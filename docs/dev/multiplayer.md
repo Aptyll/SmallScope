@@ -45,7 +45,7 @@ wears the **profile's** name and last hero — `applyProfile()`, called by `init
 on from the eagle), `aboard`/`dropT`/`dropU`
 (the eagle ride, see [Eagle drop](rendering.md#eagle-drop-mode-drop)), its own `inv` wallet, `bag`
 and `food` pouch (see [the backpack](gameplay.md#inventory-and-the-backpack)),
-`level`/`xp` (see [Hero levels](#hero-levels)), `kills`, an `input` struct and an `ai` brain.
+`level`/`xp` (see [Hero levels](#hero-levels)), `earned` (the match's gold earned), `kills`, an `input` struct and an `ai` brain.
 `reset(first)` places it at `spawn` and clears every transient; it is the single definition of
 "a fresh player". Boot calls it with `first` true, and `respawnPlayer` — the team's bird setting a
 downed player back down — with `false`, which is what gives the return its 3 s of i-frames.
@@ -385,16 +385,34 @@ character's tone and fringe ([sprites.md](sprites.md#looks-a-character-on-the-cl
 
 ## Hero levels
 
-League-style: every player has `p.level` (1–`LEVEL_MAX` = 12) and `p.xp`, which is simply lifetime
-gold earned. **`gainGold(p, n)` is the only way gold enters a wallet** (`awardGold` — the on-the-spot
-payout every source uses — and robot deposits both route through it) — it pays the purse, adds the same `n` to `xp` and calls
-`levelUp(p)` while `xp >= LEVEL_XP[level]` (cumulative thresholds 40, 100, 180, 280, 400, 540,
-700, 880, 1080, 1300, 1540 — the gap grows by 20 each level, 1540 gold to cap). The table is
-sized against a bot chaining pines all match (about a gold a second on the fells plus the
-[trickle](gameplay.md#economy-one-currency)'s 15 a minute): that bot is level 9 or 10 at fifteen
-minutes and capped past twenty, a player who fights and farms by halves sits two or three levels
-under it, and the trickle alone is level 3 by seven minutes — a level is news all match. Spending gold and dying never touch
-`xp`; level and xp are set in the constructor, not `reset()`, so they would survive a `reset`.
+League-style: every player has `p.level` (1–`LEVEL_MAX` = 12) and `p.xp`, and XP is its own number,
+apart from gold. **`gainXp(p, n)` is the only way XP enters a body**: it adds to `xp`, to the running
+total over the head (`xpN` since `xpTick`, the [purple number](rendering.md#the-running-xp-total)) and
+calls `levelUp(p)` while `xp >= LEVEL_XP[level]` (cumulative thresholds 60, 150, 270, 420, 600, 810,
+1050, 1320, 1620, 1950, 2310 — the gap grows by 30 each level). XP comes from being **near when a
+rival body dies**, never from the last hit: `shareXp(dead, xp, team, src)` hands a death's XP to
+every scout of `team` that `unitsNear(dead, …, XP_R)` finds (160 px, about half the view at the
+default zoom; alive and on the ground), plus `src` — the one who landed the blow — wherever it
+stood. The pot grows `XP_SHARE` (0.3) of the whole for each sharer past the first, so two on a
+wave get 65% each and five get 46% each. What a death is worth:
+
+| Death | XP | Shared by |
+| --- | --- | --- |
+| a soldier (`robotDies`) | `SOLDIER_XP` 20 | its rival side |
+| a scout (`die`) | `KILL_XP` 40 + `KILL_XP_LV` 15 × its level | its rival side, whatever downed it |
+| a beast with an `xp` in `YIELD` (`animalDies`): deer 40, wolf 15, black and brown bear 150 | grown `ANIMAL_LV_XP` (a tenth) a level | the side of whoever landed the last blow |
+
+Rabbits, workers, buildings, the works (pines, rocks, chests), fish, sales and the clock pay **no
+XP** — the road is where a scout levels. The table is sized against a scout who keeps to the road
+and the camps: about level 6 at ten minutes and the cap near minute 25, where the old gold-fed table
+capped near 13 (the arena's 4.37 runs). Dying never touches `xp`; level and xp are set in the
+constructor, not `reset()`, so they survive a `reset`.
+
+**`gainGold(p, n)` is the only way gold enters a wallet** (`awardGold` — the on-the-spot payout
+every source uses — and robot deposits both route through it): it pays the purse and `p.earned`,
+the match's gold earned, which is what the scoreboard ranks by and the post-game GOLD prints.
+It no longer levels anyone. A sale at the counter pays through `tradeGold`, which counts as
+neither.
 
 Growth is flat and identical for both classes: each level past 1 adds `LVL_HP` (9) to
 `maxHp` (via `levelMaxHp(p)`, healed on the spot) and `LVL_DMG` (2) to every arrow
@@ -586,8 +604,8 @@ that takes a player out for good is that eagle being driven off. `updateRespawns
 `updatePlay` beside `updateStructures`) counts down every `p.dead && !p.eliminated` player's
 `p.respawnT` — `respawnTime(p)`: the hero level's entry in `RESPAWN_WAIT`, shaped like League's
 base wait — 5 / 6 / 7 / 9 / 11 s for levels 1-5, 14 / 18 / 23 / 29 s for 6-9, 36 / 43 / 50 s for
-10 to the `LEVEL_MAX` of 12 — and nothing off the match clock: gold is XP and the table only
-climbs, so the level *is* the clock. An early death costs a few seconds and a late one costs real match, which is what makes a wiped side late in a game (everyone
+10 to the `LEVEL_MAX` of 12 — and nothing off the match clock: XP only climbs and comes
+every wave, so the level *is* the clock. An early death costs a few seconds and a late one costs real match, which is what makes a wiped side late in a game (everyone
 high) a real window on a roost its defenders otherwise come back to from sixty pixels away every
 few seconds. At zero it calls `respawnPlayer(p)`, which puts `p.spawn`
 `RESPAWN_OUT` (40 px) down the spur from the bird (`e.laneDir`; the nearest standable tile there
@@ -674,7 +692,7 @@ the **skill layer's** hand fields (below: `cone`, `rear`, `perceive`, `hand`, `a
 target's read motion), `draw` (0.6 / 0.7 / 0.9 / 0.95 of `bowCharge` it looses at — a short draw is a
 weak shot), `dodge` (×0.25 / 0.5 / 1 / 2), `abil` (0.2 / 0.35 / 0.8 / 1 chance per `AI_ABIL_T` that a
 ready ability is spent), `flee` (0.55 / 0.5 / 0.35 / 0 hp it hides at), `work` (0.4 / 0.5 / 0.8 / 1 duty
-cycle of the E key while harvesting — its level pace), the **choice** knobs the team brain reads
+cycle of the E key while harvesting — its gold pace), the **choice** knobs the team brain reads
 (`judge`, `focus`, `team`, `think`, `memory` — what each means is in the banner), `strafe` (0.3 / 0.45 / 0.8 / 1 of each 2 s it
 keeps moving in a fight; the rest it PLANTS — stands, draws and shoots, the only time a slow side
 fires, so stopping is the tell and the moment a new player hits it — and under 1 it circles that
@@ -947,6 +965,14 @@ The ladder:
    there; a SCOUT walks its beat (`aiScoutPoint`), but not for 8 s after it fled a fight
    (`ai.scoutCd`). Neither job holds a bot with nothing to do:
    they fall through to the rungs below.
+9b. **road** — XP is being near when rival bodies fall ([Hero levels](#hero-levels)) and gold is
+   the work's, so a bot splits its time (`aiRoad`): every `AI_ROAD_T` (20 s) it rolls a stretch on
+   the road or on the work, the road at `AI_ROAD_P` (0.55) at the table's average level
+   (`animalLevel`), `AI_ROAD_LV` (0.15) more for each level it trails that average and less for
+   each it leads, divided by its mood's `greed` (a greedy bot works longer). On a road stretch it
+   walks to the nearest rival soldier inside `AI_ROAD_D` (720 px), thought ROAD; rung 3 does the
+   fighting once the wave is in sight. Off an order's ring, an escort's leash and a guard's post
+   only. No wave out, or a work stretch, and it goes on down the ladder.
 10. **hunt** — an animal within `AI_HUNT` (120 px), with a 6 s catch timer per animal (prey
    outruns a walk; 8 s for a blade). A bow shoots from 55 px; a blade walks in to `AI_MELEE_D`
    and swings only inside `AI_MELEE_D` + 8 px. Birds are excluded: they fly, and no ground route catches a flushed flock.
@@ -1106,7 +1132,7 @@ what the rest of the code needs to know is this:
   the own-bird alarm are raised on the host's screen only.
 - **What the step gates on `p === player`, a client does for itself.** The profile's lifetime
   stats, `markDropped` and the leap's hard music cut never run on a client's screen, so
-  `netClientStats` (js/net/net.js) reads them off its snapshot body each step: `xp` climbing is gold,
+  `netClientStats` (js/net/net.js) reads them off its snapshot body each step: `earned` climbing is gold,
   `kills` climbing a kill, `dead` rising a death, `aboard` falling the leap, and the first step of
   the ride the match and its first day. A new local-only side effect in the sim needs its edge there.
 

@@ -546,13 +546,15 @@ function drawPlayer(p, ex, ey, now) {
     if (shL) drawShieldBar(fx - 7, hy - 10, p.dawnShield);
     if (line > 0) drawOrcaCount(fx, hy - 10 - shL, line);
     // the running damage total, past the frame's right edge: the bar backing,
-    // the colour-blind cap or the stun plate, whichever stands furthest out
-    queueTally(p, fx + 8 + (p.stunT > 0 ? 6 : foeCue(p.team) ? 1 : 0), hy - 6, barCol(p.team));
+    // the colour-blind cap or the stun plate, whichever stands furthest out,
+    // centred on the 7-row frame the badge spans (hy-8 .. hy-2)
+    queueTally(p, fx + 8 + (p.stunT > 0 ? 6 : foeCue(p.team) ? 1 : 0), hy - 4.5, barCol(p.team));
     // level badge: a 7-tall plate sharing its right frame column with the bar
     // backing's left edge (fx-8: one 1px frame everywhere, never a doubled
     // wall), and spanning the health bar and the stamina bar stacked (hy-8 ..
     // hy-2) - the plate every animal wears too (drawLevelBadge)
     drawLevelBadge(fx - 8, hy - 8, p.level);
+    if (local) queueXp(p, fx - 8 - levelBadgeW(p.level), hy - 4.5); // your XP, mirroring the damage total off the badge's left (js/draw/overhead.js)
     // Every player carries a name tag in its team colour so a fight stays
     // legible - your own included: the profile name is what the rest of the
     // table sees over your head, and hiding it from you alone would make it

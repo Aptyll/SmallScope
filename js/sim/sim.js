@@ -543,11 +543,11 @@ function tickObjTimers(dt) {
 
 // ------------------------------------------------------------ passive income
 // The clock pays: every player on the ground draws TRICKLE_GOLD into its
-// wallet every TRICKLE_T s, through gainGold so it levels too - the League
-// trickle. A floor under everyone's purse, so a player who never swings an
-// axe still buys gear and still reaches the mid levels, and a farmer pulls
-// ahead only by the fells, never by the clock. Silent on purpose: no floater,
-// no blip - the strip's purse and the xp round the portrait are the tell. The practice
+// wallet every TRICKLE_T s, through gainGold - the League trickle, gold and
+// never XP. A floor under everyone's purse, so a player who never swings an
+// axe still buys gear, and a farmer pulls ahead only by the fells, never by
+// the clock. Silent on purpose: no floater,
+// no blip - the strip's purse is the tell. The practice
 // arena has no clock and gets none; the dead and the airborne earn nothing.
 const TRICKLE_GOLD = 1;
 const TRICKLE_T = 4;      // s per coin: 15 gold a minute, ~225 over a fifteen-minute match
@@ -809,7 +809,7 @@ function updatePlay(dt) {
         } else got = d.it ? (bagPut(p, d.it) ? 1 : 0) : fitAdd(p, d.type, d.n);
         if (got > 0) {
           d.n -= got;
-          addFloater(p.x, p.y - 14, '+' + got, RES_COLORS[d.type]);
+          addFloater(p.x, p.y - 14, (d.type === 'gold' ? '' : '+') + got, RES_COLORS[d.type]);
           noteSeen(p, d.type); // the local player has now held one: mark the tech node
           sfxFor(p, 'stash');
         }

@@ -39,7 +39,7 @@
 //           fires - so the moment it stops is the moment it is about to
 //           shoot, and the moment a new player hits it. Under 1 it also
 //           circles that much less: it walks in straighter
-//   work    duty cycle of the E key while harvesting (its level pace)
+//   work    duty cycle of the E key while harvesting (its gold pace)
 // CHOICES (the ladder and the team brain read them; neutral when a
 // staged profile leaves one out):
 //   judge   0..1 how well it reads a fight before taking or staying in it

@@ -21,7 +21,7 @@ const CB_FLASH_T = 0.18;     // s a pressed well stays white
 // the buttons, top to bottom; `aim` arms a ghost, `auto` names a standing toggle
 const CHEATS = [
   { id: 'level', name: 'LEVEL UP' },
-  { id: 'gold', name: 'ADD GOLD', note: '+' + CHEAT_GOLD },
+  { id: 'gold', name: 'ADD GOLD', note: String(CHEAT_GOLD) },
   { id: 'cd', name: 'REFRESH COOLDOWNS', auto: true },
   { id: 'hp', name: 'REFRESH HEALTH', auto: true },
   { id: 'reset', name: 'RESET TO LEVEL 1' },

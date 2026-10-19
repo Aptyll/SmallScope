@@ -54,7 +54,7 @@ function sampleStats(dt) {
   if (statT < STAT_STEP) return;
   statT -= STAT_STEP;
   for (const p of players) {
-    p.hGold.push(p.xp);
+    p.hGold.push(p.earned);
     p.hDmg.push(p.dmgOut);
     if (p.hGold.length > STAT_MAX) { p.hGold = statHalve(p.hGold); p.hDmg = statHalve(p.hDmg); }
   }
@@ -76,7 +76,7 @@ function statFreeze() {
       streak: q.bestStreak, multi: q.bestMulti, cc: Math.round(q.ccOut),
       dmg: q.dmgOut, bird: q.dmgBird, struct: q.dmgStruct, beast: Math.round(q.dmgBeast),
       inP: q.dmgInP, inB: q.dmgInB, healed: Math.round(q.healed),
-      gold: q.xp, spent: q.goldSpent, beasts: q.beasts,
+      gold: q.earned, spent: q.goldSpent, beasts: q.beasts,
     })),
     // which sides are still standing at the whistle: a side whose bird has
     // been driven off is out, and a lone side left standing wears the crest

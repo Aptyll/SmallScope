@@ -141,7 +141,7 @@ function shopSell(p, s) {
   const v = sellValue(s);
   if (v <= 0) { shopDeny(p); return 0; }
   tradeGold(p, v);
-  shopFx(p, '+' + v, RES_COLORS.gold);
+  shopFx(p, String(v), RES_COLORS.gold);
   sfxFor(p, 'coin');
   return v;
 }
@@ -172,7 +172,7 @@ function shopTrade(p, good, dir, n) {
     for (const t of good === 'fish' ? FISH_KINDS : [good]) v += foodPrice(t) * bagTake(p, t, bagCount(p, t));
     if (v < 1) { shopDeny(p); return false; }
     tradeGold(p, v);
-    shopFx(p, '+' + v, RES_COLORS[good]);
+    shopFx(p, String(v), RES_COLORS[good]);
   }
   sfxFor(p, 'coin');
   return true;

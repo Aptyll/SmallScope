@@ -43,9 +43,9 @@ const SB_COL = [96, 128, 176]; // right edges of LVL / GOLD / K/D/A, panel-relat
 
 function scoreboardOpen() { return keyHeld('board') && state.mode !== 'title' && !window.DBG.hideUI; }
 
-// "winning" is lifetime gold earned, not the purse: gold spent on a building
-// is progress, and it is the same number the hero levels run on
-function scoreOf(p) { return p.xp; }
+// "winning" is the match's gold earned (gainGold), not the purse: gold spent
+// on a building is progress, not a step back
+function scoreOf(p) { return p.earned; }
 
 // players grouped by team, teams ordered by their total, players by their own
 function scoreGroups() {
