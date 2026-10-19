@@ -596,8 +596,8 @@
   // The two goods that MOVE. Their frames bake like anything else; what
   // ships beside them is a blank canvas of the same size per icon, which
   // stepItemIcons (js/render.js) redraws each frame. It starts on frame 0 so
-  // anything that bakes an item icon into a still panel at boot (the control
-  // primer) gets a picture rather than a hole.
+  // anything that bakes an item icon into a still panel at boot gets a
+  // picture rather than a hole.
   const goldFrames = nugget.map((f) => bake(f, NUGPAL));
   const berryFrames = berry.map((f) => bake(f, BERPAL));
 

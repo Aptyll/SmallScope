@@ -58,7 +58,7 @@ order, so the script tags still interleave them:
 | [js/app/canvas.js](../../js/app/canvas.js) | ~270 | shared scope, no `window.*` export | screen + world + light buffers, `fitCanvas`, pixel-exact zoom, the panel layout anchors |
 | [js/sim/player.js](../../js/sim/player.js) | ~1010 | shared scope, no `window.*` export | the `Player` class and the ten of them, classes/kits/gear/cards, the entity arrays, damage & death |
 | [js/sim/stats.js](../../js/sim/stats.js) | ~95 | shared scope, no `window.*` export | the seven hero stats: what each is, `statOf` (the one reader), armor and cooldown speed at their sites, the ledgers' rows |
-| [js/sim/items.js](../../js/sim/items.js) | ~210 | shared scope, no `window.*` export | the items the counter sells: `BUILD_ITEMS` (five parts, eight finished items built from them), their stats and passives, the six slots, what an item costs you, folding them into the kit (`itemMods`, from `refreshKit`), the passives' hooks on a hit and on the clock, and each class's bot build |
+| [js/sim/items.js](../../js/sim/items.js) | ~210 | shared scope, no `window.*` export | the items the counter sells: `BUILD_ITEMS` (five parts, eight finished items built from them), their stats and passives, the six slots, what an item costs you, folding them into the kit (`itemMods`, from `refreshKit`), the passives' hooks on a hit and on the clock, a chest's free part (`chestPart`), and each class's bot build and the stray parts it sells |
 | [js/app/input.js](../../js/app/input.js) | ~1000 | shared scope, no `window.*` export | the physical-key translation and the binds (`keyName`, `KEY_ACTIONS`, `binds()` over the two schemes' maps, `keyIs`/`keyHeld`/`keyCap`, the rebind), `keys`/`mouse`, the listeners, and the four entry points every controller shares (`keyPress`/`keyRelease`, `pointerPress`/`pointerRelease`) plus the bare gestures (`fireDown`/`fireUp`, `openFlagWheel`, `openWheelNear`, `panelScrollBy`); `sampleHumanInput` folds keys, mouse and both sticks into the input struct |
 | [js/app/gamepad.js](../../js/app/gamepad.js) | ~320 | shared scope, no `window.*` export | a pad as the keyboard and mouse it stands in for: the standard-mapping tables, `padPoll` (once per frame from `loop()`), the play set and the menu set |
 | [js/sim/cistern.js](../../js/sim/cistern.js) | ~200 | shared scope, no `window.*` export | the cistern at the middle: its measures off the bake, the footprint's distance field and the swept step that holds every body to it, the tile flags and cuts routes and placements read, laying its ground and the fords outside its culverts, and the waves' way round by one |
@@ -74,7 +74,7 @@ order, so the script tags still interleave them:
 | [js/sim/robots.js](../../js/sim/robots.js) | ~990 | shared scope, no `window.*` export | the worker bots a bay rolls out, the eagle's merchant and the barracks it raises, the soldiers a barracks marches down the road, and the one flag per player whose tile is their standing order |
 | [js/sim/farm.js](../../js/sim/farm.js) | ~45 | shared scope, no `window.*` export | farming: what a soldier's last hit pays, the coin pop it throws, and the `farm` count a last hit on a soldier or camp monster adds |
 | [js/sim/actions.js](../../js/sim/actions.js) | ~1020 | shared scope, no `window.*` export | what a player does: the swing tools and harvesting, the roll as a hit, prone — and, under its own banner, the damage types and status effects **every** kind of unit shares |
-| [js/sim/tools.js](../../js/sim/tools.js) | ~1490 | shared scope, no `window.*` export | the weapon: the `TOOLS` and `BITS` tables, what a press fires, how each bit flies, the loot rolls, the tech tree, and the icons for both |
+| [js/sim/tools.js](../../js/sim/tools.js) | ~1490 | shared scope, no `window.*` export | the weapon: the `TOOLS` and `BITS` tables, what a press fires, how each bit flies, the tech tree, the class loadouts, and the icons for both |
 | [js/sim/mining.js](../../js/sim/mining.js) | ~240 | shared scope, no `window.*` export | the rocks as a thing to mine: the `ROCK_KINDS` table, the ores as carried items and what each is worth at the counter, and the rock that mines itself for whoever stands by it |
 | [js/sim/icebreak.js](../../js/sim/icebreak.js) | ~280 | shared scope, no `window.*` export | the ice breaking in its own shape, the hole the orca comes up through: its footprints, the hole and its freeze, the tiles it opens and closes, the water read by the pixel |
 | [js/sim/orca.js](../../js/sim/orca.js) | ~210 | shared scope, no `window.*` export | the orca under its lake's ice: the cruise, the lock-on and its countdown, the stalk, the strike through an ice break, the bite, and the way off its ice a bot runs |
@@ -82,7 +82,8 @@ order, so the script tags still interleave them:
 | [js/sim/abilities.js](../../js/sim/abilities.js) | ~1310 | shared scope, no `window.*` export | the class abilities on keys 1-4: the `CLASS_AB` table, casting, the pierce/net/grapple/snow-cover/shield-and-slam/rush/crater/execute sim, the telegraph and landing shapes every side sees, and their draw passes |
 | [js/sim/fog.js](../../js/sim/fog.js) | ~130 | shared scope, no `window.*` export | the fog of war's rule: each side's eyes, sight lines stopped by stone, the woods as brush, and `inSight` (what a side sees, which its bots ask) |
 | [js/ai/ai-skill.js](../../js/ai/ai-skill.js) | ~250 | shared scope, no `window.*` export | how well a bot plays: the difficulty levels and the skill layer, the hands between the ladder's decision and the input it writes |
-| [js/ai/ai.js](../../js/ai/ai.js) | ~990 | shared scope, no `window.*` export | the bot brain — a priority ladder writing the same input struct a human fills |
+| [js/ai/ai.js](../../js/ai/ai.js) | ~770 | shared scope, no `window.*` export | the bot brain — a priority ladder writing the same input struct a human fills: its reads, its walks and `updateAI` |
+| [js/ai/ai-ladder.js](../../js/ai/ai-ladder.js) | ~910 | shared scope, no `window.*` export | the ladder itself: `aiThink` and its rungs, in the order they are asked |
 | [js/ai/ai-farm.js](../../js/ai/ai-farm.js) | ~130 | shared scope, no `window.*` export | the farm roles: where a laner stands and how it holds its blow for the last hit, where a jungler walks and waits on a den |
 | [js/ai/bot-api.js](../../js/ai/bot-api.js) | ~340 | `window.BOTS` | the bot API: a seat driven by a bot file behind a JSON boundary (observation in, input struct out), its transports and its library; js/baked/bot-lib.js is the examples baked from bots/ ([docs/bots/](../bots/README.md)) |
 | [js/sim/sim.js](../../js/sim/sim.js) | ~1540 | shared scope, no `window.*` export | `update`/`updatePlay`/`updatePlayer` (and its named steps), the camera (`camX`/`camY`), fx aging, the snow |
@@ -118,8 +119,8 @@ order, so the script tags still interleave them:
 | [js/draw/render.js](../../js/draw/render.js) | ~1460 | shared scope, no `window.*` export | `render()` composes and blits the frame; the `.` debug overlays; cursor, reticle and aim line |
 | [js/ui/wheel.js](../../js/ui/wheel.js) | ~800 | shared scope, no `window.*` export | the HUD in world space: the radial wheel and `runCmd`, the selection brackets, key and pad prompts, the work/rack/bell/shop hints, the build list (its hammer plate, its column, the piece on the pointer) and its ghost |
 | [js/ui/minimap.js](../../js/ui/minimap.js) | ~230 | shared scope, no `window.*` export | the minimap: its rebuilt disc, masks, chrome and view arc, `renderMinimap` |
-| [js/ui/bag.js](../../js/ui/bag.js) | ~670 | shared scope, no `window.*` export | the backpack drawer's geometry and hit tests, `overHud`, the drag verbs and what a gesture answers with, the character panel, the SHIFT plate, `drawBag` |
-| [js/ui/strip.js](../../js/ui/strip.js) | ~640 | shared scope, no `window.*` export | the hud strip's bones: its constants, the hud frame, the HUD size dials, every cell rect and refusal flash, the weapon shelf's geometry and drops, sending a cell across, the drag's press/move/release |
+| [js/ui/bag.js](../../js/ui/bag.js) | ~670 | shared scope, no `window.*` export | the backpack drawer's geometry and hit tests, `overHud`, the drag verbs and what a gesture answers with, the character panel, `drawBag` |
+| [js/ui/strip.js](../../js/ui/strip.js) | ~640 | shared scope, no `window.*` export | the hud strip's bones: its constants, the hud frame, the HUD size dials, every cell rect and refusal flash, the weapon shelf's geometry (the class weapon and the six item slots), where a carried item is let go, a pack cell's click, the drag's press/move/release |
 | [js/ui/hud-draw.js](../../js/ui/hud-draw.js) | ~690 | shared scope, no `window.*` export | drawing the strip and the shelf: the portrait, the health and stamina bars, tier and mod plates, item icons, the cooldown sweep, the ability/meal/gold cells, `drawHudStrip`, the scaled bakes, the shelf's wells, the drag ghost |
 | [js/ui/statpanel.js](../../js/ui/statpanel.js) | ~95 | shared scope, no `window.*` export | the stat panel left of the portrait: its cells and icons, its hit test, the hover breakdown (`tipStat`) |
 | [js/ui/rail.js](../../js/ui/rail.js) | ~220 | shared scope, no `window.*` export | the team rail along the top edge, and the anchors the screens hang under it |
@@ -185,7 +186,7 @@ eagle, gating the scripted first flight that rides the landing), `bestLap`
 (`bestLap()`/`setBestLap()`: the ice parkour's all-time record) and `bestRange`
 (`bestRange()`/`setBestRange()`: the archery round's best score) — the only two things the
 practice arena writes ([world.md](world.md#the-practice-arena)) — the
-[arsenal](gameplay.md#the-wiki)'s `tech.seen` (the wiki's "held one" pips; `tech.done` rides along unread) and the
+old arsenal's `tech.seen` (which kinds this profile has held; nothing reads it now, and `tech.done` rides along unread) and the
 `settings` object — as one JSON blob under
 `softfall.profile`. It is the only file that touches `localStorage` (the CLAUDE.md rule):
 swapping the private `read()` / `write()` pair for requests turns the
@@ -222,8 +223,7 @@ file is a save file.
   js/sprites/eagle.js); an id the game no longer has is kept but never worn. A match's gold
   never becomes coins.
 - **The tech lists are ids and nothing else.** `markSeen` coalesces (it fires from a pickup) and is
-  the only writer: `tech.done` is carried through load and save untouched and read by nothing
-  (the whole arsenal is unlocked). `load()` copies only strings and de-duplicates, so a
+  the only writer: `tech.done` is carried through load and save untouched and read by nothing. `load()` copies only strings and de-duplicates, so a
   hand-edited save cannot put a number or a repeat into the lists. What a node *is* lives in
   js/sim/tools.js — this file only remembers.
 

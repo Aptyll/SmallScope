@@ -363,8 +363,8 @@ function drawKeyCap(g, x, y, label, pressed, hot, now) {
   drawPixelText(g, label, x + 3, cy + 3, '#121418');
   return w;
 }
-// the key-cap + verb pair itself, shared by the work prompt, the rack's and
-// the pack's SHIFT plate: pressed = the face drops a pixel and the verb goes
+// the key-cap + verb pair itself, shared by the work prompt and the rack's
+// plate: pressed = the face drops a pixel and the verb goes
 // gold. `action` is what the cap is FOR (the work key unless said otherwise),
 // and the cap prints whatever key that action is bound to (keyCap,
 // input.js). With a pad in hand the cap is the pad's button (PAD_BIND) and

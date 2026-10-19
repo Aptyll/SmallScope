@@ -1546,7 +1546,6 @@ function updateFx(dt) {
     const want = bagOpenNow() ? 1 : 0, d = want - bagEase;
     bagEase += Math.sign(d) * Math.min(Math.abs(d), dt / BAG_SLIDE_T);
   }
-  if (toolFlash > 0) toolFlash -= dt; // ... and the weapon well's, beside it
   if (foodFlash > 0) foodFlash -= dt; // ... and the meal button's
   if (abFlash > 0) abFlash -= dt;     // ... and a locked ability well's
   // the shelf's flash is chrome too: what the last press spent, fading (js/sim/tools.js)

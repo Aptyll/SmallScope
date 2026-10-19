@@ -538,7 +538,6 @@ function chopTree(o, p) {
     flushBirds(campAt(ox, oy), { x: ox, y: oy }); // felling a perch scatters the flock in it (dormant: see the birds banner, wildlife.js)
     return;
   }
-  dropLoot(ox, oy - 6, 0, TREE_DROP); // the rare one: something was living in it
   if (o.rare) {
     awardGold(p, YIELD.treeRare, ox, oy - 12);
     burst(ox, oy - 8, '#f2cc6a', 10, 50, 0.6, true);
@@ -585,9 +584,8 @@ function hitObject(o, p) {
   } else if (o.type === 'chest') {
     // a buried cache in the treeline (placeChests, js/sim/world.js): one free E
     // press springs it - gold straight into the purse, a card drop rolled
-    // from CHEST_ODDS, and a tool or bit rolled up to the TOP tier - the same
-    // roll a sunstone makes (a felled tree only pays the bottom tier). The tile
-    // opens with it, so a sprung chest leaves a gap in the forest wall.
+    // from CHEST_ODDS, and a free item part (chestPart, js/sim/items.js). The
+    // tile opens with it, so a sprung chest leaves a gap in the forest wall.
     objects[idx(o.tx, o.ty)] = null;
     sfxAt('stash', ox, oy);
     shakeFor(p, 1.5);
@@ -596,7 +594,7 @@ function hitObject(o, p) {
     const key = cardKey(rarity);
     spawnDrop(ox, oy, key, 1);
     addFloater(ox, oy - 24, rarity.toUpperCase() + ' CARD', RES_COLORS[key]);
-    dropLoot(ox, oy, TOOL_TIERS.length - 1, CHEST_TOOL);
+    chestPart(p, ox, oy);
     burst(ox, oy - 6, '#f2cc6a', 12, 55, 0.6, true);
     burst(ox, oy - 6, '#8a6142', 8, 45, 0.5, true);
   } else if (STRUCTS[o.type]) {

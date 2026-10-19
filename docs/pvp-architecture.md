@@ -326,10 +326,10 @@ wire: the handshake is `PATCH_TXT`, the seed and the map shape in the `hello` (a
 
 | `t` | Dir | Form | Body |
 | --- | --- | --- | --- |
-| `hello` | c→h | JSON | `uid` (the client's identity across a reconnect, kept per tab in `sessionStorage`), `patch` (`PATCH_TXT`), `seed`, `map` (`MAP_TYPE` - the same world means the same shape of it, and a mismatch refuses with `SEED`), `name`, `cls` (the profile's hero), `rank` (its RANKED rating) |
+| `hello` | c→h | JSON | `uid` (the client's identity across a reconnect, kept per tab in `sessionStorage`), `patch` (`PATCH_TXT`), `seed`, `map` (`MAP_TYPE` - the same world means the same shape of it, and a mismatch refuses with `SEED`), `name`, `cls` (the profile's hero), `rank` (its RANKED rating), and from a page crossing to meet another party `party` (its own party's code) and `pn` (how many people it brings) |
 | `welcome` | h→c | JSON | `slot`, `hostSlot`, `seed`, `tick`, `roster`, `phase` (the waiting room's page: `room` or `pick`), `ready`, `lvl` (as on a `roster`) |
-| `refuse` | h→c | JSON | `why`: `VERSION` / `SEED` / `LATE` / `FULL` / `KICKED` from the host; `NOROOM` / `FULL` from the relay. A client also sets `NET.refused` itself to `BYTES` (a frame it could not decode) and `HOSTGONE` |
-| `roster` | h→c (`*`) | JSON | `roster`: ten `{control, team, name, cls}`, on every join and leave. A client turns the host's `human` into `remote` and keeps its own slot `human`. With it `ready` (the slots whose person said READY), `lvl` (the host's bot level), `mode`, `code` and `ranks` (each person's rating), `roomInfo` |
+| `refuse` | h→c | JSON | `why`: `VERSION` / `SEED` / `LATE` / `FULL` / `KICKED` / `BUSY` / `MATCHED` (a crossing party the host did not seat) from the host; `NOROOM` / `FULL` from the relay. A client also sets `NET.refused` itself to `BYTES` (a frame it could not decode) and `HOSTGONE` |
+| `roster` | h→c (`*`) | JSON | `roster`: ten `{control, team, name, cls}`, on every join and leave. A client turns the host's `human` into `remote` and keeps its own slot `human`. With it `ready` (the slots whose person said READY), `lvl` (the host's bot level), `mode`, `code`, `ranks` (each person's rating) and `seek` (seconds since FIND MATCH while the party is looking, else -1), `roomInfo` |
 | `count` | h→c (`*`) | JSON | the waiting room's countdown: `ct`, the host's `countT`, and `n`, the digit shown |
 | `pick` | c→h | JSON | `cls`: the guest's hero on the hero select (`netPick` -> `seatPick`); the host answers with a `roster` |
 | `ready` | c→h | JSON | `on`: the guest's READY said or taken back (`seatReady`); the host answers with a `roster` |
@@ -339,6 +339,7 @@ wire: the handshake is `PATCH_TXT`, the seed and the map shape in the `hello` (a
 | `say` | c→h | JSON | `s`: a line for the room's chat; the host drops one that comes within `TALK_GAP` of that guest's last (`talkFrom`, js/ui/roomtalk.js) |
 | `said` | h→c (`*`) | JSON | `slot`, `s`: a line of the room's chat, the host's own and every guest's it kept, cleaned to the pixel font's letters (`talkClean`) |
 | `rematch` | h→c (`*`) | JSON | `seed`, `map`: the valley the room plays next, sent the moment a match ends (`rematchOffer`, js/ui/rooms.js) and again on the host's LOBBY. A guest's LOBBY reloads onto it and joins the same code; once the host has gone after it, the guest drops whatever else the old socket brings and does not end on HOST LEFT |
+| `cross` | h→c (`*`) | JSON | `room`, `seed`, `map`, `code`, `n`: the leader's party is crossing to meet another (`seekCross`, js/ui/matchmaking.js); each guest saves its party and reloads to join that room with `party`/`pn` in its hello |
 | `phase` | h→c (`*`) | JSON | `phase`: the host turned the waiting room's page, `room` (the seats) or `pick` (the stage and LOCK IN) |
 | `full` | h→c | bytes, reliable | `tick`, `ia` (as on a `snap`), `snap`: the whole `snapBuild()` - players, `objects` as a sparse map by tile index, `structs`, the five kinds, `eagles`, `ground` (base64 of the byte array), the singletons. The dictionary from index 0. Sent after the welcome, on a `resync`, and to a peer whose ack aged out of the ring |
 | `snap` | h→c | bytes, lossy | `tick`, `d` (the delta, below), `ev` (the cosmetics drained this flush), `ia` (the newest of THIS peer's inputs the host has stepped: where its prediction replays from), and `full` when `NET.verify` is on and the tick is a `VERIFY_EVERY` one |
@@ -347,14 +348,14 @@ wire: the handshake is `PATCH_TXT`, the seed and the map shape in the `hello` (a
 | `peer` / `gone` | transport→h | - | someone joined or left the room or lobby (`gone` hands the body to a bot and parks the slot, below) |
 | `closed` / `hostGone` | transport→c | - | the client's own socket dropped (relay; it redials) / the host is gone: its socket closed on the relay, or the lobby's owner left on Steam |
 | `replaced` | relay→h | JSON | another host socket took this room's code: the transport sets `error = 'REPLACED'` and closes without redialling (two hosts would otherwise swap the room forever) |
-| `room` | h→relay | JSON | `data`: `{name, patch, seed, state: 'open' or 'live', humans, sides}` - what the list shows (`netHostRoom`); on Steam the same object goes into lobby data as strings |
+| `room` | h→relay | JSON | `data`: `{name, patch, seed, map, practice, state: 'open' or 'live', humans, sides, seek}` (`seek`: the mode while the party is looking for another, else empty) - what the list shows (`netHostRoom`); on Steam the same object goes into lobby data as strings |
 
 There is no ping, no ack message of its own (the ack rides every `in`), no world hash and no
 leave message (a leave is the transport's `gone`).
 
 ### The delta (`d`)
 
-Cut by `snapDeltaFrom(h, base)` and applied by `snapApplyDelta`. `{v, tick, base}` (`base` -1
+Cut by `snapDeltaFrom(h, base, team)` and applied by `snapApplyDelta`. `{v, tick, base}` (`base` -1
 for "from nothing"), then only what was touched since the base:
 
 | Key | Carries |
@@ -367,8 +368,18 @@ for "from nothing"), then only what was touched since the base:
 | `groundDiff` | a flat `[index, type, ...]`; each cell is `repaintGround`ed |
 | `structs` | the registry as tile indices, when it moved |
 
-Every client gets every player's every field, bag included: there is no per-recipient field
-policy yet.
+**Each side is sent only what it sees** (the `fog` banner, js/net/snapshot.js; the rule is
+[the fog of war](dev/gameplay.md#fog-of-war)). Each ring entry keeps the ids each side cannot see
+(`snapFogHid`); a peer's full form (`snapBuild(team)`) and its deltas are cut for its side
+(`netFogTeam`: its own, or everything once its bird is gone - a change of side is a full sync).
+A rival `R`/`A`/`W` out of sight is left out: `del` the tick it goes, sent whole (its id in the
+kind's `whole`, so keys left over from before are dropped) the tick it comes back, never in
+`order` while hidden. A rival player out of sight goes as a stub: `fogHid: 1` and only
+`SNAP_FOG_KEEP` (name, class, level, hp, kills and the rest of what the rail, the scoreboard and
+the post-game lobby show); every other field the client holds is the last-seen value and drawn
+nowhere. A link to a body the side was not sent resolves to null and is put back when it arrives
+(`snapPendRetry`). Within what a side sees, every player's every field goes, bag included: there
+is no per-recipient field policy beyond the fog.
 
 ### Events
 
@@ -376,7 +387,9 @@ policy yet.
 (cue at a place with a radius; `EV_ANYWHERE` reaches every screen), `sfxp` (cue for a player id),
 `sfxo` (owner cue / bystander cue), `shake` and `shakep` entries as `{k, a}`, recorded inside the
 step on the host (`evInStep` and `evRecord`, which is on only while there are peers; `EV_MAX` 1024
-per flush) and replayed by `evPlay` on a client against *its* player. Everything that changes
+per flush) and replayed by `evPlay` on a client against *its* player. A side's peers get only the
+`burst`, `stream`, `float` and last-hit `coin` entries raised where it sees, and the bot calls and
+missed coins meant for it (`netEvSeen`). Everything that changes
 state - a build, a ground change, a death, a respawn, a trade, the end of the match - arrives as
 snapshot state, not as an event, so a lost `snap` loses only cosmetics. Two wrinkles: a floater
 that carries a team's paint records the HOST's `skin()` colour, and `burst` draws off the sim's
@@ -420,8 +433,9 @@ The same screens and the same protocol ride either transport; only the list and 
    tick on its seat, and the leader's FIND MATCH does nothing but flash the seats it waits on
    until every person has said it (`roomAllReady`). Every person's seat carries ping bars
    (`ping`/`pong`/`pings`) and, in RANKED, its rating. The party has a chat (`say`/`said`).
-   FIND MATCH (`partyFind`) fills every empty seat on both sides with a bot, pins the bots' level
-   in RANKED (`NET.botLv` from the party's average rating) and turns the page to the HERO SELECT
+   FIND MATCH (`partyFind`) first looks for another party (**matchmaking**, below), then
+   (`partyStart`) fills every empty seat on both sides with a bot, pins the bots' level
+   in RANKED (`NET.botLv` from the people's average rating) and turns the page to the HERO SELECT
    (`pick`, the lobby): each member picks a hero (`pick` message, `seatPick`), a guest sees the
    leader's name where LOCK IN would be, and the leader's ESC turns back to the seats. Seats are
    locked once the drop is under way (`seatsOpen`). The client builds its bodies from the
@@ -449,6 +463,19 @@ The same screens and the same protocol ride either transport; only the list and 
    `BUSY`), seats them on the spawn and parks a leaver's empty body in the corner; the list
    entry carries `practice: 1`, so a code typed on a title page reloads onto the field. The
    leader's LEAVE is a rematch back to the party (`rematch`, which a guest on the field follows at once).
+10. **Matchmaking** (js/ui/matchmaking.js). QUICKPLAY and RANKED's FIND MATCH sets `NET.seek`,
+   lists the room with `seek: mode` and reads the list. Of the parties looking in one mode, the
+   lowest code hosts: it waits `MATCH_WAIT` (8 s, plus `MATCH_HOLD` while a higher one is still
+   listed); every other party crosses to the lowest it sees (`seekCross`): the leader saves its
+   party (`sessionStorage` `softfall.home`: code, mode, guests' slots), sends `cross`, and every
+   page of it reloads as `?seed=S&map=M&join=ROOM&back=1&party=CODE&pn=N` (`CROSS`). The host
+   seats the first crossing party's hellos on its rival side (`crossAdmit`) and refuses any other
+   `MATCHED`; it starts once all `pn` are in or after `MATCH_GATHER` (20 s), and with nobody found
+   at `MATCH_WAIT` it starts with bots. A page that has not been welcomed ignores what the host says
+   to the whole room. A crossed page goes home on LOBBY after the match, on a refusal, after
+   `MATCH_JOIN` (6 s) of failed tries, or when its host walks out (`partyLost`): its leader hosts
+   the party's code again and its guests join it, all on `homeSeed(code)` (`crossHomeUrl`). The
+   rival party's people are left out of the host's rematch seats (`pr.cross`).
 
 ### Joins, leaves, reconnects
 

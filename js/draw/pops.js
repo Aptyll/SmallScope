@@ -42,6 +42,7 @@ function drawCoin(grid, ink, x, y) {
 
 function drawPops(ex, ey) {
   for (const f of floaters) {
+    if (!fogShown(f)) continue; // a number raised in the fog is not shown (js/draw/fog.js; render() has asked this frame already)
     const s = f.scale || 1;
     drawWorldText(f.txt,
       Math.round(f.x + (f.vx || 0) * f.t - ex - pixelTextWidth(f.txt, s) / 2),

@@ -167,6 +167,17 @@ function itemsOnHit(src, e, o) {
   }
   if (k.chill) slowUnit(e, CHILL_T, CHILL_MUL);
 }
+// A sprung chest's free part (hitObject, js/sim/actions.js): one part off the
+// shared rng, straight into a free slot. With every slot full it pays the
+// part's price in gold instead, so a chest is never worth less for a full build.
+function chestPart(p, x, y) {
+  const id = ITEM_PARTS[Math.floor(rng() * ITEM_PARTS.length)];
+  const slot = p.items.indexOf(null);
+  if (slot < 0) { tradeGold(p, BUILD_ITEMS[id].price); addFloater(x, y - 34, '+' + BUILD_ITEMS[id].price, RES_COLORS.gold); return; }
+  p.items[slot] = id;
+  itemsChanged(p);
+  addFloater(x, y - 34, BUILD_ITEMS[id].name, '#9fd6a0');
+}
 // the player's own clock, once a step (js/sim/sim.js): the fight timer, and
 // DEN's heal once it has run out
 function itemsTick(p, dt) {
@@ -192,6 +203,19 @@ function botNextItem(p) {
     return id;
   }
   return null;
+}
+// a held part no item still left on p's list is built from (a chest's gift,
+// usually): the slot index of the first one, or -1. Sold at a counter once
+// the slots are full, so a stray part never blocks the build.
+function botStrayPart(p) {
+  const list = BOT_BUILDS[CLASSES[p.cls].name] || BOT_BUILDS.HUNTER;
+  const want = new Set();
+  for (const id of list) if (!p.items.includes(id)) for (const q of BUILD_ITEMS[id].from || []) want.add(q);
+  for (let i = 0; i < p.items.length; i++) {
+    const id = p.items[i];
+    if (id && isPart(id) && !want.has(id)) return i;
+  }
+  return -1;
 }
 // what a bot would buy RIGHT NOW with its purse: the next item whole, or a part
 // of it. null when nothing on its list is affordable.

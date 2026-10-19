@@ -25,6 +25,8 @@ const NET = {
   botLv: null,               // a host's: RANKED's bots' level, pinned at FIND MATCH (rankLevel); null leaves it settings.aiLevel (aiProfile, js/ai/ai-skill.js)
   ranks: [],                 // the party's: each person's RANKED rating per slot (their hello's, the host's own PROFILE.rank)
   code: '',                  // a guest's: the party's code, as the host sent it (roomCode, js/ui/rooms.js)
+  seek: null,                // a host's: FIND MATCH looking for another party, { t, hold, rival, crossing } (js/ui/matchmaking.js)
+  seekAt: null,              // a guest's: when, on its own clock, the party started looking (null while it is not)
   pingT: 0,                  // a host's: s toward the next round of pings
   chat: [],                  // the waiting room's last lines, { name, team, s } (js/ui/roomtalk.js)
   hostSlot: 0,               // a client's: which slot the host's own player sits in
@@ -80,7 +82,7 @@ function netSetup(role, transport) {
   if (NET.transport && NET.transport !== loopbackTransport) NET.transport.close();
   NET.role = role || 'solo';
   NET.transport = transport || loopbackTransport;
-  NET.peers.clear(); NET.parked.clear(); NET.kicked.clear(); NET.ready.clear(); NET.pings = []; NET.pingT = 0; NET.chat = []; NET.ranks = []; NET.botLv = null; NET.code = '';
+  NET.peers.clear(); NET.parked.clear(); NET.kicked.clear(); NET.ready.clear(); NET.pings = []; NET.pingT = 0; NET.chat = []; NET.ranks = []; NET.botLv = null; NET.code = ''; NET.seek = null; NET.seekAt = null;
   NET.easeAt = 0; NET.gapAvg = 0; NET.gapDev = 0; NET.easeMs = 0;
   NET.synced = false; NET.welcomed = false; NET.helloed = false; NET.refused = null; NET.lastTick = -1; NET.hostOver = null; NET.countN = -1; NET.published = false; NET.phase = 'room'; NET.rematch = null; NET.nextSeed = 0; NET.was = null;
   NET.dictOut = encDict(); NET.dictIn = encDict(); NET.verifyFail = null;
@@ -132,7 +134,8 @@ function netHostRoom() {
   if (NET.role !== 'host' || !NET.transport.roomData) return;
   let humans = 0; const sides = [0, 0];
   for (const p of players) if (isHuman(p)) { humans++; sides[p.team]++; }
-  NET.transport.roomData({ name: player ? player.name : '', patch: PATCH_TXT, seed: SEED, map: MAP_TYPE, practice: PRACTICE ? 1 : 0, state: state.drop ? 'live' : 'open', humans, sides });
+  NET.transport.roomData({ name: player ? player.name : '', patch: PATCH_TXT, seed: SEED, map: MAP_TYPE, practice: PRACTICE ? 1 : 0, state: state.drop ? 'live' : 'open', humans, sides,
+    seek: NET.seek && !NET.seek.rival && !NET.seek.crossing ? NET.mode : '' }); // a party looking for another (js/ui/matchmaking.js)
 }
 // the roster to every peer, on every change of it: a client's waiting room
 // draws the same ten this one does
@@ -207,7 +210,13 @@ function netHostHello(peer, msg) {
   let slot = -1;
   const park = NET.parked.get(msg.uid) || rematchSeat(msg.uid); // a dropped peer's slot, or the one it held last match
   if (park && !isHuman(players[park.slot])) { slot = park.slot; NET.parked.delete(msg.uid); }
-  else if (NET.mode) {
+  else if (msg.party) {
+    // a party crossing in to meet ours (js/ui/matchmaking.js): the rival side
+    if (!crossAdmit(msg)) return refuse('MATCHED');
+    const seat = players.find((p) => p.team !== player.team && !isHuman(p));
+    if (!seat) return refuse('FULL');
+    slot = seat.id;
+  } else if (NET.mode) {
     // a party: a seat on the leader's own side, while it is still choosing
     // whom to bring - never once the hero select or the match has begun
     // (a party on the practice field takes friends at any time)
@@ -235,7 +244,7 @@ function netHostHello(peer, msg) {
   if (msg.name) p.name = msg.name;
   if (msg.cls !== undefined && msg.cls !== null) setClass(p, msg.cls);
   NET.ranks[slot] = msg.rank | 0 || null;
-  const pr = { slot, uid: msg.uid, name: msg.name, lastTick: 0, ack: -1, dictAt: new Map(), q: [], qMin: Infinity, qN: 0 };
+  const pr = { slot, uid: msg.uid, name: msg.name, cross: !!msg.party, lastTick: 0, ack: -1, dictAt: new Map(), q: [], qMin: Infinity, qN: 0 };
   NET.peers.set(peer, pr);
   NET.transport.send(peer, Object.assign({ t: 'welcome', slot, hostSlot: localId, seed: SEED, tick: state.tick, roster: netRoster(), phase: NET.phase }, roomInfo()));
   netHostFull(peer, pr);
@@ -250,11 +259,29 @@ function netHostHello(peer, msg) {
 // dictionary from index 0, whole
 function netHostFull(peer, pr) {
   const h = snapHistoryPush();
-  const full = snapEncode({ t: 'full', tick: h.tick, snap: snapBuild(), ia: pr.lastTick }, NET.dictOut, 0);
+  pr.fogTeam = netFogTeam(pr);
+  const full = snapEncode({ t: 'full', tick: h.tick, snap: snapBuild(pr.fogTeam), ia: pr.lastTick }, NET.dictOut, 0);
   NET.bytesOut += NET.transport.send(peer, full) ? full.length : 0;
   NET.fulls++;
   pr.ack = h.tick;
   pr.dictAt = new Map([[h.tick, NET.dictOut.names.length]]);
+}
+// the side whose sight cuts what this peer is sent (the `fog` banner,
+// js/net/snapshot.js): its own, until its bird is gone and it only watches
+// (any body, either side's sight) - then everything, -1
+function netFogTeam(pr) { const p = players[pr.slot]; return p.eliminated ? -1 : p.team; }
+// the step's cosmetics a side may see: a puff, a stream or a number raised
+// out of its sight is a body it cannot see giving itself away (sightAt,
+// js/sim/fog.js), and a bot's call or a miss's coin is for the side it names
+function netEvSeen(ev, team) {
+  if (team < 0) return ev;
+  return ev.filter((e) => {
+    const a = e.a;
+    if (e.k === 'float' || e.k === 'burst') return sightAt(team, a[0], a[1]);
+    if (e.k === 'stream') return sightAt(team, a[0], a[1]) || sightAt(team, a[2], a[3]);
+    if (e.k === 'coin') return a[2] ? a[3] === team : sightAt(team, a[0], a[1]); // a miss's coin is its own side's (js/sim/farm.js)
+    return e.k !== 'call' || a[6] === team;
+  });
 }
 function netHostLeave(peer) {
   const pr = NET.peers.get(peer);
@@ -332,15 +359,16 @@ const PING_EVERY = 2;   // s between rounds
 const PING_EASE = 0.5;  // the new round's share of a peer's eased round trip
 function roomInfo() {
   if (NET.isHost) NET.ranks[localId] = PROFILE.rank();
-  return { ready: [...NET.ready], lvl: roomLevel(), mode: NET.mode, code: roomCode(), ranks: NET.ranks };
+  return { ready: [...NET.ready], lvl: roomLevel(), mode: NET.mode, code: roomCode(), ranks: NET.ranks, seek: NET.seek ? NET.seek.t : -1 };
 }
 // a guest's copy, off a roster or the welcome
 function roomInfoIn(msg) {
   if (msg.ready) NET.ready = new Set(msg.ready);
   if (msg.lvl !== undefined) NET.aiLevel = msg.lvl | 0;
-  if (msg.mode !== undefined) NET.mode = msg.mode;
+  if (msg.mode !== undefined && msg.mode !== NET.mode) { if (NET.mode) state.menu.modeFx = 0.25; NET.mode = msg.mode; } // the leader turned the mode: the head flashes
   if (msg.code) NET.code = String(msg.code);
   if (Array.isArray(msg.ranks)) NET.ranks = msg.ranks;
+  if (msg.seek !== undefined) NET.seekAt = msg.seek >= 0 ? performance.now() / 1000 - msg.seek : null; // the party looking: the clock (seekClock)
 }
 function seatReady(slot, on) {
   if (NET.role !== 'host' || !seatsOpen()) return;
@@ -384,15 +412,16 @@ function netHostFlush() {
   if (check) snapShadow.scanAt = 0; // the proof's tick sees every tile now, not a slice ago
   const h = snapHistoryPush();
   const ev = evDrain();
-  const full = check ? snapBuild() : null; // the client checks itself against this
-  const cuts = new Map(); // ack tick -> delta
+  const cuts = new Map(), fulls = new Map(), evs = new Map(); // per side (and ack tick): the delta, the full form the client checks itself against, the cosmetics
   for (const [peer, pr] of NET.peers) {
-    const base = snapHistoryAt(pr.ack);
-    if (!base) { netHostFull(peer, pr); continue; }
-    let d = cuts.get(pr.ack);
-    if (!d) { d = snapDeltaFrom(h, base); cuts.set(pr.ack, d); }
-    const msg = { t: 'snap', tick: h.tick, d, ev, ia: pr.lastTick }; // ia: the newest of this peer's inputs the step has taken (netPredict)
-    if (full) msg.full = full;
+    const base = snapHistoryAt(pr.ack), team = netFogTeam(pr);
+    if (!base || team !== pr.fogTeam) { netHostFull(peer, pr); continue; } // a side's sight changed under it (its bird gone): the whole match again
+    const key = team + ':' + pr.ack;
+    let d = cuts.get(key);
+    if (!d) { d = snapDeltaFrom(h, base, team); cuts.set(key, d); }
+    if (!evs.has(team)) evs.set(team, netEvSeen(ev, team));
+    const msg = { t: 'snap', tick: h.tick, d, ev: evs.get(team), ia: pr.lastTick }; // ia: the newest of this peer's inputs the step has taken (netPredict)
+    if (check) { if (!fulls.has(team)) fulls.set(team, snapBuild(team)); msg.full = fulls.get(team); }
     const bytes = snapEncode(msg, NET.dictOut, pr.dictAt.get(pr.ack) || 0);
     pr.dictAt.set(h.tick, NET.dictOut.names.length);
     for (const t of pr.dictAt.keys()) if (t < pr.ack) pr.dictAt.delete(t);
@@ -452,8 +481,12 @@ function netClientStep(dt) {
       if (state.mode !== 'title' && !NET.rematch && !(state.over === 'won' || state.over === 'lost')) endMatch('hostleft');
       continue;
     }
+    // a socket the host has not seated (or turned away) still hears what the
+    // host says to the whole room: none of it is ours until the welcome
+    if (!NET.welcomed && msg.t !== 'welcome') continue;
     if (msg.t === 'rematch') { rematchHeard(msg); continue; }
     if (msg.t === 'practice') { practiceHeard(); continue; } // the leader's START: onto the practice field after it (js/ui/rooms.js)
+    if (msg.t === 'cross') { crossHeard(msg); continue; }    // the leader's party crossing to meet another (js/ui/matchmaking.js)
     if (msg.t === 'welcome') { netClientWelcome(msg); continue; }
     // the waiting room: the host's ten and its count, drawn here as there
     if (msg.t === 'roster') { netClientRoster(msg.roster); roomInfoIn(msg); continue; }
@@ -489,7 +522,8 @@ function netClientStats() {
   NET.was = { p: me, earned: me.earned, kills: me.kills, dead: me.dead, aboard: me.aboard };
 }
 function netClientHello() {
-  NET.transport.send('host', { t: 'hello', uid: NET.uid, patch: PATCH_TXT, seed: SEED, map: MAP_TYPE, name: PROFILE.name(), cls: PROFILE.hero(), rank: PROFILE.rank() });
+  NET.transport.send('host', { t: 'hello', uid: NET.uid, patch: PATCH_TXT, seed: SEED, map: MAP_TYPE, name: PROFILE.name(), cls: PROFILE.hero(), rank: PROFILE.rank(),
+    party: CROSS ? CROSS.party : undefined, pn: CROSS ? CROSS.n : undefined }); // a party crossing in (js/ui/matchmaking.js)
 }
 // the roster the host dealt: our slot is the human here, the host's is a
 // remote one, and the bodies are built before the first snapshot fills them
@@ -561,7 +595,7 @@ function netClientApplyDelta(msg) {
     for (const [e, f] of changed) { if ('x' in f) movedX.add(e); if ('y' in f) movedY.add(e); }
     const eased = [];
     for (const [e] of shown) if (e._t0) { eased.push([e, e.x, e.y]); if (!movedX.has(e)) e.x = e._tx; if (!movedY.has(e)) e.y = e._ty; }
-    const out = []; snapCompareLoose(msg.full, snapBuild(), '', out, 8);
+    const out = []; snapCompareLoose(msg.full, snapBuildSeen(msg.full), '', out, 8);
     for (const [e, x, y] of eased) { e.x = x; e.y = y; }
     if (out.length) NET.verifyFail = { tick: msg.tick, out };
   }

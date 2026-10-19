@@ -74,15 +74,11 @@ nothing in it is at stake. See [the practice arena](world.md#the-practice-arena)
 
 ## The pillars
 
-**Your weapon is something you build.** One weapon slot holds a **tool** — a body
-with a rate of fire, a number of bit cells and a weight it is strong enough to throw. What comes
-out of it is the **bits** loaded into it, fired in order and then round again: a plain arrow, a
-log that arcs down and flattens whoever it lands on, a wisp that circles you lighting the dark,
-or a modifier that rewrites every shot on that tool at once. Both are **found first** — in mined
-rocks, in felled trees and in the treeline's chests, the top tier only in the rarest rock and the
-chests — so the weapon you finish a
-match with is one the map handed you a piece at a time; the counter only buys them back. A find loads itself into the tool while it has a free cell, and the **shelf** over
-the backpack shows the build at all times, to be rebuilt mid-fight.
+**Your weapon is your class's.** One weapon slot holds a **tool** (a body with a rate of fire,
+a number of bit cells and a weight it is strong enough to throw), and what comes out of it is the
+**bits** loaded into it. Each class flies in with its own (the HUNTER a bow, the WARRIOR a
+sword), and nothing on the map drops another: what grows over a match is the six item slots. The
+**shelf** over the backpack shows the weapon and those six slots at all times.
 [Tools and bits](gameplay.md#tools-and-bits).
 
 **Gold buys items, League's way.** Either team's **merchant's counter** sells five cheap parts and
@@ -99,10 +95,9 @@ cast the body visibly performs, and effects drawn plainly for both sides: the ga
 first, sneaky second. [Class abilities](gameplay.md#class-abilities-keys-1-4),
 [Classes](multiplayer.md#classes).
 
-**The whole arsenal is on the table from the first match.** A **wiki** on the main menu writes
-every tool and bit down with its numbers, and all of it is unlocked: what your fiftieth match may
-drop is exactly what your first one may drop, so a new player and a veteran play the same game and
-a find is a find because of what it *is*, never because of what you have ground out. The same
+**Every item is on the table from the first match.** A **wiki** on the main menu writes every
+part and finished item down with its stats, passive and price, and all of it is on sale to
+everybody alike, so a new player and a veteran play the same game and nothing is ground out. The same
 wiki is where the game explains itself — the beasts, what a level does to them, and on its WORLD
 page the valley itself: why two companies are on the snow and why nobody on it dies
 ([the setting](lore.md)) — one page a subject, so the snow never has to.
@@ -141,9 +136,8 @@ the same number it sells them for; a bigger fish fetches more.
 [Economy](gameplay.md#economy-one-currency), [the counter](gameplay.md#the-merchants-counter),
 [Hero levels](multiplayer.md#hero-levels).
 
-**You carry a 12-cell backpack, and it is the build.** The wallet (`p.inv`) is gold and nothing
-else, and the twelve cells (`BAG_CAP`) are for the tools, bits and cards a match hands you — the things worth
-laying out and choosing between. Berries and fish are not in it: food is an uncapped **pouch**
+**You carry a 12-cell backpack.** The wallet (`p.inv`) is gold and nothing
+else, and the twelve cells (`BAG_CAP`) are for the consumables and ore a match hands you. Berries and fish are not in it: food is an uncapped **pouch**
 (`p.food`) pressed on Q and F from the HUD, because a meal is never arranged, only eaten.
 [Inventory and the backpack](gameplay.md#inventory-and-the-backpack).
 
@@ -170,7 +164,7 @@ vote calls its own bird home, so even giving up is the bird leaving
 [Death and respawn](gameplay.md#death-and-respawn), [Bots](multiplayer.md#bots).
 
 **Roguelike cards come out of the treeline's chests.** A sprung chest drops a **rarity-rolled
-card**, which opens itself the moment it is held, one at random, without pausing the sim, and
+card** (and gives a free item part), which opens itself the moment it is held, one at random, without pausing the sim, and
 the card is baked into the kit for the rest of the match. [Roguelike cards](gameplay.md#roguelike-cards).
 
 **T is the build list, and the ghost under the pointer is what a click lays.** A tap opens it on
@@ -234,8 +228,8 @@ into the fight always walked. [The road](world.md#the-road), [the zipline](world
   style, and every hero wears one fixed look; looks come back later as hero skins, never body
   sliders. A fresh install arrives pre-named on the title, so play is one press away and nobody
   is stopped at a form. **A profile is never power**: a match reads its name and the hero picked
-  and nothing else — everything about a match is decided inside that match, and the arsenal is
-  unlocked for everybody alike. See [architecture.md](architecture.md#profilejs),
+  and nothing else — everything about a match is decided inside that match, and every item is
+  on sale to everybody alike. See [architecture.md](architecture.md#profilejs),
   [the hero row](rendering.md#lobby) and [the profile card](rendering.md#the-profile-card). An
   online lobby sends the host exactly that name and hero and nothing more; if a server ever
   holds the profile, it holds the same object.
