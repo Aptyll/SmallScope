@@ -12,15 +12,26 @@ function drawCampIcon(g, C, x, y, col, rim) {
   g.fillStyle = col || C.spec.mark;
   for (const [rx, ry, rw, rh] of C.spec.icon) g.fillRect(x0 + rx, y0 + ry, rw, rh);
 }
-// A cleared camp's respawn clock, worn by its anchor prop (the den's mouth,
-// the black bear stone - the one carrying `site`) under the pointer: the same
-// neutral bar a picked bush wears, filling toward the camp coming back
-// (updateCamps, camps.js) - full and holding is a camp that is due and
-// waiting for you to leave. A camp with anything alive in it wears none.
+// A cleared camp's respawn clock, so a jungle route can be walked on it:
+// the seconds left until the whole camp is back (updateCamps, camps.js),
+// worn by its anchor prop (the den's mouth, the black bear stone - the one
+// carrying `site`) at all times, and the same seconds under its glyph on
+// both maps (drawCampMark). A camp with anything alive in it wears none, and
+// so does one that is due and only waiting for you to leave its ground.
+const CAMP_CLOCK_INK = '#e8eef8';
+function campClock(C) { return C.spec.pop > 0 && C.repopT > 0 && campPop(C) === 0 ? Math.ceil(C.repopT) : 0; }
 function drawCampClock(o, cx, topY) {
-  const C = o.site;
-  if (!C || campPop(C) > 0) return;
-  drawHealthBar(cx, topY, C.spec.repop - C.repopT, C.spec.repop, 12, undefined, BAR_NEUTRAL);
+  const n = o.site ? campClock(o.site) : 0;
+  if (!n) return;
+  const t = String(n);
+  drawWorldText(t, Math.round(cx - pixelTextWidth(t) / 2), Math.round(topY) - 6, CAMP_CLOCK_INK);
+}
+// a camp on a map: its glyph in its ink, or - cleared - in grey with the
+// seconds until it is back under it
+function drawCampMark(g, C, x, y) {
+  const n = campClock(C);
+  drawCampIcon(g, C, x, y, n ? '#8a93a8' : C.spec.mark, HUD_INK);
+  if (n) drawPixelTextOutline(g, String(n), Math.round(x - pixelTextWidth(String(n)) / 2), Math.round(y) + 5, CAMP_CLOCK_INK, HUD_INK);
 }
 
 // ---- what a flag looks like ---------------------------------------------

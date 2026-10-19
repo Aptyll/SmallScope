@@ -472,7 +472,7 @@ function aiNearestEnemy(p, prof, anchors) {
       if (an && Math.hypot(b.x - an.x, b.y - an.y) < AI_ANCHOR_R) range = AI_ANCHOR_D;
     }
     if (d >= range) continue;
-    const s = (prof.pick === 'weak' ? b.hp + d * 0.05 : d) + 20; // a player in the same sight is the better target
+    const s = (prof.pick === 'weak' || aiRole(p) === 'laner' ? b.hp + d * 0.05 : d) + 20; // a player in the same sight is the better target (a laner reads the bars: the lowest is the next last hit)
     if (s < bs) { bs = s; best = b; }
   }
   return best;
@@ -662,6 +662,16 @@ function updateAI(p, dt) {
   // riding with no rung wanting the ride this think: let go (the ride, above)
   if (p.zip >= 0 && !ai.zipUsed) p.input.jump = true;
 }
+// rung 1's meal (aiThink): fish when badly hurt, berries when a little, and
+// only with no rival close enough to knock it out of the hands
+function aiEat(p, foeD) {
+  const inp = p.input;
+  if (p.eatT <= 0 && p.foodCd <= 0 && foeD > AI_EAT_R) {
+    if (p.hp < p.maxHp * 0.5 && fishHeld(p) > 0) inp.eatFish = true;
+    else if (p.hp < p.maxHp * 0.8 && bagCount(p, 'berry') > 0) inp.eatBerry = true;
+  }
+  if (p.eatT > 0) aiNote(p, 'EAT', 'LOW HP', null);
+}
 function aiThink(p, dt) {
   const inp = p.input, ai = p.ai;
   inp.mx = 0; inp.my = 0; inp.work = false; inp.slide = false;
@@ -850,11 +860,7 @@ function aiThink(p, dt) {
   // middle, and a push that stopped for every column never reached the bird)
   const waveFoe = foe && !(foe instanceof Player) && !!pushE && !(mine && mine.threat && own && Math.hypot(own.x - p.x, own.y - p.y) < AI_ROOST_R);
   const engage = foe && ai.seeT >= prof.react && !((siege || rally || charge || waveFoe) && foeD > AI_SIEGE_R) ? foe : null;
-  if (p.eatT <= 0 && p.foodCd <= 0 && foeD > AI_EAT_R) {
-    if (p.hp < p.maxHp * 0.5 && fishHeld(p) > 0) inp.eatFish = true;
-    else if (p.hp < p.maxHp * 0.8 && bagCount(p, 'berry') > 0) inp.eatBerry = true;
-  }
-  if (p.eatT > 0) aiNote(p, 'EAT', 'LOW HP', null);
+  aiEat(p, foeD);
 
   // 2. the burrow - a hunter's alone now, cast as SNOW COVER (key 4) with its
   //    own 60 s clock on the way under. Decided before the ladder because two
@@ -987,7 +993,8 @@ function aiThink(p, dt) {
     const planted = prof.strafe >= 1 || (state.tick % 120) >= 120 * prof.strafe;
     if (planted && prof.strafe < 1) { inp.mx = 0; inp.my = 0; }
     // draw, then loose at the profile's draw - a blade only once they are under it
-    inp.fire = planted && clear && (!melee || d < AI_MELEE_D + 8) && p.chargeT < drawTime(p) * skillDraw(p, prof);
+    // (on a soldier its own wave is wearing down, the draw is held for the last hit: aiFarmFire, js/ai/ai-farm.js)
+    inp.fire = aiFarmFire(p, foe, planted && clear && (!melee || d < AI_MELEE_D + 8) && p.chargeT < drawTime(p) * skillDraw(p, prof));
     if (p.hp < p.maxHp * 0.45 && p.dodgeCharges > 0 && rng() < dt * 2 * prof.dodge) inp.dodge = true;
     skillSlip(p, prof, foe, dt); // the odd lapse, at the profile's rate
     ai.tgt = null;
@@ -1280,7 +1287,7 @@ function aiThink(p, dt) {
       if (d >= 0 && d > 24) { aimAt(p.x + inp.mx * 40, p.y + inp.my * 40); inp.fire = false; ai.tgt = null; return; }
       ai.scoutN = (ai.scoutN || 0) + 1; ai.scout = null; // there, or no way there: the next point on the beat
       if (d < 0) ai.scoutCd = state.elapsed + 3;          // (no way there: work a while before trying the next)
-    }
+    } else if (aiFarmWalk(p, role, steerTo, aimAt)) return; // a laner's wave, a jungler's den (js/ai/ai-farm.js)
   }
 
   // 6. meat is gold: chase and shoot the nearest animal, but give up on one

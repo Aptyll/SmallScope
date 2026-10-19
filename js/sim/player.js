@@ -516,6 +516,7 @@ const PLAYER_RECORD = {
   healed: 0,                     // health given back to this body, whatever gave it (healPlayer)
   goldSpent: 0,                  // gold paid out of the purse (pay, js/sim/core.js)
   beasts: 0,                     // animals this body landed the last blow on (animalDies, js/sim/wildlife.js)
+  farm: 0,                       // last hits on rival soldiers and camp monsters (farmHit, js/sim/farm.js)
   streak: 0, bestStreak: 0,      // rivals downed since this body last went down, and the most of it
   multiN: 0, multiT: -1e9, bestMulti: 0, // the run of kills MULTI_T apart, when the last one was, the most of it
   ccOut: 0,                      // s of stun, root and net put on RIVAL players (ccCredit, js/sim/actions.js)
@@ -923,8 +924,9 @@ const KILL_VERB = { worker: 'CUT DOWN', fire: 'BURNED' };
 // is looted (the 1.25-3.54 rule, where the killer pocketed the wallet and the
 // build lay where it fell, is gone - it made the fifteenth minute a bag you
 // were afraid to carry). What a kill is worth is a flat bounty from nowhere,
-// paid to the credited killer through awardGold so it levels them, sized
-// against a scrapped soldier's SOLDIER_BOUNTY (4): a player is three of them.
+// paid to the credited killer through awardGold so it levels them. (It was
+// sized at three soldiers; a soldier's last hit pays far more since farming
+// came in - SOLDIER_BOUNTY, js/sim/farm.js - so a kill is now under one.)
 // The one stake left on a death is the wait below and the walk back.
 const KILL_BOUNTY = 12;   // gold (and so xp) a downed rival pays its killer
 const MULTI_T = 10;       // s a kill may follow the one before and still count toward a multi-kill (the post-game record)

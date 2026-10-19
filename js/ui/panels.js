@@ -38,9 +38,9 @@ function logEvent(txt, p, o) {
 }
 
 // ---- scoreboard (hold TAB) ----
-const SB_W = 168;
+const SB_W = 200;
 const SB_ROW = 9;
-const SB_COL = [96, 128, 160]; // right edges of LVL / GOLD / KILLS, panel-relative
+const SB_COL = [96, 128, 160, 192]; // right edges of LVL / GOLD / KILLS / FARM, panel-relative
 
 function scoreboardOpen() { return keyHeld('board') && state.mode !== 'title' && !window.DBG.hideUI; }
 
@@ -83,9 +83,9 @@ function renderScoreboard() {
   drawPixelTextShadow(ctx, day, x + SB_W - 6 - pixelTextWidth(day), y + 6, '#7a8bb8', shadow);
   ctx.fillStyle = '#222c55'; ctx.fillRect(x + 4, y + 15, SB_W - 8, 1);
 
-  const head = ['LVL', 'GOLD', 'KILLS'];
+  const head = ['LVL', 'GOLD', 'KILLS', 'FARM']; // FARM: last hits on soldiers and camp monsters (js/sim/farm.js)
   drawPixelTextShadow(ctx, 'PLAYER', x + 14, y + 19, '#7a8bb8', shadow);
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < head.length; i++) {
     drawPixelTextShadow(ctx, head[i], x + SB_COL[i] - pixelTextWidth(head[i]), y + 19, '#7a8bb8', shadow);
   }
 
@@ -108,9 +108,9 @@ function renderScoreboard() {
         const tag = p.eliminated ? 'OUT' : Math.ceil(p.respawnT) + 's';
         drawPixelTextShadow(ctx, tag, x + 18 + pixelTextWidth(p.name), ry + 1, '#8f9cc4', shadow);
       }
-      const vals = [String(p.level), String(p.inv.gold), String(p.kills)];
-      const cols = ['#cfe0ff', '#f2cc6a', '#ff9a8a'];
-      for (let i = 0; i < 3; i++) {
+      const vals = [String(p.level), String(p.inv.gold), String(p.kills), String(p.farm)];
+      const cols = ['#cfe0ff', '#f2cc6a', '#ff9a8a', '#cfe0ff'];
+      for (let i = 0; i < vals.length; i++) {
         drawPixelTextShadow(ctx, vals[i], x + SB_COL[i] - pixelTextWidth(vals[i]), ry + 1, cols[i], shadow);
       }
       ctx.globalAlpha = 1;
@@ -267,7 +267,8 @@ function buildMapPanel() {
   g.fillRect(mx - 1, my - 1, MAP_W + 2, MAP_W + 2);
 }
 
-// the camps on the chart: the glyph alone, in its camp's ink. The camp
+// the camps on the chart: the glyph in its camp's ink (grey with its seconds
+// under it while it is cleared, drawCampMark). The camp
 // under the pointer lights white and wears its name on a small graphite tag
 // that runs away from the chart's middle (a name on every camp at the
 // chart's 3x5 font crowded the map and still read badly; the glyph says
@@ -293,7 +294,7 @@ function drawChartCamps() {
     if (mouse.inside && d < hd) { hd = d; hov = { L, lx, ly }; }
     return { L, lx, ly };
   });
-  for (const { L, lx, ly } of pts) drawCampIcon(ctx, L, lx, ly, L.spec.mark, HUD_INK);
+  for (const { L, lx, ly } of pts) drawCampMark(ctx, L, lx, ly); // a cleared one wears its seconds (js/draw/marks.js)
   if (hov) chartTag(hov.lx, hov.ly, hov.L, hov.lx > MAP_X + MAP_W / 2);
 }
 

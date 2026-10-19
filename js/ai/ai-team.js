@@ -40,11 +40,11 @@
 //   roam   x how wide it wanders with nothing to do
 //   fit    how well it suits each role (the plan hands jobs out by this)
 const AI_MOODS = {
-  brave:    { name: 'BRAVE',    flee: -0.15, judge: -0.25, help: 1.3, stalk: true,  greed: 0.9, eco: 0.3, roam: 1.1, fit: { pusher: 4, stalker: 3, guard: 0, scout: 1, slayer: 3 } },
-  cautious: { name: 'CAUTIOUS', flee: 0.15,  judge: 0.25,  help: 0.8, stalk: false, greed: 1,   eco: 0.5, roam: 0.8, fit: { pusher: 0, stalker: 0, guard: 4, scout: 2, slayer: 1 } },
-  greedy:   { name: 'GREEDY',   flee: 0.05,  judge: 0.1,   help: 0.5, stalk: false, greed: 1.5, eco: 0.7, roam: 0.9, fit: { pusher: 1, stalker: 0, guard: 1, scout: 0, slayer: 3 } },
-  loyal:    { name: 'LOYAL',    flee: 0,     judge: 0.1,   help: 1.8, stalk: true,  greed: 1,   eco: 0.5, roam: 1,   fit: { pusher: 3, stalker: 1, guard: 3, scout: 0, slayer: 2 } },
-  wild:     { name: 'WILD',     flee: -0.05, judge: -0.1,  help: 1,   stalk: true,  greed: 1,   eco: 0.4, roam: 1.6, fit: { pusher: 2, stalker: 4, guard: 0, scout: 4, slayer: 2 } },
+  brave:    { name: 'BRAVE',    flee: -0.15, judge: -0.25, help: 1.3, stalk: true,  greed: 0.9, eco: 0.3, roam: 1.1, fit: { pusher: 4, stalker: 3, guard: 0, scout: 1, slayer: 3, jungler: 2, laner: 2 } },
+  cautious: { name: 'CAUTIOUS', flee: 0.15,  judge: 0.25,  help: 0.8, stalk: false, greed: 1,   eco: 0.5, roam: 0.8, fit: { pusher: 0, stalker: 0, guard: 4, scout: 2, slayer: 1, jungler: 1, laner: 3 } },
+  greedy:   { name: 'GREEDY',   flee: 0.05,  judge: 0.1,   help: 0.5, stalk: false, greed: 1.5, eco: 0.7, roam: 0.9, fit: { pusher: 1, stalker: 0, guard: 1, scout: 0, slayer: 3, jungler: 3, laner: 3 } },
+  loyal:    { name: 'LOYAL',    flee: 0,     judge: 0.1,   help: 1.8, stalk: true,  greed: 1,   eco: 0.5, roam: 1,   fit: { pusher: 3, stalker: 1, guard: 3, scout: 0, slayer: 2, jungler: 1, laner: 2 } },
+  wild:     { name: 'WILD',     flee: -0.05, judge: -0.1,  help: 1,   stalk: true,  greed: 1,   eco: 0.4, roam: 1.6, fit: { pusher: 2, stalker: 4, guard: 0, scout: 4, slayer: 2, jungler: 3, laner: 1 } },
 };
 const AI_MOOD_KEYS = Object.keys(AI_MOODS);
 // A bot's mood is for life, not for a match: a body with a roster name of
@@ -86,6 +86,8 @@ const AI_ROLES = {
   scout:    { name: 'SCOUT' },    // walks the middle and the far bank, eyes for the side
   stalker:  { name: 'STALKER' },  // goes after a rival the side saw alone
   slayer:   { name: 'SLAYER' },   // one of the party the side sends to its bear
+  jungler:  { name: 'JUNGLER' },  // walks its side's wolf dens on their clocks (js/ai/ai-farm.js)
+  laner:    { name: 'LANER' },    // last-hits the rival wave behind its own (js/ai/ai-farm.js)
   gatherer: { name: 'GATHERER' }, // the ladder as it always was: hunt, loot, build, harvest
 };
 const AI_PLAN_T = 2;        // s between a side's re-plans
@@ -141,8 +143,10 @@ function aiDownCount(team) {
 // Re-plan a side: its stance, and who holds which job. The push and guard
 // counts are the profile's own (aiPushers, prof.guard - the difficulty),
 // so the plan decides WHO, not how many; the window is the one time it adds
-// pushers of its own. Everyone else is a gatherer, bar one scout and one
-// stalker once the match is under way. A bot keeps its role while the role
+// pushers of its own. The free hands farm next - AI_JUNGLE_N junglers, then
+// AI_LANE_N laners (js/ai/ai-farm.js) - then one scout and one stalker once
+// the match is under way, while there are bots left for them, and anyone
+// left over is a gatherer. A bot keeps its role while the role
 // is still wanted (AI_KEEP), so the jobs do not reshuffle every re-plan.
 function aiPlan(team) {
   const T = aiTeams[team];
@@ -199,6 +203,9 @@ function aiPlan(team) {
   }
   if (party) { if (T.bear !== bear) T.bearT = 0; T.bear = bear; for (let i = 0; i < party; i++) want.push('slayer'); }
   else T.bear = null;
+  // the farm (js/ai/ai-farm.js): the side's free hands walk its dens and its wave
+  for (let i = 0; i < AI_JUNGLE_N && want.length < bots.length; i++) want.push('jungler');
+  for (let i = 0; i < AI_LANE_N && want.length < bots.length; i++) want.push('laner');
   if (state.elapsed >= AI_SCOUT_AT && want.length < bots.length - 1) want.push('scout');
   // a grudge (aiDowned) takes the side's one stalker job first, whatever the clock
   const grudger = bots.find((q) => aiGrudge(q));

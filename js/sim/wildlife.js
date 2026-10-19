@@ -817,6 +817,7 @@ function animalDies(a) {
   sfxAt('monsterDie', a.x, a.y, 0, a.kind);
   const hunter = a.lastHit !== undefined ? players[a.lastHit] : null;
   if (hunter) hunter.beasts++; // the post-game record (js/ui/lobby.js)
+  if (hunter && a.home) farmHit(hunter, a.x, a.y - (a.alt || 0) - 8); // a camp monster is farm (the `farm` banner, js/sim/farm.js)
   const y = YIELD[a.kind];
   if (hunter && !hunter.dead && y && y.coins) {
     const base = Math.round(y.coins * y.each * (1 + ANIMAL_LV_GOLD * ((a.level || 1) - 1)));

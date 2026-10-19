@@ -72,7 +72,7 @@ function statFreeze() {
     over: state.over,
     rows: players.filter((q) => q.active).map((q) => ({
       id: q.id, name: q.name, cls: q.cls, team: q.team, you: q === player,
-      level: q.level, kills: q.kills, deaths: q.deaths,
+      level: q.level, kills: q.kills, deaths: q.deaths, farm: q.farm,
       streak: q.bestStreak, multi: q.bestMulti, cc: Math.round(q.ccOut),
       dmg: q.dmgOut, bird: q.dmgBird, struct: q.dmgStruct, beast: Math.round(q.dmgBeast),
       inP: q.dmgInP, inB: q.dmgInB, healed: Math.round(q.healed),
@@ -94,6 +94,7 @@ function statFreeze() {
 const SCORE_GROUPS = [
   { head: 'COMBAT', rows: [
     { label: 'K/D', key: 'kills', txt: (r) => r.kills + '/' + r.deaths, best: false },
+    { label: 'FARM', key: 'farm' }, // last hits on soldiers and camp monsters (js/sim/farm.js)
     { label: 'LEVEL', key: 'level' },
     { label: 'BEST STREAK', key: 'streak' },
     { label: 'BEST MULTI-KILL', key: 'multi' },
