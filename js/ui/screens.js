@@ -1369,13 +1369,10 @@ function renderVictory(now) {
       const by = s.y + Math.round((1 - sr) * 26) + (pose ? 0 : bob);
       ctx.globalAlpha = sr;
       if (pose) {
-        // the marks sit on the standing body plan (drawPlayer), so a body
-        // that has left it wears none of them
         drawEndBody(pose.spr, s.x + (pose.dx || 0), by + WIN_BODY - (pose.dy || 0));
         if (pose.puff) drawSnowPuff(s.x + (WIN_BODY >> 1), by + WIN_BODY, pose.puff, sr);
       } else {
         ctx.drawImage(set.down[Math.sin(ph) > 0.6 ? 1 : 0], s.x, by, WIN_BODY, WIN_BODY);
-        drawGearMarks(s.m, s.x, by, 3);
       }
       drawPixelTextOutline(ctx, s.m.name, centreTextX(s.x + (WIN_BODY >> 1), s.m.name), by - (k ? 8 : 13) - lift, tm.mark, '#0f1632');
       ctx.globalAlpha = 1;

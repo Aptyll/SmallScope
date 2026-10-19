@@ -188,36 +188,6 @@ function drawMerchant(b, ex, ey, now) {
 // ---- the player -----------------------------------------------------------
 // every player draws through here - the local one, the AI fills, network
 // peers later. Team palette on the sprite, name tag on everybody else.
-// gear on the body: bought depth is visible depth. Each piece at level 2+
-// lays a band of its material across the sprite - hat, coat, hips, one mark
-// per foot - so a fed player reads iron -> steel -> gold at a glance without
-// a number. Level 1 (the free pick) draws nothing: the baseline look is the
-// champion's. Rows are sprite-relative to the shared 16x16 body plan.
-const GEAR_MARKS = [
-  { y: 3, x: 5, w: 6, lean: true }, // helmet: across the hat/hood
-  { y: 8, x: 5, w: 6 },          // chest: across the coat
-  { y: 11, x: 5, w: 6 },         // legs: across the hips
-  { y: 13, x: 5, w: 2, x2: 9 },  // boots: one mark per foot
-];
-// s scales the whole 16x16 grid the marks are authored on: 1 in the world,
-// 3 on the victory screen's stage. On a run (`running`) the body has the
-// doll's frames under it: their feet are never where the standing ones are,
-// so the boots' marks are left off, and the head leans `lean` px along a
-// side-on facing, so the helmet's mark goes with it.
-function drawGearMarks(p, px, py, s, running, lean) {
-  s = s || 1;
-  for (let i = 0; i < GEAR_MARKS.length; i++) {
-    const lv = p.gearLv[i];
-    if (lv < 2) continue;
-    const m = GEAR_MARKS[i];
-    if (running && m.x2 !== undefined) continue;
-    const x = px + (m.x + (running && m.lean ? lean : 0)) * s;
-    ctx.fillStyle = GEAR_MATS[lv - 1];
-    ctx.fillRect(x, py + m.y * s, m.w * s, s);
-    if (m.x2 !== undefined) ctx.fillRect(px + m.x2 * s, py + m.y * s, m.w * s, s);
-  }
-}
-
 // Centre a run of pixel text over a model. A glyph run is an ODD number of
 // pixels wide at scale 1 (`pixelTextWidth` is `4n - 1`), so it can never sit
 // exactly on the seam an even-width sprite is centred on - but it must at
@@ -482,14 +452,6 @@ function drawPlayer(p, ex, ey, now) {
       ctx.restore();
     } else {
       drawSpriteFlash(spr, sx, sy, p.hurtT > 0.12 ? 1 : 0);
-    }
-    // gear marks sit at fixed points on the standing body plan, so the prone
-    // poses skip them rather than stripe a shoulder across someone's hip; a
-    // running body carries them up and down its bob, and side-on leans the
-    // head a pixel into the run
-    if (state.mode !== 'title' && !lying && !(pose && pose.rot) && catchF < 0 && !rb) {
-      drawGearMarks(p, ax, ay - (running ? runBob(p) : 0), 1, running,
-        p.dir === 'right' ? 1 : p.dir === 'left' ? -1 : 0);
     }
     if (seat) ctx.restore();
     ctx.globalAlpha = 1;

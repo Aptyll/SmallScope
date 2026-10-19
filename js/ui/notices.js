@@ -102,7 +102,7 @@ function raiseStatNote() {
   notices.push({ kind: 'stats', txt: '', good: null, t: 0 });
   while (notices.length > NOTE_MAX * 2) notices.shift();
 }
-// Watching the kit beats hooking the writers: levelUp, buyGear, useCard and a
+// Watching the kit beats hooking the writers: levelUp, buyItem, useCard and a
 // bot's resolveCardForBot all land here for free, a host's snapshot lands a
 // client's here the same way, and nothing that ever edits a kit has to
 // remember to announce it. Aged from updateFx (js/sim/sim.js) beside ageNotices.

@@ -126,7 +126,6 @@ try {
     if (!PRACTICE && !JOIN_AT_BOOT) {
       try {
         const d = JSON.parse(dropRaw);
-        if (d && Array.isArray(d.gear)) player.gear = d.gear.map((v) => v | 0);
         if (d && Array.isArray(d.abPick)) player.abPick = d.abPick.map((v) => v | 0);
       } catch (e) { }
       setClass(player, player.cls);
@@ -367,16 +366,13 @@ window.DBG = {
   // moves (the `stat ledger` block, js/ui/shop.js): the table every surface
   // prices a body with, the plate's own size, the live values, what each row
   // is still lit for, and the raise without a change behind it - so a driver
-  // can prove a level, a card or a gear buy moved the number it was meant to
+  // can prove a level, a card or an item moved the number it was meant to
   STAT_ROWS, STAT_W, statPlateH, raiseStatNote, noteLaneFloor,
   statValues: (p) => STAT_ROWS.map(([n, get, fmt]) => [n, fmt(get(kitOf(p || player), p || player))]),
   statLit: () => STAT_ROWS.map(([n], i) => (statLit[i] ? [n, statDeltaTxt(statLit[i].d, STAT_ROWS[i][2]), statLit[i].t] : null)).filter(Boolean),
-  // gear: the table, a player's effective kit, and buy/pick without the HUD
-  GEAR, GEAR_SLOTS, GEAR_COSTS, kitOf, refreshKit, gearHit, charLayout, charHit, BAG_CELL,
-  gearCost: (i, p) => gearCost(p || player, i),
-  buyGear: (i, p) => buyGear(p || player, i),
-  pickGear: (i, v) => pickGear(i, v), heroLayout, heroScreenHit, beginHero,
-  setGear: (i, v, p) => { const q = p || player; q.gear[i] = v; refreshKit(q); return q.kit; },
+  // a player's effective kit, the G panel's geometry, and the hero pop-up
+  kitOf, refreshKit, charItemHit, charLayout, charHit, BAG_CELL,
+  heroLayout, heroScreenHit, beginHero,
   // the match readouts: the log (not drawn - read it here), staged lines
   // without the kills behind them, and the standings (hold TAB in game, or
   // set keys.tab here)

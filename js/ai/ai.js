@@ -709,19 +709,6 @@ function aiSpend(p, inp, steerTo) {
     }
     if (next) return false;
   }
-  // ...and gear once the build is done: the hero pop-up is a menu bought from
-  // anywhere (gameplay.md), so a purse fat enough to keep a building
-  // float (buyGear re-validates, so a stale order is harmless) is spent on
-  // the cheapest piece here, mid-push or mid-defence alike, rather than
-  // at the spend rung a pusher never reaches
-  if (!inp.cmd) {
-    let gi = -1, gc = 1e9;
-    for (let i = 0; i < GEAR_SLOTS.length; i++) {
-      const c = gearCost(p, i);
-      if (c && c.gold < gc) { gc = c.gold; gi = i; }
-    }
-    if (gi >= 0 && p.inv.gold >= gc + 15) inp.cmd = { kind: 'gear', piece: gi };
-  }
   return false;
 }
 

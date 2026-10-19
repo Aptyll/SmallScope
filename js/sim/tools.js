@@ -336,7 +336,7 @@ function updateWarps(dt) {
 // what it is worth: the counter pays half of it (js/ui/shop.js), and a tool
 // sold with bits in it fetches half of those too, so nothing is ever quietly emptied for gold. `art` picks the 12x12 silhouette, which is baked
 // once per tier - so a tool's shape says which weapon it is and its colour
-// says how good it is, the way GEAR_MATS tints one gear icon across levels.
+// says how good it is.
 //
 // TENSILE AND CAP ARE THE TWO HALVES OF A TOOL. `cap` is how much you may
 // hang on it and `tensile` is how much of that it can actually swing in one

@@ -502,7 +502,7 @@ function pointerPress(button) {
     if (state.tunAim) { SFX.unlock(); state.tunAim = false; return; } // ...and the burrow's ghost
     if (cheatAimOff()) { SFX.unlock(); return; } // ...and the practice bar's aim
     if (state.mapOpen) { openFlagWheel(); return; } // over the chart: the flag wheel, the one way to order a tile off-screen
-    if (bagHit(mouse.x, mouse.y) || gearHit(mouse.x, mouse.y) >= 0 || stripHit(mouse.x, mouse.y) ||
+    if (bagHit(mouse.x, mouse.y) || charHit(mouse.x, mouse.y) || stripHit(mouse.x, mouse.y) ||
         shopHit(mouse.x, mouse.y) || shelfHit(mouse.x, mouse.y) || shelfPlateHit(mouse.x, mouse.y) || cheatHit(mouse.x, mouse.y)) return; // no wheel through the HUD
     // any tile on the map is a place to plant a flag on (building is the
     // list on T, managing is E beside your own building)

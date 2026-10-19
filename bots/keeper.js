@@ -1,19 +1,19 @@
 // KEEPER: stays home. Chops the woods by its own bird for gold, spends it on
-// gear, and turns on anything that comes for the bird. Shows work (E), an
+// items at its counter, and turns on anything that comes for the bird. Shows work (E), an
 // order (`cmd`) and reading your own bird's `hitT`.
 defineBot({
   name: 'KEEPER',
   author: 'Softfall',
   version: '1.0',
 
-  init(hello) { this.drawT = 0; this.gear = 0; this.bad = new Set(); this.tree = null; },
+  init(hello) { this.drawT = 0; this.bad = new Set(); this.tree = null; },
 
   think(obs) {
     const me = obs.me;
     if (me.dead || me.aboard) return { think: { goal: 'IDLE', why: 'DOWN' } };
     const act = {};
     if (me.skillPts > 0) act.ability = me.abilities.reduce((b, a) => (a.lv < b.lv ? a : b)).key;
-    else if (me.gold > 120) { act.cmd = { kind: 'gear', piece: this.gear }; this.gear = (this.gear + 1) % 4; }
+    else if (obs.shop && me.items.includes(null)) { const can = obs.shop.filter((s) => s.price <= me.gold).sort((a, b) => b.price - a.price); if (can.length) act.cmd = { kind: 'shop', act: 'item', id: can[0].id }; }
 
     const own = obs.eagles.find((e) => e.team === me.team && e.state === 'down');
     const home = own || { x: me.x, y: me.y };

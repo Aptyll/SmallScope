@@ -67,14 +67,14 @@ function statShown(p, key) { return statOf(p, key) * statBuffMul(p, key); }
 function statParts(p, key) {
   const c = CLASSES[p.cls], add = kitOf(p).add, n = Math.max(0, p.level - 1), rows = [];
   // the items' share of the bonus, folded into a spare kit the way refreshKit
-  // folds them; the rest of the bag is gear and cards
+  // folds them; the rest of the bag is cards
   const ik = baseKit(p.cls);
   if (p.items) itemMods(ik, p);
   const it = ik.add[key] || 0, rest = ((add && add[key]) || 0) - it;
   const kind = key === 'as' ? ['lvp', 'addp'] : ['lv', 'add'];
   rows.push(['BASE', key === 'as' ? classAs(p.cls) : c.base[key] || 0, 'base']);
   if (n && c.grow[key]) rows.push(['LEVEL ' + p.level, c.grow[key] * n, kind[0]]);
-  if (Math.abs(rest) > 1e-9) rows.push(['GEAR AND CARDS', rest, kind[1]]);
+  if (Math.abs(rest) > 1e-9) rows.push(['CARDS', rest, kind[1]]);
   if (Math.abs(it) > 1e-9) rows.push(['ITEMS', it, kind[1]]);
   const b = statBuffMul(p, key);
   if (b !== 1) rows.push([(MONSTER[p.buffKind] && MONSTER[p.buffKind].buff) || 'BUFF', b - 1, 'buff']);
