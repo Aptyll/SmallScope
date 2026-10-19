@@ -17,6 +17,26 @@ const PERCH_U = 21;   // u from the corner the bird roosts: the back of the holl
 const BASE_KEEP = 3;  // tiles past the wall the later worldgen passes (rocks, chests) keep off
 // a RED-side u for either team: BLUE's base is RED's mirrored along the road
 function baseU(team, u) { return team === 0 ? u : WORLD - 1 - u; }
+// THE MOUTHS: the hollow opens three ways, one a LANE (js/sim/lanes.js) -
+// 0 the top lane out of the top-left side of the wall, 1 the mid road out
+// of the front, 2 the bot lane out of the bottom-right side - and the
+// merchant raises one BAY (the barracks) just inside each, whose waves walk
+// that lane (updateMerchant, js/sim/robots.js). Spots are in the road's
+// frame: u along it from the side's own corner, s tiles across it (- the
+// top side, + the bot side), the same for both teams.
+const BASE_SIDE_U = 34;  // u of the top and bot mouths...
+const BASE_SIDE_S = 15;  // ...and the tiles across the road they open: on the wall
+const BASE_BAYS = [[27, -10], [40, 6], [27, 10]]; // [u, s] per lane where its bay's centre stands: inside the mouth, beside the lane in, clear of the stall
+// a point of a side's frame in tile-index space (continuous)
+function baseTile(team, u, s) {
+  const v = baseU(team, u);
+  return { tx: v + s / Math.SQRT2, ty: WORLD - 1 - v + s / Math.SQRT2 };
+}
+// where lane `lane` leaves a side's hollow, and where its bay stands
+function baseGate(team, lane) {
+  return lane === 1 ? baseTile(team, BASE_U + BASE_R, 0) : baseTile(team, BASE_SIDE_U, (lane - 1) * BASE_SIDE_S);
+}
+function baseBaySpot(team, lane) { return baseTile(team, BASE_BAYS[lane][0], BASE_BAYS[lane][1]); }
 function baseCentre(team) { const u = baseU(team, BASE_U); return { tx: u, ty: WORLD - 1 - u }; }
 function basePerch(team) { const u = baseU(team, PERCH_U); return { u, tx: u, ty: WORLD - 1 - u }; }
 // the u where the road leaves the hollow through its mouth: a side's junction (roadNest)

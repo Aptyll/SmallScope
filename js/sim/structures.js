@@ -732,9 +732,10 @@ function updateStructures(dt) {
       o.waveT -= dt;
       if (o.waveT <= 0) {
         o.waveT = t.waveT;
-        let alive = 0; // the cap is the SIDE's: every bay of the team queued or out, so more bays refill a column faster but never fill the map
-        for (const q of structures) if (q.type === 'barracks' && q.team === o.team) alive += q.queue;
-        for (const b of robots) if (b.kind === 'soldier' && b.team === o.team && !b.dead) alive++;
+        let alive = 0; // the cap is the LANE's: every bay of the team on this lane, queued or out, so a lane never fills up
+        const lane = o.lane === undefined ? 1 : o.lane; // the merchant's bays carry theirs (updateMerchant); any other walks the mid road
+        for (const q of structures) if (q.type === 'barracks' && q.team === o.team && (q.lane === undefined ? 1 : q.lane) === lane) alive += q.queue;
+        for (const b of robots) if (b.kind === 'soldier' && b.team === o.team && b.lane === lane && !b.dead) alive++;
         o.queue += Math.max(0, Math.min(t.cap - alive, t.wave + Math.floor((state.elapsed - o.born) / t.grow)));
       }
       o.rollT -= dt;
