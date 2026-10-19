@@ -874,7 +874,7 @@ function hurtUnit(e, dmg, nx, ny, src, o) {
   o = o || {};
   // a bear buff (campBuff, wildlife.js): every blow a player wearing it lands
   // is worth more, whatever landed it - a shot, a roll, a stomp alike
-  if (src instanceof Player && src.buffT > 0) dmg = Math.round(dmg * CAMP_BUFF_DMG);
+  if (src instanceof Player && src.buffT > 0) dmg = Math.round(dmg * statBuffMul(src, 'dmg'));
   const ty = DMG_TYPES[o.type] || DMG_TYPES.blunt;
   const km = o.kbMul === undefined ? 1 : o.kbMul;
   if (e instanceof Player) {

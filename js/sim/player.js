@@ -57,13 +57,11 @@ const SNOW_TRAIL_FADE = 1.4; // fade window at the end of that life: hold crisp,
 // (waves every 30 s growing a soldier every 3 min, a share of the kills, a
 // den now and then): about level 6 at ten minutes and the cap near 25, so a
 // lead in levels is still news late, where the old gold-fed table capped near
-// 13. XP is never spent or lost on death. Each level past the first is the
-// same flat growth: +LVL_HP max hp (healed on the spot) and +LVL_DMG on every
-// arrow, applied on top of the class kit.
+// 13. XP is never spent or lost on death. What a level grows is the hero's
+// own: CLASSES[c].grow, read through statOf (js/sim/stats.js), the health it
+// adds healed on the spot.
 const LEVEL_MAX = 12;
 const LEVEL_XP = [0, 60, 150, 270, 420, 600, 810, 1050, 1320, 1620, 1950, 2310];
-const LVL_HP = 9;
-const LVL_DMG = 2;
 
 // The dodge roll as an ability: how long it lasts, how hard it throws you,
 // and how many charges refill how fast. What a roll HITS on the way through
@@ -94,17 +92,21 @@ const CLASSES = [
     name: 'HUNTER', role: 'BOW, DISTANCE, AMBUSH',
     look: { sex: 0, tone: 2, hair: 1, hairCol: 2, beard: 0, face: 1 },
     blurb: ['THE BOW IS THE ARGUMENT: KEEP THE GAP.', 'THE NET TANGLES THEM. THE GRAPPLE PULLS YOU CLEAR.', 'THE SNOW HIDES YOU. THE SHOT OUT OF IT HITS MUCH HARDER.'],
-    stats: { ice: 3, draw: 4, power: 4, tough: 2 },
+    // the seven stats at level 1, and what each level adds (js/sim/stats.js);
+    // attack speed's base is the bow's own cycle (classAs), its growth a fraction
+    base: { hp: 92, dmg: 16, armor: 12, ap: 0, haste: 0, ms: PLAYER_SPEED },
+    grow: { hp: 10, dmg: 2, as: 0.02, armor: 3 },
     kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1, chargeMul: 0.55,
-      bowCharge: BOW_CHARGE, nock: 0.4, dmgBase: 4, dmgPow: 9, spdDmg: 0, dodgeSpeed: DODGE_SPEED, maxHp: 92 },
+      bowCharge: BOW_CHARGE, nock: 0.4, spdDmg: 0, dodgeSpeed: DODGE_SPEED },
   },
   {
     name: 'WARRIOR', role: 'PRESSURE, BLOCKING, MOMENTUM',
     look: { sex: 0, tone: 4, hair: 0, hairCol: 1, beard: 2, face: 0 },
     blurb: ['THE FIGHT IS AT ARM\'S LENGTH: GET THERE.', 'THE SHIELD EATS ARROWS. THE RUSH CARRIES BODIES.', 'THE SWORD REACHES A BODY LENGTH. THE EXECUTE FINISHES IT.'],
-    stats: { ice: 4, draw: 2, power: 3, tough: 5 },
+    base: { hp: 120, dmg: 18, armor: 20, ap: 0, haste: 0, ms: PLAYER_SPEED },
+    grow: { hp: 14, dmg: 2.5, as: 0.015, armor: 4 },
     kit: { iceMax: 1.15, iceSteer: 3.2, slideMin: 70, fatigue: 0.7, chargeMul: 0.7,
-      bowCharge: 0.75, nock: 0.5, dmgBase: 3, dmgPow: 6, spdDmg: 5, dodgeSpeed: 230, maxHp: 120 },
+      bowCharge: 0.75, nock: 0.5, spdDmg: 5, dodgeSpeed: 230 },
   },
 ];
 // the heroes announced but not yet playable: the hero row shows each as a
@@ -124,8 +126,8 @@ function kitOf(p) { return p.kit || CLASSES[p.cls].kit; }
 // new hero brings its own tool and bits - the loadout is part of who you
 // picked, not a thing carried across (js/sim/tools.js)
 function setClass(p, c) { p.cls = c; p.look = Object.assign({}, CLASSES[c].look); refreshKit(p); p.hp = p.maxHp; giveLoadout(p); }
-// kit hp plus the flat per-level growth
-function levelMaxHp(p) { return kitOf(p).maxHp + LVL_HP * (p.level - 1); }
+// the hero's HEALTH stat: its base, its levels and its bonuses (statOf, js/sim/stats.js)
+function levelMaxHp(p) { return statOf(p, 'hp'); }
 // THE ONE WAY HEALTH COMES BACK to a player: a meal, the daylight, a second
 // wind, a kill's heal. Capped at the most, and what it actually gave back is
 // counted for the post-game record (js/ui/lobby.js) and returned.
@@ -195,7 +197,7 @@ function levelUp(p) {
   p.level++;
   p.skillPts++;
   p.maxHp = levelMaxHp(p);
-  p.hp = Math.min(p.maxHp, p.hp + LVL_HP);
+  p.hp = Math.min(p.maxHp, p.hp + (CLASSES[p.cls].grow.hp || 0));
   // the early levels come too fast to be news; the late ones say who is ahead
   if (p.level >= LOG_LEVEL) logEvent(p.name + ' REACHED LEVEL ' + p.level, p);
   if (!inAir(p)) floaters.push({ x: p.x, y: p.y - 22, txt: 'LEVEL ' + p.level, color: '#f2cc6a', t: 0, vx: 0, scale: 2, rise: 20 });
@@ -377,17 +379,17 @@ const GEAR_LV_MAX = 4;
 const GEAR_MATS = ['#8a6a4a', '#9aa3ad', '#9fc4dd', '#f2cc6a']; // leather/iron/steel/gold, by piece level
 const GEAR = [
   [ // helmet: how you kill
-    { name: 'LONGSIGHT', blurb: 'ARROWS HIT HARDER', mod: (k, L) => { k.dmgBase += L; } },
-    { name: 'QUICKDRAW', blurb: 'FASTER DRAW AND RENOCK', mod: (k, L) => { k.bowCharge *= 1 - 0.08 * L; k.nock *= 1 - 0.08 * L; } },
+    { name: 'LONGSIGHT', blurb: 'ARROWS HIT HARDER', mod: (k, L) => { k.add.dmg += L; } },
+    { name: 'QUICKDRAW', blurb: 'FASTER DRAW AND RENOCK', mod: (k, L) => { k.add.as += 0.08 * L; } },
     { name: 'HUNTSMAN', blurb: 'ANIMALS PAY MORE', mod: (k, L) => { k.huntMul += 0.15 * L; } },
   ],
   [ // chest: how you last
-    { name: 'BULWARK', blurb: 'MORE HEALTH', mod: (k, L) => { k.maxHp += 8 * L; } },
-    { name: 'IRONHIDE', blurb: 'EVERY HIT HURTS LESS', mod: (k, L) => { k.dr += L; } },
+    { name: 'BULWARK', blurb: 'MORE HEALTH', mod: (k, L) => { k.add.hp += 8 * L; } },
+    { name: 'IRONHIDE', blurb: 'EVERY HIT HURTS LESS', mod: (k, L) => { k.add.armor += 6 * L; } },
     { name: 'HEARTHWEAVE', blurb: 'FOOD AND NIGHTS ARE KINDER', mod: (k, L) => { k.foodMul += 0.25 * L; k.nightHeal = true; } },
   ],
   [ // legs: how you cross snow
-    { name: 'STRIDER', blurb: 'WALK FASTER', mod: (k, L) => { k.walkMul += 0.04 * L; } },
+    { name: 'STRIDER', blurb: 'WALK FASTER', mod: (k, L) => { k.add.ms += 3 * L; } },
     { name: 'SLIDEWORN', blurb: 'LONGER, EARLIER SLIDES', mod: (k, L) => { k.fatigue *= 1 - 0.12 * L; k.slideMin -= 5 * L; } },
     { name: 'PACKMULE', blurb: 'FELLS AND BREAKS PAY MORE', mod: (k, L) => { k.harvestMul += 0.25 * L; } },
   ],
@@ -397,35 +399,6 @@ const GEAR = [
     { name: 'GHOSTSTEP', blurb: 'FOES SPOT YOU FROM CLOSER', mod: (k, L) => { k.stealth -= 0.10 * L; } },
   ],
 ];
-// ---- stat points ----------------------------------------------------------
-// The pre-match build's other half: STAT_POINTS points every hero - human
-// or bot - spends before the eagle, a point a step, on the STAT LEDGER
-// itself (the hero pop-up, js/ui/menu.js): every row the ledger prices a
-// body with (GEAR_STATS, same names, same order) is a track here, and a
-// point on it is one step of that number. Same shape as a GEAR variant's
-// mod(k, L) with the points spent as L, folded into the kit by refreshKit
-// below, so every kit-reading site picks them up the way it does gear. The
-// budget is the same for everybody (bots deal theirs from the seed in
-// initPlayers), so a spend is a shape, never a head start - the wiki's
-// flatness holds.
-const STAT_POINTS = 6;
-const STAT_TRACKS = [
-  { name: 'HEALTH', mod: (k, n) => { k.maxHp += 5 * n; } },
-  { name: 'DAMAGE', mod: (k, n) => { k.dmgBase += 0.5 * n; } },
-  { name: 'DRAW', mod: (k, n) => { k.bowCharge *= Math.pow(0.96, n); } },
-  { name: 'RENOCK', mod: (k, n) => { k.nock *= Math.pow(0.95, n); } },
-  { name: 'ARMOR', mod: (k, n) => { k.dr += 0.5 * n; } },
-  { name: 'WALK', mod: (k, n) => { k.walkMul += 0.02 * n; } },
-  { name: 'ICE SPEED', mod: (k, n) => { k.iceMax *= Math.pow(1.04, n); } },
-  { name: 'ICE GRIP', mod: (k, n) => { k.iceSteer += 0.15 * n; } },
-  { name: 'FATIGUE', mod: (k, n) => { k.fatigue *= Math.pow(0.94, n); } },
-  { name: 'DODGE', mod: (k, n) => { k.dodgeCd -= 0.15 * n; } },
-  { name: 'HUNTS', mod: (k, n) => { k.huntMul += 0.1 * n; } },
-  { name: 'FELLS', mod: (k, n) => { k.harvestMul += 0.15 * n; } },
-  { name: 'FOOD', mod: (k, n) => { k.foodMul += 0.15 * n; } },
-  { name: 'SEEN AT', mod: (k, n) => { k.stealth -= 0.05 * n; } },
-];
-function ptsSpent(p) { let n = 0; for (const v of p.pts) n += v | 0; return n; }
 // ---- roguelike cards ------------------------------------------------------
 // Dropped by a sprung chest in the treeline (hitObject's chest branch,
 // js/sim/actions.js, rolled against CHEST_ODDS), carried in the pouch, and DRAWN
@@ -438,39 +411,39 @@ function ptsSpent(p) { let n = 0; for (const v of p.pts) n += v | 0; return n; }
 // champion/gear kit carries; die()'s kill-credit line reads it.
 const CARDS = {
   white: [
-    { name: 'QUICK HANDS', blurb: 'FASTER RENOCK', mod: (k) => { k.nock *= 0.92; } },
-    { name: 'THICK SOLES', blurb: 'WALK FASTER', mod: (k) => { k.walkMul += 0.03; } },
+    { name: 'QUICK HANDS', blurb: 'FASTER RENOCK', mod: (k) => { k.add.as += 0.04; } },
+    { name: 'THICK SOLES', blurb: 'WALK FASTER', mod: (k) => { k.add.ms += 2; } },
     { name: 'SOFT LANDING', blurb: 'DODGES COME BACK SOONER', mod: (k) => { k.dodgeCd -= 0.25; } },
     { name: 'FORAGER', blurb: 'FELLS AND BREAKS PAY MORE', mod: (k) => { k.harvestMul += 0.5; } },
-    { name: 'STEADY HAND', blurb: 'FASTER FULL DRAW', mod: (k) => { k.bowCharge *= 0.96; } },
+    { name: 'STEADY HAND', blurb: 'FASTER FULL DRAW', mod: (k) => { k.add.as += 0.02; } },
   ],
   green: [
-    { name: 'SHARP POINT', blurb: 'ARROWS HIT HARDER', mod: (k) => { k.dmgBase += 1; } },
-    { name: 'PADDED VEST', blurb: 'MORE HEALTH', mod: (k) => { k.maxHp += 12; } },
-    { name: 'LIGHT FEET', blurb: 'WALK FASTER', mod: (k) => { k.walkMul += 0.06; } },
+    { name: 'SHARP POINT', blurb: 'ARROWS HIT HARDER', mod: (k) => { k.add.dmg += 1; } },
+    { name: 'PADDED VEST', blurb: 'MORE HEALTH', mod: (k) => { k.add.hp += 12; } },
+    { name: 'LIGHT FEET', blurb: 'WALK FASTER', mod: (k) => { k.add.ms += 4; } },
     { name: 'CAMOUFLAGE', blurb: 'FOES SPOT YOU FROM CLOSER', mod: (k) => { k.stealth -= 0.08; } },
-    { name: "FLETCHER'S TOUCH", blurb: 'FASTER RENOCK', mod: (k) => { k.nock *= 0.85; } },
+    { name: "FLETCHER'S TOUCH", blurb: 'FASTER RENOCK', mod: (k) => { k.add.as += 0.07; } },
   ],
   blue: [
-    { name: 'HEAVY DRAW', blurb: 'HITS HARDER, SLOWER DRAW', mod: (k) => { k.dmgBase += 2; k.bowCharge *= 1.05; } },
-    { name: 'IRON WILL', blurb: 'LESS DAMAGE, MORE HEALTH', mod: (k) => { k.dr += 1.5; k.maxHp += 10; } },
-    { name: 'SPRINTER', blurb: 'WALK FASTER, DODGES SOONER', mod: (k) => { k.walkMul += 0.09; k.dodgeCd -= 0.3; } },
+    { name: 'HEAVY DRAW', blurb: 'HITS HARDER, SLOWER DRAW', mod: (k) => { k.add.dmg += 2; k.add.as -= 0.03; } },
+    { name: 'IRON WILL', blurb: 'LESS DAMAGE, MORE HEALTH', mod: (k) => { k.add.armor += 10; k.add.hp += 10; } },
+    { name: 'SPRINTER', blurb: 'WALK FASTER, DODGES SOONER', mod: (k) => { k.add.ms += 6; k.dodgeCd -= 0.3; } },
     { name: "AMBUSHER'S EDGE", blurb: 'AMBUSH SHOTS HIT HARDER', mod: (k) => { k.ambushMul += 0.4; } },
     { name: 'ICE RUNNER', blurb: 'FASTER, SHARPER ON ICE', mod: (k) => { k.iceMax *= 1.15; k.iceSteer += 0.2; } },
   ],
   purple: [
-    { name: 'EXECUTIONER', blurb: 'ARROWS HIT MUCH HARDER', mod: (k) => { k.dmgBase += 3; k.dmgPow += 1.5; } },
-    { name: 'STONE SKIN', blurb: 'MUCH LESS DAMAGE TAKEN', mod: (k) => { k.dr += 3; } },
+    { name: 'EXECUTIONER', blurb: 'ARROWS HIT MUCH HARDER', mod: (k) => { k.add.dmg += 4; } },
+    { name: 'STONE SKIN', blurb: 'MUCH LESS DAMAGE TAKEN', mod: (k) => { k.add.armor += 20; } },
     { name: 'GHOST', blurb: 'SEEN FROM MUCH CLOSER', mod: (k) => { k.stealth -= 0.18; } },
     { name: 'BLOODLUST', blurb: 'HEAL ON A KILL', mod: (k) => { k.killHeal = (k.killHeal || 0) + 12; } },
-    { name: 'RELENTLESS', blurb: 'FASTER DODGES AND ARROWS', mod: (k) => { k.dodgeCd -= 0.7; k.nock *= 0.8; } },
+    { name: 'RELENTLESS', blurb: 'FASTER DODGES AND ARROWS', mod: (k) => { k.dodgeCd -= 0.7; k.add.as += 0.1; } },
   ],
   gold: [
-    { name: "BERSERKER'S HEART", blurb: 'HITS HARDER, LESS HEALTH', mod: (k) => { k.dmgBase += 5; k.maxHp -= 15; } },
-    { name: 'FORTRESS', blurb: 'MUCH LESS DAMAGE, MORE HP', mod: (k) => { k.dr += 5; k.maxHp += 25; } },
+    { name: "BERSERKER'S HEART", blurb: 'HITS HARDER, LESS HEALTH', mod: (k) => { k.add.dmg += 5; k.add.hp -= 15; } },
+    { name: 'FORTRESS', blurb: 'MUCH LESS DAMAGE, MORE HP', mod: (k) => { k.add.armor += 35; k.add.hp += 25; } },
     { name: 'PHANTOM', blurb: 'SEEN CLOSER, HARDER AMBUSH', mod: (k) => { k.stealth -= 0.3; k.ambushMul += 0.5; } },
-    { name: 'VAMPIRE', blurb: 'HEAL ON KILL, HITS HARDER', mod: (k) => { k.killHeal = (k.killHeal || 0) + 25; k.dmgBase += 1; } },
-    { name: "WINTER'S CHILD", blurb: 'MUCH FASTER, SHARPER ON ICE', mod: (k) => { k.iceMax *= 1.3; k.iceSteer += 0.35; k.walkMul += 0.05; } },
+    { name: 'VAMPIRE', blurb: 'HEAL ON KILL, HITS HARDER', mod: (k) => { k.killHeal = (k.killHeal || 0) + 25; k.add.dmg += 1; } },
+    { name: "WINTER'S CHILD", blurb: 'MUCH FASTER, SHARPER ON ICE', mod: (k) => { k.iceMax *= 1.3; k.iceSteer += 0.35; k.add.ms += 4; } },
   ],
 };
 
@@ -480,17 +453,17 @@ const CARDS = {
 // numbers that page shows can never drift from the ones the sim reads.
 function baseKit(cls) {
   return Object.assign({}, CLASSES[cls].kit, {
-    huntMul: 1, dr: 0, foodMul: 1, nightHeal: false, walkMul: 1,
+    cls, add: statBag(), // whose kit, and the stat bonuses gear and cards write (js/sim/stats.js)
+    huntMul: 1, foodMul: 1, nightHeal: false,
     harvestMul: 1, dodgeCd: DODGE_CD, stealth: 1,
     ambushMul: AMBUSH_MUL, bury: PRONE_BURY,
     killHeal: 0, kindle: false, chill: false, restHeal: 0, // the item passives (js/sim/items.js)
   });
 }
-// rebuild p.kit from class + gear + skills + cards + items
+// rebuild p.kit from class + gear + cards + items
 function refreshKit(p) {
   const k = baseKit(p.cls);
   for (let i = 0; i < GEAR.length; i++) GEAR[i][p.gear[i]].mod(k, p.gearLv[i]);
-  for (let i = 0; i < STAT_TRACKS.length; i++) STAT_TRACKS[i].mod(k, p.pts[i] | 0);
   for (const c of p.cards) CARDS[c.rarity][c.id].mod(k);
   itemMods(k, p); // the six item slots (js/sim/items.js)
   p.kit = k;
@@ -573,7 +546,6 @@ class Player {
     this.fishPick = null;               // the fish the fish well eats (a FISH_KINDS key), or null for whichever comes next
     this.cls = 0;                       // CLASSES index; the lobby sets the local one
     this.gear = [0, 0, 0, 0];           // chosen GEAR variant per slot (helmet/chest/legs/boots)
-    this.pts = STAT_TRACKS.map(() => 0); // STAT_POINTS spent per STAT_TRACKS row (a ledger row each), pre-match (the hero pop-up)
     this.gearLv = [1, 1, 1, 1];         // piece levels, 1..GEAR_LV_MAX - fresh every match
     this.skillPts = 1;                  // unspent; level 1 starts with one, each levelUp adds one - spent on ability levels (buyAbilityLv, js/sim/abilities.js)
     this.abLv = [0, 0, 0, 0];           // ability ranks, 0 (LOCKED) ..AB_LV_MAX, a skill point each - like gear and cards, NOT cleared by reset(): a death keeps what was bought
@@ -771,12 +743,10 @@ function initPlayers(roster, local) {
   roster = roster || defaultRoster(local);
   players.length = 0;
   for (let i = 0; i < MAX_PLAYERS; i++) players.push(new Player(i, roster[i].control, roster[i].team));
-  // bots draw their class, their four gear variants AND their stat points
-  // from the seed, so a replayed world fields the same roster in the same
-  // loadouts
+  // bots draw their class and their four gear variants from the seed, so a
+  // replayed world fields the same roster in the same loadouts
   for (const p of players) if (p.control === 'ai') {
     for (let i = 0; i < GEAR_SLOTS.length; i++) p.gear[i] = Math.floor(hash2(p.id * 29 + i * 13 + 5, 191) * 3) % 3;
-    for (let n = 0; n < STAT_POINTS; n++) p.pts[Math.floor(hash2(p.id * 41 + n * 7 + 11, 223) * STAT_TRACKS.length) % STAT_TRACKS.length]++;
     // floor(hash * N): even over however many classes exist (for two it maps
     // exactly as the old `< 0.5` coin, so old seeds keep their rosters)
     setClass(p, Math.floor(hash2(p.id * 17 + 3, 77) * CLASSES.length)); // refreshes the kit too
@@ -911,7 +881,7 @@ const HIT_KB = 110;
 function damagePlayer(p, dmg, dx, dy, src, cause, crit, kb) {
   const dot = !!DOT_CAUSE[cause];
   if (p.dead || (p.invuln > 0 && !dot)) return;
-  dmg = Math.max(1, dmg - kitOf(p).dr); // IRONHIDE flattens every hit, but never to zero
+  dmg = armorTaken(p, dmg); // ARMOR cuts every hit by its share, never to zero (js/sim/stats.js)
   // the dawn shield (pickSnowdrop, js/sim/actions.js) takes the hit first, a burn
   // included; what is left of the blow goes on to health
   const shielded = Math.min(p.dawnShield, dmg);

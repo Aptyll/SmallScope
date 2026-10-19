@@ -565,7 +565,7 @@ function aiRoamPick(p, leash) {
 const ZIP_AI_GAIN = 4;   // s a ride must save over the feet before a bot walks to the cable
 const ZIP_AI_OFF = 6;    // px short of the exit point it lets go (a step is 3.7 px at ZIP_SPD)
 // the feet's time over a straight line, at the bot's own walk
-function aiWalkT(p, d) { return d / (PLAYER_SPEED * kitOf(p).walkMul); }
+function aiWalkT(p, d) { return d / statOf(p, 'ms'); }
 // the ride from p's spot to (x, y), if the cable saves ZIP_AI_GAIN over the
 // feet: { z, d0, d1 } (px along at the mount and the exit), else null
 function aiZipWorth(p, x, y) {

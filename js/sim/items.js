@@ -31,16 +31,18 @@ const KINDLE_BURN = 2;      // ...for this many seconds at the ordinary burn
 const CHILL_T = 1, CHILL_MUL = 0.7; // CHILL: a hit slows the target this long, to this share of its speed
 
 // What each stat line IS: the label the shop prints, how its number reads,
-// and what it writes into the kit. The names are the hero stat sheet's
-// (health, damage, attack speed, armor, move speed). ATTACK SPEED is a share
-// off both the draw and the renock, the way QUICKDRAW and the stat points
-// shorten them.
+// and what it writes into the kit. Every line is one of the hero stats
+// (js/sim/stats.js) and adds to the kit's stat bag, `kit.add`, the same bag
+// gear and cards add to, so statOf reads an item without knowing items
+// exist. ARMOR is League's (each point a share off every hit), ATTACK SPEED a
+// share added to the hero's attack speed, MOVE SPEED flat (the hero's walk is
+// PLAYER_SPEED).
 const ITEM_STATS = {
-  dmg:   { label: 'DAMAGE', fmt: (v) => '+' + v, mod: (k, v) => { k.dmgBase += v; } },
-  hp:    { label: 'HEALTH', fmt: (v) => '+' + v, mod: (k, v) => { k.maxHp += v; } },
-  armor: { label: 'ARMOR', fmt: (v) => '+' + v, mod: (k, v) => { k.dr += v; } },
-  as:    { label: 'ATTACK SPEED', fmt: (v) => '+' + Math.round(v * 100) + '%', mod: (k, v) => { k.bowCharge *= 1 - v; k.nock *= 1 - v; } },
-  ms:    { label: 'MOVE SPEED', fmt: (v) => '+' + Math.round(v * 100) + '%', mod: (k, v) => { k.walkMul += v; } },
+  dmg:   { label: 'DAMAGE', fmt: (v) => '+' + v, mod: (k, v) => { k.add.dmg += v; } },
+  hp:    { label: 'HEALTH', fmt: (v) => '+' + v, mod: (k, v) => { k.add.hp += v; } },
+  armor: { label: 'ARMOR', fmt: (v) => '+' + v, mod: (k, v) => { k.add.armor += v; } },
+  as:    { label: 'ATTACK SPEED', fmt: (v) => '+' + Math.round(v * 100) + '%', mod: (k, v) => { k.add.as += v; } },
+  ms:    { label: 'MOVE SPEED', fmt: (v) => '+' + v, mod: (k, v) => { k.add.ms += v; } },
 };
 const ITEM_STAT_ORDER = ['dmg', 'hp', 'armor', 'as', 'ms']; // the shop's category filters, in this order
 
@@ -66,16 +68,16 @@ const BUILD_ITEMS = {
   flint:  { name: 'FLINT HEAD', price: 30, stats: { dmg: 2 }, icon: 'bitArt_barb' },
   hide:   { name: 'WOLF HIDE', price: 25, stats: { hp: 15 }, icon: ['gear', 1, 0, 0] },
   string: { name: 'GUT STRING', price: 30, stats: { as: 0.08 }, icon: ['gear', 0, 1, 0] },
-  plate:  { name: 'IRON PLATE', price: 30, stats: { armor: 1 }, icon: ['gear', 1, 1, 1] },
-  boots:  { name: 'FUR BOOTS', price: 25, stats: { ms: 0.05 }, icon: ['gear', 3, 0, 0] },
+  plate:  { name: 'IRON PLATE', price: 30, stats: { armor: 7 }, icon: ['gear', 1, 1, 1] },
+  boots:  { name: 'FUR BOOTS', price: 25, stats: { ms: 4 }, icon: ['gear', 3, 0, 0] },
 
   horn:     { name: "HUNTER'S HORN", price: 150, from: ['flint', 'string'], stats: { dmg: 4, as: 0.15 }, passive: 'kindling', icon: 'toolArt_horn_2' },
-  bearskin: { name: 'BEARSKIN', price: 140, from: ['hide', 'plate'], stats: { hp: 35, armor: 2 }, passive: 'den', icon: ['gear', 1, 2, 3] },
+  bearskin: { name: 'BEARSKIN', price: 140, from: ['hide', 'plate'], stats: { hp: 35, armor: 14 }, passive: 'den', icon: ['gear', 1, 2, 3] },
   fang:     { name: 'WOLF FANG', price: 130, from: ['flint', 'hide'], stats: { dmg: 3, hp: 20 }, passive: 'feast', icon: ['gear', 0, 2, 3] },
-  brand:    { name: 'IRON BRAND', price: 140, from: ['flint', 'plate'], stats: { dmg: 3, armor: 2 }, passive: 'chill', icon: 'toolArt_sword_2' },
-  skates:   { name: 'SKATES', price: 80, from: ['boots'], stats: { ms: 0.08 }, passive: 'glide', icon: ['gear', 3, 0, 3] },
-  cloak:    { name: 'SNOW CLOAK', price: 120, from: ['boots', 'hide'], stats: { hp: 20, ms: 0.05 }, passive: 'drift', icon: ['gear', 3, 2, 3] },
-  feathers: { name: 'FEATHERS', price: 130, from: ['string', 'boots'], stats: { as: 0.18, ms: 0.05 }, passive: 'light', icon: ['gear', 3, 1, 3] },
+  brand:    { name: 'IRON BRAND', price: 140, from: ['flint', 'plate'], stats: { dmg: 3, armor: 14 }, passive: 'chill', icon: 'toolArt_sword_2' },
+  skates:   { name: 'SKATES', price: 80, from: ['boots'], stats: { ms: 6 }, passive: 'glide', icon: ['gear', 3, 0, 3] },
+  cloak:    { name: 'SNOW CLOAK', price: 120, from: ['boots', 'hide'], stats: { hp: 20, ms: 4 }, passive: 'drift', icon: ['gear', 3, 2, 3] },
+  feathers: { name: 'FEATHERS', price: 130, from: ['string', 'boots'], stats: { as: 0.18, ms: 4 }, passive: 'light', icon: ['gear', 3, 1, 3] },
   sunstone: { name: 'SUNSTONE', price: 200, from: ['flint', 'flint'], stats: { dmg: 7 }, passive: 'ambush', icon: 'itemOre_sunstone' },
 };
 const ITEM_PARTS = Object.keys(BUILD_ITEMS).filter((id) => !BUILD_ITEMS[id].from);

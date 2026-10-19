@@ -81,6 +81,8 @@ function botNearSide(p, x, y) {
 function botToolOf(c) {
   return c ? { type: c.type, bits: c.bits.map((b) => (b ? (b.type || b) : null)) } : null;
 }
+// a body's hero stats as the panel reads them, buffs on, keyed as STATS
+function botStats(p) { const o = {}; for (const s of STATS) o[s.key] = Math.round(statShown(p, s.key) * 100) / 100; return o; }
 function botObserve(p) {
   const near = (x, y) => Math.hypot(x - p.x, y - p.y) < BOT_OBS_R;
   const me = {
@@ -88,6 +90,7 @@ function botObserve(p) {
     x: botR(p.x), y: botR(p.y), vx: botR(p.vx), vy: botR(p.vy),
     hp: botR(p.hp), maxHp: p.maxHp, dead: p.dead, respawnT: botR(p.respawnT), eliminated: p.eliminated,
     level: p.level, xp: p.xp, gold: p.inv.gold, skillPts: p.skillPts,
+    stats: botStats(p), // the seven hero stats, the numbers the HUD's panel prints (js/sim/stats.js)
     prone: !!p.prone, hide: botR(p.hide || 0), aboard: !!p.aboard, falling: p.dropT > 0, zip: p.zip,
     abilities: p.abLv.map((lv, i) => botAbility(p, i, lv)),
     gear: p.gearLv.slice(), // each piece's level, 1..GEAR_LV_MAX (hello.rules.gearCosts prices the next)

@@ -84,6 +84,7 @@ obs = {
     x, y, vx, vy,
     hp, maxHp, dead, respawnT, eliminated,
     level, xp, gold, skillPts,
+    stats: { hp, dmg, as, armor, ap, haste, ms },  // the seven hero stats, buffs on: the HUD panel's numbers
     prone, hide,           // hide 0..1: how buried under the snow
     aboard, falling, zip,  // on the eagle; in the drop; -1 or the cable ridden
     abilities: [{ key, id, lv, cd, ready, range }],  // keys 0..3; lv 0 = locked; range px or null
