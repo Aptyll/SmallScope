@@ -450,7 +450,7 @@ function render() {
       if (open > 0) drawWindowed(open, x, y, spr.width, spr.height, drawSnag); else drawSnag();
     } else if (o.type === 'den') {
       drawSpriteFlash(SPRITES.den, px + sh, py - 4, o.flash);
-      if (o === hovO) drawCampClock(o, px + 16, py - 3); // a cleared camp's respawn clock, under the pointer
+      drawCampClock(o, px + 16, py - 3); // a cleared camp's respawn clock (js/draw/marks.js)
     } else if (o.type === 'hut') {
       // the HOG HUT (CAMPS.hut, camps.js): the anchor is the front-left tile
       // of its 2x2 footprint and draws the whole building centred over the
@@ -492,7 +492,7 @@ function render() {
       drawDummyMeter(o, px + 8, dy - 10);
     } else if (o.type === 'cairn') {
       drawSpriteFlash(CAIRN_SPR, px + sh + 1, py + TILE - CAIRN_SPR.height + 1, o.flash);
-      if (o === hovO) drawCampClock(o, px + 8, py + TILE - CAIRN_SPR.height - 2); // the black bear stone's clock
+      drawCampClock(o, px + 8, py + TILE - CAIRN_SPR.height - 2); // the black bear stone's clock
     } else if (o.type === 'pylon') {
       drawPylon(o, px + sh, py); // a zipline's post (js/draw/zipline.js); the cable itself is drawZips, below
     } else if (o.type === 'banner') {
@@ -737,15 +737,7 @@ function render() {
     }
   }
 
-  // floaters (damage numbers drift sideways, rise faster, and can be 2x) -
-  // queued, not drawn: a number is a readout, so it is stamped above the
-  // night grade with the tags (the `ink over the world` banner, js/draw/light.js)
-  for (const f of floaters) {
-    const s = f.scale || 1;
-    drawWorldText(f.txt,
-      Math.round(f.x + (f.vx || 0) * f.t - ex - pixelTextWidth(f.txt, s) / 2),
-      Math.round(f.y - ey - f.t * (f.rise || 14)), f.color, s, 1 - f.t / (f.life || 0.9));
-  }
+  drawPops(ex, ey); // the floaters and the farm's coins, stamped above the night grade (js/draw/pops.js)
 
   drawSweep(ex, ey);        // the wind's slow sweep of loose snow, laid in the world, over the pines (windSweep, js/sim/weather.js)
   drawDropAir(ex, ey, now, false); // the flight path, and a bird on the ground (the fliers: the air layer, below)

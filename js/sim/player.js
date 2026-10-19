@@ -516,6 +516,7 @@ const PLAYER_RECORD = {
   healed: 0,                     // health given back to this body, whatever gave it (healPlayer)
   goldSpent: 0,                  // gold paid out of the purse (pay, js/sim/core.js)
   beasts: 0,                     // animals this body landed the last blow on (animalDies, js/sim/wildlife.js)
+  farm: 0,                       // last hits on rival soldiers and camp monsters (farmHit, js/sim/farm.js)
   streak: 0, bestStreak: 0,      // rivals downed since this body last went down, and the most of it
   multiN: 0, multiT: -1e9, bestMulti: 0, // the run of kills MULTI_T apart, when the last one was, the most of it
   ccOut: 0,                      // s of stun, root and net put on RIVAL players (ccCredit, js/sim/actions.js)
@@ -1247,7 +1248,7 @@ function endMatch(how) {
 // cashes as a SHUTDOWN on top. A body that keeps going down without a kill or
 // an assist (p.feed) is worth less, down to FEED_FLOOR, so feeding one side
 // never funds the other. Every amount is counted in SCRAPPED SOLDIERS
-// (SOLDIER_BOUNTY, js/sim/robots.js, read at the kill), so the kill keeps its
+// (SOLDIER_BOUNTY, js/sim/farm.js, read at the kill), so the kill keeps its
 // place in the farm whatever a last hit is retuned to: a plain kill is three
 // of them, the biggest shutdown eight, so ending a streak pays without
 // erasing the lead the streak built. Gold only goes to the living, as a kill

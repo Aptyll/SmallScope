@@ -294,7 +294,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| a camp: its kind's data, the fixed mirrored sites, the clearing, standing one up, stocking it, where a position is, the respawn clock its anchor wears | `CAMPS` (the hog hut's `hut` is an `OBJECTS` row with `w`/`h`; `render()`'s hut branch draws it off `HUT_FR`), `CAMP_SITES`/`CAMP_EDGE`, `campTile`, `campSites`, `RIVER_BANK`/`RIVER_REACH`/`RIVER_BAND`/`riverPath` (a river camp's bank, `C.path`), `campMark`, `campNear`, `campFrame`/`campLocal` (a treeline camp's along/out axes), `layCampPlan` (a drawn camp's `plan`; `C.spots`), `clearCamp`, `placeCamps`, `spawnCampMonster`, `stockCamps`, `campPop`, `campAt`, `CAMP_HOLD`, `updateCamps` (`C.repopT`; the anchor's `site`) | `camps` (the hover bar: `drawCampClock`, js/draw/marks.js, from the den and cairn branches of `render()` off `hovO`; the warren has no anchor; a river camp has no anchor, js/draw/render.js) |
+| a camp: its kind's data, the fixed mirrored sites, the clearing, standing one up, stocking it, where a position is, the respawn clock its anchor wears | `CAMPS` (the hog hut's `hut` is an `OBJECTS` row with `w`/`h`; `render()`'s hut branch draws it off `HUT_FR`), `CAMP_SITES`/`CAMP_EDGE`, `campTile`, `campSites`, `RIVER_BANK`/`RIVER_REACH`/`RIVER_BAND`/`riverPath` (a river camp's bank, `C.path`), `campMark`, `campNear`, `campFrame`/`campLocal` (a treeline camp's along/out axes), `layCampPlan` (a drawn camp's `plan`; `C.spots`), `clearCamp`, `placeCamps`, `spawnCampMonster`, `stockCamps`, `campPop`, `campAt`, `CAMP_HOLD`, `updateCamps` (`C.repopT`; the anchor's `site`) | `camps` (the clock: `drawCampClock`, js/draw/marks.js, from the den and cairn branches of `render()`; on the maps `drawCampMark`; the warren has no anchor; a river camp has no anchor, js/draw/render.js) |
 
 ## js/sim/practice.js
 
@@ -375,12 +375,18 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | shooting a worker bot: its hitbox, its damage, its wreck, and who it is now angry at | `ROBOT_HIT_R`/`robotHitY` (the disc the arrow loop sweeps), `hurtRobot`, `robotDies`, `b.mad` | `workers` |
 | what a worker does this frame: the flag dispatch, the harvest tick, the melee | the tail of `updateRobot`, `engage`, `gather`, `holdAt` | `workers` |
 | the eagle's merchant: climbing down at the crash, pitching its stall beside the road's head (`OBJECTS.stall`), felling the back woods (away from the road) into its log stock, raising up to three bot bays (barracks) there for those logs (and rebuilding them), keeping to its post on the road just up from the bird, and standing still to serve whoever opens its counter | `MERCH_*` (incl. `MERCH_BAY_*`), `freeTileNear`, `spawnMerchant` (called from `eagleCrash`, js/sim/eagle.js), `updateMerchant` (dispatched from `updateRobot` on `b.merchant`), `merchFell`, `merchBearing`, `merchBayDir`, `merchBaySlots`, `merchNextBay`, `merchBaySite`, `merchBayBlocker`, `merchBackPine`, `merchStallSite`, `pitchStall`, `b.stall`/`b.stallT`/`b.stallSite`, `b.bays`/`b.bayT`/`b.baySite`/`b.wood`, `b.avoids`, `shopServing` (js/ui/shop.js) | `merchant` |
-| a wave's soldier: its route down the road (round the cistern by a ford: `cisternWayRound`, js/sim/cistern.js), the four rungs it fights by, the bird strike, the bounty, the zipline ride on the march and the route read again after it | `SOLDIER_*`, `makeSoldier`, `soldierGoal`, `soldierBoard`, `soldierRejoin` (the ride itself: `zipRide` from `updateRobot`'s ride branch) (rolled out by `updateStructures`'s barracks branch, structures.js), `updateSoldier` (dispatched from `updateRobot` on `b.kind === 'soldier'`), `robotDies`'s bounty and `SOLDIER_XP` (the `workers` banner) | `soldiers` (the pennant: `drawRobot`, js/draw/bodies.js; the gust: `updateEagle`/`eagleGust`, js/sim/eagle.js) |
+| a wave's soldier: its route down the road (round the cistern by a ford: `cisternWayRound`, js/sim/cistern.js), the four rungs it fights by, the bird strike, the last hit's pay (`soldierBounty`, js/sim/farm.js) and the health that grows with the clock (`SOLDIER_HP_GROW`), the zipline ride on the march and the route read again after it | `SOLDIER_*`, `makeSoldier`, `soldierGoal`, `soldierBoard`, `soldierRejoin` (the ride itself: `zipRide` from `updateRobot`'s ride branch) (rolled out by `updateStructures`'s barracks branch, structures.js), `updateSoldier` (dispatched from `updateRobot` on `b.kind === 'soldier'`), `robotDies`'s bounty and `SOLDIER_XP` (the `workers` banner) | `soldiers` (the pennant: `drawRobot`, js/draw/bodies.js; the gust: `updateEagle`/`eagleGust`, js/sim/eagle.js) |
 | the team flag: the four orders and their glyphs, the wheel's order, planting/moving/lifting one, whose flag a body serves (a human's over all), a teammate's to join, the nearest to help at | `FLAG_TYPES`, `FLAG_ORDER`, `FLAG_MINE`/`FLAG_FOE`, `plantFlag`, `clearFlag`, `flagRecall`, `flagOf`, `servedFlag`, `humanFlag`, `teamFlagAt`, `nearestTeamFlag`, `flagPos`, `inFlag` | `team flags` |
 | what is hostile inside a flag's ring, and who has already claimed a tile in it | `flagFoe`, `enemyStructNear`, `objTaken` | `team flags` |
 | a worker's attack: who is a valid mark, where the axe lands, the blow itself | `robotFoeUnit`, `foeAlive`, `foePoint`, `robotStrike`, `ROBOT_*` | `team flags` › `a worker's simple attack` |
 | how an AI PLAYER answers a flag, and flies its own | `aiFlagSync`, `aiStructTile`, `AI_FLAG_*`, the `order` block and rung 5a of `updateAI` | not here: `ai` › `the flag`, ai.js |
 | what a flag LOOKS like - all six draw functions | `drawFlagIcon`, `drawFlagPennant`, `drawFlagRing`, `drawFlagRings`, `drawFlag`, `drawFlagMark` | not here: `what a flag looks like`, js/draw/marks.js |
+
+## js/sim/farm.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| what a soldier's last hit pays and how it grows, the coin it throws (gold for the hitter, grey to the side that missed it), the `farm` count | `SOLDIER_BOUNTY`, `SOLDIER_BOUNTY_GROW`, `soldierBounty`, `coinPop`/`coinPops`/`COIN_POP_T`, `farmHit` (from `robotDies`, robots.js, and `animalDies` on a camp monster, wildlife.js) | `farm` (the coin's pixels: `drawPops`, js/draw/pops.js; online: `evPlay`'s `coin`, js/net/events.js) |
 
 ## js/sim/actions.js
 
@@ -520,12 +526,19 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | Looking for | Start at | Banner |
 | --- | --- | --- |
 | a bot's temperament and what it moves; the decision knobs read off the profile with their defaults | `AI_MOODS`, `aiMood`, `aiMoodOf`, `aiKnob`/`AI_KNOB_DEFAULT`, `aiJudge`, `aiFlee` | `team brain` |
-| the side's plan: who pushes, guards, scouts, stalks or hunts the bear, the stance, the window, the focus, the plan's order (`aiRank`, ai.js) | `AI_ROLES`, `aiTeams`, `aiTeamNew`, `aiPlan`, `aiRole`, `aiPlanRank`, `AI_PLAN_T`, `AI_WINDOW_*` | `team brain` |
+| the side's plan: who pushes, guards, lanes, jungles, scouts, stalks or hunts the bear, the stance, the window, the focus, the plan's order (`aiRank`, ai.js) | `AI_ROLES`, `aiTeams`, `aiTeamNew`, `aiPlan`, `aiRole`, `aiPlanRank`, `AI_PLAN_T`, `AI_WINDOW_*` | `team brain` |
 | what the side has seen and who is calling: sightings, calls for help, the stalker's pick, the odds and the fall-back, the scout's beat | `aiLook`/`aiSaw`, `aiCall`, `aiHumanCall`, `aiHelpCall`, `aiStalkTarget`, `aiOdds`, `aiFallBack`/`aiFallBackTo`, `aiScoutPoint`, `aiForget` | `team brain` |
 | the bear party | `aiSideBear`, `aiBearJob`, `AI_BEAR_*` | `team brain` |
 | a bot's grudge, an ally answering your flag (ON IT, GUARDING), the fight's commit window | `aiDowned` (called from `die`, player.js), `aiGrudge`, `aiGrudgeFoe`, `AI_GRUDGE_*`, `aiObeys`, `aiAnswerFlag`/`aiAnswerStep`, `AI_ONIT_T`/`AI_ONIT_STALE`, `aiHoldFoe`, `AI_COMMIT_*`, `AI_FLEE_HOLD` | `team brain` |
 | what a bot buys with its gold (income by payback; the side's builder raises bays) | `aiEcoBuy`, `aiIncome`, `AI_MATCH_MIN`, `AI_BAY_RATE`, the moods' `eco`, `T.builder` | `team brain` |
 | what a bot is doing and why, for the dashboard | `aiNote` (`p.ai.thought`) | `team brain` |
+
+## js/ai/ai-farm.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| a laner holding its blow until one hit finishes a soldier, what it remembers its blow does, where it stands | `aiFarmHold`, `aiFarmFire` (rung 3 of `aiThink`), `aiFarmLearn` (from `hurtRobot`), `aiLaneSpot`, `AI_FARM_*` | `bot farm` |
+| a jungler's walk: the den with its pack up, or waiting just outside the next one to come back | `aiDenSpot`, `aiFarmWalk` (rung 5f), `AI_DEN_EARLY`, `AI_JUNGLE_N`/`AI_LANE_N` (handed out by `aiPlan`, ai-team.js) | `bot farm` |
 
 ## js/ai/bot-api.js
 
@@ -777,10 +790,16 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| the camp glyph both maps stamp, and the respawn clock a hovered anchor wears | `drawCampIcon`, `drawCampClock` | `the camp glyph both maps and the drop chart stamp` (its `CAMPS` spec: `camps`, js/sim/camps.js) |
+| the camp glyph both maps stamp, and the respawn clock a cleared camp wears (over its anchor and on both maps, grey glyph; out of sight it counts down from the last seen value) | `drawCampIcon`, `drawCampClock`, `drawCampMark`, `campClock`, `campClockSeen`, `CAMP_CLOCK_INK` | `the camp glyph both maps and the drop chart stamp` (its `CAMPS` spec: `camps`, js/sim/camps.js) |
 | what a flag looks like: the order's glyph (at any scale), the map pennant, the ring an order covers (every standing one and the held wheel's preview), the planted banner, and a map's pennant-with-ring | `drawFlagIcon`, `drawFlagPennant`, `drawFlagRing`, `drawFlagRings`, `drawFlag`, `drawFlagMark` | `what a flag looks like` (what they read, `FLAG_TYPES`/`FLAG_R`: `team flags`, robots.js; the wheel's pick: `wheelLayout`, js/ui/wheel.js) |
 | what a body looks like on either map: the square in its side's ink (a player one step bigger than a robot), the watched body's white heart in its side's ring, the bird diamond, and a rival's cross under a colour-blind palette | `drawMapDot`, `drawMapUnit`, `drawMapCross`, `drawMapYou`, `drawMapBird` | `what a body looks like on a map` (its two callers: `renderMinimap` js/ui/minimap.js, `renderWorldMap` js/ui/panels.js) |
 | a zipline on either map: a crisp two-pixel ribbon in its side's ink pylon to pylon, each pylon a pale pixel on it | `drawMapZip`, `MAP_ZIP_PYLON` | `a zipline on a map` (its two callers: `renderMinimap` js/ui/minimap.js, `renderWorldMap` js/ui/panels.js; the lines: `zips`, js/sim/zipline.js) |
+
+## js/draw/pops.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| the floaters and the farm coin: its spin frames, its hop and fall, the grey miss only the missing side sees, a gold coin hidden in the fog | `drawPops` (from `render()`), `drawCoin`, `COIN_PX`, `COIN_INK`, `COIN_*` | `pops` (the pops themselves: `coinPop`, js/sim/farm.js; `addFloater`, js/sim/core.js) |
 
 ## js/draw/callouts.js
 

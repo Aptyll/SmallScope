@@ -228,8 +228,10 @@ code still uses `ex`/`ey`. A screen-space pass anchored to the world reads the e
     ([the tool swap](#the-tool-swap)) → `drawAbilityAir` (the spinning net, the grapple's rope)
     → `drawTurretFx` (each turret's dashed aim **arc** and the cords snapping on the release)
     → turret tracers;
-12. `drawSlashes` (the sword's sweeps) → swing arcs (one per swinging player) → floaters
-    (queued through `drawWorldText`, see [Text over the world](#text-over-the-world));
+12. `drawSlashes` (the sword's sweeps) → swing arcs (one per swinging player) → `drawPops`
+    (js/draw/pops.js): the floaters (queued through `drawWorldText`, see
+    [Text over the world](#text-over-the-world)) and the farm's coins (plates,
+    [gameplay.md](gameplay.md#farming));
 13. `drawSweep` (the wind's slow sweep of loose snow, over every canopy, as strong as the day's
     weather lets it — [the wind field](#the-wind-field))
     → `drawDropAir` (the dotted flight path and a bird on the ground, while `state.drop`
@@ -301,10 +303,10 @@ state everywhere the cursor lands;
 a bare bush never rims because `workTarget`'s `ready` gate already refuses it — a *hovered* bare
 bush shows its regrow clock instead, the neutral unit bar (`drawHealthBar`, gold) over the plant
 filling toward `BUSH_REGROW`, drawn only while the pointer's tile is that bush (`hovO`, resolved
-beside `wkO` at any reach, since a look asks nothing of the legs). A hovered **camp anchor**
-(a wolf den's mouth; the bears' river camps have none) wears the same bar the same way — over the prop, filling toward the camp's return off its
-respawn clock (`o.site.repopT`, `drawCampClock`, [world.md](world.md#runtime)) while the camp is cleared, nothing
-while anything in it lives. Only a
+beside `wkO` at any reach, since a look asks nothing of the legs). A **camp anchor**
+(a wolf den's mouth; the bears' river camps have none) wears the seconds until the camp is back
+over the prop, hovered or not, while the camp is cleared (`drawCampClock`,
+[world.md](world.md#runtime)), nothing while anything in it lives. Only a
 covering canopy leaves the atlas batch, so the batch below stays whole. A **dead tree** is a 16×24 snag at `py - 8`. Short ground sprites (bush,
 stump) all draw at `py + 4` to stay clear of that band — drop one lower and
 a tree on the tile below hides it almost completely. The den is tall enough not to need it: its 21 rows
@@ -476,7 +478,8 @@ buffers and re-bakes the slab whenever `MAP_W` changes. The slab is the HUD's **
 and so does a press anywhere off the slab (`mapCloseHit` in `pointerPress`, play and drop alike).
 There is no compass (the chart is north-up, as the world is), no key (the marks are the minimap's
 own), no clock (the rail or the disc wears it), no title, and **no camp names until asked**: each
-camp is its glyph in its camp's ink, and the one under the pointer (within `CHART_HOVER_R`) lights
+camp is its glyph in its camp's ink (grey with its seconds under it while it is cleared,
+`drawCampMark`, as on the minimap), and the one under the pointer (within `CHART_HOVER_R`) lights
 white and wears its name on a small graphite tag running away from the chart's middle
 (`drawChartCamps`/`chartTag`). The ziplines on both maps are `drawMapZip` (js/draw/marks.js): a
 crisp two-pixel ribbon in the side's ink, pylon to pylon, each pylon a pale pixel on it
