@@ -28,7 +28,7 @@
 // While ladderWatch is set the page's keys and clicks are the watcher's
 // (ladderWatchKey / ladderWatchClick), endMatch reports the winner here
 // instead of opening the end screens, nothing is saved (canSave) and nothing
-// counts on the character (PROFILE.quiet). Leaving reloads the page.
+// counts on the profile (PROFILE.quiet). Leaving reloads the page.
 const LAD_ROW_H = 20, LAD_ROW_GAP = 3;
 const LAD_LIST_W = 300, LAD_CARD_W = 236, LAD_GAP = 12;
 const LAD_ROWS_MAX = 9;            // rows shown; the keys scroll past them

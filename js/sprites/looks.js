@@ -1,6 +1,6 @@
 'use strict';
-// The 48 px CHARACTER MODEL: the big front-facing figure the create screen,
-// the roster and the lobby's stage show. In-world bodies stay 16 px
+// The 48 px HERO MODEL: the big front-facing figure the lobby's stage and its
+// hero row show (each hero's fixed look: CLASSES, js/sim/player.js). In-world bodies stay 16 px
 // (characters.js paints a character's tone and fringe onto them); this is
 // where the whole look reads - body type, face shape, hair style, beard - as
 // LAYERS stamped in order onto one canvas: body, head, beard, hair, then the
@@ -13,8 +13,10 @@
 (() => {
   const { TEAM_SKINS } = SPR;
   const LOOK = SPRITES.LOOK;
-  const N = PROFILE.LOOK_N;
-  const check = (name, n, want) => { if (n !== want) throw new Error('looks.js: ' + name + ' has ' + n + ' entries, profile.js says ' + want); };
+  // the look's axes and how many choices each has: what a hero's `look` may
+  // name, asserted against the tables below and characters.js's at load
+  const N = { sex: 2, tone: 6, hair: 6, hairCol: 8, beard: 4, face: 3 };
+  const check = (name, n, want) => { if (n !== want) throw new Error('looks.js: ' + name + ' has ' + n + ' entries, the axes say ' + want); };
 
   // ---------------------------------------------------------------- bodies
   // two body types, 24 wide at x = 12, rows 20-47: neck, shoulders, arms and
@@ -323,7 +325,7 @@
   check('LOOK.tones', LOOK.tones.length, N.tone);
   check('LOOK.hairCols', LOOK.hairCols.length, N.hairCol);
   check('LOOK.hairs', LOOK.hairs.length, N.hair);
-  check('OUTFIT', OUTFIT.length, PROFILE.CLASS_N);
+  check('OUTFIT', OUTFIT.length, PROFILE.HERO_N);
   for (const L of [].concat(BODY, HEAD, BEARD, HAIR, OUTFIT)) {
     if (!L) continue;
     for (const r of L.rows) if (r.length !== L.rows[0].length) throw new Error('looks.js: ragged grid row "' + r + '"');
@@ -350,16 +352,14 @@
       }
     }
   };
-  // portrait(cls, look, team): the 48 x 48 model of one character in one
-  // team's paint, composed on first ask and kept. The create screen asks for
-  // one per option cell per click, so the cache is emptied past PORTRAIT_KEEP
-  // rather than growing with every roll of the die. `bare` leaves the outfit off - the create screen's
-  // head-and-shoulders read while a face is being chosen is the same model.
+  // portrait(cls, look, team): the 48 x 48 model of one hero in one team's
+  // paint, composed on first ask and kept (emptied past PORTRAIT_KEEP, so a
+  // ladder card's look or a repaint never grows it without bound).
   const PORTRAIT_KEEP = 512;
   const cache = new Map();
   SPR.onTeams(() => cache.clear()); // a repaint (setTeamPal) rebakes every model on its next ask
-  function portrait(cls, look, team, bare) {
-    const key = cls + '|' + team + '|' + (bare ? 1 : 0) + '|' + [look.sex, look.tone, look.hair, look.hairCol, look.beard, look.face].join(',');
+  function portrait(cls, look, team) {
+    const key = cls + '|' + team + '|' + [look.sex, look.tone, look.hair, look.hairCol, look.beard, look.face].join(',');
     let c = cache.get(key);
     if (c) return c;
     c = document.createElement('canvas');
@@ -370,7 +370,7 @@
     stamp(g, HEAD[look.face] || HEAD[0], pal);
     stamp(g, BEARD[look.beard], pal);
     stamp(g, HAIR[look.hair], pal);
-    if (!bare) stamp(g, OUTFIT[cls] || OUTFIT[0], pal);
+    stamp(g, OUTFIT[cls] || OUTFIT[0], pal);
     if (cache.size >= PORTRAIT_KEEP) cache.clear();
     cache.set(key, c);
     return c;

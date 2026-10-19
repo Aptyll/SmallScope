@@ -219,7 +219,6 @@ function netHostHello(peer, msg) {
   const p = players[slot];
   p.control = 'remote';
   if (msg.name) p.name = msg.name;
-  if (msg.look) p.look = msg.look;
   if (msg.cls !== undefined && msg.cls !== null) setClass(p, msg.cls);
   const pr = { slot, uid: msg.uid, name: msg.name, lastTick: 0, ack: -1, dictAt: new Map(), q: [], qMin: Infinity, qN: 0 };
   NET.peers.set(peer, pr);
@@ -394,7 +393,7 @@ function pongIn(pr, msg) {
   if (!(rtt >= 0 && rtt < 60000)) return;
   pr.rtt = pr.rtt === undefined ? rtt : pr.rtt + (rtt - pr.rtt) * PING_EASE;
 }
-function netRoster() { return players.map((p) => ({ control: p.control, team: p.team, name: p._name, cls: p.cls, look: p.look })); }
+function netRoster() { return players.map((p) => ({ control: p.control, team: p.team, name: p._name, cls: p.cls })); }
 // after the step: every SNAP_EVERY ticks this tick goes into the ring and
 // each peer gets the delta from ITS acked tick (peers on one ack share the
 // cut), with the cosmetics the step recorded; a peer whose ack has aged out
@@ -492,7 +491,7 @@ function netClientStep(dt) {
   if (T.open && !NET.helloed) { netClientHello(); NET.helloed = true; }
   if (!T.open) NET.helloed = false;
 }
-// The character's lifetime stats on a client. Every PROFILE.add* in the sim
+// The profile's lifetime stats on a client. Every PROFILE.add* in the sim
 // is gated on `p === player` INSIDE the step, which only the host's screen
 // runs, so a client reads the same facts off its own body as the snapshots
 // move it: xp is the match's gold earned (gainGold), kills only climbs, a
@@ -519,13 +518,12 @@ function netClientStats() {
   NET.was = { p: me, xp: me.xp, kills: me.kills, dead: me.dead, aboard: me.aboard };
 }
 function netClientHello() {
-  const c = PROFILE.char();
-  NET.transport.send('host', { t: 'hello', uid: NET.uid, patch: PATCH_TXT, seed: SEED, map: MAP_TYPE, name: c ? c.name : PROFILE.name(), cls: c ? c.cls : 0, look: c ? c.look : null });
+  NET.transport.send('host', { t: 'hello', uid: NET.uid, patch: PATCH_TXT, seed: SEED, map: MAP_TYPE, name: PROFILE.name(), cls: PROFILE.hero() });
 }
 // the roster the host dealt: our slot is the human here, the host's is a
 // remote one, and the bodies are built before the first snapshot fills them
 function netClientWelcome(msg) {
-  const roster = msg.roster.map((r, i) => ({ control: i === msg.slot ? 'human' : r.control === 'human' ? 'remote' : r.control, team: r.team, name: r.name, cls: r.cls, look: r.look }));
+  const roster = msg.roster.map((r, i) => ({ control: i === msg.slot ? 'human' : r.control === 'human' ? 'remote' : r.control, team: r.team, name: r.name, cls: r.cls }));
   NET.hostSlot = msg.hostSlot;
   NET.phase = msg.phase || 'room';
   initPlayers(roster, msg.slot);
@@ -536,7 +534,7 @@ function netClientWelcome(msg) {
   NET.welcomed = true; // the title screen moves to the waiting room on this
 }
 // a later roster (someone came or went while we wait): the bodies stay, their
-// names, classes, faces and kinds change in place - ours stays the human
+// names, heroes and kinds change in place - ours stays the human
 function netClientRoster(roster) {
   for (let i = 0; i < players.length && i < roster.length; i++) {
     const p = players[i], r = roster[i];
@@ -545,7 +543,6 @@ function netClientRoster(roster) {
     p.control = r.control === 'human' ? 'remote' : r.control;
     p.team = r.team;
     p.name = r.name;
-    if (r.look) p.look = r.look;
     if (p.cls !== r.cls) setClass(p, r.cls);
   }
 }

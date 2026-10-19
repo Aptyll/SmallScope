@@ -29,20 +29,19 @@ to the world.
 fewer bots, a frozen target dummy, or a ghost. `DBG.setLocal(id)` rebuilds the ten with this
 screen's player in slot `id` (title only: it is a fresh `initPlayers`).
 
-**`initPlayers(roster, local)` takes a roster** — one `{ control, team?, name?, cls?, look? }` per
+**`initPlayers(roster, local)` takes a roster** — one `{ control, team?, name?, cls? }` per
 slot — and the local slot; with neither it builds today's match (`defaultRoster`: this screen's
 human in `LOCAL_SLOT`, an AI everywhere else, teams alternating by slot). A bot still rolls its
-class and gear off the seed; a roster entry's own `name`/`cls`/`look` land over that, which is
+class and gear off the seed; a roster entry's own `name`/`cls` land over that, which is
 how a lobby dresses a remote human's body (`netClientWelcome`, [Online play](#online-play)).
-The profile's character is only ever applied to this screen's player (`applyCharacter(p?)`).
+The profile is only ever applied to this screen's player (`applyProfile()`).
 
 **A `Player` owns its whole body** — position, velocity, facing, hp, bow draw,
 dodge charges, slide state, swing state, held tool, i-frames, footprint cadence — plus `id`,
 `team`, `control`, `name` (`TEAMS[team].name + '-' + (id + 1)` for an AI fill; the local player
-wears its **active character's** name, class and look — `applyCharacter(p?)`, called by
-`initPlayers` and whenever the roster's active slot changes — see
-[architecture.md](architecture.md#profilejs)), `look` (the face on the class body: a bot's is
-hashed off its id by `botLook`, so a replayed world fields the same faces), `spawn` (the tile it landed
+wears the **profile's** name and last hero — `applyProfile()`, called by `initPlayers` — see
+[architecture.md](architecture.md#profilejs)), `look` (the hero's fixed face, a copy of
+`CLASSES[cls].look` that every `setClass` writes, so every copy of a hero looks the same), `spawn` (the tile it landed
 on from the eagle), `aboard`/`dropT`/`dropU`
 (the eagle ride, see [Eagle drop](rendering.md#eagle-drop-mode-drop)), its own `inv` wallet, `bag`
 and `food` pouch (see [the backpack](gameplay.md#inventory-and-the-backpack)),
@@ -144,7 +143,7 @@ game's key *name*, the face that key wears on a US board, lowercase for a letter
 `KeyW` → `'w'`, `Space` → `' '`, `ShiftLeft` → `'Shift'`, `Period` → `'.'`; a code the table
 does not know falls back to `e.key`, so an on-screen keyboard is not dead). `keys`, the binds and
 every comparison are written in those names, so an AZERTY board walks on its Z Q S D without
-knowing it. `e.char` is what the key *typed*, which only the name editor reads (`createKey`, js/ui/chars.js). What
+knowing it. `e.char` is what the key *typed*, which only the name editor reads (`profileKey`, js/ui/profile-card.js). What
 the player *sees* runs the other way: `keyLabel` prints the face the key has on the board in hand
 where the browser can say (Chrome's `navigator.keyboard.getLayoutMap()`, cached in `kbLayout` and
 refreshed on `layoutchange` — `KeyW` reads Z on AZERTY), else the US face; anything the pixel
@@ -367,10 +366,9 @@ already firing: [starting loadouts](gameplay.md#starting-loadouts). See
 one does, its cooldown, cast, and the states it leaves on a body — are
 [Class abilities](gameplay.md#class-abilities-keys-1-4) in gameplay.md.
 
-The local player's class is **fixed on the character** it was created with (js/app/profile.js; the
-create screen's class pair, [the character screens](rendering.md#the-character-screens)) — the
-only way to the other class is another character, and the lobby swaps between the profile's
-three with the chevrons beside the stage figure; bots hash theirs — class, look, all four gear
+The local player's class is its **hero, picked each match** on the lobby's hero row
+([lobby](rendering.md#lobby), js/ui/heroes.js); the one locked in is kept as the profile's
+hero (js/app/profile.js), where the next pick opens. Bots hash theirs — hero (and with it its look), all four gear
 variants **and** their stat points — from the seed in `initPlayers()` so a replayed world fields the same roster in the
 same loadouts. Lobby shows that roster as two team panels on the screen's edges — your side left, the
 rivals right, their picks face-down until LOCK IN's countdown turns them (a second press skips

@@ -77,15 +77,19 @@ const BOW_CHARGE = 0.9;   // seconds to a full draw
 const BOW_NOCK = 0.45;    // WREN's seconds between loosing and the next draw
 
 // ---- classes ------------------------------------------------------------
-// Every player plays one of these. A class is a look (SPRITES.champ[c] - the
-// sprite key keeps its legacy name; js/sprites.js is never rewritten) plus a
-// kit - the numbers updatePlayer / emitBit / tryDodge read through kitOf(p)
-// instead of the bare constants - plus its four ACTIVE ABILITIES on keys 1-4
-// (CLASS_AB, js/sim/abilities.js). Picked on the lobby screen (local) or
-// hashed from the seed (bots) in initPlayers().
+// Every player plays one of these HEROES. A hero is a body (its class outfit,
+// js/sprites/looks.js) worn by ONE fixed `look` - the face, hair and beard
+// every copy of it has, the way a League champion looks the same in every
+// match (skins come later, never sliders) - plus a kit - the numbers
+// updatePlayer / emitBit / tryDodge read through kitOf(p) instead of the bare
+// constants - plus its four ACTIVE ABILITIES on keys 1-4 (CLASS_AB,
+// js/sim/abilities.js). Picked on the lobby's hero row (local, js/ui/chars.js)
+// or hashed from the seed (bots) in initPlayers(). `look` axes are
+// js/sprites/looks.js's: { sex, tone, hair, hairCol, beard, face }.
 const CLASSES = [
   {
     name: 'HUNTER', role: 'BOW, DISTANCE, AMBUSH',
+    look: { sex: 0, tone: 2, hair: 1, hairCol: 2, beard: 0, face: 1 },
     blurb: ['THE BOW IS THE ARGUMENT: KEEP THE GAP.', 'THE NET TANGLES THEM. THE GRAPPLE PULLS YOU CLEAR.', 'THE SNOW HIDES YOU. THE SHOT OUT OF IT HITS MUCH HARDER.'],
     stats: { ice: 3, draw: 4, power: 4, tough: 2 },
     kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1, chargeMul: 0.55,
@@ -93,20 +97,30 @@ const CLASSES = [
   },
   {
     name: 'WARRIOR', role: 'PRESSURE, BLOCKING, MOMENTUM',
+    look: { sex: 0, tone: 4, hair: 0, hairCol: 1, beard: 2, face: 0 },
     blurb: ['THE FIGHT IS AT ARM\'S LENGTH: GET THERE.', 'THE SHIELD EATS ARROWS. THE RUSH CARRIES BODIES.', 'THE SWORD REACHES A BODY LENGTH. THE EXECUTE FINISHES IT.'],
     stats: { ice: 4, draw: 2, power: 3, tough: 5 },
     kit: { iceMax: 1.15, iceSteer: 3.2, slideMin: 70, fatigue: 0.7, chargeMul: 0.7,
       bowCharge: 0.75, nock: 0.5, dmgBase: 3, dmgPow: 6, spdDmg: 5, dodgeSpeed: 230, maxHp: 120 },
   },
 ];
+// the heroes announced but not yet playable: the hero row shows each as a
+// dark silhouette of this body and look, its name on hover, and no press.
+// One moves into CLASSES (with a kit and abilities) the day it ships.
+const HEROES_SOON = [
+  { name: 'SLEET', cls: 0, look: { sex: 1, tone: 1, hair: 4, hairCol: 6, beard: 0, face: 2 } },
+  { name: 'DURAVO', cls: 1, look: { sex: 0, tone: 3, hair: 2, hairCol: 0, beard: 3, face: 0 } },
+];
 // the kit every sim site reads: the class's numbers with the player's gear
 // folded in. refreshKit() rebuilds the cache whenever class or gear
 // changes; kitOf() itself is called many times a frame and must stay a read.
 function kitOf(p) { return p.kit || CLASSES[p.cls].kit; }
-// swap a player's class: kit hp applies on the spot (full heal, it's a
-// pre-match choice), and the new class brings its own tool and bits - the
-// loadout is part of who you picked, not a thing carried across (js/sim/tools.js)
-function setClass(p, c) { p.cls = c; refreshKit(p); p.hp = p.maxHp; giveLoadout(p); }
+// swap a player's hero: its look comes with it (a copy - a snapshot merges
+// `look` in place, js/net/snapshot.js, and must never write into CLASSES),
+// kit hp applies on the spot (full heal, it's a pre-match choice), and the
+// new hero brings its own tool and bits - the loadout is part of who you
+// picked, not a thing carried across (js/sim/tools.js)
+function setClass(p, c) { p.cls = c; p.look = Object.assign({}, CLASSES[c].look); refreshKit(p); p.hp = p.maxHp; giveLoadout(p); }
 // kit hp plus the flat per-level growth
 function levelMaxHp(p) { return kitOf(p).maxHp + LVL_HP * (p.level - 1); }
 // THE ONE WAY HEALTH COMES BACK to a player: a meal, the daylight, a second
@@ -154,30 +168,15 @@ function levelUp(p) {
   if (!inAir(p)) floaters.push({ x: p.x, y: p.y - 22, txt: 'LEVEL ' + p.level, color: '#f2cc6a', t: 0, vx: 0, scale: 2, rise: 20 });
   sfxFor(p, 'levelUp');
 }
-// the pose set a body draws from: its class body in its team's paint, worn
-// by its character's look (tone and fringe at 16 px - js/sprites/characters.js)
+// the pose set a body draws from: its hero's body in its team's paint, worn
+// by the hero's look (tone and fringe at 16 px - js/sprites/characters.js)
 function classSet(p) { return SPRITES.champLook(p.cls, p.look, skin(p.team)); }
-// a bot's look, off the seed like its class and gear: a roster of faces,
-// the same faces on a replayed world. LOOK_N is the axes' sizes (profile.js).
-function botLook(id) {
-  const look = {}, N = PROFILE.LOOK_N;
-  let k = 0;
-  for (const ax in N) look[ax] = Math.floor(hash2(id * 41 + 11 + k++ * 7, 123) * N[ax]) % N[ax];
-  return look;
-}
-// The local player wears the ACTIVE CHARACTER: its name, its look, and its
-// class (fixed at creation - js/app/profile.js), whose loadout comes with it.
-// Called from initPlayers and whenever the roster's active slot changes
-// (the character screens, js/ui/chars.js; the lobby's slot strip). It
-// takes the player to dress so that a lobby can dress a REMOTE human's body
-// the same way from a spec of its own, but the profile's character is only
-// ever this screen's.
-function applyCharacter(p) {
-  p = p || player;
-  const c = PROFILE.char();
-  p.name = c ? c.name : PROFILE.name();
-  p.look = c ? c.look : botLook(0);
-  setClass(p, c ? c.cls : 0);
+// The local player wears the PROFILE: its name, and the hero it last locked
+// in (js/app/profile.js), whose look and loadout come with it. Called from
+// initPlayers; the hero row (js/ui/chars.js) re-picks through setClass.
+function applyProfile() {
+  player.name = PROFILE.name();
+  setClass(player, PROFILE.hero());
 }
 // Five players share each team colour, so text that names one player (the
 // scoreboard, the event log) also needs a per-player shade of that team's
@@ -528,10 +527,10 @@ class Player {
     this.botId = null;                  // an 'ai' seat's bot FILE (BOT_LIB, js/ai/bot-api.js); null = the built-in brain
     // the local player wears the profile's display name; every other player is
     // named off its team - live, through the `name` getter below, so the name
-    // follows the paint (skin) when the team-colour setting flips. Which
-    // character the local player IS (name, look, class) is applyCharacter().
+    // follows the paint (skin) when the team-colour setting flips. Who the
+    // local player IS (name, hero) is applyProfile().
     this._name = control === 'human' ? PROFILE.name() : null; // a remote human is named by the roster
-    this.look = botLook(id);            // the face on the class body ({ sex, tone, hair, hairCol, beard, face }, profile.js LOOK_N)
+    this.look = Object.assign({}, CLASSES[0].look); // the hero's face, set again by every setClass
     this.spawn = { tx: WORLD >> 1, ty: WORLD >> 1 }; // landing tile once the eagle drops this player (the bot brain's "home")
     this.inv = { gold: 0 };             // the wallet is currency only - carried goods are in the bag
     this.bagCap = BAG_CAP;              // slots; one starting backpack
@@ -619,7 +618,7 @@ class Player {
     this.reset(true);
   }
   get active() { return this.control !== 'none'; }
-  // a named player (the human, via applyCharacter) keeps its name; every other
+  // a named player (the human, via applyProfile) keeps its name; every other
   // player is called after the colour it is WEARING right now
   get name() { return this._name !== null ? this._name : TEAMS[skin(this.team)].name + '-' + (this.id + 1); }
   set name(v) { this._name = v; }
@@ -752,13 +751,12 @@ function initPlayers(roster, local) {
   for (const p of players) {
     const r = roster[p.id];
     if (r.name != null) p.name = r.name;
-    if (r.look) p.look = r.look;
     if (r.cls != null) setClass(p, r.cls);
   }
   localId = local;
   player = players[local];
   inv = player.inv;
-  applyCharacter(); // the local player is whoever the profile has active
+  applyProfile(); // the local player is the profile: its name and its last hero
 }
 
 // who p is allowed to shoot: another live player on another team (this is the
@@ -996,7 +994,7 @@ function die(p, src, cause) {
     killer.bestMulti = Math.max(killer.bestMulti, killer.multiN);
     if (killer.control === 'ai') aiDowned(killer, p); // a bot remembers who it keeps downing (the grudge, js/ai/ai-team.js)
     if (!killer.dead) awardGold(killer, KILL_BOUNTY, killer.x, killer.y); // the bounty, not the victim's purse
-    if (killer === player && !PRACTICE) PROFILE.addKill(); // the character's lifetime count
+    if (killer === player && !PRACTICE) PROFILE.addKill(); // the profile's lifetime count
     // BLOODLUST/VAMPIRE: a flat heal on a confirmed kill, the one card
     // effect that isn't a plain kitOf() field - mirrors eatBerry's heal
     if (killer.kit.killHeal > 0 && killer.hp < killer.maxHp) {
