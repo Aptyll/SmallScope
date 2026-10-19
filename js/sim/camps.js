@@ -43,7 +43,7 @@
 //               down, and stops at the water to fish (riverPath; the walk,
 //               updateCampMonster, wildlife.js)
 //
-// resource: the pack - gold per head, the biggest steady payout on the map
+// resource: the pack - gold per head, the jungle's farm (each wolf a FARM, js/sim/farm.js)
 // buff:     the black bear - the brown bear's match, paid as it is (MONSTER's teamPay, wildlife.js);
 //           it walks BLUE's bank of the downstream bend
 // epic:     the brown bear - the whole team is paid and given the BROWN BUFF for the kill;
@@ -63,7 +63,7 @@ const CAMPS = {
     name: 'WOLF DEN', tag: 'THE PACK PAYS IN GOLD',
     r: 5, mark: '#d8c0c4',
     icon: [[2, 3, 3, 3], [1, 4, 5, 2], [0, 1, 1, 2], [2, 0, 1, 2], [4, 0, 1, 2], [6, 1, 1, 2]], // paw print
-    kind: 'wolf', pop: 4, repop: 60,
+    kind: 'wolf', pop: 4, repop: 75, // about one lap of a side's two dens: a jungle route on the clock
     props: [[0, 0, 'den']],
     spots: [[-2, -1], [2, -1], [-2, 2], [2, 2]],
   },
@@ -280,7 +280,7 @@ function placeCamps() {
     }
     for (const [dx, dy, type, variant] of spec.props) {
       const extra = type === 'deadTree' ? { hp: 3, variant } : type === 'chest' ? { hp: 1 } : type === 'snowdrop' ? { variant, readyAt: 0 } : {};
-      if (dx === 0 && dy === 0) extra.site = C; // the anchor knows its camp: a hover reads the clock off it (drawCampClock)
+      if (dx === 0 && dy === 0) extra.site = C; // the anchor knows its camp: its clock is drawn off it (drawCampClock)
       const o = placeObj(C.tx + dx, C.ty + dy, type, extra);
       // a prop bigger than a tile (OBJECTS' w, h) fills the rest with parts, as a
       // building does: east of the anchor, and north of it, so the anchor stays
@@ -340,8 +340,8 @@ function campAt(x, y) {
 // it holds the clock at the top - a camp is cleared or it is not, and a
 // half-killed pack never trickles back; cleared, it counts down; and due, it
 // holds at zero for as long as someone is standing in the site (CAMP_HOLD
-// px), then the whole camp is back at once. The anchor prop wears the count
-// under the pointer (drawCampClock, draw-world.js).
+// px), then the whole camp is back at once. A cleared camp wears its seconds
+// on its anchor prop and on both maps (drawCampClock, js/draw/marks.js).
 const CAMP_HOLD = 96;
 function updateCamps(dt) {
   for (const C of camps) {

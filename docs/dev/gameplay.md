@@ -1867,7 +1867,7 @@ still load. All three run
 
 | Kind | hp (+ a level) | bite (+ a level) | reach / cd / spd | body | kill |
 | --- | --- | --- | --- | --- | --- |
-| wolf | 30 (+3) | 9 (+1) | 13 px / 1 s / 96 | r 4.5, mass 2, a roll passes through | `YIELD.wolf` 24 |
+| wolf | 30 (+3) | 9 (+1) | 13 px / 1 s / 96 | r 4.5, mass 2, a roll passes through | `YIELD.wolf` 16, a FARM |
 | alpha (black bear) | 640 (+50) | 22 (+3) | 44 px / 1.4 s / 100 | r 18, mass 5, a big body a roll **tackles** | `YIELD.alpha` 90, `EPIC_TEAM_GOLD` (40) to every teammate on the ground, the BLACK BUFF for the whole team, a feed line |
 | dire (brown bear) | 640 (+50) | 22 (+3) | 44 px / 1.4 s / 100 | r 18, mass 5, a big body a roll **tackles** | `YIELD.dire` 90, `EPIC_TEAM_GOLD` (40) to every teammate on the ground, the BROWN BUFF for the whole team, a feed line |
 
@@ -1978,7 +1978,7 @@ rather than a different resource (the League model: one number, many ways to ear
 | rock | its kind's `gold` (`ROCK_KINDS`, js/sim/mining.js): STONE 3, FROSTGLASS SPIRE 8, SUNSTONE 20 | 2 / 3 / 4 s of standing by it, paid with **ore** besides and a roll at a find; it regrows ([Mining a rock](#mining-a-rock)) |
 | rabbit | `rabbit` 2 coins × 5 → 10 | bolts when approached; jinks one shot per 10 s |
 | deer | `deer` 3 coins × 6 → 18 | the big mobile target: two of them, each running its side's line |
-| wolf | `wolf` 3 coins × 8 → 24 | a den's four; neutral until hit, and then the pack bites back |
+| wolf | `wolf` 2 coins × 8 → 16 | a den's four (64), each a FARM ([Farming](#farming)); neutral until hit, and then the pack bites back |
 | black bear | `alpha` 6 coins × 15 → 90 | BLUE's river camp's one; `EPIC_TEAM_GOLD` (40) to every teammate besides, and the BLACK BUFF for the whole team |
 | brown bear | `dire` 6 coins × 15 → 90 | RED's river camp's one; `EPIC_TEAM_GOLD` (40) to every teammate besides, and the BROWN BUFF for the whole team |
 | bird | `bird` 2 coins × 4 → 8 | dormant: nothing spawns one |
@@ -3049,11 +3049,30 @@ is the stalemate a player breaks by walking out. It takes every hit, state and s
 other body (`bot: true` is what `isAnimalUnit` reads to send a blow down the robot path rather
 than the animal one — a soldier carries a `kind` too), the roosting bird's **gust** rears at it
 and buffets it like a player (`updateEagle`/`eagleGust`), a turret marks it, and it dies through
-`robotDies` carrying a `SOLDIER_BOUNTY` (4 gold, through `awardGold`) for whoever scraps it and
+`robotDies` paying its bounty to the rival who lands the **last hit** ([Farming](#farming)) and
 `SOLDIER_XP` (20) shared by every rival scout standing near, whoever scrapped it
-([Hero levels](multiplayer.md#hero-levels)) — no feed line, three a wave. The cap on a barracks' live soldiers is
+([Hero levels](multiplayer.md#hero-levels)) — no feed line, three a wave. Its health is `STRUCTS.barracks` `botHp` (60) plus `SOLDIER_HP_GROW`
+(10) for every `grow` the match has run (`makeSoldier`), so a hero's grown blow never makes every
+hit a last hit. The cap on a barracks' live soldiers is
 `STRUCTS.barracks.tiers[0].cap`. Bots read them as attackers at their bird and as targets in
 sight, and a pusher walks with its own column ([multiplayer.md](multiplayer.md#bots)).
+
+
+### Farming
+
+js/sim/farm.js. League's last hit: a rival soldier pays **only** the rival who lands its final
+blow — `soldierBounty()`, `SOLDIER_BOUNTY` (16) plus `SOLDIER_BOUNTY_GROW` (1) for every barracks
+`grow` (180 s) the match has run, paid by `robotDies` through `awardGold` — and a camp monster
+(`a.home`: the wolves and the bears) pays its killer as ever (`animalDies`). Each is one **farm**
+(`farmHit`: `p.farm`, in `PLAYER_RECORD`), which the scoreboard's FARM column and the post-game
+COMBAT group's FARM row print. A soldier the waves, a turret or a beast finish pays nobody: the
+**miss**. Both make a **coin pop** (`coinPop`, recorded as the `coin` event for the screens that
+do not run the step, aged by `state.tick`): a gold coin that hops and spins off a last hit, and a
+grey one that drops and fades where a miss fell, drawn only for the side that missed it and only
+within `COIN_MISS_R` of the watched body (`drawPops`, js/draw/pops.js). A rival's gold coin in
+the fog is not drawn. The wolf den is the jungle: four wolves at 16 each and back `repop` (75 s)
+after the last dies, its clock on the den and on both maps ([world.md](world.md#runtime)).
+Bots farm through two roles, the LANER and the JUNGLER ([multiplayer.md](multiplayer.md#bots)).
 
 ### The merchant
 
@@ -3302,8 +3321,8 @@ before it clears the streak, and `payTakedown` pays:
 - gold goes only to the living, as a kill always has; a dead killer still takes the credit.
 
 **Worth** is `killBounty()`: `KILL_SOLDIERS` (3) scrapped soldiers' `SOLDIER_BOUNTY`
-(js/sim/robots.js, read at the kill, so retuning a last hit moves the kill with it; 12 gold at a
-4-gold soldier), shrunk by `FEED_STEP` (20%) per death past `FEED_FROM` (2) the victim has died
+(js/sim/farm.js, read at the kill, so retuning a last hit moves the kill with it; 48 gold at a
+16-gold soldier, the base pay, not the one that grows with the clock), shrunk by `FEED_STEP` (20%) per death past `FEED_FROM` (2) the victim has died
 without a kill or assist (`p.feed`, reset by either), to a floor of `FEED_FLOOR` (a third): so feeding
 never funds the other side. **Bounty** grows from a streak of `BOUNTY_FROM` (2) by `BOUNTY_STEP`
 (1 soldier) a kill to `BOUNTY_MAX` (5 soldiers); the killer cashes it as a **SHUTDOWN** (the log says SHUT DOWN,

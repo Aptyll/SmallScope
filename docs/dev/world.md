@@ -924,11 +924,12 @@ enough to be shown: a camp with anything alive in it holds the clock at `repop` 
 pack never trickles back; cleared, it counts down; and due, it **holds at zero** for as long as
 any player is within `CAMP_HOLD` (96 px) — clearing a camp is a real reward for a while and it
 still grows back, the moment the intruder leaves — then every slot is refilled at once. **The
-anchor prop wears the clock** (a river camp has no anchor, so the bears' clock is not shown in the world): `drawCampClock` (js/draw/marks.js) draws the neutral unit bar over
-a hovered den mouth, the picked bush's own read
-([rendering.md](rendering.md#render-pass-order)), filling toward the camp's return while it is
-empty and nothing at all while anything in it lives; a full bar holding is a camp that is due
-and waiting for you to go.
+anchor prop wears the clock** (a river camp has no anchor, so the bears' clock is not shown in the world): `drawCampClock` (js/draw/marks.js) prints the seconds left over
+the den mouth at all times while the camp is cleared, and `drawCampMark` greys the camp's glyph
+on both maps with the same seconds under it, so a jungle route can be walked on the clock. A camp
+with anything alive in it wears none, and neither does one that is due and waiting for you to go.
+Under the fog a side knows a clock only while it sees the camp (`campClockSeen`): out of sight it
+counts the last clock it saw down, and a camp cleared unseen shows none.
 
 `DBG` exposes `camps`, `CAMPS`, `CAMP_SITES`, `campSites`, `campTile`, `campAt`, `stockCamps`,
 `campBuff` and `warp(tx, ty, p?)` — warping a player beside a site is how to stage one (never
