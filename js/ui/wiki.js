@@ -14,17 +14,16 @@
 // table row, a world entry) for a content width, each with a fixed height, so the layout, the draw, the hit
 // test and the scroll bound all read one list and a new page is one table
 // entry and one builder, never new plumbing. Nothing here is bought, unlocked
-// or researched. The ARSENAL page is what the tech tree was for: every kind
-// in a table with its numbers written down, tools then bits then modifiers,
-// worn to gilded, every one of them droppable from the first match (LOOT_POOL
-// is built off the tier alone); a hover still raises the full card in the
-// tooltip. The BEASTS page is the meadow's two kinds and the camps' three - each drawn wearing
+// or researched. The ITEMS page is the merchant's catalogue written down:
+// the parts, then the finished items, each with its price, its stats and its
+// passive, read off BUILD_ITEMS (js/sim/items.js); a hover raises the same
+// card the shop shows (tipItem). The BEASTS page is the meadow's two kinds and the camps' three - each drawn wearing
 // the frame it wears in the snow - and what a level does to their health
 // and to the gold and XP a kill pays, at levels 1, 6 and 12, read off the same
 // constants the sim spends (ANIMAL_HP, ANIMAL_LV_HP, YIELD, ANIMAL_LV_GOLD, ANIMAL_LV_XP,
 // js/sim/wildlife.js and js/sim/core.js), so the page can never disagree with the
 // game. The CLASSES page is the two classes as the lobby reads them -
-// body, pitch, health and the four stat pips - and their eight abilities
+// body, pitch and level 1 stats - and their eight abilities
 // with the cooldown, the cast and what each does, off CLASS_AB itself. The
 // WORLD page is the one with no numbers on it: the valley written down - the
 // snow, what is under it, the one law, and who is on it - each entry a figure
@@ -59,32 +58,24 @@ function wikiBeastGold(kind, lv) { const y = YIELD[kind]; return Math.round(y.co
 // ...and its XP, the whole of it before the side standing near shares it (shareXp); 0 for a kind worth none
 function wikiBeastXp(kind, lv) { const y = YIELD[kind]; return y && y.xp ? Math.round(y.xp * (1 + ANIMAL_LV_XP * (lv - 1))) : 0; }
 
-// the arsenal tables: one column set per kind of thing, each column a label,
-// a width and how to read the number off the kind's own record
-const WIKI_TOOL_COLS = [
-  { label: 'RATE', w: 30, get: (id) => tipSec(TOOLS[id].rof * TOOL_ROF_STEP) },
-  { label: 'SLOTS', w: 28, get: (id) => String(TOOLS[id].cap) },
-  { label: 'TENSILE', w: 34, get: (id) => String(TOOLS[id].tensile), col: '#f2cc6a' },
-];
-const WIKI_BIT_COLS = [
-  { label: 'DMG', w: 22, get: (id) => String(BITS[id].dmg), col: '#e0637a' },
-  { label: 'WT', w: 18, get: (id) => String(BITS[id].weight), col: '#f2cc6a' },
-  { label: 'SPD', w: 22, get: (id) => String(BITS[id].speed) },
-  { label: 'LIFE', w: 30, get: (id) => tipSec(BITS[id].life) },
-  { label: 'FLIGHT', w: 44, get: (id) => TIP_PATH[BITS[id].path] || BITS[id].path, colOf: (id) => BITS[id].col },
-];
-const WIKI_MOD_COLS = [
-  { label: 'WT', w: 18, get: (id) => String(BITS[id].weight), col: '#f2cc6a' },
-  { label: 'EFFECT', w: 162, get: (id) => BITS[id].blurb.split('. ')[0].replace(/\.$/, ''), col: TIP_DIM },
+// the items table: each column a label, a width and how to read it off the
+// item's own BUILD_ITEMS record. STATS is the shop's own wording (ITEM_STATS).
+function wikiItemStats(id) {
+  const st = BUILD_ITEMS[id].stats;
+  return ITEM_STAT_ORDER.filter((k) => st[k]).map((k) => ITEM_STATS[k].fmt(st[k]) + ' ' + ITEM_STATS[k].label).join('  ');
+}
+const WIKI_ITEM_COLS = [
+  { label: 'STATS', w: 150, get: wikiItemStats, col: '#f4f7ff' },
+  { label: 'PASSIVE', w: 52, get: (id) => BUILD_ITEMS[id].passive ? ITEM_PASSIVES[BUILD_ITEMS[id].passive].name : '', col: '#9fd6a0' },
+  { label: 'PRICE', w: 30, get: (id) => String(BUILD_ITEMS[id].price), col: RES_COLORS.gold },
 ];
 // the classes page: an ability row's two numbers (the tooltip's own rows,
-// tipClassAb), and the four stats a class card shows as pips - the kit's
-// numbers behind each are in CLASSES, player.js
+// tipClassAb), and the stats a class card shows at level 1 (WIKI_STATS)
 const WIKI_AB_COLS = [
   { label: 'COOLDOWN', w: 40, get: (ab) => tipSec(ab.cd) },
   { label: 'CAST', w: 32, get: (ab) => tipSec(ab.cast) },
 ];
-const WIKI_STATS = [['ICE', 'ice'], ['DRAW', 'draw'], ['POWER', 'power'], ['TOUGH', 'tough']];
+const WIKI_STATS = ['hp', 'dmg', 'as', 'armor', 'ms']; // the class card's rows: its level 1 numbers (STATS, js/sim/stats.js)
 // a sentence broken into lines no wider than maxW, on word boundaries
 function wikiWrap(text, maxW) {
   const lines = [];
@@ -95,12 +86,6 @@ function wikiWrap(text, maxW) {
   }
   if (line) lines.push(line);
   return lines;
-}
-// every kind of one sort, worn to gilded, in the order the TECH table names them
-function wikiKinds(sort) {
-  const ids = TECH.map((n) => n.id).filter((id) => sort === 'tool' ? !!toolIdOf(id)
-    : sort === 'bit' ? !!bitIdOf(id) && BITS[bitIdOf(id)].proj : !!bitIdOf(id) && !BITS[bitIdOf(id)].proj);
-  return ids.sort((p, q) => itemTier(p) - itemTier(q));
 }
 
 // the world page: the setting, in the order a scout meets it. An entry is a
@@ -117,7 +102,7 @@ const WIKI_WORLD = [
   { name: 'SOFTFALL', fig: () => [SPRITES.tree[0]],
     text: 'THE SNOW CAME DOWN SOFT AND DID NOT STOP, AND THE VALLEY\'S OLD WORKS WENT UNDER WHOLE. IT STILL FALLS EVERY WINTER, AND THE VALLEY COMES OUT FROM UNDER IT A DIFFERENT SHAPE EACH TIME. NO MAP OF SOFTFALL IS GOOD FOR TWO WINTERS.' },
   { name: 'THE WORKS', fig: () => [SPRITES.rock[0], SPRITES.crate],
-    text: 'NOBODY ALIVE SAW THE WORKS RUNNING. THE PINES GREW UP THROUGH THEM AND THE ROCKS ARE THEIR RUBBLE, SO THERE IS GOLD IN BOTH, AND NOW AND THEN A TOOL. THE TREELINE KEEPS THE CRATES THAT NEVER SHIPPED. BREAK IT OPEN AND IT IS YOURS.' },
+    text: 'NOBODY ALIVE SAW THE WORKS RUNNING. THE PINES GREW UP THROUGH THEM AND THE ROCKS ARE THEIR RUBBLE, SO THERE IS GOLD IN BOTH. THE TREELINE KEEPS THE CRATES THAT NEVER SHIPPED. BREAK IT OPEN AND IT IS YOURS.' },
   { name: 'THE CLAIM', fig: () => [SPRITES.champ[0][skin(player.team)].right[0], SPRITES.champ[1][skin(1 - player.team)].left[0]],
     text: 'VALLEY LAW IS ONE LINE LONG: A CLAIM STANDS WHILE ITS BIRD HOLDS ITS ROOST. SO NOBODY COMES TO SOFTFALL TO KILL ANYBODY. SCARE THE OTHER COMPANY\'S BIRD OFF ITS GROUND AND THE WHOLE VALLEY IS YOURS UNTIL THE NEXT SNOW.' },
   { name: 'THE EAGLES', air: true, fig: () => [SPRITES.perch.figure(BIRD_SKINS[0].id, skin(player.team))],
@@ -165,14 +150,14 @@ const WIKI_PAGES = [
     }
     return b;
   } },
-  { id: 'arsenal', label: 'ARSENAL', build() {
+  { id: 'items', label: 'ITEMS', build() {
     const b = [];
-    b.push({ kind: 'line', h: 9, text: 'EVERY TOOL AND EVERY BIT DROPS FOR EVERYBODY FROM THE FIRST MATCH. NOTHING IS RESEARCHED.', col: '#cfe0ff' });
-    b.push({ kind: 'line', h: 9, text: 'ONE CLICK FIRES EVERY SHOT LOADED, AND EVERY MODIFIER SHAPES EVERY SHOT.', col: TIP_DIM });
-    for (const [title, sort, cols] of [['TOOLS', 'tool', WIKI_TOOL_COLS], ['BITS', 'bit', WIKI_BIT_COLS], ['MODIFIERS', 'mod', WIKI_MOD_COLS]]) {
+    b.push({ kind: 'line', h: 9, text: 'SIX SLOTS. EVERY ITEM IS ON SALE AT EITHER COUNTER, ALWAYS AT ONE PRICE.', col: '#cfe0ff' });
+    b.push({ kind: 'line', h: 9, text: 'A FINISHED ITEM COSTS LESS FOR EVERY PART OF IT YOU ALREADY HOLD.', col: TIP_DIM });
+    for (const [title, ids] of [['PARTS', ITEM_PARTS], ['FINISHED', ITEM_DONE]]) {
       b.push({ kind: 'gap', h: 4 });
-      b.push({ kind: 'head', h: 12, text: title, cols });
-      for (const id of wikiKinds(sort)) b.push({ kind: 'row', h: 14, id, cols });
+      b.push({ kind: 'head', h: 12, text: title, cols: WIKI_ITEM_COLS });
+      for (const id of ids) b.push({ kind: 'row', h: 14, id, cols: WIKI_ITEM_COLS });
     }
     return b;
   } },
@@ -349,33 +334,25 @@ function drawWikiRail(L) {
   ctx.fillStyle = '#ffd95c'; ctx.fillRect(thumb.x, thumb.y, thumb.w, 1); ctx.fillRect(thumb.x, thumb.y, 1, thumb.h);
   ctx.fillStyle = '#8a6a2a'; ctx.fillRect(thumb.x, thumb.y + thumb.h - 1, thumb.w, 1); ctx.fillRect(thumb.x + thumb.w - 1, thumb.y, 1, thumb.h);
 }
-// one arsenal row: the kind's icon on its own tier plate - lit the way a bag
-// cell lights, rimmed and lifted under the pointer, the blue pip for "you have
-// held one" - its name in the tier's ink, and its numbers in the columns
-function drawWikiRow(r, L, hot, now) {
+// one item row: the item's icon in a well rimmed the way the shop rims it
+// (part or finished), its name, and its numbers in the columns
+function drawWikiRow(r, L, hot) {
   const id = r.bl.id, y = r.y - L.scroll;
   const n = { x: L.left, y: y + (hot ? 0 : 1), w: 12, h: 12 };
-  const tp = tierPlate(id, hot);
-  ctx.fillStyle = tp.rim; ctx.fillRect(n.x, n.y, n.w, n.h);
-  ctx.fillStyle = tp.plate; ctx.fillRect(n.x + 1, n.y + 1, n.w - 2, n.h - 2);
-  modPlate(id, n, n.y);
-  const im = SPRITES[ITEMS[id].icon];
-  ctx.drawImage(im, n.x + ((n.w - im.width) >> 1), n.y + ((n.h - im.height) >> 1));
-  if (PROFILE.techSeen(id)) { ctx.fillStyle = '#8fd8ff'; ctx.fillRect(n.x + 1, n.y + 1, 2, 2); }
-  const tool = toolIdOf(id), bit = bitIdOf(id);
-  const name = tool ? TOOLS[tool].name : BITS[bit].name;
-  const ink = TOOL_TIERS[itemTier(id)].ink;
+  ctx.fillStyle = hot ? '#ffffff' : TOOL_TIERS[isPart(id) ? 0 : 2].rim; ctx.fillRect(n.x, n.y, n.w, n.h);
+  ctx.fillStyle = '#080b1c'; ctx.fillRect(n.x + 1, n.y + 1, n.w - 2, n.h - 2);
+  shopIcon(itemIcon(id), { x: n.x + 1, y: n.y + 1, w: n.w - 2 + 4, h: n.h - 2 + 4 });
+  const name = BUILD_ITEMS[id].name;
   const nx = L.left + 17, ty = y + 4;
-  drawPixelTextShadow(ctx, name, nx, ty, hot ? '#ffffff' : ink, '#0a0e23');
+  drawPixelTextShadow(ctx, name, nx, ty, hot ? '#ffffff' : '#cfe0ff', '#0a0e23');
   // the columns, right to left off the content's right margin, each value
   // right-aligned under its head; a dotted leader ties the name to the first
   let rx = L.right;
   let firstX = rx;
   for (let i = r.bl.cols.length - 1; i >= 0; i--) {
-    const c = r.bl.cols[i], key = tool || bit;
-    const v = c.get(key), vw = pixelTextWidth(v);
-    drawPixelTextShadow(ctx, v, rx - vw, ty, c.colOf ? c.colOf(key) : c.col || '#f4f7ff', '#0a0e23');
-    firstX = rx - vw;
+    const c = r.bl.cols[i];
+    const v = c.get(id), vw = pixelTextWidth(v);
+    if (v) { drawPixelTextShadow(ctx, v, rx - vw, ty, c.col, '#0a0e23'); firstX = rx - vw; }
     rx -= c.w;
   }
   ctx.fillStyle = '#2c3560';
@@ -418,11 +395,11 @@ function renderWiki(now, a) {
       }
       ctx.fillStyle = '#2c3a68';
       ctx.fillRect(L.left, y + 10, L.right - L.left, 1);
-    } else if (bl.kind === 'row') drawWikiRow(r, L, hit && hit.kind === 'row' && hit.id === bl.id, now);
+    } else if (bl.kind === 'row') drawWikiRow(r, L, hit && hit.kind === 'row' && hit.id === bl.id);
     else if (bl.kind === 'cls') {
       // a class card: the body at 3x on the left (the side you play in), its
-      // name and role, the three lines of its pitch, and on the right the
-      // ledger the lobby reads - health, then the four stats as pips
+      // name and role, the three lines of its pitch, and on the right its
+      // stats at level 1
       const c = CLASSES[bl.cls];
       const spr = SPRITES.champ[bl.cls][skin(player.team)].down[0];
       ctx.drawImage(spr, L.left, y + 2, 48, 48);
@@ -430,16 +407,12 @@ function renderWiki(now, a) {
       drawPixelTextShadow(ctx, c.name, tx, y + 4, '#ffd95c', '#0a0e23');
       drawPixelTextShadow(ctx, c.role, tx + pixelTextWidth(c.name) + 7, y + 4, TIP_LABEL, '#0a0e23');
       c.blurb.forEach((t, k) => drawPixelTextShadow(ctx, t, tx, y + 14 + k * 8, k ? TIP_DIM : '#cfe0ff', '#0a0e23'));
-      const px0 = L.right - 19, lx = px0 - 5;
-      let ry = y + 4;
-      drawPixelTextShadow(ctx, 'HEALTH', lx - pixelTextWidth('HEALTH'), ry, TIP_LABEL, '#0a0e23');
-      const hp = String(c.kit.maxHp);
-      drawPixelTextShadow(ctx, hp, L.right - pixelTextWidth(hp), ry, '#f4f7ff', '#0a0e23');
-      for (const [label, key] of WIKI_STATS) {
-        ry += 8;
-        drawPixelTextShadow(ctx, label, lx - pixelTextWidth(label), ry, TIP_LABEL, '#0a0e23');
-        for (let k = 0; k < 5; k++) { ctx.fillStyle = k < c.stats[key] ? '#ffd95c' : '#2c3560'; ctx.fillRect(px0 + k * 4, ry + 1, 3, 3); }
-      }
+      const lx = L.right - 24;
+      WIKI_STATS.forEach((key, k) => {
+        const s = STATS.find((q) => q.key === key), ry = y + 4 + k * 8, v = s.fmt(statFrom(bl.cls, 1, null, key));
+        drawPixelTextShadow(ctx, s.name, lx - pixelTextWidth(s.name), ry, TIP_LABEL, '#0a0e23');
+        drawPixelTextShadow(ctx, v, L.right - pixelTextWidth(v), ry, '#f4f7ff', '#0a0e23');
+      });
     } else if (bl.kind === 'ab') {
       // an ability: its key on a plate, its icon in a well (the strip's
       // own), its name, the two numbers in the columns, and what it does

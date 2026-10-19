@@ -327,7 +327,7 @@ keeps them marked down, so the START that opened the slab does not close it (`pa
 While the pad owns the pointer `mouse.inside` is held true, so a mouse parked off the window
 never hides the pad's hand. `padActive()` — plugged in and touched within `PAD_IDLE` — is what
 the CONTROLS page reads, and what every **keybind indicator** reads: while it is true the HOP
-OFF cap, the work prompts, the strip's 1-4 and Q/F, the SHIFT plate, the flight HUD's two and
+OFF cap, the work prompts, the strip's 1-4 and Q/F, the flight HUD's two and
 the ESC BACK / CLOSE line under a slab all wear the pad's button instead of the key
 (`PAD_BIND`, keyed by action → `drawPadBind` / `drawBackHint`, js/ui/wheel.js; `drawDropBind`, eagle.js) —
 a change in `PAD_PLAY` is a row there.
@@ -346,11 +346,13 @@ on class or gear change — never per frame). The kit fields: `iceMax` (× `ICE_
 `nock` (the baseline every rate of fire is scaled against — a tool's own `rof` is multiplied by
 `nock / BOW_NOCK`, so a class's hands still set the rhythm; see
 [the cycle](gameplay.md#the-cycle)),
-`dmgBase`/`dmgPow` (what the *player* adds to the bit's own damage), `spdDmg` (extra damage scaled
-by the shooter's speed at release, capped at 200 px/s), `dodgeSpeed`, `maxHp`. Sites that read it:
-`updatePlayer`'s movement block, `emitBit`, `tryDodge`, the AI's draw timing, the cursor,
-aim line and draw meter. `setClass(p, c)` swaps one in (full heal — it's a pre-match choice);
-`p.maxHp` is always `levelMaxHp(p)` = kit hp + the level growth below.
+`spdDmg` (extra damage scaled by the shooter's speed at release, capped at 200 px/s),
+`dodgeSpeed`, plus `cls` (whose kit) and `add`, the bag of [hero stat](gameplay.md#hero-stats)
+bonuses gear and cards write. Sites that read it: `updatePlayer`'s movement block, `emitBit`,
+`tryDodge`, the AI's draw timing, the cursor, aim line and draw meter. The seven hero stats
+themselves (health, damage, attack speed, armor, ability power, cooldown speed, move speed) are
+read through `statOf(p, key)` (js/sim/stats.js), never off the kit. `setClass(p, c)` swaps one in
+(full heal — it's a pre-match choice); `p.maxHp` is always `levelMaxHp(p)` = `statOf(p, 'hp')`.
 
 | # | Name | Fantasy | Kit | Flies in with |
 | --- | --- | --- | --- | --- |
@@ -370,7 +372,7 @@ one does, its cooldown, cast, and the states it leaves on a body — are
 The local player's class is its **hero, picked each match** on the lobby's hero row
 ([lobby](rendering.md#lobby), js/ui/heroes.js); the one locked in is kept as the profile's
 hero (js/app/profile.js), where the next pick opens. Bots hash theirs — hero (and with it its look), all four gear
-variants **and** their stat points — from the seed in `initPlayers()` so a replayed world fields the same roster in the
+variants — from the seed in `initPlayers()` so a replayed world fields the same roster in the
 same loadouts. Lobby shows that roster as two team panels on the screen's edges — your side left, the
 rivals right, their picks face-down until LOCK IN's countdown turns them (a second press skips
 the rest of the count) — and the target at the top, whose pop-up's four plates
@@ -414,15 +416,13 @@ the match's gold earned, which is what the scoreboard ranks by and the post-game
 It no longer levels anyone. A sale at the counter pays through `tradeGold`, which counts as
 neither.
 
-Growth is flat and identical for both classes: each level past 1 adds `LVL_HP` (9) to
-`maxHp` (via `levelMaxHp(p)`, healed on the spot) and `LVL_DMG` (2) to every arrow
-(`emitBit` adds it after the bit's base + pow × draw + speed bonus). Level 12 is +99 hp / +22
-damage. A level-up pushes a 2× gold `LEVEL n` floater over the slot (skipped while `inAir`) and
+Growth is the hero's own: each level past 1 adds its `CLASSES[c].grow` to the
+[hero stats](gameplay.md#hero-stats) (HUNTER +10 hp, +2 damage, +2% attack speed, +3 armor;
+WARRIOR +14, +2.5, +1.5%, +4), the health healed on the spot in `levelUp`. A level-up pushes a 2× gold `LEVEL n` floater over the slot (skipped while `inAir`) and
 raises its cue through `sfxOwn(p, 'levelUp', 'pickup')` — the level's own ring on the screen that
 is that player, a pickup to bystanders in earshot. What the level BOUGHT flies into the notice
-lane as the [stat sheet](rendering.md#the-stat-ledger-your-sheet-as-a-notice), its HEALTH and
-DAMAGE rows lit with `+LVL_HP` and `+LVL_DMG` — which is why those two `GEAR_STATS` rows fold the
-level in themselves: the kit never holds it.
+lane as the [stat sheet](rendering.md#the-stat-ledger-your-sheet-as-a-notice), the rows it grew
+lit — `STAT_ROWS` read `statFrom` with the player's level, since the kit never holds it.
 The table's **average** level is also what the
 wildlife wears (`animalLevel`, js/sim/wildlife.js): dealt at spawn and followed after by every
 unhurt animal that hunts nobody (`relevelAnimal`) —
@@ -759,7 +759,16 @@ Three small rules, and the teamwork is what they add up to:
   which the push and guard gates below read. From `AI_SCOUT_AT` (45 s) one bot
   SCOUTs (walks the middle and the far road short of the rival lane), from `AI_STALK_AT`
   (90 s) one STALKs (a mood with `stalk`), and a strong side sends three SLAYERs to its bear,
-  below. The rest are GATHERERs: the ladder as it always was.
+  below. Before the scout and the stalker the side's free hands **farm** (js/ai/ai-farm.js):
+  `AI_JUNGLE_N` (2) JUNGLERs walk the side's own wolf dens on their clocks (`aiDenSpot`: a den
+  with its pack up is walked to and hunted by rung 6; a cleared one is waited on just outside
+  `CAMP_HOLD`, set off `AI_DEN_EARLY` before it is due, and worked away from until then), and
+  `AI_LANE_N` (3) LANERs stand `AI_FARM_BACK` behind their own soldier nearest a clash
+  (`aiLaneSpot`) and pick the lowest-health rival soldier in sight. Any bot on a rival soldier its
+  own wave is wearing down **holds its draw for the last hit** (`aiFarmFire` on rung 3's trigger):
+  it waits at `AI_FARM_STAND` and lets go once the soldier, less the swings its wave lands while
+  the blow travels, is within its hardest recent blow (`ai.farmHit`, learned in `hurtRobot`). The
+  rest are GATHERERs: the ladder as it always was.
 - **Memory.** Every rival a bot notices (through `seenAt`) goes on the side's board
   (`aiLook` → `T.seen`, kept up to `AI_SEEN_T`, trusted for the profile's `memory`). A bot
   hurt under 60% or outnumbered in a fight **calls** (`aiCall`); a hurt human with a rival on
@@ -984,7 +993,9 @@ The ladder:
    build ([`BOT_BUILDS`](gameplay.md#buying-and-selling)) at whichever counter it is standing at, a part or the whole
    item, through the same `input.cmd` a human's click sends, and when its purse covers the next
    whole item and it is out of a fight it walks to its own side's counter if that is within
-   `AI_SHOP_DETOUR` (12 tiles), which ends its ladder for that think. Then income, bought by payback (`aiEcoBuy`,
+   `AI_SHOP_DETOUR` (32 tiles; farther out it recalls, `aiRecall`), which ends its ladder for that think. With the slots full it sells
+   a stray part at the counter (`botStrayPart`: one no item left on its list is built from, a
+   chest's gift usually), and a stray it could sell counts as room for the walk. Then income, bought by payback (`aiEcoBuy`,
    js/ai/ai-team.js): a new generator, its own generator's next tier, or (the side's builder,
    `T.builder`, the most patient mood on the side, only) a bot bay, priced by the game's
    `buildCost` (each one the owner has costs 1.5× more) over the gold a minute it adds (a
@@ -1125,6 +1136,12 @@ what the rest of the code needs to know is this:
   record it (`evPush`; `burst` and the floaters record themselves); the ring rides out with the
   snapshot and the client replays each entry against its *own* player (`evPlay`). A bare
   `if (p === player) SFX.cue()` in the step is a sound no client hears.
+- **A client holds only what its side sees.** The host cuts each peer's snapshot and cosmetics
+  for its side's [fog](gameplay.md#fog-of-war): a rival soldier, creature or shot out of sight is
+  not in the client's arrays, and a rival player out of sight has `fogHid` set with every field
+  but the rail's and scoreboard's (`SNAP_FOG_KEEP`) left at its last-seen value. Anything on a
+  client that reads a rival's place asks `fogShown` or `inSight` first, never `p.x` bare; a new
+  field the rail or scoreboard shows about rivals joins `SNAP_FOG_KEEP`.
 - **What is still the host's screen.** `aiProfile` deals the ally profile to the *host's*
   `player.team` and the rival profile to the other side, so a client on the far team plays beside
   rival-grade bots; `aiSituation`'s `human` flag, `aiRank`'s skip and the escort's ward are the

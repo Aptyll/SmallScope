@@ -259,11 +259,29 @@ function netHostHello(peer, msg) {
 // dictionary from index 0, whole
 function netHostFull(peer, pr) {
   const h = snapHistoryPush();
-  const full = snapEncode({ t: 'full', tick: h.tick, snap: snapBuild(), ia: pr.lastTick }, NET.dictOut, 0);
+  pr.fogTeam = netFogTeam(pr);
+  const full = snapEncode({ t: 'full', tick: h.tick, snap: snapBuild(pr.fogTeam), ia: pr.lastTick }, NET.dictOut, 0);
   NET.bytesOut += NET.transport.send(peer, full) ? full.length : 0;
   NET.fulls++;
   pr.ack = h.tick;
   pr.dictAt = new Map([[h.tick, NET.dictOut.names.length]]);
+}
+// the side whose sight cuts what this peer is sent (the `fog` banner,
+// js/net/snapshot.js): its own, until its bird is gone and it only watches
+// (any body, either side's sight) - then everything, -1
+function netFogTeam(pr) { const p = players[pr.slot]; return p.eliminated ? -1 : p.team; }
+// the step's cosmetics a side may see: a puff, a stream or a number raised
+// out of its sight is a body it cannot see giving itself away (sightAt,
+// js/sim/fog.js), and a bot's call or a miss's coin is for the side it names
+function netEvSeen(ev, team) {
+  if (team < 0) return ev;
+  return ev.filter((e) => {
+    const a = e.a;
+    if (e.k === 'float' || e.k === 'burst') return sightAt(team, a[0], a[1]);
+    if (e.k === 'stream') return sightAt(team, a[0], a[1]) || sightAt(team, a[2], a[3]);
+    if (e.k === 'coin') return a[2] ? a[3] === team : sightAt(team, a[0], a[1]); // a miss's coin is its own side's (js/sim/farm.js)
+    return e.k !== 'call' || a[6] === team;
+  });
 }
 function netHostLeave(peer) {
   const pr = NET.peers.get(peer);
@@ -394,15 +412,16 @@ function netHostFlush() {
   if (check) snapShadow.scanAt = 0; // the proof's tick sees every tile now, not a slice ago
   const h = snapHistoryPush();
   const ev = evDrain();
-  const full = check ? snapBuild() : null; // the client checks itself against this
-  const cuts = new Map(); // ack tick -> delta
+  const cuts = new Map(), fulls = new Map(), evs = new Map(); // per side (and ack tick): the delta, the full form the client checks itself against, the cosmetics
   for (const [peer, pr] of NET.peers) {
-    const base = snapHistoryAt(pr.ack);
-    if (!base) { netHostFull(peer, pr); continue; }
-    let d = cuts.get(pr.ack);
-    if (!d) { d = snapDeltaFrom(h, base); cuts.set(pr.ack, d); }
-    const msg = { t: 'snap', tick: h.tick, d, ev, ia: pr.lastTick }; // ia: the newest of this peer's inputs the step has taken (netPredict)
-    if (full) msg.full = full;
+    const base = snapHistoryAt(pr.ack), team = netFogTeam(pr);
+    if (!base || team !== pr.fogTeam) { netHostFull(peer, pr); continue; } // a side's sight changed under it (its bird gone): the whole match again
+    const key = team + ':' + pr.ack;
+    let d = cuts.get(key);
+    if (!d) { d = snapDeltaFrom(h, base, team); cuts.set(key, d); }
+    if (!evs.has(team)) evs.set(team, netEvSeen(ev, team));
+    const msg = { t: 'snap', tick: h.tick, d, ev: evs.get(team), ia: pr.lastTick }; // ia: the newest of this peer's inputs the step has taken (netPredict)
+    if (check) { if (!fulls.has(team)) fulls.set(team, snapBuild(team)); msg.full = fulls.get(team); }
     const bytes = snapEncode(msg, NET.dictOut, pr.dictAt.get(pr.ack) || 0);
     pr.dictAt.set(h.tick, NET.dictOut.names.length);
     for (const t of pr.dictAt.keys()) if (t < pr.ack) pr.dictAt.delete(t);
@@ -576,7 +595,7 @@ function netClientApplyDelta(msg) {
     for (const [e, f] of changed) { if ('x' in f) movedX.add(e); if ('y' in f) movedY.add(e); }
     const eased = [];
     for (const [e] of shown) if (e._t0) { eased.push([e, e.x, e.y]); if (!movedX.has(e)) e.x = e._tx; if (!movedY.has(e)) e.y = e._ty; }
-    const out = []; snapCompareLoose(msg.full, snapBuild(), '', out, 8);
+    const out = []; snapCompareLoose(msg.full, snapBuildSeen(msg.full), '', out, 8);
     for (const [e, x, y] of eased) { e.x = x; e.y = y; }
     if (out.length) NET.verifyFail = { tick: msg.tick, out };
   }

@@ -37,9 +37,9 @@ function logEvent(txt, p, o) {
 }
 
 // ---- scoreboard (hold TAB) ----
-const SB_W = 184;
+const SB_W = 216;
 const SB_ROW = 9;
-const SB_COL = [96, 128, 176]; // right edges of LVL / GOLD / K/D/A, panel-relative
+const SB_COL = [96, 128, 176, 208]; // right edges of LVL / GOLD / K/D/A / FARM, panel-relative
 
 function scoreboardOpen() { return keyHeld('board') && state.mode !== 'title' && !window.DBG.hideUI; }
 
@@ -82,9 +82,9 @@ function renderScoreboard() {
   drawPixelTextShadow(ctx, day, x + SB_W - 6 - pixelTextWidth(day), y + 6, '#7a8bb8', shadow);
   ctx.fillStyle = '#222c55'; ctx.fillRect(x + 4, y + 15, SB_W - 8, 1);
 
-  const head = ['LVL', 'GOLD', 'K/D/A'];
+  const head = ['LVL', 'GOLD', 'K/D/A', 'FARM']; // FARM: last hits on soldiers and camp monsters (js/sim/farm.js)
   drawPixelTextShadow(ctx, 'PLAYER', x + 14, y + 19, '#7a8bb8', shadow);
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < head.length; i++) {
     drawPixelTextShadow(ctx, head[i], x + SB_COL[i] - pixelTextWidth(head[i]), y + 19, '#7a8bb8', shadow);
   }
 
@@ -107,9 +107,9 @@ function renderScoreboard() {
         const tag = p.eliminated ? 'OUT' : Math.ceil(p.respawnT) + 's';
         drawPixelTextShadow(ctx, tag, x + 18 + pixelTextWidth(p.name), ry + 1, '#8f9cc4', shadow);
       }
-      const vals = [String(p.level), String(p.inv.gold), p.kills + '/' + p.deaths + '/' + (p.assists || 0)];
-      const cols = ['#cfe0ff', '#f2cc6a', '#ff9a8a'];
-      for (let i = 0; i < 3; i++) {
+      const vals = [String(p.level), String(p.inv.gold), p.kills + '/' + p.deaths + '/' + (p.assists || 0), String(p.farm)];
+      const cols = ['#cfe0ff', '#f2cc6a', '#ff9a8a', '#cfe0ff'];
+      for (let i = 0; i < vals.length; i++) {
         drawPixelTextShadow(ctx, vals[i], x + SB_COL[i] - pixelTextWidth(vals[i]), ry + 1, cols[i], shadow);
       }
       ctx.globalAlpha = 1;
@@ -266,7 +266,8 @@ function buildMapPanel() {
   g.fillRect(mx - 1, my - 1, MAP_W + 2, MAP_W + 2);
 }
 
-// the camps on the chart: the glyph alone, in its camp's ink. The camp
+// the camps on the chart: the glyph in its camp's ink (grey with its seconds
+// under it while it is cleared, drawCampMark). The camp
 // under the pointer lights white and wears its name on a small graphite tag
 // that runs away from the chart's middle (a name on every camp at the
 // chart's 3x5 font crowded the map and still read badly; the glyph says
@@ -292,7 +293,7 @@ function drawChartCamps() {
     if (mouse.inside && d < hd) { hd = d; hov = { L, lx, ly }; }
     return { L, lx, ly };
   });
-  for (const { L, lx, ly } of pts) drawCampIcon(ctx, L, lx, ly, L.spec.mark, HUD_INK);
+  for (const { L, lx, ly } of pts) drawCampMark(ctx, L, lx, ly); // a cleared one wears its seconds (js/draw/marks.js)
   if (hov) chartTag(hov.lx, hov.ly, hov.L, hov.lx > MAP_X + MAP_W / 2);
 }
 
@@ -671,94 +672,15 @@ function buildSettingsPanel() {
 // The CONTROLS page: three listings, one per controller, blitted into the
 // content window at the page's scroll like any other page. The pad's and
 // the touch listing bake once (neither changes); the keyboard's is LIVE
-// (drawKeyRows, below) over a bake that holds only the weapon primer.
+// (drawKeyRows, below) over a blank bake that only sizes the scroll.
 // Every listing is THREE COLUMNS at CTRL_COL_X: the verbs grouped by what they
 // are for - moving and fighting, the kit and its panels, the match's own keys -
 // so the whole listing sits in the window without a scroll
 const CTRL_COL_X = [10, 110, 210];
 const PAD_READ_Y = 104, PAD_READ_H = 44; // the pad listing's live readout: where it starts, and the band it takes (drawPadReadout)
 const ctrlCvs = { keys: document.createElement('canvas'), pad: document.createElement('canvas') };
-ctrlCvs.keys.width = SET_W; // its height is set by bakeCtrlKeys, under the listing
+ctrlCvs.keys.width = SET_W; // its height is the listing's (KEYS_LIST_H); the listing itself draws live
 ctrlCvs.pad.width = SET_W; ctrlCvs.pad.height = PAD_READ_Y + PAD_READ_H;
-
-// THE WEAPON PRIMER: the one thing about the left button a new player cannot
-// work out by pressing it, drawn rather than explained. It is a real HORN BOW
-// with a real build - two ARROWs and a FLAME - so every mark on it is the
-// game's own arithmetic (toolPlan, sortBits, js/sim/tools.js) and the picture
-// cannot drift from the weapon.
-//
-// It is the SHELF, drawn at rest: the tool at the left end, the shots on the
-// left of its row and the modifier on the right with the free cell between,
-// the hatch on the modifier, and the FLAME's line running to every shot it
-// powers (shelfRails, js/ui/strip.js). That is the whole point of the page:
-// what is learned here is recognised in the corner of the screen.
-const PRIMER = {
-  tool: 'hornbow',
-  bits: ['flame', 'arrow', 'arrow'], // loaded in any order: the row sorts itself
-  notes: { arrow: 'ARROW - FIRES, AND IT BURNS', flame: 'FLAME - EVERY SHOT BURNS' },
-};
-const PR_CELL = 18, PR_GAP = 2, PR_X = 22, PR_TX = 16; // the row's cells, and the notes stacked under it
-function drawToolPrimer(g, y0) {
-  const T = TOOLS[PRIMER.tool];
-  const cell = makeTool(PRIMER.tool);
-  for (let i = 0; i < PRIMER.bits.length; i++) cell.bits[i] = PRIMER.bits[i];
-  sortBits(cell);
-  const plan = toolPlan(cell);
-  const n = cell.bits.length;
-  // cell -1 is the tool, at the row's left end - the shelf's own order
-  const rowY = y0 + 22;
-  const rect = (i) => ({ x: PR_X + (i + 1) * (PR_CELL + PR_GAP), y: rowY, w: PR_CELL, h: PR_CELL });
-  const mid = PR_CELL >> 1;
-
-  g.fillStyle = '#2c3a68';                                   // the section's own rule
-  g.fillRect(12, y0 - 5, SET_W - 24, 1);
-  drawPixelText(g, 'THE WEAPON', 16, y0 - 1, '#ffd95c');
-
-  // THE LINES, off the same reader the shelf uses: the FLAME runs left to
-  // every shot in the tool, with a tick down into each
-  shelfRails(cell, plan).forEach((rail, d) => {
-    const x0 = rect(rail.i).x + mid, first = rect(rail.hits[0]).x + mid, y = rowY - 4 - d * 3;
-    g.fillStyle = rail.col;
-    g.fillRect(first, y, x0 - first + 1, 1);
-    g.fillRect(x0, y, 1, rowY - y - 1);
-    for (const j of rail.hits) g.fillRect(rect(j).x + mid, y, 1, rowY - y - 1);
-  });
-
-  // the tool at the head of the row
-  const tr = rect(-1);
-  g.fillStyle = TOOL_TIERS[T.tier].rim;
-  g.fillRect(tr.x, tr.y, tr.w, tr.h);
-  g.fillStyle = TOOL_TIERS[T.tier].plate;
-  g.fillRect(tr.x + 1, tr.y + 1, tr.w - 2, tr.h - 2);
-  drawItemIcon(toolType(PRIMER.tool), tr, tr.y, g);
-
-  let line = 0;
-  const said = new Set();
-  for (let i = 0; i < n; i++) {
-    const id = cell.bits[i], b = id && BITS[id];
-    const r = rect(i);
-    const tp = b ? TOOL_TIERS[b.tier] : { rim: '#2c3560', plate: '#080b1c' };
-    g.fillStyle = tp.rim;
-    g.fillRect(r.x, r.y, r.w, r.h);
-    g.fillStyle = tp.plate;
-    g.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
-    if (!b) continue;
-    modPlate(bitType(id), r, r.y, PR_CELL, g);
-    drawItemIcon(bitType(id), r, r.y, g);
-    // the note for each kind, stacked under the row in the bit's own colour,
-    // in the row's own order
-    if (said.has(id)) continue;
-    said.add(id);
-    drawPixelText(g, PRIMER.notes[id], PR_TX, rowY + 28 + line++ * 9, b.col);
-  }
-
-  // and the rules the picture alone cannot say
-  const foot = rowY + 28 + line * 9 + 4;
-  drawPixelText(g, 'ONE CLICK FIRES EVERYTHING LOADED', PR_TX, foot, '#cfe0f2');
-  drawPixelText(g, 'EVERY MODIFIER SHAPES EVERY SHOT', PR_TX, foot + 9, '#8fd8ff');
-  drawPixelText(g, 'A HEAVIER LOAD TAKES LONGER TO DRAW', PR_TX, foot + 18, '#f2cc6a');
-  drawPixelText(g, 'NO SHOT LOADED - IT FIRES A PLAIN ARROW', PR_TX, foot + 27, '#8fe08a');
-}
 
 // THE KEYBOARD LISTING IS LIVE, NOT BAKED: every rebindable verb sits beside
 // its key drawn as a cap - the same cap the work prompt wears in the world
@@ -805,7 +727,7 @@ const KEY_ROWS = {
 };
 const KEY_ROW_H = 12, KEY_ROWS_Y = 5;
 const KEY_ROWS_N = Math.max(...Object.values(KEY_ROWS).map((s) => Math.max(...s.map((c) => c.length)))); // the tallest column
-const KEYS_PRIMER_Y = KEY_ROWS_Y + (KEY_ROWS_N + 1) * KEY_ROW_H + 14; // the primer bakes under the listing and its RESET row
+const KEYS_LIST_H = KEY_ROWS_Y + (KEY_ROWS_N + 1) * KEY_ROW_H + 6; // the listing and its RESET row
 function keyRowsLayout() {
   const caps = [], words = [];
   const R = KEY_ROWS[settings.scheme] || KEY_ROWS.wasd;
@@ -836,10 +758,7 @@ function drawKeyRows(ox, oy, hit, now) {
   for (const c of K.caps) drawKeyCap(ctx, ox + c.x, oy + c.y, c.lab, false, state.rebind === c.act ? 2 : hit === 'key:' + c.act ? 1 : 0, now);
   drawPixelText(ctx, 'RESET', ox + K.reset.x, oy + K.reset.y, bindsDefault() ? '#2c3a68' : hit === 'keyreset' ? '#cfe0ff' : '#7a8bb8');
 }
-(function bakeCtrlKeys() {
-  ctrlCvs.keys.height = KEYS_PRIMER_Y + 128; // the primer's own height
-  drawToolPrimer(ctrlCvs.keys.getContext('2d'), KEYS_PRIMER_Y);
-})();
+ctrlCvs.keys.height = KEYS_LIST_H; // blank: the live listing draws over it, this only sizes the scroll
 
 // A pad button as a picture, ~9px, at x, y (its top-left): a face button is a
 // disc with its letter, a bumper a flat pill, a trigger a tall one, a stick

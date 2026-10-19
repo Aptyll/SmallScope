@@ -228,8 +228,10 @@ code still uses `ex`/`ey`. A screen-space pass anchored to the world reads the e
     ([the tool swap](#the-tool-swap)) → `drawAbilityAir` (the spinning net, the grapple's rope)
     → `drawTurretFx` (each turret's dashed aim **arc** and the cords snapping on the release)
     → turret tracers;
-12. `drawSlashes` (the sword's sweeps) → swing arcs (one per swinging player) → floaters
-    (queued through `drawWorldText`, see [Text over the world](#text-over-the-world));
+12. `drawSlashes` (the sword's sweeps) → swing arcs (one per swinging player) → `drawPops`
+    (js/draw/pops.js): the floaters (queued through `drawWorldText`, see
+    [Text over the world](#text-over-the-world)) and the farm's coins (plates,
+    [gameplay.md](gameplay.md#farming));
 13. `drawSweep` (the wind's slow sweep of loose snow, over every canopy, as strong as the day's
     weather lets it — [the wind field](#the-wind-field))
     → `drawDropAir` (the dotted flight path and a bird on the ground, while `state.drop`
@@ -301,10 +303,10 @@ state everywhere the cursor lands;
 a bare bush never rims because `workTarget`'s `ready` gate already refuses it — a *hovered* bare
 bush shows its regrow clock instead, the neutral unit bar (`drawHealthBar`, gold) over the plant
 filling toward `BUSH_REGROW`, drawn only while the pointer's tile is that bush (`hovO`, resolved
-beside `wkO` at any reach, since a look asks nothing of the legs). A hovered **camp anchor**
-(a wolf den's mouth; the bears' river camps have none) wears the same bar the same way — over the prop, filling toward the camp's return off its
-respawn clock (`o.site.repopT`, `drawCampClock`, [world.md](world.md#runtime)) while the camp is cleared, nothing
-while anything in it lives. Only a
+beside `wkO` at any reach, since a look asks nothing of the legs). A **camp anchor**
+(a wolf den's mouth; the bears' river camps have none) wears the seconds until the camp is back
+over the prop, hovered or not, while the camp is cleared (`drawCampClock`,
+[world.md](world.md#runtime)), nothing while anything in it lives. Only a
 covering canopy leaves the atlas batch, so the batch below stays whole. A **dead tree** is a 16×24 snag at `py - 8`. Short ground sprites (bush,
 stump) all draw at `py + 4` to stay clear of that band — drop one lower and
 a tree on the tile below hides it almost completely. The den is tall enough not to need it: its 21 rows
@@ -347,8 +349,7 @@ opening from 4 to 18 px out of the chest — is the first third and then gone, s
 is left to read. The **icon** is the new body's own 12×12, on the tier `plate` inside a `rim`
 frame it wears in every well it will ever sit in, climbing `SWAP_RISE` (26 px) on an ease-out and
 fading only over the last third. `swapFx` also fires two `burst`s in the tier's ink and rim at the
-body, `SFX.levelUp` for the local player (`SFX.pickup` for anyone else in earshot), and the
-[shelf's row flash](#the-weapon-shelf).
+body, `SFX.levelUp` for the local player (`SFX.pickup` for anyone else in earshot).
 
 ### Snow
 
@@ -477,7 +478,8 @@ buffers and re-bakes the slab whenever `MAP_W` changes. The slab is the HUD's **
 and so does a press anywhere off the slab (`mapCloseHit` in `pointerPress`, play and drop alike).
 There is no compass (the chart is north-up, as the world is), no key (the marks are the minimap's
 own), no clock (the rail or the disc wears it), no title, and **no camp names until asked**: each
-camp is its glyph in its camp's ink, and the one under the pointer (within `CHART_HOVER_R`) lights
+camp is its glyph in its camp's ink (grey with its seconds under it while it is cleared,
+`drawCampMark`, as on the minimap), and the one under the pointer (within `CHART_HOVER_R`) lights
 white and wears its name on a small graphite tag running away from the chart's middle
 (`drawChartCamps`/`chartTag`). The ziplines on both maps are `drawMapZip` (js/draw/marks.js): a
 crisp two-pixel ribbon in the side's ink, pylon to pylon, each pylon a pale pixel on it
@@ -521,19 +523,18 @@ empty world.
 
 | Where | What | Function |
 | --- | --- | --- |
-| top left | the **weapon shelf**: the tool in hand and its bit cells, shots left and fittings right, always up — and under the weapon well the small tab of the **inventory drawer**, shut until B or the tab | `drawShelf`, `drawBag` |
+| top left | the **weapon shelf**: the class weapon in its big well and the six item slots beside it, always up — and under the weapon well the small tab of the **inventory drawer**, shut until B or the tab | `drawShelf`, `drawBag` |
 | top right, under the disc | the **notice lane**: the roost warning and the **stat sheet** that flies in when a number on yours moves | `renderNotices` |
 | top right | the minimap and its day/night ring — the black outline sits `MM_GAP` (4 px) off the top edge and the right edge alike (`applyMinimapSize`, core.js) — the clock centred under it while no team rail is up (`mmClockShown`), and the notice plates under that | `renderMinimap`, `renderNotices` |
 | top centre | the **team rail**: one thin plate, every other player in the match as a 12px emblem over a hp bar in the side's colour, your teammates left (never you: your own hp is the strip's) and the rival right, the match clock over the two kill totals between them — and under it, the camp plate, the DAY headline and the spectate control (`headlineY`) | `drawRailScaled` |
 | beside the pointer, or bottom left | the hover tooltip, wherever the TOOLTIP row puts it | `tipPos`, `drawTooltip` |
-| bottom centre | the hud strip, flush to the bottom: your portrait (xp round its edge, the level on its corner), the four ability wells over the health and stamina bars, the two meal wells over the gold | `drawHudStrip` |
+| bottom centre | the hud strip, flush to the bottom: the stat panel, your portrait (xp round its edge, the level on its corner), the four ability wells over the health and stamina bars, the two meal wells over the gold | `drawHudStrip` |
 | centre, on G | the character panel: the live body, the stat ledger, the four gear pieces | `drawCharPanel` |
 
 Every widget slides **its own size** away for the landing intro — the minimap up by
 `MM_R * 2 + 40`, the rail up by `RAIL_SLIDE`, the strip down by
-`HUD_SLIDE` (`AB_H` + `XP_TAG` + 5), the top-left corner left by `CORNER_REACH` (the widest
-row a tool can have plus the SHIFT plate off its end) — because a shove that only cleared the
-tool cell would leave a longbow's row parked over the cinematic.
+`HUD_SLIDE` (`AB_H` + `XP_TAG` + 5), the top-left corner left by `CORNER_REACH` (the shelf's
+fixed plate or the drawer, whichever is wider).
 
 ### Notices: the plates under the minimap
 
@@ -622,7 +623,7 @@ the lane under the disc on the same ease, the same white frame pulse and the sam
 plate, holds `NOTE_LIFE` (8 s), and rides back out the way it came — and it **shoves** whatever
 plate was in the lane down under it exactly as a roost plate does. When nothing has changed there is
 nothing on screen at all. The only thing about it that is not a roost plate is its **size**
-(`STAT_W` 88 wide, `statPlateH()` tall), and every plate is right-aligned on the disc's own right
+(`STAT_W` 100 wide, `statPlateH()` tall), and every plate is right-aligned on the disc's own right
 edge, so the wider one still reads as the same lane.
 
 **Every row of the sheet is on it, dim, and the rows that moved are lit**: label and number to
@@ -631,9 +632,9 @@ between them — `+9`, `-15`, `+8%`, `-0.30S`, the magnitude in that row's own f
 it moved in. Those rows **pulse** for `STAT_PULSE` (1.3 s) on the card's own three-pulses-under-a-
 decay flash grammar, so the thing you are meant to read is still blinking when your eyes arrive.
 The stats kind sets `flash: 0` so the card's white wash never fires: on a plate the size of a roost warning
-that wash *is* the arrival, but over fourteen rows it would drown the green ones that are the news,
+that wash *is* the arrival, but over seven rows it would drown the green ones that are the news,
 so the frame pulses and the rows do the blinking. **Green is better and red is worse**, by the row's
-own `dir`, so a draw time that *fell* reads green — the grammar the hero pop-up's hover deltas
+own `dir` — the grammar the hero pop-up's hover deltas
 already teach.
 
 **One stats plate is ever up.** A second change inside the first one's life drops it and flies a
@@ -648,18 +649,15 @@ an unchanged number would be a lie. One cue per batch (`SFX.stat(up)`), never on
 card moves three numbers and is one thing that happened; its direction is the batch's balance, so a
 card that trades health for damage still speaks.
 
-It reads `GEAR_STATS`, the one table the [hero pop-up](#the-hero-pop-up) prices a pick from
-and the [character panel](#the-character-panel-g) spells a body out with, so the three can never
-disagree about what a stat is, how it prints, or which way is up. Two rows carry the **hero level**
-that the kit itself never holds — `levelMaxHp` adds the hp and `emitBit` the damage — so the
-getters take `(kit, player)` and fold it in when a player is passed. The hero pop-up prices a
-pre-match pick where every hero is level 1 and passes nothing; everything reading a live body passes
-it. Without that a level-up would move no row at all.
+It reads `STAT_ROWS` (js/sim/stats.js), the seven [hero stats](gameplay.md#hero-stats) as the one
+table the [hero pop-up](#the-hero-pop-up) prices a pick from and the
+[character panel](#the-character-panel-g) spells a body out with, so the three can never disagree
+about what a stat is, how it prints, or which way is up. The getters take `(kit, player)`: the
+**hero level** is not in the kit, so a live body is passed and its level read; the hero pop-up
+prices a pre-match pick where every hero is level 1 and passes nothing (the kit says whose it is).
 
-**Two kit fields have no row and so light nothing** — `killHeal` (BLOODLUST, VAMPIRE) and
-`ambushMul` (AMBUSHER'S EDGE, PHANTOM), the only card effects outside `GEAR_STATS`' vocabulary.
-Giving them rows is two more entries in that table plus taller character and gear panels to seat
-them in: both are already within a few pixels of `fitCanvas`'s 240-row floor.
+**Anything outside the seven lights nothing** — a card or gear bonus to ice, the dodge, stealth,
+food, hunts, fells, `killHeal` or `ambushMul` moves no row.
 
 ### The hover tooltip
 
@@ -689,7 +687,8 @@ does, so what the panel describes and what a click would do can never be two dif
 In `play`, in order: the merchant's counter (`shopHit` → `tipShop` — first, so a drag held over
 its sell well is priced rather than merely described), then a **live drag** (whatever is on the
 cursor describes itself, `tipCell`), the character panel's gear wells (`gearHit`), a rail chip
-(`railHit`), the shelf (`shelfHit`: the tool cell, a loaded bit, or an empty bit cell), a
+(`railHit`), the shelf (`shelfHit`: the weapon, answering `tipCell`, or an item slot, answering
+`tipItem`), a
 floating buy plate (`abBuyHit`), the strip (`stripHit`: an ability well, a meal well,
 the purse) and last the drawer (`bagHit`). In `title` it answers the wiki's rows and
 ability cards and the lobby's stage wells; every other mode returns null.
@@ -711,10 +710,9 @@ then only the flags that are *true*, because four rows of NO would drown the thr
 `tipStack` (a meal), `tipGold`, `tipRail` (a rail
 chip), `tipShop` (the counter's wells, js/ui/shop.js), `tipGear`, `tipClassAb` (a strip
 ability well in play, or the lobby's stage wells with `cls` passed — the in-play cooldown
-and cast-hint rows only appear in play), and `tipKind` (a wiki row), which strips the "what is loaded in it"
-half and ends on whether this profile has ever held one. `tipCell(s)` picks the builder for
-whatever a bag or shelf cell holds, and `tipSend(d, txt)` adds the one free line saying what a
-click on that well would do.
+and cast-hint rows only appear in play), and the shop's `tipItem` (an item slot on the shelf, a
+wiki ITEMS row). `tipCell(s)` picks the builder for whatever a bag cell or the weapon well
+holds.
 
 ### The patch notes screen
 
@@ -753,9 +751,9 @@ right past the last page opens PATCH NOTES; ESC leaves. What the pages say is [g
 
 A page is data. `WIKI_PAGES` is `{ id, label, build(cw) }` and `build` returns the page's
 **blocks** top to bottom for a content width — `line` (a sentence), `rule` (a gold rule), `head` (a section name
-with its column heads over their columns), `row` (a kind on its tier plate with its numbers in
-the columns, `WIKI_TOOL_COLS` / `WIKI_BIT_COLS` / `WIKI_MOD_COLS` naming each column's label,
-width and getter), `legend` (the deer wearing the overhead frame, a leader from each part of it
+with its column heads over their columns), `row` (an item in its well with its numbers in
+the columns, `WIKI_ITEM_COLS` naming each column's label, width and getter; hoverable, answering
+`tipItem`), `legend` (the deer wearing the overhead frame, a leader from each part of it
 to its name), `beast` (a kind standing on its snow beside its growth table, `WIKI_BEASTS`),
 `cls` (a class card: the body at 3x, pitch, health and the stat pips, `WIKI_STATS`), `ab`
 (an ability: key plate, the strip's icon in a well, name, the `WIKI_AB_COLS` numbers, the blurb
@@ -766,7 +764,7 @@ each with a fixed height, built once per content width (`wikiBlocks(pageId, cw)`
 page is the only one whose `build` reads `cw`, to wrap its sentences to a slab that has
 narrowed with the view). `wikiLayout()` is the single source of
 every rect: the slab, the tab cells, the window, each block's y (pre-scroll), the scroll bound,
-the rail and its thumb; `wikiHit(mx, my)` reads it back as a tab, a row (carrying its kind id,
+the rail and its thumb; `wikiHit(mx, my)` reads it back as a tab, a row (carrying its item id,
 which is what the tooltip asks for) or the rail, so the hover, the click and the tooltip can
 never disagree. Per-page scroll lives in `wikiScroll` beside the settings slab's `setScroll`;
 the open page is `menu.wikiTab`. A new page is one table entry and one builder.
@@ -775,9 +773,8 @@ the open page is `menu.wikiTab`. A new page is one table entry and one builder.
 `drawBeastFrame` (js/draw/bodies.js) over the same sprite, on a low snow mound, at the least level
 the kind spawns at (a bear's growth columns start there too, `wikiLevels`) — so the page teaches the frame by showing it, and a change to the
 frame in the world changes it on the page. A camp monster's leash bar is shown part-filled, since bare
-track says nothing. An ARSENAL row is the kind's icon on
-the tier plate a bag cell wears (`tierPlate`, `modPlate`), rimmed and lifted a pixel
-under the pointer, the blue pip for `PROFILE.techSeen`, its name in the tier's ink, a dotted
+track says nothing. An ITEMS row (`drawWikiRow`) is the item's icon in a well rimmed part or
+finished the way the shop rims it, white and lifted a pixel under the pointer, its name, a dotted
 leader to its numbers. A WORLD entry's figures (`drawWikiFig`) are whatever sprites its `fig()`
 returns at draw time — so they wear the side you play through `skin` — stood left to right on
 one mound (`wikiMound`, the beasts' own; `road` makes it packed earth in the road's colours,
@@ -787,7 +784,7 @@ or pressed: a click only opens a tab or pages the rail.
 ### The hud strip
 
 `drawHudStrip` is one plate, flush to the bottom — the [hud frame](#the-hud-frame) — read left to
-right the way a MOBA's bottom bar is (0.426): the **portrait**, then **four 34px ability wells**
+right the way a MOBA's bottom bar is (0.426): the **stat panel**, the **portrait**, then **four 34px ability wells**
 `[1][2][3][4]` in key order with the **health bar** and the **stamina bar** under them, then the
 **two meal wells** with the **purse** under them (`stripCellRect(j)`: 0-3 the abilities, 4-5 the
 meals; `abCellRect(i)`, `foodCellRect(i)`, `portraitRect`, `hpBarRect`, `stBarRect`,
@@ -795,6 +792,17 @@ meals; `abCellRect(i)`, `foodCellRect(i)`, `portraitRect`, `hpBarRect`, `stBarRe
 [the shelf's tool cell](#the-weapon-shelf) — and nor are unopened cards (they open the moment they
 are held, [gameplay](gameplay.md#roguelike-cards)) or a build well (the build key opens the list).
 The plate swallows clicks so nothing fires through it.
+
+The **stat panel** (`drawStatPanel`, js/ui/statpanel.js) is a plate of its own butted to the
+strip's left frame, the strip's height: the seven [hero stats](gameplay.md#hero-stats) in two
+columns (`STAT_PANEL_GRID`), each a dark well with its 7×7 icon (`STAT_ICON`, inked round) and its
+number (`statShown`, so a bear buff is already in it — and the number it raises wears that bear's
+ring colour while it runs). The strip and the panel are one widget: `hudStripRect` centres the
+**pair** on the view, `stripCap` fits the pair, and `drawHudScaled` bakes from the panel's left
+edge. `stripHit` answers it first (`statPanelHit`: `{kind: 'stat', key}` on a cell, the plate's
+`'frame'` off one), so a press on it never reaches the world, and a hover raises the tooltip's
+**breakdown** (`tipStat`, off `statParts`): BASE, the LEVEL's growth, what GEAR AND CARDS and ITEMS
+gave, the buff, then the total under a rule (the descriptor's `sum`).
 
 The **portrait** (`drawPortrait`) is a `PORT_SQ` square in the wells' own border (ink, then the
 rim), the hero's standing frame at 3× (`portraitSprite`: the worn body's if one is worn, the
@@ -821,8 +829,8 @@ level it can hold, `AB_LV_MAX` of them, the first being the unlock
 and the well says so in the meal button's own grammar: dark rim, the icon at `LOCK_DIM` (0.28),
 an empty pip row and a grey key digit — dim, never absent, so the strip never rearranges and you
 can read what you have not bought. A press on one is refused with the same red band and 1px
-shake the tool well and the meal buttons refuse in (`abDenied`, aged in `updateFx` beside
-`toolFlash`/`foodFlash`); a cooldown is NOT that refusal, because the sweep already says when it
+shake the meal buttons refuse in (`abDenied`, aged in `updateFx` beside
+`foodFlash`); a cooldown is NOT that refusal, because the sweep already says when it
 comes home. The ASK lives off the well: while a
 skill point is unspent and the key has room a **floating buy plate** bobs in the open screen
 above the well, `AB_BUY_AIR` clear of the strip's line at the bottom of its bob, shadow included
@@ -888,7 +896,7 @@ because the pouch has no ceiling. Hover lights the rim, a press sets the same ed
 intent the key does (`eatBerry`/`eatFish`), so `startEat` speaks every refusal and a well can
 never disagree with its key. A refusal *shows*: whatever the reason (none in the pouch, the clock
 still up, full health, a busy body), the asked well takes the red band and 1px shake for
-`foodFlash` seconds — `foodDenied(type)`, aged in `updateFx` beside `bagDenied()`/`toolDenied()`.
+`foodFlash` seconds — `foodDenied(type)`, aged in `updateFx` beside `bagDenied()`.
 The shared food clock (`drawFoodClock`) sweeps both together and lifts the one being chewed
 white. A meal you have none of keeps its seat but dims to 0.35, so the pair never rearranges.
 The fish well shows the fish F will eat next (`fishToEat`) and, with nothing picked, the count of
@@ -963,7 +971,7 @@ Every margin inside the outline is three pixels — line, edge, ground — which
 [drawer](#the-backpack) wears it with only its two free (right) corners cut — it is flush with
 the view's left edge.
 
-**One well size for the HUD**: the strip's wells and the shelf's cells are `HUD_CELL` (34)
+**One well size for the HUD**: the strip's wells and the shelf's weapon well are `HUD_CELL` (34)
 square, and every item icon in them is drawn doubled (`drawItemIcon`'s `k`), so a tool reads at
 one size on the shelf as an ability does on the strip. The drawer's cells are the exception on
 purpose — `BAG_CELL` (18) with the art at 1× — because a spare is glanced at and dragged, not
@@ -1002,73 +1010,42 @@ point is spent nowhere else, and nothing else on the strip is ever bought.
 
 ### The weapon shelf
 
-**The one weapon, top-left, on screen at all times**: the tool in hand in the big well at the left
-end of a row (`shelfCellRect(-1)`, `SHELF_CELL` = `HUD_CELL`, 34) and its bit cells running right
-in smaller wells (`SHELF_ITEM` 26, `SHELF_GAP` 3 apart, `SHELF_WGAP` 5 off the weapon, centred on
-its height), which is the one place the [whole of a press](gameplay.md#toolplan-one-activation-in-one-pass)
-is on screen at once — and the whole of what the HUD says about the arsenal, since the strip
-has no weapon well and everything else carried is in [the drawer](#the-backpack) under this row.
-The bigger well is what says "this holds the others". The cells are always **shots on the left,
-fittings on the right**, empty cells between (`sortBits`, [firing](gameplay.md#toolplan-one-activation-in-one-pass)),
-so the row reads the same way on every build.
+**The class weapon and the item slots, top-left, on screen at all times**: the weapon in the big
+well at the left end of a row (`shelfCellRect(-1)`, `SHELF_CELL` = `HUD_CELL`, 34) and the
+`ITEM_SLOTS` [item slots](gameplay.md#the-items) running right in smaller wells
+(`shelfCellRect(0..5)`, `SHELF_ITEM` 26, `SHELF_GAP` 3 apart, `SHELF_WGAP` 5 off the weapon,
+centred on its height), showing `p.items` left to right as the shop fills them. It is the whole
+of what the HUD says about what a player carries into a fight, since the strip has no weapon well
+and everything else carried is in [the drawer](#the-backpack) under this row.
 
 It stands on the [hud frame](#the-hud-frame): `shelfPlateRect`, flush with the view's left edge
 (only its right corners cut), its top level with the minimap's (`SHELF_TOP` = `MM_GAP`), `SHELF_PAD`
-(4) of ground round the row and hugging it on the right (`shelfRowRight`). The row is pinned by
-its LEFT and grows rightward, so the weapon well never moves; the SHIFT plate (`drawShiftHint`)
-hangs off the row's right end. The plate grows **upward** by
-`SHELF_LINE` (4) for every fitting loaded (`shelfLines`, `shelfRowY`), which is where the lines
-live: on the plate, never over the world. The wells (`shelfWell`) sit in it with no drop shadow;
-a cell answers `shelfHit`, and the ground between them answers `shelfPlateHit` so a click on the
-plate never falls through to the world (`overHud`, and the right button's wheel gate).
+(4) of ground round the row, and a **fixed width** (`SHELF_ROW_MAX`), since the row never changes
+length. The wells (`shelfWell`) sit in it with no drop shadow; a cell answers `shelfHit`
+(`{kind:'tool'}` / `{kind:'item', i}`), and the ground between them answers `shelfPlateHit` so a
+click on the plate never falls through to the world (`overHud`, and the right button's wheel
+gate). Nothing on it is dragged or clicked: a hover raises the weapon's `tipCell` or the item's
+`tipItem`.
 
-**The tool cell is the weapon's one well** (the head of `drawShelf`), and it carries no words:
+**The weapon well** (the head of `drawShelf`) carries no words:
 
-- its **rim** is the tool's rarity (dim green, bright blue, bright gold — `tierPlate`, the same
-  1px rim it wears in every other well), brightened on hover, and the 12px tool art is drawn
-  doubled so the tool reads at the ability icons' size. There is one weapon slot (`TOOL_SLOTS`),
-  so there is no "selected" tell;
+- its **rim** is the tool's rarity (`tierPlate`, the same 1px rim it wears in every other well),
+  brightened on hover, and the 12px tool art is drawn doubled so the tool reads at the ability
+  icons' size. There is one weapon slot (`TOOL_SLOTS`), so there is no "selected" tell;
 - the **[cooldown sweep](#the-cooldown-sweep)** turns once through exactly `toolCycle` off
   `p.nockT`, so the rate of fire is the speed of the hand rather than a number — and the veil
   clearing IS the bow being ready, since nothing else gates the draw
-  ([the cycle](gameplay.md#the-cycle));
-- the one *event*: a **red band all the way round and the pack's own 1px shake** for `toolFlash`
-  seconds when a bit has nowhere to go in the tool
-  ([one click sends it](gameplay.md#the-weapon-shelf)) — `toolDenied()`, the twin of `bagDenied()`
-  in the same red and aged in `updateFx` beside it, so the two containers refuse in one language.
+  ([the cycle](gameplay.md#the-cycle)).
 
-Two marks, no words, all off `toolPlan`:
-
-- every bit cell's **rim** is its rarity, and a fitting's ground is **hatched** in that same
-  colour, inset 2px so the rim stays one clean line (`modPlate`). Weight has no mark on a cell: a
-  heavy build shows as a longer draw on the [overhead bar](gameplay.md#the-draw);
-- one **line** per fitting, in that fitting's own colour (`shelfRails`, off each shot's `mods`):
-  a node on top of the fitting, a stem up to its own lane, a rounded corner, a run left over the
-  shots, and a drop with an arrowhead into **every** shot it powers — the weapon well itself when
-  the built-in arrow is the shot. Lanes stack with the leftmost fitting lowest, and each line lands
-  on a shot at its own x (`SHELF_LINE_STEP` apart), so no two lines ever share a pixel and none is
-  hidden. Each gets a 1px dark seat, for the reason world text is outlined. Hovering a cell dims
-  every line that does not touch it.
-
-And **two events**, both on the one flash: `bitLit` is `{ cell, cells, t, col }` — the tool the
-flash belongs to (held by *reference*, so changing weapons cannot leave a flash on somebody else's
-cells), which of its cells are lit, how long is left and in what colour. `bitLitAt` ramps it, and
-clamps, so a flash may outlive `BIT_LIT_T`; `bitLitCol` answers the colour. Both live in
-js/sim/tools.js, aged in `updateFx` beside the refusal reds, and both are the **local player's alone**.
-
-- **A press** lights every loaded cell white, fading over `BIT_LIT_T` (0.3 s), lines included
-  (`fireTool`). A build is fired far more often than it is edited, so the press itself is where
-  the row is learned.
-- **A [tool swap](gameplay.md#where-tools-and-bits-come-from)** lights the WHOLE row — cell **-1**,
-  the tool well, and every loaded bit — in the new tier's own ink for `SWAP_T` (1.1 s)
-  (`swapFx`). The tool cell is the tell: a press never lights it, so a lit tool means one thing
-  only, which is that the body itself just changed under you.
+**An item slot** wears its item's icon (`shopIcon(itemIcon(id))`) on the shop's own rim: a part
+on the bottom tier's, a finished item on the top tier's, so a glance tells how far the build has
+come. An empty slot is a dark well; a filled one lifts its rim grey under the pointer.
 
 ### The backpack
 
 **A drawer under the weapon shelf, shut until asked for**. The HUD shows one weapon —
-[the shelf](#the-weapon-shelf) — and everything else a player carries is in here: the spare
-tools a walk turns up and the bits no tool had a cell for. It is **invisible by default**: the
+[the shelf](#the-weapon-shelf) — and everything else a player carries in a cell is in here: the
+consumables and the ore. It is **invisible by default**: the
 pack key (B; L3 on a pad) or a click on the **tab** under the weapon well (`bagTabRect`: a small
 `BAG_TAB_W`×`BAG_TAB_H` [hud frame](#the-hud-frame) of its own, `BAG_TAB_AIR` (4) clear of the
 shelf's plate and centred under the weapon, holding a small chevron pointing the way the drawer
@@ -1088,7 +1065,7 @@ what the counter's slab is pinned clear of.
 
 The frame (`bagFrameRect()`, flush with the view's left edge `BAG_TAB_AIR` under the tab,
 `BAG_W` wide) is **nothing but the inventory grid** (`BAG_CAP` 12 — two rows of
-`BAG_COLS` 6): the tools and bits a build is made of, in the small `BAG_CELL` cells
+`BAG_COLS` 6), in the small `BAG_CELL` cells
 ([the hud frame](#the-hud-frame) has the size and the why).
 There is no numbers row — the two meals and the gold are the
 [strip's right end](#the-hud-strip). The tab never moves; its arrow's colour is its only state — gold
@@ -1110,13 +1087,13 @@ as pips along the bottom, in the corner a stack number would have used.
 - **An empty cell is the *lighter* one**: it has no icon to show off, and free space is what the
   grid is being read for, while a full cell goes dark behind its item. A stack of one prints no
   number — an empty corner says it.
-- **A click on a cell uses what is in it** — a bit or a tool by
-  [sending it to the weapon](gameplay.md#the-weapon-shelf) — resolved on the
+- **A click on a cell uses what is in it** — a consumable's `use`, such as the burrow
+  ([sendBagCell](gameplay.md#the-weapon-shelf)) — resolved on the
   release so that a press which travels is still a drag. Putting a *carried* item down is on the
   release too.
 - **A well answers when something lands in it**: a `WELL_LIT_T` (0.3 s) wash in the colour of what
   happened — blue placed, green merged, gold swapped, red refused (`drawWellLit`) — drawn last,
-  over the item. The same four colours come back as a **ring** around the well under the pointer
+  over the item. Its colours come back as a **ring** around the pack cell under the pointer
   while something is on the cursor, saying what letting go there *would* do before it does it
   ([what a gesture answers with](gameplay.md#what-a-gesture-answers-with)); that ring is painted
   after the drag ghost and outside the well, because the ghost is exactly as big as the cell.
@@ -1138,8 +1115,8 @@ LEFT: the **body as it stands right now** — the class sprite walking in place 
 bought gear bands in their level materials (`drawGearMarks`, the same pixels every rival reads on
 you in the world) with the held weapon beside it — under a header naming the sheet (the profile
 name in the team's mark, the class and hero level beside it). Below, the **stat ledger**:
-`GEAR_STATS` read off the **live kit** (`kitOf`) *and handed the player*, so gear levels, cards and
-the hero level's own hp and damage are all already in the numbers — dotted leaders, label left,
+`STAT_ROWS` read off the **live kit** (`kitOf`) *and handed the player*, so gear levels, cards and
+the hero level's own growth are all already in the numbers — dotted leaders, label left,
 value right, the panels' text carve-out. It is the same table, the same numbers and the same
 verdict inks as the [sheet that flies into the notice lane](#the-stat-ledger-your-sheet-as-a-notice),
 opened out: the panel's job is reading a body at leisure, the plate's is catching what moved.
@@ -1793,8 +1770,8 @@ both the pixel cursor and the browser-cursor fallback read from it. It returns
 - `kind` **arrow** — dead (off a plank), paused, map, and anywhere in the title/settings/wheel that isn't
   a widget; **hand** — over a live main-menu item (`menuHit()`, frozen planks stay an arrow), a death-overlay plank (`deadHit()`) or spectate arrow (`specHit()`), a settings widget (`settingsHit()`, shared with the click handler
   so hover and click can never disagree), a live wheel segment, or a control inside the backpack
-  widget (`gearHit()` / `bagHit()`), a weapon or ability well (`stripHit()`) or a cell of the weapon shelf
-  (`shelfHit()` — the strip's gold plate is a readout and stays an arrow, see [The HUD corners](#the-hud-corners)); **grab** — dragging a
+  widget (`gearHit()` / `bagHit()`) or an ability or meal well (`stripHit()`); a cell of the weapon shelf
+  (`shelfHit()`) is read, not handled, and stays an arrow, as does the strip's gold plate (see [The HUD corners](#the-hud-corners)); **grab** — dragging a
   slider, **or carrying an item on the cursor** (`state.drag`, which outranks everything: the drag
   ghost *is* the cursor until it is put down); **hammer** — over the world while the build list
   is up (`dim` where the ghost cannot stand, and wearing the picked piece as `piece` wherever a
@@ -1957,7 +1934,7 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   clear the row and its name, `HERO_ROW_H`) in your side's paint under a warm pool of light with
   a gold ring turning on the snow, and **no weapon and no name under it** — the row carries the
   hero's name, the roster frame yours. **Clicking the figure** (it lifts under the hand; `'hero'` in `lobbyHit`, the
-  body's own rect) opens the [hero pop-up](#the-hero-pop-up): gear, stat points and the
+  body's own rect) opens the [hero pop-up](#the-hero-pop-up): gear and the
   abilities. No gear shows on the lobby itself.
 
   **Three pop-ups** open over the still-lit lobby, one at a time, on one shared ease
@@ -2038,21 +2015,13 @@ tag). The store behind it is [profile.js](architecture.md#profilejs): one name a
 <a id="the-hero-pop-up"></a>
 - **Hero pop-up** (`menu.screen = 'hero'`, off your figure on the lobby, easing over the
   still-lit lobby on `menu.popT`): a dim, then a floating panel in two columns
-  (`heroLayout()`/`heroScreenHit()`, which answers `{row, v}` a variant well, `{pt, d}` a
-  ledger row (a point goes there) or `{pt, d: -1}` one of its spent pips (that point comes
-  back), `{ab}` an ability well, `'x'`, `'panel'` or null). LEFT is the **live preview**
+  (`heroLayout()`/`heroScreenHit()`, which answers `{row}` a variant well, `{ab}` an ability
+  well, `'x'`, `'panel'` or null). LEFT is the **live preview**
   (`drawGearPreview`): the chosen class walking in place at 4× wearing its four leather bands
   (every pre-match pick is the free level 1) with the class weapon at hand, and under it the
-  **stat ledger** — one labelled row per number the build can touch (`GEAR_STATS`, whose
-  getters take an optional player and are handed none here — every pre-match hero is level 1),
-  real values computed by `heroPreviewKit` through the same `baseKit` (js/sim/player.js) the sim's
-  `refreshKit` uses, so the page can never lie. **The ledger is also where the stat points are
-  spent** ([gameplay.md](gameplay.md#stat-points)): the unspent ones stand as a row of
-  `STAT_POINTS` pips between the preview and the ledger, every row is a track, a hovered row
-  shows what one more point would make of its number (the would-be value in green at the edge,
-  dim when nothing is left to spend) and a click puts a point there (`spendPt`); a row's spent
-  points stand as gold pips right after its label (`heroPipX`, `HERO_PIP`) and a click on a
-  pip takes that point back. RIGHT is two **columns** of four wells, every well a button that
+  **stat ledger** — the seven [hero stats](gameplay.md#hero-stats) at level 1 (`STAT_ROWS`,
+  handed no player here), real values computed by `heroPreviewKit` through the same `baseKit`
+  (js/sim/player.js) the sim's `refreshKit` uses, so the page can never lie. RIGHT is two **columns** of four wells, every well a button that
   turns it: the **gear column** — one well a piece wearing the picked variant's 32px icon
   (`drawGearWell`, `GEAR32`/`gearIcon32` baked on the ability icons' palette), gold-rimmed, a
   click turning it to the piece's next variant (`pickGear`) — and the **ability column** — one
@@ -2062,19 +2031,17 @@ tag). The store behind it is [profile.js](architecture.md#profilejs): one name a
   carry two, the hunter's one, which a click leaves as it is), and a hover raising the option's
   card (`tipClassAb`, hooked in `tipAt`) — their growth is the match's own skill points, never
   bought here. The hovered well's name prints once under the columns: what a click would turn
-  it to. **Hovering a gear well or a ledger row writes its deltas into the ledger** — the
-  current number steps aside dim and the would-be number (the NEXT variant's, one more point's)
+  it to. **Hovering a gear well writes its deltas into the ledger** — the
+  current number steps aside dim and the would-be number (the NEXT variant's)
   takes the edge in green (better) or red (worse), covering the whole swap — and a click
   makes it so, the ledger stepping to the new kit as the equip plays. **Picking plays on the
   preview body** (`pickGear` → `menu.gearFxT`/`gearFxSlot`): a white flash through the scratch
-  canvas, gold sparks, the changed piece's band lit; a point (`spendPt`) refreshes the kit and
-  heals to full the same way. The keyboard walks `menu.grow` down the gear column, the ability column
-  and on through the ledger's rows: on a well (corner ticks) Enter, Space or Right turns it and
-  Left turns it back, on a row (end ticks) Right or Enter spends a point and Left takes one
-  back. ESC,
+  canvas, gold sparks, the changed piece's band lit. The keyboard walks `menu.grow` down the
+  gear column and the ability column: on a well (corner ticks) Enter, Space or Right turns it and
+  Left turns it back. ESC,
   Backspace, the **X** in the corner, or a click anywhere off the panel
   close it back to the lobby (`leaveHero`) — LOCK IN (and a running count) stays on the lobby
-  behind it. The ledger's and the tracks' labelled rows are the PLAYER-panel text carve-out:
+  behind it. The ledger's labelled rows are the PLAYER-panel text carve-out:
   comparing numbers is this panel's whole job. See [gameplay.md](gameplay.md#gear).
 
 - **Entrance**: `menu.t` staggers the logo and items in at boot.

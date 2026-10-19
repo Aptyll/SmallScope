@@ -31,7 +31,8 @@ let tipNow = null;      // this frame's descriptor, resolved once in render()
 // seconds, to two places, without a trailing shout of precision
 function tipSec(s) { return (Math.round(s * 100) / 100).toFixed(2) + 'S'; }
 // A descriptor is { title, tcol, kind, rows: [[label, value, col]],
-// notes: [[text, col]], icon, plate, rim }. Everything below builds one of
+// sum: [value, col] (a total under a rule, optional), notes: [[text, col]],
+// icon, plate, rim }. Everything below builds one of
 // these and drawTooltip is the only thing that knows how to paint it.
 function tipBase(type, title, kind) {
   const t = itemTier(type);
@@ -59,7 +60,7 @@ function tipTool(cell) {
   d.rows.push(['BIT SLOTS', bitsIn(cell) + '/' + T.cap, '#f4f7ff']);
   d.rows.push(['TENSILE', String(plan.tensile), '#f2cc6a']);
   d.rows.push(['LOADED WEIGHT', String(plan.load), '#f4f7ff']);
-  d.rows.push(['FULL DRAW', tipSec(kitOf(player).bowCharge * toolDrawMul(cell)), slow ? '#ffd95c' : '#f4f7ff']);
+  d.rows.push(['FULL DRAW', tipSec(kitOf(player).bowCharge * toolDrawMul(cell) / asMul(player)), slow ? '#ffd95c' : '#f4f7ff']);
   d.rows.push(['SHOTS A PRESS', String(plan.shots.length), '#8fe08a']);
   for (let i = 0; i < cell.bits.length; i++) {
     const b = cell.bits[i] && BITS[cell.bits[i]];
@@ -176,14 +177,6 @@ function tipStack(s) {
   d.rows.push(['CARRIED', String(s.n), '#f4f7ff']);
   return d;
 }
-// What a click on this well will DO, said where the item actually SITS - a
-// tool means "take it in hand" in the grid and "stow it" in the well, so the
-// note is pushed on by tipAt's branches rather than by tipCell, which does
-// not know where it is. Same phrasing as the food rows' own CLICK TO EAT.
-function tipSend(d, txt) {
-  if (d) d.notes.push(['CLICK TO ' + txt, TIP_DIM]);
-  return d;
-}
 // whatever is in a bag cell, a slot, a bit cell or on the cursor
 function tipCell(s) {
   if (!s) return null;
@@ -260,25 +253,6 @@ function tipStruct(type) {
   for (const s of S.blurb.split('. ')) d.notes.push([s.replace(/\.$/, ''), TIP_DIM]);
   return d;
 }
-// A KIND on the wiki's ARSENAL page - the one tooltip that is not about
-// something you are holding, so it describes the kind itself and ends on the
-// one thing the page knows about you: whether you have ever held one.
-function tipKind(id) {
-  const cell = toolIdOf(id) ? makeTool(toolIdOf(id)) : null;
-  const d = cell ? tipTool(cell) : tipBit(bitIdOf(id));
-  // A wiki row describes the KIND, not a tool somebody is holding, so the
-  // "what is loaded in it" half goes: no bit list, and the player count is the
-  // capacity rather than 0-out-of-capacity.
-  d.notes.length = 0;
-  if (cell) {
-    d.rows.length = 3;
-    d.rows[1] = ['BIT SLOTS', String(TOOLS[toolIdOf(id)].cap), '#f4f7ff'];
-  }
-  d.notes.push([PROFILE.techSeen(id) ? 'YOU HAVE HELD ONE OF THESE'
-    : 'NEVER HELD ONE', PROFILE.techSeen(id) ? '#8fd8ff' : TIP_DIM]);
-  return d;
-}
-
 // What the pointer is on, asked once per frame. The order mirrors the
 // mousedown handler exactly: the build list's rows, gear, then the shelf,
 // then the weapon strip, then the backpack - so the panel and the click
@@ -289,9 +263,9 @@ function tipAt(mx, my) {
     const m = state.menu;
     if (m.screen === 'wiki' && m.wikiT >= 1) {
       const h = wikiHit(mx, my);
-      // an ARSENAL row describes its kind; a CLASSES row is the lobby's
+      // an ITEMS row is the shop's own item card; a CLASSES row is the lobby's
       // own ability card, read at the base cooldown since nobody has levelled
-      return !h ? null : h.kind === 'row' ? tipKind(h.id) : h.kind === 'ab' ? tipClassAb(h.i, h.cls, h.k) : null;
+      return !h ? null : h.kind === 'row' ? tipItem(h.id) : h.kind === 'ab' ? tipClassAb(h.i, h.cls, h.k) : null;
     }
     // the hero pop-up's four ability wells raise the same card
     if (m.screen === 'hero' && m.popT >= 1) { const h = heroScreenHit(); return h && h.ab != null ? tipClassAb(h.ab, player.cls, player.abPick[h.ab]) : null; }
@@ -321,25 +295,16 @@ function tipAt(mx, my) {
   if (ch && ch.kind === 'cell') return tipCheat(ch.i);
   const fh = shelfHit(mx, my);
   if (fh) {
-    const cell = shelfCell();
-    if (fh.kind === 'tool') {
-      if (cell) return tipSend(tipCell(cell), 'STOW IT IN THE PACK');
-      return { title: 'EMPTY WEAPON SLOT', tcol: TIP_DIM, kind: 'WEAPON', rows: [], plate: BAG_WELL, rim: '#3c4048',
-        notes: [['DRAG A TOOL HERE FROM THE PACK', TIP_DIM]] };
-    }
-    const id = cell.bits[fh.i];
-    if (id) return tipSend(tipBit(id), 'STOW IT IN THE PACK');
-    const T = TOOLS[toolIdOf(cell.type)];
-    const d = tipBase(cell.type, 'EMPTY BIT CELL', TOOL_TIERS[T.tier].name + ' TOOL');
-    d.icon = null; d.tcol = TIP_DIM;
-    d.notes.push(['A FOUND BIT LANDS HERE ON ITS OWN', TIP_DIM]);
-    d.notes.push(['LOADED ' + toolLoad(cell) + ' OF ' + toolTensile(cell) + ' TENSILE', '#f2cc6a']);
-    return d;
+    // the class weapon, or an item slot: what is there, or nothing for an empty slot
+    if (fh.kind === 'tool') return shelfCell() ? tipCell(shelfCell()) : null;
+    const id = player.items[fh.i];
+    return id ? tipItem(id) : null;
   }
   const abb = abBuyHit(mx, my);
   if (abb >= 0) return tipClassAb(abb); // the buy plate describes the ability it upgrades
   const sh = stripHit(mx, my);
   if (sh && sh.kind === 'ab') return tipClassAb(sh.i);
+  if (sh && sh.kind === 'stat') return tipStat(sh.key); // the stat panel's breakdown (js/ui/statpanel.js)
   // a meal button describes the meal it eats - the bag cell's own food
   // descriptor, so the two surfaces can never disagree about a berry
   if (sh && (sh.kind === 'fishPick' || sh.kind === 'fishPop' || (sh.kind === 'food' && FOOD_BTNS[sh.i].type === 'fish'))) return null; // the picker says it (drawFishPop)
@@ -356,8 +321,6 @@ function tipAt(mx, my) {
   if (bh.kind === 'cell') {
     const s = player.bag[bh.i];
     const d = s && s.type === 'tunnel' ? tipTunnel() : tipCell(s);
-    if (d && isToolCell(s)) tipSend(d, 'TAKE IT IN HAND');
-    else if (d && bitIdOf(s.type) && heldTool(player)) tipSend(d, 'LOAD IT IN THE WEAPON');
     // ...and while the counter is up, what it is worth over there
     if (d && shopOpen()) {
       d.rows.push(['SELLS FOR', sellValue(s) + ' GOLD', RES_COLORS.gold]);
@@ -376,7 +339,7 @@ function tipSize(d) {
   for (const [l, v] of d.rows) w = Math.max(w, pixelTextWidth(l) + 10 + pixelTextWidth(v));
   for (const [t] of d.notes || []) w = Math.max(w, pixelTextWidth(t));
   const head = d.icon ? Math.max(14, d.icon.height + 2) : 14;
-  const h = TIP_PAD * 2 + head + d.rows.length * TIP_ROW + (d.notes || []).length * TIP_ROW;
+  const h = TIP_PAD * 2 + head + d.rows.length * TIP_ROW + (d.notes || []).length * TIP_ROW + (d.sum ? TIP_ROW + 3 : 0);
   return { w: Math.min(TIP_MAXW, w) + TIP_PAD * 2, h };
 }
 // WHERE the panel goes, the one answer for both modes. FIXED is the corner it
@@ -438,6 +401,12 @@ function drawTooltip() {
     ctx.fillStyle = '#33363d';
     for (let px = x + TIP_PAD + lw + 3; px < x + w - TIP_PAD - vw - 2; px += 2) ctx.fillRect(px, cy + 4, 1, 1);
     drawPixelTextShadow(ctx, value, x + w - TIP_PAD - vw, cy, col || '#f4f7ff', '#121418');
+    cy += TIP_ROW;
+  }
+  if (d.sum) { // a total under a rule (the stat panel's breakdown, tipStat)
+    ctx.fillStyle = '#33363d'; ctx.fillRect(x + TIP_PAD, cy, w - TIP_PAD * 2, 1);
+    cy += 3;
+    drawPixelTextShadow(ctx, d.sum[0], x + w - TIP_PAD - pixelTextWidth(d.sum[0]), cy, d.sum[1], '#121418');
     cy += TIP_ROW;
   }
   for (const [text, col] of d.notes || []) {

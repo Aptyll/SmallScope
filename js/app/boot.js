@@ -12,9 +12,6 @@ function startGame() {
 PROFILE.load();   // the profile carries the settings, so it is read first
 loadSettings();
 mendBinds(); // the profile's key binds made whole (input.js)
-// ...and the tech tree, which decides what this profile's world may drop.
-// Must run after PROFILE.load() and before initPlayers()/any swing.
-rebuildLootPool();
 fitCanvas(); relayout(); // the window may have changed size while the scripts loaded (no resize listener yet); this places the UI for the fitted view
 SFX.setVolume(settings.volume);
 SFX.setMusicVolume(settings.musicVol);
@@ -130,7 +127,6 @@ try {
       try {
         const d = JSON.parse(dropRaw);
         if (d && Array.isArray(d.gear)) player.gear = d.gear.map((v) => v | 0);
-        if (d && Array.isArray(d.pts)) player.pts = d.pts.map((v) => v | 0);
         if (d && Array.isArray(d.abPick)) player.abPick = d.abPick.map((v) => v | 0);
       } catch (e) { }
       setClass(player, player.cls);
@@ -205,15 +201,14 @@ window.DBG = {
   // the hud strip - portrait, abilities, bars and meals, bottom-centre.
   hudStripRect, stripHit,
   // Tools and bits: the two tables, the tier palette, an instance maker, the
-  // firing pipeline and the loot roll - so a driver can stage a build without
-  // mining for it. `shelfCellRect(-1)` is the weapon's one well, and
-  // `shelfCellRect` / `shelfHit` the always-up shelf's (cell -1 is the tool).
+  // firing pipeline - so a driver can stage a build. `shelfCellRect(-1)` is
+  // the weapon's one well and 0..5 the item slots; `shelfHit` names either.
   // `fitAdd` is the pickup's own path: a bit into the tool, the rest in the pack.
   TOOL_TIERS, TOOL_SLOTS, makeTool, toolType, bitType, bitMods, newMods, fitAdd,
   // toolPlan is the whole press resolved without firing it: what the budget
   // reaches, through which envelope, and where it runs out (`cut`)
   toolPlan, toolLoad, toolDrawMul, drawTime, sortBits,
-  toolRof, toolCycle, peekBit, toolReady, dropLoot, giveLoadout, CLASS_LOADOUT,
+  toolRof, toolCycle, peekBit, toolReady, giveLoadout, CLASS_LOADOUT,
   // a thing put down on purpose: the throw (out of the pack, along the
   // cursor), the lock that keeps it out of the thrower's own hands, and the
   // bits a tool sheds as it lands - so a driver can stage a discard without
@@ -227,7 +222,7 @@ window.DBG = {
   takeUpgrade: (cell, p) => takeUpgrade(p || player, cell),
   // the draw curve: 0..1 off a player's chargeT, and the flight and damage it buys a bit
   drawPow, shotFlight, drawDmgMul, DRAW_RANGE_MIN, DRAW_SPEED_MIN, DRAW_DMG_MIN,
-  shelfCellRect, shelfHit, shelfRails, tierPlate,
+  shelfCellRect, shelfHit, tierPlate,
   // the closing line's three bits: what a shot does where it LANDS, the
   // teleport with no shot to fire it, the flashes it strings across the jump,
   // and the chop a thrown axe lands - so a driver can prove an arrival or a
@@ -246,11 +241,10 @@ window.DBG = {
   // level 0 is LOCKED: nothing casts off a key no point has been spent on
   abUnlocked: (i, p) => abUnlocked(p || player, i), abReady: (i, p) => abReady(p || player, i),
   buyAbilityLv: (i, p) => buyAbilityLv(p || player, i), abBuyRect, abBuyHit,
-  // the arsenal tree: the graph, the page's own geometry, and the pool a
-  // match drops from - which is the whole arsenal, the same for every profile.
-  // `wipeTech` forgets what this profile has HELD (the blue pips), which is
+  // the old arsenal tree's graph (nothing drops off it now; the items page is
+  // BUILD_ITEMS). `wipeTech` forgets what this profile has HELD (the blue pips), which is
   // all a profile still remembers about the tree.
-  TECH, rebuildLootPool, LOOT_POOL,
+  TECH,
   // the wiki: its pages, the live layout (tabs, rows, window, rail), what is
   // under a point, the open page's scroll, and the way in and out; the
   // title's three tabs over it and the notes screen (js/ui/notes.js)
@@ -322,7 +316,7 @@ window.DBG = {
   // cue/rumble/pulse raiser, and what a release on a given well WOULD do -
   // so a driver can prove the promise and the move agree without a mouse
   dragLift, dragDrop, dragReturn, hudPress, hudRelease, hudFx, haptic,
-  dropKindBag, dropKindSlot: (i) => dropKindSlot(i || 0), dropKindBit,
+  dropKindBag,
   get wellLit() { return wellLit; }, get dragLit() { return dragLit; },
   get bag() { return player.bag; },
   get food() { return player.food; },
@@ -374,14 +368,14 @@ window.DBG = {
   // prices a body with, the plate's own size, the live values, what each row
   // is still lit for, and the raise without a change behind it - so a driver
   // can prove a level, a card or a gear buy moved the number it was meant to
-  GEAR_STATS, STAT_W, statPlateH, raiseStatNote, noteLaneFloor,
-  statValues: (p) => GEAR_STATS.map(([n, get, fmt]) => [n, fmt(get(kitOf(p || player), p || player))]),
-  statLit: () => GEAR_STATS.map(([n], i) => (statLit[i] ? [n, statDeltaTxt(statLit[i].d, GEAR_STATS[i][2]), statLit[i].t] : null)).filter(Boolean),
+  STAT_ROWS, STAT_W, statPlateH, raiseStatNote, noteLaneFloor,
+  statValues: (p) => STAT_ROWS.map(([n, get, fmt]) => [n, fmt(get(kitOf(p || player), p || player))]),
+  statLit: () => STAT_ROWS.map(([n], i) => (statLit[i] ? [n, statDeltaTxt(statLit[i].d, STAT_ROWS[i][2]), statLit[i].t] : null)).filter(Boolean),
   // gear: the table, a player's effective kit, and buy/pick without the HUD
   GEAR, GEAR_SLOTS, GEAR_COSTS, kitOf, refreshKit, gearHit, charLayout, charHit, BAG_CELL,
   gearCost: (i, p) => gearCost(p || player, i),
   buyGear: (i, p) => buyGear(p || player, i),
-  pickGear: (i, v) => pickGear(i, v), spendPt, heroLayout, heroScreenHit, beginHero,
+  pickGear: (i, v) => pickGear(i, v), heroLayout, heroScreenHit, beginHero,
   setGear: (i, v, p) => { const q = p || player; q.gear[i] = v; refreshKit(q); return q.kit; },
   // the match readouts: the log (not drawn - read it here), staged lines
   // without the kills behind them, and the standings (hold TAB in game, or
@@ -472,8 +466,8 @@ window.DBG = {
   // screen) and the navbar cells - so a driver can click a dial without
   // guessing at the pitch. setSettingsTab flips the page directly, and
   // ctrlCvs holds the CONTROLS page's three bakes (keys / pad / touch) -
-  // blit one scaled to read the weapon primer's pixels without squinting at
-  // a 240px page; setCtrlTab picks which listing the page shows.
+  // blit one scaled to read its pixels without squinting at a 240px page;
+  // setCtrlTab picks which listing the page shows.
   settingsHit, muteBtnRect, settingsScrollBy, ctrlCvs,
   setSettingsTab: (id) => { setTab = id; },
   get settingsTab() { return setTab; }, // the open page (a let, so a getter)

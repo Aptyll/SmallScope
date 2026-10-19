@@ -119,11 +119,7 @@ declare victory. The affordances:
   card, driven by `profileHit`, `profileKey`, `profileCommit`/`leaveProfile` and read back
   through `profileLayout`/`profileTagRect`; `DBG.lobbyPick(i)` and `DBG.heroList()` drive the
   lobby's hero row. See [architecture.md](architecture.md#profilejs).
-- **The arsenal needs no staging** — every kind is unlocked for
-  every profile, so `DBG.LOOT_POOL` is the same on a fresh install as on a played-in one, and
-  reading it back is how you prove what a match may drop. `DBG.wipeTech()` still forgets which
-  kinds this profile has *held*, which is all the [wiki](gameplay.md#the-wiki)'s blue pips are.
-  The wiki itself is driven headlessly by `DBG.beginWiki()`, `wikiSetTab(i)`, `wikiScrollBy(px)`,
+- **The [wiki](gameplay.md#the-wiki) needs no staging**: it is driven headlessly by `DBG.beginWiki()`, `wikiSetTab(i)`, `wikiScrollBy(px)`,
   `wikiLayout()` (tabs, rows, the window, the rail) and `wikiHit(x, y)`; the ease takes 0.35 s
   of real frames, so wait for `state.menu.wikiT` to read 1 before hovering anything. The patch
   notes and roadmap open with `DBG.beginNotes()` and `DBG.openPageTab(i)` (0 wiki, 1 patch notes,
@@ -236,10 +232,9 @@ code, not in the byte-fragile grid files under js/sprites/ — see `bakeGrid` in
 icon that should **loop** is still one canvas to everything that draws it — put the frames in
 `SPRITES.itemAnim[key]` and the canvas in `SPRITES[key]`, and `stepItemIcons` animates it, see
 [sprites.md](sprites.md)), a colour in `RES_COLORS` for the pickup floater, **what it is worth** (see the counter below, or
-it sells for nothing), whatever *makes* the item, and what using it does —
-`bagClick` maps a cell click onto an input flag, so a new item needs its own branch there or
-clicking its cell will just deny (`sendBagCell` runs first and handles only the two kinds that
-have somewhere to *go*, a bit and a tool) — and a branch in `tipStack` (the `tooltips` banner, js/ui/tooltip.js) or
+it sells for nothing), whatever *makes* the item, and what using it does — a `use` on its
+`ITEMS` row, which a click on its cell runs (`sendBagCell`); without one, clicking its cell just
+denies (`bagClick`) — and a branch in `tipStack` (the `tooltips` banner, js/ui/tooltip.js) or
 hovering it says only its raw type name. **A new FOOD is the one item that is already generic**:
 give its `ITEMS` row a `heal` and `pouch: true` and it picks up the pouch, the meal channel, the
 shared clock and the tooltip rows for free (`startEat`, js/sim/core.js — see
@@ -253,9 +248,9 @@ one: it is a wallet number with no ceiling. See
 
 **Adding a weapon (a tool) or a bit** — both are one entry in `TOOLS` / `BITS`
 ([js/sim/tools.js](../../js/sim/tools.js)); the loop at the foot of that file registers the `ITEMS` and
-`RES_COLORS` rows, so storage, drops, the drag, the click that sends it between
-pack and weapon, and the loot pools all pick it up
-with no other edit. Both need a `price`, or the merchant buys it back
+`RES_COLORS` rows, so storage, drops and the drag all pick it up
+with no other edit. Nothing drops a tool or a bit in a match; a new one reaches a player through
+`CLASS_LOADOUT`. Both need a `price`, or the merchant buys it back
 for nothing ([the counter](gameplay.md#buying-and-selling) - half the price is what it fetches,
 and a tool carries its loaded bits into that sum). A **tool** needs `rof`/`cap`/`tensile`/`tier`
 and an `art` key — every tool has a 12×12 silhouette of its own in `TOOL_ART` (bow, recurve,
@@ -268,10 +263,6 @@ a `cap` at least as big **swaps itself into the hand** and takes the build with 
 ([the swap](gameplay.md#where-tools-and-bits-come-from)), so a new tool that is a straight upgrade
 of an existing one needs no pickup code — and one that is better but *narrower* is deliberately
 left an ordinary pickup rather than being made to drop somebody's bits.
-**A `cap` above 5 is the one number with a layout cost**: the corner's two width constants
-(`CORNER_REACH` and `CORNER_CLAIM`, js/ui/strip.js) both spell "six wells" out as `6 * SHELF_CELL +
-5 * SHELF_GAP`, so a roomier tool would run its row off the intro bake and under the merchant's
-slab, which is pinned off the claim ([the panel](gameplay.md#the-panel)). Widen both together.
 
 **A new way to put a tool on the ground must call `shedBits` first** (js/sim/tools.js) — the one that
 exists, `throwCell` (js/ui/bag.js), does (a death puts nothing down since 3.55). Skip it and that
@@ -300,14 +291,9 @@ modifier that carries a **damage type** sets `m.type` (see `DMG_TYPES`, js/sim/a
 arrow carries it to `hurtUnit` with no per-kind code; add its numbers to `tipBit`'s modifier
 branch, which reads them back out of `bitMods` rather than restating them.
 
-**It also needs a `TECH` node** (js/sim/tools.js), or the [wiki](gameplay.md#the-wiki)'s ARSENAL
-page never lists it — the loot pool rolls it either way, since the pool is every kind at or
-under a tier, but a kind missing from the page is a kind nobody can read the numbers of. The
-page's three tables are `wikiKinds(sort)` (js/ui/wiki.js): every `TECH` id of that sort, ordered
-by tier, in a scrolling window — so a new node is a new row with no layout to retune. Give the
-node a `req` naming the node beneath it (null only on the tier-0 row); nothing draws that edge
-any more, but it is the lineage on paper. The row, its "held one" pip (`noteSeen`) and its
-tooltip (`tipKind`) all follow from that one entry.
+**A `TECH` node** (js/sim/tools.js) is what `noteSeen` records a kind against; no page lists the
+kinds now (the wiki's ITEMS page reads `BUILD_ITEMS`). Give a node a `req` naming the node
+beneath it (null only on the tier-0 row); nothing draws that edge, but it is the lineage on paper.
 
 A brand-new `path` is the only thing that is not table-driven: it needs a
 branch in `steerBit` — plus a line in `drawAimLine`'s honesty
@@ -570,14 +556,15 @@ already current, so it is safe to call from a state change that repeats.
 | File | The numbers |
 | --- | --- |
 | js/sim/core.js | the `YIELD` table (every gold payout, the one table still in core.js); `useCard`'s random draw |
-| js/sim/player.js | `RESPAWN_WAIT` (the wait for the bird, beside `die()`) and the takedown gold (`KILL_SOLDIERS`, `ASSIST_*`, `BOUNTY_*`, `FEED_*`, the `takedowns` banner); the `CARDS` table (every card's effect, by rarity); the hero-level table (`LEVEL_XP`/`LVL_HP`/`LVL_DMG` — sized against the road's XP, see [multiplayer.md](multiplayer.md#hero-levels)) and what a downed scout is worth (`KILL_XP`/`KILL_XP_LV`); `BOW_CHARGE` and the momentum constants (`ICE_MAX`, `SLIDE_MIN`/`SLIDE_EXIT`, `TRAIL_MIN`) above `CLASSES`; the player count (`MAX_PLAYERS`) |
+| js/sim/player.js | `RESPAWN_WAIT` (the wait for the bird, beside `die()`) and the takedown gold (`KILL_SOLDIERS`, `ASSIST_*`, `BOUNTY_*`, `FEED_*`, the `takedowns` banner); the `CARDS` table (every card's effect, by rarity); the hero-level table (`LEVEL_XP` — sized against the road's XP, see [multiplayer.md](multiplayer.md#hero-levels)) and what a downed scout is worth (`KILL_XP`/`KILL_XP_LV`); each hero's stats and growth (`CLASSES[c].base`/`.grow`, read through js/sim/stats.js); `BOW_CHARGE` and the momentum constants (`ICE_MAX`, `SLIDE_MIN`/`SLIDE_EXIT`, `TRAIL_MIN`) above `CLASSES`; the player count (`MAX_PLAYERS`) |
 | js/sim/world.js | the chests (`CHEST_*` above `placeChests()`: count, spacing, payout, and `CHEST_ODDS`, a chest's card rarity roll); `TREE_HP`; `TREE_RARE_CHANCE` in `treeRare()`; the road (`ROAD_HW`/`ROAD_RAG`/`ROAD_ICE_KEEP`/`ROAD_ICE_TAPER`/`ROAD_STEP`/`ROAD_HW_WOOD`/`ROAD_NEST_IN`/`ROAD_NEST_OFF`/`ROAD_LOG_IN`/`SPUR_HW`), which reshapes the map |
 | js/sim/base.js | the bases (`BASE_U`/`BASE_R`/`BASE_RAG`/`PERCH_U`/`BASE_KEEP`), which reshape both roost corners |
 | js/sim/structures.js | `STRUCTS` costs/HP/build times (plus turret range/dmg/rate/traverse/aim/`acc`, generator pay/period, bay bot count/HP and its `w`/`h` footprint; the bay's roll-out cadence is inline in `updateStructures()`'s spawner branch); the turret's own throw (`TUR_*`, `ROCK_SPD`/`ROCK_FALL`/`ROCK_MISS`/`ROCK_SPLASH`, under the `turret gunnery` banner); the waves (`STRUCTS.barracks`'s `wave`/`waveT`/`grow`/`cap`/`botHp`/`hp`, `BARRACKS_ROLL`) |
-| js/sim/robots.js | `SOLDIER_*` (speed, aggro, siege reach, the bird damage, the bounty); `MERCH_BAYS`/`MERCH_BAY_*` (how many bays, the logs each costs, when the first is due, how far behind the roost, the rebuild wait); `MERCH_BACK_R`/`MERCH_BACK_ARC` (how far and how wide the back woods reach) |
+| js/sim/robots.js | `SOLDIER_*` (speed, aggro, siege reach, the bird damage, `SOLDIER_HP_GROW`); `MERCH_BAYS`/`MERCH_BAY_*` (how many bays, the logs each costs, when the first is due, how far behind the roost, the rebuild wait); `MERCH_BACK_R`/`MERCH_BACK_ARC` (how far and how wide the back woods reach) |
+| js/sim/farm.js | `SOLDIER_BOUNTY`/`SOLDIER_BOUNTY_GROW` (a soldier's last hit), `COIN_POP_T`; the bots' farm knobs `AI_FARM_*`/`AI_DEN_EARLY`/`AI_LANE_N`/`AI_JUNGLE_N` sit in js/ai/ai-farm.js |
 | js/sim/actions.js | `WORK_REACH` and the roll/prone blocks |
-| js/sim/tools.js | the `TOOLS` and `BITS` tables; the loot rates (`TREE_DROP`/`CHEST_TOOL`/`LOOT_TOOL`); the flight-path constants beside `steerBit`; the damage roll in `emitBit()` |
-| js/sim/mining.js | `ROCK_KINDS` (each rock kind's mining time, gold, ore, find and regrow), `ORE_PRICE`, `MINE_STRIKE`/`MINE_R`/`MINE_DECAY`/`MINE_HIT_HOLD`/`MINE_STREAM_T`/`MINE_MOVE`/`ORE_FLING` |
+| js/sim/tools.js | the `TOOLS` and `BITS` tables; the flight-path constants beside `steerBit`; the damage roll in `emitBit()` |
+| js/sim/mining.js | `ROCK_KINDS` (each rock kind's mining time, gold, ore and regrow), `ORE_PRICE`, `MINE_STRIKE`/`MINE_R`/`MINE_DECAY`/`MINE_HIT_HOLD`/`MINE_STREAM_T`/`MINE_MOVE`/`ORE_FLING` |
 | js/sim/items.js | `BUILD_ITEMS` (every part's and item's price, stats and passive), `ITEM_PASSIVES`, `ITEM_SELL`, `ITEM_FIGHT_T`, `KINDLE_EVERY`/`KINDLE_BURN`, `CHILL_T`/`CHILL_MUL`, the bots' `BOT_BUILDS` |
 | js/ui/shop.js | `FOOD_PRICE` (the frost pike and the berry; every other fish off its heal), `SHOP_REACH` |
 | js/ai/ai-skill.js | every level's numbers (`AI_LEVELS`: the hand fields, the choice knobs, `push`/`guard`), the ally clocks (`AI_ALLY_PUSH`), the ladder's hands (`AI_LADDER_HANDS`), the skill layer's clocks (`AI_SETTLE`, `AI_WOBBLE_T`, `AI_ALERT_T`, `AI_AIM_ON`, `AI_BLADE_CLOSE`, `AI_BLADE_HOLD`) |

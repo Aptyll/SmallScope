@@ -479,7 +479,7 @@ function peekBit(cell) { return toolPlan(cell).shots[0].id; }
 // seconds between shots: the tool's own rate, quickened by everything that
 // already quickens a renock (QUICKDRAW, QUICK HANDS, the renock cards)
 function toolRof(p, cell) {
-  return TOOLS[toolIdOf(cell.type)].rof * TOOL_ROF_STEP * (kitOf(p).nock / BOW_NOCK);
+  return TOOLS[toolIdOf(cell.type)].rof * TOOL_ROF_STEP * (kitOf(p).nock / BOW_NOCK) / asMul(p);
 }
 // The cycle a press starts, for THIS player right now: the held tool's rate,
 // or bare hands' (`kit.nock`) with no tool up. The one number every readout of
@@ -488,7 +488,7 @@ function toolRof(p, cell) {
 // meter can ever show a cooldown a different length from the one running.
 function toolCycle(p) {
   const cell = heldTool(p);
-  return cell ? toolRof(p, cell) : kitOf(p).nock;
+  return cell ? toolRof(p, cell) : kitOf(p).nock / asMul(p);
 }
 
 // Can the button do anything at all right now? Only a slot with no tool in it
@@ -526,7 +526,7 @@ function toolDrawMul(cell) {
 // seconds to a full draw for THIS player right now: the kit's own draw,
 // slowed by the weight in the held tool. Every reader of "how far back is the
 // string" divides by this, never by the bare `kit.bowCharge`.
-function drawTime(p) { return kitOf(p).bowCharge * toolDrawMul(heldTool(p)); }
+function drawTime(p) { return kitOf(p).bowCharge * toolDrawMul(heldTool(p)) / asMul(p); } // ATTACK SPEED quickens the pull (js/sim/stats.js)
 function drawPow(p) { return Math.min(1, Math.max(0, p.chargeT / drawTime(p))); }
 function drawSpeedMul(pw) { return DRAW_SPEED_MIN + (1 - DRAW_SPEED_MIN) * pw; }
 function drawRangeMul(pw) { return DRAW_RANGE_MIN + (1 - DRAW_RANGE_MIN) * pw; }
@@ -801,6 +801,10 @@ function armOff(m, k, d) { return (m.fan > 1 ? (k - (m.fan - 1) / 2) * FAN_SPREA
 // activation, which is all its skew off the aim is. SPLITTER fans one bit into
 // `m.fan` arms and DUPLICATE fires the whole fan `m.dup` times over, and the
 // two multiply because both compound.
+// A full-draw blow with bit `b`: the hero's DAMAGE stat (statOf, js/sim/stats.js),
+// which is the class's own bit, plus however much more or less this bit hits
+// for than that one - a found log still lands harder than the plain arrow.
+function bitDmg(p, b) { return statOf(p, 'dmg') + b.dmg - BITS[CLASS_LOADOUT[p.cls].bits[0]].dmg; }
 function emitBit(p, b, id, m, amb, seq) {
   const kit = kitOf(p);
   const pw = drawPow(p);
@@ -809,12 +813,11 @@ function emitBit(p, b, id, m, amb, seq) {
   // the flight runs parallel to the aim line and never meets it
   const dx = p.input.aimX - p.x, dy = p.input.aimY - (p.y - BOW_Y);
   const base = Math.atan2(dy, dx);
-  // the bit is what is being thrown: its own numbers lead, and the champion
-  // kit, the hero level and the modifiers are what the player brought to it.
-  // Then the draw scales the whole sum (drawDmgMul): a full draw is worth
-  // every point of it, a tap DRAW_DMG_MIN of it - the flat kit and level
-  // bonuses included, so a spammed level-twelve bow is still a weak one
-  let dmg = (b.dmg + kit.dmgPow * pw * 0.5 + kit.dmgBase + spdBonus + LVL_DMG * (p.level - 1)) * drawDmgMul(pw);
+  // the hero's DAMAGE is the blow (bitDmg), the modifiers are what the
+  // player fitted to it. Then the draw scales the whole sum (drawDmgMul): a
+  // full draw is worth every point of it, a tap DRAW_DMG_MIN of it - so a
+  // spammed level-twelve bow is still a weak one
+  let dmg = (bitDmg(p, b) + spdBonus) * drawDmgMul(pw);
   dmg = Math.round(dmg * m.dmgMul + m.dmgAdd);
   if (amb) dmg = Math.round(dmg * kit.ambushMul);
   const { spd, life } = shotFlight(b, m, pw);
@@ -876,7 +879,7 @@ function slashTool(p, cell, plan, melee, amb) {
   const walls = structsInCone(p, p.x, p.y, a, r, melee.half);
   for (const s of plan.shots) {
     const b = BITS[s.id], m = s.m;
-    let dmg = (b.dmg + kit.dmgPow * pw * 0.5 + kit.dmgBase + spdBonus + LVL_DMG * (p.level - 1)) * drawDmgMul(pw);
+    let dmg = (bitDmg(p, b) + spdBonus) * drawDmgMul(pw);
     dmg = Math.round(dmg * m.dmgMul + m.dmgAdd);
     if (amb) dmg = Math.round(dmg * kit.ambushMul);
     const kb = b.kb === undefined ? 1 : b.kb;
@@ -1116,54 +1119,6 @@ for (const n of TECH) TECH_BY_ID[n.id] = n;
 // and from the loadout they fly in with, and nothing reads it but the tree
 function noteSeen(p, type) {
   if (p === player && TECH_BY_ID[type]) PROFILE.markSeen(type);
-}
-
-// ---- loot: what the world pays out --------------------------------------
-// Tools and bits are found FIRST and bought SECOND - the merchant's counter
-// (js/shop.js) rotates a handful of them every couple of minutes, and this
-// is the other, older way in. A mined rock is the common source (its kind's
-// `loot` and `lootTier`, ROCK_KINDS in js/sim/mining.js - a stone turns up the
-// bottom tier, a sunstone always turns up something) and a felled tree the
-// rare one, all rolling on the shared rng at the moment the work lands (never
-// inside genWorld - see the seed rule in CLAUDE.md). A tier is a ceiling:
-// a sunstone and a chest both roll up to the top, and the sunstone always
-// rolls, so it turns up the top tier more often than a chest does.
-const TREE_DROP = 0.04;  // 1 in 25 felled trees
-const CHEST_TOOL = 0.75; // ...and three in four sprung chests, up to the TOP tier
-const LOOT_TOOL = 0.3;   // this share of any of those is a tool, the rest bits
-// Every kind at or under `tier`, split into the two pools. The whole arsenal
-// is unlocked, so this is one list per tier built at boot rather than a filter
-// run per roll - a drop happens in the middle of a swing. The array itself is
-// never replaced - dropLoot holds it.
-const LOOT_POOL = [];
-function rebuildLootPool() {
-  LOOT_POOL.length = 0;
-  for (let t = 0; t < TOOL_TIERS.length; t++) {
-    LOOT_POOL.push({
-      tools: Object.keys(TOOLS).filter((k) => TOOLS[k].tier <= t),
-      bits: Object.keys(BITS).filter((k) => BITS[k].tier <= t),
-    });
-  }
-}
-// Rolls one find at `tier` or below and drops it at (x, y); returns what it
-// dropped, or null. A tool comes out empty - its bits are the next thing to
-// find - and a bit drops as a single, so a pack of them is a run of finds.
-function dropLoot(x, y, tier, chance) {
-  if (rng() >= chance) return null;
-  const pool = LOOT_POOL[Math.max(0, Math.min(LOOT_POOL.length - 1, tier))];
-  if (!pool || !pool.tools.length || !pool.bits.length) return null;
-  if (rng() < LOOT_TOOL) {
-    const id = pool.tools[Math.floor(rng() * pool.tools.length)];
-    spawnDrop(x, y, toolType(id), 1, makeTool(id));
-    addFloater(x, y - 26, TOOLS[id].name, TOOL_TIERS[TOOLS[id].tier].ink);
-    burst(x, y - 6, TOOL_TIERS[TOOLS[id].tier].rim, 10, 50, 0.6, true);
-    return id;
-  }
-  const id = pool.bits[Math.floor(rng() * pool.bits.length)];
-  spawnDrop(x, y, bitType(id), 1);
-  addFloater(x, y - 26, BITS[id].name, TOOL_TIERS[BITS[id].tier].ink);
-  burst(x, y - 6, BITS[id].col, 8, 45, 0.5, true);
-  return id;
 }
 
 // ---- starting loadouts ---------------------------------------------------

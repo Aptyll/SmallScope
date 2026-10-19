@@ -7,8 +7,9 @@
 // gone for it: from the screen and both maps (js/draw/fog.js draws that) and
 // from its bots (they ask through seenAt(q, range, team) and inSight).
 // Terrain, buildings and the eagles are never fogged.
-//   Everything here is read off the world as it stands, so a client works it
-// out from its own copy and nothing new is saved or sent.
+//   Everything here is read off the world as it stands, so nothing new is
+// saved. Online the host sends each side only what this says it sees (the
+// `fog` banner in js/net/snapshot.js), and a client takes its word (`fogHid`).
 // ------------------------------------------------------------ fog of war
 const FOG_HERO = 160;    // px a hero sees
 const FOG_SOLDIER = 112; // px a wave soldier sees (past its SOLDIER_AGGRO, so it sees what it turns on)
@@ -108,23 +109,38 @@ function woodsHide(srcs, x, y) {
 }
 
 // Whether `team` can see unit u right now. Its own side always; a rival the
-// falcon marked always (the mark's one bypass, js/sim/abilities.js). Asked
+// falcon marked always (the mark's one bypass, js/sim/abilities.js); on a
+// client, never a body the host said is out of its sight (`fogHid`, the `fog`
+// banner in js/net/snapshot.js - what it holds of that body is stale). Asked
 // once per unit per side per tick: the answer is kept for the rest of the tick
 const fogSeen = [new Map(), new Map()], fogEyes = [[], []], fogTick = [-1, -1];
 function inSight(team, u) {
+  if (u.fogHid) return false;
   if (!fogUp() || u.team === team || (team !== 0 && team !== 1)) return true;
   if (u.markT > 0) return true;
-  if (fogTick[team] !== state.tick) { fogTick[team] = state.tick; fogSeen[team].clear(); sightSources(team, fogEyes[team]); }
+  fogEyesOf(team);
   const kept = fogSeen[team].get(u);
   if (kept !== undefined) return kept;
-  const srcs = fogEyes[team];
+  const seen = sightAt(team, u.x, u.y);
+  fogSeen[team].set(u, seen);
+  return seen;
+}
+// the side's eyes this tick (worked out on the first ask of the tick)
+function fogEyesOf(team) {
+  if (fogTick[team] !== state.tick) { fogTick[team] = state.tick; fogSeen[team].clear(); sightSources(team, fogEyes[team]); }
+  return fogEyes[team];
+}
+// whether `team` sees the point (x, y): inside an eye's reach with no stone
+// between, and not deep in the woods out of a near eye's reach. What a body
+// is asked through inSight; a puff or a number on the wire, bare
+function sightAt(team, x, y) {
+  if (!fogUp() || (team !== 0 && team !== 1)) return true;
+  const srcs = fogEyesOf(team);
   let seen = false;
   for (const s of srcs) {
-    const dx = u.x - s.x, dy = u.y - s.y, d = Math.hypot(dx, dy);
+    const dx = x - s.x, dy = y - s.y, d = Math.hypot(dx, dy);
     if (d > s.r) continue;
     if (s.open || d < 1 || sightReach(s.x, s.y, dx / d, dy / d, d, s.walls, s.stone) >= d) { seen = true; break; }
   }
-  if (seen && woodsHide(srcs, u.x, u.y)) seen = false;
-  fogSeen[team].set(u, seen);
-  return seen;
+  return seen && !woodsHide(srcs, x, y);
 }

@@ -472,7 +472,7 @@ function aiNearestEnemy(p, prof, anchors) {
       if (an && Math.hypot(b.x - an.x, b.y - an.y) < AI_ANCHOR_R) range = AI_ANCHOR_D;
     }
     if (d >= range) continue;
-    const s = (prof.pick === 'weak' ? b.hp + d * 0.05 : d) + 20; // a player in the same sight is the better target
+    const s = (prof.pick === 'weak' || aiRole(p) === 'laner' ? b.hp + d * 0.05 : d) + 20; // a player in the same sight is the better target (a laner reads the bars: the lowest is the next last hit)
     if (s < bs) { bs = s; best = b; }
   }
   return best;
@@ -565,7 +565,7 @@ function aiRoamPick(p, leash) {
 const ZIP_AI_GAIN = 4;   // s a ride must save over the feet before a bot walks to the cable
 const ZIP_AI_OFF = 6;    // px short of the exit point it lets go (a step is 3.7 px at ZIP_SPD)
 // the feet's time over a straight line, at the bot's own walk
-function aiWalkT(p, d) { return d / (PLAYER_SPEED * kitOf(p).walkMul); }
+function aiWalkT(p, d) { return d / statOf(p, 'ms'); }
 // the ride from p's spot to (x, y), if the cable saves ZIP_AI_GAIN over the
 // feet: { z, d0, d1 } (px along at the mount and the exit), else null
 function aiZipWorth(p, x, y) {
@@ -676,7 +676,7 @@ function resolveCardForBot(p) {
 // covers the next WHOLE item walks it to its own side's counter when that is
 // close (a bot respawns beside it). Only a finished build spends on gear.
 // True while it is walking to shop, which ends aiThink's ladder this think.
-const AI_SHOP_DETOUR = 12 * TILE; // px: how far off a bot walks to its counter to buy
+const AI_SHOP_DETOUR = 32 * TILE; // px: how far a bot walks to its counter to buy; past it (AI_RECALL_FAR) it recalls
 function aiSpend(p, inp, steerTo) {
   // spend a free skill point before the ladder - waiting on it is leaving
   // growth on the table. Lowest ability level first, so the kit rises
@@ -690,8 +690,15 @@ function aiSpend(p, inp, steerTo) {
   if (!inp.cmd && p.items) {
     const buy = botItemBuy(p);
     if (buy && merchNear(p)) { inp.cmd = { kind: 'shop', act: 'item', id: buy }; return false; }
+    const stray = !p.items.includes(null) && merchNear(p) ? botStrayPart(p) : -1;
+    if (stray >= 0) { inp.cmd = { kind: 'shop', act: 'sellItem', slot: stray }; return false; }
     const next = botNextItem(p);
-    if (next && buy === next && p.fightT <= 0) { // never out of a fight (ITEM_FIGHT_T)
+    // the walk: the next WHOLE item is in the purse and the counter will
+    // seat it (a stray part sold there makes the room), never out of a fight
+    // (ITEM_FIGHT_T)
+    const nc = next && itemCost(p, next);
+    const fits = nc && (itemRoom(p, nc.used) >= 1 || botStrayPart(p) >= 0);
+    if (next && fits && !merchNear(p) && p.inv.gold >= nc.gold && p.fightT <= 0) {
       const m = robots.find((b) => b.merchant && !b.dead && b.team === p.team);
       const c = m && (stallUp(m.stall) ? m.stall : m.hopT > 0 ? null : m);
       const pt = c && counterPt(c);
@@ -728,12 +735,24 @@ function updateAI(p, dt) {
   // riding with no rung wanting the ride this think: let go (the ride, above)
   if (p.zip >= 0 && !ai.zipUsed) p.input.jump = true;
 }
+// rung 1's meal (aiThink): fish when badly hurt, berries when a little, and
+// only with no rival close enough to knock it out of the hands
+function aiEat(p, foeD) {
+  const inp = p.input;
+  if (p.eatT <= 0 && p.foodCd <= 0 && foeD > AI_EAT_R) {
+    if (p.hp < p.maxHp * 0.5 && fishHeld(p) > 0) inp.eatFish = true;
+    else if (p.hp < p.maxHp * 0.8 && bagCount(p, 'berry') > 0) inp.eatBerry = true;
+  }
+  if (p.eatT > 0) aiNote(p, 'EAT', 'LOW HP', null);
+}
 // THE WAY HOME (js/sim/recall.js). Read after the ladder, so it overrides
 // what the ladder asked only when nothing rival is within AI_RECALL_SAFE: a
 // fight in reach is the ladder's, and whatever it does there ends a channel
 // the way a player's own action would. Out of reach of one, a bot low on
-// health and far from its bird recalls and stands still for the channel; one
-// already in its own ring and hurt stands in it until it is whole again.
+// health, or out of a fight with the gold for its next whole item (League's
+// back to shop: the counter stands by the bird), and far from its bird
+// recalls and stands still for the channel; one already in its own ring and
+// hurt stands in it until it is whole again.
 const AI_RECALL_HP = 0.35;      // share of max health under which a bot goes home
 const AI_RECALL_FAR = 30 * TILE; // px from its bird past which the channel beats the walk
 const AI_RECALL_SAFE = 150;     // px: a rival this close and the bot fights or runs instead
@@ -744,12 +763,14 @@ function aiRecall(p) {
   if (!e || e.state !== 'down') return;
   if (unitsNear(p, p.x, p.y, AI_RECALL_SAFE).some((q) => (q instanceof Player || robots.includes(q)) && inSight(p.team, q))) return; // what its side sees, as a player would
   const inp = p.input, low = p.hp < p.maxHp * AI_RECALL_HP;
-  const go = p.recallT <= 0 && low && p.eatT <= 0 && !recallBlocked(p) && Math.hypot(e.x - p.x, e.y - p.y) > AI_RECALL_FAR;
+  const next = p.items && botNextItem(p), nc = next && itemCost(p, next);
+  const rich = !!nc && p.fightT <= 0 && p.inv.gold >= nc.gold && (itemRoom(p, nc.used) >= 1 || botStrayPart(p) >= 0);
+  const go = p.recallT <= 0 && (low || rich) && p.eatT <= 0 && !recallBlocked(p) && Math.hypot(e.x - p.x, e.y - p.y) > AI_RECALL_FAR;
   const wait = roostRing(p) && p.fightT <= 0 && p.hp < p.maxHp * AI_RING_FULL; // a body still in a fight is the ladder's
   if (!go && !(p.recallT > 0) && !wait) return;
   if (go) inp.cmd = { kind: 'recall' };
   inp.mx = inp.my = 0; inp.slide = false; inp.dodge = false; inp.jump = false;
-  if (go || p.recallT > 0) { inp.fire = false; inp.work = false; inp.ability = -1; aiNote(p, 'RECALL', 'LOW HP', null); }
+  if (go || p.recallT > 0) { inp.fire = false; inp.work = false; inp.ability = -1; aiNote(p, 'RECALL', low ? 'LOW HP' : 'SHOP', null); }
   else aiNote(p, 'IDLE', 'HEALING', null);
 }
 
@@ -941,11 +962,7 @@ function aiThink(p, dt) {
   // middle, and a push that stopped for every column never reached the bird)
   const waveFoe = foe && !(foe instanceof Player) && !!pushE && !(mine && mine.threat && own && Math.hypot(own.x - p.x, own.y - p.y) < AI_ROOST_R);
   const engage = foe && ai.seeT >= prof.react && !((siege || rally || charge || waveFoe) && foeD > AI_SIEGE_R) ? foe : null;
-  if (p.eatT <= 0 && p.foodCd <= 0 && foeD > AI_EAT_R) {
-    if (p.hp < p.maxHp * 0.5 && fishHeld(p) > 0) inp.eatFish = true;
-    else if (p.hp < p.maxHp * 0.8 && bagCount(p, 'berry') > 0) inp.eatBerry = true;
-  }
-  if (p.eatT > 0) aiNote(p, 'EAT', 'LOW HP', null);
+  aiEat(p, foeD);
 
   // 2. the burrow - a hunter's alone now, cast as SNOW COVER (key 4) with its
   //    own 60 s clock on the way under. Decided before the ladder because two
@@ -1078,7 +1095,8 @@ function aiThink(p, dt) {
     const planted = prof.strafe >= 1 || (state.tick % 120) >= 120 * prof.strafe;
     if (planted && prof.strafe < 1) { inp.mx = 0; inp.my = 0; }
     // draw, then loose at the profile's draw - a blade only once they are under it
-    inp.fire = planted && clear && (!melee || d < AI_MELEE_D + 8) && p.chargeT < drawTime(p) * skillDraw(p, prof);
+    // (on a soldier its own wave is wearing down, the draw is held for the last hit: aiFarmFire, js/ai/ai-farm.js)
+    inp.fire = aiFarmFire(p, foe, planted && clear && (!melee || d < AI_MELEE_D + 8) && p.chargeT < drawTime(p) * skillDraw(p, prof));
     if (p.hp < p.maxHp * 0.45 && p.dodgeCharges > 0 && rng() < dt * 2 * prof.dodge) inp.dodge = true;
     skillSlip(p, prof, foe, dt); // the odd lapse, at the profile's rate
     ai.tgt = null;
@@ -1371,7 +1389,7 @@ function aiThink(p, dt) {
       if (d >= 0 && d > 24) { aimAt(p.x + inp.mx * 40, p.y + inp.my * 40); inp.fire = false; ai.tgt = null; return; }
       ai.scoutN = (ai.scoutN || 0) + 1; ai.scout = null; // there, or no way there: the next point on the beat
       if (d < 0) ai.scoutCd = state.elapsed + 3;          // (no way there: work a while before trying the next)
-    }
+    } else if (aiFarmWalk(p, role, steerTo, aimAt)) return; // a laner's wave, a jungler's den (js/ai/ai-farm.js)
   }
 
   // 5g. the road (aiRoad): a road stretch walks to the nearest rival wave,

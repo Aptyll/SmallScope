@@ -29,7 +29,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.493';
+const PATCH_TXT = 'PATCH 0.497';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -45,7 +45,11 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
-  ['0.493', 'QUICKPLAY AND RANKED NOW FIND YOU REAL OPPONENTS: FIND MATCH LOOKS FOR ANOTHER PARTY FOR A FEW SECONDS UNDER A GOLD CLOCK AND PUTS IT ON THE OTHER SIDE, WITH BOTS ONLY IF NOBODY IS THERE, AND THE PARTY LEADER CAN NOW SWITCH MODES BY CLICKING THE MODE NAME.'],
+  ['0.497', 'QUICKPLAY AND RANKED NOW FIND YOU REAL OPPONENTS: FIND MATCH LOOKS FOR ANOTHER PARTY FOR A FEW SECONDS UNDER A GOLD CLOCK AND PUTS IT ON THE OTHER SIDE, WITH BOTS ONLY IF NOBODY IS THERE, AND THE PARTY LEADER CAN NOW SWITCH MODES BY CLICKING THE MODE NAME.'],
+  ['0.496', 'THE FOG OF WAR HOLDS ONLINE: EACH PLAYER IS SENT ONLY WHAT THEIR SIDE SEES, AND A RIVAL ARROW, ITS FIRE OR A DAMAGE NUMBER IN THE FOG NO LONGER SHOWS.'],
+  ['0.495', 'TOOLS AND BITS ARE GONE FROM THE ROCKS, TREES AND CHESTS: YOUR WEAPON IS YOUR CLASS\'S, A CHEST HANDS YOU A FREE ITEM PART, YOUR SIX ITEM SLOTS SIT BESIDE THE WEAPON TOP-LEFT, THE WIKI HAS AN ITEMS PAGE, AND BOTS GO HOME TO SHOP WHEN THEY CAN AFFORD THEIR NEXT ITEM.'],
+  ['0.494', 'FARMING PAYS: THE LAST HIT ON A RIVAL SOLDIER IS 16 GOLD AND A SPINNING COIN, GROWING OVER THE MATCH, WHILE A SOLDIER YOUR WAVE FINISHES PAYS NOBODY AND SHOWS YOU A GREY COIN; WOLF DENS COME BACK 75 SECONDS AFTER THEY ARE CLEARED WITH THEIR CLOCK ON THE DEN AND BOTH MAPS, SOLDIERS GROW TOUGHER, THE SCOREBOARD AND POST-GAME COUNT YOUR FARM, AND BOTS LANE AND JUNGLE FOR IT.'],
+  ['0.493', 'EVERY HERO HAS SEVEN STATS, LEAGUE STYLE - HEALTH, DAMAGE, ATTACK SPEED, ARMOR, ABILITY POWER, COOLDOWN SPEED AND MOVE SPEED - WITH ITS OWN STARTING NUMBERS AND GROWTH EACH LEVEL, SHOWN BESIDE YOUR PORTRAIT WITH WHERE EACH COMES FROM ON HOVER; ARMOR NOW CUTS A SHARE OF EVERY HIT, AND THE STAT POINTS BEFORE A MATCH ARE GONE.'],
   ['0.492', 'EACH SIDE HAS A HOME BASE NOW: A FIXED CLEARING IN ITS OWN CORNER WOODS WITH THE ROAD RUNNING IN TO IT, AND EACH EAGLE FLIES IN OVER ITS OWN CORNER WITH THE WHOLE TEAM ON ITS BACK AND LANDS AT THE BACK OF THE BASE, WHERE YOU HOP OFF WITH E. NO MORE JUMPING OFF MID-FLIGHT.'],
   ['0.491', 'XP IS ITS OWN NUMBER NOW: YOU LEVEL BY STANDING NEAR WHEN RIVAL SOLDIERS, SCOUTS AND CAMP BEASTS FALL, SHOWN AS A PURPLE NUMBER BY YOUR LEVEL, WHILE MINING, CHOPPING AND FISHING PAY GOLD ONLY AND THE LEVEL CAP COMES MUCH LATER.'],
   ['0.490', 'KILLS WORK LIKE LEAGUE\'S NOW: EVERYONE WHO HIT OR PINNED A RIVAL IN THE LAST TEN SECONDS GETS AN ASSIST AND A SHARE OF THE GOLD, A PLAYER ON A STREAK WEARS A GOLD BOUNTY OVER THEIR NAME THAT THEIR KILLER CASHES AS A SHUTDOWN, A PLAYER WHO KEEPS DYING IS WORTH LESS, A DEATH TO THE ICE, THE ORCA OR THE WOLVES STILL PAYS WHOEVER HIT THEM LAST, AND THE SCOREBOARD AND POST-GAME STATS SHOW K/D/A.'],
@@ -1275,24 +1279,15 @@ function drawLobbyBackdrop(now, a) {
 // which a click leaves as it is; the pick is player.abPick, read by abOf),
 // and a hover raises the option's card (tipClassAb, js/ui/tooltip.js):
 // what the key will do, read before the eagle - its growth is the match's
-// own (skill points), never bought here. THE STAT POINTS are spent on the
-// ledger itself: STAT_POINTS to put a step at a time on any row (STAT_TRACKS,
-// player.js - one a row), the unspent ones a row of pips between the
-// preview and the ledger. A hovered row shows what one more point would
-// make of it (its would-be number in green), a click spends one there
-// (spendPt); the points on a row stand as gold pips after its label, and
-// clicking a pip takes that point back. ESC, Backspace, the X, or a click
-// outside the panel closes it; LOCK IN stays on the lobby behind it. The
-// ledger's labelled rows are the
-// PLAYER-panel text carve-out: comparing numbers is this panel's whole job.
-// The keyboard walks menu.grow down the two strips and on through the stat
-// whole job. The keyboard walks menu.grow down the gear column, the ability
-// column and the ledger's rows; on a well Enter, Space or Right turns it
-// (Left turns it back), on a ledger row Right or Enter spends a point and
-// Left takes one back.
+// own (skill points), never bought here. The ledger under the preview is
+// the hero's seven stats at level 1 (STAT_ROWS, js/sim/stats.js) with the
+// gear picked, the PLAYER-panel text carve-out: comparing numbers is this
+// panel's whole job. ESC, Backspace, the X, or a click outside the panel
+// closes it; LOCK IN stays on the lobby behind it. The keyboard walks
+// menu.grow down the gear column and the ability column; on a well Enter,
+// Space or Right turns it, Left turns it back.
 const GEARP_W = 38, GEARP_G = 4;                     // a column well, and the gap between wells
 const HERO_COL_GAP = 10;                             // between the two columns
-const HERO_PIP = 4;                                  // a spent point's pip on a ledger row (3 px, 1 gap)
 function heroLayout() {
   const cx = Math.round(VIEW_W / 2);
   const ledW = 118;
@@ -1303,58 +1298,23 @@ function heroLayout() {
   const gx = px + 8 + ledW + 10, ax = gx + GEARP_W + HERO_COL_GAP;
   const col = (x) => [0, 1, 2, 3].map((i) => ({ x, y: py + 12 + i * (GEARP_W + GEARP_G), w: GEARP_W, h: GEARP_W, i }));
   const gear = col(gx), abils = col(ax);
-  // the ledger: a row a stat, each a track for the points; the unspent pips over it
-  const led = { x: px + 8, y: py + 100, w: ledW };
-  const stats = GEAR_STATS.map((row, i) => ({ x: led.x, y: led.y + i * 8 - 1, w: led.w, h: 8, i }));
-  return { cx, panel: { x: px, y: py, w: pw, h: ph }, gear, abils, stats,
+  // the ledger: a row a stat, under the preview
+  const led = { x: px + 8, y: py + 94, w: ledW };
+  return { cx, panel: { x: px, y: py, w: pw, h: ph }, gear, abils,
     prev: { x: px + 8, y: py + 8, w: ledW, h: 78 },   // the preview well
-    pips: { x: px + 8, y: py + 90 },                   // the unspent points
-    led,                                               // the ledger below them
+    led,                                               // the ledger below it
     name: { x: gx + (colsW >> 1), y: py + 190 },       // the hovered well's name
     xr: { x: px + pw - 14, y: py + 4, w: 10, h: 10 } };
 }
 
 // The kit these picks would fly out with: the class base plus each variant
-// at the free level 1 plus the points spent - no skills, no cards - exactly
-// what refreshKit hands the sim at lock-in.
-function heroPreviewKit(gear, pts) {
+// at the free level 1 - no skills, no cards - exactly what refreshKit hands
+// the sim at lock-in.
+function heroPreviewKit(gear) {
   const k = baseKit(state.menu.csel);
   for (let i = 0; i < GEAR.length; i++) GEAR[i][gear[i]].mod(k, 1);
-  for (let i = 0; i < STAT_TRACKS.length; i++) STAT_TRACKS[i].mod(k, pts[i] | 0);
   return k;
 }
-// The ledger: one row per number gear can touch. `dir` says which way is
-// better (+1 higher, -1 lower), which is what colours a hovered delta - and
-// the stat sheet's, on the plate that flies into the notice lane when one of
-// these numbers moves (the `stat ledger` block, js/ui/shop.js).
-// A getter takes (kit, player), and the player is OPTIONAL: the hero pop-up
-// prices a pre-match pick where every hero is level 1 and hands it nothing,
-// while anything reading a body mid-match passes it and gets the HERO LEVEL
-// folded in. The two rows a level moves carry it here rather than at their
-// readers, because the kit itself never holds it - levelMaxHp adds the hp
-// (player.js) and emitBit adds the damage (tools.js), so a ledger off the
-// bare kit would report a level-up as nothing having changed.
-const GS_INT = (v) => String(Math.round(v));
-const GS_SEC = (v) => (Math.round(v * 100) / 100).toFixed(2) + 'S';
-const GS_PCT = (v) => Math.round(v * 100) + '%';
-const GS_NUM = (v) => String(Math.round(v * 10) / 10);
-const GS_LV = (p) => (p ? p.level : 1) - 1; // levels PAST the first: what the growth is paid on
-const GEAR_STATS = [
-  ['HEALTH', (k, p) => k.maxHp + LVL_HP * GS_LV(p), GS_INT, 1],
-  ['DAMAGE', (k, p) => k.dmgBase + LVL_DMG * GS_LV(p), GS_NUM, 1], // a stat point adds a half
-  ['DRAW', (k) => k.bowCharge, GS_SEC, -1],
-  ['RENOCK', (k) => k.nock, GS_SEC, -1],
-  ['ARMOR', (k) => k.dr, GS_INT, 1],
-  ['WALK', (k) => k.walkMul, GS_PCT, 1],
-  ['ICE SPEED', (k) => k.iceMax, GS_PCT, 1],
-  ['ICE GRIP', (k) => k.iceSteer, GS_NUM, 1],
-  ['FATIGUE', (k) => k.fatigue, GS_PCT, -1],
-  ['DODGE', (k) => k.dodgeCd, GS_SEC, -1],
-  ['HUNTS', (k) => k.huntMul, GS_PCT, 1],
-  ['FELLS', (k) => k.harvestMul, GS_PCT, 1],
-  ['FOOD', (k) => k.foodMul, GS_PCT, 1],
-  ['SEEN AT', (k) => k.stealth, GS_PCT, -1],
-];
 
 // The twelve variant icons: detailed 32x32 char grids on the ability icons'
 // palette (AB32_PAL, js/sim/abilities.js - one style across every big icon),
@@ -1803,25 +1763,16 @@ function gearIcon32(i, v) {
   return cv;
 }
 // what the pointer is over on the hero pop-up: {row} (a gear well), {ab}
-// (an ability well), {pt} (a ledger row: a point goes here) or {pt, d: -1}
-// (one of its spent pips: that point comes back), 'x', 'panel' (the slab
-// itself - inert, swallows the press), or null (outside: a click closes)
+// (an ability well), 'x', 'panel' (the slab itself - inert, swallows the
+// press, the ledger included), or null (outside: a click closes)
 function heroScreenHit() {
-  const { gear, abils, stats, panel, xr } = heroLayout();
+  const { gear, abils, panel, xr } = heroLayout();
   const over = (r, px, py) => mouse.x >= r.x - px && mouse.x < r.x + r.w + px && mouse.y >= r.y - py && mouse.y < r.y + r.h + py;
   if (over(xr, 3, 3)) return 'x';
   for (const w of gear) if (over(w, 0, 1)) return { row: w.i };
   for (const w of abils) if (over(w, 0, 1)) return { ab: w.i };
-  for (const r of stats) {
-    if (!over(r, 0, 0)) continue;
-    const n = player.pts[r.i] | 0, px0 = heroPipX(r.i);
-    if (n > 0 && mouse.x >= px0 - 1 && mouse.x < px0 + n * HERO_PIP) return { pt: r.i, d: -1 };
-    return { pt: r.i, d: 1 };
-  }
   return popFrameHit(panel, xr);
 }
-// where a ledger row's spent pips start: just after its label
-function heroPipX(i) { const { led } = heroLayout(); return led.x + pixelTextWidth(GEAR_STATS[i][0]) + 4; }
 // key i's option turned by d: the next (or the last) of what the key
 // carries; a key with one option has nowhere to turn
 function pickAbility(i, d) {
@@ -1836,16 +1787,6 @@ function beginHero() {
   openPop('hero');
 }
 function leaveHero() { leavePop(); }
-// a point spent (d = 1) on or refunded (d = -1) from track i, when the
-// budget allows; full heal like a gear pick since nothing has been risked
-function spendPt(i, d) {
-  const n = player.pts[i] | 0;
-  if (d > 0 ? ptsSpent(player) >= STAT_POINTS : n <= 0) { SFX.deny(); return; }
-  player.pts[i] = n + d;
-  refreshKit(player);
-  player.hp = player.maxHp;
-  SFX.pickup();
-}
 // pre-match variant pick for the local player, full heal like setClass since
 // nothing has been risked yet. The pick plays on the preview body: gearFxT
 // runs the white flash and the sparkles, gearFxSlot lights the piece's band.
@@ -1862,12 +1803,12 @@ function pickGear(i, v) {
 function heroKey(k) {
   const m = state.menu;
   if (m.lockT > 0) return;
-  const N = 8 + GEAR_STATS.length; // the gear column, the ability column, then the ledger's rows
+  const N = 8; // the gear column, then the ability column
   if (k === 'escape' || k === 'backspace') leaveHero();
   else if (moveDir(k) === 'up') { m.grow = (m.grow + N - 1) % N; SFX.pickup(); }
   else if (moveDir(k) === 'down') { m.grow = (m.grow + 1) % N; SFX.pickup(); }
-  else if (moveDir(k) === 'left') { if (m.grow < 4) pickGear(m.grow, (player.gear[m.grow] + 2) % 3); else if (m.grow < 8) pickAbility(m.grow - 4, -1); else spendPt(m.grow - 8, -1); }
-  else if (moveDir(k) === 'right' || k === 'enter' || k === ' ') { if (m.grow < 4) pickGear(m.grow, (player.gear[m.grow] + 1) % 3); else if (m.grow < 8) pickAbility(m.grow - 4, 1); else spendPt(m.grow - 8, 1); }
+  else if (moveDir(k) === 'left') { if (m.grow < 4) pickGear(m.grow, (player.gear[m.grow] + 2) % 3); else pickAbility(m.grow - 4, -1); }
+  else if (moveDir(k) === 'right' || k === 'enter' || k === ' ') { if (m.grow < 4) pickGear(m.grow, (player.gear[m.grow] + 1) % 3); else pickAbility(m.grow - 4, 1); }
 }
 
 function heroClick() {
@@ -1876,7 +1817,6 @@ function heroClick() {
   const h = heroScreenHit();
   if (!h || h === 'x') { leaveHero(); return; } // the X, or anywhere off the panel
   if (h === 'panel') return;                    // the slab swallows it
-  if (h.pt != null) { m.grow = 8 + h.pt; spendPt(h.pt, h.d); return; } // the row takes a point; a spent pip gives one back
   if (h.row != null) { m.grow = h.row; pickGear(h.row, (player.gear[h.row] + 1) % 3); return; } // the well turns to the next variant
   if (h.ab != null) { m.grow = 4 + h.ab; pickAbility(h.ab, 1); }                               // ...or the next option
 }
@@ -1993,7 +1933,7 @@ function lockIn() {
   if (!NET.isClient) PROFILE.setHero(m.csel); // the next match's pick opens on it
   SFX.place();
   if (NET.role === 'solo' && (settings.mapType | 0) !== MAP_TYPE) {
-    try { sessionStorage.setItem('softfall.drop', JSON.stringify({ gear: player.gear, pts: player.pts, abPick: player.abPick })); } catch (e) { }
+    try { sessionStorage.setItem('softfall.drop', JSON.stringify({ gear: player.gear, abPick: player.abPick })); } catch (e) { }
     location.href = location.pathname + '?seed=' + SEED + '&map=' + (settings.mapType | 0);
     m.lockT = 9; // the old page holds the lobby still until the new one paints
     return;
@@ -2470,51 +2410,29 @@ function drawGearPreview(r, now) {
 // left, the twelve wells on the right, the X in the corner
 function renderHero(now, a) {
   const m = state.menu;
-  const { panel, gear, abils, stats, xr, prev, led, name, pips } = heroLayout();
+  const { panel, gear, abils, xr, prev, led, name } = heroLayout();
   const rise = Math.round((1 - a) * 12);
   ctx.globalAlpha = a;
   drawPopSlab(panel, rise);
   const gh = m.popT >= 1 && mouse.inside ? heroScreenHit() : null;
-  const onWell = gh && gh.row != null, onPt = gh && gh.pt != null, onAb = gh && gh.ab != null;
+  const onWell = gh && gh.row != null, onAb = gh && gh.ab != null;
   const gearNext = onWell ? (player.gear[gh.row] + 1) % 3 : -1; // what a click on the hovered well would pick
   drawGearPreview({ x: prev.x, y: prev.y + rise, w: prev.w, h: prev.h }, now);
-  // the ledger: the numbers as picked now - and, under a hovered gear
-  // well or a hovered row, what they would BECOME, green where that is
-  // better and red where worse. Every row is a track for the points: the
-  // unspent ones stand as pips over the ledger, a row's spent ones as gold
-  // pips after its label (a click on one takes it back), and the keyboard's
-  // row breathes a tick at its ends
-  const cur = heroPreviewKit(player.gear, player.pts);
-  const spent = ptsSpent(player);
+  // the ledger: the seven stats as picked now - and, under a hovered gear
+  // well, what they would BECOME, green where that is better and red where worse
+  const cur = heroPreviewKit(player.gear);
   let hovKit = null;
   if (onWell) {
     const picks = player.gear.slice();
     picks[gh.row] = gearNext;
-    hovKit = heroPreviewKit(picks, player.pts);
-  } else if (onPt && (gh.d > 0 ? spent < STAT_POINTS : (player.pts[gh.pt] | 0) > 0)) {
-    const pts = player.pts.slice();
-    pts[gh.pt] = (pts[gh.pt] | 0) + gh.d;
-    hovKit = heroPreviewKit(player.gear, pts);
+    hovKit = heroPreviewKit(picks);
   }
-  for (let n = 0; n < STAT_POINTS; n++) {
-    ctx.fillStyle = 'rgba(4,6,18,0.55)'; ctx.fillRect(pips.x + n * 7 + 1, pips.y + rise + 1, 5, 5);
-    ctx.fillStyle = n < STAT_POINTS - spent ? '#f4f7ff' : '#2c3560'; ctx.fillRect(pips.x + n * 7, pips.y + rise, 5, 5);
-    if (n < STAT_POINTS - spent) { ctx.fillStyle = '#c8d4ee'; ctx.fillRect(pips.x + n * 7 + 1, pips.y + rise + 4, 4, 1); ctx.fillRect(pips.x + n * 7 + 4, pips.y + rise + 1, 1, 4); }
-  }
-  const focusRow = m.grow - 8;
-  for (let i = 0; i < GEAR_STATS.length; i++) {
-    const [label, get, fmt, dir] = GEAR_STATS[i];
+  for (let i = 0; i < STAT_ROWS.length; i++) {
+    const [label, get, fmt, dir] = STAT_ROWS[i];
     const y = led.y + rise + i * 8;
     const ov = get(cur), nv = hovKit ? get(hovKit) : ov;
     const changed = hovKit && Math.abs(nv - ov) > 1e-9;
-    const onRow = onPt && gh.pt === i, n = player.pts[i] | 0;
-    drawPixelTextShadow(ctx, label, led.x, y, changed || onRow || focusRow === i ? '#f4f7ff' : '#7a8bb8', '#0a0e23');
-    const px0 = heroPipX(i);
-    for (let j = 0; j < n; j++) { // the row's spent points
-      const hotPip = onRow && gh.d < 0;
-      ctx.fillStyle = 'rgba(4,6,18,0.55)'; ctx.fillRect(px0 + j * HERO_PIP + 1, y + 3, 3, 3);
-      ctx.fillStyle = hotPip ? '#f4f7ff' : '#ffd95c'; ctx.fillRect(px0 + j * HERO_PIP, y + 2, 3, 3);
-    }
+    drawPixelTextShadow(ctx, label, led.x, y, changed ? '#f4f7ff' : '#7a8bb8', '#0a0e23');
     const vTxt = fmt(ov);
     if (changed) {
       // the current number steps aside dim; the would-be number takes the
@@ -2530,13 +2448,7 @@ function renderHero(now, a) {
       ctx.fillRect(led.x + led.w - nw - 5, y + 3, 1, 1);
       ctx.fillRect(led.x + led.w - nw - 6, y + 4, 1, 1);
     } else {
-      drawPixelTextShadow(ctx, vTxt, led.x + led.w - pixelTextWidth(vTxt), y, onRow && spent >= STAT_POINTS ? '#5a6690' : '#f4f7ff', '#0a0e23');
-    }
-    if (focusRow === i && !mouse.inside) { // keyboard cursor on the row: ticks at its ends
-      ctx.globalAlpha = a * (0.7 + 0.3 * Math.sin(now * 6));
-      ctx.fillStyle = '#f4f7ff';
-      ctx.fillRect(led.x - 4, y + 3, 2, 1); ctx.fillRect(led.x + led.w + 2, y + 3, 2, 1);
-      ctx.globalAlpha = a;
+      drawPixelTextShadow(ctx, vTxt, led.x + led.w - pixelTextWidth(vTxt), y, '#f4f7ff', '#0a0e23');
     }
   }
   ctx.globalAlpha = a;
@@ -2573,7 +2485,7 @@ function renderHero(now, a) {
   const nOpt = onAb ? abOptions(player.cls, gh.ab).length : 0;
   const nm = onWell ? GEAR[gh.row][gearNext].name
     : onAb ? abOptions(player.cls, gh.ab)[((player.abPick[gh.ab] | 0) + 1) % nOpt].name
-    : onPt || m.grow >= 8 ? '' : m.grow >= 4 ? abOf(player, m.grow - 4).name : GEAR[m.grow][player.gear[m.grow]].name;
+    : m.grow >= 4 ? abOf(player, m.grow - 4).name : GEAR[m.grow][player.gear[m.grow]].name;
   if (nm) drawPixelTextShadow(ctx, nm, name.x - Math.round(pixelTextWidth(nm) / 2), name.y + rise,
     onWell || (onAb && nOpt > 1) ? '#f4f7ff' : '#ffd95c', '#0a0e23');
   drawPopX(xr, rise, gh === 'x');

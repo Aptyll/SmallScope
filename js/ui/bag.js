@@ -1,17 +1,15 @@
 'use strict';
 // The backpack and what the pointer carries: the drawer's geometry and hit
 // tests, overHud, the drag verbs and what a gesture answers with, the
-// character panel, the pack's SHIFT plate and drawBag.
+// character panel and drawBag.
 // ---- the backpack: a DRAWER under the weapon shelf, top-left ------------
-// THE HUD SHOWS ONE WEAPON (3.23): the shelf in the top-left corner is the
-// tool in hand and the bits loaded into it, and everything else a player
-// carries - the spare tools a walk turns up, the bits no cell had room for -
-// is in a drawer that is INVISIBLE UNTIL ASKED FOR. The pack key (B, L3 on a
-// pad) or the small arrow under the tool cell drops it down from beneath the
-// shelf; the same again, or ESC, slides it back up. The merchant's counter
-// drops it too, since a sale is a drag out of it. The pack is the overflow
-// (fitAdd, js/sim/tools.js): a found bit loads itself into a tool first, and a
-// found tool goes in here, so the shelf never has to be read past.
+// THE SHELF IS THE WEAPON AND THE ITEMS: the top-left corner is the class's
+// weapon in its big well and the six item slots beside it (js/ui/strip.js),
+// and everything else a player carries - food, ore, cards - is in a drawer
+// that is INVISIBLE UNTIL ASKED FOR. The pack key (B, L3 on a pad) or the
+// small arrow under the weapon well drops it down from beneath the shelf;
+// the same again, or ESC, slides it back up. The merchant's counter drops it
+// too, since a sale is a drag out of it.
 //
 // Small cells, on purpose: BAG_CELL px with the item art at 1x, a third the
 // size of a well, because a spare is a thing you glance at and drag, not a
@@ -29,9 +27,8 @@
 // something could not be carried (bagDenied) - the drawer shaking with it.
 //
 // ONE WELL SIZE FOR THE HUD (3.23): the strip's ability wells and the
-// shelf's cells are HUD_CELL square with their item art doubled
-// (drawItemIcon's k), so a tool reads at the same size on the shelf as an
-// ability does on the strip. Each has its own size dial (hudSc, cornerSc): the
+// shelf's weapon well are HUD_CELL square with their item art doubled
+// (drawItemIcon's k), so the weapon reads at the same size as an ability. Each has its own size dial (hudSc, cornerSc): the
 // strip about its bottom-centre anchor (drawHudScaled), the shelf and its
 // drawer about the top-left corner (drawCornerScaled).
 const HUD_CELL = 34;
@@ -160,7 +157,7 @@ function bagClick(h) {
 // and the only one that also pulses the cursor - and `deny` a refusal.
 const WELL_LIT_T = 0.3;   // s a well glows after something landed in it
 const DRAG_LIT_T = 0.36;  // ...and the cursor, when the hand's contents changed
-let wellLit = null;       // { k, i, slot, t, col } - k is 'bag' | 'slot' | 'bit'
+let wellLit = null;       // { k, i, t, col } - k is 'bag'
 let dragLit = 0;
 // the colours are the same four the hovered well uses to say what a release
 // WILL do (dropKindAt), so the promise and the answer are one language
@@ -175,23 +172,22 @@ const HUD_FX = {
 };
 // `k`/`i`/`slot` name the well that answered, or nothing at all for a gesture
 // with no well behind it (a throw out onto the snow)
-function hudFx(kind, k, i, slot) {
+function hudFx(kind, k, i) {
   const f = HUD_FX[kind];
   if (!f) return;
   f.sfx();
   haptic(kind);
-  if (k) wellLit = { k, i: i | 0, slot: slot | 0, t: WELL_LIT_T, col: f.col };
+  if (k) wellLit = { k, i: i | 0, t: WELL_LIT_T, col: f.col };
   if (f.hand) dragLit = DRAG_LIT_T;
 }
 // how lit a well is, 1 the moment something landed and 0 by the end of it
-function wellLitAt(k, i, slot) {
+function wellLitAt(k, i) {
   if (!wellLit || wellLit.k !== k || wellLit.i !== i) return 0;
-  if (k === 'bit' && wellLit.slot !== (slot | 0)) return 0;
   return Math.min(1, wellLit.t / WELL_LIT_T);
 }
 // the wash itself, over a well that has just taken something
-function drawWellLit(r, k, i, slot) {
-  const lit = wellLitAt(k, i, slot);
+function drawWellLit(r, k, i) {
+  const lit = wellLitAt(k, i);
   if (lit <= 0) return;
   ctx.globalAlpha = 0.5 * lit;
   ctx.fillStyle = wellLit.col;
@@ -203,12 +199,10 @@ function drawWellLit(r, k, i, slot) {
 // something is on the cursor, and answered in colour alone on that well's rim
 // (drawBag / drawShelf). It is the other half of the press arming rather than
 // acting: a gesture you can call off is only worth having if you can see what
-// you are about to do before you commit to it - and a bit held over the weapon
-// KEY reddening before the release is the refusal said in advance rather than
-// after the fact.
+// you are about to do before you commit to it.
 //
-// It reads the same branches the three dragDrop* functions take, so the
-// promise and the move can never disagree.
+// It reads the same branches dragDropBag takes, so the promise and the move
+// can never disagree.
 function dropKindBag(i) {
   const d = state.drag;
   if (!d) return null;
@@ -217,20 +211,6 @@ function dropKindBag(i) {
   const max = ITEMS[d.cell.type] ? ITEMS[d.cell.type].stack : 1;
   if (s.type === d.cell.type && !s.bits && s.n < max) return 'merge';
   return 'swap';
-}
-function dropKindSlot(i) {
-  const d = state.drag;
-  if (!d) return null;
-  if (!isToolCell(d.cell)) return 'deny'; // a bit belongs in a tool, not on a key
-  return player.tools[i] ? 'swap' : 'place';
-}
-function dropKindBit(s, i) {
-  const d = state.drag;
-  if (!d) return null;
-  if (!bitIdOf(d.cell.type)) return 'deny'; // a tool does not go inside a tool
-  const cell = player.tools[s];
-  if (!cell) return 'deny';
-  return cell.bits[i] ? 'swap' : 'place';
 }
 const DROP_RIM = { place: FX_PLACE, merge: FX_MERGE, swap: FX_SWAP, deny: FX_DENY };
 function dropRim(kind) { return kind ? DROP_RIM[kind] : null; }
@@ -257,24 +237,12 @@ function dragTake(cell, from) {
   return true;
 }
 // Lifting what a well is holding onto the cursor: the move a press that
-// TRAVELS makes (hudMove), one function over the three kinds of well so the
-// three branches cannot drift apart. Returns whether anything was lifted.
+// TRAVELS makes (hudMove). Returns whether anything was lifted.
 function dragLift(src) {
-  if (src.k === 'bag') {
-    const s = player.bag[src.i];
-    if (!s) return false;
-    player.bag[src.i] = null;
-    return dragTake(s, src);
-  }
-  if (src.k === 'slot') {
-    const s = player.tools[src.i];
-    if (!s) return false;
-    player.tools[src.i] = null;
-    return dragTake(s, src);
-  }
-  const cell = player.tools[src.slot];
-  const was = cell && bitPut(cell, src.i, null);
-  return was ? dragTake({ type: bitType(was), n: 1 }, src) : false;
+  const s = player.bag[src.i];
+  if (!s) return false;
+  player.bag[src.i] = null;
+  return dragTake(s, src);
 }
 // Put a carried cell back where the drag started. Home may have been filled
 // behind it (the drop that landed there, a swap earlier in the same gesture),
@@ -285,13 +253,7 @@ function dragReturn() {
   if (!d) return;
   const f = d.from;
   let home = false;
-  if (f.k === 'bag') { if (!player.bag[f.i]) { player.bag[f.i] = d.cell; home = true; } }
-  else if (f.k === 'slot') { if (!player.tools[f.i]) { player.tools[f.i] = d.cell; home = true; } }
-  else if (f.k === 'bit') {
-    // a bit came out of a tool as a one-off cell; it goes back as an id
-    const t = player.tools[f.slot];
-    if (t && !t.bits[f.i]) { t.bits[f.i] = bitIdOf(d.cell.type); home = true; }
-  }
+  if (!player.bag[f.i]) { player.bag[f.i] = d.cell; home = true; }
   if (!home && !bagPut(player, d.cell)) throwCell(d.cell);
   state.drag = null;
 }
@@ -328,29 +290,17 @@ function throwCell(cell) {
 //
 // Home can be gone by the time it is asked: a stack that did not empty is
 // still sitting in it, an earlier swap in the same gesture filled it, or it
-// cannot hold this kind at all (a berry does not go in a bit cell, a bit does
-// not go on the weapon key). Then this says no and the caller falls back to
+// cannot hold this kind. Then this says no and the caller falls back to
 // what it always did - the ousted item rides the cursor, which is free,
 // because what was on it is what just went into the well.
 function dragHome(out, from) {
   if (!from) return false;
-  if (from.k === 'bag') {
-    const s = player.bag[from.i];
-    if (!s) { player.bag[from.i] = out; return true; }
-    // refilled with more of its own kind: top that stack up instead
-    const max = ITEMS[out.type] ? ITEMS[out.type].stack : 1;
-    if (s.type === out.type && !s.bits && !out.bits && s.n + out.n <= max) { s.n += out.n; return true; }
-    return false;
-  }
-  if (from.k === 'slot') {
-    if (!isToolCell(out) || player.tools[from.i]) return false;
-    player.tools[from.i] = out;
-    return true;
-  }
-  const cell = player.tools[from.slot], id = bitIdOf(out.type);
-  if (!id || out.n > 1 || !cell || cell.bits[from.i]) return false;
-  bitPut(cell, from.i, id);
-  return true;
+  const s = player.bag[from.i];
+  if (!s) { player.bag[from.i] = out; return true; }
+  // refilled with more of its own kind: top that stack up instead
+  const max = ITEMS[out.type] ? ITEMS[out.type].stack : 1;
+  if (s.type === out.type && !s.bits && !out.bits && s.n + out.n <= max) { s.n += out.n; return true; }
+  return false;
 }
 // a carried cell landing on grid cell i: merge into the same kind if it will
 // take it, otherwise swap with whatever is sitting there - what was here
@@ -393,7 +343,7 @@ function bagCellPlate(r, rim, inner, lift) {
 // LEFT: the body as it stands right now - the class sprite walking in place
 // at 4x wearing its bought gear bands in their level materials
 // (drawGearMarks, the same pixels every rival reads on you in the world) with
-// the held weapon beside it - and under it the STAT LEDGER, GEAR_STATS read
+// the held weapon beside it - and under it the STAT LEDGER, STAT_ROWS read
 // off the LIVE kit (kitOf) with the player handed to it, so gear levels,
 // cards and the hero level's own growth are all in the numbers - the same
 // table, numbers and verdict inks as the stat sheet that flies into the
@@ -491,10 +441,10 @@ function drawCharPanel(now) {
   }
   // the ledger: every number this body carries RIGHT NOW - gear levels, cards
   // and the hero level already folded in, because it reads the live kit and
-  // hands the getters the player (GEAR_STATS, js/ui/menu.js)
+  // hands the getters the player (STAT_ROWS, js/sim/stats.js)
   const k = kitOf(player);
-  for (let i = 0; i < GEAR_STATS.length; i++) {
-    const [label, get, fmt] = GEAR_STATS[i];
+  for (let i = 0; i < STAT_ROWS.length; i++) {
+    const [label, get, fmt] = STAT_ROWS[i];
     const y = L.led.y + i * 8;
     drawPixelTextShadow(ctx, label, L.led.x, y, '#8c919a', '#121418');
     const vTxt = fmt(get(k, player));
@@ -565,38 +515,6 @@ function drawFoodClock(x, y, w, h, type) {
   // the same wedge sweeping the same way, minus the stroke that would own the
   // icon
   drawSweepCover(x, y, w, h, Math.min(1, p.foodCd / FOOD_CD), CD_SWEEP, w >= 12 ? CD_EDGE : null);
-}
-
-// ---- the pack's SHIFT plate ---------------------------------------------
-// The one keybind indicator the backpack carries (the carve-out CLAUDE.md's
-// UI rule names), in the world prompts' own key-cap grammar. It is up while
-// the pointer is on a well that has somewhere to send what it holds - a bit
-// in the grid (into the weapon), a bit on the shelf or a tool on the
-// weapon (back into the pack), a tool in the grid (into your hands) - and its
-// verb is that DESTINATION, so the plate teaches which way the transfer goes
-// rather than merely announcing a key. The cap depresses while shift is
-// actually down, so it also answers "is it registering".
-//
-// Shift-click IS that transfer, in both hands: with an empty one it is the
-// plain click's own move (hudRelease), and while carrying something it is
-// sendAt, which spends the click on this well and leaves the hand loaded. The
-// verb reads the same either way, because the well's item goes the same way.
-function shiftVerb(mx, my) {
-  if (!mouse.inside || player.dead) return null;
-  const fh = shelfHit(mx, my);    // the same wells, in the same order, sendAt tries
-  if (fh) return (fh.kind === 'bit' ? shelfCell().bits[fh.i] : shelfCell()) ? 'STOW' : null;
-  const bh = bagHit(mx, my);
-  if (!bh || bh.kind !== 'cell') return null;
-  const s = player.bag[bh.i];
-  if (isToolCell(s)) return 'HOLD';                    // trades places with the weapon
-  return s && bitIdOf(s.type) && heldTool(player) ? 'LOAD' : null;
-}
-function drawShiftHint() {
-  const verb = shiftVerb(mouse.x, mouse.y);
-  if (!verb) return;
-  // off the shelf row's right end, level with its cells - clear of the
-  // rails above the row and of the drawer below it
-  drawKeyPrompt(shelfRowRight() + 5, shelfRowY() + 12, verb, keyHeld('slide'), 'slide');
 }
 
 function drawBag(now) {
@@ -686,5 +604,4 @@ function drawBag(now) {
   };
   for (let oy = -1; oy <= 1; oy++) for (let ox = -1; ox <= 1; ox++) if (ox || oy) stamp(ox, oy, '#191b1f');
   stamp(0, 0, col);
-  drawShiftHint(); // outside the refusal shake: the plate is not what refused
 }
