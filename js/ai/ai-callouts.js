@@ -120,7 +120,7 @@ function callLook(p) {
   for (const q of players) {
     if (q.team === p.team || !unitAlive(q)) continue;
     const d = Math.hypot(q.x - p.x, q.y - p.y);
-    if (d >= seenAt(q, CALL_NEAR)) continue;
+    if (d >= seenAt(q, CALL_NEAR, p.team)) continue;
     if (d < nd) { nd = d; near = q; }
     if (q.hp < q.maxHp * CALL_LOW_HP && (!low || q.hp < low.hp)) low = q;
   }
@@ -141,7 +141,7 @@ function callLook(p) {
     let n = 0, sx = 0, sy = 0;
     for (const q of players) {
       if (q.team === p.team || !unitAlive(q)) continue;
-      if (Math.hypot(q.x - own.x, q.y - own.y) >= CALL_ROOST_R || Math.hypot(q.x - p.x, q.y - p.y) >= seenAt(q, CALL_ROOST_R)) continue;
+      if (Math.hypot(q.x - own.x, q.y - own.y) >= CALL_ROOST_R || Math.hypot(q.x - p.x, q.y - p.y) >= seenAt(q, CALL_ROOST_R, p.team)) continue;
       n++; sx += q.x; sy += q.y;
     }
     if (n) return { k: 'here', n, x: sx / n, y: sy / n };

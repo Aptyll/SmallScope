@@ -121,6 +121,9 @@ obs = {
 - **Hidden rivals.** A rival buried past the point where it drops off the minimap is not listed,
   unless a falcon mark is on it. The game's own sight rule decides, the one every turret and wolf
   uses.
+- **The fog of war.** A rival player, a rival soldier or an animal outside your side's sight (a
+  circle round each of your heroes, soldiers and turrets, cut by stone; the woods hide a body
+  until one of you stands close) is not listed either - the same fog a human plays under.
 - **Birds.** `state` is `'fly' | 'dive' | 'down' | 'flee' | 'gone'`. A bird `'down'` is the
   objective: drive the rival one to `'flee'` and your side wins. `hp` is its nerve. `hitT` is
   seconds since it was last struck. `mouth` is where its spur meets the road: the way in.
