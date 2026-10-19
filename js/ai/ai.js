@@ -676,7 +676,7 @@ function resolveCardForBot(p) {
 // covers the next WHOLE item walks it to its own side's counter when that is
 // close (a bot respawns beside it). Only a finished build spends on gear.
 // True while it is walking to shop, which ends aiThink's ladder this think.
-const AI_SHOP_DETOUR = 12 * TILE; // px: how far off a bot walks to its counter to buy
+const AI_SHOP_DETOUR = 32 * TILE; // px: how far a bot walks to its counter to buy; past it (AI_RECALL_FAR) it recalls
 function aiSpend(p, inp, steerTo) {
   // spend a free skill point before the ladder - waiting on it is leaving
   // growth on the table. Lowest ability level first, so the kit rises
@@ -739,8 +739,10 @@ function updateAI(p, dt) {
 // what the ladder asked only when nothing rival is within AI_RECALL_SAFE: a
 // fight in reach is the ladder's, and whatever it does there ends a channel
 // the way a player's own action would. Out of reach of one, a bot low on
-// health and far from its bird recalls and stands still for the channel; one
-// already in its own ring and hurt stands in it until it is whole again.
+// health, or out of a fight with the gold for its next whole item (League's
+// back to shop: the counter stands by the bird), and far from its bird
+// recalls and stands still for the channel; one already in its own ring and
+// hurt stands in it until it is whole again.
 const AI_RECALL_HP = 0.35;      // share of max health under which a bot goes home
 const AI_RECALL_FAR = 30 * TILE; // px from its bird past which the channel beats the walk
 const AI_RECALL_SAFE = 150;     // px: a rival this close and the bot fights or runs instead
@@ -751,12 +753,14 @@ function aiRecall(p) {
   if (!e || e.state !== 'down') return;
   if (unitsNear(p, p.x, p.y, AI_RECALL_SAFE).some((q) => (q instanceof Player || robots.includes(q)) && inSight(p.team, q))) return; // what its side sees, as a player would
   const inp = p.input, low = p.hp < p.maxHp * AI_RECALL_HP;
-  const go = p.recallT <= 0 && low && p.eatT <= 0 && !recallBlocked(p) && Math.hypot(e.x - p.x, e.y - p.y) > AI_RECALL_FAR;
+  const next = p.items && botNextItem(p), nc = next && itemCost(p, next);
+  const rich = !!nc && p.fightT <= 0 && p.inv.gold >= nc.gold && (itemRoom(p, nc.used) >= 1 || botStrayPart(p) >= 0);
+  const go = p.recallT <= 0 && (low || rich) && p.eatT <= 0 && !recallBlocked(p) && Math.hypot(e.x - p.x, e.y - p.y) > AI_RECALL_FAR;
   const wait = roostRing(p) && p.fightT <= 0 && p.hp < p.maxHp * AI_RING_FULL; // a body still in a fight is the ladder's
   if (!go && !(p.recallT > 0) && !wait) return;
   if (go) inp.cmd = { kind: 'recall' };
   inp.mx = inp.my = 0; inp.slide = false; inp.dodge = false; inp.jump = false;
-  if (go || p.recallT > 0) { inp.fire = false; inp.work = false; inp.ability = -1; aiNote(p, 'RECALL', 'LOW HP', null); }
+  if (go || p.recallT > 0) { inp.fire = false; inp.work = false; inp.ability = -1; aiNote(p, 'RECALL', low ? 'LOW HP' : 'SHOP', null); }
   else aiNote(p, 'IDLE', 'HEALING', null);
 }
 

@@ -323,10 +323,9 @@ the throw and the refusal flash work on tools and bits with no storage code of t
 **There is ONE weapon slot** (`p.tools`, `TOOL_SLOTS` = 1 — the array and the drag plumbing stay
 generic over it), and the left button fires it. Keys 1-4 belong to the
 [class abilities](#class-abilities-keys-1-4). The slot holds a **tool**; a tool holds
-**bits**; the bits are what actually fly. Both are found in the world (and sell at
-[the counter](#the-merchants-counter)), and both are
-carried items you can drag around — so the weapon is a thing a player assembles rather than a
-thing they are issued.
+**bits**; the bits are what actually fly. Neither drops in the world: a player fires the class
+loadout ([Starting loadouts](#starting-loadouts)), and [the counter](#the-merchants-counter) buys
+either back.
 
 ### A tool
 
@@ -395,8 +394,7 @@ Two rules govern it, and both are load-bearing:
 
 - **It applies to every shot.** Where a modifier sits means nothing: it changes every projectile
   the tool fires, the built-in arrow included when nothing else is loaded. There is no wrong place
-  to put one and no way to waste one. The shelf draws that reach as a **line** from the fitting
-  into each shot ([the shelf](#the-weapon-shelf)).
+  to put one and no way to waste one.
 - **It compounds with whatever is already there.** Every `mod` composes with the value it is
   handed — `*=` a multiplier, `+=` a quantity — and must never `=` or `Math.max` it. Two SPEEDUPs are
   four times the speed, two SPLITTERs nine shots, two FLAMEs twice as long at twice the rate
@@ -454,7 +452,7 @@ is the teleport's whole rule: a request that hits nothing takes you nowhere.
   blinking out of existence rather than as a path.
 - **`chop`** — one chop into every tree within `AXE_CHOP_R` (26 px) of where the head stopped,
   the struck tile included. It is the same blow an E swing lands (`chopTree`, js/sim/actions.js —
-  gold, stump, fell payout, loot roll and the rare pine's jackpot), routed through `contest()`
+  gold, stump, fell payout and the rare pine's jackpot), routed through `contest()`
   on the same `work:` key, so an axe and a swing on one tile in one step are one chop. Three
   throws fell a pine, and they fell its neighbours with it.
 
@@ -477,14 +475,13 @@ nothing is left behind: every loaded shot leaves together, each wearing every lo
 #### `toolPlan`: one activation, in one pass
 
 `toolPlan(cell)` walks the cells once and returns `{ shots, load, tensile, spent }`
-(`spent` is every loaded cell — what `fireTool` flashes on the shelf). It is
-the *only* place the arithmetic lives, and the press, the [aim line](#the-draw) and the
-[shelf](rendering.md#the-weapon-shelf) all read it — so the three can never disagree about what
-the button is about to do.
+(`spent` is every loaded cell). It is
+the *only* place the arithmetic lives, and the press and the [aim line](#the-draw) both read
+it — so the two can never disagree about what the button is about to do.
 
 - **Order means nothing.** Every modifier folds into one envelope, and every projectile is
   pushed onto `shots` with a copy of the whole of it (`mods` lists the modifier cells that power
-  it, which is what the shelf's lines draw). A SPLITTER beside two ARROWs fans both.
+  it). A SPLITTER beside two ARROWs fans both.
 - Every loaded cell's weight is added to `load`, which only slows [the draw](#the-draw).
 - **No shot loaded still fires.** A tool with only modifiers, or with nothing, fires the built-in
   `TOOL_BASE_SHOT` (a plain ARROW, `i` -1, `base`) wearing whatever modifiers are there. It takes
@@ -619,35 +616,25 @@ the whole roster.
 
 ### The weapon shelf
 
-**The build is on screen at all times, top-left** — the tool in a bigger well at the left end of
-a row, then its bit cells: **shots on the left, fittings on the right**, empty cells between
-(`sortBits`). The order is kept for the player and means nothing to the press. It is the whole of what the HUD says
-about the arsenal — one tool, read in one place; the bottom strip has no weapon well — with the
-[inventory drawer](rendering.md#the-backpack) shut under it.
+**The class weapon and the item slots are on screen at all times, top-left**: the weapon in its
+one big well at the left end of a row (`shelfCellRect(-1)`), then the `ITEM_SLOTS` item slots
+(`shelfCellRect(0..5)`), smaller wells showing `p.items` ([the items](#the-items)) left to right
+as the shop fills them. It is the whole of what the HUD says about what a player carries into a
+fight; the bottom strip has no weapon well, and the [inventory drawer](rendering.md#the-backpack)
+is shut under it.
 
-It stands on the same plate as the rest of the HUD, which swallows a click anywhere on it
-(`shelfPlateHit`). It is pinned by its TOP to the
-corner and grows rightward — a bigger tool grows the row rather than moving the tool cell it is
-read from. The geometry is `shelfCellRect(i)` (cell **-1 is the tool**), the pointer
-`shelfHit` (`{kind:'tool'}` / `{kind:'bit', i}` / null), and the draw `drawShelf` — all in
-js/ui/hud-draw.js and js/ui/strip.js, scaled about the top-left corner at its own size (`cornerSc`)
-([rendering.md](rendering.md#the-hud-strip)).
+It stands on the same plate as the rest of the HUD, a fixed width, which swallows a click anywhere
+on it (`shelfPlateHit`). The pointer is `shelfHit` (`{kind:'tool'}` / `{kind:'item', i}` / null)
+and the draw `drawShelf`, in js/ui/strip.js and js/ui/hud-draw.js, scaled about the top-left
+corner at its own size (`cornerSc`) ([rendering.md](rendering.md#the-hud-strip)). Nothing on the
+shelf is dragged or clicked: it is read. A hover raises the weapon's `tipCell` or the item's
+`tipItem` (the shop's own card), and the [drawing](rendering.md#the-weapon-shelf) has no words:
+the weapon wears its rate-of-fire sweep, and a slot's rim says part or finished.
 
-Two marks and no words, [drawn](rendering.md#the-weapon-shelf) rather than labelled: a box's
-**rim colour** is its rarity (and a hatched ground is a fitting), and one **line** per fitting runs
-over the row from it into every shot it powers (the tool well itself when the built-in arrow is
-the shot). And two events on the one flash (`bitLit`/`bitLitAt`/`bitLitCol`,
-js/sim/tools.js, aged in `updateFx`): every cell the last press SPENT flashes white and fades over
-`BIT_LIT_T` (0.3 s), its lines with it, so the left button teaches the row it is firing — and a
-[tool swap](#where-tools-and-bits-come-from) lights the **whole** row, the tool well included, in
-the new tier's ink for `SWAP_T` (1.1 s).
-
-The drag is one mechanism shared by the grid, the weapon slot and the shelf
-(the drag banners of [js/ui/strip.js](../../js/ui/strip.js), `state.drag`): a press **arms** a pick-up and only travel past
-`DRAG_SLOP` promotes it, so a tap on a berry still eats it
-while a drag off either one picks it up. A release over any well that will take it puts it there;
-over the rest of the HUD it goes home; **over the world it is thrown**, which is the only way to
-get rid of a tool.
+The drag belongs to the pack ([the drag banners](../../js/ui/bag.js), `state.drag`): a press
+**arms** a pick-up and only travel past `DRAG_SLOP` promotes it, so a tap on the burrow still
+stands its ghost up while a drag off it picks it up. A release over a pack cell puts it there; over the counter it
+sells; over the rest of the HUD it goes home; **over the world it is thrown**.
 
 **A throw goes where it was aimed, and stays thrown.** `throwCell` sends the item off the body
 along the **cursor's heading** at `TOSS_SPEED` (130 px/s — the facing stands in when the pointer
@@ -659,46 +646,34 @@ everybody else may take it the instant it lands, which is what makes a hand-off 
 work. A thrown **tool** sheds its bits on the way ([above](#a-discarded-weapon-sheds-its-build)),
 and they carry the same heading and the same lock.
 
-**A drop onto a loaded well SWAPS.** Whatever the drop displaces goes back to *home* — the well
-this drag started from (`dragHome`) — because home is the one place already known to be free: it
-is where the thing in hand came out of. So a bit dragged from the pack onto a loaded bit cell
-trades places with the bit that was there, a tool dropped on the weapon well sends the old one to
-the bag cell it came out of, and a bit dragged out of the column onto a bit in the grid does the
-same in reverse: one move each way, the same swap `sendBagCell`'s click makes. Home can be gone
-by the time it is asked — a stack that did not empty is still
-sitting in it, an earlier swap in the same gesture filled it, or it cannot hold that kind at all
-(a berry does not go in a bit cell, a bit does not go on the weapon key) — and then the displaced
-item rides the cursor, which is free, because what was on it is what just went into the well.
+**A drop onto a loaded cell SWAPS.** Whatever the drop displaces goes back to *home*, the cell
+this drag started from (`dragHome`), because home is the one place already known to be free: it
+is where the thing in hand came out of. Home can be gone by the time it is asked (a stack that did
+not empty is still sitting in it), and then the displaced item rides the cursor, which is free,
+because what was on it is what just went into the cell.
 
-**A plain click is the whole move**, because every one of these wells has exactly one sensible
-destination (`sendBagCell` / `sendBitCell` / `sendSlot`): a **bit** in the grid loads into the
-weapon where it works (`fitBit`, [below](#where-tools-and-bits-come-from)), a **bit** in the column comes back to the pack (merging its own stack,
-`bagAdd`), a **tool** in the grid trades places with the weapon in hand, and the **weapon well**
-stows what it holds in the pack the way a bit does. It is the backpack's own grammar — clicking a
-cell *uses* what is in it, a berry by eating it and a card by drawing from it.
+**A plain click uses what is in a pack cell** (`sendBagCell`, its `ITEMS[type].use`: the burrow
+is the one kind with one). A kind with no use falls through to `bagClick`'s refusal.
 
 **Every press in this widget ARMS; the release is what resolves it** — `hudPress` writes
 `state.dragPend` and nothing else, `hudRelease` acts, for a pick-up (a press that travels past
 `DRAG_SLOP`) and for putting a carried item down alike. **Never resolve a put-down on the press**:
-a drop onto a loaded well swaps, a swap whose displaced item cannot go home puts that item back
+a drop onto a loaded cell swaps, a swap whose displaced item cannot go home puts that item back
 on the cursor, and the mouseup would then run the same `dragDrop` at the same pixel — one click,
 two swaps. The item lands where the button came *up*, and a press can be called off by moving
-away before letting go. Each helper returns whether it *handled* the click, so a berry, a card and an empty
-cell fall through to their ordinary click. Nothing can be destroyed: when the destination
-has no room the item does not move at all, and the container that is full is the one that
-refuses — the pack through `bagDenied()`, the weapon through its twin `toolDenied()`, which bands
-the weapon well in the same red for the same 0.6 s.
+away before letting go. Nothing can be destroyed: when the destination has no room the item does
+not move at all, and the pack refuses through `bagDenied()`.
 
 ### What a gesture answers with
 
 **Every move of an item answers in three places at once** — the ear, the hand and the well it
-landed in — and one function raises all three (`hudFx(kind, k, i, slot)`, the `what a gesture
+landed in — and one function raises all three (`hudFx(kind, k, i)`, the `what a gesture
 answers with` banner, js/ui/bag.js) — so a new well or a new gesture calls `hudFx`, never a bare
 `SFX`, and cannot end up with two of the three.
 
-Five kinds, and they are a language rather than a volume: **`grab`** lifting something onto the
-cursor, **`place`** setting it into an empty well, **`seat`** the weapon well's heavier version of
-that, **`swap`** an exchange, and **`deny`** a refusal. The swap is the loudest of them on purpose
+The kinds (`HUD_FX`) are a language rather than a volume: **`grab`** lifting something onto the
+cursor, **`place`** setting it into an empty well, **`merge`** topping a stack up, **`seat`** a
+heavier `place` that no well calls now, **`swap`** an exchange, and **`deny`** a refusal. The swap is the loudest of them on purpose
 — it is the one move that hands you something *back* — so it gets a cue of its own (`SFX.swap`,
 two notes crossing, told from `stash`'s rising pair by ear alone), the hardest rumble, and the
 only pulse on the cursor itself.
@@ -711,57 +686,29 @@ only pulse on the cursor itself.
   `DRAG_LIT_T` (0.36 s) — so the hand visibly changes contents rather than quietly doing it. Both
   age in `updateFx` beside the refusal reds.
 
-**And the well says what will happen before it happens.** While something rides the cursor, the
-well under the pointer wears a **ring** in one of four colours — blue *drops it in*, green *tops
-the stack up*, gold *trades with what is there*, red *refuses* — from `dropKindBag` /
-`dropKindSlot` / `dropKindBit`, which read the same branches the three `dragDrop*` functions take,
-so the promise and the move can never disagree — a bit held over the weapon **key** reddens
-*before* the release. The ring is drawn last of all (`drawDropPromise`, after `drawDragGhost`) and outside the
-well's own footprint, because the thing asking the question is an 18 px ghost sitting on an 18 px
-cell — a rim inside the well is a rim nobody ever sees. The hover tooltip names what the click will
-do where the item actually sits (`tipSend`), which is why a tool reads TAKE IT IN HAND in the
-grid and STOW IT IN THE PACK in the well.
+**And the cell says what will happen before it happens.** While something rides the cursor, the
+pack cell under the pointer wears a **ring** in one of three colours — blue *drops it in*, green
+*tops the stack up*, gold *trades with what is there* — from `dropKindBag`, which reads the same
+branches `dragDropBag` takes, so the promise and the move can never disagree. The ring is drawn
+last of all (`drawDropPromise`, after `drawDragGhost`) and outside the cell's own footprint,
+because the thing asking the question is an 18 px ghost sitting on an 18 px cell — a rim inside
+the cell is a rim nobody ever sees.
 
-**Shift SENDS**, in both hands. With an **empty** one it is the plain click's own transfer above,
-nothing more. With something already riding the cursor, a
-plain press puts the item down where it lands, while a press begun with shift held is remembered
-on `state.dragPend` (`keep`) and its release runs `sendAt(mx, my)` instead — the same wells
-`dragDrop` tries, in the same order, but acting on what is already *sitting* there and leaving
-what is in hand in hand. Over anything else — the bare frame, an empty cell, the rest of the HUD —
-it does nothing at all, because that promise is the whole point. Recording the modifier at the
-press rather than reading it at the release is deliberate: letting go of shift mid-click cannot
-change what the gesture turns out to be.
-
-The pack advertises the gesture rather than expecting you to know it: `drawShiftHint` floats a
-**SHIFT key cap** (the world prompts' own `drawKeyPrompt`, the keybind-indicator carve-out of
-the [UI rule](rendering.md#show-dont-label)) over the pack's top-right corner whenever the pointer is
-on a well with somewhere to send what it holds, and the verb on it is that **destination** —
-`LOAD` for a bit in the grid, `STOW` for a bit on the shelf or the tool on the weapon,
-`HOLD` for a tool in the grid — so the plate teaches which way the transfer goes rather than
-merely announcing a key. `shiftVerb` asks the same wells in the same order `sendAt` does, so the
-plate and the click can never disagree; a berry and a card get none, because eating and drawing
-are not transfers. The cap presses down while the key is actually held.
+**Shift while carrying uses the cell under the pointer.** A plain press puts the item down where
+it lands, while a press begun with shift held is remembered on `state.dragPend` (`keep`) and its
+release runs `sendAt(mx, my)` instead: the click spent on the pack cell under the pointer
+(`sendBagCell`), leaving what is in hand in hand. Over anything else it does nothing at all,
+because that promise is the whole point. Recording the modifier at the press rather than reading
+it at the release is deliberate: letting go of shift mid-click cannot change what the gesture
+turns out to be.
 
 ### Where tools and bits come from
 
-`dropLoot(x, y, tier, chance)` rolls one find on the shared `rng` at the moment a swing lands
-(never inside `genWorld` — see the seed rule). `LOOT_TOOL` (0.3) of any find is a tool, the rest a
-bit, and only kinds at or under the given tier are in the pool.
-
-| source | chance | tier |
-| --- | --- | --- |
-| a mined rock | its kind's `loot`: STONE 0.2, FROSTGLASS 0.5, SUNSTONE 1 | its `lootTier`: 0 / 1 / 2 |
-| a felled tree | `TREE_DROP` 0.04 | 0 |
-| a sprung chest | `CHEST_TOOL` 0.75 | up to 2 |
-
-**The tier is a ceiling, not a floor.** The kind is picked evenly from everything at or under it
-(`LOOT_POOL`, [the wiki](#the-wiki)), so a roll at tier 2 mostly turns up tier-0 and tier-1 kinds,
-and the top tier is the smaller share of what it can give. A SUNSTONE and a chest roll that same
-pool, and the rock always rolls where the chest rolls `CHEST_TOOL` of the time, so **a SUNSTONE
-turns up a top-tier kind more often than a chest does** — and grows back
-([Mining a rock](#mining-a-rock)), where a chest is gone for the match. What only a chest pays is
-its card ([Roguelike cards](#roguelike-cards)). The [counter](#the-merchants-counter) sells no tools or bits; it buys
-them back at half their `price`.
+**Nothing drops a tool or a bit.** A rock pays gold and ore, a felled tree gold, and
+a sprung chest gold, a card and a free item part (`chestPart`, [the items](#the-items)). The
+weapon a player fires is the class loadout ([below](#starting-loadouts)); the `TOOLS` / `BITS`
+engine still runs it. The [counter](#the-merchants-counter) sells no tools or bits; it buys them
+back at half their `price`.
 
 **A found bit arms itself.** The pack is the overflow, not the destination: a bit walked over
 goes into a free cell of the tool, and only what the tool cannot
@@ -770,15 +717,9 @@ hold lands in the grid. **Anywhere it lands, it works** (`fitBit`): it takes a f
 the fittings — and since every fitting powers every shot, a find is never wasted — `fitAdd(p, type, n)`, with `fitRoom(p, type)` the room it counts, which
 is why a FULL pack with an empty bit cell still magnetises a drop and still claims it. The drop
 pickup (js/sim/sim.js) goes through the pair, so the ordinary way to
-arm a find is to walk over it, and the drag is what you reach for to ARRANGE a build rather than
-what you must do to have one — which is half of why the [shelf](#the-weapon-shelf) is on screen
-at all times: a bit that loaded itself has to be seen loading itself. It fills a free cell
-whatever the load (a heavy build only pulls slower, and one click sends a bit back to the pack),
-and a **bot is left out** — `botFitLoadout` does this for them on its own timer and is choosier
+arm a find is to walk over it. It fills a free cell whatever the load (a heavy build only pulls
+slower), and a **bot is left out** — `botFitLoadout` does this for them on its own timer and is choosier
 about it, so a pickup that shoved a bit into a bot's tool would only make it a worse shot.
-
-So the bottom tier lies around loose in the stone and the pines, the middle tier in the frostglass,
-and the top tier in the sunstone and the chests. A found tool comes out **empty** — its bits are the next thing to find.
 
 **And a strictly better body takes the build with it.** A tool walked over swaps itself straight
 into the hand when two things are true at once: its **tier is higher** than the one held, and its
@@ -792,8 +733,7 @@ It runs for **every** player, bot included, off the same two functions, and it i
 the game that rearms somebody with no hand on the weapon — which is why it carries a tell of its
 own, drawn rather than announced: a ring in the new tier's colour opens out of the body and the
 new tool's own icon rises out of it (`swapFx` → [`drawSwaps`](rendering.md#the-tool-swap)), for
-everyone on screen, while the local player's whole [shelf](#the-weapon-shelf) row flashes in that
-same tier ink. Nothing is refused and nothing is lost: a same-tier find, or a higher-tier body
+everyone on screen. Nothing is refused and nothing is lost: a same-tier find, or a higher-tier body
 with fewer cells than the build needs, is an ordinary pickup into the pack.
 
 ### A discarded weapon sheds its build
@@ -809,21 +749,17 @@ or a thrown tool becomes the way to hand over a whole build in one gesture. Empt
 at that one moment is not the rebuilding-from-type the [hard rule](../../CLAUDE.md#hard-rules)
 forbids.
 
-The pool a roll draws from is the whole table at or under that tier — `LOOT_POOL`,
-[the wiki](#the-wiki).
-
 ### Tiers, and how a find reads
 
 `TOOL_TIERS` is a colour and nothing else in the sim: what a tier buys you is written into each
 tool's own numbers. The three read worse to better as **dim green, bright blue, bright gold**
 (WORN, KEEN, GILDED). The tier is stated in **one** place and the same way everywhere — the 1px
-rim round a dark plate, in every well the item ever sits in (bag cell, weapon slot, bit cell, drag
-ghost, loadout card) — which is why nothing on screen has to say "TIER 2". `tierPlate(type)` is
+rim round a dark plate, in every well the item ever sits in (bag cell, the shelf's weapon
+well, drag ghost, loadout card) — which is why nothing on screen has to say "TIER 2". `tierPlate(type)` is
 that lookup and `itemTier(type)` the raw index. Nothing shines or moves.
 
 **Which of the two kinds of bit it is is stated on that same plate**, by `modPlate` (js/ui/hud-draw.js),
-called wherever a bit sits — the grid, the column, the cursor, the counter's wells, a tech node,
-the tooltip's own icon plate. A **projectile** keeps the flat square plate every carried item
+called wherever a bit sits — the pack's grid, the cursor, the tooltip's own icon plate. A **projectile** keeps the flat square plate every carried item
 wears: it is a thing you fire. A **modifier** gets its plate hatched, inset 2px so the rim stays
 one clean line, in its rarity's colour — it never flies, it is fitted *into* the tool — so the two
 are told apart across a whole grid without recognising a single glyph. Colour is already spent on
@@ -918,7 +854,7 @@ reset). `p.abLv` resets with the match like `p.gearLv`. The wells carry the prog
 gear-style buy pips along the top edge, **one seat per point the key can hold**, so an empty row
 is a locked ability — and a locked well stands dim (dark rim, the icon at `LOCK_DIM`, a grey key
 digit), exactly as a meal button with nothing behind it does; a press on one reddens and shakes
-it (`abDenied`, the twin of `toolDenied`/`foodDenied`). The ASK floats clear of the wells: while a
+it (`abDenied`, the twin of `foodDenied`). The ASK floats clear of the wells: while a
 point is unspent each un-maxed key grows a bobbing gold plus plate in the open screen above its
 well (`abBuyRect`/`abBuyHit`/`drawAbBuyPlate`, UI › `hud strip`). The plate press buys — and so does **the key itself while a point is unspent**: the sim
 consumes `p.input.ability` as a buy whenever `abLvCanBuy(p, i)` holds and as a cast otherwise
@@ -1018,14 +954,11 @@ typed twice, so a retune can never leave the wiki lying.
   `ANIMAL_LV_HP` and `YIELD` / `ANIMAL_LV_GOLD` / `ANIMAL_LV_XP` through the same arithmetic `makeAnimal` and
   `animalDies` use ([Wildlife](#wildlife)). The frames on the page wear the level a spawn would
   be dealt right now (`animalLevel()`).
-- **ARSENAL** — every tool and bit, and **every one is unlocked**: the page is not a shop, not a
-  skill tree and not a gate but the picture of what the map may hand you, and it may hand you
-  all of it — a profile on its first flight rolls exactly what one five hundred matches old
-  rolls. Three tables — TOOLS (rate of fire, bit slots, tensile),
-  BITS (damage, weight, speed, lifespan, flight) and MODIFIERS (weight, and the first sentence
-  of the blurb) — worn to gilded, each kind's icon on its own tier plate with the blue pip for "you
-  have held one" (`PROFILE.techSeen`), and a hover raising the full card in the tooltip
-  (`tipKind`, js/ui/tooltip.js).
+- **ITEMS**: the merchant's catalogue written down ([the items](#the-items)): two tables, PARTS
+  (`ITEM_PARTS`) then FINISHED (`ITEM_DONE`), each row the item's icon in a well rimmed part or
+  finished the way the shop rims it, its name, and STATS / PASSIVE / PRICE (`WIKI_ITEM_COLS`,
+  `wikiItemStats`) read off `BUILD_ITEMS`, `ITEM_STATS` and `ITEM_PASSIVES`. A hover raises the
+  shop's own item card (`tipItem`, js/ui/shop.js).
 - **WORLD** — the one page with no numbers on it: the valley written down. Ten entries in the
   order a scout meets them — SOFTFALL, THE WORKS, THE CLAIM, THE EAGLES, THE SCOUTS, THE
   COUNTER, THE MACHINES, THE ROAD, THE WOLVES, GOLD (`WIKI_WORLD`) — each a figure on its mound
@@ -1038,16 +971,11 @@ The `TECH` table in [js/sim/tools.js](../../js/sim/tools.js) carries the kinds a
 edge per node — `req`, the node beneath it, null on the tier-0 row. Nothing at runtime reads the
 edge: it is the arsenal's lineage on paper (each root plus at most two children — SHORTBOW →
 RECURVE BOW → LONGBOW, ARROW → CARE ARROW → ICE LANCE, BARBED SHOT → THROWING LOG → HEFT, and so
-on), the ARSENAL page lists kinds in its order, and a future page may want to draw it.
+on), and no page lists it now.
 
-**`LOOT_POOL` is every kind at or under a tier**, split into tools and bits, and it is built once
-by `rebuildLootPool()` at boot rather than filtered per roll, because a drop happens in the middle
-of a swing. Nothing narrows it and nothing can empty it, so the tier is the only thing a roll asks
-about; `dropLoot` still returns null on an empty pool rather than throwing.
-
-`PROFILE.markSeen(id)` is all a profile remembers about the arsenal, and it gates
+`PROFILE.markSeen(id)` is all a profile remembers about the old arsenal, and it gates
 **nothing**: it is fired for the local player only (`noteSeen(p, type)`) from the drop pickup and
-from the loadout they fly in with, and it puts the blue pip on the ARSENAL row.
+from the loadout they fly in with, and nothing reads it back.
 
 Storage is [js/app/profile.js](../../js/app/profile.js) and nothing here writes a key — see
 [architecture.md](architecture.md#profilejs).
@@ -1972,10 +1900,10 @@ rather than a different resource (the League model: one number, many ways to ear
 | Source | Pays | Profile |
 | --- | --- | --- |
 | the clock | `TRICKLE_GOLD` (1) every `TRICKLE_T` (4 s) — the `passive income` banner, js/sim/sim.js | 15 a minute to every player on the ground, silently (no floater, no blip); the floor under everyone's purse |
-| tree (`TREE_HP` 3, js/sim/world.js) | `treeFall` 1 on the fell (`treeHit` is 0 — a swing is work, the fell is the pay) | slow, safe, everywhere — a pine a second chained, so a gold a second is the ceiling of full-time farming; leaves a stump, and 1 in 25 leaves a tier-0 [find](#where-tools-and-bits-come-from) |
+| tree (`TREE_HP` 3, js/sim/world.js) | `treeFall` 1 on the fell (`treeHit` is 0 — a swing is work, the fell is the pay) | slow, safe, everywhere — a pine a second chained, so a gold a second is the ceiling of full-time farming; leaves a stump |
 | dead tree (3 hp) | `deadTreeFall` 1 | a tree; none stand since 4.82 (the brown bear's ring went with its den) |
 | rare tree (8%) | + `treeRare` 3 → 4 | jackpot roll, see `treeRare()` |
-| rock | its kind's `gold` (`ROCK_KINDS`, js/sim/mining.js): STONE 3, FROSTGLASS SPIRE 8, SUNSTONE 20 | 2 / 3 / 4 s of standing by it, paid with **ore** besides and a roll at a find; it regrows ([Mining a rock](#mining-a-rock)) |
+| rock | its kind's `gold` (`ROCK_KINDS`, js/sim/mining.js): STONE 3, FROSTGLASS SPIRE 8, SUNSTONE 20 | 2 / 3 / 4 s of standing by it, paid with **ore** besides; it regrows ([Mining a rock](#mining-a-rock)) |
 | rabbit | `rabbit` 2 coins × 5 → 10 | bolts when approached; jinks one shot per 10 s |
 | deer | `deer` 3 coins × 6 → 18 | the big mobile target: two of them, each running its side's line |
 | wolf | `wolf` 3 coins × 8 → 24 | a den's four; neutral until hit, and then the pack bites back |
@@ -1983,7 +1911,7 @@ rather than a different resource (the League model: one number, many ways to ear
 | brown bear | `dire` 6 coins × 15 → 90 | RED's river camp's one; `EPIC_TEAM_GOLD` (40) to every teammate besides, and the BROWN BUFF for the whole team |
 | bird | `bird` 2 coins × 4 → 8 | dormant: nothing spawns one |
 | gold pump (`generator`) | `tiers[tier].pay` every `period` s: 2 / 4 / 7 every 10 s — 12 / 24 / 42 a minute, so the first pays back in 5 min and each upgrade in 6.7 and 7.8 | passive income, deposited to its owner; a 4x2 building, and each one its owner already has makes the next cost 2.5x (`ramp`, `buildCost`: 60, 150, 375), so the second pays back in 12.5 min and the next tier is the better buy |
-| chest | `CHEST_GOLD_MIN`–`MAX` (8–20) + a card, and 3 in 4 a tool or bit of any tier | ~14 caches along the treeline, one free E press — the world's one source of cards, and with the SUNSTONE the only [find](#where-tools-and-bits-come-from) that can be top-tier |
+| chest | `CHEST_GOLD_MIN`–`MAX` (8–20) + a card + a free item part | ~14 caches along the treeline, one free E press — the world's one source of cards, and a part for nothing (`chestPart`, [the items](#the-items)) |
 | a sale at [the counter](#the-merchants-counter) | half a made thing's or an item's price, or the fixed price for fish and berries | the one payout that does not count as earned (`tradeGold`) — a trade is an exchange, not a source, and the counter buys food at the price it sells it |
 
 The table is sized so that a
@@ -2006,7 +1934,8 @@ single gold number (`b.carry`) and deposit at 8+ into their owner's wallet.
 ([world.md](world.md#treasure-chests)) swaps ~14 inner-edge border trees for chests, and one E
 press (`OPEN`, no tool gate) springs one — `CHEST_GOLD_MIN`–`CHEST_GOLD_MAX` gold straight to
 the purse plus one unopened card drop rolled from `CHEST_ODDS` (rarity odds beside the other
-chest constants in js/sim/world.js). The chest's tile opens with it.
+chest constants in js/sim/world.js), and a free item part (`chestPart`, [the items](#the-items)).
+The chest's tile opens with it.
 
 Physical drops exist for everything **carried**: `spawnDrop(x, y, type, n)` takes the
 value of the drop (`d.n`, default 1) and the pickup adds what fits through `bagAdd`, floating
@@ -2157,6 +2086,10 @@ survive a respawn. They ride the save on the player, and a save from before item
 slots (`saveApply`, js/sim/save.js). When the slots change, `itemsChanged` rebuilds the kit: new max
 health arrives filled, the way a gear level does, and lost max health clamps.
 
+**A sprung chest gives a part for free** (`chestPart`, js/sim/items.js): a random one of
+`ITEM_PARTS` into the first empty slot, named in a floater over the chest. With all six slots full
+it pays that part's price in gold instead (`tradeGold`).
+
 ### Buying and selling
 
 **A finished item costs its own price minus the parts of it already in your slots** (`itemCost`),
@@ -2202,8 +2135,11 @@ buy now: that item whole if the purse covers it, else the first of its parts it 
 `aiSpend` (js/ai/ai.js, rung 0 of `aiThink`, after a free skill point) sends that order whenever
 the bot is at a counter. When the purse covers the next **whole** item and the bot is out of a
 fight (`p.fightT`), it walks to its own side's counter (the stall, or the merchant's body) if that
-is within `AI_SHOP_DETOUR` (12 tiles), noting `SHOP` and the item as its thought (`aiNote`), which ends its
-ladder for that think. Only a bot whose build is finished spends on [gear](#gear).
+is within `AI_SHOP_DETOUR` (32 tiles), noting `SHOP` and the item as its thought (`aiNote`), which ends its
+ladder for that think. A part no item still left on its list is built from (a chest's gift,
+usually) is a **stray** (`botStrayPart`): with the slots full, the bot sells it at the counter,
+and a stray it could sell counts as room when it decides to walk there. Only a bot whose build is
+finished spends on [gear](#gear).
 
 ### The panel
 
@@ -2247,9 +2183,8 @@ not:
 | **under** | it does not, but the slab clears both the frame's bottom and the deepest tooltip below the drawer (`SHOP_TIP_CLEAR`, 196) | centred across, `y = cornerBottom() + 6`, on a **tall, narrow** frame where nothing fits beside the slab |
 | **neither** | both fail | `x` at the view's right rim, `y = 4` (the minimap's rim goes under it) |
 
-The width claim is the corner's **fixed** reach (the widest row a tool could ever grow to) and
-not the live `shelfRowRight()`, because the row grows with the tool in hand and a slab that slid
-sideways when a swap changed the row mid-trade would walk out from under the pointer. Every icon is
+The width claim is the corner's **fixed** reach (`CORNER_CLAIM`: the shelf's plate, a fixed
+width, or the drawer, whichever is wider). Every icon is
 drawn at the largest **whole-number** scale that fits its well (`shopIcon`): a fractional one
 stretches every third source pixel and frays 1 px linework.
 
@@ -2260,8 +2195,8 @@ A player carries in two places, and which one a kind lives in is **one flag on i
 **The bag** (`p.bag`) is a fixed array of `p.bagCap` cells, each one `null`
 or a `{ type, n }` stack of at most `ITEMS[type].stack`. Everyone starts with **one bag of 12**
 (`BAG_CAP`, two rows of `BAG_COLS` 6 in the [drawer](rendering.md#the-backpack) under the weapon shelf, shut until B); a second bag is a bigger `bagCap` and a longer array,
-nothing else. It holds the **build**: the spare tools and bits a player lays out, compares and
-chooses between — and a bit only takes a cell once every tool carried (the one in hand, then
+nothing else. It holds the consumables and the ore (and a stray tool or bit, which nothing drops
+now) — and a bit only takes a cell once every tool carried (the one in hand, then
 each in the pack) is full, since `fitAdd` (js/sim/tools.js) loads it into them first.
 
 **The pouch** (`p.food`, `newPouch()`) is a set of uncapped counters beside the wallet, and it
@@ -2280,8 +2215,8 @@ numbers.
 | `fish` (frost pike) / `sunfish` / `whitefish` / `snowChar` | `itemFrostPike` / `itemSunfish` / `itemWhitefish` / `itemSnowChar` | pouch, no cap | F, or clicking its meal well — eats one (same; which one: `fishToEat`) |
 | `cardWhite`/`cardGreen`/`cardBlue`/`cardPurple`/`cardGold` | `itemCard<Rarity>` | pouch, no cap | nothing: it opens itself the moment it is held, one at random (see [Roguelike cards](#roguelike-cards)) |
 | `tunnel` | `itemTunnel` | bag, stack 5 | a **consumable** (`use`): V, or clicking its pack cell (`sendBagCell`) — stands the hole's ghost up, and the dig spends one (see [The burrow](#the-burrow-a-tunnel-anyone-can-ride)) |
-| `tool:<id>` | `toolArt_<shape>_<tier>` | bag, stack 1 | dragged onto one of the four weapon slots (see [Tools and bits](#tools-and-bits)) |
-| `bit:<id>` | `bitArt_<id>` | bag, stack `BIT_STACK` 255 | loads itself into the tool in hand on pickup (`fitAdd`), or is dragged into a cell of the shelf |
+| `tool:<id>` | `toolArt_<shape>_<tier>` | bag, stack 1 | nothing but the counter, which buys it back (see [Tools and bits](#tools-and-bits)) |
+| `bit:<id>` | `bitArt_<id>` | bag, stack `BIT_STACK` 255 | loads itself into the tool in hand on pickup (`fitAdd`) |
 | `ironstone`/`frostglass`/`sunstone` | `itemOre_<key>` | bag, stack `ORE_STACK` 99 | nothing yet but the counter, which buys it at half its `price` (2 / 12 / 40); see [Mining a rock](#mining-a-rock) |
 
 An unopened card is an ordinary `ITEMS` entry (`pouch: true`) — one per rarity, since a white
@@ -2323,10 +2258,7 @@ written once and neither know nor care.
 something says so the same way:
 `bagDenied()` reddens and shakes the whole backpack frame for 0.6 s with one `SFX.deny()`, and re-firing while
 it is already up does nothing, so standing on a drop you cannot carry is one flash and not sixty a
-second. A pouch kind can never fire it. The **weapon** refuses in the same language:
-`toolDenied()` / `toolFlash` (UI › `hud strip`) bands the weapon well in that red and shakes it
-for the same 0.6 s when a bit has nowhere to go in it, so the container that is full is always
-the one that answers.
+second. A pouch kind can never fire it.
 
 The HUD is in the `UI` › `backpack` banner — see
 [the backpack](rendering.md#the-backpack).
@@ -2433,7 +2365,8 @@ from it to the feet; the overhead frame's bar slot fills in the side's glow for 
 (`drawPlayer`, js/draw/bodies.js).
 
 **Bots** (`aiRecall`, js/ai/ai.js, read after the ladder in `updateAI`): with no rival player or
-machine inside `AI_RECALL_SAFE`, a bot under `AI_RECALL_HP` of its health and more than
+machine inside `AI_RECALL_SAFE`, a bot under `AI_RECALL_HP` of its health, or out of a fight with
+the gold for its next whole item (`botNextItem`, the counter stands by the bird), and more than
 `AI_RECALL_FAR` from its bird recalls and stands still for the channel, and a bot hurt in its own
 ring and out of a fight waits there to `AI_RING_FULL`. A rival its side sees in reach hands it back to
 the ladder.
@@ -2508,11 +2441,11 @@ rock, two in one step [contested](multiplayer.md#contested-orders) on `mine:<til
 fills for as long as the miner stays inside the ring, whatever they do there - walk, shoot,
 roll, eat, cast:
 
-| kind | `mine` | `gold` | `ore` | `loot` / `lootTier` | `regrow` |
-| --- | --- | --- | --- | --- | --- |
-| STONE | 2 s | 3 | 3–5 IRONSTONE | 0.2 / 0 | 120 s |
-| FROSTGLASS SPIRE | 3 s | 8 | 1–2 FROSTGLASS | 0.5 / 1 | 180 s |
-| SUNSTONE | 4 s | 20 | 1 SUNSTONE | 1 / 2 | 300 s |
+| kind | `mine` | `gold` | `ore` | `regrow` |
+| --- | --- | --- | --- | --- |
+| STONE | 2 s | 3 | 3–5 IRONSTONE | 120 s |
+| FROSTGLASS SPIRE | 3 s | 8 | 1–2 FROSTGLASS | 180 s |
+| SUNSTONE | 4 s | 20 | 1 SUNSTONE | 300 s |
 
 The pick bites every `MINE_STRIKE` (0.5 s): the rock shivers and blinks white, chips and a
 white spark fly off where the pick lands, three motes of the kind's colour stream into the miner
@@ -2532,8 +2465,7 @@ at it, yours or a rival's, starts from what is left.
 
 When it lands (`finishMine`) the rock pays its `gold` through `awardGold` (times `harvestMul`;
 gold only, never XP), throws its ore onto the snow one piece at a time toward the miner
-(`ORE_FLING`) for the [drop pickup](#inventory-and-the-backpack), rolls its find
-(`dropLoot`), and lies as **rubble** (`o.regrow`, `SPRITES.rockSpent`) — still solid, not
+(`ORE_FLING`) for the [drop pickup](#inventory-and-the-backpack), and lies as **rubble** (`o.regrow`, `SPRITES.rockSpent`) — still solid, not
 offered to E (`OBJECTS.rock.ready` is `rockReady`) — until `tickRock` in the object timers
 grows it back. The bots mine by the same rule (the harvest rung walks them beside a rock and
 they stand there, key up, until it breaks); the worker bots leave rocks alone, and the merchant's axe, a crater and the
@@ -3559,23 +3491,14 @@ refused, Escape or a click elsewhere calls it off
 edge, puts the defaults back and sits dim while they already are. `KEY_ROWS` is the three
 columns per scheme (an action id, a run of caps on one verb — MOVE, ABILITIES — or a fixed pair), `keyRowsLayout`
 places every cap and word listing-local, and the draw (`drawKeyRows`), `settingsHit`
-(`'key:<action>'`, `'keyreset'`) and `DBG.keyRows` all read it. Under a rule at
-`KEYS_PRIMER_Y`, baked (`bakeCtrlKeys`), **THE WEAPON** — the one thing about the left button a
-new player cannot work out by pressing it, drawn rather than explained (`drawToolPrimer`); the
-page is long enough that its scroll track appears.
+(`'key:<action>'`, `'keyreset'`) and `DBG.keyRows` all read it. Its bake (`ctrlCvs.keys`) is
+blank, `KEYS_LIST_H` tall (the listing and its RESET row), and only sizes the scroll.
 GAMEPAD draws each button as a picture (`drawPadGlyph`: a face button is a disc with its
 letter, a bumper a flat pill, a trigger a tall one, a stick a ring, the dpad a cross with its
 pressed arm lit) beside its verb — moving and fighting, the abilities and the kit, then the
 match's buttons with the menu set under a rule — and its live readout under them. The bindings themselves: [the two controllers](multiplayer.md#the-two-controllers).
 
-The primer is a **real HORN BOW** — FLAME, ARROW, ARROW — sorted by `sortBits` and run through
-`toolPlan` at bake time, so the picture cannot drift from the weapon: the shots sit left, the
-flame right, and its line reaches both arrows. The cells, the hatch on the modifier and the lines
-are the **same marks** the shelf draws in play (`modPlate`, js/ui/hud-draw.js, takes the context
-to paint so a bake can borrow it) — what is learned here is recognised there. Each kind gets one
-note in its own colour, and four lines close it: one click fires everything loaded, every
-modifier shapes every shot, a heavier load takes longer to draw, and with no shot loaded it fires
-a plain arrow. The title screen's TUTORIAL panel carries
+The title screen's TUTORIAL panel carries
 the same keys under `1-4 CLASS ABILITIES`.
 
 `settings.info` (one INFO DISPLAY toggle row in the ESC menu, **or F3**, minecraft-style — the

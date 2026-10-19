@@ -377,8 +377,8 @@ reads a frame array instead would mean teaching every one of them about three sp
 three are not special, they are icons that happen to move. One clock drives all of them
 (`ITEM_FR`, 100 ms), so every berry on the screen is on the same beat — a dozen icons each looping
 to their own is a fruit machine, not a HUD — and a frame that has not changed is not redrawn.
-Each canvas starts on frame 0, so a panel that bakes an item icon into a still image at boot (the
-control primer) gets a picture rather than a hole.
+Each canvas starts on frame 0, so a panel that bakes an item icon into a still image at boot gets
+a picture rather than a hole.
 
 **The crate is hand-drawn.** `SPRITES.crate` is the 16×16
 `crate` grid on `CRATE_PAL` (five colours: an outline, plank in shade and in light, the pale X of
