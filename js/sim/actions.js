@@ -874,7 +874,7 @@ function hurtUnit(e, dmg, nx, ny, src, o) {
   o = o || {};
   // a bear buff (campBuff, wildlife.js): every blow a player wearing it lands
   // is worth more, whatever landed it - a shot, a roll, a stomp alike
-  if (src instanceof Player && src.buffT > 0) dmg = Math.round(dmg * CAMP_BUFF_DMG);
+  if (src instanceof Player && src.buffT > 0) dmg = Math.round(dmg * statBuffMul(src, 'dmg'));
   const ty = DMG_TYPES[o.type] || DMG_TYPES.blunt;
   const km = o.kbMul === undefined ? 1 : o.kbMul;
   if (e instanceof Player) {
@@ -908,9 +908,10 @@ function hurtUnit(e, dmg, nx, ny, src, o) {
 // `src`, where a caller names one, is the body that put the state on: a rival
 // player pinned by a player is that player's crowd control in the post-game
 // record (js/ui/lobby.js), counted as the seconds it ADDS to what is already
-// on - a stun refreshed every frame is not a stun every frame.
+// on - a stun refreshed every frame is not a stun every frame. It also puts
+// the pinner on the body's assist list (noteFoe, the `takedowns` banner, js/sim/player.js).
 function ccCredit(e, cur, t, src) {
-  if (src instanceof Player && e instanceof Player && src.team !== e.team) src.ccOut += Math.max(0, t - Math.max(0, cur));
+  if (src instanceof Player && e instanceof Player && src.team !== e.team) { src.ccOut += Math.max(0, t - Math.max(0, cur)); noteFoe(e, src); }
 }
 function stunUnit(e, t, src) {
   if (t <= 0 || !unitAlive(e)) return;

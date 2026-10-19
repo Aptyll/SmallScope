@@ -37,15 +37,15 @@ function logEvent(txt, p, o) {
 }
 
 // ---- scoreboard (hold TAB) ----
-const SB_W = 200;
+const SB_W = 216;
 const SB_ROW = 9;
-const SB_COL = [96, 128, 160, 192]; // right edges of LVL / GOLD / KILLS / FARM, panel-relative
+const SB_COL = [96, 128, 176, 208]; // right edges of LVL / GOLD / K/D/A / FARM, panel-relative
 
 function scoreboardOpen() { return keyHeld('board') && state.mode !== 'title' && !window.DBG.hideUI; }
 
-// "winning" is lifetime gold earned, not the purse: gold spent on a building
-// is progress, and it is the same number the hero levels run on
-function scoreOf(p) { return p.xp; }
+// "winning" is the match's gold earned (gainGold), not the purse: gold spent
+// on a building is progress, not a step back
+function scoreOf(p) { return p.earned; }
 
 // players grouped by team, teams ordered by their total, players by their own
 function scoreGroups() {
@@ -82,7 +82,7 @@ function renderScoreboard() {
   drawPixelTextShadow(ctx, day, x + SB_W - 6 - pixelTextWidth(day), y + 6, '#7a8bb8', shadow);
   ctx.fillStyle = '#222c55'; ctx.fillRect(x + 4, y + 15, SB_W - 8, 1);
 
-  const head = ['LVL', 'GOLD', 'KILLS', 'FARM']; // FARM: last hits on soldiers and camp monsters (js/sim/farm.js)
+  const head = ['LVL', 'GOLD', 'K/D/A', 'FARM']; // FARM: last hits on soldiers and camp monsters (js/sim/farm.js)
   drawPixelTextShadow(ctx, 'PLAYER', x + 14, y + 19, '#7a8bb8', shadow);
   for (let i = 0; i < head.length; i++) {
     drawPixelTextShadow(ctx, head[i], x + SB_COL[i] - pixelTextWidth(head[i]), y + 19, '#7a8bb8', shadow);
@@ -107,7 +107,7 @@ function renderScoreboard() {
         const tag = p.eliminated ? 'OUT' : Math.ceil(p.respawnT) + 's';
         drawPixelTextShadow(ctx, tag, x + 18 + pixelTextWidth(p.name), ry + 1, '#8f9cc4', shadow);
       }
-      const vals = [String(p.level), String(p.inv.gold), String(p.kills), String(p.farm)];
+      const vals = [String(p.level), String(p.inv.gold), p.kills + '/' + p.deaths + '/' + (p.assists || 0), String(p.farm)];
       const cols = ['#cfe0ff', '#f2cc6a', '#ff9a8a', '#cfe0ff'];
       for (let i = 0; i < vals.length; i++) {
         drawPixelTextShadow(ctx, vals[i], x + SB_COL[i] - pixelTextWidth(vals[i]), ry + 1, cols[i], shadow);

@@ -469,11 +469,11 @@ function netClientStep(dt) {
 // The profile's lifetime stats on a client. Every PROFILE.add* in the sim
 // is gated on `p === player` INSIDE the step, which only the host's screen
 // runs, so a client reads the same facts off its own body as the snapshots
-// move it: xp is the match's gold earned (gainGold), kills only climbs, a
+// move it: earned is the match's gold earned (gainGold), kills only climbs, a
 // death is dead's rising edge, the match and its first day start at takeoff
-// (beginDrop's two, which a client never calls) and the leap off the bird is
-// aboard's falling edge (dropJump's markDropped, and off a FLYING bird the
-// hard music cut - the leap's cue itself arrives as sfxFor's event). A redial
+// (beginDrop's two, which a client never calls) and the hop off the bird is
+// aboard's falling edge (hopOff's markDropped - the hop's cue itself
+// arrives as sfxFor's event). A redial
 // keeps the baseline, so what was earned while the socket was down still counts.
 function netClientStats() {
   const me = player;
@@ -481,16 +481,12 @@ function netClientStats() {
   const w = NET.was;
   if (!w || w.p !== me) { PROFILE.addMatch(); PROFILE.addDay(); }
   else {
-    if (me.xp > w.xp) PROFILE.addGold(me.xp - w.xp);
+    if (me.earned > w.earned) PROFILE.addGold(me.earned - w.earned);
     for (let k = w.kills; k < me.kills; k++) PROFILE.addKill();
     if (me.dead && !w.dead) PROFILE.addDeath();
-    if (w.aboard && !me.aboard) {
-      PROFILE.markDropped();
-      const e = state.drop && state.drop.eagles[me.team];
-      if (e && e.state !== 'down') SFX.music.play('jump', { out: 0.1, in: 0.05 });
-    }
+    if (w.aboard && !me.aboard) PROFILE.markDropped();
   }
-  NET.was = { p: me, xp: me.xp, kills: me.kills, dead: me.dead, aboard: me.aboard };
+  NET.was = { p: me, earned: me.earned, kills: me.kills, dead: me.dead, aboard: me.aboard };
 }
 function netClientHello() {
   NET.transport.send('host', { t: 'hello', uid: NET.uid, patch: PATCH_TXT, seed: SEED, map: MAP_TYPE, name: PROFILE.name(), cls: PROFILE.hero(), rank: PROFILE.rank() });
@@ -635,6 +631,12 @@ function netClientMode() {
     return;
   }
   if (state.over === 'won' || state.over === 'lost') return;
+  // seated on a bird that has come down: play begins on the roost, as the
+  // host's landAboard does, so the hop keys reach the host (no brief here)
+  if (me.aboard && state.drop.eagles[me.team].state === 'down') {
+    if (state.mode === 'drop') { handOver(me); SFX.music.play('jump', { out: 0.1, in: 0.05 }); }
+    return;
+  }
   if (me.aboard || me.dropT > 0) {
     if (state.mode !== 'drop') { state.mode = 'drop'; state.menu.panel = null; state.menu.screen = 'menu'; applyZoom(0, true); }
     return;

@@ -253,7 +253,7 @@ a radial gradient filled over every device px cost 5 ms a frame on a CPU-drawn c
 sits here, not at the end of `render()`, so the strip holds no HUD, no dim and no picture of
 itself) → `tipResolve` ([the hover tooltip](#the-hover-tooltip)'s one answer for the frame) →
 `renderUI` (skipped in `title` and `drop`) → `drawAgameUI` (`PRACTICE`, mode `play`) →
-`renderDropUI` (mode `drop` only: the flight bar, keybind indicators) → `drawDropBrief` (mode
+`renderDropUI` (mode `drop` only: your arrow, keybind indicators) → `drawDropBrief` (mode
 `play`, only while [the drop brief](#the-drop-brief) holds a roost) or `drawHopPrompt` (mode
 `play`, the local player still seated on its roost: the HOP OFF key cap — E, or the pad's A disc
 while one is in hand) → `renderWorldMap` (the M map, in `play` and `drop`) → `renderWheel` (the radial menu — after
@@ -529,7 +529,7 @@ empty world.
 | top right | the minimap and its day/night ring — the black outline sits `MM_GAP` (4 px) off the top edge and the right edge alike (`applyMinimapSize`, core.js) — the clock centred under it while no team rail is up (`mmClockShown`), and the notice plates under that | `renderMinimap`, `renderNotices` |
 | top centre | the **team rail**: one thin plate, every other player in the match as a 12px emblem over a hp bar in the side's colour, your teammates left (never you: your own hp is the strip's) and the rival right, the match clock over the two kill totals between them — and under it, the camp plate, the DAY headline and the spectate control (`headlineY`) | `drawRailScaled` |
 | beside the pointer, or bottom left | the hover tooltip, wherever the TOOLTIP row puts it | `tipPos`, `drawTooltip` |
-| bottom centre | the hud strip, flush to the bottom: your portrait (xp round its edge, the level on its corner), the four ability wells over the health and stamina bars, the two meal wells over the gold | `drawHudStrip` |
+| bottom centre | the hud strip, flush to the bottom: the stat panel, your portrait (xp round its edge, the level on its corner), the four ability wells over the health and stamina bars, the two meal wells over the gold | `drawHudStrip` |
 | centre, on G | the character panel: the live body, the stat ledger, the four gear pieces | `drawCharPanel` |
 
 Every widget slides **its own size** away for the landing intro — the minimap up by
@@ -625,7 +625,7 @@ the lane under the disc on the same ease, the same white frame pulse and the sam
 plate, holds `NOTE_LIFE` (8 s), and rides back out the way it came — and it **shoves** whatever
 plate was in the lane down under it exactly as a roost plate does. When nothing has changed there is
 nothing on screen at all. The only thing about it that is not a roost plate is its **size**
-(`STAT_W` 88 wide, `statPlateH()` tall), and every plate is right-aligned on the disc's own right
+(`STAT_W` 100 wide, `statPlateH()` tall), and every plate is right-aligned on the disc's own right
 edge, so the wider one still reads as the same lane.
 
 **Every row of the sheet is on it, dim, and the rows that moved are lit**: label and number to
@@ -634,9 +634,9 @@ between them — `+9`, `-15`, `+8%`, `-0.30S`, the magnitude in that row's own f
 it moved in. Those rows **pulse** for `STAT_PULSE` (1.3 s) on the card's own three-pulses-under-a-
 decay flash grammar, so the thing you are meant to read is still blinking when your eyes arrive.
 The stats kind sets `flash: 0` so the card's white wash never fires: on a plate the size of a roost warning
-that wash *is* the arrival, but over fourteen rows it would drown the green ones that are the news,
+that wash *is* the arrival, but over seven rows it would drown the green ones that are the news,
 so the frame pulses and the rows do the blinking. **Green is better and red is worse**, by the row's
-own `dir`, so a draw time that *fell* reads green — the grammar the hero pop-up's hover deltas
+own `dir` — the grammar the hero pop-up's hover deltas
 already teach.
 
 **One stats plate is ever up.** A second change inside the first one's life drops it and flies a
@@ -651,18 +651,15 @@ an unchanged number would be a lie. One cue per batch (`SFX.stat(up)`), never on
 card moves three numbers and is one thing that happened; its direction is the batch's balance, so a
 card that trades health for damage still speaks.
 
-It reads `GEAR_STATS`, the one table the [hero pop-up](#the-hero-pop-up) prices a pick from
-and the [character panel](#the-character-panel-g) spells a body out with, so the three can never
-disagree about what a stat is, how it prints, or which way is up. Two rows carry the **hero level**
-that the kit itself never holds — `levelMaxHp` adds the hp and `emitBit` the damage — so the
-getters take `(kit, player)` and fold it in when a player is passed. The hero pop-up prices a
-pre-match pick where every hero is level 1 and passes nothing; everything reading a live body passes
-it. Without that a level-up would move no row at all.
+It reads `STAT_ROWS` (js/sim/stats.js), the seven [hero stats](gameplay.md#hero-stats) as the one
+table the [hero pop-up](#the-hero-pop-up) prices a pick from and the
+[character panel](#the-character-panel-g) spells a body out with, so the three can never disagree
+about what a stat is, how it prints, or which way is up. The getters take `(kit, player)`: the
+**hero level** is not in the kit, so a live body is passed and its level read; the hero pop-up
+prices a pre-match pick where every hero is level 1 and passes nothing (the kit says whose it is).
 
-**Two kit fields have no row and so light nothing** — `killHeal` (BLOODLUST, VAMPIRE) and
-`ambushMul` (AMBUSHER'S EDGE, PHANTOM), the only card effects outside `GEAR_STATS`' vocabulary.
-Giving them rows is two more entries in that table plus taller character and gear panels to seat
-them in: both are already within a few pixels of `fitCanvas`'s 240-row floor.
+**Anything outside the seven lights nothing** — a card or gear bonus to ice, the dodge, stealth,
+food, hunts, fells, `killHeal` or `ambushMul` moves no row.
 
 ### The hover tooltip
 
@@ -790,7 +787,7 @@ or pressed: a click only opens a tab or pages the rail.
 ### The hud strip
 
 `drawHudStrip` is one plate, flush to the bottom — the [hud frame](#the-hud-frame) — read left to
-right the way a MOBA's bottom bar is (0.426): the **portrait**, then **four 34px ability wells**
+right the way a MOBA's bottom bar is (0.426): the **stat panel**, the **portrait**, then **four 34px ability wells**
 `[1][2][3][4]` in key order with the **health bar** and the **stamina bar** under them, then the
 **two meal wells** with the **purse** under them (`stripCellRect(j)`: 0-3 the abilities, 4-5 the
 meals; `abCellRect(i)`, `foodCellRect(i)`, `portraitRect`, `hpBarRect`, `stBarRect`,
@@ -798,6 +795,17 @@ meals; `abCellRect(i)`, `foodCellRect(i)`, `portraitRect`, `hpBarRect`, `stBarRe
 [the shelf's tool cell](#the-weapon-shelf) — and nor are unopened cards (they open the moment they
 are held, [gameplay](gameplay.md#roguelike-cards)) or a build well (the build key opens the list).
 The plate swallows clicks so nothing fires through it.
+
+The **stat panel** (`drawStatPanel`, js/ui/statpanel.js) is a plate of its own butted to the
+strip's left frame, the strip's height: the seven [hero stats](gameplay.md#hero-stats) in two
+columns (`STAT_PANEL_GRID`), each a dark well with its 7×7 icon (`STAT_ICON`, inked round) and its
+number (`statShown`, so a bear buff is already in it — and the number it raises wears that bear's
+ring colour while it runs). The strip and the panel are one widget: `hudStripRect` centres the
+**pair** on the view, `stripCap` fits the pair, and `drawHudScaled` bakes from the panel's left
+edge. `stripHit` answers it first (`statPanelHit`: `{kind: 'stat', key}` on a cell, the plate's
+`'frame'` off one), so a press on it never reaches the world, and a hover raises the tooltip's
+**breakdown** (`tipStat`, off `statParts`): BASE, the LEVEL's growth, what GEAR AND CARDS and ITEMS
+gave, the buff, then the total under a rule (the descriptor's `sum`).
 
 The **portrait** (`drawPortrait`) is a `PORT_SQ` square in the wells' own border (ink, then the
 rim), the hero's standing frame at 3× (`portraitSprite`: the worn body's if one is worn, the
@@ -1141,8 +1149,8 @@ LEFT: the **body as it stands right now** — the class sprite walking in place 
 bought gear bands in their level materials (`drawGearMarks`, the same pixels every rival reads on
 you in the world) with the held weapon beside it — under a header naming the sheet (the profile
 name in the team's mark, the class and hero level beside it). Below, the **stat ledger**:
-`GEAR_STATS` read off the **live kit** (`kitOf`) *and handed the player*, so gear levels, cards and
-the hero level's own hp and damage are all already in the numbers — dotted leaders, label left,
+`STAT_ROWS` read off the **live kit** (`kitOf`) *and handed the player*, so gear levels, cards and
+the hero level's own growth are all already in the numbers — dotted leaders, label left,
 value right, the panels' text carve-out. It is the same table, the same numbers and the same
 verdict inks as the [sheet that flies into the notice lane](#the-stat-ledger-your-sheet-as-a-notice),
 opened out: the panel's job is reading a body at leisure, the plate's is catching what moved.
@@ -1259,7 +1267,9 @@ once-and-only-once rule in [CLAUDE.md](../../CLAUDE.md)) and then steps back a w
 pixels, `w >> 1`, which puts the run's **middle column** on `round(sx)` — the column
 [hbMid](#the-centre-column-hbmid) draws, so the overlay runs straight down the middle glyph. Use it
 for any text centred over a model; free-floating text (damage floaters, wheel labels) is not
-centred on anything and keeps its own maths.
+centred on anything and keeps its own maths. A player with a bounty wears it centred over the tag,
+`BOUNTY_LIFT` rows up with a clear row between (`drawBountyTag`, js/draw/overhead.js): a 5 px gold
+coin on a 1 px ink rim and the gold in the purse's ink; a bot's callout stands over it.
 
 **Every other bar in the game is centred on its model directly** — an animal's frame carries the
 level badge too, but its bars stay on the body's own centre and the badge simply overhangs to the
@@ -1338,12 +1348,12 @@ Combat damage is **one running total per body**, never a number per hit. `tallyH
 (js/sim/core.js, called by `damagePlayer`, `hurtAnimal`, `hurtRobot`, the building blows and the
 dummy) adds the hit to `u.tallyN` and stamps `u.tallyTick` with `state.tick`; a hit after
 `TALLY_HOLD` (1 s) of quiet starts a new total. Both are fields on the body, so a save and a
-snapshot carry them and a client fades a total on the host's tick. The total stands **hard
-against the frame's right edge** (past the colour-blind cap or the stun plate when one is up),
-centred on the health bar, in **that bar's colour** (`barCol`: a blue player's damage is blue, a
-beast's gold), holds `TALLY_HOLD`, then fades over `TALLY_FADE`. Its size is `TALLY_SC` (1.25)
-world px per font px, and `TALLY_POP_SC` (1.5) for the `TALLY_POP` instant a hit adds to it,
-which no world pixel can take: so `drawHealthBar(…, u)` and a player's frame only **queue** it
+snapshot carry them and a client fades a total on the host's tick. The total stands **`TALLY_GAP`
+(2) px clear of the frame's right edge** (past the colour-blind cap or the stun plate when one is
+up), centred on the frame (a hero's 7-row plate, a unit's 4-row bar), in **that bar's colour** (`barCol`: a blue player's damage is blue, a
+beast's gold), holds `TALLY_HOLD`, then fades over `TALLY_FADE`. Its size is `TALLY_SC` (1)
+world px per font px, so its 7 outlined rows stand as tall as a hero's frame, and `TALLY_POP_SC`
+(1.25) for the `TALLY_POP` instant a hit adds to it, which no world pixel can take: so `drawHealthBar(…, u)` and a player's frame only **queue** it
 (`queueTally`, with the frame's alpha), and `drawTallies(kPx)` stamps the queue on the screen
 right after the world blit, as the world-1x outlined number scaled whole into device px, crisp
 at any zoom and under the HUD. A body that **dies** loses its frame, so `queueTally` also keeps
@@ -1356,6 +1366,19 @@ the same `drawTallies` pass in the same ink, gold (`BAR_NEUTRAL`): `TALLY_POP_SC
 `WORD_POP_T`. A player who goes down gets no `NAME DOWN` in the air: the feed
 says it and the fall shows it. Units also flash white on hit via `drawSpriteFlash` (0.8-alpha
 overlay).
+
+### The running XP total
+
+XP gets the damage total's treatment, on the frame's other side and for **your own scout only**:
+`gainXp` (js/sim/player.js) adds each gain to `p.xpN` and stamps `p.xpTick`, a gain after
+`TALLY_HOLD` of quiet starting a new total, and `drawPlayer` queues it for the local player
+(`queueXp`, js/draw/overhead.js) as a plain purple number in the portrait's xp ink (`PORT_XP_LIT`),
+its right edge `TALLY_GAP` px clear of the **level badge's left** and centred on the badge: the
+damage total's mirror, the same gap and height on the other side. `drawTallies`
+stamps it right-aligned at the same sizes, `TALLY_POP_SC` the instant a gain adds to it, and it
+holds and fades by the same `TALLY_HOLD`/`TALLY_FADE`. The rivals' and your mates' XP is never
+drawn: ten totals in a wave fight would be noise. No floater, no sound: the number and the
+portrait's xp band are the tell.
 
 ## Debug overlays: hitboxes and routes
 
@@ -1454,7 +1477,7 @@ so the same glyph reads on the chart, on snow and over forest.
   instead when a name already inked would run into it, since two sites sit a label's width
   apart — clamped
   to the map rect so a camp near the edge keeps its label. It opens mid-flight too (M in
-  mode `drop`), where choosing between camps is the whole jump decision.
+  mode `drop`).
 - **Arrival** — `updatePlay` keeps `state.loc` (`{ L, t }`) for the local player from
   `campAt(player.x, player.y)`, and `renderUI` shows a toast top centre for ~3.5 s whenever it
   changes: a dark plate ruled in the spec's `mark`, the glyph, the name at 2× and the `tag` under
@@ -1614,13 +1637,13 @@ side is BLUE here too), then a gap and the rivals. Each column wears its player'
 (`portraitSprite`, small) with the level on its corner and the side's colour as a line under it,
 and its name printed whole under the face: the columns take turns between two lines, so each name
 has two columns' width (`scoreName` cuts one only on a view narrowed below full width). Down the left are four **folding groups**,
-`SCORE_GROUPS`: COMBAT (K/D, level, best streak, best multi-kill, crowd control), DAMAGE DEALT (to
+`SCORE_GROUPS`: COMBAT (K/D/A, level, best streak, best multi-kill, crowd control), DAMAGE DEALT (to
 players, the bird, buildings, beasts, and the total), TAKEN AND HEALED, and GOLD (earned, spent,
 beasts hunted). A click on a group's heading folds it, a short view scrolls the groups (the wheel
 or up/down), and a number past 99999 prints its magnitude (`scoreFmt` → `shortNum`: 154K, 1.2M).
 This is the [instrument carve-out](#show-dont-label); everything that is not a number still reads
 as a shape: your column is a lit band with gold numbers and a gold rim on the face, and the biggest
-value in each row is **underlined in its side's colour** (never brightened) - except K/D and the
+value in each row is **underlined in its side's colour** (never brightened) - except K/D/A and the
 two damage-taken rows, which have no single best. The page is graphite, the HUD's own neutral dark.
 STATS and GRAPHS are page words in the top-left corner, the open one underlined to the word's
 width (`drawNavCell`'s grammar), and BACK / LOBBY are bare 2x words at the foot, white and gold
@@ -1759,13 +1782,14 @@ readout — a kill toast, a recap — lands on it for free. What gets logged liv
 works while dead and while riding the eagle, and never under `DBG.hideUI`) and is drawn per frame, not baked — every number on
 it is live. `scoreGroups()` is the ordering: players grouped by team, teams ranked by their total
 `scoreOf(p)` and players inside a team by their own, ties broken by team then player id. `scoreOf`
-is **lifetime gold earned** (`p.xp`), not the purse — spending gold on a building is progress, and
-it is the number levels already run on — while the GOLD column shows the purse, so a player that has
+is **the match's gold earned** (`p.earned`, paid by `gainGold`), not the purse — spending gold on
+a building is progress — while the GOLD column shows the purse, so a player that has
 spent can sit above one showing more gold (its LVL column is the visible tell). A team stripe in
 `TEAMS[skin(team)].mark` runs down each group, each row carries a faint team wash (stronger for the
 local player, which also gets a gold `>`), dead players dim to 0.55 and gain a tag — the respawn
-countdown (`3s`), or `OUT` once `p.eliminated`. The panel
-is `SB_W` (168) wide, its height follows the row count, and it is centred on `VIEW_W`/`VIEW_H`
+countdown (`3s`), or `OUT` once `p.eliminated`. The columns are LVL, GOLD and K/D/A (kills, deaths,
+assists - [Takedowns](gameplay.md#takedowns-assists-bounties-and-shutdowns)). The panel
+is `SB_W` (184) wide, its height follows the row count, and it is centred on `VIEW_W`/`VIEW_H`
 every frame — no `relayout()` anchors, so it needs nothing on a resize.
 
 ## Cursor
@@ -1944,7 +1968,7 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   clear the row and its name, `HERO_ROW_H`) in your side's paint under a warm pool of light with
   a gold ring turning on the snow, and **no weapon and no name under it** — the row carries the
   hero's name, the roster frame yours. **Clicking the figure** (it lifts under the hand; `'hero'` in `lobbyHit`, the
-  body's own rect) opens the [hero pop-up](#the-hero-pop-up): gear, stat points and the
+  body's own rect) opens the [hero pop-up](#the-hero-pop-up): gear and the
   abilities. No gear shows on the lobby itself.
 
   **Three pop-ups** open over the still-lit lobby, one at a time, on one shared ease
@@ -2025,21 +2049,13 @@ tag). The store behind it is [profile.js](architecture.md#profilejs): one name a
 <a id="the-hero-pop-up"></a>
 - **Hero pop-up** (`menu.screen = 'hero'`, off your figure on the lobby, easing over the
   still-lit lobby on `menu.popT`): a dim, then a floating panel in two columns
-  (`heroLayout()`/`heroScreenHit()`, which answers `{row, v}` a variant well, `{pt, d}` a
-  ledger row (a point goes there) or `{pt, d: -1}` one of its spent pips (that point comes
-  back), `{ab}` an ability well, `'x'`, `'panel'` or null). LEFT is the **live preview**
+  (`heroLayout()`/`heroScreenHit()`, which answers `{row}` a variant well, `{ab}` an ability
+  well, `'x'`, `'panel'` or null). LEFT is the **live preview**
   (`drawGearPreview`): the chosen class walking in place at 4× wearing its four leather bands
   (every pre-match pick is the free level 1) with the class weapon at hand, and under it the
-  **stat ledger** — one labelled row per number the build can touch (`GEAR_STATS`, whose
-  getters take an optional player and are handed none here — every pre-match hero is level 1),
-  real values computed by `heroPreviewKit` through the same `baseKit` (js/sim/player.js) the sim's
-  `refreshKit` uses, so the page can never lie. **The ledger is also where the stat points are
-  spent** ([gameplay.md](gameplay.md#stat-points)): the unspent ones stand as a row of
-  `STAT_POINTS` pips between the preview and the ledger, every row is a track, a hovered row
-  shows what one more point would make of its number (the would-be value in green at the edge,
-  dim when nothing is left to spend) and a click puts a point there (`spendPt`); a row's spent
-  points stand as gold pips right after its label (`heroPipX`, `HERO_PIP`) and a click on a
-  pip takes that point back. RIGHT is two **columns** of four wells, every well a button that
+  **stat ledger** — the seven [hero stats](gameplay.md#hero-stats) at level 1 (`STAT_ROWS`,
+  handed no player here), real values computed by `heroPreviewKit` through the same `baseKit`
+  (js/sim/player.js) the sim's `refreshKit` uses, so the page can never lie. RIGHT is two **columns** of four wells, every well a button that
   turns it: the **gear column** — one well a piece wearing the picked variant's 32px icon
   (`drawGearWell`, `GEAR32`/`gearIcon32` baked on the ability icons' palette), gold-rimmed, a
   click turning it to the piece's next variant (`pickGear`) — and the **ability column** — one
@@ -2049,19 +2065,17 @@ tag). The store behind it is [profile.js](architecture.md#profilejs): one name a
   carry two, the hunter's one, which a click leaves as it is), and a hover raising the option's
   card (`tipClassAb`, hooked in `tipAt`) — their growth is the match's own skill points, never
   bought here. The hovered well's name prints once under the columns: what a click would turn
-  it to. **Hovering a gear well or a ledger row writes its deltas into the ledger** — the
-  current number steps aside dim and the would-be number (the NEXT variant's, one more point's)
+  it to. **Hovering a gear well writes its deltas into the ledger** — the
+  current number steps aside dim and the would-be number (the NEXT variant's)
   takes the edge in green (better) or red (worse), covering the whole swap — and a click
   makes it so, the ledger stepping to the new kit as the equip plays. **Picking plays on the
   preview body** (`pickGear` → `menu.gearFxT`/`gearFxSlot`): a white flash through the scratch
-  canvas, gold sparks, the changed piece's band lit; a point (`spendPt`) refreshes the kit and
-  heals to full the same way. The keyboard walks `menu.grow` down the gear column, the ability column
-  and on through the ledger's rows: on a well (corner ticks) Enter, Space or Right turns it and
-  Left turns it back, on a row (end ticks) Right or Enter spends a point and Left takes one
-  back. ESC,
+  canvas, gold sparks, the changed piece's band lit. The keyboard walks `menu.grow` down the
+  gear column and the ability column: on a well (corner ticks) Enter, Space or Right turns it and
+  Left turns it back. ESC,
   Backspace, the **X** in the corner, or a click anywhere off the panel
   close it back to the lobby (`leaveHero`) — LOCK IN (and a running count) stays on the lobby
-  behind it. The ledger's and the tracks' labelled rows are the PLAYER-panel text carve-out:
+  behind it. The ledger's labelled rows are the PLAYER-panel text carve-out:
   comparing numbers is this panel's whole job. See [gameplay.md](gameplay.md#gear).
 
 - **Entrance**: `menu.t` staggers the logo and items in at boot.
@@ -2120,68 +2134,48 @@ is the one rect source for the draw, the hit test (`skinsHit`) and the cursor.
 
 Everything in the `eagle drop` banner. `beginDrop()` (from `lockIn`, or `startGame`/`DBG.beginDrop`)
 puts every active player aboard **its team's bird** (`p.aboard`) and builds
-`state.drop = { eagles: [red, blue] }` via `makeEagles()`: one base line from `makeEagleRoute()` —
-**the map's diagonal, fixed for every match and seed**: RED (team 0) flies it from the top-right
-corner down to roost in the **bottom-left** woods, BLUE the reverse to the **top-right**. Each end
-is `diagEnd()`, the point `EAGLE_END` (2) tiles inside that corner's treeline as the seed grew it
-on the diagonal — the **last wooded tile** out from the corner, so a bay in the border short of it
-is still forest on the corner side (pure reads of `borderDepth` — no `rng()`, no `hash2`) — so the
-dive past it always has forest to land in; both corners are guaranteed woods anyway by the
-[roost disc](world.md#the-tile-world). `diagEnd` also returns the corner's **mouth** — the first
-open tile past that last pine, the road's gate on the diagonal (`roadSpan`, the same rule) — kept
-for the record; what `makeEagles` hands each bird as `e.mouth` is its spur's **junction**
-(`roadNest(team)`, [the road](world.md#the-road)): the point on the road's centreline its spur
-aims at, and the way in for every walker. The two birds fly it in **opposite directions**, each shifted
-`EAGLE_LANE` (6.5 tiles) along its own right-hand perpendicular, so the mid-route pass over the
-map's centre is a clear fly-by, ~13 tiles apart with sky between the wingtips, never a collision.
-Each flies its lane dead straight (`eaglePathAt(e, u)`, the point and heading at fraction u). `beginDrop` sets mode `drop`, snaps
-the world zoom tight on your seat (`DROP_OPEN_ZOOM`) and starts the menu exit, which pulls it out to `DROP_ZOOM` (the opening shot, the menu exit above). Every rider gets a
-**wing seat** (`p.seat`, dealt per team in `beginDrop`; `seatPos`
-rotates the `EAGLE_SEATS` offsets — one on the back, two inner wings, two out on the primaries —
-by the heading, and the human sits seat 0 of their own bird); the team's **merchant** rides the
-neck (`SPRITES.perch.merchSeat`, drawn by `drawEagle` ahead of the riders — see
-[the merchant](gameplay.md#the-merchant)). Every flight takes exactly
-`EAGLE_FLIGHT_T` (10 s) — each bird derives `e.spd` from its own line's length — and jumping is
-**locked until the line's last `DROP_LOCK_T` (4 s)**: `dropJump` refuses (and `SFX.deny`s) an
-unforced jump before then. The window's far end is `e.jumpEnd` from `lastOpenU` — the last point
-on the line still over open ground (`borderDepth` + `DROP_EDGE_MARGIN` tiles clear), so **a forced
-drop never lands in the treeline**; `e.jumpOpen` is the lock's fraction, clamped under it.
-`updateDrop` (called from `updatePlay`, so pause stops it) runs
-`updateEagle` per bird, keeps every rider glued to its seat (`seatPos` at `eagleScale(e)`, the
-bird's drawn size — 3× in flight, 2× on the ground), and force-drops each **AI** player at its
-`p.dropU`, a hashed fraction of the jump window (scattered ±4 tiles off the line). **A human is
-never force-dropped**: press Space/Enter/E/click inside the window and you jump (`dropJump` —
-the fall starts **from the seat**, so the leap visibly leaves the wing); never press it and you
-**ride the landing** — `beginDive` throws only bots, the dive comes down with you on its back
-(`drawEagle` draws the seated riders through the dive and at rest), and `eagleCrash` calls
-`landAboard`: `handOver` flips mode `drop` → `play` (the zoom, the camera, the HUD slide-in a
-jump's `landPlayer` does), the ride's song is interrupted the way a jump interrupts it, and the
-[drop brief](#the-drop-brief) opens with you still seated. When it hands back, the bird wears
-the flight's gold landing ring again and `drawHopPrompt` raises the **HOP OFF** keybind
-indicator (the shared key cap, `drawKeyCap` via `drawCapBind`: E — the pad's A disc while one is in hand — with HOP OFF in gold
-beside it, centred over your head and bobbing `HOP_GAP` px clear of your name tag); `p.input.work`, `p.input.dodge`
-(E, or the roll button: a pad's A) or any walk (`p.input.mx`/`my`) while seated on a
-`down` bird calls `hopOff` (while seated, E is only that: the merchant standing beside the roost
-never opens its counter over the hop, `keyPress`'s aboard guard in input.js) — a short low step off the wing (`HOP_FALL_T`, `HOP_ALT` — every
-faller's arc reads `p.dropAlt`), steerable like any fall, landing on the nearest open tile beside
-the roost. A profile that has **never jumped**
-(`PROFILE.hasDropped()`, the drop-side gate of the `state.drop.firstFlight` flag) gets exactly
-that ride with the jump refused — `dropJump` denies the local player's manual leap outright, so a
-new player's first ground is the roost, beside the merchant, and the brief is always
-the lesson. The first hop or any real jump (`PROFILE.markDropped`) retires the refusal for good.
-A jumper free-falls for `FALL_T` (1.3 s), steering with WASD/arrows at
-`DRIFT_SPD` (130 px/s, ~10 tiles over the fall) — `sampleHumanInput` keeps the movement axis alive in mode `drop` while zeroing
-everything else; `landPlayer` then spirals out (up to 80 tiles) to the nearest tile with no object
-and no water hole, which becomes `p.spawn` — the bot brain's home tile (a respawn moves it to the
-roost) — with 2 s of i-frames and a snow
-burst. Only the human's landing changes mode: `play` (closing the M map if it was up),
-`applyZoom(0, true)` back to the player's own zoom centred on the landing, `shake`, and the
-landing intro above.
+`state.drop = { eagles: [red, blue], firstFlight }` via `makeEagles()`: **each bird flies in over
+its own corner**, fixed for every match and seed: RED (team 0) from the bottom-left corner, BLUE
+from the top-right, a short straight glide down the road's diagonal from `EAGLE_FROM_U` (3) u in
+from the corner (every wing seat still on the map) to `EAGLE_STOOP_U` (9) u short of its
+[base](world.md#the-bases)'s **perch** (`basePerch`), where the stoop begins. The two birds never
+cross the map and never meet. `e.mouth` is the side's **junction** (`roadNest(team)`,
+[the road](world.md#the-road)): where the road leaves the base's hollow, the way in for every
+walker. Each flies its line dead straight (`eaglePathAt(e, u)`, the point and heading at
+fraction u). `beginDrop` sets mode `drop`, snaps the world zoom tight on your seat
+(`DROP_OPEN_ZOOM`, the camera clamped inside the world, since the bird starts at its corner) and
+starts the menu exit, which pulls it out to `DROP_ZOOM` (the opening shot, the menu exit above).
+Every rider gets a **wing seat** (`p.seat`, dealt per team in `beginDrop`; `seatPos` rotates the
+`EAGLE_SEATS` offsets (one on the back, two inner wings, two out on the primaries) by the heading,
+and the human sits seat 0 of their own bird); the team's **merchant** rides the neck
+(`SPRITES.perch.merchSeat`, drawn by `drawEagle` ahead of the riders, see
+[the merchant](gameplay.md#the-merchant)). The glide takes `EAGLE_FLIGHT_T` (2.5 s), each bird
+deriving `e.spd` from its line's length. **Nobody jumps**: the whole side rides the landing.
+`updateDrop` (called from `updatePlay`, so pause stops it) runs `updateEagle` per bird and keeps
+every rider glued to its seat (`seatPos` at `eagleScale(e)`, the bird's drawn size: 3× in flight,
+2× on the ground) through the dive and the crash. `eagleCrash` calls `landAboard` for the local
+player: `handOver` flips mode `drop` → `play` (the zoom, the camera, the HUD slide-in), the ride's
+song is interrupted by the impact, and on a profile's first flight the
+[drop brief](#the-drop-brief) opens with you still seated. A client does the same off its
+snapshot when its own bird is `down` (`netClientMode`, js/net/net.js), without the brief.
+Once the bird is down, the **bots hop off one by one**: a bot's seat goes at `e.restT` ≥
+`BOT_HOP_T` (0.8 s) + `p.seat` × `BOT_HOP_GAP` (0.3 s). For you, `drawHopPrompt` raises the
+**HOP OFF** keybind indicator (the shared key cap, `drawKeyCap` via `drawCapBind`: E, or the pad's
+A disc while one is in hand, with HOP OFF in gold beside it, centred over your head and bobbing
+`HOP_GAP` px clear of your name tag); `p.input.work`, `p.input.dodge` (E, or the roll button: a
+pad's A), `p.input.jump` or any walk (`p.input.mx`/`my`) while seated on a `down` bird calls
+`hopOff` (while seated, E is only that: the merchant standing beside the roost never opens its
+counter over the hop, `keyPress`'s aboard guard in input.js). The hop is a short low step off the
+wing (`HOP_FALL_T`, `HOP_ALT`; every faller's arc reads `p.dropAlt`), steerable at `DRIFT_SPD`
+(130 px/s) like any fall; `landPlayer` then spirals out (up to 80 tiles) to the nearest tile with
+no object and no water hole, which becomes `p.spawn` (the bot brain's home tile), with 2 s of
+i-frames and a snow burst. Your first hop (`PROFILE.markDropped`) retires the brief for good:
+`state.drop.firstFlight` is `!PROFILE.hasDropped()` at takeoff.
 
 ### The drop brief
 
-A local player that **rode the landing** — the scripted first flight always, or a veteran who
-never jumped (a real jump is the opt-out) — sits through a camera tour of the two objectives
+On a profile's **first flight** (`state.drop.firstFlight`) the local player sits through a
+camera tour of the two objectives
 before the hop. `landAboard` (from `eagleCrash`) sets `state.dropBrief` (`{ ph, t, total }`),
 and `updateDrop` runs the phases, rival first and your own last so the final word lands where
 you are sitting: **`wait`** holds the crash you are in for `BRIEF_WAIT` (1 s); **`theirs-go`**
@@ -2205,57 +2199,29 @@ mode `play`) outranks and clears it.
 
 **`state.drop` outlives the whole match** — it never goes null, because the roosts are the
 objectives. A bird's life is `fly → dive → down → flee → gone` (`e.state`): at the end of its line
-`beginDive` throws any remaining rider and `findCrashPoint` lands on the side's **nest** —
-`roadNest(team)` ([the road](world.md#the-road)): `ROAD_NEST_OFF` (13) tiles off the road's
-centreline to the bird's own right, at the first junction inward from the gate where the spot is
-deep (`roadNestDeep`: ≥`CRASH_DEPTH` (14) tiles inside the treeline by the border's own measure,
-`forestDepth` = `borderDepth` − edge distance, **and** as far inside the corner's
-[roost disc](world.md#the-tile-world), since `forestDepth` only knows the nearest world edge)
-**and** whose 7×7 still holds ≥`MIN_CRASH_TREES` (40 of 49 — the border is solid, so fewer means
-an edge or a bay) — the roost sits a proper way **inside** the woods with trees all round it,
-never on the tree edge, RED's to the top-left side of its road, BLUE's to the bottom-right,
-mirrored through the map's centre; should the spot have changed since worldgen the nearest tile
-round it that still qualifies takes the impact, the blast ring always off the road (pure reads —
-no `rng()`, no `hash2` — so a seed always buries its birds in the same trees). The stoop runs
+`beginDive` sets the crash point, `findCrashPoint`: the side's **perch** (`roadNest(team)`'s nest,
+`basePerch`, at the back of its [base](world.md#the-bases)'s hollow, on the road's diagonal),
+fixed for every match and seed, so the cables are laid knowing it. The stoop runs
 `EAGLE_DIVE_T` (1.4 s, `u²`-eased, wingbeats quickening, speed motes streaming) and **banks**: the
 heading turns from the line's to the crash's bearing over the first part of the dive
-(`e.diveH0`/`e.diveTurn`, set by `beginDive`), so the turn off the road into the nest's woods
-reads as a turn, and the roosting bird faces the way it came down. `eagleCrash` then clears every tree
+(`e.diveH0`/`e.diveTurn`, set by `beginDive`), and the roosting bird faces the way it came down.
+`eagleCrash` then clears every tree
 within `BOOM_R` (3.6 tiles) outright and **paves the disc** (the pad: every snow tile in it turns
 to ground `3` that frame and `addPad` registers it with the road, [world.md](world.md#the-road),
-so the roost stands on the same packed earth as its spur and the road), snaps **two rings** to
+so the roost stands on the same packed earth as the road it ends), snaps **two rings** to
 stumps — the middle out to `BOOM_STUMP_R` (4.8) and the outer out to `BOOM_STUMP_R2` (6.0), two layers of
 build sites round the bird, so a side can stand guns inside a wall — and clears every rock and
 bush out to the outer ring outright, so the whole disc is ground a side can build on —
 **paying no gold**, a crater of free fells would warp the economy at minute one — plants the
 **roost hitbox** (`eagle` objects on the open tiles within `EAGLE_TILE_R`, solid to walkers and a
-rival-only E target; `eagleFlee` clears them again at liftoff), plans the **lane** and drops off
-the **merchant** (below), and fires `eagleBoomFx` (snow + team-colour
+rival-only E target; `eagleFlee` clears them again at liftoff), sets `e.laneDir` (the unit
+vector from the roost up the road to `e.mouth`, the bearing the merchant's work reads) and drops
+off the **merchant** (below), and fires `eagleBoomFx` (snow + team-colour
 bursts, hanging feathers, a radial dust ring, two shockwave rings squashed flat over `BOOM_LIFE`
 so they read as a blast wave along the ground, never a halo), distance-scaled `state.shake`,
 `SFX.boom()` (the timber sample dropped low under a synth blast, layered on purpose) and a
 `HAS LANDED` line in the event log (`logEvent`) — the landing is a landing, not a wound: the bird takes **no damage**
-from its own dive. **The spur** (`planLane`/`laneStep`, `e.lane = { t, ev, next, pave, paved }`):
-from the crater along `e.laneDir` — set by `eagleCrash` as the unit vector from the crash to
-`e.mouth`, its **junction on the road's centreline** (`roadNest`), back the way the bird came only
-if the junction is somehow under it — to the road's edge, every pine (and rock: `laneFells`)
-within `LANE_R` (= `SPUR_HW`, 1.25 tiles — the paved track's own half-width) of the centreline
-becomes two events timed by its distance along the spur, so a **felling front** walks out from the
-roost at `LANE_SPD` (3.5 tiles/s) starting `LANE_DELAY` after the impact: each pine **shudders
-`LANE_WARN` (0.5 s) ahead of the front** (`o.shake`, the parkour roll's own tell, decayed by
-sim.js's object-timer loop), then goes down in needles and snow with a throttled `SFX.treeFall`
-(a rock shatters to `SFX.break_`). It is the parkour's `pkAnimStep` grammar without the ice — a
-watched transition, never a blink — and it pays nothing and leaves no stumps: a road is a road.
-**Behind the front the band is paved**: `eagleCrash` registers the spur with the road
-(`addSpur`, `e.spur`, [the road](world.md#the-road)), `planLane` lists every snow tile of the
-band from the blast's rim (`BOOM_R`) to the road with its distance out (`pave`), and each
-`laneStep` turns the tiles the front has passed to ground `3`, lifts any stump off them, advances
-`e.spur.paved` and repaints the ground three tiles round each (`paintGroundTile`), so the track
-grows at the front's own pace on the bake, both maps and every `onRoad` read alike. The spur is
-done when the front is inside the road (`roadMainDist`; `LANE_MAX` (60) is only a safety) and
-`e.lane` drops when the last event and the last tile are spent. Pure reads, so a seed's spur is
-always the same spur; the merchant's post, its back woods and its bays read `e.laneDir` too, so
-they sit round the track that was actually cut. `laneStep` runs from `updateEagle`'s `down` branch. The grounded bird
+from its own dive. The grounded bird
 is the team's **objective**, and its hp pool is its
 **nerve**: `EAGLE_HP` (2000, sized as a siege, because the bots go for it),
 spooked down a flat `EAGLE_ARROW_DMG` (12) per rival arrow through `hurtEagle` (the sim.js arrow
@@ -2290,8 +2256,7 @@ until `FLEE_T`, when it is `gone` and draws nothing ever again.
 
 Drawing: `drawDropAir` (above the world, below lighting) first dots **the flight path across the
 snow itself** while mode is `drop` — each flying bird's whole line dashed in its team colour, dots
-crawling toward the end so the line reads as a direction, with your own bird's jump window overlaid
-in the flight bar's window colours (`FLIGHT_SHUT`, then `FLIGHT_OPEN` pulsing once the lock opens; never on the scripted first flight) — then runs `drawEagle` per bird — the
+crawling toward the end so the line reads as a direction — then runs `drawEagle` per bird — the
 shadow `alt` px below and up to 10 px right of the body (`alt` is
 `DROP_ALT` 56 px in flight, converging to 0 down the dive so shadow and bird meet at the crash
 point) at the bird's **true ground size** — the roost's, not the nearer-the-camera flight size —
@@ -2325,9 +2290,8 @@ down-left shows its profiles — the bottom three rows tucked into the plumage s
 rather than stands, the hem meeting the feathers at the seat point; **world-sized** — `riderScale(e)` is the bird's own perspective, `eagleScale / 2`:
 1× on the roosting bird, 1.5× in flight because the bird itself is 1.5× bigger up there, so a
 body never changes size against the feathers under it; the merchant on the neck the same way; the
-local player drawn last; in flight only **your own** name rides the wing, in your side's paint (`seatedName`) under a bobbing gold arrow (`drawYouArrow`, drawn by `renderDropUI`, anchored over the tag in world space so it clears it at every zoom; both ride `flightBob`) - seven names on one bird told a new player nothing about which one was them), and a pulsing landing ring
-in `FLIGHT_OPEN` under the human's own bird — only while the jump window is open and never on the scripted first flight, so the ring never promises a jump
-the lock refuses — then every faller: a `sin` **hop** off the wing
+local player drawn last; in flight only **your own** name rides the wing, in your side's paint (`seatedName`) under a bobbing gold arrow (`drawYouArrow`, drawn by `renderDropUI`, anchored over the tag in world space so it clears it at every zoom; both ride `flightBob`) - seven names on one bird told a new player nothing about which one was them), and a pulsing gold landing ring
+in `FLIGHT_OPEN` under your own roosted bird once the brief has handed back, while you are still seated — then every faller: a `sin` **hop** off the wing
 over the first quarter of the fall, then the shrink from `p.dropSc` (the seat's size as it left)
 to 1× along
 `alt = p.dropAlt·(1 − q²)` with a widening shadow. The faller cull is against `WV_*`, the world
@@ -2346,18 +2310,11 @@ beats as wing turns, its seats again `SPRITES.perch.seat`). A `flee` bird climbs
 scale and `alt` walk from the roost's numbers to the flight's over `FLEE_LIFT_T`, the shadow
 returning and diverging as the ground falls away, wingbeats at full panic (`perchLiftBeat`, counted
 from the takeoff's first downstroke, so the roost can warm the whole climb: Perch's `'l'` poses) — and fades over the
-last 1.4 s of `FLEE_T`; `gone` draws nothing. `renderDropUI` (mode `drop` only) draws the
-**flight bar**, top centre: a graphite plate (`drawHudFrame`, all four corners cut) round the whole
-line as one dark track (`FLIGHT_TRACK`), the flown part filled in team colour up to the window with a white head line riding its front
-(the head glides a device pixel at a time on `flightShownT`, a render-side clock that carries the flight's time on between sim steps or snapshots, never backwards and never more than one update's gap ahead), the **jump window as a gold stretch** (`FLIGHT_SHUT`, unlit gold, while locked,
-`FLIGHT_OPEN` gold once open — the lock is taught by the bar's shape, no sentence), and the jump's key under it
-(`drawCapBind`: the shared key cap `drawKeyCap` with JUMP beside it — grey word while locked,
-the cap lit white and the word gold once open). The scripted first flight shows neither window nor key. A press the
-door refuses (`dropPress`, input.js's three drop sites) turns the plate and key the bag's
-refusal red and shakes them a pixel either way as one for `FLIGHT_DENY_T`; `WASD - DRIFT` while falling; and an `M - MAP` keybind indicator bottom right (`drawDropBind`: both wear the pad's left stick and BACK pill while a pad is in hand) —
+last 1.4 s of `FLEE_T`; `gone` draws nothing. `renderDropUI` (mode `drop` only) draws your gold arrow while you ride,
+`WASD - DRIFT` while falling; and an `M - MAP` keybind indicator bottom right (`drawDropBind`: both wear the pad's left stick and BACK pill while a pad is in hand) —
 the ride's wider read is the **M map** (`renderWorldMap` also runs in mode `drop`, where it
 draws each flying bird's line dashed in team colour with the bird diamond riding it; M/Esc are
-handled in input.js's drop branch, the map swallows the jump click, and the sim keeps running
+handled in input.js's drop branch, a click only closes the map, and the sim keeps running
 under it). Text scale follows the view (2× when tall). Once `down`, both objectives are marked on
 the minimap disc and the M map as the same bird diamond in team colour.
 
@@ -2581,7 +2538,7 @@ does not follow the day clock: the shade lies where it lies at night too, under 
 - **Nobody has to report a change.** `castAt` remembers the caster each tile's shade was painted
   with, and `syncCasts` — the first thing `render()` does before the ground blit — compares it
   with what stands there now over the view plus `CAST_REACH`, and repaints the reach of any that
-  changed, each dirty tile once. A pine felled by an axe, a crater, the spur or a snapshot takes
+  changed, each dirty tile once. A pine felled by an axe, a crater or a snapshot takes
   its shade with it, and a new kind of scenery only needs a `CASTERS` entry.
 - **Bodies draw their own each frame** (`drawCastShade(spr, x, y)` before the sprite, a
   `WeakMap` of shades per frame): players (the standing frame through a roll; none lying prone or

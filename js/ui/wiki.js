@@ -20,11 +20,11 @@
 // is built off the tier alone); a hover still raises the full card in the
 // tooltip. The BEASTS page is the meadow's two kinds and the camps' three - each drawn wearing
 // the frame it wears in the snow - and what a level does to their health
-// and to the gold a kill pays, at levels 1, 6 and 12, read off the same
-// constants the sim spends (ANIMAL_HP, ANIMAL_LV_HP, YIELD, ANIMAL_LV_GOLD,
+// and to the gold and XP a kill pays, at levels 1, 6 and 12, read off the same
+// constants the sim spends (ANIMAL_HP, ANIMAL_LV_HP, YIELD, ANIMAL_LV_GOLD, ANIMAL_LV_XP,
 // js/sim/wildlife.js and js/sim/core.js), so the page can never disagree with the
 // game. The CLASSES page is the two classes as the lobby reads them -
-// body, pitch, health and the four stat pips - and their eight abilities
+// body, pitch and level 1 stats - and their eight abilities
 // with the cooldown, the cast and what each does, off CLASS_AB itself. The
 // WORLD page is the one with no numbers on it: the valley written down - the
 // snow, what is under it, the one law, and who is on it - each entry a figure
@@ -56,6 +56,8 @@ const WIKI_BEASTS = [
 // what a beast is at a level: the sim's own arithmetic (makeAnimal, animalDies)
 function wikiBeastHp(kind, lv) { return animalHpAt(kind, lv); }
 function wikiBeastGold(kind, lv) { const y = YIELD[kind]; return Math.round(y.coins * y.each * (1 + ANIMAL_LV_GOLD * (lv - 1))); }
+// ...and its XP, the whole of it before the side standing near shares it (shareXp); 0 for a kind worth none
+function wikiBeastXp(kind, lv) { const y = YIELD[kind]; return y && y.xp ? Math.round(y.xp * (1 + ANIMAL_LV_XP * (lv - 1))) : 0; }
 
 // the arsenal tables: one column set per kind of thing, each column a label,
 // a width and how to read the number off the kind's own record
@@ -76,13 +78,12 @@ const WIKI_MOD_COLS = [
   { label: 'EFFECT', w: 162, get: (id) => BITS[id].blurb.split('. ')[0].replace(/\.$/, ''), col: TIP_DIM },
 ];
 // the classes page: an ability row's two numbers (the tooltip's own rows,
-// tipClassAb), and the four stats a class card shows as pips - the kit's
-// numbers behind each are in CLASSES, player.js
+// tipClassAb), and the stats a class card shows at level 1 (WIKI_STATS)
 const WIKI_AB_COLS = [
   { label: 'COOLDOWN', w: 40, get: (ab) => tipSec(ab.cd) },
   { label: 'CAST', w: 32, get: (ab) => tipSec(ab.cast) },
 ];
-const WIKI_STATS = [['ICE', 'ice'], ['DRAW', 'draw'], ['POWER', 'power'], ['TOUGH', 'tough']];
+const WIKI_STATS = ['hp', 'dmg', 'as', 'armor', 'ms']; // the class card's rows: its level 1 numbers (STATS, js/sim/stats.js)
 // a sentence broken into lines no wider than maxW, on word boundaries
 function wikiWrap(text, maxW) {
   const lines = [];
@@ -131,7 +132,7 @@ const WIKI_WORLD = [
   { name: 'THE WOLVES', fig: () => [SPRITES.wolf.right.idle[0], SPRITES.wolf.left.idle[0]],
     text: 'THE WOLVES WERE HERE FIRST AND HAVE NO OPINION ABOUT CLAIMS. LEAVE A DEN ALONE AND IT LEAVES YOU ALONE. THE BLACK BEAR KEEPS TO ITS STONE AND THE BROWN BEAR TO ITS DEN, AND A COMPANY THAT BRINGS ONE DOWN WALKS TALLER FOR A WHILE.' },
   { name: 'GOLD', fig: () => [SPRITES.goldSack[SPRITES.goldSack.length - 1]],
-    text: 'THE ONLY THING THE VALLEY PAYS IN, AND THE ONLY THING THAT TEACHES. A SCOUT WHO HAS EARNED A LOT OF IT HAS DONE A LOT, AND THAT IS ALL A LEVEL IS. NOBODY HERE HAS EVER FOUND A USE FOR A SECOND CURRENCY.' },
+    text: 'THE ONLY THING THE VALLEY PAYS IN. THE WORKS WILL MAKE A SCOUT RICH, BUT A PINE NEVER TAUGHT ANYBODY ANYTHING. A SCOUT LEARNS ON THE ROAD, STANDING CLOSE WHEN THINGS FALL, AND THAT IS ALL A LEVEL IS.' },
 ];
 
 const WIKI_PAGES = [
@@ -150,7 +151,7 @@ const WIKI_PAGES = [
   { id: 'beasts', label: 'BEASTS', build(cw) {
     const b = [];
     b.push({ kind: 'line', h: 9, text: 'EVERY BEAST IS DEALT THE TABLE\'S AVERAGE HERO LEVEL WHEN IT SPAWNS, AND KEEPS IT.', col: '#cfe0ff' });
-    b.push({ kind: 'line', h: 9, text: 'A LEVEL IS MORE HEALTH TO SHOOT THROUGH, AND MORE GOLD FOR THE KILL.', col: TIP_DIM });
+    b.push({ kind: 'line', h: 9, text: 'A LEVEL IS MORE HEALTH TO SHOOT THROUGH, AND MORE GOLD AND XP FOR THE KILL.', col: TIP_DIM });
     b.push({ kind: 'legend', h: SPRITES.deer.right.idle[0].height + 26 }); // the deer under its frame, as a card's figure
     b.push({ kind: 'rule', h: 8 });
     // a card is as wide and as tall as its beast standing under its frame
@@ -158,7 +159,7 @@ const WIKI_PAGES = [
     for (const bs of WIKI_BEASTS) {
       const spr = SPRITES[bs.kind].right.idle[0];
       const figW = Math.max(WIKI_BEAST_W, spr.width), lines = wikiWrap(bs.line(), cw - figW - 8);
-      const h = Math.max(46 + (lines.length - 1) * 8, spr.height - (spr.crown || 0) + 18 * beastFrame(bs.kind).s + 8);
+      const h = Math.max(46 + (wikiBeastXp(bs.kind, 1) ? 9 : 0) + (lines.length - 1) * 8, spr.height - (spr.crown || 0) + 18 * beastFrame(bs.kind).s + 8); // a KILL XP row is a row more
       b.push({ kind: 'beast', h, beast: bs, figW, lines });
     }
     return b;
@@ -419,8 +420,8 @@ function renderWiki(now, a) {
     } else if (bl.kind === 'row') drawWikiRow(r, L, hit && hit.kind === 'row' && hit.id === bl.id, now);
     else if (bl.kind === 'cls') {
       // a class card: the body at 3x on the left (the side you play in), its
-      // name and role, the three lines of its pitch, and on the right the
-      // ledger the lobby reads - health, then the four stats as pips
+      // name and role, the three lines of its pitch, and on the right its
+      // stats at level 1
       const c = CLASSES[bl.cls];
       const spr = SPRITES.champ[bl.cls][skin(player.team)].down[0];
       ctx.drawImage(spr, L.left, y + 2, 48, 48);
@@ -428,16 +429,12 @@ function renderWiki(now, a) {
       drawPixelTextShadow(ctx, c.name, tx, y + 4, '#ffd95c', '#0a0e23');
       drawPixelTextShadow(ctx, c.role, tx + pixelTextWidth(c.name) + 7, y + 4, TIP_LABEL, '#0a0e23');
       c.blurb.forEach((t, k) => drawPixelTextShadow(ctx, t, tx, y + 14 + k * 8, k ? TIP_DIM : '#cfe0ff', '#0a0e23'));
-      const px0 = L.right - 19, lx = px0 - 5;
-      let ry = y + 4;
-      drawPixelTextShadow(ctx, 'HEALTH', lx - pixelTextWidth('HEALTH'), ry, TIP_LABEL, '#0a0e23');
-      const hp = String(c.kit.maxHp);
-      drawPixelTextShadow(ctx, hp, L.right - pixelTextWidth(hp), ry, '#f4f7ff', '#0a0e23');
-      for (const [label, key] of WIKI_STATS) {
-        ry += 8;
-        drawPixelTextShadow(ctx, label, lx - pixelTextWidth(label), ry, TIP_LABEL, '#0a0e23');
-        for (let k = 0; k < 5; k++) { ctx.fillStyle = k < c.stats[key] ? '#ffd95c' : '#2c3560'; ctx.fillRect(px0 + k * 4, ry + 1, 3, 3); }
-      }
+      const lx = L.right - 24;
+      WIKI_STATS.forEach((key, k) => {
+        const s = STATS.find((q) => q.key === key), ry = y + 4 + k * 8, v = s.fmt(statFrom(bl.cls, 1, null, key));
+        drawPixelTextShadow(ctx, s.name, lx - pixelTextWidth(s.name), ry, TIP_LABEL, '#0a0e23');
+        drawPixelTextShadow(ctx, v, L.right - pixelTextWidth(v), ry, '#f4f7ff', '#0a0e23');
+      });
     } else if (bl.kind === 'ab') {
       // an ability: its key on a plate, its icon in a well (the strip's
       // own), its name, the two numbers in the columns, and what it does
@@ -489,14 +486,15 @@ function renderWiki(now, a) {
       const nx = L.left + bl.figW + 8, dy = (bl.lines.length - 1) * 8; // a wrapped line pushes the table down
       drawPixelTextShadow(ctx, bs.name, nx, y + 4, '#ffd95c', '#0a0e23');
       bl.lines.forEach((t, k) => drawPixelTextShadow(ctx, t, nx, y + 13 + k * 8, TIP_DIM, '#0a0e23'));
-      // the growth table: LV heads over three columns, HEALTH and KILL GOLD
-      // under them, a dotted leader from each label to its first number
+      // the growth table: LV heads over three columns, HEALTH, KILL GOLD and
+      // (a kind worth any) KILL XP under them, a dotted leader from each label to its first number
       const levels = wikiLevels(bs.kind), colW = 30, cx0 = L.right - colW * levels.length;
       levels.forEach((lv, i) => {
         const t = 'LV ' + lv;
         drawPixelTextShadow(ctx, t, cx0 + (i + 1) * colW - pixelTextWidth(t), y + 4, TIP_LABEL, '#0a0e23');
       });
       const rowsT = [['HEALTH', (lv) => String(wikiBeastHp(bs.kind, lv)), BAR_NEUTRAL], ['KILL GOLD', (lv) => String(wikiBeastGold(bs.kind, lv)), '#f2cc6a']];
+      if (wikiBeastXp(bs.kind, 1)) rowsT.push(['KILL XP', (lv) => String(wikiBeastXp(bs.kind, lv)), PORT_XP_LIT]);
       rowsT.forEach(([label, get, col], k) => {
         const ry = y + 24 + dy + k * 9;
         drawPixelTextShadow(ctx, label, nx, ry, TIP_LABEL, '#0a0e23');

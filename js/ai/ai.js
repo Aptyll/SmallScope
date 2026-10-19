@@ -23,11 +23,11 @@ const AI_ABIL_T = 0.5;    // s between ability rolls
 const AI_ANCHOR_R = 260;  // px round an anchor (its bird, the human) a rival is noticed from
 const AI_ANCHOR_D = 420;  // ...but never from farther than this
 const AI_HOLD = 96;       // px a hunter holds off the rival bird at (outside its gust)
-const AI_GATE = 128;      // px up the road from a spur's junction where a walk to a roost stages
-const AI_FORT_N = 3;      // turrets a side's guards keep standing along its spur
+const AI_GATE = 128;      // px up the road from a base's junction where a walk to a roost stages
+const AI_FORT_N = 3;      // turrets a side's guards keep standing along its road home
 const AI_PATROL_T = 40;   // s of a guard's cycle...
 const AI_PATROL_OUT = 14; // ...the first of which it spends scouting out up the road
-const AI_PATROL_D = 360;  // px up the road from the spur's junction the scouting walk reaches
+const AI_PATROL_D = 360;  // px up the road from the base's junction the scouting walk reaches
 const AI_ROOST_BUDGET = NAV_BUDGET * 4; // A* expansions a walk into a roost's forest may spend
 const AI_ESCORT = 120;    // px an escort lets the human get away before it follows
 const AI_ESCORT_R = 400;  // px past which the human is too far to escort
@@ -112,9 +112,9 @@ function aiOnGuard(p, prof) {
   const T = aiPlan(p.team), r = aiRank(p);
   return r >= T.nPush && r < T.nPush + T.nGuard ? e : null;
 }
-// the staging point of a roost: AI_GATE px up the road from the spur's
+// the staging point of a roost: AI_GATE px up the road from the base's
 // junction (e.mouth) toward the field, on the road itself, so the way in is
-// always road -> junction -> spur -> bird (roadNest/roadPoint, world.js)
+// always road -> junction -> the road through the hollow -> bird (roadNest/roadPoint, world.js)
 function aiLaneGate(e) {
   return roadPoint(roadNest(e.team).u + (e.team === 0 ? 1 : -1) * AI_GATE / (TILE * Math.SQRT2));
 }
@@ -143,7 +143,7 @@ function aiInLane(p, e) {
   return (t >= -0.1 && t <= 1.08 && perp < 40) || Math.hypot(px, py) < 90;
 }
 // The next turret job for a guard of the bird e, or null: { tx, ty, n } to
-// raise one more of the side's AI_FORT_N along the spur - pairs either side
+// raise one more of the side's AI_FORT_N along the road home - pairs either side
 // of its axis, out from the bird, on a tile with three open sides so the
 // lane is never walled in - or { tx, ty, up } to raise one of them a tier
 // once they all stand and the purse holds twice the price (gear comes first)
@@ -503,6 +503,49 @@ function aiWaveHead(p, e) {
   return best;
 }
 
+// ---- the road, and the roam ---------------------------------------------------
+// XP is being NEAR when rival bodies fall (shareXp, js/sim/player.js), and the
+// road is where they fall, a wave every thirty seconds - while gold is the
+// work's (the harvest rung). So a bot splits its time: every AI_ROAD_T it
+// rolls a stretch on the road or on the work, the road at AI_ROAD_P at the
+// table's average level, AI_ROAD_LV more a level it trails that average and
+// less a level it leads, and a greedy mood stays on the work longer. On a
+// road stretch it walks to the nearest rival soldier inside AI_ROAD_D (rung
+// 5g); rung 3 does the fighting once the wave is in sight. No wave out, or a
+// work stretch: null, and the ladder goes on to the hunt and the harvest.
+const AI_ROAD_T = 30;    // s a stretch lasts before the next roll
+const AI_ROAD_P = 0.55;  // the odds of the road at the table's average level
+const AI_ROAD_LV = 0.15; // ...moved this much a level behind (up) or ahead (down)
+const AI_ROAD_D = 1600;  // px off a rival soldier may be and still be walked to: most of the way across the valley, the zipline helps
+function aiRoad(p, dt) {
+  const ai = p.ai;
+  ai.roadT = (ai.roadT || 0) - dt;
+  if (ai.roadT <= 0) {
+    ai.roadT = AI_ROAD_T;
+    ai.road = rng() < (AI_ROAD_P + AI_ROAD_LV * (animalLevel() - p.level)) / aiMood(p).greed;
+  }
+  if (!ai.road) return null;
+  let best = null, bd = AI_ROAD_D;
+  for (const b of robots) {
+    if (b.kind !== 'soldier' || !unitAlive(b) || b.team === p.team) continue;
+    const d = Math.hypot(b.x - p.x, b.y - p.y);
+    if (d < bd) { bd = d; best = b; }
+  }
+  return best;
+}
+// where a bot with nothing to do wanders next: round its leash when it has
+// one, else near the middle of the map or near its own landing, by halves
+// (rung 11)
+function aiRoamPick(p, leash) {
+  const ai = p.ai;
+  if (leash) { ai.wx = leash.e.x + rand(-1, 1) * leash.r; ai.wy = leash.e.y + rand(-1, 1) * leash.r; return; }
+  const toward = rng() < 0.5 ? { x: cx * TILE, y: cy * TILE } :
+    { x: (p.spawn.tx + 0.5) * TILE, y: (p.spawn.ty + 0.5) * TILE };
+  const w = aiMood(p).roam; // (a wild bot wanders wider)
+  ai.wx = toward.x + rand(-14, 14) * TILE * w;
+  ai.wy = toward.y + rand(-14, 14) * TILE * w;
+}
+
 // ---- the ride ---------------------------------------------------------------
 // A bot rides the zipline (the `zipline` banner, js/sim/zipline.js) the way a hand
 // does, through the same hop intent: every walk the ladder orders goes
@@ -522,7 +565,7 @@ function aiWaveHead(p, e) {
 const ZIP_AI_GAIN = 4;   // s a ride must save over the feet before a bot walks to the cable
 const ZIP_AI_OFF = 6;    // px short of the exit point it lets go (a step is 3.7 px at ZIP_SPD)
 // the feet's time over a straight line, at the bot's own walk
-function aiWalkT(p, d) { return d / (PLAYER_SPEED * kitOf(p).walkMul); }
+function aiWalkT(p, d) { return d / statOf(p, 'ms'); }
 // the ride from p's spot to (x, y), if the cable saves ZIP_AI_GAIN over the
 // feet: { z, d0, d1 } (px along at the mount and the exit), else null
 function aiZipWorth(p, x, y) {
@@ -1125,9 +1168,9 @@ function aiThink(p, dt) {
   }
 
   // 5b''. a guard is a proactive defender, never a sentry: it raises its
-  //       side's turrets along the spur (AI_FORT_N, then their tiers once the
+  //       side's turrets along the road home (AI_FORT_N, then their tiers once the
   //       purse is deep), and for AI_PATROL_OUT of every AI_PATROL_T walks
-  //       out past the spur's junction and up the road to see who is coming
+  //       out past the base's junction and up the road to see who is coming
   //       (what it sees is the side's, aiLook - the brace reads it); the rest
   //       of the time it works what is near the bird (the rungs below).
   //       Any other bot at home with nothing to push or answer lends a hand
@@ -1263,7 +1306,7 @@ function aiThink(p, dt) {
       ai.pushCd = 10;
     } else {
       // the archer's station: AI_HOLD out from the bird ON THE LANE'S AXIS,
-      // where the spur keeps the line to the roost open (off the axis a
+      // where the road keeps the line to the roost open (off the axis a
       // wall the defenders raised may eat the shot), outside the gust
       const sx = e.x + e.laneDir.x * AI_HOLD, sy = e.y + e.laneDir.y * AI_HOLD;
       const ux = (e.x - p.x) / (d || 1), uy = (e.y - p.y) / (d || 1);
@@ -1337,6 +1380,11 @@ function aiThink(p, dt) {
       if (d < 0) ai.scoutCd = state.elapsed + 3;          // (no way there: work a while before trying the next)
     } else if (aiFarmWalk(p, role, steerTo, aimAt)) return; // a laner's wave, a jungler's den (js/ai/ai-farm.js)
   }
+
+  // 5g. the road (aiRoad): a road stretch walks to the nearest rival wave,
+  //     where the XP falls - free of an order's ring, an escort and a post
+  const road = !bound && !escort && !guardE ? aiRoad(p, dt) : null;
+  if (road) { aiNote(p, 'ROAD', 'THE WAVE', road); if (steerTo(road.x, road.y, 2) >= 0) { aimAt(road.x, road.y); inp.fire = false; ai.tgt = null; return; } }
 
   // 6. meat is gold: chase and shoot the nearest animal, but give up on one
   //    it cannot catch in 6 s (prey outruns a walk) or cannot route to at all
@@ -1469,7 +1517,7 @@ function aiThink(p, dt) {
     const ptx = Math.floor(p.x / TILE), pty = Math.floor(p.y / TILE);
     if (Math.max(Math.abs(t.tx - ptx), Math.abs(t.ty - pty)) <= WORK_REACH) {
       // the E key at the profile's duty cycle - a slow side rests between
-      // swings, which is what sets how fast it levels. A rock takes no key:
+      // swings, which is what sets how fast it earns. A rock takes no key:
       // standing by it is the mining (updateMine, js/sim/mining.js).
       inp.work = t.type !== 'rock' && (prof.work >= 1 || (state.tick % 120) < 120 * prof.work);
       return;
@@ -1494,16 +1542,7 @@ function aiThink(p, dt) {
   else aiNote(p, 'ROAM', 'NOTHING NEAR', { x: ai.wx, y: ai.wy });
   ai.roam -= dt;
   if (leash && Math.hypot(ai.wx - leash.e.x, ai.wy - leash.e.y) > leash.r * 1.5) ai.roam = 0; // the leash moved (the human walked on)
-  if (ai.roam <= 0) {
-    ai.roam = rand(3, 7);
-    if (leash) { ai.wx = leash.e.x + rand(-1, 1) * leash.r; ai.wy = leash.e.y + rand(-1, 1) * leash.r; } else {
-    const toward = rng() < 0.5 ? { x: cx * TILE, y: cy * TILE } :
-      { x: (p.spawn.tx + 0.5) * TILE, y: (p.spawn.ty + 0.5) * TILE };
-    const w = aiMood(p).roam; // (a wild bot wanders wider)
-    ai.wx = toward.x + rand(-14, 14) * TILE * w;
-    ai.wy = toward.y + rand(-14, 14) * TILE * w;
-    }
-  }
+  if (ai.roam <= 0) { ai.roam = rand(3, 7); aiRoamPick(p, leash); }
   const rd = steerTo(ai.wx, ai.wy);
   if (rd < 20) ai.roam = 0; // arrived, or no route (a point in the treeline): pick another
   aimAt(p.x + inp.mx * 24, p.y + inp.my * 24);

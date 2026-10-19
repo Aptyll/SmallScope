@@ -45,7 +45,7 @@ wears the **profile's** name and last hero — `applyProfile()`, called by `init
 on from the eagle), `aboard`/`dropT`/`dropU`
 (the eagle ride, see [Eagle drop](rendering.md#eagle-drop-mode-drop)), its own `inv` wallet, `bag`
 and `food` pouch (see [the backpack](gameplay.md#inventory-and-the-backpack)),
-`level`/`xp` (see [Hero levels](#hero-levels)), `kills`, an `input` struct and an `ai` brain.
+`level`/`xp` (see [Hero levels](#hero-levels)), `earned` (the match's gold earned), `kills`, an `input` struct and an `ai` brain.
 `reset(first)` places it at `spawn` and clears every transient; it is the single definition of
 "a fresh player". Boot calls it with `first` true, and `respawnPlayer` — the team's bird setting a
 downed player back down — with `false`, which is what gives the return its 3 s of i-frames.
@@ -67,9 +67,9 @@ fire          bow held: rising edge draws, falling edge looses. The rising edge
 work          E held (with it clear, the hands still take a tree, a bush or a fish in reach: autoWork/autoFish)
 slide         shift held
 dodge         edge-triggered, cleared by the sim when it reads it
-jump          edge-triggered: the leap off the eagle, or the hop off the roost -
-              the ride's one act (dropJump, js/sim/eagle.js; read at the top of
-              updatePlay's player loop, before the air skips the body) - and
+jump          edge-triggered: the hop off the roosted bird (hopOff,
+              js/sim/eagle.js; read at the top of updatePlay's player loop,
+              before the air skips the body) - and
               on the ground the zipline's: clip on under either side's cable,
               let go while riding, or - out of reach with the aim on a
               cable as drawn - the walk there that clips on (zipToggle,
@@ -346,11 +346,13 @@ on class or gear change — never per frame). The kit fields: `iceMax` (× `ICE_
 `nock` (the baseline every rate of fire is scaled against — a tool's own `rof` is multiplied by
 `nock / BOW_NOCK`, so a class's hands still set the rhythm; see
 [the cycle](gameplay.md#the-cycle)),
-`dmgBase`/`dmgPow` (what the *player* adds to the bit's own damage), `spdDmg` (extra damage scaled
-by the shooter's speed at release, capped at 200 px/s), `dodgeSpeed`, `maxHp`. Sites that read it:
-`updatePlayer`'s movement block, `emitBit`, `tryDodge`, the AI's draw timing, the cursor,
-aim line and draw meter. `setClass(p, c)` swaps one in (full heal — it's a pre-match choice);
-`p.maxHp` is always `levelMaxHp(p)` = kit hp + the level growth below.
+`spdDmg` (extra damage scaled by the shooter's speed at release, capped at 200 px/s),
+`dodgeSpeed`, plus `cls` (whose kit) and `add`, the bag of [hero stat](gameplay.md#hero-stats)
+bonuses gear and cards write. Sites that read it: `updatePlayer`'s movement block, `emitBit`,
+`tryDodge`, the AI's draw timing, the cursor, aim line and draw meter. The seven hero stats
+themselves (health, damage, attack speed, armor, ability power, cooldown speed, move speed) are
+read through `statOf(p, key)` (js/sim/stats.js), never off the kit. `setClass(p, c)` swaps one in
+(full heal — it's a pre-match choice); `p.maxHp` is always `levelMaxHp(p)` = `statOf(p, 'hp')`.
 
 | # | Name | Fantasy | Kit | Flies in with |
 | --- | --- | --- | --- | --- |
@@ -370,7 +372,7 @@ one does, its cooldown, cast, and the states it leaves on a body — are
 The local player's class is its **hero, picked each match** on the lobby's hero row
 ([lobby](rendering.md#lobby), js/ui/heroes.js); the one locked in is kept as the profile's
 hero (js/app/profile.js), where the next pick opens. Bots hash theirs — hero (and with it its look), all four gear
-variants **and** their stat points — from the seed in `initPlayers()` so a replayed world fields the same roster in the
+variants — from the seed in `initPlayers()` so a replayed world fields the same roster in the
 same loadouts. Lobby shows that roster as two team panels on the screen's edges — your side left, the
 rivals right, their picks face-down until LOCK IN's countdown turns them (a second press skips
 the rest of the count) — and the target at the top, whose pop-up's four plates
@@ -385,26 +387,42 @@ character's tone and fringe ([sprites.md](sprites.md#looks-a-character-on-the-cl
 
 ## Hero levels
 
-League-style: every player has `p.level` (1–`LEVEL_MAX` = 12) and `p.xp`, which is simply lifetime
-gold earned. **`gainGold(p, n)` is the only way gold enters a wallet** (`awardGold` — the on-the-spot
-payout every source uses — and robot deposits both route through it) — it pays the purse, adds the same `n` to `xp` and calls
-`levelUp(p)` while `xp >= LEVEL_XP[level]` (cumulative thresholds 40, 100, 180, 280, 400, 540,
-700, 880, 1080, 1300, 1540 — the gap grows by 20 each level, 1540 gold to cap). The table is
-sized against a bot chaining pines all match (about a gold a second on the fells plus the
-[trickle](gameplay.md#economy-one-currency)'s 15 a minute): that bot is level 9 or 10 at fifteen
-minutes and capped past twenty, a player who fights and farms by halves sits two or three levels
-under it, and the trickle alone is level 3 by seven minutes — a level is news all match. Spending gold and dying never touch
-`xp`; level and xp are set in the constructor, not `reset()`, so they would survive a `reset`.
+League-style: every player has `p.level` (1–`LEVEL_MAX` = 12) and `p.xp`, and XP is its own number,
+apart from gold. **`gainXp(p, n)` is the only way XP enters a body**: it adds to `xp`, to the running
+total over the head (`xpN` since `xpTick`, the [purple number](rendering.md#the-running-xp-total)) and
+calls `levelUp(p)` while `xp >= LEVEL_XP[level]` (cumulative thresholds 60, 150, 270, 420, 600, 810,
+1050, 1320, 1620, 1950, 2310 — the gap grows by 30 each level). XP comes from being **near when a
+rival body dies**, never from the last hit: `shareXp(dead, xp, team, src)` hands a death's XP to
+every scout of `team` that `unitsNear(dead, …, XP_R)` finds (160 px, about half the view at the
+default zoom; alive and on the ground), plus `src` — the one who landed the blow — wherever it
+stood. The pot grows `XP_SHARE` (0.3) of the whole for each sharer past the first, so two on a
+wave get 65% each and five get 46% each. What a death is worth:
 
-Growth is flat and identical for both classes: each level past 1 adds `LVL_HP` (9) to
-`maxHp` (via `levelMaxHp(p)`, healed on the spot) and `LVL_DMG` (2) to every arrow
-(`emitBit` adds it after the bit's base + pow × draw + speed bonus). Level 12 is +99 hp / +22
-damage. A level-up pushes a 2× gold `LEVEL n` floater over the slot (skipped while `inAir`) and
+| Death | XP | Shared by |
+| --- | --- | --- |
+| a soldier (`robotDies`) | `SOLDIER_XP` 20 | its rival side |
+| a scout (`die`) | `KILL_XP` 40 + `KILL_XP_LV` 15 × its level | its rival side, whatever downed it |
+| a beast with an `xp` in `YIELD` (`animalDies`): deer 40, wolf 15, black and brown bear 150 | grown `ANIMAL_LV_XP` (a tenth) a level | the side of whoever landed the last blow |
+
+Rabbits, workers, buildings, the works (pines, rocks, chests), fish, sales and the clock pay **no
+XP** — the road is where a scout levels. The table is sized against a scout who keeps to the road
+and the camps: about level 6 at ten minutes and the cap near minute 25, where the old gold-fed table
+capped near 13 (the arena's 4.37 runs). Dying never touches `xp`; level and xp are set in the
+constructor, not `reset()`, so they survive a `reset`.
+
+**`gainGold(p, n)` is the only way gold enters a wallet** (`awardGold` — the on-the-spot payout
+every source uses — and robot deposits both route through it): it pays the purse and `p.earned`,
+the match's gold earned, which is what the scoreboard ranks by and the post-game GOLD prints.
+It no longer levels anyone. A sale at the counter pays through `tradeGold`, which counts as
+neither.
+
+Growth is the hero's own: each level past 1 adds its `CLASSES[c].grow` to the
+[hero stats](gameplay.md#hero-stats) (HUNTER +10 hp, +2 damage, +2% attack speed, +3 armor;
+WARRIOR +14, +2.5, +1.5%, +4), the health healed on the spot in `levelUp`. A level-up pushes a 2× gold `LEVEL n` floater over the slot (skipped while `inAir`) and
 raises its cue through `sfxOwn(p, 'levelUp', 'pickup')` — the level's own ring on the screen that
 is that player, a pickup to bystanders in earshot. What the level BOUGHT flies into the notice
-lane as the [stat sheet](rendering.md#the-stat-ledger-your-sheet-as-a-notice), its HEALTH and
-DAMAGE rows lit with `+LVL_HP` and `+LVL_DMG` — which is why those two `GEAR_STATS` rows fold the
-level in themselves: the kit never holds it.
+lane as the [stat sheet](rendering.md#the-stat-ledger-your-sheet-as-a-notice), the rows it grew
+lit — `STAT_ROWS` read `statFrom` with the player's level, since the kit never holds it.
 The table's **average** level is also what the
 wildlife wears (`animalLevel`, js/sim/wildlife.js): dealt at spawn and followed after by every
 unhurt animal that hunts nobody (`relevelAnimal`) —
@@ -527,8 +545,8 @@ swing is refused. It is not helpless either: a rival lingering in `GUST_R` makes
 hp/s back.
 
 `die(p, src, cause)` takes **nothing off the body** regardless of what happens next: wallet, pouch,
-bag, weapon and build all stay, and the credited killer is paid a flat `KILL_BOUNTY` (12) via
-`awardGold` — an uncredited death pays nobody (gold is never a physical drop). What happens next
+bag, weapon and build all stay, and the killer and the assists are paid by `payTakedown`
+([Takedowns](gameplay.md#takedowns-assists-bounties-and-shutdowns)) — gold is never a physical drop. What happens next
 depends on `teamEagleDown(p.team)` alone: the wait and the return of
 [Respawn at the bird](#respawn-at-the-bird) while the team's eagle still roosts, or
 `p.eliminated = true`, the permanent path, once it has been driven off;
@@ -586,11 +604,11 @@ that takes a player out for good is that eagle being driven off. `updateRespawns
 `updatePlay` beside `updateStructures`) counts down every `p.dead && !p.eliminated` player's
 `p.respawnT` — `respawnTime(p)`: the hero level's entry in `RESPAWN_WAIT`, shaped like League's
 base wait — 5 / 6 / 7 / 9 / 11 s for levels 1-5, 14 / 18 / 23 / 29 s for 6-9, 36 / 43 / 50 s for
-10 to the `LEVEL_MAX` of 12 — and nothing off the match clock: gold is XP and the table only
-climbs, so the level *is* the clock. An early death costs a few seconds and a late one costs real match, which is what makes a wiped side late in a game (everyone
+10 to the `LEVEL_MAX` of 12 — and nothing off the match clock: XP only climbs and comes
+every wave, so the level *is* the clock. An early death costs a few seconds and a late one costs real match, which is what makes a wiped side late in a game (everyone
 high) a real window on a roost its defenders otherwise come back to from sixty pixels away every
 few seconds. At zero it calls `respawnPlayer(p)`, which puts `p.spawn`
-`RESPAWN_OUT` (40 px) down the spur from the bird (`e.laneDir`; the nearest standable tile there
+`RESPAWN_OUT` (40 px) up the road from the bird (`e.laneDir`; the nearest standable tile there
 through `nearestDryTile`, the same spiral a hole is climbed out of) and calls `p.reset(false)`,
 the transient-clear a fresh landing gets, i-frames included — so the way back into the match is
 the road everyone walked out on, past the merchant. A bird still in the air (a player
@@ -608,9 +626,9 @@ The last two arguments are the whole credit system. `src` is the player who deal
 (`players[a.owner]` for an arrow, null for the world) and `cause` names what the world did when
 there is no `src` (`DEATH_CAUSE`, js/sim/player.js: `ice`, `wolf` — a den's pack — `bear`,
 `tackle`, `eagle`, `fire`, `soldier`, `orca`; an unnamed one reads WENT DOWN). A death with an `src` other than
-the victim bumps `src.kills` — the scoreboard's KILLS column — and writes `"<killer> SHOT <victim>"` into the log in the killer's colours
+the victim bumps `src.kills` — the scoreboard's K/D/A column — and writes `"<killer> SHOT <victim>"` (SHUT DOWN when the victim wore a bounty) into the log in the killer's colours
 (`KILL_VERB` swaps the verb where the cause was no arrow: a `worker`'s axe CUT DOWN, `fire` BURNED);
-without one it writes the cause's line — `"<victim> FELL THROUGH THE ICE"` — in the victim's. **Any new way to hurt a
+without one the latest rival who hit the victim inside `ASSIST_T` takes the kill, and the cause's line — `"<victim> FELL THROUGH THE ICE"` — is written in that killer's colours, or the victim's when there is none. **Any new way to hurt a
 player must pass its `src`**, or the kill goes uncredited and the log line reads as an accident.
 
 The log also takes a level-up at `LOG_LEVEL` (5) or above — the early levels come too
@@ -674,7 +692,7 @@ the **skill layer's** hand fields (below: `cone`, `rear`, `perceive`, `hand`, `a
 target's read motion), `draw` (0.6 / 0.7 / 0.9 / 0.95 of `bowCharge` it looses at — a short draw is a
 weak shot), `dodge` (×0.25 / 0.5 / 1 / 2), `abil` (0.2 / 0.35 / 0.8 / 1 chance per `AI_ABIL_T` that a
 ready ability is spent), `flee` (0.55 / 0.5 / 0.35 / 0 hp it hides at), `work` (0.4 / 0.5 / 0.8 / 1 duty
-cycle of the E key while harvesting — its level pace), the **choice** knobs the team brain reads
+cycle of the E key while harvesting — its gold pace), the **choice** knobs the team brain reads
 (`judge`, `focus`, `team`, `think`, `memory` — what each means is in the banner), `strafe` (0.3 / 0.45 / 0.8 / 1 of each 2 s it
 keeps moving in a fight; the rest it PLANTS — stands, draws and shoots, the only time a slow side
 fires, so stopping is the tell and the moment a new player hits it — and under 1 it circles that
@@ -887,12 +905,12 @@ The ladder:
 7. **guard** — from 0.6 × `push.t` on, the plan's guards (`T.nGuard`: the profile's `guard` bots, 1 / 2 / 0 — a relentless side keeps none; allies 1 — but at most one
    unless the bird was hit in the last `AI_GUARD_HOT` (60 s), and the braced pushers) after
    the pushers in the plan's order (`aiRank`, the team brain above) keep their own bird, as
-   proactive defenders, not sentries: a guard raises the side's turrets along the spur
+   proactive defenders, not sentries: a guard raises the side's turrets along the road home
    (`aiFortSite`: `AI_FORT_N` (3), in pairs either side of its axis on tiles with three open
    sides, then a tier at a time once the purse holds twice the price), lays walls before those
    tiers (`aiWallSite`, from `aiWallPlan`: the defence line below, then three tiles on the
    lane-gate side of each turret; one wall a side a step, `T.wallTick`), and for `AI_PATROL_OUT`
-   (14 s) of every `AI_PATROL_T` (40 s) walks out past the spur's junction `AI_PATROL_D` (360 px)
+   (14 s) of every `AI_PATROL_T` (40 s) walks out past the base's junction `AI_PATROL_D` (360 px)
    up the road to see who is coming (the brace reads what it sees). Otherwise it goes on down
    the ladder to work what is near while inside `AI_GUARD_R` of the bird, its anchor.
    **The defence line** (`aiRingPlan`, once per side every `AI_RING_T` (10 s), kept on `T.ring`):
@@ -927,15 +945,16 @@ The ladder:
    pusher leaves the rival wave to its own: a rival soldier is fought only inside `AI_SIEGE_R`,
    unless its own bird is threatened and it is near home. (A relentless
    side skips the column and waits for its whole pack instead — the profile, above.)
-   The walk is `aiToRoost`: the roost sits in its corner's woods at the end of its spur and the
-   spur is the only way in, so off it the route is road → `aiLaneGate` (`AI_GATE` px up the road
-   from the junction, toward the field) → junction (`e.mouth`) → spur → bird, on a bigger pathfinder budget (`AI_ROOST_BUDGET`,
+   The walk is `aiToRoost`: the roost sits at the back of its [base](world.md#the-bases)'s
+   hollow, at the end of the road, so off the road the route is road → `aiLaneGate` (`AI_GATE` px
+   up the road from the junction, toward the field) → junction (`e.mouth`) → the road through the
+   hollow → bird, on a bigger pathfinder budget (`AI_ROOST_BUDGET`,
    `navTo`'s optional last argument); a route straight at the bird runs `NAV_BUDGET` out in
-   the border and leaves a bot wedged in a pocket, which is what this exists to prevent. In the
-   spur, any **turret the defenders raised comes down first** (E, `STRUCT_HIT_DMG` a swing, 10 of it once
+   the border and leaves a bot wedged in a pocket, which is what this exists to prevent. On the
+   way in, any **turret the defenders raised comes down first** (E, `STRUCT_HIT_DMG` a swing, 10 of it once
    `STRUCT_DR` has taken its cut — a bot
    standing off the bird under a turret's rocks never finishes a draw), then a hunter takes its
-   station `AI_HOLD` (96 px) out **on the spur's axis**, where the spur keeps the line to
+   station `AI_HOLD` (96 px) out **on the road's axis**, where the road keeps the line to
    the roost open (off the axis a wall the defenders raised may eat the shot) and outside the gust, and looses at the
    profile's draw; a warrior walks up to the nearest roost tile (`aiEagleTile`) and swings E on
    it, gust and all, exactly as a hand does. Defenders in sight are rung 3's business — until
@@ -956,6 +975,14 @@ The ladder:
    there; a SCOUT walks its beat (`aiScoutPoint`), but not for 8 s after it fled a fight
    (`ai.scoutCd`). Neither job holds a bot with nothing to do:
    they fall through to the rungs below.
+9b. **road** — XP is being near when rival bodies fall ([Hero levels](#hero-levels)) and gold is
+   the work's, so a bot splits its time (`aiRoad`): every `AI_ROAD_T` (20 s) it rolls a stretch on
+   the road or on the work, the road at `AI_ROAD_P` (0.55) at the table's average level
+   (`animalLevel`), `AI_ROAD_LV` (0.15) more for each level it trails that average and less for
+   each it leads, divided by its mood's `greed` (a greedy bot works longer). On a road stretch it
+   walks to the nearest rival soldier inside `AI_ROAD_D` (720 px), thought ROAD; rung 3 does the
+   fighting once the wave is in sight. Off an order's ring, an escort's leash and a guard's post
+   only. No wave out, or a work stretch, and it goes on down the ladder.
 10. **hunt** — an animal within `AI_HUNT` (120 px), with a 6 s catch timer per animal (prey
    outruns a walk; 8 s for a blade). A bow shoots from 55 px; a blade walks in to `AI_MELEE_D`
    and swings only inside `AI_MELEE_D` + 8 px. Birds are excluded: they fly, and no ground route catches a flushed flock.
@@ -1114,30 +1141,23 @@ what the rest of the code needs to know is this:
   escort. A human flag does lead its side for either kind (`isHuman`). Notices (`raiseNotice`) and
   the own-bird alarm are raised on the host's screen only.
 - **What the step gates on `p === player`, a client does for itself.** The profile's lifetime
-  stats, `markDropped` and the leap's hard music cut never run on a client's screen, so
-  `netClientStats` (js/net/net.js) reads them off its snapshot body each step: `xp` climbing is gold,
-  `kills` climbing a kill, `dead` rising a death, `aboard` falling the leap, and the first step of
-  the ride the match and its first day. A new local-only side effect in the sim needs its edge there.
+  stats and `markDropped` never run on a client's screen, so
+  `netClientStats` (js/net/net.js) reads them off its snapshot body each step: `earned` climbing is gold,
+  `kills` climbing a kill, `dead` rising a death, `aboard` falling the hop, and the first step of
+  the ride the match and its first day. Its own landing (mode `play` and the landing's hard music
+  cut once its bird is `down`) is `netClientMode`'s. A new local-only side effect in the sim needs its edge there.
 
 ## Where players start
 
-Nowhere, until they land: every active player boards **its team's** eagle in `beginDrop()` — RED
-and BLUE fly the map's one diagonal (a fixed `EAGLE_FLIGHT_T` 10 s each) in opposite directions,
-RED from the top-right corner down to the bottom-left, BLUE the reverse, so the two sides salt
-themselves along it from opposite ends and each roosts in its own fixed corner — and gets its
-`spawn` from `landPlayer()`, the
-nearest open tile to where it jumped. Jumping only unlocks over the line's **last `DROP_LOCK_T`
-(4 s)**: bots jump at a hashed fraction of that window (never past its end, the last open
-ground before the corner's treeline — no bot is ever force-dropped in the trees), the human where
-they press Space — drifting with WASD on the way down — or **not at all**: a human who never
-jumps rides the dive and the crash on the bird's back, sits through the
-[drop brief](rendering.md#the-drop-brief) (the camera tour of both roosts), then hops off the
-roost with E (or by walking) under the E HOP OFF indicator. A profile's first flight is exactly that ride with
-the manual leap refused — scripted onboarding — and a real jump is the opt-out for everyone
-after. That tile is what the bot brain
-treats as "home". There are no spawn pockets, no starter rings, and no guaranteed resources near
-a landing — reading the ride (the dotted path over the snow, or M for the map) is the whole
-point. `ringPts` (six points on a ring
+Nowhere, until they land: every active player boards **its team's** eagle in `beginDrop()`. Each
+bird flies a short fixed line in over its own corner (`EAGLE_FLIGHT_T`, 2.5 s), RED's the
+bottom-left and BLUE's the top-right, and roosts on its [base](world.md#the-bases)'s perch with
+the whole side on its back. The bots hop off one by one once the wings fold; a human hops off
+with E, the roll button or by walking, under the E HOP OFF indicator, after the
+[drop brief](rendering.md#the-drop-brief) on a profile's first flight. Each rider's `spawn` comes
+from `landPlayer()`, the nearest open tile to where its hop came down, and that tile is what the
+bot brain treats as "home". There are no spawn pockets, no starter rings, and no guaranteed
+resources near a landing. `ringPts` (six points on a ring
 `SPAWN_D` tiles from the centre — `RING_N` is frozen at 6, decoupled from the player count) is the
 old camp ring, kept only because river spokes and the keep-clear rules in `genWorld()` are built
 on it.

@@ -92,7 +92,7 @@ function storyLines(ws) {
   if (state.elapsed > 180) for (const q of allies) if (!q.deaths && !q.eliminated) { add(q, ' NEVER WENT DOWN'); break; }
   // the richest mate, when the match was too quiet for anything better
   let rich = null, rn = 0;
-  for (const q of allies) if (q.xp > rn) { rn = q.xp; rich = q; }
+  for (const q of allies) if (q.earned > rn) { rn = q.earned; rich = q; }
   if (rich) add(rich, ' EARNED ' + rn + ' GOLD');
   return (ws.story = out);
 }

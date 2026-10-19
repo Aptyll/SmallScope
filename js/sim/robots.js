@@ -86,13 +86,15 @@ function robotDies(b, src) {
   }
   // a soldier carries a bounty instead of cargo: the rival who lands the
   // LAST HIT is paid it on the spot (soldierBounty, the `farm` banner of
-  // js/sim/farm.js) and counts a farm - the road pays, which is what makes
-  // walking out to meet a wave worth the walk. One the waves, a turret or a
+  // js/sim/farm.js) and counts a farm, and every rival scout standing near
+  // shares its SOLDIER_XP whoever scrapped it (shareXp, js/sim/player.js) -
+  // the road pays, which is what makes walking out to meet a wave worth the walk. One the waves, a turret or a
   // beast finish pays nobody, and its rivals near it see the coin go grey.
   // Three a wave, so no feed line: the fight is the news, not each wreck.
   if (b.kind === 'soldier') {
     if (src && src.inv && src.team !== b.team) { awardGold(src, soldierBounty(), b.x, b.y); farmHit(src, b.x, b.y - 6); }
     else coinPop(b.x, b.y - 6, true, 1 - b.team);
+    shareXp(b, SOLDIER_XP, 1 - b.team, src);
     return;
   }
   // a downed worker is not a downed player: it makes the feed, never the kill
@@ -175,7 +177,7 @@ function updateRobot(b, dt) {
   const deposit = () => {
     if (b.carry <= 0) return;
     gainGold(players[b.owner] || player, b.carry);
-    addFloater(hx, hy - 14, '+' + b.carry, RES_COLORS.gold);
+    addFloater(hx, hy - 14, String(b.carry), RES_COLORS.gold);
     b.carry = 0;
     sfxAt('coin', hx, hy);
   };
@@ -311,8 +313,8 @@ function updateRobot(b, dt) {
 // Each eagle is DRIVEN by its team's merchant - the figure on the bird's neck
 // in flight (drawEagle, js/sim/eagle.js) - who climbs down the moment it roosts
 // and works HOME for its side, never toward the fight: it pitches its
-// market STALL beside the spur's head (the shop players walk to), then fells the back
-// woods (the half of the roost facing away from the spur and the road) from
+// market STALL beside the road's head (the shop players walk to), then fells the back
+// woods (the half of the roost facing away from the road) from
 // the roost outward, every pine and snag a log in its own stock (`wood`),
 // and raises the BOT BAYS (the barracks) on that cleared home ground - the
 // first on a clock, each after it for MERCH_BAY_WOOD logs, up to MERCH_BAYS -
@@ -336,10 +338,10 @@ const MERCH_SPD = 46;        // px/s
 const MERCH_SWING_T = 0.7;   // s per axe swing (a pine is 4 hp: ~3 s a tree)
 const MERCH_BUILD_T = 0.9;   // s the hammer's wind-up reads as (drawMerchant)
 const MERCH_BACK_R = 13;     // tiles from the roost the back woods' felling reaches
-const MERCH_BACK_ARC = Math.PI / 2; // rad off the spur's axis a pine must sit to be the back woods': the half facing away from the road
+const MERCH_BACK_ARC = Math.PI / 2; // rad off the road's axis a pine must sit to be the back woods': the half facing away from the road
 const MERCH_HOP_T = 0.55;    // s of the hop off the bird
-const MERCH_STALL_OUT = 4.6; // tiles from the roost the stall's centre sits: at the paved crater's edge, in its stump rings, so its front opens onto the clearing
-const MERCH_STALL_ANG = 0.9; // rad either side of the spur's axis it looks for a site: beside the track's head, never on it
+const MERCH_STALL_OUT = 6;   // tiles from the roost the stall's centre sits: just past the paved crater, its front onto the base's clearing
+const MERCH_STALL_ANG = 1.0; // rad either side of the road's axis it looks for a site: beside the road's head, never on it
 const MERCH_THINK = 0.35;    // s between job picks
 // the bot bays (STRUCTS.barracks): MERCH_BAY_T after the landing the merchant
 // clears a site MERCH_BAY_BACK tiles out from the roost - the footprint to
@@ -373,7 +375,7 @@ function freeTileNear(tx, ty, rMax) {
 
 // the crash: the driver climbs down on the lane side of the roost (eagleCrash, js/sim/eagle.js)
 function spawnMerchant(e) {
-  const lx = e.laneDir.x, ly = e.laneDir.y; // the spur's own direction: from the crater to its junction on the road (eagleCrash)
+  const lx = e.laneDir.x, ly = e.laneDir.y; // the road's direction out: from the roost to its junction (eagleCrash)
   const wx = e.x + lx * (EAGLE_TILE_R + 1.4) * TILE, wy = e.y + ly * (EAGLE_TILE_R + 1.4) * TILE;
   const at = freeTileNear(Math.floor(wx / TILE), Math.floor(wy / TILE), 6) || { tx: Math.floor(e.x / TILE), ty: Math.floor(e.y / TILE) };
   const b = {
@@ -413,24 +415,20 @@ function merchFell(b, t) {
   b.tgt = null;
   return true;
 }
-// a bearing off the spur's axis (0 = toward the road) as a world-space unit vector
+// a bearing off the road's axis (0 = up the road, out of the base) as a world-space unit vector
 function merchBearing(e, ang) {
   const lx = e.laneDir.x, ly = e.laneDir.y;
   return { x: lx * Math.cos(ang) - ly * Math.sin(ang), y: ly * Math.cos(ang) + lx * Math.sin(ang), ang };
 }
 // where the stall goes: a 3x2 site (top-left, like a bay's) about
 // MERCH_STALL_OUT tiles from the roost at MERCH_STALL_ANG either side of the
-// spur's axis - beside the track's head, where everybody lands and respawns,
-// and off the track itself (SPUR_HW and a tile more) so the way in is never
+// road's axis - beside the road's head, where everybody lands and respawns,
+// and off the road and the crash pad (laneDist) so the way in is never
 // shut. Dry land holding nothing the axe cannot take; the nearer side wins.
 function merchStallSite(b) {
-  const e = b.roost, lx = e.laneDir.x, ly = e.laneDir.y;
-  const offSpur = (x, y) => {
-    const px = x + 0.5 - e.x / TILE, py = y + 0.5 - e.y / TILE;
-    return px * lx + py * ly <= 0 || Math.abs(px * -ly + py * lx) >= SPUR_HW + 1;
-  };
+  const e = b.roost;
   const fits = (tx, ty) => footprint('barracks', tx, ty).every(([x, y]) => {
-    if (!inWorld(x, y) || waterAt(x, y) || (ground[idx(x, y)] !== 0 && ground[idx(x, y)] !== 3) || !offSpur(x, y)) return false;
+    if (!inWorld(x, y) || waterAt(x, y) || ground[idx(x, y)] !== 0 || laneDist(x, y) < 0) return false;
     const o = objAt(x, y);
     return !o || laneFells(o) || o.type === 'stump';
   });
@@ -460,7 +458,7 @@ function pitchStall(b, s) {
   return o;
 }
 // the first bay's bearing: one of the two BACK corners (+-135 deg off the
-// spur's axis), the one pointing nearer the world's edge - deeper into the
+// road's axis), the one pointing nearer the world's edge - deeper into the
 // roost corner's guaranteed woods, away from the field - so both sides'
 // yards sit the same way round, mirrored
 function merchBayDir(e) {
@@ -527,7 +525,7 @@ function merchBayBlocker(b, s) {
   return best;
 }
 // the next pine of the back woods: inside MERCH_BACK_R of the roost and at
-// least MERCH_BACK_ARC off the spur's axis, with an open side to stand on,
+// least MERCH_BACK_ARC off the road's axis, with an open side to stand on,
 // the one nearest the ROOST first (the merchant's own distance breaks near
 // ties) - so the clearing grows out from home as one front instead of a
 // trail wherever it last stood
@@ -631,7 +629,7 @@ function updateMerchant(b, dt) {
   };
   // ---- the stall: the first job off the bird ---------------------------
   // The shop the players walk to (OBJECTS.stall, world.js): pitched beside
-  // the spur's head, where everybody lands and respawns. It is never
+  // the road's head, where everybody lands and respawns. It is never
   // wrecked, so it goes up once; until it does, the merchant's own body is
   // the only counter (it stays one after, too).
   if (!b.stall && b.stallT > 0) b.stallT -= dt;
@@ -735,10 +733,10 @@ function updateMerchant(b, dt) {
 // It carries a bounty paid to the rival who lands its last hit (robotDies,
 // soldierBounty in js/sim/farm.js), and it takes every hit, state and gust
 // like any other body. Its route is the
-// road's waypoints from its own spur's junction to the rival's
+// road's waypoints from its own base's junction to the rival's
 // (roadWaypoints), round the cistern at the middle by a ford outside one of
-// its culverts (cisternWayRound, js/sim/cistern.js), then the rival's spur to
-// the roost: a waypoint it cannot reach is skipped, not
+// its culverts (cisternWayRound, js/sim/cistern.js), then up the rival's road
+// to the roost: a waypoint it cannot reach is skipped, not
 // waited on, so a wave never stands still on a blocked tile. On the march it
 // rides any ZIPLINE that carries it toward the rival bird (soldierBoard):
 // its own side's out to the front, the rival's in to their roost - hands on
@@ -749,6 +747,7 @@ const SOLDIER_AGGRO = 96;      // px it turns on a rival unit inside
 const SOLDIER_SIEGE = 40;      // px it turns on a rival building inside - what is in its way, not the whole ring round a roost
 const SOLDIER_HP_GROW = 10;    // health a soldier gains for every barracks `grow` the match has run
 const SOLDIER_EAGLE_DMG = 8;   // nerve one swing takes off the rival bird (a hand's E swing is EAGLE_WORK_DMG, 20)
+const SOLDIER_XP = 20;         // XP it is worth to the rival scouts standing near (shareXp)
 const SOLDIER_WP_R = 28;       // px from a waypoint that counts as reached
 const SOLDIER_ZIP_GAIN = 96;   // px nearer the rival bird a ride's end must be than the soldier stands before it clips on: six tiles, so never a hop on and straight off
 const SOLDIER_ZIP_REACH = 96;  // px off a cable's track a marching soldier turns aside to it: the road's own width and the verge, so a column on the lane finds the line beside it
@@ -760,7 +759,7 @@ function makeSoldier(o) {
   // hero's grown blow never makes every hit on one a last hit
   b.hp = b.maxHp = b.maxHp + SOLDIER_HP_GROW * Math.floor(state.elapsed / STRUCTS.barracks.tiers[0].grow);
   b.owner = -1; // nobody's: no flag, no cargo, no payout but the bounty
-  // the march: own junction first (down the roost's spur), the road, the
+  // the march: own junction first (up the road out of the base), the road, the
   // rival junction; the rival roost itself is read live (it may have flown)
   const own = state.drop && state.drop.eagles[b.team], rival = state.drop && state.drop.eagles[1 - b.team];
   b.way = [];
@@ -860,7 +859,7 @@ function updateSoldier(b, dt) {
       }
     }
   }
-  // 3. a rival building in its way: a turret, a wall across the spur,
+  // 3. a rival building in its way: a turret, a wall across the road,
   //    their bays
   if (!busy) {
     const st = enemyStructNear(b.team, b.x, b.y - 1, SOLDIER_SIEGE);

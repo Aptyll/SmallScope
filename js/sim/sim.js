@@ -177,10 +177,12 @@ function update(dt) {
     const c = titleCamTarget();
     camX = c.x; camY = c.y;
   } else if (state.mode === 'drop') {
-    // riding: track the eagle (the rider sits on it); falling: hold over the
-    // landing point. The first INTRO_T is the opening shot: held dead on your
-    // seat while applyZoom pulls the view out round it.
-    const tx = player.x - WV_W / 2, ty = player.y - WV_H / 2;
+    // riding: track the eagle (the rider sits on it). The first INTRO_T is
+    // the opening shot: held on your seat while applyZoom pulls the view out
+    // round it. Kept inside the world, like play's: the bird comes in over
+    // its own corner, from the very edge of the map.
+    const tx = Math.max(0, Math.min(WORLD * TILE - WV_W, player.x - WV_W / 2));
+    const ty = Math.max(0, Math.min(WORLD * TILE - WV_H, player.y - WV_H / 2));
     if (state.intro > 0) {
       state.intro = Math.max(0, state.intro - dt);
       camX = tx; camY = ty;
@@ -543,11 +545,11 @@ function tickObjTimers(dt) {
 
 // ------------------------------------------------------------ passive income
 // The clock pays: every player on the ground draws TRICKLE_GOLD into its
-// wallet every TRICKLE_T s, through gainGold so it levels too - the League
-// trickle. A floor under everyone's purse, so a player who never swings an
-// axe still buys gear and still reaches the mid levels, and a farmer pulls
-// ahead only by the fells, never by the clock. Silent on purpose: no floater,
-// no blip - the strip's purse and the xp round the portrait are the tell. The practice
+// wallet every TRICKLE_T s, through gainGold - the League trickle, gold and
+// never XP. A floor under everyone's purse, so a player who never swings an
+// axe still buys gear, and a farmer pulls ahead only by the fells, never by
+// the clock. Silent on purpose: no floater,
+// no blip - the strip's purse is the tell. The practice
 // arena has no clock and gets none; the dead and the airborne earn nothing.
 const TRICKLE_GOLD = 1;
 const TRICKLE_T = 4;      // s per coin: 15 gold a minute, ~225 over a fifteen-minute match
@@ -565,10 +567,10 @@ function updatePlay(dt) {
   // every player steps through the same code, each off its own input struct
   // (players still on or under the eagle are moved by updateDrop instead)
   for (const p of players) {
-    // the leap is the one act a rider can take: read here, before the air
-    // skips the body, so a remote hand's press lands like a local one
+    // the hop off the roost is the one act a rider can take: read here, before
+    // the air skips the body, so a remote hand's press lands like a local one
     // ...and on the ground the same intent is the zipline's and the deer's (hopToggle, wildlife.js)
-    if (p.input.jump) { p.input.jump = false; if (p.active && p.aboard) dropJump(p); else if (p.active && !p.dead && !inAir(p)) hopToggle(p); }
+    if (p.input.jump) { p.input.jump = false; if (p.active && p.aboard) hopOff(p); else if (p.active && !p.dead && !inAir(p)) hopToggle(p); }
     if (!p.active || inAir(p)) continue;
     if (p.control === 'ai') (p.botId ? botStep : updateAI)(p, dt); // a bot file's seat, or the built-in brain (js/ai/bot-api.js)
     updatePlayer(p, dt);
@@ -809,7 +811,7 @@ function updatePlay(dt) {
         } else got = d.it ? (bagPut(p, d.it) ? 1 : 0) : fitAdd(p, d.type, d.n);
         if (got > 0) {
           d.n -= got;
-          addFloater(p.x, p.y - 14, '+' + got, RES_COLORS[d.type]);
+          addFloater(p.x, p.y - 14, (d.type === 'gold' ? '' : '+') + got, RES_COLORS[d.type]);
           noteSeen(p, d.type); // the local player has now held one: mark the tech node
           sfxFor(p, 'stash');
         }
@@ -903,8 +905,8 @@ function walkStep(p, dt, mx, my, len, onIce, kit) {
   // hero's stride, and a drawn bow does not slow the deer under it
   const walkMax = (p.mount ? PLAYER_SPEED * RIDE[p.mount.kind].mul
     : p.prone ? PRONE_SPEED
-      : p.riseT > 0 ? PLAYER_SPEED * kit.walkMul * 0.45
-        : PLAYER_SPEED * kit.walkMul * chargeMul) * abMul * wadeMul(p); // STRIDER lengthens the stride; deep snow drags (js/sim/depth.js)
+      : p.riseT > 0 ? statOf(p, 'ms') * 0.45
+        : statOf(p, 'ms') * chargeMul) * abMul * wadeMul(p); // MOVE SPEED (js/sim/stats.js); deep snow drags (js/sim/depth.js)
 
   if (p.prone || p.rootT > 0 || (!onIce && !p.sliding && sp <= walkMax + 6)) {
     // plain snow walking: near-instant vector approach, tuned so it feels
@@ -1526,7 +1528,7 @@ function updateFx(dt) {
   for (let i = floaters.length - 1; i >= 0; i--) {
     const f = floaters[i];
     f.t += dt;
-    if (f.t > 0.9) floaters.splice(i, 1);
+    if (f.t > (f.life || 0.9)) floaters.splice(i, 1);
   }
   for (let i = wordPops.length - 1; i >= 0; i--) { // a target's word (hitPTarget, js/sim/practice.js)
     wordPops[i].t += dt;

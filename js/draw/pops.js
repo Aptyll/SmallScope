@@ -45,7 +45,7 @@ function drawPops(ex, ey) {
     const s = f.scale || 1;
     drawWorldText(f.txt,
       Math.round(f.x + (f.vx || 0) * f.t - ex - pixelTextWidth(f.txt, s) / 2),
-      Math.round(f.y - ey - f.t * (f.rise || 14)), f.color, s, 1 - f.t / 0.9);
+      Math.round(f.y - ey - f.t * (f.rise || 14)), f.color, s, 1 - f.t / (f.life || 0.9));
   }
   const vp = viewPlayer();
   for (const c of coinPops) {
