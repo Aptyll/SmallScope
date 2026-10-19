@@ -1,5 +1,5 @@
 // ------------------------------------------------------------ room talk
-// What the waiting room (js/ui/rooms.js) says between people: a few lines of
+// What the party lobby (js/ui/rooms.js) says between people: a few lines of
 // chat under the seats, the Steam friends' invite, a Steam invite taken up,
 // and the nudge a screen gives when it is tabbed out and the room needs it.
 //
@@ -12,8 +12,8 @@
 // draws gets through (talkClean). The list lives in NET.chat and starts
 // empty with every room.
 //
-// INVITE (a Steam lobby only: a relay room has its code to copy) opens
-// Steam's friends overlay on this lobby. A friend's invite taken up, or
+// INVITE (a Steam lobby only; every party has its code to copy as well)
+// opens Steam's friends overlay on this lobby, and so does an empty seat's +. A friend's invite taken up, or
 // Steam's Join Game on a friend in a room, reloads this page onto that lobby
 // (`joinRequested` from desktop/main.js, or `+connect_lobby` at launch,
 // which main.js turns into ?join=); the join from boot does the rest.
@@ -107,11 +107,11 @@ function drawTalk(L, now, hot) {
 }
 
 // ------------------------------------------------------------ invite
-// INVITE sits where a relay room's code would, top-right: a Steam lobby's
+// INVITE sits before the party's code, top-right, in a Steam lobby: Steam's
 function roomInviteRect(L) {
   if (!netSteam() || !NET.transport || !NET.transport.lobbyId) return null;
-  const w = pixelTextWidth('INVITE', 2);
-  return { x: L.x + L.w - w, y: 16, w, h: 10 };
+  const w = pixelTextWidth('INVITE', 2), code = roomCode(), cw = code ? pixelTextWidth(code, 2) + 18 : 0;
+  return { x: L.x + L.w - cw - w, y: 16, w, h: 10 };
 }
 function roomInvite() {
   const b = window.steamBridge;

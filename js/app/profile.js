@@ -18,7 +18,6 @@
   const SAVE_KEY = 'softfall.save.';  // + slot: one saved match's body
   const OLD_SETTINGS = 'softfall.settings'; // pre-profile saves; migrated once
   const NAME_MAX = 16;
-  let quiet = false;               // PROFILE.quiet: the stats are not counting
   const DEFAULT_NAME = 'WANDERER'; // what a corrupt save falls back to mid-session
   const CHAR_MAX = 3;              // character slots a profile holds
   const CLASS_N = 2;               // CLASSES.length (js/sim/player.js) - a class index past this is repaired to 0
@@ -30,6 +29,9 @@
   // match (a match's gold never reaches it). What a coin buys is the skins
   // screen's table (js/ui/skins.js); this file only keeps the count and ids.
   const START_COINS = 100;
+  // RANKED's rating, one per profile: where it starts and its floor. What
+  // moves it is the party lobby's (rankResult, js/ui/rooms.js)
+  const RANK_START = 1000, RANK_MIN = 0;
   const ID_MAX = 24; // a cosmetic id is a short word; anything longer is junk from a hand edit
 
   // A fresh character comes PRE-ROLLED, not blank: the create screen opens on
@@ -128,6 +130,7 @@
       // `owned`, and an id the game no longer has is kept but never worn
       // (birdSkinFor, js/ui/skins.js, falls back to the free one).
       coins: START_COINS,
+      rank: RANK_START,
       owned: [],
       worn: {},
       // null, not {} - game.js reads a null here as "nothing was ever saved"
@@ -185,7 +188,7 @@
   }
 
   window.PROFILE = {
-    NAME_MAX, DEFAULT_NAME,
+    NAME_MAX, DEFAULT_NAME, RANK_START,
 
     // Read the store once, at boot, before anything asks for a name. Repairs a
     // partial or corrupt save against blank() rather than throwing, and folds a
@@ -231,6 +234,7 @@
         // a profile from before the purse arrives without it and keeps the
         // START_COINS blank() gave it, like a fresh one
         if (typeof s.coins === 'number' && isFinite(s.coins)) profile.coins = Math.max(0, Math.floor(s.coins));
+        if (typeof s.rank === 'number' && isFinite(s.rank)) profile.rank = Math.max(RANK_MIN, Math.floor(s.rank));
         if (Array.isArray(s.owned)) {
           for (const id of s.owned) if (typeof id === 'string' && id.length <= ID_MAX && profile.owned.indexOf(id) < 0) profile.owned.push(id);
         }
@@ -363,10 +367,7 @@
     // ---- stats ------------------------------------------------------------
     // The ACTIVE character's lifetime numbers; a call with no character
     // (nothing plays without one) counts on a throwaway so it never throws.
-    stats() { const c = profile.chars[profile.active]; return c && !quiet ? c.stats : blankStats(); },
-    // a match the player only WATCHES (the bot ladder, js/ui/ladder.js) counts
-    // on the throwaway too: until the page reloads, nothing reaches the stats
-    quiet(on) { quiet = !!on; },
+    stats() { const c = profile.chars[profile.active]; return c ? c.stats : blankStats(); },
     addWin() { this.stats().wins++; scheduleSave(); },
     addGold(n) { if (n > 0) { this.stats().gold += n; scheduleSave(); } },
     // one call per day the player sets foot in: day 1 as the eagles take off
@@ -403,6 +404,9 @@
     },
     // a finished match's pay (payMatchCoins, js/ui/skins.js): a moment, so it saves through
     addCoins(n) { n = Math.floor(n) || 0; if (n > 0) { profile.coins += n; saveNow(); } },
+    // ---- ranked -------------------------------------------------------------
+    rank() { return profile.rank; },
+    addRank(d) { profile.rank = Math.max(RANK_MIN, profile.rank + (Math.round(d) || 0)); saveNow(); },
     // DBG only: set the purse (a staged screenshot, a test of the short purse)
     setCoins(n) { profile.coins = Math.max(0, Math.floor(n) || 0); saveNow(); },
 

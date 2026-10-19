@@ -815,7 +815,6 @@ function render() {
   // (see the tooltips banner, ui.js)
   tipResolve();
   renderUI(now);
-  if (ladderWatch && state.mode !== 'title') drawLadderWatch(now); // a watched bot match's controls (js/ui/ladder.js)
   drawSaveFlash(); // a save just landed (js/ui/saves.js): drawn in the drop too, which renderUI skips
   // the archery round's live layer: countdown, GO, the TIME/SCORE/HITS
   // plate, the final score (drawAgameUI, js/draw-world.js)
@@ -1444,15 +1443,11 @@ function cursorInfo() {
     if (m.screen === 'chars') return { kind: m.charT >= 1 && charsHit() ? 'hand' : 'arrow' };
     if (m.screen === 'create') return { kind: m.charT >= 1 && createHit() ? 'hand' : 'arrow' };
     if (m.screen === 'skins') return { kind: m.skinT >= 1 && skinsHit() >= 0 ? 'hand' : 'arrow' };
-    if (m.screen === 'ladder') return ladderCursor();
-    if (m.screen === 'rooms') return { kind: m.roomsT >= 1 && roomsHit() ? 'hand' : 'arrow' };
     if (m.screen === 'room') return { kind: m.roomsT >= 1 && roomHit() ? 'hand' : 'arrow' };
-    if (m.screen === 'host') return { kind: m.roomsT >= 1 && hostHit() ? 'hand' : 'arrow' };
     if (!m.panel && (overCharTag() || overPatchTag() || overCoinTag())) return { kind: 'hand' }; // the three corner tags
     if (!m.panel && menuHit() >= 0) return { kind: 'hand' };
     return { kind: 'arrow' };
   }
-  if (ladderWatch && state.mode !== 'title') return ladderWatchCursor(); // a watched bot match (js/ui/ladder.js)
   if (state.mode === 'dead') return { kind: deadHit() >= 0 || emoteHit() >= 0 || specHit() || rpCloseHit() ? 'hand' : 'arrow' };
   if (state.mode === 'drop') return { kind: 'arrow' };
   if (state.mode !== 'play') return { kind: 'arrow' };

@@ -69,8 +69,8 @@ initPlayers();
   netRelay(); // a ?relay= in the URL is remembered now, whether or not a role follows
   if (q) netSetup(q[1], netTransportFor(r ? r[1] : null)); else netSetup('solo');
 })();
-// ...and a page reloaded onto a room's seed to join it (joinRoom, js/ui/menu.js)
-// walks straight into the rooms screen with that join under way
+// ...and a page reloaded onto a party's seed to join it (joinRoom, js/ui/rooms.js),
+// a Steam invite, or a rematch walks straight into the party lobby with that join under way
 const JOIN_AT_BOOT = (function () { const j = /[?&]join=([A-Z0-9]+)/i.exec(location.search); return j ? j[1].toUpperCase() : null; })();
 // a saved match (js/sim/save.js): the valley as it grew is the baseline every
 // save is written against, and a load that reloaded onto its seed puts the
@@ -111,8 +111,8 @@ if (PRACTICE) {
   // pre-rolled character (js/ui/chars.js) - the title menu is behind it
   beginCreate(-1, true);
 }
-if (JOIN_AT_BOOT && !PRACTICE && PROFILE.hasChar()) { beginRooms(); state.menu.rsel = -2; netJoin(JOIN_AT_BOOT); rematchBootJoin(); }
-rematchBootHost(); // a host back from a match in a room: the room again, same people, same sides (js/ui/rooms.js)
+if (JOIN_AT_BOOT && !PRACTICE && PROFILE.hasChar()) partyBootJoin(JOIN_AT_BOOT); // the party screen, the join under way (js/ui/rooms.js)
+rematchBootHost(); // a leader back from a match: the party again, same people (js/ui/rooms.js)
 // landing from a reroll: the whiteout the die left behind clears to the new world
 try {
   if (sessionStorage.getItem('softfall.reroll')) {
@@ -680,17 +680,16 @@ function loop(nowMs) {
   perfFrame(rawDt);
   if (!window.DBG.freeze) {
     padPoll(dt);   // the sticks have no events: read them once a frame, before the steps
-    const spd = ladderWatch ? ladderWatch.speed : 1; // a watched bot match runs faster on request (js/ui/ladder.js)
-    tickAcc += dt * spd;
+    tickAcc += dt;
     let n = 0;
     const t0 = performance.now();
-    while (tickAcc >= TICK_DT - TICK_SLACK && n < TICK_MAX * spd) {
+    while (tickAcc >= TICK_DT - TICK_SLACK && n < TICK_MAX) {
       tweenMark();
       update(TICK_DT);
       tickAcc -= TICK_DT;
       n++;
     }
-    if (n === TICK_MAX * spd && tickAcc > 0) tickAcc = 0; // the stall's remainder is dropped, not owed
+    if (n === TICK_MAX && tickAcc > 0) tickAcc = 0; // the stall's remainder is dropped, not owed
     const t1 = performance.now();
     // a hidden page draws nothing: nobody can see it, and a minimised Steam
     // window would otherwise keep the GPU drawing 60 frames a second. Its sim

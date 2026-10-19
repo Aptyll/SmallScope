@@ -1057,7 +1057,7 @@ function respawnPlayer(p) {
   p.reset(false);
   burst(p.x, p.y - 2, '#f4f7ff', 16, 70, 0.5, true);
   sfxAt('place', p.x, p.y);
-  if (p === player && !ladderWatch) { // a watcher's camera stays on whoever it follows (js/ui/ladder.js)
+  if (p === player) {
     state.over = null;
     state.mode = 'play';
     state.spec = -1; // the camera returns to the local player, not whoever it was watching
@@ -1150,7 +1150,6 @@ function endSnapshot() {
 // the local player leaves the match, one way or the other: the overlay takes
 // the screen (mode 'dead'), the sim runs on underneath it
 function endMatch(how) {
-  if (ladderWatch) { ladderWatchOver(how); return; } // a watched bot match keeps its camera and keys (js/ui/ladder.js)
   // count a win only the first time this match resolves as won - a second
   // endMatch('won') (or a driver poking it) must not increment twice
   const awardWin = how === 'won' && state.over !== 'won';
@@ -1166,6 +1165,7 @@ function endMatch(how) {
   if (awardWin) PROFILE.addWin();
   // the coins: once per ending, on the same edges as the win and the loss sting
   if (awardWin || firstLoss) payMatchCoins(awardWin);
+  if (awardWin || firstLoss) rankResult(awardWin); // RANKED's rating (js/ui/rooms.js)
   state.mode = 'dead';
   state.deadView = 'menu';
   state.deadSel = 0;
