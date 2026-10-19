@@ -4,7 +4,7 @@
 // ghost, the held tool. Every walking thing's sprite pass ends up here.
 // ---- beasts, robots and the merchant --------------------------------------
 // The frame a beast is on: the clip it put itself in (ANIM_CLIPS,
-// js/wildlife.js - a graze, a gallop, a sit-up) and how far into it, wrapped
+// js/sim/wildlife.js - a graze, a gallop, a sit-up) and how far into it, wrapped
 // the long way round so any animT lands on a frame rather than off the end.
 function clipFrame(set, a) {
   const clip = set[a.clip] || set.idle;
@@ -18,10 +18,10 @@ function drawAnimal(a, ex, ey, now) {
   const px = Math.round(a.x - spr.width / 2 - ex);
   const gy = Math.round(a.y + 4 - spr.height - ey);
   drawCastShade(spr, px, gy); // the sun's shade, cut from this frame (ground.js), on the ground under a leap
-  const py = gy - rideLift(a); // a ridden deer's leap lifts it off its shade (js/wildlife.js)
+  const py = gy - rideLift(a); // a ridden deer's leap lifts it off its shade (js/sim/wildlife.js)
   drawSpriteFlash(spr, px, py, a.flash);
   // netted, snared, alight, marked: the same four tells a player wears, at
-  // this body's size (drawUnitStates, js/abilities.js). `top` (a bear's
+  // this body's size (drawUnitStates, js/sim/abilities.js). `top` (a bear's
   // frames) is the headroom its rear-up needs over the standing head: the
   // tells sit on the standing body, not on the box
   const ty = py + (spr.top || 0);
@@ -46,7 +46,7 @@ function drawAnimal(a, ex, ey, now) {
 // the same plate a hero wears (drawLevelBadge), because the number means
 // the same thing over either. The second bar is always worn: a wolf's
 // threat, bare track at rest and filling from the first flicker of
-// interest to the full bar it charges on (updateWolf, js/wildlife.js); a
+// interest to the full bar it charges on (updateWolf, js/sim/wildlife.js); a
 // deer's sprint and a rabbit's jink charge (updatePrey) in stamina white -
 // each is one, spent on the run and on the dash. Over the frame, the stun
 // stars or the noticed mark, never both. The bar's width is the kind's
@@ -139,7 +139,7 @@ function drawRobot(b, ex, ey, now) {
     ctx.restore();
   }
 
-  // the four shared tells, same as any other body (js/abilities.js)
+  // the four shared tells, same as any other body (js/sim/abilities.js)
   drawUnitStates(b, bx, by, spr.width, spr.height, now);
   drawHealthBar(b.x - ex, by - 4, b.hp, b.maxHp, 8, b.team, undefined, b);
   if (b.stunT > 0) drawStunStars(Math.round(b.x - ex), by - 9, b, 4);
@@ -152,7 +152,7 @@ function drawRobot(b, ex, ey, now) {
 // off the bird as a lift, the shared tells, and a MERCH nameplate in the
 // side's paint - a name, the one text a body over the world gets (the bird it
 // drives wears PERCH the same way, drawEagle in eagle.js). NO HEALTH BAR: it
-// has no health to draw (the `merchant` banner, js/robots.js), and a full bar
+// has no health to draw (the `merchant` banner, js/sim/robots.js), and a full bar
 // that can never move would promise a fight that is not on offer.
 function drawMerchant(b, ex, ey, now) {
   const set = SPRITES.merchant[skin(b.team)];
@@ -275,7 +275,7 @@ function atFeet(x, y, sc, fn) {
   ctx.restore();
 }
 
-// The class body's run and dodge roll are the doll's frames (js/sprites/motion.js,
+// The class body's run and dodge roll are the doll's frames (js/baked/motion.js,
 // baked in every paint by characters.js), each wider than the 16x16 cell, which
 // sits at SPRITES.motionBox's (x, y) inside it. The run plays RUN_STEP frames per
 // step of animT - eight frames, two steps, 18 a second at a walk's 9 - and a roll
@@ -299,7 +299,7 @@ function rollFrame(prog) {
 
 const MOUNT_BAR_ROWS = 1; // rows a rider's frame stands higher to hang the deer's bar under the stamina
 const MOUNT_BAR_COL = '#c98f52'; // that bar's fill: the deer's own coat tan, never the rider's colour
-// A deer's rider sits IN the deer (RIDE, js/wildlife.js): the cell sinks
+// A deer's rider sits IN the deer (RIDE, js/sim/wildlife.js): the cell sinks
 // until its row `hip` meets the back at the seat column, which sits toward
 // the rump, and nothing of the body from that row down is drawn - the deer's
 // own back line is the rider's lower edge, so the legs are out of sight
@@ -337,7 +337,7 @@ function drawPlayer(p, ex, ey, now) {
   const set = lying ? classSet(p).prone[p.dir] : classSet(p)[p.dir];
   let frame = 0;
   // upright, a body strides only while it covers ground on its own feet - the
-  // sim's own test for stepping animT on (updatePlayer, js/sim.js) - so a
+  // sim's own test for stepping animT on (updatePlayer, js/sim/sim.js) - so a
   // shift-slide and a push against a wall stand, and a zipline's rider hangs still
   const striding = p.moving && p.zip < 0 && !p.mount && !p.sliding && Math.hypot(p.vx, p.vy) > 8; // ...and a deer's rider sits
   if (lying) frame = p.moving ? 1 + (Math.floor(p.crawlT) % 2) : 0;
@@ -346,12 +346,12 @@ function drawPlayer(p, ex, ey, now) {
   // is - the rope and handle over its head are the cable pass's (drawZips)
   const zl = p.zip >= 0 ? ZIP_ALT : 0;
   // a deer's rider: the body sits in the deer's back (riderSeat) and rides
-  // its leap (rideLift, js/wildlife.js); the deer casts the shadow
+  // its leap (rideLift, js/sim/wildlife.js); the deer casts the shadow
   const seat = p.mount ? riderSeat(p) : null;
   const rl = rideLift(p) + (seat ? seat.lift : 0);
   let spr = set[frame];
   // the fish catch: three DOWN-facing frames whatever the body faces
-  // (catchFrame, js/tools.js). The hoist frame is 20 tall on the same feet,
+  // (catchFrame, js/sim/tools.js). The hoist frame is 20 tall on the same feet,
   // which is what `sy` below pays for
   const catchF = !lying && p.fallT <= 0 && p.dodgeT <= 0 ? catchFrame(p) : -1;
   if (catchF >= 0) { const cs = classSet(p); spr = (p.catchKind === 'sunfish' && cs.catchSun || cs.catch)[catchF]; }
@@ -450,7 +450,7 @@ function drawPlayer(p, ex, ey, now) {
   } else {
     // a cast, the net shot's recoil hop or the rush lean is performed BY the
     // body: the pose shifts / tilts the sprite itself (abilityPose,
-    // js/abilities.js), so an ability visibly happens to the model
+    // js/sim/abilities.js), so an ability visibly happens to the model
     const pose = state.mode !== 'title' ? abilityPose(p) : null;
     const bob = seat ? seat.bob : 0; // a rider rises and falls with the gallop, the plate holds still
     const ax = px + (pose ? pose.dx : 0), ay = py + (pose ? pose.dy : 0) - zl + bob;
@@ -495,7 +495,7 @@ function drawPlayer(p, ex, ey, now) {
     ctx.globalAlpha = 1;
     if (held && !toolBehind) atFeet(fx0, fy0, wsc, () => drawHeldTool(p, px, py + bob));
     // what an ability left ON this body - shield, net, jaws, fury, mark -
-    // drawn over the sprite for every side alike (js/abilities.js)
+    // drawn over the sprite for every side alike (js/sim/abilities.js)
     if (state.mode !== 'title') atFeet(fx0, fy0, wsc, () => drawAbilityOnPlayer(p, ax, ay, now));
     if (zl) drawZipHandle(p, Math.round(p.x - ex), sy, ey); // the handle over the head and the rope up to the cable (js/draw/zipline.js)
     // and the snow goes on last, over body and bow alike
@@ -530,10 +530,10 @@ function drawPlayer(p, ex, ey, now) {
   // fx is the stack's own centre column - the body's, shifted by FRAME_DX so
   // the frame straddles the sprite. Everything in the frame hangs off it.
   const fx = Math.round(p.x - ex) + FRAME_DX;
-  // a dawn shield (pickSnowdrop, js/actions.js) adds its own row straight
+  // a dawn shield (pickSnowdrop, js/sim/actions.js) adds its own row straight
   // above the hp bar, and everything that sat above the bar - the draw meter,
   // the name, a callout - stands SHIELD_LIFT rows higher while it holds; the
-  // orca's count (js/orca.js) stands over the frame the same way, over the shield's
+  // orca's count (js/sim/orca.js) stands over the frame the same way, over the shield's
   const shL = p.dawnShield > 0 ? SHIELD_LIFT : 0, line = orcaLine(p);
   const lift = shL + (line > 0 ? ORCA_COUNT_LIFT : 0);
   callTag(p, Math.round(p.x - ex), hy - 18 - lift); // a bot's callout hangs over the name (js/draw/callouts.js)
@@ -588,7 +588,7 @@ function drawPlayer(p, ex, ey, now) {
     // frame row with it, in the deer's coat tan (MOUNT_BAR_COL) - in the
     // side's colour it read as a second copy of the rider's own bar. The
     // rider's bar above says the side the deer is on while ridden (unitFoe,
-    // js/actions.js); the deer's damage total wears the tan too
+    // js/sim/actions.js); the deer's damage total wears the tan too
     if (p.mount) {
       const cx = p.x - ex + FRAME_DX; // the column the rider's own bars hang off
       drawHealthBar(cx, hy - 1, p.mount.hp, p.mount.maxHp, 14, p.team, MOUNT_BAR_COL);
@@ -627,7 +627,7 @@ function drawPlayer(p, ex, ey, now) {
     // hp backing (frame top at hy-11, fill hy-10..-9) and the hp backing's top
     // row hy-8 is the frame-colour gap row, so the frame stays one outline.
     // The same slot carries the renock cooldown when the bow is not drawn, AND
-    // the meal being chewed (js/core.js) - the three states of one pair of
+    // the meal being chewed (js/sim/core.js) - the three states of one pair of
     // hands, and never two at once, since a meal puts the bow down and blocks
     // the draw for its whole length. So one strip above a head answers the only
     // question a fight asks about it: gold filling = drawing (a shot is coming),
@@ -827,13 +827,13 @@ function drawHeldTool(p, px, py) {
     ctx.restore();
   }
 
-  // the weapon's art points its business end along TOOL_FWD (js/tools.js);
+  // the weapon's art points its business end along TOOL_FWD (js/sim/tools.js);
   // rotating by the aim (or the facing) minus that puts the arrowhead, the
   // sword's point or the sling's stone toward where its owner is looking
   const wDef = weapon ? TOOLS[toolIdOf(weapon.type)] : null;
   const fwd = wDef ? TOOL_FWD[wDef.art] || 0 : 0;
   // the blade at its real length, where the art has one (TOOL_HELD_ART,
-  // js/tools.js); everything else is its bag icon
+  // js/sim/tools.js); everything else is its bag icon
   const wHeld = wDef ? SPRITES['toolHeld_' + wDef.art + '_' + wDef.tier] || wIcon : null;
 
   // THE SWING: a blade mid-cut is swung through its whole wedge, pivoting at

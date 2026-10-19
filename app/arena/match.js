@@ -45,7 +45,7 @@ function playMatch(opts) {
   const levels = L.AI_LEVELS;
   if (o.kind === 'level') g.run(`player.ai.prof = AI_LEVELS[${o.proxy | 0}];`);
   else for (const p of L.players) p.ai.prof = levels[p.team === 0 ? o.a : o.b];
-  // bot files (js/bots/api.js, docs/bots/): `bots` adds programs to the
+  // bot files (js/ai/bot-api.js, docs/bots/): `bots` adds programs to the
   // library ({ id: source text }) beside the baked examples, `seats` says who
   // plays where ({ seat: id }). Every file runs sealed in a vm context of its
   // own (sandbox.js), the baked examples too, so no seat can read the game
@@ -98,7 +98,7 @@ function playMatch(opts) {
   const sampleTicks = Math.max(1, Math.round(o.sampleEvery / T));
   const pKeys = ['x', 'y', 'hp', 'maxHp', 'dead', 'level', 'gold', 'dmg', 'hurt', 'siege', 'kills', 'deaths', 'act', 'goal'];
   // gold that comes whatever a body does - the clock's trickle (TRICKLE_*,
-  // js/sim.js) and a side's generators - is not work: a window has to earn
+  // js/sim/sim.js) and a side's generators - is not work: a window has to earn
   // more than this before it counts
   const passive = g.run('TRICKLE_GOLD * Math.ceil(' + o.sampleEvery + ' / TRICKLE_T)') + 1;
   const samples = [];
@@ -172,7 +172,7 @@ function playMatch(opts) {
   try {
     while (ticks < maxTicks) {
       // seat 0 dying puts the page in 'dead' (the respawn overlay), which
-      // stops the match clock and the day with it (update, js/sim.js). A human
+      // stops the match clock and the day with it (update, js/sim/sim.js). A human
       // watching their respawn is still in a match that runs on, so the
       // harness keeps the page in 'play' until the respawn does it itself.
       if (L.state.over === 'respawning' && L.state.mode === 'dead') L.state.mode = 'play';
@@ -198,7 +198,7 @@ function playMatch(opts) {
     id: p.id, kills: p.kills, deaths: p.deaths, dmg: Math.round(p.dmgOut), siege: Math.round(p.dmgBird + p.dmgStruct),
     gold: Math.round(p.xp), level: p.level, dist: Math.round(dist[i]), acts: act[i], goals: goals[i],
   }));
-  // a bot file's health at the whistle (js/bots/api.js): how often it threw
+  // a bot file's health at the whistle (js/ai/bot-api.js): how often it threw
   // or answered nothing usable, so a ladder can flag a broken entry
   for (const s of seats) {
     const r = s.ctrl === 'scripted' && G.BOTS.rt.get(s.id);

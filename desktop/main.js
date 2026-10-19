@@ -71,7 +71,7 @@ function createWindow() {
   if (args.net) query.net = args.net;
   if (args.join) { query.net = 'client'; query.lobby = args.join; }
   if (args.relay) query.relay = args.relay;           // the match relay (host:port); remembered by the page
-  if (connectLobby && !args.join) query.join = connectLobby; // the page joins it from boot (JOIN_AT_BOOT, js/boot.js)
+  if (connectLobby && !args.join) query.join = connectLobby; // the page joins it from boot (JOIN_AT_BOOT, js/app/boot.js)
   // a launch with Steam up rides Steam's lobbies (Noah's ruling, 2026-10-14):
   // a player's own machine runs no relay. --transport=relay or a --relay=ADDR
   // keeps the relay; with Steam down the page plays solo or dials a relay

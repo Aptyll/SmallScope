@@ -193,7 +193,7 @@ const scenes = [
     stage: `(function () { ${PROLOGUE}; ${OPEN};
       const S = openBattle({ zoom: 1.3333, gap: 200, span: 150, warm: 70 });
       __M.stageBegin();
-      // IMPOSSIBLE picks the weakest rival (AI_LEVELS, js/ai-skill.js), so one wounded
+      // IMPOSSIBLE picks the weakest rival (AI_LEVELS, js/ai/ai-skill.js), so one wounded
       // body is all it takes to turn a whole side onto it
       const mark = S.B.foes.filter(function (p) { return p.name === 'THORNE'; })[0] || S.B.foes[3];
       for (const p of S.B.mine) if (p.ai && p.ai.prof) p.ai.prof.pick = 'weak';

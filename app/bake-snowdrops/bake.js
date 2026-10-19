@@ -1,4 +1,4 @@
-// Bakes the meadow snowdrops into js/sprites/snowdrops.js.
+// Bakes the meadow snowdrops into js/baked/snowdrops.js.
 //
 //   python3 app/bake-snowdrops/paint.py   (repaints the atlases; numpy, Pillow)
 //   node app/bake-snowdrops/bake.js
@@ -19,7 +19,7 @@ const path = require('path');
 const zlib = require('zlib');
 
 const HERE = __dirname;
-const OUT = path.join(HERE, '..', '..', 'js', 'sprites', 'snowdrops.js');
+const OUT = path.join(HERE, '..', '..', 'js', 'baked', 'snowdrops.js');
 let CELL = 0; // px a cell, read off the still atlas (three states wide)
 const CHARS = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 
@@ -111,7 +111,7 @@ for (let v = 0; v < rows; v++) {
 
 const grid = (g, pad) => '[\n' + g.map((r) => pad + "  '" + r + "',").join('\n') + '\n' + pad + ']';
 let src = `'use strict';
-// The meadow snowdrops (OBJECTS.snowdrop, js/world.js): SPRITES.snowdrop[variant]
+// The meadow snowdrops (OBJECTS.snowdrop, js/sim/world.js): SPRITES.snowdrop[variant]
 // = { closed: [lean -1, 0, +1], open: [lean -1, 0, +1], picked: [one frame],
 // glow: [lean -1, 0, +1][phase], bell: [lean -1, 0, +1], at: [lean -1, 0, +1] },
 // ${CELL}x${CELL} cells with the feet at (${CELL / 2}, ${CELL - 2}).

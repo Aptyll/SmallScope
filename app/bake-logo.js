@@ -1,4 +1,4 @@
-// Bakes docs/media/logos/mainMenuSoftfall.png into js/logodata.js as a PNG
+// Bakes docs/media/logos/mainMenuSoftfall.png into js/baked/logodata.js as a PNG
 // data URL, keyed out of its sky, trimmed and shrunk SHRINK times, so the
 // title's logo works with no server at all - opening index.html
 // off the disk is a first-class way to run this game, and an <img> read off a
@@ -24,7 +24,7 @@ const zlib = require('zlib');
 
 const ROOT = path.join(__dirname, '..');
 const SRC = path.join(ROOT, 'docs', 'media', 'logos', 'mainMenuSoftfall.png');
-const OUT = path.join(ROOT, 'js', 'logodata.js');
+const OUT = path.join(ROOT, 'js', 'baked', 'logodata.js');
 const OUTLINE_MAX = 70; // a channel above this is not outline navy
 const SHRINK = 4;       // source px per baked px
 const PROBE = process.argv.includes('--probe');

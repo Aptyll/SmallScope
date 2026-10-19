@@ -1,5 +1,5 @@
 'use strict';
-// The story landmarks on the ground (LANDMARKS, js/landmarks.js).
+// The story landmarks on the ground (LANDMARKS, js/sim/landmarks.js).
 // ------------------------------------------------------------ landmarks
 // A landmark's anchor is the front-left tile of its footprint: the sprite is
 // centred over the footprint's width and stands on the anchor's foot row,

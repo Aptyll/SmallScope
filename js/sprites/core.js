@@ -57,7 +57,7 @@ window.SPR = (() => {
   // wears the same two names at least: `idle` is what it does standing still
   // and is the frame anything asking for "the beast" takes (the wiki's cards
   // read `.right.idle[0]`). Which clip is playing is the animal's business,
-  // not the sprite's - js/wildlife.js sets `a.clip`, drawAnimal plays it.
+  // not the sprite's - js/sim/wildlife.js sets `a.clip`, drawAnimal plays it.
   function bakeClips(clips, pal) {
     const out = {};
     for (const k in clips) out[k] = clips[k].map((f) => bake(f, pal));
@@ -89,7 +89,7 @@ window.SPR = (() => {
   // TEAM_PALETTES are the COLOUR BLIND dropdown's four answers (settings.teamPal): the
   // same two presets repainted for a player who cannot tell the default pair
   // apart. Slot 0 is the side your screen paints as the rival, slot 1 yours
-  // (skin(), js/player.js). RED-GREEN is orange against blue (the pair both
+  // (skin(), js/sim/player.js). RED-GREEN is orange against blue (the pair both
   // red-green blindnesses keep apart), BLUE-YELLOW vermilion against cyan
   // (the pair a tritan keeps apart) and CONTRAST pale gold against a dark
   // blue, apart on brightness alone. Every rival hat drops the default teal,

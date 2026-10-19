@@ -144,7 +144,7 @@ const PROLOGUE = `(function(){
 })()`;
 
 // A rival body to shoot, stomp, rush or loot. `remote` is the control mode
-// that matters: 'none' is a GHOST at its camp (js/player.js) and draws as a
+// that matters: 'none' is a GHOST at its camp (js/sim/player.js) and draws as a
 // pale silhouette with no plate, while a remote human with no inputs arriving
 // is a solid, named, inert body - exactly what a staged scene wants.
 const RIVAL = `function rival(x, y, opts) {
@@ -368,7 +368,7 @@ const scenes = [
     })()`,
     roll: `__M.step = function () { state.dropBrief = null; __M.clearInput(player); };
     __M.cam = function () {
-      // the ride pins DROP_ZOOM every step (applyZoom, js/sim.js); at 16:9 the
+      // the ride pins DROP_ZOOM every step (applyZoom, js/sim/sim.js); at 16:9 the
       // widest rung is 60 x 34 tiles and the bird crosses a vista, so the shot
       // takes that framing rather than fighting it
       __M.forceZoom(0.6667);
@@ -434,7 +434,7 @@ const scenes = [
       const t = __M.nearObj(W.grove.tx, W.grove.ty, 'tree', 9);
       const c = __M.tile(t.tx, t.ty);
       // Out of reach to begin with: a tree in reach is struck with no key at
-      // all (auto-work, js/actions.js), so a body standing beside one has it
+      // all (auto-work, js/sim/actions.js), so a body standing beside one has it
       // down before the clip has a beat to breathe. It walks in from the left
       // instead, and stops a stride short of the trunk.
       __M.place(c.x - 58, c.y + 2);
@@ -819,7 +819,7 @@ const scenes = [
       // Three buried caches out of the treeline, stood in a row on open snow
       // in front of it so each spill reads: gold straight into the purse, a
       // card, and a tool or bit rolled up to the TOP tier (hitObject's
-      // chest branch, js/actions.js). A chest is an AUTO target, so the hands
+      // chest branch, js/sim/actions.js). A chest is an AUTO target, so the hands
       // spring each one the moment it is in reach.
       const row = [-6, -1, 4];
       for (const dx of row) placeObj(W.lane.tx + dx, W.lane.ty, 'chest', { hp: 1 });
@@ -1266,7 +1266,7 @@ const scenes = [
         const q = DBG.zipPoint(S.z, player.zip >= 0 ? player.zipD : 0);
         if (!on && t > 0.35) { player.input.jump = true; on = true; }
         // the stick held ALONG the cable, toward the front: that is what picks
-        // the direction (zipStart / zipStep, js/zipline.js)
+        // the direction (zipStart / zipStep, js/sim/zipline.js)
         if (player.zip >= 0) __M.walk(q.tx, q.ty);
         __M.aim(player.x + q.tx * 80, player.y + q.ty * 80);
       };

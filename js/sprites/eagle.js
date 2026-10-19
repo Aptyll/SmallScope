@@ -4,7 +4,7 @@
 // screen's cards (SPRITES.birdSkinIcon).
 
 // The bird's skins: what each one IS for the skins screen (js/ui/skins.js)
-// and the purse (js/profile.js) - an id kept in a profile, a name, a rarity
+// and the purse (js/app/profile.js) - an id kept in a profile, a name, a rarity
 // (SKIN_RARITY, js/ui/skins.js: the card's colour) and a price in coins. The
 // first row is free and is what every bird wears by default.
 const BIRD_SKINS = [

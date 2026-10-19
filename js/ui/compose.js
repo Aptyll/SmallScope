@@ -179,7 +179,7 @@ function drawTags() {
   // the sampled sound bank: decoded / asked for. Red on anything missing,
   // because an empty bank is silent in exactly the way a mis-wired cue is -
   // every sampled sound falls back to the old synth line and the game sounds
-  // untouched. See js/audio.js loadBank().
+  // untouched. See js/app/audio.js loadBank().
   const bs = SFX.banked();
   line('SFX', bs.got + '/' + bs.want, bs.got < bs.want ? '#ff9a8a' : '#f4f7ff');
   if (state.mode !== 'title') {

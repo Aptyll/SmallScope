@@ -5,13 +5,13 @@
 // prisms thrust up through the slabs, a SUNSTONE is a black obelisk seamed
 // with amber and ringed with amber shards. Look B of
 // docs/media/concepts/rock-concepts-1.png (A boulders, B standing crags,
-// C strata ledge). Every rock is two tiles wide (OBJECTS.rock's w, js/world.js)
+// C strata ledge). Every rock is two tiles wide (OBJECTS.rock's w, js/sim/world.js)
 // and drawn from its anchor, the footprint's west tile, feet on the tile's
 // bottom edge. The grids came off the concept generator (faceted stone lit
 // from the upper left, the sun's side) and are kept here verbatim.
 //
 // Each kind has three more things baked beside it:
-//   rockSpent[k]  - the rubble it leaves while it regrows (ROCK_KINDS, js/mining.js)
+//   rockSpent[k]  - the rubble it leaves while it regrows (ROCK_KINDS, js/sim/mining.js)
 //   rockCracks[k] - three overlays drawn in stages as a rock is mined
 //   rockGlints[k] - the pixels a glint may flash on (the crystal's and the
 //                   amber's brightest), which the draw pass picks among

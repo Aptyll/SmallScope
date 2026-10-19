@@ -39,7 +39,7 @@ Rules that make a sheet honest:
    `sheet.py`, look at it yourself at full size.
 3. Hand it over with one line per letter plus your pick and why. **Stop and wait** for the letter.
 4. Polish only the pick. To ship it, its painter becomes a bake script under `app/bake-<thing>/`
-   that writes the generated sprite file under `js/sprites/` (never hand-edited, as bears.js and
+   that writes the generated sprite file under `js/baked/` (never hand-edited, as bears.js and
    robot.js), a team-painted set bakes inside `SPR.onTeams`, and the pick's sheet is saved to
    `docs/media/concepts/<thing>-concepts-<round>.png`. Verify in game at a close-up
    (`DBG.setK(6, true)`, `DBG.hideUI = true`), update [docs/dev/sprites.md](../../../docs/dev/sprites.md),

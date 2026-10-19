@@ -38,9 +38,9 @@ function wheelOptions() {
   // straight up - picking one IS the roll (or the ring), so neither carries
   // a separate go wedge
   if (w.kind === 'pkdie') return [{ id: 'easy' }, { id: 'medium' }, { id: 'hard' }];
-  if (w.kind === 'agbell') return AG_WEDGES.map((id) => ({ id })); // one wedge per round (js/practice.js)
+  if (w.kind === 'agbell') return AG_WEDGES.map((id) => ({ id })); // one wedge per round (js/sim/practice.js)
   // the MOUSE scheme's action wheel: the four abilities clockwise from the
-  // top, then the two meals and the flag (MS_WHEEL, js/input.js)
+  // top, then the two meals and the flag (MS_WHEEL, js/app/input.js)
   if (w.kind === 'kit') return MS_WHEEL.map((id) => ({ id }));
   // upgrade is always the wedge straight up and demolish always the last one,
   // with repair between them. A site still going up (w.site, fixed when the
@@ -90,7 +90,7 @@ function wheelLayout() {
 function resolveWheel() {
   const w = state.wheel;
   const L = wheelLayout();
-  // the action wheel performs its own pick (msKitPick, js/input.js); only its
+  // the action wheel performs its own pick (msKitPick, js/app/input.js); only its
   // own release stands the flag wheel up, so any other close drops that wedge
   if (w.kind === 'kit') { if (L.seg >= 0 && MS_WHEEL[L.seg] !== 'flag') msKitPick(w, L.seg); return; }
   // the piece wheel is the build key's alone: its release (buildKeyRelease)
@@ -158,13 +158,13 @@ function runCmd(p, c) {
     return placeStruct(c.tx, c.ty, c.id, p, c.rot); // rot: the list's R (a wheel's order is unturned)
   }
   // the flag: per-player state, planted anywhere on the map (no reach, no
-  // contest); id null is the lift (the `team flags` banner, js/robots.js)
+  // contest); id null is the lift (the `team flags` banner, js/sim/robots.js)
   if (c.kind === 'flag') { if (c.id) plantFlag(p, c.tx, c.ty, c.id); else clearFlag(p); return true; }
-  if (c.kind === 'tunnel') return digTunnel(p, c.tx, c.ty); // a burrow's near hole (js/tunnel.js) - it checks its own reach
-  if (c.kind === 'rack') { rackEquip(p, c); return true; } // the practice armory (js/practice.js)
-  if (c.kind === 'pkdie') { pkWheelPick(p, c); return true; } // the parkour roll die (js/practice.js)
-  if (c.kind === 'agbell') { agRing(p, c); return true; } // the archery range's bell (js/practice.js)
-  if (c.kind === 'cheat') return cheatCmd(p, c); // the practice bar (js/practice.js, js/ui/cheats.js)
+  if (c.kind === 'tunnel') return digTunnel(p, c.tx, c.ty); // a burrow's near hole (js/sim/tunnel.js) - it checks its own reach
+  if (c.kind === 'rack') { rackEquip(p, c); return true; } // the practice armory (js/sim/practice.js)
+  if (c.kind === 'pkdie') { pkWheelPick(p, c); return true; } // the parkour roll die (js/sim/practice.js)
+  if (c.kind === 'agbell') { agRing(p, c); return true; } // the archery range's bell (js/sim/practice.js)
+  if (c.kind === 'cheat') return cheatCmd(p, c); // the practice bar (js/sim/practice.js, js/ui/cheats.js)
   const o = structOf(objAt(c.tx, c.ty));
   if (!o || !STRUCTS[o.type] || !ownsStruct(o, p)) return false;
   if (Math.hypot(c.tx * TILE + 8 - p.x, c.ty * TILE + 8 - p.y) > 60) return 'far';
@@ -224,7 +224,7 @@ function drawWorkHint(ox, oy) {
   if (player.charging || player.fallT > 0 || player.dodgeT > 0 || player.zip >= 0) return; // a rider's hands are full, and the cable is the only thing E does
   if (player.mount) return; // on deer-back E is the hop off, and the deer under you says so
   if (hoverFish()) return; // the fish brackets win over CRACK ICE on the same tile
-  // a MERCHANT in reach owns the key outright (keyPress, js/input.js), so its
+  // a MERCHANT in reach owns the key outright (keyPress, js/app/input.js), so its
   // cap is the one that shows - trunk under the aim or not
   if (drawShopHint(ox, oy)) return;
   // ...then a zipline overhead, the key's next claim (keyPress again)
@@ -275,11 +275,11 @@ function drawWorkHint(ox, oy) {
 // Every keybind indicator - a cap beside a verb, a number in a well's
 // corner, the ESC hint under a slab - names an ACTION (KEY_ACTIONS,
 // input.js), never a key: on the keyboard it prints whatever key the action
-// is bound to (keyCap), and with a pad in hand (padActive, js/gamepad.js)
+// is bound to (keyCap), and with a pad in hand (padActive, js/app/gamepad.js)
 // the same indicator wears the pad's button instead, so what the player is
 // holding is what the screen points at. This table is the action -> pad
 // glyph map, one row per action the HUD ever prints, and it mirrors
-// PAD_PLAY / PAD_MENU (js/gamepad.js) - a change there is a row here; esc,
+// PAD_PLAY / PAD_MENU (js/app/gamepad.js) - a change there is a row here; esc,
 // enter, click and move are the fixed few. The glyph kinds are
 // drawPadGlyph's (panels.js), the same pictures the CONTROLS page lists.
 const PAD_BIND = {
@@ -386,7 +386,7 @@ function promptW(verb, action) {
 }
 
 // The zipline's prompt: a bare cap, no verb, over the cable at the body's own
-// column while it stands under either side's line (zipNear, js/zipline.js - the
+// column while it stands under either side's line (zipNear, js/sim/zipline.js - the
 // resolver keyPress clips on with). The cable overhead is the whole
 // affordance; the cap only says which key takes it.
 function drawZipHint(ox, oy) {
@@ -399,7 +399,7 @@ function drawZipHint(ox, oy) {
 }
 
 // The deer's prompt, the zipline's grammar: a bare cap over the back of the
-// wild deer in reach (rideNear, js/wildlife.js - the resolver keyPress hops
+// wild deer in reach (rideNear, js/sim/wildlife.js - the resolver keyPress hops
 // on with). The deer is the affordance; the cap only says which key takes it.
 function drawRideHint(ox, oy) {
   const a = rideNear(player);
@@ -411,7 +411,7 @@ function drawRideHint(ox, oy) {
 const RIDE_HINT_Y = 56; // px above a deer's feet: clear of its plate and its noticed mark
 
 // The practice armory's prompt: PROXIMITY, not hover - standing beside the
-// rack is the whole gesture (rackNear, js/practice.js), so the E ARM cap rises
+// rack is the whole gesture (rackNear, js/sim/practice.js), so the E ARM cap rises
 // over the rack itself the moment you are in reach, wherever the pointer is.
 // Pressing E opens the wheel, which hides every hint including this one.
 function drawRackHint(ox, oy) {
@@ -424,7 +424,7 @@ function drawRackHint(ox, oy) {
 }
 
 // The parkour die's prompt, the rack's own proximity grammar: an E ROLL cap
-// over the die while it is in reach (pkDieNear, js/practice.js - the same
+// over the die while it is in reach (pkDieNear, js/sim/practice.js - the same
 // resolver the wheel-open press uses). Holding E opens the roll wheel, which
 // hides every hint including this one.
 function drawPkHint(ox, oy) {
@@ -437,7 +437,7 @@ function drawPkHint(ox, oy) {
 }
 
 // The range bell's prompt, the die's own proximity grammar: an E RING cap
-// over the bell while it is in reach (agBellNear, js/practice.js - the same
+// over the bell while it is in reach (agBellNear, js/sim/practice.js - the same
 // resolver the wheel-open press uses). Holding E opens the difficulty
 // wheel, which hides every hint including this one. Only while the range
 // is idle - mid-round the bell is under the snow.
@@ -473,7 +473,7 @@ function drawShopHint(ox, oy) {
 
 // hovering a fish: white brackets on the fish (the same "this reacts" cue as
 // stumps), full-bright once it is inside the automatic catch's reach (autoFish,
-// js/tools.js) and dimmed until then - the mechanic is standing on the ice
+// js/sim/tools.js) and dimmed until then - the mechanic is standing on the ice
 // beside it, and the brackets' brightness is the whole of that hint
 function drawFishHint(ex, ey, now) {
   if (state.mode !== 'play' || state.mapOpen || state.settingsOpen || state.wheel) return;
@@ -678,7 +678,7 @@ function renderWheel(now) {
 }
 
 // ---- the action wheel's wedges ------------------------------------------
-// The MOUSE scheme's wheel (msWheelPress, js/input.js) wears what the strip
+// The MOUSE scheme's wheel (msWheelPress, js/app/input.js) wears what the strip
 // wears: an ability's own icon at half size, dark where it cannot cast yet
 // (locked or waiting), a meal's bag icon, dark with none in the bag, and
 // the flag's pennant in the side's ink.
@@ -714,7 +714,7 @@ function kitLabel(id) {
 // tap again puts it away. HOLDING T opens the
 // PIECE WHEEL over the pointer - every buildable round the ring, the manage
 // wheel's own grammar - and the release on a wedge picks it and opens the
-// list on it (keyRelease, js/input.js), so the hand never leaves WASD. In the
+// list on it (keyRelease, js/app/input.js), so the hand never leaves WASD. In the
 // column, one row a piece: its icon and its price, the picked row lit, a
 // price you cannot pay in red - and, on a piece that turns, the rotate key's
 // cap. The mouse wheel walks the rows, a click picks one, and a hover prints
@@ -777,7 +777,7 @@ function buildListHit(mx, my) {
 // seated on the roost
 function buildCanOpen() { return !state.mapOpen && !state.settingsOpen && !player.dead && !player.aboard; }
 // THE ONE WAY THE LIST OPENS AND SHUTS - a tap of the build key (keyRelease,
-// js/input.js); it opens on the last piece
+// js/app/input.js); it opens on the last piece
 // picked. `sel` opens it on that row instead (the piece wheel's pick), and
 // never shuts it.
 function toggleBuild(sel) {

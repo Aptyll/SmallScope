@@ -5,7 +5,7 @@ of 1/60 s. A tile is 16 px; the world is `hello.map.world` tiles square. Teams a
 the roster's real index (the game paints your own side blue on screen; the API never does).
 Seats are `0..9`; seat `i` is on team `i % 2`.
 
-The host side is [js/bots/api.js](../../js/bots/api.js); a field here that disagrees with it is
+The host side is [js/ai/bot-api.js](../../js/ai/bot-api.js); a field here that disagrees with it is
 a bug in this page.
 
 ## The file
@@ -224,7 +224,7 @@ ROAM WOLF`; any other word shows plain. Target kinds: `player`, `soldier`, `bird
 ## Hands
 
 Every scripted seat aims with the same hands, the game's HARD bots' (`AI_LADDER_HANDS`,
-js/ai-skill.js):
+js/ai/ai-skill.js):
 
 | crosshair speed | wobble | a drawn shot |
 | --- | --- | --- |

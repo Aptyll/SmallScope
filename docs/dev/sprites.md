@@ -1,7 +1,7 @@
 # Working on sprites
 
 How the ASCII-grid sprite system works and which sprites share grids with which. Read this before
-editing anything under [js/sprites/](../../js/sprites/) — the shape of a sprite file, and which
+editing anything under [js/sprites/](../../js/sprites/) or [js/baked/](../../js/baked/) — the shape of a sprite file, and which
 file holds what, is at the end.
 
 Sprites are literal ASCII grids paired with a palette object mapping character → hex (or `null`
@@ -24,7 +24,7 @@ a dedicated icon grid baked into `teamBuild[team].icon` (the turret's, the bay's
 
 **The gold pump** is the generator, a pump jack on a 4x2 tile pad, painted in code by
 `app/bake-pump/pump.py` with the cutout painter (app/media/paint.py) and baked by
-`python3 app/bake-pump/bake.py` into `js/sprites/pump.js` (never hand-edit it). Each tier is one
+`python3 app/bake-pump/bake.py` into `js/baked/pump.js` (never hand-edit it). Each tier is one
 stroke of 8 frames (the crank turns, the pitman rocks the beam, a glint runs down the pipe, the
 barrel's gold bobs): planks, then stone flags with the team band and a pennant, then a gold beam,
 head and barrel. The team paint is `k`/`K`/`e`, baked inside `SPR.onTeams` into
@@ -75,13 +75,13 @@ either team's paint. `catchSun` is the same three frames over `CATCHPAL_SUN`, th
 when `p.catchKind` is `sunfish`. The hoist is **16x20**: four rows of fish above the hat on the same feet, which is why
 `drawPlayer` draws a hand-drawn frame at `ay + (16 - spr.height)` and lifts the overhead stack 4 px while it
 is up. Look A off `docs/media/concepts/fish-catch-concepts-1.png`; which frame shows and for how long
-is `catchFrame` / `CATCH_T` in [js/tools.js](../../js/tools.js) - [fishing](world.md#ice-holes-and-fishing).
+is `catchFrame` / `CATCH_T` in [js/sim/tools.js](../../js/sim/tools.js) - [fishing](world.md#ice-holes-and-fishing).
 
 ## The run and the roll
 
 **The run, the held run and the dodge roll are the one set of player frames not typed by hand.**
 [app/bake-player/](../../app/bake-player/) paints them off a jointed doll of each class body and
-writes them to js/sprites/motion.js as char grids in characters.js's own letters, so `motionSet`
+writes them to js/baked/motion.js as char grids in characters.js's own letters, so `motionSet`
 bakes them through the same team and look palettes as every hand-drawn pose: `run[dir]`,
 `hold[dir]` and `roll[dir]` sit beside the walking directions, `left` the mirror of `right`.
 They are look A, TUCK TUMBLE, and C, SPRINT, off
@@ -269,7 +269,7 @@ the side's colour and the passage open below. It is look **C**, "raised portcull
 `drawHeldTool()` (inside a translate/rotate, resolved through `SPRITES[t.icon]` from the
 `SWING_TOOLS` table) and by `drawRobot()` for a bot's swing — E picks the tool, there is no tool
 bar. At rest `drawHeldTool()` draws the **weapon on the selected slot** instead, which is a 12×12
-`toolArt_*` canvas baked in [js/tools.js](../../js/tools.js) rather than here; both sizes go
+`toolArt_*` canvas baked in [js/sim/tools.js](../../js/sim/tools.js) rather than here; both sizes go
 through the same code because the icon is centred on its own half-width.
 
 The **gear icons** are twelve 12×12 grids, **one per variant** (`gearLongsight` … `gearGhoststep`), each baked once per
@@ -426,7 +426,7 @@ the numbers `slingState()` works out and the table itself never moves.
 it (an iron rim round the deck, a collar on the stanchion, a wrap halfway up each arm), tier 3
 ties and crowns it (the rim carried round the back, deck studs, the side's mark on the wraps, a
 lashing's loose end, and a carved finial past each tip). The fork also grows: its reach is
-**`TUR_MOUTH` (12 / 13 / 15 px, js/structures.js — the row the SIM reads for where the rock
+**`TUR_MOUTH` (12 / 13 / 15 px, js/sim/structures.js — the row the SIM reads for where the rock
 leaves)**, so the arms can never be drawn anywhere but where the stone actually goes, and its
 spread is `SL_FLARE` (7 / 7 / 9). `slingInk()` resolves a role against the tier's timber
 (`SLING_WOOD`, which climbs with `TUR_PALS`) and the side's palette. Retuning the fork is editing
@@ -440,7 +440,7 @@ into `teamBuild[team].icon.turret`, the same escape hatch the bay uses.
 **Wildlife is side-view only, and its frames are named CLIPS.** `SPRITES[kind][dir]` is an
 **object**, not a flat list: one array per behaviour, every kind carrying at least `idle` — the
 frame anything asking for "the beast" takes (the wiki's cards read `.right.idle[0]`). Which clip
-is playing is the animal's business, not the sprite's: js/wildlife.js sets `a.clip` from what the
+is playing is the animal's business, not the sprite's: js/sim/wildlife.js sets `a.clip` from what the
 beast is doing (`ANIM_CLIPS`, [gameplay.md](gameplay.md#what-a-beast-is-doing-the-clips)) and
 `clipFrame` in js/draw/bodies.js plays it. `bakeClips` builds a set and `mapClips` walks one — the
 mirror for `left`, the bears' `right` below.
@@ -475,7 +475,7 @@ supersampling (two leaf blades, one bold crook, the bell, a pale shadow pool) fi
 tones lit from the upper left, no ink line. The bloom is a sunny gold with a white lip so it reads
 on snow, the leaves a fresh green, the shut bud a dull bronze. It writes four transparent 24×24-cell
 atlases beside itself; `node
-app/bake-snowdrops/bake.js` reads them (zlib, no packages) and writes js/sprites/snowdrops.js as
+app/bake-snowdrops/bake.js` reads them (zlib, no packages) and writes js/baked/snowdrops.js as
 char grids and one palette, baked at load like every other sprite. Four variants (two shapes,
 each also mirrored), each **shut** and **open** at three wind leans and once **picked**, plus the
 open bloom's **glow**: a halo of sparks round the bell at `GLOW_N` (6) phases per lean, and the
@@ -485,7 +485,7 @@ the glow and the light are laid above the night grade by `litSnowdrops`
 by its own hash. Repaint and rebake; never edit the grids.
 
 The camps' two [bears](world.md#camps), the brown (`dire`) and the black (`alpha`), live in
-js/sprites/bears.js and are **generated, not typed**: `app/bake-bears/bake.py` (Python with numpy)
+js/baked/bears.js and are **generated, not typed**: `app/bake-bears/bake.py` (Python with numpy)
 paints a bear as shaded ellipse parts, poses them as a cutout puppet (IK legs, body tilt, head,
 jaw), renders each pose at 8× and shrinks it to the game's pixel, banding the shade into the
 palette measured off Noah's reference sheet. The rig is laid out in the units of the 1× bear the
@@ -503,7 +503,7 @@ one-off wake-up passes behind the frame instead. The
 paw's claw trail and the bite's snap are baked into their frames (`SM`/`SD`, white slashes with an ink edge one game pixel wide), and so is the
 `fish` clip's catch (`FISH_PX` in bear.py, `FL`/`FM` silver inked in `SD`). Change the rig and rebake; never edit the grids.
 
-The **IRON SCOUT** scout skin (`SPRITES.robotSkin`, js/sprites/robot.js) is generated the same
+The **IRON SCOUT** scout skin (`SPRITES.robotSkin`, js/baked/robot.js) is generated the same
 way by `app/bake-robot/bake.py` (Python with numpy and pillow): rig.py paints a lean robot as
 flat-shaded facets (one tone per plane) on a 3D-jointed puppet, projects him through the game's
 35° camera and bands him into his palette, the chest and scarf in team paint (`L`/`T`/`t`/`x`,
@@ -531,19 +531,19 @@ black obelisk seamed with amber and ringed with amber shards (32×35), each on `
 three faces) and are kept verbatim; the crack overlays are baked from them at load (`cracks`, a
 seeded walk down the body, dark on stone and white on crystal) and so are the glint sites
 (`glints`, every third of the brightest crystal and amber pixels). The three ore icons are 8×8
-grids baked beside their code in js/mining.js (`ORE_ICONS`): a lump, a shard and a cut gem.
+grids baked beside their code in js/sim/mining.js (`ORE_ICONS`): a lump, a shard and a cut gem.
 
 Anything drawn through `drawSpriteFlash()` must stay within **64×64**: it recolours through a
 shared 64×64 scratch canvas and a larger sprite clips ([rendering.md](rendering.md#render-pass-order)).
 
 **New sprites bake beside the code that draws them, not here.** The treasure chest (`CHEST_SPR`,
-js/draw/ground.js) and every tool and bit icon (`TOOL_ART` / `BIT_ART` / `bakeGrid`, js/tools.js)
+js/draw/ground.js) and every tool and bit icon (`TOOL_ART` / `BIT_ART` / `bakeGrid`, js/sim/tools.js)
 paint their char grids onto their own canvases and assign into `SPRITES`, which works because it
 is a plain object - exactly what each js/sprites/ file does for its own keys (the paragraph
 below), so a sprite that belongs to a drawer can live beside it. Tool art goes further and follows the gear icons'
 trick — one 12×12 silhouette per weapon, baked once per **tier** through `TOOL_ART_PAL`, so shape
 says which weapon and palette says how good it is. The two detailed 32×32 icon sets do the same:
-the ability icons (`AB32`/`AB32_PAL`, js/abilities.js) and the gear-variant icons (`GEAR32`,
+the ability icons (`AB32`/`AB32_PAL`, js/sim/abilities.js) and the gear-variant icons (`GEAR32`,
 js/ui/menu.js) bake lazily beside their drawers, and `GEAR32` deliberately shares `AB32_PAL` so
 every big icon in the game speaks one palette.
 
@@ -562,11 +562,12 @@ is a private IIFE with the same skeleton: destructure what it needs off `SPR`, i
 grids under `// ---- name` banners, the set builders, and at the bottom one
 `Object.assign(SPRITES, { ... })` naming every key it owns. Nothing reads another file's grid, so
 they load in any order after core; a new sprite goes into the file that owns its subject and its
-key onto that file's `Object.assign`. The one exception is `motion.js`, which is data only: the
+key onto that file's `Object.assign`. A file an `app/bake-*` script writes sits in js/baked/
+(the table names its baker) and is never edited by hand. The one exception is `motion.js`, which is data only: the
 run and roll grids on `SPR.motion`, loaded right before characters.js, which bakes them
 ([the run and the roll](#the-run-and-the-roll)).
 
-Keys marked **(dead)** are still baked but read by nothing outside js/sprites/
+Keys marked **(dead)** are still baked but read by nothing outside js/sprites/ and js/baked/
 ([Intentional dead code](checklists.md#intentional-dead-code)).
 
 | File | Banners | Registers |

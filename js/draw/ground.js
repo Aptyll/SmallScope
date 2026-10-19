@@ -113,7 +113,7 @@ function paintGroundTile(g, tx, ty) {
         }
         if (inner && h < 0.12) { g.fillStyle = '#ddf1f8'; g.fillRect(px + ((h * 210) | 0) % 12, py + ((h * 87) | 0) % 12, 2, 2); }
         paintDressing(g, tx, ty, px, py); // long cracks, the downwind bank (js/draw/lakes.js)
-        // ...and, where a PATH crosses the lake (the paths, js/world.js), the
+        // ...and, where a PATH crosses the lake (the paths, js/sim/world.js), the
         // earth spilling over this tile's share of the crossing, rimmed along
         // its own ragged edge rather than along the tile's sides. The diagonal
         // road never meets ice on any shape (ROAD_ICE_KEEP); a path does.
@@ -236,7 +236,7 @@ function roadRutAt(u) {
 function paintRoadOverlay(g, tx, ty, px, py, onIce) {
   for (let j = 0; j < TILE; j++) for (let i = 0; i < TILE; i++) {
     const fx = tx + (i + 0.5) / TILE - 0.5, fy = ty + (j + 0.5) / TILE - 0.5;
-    const d = laneDist(fx, fy); // ...which ends on the cistern's gates (js/world.js)
+    const d = laneDist(fx, fy); // ...which ends on the cistern's gates (js/sim/world.js)
     if (d >= ROAD_SHOULDER) continue;
     const hp = hash2(px + i, py + j); // this pixel's own roll
     // the drift field: snow lies on the verge and mud spreads off it in
@@ -268,7 +268,7 @@ function paintRoadOverlay(g, tx, ty, px, py, onIce) {
 }
 
 // ---- the creek's pixels ----------------------------------------------------
-// The creek (the `the creek` group, js/world.js) is look A of
+// The creek (the `the creek` group, js/sim/world.js) is look A of
 // docs/media/concepts/creek-concepts-1.png, SNOWBANK CUT: dark open water
 // sunk between snow banks, deepening toward its middle. The sun's shade
 // falls down-right (SUN_DX/SUN_DY, the cast shadows), so the bank the light
@@ -280,7 +280,7 @@ function paintRoadOverlay(g, tx, ty, px, py, onIce) {
 // (ground 5) is a snow-capped boulder in the current, foam heaped on its
 // upstream side. Inside the cistern the creek is under the ice (creekIced):
 // the lake's own pixels, and the culverts it runs out of are the wall's art
-// (js/sprites/cistern.js). Every pixel is a function of its position alone,
+// (js/baked/cistern.js). Every pixel is a function of its position alone,
 // so any repaint lays back exactly what the bake laid.
 const CREEK_COL = {
   deep: '#2c5068', mid: '#335a73', shal: '#3f6c84', shade: '#24435a', under: '#1d3649',
@@ -295,7 +295,7 @@ function creekNear(tx, ty) {
   return cisternR(tx, ty) > CIST_ICE - 1.5;
 }
 function paintCreek(g, tx, ty, px, py) {
-  const iced = orcaLakeNear(tx, ty); // the cistern may freeze some of this tile's water (creekIced, js/world.js)
+  const iced = orcaLakeNear(tx, ty); // the cistern may freeze some of this tile's water (creekIced, js/sim/world.js)
   for (let j = 0; j < TILE; j++) for (let i = 0; i < TILE; i++) {
     const x = px + i, y = py + j;
     const fx = tx + (i + 0.5) / TILE - 0.5, fy = ty + (j + 0.5) / TILE - 0.5;
@@ -387,7 +387,7 @@ function drawCreekFlow(ox, oy, tx0, ty0, tx1, ty1) {
   }
   ctx.globalAlpha = 1;
 }
-// THE CREEK'S FISH (creekFishAt, js/world.js: where each is, what kind, how
+// THE CREEK'S FISH (creekFishAt, js/sim/world.js: where each is, what kind, how
 // much shows), drawn UNDER the water: the sprite (SPRITES.creekFish, baked by
 // app/bake-fish/paint.py) is rimmed in the water's own shade and laid at
 // part alpha, so the creek shows through it, and the current's glints are
@@ -564,7 +564,7 @@ function relabelIce(tx, ty) {
 function bakeLakes() {
   const N = WORLD * WORLD, q = new Int32Array(N), D4 = [1, 0, -1, 0, 0, 1, 0, -1];
   lakeStyle = new Uint8Array(N).fill(255); lakeDepth = new Uint8Array(N);
-  // the orca's lake (js/world.js) is labelled first, and always DEEP: the
+  // the orca's lake (js/sim/world.js) is labelled first, and always DEEP: the
   // dark middle is where it swims. Whatever ice it meets takes its style.
   const c = Math.round((WORLD - 1) / 2), orcaAt = [];
   for (let dy = -14; dy <= 14; dy++) for (let dx = -14; dx <= 14; dx++) {
@@ -738,7 +738,7 @@ function paintSnowShore(g, tx, ty, px, py) {
 const SNOW_PAL = ['#dfe8f4', '#e8f0f9', '#eef4fb', '#f5f9fd'].map(rgbOf); // lee .. lit
 const SNOW_BASE = 1;                           // the flat snow's tone
 const SNOW_GLINT = rgbOf('#ffffff'), SNOW_GLINT_P = 0.996; // a crystal, only on the lit tone
-let SNOW_ANG = -0.33, SNOW_C = Math.cos(SNOW_ANG), SNOW_S = Math.sin(SNOW_ANG); // a match turns it onto the seed's prevailing wind (layDrifts, js/depth.js)
+let SNOW_ANG = -0.33, SNOW_C = Math.cos(SNOW_ANG), SNOW_S = Math.sin(SNOW_ANG); // a match turns it onto the seed's prevailing wind (layDrifts, js/sim/depth.js)
 const SNOW_LOOKS = [
   { sc: 1,   rel: 7, dith: 0.8 },              // fine drifts
   { sc: 1.8, rel: 8, dith: 0.6 },              // broad swells
@@ -822,7 +822,7 @@ function snowTile(px, py) {
       S[b * SNOW_LAT + a] = (H[(b + 1) * SNOW_LAT + a + 1] - H[(b - 1) * SNOW_LAT + a - 1]) * k;
     }
   }
-  const deep = driftCell && driftCell[idx(px / TILE, py / TILE)]; // a deep drift reaches this tile (js/depth.js)
+  const deep = driftCell && driftCell[idx(px / TILE, py / TILE)]; // a deep drift reaches this tile (js/sim/depth.js)
   if (deep) deepTileOpen(px, py); // its depths, each worked out once (js/draw/depth.js)
   for (let j = 0; j < TILE; j++) {
     const v = j / TILE, qa = q00 + (q01 - q00) * v, qb = q10 + (q11 - q10) * v, y = py + j, fy = y / 2 - Y0;
@@ -881,7 +881,7 @@ function snowStrip(g, ty, tx0, tx1, strip) {
 }
 
 // ------------------------------------------------------------ the wind's sweep
-// The wind's sweep (windSweep, the `wind` banner, js/weather.js) drawn: every
+// The wind's sweep (windSweep, the `wind` banner, js/sim/weather.js) drawn: every
 // fifteen seconds a few faint streaks of loose snow drift slowly downwind,
 // each a thin white line of drift over its own soft shadow a few px
 // down-right (the one sun), rolling gently as it goes. The streaks live in
@@ -951,7 +951,7 @@ function drawSweep(ex, ey) {
 }
 
 // ------------------------------------------------------------ the ground blizzard
-// A blizzard day's snow (state.wx.drift, the `weather` banner, js/weather.js) is
+// A blizzard day's snow (state.wx.drift, the `weather` banner, js/sim/weather.js) is
 // not falling, it is BLOWING: low, fast streaks of loose snow skimming the
 // drifts downwind, continuously, under everything that stands. Laid in the
 // world like the sweep's (a BLOW_CELL_W x BLOW_CELL_H grid, nothing rolls):
@@ -1211,7 +1211,7 @@ function drawCastShade(spr, x, y) {
 // ------------------------------------------------------------ the scenery bakes
 // Which of a pine's twenty-four bend frames it is wearing - and which half of
 // the atlas it takes it from. A tree does not animate on a clock of its own:
-// the wind field (the `wind` banner, js/weather.js) is sampled at the tree's own
+// the wind field (the `wind` banner, js/sim/weather.js) is sampled at the tree's own
 // tile, so a gust crossing the field lays one band of trees over at a time and
 // the treeline works in order.
 //
@@ -1334,7 +1334,7 @@ const CAIRN_SPR = (() => {
   });
   return c;
 })();
-// The practice dummy (the `practice arena` banner, js/practice.js), baked here
+// The practice dummy (the `practice arena` banner, js/sim/practice.js), baked here
 // for the same reason the chest is. A big target you read across the arena:
 // a burlap sack head with stitched eyes under a snow cap, arms lashed to a
 // crossbar with rope, a sack torso wearing a painted red ring, straw leaking

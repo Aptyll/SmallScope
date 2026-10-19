@@ -1,6 +1,6 @@
 'use strict';
 // Everything with four legs or wings: the imp, the rabbit, the deer, the wolf,
-// the bird. The camps' two bears are js/sprites/bears.js.
+// the bird. The camps' two bears are js/baked/bears.js.
 (() => {
   const { bake, flipH, bakeClips, mapClips } = SPR;
 
@@ -54,7 +54,7 @@
   // The meadow's bunny, side view facing right: a chunky brown hare with a
   // pink inner ear and one white glint in the eye. Three sheets out of
   // docs/media/new_media3/ split at 32 px into the three CLIPS a behaviour
-  // plays (ANIM_CLIPS, js/wildlife.js): `idle` is
+  // plays (ANIM_CLIPS, js/sim/wildlife.js): `idle` is
   // bunny_facing_right_gently_look_around, `hop` is
   // bunny_facing_right_hopping_right, `rise` is
   // bunny_facing_right_stand_up_and_wiggle - the sit-up a rabbit that has
@@ -437,7 +437,7 @@
   // ---------------------------------------------------------------- deer
   // The stag, side view facing right: warm coat, pale antlers, dark slender
   // legs. Three sheets out of docs/media/new_media3/ split at 38 px into the
-  // clips (ANIM_CLIPS, js/wildlife.js): `idle` is
+  // clips (ANIM_CLIPS, js/sim/wildlife.js): `idle` is
   // deer_facing_right_gently_look_around (head up, watching), `graze` is
   // deer_facing_right_grazing_loop (head down into the snow and back) and
   // `run` is deer_facing_right_galloping. Head up against head down is the

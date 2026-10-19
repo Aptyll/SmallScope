@@ -121,7 +121,7 @@ function drawStBar() {
 // weapon well, a bit cell, the drag ghost. This is the ONLY place a tier is
 // stated, and it is stated the same way everywhere - a dark well with a 1px
 // rim in the tier's colour, dim green, blue, gold, brighter as it gets better
-// (TOOL_TIERS, js/tools.js) - which is what lets a find be read at a glance
+// (TOOL_TIERS, js/sim/tools.js) - which is what lets a find be read at a glance
 // without a rarity word anywhere on screen. Nothing on it moves.
 function tierPlate(type, lit) {
   const t = itemTier(type);
@@ -565,7 +565,7 @@ function shelfWell(r, type, lit, rim) {
 //     ever sits on another. Hover a cell and the lines that touch it stay
 //     lit while the rest dim.
 // ...and one event: every cell the last press SPENT flashes white and fades
-// (bitLitAt, js/tools.js), its lines with it, so the left button teaches the
+// (bitLitAt, js/sim/tools.js), its lines with it, so the left button teaches the
 // row it is firing.
 const SHELF_LINE_STEP = 4; // px between two lines landing on the same shot
 function drawShelf(now) {
@@ -595,7 +595,7 @@ function drawShelf(now) {
     }
     // ...and the tool's own share of the row flash: a press never lights this
     // cell, so a lit TOOL means one thing only - the body itself just changed
-    // under you (swapFx, js/tools.js)
+    // under you (swapFx, js/sim/tools.js)
     const tlit = bitLitAt(cell, -1);
     if (tlit > 0) {
       ctx.globalAlpha = 0.6 * tlit;

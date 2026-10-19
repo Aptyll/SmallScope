@@ -29,7 +29,7 @@ nothing to re-record: shots name the take's own beats, so most notes are a `cut.
 ## Director mode: filming the live game
 
 The kit stages headless takes; director mode films a match you are playing, for OBS or the game's
-own recorder (code: js/director.js). **F7** turns it on and shows a strip at the left edge with the
+own recorder (code: js/app/director.js). **F7** turns it on and shows a strip at the left edge with the
 keys. While it is on: the **arrows** fly a free camera (they stop walking the body), **HOME** hands
 the camera back to a steady follow with no aim lean, **PAGE UP / PAGE DOWN** and the wheel zoom on
 a slow glide, **F8** hides the HUD (`DBG.hideUI`, the kit's own switch: also the aim line, the
@@ -53,7 +53,7 @@ state; `DBG.directorKey('F9')` presses a key headless.
 | `cut.py` | the editor: `cut.json` shots between beats, sharp camera moves, text, a freeze with a drain, the wishlist card; writes the mp4 and `map.json` |
 | `view.py` | any camera off a recorded frame, pixel-exact (nearest blow-up, then area-average down) |
 | `look.py` | the game's 3x5 font as rimmed video text, `stamp`, the game logo, the pixel Steam and Discord marks (`steam-mark.png`, `discord-mark.png`), `drain`, `freeze` |
-| `mix.py` + `audio.js` | the take's cues on the frames they land on, rendered offline through js/audio.js, under an optional song, muxed |
+| `mix.py` + `audio.js` | the take's cues on the frames they land on, rendered offline through js/app/audio.js, under an optional song, muxed |
 | `board.py` | a 3x3 (or `--cols`) storyboard with pixel-font captions, from stills or from `--keep` frames |
 | `gif.py` | GIFs from frames, a 1x strip, or a piece of an mp4 |
 | `paint.py` | the 2D painted cutout painter: parts at 8x, banded to locked ramps, inner lines, outline, stickers, `lint` |

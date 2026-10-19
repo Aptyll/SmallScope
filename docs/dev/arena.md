@@ -52,7 +52,7 @@ robots' gold).
   `performance.now` stubbed before load) driven by the same steps reaches the same position, hp
   and gold for all ten players at every 10 s of a two-minute match on seed 42 as the arena does.
 - **Pixels the sim reads.** The one pixel read in the sim is a building's shot box off its
-  sprite's opaque pixels (`artBox`, js/sim.js). The bounding box and pixel count of 764 of the 769
+  sprite's opaque pixels (`artBox`, js/sim/sim.js). The bounding box and pixel count of 764 of the 769
   sprite canvases match Chromium exactly, every building among them; the other five are the
   berry and fish icons and the three `rockFill` overlays, which only the draw reads.
 - **Replays.** One seed is one exact match: two runs give byte-identical samples and events.
@@ -78,7 +78,7 @@ What differs from a real match, on purpose:
   is expected here; it is the difficulty.
 - **`versus`**: team 0 plays `AI_LEVELS[a]`, team 1 `AI_LEVELS[b]` through `p.ai.prof`, no ally
   bonus. `a = b` is a mirror match.
-- **Bot files** (js/bots/api.js, [docs/bots/](../bots/)): `playMatch({ seats: { 0: 'starter', 1: 'pack' } })`
+- **Bot files** (js/ai/bot-api.js, [docs/bots/](../bots/)): `playMatch({ seats: { 0: 'starter', 1: 'pack' } })`
   assigns seats to programs in the library (the baked examples are there already) before the drop;
   `bots: { id: source }` adds more. Every file, the baked ones too, runs sealed in a vm context
   of its own, in a thread of its own (`app/arena/sandbox.js`: no game globals, seeded random,

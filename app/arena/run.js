@@ -126,7 +126,7 @@ async function main() {
   const a = parseArgs(process.argv.slice(2));
   const seeds = parseList(a.seeds, [1, 2, 3, 4]);
   const kind = a.kind === 'versus' ? 'versus' : 'level';
-  const NORMAL = 1; // AI_LEVELS: EASY, NORMAL, HARD, IMPOSSIBLE (js/ai-skill.js)
+  const NORMAL = 1; // AI_LEVELS: EASY, NORMAL, HARD, IMPOSSIBLE (js/ai/ai-skill.js)
   const num = (v) => v === undefined || v === true ? NORMAL : +v;
   const levels = kind === 'level' ? parseList(a.level, [NORMAL]) : [NORMAL];
   const jobs = Math.max(1, +a.jobs || os.cpus().length);

@@ -22,7 +22,7 @@
 // the frame it wears in the snow - and what a level does to their health
 // and to the gold a kill pays, at levels 1, 6 and 12, read off the same
 // constants the sim spends (ANIMAL_HP, ANIMAL_LV_HP, YIELD, ANIMAL_LV_GOLD,
-// js/wildlife.js and js/core.js), so the page can never disagree with the
+// js/sim/wildlife.js and js/sim/core.js), so the page can never disagree with the
 // game. The CLASSES page is the two classes as the lobby reads them -
 // body, pitch, health and the four stat pips - and their eight abilities
 // with the cooldown, the cast and what each does, off CLASS_AB itself. The

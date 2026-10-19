@@ -24,7 +24,7 @@
 // are pressed the same way (Q and F, a click), each with its key in the
 // corner an ability prints its key in and its count in the top-right; both
 // wipe on the shared food clock (drawFoodClock). THE MEALS ARE ALWAYS HERE:
-// food is a pouch and not a bag stack (the `inventory` banner, js/player.js),
+// food is a pouch and not a bag stack (the `inventory` banner, js/sim/player.js),
 // so these two wells are the whole of where a berry and a fish are read and
 // pressed, and the counts are uncapped - hence shortNum, four characters at
 // most. Under them, level with the bars, THE PURSE: the coin and the gold, on
@@ -114,7 +114,7 @@ const HUD_SLIDE = AB_H + XP_TAG + 5; // ...and their outline
 // How far the HUD has slid in: 0 while it is away below the screen, 1 once it
 // is home. The intro rides it up (renderUI) - and a ceremony PINS it there,
 // because the drop brief's camera branch holds state.intro for the whole
-// roost tour (js/sim.js), which is how the HUD stays off a cinematic. Every
+// roost tour (js/sim/sim.js), which is how the HUD stays off a cinematic. Every
 // piece that hangs in the open screen ABOVE the strip - the buy plates, which
 // the slide is not deep enough to carry off the bottom on their own - asks
 // this before it draws or answers the pointer, or it bobs there alone over a
@@ -127,7 +127,7 @@ function hudHome() { return hudInT() >= 1; }
 // part of the HUD is sized on its own - the strip (settings.hudScale), the
 // top-left corner of weapon shelf and drawer (settings.hudCorner), the team
 // rail along the top (settings.hudRail); the minimap has its own radius dial
-// (settings.mmR, applyMinimapSize, js/core.js). Each widget keeps ALL its
+// (settings.mmR, applyMinimapSize, js/sim/core.js). Each widget keeps ALL its
 // geometry in 1x space and its draw bakes it at 1x and blits it scaled about
 // its anchor (drawHudScaled, drawCornerScaled, drawRailScaled); the pointer is
 // mapped back through the same anchor (stripMouse, cornerMouse), so every hit
@@ -221,7 +221,7 @@ function goldCellRect() {
   const r = foodCellRect(0);
   return { x: r.x, y: r.y + BAR_TOP, w: FOOD_W, h: ST_TOP + ST_H + 2 - BAR_TOP };
 }
-// THE FISH PICKER: the fish well holds four kinds (FISH_KINDS, js/player.js),
+// THE FISH PICKER: the fish well holds four kinds (FISH_KINDS, js/sim/player.js),
 // and pointing at it raises a column of them straight up off the well - the
 // lake's frost pike nearest it, its gold sunfish, then the creek's whitefish
 // and snow char, each with how many you carry. With
@@ -273,7 +273,7 @@ function foodDenied(type) {
   SFX.deny();
 }
 // And the ability wells' share of it: a key nobody has spent a point on is
-// LOCKED (abUnlocked, js/abilities.js), and its well already stands dim with
+// LOCKED (abUnlocked, js/sim/abilities.js), and its well already stands dim with
 // a dark icon - but a press has to answer, so the asked well reddens and
 // shakes in the same red the pack, the weapon well and the meal buttons
 // refuse in. tryAbility is the one caller, so key and click speak alike; a
@@ -348,7 +348,7 @@ function stripHit(mx, my) {
 // THE ONE WEAPON, TOP-LEFT, ON SCREEN AT ALL TIMES (3.23): the tool in hand
 // at the left end in its own bigger well, then its bit cells - projectiles on
 // the left, modifiers on the right, the free cells between them (sortBits,
-// js/tools.js). Order does nothing in a press any more, so the row is laid
+// js/sim/tools.js). Order does nothing in a press any more, so the row is laid
 // out to be READ: what flies, then what shapes it. It is the whole of what
 // the HUD says about the arsenal - the strip has no weapon well, and
 // everything else carried is in the drawer under this plate, shut until

@@ -3,7 +3,7 @@
 // order in this Node process's own global scope, which stands in for the
 // page. Nothing is drawn. A canvas is a small alpha-only pixel store - enough
 // for the sim's one pixel read, the building hitboxes off their sprites'
-// opaque pixels (artBox, js/sim.js), and those match Chromium's pixel for
+// opaque pixels (artBox, js/sim/sim.js), and those match Chromium's pixel for
 // pixel; audio, input, timers and storage are inert. The sim is the real one,
 // untouched, and nothing runs the title screen (whose live world would spend
 // rng draws for as long as it is up), so one seed is one exact replay - the

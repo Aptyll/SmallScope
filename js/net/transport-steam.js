@@ -10,7 +10,7 @@
 // The host CREATES the lobby and writes what a joiner needs into its data -
 // the patch, the seed, the room's state - before anyone can read it; a
 // joiner whose page was born with another seed reloads itself onto the
-// lobby's, since SEED is decided at load (js/core.js). Steam tells the host
+// lobby's, since SEED is decided at load (js/sim/core.js). Steam tells the host
 // who came and went through the lobby's chat updates, which the transport
 // turns into the same {t:'peer'} / {t:'gone'} the relay sends.
 //

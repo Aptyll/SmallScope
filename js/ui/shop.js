@@ -1,19 +1,19 @@
 'use strict';
 // THE MERCHANT'S COUNTER: the one place gold turns into goods and goods turn
-// back into gold. Each eagle's driver (the `merchant` banner, js/robots.js)
+// back into gold. Each eagle's driver (the `merchant` banner, js/sim/robots.js)
 // climbs down at the crash, fells its back woods and raises the bot bays,
 // and keeps to the lane mouth between jobs - and standing beside it opens this.
 //
 // BOTH counters serve EVERYBODY. Your own roost's merchant is the near one and
 // the rival's is a walk through their base, but neither asks whose side you
 // are on, which is exactly why a merchant cannot be killed (unitAlive,
-// js/actions.js): a shop nobody can reach is not a shop.
+// js/sim/actions.js): a shop nobody can reach is not a shop.
 //
 // Three things live in this file, in this order:
 //   - the MARKET. Fish and berries have a price that MOVES - a random walk
 //     with a pull home and the odd shock - and they are the only two things in
 //     the game that do. Everything else is priced once, on its own def
-//     (`price` on TOOLS/BITS in js/tools.js, CARD_PRICE in js/player.js).
+//     (`price` on TOOLS/BITS in js/sim/tools.js, CARD_PRICE in js/sim/player.js).
 //   - the STOCK. Twelve offers rolled off the tool, bit and card pools, which
 //     turn over every SHOP_RESTOCK seconds - the same twelve at both counters,
 //     because there is one market and two shopfronts onto it.
@@ -25,7 +25,7 @@
 // reach shuts it.
 // ------------------------------------------------------------ market
 // The market's own rng, seeded off SEED the way the chests' is (chRng,
-// js/world.js): prices are the same on every machine playing the same seed,
+// js/sim/world.js): prices are the same on every machine playing the same seed,
 // and a busy market can never shift the loot rolls by consuming draws out of
 // the shared stream.
 const mktRng = mulberry32((SEED ^ 0x4D4B5431) >>> 0);
@@ -64,7 +64,7 @@ const market = { t: 0, goods: {}, stockT: 0, stock: null, n: 0, step: 0 };
 
 // EVERY FISH trades on the one fish market. Each kind in FISH_KINDS (the
 // creek's whitefish and snow char beside the hole's frost pike and gold
-// sunfish, js/player.js) is priced off the frost pike's live price (the
+// sunfish, js/sim/player.js) is priced off the frost pike's live price (the
 // `fish` good), scaled by what it heals against what the pike heals - so a
 // new fish is priced the moment it has a `heal`, and the four move together.
 function goodOf(type) { return Object.hasOwn(GOODS, type) ? type : FISH_KINDS.includes(type) ? 'fish' : null; }
@@ -142,7 +142,7 @@ function initMarket() {
   shopRestock(true);
 }
 
-// Called once per sim step from updatePlay (js/sim.js), never in practice -
+// Called once per sim step from updatePlay (js/sim/sim.js), never in practice -
 // the training room has no merchants and no clock. Both timers live here: the
 // price walk on MKT_STEP, and the counter's own turnover on SHOP_RESTOCK.
 function updateMarket(dt) {
@@ -295,7 +295,7 @@ function raiseStatNote() {
 // Watching the kit beats hooking the writers: levelUp, buyGear, useCard and a
 // bot's resolveCardForBot all land here for free, a host's snapshot lands a
 // client's here the same way, and nothing that ever edits a kit has to
-// remember to announce it. Aged from updateFx (js/sim.js) beside ageNotices.
+// remember to announce it. Aged from updateFx (js/sim/sim.js) beside ageNotices.
 function updateStatLedger(dt) {
   for (let i = 0; i < statLit.length; i++) if (statLit[i] && (statLit[i].t -= dt) <= 0) statLit[i] = null;
   const p = player;
@@ -383,7 +383,7 @@ const NOTE_KIND = {
     tp: { '.': null, a: '#a83c50', h: '#ff9a8a' } },
   stock: { bg: '#2a2340', edge: '#c9a227', fg: '#f2cc6a', mark: 'crate', tail: null },
   // YOUR ROOST IS BEING STRUCK AND YOU ARE SOMEWHERE ELSE (hurtEagle,
-  // js/boot.js, in the same beat as SFX.alarm). Its own alarm red - hotter
+  // js/app/boot.js, in the same beat as SFX.alarm). Its own alarm red - hotter
   // than a crash's rose, because a price falling costs you gold and this
   // costs you the match - and the falling tail, since what the number on it
   // says is the nerve the bird has left.
@@ -431,7 +431,7 @@ function raiseNotice(kind, txt, good) {
   while (notices.length > NOTE_MAX * 2) notices.shift();
 }
 
-// Chrome: it ages on WALL time from updateFx (js/sim.js),
+// Chrome: it ages on WALL time from updateFx (js/sim/sim.js),
 // so a plate fades out - and the sack keeps turning over its six frames -
 // while the sim is paused rather than hanging there.
 function ageNotices(dt) {
@@ -621,8 +621,8 @@ const SHOP_RESTOCK = 120; // s between turnovers
 const SHOP_COLS = 3;      // offers in every section
 // Cards are rolled by rarity, not by name: an unopened card is what changes
 // hands and the buff inside it is drawn afterwards (useCard,
-// js/core.js), so the buyer is paying for the odds. Kinder than a chest's odds
-// (CHEST_ODDS, js/world.js) - a counter you can choose to walk to should show
+// js/sim/core.js), so the buyer is paying for the odds. Kinder than a chest's odds
+// (CHEST_ODDS, js/sim/world.js) - a counter you can choose to walk to should show
 // the better rarities more often than a box you tripped over.
 const SHOP_CARD_ODDS = { white: 0.4, green: 0.3, blue: 0.19, purple: 0.09, gold: 0.02 };
 // the four sections, in the order the panel stacks them
@@ -729,7 +729,7 @@ function inReach(p, c) {
   return counterDist(p, c) <= SHOP_REACH + PLAYER_R;
 }
 // The other way round: the player whose counter is OPEN on this merchant, or
-// null. updateMerchant (js/robots.js) asks it every frame and drops
+// null. updateMerchant (js/sim/robots.js) asks it every frame and drops
 // everything - the bays, the felling, the loiter - while somebody is being
 // served: a shopkeeper does not walk off mid-sale, and a counter that strolled
 // away from its own customer would shut itself in their face while they read
@@ -751,7 +751,7 @@ function itemValue(type) {
   const b = bitIdOf(type); if (b) return BITS[b].price;
   const r = CARD_TYPE_RARITY[type]; if (r) return CARD_PRICE[r];
   if (isGood(type)) return marketPrice(type);
-  return (ITEMS[type] && ITEMS[type].price) || 0; // a kind priced on its own ITEMS row (an ore, js/mining.js)
+  return (ITEMS[type] && ITEMS[type].price) || 0; // a kind priced on its own ITEMS row (an ore, js/sim/mining.js)
 }
 // a whole bag cell at asking price - a tool carries its loaded bits, and they
 // are worth what they are worth, so a loaded weapon is never sold as an empty one
@@ -788,7 +788,7 @@ function shopBuy(p, sec, i) {
     const o = shopOffer(sec, i);
     if (!o || o.id !== id || !shopCanBuy(p, sec, i)) return;
     // room BEFORE money: nothing is ever paid for that cannot be carried. A
-    // bought BIT arms itself the way a found one does (fitAdd, js/tools.js) - the
+    // bought BIT arms itself the way a found one does (fitAdd, js/sim/tools.js) - the
     // tool's free cells first, the pack with what is left - so a purchase made to
     // fill a hole in the build is already in the build when you walk away.
     if (o.kind === 'tool') {
@@ -811,7 +811,7 @@ function shopCanBuy(p, sec, i) {
 
 // A bag cell over the counter. The whole cell goes - an instanced tool cannot
 // be split and a stack of berries has no reason to be - and the gold is a
-// TRADE, not a payout: see tradeGold (js/player.js) for why a sale earns no
+// TRADE, not a payout: see tradeGold (js/sim/player.js) for why a sale earns no
 // levels. Returns the gold paid, 0 if nothing happened.
 function shopSell(p, s) {
   if (!s || !merchNear(p)) { shopDeny(p); return 0; }
@@ -843,7 +843,7 @@ function packCount(p) { return bagUsed(p); }
 // THE WHOLE PACK, over the counter in one press. What it takes is the BAG and
 // nothing else, and the bag's own boundaries are the whole rule: the two
 // meals and the unopened cards are in the POUCH and not in a cell at all
-// (isPouch, js/player.js), and the tool in hand with the bits fitted into it
+// (isPouch, js/sim/player.js), and the tool in hand with the bits fitted into it
 // is on the SHELF (p.tools). So what a press here cannot reach is exactly
 // what is being carried on purpose, and the drawer emptying is the answer.
 //
@@ -1030,7 +1030,7 @@ function shopOpen() {
 // long as the counter is open: SFX.music.hold notes what was playing AND the
 // second it had reached, and the release at the far end puts it back there - so
 // a trip to the shop costs the match's track the bars it covered rather than
-// the whole song (the `music` banner, js/audio.js).
+// the whole song (the `music` banner, js/app/audio.js).
 function openShop(b) {
   if (!b) return false;
   state.shop = b;

@@ -722,7 +722,7 @@ function emotePlay(i) { emo.i = i; emo.t0 = performance.now() / 1000; SFX.place(
 function emoteKey(k) { const i = EM_KEYS.indexOf(k); if (i < 0 || !emoteLive()) return false; emotePlay(i); return true; }
 function emoteClick() { const h = emoteHit(); if (h < 0) return false; emotePlay(h); return true; }
 // the pad's dpad IS the bar over an end screen (padPress/padRelease,
-// js/gamepad.js); its planks keep the stick and the bumpers
+// js/app/gamepad.js); its planks keep the stick and the bumpers
 function emotePad(i) { return emoteScreen() ? EM_PAD[i] || null : null; }
 
 // what the local player's body is doing this frame, or null for standing there
@@ -1504,7 +1504,7 @@ function drawBlizzard(now, a) {
   const span = VIEW_W + 80;
   // ...under one slow envelope over the whole sheet, so the wind arrives in
   // GUSTS instead of hissing flat: two sines beating against each other, the
-  // way the world's own wind is summed (windSway, js/weather.js)
+  // way the world's own wind is summed (windSway, js/sim/weather.js)
   const gust = 0.55 + 0.45 * (0.5 + 0.5 * Math.sin(now * 0.55) * Math.sin(now * 0.23 + 1.3));
   for (let i = 0; i < 52; i++) {
     const h1 = hash2(i * 17 + 3, 41), h2 = hash2(i * 11 + 7, 89);

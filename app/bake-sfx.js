@@ -1,13 +1,13 @@
-// Bakes audio/sfx/*.mp3 into js/sfxdata.js as base64, so the sound effects work
+// Bakes audio/sfx/*.mp3 into js/baked/sfxdata.js as base64, so the sound effects work
 // with no server at all - opening index.html off the disk is a first-class way
 // to run this game.
 //
 // Why this exists: the sampled cues are decoded into AudioBuffers so they can be
-// trimmed, levelled, pitch-jittered and filtered (see js/audio.js). Getting the
+// trimmed, levelled, pitch-jittered and filtered (see js/app/audio.js). Getting the
 // bytes for that needs fetch/XHR, and a file:// page is allowed neither, so the
 // whole sample layer silently fell back to the old synth cues when the game was
 // double-clicked instead of served. Inlining the bytes removes the network from
-// the path entirely; js/audio.js still falls back to fetch for any file missing
+// the path entirely; js/app/audio.js still falls back to fetch for any file missing
 // from here, so the two ways of running stay interchangeable.
 //
 //   node app/bake-sfx.js        # rerun after adding, removing or replacing a clip
@@ -20,7 +20,7 @@ const path = require('path');
 
 const ROOT = path.join(__dirname, '..');
 const SRC = path.join(ROOT, 'audio', 'sfx');
-const OUT = path.join(ROOT, 'js', 'sfxdata.js');
+const OUT = path.join(ROOT, 'js', 'baked', 'sfxdata.js');
 
 const files = fs.readdirSync(SRC).filter((f) => /\.(mp3|ogg|wav)$/i.test(f)).sort();
 if (!files.length) {

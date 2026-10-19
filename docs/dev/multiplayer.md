@@ -69,22 +69,22 @@ work          E held (with it clear, the hands still take a tree, a bush or a fi
 slide         shift held
 dodge         edge-triggered, cleared by the sim when it reads it
 jump          edge-triggered: the leap off the eagle, or the hop off the roost -
-              the ride's one act (dropJump, js/eagle.js; read at the top of
+              the ride's one act (dropJump, js/sim/eagle.js; read at the top of
               updatePlay's player loop, before the air skips the body) - and
               on the ground the zipline's: clip on under either side's cable,
               let go while riding, or - out of reach with the aim on a
               cable as drawn - the walk there that clips on (zipToggle,
-              js/world.js; E sets it there)
+              js/sim/world.js; E sets it there)
 grapple       held (key 3): the hunter's grapple reels only while this is down -
               the one held ability input (playerMove's grapple branch reads it;
               the burrow is the SNOW COVER cast on `ability`, not a field here)
 eatBerry      edge-triggered (Q): STARTS the 1.5s meal, it does not heal on the spot
 eatFish       edge-triggered (F): same, and off the same shared 3s clock
-              (startEat, js/core.js - see Food in gameplay.md)
+              (startEat, js/sim/core.js - see Food in gameplay.md)
 useCard       edge-triggered (bots only: a held card opens itself anyway):
-              draw one unopened card at random (useCard, js/core.js)
+              draw one unopened card at random (useCard, js/sim/core.js)
 ability       edge-triggered (keys 1-4): cast that class ability, -1 = none
-              (tryAbility, js/abilities.js - see Classes below)
+              (tryAbility, js/sim/abilities.js - see Classes below)
 cmd           one-shot order, run by runCmd (js/ui/wheel.js):
               {kind:'build'|'upgrade'|'demolish', tx, ty, id} - a build also
               carries rot, the list's R (a wheel's order is unturned)
@@ -119,7 +119,7 @@ bot's chop resolve through exactly the same function.
 
 ## The two controllers
 
-The local human has two: keyboard and mouse (js/input.js) and a gamepad (js/gamepad.js) — the
+The local human has two: keyboard and mouse (js/app/input.js) and a gamepad (js/app/gamepad.js) — the
 Steam Deck's hands. **The pad is the keyboard in disguise.** The browser listeners in
 input.js only translate events; what a key *does* lives in `keyPress(e)`/`keyRelease(e)` (`e` is
 `{key, repeat, char}` — a real KeyboardEvent translated, or an object a pad builds) and what a
@@ -276,7 +276,7 @@ what CLICK leaves on the keyboard moves onto the mouse. The keys still work; not
   any right press lets go).
 - **What the eye gets:** `drawCastPreview` (js/draw/marks.js) draws the ground the lit wedge or
   the readied ability covers, from the body toward its cast point, off the row's own `aim`
-  (`CLASS_AB`, js/abilities.js: a `line`, a `cone` with its `half`, or a `ring` round the body),
+  (`CLASS_AB`, js/sim/abilities.js: a `line`, a `cone` with its `half`, or a `ring` round the body),
   gold when it will cast and grey while it cannot. The wheel's wedges wear the strip's icons,
   dark while locked, waiting or out of stock (`drawKitWedge`, js/ui/wheel.js).
 
@@ -337,7 +337,7 @@ a change in `PAD_PLAY` is a row there.
 Every player also carries a class (`p.cls`, an index into `CLASSES` in the `players` banner).
 A class is a look, a kit, and **four active abilities on keys 1-4** (`CLASS_AB`, a key carrying
 one option or several — `CLASS_AB_ALT`, picked pre-match, [class abilities](gameplay.md#class-abilities-keys-1-4);
-[js/abilities.js](../../js/abilities.js) — see [Class abilities](gameplay.md#class-abilities-keys-1-4)).
+[js/sim/abilities.js](../../js/sim/abilities.js) — see [Class abilities](gameplay.md#class-abilities-keys-1-4)).
 The kit is the handful of numbers the sim reads through `kitOf(p)`
 instead of the bare constants. **`kitOf(p)` returns the *effective* kit**: the class's numbers
 with the player's [gear](gameplay.md#gear) folded in by `refreshKit(p)` (cached on `p.kit`, rebuilt
@@ -357,7 +357,7 @@ aim line and draw meter. `setClass(p, c)` swaps one in (full heal — it's a pre
 | 0 | **HUNTER** — bow, distance control, the one class that hides | keep the gap and own the ground between | the ranged numbers: quick nock (0.4 s), full draw power, 92 hp | a SHORTBOW with an ARROW in its second cell, the first held open |
 | 1 | **WARRIOR** — close pressure, blocking, momentum | get to arm's length and stay there | 120 hp, faster on ice (×1.15), +5 speed damage, dash 230, softer bow numbers | a LONGSWORD — the one melee body — with a BARBED SHOT on its edge in the second cell, the first held open |
 
-The **weapon is part of the class**: `CLASS_LOADOUT` (js/tools.js) pairs each one with a tool
+The **weapon is part of the class**: `CLASS_LOADOUT` (js/sim/tools.js) pairs each one with a tool
 and **one projectile**, and `setClass` / `Player.reset` (the first landing) hand it over — so the
 two classes do not shoot the same thing and every bot arrives armed; a respawn keeps the weapon it
 died with ([death keeps everything](gameplay.md#death-and-respawn)). The cell in FRONT of that projectile is
@@ -367,7 +367,7 @@ already firing: [starting loadouts](gameplay.md#starting-loadouts). See
 one does, its cooldown, cast, and the states it leaves on a body — are
 [Class abilities](gameplay.md#class-abilities-keys-1-4) in gameplay.md.
 
-The local player's class is **fixed on the character** it was created with (js/profile.js; the
+The local player's class is **fixed on the character** it was created with (js/app/profile.js; the
 create screen's class pair, [the character screens](rendering.md#the-character-screens)) — the
 only way to the other class is another character, and the lobby swaps between the profile's
 three with the chevrons beside the stage figure; bots hash theirs — class, look, all four gear
@@ -375,7 +375,7 @@ variants **and** their stat points — from the seed in `initPlayers()` so a rep
 same loadouts. Lobby shows that roster as two team panels on the screen's edges — your side left, the
 rivals right, their picks face-down until LOCK IN's countdown turns them (a second press skips
 the rest of the count) — and the target at the top, whose pop-up's four plates
-set `settings.aiLevel` (`AI_LEVELS`, js/ai-skill.js: EASY / NORMAL / HARD /
+set `settings.aiLevel` (`AI_LEVELS`, js/ai/ai-skill.js: EASY / NORMAL / HARD /
 IMPOSSIBLE, remembered with the profile), the profile the rivals play by
 (`aiProfile`, [Bots](#bots)). Sprites live in `SPRITES.champ[c][team]` (the sprite key keeps its legacy name;
 the grid files under js/sprites/ are never rewritten) — same
@@ -407,7 +407,7 @@ lane as the [stat sheet](rendering.md#the-stat-ledger-your-sheet-as-a-notice), i
 DAMAGE rows lit with `+LVL_HP` and `+LVL_DMG` — which is why those two `GEAR_STATS` rows fold the
 level in themselves: the kit never holds it.
 The table's **average** level is also what the
-wildlife wears (`animalLevel`, js/wildlife.js): dealt at spawn and followed after by every
+wildlife wears (`animalLevel`, js/sim/wildlife.js): dealt at spawn and followed after by every
 unhurt animal that hunts nobody (`relevelAnimal`) —
 [gameplay.md](gameplay.md#wildlife).
 
@@ -437,7 +437,7 @@ only place a team colour is written down; the game code reads it back as `TEAMS`
 map markers, death bursts and the eagles' armour.
 
 **The paint is per screen, the team is not.** Every colour lookup goes through
-`skin(team)` (js/player.js) — `TEAMS[skin(p.team)]`, `SPRITES.champ[cls][skin(team)]`,
+`skin(team)` (js/sim/player.js) — `TEAMS[skin(p.team)]`, `SPRITES.champ[cls][skin(team)]`,
 `teamBuild`/`robotTeam`/`merchant[skin(...)]`, the birds' `SPRITES.perch` frames, the two maps' eagle marks — and with
 `settings.teamBlue` (the default, the ESC menu's MY TEAM row) it returns the BLUE preset for the
 local player's side and RED for the rival side whatever indices the roster dealt, so allies are
@@ -448,12 +448,12 @@ the toggle); the human's profile name is stored. Nothing in the rules reads `ski
 what colour things are drawn.
 
 **Colour-blind palettes.** The VIDEO page's COLOUR BLIND dropdown (`settings.teamPal`, applied by
-`applyTeamPal`, js/core.js) repaints both presets from `TEAM_PALETTES`: orange against blue for
+`applyTeamPal`, js/sim/core.js) repaints both presets from `TEAM_PALETTES`: orange against blue for
 red-green eyes, vermilion against cyan for blue-yellow eyes, pale gold against dark blue for high
 contrast ([sprites](sprites.md)). Its entries name the colour blindness each is for (OFF,
 PROTANOPIA / DEUTERANOPIA, TRITANOPIA, ACHROMATOPSIA), each beside a chip of its palette, yours
 beside theirs, so a player can also just pick the pair they tell apart. Any palette but the default also turns on the rival's
-**shape cue** (`foeCue(team)`, js/player.js): a rival is a cross on both maps and on the lobby
+**shape cue** (`foeCue(team)`, js/sim/player.js): a rival is a cross on both maps and on the lobby
 graph's line head (`drawMapUnit`'s `foe`, `drawMapCross`), and its health bar wears a raised dark
 cap on its right end (`drawHealthBar`), so the sides part in greyscale. The names stay RED and BLUE.
 
@@ -509,7 +509,7 @@ raided without ever touching the base; the feed says so, but a worker is never a
 
 **So is a rival's grounded eagle** — tested before tile solidity (its own roost tiles are solid,
 and would otherwise eat the shot), same team rule, through `hurtEagle` (the `eagle drop` banner in
-js/eagle.js): a rival arrow landing on **any roost tile** spooks the bird `EAGLE_ARROW_DMG` (12) off
+js/sim/eagle.js): a rival arrow landing on **any roost tile** spooks the bird `EAGLE_ARROW_DMG` (12) off
 its `EAGLE_HP` (2000) pool — a flat chip, whatever the arrow would do to a body, so archers
 standing off it take minutes and the side has time to answer — the
 tiles are the one hit test walkers, arrows and E all share, so there is no corner an arrow can
@@ -547,7 +547,7 @@ down. Every death runs `checkLastStanding()`, which ends the match as a win once
 team** is left — `rivalTeamsInMatch()`/`teamInMatch()` read the same other-team rule `enemyOf`
 does, and **a team is in the match while its eagle roosts**: `teamInMatch` asks
 `teamEagleDown(team)` first, so a fled eagle takes the side out whatever else it still holds
-(`eagleFlee` in js/eagle.js is what puts every player down at liftoff), and a side with every player
+(`eagleFlee` in js/sim/eagle.js is what puts every player down at liftoff), and a side with every player
 dead and waiting on its bird is not out — kills never end a match, only the bird does. **The
 match keeps simulating while you are out** — `update()` runs `updatePlay` in both `play` and
 `dead` mode; only pause and the settings panel stop the world (the map does not), and not in a
@@ -581,7 +581,7 @@ the wait is the entire cost ([death keeps everything](gameplay.md#death-and-resp
 
 The last two arguments are the whole credit system. `src` is the player who dealt the damage
 (`players[a.owner]` for an arrow, null for the world) and `cause` names what the world did when
-there is no `src` (`DEATH_CAUSE`, js/player.js: `ice`, `wolf` — a den's pack — `bear`,
+there is no `src` (`DEATH_CAUSE`, js/sim/player.js: `ice`, `wolf` — a den's pack — `bear`,
 `tackle`, `eagle`, `fire`, `soldier`, `orca`; an unnamed one reads WENT DOWN). A death with an `src` other than
 the victim bumps `src.kills` — the scoreboard's KILLS column — and writes `"<killer> SHOT <victim>"` into the log in the killer's colours
 (`KILL_VERB` swaps the verb where the cause was no arrow: a `worker`'s axe CUT DOWN, `fire` BURNED);
@@ -625,12 +625,12 @@ gone until the restock).
 
 **Two controllers drive an `'ai'` seat.** With `p.botId` null it is the built-in brain below
 (`updateAI`); with `p.botId` naming a program in `BOT_LIB` it is a **bot file** (`botStep`,
-js/bots/api.js; `updatePlay` picks between the two). A bot file sees only a JSON observation of
+js/ai/bot-api.js; `updatePlay` picks between the two). A bot file sees only a JSON observation of
 what its seat could see (`botObserve`: rivals by the minimap's own rule through `seenAt`, both
 birds, its own body) every `BOT_THINK` ticks, and answers with an act that is read field by
 field into the same `p.input` (`botAct`), plus a `goTo` walked by `navTo`, a `say` for its side
 and a `think` stored as `p.ai.thought`. It runs inline (the examples baked from `bots/` into
-js/bots/lib.js by `app/bake-bots.js`), in a Web Worker (a person's file) or on any transport a
+js/baked/bot-lib.js by `app/bake-bots.js`), in a Web Worker (a person's file) or on any transport a
 harness registers in `BOT_TRANSPORTS`; a headless runner steps only while `botPending()` is
 false, so a seed and the same files replay exactly. The live half of a seat (`botRt`) is never
 saved: a save keeps `p.botId` and the first step after a load reopens the program. In a solo match
@@ -639,7 +639,7 @@ at the drop). The author's contract: [docs/bots/](../bots/README.md).
 
 `updateAI(p, dt)` (the `ai` banner) writes `p.input` and nothing else — a bot can never do anything
 a human couldn't. It is a priority ladder re-picked a few times a second, and **a profile says how
-well each rung is played** (the `difficulty` banner, js/ai-skill.js): the **rivals** run
+well each rung is played** (the `difficulty` banner, js/ai/ai-skill.js): the **rivals** run
 `AI_LEVELS[settings.aiLevel]` — EASY / NORMAL / HARD / IMPOSSIBLE, the lobby's plates, remembered
 with the profile — and **your allies** run `AI_ALLIES[level]`, the next notch up (capped at the
 top) plus the support fields, so your side is always the more competent one and the difficulty
@@ -679,7 +679,7 @@ a hit on its own bird — at every level the side answers from anywhere on the m
 (`aiDefendersWanted`, **the two birds**, below); the difficulty is how well they fight when
 they get there, never whether they come.
 
-**The skill layer** (the `skill` banner, js/ai-skill.js) is the hands between what the ladder
+**The skill layer** (the `skill` banner, js/ai/ai-skill.js) is the hands between what the ladder
 decides and the input it writes, so an easy bot misses the way a person does rather than at
 random. Its state is `p.ai.sk` (`skillOf`, made on first use; the banner lists every field for
 the dashboard). `skillNotice` is the **eyes**: a rival inside `cone` degrees of where the bot is
@@ -703,7 +703,7 @@ rusher circling at 15 px sweeps faster than any sane turn rate.) **Scripted seat
 hands, `AI_LADDER_HANDS` (HARD's `hand` and `aim`), through the same `skillHands`, so a ladder
 ranks decisions rather than aim; its `hands` flag adds the wobble and the held draw to every aim.
 
-**The team brain** (js/ai-team.js) is what turns ten ladders into two sides. The profile says
+**The team brain** (js/ai/ai-team.js) is what turns ten ladders into two sides. The profile says
 how well a bot plays; the team brain says what the side is doing and who does which part of it.
 Three small rules, and the teamwork is what they add up to:
 
@@ -936,7 +936,7 @@ The ladder:
    takes the same `input.cmd` a gear buy does and `shopBuy`/`shopTrade` take any `p`, so the
    path is there the day this rung learns to walk to a roost and read a price — nothing about the
    shop is human-only except the drag that sells. Then income, bought by payback (`aiEcoBuy`,
-   js/ai-team.js): a new generator, its own generator's next tier, or (the side's builder,
+   js/ai/ai-team.js): a new generator, its own generator's next tier, or (the side's builder,
    `T.builder`, the most patient mood on the side, only) a bot bay, priced by the game's
    `buildCost` (each one the owner has costs 1.5× more) over the gold a minute it adds (a
    generator's `pay`/`period`; a bay `AI_BAY_RATE`, 12, measured). A buy passes when it pays back
@@ -954,7 +954,7 @@ The ladder:
    instant one is carried, `resolveCardForBot` (top of every think) makes the same single random
    pick `useCard` makes for a hand, rarest first, minus the burst and the floater. The loot
    itself is put to work between the loot and spend rungs: every 2.5 s `botFitLoadout`
-   (js/tools.js) loads found bits into the tool being fired.
+   (js/sim/tools.js) loads found bits into the tool being fired.
 13. **harvest** — walk to a tree/chest/berried bush or a standing rock nobody is at within
    `AI_FORAGE` (12 tiles) and hold E at the profile's `work` duty cycle - at a rock it just stands,
    key up, since the rock mines itself.
@@ -980,7 +980,7 @@ and returns **-1 when there is no route** (or the bot has been pinned for a whil
 the zipline** ([the ride](gameplay.md#the-zipline)) the way a hand does, through the same hop
 intent, and nothing in the ladder knows: `steerTo` asks `aiZipWorth` first — would walking to
 either side's cable (the better of the two), riding to the point nearest the goal and walking the rest beat the feet by
-`ZIP_AI_GAIN` (4 s)? — and if so walks to the mount (`zipMount`, js/zipline.js — the nearest point of
+`ZIP_AI_GAIN` (4 s)? — and if so walks to the mount (`zipMount`, js/sim/zipline.js — the nearest point of
 the cable whose ground a body can stand on, shared with a player's walk to the cable), presses `input.jump` under it, holds the stick along
 the cable toward the exit while it rides (the goal re-read every think, so a rider called home
 mid-cable holds the other way) and presses the hop again `ZIP_AI_OFF` (6 px) short of the exit.
@@ -1022,7 +1022,7 @@ level is for, and with a hand rather than a bot on the human's side that dive is
 ### Bot callouts
 
 Every `'ai'` seat, brain or bot file, **says what it sees** to its own side (`updateCallouts`,
-js/ai-callouts.js, from `updatePlay`): a short word on a plate over its name and a ping on the
+js/ai/ai-callouts.js, from `updatePlay`): a short word on a plate over its name and a ping on the
 spot it is about, both on the minimap disc too (js/draw/callouts.js). A call never decides
 anything; it reports something already true, most urgent first (`callLook`): its own bird just
 hit (BIRD!), itself losing a fight (HELP!), a rival or a bear nearly down in front of it
@@ -1035,12 +1035,12 @@ same with callouts as without them. `callouts` and `callSaid` are in `SAVE_ROOTS
 `addCallout` records each call (`evPush('call')`) so a host's clients raise the same one.
 
 **The team brain speaks through the same door.** A bot answering a human's flag says ON IT, or
-GUARDING for one bot it keeps on the bird (`aiAnswerFlag`/`aiAnswerStep`, js/ai-team.js: who
+GUARDING for one bot it keeps on the bird (`aiAnswerFlag`/`aiAnswerStep`, js/ai/ai-team.js: who
 answers, and the stagger by seat, are the brain's); the callouts own only the words, the icons
 and the life on screen (`CALLS.onit`, `CALLS.guarding`). **A grudge** is voiced here: a rival bot
 whose `p.ai.grudge` has just stamped `seenT` (its first sight of its mark) says YOU AGAIN over its
 head to the mark's side only (a call's `see`), once per pair per `CALL_GRUDGE_T` (`callGrudge`).
-A scripted bot may say only `BOT_CALLS` (js/bots/api.js), none of these three.
+A scripted bot may say only `BOT_CALLS` (js/ai/bot-api.js), none of these three.
 
 ## Online play
 

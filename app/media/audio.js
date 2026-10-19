@@ -1,4 +1,4 @@
-// Render the game's own sound cues to a WAV, offline, through js/audio.js itself.
+// Render the game's own sound cues to a WAV, offline, through js/app/audio.js itself.
 //   node app/media/audio.js <cues.json> <out.wav> <seconds>
 // cues.json is [[t seconds, cue, arg], ...] (mix.py writes it from a take and its cut).
 // The page's AudioContext is swapped for an OfflineAudioContext before the game loads;

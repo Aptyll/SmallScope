@@ -3,7 +3,7 @@
 // worker_threads Worker, so its heap is capped apart from the match's), and
 // inside that thread in a Node vm context of its own, so it sees only its
 // messages - not `players`, not the page, not `require`, not the disk. The
-// file loads behind BOT_SEAL (js/bots/api.js: a seeded Math.random, a clock
+// file loads behind BOT_SEAL (js/ai/bot-api.js: a seeded Math.random, a clock
 // standing at 0, a budget on raw buffers) and every think has a CPU budget,
 // so the same seed and files replay the same match and a slow or greedy file
 // costs only itself.
