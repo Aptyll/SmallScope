@@ -27,6 +27,7 @@ window.MEDIA = (function () {
     for (const p of players) { p.control = 'human'; p.name = o.names ? p.name : ''; p.flag = null; }
     settings.teamBlue = !!o.teamBlue;
     D.hideUI = true; D.setK(o.k, true);
+    D.fog = !!o.fog; // the fog of war hides what a scene stages: off unless the scene asks (o.fog)
     if (o.weather) D.weather(o.weather);
     if (o.time != null) state.time = o.time * DAY_LEN;
     // the ears: a cue rung within earR of the camera, or by a body in M.ears

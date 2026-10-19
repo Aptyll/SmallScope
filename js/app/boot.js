@@ -428,6 +428,9 @@ window.DBG = {
   risePlayer: (p) => risePlayer(p || player),
   concealOf: (p) => concealOf(p || player),
   seenAt: (range, p) => seenAt(p || player, range),
+  // the fog of war (js/sim/fog.js): fog = false lifts it for a debug look;
+  // inSight(team, u) is what that side sees, fogShown(u) what this screen draws
+  fog: true, inSight, fogShown: (u) => fogShown(u),
   ambushReady: (p) => ambushReady(p || player),
   setHide: (h, p) => {
     const q = p || player;

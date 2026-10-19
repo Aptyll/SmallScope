@@ -310,6 +310,7 @@ function renderWorldMap(now) {
   // terrain
   buildWorldMapImg();
   ctx.drawImage(mapCv, MAP_X, MAP_Y);
+  fogOverMap(ctx, now, 0, 0, WORLD, WORLD, MAP_X, MAP_Y, MAP_W, MAP_W); // the fog of war (js/draw/fog.js)
 
   // night falls over the chart too
   if (state.darkness > 0.01) {
@@ -339,11 +340,11 @@ function renderWorldMap(now) {
   // soldier and merchant standing, none of them hides - then the players,
   // then the birds over all of them, since the objective is the read
   for (const r of robots) {
-    if (r.dead) continue;
+    if (r.dead || !fogShown(r, now)) continue;
     drawMapUnit(ctx, mx(r.x), my(r.y), TEAMS[skin(r.team)].mark, CHART_DARK, 2, true, foeCue(r.team));
   }
   for (const p of players) {
-    if (p === vp || !p.active || p.dead || inAir(p)) continue;
+    if (p === vp || !p.active || p.dead || inAir(p) || !fogShown(p, now)) continue;
     if (p.team !== vp.team && p.markT <= 0 && concealOf(p) >= PRONE_MAP) continue; // buried: off the map, same as the minimap - unless falcon-marked
     drawMapUnit(ctx, mx(p.x), my(p.y), TEAMS[skin(p.team)].mark, CHART_DARK, 2, false, foeCue(p.team));
   }

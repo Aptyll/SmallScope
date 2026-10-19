@@ -71,7 +71,7 @@ function aiSituation() {
       const d = Math.hypot(q.x - e.x, q.y - e.y);
       if (d >= AI_ROOST_R) continue;
       if (q.team === team) s.defenders++;
-      else if (d < seenAt(q, AI_ROOST_R)) { s.attackers++; if (q === player) s.human = true; }
+      else if (d < seenAt(q, AI_ROOST_R, team)) { s.attackers++; if (q === player) s.human = true; }
     }
     // a rival WAVE at the roost is an attack too (the `soldiers` banner,
     // robots.js) - counted at half strength, so a five-column calls three
@@ -458,14 +458,14 @@ function aiNearestEnemy(p, prof, anchors) {
     for (const an of anchors) {
       if (an && Math.hypot(q.x - an.x, q.y - an.y) < AI_ANCHOR_R) range = AI_ANCHOR_D;
     }
-    if (d >= range || d >= seenAt(q, range)) continue;
+    if (d >= range || d >= seenAt(q, range, p.team)) continue;
     const s = prof.pick === 'weak' ? q.hp + d * 0.05 : d;
     if (s < bs) { bs = s; best = q; }
   }
   // a rival wave's soldiers are rivals too (the `soldiers` banner, robots.js):
   // the same sight and the same anchors, with no cover to see through
   for (const b of robots) {
-    if (b.kind !== 'soldier' || !unitAlive(b) || b.team === p.team) continue;
+    if (b.kind !== 'soldier' || !unitAlive(b) || b.team === p.team || !inSight(p.team, b)) continue;
     const d = Math.hypot(b.x - p.x, b.y - p.y);
     let range = prof.sight;
     for (const an of anchors) {
@@ -565,7 +565,7 @@ function aiNearestAnimal(p) {
   for (const a of animals) {
     // birds fly: no route on the ground catches a flushed flock. The two
     // midline camps' kinds are never a hunt: a lone bot pulling one dies to it
-    if (a.dead || a.kind === 'bird' || a === p.ai.huntAvoid || a.rider) continue; // a ridden deer is its rider's
+    if (a.dead || a.kind === 'bird' || a === p.ai.huntAvoid || a.rider || !inSight(p.team, a)) continue; // a ridden deer is its rider's; one in the fog is not there
     if (MONSTER[a.kind] && MONSTER[a.kind].teamPay) continue;
     const d = Math.hypot(a.x - p.x, a.y - p.y);
     if (d < bd) { bd = d; best = a; }
@@ -836,7 +836,7 @@ function aiThink(p, dt) {
   const fq = foe && ai.focusOk && T.focus >= 0 ? players[T.focus] : null;
   if (fq && fq !== foe && enemyOf(p, fq)) {
     const d = Math.hypot(fq.x - p.x, fq.y - p.y);
-    if (d < prof.sight && d < seenAt(fq, prof.sight)) foe = fq;
+    if (d < prof.sight && d < seenAt(fq, prof.sight, p.team)) foe = fq;
   }
   // ...and a rival it was just fighting is held a little past the edge of
   // its sight (aiHoldFoe, the team brain), so a strafe across the line does

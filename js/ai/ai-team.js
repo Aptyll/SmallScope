@@ -261,7 +261,7 @@ function aiHoldFoe(p, prof, foe) {
   const ai = p.ai, f = ai.lastFoe;
   if (!foe && f && state.elapsed - ai.lastFoeT < AI_COMMIT_T && (f instanceof Player ? enemyOf(p, f) : unitAlive(f) && f.team !== p.team)) {
     const r = prof.sight * AI_COMMIT_R, d = Math.hypot(f.x - p.x, f.y - p.y);
-    if (d < r && (!(f instanceof Player) || d < seenAt(f, r))) return f;
+    if (d < r && (f instanceof Player ? d < seenAt(f, r, p.team) : inSight(p.team, f))) return f;
   }
   if (foe) { ai.lastFoe = foe; ai.lastFoeT = state.elapsed; }
   return foe;
@@ -291,7 +291,7 @@ function aiGrudgeFoe(p, prof) {
   const m = g ? players[g.id] : null;
   if (!m || !enemyOf(p, m)) return null;
   const d = Math.hypot(m.x - p.x, m.y - p.y);
-  if (d >= prof.sight * AI_COMMIT_R || d >= seenAt(m, prof.sight * AI_COMMIT_R)) return null;
+  if (d >= prof.sight * AI_COMMIT_R || d >= seenAt(m, prof.sight * AI_COMMIT_R, p.team)) return null;
   if (g.seenT < 0) g.seenT = state.elapsed;
   return m;
 }
@@ -446,7 +446,7 @@ function aiLook(p, prof) {
   for (const q of players) {
     if (!enemyOf(p, q)) continue;
     const d = Math.hypot(q.x - p.x, q.y - p.y);
-    if (d < prof.sight && d < seenAt(q, prof.sight)) aiSaw(p, q);
+    if (d < prof.sight && d < seenAt(q, prof.sight, p.team)) aiSaw(p, q);
   }
 }
 // p calls for help at where it stands (one open call a caller, refreshed)
@@ -502,7 +502,7 @@ function aiOdds(p, foe, prof) {
   for (const q of players) {
     if (!q.active || q.dead || inAir(q)) continue;
     if (q.team === p.team) { if (Math.hypot(q.x - p.x, q.y - p.y) < AI_ODDS_R) us++; }
-    else if (enemyOf(p, q) && Math.hypot(q.x - foe.x, q.y - foe.y) < AI_ODDS_R && Math.hypot(q.x - p.x, q.y - p.y) < seenAt(q, prof.sight)) them++;
+    else if (enemyOf(p, q) && Math.hypot(q.x - foe.x, q.y - foe.y) < AI_ODDS_R && Math.hypot(q.x - p.x, q.y - p.y) < seenAt(q, prof.sight, p.team)) them++;
   }
   return { us, them };
 }

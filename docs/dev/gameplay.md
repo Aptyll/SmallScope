@@ -1489,13 +1489,15 @@ those, never `p.hide` directly**:
 
 - `concealOf(p)` = `hide`, discounted to `PRONE_MOVE` (×0.5) while `p.moving`. A crawling mound is
   worth half a still one, which is what makes "stop before you shoot" a real decision.
-- `seenAt(p, range)` = the distance a watcher with plain sight `range` actually notices p from:
+- `seenAt(p, range, team)` = the distance a watcher with plain sight `range` actually notices p from
+  (0 when `team` is given and p is in that side's [fog](#fog-of-war); creatures and turrets give none):
   `range × kit.stealth × (1 − PRONE_CUT × conceal)`, floored at `PRONE_SNIFF` (22 px) whenever
   there is any cover at all — **nothing hides at arm's length**. A bot's sight is its profile's
   (`AI_LEVELS`, js/ai/ai-skill.js: EASY 120, NORMAL 147, HARD 200, IMPOSSIBLE 267 px), so full cover takes those to
   22 (the floor), 22, 28 and 37, and a tier-3 turret's 124 down to 22.
 
-**Every watcher resolves through `seenAt`, and a new one must too.** Today's callers: a bot's
+**Every watcher resolves through `seenAt`, and a new one must too** (a bot's names its side, so the
+fog holds for it). Today's callers: a bot's
 target pick and its roost-threat count (`aiNearestEnemy`, `aiSituation`, js/ai/ai.js), a turret
 (`turretMark`/`turretHolds`), a worker bot's quarry and the flag's reach (js/sim/robots.js), prey
 deciding to bolt (`updatePrey`), the eagle's gust (js/sim/eagle.js) and the CLICK scheme's lock and
@@ -1565,6 +1567,34 @@ None of them is a word:
 A hunter bot casts it through the same ability key a human presses (`inp.ability = 3`) — rung 2
 of the [ladder](multiplayer.md#bots), decided before the rest because two later rungs read
 the answer; a warrior bot has no burrow to decide.
+
+## Fog of war
+
+A side sees a circle round each of its heroes (`FOG_HERO`, 10 tiles), wave soldiers
+(`FOG_SOLDIER`, 7) and finished turrets (`FOG_TURRET`, 8) — towers will join `sightSources` when they
+exist. Everything else is dimmed, never black: terrain, buildings and both eagles stay, but a rival
+player, a rival bot and every creature outside the side's sight are not there for it — not drawn on
+the screen, the minimap or the M map, and not seen by its bots. Code: js/sim/fog.js (the rule),
+js/draw/fog.js (the picture).
+
+- **Stone cuts sight**: the cistern's stone (by its distance field, `cisternDist`) and every built
+  wall, long wall and gate tile (`sightWallAt`). A sight line stops where it meets one
+  (`sightReach`); the screen keeps `FOG_FACE` px past that lit so the wall's face shows.
+- **Pines cast no shadow. The woods are brush instead**: a body standing on a walkable tile with
+  `FOG_WOODS_N` pines or more in the 5x5 round it is hidden from a side even inside its circles,
+  until one of that side's heroes or soldiers stands within `FOG_BRUSH` px (`woodsHide`).
+- **The falcon's mark sees through it**, as it sees through cover.
+- **Where it is up** (`fogUp`): a match on the ground. Never the practice field, the drop's flight
+  or the title tour; `DBG.fog = false` lifts it for a debug look, and the media
+  kit films without it unless a scene asks (`MEDIA.boot({ fog: true })`).
+- **Bots play by it.** `inSight(team, u)` is the side's answer, worked out once per unit per tick.
+  Every bot sight check names its side: `seenAt(q, range, p.team)` returns 0 for a rival outside
+  that side's sight, and the soldier, hunt and bot-API loops ask `inSight` straight. So a bot's
+  profile sight (up to 267 px) is capped by what its side can see, and a bot never shoots into
+  the fog. The CLICK scheme's lock and acquire ask the same.
+- **Nothing is stored or sent**: it is all read off where things stand, so a client works out its
+  own side's view from its copy of the world. The host still sends every body to every client
+  (hiding them on the wire is separate, later work).
 
 ## Wildlife
 

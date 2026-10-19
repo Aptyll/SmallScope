@@ -192,7 +192,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | the gear table, the effective kit, buying a piece level | `GEAR`, `GEAR_SLOTS`, `GEAR_COSTS`, `baseKit`, `refreshKit` (folds in the item slots: `itemMods`, js/sim/items.js), `gearCost`, `buyGear` | `players` › `gear` |
 | skill points (one per hero level, spent on class-ability levels) | `p.skillPts` (spent by `buyAbilityLv`, abilities.js) | `players` (granted in `levelUp`) |
 | roguelike card effects and rarities | `CARDS`, `CARD_RARITIES`, `cardKey`, `CARD_TYPE_RARITY` | `players` › `roguelike cards` |
-| how hidden a player is, and how far anything notices it from | `concealOf`, `seenAt`, `ambushReady` | `players` › `being seen` |
+| how hidden a player is, and how far anything notices it from (`seenAt`'s `team`: the fog of war, js/sim/fog.js) | `concealOf`, `seenAt`, `ambushReady` | `players` › `being seen` |
 | death (which keeps everything on the body), the flat bounty a kill pays, the wait for the bird and the return at it, the one permanent path (a driven-off eagle), the team-level win check | `KILL_BOUNTY`, `bodyOut` (the body leaving the world, without the record: die()'s first half, and a surrender's whole), `die`, `RESPAWN_WAIT`, `respawnTime`, `updateRespawns`, `RESPAWN_OUT`, `respawnPlayer`, `teamInMatch`, `rivalTeamsInMatch`, `checkLastStanding`, `endMatch`, `endSnapshot` | `damage & death` (`teamEagleDown`: `eagle drop`, js/sim/eagle.js) |
 | practice undoing a death on the spot | `practiceRevive` (die()'s first branch under `PRACTICE`) | `damage & death` |
 | the match record every player keeps, for [the post-game lobby](../../js/ui/lobby.js) | `p.kills`/`p.deaths`/`p.dmgOut`/`p.dmgIn`/`p.dmgBird`/`p.dmgStruct`/`p.hGold`/`p.hDmg`, and the newer half as a table, `PLAYER_RECORD` (`dmgBeast`, `dmgInP`/`dmgInB`, `healed`, `goldSpent`, `beasts`, `streak`/`bestStreak`, `multiN`/`multiT`/`bestMulti` over `MULTI_T`, `ccOut`; an older save is filled from it in `saveApply`, js/sim/save.js) (written in `damagePlayer`, `die` and `healPlayer` here, `hurtEagle` js/sim/eagle.js, `hurtUnit`/`ccCredit`/`hurtStruct` js/sim/actions.js, `pay` js/sim/core.js, `animalDies` + `BEAST_CAUSES` js/sim/wildlife.js, `sampleStats` js/ui/lobby.js; a respawn's `reset` clears none of them) | `players` (declared) / `damage & death` (kept) |
@@ -459,6 +459,16 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | the net drape, the root's jaws, the flames and the mark's chevrons, on ANY sprite at its own size | `drawUnitStates` | `class abilities` › `drawing` (its four callers: `drawAbilityOnPlayer` here, `drawAnimal`/`drawBird`/`drawRobot`, js/draw/bodies.js) |
 | who a thing left in the world credits its kill to, once the caster may be down | `abCredit` | `class abilities` › `the world tick` (whose SIDE it is on: `sideOf`, actions.js) |
 | the twelve 32×32 ability icons (the eight firsts, the warrior's four others) and their bake per option | `AB32`, `AB32_ALT`, `AB32_PAL`, `classAbIcon(cls, i, k)` | `class abilities` › `the strip icons` (drawn by `drawClassAbCell`, js/ui/hud-draw.js, and `tipClassAb`, js/ui/tooltip.js) |
+
+## js/sim/fog.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| how far each side sees, the woods' count and reach, the lit face | `FOG_HERO`/`FOG_SOLDIER`/`FOG_TURRET`, `FOG_WOODS_N`/`FOG_BRUSH`, `FOG_FACE` | `fog of war` |
+| whether the fog is up at all | `fogUp` (`DBG.fog`) | `fog of war` |
+| a side's eyes, and a sight line meeting stone (built walls by tile, the cistern by its distance field) | `sightSources`, `sightEye`, `sightReach`, `sightWalls`, `sightWallAt` | `fog of war` |
+| the woods as brush | `inWoods`, `woodsHide` | `fog of war` |
+| what a side sees (the bots ask it, and `seenAt(p, range, team)` through it) | `inSight` | `fog of war` |
 
 ## js/ai/ai-skill.js
 
@@ -744,6 +754,14 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | Looking for | Start at | Banner |
 | --- | --- | --- |
 | what a callout looks like: the plate over the caller's name (or over the ping when the caller is off the screen), its glyphs, the ground ping's pulse, the minimap's | `drawCallouts` (called after `renderLighting`, render.js), `drawCallPlate`, `CALL_GLYPHS`, `callTag`/`callAnchor` (set from `drawPlayer`, js/draw/bodies.js), `drawCalloutsMap` (called from `renderMinimap`, js/ui/minimap.js) | `callout pixels` (what a call is: `bot callouts`, js/ai/ai-callouts.js) |
+
+## js/draw/fog.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| whether a body (or its map dot, or its tracks) is drawn this frame, the frame's sight lines, the edge's distance at a point | `fogShown`, `fogView`, `fogMargin`, `fogRay`, `fogLines` (an eye that has not moved keeps its lines) | `fog of war (draw)` |
+| the dim over the world: its tint, the stepped rim's cell and step, the mask and the multiply (called first thing in `renderLighting`) | `FOG_TINT`, `FOG_CELL`/`FOG_STEP`/`FOG_ARC`/`FOG_CLAMP`, `fogCorners`, `fogMask`, `drawFog` | `fog of war (draw)` |
+| the minimap's and the M map's fog: one px a tile, rebuilt when an eye moves | `fogMapFrame`, `fogOverMap` (from `renderMinimap`, js/ui/minimap.js, and `renderWorldMap`, js/ui/panels.js) | `fog of war (draw)` |
 
 ## js/draw/light.js
 

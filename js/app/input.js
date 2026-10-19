@@ -835,14 +835,14 @@ function ckArmedPress() {
 function ckSees(p, t) {
   if (!unitAlive(t) || !unitFoe(p, t)) return false;
   const d = Math.hypot(t.x - p.x, t.y - p.y);
-  return d <= (t instanceof Player ? seenAt(t, CK_LOCK_R) : CK_LOCK_R);
+  return d <= (t instanceof Player ? seenAt(t, CK_LOCK_R, p.team) : inSight(p.team, t) ? CK_LOCK_R : 0);
 }
 // the nearest foe an attack-move takes: a rival player it can see, a rival
 // robot, or a camp's monster - never a deer, which is a hunt and not a fight
 function ckAcquire(p) {
   let best = null, bd = CK_ACQ_R;
-  const take = (e, r) => { const d = Math.hypot(e.x - p.x, e.y - p.y); if (d <= r && d < bd) { bd = d; best = e; } };
-  for (const q of players) if (enemyOf(p, q)) take(q, seenAt(q, CK_ACQ_R));
+  const take = (e, r) => { const d = Math.hypot(e.x - p.x, e.y - p.y); if (d <= r && d < bd && inSight(p.team, e)) { bd = d; best = e; } };
+  for (const q of players) if (enemyOf(p, q)) take(q, seenAt(q, CK_ACQ_R, p.team));
   for (const b of robots) if (unitAlive(b) && b.team !== p.team) take(b, CK_ACQ_R);
   for (const a of animals) if (a.home && unitAlive(a)) take(a, CK_ACQ_R);
   return best;

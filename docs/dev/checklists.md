@@ -394,7 +394,10 @@ can see a player — asks `seenAt(p, range)`, never a bare distance against a ba
 function is where GHOSTSTEP and lying buried in the snow both live, and a hunter that skips it
 stares straight through the cover with nothing in the code to say why. If it also *marks* the
 player somewhere the player can read (a map dot, an icon), gate that on
-`concealOf(p) >= PRONE_MAP` the way both maps do. See
+`concealOf(p) >= PRONE_MAP` the way both maps do. A bot or anything else that plays for a side
+passes that side: `seenAt(p, range, team)`, and `inSight(team, u)` for a body that is not a player,
+or it sees through the [fog of war](gameplay.md#fog-of-war). **Drawing a body, its dot or anything
+pinned to it** asks `fogShown(u, now)` first (js/draw/fog.js), or it shows in the fog. See
 [gameplay.md](gameplay.md#prone-under-the-snow).
 
 **Adding a way to hurt anything** — call `hurtUnit(e, dmg, nx, ny, src, o)`, never `damagePlayer` /

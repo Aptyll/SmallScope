@@ -498,7 +498,7 @@ riding a zipline is a target like any other, and cannot shoot back ([the ride](g
 
 **Whether a rival can be seen at all is a separate question from whether they can be shot.**
 `enemyOf` answers the second; `seenAt(p, range)` answers the first, and every watcher in the
-game — the bot brain, both turret checks — resolves through it (a camp monster has no sight: a hit is its only trigger). See
+game — the bot brain (naming its side, so the [fog of war](gameplay.md#fog-of-war) holds), both turret checks — resolves through it (a camp monster has no sight: a hit is its only trigger). See
 [Prone](gameplay.md#prone-under-the-snow).
 
 **A rival's worker bots are targets too** — they are tested straight after the players, on the same

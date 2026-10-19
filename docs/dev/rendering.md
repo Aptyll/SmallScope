@@ -236,7 +236,7 @@ code still uses `ex`/`ey`. A screen-space pass anchored to the world reads the e
     exists; the fliers draw on the air layer, below) → `drawZips` (each side's zipline cable, span by span with its sag and wind lean —
     over every body and canopy, under the night; the line under the pointer lit gold, `hoverZip`;
     js/draw/zipline.js);
-14. `renderLighting` → `drawNavPaths` + `drawHitboxes` (the `.` debug overlay — deliberately
+14. `renderLighting` (its first pass `drawFog`, [the fog of war](gameplay.md#fog-of-war), js/draw/fog.js) → `drawNavPaths` + `drawHitboxes` (the `.` debug overlay — deliberately
     **above** the lighting, see [Debug overlays](#debug-overlays-hitboxes-and-routes));
 15. the air layer (`ctx = actx`): `drawDropAir(…, true)` (a bird in flight, its shadow and trail,
     the riders and every faller) → the zipline riders (`airRiders`, `drawPlayer`) → `lightAir` ([the air layer](#the-resting-zoom-is-always-pixel-exact)).
@@ -2369,6 +2369,15 @@ the ride alone (`rayLight` asks `aboard`/`dropT`, never `inAir`).
 Everything over the finished world frame, in world pixels, in `renderLighting()`
 ([js/draw/light.js](../../js/draw/light.js), the `light & weather` banner). It is the last world
 pass; the debug overlays are the only thing above it.
+
+**The fog of war goes first** (`drawFog`, js/draw/fog.js): one `multiply` of a flat grey
+(`FOG_TINT`) through a mask of the viewed side's sight, under the hour and the night, so fog and
+night stack instead of fighting. Dim, never black, and neutral grey where the night is blue. The
+rim is stepped `FOG_STEP` px on the world's own grid (the edge measured on `FOG_CELL` px corners),
+so it holds still while the camera slides; never a blur. A body out of sight is simply not put on
+the draw list (`fogShown`, in `render()`'s list, the swing arcs, the trample and both maps' dots).
+Its cost is on F3's DRAW: about 1 ms on the headless software renderer, mostly the multiply
+itself, and an eye that has not moved re-uses its sight lines.
 
 **Almost nothing on the map emits light, and there is no light registry** — not even a glow on the
 player: a lit shot and a warren's open snowdrop are the only two. **Night is a colour and a closing in**: a `multiply` of

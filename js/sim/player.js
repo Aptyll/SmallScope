@@ -790,11 +790,15 @@ function concealOf(p) { return p.hide > 0 ? p.hide * (p.moving ? PRONE_MOVE : 1)
 // never past PRONE_SNIFF, because at arm's length you are found whatever you
 // are lying under. Every watcher in the game (the pack, the turrets, the bot
 // brain) resolves through this one function so they cannot disagree about who
-// is hidden.
-function seenAt(p, range) {
+// is hidden. A watcher that plays by the fog of war (a bot, a hand's lock-on)
+// names its side as `team`: a rival outside that side's sight is not seen at
+// all (inSight, js/sim/fog.js). Creatures and turrets watch without it.
+function seenAt(p, range, team) {
   // the falcon's mark is the ONE legal bypass: a swept rival is simply seen,
-  // whatever they are lying under, until the mark runs out (js/sim/abilities.js)
+  // whatever they are lying under or however deep in the fog, until the mark
+  // runs out (js/sim/abilities.js)
   if (p.markT > 0) return range;
+  if (team !== undefined && !inSight(team, p)) return 0;
   const c = concealOf(p);
   const r = range * kitOf(p).stealth * (1 - PRONE_CUT * c);
   return c > 0 ? Math.max(r, Math.min(range, PRONE_SNIFF)) : r;
