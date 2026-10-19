@@ -188,7 +188,7 @@
     gold:   CARD_PAL('#e8a33d', '#ffdc8e', '#a8661a', '#ffffff'),
   };
 
-  // The backpack's own glyph: 12x12 like a gear icon, because it sits in the
+  // The backpack's own glyph: 12x12 like an item icon, because it sits in the
   // same 18px HUD well. Dark flap over a lighter body with a gold buckle.
   const itemBag = [
     '....oooo....',

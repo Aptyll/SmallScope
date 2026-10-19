@@ -327,7 +327,7 @@ function dragDropBag(i) {
   return true;
 }
 // One cell, and the reason nothing in here is bigger than anything else:
-// grid slots and gear plates all come out of this. Returns
+// every grid slot comes out of this. Returns
 // the y it actually drew at, since a hover lift shifts it.
 function bagCellPlate(r, rim, inner, lift) {
   const y = r.y - (lift ? 1 : 0);

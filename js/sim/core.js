@@ -627,7 +627,7 @@ function updateEat(p, dt) {
   if (bagCount(p, type) <= 0) return; // spilled out from under the meal
   bagTake(p, type, 1);
   p.foodCd = FOOD_CD;
-  const heal = Math.round(ITEMS[type].heal * kitOf(p).foodMul); // HEARTHWEAVE makes meals bigger
+  const heal = Math.round(ITEMS[type].heal * kitOf(p).foodMul); // a kit's foodMul scales the meal
   healPlayer(p, heal);
   sfxAt('heal', p.x, p.y);
   addFloater(p.x, p.y - 14, '+' + heal, '#8fe08a');

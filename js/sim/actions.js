@@ -282,7 +282,7 @@ function tryDodge(p) {
   p.stamGhost = Math.max(p.stamGhost, (p.dodgeCharges + regenP) / DODGE_CHARGES);
   p.stamGhostT = 0.3;
   p.dodgeCharges--;
-  if (p.dodgeRegenT <= 0) p.dodgeRegenT = kitOf(p).dodgeCd; // DANCER shortens the refill
+  if (p.dodgeRegenT <= 0) p.dodgeRegenT = kitOf(p).dodgeCd; // cards and the LIGHT item shorten the refill
   p.invuln = Math.max(p.invuln, DODGE_T + 0.05);
   p.kbx = p.kby = 0;
   faceToward(p, dx, dy, true);
@@ -530,7 +530,7 @@ function chopTree(o, p) {
   objects[idx(o.tx, o.ty)] = { type: 'stump', tx: o.tx, ty: o.ty, flash: 0, shake: 0 };
   sfxAt('treeFall', ox, oy);
   shakeFor(p, dead ? 2 : 2.5);
-  // PACKMULE / FORAGER fatten the fell
+  // FORAGER fattens the fell
   awardGold(p, Math.round((dead ? YIELD.deadTreeFall : YIELD.treeFall) * kitOf(p).harvestMul), ox, oy - 6);
   burst(ox, oy - 8, '#eef4fb', dead ? 12 : 14, 55, 0.7, true);
   burst(ox, oy - 8, dead ? '#6b5a48' : '#2f5c4b', dead ? 6 : 8, 45, 0.6, true);

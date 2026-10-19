@@ -112,7 +112,7 @@ defineBot({
       return act;
     }
     const n = pickNode(this, obs, own, 220, ['tree', 'bush', 'rock']);
-    if (n) { work(me, n, act); act.think = { goal: 'GATHER', why: 'GOLD FOR GEAR', plan: 'HOLD', target: { kind: 'point', x: n.x, y: n.y } }; return act; }
+    if (n) { work(me, n, act); act.think = { goal: 'GATHER', why: 'GOLD FOR ITEMS', plan: 'HOLD', target: { kind: 'point', x: n.x, y: n.y } }; return act; }
     act.goTo = { x: post.x, y: post.y };
     act.think = { goal: 'GUARD', why: 'NOTHING TO DO', plan: 'HOLD' };
     return act;

@@ -785,7 +785,7 @@ function updateTitle(dt) {
     // cell would go NaN here and take its whole row off the screen
     m.hover[i] = (m.hover[i] || 0) + (target - (m.hover[i] || 0)) * Math.min(1, dt * 14);
   }
-  // lobby cross-fade and its own hovers; a pop-up (gear, map, ai) rides a
+  // lobby cross-fade and its own hovers; a pop-up (hero, map, ai) rides a
   // second ease (popT) over the still-lit lobby
   const st = m.screen === 'lobby' || popOpen() ? 1 : 0;
   m.screenT = Math.max(0, Math.min(1, m.screenT + (st ? 1 : -1) * dt / 0.35));
@@ -1281,7 +1281,7 @@ function heroLayout() {
   const cx = Math.round(VIEW_W / 2);
   const ledW = 118;
   const pw = 8 + ledW + 10 + HERO_WELL + 8;
-  const ph = 222;
+  const ph = 206;
   const px = cx - (pw >> 1), py = Math.round((VIEW_H - ph) / 2);
   const ax = px + 8 + ledW + 10;
   const abils = [0, 1, 2, 3].map((i) => ({ x: ax, y: py + 12 + i * (HERO_WELL + HERO_WELL_G), w: HERO_WELL, h: HERO_WELL, i }));
@@ -1400,8 +1400,8 @@ function mapStep(d) {
   m.mapSlide = { d, k, from, t: 0 };
   pickMap(k);
 }
-// LOCK IN: the class is locked here and the countdown starts. Gear stays
-// open through it (the widget still opens its pop-up), ESC calls it off, and
+// LOCK IN: the class is locked here and the countdown starts. The hero
+// pop-up stays open through it (your figure still opens it), ESC calls it off, and
 // the eagle comes at zero (updateTitle -> lockIn) - or at once on a SECOND
 // press: a player who has already decided is not made to sit through the
 // count, so LOCK IN again ends it where zero would have (every rival frame
@@ -1440,8 +1440,8 @@ function lobbyRevealed() {
 // grown at boot (MAP_TYPE), so a pick that is not this page's shape is a
 // page - the lobby stays on screen to the end of the count, then the page
 // comes back on this seed in that shape and js/app/boot.js goes straight to
-// the eagle (softfall.drop, carrying the gear picks and the stat points,
-// which no profile holds).
+// the eagle (softfall.drop, carrying the ability picks, which no profile
+// holds).
 function lockIn() {
   const m = state.menu;
   if (m.lockT > 0) return;
@@ -1479,7 +1479,7 @@ function lobbyClick() {
   const h = lobbyHit();
   if (!h) return;
   if (h === 'play') pressPlay();                                    // LOCK IN: lock the pick, start the count
-  else if (h === 'hero') { m.pressT = 0.12; beginHero(); }          // your figure opens the hero pop-up: gear, points, abilities
+  else if (h === 'hero') { m.pressT = 0.12; beginHero(); }          // your figure opens the hero pop-up: stats, abilities
   else if (h === 'map') { m.pressT = 0.12; beginMapPick(); }        // the map plate its own: the shape, the seed, the die
   else if (h === 'ai') { m.pressT = 0.12; beginAiPick(); }          // the target its own: the rivals' level
   else if (h.startsWith('pick')) lobbyPick(+h.slice(4));            // a hero on the row (js/ui/heroes.js)

@@ -1,6 +1,6 @@
 'use strict';
 // A body in the world: a beast on its clip, a robot, the merchant, and the
-// player - gear marks, buff ring, pose bounds, snow cover, burial, the
+// player - buff ring, pose bounds, snow cover, burial, the
 // ghost, the held tool. Every walking thing's sprite pass ends up here.
 // ---- beasts, robots and the merchant --------------------------------------
 // The frame a beast is on: the clip it put itself in (ANIM_CLIPS,

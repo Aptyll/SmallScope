@@ -547,7 +547,7 @@ function tickObjTimers(dt) {
 // The clock pays: every player on the ground draws TRICKLE_GOLD into its
 // wallet every TRICKLE_T s, through gainGold - the League trickle, gold and
 // never XP. A floor under everyone's purse, so a player who never swings an
-// axe still buys gear, and a farmer pulls ahead only by the fells, never by
+// axe still buys items, and a farmer pulls ahead only by the fells, never by
 // the clock. Silent on purpose: no floater,
 // no blip - the strip's purse is the tell. The practice
 // arena has no clock and gets none; the dead and the airborne earn nothing.
@@ -1429,7 +1429,7 @@ function updatePlayer(p, dt) {
   p.faceT = Math.max(0, p.faceT - dt);
   p.invuln = Math.max(0, p.invuln - dt);
 
-  // gentle regen in daylight (HEARTHWEAVE keeps the hearth lit after dark)
+  // gentle regen in daylight (a kit's nightHeal keeps it on after dark)
   if (p.hp < p.maxHp && (state.darkness < 0.3 || kit.nightHeal)) {
     healPlayer(p, dt * 0.6);
   }

@@ -477,7 +477,7 @@ function toolPlan(cell) {
 // for. Never null for a tool: an empty one answers with its own plain shot.
 function peekBit(cell) { return toolPlan(cell).shots[0].id; }
 // seconds between shots: the tool's own rate, quickened by everything that
-// already quickens a renock (QUICKDRAW, QUICK HANDS, the renock cards)
+// already quickens a renock (QUICK HANDS, the renock cards)
 function toolRof(p, cell) {
   return TOOLS[toolIdOf(cell.type)].rof * TOOL_ROF_STEP * (kitOf(p).nock / BOW_NOCK) / asMul(p);
 }
@@ -1215,7 +1215,7 @@ function botFitLoadout(p) {
 //
 // A tool's SHAPE says which weapon it is and its PALETTE says its tier: every
 // tool has a silhouette of its own, and every art is baked in all three tier
-// palettes, the way one gear icon covers four materials. Tier colour lands on
+// palettes, the way one item icon glyph covers four materials. Tier colour lands on
 // 'm' (the limb or the metal) and 'M' (its lit side), so what somebody holds
 // reads its tier off their sprite from across the snow; everything else stays
 // the same on every tier - the grip (g/G), the string (q, dim so the limbs

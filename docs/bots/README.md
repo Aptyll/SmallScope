@@ -11,7 +11,7 @@ what it is thinking, so you can watch it reason in the game's bot view (F4) and 
 - **[Example bots](../../bots/)**: `starter.js` (the template), `pack.js` (teamwork over `say`),
   `keeper.js` (gathering, buying, defending), and four ladder styles: `raider.js` (rushes the
   rival bird), `bulwark.js` (holds its road home with turrets, sallies after a wipe), `prospector.js`
-  (farms and gears up, then pushes together) and `shepherd.js` (walks behind its soldier waves).
+  (farms and buys items, then pushes together) and `shepherd.js` (walks behind its soldier waves).
 
 ## The smallest bot
 

@@ -1270,8 +1270,8 @@ stars reflected in the ice under it, and nothing to carry a lamp for
 in wildlife or the AI reads `state.darkness`. What keys off the cycle:
 
 - The only passive heal, slow HP regen in `updatePlayer()` for every player, runs while
-  `state.darkness < 0.3` — or at any hour under a kit with `nightHeal` (the HEARTHWEAVE gear,
-  js/sim/player.js). There is no cold/warmth system.
+  `state.darkness < 0.3` — or at any hour under a kit with `nightHeal` (`baseKit`,
+  js/sim/player.js; no card or item sets it now). There is no cold/warmth system.
 - **The wind dies with the light.** `windAmp()` squares `1 - darkness`, so the snow stops blowing
   sideways and every pine goes still over the twelve seconds of dusk and stays still until dawn
   ([the wind field](rendering.md#the-wind-field)).
@@ -1348,7 +1348,7 @@ sits beside `STRUCTS` in [js/sim/structures.js](../../js/sim/structures.js) with
   callback calls `startCatch(p, kind)` (below `autoFish` in js/sim/tools.js), `CATCH_T` (2 s) of three
   down-facing frames whatever the body faced - `CATCH_STOOP` (0.16 s) bent to the hole,
   `CATCH_HAUL` (0.22 s) with the fish coming up, then the trophy hoist over the head
-  (`catchFrame(p)` says which; `drawPlayer` draws it, the held tool and gear marks off, the
+  (`catchFrame(p)` says which; `drawPlayer` draws it, the held tool off, the
   overhead stack lifted 4 px for the hoist). It is shown only by a body standing still anyway:
   a step, any other intent (a fresh press, a roll, a cast, a swing, a meal) and a hit
   through `damagePlayer` end it at once via `cancelCatch` — an automatic catch may never cost

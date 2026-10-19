@@ -178,7 +178,7 @@ function animalHit(a, x, y) { return Math.hypot(a.x - x, animalHitY(a) - y) < an
 // One animal taking a hit, from an arrow or from a body rolled into it. Both
 // come through here so a swipe reacts exactly like a shot does - the den
 // wakes, prey bolts, the flock scatters - and `lastHit` (the player whose
-// HUNTSMAN bonus the kill pays, see animalDies) is stamped in one place.
+// wallet the kill pays, see animalDies) is stamped in one place.
 function hurtAnimal(a, dmg, nx, ny, kb, owner, ambush) {
   a.hp -= dmg;
   a.flash = 0.12;
@@ -690,7 +690,7 @@ function updatePrey(a, dt) {
   }
 
   // both prey bolt from a player who gets close - the deer from further out
-  // than the rabbit. The ring is what the player is SEEN at, so GHOSTSTEP
+  // than the rabbit. The ring is what the player is SEEN at, so stealth
   // and lying buried in the snow are how a hunter closes on a deer at all.
   let scare = null, sd = 1e9;
   for (const p of players) {
@@ -794,7 +794,7 @@ function updatePrey(a, dt) {
   // sight, or it has just finished running from you - the deer's head is up
   // and turning and the rabbit is rocked back on its haunches. So a grazing
   // deer is a deer that has not seen you, which is the whole of why closing
-  // on one under GHOSTSTEP or buried in the snow is worth doing, and it is
+  // on one under stealth or buried in the snow is worth doing, and it is
   // told without a word. Moving is the gallop or the hop, run slower for a
   // wander than for a flight: the same gait, not a different one.
   if (moving) setClip(a, rabbit ? 'hop' : 'run');
@@ -809,8 +809,8 @@ function updatePrey(a, dt) {
 // what a kill pays: one profile per kind out of the YIELD table, grown
 // ANIMAL_LV_GOLD a level for the animal's own level (the top of the banner),
 // straight into the wallet of whoever landed the final blow (a.lastHit,
-// stamped by hurtAnimal) - gold is never a physical drop. A HUNTSMAN's kill
-// pays its bonus on top of the same, grown award; a kill nobody is left
+// stamped by hurtAnimal) - gold is never a physical drop. A kit's huntMul
+// pays a bonus on top of the same, grown award; a kill nobody is left
 // alive to credit pays nobody. A camp monster's or a deer's `xp` is the
 // hunter's side's, shared by whoever of it stands near (shareXp), the
 // hunter too if they are still up; a rabbit teaches nobody anything.

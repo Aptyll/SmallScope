@@ -242,9 +242,9 @@ function tipStruct(type) {
   return d;
 }
 // What the pointer is on, asked once per frame. The order mirrors the
-// mousedown handler exactly: the build list's rows, gear, then the shelf,
-// then the weapon strip, then the backpack - so the panel and the click
-// always agree.
+// mousedown handler exactly: the build list's rows, the character panel's
+// items, then the shelf, then the weapon strip, then the backpack - so the
+// panel and the click always agree.
 function tipAt(mx, my) {
   if (window.DBG.hideUI || !mouse.inside) return null;
   if (state.mode === 'title') {

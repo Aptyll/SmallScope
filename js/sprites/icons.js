@@ -1,13 +1,14 @@
 'use strict';
-// HUD art: the twelve gear glyphs in four materials, the hearts, and the
+// HUD art: the twelve item icon glyphs in four materials, the hearts, and the
 // cursor set with its shadow.
 (() => {
   const { bake } = SPR;
 
   // ---------------------------------------------------------------- gear icons
   // One 12x12 glyph PER VARIANT (12 total), baked once per material - leather /
-  // iron / steel / gold - into SPRITES.gearIcons[slot][variant][material], so
-  // the icon carries WHICH piece you chose and its material carries the level.
+  // iron / steel / gold - into SPRITES.gearIcons[slot][variant][material]. They
+  // are item icon art now: a BUILD_ITEMS icon ['gear', slot, variant, material]
+  // names one (itemIcon, js/sim/items.js).
   // Shared accent chars across every material: w ice-white, r hearth-red.
   const GEAR_MAT_PALS = [
     { '.': null, 'o': '#141a2c', 'm': '#8a6a4a', 'h': '#b08a5e', 'd': '#5f4830', 'w': '#ddf1f8', 'r': '#f2707a' }, // leather

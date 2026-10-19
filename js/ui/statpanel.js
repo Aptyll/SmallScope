@@ -4,7 +4,7 @@
 // (js/sim/stats.js) prints - so a running bear buff is already in them, and
 // the number it raises wears that buff's ring colour while it lasts. Pointing
 // at one raises the tooltip's breakdown (tipStat): the base, what the levels
-// added, the bonus gear and cards gave, the buff, and the total under a rule.
+// added, the bonus cards and items gave, the buff, and the total under a rule.
 // It is part of the strip: drawn inside drawHudStrip, so it slides and scales
 // with it (drawHudScaled bakes from its left edge), and answered by stripHit,
 // so the world never sees a press on it.

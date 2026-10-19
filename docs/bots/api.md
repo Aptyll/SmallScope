@@ -62,8 +62,7 @@ are listed because a socket transport later will carry exactly these.
 | bot → game | `{ t: 'err', tick, msg }` | your code threw |
 | game → bot | `{ t: 'end', result }` | the match is over |
 
-`rules`: `{ tickDt, thinkEvery, obsR, tile, world, gearCosts, gearMax }`. `gearCosts[n - 1]` is
-the gold that takes a piece from level `n` to `n + 1`; `gearMax` is the top level.
+`rules`: `{ tickDt, thinkEvery, obsR, tile, world }`.
 
 `map`: `{ world, tile, shape, grid }`. `grid` is the map when your seat was taken: `world`
 strings, one per row, one character per tile (`grid[ty][tx]`):
@@ -88,7 +87,6 @@ obs = {
     prone, hide,           // hide 0..1: how buried under the snow
     aboard, falling, zip,  // on the eagle; in the drop; -1 or the cable ridden
     abilities: [{ key, id, lv, cd, ready, range }],  // keys 0..3; lv 0 = locked; range px or null
-    gear: [lv, lv, lv, lv],                // helmet, chest, legs, boots: 1..rules.gearMax
     tool: { type, bits, lvl } | null,      // the weapon in hand and the bits loaded in it
     toolSel, tools: [type | null],
     bag: [{ type, n } | null],
@@ -183,7 +181,6 @@ again on its side, exactly as it does a player's.
 | `cmd` | what it does |
 | --- | --- |
 | `{ kind: 'ability', i }` | spend a skill point on key `i` |
-| `{ kind: 'gear', piece }` | buy the next level of a gear piece (0 helmet, 1 chest, 2 legs, 3 boots) |
 | `{ kind: 'build', tx, ty, id, rot }` | place a building |
 | `{ kind: 'upgrade' \| 'repair' \| 'demolish', tx, ty }` | manage your side's building there (within 60 px) |
 | `{ kind: 'flag', tx, ty, id }` | plant your side's order marker (`id: null` lifts it) |

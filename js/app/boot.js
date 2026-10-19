@@ -119,7 +119,7 @@ try {
   }
   // ...and from LOCK IN on a shape this page had not grown (lockIn, js/ui/menu.js):
   // the page came back on this seed in that shape and goes straight to the
-  // eagle, the gear picks, stat points and ability picks it carried put back on (no profile holds them)
+  // eagle, the ability picks it carried put back on (no profile holds them)
   const dropRaw = sessionStorage.getItem('softfall.drop');
   if (dropRaw) {
     sessionStorage.removeItem('softfall.drop');
@@ -234,7 +234,7 @@ window.DBG = {
   CLASS_AB, abCraters: craters, abNets: nets,
   tryAbility: (i, p) => tryAbility(p || player, i),
   setAbilityCd: (i, t, p) => { (p || player).abCd[i] = t; },
-  // ability levels: gear's ladder on the four keys (js/sim/abilities.js)
+  // ability levels: a buy ladder on the four keys (js/sim/abilities.js)
   AB_LV_MAX, abLvCanBuy: (i, p) => abLvCanBuy(p || player, i),
   abCdOf: (i, p) => abCdOf(p || player, i),
   // level 0 is LOCKED: nothing casts off a key no point has been spent on

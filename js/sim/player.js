@@ -1,6 +1,6 @@
 'use strict';
 // Every combatant in the match: the numbers a player is made of, the Player
-// class and the ten of them, the two playable classes and their kits, gear, cards,
+// class and the ten of them, the two playable classes and their kits, cards,
 // the input struct, contested orders, the entity arrays - and the damage &
 // death lifecycle those players live and die by.
 // ------------------------------------------------------------ players
@@ -116,8 +116,8 @@ const HEROES_SOON = [
   { name: 'SLEET', cls: 0, look: { sex: 1, tone: 1, hair: 4, hairCol: 6, beard: 0, face: 2 } },
   { name: 'DURAVO', cls: 1, look: { sex: 0, tone: 3, hair: 2, hairCol: 0, beard: 3, face: 0 } },
 ];
-// the kit every sim site reads: the class's numbers with the player's gear
-// folded in. refreshKit() rebuilds the cache whenever class or gear
+// the kit every sim site reads: the class's numbers with the player's cards
+// and items folded in. refreshKit() rebuilds the cache whenever one of them
 // changes; kitOf() itself is called many times a frame and must stay a read.
 function kitOf(p) { return p.kit || CLASSES[p.cls].kit; }
 // swap a player's hero: its look comes with it (a copy - a snapshot merges
@@ -248,7 +248,7 @@ function playerTint(p) {
 // The six helpers below route them there, which is what keeps the pickup, the
 // catch, the sale and the AI's food check generic over "a
 // berry" and "a bit" alike.
-// `heal` is what a meal is worth before HEARTHWEAVE - the ONE place the number
+// `heal` is what a meal is worth before the kit's foodMul - the ONE place the number
 // lives, so the tooltip and the meal that lands can never disagree (js/sim/core.js).
 const ITEMS = {
   berry: { icon: 'itemBerry', stack: Infinity, pouch: true, heal: 20 },
@@ -373,7 +373,7 @@ function bagTake(p, type, n) {
 // A card's mod(k) writes into the kit - folded in cumulatively by
 // refreshKit below, so every kit-reading site in the sim picks them up for
 // free the same way it does items. killHeal is the one field no
-// champion/gear kit carries; die()'s kill-credit line reads it.
+// class kit carries; die()'s kill-credit line reads it.
 const CARDS = {
   white: [
     { name: 'QUICK HANDS', blurb: 'FASTER RENOCK', mod: (k) => { k.add.as += 0.04; } },
@@ -496,7 +496,7 @@ class Player {
     this.skillPts = 1;                  // unspent; level 1 starts with one, each levelUp adds one - spent on ability levels (buyAbilityLv, js/sim/abilities.js)
     this.abLv = [0, 0, 0, 0];           // ability ranks, 0 (LOCKED) ..AB_LV_MAX, a skill point each - like cards and items, NOT cleared by reset(): a death keeps what was bought
     this.abPick = [0, 0, 0, 0];         // which option each key carries (abOf, js/sim/abilities.js), picked pre-match in the hero pop-up; a bot keeps the first
-    this.cards = [];                    // picked roguelike cards, {rarity,id} - like gear, survives a respawn
+    this.cards = [];                    // picked roguelike cards, {rarity,id} - like items, survives a respawn
     // the one order marker this player has standing (the right-click radial;
     // see the `team flags` banner in js/sim/robots.js): null, or { tx, ty, type,
     // owner }. NOT cleared by reset() - an order outlives the hand that gave it.
@@ -527,7 +527,7 @@ class Player {
     this.hDmg = [];                     // ...and damage dealt, both cumulative (sampleStats, js/ui/lobby.js)
     this.items = new Array(ITEM_SLOTS).fill(null); // the six item slots, ids or null (js/sim/items.js) - like cards, they survive a respawn
     this.fightT = 0; this.kindleN = 0;  // s since the last hit given or taken, and KINDLING's count (itemsOnHit)
-    refreshKit(this);                   // builds this.kit and this.maxHp from class + gear + skill
+    refreshKit(this);                   // builds this.kit and this.maxHp from class + cards + items
     this.aboard = false;                // riding the eagle (beginDrop sets it, hopOff clears it)
     this.dropT = 0;                     // seconds left of the step down off the roost (0 = on the ground)
     this.dropAlt = 0;                   // px the step down started from: HOP_ALT off the roost
@@ -739,7 +739,7 @@ function faceToward(p, dx, dy, hold) {
 // which is the whole reason to stop moving before you shoot.
 function concealOf(p) { return p.hide > 0 ? p.hide * (p.moving ? PRONE_MOVE : 1) : 0; }
 // How far p is noticed from by a watcher whose plain sight range is `range`.
-// GHOSTSTEP always shortens it; lying under the snow shortens it hard - but
+// The kit's stealth (cards, items) shortens it; lying under the snow shortens it hard - but
 // never past PRONE_SNIFF, because at arm's length you are found whatever you
 // are lying under. Every watcher in the game (the pack, the turrets, the bot
 // brain) resolves through this one function so they cannot disagree about who
@@ -871,7 +871,7 @@ const KILL_VERB = { worker: 'CUT DOWN', fire: 'BURNED' };
 
 // DEATH COSTS TIME, NOTHING ELSE. A body goes down with everything it had
 // and comes back with all of it: the wallet, the pouch, the bag, the weapon
-// and its build, the cards, the gear, the level. Nothing spills and nothing
+// and its build, the cards, the items, the level. Nothing spills and nothing
 // is looted (the 1.25-3.54 rule, where the killer pocketed the wallet and the
 // build lay where it fell, is gone - it made the fifteenth minute a bag you
 // were afraid to carry). What a kill is worth is gold from nowhere, paid out

@@ -19,7 +19,7 @@
 // tiers[0].cost x ramp^n (buildCost, below). Income is a payback sum: a first
 // gold pump pays itself back in five minutes, so without the ramp the best
 // play was always another one, and a match drowned in them. With it the
-// answer turns: the second costs more than an upgrade or the gear it
+// answer turns: the second costs more than an upgrade or the item it
 // competes with, and the list's own price says so. Defence never ramps.
 // `blurb` is what a piece is FOR, one short sentence to a line (a line is
 // split at '. ' and must fit the tooltip's width): the build list's hover
@@ -474,7 +474,7 @@ function turretAim(o, tg, k) {
   if (tg.team === team) return null;
   return { x: tg.x, y: tg.y - 4 };
 }
-// GHOSTSTEP - and a body buried in the snow - shrink the ring a PLAYER is
+// Stealth - and a body buried in the snow - shrink the ring a PLAYER is
 // acquired and held inside; nothing else hides from a sling.
 function turretReach(tg, k, range) { return k === 'player' ? seenAt(tg, range) : range; }
 function turretHolds(o, tg, k, range, pv) {

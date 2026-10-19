@@ -498,7 +498,7 @@ sees is always shots then fittings however the bits went in.
 (`statOf`, [hero stats](#hero-stats)) plus however much more or less this bit hits for than the
 class's own bit, the kit's speed bonus (`spdDmg`) adds to it, **the draw
 scales the whole sum** (`drawDmgMul`, [The draw](#the-draw)) and then the modifiers scale that —
-so gear, cards and levels all still matter to a weapon they know nothing about, and a spammed
+so items, cards and levels all still matter to a weapon they know nothing about, and a spammed
 level-twelve bow is still a weak one. Speed and life come from `shotFlight(b, m, pw)`, the same
 envelope the aim line measures. The shot goes into the `arrows` array carrying
 `path`, `solid`, `ff`, `kb`, `reach`, `body`, `impact`, `type`, `burn`, `burnDps`, `cinder`,
@@ -777,7 +777,7 @@ told from a berry at a distance. A tool's **shape** says which weapon it is and 
 says its tier: six 12×12 silhouettes (`TOOL_ART`: bow, recurve, horn, long, sword, sling — one a
 tool, every bow its own: the short plain D, the recurve's forward-flicked tips, the horn bow's
 swept-back ears either side of a set-back grip, the full-height gold longbow), each baked in all
-three tier palettes — the same trick `GEAR_MATS` plays with one gear icon across four materials.
+three tier palettes, the way one `SPRITES.gearIcons` glyph is baked in four materials.
 
 ### Bots
 
@@ -803,7 +803,7 @@ its edge — the one **melee** body ([the cut](#the-cut-a-melee-tool) below).
 **The shot sits in the first cell and the rest are left open** (`giveLoadout` runs `sortBits`),
 so the first fitting anybody picks up has somewhere to go — a SPLITTER walked over turns that one
 arrow into three on the very next press. The hero pop-up's preview
-shows the weapon at the body's side (`drawGearPreview`, js/ui/menu.js) — the other half of what a
+shows the weapon at the body's side (`drawHeroPreview`, js/ui/menu.js) — the other half of what a
 class flies out with.
 
 ## Class abilities (keys 1-4)
@@ -814,8 +814,8 @@ Everything in this section lives in **[js/sim/abilities.js](../../js/sim/abiliti
 lives in its table entry** (`cd`, `cast`, `use(p)`), never in an `if` elsewhere. **A key can
 carry more than one option**: `CLASS_AB[cls][i]` is its first and `CLASS_AB_ALT[cls][i]` the
 others (`abOptions(cls, i)` lists them), and which one a body carries is `p.abPick[i]`, picked
-before the eagle in the [hero pop-up](rendering.md#the-hero-pop-up)'s ability strip and carried
-through the lock-in page with the gear; **every reader asks `abOf(p, i)`** for what a key is on
+before the eagle in the [hero pop-up](rendering.md#the-hero-pop-up)'s ability column and carried
+through the lock-in page; **every reader asks `abOf(p, i)`** for what a key is on
 this body, and `abKeyOf(p, id)` for the key an ability id stands on (−1 when it is not picked).
 A bot keeps the first option on every key — the one its hands know, since `aiCombat` reaches
 for keys by index. The hunter's keys carry one option each; the warrior's carry two:
@@ -850,8 +850,8 @@ The rest of the set: `abLvCanBuy(p, i)` (a point in hand, room on the key),
 `runCmd` by HUD plate click and bots alike — the unlock floats `NAME UNLOCKED` and a fatter
 burst, every level after floats the number), and `abCdOf(p, i)` — which every cooldown-setting
 site reads instead of the table's base `cd` (the cast landing, and the shield's comes-down
-reset). `p.abLv` resets with the match like `p.gearLv`. The wells carry the progress — fat
-gear-style buy pips along the top edge, **one seat per point the key can hold**, so an empty row
+reset). `p.abLv` resets with the match (every boot builds fresh `Player`s). The wells carry the progress — fat
+buy pips along the top edge, **one seat per point the key can hold**, so an empty row
 is a locked ability — and a locked well stands dim (dark rim, the icon at `LOCK_DIM`, a grey key
 digit), exactly as a meal button with nothing behind it does; a press on one reddens and shakes
 it (`abDenied`, the twin of `foodDenied`). The ASK floats clear of the wells: while a
@@ -1807,7 +1807,7 @@ still load. All three run
 The two bears are the two midline camps' kinds (`teamPay` in their `MONSTER` rows), and
 [the creek](world.md#the-creek) bends so each side owns one: they are one fight in two coats,
 the same row, the same hp and the same pay. Every payout grows `ANIMAL_LV_GOLD` a level like any
-kill ([Wildlife](#wildlife)). The teammate share goes through `awardGold` at each teammate's own feet (so a bot's gear purchase can
+kill ([Wildlife](#wildlife)). The teammate share goes through `awardGold` at each teammate's own feet (so a bot's purchase can
 eat it the same tick), to every active teammate who is not dead
 or in the air; the buff goes to every active teammate regardless. The bear's 150 XP is the
 hunter's side's, shared by whoever of it stands near ([Hero levels](multiplayer.md#hero-levels)).
@@ -2061,9 +2061,9 @@ needed twice) and carries bigger stats and one **passive**.
 | SUNSTONE | 200 | FLINT HEAD, FLINT HEAD | +7 DAMAGE | AMBUSH |
 
 **What an item does goes through the kit.** `itemMods` folds every slot into the kit inside
-`refreshKit` (js/sim/player.js), the way a card or a gear level does, so every site that reads the
+`refreshKit` (js/sim/player.js), the way a card does, so every site that reads the
 kit picks an item up without knowing items exist. Each stat line is an `ITEM_STATS` row, and every row adds
-its number to the same hero stat in the kit's bonus bag `kit.add` that gear and cards add to (see
+its number to the same hero stat in the kit's bonus bag `kit.add` that cards add to (see
 [Hero stats](#hero-stats)): ARMOR is League armor, ATTACK SPEED a share of the hero's attack speed,
 MOVE SPEED flat on the hero's walk. `ITEM_STAT_ORDER` is the
 order the stats print in and the order of the panel's category filters. Two items add their stats
@@ -2089,7 +2089,7 @@ Items are **ids** in `p.items` (`ITEM_SLOTS`, six of them, an id or `null` each)
 an item has no state of its own, so a slot is just the name of what is in it. Like cards, they
 survive a respawn. They ride the save on the player, and a save from before items gets six empty
 slots (`saveApply`, js/sim/save.js). When the slots change, `itemsChanged` rebuilds the kit: new max
-health arrives filled, the way a gear level does, and lost max health clamps.
+health arrives filled, the way a hero level does, and lost max health clamps.
 
 **A sprung chest gives a part for free** (`chestPart`, js/sim/items.js): a random one of
 `ITEM_PARTS` into the first empty slot, named in a floater over the chest. With all six slots full
@@ -2143,8 +2143,7 @@ fight (`p.fightT`), it walks to its own side's counter (the stall, or the mercha
 is within `AI_SHOP_DETOUR` (32 tiles), noting `SHOP` and the item as its thought (`aiNote`), which ends its
 ladder for that think. A part no item still left on its list is built from (a chest's gift,
 usually) is a **stray** (`botStrayPart`): with the slots full, the bot sells it at the counter,
-and a stray it could sell counts as room when it decides to walk there. Only a bot whose build is
-finished spends on [gear](#gear).
+and a stray it could sell counts as room when it decides to walk there.
 
 ### The panel
 
@@ -2494,69 +2493,27 @@ Every hero is the same seven League-style numbers, all in js/sim/stats.js (`STAT
 
 The base and growth sit in each hero's `CLASSES` entry (`base`, `grow`); attack speed's base is
 not written down but is the class weapon's own cycle (`classAs`: the kit's full draw plus the
-loadout tool's renock), and its growth and bonuses are fractions. Gear, cards and items
+loadout tool's renock), and its growth and bonuses are fractions. Cards and items
 (`ITEM_STATS`, js/sim/items.js) add to the kit's bonus bag `kit.add` (rebuilt by `refreshKit`); a bear buff multiplies at the moment it counts
 (`statBuffMul`: damage dealt in `hurtUnit`, the walk in `abilityMoveMul`), and `statShown` is the
-sheet with that on. `statParts` is the breakdown the panel's hover lists (base, levels, gear and cards, items, buff). Ice handling, the dodge
+sheet with that on. `statParts` is the breakdown the panel's hover lists (base, levels, cards, items, buff). Ice handling, the dodge
 roll, hiding and food are class traits on the kit, not stats. There are no pre-match stat points.
 
-## Gear
+## The effective kit
 
-Every player wears four pieces — **helmet, chest, legs, boots** (`GEAR_SLOTS`) — each one of three
-variants with a distinct lane, all in the `GEAR` table in the `players` banner:
-
-| Slot | Variants (per piece level) |
-| --- | --- |
-| helmet | LONGSIGHT +1 damage · QUICKDRAW +8% attack speed · HUNTSMAN +15% animal-kill gold |
-| chest | BULWARK +8 health · IRONHIDE +6 armor · HEARTHWEAVE +25% food heal, passive heal runs at night |
-| legs | STRIDER +3 move speed · SLIDEWORN −12% fatigue, slide engages 5 sooner · PACKMULE +25% gold on fells/breaks (`harvestMul`, rounded) |
-| boots | SKATES +8% ice cap, +0.15 steer · DANCER −0.4 s dodge refill · GHOSTSTEP wolves/turrets acquire at −10% range |
-
-The variant pick is free and is **level 1**; in-match gold buys each piece to level `GEAR_LV_MAX`
-(4) for `GEAR_COSTS` 10/20/35 — the second gold sink beside building. Levels reset with the match
-(every boot builds fresh `Player`s). The human picks variants in the **hero pop-up** — opened
-by clicking their figure on the lobby, all 12 variants at once as 32×32 icon wells beside a
-live preview and the seven hero stats with hover deltas (League runes-style; see
-[the hero pop-up](rendering.md#the-hero-pop-up)); `pickGear()` writes straight to `player.gear`.
-AI players hash all four variants from the seed in `initPlayers()`. **Every variant has its own
-icons**: the 12×12 material-swapped `SPRITES.gearIcons[slot][variant][material]` the HUD
-wears, and the detailed 32×32 `GEAR32` set the pop-up's wells wear — a pick is a distinct
-picture, not a label.
-
-**Worn gear shows on the sprite**: each piece at level 2+ lays a 1 px band of its material across
-the shared 16×16 body plan — hat, coat, hips, one mark per foot (`GEAR_MARKS`/`drawGearMarks`,
-called from `drawPlayer` under the held tool; skipped while rolling, in a hole, or in title). The
-free level-1 pick draws nothing, so the baseline look stays the class's; a fed player reads
-iron → steel → gold at a glance, the same materials the HUD plates wear.
-
-**Mechanism**: a variant's `mod(k, L)` writes its bonus into the player's *effective kit* —
-`refreshKit(p)` copies the class kit, adds the gear-only defaults (`add`, the [hero stat](#hero-stats)
-bonus bag, and `huntMul`, `foodMul`, `nightHeal`, `harvestMul`, `dodgeCd`, `stealth`) and applies the four mods; `kitOf(p)`
-returns that cache, so every existing kit read site (movement, `emitBit`, dodge timing, the AI,
-the draw meter) picks gear up without knowing it exists. The sim never reads `p.gear` directly.
-Sites that read the gear-only fields: `statOf` (`add`), `updateEat`'s landing and the daylight
-regen (`foodMul`/`nightHeal`), `hitObject`'s fell/break payouts (`harvestMul`), `animalDies`
-(`huntMul`, paid to `a.lastHit` — stamped by the arrow loop — as one extra coin), **`seenAt()`**
-(`stealth` — see [Prone](#prone-under-the-snow); the wolf pack, both turret checks *and*
-`aiNearestEnemy` all go through it, so GHOSTSTEP works against a rival player as well as against
-wolves and turrets), and the three dodge-refill sites (`dodgeCd`).
-
-**Buying** goes through `input.cmd = {kind:'gear', piece}` → `runCmd` → `buyGear(p, i)` — the one
-entry point: it re-validates cost, pays, bumps `gearLv`, rebuilds the kit, and heals a BULWARK
-bump on the spot like a hero level. No tile, no reach, no contest — it only touches the buyer's
-own wallet. The human buys on the **character panel** (G): the four pieces sit head-to-toe as
-32 px icon wells (`charLayout`/`charHit`/`drawCharPanel`, js/ui/bag.js), each named in the material
-of its level (leather → iron → steel → gold) with gear's three buy pips and the next level's
-price on it — an affordable well pulses its rim gold, a click on it buys, and a maxed piece goes
-quiet behind a gold rim
-([the character panel](rendering.md#the-character-panel-g)). There is no keyboard shortcut for
-it: keys 1-4 are the class abilities, and gear is bought where gear is worn. `gearHit` (a
-read through `charHit`) is shared by the click handler, `cursorInfo` (hand cursor) and
-`tipAt`, so the three can never disagree. The click is swallowed **before** `clickAction` — the
-panel, the backpack widget, the hud strip (the weapon well, an ability well casting and its buy
-badge) and the weapon shelf are the left-clickable HUD in play. Bots buy at rung 0 of
-`aiThink` (js/ai/ai.js), from anywhere, once their [item build](#buying-and-selling) is finished: cheapest piece
-first, keeping a 15-gold float so they still build.
+`refreshKit(p)` (js/sim/player.js) rebuilds a player's *effective kit*: `baseKit` copies the class
+kit and adds the bonus fields (`add`, the [hero stat](#hero-stats) bonus bag, and `huntMul`,
+`foodMul`, `nightHeal`, `harvestMul`, `dodgeCd`, `stealth`, `ambushMul` and the item passives'
+fields), then every [card](#roguelike-cards) in `p.cards` and the six item slots (`itemMods`,
+js/sim/items.js; see [the items](#the-items)) write into it. `kitOf(p)` returns that cache, so
+every kit read site (movement, `emitBit`, dodge timing, the AI, the draw meter) picks a card or
+an item up without knowing it exists. Sites that read the bonus fields: `statOf` (`add`),
+`updateEat`'s landing and the daylight regen (`foodMul`/`nightHeal`), `hitObject`'s fell/break
+payouts (`harvestMul`), `animalDies` (`huntMul`, paid to `a.lastHit`, stamped by the arrow loop),
+**`seenAt()`** (`stealth`, see [Prone](#prone-under-the-snow); the wolf pack, both turret checks
+*and* `aiNearestEnemy` all go through it, so a stealth card or item works against a rival player
+as well as against wolves and turrets), and the three dodge-refill sites (`dodgeCd`). No card or
+item raises `huntMul`, `foodMul` or `nightHeal` now; they sit at their defaults.
 
 ## Roguelike cards
 
@@ -2565,8 +2522,7 @@ A permanent buff dropped by a sprung **chest** in the treeline (`placeChests`, j
 `rollCardRarity`), one at a time, drawn one at a time.
 `CARDS` is `{ white: [...], green: [...], blue: [...], purple: [...], gold: [...] }`
 (`CARD_RARITIES`, White → Gold rising in rarity and magnitude), each entry `{ name, blurb, mod(k) }` —
-the exact shape a `GEAR` variant's `mod(k, L)` is, minus the level argument, since a card is a
-one-shot pick rather than a leveled buy. Every effect stays inside `kitOf`'s existing field
+the same `mod(k)` an item passive has. Every effect stays inside `kitOf`'s existing field
 vocabulary (the hero stat bag `add`, `stealth`, `ambushMul`, `iceMax`, …) except one
 genuinely new field, `killHeal` — a flat heal on a confirmed kill, hooked at `die()`'s existing
 kill-credit line the same way `updateEat` applies a meal's.
@@ -2580,10 +2536,10 @@ hand), one entry of that rarity at random, `bagTake` the card, push `{ rarity, i
 `p.cards`, `refreshKit(p)`, then `cardFx` (a burst in the rarity's colour) and a floater with the
 card's name. The floater names the CARD; what it did to the NUMBERS flies into the notice lane
 as the [stat sheet](rendering.md#the-stat-ledger-your-sheet-as-a-notice), every row the pick
-moved lit and blinking on it. An intent with nothing to draw is refused (`cardDenied`, the deny cue). `refreshKit` folds every entry in `p.cards` in after gear, cumulatively
+moved lit and blinking on it. An intent with nothing to draw is refused (`cardDenied`, the deny cue). `refreshKit` folds every entry in `p.cards` in before the items, cumulatively
 (`for (const c of p.cards) CARDS[c.rarity][c.id].mod(k);`), so picking the same effect twice stacks
 it, and every existing kit-reading site in the sim — movement, `emitBit`, dodge timing, the AI,
-`seenAt`'s stealth — picks a card up for free, the same way it already does for gear. `p.cards` is
+`seenAt`'s stealth — picks a card up for free, the same way it does for items. `p.cards` is
 set once in the `Player` constructor and never touched by `reset()`, so a build survives every
 respawn within a match.
 
@@ -2685,7 +2641,7 @@ goes on a hole instead of snow, and that flag — never the type name — is wha
 2.5, the bay 1.5) costs `ramp` times more for each of that type its owner already has, standing or
 going up (60, 150, 375... for gold pumps), and the price paid rides the building as `paid` for
 the refund. Upgrading pays the next tier's cost and re-runs a shorter
-construction, and the last tier (`tiers.length - 1`) reports MAX TIER. Building and [gear](#gear)
+construction, and the last tier (`tiers.length - 1`) reports MAX TIER. Building and [items](#buying-and-selling)
 are the two gold sinks.
 
 Mechanics (the wheel in [js/ui/wheel.js](../../js/ui/wheel.js), the buildings in [structures.js](../../js/sim/structures.js)):
@@ -3180,7 +3136,7 @@ set down again at the bird ([Respawn at the bird](multiplayer.md#respawn-at-the-
 eagle has been driven off every death on that side is permanent, and that is the only way anyone
 is ever out of a match (a side that surrenders calls its own bird home: [Surrender vote](multiplayer.md#surrender-vote)). `die(p, src, cause)` marks that player dead and drops its bow draw,
 momentum and zipline handle either way (that half is `bodyOut(p)`, which a surrender runs alone, since nobody went down). **Death keeps everything**: the wallet, the pouch, the
-bag, the weapon and the build loaded into it, the unopened cards, the gear, the skill ranks, the
+bag, the weapon and the build loaded into it, the unopened cards, the items, the skill ranks, the
 level and xp all stay on the body, and `reset(false)` brings the same player back — nothing
 spills, nothing is looted, and the snow around a corpse is as clean as it was. (An item riding
 the cursor mid-drag goes back in the bag, so it is still there when the body comes back instead
@@ -3276,7 +3232,7 @@ away), the same deal the [build list](#base-building) takes: night still falls, 
 nothing else*: `mx`/`my`, `slide` and the grapple's held key are read as usual, the edge-triggered
 `dodge` passes
 straight through, and `fire`/`work`/`eatBerry`/`eatFish`/`cmd` are dropped along with any held
-draw (the pointer is over the parchment, so there is nothing to aim or work at, and a gear plate
+draw (the pointer is over the parchment, so there is nothing to aim or work at, and an ability level
 bought blind under the dim would be bought by accident). So you walk with the chart up and watch
 your own marker cross it. Consequences worth knowing:
 
