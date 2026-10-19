@@ -940,23 +940,13 @@ const MULTI_T = 10;       // s a kill may follow the one before and still count 
 const RESPAWN_WAIT = [5, 6, 7, 9, 11, 14, 18, 23, 29, 36, 43, 50]; // s, by hero level 1..LEVEL_MAX
 function respawnTime(p) { return RESPAWN_WAIT[Math.max(1, Math.min(LEVEL_MAX, p.level)) - 1]; }
 
-// A player goes down two ways. While its team's bird still roosts (or is
-// still flying in) it is temporary: p.dead is set (out of the world right
-// now) but p.eliminated stays false and respawnT counts down to a return AT
-// THE BIRD (see updateRespawns/respawnPlayer). Once the bird has been driven
-// off it is permanent: p.eliminated = true, no way back - the eagle is the
-// only thing that takes a player out of a match for good. Only the local
-// player's ELIMINATION takes the screen with it (the death overlay); a
-// respawn-pending local death gets the lighter 'respawning' overlay instead
-// (see endMatch/DEAD_ITEMS/renderDead).
-function die(p, src, cause) {
-  // practice: nothing is at stake and nobody is ever out - a death is undone
-  // on the spot, back at the spawn tile with the build and the bag untouched
-  if (PRACTICE && p === player) { practiceRevive(p); return; }
+// The body leaves the world: whatever it was holding, riding, casting or
+// eating stops here. die() is this plus the record (the death, the kill, the
+// feed line, the wait); a side that surrenders (js/sim/surrender.js) is this alone,
+// since nobody went down.
+function bodyOut(p) {
   p.dead = true;
-  p.deaths++;      // the match record; a respawn never clears it (js/ui/lobby.js)
-  p.streak = 0;    // ...and the run of kills ends with the body
-  p.zip = -1;      // the handle is let go of (the respawn's reset clears the rest)
+  p.zip = -1;   // the handle is let go of (the respawn's reset clears the rest)
   p.zipWalk = false;
   rideEnd(p, true); // ...and off the deer, which bolts (js/sim/wildlife.js)
   p.charging = false;
@@ -977,14 +967,32 @@ function die(p, src, cause) {
   p.buffT = 0; // the bear buff goes with the body too
   p.dawnShield = 0; // ...and the dawn's shield
   clearUnitStatus(p); // root, slow, net, mark and the fire go out with the body
+  // an item on the cursor goes back in the bag, so it is still there when the
+  // body comes back instead of vanishing with the hand that was holding it
+  if (p === player && state.drag) { dragReturn(); state.dragPend = null; }
+}
+
+// A player goes down two ways. While its team's bird still roosts (or is
+// still flying in) it is temporary: p.dead is set (out of the world right
+// now) but p.eliminated stays false and respawnT counts down to a return AT
+// THE BIRD (see updateRespawns/respawnPlayer). Once the bird has been driven
+// off it is permanent: p.eliminated = true, no way back - the eagle is the
+// only thing that takes a player out of a match for good. Only the local
+// player's ELIMINATION takes the screen with it (the death overlay); a
+// respawn-pending local death gets the lighter 'respawning' overlay instead
+// (see endMatch/DEAD_ITEMS/renderDead).
+function die(p, src, cause) {
+  // practice: nothing is at stake and nobody is ever out - a death is undone
+  // on the spot, back at the spawn tile with the build and the bag untouched
+  if (PRACTICE && p === player) { practiceRevive(p); return; }
+  p.deaths++;      // the match record; a respawn never clears it (js/ui/lobby.js)
+  p.streak = 0;    // ...and the run of kills ends with the body
+  bodyOut(p);
   burst(p.x, p.y - 6, TEAMS[skin(p.team)].mark, 12, 55, 0.6);
   // kill credit and the feed line: the killer's colours if there is one,
   // otherwise the victim's, since the victim is who the line is about
   const killer = src && src !== p ? src : null;
   p.lastDeath = { by: killer && players.includes(killer) ? killer.id : -1, cause: cause || null, tick: state.tick };
-  // an item on the cursor goes back in the bag, so it is still there when the
-  // body comes back instead of vanishing with the hand that was holding it
-  if (p === player && state.drag) { dragReturn(); state.dragPend = null; }
   if (killer) {
     killer.kills++;
     killer.streak++; killer.bestStreak = Math.max(killer.bestStreak, killer.streak);
@@ -1182,6 +1190,8 @@ function endMatch(how) {
   // reads as a bug. A loss's summary is opened minutes later, off the LOBBY
   // plank, so this is the only moment its numbers are still true.
   state.end = how === 'won' || how === 'lost' ? endSnapshot() : null;
+  // a side that surrendered skips its defeat and lands on the post-game stats (js/sim/surrender.js)
+  if (how === 'lost' && state.surrendered === player.team) openScores('menu');
   if (how === 'won') { SFX.victory(); state.shake = Math.max(state.shake, 4); }
   // ...and a loss gets the same courtesy: the defeat song used to come up
   // under silence where a win got a fanfare, so the worse of the two endings

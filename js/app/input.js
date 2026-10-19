@@ -519,13 +519,14 @@ function pointerPress(button) {
   if (button !== 0) return;
   if (state.mode === 'title') { menuClick(); return; }
   if (state.mode === 'drop') { SFX.unlock(); if (!state.mapOpen) dropPress(); else if (mapCloseHit()) state.mapOpen = false; return; }
-  if (state.mode === 'dead') { SFX.unlock(); deadClick(); return; }
+  if (state.mode === 'dead') { SFX.unlock(); if (!voteClick()) deadClick(); return; }
   if (state.mode !== 'play') return;
   if (ckOn() && ck.arm) { ckArmedPress(); return; } // an armed attack-move: this press lays it
   if (state.wheel && state.wheel.stand) { resolveWheel(); state.wheel = null; return; } // a standing flag wheel: this press picks
   if (state.wheel) { state.wheel = null; return; } // left-click while it is open: cancel
   if (state.settingsOpen) { mouse.down = true; settingsMouseDown(); return; }
   if (state.mapOpen) { if (mapCloseHit()) { SFX.unlock(); state.mapOpen = false; } return; } // a press off the slab closes the chart; on it, the press is swallowed
+  if (voteClick()) return; // the surrender vote's YES / NO (js/ui/vote.js)
   // the build list: a press on a row picks it, a press on the world lays
   // the ghost (a red ghost refuses with the deny cue and nothing else);
   // presses over the rest of the HUD go on to it as ever

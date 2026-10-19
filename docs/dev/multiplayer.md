@@ -552,6 +552,32 @@ match keeps simulating while you are out** — `update()` runs `updatePlay` in b
 match another screen shares (`netShared`). Full detail:
 [Death and respawn](gameplay.md#death-and-respawn).
 
+### Surrender vote
+
+A side can give up together, League-style (js/sim/surrender.js). Past `VOTE_OPEN` (15:00 on the match
+clock) any person on a side sees SURRENDER on the ESC panel's foot (`footPlanks`, js/ui/panels.js);
+pressing it sends `{ kind: 'vote', yes: true }` down `p.input.cmd`, which opens the side's vote with
+that yes, or casts a yes into one already open. Every seat of the side then gets the panel top
+centre under the clock (`drawVotePanel`, `voteY`/`noteY` js/ui/rail.js): SURRENDER?, one dash per
+seat (you first; green yes, red no, the track while undecided), plain YES and NO words a click
+casts (`voteClick`, from `pointerPress`; the panel is js/ui/vote.js), and the time left as a line draining to the centre.
+**Bots vote with the people**: they never start or cast a vote (`voteCmd` drops a non-person's
+order), and their dashes count as yes while more people voted yes than no (`voteTally`). The vote
+passes at `voteNeed` seats yes: 4 of 5, every seat on a smaller side; it fails as soon as that can
+no longer be reached or when `VOTE_T` runs out (an unvoted seat is a no), holds its dashes for
+`VOTE_HOLD`, and the side waits `VOTE_CD` before another. A gamepad casts its yes through the same
+SURRENDER plank; a no from a pad is letting the clock run out.
+
+**The host counts.** The orders are read in `updateVotes`, first thing in `updatePlay` and before
+any body runs, since `updatePlayer` drops every order of a body that is down or stunned; a client
+only draws `state.votes`/`state.voteCd`/`state.surrendered`, which ride `SNAP_STATE` (and the save,
+with the rest of `state`). A vote that passes runs `surrenderSide`: the side's bodies leave the
+world through `bodyOut` (no death is counted), every seat is out for good, the local one goes
+through `endMatch('lost')` straight onto [the post-game stats](rendering.md#the-end-screens)
+(`openScores`, skipping the defeat), and the side's bird lifts off through `eagleFlee` with a
+SURRENDERED feed line, so the other side gets the driven-off ceremony and its victory exactly as
+if it had been beaten off.
+
 ### Respawn at the bird
 
 The team's roosting eagle is the way back, and the only thing

@@ -3290,8 +3290,8 @@ Death is a walk back, never the end: while your team's eagle still roosts (`team
 eagle-drop banner in js/sim/eagle.js) going down costs a **timer and nothing else**, and you are
 set down again at the bird ([Respawn at the bird](multiplayer.md#respawn-at-the-bird)); once the
 eagle has been driven off every death on that side is permanent, and that is the only way anyone
-is ever out of a match. `die(p, src, cause)` marks that player dead and drops its bow draw,
-momentum and zipline handle either way. **Death keeps everything**: the wallet, the pouch, the
+is ever out of a match (a side that surrenders calls its own bird home: [Surrender vote](multiplayer.md#surrender-vote)). `die(p, src, cause)` marks that player dead and drops its bow draw,
+momentum and zipline handle either way (that half is `bodyOut(p)`, which a surrender runs alone, since nobody went down). **Death keeps everything**: the wallet, the pouch, the
 bag, the weapon and the build loaded into it, the unopened cards, the gear, the skill ranks, the
 level and xp all stay on the body, and `reset(false)` brings the same player back — nothing
 spills, nothing is looted, and the snow around a corpse is as clean as it was. (An item riding

@@ -158,7 +158,9 @@ death costs the wait and the walk, League-style, and a kill pays its
 taker a flat bounty. The bird is the **only objective** and the one way a
 match ends, which is why both teams always have somewhere worth walking to — and why every bot
 on the map knows where both birds are and what is happening at them, and answers a hit on its
-own from anywhere. [Eagle drop](rendering.md#eagle-drop-mode-drop),
+own from anywhere. A side that wants out can **surrender** past fifteen minutes, League-style: a
+vote calls its own bird home, so even giving up is the bird leaving
+([Surrender vote](multiplayer.md#surrender-vote)). [Eagle drop](rendering.md#eagle-drop-mode-drop),
 [Death and respawn](gameplay.md#death-and-respawn), [Bots](multiplayer.md#bots).
 
 **Roguelike cards come out of the treeline's chests.** A sprung chest drops a **rarity-rolled
