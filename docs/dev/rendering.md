@@ -929,8 +929,8 @@ that is money must never read as a count of something carried.
 a match shows) on top, and `RAIL_LINE` under it the two kill totals at 1x in their sides' `mark`
 either side of a quiet colon (`railKills` sums `p.kills` over every player who wore the side's
 colour). A **chip** per active player (`railLayout`: `RAIL_CHIP`, `RAIL_GAP`, `RAIL_PAD`) is the
-class's 12×12 emblem (`CLASS12`/`classIcon12`, js/ui/menu.js: drawn by hand beside `CLASS32`,
-never a shrink of it) with **no rim** (0.422): the side is its **hp bar**, hung a pixel under its
+class's 12×12 emblem (`CLASS12`/`classIcon12`, js/ui/menu.js: drawn by hand at
+12 px) with **no rim** (0.422): the side is its **hp bar**, hung a pixel under its
 foot, one solid 2px run of the side's `mark` on a `RAIL_TRACK` groove, deliberately unsegmented.
 `railSides` orders each side by id and **leaves you off** (0.421): your own hp and level are the
 strip's, so a chip for you only repeated them. Your side is a chip short, so `railLayout` centres
@@ -1877,7 +1877,7 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   still at rest, with no rule and no subtitle, the pixel-font word standing in only until it
   decodes. Nothing on the title burns and nothing is ruled: `drawEmbers` and `drawGoldRule` live
   here for the wiki's header and the end screens (js/ui/screens.js). `PATCH_TXT` prints bottom-right and the
-  active character bottom-left (`drawCharTag`, js/ui/chars.js); both are click targets, and both ride the footer's
+  profile's name bottom-left (`drawProfileTag`, js/ui/profile-card.js); both are click targets, and both ride the footer's
   fade so a panel hides them.
 - **Items** are plain words in the pixel font at `MENU_TXT_SCALE` with a dark rim (`drawPixelTextOutline`): white,
   and gold and lifted a px only under the pointer, or as the keys' pick until the pointer next
@@ -1885,10 +1885,9 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   it a px; at rest nothing is lit. No plank, slab or frame — the
   **frost plank** (`drawMenuButton`: chamfered slab with hashed wood-grain, a snow cap, icicles,
   corner rivets, a gold rule when hot, and a sealed ice glaze with a cold shimmer when `frozen`)
-  is drawn by the lobby's PLAY, the rooms screen, the notes' WIKI, the end screens and the
-  create screen, sized `MENU_BW`×`MENU_BH` at `MENU_Y0` where those stand it.
-- **Die** (`drawSeedDie` — named apart from the create screen's `drawDie`, js/ui/chars.js,
-  a later file whose declaration would take a same-named one): shows `1 + (SEED % 6)` (faces
+  is drawn by the lobby's PLAY, the rooms screen, the notes' WIKI and the end screens,
+  sized `MENU_BW`×`MENU_BH` at `MENU_Y0` where those stand it.
+- **Die** (`drawSeedDie`): shows `1 + (SEED % 6)` (faces
   1–6), cycles faces and jitters while hovered, tumbles while `menu.rolling`. It stands on
   the seed row of the [lobby](#lobby)'s map pop-up. Activating it (`rerollWorld`) starts a fade (the lobby's night there) via
   `state.fade` (`{ a, to, spd, color, then }`, stepped in `update()`, painted after the info
@@ -1905,9 +1904,9 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   baked at boot (`buildHelpPanel`) but nothing on the title opens it. The `PATCH_TXT` tag
   bottom-right (`patchTagRect` / `overPatchTag`; gold with an underline on hover) opens the
   [patch notes screen](#the-patch-notes-screen).
-  The **character tag** bottom-left (`charTagRect` / `overCharTag` / `drawCharTag`, js/ui/chars.js,
-  the mirror of the patch tag: the active character's in-world body, its name and a quill that
-  gilds on hover) opens the [character screens](#the-character-screens) below. The **coin tag**
+  The **name tag** bottom-left (`profileTagRect` / `overProfileTag` / `drawProfileTag`,
+  js/ui/profile-card.js, the mirror of the patch tag: the profile's name and a quill, gold with an
+  underline on hover) opens the [profile card](#the-profile-card) below. The **coin tag**
   top-right (`coinTagRect` / `overCoinTag` / `drawCoinTag`, js/ui/skins.js: the steel coin and
   the purse, gold with an underline on hover) opens the [skins screen](#the-skins-screen).
   Any open panel ducks the logo to zero alpha.
@@ -1946,18 +1945,24 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   Whenever the level it shows changes (`menu.tgtLv`) the
   face swaps and the target jolts for a moment (`menu.tgtT`). In a
   room the map is a readout (the host's world: `'map'` is hit only when `NET.role` is
-  `'solo'`) and a guest's target is too. The **stage** under them
-  holds **your character** alone (`drawLobbyStage`): the 48 px model (`SPRITES.portrait`,
-  [sprites.md](sprites.md#looks-a-character-on-the-class-body)) at `LOBBY_MODEL` (3×, the create
-  screen's size) in your side's paint under a warm pool of light with a gold ring turning on the
-  snow, and **no weapon, no name and no class under it** — the roster frame carries the name and
-  the figure is the class. A bare **chevron either side of the figure, in close by its shoulders**
-  (`drawChevron`, white, gold and nudged outward under the hand (`menu.chover`), drawn
-  only when the profile holds more than one character) or Up/Down is `lobbyStep(±1)`: it makes
-  the neighbouring character active — `activateChar` → `applyCharacter`, so the stage, the kit
-  and the loadout follow it (`menu.csel` mirrors `player.cls` for the gear preview;
-  `menu.cswapT` pops the stage). **No ability wells and no class picker**: the class came with the
-  character. **Clicking the figure** (it lifts under the hand; `'hero'` in `lobbyHit`, the
+  `'solo'`) and a guest's target is too. Under their names stands the **hero row**
+  (js/ui/heroes.js, `heroCells`/`heroCellAt`/`drawHeroRow`): a `HERO_CELL` well per hero —
+  every `CLASSES` entry, then every `HEROES_SOON` one — holding the hero's model cropped to its
+  head at 2×. Each hero wears **one fixed look** (`CLASSES[i].look`), so the face is the hero.
+  The pick (`menu.csel`) is gold, a hovered cell lifts, and the name under the row is the
+  hovered hero's, else the pick's. A coming hero is its model's head as one flat shade
+  (`HERO_SOON_INK`), its name grey on hover, and takes no press. A click (`'pickN'` in
+  `lobbyHit`) or Left/Right/Up/Down (`lobbyStep(±1)`, through the playable ones) is
+  `lobbyPick(i)`: `setClass` puts the hero, its look, kit and loadout on the stage at once and
+  `menu.cswapT` pops it. The row dims and refuses while the count runs, and a guest's room shows
+  it without taking a press (a guest plays the hero its profile sent in the hello). LOCK IN keeps
+  the pick as the profile's hero (`lockIn` → `PROFILE.setHero`), which is where the next lobby
+  opens. The **stage** under the row holds **your hero** alone (`drawLobbyStage`): the 48 px
+  model (`SPRITES.portrait`, [sprites.md](sprites.md#looks-a-character-on-the-class-body)) at
+  `LOBBY_MODEL` (3×; `lobbyLayout` drops it to 2× when the view is too short for its head to
+  clear the row and its name, `HERO_ROW_H`) in your side's paint under a warm pool of light with
+  a gold ring turning on the snow, and **no weapon and no name under it** — the row carries the
+  hero's name, the roster frame yours. **Clicking the figure** (it lifts under the hand; `'hero'` in `lobbyHit`, the
   body's own rect) opens the [hero pop-up](#the-hero-pop-up): gear, stat points and the
   abilities. No gear shows on the lobby itself.
 
@@ -2004,7 +2009,7 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   `SFX.countTick` ticking each one (a low bell), and **one rival frame turning face-up per
   tick** (`lobbyRevealed()`: the first on the press, the last on ONE, all of them once it has
   run out, and none at rest — a white flash as each turns). Gear stays open through the count
-  (the figure still opens its pop-up, which shuts itself at zero); a character swap or a map step is
+  (the figure still opens its pop-up, which shuts itself at zero); a hero pick or a map step is
   refused with `SFX.deny`; Esc/Backspace call it off (`cancelCount`) and, at rest, go back to
   the menu; **LOCK IN again skips the rest of it** — the second `pressPlay()` ends the count
   where zero would have (every frame face-up, the hero pop-up shut). <a id="lobby-lock-in"></a>At
@@ -2015,60 +2020,30 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   calls `beginDrop()` itself; the old page holds the lobby until the new one paints. No
   instructional text anywhere on the screen.
 
-### The character screens
+### The profile card
 
-Two more surfaces on the lobby's painted night, both in [js/ui/chars.js](../../js/ui/chars.js)
-(the `characters` banner) on one ease (`menu.charT`; `menu.cscreen` remembers which of the two
-is fading out): the **roster** (`menu.screen = 'chars'`, `beginChars`/`leaveChars`, entered
-from the character tag) and the **create / customize screen** (`'create'`, `beginCreate(slot,
-first)`). The store behind them is [profile.js](architecture.md#profilejs); `charsLayout()` /
-`createLayout()` + `rowCells()` are each screen's one rect source for the draw, the hit test
-(`charsHit`/`createHit`) and the cursor.
+One surface over the dimmed title, in [js/ui/profile-card.js](../../js/ui/profile-card.js) on
+`menu.charT` (`menu.screen = 'profile'`, `beginProfile`/`leaveProfile`, entered from the name
+tag). The store behind it is [profile.js](architecture.md#profilejs): one name and one ledger.
+`profileLayout()` is the one rect source for the draw, the hit test (`profileHit`: `'name'`,
+`'card'` or off it) and the cursor.
 
-- **The roster** is the profile's three slots as cards across the middle (`drawCharCard`,
-  `CH_CARD_W`×`CH_CARD_H`): the 48 px model at 2× on its light, the name in gold with the 12 px
-  class emblem beside it, and the **ledger** under a rule — WINS / MATCHES / KILLS / DEATHS /
-  DAYS / GOLD as icon, label, dotted leader, number (the character-panel text carve-out;
-  `drawLedger`). The active card wears the gold rim; a card click makes it active
-  (`activateChar`) and leaves; the quill bottom-right opens the customize screen on that slot;
-  the X plate top-right (red under the hand) **deletes on the press** (`deleteSlot`), and
-  deleting the last character reopens the create screen as a first launch. An empty slot is a dashed well with a plus in it,
-  and a click there is a new character. Left/Right walk `menu.ksel`, Enter picks, Esc backs out
-  (`charsKey`).
-- **The create screen** opens on `menu.cedit = { slot, spec, first }` — slot −1 is a **new
-  character pre-rolled** by `PROFILE.rollChar` (a winter word and a random look), a slot index
-  is that character's copy for editing, and `first` is the fresh install (js/app/boot.js opens it
-  before the title when `!PROFILE.hasChar()`: no CANCEL, and DONE lands on the title menu).
-  Two columns centred as one block (`createLayout`), sharing a top line and a foot. Left, the
-  stage: the model at 3× (`drawModel`, the lobby's light and ring), the 16 px body at 2×
-  walking on a snow pad by its feet (what the snow will show), and the **name field** centred
-  under the stage: the buffer at 2× with a caret, or **selected** on a gold band
-  (`menu.nameSel`) when the next letter will replace it — a new character's pre-rolled name
-  arrives selected, a roll of the die leaves its word selected, and a click on the field
-  selects what is there; Backspace on a selection clears it. The rim lights under the hand,
-  the underline goes red while the name would be refused (`nameOk`, which also dims DONE),
-  the capacity ticks sit under it, and a refusal on DONE rattles and floods it red
-  (`menu.nameShake`). Right, the option panel (`CH_ROWS`): its **head row** starts in the
-  cells' column like every row and spans the widest — the **class pair** at its left (the two
-  `CLASS32` emblems on `CH_PLATE` wells; once the character exists the other one is dark under
-  a padlock: **class is fixed at creation**) and the **die** at its right end, the same size
-  (`drawDie` — five pips at rest, gold under the hand, and for `DIE_T` after a press it rattles
-  and flickers through the six faces while `shuffleLook` lands a new look *and* a new name: a
-  roll, not a button) — then **one row per axis in one grammar** — an 8 px glyph in the gutter and a
-  `CH_CELL` (24 px) cell per choice, each cell a 1× crop of the *bare* model wearing that
-  choice (`drawLookCell`: the head crop `CH_HEAD` for tone, hair, hair colour, beard and face,
-  the torso crop `CH_TORSO` for the body type), so a row is its choices seen before they are
-  picked — no swatches, no chevrons, no count pips. Cells sit in the same columns on every row;
-  the widest row (`CH_ROW_N`) sets the panel's width. DONE / CANCEL centred along the foot.
-  The screen **owns the keyboard** (input.js routes to `createKey` before its own
-  shortcuts): letters are the name, Backspace edits it, Up/Down walk `menu.crow` (a gold tick
-  breathes at the row's glyph while the pointer is off the page), Left/Right turn the row, Enter
-  is DONE, Esc CANCEL. DONE (`createCommit`) dims while the name would be refused and rattles
-  the field on a refusal; it creates (`PROFILE.createChar`) or updates (`updateChar`, which
-  never takes a class), makes the result active and returns to the roster.
-- Every plate here shares one grammar (`drawWell`): a dark drop shadow, a slate rim that
-  lightens under the hand and goes gold when picked, a navy floor. Hover eases live in
-  `menu.khover`, keyed by hit id.
+- **The card** (`renderProfileCard`, `PC_W`×`PC_H`, a gold-rimmed well) has the **name field**
+  across its head and the **ledger** under a rule — WINS / MATCHES / KILLS / DEATHS / DAYS /
+  GOLD as icon, label, dotted leader, number (the character-panel text carve-out;
+  `drawLedger`), `ESC BACK` under it. At rest the name stands in gold at 2× with its quill;
+  under the hand the field's well shows. A click on it selects the name on a gold band
+  (`menu.nameSel`: the next letter replaces it); typing (`menu.nameEdit`) shows the buffer in
+  white with a caret, the capacity ticks under it and the underline red while the store would
+  refuse it.
+- The card **owns the keyboard** (input.js routes to `profileKey` before its own shortcuts):
+  letters are the name, Backspace edits it, **Enter keeps it** (`profileCommit`: a refusal
+  rattles and floods the field red, `menu.nameShake`, and the card stays) and **Esc or a click
+  off the card closes**, keeping a name `PROFILE.setName` accepts and dropping one it refuses.
+- A fresh install never sees a form: the profile arrives pre-named (a winter word), and the
+  first press on the title goes to play. Every plate here and on the hero row shares one
+  grammar (`drawWell`): a dark drop shadow, a slate rim that lightens under the hand and goes
+  gold when picked, a navy floor.
 <a id="the-hero-pop-up"></a>
 - **Hero pop-up** (`menu.screen = 'hero'`, off your figure on the lobby, easing over the
   still-lit lobby on `menu.popT`): a dim, then a floating panel in two columns
@@ -2133,7 +2108,7 @@ The map and the seed die on it are driven the same way through the globals `mapS
 
 ### The skins screen
 
-On the lobby's painted night like the character screens, in [js/ui/skins.js](../../js/ui/skins.js)
+On the lobby's painted night, in [js/ui/skins.js](../../js/ui/skins.js)
 (`menu.screen = 'skins'`, `beginSkins`/`leaveSkins`, its own ease `menu.skinT`). `skinsLayout()`
 is the one rect source for the draw, the hit test (`skinsHit`) and the cursor.
 

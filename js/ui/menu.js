@@ -27,7 +27,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.481';
+const PATCH_TXT = 'PATCH 0.482';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -43,6 +43,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.482', 'HEROES, LEAGUE STYLE: THE CHARACTER CREATOR AND LIST ARE GONE, YOU ARE ONE PROFILE - YOUR NAME AND LIFETIME STATS, OPENED FROM YOUR NAME ON THE TITLE - THAT YOUR OLD CHARACTERS FOLD INTO WITH EVERY WIN KEPT, AND EACH MATCH YOU PICK HUNTER OR WARRIOR FROM A ROW OF HEROES ON THE LOBBY, EVERY HERO WEARING ONE LOOK FOR BOTS AND PLAYERS ALIKE, WITH SLEET AND DURAVO SHOWN AS SILHOUETTES UNTIL THEY ARRIVE.'],
   ['0.481', 'BEHIND THE SCENES: THE GAME\'S CODE IS SORTED INTO FOLDERS BY JOB. NOTHING YOU PLAY CHANGES.'],
   ['0.480', 'UNDER THE HOOD: A PLAYER\'S STEP IS NOW SPLIT INTO NAMED PIECES OF CODE, AND THE GAME PLAYS EXACTLY THE SAME.'],
   ['0.478', 'THE VIDEO KIT CAN NOW BLUR THE EDGES OF A SHOT AROUND ITS SUBJECT AND FADE ITS SUBTITLES OUT.'],
@@ -644,12 +645,11 @@ function menuKey(e) {
   if (m.screen === 'ai') { if (m.popT >= 1) aiKey(k); return; }
   if (m.screen === 'saves') { if (m.popT >= 1) savesKey(k); return; } // its own keys, the X included (js/ui/saves.js)
   if (m.screen === 'lobby') { if (m.screenT >= 1 && m.popT <= 0) lobbyKey(k); return; }
-  if (m.screen === 'chars') { if (m.charT >= 1) charsKey(k); return; }
   if (m.screen === 'skins') { if (m.skinT >= 1) skinsKey(k); return; }
   if (m.screen === 'ladder') { if (m.ladT >= 1) ladderKey(k); return; }
   if (m.screen === 'rooms') { if (m.roomsT >= 1) roomsKey(k, e); return; }
   if (m.screen === 'room' || m.screen === 'host') { if (m.roomsT >= 1) roomKey(k, e); return; } // the waiting room and CREATE's page (js/ui/rooms.js)
-  if (m.screen === 'create') return; // its keys arrive through createKey (input.js), never here
+  if (m.screen === 'profile') return; // its keys arrive through profileKey (input.js), never here
   if (m.panel) {
     if (k === 'escape' || k === 'backspace' || (m.panel !== 'settings' && (k === 'enter' || k === ' '))) closeMenuPanel();
     else if (m.panel === 'settings') settingsKey(k); // the arrows page and scroll it (js/panels.js)
@@ -671,19 +671,18 @@ function menuClick() {
   if (m.screen === 'ai') { aiClick(); return; }
   if (m.screen === 'saves') { if (m.popT >= 1 && !m.lockT) savesClick(); return; }
   if (m.screen === 'lobby') { lobbyClick(); return; }
-  if (m.screen === 'chars') { charsClick(); return; }
   if (m.screen === 'skins') { skinsClick(); return; }
   if (m.screen === 'ladder') { ladderClick(); return; }
   if (m.screen === 'rooms') { roomsClick(); return; }
   if (m.screen === 'room' || m.screen === 'host') { roomClick(); return; }
-  if (m.screen === 'create') { createClick(); return; }
+  if (m.screen === 'profile') { profileClick(); return; }
   if (m.panel) {
     if (!menuPanelReady()) return;
     if (m.panel === 'settings' && overMenuPanel()) { mouse.down = true; settingsMouseDown(); return; }
     if (!overMenuPanel()) closeMenuPanel();
     return;
   }
-  if (overCharTag()) { beginChars(); return; }
+  if (overProfileTag()) { beginProfile(); return; }
   if (overCoinTag()) { beginSkins(); return; }
   if (overPatchTag()) { beginNotes(); return; }
   const h = menuHit();
@@ -773,10 +772,9 @@ function updateTitle(dt) {
     const h = menuHit();
     if (h >= 0 && h !== m.sel) m.sel = h;
   }
-  // the character screens (js/ui/chars.js): their ease and their hovers
-  m.charT = Math.max(0, Math.min(1, m.charT + (m.screen === 'chars' || m.screen === 'create' ? 1 : -1) * dt / 0.35));
-  if (m.screen === 'chars') updateChars(dt);
-  else if (m.screen === 'create') updateCreate(dt);
+  // the profile card (js/ui/profile-card.js): its ease and its hovers
+  m.charT = Math.max(0, Math.min(1, m.charT + (m.screen === 'profile' ? 1 : -1) * dt / 0.35));
+  if (m.screen === 'profile') updateProfile(dt);
   m.skinT = Math.max(0, Math.min(1, m.skinT + (m.screen === 'skins' ? 1 : -1) * dt / 0.35)); // the skins screen (js/ui/skins.js)
   if (m.screen === 'skins') updateSkins(dt);
   updateLadder(dt); // the bot ladder screen's ease and hovers (js/ui/ladder.js)
@@ -801,11 +799,6 @@ function updateTitle(dt) {
   m.wikiT = Math.max(0, Math.min(1, m.wikiT + (m.screen === 'wiki' ? 1 : -1) * dt / 0.35));
   m.notesT = Math.max(0, Math.min(1, (m.notesT || 0) + (m.screen === 'notes' ? 1 : -1) * dt / 0.35)); // the patch notes, the same way
   m.cswapT = Math.min(1, m.cswapT + dt / 0.22);
-  const sh = m.screen === 'lobby' && m.screenT >= 1 ? lobbyHit() : null;
-  for (let i = 0; i < 2; i++) { // the character chevrons' hover eases
-    const target = sh === (i ? 'charr' : 'charl') ? 1 : 0;
-    m.chover[i] = (m.chover[i] || 0) + (target - (m.chover[i] || 0)) * Math.min(1, dt * 14);
-  }
   // the AI pop-up's plates' hover eases, and PLAY's countdown: a tick per
   // whole second, the eagle at zero (an open pop-up shuts on the way)
   const ah = m.screen === 'ai' && m.popT >= 1 && mouse.inside ? aiScreenHit() : null;
@@ -977,8 +970,6 @@ function drawMenuButton(r, label, hv, now, pressed, frozen) {
 }
 
 // the reroll die (11x11): face cycles while hovered, tumbles while rolling.
-// Named apart from the create screen's drawDie (js/ui/chars.js), a later
-// file whose declaration would otherwise take this one's.
 function drawSeedDie(x, y, hv, now) {
   const m = state.menu;
   const rolling = m.rolling > 0;
@@ -1135,15 +1126,16 @@ function buildHelpPanel() {
 // the way into a POP-UP: the map's (the shape with a chevron either side, the
 // seed row and its die - the map pop-up below) and the AI's (the three
 // plates named after AI_LEVELS, js/ai/ai-skill.js - the AI pop-up below). Under them
-// the STAGE holds YOUR CHARACTER - the 48 px model (js/sprites/looks.js) at
-// LOBBY_MODEL under its warm light, unarmed, no name under it - with a
-// CHEVRON either side that swaps to the neighbouring character (the
-// profile's three, js/app/profile.js; the class comes with the character, fixed
-// at creation, so there is no class picker here). Clicking the figure opens
+// the HERO ROW (js/ui/heroes.js) - a head per hero, the pick gold, the heroes
+// to come as silhouettes, the name under it - and under that the STAGE holds
+// YOUR HERO - the 48 px model (js/sprites/looks.js) at LOBBY_MODEL (2x when
+// the view is too short for 3x under the row) under its warm light, unarmed.
+// The arrow keys step the row; the hero locked in is the profile's next
+// opening pick (js/app/profile.js). Clicking the figure opens
 // the HERO POP-UP (gear, stat points, the abilities - `the hero pop-up`
 // above). LOCK IN is a bare word at the foot of the view, big: it locks the
 // pick and starts the COUNTDOWN (pressPlay) - a gold ring bursting off the
-// figure (lockFx), the chevrons dimmed, the count in the word's place, one
+// figure (lockFx), the hero row dimmed, the count in the word's place, one
 // rival frame turning face-up per tick, the pop-ups still open through it,
 // ESC calling it off (cancelCount), LOCK IN again skipping the rest of it -
 // and at zero lockIn() flies to the eagle (lockT -> beginDrop; a page first
@@ -1154,7 +1146,7 @@ const LOBBY_PANEL_W = 110;               // a team panel's width, glued to its s
 const LOBBY_FRAME_MAX = 44;              // a roster frame's tallest; a short view shrinks it
 const LOBBY_FRAME_GAP = 4;
 const LOBBY_HEAD = 58;                   // the panels' head: the difficulty plates and the target, right; the left kept level with it
-const LOBBY_MODEL = 3;                   // the stage model's scale: the 48 px model at 3x, the create screen's size
+const LOBBY_MODEL = 3;                   // the stage model's scale: the 48 px model at 3x
 const LOBBY_LOCK_SCALE = 3;              // LOCK IN's text scale, and the count's
 const LOBBY_PAD = 6;                     // the margin off the view's edge
 const LOBBY_MAP = 56;                    // the map plate and the target, side by side at the top centre
@@ -1185,13 +1177,14 @@ function lobbyLayout() {
   // LOCK IN, a bare word at the foot, big; the stage figure on the snow above it
   const pw2 = pixelTextWidth('LOCK IN', LOBBY_LOCK_SCALE) + 8;
   const play = { x: cx - (pw2 >> 1), y: VIEW_H - pad - 7 * LOBBY_LOCK_SCALE - 8, w: pw2, h: 7 * LOBBY_LOCK_SCALE + 4 };
-  const bs = 48 * LOBBY_MODEL;
-  const body = { x: cx - (bs >> 1), y: play.y - 22 - 46 * LOBBY_MODEL, w: bs, h: bs }; // its feet (46 rows down) 22 px over the word
-  const figure = { x: body.x + 14 * LOBBY_MODEL, y: body.y + 4 * LOBBY_MODEL, w: 20 * LOBBY_MODEL, h: 42 * LOBBY_MODEL }; // the body itself, the button into the hero pop-up
-  // a chevron either side of the figure swaps to the neighbouring character
-  const cy = body.y + 46 * LOBBY_MODEL - 60;
-  const chars = [{ x: body.x + 4, y: cy, w: 12, h: 18, d: -1 }, { x: body.x + body.w - 16, y: cy, w: 12, h: 18, d: 1 }]; // in close by the shoulders
-  return { cx, play, body, figure, chars, cards, tgt, mapc, mapName, tgtName, savc, savName };
+  // the hero row under the plates' names; the stage stands its model at 3x
+  // when the head (2 rows down) clears the row's name, else at 2x
+  const heroes = heroCells(mapName.y + 18);
+  const S = play.y - 22 - 44 * LOBBY_MODEL >= heroes[0].y + HERO_ROW_H ? LOBBY_MODEL : 2;
+  const bs = 48 * S;
+  const body = { x: cx - (bs >> 1), y: play.y - 22 - 46 * S, w: bs, h: bs }; // its feet (46 rows down) 22 px over the word
+  const figure = { x: body.x + 14 * S, y: body.y + 4 * S, w: 20 * S, h: 42 * S }; // the body itself, the button into the hero pop-up
+  return { cx, play, S, body, figure, heroes, cards, tgt, mapc, mapName, tgtName, savc, savName };
 }
 // the SAVES plate stands only where a match can be picked up: solo, with one kept
 function lobbySavesShown() { return NET.role === 'solo' && !!saveNewest(); }
@@ -1899,14 +1892,14 @@ function heroClick() {
 
 // what the pointer is on: 'play', 'hero' (your figure: the hero pop-up),
 // 'ai' (the target: the AI pop-up), 'map' (the map plate: the map pop-up),
-// 'charl' / 'charr' (the character chevrons) or null. A guest's room offers
-// the hero pop-up alone.
+// 'pickN' (playable hero N's cell on the hero row) or null. A guest's room
+// offers the hero pop-up alone.
 function lobbyHit() {
-  const { play, figure, tgt, mapc, savc, chars } = lobbyLayout();
+  const { play, figure, tgt, mapc, savc, heroes } = lobbyLayout();
   const over = (r, px, py) => mouse.x >= r.x - px && mouse.x < r.x + r.w + px && mouse.y >= r.y - py && mouse.y < r.y + r.h + py;
-  const swap = PROFILE.chars().length > 1 && !NET.isClient;
-  if (swap) { if (over(chars[0], 4, 4)) return 'charl'; if (over(chars[1], 4, 4)) return 'charr'; }
   if (over(figure, 0, 0)) return 'hero';
+  const hi = NET.isClient ? -1 : heroCellAt(heroes);
+  if (hi >= 0 && hi < CLASSES.length) return 'pick' + hi;
   if (NET.isClient) return null; // a guest's room: the host's word, the host's difficulty, the host's world, its own character as it came
   if (over(play, 2, 3)) return 'play';
   if (over(tgt, 2, 2)) return 'ai';
@@ -1949,23 +1942,6 @@ function leaveLobby() {
   state.menu.countT = 0;
   SFX.pickup();
   SFX.music.play('intro');
-}
-// swap the stage to character slot i (js/app/profile.js): it comes with its own
-// class, so the kit and the loadout follow it
-function lobbySlot(i) {
-  const m = state.menu;
-  if (m.countT > 0) { SFX.deny(); return; } // locked the moment LOCK IN was pressed
-  if (!PROFILE.chars()[i] || i === PROFILE.activeIndex()) return;
-  activateChar(i);
-  m.csel = player.cls;
-  m.cswapT = 0;
-  SFX.pickup();
-}
-// the chevrons' (or Up/Down's) step through the filled slots
-function lobbyStep(d) {
-  const n = PROFILE.chars().length;
-  if (n < 2) return;
-  lobbySlot(((PROFILE.activeIndex() + d) % n + n) % n);
 }
 // the map pop-up's chevrons: the picture slides over to the neighbouring
 // shape (m.mapSlide, drawn by drawMapPlate) and the pick is made there and
@@ -2025,6 +2001,7 @@ function lockIn() {
   const m = state.menu;
   if (m.lockT > 0) return;
   setClass(player, m.csel);
+  if (!NET.isClient) PROFILE.setHero(m.csel); // the next match's pick opens on it
   SFX.place();
   if (NET.role === 'solo' && (settings.mapType | 0) !== MAP_TYPE) {
     try { sessionStorage.setItem('softfall.drop', JSON.stringify({ gear: player.gear, pts: player.pts, abPick: player.abPick })); } catch (e) { }
@@ -2048,7 +2025,7 @@ function lobbyKey(k) {
   const m = state.menu;
   if (m.lockT > 0) return;
   if (k === 'escape' || k === 'backspace') { if (m.countT > 0) cancelCount(); else if (NET.role === 'host') { netPhase('room'); beginRoom(); } else leaveLobby(); } // a host's ESC takes the room back to its seats
-  else if (moveDir(k) === 'left' || moveDir(k) === 'up') lobbyStep(-1);   // the character chevrons
+  else if (moveDir(k) === 'left' || moveDir(k) === 'up') lobbyStep(-1);   // the hero row (js/ui/heroes.js)
   else if (moveDir(k) === 'right' || moveDir(k) === 'down') lobbyStep(1);
   else if (k === 'enter' || k === ' ') pressPlay();
 }
@@ -2063,113 +2040,14 @@ function lobbyClick() {
   else if (h === 'map') { m.pressT = 0.12; beginMapPick(); }        // the map plate its own: the shape, the seed, the die
   else if (h === 'ai') { m.pressT = 0.12; beginAiPick(); }          // the target its own: the rivals' level
   else if (h === 'saves') { m.pressT = 0.12; beginSavesPick(); }    // the saves plate: the kept matches (js/ui/saves.js)
-  else if (h === 'charl') lobbyStep(-1);                             // the character chevrons
-  else if (h === 'charr') lobbyStep(1);
+  else if (h.startsWith('pick')) lobbyPick(+h.slice(4));            // a hero on the row (js/ui/heroes.js)
 }
 
-// The class EMBLEMS: one symbolic 32x32 mark per CLASSES entry - the
-// hunter's drawn bow, the warrior's gauntlet - on the shared big-icon
-// palette (AB32_PAL, js/sim/abilities.js), baked lazily beside their drawer
-// like every other big icon. A new class brings a CLASS32 grid with it
-// (checklists.md, "Adding a class"): the roster reads by SYMBOL, and the
-// stage is where the body itself is seen.
-const CLASS32 = [
-  [ // HUNTER: the drawn bow, arrow nocked and level
-    '................................',
-    '................................',
-    '................................',
-    '................................',
-    '.......ooo......................',
-    '.......ot..owwo.................',
-    '.......ot....owwo...............',
-    '.......ot......owwo.............',
-    '.......ot.......owwo............',
-    '.......ot........owwo...........',
-    '.......ot.........owwo..........',
-    '.......ot..........owwo.........',
-    '.......ot...........owwo........',
-    '.......ot...........owwo........',
-    '...orroot............oWWo.......',
-    '..orrttttttttttttttttWWWWWo.....',
-    '..orrddddddddddddddddWWWWWo.....',
-    '...orroot............oWWo.......',
-    '.......ot...........owwo........',
-    '.......ot...........owwo........',
-    '.......ot..........owwo.........',
-    '.......ot.........owwo..........',
-    '.......ot........owwo...........',
-    '.......ot.......owwo............',
-    '.......ot......owwo.............',
-    '.......ot....owwo...............',
-    '.......ot..owwo.................',
-    '.......ooo......................',
-    '................................',
-    '................................',
-    '................................',
-    '................................',
-  ],
-  [ // WARRIOR: the iron gauntlet, knuckles first
-    '................................',
-    '................................',
-    '................................',
-    '................................',
-    '........ooo.ooo.ooo.ooo.........',
-    '........oCs.oCs.oCs.oCs.........',
-    '........oCs.oCs.oCs.oCs.........',
-    '........oCs.oCs.oCs.oCs.........',
-    '........oCs.oCs.oCs.oCs.........',
-    '........oCs.oCs.oCs.oCs.........',
-    '........oCs.oCs.oCs.oCs.........',
-    '........oCs.oCs.oCs.oCs.........',
-    '........oCs.oCs.oCs.oCs.........',
-    '.......ooooooooooooooooo........',
-    '.......osCCsCCsCCsCCssso........',
-    '.......osssssssssssssssoCso.....',
-    '.......osssssssssssssssoCso.....',
-    '.......osssssssssssssssoCso.....',
-    '.......osssssssssssssssoo.......',
-    '.......ossssssssssssssso........',
-    '.......oSSSSSSSSSSSSSSSo........',
-    '........ooooooooooooooo.........',
-    '.........oggggggggggggo.........',
-    '.........oSSSSSSSSSSSSo.........',
-    '.........oSSSSSSSSSSSSo.........',
-    '..........oooooooooooo..........',
-    '................................',
-    '................................',
-    '................................',
-    '................................',
-    '................................',
-    '................................',
-  ],
-];
-const class32Cache = new Map();
-// the baked 32x32 emblem for class i
-function classIcon32(i) {
-  let cv = class32Cache.get(i);
-  if (!cv) {
-    cv = document.createElement('canvas');
-    cv.width = cv.height = 32;
-    const g = cv.getContext('2d');
-    const rows = CLASS32[i];
-    for (let r = 0; r < rows.length; r++) {
-      const row = rows[r];
-      for (let c = 0; c < row.length; c++) {
-        const col = AB32_PAL[row[c]];
-        if (!col) continue;
-        g.fillStyle = col;
-        g.fillRect(c, r, 1, 1);
-      }
-    }
-    class32Cache.set(i, cv);
-  }
-  return cv;
-}
-
-// The same emblems at 12px for the team rail's chips (drawRailChip, ui.js):
-// drawn by hand, not shrunk - a 32px mark dropped to 12 loses its lines. The
-// local player's own chip is baked with every colour but the outline pushed
-// to white, the maps' "you". A new class brings a CLASS12 beside its CLASS32.
+// The class EMBLEMS at 12px - the hunter's bow, the warrior's gauntlet - for
+// the team rail's chips (drawRailChip), the rooms, saves and tooltips, on the
+// shared big-icon palette (AB32_PAL, js/sim/abilities.js): drawn by hand at
+// that size. The local player's own chip is baked with every colour but the
+// outline pushed to white, the maps' "you". A new hero brings a CLASS12 grid.
 const CLASS12 = [
   [ // HUNTER: the bow, the string and the arrow across
     '............',
@@ -2226,23 +2104,17 @@ function classIcon12(i, you) {
 // One roster portrait: the class's symbolic emblem in a small well. The
 // chosen one wears the gold rim; a hover lifts and lightens (hv is that
 // portrait's ease). Symbol only - the stage carries the body and every word.
-// a character slot: the body at 2x on a well - gold while it is the one on
-// stage, lifting under the hand; an empty slot is a dark well with nothing in it
-// a character tab: a small well, the character's 16 px body in it; the
-// active one gold and walking, the others dim and warm under the hand
-// The stage: your character alone in full glory - the 48 px model at
-// LOBBY_MODEL (3x, the create screen's size) inside a warm pool of light
-// with a gold ring turning on the snow, a chevron either side to swap to the
-// neighbouring character (drawn only when there is one). No weapon, no name
-// and no class: the roster frame carries the name, and the figure is the
-// class. It wears your side's paint, like
+// The stage: your hero alone in full glory - the 48 px model at the layout's
+// scale (LOBBY_MODEL, 2x in a short view) inside a warm pool of light with a
+// gold ring turning on the snow. No weapon and no name under it: the hero
+// row carries the hero's name, the roster frame yours. It wears your side's paint, like
 // that frame. sw is the swap-pop ease; a lock-in bursts a second ring out
 // from the feet (lockFx) and the light stays up while the count runs.
 const LOCK_FX_T = 0.7; // s: the lock-in's ring
 function drawLobbyStage(now, a, sw) {
   const m = state.menu;
-  const { cx, body, chars } = lobbyLayout();
-  const S = LOBBY_MODEL, feet = body.y + 46 * S;
+  const { cx, body, S } = lobbyLayout();
+  const feet = body.y + 46 * S;
   const lit = m.countT > 0 || m.lockT > 0 ? 1.7 : 1;
   ctx.globalAlpha = a * 0.4;
   ctx.fillStyle = '#04060f';
@@ -2279,16 +2151,6 @@ function drawLobbyStage(now, a, sw) {
   const bob = Math.round(Math.sin(now * 1.6));
   ctx.globalAlpha = a;
   ctx.drawImage(SPRITES.portrait(player.cls, player.look, skin(player.team)), body.x, body.y + rise + bob, body.w, body.h);
-  // the character chevrons: gold under the hand, dim while the pick is locked
-  if (PROFILE.chars().length > 1) {
-    const counting = m.countT > 0 || m.lockT > 0;
-    for (let i = 0; i < 2; i++) {
-      const c = chars[i], hv = m.chover[i] || 0;
-      ctx.globalAlpha = a * (counting ? 0.35 : 0.7 + hv * 0.3);
-      drawChevron(c.x + Math.round(hv * 2) * c.d, c.y, c.d, hv > 0.5 ? '#ffd95c' : '#f4f7ff');
-    }
-    ctx.globalAlpha = a;
-  }
 }
 
 // One roster frame, glued to its screen edge: the side's paint as a bar down
@@ -2521,7 +2383,7 @@ function drawLobbyCount(a) {
 // a (0..1) is the screen's own visibility; the whole surface rides it
 function renderLobby(now, a) {
   const m = state.menu;
-  const { play } = lobbyLayout();
+  const { play, heroes } = lobbyLayout();
   drawLobbyBackdrop(now, a);
   ctx.globalAlpha = a;
   // the panels ride in from their edges; then the map, then the stage
@@ -2531,6 +2393,7 @@ function renderLobby(now, a) {
   drawLobbyRosters(now, a, slide);
   drawLobbyTop(now, a);
   drawLobbyStage(now, a, sw);
+  drawHeroRow(heroes, a);
   drawRoomPlate(now, a);
   // LOCK IN - a bare word at the foot, the main menu's grammar: white, gold
   // and lifted a px under the hand, sunk a px on the press, and gone while the
@@ -2982,7 +2845,7 @@ function renderTitle(now) {
   const sc = easeInOut(m.screenT);             // the lobby cross-fade
   const tc = easeInOut(m.wikiT);               // ...and the wiki's own
   const nc = easeInOut(m.notesT);              // ...and the patch notes'
-  const kc = easeInOut(m.charT);               // ...and the character screens'
+  const kc = easeInOut(m.charT);               // ...and the profile card's
   const rc = easeInOut(m.roomsT);              // ...and the rooms screen's
   const bc = easeInOut(m.skinT);               // ...and the skins screen's
   const lc = easeInOut(m.ladT || 0);           // ...and the bot ladder's
@@ -3037,7 +2900,7 @@ function renderTitle(now) {
     const phot = !m.panel && overPatchTag();
     drawPixelTextShadow(ctx, PATCH_TXT, pr.x, pr.y, phot ? '#ffd95c' : '#5a6690', 'rgba(15,22,50,0.9)');
     if (phot) { ctx.fillStyle = '#c89a3c'; ctx.fillRect(pr.x, pr.y + 7, pr.w, 1); }
-    drawCharTag(now); // the active character and its quill, opposite corner
+    drawProfileTag(); // your name and its quill, opposite corner: the way to the profile card
     drawCoinTag();    // the purse, top-right: the way into the skins screen
     ctx.globalAlpha = 1;
   }
@@ -3054,7 +2917,7 @@ function renderTitle(now) {
   if (nc > 0.005) renderNotes(now, nc * (1 - out));
   if (tc > 0.005) renderWiki(now, tc * (1 - out));
   if (nc + tc > 0.005) drawPageTabs(Math.min(1, nc + tc) * (1 - out)); // one row over both, so a switch never fades it
-  if (kc > 0.005) { if (m.cscreen === 'create' && m.cedit) renderCreate(now, kc * (1 - out)); else renderChars(now, kc * (1 - out)); }
+  if (kc > 0.005) renderProfileCard(now, kc * (1 - out));
   if (rc > 0.005) renderRooms(now, rc * (1 - out));
   if (bc > 0.005) renderSkins(now, bc * (1 - out));
   if (lc > 0.005) renderLadder(now, lc * (1 - out));

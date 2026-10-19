@@ -55,8 +55,8 @@ ten-player `Player` array, the input struct and the bot brain are what keep the 
   drawn in between steps (`tweenIn`: the camera, both birds, riders and fallers, restored by
   `tweenOut` before anything else reads them); ground play draws each step as it is.
 - **No slot is the local human by construction.** `initPlayers(roster, local)` takes the roster and
-  the local slot, `player = players[localId]`, `beginDrop` seats by slot, `applyCharacter(p)` takes a
-  target, `skin()` reads `player.team`. `?local=N` and `DBG.setLocal(N)` seat the local player
+  the local slot, `player = players[localId]`, `beginDrop` seats by slot, `applyProfile()` dresses
+  `player`, `skin()` reads `player.team`. `?local=N` and `DBG.setLocal(N)` seat the local player
   elsewhere for a check. A person on another screen is `control: 'remote'`, and everything that
   treats a person differently from a bot asks `isHuman(p)` (js/net/net.js), never the string.
 - **Effects and sounds raised inside the step carry the where and the who** (js/net/events.js,

@@ -192,7 +192,7 @@ function makeWindow(seed, extra) {
 }
 
 // boot the page on `seed`: every script, then the boot's own tail (boot.js)
-// leaves it on the title (or the create screen on a fresh profile)
+// leaves it on the title
 //
 // The page runs in THIS process's own global scope, not a vm context: a vm
 // context's global object answers every bare global (every function
