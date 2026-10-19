@@ -246,7 +246,7 @@ const PATCH_DIGEST = [
 const DIGEST_FROM = '0.268'; // the oldest patch the digest covers, printed beside HIGHLIGHTS
 const NOTES_W_MAX = 440;
 const NOTES_PIC_MAX = 3; // the most a note's picture is scaled up
-// the pictures notes show, by name (js/notesart.js): {w, h, img}
+// the pictures notes show, by name (js/baked/notesart.js): {w, h, img}
 const NOTES_PICS = {};
 for (const [k, a] of Object.entries(window.NOTES_ART || {})) { const img = new Image(); img.src = a.src; NOTES_PICS[k] = { w: a.w, h: a.h, img }; }
 // the groups, patches first: {id, name, items: [{text, v, pic}], digest}

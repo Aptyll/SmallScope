@@ -50,7 +50,7 @@ const SLING = [
   { k: 'box', f0: 3, f1: 5, s0: -2, s1: -2, c: 'trim' },         // its lit edge
   { k: 'box', f0: 2, f1: 2, s0: -2, s1: 2, c: 'team', from: 1 }, // a painted collar at its foot
   // the ARMS: two timbers flaring out to the fork's mouth, whose reach is the
-  // tier's own (TUR_MOUTH, js/structures.js - the rock leaves from exactly there)
+  // tier's own (TUR_MOUTH, js/sim/structures.js - the rock leaves from exactly there)
   { k: 'seg', f0: 3, s0: 2, f1: 'af', s1: 'as', c: 'lit', w: 1, mir: true },
   { k: 'dot', f: 'mf', s: 'ms', c: 'team', mir: true, from: 1 }, // a wrap halfway up each arm
   { k: 'dot', f: 'mf1', s: 'ms', c: 'mark', mir: true, from: 2 },
@@ -302,7 +302,7 @@ function drawBayOverlay(o, px, sy, now) {
   if (o.hp < o.maxHp) drawHealthBar(px + 24, sy - 11, o.hp, o.maxHp, 24, o.team, undefined, o);
 }
 
-// THE GOLD PUMP'S STROKE (js/sprites/pump.js): the frame is read off the
+// THE GOLD PUMP'S STROKE (js/baked/pump.js): the frame is read off the
 // pump's own payout clock, so every screen that is sent payT draws the same
 // nod. A whole number of PUMP_STROKE-long strokes fits one `period`, so the
 // pay lands as a stroke ends, and for PUMP_HOP s after it a coin hops out of
@@ -356,7 +356,7 @@ function drawNet(o, px, py, now) {
   if (o.hp < o.maxHp) drawHealthBar(px + sh + 8, py - 5, o.hp, o.maxHp, 11, o.team, undefined, o); // + sh: rides the shudder, like every other building bar
 }
 const NET_FISH_AT = [[3, 4], [8, 8], [4, 11]]; // where a held fish lies in the mesh
-const NET_FISH_PIKE = ['#7ab0cc', '#eaf8ff'], NET_FISH_SUN = ['#e0a030', '#fbe6a0']; // body, belly (js/sprites/fish.js's ramps)
+const NET_FISH_PIKE = ['#7ab0cc', '#eaf8ff'], NET_FISH_SUN = ['#e0a030', '#fbe6a0']; // body, belly (js/baked/fish.js's ramps)
 
 // a building wears its owner's team palette over its tier material
 function structSprite(o) {

@@ -137,7 +137,7 @@ Measured on the final set with `node verify.js` and `node jitter.js`:
 Every cue the sim raises is gated on `nearPlayer`, so the wide shots widen that gate to about what
 the frame shows (`M.wideEars`). The WebAudio tap mirrors everything that reaches the destination,
 which is the whole SFX bus, into the recorder. The music layer is `new Audio()` elements.
-`js/audio.js` never calls `createMediaElementSource`, so no music is ever in the graph the tap
+`js/app/audio.js` never calls `createMediaElementSource`, so no music is ever in the graph the tap
 records, at any volume, and the run also holds the music volume at 0. Master sits at 0.4, and
 one shared gain across the set (−0.40 dB on this cut) moves only the loudest peak to about
 −1 dBFS, so a night shot stays quieter than a battle. The title screen is nearly silent, peaking

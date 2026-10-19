@@ -86,7 +86,7 @@ def hold(i, view):
 
 
 # ---- the roll: a crouch, a dive, the tucked ball (bodies.paint_ball) turning over once, and
-# up out of a squat, spread over DODGE_T (js/player.js). The ball frames are the tucked body
+# up out of a squat, spread over DODGE_T (js/sim/player.js). The ball frames are the tucked body
 # turned about its centre, so the light stays put while the body goes over under it.
 BALL_ANGLES = list(range(90, 361, 30))          # the dive's end .. sitting curled again
 # prog (0..1 through the roll) at which each beat starts: crouch, dive, the ball, the landing

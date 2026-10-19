@@ -3,12 +3,12 @@
 // Who you are between matches: the CHARACTER ROSTER (menu.screen 'chars')
 // and the CREATE / CUSTOMIZE screen ('create'), both on the lobby's
 // painted night, and the character tag bottom-left of the title that opens
-// the roster. The STORE is js/profile.js (three slots, each a name, a class
+// the roster. The STORE is js/app/profile.js (three slots, each a name, a class
 // fixed at creation, a look and its lifetime stats) and nothing here touches
 // localStorage; the pictures are js/sprites/looks.js (the 48 px model) and
 // characters.js (the look on the 16 px body).
 //
-// A fresh install opens the create screen before the title (js/boot.js),
+// A fresh install opens the create screen before the title (js/app/boot.js),
 // on a PRE-ROLLED character - a rolled name and look - so DONE is one press
 // away and nobody is stopped at a blank form. Nothing on either screen is a
 // sentence: the model IS the preview, a cell is a choice worn by the model,

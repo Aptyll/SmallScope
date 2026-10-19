@@ -101,7 +101,7 @@ The game already has a voice; new lines match it. `THE BOW IS THE ARGUMENT: KEEP
 - **It never explains a control or quotes a number.** A lore sentence says why the merchant
   sells to both sides; it does not say what a fish costs. Numbers are the other three wiki pages'.
 - **It prints in capitals, in a small alphabet.** The pixel font is A-Z, 0-9 and
-  `- + . , : ; ! ? / % ( ) < > ' "` (`GLYPHS`, [js/font.js](../../js/font.js)) — no long dash, no
+  `- + . , : ; ! ? / % ( ) < > ' "` (`GLYPHS`, [js/app/font.js](../../js/app/font.js)) — no long dash, no
   ampersand, no brackets — and a character it lacks prints as `?`, so a sentence is built
   without them.
 - **A WORLD entry is three lines** at the slab's full width, 80 characters a line beside its
@@ -116,7 +116,7 @@ The game already has a voice; new lines match it. `THE BOW IS THE ARGUMENT: KEEP
 - **A place is THE and a plain noun** — THE ROAD, THE ROOST, THE WORKS, THE COUNTER — and a camp
   is what is in it: WOLF DEN, BLACK BEAR STONE, BROWN BEAR DEN.
 - **A person is a winter word**: a tree, a weather, a small animal, a bird (`NAME_POOL`,
-  [js/profile.js](../../js/profile.js)).
+  [js/app/profile.js](../../js/app/profile.js)).
 - The rules are for new names. Not every shipped name follows them, and one that does not is not
   a precedent.
 

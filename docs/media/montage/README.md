@@ -52,7 +52,7 @@ A partial `run.js` re-normalises against only what it recorded — pass `GAIN=1.
   against 13–24 tall. Every scene is composed **up the screen** for that reason.
 - **The sound is the real bus.** `tools/tap.js` goes in on a fresh document and mirrors every
   connection into `ctx.destination` onto a `MediaStreamAudioDestinationNode`. Everything the game
-  synthesises or samples hangs off one master gain (js/audio.js), and the MUSIC layer is
+  synthesises or samples hangs off one master gain (js/app/audio.js), and the MUSIC layer is
   `HTMLAudioElement` and never enters the graph — so the tap is all of the SFX and none of the
   music by construction. The run also asserts it: zero audio elements were ever created.
 - **One `MediaRecorder`** takes `canvas.captureStream(60)` and that audio track together, so picture

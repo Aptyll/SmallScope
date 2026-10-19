@@ -10,7 +10,7 @@
 // pad) or the small arrow under the tool cell drops it down from beneath the
 // shelf; the same again, or ESC, slides it back up. The merchant's counter
 // drops it too, since a sale is a drag out of it. The pack is the overflow
-// (fitAdd, js/tools.js): a found bit loads itself into a tool first, and a
+// (fitAdd, js/sim/tools.js): a found bit loads itself into a tool first, and a
 // found tool goes in here, so the shelf never has to be read past.
 //
 // Small cells, on purpose: BAG_CELL px with the item art at 1x, a third the
@@ -299,10 +299,10 @@ function dragReturn() {
 // snow throws the item along the cursor's heading off the body rather than
 // tipping it out at the feet, so "put this over there" is a gesture and not a
 // wish - and for TOSS_LOCK_T seconds it is deaf to the hand that threw it
-// (lockDrop, js/core.js), because the pickup magnet would otherwise reel
+// (lockDrop, js/sim/core.js), because the pickup magnet would otherwise reel
 // straight back in what you just dragged out.
 //
-// A TOOL LEAVES ITS BUILD BEHIND ON THE WAY OUT (shedBits, js/tools.js): the
+// A TOOL LEAVES ITS BUILD BEHIND ON THE WAY OUT (shedBits, js/sim/tools.js): the
 // bits scatter around the body, each its own drop, carrying the throw's own
 // heading plus a kick. What lands is a bare weapon in a spray of fittings.
 function throwCell(cell) {

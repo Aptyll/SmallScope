@@ -58,7 +58,7 @@ const PROLOGUE = `(function(){
 })()`;
 
 // A rival body to shoot, stomp, rush or loot. `remote` is the control mode that
-// matters: 'none' is a GHOST at its camp (js/player.js) and draws as a pale
+// matters: 'none' is a GHOST at its camp (js/sim/player.js) and draws as a pale
 // silhouette with no plate, while a remote human with no inputs arriving is a
 // solid, named, inert body - exactly what a staged scene wants.
 const RIVAL = `function rival(x, y, opts) {
@@ -171,7 +171,7 @@ const scenes = [
       const c = __M.tile(t.tx, t.ty);
       // Under the tree, looking up at it: the fall comes down the frame. The
       // gap is 20 px and not a pixel more - WORK_REACH is ONE TILE, Chebyshev
-      // (js/actions.js), so a tile centre + 26 is two tiles down and the swing
+      // (js/sim/actions.js), so a tile centre + 26 is two tiles down and the swing
       // never starts.
       __M.place(c.x - 2, c.y + 20);
       player.dir = 'up';
@@ -781,7 +781,7 @@ const scenes = [
       __M.stageBegin();
       const c = __M.tile(W.arena.tx, W.arena.ty);
       // A site raises ITSELF - buildT climbs in updateStruct with a dust burst
-      // and a hammer tick every 0.8 s (js/structures.js). E is for taking a
+      // and a hammer tick every 0.8 s (js/sim/structures.js). E is for taking a
       // RIVAL'S building down; you never swing at your own.
       const bay = DBG.buildStruct(W.arena.tx - 1, W.arena.ty - 1, 'spawner', 0);
       bay.team = player.team;

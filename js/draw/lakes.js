@@ -17,7 +17,7 @@
 // lake's downwind shore. Read only through the doors below, so the shapes
 // always agree: no drift is ever drawn on a tile the deep band owns (it
 // draws its own), so nothing that looks deep walks shallow.
-// The map is js/depth.js's: snowDepth at a tile-space point, DEPTH_MID and
+// The map is js/sim/depth.js's: snowDepth at a tile-space point, DEPTH_MID and
 // DEPTH_DEEP its bands, deepAt the slowing test, driftWind the prevailing
 // wind.
 const DRIFT_MID = () => DEPTH_MID;  // depth from which a drift piles in a lee
@@ -466,7 +466,7 @@ const dustCv = (() => {
 // the lake's frost pike and gold sunfish (f.kind), SHADOWS drifting
 // under the thin ice and crisp in open holes - both pre-turned to the
 // nearest of the baked headings, so a fish is never rotated off the pixel
-// grid (SPRITES.iceFish, js/sprites/fish.js)
+// grid (SPRITES.iceFish, js/baked/fish.js)
 // Drawn by render() right after the ground blit, in world space off the
 // camera's ex/ey.
 function drawIceFish(ex, ey) {

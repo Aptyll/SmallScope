@@ -47,7 +47,7 @@ ten-player `Player` array, the input struct and the bot brain are what keep the 
 
 ## What had to change, and the constraint each left behind
 
-- **The step is fixed.** `loop()` (js/boot.js) banks the frame's time and hands `update(TICK_DT)`
+- **The step is fixed.** `loop()` (js/app/boot.js) banks the frame's time and hands `update(TICK_DT)`
   zero or more times per frame (`TICK_DT = 1/60`, at most `TICK_MAX` steps), then `render()` once.
   It is 1/60 because `TOOL_ROF_STEP` counts rate of fire in 1/60 steps and every integrator was
   tuned there; a coarser network tick is a snapshot cadence (`SNAP_EVERY`), never a sim one.
@@ -62,7 +62,7 @@ ten-player `Player` array, the input struct and the bot brain are what keep the 
 - **Effects and sounds raised inside the step carry the where and the who** (js/net/events.js,
   below), because a client does not run those moments and has to be told.
 - **A hidden host keeps stepping.** A hidden tab gets no animation frames, so while
-  `document.hidden` the frames come from a worker's 16 ms clock (`watchHidden`, js/boot.js); the
+  `document.hidden` the frames come from a worker's 16 ms clock (`watchHidden`, js/app/boot.js); the
   wrapper sets `backgroundThrottling: false`. Those frames step the sim and draw nothing
   (`loop()` skips `render()` while hidden, unless a director take is recording).
 
@@ -133,7 +133,7 @@ reports `ready: false` and the page plays solo. The App ID is the environment's 
 
 ### The sim seam
 
-In `update()` (js/sim.js), host and solo, while the match is in `play`/`dead`/`drop` and unpaused
+In `update()` (js/sim/sim.js), host and solo, while the match is in `play`/`dead`/`drop` and unpaused
 (a host with peers is never paused: `netShared`, js/net/net.js, keeps the step running under its
 settings panel, and its pause key does nothing):
 
@@ -186,7 +186,7 @@ netClientStep(dt): send {t:'in'} - this tick's input and the ack - step our own 
 **Only the client's own walk is predicted** (the `prediction` banner, js/net/net.js). Each step
 the input a client sends is also stepped on its own body through the same walk the host runs
 (`walkHeading`, `walkSlide`, `walkStep`, with `wadeEase`, `kbDecay`, `iceUnder` and `clampWorld`:
-the `the walk` banner in js/sim.js), and kept in `PRED.hist`. Each snapshot names `ia`, the newest
+the `the walk` banner in js/sim/sim.js), and kept in `PRED.hist`. Each snapshot names `ia`, the newest
 of that client's inputs the host had stepped; `netPredictRestore` puts the body back on the host's
 last word before the apply, `netPredictMend` keeps the host's new word and walks every input after
 `ia` on top of it. The difference against where the body was drawn is not snapped: it is carried as
@@ -496,7 +496,7 @@ must own the app.
 
 ## Risks
 
-The numbers are stable - code comments cite them (js/boot.js cites risk 3) - so a retired risk keeps
+The numbers are stable - code comments cite them (js/app/boot.js cites risk 3) - so a retired risk keeps
 its line.
 
 1. **The fixed step's presentation.** The sim's feel did not change at 1/60; a screen above 60 Hz
@@ -508,7 +508,7 @@ its line.
    carried at all. `netEcho` is the gate: it is a pixel diff, not a play test. There is no schema
    version, so two builds on one `PATCH_TXT` can disagree silently.
 3. **Background throttling on the host.** Alt-tab and the whole room freezes. Mitigation: while
-   the page is hidden the loop is driven by a worker's clock (`watchHidden`, js/boot.js) and the
+   the page is hidden the loop is driven by a worker's clock (`watchHidden`, js/app/boot.js) and the
    wrapper sets `backgroundThrottling: false`. A client shows a blinking relay pip when its socket
    is down, but nothing when snapshots merely stop arriving.
 4. **Edge-triggered inputs under loss.** `dodge`, `jump`, the meals, `useCard`, `ability` and `cmd`

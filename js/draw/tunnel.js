@@ -1,6 +1,6 @@
 'use strict';
 // ------------------------------------------------------------ tunnels, drawn
-// The burrow's pixels (the sim is js/tunnel.js). Everything here lies flat on
+// The burrow's pixels (the sim is js/sim/tunnel.js). Everything here lies flat on
 // the snow under whatever walks: the holes, the mound a body makes riding a
 // tunnel, the dig's clock under a digger's boots, the aim's ghost - and the
 // work key's cap over a hole the local player can take. Each state is a

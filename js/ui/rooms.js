@@ -102,7 +102,7 @@ function joinRoom(k) {
   if (!r || !roomOk(r) || NET.role === 'client') return;
   m.rsel = k;
   // the world is the host's: SEED and MAP_TYPE are both decided at load
-  // (js/core.js, js/boot.js), so a page born on another seed OR another
+  // (js/sim/core.js, js/app/boot.js), so a page born on another seed OR another
   // shape starts over on the room's and joins from boot (?join=)
   const seed = r.data && +r.data.seed, map = (r.data && r.data.map | 0) || 0;
   if (seed && (seed !== SEED || map !== MAP_TYPE)) { location.search = '?seed=' + seed + '&map=' + map + '&join=' + r.room + (netSteam() ? '&transport=steam' : ''); return; }

@@ -1,5 +1,5 @@
 # The bear's clips as poses for the puppet (bear.py). Each clip is a list of
-# pose dicts; a clip's frame rate is the game's (ANIM_CLIPS, js/wildlife.js).
+# pose dicts; a clip's frame rate is the game's (ANIM_CLIPS, js/sim/wildlife.js).
 import math
 from bear import HIPS
 
@@ -71,7 +71,7 @@ RISE = [
 ROAR = [RISE[0], RISE[1], RISE[2], RISE[3], RISE[3], RISE[2], RISE[1], RISE[0]]
 
 # ---- the attacks: two moves on all fours, picked at random per blow
-# (BEAR_ATTACKS, js/wildlife.js), each landing on frame ATTACK_STRIKE so
+# (BEAR_ATTACKS, js/sim/wildlife.js), each landing on frame ATTACK_STRIKE so
 # the fight's timing is the same whichever plays. The wind-up is the tell.
 ATTACK_STRIKE = 4
 

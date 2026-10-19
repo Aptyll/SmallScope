@@ -18,7 +18,7 @@
 // onto another manual slot - the two trade places, or an autosave dropped on
 // an empty one is kept there for good. The keys reach the same: Delete, F2,
 // and Shift with Left or Right; a pad's X is Delete and its pointer carries.
-// The storage and the match itself are js/save.js.
+// The storage and the match itself are js/sim/save.js.
 
 const SV_CW = 56, SV_CH = 76, SV_GAP = 4; // one card, and the gutter between
 const SV_ARM_T = 2.5;                      // s an armed card waits for its second press
@@ -312,7 +312,7 @@ function savesImg(url) {
   return im.complete && im.naturalWidth ? im : null;
 }
 
-// a slot's picture (saveMeta, js/save.js): the whole minimap at SAVE_THUMB
+// a slot's picture (saveMeta, js/sim/save.js): the whole minimap at SAVE_THUMB
 // px square, a gold pip where you stood
 function saveThumb() {
   try {

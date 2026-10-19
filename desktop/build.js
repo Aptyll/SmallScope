@@ -15,7 +15,7 @@ const NAME = 'Softfall';
 
 // the game: the page and its tab icon (and the bot lab's page, F6), the code, the music. Nothing from docs/, app/ or the wrapper's own
 // node_modules, and of audio/ only the streamed tracks - the sample clips are baked into
-// js/sfxdata.js already, and audio/new_sfx_to_use holds clips the game does not play yet
+// js/baked/sfxdata.js already, and audio/new_sfx_to_use holds clips the game does not play yet
 fs.rmSync(APP, { recursive: true, force: true });
 fs.mkdirSync(path.join(APP, 'audio'), { recursive: true });
 for (const f of ['index.html', 'favicon.ico', 'botlab.html', 'LICENSE']) fs.copyFileSync(path.join(ROOT, f), path.join(APP, f));

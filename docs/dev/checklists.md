@@ -22,7 +22,7 @@ or a branch behind origin/main.
 The rule is in [CLAUDE.md](../../CLAUDE.md): look at the running game, don't re-read the code and
 declare victory. The affordances:
 
-- **`window.DBG`** (end of [js/boot.js](../../js/boot.js)) — read the object literal for the
+- **`window.DBG`** (end of [js/app/boot.js](../../js/app/boot.js)) — read the object literal for the
   current surface; it is the whole external API. **Stage the scene** (place structures, warp
   beside a camp, jump `state.day`/`state.time`) instead of playing to reach it. The non-obvious
   members:
@@ -196,7 +196,7 @@ that preserve the described structure.
 
 ## Common changes
 
-**Adding an object type** — one `OBJECTS` entry in [js/world.js](../../js/world.js) is most of
+**Adding an object type** — one `OBJECTS` entry in [js/sim/world.js](../../js/sim/world.js) is most of
 it: `solid` (does it block a walker), `tool` (what E reaches for) and `ready` (whether it is worth
 reaching *right now* — the bush's berries), `auto` (the hands go to it on their own the moment it
 is in reach — `autoWork`; without it the thing waits for E, as only bare ice and the dummy do; a
@@ -213,7 +213,7 @@ need no edit — none of them names a type any more. An object *instance* carryi
 generically, the same rule buildings answer through `ownsStruct`.
 
 **Adding a story landmark** is none of that: one `LANDMARKS` entry in
-[js/landmarks.js](../../js/landmarks.js) and one grid in js/sprites/landmarks.js. A new placement
+[js/sim/landmarks.js](../../js/sim/landmarks.js) and one grid in js/sprites/landmarks.js. A new placement
 rule is one more `LM_WHERE` function: [world.md](world.md#story-landmarks).
 
 What is still per-type and has to be written by hand: the sprite branch in the flat pass or the
@@ -225,14 +225,14 @@ stands up off the snow (its art and where it sits, so its shade is baked and fol
 glows — there is no light registry to add it to
 ([rendering](rendering.md#light-and-weather)). A new thing that **walks** draws
 `drawCastShade(spr, x, y)` under its sprite instead of a flat rect. A **building**
-is not an object type: it is a `STRUCTS` entry in [js/structures.js](../../js/structures.js),
+is not an object type: it is a `STRUCTS` entry in [js/sim/structures.js](../../js/sim/structures.js),
 which carries the same `mm`/`map` pair and gets solidity, both maps and the E prompt for free.
 
 **Adding a carried item** — one `ITEMS` entry (`icon`, `stack`, plus `heal` and `pouch: true` if
 it is food) is the storage half: the bag *or* the [pouch](gameplay.md#inventory-and-the-backpack),
 the drop pickup, the drag and the refusal tell are all generic over that table.
 What is *not* generic and must be written per item: an 8×8 icon sprite (bake it beside its own
-code, not in the byte-fragile grid files under js/sprites/ — see `bakeGrid` in js/tools.js and `CHEST_SPR`; an
+code, not in the byte-fragile grid files under js/sprites/ — see `bakeGrid` in js/sim/tools.js and `CHEST_SPR`; an
 icon that should **loop** is still one canvas to everything that draws it — put the frames in
 `SPRITES.itemAnim[key]` and the canvas in `SPRITES[key]`, and `stepItemIcons` animates it, see
 [sprites.md](sprites.md)), a colour in `RES_COLORS` for the pickup floater, **what it is worth** (see the counter below, or
@@ -242,17 +242,17 @@ clicking its cell will just deny (`sendBagCell` runs first and handles only the 
 have somewhere to *go*, a bit and a tool) — and a branch in `tipStack` (the `tooltips` banner, js/ui/tooltip.js) or
 hovering it says only its raw type name. **A new FOOD is the one item that is already generic**:
 give its `ITEMS` row a `heal` and `pouch: true` and it picks up the pouch, the meal channel, the
-shared clock and the tooltip rows for free (`startEat`, js/core.js — see
+shared clock and the tooltip rows for free (`startEat`, js/sim/core.js — see
 [Food](gameplay.md#food-the-meal-is-a-channel)); what it still needs is its own key and a seat in
 `FOOD_BTNS` (js/ui/strip.js), because a meal is pressed from the hud strip and never from a cell
-(a new fish instead joins `FISH_KINDS`, js/player.js, and `FISH_POP`, and eats off the fish well). The
+(a new fish instead joins `FISH_KINDS`, js/sim/player.js, and `FISH_POP`, and eats off the fish well). The
 drop draw pass and the bag cell both centre an icon
 on its own width, so a 12×12 needs no branch. Gold is **not** an `ITEMS` entry and must not become
 one: it is a wallet number with no ceiling. See
 [gameplay.md](gameplay.md#inventory-and-the-backpack).
 
 **Adding a weapon (a tool) or a bit** — both are one entry in `TOOLS` / `BITS`
-([js/tools.js](../../js/tools.js)); the loop at the foot of that file registers the `ITEMS` and
+([js/sim/tools.js](../../js/sim/tools.js)); the loop at the foot of that file registers the `ITEMS` and
 `RES_COLORS` rows, so storage, drops, the drag, the click that sends it between
 pack and weapon, and the loot pools all pick it up
 with no other edit. Both need a `price`, or the merchant sells it for nothing and buys it back
@@ -273,7 +273,7 @@ left an ordinary pickup rather than being made to drop somebody's bits.
 5 * SHELF_GAP`, so a roomier tool would run its row off the intro bake and under the merchant's
 slab, which is pinned off the claim ([the panel](gameplay.md#the-panel)). Widen both together.
 
-**A new way to put a tool on the ground must call `shedBits` first** (js/tools.js) — the one that
+**A new way to put a tool on the ground must call `shedBits` first** (js/sim/tools.js) — the one that
 exists, `throwCell` (js/ui/bag.js), does (a death puts nothing down since 3.55). Skip it and that
 one path is the only one in the game handing the next person to walk over it a finished weapon.
 
@@ -296,11 +296,11 @@ magnitude.
 
 Both need a `name` and a `blurb` — the tooltip prints them, and they are the only words the kind
 ever gets; a modifier's blurb says "EVERY SHOT AFTER IT …", because that is what it does. A
-modifier that carries a **damage type** sets `m.type` (see `DMG_TYPES`, js/actions.js) and the
+modifier that carries a **damage type** sets `m.type` (see `DMG_TYPES`, js/sim/actions.js) and the
 arrow carries it to `hurtUnit` with no per-kind code; add its numbers to `tipBit`'s modifier
 branch, which reads them back out of `bitMods` rather than restating them.
 
-**It also needs a `TECH` node** (js/tools.js), or the [wiki](gameplay.md#the-wiki)'s ARSENAL
+**It also needs a `TECH` node** (js/sim/tools.js), or the [wiki](gameplay.md#the-wiki)'s ARSENAL
 page never lists it — the loot pool rolls it either way, since the pool is every kind at or
 under a tier, but a kind missing from the page is a kind nobody can read the numbers of. The
 page's three tables are `wikiKinds(sort)` (js/ui/wiki.js): every `TECH` id of that sort, ordered
@@ -315,7 +315,7 @@ rule, which refuses to draw a straight line for a path that does not fly straigh
 is table-driven again: name it in the bit's `body` and add that name to `BIT_BODY`
 (js/draw/render.js), which is the only place the names mean anything. Same for a new **impact** —
 what the shot does where it *lands* — one `impact` on the bit and one row in `BIT_IMPACT`
-(js/tools.js), which the arrow update calls only when the shot ended on something.
+(js/sim/tools.js), which the arrow update calls only when the shot ended on something.
 
 **Putting something on the merchant's counter** — nothing, if it is a tool, a bit or a card: the
 stock is rolled off `TOOLS`/`BITS`/`CARD_RARITIES` themselves (`shopRestock`,
@@ -335,7 +335,7 @@ pop-up's preview/ledger and the bot class hash
 (`initPlayers`, already `floor(hash × CLASSES.length)`) are all generic over the tables. What a
 new class needs written:
 
-1. a `CLASSES` entry ([js/player.js](../../js/player.js)) — `name` and the `kit` numbers are
+1. a `CLASSES` entry ([js/sim/player.js](../../js/sim/player.js)) — `name` and the `kit` numbers are
    the load-bearing halves;
 2. the full sprite set in the byte-fragile [js/sprites/characters.js](../../js/sprites/characters.js)
    (a beast goes in beasts.js, the bears in bears.js by rebaking, a building in buildings.js, an item in items.js, terrain in
@@ -344,9 +344,9 @@ new class needs written:
    4 directions × 3 frames plus the 5-pose prone set, baked into `SPRITES.champ[c]` per team
    via the `TEAM_SKINS` bakes ([sprites.md](sprites.md)) — **this is the expensive part**; and
    its run, held run and roll: a body for the doll in `app/bake-player/bodies.py` (`BODIES`),
-   measured off the new idle frames, rebaked into js/sprites/motion.js, with its name in
+   measured off the new idle frames, rebaked into js/baked/motion.js, with its name in
    characters.js's `MOTION_CLS` ([the run and the roll](sprites.md#the-run-and-the-roll));
-3. a `CLASS_AB` row of four actives ([js/abilities.js](../../js/abilities.js)): each ability's
+3. a `CLASS_AB` row of four actives ([js/sim/abilities.js](../../js/sim/abilities.js)): each ability's
    `cd`/`cast`/`blurb`/`use(p)` (plus `acol`/`activeF` if a state runs on the body), its
    `abilityPose` case, any world entities it leaves and their tick/draw, and its on-body draw
    in `drawAbilityOnPlayer` if it leaves a visible state;
@@ -357,17 +357,17 @@ new class needs written:
    [team rail](rendering.md#the-team-rail) wears;
 5b. an `OUTFIT` layer for the 48 px model ([js/sprites/looks.js](../../js/sprites/looks.js) —
    the hat stopping at row 8 so the hair shows under it) and `CLASS_N` bumped in
-   [js/profile.js](../../js/profile.js), which looks.js asserts against at load; a `champLook`
+   [js/app/profile.js](../../js/app/profile.js), which looks.js asserts against at load; a `champLook`
    branch in characters.js saying where the new body's fringe sits
    ([sprites.md](sprites.md#looks-a-character-on-the-class-body));
-6. a `CLASS_LOADOUT` entry ([js/tools.js](../../js/tools.js));
-7. a fight rung in `updateAI` ([js/ai.js](../../js/ai.js)) that spends the four keys at the
+6. a `CLASS_LOADOUT` entry ([js/sim/tools.js](../../js/sim/tools.js));
+7. a fight rung in `updateAI` ([js/ai/ai.js](../../js/ai/ai.js)) that spends the four keys at the
    ranges the kit is good at — the class branch there is per-class content and the one `if`
    that must grow. Ask **`abReady(p, i)`**, never a bare `p.abCd[i] <= 0`: a key starts locked
    at level 0 and a bot that skips the check tries to cast something it has not bought.
 
 **Adding a stored profile field** — the field goes in `blank()` in
-[js/profile.js](../../js/profile.js) *and* in the repair loop `PROFILE.load()` runs over an
+[js/app/profile.js](../../js/app/profile.js) *and* in the repair loop `PROFILE.load()` runs over an
 existing save, or an old profile reaches its readers without it. Give it an accessor on the
 `PROFILE` object rather than letting callers reach into `PROFILE.get()`, and pick a write policy:
 `saveNow()` for something the player just chose, `scheduleSave()` for anything the sim writes
@@ -429,7 +429,7 @@ What it must do to get them:
    unplayable-around;
 5. join `separateUnits`, `UNIT_MASS` and `unitRadius` (see the CLAUDE.md rule), and give it a hit
    disc the way `animalHitR`/`animalHitY` and `ROBOT_HIT_R`/`robotHitY` do, swept by a loop over its list
-   in `shotContacts` (js/sim.js) — that is the one thing the arrow loop asks per kind;
+   in `shotContacts` (js/sim/sim.js) — that is the one thing the arrow loop asks per kind;
 6. if it goes in `animals`, its `SPRITES` entry is **clips, not a flat frame list** —
    `{ right: { idle: [...], ... }, left: ... }`, `idle` mandatory because it is the fallback and
    the frame the wiki's card takes — plus an `ANIM_CLIPS` row naming the same clips with their
@@ -453,7 +453,7 @@ fillers through `structOf()` first, so the anchor's entry colours the whole buil
 `STRUCTS` entry is automatically solid for free, and only a genuinely new *non-`STRUCTS`* scenery
 type needs a line there. `hitObject()`, the draws pass (via `structSprite`), construction,
 ownership and refunds already dispatch on `STRUCTS[o.type]` too — no per-type work there, and
-a shot meets the grid's own opaque box (`structShotBox`, js/sim.js), so taller art is a taller
+a shot meets the grid's own opaque box (`structShotBox`, js/sim/sim.js), so taller art is a taller
 target for free; only a part drawn outside the grid (the turret's sling) declares its reach
 (`head`) — and
 nothing to add unless the type does something once built (a functional tick branch in
@@ -502,7 +502,7 @@ remember `genWorld()`'s `free()` helper treats "ground must be 0" as the placeme
 `tryProne` (snow to dig into) and the footprint emitter. Check `fishWater()` too: it names the
 swimmable grounds outright.
 
-**Adding a map shape** — one `MAPS` entry in [js/world.js](../../js/world.js) (the `map types`
+**Adding a map shape** — one `MAPS` entry in [js/sim/world.js](../../js/sim/world.js) (the `map types`
 group) plus whatever `mapTerrain` needs to read it, and that is the feature: `genWorld`'s
 interior pass plants from `mapTerrain`, the class screen's chip draws from it, `layPaths` cuts
 its paths if it grows woods (`mapGrown`), and the ore/berry top-up puts it back to OPEN FIELD's
@@ -522,14 +522,14 @@ strength. Nothing else in the game knows a shape by name. Three rules bound one:
   junction come back reachable **chopping nothing**. A shape that fails either is a shape that
   walls a camp in.
 
-A shape is a **page**, so nothing may read `MAP_TYPE` at load time (it is set in js/boot.js after
+A shape is a **page**, so nothing may read `MAP_TYPE` at load time (it is set in js/app/boot.js after
 `loadSettings`), and a new entry changes what a lobby considers the same world: `MAPS.length`
 bounds the `?map=` parse, and the hello already carries the index.
 
 **Adding a sound** — drop the file in `audio/sfx/`, **run `node app/bake-sfx.js`** (this is not
 optional: without it the clip works when served and is silently dead when `index.html` is opened
 off the disk, which is how the game is actually played), add it to `SAMPLES` in
-[js/audio.js](../../js/audio.js) (a key may list several files; one is picked per shot), and write
+[js/app/audio.js](../../js/app/audio.js) (a key may list several files; one is picked per shot), and write
 the cue as `name() { if (smp('key', {...})) return; ...synth line... }`. **The synth line is not
 optional** — `smp` returns false until the file has decoded, and a cue with nothing behind it is
 silent on the first swing of every session. `trim()` levels the file to `SMP_LUFS` for you, so
@@ -556,7 +556,7 @@ writing a new one, read the eighteen in the notification block: a surface openin
 stepped control and a countdown second already have cues, and the answer is usually to call one
 of those from a new place. See [Audio](gameplay.md#audio).
 
-**Adding a song** — one `TRACKS` entry in [js/audio.js](../../js/audio.js) (`f`, `loop`, `vol`,
+**Adding a song** — one `TRACKS` entry in [js/app/audio.js](../../js/app/audio.js) (`f`, `loop`, `vol`,
 and `next` if it should chain into another when it ends), then one `SFX.music.play('key')` at the
 transition that owns it. Nothing polls for the right track: `play()` no-ops when its key is
 already current, so it is safe to call from a state change that repeats.
@@ -565,19 +565,19 @@ already current, so it is safe to call from a state change that repeats.
 
 | File | The numbers |
 | --- | --- |
-| js/core.js | the `YIELD` table (every gold payout, the one table still in core.js); `useCard`'s random draw |
-| js/player.js | `RESPAWN_WAIT` (the wait for the bird, beside `die()`) and `KILL_BOUNTY`; the `CARDS` table (every card's effect, by rarity); the hero-level table (`LEVEL_XP`/`LVL_HP`/`LVL_DMG` — sized against the harness, see [multiplayer.md](multiplayer.md#bots)); `BOW_CHARGE` and the momentum constants (`ICE_MAX`, `SLIDE_MIN`/`SLIDE_EXIT`, `TRAIL_MIN`) above `CLASSES`; the player count (`MAX_PLAYERS`) |
-| js/world.js | the chests (`CHEST_*` above `placeChests()`: count, spacing, payout, and `CHEST_ODDS`, a chest's card rarity roll); `TREE_HP`; `TREE_RARE_CHANCE` in `treeRare()`; the road (`ROAD_HW`/`ROAD_RAG`/`ROAD_ICE_KEEP`/`ROAD_ICE_TAPER`/`ROAD_STEP`/`ROAD_HW_WOOD`/`ROAD_NEST_IN`/`ROAD_NEST_OFF`/`ROAD_LOG_IN`/`SPUR_HW`), which reshapes the map |
-| js/structures.js | `STRUCTS` costs/HP/build times (plus turret range/dmg/rate/traverse/aim/`acc`, generator pay/period, bay bot count/HP and its `w`/`h` footprint; the bay's roll-out cadence is inline in `updateStructures()`'s spawner branch); the turret's own throw (`TUR_*`, `ROCK_SPD`/`ROCK_FALL`/`ROCK_MISS`/`ROCK_SPLASH`, under the `turret gunnery` banner); the waves (`STRUCTS.barracks`'s `wave`/`waveT`/`grow`/`cap`/`botHp`/`hp`, `BARRACKS_ROLL`) |
-| js/robots.js | `SOLDIER_*` (speed, aggro, siege reach, the bird damage, the bounty); `MERCH_BAYS`/`MERCH_BAY_*` (how many bays, the logs each costs, when the first is due, how far behind the roost, the rebuild wait); `MERCH_BACK_R`/`MERCH_BACK_ARC` (how far and how wide the back woods reach) |
-| js/actions.js | `WORK_REACH` and the roll/prone blocks |
-| js/tools.js | the `TOOLS` and `BITS` tables; the loot rates (`TREE_DROP`/`CHEST_TOOL`/`LOOT_TOOL`); the flight-path constants beside `steerBit`; the damage roll in `emitBit()` |
-| js/mining.js | `ROCK_KINDS` (each rock kind's mining time, gold, ore, find and regrow), `ORE_PRICE`, `MINE_STRIKE`/`MINE_R`/`MINE_DECAY`/`MINE_HIT_HOLD`/`MINE_STREAM_T`/`MINE_MOVE`/`ORE_FLING`, the forge's `FORGE_PTS`/`FORGE_NEED`/`FORGE_NEED_UP`/`FORGE_TAPER`/`FORGE_DMG`/`FORGE_ROF`/`FORGE_TENSILE`/`FORGE_GOLD` (and each body's `up`, `TOOLS` in js/tools.js) |
-| js/ai-skill.js | every level's numbers (`AI_LEVELS`: the hand fields, the choice knobs, `push`/`guard`), the ally clocks (`AI_ALLY_PUSH`), the ladder's hands (`AI_LADDER_HANDS`), the skill layer's clocks (`AI_SETTLE`, `AI_WOBBLE_T`, `AI_ALERT_T`, `AI_AIM_ON`, `AI_BLADE_CLOSE`, `AI_BLADE_HOLD`) |
-| js/ai.js | the bot ranges (`AI_SIGHT`, `AI_HUNT`, `AI_FORAGE`); the objective clocks (`AI_ESCALATE`, `AI_JOIN_HP`, `AI_ALARM_HP`, `AI_ROOST_R`); the waves as a bot reads them (`AI_WAVE_R`/`AI_WAVE_D`) |
-| js/sim.js | the trickle (`TRICKLE_GOLD`/`TRICKLE_T`); the per-surface steer/decay rates inline in `updatePlayer()`'s movement block; the darkness ramp in `update()`; `FLAKE_BASE`/`FLAKE_MIN`/`FLAKE_MAX` beside the flake block |
-| js/weather.js | the `WIND_*` block (the three ripples, the bend that meanders them, the gust envelope's floor and peak, and how fast it all dies at dusk) |
-| js/eagle.js | the eagle's siege (`EAGLE_HP`/`EAGLE_WORK_DMG`/`EAGLE_ARROW_DMG`/`GUST_R`/`PREEN_RATE`) |
+| js/sim/core.js | the `YIELD` table (every gold payout, the one table still in core.js); `useCard`'s random draw |
+| js/sim/player.js | `RESPAWN_WAIT` (the wait for the bird, beside `die()`) and `KILL_BOUNTY`; the `CARDS` table (every card's effect, by rarity); the hero-level table (`LEVEL_XP`/`LVL_HP`/`LVL_DMG` — sized against the harness, see [multiplayer.md](multiplayer.md#bots)); `BOW_CHARGE` and the momentum constants (`ICE_MAX`, `SLIDE_MIN`/`SLIDE_EXIT`, `TRAIL_MIN`) above `CLASSES`; the player count (`MAX_PLAYERS`) |
+| js/sim/world.js | the chests (`CHEST_*` above `placeChests()`: count, spacing, payout, and `CHEST_ODDS`, a chest's card rarity roll); `TREE_HP`; `TREE_RARE_CHANCE` in `treeRare()`; the road (`ROAD_HW`/`ROAD_RAG`/`ROAD_ICE_KEEP`/`ROAD_ICE_TAPER`/`ROAD_STEP`/`ROAD_HW_WOOD`/`ROAD_NEST_IN`/`ROAD_NEST_OFF`/`ROAD_LOG_IN`/`SPUR_HW`), which reshapes the map |
+| js/sim/structures.js | `STRUCTS` costs/HP/build times (plus turret range/dmg/rate/traverse/aim/`acc`, generator pay/period, bay bot count/HP and its `w`/`h` footprint; the bay's roll-out cadence is inline in `updateStructures()`'s spawner branch); the turret's own throw (`TUR_*`, `ROCK_SPD`/`ROCK_FALL`/`ROCK_MISS`/`ROCK_SPLASH`, under the `turret gunnery` banner); the waves (`STRUCTS.barracks`'s `wave`/`waveT`/`grow`/`cap`/`botHp`/`hp`, `BARRACKS_ROLL`) |
+| js/sim/robots.js | `SOLDIER_*` (speed, aggro, siege reach, the bird damage, the bounty); `MERCH_BAYS`/`MERCH_BAY_*` (how many bays, the logs each costs, when the first is due, how far behind the roost, the rebuild wait); `MERCH_BACK_R`/`MERCH_BACK_ARC` (how far and how wide the back woods reach) |
+| js/sim/actions.js | `WORK_REACH` and the roll/prone blocks |
+| js/sim/tools.js | the `TOOLS` and `BITS` tables; the loot rates (`TREE_DROP`/`CHEST_TOOL`/`LOOT_TOOL`); the flight-path constants beside `steerBit`; the damage roll in `emitBit()` |
+| js/sim/mining.js | `ROCK_KINDS` (each rock kind's mining time, gold, ore, find and regrow), `ORE_PRICE`, `MINE_STRIKE`/`MINE_R`/`MINE_DECAY`/`MINE_HIT_HOLD`/`MINE_STREAM_T`/`MINE_MOVE`/`ORE_FLING`, the forge's `FORGE_PTS`/`FORGE_NEED`/`FORGE_NEED_UP`/`FORGE_TAPER`/`FORGE_DMG`/`FORGE_ROF`/`FORGE_TENSILE`/`FORGE_GOLD` (and each body's `up`, `TOOLS` in js/sim/tools.js) |
+| js/ai/ai-skill.js | every level's numbers (`AI_LEVELS`: the hand fields, the choice knobs, `push`/`guard`), the ally clocks (`AI_ALLY_PUSH`), the ladder's hands (`AI_LADDER_HANDS`), the skill layer's clocks (`AI_SETTLE`, `AI_WOBBLE_T`, `AI_ALERT_T`, `AI_AIM_ON`, `AI_BLADE_CLOSE`, `AI_BLADE_HOLD`) |
+| js/ai/ai.js | the bot ranges (`AI_SIGHT`, `AI_HUNT`, `AI_FORAGE`); the objective clocks (`AI_ESCALATE`, `AI_JOIN_HP`, `AI_ALARM_HP`, `AI_ROOST_R`); the waves as a bot reads them (`AI_WAVE_R`/`AI_WAVE_D`) |
+| js/sim/sim.js | the trickle (`TRICKLE_GOLD`/`TRICKLE_T`); the per-surface steer/decay rates inline in `updatePlayer()`'s movement block; the darkness ramp in `update()`; `FLAKE_BASE`/`FLAKE_MIN`/`FLAKE_MAX` beside the flake block |
+| js/sim/weather.js | the `WIND_*` block (the three ripples, the bend that meanders them, the gust envelope's floor and peak, and how fast it all dies at dusk) |
+| js/sim/eagle.js | the eagle's siege (`EAGLE_HP`/`EAGLE_WORK_DMG`/`EAGLE_ARROW_DMG`/`GUST_R`/`PREEN_RATE`) |
 | js/draw/ground.js | the road's colours, `ROAD_COL_*` beside `paintRoadOverlay` |
 | js/draw/light.js | the `CLOUD_*` / `RAY_*` / `NIGHT_*` / `STAR_*` blocks in the `light & weather` banner (including `RAY_AFTER` / `RAY_NOON_HALF`, which decide how long the sun shafts are up for) |
 
@@ -619,13 +619,13 @@ Code that is dead **on purpose** is the next section.
 - **The music is the Steam download**: the nine tracks in `audio/music/` are 39 MB of the
   game's 44 MB, encoded at 184–256 kbps. Re-encoding them to 128 kbps (ffmpeg, `-b:a 128k`,
   or `-q:a 5` VBR) would cut the music to roughly 26 MB; the code reads the files by name in
-  `TRACKS` (js/audio.js), so a re-encode changes nothing but the bytes. Not a priority: it is
+  `TRACKS` (js/app/audio.js), so a re-encode changes nothing but the bytes. Not a priority: it is
   Noah's ears that decide, and a first install is mostly Electron's own ~265 MB anyway.
 - **A bot push that stands still mid-map** (seen in 2.63, not since 2.64's blocked-line rule in
   the fight rung, but seed 2 on NORMAL was never re-run): the way in is the harness's per-minute
   rows (own/rival roost distance per player) and `settings.hitbox = 1` on the stalled bots'
   routes.
-- **No bot targets a worker bot on purpose.** `aiNearestEnemy` (js/ai.js) takes players and a
+- **No bot targets a worker bot on purpose.** `aiNearestEnemy` (js/ai/ai.js) takes players and a
   rival wave's soldiers; a worker only falls to a shot meant for somebody else, though every
   weapon, ability and the roll land on it like any other body.
 - **Fire stops at buildings and the bird.** A structure (`hurtStruct`) and the roosting eagle
@@ -671,7 +671,7 @@ Kept on purpose — do not "clean up", and a verbatim code move carries it along
   with them): `updateBird`/`flushBirds`/`rookeryPerch`/`drawBird`, the `BIRD_*` constants,
   `YIELD.bird`, `ANIMAL_HP.bird` and every `kind === 'bird'` branch stay, and nothing spawns
   one — a camp that wants a flock stands it up again with `deadTree` props and a perching spawn
-  beside `spawnCampMonster` (js/camps.js) ([Birds](gameplay.md#birds-the-flock-dormant)). The
+  beside `spawnCampMonster` (js/sim/camps.js) ([Birds](gameplay.md#birds-the-flock-dormant)). The
   `flushBirds(campAt(...))` calls on a felled snag are the live hooks it would wake through.
 - `SPRITES.imp` (the `imp1`/`imp2` grids, `IPAL`) is baked but unreferenced since the worker bot
   got its own grids — kept in case the imp returns.
@@ -685,7 +685,7 @@ Kept on purpose — do not "clean up", and a verbatim code move carries it along
 - `SPRITES.spikes`, `SPRITES.fire`, `SPRITES.torch`, and the three heart sprites are baked but
   unreferenced since the buildables/HUD removal — kept in case those features return (the heart
   grids also carry the file's mangled-byte repair).
-- The `<` glyph in [js/font.js](../../js/font.js) was added for the removed resolution cycle
+- The `<` glyph in [js/app/font.js](../../js/app/font.js) was added for the removed resolution cycle
   control and is currently unreferenced — kept as generic font coverage. (`>` is live again: it
   marks your own row on the scoreboard.)
 - `SPRITES.raider` (+ `RDPAL`) and `SPRITES.mine` are still baked but unreferenced since the
@@ -703,6 +703,6 @@ Kept on purpose — do not "clean up", and a verbatim code move carries it along
   recover one with `git show ee284a0:"audio/music/<name>"` if a cue ever wants it. A track is
   live only once it is in `TRACKS`. `app/server.js`'s `.ogg`/`.wav` MIME rows are forward-looking — every asset in the repo
   is an mp3.
-- The `tracers` array (js/player.js), its ageing (js/structures.js) and its draw pass
+- The `tracers` array (js/sim/player.js), its ageing (js/sim/structures.js) and its draw pass
   (js/draw/render.js) are kept working but nothing pushes to them — they went idle with the
   raiders, and the live turret slings a travelling rock through `arrows` instead.

@@ -13,9 +13,9 @@
   // after the step and before the draw.
   // A scene's hook has to land AFTER sampleHumanInput and before the step
   // reads the struct: sampleHumanInput rebuilds the local player's input from
-  // the keyboard every step (js/input.js), so anything written earlier - work,
+  // the keyboard every step (js/app/input.js), so anything written earlier - work,
   // and every field the live path assigns - is gone before updatePlay sees it.
-  // Exactly one call per update (js/sim.js), so this is once per sim step.
+  // Exactly one call per update (js/sim/sim.js), so this is once per sim step.
   M.step = null;
   M.cam = null;
   M.keepUp = false;
@@ -98,7 +98,7 @@
   M.easeCam = function (x, y, k) {
     const tx = Math.max(0, Math.min(WORLD * TILE - WV_W, x - WV_W / 2));
     const ty = Math.max(0, Math.min(WORLD * TILE - WV_H, y - WV_H / 2));
-    // the play camera's own lerp is dt*7 - about 0.117 a frame (js/sim.js) -
+    // the play camera's own lerp is dt*7 - about 0.117 a frame (js/sim/sim.js) -
     // and it is pulling toward the PLAYER. A hook easing slower than that never
     // wins its own framing: the shot settles somewhere between the two
     const a = Math.max(0.16, k == null ? 0.25 : k);
@@ -276,7 +276,7 @@
   // ----------------------------------------------------------- the camera
   M.zoom = function (z) { DBG.setZoom(z, true); };
   // Hold a scale the sim would otherwise take back - the eagle ride pins
-  // DROP_ZOOM every frame in applyZoom (js/sim.js), so a close ride has to be
+  // DROP_ZOOM every frame in applyZoom (js/sim/sim.js), so a close ride has to be
   // written back after the step and before the draw. z must stay on a rung
   // (a whole number of device px per world px) or the pixel grid tears.
   M.forceZoom = function (z) {
@@ -294,7 +294,7 @@
   M.night = function (on) {
     state.time = on ? DAY_LEN + 22 : 30;
     state.dayPop = null;
-    // state.darkness is DERIVED from the clock inside update (js/sim.js), so
+    // state.darkness is DERIVED from the clock inside update (js/sim/sim.js), so
     // a scene that only writes the time is still standing in broad daylight
     const was = DBG.freeze;
     DBG.freeze = true;
@@ -383,7 +383,7 @@
 
   // ------------------------------------------------------------ the camera
   // A RIG WITH ITS OWN POSITION. The play camera writes camX/camY itself every
-  // sim step (js/sim.js), so a hook that eases from whatever camX currently is
+  // sim step (js/sim/sim.js), so a hook that eases from whatever camX currently is
   // is easing off a floor that already moved - and a frame carrying 0 or 2 sim
   // steps moves it a different amount, which is the judder. The rig keeps its
   // own float, eases that at a fixed rate per FRAME, and writes the result
@@ -437,7 +437,7 @@
   };
 
   // ------------------------------------------------------------ wide ears
-  // Every cue the sim raises is gated on nearPlayer (180 px - js/structures.js),
+  // Every cue the sim raises is gated on nearPlayer (180 px - js/sim/structures.js),
   // which is tuned for a camera sitting on one player's shoulder. A wide shot
   // of a ten-body fight would be almost silent under it, so for capture the
   // gate is widened to ABOUT WHAT THE FRAME SHOWS: audible means on screen.

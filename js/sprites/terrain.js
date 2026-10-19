@@ -1126,7 +1126,7 @@
     '....ssssss......',
   ];
   // the regrow clock, read off the plant (BUSH_BUD_T / BUSH_RIPEN_T,
-  // js/world.js): pale buds where the berries will be, then the berries
+  // js/sim/world.js): pale buds where the berries will be, then the berries
   // back but dull, then `bush` again. Same silhouette, only the four berry
   // pixels change, so the stage reads without the bush seeming to move.
   const bushBud = [
@@ -1328,7 +1328,7 @@
   const treeRows = treePals.map((pal) => treeSway.map((f) => bake(f, pal)));
   const treeSpr = treeRows[2]; // variant B, deep tone (the filtered look itself) - the pine a single frame stands for
   // ---------------------------------------------------------------- the hog hut
-  // The HOG HUT camp's anchor (CAMPS.hut, js/camps.js): a snow-roofed log
+  // The HOG HUT camp's anchor (CAMPS.hut, js/sim/camps.js): a snow-roofed log
   // hut with a smoking chimney, 35x35 on a 2x2 footprint, drawn centred over
   // the anchor tile and the one to its right. Eight frames of the chimney's smoke, straight off
   // docs/media/new_media5/hog-hut-chimney-moving.png at 1:1 - the source

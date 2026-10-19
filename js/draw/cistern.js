@@ -1,6 +1,6 @@
 'use strict';
 // ------------------------------------------------------------ the cistern's pixels
-// The cistern (js/cistern.js) is baked art, SPRITES.cistern (js/sprites/cistern.js,
+// The cistern (js/sim/cistern.js) is baked art, SPRITES.cistern (js/baked/cistern.js,
 // app/bake-cistern/paint.py), drawn in two places:
 //   the flat layer  the gates' sills and every shadow it throws, laid into
 //                   the ground canvas a tile at a time like the creek

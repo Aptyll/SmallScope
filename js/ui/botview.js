@@ -162,7 +162,7 @@ function botLogStep(dt) {
   if (sample) BOTLOG.last = botMatchSummary();
 }
 // who went down since the last step, credited to whoever's kill count rose
-// with it (die, js/player.js, does both at once); -1 when nobody's did
+// with it (die, js/sim/player.js, does both at once); -1 when nobody's did
 function botLogKills(t) {
   let downs = null, up = null;
   for (const p of players) {

@@ -8,7 +8,7 @@ from PIL import Image, ImageFilter, ImageEnhance
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
-FONT = dict(re.findall(r"'(.)': '([01]{15})'", open(os.path.join(ROOT, 'js', 'font.js'), encoding='utf8').read()))
+FONT = dict(re.findall(r"'(.)': '([01]{15})'", open(os.path.join(ROOT, 'js', 'app', 'font.js'), encoding='utf8').read()))
 for ch, g in {'"': '101101000000000', "'": '010010000000000', ':': '000010000010000', ',': '000000000010100', '.': '000000000000010'}.items():
     FONT.setdefault(ch, g)
 COL = {'white': '#f4f7ff', 'gold': '#ffd34d', 'red': '#ff5a4a', 'cyan': '#7fe8ff', 'blue': '#6aa8e8', 'grey': '#b8c0cc', 'discord': '#7984ff'}
@@ -66,7 +66,7 @@ def stamp(img, card, x, y, al=1.0, scale=1.0):
     return b.convert('RGB')
 
 def game_logo(scale=4):
-    src = open(os.path.join(ROOT, 'js', 'logodata.js'), encoding='utf8').read()
+    src = open(os.path.join(ROOT, 'js', 'baked', 'logodata.js'), encoding='utf8').read()
     lg = Image.open(io.BytesIO(base64.b64decode(re.search(r"base64,([^'\"]+)", src).group(1)))).convert('RGBA')
     return lg.resize((lg.width * scale, lg.height * scale), Image.NEAREST)
 

@@ -1,4 +1,4 @@
-# Bakes the players' run and dodge roll into js/sprites/motion.js as char grids.
+# Bakes the players' run and dodge roll into js/baked/motion.js as char grids.
 #
 #   python app/bake-player/bake.py     # needs numpy; rerun after changing the doll
 #   python app/bake-player/preview.py out.png     # every frame on one sheet, to judge first
@@ -15,7 +15,7 @@ from bodies import BODIES
 import anim
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-OUT = os.path.normpath(HERE + '/../../js/sprites/motion.js')
+OUT = os.path.normpath(HERE + '/../../js/baked/motion.js')
 FACINGS = {'down': 90, 'up': -90, 'right': 0}           # left is right's mirror, in the game
 UPRIGHT = {'run': lambda i: True, 'hold': lambda i: True, 'roll': lambda i: i in (0, len(anim.roll_poses('side')) - 2, len(anim.roll_poses('side')) - 1)}
 

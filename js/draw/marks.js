@@ -216,7 +216,7 @@ function drawMapDot(g, x, y, size, col, rim) {
   g.fillStyle = rim; g.fillRect(x0 - 1, y0 - 1, size + 2, size + 2);
   g.fillStyle = col; g.fillRect(x0, y0, size, size);
 }
-// a rival under a colour-blind palette wears a cross (foeCue, js/player.js)
+// a rival under a colour-blind palette wears a cross (foeCue, js/sim/player.js)
 function drawMapUnit(g, x, y, col, rim, k, bot, foe) {
   if (foe) drawMapCross(g, x, y, bot ? k : k + 1, col, rim);
   else drawMapDot(g, x, y, bot ? k : k + 1, col, rim);

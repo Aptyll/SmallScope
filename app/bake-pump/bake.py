@@ -1,4 +1,4 @@
-# Bakes the GOLD PUMP (the generator) into js/sprites/pump.js as char grids.
+# Bakes the GOLD PUMP (the generator) into js/baked/pump.js as char grids.
 #
 #   python3 app/bake-pump/bake.py     # needs numpy and pillow; rerun after changing pump.py
 #
@@ -6,13 +6,13 @@
 # the build-list icon with the team paint swapped for sentinel colours,
 # crops every frame to one shared box, gives each colour a char and writes
 # the grids. The team paint becomes k/K/e (fit, fitL, glow: teamBuildPal's
-# letters), so js/sprites/pump.js paints it inside onTeams. The grids this
+# letters), so js/baked/pump.js paints it inside onTeams. The grids this
 # writes are the game's only copy.
 import os, numpy as np
 from pump import pump, icon, team, barrel_mouth, lint
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-OUT = os.path.normpath(HERE + '/../../js/sprites/pump.js')
+OUT = os.path.normpath(HERE + '/../../js/baked/pump.js')
 FRAMES = 8
 SENT = ['#ff00f0', '#ff00f1', '#ff00f2']          # the team ramp, dark to light, as sentinels
 team(SENT)

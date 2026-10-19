@@ -32,7 +32,7 @@
 // fills it), `ai` (the bot brain runs only on the host), `nav` (a route is
 // the mover's own business and the client moves nothing), and the `_`
 // fields the client's interpolation keeps (js/net/net.js). The eagle's
-// `spur` and `pad` are entries of the road registry (`spurs`, js/world.js)
+// `spur` and `pad` are entries of the road registry (`spurs`, js/sim/world.js)
 // shared by identity, so the registry is a section of its own and an eagle
 // is re-pointed at its entry after the apply; its `lane` (the felling plan,
 // with clocks that advance) is merged into the object already there.
@@ -41,7 +41,7 @@ const SNAP_SKIP = new Set(['input', 'ai', 'nav', '_fx', '_fy', '_tx', '_ty', '_t
   // pass reads: a client neither steps nor shows these, and each is a few
   // bytes per body per snapshot. The echo harness runs WITHOUT them, so
   // adding a name here is proven harmless or caught as pixels
-  'wade', 'wadeX', 'wadeY', 'wadePuffT', 'wadeAt', 'wadeV', 'wadeDX', 'wadeDY', 'wadeMv', // the wade: each machine eases its own (js/depth.js, js/draw/depth.js)
+  'wade', 'wadeX', 'wadeY', 'wadePuffT', 'wadeAt', 'wadeV', 'wadeDX', 'wadeDY', 'wadeMv', // the wade: each machine eases its own (js/sim/depth.js, js/draw/depth.js)
   'faceT', 'trickleT', 'footT', 'footSide', 'puffT', 'dodgeDustT', 'slideDustT', 'eatFxT', 'burnTick', 'fishCd', 'catchT', 'dryT', 'swingCd',
   'idleT', 'wary', 'thinkT', 'moveT', 'turnT', 'emT', 'spook', 'biteCd', 'alertT', 'dashT', 'dashX', 'dashY', 'fleeT', 'fleeGoal', 'goal',
   'avoidT', 'madT', 'madX', 'madY', 'baySite', 'bayDir', 'zipLast']);
@@ -148,8 +148,8 @@ function snapSingles() {
   s.spurs = pack(spurs, 0); // the road registry: each side's paved spur and its crash pad
   s.holes = holes.slice();
   s.iceCracks = [...iceCracks.entries()];
-  s.iceBreaks = iceBreaks.slice(); // plain numbers and tile lists: every screen rebuilds the pixels (js/icebreak.js)
-  s.orca = pack(orca, 0); // the orca's few numbers (js/orca.js); a client eases its x/y like a body's
+  s.iceBreaks = iceBreaks.slice(); // plain numbers and tile lists: every screen rebuilds the pixels (js/sim/icebreak.js)
+  s.orca = pack(orca, 0); // the orca's few numbers (js/sim/orca.js); a client eases its x/y like a body's
   s.nets = pack(nets, 0);
   s.market = pack(market, 0);
   return s;

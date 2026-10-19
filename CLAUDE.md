@@ -25,8 +25,8 @@ Shorts, GIFs, storyboards and stills use the kit in [media](docs/dev/media.md).
   before the file that reads it loads. A feature's tuning constants sit in the file that owns it.
 - Keep every `// ------ name` banner honest; find code through code-map before grepping.
 - What a type *is* lives in its `OBJECTS`/`STRUCTS` entry, never in an `if`.
-- New mutable sim state joins `SAVE_ROOTS` (js/save.js). New team-painted sprites bake inside `SPR.onTeams`.
-- Only `js/profile.js` touches `localStorage`.
+- New mutable sim state joins `SAVE_ROOTS` (js/sim/save.js). New team-painted sprites bake inside `SPR.onTeams`.
+- Only `js/app/profile.js` touches `localStorage`.
 
 ## Hard rules
 

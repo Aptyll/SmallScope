@@ -1,10 +1,10 @@
-# Paints the orca of the orca's lake (js/orca.js) and writes js/sprites/orca.js
+# Paints the orca of the orca's lake (js/sim/orca.js) and writes js/baked/orca.js
 # (never hand-edit it: repaint and rebake).
 #
 #   python3 app/bake-orca/paint.py   (needs numpy and Pillow)
 #
 # Look D BOLD (docs/media/concepts/orca-concepts-2.png, 2026-10-14): the camps' painted look, round and
-# heavy, four tones off the black bear's palette (js/sprites/bears.js), a gold
+# heavy, four tones off the black bear's palette (js/baked/bears.js), a gold
 # eye like the bears', three blunt teeth a jaw. Built from app/media/paint.py's
 # parts round one bent spine: the body swept along it, the jaws two shorter
 # spines hinged at the head, the fins lenses off it.
@@ -14,7 +14,7 @@
 #            cell between the jaws, the point the draw lays on the bitten spot.
 #   shadow   top-down, SHADOW_HD headings round from +x (east) clockwise, SHADOW_PH
 #            steps of the tail's up-and-down beat each, as a SHADOW under the ice the way the lake's fish are
-#            one (js/sprites/fish.js): no colour of its own, the under-ice ink
+#            one (js/baked/fish.js): no colour of its own, the under-ice ink
 #            solid round its edge and half strength in its core
 # Each frame is trimmed to its pixels and carries where it sits in its CELL
 # (canvas.ox / canvas.oy), so a draw still lays the cell's centre on the spot.
@@ -24,12 +24,12 @@ sys.path.insert(0, os.path.join(HERE, '..', 'media'))
 import numpy as np
 from paint import Canvas, ramp, lint, bez, nrm, hx
 
-OUT = os.path.join(HERE, '..', '..', 'js', 'sprites', 'orca.js')
+OUT = os.path.join(HERE, '..', '..', 'js', 'baked', 'orca.js')
 CELL = 64          # px square of every shadow frame before the trim
 BCELL = 80         # ...and of a breach frame (the flukes hang under the waterline)
 SHADOW_HD = 64     # headings: a step is under 6 degrees, so a turn rolls round instead of jumping
 SHADOW_PH = 8      # steps of one beat of the tail
-SHADOW = '#4a708c'                     # the under-ice ink every shadow is made of (js/sprites/fish.js): its rim
+SHADOW = '#4a708c'                     # the under-ice ink every shadow is made of (js/baked/fish.js): its rim
 SHADOW_CORE = 'rgba(74,112,140,0.52)'  # ...and its core, about half the rim
 
 # tones from the black bear's own palette (BLACK_PAL) so it sits with the camps
@@ -203,13 +203,13 @@ def gs(t):
     return f"[{ox},{oy},'" + '|'.join(rle(r) for r in rows) + "']"
 
 js = ["'use strict';",
-      "// The orca of the orca's lake (js/orca.js), look D BOLD. SPRITES.orca =",
+      "// The orca of the orca's lake (js/sim/orca.js), look D BOLD. SPRITES.orca =",
       "//   breach  { open, shut }: side-on, the steep lunge up out of the ice, head",
       "//           up and to the LEFT (the lunge to the right is SPR.flipH of it);",
       "//           `jaw` is the cell's pixel between the jaws, laid on the bitten spot",
       "//   shade(hd, ph)  the shadow: heading hd of " + str(SHADOW_HD) + " round from +x (east) clockwise, step ph",
       "//           of " + str(SHADOW_PH) + " of the tail's beat; top-down, the under-ice ink, solid rim over a",
-      "//           half-strength core, like the lake's fish (js/sprites/fish.js); drawn at part alpha",
+      "//           half-strength core, like the lake's fish (js/baked/fish.js); drawn at part alpha",
       "//           under the ice. Packed (rows run-length, '|' between them) and baked the first time",
       "//           it is asked for, so the game starts without painting them all",
       "// Every frame is cut from its cell (cell: a shadow's, bcell: a breach's) and keeps where it sat in it",

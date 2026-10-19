@@ -3,7 +3,7 @@
 // three tier materials and each side's fittings, the turret's three timber
 // bases, the net, the scaffold, the bot bay and its worker bots, spikes, fire
 // and the torch. The generator is the gold pump, baked after this file
-// (js/sprites/pump.js), into the same teamBuild sets.
+// (js/baked/pump.js), into the same teamBuild sets.
 (() => {
   const { bake, TEAM_SKINS, teamBuildPal } = SPR;
 
@@ -116,7 +116,7 @@
     '..ssssssssssss..',
   ];
 
-  // THE TURRET'S BASE IS TIMBER AT EVERY TIER (STRUCTS.turret, js/structures.js)
+  // THE TURRET'S BASE IS TIMBER AT EVERY TIER (STRUCTS.turret, js/sim/structures.js)
   // and it is ONE PIECE OF TIMBER growing up: a sawn stump, the same stump
   // CARVED, and a carved pedestal that has left the forest behind. That is the
   // whole of the upgrade's picture, so the three tiers are three GRIDS instead

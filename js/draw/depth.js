@@ -1,6 +1,6 @@
 'use strict';
 // How deep snow looks: the DEEP band's raised drift baked into the ground,
-// and a body wading through it. The map itself is js/depth.js.
+// and a body wading through it. The map itself is js/sim/depth.js.
 // ------------------------------------------------------------ deep snow's look
 // A deep drift has to read as HIGHER than the snow round it at a glance, in
 // the game's own light (the sun is top-left, like every cast shade): a white
@@ -90,7 +90,7 @@ function wadeLook(e, now) {
 }
 // how wide a body's collar is - 0 for one that is not standing in the snow:
 // a player lying under it (the cover is its own look), in the water, on the
-// cable, on a deer's back or in the air, a kind that runs on the crust (ON_CRUST, js/depth.js:
+// cable, on a deer's back or in the air, a kind that runs on the crust (ON_CRUST, js/sim/depth.js:
 // a rabbit, a bird), and the merchant, who never leaves the road
 function wadeWidth(e) {
   if (e instanceof Player) return e.prone || e.fallT > 0 || e.zip >= 0 || e.mount || inAir(e) || e.dead ? 0 : 10; // a rider sits up on its deer

@@ -26,7 +26,7 @@
 // (the shop banner's reason): reading a market IS reading numbers.
 const MKT_SIGN = 'MARKET';
 // the rows' order: the money good first, then every other fish (FISH_KINDS,
-// js/player.js, so a new fish gets its row), then the berries
+// js/sim/player.js, so a new fish gets its row), then the berries
 const MKT_GOODS = ['fish', ...FISH_KINDS.filter((k) => k !== 'fish'), 'berry'];
 const MKT_BUY = '#8fe08a', MKT_SELL = '#e0637a';               // a buy and a sale, and the rise and the fall
 const MKT_AVG = '#f2cc6a';                                      // what the buys cost, in the purse's own gold

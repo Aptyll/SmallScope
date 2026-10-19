@@ -1,4 +1,4 @@
-# Bakes the two camp bears into js/sprites/bears.js as char grids.
+# Bakes the two camp bears into js/baked/bears.js as char grids.
 #
 #   python3 app/bake-bears/bake.py     # needs numpy; rerun after changing the rig
 #
@@ -15,7 +15,7 @@ from bear import pose
 from anim import CLIPS
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-OUT = os.path.normpath(HERE + '/../../js/sprites/bears.js')
+OUT = os.path.normpath(HERE + '/../../js/baked/bears.js')
 CH = {'D0': '0', 'D1': '1', 'M3': '3', 'L6': '6', 'H8': '8', 'G7': 'g', 'EY': 'e', 'BN': 'b', 'BS': 's', 'SM': 'w', 'SD': 'k', 'FL': 'f', 'FM': 'm'}
 
 def grid(img, pal):
