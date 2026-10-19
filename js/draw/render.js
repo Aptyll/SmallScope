@@ -1440,11 +1440,10 @@ function cursorInfo() {
     if (m.screen === 'notes') return { kind: m.notesT >= 1 && notesHit(mouse.x, mouse.y) ? 'hand' : 'arrow' };
     if (m.screen === 'wiki') return { kind: m.wikiT >= 1 && pageTabHit(mouse.x, mouse.y) >= 0 ? 'hand' : 'arrow' };
     if (m.screen === 'lobby') return { kind: m.screenT >= 1 && m.popT <= 0 && lobbyHit() ? 'hand' : 'arrow' };
-    if (m.screen === 'chars') return { kind: m.charT >= 1 && charsHit() ? 'hand' : 'arrow' };
-    if (m.screen === 'create') return { kind: m.charT >= 1 && createHit() ? 'hand' : 'arrow' };
+    if (m.screen === 'profile') return { kind: m.charT >= 1 && profileHit() === 'name' ? 'hand' : 'arrow' };
     if (m.screen === 'skins') return { kind: m.skinT >= 1 && skinsHit() >= 0 ? 'hand' : 'arrow' };
     if (m.screen === 'room') return { kind: m.roomsT >= 1 && roomHit() ? 'hand' : 'arrow' };
-    if (!m.panel && (overCharTag() || overPatchTag() || overCoinTag())) return { kind: 'hand' }; // the three corner tags
+    if (!m.panel && (overProfileTag() || overPatchTag() || overCoinTag())) return { kind: 'hand' }; // the three corner tags
     if (!m.panel && menuHit() >= 0) return { kind: 'hand' };
     return { kind: 'arrow' };
   }

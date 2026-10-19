@@ -220,14 +220,14 @@ into the fight always walked. [The road](world.md#the-road), [the zipline](world
   [multiplayer.md](multiplayer.md).
 - **Not a game that explains itself in text.** The UI rule in [CLAUDE.md](../../CLAUDE.md) is a
   design constraint, not a style preference.
-- **Not an account.** The player profile is up to three **characters** — each a name, a class
-  fixed when it was made, a look (body type, skin tone, hair, beard, face) and its own lifetime
-  numbers — plus a record of which kinds you have held, in the browser. No passwords, no sign-in,
-  nothing to log into. A fresh install opens the create screen **before** the title on a
-  pre-rolled name and look, so PLAY is one press away and nobody is stopped at a blank form. **A
-  character is paint, never power**: a match reads its name, class and look and nothing else —
-  everything about a match is decided inside that match, and the arsenal is unlocked for
-  everybody alike. See [architecture.md](architecture.md#profilejs) and
-  [the character screens](rendering.md#the-character-screens). An online lobby sends the host
-  exactly that name, class and look and nothing more; if a server ever holds the profile, it
-  holds the same object.
+- **Not an account.** The player profile is **one name and its lifetime numbers** — plus the
+  hero last locked in and a record of which kinds you have held, in the browser. No passwords,
+  no sign-in, nothing to log into. **Heroes are picked at the start of each match**, League
+  style, and every hero wears one fixed look; looks come back later as hero skins, never body
+  sliders. A fresh install arrives pre-named on the title, so play is one press away and nobody
+  is stopped at a form. **A profile is never power**: a match reads its name and the hero picked
+  and nothing else — everything about a match is decided inside that match, and the arsenal is
+  unlocked for everybody alike. See [architecture.md](architecture.md#profilejs),
+  [the hero row](rendering.md#lobby) and [the profile card](rendering.md#the-profile-card). An
+  online lobby sends the host exactly that name and hero and nothing more; if a server ever
+  holds the profile, it holds the same object.

@@ -430,10 +430,6 @@ function loadSave(slot) {
       return;
     }
     try { sessionStorage.setItem('softfall.load', json); } catch (e) { go(null); return; }
-    // the character that played it becomes the active one, so what the match
-    // adds to a lifetime tally lands on the right card (js/app/profile.js)
-    const ci = PROFILE.chars().findIndex((c) => c.name === m.name && c.cls === m.cls);
-    if (ci >= 0) PROFILE.setActive(ci);
     location.href = location.pathname + '?seed=' + m.seed + '&map=' + m.map;
   };
   state.fade = {

@@ -3467,64 +3467,45 @@ human idle, and deep in a ten-bot match with hundreds of buildings and robots st
 
 ## Settings
 
-**The MULTIPLAYER plank** (js/ui/rooms.js) is CUSTOM GAMES, League's custom-game list in
-Graphite: the relay's open rooms as rows under GAME / MAP / PLAYERS / CODE heads, a relay pip
-top-right (green and breathing while the list socket is open, red and blinking while it is not)
-and, while the list is empty, one ghost of a row where the first room will stand. A row carries
-its host's game, its map, ten seat pips (five a side, the people in them lit in that side's
-paint - the relay lists a count per side), a red dot once its match is under way and its
-four-letter code (the thing a host reads aloud); a room on another patch is dimmed and inert with
-its patch printed where the code would be. A click picks a row, a second click or JOIN joins it;
-The CODE box top-right joins by a room's four letters: click it and type, or paste (Ctrl+V)
-anywhere on the list - "code: ACKT" works, the word a listed room answers to wins - and a code
-no room answers to rattles the box. CREATE opens **the host page**: the room's options before the
-room exists, one row each with its value between two chevrons - MAP (the shape), VALLEY (the
-seed; either chevron rolls another), TEAMS (1V1 to 5V5: seats a side, the rest emptied,
-`seatsSize`) and BOTS (their level) - with BACK and CREATE at the foot. CREATE on this page's
-own world opens the room at once; another shape or seed reloads the page hosting on it
-(`?map&seed&net=host&back=1`), straight onto the room with TEAMS carried. It makes a room on
-the relay and opens it on **the room**,
-whose code top-right copies itself on a click (white for a moment), for a Discord message: both sides as two columns of five
-seats (a face, a name, the class or BOT, the class mark), your side on the left. A click on a
-seat across the rule moves you to that side and the bot or empty seat there takes your old one
-(the swap mark shows under the pointer); the host's pointer on a seat's far end shows a red X
-that shows a person out or empties a bot's seat, and a + that puts a bot back; the host's click on a
-bot's class mark turns that bot to the next class (`seatClass`), kept through a rematch. A guest's seat shows a green tick once it has said READY and
-bars for its link to the host (green, amber, red as the round trip grows). The options read under
-the title (MAP, VALLEY, TEAMS as the seats each side has filled, yours first, and BOTS); the host
-clicks TEAMS or BOTS to turn it a step (or walks up off the top seat onto them with the keys),
-and a joiner takes a bot's seat on a side already at that size, so TEAMS holds. A side's count
-reads its people over its open seats. After BOTS the host has SHUFFLE, which deals the people
-afresh, alternately to each side (`seatsShuffle`). Under the seats is the room's chat
-(js/ui/roomtalk.js): the last four lines, each a name in its side's paint, over a plate showing
-an ENTER key cap and a speech bubble; Enter (while the keys are not walking the seats) or a click
-on the plate starts a line, Enter sends it, Esc drops it. In a Steam lobby INVITE stands where a
-relay room's code would and opens Steam's friends overlay on the lobby; a friend's invite taken
-up, or Steam's Join Game on a friend in a room, joins that lobby. A screen that is not in focus
-when someone joins, a chat line lands or the count starts flashes its taskbar button (the
-wrapper) or marks its tab's title with a star (a browser) until it is looked at. LEAVE, and a
-guest's READY or the host's START, which stays dim and flashes the seats it waits on until every
-guest is ready, then counts 3, 2, 1 on every screen as one big gold digit where the words were
-(the host's Esc calls it off) and takes everyone into the match, each class as it came: there is
-no pick for now (Noah, 2026-10-14). The
-**pick** - the lobby, still reached by a 'pick' phase and nothing in a room sends one now, which every peer
-sees as the host does, with the room's code on a 2x plate under the relay pip at the head of
-your side's roster, a crown over the host's card, a brighter rim on every person's card than a
-bot's, and a white flash with a cue on a card whose kind changed (someone came, or went). A
-guest sees it minus the two pop-ups off the map plate and the target and the character swap (its class came with it), and
-where LOCK IN would be a frozen plank wearing the host's name: the host's count comes over it and
-the eagle on the host's zero; the host's ESC there takes everyone back to the room. After the
-match LOBBY takes each screen back to the same room on a fresh valley, with the same code, the
-same people in the same seats and the same empty seats (the rematch, js/ui/rooms.js); a guest
-who presses it first waits on the list until the host's room is back. A guest whose
-host walks out of the waiting room, or who was shown out, is back on the list with a rattle; one whose host leaves mid-match gets the HOST LEFT end screen (a
-headline and a LOBBY plank over the frozen world, `hostleft` in DEAD_ITEMS, js/ui/screens.js),
-and one whose socket drops mid-match shows a red pip blinking top-centre until the transport
-redials (`drawNetLink`). Joining a room whose seed is not this page's reloads the page onto it
+**The party lobby** (js/ui/rooms.js, `menu.screen = 'room'`) is where QUICKPLAY and RANKED on
+the title land: the page hosts its own party at once (`beginParty`: a room on the relay, or a
+Steam lobby) and NET.mode names the mode. One centred column, League's lobby in Graphite: the
+mode's name and "n / 5" at the head, the party's four-letter code top-right in gold (a click copies
+it, white for a moment) beside a relay pip, and in a Steam lobby INVITE beside it, which opens
+Steam's friends overlay. Five seats of your side: a face, a name, a READY tick, the rating in
+RANKED, a guest's link bars (green, amber, red as the round trip grows), a crown over the leader;
+an empty seat is a dotted well with a gold + that invites (the code copied, or Steam's overlay).
+The leader's pointer on a guest's seat end shows a red X that shows them out (`seatKick`). The
+rival side is never shown: until matchmaking pairs parties it is all bots. While you are alone
+the CODE box sits under the code: type or paste (Ctrl+V) a friend's four letters to join their
+party (`partySeek` looks the code up on the relay's list, or in a Steam lobby's data, which
+carries the same code: `steamCode`, js/net/transport-steam.js); a code nobody answers to
+rattles the box. Under the seats is the chat (js/ui/roomtalk.js): the last four lines, each a
+name in its side's paint, over a plate showing an ENTER key cap and a speech bubble; Enter or a
+click on the plate starts a line, Enter sends it, Esc drops it. At the foot LEAVE, and a guest's
+READY or the leader's FIND MATCH, dim and flashing the seats it waits on until every guest is
+ready (`partyFind`): every empty seat on both sides takes a bot and the whole party goes to the
+**hero select** (netPhase 'pick', the lobby, js/ui/menu.js), which every member sees as the
+leader does, with the code on a 2x plate at the head of your side's roster and a crown over the
+leader's card. Each member picks a hero on the row (`netPick`: a guest's press goes through the
+leader, js/net/net.js); a guest sees the leader's map and target but cannot press them, and
+where LOCK IN would be a frozen plank wearing the leader's name: the leader's count comes over
+it and the eagle on its zero; the leader's ESC takes everyone back to the party. RANKED keeps a
+rating per profile (`PROFILE.rank`, starts at 1000): a win adds RANK_STEP, a loss takes it
+(`rankResult`), and the bots' level is read off the party's average rating (`rankLevel`), so
+the target cannot be picked there. A screen that is not in focus when someone joins, a chat
+line lands or the count starts flashes its taskbar button (the wrapper) or marks its tab's
+title with a star (a browser) until it is looked at. After the match LOBBY takes each screen
+back to the same party on a fresh valley, same code, same people in the same seats (the
+rematch, js/ui/rooms.js); a guest who presses it first waits until the leader's party is back.
+A guest whose leader walks out of the party, or who was shown out, is back in a party of its
+own with a rattle; one whose leader leaves mid-match gets the HOST LEFT end screen (a headline
+and a LOBBY plank over the frozen world, `hostleft` in DEAD_ITEMS, js/ui/screens.js), and one
+whose socket drops mid-match shows a red pip blinking top-centre until the transport redials
+(`drawNetLink`). Joining a party whose seed is not this page's reloads the page onto it
 (`?seed=N&join=CODE`). Under the wrapper with Steam asked for (`netSteam()`, js/net/net.js) the
-same screen lists Steam's lobbies instead (`steamRooms`, js/net/transport-steam.js: the host
-writes its name, patch, seed, state and seat counts into the lobby's data), joined with the same
-click and with no code plate, since a lobby id is not for reading aloud. Which relay:
+party is a Steam lobby (`steamRooms`, js/net/transport-steam.js: the leader writes its name,
+patch, seed, state, seat counts and code into the lobby's data). Which relay:
 `netRelay()` (js/net/net.js) - `?relay=host:port` once,
 remembered with the settings (`settings.relay`), else the page's own host.
 

@@ -124,9 +124,9 @@ order, so the script tags still interleave them:
 | [js/ui/menu.js](../../js/ui/menu.js) | ~3050 | shared scope, no `window.*` export | the title screen: menu planks, reroll die, tutorial panel, the lobby, the hero pop-up, `PATCH_TXT` and `PATCH_NOTES` |
 | [js/ui/notes.js](../../js/ui/notes.js) | ~420 | shared scope, no `window.*` export | the title's WIKI / PATCH NOTES / ROADMAP tabs, the roadmap, and the patch notes screen |
 | [js/ui/wiki.js](../../js/ui/wiki.js) | ~520 | shared scope, no `window.*` export | the wiki: its pages as data, the slab, tabs and rail, and drawing each page |
-| [js/ui/chars.js](../../js/ui/chars.js) | ~580 | shared scope, no `window.*` export | the character roster, the create / customize screen, and the title's character tag |
+| [js/ui/profile-card.js](../../js/ui/profile-card.js) | ~190 | shared scope, no `window.*` export | the title's name tag and the profile card: the name, renaming it, the lifetime ledger; `drawWell`, the plate grammar the hero row shares |
+| [js/ui/heroes.js](../../js/ui/heroes.js) | ~90 | shared scope, no `window.*` export | the lobby's hero row: a head per hero, the coming heroes as silhouettes, the pick |
 | [js/ui/skins.js](../../js/ui/skins.js) | ~250 | shared scope, no `window.*` export | the skins screen the coins buy from, the title's coin tag, and `birdSkinFor`, which skin a bird wears |
-| [js/ui/ladder.js](../../js/ui/ladder.js) | ~600 | shared scope, no `window.*` export | the bot ladder screen: the offline ladder's standings, FIGHT, which seats a ladder bot on the rival side, and WATCH, two ladder bots playing every seat while the player watches |
 | [js/ui/screens.js](../../js/ui/screens.js) | ~1380 | shared scope, no `window.*` export | the replay window, the death overlay and spectating, the victory and defeat ceremonies |
 | [js/ui/lobby.js](../../js/ui/lobby.js) | ~470 | shared scope, no `window.*` export | the post-game lobby: the match's own record, and the sampling during play its graphs are drawn from |
 | [js/sim/save.js](../../js/sim/save.js) | ~450 | shared scope, no `window.*` export | saved matches: the valley's baseline, the match as one object graph (`saveCapture`/`saveApply`), the slots through `PROFILE`, the autosave ring, the load's hand-off to the next page, and `saveHash`, the replay proof's hash |
@@ -167,11 +167,9 @@ tag `pre-split` keeps the one-file history.
 
 ### profile.js
 
-The local player profile — up to `CHAR_MAX` (3) **characters** in `chars` with `active`
-naming the one the local player wears (each `{ name, cls, look, stats, born }`: the class is
-fixed at creation, `look` is an index per axis of `LOOK_N` — `sex`, `tone`, `hair`,
-`hairCol`, `beard`, `face` — and `stats` the character's own `wins` / `matches` / `gold` /
-`days` / `kills` / `deaths`), the
+The local player profile — **one `name`** (every other player sees it), its lifetime `stats`
+(`wins` / `matches` / `gold` / `days` / `kills` / `deaths`), `hero` (the `CLASSES` index last
+locked in, where the lobby's hero row opens next time), the
 one-shot `dropped` flag (`hasDropped()`/`markDropped()`: has this profile ever jumped off the
 eagle, gating the scripted first flight that rides the landing), `bestLap`
 (`bestLap()`/`setBestLap()`: the ice parkour's all-time record) and `bestRange`
@@ -186,27 +184,24 @@ There are no accounts, no passwords and no sign-in, and nothing here is authorit
 file is a save file.
 
 - **`PROFILE.load()`** repairs a partial or corrupt save against a blank profile rather than
-  throwing (`mendChar`/`mendLook` repair each slot axis by axis: a class or look index out of
-  range lands on 0, a bad name is re-rolled) and migrates older saves in place (a pre-profile
-  `softfall.settings` key is folded in once and removed; a v1 save's `name` + `stats` become its
-  first character). Boot calls it
-  **before `loadSettings()`**, which reads `PROFILE.settings()`. **A fresh install has no
-  character** (`hasChar()` false) and boot opens the create screen before the title.
-- **The character calls**: `chars()`, `activeIndex()`, `char()`, `rollChar(cls)` (a fresh
-  unsaved spec with a random name and look), `createChar(spec)` (into the next free slot, made
-  active; `{ ok: false, why: 'FULL' }` past three), `updateChar(i, spec)` (name and look only —
-  the class in the spec is ignored), `deleteChar(i)`, `setActive(i)`. `LOOK_N` and `CLASS_N`
-  are exported so js/sprites/looks.js can assert its tables against them at load.
+  throwing (a bad name keeps the blank's pre-rolled one, a hero index out of range lands on 0,
+  stats take only whole non-negative numbers) and migrates older saves in place (a pre-profile
+  `softfall.settings` key is folded in once and removed; **a v2 save's character slots fold into
+  the one profile**: the active slot's name and class become `name` and `hero`, and every slot's
+  stats are added together, so no win on any slot is lost). Boot calls it **before
+  `loadSettings()`**, which reads `PROFILE.settings()`. **A fresh install is pre-named** from
+  `NAME_POOL` — winter words, every one clean under the validator — and lands on the title.
+- **Who you are**: `name()`, `setName(raw)` (validate()'s result; nothing written on a
+  refusal), `rollName()`, `hero()`, `setHero(i)`. `HERO_N` is exported so js/sprites/looks.js
+  can assert its outfits against it at load.
 - **`PROFILE.validate(raw)`** is the one name validator: trimmed, uppercased, `A-Z0-9` only, 16
   characters, and a basic profanity list matched after the obvious digit-for-letter swaps are
-  folded out. It returns `{ ok, name }` or `{ ok: false, why }`. **A character always has a
-  name**: a new one is pre-rolled from `NAME_POOL` — winter words, every one clean under the
-  validator — so the create screen opens on a name rather than a blank.
-- **The stat calls coalesce, and land on the active character.** `addGold` fires on every
+  folded out. It returns `{ ok, name }` or `{ ok: false, why }`.
+- **The stat calls coalesce.** `addGold` fires on every
   payout, `addWin` once per `endMatch('won')`, `addMatch` and `addDay` at eagle takeoff (and
   `addDay` at each dawn the local player is still in), `addKill`/`addDeath` from `die()`, so
   writes are batched behind an 800 ms timer and flushed on `pagehide` / `visibilitychange`;
-  the character calls and `putSettings` write through immediately.
+  `setName`, `setHero` and `putSettings` write through immediately.
 - **The purse and the wardrobe are ids and a count.** `coins` starts at `START_COINS` (a
   profile from before the purse gets it too), `owned` holds the ids bought (a free cosmetic is
   never written there; the key is `slot:id`, bare for the bird's) and `worn` maps a slot
@@ -222,8 +217,9 @@ file is a save file.
   hand-edited save cannot put a number or a repeat into the lists. What a node *is* lives in
   js/sim/tools.js — this file only remembers.
 
-The character screens and the title's character tag are js/ui/chars.js, the skins screen and the coin tag js/ui/skins.js; the local player takes a character on
-through `applyCharacter()` (js/sim/player.js).
+The name tag and the profile card are js/ui/profile-card.js, the hero row js/ui/heroes.js, the
+skins screen and the coin tag js/ui/skins.js; the local player takes the profile's name and hero
+on through `applyProfile()` (js/sim/player.js).
 
 ### font.js
 

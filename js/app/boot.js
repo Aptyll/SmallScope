@@ -106,12 +106,8 @@ if (PRACTICE) {
   camY = Math.max(0, Math.min(WORLD * TILE - WV_H, player.y - WV_H / 2));
   state.introFrom = { x: camX, y: camY };
   state.intro = HUD_IN_T; state.introLen = HUD_IN_T;
-} else if (!PROFILE.hasChar()) {
-  // a fresh install: the first thing seen is the create screen, opened on a
-  // pre-rolled character (js/ui/chars.js) - the title menu is behind it
-  beginCreate(-1, true);
 }
-if (JOIN_AT_BOOT && !PRACTICE && PROFILE.hasChar()) partyBootJoin(JOIN_AT_BOOT); // the party screen, the join under way (js/ui/rooms.js)
+if (JOIN_AT_BOOT && !PRACTICE) partyBootJoin(JOIN_AT_BOOT); // the party screen, the join under way (js/ui/rooms.js)
 rematchBootHost(); // a leader back from a match: the party again, same people (js/ui/rooms.js)
 // landing from a reroll: the whiteout the die left behind clears to the new world
 try {
@@ -127,7 +123,7 @@ try {
   // itself and comes back up on itself)
   if (sessionStorage.getItem('softfall.select')) {
     sessionStorage.removeItem('softfall.select');
-    if (!PRACTICE && PROFILE.hasChar() && !JOIN_AT_BOOT) {
+    if (!PRACTICE && !JOIN_AT_BOOT) {
       beginLobby(); state.menu.screenT = 1;
       if (state.fade) state.fade.color = LOBBY_NIGHT;
     }
@@ -138,7 +134,7 @@ try {
   const dropRaw = sessionStorage.getItem('softfall.drop');
   if (dropRaw) {
     sessionStorage.removeItem('softfall.drop');
-    if (!PRACTICE && PROFILE.hasChar() && !JOIN_AT_BOOT) {
+    if (!PRACTICE && !JOIN_AT_BOOT) {
       try {
         const d = JSON.parse(dropRaw);
         if (d && Array.isArray(d.gear)) player.gear = d.gear.map((v) => v | 0);
@@ -198,10 +194,10 @@ window.DBG = {
   settings, perf, treeRare, cursorInfo,
   // the other controller (js/app/gamepad.js): its live state
   pad, padActive,
-  // the local profile: the store itself and the character screens (js/ui/chars.js),
-  // so a driver can open the roster or the create screen and read back what it accepts
-  PROFILE, beginChars, leaveChars, beginCreate, createCommit, createCancel, createKey, createHit, charsHit,
-  createLayout, charsLayout, nameOk, charTagRect, overCharTag, applyCharacter, activateChar, beginSkins, skinsLayout, birdSkinFor, coinTagRect, setCoins: (n) => PROFILE.setCoins(n),
+  // the local profile: the store itself, the profile card (js/ui/profile-card.js)
+  // and the hero row (js/ui/heroes.js), so a driver can rename, pick and read back
+  PROFILE, beginProfile, leaveProfile, profileCommit, profileKey, profileHit, profileLayout, profileTagRect, overProfileTag,
+  applyProfile, heroList, lobbyPick, beginSkins, skinsLayout, birdSkinFor, coinTagRect, setCoins: (n) => PROFILE.setCoins(n),
   // the radial wheel: open one by hand (state.wheel) and read back the
   // geometry the hover test and the pixels both use
   wheelLayout, wheelSpan, wheelAng, WHEEL_HUB, WHEEL_R, WHEEL_RING,
