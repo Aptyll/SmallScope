@@ -1,7 +1,6 @@
 // The local player profile: who you are between matches.
 //
-// One object under one localStorage key (and the saved matches beside it,
-// under keys of their own - see putSave), and THE ONLY PLACE THE GAME TOUCHES
+// One object under one localStorage key, and THE ONLY PLACE THE GAME TOUCHES
 // STORAGE. Everything else - game.js included - goes through window.PROFILE, so
 // putting the profile on a server later is a change to this file and nothing
 // else: swap the private read()/write() pair for requests, keep the surface
@@ -16,8 +15,9 @@
 // active slot's name and hero, every slot's stats added together.
 (function () {
   const KEY = 'softfall.profile';
-  const SAVES_KEY = 'softfall.saves'; // the saved matches' index: { slot: meta }
-  const SAVE_KEY = 'softfall.save.';  // + slot: one saved match's body
+  // the saved matches a profile kept before saves were removed: an index key
+  // and a body per slot, cleared once at load so they stop taking up storage
+  const OLD_SAVES = 'softfall.saves', OLD_SAVE = 'softfall.save.';
   const OLD_SETTINGS = 'softfall.settings'; // pre-profile saves; migrated once
   const NAME_MAX = 16;
   const HERO_N = 2;                // CLASSES.length (js/sim/player.js) - a hero index past this is repaired to 0
@@ -216,6 +216,7 @@
         saveNow();
       }
       if (s && s.v !== 3) saveNow(); // a migrated save is written back in its new shape at once
+      clearOldSaves();
       return profile;
     },
 
@@ -354,69 +355,16 @@
       saveNow();
     },
 
-    // ---- saved matches ------------------------------------------------------
-    // A save is a whole solo match frozen mid-play (js/sim/save.js builds and
-    // reads it; this file only keeps it). The slots' METAS - what the lists
-    // print: hero, level, clock, when, the thumbnail - live together under
-    // one index key, so a list never opens a body; each BODY is its own key,
-    // because a body is the big one and a quota refusal must cost one slot,
-    // not the whole index.
-    saveMetas() {
-      try { const m = JSON.parse(localStorage.getItem(SAVES_KEY)); return m && typeof m === 'object' ? m : {}; } catch (e) { return {}; }
-    },
-    saveBody(slot) {
-      try { return localStorage.getItem(SAVE_KEY + slot); } catch (e) { return null; }
-    },
-    // false when storage refused it (full, or blocked): the old slot stands
-    putSave(slot, meta, body) {
-      try {
-        localStorage.setItem(SAVE_KEY + slot, body);
-        const m = this.saveMetas(); m[slot] = meta;
-        localStorage.setItem(SAVES_KEY, JSON.stringify(m));
-        return true;
-      } catch (e) { return false; }
-    },
-    dropSave(slot) {
-      try {
-        localStorage.removeItem(SAVE_KEY + slot);
-        const m = this.saveMetas(); delete m[slot];
-        localStorage.setItem(SAVES_KEY, JSON.stringify(m));
-      } catch (e) { }
-    },
-    // a slot's card rewritten in place (its name), the body untouched
-    putSaveMeta(slot, meta) {
-      try {
-        const m = this.saveMetas();
-        if (!m[slot]) return false;
-        m[slot] = meta;
-        localStorage.setItem(SAVES_KEY, JSON.stringify(m));
-        return true;
-      } catch (e) { return false; }
-    },
-    // two slots trade places, either of them possibly empty (the list's
-    // reordering): bodies first, then the index in one write. The two
-    // bodies are held while they move, so a refusal halfway (storage full)
-    // puts both back as they were and the swap simply did not happen.
-    swapSaves(a, b) {
-      let ba = null, bb = null;
-      const put = (k, v) => { if (v !== null) localStorage.setItem(SAVE_KEY + k, v); else localStorage.removeItem(SAVE_KEY + k); };
-      try {
-        ba = localStorage.getItem(SAVE_KEY + a); bb = localStorage.getItem(SAVE_KEY + b);
-        const m = this.saveMetas(), ma = m[a], mb = m[b];
-        localStorage.removeItem(SAVE_KEY + a); localStorage.removeItem(SAVE_KEY + b);
-        put(a, bb); put(b, ba);
-        if (mb) m[a] = mb; else delete m[a];
-        if (ma) m[b] = ma; else delete m[b];
-        localStorage.setItem(SAVES_KEY, JSON.stringify(m));
-        return true;
-      } catch (e) {
-        try { localStorage.removeItem(SAVE_KEY + a); localStorage.removeItem(SAVE_KEY + b); put(a, ba); put(b, bb); } catch (e2) { }
-        return false;
-      }
-    },
-
     flush,
   };
+
+  function clearOldSaves() {
+    try {
+      const dead = [];
+      for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k === OLD_SAVES || (k && k.startsWith(OLD_SAVE))) dead.push(k); }
+      for (const k of dead) localStorage.removeItem(k);
+    } catch (e) { }
+  }
 
   // a coalesced write still pending when the tab goes away
   window.addEventListener('pagehide', flush);
