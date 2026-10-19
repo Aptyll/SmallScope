@@ -1256,7 +1256,9 @@ once-and-only-once rule in [CLAUDE.md](../../CLAUDE.md)) and then steps back a w
 pixels, `w >> 1`, which puts the run's **middle column** on `round(sx)` — the column
 [hbMid](#the-centre-column-hbmid) draws, so the overlay runs straight down the middle glyph. Use it
 for any text centred over a model; free-floating text (damage floaters, wheel labels) is not
-centred on anything and keeps its own maths.
+centred on anything and keeps its own maths. A player with a bounty wears it centred over the tag,
+`BOUNTY_LIFT` rows up with a clear row between (`drawBountyTag`, js/draw/overhead.js): a 5 px gold
+coin on a 1 px ink rim and the gold in the purse's ink; a bot's callout stands over it.
 
 **Every other bar in the game is centred on its model directly** — an animal's frame carries the
 level badge too, but its bars stay on the body's own centre and the badge simply overhangs to the
@@ -1335,12 +1337,12 @@ Combat damage is **one running total per body**, never a number per hit. `tallyH
 (js/sim/core.js, called by `damagePlayer`, `hurtAnimal`, `hurtRobot`, the building blows and the
 dummy) adds the hit to `u.tallyN` and stamps `u.tallyTick` with `state.tick`; a hit after
 `TALLY_HOLD` (1 s) of quiet starts a new total. Both are fields on the body, so a save and a
-snapshot carry them and a client fades a total on the host's tick. The total stands **hard
-against the frame's right edge** (past the colour-blind cap or the stun plate when one is up),
-centred on the health bar, in **that bar's colour** (`barCol`: a blue player's damage is blue, a
-beast's gold), holds `TALLY_HOLD`, then fades over `TALLY_FADE`. Its size is `TALLY_SC` (1.25)
-world px per font px, and `TALLY_POP_SC` (1.5) for the `TALLY_POP` instant a hit adds to it,
-which no world pixel can take: so `drawHealthBar(…, u)` and a player's frame only **queue** it
+snapshot carry them and a client fades a total on the host's tick. The total stands **`TALLY_GAP`
+(2) px clear of the frame's right edge** (past the colour-blind cap or the stun plate when one is
+up), centred on the frame (a hero's 7-row plate, a unit's 4-row bar), in **that bar's colour** (`barCol`: a blue player's damage is blue, a
+beast's gold), holds `TALLY_HOLD`, then fades over `TALLY_FADE`. Its size is `TALLY_SC` (1)
+world px per font px, so its 7 outlined rows stand as tall as a hero's frame, and `TALLY_POP_SC`
+(1.25) for the `TALLY_POP` instant a hit adds to it, which no world pixel can take: so `drawHealthBar(…, u)` and a player's frame only **queue** it
 (`queueTally`, with the frame's alpha), and `drawTallies(kPx)` stamps the queue on the screen
 right after the world blit, as the world-1x outlined number scaled whole into device px, crisp
 at any zoom and under the HUD. A body that **dies** loses its frame, so `queueTally` also keeps
@@ -1353,6 +1355,19 @@ the same `drawTallies` pass in the same ink, gold (`BAR_NEUTRAL`): `TALLY_POP_SC
 `WORD_POP_T`. A player who goes down gets no `NAME DOWN` in the air: the feed
 says it and the fall shows it. Units also flash white on hit via `drawSpriteFlash` (0.8-alpha
 overlay).
+
+### The running XP total
+
+XP gets the damage total's treatment, on the frame's other side and for **your own scout only**:
+`gainXp` (js/sim/player.js) adds each gain to `p.xpN` and stamps `p.xpTick`, a gain after
+`TALLY_HOLD` of quiet starting a new total, and `drawPlayer` queues it for the local player
+(`queueXp`, js/draw/overhead.js) as a plain purple number in the portrait's xp ink (`PORT_XP_LIT`),
+its right edge `TALLY_GAP` px clear of the **level badge's left** and centred on the badge: the
+damage total's mirror, the same gap and height on the other side. `drawTallies`
+stamps it right-aligned at the same sizes, `TALLY_POP_SC` the instant a gain adds to it, and it
+holds and fades by the same `TALLY_HOLD`/`TALLY_FADE`. The rivals' and your mates' XP is never
+drawn: ten totals in a wave fight would be noise. No floater, no sound: the number and the
+portrait's xp band are the tell.
 
 ## Debug overlays: hitboxes and routes
 
@@ -1611,13 +1626,13 @@ side is BLUE here too), then a gap and the rivals. Each column wears its player'
 (`portraitSprite`, small) with the level on its corner and the side's colour as a line under it,
 and its name printed whole under the face: the columns take turns between two lines, so each name
 has two columns' width (`scoreName` cuts one only on a view narrowed below full width). Down the left are four **folding groups**,
-`SCORE_GROUPS`: COMBAT (K/D, level, best streak, best multi-kill, crowd control), DAMAGE DEALT (to
+`SCORE_GROUPS`: COMBAT (K/D/A, level, best streak, best multi-kill, crowd control), DAMAGE DEALT (to
 players, the bird, buildings, beasts, and the total), TAKEN AND HEALED, and GOLD (earned, spent,
 beasts hunted). A click on a group's heading folds it, a short view scrolls the groups (the wheel
 or up/down), and a number past 99999 prints its magnitude (`scoreFmt` → `shortNum`: 154K, 1.2M).
 This is the [instrument carve-out](#show-dont-label); everything that is not a number still reads
 as a shape: your column is a lit band with gold numbers and a gold rim on the face, and the biggest
-value in each row is **underlined in its side's colour** (never brightened) - except K/D and the
+value in each row is **underlined in its side's colour** (never brightened) - except K/D/A and the
 two damage-taken rows, which have no single best. The page is graphite, the HUD's own neutral dark.
 STATS and GRAPHS are page words in the top-left corner, the open one underlined to the word's
 width (`drawNavCell`'s grammar), and BACK / LOBBY are bare 2x words at the foot, white and gold
@@ -1756,13 +1771,14 @@ readout — a kill toast, a recap — lands on it for free. What gets logged liv
 works while dead and while riding the eagle, and never under `DBG.hideUI`) and is drawn per frame, not baked — every number on
 it is live. `scoreGroups()` is the ordering: players grouped by team, teams ranked by their total
 `scoreOf(p)` and players inside a team by their own, ties broken by team then player id. `scoreOf`
-is **lifetime gold earned** (`p.xp`), not the purse — spending gold on a building is progress, and
-it is the number levels already run on — while the GOLD column shows the purse, so a player that has
+is **the match's gold earned** (`p.earned`, paid by `gainGold`), not the purse — spending gold on
+a building is progress — while the GOLD column shows the purse, so a player that has
 spent can sit above one showing more gold (its LVL column is the visible tell). A team stripe in
 `TEAMS[skin(team)].mark` runs down each group, each row carries a faint team wash (stronger for the
 local player, which also gets a gold `>`), dead players dim to 0.55 and gain a tag — the respawn
-countdown (`3s`), or `OUT` once `p.eliminated`. The panel
-is `SB_W` (168) wide, its height follows the row count, and it is centred on `VIEW_W`/`VIEW_H`
+countdown (`3s`), or `OUT` once `p.eliminated`. The columns are LVL, GOLD and K/D/A (kills, deaths,
+assists - [Takedowns](gameplay.md#takedowns-assists-bounties-and-shutdowns)). The panel
+is `SB_W` (184) wide, its height follows the row count, and it is centred on `VIEW_W`/`VIEW_H`
 every frame — no `relayout()` anchors, so it needs nothing on a resize.
 
 ## Cursor

@@ -222,7 +222,7 @@ window.DBG = {
   spawnDrop, throwCell, flingDrop, lockDrop, dropLocked, TOSS_SPEED, TOSS_LOCK_T,
   shedBits, SHED_KICK, BIT_STACK, swaps, SWAP_T,
   // death keeps everything (die): the one number a kill is worth
-  KILL_BOUNTY,
+  get KILL_BOUNTY() { return killBounty(); },
   toolUpgrade: (cell, p) => toolUpgrade(p || player, cell),
   takeUpgrade: (cell, p) => takeUpgrade(p || player, cell),
   // the draw curve: 0..1 off a player's chargeT, and the flight and damage it buys a bit
@@ -367,8 +367,8 @@ window.DBG = {
   rpRect, rpCloseRect, rpCloseHit,
   // routes: the search itself, and showPaths = true draws every unit's live route
   findPath, walkable, navTo, showPaths: false,
-  // hero levels: pay a player gold (and XP) the way a pickup would
-  gainGold: (n, p) => gainGold(p || player, n), LEVEL_XP, LEVEL_MAX,
+  // hero levels: pay a player gold, or XP, the way the match would
+  gainGold: (n, p) => gainGold(p || player, n), gainXp: (n, p) => gainXp(p || player, n), LEVEL_XP, LEVEL_MAX,
   // the stat ledger, the sheet that flies into the notice lane when a number
   // moves (the `stat ledger` block, js/ui/shop.js): the table every surface
   // prices a body with, the plate's own size, the live values, what each row

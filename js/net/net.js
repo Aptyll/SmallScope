@@ -469,7 +469,7 @@ function netClientStep(dt) {
 // The profile's lifetime stats on a client. Every PROFILE.add* in the sim
 // is gated on `p === player` INSIDE the step, which only the host's screen
 // runs, so a client reads the same facts off its own body as the snapshots
-// move it: xp is the match's gold earned (gainGold), kills only climbs, a
+// move it: earned is the match's gold earned (gainGold), kills only climbs, a
 // death is dead's rising edge, the match and its first day start at takeoff
 // (beginDrop's two, which a client never calls) and the hop off the bird is
 // aboard's falling edge (hopOff's markDropped - the hop's cue itself
@@ -481,12 +481,12 @@ function netClientStats() {
   const w = NET.was;
   if (!w || w.p !== me) { PROFILE.addMatch(); PROFILE.addDay(); }
   else {
-    if (me.xp > w.xp) PROFILE.addGold(me.xp - w.xp);
+    if (me.earned > w.earned) PROFILE.addGold(me.earned - w.earned);
     for (let k = w.kills; k < me.kills; k++) PROFILE.addKill();
     if (me.dead && !w.dead) PROFILE.addDeath();
     if (w.aboard && !me.aboard) PROFILE.markDropped();
   }
-  NET.was = { p: me, xp: me.xp, kills: me.kills, dead: me.dead, aboard: me.aboard };
+  NET.was = { p: me, earned: me.earned, kills: me.kills, dead: me.dead, aboard: me.aboard };
 }
 function netClientHello() {
   NET.transport.send('host', { t: 'hello', uid: NET.uid, patch: PATCH_TXT, seed: SEED, map: MAP_TYPE, name: PROFILE.name(), cls: PROFILE.hero(), rank: PROFILE.rank() });

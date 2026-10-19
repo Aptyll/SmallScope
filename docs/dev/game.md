@@ -126,11 +126,13 @@ enemy building, and strikes a rival's grounded eagle — and the axe and pick it
 selected, they come out on their own for whatever is under the cursor. A rock needs no key at all: it
 mines itself for whoever stands by it. [The swing tools](gameplay.md#the-swing-tools-e).
 
-**Gold is the only currency, and gold is also XP.** No wood, no stone — one number earned many
-ways, each source with its own yield profile, and it pays itself: gold is never a pickup on the
-ground, every source pays the earner on the spot. Every payout levels you as a side effect — a
-*sale* at the counter is the one exception, because a price you can both buy and sell at would
-otherwise be a level farm. **Fish and berries have a fixed price**, and the counter buys them at
+**Gold is the only currency; XP is a separate number, League style.** No wood, no stone — one
+currency earned many ways (last hits, kills, camps, the works, gold pumps, a slow trickle), each
+source with its own yield profile, and it pays itself: gold is never a pickup on the ground,
+every source pays the earner on the spot. **XP comes from being near when a rival body dies** —
+a soldier, a scout, a camp monster — shared among the allies standing there, so the last hit
+is gold and being there is XP. Mining, felling and fishing pay gold only: **the woods make you
+rich and the road makes you level**, and the late levels come late. **Fish and berries have a fixed price**, and the counter buys them at
 the same number it sells them for; a bigger fish fetches more.
 [Economy](gameplay.md#economy-one-currency), [the counter](gameplay.md#the-merchants-counter),
 [Hero levels](multiplayer.md#hero-levels).
@@ -155,7 +157,7 @@ and when its nerve breaks it is **driven off**, not killed: every camera pans to
 away, and its whole side falls with it as it goes. **It is also the way back**: a player who
 goes down waits out a timer and is set down again at the roost with everything it had — wallet, bag, weapon and build;
 death costs the wait and the walk, League-style, and a kill pays its
-taker a flat bounty. The bird is the **only objective** and the one way a
+taker and the assists gold, more for ending a streak (a shutdown), less for a player who keeps dying. The bird is the **only objective** and the one way a
 match ends, which is why both teams always have somewhere worth walking to — and why every bot
 on the map knows where both birds are and what is happening at them, and answers a hit on its
 own from anywhere. A side that wants out can **surrender** past fifteen minutes, League-style: a
@@ -198,8 +200,8 @@ they leave its ground and heals — and every site sits well off the road, so th
 wolf's. [Camps](world.md#camps), [camp monsters](gameplay.md#camp-monsters-neutral-until-hit).
 
 **The road is where the match is fought.** The waves are the match's clock: a column that is not
-met on the road reaches the rival bird, and a scrapped soldier pays its killer gold (and so XP)
-on the spot — so the lane is where the fighting, the pushing and the paying are, and a base is
+met on the road reaches the rival bird, and a scrapped soldier pays its killer gold and every
+rival standing near XP — so the lane is where the fighting, the pushing and the levels are, and a base is
 something to walk *out* of. A raid that wrecks a barracks thins a side's waves until its
 merchant rebuilds it. **The walk out is not the fight, so a zipline compresses it**: each side's
 cable runs from the stump ring beside its bird along the road's verge to short of the middle, and any body

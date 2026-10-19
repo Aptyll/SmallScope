@@ -1181,7 +1181,7 @@ lap record's twin and the second of the only two things practice ever writes.
 **The practice bar** (js/ui/cheats.js, League's practice-tool column) hangs down the left edge
 under the corner's open drawer, at the corner's size (`cornerSc`) (capped so it never runs off the
 bottom): icon wells on one hud plate in two groups — LEVEL UP, ADD GOLD (`CHEAT_GOLD`, through
-`tradeGold`, so no XP rides it), REFRESH COOLDOWNS and REFRESH HEALTH (standing toggles,
+`tradeGold`, so it never counts as earned), REFRESH COOLDOWNS and REFRESH HEALTH (standing toggles,
 `CHEAT_AUTO`, applied every tick by `cheatAuto` from `updatePractice`, frost-rimmed while on),
 RESET TO LEVEL 1; then TELEPORT, SPAWN DUMMY and CLEAR DUMMIES. The name is the tooltip
 (`tipCheat`). A press sends `input.cmd {kind:'cheat'}` → `runCmd` → `cheatCmd` (js/sim/practice.js,

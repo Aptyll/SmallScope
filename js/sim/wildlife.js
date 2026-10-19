@@ -21,10 +21,11 @@ const ANIMAL_HP = { rabbit: 8, deer: 24, wolf: 30, alpha: 640, dire: 640, bird: 
 // the table when it is finally pulled. The kill pays for it:
 // ANIMAL_LV_GOLD of the YIELD payout more a level (animalDies), a tenth, so
 // a level-12 beast is worth a little over twice a level-1 one - about what
-// its hp grew by. Gold is XP, so the loop feeds itself, but at a tenth a
-// level it is a slope, not a farm.
+// its hp grew by. Its XP (YIELD's `xp`, shared by the hunter's side standing
+// near: shareXp, js/sim/player.js) grows the same tenth a level.
 const ANIMAL_LV_HP = { rabbit: 1, deer: 2, wolf: 3, alpha: 50, dire: 50, bird: 0 };
 const ANIMAL_LV_GOLD = 0.1;
+const ANIMAL_LV_XP = 0.1;
 function animalLevel() {
   let n = 0, s = 0;
   for (const p of players) if (p.active) { n++; s += p.level; }
@@ -810,7 +811,9 @@ function updatePrey(a, dt) {
 // straight into the wallet of whoever landed the final blow (a.lastHit,
 // stamped by hurtAnimal) - gold is never a physical drop. A HUNTSMAN's kill
 // pays its bonus on top of the same, grown award; a kill nobody is left
-// alive to credit pays nobody.
+// alive to credit pays nobody. A camp monster's or a deer's `xp` is the
+// hunter's side's, shared by whoever of it stands near (shareXp), the
+// hunter too if they are still up; a rabbit teaches nobody anything.
 function animalDies(a) {
   a.dead = true;
   if (a.rider) rideEnd(a.rider, true); // the rider goes down in the snow beside it
@@ -823,6 +826,7 @@ function animalDies(a) {
     const bonus = Math.max(0, Math.ceil(base * (kitOf(hunter).huntMul - 1)));
     awardGold(hunter, base + bonus, a.x, a.y - (a.alt || 0));
   }
+  if (hunter && y && y.xp) shareXp(a, y.xp * (1 + ANIMAL_LV_XP * ((a.level || 1) - 1)), hunter.team, hunter);
   if (a.kind === 'rabbit') {
     burst(a.x, a.y - 3, '#9a6a45', 10, 45, 0.5);
     burst(a.x, a.y - 3, '#c29068', 6, 35, 0.4);
