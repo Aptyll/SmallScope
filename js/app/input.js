@@ -91,6 +91,7 @@ const KEY_ACTIONS = [
   { id: 'amove', verb: 'ATTACK MOVE', ck: 'a' }, { id: 'stop', verb: 'STOP', ck: 's' },
   { id: 'dodge', verb: 'DODGE', key: ' ', ck: ' ', ms: 'Mouse4' }, { id: 'slide', verb: 'SLIDE', key: 'Shift', ck: 'Shift', ms: 'Mouse5' }, { id: 'work', verb: 'HARVEST', key: 'e' },
   { id: 'berry', verb: 'EAT BERRY', key: 'q', ck: 'd' }, { id: 'fish', verb: 'EAT FISH', key: 'f', ck: 'f' },
+  { id: 'recall', verb: 'RECALL', key: 'h', ck: 'h' },
   { id: 'flag', verb: 'FLAG WHEEL', ck: 'g' },
   { id: 'tunnel', verb: 'DIG BURROW', key: 'v', ck: 'v' }, { id: 'bag', verb: 'INVENTORY', key: 'b', ck: 'b' },
   { id: 'char', verb: 'CHARACTER', key: 'g', ck: 'c' },
@@ -246,8 +247,6 @@ function keyPress(e) {
   // the profile card owns the keyboard while it is up: its letters are the
   // name, not shortcuts, and F3 / '.' below would fire on keys the field ignores
   if (state.mode === 'title' && state.menu.screen === 'profile') { profileKey(e); return; }
-  // ...and so does a save's name while it is typed (js/ui/saves.js)
-  if (saveUi.edit) { if (savesUp()) { savesEditKey(e); return; } saveUi.edit = null; }
   // F3 flips the info stack in any mode, minecraft-style (the browser's own
   // F3 find bar is suppressed above)
   if (e.key === 'F3') { settings.info = !settings.info; saveSettings(); return; }
@@ -290,6 +289,8 @@ function keyPress(e) {
   if (keyIs(e, 'dodge')) player.input.dodge = true;
   if (keyIs(e, 'berry')) player.input.eatBerry = true;
   if (keyIs(e, 'fish')) player.input.eatFish = true;
+  // the walk home (js/sim/recall.js): a CLICK order would walk out of it, so the press drops the order
+  if (keyIs(e, 'recall') && !e.repeat) { player.input.cmd = { kind: 'recall' }; if (ckOn()) ckClear(); }
   // the burrow stands its hole ghost under the pointer, and puts it away (js/sim/tunnel.js)
   if (keyIs(e, 'tunnel') && !e.repeat) tunnelAimToggle();
   // the pack key drops the inventory drawer under the weapon shelf. It is
@@ -407,12 +408,10 @@ function keyPress(e) {
     else if (state.bagOpen) { state.bagOpen = false; SFX.ui(false); } // the drawer slides back up
     else {
       state.settingsOpen = !state.settingsOpen; dragSlider = null; setDrop = null; state.wheel = null; SFX.ui(state.settingsOpen);
-      saveUi.open = false;
-      if (state.settingsOpen) autoSave(); // the way into the pause menu autosaves (js/sim/save.js)
     }
   }
   if (keyIs(e, 'mute')) { settings.muted = SFX.toggleMute(); saveSettings(); }
-  if (keyIs(e, 'pause') && (state.paused || !netShared())) { state.paused = !state.paused; SFX.ui(state.paused); if (state.paused) autoSave(); } // the PAUSED plate is a surface like any other
+  if (keyIs(e, 'pause') && (state.paused || !netShared())) { state.paused = !state.paused; SFX.ui(state.paused); } // the PAUSED plate is a surface like any other
 }
 pageListen(window, 'keyup', (e) => {
   const k = keyName(e);
@@ -572,7 +571,6 @@ function sideButton(button, down) {
 // ...and came back up
 function pointerRelease(button) {
   if (button === 3 || button === 4) { sideButton(button, false); return; }
-  if (button === 0 && saveUi.press) savesRelease(); // a save card let go of: the click, or the drop (js/ui/saves.js)
   if (button === 2 && ckOn()) { ckRightRelease(); return; }
   if (button === 2 && state.wheel) { resolveWheel(); state.wheel = null; return; }
   if (button === 1) { if (msOn()) msWheelRelease(); return; }
@@ -837,14 +835,14 @@ function ckArmedPress() {
 function ckSees(p, t) {
   if (!unitAlive(t) || !unitFoe(p, t)) return false;
   const d = Math.hypot(t.x - p.x, t.y - p.y);
-  return d <= (t instanceof Player ? seenAt(t, CK_LOCK_R) : CK_LOCK_R);
+  return d <= (t instanceof Player ? seenAt(t, CK_LOCK_R, p.team) : inSight(p.team, t) ? CK_LOCK_R : 0);
 }
 // the nearest foe an attack-move takes: a rival player it can see, a rival
 // robot, or a camp's monster - never a deer, which is a hunt and not a fight
 function ckAcquire(p) {
   let best = null, bd = CK_ACQ_R;
-  const take = (e, r) => { const d = Math.hypot(e.x - p.x, e.y - p.y); if (d <= r && d < bd) { bd = d; best = e; } };
-  for (const q of players) if (enemyOf(p, q)) take(q, seenAt(q, CK_ACQ_R));
+  const take = (e, r) => { const d = Math.hypot(e.x - p.x, e.y - p.y); if (d <= r && d < bd && inSight(p.team, e)) { bd = d; best = e; } };
+  for (const q of players) if (enemyOf(p, q)) take(q, seenAt(q, CK_ACQ_R, p.team));
   for (const b of robots) if (unitAlive(b) && b.team !== p.team) take(b, CK_ACQ_R);
   for (const a of animals) if (a.home && unitAlive(a)) take(a, CK_ACQ_R);
   return best;

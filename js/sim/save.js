@@ -1,10 +1,12 @@
 // ------------------------------------------------------------ saved matches
-// A SAVE is a solo match frozen at one sim step, whole: every body, arrow in
+// A SAVE is a match frozen at one sim step, whole: every body, arrow in
 // flight, building, drop, camp, the counters' stock and prices, the clock and
-// the three random streams' positions - so a loaded game does not merely look
-// like the saved one, it PLAYS OUT exactly as the saved one would have from
-// that step on (the proof is DBG.saveHash: step a match on, load its save
-// beside it, step the same count, compare).
+// the three random streams' positions - so a match put back does not merely
+// look like the captured one, it PLAYS OUT exactly as that one would have
+// from that step on. Players never save; this stays as the determinism
+// proof: DBG.saveHash after stepping a
+// match, DBG.saveLoad(DBG.saveCapture()) onto a fresh page, step the same
+// count, compare.
 //
 // Nothing here knows what a field means. The world is a seed (SEED, MAP_TYPE):
 // a load is a page on the saved seed and shape, which grows the very same
@@ -16,10 +18,9 @@
 //     valley (saveBaseline, taken at boot before anything moves): the 33 000
 //     untouched pines are not written, a reference to one is its tile index.
 // A new field on any of these rides along untold. A new mutable GLOBAL the
-// sim reads does not - it joins SAVE_ROOTS, or a loaded match forgets it.
+// sim reads does not - it joins SAVE_ROOTS, or the proof misses it.
 //
-// The flow: saveMatch writes a slot through PROFILE (the one file that
-// touches storage); loadSave hands the body to the next page through
+// The flow: saveDevLoad hands the record to the next page through
 // sessionStorage and reloads onto ?seed&map; js/app/boot.js calls saveBootLoad
 // after the world stands and before the ground is baked, so the bake paints
 // the saved valley and not the fresh one.
@@ -27,11 +28,6 @@
 // ---- tuning ---------------------------------------------------------------
 const SAVE_V = 2;           // the body's shape; a body of another shape is refused, never half-read
                             // (2: the generator grew to the 4x2 gold pump - a 1x1 one would load without its footprint)
-const SAVE_MANUAL = 5;      // manual slots: m0..m4
-const SAVE_AUTO = 3;        // autosaves kept, newest first: a0..a2
-const SAVE_AUTO_T = 120;    // s of live match between autosaves
-const SAVE_THUMB = 40;      // px square: the slot's minimap picture
-const SAVE_FLASH_T = 1.6;   // s the HUD's saved mark shows
 
 // ---- what is saved ----------------------------------------------------------
 // [name, get, put]: get() hands the live value in, put(v) takes the decoded
@@ -43,7 +39,7 @@ function saveArr(a) { return [() => a, (v) => { a.length = 0; if (v) for (const 
 // with every panel shut
 const SAVE_STATE_SKIP = new Set(['paused', 'mapOpen', 'bagOpen', 'charOpen', 'shop', 'drag', 'dragPend',
   'settingsOpen', 'rebind', 'wheel', 'build', 'menu', 'intro', 'introLen', 'introFrom', 'fade', 'shake',
-  'shopTab', 'forgeSel', 'forgePile', 'tunAim']); // the forge's bench (js/ui/forge.js); a weapon's points ride its own cell
+  'shopSel', 'shopSlot', 'shopCat', 'tunAim']); // the counter's pick and filter (js/ui/shop.js)
 const SAVE_ROOTS = [
   ['state', () => { const o = {}; for (const k of Object.keys(state)) if (!SAVE_STATE_SKIP.has(k)) o[k] = state[k]; return o; },
     (v) => Object.assign(state, v)],
@@ -60,12 +56,11 @@ const SAVE_ROOTS = [
   ['iceBreaks', ...saveArr(iceBreaks)], // the breaks in their own shape (js/sim/icebreak.js); their pixels rebuild off them
   // the orca (js/sim/orca.js); a save from before it carries none, and it stays where boot put it
   ['orca', () => orca, (v) => { if (v) Object.assign(orca, ORCA_FRESH(), v); }],
-  ['market', () => market, (v) => Object.assign(market, v)],
   // the bot callouts (js/ai/ai-callouts.js); a save from before they existed
   // carries none of these, and loads with every side silent
   ['callouts', ...saveArr(callouts)],
   ['callSaid', () => callSaid, (v) => { callSaid[0] = v ? v[0] : {}; callSaid[1] = v ? v[1] : {}; }],
-  ['rng', () => [rng.s, fxRng.s, mktRng.s], (v) => { rng.s = v[0]; fxRng.s = v[1]; mktRng.s = v[2]; }],
+  ['rng', () => [rng.s, fxRng.s], (v) => { rng.s = v[0]; fxRng.s = v[1]; }], // (an old save's third, the market's, is ignored)
   // (a save from before the deer lines carries one number there: both sides start their clock fresh)
   ['wild', () => [deerBackT, fishCap, fishFloor, emergeSites],
     (v) => { deerBackT = Array.isArray(v[0]) ? v[0] : [DEER_BACK, DEER_BACK]; fishCap = v[1]; fishFloor = v[2]; emergeSites = v[3]; }],
@@ -297,6 +292,7 @@ function saveApply(rec) {
   for (const [n, , put] of SAVE_ROOTS) put(r[n]);
   // a save from before a record field existed: the field starts at nothing
   for (const p of players) for (const k in PLAYER_RECORD) if (p[k] === undefined) p[k] = PLAYER_RECORD[k];
+  for (const p of players) if (!p.items) p.items = new Array(ITEM_SLOTS).fill(null); // ...and from before items (js/sim/items.js)
   objTimersRescan(); // the objects with a clock running are an index of the tiles, rebuilt rather than saved (js/sim/sim.js)
 }
 
@@ -321,123 +317,14 @@ function saveHash() {
   return { hash: (h >>> 0).toString(16), len: s.length, tick: state.tick };
 }
 
-// ---- slots ------------------------------------------------------------------
-// Solo matches only: an online match is the host's and a client's sim never
-// runs, and the practice room is no match at all. Nor is one already decided.
-function canSave() {
-  return !PRACTICE && !NET.isClient && NET.role === 'solo' && !!saveBase &&
-    (state.mode === 'play' || state.mode === 'drop' || state.mode === 'dead') &&
-    state.over !== 'won' && state.over !== 'lost';
-}
-// the slot's card: everything a list prints, so a list never opens a body
-// (the thumbnail's pixels: saveThumb, js/ui/saves.js)
-function saveMeta() {
-  return {
-    name: player.name, cls: player.cls, look: player.look, team: player.team, level: player.level,
-    elapsed: state.elapsed, day: state.day, when: Date.now(), seed: SEED, map: MAP_TYPE, thumb: saveThumb(),
-  };
-}
-// the name a card wears: the player's (named in the saves grid, js/ui/saves.js),
-// else the day it was kept on
-function saveTitleOf(m) { return m.named && m.title ? m.title : 'DAY ' + (m.day || 1); }
-// every filled slot's meta, keyed by slot
-function saveList() { return PROFILE.saveMetas(); }
-// the newest save of all, or null: what the lobby's saves plate shows. Off
-// the saves grid's cached read (js/ui/saves.js), since the lobby asks every frame.
-function saveNewest() {
-  const m = savesMetas();
-  let best = null;
-  for (const k in m) if (!best || m[k].when > m[best].when) best = k;
-  return best;
-}
-// A body is gzipped (CompressionStream) and kept as base64 behind a 'z', a
-// tenth of the JSON - eight of them have to share the browser's few MB with
-// the profile. A browser without the stream keeps the plain JSON ('{').
-async function saveZip(str) {
-  if (typeof CompressionStream === 'undefined') return str;
-  const buf = await new Response(new Blob([str]).stream().pipeThrough(new CompressionStream('gzip'))).arrayBuffer();
-  const u = new Uint8Array(buf);
-  let b = '';
-  for (let i = 0; i < u.length; i += 0x8000) b += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000));
-  return 'z' + btoa(b);
-}
-async function saveUnzip(body) {
-  if (body[0] !== 'z') return body;
-  const b = atob(body.slice(1)), u = new Uint8Array(b.length);
-  for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i);
-  return new Response(new Blob([u]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
-}
-
-// Write the match into `slot`. The match is taken NOW (synchronously, the
-// step the press landed on); only the packing and the write wait. Resolves
-// true once it is kept, false when it cannot be saved or storage refused it.
-let saveBusy = false;
-let saveFlashAt = -1e9; // performance.now() of the last save that landed: the HUD's mark (drawSaveFlash)
-function saveMatch(slot) {
-  if (!canSave() || saveBusy || state.drag || state.dragPend) return Promise.resolve(false);
-  saveBusy = true;
-  const meta = saveMeta(), json = JSON.stringify(saveCapture());
-  meta.auto = slot[0] === 'a';
-  const old = PROFILE.saveMetas()[slot];
-  if (old && old.named) { meta.title = old.title; meta.named = true; } // a slot the player named keeps its name when written over
-  return saveZip(json).catch(() => json).then((body) => {
-    saveBusy = false;
-    const ok = PROFILE.putSave(slot, meta, body);
-    if (ok) saveFlashAt = performance.now();
-    saveUi.metas = null; // an open saves slab reads the slots afresh (js/ui/saves.js)
-    return ok;
-  });
-}
-
-// ---- autosave -----------------------------------------------------------------
-// Every SAVE_AUTO_T of match clock, and on the way into the ESC panel, into
-// the oldest of the SAVE_AUTO ring - never twice inside SAVE_AUTO_GAP, so
-// flicking the panel open and shut does not roll the ring over itself.
-const SAVE_AUTO_GAP = 15;       // s of match clock between any two autosaves
-let saveAutoAt = SAVE_AUTO_T;   // state.elapsed the next timed autosave is due at
-let saveAutoLast = -1e9;        // state.elapsed of the last autosave
-function autoSave() {
-  if (!canSave() || state.elapsed - saveAutoLast < SAVE_AUTO_GAP) return;
-  const m = saveList();
-  let slot = null;
-  for (let i = 0; i < SAVE_AUTO; i++) {
-    const k = 'a' + i;
-    if (!m[k]) { slot = k; break; }
-    if (!slot || m[k].when < m[slot].when) slot = k;
-  }
-  saveAutoLast = state.elapsed;
-  saveAutoAt = state.elapsed + SAVE_AUTO_T;
-  saveMatch(slot);
-}
-// the frame loop's half (js/app/boot.js), after the steps
-function saveAutoTick() {
-  if (state.elapsed >= saveAutoAt && !state.paused && !state.settingsOpen) autoSave();
-}
-
-// Load: the body rides sessionStorage to the next page, which grows the saved
-// seed in the saved shape and applies it at boot (saveBootLoad).
-function loadSave(slot) {
-  const m = saveList()[slot], body = PROFILE.saveBody(slot);
-  if (!m || !body || state.fade || saveBusy) return false;
-  saveBusy = true;
-  SFX.music.stop(0.45);
-  let ready; // the unpacked body once it is (null: it would not), or the page's go once the dark is down
-  const go = (json) => {
-    if (json === null) { // the body would not unpack: back out of the dark, nothing lost
-      saveBusy = false;
-      state.fade = { a: 1, to: 0, spd: 1 / 0.45, color: '#04060f', then: null };
-      SFX.deny();
-      return;
-    }
-    try { sessionStorage.setItem('softfall.load', json); } catch (e) { go(null); return; }
-    location.href = location.pathname + '?seed=' + m.seed + '&map=' + m.map;
-  };
-  state.fade = {
-    a: 0, to: 1, spd: 1 / 0.45, color: '#04060f',
-    then: () => { if (ready !== undefined) go(ready); else ready = go; },
-  };
-  const done = (json) => { if (ready === go) go(json); else ready = json; };
-  saveUnzip(body).then(done, () => done(null));
+// ---- the dev load -------------------------------------------------------------
+// A record (saveCapture) put back on a fresh page: it rides sessionStorage to
+// the next page, which grows the record's seed in its shape and applies it at
+// boot (saveBootLoad). The replay proof's other half (DBG.saveLoad); nothing a
+// player reaches calls it.
+function saveDevLoad(rec) {
+  try { sessionStorage.setItem('softfall.load', JSON.stringify(rec)); } catch (e) { return false; }
+  location.href = location.pathname + '?seed=' + SEED + '&map=' + MAP_TYPE;
   return true;
 }
 // boot's half (js/app/boot.js): true when a saved match was put back on this page
@@ -446,8 +333,6 @@ function saveBootLoad() {
   try { raw = sessionStorage.getItem('softfall.load'); sessionStorage.removeItem('softfall.load'); } catch (e) { }
   if (!raw) return false;
   try { saveApply(JSON.parse(raw)); } catch (e) { console.warn(e); return false; }
-  saveAutoAt = state.elapsed + SAVE_AUTO_T;
-  saveAutoLast = state.elapsed;
   return true;
 }
 // ...and once boot has finished setting the page up for a title: the match

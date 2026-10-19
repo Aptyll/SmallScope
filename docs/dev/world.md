@@ -926,8 +926,10 @@ the checklist in [checklists.md](checklists.md#common-changes).
 
 ## The practice arena
 
-The TRAINING FIELD behind the title's PRACTICE TOOL plank (three knocks break its ice —
-[rendering.md](rendering.md#main-menu-title)): `?practice=1` boots `genPracticeWorld()` (the
+The TRAINING FIELD behind the title's PRACTICE TOOL, reached through a party: the party lobby's
+START takes the whole party there (`partyPractice`, js/ui/rooms.js; [gameplay.md](gameplay.md#settings)),
+the leader's page hosting and friends joining on the spawn tile (`practiceSeat`; an empty seat is
+parked in the corner forest, `practiceVacate`, js/sim/practice.js). `?practice=1` boots `genPracticeWorld()` (the
 `practice arena` banner, js/sim/practice.js) **instead of** `genWorld()`, and js/app/boot.js skips
 camps, chests, wildlife spawns and the eagle drop entirely. **The practice world is
 `WORLD` 112 under `PRACTICE`, against the match's 232** (the conditional above the `WORLD`

@@ -44,7 +44,7 @@ guild sells — not from a new faction or a new magic.
 | the eagle's hp is nerve, it gusts at a crowd, it is driven off and never killed | a bird is brave only up to a point |
 | only a bird leaving ends a match | the claim |
 | the merchant raises your base, sells to both sides and cannot be hurt | the counter is its own guild; nobody lays a hand on one |
-| fish and berry prices swing all day | the market is the guild's, not the companies' |
+| the counter's items and food have one fixed price, the same for both sides | the prices are the guild's, not the companies', and the guild does not haggle |
 | robots, turrets, generators and a barracks beside bows and swords | the works' machines, woken with gold; nobody knows who built them |
 | one straight road, corner to corner | the works' haul road, older than everything but the machines |
 | a creek down the other diagonal that never freezes, but for a frozen pool where the road crosses it | the works' old outfall, still running warm under the snow; at the crossing it slows to a pool, and the pool freezes |

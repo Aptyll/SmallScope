@@ -247,12 +247,6 @@ const CARD_RARITIES = ['white', 'green', 'blue', 'purple', 'gold'];
 // for "whichever comes next" (fishToEat, js/sim/core.js).
 const FISH_KINDS = ['whitefish', 'fish', 'snowChar', 'sunfish'];
 function fishHeld(p) { let n = 0; for (const k of FISH_KINDS) n += bagCount(p, k); return n; }
-// What one unopened card of each rarity costs at the merchant's counter
-// (the `shop` banner, js/shop.js), and half of it what one fetches sold back.
-// A card is priced by its RARITY and not per entry, because the rarity is
-// what is ever bought or carried: the pick of three inside it is drawn after
-// the money changes hands, so the buyer is paying for the odds, not the buff.
-const CARD_PRICE = { white: 25, green: 45, blue: 80, purple: 130, gold: 210 };
 // 'white' <-> the 'cardWhite' ITEMS/RES_COLORS key every rarity is stored under
 function cardKey(rarity) { return 'card' + rarity[0].toUpperCase() + rarity.slice(1); }
 const CARD_TYPE_RARITY = {}; // 'cardWhite' -> 'white', the inverse of cardKey
@@ -456,15 +450,16 @@ function baseKit(cls) {
     huntMul: 1, dr: 0, foodMul: 1, nightHeal: false, walkMul: 1,
     harvestMul: 1, dodgeCd: DODGE_CD, stealth: 1,
     ambushMul: AMBUSH_MUL, bury: PRONE_BURY,
-    killHeal: 0,
+    killHeal: 0, kindle: false, chill: false, restHeal: 0, // the item passives (js/sim/items.js)
   });
 }
-// rebuild p.kit from class + gear + skills + cards
+// rebuild p.kit from class + gear + skills + cards + items
 function refreshKit(p) {
   const k = baseKit(p.cls);
   for (let i = 0; i < GEAR.length; i++) GEAR[i][p.gear[i]].mod(k, p.gearLv[i]);
   for (let i = 0; i < STAT_TRACKS.length; i++) STAT_TRACKS[i].mod(k, p.pts[i] | 0);
   for (const c of p.cards) CARDS[c.rarity][c.id].mod(k);
+  itemMods(k, p); // the six item slots (js/sim/items.js)
   p.kit = k;
   p.maxHp = levelMaxHp(p);
   if (p.hp === undefined || p.hp > p.maxHp) p.hp = p.maxHp;
@@ -575,7 +570,8 @@ class Player {
     Object.assign(this, PLAYER_RECORD); // the rest of the record, which a save older than a field fills from too (saveApply)
     this.hGold = [];                    // the lobby's two graphs, sampled every STAT_STEP: gold earned...
     this.hDmg = [];                     // ...and damage dealt, both cumulative (sampleStats, js/ui/lobby.js)
-    this.trades = [];                   // the market ledger: every good bought or sold at a counter (marketLog, js/ui/shop.js)
+    this.items = new Array(ITEM_SLOTS).fill(null); // the six item slots, ids or null (js/sim/items.js) - like cards, they survive a respawn
+    this.fightT = 0; this.kindleN = 0;  // s since the last hit given or taken, and KINDLING's count (itemsOnHit)
     refreshKit(this);                   // builds this.kit and this.maxHp from class + gear + skill
     this.aboard = false;                // riding the eagle (beginDrop sets it, hopOff clears it)
     this.dropT = 0;                     // seconds left of the step down off the roost (0 = on the ground)
@@ -633,6 +629,8 @@ class Player {
     this.charging = false; this.chargeT = 0;      // bow draw state
     // the meal being chewed and the clock BOTH meals share (js/sim/core.js)
     this.eatT = 0; this.eatType = null; this.eatFxT = 0; this.foodCd = 0;
+    // the recall's channel, and the roost ring's motes' clock (js/sim/recall.js)
+    this.recallT = 0; this.ringFxT = 0;
     this.nockT = 0;                                // the cycle: seconds until the next press (toolCycle, js/sim/tools.js)
     this.slashT = 0; this.slashA = 0; this.slashHalf = 0; // a blade's sweep in flight: the hand swings the sword through it (slashTool, js/sim/tools.js; drawHeldTool, js/draw-world.js)
     this.catchT = 0;                               // the fish hoist's clock (startCatch/catchFrame, js/sim/tools.js)
@@ -793,11 +791,15 @@ function concealOf(p) { return p.hide > 0 ? p.hide * (p.moving ? PRONE_MOVE : 1)
 // never past PRONE_SNIFF, because at arm's length you are found whatever you
 // are lying under. Every watcher in the game (the pack, the turrets, the bot
 // brain) resolves through this one function so they cannot disagree about who
-// is hidden.
-function seenAt(p, range) {
+// is hidden. A watcher that plays by the fog of war (a bot, a hand's lock-on)
+// names its side as `team`: a rival outside that side's sight is not seen at
+// all (inSight, js/sim/fog.js). Creatures and turrets watch without it.
+function seenAt(p, range, team) {
   // the falcon's mark is the ONE legal bypass: a swept rival is simply seen,
-  // whatever they are lying under, until the mark runs out (js/sim/abilities.js)
+  // whatever they are lying under or however deep in the fog, until the mark
+  // runs out (js/sim/abilities.js)
   if (p.markT > 0) return range;
+  if (team !== undefined && !inSight(team, p)) return 0;
   const c = concealOf(p);
   const r = range * kitOf(p).stealth * (1 - PRONE_CUT * c);
   return c > 0 ? Math.max(r, Math.min(range, PRONE_SNIFF)) : r;
@@ -891,6 +893,7 @@ function damagePlayer(p, dmg, dx, dy, src, cause, crit, kb) {
   if (src instanceof Player && src !== p && src.team !== p.team) { src.dmgOut += dmg; p.dmgInP += dmg; }
   else if (BEAST_CAUSES.has(cause)) p.dmgInB += dmg;
   p.hurtT = 0.25;
+  p.fightT = ITEM_FIGHT_T; // in a fight: DEN's heal waits (js/sim/items.js)
   if (!dot) {
     const k = HIT_KB * (kb === undefined ? 1 : kb);
     p.kbx = dx * k; p.kby = dy * k;
@@ -959,6 +962,7 @@ function bodyOut(p) {
   p.swingT = p.swingCd = 0;
   // whatever ability the body was mid-way through dies with it, and the meal
   p.eatT = 0; p.eatType = null;
+  p.recallT = 0; // ...and the walk home it was channelling
   breakMine(p);
   p.castT = 0; p.castAb = -1;
   p.shieldT = 0; p.rushT = 0; p.rushVictim = null;
@@ -1051,12 +1055,18 @@ function updateRespawns(dt) {
 // stand on there - so the way back into the match is the road everyone
 // else walked out on.
 const RESPAWN_OUT = 40;
-function respawnPlayer(p) {
+// the tile a body is set down on at its own roost: RESPAWN_OUT down the spur
+// from the bird, the nearest dry one - null while the bird is not down. The
+// carried-back scout and the recall (js/sim/recall.js) both land here.
+function roostTile(p) {
   const e = state.drop && state.drop.eagles[p.team];
-  if (e && e.state === 'down') {
-    const d = e.laneDir || { x: 0, y: 1 };
-    p.spawn = nearestDryTile(e.x + d.x * RESPAWN_OUT, e.y + d.y * RESPAWN_OUT, p);
-  }
+  if (!e || e.state !== 'down') return null;
+  const d = e.laneDir || { x: 0, y: 1 };
+  return nearestDryTile(e.x + d.x * RESPAWN_OUT, e.y + d.y * RESPAWN_OUT, p);
+}
+function respawnPlayer(p) {
+  const t = roostTile(p);
+  if (t) p.spawn = t;
   p.eliminated = false;
   p.respawnT = 0;
   p.reset(false);
@@ -1123,6 +1133,7 @@ function practiceRevive(p) {
   p.prone = false; p.hide = 0; p.riseT = 0;
   p.charging = false; p.chargeT = 0; p.fireArmed = false;
   p.eatT = 0; p.eatType = null;                  // the meal dies with the body here too
+  p.recallT = 0;                                 // ...and the recall
   const s = p.spawn || { tx: WORLD >> 1, ty: WORLD >> 1 };
   p.x = (s.tx + 0.5) * TILE; p.y = (s.ty + 0.5) * TILE;
   p.invuln = 2;

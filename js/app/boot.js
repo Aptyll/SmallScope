@@ -15,9 +15,6 @@ mendBinds(); // the profile's key binds made whole (input.js)
 // ...and the tech tree, which decides what this profile's world may drop.
 // Must run after PROFILE.load() and before initPlayers()/any swing.
 rebuildLootPool();
-// ...and the merchants' market, which primes three days of prices behind it
-// so the counter's graphs are graphs on day one (js/shop.js).
-initMarket();
 fitCanvas(); relayout(); // the window may have changed size while the scripts loaded (no resize listener yet); this places the UI for the fitted view
 SFX.setVolume(settings.volume);
 SFX.setMusicVolume(settings.musicVol);
@@ -73,7 +70,7 @@ initPlayers();
 // ...and a page reloaded onto a party's seed to join it (joinRoom, js/ui/rooms.js),
 // a Steam invite, or a rematch walks straight into the party lobby with that join under way
 const JOIN_AT_BOOT = (function () { const j = /[?&]join=([A-Z0-9]+)/i.exec(location.search); return j ? j[1].toUpperCase() : null; })();
-// a saved match (js/sim/save.js): the valley as it grew is the baseline every
+// the replay proof (js/sim/save.js): the valley as it grew is the baseline every
 // save is written against, and a load that reloaded onto its seed puts the
 // match back now - after the world stands, before the bake paints it
 if (!PRACTICE) saveBaseline();
@@ -86,19 +83,12 @@ camX = player.x - WV_W / 2;
 camY = player.y - WV_H / 2;
 // practice boots straight onto the snow: no title, no eagle. The other nine
 // players empty out (control 'none' - `active` is derived from it) and stand
-// parked in the corner forest, far outside the arena, so their ghost
-// silhouettes never wander into a capture; the local player takes the arena's
-// spawn tile and the HUD slides in the way a landing's does.
+// parked in the corner forest (practiceVacate, js/sim/practice.js); the local
+// player takes the arena's spawn tile and the HUD slides in the way a landing's
+// does. A party's friends take seats as they join (netHostHello).
 if (PRACTICE) {
-  for (const p of players) {
-    if (p === player) continue;
-    p.control = 'none';
-    p.spawn = { tx: 4, ty: 4 };
-    p.x = (4.5) * TILE; p.y = (4.5) * TILE;
-  }
-  player.spawn = { tx: PR_SPAWN.tx, ty: PR_SPAWN.ty };
-  player.x = (PR_SPAWN.tx + 0.5) * TILE;
-  player.y = (PR_SPAWN.ty + 0.5) * TILE;
+  for (const p of players) if (p !== player) practiceVacate(p);
+  practiceSeat(player);
   // early morning, forever: sim.js never advances state.time under PRACTICE,
   // so this is the arena's one fixed hour - crisp daylight, shadowless dawn
   state.time = 0;
@@ -109,7 +99,8 @@ if (PRACTICE) {
   state.intro = HUD_IN_T; state.introLen = HUD_IN_T;
 }
 if (JOIN_AT_BOOT && !PRACTICE) partyBootJoin(JOIN_AT_BOOT); // the party screen, the join under way (js/ui/rooms.js)
-rematchBootHost(); // a leader back from a match: the party again, same people (js/ui/rooms.js)
+else if (JOIN_AT_BOOT) practiceBootJoin(JOIN_AT_BOOT); // a party's guest following its leader onto the field
+if (PRACTICE) practiceBootHost(); else rematchBootHost(); // a leader back from a match or the field: the party again, same people (js/ui/rooms.js)
 // landing from a reroll: the whiteout the die left behind clears to the new world
 try {
   if (sessionStorage.getItem('softfall.reroll')) {
@@ -148,7 +139,7 @@ try {
   }
 } catch (e) { }
 
-// ...and a saved match put back at boot (saveBootLoad above) comes up out of
+// ...and a record put back at boot (saveBootLoad above, the replay proof) comes up out of
 // the dark, whatever the page was about to show
 if (LOADED_AT_BOOT) saveBootEnter();
 
@@ -266,29 +257,20 @@ window.DBG = {
   WIKI_PAGES, wikiLayout, wikiHit, wikiScrollBy, wikiSetTab, beginWiki, leaveWiki,
   beginNotes, openPageTab, pageTabsLayout, notesLayout,
   wipeTech: () => PROFILE.clearTech(),
-  // The merchant's counter (js/shop.js): the live market and its two goods,
-  // the rolled stock, the panel's geometry, and every trade without the
-  // pointer. `marketStep(n)` walks the prices n moves on so a driver can watch
-  // a spike without waiting three days for one, and `shopRestock()` turns the
-  // counter over on the spot - quietly, or `shopRestock(true)` with the plate
-  // and the two-beat cue a real turnover raises.
-  market, GOODS, MKT_STEP, MKT_HIST, MKT_DAYS, SHOP_RESTOCK, marketPrice, marketHist,
-  marketStep: (n) => { for (let i = 0; i < (n || 1); i++) updateMarket(MKT_STEP); return MKT_ORDER.map(marketPrice); },
-  shopRestock: (loud) => shopRestock(!loud), shopOffer, itemValue, cellValue, sellValue,
-  // the market's plates under the minimap: the live stack, where a slot lands,
-  // and a way to raise one without waiting for the walk to do it
+  // The merchant's counter (js/ui/shop.js) and the items it sells
+  // (js/sim/items.js): the catalogue, the panel's geometry, and every trade
+  // without the pointer
+  BUILD_ITEMS, ITEM_PARTS, ITEM_DONE, itemCost: (id, p) => itemCost(p || player, id),
+  buyItem: (id, p) => buyItem(p || player, id), sellItem: (slot, p) => sellItem(p || player, slot),
+  botNextItem, botItemBuy, FOOD_PRICE, foodPrice, itemValue, cellValue, sellValue,
+  // the news plates under the minimap: the live stack, where a slot lands,
+  // and a way to raise one
   notices, noteRect, NOTE_KIND, raiseNotice,
   merchNear: (p) => merchNear(p || player),
   openShop: (p) => openShop(merchNear(p || player)), closeShop, shopOpen,
   shopLayout, shopHit: (x, y) => shopHit(x == null ? mouse.x : x, y == null ? mouse.y : y),
-  shopBuy: (sec, i, p) => shopBuy(p || player, sec, i),
   shopSellCell: (i, p) => shopSellCell(p || player, i),
-  // the SELL ALL button's own press, and the two numbers it reads itself out
-  // with - the pack's worth over the counter and how many cells that is
-  shopSellAll: (p) => shopSellAll(p || player), packValue: (p) => packValue(p || player),
-  packCount: (p) => packCount(p || player),
-  shopTrade: (id, dir, p) => shopTrade(p || player, id, dir),
-  CARD_PRICE,
+  shopTrade: (good, dir, p) => shopTrade(p || player, good, dir),
   // what the pointer is on, as the panel would describe it (null = nothing)
   tipAt: (x, y) => tipAt(x == null ? mouse.x : x, y == null ? mouse.y : y),
   // and where this frame's panel is sitting, the rect drawTooltip paints -
@@ -441,6 +423,9 @@ window.DBG = {
   risePlayer: (p) => risePlayer(p || player),
   concealOf: (p) => concealOf(p || player),
   seenAt: (range, p) => seenAt(p || player, range),
+  // the fog of war (js/sim/fog.js): fog = false lifts it for a debug look;
+  // inSight(team, u) is what that side sees, fogShown(u) what this screen draws
+  fog: true, inSight, fogShown: (u) => fogShown(u),
   ambushReady: (p) => ambushReady(p || player),
   setHide: (h, p) => {
     const q = p || player;
@@ -519,8 +504,8 @@ window.DBG = {
   hideUI: false,
   // director mode (js/app/director.js): its state, and its keys as pressed
   director, directorKey: (key) => keyPress({ key, repeat: false, char: key }),
-  // saved matches (js/sim/save.js): the record, the hash the replay proof compares, a slot by hand
-  saveCapture, saveApply, saveHash, saveMatch, loadSave, saveList, autoSave,
+  // the replay proof (js/sim/save.js): the record, its hash, and the record put back on a fresh page
+  saveCapture, saveApply, saveHash, saveLoad: saveDevLoad,
   step: (dt, n) => { for (let i = 0; i < (n || 1); i++) { update(dt || TICK_DT); } render(); },
 };
 
@@ -697,7 +682,6 @@ function loop(nowMs) {
       try { render(); } finally { tweenOut(); } // the sim's values back, whatever render does
     }
     perf.simAcc += t1 - t0; perf.drawAcc += performance.now() - t1;
-    saveAutoTick(); // a timed autosave, off the match clock (js/sim/save.js)
   }
   if (!document.hidden) requestAnimationFrame(loop); // hidden: the worker calls loop() instead
   else watchHidden();

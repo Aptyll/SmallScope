@@ -112,18 +112,18 @@ function trBody(e, foot, r, pack) {
 function trampleStep(dt) {
   if (state.mode === 'title') return;
   for (const p of players) {
-    if (!p.active || inAir(p) || p.zip >= 0 || p.mount) continue; // a rider's deer leaves the tracks
+    if (!p.active || inAir(p) || p.zip >= 0 || p.mount || !fogShown(p)) continue; // a rider's deer leaves the tracks; one in the fog leaves none you see
     // the same reads the footprint emitter makes (updatePlayer, sim.js): a
     // crawl drags wide, a slide rides two runners, a walk presses a stride
     const pack = p.prone ? TR_CRAWL : p.sliding ? TR_SLIDE : TR_WALK;
     trBody(p, 5, p.prone ? PLAYER_R + 2 : PLAYER_R, pack);
   }
   for (const a of animals) {
-    if (a.kind === 'bird') continue;
+    if (a.kind === 'bird' || !fogShown(a)) continue;
     const r = unitRadius(a), big = a.kind === 'deer' || (MONSTER[a.kind] && MONSTER[a.kind].big);
     trBody(a, 0, r, big ? TR_WALK * 1.4 : r < 3 ? TR_WALK * 0.35 : TR_WALK);
   }
-  for (const b of robots) if (!(b.zip >= 0)) trBody(b, 0, unitRadius(b), TR_WALK * 0.8); // (a soldier on the cable is off the snow)
+  for (const b of robots) if (!(b.zip >= 0) && fogShown(b)) trBody(b, 0, unitRadius(b), TR_WALK * 0.8); // (a soldier on the cable is off the snow)
   trRefill(dt);
   trDustSync(dt);
 }

@@ -71,7 +71,7 @@ function aiSituation() {
       const d = Math.hypot(q.x - e.x, q.y - e.y);
       if (d >= AI_ROOST_R) continue;
       if (q.team === team) s.defenders++;
-      else if (d < seenAt(q, AI_ROOST_R)) { s.attackers++; if (q === player) s.human = true; }
+      else if (d < seenAt(q, AI_ROOST_R, team)) { s.attackers++; if (q === player) s.human = true; }
     }
     // a rival WAVE at the roost is an attack too (the `soldiers` banner,
     // robots.js) - counted at half strength, so a five-column calls three
@@ -458,14 +458,14 @@ function aiNearestEnemy(p, prof, anchors) {
     for (const an of anchors) {
       if (an && Math.hypot(q.x - an.x, q.y - an.y) < AI_ANCHOR_R) range = AI_ANCHOR_D;
     }
-    if (d >= range || d >= seenAt(q, range)) continue;
+    if (d >= range || d >= seenAt(q, range, p.team)) continue;
     const s = prof.pick === 'weak' ? q.hp + d * 0.05 : d;
     if (s < bs) { bs = s; best = q; }
   }
   // a rival wave's soldiers are rivals too (the `soldiers` banner, robots.js):
   // the same sight and the same anchors, with no cover to see through
   for (const b of robots) {
-    if (b.kind !== 'soldier' || !unitAlive(b) || b.team === p.team) continue;
+    if (b.kind !== 'soldier' || !unitAlive(b) || b.team === p.team || !inSight(p.team, b)) continue;
     const d = Math.hypot(b.x - p.x, b.y - p.y);
     let range = prof.sight;
     for (const an of anchors) {
@@ -565,7 +565,7 @@ function aiNearestAnimal(p) {
   for (const a of animals) {
     // birds fly: no route on the ground catches a flushed flock. The two
     // midline camps' kinds are never a hunt: a lone bot pulling one dies to it
-    if (a.dead || a.kind === 'bird' || a === p.ai.huntAvoid || a.rider) continue; // a ridden deer is its rider's
+    if (a.dead || a.kind === 'bird' || a === p.ai.huntAvoid || a.rider || !inSight(p.team, a)) continue; // a ridden deer is its rider's; one in the fog is not there
     if (MONSTER[a.kind] && MONSTER[a.kind].teamPay) continue;
     const d = Math.hypot(a.x - p.x, a.y - p.y);
     if (d < bd) { bd = d; best = a; }
@@ -627,8 +627,14 @@ function resolveCardForBot(p) {
   }
 }
 
-// aiThink's rung 0: a free skill point, then a purse fat enough for gear
-function aiSpend(p, inp) {
+// aiThink's rung 0: a free skill point, then the purse. Items first, off the
+// class's build (BOT_BUILDS, js/sim/items.js): at a counter it buys whatever
+// of the build it can afford, a part or the whole item, and a purse that
+// covers the next WHOLE item walks it to its own side's counter when that is
+// close (a bot respawns beside it). Only a finished build spends on gear.
+// True while it is walking to shop, which ends aiThink's ladder this think.
+const AI_SHOP_DETOUR = 12 * TILE; // px: how far off a bot walks to its counter to buy
+function aiSpend(p, inp, steerTo) {
   // spend a free skill point before the ladder - waiting on it is leaving
   // growth on the table. Lowest ability level first, so the kit rises
   // evenly - which spends the first four points UNLOCKING all four keys
@@ -638,7 +644,22 @@ function aiSpend(p, inp) {
     for (let i = 0; i < AB_KEYS; i++) if (p.abLv[i] - 1 < bl) { bl = p.abLv[i] - 1; ba = i; }
     if (ba >= 0) inp.cmd = { kind: 'ability', i: ba };
   }
-  // ...and gear the same way: the hero pop-up is a menu bought from
+  if (!inp.cmd && p.items) {
+    const buy = botItemBuy(p);
+    if (buy && merchNear(p)) { inp.cmd = { kind: 'shop', act: 'item', id: buy }; return false; }
+    const next = botNextItem(p);
+    if (next && buy === next && p.fightT <= 0) { // never out of a fight (ITEM_FIGHT_T)
+      const m = robots.find((b) => b.merchant && !b.dead && b.team === p.team);
+      const c = m && (stallUp(m.stall) ? m.stall : m.hopT > 0 ? null : m);
+      const pt = c && counterPt(c);
+      if (pt && Math.hypot(pt.x - p.x, pt.y - p.y) < AI_SHOP_DETOUR && steerTo(pt.x, pt.y, 1) >= 0) {
+        aiNote(p, 'SHOP', BUILD_ITEMS[next].name, pt);
+        return true;
+      }
+    }
+    if (next) return false;
+  }
+  // ...and gear once the build is done: the hero pop-up is a menu bought from
   // anywhere (gameplay.md), so a purse fat enough to keep a building
   // float (buyGear re-validates, so a stale order is harmless) is spent on
   // the cheapest piece here, mid-push or mid-defence alike, rather than
@@ -651,6 +672,7 @@ function aiSpend(p, inp) {
     }
     if (gi >= 0 && p.inv.gold >= gc + 15) inp.cmd = { kind: 'gear', piece: gi };
   }
+  return false;
 }
 
 function updateAI(p, dt) {
@@ -659,9 +681,35 @@ function updateAI(p, dt) {
   if (p.dead) ai.packGo = false;
   aiThink(p, dt);
   if (!p.dead) skillHands(p, aiProfile(p), dt); // the crosshair moves to where the ladder aimed (the skill layer, ai-skill.js)
+  aiRecall(p); // over the ladder: the walk home when low, and the wait in the roost ring (below)
   // riding with no rung wanting the ride this think: let go (the ride, above)
   if (p.zip >= 0 && !ai.zipUsed) p.input.jump = true;
 }
+// THE WAY HOME (js/sim/recall.js). Read after the ladder, so it overrides
+// what the ladder asked only when nothing rival is within AI_RECALL_SAFE: a
+// fight in reach is the ladder's, and whatever it does there ends a channel
+// the way a player's own action would. Out of reach of one, a bot low on
+// health and far from its bird recalls and stands still for the channel; one
+// already in its own ring and hurt stands in it until it is whole again.
+const AI_RECALL_HP = 0.35;      // share of max health under which a bot goes home
+const AI_RECALL_FAR = 30 * TILE; // px from its bird past which the channel beats the walk
+const AI_RECALL_SAFE = 150;     // px: a rival this close and the bot fights or runs instead
+const AI_RING_FULL = 0.9;       // share of max health a bot waits in its ring for
+function aiRecall(p) {
+  if (p.dead || inAir(p) || p.zip >= 0 || p.mount) return;
+  const e = state.drop && state.drop.eagles[p.team];
+  if (!e || e.state !== 'down') return;
+  if (unitsNear(p, p.x, p.y, AI_RECALL_SAFE).some((q) => (q instanceof Player || robots.includes(q)) && inSight(p.team, q))) return; // what its side sees, as a player would
+  const inp = p.input, low = p.hp < p.maxHp * AI_RECALL_HP;
+  const go = p.recallT <= 0 && low && p.eatT <= 0 && !recallBlocked(p) && Math.hypot(e.x - p.x, e.y - p.y) > AI_RECALL_FAR;
+  const wait = roostRing(p) && p.fightT <= 0 && p.hp < p.maxHp * AI_RING_FULL; // a body still in a fight is the ladder's
+  if (!go && !(p.recallT > 0) && !wait) return;
+  if (go) inp.cmd = { kind: 'recall' };
+  inp.mx = inp.my = 0; inp.slide = false; inp.dodge = false; inp.jump = false;
+  if (go || p.recallT > 0) { inp.fire = false; inp.work = false; inp.ability = -1; aiNote(p, 'RECALL', 'LOW HP', null); }
+  else aiNote(p, 'IDLE', 'HEALING', null);
+}
+
 function aiThink(p, dt) {
   const inp = p.input, ai = p.ai;
   inp.mx = 0; inp.my = 0; inp.work = false; inp.slide = false;
@@ -793,7 +841,7 @@ function aiThink(p, dt) {
   ai.helping = call ? call.id : -1;
 
   // 0. a free skill point and a fat purse are spent before the ladder
-  aiSpend(p, inp);
+  if (aiSpend(p, inp, steerTo)) return;
 
   // 0b. the orca has it (js/sim/orca.js): off its ice by the nearest way before
   //     the line runs out, everything else after. A bot reads the line a
@@ -814,7 +862,7 @@ function aiThink(p, dt) {
   const fq = foe && ai.focusOk && T.focus >= 0 ? players[T.focus] : null;
   if (fq && fq !== foe && enemyOf(p, fq)) {
     const d = Math.hypot(fq.x - p.x, fq.y - p.y);
-    if (d < prof.sight && d < seenAt(fq, prof.sight)) foe = fq;
+    if (d < prof.sight && d < seenAt(fq, prof.sight, p.team)) foe = fq;
   }
   // ...and a rival it was just fighting is held a little past the edge of
   // its sight (aiHoldFoe, the team brain), so a strafe across the line does

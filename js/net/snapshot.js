@@ -138,7 +138,7 @@ function snapUnB64(b) { const s = atob(b), u = new Uint8Array(s.length); for (le
 
 // ---- build ---------------------------------------------------------------
 // the singletons beside the entities: the match's state keys, the road
-// registry, the ice, the nets, the market, the camps' clocks, the ride
+// registry, the ice, the nets, the camps' clocks, the ride
 function snapSingles() {
   const s = { state: {}, camps: [] };
   for (const k of SNAP_STATE) { const v = pack(state[k], 0); if (v !== undefined) s.state[k] = v; }
@@ -150,7 +150,6 @@ function snapSingles() {
   s.iceBreaks = iceBreaks.slice(); // plain numbers and tile lists: every screen rebuilds the pixels (js/sim/icebreak.js)
   s.orca = pack(orca, 0); // the orca's few numbers (js/sim/orca.js); a client eases its x/y like a body's
   s.nets = pack(nets, 0);
-  s.market = pack(market, 0);
   return s;
 }
 function snapBuild() {
@@ -195,7 +194,6 @@ function snapApplySingles(s) {
   if (s.iceBreaks) { iceBreaks.length = 0; for (const b of s.iceBreaks) iceBreaks.push(Object.assign({}, b)); }
   if (s.orca) Object.assign(orca, unpack(s.orca));
   if (s.nets) { nets.length = 0; for (const n of unpack(s.nets)) nets.push(n); }
-  if (s.market) { const mk = unpack(s.market); for (const k of Object.keys(mk)) market[k] = mk[k]; }
 }
 // a field onto an entity the game holds by identity: a nested plain object
 // is merged into the one already there (a player's `inv` is aliased by the
@@ -463,7 +461,7 @@ function snapDeltaFrom(h, base) {
     if (f) es.push([i, f]);
   }
   if (es.length) d.eagles = es;
-  // the singletons: a plain object (the state keys, the market) by the names
+  // the singletons: a plain object (the state keys, the orca) by the names
   // touched, an array (the registry, the ice, the nets) whole when touched
   for (const k of Object.keys(h.singles)) {
     const v = h.singles[k], isObj = v && typeof v === 'object' && !Array.isArray(v);
@@ -749,7 +747,7 @@ function snapQuantize() {
   };
   walk(players); for (const k in SNAP_KINDS) walk(SNAP_KINDS[k]());
   if (state.drop) walk(state.drop.eagles);
-  walk(objects); walk(nets); walk(pads); walk(market); walk(state.end); walk(state.eagleCine);
+  walk(objects); walk(nets); walk(pads); walk(state.end); walk(state.eagleCine);
 }
 // One echo: quantize, frame, snapshot, blank, apply, frame; the pixels that differ,
 // the frame's own noise (two renders of the same state, for anything that

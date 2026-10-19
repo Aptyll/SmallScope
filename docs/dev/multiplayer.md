@@ -89,9 +89,11 @@ cmd           one-shot order, run by runCmd (js/ui/wheel.js):
               carries rot, the list's R (a wheel's order is unturned)
               or {kind:'gear', piece} - a gear buy: no tile, no reach, no contest
               or {kind:'ability', i} - an ability level: same, paid with a skill point
-              or {kind:'shop', act, ...} - a buy or a food trade at the
-              merchant's counter: no tile and no contest (an offer is a line,
-              not a queue), but it re-checks its own reach (shopCmd, js/ui/shop.js)
+              or {kind:'shop', act, ...} - at the merchant's counter: act
+              'item' (buy an item, id), 'sellItem' (slot), 'trade' (food:
+              good, dir, n?) or 'sell' (a bag cell, i); no tile and no contest
+              (every item is always on sale), but it re-checks its own reach
+              (shopCmd, js/ui/shop.js)
               or {kind:'flag', tx, ty, id} - plant that order's flag there, no
               reach and no contest; id null lifts it
               or {kind:'rack'|'pkdie'|'agbell', ...} - the practice room's
@@ -311,8 +313,7 @@ panel (`padMenuMode`: any mode but play and the drop, or play with a panel up) t
 (`PAD_MENU`): A *takes* — the thing under the pointer if the hand cursor is showing over a
 pointer surface, and always Enter over a key-driven menu (the idle mouse may be resting on
 another plank than the dpad picked), which every such menu answers (`padTake`) — B / BACK /
-START are Escape, X is Delete (the [saves grid](gameplay.md#saved-matches)'s X on the picked
-card), the dpad and bumpers the arrow keys (which also page the settings slab's tabs:
+START are Escape, the dpad and bumpers the arrow keys (which also page the settings slab's tabs:
 `settingsKey`, js/ui/panels.js, reached from both the title's slide-in and the in-match slab) —
 with one exception, an [end screen](rendering.md#the-emote-bar), where the dpad is the emote bar
 read clockwise from up (`emotePad`, js/ui/screens.js) and the bumpers keep the planks — the
@@ -497,7 +498,7 @@ riding a zipline is a target like any other, and cannot shoot back ([the ride](g
 
 **Whether a rival can be seen at all is a separate question from whether they can be shot.**
 `enemyOf` answers the second; `seenAt(p, range)` answers the first, and every watcher in the
-game — the bot brain, both turret checks — resolves through it (a camp monster has no sight: a hit is its only trigger). See
+game — the bot brain (naming its side, so the [fog of war](gameplay.md#fog-of-war) holds), both turret checks — resolves through it (a camp monster has no sight: a hit is its only trigger). See
 [Prone](gameplay.md#prone-under-the-snow).
 
 **A rival's worker bots are targets too** — they are tested straight after the players, on the same
@@ -614,8 +615,7 @@ player must pass its `src`**, or the kill goes uncredited and the log line reads
 
 The log also takes a level-up at `LOG_LEVEL` (5) or above — the early levels come too
 fast to be news — a wrecked building, a scrapped worker, a bear's slayer, each eagle
-landing, coming under attack and being driven off, a peer joining or leaving, and the market's
-spikes, crashes and restocks. `logEvent(txt, p, o)` is the whole interface (`o` a palette for a line
+landing, coming under attack and being driven off, and a peer joining or leaving. `logEvent(txt, p, o)` is the whole interface (`o` a palette for a line
 no player owns); the log is not drawn
 ([rendering.md](rendering.md#scoreboard-and-event-log)). `DBG.logEvent`/`DBG.events` stage lines
 without staging the kills behind them.
@@ -641,9 +641,8 @@ tile), fish catches (`autoFish`, keyed by fish index — nothing refuses one, si
 pouch), drop pickups (keyed by drop index — every player standing on a drop
 claims it *if they have room for it*, and the magnet pulls it toward the nearest such player,
 so a full bag hands the pickup on rather than sitting on it, and only food is never refused — a
-dropped card is a neutral pickup the same way, first-come whichever team gets there), shop buys
-(`shopBuy`, keyed by the counter's well — one stock serves both counters, and a bought offer is
-gone until the restock).
+dropped card is a neutral pickup the same way, first-come whichever team gets there). A shop buy
+is not contested: every item is always on sale, so two buyers never want the same thing.
 
 ## Bots
 
@@ -954,10 +953,11 @@ The ladder:
 11. **loot** — walk onto a drop within 72 px (drops are neutral and first-come).
 12. **spend** — (a [gear](gameplay.md#gear) level when the purse covers the cheapest piece
    plus a 15-gold float is bought at rung 0 (`aiSpend`) beside the skill point, from anywhere, mid-push or
-   mid-defence alike — the hero pop-up is a menu, and a pusher never reaches this rung.) **A bot never shops**: [the merchant's counter](gameplay.md#the-merchants-counter)
-   takes the same `input.cmd` a gear buy does and `shopBuy`/`shopTrade` take any `p`, so the
-   path is there the day this rung learns to walk to a roost and read a price — nothing about the
-   shop is human-only except the drag that sells. Then income, bought by payback (`aiEcoBuy`,
+   mid-defence alike, but only once its item build is finished — the hero pop-up is a menu, and a pusher never reaches this rung.) **Items come first, also at rung 0**: a bot buys its class's
+   build ([`BOT_BUILDS`](gameplay.md#buying-and-selling)) at whichever counter it is standing at, a part or the whole
+   item, through the same `input.cmd` a human's click sends, and when its purse covers the next
+   whole item and it is out of a fight it walks to its own side's counter if that is within
+   `AI_SHOP_DETOUR` (12 tiles), which ends its ladder for that think. Then income, bought by payback (`aiEcoBuy`,
    js/ai/ai-team.js): a new generator, its own generator's next tier, or (the side's builder,
    `T.builder`, the most patient mood on the side, only) a bot bay, priced by the game's
    `buildCost` (each one the owner has costs 1.5× more) over the gold a minute it adds (a
@@ -1081,7 +1081,8 @@ what the rest of the code needs to know is this:
   function directly therefore does nothing on a client.
 - **A joiner takes an open seat.** `netHostHello` refuses a different patch or seed. In a party
   (`NET.mode`, js/ui/rooms.js) it seats the joiner on the leader's side, only while the party is
-  on its seats (BUSY once the hero select or the match has begun; FULL past five). A host with no
+  on its seats (BUSY once the hero select or the match has begun; FULL past five), or any time on
+  the practice field (`practiceSeat`, onto the spawn). A host with no
   mode (a harness's `?net=host`) deals the first
   empty seat, then the first bot slot, of the side with fewer people - a bot's slot first on a
   side already at the room's size (its fullest side's seats, TEAMS) - (a match under way offers

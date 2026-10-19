@@ -892,6 +892,7 @@ function hurtUnit(e, dmg, nx, ny, src, o) {
     }
   }
   if (ty.spark) burst(e.x, unitMidY(e), ty.spark, 6, 50, 0.45);
+  if (src instanceof Player && src !== e) itemsOnHit(src, e, o); // the item passives a blow carries (js/sim/items.js)
   // fire outlives its own blow: the shot's `burn` seconds if it named any,
   // else whatever the damage type is worth on its own
   const bt = o.burn === undefined ? ty.ignite : o.burn;
