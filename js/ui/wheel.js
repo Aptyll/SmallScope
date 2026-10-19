@@ -453,7 +453,7 @@ function drawBellHint(ox, oy) {
 // (gold = the game's "active" accent, hot orange while pressed); the right
 // button is plain body so nothing suggests right-click.
 // The merchant's prompt, the rack's own proximity grammar one body over: an
-// E SHOP cap over whichever merchant is in reach (merchNear, js/shop.js -
+// E SHOP cap over whichever merchant is in reach (merchNear, js/ui/shop.js -
 // the same resolver the press uses), either team's. It hides while the
 // counter is up, the way every hint hides under a wheel. Returns whether it
 // drew: the merchant owns E in that bubble, so a cap here is the whole

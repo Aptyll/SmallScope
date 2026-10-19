@@ -17,7 +17,7 @@ WARRIOR — a human's is the one their **character** was made with) and is **dro
 diagonal in opposite directions and pass mid-route; nobody starts at a spawn camp. At the end of
 its line each eagle banks off the road into its **corner's** woods — RED always bottom-left, BLUE
 always top-right, each to its own right of the road — and becomes its team's **objective**; its
-**merchant** climbs down and works home, never toward the fight: it pitches a market stall beside
+**merchant** climbs down and works home, never toward the fight: it pitches a stall beside
 the spur's head, a shop for anybody at all who walks up to it, then fells the back woods behind
 the bird and raises the bot bays there; idle, it keeps to the head of the **spur**, the track of felled pines
 that opens from the crater straight back to the road. **The road** runs the map's
@@ -77,14 +77,16 @@ log that arcs down and flattens whoever it lands on, a wisp that circles you lig
 or a modifier that rewrites every shot on that tool at once. Both are **found first** — in mined
 rocks, in felled trees and in the treeline's chests, the top tier only in the rarest rock and the
 chests — so the weapon you finish a
-match with is one the map handed you a piece at a time. The other way in is the **merchant's
-counter**, which puts a rotating handful of them behind a price: gold you earned somewhere else,
-spent on the twelve things that happen to be on the counter this minute, never on the one thing
-you wanted. The same counter's **forge** takes any ore the rocks give up, in any
-amount, and pours it into the body itself as levels of damage and rate or strength that never
-top out but taper - a sunstone from a corner nobody owns is worth fifteen stones. A find loads itself into the tool while it has a free cell, and the **shelf** over
+match with is one the map handed you a piece at a time; the counter only buys them back. A find loads itself into the tool while it has a free cell, and the **shelf** over
 the backpack shows the build at all times, to be rebuilt mid-fight.
-[Tools and bits](gameplay.md#tools-and-bits), [the counter](gameplay.md#the-merchants-counter).
+[Tools and bits](gameplay.md#tools-and-bits).
+
+**Gold buys items, League's way.** Either team's **merchant's counter** sells five cheap parts and
+eight finished items built out of them into six item slots, every one always on sale at one
+fixed price, so you can save for the one you want. A finished item costs less by every part of it
+you already hold, carries damage, health, armor, attack speed or move speed, and one passive
+(a third hit that burns, a heal out of a fight, a slow on every hit). Bots buy their class's
+build the same way. [The counter](gameplay.md#the-merchants-counter).
 
 **Keys 1-4 are your class.** Each class carries four active abilities — the HUNTER's piercing
 shot, net, grapple and snow cover; the WARRIOR's shield (and its slam), rush, stomp and execute — each with a
@@ -128,9 +130,8 @@ mines itself for whoever stands by it. [The swing tools](gameplay.md#the-swing-t
 ways, each source with its own yield profile, and it pays itself: gold is never a pickup on the
 ground, every source pays the earner on the spot. Every payout levels you as a side effect — a
 *sale* at the counter is the one exception, because a price you can both buy and sell at would
-otherwise be a level farm. **Fish and berries have a price that moves**, drastically and all day,
-and they are the only two things in the game that do: the counter buys them at the same number it
-sells them for, so what a bag of fish is worth is a question of *when*.
+otherwise be a level farm. **Fish and berries have a fixed price**, and the counter buys them at
+the same number it sells them for; a bigger fish fetches more.
 [Economy](gameplay.md#economy-one-currency), [the counter](gameplay.md#the-merchants-counter),
 [Hero levels](multiplayer.md#hero-levels).
 
@@ -141,9 +142,8 @@ laying out and choosing between. Berries and fish are not in it: food is an unca
 [Inventory and the backpack](gameplay.md#inventory-and-the-backpack).
 
 **Gear is 4 pieces × 3 variants, bought from anywhere.** No trip home for *armour* — the gear
-pop-up is a menu, and a piece levels through four materials. The counter is the opposite bargain
-on purpose: it sells what changes the way you *play* rather than what you survive, and it makes
-you walk to a body to get it. [Gear](gameplay.md#gear).
+pop-up is a menu, and a piece levels through four materials. The counter's items are the other bargain:
+they make you walk to a body to get them. [Gear](gameplay.md#gear).
 
 **Your eagle is your life.** The bird that carried the team in crashes into its corner's trees at
 the end of its line and roosts there, armoured in team colour — the crater it blows (packed earth,

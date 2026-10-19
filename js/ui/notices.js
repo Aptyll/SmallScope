@@ -239,8 +239,7 @@ function raiseNotice(kind, txt, good) {
 }
 
 // Chrome: it ages on WALL time from updateFx (js/sim/sim.js),
-// so a plate fades out - and the sack keeps turning over its six frames -
-// while the sim is paused rather than hanging there.
+// so a plate fades out while the sim is paused rather than hanging there.
 function ageNotices(dt) {
   for (let i = notices.length - 1; i >= 0; i--) {
     notices[i].t += dt;

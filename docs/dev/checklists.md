@@ -79,13 +79,13 @@ declare victory. The affordances:
   `DBG.merchants.length` is 2 and the mode is `play`, step out the `state.dropBrief`, `hopOff()`,
   then `warp` beside `DBG.merchants[i]` — it is a working NPC and wanders off its post, so re-warp
   before each check unless a counter is open (an open counter pins it: `shopServing`). `DBG.openShop()`,
-  `shopHit(x, y)`, `shopBuy/shopSellCell/shopTrade` and `shopLayout()` drive the panel without a
-  pointer; `DBG.marketStep(n)` walks the prices n moves on, so a spike is one call rather than
-  three days of waiting, and it ticks the restock clock with them. The news it cuts is a
-  [plate under the minimap](rendering.md#notices-the-plates-under-the-minimap) as well as a
-  feed line: `DBG.notices` is the live stack, `DBG.noteRect(k)` where slot `k` sits,
-  `DBG.raiseNotice(kind, txt, good)` raises one without moving a price, and
-  `DBG.shopRestock(true)` turns the counter over *loudly* (bare, it is the quiet boot roll).
+  `shopHit(x, y)`, `buyItem(id, p?)`/`sellItem(slot, p?)`/`shopSellCell(i, p?)`/`shopTrade(good, dir, p?)`
+  and `shopLayout()` drive the panel without a pointer; `DBG.itemCost(id, p?)`, `botNextItem` and
+  `botItemBuy` read what an item costs a seat and what a bot would buy, and `BUILD_ITEMS` is the
+  catalogue. (`buyItem` and the trades still check the reach: warp to a counter first.) The
+  [plates under the minimap](rendering.md#notices-the-plates-under-the-minimap):
+  `DBG.notices` is the live stack, `DBG.noteRect(k)` where slot `k` sits, and
+  `DBG.raiseNotice(kind, txt, good)` raises one.
   A plate ages on wall time in `updateFx`, so `DBG.step` runs its arrival and its fade.
 - **`?seed=N`** pins the world — the same seed twice proves a change is deterministic, two seeds
   prove worldgen still varies. Without it every reload is a different world and A/B screenshots
@@ -255,8 +255,8 @@ one: it is a wallet number with no ceiling. See
 ([js/sim/tools.js](../../js/sim/tools.js)); the loop at the foot of that file registers the `ITEMS` and
 `RES_COLORS` rows, so storage, drops, the drag, the click that sends it between
 pack and weapon, and the loot pools all pick it up
-with no other edit. Both need a `price`, or the merchant sells it for nothing and buys it back
-for nothing ([the counter](gameplay.md#the-merchants-counter) - half the price is what it fetches,
+with no other edit. Both need a `price`, or the merchant buys it back
+for nothing ([the counter](gameplay.md#buying-and-selling) - half the price is what it fetches,
 and a tool carries its loaded bits into that sum). A **tool** needs `rof`/`cap`/`tensile`/`tier`
 and an `art` key — every tool has a 12×12 silhouette of its own in `TOOL_ART` (bow, recurve,
 horn, long, sword, sling; each baked once per tier), so add one, with its heading in `TOOL_FWD`,
@@ -317,17 +317,18 @@ is table-driven again: name it in the bit's `body` and add that name to `BIT_BOD
 what the shot does where it *lands* — one `impact` on the bit and one row in `BIT_IMPACT`
 (js/sim/tools.js), which the arrow update calls only when the shot ended on something.
 
-**Putting something on the merchant's counter** — nothing, if it is a tool, a bit or a card: the
-stock is rolled off `TOOLS`/`BITS`/`CARD_RARITIES` themselves (`shopRestock`,
-[js/ui/shop.js](../../js/ui/shop.js)), so a new kind is on sale the moment it has a `price`. A new
-**section** is a row in `SHOP_SECTIONS` plus its branch in `shopOffer` and room in
-`shopLayout`'s 2×2 grid — which is full, so a fifth section is a re-layout, not an insert.
-A new **traded good** (a thing whose price moves) is one `GOODS` entry and its `MKT_ORDER`
-place and a row in `MKT_GOODS` (js/ui/market.js); the walk, the graph, the headlines, the ledger
-and the tooltip are all generic over that table; the ticker cards share the width and the page's
-rows squeeze to fit over the trades (five fit), and "one currency" ([game.md](game.md))
-means a good is a *commodity you carry*, never a second wallet. A new **fish** needs none of it: a
-place in `FISH_KINDS` prices it off its `heal` (`goodScale`) and gives it its `MKT_GOODS` row.
+**Adding an item to the merchant's counter**: one `BUILD_ITEMS` entry in
+[js/sim/items.js](../../js/sim/items.js). A part has a `price`, one stat and an `icon`; a finished
+item adds `from` (its parts, a part named twice is needed twice) and a `passive`. The grid, the
+build tree, the price that drops by the parts held, the tooltip and the save all pick it up; the
+panel's grid is four a row (`SHOP_COLS`), so a ninth finished item is a third row and the slab's
+`SHOP_H` has to grow with it. A new **stat** is one `ITEM_STATS` row (its label, its format and
+what it writes into the kit) plus its place in `ITEM_STAT_ORDER` and an icon in `drawShopCats`
+(js/ui/shop.js). A new **passive** is one `ITEM_PASSIVES` row: a kit field the sim already reads
+needs nothing else; anything that happens on a hit or on the clock goes in `itemsOnHit` or
+`itemsTick`, and a new kit field gets its default in `baseKit` (js/sim/player.js). Put the item in
+the bots' `BOT_BUILDS` if a class should buy it. A new **fish** needs no shop edit at all: a place
+in `FISH_KINDS` prices it off its `heal` (`foodPrice`).
 
 **Adding a class** — the tables make most of it mechanical, and every screen picks the new
 entry up with no edit: the create screen's class pair grows an emblem, the strip, the gear
@@ -547,11 +548,11 @@ another for bystanders is `sfxOwn(p, own, other)`, and a shake is `shakeFor(p, n
 the step; a bare `if (nearPlayer(...)) SFX.cue()` inside the step is a sound that client never
 hears. Outside the step (HUD, menus) the bare `SFX.cue()` is right. A cue on a repeating tick (`building()` on a
 site's dust timer) needs a wide `jitter` and a `gap`, or it settles into a rhythm. A
-**notification** cue is the opposite: no jitter at all, and two directions get two *different*
-clips rather than one pitched two ways (`SFX.market`), since it is heard as a meaning and not as
-a texture. Two clips as one cue is one `smp` per clip with a `delay` on the second
-(`SFX.restock`), and a cue with two *directions* takes the direction as an argument and picks its
-clip from it (`SFX.ui(open)`) rather than being two cues a caller has to choose between. Before
+**notification** cue is the opposite: no jitter at all (`SFX.buy`), since it is heard as a meaning
+and not as a texture, and two directions get two *different* clips rather than one pitched two
+ways. Two clips as one cue is one `smp` per clip with a `delay` on the second, and a cue with two
+*directions* takes the direction as an argument and picks its clip from it (`SFX.ui(open)`) rather
+than being two cues a caller has to choose between. Before
 writing a new one, read the eighteen in the notification block: a surface opening, a step of a
 stepped control and a countdown second already have cues, and the answer is usually to call one
 of those from a new place. See [Audio](gameplay.md#audio).
@@ -572,9 +573,11 @@ already current, so it is safe to call from a state change that repeats.
 | js/sim/robots.js | `SOLDIER_*` (speed, aggro, siege reach, the bird damage, the bounty); `MERCH_BAYS`/`MERCH_BAY_*` (how many bays, the logs each costs, when the first is due, how far behind the roost, the rebuild wait); `MERCH_BACK_R`/`MERCH_BACK_ARC` (how far and how wide the back woods reach) |
 | js/sim/actions.js | `WORK_REACH` and the roll/prone blocks |
 | js/sim/tools.js | the `TOOLS` and `BITS` tables; the loot rates (`TREE_DROP`/`CHEST_TOOL`/`LOOT_TOOL`); the flight-path constants beside `steerBit`; the damage roll in `emitBit()` |
-| js/sim/mining.js | `ROCK_KINDS` (each rock kind's mining time, gold, ore, find and regrow), `ORE_PRICE`, `MINE_STRIKE`/`MINE_R`/`MINE_DECAY`/`MINE_HIT_HOLD`/`MINE_STREAM_T`/`MINE_MOVE`/`ORE_FLING`, the forge's `FORGE_PTS`/`FORGE_NEED`/`FORGE_NEED_UP`/`FORGE_TAPER`/`FORGE_DMG`/`FORGE_ROF`/`FORGE_TENSILE`/`FORGE_GOLD` (and each body's `up`, `TOOLS` in js/sim/tools.js) |
+| js/sim/mining.js | `ROCK_KINDS` (each rock kind's mining time, gold, ore, find and regrow), `ORE_PRICE`, `MINE_STRIKE`/`MINE_R`/`MINE_DECAY`/`MINE_HIT_HOLD`/`MINE_STREAM_T`/`MINE_MOVE`/`ORE_FLING` |
+| js/sim/items.js | `BUILD_ITEMS` (every part's and item's price, stats and passive), `ITEM_PASSIVES`, `ITEM_SELL`, `ITEM_FIGHT_T`, `KINDLE_EVERY`/`KINDLE_BURN`, `CHILL_T`/`CHILL_MUL`, the bots' `BOT_BUILDS` |
+| js/ui/shop.js | `FOOD_PRICE` (the frost pike and the berry; every other fish off its heal), `SHOP_REACH` |
 | js/ai/ai-skill.js | every level's numbers (`AI_LEVELS`: the hand fields, the choice knobs, `push`/`guard`), the ally clocks (`AI_ALLY_PUSH`), the ladder's hands (`AI_LADDER_HANDS`), the skill layer's clocks (`AI_SETTLE`, `AI_WOBBLE_T`, `AI_ALERT_T`, `AI_AIM_ON`, `AI_BLADE_CLOSE`, `AI_BLADE_HOLD`) |
-| js/ai/ai.js | the bot ranges (`AI_SIGHT`, `AI_HUNT`, `AI_FORAGE`); the objective clocks (`AI_ESCALATE`, `AI_JOIN_HP`, `AI_ALARM_HP`, `AI_ROOST_R`); the waves as a bot reads them (`AI_WAVE_R`/`AI_WAVE_D`) |
+| js/ai/ai.js | the bot ranges (`AI_SIGHT`, `AI_HUNT`, `AI_FORAGE`); the objective clocks (`AI_ESCALATE`, `AI_JOIN_HP`, `AI_ALARM_HP`, `AI_ROOST_R`); the waves as a bot reads them (`AI_WAVE_R`/`AI_WAVE_D`); how far a bot walks to its counter to buy (`AI_SHOP_DETOUR`) |
 | js/sim/sim.js | the trickle (`TRICKLE_GOLD`/`TRICKLE_T`); the per-surface steer/decay rates inline in `updatePlayer()`'s movement block; the darkness ramp in `update()`; `FLAKE_BASE`/`FLAKE_MIN`/`FLAKE_MAX` beside the flake block |
 | js/sim/weather.js | the `WIND_*` block (the three ripples, the bend that meanders them, the gust envelope's floor and peak, and how fast it all dies at dusk) |
 | js/sim/eagle.js | the eagle's siege (`EAGLE_HP`/`EAGLE_WORK_DMG`/`EAGLE_ARROW_DMG`/`GUST_R`/`PREEN_RATE`) |

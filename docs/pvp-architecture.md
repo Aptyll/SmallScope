@@ -20,8 +20,7 @@ ten-player `Player` array, the input struct and the bot brain are what keep the 
   channel's frames) has run against a live Steam - only in Node against a fake bridge and as a
   headless wrapper boot. The first live test should watch `DBG.netStatus()`: `framesLost` on a
   client (the receiver counts a delta it gave up on) and `fulls` on the host.
-- **Owed:** the host clamps nothing in a remote input; notices (`raiseNotice`: the roost alarm's
-  plate, the market's) and the own-bird alarm cue are raised on the host's screen only; a per-kind field policy if
+- **Owed:** the host clamps nothing in a remote input; the roost alarm's notice plate (`raiseNotice`) and the own-bird alarm cue are raised on the host's screen only; a per-kind field policy if
   ~40-70 KB/s per client is too much for nine clients on a home upload.
 - **Steam's host-left notice is code-read only**: a client turns the owner's leaving
   `LobbyChatUpdate` into `hostGone` (`wire`, js/net/transport-steam.js), never run against a live
@@ -176,7 +175,7 @@ netClientStep(dt): send {t:'in'} - this tick's input and the ack - step our own 
 | every own field of every player (position, hp, gold, bag, gear, cooldowns, status timers, aboard/drop...) except `SNAP_SKIP` | host | snapshot fields, by reflection; every client gets every player's fields |
 | arrows, drops, robots, animals (camp monsters among them), fish, the two eagles | host | snapshot lists keyed by network id (players by slot, eagles by team) |
 | `objects` tiles (a build, a demolish, a felled tree), `ground`, the `structures` registry | host | whole in the full sync; in a delta only the tiles, tile fields and ground cells touched since the peer's ack (`objDiff`, `objWholeAt`, `groundDiff`, `structs`) - state, not events, and no hash check |
-| the market, the nets, the holes and ice cracks, the ice breaks, the orca (eased like a body: `netClientLerp`), the road registry (`spurs`), the camps' `repopT` | host | snapshot singletons, sent when touched |
+| the nets, the holes and ice cracks, the ice breaks, the orca (eased like a body: `netClientLerp`), the road registry (`spurs`), the camps' `repopT` | host | snapshot singletons, sent when touched |
 | `state`: `SNAP_STATE` (`time`, `elapsed`, `day`, `tick`, `darkness`, the wind's three, `fishT`, `creekGone`, `over`, `end`, `eagleCine`) | host | snapshot singleton, by the names touched; a client keeps its own `over`/`end` and holds the host's as `NET.hostOver` |
 | deaths, respawns, the end of the match | host | snapshot state - `netClientMode` reads the local body (`aboard`, `dropT`, `dead`, `eliminated`) and the host's verdict turned to its own side |
 | a hit's puff and number, a cue, a shake | host | the cosmetic ring (`ev` on a `snap`), replayed by `evPlay` |
@@ -362,7 +361,7 @@ for "from nothing"), then only what was touched since the base:
 | --- | --- |
 | `P`, `R`, `A`, `W`, `D`, `F` | per kind: `ch` - `[id, fields]` pairs, the fields touched as they stand now (whole for an entity new since the base), names that left as `$del`; `del` - ids gone; `order` - the array's ids in order, when it moved. An id a client has not seen is made; an `order` naming an id it lacks returns null and earns a `resync` |
 | `eagles` | `[team, fields]` pairs |
-| `state`, `market`, `dropMeta` | a plain-object singleton, by the names touched |
+| `state`, `orca`, `dropMeta` | a plain-object singleton, by the names touched |
 | `camps`, `spurs`, `holes`, `iceCracks`, `nets` | an array singleton, whole when touched |
 | `objDiff`, `objWholeAt`, `objWhole` | tiles by index: touched fields (with `$del`), `null` for a tile gone, the whole tile for one made or unmade since the base (its index listed in `objWholeAt`; `objWhole` when there was no base). A tile still there changes in place |
 | `groundDiff` | a flat `[index, type, ...]`; each cell is `repaintGround`ed |

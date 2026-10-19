@@ -256,7 +256,7 @@ so the side reads off the crown, the nameplate and the bar (no prone poses — i
 as `SPRITES.teamBuild[skin(team)].stall` under `stallPal`) is **48 × 38** over its 3×2 footprint:
 a snowy awning in the side's stripes (`y`/`t`, the one team ink) over two shelves of goods, a
 lantern, a scale and a planked counter. It is look **D** off
-`docs/media/concepts/tent-concepts-2.png` (round 1, `tent-concepts-1.png`, picked the market stall
+`docs/media/concepts/tent-concepts-2.png` (round 1, `tent-concepts-1.png`, picked the stall
 shape; round 2 grew it).
 
 **The gate** (`gate` in js/sprites/buildings.js, baked per side and tier inside `SPR.onTeams` as
@@ -334,11 +334,9 @@ pine the **source order IS the animation order**: it was drawn as a loop, and th
 moves while the coin in the neck of the sack glows, so the cycle reads as light catching gold
 rather than as a bag being jostled.
 
-Its only caller is the market plate
-([the plates](rendering.md#notices-the-plates-under-the-minimap)), HUD chrome where **16** is
-the size that reads — so the 32 px source was **resampled offline to 16×16** and snapped onto
-`SACKPAL` before it ever reached this file. It sits in the same sunken well as the hand-drawn
-crate below and has to be as crisp as one.
+Its only caller is GOLD's figure on the wiki's world page (`WIKI_WORLD`, js/ui/wiki.js, its last
+frame as a still), where **16** is the size that reads, so the 32 px source was **resampled
+offline to 16×16** and snapped onto `SACKPAL` before it ever reached this file.
 
 <a id="the-offline-resample"></a>
 **Everything imported is resampled OFFLINE, never halved at load.** The sheets in
@@ -381,13 +379,11 @@ to their own is a fruit machine, not a HUD — and a frame that has not changed 
 Each canvas starts on frame 0, so a panel that bakes an item icon into a still image at boot (the
 control primer) gets a picture rather than a hole.
 
-**The crate is the other mark on that plate, and it is hand-drawn.** `SPRITES.crate` is the 16×16
+**The crate is hand-drawn.** `SPRITES.crate` is the 16×16
 `crate` grid on `CRATE_PAL` (five colours: an outline, plank in shade and in light, the pale X of
 bracing, and the top rail's highlight), drawn by hand at the 16×16 it ships at rather than
-resampled down from a sheet. It stands in the sack's place
-on the plate whose news is a **turnover** rather than a price (`NOTE_KIND.stock.mark`,
-[the plates](rendering.md#notices-the-plates-under-the-minimap)): same 16×16 stamp, same
-sunken well, so the column reads as one column whichever kind lands in it.
+resampled down from a sheet. Its only caller is THE WORKS' figure on the wiki's world page, beside
+a rock (`WIKI_WORLD`, js/ui/wiki.js): a crate that never shipped.
 
 **The turret is half grid, half raster, and it is THREE grids.** Its base is timber at every
 tier — the upgrade is more of it, never a change of material — so unlike every other tiered
