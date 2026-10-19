@@ -20,24 +20,45 @@ const AI_JUNGLE_N = 2;   // junglers a side hands out (one den each of its two)
 const AI_LANE_N = 3;     // laners a side hands out
 const AI_FARM_NEAR = 40; // px an own soldier must be from a rival one for the rival to count as being worn down
 const AI_FARM_HIT = 8;   // damage a bot reckons on before its own first blow on a soldier tells it better
+const AI_FARM_FORGET = 0.95; // share of its hardest remembered blow a bot keeps at each new one (a new weapon is learned in a few)
+const AI_FARM_ARROW = 300; // px/s a bot reckons its shot flies (the plain arrow's 320, a little under)
+const AI_FARM_SWING = 0.2; // s from a blade's release to the cut landing, as a bot reckons it
+const AI_FARM_STAND = [40, 90]; // px a blade and a bow wait off a soldier they are holding for
 const AI_FARM_BACK = 40; // px a laner stands behind its own column, toward its own bird
 const AI_DEN_EARLY = 15; // s ahead of a den's clock a jungler sets off (time to walk in on top of the walk)
 
 // is foe a rival soldier p should leave alone until one blow finishes it?
+// It reads ahead by the blow's travel: the swings its own soldiers on it
+// will land before an arrow gets there (half of them - a swing that does not
+// come leaves the soldier a sliver over, and the wave takes it)
 function aiFarmHold(p, foe) {
   if (!foe || foe.kind !== 'soldier' || foe.team === p.team) return false;
-  let worn = false;
+  let worn = 0;
   for (const b of robots) {
-    if (b.kind === 'soldier' && b.team === p.team && unitAlive(b) && Math.hypot(b.x - foe.x, b.y - foe.y) < AI_FARM_NEAR) { worn = true; break; }
+    if (b.kind === 'soldier' && b.team === p.team && unitAlive(b) && Math.hypot(b.x - foe.x, b.y - foe.y) < AI_FARM_NEAR) worn++;
   }
-  return worn && foe.hp > (p.ai.farmHit || AI_FARM_HIT);
+  if (!worn) return false;
+  const travel = aiMelee(p) ? AI_FARM_SWING : Math.hypot(foe.x - p.x, foe.y - p.y) / AI_FARM_ARROW;
+  return foe.hp - worn * ROBOT_DMG * travel / ROBOT_ATK_CD * 0.5 > (p.ai.farmHit || AI_FARM_HIT);
 }
 // rung 3's trigger on a soldier: while it is not yet one blow from down,
 // the draw is held (a held press never looses); once it is, the ordinary
 // trigger lets the draw go
-function aiFarmFire(p, foe, fire) { return aiFarmHold(p, foe) ? true : fire; }
+// - and while it waits it stands off at AI_FARM_STAND, its own soldiers
+// nearer the rival than it is, so the wave it is farming is not hitting it
+function aiFarmFire(p, foe, fire) {
+  if (!aiFarmHold(p, foe)) return fire;
+  const dx = foe.x - p.x, dy = foe.y - p.y, d = Math.hypot(dx, dy) || 1;
+  const stand = aiMelee(p) ? AI_FARM_STAND[0] : AI_FARM_STAND[1];
+  if (d < stand) { p.input.mx = -dx / d; p.input.my = -dy / d; }
+  else if (d > stand + 16) { p.input.mx = dx / d; p.input.my = dy / d; }
+  else { p.input.mx = 0; p.input.my = 0; }
+  return true;
+}
 // what p's blow did to a soldier, remembered for the next last hit
-function aiFarmLearn(src, dmg) { if (src && src.control === 'ai' && src.ai) src.ai.farmHit = dmg; }
+// - the hardest of its recent blows, so one weak tap does not have it
+// waiting for a soldier to drop under a tap's worth (and lose it to the wave)
+function aiFarmLearn(src, dmg) { if (src && src.control === 'ai' && src.ai) src.ai.farmHit = Math.max(dmg, (src.ai.farmHit || 0) * AI_FARM_FORGET); }
 
 // where a laner stands: behind its own soldier nearest a rival one (the
 // clash), or behind its own column's head with no clash yet; null with no

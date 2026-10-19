@@ -747,6 +747,7 @@ function updateMerchant(b, dt) {
 const SOLDIER_SPD = 44;        // px/s, a step slower than a walking player
 const SOLDIER_AGGRO = 96;      // px it turns on a rival unit inside
 const SOLDIER_SIEGE = 40;      // px it turns on a rival building inside - what is in its way, not the whole ring round a roost
+const SOLDIER_HP_GROW = 10;    // health a soldier gains for every barracks `grow` the match has run
 const SOLDIER_EAGLE_DMG = 8;   // nerve one swing takes off the rival bird (a hand's E swing is EAGLE_WORK_DMG, 20)
 const SOLDIER_WP_R = 28;       // px from a waypoint that counts as reached
 const SOLDIER_ZIP_GAIN = 96;   // px nearer the rival bird a ride's end must be than the soldier stands before it clips on: six tiles, so never a hop on and straight off
@@ -755,6 +756,9 @@ const SOLDIER_ZIP_REACH = 96;  // px off a cable's track a marching soldier turn
 function makeSoldier(o) {
   const b = makeRobot(o); // the bay's roll-out geometry, the barracks' botHp
   b.kind = 'soldier';
+  // tougher every `grow`, like its bounty (soldierBounty, js/sim/farm.js), so a
+  // hero's grown blow never makes every hit on one a last hit
+  b.hp = b.maxHp = b.maxHp + SOLDIER_HP_GROW * Math.floor(state.elapsed / STRUCTS.barracks.tiers[0].grow);
   b.owner = -1; // nobody's: no flag, no cargo, no payout but the bounty
   // the march: own junction first (down the roost's spur), the road, the
   // rival junction; the rival roost itself is read live (it may have flown)

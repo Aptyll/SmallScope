@@ -96,7 +96,7 @@ const STRUCTS = {
   // soldiers alive at once, every bay counted: a side nobody fights back
   // against does not fill the map, it waits for its column to spend itself.
   barracks: { name: 'BARRACKS', w: 3, h: 2, art: 'spawner', fixed: true, mm: mmTeam, map: chTeam, tiers: [
-    { cost: { gold: 40 }, hp: 320, buildT: 12, wave: 3, waveT: 30, grow: 180, botHp: 30, cap: 24 },
+    { cost: { gold: 40 }, hp: 320, buildT: 12, wave: 3, waveT: 30, grow: 180, botHp: 60, cap: 24 }, // botHp: a soldier's health at the start, grown by SOLDIER_HP_GROW (js/sim/robots.js)
   ]},
   // The fish net: the one building that goes on water instead of snow.
   // `water: true` is the whole difference, and every site reads that flag

@@ -13,7 +13,8 @@
 // drawn (inSight, js/sim/fog.js). Both are COIN_PX art at world 1x, on the
 // pixel grid - a coin is the farm's whole word, so it carries no text.
 const COIN_MISS_R = 200;   // px from the watched body a miss's coin is shown inside
-const COIN_HOP = 64, COIN_FALL = 170; // px/s up off a last hit, and px/s/s back down
+const COIN_HOP = 90, COIN_FALL = 220; // px/s up off a last hit, and px/s/s back down
+const COIN_SIDE = 12;      // px left of the body a last hit's coin hops from, clear of the gold number over it
 const COIN_DROP = 10;      // px a miss's coin sinks over its life
 const COIN_SPIN = 12;      // frames a second of the spin
 // the coin's turn: face on, three-quarter, edge, three-quarter. Rows of
@@ -55,7 +56,7 @@ function drawPops(ex, ey) {
     const a = Math.min(1, 3 * (1 - t / COIN_POP_T)); // full for most of its life, then out
     const lift = c.miss ? -COIN_DROP * t / COIN_POP_T : COIN_HOP * t - COIN_FALL * t * t / 2;
     const grid = c.miss ? COIN_PX[0] : COIN_PX[Math.floor(t * COIN_SPIN) % COIN_PX.length];
-    const x = Math.round(c.x - ex), y = Math.round(c.y - ey - lift);
+    const x = Math.round(c.x - ex - (c.miss ? 0 : COIN_SIDE)), y = Math.round(c.y - ey - lift);
     overheadPlate(() => {
       const was = ctx.globalAlpha;
       ctx.globalAlpha = was * a;
