@@ -29,7 +29,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.499';
+const PATCH_TXT = 'PATCH 0.500';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -45,6 +45,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.500', 'GEAR IS GONE: NO MORE HELMET, CHEST, LEGS AND BOOTS TO PICK OR LEVEL - ITEMS CARRY EVERY STAT NOW, THE G PANEL SHOWS YOUR SIX ITEMS BESIDE YOUR STATS, AND THE HERO POP-UP IS YOUR STATS AND YOUR FOUR ABILITY KEYS.'],
   ['0.499', 'THREE LANES: A TOP AND A BOT LANE NOW CURVE ROUND EITHER SIDE OF THE VALLEY TO A FORD AT THE MIDDLE, EACH BASE RAISES A BOT BAY AT EVERY LANE\'S MOUTH WHOSE WAVES MARCH THAT LANE, AND EACH LANE HAS ITS OWN ZIPLINE.'],
   ['0.498', 'UNDER THE HOOD: THE BOTS\' BRAIN IS NOW SPLIT INTO NAMED STEPS, AND BOTS PLAY EXACTLY THE SAME.'],
   ['0.497', 'QUICKPLAY AND RANKED NOW FIND YOU REAL OPPONENTS: FIND MATCH LOOKS FOR ANOTHER PARTY FOR A FEW SECONDS UNDER A GOLD CLOCK AND PUTS IT ON THE OTHER SIDE, WITH BOTS ONLY IF NOBODY IS THERE, AND THE PARTY LEADER CAN NOW SWITCH MODES BY CLICKING THE MODE NAME.'],
