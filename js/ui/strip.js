@@ -93,17 +93,6 @@ function drawHudFrame(x, y, w, h, o) {
   ctx.fillStyle = o.bg || AB_BG;
   chamCut(x + 2, y + 2, w - 4, h - 4, c);
 }
-// The weapon well's half of the refusal the backpack already has: a bit that
-// will not fit in the tool reddens and shakes the WELL, exactly as one that
-// will not fit in the pack reddens and shakes the frame (bagDenied) - so the
-// two containers say "full" in one language, and the one that is full is the
-// one that answers. updateFx ages it on wall time, beside bagFlash.
-let toolFlash = 0;
-function toolDenied() {
-  if (toolFlash > 0) return;
-  toolFlash = 0.6;
-  hudFx("deny");
-}
 function hudStripRect() {
   return { x: Math.round((VIEW_W - AB_W) / 2), y: VIEW_H - AB_H, w: AB_W, h: AB_H };
 }
@@ -263,7 +252,7 @@ function fishPopHeadroom() {
 // dead. startEat is the one path every press takes (key or click), so it is
 // the one caller; a second press on the same button while the red is up is
 // swallowed as the pack's is, while the other meal's button answers fresh.
-// updateFx ages it on wall time beside bagFlash and toolFlash.
+// updateFx ages it on wall time beside bagFlash.
 let foodFlash = 0, foodFlashI = 0;
 function foodDenied(type) {
   const i = FISH_KINDS.includes(type) ? 1 : 0;
@@ -345,47 +334,30 @@ function stripHit(mx, my) {
 }
 
 // ---- the weapon shelf ----------------------------------------------------
-// THE ONE WEAPON, TOP-LEFT, ON SCREEN AT ALL TIMES (3.23): the tool in hand
-// at the left end in its own bigger well, then its bit cells - projectiles on
-// the left, modifiers on the right, the free cells between them (sortBits,
-// js/sim/tools.js). Order does nothing in a press any more, so the row is laid
-// out to be READ: what flies, then what shapes it. It is the whole of what
-// the HUD says about the arsenal - the strip has no weapon well, and
-// everything else carried is in the drawer under this plate, shut until
-// asked for (the backpack banner) - so one tool is read in one place, the way
-// Noita's wand or Terraria's held item is.
+// THE CLASS WEAPON AND THE SIX ITEM SLOTS, TOP-LEFT, ON SCREEN AT ALL TIMES:
+// the weapon at the left end in its own bigger well (fixed by class - it is
+// read here, never moved), then the ITEM_SLOTS slots (p.items, js/sim/items.js)
+// in the smaller wells after it, left to right as the shop fills them. It is
+// the whole of what the HUD says about what you carry into a fight; the pack
+// is the drawer under this plate, shut until asked for (the backpack banner).
 //
-// It stands on the hud frame, like the strip and the rail (4.18): one plate
-// flush with the view's left edge and level with the minimap's top, hugging
-// the row. The plate swallows its own clicks (shelfPlateHit). Over the row,
-// INSIDE the plate, one line per modifier runs to every shot it powers; the
-// plate grows down by a line's pitch for each, so the row sits under them.
+// It stands on the hud frame, like the strip and the rail: one plate flush
+// with the view's left edge and level with the minimap's top, hugging the
+// row. The plate swallows its own clicks (shelfPlateHit); nothing on it is
+// dragged - a hover names what is there (tooltip.js).
 const SHELF_CELL = HUD_CELL;   // the weapon's own well: the one HUD size
-const SHELF_ITEM = 26;         // a bit cell: smaller than the weapon, so the weapon reads as what holds them
-const SHELF_GAP = 3;           // the air between two bit cells
-const SHELF_WGAP = 5;          // ...and between the weapon and its first bit
+const SHELF_ITEM = 26;         // an item slot: smaller than the weapon, so the weapon reads as the lead
+const SHELF_GAP = 3;           // the air between two item slots
+const SHELF_WGAP = 5;          // ...and between the weapon and the first slot
 const SHELF_PAD = 4;           // the plate's ground round the row
-const SHELF_LINE = 4;          // what one modifier's line costs over the row
 const SHELF_TOP = MM_GAP;      // the plate's top edge: level with the minimap's and the rail's
-const SHELF_SLOT = 0;          // the weapon slot it edits (TOOL_SLOTS is 1)
+const SHELF_SLOT = 0;          // the weapon slot it shows (TOOL_SLOTS is 1)
 const SHELF_X = SHELF_PAD;     // the weapon well's left edge: the plate's ground in from the view's edge
-const SHELF_MAX_BITS = 5;      // the widest body's cap (LONGBOW): what the corner reserves room for
-// how many lines hang over the row: one per modifier loaded, since each one
-// powers every shot (toolPlan)
-function shelfLines() {
-  const c = shelfCell();
-  if (!c) return 0;
-  let n = 0;
-  for (const id of c.bits) if (id && !BITS[id].proj) n++;
-  return n;
-}
-// the row's top: under the plate's margin and the lines over it
-function shelfRowY() { const n = shelfLines(); return SHELF_TOP + SHELF_PAD + (n ? n * SHELF_LINE + 2 : 0); }
-// the plate under the row: flush with the view's left edge, its ground round
-// the row and the lines, hugging whatever the tool in hand is
+// the row's top: under the plate's margin
+function shelfRowY() { return SHELF_TOP + SHELF_PAD; }
+// the plate under the row: flush with the view's left edge, its ground round the row
 function shelfPlateRect() {
-  const y = SHELF_TOP;
-  return { x: 0, y, w: shelfRowRight() + SHELF_PAD, h: shelfRowY() + SHELF_CELL + SHELF_PAD - y };
+  return { x: 0, y: SHELF_TOP, w: SHELF_ROW_MAX + SHELF_PAD, h: SHELF_CELL + SHELF_PAD * 2 };
 }
 // whether the pointer is on that plate - the shelf's cells answer for
 // themselves; this is the ground between them, which takes the click so it
@@ -396,29 +368,22 @@ function shelfPlateHit(mx, my) {
   const r = shelfPlateRect();
   return mx >= r.x && mx < r.x + r.w && my >= r.y && my < r.y + r.h;
 }
-// the widest row a tool can grow to: the weapon and a longbow's five bits
-const SHELF_ROW_MAX = SHELF_X + SHELF_CELL + SHELF_WGAP + SHELF_MAX_BITS * SHELF_ITEM + (SHELF_MAX_BITS - 1) * SHELF_GAP;
-// how far in from the left edge the corner widget can reach: that row and the
-// SHIFT plate off its end - what the intro slide and the bake are sized by,
-// so neither jumps when the tool changes
-const CORNER_REACH = SHELF_ROW_MAX + 80;
+// the row: the weapon and the six slots, always the same width
+const SHELF_ROW_MAX = SHELF_X + SHELF_CELL + SHELF_WGAP + ITEM_SLOTS * SHELF_ITEM + (ITEM_SLOTS - 1) * SHELF_GAP;
+// how far in from the left edge the corner widget reaches: what the intro
+// slide and the bake are sized by
+const CORNER_REACH = Math.max(BAG_W, SHELF_ROW_MAX + SHELF_PAD) + 4;
 // WHAT THE CORNER CLAIMS OF THE FRAME, in view px at the corner's own size
-// (cornerSc): the widest row a tool can ever grow to, or the drawer under it,
-// whichever reaches further. The merchant's slab is pinned off this
-// (shopLayout, js/shop.js) so a trade never stands on the pack it is dragged
-// out of. It is the FIXED reach and not the live shelfRowRight(): the row
-// grows with the tool in hand, and a slab that slid sideways when a swap
-// changed the row mid-trade would walk out from under the pointer. The SHIFT
-// plate CORNER_REACH allows for is left out of it - that is a hover hint,
-// not a widget, and 80 px of room for one is 80 px the counter would lose.
+// (cornerSc): the row or the drawer under it, whichever reaches further. The
+// merchant's slab is pinned off this (shopLayout, js/ui/shop.js) so a trade
+// never stands on the pack it is dragged out of.
 const CORNER_CLAIM = Math.max(BAG_W, SHELF_ROW_MAX + SHELF_PAD); // ...and the plate's margin past it
 function cornerClaim() { return Math.round(CORNER_CLAIM * cornerSc()); }
 // ...and how far DOWN it reaches with the drawer open: the other half of the
 // room a panel pinned off the corner has to miss, for a view too NARROW to
-// stand one beside it. This one is measured live off the drawer, which sits
-// under the plate and so moves with the lines over the row.
+// stand one beside it
 function cornerBottom() { const f = bagFrameRect(); return Math.round((f.y + f.h + 2) * cornerSc()); }
-// the tool the shelf is showing, or null with the weapon well empty
+// the weapon the shelf is showing, or null with the weapon well empty
 function shelfCell() { return player.tools[SHELF_SLOT] || null; }
 // ...and whether the shelf is on screen and answering the pointer at all: the
 // backpack's own gate, since the two are one widget in the corner now
@@ -426,105 +391,35 @@ function shelfUp() {
   return state.mode === 'play' && !player.dead && !state.paused &&
     !state.mapOpen && !state.settingsOpen && !state.wheel && !window.DBG.hideUI;
 }
-// how many bit cells the row is
-function shelfBits() { const c = shelfCell(); return c ? c.bits.length : 0; }
-// Cell -1 is the TOOL, in the full-size well, and 0..cap-1 are its bits, in
-// the smaller ones centred on the weapon's height: one row, left to right
-// from the corner. A bigger tool grows the row rightward.
+// Cell -1 is the WEAPON, in the full-size well, and 0..ITEM_SLOTS-1 are the
+// item slots, in the smaller ones centred on the weapon's height
 function shelfCellRect(i) {
   const y = shelfRowY();
   if (i < 0) return { x: SHELF_X, y, w: SHELF_CELL, h: SHELF_CELL };
   return { x: SHELF_X + SHELF_CELL + SHELF_WGAP + i * (SHELF_ITEM + SHELF_GAP), y: y + ((SHELF_CELL - SHELF_ITEM) >> 1), w: SHELF_ITEM, h: SHELF_ITEM };
 }
-// the row's right edge, where the SHIFT plate hangs
-function shelfRowRight() { const n = shelfBits(); const r = shelfCellRect(n ? n - 1 : -1); return r.x + r.w; }
-// What the pointer is on: { kind: 'tool' } | { kind: 'bit', i } | null. The
-// gaps and the lines are not hit tested - they say things, they do not take
-// anything, and the plate behind them swallows the click.
+// What the pointer is on: { kind: 'tool' } | { kind: 'item', i } | null. The
+// gaps are not hit tested; the plate behind them swallows the click.
 function shelfHit(mx, my) {
   if (!shelfUp()) return null;
   ({ x: mx, y: my } = cornerMouse(mx, my));
   const t = shelfCellRect(-1);
   if (mx >= t.x && mx < t.x + t.w && my >= t.y && my < t.y + t.h) return { kind: 'tool' };
-  const cell = shelfCell();
-  if (!cell) return null;
-  for (let i = 0; i < cell.bits.length; i++) {
+  for (let i = 0; i < ITEM_SLOTS; i++) {
     const r = shelfCellRect(i);
-    if (mx >= r.x && mx < r.x + r.w && my >= r.y && my < r.y + r.h) return { kind: 'bit', i };
+    if (mx >= r.x && mx < r.x + r.w && my >= r.y && my < r.y + r.h) return { kind: 'item', i };
   }
   return null;
-}
-// WHICH FITTING POWERS WHICH SHOT, as one line per modifier over the row,
-// running left to every shot it is in the envelope of. That is every shot
-// now (toolPlan), but it is still read off toolPlan's own `mods`, so the
-// picture cannot claim a rule the press does not follow. A tool with no shot
-// loaded fires its own plain one, and the lines then run into the WEAPON
-// well (cell -1), which is where that shot comes from.
-//
-// The modifier nearest the shots takes the line nearest the row and the
-// ones further right stack above it, so no stem ever crosses a line.
-function shelfRails(cell, plan) {
-  const out = [];
-  for (let i = 0; i < cell.bits.length; i++) {
-    const id = cell.bits[i];
-    if (!id || BITS[id].proj) continue;
-    const hits = plan.shots.filter((s) => s.mods.indexOf(i) >= 0).map((s) => s.i);
-    if (hits.length) out.push({ i, hits, col: BITS[id].col });
-  }
-  return out;
-}
-// A carried bit landing in bit cell i of slot s. One bit comes off the stack;
-// whatever it displaces goes home first (dragHome - the pack cell or the bit
-// cell this drag began in, which makes the drop a swap), then onto the
-// now-free hand, into the bag, or onto the snow, so it is never a deletion.
-function dragDropBit(s, i) {
-  const cell = player.tools[s], d = state.drag, from = d.from;
-  const id = bitIdOf(d.cell.type);
-  if (!id) { hudFx('deny', 'bit', i, s); return; }  // a tool does not go inside a tool
-  const was = bitPut(cell, i, id);
-  d.cell.n--;
-  if (d.cell.n <= 0) state.drag = null;
-  let hand = false;
-  if (was) {
-    const out = { type: bitType(was), n: 1 };
-    if (!dragHome(out, from)) {
-      if (!state.drag) { state.drag = { cell: out, from: { k: 'bit', slot: s, i } }; hand = true; }
-      else if (!bagPut(player, out)) throwCell(out);
-    }
-  }
-  // the ousted bit rode back onto the cursor: the hand changed without being
-  // asked, so this is a swap and says so - otherwise it is a plain seating
-  hudFx(hand ? 'swap' : 'place', 'bit', i, s);
-}
-// A carried tool landing on weapon slot i. Only a tool goes here - a bit
-// dropped on a slot is refused rather than quietly swallowed, because a bit
-// belongs in a tool, not on a key. The tool it displaces takes the bag cell
-// this one came out of (dragHome), which is the swap the CLICK already makes.
-function dragDropSlot(i) {
-  const d = state.drag, from = d.from;
-  if (!isToolCell(d.cell)) { hudFx('deny', 'slot', i); return; }
-  const was = slotPut(player, i, d.cell);
-  state.drag = null;
-  let hand = false;
-  if (was && !dragHome(was, from)) { state.drag = { cell: was, from: { k: 'slot', i } }; hand = true; }
-  hudFx(hand ? 'swap' : 'seat', 'slot', i);
 }
 // Where the carried item is being let go. Every well that can hold one is
 // tried, then the rest of the HUD sends it home, and only the WORLD throws it
 // away - so a fumbled release inside the frame costs nothing and a deliberate
-// drag out onto the snow is the one way to get rid of a tool.
+// drag out onto the snow is the one way to get rid of something.
 function dragDrop(mx, my) {
   // the counter first: a release anywhere on it is a sale - the one place a
   // release turns an item into gold (shopDropSell, js/ui/shop.js)
   if (shopHit(mx, my)) { shopDropSell(); return; }
-  const fh = shelfHit(mx, my);
-  if (fh) {
-    if (fh.kind === 'bit') dragDropBit(SHELF_SLOT, fh.i);
-    else dragDropSlot(SHELF_SLOT);
-    return;
-  }
-  const sh = stripHit(mx, my);
-  if (sh) { dragReturn(); return; } // the strip takes nothing: the weapon's well is on the shelf
+  if (shelfHit(mx, my) || stripHit(mx, my)) { dragReturn(); return; } // neither the shelf nor the strip takes a carried item
   const bh = bagHit(mx, my);
   if (bh) { if (bh.kind === 'cell') dragDropBag(bh.i); else dragReturn(); return; }
   if (overHud(mx, my)) { dragReturn(); return; }
@@ -532,84 +427,25 @@ function dragDrop(mx, my) {
   state.drag = null;
 }
 
-// ---- one click sends it to the other side -------------------------------
-// Every well here has exactly ONE sensible destination, so the CLICK is the
-// whole move: a bit in the grid loads into the weapon where it works (fitBit), a
-// bit on the shelf comes back to the pack, a tool in the grid trades places
-// with the weapon in hand, and the weapon well stows what it holds in the
-// pack the way a bit does. That completes the grammar the backpack already
-// had - clicking a cell USES what is in it, a card by drawing from it - for
-// the two kinds that had no use and could only deny.
-//
-// It is resolved on the RELEASE like every other click (hudRelease), never on
-// the press, so a press that travels is still a drag and arranging the pack
-// by hand is untouched. Each returns whether it HANDLED the click: a card and
-// an empty cell are not transfers, and there it falls through to the click it
-// always was.
-//
-// Nothing here can destroy anything - when the destination has no room the
-// item does not move at all, and the container that is full is the one that
-// reddens and buzzes (bagDenied / toolDenied), which is the same refusal a
-// drop you cannot carry already fires.
-
-// a grid cell: a tool swaps into the hand, a bit loads into the weapon, a
-// consumable is used
+// ---- one click uses it --------------------------------------------------
+// A click on a pack cell USES what is in it (ITEMS[type].use - a card is
+// drawn, a burrow dug). It is resolved on the RELEASE like every other click
+// (hudRelease), never on the press, so a press that travels is still a drag
+// and arranging the pack by hand is untouched. Returns whether it HANDLED the
+// click: a kind with no use falls through to the click it always was.
 function sendBagCell(i) {
   const s = player.bag[i];
   if (!s) return false;
-  // a consumable (ITEMS[type].use): the click is the use, refusals and all
   if (ITEMS[s.type] && ITEMS[s.type].use) { ITEMS[s.type].use(); return true; }
-  if (isToolCell(s)) {
-    // the swap is one move each way: what was in hand lands in the cell the
-    // tool just left, so the grid never grows or loses a row
-    const was = slotPut(player, player.toolSel, s);
-    player.bag[i] = was || null;
-    // one move each way IS a swap when the hand was full, and the cue says so
-    hudFx(was ? 'swap' : 'seat', 'slot', player.toolSel);
-    return true;
-  }
-  const id = bitIdOf(s.type);
-  if (!id) return false;            // a card: nowhere else to be
-  const cell = heldTool(player);
-  const at = cell ? fitBit(cell, id) : -1;
-  if (at < 0) { toolDenied(); return true; } // no weapon, or every cell loaded
-  if (--s.n <= 0) player.bag[i] = null;
-  hudFx('place', 'bit', at, player.toolSel); // the cell it landed in lights, not the one it left
-  return true;
+  return false;
 }
-// a bit cell of the shelf: back into the pack, topping up a stack of
-// its own kind first (bagAdd), and staying put if none of it fits
-function sendBitCell(s, i) {
-  const cell = player.tools[s];
-  const id = cell && cell.bits[i];
-  if (!id) return false;
-  if (!bagAdd(player, bitType(id), 1)) { bagDenied(); return true; }
-  bitPut(cell, i, null);
-  sortBits(cell); // the row closes up behind it
-  hudFx('place', 'bit', i, s);
-  return true;
-}
-// the weapon well: the tool stows in the pack, bits and all, exactly as a bit
-// does - the same gesture, one well over
-function sendSlot(i) {
-  const cell = player.tools[i];
-  if (!cell) return false;
-  if (!bagPut(player, cell)) { bagDenied(); return true; } // put it down before lifting it
-  slotPut(player, i, null);
-  hudFx('place', 'slot', i);
-  return true;
-}
-// Where a SHIFT-held release lands while something is riding the cursor: the
-// same wells dragDrop tries, in the same order, but acting on what is already
-// SITTING there instead of on what is in hand. Everything else - the rest of
-// the frame, the world - does nothing at all, because shift's whole promise
+// Where a SHIFT-held release lands while something is riding the cursor: it
+// spends the click on the pack cell under the pointer instead of on what is
+// in hand. Everything else does nothing at all, because shift's whole promise
 // is that the item in hand is still in hand afterwards.
 function sendAt(mx, my) {
-  const fh = shelfHit(mx, my);
-  if (fh) return fh.kind === 'bit' ? sendBitCell(SHELF_SLOT, fh.i) : sendSlot(SHELF_SLOT);
   const bh = bagHit(mx, my);
-  if (bh) return bh.kind === 'cell' && sendBagCell(bh.i);
-  return false;
+  return !!bh && bh.kind === 'cell' && sendBagCell(bh.i);
 }
 
 // ---- the press / move / release the drag is made of ---------------------
@@ -641,15 +477,7 @@ function hudPress(mx, my) {
     state.dragPend = keyHeld('slide') ? { keep: true } : { hold: true };
     return true;
   }
-  const fh = shelfHit(mx, my);
-  if (fh) {
-    if (fh.kind === 'bit') {
-      if (shelfCell().bits[fh.i]) state.dragPend = { src: { k: 'bit', slot: SHELF_SLOT, i: fh.i }, x: mx, y: my };
-    } else {
-      state.dragPend = { src: { k: 'slot', i: SHELF_SLOT }, x: mx, y: my, empty: !shelfCell() };
-    }
-    return true; // the shelf swallows the press either way
-  }
+  if (shelfHit(mx, my)) return true; // the shelf is read, not handled: it swallows the press
   // the floating buy plate over an ability well: its own press, clear of the
   // strip, so buying a level and casting can never steal each other's click
   const abb = abBuyHit(mx, my);
@@ -684,7 +512,7 @@ function hudMove(mx, my) {
   // an empty well has nothing to lift, and neither a shift-hold nor a press
   // made with something ALREADY in hand is a pick-up at all - both are aimed
   // at the well under the pointer when the button comes back up
-  if (!q || q.empty || q.keep || q.hold) return;
+  if (!q || q.keep || q.hold) return;
   if (Math.abs(mx - q.x) < DRAG_SLOP && Math.abs(my - q.y) < DRAG_SLOP) return;
   state.dragPend = null;
   dragLift(q.src);
@@ -692,31 +520,19 @@ function hudMove(mx, my) {
 // The release, where every click in this widget is actually decided. A live
 // drag is put down - or, when the press was begun with shift held, spends
 // itself on the well under the pointer and stays in hand (sendAt). An armed
-// press that never travelled is the click it always was, and that click is
-// the TRANSFER: the bag cell's own use (a bit into the weapon, a tool into
-// the hand, otherwise bagClick's refusal), the weapon well and a bit cell
-// of the shelf both stowing what they hold in the pack.
-//
-// SHIFT sends too, in both hands: with an empty one it is the plain click
-// (below - the transfer is what shift-click means everywhere else, so the
-// modifier costs nothing and finds the gesture for anybody who reaches for
-// it), and while carrying it is the same transfer aimed at the well under
-// the pointer instead of at what is in hand (sendAt above).
+// press that never travelled is the click it always was: the bag cell's own
+// use (sendBagCell), otherwise bagClick's refusal. With shift held while
+// carrying, the click is aimed at the cell under the pointer instead of at
+// what is in hand (sendAt above).
 function hudRelease(mx, my) {
   const q = state.dragPend;
   state.dragPend = null;
   if (state.drag) {
     if (q && q.keep) sendAt(mx, my);
     else dragDrop(mx, my);
-    // a bit carried OUT of the row left a gap there; once nothing is in hand
-    // the row closes up again (sortBits) - never mid-carry, while the gap is
-    // still the carried bit's way home
-    if (!state.drag && shelfCell()) sortBits(shelfCell());
     return true;
   }
   if (!q) return false;
-  if (q.src.k === 'bag') { if (!sendBagCell(q.src.i)) bagClick({ kind: 'cell', i: q.src.i }); }
-  else if (q.src.k === 'slot') sendSlot(q.src.i);
-  else sendBitCell(q.src.slot, q.src.i);
+  if (!sendBagCell(q.src.i)) bagClick({ kind: 'cell', i: q.src.i });
   return true;
 }

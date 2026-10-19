@@ -647,8 +647,15 @@ function aiSpend(p, inp, steerTo) {
   if (!inp.cmd && p.items) {
     const buy = botItemBuy(p);
     if (buy && merchNear(p)) { inp.cmd = { kind: 'shop', act: 'item', id: buy }; return false; }
+    const stray = !p.items.includes(null) && merchNear(p) ? botStrayPart(p) : -1;
+    if (stray >= 0) { inp.cmd = { kind: 'shop', act: 'sellItem', slot: stray }; return false; }
     const next = botNextItem(p);
-    if (next && buy === next && p.fightT <= 0) { // never out of a fight (ITEM_FIGHT_T)
+    // the walk: the next WHOLE item is in the purse and the counter will
+    // seat it (a stray part sold there makes the room), never out of a fight
+    // (ITEM_FIGHT_T)
+    const nc = next && itemCost(p, next);
+    const fits = nc && (itemRoom(p, nc.used) >= 1 || botStrayPart(p) >= 0);
+    if (next && fits && !merchNear(p) && p.inv.gold >= nc.gold && p.fightT <= 0) {
       const m = robots.find((b) => b.merchant && !b.dead && b.team === p.team);
       const c = m && (stallUp(m.stall) ? m.stall : m.hopT > 0 ? null : m);
       const pt = c && counterPt(c);

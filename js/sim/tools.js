@@ -1118,54 +1118,6 @@ function noteSeen(p, type) {
   if (p === player && TECH_BY_ID[type]) PROFILE.markSeen(type);
 }
 
-// ---- loot: what the world pays out --------------------------------------
-// Tools and bits are found FIRST and bought SECOND - the merchant's counter
-// (js/shop.js) rotates a handful of them every couple of minutes, and this
-// is the other, older way in. A mined rock is the common source (its kind's
-// `loot` and `lootTier`, ROCK_KINDS in js/sim/mining.js - a stone turns up the
-// bottom tier, a sunstone always turns up something) and a felled tree the
-// rare one, all rolling on the shared rng at the moment the work lands (never
-// inside genWorld - see the seed rule in CLAUDE.md). A tier is a ceiling:
-// a sunstone and a chest both roll up to the top, and the sunstone always
-// rolls, so it turns up the top tier more often than a chest does.
-const TREE_DROP = 0.04;  // 1 in 25 felled trees
-const CHEST_TOOL = 0.75; // ...and three in four sprung chests, up to the TOP tier
-const LOOT_TOOL = 0.3;   // this share of any of those is a tool, the rest bits
-// Every kind at or under `tier`, split into the two pools. The whole arsenal
-// is unlocked, so this is one list per tier built at boot rather than a filter
-// run per roll - a drop happens in the middle of a swing. The array itself is
-// never replaced - dropLoot holds it.
-const LOOT_POOL = [];
-function rebuildLootPool() {
-  LOOT_POOL.length = 0;
-  for (let t = 0; t < TOOL_TIERS.length; t++) {
-    LOOT_POOL.push({
-      tools: Object.keys(TOOLS).filter((k) => TOOLS[k].tier <= t),
-      bits: Object.keys(BITS).filter((k) => BITS[k].tier <= t),
-    });
-  }
-}
-// Rolls one find at `tier` or below and drops it at (x, y); returns what it
-// dropped, or null. A tool comes out empty - its bits are the next thing to
-// find - and a bit drops as a single, so a pack of them is a run of finds.
-function dropLoot(x, y, tier, chance) {
-  if (rng() >= chance) return null;
-  const pool = LOOT_POOL[Math.max(0, Math.min(LOOT_POOL.length - 1, tier))];
-  if (!pool || !pool.tools.length || !pool.bits.length) return null;
-  if (rng() < LOOT_TOOL) {
-    const id = pool.tools[Math.floor(rng() * pool.tools.length)];
-    spawnDrop(x, y, toolType(id), 1, makeTool(id));
-    addFloater(x, y - 26, TOOLS[id].name, TOOL_TIERS[TOOLS[id].tier].ink);
-    burst(x, y - 6, TOOL_TIERS[TOOLS[id].tier].rim, 10, 50, 0.6, true);
-    return id;
-  }
-  const id = pool.bits[Math.floor(rng() * pool.bits.length)];
-  spawnDrop(x, y, bitType(id), 1);
-  addFloater(x, y - 26, BITS[id].name, TOOL_TIERS[BITS[id].tier].ink);
-  burst(x, y - 6, BITS[id].col, 8, 45, 0.5, true);
-  return id;
-}
-
 // ---- starting loadouts ---------------------------------------------------
 // Every player flies in with its class's tool in the one weapon slot and ONE
 // projectile in it, which is what makes the pick a choice rather than a
