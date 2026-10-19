@@ -441,8 +441,8 @@ top-left side, `roadOffS < 0`; BLUE's the bottom-right), which the cables use. T
 the nest ([eagle drop](rendering.md#eagle-drop-mode-drop)), and the crater is a **pad** in the
 `pads` registry (`addPad(team, cx, cy, r)`, a disc of `BOOM_R`, paved whole the frame the bird
 lands: `eagleCrash`, eagle.js), so the roost and the road are one ground. `roadDist(fx, fy)` is
-the min of `roadMainDist` and every pad, so the bake, both maps and every `onRoad` read see one
-road system. From the field, the way to a bird is one straight road through its base's mouth.
+the min of `roadMainDist`, every pad, the paths and [the side lanes](#the-side-lanes), so the
+bake, both maps and every `onRoad` read see one road system. From the field, the way to a bird is one straight road through its base's mouth.
 
 **Its furniture** is placed with it, off the same ragged edge (`mark` in `placeRoad`,
 `ROAD_POLE_OUT` (0.9) tiles past it): two **`banner`** poles at each gate carrying a `team` (0 at
@@ -452,7 +452,7 @@ on its spot, since the gate stands in the treeline, but gives way to a rock or a
 E (no `tool`). The shoulders are otherwise bare: a lane's edge is not a thing to look at, and the
 centre where the waves meet is open ground. The pole's pixels are `drawBanner`.
 
-`placeRoad()` runs at boot **after `placeCreek()` and `layPaths()`** (then `placeZips()`, `placeCamps()`,
+`placeRoad()` runs at boot **after `placeCreek()`, `layPaths()` and `layLanes()`** (then `placeZips()`, `placeCamps()`,
 `placeChests()` — js/app/boot.js), on pure reads —
 `roadSpan()` scans the diagonal for the last wooded tile out from each corner by `borderDepth`,
 so the gates are where the treeline is — and it rolls nothing, so it neither moves the shared `rng` stream nor differs run to
@@ -499,6 +499,12 @@ u → `WORLD - 1 - u`).
   side's junction (`roadNest`, [the road](#the-road)), the way in for every walker.
 - The road runs in through the mouth and **ends on the perch**: `baseRoadEnd(fx, fy)` is positive
   past either perch, and `laneDist` takes it, so the lane as laid and drawn stops at the bird.
+- Two more mouths open the hollow's sides to [the side lanes](#the-side-lanes): the **top** mouth on
+  the top-left wall and the **bot** mouth on the bottom-right, `BASE_SIDE_U` (34) u from the corner
+  and `BASE_SIDE_S` (15) tiles across the road. `baseGate(team, lane)` is a lane's mouth (lane 0
+  top, 1 mid, 2 bot) and `baseBaySpot(team, lane)` where its **bay** stands just inside it
+  (`BASE_BAYS`, beside the lane in and clear of the stall), both through `baseTile(team, u, s)`,
+  the side's frame: u along the road from its own corner, s tiles across (− the top side).
 - `baseAt(tx, ty, pad)` names the side whose hollow holds a tile (`pad` tiles past the wall
   counted in), or −1, always −1 under `PRACTICE`. The chests and the rocks keep `BASE_KEEP` (3)
   tiles off a hollow's wall (`placeChests`, `placeRocks`).
@@ -506,6 +512,41 @@ u → `WORLD - 1 - u`).
 `placeBase()` runs at boot right after `placeRoad()` (js/app/boot.js): every object inside a
 hollow goes through `fellScenery` (a rock with both its tiles) and any ice there turns to snow. Pure
 position noise, no `rng()`, so no seed moves. Not under `PRACTICE`.
+
+## The side lanes
+
+**Two more lanes join the bases besides the road**: the **top** lane round the top-left of the
+valley and the **bot** lane round the bottom-right, the `lanes` banner of
+[js/sim/lanes.js](../../js/sim/lanes.js). Each leaves either hollow's centre through its side
+mouth ([the bases](#the-bases)), bends along the inside of the treeline, and crosses
+[the creek](#the-creek) at the map's middle on a ford. They are fixed cuts, the same on every
+seed: `LANE_HALF` is RED's half of the top lane as `[u, s]` control points in the road's frame,
+BLUE's half mirrors it along the road and the bot lane mirrors the top across it (s → −s), and
+`laneLine(lane)` smooths them (Catmull-Rom) into a centreline a point about every tile, with `at`,
+the tiles along it (about 280 end to end; the road is 231). The points keep the lane about 14
+tiles off the warren and 11 off the buff camp; on a seed with a deep border the lane cuts through
+the woods instead.
+
+**A lane IS road**, like a path: `roadDist` mins over `sideLaneDist(fx, fy)`, `LANE_HW` (3) tiles
+either side of the centreline (a six-tile lane, a tile narrower than the road across the field)
+with ±`LANE_RAG` (0.5) of wander on the position noise. So `placeRoad` paves it with the road in
+its one pass, felling what stood there and turning ice to road, both maps ink it, the bake paints
+it, and nothing drifts or grows on it. It has no ruts (those are measured off the diagonal) and
+its own cables ([the zipline](#the-zipline)). `sideLaneDist` is **O(1)** like `pathDist`: the
+segments (`LANE_SEG`, 3 tiles of centreline each) go through the shared `indexSegs`/`segsLat`
+(world.js).
+
+`layLanes()` runs at boot **after `layPaths()` and before `placeRoad()`**, so neither `genWorld`'s
+carve rules nor the paths' search ever saw a lane: `sideLaneDist` answers 99 until it runs, and
+always under `PRACTICE`. It rolls nothing, so no seed moves, and outside each lane's band the
+ground is the same as before lanes existed. Where a lane crosses the creek it lays **stones**
+(ground 5) on the water within `LANE_FORD_HW` (1.5) tiles of the centreline: a three-stone ford
+along the lane, whichever way the creek bends there.
+
+`laneWaypoints(team, lane)` is the march down a side lane: the centreline every `ROAD_STEP`
+tiles from the side's own mouth to the rival's (`laneAlong`, `laneAt`), then the rival hollow's
+centre ([Soldiers](gameplay.md#soldiers-the-waves)). `laneZipTiles(team, lane)` is a side's cable
+down it ([the zipline](#the-zipline)).
 
 ## The creek
 
@@ -750,12 +791,14 @@ its tile (`deepTileOpen`) and `deepPx` works each depth in it out once.
 
 ## The zipline
 
-One cable per team along the road, the `zipline` banner of [js/sim/zipline.js](../../js/sim/zipline.js): a
-polyline of **pylon** points `zips[team] = { team, pts, cum, len }` (`pts` are body positions —
+One cable per team down each lane, the `zipline` banner of [js/sim/zipline.js](../../js/sim/zipline.js): a
+polyline of **pylon** points `{ team, lane, pts, cum, len }` (`pts` are body positions —
 a rider's `p.y + 4` sits on the pylon tile's centre — `cum` the px along at each point) laid by
 `placeZips()` at boot **right after `placeRoad()` and `placeBase()`**, on pure reads (`basePerch`,
 `roadNest`, `roadSpan`, `roadEdgeAt`, `objAt`): nothing rolls, so `genWorld` and every seed's ground are
-untouched. Not under `PRACTICE`. The points, base to front:
+untouched. Not under `PRACTICE`. `zips[0]` and `zips[1]` are each side's line along the road;
+the side lanes' four follow them, and a body's `p.zip` is its line's index. The road's points,
+base to front:
 
 1. the **base pylon**, `ZIP_BASE_OUT` (4.4) u up the road from the perch, `roadEdgeAt(u, side) +
    ZIP_OUT` (0.6) tiles off the centreline on the bird's own right (`roadNest(team).side`: the two
@@ -764,6 +807,11 @@ untouched. Not under `PRACTICE`. The points, base to front:
 2. a pylon every `ZIP_SPAN` (10) u along the same verge to the **terminus** at `ZIP_MID_GAP`
    (20) u short of the road's centre — a stub of a span at the end joins the one before it — so the
    middle stretch where the waves meet is cable-free.
+
+A side lane's line (`laneZipTiles`, js/sim/lanes.js) starts at a base pylon `LANE_ZIP_S` (7)
+tiles off the perch on that lane's side of the road, then runs the lane's **outer** verge from its
+mouth, a pylon every `LANE_ZIP_SPAN` (14) tiles, to `LANE_ZIP_MID` (28) tiles short of the
+lane's middle. `zipLay(team, lane, tiles)` stands every line's pylons.
 
 A pylon's tile is the nearest along the road (u, u±1, u±2) that is dry and holds nothing but
 worldgen's scenery — a pine or a rock gives way, like the road's poles (`laneFells`); anything
@@ -776,7 +824,7 @@ its side's ink. Seed 42: RED's line runs u 23→88, BLUE's 134→208.
 `zipPoint(z, d)` is the cable at `d` px along (position, unit tangent, span and how far across
 it), `zipLift(z, d)` how high it hangs there (`ZIP_H` 31 at a pylon, `ZIP_SAG` 3 less mid-span),
 `zipNearest(z, x, y)` the nearest point of a line to a spot, and `zipNear(p)` the line a body may
-clip on — the nearer of the two, within `ZIP_GRAB` (32, two tiles) px of the track — or null:
+clip on — the nearest, within `ZIP_GRAB` (32, two tiles) px of the track — or null:
 **either side's**, a cable is anyone's ride. `zipUnder(wx, wy)` is the same
 question for a world point against the cable **as drawn** — the point dropped to the track by
 the lift where it lands (once for the span, once more with that span's sag), within `ZIP_HOVER`

@@ -19,17 +19,20 @@ into its **corner's** woods, RED always bottom-left, BLUE always top-right
 ([the bases](world.md#the-bases)); the bird roosts on its perch at the back and becomes its team's
 **objective**; its
 **merchant** climbs down and works home, never toward the fight: it pitches a stall beside
-the road's head, a shop for anybody at all who walks up to it, then fells the back woods behind
-the bird and raises the bot bays there; idle, it keeps to the road just up from the bird.
-**The road** runs the map's diagonal from one perch to the other: one straight, dry packed-earth
-lane, there from worldgen and readable from anywhere, so the way to a bird is one road in through
-its base's mouth ([the road](world.md#the-road)). Half a minute after landing each
-merchant raises a **barracks** (a bot bay) behind its bird, and two more as its logs pay for them:
-every thirty seconds each one marches a **wave** of soldier bots out to the road and down it at the
-rival bird, one soldier more every three minutes, a side's live soldiers capped across its bays. Both sides
-get the same waves, so with nobody on the road the two columns meet at the middle, each forking
-round the cistern and over the stepping stones outside its wall, and grind on the stones —
-which side's wave gets through is decided by who walks out to it. **Drive off the rival eagle
+the road's head, a shop for anybody at all who walks up to it, then raises the bot bays and fells
+the back woods behind the bird for logs to rebuild them; idle, it keeps to the road just up from the bird.
+**Three lanes** join the bases, like a Rift: **the road** (mid) runs the map's diagonal from one
+perch to the other, one straight, dry packed-earth lane, and **the top and bot lanes** curve round
+either side of the valley along the treeline, each crossing the creek on a ford at the middle. All
+three are there from worldgen, the same on every seed and readable from anywhere, and each leaves a
+base by its own mouth of the hollow ([the road](world.md#the-road),
+[the side lanes](world.md#the-side-lanes)). Half a minute after landing each merchant raises a
+**barracks** (a bot bay) just inside the mid mouth, then one inside the top and bot mouths:
+every thirty seconds each one marches a **wave** of soldier bots down its own lane at the rival
+bird, one soldier more every three minutes, each lane's live soldiers capped. Both sides get the
+same waves, so with nobody on a lane the two columns meet at its middle (the mid ones forking round
+the cistern and over the stepping stones outside its wall) and grind there — which side's wave
+gets through is decided by who walks out to it. **Drive off the rival eagle
 and the match is won** — nothing else ends one: a player who goes down waits, and is set back
 down at their own bird.
 
@@ -42,7 +45,8 @@ A settings toggle (MY TEAM) shows the roster's real colours instead.
 **The creek splits the valley.** One creek runs the other diagonal, corner to
 corner through the woods and all, so the two roosts sit on opposite halves: it meets the road once,
 at the middle, inside **the cistern**, and elsewhere it is crossed only at stepping-stone fords
-(the waves' two just outside the cistern's wall, where it runs out under it), or by a dodge roll
+(the mid waves' two just outside the cistern's wall, where it runs out under it, and one under
+each side lane), or by a dodge roll
 from the bank. The cistern is the works' ring of cut
 stone round the crossing: the road comes in at two gates with stone sills, the wall is down in
 four breaches with the fallen blocks round them, and nothing gets through the stone itself, roll
@@ -149,7 +153,7 @@ they make you walk to a body to get them. [Gear](gameplay.md#gear).
 
 **Your eagle is your life.** The bird that carried the team in crashes onto its base's perch and
 roosts there, armoured in team colour — the hollow round it, the crater it blows (packed earth,
-one ground with the road) and the bays its merchant raises in the back woods are the team's
+one ground with the road) and the bays its merchant raises at the lane mouths are the team's
 starting base, an
 easier opening for a new player who can help fortify before walking out. Its hp pool is its **nerve**:
 hits spook it, it calms back down between scares, it defends its own ground with a wing gust —
@@ -199,13 +203,13 @@ Every camp is **neutral until hit** — then the whole camp comes for the hitter
 they leave its ground and heals — and every site sits well off the road, so the lane is never a
 wolf's. [Camps](world.md#camps), [camp monsters](gameplay.md#camp-monsters-neutral-until-hit).
 
-**The road is where the match is fought.** The waves are the match's clock: a column that is not
-met on the road reaches the rival bird, and a scrapped soldier pays its killer gold and every
+**The lanes are where the match is fought.** The waves are the match's clock: a column that is not
+met on its lane reaches the rival bird, and a scrapped soldier pays its killer gold and every
 rival standing near XP — so the lane is where the fighting, the pushing and the levels are, and a base is
 something to walk *out* of. A raid that wrecks a barracks thins a side's waves until its
-merchant rebuilds it. **The walk out is not the fight, so a zipline compresses it**: each side's
-cable runs from the stump ring beside its bird along the road's verge to short of the middle, and any body
-of that team under it clips on with E, rides either way at three times a walk, and lets go
+merchant rebuilds it. **The walk out is not the fight, so a zipline compresses it**: each side
+has a cable down each lane, from beside its bird along the lane's verge to short of the middle, and any body
+under one clips on with E, rides either way at three times a walk, and lets go
 anywhere — hands on the handle, still a target, dropped by a stun or a net, and the last stretch
 into the fight always walked. [The road](world.md#the-road), [the zipline](world.md#the-zipline),
 [the ride](gameplay.md#the-zipline), [the waves](gameplay.md#soldiers-the-waves),

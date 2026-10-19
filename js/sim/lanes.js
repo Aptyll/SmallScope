@@ -18,10 +18,13 @@
 const LANE_HW = 3;        // tiles either side of the centreline: a six-tile lane, a tile narrower than the mid road across the field
 const LANE_RAG = 0.5;     // tiles its edge wanders either way on the position noise
 const LANE_SEG = 3;       // tiles of centreline per registered segment
-const LANE_FORD_ROWS = 1; // tile rows either side of a creek crossing's middle forded with it: a three-row ford
+const LANE_FORD_HW = 1.5; // tiles either side of the centreline the creek is forded where a lane crosses it: a three-stone ford
+const LANE_ZIP_SPAN = 14;  // tiles along the lane between a side cable's pylons: the mid road's ZIP_SPAN
+const LANE_ZIP_MID = 28;   // tiles short of the lane's middle its front terminus stands: the mid road's ZIP_MID_GAP
+const LANE_ZIP_S = 7;      // tiles off the road beside the perch its base pylon stands, on the lane's side: past the crash pad and the mid road's own pylon
 // RED's half of the TOP lane, [u, s]: out of the hollow's centre, through the
 // top mouth, bending along the treeline, to the creek at the middle
-const LANE_HALF = [[BASE_U, 0], [BASE_SIDE_U, -BASE_SIDE_S], [40, -21], [50, -26], [62, -31], [80, -40], [92, -46], [104, -53], [(WORLD - 1) / 2, -58]];
+const LANE_HALF = [[BASE_U, 0], [BASE_SIDE_U, -BASE_SIDE_S], [40, -21], [50, -26], [62, -30], [78, -37], [91.5, -41], [104, -49], [(WORLD - 1) / 2, -56]];
 
 // a side lane's centreline, RED's hollow to BLUE's, a point about every
 // tile (tile-index space) with `at`, the tiles along it to each. Pure
@@ -78,30 +81,24 @@ function sideLaneDist(fx, fy) {
   return lat - (LANE_HW + (vnoise(fx * 0.3 + 13.1, fy * 0.3 + 77.2) - 0.5) * 2 * LANE_RAG);
 }
 // Runs at boot after layPaths, before placeRoad (js/app/boot.js): registers
-// both lanes, and fords the creek where each crosses it - the middle of the
-// wet run under the centreline, and LANE_FORD_ROWS rows either side of it
-// (creekFord, js/sim/world.js). No rng(): no seed moves.
+// both lanes, and fords the creek where each crosses it. No rng(): no seed moves.
 function layLanes() {
   laneSegs.length = 0; laneA = laneB = null;
   if (PRACTICE) return;
-  const wet = (p) => { const tx = Math.round(p.x), ty = Math.round(p.y); return inWorld(tx, ty) && (ground[idx(tx, ty)] === 4 || ground[idx(tx, ty)] === 5); };
   for (const lane of [0, 2]) {
     const P = laneLine(lane).pts;
     for (let i = 0; i < P.length - 1; i += LANE_SEG) {
       const j = Math.min(P.length - 1, i + LANE_SEG);
       addSeg(laneSegs, P[i].x, P[i].y, P[j].x, P[j].y);
     }
-    for (let i = 0; i < P.length; i++) {
-      if (!wet(P[i])) continue;
-      let j = i;
-      while (j + 1 < P.length && wet(P[j + 1])) j++;
-      const m = P[(i + j) >> 1];
-      for (let r = -LANE_FORD_ROWS; r <= LANE_FORD_ROWS; r++) creekFord(m.x, m.y + r);
-      i = j;
-    }
   }
   const ix = indexSegs(laneSegs, LANE_HW + LANE_RAG + ROAD_SHOULDER + 2.4); // past this no pixel of a tile is the lane's or its shoulder's
   laneA = ix.A; laneB = ix.B;
+  // the fords: stones on the creek LANE_FORD_HW either side of the
+  // centreline, laid along the lane whichever way the water bends there
+  for (let i = 0; i < WORLD * WORLD; i++) {
+    if (ground[i] === 4 && segsLat(laneSegs, laneA, laneB, i % WORLD, (i / WORLD) | 0) < LANE_FORD_HW) ground[i] = 5;
+  }
 }
 // the march down a side lane: from the side's own mouth to the rival's every
 // ROAD_STEP tiles along the centreline (px), then into the rival hollow's
@@ -117,4 +114,25 @@ function laneWaypoints(team, lane) {
   const c = baseCentre(1 - team);
   pts.push({ x: (c.tx + 0.5) * TILE, y: (c.ty + 0.5) * TILE });
   return pts;
+}
+// a side's cable down a side lane (placeZips, js/sim/zipline.js), as pylon
+// points in continuous tile-index space, base first: beside the perch on the
+// lane's side of the road, then the lane's outer verge from its mouth every
+// LANE_ZIP_SPAN to LANE_ZIP_MID short of the middle - the shoulder, never the lane
+function laneZipTiles(team, lane) {
+  const L = laneLine(lane), sgn = lane - 1; // -1 the top side, +1 the bot
+  const b = baseTile(team, PERCH_U, sgn * LANE_ZIP_S), tiles = [{ x: b.tx, y: b.ty }];
+  const g = baseGate(team, lane), a = laneAlong(L, g.tx, g.ty), mid = L.at[L.at.length - 1] / 2;
+  const dir = team === 0 ? 1 : -1, end = mid - dir * LANE_ZIP_MID, off = LANE_HW + LANE_RAG + ZIP_OUT;
+  for (let d = a; ; d += dir * LANE_ZIP_SPAN) {
+    const last = (end - d) * dir < LANE_ZIP_SPAN * 0.4; // a stub of a span at the end joins the one before it
+    if (last) d = end;
+    const p = laneAt(L, d), q = laneAt(L, d + 1), r = laneAt(L, d - 1);
+    let nx = r.y - q.y, ny = q.x - r.x;
+    const nl = Math.hypot(nx, ny) || 1;
+    if ((nx + ny) * sgn < 0) { nx = -nx; ny = -ny; } // the outer side: away from the road
+    tiles.push({ x: p.x + nx / nl * off, y: p.y + ny / nl * off });
+    if (last) break;
+  }
+  return tiles;
 }

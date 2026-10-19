@@ -724,8 +724,8 @@ function updateMerchant(b, dt) {
 // to the roost; a top or bot soldier's is its own mouth, down its lane to the
 // rival mouth and into the rival hollow (laneWaypoints, js/sim/lanes.js). A
 // waypoint it cannot reach is skipped, not waited on, so a wave never stands
-// still on a blocked tile. On the mid road it rides any ZIPLINE that carries
-// it toward the rival bird (soldierBoard):
+// still on a blocked tile. On the march it rides any ZIPLINE of its lane that
+// carries it toward the rival bird (soldierBoard):
 // its own side's out to the front, the rival's in to their roost - hands on
 // the handle, so a soldier on the cable swings at nothing, and a rival who
 // meets it on the line crashes with it (zipCrash, js/sim/zipline.js).
@@ -772,17 +772,17 @@ function soldierGoal(b) {
   const rival = state.drop && state.drop.eagles[1 - b.team];
   return rival || (b.way.length ? b.way[b.way.length - 1] : null);
 }
-// the ride: a cable within SOLDIER_ZIP_REACH of the soldier whose end nearer
+// the ride: a cable of its own lane within SOLDIER_ZIP_REACH of the soldier whose end nearer
 // the rival bird is SOLDIER_ZIP_GAIN nearer it than the soldier stands. Under
 // it (inside ZIP_GRAB) it clips on, riding toward that end; short of it, it
 // walks to the mount (zipMount, js/sim/zipline.js - the point a player's walk and a
 // bot's stand on too). True while the cable has the soldier, walking or on
 function soldierBoard(b, walkToward) {
   const g = soldierGoal(b);
-  if (!g || b.lane !== 1) return false; // the cables run the mid road: a side lane's column walks
+  if (!g) return false;
   const here = Math.hypot(g.x - b.x, g.y - b.y);
   for (const z of zips) {
-    if (!z) continue;
+    if (!z || z.lane !== b.lane) continue; // its own lane's cables: a column never rides off to another lane
     const n = zipNearest(z, b.x, b.y);
     if (n.dist > SOLDIER_ZIP_REACH) continue;
     const p0 = z.pts[0], p1 = z.pts[z.pts.length - 1];

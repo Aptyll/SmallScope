@@ -235,7 +235,7 @@ code still uses `ex`/`ey`. A screen-space pass anchored to the world reads the e
 13. `drawSweep` (the wind's slow sweep of loose snow, over every canopy, as strong as the day's
     weather lets it — [the wind field](#the-wind-field))
     → `drawDropAir` (the dotted flight path and a bird on the ground, while `state.drop`
-    exists; the fliers draw on the air layer, below) → `drawZips` (each side's zipline cable, span by span with its sag and wind lean —
+    exists; the fliers draw on the air layer, below) → `drawZips` (each side's zipline cables, span by span with its sag and wind lean —
     over every body and canopy, under the night; the line under the pointer lit gold, `hoverZip`;
     js/draw/zipline.js);
 14. `renderLighting` (its first pass `drawFog`, [the fog of war](gameplay.md#fog-of-war), js/draw/fog.js) → `drawNavPaths` + `drawHitboxes` (the `.` debug overlay — deliberately

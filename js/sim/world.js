@@ -921,7 +921,7 @@ function addPad(team, cx, cy, r) {
   return sp;
 }
 // signed distance (tiles) from the nearest road edge - the diagonal's, a
-// pad's or a path's: negative inside. `laid` is the road as it stands, ended
+// pad's, a path's or a side lane's: negative inside. `laid` is the road as it stands, ended
 // on the two perches (baseRoadEnd, js/sim/base.js); without it the diagonal
 // runs whole, which is what genWorld's carve rules have always read.
 function roadDist(fx, fy, laid) {
