@@ -37,7 +37,7 @@ function playMatch(opts) {
   // Either way seat 0 is the page's `player`, which the brain never ranks
   // into a push or a guard (aiRank) - the human's seat, sat by a bot.
   g.run(`
-    PROFILE.markDropped();                 // no scripted first flight: every rider may leap
+    PROFILE.markDropped();                 // no drop brief: seat 0 hops off like every other bot
     sampleHumanInput = function () {};     // nobody's keys: seat 0's input is its bot's
     settings.aiLevel = ${o.level | 0};
     player.control = 'ai';

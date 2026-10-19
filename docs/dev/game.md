@@ -13,17 +13,17 @@ nine other people are on it.
 Ten players in `players` — **people and AI: every seat nobody takes is a bot's**, alone or in an
 online lobby ([online play](multiplayer.md#online-play)) — across **two teams of five, RED vs
 BLUE** (players alternate). Everyone plays one of **two classes** (the ranged HUNTER, the melee
-WARRIOR — a human's is the one their **character** was made with) and is **dropped in by their team's armoured eagle** — the two birds fly the map's one
-diagonal in opposite directions and pass mid-route; nobody starts at a spawn camp. At the end of
-its line each eagle banks off the road into its **corner's** woods — RED always bottom-left, BLUE
-always top-right, each to its own right of the road — and becomes its team's **objective**; its
+WARRIOR — a human's is the one their **character** was made with) and is **dropped in by their team's armoured eagle**, which flies in over its own corner and lands
+the whole side at home; nobody starts at a spawn camp. Each side's **base** is a fixed hollow cut
+into its **corner's** woods, RED always bottom-left, BLUE always top-right
+([the bases](world.md#the-bases)); the bird roosts on its perch at the back and becomes its team's
+**objective**; its
 **merchant** climbs down and works home, never toward the fight: it pitches a stall beside
-the spur's head, a shop for anybody at all who walks up to it, then fells the back woods behind
-the bird and raises the bot bays there; idle, it keeps to the head of the **spur**, the track of felled pines
-that opens from the crater straight back to the road. **The road** runs the map's
-whole diagonal, world edge to world edge: one straight, dry packed-earth lane, there from
-worldgen and readable from anywhere, with the nests beside it, so the way to a bird is one
-sightline down its spur ([the road](world.md#the-road)). Half a minute after landing each
+the road's head, a shop for anybody at all who walks up to it, then fells the back woods behind
+the bird and raises the bot bays there; idle, it keeps to the road just up from the bird.
+**The road** runs the map's diagonal from one perch to the other: one straight, dry packed-earth
+lane, there from worldgen and readable from anywhere, so the way to a bird is one road in through
+its base's mouth ([the road](world.md#the-road)). Half a minute after landing each
 merchant raises a **barracks** (a bot bay) behind its bird, and two more as its logs pay for them:
 every thirty seconds each one marches a **wave** of soldier bots out to the road and down it at the
 rival bird, one soldier more every three minutes, a side's live soldiers capped across its bays. Both sides
@@ -147,10 +147,10 @@ laying out and choosing between. Berries and fish are not in it: food is an unca
 pop-up is a menu, and a piece levels through four materials. The counter's items are the other bargain:
 they make you walk to a body to get them. [Gear](gameplay.md#gear).
 
-**Your eagle is your life.** The bird that carried the team in crashes into its corner's trees at
-the end of its line and roosts there, armoured in team colour — the crater it blows (packed earth,
-one ground with the spur and the road), the spur its landing cuts back to the road and the bays its
-merchant raises in the back woods are the team's starting base, an
+**Your eagle is your life.** The bird that carried the team in crashes onto its base's perch and
+roosts there, armoured in team colour — the hollow round it, the crater it blows (packed earth,
+one ground with the road) and the bays its merchant raises in the back woods are the team's
+starting base, an
 easier opening for a new player who can help fortify before walking out. Its hp pool is its **nerve**:
 hits spook it, it calms back down between scares, it defends its own ground with a wing gust —
 and when its nerve breaks it is **driven off**, not killed: every camera pans to watch it fly

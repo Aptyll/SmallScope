@@ -1044,7 +1044,7 @@ function drawDrift(ex, ey) {
 // Every tile remembers the caster it was painted with (castAt) and
 // syncCasts - run by render() over the view - repaints a caster's reach the
 // moment what stands on its tile changes, so a felled pine takes its shade
-// with it however it fell (an axe, the spur, a crater, a snapshot) with
+// with it however it fell (an axe, a crater, a snapshot) with
 // nothing calling anything.
 //
 // What moves draws its own each frame under its sprite (drawCastShade): the

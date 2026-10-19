@@ -127,7 +127,7 @@ obs = {
   until one of you stands close) is not listed either - the same fog a human plays under.
 - **Birds.** `state` is `'fly' | 'dive' | 'down' | 'flee' | 'gone'`. A bird `'down'` is the
   objective: drive the rival one to `'flee'` and your side wins. `hp` is its nerve. `hitT` is
-  seconds since it was last struck. `mouth` is where its spur meets the road: the way in.
+  seconds since it was last struck. `mouth` is where the road leaves its base's hollow: the way in.
 - **Ids.** A player's id is its seat. Every other id is stable for the match on this machine;
   use it to name a target in `think` or to remember a thing across thinks.
 - **Tiles to pixels:** the centre of tile `(tx, ty)` is `(tx * 16 + 8, ty * 16 + 8)`.
