@@ -3346,13 +3346,15 @@ human idle, and deep in a ten-bot match with hundreds of buildings and robots st
 **The party lobby** (js/ui/rooms.js, `menu.screen = 'room'`) is where QUICKPLAY, RANKED and
 PRACTICE TOOL on the title land: the page hosts its own party at once (`beginParty`: a room on the relay, or a
 Steam lobby) and NET.mode names the mode. One centred column, League's lobby in Graphite: the
-mode's name and "n / 5" at the head, the party's four-letter code top-right in gold (a click copies
+mode's name and "n / 5" at the head (the leader's name wears a gold step mark: a click, or the keys'
+cursor on it with left and right, turns the party to the next mode in place, `modeSwap`, and
+spends every guest's READY, since it was said to the old mode), the party's four-letter code top-right in gold (a click copies
 it, white for a moment) beside a relay pip, and in a Steam lobby INVITE beside it, which opens
 Steam's friends overlay. Five seats of your side: a face, a name, a READY tick, the rating in
 RANKED, a guest's link bars (green, amber, red as the round trip grows), a crown over the leader;
 an empty seat is a dotted well with a gold + that invites (the code copied, or Steam's overlay).
 The leader's pointer on a guest's seat end shows a red X that shows them out (`seatKick`). The
-rival side is never shown: until matchmaking pairs parties it is all bots. While you are alone
+rival side is never shown here: it is another party met by matchmaking, or bots. While you are alone
 the CODE box sits under the code: type or paste (Ctrl+V) a friend's four letters to join their
 party (`partySeek` looks the code up on the relay's list, or in a Steam lobby's data, which
 carries the same code: `steamCode`, js/net/transport-steam.js); a code nobody answers to
@@ -3360,7 +3362,12 @@ rattles the box. Under the seats is the chat (js/ui/roomtalk.js): the last four 
 name in its side's paint, over a plate showing an ENTER key cap and a speech bubble; Enter or a
 click on the plate starts a line, Enter sends it, Esc drops it. At the foot LEAVE, and a guest's
 READY or the leader's FIND MATCH, dim and flashing the seats it waits on until every guest is
-ready (`partyFind`): every empty seat on both sides takes a bot and the whole party goes to the
+ready (`partyFind`). In QUICKPLAY and RANKED the party then looks for another party doing the
+same (js/ui/matchmaking.js): the word becomes a gold clock (a press stops looking) and the clock
+also shows after "n / 5" on every member's screen. Two parties that find each other play each
+other, the one with the higher code reloading onto the other's valley as its rival side; with
+nobody found within 8 s, bots take the rival side. After the match each party goes back to its
+own party lobby. Then every empty seat on both sides takes a bot and the whole party goes to the
 **hero select** (netPhase 'pick', the lobby, js/ui/menu.js), which every member sees as the
 leader does, with the code on a 2x plate at the head of your side's roster and a crown over the
 leader's card. Each member picks a hero on the row (`netPick`: a guest's press goes through the

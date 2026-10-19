@@ -29,7 +29,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.496';
+const PATCH_TXT = 'PATCH 0.497';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -45,6 +45,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.497', 'QUICKPLAY AND RANKED NOW FIND YOU REAL OPPONENTS: FIND MATCH LOOKS FOR ANOTHER PARTY FOR A FEW SECONDS UNDER A GOLD CLOCK AND PUTS IT ON THE OTHER SIDE, WITH BOTS ONLY IF NOBODY IS THERE, AND THE PARTY LEADER CAN NOW SWITCH MODES BY CLICKING THE MODE NAME.'],
   ['0.496', 'THE FOG OF WAR HOLDS ONLINE: EACH PLAYER IS SENT ONLY WHAT THEIR SIDE SEES, AND A RIVAL ARROW, ITS FIRE OR A DAMAGE NUMBER IN THE FOG NO LONGER SHOWS.'],
   ['0.495', 'TOOLS AND BITS ARE GONE FROM THE ROCKS, TREES AND CHESTS: YOUR WEAPON IS YOUR CLASS\'S, A CHEST HANDS YOU A FREE ITEM PART, YOUR SIX ITEM SLOTS SIT BESIDE THE WEAPON TOP-LEFT, THE WIKI HAS AN ITEMS PAGE, AND BOTS GO HOME TO SHOP WHEN THEY CAN AFFORD THEIR NEXT ITEM.'],
   ['0.494', 'FARMING PAYS: THE LAST HIT ON A RIVAL SOLDIER IS 16 GOLD AND A SPINNING COIN, GROWING OVER THE MATCH, WHILE A SOLDIER YOUR WAVE FINISHES PAYS NOBODY AND SHOWS YOU A GREY COIN; WOLF DENS COME BACK 75 SECONDS AFTER THEY ARE CLEARED WITH THEIR CLOCK ON THE DEN AND BOTH MAPS, SOLDIERS GROW TOUGHER, THE SCOREBOARD AND POST-GAME COUNT YOUR FARM, AND BOTS LANE AND JUNGLE FOR IT.'],
@@ -755,7 +756,7 @@ function updateTitle(dt) {
       m.cardKind[p.id] = h;
       if (m.cardFx[p.id] > 0) m.cardFx[p.id] -= dt;
     }
-    if (NET.isClient && (NET.refused === 'HOSTGONE' || NET.refused === 'KICKED')) { if (popOpen()) leavePop(); const mode = NET.mode; netLeave(); beginParty(mode || 'quick'); SFX.deny(); }
+    if (NET.isClient && !state.fade && (NET.refused === 'HOSTGONE' || NET.refused === 'KICKED')) partyLost(); // js/ui/matchmaking.js
   } else m.cardFx = null;
   m.t += dt;
   m.camT += dt;
