@@ -308,6 +308,7 @@ function render() {
   // your side's flag rings - the ground each order covers - flat on the snow
   // under everything that walks it, and the ring a held flag wheel previews
   drawFlagRings(ox, oy, now);
+  drawRecallGround(ex, ey); // ...each roost's healing ring and the recall's closing on the feet (js/draw/recall.js)
   // ...and the pick's reach round a rock (drawMineRing, beside drawRock)
   drawMineRing(ox, oy);
   // the CLICK scheme's rings: where the last order landed, and the lock's

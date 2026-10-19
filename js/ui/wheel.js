@@ -125,6 +125,7 @@ const cmdTile = (c) => Number.isInteger(c.tx) && Number.isInteger(c.ty);
 function cmdOk(c) {
   if (!c || typeof c !== 'object') return false;
   if (c.kind === 'gear') return cmdInt(c.piece, 0, GEAR.length);
+  if (c.kind === 'recall') return true;
   if (c.kind === 'ability') return cmdInt(c.i, 0, AB_KEYS);
   if (c.kind === 'fishPick') return c.type === null || FISH_KINDS.includes(c.type);
   if (c.kind === 'shop') {
@@ -150,6 +151,7 @@ function runCmd(p, c) {
   if (c.kind === 'gear') return buyGear(p, c.piece); // no tile, no reach - gear is bought from anywhere
   if (c.kind === 'ability') return buyAbilityLv(p, c.i); // an ability level: a skill point, from anywhere
   if (c.kind === 'fishPick') { p.fishPick = c.type; return true; } // the fish well's picker (fishPick, js/ui/strip.js): which fish the key eats
+  if (c.kind === 'recall') return startRecall(p); // the walk home, from anywhere (js/sim/recall.js)
   if (c.kind === 'shop') return shopCmd(p, c); // the merchant's counter (js/shop.js) - it checks its own reach
 
   if (c.kind === 'build') {
