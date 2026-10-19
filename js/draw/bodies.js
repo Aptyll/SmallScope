@@ -556,9 +556,11 @@ function drawPlayer(p, ex, ey, now) {
     // legible - your own included: the profile name is what the rest of the
     // table sees over your head, and hiding it from you alone would make it
     // the one label in the game you cannot check.
+    const nameX = centreTextX(p.x - ex, p.name);
     drawWorldText(p.name,
-      centreTextX(p.x - ex, p.name), hy - 18 - lift, // clear of the draw meter's frame (top row hy-11) with a gap row
+      nameX, hy - 18 - lift, // clear of the draw meter's frame (top row hy-11) with a gap row
       TEAMS[skin(p.team)].mark);
+    drawBountyTag(nameX + pixelTextWidth(p.name) + 2, hy - 18 - lift, bountyOf(p)); // a streak's price, past the name (js/draw/overhead.js)
     // dodge stamina: one clean unsegmented WHITE bar under the health bar -
     // white on every side, since stamina has no side, and white is neither the
     // team's paint above it nor the gold of the draw - charges stay discrete

@@ -296,6 +296,23 @@ function drawOrcaCount(cx, bottom, left) {
   drawPixelTextOutline(ctx, s, cx - Math.floor(pixelTextWidth(s, ORCA_COUNT_K) / 2), bottom - 5 * ORCA_COUNT_K - hop, '#ffffff', BAR_FRAME, ORCA_COUNT_K);
 }
 
+// The BOUNTY (bountyOf, the `takedowns` banner js/player.js): a body on a
+// kill streak wears a coin and the gold its killer will cash, just past the
+// right end of its name, so everyone on both sides can see who is worth
+// hunting. The coin is 5 px round on the font's own 1 px ink rim, the number
+// the purse's gold; nothing at all while there is no bounty.
+const BOUNTY_INK = '#f2cc6a', BOUNTY_LIT = '#fff3c4', BOUNTY_DEEP = '#c8902c';
+function drawBountyTag(x, y, bounty) {
+  if (!(bounty > 0)) return;
+  ctx.fillStyle = BAR_FRAME;                        // the rim: the coin's 5x5 disc grown a pixel each way
+  ctx.fillRect(x + 1, y - 1, 5, 7); ctx.fillRect(x, y, 7, 5);
+  ctx.fillStyle = BOUNTY_INK;
+  ctx.fillRect(x + 2, y, 3, 5); ctx.fillRect(x + 1, y + 1, 5, 3);
+  ctx.fillStyle = BOUNTY_DEEP; ctx.fillRect(x + 2, y + 4, 3, 1); ctx.fillRect(x + 5, y + 1, 1, 3); // shade low right, the one sun
+  ctx.fillStyle = BOUNTY_LIT; ctx.fillRect(x + 2, y + 1, 1, 1);
+  drawWorldText(String(bounty), x + 9, y, BOUNTY_INK);
+}
+
 // The level plate: a 7-tall badge hard against a bar backing's LEFT column
 // (`rx`, the column past the plate, already painted by the bar), sharing that
 // one frame column and spanning the two bars stacked under it (topY..topY+6).
