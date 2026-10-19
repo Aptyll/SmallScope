@@ -35,7 +35,7 @@ down at their own bird.
 
 **Your side is always blue.** Whatever team index the roster dealt you, your allies are painted
 BLUE and your enemies RED — nameplates, arrows, armour, buildings, map marks, bot names, all of
-it — through one function (`skin`, js/player.js) the paint goes through and the rules never do.
+it — through one function (`skin`, js/sim/player.js) the paint goes through and the rules never do.
 A settings toggle (MY TEAM) shows the roster's real colours instead.
 [Teams and colours](multiplayer.md#teams-and-colours).
 

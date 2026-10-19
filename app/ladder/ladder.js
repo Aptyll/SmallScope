@@ -43,9 +43,9 @@ function metaOf(src) {
   const f = (k) => { const m = new RegExp(k + '\\s*:\\s*[\'"`]([^\'"`]{1,40})[\'"`]').exec(src); return m ? m[1] : ''; };
   return { name: f('name'), author: f('author'), version: f('version') };
 }
-// how many map shapes the game has (MAPS, js/world.js), read off the source
+// how many map shapes the game has (MAPS, js/sim/world.js), read off the source
 function shapeCount() {
-  const s = fs.readFileSync(path.join(ROOT, 'js', 'world.js'), 'utf8');
+  const s = fs.readFileSync(path.join(ROOT, 'js', 'sim', 'world.js'), 'utf8');
   const i = s.indexOf('const MAPS = ['), j = s.indexOf('\n];', i);
   return Math.max(1, (s.slice(i, j).match(/^\s*\{ name: /gm) || []).length);
 }

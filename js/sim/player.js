@@ -1,0 +1,1264 @@
+'use strict';
+// Every combatant in the match: the numbers a player is made of, the Player
+// class and the ten of them, the two playable classes and their kits, gear, cards,
+// the input struct, contested orders, the entity arrays - and the damage &
+// death lifecycle those players live and die by.
+// ------------------------------------------------------------ players
+// Every player in the match is a Player. They all carry identical state and are
+// all driven from the same `input` struct, so a feature written for "the
+// player" is a feature every player has: the local human (slot localId), the AI fills,
+// and eventually a network peer are only different in who fills that struct.
+// Sim code takes a `p` argument; `player` (the local player) is for the camera,
+// HUD, cursor and audio only.
+const TEAMS = SPRITES.teams; // the 2 colour presets (RED, BLUE), baked into the sprites
+// Which PRESET a team wears on this screen. With settings.teamBlue (the
+// default) the local player's side is always the BLUE one and the rival side
+// always RED, whatever team index the roster dealt - so allies read blue and
+// enemies red from the first match to the last, and a future second human
+// sees the mirror. The match itself never asks this: team indices, enemyOf,
+// PVP and every rule read p.team; only the PAINT goes through here - every
+// TEAMS[...] lookup, the per-team sprite sets (champ, the birds, teamBuild,
+// robotTeam, merchant) and the two maps' eagle colours. Bot names are
+// computed from it live (Player.name), so RED-3 turns BLUE-3 with the toggle.
+function skin(team) { return settings.teamBlue && player && player.team === 0 ? 1 - team : team; }
+// The rival's SHAPE cue: under any colour-blind palette (settings.teamPal, not
+// 'def') a rival's minimap dot is a cross (drawMapUnit, js/draw/marks.js) and
+// its health bar wears a raised dark cap on its right end (drawHealthBar, js/draw/overhead.js),
+// so the two sides still part in greyscale. Paint only, like skin().
+function foeCue(team) { return settings.teamPal !== 'def' && team != null && !!player && team !== player.team; }
+
+// Players. Every combatant in the match - the local human, the AI fills,
+// and (later) network peers - is a Player in `players`, so anything written
+// for "the player" is automatically something every player can do. Only the
+// camera, HUD and cursor address one specific player (`player`, the local one).
+const MAX_PLAYERS = 10; // five a side
+const TEAM_COUNT = 2;      // RED vs BLUE; players alternate (id % TEAM_COUNT)
+const PVP = true;          // arrows hit players on another team (friendly fire is off)
+const PLAYER_SPEED = 72;
+const PLAYER_R = 4.5;
+
+// momentum (player-only): input accelerates vx/vy, the surface underfoot sets
+// friction and speed caps. Walking on snow is tuned to feel like the old fixed
+// PLAYER_SPEED; everything faster than that is earned via ice, dodges, or sliding.
+const ICE_MAX = 150;      // ice speed cap (~2x walk); holding a direction pumps toward it
+const SLIDE_MIN = 85;     // shift-slide only engages above this speed...
+const SLIDE_EXIT = 55;    // ...and drops out below this one (hysteresis)
+const TRAIL_MIN = 110;    // sliding faster than this carves the snow trail
+const SNOW_TRAIL_LIFE = 3.5; // snow groove lifetime (ice scratches keep the 9s footprint life)
+const SNOW_TRAIL_FADE = 1.4; // fade window at the end of that life: hold crisp, then wipe tail-first
+
+// Hero levels (League-style, max 12). XP is lifetime gold earned (gainGold), never spent
+// or lost on death; LEVEL_XP[n-1] is the total needed to reach level n, the gap growing
+// by 20 a level. Sized against what a bot chaining pines all match earns (about a gold
+// a second on the fells, plus the clock's 15 a minute - TRICKLE_*, js/sim/sim.js): that
+// bot is level 9 or 10 at fifteen minutes and capped past twenty, a player who fights
+// and farms by halves is two or three levels behind it, and the trickle alone is level
+// 3 by seven minutes - a level is news all match, not a sprint over by 2:00. Each
+// level past the first is the same flat growth: +LVL_HP max hp (healed on the spot)
+// and +LVL_DMG on every arrow, applied on top of the class kit - a level-8 hero of
+// this table is about the capped hero of the old one.
+const LEVEL_MAX = 12;
+const LEVEL_XP = [0, 40, 100, 180, 280, 400, 540, 700, 880, 1080, 1300, 1540];
+const LVL_HP = 9;
+const LVL_DMG = 2;
+
+// The dodge roll as an ability: how long it lasts, how hard it throws you,
+// and how many charges refill how fast. What a roll HITS on the way through
+// is the ROLL_/TACKLE_ block in js/sim/actions.js.
+const DODGE_T = 0.28;     // roll duration (s)
+const DODGE_SPEED = 215;  // roll velocity -> ~60px travelled
+const DODGE_CHARGES = 2;
+const DODGE_CD = 3.5;     // seconds to refill one charge
+
+// The two bow numbers a class kit is expressed against - CLASSES below
+// reads both at load time, which is why they sit here and the rest of the
+// bow (the draw curve and the cycle: js/sim/tools.js; the trail: js/sim/actions.js).
+const BOW_CHARGE = 0.9;   // seconds to a full draw
+const BOW_NOCK = 0.45;    // WREN's seconds between loosing and the next draw
+
+// ---- classes ------------------------------------------------------------
+// Every player plays one of these. A class is a look (SPRITES.champ[c] - the
+// sprite key keeps its legacy name; js/sprites.js is never rewritten) plus a
+// kit - the numbers updatePlayer / emitBit / tryDodge read through kitOf(p)
+// instead of the bare constants - plus its four ACTIVE ABILITIES on keys 1-4
+// (CLASS_AB, js/sim/abilities.js). Picked on the lobby screen (local) or
+// hashed from the seed (bots) in initPlayers().
+const CLASSES = [
+  {
+    name: 'HUNTER', role: 'BOW, DISTANCE, AMBUSH',
+    blurb: ['THE BOW IS THE ARGUMENT: KEEP THE GAP.', 'THE NET TANGLES THEM. THE GRAPPLE PULLS YOU CLEAR.', 'THE SNOW HIDES YOU. THE SHOT OUT OF IT HITS MUCH HARDER.'],
+    stats: { ice: 3, draw: 4, power: 4, tough: 2 },
+    kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1, chargeMul: 0.55,
+      bowCharge: BOW_CHARGE, nock: 0.4, dmgBase: 4, dmgPow: 9, spdDmg: 0, dodgeSpeed: DODGE_SPEED, maxHp: 92 },
+  },
+  {
+    name: 'WARRIOR', role: 'PRESSURE, BLOCKING, MOMENTUM',
+    blurb: ['THE FIGHT IS AT ARM\'S LENGTH: GET THERE.', 'THE SHIELD EATS ARROWS. THE RUSH CARRIES BODIES.', 'THE SWORD REACHES A BODY LENGTH. THE EXECUTE FINISHES IT.'],
+    stats: { ice: 4, draw: 2, power: 3, tough: 5 },
+    kit: { iceMax: 1.15, iceSteer: 3.2, slideMin: 70, fatigue: 0.7, chargeMul: 0.7,
+      bowCharge: 0.75, nock: 0.5, dmgBase: 3, dmgPow: 6, spdDmg: 5, dodgeSpeed: 230, maxHp: 120 },
+  },
+];
+// the kit every sim site reads: the class's numbers with the player's gear
+// folded in. refreshKit() rebuilds the cache whenever class or gear
+// changes; kitOf() itself is called many times a frame and must stay a read.
+function kitOf(p) { return p.kit || CLASSES[p.cls].kit; }
+// swap a player's class: kit hp applies on the spot (full heal, it's a
+// pre-match choice), and the new class brings its own tool and bits - the
+// loadout is part of who you picked, not a thing carried across (js/sim/tools.js)
+function setClass(p, c) { p.cls = c; refreshKit(p); p.hp = p.maxHp; giveLoadout(p); }
+// kit hp plus the flat per-level growth
+function levelMaxHp(p) { return kitOf(p).maxHp + LVL_HP * (p.level - 1); }
+// THE ONE WAY HEALTH COMES BACK to a player: a meal, the daylight, a second
+// wind, a kill's heal. Capped at the most, and what it actually gave back is
+// counted for the post-game record (js/ui/lobby.js) and returned.
+function healPlayer(p, n) {
+  const h = Math.max(0, Math.min(n, p.maxHp - p.hp));
+  p.hp += h;
+  p.healed += h;
+  return h;
+}
+// the one way gold enters a wallet: pays the purse and the same amount of XP
+function gainGold(p, n) {
+  p.inv.gold += n;
+  p.xp += n;
+  // lifetime total, coalesced - see profile.js. Practice gold is play money:
+  // a free room with chests in it must never farm the tech tree's points.
+  if (p === player && !PRACTICE) PROFILE.addGold(n);
+  while (p.level < LEVEL_MAX && p.xp >= LEVEL_XP[p.level]) levelUp(p);
+}
+// The merchant's till, and the ONE way gold reaches a wallet without XP
+// behind it (CLAUDE.md names it as the exception to the gainGold rule). A
+// SALE is an exchange, not a source: the counter buys fish and berries at the
+// same price it sells them, so paying levels for one would turn two clicks
+// into a level farm rather than into a trade. Everything that EARNS gold -
+// a fell, a kill, a chest, the clock - still goes through gainGold.
+function tradeGold(p, n) { if (p && n > 0) p.inv.gold += n; }
+// Gold is never a physical drop: every source pays the earner on the spot
+// through this one wrapper - the wallet (via gainGold, so it levels too), the
+// '+N' popup at the place the action happened, and the coin blip for the
+// local earner. (x, y) is the tree, the kill, the wreck - not the player.
+function awardGold(p, n, x, y) {
+  if (!p || n <= 0) return;
+  gainGold(p, n);
+  addFloater(x, y - 14, '+' + n, RES_COLORS.gold);
+  sfxFor(p, 'coin');
+}
+function levelUp(p) {
+  p.level++;
+  p.skillPts++;
+  p.maxHp = levelMaxHp(p);
+  p.hp = Math.min(p.maxHp, p.hp + LVL_HP);
+  // the early levels come too fast to be news; the late ones say who is ahead
+  if (p.level >= LOG_LEVEL) logEvent(p.name + ' REACHED LEVEL ' + p.level, p);
+  if (!inAir(p)) floaters.push({ x: p.x, y: p.y - 22, txt: 'LEVEL ' + p.level, color: '#f2cc6a', t: 0, vx: 0, scale: 2, rise: 20 });
+  sfxFor(p, 'levelUp');
+}
+// the pose set a body draws from: its class body in its team's paint, worn
+// by its character's look (tone and fringe at 16 px - js/sprites/characters.js)
+function classSet(p) { return SPRITES.champLook(p.cls, p.look, skin(p.team)); }
+// a bot's look, off the seed like its class and gear: a roster of faces,
+// the same faces on a replayed world. LOOK_N is the axes' sizes (profile.js).
+function botLook(id) {
+  const look = {}, N = PROFILE.LOOK_N;
+  let k = 0;
+  for (const ax in N) look[ax] = Math.floor(hash2(id * 41 + 11 + k++ * 7, 123) * N[ax]) % N[ax];
+  return look;
+}
+// The local player wears the ACTIVE CHARACTER: its name, its look, and its
+// class (fixed at creation - js/app/profile.js), whose loadout comes with it.
+// Called from initPlayers and whenever the roster's active slot changes
+// (the character screens, js/ui/chars.js; the lobby's slot strip). It
+// takes the player to dress so that a lobby can dress a REMOTE human's body
+// the same way from a spec of its own, but the profile's character is only
+// ever this screen's.
+function applyCharacter(p) {
+  p = p || player;
+  const c = PROFILE.char();
+  p.name = c ? c.name : PROFILE.name();
+  p.look = c ? c.look : botLook(0);
+  setClass(p, c ? c.cls : 0);
+}
+// Five players share each team colour, so text that names one player (the
+// scoreboard, the event log) also needs a per-player shade of that team's
+// palette - the team colour stays the background, this is the ink.
+function playerTint(p) {
+  const t = TEAMS[skin(p.team)];
+  return [t.trim, t.hatL, t.trimD, t.hat][Math.floor(p.id / TEAM_COUNT) % 4];
+}
+
+// ---- inventory: the backpack ---------------------------------------------
+// Gold is a wallet number and never a bag item - it is currency, and a purse
+// that could run out of room would make a kill refuse its own bounty. What
+// you CARRY lives in slots instead: `p.bag` is a fixed array of `p.bagCap`
+// cells, each one null or a { type, n } stack of at most ITEMS[type].stack.
+// The slot is the unit of capacity for everything the bag holds, so two half
+// stacks cost two cells the way they do in any RPG bag, and the pickup path
+// can genuinely refuse a find when there is nowhere to put it - which is the
+// whole reason the bag is slots and not a row of counters. What that
+// capacity is FOR is the build: tools, bits and unopened cards, the things a
+// player lays out, compares and chooses between.
+//
+// A cell may also be INSTANCED: a tool's cell carries the bits loaded into it
+// (`bits`, `idx` - see js/sim/tools.js), which is why a tool stacks to 1 and is
+// moved with bagPut() rather than rebuilt from a type name. Nothing else in
+// the bag has state of its own.
+//
+// FOOD AND CARDS ARE NOT IN THE BAG AT ALL. An item marked `pouch` lives in
+// `p.food`, a set of uncapped counters beside the wallet, and takes no cell:
+// the two meals are pressed on Q and F from the hud strip's own wells, and
+// an unopened card (3.23) opens itself the moment it is held (0.426) - one
+// at random from everything held, its buff picked at random (useCard,
+// js/sim/core.js) - so none of them is ever laid out, compared or
+// dragged, and every cell one of them took was a cell taken off the build.
+// The six helpers below route them there, which is what keeps the pickup, the
+// catch, the sale and the AI's food check generic over "a
+// berry" and "a bit" alike.
+// `heal` is what a meal is worth before HEARTHWEAVE - the ONE place the number
+// lives, so the tooltip and the meal that lands can never disagree (js/sim/core.js).
+const ITEMS = {
+  berry: { icon: 'itemBerry', stack: Infinity, pouch: true, heal: 20 },
+  // the lake's two, caught through a hole in the ice (the `fish` shoal,
+  // js/sim/wildlife.js): the FROST PIKE - still the `fish` key, which the market,
+  // the nets and every save already name - and the rare GOLD SUNFISH
+  fish: { icon: 'itemFrostPike', stack: Infinity, pouch: true, heal: 50, name: 'FROST PIKE' },
+  sunfish: { icon: 'itemSunfish', stack: Infinity, pouch: true, heal: 80, name: 'GOLD SUNFISH' },
+  // the creek's two (CREEK_FISH, js/sim/world.js): caught by rolling over the
+  // water onto one, eaten off the fish well like the lake's
+  whitefish: { icon: 'itemWhitefish', stack: Infinity, pouch: true, heal: 40, name: 'WHITEFISH' },
+  snowChar: { icon: 'itemSnowChar', stack: Infinity, pouch: true, heal: 70, name: 'SNOW CHAR' },
+  // unopened roguelike cards - one ITEMS entry per rarity, in the pouch like
+  // a meal, so the drop pickup and the counter are all free
+  // (see checklists.md "adding a carried item"). Drawing one (useCard,
+  // js/sim/core.js) applies a random entry of its rarity; see CARDS below.
+  cardWhite:  { icon: 'itemCardWhite',  stack: Infinity, pouch: true },
+  cardGreen:  { icon: 'itemCardGreen',  stack: Infinity, pouch: true },
+  cardBlue:   { icon: 'itemCardBlue',   stack: Infinity, pouch: true },
+  cardPurple: { icon: 'itemCardPurple', stack: Infinity, pouch: true },
+  cardGold:   { icon: 'itemCardGold',   stack: Infinity, pouch: true },
+  // the burrow, a rabbit's drop: a CONSUMABLE in the pack, stacked in one
+  // cell. Clicking the cell (or the burrow key) is `use`: it stands the hole's
+  // ghost up, and the dig spends one (js/sim/tunnel.js, where its icon is baked).
+  tunnel:     { icon: 'itemTunnel',     stack: 5, use: () => tunnelAimToggle() },
+};
+const CARD_RARITIES = ['white', 'green', 'blue', 'purple', 'gold'];
+// THE FISH a body can eat, in the order the fish well eats them when no kind
+// is picked: the smallest meal first, so the best one is kept. The well's
+// picker (fishPick, js/ui/strip.js) sets p.fishPick to one of them, or null
+// for "whichever comes next" (fishToEat, js/sim/core.js).
+const FISH_KINDS = ['whitefish', 'fish', 'snowChar', 'sunfish'];
+function fishHeld(p) { let n = 0; for (const k of FISH_KINDS) n += bagCount(p, k); return n; }
+// What one unopened card of each rarity costs at the merchant's counter
+// (the `shop` banner, js/shop.js), and half of it what one fetches sold back.
+// A card is priced by its RARITY and not per entry, because the rarity is
+// what is ever bought or carried: the pick of three inside it is drawn after
+// the money changes hands, so the buyer is paying for the odds, not the buff.
+const CARD_PRICE = { white: 25, green: 45, blue: 80, purple: 130, gold: 210 };
+// 'white' <-> the 'cardWhite' ITEMS/RES_COLORS key every rarity is stored under
+function cardKey(rarity) { return 'card' + rarity[0].toUpperCase() + rarity.slice(1); }
+const CARD_TYPE_RARITY = {}; // 'cardWhite' -> 'white', the inverse of cardKey
+for (const r of CARD_RARITIES) CARD_TYPE_RARITY[cardKey(r)] = r;
+// The one bag everyone starts with; a second one raises p.bagCap. Two rows
+// of BAG_COLS small cells in the drawer under the weapon shelf (3.23, the
+// backpack banner in js/ui.js): the spare tools a walk turns up and the bits
+// no tool had a cell for, with every cell earned by choosing what to keep.
+// Nothing that is merely COUNTED lives in it (meals and cards are the
+// pouch), and a found bit loads itself into a tool before it ever takes a
+// cell (fitAdd, js/sim/tools.js). A kind with a `use` (the burrow) is spent from
+// its cell: a click on it is the use (sendBagCell, js/ui/strip.js).
+const BAG_CAP = 12;
+// Is this kind carried in the POUCH (p.food) rather than in a cell? One test,
+// asked by all four counting helpers, so a pouch kind can never be half in
+// one store and half in the other.
+function isPouch(type) { return !!(ITEMS[type] && ITEMS[type].pouch); }
+// a fresh pouch: every pouch kind at zero, so a count is never undefined
+function newPouch() { const o = {}; for (const k in ITEMS) if (ITEMS[k].pouch) o[k] = 0; return o; }
+function bagCount(p, type) {
+  if (isPouch(type)) return p.food[type] || 0;
+  let n = 0;
+  for (const s of p.bag) if (s && s.type === type) n += s.n;
+  return n;
+}
+function bagUsed(p) { let n = 0; for (const s of p.bag) if (s) n++; return n; }
+// how many more of `type` fit: the room left in its partial stacks plus a
+// whole stack for every empty cell - and Infinity for a pouch kind, which is
+// what makes a berry pickup, a catch and a market buy incapable of refusing
+function bagRoom(p, type) {
+  if (isPouch(type)) return Infinity;
+  const max = ITEMS[type] ? ITEMS[type].stack : 0;
+  let n = 0;
+  for (const s of p.bag) n += !s ? max : s.type === type ? max - s.n : 0;
+  return n;
+}
+// adds what fits - topping up partial stacks before opening a cell - and
+// returns how many went in; the caller decides what happens to the remainder
+function bagAdd(p, type, n) {
+  if (!ITEMS[type]) return 0;
+  if (isPouch(type)) { p.food[type] = (p.food[type] || 0) + n; return n; } // the pouch always takes it (a save from before a kind existed carries no counter for it)
+  const max = ITEMS[type].stack;
+  let left = n;
+  for (const s of p.bag) {
+    if (left <= 0) break;
+    if (!s || s.type !== type || s.n >= max) continue;
+    const take = Math.min(left, max - s.n);
+    s.n += take; left -= take;
+  }
+  for (let i = 0; i < p.bag.length && left > 0; i++) {
+    if (p.bag[i]) continue;
+    const take = Math.min(left, max);
+    p.bag[i] = { type, n: take }; left -= take;
+  }
+  return n - left;
+}
+// An instanced cell (a tool, which carries its own bits) cannot be rebuilt
+// from a type name, so it is placed whole into the first free slot rather than
+// merged into a stack. Returns false when there was nowhere to put it, and the
+// caller decides - the drop path leaves it lying in the snow.
+function bagPut(p, cell) {
+  for (let i = 0; i < p.bag.length; i++) if (!p.bag[i]) { p.bag[i] = cell; return true; }
+  return false;
+}
+// spends from the LAST stack backwards, so partial stacks empty and free
+// their cell instead of leaving a trail of ones across the bag
+function bagTake(p, type, n) {
+  if (isPouch(type)) {
+    const took = Math.min(n, p.food[type] || 0);
+    p.food[type] -= took;
+    return took;
+  }
+  let left = n;
+  for (let i = p.bag.length - 1; i >= 0 && left > 0; i--) {
+    const s = p.bag[i];
+    if (!s || s.type !== type) continue;
+    const take = Math.min(left, s.n);
+    s.n -= take; left -= take;
+    if (s.n <= 0) p.bag[i] = null;
+  }
+  return n - left;
+}
+
+// ---- gear ----------------------------------------------------------------
+// Four pieces - helmet, chest, legs, boots - each picked from three variants
+// at the lobby (that free pick is level 1) and bought to level GEAR_LV_MAX
+// in-match, from anywhere, per piece. A variant's mod() writes its bonus into
+// the effective kit at the piece's level, so the whole system is one table
+// plus refreshKit(); the sim never reads gear directly. Levels reset with the
+// match because every boot builds fresh Players. The HUD row (UI banner) and
+// the bots both buy through input.cmd {kind:'gear', piece}, never directly.
+const GEAR_SLOTS = ['HELMET', 'CHEST', 'LEGS', 'BOOTS'];
+const GEAR_COSTS = [10, 20, 35]; // gold to reach piece level 2 / 3 / 4
+const GEAR_LV_MAX = 4;
+const GEAR_MATS = ['#8a6a4a', '#9aa3ad', '#9fc4dd', '#f2cc6a']; // leather/iron/steel/gold, by piece level
+const GEAR = [
+  [ // helmet: how you kill
+    { name: 'LONGSIGHT', blurb: 'ARROWS HIT HARDER', mod: (k, L) => { k.dmgBase += L; } },
+    { name: 'QUICKDRAW', blurb: 'FASTER DRAW AND RENOCK', mod: (k, L) => { k.bowCharge *= 1 - 0.08 * L; k.nock *= 1 - 0.08 * L; } },
+    { name: 'HUNTSMAN', blurb: 'ANIMALS PAY MORE', mod: (k, L) => { k.huntMul += 0.15 * L; } },
+  ],
+  [ // chest: how you last
+    { name: 'BULWARK', blurb: 'MORE HEALTH', mod: (k, L) => { k.maxHp += 8 * L; } },
+    { name: 'IRONHIDE', blurb: 'EVERY HIT HURTS LESS', mod: (k, L) => { k.dr += L; } },
+    { name: 'HEARTHWEAVE', blurb: 'FOOD AND NIGHTS ARE KINDER', mod: (k, L) => { k.foodMul += 0.25 * L; k.nightHeal = true; } },
+  ],
+  [ // legs: how you cross snow
+    { name: 'STRIDER', blurb: 'WALK FASTER', mod: (k, L) => { k.walkMul += 0.04 * L; } },
+    { name: 'SLIDEWORN', blurb: 'LONGER, EARLIER SLIDES', mod: (k, L) => { k.fatigue *= 1 - 0.12 * L; k.slideMin -= 5 * L; } },
+    { name: 'PACKMULE', blurb: 'FELLS AND BREAKS PAY MORE', mod: (k, L) => { k.harvestMul += 0.25 * L; } },
+  ],
+  [ // boots: how you skate and dodge
+    { name: 'SKATES', blurb: 'FASTER, SHARPER ON ICE', mod: (k, L) => { k.iceMax *= 1 + 0.08 * L; k.iceSteer += 0.15 * L; } },
+    { name: 'DANCER', blurb: 'DODGES COME BACK SOONER', mod: (k, L) => { k.dodgeCd -= 0.4 * L; } },
+    { name: 'GHOSTSTEP', blurb: 'FOES SPOT YOU FROM CLOSER', mod: (k, L) => { k.stealth -= 0.10 * L; } },
+  ],
+];
+// ---- stat points ----------------------------------------------------------
+// The pre-match build's other half: STAT_POINTS points every hero - human
+// or bot - spends before the eagle, a point a step, on the STAT LEDGER
+// itself (the hero pop-up, js/ui/menu.js): every row the ledger prices a
+// body with (GEAR_STATS, same names, same order) is a track here, and a
+// point on it is one step of that number. Same shape as a GEAR variant's
+// mod(k, L) with the points spent as L, folded into the kit by refreshKit
+// below, so every kit-reading site picks them up the way it does gear. The
+// budget is the same for everybody (bots deal theirs from the seed in
+// initPlayers), so a spend is a shape, never a head start - the wiki's
+// flatness holds.
+const STAT_POINTS = 6;
+const STAT_TRACKS = [
+  { name: 'HEALTH', mod: (k, n) => { k.maxHp += 5 * n; } },
+  { name: 'DAMAGE', mod: (k, n) => { k.dmgBase += 0.5 * n; } },
+  { name: 'DRAW', mod: (k, n) => { k.bowCharge *= Math.pow(0.96, n); } },
+  { name: 'RENOCK', mod: (k, n) => { k.nock *= Math.pow(0.95, n); } },
+  { name: 'ARMOR', mod: (k, n) => { k.dr += 0.5 * n; } },
+  { name: 'WALK', mod: (k, n) => { k.walkMul += 0.02 * n; } },
+  { name: 'ICE SPEED', mod: (k, n) => { k.iceMax *= Math.pow(1.04, n); } },
+  { name: 'ICE GRIP', mod: (k, n) => { k.iceSteer += 0.15 * n; } },
+  { name: 'FATIGUE', mod: (k, n) => { k.fatigue *= Math.pow(0.94, n); } },
+  { name: 'DODGE', mod: (k, n) => { k.dodgeCd -= 0.15 * n; } },
+  { name: 'HUNTS', mod: (k, n) => { k.huntMul += 0.1 * n; } },
+  { name: 'FELLS', mod: (k, n) => { k.harvestMul += 0.15 * n; } },
+  { name: 'FOOD', mod: (k, n) => { k.foodMul += 0.15 * n; } },
+  { name: 'SEEN AT', mod: (k, n) => { k.stealth -= 0.05 * n; } },
+];
+function ptsSpent(p) { let n = 0; for (const v of p.pts) n += v | 0; return n; }
+// ---- roguelike cards ------------------------------------------------------
+// Dropped by a sprung chest in the treeline (hitObject's chest branch,
+// js/sim/actions.js, rolled against CHEST_ODDS), carried in the pouch, and DRAWN
+// on the card key: one card at random from everything held, one entry at
+// random from its rarity (useCard, js/sim/core.js) - no draft screen (3.23).
+// Same shape as a GEAR variant's mod(k, L) minus the level - a card is a
+// one-shot pick, not a leveled buy - folded into the kit cumulatively by
+// refreshKit below, so every kit-reading site in the sim picks them up for
+// free the same way it already does for gear. killHeal is the one field no
+// champion/gear kit carries; die()'s kill-credit line reads it.
+const CARDS = {
+  white: [
+    { name: 'QUICK HANDS', blurb: 'FASTER RENOCK', mod: (k) => { k.nock *= 0.92; } },
+    { name: 'THICK SOLES', blurb: 'WALK FASTER', mod: (k) => { k.walkMul += 0.03; } },
+    { name: 'SOFT LANDING', blurb: 'DODGES COME BACK SOONER', mod: (k) => { k.dodgeCd -= 0.25; } },
+    { name: 'FORAGER', blurb: 'FELLS AND BREAKS PAY MORE', mod: (k) => { k.harvestMul += 0.5; } },
+    { name: 'STEADY HAND', blurb: 'FASTER FULL DRAW', mod: (k) => { k.bowCharge *= 0.96; } },
+  ],
+  green: [
+    { name: 'SHARP POINT', blurb: 'ARROWS HIT HARDER', mod: (k) => { k.dmgBase += 1; } },
+    { name: 'PADDED VEST', blurb: 'MORE HEALTH', mod: (k) => { k.maxHp += 12; } },
+    { name: 'LIGHT FEET', blurb: 'WALK FASTER', mod: (k) => { k.walkMul += 0.06; } },
+    { name: 'CAMOUFLAGE', blurb: 'FOES SPOT YOU FROM CLOSER', mod: (k) => { k.stealth -= 0.08; } },
+    { name: "FLETCHER'S TOUCH", blurb: 'FASTER RENOCK', mod: (k) => { k.nock *= 0.85; } },
+  ],
+  blue: [
+    { name: 'HEAVY DRAW', blurb: 'HITS HARDER, SLOWER DRAW', mod: (k) => { k.dmgBase += 2; k.bowCharge *= 1.05; } },
+    { name: 'IRON WILL', blurb: 'LESS DAMAGE, MORE HEALTH', mod: (k) => { k.dr += 1.5; k.maxHp += 10; } },
+    { name: 'SPRINTER', blurb: 'WALK FASTER, DODGES SOONER', mod: (k) => { k.walkMul += 0.09; k.dodgeCd -= 0.3; } },
+    { name: "AMBUSHER'S EDGE", blurb: 'AMBUSH SHOTS HIT HARDER', mod: (k) => { k.ambushMul += 0.4; } },
+    { name: 'ICE RUNNER', blurb: 'FASTER, SHARPER ON ICE', mod: (k) => { k.iceMax *= 1.15; k.iceSteer += 0.2; } },
+  ],
+  purple: [
+    { name: 'EXECUTIONER', blurb: 'ARROWS HIT MUCH HARDER', mod: (k) => { k.dmgBase += 3; k.dmgPow += 1.5; } },
+    { name: 'STONE SKIN', blurb: 'MUCH LESS DAMAGE TAKEN', mod: (k) => { k.dr += 3; } },
+    { name: 'GHOST', blurb: 'SEEN FROM MUCH CLOSER', mod: (k) => { k.stealth -= 0.18; } },
+    { name: 'BLOODLUST', blurb: 'HEAL ON A KILL', mod: (k) => { k.killHeal = (k.killHeal || 0) + 12; } },
+    { name: 'RELENTLESS', blurb: 'FASTER DODGES AND ARROWS', mod: (k) => { k.dodgeCd -= 0.7; k.nock *= 0.8; } },
+  ],
+  gold: [
+    { name: "BERSERKER'S HEART", blurb: 'HITS HARDER, LESS HEALTH', mod: (k) => { k.dmgBase += 5; k.maxHp -= 15; } },
+    { name: 'FORTRESS', blurb: 'MUCH LESS DAMAGE, MORE HP', mod: (k) => { k.dr += 5; k.maxHp += 25; } },
+    { name: 'PHANTOM', blurb: 'SEEN CLOSER, HARDER AMBUSH', mod: (k) => { k.stealth -= 0.3; k.ambushMul += 0.5; } },
+    { name: 'VAMPIRE', blurb: 'HEAL ON KILL, HITS HARDER', mod: (k) => { k.killHeal = (k.killHeal || 0) + 25; k.dmgBase += 1; } },
+    { name: "WINTER'S CHILD", blurb: 'MUCH FASTER, SHARPER ON ICE', mod: (k) => { k.iceMax *= 1.3; k.iceSteer += 0.35; k.walkMul += 0.05; } },
+  ],
+};
+
+// the class kit plus the gear-free defaults - the fields no class kit
+// carries; a variant's mod() edits them in place. Shared by refreshKit and
+// the hero pop-up's preview ledger (heroPreviewKit, js/ui/menu.js), so the
+// numbers that page shows can never drift from the ones the sim reads.
+function baseKit(cls) {
+  return Object.assign({}, CLASSES[cls].kit, {
+    huntMul: 1, dr: 0, foodMul: 1, nightHeal: false, walkMul: 1,
+    harvestMul: 1, dodgeCd: DODGE_CD, stealth: 1,
+    ambushMul: AMBUSH_MUL, bury: PRONE_BURY,
+    killHeal: 0,
+  });
+}
+// rebuild p.kit from class + gear + skills + cards
+function refreshKit(p) {
+  const k = baseKit(p.cls);
+  for (let i = 0; i < GEAR.length; i++) GEAR[i][p.gear[i]].mod(k, p.gearLv[i]);
+  for (let i = 0; i < STAT_TRACKS.length; i++) STAT_TRACKS[i].mod(k, p.pts[i] | 0);
+  for (const c of p.cards) CARDS[c.rarity][c.id].mod(k);
+  p.kit = k;
+  p.maxHp = levelMaxHp(p);
+  if (p.hp === undefined || p.hp > p.maxHp) p.hp = p.maxHp;
+}
+function gearCost(p, i) { return p.gearLv[i] >= GEAR_LV_MAX ? null : { gold: GEAR_COSTS[p.gearLv[i] - 1] }; }
+// the one entry point for an upgrade, reached through runCmd so every buyer -
+// HUD click, number key, bot - goes the same way. A BULWARK bump heals the
+// new hp on the spot, the way a hero level does.
+function buyGear(p, i) {
+  const cost = gearCost(p, i);
+  if (!cost || !canAfford(cost, p)) { sfxFor(p, 'deny'); return cost ? 'gold' : 'max'; }
+  pay(cost, p);
+  p.gearLv[i]++;
+  const oldMax = p.maxHp;
+  refreshKit(p);
+  if (p.maxHp > oldMax) p.hp = Math.min(p.maxHp, p.hp + (p.maxHp - oldMax));
+  addFloater(p.x, p.y - 18, GEAR[i][p.gear[i]].name + ' ' + p.gearLv[i], GEAR_MATS[p.gearLv[i] - 1]);
+  burst(p.x, p.y - 8, GEAR_MATS[p.gearLv[i] - 1], 8, 40, 0.45);
+  sfxOwn(p, 'levelUp', 'pickup');
+  return true;
+}
+// one frame of intent - the whole interface between a controller and the sim
+function makeInput() {
+  return {
+    mx: 0, my: 0,        // movement axis (the sim normalises)
+    aimX: 0, aimY: 0,    // world-space aim point (cursor, for the human)
+    fire: false,         // bow held: press draws, release looses
+    work: false,         // E held
+    slide: false,        // shift held
+    dodge: false,        // edge-triggered, cleared once the sim reads it
+    jump: false,         // edge-triggered: the leap off the eagle, or the hop off the roost (dropJump, js/sim/eagle.js)
+    grapple: false,      // held: the grapple reels only while this is down
+                         // (key 3 for the human; the burrow itself is now the
+                         // hunter's SNOW COVER cast, key 4, not an input)
+    eatBerry: false, eatFish: false, // edge-triggered
+    useCard: false,      // edge-triggered: draw one unopened card at random (useCard, js/sim/core.js)
+    ability: -1,         // edge-triggered: cast the class ability on this key (1-4), js/sim/abilities.js
+    cmd: null,           // one-shot: {kind:'build'|'upgrade'|'demolish'|'craft', tx, ty, id} or {kind:'gear', piece} or {kind:'ability', i}
+  };
+}
+
+// The newer half of the match record, as a table so a save written before a
+// field existed can be filled in on load (saveApply, js/sim/save.js).
+const PLAYER_RECORD = {
+  dmgBeast: 0,                   // damage dealt to wildlife, what landed of it (hurtUnit, actions.js)
+  dmgInP: 0,                     // ...of dmgIn, what rival players dealt
+  dmgInB: 0,                     // ...and what a beast's bite dealt (BEAST_CAUSES, js/sim/wildlife.js)
+  healed: 0,                     // health given back to this body, whatever gave it (healPlayer)
+  goldSpent: 0,                  // gold paid out of the purse (pay, js/sim/core.js)
+  beasts: 0,                     // animals this body landed the last blow on (animalDies, js/sim/wildlife.js)
+  streak: 0, bestStreak: 0,      // rivals downed since this body last went down, and the most of it
+  multiN: 0, multiT: -1e9, bestMulti: 0, // the run of kills MULTI_T apart, when the last one was, the most of it
+  ccOut: 0,                      // s of stun, root and net put on RIVAL players (ccCredit, js/sim/actions.js)
+  assists: 0,                    // rivals this body helped down without the last blow (payTakedown)
+  feed: 0,                       // deaths since this body's last kill or assist: past FEED_FROM it is worth less (killWorth)
+};
+class Player {
+  constructor(id, control, team) {
+    this.id = id;
+    this.team = team === undefined ? id % TEAM_COUNT : team; // alternating by slot unless a roster says otherwise
+    this.control = control;             // 'human' | 'ai' | 'none' (nobody -> ghost)
+    this.botId = null;                  // an 'ai' seat's bot FILE (BOT_LIB, js/ai/bot-api.js); null = the built-in brain
+    // the local player wears the profile's display name; every other player is
+    // named off its team - live, through the `name` getter below, so the name
+    // follows the paint (skin) when the team-colour setting flips. Which
+    // character the local player IS (name, look, class) is applyCharacter().
+    this._name = control === 'human' ? PROFILE.name() : null; // a remote human is named by the roster
+    this.look = botLook(id);            // the face on the class body ({ sex, tone, hair, hairCol, beard, face }, profile.js LOOK_N)
+    this.spawn = { tx: WORLD >> 1, ty: WORLD >> 1 }; // landing tile once the eagle drops this player (the bot brain's "home")
+    this.inv = { gold: 0 };             // the wallet is currency only - carried goods are in the bag
+    this.bagCap = BAG_CAP;              // slots; one starting backpack
+    this.bag = new Array(this.bagCap).fill(null); // each cell null or { type, n }
+    // the POUCH: the two meals, uncapped and cell-free (the ITEMS `pouch`
+    // flag above). Read and written only through the bag helpers, so every
+    // caller stays generic over where a kind actually lives.
+    this.food = newPouch();             // the pouch: the meals and the unopened cards, uncapped
+    this.fishPick = null;               // the fish the fish well eats (a FISH_KINDS key), or null for whichever comes next
+    this.cls = 0;                       // CLASSES index; the lobby sets the local one
+    this.gear = [0, 0, 0, 0];           // chosen GEAR variant per slot (helmet/chest/legs/boots)
+    this.pts = STAT_TRACKS.map(() => 0); // STAT_POINTS spent per STAT_TRACKS row (a ledger row each), pre-match (the hero pop-up)
+    this.gearLv = [1, 1, 1, 1];         // piece levels, 1..GEAR_LV_MAX - fresh every match
+    this.skillPts = 1;                  // unspent; level 1 starts with one, each levelUp adds one - spent on ability levels (buyAbilityLv, js/sim/abilities.js)
+    this.abLv = [0, 0, 0, 0];           // ability ranks, 0 (LOCKED) ..AB_LV_MAX, a skill point each - like gear and cards, NOT cleared by reset(): a death keeps what was bought
+    this.abPick = [0, 0, 0, 0];         // which option each key carries (abOf, js/sim/abilities.js), picked pre-match in the hero pop-up; a bot keeps the first
+    this.cards = [];                    // picked roguelike cards, {rarity,id} - like gear, survives a respawn
+    // the one order marker this player has standing (the right-click radial;
+    // see the `team flags` banner in js/sim/robots.js): null, or { tx, ty, type,
+    // owner }. NOT cleared by reset() - an order outlives the hand that gave it.
+    this.flag = null;
+    // the tile index of the near hole of this body's one tunnel (js/sim/tunnel.js),
+    // -1 for none. NOT cleared by reset() - a dug tunnel outlives its digger.
+    this.tunHole = -1;
+    this.eliminated = false;            // its bird was driven off: no coming back - see die()/eagleFleeResolve
+    this.respawnT = 0;                  // seconds left on an active respawn countdown
+    this.level = 1; this.xp = 0;        // hero level and lifetime gold earned; survive death
+    this.trickleT = 0;                  // s toward the next passive coin (TRICKLE_T, js/sim/sim.js)
+    this.kills = 0;                     // rivals downed; scoreboard only, survives death
+    this.foeHits = {};                  // rival id -> state.elapsed of its latest blow or crowd control on this body (noteFoe); a death clears it
+    this.lastDeath = null;              // { by, cause, tick } of the latest death: the kill feed's line, as data (js/ai/bot-api.js)
+    this.lastCmd = null;                // { kind, tick, ok, why } of the latest order run (runCmd)
+    // The rest of the match record, for the post-game lobby (js/ui/lobby.js).
+    // Every one of them is a running total for the WHOLE match: a death
+    // clears nothing here, and reset() leaves them alone the way it leaves
+    // kills and the level. They cross the wire like any other field, so a
+    // client's lobby prints the host's numbers rather than its own guess.
+    this.deaths = 0;                    // times this body went down
+    this.dmgOut = 0;                    // damage dealt to RIVAL players, counted after their DR
+    this.dmgIn = 0;                     // damage taken from anything at all, counted after this body's DR
+    this.dmgBird = 0;                   // nerve knocked off the rival eagle (hurtEagle, eagle.js)
+    this.dmgStruct = 0;                 // damage dealt to rival buildings, after STRUCT_DR (hurtStruct, actions.js)
+    Object.assign(this, PLAYER_RECORD); // the rest of the record, which a save older than a field fills from too (saveApply)
+    this.hGold = [];                    // the lobby's two graphs, sampled every STAT_STEP: gold earned...
+    this.hDmg = [];                     // ...and damage dealt, both cumulative (sampleStats, js/ui/lobby.js)
+    this.trades = [];                   // the market ledger: every good bought or sold at a counter (marketLog, js/ui/shop.js)
+    refreshKit(this);                   // builds this.kit and this.maxHp from class + gear + skill
+    this.aboard = false;                // riding the eagle (beginDrop sets it, dropJump clears it)
+    this.dropT = 0;                     // seconds of free fall left after jumping (0 = on the ground)
+    this.dropAlt = 0;                   // px the fall started from: the flight's DROP_ALT, or a hop's HOP_ALT off the roost
+    this.dropSc = 1;                    // the body's drawn scale as it left the seat (riderScale), shrinking to 1 as it falls
+    this.dropU = 1;                     // route fraction at which an bot jumps
+    // bot brain (unused by a human player): current job, give-up timers and the
+    // short blacklists that keep a bot from re-picking work it cannot reach
+    this.ai = {
+      tgt: null, avoid: null, avoidT: 0, thinkT: 0,
+      huntTgt: null, huntT: 0, huntAvoid: null, huntAvoidT: 0,
+      lootT: 0, spendT: 0, buildT: 0, fitT: 0,
+      hideT: 0, hideCd: 0,
+      wx: 0, wy: 0, roam: 0,
+      // the difficulty profile's clocks (ai-skill.js): prof overrides the
+      // side's profile (DBG / the harness), seeT is how long a rival has been
+      // noticed, sk the skill layer's hands (skillOf, made on first use),
+      // abilOk this tick's ability roll, pushCd a roost it could not reach
+      prof: null, seeT: 0, sk: null, abilT: 0, abilOk: true, pushCd: 0,
+      // the flag (aiFlagSync, ai.js): want is the order this tick's ladder
+      // would fly ({ type, x, y } or null), wantT how long it has flown one
+      // with no reason left, join the teammate whose flag it serves instead
+      // of planting a twin (-1 = none), flagT the re-read clock
+      want: null, wantT: 0, join: -1, flagT: 0,
+      // the team brain (js/ai/ai-team.js): mood its temperament's key (dealt on
+      // first read), helping the teammate whose call it answers, foeId the
+      // player it is shooting (the side's focus tally), focusT/focusOk the
+      // focus roll, lastFoe/lastFoeT the rival it last fought and when (the
+      // commit window, aiHoldFoe), fleeT until when a fall-back holds,
+      // downs/grudge who it has downed
+      // and the mark it holds a grudge on, obeyFor/obeyOk the human flag it
+      // rolled on and the roll, guarding its guard holding the bird past an
+      // attack flag, answered/answerAt/answerKind/answerKey the human flag it last
+      // answered and when its ON IT is due (aiAnswerFlag), band its range band
+      // in a fight (aiRangeBand), fortCd the wait before it next chooses a turret or wall job (fortJob, held between), packT how long it has waited at the rally, scout/scoutN
+      // the scout's point and step along its beat, thought what it is doing
+      // and why (the dashboard's record)
+      mood: null, helping: -1, foeId: -1, focusT: 0, focusOk: false, packT: 0, scout: null, scoutN: 0, thought: null, lastFoe: null, lastFoeT: -1e9, fleeT: -1e9, downs: {}, grudge: null, obeyFor: null, obeyOk: true, guarding: false, scoutCd: 0, answered: null, answerAt: 0, answerKind: null, answerKey: "", band: null, fortCd: 0, fortJob: null,
+    };
+    this.reset(true);
+  }
+  get active() { return this.control !== 'none'; }
+  // a named player (the human, via applyCharacter) keeps its name; every other
+  // player is called after the colour it is WEARING right now
+  get name() { return this._name !== null ? this._name : TEAMS[skin(this.team)].name + '-' + (this.id + 1); }
+  set name(v) { this._name = v; }
+  // spawn placement + every transient cleared; boot calls it with first=true,
+  // respawnPlayer() (the team's bird setting a player back down) with first=false
+  reset(first) {
+    this.x = (this.spawn.tx + 0.5) * TILE;
+    this.y = (this.spawn.ty + 0.5) * TILE;
+    this.vx = 0; this.vy = 0;
+    this.dir = 'down'; this.faceT = 0; this.moving = false; this.animT = 0;
+    this.hp = this.maxHp;
+    this.dead = false;
+    this.charging = false; this.chargeT = 0;      // bow draw state
+    // the meal being chewed and the clock BOTH meals share (js/sim/core.js)
+    this.eatT = 0; this.eatType = null; this.eatFxT = 0; this.foodCd = 0;
+    this.nockT = 0;                                // the cycle: seconds until the next press (toolCycle, js/sim/tools.js)
+    this.slashT = 0; this.slashA = 0; this.slashHalf = 0; // a blade's sweep in flight: the hand swings the sword through it (slashTool, js/sim/tools.js; drawHeldTool, js/draw-world.js)
+    this.catchT = 0;                               // the fish hoist's clock (startCatch/catchFrame, js/sim/tools.js)
+    this.catchKind = 'fish';                       // ...and which fish is hoisted (an ITEMS key)
+    this.fireArmed = false;                        // the bow button has been pressed since the last loose
+    this.readyFlash = 0; this.dryT = 0;            // HUD tells: renocked / pressed empty
+    this.dodgeT = 0; this.dodgeVX = 0; this.dodgeVY = 0; this.dodgeDustT = 0;
+    this.dodgeCharges = DODGE_CHARGES; this.dodgeRegenT = 0;
+    this.wade = 0; // how deep in the snow (wadeStep, js/sim/depth.js)
+    this.rollHit = [];                             // what this roll has already swiped (once each)
+    this.stamGhost = 0; this.stamGhostT = 0;      // spent-stamina ghost
+    this.sliding = false; this.slideT = 0; this.trailD = 0; this.slideDustT = 0;
+    // prone: lying down, how much snow is over you (0..1), the get-up window,
+    // the crawl's animation phase, and the two tells a buried body still gives
+    this.prone = false; this.hide = 0; this.riseT = 0;
+    this.crawlT = 0; this.puffT = 0; this.hideFlash = 0;
+    this.swingT = 0; this.swingCd = 0; this.swingDir = 0; this.swingHitDone = false;
+    this.swing = SWING_BOW;                        // held SWING_TOOLS index (bow at rest)
+    this.autoSwing = false;                        // the swing in flight was the hands' own (autoWork), so a draw may begin under it
+    this.fishCd = 0;                               // the automatic catch's clock (autoFish, js/sim/tools.js)
+    this.mineO = null; this.mineStrikeT = 0;       // the rock this body's pick is at, and its next bite (js/sim/mining.js)
+    this.mineHoldT = 0;                            // ...and how long a rival's blow keeps it off
+    // the class abilities (keys 1-4, js/sim/abilities.js): per-key cooldowns, the
+    // cast in progress, and every timed state one can leave on a body -
+    // slowed under a net or a crater, mid-reel on the grapple, shielded,
+    // or mid-rush
+    this.abCd = [0, 0, 0, 0];                      // (abLv, the ranks bought, lives in the constructor: a death keeps them)
+    this.windT = 0; this.windRate = 0;             // SECOND WIND's breath: s left, hp a second (abSecondWind)
+    this.castAb = -1; this.castT = 0; this.castMax = 0; // castMax is the wind-up's full length, so a telegraph can read how far along it is (castProg)
+    // Every state ANY unit can be under - stun, root, slow and its net
+    // drape, the mark, and fire - is written and cleared in one place for
+    // all three kinds of unit (`status effects`, js/sim/actions.js), so a player,
+    // a deer and a worker bot wear the identical set.
+    clearUnitStatus(this);
+    this.shieldT = 0; this.shieldA = 0;            // the tower shield, and where it faces
+    this.rushT = 0; this.rushNX = 0; this.rushNY = 0; this.rushVictim = null;
+    this.castSlam = false;                         // the shield key pressed mid-wall or mid-rush: the cast in flight is the SLAM, not a raise (js/sim/abilities.js)
+    this.buffT = 0;                                // s of a bear buff left (campBuff, wildlife.js): harder blows, a quicker walk
+    this.buffKind = null;                          // ...and which bear's ('alpha' or 'dire'): its name and its ring's colour
+    this.dawnShield = 0;                           // hp of the DAWN SHIELD left (pickSnowdrop, js/sim/actions.js): spent before health
+    // the tunnels (js/sim/tunnel.js): the one being ridden ({ fx, fy, tx, ty, t, len },
+    // px and s), the wait after coming up before any hole takes this body
+    // again, the seconds left on the far end being dug, and the work key held
+    // through the last step (a hole takes a fresh press, never a held one)
+    this.tun = null; this.tunCd = 0; this.digT = 0; this.tunE = false;
+    this.hopT = 0;                                 // the net shot's recoil hop, on the body
+    this.grapT = 0; this.grapX = 0; this.grapY = 0; // the grapple: reel time left, and the anchor it hauls toward
+    this.zip = -1; this.zipD = 0; this.zipDir = 1;  // the zipline (js/sim/zipline.js): the line ridden (its team, or none), px along it, and which way
+    this.lastMx = 0; this.lastMy = 0;                // the stick's last held direction, unit (updatePlayer): what the clip-on reads when the body stands still for the press
+    this.zipWalk = false; this.zipWalkL = 0;         // walking itself to a cable to clip on, and which (zipWalkStep, js/sim/zipline.js)
+    this.zipLast = 0;                                // px along the cable a step ago (zipCrash, js/sim/zipline.js)
+    // the deer ridden (the `riding` banner, js/sim/wildlife.js), or null; the leap
+    // in the air (s left), how long it has been up, and the wait before the next
+    this.mount = null; this.leapT = 0; this.leapUp = 0; this.leapCd = 0;
+    // The one weapon slot the button fires. It holds a tool CELL - the same
+    // object a bag cell is, bits and all - so moving one between the bag and
+    // the slot is a reference move and a tool never loses what is loaded
+    // into it. Granted on the FIRST landing only: a death keeps the build
+    // (die), so a respawn comes back holding what it went down holding -
+    // unless every slot is bare, when the bird hands the class's own
+    // loadout over rather than set down a body with nothing to fire.
+    // js/sim/tools.js owns all of it.
+    if (first || !this.tools || !this.tools.some((t) => t)) giveLoadout(this);
+    this.workTx = -1; this.workTy = -1;            // tile the current E swing is aimed at
+    this.hurtT = 0; this.invuln = first ? 0 : 3;
+    this.kbx = 0; this.kby = 0;
+    this.fallT = 0; this.fallRipT = 0;             // floundering in an ice hole
+    this.footT = 0; this.footSide = 0;
+    this.firePrev = false;
+    this.input = makeInput();
+  }
+}
+
+const players = [];  // every player; filled by initPlayers() at boot
+let player = null;   // the local player - camera, HUD, cursor and audio follow this one
+let inv = null;      // === player.inv, the counters the HUD draws
+// which slot THIS screen's player sits in. Nothing about a slot makes it the
+// local one - slot 0 is only the default - so anything that means "me" reads
+// `player` (or `p === player`), never an id: an online match seats this screen
+// wherever the host's roster says (docs/pvp-architecture.md), and a bot-vs-bot
+// harness seats it nowhere in particular. ?local=N seats it in slot N for a
+// session, the way ?seed=N pins the world - the check that no code still
+// assumes slot 0 is to play from slot 7.
+let localId = 0;
+const LOCAL_SLOT = (function () {
+  const q = /[?&]local=([0-9]+)/.exec(location.search);
+  return q ? Math.min(MAX_PLAYERS - 1, parseInt(q[1], 10) || 0) : 0;
+})();
+
+// A ROSTER is one entry per slot: { control, team?, name?, cls?, look? }.
+// The default is today's match - this screen's human in its slot and an AI
+// in every other - and a lobby hands in one of its own, with its humans
+// already named, classed and dressed.
+function defaultRoster(local) {
+  const r = [];
+  for (let i = 0; i < MAX_PLAYERS; i++) r.push({ control: i === local ? 'human' : 'ai' });
+  return r;
+}
+function initPlayers(roster, local) {
+  local = local === undefined ? LOCAL_SLOT : local;
+  roster = roster || defaultRoster(local);
+  players.length = 0;
+  for (let i = 0; i < MAX_PLAYERS; i++) players.push(new Player(i, roster[i].control, roster[i].team));
+  // bots draw their class, their four gear variants AND their stat points
+  // from the seed, so a replayed world fields the same roster in the same
+  // loadouts
+  for (const p of players) if (p.control === 'ai') {
+    for (let i = 0; i < GEAR_SLOTS.length; i++) p.gear[i] = Math.floor(hash2(p.id * 29 + i * 13 + 5, 191) * 3) % 3;
+    for (let n = 0; n < STAT_POINTS; n++) p.pts[Math.floor(hash2(p.id * 41 + n * 7 + 11, 223) * STAT_TRACKS.length) % STAT_TRACKS.length]++;
+    // floor(hash * N): even over however many classes exist (for two it maps
+    // exactly as the old `< 0.5` coin, so old seeds keep their rosters)
+    setClass(p, Math.floor(hash2(p.id * 17 + 3, 77) * CLASSES.length)); // refreshes the kit too
+  }
+  // a roster's own dressing (a lobby's humans) lands over the defaults
+  for (const p of players) {
+    const r = roster[p.id];
+    if (r.name != null) p.name = r.name;
+    if (r.look) p.look = r.look;
+    if (r.cls != null) setClass(p, r.cls);
+  }
+  localId = local;
+  player = players[local];
+  inv = player.inv;
+  applyCharacter(); // the local player is whoever the profile has active
+}
+
+// who p is allowed to shoot: another live player on another team (this is the
+// one place the FFA/friendly-fire rule lives)
+function enemyOf(p, q) { return q !== p && q.active && !q.dead && !inAir(q) && (!PVP || q.team !== p.team); }
+// riding the eagle or falling from it - or under the snow in a tunnel
+// (js/sim/tunnel.js): not in the world, nothing can touch it
+function inAir(p) { return p.aboard || p.dropT > 0 || !!p.tun; }
+
+// ---- facing --------------------------------------------------------------
+// The one way a body turns (faceToward). Near a diagonal the facing it
+// already has wins until the other axis leads by FACE_BIAS, so a walk or an
+// aim along 45 degrees no longer flicks between two sprites every frame. An
+// action aimed at something - a shot, a slash, a cast, a rush, a roll -
+// passes `hold`: the body keeps that facing for FACE_HOLD (p.faceT) and the
+// walk cannot turn it straight back on the next frame, which read as the
+// body blinking. A draw or a raised shield still turns it every step.
+const FACE_BIAS = 1.25;
+const FACE_HOLD = 0.15; // s
+function faceToward(p, dx, dy, hold) {
+  if (!dx && !dy) return;
+  const ax = Math.abs(dx), ay = Math.abs(dy);
+  const wide = p.dir === 'left' || p.dir === 'right' ? ax * FACE_BIAS >= ay : ax > ay * FACE_BIAS;
+  p.dir = wide ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up');
+  if (hold) p.faceT = FACE_HOLD;
+}
+
+// ---- being seen ---------------------------------------------------------
+// How buried a player reads to anything hunting for it. `p.hide` is the cover
+// itself; a mound that is crawling is worth much less than one holding still,
+// which is the whole reason to stop moving before you shoot.
+function concealOf(p) { return p.hide > 0 ? p.hide * (p.moving ? PRONE_MOVE : 1) : 0; }
+// How far p is noticed from by a watcher whose plain sight range is `range`.
+// GHOSTSTEP always shortens it; lying under the snow shortens it hard - but
+// never past PRONE_SNIFF, because at arm's length you are found whatever you
+// are lying under. Every watcher in the game (the pack, the turrets, the bot
+// brain) resolves through this one function so they cannot disagree about who
+// is hidden.
+function seenAt(p, range) {
+  // the falcon's mark is the ONE legal bypass: a swept rival is simply seen,
+  // whatever they are lying under, until the mark runs out (js/sim/abilities.js)
+  if (p.markT > 0) return range;
+  const c = concealOf(p);
+  const r = range * kitOf(p).stealth * (1 - PRONE_CUT * c);
+  return c > 0 ? Math.max(r, Math.min(range, PRONE_SNIFF)) : r;
+}
+// the shot that was worth the wait: full cover, and dead still while it goes
+function ambushReady(p) { return p.prone && p.hide >= 1 && !p.moving; }
+
+// ---- contested orders --------------------------------------------------
+// Several players can order the same tile, drop or fish inside one sim step,
+// and only one of those can happen. Each such action queues a claim here;
+// resolveContests() runs exactly one per key, picked from (SEED, player id,
+// sim tick) - so the same step resolves the same way on every machine.
+const contests = new Map();
+function contest(key, p, fn) {
+  let list = contests.get(key);
+  if (!list) { list = []; contests.set(key, list); }
+  list.push({ p, fn });
+}
+function contestRank(p) { return hash2(p.id * 131 + 7, state.tick); }
+function resolveContests() {
+  for (const list of contests.values()) {
+    let win = list[0], wr = contestRank(win.p);
+    for (let i = 1; i < list.length; i++) {
+      const r = contestRank(list[i].p);
+      if (r < wr) { win = list[i]; wr = r; }
+    }
+    win.fn();
+  }
+  contests.clear();
+}
+
+const animals = []; // passive wildlife: rabbits and deer, spawned once at boot
+const structures = []; // every tiered building (walls included)
+const robots = []; // spawner-owned worker bots
+const tracers = []; // turret shot lines: {x0,y0,x1,y1,t}
+const arrows = []; // live bow shots: {x,y,vx,vy,t,life,dmg,pow}
+const ARROW_PX = []; // scratch x,y,colour triples for one rasterised arrow body (render only)
+const drops = [];
+const particles = []; // {x,y,vx,vy,life,color,size,grav} + optional `alpha` fade ceiling
+const floaters = [];
+const footprints = [];
+const fish = []; // swimmers under the ice: {x,y,a,spd,t,turnT,spook}
+const iceCracks = new Map(); // tile idx -> pickaxe hits taken (cracked, not yet open)
+const holes = []; // tile idx of open water holes; they refreeze each dawn
+const camps = []; // the jungle camps, stood up at fixed sites by worldgen (see the camps banner, js/sim/camps.js)
+
+// ------------------------------------------------------------ damage & death
+// Nothing to do with the wheel above: a hit, what a hit spills, the split
+// between a respawn timer and permanent elimination, and the overlay the
+// local player's ending puts up.
+
+// Causes that are a BURN rather than a blow (see updateBurn, js/sim/actions.js).
+// A bite of one is not a hit: it goes through the i-frames a body DOES have
+// (a roll does not put a fire out, and neither does a respawn) and never
+// shoves - a burn is a condition on the body, not a blow landing on it.
+const DOT_CAUSE = { fire: true };
+
+// The shove a blow lands on a body, in px/s. It is the BASELINE, not the
+// whole story: `kb` is a multiplier on it, so a projectile bit's KNOCKBACK
+// (js/sim/tools.js) scales a player's shove exactly as it scales an animal's or a
+// worker's, and the ordinary blow is 1.
+const HIT_KB = 110;
+
+// A hit grants NO i-frames. `invuln` is only ever set by something DELIBERATE -
+// the dodge roll, a respawn, the drop's landing, scrambling out of a hole - so
+// two arrows arriving in the same step both land, both shove and both light
+// their fire, rather than the second being eaten by the first's grace.
+//
+// src: the player who dealt it (kill credit + the log line), null for the
+// world; cause: a DEATH_CAUSE key naming what the world did, when src is null;
+// kb: the multiplier on HIT_KB (hurtUnit's `kbMul`, undefined = an ordinary shove)
+function damagePlayer(p, dmg, dx, dy, src, cause, crit, kb) {
+  const dot = !!DOT_CAUSE[cause];
+  if (p.dead || (p.invuln > 0 && !dot)) return;
+  dmg = Math.max(1, dmg - kitOf(p).dr); // IRONHIDE flattens every hit, but never to zero
+  // the dawn shield (pickSnowdrop, js/sim/actions.js) takes the hit first, a burn
+  // included; what is left of the blow goes on to health
+  const shielded = Math.min(p.dawnShield, dmg);
+  if (shielded > 0) {
+    p.dawnShield -= shielded;
+    burst(p.x, p.y - 10, '#ffd84a', 4, 36, 0.35);
+    if (p.dawnShield <= 0) { sfxAt('shieldBreak', p.x, p.y); burst(p.x, p.y - 10, '#fff4b8', 10, 60, 0.5); }
+  }
+  p.hp -= dmg - shielded;
+  // the match record both ends of the blow keep (the post-game lobby, js/ui/lobby.js).
+  // What is counted is what LANDED, DR already off it - the overkill on the
+  // last hit of a kill included, because that is what the swing was worth.
+  // Only a RIVAL's blow is anybody's damage dealt: the world's and your own
+  // side's still show up as damage taken, which is the honest read of both.
+  p.dmgIn += dmg;
+  if (src instanceof Player && src !== p && src.team !== p.team) { src.dmgOut += dmg; p.dmgInP += dmg; noteFoe(p, src); }
+  else if (BEAST_CAUSES.has(cause)) p.dmgInB += dmg;
+  p.hurtT = 0.25;
+  if (!dot) {
+    const k = HIT_KB * (kb === undefined ? 1 : kb);
+    p.kbx = dx * k; p.kby = dy * k;
+  }
+  risePlayer(p); // nobody stays buried through a hit: the cover is blown with the body
+  breakEat(p);   // ...and the meal goes with it - that is what makes the channel a channel
+  if (src && src.team !== p.team) mineHit(p); // ...and a rival's blow knocks the pick off a rock (js/sim/mining.js)
+  cancelCatch(p); // ...and the hoist: a fish over your head is a hit you did not see coming
+  // a burn shakes and shouts once, when it lights (igniteUnit) - not four
+  // times a second for as long as it runs
+  if (!dot) shakeFor(p, crit ? 6 : 3);
+  tallyHit(p, dmg);
+  if (!dot) sfxAt('hurt', p.x, p.y);
+  burst(p.x, p.y - 6, dot ? '#ff9440' : '#cfd8e8', 8, 50, 0.45);
+  if (p.hp <= 0) die(p, src, cause);
+}
+
+// what the log says when nobody gets the credit
+const DEATH_CAUSE = { ice: 'FELL THROUGH THE ICE', creek: 'WENT IN THE CREEK', wolf: 'WENT TO THE WOLVES', bear: 'MET A BEAR', tackle: 'RAN INTO SOMETHING SOLID', eagle: 'LOST THEIR EAGLE', fire: 'BURNED IN THE SNOW', soldier: 'FELL TO THE WAVE', orca: 'WENT TO THE ORCA' };
+// ...and what the line says when there IS credit but no arrow: `cause` is
+// read for the verb too, so a worker's axe doesn't get written up as a shot
+const KILL_VERB = { worker: 'CUT DOWN', fire: 'BURNED' };
+
+// DEATH COSTS TIME, NOTHING ELSE. A body goes down with everything it had
+// and comes back with all of it: the wallet, the pouch, the bag, the weapon
+// and its build, the cards, the gear, the level. Nothing spills and nothing
+// is looted (the 1.25-3.54 rule, where the killer pocketed the wallet and the
+// build lay where it fell, is gone - it made the fifteenth minute a bag you
+// were afraid to carry). What a kill is worth is gold from nowhere, paid out
+// by payTakedown (the `takedowns` banner below). The one stake left on a
+// death is the wait below and the walk back.
+const MULTI_T = 10;       // s a kill may follow the one before and still count toward a multi-kill (the post-game record)
+
+// The wait for the bird to set a downed player back down: a read of the
+// hero's level alone, shaped like League's (its base wait runs 10 s to
+// 52.5 s over 18 levels, flat early, steepest mid-game). Early, levels 1-5
+// (about the first four minutes), a death is a few seconds and the fighting
+// goes on; mid-game, 6-9, it starts to cost; from 10 a death is a real hole
+// in the side, which is what makes a wiped side late a real window on a
+// roost whose defenders otherwise come back sixty pixels from the bird.
+// Nothing off the match clock: the level IS the clock, since gold is XP and
+// the table only climbs. With nothing else lost on a death, this wait is the
+// WHOLE penalty.
+const RESPAWN_WAIT = [5, 6, 7, 9, 11, 14, 18, 23, 29, 36, 43, 50]; // s, by hero level 1..LEVEL_MAX
+function respawnTime(p) { return RESPAWN_WAIT[Math.max(1, Math.min(LEVEL_MAX, p.level)) - 1]; }
+
+// A player goes down two ways. While its team's bird still roosts (or is
+// still flying in) it is temporary: p.dead is set (out of the world right
+// now) but p.eliminated stays false and respawnT counts down to a return AT
+// THE BIRD (see updateRespawns/respawnPlayer). Once the bird has been driven
+// off it is permanent: p.eliminated = true, no way back - the eagle is the
+// only thing that takes a player out of a match for good. Only the local
+// player's ELIMINATION takes the screen with it (the death overlay); a
+// respawn-pending local death gets the lighter 'respawning' overlay instead
+// (see endMatch/DEAD_ITEMS/renderDead).
+function die(p, src, cause) {
+  // practice: nothing is at stake and nobody is ever out - a death is undone
+  // on the spot, back at the spawn tile with the build and the bag untouched
+  if (PRACTICE && p === player) { practiceRevive(p); return; }
+  // what this body is worth is read before the death clears the streak it wears
+  const worth = killWorth(p), bounty = bountyOf(p);
+  p.dead = true;
+  p.deaths++;      // the match record; a respawn never clears it (js/ui/lobby.js)
+  p.feed++;        // ...a run of deaths without a takedown makes it worth less (killWorth)
+  p.streak = 0;    // ...and the run of kills ends with the body
+  p.zip = -1;      // the handle is let go of (the respawn's reset clears the rest)
+  p.zipWalk = false;
+  rideEnd(p, true); // ...and off the deer, which bolts (js/sim/wildlife.js)
+  p.charging = false;
+  p.chargeT = 0;
+  p.fireArmed = false;
+  p.dodgeT = 0;
+  p.vx = p.vy = 0;
+  p.sliding = false;
+  p.prone = false; p.hide = 0; p.riseT = 0;
+  p.fallT = 0;
+  p.swingT = p.swingCd = 0;
+  // whatever ability the body was mid-way through dies with it, and the meal
+  p.eatT = 0; p.eatType = null;
+  breakMine(p);
+  p.castT = 0; p.castAb = -1;
+  p.shieldT = 0; p.rushT = 0; p.rushVictim = null;
+  p.castSlam = false; p.hopT = 0; p.grapT = 0;
+  p.buffT = 0; // the bear buff goes with the body too
+  p.dawnShield = 0; // ...and the dawn's shield
+  clearUnitStatus(p); // root, slow, net, mark and the fire go out with the body
+  burst(p.x, p.y - 6, TEAMS[skin(p.team)].mark, 12, 55, 0.6);
+  // kill credit and the feed line: the killer's colours if there is one,
+  // otherwise the victim's, since the victim is who the line is about
+  // A death the world dealt (the ice, the orca, the wolves) goes to the rival
+  // who hit this body last inside ASSIST_T, the way League hands a tower's
+  // execution to the last champion in; losing the bird is nobody's kill.
+  const foes = cause === 'eagle' ? [] : recentFoes(p);
+  p.foeHits = {};
+  const killer = src && src !== p ? src : foes.length ? foes[0] : null;
+  p.lastDeath = { by: killer && players.includes(killer) ? killer.id : -1, cause: cause || null, tick: state.tick };
+  // an item on the cursor goes back in the bag, so it is still there when the
+  // body comes back instead of vanishing with the hand that was holding it
+  if (p === player && state.drag) { dragReturn(); state.dragPend = null; }
+  if (killer) {
+    killer.kills++;
+    killer.streak++; killer.bestStreak = Math.max(killer.bestStreak, killer.streak);
+    // a multi-kill: each kill inside MULTI_T of the one before carries the run on
+    killer.multiN = state.elapsed - killer.multiT <= MULTI_T ? killer.multiN + 1 : 1;
+    killer.multiT = state.elapsed;
+    killer.bestMulti = Math.max(killer.bestMulti, killer.multiN);
+    if (killer.control === 'ai') aiDowned(killer, p); // a bot remembers who it keeps downing (the grudge, js/ai/ai-team.js)
+    payTakedown(p, killer, foes, worth, bounty); // the kill's gold, the assists' share and a shutdown's bounty
+    if (killer === player && !PRACTICE) PROFILE.addKill(); // the character's lifetime count
+    // BLOODLUST/VAMPIRE: a flat heal on a confirmed kill, the one card
+    // effect that isn't a plain kitOf() field - mirrors eatBerry's heal
+    if (killer.kit.killHeal > 0 && killer.hp < killer.maxHp) {
+      const heal = healPlayer(killer, killer.kit.killHeal);
+      addFloater(killer.x, killer.y - 14, '+' + heal, '#8fe08a');
+      sfxAt('heal', killer.x, killer.y);
+    }
+  }
+  storyDown(killer, p); // the match story (js/ui/story.js): who keeps downing whom
+  // a killer the world stood in for keeps the world's line, in the killer's colours
+  const shot = killer && killer === src;
+  logEvent(shot ? killer.name + ' ' + (bounty ? 'SHUT DOWN' : KILL_VERB[cause] || 'SHOT') + ' ' + p.name
+    : p.name + ' ' + (DEATH_CAUSE[cause] || 'WENT DOWN'), killer || p);
+  // the bird is the way back - a side whose objective has fallen is out,
+  // however its players go down after that
+  if (!teamEagleDown(p.team)) p.respawnT = respawnTime(p);
+  else p.eliminated = true;
+  if (p === player) { if (!PRACTICE) PROFILE.addDeath(); endMatch(p.eliminated ? 'lost' : 'respawning'); }
+  // no NAME DOWN over the body: the feed line above says it, and the body's
+  // own fall (the `going down` banner, js/draw/bodies.js) shows it, where a
+  // word in the air sat over whatever the fight was still about
+  else if (state.spec === p.id) specNext(1); // the player being watched went down: follow another
+  checkLastStanding();
+}
+
+// ticks every dead-but-not-eliminated player's respawn timer; called from
+// updatePlay alongside updateStructures, so it keeps running under the
+// 'respawning' overlay exactly like the rest of the sim does under 'dead'
+function updateRespawns(dt) {
+  for (const p of players) {
+    if (!p.active || !p.dead || p.eliminated) continue;
+    // the bird left mid-timer: eagleFleeResolve puts the whole side out at
+    // the end of the ceremony, so the timer simply stops meaning anything
+    if (teamEagleDown(p.team)) continue;
+    p.respawnT -= dt;
+    if (p.respawnT > 0) continue;
+    // a bird still in the air has nowhere to set anyone down: hold at zero
+    // until it roosts (a player shot in the seconds between its own landing
+    // and the bird's)
+    const e = state.drop && state.drop.eagles[p.team];
+    if (!e || e.state !== 'down') { p.respawnT = 0; continue; }
+    respawnPlayer(p);
+  }
+}
+
+// brings a downed player back at its team's bird: p.reset(false) is the exact
+// full-clear a fresh eagle landing gets (same 3 s i-frames), anchored
+// RESPAWN_OUT px down the lane from the roost - the nearest tile a body can
+// stand on there - so the way back into the match is the road everyone
+// else walked out on.
+const RESPAWN_OUT = 40;
+function respawnPlayer(p) {
+  const e = state.drop && state.drop.eagles[p.team];
+  if (e && e.state === 'down') {
+    const d = e.laneDir || { x: 0, y: 1 };
+    p.spawn = nearestDryTile(e.x + d.x * RESPAWN_OUT, e.y + d.y * RESPAWN_OUT, p);
+  }
+  p.eliminated = false;
+  p.respawnT = 0;
+  p.reset(false);
+  burst(p.x, p.y - 2, '#f4f7ff', 16, 70, 0.5, true);
+  sfxAt('place', p.x, p.y);
+  if (p === player && !ladderWatch) { // a watcher's camera stays on whoever it follows (js/ui/ladder.js)
+    state.over = null;
+    state.mode = 'play';
+    state.spec = -1; // the camera returns to the local player, not whoever it was watching
+    camX = Math.max(0, Math.min(WORLD * TILE - WV_W, p.x - WV_W / 2));
+    camY = Math.max(0, Math.min(WORLD * TILE - WV_H, p.y - WV_H / 2));
+    state.introFrom = { x: camX, y: camY };
+    state.intro = HUD_IN_T; state.introLen = HUD_IN_T; // the HUD slides in, like a fresh landing
+  }
+}
+
+// players still in the match (riding the eagle counts: it is about to land)
+function aliveCount() { let n = 0; for (const p of players) if (p.active && !p.dead) n++; return n; }
+
+// a team is still "in the match" while its bird has not been driven off and
+// anyone on it is still in - note !eliminated, not !dead: a wiped team
+// is waiting on its bird, not out, so the objective is the only way to win
+function teamInMatch(team) {
+  if (teamEagleDown(team)) return false; // the objective: a fallen eagle takes its whole side out
+  return players.some((q) => q.active && q.team === team && !q.eliminated);
+}
+
+// rival TEAMS still in the match, by the same rule enemyOf()/PVP state -
+// p's own team is never counted, and each rival team counts once however
+// many players it has.
+function rivalTeamsInMatch(p) {
+  const seen = new Set();
+  let n = 0;
+  for (const q of players) {
+    if (!q.active || seen.has(q.team) || !(!PVP || q.team !== p.team)) continue;
+    seen.add(q.team);
+    if (teamInMatch(q.team)) n++;
+  }
+  return n;
+}
+
+// the local player not eliminated and every RIVAL team gone: the match is won
+// (only once, and only when there was another side to beat). Teams win
+// together - a side is in the match while its bird roosts, whoever is
+// standing - so this is the last BIRD standing, never the last player.
+function checkLastStanding() {
+  // practice has no rivals and no ending - an empty roster must not read as a win
+  if (PRACTICE) return;
+  // state.eagleCine: the driven-off ceremony is playing - the screens wait
+  // for it (eagleFleeResolve re-runs this once the camera has had its moment)
+  if (state.over || state.eagleCine || player.eliminated || rivalTeamsInMatch(player) > 0) return;
+  endMatch('won');
+}
+
+// the practice room's answer to a fall: full pool, spawn tile, a beat of
+// grace - the fall through the ice or the tackle still HAPPENED (the damage
+// numbers taught what they taught), it just costs nothing that lasts
+function practiceRevive(p) {
+  p.hp = p.maxHp;
+  p.vx = p.vy = 0;
+  p.dodgeT = 0;
+  clearUnitStatus(p); // the fire goes out with the fall, same as the stun
+  p.fallT = 0; p.sliding = false; p.catchT = 0;
+  p.prone = false; p.hide = 0; p.riseT = 0;
+  p.charging = false; p.chargeT = 0; p.fireArmed = false;
+  p.eatT = 0; p.eatType = null;                  // the meal dies with the body here too
+  const s = p.spawn || { tx: WORLD >> 1, ty: WORLD >> 1 };
+  p.x = (s.tx + 0.5) * TILE; p.y = (s.ty + 0.5) * TILE;
+  p.invuln = 2;
+  burst(p.x, p.y - 4, '#f4f7ff', 14, 60, 0.5, true);
+  sfxAt('place', p.x, p.y); // in earshot only - it had rung on every screen for every bot's return
+}
+
+// Both end screens print the same object, so there is one of these rather
+// than one per ending: the four tally numbers, the class it was played in,
+// the whole side both stages stand, and the one fact only the loss prints
+// (its placing).
+function endSnapshot() {
+  // where the local player finished: every player still in the match outlasted
+  // it, so place is one past that count. A win is 1st by definition (the
+  // screen that prints place never sees a win, but the object shouldn't lie).
+  const left = players.filter((q) => q !== player && q.active && !q.eliminated).length;
+  return {
+    gold: player.xp, kills: player.kills, level: player.level, time: state.elapsed,
+    team: player.team, cls: player.cls,
+    // the whole side, the local player first: every body either ending stands
+    // on its stage, with the name, class and kit it finished in (a mate who
+    // is down at the whistle still shares the result)
+    roster: players.filter((q) => q.active && q.team === player.team)
+      .sort((a, b) => (a === player ? -1 : b === player ? 1 : a.id - b.id))
+      .map((q) => ({ name: q.name, cls: q.cls, look: q.look, team: q.team, gear: q.gear.slice(), gearLv: q.gearLv.slice() })),
+    place: player.eliminated ? left + 1 : 1, of: players.filter((q) => q.active).length,
+  };
+}
+
+// the local player leaves the match, one way or the other: the overlay takes
+// the screen (mode 'dead'), the sim runs on underneath it
+function endMatch(how) {
+  if (ladderWatch) { ladderWatchOver(how); return; } // a watched bot match keeps its camera and keys (js/ui/ladder.js)
+  // count a win only the first time this match resolves as won - a second
+  // endMatch('won') (or a driver poking it) must not increment twice
+  const awardWin = how === 'won' && state.over !== 'won';
+  // ...and the same edge for the loss sting below: a second endMatch('lost')
+  // (or a driver poking it) must not ring twice over one ending
+  const firstLoss = how === 'lost' && state.over !== 'lost';
+  state.over = how;
+  // the post-game lobby prints the match as it ENDED (js/ui/lobby.js): a won
+  // match runs on underneath its own ceremony, so the table is frozen here
+  // rather than read off `players` once the plank is finally pressed. A
+  // respawn wait is not an ending and freezes nothing.
+  if (how !== 'respawning') statFreeze();
+  if (awardWin) PROFILE.addWin();
+  // the coins: once per ending, on the same edges as the win and the loss sting
+  if (awardWin || firstLoss) payMatchCoins(awardWin);
+  state.mode = 'dead';
+  state.deadView = 'menu';
+  state.deadSel = 0;
+  state.deadHover = [0, 0];
+  state.mapOpen = false;
+  state.bagOpen = false;
+  state.settingsOpen = false; setDrop = null;
+  state.wheel = null;
+  state.build = null;
+  state.deadTimer = 0;
+  state.defeatT = 0;
+  state.rpClosed = false; // every death opens the replay again
+  // an ENDING freezes its numbers here, not in the render pass: the match
+  // runs on underneath (a generator can still pay out, a rival can still
+  // fall) and a total that climbs behind a tally which already counted it
+  // reads as a bug. A loss's summary is opened minutes later, off the LOBBY
+  // plank, so this is the only moment its numbers are still true.
+  state.end = how === 'won' || how === 'lost' ? endSnapshot() : null;
+  if (how === 'won') { SFX.victory(); state.shake = Math.max(state.shake, 4); }
+  // ...and a loss gets the same courtesy: the defeat song used to come up
+  // under silence where a win got a fanfare, so the worse of the two endings
+  // was the quieter one. A sting, not a dirge - the song does the mourning.
+  else if (firstLoss) SFX.defeat();
+  // the end screen has a song of its own; a respawn timer is not the end of anything
+  if (how === 'won' || how === 'lost') SFX.music.play(how === 'won' ? 'victory' : 'defeat', { in: 1.2 });
+  player.input = makeInput(); // whatever was held dies with the player
+  // a respawn wait has no planks: it opens straight onto an ally, with the
+  // replay window over the view until it is closed (the `death & spectate`
+  // banner, js/screens.js); specNext keeps to the side while the wait runs
+  if (how === 'respawning') { state.deadView = 'spec'; state.spec = -1; specNext(1); }
+}
+
+
+// ------------------------------------------------------------ takedowns
+// What a downed rival pays, League's way. The KILLER takes the body's worth;
+// every other rival who hit it or pinned it in the last ASSIST_T s (noteFoe,
+// fed by damagePlayer and ccCredit, js/sim/actions.js) takes an ASSIST and a
+// share of half that worth. A body on a streak wears a BOUNTY (bountyOf, the
+// coin over its name, drawBountyTag js/draw/overhead.js) that its killer
+// cashes as a SHUTDOWN on top. A body that keeps going down without a kill or
+// an assist (p.feed) is worth less, down to FEED_FLOOR, so feeding one side
+// never funds the other. Sized against a scrapped soldier's SOLDIER_BOUNTY
+// (4): a plain kill is three of them, the biggest shutdown eight, so ending a
+// streak pays without erasing the lead the streak built. Gold only goes to
+// the living, as a kill always has.
+const KILL_BOUNTY = 12;     // gold a downed rival pays its killer, before feed and bounty
+const ASSIST_T = 10;        // s a rival's blow or crowd control stays on a body's record
+const ASSIST_SHARE = 0.5;   // of the worth, split evenly among the assists (each at least 1)
+const BOUNTY_FROM = 2;      // the streak at which a body starts wearing a bounty
+const BOUNTY_STEP = 4;      // gold the bounty grows by each kill from there...
+const BOUNTY_MAX = 20;      // ...up to this (a streak of 6)
+const FEED_FROM = 2;        // deaths without a takedown before a body is worth less
+const FEED_STEP = 0.2;      // ...the worth lost each death past that...
+const FEED_FLOOR = 1 / 3;   // ...down to this share of KILL_BOUNTY
+
+// a rival player's blow or crowd control on a player, for the assist list
+function noteFoe(p, src) {
+  if (!(src instanceof Player) || !(p instanceof Player) || src === p || src.team === p.team) return;
+  (p.foeHits || (p.foeHits = {}))[src.id] = state.elapsed;
+}
+// the rivals inside ASSIST_T on p's record, the latest first
+function recentFoes(p) {
+  const h = p.foeHits || {}, out = [];
+  for (const id in h) {
+    const q = players[id];
+    if (q && q.active && q.team !== p.team && state.elapsed - h[id] <= ASSIST_T) out.push(q);
+  }
+  return out.sort((a, b) => h[b.id] - h[a.id] || a.id - b.id);
+}
+function bountyOf(p) { return p.streak < BOUNTY_FROM ? 0 : Math.min(BOUNTY_MAX, BOUNTY_STEP * (p.streak - BOUNTY_FROM + 1)); }
+function killWorth(p) { return Math.round(KILL_BOUNTY * Math.max(FEED_FLOOR, 1 - FEED_STEP * Math.max(0, p.feed - FEED_FROM + 1))); }
+
+// p is down: the killer and the assists are paid, and every one of them has
+// broken their run of feeding. The SHUTDOWN word rises over the body.
+function payTakedown(p, killer, foes, worth, bounty) {
+  killer.feed = 0;
+  if (!killer.dead) awardGold(killer, worth + bounty, killer.x, killer.y); // from nowhere, never the victim's purse
+  const help = foes.filter((q) => q !== killer);
+  const share = help.length ? Math.max(1, Math.round(worth * ASSIST_SHARE / help.length)) : 0;
+  for (const q of help) {
+    q.assists++; q.feed = 0;
+    if (!q.dead) awardGold(q, share, q.x, q.y);
+  }
+  if (bounty > 0) addFloater(p.x, p.y - 24, 'SHUTDOWN', '#f2cc6a', { scale: 2, rise: 20, life: 1.4 });
+}

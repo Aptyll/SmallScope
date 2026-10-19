@@ -111,7 +111,7 @@ async function main(scenes) {
     if (p.type === 'error') pageErrors.push('console: ' + p.args.map((a) => a.value || a.description).join(' '));
   });
 
-  // the tap has to exist before js/audio.js builds its graph, so it goes in on
+  // the tap has to exist before js/app/audio.js builds its graph, so it goes in on
   // a fresh document and the page is reloaded onto it
   await cdp.send('Page.addScriptToEvaluateOnNewDocument', {
     source: fs.readFileSync(path.join(__dirname, 'tap.js'), 'utf8'),
@@ -208,13 +208,13 @@ async function main(scenes) {
     }
   }
 
-  // Prove the music layer never sounded. It is HTMLAudioElement (js/audio.js)
+  // Prove the music layer never sounded. It is HTMLAudioElement (js/app/audio.js)
   // and never enters the WebAudio graph, so the tap could not have carried it
   // even at full volume - this is the belt to that braces.
   // The music layer is `new Audio()` elements that are never put in the
   // DOM, so `elements` (a DOM query) reads 0 whatever is playing - the check
   // that means something is musicVol 0. What makes it certain is structural:
-  // js/audio.js never calls createMediaElementSource, so no music element is
+  // js/app/audio.js never calls createMediaElementSource, so no music element is
   // ever in the WebAudio graph the tap mirrors, at any volume.
   const music = await cdp.eval(`(function(){
     const els = [].slice.call(document.querySelectorAll('audio'));

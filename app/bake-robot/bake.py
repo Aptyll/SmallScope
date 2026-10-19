@@ -1,4 +1,4 @@
-# Bakes the ROBOT scout skin into js/sprites/robot.js as char grids.
+# Bakes the ROBOT scout skin into js/baked/robot.js as char grids.
 #
 #   python3 app/bake-robot/bake.py     # needs numpy and pillow; rerun after changing the rig
 #
@@ -12,7 +12,7 @@ import os, numpy as np
 from rig import render
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-OUT = os.path.normpath(HERE + '/../../js/sprites/robot.js')
+OUT = os.path.normpath(HERE + '/../../js/baked/robot.js')
 
 SC = 0.62            # the rig is authored at 64 px; this stands him ~32 px tall
 IDLE_N, RUN_N = 6, 4

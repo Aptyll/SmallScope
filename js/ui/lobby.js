@@ -130,7 +130,7 @@ const SCORE_STATS = SCORE_GROUPS.flatMap((g) => g.rows);
 const SCORE_ROW = 10;     // px per stat row
 const SCORE_HEAD = 11;    // px per group heading, and the 2 under a group
 // a number in a column: whole up to 99999, past that its magnitude (shortNum,
-// js/core.js: 100K, 2.4M, 1B) so no column ever outgrows its width
+// js/sim/core.js: 100K, 2.4M, 1B) so no column ever outgrows its width
 function scoreFmt(n) {
   n = Math.round(n || 0);
   return n >= 100000 ? shortNum(n) : String(n);
@@ -191,7 +191,7 @@ function scoresLayout() {
   const nMine = cols.filter((r) => r.team === (player ? player.team : 0)).length;
   const gap = nMine && nMine < cols.length ? SCORE_TEAM_GAP : 0;
   // a narrow view narrows the columns, never the numbers: a six-digit value
-  // still fits at the floor's width (320, fitCanvas js/canvas.js)
+  // still fits at the floor's width (320, fitCanvas js/app/canvas.js)
   const colW = Math.max(20, Math.min(SCORE_COL_W, Math.floor((VIEW_W - 8 - SCORE_LABEL_W - gap) / Math.max(1, cols.length))));
   const face = Math.min(SCORE_FACE, colW - 2);
   const w = SCORE_LABEL_W + cols.length * colW + gap;

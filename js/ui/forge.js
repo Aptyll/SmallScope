@@ -2,7 +2,7 @@
 // ------ the forge tab
 // The merchant's counter has two faces, picked by the two tab plates in its
 // sign row: the SHOP (js/ui/shop.js) and the FORGE, where ore from the rocks
-// is dumped into a weapon (the rules: the forge banner, js/mining.js). The
+// is dumped into a weapon (the rules: the forge banner, js/sim/mining.js). The
 // FORGE face swaps the stock, the market and the sell strip for one bench and
 // keeps everything else - the awning, the purse, the restock road - so it
 // reads as the same counter.

@@ -3,7 +3,7 @@ The MIT License below applies only to the source code in this repository
 
 Art, audio, and the Softfall name are not covered by that license. Those
 remain All Rights Reserved. That includes the pixel-art sprite grids in
-js/sprites.js, the baked sound in js/sfxdata.js, and the files under
+js/sprites/ and js/baked/, the baked sound in js/baked/sfxdata.js, and the files under
 audio/ and docs/media/, even though some of that lives inside .js files.
 
 ---

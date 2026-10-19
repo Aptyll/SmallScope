@@ -679,7 +679,7 @@ function netClientMode() {
 // ------------------------------------------------------------ prediction
 // A client's own walk runs AHEAD of the host instead of a round trip behind
 // it: each step the input that went out is also stepped here, through the
-// same walk the host runs (walkHeading/walkSlide/walkStep, js/sim.js), on the
+// same walk the host runs (walkHeading/walkSlide/walkStep, js/sim/sim.js), on the
 // local body alone. Each snapshot names the newest of our inputs the host had
 // taken (`ia`); the body goes back to the host's word (netPredictRestore),
 // takes the snapshot, and the inputs the host has not yet seen are walked

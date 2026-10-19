@@ -1,7 +1,7 @@
 'use strict';
 // The practice bar: League's practice-tool column down the left edge, under
 // the PRACTICE TOOL only. Icons on one hud plate, a name on hover (the
-// tooltip), a press sends the command (cheatCmd, js/practice.js).
+// tooltip), a press sends the command (cheatCmd, js/sim/practice.js).
 // ------------------------------------------------------------ the practice bar
 // Two groups on one plate, split by a gap: YOU (level, gold, the two standing
 // toggles, reset) and THE FIELD (teleport, a dummy, clear the dummies). A

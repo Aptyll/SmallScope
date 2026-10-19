@@ -1,6 +1,6 @@
 // ------------------------------------------------------------ callout pixels
 // What a bot's callout looks like (what it is and when one is said: the `bot
-// callouts` banner, js/ai-callouts.js). A screen sees the calls made to the
+// callouts` banner, js/ai/ai-callouts.js). A screen sees the calls made to the
 // watched body's side - its own side's, and a rival's grudge against one of
 // them. Three pieces, all in the call's accent ink:
 //   the word  a dark plate with a steel edge over the caller's name tag: the

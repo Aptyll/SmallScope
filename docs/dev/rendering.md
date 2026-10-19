@@ -105,7 +105,7 @@ not stored as a float at all:
   a resize, never from `zoomCur`, which a ride or a show may be holding elsewhere. The wheel still
   steps out to `ZOOM_MIN`.
 - **The shows hold `ZOOM_SHOW` (1)**, the framing they were composed at: the title's backdrop,
-  the drop brief's roost tour and the driven-off ceremony (`applyZoom`'s `show`, js/sim.js), then
+  the drop brief's roost tour and the driven-off ceremony (`applyZoom`'s `show`, js/sim/sim.js), then
   ease back to the wheel's zoom. The ride itself keeps `DROP_OPEN_ZOOM` → `DROP_ZOOM`.
 - The rungs are therefore `k / devScale`. At `devScale` 3 (a 1080p fullscreen) that is **third
   steps** — 0.67, 1, 1.33, 1.67 … 4.67, thirteen of them; at 4 (1440p) it is quarters, seventeen.
@@ -140,11 +140,11 @@ when drawing (`Math.round`) or sprites smear across subpixels.
 
 **Canvas size changed → `fitCanvas()` then `relayout()`** (both
 resize paths do it; both listeners live in canvas.js). `relayout()`
-(js/core.js) recomputes everything positioned off `VIEW_W`/`VIEW_H`, in this order:
+(js/sim/core.js) recomputes everything positioned off `VIEW_W`/`VIEW_H`, in this order:
 `applyMinimapSize()` (the disc's anchors), `fitMapSlab()` (the chart's size, below), the
 map/settings panel positions (`PANEL_X/Y`, `MAP_X/Y`, `SET_X/Y`, `SL_X`, `SET_MUTE_X`),
 `fitFlakes()` (see [Snow](#snow)), `renderBars()` (re-bakes the pillarbox frame) and
-`layoutReplay()`. Those panel `let`s are **declared together in js/canvas.js** (the file after
+`layoutReplay()`. Those panel `let`s are **declared together in js/app/canvas.js** (the file after
 core.js), not down in their own panel sections, so by the time anything can call `relayout()`
 none of them is still in a temporal dead zone — a new panel anchor is declared there too; the
 offsets *within* each baked panel stay in their own sections. A screen authored
@@ -163,7 +163,7 @@ world grid while the screen slides under it, so it wanders within half a world p
 **The air layer** removes that cost where it showed: the eagle the camera rides, and a player on a
 zipline. A bird in flight (`dropFlies`: fly, dive, flee), anyone falling from it and a player on a
 cable's handle (held out of the y-sorted pass in `airRiders`, so whoever that pass would not show
-stays hidden) draw into `airCv` (js/canvas.js) off the **exact** camera, and the layer is blitted
+stays hidden) draw into `airCv` (js/app/canvas.js) off the **exact** camera, and the layer is blitted
 over the world with no shift, so the body holds still on the screen while the ground slides under
 it. A rider is drawn over the cable and the canopy. Only `airBox` is graded and blitted: the whole
 frame while a bird flies (its trail and shadow reach across it), else a box `AIR_PAD`/`AIR_TOP`
@@ -338,7 +338,7 @@ lies dim until it is yours again, and everyone else sees it whole.
 
 `drawSwaps(ex, ey)` is the world half of the tell a
 [tool trading itself up](gameplay.md#where-tools-and-bits-come-from) raises, over one entry per
-swap in `swaps` (js/tools.js, pushed by `swapFx`, aged by `updateSwaps` in `updateFx`). It is
+swap in `swaps` (js/sim/tools.js, pushed by `swapFx`, aged by `updateSwaps` in `updateFx`). It is
 drawn for **every** player, not only the local one: a rival rearming mid-fight is news to whoever
 is shooting at them, and the ring's colour is the whole of the news.
 
@@ -427,7 +427,7 @@ Anything else that wants words is a design bug.
 labels — the map slab's header is live, since the day changes) into offscreen canvases (the map slab is the HUD's graphite plate, `drawHudFrame`; the help slab is a frost slab, `bakeFrostSlab()`; the settings slab and the SAVES slab in its place are flat, `bakeFlatSlab()`, both js/ui/panels.js); per-frame code blits them and draws only the live parts on top.
 Their layout variables (`PANEL_*`, `MAP_*`, `SET_*`, `SL_X`) are shared between the bake
 function and the per-frame code, so both sides move together — but a bake-side change only appears
-after the panel is rebuilt. They are declared in js/canvas.js and reassigned by `relayout()`
+after the panel is rebuilt. They are declared in js/app/canvas.js and reassigned by `relayout()`
 ([above](#world-zoom-and-the-two-pixel-spaces)). The ESC slab's **rows have no fixed anchors**:
 it is tabbed, and each page lays its rows out (and scrolls them) through `settingsLayout()`
 (js/ui/panels.js) off `SET_X`/`SET_Y`/`SL_X` alone. A bake draws in panel-relative coordinates,
@@ -746,7 +746,7 @@ It is the whole view: a dark veil over the world, the tabs, and one column (`NOT
 the view) of folding groups, newest at the top. First EVERY PATCH: `PATCH_NOTES` folded by tenth
 (0.390 - 0.391, 0.380 - 0.389 ... `NOTES_GROUPS`, built off the list, so a new patch needs nothing
 here). A note with a third field shows that picture under its text (`NOTES_PICS`, from
-`window.NOTES_ART` in the generated js/notesart.js), scaled up by whole pixels to fit the column,
+`window.NOTES_ART` in the generated js/baked/notesart.js), scaled up by whole pixels to fit the column,
 at most `NOTES_PIC_MAX` times. Below them the HIGHLIGHTS: `PATCH_DIGEST`, hand-written, the patches
 since `DIGEST_FROM` condensed into short lines by what a player notices, each with its patch dim on
 the right. A group is a chevron and its name; a click or Enter on the keys' pick folds it
@@ -828,7 +828,7 @@ because this one bar is always yours and the overhead bars keep the sides. The *
 draining as `STAM_GHOST`), notched between charges: the seat a mana bar takes when heroes come.
 
 An **ability well** (`drawClassAbCell`) is the same grammar pointed at `CLASS_AB[p.cls][i]`: its
-detailed 32px icon (`classAbIcon`, baked from `AB32` in js/abilities.js) is the ability, a
+detailed 32px icon (`classAbIcon`, baked from `AB32` in js/sim/abilities.js) is the ability, a
 **sweep** round the well is its cooldown (against the level-cut `abCdOf`, not the table base —
 see below), and the key
 digit sits big at 2× in the bottom-left corner (the keybind-indicator carve-out). Along the top
@@ -849,7 +849,7 @@ under the same two gates
 — a gold-rimmed plus, lighting on hover, the tooltip carrying the numbers). The `hudHome()` half
 matters because the plate hangs in open screen ABOVE the strip: the intro's `HUD_SLIDE` ([the HUD corners](#the-hud-corners)) is not far
 enough to carry it off the bottom with the wells, and a **drop brief pins `state.intro`** for the
-whole roost tour (the brief's camera branch in js/sim.js never counts it down), so without that
+whole roost tour (the brief's camera branch in js/sim/sim.js never counts it down), so without that
 gate four gold plus plates bob alone along the bottom edge for the length of the cinematic.
 `hudInT()` is the one answer to "how far in is the HUD", shared by `renderUI`'s slide and both
 gates. Pressing the plate buys the level,
@@ -1072,7 +1072,7 @@ And **two events**, both on the one flash: `bitLit` is `{ cell, cells, t, col }`
 flash belongs to (held by *reference*, so changing weapons cannot leave a flash on somebody else's
 cells), which of its cells are lit, how long is left and in what colour. `bitLitAt` ramps it, and
 clamps, so a flash may outlive `BIT_LIT_T`; `bitLitCol` answers the colour. Both live in
-js/tools.js, aged in `updateFx` beside the refusal reds, and both are the **local player's alone**.
+js/sim/tools.js, aged in `updateFx` beside the refusal reds, and both are the **local player's alone**.
 
 - **A press** lights every loaded cell white, fading over `BIT_LIT_T` (0.3 s), lines included
   (`fireTool`). A build is fired far more often than it is edited, so the press itself is where
@@ -1173,7 +1173,7 @@ click can never disagree).
 ## Overhead health bars
 
 Beside the bar sits the other thing drawn on every body alike: **`drawUnitStates(e, px, py, w, h,
-now)`** ([js/abilities.js](../../js/abilities.js)) paints the net drape, the root's sprung jaws,
+now)`** ([js/sim/abilities.js](../../js/sim/abilities.js)) paints the net drape, the root's sprung jaws,
 the fire and the mark's gold chevrons over whatever sprite is wearing them, taking the sprite's own box so
 a rabbit, a worker bot and a player get the same four tells at their own size. `drawPlayer`
 reaches it through `drawAbilityOnPlayer` (which adds the one a player alone can show — a raised
@@ -1302,7 +1302,7 @@ draw meter still showed would make the whole thing pointless.
 
 White pixel text on a white snowfield is unreadable with a drop shadow, so text over the world
 wears an **outline**: `drawPixelTextOutline(ctx, text, x, y, color, outline, scale)` in
-[font.js](../../js/font.js) stamps the glyph at the eight 1-px integer offsets in the outline
+[font.js](../../js/app/font.js) stamps the glyph at the eight 1-px integer offsets in the outline
 colour, then once in the text colour — a solid rim on every side, exactly 1 game px at any text
 scale, no blur. The outline colour is `#0f1632`. Every string is baked once into
 [the string cache](architecture.md#fontjs) and stamped as one image after that, so the nine
@@ -1350,7 +1350,7 @@ it, the replay keeps recording and the recap waits; then the view hands over to 
 ## Damage feedback
 
 Combat damage is **one running total per body**, never a number per hit. `tallyHit(u, amount)`
-(js/core.js, called by `damagePlayer`, `hurtAnimal`, `hurtRobot`, the building blows and the
+(js/sim/core.js, called by `damagePlayer`, `hurtAnimal`, `hurtRobot`, the building blows and the
 dummy) adds the hit to `u.tallyN` and stamps `u.tallyTick` with `state.tick`; a hit after
 `TALLY_HOLD` (1 s) of quiet starts a new total. Both are fields on the body, so a save and a
 snapshot carry them and a client fades a total on the host's tick. The total stands **hard
@@ -1365,7 +1365,7 @@ at any zoom and under the HUD. A body that **dies** loses its frame, so `queueTa
 each body's last spot (`tallySpot`, world px) and `drawTallies` floats a dead body's total
 `TALLY_RISE` px up from there, fading over `TALLY_DEATH`. A one-shot never hung a frame, so
 `trackDowns` calls `tallyFall(p)` to seed the spot where the frame would have stood. A word an
-archery target says when it breaks (`wordPop`, js/core.js, a staged scene's only) is stamped by
+archery target says when it breaks (`wordPop`, js/sim/core.js, a staged scene's only) is stamped by
 the same `drawTallies` pass in the same ink, gold (`BAR_NEUTRAL`): `TALLY_POP_SC` for the
 `TALLY_POP` instant it lands, then `TALLY_SC`, rising `WORD_POP_RISE` px and fading over
 `WORD_POP_T`. A player who goes down gets no `NAME DOWN` in the air: the feed
@@ -1873,7 +1873,7 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   weighs on the top/bottom edges plus a corner vignette, leaving the centre clear;
   `drawMenuSlab` is the translucent slab with gilt corner brackets behind the items; the
   logo is `LOGO_IMG` (the picture `docs/media/logos/mainMenuSoftfall.png` keyed and baked to
-  `js/logodata.js` by `app/bake-logo.js`), drawn 1:1 with its top `LOGO_Y` below the view's top edge under a cold pulsing glow,
+  `js/baked/logodata.js` by `app/bake-logo.js`), drawn 1:1 with its top `LOGO_Y` below the view's top edge under a cold pulsing glow,
   still at rest, with no rule and no subtitle, the pixel-font word standing in only until it
   decodes. Nothing on the title burns and nothing is ruled: `drawEmbers` and `drawGoldRule` live
   here for the wiki's header and the end screens (js/ui/screens.js). `PATCH_TXT` prints bottom-right and the
@@ -1979,14 +1979,14 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   ([below](#lobby-lock-in)) — the shape's name under it in white, and the **seed row** under
   that (`SEED_TXT` and the [die](#main-menu-title), gold under the hand; a click is
   `rerollWorld`, which IS a page: it fades through the lobby's own night (`LOBBY_NIGHT`, the
-  sky's darkest) and js/boot.js clears from it, so a roll never flashes white over this screen —
+  sky's darkest) and js/app/boot.js clears from it, so a roll never flashes white over this screen —
   white is the reroll's from anywhere else). The keyboard walks two rows (`menu.mrow`: the picture, then the seed —
   Up/Down; the lit row stands in for the hand while the pointer is off the view), Enter on the
   seed rolls, Enter on the picture closes. The **AI pop-up** (`menu.screen = 'ai'`, off the
   target, host or solo — `beginAiPick`, `aiLayout`/`aiScreenHit`, `renderAiPick`): the target
   `POP_PIC` big on the left worn as the hovered (else the picked) level wears it, and on the
   right the **four difficulty plates** (`drawDiffPlates`: `LOBBY_LV_W`×`LOBBY_LV_H`, one per
-  `AI_LEVELS` row, stacked easy to hard, each carrying its level's name (js/ai-skill.js — EASY /
+  `AI_LEVELS` row, stacked easy to hard, each carrying its level's name (js/ai/ai-skill.js — EASY /
   NORMAL / HARD / IMPOSSIBLE) and its tier in pips, the picked one filled in the rivals' paint, the hovered one
   lifting (`menu.dhover`)); a click or Up/Down is `setAiLevel`, which saves the profile's
   settings, and Enter closes. While a ladder bot is picked for this lobby (`ladderFoe`, from the
@@ -2011,7 +2011,7 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   zero, or on that press, `lockIn()` — `menu.lockT`, then straight to `beginDrop()` (the eagle
   ride, below) — unless the picked shape is not the one this page grew: a shape is grown at boot
   (`MAP_TYPE`), so `lockIn` then loads `?seed=<this seed>&map=<the pick>` with the gear picks in
-  `sessionStorage['softfall.drop']` (no profile holds them) and js/boot.js puts them back on and
+  `sessionStorage['softfall.drop']` (no profile holds them) and js/app/boot.js puts them back on and
   calls `beginDrop()` itself; the old page holds the lobby until the new one paints. No
   instructional text anywhere on the screen.
 
@@ -2037,7 +2037,7 @@ first)`). The store behind them is [profile.js](architecture.md#profilejs); `cha
   (`charsKey`).
 - **The create screen** opens on `menu.cedit = { slot, spec, first }` — slot −1 is a **new
   character pre-rolled** by `PROFILE.rollChar` (a winter word and a random look), a slot index
-  is that character's copy for editing, and `first` is the fresh install (js/boot.js opens it
+  is that character's copy for editing, and `first` is the fresh install (js/app/boot.js opens it
   before the title when `!PROFILE.hasChar()`: no CANCEL, and DONE lands on the title menu).
   Two columns centred as one block (`createLayout`), sharing a top line and a foot. Left, the
   stage: the model at 3× (`drawModel`, the lobby's light and ring), the 16 px body at 2×
@@ -2079,7 +2079,7 @@ first)`). The store behind them is [profile.js](architecture.md#profilejs); `cha
   (every pre-match pick is the free level 1) with the class weapon at hand, and under it the
   **stat ledger** — one labelled row per number the build can touch (`GEAR_STATS`, whose
   getters take an optional player and are handed none here — every pre-match hero is level 1),
-  real values computed by `heroPreviewKit` through the same `baseKit` (js/player.js) the sim's
+  real values computed by `heroPreviewKit` through the same `baseKit` (js/sim/player.js) the sim's
   `refreshKit` uses, so the page can never lie. **The ledger is also where the stat points are
   spent** ([gameplay.md](gameplay.md#stat-points)): the unspent ones stand as a row of
   `STAT_POINTS` pips between the preview and the ledger, every row is a track, a hovered row
@@ -2274,7 +2274,7 @@ never jumped (a real jump is the opt-out) — sits through a camera tour of the 
 before the hop. `landAboard` (from `eagleCrash`) sets `state.dropBrief` (`{ ph, t, total }`),
 and `updateDrop` runs the phases, rival first and your own last so the final word lands where
 you are sitting: **`wait`** holds the crash you are in for `BRIEF_WAIT` (1 s); **`theirs-go`**
-glides the camera across the map to the rival bird — the sim camera (js/sim.js) follows
+glides the camera across the map to the rival bird — the sim camera (js/sim/sim.js) follows
 `dropBriefTarget()` with the driven-off ceremony's own lerp, so a bird still finishing its dive
 is *tracked* and the crash lands on screen — and holds until it is down; **`theirs`** holds
 `BRIEF_HOLD` (3 s) under a one-line headline (`drawDropBrief`, baked opaque and faded as a
@@ -2366,7 +2366,7 @@ bar is the whole announcement, so chip damage must be pressed home. At zero nerv
 **driven off, not killed**, and liftoff starts the **driven-off ceremony**, League-style:
 `eagleFlee` clears the roost tiles, blasts the takeoff downdraft (`eagleGustFx` writ large,
 `SFX.gust`), logs `WAS DRIVEN OFF` and sets `state.eagleCine` — the camera (its banner in
-js/sim.js) glides to the fleeing bird and holds it centred, `sampleHumanInput` zeroes the local
+js/sim/sim.js) glides to the fleeing bird and holds it centred, `sampleHumanInput` zeroes the local
 controls exactly as pause does, `hurtEagle` refuses a second flee, and `checkLastStanding` waits.
 `EAGLE_CINE_T` (3.2 s) after liftoff, `eagleFleeResolve` (ticked from `updateDrop`) puts the
 owning side down permanently (`die(p, null, 'eagle')` / `teamEagleDown`, which `die`,
@@ -2604,7 +2604,7 @@ did). The practice arena is exempt (`PRACTICE`): its light never changes, for it
 **Midday** is clean light, and clean light is contrast: across the noon window (`TOD_NOON` ±
 `TOD_NOON_HALF`, easing over `TOD_NOON_FADE`, gated by `todNoon`) the world buffer is multiplied
 **by itself** at `TOD_CRISP`, which deepens the needles and the cast shade far more
-than the drifts. It goes through a copy (`gradeCv`, js/canvas.js): the frame's used corner is
+than the drifts. It goes through a copy (`gradeCv`, js/app/canvas.js): the frame's used corner is
 copied there and multiplied back. Never draw a canvas onto itself: the browser then copies the
 whole backing store and again on the next stroke, which cost 4 ms a frame on a CPU-drawn canvas.
 
@@ -2729,7 +2729,7 @@ canvases the same scene runs at 87 fps.
 
 ### The wind field
 
-One field, in the `wind` banner of [js/weather.js](../../js/weather.js), and everything the
+One field, in the `wind` banner of [js/sim/weather.js](../../js/sim/weather.js), and everything the
 weather moves reads it rather than keeping a clock of its own:
 
 - `state.windT` is its clock, stepped in `updateFx` — the **sim** clock, not wall time, so
@@ -2831,7 +2831,7 @@ weather moves reads it rather than keeping a clock of its own:
   see the same snow blowing across it. A moving thing, it is placed off the exact camera
   (`ex`/`ey`). It costs well under a millisecond a frame while it is on and nothing otherwise.
 - The **snow off the pines** reads the crest of `windGust`
-  ([js/shed.js](../../js/shed.js), the `snow off the pines` banner). The sim raises that puff and
+  ([js/sim/shed.js](../../js/sim/shed.js), the `snow off the pines` banner). The sim raises that puff and
   `burst` carries it to every screen, so it is a gameplay-side event with no pass of its own:
   each human in the match has `SHED_DRAWS` (36) random tiles a second drawn from about a view
   round them (a bot draws none, nothing is scanned), and a draw landing on a pine at
@@ -2846,7 +2846,7 @@ weather moves reads it rather than keeping a clock of its own:
 
 ### The day's weather
 
-Every day of a match rolls one of four weathers (the `weather` banner, js/weather.js) off the seed
+Every day of a match rolls one of four weathers (the `weather` banner, js/sim/weather.js) off the seed
 and `state.day` with `hash2`, so every client that knows the day (the snapshot already carries it)
 knows the sky, and the wire carries nothing new. `weatherOf(day)` names it off `WX_ODDS`; the
 practice arena always gets `snow`. A weather is only a row of **dials** in `WEATHERS` that the

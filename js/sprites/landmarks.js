@@ -1,5 +1,5 @@
 'use strict';
-// The story landmarks' art (LANDMARKS, js/landmarks.js): the boat frozen into
+// The story landmarks' art (LANDMARKS, js/sim/landmarks.js): the boat frozen into
 // a lake. Weathered wood and a faded rust paint - never a saturated red or
 // blue, which are the teams' inks, so nothing here reads as anybody's.
 // Picked from docs/media/concepts/landmarks-concepts-1.png: E.

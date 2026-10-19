@@ -1,7 +1,7 @@
 'use strict';
 // ------------------------------------------------------------ the orca, drawn
 // The pixels of the orca (the thing itself, its hunt and its clock:
-// js/orca.js; its art: SPRITES.orca, js/sprites/orca.js).
+// js/sim/orca.js; its art: SPRITES.orca, js/baked/orca.js).
 //   the shadow   under the ice with the lake's fish (render, after them): the
 //                baked heading nearest its own (64 round, so a turn rolls
 //                through them), never turned off the pixel grid, and cut to the ice's own pixels (orcaMask) so it never

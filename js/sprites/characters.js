@@ -114,14 +114,14 @@
 
   // ---------------------------------------------------------------- the fish catch
   // Three DOWN-facing frames the catch plays through whichever way the body
-  // faces (catchFrame, js/tools.js; drawn by drawPlayer): a STOOP to the hole,
+  // faces (catchFrame, js/sim/tools.js; drawn by drawPlayer): a STOOP to the hole,
   // the fish HAULED up tail-first with the water flying off it, and the trophy
   // HOIST - both arms straight up, the fish flat above the hat - which is why
   // the hold frame is 16x20 and draws four rows higher on the same feet. Look
   // A off docs/media/concepts/fish-catch-concepts-1.png. The fish letters
   // (CATCHPAL_EXTRA): n outline, f/F body, w belly, i eye, c a flying drop -
   // a FROST PIKE's colours; CATCHPAL_SUN repaints it as the GOLD SUNFISH
-  // (the lake's two, js/sprites/fish.js), so the hoist shows what was caught.
+  // (the lake's two, js/baked/fish.js), so the hoist shows what was caught.
   const CATCHPAL_EXTRA = { 'n': '#2e4a5e', 'f': '#7ab0cc', 'F': '#b4dcec', 'w': '#eaf8ff', 'i': '#101d2c', 'c': '#9fd6f2' };
   const CATCHPAL_SUN = { 'n': '#6a3a12', 'f': '#e0a030', 'F': '#f6d46a', 'w': '#fbe6a0' };
   const catchStoop = [
@@ -651,7 +651,7 @@
   ];
 
   // ---------------------------------------------------------------- run and roll
-  // The run cycle and the dodge roll are not drawn here: js/sprites/motion.js carries them as
+  // The run cycle and the dodge roll are not drawn here: js/baked/motion.js carries them as
   // grids painted off a doll of each class body (app/bake-player/), in this file's letters,
   // so they bake through the same team and look palettes as the hand-drawn poses. Each is a
   // sibling of the walking directions - `run[dir]`, `hold[dir]` (the run with the hands at
@@ -828,7 +828,7 @@
   // champLook(cls, look, team): the full pose set for one character in one
   // team's paint, baked on first ask and kept - ten players and a menu or two
   // is all that ever asks, so the cache stays small. Every reader of a
-  // player's body goes through classSet(p) (js/player.js), which asks here.
+  // player's body goes through classSet(p) (js/sim/player.js), which asks here.
   const lookCache = new Map();
   function champLook(cls, look, team) {
     if (!look) return champPlayers[cls][team];
@@ -842,7 +842,7 @@
   }
 
   // the MERCHANT who drives each team's eagle and works its roost (the
-  // `merchant` banner, js/robots.js): the player body plan in a trader's tan
+  // `merchant` banner, js/sim/robots.js): the player body plan in a trader's tan
   // coat, with the hat and the trim in the team's colour so the side reads
   // Not another player: its own grids, 16 x 18 - two rows taller than a slot
   // - picked off a concept sheet (docs/media/concepts/merchant-concepts-2,

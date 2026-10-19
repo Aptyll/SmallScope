@@ -86,7 +86,7 @@ files or processes in it. Going online changes where things run, not what a bot 
 1. **A server runs the matches.** The same arena runner, on a server, plays the queue.
 2. **Bots run sandboxed.** Each seat's bot runs in its own isolated process or container and
    talks to the match over a socket: a transport beside the game's `worker` and the arena's `vm`
-   (`BOT_TRANSPORTS`, js/bots/api.js), carrying the same messages. Lockstep keeps a match exact.
+   (`BOT_TRANSPORTS`, js/ai/bot-api.js), carrying the same messages. Lockstep keeps a match exact.
 3. **Records go in a database** instead of `ladder-data/`: the same `history.jsonl` records and
    logs, served to a web version of the standings page.
 4. **People upload files** instead of `add`; a changed upload is a new revision, as now.

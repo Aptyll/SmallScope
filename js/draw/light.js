@@ -564,7 +564,7 @@ function todGrade() {
   }
   const crisp = Math.max(todNoon() * TOD_CRISP, frost * FROST_CRISP * (1 - state.darkness));
   if (crisp > 0.01) {
-    grctx.globalCompositeOperation = 'copy'; // through a copy, never ctx.canvas onto itself (gradeCv, js/canvas.js)
+    grctx.globalCompositeOperation = 'copy'; // through a copy, never ctx.canvas onto itself (gradeCv, js/app/canvas.js)
     grctx.drawImage(ctx.canvas, 0, 0, WV_W, WV_H, 0, 0, WV_W, WV_H);
     ctx.globalCompositeOperation = 'multiply';
     ctx.globalAlpha = crisp;
@@ -575,7 +575,7 @@ function todGrade() {
 }
 
 // ---- frost glints ----
-// A clear frosty day (state.wx.frost, the `weather` banner, js/weather.js) is the
+// A clear frosty day (state.wx.frost, the `weather` banner, js/sim/weather.js) is the
 // one weather with nothing falling, so what it shows instead is the cold on
 // the ground: the day's grade cooled by FROST_TINT and held at FROST_CRISP
 // from dawn to dusk (todGrade), the cloud shadows thinned by FROST_CLEAR, and
@@ -769,7 +769,7 @@ const worldInk = [];
 // League's plates pile.
 const worldPlates = [];
 let platesNow = false; // set while the flush stamps them: a plate's own calls then draw in place
-// a world layer: the world buffer, or the air layer over it (airCv, js/canvas.js) -
+// a world layer: the world buffer, or the air layer over it (airCv, js/app/canvas.js) -
 // both hold their readouts back for the flush, above the grade
 function inWorldLayer() { return ctx === wctx || ctx === actx; }
 function overheadPlate(fn) {
@@ -909,7 +909,7 @@ function renderLighting(ox, oy, now) {
   flushWorldInk();
 }
 
-// The air layer's light (airCv, js/canvas.js): the grades renderLighting
+// The air layer's light (airCv, js/app/canvas.js): the grades renderLighting
 // lays over the whole frame - the hour, the blizzard's haze, the night and
 // its rim - and none of what lies on the ground (rays, cloud shadow, glints,
 // the lights). The fills colour the layer's empty pixels too, so its own
@@ -951,7 +951,7 @@ function lightAir(x, y, w, h) {
 }
 
 // A shot can still carry its own light: the CARE ARROW and the WISP do, and
-// anything a FLAME modifier is riding (`lit` in the BITS table, js/tools.js).
+// anything a FLAME modifier is riding (`lit` in the BITS table, js/sim/tools.js).
 // They are read straight off the live shots rather than registered anywhere,
 // and with the open snowdrops they are the only light left in the game -
 // additive, so they warm the night blue rather than cutting a clean hole in it.

@@ -4,7 +4,7 @@
 // one question every drawer asks - which skin a bird wears.
 // ------------------------------------------------------------ skins
 // The purse and the wardrobe are the profile's (PROFILE.coins/owns/buy/
-// addCoins/worn/wear, js/profile.js). Nothing here touches the sim: a skin is
+// addCoins/worn/wear, js/app/profile.js). Nothing here touches the sim: a skin is
 // paint, read at draw time on this machine only, and coins are paid on the
 // local machine as its own match ends.
 //
@@ -51,7 +51,7 @@ const SK_TICK_PAL = { w: '#cfe0ff' };
 // `tint`, have no art of their own yet and are not worn in a match - a card
 // shows today's picture washed in the skin's `tint` (a trail, a streak in its
 // two `cols`). A scout row with a `body` is real: it names a whole body in
-// SPRITES (the robot: SPRITES.robotSkin, js/sprites/robot.js) that the local
+// SPRITES (the robot: SPRITES.robotSkin, js/baked/robot.js) that the local
 // player wears in a match (scoutBody). The bird's table is real and lives with
 // its art (BIRD_SKINS, js/sprites/eagle.js).
 // Every table's first row is free and is the slot's default; an id is what
@@ -125,7 +125,7 @@ function scoutBody(p) {
   const r = skinWorn(SKIN_TABS[SK_TAB_SCOUT]);
   return r.body && SPRITES[r.body] ? SPRITES[r.body][skin(p.team)] : null;
 }
-// what a finished match pays (endMatch, js/player.js, on its first ending
+// what a finished match pays (endMatch, js/sim/player.js, on its first ending
 // only); practice pays nothing
 function payMatchCoins(won) {
   if (PRACTICE) return;

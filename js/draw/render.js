@@ -69,7 +69,7 @@ function stepItemIcons(nowMs) {
 // canvas and stamps the eight neighbours, the same rim grammar as
 // drawPixelTextOutline. Call it right before drawing the
 // object itself so the rim sits under the body.
-// A rock (ROCK_KINDS, js/mining.js) from its anchor at (x, y): two tiles
+// A rock (ROCK_KINDS, js/sim/mining.js) from its anchor at (x, y): two tiles
 // wide, feet on the tile's bottom edge, so a taller kind stands up into the
 // row behind it the way a pine does. Rubble while it regrows; under a
 // channel, its cracks by thirds and a bar over it filling in the kind's own
@@ -80,7 +80,7 @@ const ROCK_GLINT_T = 0.32;   // s a glint lasts
 const ROCK_GLINT_NIGHT = 2.5; // ...and how much longer the wait between two is after dark
 // The pick's reach, flat on the snow under the rock: in the kind's colour
 // round the rock your pick is at, and faint round a free one close enough
-// to step into (MINE_RING_NEAR past MINE_R, js/mining.js)
+// to step into (MINE_RING_NEAR past MINE_R, js/sim/mining.js)
 const MINE_RING_NEAR = 24;
 function drawMineRing(ox, oy) {
   const v = viewPlayer();
@@ -103,7 +103,7 @@ function drawRock(o, x, y, now) {
   drawSpriteFlash(spr, x, top, o.flash);
   if (o.crack > 0) {
     // the kind's colour rising up the body from its foot as the bar fills,
-    // its top row lit full (SPRITES.rockFill, js/mining.js)
+    // its top row lit full (SPRITES.rockFill, js/sim/mining.js)
     const F = SPRITES.rockFill[o.kind], fh = Math.round(F.height * o.crack), fy = F.height - fh;
     if (fh > 0) {
       ctx.globalAlpha = 0.4;
@@ -324,7 +324,7 @@ function render() {
     const spr = SPRITES[ITEMS[d.type] ? ITEMS[d.type].icon : 'itemGold'];
     const h = spr.width >> 1; // a tool's icon is 12x12, everything else 8x8
     // WHAT YOU JUST THREW AWAY LIES DIM. A drop inside its lock is not yours
-    // to walk back over (dropLocked, js/core.js) - no glint, no magnet - so it
+    // to walk back over (dropLocked, js/sim/core.js) - no glint, no magnet - so it
     // goes half-lit until the three seconds are up and it comes back to life.
     // Everyone else sees it whole: the lock is one hand's, not the world's.
     const held = dropLocked(d, viewPlayer());
@@ -473,7 +473,7 @@ function render() {
       // the practice target: skids on its tile, everything else drawn up off
       // it like a tree. The readout bar only appears once it is hurt, and
       // updatePractice mending it is what takes the bar away again. While
-      // the archery round's sink runs (agSinkU, js/practice.js) the sprite
+      // the archery round's sink runs (agSinkU, js/sim/practice.js) the sprite
       // drops and the snow line crops it - the bottom is already under the
       // field - and at full depth the object leaves the grid entirely.
       const su = PRACTICE ? agSinkU() : 0;
@@ -676,7 +676,7 @@ function render() {
   drawAimLine(ex, ey, now);
   drawZipGuide(ex, ey);     // the dotted walk to the hovered cable (js/draw/zipline.js)
 
-  // arrows: the one shared body (ARROW_MAP, js/actions.js - white tip, flint
+  // arrows: the one shared body (ARROW_MAP, js/sim/actions.js - white tip, flint
   // head, the loaded bit's collar, one-gold shaft, team feathers) rasterised
   // at the live bearing by arrowBodyPx and rimmed in dark so the shot stays
   // readable over snow. a.x/a.y is the TIP - the point the sim tests - and
@@ -686,7 +686,7 @@ function render() {
     const hx = Math.round(a.x - ex), hy = Math.round(a.y - ey);
     if (hx < -22 || hx > WV_W + 22 || hy < -22 || hy > WV_H + 22) continue;
     // Not every bit flies as the plain arrow: a bit may name a BODY of its
-    // own (`body`, js/tools.js) - a barbed or an icy shaft, a grapple on its
+    // own (`body`, js/sim/tools.js) - a barbed or an icy shaft, a grapple on its
     // cord, a tumbling log, a mote with no bearing at all, a swung fist or
     // axe, a teleport request that is not a shape - and BIT_BODY (the bodies
     // a bit flies as, below) is where that name is answered. Everything else
@@ -719,7 +719,7 @@ function render() {
   }
   ctx.globalAlpha = 1;
 
-  // the sword's sweeps (js/abilities.js draws them: every player who just cut)
+  // the sword's sweeps (js/sim/abilities.js draws them: every player who just cut)
   drawSlashes(ex, ey);
   // swing arcs (every player who is mid-swing)
   for (const p of players) {
@@ -746,7 +746,7 @@ function render() {
       Math.round(f.y - ey - f.t * (f.rise || 14)), f.color, s, 1 - f.t / (f.life || 0.9));
   }
 
-  drawSweep(ex, ey);        // the wind's slow sweep of loose snow, laid in the world, over the pines (windSweep, js/weather.js)
+  drawSweep(ex, ey);        // the wind's slow sweep of loose snow, laid in the world, over the pines (windSweep, js/sim/weather.js)
   drawDropAir(ex, ey, now, false); // the flight path, and a bird on the ground (the fliers: the air layer, below)
   drawZips(ex, ey, now);    // the ziplines' cables, lit gold under the pointer, over everything but the night (js/draw/zipline.js)
   renderLighting(ox, oy, now);
@@ -756,7 +756,7 @@ function render() {
   drawHitboxes(ox, oy, ex, ey);
   drawBotLines(ex, ey); // F4: a line from each bot to what it is after (js/ui/botview.js)
 
-  // the air layer (airCv, js/canvas.js): a bird in flight, its riders,
+  // the air layer (airCv, js/app/canvas.js): a bird in flight, its riders,
   // anyone falling and a player on a zipline's handle, off the EXACT camera
   // so the body the camera rides holds still on the screen while the ground
   // slides under it; the day's grade laid over it the way renderLighting
@@ -821,7 +821,7 @@ function render() {
   // plate, the final score (drawAgameUI, js/draw-world.js)
   if (PRACTICE && state.mode === 'play') drawAgameUI(now);
   if (state.mode === 'drop') renderDropUI(now);
-  // the drop brief's roost headlines (updateDrop's tour, js/eagle.js)
+  // the drop brief's roost headlines (updateDrop's tour, js/sim/eagle.js)
   if (state.mode === 'play' && state.dropBrief) drawDropBrief();
   else if (state.mode === 'play' && player.aboard) drawHopPrompt(now); // still seated on the roost: E - HOP OFF
   // the M map works mid-flight too: the ride's wider read lives here now
@@ -852,7 +852,7 @@ function render() {
   applyCursorStyle(cur);
   if (!window.DBG.hideUI) drawBuildCursor(cur); // the build list's piece, under the pointer's own glyph
   if (settings.pixelCursor && mouse.inside && !window.DBG.hideUI) drawCursor(cur, now);
-  // director mode (js/director.js): the finished frame goes to a take being
+  // director mode (js/app/director.js): the finished frame goes to a take being
   // recorded, and only then the director's strip over it
   dirRecFrame();
   drawDirector(now);
@@ -860,8 +860,8 @@ function render() {
 
 // ---- the bodies a bit flies as -------------------------------------------
 // What a shot looks like in the air says what it IS: the plain arrow is the
-// one shared body (ARROW_MAP, js/actions.js), and every bit that does
-// something else names a body of its own (`body` on BITS, js/tools.js) that
+// one shared body (ARROW_MAP, js/sim/actions.js), and every bit that does
+// something else names a body of its own (`body` on BITS, js/sim/tools.js) that
 // BIT_BODY at the foot of this section answers. Each is handed the shot, its
 // tip rounded (hx, hy) and exact (x, y) in world-view px, and the clock.
 //
@@ -1106,7 +1106,7 @@ function drawShotFire(a, hx, hy, now) {
 }
 
 // Which body a bit flies as. A kind names one in its own table row (`body`,
-// js/tools.js) and this is the only place those names mean anything - so a
+// js/sim/tools.js) and this is the only place those names mean anything - so a
 // new silhouette is one row there and one row here, never an `if` in the
 // shots pass. No `body` is the plain arrow.
 const BIT_BODY = {
@@ -1123,7 +1123,7 @@ const BIT_BODY = {
 
 // ---- the teleport's flash ------------------------------------------------
 // What a jump leaves behind: the character stamped as a flat silhouette every
-// WARP_STEP px of the line it crossed (js/tools.js owns the flash itself),
+// WARP_STEP px of the line it crossed (js/sim/tools.js owns the flash itself),
 // all of them fading together. It is the tell that makes a teleport read as a
 // PATH rather than as a body blinking out of one place and into another - the
 // same tinted-scratch trick the missing player's ghost is drawn with, and the
@@ -1152,7 +1152,7 @@ function drawWarps(ex, ey) {
 }
 
 // A WEAPON THAT CHANGED HANDS WITH NOBODY'S HAND ON IT. The tool swap
-// (swapFx, js/tools.js owns the event) is the one thing that rearms a player
+// (swapFx, js/sim/tools.js owns the event) is the one thing that rearms a player
 // without them asking, so it says so in the world and not only on the local
 // shelf: a ring in the new tier's colour opens out of the body, and the new
 // body's own 12x12 icon climbs out of it on its tier plate - the same plate it
@@ -1530,7 +1530,7 @@ function cursorInfo() {
   if (hoverFish()) return ret('fish', busy);
   // something E can work: lock ring (ice-blue over bare ice), dim out of
   // reach. Nothing at a counter: inside a merchant's reach E is the shop's
-  // (keyPress, js/input.js), and a ring there would promise a swing the key
+  // (keyPress, js/app/input.js), and a ring there would promise a swing the key
   // no longer makes.
   const wt = merchNear(player) ? null : workTarget(player);
   if (wt) return ret(wt.o ? 'lock' : 'ice', busy || !wt.near);
@@ -1665,7 +1665,7 @@ function drawAimLine(ex, ey, now) {
   const plan = toolPlan(cell);
   if (!plan.shots.length) return;
   // a blade's draw grows a WEDGE, not a line: the exact reach the cut will
-  // sweep at this draw (slashReach, js/tools.js), from the body along the aim
+  // sweep at this draw (slashReach, js/sim/tools.js), from the body along the aim
   const melee = TOOLS[toolIdOf(cell.type)].melee;
   if (melee) {
     const a = Math.atan2(mouseWY() - (player.y - BOW_Y), mouseWX() - player.x);

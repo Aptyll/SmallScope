@@ -27,9 +27,9 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.478';
+const PATCH_TXT = 'PATCH 0.481';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
-// baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
+// baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
 // anyway; nothing else on the title changes size with it. LOGO_Y is its top
 // edge in the VIEW (not the authored frame): it hugs the top at any height.
@@ -43,6 +43,8 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.481', 'BEHIND THE SCENES: THE GAME\'S CODE IS SORTED INTO FOLDERS BY JOB. NOTHING YOU PLAY CHANGES.'],
+  ['0.480', 'UNDER THE HOOD: A PLAYER\'S STEP IS NOW SPLIT INTO NAMED PIECES OF CODE, AND THE GAME PLAYS EXACTLY THE SAME.'],
   ['0.478', 'THE VIDEO KIT CAN NOW BLUR THE EDGES OF A SHOT AROUND ITS SUBJECT AND FADE ITS SUBTITLES OUT.'],
   ['0.477', 'THE ORCA NO LONGER JUMPS WHEN IT STRIKES: ITS SHADOW GLIDES ONTO THE HOLE AND TURNS TO FACE YOU AS THE ICE CRACKS.'],
   ['0.476', 'THE ORCA STALKS NOW: ONCE IT LOCKS ON, A BIG 3 2 1 COUNTS DOWN OVER YOUR HEAD WHILE ITS SHADOW GLIDES PAST YOU, ROLLS SMOOTHLY ROUND AND RUNS IN WITH ITS FLUKES BEATING, RISING DARKER AS IT COMES, AND A SECOND AFTER IT SINKS BACK IT CAN LOCK ON THE NEXT ONE.'],
@@ -580,7 +582,7 @@ function menuActivate(i) {
 }
 
 // Into the training arena: the same whiteout-and-reload the die uses, onto
-// ?practice=1 - PRACTICE (js/core.js) pins the seed and js/boot.js boots the
+// ?practice=1 - PRACTICE (js/sim/core.js) pins the seed and js/app/boot.js boots the
 // arena straight into play. leavePractice is the way back (the ESC panel's
 // plank, js/panels.js): the same fade onto a bare URL, so leaving practice
 // lands on a fresh title world exactly like a reroll does.
@@ -708,11 +710,11 @@ function beginIntro() {
 // the die (on the lobby, under the shape's name): whiteout, then
 // reload on a fresh seed in the same shape (SEED is a const every
 // deterministic value closes over, so a new world is a new page). It lands
-// back on the lobby (softfall.select, read by js/boot.js), so a
+// back on the lobby (softfall.select, read by js/app/boot.js), so a
 // roll is one press and not a walk.
 // A page that lands back on the lobby (the die) fades through the lobby's
 // own night (LOBBY_NIGHT, the sky at its darkest), never white: the screen
-// goes dark and comes back up on itself, and js/boot.js clears from the
+// goes dark and comes back up on itself, and js/app/boot.js clears from the
 // same colour. White is the reroll's from anywhere else. (A map pick is no
 // page at all until LOCK IN: pickMap, lockIn.)
 const LOBBY_NIGHT = '#04060f';
@@ -837,7 +839,7 @@ function updateTitle(dt) {
       if (m.panelT <= 0) { m.panelT = 0; m.panel = null; m.closing = false; }
     } else m.panelT = Math.min(1, m.panelT + dt / PANEL_SLIDE_T);
   }
-  titleWild(dt); // the ambient world: wildlife and the shoal keep living behind the menu (js/wildlife.js)
+  titleWild(dt); // the ambient world: wildlife and the shoal keep living behind the menu (js/sim/wildlife.js)
 }
 
 // chamfered rect on the main ctx (2px corner cut)
@@ -1132,11 +1134,11 @@ function buildHelpPanel() {
 // cracked, wrecked) - each with its name in plain white under it, and each
 // the way into a POP-UP: the map's (the shape with a chevron either side, the
 // seed row and its die - the map pop-up below) and the AI's (the three
-// plates named after AI_LEVELS, js/ai-skill.js - the AI pop-up below). Under them
+// plates named after AI_LEVELS, js/ai/ai-skill.js - the AI pop-up below). Under them
 // the STAGE holds YOUR CHARACTER - the 48 px model (js/sprites/looks.js) at
 // LOBBY_MODEL under its warm light, unarmed, no name under it - with a
 // CHEVRON either side that swaps to the neighbouring character (the
-// profile's three, js/profile.js; the class comes with the character, fixed
+// profile's three, js/app/profile.js; the class comes with the character, fixed
 // at creation, so there is no class picker here). Clicking the figure opens
 // the HERO POP-UP (gear, stat points, the abilities - `the hero pop-up`
 // above). LOCK IN is a bare word at the foot of the view, big: it locks the
@@ -1274,7 +1276,7 @@ function drawLobbyBackdrop(now, a) {
 // columns. LEFT: the live preview - the chosen class walking in place in
 // its four leather pieces with the class weapon at hand, and under it the
 // STAT LEDGER: every number the kit flies out with, real values from the
-// same code the sim reads (heroPreviewKit / baseKit, js/player.js).
+// same code the sim reads (heroPreviewKit / baseKit, js/sim/player.js).
 // RIGHT: two COLUMNS of four wells, a click turning any of them. The GEAR
 // column is one well a piece (helmet, chest, legs, boots) wearing the
 // picked variant's 32px icon; a click turns it to the piece's next variant
@@ -1285,7 +1287,7 @@ function drawLobbyBackdrop(now, a) {
 // would do to the numbers is read before it is done. The ABILITIES column
 // is one well a key (1-4) wearing the picked option's icon with the key in
 // the corner; a click turns it to the key's next option (abOptions,
-// js/abilities.js - the warrior's keys carry two each, the hunter's one,
+// js/sim/abilities.js - the warrior's keys carry two each, the hunter's one,
 // which a click leaves as it is; the pick is player.abPick, read by abOf),
 // and a hover raises the option's card (tipClassAb, js/ui/tooltip.js):
 // what the key will do, read before the eagle - its growth is the match's
@@ -1371,7 +1373,7 @@ const GEAR_STATS = [
 ];
 
 // The twelve variant icons: detailed 32x32 char grids on the ability icons'
-// palette (AB32_PAL, js/abilities.js - one style across every big icon),
+// palette (AB32_PAL, js/sim/abilities.js - one style across every big icon),
 // baked lazily beside the code that draws them (sprites.md). GEAR32[slot][v]
 // in GEAR's own order; the 12px material-swapped SPRITES.gearIcons stay the
 // HUD's and the plaque's.
@@ -1948,7 +1950,7 @@ function leaveLobby() {
   SFX.pickup();
   SFX.music.play('intro');
 }
-// swap the stage to character slot i (js/profile.js): it comes with its own
+// swap the stage to character slot i (js/app/profile.js): it comes with its own
 // class, so the kit and the loadout follow it
 function lobbySlot(i) {
   const m = state.menu;
@@ -2016,7 +2018,7 @@ function lobbyRevealed() {
 // beginDrop). A map pick is spent HERE, not when it is made: a shape is
 // grown at boot (MAP_TYPE), so a pick that is not this page's shape is a
 // page - the lobby stays on screen to the end of the count, then the page
-// comes back on this seed in that shape and js/boot.js goes straight to
+// comes back on this seed in that shape and js/app/boot.js goes straight to
 // the eagle (softfall.drop, carrying the gear picks and the stat points,
 // which no profile holds).
 function lockIn() {
@@ -2067,7 +2069,7 @@ function lobbyClick() {
 
 // The class EMBLEMS: one symbolic 32x32 mark per CLASSES entry - the
 // hunter's drawn bow, the warrior's gauntlet - on the shared big-icon
-// palette (AB32_PAL, js/abilities.js), baked lazily beside their drawer
+// palette (AB32_PAL, js/sim/abilities.js), baked lazily beside their drawer
 // like every other big icon. A new class brings a CLASS32 grid with it
 // (checklists.md, "Adding a class"): the roster reads by SYMBOL, and the
 // stage is where the body itself is seen.
@@ -2899,7 +2901,7 @@ function renderMapPick(now, a) {
 
 // ---- the map ---------------------------------------------------------------
 // The other thing about the match that is not about a body: WHAT SHAPE THE
-// VALLEY CAME OUT OF THE SNOW IN (MAPS, js/world.js). The select screen
+// VALLEY CAME OUT OF THE SNOW IN (MAPS, js/sim/world.js). The select screen
 // wears it at the top centre as a PICTURE rather than a word for it - this
 // seed's own valley in the picked shape, drawn straight off mapTerrain
 // (mapChip) - with the shape's NAME under it (a name, which is what text is

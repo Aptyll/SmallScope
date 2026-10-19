@@ -6,7 +6,7 @@ The DEEP band of the [snow depth map](world.md#snow-depth) slows **every** walke
 players: each unit carries `e.wade` (0..1), eased toward whether its feet (`y + 4`) are in deep
 snow at `DEEP_EASE` (~95% in a quarter second, and back out as fast) by `wadeStep`, which
 `updateUnitStatus` runs for players, animals and robots alike. A body in the air, on the cable,
-in the water or dead is in none of it. The numbers ([js/depth.js](../../js/depth.js)):
+in the water or dead is in none of it. The numbers ([js/sim/depth.js](../../js/sim/depth.js)):
 
 - **Walking: `DEEP_WALK` 0.7.** `wadeMul(e)` folds into a player's `walkMax` (so it stacks with
   a drawn bow, a cast and the rest) and into `unitMoveMul` for everything else. A player at 75
@@ -18,7 +18,7 @@ in the water or dead is in none of it. The numbers ([js/depth.js](../../js/depth
 - **Sliding: friction x`DEEP_SLIDE` (2)** on a snow slide in it, and no slide *starts* with the
   wade past `DEEP_SLIDE_BAR` - you can slide in, and the drift eats it.
 - The walk cycle keeps time with the speed the wade leaves (`animT` steps with `spNow` over
-  `PLAYER_SPEED`, updatePlayer, js/sim.js), so a full wade strides 30% slower, and a wading
+  `PLAYER_SPEED`, updatePlayer, js/sim/sim.js), so a full wade strides 30% slower, and a wading
   body moving faster than 12 px/s kicks up a puff at its feet every `DEEP_PUFF_T`.
 
 A rush, the grapple's reel and the zipline own their velocity and ignore it. Bots do not route
@@ -45,13 +45,13 @@ model, the input struct, teams, bots and how two players' orders are resolved.
 
 A player moves on a real velocity (`p.vx/vy`): `p.input.mx/my` accelerates, and the surface
 underfoot sets friction and speed caps. All the tuning constants live in the `players` banner of
-[js/player.js](../../js/player.js) (`ICE_MAX`, `SLIDE_MIN`/`SLIDE_EXIT`, `TRAIL_MIN`, above
+[js/sim/player.js](../../js/sim/player.js) (`ICE_MAX`, `SLIDE_MIN`/`SLIDE_EXIT`, `TRAIL_MIN`, above
 `CLASSES`, whose kits are written against them) and the per-surface rates inline in
 `updatePlayer()`'s movement block, which every player runs. **Momentum is deliberately players-only**
 — animals, robots, and knockback move directly (a direction times a speed through `moveEntity`).
 
 **Facing** (`p.dir`, the sprite a body shows) only ever changes through `faceToward(p, dx, dy, hold)`
-in the `facing` banner of js/player.js: the walk, a draw's aim, a raised shield, a work or mining
+in the `facing` banner of js/sim/player.js: the walk, a draw's aim, a raised shield, a work or mining
 swing, the zipline, and every aimed action. Near a diagonal the axis the body already faces wins
 until the other one leads by `FACE_BIAS` (1.25), so walking or aiming along 45 degrees does not
 flick between two sprites each frame. A shot, a slash, a cast, a rush and a roll pass `hold`: the
@@ -105,7 +105,7 @@ The one movement that is neither walked nor slid: any body standing under **eith
 cable ([the zipline](world.md#the-zipline), `zipNear`) presses E and **clips on** —
 `keyPress`/`pointerPress`/`ckRightPress` set `input.jump`, the edge-triggered hop intent the
 eagle already reads, and `updatePlay` consumes it for every player alike as `zipToggle(p)`
-(js/zipline.js): riding, it lets go; under a cable, `zipStart`. The ride is its own branch of
+(js/sim/zipline.js): riding, it lets go; under a cable, `zipStart`. The ride is its own branch of
 `updatePlayer`'s movement ladder, after the grapple's and before the surface model
 (`zipStep`): the cable sets `p.x/p.y` **outright** — no `moveEntity`, so a wall, a pine or a body
 under the line never stops a rider — and `p.vx/vy` to the tangent × `ZIP_SPD` (220 px/s, three
@@ -122,7 +122,7 @@ said. State on the body: `p.zip` (the line's team, −1 for none), `p.zipD` (px 
 comes back clipped on; `die` lets go too.
 
 **The cable under the pointer.** `hoverZip()` (actions.js, beside `hoverFish`) is either
-side's cable under the pointer as drawn (`zipUnder`, js/zipline.js — within `ZIP_HOVER` of the
+side's cable under the pointer as drawn (`zipUnder`, js/sim/zipline.js — within `ZIP_HOVER` of the
 strand, never the invisible track under it), while the body is on the ground with nothing open
 over it. While it holds, `drawZips` lights the whole line in the work-target rim's two golds on
 its beat, and `drawZipGuide` (js/draw/zipline.js, right after the aim line) runs a static dotted
@@ -158,7 +158,7 @@ damage never dismounts (its knockback decays unspent, since the ride branch neve
 `kbx/kby`); a **stun, a root or a net** does, through `zipEnd(p, true)` inside `stunUnit`,
 `rootUnit` and `netUnit` (any body's, a soldier's too): dropped at rest on the snow under the
 cable. Another body never shoves a rider (`separateUnits` skips `zip >= 0` the way it skips
-`inAir(p)`), but **two rivals on one cable crash**: `zipCrash` (js/zipline.js, called in `updatePlay`
+`inAir(p)`), but **two rivals on one cable crash**: `zipCrash` (js/sim/zipline.js, called in `updatePlay`
 once the robots have stepped) finds every pair of riders of different sides on the same line
 within `ZIP_CRASH_R` (8 px) along it, or past each other since the last step (`zipLast`), and
 `stunUnit`s both for `ZIP_CRASH_STUN` (0.8 s, the tackle's top) — so both fall at rest where they
@@ -315,7 +315,7 @@ red, robots blue), and `DBG.findPath`/`DBG.walkable`/`DBG.navTo` are exposed for
 
 ## Tools and bits
 
-Everything in this section lives in **[js/tools.js](../../js/tools.js)**, under the `tools & bits`
+Everything in this section lives in **[js/sim/tools.js](../../js/sim/tools.js)**, under the `tools & bits`
 banner. It loads after `actions.js` because a shot it fires is the arrow pipeline's, and its
 top-level code registers one `ITEMS` row per kind — which is what makes the bag, the drop pickup,
 the throw and the refusal flash work on tools and bits with no storage code of their own.
@@ -369,7 +369,7 @@ A **projectile bit** is one shot: `path` (how it flies), `solid` (whether a wall
 `life`/`speed`/`dmg` as baselines. Optional `lit` is a light radius it carries in
 flight; optional `reach` widens every hit test past the tip (a bit with a *body* — the fist, the
 axe); optional `body` names the silhouette the shots pass draws it as (`BIT_BODY`, js/draw/render.js);
-optional `impact` names what it does where it *lands* (`BIT_IMPACT`, js/tools.js); and
+optional `impact` names what it does where it *lands* (`BIT_IMPACT`, js/sim/tools.js); and
 `bot: false` marks a kind no bot will load. A spent shot is simply gone — nothing lands to be
 picked back up.
 
@@ -377,7 +377,7 @@ picked back up.
 
 `kb` is a **multiplier**, not a speed, and 1 is the ordinary shove. It has to be, because the
 three kinds of unit are already pushed at three different weights — a player at `HIT_KB` (110 px/s,
-js/player.js), a worker at `ROBOT_KB` (40, js/robots.js), an animal on a curve off the draw
+js/sim/player.js), a worker at `ROBOT_KB` (40, js/sim/robots.js), an animal on a curve off the draw
 (25–70) — and one number written on a bit has to mean the same thing thrown at any of them. It
 rides to `hurtUnit` as `o.kbMul`, which scales whatever shove that kind takes; `o.kb` beside it
 is still the absolute px/s an *ability* picks for a particular blow. A shot with no `kb` at all
@@ -409,7 +409,7 @@ Eight exist: SPEEDUP, SPLITTER, DUPLICATE, HEFT, LONGSHOT, and the three that ca
 
 #### Fire on a shot
 
-`m.type` is the shot's **damage type** (`DMG_TYPES`, js/actions.js — `blunt` unless a modifier says
+`m.type` is the shot's **damage type** (`DMG_TYPES`, js/sim/actions.js — `blunt` unless a modifier says
 otherwise), and `m.burn` / `m.burnDps` are the fire it leaves in the body it hits. The shot carries
 all four onto the arrow, and every hit branch in the arrow loop hands them to `hurtUnit` — so a
 flaming shot burns a rival, a deer, a bird and a worker bot identically, with no per-kind code.
@@ -439,7 +439,7 @@ All three carry `bot: false`: a bot has no pointer and cannot read a weapon whos
 *where you end up standing*, the same refusal that already keeps boomerangs and orbits out of
 its hands.
 
-**What a bit does where it lands** is one row in `BIT_IMPACT` (js/tools.js), called from the arrow
+**What a bit does where it lands** is one row in `BIT_IMPACT` (js/sim/tools.js), called from the arrow
 update only when the shot ended **on** something (`a.struck` — a wall, a tree, a body, the roost,
 a dummy, a target face) rather than merely running out of life over open snow. That distinction
 is the teleport's whole rule: a request that hits nothing takes you nowhere.
@@ -454,7 +454,7 @@ is the teleport's whole rule: a request that hits nothing takes you nowhere.
   (`drawWarps`, js/draw/render.js; aged in `updateFx`). Without the trail a teleport reads as a body
   blinking out of existence rather than as a path.
 - **`chop`** — one chop into every tree within `AXE_CHOP_R` (26 px) of where the head stopped,
-  the struck tile included. It is the same blow an E swing lands (`chopTree`, js/actions.js —
+  the struck tile included. It is the same blow an E swing lands (`chopTree`, js/sim/actions.js —
   gold, stump, fell payout, loot roll and the rare pine's jackpot), routed through `contest()`
   on the same `work:` key, so an axe and a swing on one tile in one step are one chop. Three
   throws fell a pine, and they fell its neighbours with it.
@@ -528,12 +528,12 @@ blade at its whole worth (`slashReach`) — and **every bit in the plan is one c
 swing**: its damage through `emitBit`'s own sum (bit, kit, level, the draw's multiplier, the
 modifiers' `dmgMul`/`dmgAdd`, the ambush), its modifiers' damage type and fire on every body the
 edge reaches. What the edge reaches is the **wedge** — `inCone`/`unitsInCone`/`structsInCone`
-(js/actions.js): a body counts by its centre plus its own radius, a building by any tile of its
+(js/sim/actions.js): a body counts by its centre plus its own radius, a building by any tile of its
 footprint — and nothing else: a body behind the caster is never cut. A bit whose whole point is its
 flight (a boomerang, a lob, an orbit) swings as a plain cut worth its damage; the sword is a place
 the fittings you found can still go, not a second arsenal. Each cut leaves its wedge on the snow
 (`slashes`, `SLASH_T` 0.28 s, ticked by `updateSlashes` from `updatePlay`) — the outline in white,
-gold when it landed, with a bright edge sweeping across it — drawn by `drawSlashes` (js/abilities.js,
+gold when it landed, with a bright edge sweeping across it — drawn by `drawSlashes` (js/sim/abilities.js,
 called from js/draw/render.js beside the E swing arcs), and the local player's draw grows the same wedge
 in place of the aim line (`drawAimLine`), so the reach the cut is about to have is on the ground
 before it lands. **The hand swings the sword itself**: the blade is drawn at its real 22 px length
@@ -542,7 +542,7 @@ hand holds a tool that has one), a draw winds it back to the start of its arc, a
 after the loose (`p.slashT`/`slashA`/`slashHalf`, counted down in `updatePlayer`) `drawHeldTool`
 sweeps it across the wedge pivoting at the hands, two ghosts of it trailing, in front of the body
 whichever way it faces. A bot with a blade fights at `AI_MELEE_D` (18 px) instead of a bow's 70, and
-only presses fire once the target is under the edge (`aiMelee`, js/ai.js).
+only presses fire once the target is under the edge (`aiMelee`, js/ai/ai.js).
 
 ### Flight paths
 
@@ -593,7 +593,7 @@ through `hurtStruct`, `STRUCT_DR` (60 %) off like any player blow — so a bit t
 (`solid: false`) pays for that with its siege, and needs no second flag. A burning shot trails fire instead of team colour, burns on its head in flight ([the draw](#the-draw)) and bursts embers where it lands.
 
 **A shot meets everything its step crossed, then one blow.** A step is a *segment*, never a point:
-`shotContacts` (js/sim.js, `the shot's sweep`) lists what the segment met in the order it met
+`shotContacts` (js/sim/sim.js, `the shot's sweep`) lists what the segment met in the order it met
 it — the tiles it entered (a grid DDA) up to the first that ends it (a rival roost, the practice
 dummy, a solid tile), every **standing building by the shape it is drawn in** — `structShotBox`,
 the box its sprite's opaque pixels cover where the draw lays it (`structArtOff`, so the bay's roof
@@ -637,7 +637,7 @@ Two marks and no words, [drawn](rendering.md#the-weapon-shelf) rather than label
 **rim colour** is its rarity (and a hatched ground is a fitting), and one **line** per fitting runs
 over the row from it into every shot it powers (the tool well itself when the built-in arrow is
 the shot). And two events on the one flash (`bitLit`/`bitLitAt`/`bitLitCol`,
-js/tools.js, aged in `updateFx`): every cell the last press SPENT flashes white and fades over
+js/sim/tools.js, aged in `updateFx`): every cell the last press SPENT flashes white and fades over
 `BIT_LIT_T` (0.3 s), its lines with it, so the left button teaches the row it is firing — and a
 [tool swap](#where-tools-and-bits-come-from) lights the **whole** row, the tool well included, in
 the new tier's ink for `SWAP_T` (1.1 s).
@@ -653,7 +653,7 @@ get rid of a tool.
 along the **cursor's heading** at `TOSS_SPEED` (130 px/s — the facing stands in when the pointer
 is on the body), rather than tipping it out at the feet, so "put this over there" is a gesture and
 not a wish; and for `TOSS_LOCK_T` (3 s) the drop is **deaf to the hand that threw it**
-(`lockDrop`/`dropLocked`, js/core.js — the drop carries one player id), because the pickup magnet
+(`lockDrop`/`dropLocked`, js/sim/core.js — the drop carries one player id), because the pickup magnet
 would otherwise reel straight back in what was just dragged out. The lock is one player's:
 everybody else may take it the instant it lands, which is what makes a hand-off across a fight
 work. A thrown **tool** sheds its bits on the way ([above](#a-discarded-weapon-sheds-its-build)),
@@ -769,7 +769,7 @@ hold lands in the grid. **Anywhere it lands, it works** (`fitBit`): it takes a f
 `sortBits` seats it on its own side — a shot at the end of the shots, a fitting at the front of
 the fittings — and since every fitting powers every shot, a find is never wasted — `fitAdd(p, type, n)`, with `fitRoom(p, type)` the room it counts, which
 is why a FULL pack with an empty bit cell still magnetises a drop and still claims it. The drop
-pickup (js/sim.js) and `shopBuy` (js/ui/shop.js) both go through the pair, so the ordinary way to
+pickup (js/sim/sim.js) and `shopBuy` (js/ui/shop.js) both go through the pair, so the ordinary way to
 arm a find is to walk over it, and the drag is what you reach for to ARRANGE a build rather than
 what you must do to have one — which is half of why the [shelf](#the-weapon-shelf) is on screen
 at all times: a bit that loaded itself has to be seen loading itself. It fills a free cell
@@ -799,7 +799,7 @@ with fewer cells than the build needs, is an ordinary pickup into the pack.
 ### A discarded weapon sheds its build
 
 The counterweight to the pack being the overflow: **a tool that lands in the snow arrives bare.**
-`shedBits(cell, x, y, hx, hy, p)` (js/tools.js) empties the row as the tool goes down, spawning
+`shedBits(cell, x, y, hx, hy, p)` (js/sim/tools.js) empties the row as the tool goes down, spawning
 every loaded bit as its own drop flung along `hx`/`hy` — whatever threw the tool — plus a
 `SHED_KICK` of its own, so what lies there is a body in a scatter of fittings. The one ground-drop
 path calls it: the [drag out onto the world](#the-weapon-shelf) (`throwCell`, js/ui/bag.js). A
@@ -828,7 +828,7 @@ wears: it is a thing you fire. A **modifier** gets its plate hatched, inset 2px 
 one clean line, in its rarity's colour — it never flies, it is fitted *into* the tool — so the two
 are told apart across a whole grid without recognising a single glyph. Colour is already spent on
 tier, which is why the difference has to be texture. Weight has no mark on a cell; it shows as the
-length of the draw. The 8×8 glyph (`BIT_ART`, js/tools.js)
+length of the draw. The 8×8 glyph (`BIT_ART`, js/sim/tools.js)
 then says what the bit *does*, in the same two grammars: a **shot** is drawn as the thing that
 flies, tip to the upper right like every other shot icon (the arrow; the barbed shaft; the
 return loop of the hookshot; the gold arrow with a light for a head; the comet wisp; the cut
@@ -872,7 +872,7 @@ class flies out with.
 
 ## Class abilities (keys 1-4)
 
-Everything in this section lives in **[js/abilities.js](../../js/abilities.js)**, under the
+Everything in this section lives in **[js/sim/abilities.js](../../js/sim/abilities.js)**, under the
 `class abilities` banner. Keys 1-4 cast the four actives of the player's
 [class](multiplayer.md#classes) — `CLASS_AB[p.cls]`, one row per key, where **what an ability IS
 lives in its table entry** (`cd`, `cast`, `use(p)`), never in an `if` elsewhere. **A key can
@@ -922,10 +922,10 @@ it (`abDenied`, the twin of `toolDenied`/`foodDenied`). The ASK floats clear of 
 point is unspent each un-maxed key grows a bobbing gold plus plate in the open screen above its
 well (`abBuyRect`/`abBuyHit`/`drawAbBuyPlate`, UI › `hud strip`). The plate press buys — and so does **the key itself while a point is unspent**: the sim
 consumes `p.input.ability` as a buy whenever `abLvCanBuy(p, i)` holds and as a cast otherwise
-(js/sim.js, beside the other edge intents), so key 2 with a point in hand levels ability 2 and the
+(js/sim/sim.js, beside the other edge intents), so key 2 with a point in hand levels ability 2 and the
 next press casts it; a maxed key casts straight through an unspent point. That reaches every
 controller and the well click alike, since all of them set the one field. Hover lights the plate
-and the tooltip carries the numbers (`LOCKED` and `UNLOCK 1 SKILL PT` on a dark key). Bots spend each free point in rung 0 of the ladder (`aiThink`, js/ai.js), lowest ability
+and the tooltip carries the numbers (`LOCKED` and `UNLOCK 1 SKILL PT` on a dark key). Bots spend each free point in rung 0 of the ladder (`aiThink`, js/ai/ai.js), lowest ability
 level first — which spends their first four unlocking all four keys before any gets a cut. The cd
 column in the tables below is the level-1 base.
 
@@ -955,7 +955,7 @@ HUNTER — bow, distance control, the ground between:
 
 | key | name | cd | what it does |
 | --- | --- | --- | --- |
-| 1 | **PIERCING SHOT** | 12 s | locks a full draw for `PIERCE_WIND` (0.7 s) — the body plants (`PIERCE_SLOW` ×0.15 walk), the pose leans back and holds, and a thin dashed **telegraph line** is drawn on the ground along the live aim for BOTH sides, gold-flaring as the loose nears. Then the shot fires itself: one enhanced arrow (a full-draw plain arrow ×`PIERCE_MUL` 1.5, `PIERCE_SPD` 380, `PIERCE_RANGE` 520) that **goes through every body on the line** (`a.pierce`/`a.pierceHit`, the arrow loop in js/sim.js) — only a raised shield or the world stops it. **It wears every modifier on the tool in hand** (`pierceMods`) — folded into one envelope and spent as a press spends one: `pierceFlight` is `shotFlight` at full draw, so SPEEDUP and LONGSHOT stretch the reach as well as the speed; HEFT and SPLITTER scale the damage after the multiplier; the fire and CINDER BURST ride it; SPLITTER fans it and DUPLICATE repeats it (`armOff`), every arm a pierce of its own. The telegraph draws that flight, one line per fan arm, each to where the world stops it (`teleLen`). The loose is the unmissable cue: `SFX.nock` snap + a white flash on the arrowhead |
+| 1 | **PIERCING SHOT** | 12 s | locks a full draw for `PIERCE_WIND` (0.7 s) — the body plants (`PIERCE_SLOW` ×0.15 walk), the pose leans back and holds, and a thin dashed **telegraph line** is drawn on the ground along the live aim for BOTH sides, gold-flaring as the loose nears. Then the shot fires itself: one enhanced arrow (a full-draw plain arrow ×`PIERCE_MUL` 1.5, `PIERCE_SPD` 380, `PIERCE_RANGE` 520) that **goes through every body on the line** (`a.pierce`/`a.pierceHit`, the arrow loop in js/sim/sim.js) — only a raised shield or the world stops it. **It wears every modifier on the tool in hand** (`pierceMods`) — folded into one envelope and spent as a press spends one: `pierceFlight` is `shotFlight` at full draw, so SPEEDUP and LONGSHOT stretch the reach as well as the speed; HEFT and SPLITTER scale the damage after the multiplier; the fire and CINDER BURST ride it; SPLITTER fans it and DUPLICATE repeats it (`armOff`), every arm a pierce of its own. The telegraph draws that flight, one line per fan arm, each to where the world stops it (`teleLen`). The loose is the unmissable cue: `SFX.nock` snap + a white flash on the arrowhead |
 | 2 | **NET SHOT** | 15 s | a weighted net down a line (`nets`): first rival hit takes 4 and is **slowed** (`p.slowT`/`slowMul` ×0.4, 2 s, the drape drawn on them); the recoil kicks the hunter backward with an animated hop (`p.hopT`) |
 | 3 | **GRAPPLE** | 8 s | throws a hook down the aim ray: the first **tree, dead tree or rock** within `GRAP_RANGE` (170 px) and `GRAP_ASSIST` of the line (the aim assist) anchors it, and the body is reeled straight at it at `GRAP_REEL` (260 px/s — over `SLIDE_MIN`, so shift on release carves a slide). The reel runs **while key 3 is held** (`input.grapple`, the one held ability input); releasing, arriving, a wall or a stun lets go through `grapEnd`, which KEEPS the momentum and starts the cooldown — a long ride and an instant release cost the same. A hook that catches nothing costs `GRAP_MISS_CD` (1 s) |
 | 4 | **SNOW COVER** | 60 s | the burrow ([Prone](#prone-under-the-snow), which only this key opens): the cast kneels and calls `tryProne`, the 60 s clock is paid **on the way under**, and the key again — like every other way back up — rises free. A kneel the snow refuses (still moving, sliding, no snow underfoot) refunds the clock. The well's active tell drains with `p.hide` as the cover builds |
@@ -964,7 +964,7 @@ WARRIOR — close pressure, blocking, momentum:
 
 | key | name | cd | what it does |
 | --- | --- | --- | --- |
-| 1 | **SHIELD WALL** | 9 s | raises a tower shield toward the aim for up to 2.2 s (the cooldown starts when it comes DOWN). Any shot flying into the front arc dies on it (`abShieldBlocks`, checked in the arrow loop before the body); walking drops to 40 % and the weapon is out of hand. **The key again while the wall is up is the SLAM** (`tryAbility` sets `p.castSlam`, the row's `use` branches on it): a `SLAM_CAST` (0.16 s) wind-up with the wedge on the snow, then `abSlam` — `SLAM_DMG` (8), `SLAM_STUN` (1.1 s) and `SLAM_KB` down the face on everything in `SLAM_R`/`SLAM_HALF` (30 px, ±0.85 rad, `unitsInCone`/`structsInCone`, js/actions.js) — and the wall is spent (`abShieldDown`, the cooldown starts). **Mid-charge the same key slams too**: the rush ends on the spot (`rushEnd`, the carried body slammed where it stands) and the wind-up begins there; with no wall up it waits on the shield's cooldown like the raise would. A rush may be cast with the wall up — only the charge itself refuses the other keys |
+| 1 | **SHIELD WALL** | 9 s | raises a tower shield toward the aim for up to 2.2 s (the cooldown starts when it comes DOWN). Any shot flying into the front arc dies on it (`abShieldBlocks`, checked in the arrow loop before the body); walking drops to 40 % and the weapon is out of hand. **The key again while the wall is up is the SLAM** (`tryAbility` sets `p.castSlam`, the row's `use` branches on it): a `SLAM_CAST` (0.16 s) wind-up with the wedge on the snow, then `abSlam` — `SLAM_DMG` (8), `SLAM_STUN` (1.1 s) and `SLAM_KB` down the face on everything in `SLAM_R`/`SLAM_HALF` (30 px, ±0.85 rad, `unitsInCone`/`structsInCone`, js/sim/actions.js) — and the wall is spent (`abShieldDown`, the cooldown starts). **Mid-charge the same key slams too**: the rush ends on the spot (`rushEnd`, the carried body slammed where it stands) and the wind-up begins there; with no wall up it waits on the shield's cooldown like the raise would. A rush may be cast with the wall up — only the charge itself refuses the other keys |
 | 2 | **BULL RUSH** | 12 s | a 0.3 s wind-up with **the line on the snow** for both sides (`RUSH_SPD × RUSH_T` long, stopped at solids, a bar at its end where the slam will be — the body faces the live aim the whole wind-up), then charges the aim line at 300 px/s for 0.42 s (its own movement branch in `updatePlayer`, no i-frames, ramping to speed over `RUSH_RAMP`): the **first rival hit is carried** on the shoulder and **slammed** at the end (a bear is never picked up: the charge stops against it and slams it where it stands) — 10 damage + 0.6 s stun, ×1.6 driven into a wall (`rushStep`/`rushEnd`) |
 | 3 | **STOMP** | 14 s | a leap-stomp at the feet — the ring of `STOMP_R` on the snow through the wind-up, filling in as it nears, and flashed white where it lands (`abFx`): 12 damage + radial knockback + a beat of stun in `STOMP_R`, and the **crater** (`craters`) is deep snow that slows rivals crossing it for 4 s |
 | 4 | **EXECUTE** | 18 s | a 0.55 s overhead wind-up with the wedge on the snow (`EXEC_R`/`EXEC_HALF`, 30 px, ±0.75 rad — narrower than the sword), then `abExecute`: every unit in it takes `execDmg` — `EXEC_DMG` (10) plus `EXEC_MISSING` (half) of the life it has already lost, capped at `EXEC_BONUS_MAX` (40) extra — so a body the other three keys have worked over is finished, and a full one takes ten. `EXEC_KB` shove; a cut over twice the base is a crit |
@@ -1033,7 +1033,7 @@ typed twice, so a retune can never leave the wiki lying.
   sentences live in that table alone; the premise, the fixed words and the voice they are
   written in are [lore.md](lore.md).
 
-The `TECH` table in [js/tools.js](../../js/tools.js) carries the kinds and exactly one
+The `TECH` table in [js/sim/tools.js](../../js/sim/tools.js) carries the kinds and exactly one
 edge per node — `req`, the node beneath it, null on the tier-0 row. Nothing at runtime reads the
 edge: it is the arsenal's lineage on paper (each root plus at most two children — SHORTBOW →
 RECURVE BOW → LONGBOW, ARROW → CARE ARROW → ICE LANCE, BARBED SHOT → THROWING LOG → HEFT, and so
@@ -1048,7 +1048,7 @@ about; `dropLoot` still returns null on an empty pool rather than throwing.
 **nothing**: it is fired for the local player only (`noteSeen(p, type)`) from the drop pickup and
 from the loadout they fly in with, and it puts the blue pip on the ARSENAL row.
 
-Storage is [js/profile.js](../../js/profile.js) and nothing here writes a key — see
+Storage is [js/app/profile.js](../../js/app/profile.js) and nothing here writes a key — see
 [architecture.md](architecture.md#profilejs).
 
 ## The swing tools (E)
@@ -1060,7 +1060,7 @@ selected slot — the moment a swing ends. Two verbs, two inputs:
 
 - **Left click = the selected tool slot.** The press only records intent (`clickAction` sets
   `input.fire`); `updatePlayer` starts the draw on the rising edge and fires on the falling one.
-- **The hands work on their own** (`autoWork(p)`, js/actions.js — `updatePlayer` calls it every
+- **The hands work on their own** (`autoWork(p)`, js/sim/actions.js — `updatePlayer` calls it every
   step `p.input.work` is *not* set). Whatever an `OBJECTS` entry marks `auto` — a tree, a dead
   tree, a berried bush, a chest, a rival's roosting eagle — and **any building on the
   other team** (`autoToolFor`, resolving a footprint tile through `structOf` and refusing your
@@ -1075,7 +1075,7 @@ selected slot — the moment a swing ends. Two verbs, two inputs:
   **both tools on the sprite**: the axe or pick sweeping in one hand, the drawn weapon on the aim
   in the other (`drawHeldTool`, [below](#the-draw)). It obeys the
   same busy gates as E (a fall, a roll, a stun, an ability, a meal, the swing cooldown).
-  **Fish are the same idea on ice** (`autoFish(p, dt)`, js/tools.js, called right after it):
+  **Fish are the same idea on ice** (`autoFish(p, dt)`, js/sim/tools.js, called right after it):
   standing on an ice tile with a fish inside `FISH_CATCH_R` catches it with no press, once
   every `FISH_AUTO_CD` (1.2 s, `p.fishCd`) so a walk along a shoal is a stride per fish, and
   nothing can refuse the catch, because fish go in the pouch. It spends no tool cycle and runs
@@ -1126,7 +1126,7 @@ at all, since the axe is the only tool E ever brings out for one.
 team are**: `workTarget()` resolves the tile through `structOf()` (so any tile of a 3×2 footprint
 counts, via its `part`) and returns the axe when `ownsStruct()` is false, and `swingHit` routes
 the swing to the anchor. Your own buildings are never swung at: E in reach of one opens its
-manage wheel instead (`manageNear`, js/structures.js), so E is never ambiguous. See
+manage wheel instead (`manageNear`, js/sim/structures.js), so E is never ambiguous. See
 [Base building](#base-building) for the damage numbers. The axe and the pick never hit a living
 thing: the tool on the selected slot is the only weapon aimed at one.
 
@@ -1190,7 +1190,7 @@ and nothing more, a floor under the hand's own draw, never a second weapon.
 
 `drawPow(p)` — `chargeT` over `drawTime(p)`, clamped 0..1 — scales the shot three ways
 at once, each on a straight line from a floor to the bit's own number (the `the draw` banner,
-js/tools.js):
+js/sim/tools.js):
 
 | | at a tap (`pw` 0) | at full draw | floor |
 | --- | --- | --- | --- |
@@ -1241,7 +1241,7 @@ leaves holes on the diagonals that the rim fills with dark. All of them wear `pa
 red rim that keeps it off white snow — climbing as it trails and flickering every `FIRE_FLICK`,
 longer the hotter the burn (5 px on a FLAME, 7 on a PYRE, 9 on both), with a CINDER BURST's
 shot spitting sparks round its head. Everything else is **the one arrow body**: `ARROW_MAP`
-(js/actions.js), an ASCII master parsed once into `ARROW_BODY` — a white tip, a tapered flint
+(js/sim/actions.js), an ASCII master parsed once into `ARROW_BODY` — a white tip, a tapered flint
 head, a 1 px collar in the bit's own `col` (the bit is readable from the collar; the shaft never
 recolours), a single-gold shaft, and swept swallow-tail feathers in `TEAMS[a.team].mark` edged
 with the team's `coatD` — so whose shot it is reads from the tail. `arrowBodyPx`
@@ -1298,7 +1298,7 @@ rest the hands hold the tool on the *selected slot*, in its own tier colour, so 
 carrying reads off their sprite from across the snow — and an empty slot reads as empty hands.
 It is carried at the leading hand while idle/walking (turned to the facing, drawn *before* the
 body sprite for `up` so it's occluded, riding the run's bob - `runBob`), and rotated toward the mouse while drawn.
-Every art says which way its business end points as drawn (`TOOL_FWD`, js/tools.js) and the hand
+Every art says which way its business end points as drawn (`TOOL_FWD`, js/sim/tools.js) and the hand
 turns it by the facing or the aim minus that: a bow's arrowhead is at +x, drawn the way a bow is
 held — string toward the archer, belly toward the target — the sword's point at −x, the sling's
 stone up.
@@ -1368,7 +1368,7 @@ and their once-per-roll bookkeeping.
 ## Status effects: one set for every unit
 
 Everything in this section lives under the **`status effects`** banner at the foot of
-[js/actions.js](../../js/actions.js). Three kinds of thing walk this world — a **player**, an
+[js/sim/actions.js](../../js/sim/actions.js). Three kinds of thing walk this world — a **player**, an
 **animal**, a **worker bot** — and all three take a blow and a state through the same funnels
 (the [CLAUDE.md](../../CLAUDE.md) hard rule; the detail is here):
 
@@ -1386,7 +1386,7 @@ written down once: an animal has no `team` (`unitTeam` → −1), so it is nobod
 everybody's fair game — exactly how the world already treated a deer. `sideOf(w)` hands one of these
 lists the side of a **thing in the world** — a net, a shot in flight — rather than a living
 caster, so a net outlives the hunter who threw it and still knows whose it was; `abCredit(w)`
-(js/abilities.js) is its other half, and pays a kill to nobody once that caster is down.
+(js/sim/abilities.js) is its other half, and pays a kill to nobody once that caster is down.
 
 ### I-frames: only something deliberate grants them
 
@@ -1400,8 +1400,8 @@ sets it nowhere.** The only things that grant it are deliberate:
 | `tryDodge` | `DODGE_T` + 0.05 s | the roll *is* the dodge — [Dodge roll](#dodge-roll) |
 | `Player.reset` — so `respawnPlayer` | 3 s (0 on the very first spawn) | nobody is spawn-camped |
 | `landPlayer`, `practiceRevive` | 2 s | a beat of grace while the snow settles |
-| the ice-hole scramble (`updatePlayer`, js/sim.js) | 0.8 s | you climb out; you are not bitten climbing out |
-| the drop briefing (`js/eagle.js`) | 0.4 s, refreshed | the lesson is not a fight |
+| the ice-hole scramble (`updatePlayer`, js/sim/sim.js) | 0.8 s | you climb out; you are not bitten climbing out |
+| the drop briefing (`js/sim/eagle.js`) | 0.4 s, refreshed | the lesson is not a fight |
 
 `rollTackle` **drops** them ([the roll is a hit](#the-roll-is-a-hit)).
 
@@ -1424,7 +1424,7 @@ The six states, and what each does to a body:
 | **fire** | `burnT`/`burnDps`/`burnBy` | see below | flame tongues off the crown, and lit snow under the feet |
 
 Every one of them is **drawn on the body, for both sides**, at whatever size that body is —
-`drawUnitStates(e, px, py, w, h, now)` (js/abilities.js) takes the sprite's own box and is called by
+`drawUnitStates(e, px, py, w, h, now)` (js/sim/abilities.js) takes the sprite's own box and is called by
 `drawAbilityOnPlayer`, `drawAnimal`, `drawBird` and `drawRobot` alike. A state you cannot see is a
 rule you cannot play around, and that is as true of a deer as of a rival. The player keeps one tell
 of its own on top (a raised shield, `drawAbilityOnPlayer`), and the stun badge is the one visual that
@@ -1450,7 +1450,7 @@ credit, `DEATH_CAUSE.fire` — "BURNED IN THE SNOW").
 
 Two rules make the burn behave like fire rather than like a stream of small arrows:
 
-- **`DOT_CAUSE`** (js/player.js) — a bite of fire is *not a blow*. It goes **through** the i-frames
+- **`DOT_CAUSE`** (js/sim/player.js) — a bite of fire is *not a blow*. It goes **through** the i-frames
   a body does have — a roll does not put a fire out, and neither does a respawn — and never shoves:
   a burn is a condition on the body, not a blow landing on it. It still breaks cover and the meal:
   you cannot lie hidden, or eat, while you are alight.
@@ -1469,8 +1469,8 @@ entirely in speed; the way IN costs the ability's 60 s cooldown
 ([class abilities](#class-abilities-keys-1-4)), and every way back up is free. There is no
 burrow key and no `input.prone` — the ability is the one door.
 
-`tryProne(p)`/`risePlayer(p)` (the `prone` sub-banner of `actions`, js/actions.js) are the only two ways in and out —
-`abSnowCover` (js/abilities.js) is the one caller of `tryProne` and refunds the clock when the
+`tryProne(p)`/`risePlayer(p)` (the `prone` sub-banner of `actions`, js/sim/actions.js) are the only two ways in and out —
+`abSnowCover` (js/sim/abilities.js) is the one caller of `tryProne` and refunds the clock when the
 snow refuses. Going down
 needs **both feet still** (`hypot(vx, vy) <= PRONE_ENTER`, 14 px/s — you cannot dive at a run),
 not sliding, not mid-roll, and **snow underfoot**: a river has nothing to dig into, and the press
@@ -1493,14 +1493,14 @@ those, never `p.hide` directly**:
 - `seenAt(p, range)` = the distance a watcher with plain sight `range` actually notices p from:
   `range × kit.stealth × (1 − PRONE_CUT × conceal)`, floored at `PRONE_SNIFF` (22 px) whenever
   there is any cover at all — **nothing hides at arm's length**. A bot's sight is its profile's
-  (`AI_LEVELS`, js/ai-skill.js: EASY 120, NORMAL 147, HARD 200, IMPOSSIBLE 267 px), so full cover takes those to
+  (`AI_LEVELS`, js/ai/ai-skill.js: EASY 120, NORMAL 147, HARD 200, IMPOSSIBLE 267 px), so full cover takes those to
   22 (the floor), 22, 28 and 37, and a tier-3 turret's 124 down to 22.
 
 **Every watcher resolves through `seenAt`, and a new one must too.** Today's callers: a bot's
-target pick and its roost-threat count (`aiNearestEnemy`, `aiSituation`, js/ai.js), a turret
-(`turretMark`/`turretHolds`), a worker bot's quarry and the flag's reach (js/robots.js), prey
-deciding to bolt (`updatePrey`), the eagle's gust (js/eagle.js) and the CLICK scheme's lock and
-acquire (js/input.js). A camp monster has no sight
+target pick and its roost-threat count (`aiNearestEnemy`, `aiSituation`, js/ai/ai.js), a turret
+(`turretMark`/`turretHolds`), a worker bot's quarry and the flag's reach (js/sim/robots.js), prey
+deciding to bolt (`updatePrey`), the eagle's gust (js/sim/eagle.js) and the CLICK scheme's lock and
+acquire (js/app/input.js). A camp monster has no sight
 to resolve, since a hit is its only trigger ([Camp monsters](#camp-monsters-neutral-until-hit)).
 Both maps gate separately on `concealOf(p) >= PRONE_MAP` (0.55): a rival buried and still drops off
 the minimap and the M map, and a rival *crawling* tops out at 0.5 and stays on both — moving puts
@@ -1522,7 +1522,7 @@ that made it — and it is the counterplay: a line like that leads straight to t
 
 `ambushReady(p)` is `prone && hide >= 1 && !moving`: **full** cover, and dead still while it goes.
 `fireTool` reads it before anything else can break the cover, multiplies the whole damage roll
-(`emitBit`, js/tools.js: `(bit.dmg + kit.dmgPow × draw × 0.5 + kit.dmgBase + speed bonus + level)
+(`emitBit`, js/sim/tools.js: `(bit.dmg + kit.dmgPow × draw × 0.5 + kit.dmgBase + speed bonus + level)
 × drawDmgMul`, then the modifiers) by `kit.ambushMul` (starts at `AMBUSH_MUL` 2.5, grown by ambush
 ranks), tags the arrow `ambush: true`, and calls
 `risePlayer` after the loose — one ambush per burrow, then you are a player lying in the open with
@@ -1653,12 +1653,12 @@ says `leap` (the road's felled trunk, `isSolidTile`). A leap never lands on a tr
 again. A stun on either body, a fall through the ice, the zipline, the air, or either one dying
 throws the rider at rest (`rideCheck`, `stunUnit`, `die`, `animalDies`); nobody goes prone or
 under the snow in a tunnel from deer-back. Bots never mount. The `riding` banner in
-js/wildlife.js holds all of it.
+js/sim/wildlife.js holds all of it.
 
 ### What a beast is doing: the clips
 
 A beast's animation is a named **clip** — a graze, a gallop, a
-sit-up ([sprites.md](sprites.md)) — not a walk flag. `ANIM_CLIPS` (js/wildlife.js) is the whole of it: a row per kind naming the clips that
+sit-up ([sprites.md](sprites.md)) — not a walk flag. `ANIM_CLIPS` (js/sim/wildlife.js) is the whole of it: a row per kind naming the clips that
 kind's `SPRITES` entry carries and the frames a second each runs at. `setClip(a, name)` puts a
 beast in one and **restarts the loop**, so a sit-up always begins on the frame it was drawn to
 begin on; `stepClip(a, dt, rate)` advances it, `rate` being the caller's own gait multiplier —
@@ -1718,7 +1718,7 @@ included, which is what keeps the `.` overlay honest ([rendering.md](rendering.m
   animal is boxed in (the caller just idles and picks again). `preyWander` is the per-kind
   chooser: a rabbit off its warren's deep snow (`warrenHolds`) hops back toward the middle, and
   on it takes short 1–3 tile hops that end on it, so the warren reads as theirs; a deer takes an
-  open direction, 3–6 tiles. A rabbit runs on top of the deep snow (`ON_CRUST`, js/depth.js:
+  open direction, 3–6 tiles. A rabbit runs on top of the deep snow (`ON_CRUST`, js/sim/depth.js:
   `wadeStep` never slows one and `wadeWidth` never sinks it). `navStep` walks it at
   `PREY_SPD`, and arriving (or `ok === false`) drops the goal and idles. The walk wears the
   `hop` / `run` clip at 0.6 rate — the same gait as a flight, taken lazily — and the idle at
@@ -1884,7 +1884,7 @@ perched) is the only height in the game, subtracted by `animalHitY` and the curs
 ### The orca
 
 **One orca lives under [its lake](world.md#the-orcas-lake), the cistern's frozen pool**
-([js/orca.js](../../js/orca.js), the pixels in [js/draw/orca.js](../../js/draw/orca.js), its
+([js/sim/orca.js](../../js/sim/orca.js), the pixels in [js/draw/orca.js](../../js/draw/orca.js), its
 art `SPRITES.orca`, baked by app/bake-orca/paint.py). It is not an animal: nothing shoots it,
 nothing walks into it, and it never leaves the water. `orca` is one `SAVE_ROOTS` singleton
 that rides the snapshot; the client eases it like a body (`netClientLerp`).
@@ -1928,17 +1928,17 @@ while everything you *carry* lives in `p.bag`, the slot array described in
 player's wallet.) **Gold is the only currency.** The one other thing the world pays out is
 **ore**, which only a mined rock gives up and which is carried in the bag
 ([Mining a rock](#mining-a-rock)); berries/fish are consumables ([Food](#food-the-meal-is-a-channel)), never spent on anything. The whole economy is the
-`YIELD` table in the constants banner of [js/core.js](../../js/core.js) - the one tuning table
+`YIELD` table in the constants banner of [js/sim/core.js](../../js/sim/core.js) - the one tuning table
 with no single owner - which gives every source a different **yield profile**
 rather than a different resource (the League model: one number, many ways to earn it):
 
 | Source | Pays | Profile |
 | --- | --- | --- |
-| the clock | `TRICKLE_GOLD` (1) every `TRICKLE_T` (4 s) — the `passive income` banner, js/sim.js | 15 a minute to every player on the ground, silently (no floater, no blip); the floor under everyone's purse and the pace a level comes at for a player who never farms |
-| tree (`TREE_HP` 3, js/world.js) | `treeFall` 1 on the fell (`treeHit` is 0 — a swing is work, the fell is the pay) | slow, safe, everywhere — a pine a second chained, so a gold a second is the ceiling of full-time farming; leaves a stump, and 1 in 25 leaves a tier-0 [find](#where-tools-and-bits-come-from) |
+| the clock | `TRICKLE_GOLD` (1) every `TRICKLE_T` (4 s) — the `passive income` banner, js/sim/sim.js | 15 a minute to every player on the ground, silently (no floater, no blip); the floor under everyone's purse and the pace a level comes at for a player who never farms |
+| tree (`TREE_HP` 3, js/sim/world.js) | `treeFall` 1 on the fell (`treeHit` is 0 — a swing is work, the fell is the pay) | slow, safe, everywhere — a pine a second chained, so a gold a second is the ceiling of full-time farming; leaves a stump, and 1 in 25 leaves a tier-0 [find](#where-tools-and-bits-come-from) |
 | dead tree (3 hp) | `deadTreeFall` 1 | a tree; none stand since 4.82 (the brown bear's ring went with its den) |
 | rare tree (8%) | + `treeRare` 3 → 4 | jackpot roll, see `treeRare()` |
-| rock | its kind's `gold` (`ROCK_KINDS`, js/mining.js): STONE 3, FROSTGLASS SPIRE 8, SUNSTONE 20 | 2 / 3 / 4 s of standing by it, paid with **ore** besides and a roll at a find; it regrows ([Mining a rock](#mining-a-rock)) |
+| rock | its kind's `gold` (`ROCK_KINDS`, js/sim/mining.js): STONE 3, FROSTGLASS SPIRE 8, SUNSTONE 20 | 2 / 3 / 4 s of standing by it, paid with **ore** besides and a roll at a find; it regrows ([Mining a rock](#mining-a-rock)) |
 | rabbit | `rabbit` 2 coins × 5 → 10 | bolts when approached; jinks one shot per 10 s |
 | deer | `deer` 3 coins × 6 → 18 | the big mobile target: two of them, each running its side's line |
 | wolf | `wolf` 3 coins × 8 → 24 | a den's four; neutral until hit, and then the pack bites back |
@@ -1957,7 +1957,7 @@ bots hit the level cap early). PACKMULE and the
 FORAGER card multiply the fell (`harvestMul`, +25% a level and +50%; the payout rounds).
 
 **Gold is never a physical drop.** Every source pays the earner on the spot through
-`awardGold(p, n, x, y)` (`players` banner, js/player.js, beside `gainGold` — which it wraps, so
+`awardGold(p, n, x, y)` (`players` banner, js/sim/player.js, beside `gainGold` — which it wraps, so
 every payout is also XP, see [Hero levels](multiplayer.md#hero-levels)): the `+N` floater rises
 at the place the action happened (the tree, the kill, the wreck), and the local earner gets the
 coin blip. Who earns is always the actor: the swinger of the blow, the final-blow shooter of an
@@ -1972,12 +1972,12 @@ single gold number (`b.carry`) and deposit at 8+ into their owner's wallet.
 ([world.md](world.md#treasure-chests)) swaps ~14 inner-edge border trees for chests, and one E
 press (`OPEN`, no tool gate) springs one — `CHEST_GOLD_MIN`–`CHEST_GOLD_MAX` gold straight to
 the purse plus one unopened card drop rolled from `CHEST_ODDS` (rarity odds beside the other
-chest constants in js/world.js). The chest's tile opens with it.
+chest constants in js/sim/world.js). The chest's tile opens with it.
 
 Physical drops exist for everything **carried**: `spawnDrop(x, y, type, n)` takes the
 value of the drop (`d.n`, default 1) and the pickup adds what fits through `bagAdd`, floating
 that number in `RES_COLORS[type]`. It **returns the drop** it made, which is what lets a
-deliberate throw give it a heading and a lock on top (`flingDrop`/`lockDrop`, js/core.js). **Whatever was taken comes off `d.n`, and the drop is only
+deliberate throw give it a heading and a lock on top (`flingDrop`/`lockDrop`, js/sim/core.js). **Whatever was taken comes off `d.n`, and the drop is only
 removed when `d.n` hits zero** — that is what lets a stack of 5 bits half-fill a bag and
 leave 3 lying in the snow. A drop's `type` is always an `ITEMS` key: sources pay `berry` and
 the card rarities, a caught fish goes straight into the pouch (taken by `autoFish`, or handed over by a
@@ -2019,7 +2019,7 @@ everything above that rule is priced once, on its own def.
 
 Your own roost's merchant is the near one; the rival's is a walk through their base and sells the
 same twelve things, because there is **one market and two shopfronts onto it**. That is also why a
-merchant **cannot be killed**: `unitAlive` (js/actions.js) answers false for one (the
+merchant **cannot be killed**: `unitAlive` (js/sim/actions.js) answers false for one (the
 [CLAUDE.md](../../CLAUDE.md) picker rule). It has no `hp` field
 at all and draws no health bar.
 
@@ -2033,7 +2033,7 @@ the stall's front edge) — and the `E SHOP` cap over it (`drawShopHint`, js/ui/
 prompt the practice armory's `E ARM` uses. **A merchant in reach owns E outright**: unlike the
 armory, the roll die and the bell — which all stand aside for a real
 [work target](#the-swing-tools-e) — the counter is taken *first*, ahead of the swing and ahead of
-everything else the key does (`keyPress`, js/input.js). It has to be: the merchant fells trees for
+everything else the key does (`keyPress`, js/app/input.js). It has to be: the merchant fells trees for
 a living and loiters among them, so there is very often a trunk one tile off the counter, and a
 swing that outranked the counter would leave the shop unopenable under its own `E SHOP` cap.
 One rule answers in all three places: the press, the cap, and whether the
@@ -2063,7 +2063,7 @@ LOOP, which loops for exactly as long as the counter is open — and `closeShop`
 release puts that track back at that second, so a trip to the shop costs the match's own track the
 bars it covered rather than the whole song. Any ordinary `music.play`/`music.stop` in between
 clears the hold, so a track that takes the layer for its own reason — a victory, the lobby — can
-never be undone by a release arriving after it. See the `music` banner, js/audio.js.
+never be undone by a release arriving after it. See the `music` banner, js/app/audio.js.
 
 The merchant **stands still and faces you** while a counter is open on its own body (`shopServing`,
 read by `updateMerchant`): it drops the bays, the felling and the loiter for as long as the sale
@@ -2076,7 +2076,7 @@ merchant that stopped for anyone standing near it would never raise its stall.
 The counter's second face (the anvil tab; `state.shopTab`, the `the forge tab` banner of
 [js/ui/forge.js](../../js/ui/forge.js)) swaps the stock, the market and the sell strip for one
 bench, and the rules live beside the ore in the `the forge` banner of
-[js/mining.js](../../js/mining.js). **It is a dump, not a recipe**: any ore, in any amount and any
+[js/sim/mining.js](../../js/sim/mining.js). **It is a dump, not a recipe**: any ore, in any amount and any
 order, goes into a weapon as forge points (`FORGE_PTS`: IRONSTONE 1, FROSTGLASS 4, SUNSTONE 15),
 the points fill the weapon's bar, and each time it fills the weapon is a level up and the next
 bar is `FORGE_NEED_UP` (3) longer (`forgeNeed`: 5, 8, 11, 14...; `forgeCum` is the total). There is
@@ -2115,7 +2115,7 @@ drag and click, and its own click steps through what you carry. Nothing leaves t
 either: the weapon well holds a pointer to the cell (`state.forgeSel`, found again each frame, by
 the cell or by where it was and what it is for a client whose pack the snapshot rebuilds) and
 the pile only counts (`state.forgePile`, clamped to what you carry every frame by
-`forgePileNow`). Both are this screen's and stay out of a save (`SAVE_STATE_SKIP`, js/save.js).
+`forgePileNow`). Both are this screen's and stay out of a save (`SAVE_STATE_SKIP`, js/sim/save.js).
 The plate sends `input.cmd` `{kind: 'shop', act: 'forge', where, i, pile}`, and `forgeTool`
 re-checks the reach and that every count is whole and carried (`forgeReady`), spends the pile
 (`bagTake`) and adds its points. The bots do not forge.
@@ -2127,7 +2127,7 @@ forged numbers in that colour.
 ### The stock, and what it costs
 
 **Every tool, bit and card has a gold price on its own def**: `price` on the `TOOLS` and
-`BITS` entries (js/tools.js) and `CARD_PRICE` by rarity (js/player.js). A card is priced by rarity and
+`BITS` entries (js/sim/tools.js) and `CARD_PRICE` by rarity (js/sim/player.js). A card is priced by rarity and
 not per entry because the rarity is what changes hands — the [pick of three](#roguelike-cards)
 inside it is drawn afterwards, so the buyer is paying for the odds.
 
@@ -2236,7 +2236,7 @@ A headline goes to **two places at once**, and a restock's does too:
 Both readouts take their colour from one table (`NOTE_KIND`), handed straight to `logEvent` as its
 palette override, so the two can never disagree about which way a price went.
 
-**Each has its own cue** (js/audio.js): `SFX.market(up)` is a coin dinging on a spike and a falling
+**Each has its own cue** (js/app/audio.js): `SFX.market(up)` is a coin dinging on a spike and a falling
 sigh on a crash — two *different* clips rather than one pitched two ways, and unjittered, because
 this is read as a direction and never as a texture — and `SFX.restock()` is the turnover in two beats, a
 wagon pulling in and, `RESTOCK_RING` (0.9 s) behind it, the bell over the new stock. Neither is
@@ -2383,7 +2383,7 @@ or a `{ type, n }` stack of at most `ITEMS[type].stack`. Everyone starts with **
 (`BAG_CAP`, two rows of `BAG_COLS` 6 in the [drawer](rendering.md#the-backpack) under the weapon shelf, shut until B); a second bag is a bigger `bagCap` and a longer array,
 nothing else. It holds the **build**: the spare tools and bits a player lays out, compares and
 chooses between — and a bit only takes a cell once every tool carried (the one in hand, then
-each in the pack) is full, since `fitAdd` (js/tools.js) loads it into them first.
+each in the pack) is full, since `fitAdd` (js/sim/tools.js) loads it into them first.
 
 **The pouch** (`p.food`, `newPouch()`) is a set of uncapped counters beside the wallet, and it
 holds the two **meals** and the five **unopened card** rarities — everything with
@@ -2391,7 +2391,7 @@ holds the two **meals** and the five **unopened card** rarities — everything w
 refused: a meal is pressed on Q and F or on
 [the hud strip's meal wells](rendering.md#the-hud-strip), and a card opens itself the moment it
 is held, so the cells are all the build's. Being uncapped is why every count that shows
-one goes through **`shortNum`** (js/core.js) — `999`, then `1.2K`, `12K`, `340K`, `1.2M`, four
+one goes through **`shortNum`** (js/sim/core.js) — `999`, then `1.2K`, `12K`, `340K`, `1.2M`, four
 characters at most. The exact figure stays in the tooltip, the surface whose job is comparing
 numbers.
 
@@ -2408,7 +2408,7 @@ numbers.
 An unopened card is an ordinary `ITEMS` entry (`pouch: true`) — one per rarity, since a white
 card and a gold card are not interchangeable — which is what makes the drop pickup and the
 counting helpers free for it, same as any other carried item. Tools and bits
-register their rows the same way, from [js/tools.js](../../js/tools.js), under namespaced keys so
+register their rows the same way, from [js/sim/tools.js](../../js/sim/tools.js), under namespaced keys so
 a kind can never collide with a berry.
 
 A tool is the **one instanced** item (the [CLAUDE.md](../../CLAUDE.md) hard rule): it stacks to 1
@@ -2456,7 +2456,7 @@ The HUD is in the `UI` › `backpack` banner — see
 
 Berries and fish are the only heal a player carries, and they answer the same question — *can I take
 this fight* — so the whole thing is **one clock and one channel**, in the `food` banner of
-[js/core.js](../../js/core.js):
+[js/sim/core.js](../../js/sim/core.js):
 
 | | |
 | --- | --- |
@@ -2473,7 +2473,7 @@ and the tempo and **nothing out of the pouch**, and can be restarted on the spot
 
 `eatBerry(p)` / `eatFish(p)` are the two edge-triggered intents Q and F set (two keys, two
 meals — the hud strip's meal buttons click the same intents a key sets); both are one
-line into `startEat`. **Four fish** share F (`FISH_KINDS`, js/player.js): the WHITEFISH (+40) and
+line into `startEat`. **Four fish** share F (`FISH_KINDS`, js/sim/player.js): the WHITEFISH (+40) and
 the rarer SNOW CHAR (+70) caught in the creek ([world](world.md)), and the FROST PIKE (+50, item
 `fish`) and the rarer GOLD SUNFISH (+80) from a hole or a net. `fishToEat(p)` says which: the body's pick (`p.fishPick`) if it has one, else the smallest
 meal it carries. Pointing at the fish well raises the **fish picker**, a column of the four with
@@ -2524,7 +2524,7 @@ The [warrens](world.md#camps) carry three **snowdrop** clumps each, at the back 
 a bronze bud shut; an open one is lit above the night, in a pool of warm light with sparks,
 twinkles and motes round it: `litSnowdrops`, js/draw/light.js). A clump is **open until
 someone picks it**: an open clump is a work target and the hands take it on their own like a
-berried bush (`auto`, `ready`), and a pick (`pickSnowdrop`, js/actions.js) lays `DAWN_SHIELD` (10)
+berried bush (`auto`, `ready`), and a pick (`pickSnowdrop`, js/sim/actions.js) lays `DAWN_SHIELD` (10)
 of shield on **every scout of the picker's side** who is up and on the ground, wherever they are,
 stacking to `DAWN_SHIELD_MAX` (30): so the clumps are worth racing the other side to, one segment
 each. Then that clump alone rests `SNOWDROP_CD` (90 s; `o.readyAt`, the match second it opens,
@@ -2557,7 +2557,7 @@ the far end opens loses the near hole too. A finished tunnel outlives its digger
 (`p.tunHole` is not cleared by `reset()`).
 
 **Anyone takes a hole**, of either side, and many can be under at once: a fresh press of the work
-key standing on it (`TUN_ON`, 9 px; `tunnelEnter`, ahead of the swing in `updatePlayer` — a key held
+key standing on it (`TUN_ON`, 9 px; `tunnelEnter`, ahead of the swing in `playerSwing`, a step of `updatePlayer` — a key held
 from before stays the swing's). Underground the body is out of the world — `inAir` answers true
 for `p.tun`, so nothing hits it, nothing it wants gets through, and every loop over players skips
 it — and it rides the line between the holes at `TUN_SPEED` (240 px/s, at least `TUN_MIN_T`)
@@ -2575,7 +2575,7 @@ is caving. Standing on a hole you can take, the work key's bare cap rises over i
 ## Mining a rock
 
 Rocks come in three kinds (`ROCK_KINDS`, the `rocks and ore` banner of
-[js/mining.js](../../js/mining.js)), each with its own outline so the kind reads by shape before
+[js/sim/mining.js](../../js/sim/mining.js)), each with its own outline so the kind reads by shape before
 colour: **STONE**, a pair of leaning slabs; **FROSTGLASS SPIRE**, ice prisms through the slabs;
 **SUNSTONE**, a black obelisk seamed with amber. Where each stands is [world.md](world.md#rocks).
 Every rock is two tiles wide (`OBJECTS.rock.w`), and either tile answers for the whole rock.
@@ -2616,7 +2616,7 @@ so it is XP too), throws its ore onto the snow one piece at a time toward the mi
 offered to E (`OBJECTS.rock.ready` is `rockReady`) — until `tickRock` in the object timers
 grows it back. The bots mine by the same rule (the harvest rung walks them beside a rock and
 they stand there, key up, until it breaks); the worker bots leave rocks alone, and the merchant's axe, a crater and the
-landing's lane take a rock off the map whole (`fellScenery`, js/world.js). What the ore is for
+landing's lane take a rock off the map whole (`fellScenery`, js/sim/world.js). What the ore is for
 is [the forge](#the-forge).
 
 ## Gear
@@ -2645,7 +2645,7 @@ picture, not a label.
 <a id="stat-points"></a>
 **Stat points** are the build's other half, spent on the same pop-up's stat ledger itself:
 `STAT_POINTS` (6) to put a step at a time on **any row** before the eagle. `STAT_TRACKS`
-(js/player.js `stat points`) is one track per ledger row, same names in the same order as
+(js/sim/player.js `stat points`) is one track per ledger row, same names in the same order as
 `GEAR_STATS` — HEALTH +5, DAMAGE +0.5, DRAW ×0.96, RENOCK ×0.95, ARMOR +0.5, WALK +2%, ICE
 SPEED ×1.04, ICE GRIP +0.15, FATIGUE ×0.94, DODGE −0.15 s, HUNTS +10%, FELLS +15%, FOOD +15%,
 SEEN AT −5% a point — each a `mod(k, n)` folded into the kit by `refreshKit` after gear, so
@@ -2687,13 +2687,13 @@ read through `charHit`) is shared by the click handler, `cursorInfo` (hand curso
 `tipAt`, so the three can never disagree. The click is swallowed **before** `clickAction` — the
 panel, the backpack widget, the hud strip (the weapon well, an ability well casting and its buy
 badge) and the weapon shelf are the left-clickable HUD in play. Bots buy at rung 0 of
-`aiThink` (js/ai.js), from anywhere — a pusher never reaches the spend rung: cheapest piece
+`aiThink` (js/ai/ai.js), from anywhere — a pusher never reaches the spend rung: cheapest piece
 first, keeping a 15-gold float so they still build.
 
 ## Roguelike cards
 
-A permanent buff dropped by a sprung **chest** in the treeline (`placeChests`, js/world.js;
-`hitObject`'s chest branch in js/actions.js rolls the rarity against `CHEST_ODDS` through
+A permanent buff dropped by a sprung **chest** in the treeline (`placeChests`, js/sim/world.js;
+`hitObject`'s chest branch in js/sim/actions.js rolls the rarity against `CHEST_ODDS` through
 `rollCardRarity`), one at a time, drawn one at a time.
 `CARDS` is `{ white: [...], green: [...], blue: [...], purple: [...], gold: [...] }`
 (`CARD_RARITIES`, White → Gold rising in rarity and magnitude), each entry `{ name, blurb, mod(k) }` —
@@ -2705,7 +2705,7 @@ kill-credit line the same way `updateEat` applies a meal's.
 
 **The draw** (there is no draft screen and no key, 0.426): an unopened card is a pouch kind,
 and it opens itself the moment it is held with the body on the ground — `updatePlayer`
-(js/sim.js) calls `useCard(p)` (js/core.js, beside `startEat`) while `cardsHeld(p)` is above
+(js/sim/sim.js) calls `useCard(p)` (js/sim/core.js, beside `startEat`) while `cardsHeld(p)` is above
 zero, as does the input's `useCard` intent (the bots' API) —
 one card taken at random from everything held (so a rarity is as likely as it is common in the
 hand), one entry of that rarity at random, `bagTake` the card, push `{ rarity, id }` onto
@@ -2720,7 +2720,7 @@ set once in the `Player` constructor and never touched by `reset()`, so a build 
 respawn within a match.
 
 **The built-in brain opens its own first** — the instant a bot is carrying any unopened card,
-`resolveCardForBot(p)` (js/ai.js, the top of `aiThink`, which runs before `updatePlayer`) resolves it: the first rarity in `CARD_RARITIES` order it holds (a human's draw
+`resolveCardForBot(p)` (js/ai/ai.js, the top of `aiThink`, which runs before `updatePlayer`) resolves it: the first rarity in `CARD_RARITIES` order it holds (a human's draw
 is weighted across everything held), one random entry from that rarity's pool, minus the burst
 and the floater.
 
@@ -2820,7 +2820,7 @@ the refund. Upgrading pays the next tier's cost and re-runs a shorter
 construction, and the last tier (`tiers.length - 1`) reports MAX TIER. Building and [gear](#gear)
 are the two gold sinks.
 
-Mechanics (the wheel in [js/ui/wheel.js](../../js/ui/wheel.js), the buildings in [structures.js](../../js/structures.js)):
+Mechanics (the wheel in [js/ui/wheel.js](../../js/ui/wheel.js), the buildings in [structures.js](../../js/sim/structures.js)):
 
 - `state.wheel` (`{kind:'build'|'manage'|'flag'|'rack'|'pkdie'|'agbell', tx, ty, seg, ax, ay}`, plus
   `sx`/`sy` on a flag wheel opened over the chart) is the open wheel — `'flag'` is the
@@ -2830,7 +2830,7 @@ Mechanics (the wheel in [js/ui/wheel.js](../../js/ui/wheel.js), the buildings in
   ([world.md](world.md#the-practice-arena)); ESC/M/settings/death
   close it, a left-click cancels it, and the game **keeps running** — opening the
   wheel mid-night is deliberate pressure. `wheelLayout()` is shared by `resolveWheel()` and
-  `renderWheel()` so hover math and pixels can never disagree - and by `pointerMove` (js/input.js),
+  `renderWheel()` so hover math and pixels can never disagree - and by `pointerMove` (js/app/input.js),
   which is what `seg` is for: it holds the wedge the cue last spoke for, so crossing into another one ticks `SFX.notch` once, for a mouse or a stick
   alike (the wheel opening itself is `SFX.wheelUp`). `resolveWheel()` does not act: it
   writes `player.input.cmd`, and `runCmd(p, c)` performs it in the next sim step (re-checking
@@ -2971,12 +2971,12 @@ Mechanics (the wheel in [js/ui/wheel.js](../../js/ui/wheel.js), the buildings in
   drift apart. Four things reach it:
   - the **E swing**, `hitObject()`'s structure branch, **contested** with everything else E does
     (it runs inside `swingHit`'s `contest('work:' + idx)`);
-  - **every bit a tool fires**, in the arrow update's solid-tile branch (js/sim.js): a shot
+  - **every bit a tool fires**, in the arrow update's solid-tile branch (js/sim/sim.js): a shot
     that dies on a wall sieges it first — anywhere on the building's drawn shape, the turret's
     turntable included ([the sweep](#flight-paths), `structShotBox`). A bit whose `solid` is `false`
     (the care arrow, the wisp, the hook) passes through buildings without touching them — that
     is the trade for passing walls, and it needs no second flag;
-  - a **turret's rock LANDING** (`rockLands`, js/structures.js), which is how a piece that flies
+  - a **turret's rock LANDING** (`rockLands`, js/sim/structures.js), which is how a piece that flies
     over the world reaches a building at all — see [Turret](#the-buildings) above;
   - the **abilities**: the stomp's ring, the shield's slam and the execute (their wedge, through
     `structsInCone`), the charge's slam into whatever it was driven into, the net, and the
@@ -3078,7 +3078,7 @@ hauler — see [Team flags](#team-flags) for why the anger is gated on the flag.
 
 ### Soldiers: the waves
 
-The `soldiers` banner (js/robots.js). Every `STRUCTS.barracks.waveT` seconds each merchant's
+The `soldiers` banner (js/sim/robots.js). Every `STRUCTS.barracks.waveT` seconds each merchant's
 [barracks](#base-building) rolls out a column of **soldiers** — the worker's chassis under its
 side's pennant (`drawRobot` stamps `drawFlagPennant` on a `kind: 'soldier'` body, the one thing
 that says this bot is not here to chop) — that marches [the road](world.md#the-road) to the rival
@@ -3130,7 +3130,7 @@ team-cloth crown and the white beard, seated on the bird's neck in flight (`SPRI
 [sprites.md](sprites.md)'s own 16 × 18 grids, built so it never reads as a player on either side,
 with a `MERCH` nameplate and a bar in its side's paint over it, `drawMerchant`; the bird wears only its hp bar) — who climbs
 down the moment it roosts (`spawnMerchant`, called
-from `eagleCrash`, the `merchant` banner in js/robots.js) and works **home** for its side, never
+from `eagleCrash`, the `merchant` banner in js/sim/robots.js) and works **home** for its side, never
 toward the fight. It raises no walls and no guns (both stay on the build list for players). Its
 first job is its **stall**, and after that **home production**: it fells the **back woods** and
 raises the **bot bays** there.
@@ -3183,7 +3183,7 @@ shared status/stun handling. A bay's owner is the team's first player (`createSt
 one). `owner` is -1, so it reads no flag and no flag ever recalls it.
 
 **It cannot be hurt, and it has no `hp` field at all rather than a large one.** `unitAlive`
-(js/actions.js) answers false for a merchant, and that one function is the gate every target
+(js/sim/actions.js) answers false for a merchant, and that one function is the gate every target
 picker in the game asks (CLAUDE.md's `unitAlive` rule; here also a turret's `turretAim`, a
 worker's `robotFoeUnit` and a flag's `flagFoe`) — so
 it is invisible to every weapon in the world rather than merely immune to one of them. It draws no
@@ -3195,9 +3195,9 @@ health bar either: a full bar that could never move would promise a fight that i
 **One order marker per player, of four kinds, that the whole side reads — every worker bot out of
 a bay the planter owns, and every AI player on the team.** A flag is an **area**: `FLAG_R` (192 px,
 twelve tiles) round the tile it stands on is the ground the order is about, and a ring on the snow
-says so. The sim side is the `team flags` banner in [robots.js](../../js/robots.js) plus the
+says so. The sim side is the `team flags` banner in [robots.js](../../js/sim/robots.js) plus the
 dispatch at the tail of `updateRobot()`; how an AI *player* answers one is the `flag` rung in
-[ai.js](../../js/ai.js) ([Bots](multiplayer.md#bots)); the wheel is the `radial wheel` banner in
+[ai.js](../../js/ai/ai.js) ([Bots](multiplayer.md#bots)); the wheel is the `radial wheel` banner in
 [js/ui/wheel.js](../../js/ui/wheel.js).
 
 **The wheel is the order.** Right-click any tile (building is the list on T and managing is E —
@@ -3287,7 +3287,7 @@ whole of that is [the order](multiplayer.md#bots) in the ladder.
 ## Death and respawn
 
 Death is a walk back, never the end: while your team's eagle still roosts (`teamEagleDown`, the
-eagle-drop banner in js/eagle.js) going down costs a **timer and nothing else**, and you are
+eagle-drop banner in js/sim/eagle.js) going down costs a **timer and nothing else**, and you are
 set down again at the bird ([Respawn at the bird](multiplayer.md#respawn-at-the-bird)); once the
 eagle has been driven off every death on that side is permanent, and that is the only way anyone
 is ever out of a match. `die(p, src, cause)` marks that player dead and drops its bow draw,
@@ -3311,7 +3311,7 @@ win — a team-level question a kill can never answer, since a side is in the ma
 roosts ([PvP](multiplayer.md#pvp)).
 
 Either way the local player's overlay goes up through `endMatch('lost' | 'won' | 'respawning')`
-(js/player.js, the `damage & death` banner; the screens it raises are the `death & spectate`
+(js/sim/player.js, the `damage & death` banner; the screens it raises are the `death & spectate`
 banner, js/ui/screens.js): `state.mode = 'dead'`, every local overlay closed, and the screen goes
 to a dim with two planks — **SPECTATE** and **LOBBY** — for `'lost'` (permanent), to
 [the victory screen](rendering.md#the-end-screens), whose planks are **KEEP PLAYING** and
@@ -3370,7 +3370,7 @@ your own marker cross it. Consequences worth knowing:
   wide read; `landPlayer` closes it at touchdown), so the chart cannot survive into the death
   overlay.
 - The world keeps the zoom you were playing at. The slab is UI and fits the view whatever the
-  zoom (`fitMapSlab`, js/canvas.js: the chart takes the rows the view gives it, 96 up to
+  zoom (`fitMapSlab`, js/app/canvas.js: the chart takes the rows the view gives it, 96 up to
   `CHART_MAX` 232 px; [World zoom](rendering.md#world-zoom-and-the-two-pixel-spaces)), so
   opening the map never touches the camera.
 
@@ -3381,9 +3381,9 @@ arrow in flight, building, drop, camp, the counter's stock and prices, the clock
 seeded streams' positions (`rng`, `fxRng`, `mktRng` - `mulberry32` keeps its state on the
 function as `.s` for this). A loaded match does not merely look like the saved one, it **plays
 out** the same from that step: the proof is below. An online match (host or client) and the
-practice room never save (`canSave`, js/save.js), nor does a match that is already decided.
+practice room never save (`canSave`, js/sim/save.js), nor does a match that is already decided.
 
-**How it works** (js/save.js). The world is a seed: a load is a page on the saved `?seed` and
+**How it works** (js/sim/save.js). The world is a seed: a load is a page on the saved `?seed` and
 `?map`, which grows the very same valley, and the save is what the match has done to it since.
 `saveBaseline` records the valley as it grew, at boot, before anything moves (each tile's object
 by reference with a hash of its contents, and the ground); `saveCapture` then writes
@@ -3395,7 +3395,7 @@ by reference with a hash of its contents, and the ground); `saveCapture` then wr
   bot's hunt target, a den's camp, `player` as `players[localId]`) comes back shared. JSON with a
   handful of `$` tags: an object reached twice is written once and pointed at, a `Player` comes
   back with its class, `Map`/`Set`/typed arrays/`NaN`/`Infinity`/`-0`/`undefined` survive, and
-  so do an array's own fields (a route's `partial`, js/nav.js - dropping it once made a loaded
+  so do an array's own fields (a route's `partial`, js/sim/nav.js - dropping it once made a loaded
   bot re-plan a step early); a reference into a static table (`saveTables`, three levels down:
   a camp's `CAMPS` row) is written as its path;
 - **only the map objects and ground tiles that differ from the grown valley.** A reference to an
@@ -3533,8 +3533,8 @@ remembered with the settings (`settings.relay`), else the page's own host.
 `teamPal` — the VIDEO page's COLOUR BLIND dropdown: `def` (OFF) or a colour-blind palette (`rg`, `by`, `hc`), same section —
 `tipFollow` — the TOOLTIP row, the hover panel beside the pointer (the default) or parked bottom
 left ([the hover tooltip](rendering.md#the-hover-tooltip)) —
-`aiLevel` — the rival bots' level, picked in the lobby's AI pop-up, an index into `AI_LEVELS` (js/ai-skill.js), NORMAL until moved (a settings save from before EASY is moved up one, `loadSettings`) —
-`mapType` — the map shape picked in the lobby's map pop-up, an index into `MAPS` (js/world.js); it is
+`aiLevel` — the rival bots' level, picked in the lobby's AI pop-up, an index into `AI_LEVELS` (js/ai/ai-skill.js), NORMAL until moved (a settings save from before EASY is moved up one, `loadSettings`) —
+`mapType` — the map shape picked in the lobby's map pop-up, an index into `MAPS` (js/sim/world.js); it is
 what the NEXT load grows — LOCK IN reloads onto it when it is not this page's shape ([map shapes](world.md#map-shapes)) —
 `scheme` — the keyboard scheme, `'wasd'` or `'click'` — with `binds` / `bindsClick`, the key
 each action is bound to under each
@@ -3601,7 +3601,7 @@ wears gold — a hand-picked mix golds none of them. SNOWFALL is deliberately in
 falling snow is the game's identity and nearly free, so only a deliberate hand turns it off.
 Between QUALITY and the toggles sits **FPS CAP** — 30 / 60 / 120 / 144 / UNLIMITED, a choice row
 whose words are numbers because the row is an instrument — `settings.fpsCap`, which
-`capSkips` (js/boot.js, [the fixed step](code-map.md#jsbootjs)) reads at the top of every
+`capSkips` (js/app/boot.js, [the fixed step](code-map.md#jsbootjs)) reads at the top of every
 animation frame: a frame under the cap is skipped whole, its time banked into the next, so
 the sim still takes every 1/60 s step it is owed and only the presentation thins. UNLIMITED
 is every frame the screen offers. Last sits **COLOUR BLIND**, the team palettes
@@ -3676,7 +3676,7 @@ the same keys under `1-4 CLASS ABILITIES`.
 keydown handler flips it in any mode and suppresses the browser's find bar; default off) shows
 the **info stack** — `drawTags()`, a vertical list on the left edge at the top quarter of the
 view, drawn above every overlay. Six lines — **FPS** (`loop()`
-hands each raw unclamped frame delta to `perfFrame`, js/core.js, which refreshes `perf.fps` every
+hands each raw unclamped frame delta to `perfFrame`, js/sim/core.js, which refreshes `perf.fps` every
 half second),
 **SIM** and **DRAW**, the ms a frame spent in `update()` and in `render()` over the same window
 (red together once they no longer fit a 60 Hz frame; DRAW is the script's side only, since a GPU
@@ -3702,14 +3702,14 @@ MOUSE leave it out to make room for the burrow); the rest is in
 [Debug overlays](rendering.md#debug-overlays-hitboxes-and-routes).
 
 Beneath the minimap `renderMinimap()` prints the elapsed clock alone, centred on the disc. There
-is no alive count: a match does not end on bodies (`aliveCount()`, js/player.js, has no caller
+is no alive count: a match does not end on bodies (`aliveCount()`, js/sim/player.js, has no caller
 but `DBG`). Under the disc runs the notice lane, and the **stat sheet** flies into it whenever a
 number on yours moves - every row of your sheet, the moved ones lit and blinking, gone again in
 eight seconds: [rendering.md](rendering.md#the-stat-ledger-your-sheet-as-a-notice).
 
 ## Audio
 
-[js/audio.js](../../js/audio.js) is three layers under one master dial, and `SFX` is all of them.
+[js/app/audio.js](../../js/app/audio.js) is three layers under one master dial, and `SFX` is all of them.
 
 **Inside the step, a cue is asked for through js/net/events.js, never gated by hand.** A world
 cue at a place is `sfxAt('cue', x, y[, r][, 0, arg])` (heard within `r` px, `nearPlayer`'s
@@ -3741,7 +3741,7 @@ right, and the fallback line under every sampled cue.
 **Samples.** `SAMPLES` maps a key to the files behind it in `audio/sfx/`; `loadBank()` decodes all
 of them on the first `ensure()`.
 
-**The bytes come from [js/sfxdata.js](../../js/sfxdata.js), not from the network.** That file is
+**The bytes come from [js/baked/sfxdata.js](../../js/baked/sfxdata.js), not from the network.** That file is
 generated — `node app/bake-sfx.js` writes every clip in `audio/sfx/` into it as base64 — and it exists
 because **double-clicking `index.html` has to work** (CLAUDE.md, Run and verify): a `file://` page is
 allowed neither `fetch` nor XHR against its own folder, and an unloaded bank falls back to synth
@@ -3841,21 +3841,21 @@ two that *are* a body in the world, `bigHurt` and `botOut`, keep a 0.04 jitter.
 
 | Cue | Says | Fired from |
 | --- | --- | --- |
-| `countTick()` | one whole second of a wait gone | the class screen's PLAY count (`state.menu.countT`, js/ui/menu.js) and the range's 3-2-1 (`agUpdate`, js/practice.js) — never the `nock` blip, which is the sound of a bow being ready |
-| `ui(open)` | a surface came up, or went away | every overlay toggle in `keyPress` (js/input.js): the pack drawer, the sheet, the chart, the build list, the ESC slab, the pause plate, and each of Escape's back-outs |
+| `countTick()` | one whole second of a wait gone | the class screen's PLAY count (`state.menu.countT`, js/ui/menu.js) and the range's 3-2-1 (`agUpdate`, js/sim/practice.js) — never the `nock` blip, which is the sound of a bow being ready |
+| `ui(open)` | a surface came up, or went away | every overlay toggle in `keyPress` (js/app/input.js): the pack drawer, the sheet, the chart, the build list, the ESC slab, the pause plate, and each of Escape's back-outs |
 | `notch()` | one step of a stepped control | the zoom rung and the build list's rows (the `wheel` listener), the minimap's steps, and a radial wheel's wedge as the travel crosses it (`pointerMove`) |
 | `turn()` | a piece turned on the spot | R over the build ghost |
 | `wheelUp()` | a radial wheel rolled open | `openFlagWheel`, `openWheelNear`, and whichever of the work key's four (manage, rack, roll die, range bell) the press opened |
-| `record()` | a new BEST | `agEndRound` and the parkour line (js/practice.js) — one cue for one meaning, on both instruments |
-| `runUp(n)` / `runBroke()` | a run of hits reaching a milestone, and a run lost | `hitPTarget` every `AG_RUN_STEP` in a row (**pitched up as the run climbs** — the one place a rate is meant to be heard, because the number it tracks is the thing being climbed), and the arrow loop (js/sim.js) when a run of that length ends in the snow |
-| `alarm()` | **your roost is being struck and you cannot see it** | `hurtEagle` (js/eagle.js) when the bird is out of earshot and it is your own — the one cue in the game that speaks for something off screen, held to one warning per `EAGLE_WARN_GAP`, and the one that arrives with a **plate**: the `roost` notice under the minimap ([the plates](rendering.md#notices-the-plates-under-the-minimap)) and a feed line, so the ear turns your head and the corner says what happened |
-| `marked()` / `dazed()` | you have been found; you are stunned out of your own hands | `markUnit`/`stunUnit` (js/actions.js), **local player only and fresh applications only** — a state re-applied every second would otherwise re-ring every second |
-| `nightFall()` | the cold coming down | the darkness curve crossing `NIGHT_CUE` upward (js/sim.js), `dawnChime`'s opposite number |
-| `warp()` | a body moved without walking it | `warpPlayer` (js/tools.js) — never the dodge whoosh, the sound of air being crossed, the one thing a teleport never does |
+| `record()` | a new BEST | `agEndRound` and the parkour line (js/sim/practice.js) — one cue for one meaning, on both instruments |
+| `runUp(n)` / `runBroke()` | a run of hits reaching a milestone, and a run lost | `hitPTarget` every `AG_RUN_STEP` in a row (**pitched up as the run climbs** — the one place a rate is meant to be heard, because the number it tracks is the thing being climbed), and the arrow loop (js/sim/sim.js) when a run of that length ends in the snow |
+| `alarm()` | **your roost is being struck and you cannot see it** | `hurtEagle` (js/sim/eagle.js) when the bird is out of earshot and it is your own — the one cue in the game that speaks for something off screen, held to one warning per `EAGLE_WARN_GAP`, and the one that arrives with a **plate**: the `roost` notice under the minimap ([the plates](rendering.md#notices-the-plates-under-the-minimap)) and a feed line, so the ear turns your head and the corner says what happened |
+| `marked()` / `dazed()` | you have been found; you are stunned out of your own hands | `markUnit`/`stunUnit` (js/sim/actions.js), **local player only and fresh applications only** — a state re-applied every second would otherwise re-ring every second |
+| `nightFall()` | the cold coming down | the darkness curve crossing `NIGHT_CUE` upward (js/sim/sim.js), `dawnChime`'s opposite number |
+| `warp()` | a body moved without walking it | `warpPlayer` (js/sim/tools.js) — never the dodge whoosh, the sound of air being crossed, the one thing a teleport never does |
 | `spectate()` | the camera handed to another body | `specNext` (js/ui/screens.js) |
-| `defeat()` | the match lost | `endMatch` (js/player.js) — the sting the defeat song comes up under, as `victory()` is the win's |
+| `defeat()` | the match lost | `endMatch` (js/sim/player.js) — the sting the defeat song comes up under, as `victory()` is the win's |
 | `bigHurt()` | a great bird taking a blow | `hurtEagle` within earshot — never `hurt()`, a man's winded oof. The clip is a bull at rest, so it plays `BIGHURT_RATE` (1.5) up with a 320 Hz highpass under it — pitch and the chest resonance are what separate a beast in a field from something with a beak |
-| `botOut()` | a machine rolling out of the bay | the spawner's shutter (js/structures.js), through `sfxAt` |
+| `botOut()` | a machine rolling out of the bay | the spawner's shutter (js/sim/structures.js), through `sfxAt` |
 
 **Never borrow a cue** for a new event: a borrowed cue teaches the ear the wrong thing — an
 eagle that goes "oof" is a person, and two instruments that award a record two different ways

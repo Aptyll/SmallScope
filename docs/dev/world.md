@@ -66,7 +66,7 @@ stable per tile.
   `chg`, `rec`, `scan`; generator `payT`; spawner `mode`,
   `bots`, `respawnT`/`respawnTotal`, `door`), and every live one is also referenced from the module-scope `structures`
   array so `updateStructures()` never scans the 53,824-tile grid. Nor do the object clocks
-  (`flash`/`shake`, bush regrow, a rock's crack and rubble): `tickObjTimers` (js/sim.js, the
+  (`flash`/`shake`, bush regrow, a rock's crack and rubble): `tickObjTimers` (js/sim/sim.js, the
   `object timers` banner) ticks only the objects in `objTimed`, in map order, and drops each one
   once its clocks run down. A clock is started only through `joltObj(o, flash, shake)` or
   `timeObj(o)`, which enrol the object; one set straight on the object never runs.
@@ -198,7 +198,7 @@ across a tile edge carries on, and a hole that refreezes gets its crack back.
 ## Map shapes
 
 **The valley comes out from under the snow a different shape each winter** ([lore](lore.md)), and
-`MAPS` (the `map types` group of [js/world.js](../../js/world.js)) is the shapes it comes out in.
+`MAPS` (the `map types` group of [js/sim/world.js](../../js/sim/world.js)) is the shapes it comes out in.
 One entry is one **interior**; the border forest and the two roost corners are every shape's
 alike, because the road's gates, both nests and the crash rule are all measured off
 `borderDepth` and nothing may move them.
@@ -215,11 +215,11 @@ plants from it and the class screen's chip draws from it (`mapChip`, js/ui/menu.
 picture on the chip is **this seed's own valley** in that shape and not an illustration of one.
 
 **`MAP_TYPE` is the shape this page grew** — `?map=N`, else the profile's `settings.mapType`,
-read once in js/boot.js after `loadSettings()` and never again (and written back to `settings.mapType`, so the lobby's pick starts as the shape standing). Picking one in the lobby's map
+read once in js/app/boot.js after `loadSettings()` and never again (and written back to `settings.mapType`, so the lobby's pick starts as the shape standing). Picking one in the lobby's map
 pop-up (`pickMap`, [rendering.md](rendering.md#lobby)) only saves `settings.mapType` and the
 lobby stays put; the pick is spent at LOCK IN, which is then a **page** the way a reroll is: it
 comes back on `?seed=<this seed>&map=<the pick>` and goes straight to the eagle (`lockIn`,
-js/boot.js's `softfall.drop`). Only a **solo** lobby may pick — a host reloading
+js/app/boot.js's `softfall.drop`). Only a **solo** lobby may pick — a host reloading
 would drop its room, and a guest's world is the host's (`netHostHello` refuses a hello whose map
 is not the host's, exactly as it refuses a seed; `joinRoom` carries `&map=` with `&seed=`).
 
@@ -244,14 +244,14 @@ What a shape changes downstream, without a line of its own anywhere:
 - **the chests** ([below](#treasure-chests)) keep `CHEST_BURIED` of their number back for a pine
   standing *inside* a stand;
 - **the shoal** rides how much swimmable ice there is (`FISH_WATER_REF`/`FISH_CAP_MUL`, the
-  `fish` banner of js/wildlife.js) — FROZEN ISLES holds 75 fish where OPEN FIELD holds 30;
+  `fish` banner of js/sim/wildlife.js) — FROZEN ISLES holds 75 fish where OPEN FIELD holds 30;
 - **building** needs ground `0` or `3` as it always did, so on FROZEN ISLES a base stands on an
   island's shore, the road or a path, never on the lake.
 
 ## The paths
 
 A shape that grows woods over the whole valley would else be a wall, so it lays **paths** with
-them (the `the paths` group, [js/world.js](../../js/world.js)): packed earth about a pine wide,
+them (the `the paths` group, [js/sim/world.js](../../js/sim/world.js)): packed earth about a pine wide,
 cut where the shape's own gaps run. **A path IS road** — `roadDist` mins over the path segments,
 so `placeRoad` paves them with the lane in its one pass, the ground array says `3`, both maps ink
 them, nothing grows on one, a building stands on one and nobody digs into one. Only narrower
@@ -308,7 +308,7 @@ walled in by design: [camps](#camps)).
 
 ## Rocks
 
-`placeRocks()` (the `world` banner, js/world.js) runs at boot after `placeChests()` and stands
+`placeRocks()` (the `world` banner, js/sim/world.js) runs at boot after `placeChests()` and stands
 **the rocks in a few clusters, mining spots a player goes to**, each on the open snow just out
 from the border forest: 2–8 tiles (`ROCK_BAND_MIN`/`ROCK_BAND_MAX`, walked 4-way) from the nearest
 **border** pine — one on `borderDepth`'s side of the line, so a grown shape's inner woods draw no
@@ -346,7 +346,7 @@ ring, the landing's lane, the merchant's axe) go through it.
 
 ## Treasure chests
 
-`placeChests()` (the `world` banner, js/world.js) runs at boot after
+`placeChests()` (the `world` banner, js/sim/world.js) runs at boot after
 `placeCamps()`: it scans for **border trees on the forest's inner edge** (a `tree` with at
 least one cardinal neighbour of open snow — reachable with E from open ground) and swaps
 `CHEST_COUNT` (14) of them for `chest` objects, at least `CHEST_SPACING` (22) tiles apart.
@@ -363,7 +363,7 @@ can never perturb the shared `rng` stream and terrain stays bit-identical for an
 on both maps (its `mm`/`map` entry), and one free E press (`OPEN`, `needs: null`) springs it —
 `hitObject`'s chest branch pays `CHEST_GOLD_MIN`–`CHEST_GOLD_MAX` (8–20) gold on the spot, drops one
 card rolled from `CHEST_ODDS` (those constants beside `placeChests`) and, `CHEST_TOOL` (0.75,
-js/tools.js) of the time, a tool or bit of any tier up to the top through `dropLoot` — the same
+js/sim/tools.js) of the time, a tool or bit of any tier up to the top through `dropLoot` — the same
 roll a SUNSTONE rock makes every time it breaks
 ([where tools and bits come from](gameplay.md#where-tools-and-bits-come-from)). The tile empties with
 it, leaving a one-tile notch in the treeline where the cache was dug out. The sprite bakes in
@@ -372,7 +372,7 @@ in the byte-fragile grid files under js/sprites/.
 
 ## Story landmarks
 
-Scenery that suggests someone was here before the match: a **boat** frozen out in a lake. They are the `landmarks` banner in [js/landmarks.js](../../js/landmarks.js),
+Scenery that suggests someone was here before the match: a **boat** frozen out in a lake. They are the `landmarks` banner in [js/sim/landmarks.js](../../js/sim/landmarks.js),
 and **a landmark is data**: one `LANDMARKS` entry (its footprint `w`×`h`, `solid`, the `where`
 rule, `count`, `mirror`, `spacing`, its `art` key and `foot`, `mm`) and one sprite in
 `SPRITES.landmark` (js/sprites/landmarks.js). The file turns each entry into an `OBJECTS` row
@@ -409,12 +409,12 @@ room for a whole side and a wave to fight in; where it crosses each roost corner
 `ROAD_HW_WOOD` (2.5), a five-tile forest road with the pines closing in (`roadHW(u)`); and
 `ROAD_LOG_IN` (10) u past each nest's junction a **felled trunk** lies across it (`log`, below):
 the way on is blocked to anyone on foot (a ridden deer's leap clears it: `OBJECTS.log.leap`, [riding](gameplay.md#riding-a-deer)), and the road running on under it to the edge says the route does not end
-here (the `the road` group of the `world` banner, js/world.js). Ground `3`, packed earth showing
+here (the `the road` group of the `world` banner, js/sim/world.js). Ground `3`, packed earth showing
 through the snow with two ruts down its length: it **walks like snow** (only ice and holes are
 special-cased in `updatePlayer`'s momentum block) but it is **not snow** — nothing digs into it
 (`tryProne`, the hunter's burrow), nothing grows on it, a fish never counts it
 as water (`fishWater`), and the footprint emitter leaves no prints on it. A building **does**
-stand on it: `canPlaceAt` (js/structures.js) takes ground `0` and `3` alike.
+stand on it: `canPlaceAt` (js/sim/structures.js) takes ground `0` and `3` alike.
 
 **Its edge is ragged, never a tile staircase.** `roadEdgeAt(u, side)` wanders the half-width
 along the lane on the position noise — a slow drift of ±`ROAD_RAG` (0.8) and a fine ripple, each
@@ -438,7 +438,7 @@ centreline — at least `ROAD_NEST_IN` (8) u inward from its gate, walking furth
 `ROAD_NEST_MAX`, 40) until the **nest**, `ROAD_NEST_OFF` (13) tiles off the centreline to the
 bird's own right, is deep: `roadNestDeep` wants `CRASH_DEPTH` inside the treeline by the border's
 measure (`forestDepth`) *and* inside the roost disc's arc, with `MIN_CRASH_TREES` round it
-(js/eagle.js's crash rule — the deepest, densest candidate stands in if none qualifies). RED (team 0)
+(js/sim/eagle.js's crash rule — the deepest, densest candidate stands in if none qualifies). RED (team 0)
 flies down to the bottom-left and its right is the top-left side (`roadOffS < 0`); BLUE's is the
 bottom-right — the two nests mirror through the map's centre like the camps. Pure reads, cached
 per team; a seed's nests are where they always are. The bird lands there
@@ -470,7 +470,7 @@ paints its four neighbours' pieces too, shifted, because the trunk is wider than
 runs on and spills past a tile's corners.
 
 `placeRoad()` runs at boot **after `placeCreek()` and `layPaths()`** (then `placeZips()`, `placeCamps()`,
-`placeChests()` — js/boot.js), on pure reads —
+`placeChests()` — js/app/boot.js), on pure reads —
 `roadSpan()` scans the diagonal for the last wooded tile out from each corner by `borderDepth`,
 exactly the rule `diagEnd` (eagle.js) flies the eagles by, so the gates are where each line's
 mouth is — and it rolls nothing, so it neither moves the shared `rng` stream nor differs run to
@@ -506,7 +506,7 @@ tile it lays, a few tiles a frame for the seconds the front takes.
 
 **One creek runs the whole map, world edge to world edge, down the
 cross-diagonal** (`tx = ty`, the top-left corner to the bottom-right — the road's opposite), the
-`the creek` group of [js/world.js](../../js/world.js). It cuts the valley into RED's half and
+`the creek` group of [js/sim/world.js](../../js/sim/world.js). It cuts the valley into RED's half and
 BLUE's with a roost on each side, meets the road once, at the middle where the waves meet (and
 freezes there, into [the orca's lake](#the-orcas-lake): the one stretch that does), and
 comes from beyond and goes on past us like the road: through the border woods too, where the
@@ -583,7 +583,7 @@ drawn just before them) a LAKE WHITEFISH or a SNOW CHAR (`CREEK_FISH_CHAR` of th
 downstream every `CREEK_FISH_GAP` tiles of creek, now and then down out of sight and back, in under
 the cistern's wall and never over a ford. Each is a pure function of its index and `windT` (`creekFishAt`,
 world.js), so every client places them alike. A body that **rolls** over the water onto one
-catches it (`creekFishCatch`, run by the roll in `updatePlayer`, one winner through `contest()`):
+catches it (`creekFishCatch`, run by the roll in `playerMove`, updatePlayer's movement step, one winner through `contest()`):
 it goes into the pouch as `whitefish` or `snowChar`, and its place swims back `CREEK_FISH_BACK`
 seconds later (`state.creekGone`, index to the `windT` it returns at, in `SNAP_STATE` and the
 save). Walking in is a plunge, so a roll is the only way to them. They are not the frost pike and
@@ -597,7 +597,7 @@ creek on their own feet, while a shove off the bank dunks a bot.
 ### The cistern
 
 **At the middle the road and the creek meet inside a ring of dressed stone**, the works' old
-cistern (the `the cistern` banner, [js/cistern.js](../../js/cistern.js)): its pool is
+cistern (the `the cistern` banner, [js/sim/cistern.js](../../js/sim/cistern.js)): its pool is
 [the orca's lake](#the-orcas-lake), all ice. Look H CUT BLOCKS of
 `docs/media/concepts/cistern-concepts-4.png`. The ring runs from `CIST_RI` to `CIST_RO` tiles off
 the crossing (in `w`, `p`: the road's and the creek's frame), the wall 16 px tall (the bake's `HWALL`). The road comes
@@ -608,7 +608,7 @@ course, and the blocks that fell lie round them, most outside. The creek runs in
 by a **culvert** each way, frozen under the wall (`CIST_FROZEN`) and open past it.
 
 **It is baked, footprint and all.** `app/bake-cistern/paint.py` paints it as a heightfield per world
-px in the game's 3/4 view and writes `js/sprites/cistern.js` (`SPRITES.cistern`, never hand-edited):
+px in the game's 3/4 view and writes `js/baked/cistern.js` (`SPRITES.cistern`, never hand-edited):
 `geo` (every measure above, read by the sim, so it can never stand off the art), `flat` (the sills
 and every shadow), `segs` (the standing stone in pieces) and `solid` (the footprint: every ground
 px stone stands on). Everything random is drawn from (`w`, `|p|`), so BLUE's half is RED's
@@ -683,7 +683,7 @@ under `PRACTICE`. `DBG` exposes `orcaLakeAt` and `orcaLakeEdge`.
 ## Snow depth
 
 One map of how deep the snow lies, `snowDepth(fx, fy)` (tile space, 0..1; `snowDepthPx` for
-world px), in [js/depth.js](../../js/depth.js). It is static for the match and a pure function
+world px), in [js/sim/depth.js](../../js/sim/depth.js). It is static for the match and a pure function
 of the seed and the scenery worldgen stood up (`hash2`/`vnoise`, **no `rng()`**), so every
 client lays the same map and no seed's world moves. Anything that cares how deep the snow is
 asks it; its bands:
@@ -745,7 +745,7 @@ its tile (`deepTileOpen`) and `deepPx` works each depth in it out once.
 
 ## The zipline
 
-One cable per team along the road, the `zipline` banner of [js/zipline.js](../../js/zipline.js): a
+One cable per team along the road, the `zipline` banner of [js/sim/zipline.js](../../js/sim/zipline.js): a
 polyline of **pylon** points `zips[team] = { team, pts, cum, len }` (`pts` are body positions —
 a rider's `p.y + 4` sits on the pylon tile's centre — `cum` the px along at each point) laid by
 `placeZips()` at boot **right after `placeRoad()`**, on pure reads (`roadNest`, `roadSpan`,
@@ -786,7 +786,7 @@ the lift where it lands (once for the span, once more with that span's sag), wit
 
 The jungle: named places at **fixed, mirrored sites** where neutral monsters stand — the things
 a team is choosing between while the eagle is still in the air, and the places it walks out of
-its base for. They live in the `camps` banner of [camps.js](../../js/camps.js) and in the
+its base for. They live in the `camps` banner of [camps.js](../../js/sim/camps.js) and in the
 module-scope `camps` array (`{ key, spec, name, tag, tx, ty, r, repopT }` per placed site).
 Five kinds, one reward each:
 
@@ -812,7 +812,7 @@ Five kinds, one reward each:
   with one mouth out to the field, **three rabbits** in the middle, three **snowdrop** clumps at
   the back that each shield the picker's side and then rest on their own cooldown
   ([the dawn shield](gameplay.md#the-dawn-shield)), and the clearing filled to the trees with
-  deep snow (`layMeadowDrifts`, js/depth.js). The rabbits are the only ones on the map
+  deep snow (`layMeadowDrifts`, js/sim/depth.js). The rabbits are the only ones on the map
   ([wildlife](gameplay.md#wildlife)); nothing in it is hostile. Cleared, the three are back 40 s
   later on the camp clock; with no anchor prop, nothing wears it.
 
@@ -947,13 +947,13 @@ the checklist in [checklists.md](checklists.md#common-changes).
 
 The TRAINING FIELD behind the title's PRACTICE TOOL plank (three knocks break its ice —
 [rendering.md](rendering.md#main-menu-title)): `?practice=1` boots `genPracticeWorld()` (the
-`practice arena` banner, js/practice.js) **instead of** `genWorld()`, and js/boot.js skips
+`practice arena` banner, js/sim/practice.js) **instead of** `genWorld()`, and js/app/boot.js skips
 camps, chests, wildlife spawns and the eagle drop entirely. **The practice world is
 `WORLD` 112 under `PRACTICE`, against the match's 232** (the conditional above the `WORLD`
-const, js/core.js; everything downstream sizes itself off `WORLD`, so the match world is
+const, js/sim/core.js; everything downstream sizes itself off `WORLD`, so the match world is
 untouched). The field and the ice loop's collar round it are one `PR_RING` (76) tile square
 block centred across the top (`PR_OX`/`PR_OY` offset every fixed parkour coordinate, which is
-written in the block's own tiles); the **deer ride's forest wing** fills the rows under it. The **clock never runs**: js/boot.js pins `state.time` to early morning and sim.js
+written in the block's own tiles); the **deer ride's forest wing** fills the rows under it. The **clock never runs**: js/app/boot.js pins `state.time` to early morning and sim.js
 never advances it under `PRACTICE` — crisp daylight forever, no dusk, no dawn refreeze. The
 **cloud shadows are skipped there too** for the same reason the clock is pinned: a shadow drifting
 over the dummy's meter or the parkour's ice would change what those instruments measure between
@@ -968,7 +968,7 @@ in it:
 - the **archery targets** riding a two-rail track around the field's whole perimeter (below).
 
 No fences, no wildlife, no chests, no pond, no harvest, and nothing spawns or restocks outside
-a round. `PRACTICE` (js/core.js) pins `SEED` to `PRACTICE_SEED` *above* the `?seed` parse, so
+a round. `PRACTICE` (js/sim/core.js) pins `SEED` to `PRACTICE_SEED` *above* the `?seed` parse, so
 the field is bit-identical on every visit and no seed can reshape it.
 
 **The rack is the armory.** It is a `lead` on the left tile and a solid silent follower on the
@@ -1003,7 +1003,7 @@ lower time writes) — one of the two records practice writes (the other is the 
 below), while LAST stays session-only.
 
 Everything is coordinate tests against the carved ice — no objects, no triggers. The trickle that refills a
-match's shoal is **off entirely under `PRACTICE`** (js/wildlife.js), because the only ice in the
+match's shoal is **off entirely under `PRACTICE`** (js/sim/wildlife.js), because the only ice in the
 world is the race line and a fish emerging into it would be absurd; `crackIce` still works on
 the track (a hole in the racing line is the player's own doing, and re-entering rebuilds —
 and a reroll unregisters the old track's cracks and holes before the forest regrows). Ice a
@@ -1020,14 +1020,14 @@ cross-diagonal as across a match road, so the roll key's leap clears it), a dive
 across the ice again into the field. It is carved before the loop, so a crossing ends up ice, and a roll never grows forest back onto it (`rdTiles`, `pkAnimStep`). The three targets
 are stock faces on posts off the track (`RD_TARGETS`; an `at` point holds a face there instead
 of the rail, `addPTarget`), each in a clearing that runs three wide to the nearest stretch of trail. A **tame deer**
-(`a.tame`: it never bolts from a player and never wanders, js/wildlife.js) waits at the
+(`a.tame`: it never bolts from a player and never wanders, js/sim/wildlife.js) waits at the
 trailhead (`PR_DEER`); `prDeerStep` (from `updatePractice`) puts it back on its stand
 `PR_DEER_BACK` seconds after it is let go, shot or killed.
 
 **The roll station is one die and one held wheel**: the die on its plinth stands in a small
 felled nook off the walk's south side, adjacent to the walk so its `E ROLL` cap rises as you
 pass (`pkdie`, `PK_DIE` — `pkDieNear` resolves it, shared by the prompt, `drawPkHint` in
-js/ui/wheel.js, and the press in js/input.js). **Holding E beside it opens a three-wedge radial
+js/ui/wheel.js, and the press in js/app/input.js). **Holding E beside it opens a three-wedge radial
 wheel** (kind `'pkdie'`, the armory rack's own hold-and-release grammar and the ordinary wheel
 pipeline): one wedge per difficulty, each drawn as **that difficulty's coloured die** — a
 green, amber or red cube with its pip count (`PK_DIE_COL`, js/draw/practice.js), the current track's
@@ -1069,7 +1069,7 @@ sits in open snow with the treeline well clear of every face; rails drawn flat b
 spanning the rails kept clear of the corner joins). Every target is a trolley
 on a rail — ENTITIES in `ptargets`, never tile objects (a mover crosses tiles every frame, and
 a raised face should not block a walker) — so only arrows meet them: the arrow loop's sweep
-(`shotContacts`, js/sim.js) meets every live face disc (`ptFace`/`ptLive`/`ptHitR` — the hit disc
+(`shotContacts`, js/sim/sim.js) meets every live face disc (`ptFace`/`ptLive`/`ptHitR` — the hit disc
 scales with the target's `size`, small or large, `AG_SIZE`). A target lives at track distance
 `s` (`agPos` maps it to world x/y) on one of **two lanes** (`AG_LANE_GAP` px apart), with three
 habits: `still`, `move` (rolling `dir × spd` along the rail, `AG_SPD` slow/medium/fast) and
@@ -1100,13 +1100,13 @@ spent for good.
 (`app/media/scenes/deer-gap.js`): the arrow test and the draw read `ptargets` in any mode, the
 list rides `SAVE_ROOTS`, and since `updatePractice` never runs in a match the face holds where
 it was put. One carrying a `word` scores nothing: `hitPTarget` shatters it and `wordPop`
-(js/core.js) floats the word up from the face in the damage totals' gold
+(js/sim/core.js) floats the word up from the face in the damage totals' gold
 ([rendering](rendering.md#damage-feedback)).
 
 **Every arrow into a face also extends a consecutive-hit run** (`agStreak`),
 minigame or not: the hit popup carries it from the second hit on (`X3` alone in free practice —
 white, gold from five, hot orange from ten — appended to the points during a round), any
-practice arrow that ends without striking a face breaks it (the arrow loop, js/sim.js — the
+practice arrow that ends without striking a face breaks it (the arrow loop, js/sim/sim.js — the
 dummy counts as a break: the run is a *target* run), and ringing a round in starts it over.
 **The run is audible**: every `AG_RUN_STEP` (5) in a row flares at the face AND rings
 `SFX.runUp(agStreak)` - the one cue in the game deliberately PITCHED by a number, because the
@@ -1121,7 +1121,7 @@ in its own mark (`AG_WEDGE_ART`, js/draw/practice.js) with the best medal it has
 the corner; the last-rung one wears a gold frame (the bell itself never wears the pick — no
 recolour, the wheel's frame is the readout).
 
-**What a round is lives in `AG_ROUNDS`** (js/practice.js), one entry per round: its name, its
+**What a round is lives in `AG_ROUNDS`** (js/sim/practice.js), one entry per round: its name, its
 starting clock, how it opens (`begin`) and runs (`tick`), what a hit pays and what its popup says
 (`hit`), when it is over (`over`), the plate's three rows (`rows`), the line under the final score
 (`end`) and where its record is kept (`best`/`setBest`). `agame.mode` names the one in play and
@@ -1181,7 +1181,7 @@ bottom): icon wells on one hud plate in two groups — LEVEL UP, ADD GOLD (`CHEA
 `tradeGold`, so no XP rides it), REFRESH COOLDOWNS and REFRESH HEALTH (standing toggles,
 `CHEAT_AUTO`, applied every tick by `cheatAuto` from `updatePractice`, frost-rimmed while on),
 RESET TO LEVEL 1; then TELEPORT, SPAWN DUMMY and CLEAR DUMMIES. The name is the tooltip
-(`tipCheat`). A press sends `input.cmd {kind:'cheat'}` → `runCmd` → `cheatCmd` (js/practice.js,
+(`tipCheat`). A press sends `input.cmd {kind:'cheat'}` → `runCmd` → `cheatCmd` (js/sim/practice.js,
 `PRACTICE`-gated); TELEPORT and SPAWN DUMMY arm a ghost on the pointer's tile instead (green
 where it lands, red where it would not — `cheatAimOk` asks what `cheatCmd` will), and a left
 press on the world sends the order with that tile — teleport once, dummies until the button,
@@ -1191,7 +1191,7 @@ round's furniture so a rung bell sinks it with the rest. The chevron tab on the 
 column away.
 
 Practice is not a match, and everything with stakes is guarded on `PRACTICE`: the local player is
-the only active one (js/boot.js parks the other nine as `control: 'none'` in the corner
+the only active one (js/app/boot.js parks the other nine as `control: 'none'` in the corner
 forest), `die()` becomes `practiceRevive()` (full pool, spawn tile `PR_SPAWN`, a beat of
 grace), `checkLastStanding()` never fires, and the profile is never written — `gainGold` skips
 `PROFILE.addGold` and the pinned clock means `addDay` can never fire — with two deliberate
@@ -1201,7 +1201,7 @@ slab's LEAVE plank ([settings](gameplay.md#settings)).
 
 The **dummy** is an `OBJECTS` entry (`solid`, any tool, verb HIT) with one solid tile and a
 26×42 sprite (`DUMMY_SPR`, baked in js/draw/practice.js). Every way of hurting it
-lands in `hitDummy` (js/actions.js): the E swing (`DUMMY_WORK_DMG`), every bit — the arrow loop
+lands in `hitDummy` (js/sim/actions.js): the E swing (`DUMMY_WORK_DMG`), every bit — the arrow loop
 tests the dummy across its base tile and the two above it, so torso and head shots land — and
 the roll's tackle. It never breaks: the pool floors at zero, the overhead bar appears only
 while it is hurt, and `updatePractice` (called from `updatePlay` under `PRACTICE`) mends it
@@ -1269,7 +1269,7 @@ in wildlife or the AI reads `state.darkness`. What keys off the cycle:
 
 - The only passive heal, slow HP regen in `updatePlayer()` for every player, runs while
   `state.darkness < 0.3` — or at any hour under a kit with `nightHeal` (the HEARTHWEAVE gear,
-  js/player.js). There is no cold/warmth system.
+  js/sim/player.js). There is no cold/warmth system.
 - **The wind dies with the light.** `windAmp()` squares `1 - darkness`, so the snow stops blowing
   sideways and every pine goes still over the twelve seconds of dusk and stays still until dawn
   ([the wind field](rendering.md#the-wind-field)).
@@ -1295,12 +1295,12 @@ that tile (see [The swing tools](gameplay.md#the-swing-tools-e); the weapons:
 `iceCracks` map (`tile idx → hits`, rendered as bright fracture decals in their own pass);
 `ICE_HOLE_HITS` (2) breaks through — the tile becomes `ground = 2` (open water), joins the
 `holes` list, and is repainted into the ground canvas via `repaintGround()`. Constants live in the `fish` banner of
-[js/wildlife.js](../../js/wildlife.js) (`ICE_HOLE_HITS`, `HOLE_FALL_DMG`, `HOLE_FALL_T`,
+[js/sim/wildlife.js](../../js/sim/wildlife.js) (`ICE_HOLE_HITS`, `HOLE_FALL_DMG`, `HOLE_FALL_T`,
 `FISH_MAX`/`FISH_MIN`/`FISH_WATER_REF`/`FISH_CAP_MUL`, `FISH_CATCH_R`; `FISH_SPAWN_T` alone stays in core.js, and the `NET_*` set
-sits beside `STRUCTS` in [js/structures.js](../../js/structures.js) with the net entry it tunes).
+sits beside `STRUCTS` in [js/sim/structures.js](../../js/sim/structures.js) with the net entry it tunes).
 
 - **Falling in**: standing over a hole tile (checked at each player's feet in `updatePlayer`,
-  js/sim.js) plunges that player: `HOLE_FALL_DMG` (15) via `damagePlayer`, velocity zeroed, and
+  js/sim/sim.js) plunges that player: `HOLE_FALL_DMG` (15) via `damagePlayer`, velocity zeroed, and
   `p.fallT` runs `HOLE_FALL_T` (1.1 s) of floundering — no movement, tools, dodge, or
   slide (`clickAction`, `tryWork`, and `tryDodge` all check `fallT`). `drawPlayer` clips
   the sprite to the waterline with ripple rects. The climb-out teleports to
@@ -1329,7 +1329,7 @@ sits beside `STRUCTS` in [js/structures.js](../../js/structures.js) with the net
   (`fishClear` probes ±margin on the four compass directions from the centre) while the drawn body
   is rotated, so a fish swimming diagonally along a shore can clip a corner of snow with its
   nose or tail for a frame or two, at the faint alpha an under-ice fish is drawn with — accepted.
-  Each is a **FROST PIKE** or, one in `FISH_RARE` (0.2, js/wildlife.js), a **GOLD SUNFISH**: `f.kind`
+  Each is a **FROST PIKE** or, one in `FISH_RARE` (0.2, js/sim/wildlife.js), a **GOLD SUNFISH**: `f.kind`
   (`fish` or `sunfish`) comes from `hash2` of its spawn spot inside `addFish`, so no `rng()` call
   is added. They render in a pass right after the ground blit (`drawIceFish`, js/draw/lakes.js, using `ex`/`ey`) as a cold blue
   **shadow** under the ice (`SPRITES.iceFish[kind].shadow`, look N: the swim sprite's shape in the under-ice ink
@@ -1337,13 +1337,13 @@ sits beside `STRUCTS` in [js/structures.js](../../js/structures.js) with the net
   by shape, never colour) at 0.42 alpha; where a fish crosses an open hole the crisp swim sprite is drawn clipped to the hole's
   tiles, so only what is in the open water shows in colour. Both are baked by
   app/bake-fish/paint.py (16 headings, 2 tail frames). Cracking ice spooks nearby fish into a fast dart.
-- **Fishing is automatic**: `autoFish(p, dt)` (js/tools.js, called from `updatePlayer` every
+- **Fishing is automatic**: `autoFish(p, dt)` (js/sim/tools.js, called from `updatePlayer` every
   step) checks whether that player stands on an ice tile with a fish within `FISH_CATCH_R`
   (16 px); if so the fish is taken with no press — once per `FISH_AUTO_CD` (1.2 s), spending no
   tool cycle — into the `p.food` pouch, splash, no arrow, and the press on the ice
   flies like any other ([the swing tools](gameplay.md#the-swing-tools-e)). The catch is
   [contested](multiplayer.md#contested-orders), so two players can't land the same fish. **The catch is a pose**: the contest's
-  callback calls `startCatch(p, kind)` (below `autoFish` in js/tools.js), `CATCH_T` (2 s) of three
+  callback calls `startCatch(p, kind)` (below `autoFish` in js/sim/tools.js), `CATCH_T` (2 s) of three
   down-facing frames whatever the body faced - `CATCH_STOOP` (0.16 s) bent to the hole,
   `CATCH_HAUL` (0.22 s) with the fish coming up, then the trophy hoist over the head
   (`catchFrame(p)` says which; `drawPlayer` draws it, the held tool and gear marks off, the
@@ -1369,7 +1369,7 @@ sits beside `STRUCTS` in [js/structures.js](../../js/structures.js) with the net
 ### Ice breaks
 
 **Something big coming up through a lake breaks the ice in its own shape**, never a tile's
-([js/icebreak.js](../../js/icebreak.js), the pixels in
+([js/sim/icebreak.js](../../js/sim/icebreak.js), the pixels in
 [js/draw/icebreak.js](../../js/draw/icebreak.js)). The orca comes up through one
 ([the orca](gameplay.md#the-orca): `orcaStrike`). `iceBreak(x, y, shape, ang, { warn, hold })` breaks the ice
 round a world point and returns the break (null where no bare ice lies under it);
@@ -1396,7 +1396,7 @@ round a world point and returns the break (null where no bare ice lies under it)
   own close time in `open`; `updateIceBreaks` (from `updatePlay`) opens and closes them. A
   tile a break holds is painted as ice (`paintGroundTile` asks `iceBreakHolds`) and the break
   draws its own water over it, so nothing square ever shows. A player's feet read the pixels
-  (`iceBreakWet`): the plunge in `updatePlayer` and the climb out (`nearestDryTile`) go by the
+  (`iceBreakWet`): the plunge in `playerPlunge` and the climb out (`nearestDryTile`) go by the
   water as drawn, and a strict move (`moveEntity`) stops at its edge. A net built on a break's
   water keeps it open and joins `holes`, so the dawn refreeze has it from there.
 - **The pixels** (`drawIceBreaks`, flat after the pick cracks in `render()`): one small canvas a

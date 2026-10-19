@@ -510,7 +510,7 @@ const SET_TABS = [
     { id: 'hud', label: 'BOTTOM BAR SIZE', kind: 'slider' },
     { id: 'shake', label: 'SCREEN SHAKE', kind: 'toggle' },
     // the pad's rumble when an item is grabbed, placed or
-    // swapped (haptic, js/input.js) - dead on a mouse, which has no motor
+    // swapped (haptic, js/app/input.js) - dead on a mouse, which has no motor
     { id: 'haptics', label: 'RUMBLE', kind: 'toggle' },
     { id: 'info', label: 'INFO DISPLAY', kind: 'toggle' },
     { id: 'cursor', label: 'CURSOR', kind: 'toggle', on: 'PIXEL', off: 'BROWSER' },
@@ -524,7 +524,7 @@ const SET_TABS = [
     { id: 'quality', label: 'QUALITY', kind: 'choice',
       opts: [{ id: 'low', label: 'LOW' }, { id: 'medium', label: 'MEDIUM' }, { id: 'high', label: 'HIGH' }],
       val: () => vidPreset(), pick: (v) => Object.assign(settings, VID_PRESETS[v]) },
-    // the frames the loop may present a second (capSkips, js/boot.js), low to
+    // the frames the loop may present a second (capSkips, js/app/boot.js), low to
     // high with UNLIMITED (every frame the screen offers) at the top end.
     // Numbers, not words: the row is an instrument, and a player picking a
     // cap knows their screen's rate
@@ -540,7 +540,7 @@ const SET_TABS = [
     // core.js), named by the colour blindness each palette is for. Every
     // entry wears its palette's chip, yours beside theirs, so a player can
     // also just pick the pair they tell apart. Any but OFF also puts the
-    // rival's shape cue on (foeCue, js/player.js)
+    // rival's shape cue on (foeCue, js/sim/player.js)
     { id: 'teamPal', label: 'COLOUR BLIND', kind: 'drop',
       opts: [{ id: 'def', label: 'OFF' }, { id: 'rg', label: 'PROTANOPIA / DEUTERANOPIA' },
         { id: 'by', label: 'TRITANOPIA' }, { id: 'hc', label: 'ACHROMATOPSIA' }],
@@ -685,7 +685,7 @@ ctrlCvs.pad.width = SET_W; ctrlCvs.pad.height = PAD_READ_Y + PAD_READ_H;
 // THE WEAPON PRIMER: the one thing about the left button a new player cannot
 // work out by pressing it, drawn rather than explained. It is a real HORN BOW
 // with a real build - two ARROWs and a FLAME - so every mark on it is the
-// game's own arithmetic (toolPlan, sortBits, js/tools.js) and the picture
+// game's own arithmetic (toolPlan, sortBits, js/sim/tools.js) and the picture
 // cannot drift from the weapon.
 //
 // It is the SHELF, drawn at rest: the tool at the left end, the shots on the

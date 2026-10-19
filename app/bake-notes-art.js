@@ -1,4 +1,4 @@
-// Bakes the pictures in docs/media/notes/ into js/notesart.js, so a patch note can
+// Bakes the pictures in docs/media/notes/ into js/baked/notesart.js, so a patch note can
 // show the art it shipped (or the concept it sketched). A note names its picture by
 // file name as its third field: ['0.391', 'TEXT.', 'winter-flowers'].
 // Each picture goes in as a PNG data URL with its size: the game opens off the disk
@@ -11,7 +11,7 @@ const path = require('path');
 
 const ROOT = path.join(__dirname, '..');
 const SRC = path.join(ROOT, 'docs', 'media', 'notes');
-const OUT = path.join(ROOT, 'js', 'notesart.js');
+const OUT = path.join(ROOT, 'js', 'baked', 'notesart.js');
 const MAX_BYTES = 24 * 1024; // a picture this big is not a 1x pixel strip
 
 const out = {};

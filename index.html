@@ -39,78 +39,79 @@
      trip per file on the web build). app/check-globals.js fails a script without it. -->
 <!-- the local player profile (name, stats, settings) and the only file that touches
      localStorage: it has no dependencies, so it goes first. -->
-<script defer src="js/profile.js"></script>
-<script defer src="js/font.js"></script>
-<!-- js/sprites/: every sprite as a char grid + palette, baked at load. core.js first (it
-     makes SPRITES and the SPR helpers); each file after it registers the keys it owns.
-     motion.js is the one data file: the run and roll grids characters.js bakes. -->
+<script defer src="js/app/profile.js"></script>
+<script defer src="js/app/font.js"></script>
+<!-- js/sprites/: every hand-drawn sprite as a char grid + palette, baked at load. core.js
+     first (it makes SPRITES and the SPR helpers); each file after it registers the keys it
+     owns. js/baked/ files are written by app/bake-*, never by hand: motion.js is the run
+     and roll grids characters.js bakes, the rest register sprites like the hand files. -->
 <script defer src="js/sprites/core.js"></script>
-<script defer src="js/sprites/motion.js"></script>
+<script defer src="js/baked/motion.js"></script>
 <script defer src="js/sprites/characters.js"></script>
 <script defer src="js/sprites/looks.js"></script>
-<script defer src="js/sprites/robot.js"></script>
+<script defer src="js/baked/robot.js"></script>
 <script defer src="js/sprites/terrain.js"></script>
 <script defer src="js/sprites/rocks.js"></script>
 <script defer src="js/sprites/beasts.js"></script>
-<script defer src="js/sprites/bears.js"></script>
-<script defer src="js/sprites/snowdrops.js"></script>
+<script defer src="js/baked/bears.js"></script>
+<script defer src="js/baked/snowdrops.js"></script>
 <script defer src="js/sprites/eagle.js"></script>
 <script defer src="js/sprites/perch.js"></script>
 <script defer src="js/sprites/buildings.js"></script>
-<script defer src="js/sprites/pump.js"></script>
+<script defer src="js/baked/pump.js"></script>
 <script defer src="js/sprites/items.js"></script>
-<script defer src="js/sprites/fish.js"></script>
-<script defer src="js/sprites/orca.js"></script>
-<script defer src="js/sprites/cistern.js"></script>
+<script defer src="js/baked/fish.js"></script>
+<script defer src="js/baked/orca.js"></script>
+<script defer src="js/baked/cistern.js"></script>
 <script defer src="js/sprites/icons.js"></script>
 <script defer src="js/sprites/landmarks.js"></script>
 <!-- audio/sfx/*.mp3 baked to base64 by app/bake-sfx.js: a file:// page cannot fetch
      its own folder, so this is what lets the sound effects work when index.html
      is opened straight off the disk. Must load before audio.js. -->
-<script defer src="js/sfxdata.js"></script>
-<script defer src="js/audio.js"></script>
+<script defer src="js/baked/sfxdata.js"></script>
+<script defer src="js/app/audio.js"></script>
 <!-- docs/media/logos/mainMenuSoftfall.png keyed and baked by app/bake-logo.js
      for the same reason: an <img> off a file:// path would taint the canvas. -->
-<script defer src="js/logodata.js"></script>
-<script defer src="js/notesart.js"></script>
+<script defer src="js/baked/logodata.js"></script>
+<script defer src="js/baked/notesart.js"></script>
 <!-- The game code: flat classic scripts sharing one global scope
      (docs/dev/architecture.md). A file may reference names from any file at runtime, but its
      top-level (load-time) statements may only reference names from files loaded above it. -->
-<script defer src="js/core.js"></script>
-<script defer src="js/director.js"></script>
-<script defer src="js/canvas.js"></script>
-<script defer src="js/player.js"></script>
-<script defer src="js/input.js"></script>
+<script defer src="js/sim/core.js"></script>
+<script defer src="js/app/director.js"></script>
+<script defer src="js/app/canvas.js"></script>
+<script defer src="js/sim/player.js"></script>
+<script defer src="js/app/input.js"></script>
 <!-- the other controller, a keyboard-and-mouse in disguise: it calls
      input.js's keyPress/pointerPress and folds its sticks into sampleHumanInput -->
-<script defer src="js/gamepad.js"></script>
-<script defer src="js/cistern.js"></script>
-<script defer src="js/world.js"></script>
-<script defer src="js/zipline.js"></script>
-<script defer src="js/camps.js"></script>
-<script defer src="js/practice.js"></script>
-<script defer src="js/depth.js"></script>
-<script defer src="js/landmarks.js"></script>
-<script defer src="js/nav.js"></script>
-<script defer src="js/wildlife.js"></script>
-<script defer src="js/structures.js"></script>
-<script defer src="js/robots.js"></script>
-<script defer src="js/actions.js"></script>
-<script defer src="js/tools.js"></script>
-<script defer src="js/mining.js"></script>
-<script defer src="js/tunnel.js"></script>
-<script defer src="js/icebreak.js"></script>
-<script defer src="js/orca.js"></script>
-<script defer src="js/abilities.js"></script>
-<script defer src="js/ai-skill.js"></script>
-<script defer src="js/ai.js"></script>
-<script defer src="js/ai-team.js"></script>
-<script defer src="js/bots/api.js"></script>
-<script defer src="js/bots/lib.js"></script>
-<script defer src="js/sim.js"></script>
-<script defer src="js/weather.js"></script>
-<script defer src="js/shed.js"></script>
-<script defer src="js/ai-callouts.js"></script>
+<script defer src="js/app/gamepad.js"></script>
+<script defer src="js/sim/cistern.js"></script>
+<script defer src="js/sim/world.js"></script>
+<script defer src="js/sim/zipline.js"></script>
+<script defer src="js/sim/camps.js"></script>
+<script defer src="js/sim/practice.js"></script>
+<script defer src="js/sim/depth.js"></script>
+<script defer src="js/sim/landmarks.js"></script>
+<script defer src="js/sim/nav.js"></script>
+<script defer src="js/sim/wildlife.js"></script>
+<script defer src="js/sim/structures.js"></script>
+<script defer src="js/sim/robots.js"></script>
+<script defer src="js/sim/actions.js"></script>
+<script defer src="js/sim/tools.js"></script>
+<script defer src="js/sim/mining.js"></script>
+<script defer src="js/sim/tunnel.js"></script>
+<script defer src="js/sim/icebreak.js"></script>
+<script defer src="js/sim/orca.js"></script>
+<script defer src="js/sim/abilities.js"></script>
+<script defer src="js/ai/ai-skill.js"></script>
+<script defer src="js/ai/ai.js"></script>
+<script defer src="js/ai/ai-team.js"></script>
+<script defer src="js/ai/bot-api.js"></script>
+<script defer src="js/baked/bot-lib.js"></script>
+<script defer src="js/sim/sim.js"></script>
+<script defer src="js/sim/weather.js"></script>
+<script defer src="js/sim/shed.js"></script>
+<script defer src="js/ai/ai-callouts.js"></script>
 <!-- js/net/: what a match shares between screens. events.js records the step's cosmetics
      (a puff, a number, a cue, a shake) for a host's clients; solo records nothing. -->
 <script defer src="js/net/events.js"></script>
@@ -166,10 +167,10 @@
 <script defer src="js/ui/ladder.js"></script>
 <script defer src="js/ui/screens.js"></script>
 <script defer src="js/ui/lobby.js"></script>
-<script defer src="js/save.js"></script>
+<script defer src="js/sim/save.js"></script>
 <script defer src="js/ui/saves.js"></script>
 <script defer src="js/ui/botview.js"></script>
-<script defer src="js/eagle.js"></script>
-<script defer src="js/boot.js"></script>
+<script defer src="js/sim/eagle.js"></script>
+<script defer src="js/app/boot.js"></script>
 </body>
 </html>

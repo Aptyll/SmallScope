@@ -4,7 +4,7 @@
 // sense mark, stun stars - and the build reveal a structure grows in under.
 // ---- the arrow body, shared, and the frame over every unit's head ---------
 // The arrow's silhouette, and the one rasteriser every shaft in the game goes
-// through: the flying arrow (render.js) rasterises ARROW_BODY (js/actions.js)
+// through: the flying arrow (render.js) rasterises ARROW_BODY (js/sim/actions.js)
 // through this pair, and a bit that flies as a shaft of its own (the bodies a
 // bit flies as, render.js) hands in its own map. hx/hy is the tip's exact (unrounded) screen position,
 // i0..i1 the stretch of the body to draw (a buried head is skipped by raising
@@ -52,7 +52,7 @@ function arrowBodyPx(out, hx, hy, nx, ny, i0, i1, cT, cD, cB, cG, body, ink) {
 // across it from the middle row) as the flat [i, j, key] triples arrowBodyPx
 // walks, sorted by `pri` - its keys from fill to structure, so where a
 // diagonal lands two pixels on one cell the structural one is painted last
-// and wins, exactly as ARROW_BODY is sorted in js/actions.js.
+// and wins, exactly as ARROW_BODY is sorted in js/sim/actions.js.
 function shaftBody(rows, pri) {
   const px = [], mid = (rows.length - 1) >> 1;
   for (let r = 0; r < rows.length; r++)
@@ -130,7 +130,7 @@ function evenBarW(w) {
   return w;
 }
 // ---- the running damage total beside the bar ----
-// A body's hits since its last quiet (tallyHit, js/core.js) stand as one
+// A body's hits since its last quiet (tallyHit, js/sim/core.js) stand as one
 // number hard against its frame's right edge, centred on the health bar, in
 // that bar's colour - a blue player's damage is blue, a beast's gold - and
 // one beat bigger for the instant a hit adds to it. It holds TALLY_HOLD s
@@ -198,7 +198,7 @@ function drawTallies(k, subX, subY) {
     ctx.globalAlpha = tallyQueue[i + 4];
     ctx.drawImage(img, Math.round(tallyQueue[i + 1] * k) - subX, Math.round(tallyQueue[i + 2] * k - img.height * s / 2) - subY, img.width * s, img.height * s);
   }
-  // ...and the words a hit says (wordPop, js/core.js), over the totals: one
+  // ...and the words a hit says (wordPop, js/sim/core.js), over the totals: one
   // beat bigger as they land, like a total taking a hit
   for (const w of wordPops) {
     const img = tallyImg(w.txt, BAR_NEUTRAL);
@@ -220,7 +220,7 @@ function drawTallies(k, subX, subY) {
 // `u`, the body the bar is over, hangs its running damage total off the
 // bar's right end (queueTally); a player's frame hangs its own.
 // `s` (default 1) draws the whole bar that many pixels to its own pixel - a
-// bear's frame is its body's 2x (MONSTER.frame, js/wildlife.js) - with `w`
+// bear's frame is its body's 2x (MONSTER.frame, js/sim/wildlife.js) - with `w`
 // and the cut still counted in the bar's own pixels; `segs` fixes the cut
 // instead of hpSegCount's (it must divide w + 1)
 function drawHealthBar(cxp, topY, hp, maxHp, w, team, col, u, s, segs) {
@@ -247,14 +247,14 @@ function healthBarPx(cxp, topY, hp, maxHp, w, team, col, s, segs) {
   ctx.fillStyle = HP_TICK;
   for (let i = 1; i < n; i++) ctx.fillRect(x + (i * seg - 1) * k, y, k, 2 * k);
   // a rival's bar under a colour-blind palette wears a raised dark cap on its
-  // right end (foeCue, js/player.js), so the side reads by outline alone
+  // right end (foeCue, js/sim/player.js), so the side reads by outline alone
   if (foeCue(team)) {
     ctx.fillStyle = HP_CAP;
     ctx.fillRect(x + w * k, y - 2 * k, 2 * k, 5 * k);
   }
 }
 
-// The DAWN SHIELD bar (pickSnowdrop, js/actions.js): its own row in the
+// The DAWN SHIELD bar (pickSnowdrop, js/sim/actions.js): its own row in the
 // frame straight above the hp bar, built the way the draw meter is - its
 // backing adds the rows above the hp backing and the hp backing's top row
 // is the frame-colour gap, so the frame stays one outline - and the draw
@@ -283,7 +283,7 @@ function drawShieldBar(x, y, shield) {
   ctx.fillRect(x, y, 1, 1);
 }
 
-// The ORCA'S COUNT (orcaLine, js/orca.js): the whole seconds a player the
+// The ORCA'S COUNT (orcaLine, js/sim/orca.js): the whole seconds a player the
 // orca has locked has left on its ice, 3 2 1, one big white number over the
 // frame (ORCA_COUNT_K the font's scale, a 1 px ink rim), everything above
 // standing ORCA_COUNT_LIFT rows higher (drawPlayer). Each number hops up a
@@ -296,7 +296,7 @@ function drawOrcaCount(cx, bottom, left) {
   drawPixelTextOutline(ctx, s, cx - Math.floor(pixelTextWidth(s, ORCA_COUNT_K) / 2), bottom - 5 * ORCA_COUNT_K - hop, '#ffffff', BAR_FRAME, ORCA_COUNT_K);
 }
 
-// The BOUNTY (bountyOf, the `takedowns` banner js/player.js): a body on a
+// The BOUNTY (bountyOf, the `takedowns` banner js/sim/player.js): a body on a
 // kill streak wears a coin and the gold its killer will cash, just past the
 // right end of its name, so everyone on both sides can see who is worth
 // hunting. The coin is 5 px round on the font's own 1 px ink rim, the number
@@ -334,7 +334,7 @@ function drawLevelBadge(rx, topY, level, s) {
 
 // The noticed mark: a "!" over a head for as long as an animal has a player
 // in sight (e.senseT - seconds since it did, 0 while it does not; the prey
-// and wolves banners, js/wildlife.js), in the colour of what that means -
+// and wolves banners, js/sim/wildlife.js), in the colour of what that means -
 // prey's alarm in stamina white, a wolf's in its threat red - rising out of
 // the head over its first tenth of a second and gone the frame the sight is.
 // It turns where the stun stars turn, and the stars win: a stunned body is

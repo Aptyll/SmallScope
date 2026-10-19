@@ -38,7 +38,7 @@ const LAD_FORM = { W: LAD_WIN, D: LAD_DRAW, L: LAD_LOSS };
 
 // ---- the faces ---------------------------------------------------------------------
 // Who each known bot is at a glance, by its id: a scout in the rivals' paint
-// (cls and look, the create screen's axes: LOOK_N, js/profile.js), a colour
+// (cls and look, the create screen's axes: LOOK_N, js/app/profile.js), a colour
 // of its own and a 9x9 emblem of how it plays. Any other bot (a person's
 // file) gets FACE_ANY's emblem in steel and a scout rolled from its id.
 const LAD_GLYPHS = {
@@ -129,7 +129,7 @@ function ladderName(id) {
 }
 
 // ---- the match --------------------------------------------------------------------
-// the drop (beginDrop, js/eagle.js): every rival seat a bot plays runs the foe
+// the drop (beginDrop, js/sim/eagle.js): every rival seat a bot plays runs the foe
 function ladderSeat() {
   const W = ladderWatch;
   if (W) {

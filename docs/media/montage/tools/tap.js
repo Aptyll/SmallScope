@@ -1,7 +1,7 @@
 // Document-start: tap the WebAudio graph.
 //
 // Everything the game synthesises or samples hangs off ONE master gain that
-// connects to ctx.destination (js/audio.js); the MUSIC layer is HTMLAudioElement
+// connects to ctx.destination (js/app/audio.js); the MUSIC layer is HTMLAudioElement
 // and never enters the graph at all. So mirroring every connection into
 // ctx.destination onto a MediaStreamDestination captures exactly the SFX bus -
 // all of it, none of the music - with no hook in the game itself.

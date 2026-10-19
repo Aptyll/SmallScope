@@ -1,4 +1,4 @@
-# Paints every fish a player can catch and writes js/sprites/fish.js (never
+# Paints every fish a player can catch and writes js/baked/fish.js (never
 # hand-edit it: repaint and rebake).
 #
 #   python3 app/bake-fish/paint.py   (needs numpy and Pillow)
@@ -24,7 +24,7 @@ sys.path.insert(0, os.path.join(HERE, '..', 'media'))
 import numpy as np
 from paint import Canvas, ramp, lint, hx, INK
 
-OUT = os.path.join(HERE, '..', '..', 'js', 'sprites', 'fish.js')
+OUT = os.path.join(HERE, '..', '..', 'js', 'baked', 'fish.js')
 SWIM_HD = 16   # headings
 CELL = 28      # px square per swim frame, the fish centred on (14, 14)
 WATER_EDGE = '#1d3649'   # CREEK_COL.under: the rim a submerged fish wears
@@ -165,8 +165,8 @@ def gridsJs(name, sw):
 
 js = ["'use strict';",
       "// Every fish a player can catch. SPRITES.creekFish[kind] = { swim, icon } for the creek's",
-      "// (CREEK_FISH, js/world.js) and SPRITES.iceFish[kind] = { swim, shadow, icon } for the lake's",
-      "// (the `fish` shoal, js/wildlife.js). swim / shadow are top-down, " + str(SWIM_HD) + " headings round from",
+      "// (CREEK_FISH, js/sim/world.js) and SPRITES.iceFish[kind] = { swim, shadow, icon } for the lake's",
+      "// (the `fish` shoal, js/sim/wildlife.js). swim / shadow are top-down, " + str(SWIM_HD) + " headings round from",
       "// +x (east) clockwise, 2 tail frames each, " + str(CELL) + "x" + str(CELL) + " cells centred on the fish: swim rimmed",
       "// in the water's own shade, shadow the under-ice ink, solid rim over a half-strength core.",
       "// icon is side-on, head right, the pouch icon (ITEMS.whitefish / snowChar / fish / sunfish).",

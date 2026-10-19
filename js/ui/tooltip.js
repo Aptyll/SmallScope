@@ -44,7 +44,7 @@ function tipBase(type, title, kind) {
 }
 const TIP_PATH = { line: 'STRAIGHT', orbit: 'ORBIT', boomer: 'BOOMERANG', lob: 'ARCS DOWN', curve: 'CURVES' };
 // KNOCKBACK is the one bit number that is a multiple rather than a quantity
-// (see BITS, js/tools.js), so it prints as one - 'x1' is the ordinary shove
+// (see BITS, js/sim/tools.js), so it prints as one - 'x1' is the ordinary shove
 const TIP_KB = (kb) => 'x' + (Math.round((kb === undefined ? 1 : kb) * 10) / 10);
 // A TOOL: the numbers that are the whole of what a tool is, and then what is
 // loaded in it - which is the other half of "what will this do". The list
@@ -113,7 +113,7 @@ function tipBit(id) {
   d.notes.push([b.blurb, TIP_DIM]);
   return d;
 }
-// the burrow's pack cell (js/tunnel.js): the dig, the wait after a ride, and how
+// the burrow's pack cell (js/sim/tunnel.js): the dig, the wait after a ride, and how
 // long a rival's boots take to cave it - the numbers the hole itself shows
 function tipTunnel() {
   const n = bagCount(player, 'tunnel');

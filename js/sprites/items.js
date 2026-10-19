@@ -177,7 +177,7 @@
       '.oCEEco.', '.oECCEo.', '.occcco.', '.oooooo.',
     ],
   };
-  // C is the rarity's own hex - RES_COLORS in js/structures.js reads the same
+  // C is the rarity's own hex - RES_COLORS in js/sim/structures.js reads the same
   // five, so a card's floater is its card's colour
   const CARD_PAL = (C, L, c, E) => ({ '.': null, o: '#141c30', x: '#ffffff', C, L, c, E });
   const CARD_PALS = {
