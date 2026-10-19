@@ -261,27 +261,24 @@ const NOTE_TAILS = {
 // stack of what it has been - and a row still inside its own hold comes along
 // on the new plate until that hold runs out.
 //
-// The rows read GEAR_STATS (js/ui/menu.js), the one table the hero pop-up
+// The rows read STAT_ROWS (js/sim/stats.js), the one table the hero pop-up
 // prices a pick from and the character panel spells a body out with, so the
 // three can never disagree about what a stat is, how it prints, or which way
-// is up. Two kit fields have no row in it and so light nothing: killHeal
-// (BLOODLUST, VAMPIRE) and ambushMul (AMBUSHER'S EDGE, PHANTOM). Adding them
-// is two more entries in that table and taller character and gear panels to
-// seat them in - both are already close to the view's 240-row floor.
+// is up. It is the seven hero stats and nothing else, so a card or gear bonus
+// to anything outside them (ice, dodge, stealth, food, hunts, fells, killHeal,
+// ambushMul) lights nothing.
 const STAT_PAD = 4;      // the plate's margin inside its frame
 const STAT_TOP = 4;      // ...and above the first row
 const STAT_PITCH = 8;    // a row: the 5 px font and its air
 const STAT_PULSE = 1.3;  // s the moved rows blink for, arriving
-const STAT_W = 88;       // the longest label ('ICE SPEED', 35 px), its number, and a delta between them
+const STAT_W = 100;      // the longest label ('COOLDOWN SPEED'), its number, and a delta between them
 const STAT_LABEL = '#68769f', STAT_VAL = '#c3d0ee', STAT_LIT = '#f4f7ff';
 const STAT_DOT = '#2b3560';                       // the leader, where a delta is not standing in it
 const STAT_UP = '#8fe08a', STAT_DOWN = '#e0637a'; // better / worse: the hero pop-up's verdict inks
-// The plate's height is every row of the sheet, so it follows GEAR_STATS
-// rather than repeating its length - which is why NOTE_KIND.stats reaches it
-// through a GETTER: the table is built at load time, when GEAR_STATS
-// (js/ui/menu.js, a later file) does not exist yet, and `noteH` asks for the
-// height at draw time, when it does.
-function statPlateH() { return STAT_TOP * 2 + (GEAR_STATS.length - 1) * STAT_PITCH + 6; }
+// The plate's height is every row of the sheet, so it follows STAT_ROWS
+// rather than repeating its length; NOTE_KIND.stats asks for it through a
+// getter, at draw time.
+function statPlateH() { return STAT_TOP * 2 + (STAT_ROWS.length - 1) * STAT_PITCH + 6; }
 let statSeen = null;    // the last value of each row; null = not seeded yet
 let statOwner = null;   // the body those came off - a new match reseeds silently
 const statLit = [];     // per row: { d, t } - the delta and the seconds of hold left
@@ -306,15 +303,15 @@ function updateStatLedger(dt) {
   const k = kitOf(p), seed = !statSeen || statOwner !== p;
   if (seed) { statSeen = []; statOwner = p; statLit.length = 0; }
   let moved = 0, good = 0;
-  for (let i = 0; i < GEAR_STATS.length; i++) {
-    const get = GEAR_STATS[i][1], fmt = GEAR_STATS[i][2], v = get(k, p);
+  for (let i = 0; i < STAT_ROWS.length; i++) {
+    const get = STAT_ROWS[i][1], fmt = STAT_ROWS[i][2], v = get(k, p);
     if (seed) { statSeen[i] = v; statLit[i] = null; continue; }
     // the test is the PRINTED number, not the raw one: a change too small to
     // move the row is one the plate cannot show, and a '+0' beside a number
     // that did not move would be a lie
     if (fmt(v) === fmt(statSeen[i])) continue;
     statLit[i] = { d: v - statSeen[i], t: NOTE_LIFE }; // a delta lives as long as a plate does
-    good += (v - statSeen[i]) * GEAR_STATS[i][3] > 0 ? 1 : -1;
+    good += (v - statSeen[i]) * STAT_ROWS[i][3] > 0 ? 1 : -1;
     statSeen[i] = v;
     moved++;
   }
@@ -339,13 +336,13 @@ function noteStatBody(x, y, e, K, a) {
   // three pulses under a decay - the card's own flash grammar, said about a row
   const pulse = e.t < STAT_PULSE
     ? (1 - e.t / STAT_PULSE) * (0.5 + 0.5 * Math.cos(e.t / STAT_PULSE * Math.PI * 6)) : 0;
-  for (let i = 0; i < GEAR_STATS.length; i++) {
-    const label = GEAR_STATS[i][0], get = GEAR_STATS[i][1], fmt = GEAR_STATS[i][2];
+  for (let i = 0; i < STAT_ROWS.length; i++) {
+    const label = STAT_ROWS[i][0], get = STAT_ROWS[i][1], fmt = STAT_ROWS[i][2];
     const ry = y + STAT_TOP + i * STAT_PITCH;
     const vTxt = fmt(get(k, p));
     const lx = x + STAT_PAD, vx = x + STAT_W - STAT_PAD - pixelTextWidth(vTxt);
     const lit = statLit[i];
-    const col = lit && lit.d * GEAR_STATS[i][3] > 0 ? STAT_UP : STAT_DOWN;
+    const col = lit && lit.d * STAT_ROWS[i][3] > 0 ? STAT_UP : STAT_DOWN;
     const dTxt = lit ? statDeltaTxt(lit.d, fmt) : '';
     const dx = vx - 4 - pixelTextWidth(dTxt);
     if (lit) { // the row's wash, in the verdict's own ink, blinking as it arrives

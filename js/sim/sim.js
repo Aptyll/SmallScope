@@ -894,8 +894,8 @@ function walkStep(p, dt, mx, my, len, onIce, kit) {
   // hero's stride, and a drawn bow does not slow the deer under it
   const walkMax = (p.mount ? PLAYER_SPEED * RIDE[p.mount.kind].mul
     : p.prone ? PRONE_SPEED
-      : p.riseT > 0 ? PLAYER_SPEED * kit.walkMul * 0.45
-        : PLAYER_SPEED * kit.walkMul * chargeMul) * abMul * wadeMul(p); // STRIDER lengthens the stride; deep snow drags (js/sim/depth.js)
+      : p.riseT > 0 ? statOf(p, 'ms') * 0.45
+        : statOf(p, 'ms') * chargeMul) * abMul * wadeMul(p); // MOVE SPEED (js/sim/stats.js); deep snow drags (js/sim/depth.js)
 
   if (p.prone || p.rootT > 0 || (!onIce && !p.sliding && sp <= walkMax + 6)) {
     // plain snow walking: near-instant vector approach, tuned so it feels

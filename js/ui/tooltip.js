@@ -31,7 +31,8 @@ let tipNow = null;      // this frame's descriptor, resolved once in render()
 // seconds, to two places, without a trailing shout of precision
 function tipSec(s) { return (Math.round(s * 100) / 100).toFixed(2) + 'S'; }
 // A descriptor is { title, tcol, kind, rows: [[label, value, col]],
-// notes: [[text, col]], icon, plate, rim }. Everything below builds one of
+// sum: [value, col] (a total under a rule, optional), notes: [[text, col]],
+// icon, plate, rim }. Everything below builds one of
 // these and drawTooltip is the only thing that knows how to paint it.
 function tipBase(type, title, kind) {
   const t = itemTier(type);
@@ -61,7 +62,7 @@ function tipTool(cell) {
   d.rows.push(['BIT SLOTS', bitsIn(cell) + '/' + T.cap, '#f4f7ff']);
   d.rows.push(['TENSILE', String(plan.tensile), lv && T.up === 'tensile' ? FORGE_INK : '#f2cc6a']);
   d.rows.push(['LOADED WEIGHT', String(plan.load), '#f4f7ff']);
-  d.rows.push(['FULL DRAW', tipSec(kitOf(player).bowCharge * toolDrawMul(cell)), slow ? '#ffd95c' : '#f4f7ff']);
+  d.rows.push(['FULL DRAW', tipSec(kitOf(player).bowCharge * toolDrawMul(cell) / asMul(player)), slow ? '#ffd95c' : '#f4f7ff']);
   d.rows.push(['SHOTS A PRESS', String(plan.shots.length), '#8fe08a']);
   for (let i = 0; i < cell.bits.length; i++) {
     const b = cell.bits[i] && BITS[cell.bits[i]];
@@ -342,6 +343,7 @@ function tipAt(mx, my) {
   if (abb >= 0) return tipClassAb(abb); // the buy plate describes the ability it upgrades
   const sh = stripHit(mx, my);
   if (sh && sh.kind === 'ab') return tipClassAb(sh.i);
+  if (sh && sh.kind === 'stat') return tipStat(sh.key); // the stat panel's breakdown (js/ui/statpanel.js)
   // a meal button describes the meal it eats - the bag cell's own food
   // descriptor, so the two surfaces can never disagree about a berry
   if (sh && (sh.kind === 'fishPick' || sh.kind === 'fishPop' || (sh.kind === 'food' && FOOD_BTNS[sh.i].type === 'fish'))) return null; // the picker says it (drawFishPop)
@@ -378,7 +380,7 @@ function tipSize(d) {
   for (const [l, v] of d.rows) w = Math.max(w, pixelTextWidth(l) + 10 + pixelTextWidth(v));
   for (const [t] of d.notes || []) w = Math.max(w, pixelTextWidth(t));
   const head = d.icon ? Math.max(14, d.icon.height + 2) : 14;
-  const h = TIP_PAD * 2 + head + d.rows.length * TIP_ROW + (d.notes || []).length * TIP_ROW;
+  const h = TIP_PAD * 2 + head + d.rows.length * TIP_ROW + (d.notes || []).length * TIP_ROW + (d.sum ? TIP_ROW + 3 : 0);
   return { w: Math.min(TIP_MAXW, w) + TIP_PAD * 2, h };
 }
 // WHERE the panel goes, the one answer for both modes. FIXED is the corner it
@@ -440,6 +442,12 @@ function drawTooltip() {
     ctx.fillStyle = '#33363d';
     for (let px = x + TIP_PAD + lw + 3; px < x + w - TIP_PAD - vw - 2; px += 2) ctx.fillRect(px, cy + 4, 1, 1);
     drawPixelTextShadow(ctx, value, x + w - TIP_PAD - vw, cy, col || '#f4f7ff', '#121418');
+    cy += TIP_ROW;
+  }
+  if (d.sum) { // a total under a rule (the stat panel's breakdown, tipStat)
+    ctx.fillStyle = '#33363d'; ctx.fillRect(x + TIP_PAD, cy, w - TIP_PAD * 2, 1);
+    cy += 3;
+    drawPixelTextShadow(ctx, d.sum[0], x + w - TIP_PAD - pixelTextWidth(d.sum[0]), cy, d.sum[1], '#121418');
     cy += TIP_ROW;
   }
   for (const [text, col] of d.notes || []) {

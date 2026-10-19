@@ -486,7 +486,7 @@ function peekBit(cell) { return toolPlan(cell).shots[0].id; }
 // already quickens a renock (QUICKDRAW, QUICK HANDS, the renock cards) and
 // by the forge on a body whose `up` is its rate
 function toolRof(p, cell) {
-  return TOOLS[toolIdOf(cell.type)].rof * toolRofMul(cell) * TOOL_ROF_STEP * (kitOf(p).nock / BOW_NOCK);
+  return TOOLS[toolIdOf(cell.type)].rof * toolRofMul(cell) * TOOL_ROF_STEP * (kitOf(p).nock / BOW_NOCK) / asMul(p);
 }
 // The cycle a press starts, for THIS player right now: the held tool's rate,
 // or bare hands' (`kit.nock`) with no tool up. The one number every readout of
@@ -495,7 +495,7 @@ function toolRof(p, cell) {
 // meter can ever show a cooldown a different length from the one running.
 function toolCycle(p) {
   const cell = heldTool(p);
-  return cell ? toolRof(p, cell) : kitOf(p).nock;
+  return cell ? toolRof(p, cell) : kitOf(p).nock / asMul(p);
 }
 
 // Can the button do anything at all right now? Only a slot with no tool in it
@@ -531,7 +531,7 @@ function toolDrawMul(cell) {
 // seconds to a full draw for THIS player right now: the kit's own draw,
 // slowed by the weight in the held tool. Every reader of "how far back is the
 // string" divides by this, never by the bare `kit.bowCharge`.
-function drawTime(p) { return kitOf(p).bowCharge * toolDrawMul(heldTool(p)); }
+function drawTime(p) { return kitOf(p).bowCharge * toolDrawMul(heldTool(p)) / asMul(p); } // ATTACK SPEED quickens the pull (js/sim/stats.js)
 function drawPow(p) { return Math.min(1, Math.max(0, p.chargeT / drawTime(p))); }
 function drawSpeedMul(pw) { return DRAW_SPEED_MIN + (1 - DRAW_SPEED_MIN) * pw; }
 function drawRangeMul(pw) { return DRAW_RANGE_MIN + (1 - DRAW_RANGE_MIN) * pw; }
@@ -806,6 +806,10 @@ function armOff(m, k, d) { return (m.fan > 1 ? (k - (m.fan - 1) / 2) * FAN_SPREA
 // activation, which is all its skew off the aim is. SPLITTER fans one bit into
 // `m.fan` arms and DUPLICATE fires the whole fan `m.dup` times over, and the
 // two multiply because both compound.
+// A full-draw blow with bit `b`: the hero's DAMAGE stat (statOf, js/sim/stats.js),
+// which is the class's own bit, plus however much more or less this bit hits
+// for than that one - a found log still lands harder than the plain arrow.
+function bitDmg(p, b) { return statOf(p, 'dmg') + b.dmg - BITS[CLASS_LOADOUT[p.cls].bits[0]].dmg; }
 function emitBit(p, b, id, m, amb, seq) {
   const kit = kitOf(p);
   const pw = drawPow(p);
@@ -814,12 +818,11 @@ function emitBit(p, b, id, m, amb, seq) {
   // the flight runs parallel to the aim line and never meets it
   const dx = p.input.aimX - p.x, dy = p.input.aimY - (p.y - BOW_Y);
   const base = Math.atan2(dy, dx);
-  // the bit is what is being thrown: its own numbers lead, and the champion
-  // kit, the hero level and the modifiers are what the player brought to it.
-  // Then the draw scales the whole sum (drawDmgMul): a full draw is worth
-  // every point of it, a tap DRAW_DMG_MIN of it - the flat kit and level
-  // bonuses included, so a spammed level-twelve bow is still a weak one
-  let dmg = (b.dmg + kit.dmgPow * pw * 0.5 + kit.dmgBase + spdBonus + LVL_DMG * (p.level - 1)) * drawDmgMul(pw);
+  // the hero's DAMAGE is the blow (bitDmg), the modifiers are what the
+  // player fitted to it. Then the draw scales the whole sum (drawDmgMul): a
+  // full draw is worth every point of it, a tap DRAW_DMG_MIN of it - so a
+  // spammed level-twelve bow is still a weak one
+  let dmg = (bitDmg(p, b) + spdBonus) * drawDmgMul(pw);
   dmg = Math.round(dmg * m.dmgMul + m.dmgAdd);
   if (amb) dmg = Math.round(dmg * kit.ambushMul);
   const { spd, life } = shotFlight(b, m, pw);
@@ -881,7 +884,7 @@ function slashTool(p, cell, plan, melee, amb) {
   const walls = structsInCone(p, p.x, p.y, a, r, melee.half);
   for (const s of plan.shots) {
     const b = BITS[s.id], m = s.m;
-    let dmg = (b.dmg + kit.dmgPow * pw * 0.5 + kit.dmgBase + spdBonus + LVL_DMG * (p.level - 1)) * drawDmgMul(pw);
+    let dmg = (bitDmg(p, b) + spdBonus) * drawDmgMul(pw);
     dmg = Math.round(dmg * m.dmgMul + m.dmgAdd);
     if (amb) dmg = Math.round(dmg * kit.ambushMul);
     const kb = b.kb === undefined ? 1 : b.kb;

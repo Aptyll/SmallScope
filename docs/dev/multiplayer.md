@@ -344,11 +344,13 @@ on class or gear change — never per frame). The kit fields: `iceMax` (× `ICE_
 `nock` (the baseline every rate of fire is scaled against — a tool's own `rof` is multiplied by
 `nock / BOW_NOCK`, so a class's hands still set the rhythm; see
 [the cycle](gameplay.md#the-cycle)),
-`dmgBase`/`dmgPow` (what the *player* adds to the bit's own damage), `spdDmg` (extra damage scaled
-by the shooter's speed at release, capped at 200 px/s), `dodgeSpeed`, `maxHp`. Sites that read it:
-`updatePlayer`'s movement block, `emitBit`, `tryDodge`, the AI's draw timing, the cursor,
-aim line and draw meter. `setClass(p, c)` swaps one in (full heal — it's a pre-match choice);
-`p.maxHp` is always `levelMaxHp(p)` = kit hp + the level growth below.
+`spdDmg` (extra damage scaled by the shooter's speed at release, capped at 200 px/s),
+`dodgeSpeed`, plus `cls` (whose kit) and `add`, the bag of [hero stat](gameplay.md#hero-stats)
+bonuses gear and cards write. Sites that read it: `updatePlayer`'s movement block, `emitBit`,
+`tryDodge`, the AI's draw timing, the cursor, aim line and draw meter. The seven hero stats
+themselves (health, damage, attack speed, armor, ability power, cooldown speed, move speed) are
+read through `statOf(p, key)` (js/sim/stats.js), never off the kit. `setClass(p, c)` swaps one in
+(full heal — it's a pre-match choice); `p.maxHp` is always `levelMaxHp(p)` = `statOf(p, 'hp')`.
 
 | # | Name | Fantasy | Kit | Flies in with |
 | --- | --- | --- | --- | --- |
@@ -368,7 +370,7 @@ one does, its cooldown, cast, and the states it leaves on a body — are
 The local player's class is its **hero, picked each match** on the lobby's hero row
 ([lobby](rendering.md#lobby), js/ui/heroes.js); the one locked in is kept as the profile's
 hero (js/app/profile.js), where the next pick opens. Bots hash theirs — hero (and with it its look), all four gear
-variants **and** their stat points — from the seed in `initPlayers()` so a replayed world fields the same roster in the
+variants — from the seed in `initPlayers()` so a replayed world fields the same roster in the
 same loadouts. Lobby shows that roster as two team panels on the screen's edges — your side left, the
 rivals right, their picks face-down until LOCK IN's countdown turns them (a second press skips
 the rest of the count) — and the target at the top, whose pop-up's four plates
@@ -394,15 +396,13 @@ minutes and capped past twenty, a player who fights and farms by halves sits two
 under it, and the trickle alone is level 3 by seven minutes — a level is news all match. Spending gold and dying never touch
 `xp`; level and xp are set in the constructor, not `reset()`, so they would survive a `reset`.
 
-Growth is flat and identical for both classes: each level past 1 adds `LVL_HP` (9) to
-`maxHp` (via `levelMaxHp(p)`, healed on the spot) and `LVL_DMG` (2) to every arrow
-(`emitBit` adds it after the bit's base + pow × draw + speed bonus). Level 12 is +99 hp / +22
-damage. A level-up pushes a 2× gold `LEVEL n` floater over the slot (skipped while `inAir`) and
+Growth is the hero's own: each level past 1 adds its `CLASSES[c].grow` to the
+[hero stats](gameplay.md#hero-stats) (HUNTER +10 hp, +2 damage, +2% attack speed, +3 armor;
+WARRIOR +14, +2.5, +1.5%, +4), the health healed on the spot in `levelUp`. A level-up pushes a 2× gold `LEVEL n` floater over the slot (skipped while `inAir`) and
 raises its cue through `sfxOwn(p, 'levelUp', 'pickup')` — the level's own ring on the screen that
 is that player, a pickup to bystanders in earshot. What the level BOUGHT flies into the notice
-lane as the [stat sheet](rendering.md#the-stat-ledger-your-sheet-as-a-notice), its HEALTH and
-DAMAGE rows lit with `+LVL_HP` and `+LVL_DMG` — which is why those two `GEAR_STATS` rows fold the
-level in themselves: the kit never holds it.
+lane as the [stat sheet](rendering.md#the-stat-ledger-your-sheet-as-a-notice), the rows it grew
+lit — `STAT_ROWS` read `statFrom` with the player's level, since the kit never holds it.
 The table's **average** level is also what the
 wildlife wears (`animalLevel`, js/sim/wildlife.js): dealt at spawn and followed after by every
 unhurt animal that hunts nobody (`relevelAnimal`) —

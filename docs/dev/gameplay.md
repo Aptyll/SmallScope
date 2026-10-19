@@ -498,8 +498,9 @@ The cells keep themselves in order: `sortBits(cell)` puts projectiles on the lef
 the right and empty cells between, and `bitPut` runs it on every placement, so the row a player
 sees is always shots then fittings however the bits went in.
 
-`emitBit` is where the player is folded back in: the bit's own damage leads, the class kit's
-`dmgBase`/`dmgPow`, the kit's speed bonus (`spdDmg`) and the hero level add to it, **the draw
+`emitBit` is where the player is folded back in: `bitDmg(p, b)` is the hero's DAMAGE stat
+(`statOf`, [hero stats](#hero-stats)) plus however much more or less this bit hits for than the
+class's own bit, the kit's speed bonus (`spdDmg`) adds to it, **the draw
 scales the whole sum** (`drawDmgMul`, [The draw](#the-draw)) and then the modifiers scale that —
 so gear, cards and levels all still matter to a weapon they know nothing about, and a spammed
 level-twelve bow is still a weak one. Speed and life come from `shotFlight(b, m, pw)`, the same
@@ -1003,8 +1004,8 @@ the numbers come from. Every number on a page is read off the constant the sim s
 typed twice, so a retune can never leave the wiki lying.
 
 - **CLASSES** (the page the wiki opens on) — the two classes as the lobby reads them: the
-  body at 3x in the side you play in, the name and role, the three lines of the pitch, and a
-  ledger of health and the four stat pips (`CLASSES[c].stats`, `kit.maxHp`); under each, its
+  body at 3x in the side you play in, the name and role, the three lines of the pitch, and its
+  level 1 health, damage, attack speed, armor and move speed (`WIKI_STATS`, off `statFrom`); under each, its
   four abilities in key order — the key on a plate, the strip's own 32 px icon in a well
   (`classAbIcon`), the name, COOLDOWN and CAST in the columns (`WIKI_AB_COLS`, off `CLASS_AB`)
   and the blurb wrapped beneath. A hover raises the lobby's ability card (`tipClassAb` with
@@ -1524,12 +1525,10 @@ that made it — and it is the counterplay: a line like that leads straight to t
 
 `ambushReady(p)` is `prone && hide >= 1 && !moving`: **full** cover, and dead still while it goes.
 `fireTool` reads it before anything else can break the cover, multiplies the whole damage roll
-(`emitBit`, js/sim/tools.js: `(bit.dmg + kit.dmgPow × draw × 0.5 + kit.dmgBase + speed bonus + level)
-× drawDmgMul`, then the modifiers) by `kit.ambushMul` (starts at `AMBUSH_MUL` 2.5, grown by ambush
+(`emitBit`, js/sim/tools.js: `(bitDmg + speed bonus) × drawDmgMul`, then the modifiers) by `kit.ambushMul` (starts at `AMBUSH_MUL` 2.5, grown by ambush
 ranks), tags the arrow `ambush: true`, and calls
 `risePlayer` after the loose — one ambush per burrow, then you are a player lying in the open with
-a bow that still has to be renocked. A level-1 HUNTER's full draw of the plain arrow (`dmg` 8) goes
-17 → 43. A fish taken off the ice (`autoFish`) is not a shot: it never touches the tool and breaks
+a bow that still has to be renocked. A level-1 HUNTER's full draw (DAMAGE 16) goes 16 → 40. A fish taken off the ice (`autoFish`) is not a shot: it never touches the tool and breaks
 no cover.
 
 Wherever the tagged arrow lands — player, worker bot or animal — `ambushFx()` puts a gold flare
@@ -2649,6 +2648,29 @@ they stand there, key up, until it breaks); the worker bots leave rocks alone, a
 landing's lane take a rock off the map whole (`fellScenery`, js/sim/world.js). What the ore is for
 is [the forge](#the-forge).
 
+## Hero stats
+
+Every hero is the same seven League-style numbers, all in js/sim/stats.js (`STATS`), and
+`statOf(p, key)` is the one reader: the sim, the HUD's stat panel and the bots all ask it.
+
+| Stat | key | What it does | HUNTER L1, per level | WARRIOR L1, per level |
+| --- | --- | --- | --- | --- |
+| HEALTH | `hp` | `p.maxHp` (`levelMaxHp`); a level's growth is healed on the spot | 92, +10 | 120, +14 |
+| DAMAGE | `dmg` | a full-draw basic attack (`bitDmg`: the stat, plus how much more a found bit hits for than the class bit) | 16, +2 | 18, +2.5 |
+| ATTACK SPEED | `as` | full-draw attacks a second; `asMul` divides the draw (`drawTime`) and the renock (`toolRof`, `toolCycle`) | 0.58, +2% | 0.77, +1.5% |
+| ARMOR | `armor` | `damagePlayer` cuts every hit to `100 / (100 + armor)`, never under 1 (`armorTaken`; `armorRaw` its inverse, for `orcaLethal`) | 12, +3 | 20, +4 |
+| ABILITY POWER | `ap` | each ability adds `ap ×` its entry's `ap` ratio (`abAp`/`abDmg`, js/sim/abilities.js) | 0 | 0 |
+| COOLDOWN SPEED | `haste` | `abCdOf` runs `100 / (100 + haste)` as long (`hasteMul`) | 0 | 0 |
+| MOVE SPEED | `ms` | the walk in px/s (`updatePlayer`, `aiWalkT`) | 72 | 72 |
+
+The base and growth sit in each hero's `CLASSES` entry (`base`, `grow`); attack speed's base is
+not written down but is the class weapon's own cycle (`classAs`: the kit's full draw plus the
+loadout tool's renock), and its growth and bonuses are fractions. Gear and cards add to the kit's
+bonus bag `kit.add` (rebuilt by `refreshKit`); a bear buff multiplies at the moment it counts
+(`statBuffMul`: damage dealt in `hurtUnit`, the walk in `abilityMoveMul`), and `statShown` is the
+sheet with that on. `statParts` is the breakdown the panel's hover lists. Ice handling, the dodge
+roll, hiding and food are class traits on the kit, not stats. There are no pre-match stat points.
+
 ## Gear
 
 Every player wears four pieces — **helmet, chest, legs, boots** (`GEAR_SLOTS`) — each one of three
@@ -2656,34 +2678,21 @@ variants with a distinct lane, all in the `GEAR` table in the `players` banner:
 
 | Slot | Variants (per piece level) |
 | --- | --- |
-| helmet | LONGSIGHT +1 arrow dmg · QUICKDRAW −8% draw *and* renock time · HUNTSMAN +15% animal-kill gold |
-| chest | BULWARK +8 max hp · IRONHIDE −1 dmg from every hit (min 1) · HEARTHWEAVE +25% food heal, passive heal runs at night |
-| legs | STRIDER +4% walk speed · SLIDEWORN −12% fatigue, slide engages 5 sooner · PACKMULE +25% gold on fells/breaks (`harvestMul`, rounded) |
+| helmet | LONGSIGHT +1 damage · QUICKDRAW +8% attack speed · HUNTSMAN +15% animal-kill gold |
+| chest | BULWARK +8 health · IRONHIDE +6 armor · HEARTHWEAVE +25% food heal, passive heal runs at night |
+| legs | STRIDER +3 move speed · SLIDEWORN −12% fatigue, slide engages 5 sooner · PACKMULE +25% gold on fells/breaks (`harvestMul`, rounded) |
 | boots | SKATES +8% ice cap, +0.15 steer · DANCER −0.4 s dodge refill · GHOSTSTEP wolves/turrets acquire at −10% range |
 
 The variant pick is free and is **level 1**; in-match gold buys each piece to level `GEAR_LV_MAX`
 (4) for `GEAR_COSTS` 10/20/35 — the second gold sink beside building. Levels reset with the match
 (every boot builds fresh `Player`s). The human picks variants in the **hero pop-up** — opened
 by clicking their figure on the lobby, all 12 variants at once as 32×32 icon wells beside a
-live preview and a real-number stat ledger with hover deltas (League runes-style; see
+live preview and the seven hero stats with hover deltas (League runes-style; see
 [the hero pop-up](rendering.md#the-hero-pop-up)); `pickGear()` writes straight to `player.gear`.
 AI players hash all four variants from the seed in `initPlayers()`. **Every variant has its own
 icons**: the 12×12 material-swapped `SPRITES.gearIcons[slot][variant][material]` the HUD
 wears, and the detailed 32×32 `GEAR32` set the pop-up's wells wear — a pick is a distinct
 picture, not a label.
-
-<a id="stat-points"></a>
-**Stat points** are the build's other half, spent on the same pop-up's stat ledger itself:
-`STAT_POINTS` (6) to put a step at a time on **any row** before the eagle. `STAT_TRACKS`
-(js/sim/player.js `stat points`) is one track per ledger row, same names in the same order as
-`GEAR_STATS` — HEALTH +5, DAMAGE +0.5, DRAW ×0.96, RENOCK ×0.95, ARMOR +0.5, WALK +2%, ICE
-SPEED ×1.04, ICE GRIP +0.15, FATIGUE ×0.94, DODGE −0.15 s, HUNTS +10%, FELLS +15%, FOOD +15%,
-SEEN AT −5% a point — each a `mod(k, n)` folded into the kit by `refreshKit` after gear, so
-every kit-reading site picks them up for free.
-`player.pts` holds the spend (`spendPt`, js/ui/menu.js; `ptsSpent` the total); it rides the
-lock-in page with the gear (`softfall.drop`) and no profile keeps it. **The budget is the same
-for everybody** — AI players deal theirs from the seed in `initPlayers()`, a point at a time
-across the tracks — so a spend is a shape, never a head start, and the arsenal's flatness holds.
 
 **Worn gear shows on the sprite**: each piece at level 2+ lays a 1 px band of its material across
 the shared 16×16 body plan — hat, coat, hips, one mark per foot (`GEAR_MARKS`/`drawGearMarks`,
@@ -2692,11 +2701,11 @@ free level-1 pick draws nothing, so the baseline look stays the class's; a fed p
 iron → steel → gold at a glance, the same materials the HUD plates wear.
 
 **Mechanism**: a variant's `mod(k, L)` writes its bonus into the player's *effective kit* —
-`refreshKit(p)` copies the class kit, adds the gear-only defaults (`huntMul`, `dr`, `foodMul`,
-`nightHeal`, `walkMul`, `harvestMul`, `dodgeCd`, `stealth`) and applies the four mods; `kitOf(p)`
+`refreshKit(p)` copies the class kit, adds the gear-only defaults (`add`, the [hero stat](#hero-stats)
+bonus bag, and `huntMul`, `foodMul`, `nightHeal`, `harvestMul`, `dodgeCd`, `stealth`) and applies the four mods; `kitOf(p)`
 returns that cache, so every existing kit read site (movement, `emitBit`, dodge timing, the AI,
 the draw meter) picks gear up without knowing it exists. The sim never reads `p.gear` directly.
-Sites that read the gear-only fields: `damagePlayer` (`dr`), `updateEat`'s landing and the daylight
+Sites that read the gear-only fields: `statOf` (`add`), `updateEat`'s landing and the daylight
 regen (`foodMul`/`nightHeal`), `hitObject`'s fell/break payouts (`harvestMul`), `animalDies`
 (`huntMul`, paid to `a.lastHit` — stamped by the arrow loop — as one extra coin), **`seenAt()`**
 (`stealth` — see [Prone](#prone-under-the-snow); the wolf pack, both turret checks *and*
@@ -2729,7 +2738,7 @@ A permanent buff dropped by a sprung **chest** in the treeline (`placeChests`, j
 (`CARD_RARITIES`, White → Gold rising in rarity and magnitude), each entry `{ name, blurb, mod(k) }` —
 the exact shape a `GEAR` variant's `mod(k, L)` is, minus the level argument, since a card is a
 one-shot pick rather than a leveled buy. Every effect stays inside `kitOf`'s existing field
-vocabulary (`dmgBase`, `dr`, `maxHp`, `walkMul`, `stealth`, `ambushMul`, `iceMax`, …) except one
+vocabulary (the hero stat bag `add`, `stealth`, `ambushMul`, `iceMax`, …) except one
 genuinely new field, `killHeal` — a flat heal on a confirmed kill, hooked at `die()`'s existing
 kill-credit line the same way `updateEat` applies a meal's.
 
