@@ -452,7 +452,7 @@ function bakeFrostSlab(g, w, h, title) {
   g.fillRect(tx0 - 30, 10, 2, 3); g.fillRect(tx0 + tw + 28, 10, 2, 3);
 }
 
-// The flat slab the ESC settings panel and the SAVES slab in its place stand
+// The flat slab the ESC settings panel stands
 // on: solid, never see-through - an ink silhouette, one quiet steel line and a
 // flat night ground, the HUD frame's grammar (drawHudFrame, js/ui/strip.js)
 // at a menu's volume. No mottling, bevel or corner crystals: the head
@@ -651,7 +651,6 @@ function settingsTabBy(d) {
 // and the in-match ESC slab both route here): the arrows page and scroll.
 // True when the key was the panel's, so the caller drops it.
 function settingsKey(k) {
-  if (savesUp()) return savesKey(k);
   if (setDrop && k === 'escape') { setDrop = null; SFX.pickup(); return true; } // ESC folds an open list before the panel
   const d = moveDir(k);
   if (d === 'left') settingsTabBy(-1);
@@ -995,16 +994,15 @@ function muteBtnRect() {
 // fresh title world; in a match it is toLobby() (js/screens.js), the
 // death screen's own way back to the title. Only the in-match slab hangs it:
 // the title's slide-in has nothing to leave, so CLOSE sits centred alone.
-// A solo match hangs SAVES between them (the saves slab, js/ui/saves.js),
-// and SURRENDER stands before LEAVE while your side may vote: it starts the
+// SURRENDER stands before LEAVE while your side may vote: it starts the
 // vote, or casts your yes in one already open (js/sim/surrender.js). Four planks
 // slim down a little to keep the slab's margins.
 function footPlanks() {
-  const ids = !state.settingsOpen ? ['close'] : ['close', ...(canSave() ? ['saves'] : []),
+  const ids = !state.settingsOpen ? ['close'] : ['close',
     ...(voteCanStart(player) || voteOpenFor(player) ? ['surrender'] : []), 'leave'];
   const n = ids.length, y = SET_Y + SET_FOOT_Y, pw = n > 3 ? SET_PLANK_W - 8 : SET_PLANK_W;
   const x0 = SET_X + Math.round((SET_W - (pw * n + SET_PLANK_GAP * (n - 1))) / 2);
-  const label = { close: 'CLOSE', saves: 'SAVES', surrender: 'SURRENDER', leave: 'LEAVE' };
+  const label = { close: 'CLOSE', surrender: 'SURRENDER', leave: 'LEAVE' };
   return ids.map((id, i) => ({ id, label: label[id], x: x0 + i * (pw + SET_PLANK_GAP), y, w: pw, h: SET_PLANK_H }));
 }
 function leavePlankRect() { return footPlanks().find((l) => l.id === 'leave') || null; }
@@ -1023,7 +1021,6 @@ function settingsClose() {
 // 'c:<row>:<opt>' for a choice row's word (QUALITY), or
 // 'key:<action>' for a keyboard cap and 'keyreset' for the word under them.
 function settingsHit() {
-  if (savesUp()) return savesHit(); // the saves slab stands in the ESC panel's place (js/ui/saves.js)
   const mx = mouse.x, my = mouse.y;
   const L = settingsLayout();
   // an open dropdown list takes the whole pointer: one of its entries, or nothing
@@ -1068,7 +1065,6 @@ function settingsHit() {
 
 function settingsMouseDown() {
   SFX.unlock();
-  if (savesUp()) { savesClick(); return; }
   const hit = settingsHit();
   // a listening cap: any press but its own calls it off first
   if (state.rebind && hit !== 'key:' + state.rebind) state.rebind = null;
@@ -1101,7 +1097,6 @@ function settingsMouseDown() {
   if (hit === 'vol' || hit === 'music' || hit === 'sfx' || hit === 'map' || HUD_DIALS[hit]) { dragSlider = hit; applySliderDrag(); return; }
   if (hit === 'close') { settingsClose(); return; }
   if (hit === 'leave') { if (PRACTICE) leavePractice(); else toLobby(); return; }
-  if (hit === 'saves') { openSaves(); return; }
   if (hit === 'surrender') { player.input.cmd = { kind: 'vote', yes: true }; settingsClose(); return; }
   if (hit.startsWith('c:')) {
     const [, rid, oid] = hit.split(':');
@@ -1225,7 +1220,6 @@ function toggleVal(id) { return id === 'cursor' ? settings.pixelCursor : !!setti
 // opts.slide (px): draw the panel shifted down by that much - the main menu
 // slides it in over the living world and skips the dim + minimap preview
 function renderSettings(now, opts) {
-  if (savesUp()) { renderSaves(now, opts); return; } // the saves slab stands in its place (js/ui/saves.js)
   if (dragSlider && mouse.down) applySliderDrag();
   const slide = opts && opts.slide ? Math.round(opts.slide) : 0;
   if (!opts || !opts.bare) {

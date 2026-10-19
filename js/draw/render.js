@@ -815,7 +815,6 @@ function render() {
   // (see the tooltips banner, ui.js)
   tipResolve();
   renderUI(now);
-  drawSaveFlash(); // a save just landed (js/ui/saves.js): drawn in the drop too, which renderUI skips
   // the archery round's live layer: countdown, GO, the TIME/SCORE/HITS
   // plate, the final score (drawAgameUI, js/draw-world.js)
   if (PRACTICE && state.mode === 'play') drawAgameUI(now);
@@ -1435,7 +1434,6 @@ function cursorInfo() {
       if (dragSlider) return { kind: 'grab' };
       return { kind: settingsHit() ? 'hand' : 'arrow' };
     }
-    if (m.screen === 'saves' && savesCarrying()) return { kind: 'grab' }; // a save card in the hand
     if (popOpen()) { const gh = m.popT >= 1 ? popHit() : null; return { kind: gh !== null && gh !== 'panel' ? 'hand' : 'arrow' }; }
     if (m.screen === 'notes') return { kind: m.notesT >= 1 && notesHit(mouse.x, mouse.y) ? 'hand' : 'arrow' };
     if (m.screen === 'wiki') return { kind: m.wikiT >= 1 && pageTabHit(mouse.x, mouse.y) >= 0 ? 'hand' : 'arrow' };
@@ -1451,7 +1449,7 @@ function cursorInfo() {
   if (state.mode === 'drop') return { kind: 'arrow' };
   if (state.mode !== 'play') return { kind: 'arrow' };
   if (state.settingsOpen) {
-    if (dragSlider || savesCarrying()) return { kind: 'grab' };
+    if (dragSlider) return { kind: 'grab' };
     return { kind: settingsHit() ? 'hand' : 'arrow' };
   }
   if (state.mapOpen) return { kind: 'arrow' };

@@ -246,8 +246,6 @@ function keyPress(e) {
   // the profile card owns the keyboard while it is up: its letters are the
   // name, not shortcuts, and F3 / '.' below would fire on keys the field ignores
   if (state.mode === 'title' && state.menu.screen === 'profile') { profileKey(e); return; }
-  // ...and so does a save's name while it is typed (js/ui/saves.js)
-  if (saveUi.edit) { if (savesUp()) { savesEditKey(e); return; } saveUi.edit = null; }
   // F3 flips the info stack in any mode, minecraft-style (the browser's own
   // F3 find bar is suppressed above)
   if (e.key === 'F3') { settings.info = !settings.info; saveSettings(); return; }
@@ -410,12 +408,10 @@ function keyPress(e) {
     else if (state.bagOpen) { state.bagOpen = false; SFX.ui(false); } // the drawer slides back up
     else {
       state.settingsOpen = !state.settingsOpen; dragSlider = null; setDrop = null; state.wheel = null; SFX.ui(state.settingsOpen);
-      saveUi.open = false;
-      if (state.settingsOpen) autoSave(); // the way into the pause menu autosaves (js/sim/save.js)
     }
   }
   if (keyIs(e, 'mute')) { settings.muted = SFX.toggleMute(); saveSettings(); }
-  if (keyIs(e, 'pause') && (state.paused || !netShared())) { state.paused = !state.paused; SFX.ui(state.paused); if (state.paused) autoSave(); } // the PAUSED plate is a surface like any other
+  if (keyIs(e, 'pause') && (state.paused || !netShared())) { state.paused = !state.paused; SFX.ui(state.paused); } // the PAUSED plate is a surface like any other
 }
 pageListen(window, 'keyup', (e) => {
   const k = keyName(e);
@@ -575,7 +571,6 @@ function sideButton(button, down) {
 // ...and came back up
 function pointerRelease(button) {
   if (button === 3 || button === 4) { sideButton(button, false); return; }
-  if (button === 0 && saveUi.press) savesRelease(); // a save card let go of: the click, or the drop (js/ui/saves.js)
   if (button === 2 && ckOn()) { ckRightRelease(); return; }
   if (button === 2 && state.wheel) { resolveWheel(); state.wheel = null; return; }
   if (button === 1) { if (msOn()) msWheelRelease(); return; }

@@ -131,8 +131,7 @@ order, so the script tags still interleave them:
 | [js/ui/skins.js](../../js/ui/skins.js) | ~250 | shared scope, no `window.*` export | the skins screen the coins buy from, the title's coin tag, and `birdSkinFor`, which skin a bird wears |
 | [js/ui/screens.js](../../js/ui/screens.js) | ~1380 | shared scope, no `window.*` export | the replay window, the death overlay and spectating, the victory and defeat ceremonies |
 | [js/ui/lobby.js](../../js/ui/lobby.js) | ~470 | shared scope, no `window.*` export | the post-game lobby: the match's own record, and the sampling during play its graphs are drawn from |
-| [js/sim/save.js](../../js/sim/save.js) | ~450 | shared scope, no `window.*` export | saved matches: the valley's baseline, the match as one object graph (`saveCapture`/`saveApply`), the slots through `PROFILE`, the autosave ring, the load's hand-off to the next page, and `saveHash`, the replay proof's hash |
-| [js/ui/saves.js](../../js/ui/saves.js) | ~545 | shared scope, no `window.*` export | the SAVES grid (the slot cards, each carrying its own verb, the arm-then-confirm load, a card's delete, name and carry), the lobby's SAVES plate and the HUD's saved mark |
+| [js/sim/save.js](../../js/sim/save.js) | ~350 | shared scope, no `window.*` export | the replay proof: the valley's baseline, the match as one object graph (`saveCapture`/`saveApply`), `saveHash`, and the record put back on a fresh page (`saveDevLoad`) |
 | [js/ui/botview.js](../../js/ui/botview.js) | ~470 | shared scope, no `window.*` export | the bot dev view: every bot's thought read one way, the recorder, the F4 map overlay and table, the link to the out-of-game page [botlab.html](../../botlab.html) ([botview.md](botview.md)) |
 | [js/sim/eagle.js](../../js/sim/eagle.js) | ~1510 | shared scope, no `window.*` export | the eagle drop: the corner roosts, the ride and the jump, the crash and the spur, the drop brief, the bird each side guards |
 | [js/app/boot.js](../../js/app/boot.js) | ~700 | `DBG` + shared scope | the last file to load: the boot order, `window.DBG`, the rAF loop and the fixed 1/60 s step it feeds the sim |
@@ -335,7 +334,7 @@ does). Each one says so in a comment; if you move a block and the console shows 
 
 The storage keys touched outside profile.js are all sessionStorage hand-offs to the next page:
 `softfall.reroll`, `softfall.select` and `softfall.drop` (written in menu.js), and `softfall.load`
-(a saved match on its way in, written in save.js); boot.js reads each — they survive the reload,
+(the replay proof's record on its way in, written in save.js); boot.js reads each — they survive the reload,
 not the tab.
 
 Their only deliberate `window.*` export is `DBG`, the debug surface at the end of boot.js: live

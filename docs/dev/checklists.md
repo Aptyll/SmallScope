@@ -354,8 +354,8 @@ new class needs written:
    in `drawAbilityOnPlayer` if it leaves a visible state;
 4. four detailed 32×32 icons in `AB32` (on `AB32_PAL` — one palette across every big icon);
 5. a 12×12 class **emblem** in `CLASS12` ([js/ui/menu.js](../../js/ui/menu.js), same palette),
-   drawn by hand (never a shrink), which the [team rail](rendering.md#the-team-rail), the rooms,
-   the saves and the tooltips wear;
+   drawn by hand (never a shrink), which the [team rail](rendering.md#the-team-rail), the rooms
+   and the tooltips wear;
 5b. an `OUTFIT` layer for the 48 px model ([js/sprites/looks.js](../../js/sprites/looks.js) —
    the hat stopping at row 8 so the hair shows under it) and `HERO_N` bumped in
    [js/app/profile.js](../../js/app/profile.js), which looks.js asserts against at load; a `champLook`
@@ -649,10 +649,10 @@ Code that is dead **on purpose** is the next section.
   still is staged through `DBG`: `PROFILE.markDropped()`, `beginDrop()`, `hideUI`, `step` to
   `e.t ≈ dur/2` for the pass, `freeze`, `POST /shot?f=`.
 
-- **A loaded match counts its lifetime stats again.** The profile's per-character stats
+- **A record put back counts its lifetime stats again.** The profile's stats
   (`PROFILE.addKill`/`addDay`/`addWin`...) are written as they happen, so replaying a stretch
-  from an older save adds its kills, days and a win a second time. The saves themselves are
-  exact; only the lifetime tally is not rewound ([saved matches](gameplay.md#saved-matches)).
+  with `DBG.saveLoad` adds its kills, days and a win a second time on the dev profile; only the
+  lifetime tally is not rewound ([saved matches](gameplay.md#saved-matches)).
 - **The day clock turns under the ESC panel and the pause plate.** `update` advances
   `state.time`/`state.elapsed` in play and drop whatever `state.paused`/`state.settingsOpen`
   say, while every body stands still; the match clock under the minimap ticks on behind the

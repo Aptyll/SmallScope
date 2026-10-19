@@ -69,7 +69,7 @@ initPlayers();
 // ...and a page reloaded onto a party's seed to join it (joinRoom, js/ui/rooms.js),
 // a Steam invite, or a rematch walks straight into the party lobby with that join under way
 const JOIN_AT_BOOT = (function () { const j = /[?&]join=([A-Z0-9]+)/i.exec(location.search); return j ? j[1].toUpperCase() : null; })();
-// a saved match (js/sim/save.js): the valley as it grew is the baseline every
+// the replay proof (js/sim/save.js): the valley as it grew is the baseline every
 // save is written against, and a load that reloaded onto its seed puts the
 // match back now - after the world stands, before the bake paints it
 if (!PRACTICE) saveBaseline();
@@ -144,7 +144,7 @@ try {
   }
 } catch (e) { }
 
-// ...and a saved match put back at boot (saveBootLoad above) comes up out of
+// ...and a record put back at boot (saveBootLoad above, the replay proof) comes up out of
 // the dark, whatever the page was about to show
 if (LOADED_AT_BOOT) saveBootEnter();
 
@@ -506,8 +506,8 @@ window.DBG = {
   hideUI: false,
   // director mode (js/app/director.js): its state, and its keys as pressed
   director, directorKey: (key) => keyPress({ key, repeat: false, char: key }),
-  // saved matches (js/sim/save.js): the record, the hash the replay proof compares, a slot by hand
-  saveCapture, saveApply, saveHash, saveMatch, loadSave, saveList, autoSave,
+  // the replay proof (js/sim/save.js): the record, its hash, and the record put back on a fresh page
+  saveCapture, saveApply, saveHash, saveLoad: saveDevLoad,
   step: (dt, n) => { for (let i = 0; i < (n || 1); i++) { update(dt || TICK_DT); } render(); },
 };
 
@@ -684,7 +684,6 @@ function loop(nowMs) {
       try { render(); } finally { tweenOut(); } // the sim's values back, whatever render does
     }
     perf.simAcc += t1 - t0; perf.drawAcc += performance.now() - t1;
-    saveAutoTick(); // a timed autosave, off the match clock (js/sim/save.js)
   }
   if (!document.hidden) requestAnimationFrame(loop); // hidden: the worker calls loop() instead
   else watchHidden();

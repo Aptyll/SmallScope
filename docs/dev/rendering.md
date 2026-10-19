@@ -1832,8 +1832,7 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
 `state.menu`:
 
 - **Items** `MENU_ITEMS` (QUICKPLAY / RANKED / PRACTICE TOOL —
-  all three live from the first boot, and nothing else: a [saved match](gameplay.md#saved-matches)
-  is picked up from the lobby's SAVES plate; `menuActivate` dispatches on the word; PRACTICE TOOL's activation is `beginPractice()` (the
+  all three live from the first boot, and nothing else; `menuActivate` dispatches on the word; PRACTICE TOOL's activation is `beginPractice()` (the
   reroll's whiteout onto
   `?practice=1`, the [practice arena](world.md#the-practice-arena)). QUICKPLAY and
   RANKED open the [party lobby](gameplay.md#settings) in that mode (`beginParty`), whose FIND
@@ -1898,7 +1897,7 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   ribbons, a vnoise ridge over a pine line, a lit snow floor, stateless snowfall off the clock,
   the cinematic band; fully opaque at rest, so the live ambient world is never this screen's
   backdrop), laid out **the way a League lobby is**, in the full view (no authored frame).
-  `lobbyLayout()`/`lobbyHit()` (which answers `'play'`, `'gear'`, `'map'`, `'ai'`, `'saves'`, `'pickN'` (a hero on
+  `lobbyLayout()`/`lobbyHit()` (which answers `'play'`, `'gear'`, `'map'`, `'ai'`, `'pickN'` (a hero on
   the row) or null) are the rect source for both drawing and the mouse.
   **Two team panels stand glued to the screen's edges** (`LOBBY_PANEL_W` wide, `drawLobbyRosters`/
   `drawLobbyCard`): your side's five **frames** down the left, the rivals' down the right, in
@@ -1908,10 +1907,8 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   **face-down** (the body as one flat shade through the scratch canvas) until the countdown
   turns it. Both panels' heads are empty, level with each other. At the **top centre**, a row
   centred `LOBBY_TOP_GAP` apart (`drawLobbyTop`), stand the **map plate** and the
-  **target** — and, while a solo profile holds a save (`lobbySavesShown`), the **SAVES plate**
-  after them (`drawSavesPlate`, js/ui/saves.js: the newest save's picture on a fanned stack of
-  cards, its name under it) — each `LOBBY_MAP` square with its name under it in plain white — the
-  shape's, the level's, the save's — gold only while the picture over it is under the hand, when
+  **target**, each `LOBBY_MAP` square with its name under it in plain white — the
+  shape's, the level's — gold only while the picture over it is under the hand, when
   the plate lifts a px: each is the way into its own pop-up. The map plate (`drawMapPlate`) holds this seed's own
   valley in the picked shape ([map shapes](world.md#map-shapes)) — `mapChip` bakes it at 1 px a
   sampled tile straight off the grown `ground` (the ice sheets and holes as rolled, the road as
@@ -1948,12 +1945,10 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   body's own rect) opens the [hero pop-up](#the-hero-pop-up): gear, stat points and the
   abilities. No gear shows on the lobby itself.
 
-  **Four pop-ups** open over the still-lit lobby, one at a time, on one shared ease
+  **Three pop-ups** open over the still-lit lobby, one at a time, on one shared ease
   (`menu.popT`, `menu.pop` naming the open one through its fade-out; `popOpen()`/`popHit()`/
   `openPop`/`leavePop`, and `drawPopSlab`/`drawPopX`/`popFrameHit` for the slab, the X and the
-  inert hits they share; `m.screen` is `'hero'`, `'map'`, `'ai'` or `'saves'` while one is open).
-  The **saves pop-up** is the [saves grid](gameplay.md#saved-matches) (`beginSavesPick`,
-  `renderSaves(now, { pop })`). Esc,
+  inert hits they share; `m.screen` is `'hero'`, `'map'` or `'ai'` while one is open). Esc,
   Backspace, the X or a click off the slab closes any of them. The **hero pop-up** is
   [below](#the-hero-pop-up). The **map pop-up** (`menu.screen = 'map'`, off the map plate, solo
   only — `beginMapPick`, `mapLayout`/`mapScreenHit`, `renderMapPick`): the picture `POP_PIC` big

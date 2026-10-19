@@ -3218,12 +3218,13 @@ your own marker cross it. Consequences worth knowing:
 
 ## Saved matches
 
-A **solo** match can be saved at any step and loaded later exactly where it stood: every body,
-arrow in flight, building, drop, camp, every player's item slots, the clock, and the two
-seeded streams' positions (`rng` and `fxRng`; `mulberry32` keeps its state on the
-function as `.s` for this). A loaded match does not merely look like the saved one, it **plays
-out** the same from that step: the proof is below. An online match (host or client) and the
-practice room never save (`canSave`, js/sim/save.js), nor does a match that is already decided.
+Players never save a match (Noah, 2026-10-19: not a singleplayer game). What stays is the
+machinery as a **determinism proof**: a match can be captured at any step and put back exactly
+where it stood on a fresh page - every body, arrow in flight, building, drop, camp, every
+player's item slots, the clock, and the two seeded streams' positions (`rng` and `fxRng`;
+`mulberry32` keeps its state on the function as `.s` for this) - and it then **plays
+out** the same from that step: the proof is below. Nothing a player reaches calls it; it is
+`DBG.saveCapture`, `DBG.saveApply`, `DBG.saveHash` and `DBG.saveLoad` (js/app/boot.js).
 
 **How it works** (js/sim/save.js). The world is a seed: a load is a page on the saved `?seed` and
 `?map`, which grows the very same valley, and the save is what the match has done to it since.
@@ -3246,63 +3247,22 @@ by reference with a hash of its contents, and the ground); `saveCapture` then wr
   its footprint) is always written, because the fresh valley's copy would point at the fresh
   page's camp.
 
-**A new mutable global the sim reads joins `SAVE_ROOTS`**, or a loaded match silently forgets it
+**A new mutable global the sim reads joins `SAVE_ROOTS`**, or the proof silently misses it
 (the CLAUDE.md rule). A new *field* on anything already saved rides along untold. Functions and
 canvases are nobody's state and are dropped (a console warning names the path if one turns up).
 
-**The flow.** `saveMatch(slot)` takes the match synchronously on the step it was pressed, gzips it
-(`CompressionStream`, base64 behind a `z`: 20-130 KB a save against 300 KB-1 MB of JSON) and hands
-it to `PROFILE.putSave` - the metas (hero, level, clock, when, name, a 40 px minimap thumbnail) under one
-index key so a list never opens a body, each body under its own. `loadSave(slot)` fades out,
-unpacks the body into `sessionStorage` (`softfall.load`) and reloads onto the saved seed and
-shape; boot calls `saveBootLoad` after the world stands and **before `prepGround`**, so the bake
-paints the saved valley, then `saveBootEnter` once boot is done (the saved camera, the fade up
-from dark, the match's music; no HUD slide, whose ease would move the camera and pop the day's
-headline).
-
-The ESC panel, and so the SAVES plank, is only up in play; the eagle's ride and a respawn wait
-are covered by the autosave alone.
-
-**Slots.** Five manual slots (`m0`-`m4`) and an autosave ring of three (`a0`-`a2`, the oldest
-overwritten): an autosave every `SAVE_AUTO_T` (120 s) of match clock (`saveAutoTick`, from the
-frame loop after the steps) and on the way into the ESC panel or the pause plate, never two inside
-`SAVE_AUTO_GAP` (15 s). A save that lands flashes a gold down-arrow under the minimap, beside the match
-clock where that hangs there (`drawSaveFlash`).
-
-**The screens** (js/ui/saves.js). One grid: five manual cards over the autosave ring, each its
-match at a glance - the thumbnail with the match clock (gold) and how long ago
-(`NOW`/`12M`/`5H`/`3D`) on its foot, the save's **name** (`saveTitleOf`: the player's, else
-`DAY n`), the class emblem and level; an empty manual card is a +, an autosave wears two chasing
-arrows. There is no verb to pick: each card says its own (`svVerb`). A press on an empty manual
-card (+) saves the match into it; a press on a kept card loads it; nothing writes over a kept
-card (its X clears the slot, then its + takes the new save). In a match it opens on the settings
-slab off the ESC panel's one **SAVES** button, which is there only while `canSave()` (a solo match:
-never practice or online). In the **solo lobby** it is a pop-up off the **SAVES plate** - a third
-plate beside the map and the target, there only while the profile holds a save: the newest save's
-picture on a fanned stack of cards, its name under it, a play arrow over it under the hand - LOAD
-only (an empty card does nothing with no match to keep), the newest card lit when it opens (`beginSavesPick`), so Enter picks the last match back up.
-The title list itself carries nothing about saves. Loading over the match you are in arms the
-card first (gold rim, the play arrow over the thumbnail, `SV_ARM_T`), and a second press does it.
-The arrows walk the cards.
-
-Every kept card has three handles beside its press. The **X** in its corner (out under the hand,
-or on the picked card; Delete, a pad's X) arms it red, and a second press deletes it
-(`savesDelete`). Its **name** is typed over in place - a click on it (the pencil shows beside it) or
-F2, up to `SV_NAME_MAX` letters, digits and single spaces, Enter keeping it and Escape dropping it;
-an emptied name falls back to the day, and a slot the player named keeps its name when written
-over (`meta.named`). While a name is typed it owns the keyboard (`savesEditKey`, routed first in
-`keyPress`). And the card can be **carried**: pressed and moved `SV_DRAG_PX` it rides the pointer,
-the slot it left dark, and dropped on another manual slot the two trade places (Shift with Left or
-Right steps a manual card one slot along); an autosave dropped on an EMPTY manual slot is kept
-there and stops being one. The ring keeps the order it was written in, so nothing lands on it, and
-the slot under a carried card rims gold where it may land and red where it may not
-(`savesCanMove`, `PROFILE.swapSaves`). A load makes the character that played the save the active
-one, so what the match adds to a lifetime tally lands on the right card.
+**The flow.** `DBG.saveLoad(rec)` (`saveDevLoad`) puts a record from `saveCapture` into
+`sessionStorage` (`softfall.load`) and reloads onto the same seed and shape; boot calls
+`saveBootLoad` after the world stands and **before `prepGround`**, so the bake paints the saved
+valley, then `saveBootEnter` once boot is done (the saved camera, the fade up from dark, the
+match's music; no HUD slide, whose ease would move the camera and pop the day's headline). A
+profile's saved matches from before saves were removed are cleared from storage once at load
+(`clearOldSaves`, js/app/profile.js).
 
 **The proof** (`DBG.saveHash`: a hash of everything a save carries, less the camera and what
 runs on the frame's clock rather than the match's - the snowfall, which `updateFx` sways on
 `performance.now` and tops up off `fxRng`, so an ember's tint, the one draw that stream lends the
-sim, and the wade's look a draw pass eases on each body, `SAVE_FRAME_KEYS`). Step a match on a frozen page, `saveMatch`, keep stepping and hash; `loadSave` it onto a
+sim, and the wade's look a draw pass eases on each body, `SAVE_FRAME_KEYS`). Step a match on a frozen page, `saveCapture`, keep stepping and hash; `saveLoad` the record onto a
 page frozen from its first frame, step the same counts and hash: the two must agree at every
 count, across all three shapes, from a save made in the eagle's ride, early in play with the local
 human idle, and deep in a ten-bot match with hundreds of buildings and robots standing.
@@ -3380,7 +3340,7 @@ browser toggles it.
 
 **The panel is a flat, solid slab** (`bakeFlatSlab`: an ink outline, one quiet steel line, a flat
 night ground, never see-through) headed like the patch notes: its name big and gold with no rule
-under it (`drawSlabHead`), the SAVES slab in its place the same. A toggle is a switch (gold track, knob
+under it (`drawSlabHead`). A toggle is a switch (gold track, knob
 right when on), and the row under the pointer lifts as a band with its name white.
 
 **The panel is tabbed.** A navbar under the title splits the rows into four pages — GAME
@@ -3436,15 +3396,12 @@ flat buttons (`drawFlatButton`, their line and word gold under the pointer): **C
 button; ESC and the pad's B still fold the slab — and, in a match only, the way out beside it,
 LEAVE, out of the match or out of [practice](world.md#the-practice-arena) (the ESC
 slab is the one menu either has, so its exit lives there; the title's slide-in has nothing to
-leave, so it centres CLOSE alone). A solo match hangs **SAVES** between the two (while `canSave()`:
-the [saves grid](#saved-matches)). `settingsHit()` answers `'close'` (→ `settingsClose`: the
-in-match slab folds the way ESC folds it, the title's slide-in through `closeMenuPanel`),
-`'saves'` (→ `openSaves`, js/ui/saves.js) and
+leave, so it centres CLOSE alone). SURRENDER stands before LEAVE while your side may vote
+(js/sim/surrender.js). `settingsHit()` answers `'close'` (→ `settingsClose`: the
+in-match slab folds the way ESC folds it, the title's slide-in through `closeMenuPanel`), `'surrender'` and
 `'leave'` (→ `toLobby()`, js/ui/screens.js, the death screen's own fade back to the title on this
 seed, or `leavePractice()`, js/ui/menu.js, the reroll's whiteout onto a bare URL, landing on a fresh
-title world); `leavePlankRect()` is the LEAVE plank, `null` on the title. While the saves grid is
-up it stands in the panel's place: `renderSettings`, `settingsHit`, `settingsMouseDown` and
-`settingsKey` each hand straight to it, and Escape backs out of it before it folds the panel.
+title world); `leavePlankRect()` is the LEAVE plank, `null` on the title.
 
 **Mute is not a row.** It is a 9×9 speaker plate (`muteBtnRect`, `drawMuteBtn`) hard against the
 left end of the MASTER track on the AUDIO page — `muteBtnRect()` returns `null` on any other
