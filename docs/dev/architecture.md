@@ -81,6 +81,7 @@ order, so the script tags still interleave them:
 | [js/ai/ai.js](../../js/ai/ai.js) | ~990 | shared scope, no `window.*` export | the bot brain — a priority ladder writing the same input struct a human fills |
 | [js/ai/bot-api.js](../../js/ai/bot-api.js) | ~340 | `window.BOTS` | the bot API: a seat driven by a bot file behind a JSON boundary (observation in, input struct out), its transports and its library; js/baked/bot-lib.js is the examples baked from bots/ ([docs/bots/](../bots/README.md)) |
 | [js/sim/sim.js](../../js/sim/sim.js) | ~1540 | shared scope, no `window.*` export | `update`/`updatePlay`/`updatePlayer` (and its named steps), the camera (`camX`/`camY`), fx aging, the snow |
+| [js/sim/surrender.js](../../js/sim/surrender.js) | ~100 | shared scope, no `window.*` export | the surrender vote: when a side may vote, how bots side with the people, the clock and the cooldown, and the side called home on a pass |
 | [js/sim/weather.js](../../js/sim/weather.js) | ~260 | shared scope, no `window.*` export | the day's weather and the one wind field the sim and the draw read |
 | [js/sim/shed.js](../../js/sim/shed.js) | ~90 | shared scope, no `window.*` export | snow knocked off the pines by a gust's crest or a blow, raised in the sim and carried by `burst` |
 | [js/ai/ai-callouts.js](../../js/ai/ai-callouts.js) | ~190 | shared scope, no `window.*` export | bot callouts: when a bot tells its side something (HELP!, BIRD!, BEAR LOW!), the words of the brain's flag answers (ON IT), a grudge (YOU AGAIN), the anti-spam rules, `addCallout` |
@@ -114,6 +115,7 @@ order, so the script tags still interleave them:
 | [js/ui/strip.js](../../js/ui/strip.js) | ~640 | shared scope, no `window.*` export | the hud strip's bones: its constants, the hud frame, the HUD size dials, every cell rect and refusal flash, the weapon shelf's geometry and drops, sending a cell across, the drag's press/move/release |
 | [js/ui/hud-draw.js](../../js/ui/hud-draw.js) | ~690 | shared scope, no `window.*` export | drawing the strip and the shelf: the portrait, the health and stamina bars, tier and mod plates, item icons, the cooldown sweep, the ability/meal/gold cells, `drawHudStrip`, the scaled bakes, the shelf's wells, the drag ghost |
 | [js/ui/rail.js](../../js/ui/rail.js) | ~220 | shared scope, no `window.*` export | the team rail along the top edge, and the anchors the screens hang under it |
+| [js/ui/vote.js](../../js/ui/vote.js) | ~70 | shared scope, no `window.*` export | the surrender vote's panel top centre under the clock and its YES / NO click |
 | [js/ui/cheats.js](../../js/ui/cheats.js) | ~320 | shared scope, no `window.*` export | the practice bar down the left edge (PRACTICE TOOL only): its buttons, aim ghost and tooltip card |
 | [js/ui/tooltip.js](../../js/ui/tooltip.js) | ~440 | shared scope, no `window.*` export | the hover tooltip: `tipAt`, `tipPos` and `drawTooltip` |
 | [js/ui/compose.js](../../js/ui/compose.js) | ~150 | shared scope, no `window.*` export | `renderUI`, the frame's UI pass in order |

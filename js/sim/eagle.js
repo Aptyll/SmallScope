@@ -894,8 +894,9 @@ function hurtEagle(e, dmg, src, hx, hy) {
 // (the camera banner in js/sim/sim.js), the local controls go dead (input.js),
 // and the takeoff plays for EAGLE_CINE_T before eagleFleeResolve puts the
 // side down and queues the victory or defeat screen. League-style: watch the
-// nexus fall, then read the word.
-function eagleFlee(e, src) {
+// nexus fall, then read the word. `line` is the feed's word for why, when it
+// was not a fight (a side that surrenders calls its bird home, js/sim/surrender.js).
+function eagleFlee(e, src, line) {
   e.state = 'flee';
   e.fleeT = 0;
   e.hp = 0;
@@ -915,7 +916,7 @@ function eagleFlee(e, src) {
   eagleGustFx(e, 2); // the takeoff downdraft: the gust's language writ large
   shakeAt(e.x, e.y, 4, EV_ANYWHERE); shakeAt(e.x, e.y, 7, 500);
   sfxAt('gust', e.x, e.y, EV_ANYWHERE);
-  logEvent('THE ' + TEAMS[skin(e.team)].name + ' EAGLE WAS DRIVEN OFF', src || players.find((p) => p.team === e.team));
+  logEvent(line || 'THE ' + TEAMS[skin(e.team)].name + ' EAGLE WAS DRIVEN OFF', src || players.find((p) => p.team === e.team));
   state.eagleCine = { team: e.team, t: 0, srcId: src ? src.id : -1 };
 }
 

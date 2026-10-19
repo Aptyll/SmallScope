@@ -34,6 +34,7 @@ function renderUI(now) {
   // intro slide down from above like the minimap, at its own size dial
   // (railSc), and stays up while you are out - who is up is what a spectator reads
   drawRailScaled(now, slide);
+  drawVotePanel(); // the surrender vote, under the rail (js/ui/vote.js)
 
   // THE COUNTER WASHES THE FRAME (shopScrim, js/shop.js), and exactly what a
   // trade is made of stays lit above the wash: the counter itself, the corner

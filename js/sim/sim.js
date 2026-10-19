@@ -542,8 +542,16 @@ function tickObjTimers(dt) {
 // arena has no clock and gets none; the dead and the airborne earn nothing.
 const TRICKLE_GOLD = 1;
 const TRICKLE_T = 4;      // s per coin: 15 gold a minute, ~225 over a fifteen-minute match
+function trickle(p, dt) {
+  if (p.dead || PRACTICE) return;
+  p.trickleT += dt;
+  if (p.trickleT >= TRICKLE_T) { p.trickleT -= TRICKLE_T; gainGold(p, TRICKLE_GOLD); }
+}
 function updatePlay(dt) {
   state.tick++; // with SEED and the player id, this decides contested orders
+  // the surrender votes read their orders before any body runs, since a body
+  // that is down or stunned drops every order it is given (js/sim/surrender.js)
+  updateVotes(dt);
 
   // every player steps through the same code, each off its own input struct
   // (players still on or under the eagle are moved by updateDrop instead)
@@ -555,10 +563,7 @@ function updatePlay(dt) {
     if (!p.active || inAir(p)) continue;
     if (p.control === 'ai') (p.botId ? botStep : updateAI)(p, dt); // a bot file's seat, or the built-in brain (js/ai/bot-api.js)
     updatePlayer(p, dt);
-    if (!p.dead && !PRACTICE) {
-      p.trickleT += dt;
-      if (p.trickleT >= TRICKLE_T) { p.trickleT -= TRICKLE_T; gainGold(p, TRICKLE_GOLD); }
-    }
+    trickle(p, dt);
   }
   updateTunnels(dt); // the burrows: the digs, the rides under the snow and the holes caving (js/sim/tunnel.js)
   updateIceBreaks(); // a break's hole opening and its tiles freezing back (js/sim/icebreak.js)
