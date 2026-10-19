@@ -77,15 +77,19 @@ const BOW_CHARGE = 0.9;   // seconds to a full draw
 const BOW_NOCK = 0.45;    // WREN's seconds between loosing and the next draw
 
 // ---- classes ------------------------------------------------------------
-// Every player plays one of these. A class is a look (SPRITES.champ[c] - the
-// sprite key keeps its legacy name; js/sprites.js is never rewritten) plus a
-// kit - the numbers updatePlayer / emitBit / tryDodge read through kitOf(p)
-// instead of the bare constants - plus its four ACTIVE ABILITIES on keys 1-4
-// (CLASS_AB, js/sim/abilities.js). Picked on the lobby screen (local) or
-// hashed from the seed (bots) in initPlayers().
+// Every player plays one of these HEROES. A hero is a body (its class outfit,
+// js/sprites/looks.js) worn by ONE fixed `look` - the face, hair and beard
+// every copy of it has, the way a League champion looks the same in every
+// match (skins come later, never sliders) - plus a kit - the numbers
+// updatePlayer / emitBit / tryDodge read through kitOf(p) instead of the bare
+// constants - plus its four ACTIVE ABILITIES on keys 1-4 (CLASS_AB,
+// js/sim/abilities.js). Picked on the lobby's hero row (local, js/ui/chars.js)
+// or hashed from the seed (bots) in initPlayers(). `look` axes are
+// js/sprites/looks.js's: { sex, tone, hair, hairCol, beard, face }.
 const CLASSES = [
   {
     name: 'HUNTER', role: 'BOW, DISTANCE, AMBUSH',
+    look: { sex: 0, tone: 2, hair: 1, hairCol: 2, beard: 0, face: 1 },
     blurb: ['THE BOW IS THE ARGUMENT: KEEP THE GAP.', 'THE NET TANGLES THEM. THE GRAPPLE PULLS YOU CLEAR.', 'THE SNOW HIDES YOU. THE SHOT OUT OF IT HITS MUCH HARDER.'],
     stats: { ice: 3, draw: 4, power: 4, tough: 2 },
     kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1, chargeMul: 0.55,
@@ -93,20 +97,30 @@ const CLASSES = [
   },
   {
     name: 'WARRIOR', role: 'PRESSURE, BLOCKING, MOMENTUM',
+    look: { sex: 0, tone: 4, hair: 0, hairCol: 1, beard: 2, face: 0 },
     blurb: ['THE FIGHT IS AT ARM\'S LENGTH: GET THERE.', 'THE SHIELD EATS ARROWS. THE RUSH CARRIES BODIES.', 'THE SWORD REACHES A BODY LENGTH. THE EXECUTE FINISHES IT.'],
     stats: { ice: 4, draw: 2, power: 3, tough: 5 },
     kit: { iceMax: 1.15, iceSteer: 3.2, slideMin: 70, fatigue: 0.7, chargeMul: 0.7,
       bowCharge: 0.75, nock: 0.5, dmgBase: 3, dmgPow: 6, spdDmg: 5, dodgeSpeed: 230, maxHp: 120 },
   },
 ];
+// the heroes announced but not yet playable: the hero row shows each as a
+// dark silhouette of this body and look, its name on hover, and no press.
+// One moves into CLASSES (with a kit and abilities) the day it ships.
+const HEROES_SOON = [
+  { name: 'SLEET', cls: 0, look: { sex: 1, tone: 1, hair: 4, hairCol: 6, beard: 0, face: 2 } },
+  { name: 'DURAVO', cls: 1, look: { sex: 0, tone: 3, hair: 2, hairCol: 0, beard: 3, face: 0 } },
+];
 // the kit every sim site reads: the class's numbers with the player's gear
 // folded in. refreshKit() rebuilds the cache whenever class or gear
 // changes; kitOf() itself is called many times a frame and must stay a read.
 function kitOf(p) { return p.kit || CLASSES[p.cls].kit; }
-// swap a player's class: kit hp applies on the spot (full heal, it's a
-// pre-match choice), and the new class brings its own tool and bits - the
-// loadout is part of who you picked, not a thing carried across (js/sim/tools.js)
-function setClass(p, c) { p.cls = c; refreshKit(p); p.hp = p.maxHp; giveLoadout(p); }
+// swap a player's hero: its look comes with it (a copy - a snapshot merges
+// `look` in place, js/net/snapshot.js, and must never write into CLASSES),
+// kit hp applies on the spot (full heal, it's a pre-match choice), and the
+// new hero brings its own tool and bits - the loadout is part of who you
+// picked, not a thing carried across (js/sim/tools.js)
+function setClass(p, c) { p.cls = c; p.look = Object.assign({}, CLASSES[c].look); refreshKit(p); p.hp = p.maxHp; giveLoadout(p); }
 // kit hp plus the flat per-level growth
 function levelMaxHp(p) { return kitOf(p).maxHp + LVL_HP * (p.level - 1); }
 // THE ONE WAY HEALTH COMES BACK to a player: a meal, the daylight, a second
@@ -154,30 +168,15 @@ function levelUp(p) {
   if (!inAir(p)) floaters.push({ x: p.x, y: p.y - 22, txt: 'LEVEL ' + p.level, color: '#f2cc6a', t: 0, vx: 0, scale: 2, rise: 20 });
   sfxFor(p, 'levelUp');
 }
-// the pose set a body draws from: its class body in its team's paint, worn
-// by its character's look (tone and fringe at 16 px - js/sprites/characters.js)
+// the pose set a body draws from: its hero's body in its team's paint, worn
+// by the hero's look (tone and fringe at 16 px - js/sprites/characters.js)
 function classSet(p) { return SPRITES.champLook(p.cls, p.look, skin(p.team)); }
-// a bot's look, off the seed like its class and gear: a roster of faces,
-// the same faces on a replayed world. LOOK_N is the axes' sizes (profile.js).
-function botLook(id) {
-  const look = {}, N = PROFILE.LOOK_N;
-  let k = 0;
-  for (const ax in N) look[ax] = Math.floor(hash2(id * 41 + 11 + k++ * 7, 123) * N[ax]) % N[ax];
-  return look;
-}
-// The local player wears the ACTIVE CHARACTER: its name, its look, and its
-// class (fixed at creation - js/app/profile.js), whose loadout comes with it.
-// Called from initPlayers and whenever the roster's active slot changes
-// (the character screens, js/ui/chars.js; the lobby's slot strip). It
-// takes the player to dress so that a lobby can dress a REMOTE human's body
-// the same way from a spec of its own, but the profile's character is only
-// ever this screen's.
-function applyCharacter(p) {
-  p = p || player;
-  const c = PROFILE.char();
-  p.name = c ? c.name : PROFILE.name();
-  p.look = c ? c.look : botLook(0);
-  setClass(p, c ? c.cls : 0);
+// The local player wears the PROFILE: its name, and the hero it last locked
+// in (js/app/profile.js), whose look and loadout come with it. Called from
+// initPlayers; the hero row (js/ui/chars.js) re-picks through setClass.
+function applyProfile() {
+  player.name = PROFILE.name();
+  setClass(player, PROFILE.hero());
 }
 // Five players share each team colour, so text that names one player (the
 // scoreboard, the event log) also needs a per-player shade of that team's
@@ -248,12 +247,6 @@ const CARD_RARITIES = ['white', 'green', 'blue', 'purple', 'gold'];
 // for "whichever comes next" (fishToEat, js/sim/core.js).
 const FISH_KINDS = ['whitefish', 'fish', 'snowChar', 'sunfish'];
 function fishHeld(p) { let n = 0; for (const k of FISH_KINDS) n += bagCount(p, k); return n; }
-// What one unopened card of each rarity costs at the merchant's counter
-// (the `shop` banner, js/shop.js), and half of it what one fetches sold back.
-// A card is priced by its RARITY and not per entry, because the rarity is
-// what is ever bought or carried: the pick of three inside it is drawn after
-// the money changes hands, so the buyer is paying for the odds, not the buff.
-const CARD_PRICE = { white: 25, green: 45, blue: 80, purple: 130, gold: 210 };
 // 'white' <-> the 'cardWhite' ITEMS/RES_COLORS key every rarity is stored under
 function cardKey(rarity) { return 'card' + rarity[0].toUpperCase() + rarity.slice(1); }
 const CARD_TYPE_RARITY = {}; // 'cardWhite' -> 'white', the inverse of cardKey
@@ -457,15 +450,16 @@ function baseKit(cls) {
     huntMul: 1, dr: 0, foodMul: 1, nightHeal: false, walkMul: 1,
     harvestMul: 1, dodgeCd: DODGE_CD, stealth: 1,
     ambushMul: AMBUSH_MUL, bury: PRONE_BURY,
-    killHeal: 0,
+    killHeal: 0, kindle: false, chill: false, restHeal: 0, // the item passives (js/sim/items.js)
   });
 }
-// rebuild p.kit from class + gear + skills + cards
+// rebuild p.kit from class + gear + skills + cards + items
 function refreshKit(p) {
   const k = baseKit(p.cls);
   for (let i = 0; i < GEAR.length; i++) GEAR[i][p.gear[i]].mod(k, p.gearLv[i]);
   for (let i = 0; i < STAT_TRACKS.length; i++) STAT_TRACKS[i].mod(k, p.pts[i] | 0);
   for (const c of p.cards) CARDS[c.rarity][c.id].mod(k);
+  itemMods(k, p); // the six item slots (js/sim/items.js)
   p.kit = k;
   p.maxHp = levelMaxHp(p);
   if (p.hp === undefined || p.hp > p.maxHp) p.hp = p.maxHp;
@@ -530,10 +524,10 @@ class Player {
     this.botId = null;                  // an 'ai' seat's bot FILE (BOT_LIB, js/ai/bot-api.js); null = the built-in brain
     // the local player wears the profile's display name; every other player is
     // named off its team - live, through the `name` getter below, so the name
-    // follows the paint (skin) when the team-colour setting flips. Which
-    // character the local player IS (name, look, class) is applyCharacter().
+    // follows the paint (skin) when the team-colour setting flips. Who the
+    // local player IS (name, hero) is applyProfile().
     this._name = control === 'human' ? PROFILE.name() : null; // a remote human is named by the roster
-    this.look = botLook(id);            // the face on the class body ({ sex, tone, hair, hairCol, beard, face }, profile.js LOOK_N)
+    this.look = Object.assign({}, CLASSES[0].look); // the hero's face, set again by every setClass
     this.spawn = { tx: WORLD >> 1, ty: WORLD >> 1 }; // landing tile once the eagle drops this player (the bot brain's "home")
     this.inv = { gold: 0 };             // the wallet is currency only - carried goods are in the bag
     this.bagCap = BAG_CAP;              // slots; one starting backpack
@@ -579,7 +573,8 @@ class Player {
     Object.assign(this, PLAYER_RECORD); // the rest of the record, which a save older than a field fills from too (saveApply)
     this.hGold = [];                    // the lobby's two graphs, sampled every STAT_STEP: gold earned...
     this.hDmg = [];                     // ...and damage dealt, both cumulative (sampleStats, js/ui/lobby.js)
-    this.trades = [];                   // the market ledger: every good bought or sold at a counter (marketLog, js/ui/shop.js)
+    this.items = new Array(ITEM_SLOTS).fill(null); // the six item slots, ids or null (js/sim/items.js) - like cards, they survive a respawn
+    this.fightT = 0; this.kindleN = 0;  // s since the last hit given or taken, and KINDLING's count (itemsOnHit)
     refreshKit(this);                   // builds this.kit and this.maxHp from class + gear + skill
     this.aboard = false;                // riding the eagle (beginDrop sets it, dropJump clears it)
     this.dropT = 0;                     // seconds of free fall left after jumping (0 = on the ground)
@@ -622,7 +617,7 @@ class Player {
     this.reset(true);
   }
   get active() { return this.control !== 'none'; }
-  // a named player (the human, via applyCharacter) keeps its name; every other
+  // a named player (the human, via applyProfile) keeps its name; every other
   // player is called after the colour it is WEARING right now
   get name() { return this._name !== null ? this._name : TEAMS[skin(this.team)].name + '-' + (this.id + 1); }
   set name(v) { this._name = v; }
@@ -638,6 +633,8 @@ class Player {
     this.charging = false; this.chargeT = 0;      // bow draw state
     // the meal being chewed and the clock BOTH meals share (js/sim/core.js)
     this.eatT = 0; this.eatType = null; this.eatFxT = 0; this.foodCd = 0;
+    // the recall's channel, and the roost ring's motes' clock (js/sim/recall.js)
+    this.recallT = 0; this.ringFxT = 0;
     this.nockT = 0;                                // the cycle: seconds until the next press (toolCycle, js/sim/tools.js)
     this.slashT = 0; this.slashA = 0; this.slashHalf = 0; // a blade's sweep in flight: the hand swings the sword through it (slashTool, js/sim/tools.js; drawHeldTool, js/draw-world.js)
     this.catchT = 0;                               // the fish hoist's clock (startCatch/catchFrame, js/sim/tools.js)
@@ -755,13 +752,12 @@ function initPlayers(roster, local) {
   for (const p of players) {
     const r = roster[p.id];
     if (r.name != null) p.name = r.name;
-    if (r.look) p.look = r.look;
     if (r.cls != null) setClass(p, r.cls);
   }
   localId = local;
   player = players[local];
   inv = player.inv;
-  applyCharacter(); // the local player is whoever the profile has active
+  applyProfile(); // the local player is the profile: its name and its last hero
 }
 
 // who p is allowed to shoot: another live player on another team (this is the
@@ -799,11 +795,15 @@ function concealOf(p) { return p.hide > 0 ? p.hide * (p.moving ? PRONE_MOVE : 1)
 // never past PRONE_SNIFF, because at arm's length you are found whatever you
 // are lying under. Every watcher in the game (the pack, the turrets, the bot
 // brain) resolves through this one function so they cannot disagree about who
-// is hidden.
-function seenAt(p, range) {
+// is hidden. A watcher that plays by the fog of war (a bot, a hand's lock-on)
+// names its side as `team`: a rival outside that side's sight is not seen at
+// all (inSight, js/sim/fog.js). Creatures and turrets watch without it.
+function seenAt(p, range, team) {
   // the falcon's mark is the ONE legal bypass: a swept rival is simply seen,
-  // whatever they are lying under, until the mark runs out (js/sim/abilities.js)
+  // whatever they are lying under or however deep in the fog, until the mark
+  // runs out (js/sim/abilities.js)
   if (p.markT > 0) return range;
+  if (team !== undefined && !inSight(team, p)) return 0;
   const c = concealOf(p);
   const r = range * kitOf(p).stealth * (1 - PRONE_CUT * c);
   return c > 0 ? Math.max(r, Math.min(range, PRONE_SNIFF)) : r;
@@ -897,6 +897,7 @@ function damagePlayer(p, dmg, dx, dy, src, cause, crit, kb) {
   if (src instanceof Player && src !== p && src.team !== p.team) { src.dmgOut += dmg; p.dmgInP += dmg; noteFoe(p, src); }
   else if (BEAST_CAUSES.has(cause)) p.dmgInB += dmg;
   p.hurtT = 0.25;
+  p.fightT = ITEM_FIGHT_T; // in a fight: DEN's heal waits (js/sim/items.js)
   if (!dot) {
     const k = HIT_KB * (kb === undefined ? 1 : kb);
     p.kbx = dx * k; p.kby = dy * k;
@@ -943,6 +944,39 @@ const MULTI_T = 10;       // s a kill may follow the one before and still count 
 const RESPAWN_WAIT = [5, 6, 7, 9, 11, 14, 18, 23, 29, 36, 43, 50]; // s, by hero level 1..LEVEL_MAX
 function respawnTime(p) { return RESPAWN_WAIT[Math.max(1, Math.min(LEVEL_MAX, p.level)) - 1]; }
 
+// The body leaves the world: whatever it was holding, riding, casting or
+// eating stops here. die() is this plus the record (the death, the kill, the
+// feed line, the wait); a side that surrenders (js/sim/surrender.js) is this alone,
+// since nobody went down.
+function bodyOut(p) {
+  p.dead = true;
+  p.zip = -1;   // the handle is let go of (the respawn's reset clears the rest)
+  p.zipWalk = false;
+  rideEnd(p, true); // ...and off the deer, which bolts (js/sim/wildlife.js)
+  p.charging = false;
+  p.chargeT = 0;
+  p.fireArmed = false;
+  p.dodgeT = 0;
+  p.vx = p.vy = 0;
+  p.sliding = false;
+  p.prone = false; p.hide = 0; p.riseT = 0;
+  p.fallT = 0;
+  p.swingT = p.swingCd = 0;
+  // whatever ability the body was mid-way through dies with it, and the meal
+  p.eatT = 0; p.eatType = null;
+  p.recallT = 0; // ...and the walk home it was channelling
+  breakMine(p);
+  p.castT = 0; p.castAb = -1;
+  p.shieldT = 0; p.rushT = 0; p.rushVictim = null;
+  p.castSlam = false; p.hopT = 0; p.grapT = 0;
+  p.buffT = 0; // the bear buff goes with the body too
+  p.dawnShield = 0; // ...and the dawn's shield
+  clearUnitStatus(p); // root, slow, net, mark and the fire go out with the body
+  // an item on the cursor goes back in the bag, so it is still there when the
+  // body comes back instead of vanishing with the hand that was holding it
+  if (p === player && state.drag) { dragReturn(); state.dragPend = null; }
+}
+
 // A player goes down two ways. While its team's bird still roosts (or is
 // still flying in) it is temporary: p.dead is set (out of the world right
 // now) but p.eliminated stays false and respawnT counts down to a return AT
@@ -958,31 +992,10 @@ function die(p, src, cause) {
   if (PRACTICE && p === player) { practiceRevive(p); return; }
   // what this body is worth is read before the death clears the streak it wears
   const worth = killWorth(p), bounty = bountyOf(p);
-  p.dead = true;
   p.deaths++;      // the match record; a respawn never clears it (js/ui/lobby.js)
   p.feed++;        // ...a run of deaths without a takedown makes it worth less (killWorth)
   p.streak = 0;    // ...and the run of kills ends with the body
-  p.zip = -1;      // the handle is let go of (the respawn's reset clears the rest)
-  p.zipWalk = false;
-  rideEnd(p, true); // ...and off the deer, which bolts (js/sim/wildlife.js)
-  p.charging = false;
-  p.chargeT = 0;
-  p.fireArmed = false;
-  p.dodgeT = 0;
-  p.vx = p.vy = 0;
-  p.sliding = false;
-  p.prone = false; p.hide = 0; p.riseT = 0;
-  p.fallT = 0;
-  p.swingT = p.swingCd = 0;
-  // whatever ability the body was mid-way through dies with it, and the meal
-  p.eatT = 0; p.eatType = null;
-  breakMine(p);
-  p.castT = 0; p.castAb = -1;
-  p.shieldT = 0; p.rushT = 0; p.rushVictim = null;
-  p.castSlam = false; p.hopT = 0; p.grapT = 0;
-  p.buffT = 0; // the bear buff goes with the body too
-  p.dawnShield = 0; // ...and the dawn's shield
-  clearUnitStatus(p); // root, slow, net, mark and the fire go out with the body
+  bodyOut(p);
   burst(p.x, p.y - 6, TEAMS[skin(p.team)].mark, 12, 55, 0.6);
   // kill credit and the feed line: the killer's colours if there is one,
   // otherwise the victim's, since the victim is who the line is about
@@ -993,9 +1006,6 @@ function die(p, src, cause) {
   p.foeHits = {};
   const killer = src && src !== p ? src : foes.length ? foes[0] : null;
   p.lastDeath = { by: killer && players.includes(killer) ? killer.id : -1, cause: cause || null, tick: state.tick };
-  // an item on the cursor goes back in the bag, so it is still there when the
-  // body comes back instead of vanishing with the hand that was holding it
-  if (p === player && state.drag) { dragReturn(); state.dragPend = null; }
   if (killer) {
     killer.kills++;
     killer.streak++; killer.bestStreak = Math.max(killer.bestStreak, killer.streak);
@@ -1005,7 +1015,7 @@ function die(p, src, cause) {
     killer.bestMulti = Math.max(killer.bestMulti, killer.multiN);
     if (killer.control === 'ai') aiDowned(killer, p); // a bot remembers who it keeps downing (the grudge, js/ai/ai-team.js)
     payTakedown(p, killer, foes, worth, bounty); // the kill's gold, the assists' share and a shutdown's bounty
-    if (killer === player && !PRACTICE) PROFILE.addKill(); // the character's lifetime count
+    if (killer === player && !PRACTICE) PROFILE.addKill(); // the profile's lifetime count
     // BLOODLUST/VAMPIRE: a flat heal on a confirmed kill, the one card
     // effect that isn't a plain kitOf() field - mirrors eatBerry's heal
     if (killer.kit.killHeal > 0 && killer.hp < killer.maxHp) {
@@ -1057,18 +1067,24 @@ function updateRespawns(dt) {
 // stand on there - so the way back into the match is the road everyone
 // else walked out on.
 const RESPAWN_OUT = 40;
-function respawnPlayer(p) {
+// the tile a body is set down on at its own roost: RESPAWN_OUT down the spur
+// from the bird, the nearest dry one - null while the bird is not down. The
+// carried-back scout and the recall (js/sim/recall.js) both land here.
+function roostTile(p) {
   const e = state.drop && state.drop.eagles[p.team];
-  if (e && e.state === 'down') {
-    const d = e.laneDir || { x: 0, y: 1 };
-    p.spawn = nearestDryTile(e.x + d.x * RESPAWN_OUT, e.y + d.y * RESPAWN_OUT, p);
-  }
+  if (!e || e.state !== 'down') return null;
+  const d = e.laneDir || { x: 0, y: 1 };
+  return nearestDryTile(e.x + d.x * RESPAWN_OUT, e.y + d.y * RESPAWN_OUT, p);
+}
+function respawnPlayer(p) {
+  const t = roostTile(p);
+  if (t) p.spawn = t;
   p.eliminated = false;
   p.respawnT = 0;
   p.reset(false);
   burst(p.x, p.y - 2, '#f4f7ff', 16, 70, 0.5, true);
   sfxAt('place', p.x, p.y);
-  if (p === player && !ladderWatch) { // a watcher's camera stays on whoever it follows (js/ui/ladder.js)
+  if (p === player) {
     state.over = null;
     state.mode = 'play';
     state.spec = -1; // the camera returns to the local player, not whoever it was watching
@@ -1129,6 +1145,7 @@ function practiceRevive(p) {
   p.prone = false; p.hide = 0; p.riseT = 0;
   p.charging = false; p.chargeT = 0; p.fireArmed = false;
   p.eatT = 0; p.eatType = null;                  // the meal dies with the body here too
+  p.recallT = 0;                                 // ...and the recall
   const s = p.spawn || { tx: WORLD >> 1, ty: WORLD >> 1 };
   p.x = (s.tx + 0.5) * TILE; p.y = (s.ty + 0.5) * TILE;
   p.invuln = 2;
@@ -1161,7 +1178,6 @@ function endSnapshot() {
 // the local player leaves the match, one way or the other: the overlay takes
 // the screen (mode 'dead'), the sim runs on underneath it
 function endMatch(how) {
-  if (ladderWatch) { ladderWatchOver(how); return; } // a watched bot match keeps its camera and keys (js/ui/ladder.js)
   // count a win only the first time this match resolves as won - a second
   // endMatch('won') (or a driver poking it) must not increment twice
   const awardWin = how === 'won' && state.over !== 'won';
@@ -1177,6 +1193,7 @@ function endMatch(how) {
   if (awardWin) PROFILE.addWin();
   // the coins: once per ending, on the same edges as the win and the loss sting
   if (awardWin || firstLoss) payMatchCoins(awardWin);
+  if (awardWin || firstLoss) rankResult(awardWin); // RANKED's rating (js/ui/rooms.js)
   state.mode = 'dead';
   state.deadView = 'menu';
   state.deadSel = 0;
@@ -1195,6 +1212,8 @@ function endMatch(how) {
   // reads as a bug. A loss's summary is opened minutes later, off the LOBBY
   // plank, so this is the only moment its numbers are still true.
   state.end = how === 'won' || how === 'lost' ? endSnapshot() : null;
+  // a side that surrendered skips its defeat and lands on the post-game stats (js/sim/surrender.js)
+  if (how === 'lost' && state.surrendered === player.team) openScores('menu');
   if (how === 'won') { SFX.victory(); state.shake = Math.max(state.shake, 4); }
   // ...and a loss gets the same courtesy: the defeat song used to come up
   // under silence where a win got a fanfare, so the worse of the two endings
@@ -1218,19 +1237,21 @@ function endMatch(how) {
 // coin over its name, drawBountyTag js/draw/overhead.js) that its killer
 // cashes as a SHUTDOWN on top. A body that keeps going down without a kill or
 // an assist (p.feed) is worth less, down to FEED_FLOOR, so feeding one side
-// never funds the other. Sized against a scrapped soldier's SOLDIER_BOUNTY
-// (4): a plain kill is three of them, the biggest shutdown eight, so ending a
-// streak pays without erasing the lead the streak built. Gold only goes to
-// the living, as a kill always has.
-const KILL_BOUNTY = 12;     // gold a downed rival pays its killer, before feed and bounty
+// never funds the other. Every amount is counted in SCRAPPED SOLDIERS
+// (SOLDIER_BOUNTY, js/sim/robots.js, read at the kill), so the kill keeps its
+// place in the farm whatever a last hit is retuned to: a plain kill is three
+// of them, the biggest shutdown eight, so ending a streak pays without
+// erasing the lead the streak built. Gold only goes to the living, as a kill
+// always has.
+const KILL_SOLDIERS = 3;    // soldiers a downed rival is worth to its killer, before feed and bounty
 const ASSIST_T = 10;        // s a rival's blow or crowd control stays on a body's record
 const ASSIST_SHARE = 0.5;   // of the worth, split evenly among the assists (each at least 1)
 const BOUNTY_FROM = 2;      // the streak at which a body starts wearing a bounty
-const BOUNTY_STEP = 4;      // gold the bounty grows by each kill from there...
-const BOUNTY_MAX = 20;      // ...up to this (a streak of 6)
+const BOUNTY_STEP = 1;      // soldiers the bounty grows by each kill from there...
+const BOUNTY_MAX = 5;       // ...up to this (a streak of 6)
 const FEED_FROM = 2;        // deaths without a takedown before a body is worth less
 const FEED_STEP = 0.2;      // ...the worth lost each death past that...
-const FEED_FLOOR = 1 / 3;   // ...down to this share of KILL_BOUNTY
+const FEED_FLOOR = 1 / 3;   // ...down to this share of the plain kill
 
 // a rival player's blow or crowd control on a player, for the assist list
 function noteFoe(p, src) {
@@ -1246,8 +1267,10 @@ function recentFoes(p) {
   }
   return out.sort((a, b) => h[b.id] - h[a.id] || a.id - b.id);
 }
-function bountyOf(p) { return p.streak < BOUNTY_FROM ? 0 : Math.min(BOUNTY_MAX, BOUNTY_STEP * (p.streak - BOUNTY_FROM + 1)); }
-function killWorth(p) { return Math.round(KILL_BOUNTY * Math.max(FEED_FLOOR, 1 - FEED_STEP * Math.max(0, p.feed - FEED_FROM + 1))); }
+// the plain kill in gold, and a body's bounty and worth
+function killBounty() { return KILL_SOLDIERS * SOLDIER_BOUNTY; }
+function bountyOf(p) { return p.streak < BOUNTY_FROM ? 0 : SOLDIER_BOUNTY * Math.min(BOUNTY_MAX, BOUNTY_STEP * (p.streak - BOUNTY_FROM + 1)); }
+function killWorth(p) { return Math.round(killBounty() * Math.max(FEED_FLOOR, 1 - FEED_STEP * Math.max(0, p.feed - FEED_FROM + 1))); }
 
 // p is down: the killer and the assists are paid, and every one of them has
 // broken their run of feeding. The SHUTDOWN word rises over the body.

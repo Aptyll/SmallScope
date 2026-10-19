@@ -52,14 +52,12 @@ const TIP_KB = (kb) => 'x' + (Math.round((kb === undefined ? 1 : kb) * 10) / 10)
 // because the weight is what the draw pays for (toolDrawMul).
 function tipTool(cell) {
   const id = toolIdOf(cell.type), T = TOOLS[id];
-  const lv = toolLvl(cell);
-  const d = tipBase(cell.type, T.name + (lv ? ' +' + lv : ''), TOOL_TIERS[T.tier].name + ' TOOL');
+  const d = tipBase(cell.type, T.name, TOOL_TIERS[T.tier].name + ' TOOL');
   const plan = toolPlan(cell);
   const slow = toolDrawMul(cell) > 1;
-  if (lv) d.rows.push(['FORGED DAMAGE', 'x' + toolDmgMul(cell).toFixed(2), FORGE_INK]);
-  d.rows.push(['RATE OF FIRE', tipSec(T.rof * toolRofMul(cell) * TOOL_ROF_STEP), lv && T.up === 'rof' ? FORGE_INK : '#f4f7ff']);
+  d.rows.push(['RATE OF FIRE', tipSec(T.rof * TOOL_ROF_STEP), '#f4f7ff']);
   d.rows.push(['BIT SLOTS', bitsIn(cell) + '/' + T.cap, '#f4f7ff']);
-  d.rows.push(['TENSILE', String(plan.tensile), lv && T.up === 'tensile' ? FORGE_INK : '#f2cc6a']);
+  d.rows.push(['TENSILE', String(plan.tensile), '#f2cc6a']);
   d.rows.push(['LOADED WEIGHT', String(plan.load), '#f4f7ff']);
   d.rows.push(['FULL DRAW', tipSec(kitOf(player).bowCharge * toolDrawMul(cell)), slow ? '#ffd95c' : '#f4f7ff']);
   d.rows.push(['SHOTS A PRESS', String(plan.shots.length), '#8fe08a']);

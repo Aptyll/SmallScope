@@ -636,15 +636,17 @@ function drawPlayer(p, ex, ey, now) {
     // pale gold = it peaked, slate filling = reloading (it is not), pale gold
     // again for the instant it came back (the bow's own ready colour; white is
     // the stamina bar's), GREEN filling = eating (a heal is coming, and hitting
-    // them takes it away).
-    // All three use the identical geometry, so the bar never jumps when one
+    // them takes it away), and the recall's channel in the side's own glow
+    // (js/sim/recall.js: a scout leaving, and a hit keeps them there).
+    // All of them use the identical geometry, so the bar never jumps when one
     // hands over to the next.
-    if (p.eatT > 0 || p.charging || p.nockT > 0 || p.readyFlash > 0) {
-      const eating = p.eatT > 0, drawing = p.charging;
+    if (p.eatT > 0 || p.recallT > 0 || p.charging || p.nockT > 0 || p.readyFlash > 0) {
+      const eating = p.eatT > 0, drawing = p.charging, home = !eating && p.recallT > 0;
       // the reload divides by toolCycle - the same span the well's wipe and the
       // reticle's marks read - so the slate fill starts at zero the frame the
       // shot leaves (dividing by the bare kit.nock sat it at 1 px for half the cycle)
       const frac = eating ? 1 - p.eatT / FOOD_EAT
+        : home ? 1 - p.recallT / RECALL_T
         : drawing ? drawPow(p)
         : p.readyFlash > 0 ? 1 : 1 - p.nockT / Math.max(0.01, toolCycle(p));
       const x = fx - 7, y = hy - 10 - lift;
@@ -653,6 +655,7 @@ function drawPlayer(p, ex, ey, now) {
       ctx.fillStyle = BAR_TRACK;
       ctx.fillRect(x, y, 14, 2);         // the fill rows; the gap row under is the hp backing's
       ctx.fillStyle = eating ? EAT_COL
+        : home ? TEAMS[skin(p.team)].glow
         : !drawing ? (p.readyFlash > 0 ? DRAW_FULL_COL : NOCK_COL)
         : frac < 1 ? DRAW_COL
         : p.chargeT < drawTime(p) + DRAW_FULL_FLASH ? '#ffffff' : DRAW_FULL_COL;

@@ -125,15 +125,15 @@ const cmdTile = (c) => Number.isInteger(c.tx) && Number.isInteger(c.ty);
 function cmdOk(c) {
   if (!c || typeof c !== 'object') return false;
   if (c.kind === 'gear') return cmdInt(c.piece, 0, GEAR.length);
+  if (c.kind === 'recall') return true;
   if (c.kind === 'ability') return cmdInt(c.i, 0, AB_KEYS);
   if (c.kind === 'fishPick') return c.type === null || FISH_KINDS.includes(c.type);
   if (c.kind === 'shop') {
-    if (c.act === 'buy') return cmdKey(market.stock, c.sec) && cmdInt(c.i, 0, Infinity);
-    if (c.act === 'trade') return typeof c.good === 'string' && isGood(c.good) && (c.dir === 1 || c.dir === -1) &&
+    if (c.act === 'item') return cmdKey(BUILD_ITEMS, c.id);
+    if (c.act === 'sellItem') return cmdInt(c.slot, 0, ITEM_SLOTS);
+    if (c.act === 'trade') return FOOD_GOODS.includes(c.good) && (c.dir === 1 || c.dir === -1) &&
       (c.n === undefined || (Number.isInteger(c.n) && c.n >= 1));
-    if (c.act === 'sell') return cmdInt(c.i, 0, Infinity);
-    if (c.act === 'forge') return (c.where === 'tool' || c.where === 'bag') && cmdInt(c.i, 0, Infinity) && !!c.pile && typeof c.pile === 'object';
-    return c.act === 'sellAll';
+    return c.act === 'sell' && cmdInt(c.i, 0, Infinity);
   }
   if (c.kind === 'build') return cmdKey(STRUCTS, c.id) && cmdTile(c) && (c.tx2 === undefined || (Number.isInteger(c.tx2) && Number.isInteger(c.ty2)));
   if (c.kind === 'flag') return !c.id || (cmdKey(FLAG_TYPES, c.id) && cmdTile(c));
@@ -151,6 +151,7 @@ function runCmd(p, c) {
   if (c.kind === 'gear') return buyGear(p, c.piece); // no tile, no reach - gear is bought from anywhere
   if (c.kind === 'ability') return buyAbilityLv(p, c.i); // an ability level: a skill point, from anywhere
   if (c.kind === 'fishPick') { p.fishPick = c.type; return true; } // the fish well's picker (fishPick, js/ui/strip.js): which fish the key eats
+  if (c.kind === 'recall') return startRecall(p); // the walk home, from anywhere (js/sim/recall.js)
   if (c.kind === 'shop') return shopCmd(p, c); // the merchant's counter (js/shop.js) - it checks its own reach
 
   if (c.kind === 'build') {
@@ -454,7 +455,7 @@ function drawBellHint(ox, oy) {
 // (gold = the game's "active" accent, hot orange while pressed); the right
 // button is plain body so nothing suggests right-click.
 // The merchant's prompt, the rack's own proximity grammar one body over: an
-// E SHOP cap over whichever merchant is in reach (merchNear, js/shop.js -
+// E SHOP cap over whichever merchant is in reach (merchNear, js/ui/shop.js -
 // the same resolver the press uses), either team's. It hides while the
 // counter is up, the way every hint hides under a wheel. Returns whether it
 // drew: the merchant owns E in that bubble, so a cap here is the whole

@@ -71,21 +71,21 @@ declare victory. The affordances:
   - **Under the wrapper — Noah runs this by hand; a session never starts Electron or makes a
     Steam lobby.** `cd desktop && npm start -- --net=host` on one machine and `--join=LOBBYID`
     on another (Steam running on both) ride the same match over a Steam lobby; with Steam up
-    the MULTIPLAYER plank lists the open lobbies and a click joins one (`--transport=relay` for
-    the relay's rooms instead). `DBG.netStatus().lobby` is the id to hand a joiner and `DBG.lobbies()` lists them raw.
+    QUICKPLAY hosts a party as a public lobby whose code a friend types into their own party
+    (`--transport=relay` for the relay's rooms instead). `DBG.netStatus().lobby` is the id to hand a joiner and `DBG.lobbies()` lists them raw.
     `npm start -- --seed=42 --shot=out.png --wait=4 --quit` boots the game from disk headlessly
     and captures it.
 - **The counter needs a merchant, and a merchant needs a roost**: `startGame()`, step until
   `DBG.merchants.length` is 2 and the mode is `play`, step out the `state.dropBrief`, `hopOff()`,
   then `warp` beside `DBG.merchants[i]` — it is a working NPC and wanders off its post, so re-warp
   before each check unless a counter is open (an open counter pins it: `shopServing`). `DBG.openShop()`,
-  `shopHit(x, y)`, `shopBuy/shopSellCell/shopTrade` and `shopLayout()` drive the panel without a
-  pointer; `DBG.marketStep(n)` walks the prices n moves on, so a spike is one call rather than
-  three days of waiting, and it ticks the restock clock with them. The news it cuts is a
-  [plate under the minimap](rendering.md#notices-the-plates-under-the-minimap) as well as a
-  feed line: `DBG.notices` is the live stack, `DBG.noteRect(k)` where slot `k` sits,
-  `DBG.raiseNotice(kind, txt, good)` raises one without moving a price, and
-  `DBG.shopRestock(true)` turns the counter over *loudly* (bare, it is the quiet boot roll).
+  `shopHit(x, y)`, `buyItem(id, p?)`/`sellItem(slot, p?)`/`shopSellCell(i, p?)`/`shopTrade(good, dir, p?)`
+  and `shopLayout()` drive the panel without a pointer; `DBG.itemCost(id, p?)`, `botNextItem` and
+  `botItemBuy` read what an item costs a seat and what a bot would buy, and `BUILD_ITEMS` is the
+  catalogue. (`buyItem` and the trades still check the reach: warp to a counter first.) The
+  [plates under the minimap](rendering.md#notices-the-plates-under-the-minimap):
+  `DBG.notices` is the live stack, `DBG.noteRect(k)` where slot `k` sits, and
+  `DBG.raiseNotice(kind, txt, good)` raises one.
   A plate ages on wall time in `updateFx`, so `DBG.step` runs its arrival and its fade.
 - **`?seed=N`** pins the world — the same seed twice proves a change is deterministic, two seeds
   prove worldgen still varies. Without it every reload is a different world and A/B screenshots
@@ -111,14 +111,14 @@ declare victory. The affordances:
   `{ connected: true, mapping: 'standard', axes: [..4], buttons: [{pressed, value}..17] }`,
   set axes and buttons, and call `padPoll(1/60)` before each `update` — the [two
   controllers](multiplayer.md#the-two-controllers) list what each does.
-- **`localStorage.removeItem('softfall.profile')`** re-stages a first launch: a profile with no
-  character boots straight into the create screen on a pre-rolled character (boot.js calls
-  `beginCreate(-1, true)`), and its `dropped` flag comes back false, so the next ride runs the
-  scripted first flight and its [drop brief](rendering.md#eagle-drop-mode-drop). `DBG.PROFILE`
-  is the store; `DBG.beginChars()` opens the roster and `DBG.beginCreate(slot)` the create /
-  customize screen (`-1` a new character), driven by `createHit`/`charsHit`, `createKey`,
-  `createCommit`/`createCancel` and read back through `createLayout`/`charsLayout`. See
-  [architecture.md](architecture.md#profilejs).
+- **`localStorage.removeItem('softfall.profile')`** re-stages a first launch: a fresh profile
+  boots on the title with a pre-rolled name, and its `dropped` flag comes back false, so the next
+  ride runs the scripted first flight and its [drop brief](rendering.md#eagle-drop-mode-drop).
+  A v2 save (`{ v: 2, active, chars: [{ name, cls, stats }..] }` written before a reload) stages
+  the fold into one profile. `DBG.PROFILE` is the store; `DBG.beginProfile()` opens the profile
+  card, driven by `profileHit`, `profileKey`, `profileCommit`/`leaveProfile` and read back
+  through `profileLayout`/`profileTagRect`; `DBG.lobbyPick(i)` and `DBG.heroList()` drive the
+  lobby's hero row. See [architecture.md](architecture.md#profilejs).
 - **The arsenal needs no staging** — every kind is unlocked for
   every profile, so `DBG.LOOT_POOL` is the same on a fresh install as on a played-in one, and
   reading it back is how you prove what a match may drop. `DBG.wipeTech()` still forgets which
@@ -255,8 +255,8 @@ one: it is a wallet number with no ceiling. See
 ([js/sim/tools.js](../../js/sim/tools.js)); the loop at the foot of that file registers the `ITEMS` and
 `RES_COLORS` rows, so storage, drops, the drag, the click that sends it between
 pack and weapon, and the loot pools all pick it up
-with no other edit. Both need a `price`, or the merchant sells it for nothing and buys it back
-for nothing ([the counter](gameplay.md#the-merchants-counter) - half the price is what it fetches,
+with no other edit. Both need a `price`, or the merchant buys it back
+for nothing ([the counter](gameplay.md#buying-and-selling) - half the price is what it fetches,
 and a tool carries its loaded bits into that sum). A **tool** needs `rof`/`cap`/`tensile`/`tier`
 and an `art` key — every tool has a 12×12 silhouette of its own in `TOOL_ART` (bow, recurve,
 horn, long, sword, sling; each baked once per tier), so add one, with its heading in `TOOL_FWD`,
@@ -317,26 +317,28 @@ is table-driven again: name it in the bit's `body` and add that name to `BIT_BOD
 what the shot does where it *lands* — one `impact` on the bit and one row in `BIT_IMPACT`
 (js/sim/tools.js), which the arrow update calls only when the shot ended on something.
 
-**Putting something on the merchant's counter** — nothing, if it is a tool, a bit or a card: the
-stock is rolled off `TOOLS`/`BITS`/`CARD_RARITIES` themselves (`shopRestock`,
-[js/ui/shop.js](../../js/ui/shop.js)), so a new kind is on sale the moment it has a `price`. A new
-**section** is a row in `SHOP_SECTIONS` plus its branch in `shopOffer` and room in
-`shopLayout`'s 2×2 grid — which is full, so a fifth section is a re-layout, not an insert.
-A new **traded good** (a thing whose price moves) is one `GOODS` entry and its `MKT_ORDER`
-place and a row in `MKT_GOODS` (js/ui/market.js); the walk, the graph, the headlines, the ledger
-and the tooltip are all generic over that table; the ticker cards share the width and the page's
-rows squeeze to fit over the trades (five fit), and "one currency" ([game.md](game.md))
-means a good is a *commodity you carry*, never a second wallet. A new **fish** needs none of it: a
-place in `FISH_KINDS` prices it off its `heal` (`goodScale`) and gives it its `MKT_GOODS` row.
+**Adding an item to the merchant's counter**: one `BUILD_ITEMS` entry in
+[js/sim/items.js](../../js/sim/items.js). A part has a `price`, one stat and an `icon`; a finished
+item adds `from` (its parts, a part named twice is needed twice) and a `passive`. The grid, the
+build tree, the price that drops by the parts held, the tooltip and the save all pick it up; the
+panel's grid is four a row (`SHOP_COLS`), so a ninth finished item is a third row and the slab's
+`SHOP_H` has to grow with it. A new **stat** is one `ITEM_STATS` row (its label, its format and
+what it writes into the kit) plus its place in `ITEM_STAT_ORDER` and an icon in `drawShopCats`
+(js/ui/shop.js). A new **passive** is one `ITEM_PASSIVES` row: a kit field the sim already reads
+needs nothing else; anything that happens on a hit or on the clock goes in `itemsOnHit` or
+`itemsTick`, and a new kit field gets its default in `baseKit` (js/sim/player.js). Put the item in
+the bots' `BOT_BUILDS` if a class should buy it. A new **fish** needs no shop edit at all: a place
+in `FISH_KINDS` prices it off its `heal` (`foodPrice`).
 
 **Adding a class** — the tables make most of it mechanical, and every screen picks the new
-entry up with no edit: the create screen's class pair grows an emblem, the strip, the gear
+entry up with no edit: the lobby's hero row grows a cell, the strip, the gear
 pop-up's preview/ledger and the bot class hash
 (`initPlayers`, already `floor(hash × CLASSES.length)`) are all generic over the tables. What a
 new class needs written:
 
-1. a `CLASSES` entry ([js/sim/player.js](../../js/sim/player.js)) — `name` and the `kit` numbers are
-   the load-bearing halves;
+1. a `CLASSES` entry ([js/sim/player.js](../../js/sim/player.js)) — `name`, its one fixed `look`
+   and the `kit` numbers are the load-bearing parts (a hero announced in `HEROES_SOON` moves
+   over, keeping its look);
 2. the full sprite set in the byte-fragile [js/sprites/characters.js](../../js/sprites/characters.js)
    (a beast goes in beasts.js, the bears in bears.js by rebaking, a building in buildings.js, an item in items.js, terrain in
    terrain.js, HUD art in icons.js), registered by adding its key to that file's
@@ -351,12 +353,11 @@ new class needs written:
    `abilityPose` case, any world entities it leaves and their tick/draw, and its on-body draw
    in `drawAbilityOnPlayer` if it leaves a visible state;
 4. four detailed 32×32 icons in `AB32` (on `AB32_PAL` — one palette across every big icon);
-5. a 32×32 class **emblem** in `CLASS32` ([js/ui/menu.js](../../js/ui/menu.js), same palette) — the
-   symbolic mark the create screen's class pair and the roster read the class by — and its 12×12
-   twin in `CLASS12` beside it, drawn by hand (never a shrink), which the
-   [team rail](rendering.md#the-team-rail) wears;
+5. a 12×12 class **emblem** in `CLASS12` ([js/ui/menu.js](../../js/ui/menu.js), same palette),
+   drawn by hand (never a shrink), which the [team rail](rendering.md#the-team-rail), the rooms
+   and the tooltips wear;
 5b. an `OUTFIT` layer for the 48 px model ([js/sprites/looks.js](../../js/sprites/looks.js) —
-   the hat stopping at row 8 so the hair shows under it) and `CLASS_N` bumped in
+   the hat stopping at row 8 so the hair shows under it) and `HERO_N` bumped in
    [js/app/profile.js](../../js/app/profile.js), which looks.js asserts against at load; a `champLook`
    branch in characters.js saying where the new body's fringe sits
    ([sprites.md](sprites.md#looks-a-character-on-the-class-body));
@@ -393,7 +394,10 @@ can see a player — asks `seenAt(p, range)`, never a bare distance against a ba
 function is where GHOSTSTEP and lying buried in the snow both live, and a hunter that skips it
 stares straight through the cover with nothing in the code to say why. If it also *marks* the
 player somewhere the player can read (a map dot, an icon), gate that on
-`concealOf(p) >= PRONE_MAP` the way both maps do. See
+`concealOf(p) >= PRONE_MAP` the way both maps do. A bot or anything else that plays for a side
+passes that side: `seenAt(p, range, team)`, and `inSight(team, u)` for a body that is not a player,
+or it sees through the [fog of war](gameplay.md#fog-of-war). **Drawing a body, its dot or anything
+pinned to it** asks `fogShown(u, now)` first (js/draw/fog.js), or it shows in the fog. See
 [gameplay.md](gameplay.md#prone-under-the-snow).
 
 **Adding a way to hurt anything** — call `hurtUnit(e, dmg, nx, ny, src, o)`, never `damagePlayer` /
@@ -547,11 +551,11 @@ another for bystanders is `sfxOwn(p, own, other)`, and a shake is `shakeFor(p, n
 the step; a bare `if (nearPlayer(...)) SFX.cue()` inside the step is a sound that client never
 hears. Outside the step (HUD, menus) the bare `SFX.cue()` is right. A cue on a repeating tick (`building()` on a
 site's dust timer) needs a wide `jitter` and a `gap`, or it settles into a rhythm. A
-**notification** cue is the opposite: no jitter at all, and two directions get two *different*
-clips rather than one pitched two ways (`SFX.market`), since it is heard as a meaning and not as
-a texture. Two clips as one cue is one `smp` per clip with a `delay` on the second
-(`SFX.restock`), and a cue with two *directions* takes the direction as an argument and picks its
-clip from it (`SFX.ui(open)`) rather than being two cues a caller has to choose between. Before
+**notification** cue is the opposite: no jitter at all (`SFX.buy`), since it is heard as a meaning
+and not as a texture, and two directions get two *different* clips rather than one pitched two
+ways. Two clips as one cue is one `smp` per clip with a `delay` on the second, and a cue with two
+*directions* takes the direction as an argument and picks its clip from it (`SFX.ui(open)`) rather
+than being two cues a caller has to choose between. Before
 writing a new one, read the eighteen in the notification block: a surface opening, a step of a
 stepped control and a countdown second already have cues, and the answer is usually to call one
 of those from a new place. See [Audio](gameplay.md#audio).
@@ -566,15 +570,17 @@ already current, so it is safe to call from a state change that repeats.
 | File | The numbers |
 | --- | --- |
 | js/sim/core.js | the `YIELD` table (every gold payout, the one table still in core.js); `useCard`'s random draw |
-| js/sim/player.js | `RESPAWN_WAIT` (the wait for the bird, beside `die()`) and the takedown gold (`KILL_BOUNTY`, `ASSIST_*`, `BOUNTY_*`, `FEED_*`, the `takedowns` banner); the `CARDS` table (every card's effect, by rarity); the hero-level table (`LEVEL_XP`/`LVL_HP`/`LVL_DMG` — sized against the harness, see [multiplayer.md](multiplayer.md#bots)); `BOW_CHARGE` and the momentum constants (`ICE_MAX`, `SLIDE_MIN`/`SLIDE_EXIT`, `TRAIL_MIN`) above `CLASSES`; the player count (`MAX_PLAYERS`) |
+| js/sim/player.js | `RESPAWN_WAIT` (the wait for the bird, beside `die()`) and the takedown gold (`KILL_SOLDIERS`, `ASSIST_*`, `BOUNTY_*`, `FEED_*`, the `takedowns` banner); the `CARDS` table (every card's effect, by rarity); the hero-level table (`LEVEL_XP`/`LVL_HP`/`LVL_DMG` — sized against the harness, see [multiplayer.md](multiplayer.md#bots)); `BOW_CHARGE` and the momentum constants (`ICE_MAX`, `SLIDE_MIN`/`SLIDE_EXIT`, `TRAIL_MIN`) above `CLASSES`; the player count (`MAX_PLAYERS`) |
 | js/sim/world.js | the chests (`CHEST_*` above `placeChests()`: count, spacing, payout, and `CHEST_ODDS`, a chest's card rarity roll); `TREE_HP`; `TREE_RARE_CHANCE` in `treeRare()`; the road (`ROAD_HW`/`ROAD_RAG`/`ROAD_ICE_KEEP`/`ROAD_ICE_TAPER`/`ROAD_STEP`/`ROAD_HW_WOOD`/`ROAD_NEST_IN`/`ROAD_NEST_OFF`/`ROAD_LOG_IN`/`SPUR_HW`), which reshapes the map |
 | js/sim/structures.js | `STRUCTS` costs/HP/build times (plus turret range/dmg/rate/traverse/aim/`acc`, generator pay/period, bay bot count/HP and its `w`/`h` footprint; the bay's roll-out cadence is inline in `updateStructures()`'s spawner branch); the turret's own throw (`TUR_*`, `ROCK_SPD`/`ROCK_FALL`/`ROCK_MISS`/`ROCK_SPLASH`, under the `turret gunnery` banner); the waves (`STRUCTS.barracks`'s `wave`/`waveT`/`grow`/`cap`/`botHp`/`hp`, `BARRACKS_ROLL`) |
 | js/sim/robots.js | `SOLDIER_*` (speed, aggro, siege reach, the bird damage, the bounty); `MERCH_BAYS`/`MERCH_BAY_*` (how many bays, the logs each costs, when the first is due, how far behind the roost, the rebuild wait); `MERCH_BACK_R`/`MERCH_BACK_ARC` (how far and how wide the back woods reach) |
 | js/sim/actions.js | `WORK_REACH` and the roll/prone blocks |
 | js/sim/tools.js | the `TOOLS` and `BITS` tables; the loot rates (`TREE_DROP`/`CHEST_TOOL`/`LOOT_TOOL`); the flight-path constants beside `steerBit`; the damage roll in `emitBit()` |
-| js/sim/mining.js | `ROCK_KINDS` (each rock kind's mining time, gold, ore, find and regrow), `ORE_PRICE`, `MINE_STRIKE`/`MINE_R`/`MINE_DECAY`/`MINE_HIT_HOLD`/`MINE_STREAM_T`/`MINE_MOVE`/`ORE_FLING`, the forge's `FORGE_PTS`/`FORGE_NEED`/`FORGE_NEED_UP`/`FORGE_TAPER`/`FORGE_DMG`/`FORGE_ROF`/`FORGE_TENSILE`/`FORGE_GOLD` (and each body's `up`, `TOOLS` in js/sim/tools.js) |
+| js/sim/mining.js | `ROCK_KINDS` (each rock kind's mining time, gold, ore, find and regrow), `ORE_PRICE`, `MINE_STRIKE`/`MINE_R`/`MINE_DECAY`/`MINE_HIT_HOLD`/`MINE_STREAM_T`/`MINE_MOVE`/`ORE_FLING` |
+| js/sim/items.js | `BUILD_ITEMS` (every part's and item's price, stats and passive), `ITEM_PASSIVES`, `ITEM_SELL`, `ITEM_FIGHT_T`, `KINDLE_EVERY`/`KINDLE_BURN`, `CHILL_T`/`CHILL_MUL`, the bots' `BOT_BUILDS` |
+| js/ui/shop.js | `FOOD_PRICE` (the frost pike and the berry; every other fish off its heal), `SHOP_REACH` |
 | js/ai/ai-skill.js | every level's numbers (`AI_LEVELS`: the hand fields, the choice knobs, `push`/`guard`), the ally clocks (`AI_ALLY_PUSH`), the ladder's hands (`AI_LADDER_HANDS`), the skill layer's clocks (`AI_SETTLE`, `AI_WOBBLE_T`, `AI_ALERT_T`, `AI_AIM_ON`, `AI_BLADE_CLOSE`, `AI_BLADE_HOLD`) |
-| js/ai/ai.js | the bot ranges (`AI_SIGHT`, `AI_HUNT`, `AI_FORAGE`); the objective clocks (`AI_ESCALATE`, `AI_JOIN_HP`, `AI_ALARM_HP`, `AI_ROOST_R`); the waves as a bot reads them (`AI_WAVE_R`/`AI_WAVE_D`) |
+| js/ai/ai.js | the bot ranges (`AI_SIGHT`, `AI_HUNT`, `AI_FORAGE`); the objective clocks (`AI_ESCALATE`, `AI_JOIN_HP`, `AI_ALARM_HP`, `AI_ROOST_R`); the waves as a bot reads them (`AI_WAVE_R`/`AI_WAVE_D`); how far a bot walks to its counter to buy (`AI_SHOP_DETOUR`) |
 | js/sim/sim.js | the trickle (`TRICKLE_GOLD`/`TRICKLE_T`); the per-surface steer/decay rates inline in `updatePlayer()`'s movement block; the darkness ramp in `update()`; `FLAKE_BASE`/`FLAKE_MIN`/`FLAKE_MAX` beside the flake block |
 | js/sim/weather.js | the `WIND_*` block (the three ripples, the bend that meanders them, the gust envelope's floor and peak, and how fast it all dies at dusk) |
 | js/sim/eagle.js | the eagle's siege (`EAGLE_HP`/`EAGLE_WORK_DMG`/`EAGLE_ARROW_DMG`/`GUST_R`/`PREEN_RATE`) |
@@ -646,10 +652,10 @@ Code that is dead **on purpose** is the next section.
   still is staged through `DBG`: `PROFILE.markDropped()`, `beginDrop()`, `hideUI`, `step` to
   `e.t ≈ dur/2` for the pass, `freeze`, `POST /shot?f=`.
 
-- **A loaded match counts its lifetime stats again.** The profile's per-character stats
+- **A record put back counts its lifetime stats again.** The profile's stats
   (`PROFILE.addKill`/`addDay`/`addWin`...) are written as they happen, so replaying a stretch
-  from an older save adds its kills, days and a win a second time. The saves themselves are
-  exact; only the lifetime tally is not rewound ([saved matches](gameplay.md#saved-matches)).
+  with `DBG.saveLoad` adds its kills, days and a win a second time on the dev profile; only the
+  lifetime tally is not rewound ([saved matches](gameplay.md#saved-matches)).
 - **The day clock turns under the ESC panel and the pause plate.** `update` advances
   `state.time`/`state.elapsed` in play and drop whatever `state.paused`/`state.settingsOpen`
   say, while every body stands still; the match clock under the minimap ticks on behind the

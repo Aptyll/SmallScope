@@ -104,7 +104,6 @@
   // decoded (or if it never does - file://, a missing folder, a codec) smp()
   // returns false and the caller's synth line plays in its place.
   const SFX_DIR = 'audio/sfx/';
-  const RESTOCK_RING = 0.9; // s between the wagon and the bell in SFX.restock
   // How far up the bull grunt behind SFX.bigHurt is pitched to read as a great
   // BIRD instead: 1.5 is a fifth and a half, which is the difference between a
   // beast in a field and something with a beak over your roost.
@@ -131,13 +130,9 @@
     wind: ['gentle_wind_blowing_#1-1787704908517.mp3', 'gentle_wind_blowing_#3-1787704902018.mp3',
       'gentle_wind_blowing__#4-1787704410848.mp3'],
     owl: ['owl_sound_at_night_#2-1787704444687.mp3'],
-    // the market's four, notification cues rather than world sounds: a coin
-    // ding for a price spike, a falling sigh for a crash, and the wagon and the
-    // bell the counter's turnover is announced by (SFX.restock, below)
-    spike: ['money ding.mp3'],
-    crash: ['sad sound.mp3'],
-    freight: ['freigh moving.mp3'],
-    restock: ['market refresh notification.mp3'],
+    // a finished item bought at the counter (buyItem, js/sim/items.js): a
+    // notification cue rather than a world sound, unjittered like the set below
+    buy: ['money ding.mp3'],
     // THE NOTIFICATION LAYER, and the whole set is deliberately ABSTRACT -
     // not one of these is a thing in the world making a noise. A stepped
     // control, a panel, a countdown, a status landing on your own body and a
@@ -145,7 +140,7 @@
     // AND from the world's axes and bowstrings in the same instant, which is
     // exactly what the synth blips do badly: six of them are the same square
     // wave two notes apart. These are unjittered by default for the same
-    // reason the market's four are (below): a cue that says a THING HAPPENED
+    // reason the buy ding is (above): a cue that says a THING HAPPENED
     // must arrive identical every time, or it reads as texture.
     count: ['lowdong.mp3'],              // one second of a countdown gone
     uiOpen: ['dongding.mp3'],            // a panel, drawer or chart coming up
@@ -849,31 +844,12 @@
     botOut() { if (smp('botOut', { vol: 0.56, jitter: 0.04, gap: 0.4 })) return; tone(300, 0.07, 'square', 0.05, 200); noise(0.1, 0.08, 1800); },
     // the camera handed to another body, watching from nowhere
     spectate() { if (smp('spectate', { vol: 0.56, jitter: 0, gap: 0.2 })) return; tone(520, 0.2, 'sine', 0.05, -200); },
-    // The market moving hard (marketNews, js/shop.js), under the plate that
-    // rises with it (the `notices` banner, js/shop.js): a coin dinging
-    // on a spike, a sad fall on a crash. Two DIFFERENT clips rather than one
-    // pitched two ways, and unjittered, because this is read as a DIRECTION
-    // and not as a texture - a spike must never be mistakable for a crash.
-    // The synth pair underneath is the fallback, and says the same thing.
-    market(up) {
-      if (smp(up ? 'spike' : 'crash', { vol: 0.79, jitter: 0 })) return;
-      tone(up ? 700 : 990, 0.07, 'square', 0.06);
-      tone(up ? 990 : 700, 0.14, 'triangle', 0.07, 0, 0.06);
-    },
-    // The counter turning over (shopRestock, js/shop.js): the wagon pulling
-    // in, and RESTOCK_RING seconds behind it the bell over the new stock -
-    // one cue in two beats, the second landing as the plate settles. The gap
-    // is deliberate and fixed: it is the sound of the goods arriving and THEN
-    // being laid out, and jitter on either half would blur that into one noise.
-    restock() {
-      // both whole: the wagon is 3.3 s and still rolling under the bell,
-      // which is the point - the goods arrive, then they are laid out
-      const a = smp('freight', { vol: 0.56, jitter: 0 });
-      const b = smp('restock', { vol: 0.71, jitter: 0, delay: RESTOCK_RING });
-      if (a || b) return;
-      tone(240, 0.06, 'triangle', 0.2); tone(360, 0.08, 'triangle', 0.18, 0, 0.05);
-      tone(523, 0.1, 'triangle', 0.09, 0, RESTOCK_RING);
-      tone(784, 0.18, 'triangle', 0.09, 0, RESTOCK_RING + 0.09);
+    // a finished item landing in a slot (buyItem, js/sim/items.js): the ding
+    // over the coin, so the purchase you saved for is told from a part by ear
+    buy() {
+      if (smp('buy', { vol: 0.79, jitter: 0 })) return;
+      tone(700, 0.07, 'square', 0.06);
+      tone(990, 0.14, 'triangle', 0.07, 0, 0.06);
     },
     heal() { if (smp('warm', { vol: 0.73, rate: 1.3, jitter: 0.06 })) return; tone(440, 0.1, 'triangle', 0.08); tone(554, 0.12, 'triangle', 0.08, 0, 0.08); },
     // the dawn shield laid on you (pickSnowdrop), and the last of it broken

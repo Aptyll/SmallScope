@@ -24,8 +24,7 @@ const events = [];        // {txt, bg, edge, fg, t}, newest last
 // plate takes the team's dark coat, not its bright mark: the ink is a pale
 // per-player tint, and a bright plate over snow leaves it nothing to sit on.
 // `o` overrides that palette for a line no player owns but the world still
-// wants coloured - the market's own headlines, green on a spike and red on a
-// crash (marketNews, js/shop.js).
+// wants coloured.
 function logEvent(txt, p, o) {
   o = o || {};
   events.push({
@@ -311,6 +310,7 @@ function renderWorldMap(now) {
   // terrain
   buildWorldMapImg();
   ctx.drawImage(mapCv, MAP_X, MAP_Y);
+  fogOverMap(ctx, now, 0, 0, WORLD, WORLD, MAP_X, MAP_Y, MAP_W, MAP_W); // the fog of war (js/draw/fog.js)
 
   // night falls over the chart too
   if (state.darkness > 0.01) {
@@ -340,11 +340,11 @@ function renderWorldMap(now) {
   // soldier and merchant standing, none of them hides - then the players,
   // then the birds over all of them, since the objective is the read
   for (const r of robots) {
-    if (r.dead) continue;
+    if (r.dead || !fogShown(r, now)) continue;
     drawMapUnit(ctx, mx(r.x), my(r.y), TEAMS[skin(r.team)].mark, CHART_DARK, 2, true, foeCue(r.team));
   }
   for (const p of players) {
-    if (p === vp || !p.active || p.dead || inAir(p)) continue;
+    if (p === vp || !p.active || p.dead || inAir(p) || !fogShown(p, now)) continue;
     if (p.team !== vp.team && p.markT <= 0 && concealOf(p) >= PRONE_MAP) continue; // buried: off the map, same as the minimap - unless falcon-marked
     drawMapUnit(ctx, mx(p.x), my(p.y), TEAMS[skin(p.team)].mark, CHART_DARK, 2, false, foeCue(p.team));
   }
@@ -453,7 +453,7 @@ function bakeFrostSlab(g, w, h, title) {
   g.fillRect(tx0 - 30, 10, 2, 3); g.fillRect(tx0 + tw + 28, 10, 2, 3);
 }
 
-// The flat slab the ESC settings panel and the SAVES slab in its place stand
+// The flat slab the ESC settings panel stands
 // on: solid, never see-through - an ink silhouette, one quiet steel line and a
 // flat night ground, the HUD frame's grammar (drawHudFrame, js/ui/strip.js)
 // at a menu's volume. No mottling, bevel or corner crystals: the head
@@ -652,7 +652,6 @@ function settingsTabBy(d) {
 // and the in-match ESC slab both route here): the arrows page and scroll.
 // True when the key was the panel's, so the caller drops it.
 function settingsKey(k) {
-  if (savesUp()) return savesKey(k);
   if (setDrop && k === 'escape') { setDrop = null; SFX.pickup(); return true; } // ESC folds an open list before the panel
   const d = moveDir(k);
   if (d === 'left') settingsTabBy(-1);
@@ -788,20 +787,20 @@ const KEY_ROWS = {
   wasd: [
     [{ acts: ['up', 'left', 'down', 'right'], verb: 'MOVE' }, { acts: ['ab1', 'ab2', 'ab3', 'ab4'], verb: 'ABILITIES' },
       ['CLICK', 'FIRE'], 'dodge', 'slide', 'work', ['RMB', 'FLAG WHEEL']],
-    ['berry', 'fish', 'tunnel', 'bag', 'char', 'build', 'rotate'],
+    ['berry', 'fish', 'recall', 'tunnel', 'bag', 'char', 'build', 'rotate'],
     ['map', 'board', 'mute', 'pause', ['ESC', 'SETTINGS'], ['SCROLL', 'ZOOM'], ['F3', 'INFO'], ['.', 'HITBOX']],
   ],
   click: [
     [['RMB', 'MOVE / ACT'], ['HOLD RMB', 'FOLLOW'], { acts: ['ab1', 'ab2', 'ab3', 'ab4'], verb: 'ABILITIES' },
       ['CLICK', 'FIRE'], 'amove', 'stop', 'dodge', 'slide'],
     ['berry', 'fish', 'flag', 'tunnel', 'bag', 'char', 'build', 'rotate'],
-    ['map', 'board', 'mute', 'pause', ['ESC', 'SETTINGS'], ['SCROLL', 'ZOOM'], ['F3', 'INFO']],
+    ['recall', 'map', 'board', 'mute', 'pause', ['ESC', 'SETTINGS'], ['SCROLL', 'ZOOM'], ['F3', 'INFO']],
   ],
   mouse: [
     [['RMB', 'MOVE / ACT'], ['HOLD RMB', 'FOLLOW'], ['CLICK', 'FIRE'], ['HOLD MMB', 'ACTION WHEEL'],
       'dodge', 'slide', { acts: ['ab1', 'ab2', 'ab3', 'ab4'], verb: 'ABILITIES' }, 'amove'],
     ['stop', 'berry', 'fish', 'flag', 'tunnel', 'bag', 'char', 'build'],
-    ['rotate', 'map', 'board', 'mute', 'pause', ['ESC', 'SETTINGS'], ['SCROLL', 'ZOOM']],
+    ['rotate', 'recall', 'map', 'board', 'mute', 'pause', ['ESC', 'SETTINGS'], ['SCROLL', 'ZOOM']],
   ],
 };
 const KEY_ROW_H = 12, KEY_ROWS_Y = 5;
@@ -991,18 +990,21 @@ function muteBtnRect() {
 
 // The foot's buttons (drawFlatButton): CLOSE, and
 // in a match the way out beside it (the ESC panel is the one menu a match or
-// the arena has). In practice LEAVE is leavePractice()
-// (js/menu.js), the reroll's whiteout onto a bare URL, so leaving lands on a
-// fresh title world; in a match it is toLobby() (js/screens.js), the
+// the arena has). In practice a party's leader goes back to its party
+// (toLobby) and anyone else takes leavePractice() (js/ui/menu.js), the
+// reroll's whiteout onto a bare URL, landing on a fresh title world; in a match it is toLobby() (js/screens.js), the
 // death screen's own way back to the title. Only the in-match slab hangs it:
 // the title's slide-in has nothing to leave, so CLOSE sits centred alone.
-// A solo match hangs SAVES between them (the saves slab, js/ui/saves.js).
+// SURRENDER stands before LEAVE while your side may vote: it starts the
+// vote, or casts your yes in one already open (js/sim/surrender.js). Four planks
+// slim down a little to keep the slab's margins.
 function footPlanks() {
-  const ids = state.settingsOpen ? (canSave() ? ['close', 'saves', 'leave'] : ['close', 'leave']) : ['close'];
-  const n = ids.length, y = SET_Y + SET_FOOT_Y;
-  const x0 = SET_X + Math.round((SET_W - (SET_PLANK_W * n + SET_PLANK_GAP * (n - 1))) / 2);
-  const label = { close: 'CLOSE', saves: 'SAVES', leave: 'LEAVE' };
-  return ids.map((id, i) => ({ id, label: label[id], x: x0 + i * (SET_PLANK_W + SET_PLANK_GAP), y, w: SET_PLANK_W, h: SET_PLANK_H }));
+  const ids = !state.settingsOpen ? ['close'] : ['close',
+    ...(voteCanStart(player) || voteOpenFor(player) ? ['surrender'] : []), 'leave'];
+  const n = ids.length, y = SET_Y + SET_FOOT_Y, pw = n > 3 ? SET_PLANK_W - 8 : SET_PLANK_W;
+  const x0 = SET_X + Math.round((SET_W - (pw * n + SET_PLANK_GAP * (n - 1))) / 2);
+  const label = { close: 'CLOSE', surrender: 'SURRENDER', leave: 'LEAVE' };
+  return ids.map((id, i) => ({ id, label: label[id], x: x0 + i * (pw + SET_PLANK_GAP), y, w: pw, h: SET_PLANK_H }));
 }
 function leavePlankRect() { return footPlanks().find((l) => l.id === 'leave') || null; }
 // CLOSE: the in-match slab folds (what ESC does, input.js), the title's
@@ -1020,7 +1022,6 @@ function settingsClose() {
 // 'c:<row>:<opt>' for a choice row's word (QUALITY), or
 // 'key:<action>' for a keyboard cap and 'keyreset' for the word under them.
 function settingsHit() {
-  if (savesUp()) return savesHit(); // the saves slab stands in the ESC panel's place (js/ui/saves.js)
   const mx = mouse.x, my = mouse.y;
   const L = settingsLayout();
   // an open dropdown list takes the whole pointer: one of its entries, or nothing
@@ -1065,7 +1066,6 @@ function settingsHit() {
 
 function settingsMouseDown() {
   SFX.unlock();
-  if (savesUp()) { savesClick(); return; }
   const hit = settingsHit();
   // a listening cap: any press but its own calls it off first
   if (state.rebind && hit !== 'key:' + state.rebind) state.rebind = null;
@@ -1097,8 +1097,8 @@ function settingsMouseDown() {
   }
   if (hit === 'vol' || hit === 'music' || hit === 'sfx' || hit === 'map' || HUD_DIALS[hit]) { dragSlider = hit; applySliderDrag(); return; }
   if (hit === 'close') { settingsClose(); return; }
-  if (hit === 'leave') { if (PRACTICE) leavePractice(); else toLobby(); return; }
-  if (hit === 'saves') { openSaves(); return; }
+  if (hit === 'leave') { if (PRACTICE && !(NET.isHost && NET.mode)) leavePractice(); else toLobby(); return; } // a party's leader back to its party
+  if (hit === 'surrender') { player.input.cmd = { kind: 'vote', yes: true }; settingsClose(); return; }
   if (hit.startsWith('c:')) {
     const [, rid, oid] = hit.split(':');
     const row = settingsLayout().rows.find(r => r.id === rid);
@@ -1221,7 +1221,6 @@ function toggleVal(id) { return id === 'cursor' ? settings.pixelCursor : !!setti
 // opts.slide (px): draw the panel shifted down by that much - the main menu
 // slides it in over the living world and skips the dim + minimap preview
 function renderSettings(now, opts) {
-  if (savesUp()) { renderSaves(now, opts); return; } // the saves slab stands in its place (js/ui/saves.js)
   if (dragSlider && mouse.down) applySliderDrag();
   const slide = opts && opts.slide ? Math.round(opts.slide) : 0;
   if (!opts || !opts.bare) {

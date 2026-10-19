@@ -20,11 +20,15 @@ const NET = {
   kicked: new Set(),         // a host's: the uids shown out of this room, refused if they knock again (seatKick)
   ready: new Set(),          // the waiting room's: the slots whose person has said READY (the host's to keep; a guest mirrors it off each roster)
   pings: [],                 // the waiting room's: ms to the host per slot, null for a bot or the host itself (pingsHost; a guest mirrors it)
-  aiLevel: 0,                // a guest's: the host's bot level, shown in the room (the host reads its own settings.aiLevel)
+  aiLevel: 0,                // a guest's: the host's bot level, shown in the room (the host reads roomLevel, js/ui/rooms.js)
+  mode: null,                // the party's mode: 'quick' | 'ranked' | 'practice' (PARTY_MODES, js/ui/rooms.js), null with no party open; a guest's comes with the roster
+  botLv: null,               // a host's: RANKED's bots' level, pinned at FIND MATCH (rankLevel); null leaves it settings.aiLevel (aiProfile, js/ai/ai-skill.js)
+  ranks: [],                 // the party's: each person's RANKED rating per slot (their hello's, the host's own PROFILE.rank)
+  code: '',                  // a guest's: the party's code, as the host sent it (roomCode, js/ui/rooms.js)
   pingT: 0,                  // a host's: s toward the next round of pings
   chat: [],                  // the waiting room's last lines, { name, team, s } (js/ui/roomtalk.js)
   hostSlot: 0,               // a client's: which slot the host's own player sits in
-  phase: 'room',             // the waiting room's page, the host's to turn: 'room' (the seats, js/ui/rooms.js) or 'pick' (the lobby's stage and LOCK IN)
+  phase: 'room',             // the party's page, the host's to turn: 'room' (the seats, js/ui/rooms.js) or 'pick' (the hero select: the lobby's stage and LOCK IN)
   synced: false,             // a client's: has the first full snapshot landed
   inTick: 0,                 // a client's: the tick its last input went out for
   lastTick: -1,              // a client's: the newest snapshot tick applied
@@ -76,7 +80,7 @@ function netSetup(role, transport) {
   if (NET.transport && NET.transport !== loopbackTransport) NET.transport.close();
   NET.role = role || 'solo';
   NET.transport = transport || loopbackTransport;
-  NET.peers.clear(); NET.parked.clear(); NET.kicked.clear(); NET.ready.clear(); NET.pings = []; NET.pingT = 0; NET.chat = [];
+  NET.peers.clear(); NET.parked.clear(); NET.kicked.clear(); NET.ready.clear(); NET.pings = []; NET.pingT = 0; NET.chat = []; NET.ranks = []; NET.botLv = null; NET.code = '';
   NET.easeAt = 0; NET.gapAvg = 0; NET.gapDev = 0; NET.easeMs = 0;
   NET.synced = false; NET.welcomed = false; NET.helloed = false; NET.refused = null; NET.lastTick = -1; NET.hostOver = null; NET.countN = -1; NET.published = false; NET.phase = 'room'; NET.rematch = null; NET.nextSeed = 0; NET.was = null;
   NET.dictOut = encDict(); NET.dictIn = encDict(); NET.verifyFail = null;
@@ -101,13 +105,13 @@ function netRelay() {
   if (location.protocol === 'http:' || location.protocol === 'https:') return location.host;
   return RELAY_DEFAULT;
 }
-// The three doors the title screen opens (js/ui/menu.js): host a room on
-// the relay, join one by its code, or leave whichever this is and be solo
-// again with today's ten. The Steam transport takes the same three when the
-// wrapper is asked for it (?transport=steam).
+// The three doors the party lobby opens (js/ui/rooms.js): host a room on
+// the relay (every party is one), join one by its code, or leave whichever
+// this is and be solo again with today's ten. The Steam transport takes the
+// same three when the wrapper is asked for it (?transport=steam).
 // is this screen riding Steam: the wrapper's bridge is there and the page
-// was asked for it (?transport=steam, the wrapper's --transport=steam). The
-// rooms screen lists Steam's lobbies then instead of the relay's rooms
+// was asked for it (?transport=steam, the wrapper's --transport=steam). A
+// code is looked up on Steam's lobbies then instead of the relay's rooms
 function netSteam() { return !!window.steamBridge && /[?&]transport=steam/.test(location.search); }
 function netTransportFor(room) {
   if (netSteam()) return steamTransport(room);
@@ -122,12 +126,13 @@ function netLeave() {
   else if (was === 'host') for (const p of players) if (p.control === 'remote') { p.control = 'ai'; p.input = makeInput(); }
 }
 // what the relay's list says of this room: who hosts it, on what patch, seed
-// and map shape, whether it is still open, and how many people are in it
+// and map shape, whether it is still open, and how many people are in it -
+// what a code typed into another party's box is matched against
 function netHostRoom() {
   if (NET.role !== 'host' || !NET.transport.roomData) return;
   let humans = 0; const sides = [0, 0];
   for (const p of players) if (isHuman(p)) { humans++; sides[p.team]++; }
-  NET.transport.roomData({ name: player ? player.name : '', patch: PATCH_TXT, seed: SEED, map: MAP_TYPE, state: state.drop ? 'live' : 'open', humans, sides });
+  NET.transport.roomData({ name: player ? player.name : '', patch: PATCH_TXT, seed: SEED, map: MAP_TYPE, practice: PRACTICE ? 1 : 0, state: state.drop ? 'live' : 'open', humans, sides });
 }
 // the roster to every peer, on every change of it: a client's waiting room
 // draws the same ten this one does
@@ -148,8 +153,8 @@ function netHostStep(dt) {
     const pr = NET.peers.get(peer);
     if (!pr) continue;
     if (msg.t === 'resync') { netHostFull(peer, pr); continue; } // a delta the client could not take: the whole thing again
-    if (msg.t === 'seat') { seatSwap(pr.slot, msg.slot | 0); continue; } // the waiting room: a move to the other side
-    if (msg.t === 'ready') { seatReady(pr.slot, !!msg.on); continue; }    // ...a guest's READY
+    if (msg.t === 'ready') { seatReady(pr.slot, !!msg.on); continue; }    // the party: a guest's READY
+    if (msg.t === 'pick') { seatPick(pr.slot, msg.cls | 0); continue; }   // ...a guest's hero, on the hero select
     if (msg.t === 'say') { talkFrom(pr, msg.s); continue; }               // ...a line for the room's chat
     if (msg.t === 'pong') { pongIn(pr, msg); continue; }                   // ...and its answer to a ping
     if (msg.t === 'in') {
@@ -201,8 +206,16 @@ function netHostHello(peer, msg) {
   if ((msg.map | 0) !== MAP_TYPE) return refuse('SEED'); // the same world means the same shape of it (MAPS, world.js)
   let slot = -1;
   const park = NET.parked.get(msg.uid) || rematchSeat(msg.uid); // a dropped peer's slot, or the one it held last match
-  if (park && players[park.slot].control === 'ai') { slot = park.slot; NET.parked.delete(msg.uid); }
-  else {
+  if (park && !isHuman(players[park.slot])) { slot = park.slot; NET.parked.delete(msg.uid); }
+  else if (NET.mode) {
+    // a party: a seat on the leader's own side, while it is still choosing
+    // whom to bring - never once the hero select or the match has begun
+    // (a party on the practice field takes friends at any time)
+    if (NET.mode !== 'practice' && (state.mode !== 'title' || NET.phase !== 'room')) return refuse('BUSY');
+    const seat = players.find((p) => p.team === player.team && !isHuman(p));
+    if (!seat) return refuse('FULL');
+    slot = seat.id;
+  } else {
     if (state.drop && state.elapsed > LATE_JOIN_T) return refuse('LATE');
     // the smaller side's first open seat (the side with fewer people, not
     // fewer bodies): on a side short of the room's size (its fullest side's
@@ -218,9 +231,10 @@ function netHostHello(peer, msg) {
   }
   const p = players[slot];
   p.control = 'remote';
+  if (PRACTICE) practiceSeat(p); // onto the field's spawn, out of the corner it was parked in
   if (msg.name) p.name = msg.name;
-  if (msg.look) p.look = msg.look;
   if (msg.cls !== undefined && msg.cls !== null) setClass(p, msg.cls);
+  NET.ranks[slot] = msg.rank | 0 || null;
   const pr = { slot, uid: msg.uid, name: msg.name, lastTick: 0, ack: -1, dictAt: new Map(), q: [], qMin: Infinity, qN: 0 };
   NET.peers.set(peer, pr);
   NET.transport.send(peer, Object.assign({ t: 'welcome', slot, hostSlot: localId, seed: SEED, tick: state.tick, roster: netRoster(), phase: NET.phase }, roomInfo()));
@@ -250,33 +264,20 @@ function netHostLeave(peer) {
   p.control = 'ai'; // the side keeps its number while the slot waits
   p.input = makeInput();
   NET.parked.set(pr.uid, { slot: pr.slot, t: 0 });
-  NET.ready.delete(pr.slot); NET.pings[pr.slot] = null;
+  NET.ready.delete(pr.slot); NET.pings[pr.slot] = null; NET.ranks[pr.slot] = null;
+  if (NET.mode && state.mode === 'title' && NET.phase === 'room') p.control = 'none'; // a party's seat stands empty again for the next friend
+  if (PRACTICE) practiceVacate(p); // the field has no bots: back to the corner, empty
   logEvent((p.name || 'A PLAYER') + ' LEFT', p);
   netHostRoster(); netHostRoom();
 }
 // ------------------------------------------------------------ seats
-// The waiting room's moves, every one the host's to make (a guest asks with
-// a `seat` message, netSeat). A seat is a SLOT and a side is a field on it
-// (Player.team), so a move to the other side swaps the two bodies' teams and
-// nothing else: nobody is reseated, no slot's input or connection moves, and
-// the side keeps its number - the bot (or the empty seat) clicked on walks
-// over to where the mover stood. Only before the count: once LOCK IN is
-// pressed the sides are what the eagles will carry.
+// The party's moves, every one the host's to make: a friend shown out, a
+// guest's hero picked on the hero select, and the page (the party's seats,
+// or the pick) turned on every screen. Only before the count: once LOCK IN
+// is pressed the sides are what the eagles will carry.
 function seatsOpen() { return state.mode === 'title' && !state.drop && !(state.menu.countT > 0) && !(state.menu.lockT > 0); }
-// can the body in slot `from` move to the side of slot `to` by taking its seat
-function seatCanSwap(from, to) {
-  const a = players[from], b = players[to];
-  return !!a && !!b && a !== b && a.team !== b.team && !isHuman(b) && seatsOpen();
-}
-function seatSwap(from, to) {
-  if (NET.role === 'client' || !seatCanSwap(from, to)) return false;
-  const a = players[from], b = players[to], t = a.team;
-  a.team = b.team; b.team = t;
-  netHostRoster(); netHostRoom();
-  return true;
-}
-// the host turns the waiting room's page (the seats, or the pick) on every
-// screen at once; a guest follows it from wherever it stands in the title
+// the host turns the party's page (the seats, or the pick) on every screen
+// at once; a guest follows it from wherever it stands in the title
 function netPhase(ph) {
   if (NET.role !== 'host') return;
   NET.phase = ph;
@@ -289,85 +290,57 @@ function netClientPhase(ph) {
   if (popOpen()) leavePop();
   if (ph === 'pick') beginLobby(); else beginRoom();
 }
-// this screen's own move: the host makes it, a guest asks for it
-function netSeat(to) {
-  if (NET.role === 'client') { if (seatCanSwap(localId, to)) NET.transport.send('host', { t: 'seat', slot: to }); return; }
-  seatSwap(localId, to);
-}
-// the host's hand on a seat: a person is shown out of the room (and kept out
-// of it - the kick list lives as long as the room), a bot's seat is emptied,
-// an empty seat gets its bot back
+// the leader's hand on a friend: shown out of the party (and kept out of it
+// - the kick list lives as long as the room), the seat empty again
 function seatKick(slot) {
   if (NET.role !== 'host' || !seatsOpen()) return;
   for (const [peer, pr] of NET.peers) if (pr.slot === slot) {
     NET.transport.send(peer, { t: 'refuse', why: 'KICKED' });
     NET.peers.delete(peer);
     NET.kicked.add(pr.uid);
-    NET.ready.delete(slot); NET.pings[slot] = null;
+    NET.ready.delete(slot); NET.pings[slot] = null; NET.ranks[slot] = null;
     const p = players[slot];
-    p.control = 'ai'; p.input = makeInput(); p.name = null;
+    p.control = NET.mode ? 'none' : 'ai'; p.input = makeInput(); p.name = null;
     logEvent((pr.name || 'A PLAYER') + ' LEFT', p);
     netHostRoster(); netHostRoom();
     return;
   }
 }
-function seatBot(slot) {
+// a hero picked on the hero select: the host sets its own, a guest asks the
+// host (`pick`), and every screen sees it with the next roster
+function seatPick(slot, cls) {
   const p = players[slot];
-  if (NET.role === 'client' || !p || isHuman(p) || !seatsOpen()) return;
-  p.control = p.control === 'none' ? 'ai' : 'none';
-  netHostRoster(); netHostRoom();
-}
-// the host's click on a bot's class mark: the next class, on every screen
-function seatClass(slot) {
-  const p = players[slot];
-  if (NET.isClient || !seatsOpen() || !p || p.control !== 'ai') return;
-  setClass(p, (p.cls + 1) % CLASSES.length);
+  if (NET.role === 'client' || !p || !seatsOpen() || !CLASSES[cls]) return;
+  setClass(p, cls);
   netHostRoster();
 }
-// SHUFFLE (the room's option): the people dealt at random, alternately to
-// each side (which side gets the odd one is a coin), so the two differ by
-// one at most. Two people trading sides swap with each other; the rest take
-// a bot's seat over there, else an empty one's. Menu chance, never the sim's rng
-function seatsShuffle() {
-  if (NET.isClient || !seatsOpen()) return;
-  const ppl = players.filter(isHuman);
-  for (let i = ppl.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [ppl[i], ppl[j]] = [ppl[j], ppl[i]]; }
-  const first = Math.random() < 0.5 ? 0 : 1;
-  const go = [[], []]; // go[t]: the people to move onto side t
-  ppl.forEach((p, i) => { const t = i % 2 ? 1 - first : first; if (p.team !== t) go[t].push(p); });
-  while (go[0].length && go[1].length) { const a = go[0].pop(), b = go[1].pop(); const t = a.team; a.team = b.team; b.team = t; }
-  for (const t of [0, 1]) for (const p of go[t]) {
-    const seat = players.find((q) => q.team === t && q.control === 'ai') || players.find((q) => q.team === t && q.control === 'none');
-    if (seat) { seat.team = p.team; p.team = t; }
-  }
-  netHostRoster(); netHostRoom();
-}
-// TEAMS (the room's option, js/ui/rooms.js): k seats a side - the people
-// keep theirs, bots fill the side up to k in slot order and the rest empty
-function seatsSize(k) {
-  if (NET.isClient || !seatsOpen()) return;
-  for (const t of [0, 1]) {
-    let bots = Math.max(0, k - players.filter((p) => p.team === t && isHuman(p)).length);
-    for (const p of players) if (p.team === t && !isHuman(p)) { p.control = bots > 0 ? 'ai' : 'none'; if (bots > 0) bots--; }
-  }
-  netHostRoster(); netHostRoom();
+function netPick(cls) {
+  if (NET.isClient) NET.transport.send('host', { t: 'pick', cls });
+  else seatPick(localId, cls);
 }
 // ------------------------------------------------------------ room info
-// What the waiting room shows beyond the seats, the host's to keep and sent
-// with every roster (and the welcome): who has said READY, and the bots'
-// level. READY is a person's word that they are at the keys; the host's
-// START waits on every person's (roomAllReady, js/ui/rooms.js). The pings
+// What the party shows beyond the seats, the host's to keep and sent with
+// every roster (and the welcome): who has said READY, the bots' level, the
+// mode, the party's code and each person's RANKED rating. READY is a
+// person's word that they are at the keys; the leader's FIND MATCH waits on
+// every person's (roomAllReady, js/ui/rooms.js). The pings
 // go round every PING_EVERY: the host stamps a `ping` to each peer, the
 // peer sends the stamp straight back, and the round trip (eased) goes out
 // to everyone as `pings`, a number per slot, so every screen can draw each
 // person's link - over the relay this is the whole path, two hops.
 const PING_EVERY = 2;   // s between rounds
 const PING_EASE = 0.5;  // the new round's share of a peer's eased round trip
-function roomInfo() { return { ready: [...NET.ready], lvl: settings.aiLevel | 0 }; }
+function roomInfo() {
+  if (NET.isHost) NET.ranks[localId] = PROFILE.rank();
+  return { ready: [...NET.ready], lvl: roomLevel(), mode: NET.mode, code: roomCode(), ranks: NET.ranks };
+}
 // a guest's copy, off a roster or the welcome
 function roomInfoIn(msg) {
   if (msg.ready) NET.ready = new Set(msg.ready);
   if (msg.lvl !== undefined) NET.aiLevel = msg.lvl | 0;
+  if (msg.mode !== undefined) NET.mode = msg.mode;
+  if (msg.code) NET.code = String(msg.code);
+  if (Array.isArray(msg.ranks)) NET.ranks = msg.ranks;
 }
 function seatReady(slot, on) {
   if (NET.role !== 'host' || !seatsOpen()) return;
@@ -394,7 +367,7 @@ function pongIn(pr, msg) {
   if (!(rtt >= 0 && rtt < 60000)) return;
   pr.rtt = pr.rtt === undefined ? rtt : pr.rtt + (rtt - pr.rtt) * PING_EASE;
 }
-function netRoster() { return players.map((p) => ({ control: p.control, team: p.team, name: p._name, cls: p.cls, look: p.look })); }
+function netRoster() { return players.map((p) => ({ control: p.control, team: p.team, name: p._name, cls: p.cls })); }
 // after the step: every SNAP_EVERY ticks this tick goes into the ring and
 // each peer gets the delta from ITS acked tick (peers on one ack share the
 // cut), with the cosmetics the step recorded; a peer whose ack has aged out
@@ -480,6 +453,7 @@ function netClientStep(dt) {
       continue;
     }
     if (msg.t === 'rematch') { rematchHeard(msg); continue; }
+    if (msg.t === 'practice') { practiceHeard(); continue; } // the leader's START: onto the practice field after it (js/ui/rooms.js)
     if (msg.t === 'welcome') { netClientWelcome(msg); continue; }
     // the waiting room: the host's ten and its count, drawn here as there
     if (msg.t === 'roster') { netClientRoster(msg.roster); roomInfoIn(msg); continue; }
@@ -492,7 +466,7 @@ function netClientStep(dt) {
   if (T.open && !NET.helloed) { netClientHello(); NET.helloed = true; }
   if (!T.open) NET.helloed = false;
 }
-// The character's lifetime stats on a client. Every PROFILE.add* in the sim
+// The profile's lifetime stats on a client. Every PROFILE.add* in the sim
 // is gated on `p === player` INSIDE the step, which only the host's screen
 // runs, so a client reads the same facts off its own body as the snapshots
 // move it: xp is the match's gold earned (gainGold), kills only climbs, a
@@ -519,13 +493,12 @@ function netClientStats() {
   NET.was = { p: me, xp: me.xp, kills: me.kills, dead: me.dead, aboard: me.aboard };
 }
 function netClientHello() {
-  const c = PROFILE.char();
-  NET.transport.send('host', { t: 'hello', uid: NET.uid, patch: PATCH_TXT, seed: SEED, map: MAP_TYPE, name: c ? c.name : PROFILE.name(), cls: c ? c.cls : 0, look: c ? c.look : null });
+  NET.transport.send('host', { t: 'hello', uid: NET.uid, patch: PATCH_TXT, seed: SEED, map: MAP_TYPE, name: PROFILE.name(), cls: PROFILE.hero(), rank: PROFILE.rank() });
 }
 // the roster the host dealt: our slot is the human here, the host's is a
 // remote one, and the bodies are built before the first snapshot fills them
 function netClientWelcome(msg) {
-  const roster = msg.roster.map((r, i) => ({ control: i === msg.slot ? 'human' : r.control === 'human' ? 'remote' : r.control, team: r.team, name: r.name, cls: r.cls, look: r.look }));
+  const roster = msg.roster.map((r, i) => ({ control: i === msg.slot ? 'human' : r.control === 'human' ? 'remote' : r.control, team: r.team, name: r.name, cls: r.cls }));
   NET.hostSlot = msg.hostSlot;
   NET.phase = msg.phase || 'room';
   initPlayers(roster, msg.slot);
@@ -536,16 +509,15 @@ function netClientWelcome(msg) {
   NET.welcomed = true; // the title screen moves to the waiting room on this
 }
 // a later roster (someone came or went while we wait): the bodies stay, their
-// names, classes, faces and kinds change in place - ours stays the human
+// names, heroes and kinds change in place - ours stays the human
 function netClientRoster(roster) {
   for (let i = 0; i < players.length && i < roster.length; i++) {
     const p = players[i], r = roster[i];
-    p.team = r.team; // a seat move changes ours as well (seatSwap)
+    p.team = r.team; // the host deals the sides, ours included
     if (i === localId) continue;
     p.control = r.control === 'human' ? 'remote' : r.control;
     p.team = r.team;
     p.name = r.name;
-    if (r.look) p.look = r.look;
     if (p.cls !== r.cls) setClass(p, r.cls);
   }
 }

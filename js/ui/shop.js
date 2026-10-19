@@ -1,692 +1,31 @@
 'use strict';
-// THE MERCHANT'S COUNTER: the one place gold turns into goods and goods turn
+// THE MERCHANT'S COUNTER: the one place gold turns into items and goods turn
 // back into gold. Each eagle's driver (the `merchant` banner, js/sim/robots.js)
 // climbs down at the crash, fells its back woods and raises the bot bays,
-// and keeps to the lane mouth between jobs - and standing beside it opens this.
+// and keeps to the lane mouth between jobs - and standing beside it, or its
+// stall, opens this.
 //
 // BOTH counters serve EVERYBODY. Your own roost's merchant is the near one and
 // the rival's is a walk through their base, but neither asks whose side you
 // are on, which is exactly why a merchant cannot be killed (unitAlive,
 // js/sim/actions.js): a shop nobody can reach is not a shop.
 //
-// Three things live in this file, in this order:
-//   - the MARKET. Fish and berries have a price that MOVES - a random walk
-//     with a pull home and the odd shock - and they are the only two things in
-//     the game that do. Everything else is priced once, on its own def
-//     (`price` on TOOLS/BITS in js/sim/tools.js, CARD_PRICE in js/sim/player.js).
-//   - the STOCK. Twelve offers rolled off the tool, bit and card pools, which
-//     turn over every SHOP_RESTOCK seconds - the same twelve at both counters,
-//     because there is one market and two shopfronts onto it.
-//   - the PANEL. Bought from with a click, sold to by DRAGGING out of the
-//     pack, which is always up beside it (drawBag, ui.js).
+// It is an ITEMS shop in League's mould (js/sim/items.js owns the items):
+// every item is on sale all the time, at one fixed price, so a player can
+// save up for the one they want. Nothing in it moves - fish and berries have
+// a fixed price too - and nothing sells out. Three things live here:
+//   - the COUNTERS: which one a body is standing at, and the reach that keeps
+//     the panel open.
+//   - BUYING AND SELLING: items through buyItem/sellItem, fish and berries at
+//     their fixed price, and anything in the pack dragged onto the panel.
+//   - the PANEL, layout A: category filters down the left, the parts and the
+//     finished items in a grid, the picked item read out on the right with its
+//     build tree, and along the bottom your six slots and the food.
 //
 // The counter does not stop the sim, and standing at one does not protect you:
 // it is HUD like the backpack and the character sheet, and walking out of
 // reach shuts it.
-// ------------------------------------------------------------ market
-// The market's own rng, seeded off SEED the way the chests' is (chRng,
-// js/sim/world.js): prices are the same on every machine playing the same seed,
-// and a busy market can never shift the loot rolls by consuming draws out of
-// the shared stream.
-const mktRng = mulberry32((SEED ^ 0x4D4B5431) >>> 0);
-
-const MKT_STEP = 5;      // s between price moves - the sample pitch of the graphs too
-const MKT_DAYS = 3;      // days of history a graph shows
-const MKT_HIST = Math.ceil(MKT_DAYS * CYCLE / MKT_STEP); // samples held per good
-const MKT_REVERT = 0.05; // share of the gap back to `base` each step: the pull home
-const MKT_NEWS = 0.3;    // share of the last headline's price a move must clear to cut a new one
-const MKT_TRADES = 48;   // trades a body's ledger keeps; older ones have scrolled off the graph anyway
-
-// The two traded goods. `base` is what a thing is worth when nothing is
-// happening, `min`/`max` the rails it can never leave, `vol` the ordinary
-// step, and `shock` the chance a step is a LURCH instead - straight to `lo` or
-// `hi` of where it stood, which is what makes a market worth watching rather
-// than a number that drifts. Fish are the money good and berries the small
-// change: a fish is worth four or five berries at rest and the gap widens on
-// a spike, so a full bag of fish is a real decision about when to sell it.
-// `newsMin` is the OTHER half of the headline test: the gold a move must also
-// be worth. Without it a berry going 2G -> 3G is a 50% "spike" and the feed
-// fills with small change, because a percentage of a cheap thing is nothing.
-const GOODS = {
-  fish:  { name: 'FISH',    base: 18, min: 5, max: 60, vol: 0.13, shock: 0.05, lo: 0.62, hi: 1.7, newsMin: 4 },
-  berry: { name: 'BERRIES', base: 4,  min: 1, max: 15, vol: 0.11, shock: 0.04, lo: 0.66, hi: 1.6, newsMin: 2 },
-};
-const MKT_ORDER = ['fish', 'berry']; // the order the counter lists them in: the money good first
-
-// The live market. `price` is a float and the whole walk runs on it; what is
-// ever PAID is marketPrice() - the rounded coin - so the graph can wander
-// between two whole numbers without the counter's price flickering.
-// `news` is the price the last headline was cut at, `pop` the seconds of
-// highlight left on a row that just made one. `step` counts the moves since
-// the match began, so the newest sample of every graph is move `step` and a
-// trade can say which move it was made on (marketLog).
-const market = { t: 0, goods: {}, stockT: 0, stock: null, n: 0, step: 0 };
-
-// EVERY FISH trades on the one fish market. Each kind in FISH_KINDS (the
-// creek's whitefish and snow char beside the hole's frost pike and gold
-// sunfish, js/sim/player.js) is priced off the frost pike's live price (the
-// `fish` good), scaled by what it heals against what the pike heals - so a
-// new fish is priced the moment it has a `heal`, and the four move together.
-function goodOf(type) { return Object.hasOwn(GOODS, type) ? type : FISH_KINDS.includes(type) ? 'fish' : null; }
-function goodScale(type) { const g = goodOf(type); return g === type ? 1 : ITEMS[type].heal / ITEMS[g].heal; }
-function goodName(type) { return ITEMS[type].name || GOODS[type].name; } // a fish by its own name, the market's by its
-function marketPrice(id) { return Math.max(1, Math.round(market.goods[goodOf(id)].price * goodScale(id))); }
-// the goods array a good's graph is drawn from, oldest first (a fish's is
-// its market's, in the frost pike's coin)
-function marketHist(id) { return market.goods[goodOf(id)].hist; }
-// is this a traded good rather than a made thing?
-function isGood(type) { return !!goodOf(type); }
-// where on the clock the market stands right now, in moves: the newest
-// sample plus the share of the next move already gone - the right edge of
-// every graph, and the moment a trade made now is pinned to
-function marketNow() { return (market.step || 0) + market.t / MKT_STEP; }
-
-// THE LEDGER: every unit of a good a body bought or sold at the counter, as
-// { id, d, at, c, n } - the kind, +1 bought / -1 sold, the market clock it
-// happened at (marketNow), the coin paid or fetched for ONE, and how many.
-// It is what the market page pins its markers on, so `at` and `c` are the
-// trade's own and never re-read off the graph: a marker sits exactly where
-// the price was when the coin changed hands. Back-to-back trades of one kind,
-// one way, at one price inside one move fold into one entry, so a run of
-// clicks reads as one marker with a count rather than a smear. Kept on the
-// player, so it rides the save and the wire like the rest of the body.
-function marketLog(p, id, dir, price, n) {
-  const L = p.trades || (p.trades = []);
-  const at = Math.round(marketNow() * 100) / 100, last = L[L.length - 1];
-  if (last && last.id === id && last.d === dir && last.c === price && Math.floor(last.at) === Math.floor(at)) last.n += n;
-  else L.push({ id, d: dir, at, c: price, n });
-  while (L.length && (L.length > MKT_TRADES || L[0].at < at - MKT_HIST)) L.shift();
-}
-
-// one step of the walk: the pull home, the ordinary drift, then the shock
-function marketWalk(id) {
-  const g = GOODS[id], r = market.goods[id];
-  let p = r.price;
-  p += (g.base - p) * MKT_REVERT;
-  p *= 1 + (mktRng() * 2 - 1) * g.vol;
-  if (mktRng() < g.shock) p *= mktRng() < 0.5 ? g.lo : g.hi;
-  r.price = Math.max(g.min, Math.min(g.max, p));
-}
-
-// A move worth telling everyone about. The feed is where the game already
-// says what just happened to somebody, so it is where the market says what
-// just happened to their bag - one line, the good's own colour, and the price
-// it landed on. `news` only moves when a line is cut, so a slow climb of ten
-// small steps still makes the headline the moment it adds up to MKT_NEWS.
-function marketNews(id) {
-  const r = market.goods[id], now = marketPrice(id), g = GOODS[id];
-  const d = (now - r.news) / Math.max(1, r.news);
-  if (Math.abs(d) < MKT_NEWS || Math.abs(now - r.news) < g.newsMin) return;
-  const up = d > 0;
-  r.news = now;
-  r.pop = 3;
-  const k = up ? 'spike' : 'crash';
-  logEvent(GOODS[id].name + (up ? ' SPIKE ' : ' CRASH ') + now + 'G', null, NOTE_KIND[k]);
-  raiseNotice(k, now + 'G', id); // ...and the plate under the minimap
-  SFX.market(up);
-}
-
-// Three days of trading before anyone landed, so the graphs are graphs on day
-// one rather than a flat line that fills in over the first quarter of an hour.
-function initMarket() {
-  market.t = 0;
-  notices.length = 0; // a new match starts with a clear corner
-  for (const id of MKT_ORDER) {
-    const g = GOODS[id];
-    const r = { price: g.base, news: g.base, pop: 0, hist: [] };
-    market.goods[id] = r;
-    for (let i = 0; i < MKT_HIST; i++) { marketWalk(id); r.hist.push(r.price); }
-    r.news = marketPrice(id);
-  }
-  market.step = 0;
-  shopRestock(true);
-}
-
-// Called once per sim step from updatePlay (js/sim/sim.js), never in practice -
-// the training room has no merchants and no clock. Both timers live here: the
-// price walk on MKT_STEP, and the counter's own turnover on SHOP_RESTOCK.
-function updateMarket(dt) {
-  market.t += dt;
-  while (market.t >= MKT_STEP) {
-    market.t -= MKT_STEP;
-    market.step = (market.step || 0) + 1;
-    for (const id of MKT_ORDER) {
-      const r = market.goods[id];
-      marketWalk(id);
-      r.hist.push(r.price);
-      while (r.hist.length > MKT_HIST) r.hist.shift();
-      marketNews(id);
-    }
-  }
-  for (const id of MKT_ORDER) {
-    const r = market.goods[id];
-    if (r.pop > 0) r.pop = Math.max(0, r.pop - dt);
-  }
-  market.stockT -= dt;
-  if (market.stockT <= 0) shopRestock(false);
-  // the counter shuts itself the moment you walk away from it
-  if (state.shop && (player.dead || !inReach(player, state.shop))) closeShop();
-}
-
-// ------------------------------------------------------------ notices
-// News as something you SEE, not something you read in a log. The market is
-// this corner's first and biggest customer - hence its living here - but the
-// plate is not the market's: anything that happens where you are NOT can
-// raise one (`raiseNotice`), and the roost under attack does.
-//
-// Every headline here leaves its line in the event log as well (logEvent,
-// js/panels.js) - the log is the match's own record and the market belongs
-// in it - but the log is not drawn, and it is full of what happened to
-// PLAYERS. A price is not something that happened to a player: it is the state of
-// the world you are about to sell your bag into, and it has to arrive where
-// the other things you glance at mid-fight are. So it also raises a PLATE,
-// top-right, hard under the minimap beside the clock.
-//
-// One shape, four notices, read left to right with no sentence in it: the
-// MARK of what the news IS (the merchant's GOLD SACK, SPRITES.goldSack,
-// turning over its six frames the whole time a PRICE plate is up - a wooden
-// CRATE, SPRITES.crate, when the counter itself has turned over, because a
-// sack of coin is what a price is worth and a crate is what a delivery is -
-// and the maps' own BIRD DIAMOND in your side's ink when the news is your
-// roost), then what it is about (the good's own item icon beside the
-// price it landed on, both at the SAME scale - an 8 px icon against a 10 px
-// number reads as a footnote to it, and these two are one reading - or NEW
-// STOCK for a turnover, or the NERVE the bird has left), then one glyph
-// carrying WHICH WAY - an arrow up or
-// an arrow down. A stock plate has no tail: its crate has already said which
-// kind of news this is, so the headline takes that room instead. The plate's
-// frame and ink carry the same green/red/gold the feed line does, so the two
-// readouts of one event never disagree.
-const NOTE_MAX = 3;      // plates on screen at once; the oldest falls off the bottom
-const NOTE_LIFE = 8;     // s from arrival to gone
-// The arrival is a BEAT, not a fade-in: the plate flies in off the right edge
-// over NOTE_IN while flashing white (NOTE_FLASH - three pulses under a decay,
-// so the corner catches somebody whose eyes are on the middle of the screen),
-// and at the end it rides back out the way it came over NOTE_OUT rather than
-// dissolving in place. Long on purpose: this is news you are meant to look up
-// for, and a third-of-a-second slide is over before a glance can land on it.
-const NOTE_IN = 0.55;    // arrival: the slide in
-const NOTE_FLASH = 0.45; // ...and the white flash pulsing over it
-const NOTE_WASH = 0.85;  // how hard that flash washes the FIELD; a kind's `flash` overrides it
-const NOTE_OUT = 1.2;    // departure: fades while sliding back out right
-const NOTE_SLIDE = 30;   // px it travels, in and out
-const NOTE_FR = 0.11;    // s per frame of the sack's six
-// 78 wide is what the content well needs: 16 px of icon, 3 of gap and the 22
-// of "60G" at 2x is 41, over the 30 the mark's well and the tail's gutter take,
-// and the rest is the air that keeps the price off the arrow.
-const NOTE_W = 78, NOTE_H = 22;
-const NOTE_AIR = 4;      // the air between two plates in the lane
-const NOTE_GAP = 18;     // below the disc's clock, which ends 14px under it
-const notices = [];      // {kind, txt, good, t}; ageNotices runs the clock
-// A PLATE IS ITS KIND'S SIZE. Every kind but one is the 78x22 card the
-// market's prices are read off; the STATS kind is the same card grown to seat
-// a ledger, and nothing in the lane is special-cased for it - the stack sums
-// the heights it finds. Ask the table, never the kind's name.
-function noteW(K) { return K.w || NOTE_W; }
-function noteH(K) { return K.h || NOTE_H; }
-function notePitch(K) { return noteH(K) + NOTE_AIR; }
-// the tails: which way the price went. 8x8, the item icons' own grid, so the
-// good beside it and the tail after it read as one rank. A kind with no tail
-// (stock) has said its piece with its mark already.
-const NOTE_TAILS = {
-  up: ['........', '...aa...', '..ahha..', '.ahhhha.', 'aahhhhaa', '..ahha..', '..ahha..', '..ahha..'],
-  down: ['..ahha..', '..ahha..', '..ahha..', 'aahhhhaa', '.ahhhha.', '..ahha..', '...aa...', '........'],
-};
-// ---- the stat ledger: your sheet, as a notice ------------------------------
-// THE ANSWER TO "WHAT DID THAT DO?". A hero level, a card drawn on C and a
-// gear buy all rewrite the kit silently - the floater over your head names the
-// thing you TOOK and never the number it moved - so until this plate the only
-// place to read the change was the character panel, which is a key press and a
-// pause in the middle of a fight.
-//
-// It is a NOTICE and nothing else: it does not stand on the HUD, it ARRIVES.
-// A change flies the sheet in off the right edge into the lane under the disc
-// on the same ease, the same white pulse and the same lane as a price, holds
-// NOTE_LIFE, and rides back out the way it came - and it SHOVES whatever plate
-// was in the lane down under it exactly as a price plate does. The only thing
-// about it that is not a price plate is its SIZE, and that the lane sums the
-// heights it finds instead of counting a pitch is the whole of what carrying
-// it took. It sits above NOTE_KIND because the table reads its size.
-//
-// Every row of the sheet is on it, dim, and THE ROWS THAT MOVED ARE LIT: label
-// and number to white, a wash across the row in its verdict colour, the delta
-// printed in the leader's own space between them - and those rows PULSE for
-// STAT_PULSE seconds as the plate slides home, so the thing you are meant to
-// read is still blinking when your eyes arrive. Green is BETTER and red is
-// WORSE by the row's own `dir`, so a draw time that FELL reads green: the
-// grammar the hero pop-up's hover deltas already teach.
-//
-// ONE stats plate is ever up. A second change inside the first one's life
-// drops it and flies a fresh one - the news is what your sheet is NOW, not a
-// stack of what it has been - and a row still inside its own hold comes along
-// on the new plate until that hold runs out.
-//
-// The rows read GEAR_STATS (js/ui/menu.js), the one table the hero pop-up
-// prices a pick from and the character panel spells a body out with, so the
-// three can never disagree about what a stat is, how it prints, or which way
-// is up. Two kit fields have no row in it and so light nothing: killHeal
-// (BLOODLUST, VAMPIRE) and ambushMul (AMBUSHER'S EDGE, PHANTOM). Adding them
-// is two more entries in that table and taller character and gear panels to
-// seat them in - both are already close to the view's 240-row floor.
-const STAT_PAD = 4;      // the plate's margin inside its frame
-const STAT_TOP = 4;      // ...and above the first row
-const STAT_PITCH = 8;    // a row: the 5 px font and its air
-const STAT_PULSE = 1.3;  // s the moved rows blink for, arriving
-const STAT_W = 88;       // the longest label ('ICE SPEED', 35 px), its number, and a delta between them
-const STAT_LABEL = '#68769f', STAT_VAL = '#c3d0ee', STAT_LIT = '#f4f7ff';
-const STAT_DOT = '#2b3560';                       // the leader, where a delta is not standing in it
-const STAT_UP = '#8fe08a', STAT_DOWN = '#e0637a'; // better / worse: the hero pop-up's verdict inks
-// The plate's height is every row of the sheet, so it follows GEAR_STATS
-// rather than repeating its length - which is why NOTE_KIND.stats reaches it
-// through a GETTER: the table is built at load time, when GEAR_STATS
-// (js/ui/menu.js, a later file) does not exist yet, and `noteH` asks for the
-// height at draw time, when it does.
-function statPlateH() { return STAT_TOP * 2 + (GEAR_STATS.length - 1) * STAT_PITCH + 6; }
-let statSeen = null;    // the last value of each row; null = not seeded yet
-let statOwner = null;   // the body those came off - a new match reseeds silently
-const statLit = [];     // per row: { d, t } - the delta and the seconds of hold left
-// drop any stats plate that is up and fly a fresh one: it arrives at the head
-// of the lane, shoving whatever stood there down, and re-runs its own pulse
-function raiseStatNote() {
-  for (let i = notices.length - 1; i >= 0; i--) if (notices[i].kind === 'stats') notices.splice(i, 1);
-  notices.push({ kind: 'stats', txt: '', good: null, t: 0 });
-  while (notices.length > NOTE_MAX * 2) notices.shift();
-}
-// Watching the kit beats hooking the writers: levelUp, buyGear, useCard and a
-// bot's resolveCardForBot all land here for free, a host's snapshot lands a
-// client's here the same way, and nothing that ever edits a kit has to
-// remember to announce it. Aged from updateFx (js/sim/sim.js) beside ageNotices.
-function updateStatLedger(dt) {
-  for (let i = 0; i < statLit.length; i++) if (statLit[i] && (statLit[i].t -= dt) <= 0) statLit[i] = null;
-  const p = player;
-  // the menus, the class screen's gear picks and the drop tour reseed in
-  // silence: nothing there is news, and a plate must not be waiting to fly in
-  // the moment the HUD arrives
-  if (!p || (state.mode !== 'play' && state.mode !== 'dead')) { statSeen = null; return; }
-  const k = kitOf(p), seed = !statSeen || statOwner !== p;
-  if (seed) { statSeen = []; statOwner = p; statLit.length = 0; }
-  let moved = 0, good = 0;
-  for (let i = 0; i < GEAR_STATS.length; i++) {
-    const get = GEAR_STATS[i][1], fmt = GEAR_STATS[i][2], v = get(k, p);
-    if (seed) { statSeen[i] = v; statLit[i] = null; continue; }
-    // the test is the PRINTED number, not the raw one: a change too small to
-    // move the row is one the plate cannot show, and a '+0' beside a number
-    // that did not move would be a lie
-    if (fmt(v) === fmt(statSeen[i])) continue;
-    statLit[i] = { d: v - statSeen[i], t: NOTE_LIFE }; // a delta lives as long as a plate does
-    good += (v - statSeen[i]) * GEAR_STATS[i][3] > 0 ? 1 : -1;
-    statSeen[i] = v;
-    moved++;
-  }
-  if (!moved) return;
-  raiseStatNote();
-  // ONE cue for the batch, never one per row: a gold card moves three numbers
-  // and is one thing that happened. Its direction is the batch's balance, so a
-  // card that trades health for damage still speaks and reads as whichever way
-  // it leans. The bare call is the right one here even though updateFx runs
-  // inside the step: this is the LOCAL screen's own chrome, read off the local
-  // body, and a client's snapshot moves its numbers for it.
-  SFX.stat(good >= 0);
-}
-// the delta beside a value, in that value's own format: the magnitude printed
-// exactly as the row prints itself, behind the sign it moved in
-function statDeltaTxt(d, fmt) { return (d > 0 ? '+' : '-') + fmt(Math.abs(d)); }
-// THE PLATE'S BODY (NOTE_KIND.stats.body): the whole sheet, the moved rows lit
-// and blinking. `e.t` is the plate's own age, which is what the pulse runs on.
-function noteStatBody(x, y, e, K, a) {
-  const p = player, k = kitOf(p);
-  const sh = 'rgba(4,6,18,0.9)'; // the plate is opaque and it fades: shadow font, not outline
-  // three pulses under a decay - the card's own flash grammar, said about a row
-  const pulse = e.t < STAT_PULSE
-    ? (1 - e.t / STAT_PULSE) * (0.5 + 0.5 * Math.cos(e.t / STAT_PULSE * Math.PI * 6)) : 0;
-  for (let i = 0; i < GEAR_STATS.length; i++) {
-    const label = GEAR_STATS[i][0], get = GEAR_STATS[i][1], fmt = GEAR_STATS[i][2];
-    const ry = y + STAT_TOP + i * STAT_PITCH;
-    const vTxt = fmt(get(k, p));
-    const lx = x + STAT_PAD, vx = x + STAT_W - STAT_PAD - pixelTextWidth(vTxt);
-    const lit = statLit[i];
-    const col = lit && lit.d * GEAR_STATS[i][3] > 0 ? STAT_UP : STAT_DOWN;
-    const dTxt = lit ? statDeltaTxt(lit.d, fmt) : '';
-    const dx = vx - 4 - pixelTextWidth(dTxt);
-    if (lit) { // the row's wash, in the verdict's own ink, blinking as it arrives
-      ctx.globalAlpha = a * (0.22 + 0.55 * pulse);
-      ctx.fillStyle = col;
-      noteBox(x + 2, ry - 2, STAT_W - 4, STAT_PITCH, 1);
-      ctx.globalAlpha = a;
-    }
-    drawPixelTextShadow(ctx, label, lx, ry, lit ? STAT_LIT : STAT_LABEL, sh);
-    drawPixelTextShadow(ctx, vTxt, vx, ry, lit ? STAT_LIT : STAT_VAL, sh);
-    ctx.fillStyle = STAT_DOT; // the leader, stopping short of whatever stands in it
-    for (let dotX = lx + pixelTextWidth(label) + 4; dotX < (lit ? dx : vx) - 3; dotX += 4) {
-      ctx.fillRect(dotX, ry + 4, 2, 1);
-    }
-    if (!lit) continue;
-    drawPixelTextShadow(ctx, dTxt, dx, ry, col, sh);
-    // the blink: the delta stamped again in white on the pulse's peaks, so the
-    // row reads as a bulb going off and not as a colour that happens to be there
-    if (pulse > 0.01) {
-      ctx.globalAlpha = a * pulse;
-      drawPixelTextShadow(ctx, dTxt, dx, ry, '#f4f7ff', sh);
-      ctx.globalAlpha = a;
-    }
-  }
-}
-
-// One palette per kind, worn by the plate AND handed to logEvent for the feed
-// line: bg/edge/fg are exactly the keys logEvent's `o` override reads, so the
-// two cannot drift apart. `mark` is the 16x16 stamp in the plate's left well -
-// a SPRITES key for a still one, or null for the sack's six turning frames.
-const NOTE_KIND = {
-  spike: { bg: '#14351f', edge: '#8fe08a', fg: '#b8f0b0', mark: null, tail: 'up',
-    tp: { '.': null, a: '#5aa85e', h: '#b8f0b0' } },
-  crash: { bg: '#3a1420', edge: '#e0637a', fg: '#ff9a8a', mark: null, tail: 'down',
-    tp: { '.': null, a: '#a83c50', h: '#ff9a8a' } },
-  stock: { bg: '#2a2340', edge: '#c9a227', fg: '#f2cc6a', mark: 'crate', tail: null },
-  // YOUR ROOST IS BEING STRUCK AND YOU ARE SOMEWHERE ELSE (hurtEagle,
-  // js/app/boot.js, in the same beat as SFX.alarm). Its own alarm red - hotter
-  // than a crash's rose, because a price falling costs you gold and this
-  // costs you the match - and the falling tail, since what the number on it
-  // says is the nerve the bird has left.
-  roost: { bg: '#3a1414', edge: '#d0453a', fg: '#ff9a8a', glyph: 'bird', tail: 'down',
-    tp: { '.': null, a: '#a83c50', h: '#ff9a8a' } },
-  // A NUMBER ON YOUR OWN SHEET MOVED (the `stat ledger` block below): the
-  // same card, grown to seat the ledger and drawing its own body instead of
-  // the mark/headline/tail row. Slate rather than a verdict colour, because
-  // one plate can carry a gain and a loss at once - the ROWS are where green
-  // and red are spoken.
-  stats: { bg: '#141a33', edge: '#5d6d9e', fg: '#c3d0ee', mark: null, tail: null,
-    w: STAT_W, get h() { return statPlateH(); }, body: noteStatBody, flash: 0 },
-};
-// A mark that is STAMPED rather than blitted, named by its kind's `glyph`, so
-// a kind whose mark is not a sprite needs no `if` in the draw. Grids in the
-// tails' own language (`stampGrid`, js/ui/screens.js): 16 wide, to fill the
-// same well the 16x16 sprites do, and `h` is filled in per draw with YOUR
-// SIDE'S ink - which is the whole reason to stamp one instead of baking a
-// sprite, since a baked sprite cannot be recoloured per team.
-//
-// The BIRD is a soaring raptor from below - head, swept wings, tail - and not
-// the maps' 7 px objective diamond blown up: at 2x that diamond reads as a
-// medical PLUS, and its cousin the arrow tail is already on the far end of
-// this same plate. A mark has to be the thing, not a marker for it.
-const NOTE_MARKS = {
-  bird: [
-    '.......hh.......',
-    '......hhhh......',
-    '......hhhh......',
-    '.hh...hhhh...hh.',
-    '.hhhh.hhhh.hhhh.',
-    '..hhhhhhhhhhhh..',
-    '...hhhhhhhhhh...',
-    '.......hh.......',
-    '......hhhh......',
-    '.......hh.......',
-  ],
-};
-
-// raise one. `good` is a GOODS/ITEMS key whose icon rides beside the text, or
-// null for a notice about the counter itself - or about something that is not
-// the counter at all.
-function raiseNotice(kind, txt, good) {
-  notices.push({ kind, txt: String(txt).toUpperCase(), good, t: 0 });
-  while (notices.length > NOTE_MAX * 2) notices.shift();
-}
-
-// Chrome: it ages on WALL time from updateFx (js/sim/sim.js),
-// so a plate fades out - and the sack keeps turning over its six frames -
-// while the sim is paused rather than hanging there.
-function ageNotices(dt) {
-  for (let i = notices.length - 1; i >= 0; i--) {
-    notices[i].t += dt;
-    if (notices[i].t > NOTE_LIFE) notices.splice(i, 1);
-  }
-}
-
-// The slot a plate rests in, newest first: k = 0 sits under the disc's clock
-// row, and every plate is RIGHT-ALIGNED on the disc's own right edge, so a
-// taller or wider one still reads as the same lane. Off MM_* so the lane
-// follows the minimap wherever the size dial and the view put it. The y is a
-// SUM of what stands above the slot rather than k * a pitch, because the
-// stats plate is not the height of a price.
-function noteKindAt(k) {
-  const e = notices[notices.length - 1 - k];
-  return (e && NOTE_KIND[e.kind]) || NOTE_KIND.stock;
-}
-function noteRect(k) {
-  const K = noteKindAt(k), w = noteW(K);
-  let y = MM_CY + MM_R + NOTE_GAP;
-  for (let j = 0; j < k; j++) y += notePitch(noteKindAt(j));
-  return { x: MM_CX + MM_R - w, y, w, h: noteH(K) };
-}
-// The lane's floor: the top of the hud strip's xp numbers, at whatever size
-// its dial holds (hudSc). Three plates of a price's height never came near it, but the
-// stats sheet is five of them, so on a short view the lane can reach the
-// bottom edge - and a plate drawn half under the strip is worse than one not
-// drawn. renderNotices lays them newest first and stops here, which drops the
-// OLDEST news: the right one to lose.
-function noteLaneFloor() { return VIEW_H - Math.round((AB_H + XP_TAG) * hudSc()) - 4; }
-
-// Drawn from renderUI (js/ui.js) after the counter and the character sheet:
-// news that arrives mid-trade must not hide behind the thing it is about.
-function renderNotices() {
-  const n = Math.min(NOTE_MAX, notices.length);
-  if (!n) return;
-  // the newest arrives at the top and pushes the stack down under it, on the
-  // same ease that slides it in - so nothing below it jumps a whole pitch, and
-  // it shoves by ITS OWN height, which is how a tall plate can join the lane
-  const top = notices[notices.length - 1];
-  const push = easeOut(top.t / NOTE_IN);
-  const shove = notePitch(NOTE_KIND[top.kind] || NOTE_KIND.stock);
-  // oldest first, so the newest lands ON TOP of the stack it is pushing down:
-  // during the ease the plate below starts under it and slides out from
-  // beneath, which is the motion that reads as a shove rather than a collision
-  for (let k = n - 1; k >= 0; k--) {
-    const e = notices[notices.length - 1 - k], K = NOTE_KIND[e.kind] || NOTE_KIND.stock;
-    const slide = 1 - easeOut(e.t / NOTE_IN);
-    // the exit is the entrance run backwards - it leaves by the edge it came
-    // in from, so the corner reads as one lane rather than as things vanishing
-    const gone = easeOut((e.t - (NOTE_LIFE - NOTE_OUT)) / NOTE_OUT);
-    // No fade IN: the plate is opaque from its first frame and the flash's own
-    // first peak is what covers its arrival, so the card reads as a bulb going
-    // off rather than as something dissolving into place.
-    const a = 1 - gone;
-    if (a <= 0) continue;
-    const r = noteRect(k);
-    if (r.y + r.h > noteLaneFloor()) continue; // the lane ran out of room: this is the oldest plate
-    // it travels its own width plus the lane's slack, so a wide plate clears
-    // the edge as completely as a narrow one
-    const x = r.x + Math.round((slide + gone) * (NOTE_SLIDE + r.w - NOTE_W));
-    const y = Math.round(r.y - (k ? (1 - push) * shove : 0));
-    ctx.globalAlpha = a;
-    noteCard(x, y, K, a, e.t);
-    // WHAT IS ON THE CARD is the kind's own (K.body), so a plate carrying a
-    // ledger needs no branch in the lane that carries it; everything without
-    // one wears noteBody, the mark / headline / tail row every price is read
-    // off. The kind's own flash comes with it - the body is drawn under the
-    // card's white pulse and may pulse on its own clock after it.
-    (K.body || noteBody)(x, y, e, K, a);
-    // The flash, last and over everything: three pulses under a decay, so the
-    // first is a near-white card and the two after it are the plate blinking
-    // as it slides home. The frame goes white whole while the field only
-    // washes - past the opening peak the card has to stay readable. How hard
-    // the FIELD washes is the kind's (`flash`, default NOTE_WASH): on a card
-    // the size of a price it is the arrival, but on the stats sheet it would
-    // white out fourteen rows and drown the green ones that are the news, so
-    // that kind takes the frame's pulse alone and lets its rows do the
-    // blinking (noteStatBody).
-    if (e.t < NOTE_FLASH) {
-      const f = (1 - e.t / NOTE_FLASH) * (0.5 + 0.5 * Math.cos(e.t / NOTE_FLASH * Math.PI * 6));
-      const wash = K.flash === undefined ? NOTE_WASH : K.flash;
-      ctx.fillStyle = '#f4f7ff';
-      if (wash > 0) {
-        ctx.globalAlpha = a * wash * f;
-        noteBox(x + 1, y + 1, r.w - 2, r.h - 2, 1);
-      }
-      ctx.globalAlpha = a * f;
-      noteFrame(x, y, r.w, r.h, '#f4f7ff');
-    }
-    ctx.globalAlpha = 1;
-  }
-}
-
-// THE DEFAULT BODY: the mark, what the news is about, and the tail - the row
-// every price, turnover and roost warning is read left to right off. A kind
-// with a `body` of its own never comes through here.
-function noteBody(x, y, e, K, a) {
-  // the kind's mark, sunk into a well of its own so it reads as a stamp on
-  // the card: the merchant's sack, turning over its six frames the whole
-  // time a price plate is up, or the crate that means new stock - one still
-  // frame, because a delivery on a counter is a thing sitting there.
-  ctx.fillStyle = 'rgba(3,5,14,0.5)';
-  ctx.fillRect(x + 1, y + 3, 18, 16);
-  // a stamped mark sits where a sprite would, centred in the well's 16 rows
-  // (the grids are 10 tall, so 3 px of air above and below) and inked in
-  // your side's colour, with the rim pass so it reads on the wash
-  if (K.glyph) {
-    stampGrid(NOTE_MARKS[K.glyph], { '.': null, h: TEAMS[skin(player.team)].mark },
-      x + 2, y + 6, 1, '#0b1024');
-  } else ctx.drawImage(K.mark ? SPRITES[K.mark]
-    : SPRITES.goldSack[Math.floor(e.t / NOTE_FR) % SPRITES.goldSack.length], x + 2, y + 3);
-  // What it is about, centred in the well between the mark and the tail: the
-  // good's own icon and the price it landed on, sized TOGETHER - the icon is
-  // drawn at the text's own scale, so the pair reads as one number with a
-  // face on it rather than as a number with a speck beside it, and both drop
-  // to 1x together if a headline is too long for 2x. A notice with no good to
-  // name (NEW STOCK) is text alone, and its plate has no tail, so the well
-  // runs the tail's 8 px out to the frame.
-  const tail = NOTE_TAILS[K.tail];
-  const cx0 = x + 20, cw = NOTE_W - 22 - (tail ? 8 : 0);
-  const im = e.good && ITEMS[e.good] && SPRITES[ITEMS[e.good].icon];
-  const sh = 'rgba(4,6,18,0.9)'; // the plate is opaque and it fades: shadow font, not outline
-  const runW = (sc) => (im ? im.width * sc + 3 : 0) + pixelTextWidth(e.txt, sc);
-  const ts = runW(2) <= cw ? 2 : 1;
-  const bx = cx0 + Math.max(0, (cw - runW(ts)) >> 1);
-  if (im) ctx.drawImage(im, bx, y + ((NOTE_H - im.height * ts) >> 1), im.width * ts, im.height * ts);
-  drawPixelTextShadow(ctx, e.txt, bx + (im ? im.width * ts + 3 : 0),
-    y + ((NOTE_H - ts * 5) >> 1), K.fg, sh, ts);
-  if (tail) stampGrid(tail, K.tp, x + NOTE_W - 10, y + 7, 1);
-}
-
-// The card itself, and the whole of what makes it read as a PLATE rather than
-// as a rectangle: a shadow under it, corners notched off so it sits like a
-// stamped tag, a lit top edge and a shaded bottom one for the bevel, and the
-// kind's accent draining along the base as the plate's own remaining life -
-// the one place the 8 s it has left is written down, and it is written as a
-// length rather than a number.
-function noteCard(x, y, K, a, t) {
-  const w = noteW(K), h = noteH(K);
-  ctx.globalAlpha = a * 0.5;
-  ctx.fillStyle = 'rgba(3,5,14,0.85)';
-  noteBox(x + 2, y + 2, w, h, 1);
-  ctx.globalAlpha = a;
-  ctx.fillStyle = '#080c1e'; // base: the world must not read through the plate
-  noteBox(x, y, w, h, 1);
-  ctx.globalAlpha = a * 0.9;
-  ctx.fillStyle = K.bg;
-  noteBox(x + 1, y + 1, w - 2, h - 2, 1);
-  ctx.globalAlpha = a * 0.5;
-  ctx.fillStyle = K.edge; // the bevel: lit along the top, shaded along the base
-  ctx.fillRect(x + 2, y + 1, w - 4, 1);
-  ctx.globalAlpha = a * 0.35;
-  ctx.fillStyle = '#03050e';
-  ctx.fillRect(x + 2, y + h - 2, w - 4, 1);
-  ctx.globalAlpha = a;
-  noteFrame(x, y, w, h, K.edge);
-  const life = Math.max(0, Math.min(1, 1 - t / NOTE_LIFE));
-  ctx.fillStyle = K.fg;
-  ctx.fillRect(x + 2, y + h - 1, Math.round((w - 4) * life), 1);
-}
-
-// a rect with its four corner pixels cut, drawn as three bands. `c` is how
-// deep the notch bites - the whole reason the plate does not read as a box.
-function noteBox(x, y, w, h, c) {
-  ctx.fillRect(x + c, y, w - c * 2, c);
-  ctx.fillRect(x, y + c, w, h - c * 2);
-  ctx.fillRect(x + c, y + h - c, w - c * 2, c);
-}
-// the 1px frame around that shape, corners included
-function noteFrame(x, y, w, h, col) {
-  ctx.fillStyle = col;
-  ctx.fillRect(x + 1, y, w - 2, 1); ctx.fillRect(x + 1, y + h - 1, w - 2, 1);
-  ctx.fillRect(x, y + 1, 1, h - 2); ctx.fillRect(x + w - 1, y + 1, 1, h - 2);
-}
-
-// ------------------------------------------------------------ the counter's stock
-// Twelve offers in four sections, rolled off the same pools the world drops
-// from and turned over every two minutes. An offer is ONE item: buying it
-// empties its well (its stock entry goes null) until the next shipment fills
-// all twelve again. Both counters and every player share the one stock, so a
-// buy is contested (shopBuy) - what is on the counter is gone the moment
-// somebody gets to it first, and the clock says when more arrives.
-const SHOP_RESTOCK = 120; // s between turnovers
-const SHOP_COLS = 3;      // offers in every section
-// Cards are rolled by rarity, not by name: an unopened card is what changes
-// hands and the buff inside it is drawn afterwards (useCard,
-// js/sim/core.js), so the buyer is paying for the odds. Kinder than a chest's odds
-// (CHEST_ODDS, js/sim/world.js) - a counter you can choose to walk to should show
-// the better rarities more often than a box you tripped over.
-const SHOP_CARD_ODDS = { white: 0.4, green: 0.3, blue: 0.19, purple: 0.09, gold: 0.02 };
-// the four sections, in the order the panel stacks them
-const SHOP_SECTIONS = [
-  { id: 'tools', label: 'TOOLS' },
-  { id: 'proj',  label: 'BITS' },
-  { id: 'mods',  label: 'MODIFIERS' },
-  { id: 'cards', label: 'CARDS' },
-];
-
-// n distinct keys off a pool, shuffled on the market's own stream
-function shopPick(pool, n) {
-  const a = pool.slice();
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(mktRng() * (i + 1));
-    const t = a[i]; a[i] = a[j]; a[j] = t;
-  }
-  return a.slice(0, Math.min(n, a.length));
-}
-// Turns the counter over. `quiet` is the boot roll - the first stock is not
-// news, it is what the shop opened with.
-function shopRestock(quiet) {
-  market.stock = {
-    tools: shopPick(Object.keys(TOOLS), SHOP_COLS),
-    proj: shopPick(Object.keys(BITS).filter((k) => BITS[k].proj), SHOP_COLS),
-    mods: shopPick(Object.keys(BITS).filter((k) => !BITS[k].proj), SHOP_COLS),
-    cards: [],
-  };
-  for (let i = 0; i < SHOP_COLS; i++) market.stock.cards.push(rollCardRarity(SHOP_CARD_ODDS));
-  market.stockT = SHOP_RESTOCK;
-  market.n++;
-  if (quiet) return;
-  logEvent('THE MERCHANTS RESTOCK', null, NOTE_KIND.stock);
-  // The plate and its cue are NOT gated on standing at a counter the way the
-  // old blip was: a turnover is the one market event you might want to walk
-  // across the map for, and news you only hear once you are already there is
-  // not news.
-  raiseNotice('stock', 'NEW STOCK', null);
-  SFX.restock();
-}
-
-// One offer, resolved from the stock: { kind, id, type, price }. `type` is the
-// ITEMS key it becomes in a bag, which is what every icon, tooltip and bag
-// call downstream wants. Returns null for a section that is not stocked.
-function shopOffer(sec, i) {
-  const st = market.stock;
-  const list = st && st[sec];
-  const id = list && list[i];
-  if (!id) return null;
-  if (sec === 'tools') return { kind: 'tool', id, type: toolType(id), price: TOOLS[id].price };
-  if (sec === 'cards') return { kind: 'card', id, type: cardKey(id), price: CARD_PRICE[id] };
-  return { kind: 'bit', id, type: bitType(id), price: BITS[id].price };
-}
-
-// ------------------------------------------------------------ buying and selling
-// One price list, read two ways: `itemValue` is what the counter ASKS for one
-// of a kind, `sellValue` is what it PAYS for what is in a bag cell. Half, for
-// everything that was made - which is the whole margin the merchant lives on,
-// and the reason looting is still better than shopping.
-//
-// The two GOODS are the exception: they trade at the live market price both
-// ways, no spread at all. A spread would kill the only thing the market is
-// for - buy low, hold, sell high - and there is nothing to protect, since the
-// price does the taking all by itself.
+// ------------------------------------------------------------ the counters
 const SHOP_REACH = 34; // px from a counter the shop is open
 
 // A COUNTER is either of two things: the merchant's own body, or the STALL
@@ -745,12 +84,34 @@ function shopServing(b) {
   return state.shop === b && player.active && !player.dead ? player : null;
 }
 
+// Shuts the counter the moment you walk away from it. Called once per sim
+// step from updatePlay (js/sim/sim.js), never in practice: the training room
+// has no merchants.
+function updateShop() {
+  if (state.shop && (player.dead || !inReach(player, state.shop))) closeShop();
+}
+
+// ------------------------------------------------------------ buying and selling
+// One price list, read two ways: `itemValue` is what the counter ASKS for one
+// of a kind, `sellValue` is what it PAYS for what is in a bag cell. Half, for
+// everything that was made - which is the whole margin the merchant lives on.
+//
+// FISH AND BERRIES are the exception: a fixed price, the same both ways. A
+// frost pike is the `fish` price, and every other fish is priced off it by
+// what it heals against what the pike heals, so a new fish is priced the
+// moment it has a `heal`.
+const FOOD_PRICE = { fish: 18, berry: 4 };
+const FOOD_GOODS = ['fish', 'berry']; // the panel's food row, in this order
+function isFood(type) { return type === 'berry' || FISH_KINDS.includes(type); }
+function foodPrice(type) {
+  if (type === 'berry') return FOOD_PRICE.berry;
+  return Math.max(1, Math.round(FOOD_PRICE.fish * ITEMS[type].heal / ITEMS.fish.heal));
+}
 // what one of a kind costs at the counter
 function itemValue(type) {
   const t = toolIdOf(type); if (t) return TOOLS[t].price;
   const b = bitIdOf(type); if (b) return BITS[b].price;
-  const r = CARD_TYPE_RARITY[type]; if (r) return CARD_PRICE[r];
-  if (isGood(type)) return marketPrice(type);
+  if (isFood(type)) return foodPrice(type);
   return (ITEMS[type] && ITEMS[type].price) || 0; // a kind priced on its own ITEMS row (an ore, js/sim/mining.js)
 }
 // a whole bag cell at asking price - a tool carries its loaded bits, and they
@@ -759,13 +120,12 @@ function cellValue(s) {
   if (!s) return 0;
   let v = itemValue(s.type) * s.n;
   if (s.bits) for (const b of s.bits) if (b) v += BITS[b].price;
-  if (s.bits) v += forgeWorth(s);
   return v;
 }
 // ...and what the merchant hands over for it
 function sellValue(s) {
   if (!s) return 0;
-  if (isGood(s.type)) return marketPrice(s.type) * s.n;
+  if (isFood(s.type)) return foodPrice(s.type) * s.n;
   return Math.max(1, Math.floor(cellValue(s) / 2));
 }
 
@@ -773,51 +133,13 @@ function sellValue(s) {
 function shopDeny(p) { sfxFor(p, 'deny'); }
 function shopNoRoom(p) { if (p === player) bagDenied(); }
 
-// One offer off the counter. Reached through runCmd (input.cmd {kind:'shop'}),
-// so the HUD click, a bot and anything later all buy the same way - and it
-// re-validates the reach itself, exactly as buyGear re-validates its cost, so
-// a stale order from a player that has since walked away is harmless. The
-// offer is a single item every player at either counter is reaching for, so
-// the take is CONTESTED on its well: two buyers in one step get one winner and
-// the loser keeps its gold. The checks run twice - up front so a refusal is
-// heard on the click, and again inside the claim, where the stock is re-read.
-function shopBuy(p, sec, i) {
-  if (!shopCanBuy(p, sec, i)) return false;
-  const id = shopOffer(sec, i).id;
-  contest('shop:' + sec + ':' + i, p, () => {
-    const o = shopOffer(sec, i);
-    if (!o || o.id !== id || !shopCanBuy(p, sec, i)) return;
-    // room BEFORE money: nothing is ever paid for that cannot be carried. A
-    // bought BIT arms itself the way a found one does (fitAdd, js/sim/tools.js) - the
-    // tool's free cells first, the pack with what is left - so a purchase made to
-    // fill a hole in the build is already in the build when you walk away.
-    if (o.kind === 'tool') {
-      if (!bagPut(p, makeTool(o.id))) { shopNoRoom(p); return; }
-    } else if (!fitAdd(p, o.type, 1)) { shopNoRoom(p); return; }
-    pay({ gold: o.price }, p);
-    market.stock[sec][i] = null; // sold: the well stands empty until the next shipment
-    noteSeen(p, o.type); // bought counts as held: the tech tree opens on it
-    shopFx(p, '-' + o.price, RES_COLORS.gold);
-    sfxFor(p, 'coin');
-  });
-  return true;
-}
-// the offer is still on the counter, the body is at one, and the purse covers it
-function shopCanBuy(p, sec, i) {
-  const o = shopOffer(sec, i);
-  if (!o || !merchNear(p) || !canAfford({ gold: o.price }, p)) { shopDeny(p); return false; }
-  return true;
-}
-
 // A bag cell over the counter. The whole cell goes - an instanced tool cannot
-// be split and a stack of berries has no reason to be - and the gold is a
-// TRADE, not a payout: see tradeGold (js/sim/player.js) for why a sale earns no
-// levels. Returns the gold paid, 0 if nothing happened.
+// be split - and the gold is a TRADE, not a payout: see tradeGold
+// (js/sim/player.js) for why a sale earns no levels. Returns the gold paid.
 function shopSell(p, s) {
   if (!s || !merchNear(p)) { shopDeny(p); return 0; }
   const v = sellValue(s);
   if (v <= 0) { shopDeny(p); return 0; }
-  if (isGood(s.type)) marketLog(p, s.type, -1, marketPrice(s.type), s.n); // a good sold any way is on the market page
   tradeGold(p, v);
   shopFx(p, '+' + v, RES_COLORS.gold);
   sfxFor(p, 'coin');
@@ -833,71 +155,30 @@ function shopSellCell(p, i) {
   return v;
 }
 
-// WHAT THE PACK IS WORTH over the counter, and how many cells that is - the
-// two numbers the SELL ALL button reads itself out with, and the tooltip
-// beside it. One walk of the bag, so the plate and the tip can never disagree
-// about what a press is about to fetch.
-function packValue(p) { let v = 0; for (const s of p.bag) v += sellValue(s); return v; }
-function packCount(p) { return bagUsed(p); }
-
-// THE WHOLE PACK, over the counter in one press. What it takes is the BAG and
-// nothing else, and the bag's own boundaries are the whole rule: the two
-// meals and the unopened cards are in the POUCH and not in a cell at all
-// (isPouch, js/sim/player.js), and the tool in hand with the bits fitted into it
-// is on the SHELF (p.tools). So what a press here cannot reach is exactly
-// what is being carried on purpose, and the drawer emptying is the answer.
-//
-// It resolves as ONE sale - one payment, one floater, one coin - rather than
-// twelve, because it is one decision; twelve cues for one press is a slot
-// machine. Half a pack that will not sell (nothing does today, but a worthless
-// kind would) is left where it is rather than failing the lot.
-function shopSellAll(p) {
-  if (!merchNear(p)) { shopDeny(p); return 0; }
-  let v = 0;
-  for (let i = 0; i < p.bag.length; i++) {
-    const s = p.bag[i];
-    if (!s) continue;
-    const g = sellValue(s);
-    if (g <= 0) continue;
-    if (isGood(s.type)) marketLog(p, s.type, -1, marketPrice(s.type), s.n);
-    v += g;
-    p.bag[i] = null;
-  }
-  if (v <= 0) { shopDeny(p); return 0; } // an empty pack, or nothing in it worth a coin
-  tradeGold(p, v);
-  shopFx(p, '+' + v, RES_COLORS.gold);
-  sfxFor(p, 'coin');
-  return v;
-}
-
-// Units of a traded good, either way, at the live price. `dir` is +1 to buy
-// and -1 to sell - one function, because the price is the same number in both
-// directions and splitting it would be two ways to read one quantity. `n` is
-// how many (one when left out): a buy takes as many as the purse and the pack
-// cover, up to `n`, and a sale as many as are carried - so BUY 5 with gold for
-// three buys three, and SELL ALL is a sale of `Infinity`. It resolves as ONE
-// trade, one payment and one marker, however many units moved.
-function shopTrade(p, id, dir, n) {
-  if (!isGood(id) || !merchNear(p)) { shopDeny(p); return false; }
-  const price = marketPrice(id);
-  const want = Math.max(1, Math.floor(n) || 1);
+// Food over the counter at its fixed price. `dir` +1 buys `n` (one when left
+// out) - as many as the purse and the pouch cover - and -1 sells ALL of that
+// good: every berry, or every fish of every kind. One payment either way.
+function shopTrade(p, good, dir, n) {
+  if (!FOOD_GOODS.includes(good) || !merchNear(p)) { shopDeny(p); return false; }
   if (dir > 0) {
-    const k = Math.min(want, Math.floor(p.inv.gold / price), bagRoom(p, id));
+    const price = foodPrice(good);
+    const k = Math.min(Math.max(1, Math.floor(n) || 1), Math.floor(p.inv.gold / price), bagRoom(p, good));
     if (k < 1) { if (p.inv.gold < price) shopDeny(p); else shopNoRoom(p); return false; }
-    const got = bagAdd(p, id, k);
+    const got = bagAdd(p, good, k);
     pay({ gold: price * got }, p);
-    marketLog(p, id, 1, price, got);
-    shopFx(p, '-' + price * got, RES_COLORS[id]);
+    shopFx(p, '-' + price * got, RES_COLORS[good]);
   } else {
-    const k = bagTake(p, id, Math.min(want, bagCount(p, id)));
-    if (k < 1) { shopDeny(p); return false; }
-    tradeGold(p, price * k);
-    marketLog(p, id, -1, price, k);
-    shopFx(p, '+' + price * k, RES_COLORS[id]);
+    let v = 0;
+    for (const t of good === 'fish' ? FISH_KINDS : [good]) v += foodPrice(t) * bagTake(p, t, bagCount(p, t));
+    if (v < 1) { shopDeny(p); return false; }
+    tradeGold(p, v);
+    shopFx(p, '+' + v, RES_COLORS[good]);
   }
   sfxFor(p, 'coin');
   return true;
 }
+// how many of a food good a body carries (every fish kind for `fish`)
+function foodHeld(p, good) { return good === 'fish' ? fishHeld(p) : bagCount(p, good); }
 
 // the coin popping off the body that traded - the same floater a payout uses,
 // so money moving always looks the same wherever it moved
@@ -906,119 +187,47 @@ function shopFx(p, txt, col) {
   burst(p.x, p.y - 8, col, 5, 40, 0.4);
 }
 
-// the one entry point runCmd hands a shop order to (js/ui.js)
+// the one entry point runCmd hands a shop order to (js/ui/wheel.js)
 function shopCmd(p, c) {
-  if (c.act === 'buy') return !!shopBuy(p, c.sec, c.i);
+  if (c.act === 'item') return !!buyItem(p, c.id);
+  if (c.act === 'sellItem') return !!sellItem(p, c.slot);
   if (c.act === 'trade') return !!shopTrade(p, c.good, c.dir, c.n);
   if (c.act === 'sell') return !!shopSellCell(p, c.i);
-  if (c.act === 'sellAll') return !!shopSellAll(p);
-  if (c.act === 'forge') return !!forgeTool(p, c.where, c.i, c.pile);
   return false;
 }
 
 // ------------------------------------------------------------ the shop panel
-// THE TRADING POST: one slab, the sim running live behind it, and the rest of
-// the frame washed dark under it (shopScrim, below). It is pinned into the
-// room to the RIGHT of the top-left CORNER rather than dead centre, because
-// the weapon shelf and the pack drawer stand there and the drawer is open the
-// whole time this is up - a sale is a DRAG out of that grid and into the sell
-// strip, so the grid has to be reachable and visible at once (shopLayout).
+// LAYOUT A, on the HUD's own graphite plate (drawHudFrame, js/ui/strip.js):
 //
-// The name is load-bearing, and the sign says SHOP for the same reason the
-// file is called shop.js: the whole slab is the shop, and the MARKET is ONE
-// CORNER of it, under its own rule, the only corner whose prices move. Calling
-// the whole slab a market would say the twelve offers above it were traded
-// goods too, and they are not: every one of them is priced once, on its own
-// def. (The building the merchant keeps is still the trading post; that is
-// where you are, and this is what it sells.)
+//   SHOP                                              purse  X
+//   [cats] PARTS  five cheap parts          | the picked item: icon, name,
+//          ITEMS  the finished items, 4 a row| price, BUY or SELL, its stats,
+//                                           | its passive, and its build tree
+//   your six slots                          fish  BUY SELL  berries BUY SELL
 //
-// Top to bottom: the AWNING - a snow-capped, icicled valance in the counter's
-// own team colours, with the shop's sign hung off its hem between two lanterns,
-// the merchant's portrait at one end and the purse at the other; the four
-// SECTIONS of the stock, three wells each on a recessed board,
-// every well wearing its item's own tier plate with its price on a band along
-// the bottom; the MARKET rule and its ticker, a card a good with its live
-// price and a three-day sparkline, each a way onto the MARKET face where the
-// trading itself is (js/ui/market.js); the SELL strip - the drop well and the SELL ALL button on one
-// line; and the RESTOCK ROAD along the bottom rail.
+// A click PICKS (an item in the grid, a node of the tree, one of your slots)
+// and the plate on the read-out acts on the pick: BUY for an item on sale,
+// SELL for one in your slots. The category plates down the left dim every
+// item without that stat rather than hiding it, so nothing on the grid moves.
+// Anything in the pack sells by being dragged onto the panel.
 //
-// Two rules make the stock read as one grid rather than as twelve loose
-// pictures, which is what it looked like before:
-//   - EVERY offer's icon is drawn at the largest WHOLE-NUMBER scale that fits
-//     SHOP_ICON (shopIconCv), because a fractional one stretches every third
-//     source pixel to double width and a bow's 1px linework comes out frayed.
-//     The game keeps its icons on two grids, 8x8 and 12x12; against SHOP_ICON
-//     16 that is 2x and 1x, so the counter runs 16s with the three tools at 12
-//     rather than a tool with twice the AREA of the bit beside it, which is
-//     what it looked like before any of this. A common size for both needs 24,
-//     and 24 is bigger than this counter wants its goods to be.
-//   - A price band's coin sits at a FIXED offset and its number is right-
-//     aligned to another, so a section's three prices line up as a column
-//     instead of three centred groups sliding about with the digit count.
-//
-// The labelled section headings and the graphs' own numbers are the panel
-// carve-out of CLAUDE.md's UI rule, for the reason the practice instruments
-// have one: reading a market IS reading numbers, and no shape compares a
-// price today against a price yesterday.
-//
-// It is WIDE AND SHORT, and pinned near the TOP EDGE,
-// which is the one piece of this layout that is not taste: the tooltip is
-// bottom-left and grows upward off the bottom rim, and a tall centred slab
-// puts its own bottom-left corner exactly where a tall tooltip lands - so
-// hovering the last row of offers would hide the last row of offers. Its
-// HEIGHT is spent against the same rule. The deepest tooltip a well here can
-// raise tops out around 192 on the 270-row frame the slab is authored in, and the
-// order along the bottom is chosen against that line: the SELL strip ends at
-// 190, clear of it, and only the restock road below runs under it - the road,
-// whose countdown is deliberately at its RIGHT end where no tooltip reaches.
-// So what a tooltip can cover is the wagon, briefly, while you are reading a
-// tool - never an offer, a card, the sell target or the clock.
-const SHOP_W = 336, SHOP_H = 216, SHOP_Y = 4;
-const SHOP_PAD = 8;        // frame edge to content
-const SHOP_HEAD = 22;      // the awning band, and the sign row hung off its hem
-const SHOP_ICON = 16;      // every offer's icon, whatever grid it was drawn on
-const SHOP_WELL_W = 48, SHOP_WELL_H = 22; // an offer's icon plate...
-const SHOP_BAND = 9;                      // ...and the price band under it
-const SHOP_WELL_GAP = 5;
-const SHOP_SEC_W = SHOP_WELL_W * 3 + SHOP_WELL_GAP * 2; // a section: three wells and the gaps between
-const SHOP_SEC_HEAD = 8;                                // its name, and the rule off it
-const SHOP_SEC_H = SHOP_SEC_HEAD + SHOP_WELL_H + SHOP_BAND;
-const SHOP_CARD_H = 46;                                 // one ticker card (every good's share the width)
-const SHOP_SELL_H = 16;    // the sell strip along the counter's edge...
-const SHOP_ALL_W = 82;     // ...the SELL ALL button at its right end, and the
-const SHOP_ALL_GAP = 4;    //    air between the two halves
-const SHOP_SELL_GAP = 5;   // air under it, so the strip is not sitting on the rail
+// It is pinned BESIDE the top-left corner, where the weapon shelf and the
+// pack drawer stand (a sale is a drag out of that drawer), and near the top
+// edge, clear of the bottom-left corner the tooltip grows up out of.
+const SHOP_W = 344, SHOP_H = 206, SHOP_Y = 4;
 const SHOP_CORNER_GAP = 6; // frame left between the corner widget and the slab
-// The deepest tooltip an offer here can raise (the same ~192 the slab's own
-// height is budgeted against, below). Only the UNDER placement spends it: at
-// the top edge the slab is already clear of the bottom-left corner a tooltip
-// grows out of, and dropping it down the frame is the one move that could
-// walk it into one.
-const SHOP_TIP_CLEAR = 196;
-const SHOP_LANE_H = 20;    // the restock road along the bottom
-const SHOP_FOOT = 5;       // that counter edge itself; the frame is 3 on the other three sides
-const SHOP_BG = '#0a0e23', SHOP_IN = '#10173a';
-const SHOP_BOARD = '#0b1030'; // the recess a section's three wells stand on
-// The post's TIMBER: the frame, the corner brackets, the section rules, the
-// market cards and the counter edge are all cut from it, which is what makes
-// the slab read as a shopfront rather than as one more blue HUD panel.
-const SHOP_WOOD_D = '#241a12', SHOP_WOOD = '#5c4226', SHOP_WOOD_L = '#8a6142';
-const SHOP_LABEL = '#c9a874';  // a heading, in the timber's own ink
-const SHOP_SNOW = '#f4f7ff', SHOP_SNOW_D = '#c4d4ea';
-const SHOP_CLOTH = '#e0d3ad', SHOP_CLOTH_L = '#f0e6cc', SHOP_CLOTH_D = '#c9b78d'; // the awning's cream stripe
-const SHOP_LAMP = '#ffd07a', SHOP_LAMP_D = '#c9832a', SHOP_IRON = '#6c7486', SHOP_IRON_L = '#aeb6c4';
-// The sign, at SHOP_SIGN_SC. It is the one word on the slab that has to be
-// legible from the far side of a glance, so it is the only text here drawn
-// bigger than the body font.
-const SHOP_SIGN = 'SHOP', SHOP_SIGN_SC = 2;
+const SHOP_TIP_CLEAR = 196; // the deepest tooltip: the UNDER placement stays above it
+const SHOP_PART = 22, SHOP_ITEM = 26, SHOP_CAT = 16, SHOP_SLOT = 22;
+const SHOP_PITCH = 25, SHOP_ITEM_PITCH = 31, SHOP_ITEM_ROW = 39, SHOP_COLS = 4;
+const SHOP_PANE_X = 160;   // the read-out's left edge, from the slab's
+const SHOP_FOOD_W = 82;    // one food plate along the bottom
+const SHOP_RIM = '#3c4048', SHOP_HOT = '#9ca1aa', SHOP_PICK = '#fff6c8';
+const SHOP_INK = '#e8eaee', SHOP_DIM = '#8a8f99', SHOP_STAT = '#7fd88a';
+const SHOP_PANE_BG = '#111216', SHOP_PLATE = '#2a2d33', SHOP_PLATE_HOT = '#3a3e46';
 // A price you cannot pay: the refusal red every other "not enough gold" in the
-// game already speaks (tipGear's next-level row, the bag's own denial flash),
-// said three ways at once on the well so it cannot be missed at a glance -
-// a red rim, a red price band, and the goods themselves greyed back under a
-// wash. It does not lift on hover either: a well that does not answer the
-// pointer is not a button.
+// game already speaks, on the rim and the price, with the goods greyed back.
 const SHOP_DEAR_RIM = '#6b2230', SHOP_DEAR_BAND = '#3a1420', SHOP_DEAR_INK = '#e0637a';
-const SHOP_DEAR_WASH = 'rgba(8,10,26,0.62)';
+const SHOP_DEAR_WASH = 'rgba(8,9,12,0.62)';
 
 // the counter is up: the panel is drawn, eats its own clicks, and holds the
 // pack open beside it
@@ -1035,6 +244,7 @@ function openShop(b) {
   if (!b) return false;
   state.shop = b;
   state.charOpen = false; // one slab at a time - they would sit on each other
+  if (!state.shopSel) state.shopSel = botNextItem(player) || ITEM_DONE[0]; // open on what a bot of your class would save for next
   SFX.place();
   SFX.music.hold('village', { in: 0.6, out: 0.5 });
   return true;
@@ -1042,113 +252,92 @@ function openShop(b) {
 function closeShop() {
   if (!state.shop) return;
   state.shop = null;
-  forgeReset();
   SFX.pickup();
   SFX.music.release({ in: 0.8, out: 0.5 });
 }
 
-// The whole geometry in one place, top to bottom: the sign row hung off the
-// awning, carrying the portrait and the purse; the four sections as a 2x2 grid
-// of three-well rows; the MARKET rule and its four ticker cards; the SELL
-// strip, the full width of the slab, because it is a drop target and a drop
-// target should be hard to miss with an item on the cursor - the drop WELL and
-// the SELL ALL button that shares that line; and the restock road along the
-// bottom rail.
+// the item the read-out shows: the slot picked, else the item picked
+function shopPicked() {
+  const s = state.shopSlot;
+  if (s >= 0 && player.items[s]) return { id: player.items[s], slot: s };
+  return { id: Object.hasOwn(BUILD_ITEMS, state.shopSel) ? state.shopSel : ITEM_DONE[0], slot: -1 };
+}
+// the category filter: an item without the picked stat is dimmed
+function shopFiltered(id) {
+  const c = state.shopCat;
+  return c >= 0 && !(ITEM_STAT_ORDER[c] in BUILD_ITEMS[id].stats);
+}
+
+// The whole geometry in one place. WHERE IT STANDS is one rule: A COUNTER MAY
+// NOT STAND ON THE PACK IT IS SOLD OUT OF. The weapon shelf and the pack drawer
+// are in the top-left (cornerClaim / cornerBottom, js/ui/strip.js), so the slab
+// takes the room BESIDE the corner where there is one (keeping the centre when
+// the view is wide enough), the room UNDER it on a tall narrow frame - as long
+// as that stays clear of the deepest tooltip - and otherwise stops at the
+// view's right rim, over the minimap.
 function shopLayout() {
-  // WHERE IT STANDS, and the rule is one sentence: A COUNTER MAY NOT STAND ON
-  // THE PACK IT IS SOLD OUT OF. The weapon shelf and the pack drawer are in
-  // the top-left (cornerClaim / cornerBottom, js/ui.js) and a sale is a drag
-  // out of that drawer into this slab, so the slab takes the room BESIDE the
-  // corner where there is one, and the room UNDER it where there is not.
-  //
-  //   BESIDE - the ordinary answer, and it keeps the centre whenever the view
-  //     is wide enough for both, which on a 640-wide frame is a nudge of 28.
-  //   UNDER - a TALL, NARROW frame (a 1440x2560 monitor lands at 360x640, and
-  //     336 of those 360 columns are this slab, so nothing fits beside it).
-  //     There it centres across and drops below the drawer instead. It is
-  //     gated on clearing the deepest TOOLTIP as well as the frame, because
-  //     the tooltip grows up out of the bottom-left and the whole reason this
-  //     panel is short and high is that a tooltip must never cover an offer -
-  //     dropping it into a tooltip's lap would trade one overlap for a worse
-  //     one.
-  //   NEITHER - it stops at the view's right rim and the minimap's rim goes
-  //     under it. That is the deliberate order of the three: the pack is what
-  //     the trade is MADE of, the minimap is a readout, and the market's own
-  //     plates draw over the slab anyway (renderNotices).
   const mid = Math.max(2, Math.round((VIEW_W - SHOP_W) / 2));
-  const rim = VIEW_W - SHOP_W - 2;                     // the furthest right it may stand
+  const rim = VIEW_W - SHOP_W - 2;
   const beside = cornerClaim() + SHOP_CORNER_GAP;
   const under = cornerBottom() + SHOP_CORNER_GAP;
   let x = mid, y = SHOP_Y;
   if (beside <= rim) x = Math.max(mid, beside);
   else if (under + SHOP_H <= VIEW_H - SHOP_TIP_CLEAR) y = under;
   else x = Math.max(2, rim);
-  const cx = x + SHOP_PAD, cw = SHOP_W - SHOP_PAD * 2;
-  const secs = [];
-  for (let i = 0; i < SHOP_SECTIONS.length; i++) {
-    const sx = cx + (i % 2) * (cw - SHOP_SEC_W); // the two columns pinned to the two edges
-    const sy = y + SHOP_HEAD + 6 + ((i / 2) | 0) * (SHOP_SEC_H + 3);
-    const wells = [];
-    for (let k = 0; k < SHOP_COLS; k++) {
-      wells.push({ x: sx + k * (SHOP_WELL_W + SHOP_WELL_GAP), y: sy + SHOP_SEC_HEAD,
-        w: SHOP_WELL_W, h: SHOP_WELL_H + SHOP_BAND });
-    }
-    secs.push({ id: SHOP_SECTIONS[i].id, label: SHOP_SECTIONS[i].label, x: sx, y: sy, wells });
-  }
-  const mkY = y + SHOP_HEAD + 6 + SHOP_SEC_H * 2 + 3 + 3; // under the second row of sections
-  // the market's ticker: a card a good, each a way onto the MARKET page
-  const nk = MKT_GOODS.length, cards = [], tw = Math.floor((cw - (nk - 1) * 4) / nk);
-  for (let i = 0; i < nk; i++) {
-    const kx = cx + i * (tw + 4);
-    cards.push({ id: MKT_GOODS[i], x: kx, y: mkY + 8, w: i === nk - 1 ? cx + cw - kx : tw, h: SHOP_CARD_H });
-  }
-  // the bottom of the slab, from the rail up: the restock road, air, the sell
-  // strip. The strip is measured off the LANE and not off the frame, so
-  // widening the road never walks it into the market cards.
-  const laneY = y + SHOP_H - SHOP_FOOT - SHOP_LANE_H;
-  const sellY = laneY - SHOP_SELL_GAP - SHOP_SELL_H;
-  const L = {
+  const gx = x + 28, by = y + SHOP_H - 30;
+  const cats = [], parts = [], items = [], slots = [], food = [];
+  for (let i = 0; i <= ITEM_STAT_ORDER.length; i++) cats.push({ c: i - 1, x: x + 6, y: y + 26 + i * 18, w: SHOP_CAT, h: SHOP_CAT });
+  ITEM_PARTS.forEach((id, i) => parts.push({ id, x: gx + i * SHOP_PITCH, y: y + 33, w: SHOP_PART, h: SHOP_PART }));
+  ITEM_DONE.forEach((id, i) => items.push({ id, x: gx + (i % SHOP_COLS) * SHOP_ITEM_PITCH,
+    y: y + 77 + ((i / SHOP_COLS) | 0) * SHOP_ITEM_ROW, w: SHOP_ITEM, h: SHOP_ITEM }));
+  for (let i = 0; i < ITEM_SLOTS; i++) slots.push({ i, x: x + 7 + i * SHOP_PITCH, y: by, w: SHOP_SLOT, h: SHOP_SLOT });
+  FOOD_GOODS.forEach((good, i) => {
+    const fx = x + SHOP_W - 7 - (FOOD_GOODS.length - i) * (SHOP_FOOD_W + 4) + 4;
+    food.push({ good, x: fx, y: by, w: SHOP_FOOD_W, h: SHOP_SLOT,
+      buy: { x: fx + 44, y: by + 4, w: 15, h: 14 }, sell: { x: fx + 61, y: by + 4, w: 19, h: 14 } });
+  });
+  const pane = { x: x + SHOP_PANE_X, y: y + 25, w: SHOP_W - SHOP_PANE_X - 6, h: by - 9 - (y + 25) };
+  return {
     panel: { x, y, w: SHOP_W, h: SHOP_H },
-    head: { x: cx, y: y + 11, w: cw, h: 11 }, // the sign row, hung off the awning's hem
-    mkt: { x: cx, y: mkY, w: cw, h: 8 },
-    secs, cards,
-    // the strip is two controls on one line: the drop well you aim at with an
-    // item on the cursor, and the SELL ALL button at its right end. ALL is at
-    // the RIGHT for the reason the restock road's clock is - the tooltip grows
-    // up out of the bottom-LEFT corner, and the one control here that empties
-    // your pack must be readable while you are reading what it would fetch.
-    well: { x: cx, y: sellY, w: cw - SHOP_ALL_W - SHOP_ALL_GAP, h: SHOP_SELL_H },
-    all: { x: cx + cw - SHOP_ALL_W, y: sellY, w: SHOP_ALL_W, h: SHOP_SELL_H },
-    lane: { x: cx, y: laneY, w: cw, h: SHOP_LANE_H },
-    xr: { x: x + SHOP_W - SHOP_PAD - 11, y: y + 11, w: 11, h: 11 },
+    xr: { x: x + SHOP_W - 16, y: y + 6, w: 11, h: 11 },
+    labels: { parts: { x: gx, y: y + 26 }, items: { x: gx, y: y + 70 } },
+    cats, parts, items, slots, food, pane, by,
+    act: { x: pane.x + pane.w - 65, y: pane.y + 7, w: 60, h: 14 }, // BUY / SELL
+    tree: shopTree(pane, shopPicked().id),
   };
-  L.tabs = forgeTabs(L);      // the SHOP / FORGE plates beside the portrait (js/ui/forge.js)
-  L.forge = forgeLayout(L);   // ...and the bench the FORGE face stands in this room
-  L.market = mktLayout(L);    // ...and the MARKET face's page (js/ui/market.js)
-  return L;
+}
+// The picked item's tree, as wells in the read-out: a finished item over its
+// parts, or a part under the finished items it goes into.
+function shopTree(pane, id) {
+  const it = BUILD_ITEMS[id], cx = pane.x + (pane.w >> 1), n = [];
+  const top = pane.y + 72, low = top + 32;
+  const row = (ids, y, w, span) => {
+    const x0 = cx - ((ids.length - 1) * span) / 2;
+    ids.forEach((k, i) => n.push({ id: k, x: Math.round(x0 + i * span) - (w >> 1), y, w, h: w }));
+  };
+  if (it.from) { row([id], top, 22, 0); row(it.from, low, 18, 44); }
+  else { row(ITEM_DONE.filter((k) => BUILD_ITEMS[k].from.includes(id)), top, 18, 24); row([id], low, 22, 0); }
+  return n;
 }
 
-// 'x' | 'panel' | { kind:'buy', sec, i } | { kind:'sell' } | { kind:'sellAll' } |
-// { kind:'good', id } (a ticker card) | { kind:'tab', tab } | the MARKET face's own (mktHit, js/ui/market.js) | the
-// FORGE face's own (forgeHit, js/ui/forge.js) | null.
+// 'x' | 'panel' | {kind:'cat', c} | {kind:'pick', id} | {kind:'slot', i} |
+// {kind:'act'} | {kind:'food', good, dir} | {kind:'foodWell', good} | null.
 // Shared by the click, the cursor and the tooltip, so the three can never
 // disagree about what the pointer is on.
 function shopHit(mx, my) {
   if (!shopOpen()) return null;
-  const L = shopLayout(), p = L.panel;
-  if (mx < p.x || mx >= p.x + p.w || my < p.y || my >= p.y + p.h) return null;
+  const L = shopLayout(), P = L.panel;
+  if (!hitR(P, mx, my)) return null;
   if (hitR(L.xr, mx, my)) return 'x';
-  for (const t of L.tabs) if (hitR(t, mx, my)) return { kind: 'tab', tab: t.tab };
-  if (state.shopTab === 'forge') return forgeHit(L, mx, my) || 'panel';
-  if (state.shopTab === 'market') return mktHit(L, mx, my) || 'panel';
-  for (const s of L.secs) {
-    for (let i = 0; i < s.wells.length; i++) {
-      if (hitR(s.wells[i], mx, my) && shopOffer(s.id, i)) return { kind: 'buy', sec: s.id, i };
-    }
+  for (const r of L.cats) if (hitR(r, mx, my)) return { kind: 'cat', c: r.c };
+  for (const r of L.parts.concat(L.items, L.tree)) if (hitR(r, mx, my)) return { kind: 'pick', id: r.id };
+  for (const r of L.slots) if (hitR(r, mx, my)) return { kind: 'slot', i: r.i };
+  if (hitR(L.act, mx, my)) return { kind: 'act' };
+  for (const f of L.food) {
+    if (hitR(f.buy, mx, my)) return { kind: 'food', good: f.good, dir: 1 };
+    if (hitR(f.sell, mx, my)) return { kind: 'food', good: f.good, dir: -1 };
+    if (hitR(f, mx, my)) return { kind: 'foodWell', good: f.good };
   }
-  if (hitR(L.all, mx, my)) return { kind: 'sellAll' };
-  if (hitR(L.well, mx, my)) return { kind: 'sell' };
-  for (const c of L.cards) if (hitR(c, mx, my)) return { kind: 'good', id: c.id };
   return 'panel';
 }
 function hitR(r, mx, my) { return mx >= r.x && mx < r.x + r.w && my >= r.y && my < r.y + r.h; }
@@ -1157,22 +346,23 @@ function hitR(r, mx, my) { return mx >= r.x && mx < r.x + r.w && my >= r.y && my
 function shopClick(h) {
   if (!h) return false;
   if (h === 'x') { closeShop(); return true; }
-  if (h.kind === 'tab' || forgeKind(h)) { forgeClick(h); return true; }
-  if (mktKind(h)) { mktClick(h); return true; }
-  // a ticker card opens the MARKET page on its good
-  if (h.kind === 'good') { mktSel = h.id; state.shopTab = 'market'; SFX.place(); return true; }
-  if (h.kind === 'buy') { SFX.unlock(); player.input.cmd = { kind: 'shop', act: 'buy', sec: h.sec, i: h.i }; return true; }
-  // SELL ALL goes through input.cmd like the buys rather than resolving on the
-  // spot the way a drop does: nothing is on the cursor, so there is nothing a
-  // dropped command could take with it, and a bot could press it tomorrow.
-  // An empty pack is refused down in shopSellAll, where the one rule lives.
-  if (h.kind === 'sellAll') { player.input.cmd = { kind: 'shop', act: 'sellAll' }; return true; }
+  if (h.kind === 'cat') { state.shopCat = state.shopCat === h.c ? -1 : h.c; SFX.place(); return true; }
+  if (h.kind === 'pick') { state.shopSel = h.id; state.shopSlot = -1; SFX.place(); return true; }
+  if (h.kind === 'slot') { if (player.items[h.i]) { state.shopSlot = h.i; SFX.place(); } return true; }
+  if (h.kind === 'act') {
+    const pk = shopPicked();
+    SFX.unlock();
+    player.input.cmd = pk.slot >= 0 ? { kind: 'shop', act: 'sellItem', slot: pk.slot } : { kind: 'shop', act: 'item', id: pk.id };
+    if (pk.slot >= 0) { state.shopSlot = -1; state.shopSel = pk.id; }
+    return true;
+  }
+  if (h.kind === 'food') { SFX.unlock(); player.input.cmd = { kind: 'shop', act: 'trade', good: h.good, dir: h.dir }; return true; }
   return true; // the slab eats the rest; the world never sees it
 }
-// A carried cell let go over the sell well (dragDrop, js/ui.js). It resolves
-// on the spot rather than through input.cmd like the buys do: what is on the
+// A carried cell let go anywhere over the panel (dragDrop, js/ui/strip.js).
+// It resolves on the spot rather than through input.cmd: what is on the
 // cursor is out of the bag already, and a command the sim might drop that
-// frame (pause, the chart) would take the item with it.
+// frame would take the item with it.
 function shopDropSell() {
   const d = state.drag;
   if (!d) return;
@@ -1181,666 +371,215 @@ function shopDropSell() {
 }
 
 // ---- drawing -------------------------------------------------------------
-// The post's chrome, baked once a side: the timber frame with its iron corner
-// brackets, the striped awning valance with snow on its crown and icicles off
-// its scalloped hem, and the counter edge along the bottom rim. The middle is
-// CLEARED, so this is a frame and a valance and nothing else and the live pass
-// still owns the slab's own ground and every well on it. Keyed by team, because
-// the awning's stripes are whose counter this is - the one thing on the panel
-// that says it, now the sign carries the shop's name instead.
-function shopChromeCv(ti) {
-  const cache = shopChromeCv.cache || (shopChromeCv.cache = {});
-  if (cache[ti]) return cache[ti];
-  const W = SHOP_W, H = SHOP_H, T = TEAMS[ti];
-  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
-  const g = cv.getContext('2d');
-  const px = (x, y, w, h, c) => { g.fillStyle = c; g.fillRect(x, y, w, h); };
-
-  // the frame: a dark outline, a course of timber inside it lit from the upper
-  // left, and a thicker course along the bottom - the counter's own edge
-  px(0, 0, W, H, SHOP_WOOD_D);
-  px(1, 1, W - 2, H - 2, SHOP_WOOD);
-  px(1, 1, W - 2, 1, SHOP_WOOD_L); px(1, 1, 1, H - 2, SHOP_WOOD_L);
-  px(1, H - 2, W - 2, 1, SHOP_WOOD_D); px(W - 2, 1, 1, H - 2, SHOP_WOOD_D);
-  px(1, H - SHOP_FOOT + 1, W - 2, 1, SHOP_WOOD_L); // the counter's lit lip
-  for (let x = 3; x < W - 3; x += 2) {              // grain along the lip and the head
-    if (hash2(x, 11) > 0.6) px(x, H - SHOP_FOOT + 2, hash2(x, 13) > 0.5 ? 2 : 1, 1, SHOP_WOOD_D);
-    if (hash2(x, 19) > 0.72) px(x, 1, 1, 1, SHOP_WOOD_D);
-  }
-  g.clearRect(3, 3, W - 6, H - 3 - SHOP_FOOT); // the live slab shows through here
-
-  // The awning: a batten, snow along its crown, striped cloth and a scalloped
-  // hem with an icicle off the deepest point of every other scallop. The team
-  // stripe is the coat's LIT tone rather than the coat: the coat itself is
-  // barely a shade off the slab behind it, and a valance that does not read as
-  // cloth is just a row of cream teardrops.
-  const AX = 3, AW = W - 6, CY = 6, CLOTH = 6, SCAL = 3, PITCH = 14, MID = (PITCH - 1) / 2;
-  px(AX, 2, AW, 2, SHOP_WOOD_D);   // the batten the cloth is nailed to
-  px(AX, 2, AW, 1, SHOP_WOOD);
-  px(AX, 4, AW, 2, SHOP_SNOW);     // the crown, and its shaded underside
-  px(AX, 5, AW, 1, SHOP_SNOW_D);
-  for (let x = AX; x < AX + AW; x++) if (hash2(x, 17) > 0.62) px(x, 3, 1, 1, SHOP_SNOW); // lumps over the batten
-  for (let x = AX; x < AX + AW; x++) {
-    const k = (x - AX) % PITCH, s = ((x - AX) / PITCH) | 0, team = s % 2 === 1;
-    const base = team ? T.coatL : SHOP_CLOTH, lit = team ? '#8fb3d6' : SHOP_CLOTH_L, dark = team ? T.coat : SHOP_CLOTH_D;
-    const d = Math.max(0, SCAL - Math.round(Math.abs(k - MID) / MID * SCAL)); // deepest mid-stripe
-    px(x, CY, 1, CLOTH + d, base);
-    if (k === 1 || k === 2) px(x, CY, 1, CLOTH + d, lit);   // the lit fold down each seam...
-    if (k === PITCH - 1) px(x, CY, 1, CLOTH + d, dark);     // ...and the shaded one
-    px(x, CY + CLOTH + d - 1, 1, 1, dark);                  // the hem's own shade
-    px(x, CY + CLOTH + d, 1, 1, 'rgba(4,6,18,0.5)');        // ...and the shadow it throws, which seats it
-    if (d === SCAL && k === Math.round(MID) && s % 2 === 0) {
-      const len = 2 + ((hash2(x, 23) * 3) | 0);             // an icicle off the point, a shoulder then a tip
-      px(x - 1, CY + CLOTH + d, 3, 1, '#bcd0e4');
-      px(x, CY + CLOTH + d, 1, len, '#bcd0e4');
-      px(x, CY + CLOTH + d, 1, Math.max(1, len - 1), SHOP_SNOW);
-    }
-  }
-
-  // iron corner brackets nailed over the timber - the one hard edge on a slab
-  // otherwise made of cloth, snow and wood
-  for (const [bx, sx] of [[1, 1], [W - 2, -1]]) {
-    for (const [by, sy] of [[1, 1], [H - 2, -1]]) {
-      for (let k = 0; k < 6; k++) { px(bx + sx * k, by, 1, 1, SHOP_IRON); px(bx, by + sy * k, 1, 1, SHOP_IRON); }
-      for (let k = 0; k < 5; k++) { px(bx + sx * k, by + sy, 1, 1, SHOP_IRON); px(bx + sx, by + sy * k, 1, 1, SHOP_IRON); }
-      px(bx + sx, by + sy, 1, 1, SHOP_IRON_L);
-      px(bx + sx * 4, by + sy, 1, 1, SHOP_WOOD_D); px(bx + sx, by + sy * 4, 1, 1, SHOP_WOOD_D); // nail heads
-    }
-  }
-  cache[ti] = cv;
-  return cv;
-}
-
-// A lantern hanging off the awning's hem, one either side of the sign. Its
-// flame breathes on its own beat and the glow around it is the only warm light
-// on the panel, which is the whole point of it.
-function drawShopLantern(x, y, now, beat) {
-  const f = 0.72 + 0.28 * (0.5 + 0.5 * Math.sin(now * 3.1 + beat));
-  ctx.globalAlpha = 0.13 * f;
-  ctx.fillStyle = SHOP_LAMP;
-  ctx.fillRect(x - 4, y + 1, 13, 9); ctx.fillRect(x - 2, y - 1, 9, 13);
-  ctx.globalAlpha = 1;
-  ctx.fillStyle = SHOP_IRON;
-  ctx.fillRect(x + 2, y - 4, 1, 3);                            // the hook off the hem
-  ctx.fillRect(x, y - 1, 5, 1); ctx.fillRect(x, y + 8, 5, 1);  // cap and base
-  ctx.fillStyle = SHOP_WOOD_D;
-  ctx.fillRect(x, y, 5, 8);
-  ctx.fillStyle = SHOP_LAMP_D;
-  ctx.fillRect(x + 1, y + 1, 3, 6);                            // the glass
-  ctx.fillStyle = SHOP_LAMP;
-  ctx.fillRect(x + 2, y + 3, 1, f > 0.9 ? 4 : 3);              // the flame
-  ctx.fillStyle = SHOP_IRON_L;
-  ctx.fillRect(x, y - 1, 1, 1); ctx.fillRect(x + 4, y - 1, 1, 1);
-}
-
 // THE COUNTER'S WASH, over the whole frame. What stays LIT above it is
-// everything a trade is made of and nothing else: this slab, the corner - the
-// weapon shelf and the pack drawer a sale is dragged out of - the item on the
-// cursor, and the tooltip pricing whatever the pointer is on. The minimap, the
-// hud strip and the world all go under it.
-//
-// The ORDER that does that is in renderUI (js/ui.js), which is why this is a
-// pass of its own rather than the first two lines of drawShopPanel: a panel
-// cannot dim what was drawn after it, and the corner has to be drawn after.
-// It is deep on purpose - the old 0.38 left the strip and the minimap as
-// bright as the counter, so the slab read as one more window over a busy HUD
-// instead of as the only thing on screen you are doing.
-const SHOP_WASH = 'rgba(4,6,18,0.62)';
+// everything a trade is made of: this slab, the corner (the pack a sale is
+// dragged out of), the item on the cursor and the tooltip. The ORDER that does
+// that is in renderUI (js/ui/compose.js): a panel cannot dim what is drawn
+// after it, and the corner has to be drawn after.
+const SHOP_WASH = 'rgba(6,7,10,0.55)';
 function shopScrim() {
   ctx.fillStyle = SHOP_WASH;
   ctx.fillRect(0, 0, VIEW_W, VIEW_H);
 }
 
+// a recessed well: a 1px rim and a dark ground
+function shopWell(r, rim, bg) {
+  ctx.fillStyle = rim; ctx.fillRect(r.x, r.y, r.w, r.h);
+  ctx.fillStyle = bg || BAG_WELL; ctx.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
+}
+// an icon at the largest whole-number scale that fits the well: a fractional
+// one stretches every third source pixel and frays 1px linework
+function shopIcon(im, r) {
+  if (!im) return;
+  const k = Math.max(1, Math.floor(Math.min((r.w - 4) / im.width, (r.h - 4) / im.height)));
+  const w = im.width * k, h = im.height * k;
+  ctx.drawImage(im, r.x + ((r.w - w) >> 1), r.y + ((r.h - h) >> 1), w, h);
+}
+// a coin and a number: what something costs, red when the purse is short
+function shopPrice(n, x, y, dear) {
+  ctx.drawImage(SPRITES.itemGold, x, y - 2);
+  drawPixelText(ctx, String(n), x + 10, y, dear ? SHOP_DEAR_INK : RES_COLORS.gold);
+}
+// one item's well: its rim says part or finished (the tier rims), hover,
+// pick, or can't-afford; a filtered-out or unaffordable item greys back
+function shopItemWell(r, id, h, price) {
+  const dear = price !== undefined && price > player.inv.gold;
+  const hot = !!h && h.kind === 'pick' && h.id === id;
+  const pick = shopPicked().slot < 0 && shopPicked().id === id;
+  const rim = pick ? SHOP_PICK : hot ? SHOP_HOT : dear ? SHOP_DEAR_RIM : TOOL_TIERS[isPart(id) ? 0 : 2].rim;
+  shopWell(r, rim);
+  shopIcon(itemIcon(id), r);
+  if (dear || shopFiltered(id)) { ctx.fillStyle = SHOP_DEAR_WASH; ctx.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2); }
+}
+
 function drawShopPanel(now) {
   const L = shopLayout(), P = L.panel;
   const h = mouse.inside ? shopHit(mouse.x, mouse.y) : null;
-  const b = state.shop;
-  const ti = skin(b ? b.team : player.team);
-  ctx.fillStyle = 'rgba(4,6,18,0.55)'; ctx.fillRect(P.x + 3, P.y + 3, P.w, P.h); // a square slab throws a square shadow
-  ctx.fillStyle = SHOP_BG; ctx.fillRect(P.x, P.y, P.w, P.h);
-  ctx.fillStyle = SHOP_IN; ctx.fillRect(P.x + 3, P.y + 3, P.w - 6, P.h - 3 - SHOP_FOOT);
-  ctx.drawImage(shopChromeCv(ti), P.x, P.y); // the frame, the awning and the counter edge
-
-  drawShopSign(L, ti, now);
-  drawShopTabs(L, h);
-
-  if (state.shopTab === 'forge') drawForge(L, h, now);
-  else if (state.shopTab === 'market') drawMarket(L, h, now);
-  else {
-    for (const s of L.secs) drawShopSection(s, h, now);
-    drawShopHeading(L.mkt, 'MARKET', true);
-    for (const c of L.cards) drawMktTicker(c, h, now);
-    drawSellWell(L.well, h, now);
-    drawSellAll(L.all, h, now);
-  }
-  drawShopLane(L.lane, now);
-
-  // the X: the drawn way out (ESC, E and walking away all close too)
-  const hot = h === 'x';
-  ctx.fillStyle = hot ? SHOP_LAMP : SHOP_WOOD;
-  ctx.fillRect(L.xr.x, L.xr.y, L.xr.w, L.xr.h);
-  ctx.fillStyle = '#0f1632';
-  ctx.fillRect(L.xr.x + 1, L.xr.y + 1, L.xr.w - 2, L.xr.h - 2);
-  ctx.fillStyle = hot ? '#f4f7ff' : SHOP_LABEL;
-  for (let k = 0; k < 5; k++) {
-    ctx.fillRect(L.xr.x + 3 + k, L.xr.y + 3 + k, 1, 1);
-    ctx.fillRect(L.xr.x + L.xr.w - 4 - k, L.xr.y + 3 + k, 1, 1);
-  }
-}
-
-// The sign row, hung off the awning's hem: the merchant's own face in a framed
-// portrait at one end, the shop's name on a board between two lanterns, and the
-// purse - the one number the whole panel is spent out of - on a plate at the
-// other. The board carries the SHOP's name and not the merchant's title: whose
-// counter this is is already said, in the awning's colours.
-function drawShopSign(L, ti, now) {
-  const P = L.panel, R = L.head;
-  // the portrait: the merchant's own head off its walking sprite, in a timber
-  // frame - the trader is standing behind the counter, not printed on it
-  const spr = SPRITES.merchant[ti].down[0];
-  ctx.fillStyle = SHOP_WOOD; ctx.fillRect(R.x, R.y - 1, 14, 13);
-  ctx.fillStyle = SHOP_WOOD_L; ctx.fillRect(R.x, R.y - 1, 14, 1);
-  ctx.fillStyle = SHOP_WOOD_D; ctx.fillRect(R.x, R.y + 11, 14, 1);
-  ctx.fillStyle = '#080b1c'; ctx.fillRect(R.x + 1, R.y, 12, 11);
-  ctx.drawImage(spr, 2, 0, 12, 11, R.x + 1, R.y, 12, 11);
-
-  // The board: a plank hung off two rings, its name in gold at SHOP_SIGN_SC.
-  // It hangs a few px HIGHER than the portrait and the purse beside it and is
-  // deeper than both, so the shop's own name is the thing the eye lands on
-  // when the slab opens rather than one plate in a row of three.
-  const sign = state.shopTab === 'forge' ? FORGE_SIGN : state.shopTab === 'market' ? MKT_SIGN : SHOP_SIGN;
-  const sc = SHOP_SIGN_SC, tw = pixelTextWidth(sign, sc);
-  const bw = tw + 22, bx = P.x + ((P.w - bw) >> 1), bh = sc * 5 + 8, by = R.y - 3;
-  ctx.fillStyle = SHOP_IRON;
-  ctx.fillRect(bx + 6, by - 4, 1, 4); ctx.fillRect(bx + bw - 7, by - 4, 1, 4);
-  ctx.fillStyle = 'rgba(4,6,18,0.5)'; ctx.fillRect(bx + 2, by + 2, bw, bh);
-  ctx.fillStyle = SHOP_WOOD_D; ctx.fillRect(bx, by, bw, bh);
-  ctx.fillStyle = SHOP_WOOD; ctx.fillRect(bx + 1, by + 1, bw - 2, bh - 2);
-  ctx.fillStyle = SHOP_WOOD_L; ctx.fillRect(bx + 1, by + 1, bw - 2, 1);
-  ctx.fillStyle = SHOP_WOOD_D; ctx.fillRect(bx + 1, by + bh - 2, bw - 2, 1);
-  ctx.fillStyle = '#1c1208'; ctx.fillRect(bx + 3, by + 3, bw - 6, bh - 6);
-  // two brass studs, one at each end of the ink panel, so the deeper board
-  // reads as a nailed-up sign rather than as an empty frame around a word
-  ctx.fillStyle = SHOP_LAMP_D;
-  ctx.fillRect(bx + 5, by + (bh >> 1) - 1, 2, 2); ctx.fillRect(bx + bw - 7, by + (bh >> 1) - 1, 2, 2);
-  drawPixelTextShadow(ctx, sign, bx + ((bw - tw) >> 1), by + 4, '#f2cc6a', '#1c1208', sc);
-  drawShopLantern(bx - 14, by + 1, now, 0);
-  drawShopLantern(bx + bw + 9, by + 1, now, 1.9);
-
-  // the purse, right-aligned into the gap before the X, on its own plate so the
-  // number reads clear of the cloth behind it
+  drawHudFrame(P.x, P.y, P.w, P.h, { corners: { tl: true, tr: true, bl: true, br: true } });
+  // the head: the name, the purse, the way out
+  drawPixelText(ctx, 'SHOP', P.x + 7, P.y + 6, SHOP_INK, 2);
   const gold = String(player.inv.gold);
-  const pw = pixelTextWidth(gold) + 20, px0 = L.xr.x - 5 - pw;
-  ctx.fillStyle = SHOP_WOOD_D; ctx.fillRect(px0, by, pw, bh);
-  ctx.fillStyle = '#141c3c'; ctx.fillRect(px0 + 1, by + 1, pw - 2, bh - 2);
-  ctx.drawImage(SPRITES.itemGold, px0 + 4, by + 3);
-  drawPixelText(ctx, gold, px0 + 15, by + 4, RES_COLORS.gold);
-}
+  shopPrice(gold, L.xr.x - 16 - pixelTextWidth(gold), P.y + 9);
+  const xh = h === 'x';
+  ctx.fillStyle = xh ? SHOP_INK : SHOP_DIM;
+  for (let k = 0; k < 5; k++) { ctx.fillRect(L.xr.x + 3 + k, L.xr.y + 3 + k, 1, 1); ctx.fillRect(L.xr.x + 7 - k, L.xr.y + 3 + k, 1, 1); }
+  ctx.fillStyle = HUD_EDGE;
+  ctx.fillRect(P.x + 3, P.y + 21, P.w - 6, 1);
+  ctx.fillRect(P.x + 3, L.by - 5, P.w - 6, 1);
 
-// A heading and the rule that runs off it to the block's right edge - the four
-// section names and the MARKET rule are one object, so they can never drift
-// apart. `sprig` hangs a pine tip off the rule's far end.
-function drawShopHeading(r, label, sprig) {
-  drawPixelTextShadow(ctx, label, r.x, r.y, SHOP_LABEL, SHOP_BG);
-  const lw = pixelTextWidth(label) + 4, x0 = r.x + lw, w = r.w - lw - (sprig ? 10 : 0);
-  if (w > 0) {
-    ctx.fillStyle = SHOP_WOOD; ctx.fillRect(x0, r.y + 2, w, 1);
-    ctx.fillStyle = SHOP_WOOD_D; ctx.fillRect(x0, r.y + 3, w, 1);
+  drawShopCats(L, h);
+  drawPixelText(ctx, 'PARTS', L.labels.parts.x, L.labels.parts.y, SHOP_DIM);
+  drawPixelText(ctx, 'ITEMS', L.labels.items.x, L.labels.items.y, SHOP_DIM);
+  for (const r of L.parts) {
+    const n = itemCost(player, r.id).gold;
+    shopItemWell(r, r.id, h, n);
+    shopPrice(n, r.x + 1, r.y + r.h + 4, n > player.inv.gold);
   }
-  if (!sprig) return;
-  // a little pine at the rule's end - the frostlands' own tree, the whole
-  // decoration this heading gets
-  const sx = r.x + r.w - 7, sy = r.y - 2;
-  ctx.fillStyle = '#3c5840';
-  for (let k = 0; k < 4; k++) ctx.fillRect(sx + 3 - Math.min(3, k), sy + k * 2, 1 + Math.min(3, k) * 2, 2);
-  ctx.fillStyle = '#4f9c55';
-  for (let k = 1; k < 4; k++) ctx.fillRect(sx + 3 - Math.min(3, k), sy + k * 2, 1, 1);
-  ctx.fillStyle = '#4a3421'; ctx.fillRect(sx + 3, sy + 8, 1, 2);
-  ctx.fillStyle = SHOP_SNOW; ctx.fillRect(sx + 3, sy, 1, 1); ctx.fillRect(sx + 1, sy + 4, 1, 1);
-}
-
-// one section: its name, then its three wells on a recessed board - the board
-// is what groups three offers into a shelf, rather than leaving twelve loose
-// plates floating on one slab
-function drawShopSection(s, h, now) {
-  drawShopHeading({ x: s.x, y: s.y, w: SHOP_SEC_W }, s.label, false);
-  const b = { x: s.x - 2, y: s.y + SHOP_SEC_HEAD - 2, w: SHOP_SEC_W + 4, h: SHOP_WELL_H + SHOP_BAND + 4 };
-  ctx.fillStyle = SHOP_BOARD; ctx.fillRect(b.x, b.y, b.w, b.h);
-  ctx.fillStyle = '#070a1e'; ctx.fillRect(b.x, b.y, b.w, 1); ctx.fillRect(b.x, b.y, 1, b.h);
-  ctx.fillStyle = '#182148'; ctx.fillRect(b.x, b.y + b.h - 1, b.w, 1); ctx.fillRect(b.x + b.w - 1, b.y, 1, b.h);
-  for (let i = 0; i < s.wells.length; i++) {
-    const o = shopOffer(s.id, i);
-    const hot = !!h && h.kind === 'buy' && h.sec === s.id && h.i === i;
-    drawShopWell(s.wells[i], o, hot, now);
+  for (const r of L.items) {
+    const n = itemCost(player, r.id).gold;
+    shopItemWell(r, r.id, h, n);
+    shopPrice(n, r.x + 1, r.y + r.h + 4, n > player.inv.gold);
   }
+  drawShopPane(L, h);
+  drawShopSlots(L, h);
+  for (const f of L.food) drawShopFood(f, h);
 }
 
-// Every offer's icon at exactly SHOP_ICON px, whatever grid it was drawn on,
-// baked once and kept - which is the rule that makes the stock read as one
-// grid instead of twelve loose pictures, a bit never half the size of the tool
-// in the well beside it.
-//
-// The game keeps its item icons on two grids, 8x8 and 12x12. 8 doubles onto 16
-// exactly and stays crisp. 12 has no whole-number route to 16 at all, and
-// drawing it there directly would stretch one source pixel in three to double
-// width - which on a bow's 1px linework is the difference between a drawn
-// string and a frayed one. So it goes the only even way round: UP to a common
-// multiple by a whole number (4x, to 48) and back DOWN by another (/3), every
-// output pixel the average of a 3x3 block. Softer than a native 16, and far
-// better than a torn one.
-const shopIconCache = new Map();
-function shopIconCv(im) {
-  let c = shopIconCache.get(im);
-  if (c) return c;
-  const sc = Math.max(1, Math.floor(SHOP_ICON / im.width)), S = im.width * sc;
-  c = document.createElement('canvas'); c.width = S; c.height = S;
-  const g = c.getContext('2d');
-  g.imageSmoothingEnabled = false;
-  g.drawImage(im, 0, 0, S, S);
-  shopIconCache.set(im, c);
-  return c;
-}
-
-// One offer. The plate is the item's own TIER colour, exactly as it is in
-// every other well in the game, so a gilded tool reads as a gilded tool on
-// the counter too; the price band under it is the only new part, and it says
-// afford / cannot afford in ink alone.
-function drawShopWell(r, o, hot, now) {
-  const dear = !!o && player.inv.gold < o.price; // out of reach: SHOP_DEAR_* above
-  const y = r.y - (hot && !dear ? 1 : 0);
-  const iconH = SHOP_WELL_H;
-  ctx.fillStyle = 'rgba(4,6,18,0.55)'; ctx.fillRect(r.x + 2, r.y + 2, r.w, r.h);
-  if (!o) { // an empty line: a flat well and nothing in it
-    ctx.fillStyle = '#232c52'; ctx.fillRect(r.x, y, r.w, r.h);
-    ctx.fillStyle = BAG_WELL; ctx.fillRect(r.x + 1, y + 1, r.w - 2, r.h - 2);
-    return;
-  }
-  const tp = tierPlate(o.type, hot);
-  ctx.fillStyle = dear ? SHOP_DEAR_RIM : hot ? '#8fa0c8' : tp.rim;
-  ctx.fillRect(r.x, y, r.w, r.h);
-  ctx.fillStyle = tp.plate;
-  ctx.fillRect(r.x + 1, y + 1, r.w - 2, iconH - 1);
-  modPlate(o.type, r, y, iconH);
-  // The icon at SHOP_ICON px, whichever grid it was drawn on (shopIconCv).
-  const im = SPRITES[ITEMS[o.type].icon];
-  if (im) {
-    const ic = shopIconCv(im);
-    ctx.drawImage(ic, r.x + ((r.w - ic.width) >> 1), y + ((iconH - ic.height) >> 1));
-  }
-  // ...under a wash if it is out of reach, so the GOODS grey back with the
-  // price rather than the price greying out alone. The tier plate keeps its
-  // own hue through it - which tier a thing is stays true whatever it costs.
-  if (dear) {
-    ctx.fillStyle = SHOP_DEAR_WASH;
-    ctx.fillRect(r.x + 1, y + 1, r.w - 2, iconH - 1);
-  }
-  // The price band, flush along the bottom of the plate. The coin sits at a
-  // FIXED offset and the number is right-aligned to another, so a section's
-  // three prices read as a column; the centred group this used to be slid
-  // about with the digit count, which is most of what made the counter look
-  // unaligned.
-  ctx.fillStyle = dear ? SHOP_DEAR_BAND : '#141c3c';
-  ctx.fillRect(r.x + 1, y + iconH, r.w - 2, SHOP_BAND - 1);
-  const txt = String(o.price);
-  ctx.globalAlpha = dear ? 0.5 : 1;
-  ctx.drawImage(SPRITES.itemGold, r.x + 4, y + iconH);
-  ctx.globalAlpha = 1;
-  drawPixelText(ctx, txt, r.x + r.w - 4 - pixelTextWidth(txt), y + iconH + 2, dear ? SHOP_DEAR_INK : RES_COLORS.gold);
-}
-
-// The SELL strip: along the slab's bottom rim, a recessed well with corner
-// brackets, and the word on it. It is the one control here that
-// is not a click - you arrive at it holding something - so it says SELL
-// rather than trusting a glyph to carry a verb, and it is wide because a drop
-// target you are aiming at with an item on the cursor should be hard to miss.
-// (It gave up its last SHOP_ALL_W px to the SELL ALL button at the strip's
-// end and is still two thirds of the slab; a release anywhere along the whole
-// line, that button included, is a sale - dragDrop, js/ui.js.)
-// Idle it is SELL -> a coin; with something in hand it becomes that item ->
-// a coin and the gold it fetches, and the whole well lights and pulses.
-function drawSellWell(r, h, now) {
-  const d = state.drag;
-  const hot = !!h && h.kind === 'sell';
-  const live = !!d && hot;
-  ctx.fillStyle = 'rgba(4,6,18,0.55)'; ctx.fillRect(r.x + 2, r.y + 2, r.w, r.h);
-  ctx.fillStyle = live ? (Math.sin(now * 10) > 0 ? '#f2cc6a' : '#c9a227') : d ? SHOP_LAMP : SHOP_WOOD;
-  ctx.fillRect(r.x, r.y, r.w, r.h);
-  ctx.fillStyle = BAG_WELL;
-  ctx.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
-  sellSheen(r, now);
-  // the four corner brackets that say "a target", the world's own hover mark
-  ctx.fillStyle = d ? '#f2cc6a' : '#4a3421';
-  for (const [cx, cy, dx, dy] of [[r.x + 3, r.y + 3, 1, 1], [r.x + r.w - 4, r.y + 3, -1, 1],
-    [r.x + 3, r.y + r.h - 4, 1, -1], [r.x + r.w - 4, r.y + r.h - 4, -1, -1]]) {
-    ctx.fillRect(cx, cy, 4 * dx, 1); ctx.fillRect(cx, cy, 1, 4 * dy);
-  }
-  // the content, centred as one group: the word, what is going in, the arrow,
-  // the coin, and - only while there is something to price - what it fetches
-  const im = d ? SPRITES[ITEMS[d.cell.type].icon] : null;
-  const txt = d ? '+' + sellValue(d.cell) : '';
-  const lab = 'SELL', labW = pixelTextWidth(lab);
-  const wide = labW + 6 + (im ? im.width + 4 : 0) + 5 + 4 + 8 + (d ? 4 + pixelTextWidth(txt) : 0);
-  let cx = r.x + ((r.w - wide) >> 1);
-  const mid = r.y + ((r.h - 5) >> 1);
-  drawPixelTextShadow(ctx, lab, cx, mid, d ? '#ffd95c' : SHOP_LABEL, SHOP_BG);
-  cx += labW + 6;
-  if (im) { ctx.drawImage(im, cx, r.y + ((r.h - im.height) >> 1)); cx += im.width + 4; }
-  drawTradeArrow(cx, r.y + (r.h >> 1), 1, d ? '#f2cc6a' : '#8a6142');
-  cx += 5 + 4;
-  ctx.globalAlpha = d ? 1 : 0.75;
-  ctx.drawImage(SPRITES.itemGold, cx, r.y + ((r.h - 8) >> 1));
-  ctx.globalAlpha = 1;
-  if (d) drawPixelTextShadow(ctx, txt, cx + 12, mid, RES_COLORS.gold, SHOP_BG);
-}
-
-// SELL ALL: the whole pack over the counter in one press, at the strip's
-// right end. It is a CLICK where the well beside it is a DROP, so it wears a
-// button's grammar and not a target's - a raised plate that lifts under the
-// pointer, the ticker cards' own - rather than a second recessed well with
-// brackets, which would say "aim at me with something in your hand".
-//
-// It says its press in three marks and one word. The PACK - the drawer's own
-// cells, drawn small - is what it empties; the arrow out of it into a COIN is
-// which way that goes; and the gold beside the coin is what the press is
-// worth right now, which is the one number the decision is actually made on.
-// The word is ALL, and it earns its three characters the way SELL beside it
-// does: a press that empties everything you are carrying must not be guessed
-// at from a picture. What it CANNOT take is said by leaving it out - the
-// weapon on the shelf and the pouch on the strip are both drawn, both lit,
-// and neither is in this glyph.
-//
-// A pack with nothing in it goes flat and dark and does not lift. That is not
-// the counter's out-of-reach red (SHOP_DEAR_*): that red means "you cannot
-// afford this", and an empty pack is not a refusal, it is an empty pack.
-function drawSellAll(r, h, now) {
-  const d = state.drag;
-  const val = packValue(player);
-  const on = val > 0;
-  const hot = !!h && h.kind === 'sellAll';
-  const y = r.y - (hot && on && !d ? 1 : 0); // a drop target does not lift; a button does
-  ctx.fillStyle = 'rgba(4,6,18,0.55)'; ctx.fillRect(r.x + 2, r.y + 2, r.w, r.h);
-  ctx.fillStyle = !on ? '#232c52' : d ? SHOP_LAMP : hot ? '#f2cc6a' : SHOP_WOOD_L;
-  ctx.fillRect(r.x, y, r.w, r.h);
-  ctx.fillStyle = on ? SHOP_WOOD : '#1a2246';   // the plate's own face, lit from the top edge
-  ctx.fillRect(r.x + 1, y + 1, r.w - 2, r.h - 2);
-  ctx.fillStyle = on ? (hot ? '#a5744e' : SHOP_WOOD_L) : '#232c52';
-  ctx.fillRect(r.x + 1, y + 1, r.w - 2, 1);
-  ctx.fillStyle = '#0d1229';
-  ctx.fillRect(r.x + 2, y + 2, r.w - 4, r.h - 4);
-
-  const txt = on ? String(val) : '';
-  const lab = 'ALL', labW = pixelTextWidth(lab), numW = txt ? pixelTextWidth(txt) : 0;
-  const wide = labW + 5 + PACK_GLYPH_W + 4 + 3 + 4 + 8 + (txt ? 2 + numW : 0);
-  let cx = r.x + ((r.w - wide) >> 1);
-  const mid = y + ((r.h - 5) >> 1);
-  ctx.globalAlpha = on ? 1 : 0.45;
-  drawPixelTextShadow(ctx, lab, cx, mid, on ? '#ffd95c' : SHOP_LABEL, SHOP_BG);
-  cx += labW + 5;
-  drawPackGlyph(cx, y + ((r.h - PACK_GLYPH_H) >> 1), on ? SHOP_IRON_L : SHOP_IRON);
-  cx += PACK_GLYPH_W + 4;
-  drawTradeArrow(cx, y + (r.h >> 1), 1, on ? '#f2cc6a' : '#4a3421');
-  cx += 3 + 4;
-  ctx.drawImage(SPRITES.itemGold, cx, y + ((r.h - 8) >> 1));
-  ctx.globalAlpha = 1;
-  if (txt) drawPixelTextShadow(ctx, txt, cx + 10, mid, RES_COLORS.gold, SHOP_BG);
-}
-
-// THE PACK, as a glyph: the drawer's own cells, three by two, at 2 px each.
-// It is CELLS and not a bag pictogram because cells are what the player is
-// looking at while they press it - the drawer is open under the shelf the
-// whole time the counter is - and it is six lit pips on the plate's own dark
-// ground rather than a drawn frame with wells in it, because at eight pixels
-// across a rim and a recess are the same two greys and the grid stops reading
-// as a grid at all. Cool iron, against the warm ALL and the coin either side:
-// this half of the button is the container, not the money.
-const PACK_GLYPH_W = 10, PACK_GLYPH_H = 7;
-function drawPackGlyph(x, y, col) {
-  ctx.fillStyle = col;
-  for (let c = 0; c < 3; c++) {
-    for (let w = 0; w < 2; w++) ctx.fillRect(x + 1 + c * 3, y + 1 + w * 3, 2, 2);
+// The category plates: ALL, then one a stat, each that stat's own picture.
+// The picked one is rimmed lit; picking it again clears the filter.
+function drawShopCats(L, h) {
+  const icons = { dmg: SPRITES.bitArt_barb, hp: SPRITES.heartFull, armor: SPRITES.gearIcons[1][1][1],
+    as: SPRITES.toolArt_bow_0, ms: SPRITES.gearIcons[3][0][1] };
+  for (const r of L.cats) {
+    const on = (state.shopCat === undefined ? -1 : state.shopCat) === r.c;
+    const hot = !!h && h.kind === 'cat' && h.c === r.c;
+    shopWell(r, on ? SHOP_PICK : hot ? SHOP_HOT : SHOP_RIM);
+    if (r.c < 0) { // ALL: four squares, the grid itself
+      ctx.fillStyle = on ? SHOP_INK : SHOP_DIM;
+      for (const [a, b] of [[4, 4], [9, 4], [4, 9], [9, 9]]) ctx.fillRect(r.x + a, r.y + b, 3, 3);
+    } else {
+      const im = icons[ITEM_STAT_ORDER[r.c]];
+      ctx.drawImage(im, r.x + ((r.w - im.width) >> 1), r.y + ((r.h - im.height) >> 1));
+    }
   }
 }
 
-// A slow band of light crossing the sell well, left to right, for ever. The
-// well is the one control on the slab you arrive at holding something rather
-// than clicking, so it has to look LIVE while nothing is happening to it -
-// but it is also the panel's resting state, and a resting state must not
-// blink. Hence a long period and a soft envelope: it is a sheen on a polished
-// counter, not a pulse. The drag lift and the drop flash still ride over it.
-const SELL_SHEEN = 0.22;  // passes per second
-const SELL_SHEEN_W = 40;  // px the band is wide
-function sellSheen(r, now) {
-  const iw = r.w - 2, span = iw + SELL_SHEEN_W;
-  const x0 = r.x + 1 - SELL_SHEEN_W + ((now * SELL_SHEEN) % 1) * span;
-  ctx.fillStyle = SHOP_LAMP;
-  for (let i = 0; i < SELL_SHEEN_W; i++) {
-    const x = Math.round(x0 + i);
-    if (x < r.x + 1 || x >= r.x + r.w - 1) continue;
-    ctx.globalAlpha = 0.15 * Math.sin((i / SELL_SHEEN_W) * Math.PI);
-    ctx.fillRect(x, r.y + 1, 1, r.h - 2);
+// THE READ-OUT: the picked item big, its name and full price, the plate that
+// acts on it, its stats in green, its passive in gold over one dim line, and
+// its build tree under all of that.
+function drawShopPane(L, h) {
+  const R = L.pane, pk = shopPicked(), it = BUILD_ITEMS[pk.id];
+  shopWell(R, HUD_EDGE, SHOP_PANE_BG);
+  const big = { x: R.x + 5, y: R.y + 5, w: 28, h: 28 };
+  shopWell(big, TOOL_TIERS[isPart(pk.id) ? 0 : 2].rim);
+  shopIcon(itemIcon(pk.id), big);
+  drawPixelText(ctx, it.name, R.x + 38, R.y + 7, SHOP_INK);
+  shopPrice(it.price, R.x + 38, R.y + 19);
+  // BUY what is picked on the grid, SELL what is picked in your slots
+  const A = L.act, hot = !!h && h.kind === 'act';
+  let word, n, ok;
+  if (pk.slot >= 0) { word = 'SELL'; n = itemSellValue(pk.id); ok = true; }
+  else { const c = itemCost(player, pk.id); word = 'BUY'; n = c.gold; ok = n <= player.inv.gold && itemRoom(player, c.used) >= 1; }
+  ctx.fillStyle = !ok ? SHOP_DEAR_BAND : hot ? SHOP_PLATE_HOT : SHOP_PLATE;
+  ctx.fillRect(A.x, A.y, A.w, A.h);
+  drawPixelText(ctx, word, A.x + 6, A.y + 5, ok ? SHOP_INK : SHOP_DEAR_INK);
+  shopPrice(n, A.x + 9 + pixelTextWidth(word), A.y + 5, !ok);
+  // the stats, then the passive
+  let y = R.y + 39;
+  for (const s of ITEM_STAT_ORDER) {
+    if (!(s in it.stats)) continue;
+    const S = ITEM_STATS[s];
+    drawPixelText(ctx, S.fmt(it.stats[s]) + ' ' + S.label, R.x + 6, y, SHOP_STAT);
+    y += 8;
   }
-  ctx.globalAlpha = 1;
-}
-
-// ------------------------------------------------------------ the restock road
-// THE COUNTER'S CLOCK, along the bottom rail: how long until the twelve offers
-// above it turn over. It replaced a 2px bar under the sign, which was honest
-// about the SHAPE of the thing (a countdown is a length) and useless about the
-// only question actually asked of it - long enough to go and earn more gold,
-// or worth waiting here for?
-//
-// So it says it twice, and neither is a sentence. The number is the answer to
-// the question; the road under it is the same answer as a picture, and the
-// picture is the merchant's own errand: the wagon leaves the post at the
-// turnover, is furthest away at the halfway mark, and rolls back through the
-// door exactly as the new stock lands. Its POSITION is the clock - there is no
-// separate progress bar, because the wagon already is one - and its trot
-// frame is cut from distance travelled rather than from a timer of its own,
-// so the legs and the wheels belong to the same journey.
-const LANE_LEAVE = 0.5;   // of the cycle spent outbound; the rest is the way home
-const LANE_STEP = 5;      // px between trot frames
-const LANE_PLATE_W = 34;  // the countdown plate at the road's far end
-function drawShopLane(r, now) {
-  // the recess the road is sunk into, the same one a section's wells stand on
-  ctx.fillStyle = SHOP_BOARD; ctx.fillRect(r.x, r.y, r.w, r.h);
-  ctx.fillStyle = '#070a1e'; ctx.fillRect(r.x, r.y, r.w, 1); ctx.fillRect(r.x, r.y, 1, r.h);
-  ctx.fillStyle = '#182148'; ctx.fillRect(r.x, r.y + r.h - 1, r.w, 1); ctx.fillRect(r.x + r.w - 1, r.y, 1, r.h);
-
-  const plate = { x: r.x + r.w - 1 - LANE_PLATE_W, y: r.y + 3, w: LANE_PLATE_W, h: r.h - 6 };
-  const road = { x: r.x + 2, y: r.y + r.h - 3, w: plate.x - r.x - 4 };
-
-  // the road: a packed snow line with the ruts the wagon keeps cutting in it
-  ctx.fillStyle = SHOP_SNOW_D; ctx.fillRect(road.x, road.y, road.w, 1);
-  ctx.fillStyle = '#2a3358';
-  for (let x = 0; x < road.w; x += 4) ctx.fillRect(road.x + x, road.y + 1, 2, 1);
-
-  // the post's own door at the near end - what the wagon is leaving and
-  // coming back to, so the trip has two ends and not just one
-  ctx.fillStyle = SHOP_WOOD_D; ctx.fillRect(road.x, road.y - 11, 6, 11);
-  ctx.fillStyle = SHOP_WOOD; ctx.fillRect(road.x + 1, road.y - 10, 4, 10);
-  ctx.fillStyle = SHOP_SNOW; ctx.fillRect(road.x, road.y - 12, 6, 1);
-  ctx.fillStyle = SHOP_LAMP; ctx.fillRect(road.x + 2, road.y - 8, 2, 3);
-  ctx.fillStyle = SHOP_WOOD_D; ctx.fillRect(road.x + 2, road.y - 4, 2, 4);
-
-  const el = 1 - Math.max(0, Math.min(1, market.stockT / SHOP_RESTOCK)); // 0 at the turnover
-  const out = el < LANE_LEAVE ? el / LANE_LEAVE : (1 - el) / (1 - LANE_LEAVE);
-  const home = el >= LANE_LEAVE; // heading back, and facing that way
-  const bw = SHOP_BUGGY_W, span = Math.max(0, road.w - bw - 6);
-  const bx = Math.round(road.x + 6 + out * span);
-  const frame = (Math.floor((road.x + out * span) / LANE_STEP) & 1);
-  ctx.fillStyle = 'rgba(4,6,18,0.45)'; // the shadow that seats it on the road
-  ctx.fillRect(bx + 3, road.y - 1, bw - 6, 1);
-  ctx.drawImage(shopBuggyCv(frame, home), bx, road.y - SHOP_BUGGY_H);
-
-  // the countdown, on a plate at the far end of the road - RIGHT, because the
-  // hover tooltip grows up out of the bottom-LEFT corner and this is the one
-  // readout here that must survive being read at the same time as a well.
-  const t = Math.max(0, Math.ceil(market.stockT)), ss = t % 60;
-  const txt = Math.floor(t / 60) + ':' + (ss < 10 ? '0' : '') + ss;
-  const soon = market.stockT < 15;
-  ctx.fillStyle = SHOP_WOOD_D; ctx.fillRect(plate.x, plate.y, plate.w, plate.h);
-  ctx.fillStyle = soon && Math.sin(now * 9) > 0 ? '#3a2a10' : '#141c3c';
-  ctx.fillRect(plate.x + 1, plate.y + 1, plate.w - 2, plate.h - 2);
-  stampGrid(SHOP_CLOCK, SHOP_CLOCK_PAL, plate.x + 3, plate.y + ((plate.h - 7) >> 1), 1);
-  drawPixelText(ctx, txt, plate.x + 13, plate.y + ((plate.h - 5) >> 1), soon ? '#ffd95c' : SHOP_LABEL);
-}
-
-// a 7x7 clock face: what the number beside it is counting
-const SHOP_CLOCK = [
-  '..ooo..', '.oaaao.', 'oaahaao', 'oaahhao', 'oaaaaao', '.oaaao.', '..ooo..',
-];
-const SHOP_CLOCK_PAL = { '.': null, o: '#241a12', a: '#c9a874', h: '#3a2a10' };
-
-// The merchant's rig: a canopied wagon of the post's own timber, two iron
-// wheels, and the horse in the shafts. Two trot frames, mirrored for the way
-// home, baked once - four small canvases, because a char grid stamped pixel by
-// pixel every frame of an open panel is the one thing on this slab drawn often
-// enough to be worth baking (`the art`, screens.js, does the stamping).
-const SHOP_BUGGY_W = 34, SHOP_BUGGY_H = 16;
-function shopBuggyCv(frame, flip) {
-  const cache = shopBuggyCv.cache || (shopBuggyCv.cache = {});
-  const key = frame + (flip ? 'L' : 'R');
-  if (cache[key]) return cache[key];
-  const cv = document.createElement('canvas');
-  cv.width = SHOP_BUGGY_W; cv.height = SHOP_BUGGY_H;
-  const g = cv.getContext('2d');
-  if (flip) { g.translate(SHOP_BUGGY_W, 0); g.scale(-1, 1); }
-  const rows = SHOP_BUGGY[frame];
-  for (let y = 0; y < rows.length; y++) for (let x = 0; x < rows[y].length; x++) {
-    const c = SHOP_BUGGY_PAL[rows[y][x]];
-    if (c) { g.fillStyle = c; g.fillRect(x, y, 1, 1); }
+  if (it.passive) {
+    const pv = ITEM_PASSIVES[it.passive];
+    drawPixelText(ctx, pv.name, R.x + 6, y + 3, RES_COLORS.gold);
+    drawPixelText(ctx, pv.line, R.x + 6, y + 11, SHOP_DIM);
   }
-  cache[key] = cv;
-  return cv;
-}
-const SHOP_BUGGY_PAL = {
-  '.': null,
-  o: '#241a12', // outline, the post's own timber dark
-  w: '#5c4226', W: '#8a6142',          // the wagon's boards
-  c: '#e0d3ad', C: '#f0e6cc',          // its canopy, the awning's own cloth
-  k: '#3a3f52', K: '#6c7486',          // iron tyre
-  b: '#8f6640', m: '#4a2f18',          // the horse, and its mane and tail
-  g: '#f2cc6a', e: '#f4f7ff',          // the gold it is fetching; the eye
-};
-const SHOP_BUGGY = [[
-  '..................................',
-  '.....cccccccc.....................',
-  '....cCCCCCCCCc....................',
-  '...cCCCCCCCCCCc..............oo...',
-  '...cCCCCCCCCCCc.............obbbo.',
-  '...cCCCCCCCCCCc.............obebo.',
-  '...oooooooooooo............obbbbbo',
-  '...owwwwwwwwwwo...........ombbbo..',
-  '...owggggggggwo.ooooooooommbbbo...',
-  '...owwwwwwwwwwo..mmobbbbbbbbbbo...',
-  '...oWWWWWWWWWWo.mmmobbbbbbbbbbo...',
-  '...oooooooooooo..mmobbbbbbbbbo....',
-  '.....ooo...ooo.....obo...obo......',
-  '....okKko.okKko....obo...obo......',
-  '....oKkKo.oKkKo....obo...obo......',
-  '.....ooo...ooo.....ooo...ooo......',
-], [
-  '..................................',
-  '.....cccccccc.....................',
-  '....cCCCCCCCCc....................',
-  '...cCCCCCCCCCCc..............oo...',
-  '...cCCCCCCCCCCc.............obbbo.',
-  '...cCCCCCCCCCCc.............obebo.',
-  '...oooooooooooo............obbbbbo',
-  '...owwwwwwwwwwo...........ombbbo..',
-  '...owggggggggwo.ooooooooommbbbo...',
-  '...owwwwwwwwwwo..mmobbbbbbbbbbo...',
-  '...oWWWWWWWWWWo.mmmobbbbbbbbbbo...',
-  '...oooooooooooo..mmobbbbbbbbbo....',
-  '.....ooo...ooo....obo.....obo.....',
-  '....okKko.okKko...obo.....obo.....',
-  '....oKkKo.oKkKo..obo.......obo....',
-  '.....ooo...ooo...ooo.......ooo....',
-]];
-
-// a 5x5 triangle: the direction a trade runs, and the only thing on a trade
-// plate that says which way it goes
-function drawTradeArrow(x, y, dir, col) {
-  ctx.fillStyle = col;
-  for (let i = 0; i < 3; i++) ctx.fillRect(x + (dir > 0 ? i : 2 - i), y - 2 + i, 1, 5 - i * 2);
+  // the tree: lines between the two rows, then the wells; a part already in
+  // your slots is rimmed green with a tick and wears no price
+  const tree = L.tree, up = tree.filter((r) => r.y === tree[0].y), low = tree.filter((r) => r.y !== tree[0].y);
+  if (low.length) {
+    const cy = up[0].y + up[0].h + 4;
+    ctx.fillStyle = SHOP_DIM;
+    const xs = up.concat(low).map((r) => r.x + (r.w >> 1));
+    ctx.fillRect(Math.min(...xs), cy, Math.max(...xs) - Math.min(...xs) + 1, 1);
+    for (const r of up) ctx.fillRect(r.x + (r.w >> 1), r.y + r.h, 1, cy - r.y - r.h);
+    for (const r of low) ctx.fillRect(r.x + (r.w >> 1), cy, 1, r.y - cy);
+  }
+  const held = player.items.slice();
+  for (const r of tree) {
+    const i = r.id !== pk.id && isPart(r.id) ? held.indexOf(r.id) : -1;
+    if (i >= 0) held[i] = null;
+    const hot2 = !!h && h.kind === 'pick' && h.id === r.id;
+    shopWell(r, i >= 0 ? SHOP_STAT : hot2 ? SHOP_HOT : TOOL_TIERS[isPart(r.id) ? 0 : 2].rim);
+    shopIcon(itemIcon(r.id), r);
+    if (i >= 0) { ctx.fillStyle = SHOP_STAT; ctx.fillRect(r.x + r.w - 4, r.y + 1, 3, 3); }
+    else if (r.id !== pk.id) shopPrice(BUILD_ITEMS[r.id].price, r.x, r.y + r.h + 4, BUILD_ITEMS[r.id].price > player.inv.gold);
+  }
 }
 
-// The last move, as a 5x3 triangle beside the price: apex up on a rise, apex
-// down on a fall. Three rows narrowing toward the point, drawn from the row
-// the apex is on, so the shape says the direction even in one colour.
-function drawTrend(x, y, up) {
-  ctx.fillStyle = up ? '#8fe08a' : '#e0637a';
-  for (let i = 0; i < 3; i++) {
-    const w = up ? 1 + i * 2 : 5 - i * 2;
-    ctx.fillRect(x + (up ? 2 - i : i), y + i, w, 1);
+// your six slots, along the bottom: a held item in its tier rim, the picked
+// one lit; an empty slot is a dark well
+function drawShopSlots(L, h) {
+  for (const r of L.slots) {
+    const id = player.items[r.i];
+    const hot = !!h && h.kind === 'slot' && h.i === r.i && id;
+    shopWell(r, state.shopSlot === r.i && id ? SHOP_PICK : hot ? SHOP_HOT : id ? TOOL_TIERS[isPart(id) ? 0 : 2].rim : SHOP_RIM);
+    if (id) shopIcon(itemIcon(id), r);
+  }
+}
+
+// one food plate: the good and how many you carry, its fixed price, and the
+// two plain words that trade it
+function drawShopFood(f, h) {
+  shopWell(f, SHOP_RIM);
+  const im = SPRITES[ITEMS[f.good].icon];
+  ctx.drawImage(im, f.x + 4, f.y + ((f.h - im.height) >> 1));
+  drawPixelText(ctx, shortNum(foodHeld(player, f.good)), f.x + 4 + im.width - 2, f.y + 15, SHOP_DIM);
+  shopPrice(foodPrice(f.good), f.x + 22, f.y + 9);
+  for (const [r, word, dir] of [[f.buy, 'BUY', 1], [f.sell, 'SELL', -1]]) {
+    const hot = !!h && h.kind === 'food' && h.good === f.good && h.dir === dir;
+    const live = dir > 0 ? player.inv.gold >= foodPrice(f.good) : foodHeld(player, f.good) > 0;
+    if (hot && live) { ctx.fillStyle = SHOP_PLATE_HOT; ctx.fillRect(r.x, r.y, r.w, r.h); }
+    drawPixelText(ctx, word, r.x + ((r.w - pixelTextWidth(word)) >> 1), r.y + 5, live ? SHOP_INK : SHOP_DIM);
   }
 }
 
 // ---- tooltips ------------------------------------------------------------
 // What the pointer is on at the counter, in the shared descriptor shape
-// (tipBase and friends, js/ui.js) - so an offer describes itself with exactly
-// the rows the same item shows in the pack, plus what it costs.
+// (tipBase and friends, js/ui/tooltip.js).
 function tipShop(h) {
-  if (!h || h === 'x' || h === 'panel' || h.kind === 'tab') return null;
-  if (forgeKind(h)) return tipForge(h);
-  if (mktKind(h)) return tipMarket(h);
-  if (h.kind === 'buy') {
-    const o = shopOffer(h.sec, h.i);
-    if (!o) return null;
-    const d = o.kind === 'tool' ? tipTool(makeTool(o.id))
-      : o.kind === 'bit' ? tipBit(o.id)
-      : tipStack({ type: o.type, n: 1 });
-    d.rows.unshift(['PRICE', o.price + ' GOLD', player.inv.gold >= o.price ? RES_COLORS.gold : '#e0637a']);
-    d.notes.push(['CLICK TO BUY', TIP_DIM]);
+  if (!h || typeof h === 'string') return null;
+  if (h.kind === 'pick') return tipItem(h.id, itemCost(player, h.id).gold);
+  if (h.kind === 'slot') {
+    const id = player.items[h.i];
+    if (!id) return null;
+    const d = tipItem(id);
+    d.rows.push(['SELLS FOR', itemSellValue(id) + ' GOLD', RES_COLORS.gold]);
     return d;
   }
-  if (h.kind === 'sell') {
-    const d = { title: 'SELL', tcol: RES_COLORS.gold, kind: 'THE COUNTER', rows: [], notes: [],
-      icon: SPRITES.itemGold, plate: BAG_WELL, rim: '#35426e' };
-    if (state.drag) {
-      d.rows.push(['THIS FETCHES', sellValue(state.drag.cell) + ' GOLD', RES_COLORS.gold]);
-      d.notes.push(['LET GO HERE TO SELL IT', TIP_DIM]);
-    } else {
-      d.notes.push(['DRAG ANYTHING OUT OF THE PACK', TIP_DIM]);
-      d.notes.push(['MADE GOODS FETCH HALF THEIR PRICE', TIP_DIM]);
-      d.notes.push(['FISH AND BERRIES FETCH THE MARKET', TIP_DIM]);
-    }
+  if (h.kind === 'foodWell' || h.kind === 'food') {
+    const d = { title: h.good === 'fish' ? 'FISH' : 'BERRIES', tcol: RES_COLORS[h.good], kind: 'FOOD', rows: [], notes: [],
+      icon: SPRITES[ITEMS[h.good].icon], plate: BAG_WELL, rim: SHOP_RIM };
+    d.rows.push(['PRICE', foodPrice(h.good) + ' GOLD', RES_COLORS.gold]);
+    d.rows.push(['CARRIED', String(foodHeld(player, h.good)), '#f4f7ff']);
+    if (h.good === 'fish') d.notes.push(['A BIGGER FISH FETCHES MORE', TIP_DIM]);
     return d;
   }
-  // SELL ALL prices the WHOLE pack, which is the one thing on this panel no
-  // shape can say: a button can show that it empties the drawer, but not what
-  // twelve cells add up to, nor which two stores it will not touch.
-  if (h.kind === 'sellAll') {
-    const n = packCount(player), v = packValue(player);
-    const d = { title: 'SELL ALL', tcol: n ? RES_COLORS.gold : TIP_DIM, kind: 'THE COUNTER', rows: [], notes: [],
-      icon: SPRITES.itemGold, plate: BAG_WELL, rim: '#35426e' };
-    if (state.drag) { // arriving with something in hand: the whole strip is one target
-      d.rows.push(['THIS FETCHES', sellValue(state.drag.cell) + ' GOLD', RES_COLORS.gold]);
-      d.notes.push(['LET GO HERE TO SELL IT', TIP_DIM]);
-      return d;
-    }
-    if (!n) { d.notes.push(['THE PACK IS EMPTY', TIP_DIM]); return d; }
-    d.rows.push(['THE PACK', n + (n === 1 ? ' CELL' : ' CELLS'), '#f4f7ff']);
-    d.rows.push(['FETCHES', v + ' GOLD', RES_COLORS.gold]);
-    d.notes.push(['CLICK TO SELL THE WHOLE PACK', TIP_DIM]);
-    d.notes.push(['THE WEAPON AND THE POUCH STAY', TIP_DIM]);
-    return d;
+  return null;
+}
+// one item: its stats, its passive, and what it costs you now
+function tipItem(id, cost) {
+  const it = BUILD_ITEMS[id];
+  const d = { title: it.name, tcol: isPart(id) ? TOOL_TIERS[0].ink : TOOL_TIERS[2].ink, kind: isPart(id) ? 'PART' : 'ITEM',
+    rows: [], notes: [], icon: itemIcon(id), plate: BAG_WELL, rim: TOOL_TIERS[isPart(id) ? 0 : 2].rim };
+  if (cost !== undefined) d.rows.push(['PRICE', cost + ' GOLD', cost <= player.inv.gold ? RES_COLORS.gold : SHOP_DEAR_INK]);
+  for (const s of ITEM_STAT_ORDER) if (s in it.stats) d.rows.push([ITEM_STATS[s].label, ITEM_STATS[s].fmt(it.stats[s]), SHOP_STAT]);
+  if (it.passive) {
+    d.notes.push([ITEM_PASSIVES[it.passive].name, RES_COLORS.gold]);
+    d.notes.push([ITEM_PASSIVES[it.passive].line, TIP_DIM]);
   }
-  const id = h.id;
-  const r = market.goods[goodOf(id)], k = goodScale(id);
-  const price = marketPrice(id);
-  let lo = Infinity, hi = -Infinity;
-  for (const v of r.hist) { if (v * k < lo) lo = v * k; if (v * k > hi) hi = v * k; }
-  const per = Math.floor(CYCLE / MKT_STEP);
-  const back = r.hist.length > per ? r.hist[r.hist.length - 1 - per] : r.hist[0];
-  const chg = Math.round((r.price - back) / Math.max(1, back) * 100);
-  const d = { title: goodName(id), tcol: RES_COLORS[id], kind: 'TRADED GOOD', rows: [], notes: [],
-    icon: SPRITES[ITEMS[id].icon], plate: BAG_WELL, rim: '#35426e' };
-  d.rows.push(['PRICE', price + ' GOLD', RES_COLORS.gold]);
-  d.rows.push(['A DAY AGO', (chg >= 0 ? '+' : '') + chg + '%', chg >= 0 ? '#8fe08a' : '#e0637a']);
-  d.rows.push([MKT_DAYS + ' DAY HIGH', String(Math.round(hi)), '#f4f7ff']);
-  d.rows.push([MKT_DAYS + ' DAY LOW', String(Math.round(lo)), '#f4f7ff']);
-  d.rows.push(['CARRIED', String(bagCount(player, id)), '#f4f7ff']);
-  d.notes.push(['IT TRADES AT ONE PRICE BOTH WAYS', TIP_DIM]);
   return d;
 }

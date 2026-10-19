@@ -106,7 +106,9 @@ function railBottom() {
 function headlineY() { const b = railBottom(); return b ? b + 6 : 14; }
 // where the top-centre notes (the camp plate, DAY N) start: under the rail,
 // and under the spectate control while that is up (specLayout, screens.js)
-function noteY() { return headlineY() + (state.mode === 'dead' && state.deadView === 'spec' ? SPEC_H + 4 : 0); }
+function voteY() { return headlineY() + (state.mode === 'dead' && state.deadView === 'spec' ? SPEC_H + 4 : 0); }
+// ...and under the surrender vote while that is up (drawVotePanel, js/ui/vote.js)
+function noteY() { return voteY() + (voteUp() ? VOTE_H + 4 : 0); }
 function railMouse(mx, my, s) {
   return s === 1 ? { x: mx, y: my } : { x: VIEW_W / 2 + (mx - VIEW_W / 2) / s, y: my / s };
 }

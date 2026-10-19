@@ -1,7 +1,7 @@
 # Rendering
 
-> The title's MULTIPLAYER item, its CUSTOM GAMES list and room, and the waiting room:
-> [gameplay.md](gameplay.md#settings) (they are a lobby, not a surface of their own).
+> The party lobby that QUICKPLAY and RANKED open:
+> [gameplay.md](gameplay.md#settings) (it is a lobby, not a surface of their own).
 
 Everything that draws: the camera, the pass order, the baked panels, and the pixel cursor.
 Read this before touching `render()`, adding a draw pass, or changing anything positioned off
@@ -236,7 +236,7 @@ code still uses `ex`/`ey`. A screen-space pass anchored to the world reads the e
     exists; the fliers draw on the air layer, below) → `drawZips` (each side's zipline cable, span by span with its sag and wind lean —
     over every body and canopy, under the night; the line under the pointer lit gold, `hoverZip`;
     js/draw/zipline.js);
-14. `renderLighting` → `drawNavPaths` + `drawHitboxes` (the `.` debug overlay — deliberately
+14. `renderLighting` (its first pass `drawFog`, [the fog of war](gameplay.md#fog-of-war), js/draw/fog.js) → `drawNavPaths` + `drawHitboxes` (the `.` debug overlay — deliberately
     **above** the lighting, see [Debug overlays](#debug-overlays-hitboxes-and-routes));
 15. the air layer (`ctx = actx`): `drawDropAir(…, true)` (a bird in flight, its shadow and trail,
     the riders and every faller) → the zipline riders (`airRiders`, `drawPlayer`) → `lightAir` ([the air layer](#the-resting-zoom-is-always-pixel-exact)).
@@ -410,8 +410,7 @@ headlines (a death, a camp) and five deliberate carve-outs:
   (`PAD_BIND`, ui/wheel.js), so a new one goes through `drawKeyPrompt`/`drawPadBind`.
 - **The settings, PLAYER, gear, character and shop panels'** labelled rows.
 - **The instruments**: the practice room's (the dummy meter, the parkour lap clock, the archery
-  round's readouts and their BEST / LAST plates), the merchant's two price graphs with their
-  high/low, and the [stat sheet](#the-stat-ledger-your-sheet-as-a-notice). An instrument's whole job is comparing numbers.
+  round's readouts and their BEST / LAST plates) and the [stat sheet](#the-stat-ledger-your-sheet-as-a-notice). An instrument's whole job is comparing numbers.
 - **The [hover tooltip](#the-hover-tooltip)** (`tipAt`/`tipPos`/`drawTooltip`, ui/tooltip.js), because
   comparing a tool's rate of fire against a bit's weight is comparing numbers, and no shape does
   that. It is a carve-out, not a licence: the well still has to read at a glance without it.
@@ -434,12 +433,9 @@ it is tabbed, and each page lays its rows out (and scrolls them) through `settin
 so a recenter never requires a re-bake — keep any new bake-side label and its per-frame widget
 expressed the same way.
 
-The [trading post](gameplay.md#the-panel) bakes its chrome the same way but **lazily and per
-team**: `shopChromeCv(ti)` draws the timber frame, its iron corner brackets, the team-striped
-awning with its snow crest, scalloped hem and icicles, and the counter edge into one canvas the
-size of the slab, clears the middle out of it, and caches it under the team index — so the live
-pass blits one image and then owns every well on top of it. Its size is constant (`SHOP_W` ×
-`SHOP_H`), which is why it needs no rebuild on a resize; only the panel's *position* moves.
+The [counter](gameplay.md#the-panel) bakes nothing: it draws on the HUD's own graphite plate
+(`drawHudFrame`, js/ui/strip.js) every frame at a constant `SHOP_W` × `SHOP_H`, and only its
+*position* moves on a resize (`shopLayout`).
 
 The map panel's chart is a `MAP_W`-square slot **fitted to the view** (`fitMapSlab()`, below:
 96 to `CHART_MAX` 232 px), so every tile-space position drawn on the chart (the camera rect,
@@ -526,8 +522,8 @@ empty world.
 | Where | What | Function |
 | --- | --- | --- |
 | top left | the **weapon shelf**: the tool in hand and its bit cells, shots left and fittings right, always up — and under the weapon well the small tab of the **inventory drawer**, shut until B or the tab | `drawShelf`, `drawBag` |
-| top right, under the disc | the **notice lane**: the market's plates, the roost warning, and the **stat sheet** that flies in when a number on yours moves | `renderNotices` |
-| top right | the minimap and its day/night ring — the black outline sits `MM_GAP` (4 px) off the top edge and the right edge alike (`applyMinimapSize`, core.js) — the clock centred under it while no team rail is up (`mmClockShown`), and the market's plates under that | `renderMinimap`, `renderNotices` |
+| top right, under the disc | the **notice lane**: the roost warning and the **stat sheet** that flies in when a number on yours moves | `renderNotices` |
+| top right | the minimap and its day/night ring — the black outline sits `MM_GAP` (4 px) off the top edge and the right edge alike (`applyMinimapSize`, core.js) — the clock centred under it while no team rail is up (`mmClockShown`), and the notice plates under that | `renderMinimap`, `renderNotices` |
 | top centre | the **team rail**: one thin plate, every other player in the match as a 12px emblem over a hp bar in the side's colour, your teammates left (never you: your own hp is the strip's) and the rival right, the match clock over the two kill totals between them — and under it, the camp plate, the DAY headline and the spectate control (`headlineY`) | `drawRailScaled` |
 | beside the pointer, or bottom left | the hover tooltip, wherever the TOOLTIP row puts it | `tipPos`, `drawTooltip` |
 | bottom centre | the hud strip, flush to the bottom: your portrait (xp round its edge, the level on its corner), the four ability wells over the health and stamina bars, the two meal wells over the gold | `drawHudStrip` |
@@ -541,15 +537,11 @@ tool cell would leave a longbow's row parked over the cinematic.
 
 ### Notices: the plates under the minimap
 
-The HUD's corner for news from where you are NOT — the `notices` banner in [js/ui/shop.js](../../js/ui/shop.js),
-raised by `raiseNotice(kind, txt, good)` and drawn by `renderNotices()` from `renderUI`. A price
-spike, a price crash, a counter turning over and **your roost being struck while you are elsewhere**
-each raise one, *as well as* the line they already
-put in the [event log](#scoreboard-and-event-log): the log is the record of what happened to
-somebody, and a price is not that — it is the state of the world your bag is about to be sold
-into, so it belongs where the clock already is. The market is this corner's first and biggest
-customer, which is why the block lives in shop.js, but the plate is not the market's: the
-`roost` kind is the same card with a different mark on it.
+The HUD's corner for news from where you are NOT: the `notices` banner in [js/ui/notices.js](../../js/ui/notices.js),
+raised by `raiseNotice(kind, txt, good)` and drawn by `renderNotices()` from `renderUI`. Two kinds
+use it: **your roost being struck while you are elsewhere** (`roost`, raised from js/sim/eagle.js
+*as well as* the line it puts in the [event log](#scoreboard-and-event-log), which is not drawn),
+and your own [stat sheet](#the-stat-ledger-your-sheet-as-a-notice) moving (`stats`).
 
 **One shape, read left to right, with no sentence in it**: the **mark** of what the news is, then
 what it is about, then one 8×8 glyph carrying which way — an arrow up or an arrow down. That row is
@@ -563,14 +555,7 @@ in the lane is special-cased for the tall one. `noteLaneFloor()` is where the la
 of the hud strip's xp numbers at the strip's size (`hudSc`) — and a plate that would cross it is not
 drawn, which on a short view drops the **oldest** news and keeps the newest.
 
-The mark is the kind's own (`NOTE_KIND[k].mark`, a `SPRITES` key or null), 16×16 in a sunken well:
-the merchant's **gold sack** (`SPRITES.goldSack`, ten frames turning over on `NOTE_FR` (0.11 s) the
-whole time a **price** plate is up, so the coin keeps catching the light) and a still wooden
-**crate** (`SPRITES.crate`) when the counter itself has turned over — a sack of coin is what a
-price is worth, a crate is what a delivery *is*. A stock plate has **no tail**: its crate has
-already said which kind of news this is, so the headline takes that 8 px instead.
-
-A kind may name a **stamped** mark instead of a blitted one — `NOTE_KIND[k].glyph` into
+The mark sits in a sunken well at the plate's left. It is **stamped**, not blitted: `NOTE_KIND[k].glyph` into
 `NOTE_MARKS`, one pixel grid per glyph (16 wide, in the tails' own grid language) so the draw
 never grows an `if` per kind. `renderNotices` stamps it with `stampGrid` (js/ui/screens.js),
 filling `h` with your side's ink through `skin(player.team)` over a dark rim — the reason to
@@ -579,16 +564,15 @@ is `bird`: a soaring raptor from below (head, swept wings, tail), **not** the ma
 diamond — `drawMapBird(g, x, y, col, rim)` is one 7 px size only, and blown up to 2× it reads
 as a medical plus beside the arrow tail on the same plate. Its text is the **nerve the bird has
 left**, as a percent, under the falling tail — the plate says what happened where the cue
-(`SFX.alarm`) only turned your head, which is the market's own split between a ding and a number.
+(`SFX.alarm`) only turned your head: a cue for the ear, a number for the eye.
 
-What it is about is the good's own item icon and the price it landed on, **sized together** —
-`runW(s)` measures the pair at a scale and the icon is drawn at the text's own, so a 2× price
-carries a 16×16 icon and both drop to 1× together if a headline is too long for 2×. An 8 px icon
-against a 10 px number reads as a footnote to it, and these two are one reading. `NEW STOCK` names
-no good, so it is text alone.
+What it is about is the number, with an item's own icon before it when the notice's `good` names
+one, **sized together**: `runW(s)` measures the pair at a scale and the icon is drawn at the text's
+own, so both drop from 2× to 1× together if a headline is too long for 2×. The roost plate names no
+good, so it is text alone.
 
-The plate is a fixed `NOTE_W`×`NOTE_H` (78×22) card — 78 is what the content well needs, 16 px of
-icon and 3 of gap and the 22 of `60G` at 2× over the 30 the mark's well and the tail's gutter take
+The plate is a fixed `NOTE_W`×`NOTE_H` (78×22) card — 78 is what the content well needs, the 22 of `60%` at 2× over the 30 the mark's well and the
+tail's gutter take
 — and `noteCard` is the whole
 of what makes it read as a stamped tag rather than as a rectangle: a shadow offset under it,
 **corners notched** off (`noteBox`, which draws the shape as three bands), a lit top edge and a
@@ -597,8 +581,8 @@ accent (`noteFrame`), a sunken well behind the mark, and the kind's ink **draini
 as the plate's own remaining life — the only place its 8 s is written down, and it is written as a
 length. Text is the `drawPixelTextShadow` font, because the whole plate fades and an outline
 stamped under a `globalAlpha` goes blotchy ([text over the world](#text-over-the-world)). `NOTE_KIND`
-holds the three palettes and is handed straight to `logEvent` as its colour override, so the plate
-and the feed line can never disagree about which way a price went.
+holds the palettes, and the roost's is handed straight to `logEvent` as its colour override, so the
+plate and the feed line can never disagree.
 
 `noteRect(k)` places slot `k` off `MM_*` — right edge flush with the disc's own, `NOTE_GAP` (18 px)
 under its rim, so the column follows the minimap wherever the size dial and the view put it and
@@ -619,26 +603,25 @@ the last `NOTE_OUT` (1.2 s), at most `NOTE_MAX` (3) on screen. The timings are l
 this is news you are meant to look *up* for, and a third-of-a-second slide is over before a glance
 can land on it.
 
-They draw **above the counter and the character sheet** (a price that moved while you were
-standing at the shop must not arrive behind the panel it is about) and stay up while you are
-down, like the feed — the market does not stop for a death. They duck under the map and settings
+They draw **above the counter and the character sheet** (news must never arrive behind a panel)
+and stay up while you are down, like the feed. They duck under the map and settings
 panels, and the end screens own the frame outright. Each kind carries its own cue:
 [audio](gameplay.md#audio).
 
 ### The stat ledger: your sheet, as a notice
 
 The answer to *what did that DO?* — the `stat ledger` block in
-[js/ui/shop.js](../../js/ui/shop.js), watched by `updateStatLedger(dt)` from `updateFx` and drawn as
+[js/ui/notices.js](../../js/ui/notices.js), watched by `updateStatLedger(dt)` from `updateFx` and drawn as
 a [notice](#notices-the-plates-under-the-minimap) kind. A hero level, a card drawn on C and a gear
 buy all rewrite the kit silently: the floater over the body names the *thing* taken and never the
 *number* it moved, so until this plate the only place to read the change was the character panel — a
 key press and a pause in the middle of a fight.
 
 **It does not stand on the HUD, it arrives.** A change flies the sheet in off the right edge into
-the lane under the disc on the same ease, the same white frame pulse and the same lane as a price
+the lane under the disc on the same ease, the same white frame pulse and the same lane as a roost
 plate, holds `NOTE_LIFE` (8 s), and rides back out the way it came — and it **shoves** whatever
-plate was in the lane down under it exactly as a price plate does. When nothing has changed there is
-nothing on screen at all. The only thing about it that is not a price plate is its **size**
+plate was in the lane down under it exactly as a roost plate does. When nothing has changed there is
+nothing on screen at all. The only thing about it that is not a roost plate is its **size**
 (`STAT_W` 88 wide, `statPlateH()` tall), and every plate is right-aligned on the disc's own right
 edge, so the wider one still reads as the same lane.
 
@@ -647,7 +630,7 @@ white, a wash across the row in its verdict colour, and the delta printed in the
 between them — `+9`, `-15`, `+8%`, `-0.30S`, the magnitude in that row's own format behind the sign
 it moved in. Those rows **pulse** for `STAT_PULSE` (1.3 s) on the card's own three-pulses-under-a-
 decay flash grammar, so the thing you are meant to read is still blinking when your eyes arrive.
-The stats kind sets `flash: 0` so the card's white wash never fires: on a plate the size of a price
+The stats kind sets `flash: 0` so the card's white wash never fires: on a plate the size of a roost warning
 that wash *is* the arrival, but over fourteen rows it would drown the green ones that are the news,
 so the frame pulses and the rows do the blinking. **Green is better and red is worse**, by the row's
 own `dir`, so a draw time that *fell* reads green — the grammar the hero pop-up's hover deltas
@@ -721,7 +704,7 @@ leader between them — the PLAYER panel's ledger, which is where that pattern a
 free lines under those. The panel sizes itself to its widest line (capped at `TIP_MAXW`), so a
 short tooltip is a short panel.
 
-The builders, one per kind: `tipTool` (forged damage, rate of fire, bit slots, tensile, loaded weight, the
+The builders, one per kind: `tipTool` (rate of fire, bit slots, tensile, loaded weight, the
 full draw at that weight and the shots a press puts up, then the loaded bits, and a line when the
 built-in arrow is the shot or the load slows the draw), `tipBit` (damage, weight, speed, lifespan, flight —
 then only the flags that are *true*, because four rows of NO would drown the three that matter),
@@ -929,8 +912,8 @@ that is money must never read as a count of something carried.
 a match shows) on top, and `RAIL_LINE` under it the two kill totals at 1x in their sides' `mark`
 either side of a quiet colon (`railKills` sums `p.kills` over every player who wore the side's
 colour). A **chip** per active player (`railLayout`: `RAIL_CHIP`, `RAIL_GAP`, `RAIL_PAD`) is the
-class's 12×12 emblem (`CLASS12`/`classIcon12`, js/ui/menu.js: drawn by hand beside `CLASS32`,
-never a shrink of it) with **no rim** (0.422): the side is its **hp bar**, hung a pixel under its
+class's 12×12 emblem (`CLASS12`/`classIcon12`, js/ui/menu.js: drawn by hand at
+12 px) with **no rim** (0.422): the side is its **hp bar**, hung a pixel under its
 foot, one solid 2px run of the side's `mark` on a `RAIL_TRACK` groove, deliberately unsegmented.
 `railSides` orders each side by id and **leaves you off** (0.421): your own hp and level are the
 strip's, so a chip for you only repeated them. Your side is a chip short, so `railLayout` centres
@@ -969,7 +952,7 @@ solid dark ground (`o.bg`, `AB_BG` by default). **The palette is neutral graphit
 cold steel line and the navy grounds it replaced pulled the eye off the game, so the frame is the
 quietest thing on screen and the icons, the sides' colours and the gold carry the contrast. The
 strip, the shelf, the drawer, the rail, the build list, the practice bar and the tooltips share it;
-the M map and the minimap wear it too (0.459); the menus and the shop are still navy. The outline holds the plate apart from bright
+the M map and the minimap wear it too (0.459), and the shop (0.484); the menus are still navy. The outline holds the plate apart from bright
 snow at noon, the faint line finishes its edge against the forest at night, and the ground keeps every
 well readable over both. No bevel, no snow, no ornament. The top corners are cut two pixels and
 both lines follow the cuts; the corners that meet a screen edge stay square (a notch of world
@@ -1052,8 +1035,7 @@ plate never falls through to the world (`overHud`, and the right button's wheel 
 - the one *event*: a **red band all the way round and the pack's own 1px shake** for `toolFlash`
   seconds when a bit has nowhere to go in the tool
   ([one click sends it](gameplay.md#the-weapon-shelf)) — `toolDenied()`, the twin of `bagDenied()`
-  in the same red and aged in `updateFx` beside it, so the two containers refuse in one language;
-- the forge's `+N` in its corner.
+  in the same red and aged in `updateFx` beside it, so the two containers refuse in one language.
 
 Two marks, no words, all off `toolPlan`:
 
@@ -1852,13 +1834,11 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
 `BORDER_MAX + 6` tiles clear of the forest. Everything lives in the `main menu` banner and on
 `state.menu`:
 
-- **Items** `MENU_ITEMS` (SINGLEPLAYER / MULTIPLAYER / PRACTICE TOOL / BOT LADDER —
-  all four live from the first boot, and nothing else: a [saved match](gameplay.md#saved-matches)
-  is picked up from the lobby's SAVES plate; `menuActivate` dispatches on the word; PRACTICE TOOL's activation is `beginPractice()` (the
-  reroll's whiteout onto
-  `?practice=1`, the [practice arena](world.md#the-practice-arena)). SINGLEPLAYER leads
-  the column as the first live way in; MULTIPLAYER opens the rooms screen; BOT LADDER opens
-  [the bot ladder screen](#the-bot-ladder-screen);
+- **Items** `MENU_ITEMS` (QUICKPLAY / RANKED / PRACTICE TOOL —
+  all three live from the first boot, and nothing else; `menuActivate` dispatches on the word. All three open the
+  [party lobby](gameplay.md#settings) in that mode (`beginParty`): QUICKPLAY's and RANKED's FIND
+  MATCH leads to the [lobby](#lobby)'s hero select, PRACTICE TOOL's START to the
+  [practice arena](world.md#the-practice-arena);
   there is no WIKI or SETTINGS item: the [wiki](#the-wiki-screen) opens from a word in the corner of
   the patch notes, settings are the ESC panel's in play, and the seed lives on
   [lobby](#lobby) under the map), stacked `MENU_TXT_PITCH` apart, climbing from `MENU_BOTTOM`
@@ -1880,7 +1860,7 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   still at rest, with no rule and no subtitle, the pixel-font word standing in only until it
   decodes. Nothing on the title burns and nothing is ruled: `drawEmbers` and `drawGoldRule` live
   here for the wiki's header and the end screens (js/ui/screens.js). `PATCH_TXT` prints bottom-right and the
-  active character bottom-left (`drawCharTag`, js/ui/chars.js); both are click targets, and both ride the footer's
+  profile's name bottom-left (`drawProfileTag`, js/ui/profile-card.js); both are click targets, and both ride the footer's
   fade so a panel hides them.
 - **Items** are plain words in the pixel font at `MENU_TXT_SCALE` with a dark rim (`drawPixelTextOutline`): white,
   and gold and lifted a px only under the pointer, or as the keys' pick until the pointer next
@@ -1888,10 +1868,9 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   it a px; at rest nothing is lit. No plank, slab or frame — the
   **frost plank** (`drawMenuButton`: chamfered slab with hashed wood-grain, a snow cap, icicles,
   corner rivets, a gold rule when hot, and a sealed ice glaze with a cold shimmer when `frozen`)
-  is drawn by the lobby's PLAY, the rooms screen, the notes' WIKI, the end screens and the
-  create screen, sized `MENU_BW`×`MENU_BH` at `MENU_Y0` where those stand it.
-- **Die** (`drawSeedDie` — named apart from the create screen's `drawDie`, js/ui/chars.js,
-  a later file whose declaration would take a same-named one): shows `1 + (SEED % 6)` (faces
+  is drawn by the lobby's PLAY, the notes' WIKI and the end screens,
+  sized `MENU_BW`×`MENU_BH` at `MENU_Y0` where those stand it.
+- **Die** (`drawSeedDie`): shows `1 + (SEED % 6)` (faces
   1–6), cycles faces and jitters while hovered, tumbles while `menu.rolling`. It stands on
   the seed row of the [lobby](#lobby)'s map pop-up. Activating it (`rerollWorld`) starts a fade (the lobby's night there) via
   `state.fade` (`{ a, to, spd, color, then }`, stepped in `update()`, painted after the info
@@ -1908,20 +1887,20 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   baked at boot (`buildHelpPanel`) but nothing on the title opens it. The `PATCH_TXT` tag
   bottom-right (`patchTagRect` / `overPatchTag`; gold with an underline on hover) opens the
   [patch notes screen](#the-patch-notes-screen).
-  The **character tag** bottom-left (`charTagRect` / `overCharTag` / `drawCharTag`, js/ui/chars.js,
-  the mirror of the patch tag: the active character's in-world body, its name and a quill that
-  gilds on hover) opens the [character screens](#the-character-screens) below. The **coin tag**
+  The **name tag** bottom-left (`profileTagRect` / `overProfileTag` / `drawProfileTag`,
+  js/ui/profile-card.js, the mirror of the patch tag: the profile's name and a quill, gold with an
+  underline on hover) opens the [profile card](#the-profile-card) below. The **coin tag**
   top-right (`coinTagRect` / `overCoinTag` / `drawCoinTag`, js/ui/skins.js: the steel coin and
   the purse, gold with an underline on hover) opens the [skins screen](#the-skins-screen).
   Any open panel ducks the logo to zero alpha.
 <a id="lobby"></a>
-- **Lobby** (`menu.screen = 'lobby'`, entered by SINGLEPLAYER via `beginLobby`): ONE
+- **Lobby** (`menu.screen = 'lobby'`, the HERO SELECT, entered by a party's FIND MATCH via `beginLobby`): ONE
   screen on its **own painted night** (`drawLobbyBackdrop` — starfield, two additive aurora
   ribbons, a vnoise ridge over a pine line, a lit snow floor, stateless snowfall off the clock,
   the cinematic band; fully opaque at rest, so the live ambient world is never this screen's
   backdrop), laid out **the way a League lobby is**, in the full view (no authored frame).
-  `lobbyLayout()`/`lobbyHit()` (which answers `'play'`, `'gear'`, `'map'`, `'ai'`, `'saves'`, `'charl'`/`'charr'`
-  or null) are the rect source for both drawing and the mouse.
+  `lobbyLayout()`/`lobbyHit()` (which answers `'play'`, `'gear'`, `'map'`, `'ai'`, `'pickN'` (a hero on
+  the row) or null) are the rect source for both drawing and the mouse.
   **Two team panels stand glued to the screen's edges** (`LOBBY_PANEL_W` wide, `drawLobbyRosters`/
   `drawLobbyCard`): your side's five **frames** down the left, the rivals' down the right, in
   player order under a `LOBBY_HEAD` head, each frame as tall as the view allows up to
@@ -1930,10 +1909,8 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   **face-down** (the body as one flat shade through the scratch canvas) until the countdown
   turns it. Both panels' heads are empty, level with each other. At the **top centre**, a row
   centred `LOBBY_TOP_GAP` apart (`drawLobbyTop`), stand the **map plate** and the
-  **target** — and, while a solo profile holds a save (`lobbySavesShown`), the **SAVES plate**
-  after them (`drawSavesPlate`, js/ui/saves.js: the newest save's picture on a fanned stack of
-  cards, its name under it) — each `LOBBY_MAP` square with its name under it in plain white — the
-  shape's, the level's, the save's — gold only while the picture over it is under the hand, when
+  **target**, each `LOBBY_MAP` square with its name under it in plain white — the
+  shape's, the level's — gold only while the picture over it is under the hand, when
   the plate lifts a px: each is the way into its own pop-up. The map plate (`drawMapPlate`) holds this seed's own
   valley in the picked shape ([map shapes](world.md#map-shapes)) — `mapChip` bakes it at 1 px a
   sampled tile straight off the grown `ground` (the ice sheets and holes as rolled, the road as
@@ -1949,27 +1926,31 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   Whenever the level it shows changes (`menu.tgtLv`) the
   face swaps and the target jolts for a moment (`menu.tgtT`). In a
   room the map is a readout (the host's world: `'map'` is hit only when `NET.role` is
-  `'solo'`) and a guest's target is too. The **stage** under them
-  holds **your character** alone (`drawLobbyStage`): the 48 px model (`SPRITES.portrait`,
-  [sprites.md](sprites.md#looks-a-character-on-the-class-body)) at `LOBBY_MODEL` (3×, the create
-  screen's size) in your side's paint under a warm pool of light with a gold ring turning on the
-  snow, and **no weapon, no name and no class under it** — the roster frame carries the name and
-  the figure is the class. A bare **chevron either side of the figure, in close by its shoulders**
-  (`drawChevron`, white, gold and nudged outward under the hand (`menu.chover`), drawn
-  only when the profile holds more than one character) or Up/Down is `lobbyStep(±1)`: it makes
-  the neighbouring character active — `activateChar` → `applyCharacter`, so the stage, the kit
-  and the loadout follow it (`menu.csel` mirrors `player.cls` for the gear preview;
-  `menu.cswapT` pops the stage). **No ability wells and no class picker**: the class came with the
-  character. **Clicking the figure** (it lifts under the hand; `'hero'` in `lobbyHit`, the
+  `'solo'`) and a guest's target is too. Under their names stands the **hero row**
+  (js/ui/heroes.js, `heroCells`/`heroCellAt`/`drawHeroRow`): a `HERO_CELL` well per hero —
+  every `CLASSES` entry, then every `HEROES_SOON` one — holding the hero's model cropped to its
+  head at 2×. Each hero wears **one fixed look** (`CLASSES[i].look`), so the face is the hero.
+  The pick (`menu.csel`) is gold, a hovered cell lifts, and the name under the row is the
+  hovered hero's, else the pick's. A coming hero is its model's head as one flat shade
+  (`HERO_SOON_INK`), its name grey on hover, and takes no press. A click (`'pickN'` in
+  `lobbyHit`) or Left/Right/Up/Down (`lobbyStep(±1)`, through the playable ones) is
+  `lobbyPick(i)`: `setClass` puts the hero, its look, kit and loadout on the stage at once and
+  `menu.cswapT` pops it. The row dims and refuses while the count runs, and a guest's room shows
+  it without taking a press (a guest plays the hero its profile sent in the hello). LOCK IN keeps
+  the pick as the profile's hero (`lockIn` → `PROFILE.setHero`), which is where the next lobby
+  opens. The **stage** under the row holds **your hero** alone (`drawLobbyStage`): the 48 px
+  model (`SPRITES.portrait`, [sprites.md](sprites.md#looks-a-character-on-the-class-body)) at
+  `LOBBY_MODEL` (3×; `lobbyLayout` drops it to 2× when the view is too short for its head to
+  clear the row and its name, `HERO_ROW_H`) in your side's paint under a warm pool of light with
+  a gold ring turning on the snow, and **no weapon and no name under it** — the row carries the
+  hero's name, the roster frame yours. **Clicking the figure** (it lifts under the hand; `'hero'` in `lobbyHit`, the
   body's own rect) opens the [hero pop-up](#the-hero-pop-up): gear, stat points and the
   abilities. No gear shows on the lobby itself.
 
-  **Four pop-ups** open over the still-lit lobby, one at a time, on one shared ease
+  **Three pop-ups** open over the still-lit lobby, one at a time, on one shared ease
   (`menu.popT`, `menu.pop` naming the open one through its fade-out; `popOpen()`/`popHit()`/
   `openPop`/`leavePop`, and `drawPopSlab`/`drawPopX`/`popFrameHit` for the slab, the X and the
-  inert hits they share; `m.screen` is `'hero'`, `'map'`, `'ai'` or `'saves'` while one is open).
-  The **saves pop-up** is the [saves grid](gameplay.md#saved-matches) (`beginSavesPick`,
-  `renderSaves(now, { pop })`). Esc,
+  inert hits they share; `m.screen` is `'hero'`, `'map'` or `'ai'` while one is open). Esc,
   Backspace, the X or a click off the slab closes any of them. The **hero pop-up** is
   [below](#the-hero-pop-up). The **map pop-up** (`menu.screen = 'map'`, off the map plate, solo
   only — `beginMapPick`, `mapLayout`/`mapScreenHit`, `renderMapPick`): the picture `POP_PIC` big
@@ -1992,9 +1973,8 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   `AI_LEVELS` row, stacked easy to hard, each carrying its level's name (js/ai/ai-skill.js — EASY /
   NORMAL / HARD / IMPOSSIBLE) and its tier in pips, the picked one filled in the rivals' paint, the hovered one
   lifting (`menu.dhover`)); a click or Up/Down is `setAiLevel`, which saves the profile's
-  settings, and Enter closes. While a ladder bot is picked for this lobby (`ladderFoe`, from the
-  [bot ladder screen](#the-bot-ladder-screen)) the target's name is the bot's; `setAiLevel` and
-  leaving the lobby drop it.
+  settings, and Enter closes. In RANKED the target is not pressed: the bots'
+  level follows the party's rating (`NET.botLv`, js/ui/rooms.js).
 
   At the foot of the view, **LOCK
   IN** is a bare word in the [main menu](#main-menu-title)'s grammar, big (`LOBBY_LOCK_SCALE`, white,
@@ -2007,7 +1987,7 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   `SFX.countTick` ticking each one (a low bell), and **one rival frame turning face-up per
   tick** (`lobbyRevealed()`: the first on the press, the last on ONE, all of them once it has
   run out, and none at rest — a white flash as each turns). Gear stays open through the count
-  (the figure still opens its pop-up, which shuts itself at zero); a character swap or a map step is
+  (the figure still opens its pop-up, which shuts itself at zero); a hero pick or a map step is
   refused with `SFX.deny`; Esc/Backspace call it off (`cancelCount`) and, at rest, go back to
   the menu; **LOCK IN again skips the rest of it** — the second `pressPlay()` ends the count
   where zero would have (every frame face-up, the hero pop-up shut). <a id="lobby-lock-in"></a>At
@@ -2018,60 +1998,30 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   calls `beginDrop()` itself; the old page holds the lobby until the new one paints. No
   instructional text anywhere on the screen.
 
-### The character screens
+### The profile card
 
-Two more surfaces on the lobby's painted night, both in [js/ui/chars.js](../../js/ui/chars.js)
-(the `characters` banner) on one ease (`menu.charT`; `menu.cscreen` remembers which of the two
-is fading out): the **roster** (`menu.screen = 'chars'`, `beginChars`/`leaveChars`, entered
-from the character tag) and the **create / customize screen** (`'create'`, `beginCreate(slot,
-first)`). The store behind them is [profile.js](architecture.md#profilejs); `charsLayout()` /
-`createLayout()` + `rowCells()` are each screen's one rect source for the draw, the hit test
-(`charsHit`/`createHit`) and the cursor.
+One surface over the dimmed title, in [js/ui/profile-card.js](../../js/ui/profile-card.js) on
+`menu.charT` (`menu.screen = 'profile'`, `beginProfile`/`leaveProfile`, entered from the name
+tag). The store behind it is [profile.js](architecture.md#profilejs): one name and one ledger.
+`profileLayout()` is the one rect source for the draw, the hit test (`profileHit`: `'name'`,
+`'card'` or off it) and the cursor.
 
-- **The roster** is the profile's three slots as cards across the middle (`drawCharCard`,
-  `CH_CARD_W`×`CH_CARD_H`): the 48 px model at 2× on its light, the name in gold with the 12 px
-  class emblem beside it, and the **ledger** under a rule — WINS / MATCHES / KILLS / DEATHS /
-  DAYS / GOLD as icon, label, dotted leader, number (the character-panel text carve-out;
-  `drawLedger`). The active card wears the gold rim; a card click makes it active
-  (`activateChar`) and leaves; the quill bottom-right opens the customize screen on that slot;
-  the X plate top-right (red under the hand) **deletes on the press** (`deleteSlot`), and
-  deleting the last character reopens the create screen as a first launch. An empty slot is a dashed well with a plus in it,
-  and a click there is a new character. Left/Right walk `menu.ksel`, Enter picks, Esc backs out
-  (`charsKey`).
-- **The create screen** opens on `menu.cedit = { slot, spec, first }` — slot −1 is a **new
-  character pre-rolled** by `PROFILE.rollChar` (a winter word and a random look), a slot index
-  is that character's copy for editing, and `first` is the fresh install (js/app/boot.js opens it
-  before the title when `!PROFILE.hasChar()`: no CANCEL, and DONE lands on the title menu).
-  Two columns centred as one block (`createLayout`), sharing a top line and a foot. Left, the
-  stage: the model at 3× (`drawModel`, the lobby's light and ring), the 16 px body at 2×
-  walking on a snow pad by its feet (what the snow will show), and the **name field** centred
-  under the stage: the buffer at 2× with a caret, or **selected** on a gold band
-  (`menu.nameSel`) when the next letter will replace it — a new character's pre-rolled name
-  arrives selected, a roll of the die leaves its word selected, and a click on the field
-  selects what is there; Backspace on a selection clears it. The rim lights under the hand,
-  the underline goes red while the name would be refused (`nameOk`, which also dims DONE),
-  the capacity ticks sit under it, and a refusal on DONE rattles and floods it red
-  (`menu.nameShake`). Right, the option panel (`CH_ROWS`): its **head row** starts in the
-  cells' column like every row and spans the widest — the **class pair** at its left (the two
-  `CLASS32` emblems on `CH_PLATE` wells; once the character exists the other one is dark under
-  a padlock: **class is fixed at creation**) and the **die** at its right end, the same size
-  (`drawDie` — five pips at rest, gold under the hand, and for `DIE_T` after a press it rattles
-  and flickers through the six faces while `shuffleLook` lands a new look *and* a new name: a
-  roll, not a button) — then **one row per axis in one grammar** — an 8 px glyph in the gutter and a
-  `CH_CELL` (24 px) cell per choice, each cell a 1× crop of the *bare* model wearing that
-  choice (`drawLookCell`: the head crop `CH_HEAD` for tone, hair, hair colour, beard and face,
-  the torso crop `CH_TORSO` for the body type), so a row is its choices seen before they are
-  picked — no swatches, no chevrons, no count pips. Cells sit in the same columns on every row;
-  the widest row (`CH_ROW_N`) sets the panel's width. DONE / CANCEL centred along the foot.
-  The screen **owns the keyboard** (input.js routes to `createKey` before its own
-  shortcuts): letters are the name, Backspace edits it, Up/Down walk `menu.crow` (a gold tick
-  breathes at the row's glyph while the pointer is off the page), Left/Right turn the row, Enter
-  is DONE, Esc CANCEL. DONE (`createCommit`) dims while the name would be refused and rattles
-  the field on a refusal; it creates (`PROFILE.createChar`) or updates (`updateChar`, which
-  never takes a class), makes the result active and returns to the roster.
-- Every plate here shares one grammar (`drawWell`): a dark drop shadow, a slate rim that
-  lightens under the hand and goes gold when picked, a navy floor. Hover eases live in
-  `menu.khover`, keyed by hit id.
+- **The card** (`renderProfileCard`, `PC_W`×`PC_H`, a gold-rimmed well) has the **name field**
+  across its head and the **ledger** under a rule — WINS / MATCHES / KILLS / DEATHS / DAYS /
+  GOLD as icon, label, dotted leader, number (the character-panel text carve-out;
+  `drawLedger`), `ESC BACK` under it. At rest the name stands in gold at 2× with its quill;
+  under the hand the field's well shows. A click on it selects the name on a gold band
+  (`menu.nameSel`: the next letter replaces it); typing (`menu.nameEdit`) shows the buffer in
+  white with a caret, the capacity ticks under it and the underline red while the store would
+  refuse it.
+- The card **owns the keyboard** (input.js routes to `profileKey` before its own shortcuts):
+  letters are the name, Backspace edits it, **Enter keeps it** (`profileCommit`: a refusal
+  rattles and floods the field red, `menu.nameShake`, and the card stays) and **Esc or a click
+  off the card closes**, keeping a name `PROFILE.setName` accepts and dropping one it refuses.
+- A fresh install never sees a form: the profile arrives pre-named (a winter word), and the
+  first press on the title goes to play. Every plate here and on the hero row shares one
+  grammar (`drawWell`): a dark drop shadow, a slate rim that lightens under the hand and goes
+  gold when picked, a navy floor.
 <a id="the-hero-pop-up"></a>
 - **Hero pop-up** (`menu.screen = 'hero'`, off your figure on the lobby, easing over the
   still-lit lobby on `menu.popT`): a dim, then a floating panel in two columns
@@ -2136,7 +2086,7 @@ The map and the seed die on it are driven the same way through the globals `mapS
 
 ### The skins screen
 
-On the lobby's painted night like the character screens, in [js/ui/skins.js](../../js/ui/skins.js)
+On the lobby's painted night, in [js/ui/skins.js](../../js/ui/skins.js)
 (`menu.screen = 'skins'`, `beginSkins`/`leaveSkins`, its own ease `menu.skinT`). `skinsLayout()`
 is the one rect source for the draw, the hit test (`skinsHit`) and the cursor.
 
@@ -2165,48 +2115,6 @@ is the one rect source for the draw, the hit test (`skinsHit`) and the cursor.
   not sent over the wire). `drawEagle` asks it at draw time; it is paint, never read by the sim.
   `scoutBody(p)` is the same for a player: only the local player wears the scout skin worn, as a
   body of its own (the IRON SCOUT, [sprites](sprites.md)), and every other player the class body.
-
-### The bot ladder screen
-
-On the lobby's painted night, in [js/ui/ladder.js](../../js/ui/ladder.js) (`menu.screen = 'ladder'`,
-`beginLadder`/`leaveLadder`, its own ease `menu.ladT`). `ladderLayout()` is the one rect source for
-the draw, the hit test (`ladderHit`) and the cursor (`ladderCursor`).
-
-- **The data** is the offline ladder's ([docs/bots/ladder.md](../bots/ladder.md)):
-  `ladder-data/standings.js` beside index.html sets `window.LADDER_DATA` (`rows`, the standings;
-  `bots`, each entered file's source, added to `BOT_LIB` on the sealed `'worker'` transport, never
-  `'inline'`; written by `writePage`, app/ladder/page.js). The game never fetches, so
-  `ladderLoad` adds it as a script each time the screen opens; a missing file is a ladder with no
-  matches. `ladderTake` builds the rows, best first, and lists every `BOT_LIB` bot the ladder has
-  not met at the start rating.
-- **A face per bot** (`ladderFace`, keyed by id in `LAD_FACES`): a scout in the rivals' paint
-  (`SPRITES.portrait`), a colour and a 9x9 emblem of how it plays (`LAD_GLYPHS`); any other id
-  gets a scout rolled from its id and the steel cog.
-- **The list**, left: a well per bot (`drawLadderRow`) with its rank, emblem, name (a red dot if its code
-  threw), a steel bar of its rating against the field with the number, and its last five results
-  as green / grey / red chips. Slate rims, lighter under the hand, bright steel on the picked row
-  (`menu.ldSel`; Up/Down or a click; `menu.ldTop` scrolls past `LAD_ROWS_MAX`).
-- **The card**, right (`drawLadderCard`): the picked bot's portrait on a glow of its colour, its
-  emblem, its name big, its author, its rating big
-  and its last move in green or red, the trend (`ladTrend`, a 1 px line over the start's level),
-  the record as one W/D/L bar with the counts, a W/D/L bar against each rival it has met, and
-  **FIGHT** and **WATCH** at the foot, bare words like LOCK IN (Left/Right pick one for the keys,
-  `menu.ldBtn`).
-- **FIGHT** (`ladderFight`, or Enter) sets `ladderFoe` and opens the [lobby](#lobby); the drop
-  (`beginDrop` → `ladderSeat`) hands every rival `'ai'` seat of a solo match to that bot
-  (`botAssign`), the ladder's own rule of one file playing a whole side.
-- **WATCH** (`ladderWatchPick`) turns the list into the other side's pick (`menu.ldRival`, the
-  row in the rivals' colour, the card's foot reading A VS B); a row or Enter starts it
-  (`ladderWatchStart`), Esc steps back. `ladderWatch` (`{ a, b, speed, won }`) goes straight to the
-  drop with every seat a bot's, seat 0 included (`player.control = 'ai'`, the arena's trick). While
-  it is set: `sampleHumanInput` is skipped, keys and clicks are `ladderWatchKey`/`ladderWatchClick`
-  (Left/Right follow the next living player through `state.spec`, Up/Down or 1-4 the speed, M the
-  map, Esc leaves through `toLobby`), the wheel zooms, renderUI treats the HUD as `out` and drops
-  the notices, and `drawLadderWatch` draws the followed player between two arrows under the rail,
-  A VS B over the 1X-8X chips at the foot, and the winner's banner. The loop steps `speed` times
-  as many ticks (boot.js); `endMatch` hands the ending to `ladderWatchOver` instead of the end
-  screens, a seat 0 respawn leaves the camera alone, `canSave` refuses and `PROFILE.quiet` keeps
-  the character's stats untouched until the page reloads.
 
 ## Eagle drop (mode `drop`)
 
@@ -2463,6 +2371,15 @@ the ride alone (`rayLight` asks `aboard`/`dropT`, never `inAir`).
 Everything over the finished world frame, in world pixels, in `renderLighting()`
 ([js/draw/light.js](../../js/draw/light.js), the `light & weather` banner). It is the last world
 pass; the debug overlays are the only thing above it.
+
+**The fog of war goes first** (`drawFog`, js/draw/fog.js): one `multiply` of a flat grey
+(`FOG_TINT`) through a mask of the viewed side's sight, under the hour and the night, so fog and
+night stack instead of fighting. Dim, never black, and neutral grey where the night is blue. The
+rim is stepped `FOG_STEP` px on the world's own grid (the edge measured on `FOG_CELL` px corners),
+so it holds still while the camera slides; never a blur. A body out of sight is simply not put on
+the draw list (`fogShown`, in `render()`'s list, the swing arcs, the trample and both maps' dots).
+Its cost is on F3's DRAW: about 1 ms on the headless software renderer, mostly the multiply
+itself, and an eye that has not moved re-uses its sight lines.
 
 **Almost nothing on the map emits light, and there is no light registry** — not even a glow on the
 player: a lit shot and a warren's open snowdrop are the only two. **Night is a colour and a closing in**: a `multiply` of
