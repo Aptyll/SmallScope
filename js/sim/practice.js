@@ -764,10 +764,10 @@ function cheatCmd(p, c) {
     return true;
   }
   if (c.id === 'gold') {
-    // play money with no XP behind it - LEVEL UP is its own button - so the
-    // till's no-XP path, not gainGold (which would level you as it paid)
+    // play money, never counted as earned - LEVEL UP is its own button - so
+    // the till's path (tradeGold), not gainGold (which would climb the scoreboard)
     tradeGold(p, CHEAT_GOLD);
-    addFloater(p.x, p.y - 22, '+' + CHEAT_GOLD, RES_COLORS.gold);
+    addFloater(p.x, p.y - 22, String(CHEAT_GOLD), RES_COLORS.gold);
     sfxFor(p, 'coin');
     return true;
   }
@@ -779,7 +779,7 @@ function cheatCmd(p, c) {
   }
   if (c.id === 'reset') {
     // back to a fresh level 1: level, xp, purse, skill points and ranks
-    p.level = 1; p.xp = 0; p.inv.gold = 0; p.skillPts = 1;
+    p.level = 1; p.xp = 0; p.inv.gold = 0; p.earned = 0; p.skillPts = 1;
     for (let i = 0; i < p.abLv.length; i++) { p.abLv[i] = 0; p.abCd[i] = 0; }
     p.maxHp = levelMaxHp(p); p.hp = p.maxHp;
     fx('#f4f7ff');

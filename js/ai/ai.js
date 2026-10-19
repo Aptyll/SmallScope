@@ -503,6 +503,49 @@ function aiWaveHead(p, e) {
   return best;
 }
 
+// ---- the road, and the roam ---------------------------------------------------
+// XP is being NEAR when rival bodies fall (shareXp, js/sim/player.js), and the
+// road is where they fall, a wave every thirty seconds - while gold is the
+// work's (the harvest rung). So a bot splits its time: every AI_ROAD_T it
+// rolls a stretch on the road or on the work, the road at AI_ROAD_P at the
+// table's average level, AI_ROAD_LV more a level it trails that average and
+// less a level it leads, and a greedy mood stays on the work longer. On a
+// road stretch it walks to the nearest rival soldier inside AI_ROAD_D (rung
+// 5g); rung 3 does the fighting once the wave is in sight. No wave out, or a
+// work stretch: null, and the ladder goes on to the hunt and the harvest.
+const AI_ROAD_T = 30;    // s a stretch lasts before the next roll
+const AI_ROAD_P = 0.55;  // the odds of the road at the table's average level
+const AI_ROAD_LV = 0.15; // ...moved this much a level behind (up) or ahead (down)
+const AI_ROAD_D = 1600;  // px off a rival soldier may be and still be walked to: most of the way across the valley, the zipline helps
+function aiRoad(p, dt) {
+  const ai = p.ai;
+  ai.roadT = (ai.roadT || 0) - dt;
+  if (ai.roadT <= 0) {
+    ai.roadT = AI_ROAD_T;
+    ai.road = rng() < (AI_ROAD_P + AI_ROAD_LV * (animalLevel() - p.level)) / aiMood(p).greed;
+  }
+  if (!ai.road) return null;
+  let best = null, bd = AI_ROAD_D;
+  for (const b of robots) {
+    if (b.kind !== 'soldier' || !unitAlive(b) || b.team === p.team) continue;
+    const d = Math.hypot(b.x - p.x, b.y - p.y);
+    if (d < bd) { bd = d; best = b; }
+  }
+  return best;
+}
+// where a bot with nothing to do wanders next: round its leash when it has
+// one, else near the middle of the map or near its own landing, by halves
+// (rung 11)
+function aiRoamPick(p, leash) {
+  const ai = p.ai;
+  if (leash) { ai.wx = leash.e.x + rand(-1, 1) * leash.r; ai.wy = leash.e.y + rand(-1, 1) * leash.r; return; }
+  const toward = rng() < 0.5 ? { x: cx * TILE, y: cy * TILE } :
+    { x: (p.spawn.tx + 0.5) * TILE, y: (p.spawn.ty + 0.5) * TILE };
+  const w = aiMood(p).roam; // (a wild bot wanders wider)
+  ai.wx = toward.x + rand(-14, 14) * TILE * w;
+  ai.wy = toward.y + rand(-14, 14) * TILE * w;
+}
+
 // ---- the ride ---------------------------------------------------------------
 // A bot rides the zipline (the `zipline` banner, js/sim/zipline.js) the way a hand
 // does, through the same hop intent: every walk the ladder orders goes
@@ -1331,6 +1374,11 @@ function aiThink(p, dt) {
     }
   }
 
+  // 5g. the road (aiRoad): a road stretch walks to the nearest rival wave,
+  //     where the XP falls - free of an order's ring, an escort and a post
+  const road = !bound && !escort && !guardE ? aiRoad(p, dt) : null;
+  if (road) { aiNote(p, 'ROAD', 'THE WAVE', road); if (steerTo(road.x, road.y, 2) >= 0) { aimAt(road.x, road.y); inp.fire = false; ai.tgt = null; return; } }
+
   // 6. meat is gold: chase and shoot the nearest animal, but give up on one
   //    it cannot catch in 6 s (prey outruns a walk) or cannot route to at all
   if (ai.huntAvoidT > 0) { ai.huntAvoidT -= dt; if (ai.huntAvoidT <= 0) ai.huntAvoid = null; }
@@ -1462,7 +1510,7 @@ function aiThink(p, dt) {
     const ptx = Math.floor(p.x / TILE), pty = Math.floor(p.y / TILE);
     if (Math.max(Math.abs(t.tx - ptx), Math.abs(t.ty - pty)) <= WORK_REACH) {
       // the E key at the profile's duty cycle - a slow side rests between
-      // swings, which is what sets how fast it levels. A rock takes no key:
+      // swings, which is what sets how fast it earns. A rock takes no key:
       // standing by it is the mining (updateMine, js/sim/mining.js).
       inp.work = t.type !== 'rock' && (prof.work >= 1 || (state.tick % 120) < 120 * prof.work);
       return;
@@ -1487,16 +1535,7 @@ function aiThink(p, dt) {
   else aiNote(p, 'ROAM', 'NOTHING NEAR', { x: ai.wx, y: ai.wy });
   ai.roam -= dt;
   if (leash && Math.hypot(ai.wx - leash.e.x, ai.wy - leash.e.y) > leash.r * 1.5) ai.roam = 0; // the leash moved (the human walked on)
-  if (ai.roam <= 0) {
-    ai.roam = rand(3, 7);
-    if (leash) { ai.wx = leash.e.x + rand(-1, 1) * leash.r; ai.wy = leash.e.y + rand(-1, 1) * leash.r; } else {
-    const toward = rng() < 0.5 ? { x: cx * TILE, y: cy * TILE } :
-      { x: (p.spawn.tx + 0.5) * TILE, y: (p.spawn.ty + 0.5) * TILE };
-    const w = aiMood(p).roam; // (a wild bot wanders wider)
-    ai.wx = toward.x + rand(-14, 14) * TILE * w;
-    ai.wy = toward.y + rand(-14, 14) * TILE * w;
-    }
-  }
+  if (ai.roam <= 0) { ai.roam = rand(3, 7); aiRoamPick(p, leash); }
   const rd = steerTo(ai.wx, ai.wy);
   if (rd < 20) ai.roam = 0; // arrived, or no route (a point in the treeline): pick another
   aimAt(p.x + inp.mx * 24, p.y + inp.my * 24);
