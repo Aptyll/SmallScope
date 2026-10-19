@@ -39,7 +39,8 @@ if (PRACTICE) {
   genWorld();
   placeCreek();     // the creek down the cross-diagonal, its bends and fords, and the cistern round its frozen middle (world.js, cistern.js)
   layPaths();       // ...and the paths a grown shape cuts through its own woods, forded where they cross it (world.js)
-  placeRoad();       // the diagonal lane, and the paths with it (world.js)
+  layLanes();       // ...and the top and bot lanes, forded where they cross it (js/sim/lanes.js)
+  placeRoad();       // the diagonal lane, and the paths and side lanes with it (world.js)
   placeBase();       // ...and each side's hollow round the end of it, where its bird roosts (js/sim/base.js)
   placeZips();       // ...and each side's cable along it (js/sim/zipline.js)
   placeCamps();      // worldgen's last pass, before the ground is baked: the camps clear their sites
@@ -158,6 +159,8 @@ window.DBG = {
   // the map shape this page grew, the table behind it, the rule one IS, and
   // the paths it cut: DBG.mapTerrain(k, tx, ty) answers for any shape
   MAPS, mapTerrain, mapName, mapGrown, paths, pathDist,
+  // the top and bot lanes (js/sim/lanes.js): a centreline, its distance, a march down one, and the hollows' gates and bay spots
+  laneLine, sideLaneDist, laneWaypoints, baseGate, baseBaySpot,
   // the snow's depth (js/sim/depth.js): the map, the deep band, the drifts and the wind that laid them
   snowDepth, deepAt, drifts, driftWind,
   get MAP_TYPE() { return MAP_TYPE; },

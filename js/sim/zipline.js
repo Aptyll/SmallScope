@@ -1,14 +1,15 @@
 'use strict';
-// The zipline: each team's cable, laid at boot, and the ride every body takes
+// The zipline: each team's cables, laid at boot, and the ride every body takes
 // on it (drawn by js/draw/zipline.js).
 // ------------------------------------------------------------ zipline
-// THE ZIPLINE: one cable per team, strung on pylons from beside its bird at
-// the perch, out through its base's mouth along the road's own verge, to
-// a terminus ZIP_MID_GAP road-units short of the road's centre - so the
-// middle stretch where the waves meet is cable-free and is always walked
-// into. The walk out of a base is dead time with no decisions in it; the
-// fight is not; the cable compresses exactly the first and stops at the
-// second. ANY body standing under EITHER cable clips on with E (input.jump -
+// THE ZIPLINE: one cable per team down each lane, strung on pylons from
+// beside its bird at the perch, out through its base's mouth for that lane
+// along the lane's verge, to a terminus short of the lane's middle (the
+// road's: ZIP_MID_GAP road-units; a side lane's: laneZipTiles, js/sim/lanes.js)
+// - so the middle stretch where the waves meet is cable-free and is always
+// walked into. The walk out of a base is dead time with no decisions in it;
+// the fight is not; the cable compresses exactly the first and stops at the
+// second. ANY body standing under ANY cable clips on with E (input.jump -
 // the same hop intent the eagle reads), rides at ZIP_SPD
 // (three times walk) in whichever direction it holds along the cable, and
 // lets go anywhere with E again; a dodge rolls off it the way it rolls off
@@ -44,7 +45,7 @@ const ZIP_SAG = 3;         // px a span sags at its middle
 const ZIP_CRASH_R = 8;     // px along the cable two rival riders meet inside (a body's width)
 const ZIP_CRASH_STUN = 0.8; // s both are stunned for: a body hit at full speed, the tackle's top (TACKLE_STUN, actions.js)
 const ZIP_BASE_OUT = 4.4;  // u up the road from the perch the base pylon stands on the verge: past the crash pad, so the ride home lets go beside the bird
-const zips = [];           // [team] -> { team, pts: [{x, y}] (body positions, base -> front), cum: [px along at each point], len }
+const zips = [];           // [team] the mid road's, then the side lanes' -> { team, lane, pts: [{x, y}] (body positions, base -> front), cum: [px along at each point], len }
 // a point `s` tiles off the diagonal at u, signed like roadOffS (+ toward the
 // bottom-right side), in continuous tile-index space
 function zipTile(u, s) { return { x: u + s / Math.SQRT2, y: WORLD - 1 - u + s / Math.SQRT2 }; }
@@ -64,27 +65,36 @@ function placeZips() {
       tiles.push(verge(u));
       if (last) break;
     }
-    const pts = [];
-    for (const t of tiles) {
-      // the pylon's tile: the nearest along the road that is dry and holds
-      // nothing but worldgen's scenery (a pine or a rock gives way, like the
-      // road's poles); the point stands even if no tile will take a pylon
-      let tx = Math.round(t.x), ty = Math.round(t.y);
-      for (const k of [0, 1, -1, 2, -2]) {
-        const qx = tx + k, qy = ty - k;
-        if (!inWorld(qx, qy) || waterAt(qx, qy)) continue;
-        const o = objects[idx(qx, qy)];
-        if (o && !laneFells(o)) continue;
-        placeObj(qx, qy, 'pylon', { team });
-        tx = qx; ty = qy;
-        break;
-      }
-      pts.push({ x: (tx + 0.5) * TILE, y: (ty + 0.5) * TILE - 4 }); // a body position: its feet (p.y + 4) on the tile's centre
-    }
-    const cum = [0];
-    for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y));
-    zips[team] = { team, pts, cum, len: cum[cum.length - 1] };
+    zips[team] = zipLay(team, 1, tiles);
   }
+  // ...and one more each side down each side lane, from beside the perch out
+  // through the lane's mouth along its outer verge (laneZipTiles,
+  // js/sim/lanes.js): zips[0] and zips[1] stay the mid road's
+  for (const lane of [0, 2]) for (const team of [0, 1]) zips.push(zipLay(team, lane, laneZipTiles(team, lane)));
+}
+// a side's line on `lane` (0 top, 1 mid, 2 bot) through the pylon points
+// `tiles` (continuous tile-index space), base first: each pylon on the
+// nearest tile along the way that is dry and holds nothing but worldgen's
+// scenery (a pine or a rock gives way, like the road's poles); the point
+// stands even if no tile will take a pylon
+function zipLay(team, lane, tiles) {
+  const pts = [];
+  for (const t of tiles) {
+    let tx = Math.round(t.x), ty = Math.round(t.y);
+    for (const k of [0, 1, -1, 2, -2]) {
+      const qx = tx + k, qy = ty - k;
+      if (!inWorld(qx, qy) || waterAt(qx, qy)) continue;
+      const o = objects[idx(qx, qy)];
+      if (o && !laneFells(o)) continue;
+      placeObj(qx, qy, 'pylon', { team });
+      tx = qx; ty = qy;
+      break;
+    }
+    pts.push({ x: (tx + 0.5) * TILE, y: (ty + 0.5) * TILE - 4 }); // a body position: its feet (p.y + 4) on the tile's centre
+  }
+  const cum = [0];
+  for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y));
+  return { team, lane, pts, cum, len: cum[cum.length - 1] };
 }
 // the cable at `d` px along: the body position on its ground track, the unit
 // tangent (base -> front), the span it is on and how far across it (0..1)
@@ -110,8 +120,8 @@ function zipNearest(z, x, y) {
   }
   return best;
 }
-// the line a body may clip on right now: the nearer of the two, within
-// ZIP_GRAB of its track - or null. Either side's: a cable is anyone's ride
+// the line a body may clip on right now: the nearest, within
+// ZIP_GRAB of its track - or null. Any side's: a cable is anyone's ride
 function zipNear(p) {
   let best = null, bd = ZIP_GRAB;
   for (const z of zips) {
@@ -127,7 +137,7 @@ function zipNear(p) {
 // once to find the span and once more with that span's own sag - within
 // ZIP_HOVER, or null. The pointer's question (hoverZip, actions.js) and the
 // click scheme's (ckRightPress, input.js): both ask about the strand the
-// eye is on, never the invisible track under it. Either side's line, the nearer
+// eye is on, never the invisible track under it. Any side's line, the nearest
 function zipUnder(wx, wy) {
   let best = null;
   for (const z of zips) {
@@ -185,12 +195,12 @@ function zipToggle(p) {
 // prone, a stun, a root, a net, a hole, the air, a death - and a route that
 // fails or pins (navTo's ok). No timer. State on the body: p.zipWalk (a
 // flag; the goal is re-read every step, since the nearest point moves with
-// the body) and p.zipWalkL (the line's team: which cable). The walk does not write p.lastMx/lastMy (updatePlayer), so the
+// the body) and p.zipWalkL (the line's index in zips: which cable). The walk does not write p.lastMx/lastMy (updatePlayer), so the
 // clip-on at the end still reads the way you were walking BEFORE the press.
 function zipWalkStart(p, z) {
   if (p.dead || p.stunT > 0 || p.fallT > 0 || p.dodgeT > 0 || p.rushT > 0 || p.castT > 0 || p.shieldT > 0 || p.grapT > 0 || p.charging || inAir(p)) return;
   risePlayer(p);
-  p.zipWalk = true; p.zipWalkL = z.team;
+  p.zipWalk = true; p.zipWalkL = zips.indexOf(z);
   navClear(p);
 }
 function zipWalkEnd(p) {
@@ -237,7 +247,7 @@ function zipStart(p, near) {
 // one way to go (a clip-on AT the terminus that rode toward the front would
 // let go on its first step) - and the body up on the cable
 function zipBoard(e, z, d, dir) {
-  e.zip = z.team; e.zipD = d; e.zipLast = d;
+  e.zip = zips.indexOf(z); e.zipD = d; e.zipLast = d;
   e.zipDir = d <= 1 ? 1 : d >= z.len - 1 ? -1 : dir;
   const at = zipPoint(z, d);
   e.x = at.x; e.y = at.y;

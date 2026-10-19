@@ -921,7 +921,7 @@ function addPad(team, cx, cy, r) {
   return sp;
 }
 // signed distance (tiles) from the nearest road edge - the diagonal's, a
-// pad's or a path's: negative inside. `laid` is the road as it stands, ended
+// pad's, a path's or a side lane's: negative inside. `laid` is the road as it stands, ended
 // on the two perches (baseRoadEnd, js/sim/base.js); without it the diagonal
 // runs whole, which is what genWorld's carve rules have always read.
 function roadDist(fx, fy, laid) {
@@ -929,7 +929,9 @@ function roadDist(fx, fy, laid) {
   if (laid) d = Math.max(d, baseRoadEnd(fx, fy));
   for (const sp of pads) { const e = Math.hypot(fx - sp.x, fy - sp.y) - sp.hw; if (e < d) d = e; }
   const t = pathDist(fx, fy); // a grown shape's own paths (below); 99 on every shape that lays none
-  return t < d ? t : d;
+  if (t < d) d = t;
+  const l = sideLaneDist(fx, fy); // the top and bot lanes (js/sim/lanes.js); 99 until layLanes
+  return l < d ? l : d;
 }
 // the GATES: where the road crosses each corner's treeline on the diagonal -
 // the first open tile past the last wooded one. u0 is
@@ -1050,24 +1052,32 @@ function pathLat(t, fx, fy) {
   a = a < 0 ? 0 : a > t.len ? t.len : a;
   return Math.hypot(px - t.dx * a, py - t.dy * a);
 }
+// tiles from (fx, fy) to the nearest of `segs` by an index's two stamped
+// segments (indexSegs), or 99 off every one's reach - shared with the side
+// lanes (sideLaneDist, js/sim/lanes.js)
+function segsLat(segs, A, B, fx, fy) {
+  const tx = fx < 0 ? 0 : fx > WORLD - 1 ? WORLD - 1 : Math.round(fx);
+  const ty = fy < 0 ? 0 : fy > WORLD - 1 ? WORLD - 1 : Math.round(fy);
+  const i = ty * WORLD + tx;
+  const a = A[i];
+  if (a < 0) return 99;
+  let lat = pathLat(segs[a], fx, fy);
+  const b = B[i];
+  if (b >= 0) { const e = pathLat(segs[b], fx, fy); if (e < lat) lat = e; }
+  return lat;
+}
 // signed distance (tiles) from the nearest path's ragged edge, negative
 // inside - roadDist's third term. 99 where no path was ever laid.
 function pathDist(fx, fy) {
   if (!pathA) return 99;
-  const tx = fx < 0 ? 0 : fx > WORLD - 1 ? WORLD - 1 : Math.round(fx);
-  const ty = fy < 0 ? 0 : fy > WORLD - 1 ? WORLD - 1 : Math.round(fy);
-  const i = ty * WORLD + tx;
-  const a = pathA[i];
-  if (a < 0) return 99;
-  let lat = pathLat(paths[a], fx, fy);
-  const b = pathB[i];
-  if (b >= 0) { const e = pathLat(paths[b], fx, fy); if (e < lat) lat = e; }
+  const lat = segsLat(paths, pathA, pathB, fx, fy);
+  if (lat >= 99) return 99;
   return lat - (PATH_HW + (vnoise(fx * 0.42 + 61.3, fy * 0.42 + 17.9) - 0.5) * 2 * PATH_RAG);
 }
-function addPathSeg(x0, y0, x1, y1) {
+function addSeg(segs, x0, y0, x1, y1) {
   const dx = x1 - x0, dy = y1 - y0, L = Math.hypot(dx, dy);
   if (L < 0.001) return;
-  paths.push({ x: x0, y: y0, dx: dx / L, dy: dy / L, len: L });
+  segs.push({ x: x0, y: y0, dx: dx / L, dy: dy / L, len: L });
 }
 // a searched route (tiles) as segments every PATH_SEG tiles: consecutive
 // segments share an end, so the polyline is continuous and a bend is eased
@@ -1075,7 +1085,7 @@ function addPathSeg(x0, y0, x1, y1) {
 function addPathRoute(path) {
   for (let i = 0; i < path.length - 1; i += PATH_SEG) {
     const j = Math.min(path.length - 1, i + PATH_SEG);
-    addPathSeg(path[i][0], path[i][1], path[j][0], path[j][1]);
+    addSeg(paths, path[i][0], path[i][1], path[j][0], path[j][1]);
   }
   // ...and wherever it crosses the creek (the `the creek` group below), a
   // ford of stepping stones at the middle of the crossing: placeRoad paves
@@ -1092,12 +1102,17 @@ function addPathRoute(path) {
 }
 function indexPaths() {
   if (!paths.length) return;
+  const ix = indexSegs(paths, PATH_HW + PATH_RAG + ROAD_SHOULDER + 2.4); // past this a pixel of the tile can no longer be painted by the segment
+  pathA = ix.A; pathB = ix.B;
+}
+// every tile's nearest segment of `segs` and its next, out to R tiles off
+// it (-1 past): one array read per lookup instead of a walk down the list
+function indexSegs(segs, R) {
   const N = WORLD * WORLD;
-  pathA = new Int16Array(N).fill(-1); pathB = new Int16Array(N).fill(-1);
+  const A = new Int16Array(N).fill(-1), B = new Int16Array(N).fill(-1);
   const dA = new Float32Array(N).fill(Infinity), dB = new Float32Array(N).fill(Infinity);
-  const R = PATH_HW + PATH_RAG + ROAD_SHOULDER + 2.4; // past this a pixel of the tile can no longer be painted by the segment
-  for (let s = 0; s < paths.length; s++) {
-    const t = paths[s];
+  for (let s = 0; s < segs.length; s++) {
+    const t = segs[s];
     const ex = t.x + t.dx * t.len, ey = t.y + t.dy * t.len;
     const x0 = Math.max(0, Math.floor(Math.min(t.x, ex) - R)), x1 = Math.min(WORLD - 1, Math.ceil(Math.max(t.x, ex) + R));
     const y0 = Math.max(0, Math.floor(Math.min(t.y, ey) - R)), y1 = Math.min(WORLD - 1, Math.ceil(Math.max(t.y, ey) + R));
@@ -1105,10 +1120,11 @@ function indexPaths() {
       const d = pathLat(t, tx, ty);
       if (d > R) continue;
       const i = ty * WORLD + tx;
-      if (d < dA[i]) { dB[i] = dA[i]; pathB[i] = pathA[i]; dA[i] = d; pathA[i] = s; }
-      else if (d < dB[i]) { dB[i] = d; pathB[i] = s; }
+      if (d < dA[i]) { dB[i] = dA[i]; B[i] = A[i]; dA[i] = d; A[i] = s; }
+      else if (d < dB[i]) { dB[i] = d; B[i] = s; }
     }
   }
+  return { A, B };
 }
 
 // What one tile costs a route, in tiles of open snow; -1 refuses it outright.

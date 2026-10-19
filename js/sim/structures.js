@@ -96,7 +96,7 @@ const STRUCTS = {
   // soldiers alive at once, every bay counted: a side nobody fights back
   // against does not fill the map, it waits for its column to spend itself.
   barracks: { name: 'BARRACKS', w: 3, h: 2, art: 'spawner', fixed: true, mm: mmTeam, map: chTeam, tiers: [
-    { cost: { gold: 40 }, hp: 320, buildT: 12, wave: 3, waveT: 30, grow: 180, botHp: 60, cap: 24 }, // botHp: a soldier's health at the start, grown by SOLDIER_HP_GROW (js/sim/robots.js)
+    { cost: { gold: 40 }, hp: 320, buildT: 12, wave: 3, waveT: 30, grow: 180, botHp: 60, cap: 8 }, // cap: soldiers a LANE holds, queued or out; botHp: a soldier's health at the start, grown by SOLDIER_HP_GROW (js/sim/robots.js)
   ]},
   // The fish net: the one building that goes on water instead of snow.
   // `water: true` is the whole difference, and every site reads that flag
@@ -580,6 +580,18 @@ function buildCrew(o) {
   return n;
 }
 
+// the soldiers a bay's LANE holds: every bay of its team on that lane
+// queued, and every soldier of the team walking it - the barracks' cap is
+// the lane's, so more bays refill a column faster but never fill a lane.
+// The merchant's bays carry their lane (updateMerchant); any other walks mid
+function barracksLaneLoad(o) {
+  const lane = o.lane === undefined ? 1 : o.lane;
+  let n = 0;
+  for (const q of structures) if (q.type === 'barracks' && q.team === o.team && (q.lane === undefined ? 1 : q.lane) === lane) n += q.queue;
+  for (const b of robots) if (b.kind === 'soldier' && b.team === o.team && b.lane === lane && !b.dead) n++;
+  return n;
+}
+
 function updateStructures(dt) {
   for (let i = tracers.length - 1; i >= 0; i--) {
     tracers[i].t -= dt;
@@ -732,10 +744,7 @@ function updateStructures(dt) {
       o.waveT -= dt;
       if (o.waveT <= 0) {
         o.waveT = t.waveT;
-        let alive = 0; // the cap is the SIDE's: every bay of the team queued or out, so more bays refill a column faster but never fill the map
-        for (const q of structures) if (q.type === 'barracks' && q.team === o.team) alive += q.queue;
-        for (const b of robots) if (b.kind === 'soldier' && b.team === o.team && !b.dead) alive++;
-        o.queue += Math.max(0, Math.min(t.cap - alive, t.wave + Math.floor((state.elapsed - o.born) / t.grow)));
+        o.queue += Math.max(0, Math.min(t.cap - barracksLaneLoad(o), t.wave + Math.floor((state.elapsed - o.born) / t.grow)));
       }
       o.rollT -= dt;
       if (o.queue > 0 && o.rollT <= 0) {
