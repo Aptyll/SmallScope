@@ -282,7 +282,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| the top and bot lanes: their tuning and fixed control points, the smoothed centreline and a point along it, the registry roadDist mins over, laying them and their creek fords at boot, a wave's march down one, a side's cable down one | `LANE_*`, `laneLine`, `laneAt`, `laneAlong`, `laneSegs`, `sideLaneDist` (read by `roadDist`, world.js; its index: `indexSegs`/`segsLat`, world.js), `layLanes` (called at boot between `layPaths` and `placeRoad`, boot.js), `laneWaypoints` (read by `makeSoldier`, robots.js), `laneZipTiles` (read by `placeZips`, zipline.js) | `lanes` (pixels: the road's, `paintRoadOverlay`, js/draw/ground.js) |
+| the top and bot lanes: their tuning and fixed control points, the smoothed centreline and a point along it, the registry roadDist mins over, laying them and their creek fords at boot, a wave's march down one, a side's cable down one, where a laner waits on any lane | `LANE_*`, `laneLine`, `laneAt`, `laneAlong`, `laneSegs`, `sideLaneDist` (read by `roadDist`, world.js; its index: `indexSegs`/`segsLat`, world.js), `layLanes` (called at boot between `layPaths` and `placeRoad`, boot.js), `laneWaypoints` (read by `makeSoldier`, robots.js), `laneZipTiles` (read by `placeZips`, zipline.js), `laneHold` (where a bot laner waits: `aiLaneSpot`, js/ai/ai-farm.js) | `lanes` (pixels: the road's, `paintRoadOverlay`, js/draw/ground.js) |
 
 ## js/sim/zipline.js
 
@@ -552,7 +552,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| a laner holding its blow until one hit finishes a soldier, what it remembers its blow does, where it stands | `aiFarmHold`, `aiFarmFire` (rung 3 of `aiThink`), `aiFarmLearn` (from `hurtRobot`), `aiLaneSpot`, `AI_FARM_*` | `bot farm` |
+| a laner holding its blow until one hit finishes a soldier, what it remembers its blow does, which lane it holds, where it stands | `aiFarmHold`, `aiFarmFire` (rung 3 of `aiThink`), `aiFarmLearn` (from `hurtRobot`), `AI_LANE_ORDER`, `aiLaneDeal` (called by `aiPlan`, ai-team.js: `T.lanes`), `aiLane`, `aiLaneSpot` (no column: `laneHold`, js/sim/lanes.js), `AI_FARM_*` | `bot farm` |
 | a jungler's walk: the den with its pack up, or waiting just outside the next one to come back | `aiDenSpot`, `aiFarmWalk` (rung 5f), `AI_DEN_EARLY`, `AI_JUNGLE_N`/`AI_LANE_N` (handed out by `aiPlan`, ai-team.js) | `bot farm` |
 
 ## js/ai/bot-api.js

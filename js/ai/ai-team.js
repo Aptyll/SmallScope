@@ -121,7 +121,7 @@ const AI_ODDS_R = 150;      // px round a fight the numbers are counted in (the 
 // the side's shared mind, one per team; it is saved whole (SAVE_ROOTS,
 // js/sim/save.js), the bear by reference like any other shared body
 function aiTeamNew() {
-  return { at: -1, stance: 'FARM', why: '', winT: 0, roles: {}, order: [], seen: [], calls: [], focus: -1, bear: null, bearT: 0, builder: -1, answerT: 0, guarded: '', nPush: 0, nGuard: 0, braceT: 0, braceN: 0, wallTick: -1, ring: null, wallNo: {} };
+  return { at: -1, stance: 'FARM', why: '', winT: 0, roles: {}, lanes: {}, order: [], seen: [], calls: [], focus: -1, bear: null, bearT: 0, builder: -1, answerT: 0, guarded: '', nPush: 0, nGuard: 0, braceT: 0, braceN: 0, wallTick: -1, ring: null, wallNo: {} };
 }
 const aiTeams = [aiTeamNew(), aiTeamNew()];
 
@@ -144,7 +144,7 @@ function aiDownCount(team) {
 // counts are the profile's own (aiPushers, prof.guard - the difficulty),
 // so the plan decides WHO, not how many; the window is the one time it adds
 // pushers of its own. The free hands farm next - AI_JUNGLE_N junglers, then
-// AI_LANE_N laners (js/ai/ai-farm.js) - then one scout and one stalker once
+// AI_LANE_N laners, one per lane (aiLaneDeal, js/ai/ai-farm.js) - then one scout and one stalker once
 // the match is under way, while there are bots left for them, and anyone
 // left over is a gatherer. A bot keeps its role while the role
 // is still wanted (AI_KEEP), so the jobs do not reshuffle every re-plan.
@@ -231,6 +231,7 @@ function aiPlan(team) {
   const pri = (id) => (roles[id] === 'pusher' ? 0 : roles[id] === 'guard' ? 1 : 2);
   order.sort((a, b) => pri(a) - pri(b));
   T.roles = roles; T.order = order;
+  T.lanes = aiLaneDeal(T); // each laner its own lane (js/ai/ai-farm.js)
   // the side's builder, the one bot that raises bays (aiEcoBuy): the most
   // patient purse on the side, kept while it is up
   if (!bots.some((q) => q.id === T.builder)) {

@@ -3,8 +3,11 @@
 // Bots farm the way a hand does (the `farm` banner, js/sim/farm.js): two of
 // the side's roles (AI_ROLES, js/ai/ai-team.js) are farm jobs, handed out
 // after the side's pushers, guards and bear party.
-//   LANER    walks to where its side's wave meets the rival one and stands
-//            just behind its own column; the fight there is rung 3's, and
+//   LANER    holds one LANE of the three (aiLaneDeal: mid first, then top,
+//            then bot, one laner each), walks to where its side's wave on
+//            that lane meets the rival one and stands just behind its own
+//            column - or, with no column of its own on the lane, waits at
+//            the lane's hold point (laneHold, js/sim/lanes.js); the fight there is rung 3's, and
 //            on a rival soldier its own soldiers are wearing down it holds
 //            the draw until one blow finishes it (aiFarmFire) - the last
 //            hit, never the softening. A lone soldier is simply killed.
@@ -60,15 +63,34 @@ function aiFarmFire(p, foe, fire) {
 // waiting for a soldier to drop under a tap's worth (and lose it to the wave)
 function aiFarmLearn(src, dmg) { if (src && src.control === 'ai' && src.ai) src.ai.farmHit = Math.max(dmg, (src.ai.farmHit || 0) * AI_FARM_FORGET); }
 
-// where a laner stands: behind its own soldier nearest a rival one (the
-// clash), or behind its own column's head with no clash yet; null with no
-// column on the road
+// the lanes in the order the side's laners take them: mid, top, bot
+const AI_LANE_ORDER = [1, 0, 2];
+// the side's laners, each to a lane: a laner keeps the lane it held while it
+// is still a laner, and the rest take the free lanes in AI_LANE_ORDER, so a
+// side short of laners holds mid first. { [player id]: lane }
+function aiLaneDeal(T) {
+  const lanes = {}, held = new Set();
+  const laners = Object.keys(T.roles).filter((id) => T.roles[id] === 'laner');
+  for (const id of laners) if (T.lanes[id] !== undefined && !held.has(T.lanes[id])) { lanes[id] = T.lanes[id]; held.add(T.lanes[id]); }
+  for (const id of laners) {
+    if (lanes[id] !== undefined) continue;
+    const lane = AI_LANE_ORDER.find((l) => !held.has(l));
+    if (lane === undefined) break;
+    lanes[id] = lane; held.add(lane);
+  }
+  return lanes;
+}
+function aiLane(p) { const l = aiPlan(p.team).lanes[p.id]; return l === undefined ? 1 : l; }
+
+// where a laner stands: behind its own soldier on its lane nearest a rival
+// one (the clash), or behind its own column's head with no clash yet; with
+// no column of its own on the lane, the lane's hold point
 function aiLaneSpot(p) {
-  const own = aiOwnEagle(p);
+  const own = aiOwnEagle(p), lane = aiLane(p);
   let best = null, bd = Infinity, head = null, hd = Infinity;
   const rival = aiRivalEagle(p);
   for (const b of robots) {
-    if (b.kind !== 'soldier' || b.team !== p.team || !unitAlive(b)) continue;
+    if (b.kind !== 'soldier' || b.team !== p.team || b.lane !== lane || !unitAlive(b)) continue;
     if (rival) { const d = Math.hypot(b.x - rival.x, b.y - rival.y); if (d < hd) { hd = d; head = b; } }
     for (const r of robots) {
       if (r.kind !== 'soldier' || r.team === p.team || !unitAlive(r) || Math.hypot(r.x - b.x, r.y - b.y) > AI_WAVE_R * 1.5) continue;
@@ -78,7 +100,7 @@ function aiLaneSpot(p) {
     }
   }
   const b = best || head;
-  if (!b) return null;
+  if (!b) return laneHold(p.team, lane);
   if (!own) return { x: b.x, y: b.y };
   const ux = own.x - b.x, uy = own.y - b.y, ud = Math.hypot(ux, uy) || 1;
   return { x: b.x + ux / ud * AI_FARM_BACK, y: b.y + uy / ud * AI_FARM_BACK };
