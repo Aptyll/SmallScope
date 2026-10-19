@@ -187,6 +187,7 @@ again on its side, exactly as it does a player's.
 | `{ kind: 'build', tx, ty, id, rot }` | place a building |
 | `{ kind: 'upgrade' \| 'repair' \| 'demolish', tx, ty }` | manage your side's building there (within 60 px) |
 | `{ kind: 'flag', tx, ty, id }` | plant your side's order marker (`id: null` lifts it) |
+| `{ kind: 'recall' }` | channel home: 6 s standing still, then set down at your roost. Any move, shot, ability, roll or blow ends it |
 | `{ kind: 'shop', act: 'item', id }` / `{ act: 'sellItem', slot }` / `{ act: 'trade', good, dir, n }` / `{ act: 'sell', i }` | at a merchant's counter: buy an item, sell a slot, buy `n` or sell all of `fish`/`berry` (`dir` 1 or -1), sell bag cell `i` |
 
 ## The team channel

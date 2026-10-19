@@ -2389,6 +2389,48 @@ as the overhead tells do (`alpha: 1 - concealOf(p)`).
 burrow rung): a bot only starts a meal with no rival inside `AI_EAT_R` (110 px), because standing
 there chewing under fire is not patience, it is a free kill.
 
+## Recall and the roost ring
+
+League's loop: fight, go back, heal, shop, ride the zipline out. Both halves live in the `recall`
+banner of [js/sim/recall.js](../../js/sim/recall.js).
+
+| | |
+| --- | --- |
+| `RECALL_T` | **6 s** of channel standing still |
+| `RING_HP` | **22%** of max health a second |
+| `RING_STAM` | the roll's charges refill **4x** as fast |
+
+**The recall** is the **H** key (`recall`, KEY_ACTIONS; on every scheme, and a CLICK order is
+dropped on the press). It arrives as a cmd (`{ kind: 'recall' }` through `runCmd` to
+`startRecall`), so it holds online and the bots' API can send it. `recallBlocked` refuses it while
+the bird is not down, in the air or under the snow, stunned, falling, rolling, casting, rushing,
+on the rope, the cable or a deer, drawing, or prone. When the channel runs out the body is set
+down on `roostTile` (js/sim/player.js), the tile a carried-back scout lands on, inside the ring.
+The play camera cuts to a body that moved more than `CAM_CUT` in one frame instead of sweeping
+the map (js/sim/sim.js).
+
+**What breaks it**: `recallIntents` at the top of `playerIntents` ends it on any action of the
+body's own (a step, the bow, E, the slide, the roll, a jump, an ability), and `breakEat` calls
+`breakRecall`, so every way a meal is knocked out (a hit, a stun, the water, the cable, the
+fire button) knocks the recall out too. Death clears it.
+
+**The roost ring** is the packed-earth disc the bird blew clear (`BOOM_R`, js/sim/eagle.js), read
+off the bird where it sits, so it follows the roost wherever a map puts it (`roostRing`). Inside
+your own side's ring and out of a fight (`p.fightT`, the items' clock: `ITEM_FIGHT_T` after any
+blow given or taken, js/sim/items.js), `updateRecall` heals and refills the roll, with green motes rising off the body. A rival in it gets nothing.
+
+**It reads without a word** ([UI rule](rendering.md#show-dont-label)): `drawRecallGround`
+(js/draw/recall.js) draws each down bird's ring as a soft glowing rim in its side's colour (four
+one-pixel circles, baked once), and under a recalling body a dotted ring with a solid one closing
+from it to the feet; the overhead frame's bar slot fills in the side's glow for the channel
+(`drawPlayer`, js/draw/bodies.js).
+
+**Bots** (`aiRecall`, js/ai/ai.js, read after the ladder in `updateAI`): with no rival player or
+machine inside `AI_RECALL_SAFE`, a bot under `AI_RECALL_HP` of its health and more than
+`AI_RECALL_FAR` from its bird recalls and stands still for the channel, and a bot hurt in its own
+ring and out of a fight waits there to `AI_RING_FULL`. A rival its side sees in reach hands it back to
+the ladder.
+
 ## The dawn shield
 
 The [warrens](world.md#camps) carry three **snowdrop** clumps each, at the back of the clearing
@@ -3309,8 +3351,8 @@ human idle, and deep in a ten-bot match with hundreds of buildings and robots st
 
 ## Settings
 
-**The party lobby** (js/ui/rooms.js, `menu.screen = 'room'`) is where QUICKPLAY and RANKED on
-the title land: the page hosts its own party at once (`beginParty`: a room on the relay, or a
+**The party lobby** (js/ui/rooms.js, `menu.screen = 'room'`) is where QUICKPLAY, RANKED and
+PRACTICE TOOL on the title land: the page hosts its own party at once (`beginParty`: a room on the relay, or a
 Steam lobby) and NET.mode names the mode. One centred column, League's lobby in Graphite: the
 mode's name and "n / 5" at the head, the party's four-letter code top-right in gold (a click copies
 it, white for a moment) beside a relay pip, and in a Steam lobby INVITE beside it, which opens
@@ -3335,7 +3377,14 @@ where LOCK IN would be a frozen plank wearing the leader's name: the leader's co
 it and the eagle on its zero; the leader's ESC takes everyone back to the party. RANKED keeps a
 rating per profile (`PROFILE.rank`, starts at 1000): a win adds RANK_STEP, a loss takes it
 (`rankResult`), and the bots' level is read off the party's average rating (`rankLevel`), so
-the target cannot be picked there. A screen that is not in focus when someone joins, a chat
+the target cannot be picked there. PRACTICE TOOL's leader has START in place of FIND MATCH
+(`partyPractice`): once every friend is READY the leader's page reloads onto the
+[practice arena](world.md#the-practice-arena) hosting the party's code, each guest is told
+(`practice`) and follows, joining while the leader's page comes up (`practiceBootHost`,
+`practiceBootJoin`). A friend can also type the code from their own party while the party is on
+the field, and lands straight on it (`joinRoom` reads the list's `practice` flag). The leader's
+LEAVE takes everyone back to the party on the title (the rematch: guests follow on hearing it,
+`rematchHeard`); a guest's LEAVE takes only them to the title. A screen that is not in focus when someone joins, a chat
 line lands or the count starts flashes its taskbar button (the wrapper) or marks its tab's
 title with a star (a browser) until it is looked at. After the match LOBBY takes each screen
 back to the same party on a fresh valley, same code, same people in the same seats (the
@@ -3440,7 +3489,8 @@ leave, so it centres CLOSE alone). SURRENDER stands before LEAVE while your side
 (js/sim/surrender.js). `settingsHit()` answers `'close'` (→ `settingsClose`: the
 in-match slab folds the way ESC folds it, the title's slide-in through `closeMenuPanel`), `'surrender'` and
 `'leave'` (→ `toLobby()`, js/ui/screens.js, the death screen's own fade back to the title on this
-seed, or `leavePractice()`, js/ui/menu.js, the reroll's whiteout onto a bare URL, landing on a fresh
+seed, or back to the party for a party's leader on the practice field; anyone else there takes
+`leavePractice()`, js/ui/menu.js, the reroll's whiteout onto a bare URL, landing on a fresh
 title world); `leavePlankRect()` is the LEAVE plank, `null` on the title.
 
 **Mute is not a row.** It is a 9×9 speaker plate (`muteBtnRect`, `drawMuteBtn`) hard against the

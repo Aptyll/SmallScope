@@ -82,19 +82,12 @@ camX = player.x - WV_W / 2;
 camY = player.y - WV_H / 2;
 // practice boots straight onto the snow: no title, no eagle. The other nine
 // players empty out (control 'none' - `active` is derived from it) and stand
-// parked in the corner forest, far outside the arena, so their ghost
-// silhouettes never wander into a capture; the local player takes the arena's
-// spawn tile and the HUD slides in the way a landing's does.
+// parked in the corner forest (practiceVacate, js/sim/practice.js); the local
+// player takes the arena's spawn tile and the HUD slides in the way a landing's
+// does. A party's friends take seats as they join (netHostHello).
 if (PRACTICE) {
-  for (const p of players) {
-    if (p === player) continue;
-    p.control = 'none';
-    p.spawn = { tx: 4, ty: 4 };
-    p.x = (4.5) * TILE; p.y = (4.5) * TILE;
-  }
-  player.spawn = { tx: PR_SPAWN.tx, ty: PR_SPAWN.ty };
-  player.x = (PR_SPAWN.tx + 0.5) * TILE;
-  player.y = (PR_SPAWN.ty + 0.5) * TILE;
+  for (const p of players) if (p !== player) practiceVacate(p);
+  practiceSeat(player);
   // early morning, forever: sim.js never advances state.time under PRACTICE,
   // so this is the arena's one fixed hour - crisp daylight, shadowless dawn
   state.time = 0;
@@ -105,7 +98,8 @@ if (PRACTICE) {
   state.intro = HUD_IN_T; state.introLen = HUD_IN_T;
 }
 if (JOIN_AT_BOOT && !PRACTICE) partyBootJoin(JOIN_AT_BOOT); // the party screen, the join under way (js/ui/rooms.js)
-rematchBootHost(); // a leader back from a match: the party again, same people (js/ui/rooms.js)
+else if (JOIN_AT_BOOT) practiceBootJoin(JOIN_AT_BOOT); // a party's guest following its leader onto the field
+if (PRACTICE) practiceBootHost(); else rematchBootHost(); // a leader back from a match or the field: the party again, same people (js/ui/rooms.js)
 // landing from a reroll: the whiteout the die left behind clears to the new world
 try {
   if (sessionStorage.getItem('softfall.reroll')) {

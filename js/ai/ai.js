@@ -681,9 +681,35 @@ function updateAI(p, dt) {
   if (p.dead) ai.packGo = false;
   aiThink(p, dt);
   if (!p.dead) skillHands(p, aiProfile(p), dt); // the crosshair moves to where the ladder aimed (the skill layer, ai-skill.js)
+  aiRecall(p); // over the ladder: the walk home when low, and the wait in the roost ring (below)
   // riding with no rung wanting the ride this think: let go (the ride, above)
   if (p.zip >= 0 && !ai.zipUsed) p.input.jump = true;
 }
+// THE WAY HOME (js/sim/recall.js). Read after the ladder, so it overrides
+// what the ladder asked only when nothing rival is within AI_RECALL_SAFE: a
+// fight in reach is the ladder's, and whatever it does there ends a channel
+// the way a player's own action would. Out of reach of one, a bot low on
+// health and far from its bird recalls and stands still for the channel; one
+// already in its own ring and hurt stands in it until it is whole again.
+const AI_RECALL_HP = 0.35;      // share of max health under which a bot goes home
+const AI_RECALL_FAR = 30 * TILE; // px from its bird past which the channel beats the walk
+const AI_RECALL_SAFE = 150;     // px: a rival this close and the bot fights or runs instead
+const AI_RING_FULL = 0.9;       // share of max health a bot waits in its ring for
+function aiRecall(p) {
+  if (p.dead || inAir(p) || p.zip >= 0 || p.mount) return;
+  const e = state.drop && state.drop.eagles[p.team];
+  if (!e || e.state !== 'down') return;
+  if (unitsNear(p, p.x, p.y, AI_RECALL_SAFE).some((q) => (q instanceof Player || robots.includes(q)) && inSight(p.team, q))) return; // what its side sees, as a player would
+  const inp = p.input, low = p.hp < p.maxHp * AI_RECALL_HP;
+  const go = p.recallT <= 0 && low && p.eatT <= 0 && !recallBlocked(p) && Math.hypot(e.x - p.x, e.y - p.y) > AI_RECALL_FAR;
+  const wait = roostRing(p) && p.fightT <= 0 && p.hp < p.maxHp * AI_RING_FULL; // a body still in a fight is the ladder's
+  if (!go && !(p.recallT > 0) && !wait) return;
+  if (go) inp.cmd = { kind: 'recall' };
+  inp.mx = inp.my = 0; inp.slide = false; inp.dodge = false; inp.jump = false;
+  if (go || p.recallT > 0) { inp.fire = false; inp.work = false; inp.ability = -1; aiNote(p, 'RECALL', 'LOW HP', null); }
+  else aiNote(p, 'IDLE', 'HEALING', null);
+}
+
 function aiThink(p, dt) {
   const inp = p.input, ai = p.ai;
   inp.mx = 0; inp.my = 0; inp.work = false; inp.slide = false;

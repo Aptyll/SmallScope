@@ -787,20 +787,20 @@ const KEY_ROWS = {
   wasd: [
     [{ acts: ['up', 'left', 'down', 'right'], verb: 'MOVE' }, { acts: ['ab1', 'ab2', 'ab3', 'ab4'], verb: 'ABILITIES' },
       ['CLICK', 'FIRE'], 'dodge', 'slide', 'work', ['RMB', 'FLAG WHEEL']],
-    ['berry', 'fish', 'tunnel', 'bag', 'char', 'build', 'rotate'],
+    ['berry', 'fish', 'recall', 'tunnel', 'bag', 'char', 'build', 'rotate'],
     ['map', 'board', 'mute', 'pause', ['ESC', 'SETTINGS'], ['SCROLL', 'ZOOM'], ['F3', 'INFO'], ['.', 'HITBOX']],
   ],
   click: [
     [['RMB', 'MOVE / ACT'], ['HOLD RMB', 'FOLLOW'], { acts: ['ab1', 'ab2', 'ab3', 'ab4'], verb: 'ABILITIES' },
       ['CLICK', 'FIRE'], 'amove', 'stop', 'dodge', 'slide'],
     ['berry', 'fish', 'flag', 'tunnel', 'bag', 'char', 'build', 'rotate'],
-    ['map', 'board', 'mute', 'pause', ['ESC', 'SETTINGS'], ['SCROLL', 'ZOOM'], ['F3', 'INFO']],
+    ['recall', 'map', 'board', 'mute', 'pause', ['ESC', 'SETTINGS'], ['SCROLL', 'ZOOM'], ['F3', 'INFO']],
   ],
   mouse: [
     [['RMB', 'MOVE / ACT'], ['HOLD RMB', 'FOLLOW'], ['CLICK', 'FIRE'], ['HOLD MMB', 'ACTION WHEEL'],
       'dodge', 'slide', { acts: ['ab1', 'ab2', 'ab3', 'ab4'], verb: 'ABILITIES' }, 'amove'],
     ['stop', 'berry', 'fish', 'flag', 'tunnel', 'bag', 'char', 'build'],
-    ['rotate', 'map', 'board', 'mute', 'pause', ['ESC', 'SETTINGS'], ['SCROLL', 'ZOOM']],
+    ['rotate', 'recall', 'map', 'board', 'mute', 'pause', ['ESC', 'SETTINGS'], ['SCROLL', 'ZOOM']],
   ],
 };
 const KEY_ROW_H = 12, KEY_ROWS_Y = 5;
@@ -990,9 +990,9 @@ function muteBtnRect() {
 
 // The foot's buttons (drawFlatButton): CLOSE, and
 // in a match the way out beside it (the ESC panel is the one menu a match or
-// the arena has). In practice LEAVE is leavePractice()
-// (js/menu.js), the reroll's whiteout onto a bare URL, so leaving lands on a
-// fresh title world; in a match it is toLobby() (js/screens.js), the
+// the arena has). In practice a party's leader goes back to its party
+// (toLobby) and anyone else takes leavePractice() (js/ui/menu.js), the
+// reroll's whiteout onto a bare URL, landing on a fresh title world; in a match it is toLobby() (js/screens.js), the
 // death screen's own way back to the title. Only the in-match slab hangs it:
 // the title's slide-in has nothing to leave, so CLOSE sits centred alone.
 // SURRENDER stands before LEAVE while your side may vote: it starts the
@@ -1097,7 +1097,7 @@ function settingsMouseDown() {
   }
   if (hit === 'vol' || hit === 'music' || hit === 'sfx' || hit === 'map' || HUD_DIALS[hit]) { dragSlider = hit; applySliderDrag(); return; }
   if (hit === 'close') { settingsClose(); return; }
-  if (hit === 'leave') { if (PRACTICE) leavePractice(); else toLobby(); return; }
+  if (hit === 'leave') { if (PRACTICE && !(NET.isHost && NET.mode)) leavePractice(); else toLobby(); return; } // a party's leader back to its party
   if (hit === 'surrender') { player.input.cmd = { kind: 'vote', yes: true }; settingsClose(); return; }
   if (hit.startsWith('c:')) {
     const [, rid, oid] = hit.split(':');

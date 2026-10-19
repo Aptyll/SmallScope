@@ -17,7 +17,7 @@
 // the game it is a word on a dark plate and has to read.
 const BOT_PUSH = '#d55181', BOT_RETREAT = '#c98500', BOT_DEFEND = '#9085e9', BOT_FIGHT = '#d95926', BOT_FARM = '#3b8f72', BOT_ROAM = '#5d6578';
 const BOT_GOALS = {
-  PUSH: BOT_PUSH, RALLY: BOT_PUSH, REGROUP: BOT_PUSH, SIEGE: BOT_PUSH, FLEE: BOT_RETREAT, HIDE: BOT_RETREAT,
+  PUSH: BOT_PUSH, RALLY: BOT_PUSH, REGROUP: BOT_PUSH, SIEGE: BOT_PUSH, FLEE: BOT_RETREAT, HIDE: BOT_RETREAT, RECALL: BOT_RETREAT,
   DEFEND: BOT_DEFEND, GUARD: BOT_DEFEND, ESCORT: BOT_DEFEND, FOLLOW: BOT_DEFEND, HELP: BOT_DEFEND, FIGHT: BOT_FIGHT, WOLF: BOT_FIGHT, STALK: BOT_FIGHT,
   GATHER: BOT_FARM, MINE: BOT_FARM, HUNT: BOT_FARM, EAT: BOT_FARM, LOOT: BOT_FARM, BUILD: BOT_FARM, SPEND: BOT_FARM, SHOP: BOT_FARM,
   ROAM: BOT_ROAM, IDLE: BOT_ROAM, SCOUT: BOT_ROAM, ORDER: BOT_ROAM, DEAD: '#454b5a',
@@ -62,6 +62,7 @@ function botGuess(p) {
     ref: ref || null, kind: kind || '', guess: true, role: '', mood: '', plan: '', options: null, skill: null, src: '' });
   if (p.dead) return g('DEAD', '');
   if (p.eatT > 0) return g('EAT', 'HURT');
+  if (p.recallT > 0) return g('RECALL', 'LOW HP');
   if (p.prone && ai.hideT > 0) return g('HIDE', 'OUTMATCHED');
   // a shot at game is the hunt it belongs to, not a fight: the same goal
   // and why as between shots, so a hunt reads as one steady HUNT

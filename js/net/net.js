@@ -21,7 +21,7 @@ const NET = {
   ready: new Set(),          // the waiting room's: the slots whose person has said READY (the host's to keep; a guest mirrors it off each roster)
   pings: [],                 // the waiting room's: ms to the host per slot, null for a bot or the host itself (pingsHost; a guest mirrors it)
   aiLevel: 0,                // a guest's: the host's bot level, shown in the room (the host reads roomLevel, js/ui/rooms.js)
-  mode: null,                // the party's mode: 'quick' | 'ranked' (PARTY_MODES, js/ui/rooms.js), null with no party open; a guest's comes with the roster
+  mode: null,                // the party's mode: 'quick' | 'ranked' | 'practice' (PARTY_MODES, js/ui/rooms.js), null with no party open; a guest's comes with the roster
   botLv: null,               // a host's: RANKED's bots' level, pinned at FIND MATCH (rankLevel); null leaves it settings.aiLevel (aiProfile, js/ai/ai-skill.js)
   ranks: [],                 // the party's: each person's RANKED rating per slot (their hello's, the host's own PROFILE.rank)
   code: '',                  // a guest's: the party's code, as the host sent it (roomCode, js/ui/rooms.js)
@@ -132,7 +132,7 @@ function netHostRoom() {
   if (NET.role !== 'host' || !NET.transport.roomData) return;
   let humans = 0; const sides = [0, 0];
   for (const p of players) if (isHuman(p)) { humans++; sides[p.team]++; }
-  NET.transport.roomData({ name: player ? player.name : '', patch: PATCH_TXT, seed: SEED, map: MAP_TYPE, state: state.drop ? 'live' : 'open', humans, sides });
+  NET.transport.roomData({ name: player ? player.name : '', patch: PATCH_TXT, seed: SEED, map: MAP_TYPE, practice: PRACTICE ? 1 : 0, state: state.drop ? 'live' : 'open', humans, sides });
 }
 // the roster to every peer, on every change of it: a client's waiting room
 // draws the same ten this one does
@@ -210,7 +210,8 @@ function netHostHello(peer, msg) {
   else if (NET.mode) {
     // a party: a seat on the leader's own side, while it is still choosing
     // whom to bring - never once the hero select or the match has begun
-    if (state.mode !== 'title' || NET.phase !== 'room') return refuse('BUSY');
+    // (a party on the practice field takes friends at any time)
+    if (NET.mode !== 'practice' && (state.mode !== 'title' || NET.phase !== 'room')) return refuse('BUSY');
     const seat = players.find((p) => p.team === player.team && !isHuman(p));
     if (!seat) return refuse('FULL');
     slot = seat.id;
@@ -230,6 +231,7 @@ function netHostHello(peer, msg) {
   }
   const p = players[slot];
   p.control = 'remote';
+  if (PRACTICE) practiceSeat(p); // onto the field's spawn, out of the corner it was parked in
   if (msg.name) p.name = msg.name;
   if (msg.cls !== undefined && msg.cls !== null) setClass(p, msg.cls);
   NET.ranks[slot] = msg.rank | 0 || null;
@@ -264,6 +266,7 @@ function netHostLeave(peer) {
   NET.parked.set(pr.uid, { slot: pr.slot, t: 0 });
   NET.ready.delete(pr.slot); NET.pings[pr.slot] = null; NET.ranks[pr.slot] = null;
   if (NET.mode && state.mode === 'title' && NET.phase === 'room') p.control = 'none'; // a party's seat stands empty again for the next friend
+  if (PRACTICE) practiceVacate(p); // the field has no bots: back to the corner, empty
   logEvent((p.name || 'A PLAYER') + ' LEFT', p);
   netHostRoster(); netHostRoom();
 }
@@ -450,6 +453,7 @@ function netClientStep(dt) {
       continue;
     }
     if (msg.t === 'rematch') { rematchHeard(msg); continue; }
+    if (msg.t === 'practice') { practiceHeard(); continue; } // the leader's START: onto the practice field after it (js/ui/rooms.js)
     if (msg.t === 'welcome') { netClientWelcome(msg); continue; }
     // the waiting room: the host's ten and its count, drawn here as there
     if (msg.t === 'roster') { netClientRoster(msg.roster); roomInfoIn(msg); continue; }
