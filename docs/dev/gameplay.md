@@ -2557,7 +2557,7 @@ the far end opens loses the near hole too. A finished tunnel outlives its digger
 (`p.tunHole` is not cleared by `reset()`).
 
 **Anyone takes a hole**, of either side, and many can be under at once: a fresh press of the work
-key standing on it (`TUN_ON`, 9 px; `tunnelEnter`, ahead of the swing in `updatePlayer` — a key held
+key standing on it (`TUN_ON`, 9 px; `tunnelEnter`, ahead of the swing in `playerSwing`, a step of `updatePlayer` — a key held
 from before stays the swing's). Underground the body is out of the world — `inAir` answers true
 for `p.tun`, so nothing hits it, nothing it wants gets through, and every loop over players skips
 it — and it rides the line between the holes at `TUN_SPEED` (240 px/s, at least `TUN_MIN_T`)

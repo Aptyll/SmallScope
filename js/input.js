@@ -1197,7 +1197,7 @@ function sampleHumanInput(p, dt) {
   inp.mx = mx; inp.my = my;
   inp.slide = keyHeld('slide');
   // the grapple reels only while its own key - ability 3's - is held: the one
-  // HELD ability input, read by updatePlayer's grapple branch; releasing it
+  // HELD ability input, read by playerMove's grapple branch; releasing it
   // lets go early
   inp.grapple = keyHeld('ab3') || ms.reel; // ...or, cast off the mouse, reels to its end (msCast)
   inp.work = (keyHeld('work') || !!(c && c.work)) && !state.wheel && !state.shop; // the counter swallows the work key the way a wheel does

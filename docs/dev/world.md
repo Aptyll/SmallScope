@@ -583,7 +583,7 @@ drawn just before them) a LAKE WHITEFISH or a SNOW CHAR (`CREEK_FISH_CHAR` of th
 downstream every `CREEK_FISH_GAP` tiles of creek, now and then down out of sight and back, in under
 the cistern's wall and never over a ford. Each is a pure function of its index and `windT` (`creekFishAt`,
 world.js), so every client places them alike. A body that **rolls** over the water onto one
-catches it (`creekFishCatch`, run by the roll in `updatePlayer`, one winner through `contest()`):
+catches it (`creekFishCatch`, run by the roll in `playerMove`, updatePlayer's movement step, one winner through `contest()`):
 it goes into the pouch as `whitefish` or `snowChar`, and its place swims back `CREEK_FISH_BACK`
 seconds later (`state.creekGone`, index to the `windT` it returns at, in `SNAP_STATE` and the
 save). Walking in is a plunge, so a roll is the only way to them. They are not the frost pike and
@@ -1396,7 +1396,7 @@ round a world point and returns the break (null where no bare ice lies under it)
   own close time in `open`; `updateIceBreaks` (from `updatePlay`) opens and closes them. A
   tile a break holds is painted as ice (`paintGroundTile` asks `iceBreakHolds`) and the break
   draws its own water over it, so nothing square ever shows. A player's feet read the pixels
-  (`iceBreakWet`): the plunge in `updatePlayer` and the climb out (`nearestDryTile`) go by the
+  (`iceBreakWet`): the plunge in `playerPlunge` and the climb out (`nearestDryTile`) go by the
   water as drawn, and a strict move (`moveEntity`) stops at its edge. A net built on a break's
   water keeps it open and joins `holes`, so the dawn refreeze has it from there.
 - **The pixels** (`drawIceBreaks`, flat after the pick cracks in `render()`): one small canvas a

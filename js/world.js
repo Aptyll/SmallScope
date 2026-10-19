@@ -1538,7 +1538,7 @@ function placeCreek() {
 // nothing has to move them and every client places them alike; the one thing
 // the match keeps is which were caught: state.creekGone maps an index to the
 // windT it swims back at. A body ROLLING over the water onto one catches it
-// (creekFishCatch, from the roll in updatePlayer) - the only way to them, since
+// (creekFishCatch, from the roll in playerMove) - the only way to them, since
 // walking in is a plunge - and it goes in the pouch (ITEMS.whitefish /
 // ITEMS.snowChar) to be eaten off the fish well. They are not the `fish` an
 // ice hole or a net gives up (the `fish` banner, js/wildlife.js). The pixels:
@@ -1576,7 +1576,7 @@ function creekFishAt(i) {
   return CF;
 }
 // A roll over the creek takes any fish it passes over (from the roll in
-// updatePlayer, js/sim.js). Two rollers can reach one fish in a step, so it is
+// playerMove, js/sim.js). Two rollers can reach one fish in a step, so it is
 // contested, not first-come.
 function creekFishCatch(p) {
   if (PRACTICE || creekAt(p.x / TILE - 0.5, (p.y + 4) / TILE - 0.5) > 0.6) return;

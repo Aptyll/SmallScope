@@ -268,7 +268,7 @@ function zipEnd(p, fell) {
   if (!fell) sfxAt('dodge', p.x, p.y);
   burst(p.x, p.y + 4, '#cfd8e8', 4, 30, 0.3, true);
 }
-// one sim step of the ride (updatePlayer's movement ladder): a held stick
+// one sim step of the ride (playerMove, updatePlayer's movement ladder): a held stick
 // along the cable past a dead zone picks the direction, the cable sets the
 // position outright, and either end lets go
 function zipStep(p, dt, mx, my, len) {

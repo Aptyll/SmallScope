@@ -76,7 +76,7 @@ jump          edge-triggered: the leap off the eagle, or the hop off the roost -
               cable as drawn - the walk there that clips on (zipToggle,
               js/world.js; E sets it there)
 grapple       held (key 3): the hunter's grapple reels only while this is down -
-              the one held ability input (updatePlayer's grapple branch reads it;
+              the one held ability input (playerMove's grapple branch reads it;
               the burrow is the SNOW COVER cast on `ability`, not a field here)
 eatBerry      edge-triggered (Q): STARTS the 1.5s meal, it does not heal on the spot
 eatFish       edge-triggered (F): same, and off the same shared 3s clock
