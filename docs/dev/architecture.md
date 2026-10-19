@@ -57,6 +57,7 @@ order, so the script tags still interleave them:
 | [js/app/director.js](../../js/app/director.js) | ~210 | shared scope, no `window.*` export | director mode for filming: the free camera, the hidden HUD, the 9:16 frame `fitCanvas` asks for, and the canvas recorder; loaded before canvas.js because `fitCanvas()` runs at load |
 | [js/app/canvas.js](../../js/app/canvas.js) | ~270 | shared scope, no `window.*` export | screen + world + light buffers, `fitCanvas`, pixel-exact zoom, the panel layout anchors |
 | [js/sim/player.js](../../js/sim/player.js) | ~1010 | shared scope, no `window.*` export | the `Player` class and the ten of them, classes/kits/gear/cards, the entity arrays, damage & death |
+| [js/sim/items.js](../../js/sim/items.js) | ~210 | shared scope, no `window.*` export | the items the counter sells: `BUILD_ITEMS` (five parts, eight finished items built from them), their stats and passives, the six slots, what an item costs you, folding them into the kit (`itemMods`, from `refreshKit`), the passives' hooks on a hit and on the clock, and each class's bot build |
 | [js/app/input.js](../../js/app/input.js) | ~1000 | shared scope, no `window.*` export | the physical-key translation and the binds (`keyName`, `KEY_ACTIONS`, `binds()` over the two schemes' maps, `keyIs`/`keyHeld`/`keyCap`, the rebind), `keys`/`mouse`, the listeners, and the four entry points every controller shares (`keyPress`/`keyRelease`, `pointerPress`/`pointerRelease`) plus the bare gestures (`fireDown`/`fireUp`, `openFlagWheel`, `openWheelNear`, `panelScrollBy`); `sampleHumanInput` folds keys, mouse and both sticks into the input struct |
 | [js/app/gamepad.js](../../js/app/gamepad.js) | ~320 | shared scope, no `window.*` export | a pad as the keyboard and mouse it stands in for: the standard-mapping tables, `padPoll` (once per frame from `loop()`), the play set and the menu set |
 | [js/sim/cistern.js](../../js/sim/cistern.js) | ~200 | shared scope, no `window.*` export | the cistern at the middle: its measures off the bake, the footprint's distance field and the swept step that holds every body to it, the tile flags and cuts routes and placements read, laying its ground and the fords outside its culverts, and the waves' way round by one |
@@ -72,15 +73,17 @@ order, so the script tags still interleave them:
 | [js/sim/robots.js](../../js/sim/robots.js) | ~990 | shared scope, no `window.*` export | the worker bots a bay rolls out, the eagle's merchant and the barracks it raises, the soldiers a barracks marches down the road, and the one flag per player whose tile is their standing order |
 | [js/sim/actions.js](../../js/sim/actions.js) | ~1020 | shared scope, no `window.*` export | what a player does: the swing tools and harvesting, the roll as a hit, prone — and, under its own banner, the damage types and status effects **every** kind of unit shares |
 | [js/sim/tools.js](../../js/sim/tools.js) | ~1490 | shared scope, no `window.*` export | the weapon: the `TOOLS` and `BITS` tables, what a press fires, how each bit flies, the loot rolls, the tech tree, and the icons for both |
-| [js/sim/mining.js](../../js/sim/mining.js) | ~290 | shared scope, no `window.*` export | the rocks as a thing to mine: the `ROCK_KINDS` table, the ores as carried items, the rock that mines itself for whoever stands by it, and the forge's rules (a weapon's forge points and level, what a level adds, what ore is worth, the order that dumps a pile into it) |
+| [js/sim/mining.js](../../js/sim/mining.js) | ~240 | shared scope, no `window.*` export | the rocks as a thing to mine: the `ROCK_KINDS` table, the ores as carried items and what each is worth at the counter, and the rock that mines itself for whoever stands by it |
 | [js/sim/icebreak.js](../../js/sim/icebreak.js) | ~280 | shared scope, no `window.*` export | the ice breaking in its own shape, the hole the orca comes up through: its footprints, the hole and its freeze, the tiles it opens and closes, the water read by the pixel |
 | [js/sim/orca.js](../../js/sim/orca.js) | ~210 | shared scope, no `window.*` export | the orca under its lake's ice: the cruise, the lock-on and its countdown, the stalk, the strike through an ice break, the bite, and the way off its ice a bot runs |
 | [js/sim/tunnel.js](../../js/sim/tunnel.js) | ~210 | shared scope, no `window.*` export | the burrow: digging a tunnel's two holes, riding it under the snow, the wait after, a rival caving it, and the local hand's aim ghost |
 | [js/sim/abilities.js](../../js/sim/abilities.js) | ~1310 | shared scope, no `window.*` export | the class abilities on keys 1-4: the `CLASS_AB` table, casting, the pierce/net/grapple/snow-cover/shield-and-slam/rush/crater/execute sim, the telegraph and landing shapes every side sees, and their draw passes |
+| [js/sim/fog.js](../../js/sim/fog.js) | ~130 | shared scope, no `window.*` export | the fog of war's rule: each side's eyes, sight lines stopped by stone, the woods as brush, and `inSight` (what a side sees, which its bots ask) |
 | [js/ai/ai-skill.js](../../js/ai/ai-skill.js) | ~250 | shared scope, no `window.*` export | how well a bot plays: the difficulty levels and the skill layer, the hands between the ladder's decision and the input it writes |
 | [js/ai/ai.js](../../js/ai/ai.js) | ~990 | shared scope, no `window.*` export | the bot brain — a priority ladder writing the same input struct a human fills |
 | [js/ai/bot-api.js](../../js/ai/bot-api.js) | ~340 | `window.BOTS` | the bot API: a seat driven by a bot file behind a JSON boundary (observation in, input struct out), its transports and its library; js/baked/bot-lib.js is the examples baked from bots/ ([docs/bots/](../bots/README.md)) |
 | [js/sim/sim.js](../../js/sim/sim.js) | ~1540 | shared scope, no `window.*` export | `update`/`updatePlay`/`updatePlayer` (and its named steps), the camera (`camX`/`camY`), fx aging, the snow |
+| [js/sim/surrender.js](../../js/sim/surrender.js) | ~100 | shared scope, no `window.*` export | the surrender vote: when a side may vote, how bots side with the people, the clock and the cooldown, and the side called home on a pass |
 | [js/sim/weather.js](../../js/sim/weather.js) | ~260 | shared scope, no `window.*` export | the day's weather and the one wind field the sim and the draw read |
 | [js/sim/shed.js](../../js/sim/shed.js) | ~90 | shared scope, no `window.*` export | snow knocked off the pines by a gust's crest or a blow, raised in the sim and carried by `burst` |
 | [js/ai/ai-callouts.js](../../js/ai/ai-callouts.js) | ~190 | shared scope, no `window.*` export | bot callouts: when a bot tells its side something (HELP!, BIRD!, BEAR LOW!), the words of the brain's flag answers (ON IT), a grudge (YOU AGAIN), the anti-spam rules, `addCallout` |
@@ -106,6 +109,7 @@ order, so the script tags still interleave them:
 | [js/draw/bodies.js](../../js/draw/bodies.js) | ~710 | shared scope, no `window.*` export | every walking thing's sprite pass: a beast on its clip, a robot, the merchant, and `drawPlayer` with its gear marks, buff ring, snow cover, burial, ghost and held tool |
 | [js/draw/marks.js](../../js/draw/marks.js) | ~200 | shared scope, no `window.*` export | the glyph grammar both maps share: a camp's icon and clock, the flag family, what a body looks like as a dot |
 | [js/draw/callouts.js](../../js/draw/callouts.js) | ~110 | shared scope, no `window.*` export | what a callout looks like: the plate over the caller, the ground ping, the minimap pulse |
+| [js/draw/fog.js](../../js/draw/fog.js) | ~210 | shared scope, no `window.*` export | the fog of war's picture: the viewed side's sight lines, the stepped mask laid over the world, the maps' fog by tile, and `fogShown` (whether a body is drawn) |
 | [js/draw/light.js](../../js/draw/light.js) | ~680 | shared scope, no `window.*` export | light and weather over the finished frame: specks, cloud shadows, god rays, the reflected sky, and the pass that grades day into night |
 | [js/draw/render.js](../../js/draw/render.js) | ~1460 | shared scope, no `window.*` export | `render()` composes and blits the frame; the `.` debug overlays; cursor, reticle and aim line |
 | [js/ui/wheel.js](../../js/ui/wheel.js) | ~800 | shared scope, no `window.*` export | the HUD in world space: the radial wheel and `runCmd`, the selection brackets, key and pad prompts, the work/rack/bell/shop hints, the build list (its hammer plate, its column, the piece on the pointer) and its ghost |
@@ -114,23 +118,22 @@ order, so the script tags still interleave them:
 | [js/ui/strip.js](../../js/ui/strip.js) | ~640 | shared scope, no `window.*` export | the hud strip's bones: its constants, the hud frame, the HUD size dials, every cell rect and refusal flash, the weapon shelf's geometry and drops, sending a cell across, the drag's press/move/release |
 | [js/ui/hud-draw.js](../../js/ui/hud-draw.js) | ~690 | shared scope, no `window.*` export | drawing the strip and the shelf: the portrait, the health and stamina bars, tier and mod plates, item icons, the cooldown sweep, the ability/meal/gold cells, `drawHudStrip`, the scaled bakes, the shelf's wells, the drag ghost |
 | [js/ui/rail.js](../../js/ui/rail.js) | ~220 | shared scope, no `window.*` export | the team rail along the top edge, and the anchors the screens hang under it |
+| [js/ui/vote.js](../../js/ui/vote.js) | ~70 | shared scope, no `window.*` export | the surrender vote's panel top centre under the clock and its YES / NO click |
 | [js/ui/cheats.js](../../js/ui/cheats.js) | ~320 | shared scope, no `window.*` export | the practice bar down the left edge (PRACTICE TOOL only): its buttons, aim ghost and tooltip card |
 | [js/ui/tooltip.js](../../js/ui/tooltip.js) | ~440 | shared scope, no `window.*` export | the hover tooltip: `tipAt`, `tipPos` and `drawTooltip` |
 | [js/ui/compose.js](../../js/ui/compose.js) | ~150 | shared scope, no `window.*` export | `renderUI`, the frame's UI pass in order |
-| [js/ui/shop.js](../../js/ui/shop.js) | ~1900 | shared scope, no `window.*` export | the merchant's counter: the fish/berry market and its three-day history, the rolled stock and its turnover, buying and selling, and the panel all three are read on |
-| [js/ui/forge.js](../../js/ui/forge.js) | ~390 | shared scope, no `window.*` export | the counter's FORGE face: the SHOP / MARKET / FORGE tab plates, the bench (weapon well, pile well, forge bar, preview, the plate that forges, the ore plates), its hits, drops and tooltips, and the `+N` mark a forged weapon wears in every well |
-| [js/ui/market.js](../../js/ui/market.js) | ~360 | shared scope, no `window.*` export | the counter's MARKET face: a row per good, the picked good's three-day chart with your trades pinned on it, the four trade plates, its hits and tooltips, and the ticker cards on the SHOP face |
+| [js/ui/notices.js](../../js/ui/notices.js) | ~410 | shared scope, no `window.*` export | the notice lane top-right under the minimap (the roost-under-attack plate) and the stat ledger that flies your sheet into it when a number moves |
+| [js/ui/shop.js](../../js/ui/shop.js) | ~590 | shared scope, no `window.*` export | the merchant's counter: which counter a body stands at, buying and selling (items through js/sim/items.js, fish and berries at a fixed price, any pack cell dragged onto it), and the panel (category filters, the parts and items grid, the read-out with its build tree, your six slots, the food plates) |
 | [js/ui/panels.js](../../js/ui/panels.js) | ~1210 | shared scope, no `window.*` export | the TAB scoreboard + the (undrawn) event log, the M world map, the ESC settings slab |
 | [js/ui/menu.js](../../js/ui/menu.js) | ~3050 | shared scope, no `window.*` export | the title screen: menu planks, reroll die, tutorial panel, the lobby, the hero pop-up, `PATCH_TXT` and `PATCH_NOTES` |
 | [js/ui/notes.js](../../js/ui/notes.js) | ~420 | shared scope, no `window.*` export | the title's WIKI / PATCH NOTES / ROADMAP tabs, the roadmap, and the patch notes screen |
 | [js/ui/wiki.js](../../js/ui/wiki.js) | ~520 | shared scope, no `window.*` export | the wiki: its pages as data, the slab, tabs and rail, and drawing each page |
-| [js/ui/chars.js](../../js/ui/chars.js) | ~580 | shared scope, no `window.*` export | the character roster, the create / customize screen, and the title's character tag |
+| [js/ui/profile-card.js](../../js/ui/profile-card.js) | ~190 | shared scope, no `window.*` export | the title's name tag and the profile card: the name, renaming it, the lifetime ledger; `drawWell`, the plate grammar the hero row shares |
+| [js/ui/heroes.js](../../js/ui/heroes.js) | ~90 | shared scope, no `window.*` export | the lobby's hero row: a head per hero, the coming heroes as silhouettes, the pick |
 | [js/ui/skins.js](../../js/ui/skins.js) | ~250 | shared scope, no `window.*` export | the skins screen the coins buy from, the title's coin tag, and `birdSkinFor`, which skin a bird wears |
-| [js/ui/ladder.js](../../js/ui/ladder.js) | ~600 | shared scope, no `window.*` export | the bot ladder screen: the offline ladder's standings, FIGHT, which seats a ladder bot on the rival side, and WATCH, two ladder bots playing every seat while the player watches |
 | [js/ui/screens.js](../../js/ui/screens.js) | ~1380 | shared scope, no `window.*` export | the replay window, the death overlay and spectating, the victory and defeat ceremonies |
 | [js/ui/lobby.js](../../js/ui/lobby.js) | ~470 | shared scope, no `window.*` export | the post-game lobby: the match's own record, and the sampling during play its graphs are drawn from |
-| [js/sim/save.js](../../js/sim/save.js) | ~450 | shared scope, no `window.*` export | saved matches: the valley's baseline, the match as one object graph (`saveCapture`/`saveApply`), the slots through `PROFILE`, the autosave ring, the load's hand-off to the next page, and `saveHash`, the replay proof's hash |
-| [js/ui/saves.js](../../js/ui/saves.js) | ~545 | shared scope, no `window.*` export | the SAVES grid (the slot cards, each carrying its own verb, the arm-then-confirm load, a card's delete, name and carry), the lobby's SAVES plate and the HUD's saved mark |
+| [js/sim/save.js](../../js/sim/save.js) | ~350 | shared scope, no `window.*` export | the replay proof: the valley's baseline, the match as one object graph (`saveCapture`/`saveApply`), `saveHash`, and the record put back on a fresh page (`saveDevLoad`) |
 | [js/ui/botview.js](../../js/ui/botview.js) | ~470 | shared scope, no `window.*` export | the bot dev view: every bot's thought read one way, the recorder, the F4 map overlay and table, the link to the out-of-game page [botlab.html](../../botlab.html) ([botview.md](botview.md)) |
 | [js/sim/eagle.js](../../js/sim/eagle.js) | ~1510 | shared scope, no `window.*` export | the eagle drop: the corner roosts, the ride and the jump, the crash and the spur, the drop brief, the bird each side guards |
 | [js/app/boot.js](../../js/app/boot.js) | ~700 | `DBG` + shared scope | the last file to load: the boot order, `window.DBG`, the rAF loop and the fixed 1/60 s step it feeds the sim |
@@ -167,11 +170,9 @@ tag `pre-split` keeps the one-file history.
 
 ### profile.js
 
-The local player profile — up to `CHAR_MAX` (3) **characters** in `chars` with `active`
-naming the one the local player wears (each `{ name, cls, look, stats, born }`: the class is
-fixed at creation, `look` is an index per axis of `LOOK_N` — `sex`, `tone`, `hair`,
-`hairCol`, `beard`, `face` — and `stats` the character's own `wins` / `matches` / `gold` /
-`days` / `kills` / `deaths`), the
+The local player profile — **one `name`** (every other player sees it), its lifetime `stats`
+(`wins` / `matches` / `gold` / `days` / `kills` / `deaths`), `hero` (the `CLASSES` index last
+locked in, where the lobby's hero row opens next time), the
 one-shot `dropped` flag (`hasDropped()`/`markDropped()`: has this profile ever jumped off the
 eagle, gating the scripted first flight that rides the landing), `bestLap`
 (`bestLap()`/`setBestLap()`: the ice parkour's all-time record) and `bestRange`
@@ -186,27 +187,24 @@ There are no accounts, no passwords and no sign-in, and nothing here is authorit
 file is a save file.
 
 - **`PROFILE.load()`** repairs a partial or corrupt save against a blank profile rather than
-  throwing (`mendChar`/`mendLook` repair each slot axis by axis: a class or look index out of
-  range lands on 0, a bad name is re-rolled) and migrates older saves in place (a pre-profile
-  `softfall.settings` key is folded in once and removed; a v1 save's `name` + `stats` become its
-  first character). Boot calls it
-  **before `loadSettings()`**, which reads `PROFILE.settings()`. **A fresh install has no
-  character** (`hasChar()` false) and boot opens the create screen before the title.
-- **The character calls**: `chars()`, `activeIndex()`, `char()`, `rollChar(cls)` (a fresh
-  unsaved spec with a random name and look), `createChar(spec)` (into the next free slot, made
-  active; `{ ok: false, why: 'FULL' }` past three), `updateChar(i, spec)` (name and look only —
-  the class in the spec is ignored), `deleteChar(i)`, `setActive(i)`. `LOOK_N` and `CLASS_N`
-  are exported so js/sprites/looks.js can assert its tables against them at load.
+  throwing (a bad name keeps the blank's pre-rolled one, a hero index out of range lands on 0,
+  stats take only whole non-negative numbers) and migrates older saves in place (a pre-profile
+  `softfall.settings` key is folded in once and removed; **a v2 save's character slots fold into
+  the one profile**: the active slot's name and class become `name` and `hero`, and every slot's
+  stats are added together, so no win on any slot is lost). Boot calls it **before
+  `loadSettings()`**, which reads `PROFILE.settings()`. **A fresh install is pre-named** from
+  `NAME_POOL` — winter words, every one clean under the validator — and lands on the title.
+- **Who you are**: `name()`, `setName(raw)` (validate()'s result; nothing written on a
+  refusal), `rollName()`, `hero()`, `setHero(i)`. `HERO_N` is exported so js/sprites/looks.js
+  can assert its outfits against it at load.
 - **`PROFILE.validate(raw)`** is the one name validator: trimmed, uppercased, `A-Z0-9` only, 16
   characters, and a basic profanity list matched after the obvious digit-for-letter swaps are
-  folded out. It returns `{ ok, name }` or `{ ok: false, why }`. **A character always has a
-  name**: a new one is pre-rolled from `NAME_POOL` — winter words, every one clean under the
-  validator — so the create screen opens on a name rather than a blank.
-- **The stat calls coalesce, and land on the active character.** `addGold` fires on every
+  folded out. It returns `{ ok, name }` or `{ ok: false, why }`.
+- **The stat calls coalesce.** `addGold` fires on every
   payout, `addWin` once per `endMatch('won')`, `addMatch` and `addDay` at eagle takeoff (and
   `addDay` at each dawn the local player is still in), `addKill`/`addDeath` from `die()`, so
   writes are batched behind an 800 ms timer and flushed on `pagehide` / `visibilitychange`;
-  the character calls and `putSettings` write through immediately.
+  `setName`, `setHero` and `putSettings` write through immediately.
 - **The purse and the wardrobe are ids and a count.** `coins` starts at `START_COINS` (a
   profile from before the purse gets it too), `owned` holds the ids bought (a free cosmetic is
   never written there; the key is `slot:id`, bare for the bird's) and `worn` maps a slot
@@ -222,8 +220,9 @@ file is a save file.
   hand-edited save cannot put a number or a repeat into the lists. What a node *is* lives in
   js/sim/tools.js — this file only remembers.
 
-The character screens and the title's character tag are js/ui/chars.js, the skins screen and the coin tag js/ui/skins.js; the local player takes a character on
-through `applyCharacter()` (js/sim/player.js).
+The name tag and the profile card are js/ui/profile-card.js, the hero row js/ui/heroes.js, the
+skins screen and the coin tag js/ui/skins.js; the local player takes the profile's name and hero
+on through `applyProfile()` (js/sim/player.js).
 
 ### font.js
 
@@ -305,7 +304,7 @@ list, the mixing targets and the track table: [gameplay.md](gameplay.md#audio).
 
 Cues come in two grammars and the file is ordered by them: **world** cues, which are a thing on
 the map making a noise and are pitch-jittered per shot, and the **notification** layer — the
-market's four and the eighteen abstract cues under them — which are not, because each says *this
+counter's buy ding and the eighteen abstract cues under it — which are not, because each says *this
 happened* and must arrive identical every time.
 
 ### The game files (js/app/, js/sim/, js/ai/, js/net/, js/draw/ and js/ui/)
@@ -337,7 +336,7 @@ does). Each one says so in a comment; if you move a block and the console shows 
 
 The storage keys touched outside profile.js are all sessionStorage hand-offs to the next page:
 `softfall.reroll`, `softfall.select` and `softfall.drop` (written in menu.js), and `softfall.load`
-(a saved match on its way in, written in save.js); boot.js reads each — they survive the reload,
+(the replay proof's record on its way in, written in save.js); boot.js reads each — they survive the reload,
 not the tab.
 
 Their only deliberate `window.*` export is `DBG`, the debug surface at the end of boot.js: live

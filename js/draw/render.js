@@ -308,6 +308,7 @@ function render() {
   // your side's flag rings - the ground each order covers - flat on the snow
   // under everything that walks it, and the ring a held flag wheel previews
   drawFlagRings(ox, oy, now);
+  drawRecallGround(ex, ey); // ...each roost's healing ring and the recall's closing on the feet (js/draw/recall.js)
   // ...and the pick's reach round a rock (drawMineRing, beside drawRock)
   drawMineRing(ox, oy);
   // the CLICK scheme's rings: where the last order landed, and the lock's
@@ -365,12 +366,12 @@ function render() {
   }
   trackDowns(now); // a body that just dropped goes down in place (the `going down` banner, js/draw/bodies.js)
   for (const p of players) {
-    if (goingDown(p)) { draws.push({ y: p.y + 8, down: p }); continue; }
-    if (p.dead || inAir(p)) continue; // airborne players draw in drawDropAir
+    if (goingDown(p)) { if (fogShown(p, now)) draws.push({ y: p.y + 8, down: p }); continue; }
+    if (p.dead || inAir(p) || !fogShown(p, now)) continue; // airborne players draw in drawDropAir; one in the fog not at all (js/draw/fog.js)
     draws.push({ y: p.y + 8, p, ghost: !p.active }); // empty slots stand as silhouettes
   }
-  for (const a of animals) draws.push({ y: a.y + 4, a });
-  for (const b of robots) draws.push({ y: b.y + (b.merchant ? 8 : 4), r: b }); // a merchant stands on player feet (robots.js)
+  for (const a of animals) if (fogShown(a, now)) draws.push({ y: a.y + 4, a });
+  for (const b of robots) if (fogShown(b, now)) draws.push({ y: b.y + (b.merchant ? 8 : 4), r: b }); // a merchant stands on player feet (robots.js)
   // the archery targets (the training grounds', or one a staged scene stood in
   // a match): entities, never tile objects (a slider crosses tiles every
   // frame), sorted by their base like everything
@@ -723,7 +724,7 @@ function render() {
   drawSlashes(ex, ey);
   // swing arcs (every player who is mid-swing)
   for (const p of players) {
-    if (!p.active || p.dead || inAir(p) || p.swingT <= 0) continue;
+    if (!p.active || p.dead || inAir(p) || p.swingT <= 0 || !fogShown(p, now)) continue;
     const prog = 1 - p.swingT / 0.18;
     const a0 = p.swingDir - 1.1 + prog * 2.2;
     ctx.fillStyle = 'rgba(255,255,255,' + (0.8 - prog * 0.6).toFixed(2) + ')';
@@ -807,8 +808,6 @@ function render() {
   // (see the tooltips banner, ui.js)
   tipResolve();
   renderUI(now);
-  if (ladderWatch && state.mode !== 'title') drawLadderWatch(now); // a watched bot match's controls (js/ui/ladder.js)
-  drawSaveFlash(); // a save just landed (js/ui/saves.js): drawn in the drop too, which renderUI skips
   // the archery round's live layer: countdown, GO, the TIME/SCORE/HITS
   // plate, the final score (drawAgameUI, js/draw-world.js)
   if (PRACTICE && state.mode === 'play') drawAgameUI(now);
@@ -1428,28 +1427,22 @@ function cursorInfo() {
       if (dragSlider) return { kind: 'grab' };
       return { kind: settingsHit() ? 'hand' : 'arrow' };
     }
-    if (m.screen === 'saves' && savesCarrying()) return { kind: 'grab' }; // a save card in the hand
     if (popOpen()) { const gh = m.popT >= 1 ? popHit() : null; return { kind: gh !== null && gh !== 'panel' ? 'hand' : 'arrow' }; }
     if (m.screen === 'notes') return { kind: m.notesT >= 1 && notesHit(mouse.x, mouse.y) ? 'hand' : 'arrow' };
     if (m.screen === 'wiki') return { kind: m.wikiT >= 1 && pageTabHit(mouse.x, mouse.y) >= 0 ? 'hand' : 'arrow' };
     if (m.screen === 'lobby') return { kind: m.screenT >= 1 && m.popT <= 0 && lobbyHit() ? 'hand' : 'arrow' };
-    if (m.screen === 'chars') return { kind: m.charT >= 1 && charsHit() ? 'hand' : 'arrow' };
-    if (m.screen === 'create') return { kind: m.charT >= 1 && createHit() ? 'hand' : 'arrow' };
+    if (m.screen === 'profile') return { kind: m.charT >= 1 && profileHit() === 'name' ? 'hand' : 'arrow' };
     if (m.screen === 'skins') return { kind: m.skinT >= 1 && skinsHit() >= 0 ? 'hand' : 'arrow' };
-    if (m.screen === 'ladder') return ladderCursor();
-    if (m.screen === 'rooms') return { kind: m.roomsT >= 1 && roomsHit() ? 'hand' : 'arrow' };
     if (m.screen === 'room') return { kind: m.roomsT >= 1 && roomHit() ? 'hand' : 'arrow' };
-    if (m.screen === 'host') return { kind: m.roomsT >= 1 && hostHit() ? 'hand' : 'arrow' };
-    if (!m.panel && (overCharTag() || overPatchTag() || overCoinTag())) return { kind: 'hand' }; // the three corner tags
+    if (!m.panel && (overProfileTag() || overPatchTag() || overCoinTag())) return { kind: 'hand' }; // the three corner tags
     if (!m.panel && menuHit() >= 0) return { kind: 'hand' };
     return { kind: 'arrow' };
   }
-  if (ladderWatch && state.mode !== 'title') return ladderWatchCursor(); // a watched bot match (js/ui/ladder.js)
   if (state.mode === 'dead') return { kind: deadHit() >= 0 || emoteHit() >= 0 || specHit() || rpCloseHit() ? 'hand' : 'arrow' };
   if (state.mode === 'drop') return { kind: 'arrow' };
   if (state.mode !== 'play') return { kind: 'arrow' };
   if (state.settingsOpen) {
-    if (dragSlider || savesCarrying()) return { kind: 'grab' };
+    if (dragSlider) return { kind: 'grab' };
     return { kind: settingsHit() ? 'hand' : 'arrow' };
   }
   if (state.mapOpen) return { kind: 'arrow' };
@@ -1461,7 +1454,7 @@ function cursorInfo() {
   // the merchant's counter: a hand over anything that trades, an arrow over
   // the rest of the slab (which still swallows the click)
   const sp = shopHit(mouse.x, mouse.y);
-  if (sp) return { kind: sp === 'panel' ? 'arrow' : 'hand' };
+  if (sp) return { kind: sp === 'panel' || sp.kind === 'foodWell' ? 'arrow' : 'hand' };
   // the backpack widget: a hand over anything in it that does something, a
   // plain arrow over the rest of its frame (which still swallows the click).
   // The weapon shelf standing on it is the other left-draggable HUD.

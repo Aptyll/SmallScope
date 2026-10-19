@@ -323,8 +323,8 @@ the throw and the refusal flash work on tools and bits with no storage code of t
 **There is ONE weapon slot** (`p.tools`, `TOOL_SLOTS` = 1 — the array and the drag plumbing stay
 generic over it), and the left button fires it. Keys 1-4 belong to the
 [class abilities](#class-abilities-keys-1-4). The slot holds a **tool**; a tool holds
-**bits**; the bits are what actually fly. Both are found in the world or bought at
-[the counter](#the-merchants-counter), and both are
+**bits**; the bits are what actually fly. Both are found in the world (and sell at
+[the counter](#the-merchants-counter)), and both are
 carried items you can drag around — so the weapon is a thing a player assembles rather than a
 thing they are issued.
 
@@ -340,7 +340,6 @@ a `melee` block: [the cut](#the-cut-a-melee-tool)):
 | `cap` | how many bit cells it has (2–5) |
 | `tensile` | **how much weight it draws at the normal speed**: a loaded weight past `DRAW_EASE` (half) of it lengthens the pull to full power ([the draw](#the-draw)). Nothing is ever cut: every loaded bit fires |
 | `tier` / `art` | which of the three `TOOL_TIERS` palettes it wears, and which 12×12 silhouette (`bow`, `sling`, `sword`, `recurve`) |
-| `up` | the second stat [the forge](#the-forge) raises beside damage: `rof` (SHORTBOW, RECURVE, LONGBOW) or `tensile` (SLING, LONGSWORD, HORN BOW) |
 
 `cap` and `tensile` are the two halves of a tool: **cap is how much you may hang on it, tensile
 how much of that it pulls easily.** The tiers grow the two together at roughly four weight a
@@ -760,16 +759,16 @@ and the top tier is the smaller share of what it can give. A SUNSTONE and a ches
 pool, and the rock always rolls where the chest rolls `CHEST_TOOL` of the time, so **a SUNSTONE
 turns up a top-tier kind more often than a chest does** — and grows back
 ([Mining a rock](#mining-a-rock)), where a chest is gone for the match. What only a chest pays is
-its card ([Roguelike cards](#roguelike-cards)). The [counter](#the-merchants-counter) sells every
-tier beside all of them.
+its card ([Roguelike cards](#roguelike-cards)). The [counter](#the-merchants-counter) sells no tools or bits; it buys
+them back at half their `price`.
 
 **A found bit arms itself.** The pack is the overflow, not the destination: a bit walked over
-(or bought over the counter) goes into a free cell of the tool, and only what the tool cannot
+goes into a free cell of the tool, and only what the tool cannot
 hold lands in the grid. **Anywhere it lands, it works** (`fitBit`): it takes a free cell and
 `sortBits` seats it on its own side — a shot at the end of the shots, a fitting at the front of
 the fittings — and since every fitting powers every shot, a find is never wasted — `fitAdd(p, type, n)`, with `fitRoom(p, type)` the room it counts, which
 is why a FULL pack with an empty bit cell still magnetises a drop and still claims it. The drop
-pickup (js/sim/sim.js) and `shopBuy` (js/ui/shop.js) both go through the pair, so the ordinary way to
+pickup (js/sim/sim.js) goes through the pair, so the ordinary way to
 arm a find is to walk over it, and the drag is what you reach for to ARRANGE a build rather than
 what you must do to have one — which is half of why the [shelf](#the-weapon-shelf) is on screen
 at all times: a bit that loaded itself has to be seen loading itself. It fills a free cell
@@ -1490,13 +1489,15 @@ those, never `p.hide` directly**:
 
 - `concealOf(p)` = `hide`, discounted to `PRONE_MOVE` (×0.5) while `p.moving`. A crawling mound is
   worth half a still one, which is what makes "stop before you shoot" a real decision.
-- `seenAt(p, range)` = the distance a watcher with plain sight `range` actually notices p from:
+- `seenAt(p, range, team)` = the distance a watcher with plain sight `range` actually notices p from
+  (0 when `team` is given and p is in that side's [fog](#fog-of-war); creatures and turrets give none):
   `range × kit.stealth × (1 − PRONE_CUT × conceal)`, floored at `PRONE_SNIFF` (22 px) whenever
   there is any cover at all — **nothing hides at arm's length**. A bot's sight is its profile's
   (`AI_LEVELS`, js/ai/ai-skill.js: EASY 120, NORMAL 147, HARD 200, IMPOSSIBLE 267 px), so full cover takes those to
   22 (the floor), 22, 28 and 37, and a tier-3 turret's 124 down to 22.
 
-**Every watcher resolves through `seenAt`, and a new one must too.** Today's callers: a bot's
+**Every watcher resolves through `seenAt`, and a new one must too** (a bot's names its side, so the
+fog holds for it). Today's callers: a bot's
 target pick and its roost-threat count (`aiNearestEnemy`, `aiSituation`, js/ai/ai.js), a turret
 (`turretMark`/`turretHolds`), a worker bot's quarry and the flag's reach (js/sim/robots.js), prey
 deciding to bolt (`updatePrey`), the eagle's gust (js/sim/eagle.js) and the CLICK scheme's lock and
@@ -1566,6 +1567,34 @@ None of them is a word:
 A hunter bot casts it through the same ability key a human presses (`inp.ability = 3`) — rung 2
 of the [ladder](multiplayer.md#bots), decided before the rest because two later rungs read
 the answer; a warrior bot has no burrow to decide.
+
+## Fog of war
+
+A side sees a circle round each of its heroes (`FOG_HERO`, 10 tiles), wave soldiers
+(`FOG_SOLDIER`, 7) and finished turrets (`FOG_TURRET`, 8) — towers will join `sightSources` when they
+exist. Everything else is dimmed, never black: terrain, buildings and both eagles stay, but a rival
+player, a rival bot and every creature outside the side's sight are not there for it — not drawn on
+the screen, the minimap or the M map, and not seen by its bots. Code: js/sim/fog.js (the rule),
+js/draw/fog.js (the picture).
+
+- **Stone cuts sight**: the cistern's stone (by its distance field, `cisternDist`) and every built
+  wall, long wall and gate tile (`sightWallAt`). A sight line stops where it meets one
+  (`sightReach`); the screen keeps `FOG_FACE` px past that lit so the wall's face shows.
+- **Pines cast no shadow. The woods are brush instead**: a body standing on a walkable tile with
+  `FOG_WOODS_N` pines or more in the 5x5 round it is hidden from a side even inside its circles,
+  until one of that side's heroes or soldiers stands within `FOG_BRUSH` px (`woodsHide`).
+- **The falcon's mark sees through it**, as it sees through cover.
+- **Where it is up** (`fogUp`): a match on the ground. Never the practice field, the drop's flight
+  or the title tour; `DBG.fog = false` lifts it for a debug look, and the media
+  kit films without it unless a scene asks (`MEDIA.boot({ fog: true })`).
+- **Bots play by it.** `inSight(team, u)` is the side's answer, worked out once per unit per tick.
+  Every bot sight check names its side: `seenAt(q, range, p.team)` returns 0 for a rival outside
+  that side's sight, and the soldier, hunt and bot-API loops ask `inSight` straight. So a bot's
+  profile sight (up to 267 px) is capped by what its side can see, and a bot never shoots into
+  the fog. The CLICK scheme's lock and acquire ask the same.
+- **Nothing is stored or sent**: it is all read off where things stand, so a client works out its
+  own side's view from its copy of the world. The host still sends every body to every client
+  (hiding them on the wire is separate, later work).
 
 ## Wildlife
 
@@ -1947,7 +1976,7 @@ rather than a different resource (the League model: one number, many ways to ear
 | bird | `bird` 2 coins × 4 → 8 | dormant: nothing spawns one |
 | gold pump (`generator`) | `tiers[tier].pay` every `period` s: 2 / 4 / 7 every 10 s — 12 / 24 / 42 a minute, so the first pays back in 5 min and each upgrade in 6.7 and 7.8 | passive income, deposited to its owner; a 4x2 building, and each one its owner already has makes the next cost 2.5x (`ramp`, `buildCost`: 60, 150, 375), so the second pays back in 12.5 min and the next tier is the better buy |
 | chest | `CHEST_GOLD_MIN`–`MAX` (8–20) + a card, and 3 in 4 a tool or bit of any tier | ~14 caches along the treeline, one free E press — the world's one source of cards, and with the SUNSTONE the only [find](#where-tools-and-bits-come-from) that can be top-tier |
-| a sale at [the counter](#the-merchants-counter) | half a made thing's price, or the live market price for fish and berries | the one payout that is **not** XP (`tradeGold`) — a trade is an exchange, not a source, and the counter buys food at the price it sells it |
+| a sale at [the counter](#the-merchants-counter) | half a made thing's or an item's price, or the fixed price for fish and berries | the one payout that is **not** XP (`tradeGold`) — a trade is an exchange, not a source, and the counter buys food at the price it sells it |
 
 The table is sized so that a
 player chaining pines nonstop earns about a gold a second, the trickle is a quarter of that,
@@ -2004,23 +2033,19 @@ holds, because that pickup is an exchange.
 ## The merchant's counter
 
 **Each eagle's merchant keeps a shop, and both shops serve everybody.** Walk up to either team's
-**stall** (the market stall its [merchant](#the-merchant) pitches beside the spur's head) or to the
-merchant itself, press **E**, and the counter opens — the **SHOP**: twelve
-offers rolled off the tool, bit and card pools, a **sell strip** anything in the pack can be
-dragged onto with a **SELL ALL** button at its end, a live **fish and berry market**, and a
-[restock road](#the-restock-road) counting down to the next turnover. The whole feature is
-[js/ui/shop.js](../../js/ui/shop.js) — the `market`, `the counter's stock`, `buying and selling` and
-`the shop panel` banners. Two tab plates beside the portrait turn the same slab to its other face,
-[the FORGE](#the-forge), where ore takes a weapon up a level.
-
-The post is the **shop**; the MARKET is one corner of it, under its own rule on the panel, and it
-is the only corner whose prices move. That is why the slab is not itself called a market —
-everything above that rule is priced once, on its own def.
+**stall** (the stall its [merchant](#the-merchant) pitches beside the spur's head) or to the
+merchant itself, press **E**, and the counter opens: the **SHOP**, an items shop in League's
+mould. It sells five cheap **parts** and eight **finished items** built out of them into
+[six item slots](#the-items), and fish and berries at a fixed price; anything in the pack sells by
+being dragged onto it. **Every item is on sale all the time, at one fixed price, and nothing sells
+out**, so a player can save up for the one they want. The items themselves are
+[js/sim/items.js](../../js/sim/items.js) (the `items` banner); the counter is
+[js/ui/shop.js](../../js/ui/shop.js) (the `the counters`, `buying and selling` and `the shop panel`
+banners).
 
 Your own roost's merchant is the near one; the rival's is a walk through their base and sells the
-same twelve things, because there is **one market and two shopfronts onto it**. That is also why a
-merchant **cannot be killed**: `unitAlive` (js/sim/actions.js) answers false for one (the
-[CLAUDE.md](../../CLAUDE.md) picker rule). It has no `hp` field
+same things, and since a shop nobody can reach is not a shop, a merchant **cannot be killed**: `unitAlive` (js/sim/actions.js)
+answers false for one (the [CLAUDE.md](../../CLAUDE.md) picker rule). It has no `hp` field
 at all and draws no health bar.
 
 ### Opening it
@@ -2038,7 +2063,7 @@ a living and loiters among them, so there is very often a trunk one tile off the
 swing that outranked the counter would leave the shop unopenable under its own `E SHOP` cap.
 One rule answers in all three places: the press, the cap, and whether the
 cursor's [lock ring](rendering.md#cursor) promises a swing. The counter is a **panel, not a held wheel**:
-the press opens it and E, Escape, the X or **walking out of reach** shuts it (`updateMarket`
+the press opens it and E, Escape, the X or **walking out of reach** shuts it (`updateShop`
 re-checks `inReach` every step). It is HUD like the pack and the character sheet — **the sim runs
 on underneath, and standing at a counter protects nobody**.
 
@@ -2054,7 +2079,7 @@ weapon shelf and the pack drawer a sale is dragged out of), **the item on the cu
 hud strip and the world all go under. The mechanism is the draw ORDER in `renderUI` (js/ui/compose.js) and
 not the panel: a panel cannot dim what is drawn after it, so the minimap and the strip are drawn,
 then the wash, then the corner and the slab — which is why the corner is drawn in two places
-there. Everything painted after that block — the market's plates, the tooltip —
+there. Everything painted after that block (the news plates, the tooltip)
 is above the wash by arriving late.
 
 **The post has its own song.** `openShop` calls `SFX.music.hold('village', …)` — FOREST VILLAGE
@@ -2071,188 +2096,137 @@ takes. A counter open at the **stall** holds nobody, so its keeper goes on worki
 the OPEN PANEL rather than on proximity because everybody lands at the roost together, and a
 merchant that stopped for anyone standing near it would never raise its stall.
 
-### The forge
+### The items
 
-The counter's second face (the anvil tab; `state.shopTab`, the `the forge tab` banner of
-[js/ui/forge.js](../../js/ui/forge.js)) swaps the stock, the market and the sell strip for one
-bench, and the rules live beside the ore in the `the forge` banner of
-[js/sim/mining.js](../../js/sim/mining.js). **It is a dump, not a recipe**: any ore, in any amount and any
-order, goes into a weapon as forge points (`FORGE_PTS`: IRONSTONE 1, FROSTGLASS 4, SUNSTONE 15),
-the points fill the weapon's bar, and each time it fills the weapon is a level up and the next
-bar is `FORGE_NEED_UP` (3) longer (`forgeNeed`: 5, 8, 11, 14...; `forgeCum` is the total). There is
-no top level. The points are `fp` on the weapon's own cell beside `bits`, so they go wherever the
-tool goes — the shelf, the pack, the snow, the wire, a save — and a rebuilt tool would lose them;
-the level is always read off them (`toolLvl`). A weapon from the fixed-recipe forge carries a bare
-`lvl`, which `toolFp` reads as the points that level costs.
+`BUILD_ITEMS` (js/sim/items.js) is the whole catalogue, and two kinds share it. A **part** is cheap
+and carries one stat. A **finished** item names the parts it is built `from` (a part named twice is
+needed twice) and carries bigger stats and one **passive**.
 
-**What a level adds tapers** (`forgeSum`: each level adds `FORGE_TAPER`, 0.9, of what the one
-before it added), so a pile of five hundred stones makes a weapon strong and never absurd:
-damage into the press's envelope before any fitting (`toolPlan`, and the PIERCING SHOT's
-`pierceMods`), and some of the body's `up` stat — cycle off an `rof` body, weight on a `tensile`
-one.
-
-| level | points in all | damage | `rof` cycle | `tensile` |
-| --- | --- | --- | --- | --- |
-| +5 | 55 | ×1.25 | ×0.84 | +4 |
-| +10 | 185 | ×1.39 | ×0.74 | +7 |
-| +17 | 493 | ×1.50 | ×0.67 | +8 |
-| limit | | ×1.60 (`FORGE_DMG` 6% first) | ×0.60 (`FORGE_ROF` 4% first) | +10 (`FORGE_TENSILE` 1 first) |
-
-A forged weapon sells for its points as well as its body (`forgeWorth`, `FORGE_GOLD` 2 a point,
-in `cellValue`), so nothing spent at the bench is quietly lost at the sell strip.
-
-**The bench**, left to right: the WEAPON well, the PILE well (each kind in it as a stacked icon
-with its count), and the preview (the level and the two numbers the pile moves, old > new) over
-the plate that forges it, which carries the pile's points — green when it will take, dark when it
-will not. Under the wells runs the weapon's FORGE BAR: its points toward the next level, the
-pile's share lit green on top (the whole bar green when the pile levels it), the level at each end
-and the points in the middle. Under the bench, one ORE plate per kind: what a piece is worth, and
-in the pile / carried. The pile fills by a **drag** of a stack onto the pile well or its kind's
-plate (`forgeDrop`, from `dragDrop`), a **click** on an ore stack in the pack while this face is up
-(`forgePut`, from `sendBagCell`), a click on a kind's plate (all of it in, or out again) or a click
-on the pile well (every ore you carry in, or the pile emptied); the weapon well fills by the same
-drag and click, and its own click steps through what you carry. Nothing leaves the pack for
-either: the weapon well holds a pointer to the cell (`state.forgeSel`, found again each frame, by
-the cell or by where it was and what it is for a client whose pack the snapshot rebuilds) and
-the pile only counts (`state.forgePile`, clamped to what you carry every frame by
-`forgePileNow`). Both are this screen's and stay out of a save (`SAVE_STATE_SKIP`, js/sim/save.js).
-The plate sends `input.cmd` `{kind: 'shop', act: 'forge', where, i, pile}`, and `forgeTool`
-re-checks the reach and that every count is whole and carried (`forgeReady`), spends the pile
-(`bagTake`) and adds its points. The bots do not forge.
-
-A forged weapon wears `+N` in the forge's colour (`FORGE_INK`) on its well's top-left corner —
-the shelf, the pack, the bench (`forgeMark`) — and its tooltip title carries it too, with the
-forged numbers in that colour.
-
-### The stock, and what it costs
-
-**Every tool, bit and card has a gold price on its own def**: `price` on the `TOOLS` and
-`BITS` entries (js/sim/tools.js) and `CARD_PRICE` by rarity (js/sim/player.js). A card is priced by rarity and
-not per entry because the rarity is what changes hands — the [pick of three](#roguelike-cards)
-inside it is drawn afterwards, so the buyer is paying for the odds.
-
-| section | offers | rolled from |
+| part | price | stat |
 | --- | --- | --- |
-| TOOLS | 3 | every key in `TOOLS`, distinct |
-| BITS | 3 | the `proj` bits, distinct |
-| MODIFIERS | 3 | the `proj: false` bits, distinct |
-| CARDS | 3 | `rollCardRarity(SHOP_CARD_ODDS)` — kinder than a chest's `CHEST_ODDS`, since a counter you chose to walk to should beat a box you tripped over |
+| FLINT HEAD | 30 | +2 DAMAGE |
+| WOLF HIDE | 25 | +15 HEALTH |
+| GUT STRING | 30 | +8% ATTACK SPEED |
+| IRON PLATE | 30 | +1 ARMOR |
+| FUR BOOTS | 25 | +5% MOVE SPEED |
 
-**An offer is a single item**: buying it empties its well (its `market.stock` entry goes `null`,
-drawn as a flat empty well that takes no click) until the counter turns over, every
-`SHOP_RESTOCK` (120 s), and the new shipment fills all twelve again — announced in the feed, on a
-plate under the minimap and over a cue of its own (below), and counted down by the
-[restock road](#the-restock-road) along the slab's bottom rail. The stock is shared by both
-counters and every player, so a buy is [contested](multiplayer.md#contested-orders) on its well
-(`shop:<section>:<i>`): two buyers in one step get one winner and the loser keeps its gold. That is
-what makes the clock matter: what is on the counter is gone once somebody gets there first.
+| item | price | from | stats | passive |
+| --- | --- | --- | --- | --- |
+| HUNTER'S HORN | 150 | FLINT HEAD, GUT STRING | +4 DAMAGE, +15% ATTACK SPEED | KINDLING |
+| BEARSKIN | 140 | WOLF HIDE, IRON PLATE | +35 HEALTH, +2 ARMOR | DEN |
+| WOLF FANG | 130 | FLINT HEAD, WOLF HIDE | +3 DAMAGE, +20 HEALTH | FEAST |
+| IRON BRAND | 140 | FLINT HEAD, IRON PLATE | +3 DAMAGE, +2 ARMOR | CHILL |
+| SKATES | 80 | FUR BOOTS | +8% MOVE SPEED | GLIDE |
+| SNOW CLOAK | 120 | FUR BOOTS, WOLF HIDE | +20 HEALTH, +5% MOVE SPEED | DRIFT |
+| FEATHERS | 130 | GUT STRING, FUR BOOTS | +18% ATTACK SPEED, +5% MOVE SPEED | LIGHT |
+| SUNSTONE | 200 | FLINT HEAD, FLINT HEAD | +7 DAMAGE | AMBUSH |
 
-Everything rolls on `mktRng`, the market's **own** stream seeded off `SEED` (the chests' `chRng`
-pattern): the same seed is the same market on every machine, and a busy shop can never shift a loot
-roll by consuming draws out of the shared stream.
+**What an item does goes through the kit.** `itemMods` folds every slot into the kit inside
+`refreshKit` (js/sim/player.js), the way a card or a gear level does, so every site that reads the
+kit picks an item up without knowing items exist. Each stat line is an `ITEM_STATS` row: DAMAGE adds
+to `dmgBase`, HEALTH to `maxHp`, ARMOR to `dr`, ATTACK SPEED takes its share off both the draw
+(`bowCharge`) and the renock (`nock`), and MOVE SPEED adds to `walkMul`. `ITEM_STAT_ORDER` is the
+order the stats print in and the order of the panel's category filters. Two items add their stats
+twice, but **a passive counts once** however many items carry it (League's unique passives).
 
-**Buying** goes through `input.cmd = { kind: 'shop', … }` → `runCmd` → `shopBuy`, the path
-[gear](#gear) already uses, so a bot could buy tomorrow without a second code path; it re-validates
-its own reach the way `buyGear` re-validates its cost, and it checks **bag room before it takes
-the money**, so nothing is ever paid for that cannot be carried. Bots do not shop yet.
+| passive | what it does (`ITEM_PASSIVES`) |
+| --- | --- |
+| KINDLING | every `KINDLE_EVERY` (3rd) hit lights the target for `KINDLE_BURN` (2 s) at the ordinary burn (`itemsOnHit`) |
+| DEN | 3 HP a second (`restHeal`) once `ITEM_FIGHT_T` (5 s) have passed since a hit given or taken (`itemsTick`) |
+| FEAST | a kill heals 20 (`killHeal`) |
+| CHILL | a hit slows the target to `CHILL_MUL` (0.7) of its speed for `CHILL_T` (1 s) (`itemsOnHit`, through `slowUnit`) |
+| GLIDE | ice top speed ×1.15 and +0.3 ice steer |
+| DRIFT | stealth −0.15: seen from closer |
+| LIGHT | the roll comes back 0.8 s sooner (`dodgeCd`) |
+| AMBUSH | +0.4 on the ambush shot's multiplier (`ambushMul`) |
 
-**Selling** is a **drag**: pick a cell out of the grid and let go anywhere on the sell strip
-(`shopDropSell`, reached from `dragDrop`). The whole cell goes — an instanced tool cannot be
-split — and **a loaded tool sells with its bits**, at half of each, so nothing is ever quietly
-emptied for gold (`cellValue` → `sellValue`). Made goods fetch **half** their asking price; that
-margin is the whole reason looting still beats shopping. Unlike the buys, a sale resolves on the
-spot rather than through `input.cmd`: what is on the cursor is out of the bag already, and a
-command the sim might drop that frame (pause, the chart) would take the item with it.
+The two passives that are not a kit number hang off shared functions: `itemsOnHit` is called from
+`hurtUnit` (js/sim/actions.js) for every blow a player lands, and a burn's own ticks are not hits,
+so they never feed KINDLING or CHILL; `itemsTick` runs the player's fight clock (`p.fightT`, also
+set by `damagePlayer`) and DEN's heal once a step from `updatePlayer` (js/sim/sim.js).
 
-**Or all of it at once.** The **SELL ALL** button at the strip's right end (`shopSellAll`) puts
-the whole pack over the counter in one press — for `packValue(p)`, what the drawer is worth right
-now, printed on the button itself. **What it takes is the BAG, and the bag's own boundaries are
-the whole rule**: the two meals and the unopened cards are in the pouch
-([`p.food`](#inventory-and-the-backpack)) and take no cell, and the tool in hand with the bits
-fitted into it is on the shelf (`p.tools`),
-so **what the press cannot reach is exactly what is being carried on purpose** — no exclusion list
-had to be written, and one cannot rot. It resolves as **one** sale, not twelve: one payment, one
-floater, one coin, because it is one decision. Unlike the drag it goes through `input.cmd` like
-the buys — nothing is on the cursor for a dropped command to take with it — and an empty pack is
-refused with the ordinary deny. A **release** on it, rather than a click, sells the carried cell
-like the rest of the strip: with an item in hand the strip is one full-width target and only
-becomes two controls once your hand is empty.
+Items are **ids** in `p.items` (`ITEM_SLOTS`, six of them, an id or `null` each), never instances:
+an item has no state of its own, so a slot is just the name of what is in it. Like cards, they
+survive a respawn. They ride the save on the player, and a save from before items gets six empty
+slots (`saveApply`, js/sim/save.js). When the slots change, `itemsChanged` rebuilds the kit: new max
+health arrives filled, the way a gear level does, and lost max health clamps.
 
-**A sale pays gold but no XP** — `tradeGold`, the one documented exception to the `gainGold`
+### Buying and selling
+
+**A finished item costs its own price minus the parts of it already in your slots** (`itemCost`),
+each slot counted once, and the buy uses those parts up. So a SUNSTONE with one FLINT HEAD held
+costs 170 and with two, 140: a part bought early is never wasted gold, and saving toward an item
+can start one part at a time. The buy needs a free slot once those parts are spent (`itemRoom`).
+A part plays the coin and a finished item the money ding (`SFX.buy`).
+
+**Selling an item** back pays `ITEM_SELL` (half) of its whole price (`itemSellValue`), whatever it
+cost you.
+
+**Fish and berries have a fixed price, the same both ways** (`FOOD_PRICE` in js/ui/shop.js: a frost
+pike 18, a berry 4). Every other fish is priced off the pike by what it heals against what the pike
+heals (`foodPrice`): a whitefish 14, a snow char 25, a gold sunfish 29, so a new fish is priced the
+moment it has a `heal`. The food row's BUY takes one (as many as the order's `n`, the purse and the
+pouch cover) and its SELL sells every one of that good you carry, every fish of every kind for
+fish, as one payment (`shopTrade`).
+
+**Anything in the pack sells by a drag**: pick a cell out of the grid and let go anywhere on the
+panel (`shopDropSell`, reached from `dragDrop`). The whole cell goes (an instanced tool cannot be
+split) and **a loaded tool sells with its bits**, at half of each, so nothing is ever quietly
+emptied for gold (`cellValue` → `sellValue`). Made goods (a tool, a bit, an ore off its `ITEMS`
+row's `price`) fetch **half** their worth (`itemValue`); food fetches its fixed price. Unlike the
+other orders, a drag sale resolves on the spot rather than through `input.cmd`: what is on the
+cursor is out of the bag already, and a command the sim might drop that frame would take the item
+with it. `shopSellCell` is the same sale addressed by bag index, for a bot or any later caller.
+While the counter is up, every bag cell's tooltip gains a SELLS FOR row.
+
+**A sale pays gold but no XP**: `tradeGold`, the one documented exception to the `gainGold`
 rule in [CLAUDE.md](../../CLAUDE.md).
 
-### The fish and berry market
+**Every other order goes through `input.cmd`** `{kind: 'shop', act: 'item' | 'sellItem' | 'trade' | 'sell'}`
+→ `runCmd` → `shopCmd`, validated on arrival by `cmdOk` (js/ui/wheel.js), so the HUD click and a
+bot buy the same way. `buyItem`, `sellItem` and `shopTrade` re-check the reach, the gold and the
+room themselves, so a stale order is harmless. Nothing is [contested](multiplayer.md#contested-orders):
+the stock is endless, so two buyers never want the same thing.
 
-**Fish and berries have a price that moves, and they are the only two things in the game that do.**
-`GOODS` (js/ui/shop.js) is the whole table: `base` is what a thing is worth when nothing is
-happening, `min`/`max` are rails it can never leave, `vol` is the ordinary step and `shock`
-the chance a step is a **lurch** instead — straight to `lo` or `hi` of where it stood.
-
-| good | base | rails | ordinary step | lurch |
-| --- | --- | --- | --- | --- |
-| FISH | 18 | 5–60 | ±13% | 5% of steps, ×0.62 or ×1.7 |
-| BERRIES | 4 | 1–15 | ±11% | 4% of steps, ×0.66 or ×1.6 |
-
-Fish are the money good and berries the small change — a fish is worth four or five berries at
-rest and the gap widens on a spike, so a pouch of fish is a real decision about *when* to sell
-it. Every `MKT_STEP` (5 s) each good takes one step: a pull `MKT_REVERT` of the way back to its
-base, the drift, then the lurch. `price` is a float and the walk runs on it; what is ever **paid**
-is `marketPrice()`, the rounded coin, so the graph can wander between two whole numbers without
-the counter's price flickering.
-
-**Every fish trades on the fish market.** The frost pike (`fish`) is the `GOODS` row; the
-whitefish, snow char and gold sunfish (every kind in `FISH_KINDS`) ride its walk, each at the live
-fish price scaled by its heal against the pike's (`goodOf`, `goodScale`): a whitefish (+40) is 0.8
-of a fish, a snow char (+70) 1.4, a gold sunfish (+80) 1.6. So a new fish is priced the moment it
-has a `heal`, and the four rise and fall together. Each fish is its own row on
-[the market page](#the-market-page), with its own coin and its own trades, over the one shared walk.
-
-**Both goods trade at one price in both directions** — no spread at all, the one place the
-half-price rule does not apply. A spread would kill the only thing the market is *for* (buy low,
-hold, sell high), and there is nothing to protect: the price does the taking by itself.
-
-**The graphs are three days deep.** Each good keeps `MKT_HIST` samples (`MKT_DAYS × CYCLE ÷
-MKT_STEP` = 99, one per step), drawn as a filled sparkline with a dotted gridline per day boundary
-and its high and low printed small at the ends. `initMarket()` **primes the whole history at
-boot** by walking it forward from the base price, so the counter's graphs are graphs on day one
-rather than a flat line that fills in over the first quarter of an hour.
-
-**A big move makes the news.** `marketNews` cuts a headline when the price has moved both
-`MKT_NEWS` (30%) *and* the good's own `newsMin` gold (fish 4, berries 2) since the last one — green on a rise and red on
-a fall. The absolute floor is the half that matters: a berry going 2G → 3G is a 50% "spike", and
-without it the feed fills with small change. The ticker card and the market page row of the good
-that made one pulse for three seconds.
-
-A headline goes to **two places at once**, and a restock's does too:
-
-- the **event log** (not drawn; `DBG.events`) — `FISH SPIKE 34G`, `BERRIES CRASH 2G`,
-  `THE MERCHANTS RESTOCK` — the match's own record, where everything else that happened to
-  somebody already is;
-- a **plate top-right under the minimap** — the `notices` banner in js/ui/shop.js, drawn by
-  `renderNotices` ([the plates](rendering.md#notices-the-plates-under-the-minimap)) —
-  because a price is not something that happened to a player: it is the state of the world you are
-  about to sell your bag into, and it has to arrive on screen, where the clock is.
-
-Both readouts take their colour from one table (`NOTE_KIND`), handed straight to `logEvent` as its
-palette override, so the two can never disagree about which way a price went.
-
-**Each has its own cue** (js/app/audio.js): `SFX.market(up)` is a coin dinging on a spike and a falling
-sigh on a crash — two *different* clips rather than one pitched two ways, and unjittered, because
-this is read as a direction and never as a texture — and `SFX.restock()` is the turnover in two beats, a
-wagon pulling in and, `RESTOCK_RING` (0.9 s) behind it, the bell over the new stock. Neither is
-gated on standing at a counter: a turnover is the one market event worth walking across
-the map for, and news you only hear once you are already there is not news.
+**Bots buy class builds** (`BOT_BUILDS`, js/sim/items.js): a HUNTER finishes HUNTER'S HORN,
+FEATHERS, WOLF FANG, SUNSTONE, SKATES, BEARSKIN, a WARRIOR BEARSKIN, IRON BRAND, WOLF FANG, SKATES,
+SNOW CLOAK, SUNSTONE. `botNextItem` is the next one it does not have, and `botItemBuy` what it would
+buy now: that item whole if the purse covers it, else the first of its parts it does not hold yet.
+`aiSpend` (js/ai/ai.js, rung 0 of `aiThink`, after a free skill point) sends that order whenever
+the bot is at a counter. When the purse covers the next **whole** item and the bot is out of a
+fight (`p.fightT`), it walks to its own side's counter (the stall, or the merchant's body) if that
+is within `AI_SHOP_DETOUR` (12 tiles), noting `SHOP` and the item as its thought (`aiNote`), which ends its
+ladder for that think. Only a bot whose build is finished spends on [gear](#gear).
 
 ### The panel
 
-It is **wide and short and pinned near the top edge** (336×216, `SHOP_W`/`SHOP_H`/`SHOP_Y`), and
-that is a constraint, not taste — **the tooltip-corner rule**, which everything on this slab is
-laid out against: the [tooltip](rendering.md#the-hover-tooltip) parks bottom-left and grows
-upward off the bottom rim, and the deepest one an offer here can raise tops out around 192 px. So
-the slab stays short, the **sell strip ends at 190**, clear of that line, only the restock road
-runs under it, and the two readouts that must survive a tooltip — the road's countdown and the
-SELL ALL button — sit at the **right** end. All a tooltip can ever cover is the wagon, never an
-offer, a card, the sell target or the clock.
+**Layout A**, on the HUD's own graphite plate (`drawHudFrame`, js/ui/strip.js), 344×206
+(`SHOP_W`/`SHOP_H`) and pinned near the top edge (`SHOP_Y`):
+
+- the **head**: SHOP, the purse and the X;
+- down the left, the **category filters** (`state.shopCat`): ALL, then one plate a stat in
+  `ITEM_STAT_ORDER`, each that stat's own picture. A filter **dims** every item without that stat
+  rather than hiding it, so nothing on the grid moves; picking it again clears it;
+- the **grid**: PARTS, then ITEMS four a row, each well rimmed by its tier (a part tier 0, an item
+  tier 2) with what it costs **you** now (`itemCost`) under it, in the refusal red with the item
+  greyed back when the purse is short (`SHOP_DEAR_*`);
+- the **read-out** pane on the right: the picked item big, its name and full price, the
+  **BUY** or **SELL** plate wearing the gold it moves, its stats in green, its passive in gold over
+  one dim line, and its **build tree** (`shopTree`): a finished item over its parts, or a part
+  under the items it goes into. A part already in your slots is rimmed green with a tick and wears
+  no price;
+- along the bottom, **your six slots**, then one plate per food good (`FOOD_GOODS`): its icon, how
+  many you carry, its price, and BUY and SELL in plain words.
+
+A click **picks** (an item on the grid, a node of the tree, one of your slots: `state.shopSel`,
+`state.shopSlot`) and the plate acts on the pick, BUY for an item on sale, SELL for one in your
+slots. The pick and the filter are this screen's own and stay out of a save (`SAVE_STATE_SKIP`). The
+counter opens on what a bot of your class would save for next (`botNextItem`). `shopHit` is shared by
+the click, the cursor and the tooltip, so the three can never disagree about what the pointer is
+on; hovering an item describes it in the ordinary tooltip (`tipShop`, `tipItem`: PRICE, its stats,
+its passive), and a slot adds what it SELLS FOR. The words on it (the head, PARTS, ITEMS, BUY,
+SELL) are names and plates in plain words like the menus; everything else is icons, rims and
+numbers.
 
 **It is pinned clear of the corner**: **a counter may not stand on
 the pack it is sold out of** — a sale is a drag from that drawer into this slab. The weapon shelf
@@ -2262,117 +2236,15 @@ not:
 
 | | when | where it goes |
 | --- | --- | --- |
-| **beside** | `cornerClaim() + 6` still leaves the slab inside the frame | `x = max(centred, cornerClaim() + 6)`, `y = 4`. It keeps the centre whenever the view is wide enough for both, so on the ordinary 640×360 frame this is a nudge of 28 px |
-| **under** | it does not, but the slab clears both the frame's bottom and the deepest tooltip below the drawer | centred across, `y = cornerBottom() + 6`. A **tall, narrow** frame (a portrait monitor's 360×640), where nothing fits beside the 336-wide slab |
-| **neither** | both fail | `x` at the view's right rim, `y = 4` — the minimap's rim goes under it |
+| **beside** | `cornerClaim() + 6` still leaves the slab inside the frame | `x = max(centred, cornerClaim() + 6)`, `y = 4`. It keeps the centre whenever the view is wide enough for both |
+| **under** | it does not, but the slab clears both the frame's bottom and the deepest tooltip below the drawer (`SHOP_TIP_CLEAR`, 196) | centred across, `y = cornerBottom() + 6`, on a **tall, narrow** frame where nothing fits beside the slab |
+| **neither** | both fail | `x` at the view's right rim, `y = 4` (the minimap's rim goes under it) |
 
-The width claim is the corner's **fixed** reach — the widest row a tool could ever grow to — and
+The width claim is the corner's **fixed** reach (the widest row a tool could ever grow to) and
 not the live `shelfRowRight()`, because the row grows with the tool in hand and a slab that slid
-sideways when a swap changed the row mid-trade would walk out from under the pointer. The **under**
-branch is gated on `SHOP_TIP_CLEAR` (196) as well as on the frame (the tooltip-corner rule
-again). Where nothing fits at all (the shortest view the canvas
-allows, 320×240, where the slab is wider than the frame), it covers the corner. The placement's
-comments in js/ui/shop.js carry the rest of the reasoning.
-
-Top to bottom: the **awning** — a snow-capped, icicled valance striped in the counter's own team
-colours, the one thing on the panel that says whose eagle this is — with the shop's sign hung off
-its hem between two lanterns, the merchant's portrait framed at one end and the purse at the
-other; the four sections as a 2×2 grid of three-well rows, each on a recessed
-board; the **MARKET** rule and its ticker cards, one a good across the width (each good's coin and a three-day sparkline;
-a click opens [the market page](#the-market-page) on it); the **SELL strip**, the full width of
-the slab, with air under it (`SHOP_SELL_GAP`); and the
-[restock road](#the-restock-road) along that rail. The frame, the section rules, the ticker cards and
-that edge are all cut from one timber palette under iron corner brackets, which is what makes the
-slab read as a shopfront rather than as one more blue HUD panel.
-
-The **strip is two controls on one line**: the drop well you aim at with an item on the cursor,
-and the **SELL ALL** button (`SHOP_ALL_W`, 82 px) at its right end (the tooltip-corner rule).
-It is a **click** where the well beside it is a **drop**, so it is a raised plate that lifts under
-the pointer, not a second recessed well. On it: the **pack** as six lit pips (`drawPackGlyph`), an
-**arrow** into a **coin**, the **gold** it fetches (`packValue`), and the word ALL. With an empty
-pack it goes flat and dark and does not lift — deliberately *not* the counter's out-of-reach red
-(`SHOP_DEAR_*`), which means "you cannot afford this".
-
-Every offer well wears **its item's own tier plate** (`tierPlate`, gilded ones still shine) with
-the price on a band along the bottom. Two rules make the twelve read as one grid rather than as
-twelve loose pictures: every icon is drawn at the largest **whole-number** scale that fits
-`SHOP_ICON` (16) px (`shopIconCv`, baked once each) — the game's two icon grids are 8×8 and 12×12,
-so the counter runs 16s with the three tools at 12. The scale has to be whole: a
-fractional one stretches every third source pixel to double width, and a bow's 1 px linework comes
-out frayed. And a price band's coin sits at a **fixed** offset with its number **right-aligned** to
-another, so a section's three prices line up as a column instead of three centred groups sliding
-about with the digit count.
-
-### The restock road
-
-Along the bottom rail, under the sell strip: **how long until the twelve offers above it turn
-over** (`drawShopLane`, the `the restock road` banner). The question it answers: long enough to
-go and earn more gold, or worth waiting here for?
-
-It answers twice, and neither answer is a sentence. **The number** is on a plate at the road's
-far end, `M:SS` beside a small clock face, going gold and flashing under 15 s. **The picture** is
-the merchant's own errand: a canopied wagon and the horse in its shafts leave the post's door at
-the turnover, are furthest out at the halfway mark, and roll back through that door exactly as the
-new stock lands. The wagon's **position is the clock** — there is no separate progress bar,
-because the wagon already is one — it faces the way it is going, and its trot frame is cut from
-**distance travelled** rather than from a timer of its own, so the legs and the wheels belong to
-the same journey.
-
-The countdown sits at the **right** end deliberately ([the tooltip-corner rule](#the-panel)).
-
-**A price you cannot pay is said three ways at once**: the well's rim and its price band both go to the counter's out-of-reach red
-(`SHOP_DEAR_*`), the price ink with them, and the goods themselves grey back under a wash — the
-tier plate keeping its own hue through it, since which tier a thing is stays true whatever it
-costs. It does not lift under the pointer and it does not shine. It is the same red
-[tipGear](#gear)'s next-level row and the pack's own refusal already speak, and the market page's
-BUY plates wear it too when the reason they are dead is the price.
-
-The **sell strip** is a full-width recessed well with corner brackets — a drop target, so it is
-hard to miss — and it carries the word SELL. Idle it is SELL → a coin; with something in hand it
-becomes that item → a coin and the gold it fetches, and the whole well lights and pulses. At rest
-a slow band of light crosses it (`sellSheen`, a long period and a soft envelope: a resting
-state must not blink). Nothing
-else on the SHOP face is labelled with a verb (the market page's trade plates are plain words, like
-the menus). The
-section headings (TOOLS / BITS / MODIFIERS / CARDS) and the graphs' own numbers are this panel's
-share of the [instruments carve-out](rendering.md#show-dont-label), for the reason the practice instruments have
-one: reading a market **is** reading numbers, and no shape compares a price today against a price
-yesterday. Hovering anything on it describes it in the ordinary tooltip — an offer with a PRICE
-row on top of the rows that item shows anywhere else, a good with its day's change and its
-three-day high and low — and while the counter is up, every bag cell's tooltip gains a SELLS FOR
-row.
-
-### The market page
-
-The counter's third face, a tab plate (a little chart) between SHOP and FORGE, with MARKET on the
-sign (js/ui/market.js). Down the left, a **row per good** (`MKT_GOODS`: frost pike, then every other fish in
-`FISH_KINDS`, then berries; up to `MKT_ROW_H` tall, squeezed to fit over the trades): its icon and name, the live coin in the colour of the last move, and how many you
-carry. The picked row (`mktSel`, this screen's own choice) is rimmed in its good's colour and its
-three days fill **the chart** beside it.
-
-The chart's line is drawn on the **coin**, the rounded price the counter pays, not on the walk's
-float, and its right edge is the market clock right now (`marketNow`: the newest move plus the
-share of the next already gone), so the last sample holds out to the edge and the line creeps on
-between moves. Dotted rules mark the day boundaries; the high, middle and low sit on an axis down
-the right, with the live coin on a plate where the line meets it. Under the pointer a hairline
-reads off the coin at that moment and how long ago (`M:SS`).
-
-**Every trade you made is pinned on it** (the ledger, `marketLog` in js/ui/shop.js): a green dot
-and an upward triangle under the line where you bought, a red dot and a downward one over it where
-you sold, at the exact move and coin the trade happened at, with a count beside it when more than
-one changed hands. A trade is logged with its own clock and coin, never re-read off the graph, so
-the marker sits on the line. Selling a good through the sell strip or SELL ALL logs too. Units
-bought or sold one way, at one coin, inside one move fold into one entry, and a body keeps
-`MKT_TRADES` (48) entries, none older than the graph (`p.trades`, on the player, so it rides the
-save and the wire). Hovering a marker says BOUGHT or SOLD, how many, the coin, the total, the coin
-now (green when the trade is ahead) and how long ago. A **dashed gold line** is what the buys still
-on the chart cost on average, repeated as PAID under the chart beside what you carry and what it
-fetches now.
-
-Along the bottom, four plates in plain words, each wearing the gold it moves: **BUY 1**, **BUY 5**,
-**SELL 1**, **SELL ALL**. A trade order carries a count (`n`): a buy takes as many as the purse and
-the pack cover up to it (BUY 5 with gold for three buys three), a sale as many as you carry, and it
-resolves as one payment, one floater and one marker (`shopTrade`).
+sideways when a swap changed the row mid-trade would walk out from under the pointer. Every icon is
+drawn at the largest **whole-number** scale that fits its well (`shopIcon`): a fractional one
+stretches every third source pixel and frays 1 px linework.
 
 ## Inventory and the backpack
 
@@ -2437,7 +2309,7 @@ owns `p.bag[i]` directly for exactly the length of one gesture.
 **The four counting helpers are also where the pouch lives** (`isPouch(type)`): for a `pouch` kind
 `bagCount` reads `p.food[type]`, `bagRoom` answers `Infinity`, `bagAdd` always takes it all and
 `bagTake` spends it. That one branch is what keeps every caller generic over where a kind actually
-sits — the drop pickup, the catch, a market trade and the AI's food check are
+sits — the drop pickup, the catch, a food trade at the counter and the bots' food check are
 written once and neither know nor care.
 
 **Refusing is a real outcome** for what the *bag* holds, and every path that cannot store
@@ -2516,6 +2388,48 @@ as the overhead tells do (`alpha: 1 - concealOf(p)`).
 **Bots eat through the same one path** (rung 1 of `aiThink`, the ladder `updateAI` wraps — which is why it reads `foe` before the
 burrow rung): a bot only starts a meal with no rival inside `AI_EAT_R` (110 px), because standing
 there chewing under fire is not patience, it is a free kill.
+
+## Recall and the roost ring
+
+League's loop: fight, go back, heal, shop, ride the zipline out. Both halves live in the `recall`
+banner of [js/sim/recall.js](../../js/sim/recall.js).
+
+| | |
+| --- | --- |
+| `RECALL_T` | **6 s** of channel standing still |
+| `RING_HP` | **22%** of max health a second |
+| `RING_STAM` | the roll's charges refill **4x** as fast |
+
+**The recall** is the **H** key (`recall`, KEY_ACTIONS; on every scheme, and a CLICK order is
+dropped on the press). It arrives as a cmd (`{ kind: 'recall' }` through `runCmd` to
+`startRecall`), so it holds online and the bots' API can send it. `recallBlocked` refuses it while
+the bird is not down, in the air or under the snow, stunned, falling, rolling, casting, rushing,
+on the rope, the cable or a deer, drawing, or prone. When the channel runs out the body is set
+down on `roostTile` (js/sim/player.js), the tile a carried-back scout lands on, inside the ring.
+The play camera cuts to a body that moved more than `CAM_CUT` in one frame instead of sweeping
+the map (js/sim/sim.js).
+
+**What breaks it**: `recallIntents` at the top of `playerIntents` ends it on any action of the
+body's own (a step, the bow, E, the slide, the roll, a jump, an ability), and `breakEat` calls
+`breakRecall`, so every way a meal is knocked out (a hit, a stun, the water, the cable, the
+fire button) knocks the recall out too. Death clears it.
+
+**The roost ring** is the packed-earth disc the bird blew clear (`BOOM_R`, js/sim/eagle.js), read
+off the bird where it sits, so it follows the roost wherever a map puts it (`roostRing`). Inside
+your own side's ring and out of a fight (`p.fightT`, the items' clock: `ITEM_FIGHT_T` after any
+blow given or taken, js/sim/items.js), `updateRecall` heals and refills the roll, with green motes rising off the body. A rival in it gets nothing.
+
+**It reads without a word** ([UI rule](rendering.md#show-dont-label)): `drawRecallGround`
+(js/draw/recall.js) draws each down bird's ring as a soft glowing rim in its side's colour (four
+one-pixel circles, baked once), and under a recalling body a dotted ring with a solid one closing
+from it to the feet; the overhead frame's bar slot fills in the side's glow for the channel
+(`drawPlayer`, js/draw/bodies.js).
+
+**Bots** (`aiRecall`, js/ai/ai.js, read after the ladder in `updateAI`): with no rival player or
+machine inside `AI_RECALL_SAFE`, a bot under `AI_RECALL_HP` of its health and more than
+`AI_RECALL_FAR` from its bird recalls and stands still for the channel, and a bot hurt in its own
+ring and out of a fight waits there to `AI_RING_FULL`. A rival its side sees in reach hands it back to
+the ladder.
 
 ## The dawn shield
 
@@ -2616,8 +2530,8 @@ so it is XP too), throws its ore onto the snow one piece at a time toward the mi
 offered to E (`OBJECTS.rock.ready` is `rockReady`) — until `tickRock` in the object timers
 grows it back. The bots mine by the same rule (the harvest rung walks them beside a rock and
 they stand there, key up, until it breaks); the worker bots leave rocks alone, and the merchant's axe, a crater and the
-landing's lane take a rock off the map whole (`fellScenery`, js/sim/world.js). What the ore is for
-is [the forge](#the-forge).
+landing's lane take a rock off the map whole (`fellScenery`, js/sim/world.js). The ore sells at
+[the counter](#buying-and-selling) for half its `ORE_PRICE` (IRONSTONE 2, FROSTGLASS 12, SUNSTONE 40).
 
 ## Gear
 
@@ -2687,7 +2601,7 @@ read through `charHit`) is shared by the click handler, `cursorInfo` (hand curso
 `tipAt`, so the three can never disagree. The click is swallowed **before** `clickAction` — the
 panel, the backpack widget, the hud strip (the weapon well, an ability well casting and its buy
 badge) and the weapon shelf are the left-clickable HUD in play. Bots buy at rung 0 of
-`aiThink` (js/ai/ai.js), from anywhere — a pusher never reaches the spend rung: cheapest piece
+`aiThink` (js/ai/ai.js), from anywhere, once their [item build](#buying-and-selling) is finished: cheapest piece
 first, keeping a 15-gold float so they still build.
 
 ## Roguelike cards
@@ -3290,8 +3204,8 @@ Death is a walk back, never the end: while your team's eagle still roosts (`team
 eagle-drop banner in js/sim/eagle.js) going down costs a **timer and nothing else**, and you are
 set down again at the bird ([Respawn at the bird](multiplayer.md#respawn-at-the-bird)); once the
 eagle has been driven off every death on that side is permanent, and that is the only way anyone
-is ever out of a match. `die(p, src, cause)` marks that player dead and drops its bow draw,
-momentum and zipline handle either way. **Death keeps everything**: the wallet, the pouch, the
+is ever out of a match (a side that surrenders calls its own bird home: [Surrender vote](multiplayer.md#surrender-vote)). `die(p, src, cause)` marks that player dead and drops its bow draw,
+momentum and zipline handle either way (that half is `bodyOut(p)`, which a surrender runs alone, since nobody went down). **Death keeps everything**: the wallet, the pouch, the
 bag, the weapon and the build loaded into it, the unopened cards, the gear, the skill ranks, the
 level and xp all stay on the body, and `reset(false)` brings the same player back — nothing
 spills, nothing is looted, and the snow around a corpse is as clean as it was. (An item riding
@@ -3376,12 +3290,13 @@ your own marker cross it. Consequences worth knowing:
 
 ## Saved matches
 
-A **solo** match can be saved at any step and loaded later exactly where it stood: every body,
-arrow in flight, building, drop, camp, the counter's stock and prices, the clock, and the three
-seeded streams' positions (`rng`, `fxRng`, `mktRng` - `mulberry32` keeps its state on the
-function as `.s` for this). A loaded match does not merely look like the saved one, it **plays
-out** the same from that step: the proof is below. An online match (host or client) and the
-practice room never save (`canSave`, js/sim/save.js), nor does a match that is already decided.
+Players never save a match (Noah, 2026-10-19: not a singleplayer game). What stays is the
+machinery as a **determinism proof**: a match can be captured at any step and put back exactly
+where it stood on a fresh page - every body, arrow in flight, building, drop, camp, every
+player's item slots, the clock, and the two seeded streams' positions (`rng` and `fxRng`;
+`mulberry32` keeps its state on the function as `.s` for this) - and it then **plays
+out** the same from that step: the proof is below. Nothing a player reaches calls it; it is
+`DBG.saveCapture`, `DBG.saveApply`, `DBG.saveHash` and `DBG.saveLoad` (js/app/boot.js).
 
 **How it works** (js/sim/save.js). The world is a seed: a load is a page on the saved `?seed` and
 `?map`, which grows the very same valley, and the save is what the match has done to it since.
@@ -3390,7 +3305,7 @@ by reference with a hash of its contents, and the ground); `saveCapture` then wr
 
 - **the roots** (`SAVE_ROOTS`): every mutable global the sim reads - `state` without its UI keys
   (`SAVE_STATE_SKIP`: the panels, the drag, the fade, the intro), `players`, the entity arrays,
-  `iceCracks`, `iceBreaks`, `orca`, `market`, the streams, wildlife's and the bot brain's module `let`s, the post-game
+  `iceCracks`, `iceBreaks`, `orca`, the streams, wildlife's and the bot brain's module `let`s, the post-game
   record, and the camera and zoom - **as one object graph**, so a reference shared anywhere (a
   bot's hunt target, a den's camp, `player` as `players[localId]`) comes back shared. JSON with a
   handful of `$` tags: an object reached twice is written once and pointed at, a `Player` comes
@@ -3404,127 +3319,74 @@ by reference with a hash of its contents, and the ground); `saveCapture` then wr
   its footprint) is always written, because the fresh valley's copy would point at the fresh
   page's camp.
 
-**A new mutable global the sim reads joins `SAVE_ROOTS`**, or a loaded match silently forgets it
+**A new mutable global the sim reads joins `SAVE_ROOTS`**, or the proof silently misses it
 (the CLAUDE.md rule). A new *field* on anything already saved rides along untold. Functions and
 canvases are nobody's state and are dropped (a console warning names the path if one turns up).
 
-**The flow.** `saveMatch(slot)` takes the match synchronously on the step it was pressed, gzips it
-(`CompressionStream`, base64 behind a `z`: 20-130 KB a save against 300 KB-1 MB of JSON) and hands
-it to `PROFILE.putSave` - the metas (hero, level, clock, when, name, a 40 px minimap thumbnail) under one
-index key so a list never opens a body, each body under its own. `loadSave(slot)` fades out,
-unpacks the body into `sessionStorage` (`softfall.load`) and reloads onto the saved seed and
-shape; boot calls `saveBootLoad` after the world stands and **before `prepGround`**, so the bake
-paints the saved valley, then `saveBootEnter` once boot is done (the saved camera, the fade up
-from dark, the match's music; no HUD slide, whose ease would move the camera and pop the day's
-headline).
-
-The ESC panel, and so the SAVES plank, is only up in play; the eagle's ride and a respawn wait
-are covered by the autosave alone.
-
-**Slots.** Five manual slots (`m0`-`m4`) and an autosave ring of three (`a0`-`a2`, the oldest
-overwritten): an autosave every `SAVE_AUTO_T` (120 s) of match clock (`saveAutoTick`, from the
-frame loop after the steps) and on the way into the ESC panel or the pause plate, never two inside
-`SAVE_AUTO_GAP` (15 s). A save that lands flashes a gold down-arrow under the minimap, beside the match
-clock where that hangs there (`drawSaveFlash`).
-
-**The screens** (js/ui/saves.js). One grid: five manual cards over the autosave ring, each its
-match at a glance - the thumbnail with the match clock (gold) and how long ago
-(`NOW`/`12M`/`5H`/`3D`) on its foot, the save's **name** (`saveTitleOf`: the player's, else
-`DAY n`), the class emblem and level; an empty manual card is a +, an autosave wears two chasing
-arrows. There is no verb to pick: each card says its own (`svVerb`). A press on an empty manual
-card (+) saves the match into it; a press on a kept card loads it; nothing writes over a kept
-card (its X clears the slot, then its + takes the new save). In a match it opens on the settings
-slab off the ESC panel's one **SAVES** button, which is there only while `canSave()` (a solo match:
-never practice or online). In the **solo lobby** it is a pop-up off the **SAVES plate** - a third
-plate beside the map and the target, there only while the profile holds a save: the newest save's
-picture on a fanned stack of cards, its name under it, a play arrow over it under the hand - LOAD
-only (an empty card does nothing with no match to keep), the newest card lit when it opens (`beginSavesPick`), so Enter picks the last match back up.
-The title list itself carries nothing about saves. Loading over the match you are in arms the
-card first (gold rim, the play arrow over the thumbnail, `SV_ARM_T`), and a second press does it.
-The arrows walk the cards.
-
-Every kept card has three handles beside its press. The **X** in its corner (out under the hand,
-or on the picked card; Delete, a pad's X) arms it red, and a second press deletes it
-(`savesDelete`). Its **name** is typed over in place - a click on it (the pencil shows beside it) or
-F2, up to `SV_NAME_MAX` letters, digits and single spaces, Enter keeping it and Escape dropping it;
-an emptied name falls back to the day, and a slot the player named keeps its name when written
-over (`meta.named`). While a name is typed it owns the keyboard (`savesEditKey`, routed first in
-`keyPress`). And the card can be **carried**: pressed and moved `SV_DRAG_PX` it rides the pointer,
-the slot it left dark, and dropped on another manual slot the two trade places (Shift with Left or
-Right steps a manual card one slot along); an autosave dropped on an EMPTY manual slot is kept
-there and stops being one. The ring keeps the order it was written in, so nothing lands on it, and
-the slot under a carried card rims gold where it may land and red where it may not
-(`savesCanMove`, `PROFILE.swapSaves`). A load makes the character that played the save the active
-one, so what the match adds to a lifetime tally lands on the right card.
+**The flow.** `DBG.saveLoad(rec)` (`saveDevLoad`) puts a record from `saveCapture` into
+`sessionStorage` (`softfall.load`) and reloads onto the same seed and shape; boot calls
+`saveBootLoad` after the world stands and **before `prepGround`**, so the bake paints the saved
+valley, then `saveBootEnter` once boot is done (the saved camera, the fade up from dark, the
+match's music; no HUD slide, whose ease would move the camera and pop the day's headline). A
+profile's saved matches from before saves were removed are cleared from storage once at load
+(`clearOldSaves`, js/app/profile.js).
 
 **The proof** (`DBG.saveHash`: a hash of everything a save carries, less the camera and what
 runs on the frame's clock rather than the match's - the snowfall, which `updateFx` sways on
 `performance.now` and tops up off `fxRng`, so an ember's tint, the one draw that stream lends the
-sim, and the wade's look a draw pass eases on each body, `SAVE_FRAME_KEYS`). Step a match on a frozen page, `saveMatch`, keep stepping and hash; `loadSave` it onto a
+sim, and the wade's look a draw pass eases on each body, `SAVE_FRAME_KEYS`). Step a match on a frozen page, `saveCapture`, keep stepping and hash; `saveLoad` the record onto a
 page frozen from its first frame, step the same counts and hash: the two must agree at every
 count, across all three shapes, from a save made in the eagle's ride, early in play with the local
 human idle, and deep in a ten-bot match with hundreds of buildings and robots standing.
 
 ## Settings
 
-**The MULTIPLAYER plank** (js/ui/rooms.js) is CUSTOM GAMES, League's custom-game list in
-Graphite: the relay's open rooms as rows under GAME / MAP / PLAYERS / CODE heads, a relay pip
-top-right (green and breathing while the list socket is open, red and blinking while it is not)
-and, while the list is empty, one ghost of a row where the first room will stand. A row carries
-its host's game, its map, ten seat pips (five a side, the people in them lit in that side's
-paint - the relay lists a count per side), a red dot once its match is under way and its
-four-letter code (the thing a host reads aloud); a room on another patch is dimmed and inert with
-its patch printed where the code would be. A click picks a row, a second click or JOIN joins it;
-The CODE box top-right joins by a room's four letters: click it and type, or paste (Ctrl+V)
-anywhere on the list - "code: ACKT" works, the word a listed room answers to wins - and a code
-no room answers to rattles the box. CREATE opens **the host page**: the room's options before the
-room exists, one row each with its value between two chevrons - MAP (the shape), VALLEY (the
-seed; either chevron rolls another), TEAMS (1V1 to 5V5: seats a side, the rest emptied,
-`seatsSize`) and BOTS (their level) - with BACK and CREATE at the foot. CREATE on this page's
-own world opens the room at once; another shape or seed reloads the page hosting on it
-(`?map&seed&net=host&back=1`), straight onto the room with TEAMS carried. It makes a room on
-the relay and opens it on **the room**,
-whose code top-right copies itself on a click (white for a moment), for a Discord message: both sides as two columns of five
-seats (a face, a name, the class or BOT, the class mark), your side on the left. A click on a
-seat across the rule moves you to that side and the bot or empty seat there takes your old one
-(the swap mark shows under the pointer); the host's pointer on a seat's far end shows a red X
-that shows a person out or empties a bot's seat, and a + that puts a bot back; the host's click on a
-bot's class mark turns that bot to the next class (`seatClass`), kept through a rematch. A guest's seat shows a green tick once it has said READY and
-bars for its link to the host (green, amber, red as the round trip grows). The options read under
-the title (MAP, VALLEY, TEAMS as the seats each side has filled, yours first, and BOTS); the host
-clicks TEAMS or BOTS to turn it a step (or walks up off the top seat onto them with the keys),
-and a joiner takes a bot's seat on a side already at that size, so TEAMS holds. A side's count
-reads its people over its open seats. After BOTS the host has SHUFFLE, which deals the people
-afresh, alternately to each side (`seatsShuffle`). Under the seats is the room's chat
-(js/ui/roomtalk.js): the last four lines, each a name in its side's paint, over a plate showing
-an ENTER key cap and a speech bubble; Enter (while the keys are not walking the seats) or a click
-on the plate starts a line, Enter sends it, Esc drops it. In a Steam lobby INVITE stands where a
-relay room's code would and opens Steam's friends overlay on the lobby; a friend's invite taken
-up, or Steam's Join Game on a friend in a room, joins that lobby. A screen that is not in focus
-when someone joins, a chat line lands or the count starts flashes its taskbar button (the
-wrapper) or marks its tab's title with a star (a browser) until it is looked at. LEAVE, and a
-guest's READY or the host's START, which stays dim and flashes the seats it waits on until every
-guest is ready, then counts 3, 2, 1 on every screen as one big gold digit where the words were
-(the host's Esc calls it off) and takes everyone into the match, each class as it came: there is
-no pick for now (Noah, 2026-10-14). The
-**pick** - the lobby, still reached by a 'pick' phase and nothing in a room sends one now, which every peer
-sees as the host does, with the room's code on a 2x plate under the relay pip at the head of
-your side's roster, a crown over the host's card, a brighter rim on every person's card than a
-bot's, and a white flash with a cue on a card whose kind changed (someone came, or went). A
-guest sees it minus the two pop-ups off the map plate and the target and the character swap (its class came with it), and
-where LOCK IN would be a frozen plank wearing the host's name: the host's count comes over it and
-the eagle on the host's zero; the host's ESC there takes everyone back to the room. After the
-match LOBBY takes each screen back to the same room on a fresh valley, with the same code, the
-same people in the same seats and the same empty seats (the rematch, js/ui/rooms.js); a guest
-who presses it first waits on the list until the host's room is back. A guest whose
-host walks out of the waiting room, or who was shown out, is back on the list with a rattle; one whose host leaves mid-match gets the HOST LEFT end screen (a
-headline and a LOBBY plank over the frozen world, `hostleft` in DEAD_ITEMS, js/ui/screens.js),
-and one whose socket drops mid-match shows a red pip blinking top-centre until the transport
-redials (`drawNetLink`). Joining a room whose seed is not this page's reloads the page onto it
+**The party lobby** (js/ui/rooms.js, `menu.screen = 'room'`) is where QUICKPLAY, RANKED and
+PRACTICE TOOL on the title land: the page hosts its own party at once (`beginParty`: a room on the relay, or a
+Steam lobby) and NET.mode names the mode. One centred column, League's lobby in Graphite: the
+mode's name and "n / 5" at the head, the party's four-letter code top-right in gold (a click copies
+it, white for a moment) beside a relay pip, and in a Steam lobby INVITE beside it, which opens
+Steam's friends overlay. Five seats of your side: a face, a name, a READY tick, the rating in
+RANKED, a guest's link bars (green, amber, red as the round trip grows), a crown over the leader;
+an empty seat is a dotted well with a gold + that invites (the code copied, or Steam's overlay).
+The leader's pointer on a guest's seat end shows a red X that shows them out (`seatKick`). The
+rival side is never shown: until matchmaking pairs parties it is all bots. While you are alone
+the CODE box sits under the code: type or paste (Ctrl+V) a friend's four letters to join their
+party (`partySeek` looks the code up on the relay's list, or in a Steam lobby's data, which
+carries the same code: `steamCode`, js/net/transport-steam.js); a code nobody answers to
+rattles the box. Under the seats is the chat (js/ui/roomtalk.js): the last four lines, each a
+name in its side's paint, over a plate showing an ENTER key cap and a speech bubble; Enter or a
+click on the plate starts a line, Enter sends it, Esc drops it. At the foot LEAVE, and a guest's
+READY or the leader's FIND MATCH, dim and flashing the seats it waits on until every guest is
+ready (`partyFind`): every empty seat on both sides takes a bot and the whole party goes to the
+**hero select** (netPhase 'pick', the lobby, js/ui/menu.js), which every member sees as the
+leader does, with the code on a 2x plate at the head of your side's roster and a crown over the
+leader's card. Each member picks a hero on the row (`netPick`: a guest's press goes through the
+leader, js/net/net.js); a guest sees the leader's map and target but cannot press them, and
+where LOCK IN would be a frozen plank wearing the leader's name: the leader's count comes over
+it and the eagle on its zero; the leader's ESC takes everyone back to the party. RANKED keeps a
+rating per profile (`PROFILE.rank`, starts at 1000): a win adds RANK_STEP, a loss takes it
+(`rankResult`), and the bots' level is read off the party's average rating (`rankLevel`), so
+the target cannot be picked there. PRACTICE TOOL's leader has START in place of FIND MATCH
+(`partyPractice`): once every friend is READY the leader's page reloads onto the
+[practice arena](world.md#the-practice-arena) hosting the party's code, each guest is told
+(`practice`) and follows, joining while the leader's page comes up (`practiceBootHost`,
+`practiceBootJoin`). A friend can also type the code from their own party while the party is on
+the field, and lands straight on it (`joinRoom` reads the list's `practice` flag). The leader's
+LEAVE takes everyone back to the party on the title (the rematch: guests follow on hearing it,
+`rematchHeard`); a guest's LEAVE takes only them to the title. A screen that is not in focus when someone joins, a chat
+line lands or the count starts flashes its taskbar button (the wrapper) or marks its tab's
+title with a star (a browser) until it is looked at. After the match LOBBY takes each screen
+back to the same party on a fresh valley, same code, same people in the same seats (the
+rematch, js/ui/rooms.js); a guest who presses it first waits until the leader's party is back.
+A guest whose leader walks out of the party, or who was shown out, is back in a party of its
+own with a rattle; one whose leader leaves mid-match gets the HOST LEFT end screen (a headline
+and a LOBBY plank over the frozen world, `hostleft` in DEAD_ITEMS, js/ui/screens.js), and one
+whose socket drops mid-match shows a red pip blinking top-centre until the transport redials
+(`drawNetLink`). Joining a party whose seed is not this page's reloads the page onto it
 (`?seed=N&join=CODE`). Under the wrapper with Steam asked for (`netSteam()`, js/net/net.js) the
-same screen lists Steam's lobbies instead (`steamRooms`, js/net/transport-steam.js: the host
-writes its name, patch, seed, state and seat counts into the lobby's data), joined with the same
-click and with no code plate, since a lobby id is not for reading aloud. Which relay:
+party is a Steam lobby (`steamRooms`, js/net/transport-steam.js: the leader writes its name,
+patch, seed, state, seat counts and code into the lobby's data). Which relay:
 `netRelay()` (js/net/net.js) - `?relay=host:port` once,
 remembered with the settings (`settings.relay`), else the page's own host.
 
@@ -3557,7 +3419,7 @@ browser toggles it.
 
 **The panel is a flat, solid slab** (`bakeFlatSlab`: an ink outline, one quiet steel line, a flat
 night ground, never see-through) headed like the patch notes: its name big and gold with no rule
-under it (`drawSlabHead`), the SAVES slab in its place the same. A toggle is a switch (gold track, knob
+under it (`drawSlabHead`). A toggle is a switch (gold track, knob
 right when on), and the row under the pointer lifts as a band with its name white.
 
 **The panel is tabbed.** A navbar under the title splits the rows into four pages — GAME
@@ -3613,15 +3475,13 @@ flat buttons (`drawFlatButton`, their line and word gold under the pointer): **C
 button; ESC and the pad's B still fold the slab — and, in a match only, the way out beside it,
 LEAVE, out of the match or out of [practice](world.md#the-practice-arena) (the ESC
 slab is the one menu either has, so its exit lives there; the title's slide-in has nothing to
-leave, so it centres CLOSE alone). A solo match hangs **SAVES** between the two (while `canSave()`:
-the [saves grid](#saved-matches)). `settingsHit()` answers `'close'` (→ `settingsClose`: the
-in-match slab folds the way ESC folds it, the title's slide-in through `closeMenuPanel`),
-`'saves'` (→ `openSaves`, js/ui/saves.js) and
+leave, so it centres CLOSE alone). SURRENDER stands before LEAVE while your side may vote
+(js/sim/surrender.js). `settingsHit()` answers `'close'` (→ `settingsClose`: the
+in-match slab folds the way ESC folds it, the title's slide-in through `closeMenuPanel`), `'surrender'` and
 `'leave'` (→ `toLobby()`, js/ui/screens.js, the death screen's own fade back to the title on this
-seed, or `leavePractice()`, js/ui/menu.js, the reroll's whiteout onto a bare URL, landing on a fresh
-title world); `leavePlankRect()` is the LEAVE plank, `null` on the title. While the saves grid is
-up it stands in the panel's place: `renderSettings`, `settingsHit`, `settingsMouseDown` and
-`settingsKey` each hand straight to it, and Escape backs out of it before it folds the panel.
+seed, or back to the party for a party's leader on the practice field; anyone else there takes
+`leavePractice()`, js/ui/menu.js, the reroll's whiteout onto a bare URL, landing on a fresh
+title world); `leavePlankRect()` is the LEAVE plank, `null` on the title.
 
 **Mute is not a row.** It is a 9×9 speaker plate (`muteBtnRect`, `drawMuteBtn`) hard against the
 left end of the MASTER track on the AUDIO page — `muteBtnRect()` returns `null` on any other
@@ -3717,8 +3577,8 @@ default when 0; `EV_ANYWHERE` reaches every screen - the eagle's boom); a cue fo
 `sfxFor(p, 'cue')` (a step, a nock, a refusal, a status landing on *you*); a level gained is
 `sfxOwn(p, 'levelUp', 'pickup')` - one cue for the owner, another for bystanders in earshot.
 Shakes go the same way (`shakeFor(p, n[, q])`, `shakeAt(x, y, n[, r])`). The why, and the bare
-`SFX.cue()` outside the step, are CLAUDE.md's hard rule. Three cues still gate by hand on purpose, pending the plan's semantic events: the
-roost alarm (with its plate), the market's four (with theirs), and the two end-of-match songs.
+`SFX.cue()` outside the step, are CLAUDE.md's hard rule. Two cues still gate by hand on purpose, pending the plan's semantic events: the
+roost alarm (with its plate) and the two end-of-match songs.
 `SFX.stat(up)` is bare for a different reason and not an exception at all: `updateStatLedger`
 runs inside the step but is the LOCAL screen's own chrome, watching the local body's kit, and a
 client's snapshot moves those numbers for it.
@@ -3819,23 +3679,17 @@ low thump, so touching down off the eagle reads as weight rather than as an arro
 `yelp()` is a creature crying out under a hit it survived, and `monsterDie(kind)` takes the
 animal's kind — a wolf yelps where a rabbit squeals.
 
-**The market's four are notification cues, not world sounds**, and they are the one place a cue is
-deliberately *not* jittered: `market(up)` plays `spike` (a coin ding) or `crash` (a sad falling
-sigh) whole — the ding is spent in under half a second where the sigh sustains and sags for the
-best part of one, so the two are told apart by their *shape* and not only by their pitch —
-and `restock()` plays two clips as one cue — `freight`, a wagon pulling in, and `restock`, the
-bell over the new stock, scheduled `RESTOCK_RING` (0.9 s) behind it through `smp`'s own `delay`.
-The wagon runs its full 3.3 s, so it is still rolling under the bell, which is the point: the
-goods arrive, *then* they are laid out. Jitter on either half would blur the two beats into one
-noise, and a spike that could be mistaken for a crash is worse than no cue at all — these say a
-*direction*, like the plates they arrive with ([the market](#the-fish-and-berry-market)).
+**`buy()` is a notification cue, not a world sound**, and it is deliberately *not* jittered: it
+plays `buy` (a money ding) whole when a finished item lands in a slot (`buyItem`,
+js/sim/items.js), over the coin a part plays, so the purchase you saved for is told from a part by
+ear.
 
-**The notification layer is the market's rule generalised: the cues in the table below, most of them not a thing in
+**The notification layer is the buy ding's rule generalised: the cues in the table below, most of them not a thing in
 the world making a noise.** A stepped control, a panel, a countdown, a status landing on your own
 body and a warning from across the map all have to be told apart from each other *and* from the
 axes and bowstrings in the same instant, and that is exactly what the synth blips do badly — half
 of them are the same square wave two notes apart, which is why `pickup`/`place`/`swap` all read as
-"the UI answered" and nothing more. They are **unjittered** (`jitter: 0`) for the market's reason: each says
+"the UI answered" and nothing more. They are **unjittered** (`jitter: 0`) for the buy ding's reason: each says
 *this happened*, and a cue that arrives a little different every time reads as texture — but the
 two that *are* a body in the world, `bigHurt` and `botOut`, keep a 0.04 jitter.
 

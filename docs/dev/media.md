@@ -47,7 +47,7 @@ state; `DBG.directorKey('F9')` presses a key headless.
 | file | what it does |
 | --- | --- |
 | `browser.js` | finds Chrome, drives it headless over the DevTools protocol (`open`, `openGame`, `eval`, `inject`, `shot`) |
-| `stage.js` | page side, injected: `MEDIA.boot` flies the drop, cuts the local input, hides the HUD, sets zoom, weather and time; `park`, `track`, `mark`, `drive`; `M.speed` slows the sim (0 freezes it: `still` runs only the snow and the effects); logs hits and the sound cues heard near the camera |
+| `stage.js` | page side, injected: `MEDIA.boot` flies the drop, cuts the local input, hides the HUD, sets zoom, weather and time, and lifts the fog of war unless `o.fog`; `park`, `track`, `mark`, `drive`; `M.speed` slows the sim (0 freezes it: `still` runs only the snow and the effects); logs hits and the sound cues heard near the camera |
 | `rec.js` | records a scene: every frame as `fNNNN.png` plus `log.json` (`--dry` no pixels, `--at f,f` only those) |
 | `still.js` | one clean frame anywhere (`--find open` picks open snow under pines, `--player dx,dy` adds one for scale) |
 | `cut.py` | the editor: `cut.json` shots between beats, sharp camera moves, text, a freeze with a drain, the wishlist card; writes the mp4 and `map.json` |

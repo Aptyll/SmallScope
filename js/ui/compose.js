@@ -22,7 +22,7 @@ function renderUI(now) {
   // bar.
   const hudIn = hudInT(); // 0 away .. 1 home; a drop brief pins it at 0 for the tour
   const slide = 1 - hudIn;
-  const out = state.mode === 'dead' || !!ladderWatch; // the local wallet is moot once you are out, or only watching (js/ui/ladder.js)
+  const out = state.mode === 'dead'; // the local wallet is moot once you are out
 
   ctx.save();
   ctx.translate(0, Math.round(-slide * (MM_R * 2 + 40)));
@@ -34,8 +34,9 @@ function renderUI(now) {
   // intro slide down from above like the minimap, at its own size dial
   // (railSc), and stays up while you are out - who is up is what a spectator reads
   drawRailScaled(now, slide);
+  drawVotePanel(); // the surrender vote, under the rail (js/ui/vote.js)
 
-  // THE COUNTER WASHES THE FRAME (shopScrim, js/shop.js), and exactly what a
+  // THE COUNTER WASHES THE FRAME (shopScrim, js/ui/shop.js), and exactly what a
   // trade is made of stays lit above the wash: the counter itself, the corner
   // - the weapon shelf and the pack drawer a sale is dragged out of - the item
   // on the cursor, and the tooltip that prices what the pointer is on (drawn
@@ -62,7 +63,7 @@ function renderUI(now) {
   // pointer over everything, so it stays outside the scale and the slide.
   if (!out) drawHudScaled(now, Math.round(slide * HUD_SLIDE));
 
-  // the merchant's counter (js/shop.js): over the HUD like the character
+  // the merchant's counter (js/ui/shop.js): over the HUD like the character
   // sheet, with the pack open beside it to drag a sale out of - and lit,
   // with the corner, out of the wash the two of them stand in
   if (shop) {
@@ -79,13 +80,11 @@ function renderUI(now) {
   // the character panel (G): over the HUD, under the toasts and the tooltip
   if (!out && state.charOpen && !player.dead) drawCharPanel(now);
 
-  // the news plates, top-right under the minimap (the `notices` banner,
-  // js/ui/shop.js): the market's three and the roost under attack. Above the
-  // counter and the sheet on purpose: a price
-  // that moved while you were standing at the shop is exactly the news that
-  // must not arrive behind the panel it is about. They stay up while you are
-  // down, like the feed - the market does not stop for a death.
-  if (!ladderWatch) renderNotices(); // a watcher has no sheet or purse for them to be news to (js/ui/ladder.js)
+  // the news plates, top-right under the minimap (js/ui/notices.js): the
+  // roost under attack. Above the counter and the sheet on purpose, so the
+  // news never arrives behind a panel; they stay up while you are down,
+  // like the feed.
+  renderNotices();
 
   // arriving at a camp announces it, top centre: the name big, its
   // personality under it. Fades on the plate, so it uses the shadow font.

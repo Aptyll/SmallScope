@@ -9,7 +9,8 @@
 // fades: gold, seen by everyone near. A MISS's coin is grey, drops a few px
 // and fades: only the side that could have farmed the soldier sees it, and
 // only near it (COIN_MISS_R), so a fight's misses read to the players in
-// it and nobody across the map. Both are COIN_PX art at world 1x, on the
+// it and nobody across the map, and a rival's gold coin in the fog is not
+// drawn (inSight, js/sim/fog.js). Both are COIN_PX art at world 1x, on the
 // pixel grid - a coin is the farm's whole word, so it carries no text.
 const COIN_MISS_R = 200;   // px from the watched body a miss's coin is shown inside
 const COIN_HOP = 64, COIN_FALL = 170; // px/s up off a last hit, and px/s/s back down
@@ -50,6 +51,7 @@ function drawPops(ex, ey) {
     const t = (state.tick - c.tick) * TICK_DT;
     if (t < 0 || t > COIN_POP_T) continue;
     if (c.miss && (!vp || vp.team !== c.team || Math.hypot(vp.x - c.x, vp.y - c.y) > COIN_MISS_R)) continue;
+    if (!c.miss && vp && !inSight(vp.team, c)) continue; // a rival's last hit in the fog is not seen (js/sim/fog.js)
     const a = Math.min(1, 3 * (1 - t / COIN_POP_T)); // full for most of its life, then out
     const lift = c.miss ? -COIN_DROP * t / COIN_POP_T : COIN_HOP * t - COIN_FALL * t * t / 2;
     const grid = c.miss ? COIN_PX[0] : COIN_PX[Math.floor(t * COIN_SPIN) % COIN_PX.length];

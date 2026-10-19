@@ -137,6 +137,7 @@ function renderMinimap(now) {
   mmViewCtx.globalCompositeOperation = 'source-over';
   mmViewCtx.clearRect(0, 0, MM_R * 2, MM_R * 2);
   mmViewCtx.drawImage(mmCv, ptx - half, pty - half, half * 2, half * 2, 0, 0, MM_R * 2, MM_R * 2);
+  fogOverMap(mmViewCtx, now, ptx - half, pty - half, half * 2, half * 2, 0, 0, MM_R * 2, MM_R * 2); // the fog of war (js/draw/fog.js)
   mmViewCtx.globalCompositeOperation = 'destination-in';
   mmViewCtx.drawImage(mmMask(MM_R), 0, 0);
   ctx.drawImage(mmView, MM_CX - MM_R, MM_CY - MM_R);
@@ -152,13 +153,13 @@ function renderMinimap(now) {
   // rival buried past PRONE_MAP drops off it entirely - a dot that survived
   // the cover would make the whole thing pointless. Your own side never does.
   for (const r of robots) {
-    if (r.dead) continue;
+    if (r.dead || !fogShown(r, now)) continue;
     const dx = (r.x / TILE - ptx) * s, dy = (r.y / TILE - pty) * s;
     if (Math.hypot(dx, dy) > MM_R - 1) continue;
     drawMapUnit(ctx, MM_CX + dx, MM_CY + dy, TEAMS[skin(r.team)].mark, HUD_INK, 1, true, foeCue(r.team));
   }
   for (const p of players) {
-    if (p === vp || !p.active || p.dead || inAir(p)) continue;
+    if (p === vp || !p.active || p.dead || inAir(p) || !fogShown(p, now)) continue;
     if (p.team !== vp.team && p.markT <= 0 && concealOf(p) >= PRONE_MAP) continue; // a falcon-marked rival stays on it
     const dx = (p.x / TILE - ptx) * s, dy = (p.y / TILE - pty) * s;
     if (Math.hypot(dx, dy) > MM_R - 1) continue;

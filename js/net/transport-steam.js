@@ -14,11 +14,11 @@
 // who came and went through the lobby's chat updates, which the transport
 // turns into the same {t:'peer'} / {t:'gone'} the relay sends.
 //
-// A lobby's data is what the rooms screen lists (steamRooms below, polled
-// every STEAM_LIST_T s from the bridge): the host writes its name, patch,
-// seed, state and seat counts there (roomData, the same call the relay's
-// room takes), and a lobby without a `patch` key is somebody else's test on
-// the shared App ID and is not shown.
+// A lobby's data is what a typed code is looked up in (steamRooms below,
+// polled every STEAM_LIST_T s from the bridge): the host writes its name,
+// patch, seed, state, seat counts and the party's code there (roomData, the
+// same call the relay's room takes), and a lobby without a `patch` key is
+// somebody else's test on the shared App ID and is not counted.
 //
 // A text message goes as JSON on the RELIABLE channel, chunked above STEAM_CHUNK
 // into numbered text parts. The wire form's bytes (js/net/snapshot.js) go RAW,
@@ -39,7 +39,7 @@ const STEAM_FRAME_HDR = 7;
 const STEAM_MAGIC = 0xB1;        // a frame's first byte; JSON text starts with '{'
 const STEAM_PENDING = 16;        // sequences kept waiting for parts per peer before the oldest is given up
 const STEAM_LOBBY_MAX = 10;
-const STEAM_LIST_T = 2; // s between polls of the lobby list while the rooms screen is up
+const STEAM_LIST_T = 2; // s between polls of the lobby list while a code is being looked for
 // the parts of one frame: header + slice, seq/i/n as little-endian u16
 function steamFrames(u8, seq, payload) {
   const n = Math.max(1, Math.ceil(u8.length / payload)), out = [];
@@ -65,7 +65,8 @@ function steamTransport(lobbyId) {
         this.id = info.id;
         const l = await this.bridge.createLobby('public', STEAM_LOBBY_MAX);
         this.lobbyId = l.id; this.owner = l.owner;
-        await this.bridge.setLobbyData(l.id, { patch: PATCH_TXT, seed: String(SEED), map: String(MAP_TYPE), state: 'open', name: info.name || '' });
+        this.code = steamCode();
+        await this.bridge.setLobbyData(l.id, { patch: PATCH_TXT, seed: String(SEED), map: String(MAP_TYPE), state: 'open', name: info.name || '', code: this.code });
         this.wire();
         this.open = true;
       } catch (e) { this.error = String(e); }
@@ -139,7 +140,7 @@ function steamTransport(lobbyId) {
       p.done = true; p.s = null;
       this.queue.push({ peer: this.role === 'client' ? 'host' : from, bin });
     },
-    // what the rooms screen shows of this lobby (a host's call; values are strings in Steam's store)
+    // what the lobby list says of this lobby (a host's call; values are strings in Steam's store)
     roomData(data) {
       if (!this.open || this.role !== 'host' || !this.lobbyId) return;
       const d = {}; for (const k of Object.keys(data)) d[k] = typeof data[k] === 'string' ? data[k] : JSON.stringify(data[k]);
@@ -167,11 +168,23 @@ function steamTransport(lobbyId) {
   };
   return T;
 }
-// The rooms screen's feed of Steam lobbies, in the shape the relay's list
+// A party's CODE on Steam: four letters from the relay's alphabet (makeCode,
+// app/server.js), written into the lobby's data so a friend can type it
+// (partySeek, js/ui/rooms.js). A rematch's page keeps the party's (?code=).
+// Menu chance, never the sim's rng; two parties sharing one is rare, and a
+// seek then joins whichever it meets first.
+function steamCode() {
+  const q = /[?&]code=([A-Z]{4})\b/.exec(location.search);
+  if (q) return q[1];
+  const A = 'ABCDEFGHJKLMNPQRSTUVWXYZ'; // no I or O: a code is read aloud
+  let c = ''; for (let i = 0; i < 4; i++) c += A[Math.floor(Math.random() * A.length)];
+  return c;
+}
+// The party lobby's feed of Steam lobbies, in the shape the relay's list
 // sends (wsRooms, js/net/transport-ws.js): { room: lobby id, n: members,
-// data: { name, patch, seed, map, state, humans, sides } }, the numbers parsed
-// back out of Steam's string store. Polled while the screen is up; close()
-// stops it. Lobbies without a patch key are not this game's.
+// data: { name, patch, seed, map, state, humans, sides, code } }, the numbers
+// parsed back out of Steam's string store. Polled while a code is being
+// looked for; close() stops it. Lobbies without a patch key are not this game's.
 function steamRooms(cb) {
   const bridge = window.steamBridge;
   let timer = null, closed = false;
@@ -187,7 +200,7 @@ function steamRooms(cb) {
         const d = l.data || {};
         if (!d.patch) continue;
         let sides = [0, 0]; try { sides = JSON.parse(d.sides || '[0,0]'); } catch (e) {}
-        rooms.push({ room: l.id, n: (l.members || []).length, data: { name: d.name || '', patch: d.patch, seed: num(d.seed), map: num(d.map), state: d.state || 'open', humans: num(d.humans), sides } });
+        rooms.push({ room: l.id, n: (l.members || []).length, data: { name: d.name || '', patch: d.patch, seed: num(d.seed), map: num(d.map), state: d.state || 'open', humans: num(d.humans), sides, code: d.code || '', practice: num(d.practice) } });
       }
       if (!closed) cb(rooms, true);
     } catch (e) { if (!closed) cb([], false); }

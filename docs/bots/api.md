@@ -96,6 +96,7 @@ obs = {
     nav,                   // your last goTo: 'ok' | 'arrived' | 'fail' | null
                            // 'arrived' also beside a goal no path enters (a bird, a tree); 'fail' = no route
     lastCmd: { kind, tick, ok, why } | null,  // what came of your latest order
+    items,                 // your six item slots: an item id or null each
     atShop,                // standing at a merchant's counter
     orca,                  // s left on the orca's countdown over your head; -1 when it is not after you
   },
@@ -110,7 +111,7 @@ obs = {
   shots:    [{ x, y, vx, vy, team }],  // shots in flight near you
   flags:    [{ owner, type, tx, ty }], // your side's order markers
   merchants: [{ team, x, y, stall }],  // both merchants, always; stall: { tx, ty } | null
-  shop:     [{ sec, i, kind, id, price }] | null,  // the counter's stock, only while atShop
+  shop:     [{ id, part, price, from }] | null,  // every item, priced for you; only while atShop
   kills:    [{ victim, team, by, cause, tick, out }], // the kill feed since your last think
   team:     [{ from, say }],           // what teammates said since your last think
 }
@@ -121,6 +122,9 @@ obs = {
 - **Hidden rivals.** A rival buried past the point where it drops off the minimap is not listed,
   unless a falcon mark is on it. The game's own sight rule decides, the one every turret and wolf
   uses.
+- **The fog of war.** A rival player, a rival soldier or an animal outside your side's sight (a
+  circle round each of your heroes, soldiers and turrets, cut by stone; the woods hide a body
+  until one of you stands close) is not listed either - the same fog a human plays under.
 - **Birds.** `state` is `'fly' | 'dive' | 'down' | 'flee' | 'gone'`. A bird `'down'` is the
   objective: drive the rival one to `'flee'` and your side wins. `hp` is its nerve. `hitT` is
   seconds since it was last struck. `mouth` is where its spur meets the road: the way in.
@@ -139,8 +143,10 @@ obs = {
 - **The orca.** The ice inside the cistern at the middle is the orca's lake. Stand on it near
   the orca and it locks on: `me.orca` counts down from 4, and if it reaches 0 while you are still
   on that ice (a gate's sill is safe) the orca comes up and you go down, whatever your health.
-- **Shopping.** Walk to a merchant or its stall until `me.atShop`; `shop` then lists what is on
-  the shelf. Buy one with `cmd: { kind: 'shop', act: 'buy', sec, i }`.
+- **Shopping.** Walk to a merchant or its stall until `me.atShop`; `shop` then lists every item,
+  always on sale. `part` is true for a cheap part; a finished item names the parts it is built
+  `from`, and `price` already takes off the parts you hold. Buy with
+  `cmd: { kind: 'shop', act: 'item', id }`; it needs a free slot once its parts are used.
 
 ## The act
 
@@ -180,7 +186,8 @@ again on its side, exactly as it does a player's.
 | `{ kind: 'build', tx, ty, id, rot }` | place a building |
 | `{ kind: 'upgrade' \| 'repair' \| 'demolish', tx, ty }` | manage your side's building there (within 60 px) |
 | `{ kind: 'flag', tx, ty, id }` | plant your side's order marker (`id: null` lifts it) |
-| `{ kind: 'shop', act: 'buy', sec, i }` / `{ act: 'trade', good, dir }` / `{ act: 'sellAll' }` | at a merchant's counter |
+| `{ kind: 'recall' }` | channel home: 6 s standing still, then set down at your roost. Any move, shot, ability, roll or blow ends it |
+| `{ kind: 'shop', act: 'item', id }` / `{ act: 'sellItem', slot }` / `{ act: 'trade', good, dir, n }` / `{ act: 'sell', i }` | at a merchant's counter: buy an item, sell a slot, buy `n` or sell all of `fish`/`berry` (`dir` 1 or -1), sell bag cell `i` |
 
 ## The team channel
 

@@ -855,6 +855,7 @@ function flushWorldInk() {
 }
 
 function renderLighting(ox, oy, now) {
+  drawFog(ox, oy, now); // the fog of war, under the hour and the night (js/draw/fog.js)
   const dark = state.darkness;
   const day = 1 - dark;
 
