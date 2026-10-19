@@ -417,7 +417,7 @@ function abNetShot(p) {
 // The hook: thrown down the aim ray, it catches the first tree or rock near
 // the line (GRAP_ASSIST px either side - the assist, so a trunk half a tile
 // off the cursor still takes it) and starts the reel. The reel itself is a
-// movement branch in updatePlayer, held as long as the key is held; grapEnd
+// movement branch in playerMove (updatePlayer), held as long as the key is held; grapEnd
 // is every way it lets go, and where the cooldown starts - so a long ride and
 // an instant release cost the same. A hook that catches nothing costs
 // GRAP_MISS_CD instead of the full clock.
@@ -538,7 +538,7 @@ function abRush(p) {
   burst(p.x, p.y + 4, '#dfe8f4', 8, 45, 0.4, true);
   sfxAt('dodge', p.x, p.y);
 }
-// one step of the charge, called from updatePlayer's movement branch with the
+// one step of the charge, called from playerMove's movement branch with the
 // wall verdict for this frame. The first rival in the path is grabbed and
 // carried; the end of the line (or a wall) is where the slam happens.
 function rushStep(p, mv, dt) {

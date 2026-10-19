@@ -100,7 +100,7 @@ function tunFarSite(p, near) {
   }
   return null;
 }
-// the work key pressed fresh on a hole with a mate (updatePlayer, js/sim.js,
+// the work key pressed fresh on a hole with a mate (playerSwing, js/sim.js,
 // ahead of the swing): under it goes. True when it took the body.
 function tunnelEnter(p) {
   if (p.control === 'ai' || p.tunCd > 0 || p.prone || p.fallT > 0 || p.dodgeT > 0 || p.eatT > 0 ||

@@ -176,7 +176,7 @@ function breakFront(b, a) {
   return Math.max(0, Math.min(1, (a - b.warn - b.hold) / ICE_BREAK_FREEZE)) * ICE_BREAK_FRONT;
 }
 // is this world pixel a live break's open water - the one read a player's
-// feet take on a tile a break holds (the plunge, updatePlayer; the climb
+// feet take on a tile a break holds (the plunge, playerPlunge; the climb
 // out, nearestDryTile)
 function iceBreakWet(x, y) {
   for (const b of iceBreaks) {

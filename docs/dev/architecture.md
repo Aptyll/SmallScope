@@ -67,7 +67,7 @@ tags breaks the build silently: a missing global is `undefined` at call time, no
 | [js/ai-skill.js](../../js/ai-skill.js) | ~250 | shared scope, no `window.*` export | how well a bot plays: the difficulty levels and the skill layer, the hands between the ladder's decision and the input it writes |
 | [js/ai.js](../../js/ai.js) | ~990 | shared scope, no `window.*` export | the bot brain — a priority ladder writing the same input struct a human fills |
 | [js/bots/api.js](../../js/bots/api.js) | ~340 | `window.BOTS` | the bot API: a seat driven by a bot file behind a JSON boundary (observation in, input struct out), its transports and its library; js/bots/lib.js is the examples baked from bots/ ([docs/bots/](../bots/README.md)) |
-| [js/sim.js](../../js/sim.js) | ~1420 | shared scope, no `window.*` export | `update`/`updatePlay`/`updatePlayer`, the camera (`camX`/`camY`), fx aging, the snow |
+| [js/sim.js](../../js/sim.js) | ~1540 | shared scope, no `window.*` export | `update`/`updatePlay`/`updatePlayer` (and its named steps), the camera (`camX`/`camY`), fx aging, the snow |
 | [js/weather.js](../../js/weather.js) | ~260 | shared scope, no `window.*` export | the day's weather and the one wind field the sim and the draw read |
 | [js/shed.js](../../js/shed.js) | ~90 | shared scope, no `window.*` export | snow knocked off the pines by a gust's crest or a blow, raised in the sim and carried by `burst` |
 | [js/ai-callouts.js](../../js/ai-callouts.js) | ~190 | shared scope, no `window.*` export | bot callouts: when a bot tells its side something (HELP!, BIRD!, BEAR LOW!), the words of the brain's flag answers (ON IT), a grudge (YOU AGAIN), the anti-spam rules, `addCallout` |

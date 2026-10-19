@@ -828,7 +828,8 @@ const WADE_SHOVE = 40; // px/s of knockback that carries a bot into open water i
 // updatePlayer, at the end of this banner, is every body's step off its own
 // input. The walk inside it comes first, in pieces: the surface model's step for a body on its feet: the input accelerates
 // vx/vy, the surface sets the friction and the caps, and the body moves
-// against the tiles. updatePlayer runs it whenever nothing else owns the
+// against the tiles. Then the step's own named stretches (playerIntents to
+// playerTool), in the order updatePlayer runs them. playerMove runs the walk whenever nothing else owns the
 // velocity (a roll, a rush, the rope, a leap, the cable, the water), and a
 // client runs these same functions on its own body ahead of the host's word
 // (netPredict, js/net/net.js) - so they read only the body, its input and
@@ -940,15 +941,15 @@ function walkStep(p, dt, mx, my, len, onIce, kit) {
   if (mv.blockedY) p.vy = 0;
 }
 
-function updatePlayer(p, dt) {
-  const inp = p.input;
+// ---- updatePlayer's steps, in the order it runs them ------------------
+// Each is one named stretch of the body's step, and the order IS the step:
+// a stretch moved ahead of another changes what each reads, and the rand()
+// calls inside them draw on the sim's stream in exactly this order.
 
-  if (p.dead) { // out of the match: nothing it wants gets through
-    inp.dodge = inp.eatBerry = inp.eatFish = inp.useCard = false;
-    inp.ability = -1;
-    inp.cmd = null;
-    return;
-  }
+// what the controller asked for this step: a stun or a fish hoist first,
+// then the edge-triggered intents, each consumed where it lands
+function playerIntents(p, dt) {
+  const inp = p.input;
 
   // stunned: rolled through, or the wrong end of a tackle. Every intent is
   // dropped where it arrives rather than blocked at each action, so a human
@@ -993,37 +994,12 @@ function updatePlayer(p, dt) {
     const r = runCmd(p, c);
     p.lastCmd = { kind: String(c.kind), tick: state.tick, ok: r === true, why: typeof r === 'string' ? r : null };
   }
+}
 
-  // the class abilities' own clock: cooldowns, the cast landing, and every
-  // timed state one leaves on this body (js/abilities.js)
-  updateAbilities(p, dt);
-  if (p.dead) return; // a burn can finish the player in there; a body takes no more steps
-  // ...and the meal's clock beside it: the channel landing its heal, and the
-  // one cooldown a berry and a fish share (js/core.js)
-  updateEat(p, dt);
-  // ...and the pick's: the rock in reach mining itself (js/mining.js)
-  updateMine(p, dt);
-
-  // a stun, a fall, going prone or the cable takes a rider out of the saddle (js/wildlife.js)
-  rideCheck(p);
-  if (p.leapCd > 0) p.leapCd = Math.max(0, p.leapCd - dt);
-
-  // input - or the walk to the zipline holding the stick for the player
-  // (zipWalkStep, js/zipline.js: any input of their own ends it), which leaves
-  // lastMx/lastMy alone so the clip-on still reads the walk before the press
-  let mx = inp.mx, my = inp.my, auto = false;
-  if (p.zipWalk) { const w = zipWalkStep(p, dt); if (w) { mx = w.mx; my = w.my; auto = true; } }
-  const hd = walkHeading(p, mx, my, auto), len = hd.len;
-  mx = hd.mx; my = hd.my;
-
-  kbDecay(p, dt);
-
-  // ---- unified momentum: input accelerates vx/vy, the surface sets friction/caps
-  const ftx = Math.floor(p.x / TILE), fty = Math.floor((p.y + 4) / TILE);
-  const onIce = iceUnder(p);
-  const kit = kitOf(p);
-  walkSlide(p, inp.slide, dt, onIce, kit);
-
+// what owns the velocity this step, first come: the water, the roll, the
+// rush, the rope, the leap, the cable, else the feet (walkStep)
+function playerMove(p, dt, mx, my, len, onIce, kit) {
+  const inp = p.input;
   if (p.fallT > 0) {
     // floundering in an ice hole: no control until the climb-out
     p.fallT -= dt;
@@ -1114,9 +1090,9 @@ function updatePlayer(p, dt) {
   } else {
     walkStep(p, dt, mx, my, len, onIce, kit);
   }
+}
 
-  clampWorld(p);
-
+function playerPlunge(p) {
   // open water: standing over a carved ice hole plunges you in, and so does
   // the creek. An active dodge roll carries over both: a hole's one tile
   // easily, the creek's three only from its bank, so a roll that runs out over
@@ -1153,7 +1129,9 @@ function updatePlayer(p, dt) {
       damagePlayer(p, HOLE_FALL_DMG, 0, 0, null, g === 4 ? 'creek' : 'ice');
     }
   }
+}
 
+function playerCover(p, dt, ftx, fty, kit) {
   // ---- the cover -------------------------------------------------------
   // `hide` is the whole stealth state. Lying still on snow pulls it over you
   // over PRONE_BURY; crawling holds what you already have (concealOf discounts
@@ -1195,7 +1173,9 @@ function updatePlayer(p, dt) {
   }
   if (p.riseT > 0) p.riseT = Math.max(0, p.riseT - dt);
   p.hideFlash = Math.max(0, p.hideFlash - dt);
+}
 
+function playerStamina(p, dt, kit) {
   // dodge charges refill one at a time
   if (p.dodgeCharges < DODGE_CHARGES) {
     p.dodgeRegenT -= dt;
@@ -1212,7 +1192,11 @@ function updatePlayer(p, dt) {
     else p.stamGhost -= dt * 1.6;
     if (p.stamGhost < frac) p.stamGhost = frac;
   }
+}
 
+// the marks the body leaves: the crawl's furrow, the stride's prints (and the
+// walk's clock), the slide's carved double trail
+function playerTrails(p, dt, onIce) {
   const spNow = Math.hypot(p.vx, p.vy);
   // the crawl leaves a drag furrow instead of footprints: a broad flattened
   // trough with an elbow dimple alternating either side of it. It is a real
@@ -1281,7 +1265,13 @@ function updatePlayer(p, dt) {
       burst(p.x, p.y + 5, '#eef4fb', 1, 18, 0.3, true);
     }
   }
+}
 
+// the hands: the swing's clock and its hit, the work key, the hands' own
+// work and fishing. True when a fresh press took the body down a tunnel,
+// which ends its step there
+function playerSwing(p, dt) {
+  const inp = p.input;
   // swing
   p.swingCd = Math.max(0, p.swingCd - dt);
   if (p.swingT > 0) {
@@ -1297,11 +1287,15 @@ function updatePlayer(p, dt) {
   if (p.swingT <= 0 && p.swingCd <= 0) p.swing = SWING_BOW;
   // a tunnel's hole underfoot takes a FRESH press of the work key ahead of
   // the swing (js/tunnel.js) - a key held since before stays the swing's
-  if (inp.work && !p.tunE && tunnelEnter(p)) { p.tunE = true; return; }
+  if (inp.work && !p.tunE && tunnelEnter(p)) { p.tunE = true; return true; }
   p.tunE = !!inp.work;
   if (inp.work) tryWork(p); else autoWork(p);
   autoFish(p, dt);
+  return false;
+}
 
+function playerTool(p, dt) {
+  const inp = p.input;
   // the cycle: the cooldown a shot starts (toolCycle, js/tools.js) counts
   // down, and its end is the ONE gate between presses. It runs for every
   // player - dead or alive is already filtered above - so a bot recovers on
@@ -1356,6 +1350,60 @@ function updatePlayer(p, dt) {
     p.chargeT += dt;
     faceToward(p, inp.aimX - p.x, inp.aimY - p.y);
   }
+}
+
+function updatePlayer(p, dt) {
+  const inp = p.input;
+
+  if (p.dead) { // out of the match: nothing it wants gets through
+    inp.dodge = inp.eatBerry = inp.eatFish = inp.useCard = false;
+    inp.ability = -1;
+    inp.cmd = null;
+    return;
+  }
+
+  playerIntents(p, dt);
+
+  // the class abilities' own clock: cooldowns, the cast landing, and every
+  // timed state one leaves on this body (js/abilities.js)
+  updateAbilities(p, dt);
+  if (p.dead) return; // a burn can finish the player in there; a body takes no more steps
+  // ...and the meal's clock beside it: the channel landing its heal, and the
+  // one cooldown a berry and a fish share (js/core.js)
+  updateEat(p, dt);
+  // ...and the pick's: the rock in reach mining itself (js/mining.js)
+  updateMine(p, dt);
+
+  // a stun, a fall, going prone or the cable takes a rider out of the saddle (js/wildlife.js)
+  rideCheck(p);
+  if (p.leapCd > 0) p.leapCd = Math.max(0, p.leapCd - dt);
+
+  // input - or the walk to the zipline holding the stick for the player
+  // (zipWalkStep, js/zipline.js: any input of their own ends it), which leaves
+  // lastMx/lastMy alone so the clip-on still reads the walk before the press
+  let mx = inp.mx, my = inp.my, auto = false;
+  if (p.zipWalk) { const w = zipWalkStep(p, dt); if (w) { mx = w.mx; my = w.my; auto = true; } }
+  const hd = walkHeading(p, mx, my, auto), len = hd.len;
+  mx = hd.mx; my = hd.my;
+
+  kbDecay(p, dt);
+
+  // ---- unified momentum: input accelerates vx/vy, the surface sets friction/caps
+  // (the tile the step starts on, before anything moves the body: the cover
+  // reads the ground the body was lying on), before anything moves the body: the cover
+  // reads the ground the body was lying on
+  const ftx = Math.floor(p.x / TILE), fty = Math.floor((p.y + 4) / TILE);
+  const onIce = iceUnder(p);
+  const kit = kitOf(p);
+  walkSlide(p, inp.slide, dt, onIce, kit);
+  playerMove(p, dt, mx, my, len, onIce, kit);
+  clampWorld(p);
+  playerPlunge(p);
+  playerCover(p, dt, ftx, fty, kit);
+  playerStamina(p, dt, kit);
+  playerTrails(p, dt, onIce);
+  if (playerSwing(p, dt)) return; // gone down a tunnel: under the snow, the step ends
+  playerTool(p, dt);
 
   p.hurtT = Math.max(0, p.hurtT - dt);
   p.faceT = Math.max(0, p.faceT - dt);

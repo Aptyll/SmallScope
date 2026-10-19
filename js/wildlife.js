@@ -1074,7 +1074,7 @@ function rideLeap(p) {
   sfxAt('dodge', p.x, p.y);
   burst(p.x, p.y + 4, '#dfe8f4', 5, 30, 0.3, true);
 }
-// one step in the air (updatePlayer's movement ladder). A leap never comes
+// one step in the air (playerMove, updatePlayer's movement ladder). A leap never comes
 // down ON a trunk: over one at the end, it stays up (up to RIDE_LEAP_HOLD)
 // and carries on until it is clear
 function rideLeapStep(p, dt) {
