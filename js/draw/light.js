@@ -963,7 +963,7 @@ function litShots(ox, oy, now, dark) {
   const s = 0.20 + dark * 0.55; // barely there at noon, a real lantern at night
   ctx.globalCompositeOperation = 'lighter';
   for (const a of arrows) {
-    if (!a.lit) continue;
+    if (!a.lit || !fogShown(a)) continue; // a rival's flame in the fog lights nothing you see
     const r = a.lit * (1 + Math.sin(now * 11 + a.x) * 0.06);
     const lx = a.x - ox, ly = a.y - oy;
     if (lx < -r || ly < -r || lx > WV_W + r || ly > WV_H + r) continue;

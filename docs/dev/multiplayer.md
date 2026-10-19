@@ -1136,6 +1136,12 @@ what the rest of the code needs to know is this:
   record it (`evPush`; `burst` and the floaters record themselves); the ring rides out with the
   snapshot and the client replays each entry against its *own* player (`evPlay`). A bare
   `if (p === player) SFX.cue()` in the step is a sound no client hears.
+- **A client holds only what its side sees.** The host cuts each peer's snapshot and cosmetics
+  for its side's [fog](gameplay.md#fog-of-war): a rival soldier, creature or shot out of sight is
+  not in the client's arrays, and a rival player out of sight has `fogHid` set with every field
+  but the rail's and scoreboard's (`SNAP_FOG_KEEP`) left at its last-seen value. Anything on a
+  client that reads a rival's place asks `fogShown` or `inSight` first, never `p.x` bare; a new
+  field the rail or scoreboard shows about rivals joins `SNAP_FOG_KEEP`.
 - **What is still the host's screen.** `aiProfile` deals the ally profile to the *host's*
   `player.team` and the rival profile to the other side, so a client on the far team plays beside
   rival-grade bots; `aiSituation`'s `human` flag, `aiRank`'s skip and the escort's ward are the

@@ -129,9 +129,35 @@ function snapIsToken(v) { return v !== null && typeof v === 'object' && typeof v
 function snapResolve(v, seen) {
   if (v === null || typeof v !== 'object' || seen.has(v)) return;
   seen.add(v);
-  if (Array.isArray(v)) { for (let i = 0; i < v.length; i++) { if (snapIsToken(v[i])) v[i] = snapDeref(v[i]); else snapResolve(v[i], seen); } return; }
+  if (Array.isArray(v)) { for (let i = 0; i < v.length; i++) { if (snapIsToken(v[i])) v[i] = snapDerefAt(v, i, v[i]); else snapResolve(v[i], seen); } return; }
   if (v instanceof Map || v instanceof Set || ArrayBuffer.isView(v)) return;
-  for (const k of Object.keys(v)) { const c = v[k]; if (snapIsToken(c)) v[k] = snapDeref(c); else snapResolve(c, seen); }
+  for (const k of Object.keys(v)) { const c = v[k]; if (snapIsToken(c)) v[k] = snapDerefAt(v, k, c); else snapResolve(c, seen); }
+}
+// A token naming an entity this side was not sent (in the fog: the `fog`
+// banner) resolves to null, and is kept here by its holder and key: when the
+// entity comes into sight (sent whole, the field that names it unchanged on
+// the host and so never sent again), snapPendRetry puts the link back. A
+// holder whose field has been written since is dropped; the oldest go past SNAP_PEND_MAX
+const SNAP_PEND_MAX = 2048;
+const snapPending = new Map(); // holder -> Map(key -> token)
+function snapDerefAt(holder, key, t) {
+  const e = snapDeref(t);
+  if (!e) {
+    let m = snapPending.get(holder);
+    if (!m) { m = new Map(); snapPending.set(holder, m); if (snapPending.size > SNAP_PEND_MAX) snapPending.delete(snapPending.keys().next().value); }
+    m.set(key, t);
+  }
+  return e;
+}
+function snapPendRetry() {
+  for (const [holder, m] of snapPending) {
+    for (const [key, t] of m) {
+      if (holder[key] !== null) { m.delete(key); continue; } // written since: the host's newer word stands
+      const e = snapDeref(t);
+      if (e) { holder[key] = e; m.delete(key); }
+    }
+    if (!m.size) snapPending.delete(holder);
+  }
 }
 function snapB64(u8) { let s = ''; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return btoa(s); }
 function snapUnB64(b) { const s = atob(b), u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i); return u; }
@@ -152,12 +178,14 @@ function snapSingles() {
   s.nets = pack(nets, 0);
   return s;
 }
-function snapBuild() {
+// `team` (0 or 1): only what that side sees (the `fog` banner); left out, everything
+function snapBuild(team) {
   const s = Object.assign({ v: 2, players: [], objects: {}, structs: [] }, snapSingles());
-  for (const p of players) s.players.push(packEnt(p));
+  const hid = team === 0 || team === 1 ? snapFogHid() : null, fog = hid ? hid[team] : null;
+  for (const p of players) { const o = packEnt(p); s.players.push(fog && fog.P.has(p.id) ? snapFogStub(o) : o); }
   for (let i = 0; i < objects.length; i++) if (objects[i]) s.objects[i] = pack(objects[i], 0, true);
   for (const o of structures) s.structs.push(idx(o.tx, o.ty));
-  for (const k in SNAP_KINDS) s[k] = SNAP_KINDS[k]().map((e) => packEnt(e, k));
+  for (const k in SNAP_KINDS) s[k] = SNAP_KINDS[k]().filter((e) => !(fog && fog[k] && fog[k].has(snapNid(e)))).map((e) => packEnt(e, k));
   s.eagles = state.drop ? state.drop.eagles.map((e) => pack(e, 0, true)) : [];
   s.ground = snapB64(ground);
   return s;
@@ -259,6 +287,7 @@ function snapApplyTiles(s) {
 // registered under the id the host dealt it. Tokens are resolved last, once
 // everything they can name exists again.
 function snapApply(s) {
+  snapPending.clear(); // everything is resolved afresh below
   snapApplySingles(s);
   const tiles = snapApplyTiles(s) || {};
   for (const k in SNAP_KINDS) {
@@ -268,6 +297,7 @@ function snapApply(s) {
   }
   for (let i = 0; i < players.length; i++) {
     const src = s.players[i], p = players[i];
+    if (!('fogHid' in src)) delete p.fogHid; // in sight again: what the stub froze is about to be overwritten
     for (const k of Object.keys(src)) if (k !== '_nid') snapAssign(p, k, unpack(src[k]));
   }
   if (state.drop) {
@@ -347,7 +377,7 @@ function snapHistoryPush() {
   const have = sh.byTick.get(tick);
   if (have) return have;
   const p = sh.hist.length ? sh.hist[sh.hist.length - 1] : null; // the previous entry
-  const h = { tick, ents: {}, order: {}, orderKey: {}, chg: {}, gone: {}, orderMoved: {}, eagles: [], eagleChg: [], singles: null, singlesJs: {}, singlesChg: {}, structs: '', structsMoved: false, tiles: null, groundCh: null };
+  const h = { tick, ents: {}, order: {}, orderKey: {}, chg: {}, gone: {}, orderMoved: {}, eagles: [], eagleChg: [], singles: null, singlesJs: {}, singlesChg: {}, structs: '', structsMoved: false, tiles: null, groundCh: null, hid: null };
   const namesOf = (f) => { const n = new Set(Object.keys(f)); if (f.$del) { n.delete('$del'); for (const k of f.$del) n.add(k); } return n; };
   for (const kind of ['P', ...Object.keys(SNAP_KINDS)]) {
     const arr = kind === 'P' ? players : SNAP_KINDS[kind]();
@@ -366,6 +396,7 @@ function snapHistoryPush() {
     h.ents[kind] = m; h.order[kind] = order; h.orderKey[kind] = order.join(',');
     h.chg[kind] = chg; h.gone[kind] = gone; h.orderMoved[kind] = !p || p.orderKey[kind] !== h.orderKey[kind];
   }
+  h.hid = snapFogHid(); // what each side cannot see at this tick (the `fog` banner)
   h.eagles = state.drop ? state.drop.eagles.map((e) => pack(e, 0, true)) : [];
   for (let i = 0; i < h.eagles.length; i++) { const prev = p ? p.eagles[i] : null; const f = snapFieldDiff(h.eagles[i], prev); if (f) h.eagleChg[i] = prev ? namesOf(f) : null; }
   h.singles = snapSingles();
@@ -421,16 +452,18 @@ function snapHistoryAt(tick) { return snapShadow.byTick.get(tick) || null; }
 // entry after the base touched, as it stands now (base null: from nothing -
 // everything, the first send). `d.base` names the base tick (-1 for
 // nothing) so a client can refuse a delta built on a state it never had.
-function snapDeltaFrom(h, base) {
+// `team` (0 or 1) cuts it for that side's eyes only (snapFogCut); left out, everything.
+function snapDeltaFrom(h, base, team) {
   const d = { v: 2, tick: h.tick, base: base ? base.tick : -1 };
+  const fogT = team === 0 || team === 1 ? team : -1;
   const sh = snapShadow;
   const after = base ? sh.hist.slice(sh.hist.indexOf(base) + 1) : null; // the entries after the base, oldest first
   // the fields of `packed` named by `names`, present ones by value, absent ones as $del
   const pick = (packed, names) => { let f = null, del = null; for (const k of names) { if (k in packed) (f = f || {})[k] = packed[k]; else (del = del || []).push(k); } if (del) (f = f || {}).$del = del; return f; };
   for (const kind of ['P', ...Object.keys(SNAP_KINDS)]) {
-    const now = h.ents[kind];
-    let ch = null, del = null, order = !base;
-    if (!base) { for (const [n, packed] of now) (ch = ch || []).push([n, packed]); }
+    const now = h.ents[kind], hidNow = fogT >= 0 && h.hid ? h.hid[fogT][kind] : null;
+    let ch = null, del = null, order = !base, whole = null;
+    if (!base) { for (const [n, packed] of now) { if (!hidNow || !hidNow.has(n)) (ch = ch || []).push([n, packed]); else if (kind === 'P') (ch = ch || []).push([n, snapFogStub(packed)]); } }
     else {
       const names = new Map(); // id -> Set of names, or null for whole
       for (const e of after) {
@@ -438,6 +471,7 @@ function snapDeltaFrom(h, base) {
         for (const n of e.gone[kind]) if (!names.has(n)) names.set(n, new Set()); // touched: gone at some point
         if (e.orderMoved[kind]) order = true;
       }
+      if (fogT >= 0) { const out = { ch: [], del: [], whole: [] }; if (snapFogCut(kind, h, base, after, fogT, names, out)) order = true; if (out.ch.length) ch = out.ch; if (out.del.length) del = out.del; if (out.whole.length) whole = out.whole; }
       for (const [n, ns] of names) {
         const packed = now.get(n);
         if (!packed) { (del = del || []).push(n); continue; }
@@ -448,7 +482,8 @@ function snapDeltaFrom(h, base) {
     const k = {};
     if (ch) k.ch = ch;
     if (del) k.del = del;
-    if (order) k.order = h.order[kind];
+    if (whole) k.whole = whole;
+    if (order) k.order = hidNow && kind !== 'P' ? h.order[kind].filter((n) => !hidNow.has(n)) : h.order[kind];
     if (ch || del || order) d[kind] = k;
   }
   // the eagles, by team
@@ -536,12 +571,12 @@ function snapApplyDelta(d) {
     for (const k of Object.keys(f)) { if (k === '$del') { for (const kk of f.$del) delete e[kk]; } else snapAssign(e, k, unpack(f[k])); }
     changed.push([e, f]);
   };
-  if (d.P) { if (d.P.ch) for (const [n, f] of d.P.ch) applyFields(players[n], f); }
+  if (d.P) { const w = d.P.whole ? new Set(d.P.whole) : null; if (d.P.ch) for (const [n, f] of d.P.ch) { if (w && w.has(n)) snapFogWhole(players[n], f); applyFields(players[n], f); } }
   for (const k in SNAP_KINDS) {
     const dk = d[k]; if (!dk) continue;
-    const arr = SNAP_KINDS[k](), m = snapMaps[k];
+    const arr = SNAP_KINDS[k](), m = snapMaps[k], w = dk.whole ? new Set(dk.whole) : null;
     if (dk.del) for (const n of dk.del) m.delete(n);
-    if (dk.ch) for (const [n, f] of dk.ch) { let e = m.get(n); if (!e) { e = {}; snapNidSet(e, n); m.set(n, e); } applyFields(e, f); }
+    if (dk.ch) for (const [n, f] of dk.ch) { let e = m.get(n); if (!e) { e = {}; snapNidSet(e, n); m.set(n, e); } if (w && w.has(n)) snapFogWhole(e, f); applyFields(e, f); }
     if (dk.order) { arr.length = 0; for (const n of dk.order) { const e = m.get(n); if (e) arr.push(e); else lost = true; } }
   }
   if (d.eagles && state.drop) for (const [i, f] of d.eagles) { const e = state.drop.eagles[i] || (state.drop.eagles[i] = {}); snapEagleFields(e, f); changed.push([e, f]); }
@@ -551,7 +586,89 @@ function snapApplyDelta(d) {
   for (const i of Object.keys(tiles)) if (objects[i]) snapResolve(objects[i], seen);
   if (d.nets) snapResolve(nets, seen);
   if (d.state) { snapResolve(state.end, seen); snapResolve(state.eagleCine, seen); }
+  snapPendRetry();
   return lost ? null : changed;
+}
+
+// ------------------------------------------------------------ fog
+// Each side is sent only what it sees (inSight, js/sim/fog.js), so a client
+// that reads its own memory finds no rival it could not see on its screen.
+// A rival soldier, a creature or a rival's shot out of a side's sight is
+// LEFT OUT for that side: gone from its arrays the tick it goes, sent whole
+// again the tick it comes back. A player cannot leave (the array is the
+// seats), so one out of sight goes as a STUB: `fogHid` set and only the
+// fields every screen shows about any rival whatever its place (the rail,
+// the scoreboard, the post-game lobby: SNAP_FOG_KEEP); every other field
+// the client holds stays as it was when last seen and is drawn nowhere
+// (fogShown and inSight answer no for a body with `fogHid`). A field the
+// rail or the scoreboard starts reading about rivals joins SNAP_FOG_KEEP,
+// or it shows the last-seen value while the rival is in the fog. Everything
+// not in SNAP_FOG_KINDS (the tiles, the drops, the fish, the eagles, the
+// clock) goes to both sides alike.
+//   The ring keeps each tick's hidden ids per side (snapFogHid); a cut from a
+// base for one side reads that side's sight at every entry after it, the
+// same union rule as the fields: a body that came into sight at any tick the
+// client may hold goes WHOLE (and `whole` names it, so keys the client still
+// holds from before are dropped), one that left it goes as gone.
+const SNAP_FOG_KEEP = new Set(['id', 'team', 'control', 'botId', '_name', 'look', 'cls', 'active', 'dead', 'eliminated', 'respawnT',
+  'level', 'xp', 'kills', 'deaths', 'hp', 'maxHp', 'items', 'lastDeath', 'hGold', 'hDmg', 'dmgOut', 'dmgIn', 'dmgBird', 'dmgStruct', ...Object.keys(PLAYER_RECORD)]);
+const SNAP_FOG_KINDS = ['P', 'R', 'A', 'W']; // players, robots, animals, shots
+// the ids each side cannot see now, per kind; null with the fog down
+function snapFogHid() {
+  if (!fogUp()) return null;
+  const out = [{}, {}];
+  for (const team of [0, 1]) for (const kind of SNAP_FOG_KINDS) {
+    const s = out[team][kind] = new Set();
+    if (kind === 'P') { for (const p of players) if (p.active && !inAir(p) && !inSight(team, p)) s.add(p.id); } // a body in the air is the flight's: everyone sees the bird
+    else for (const e of SNAP_KINDS[kind]()) if (!inSight(team, e)) s.add(snapNid(e));
+  }
+  return out;
+}
+// a hidden player's packed form: the fields every screen shows, and the flag
+function snapFogStub(packed) {
+  const o = { fogHid: 1 };
+  for (const k of Object.keys(packed)) if (SNAP_FOG_KEEP.has(k)) o[k] = packed[k];
+  return o;
+}
+// One kind's cut for side `team`, onto the plain cut's `names` (id -> the
+// names to send, or null for whole): every id hidden at any tick from the
+// base to now is taken out of `names` and settled here, into out.ch, out.del
+// and out.whole (an entry with the fog down hides nothing: the tick it lifts,
+// everything hidden before goes whole). True when the side's view of the
+// array moved (its order is owed)
+function snapFogCut(kind, h, base, after, team, names, out) {
+  const seq = [base, ...after];
+  const hidAt = (e) => (e.hid ? e.hid[team][kind] : null);
+  const flick = new Set();
+  for (const e of seq) { const s = hidAt(e); if (s) for (const n of s) flick.add(n); }
+  let moved = false;
+  for (const n of flick) {
+    const visAt = (e) => e.ents[kind].has(n) && !(hidAt(e) && hidAt(e).has(n));
+    const nowVis = visAt(h), anyVis = seq.some(visAt), ns = names.get(n), packed = h.ents[kind].get(n);
+    names.delete(n);
+    if (anyVis) moved = true;
+    if (nowVis) { out.ch.push([n, packed]); out.whole.push(n); continue; } // in sight now, out of it at some tick the client may hold
+    if (kind !== 'P') { if (anyVis) out.del.push(n); continue; }           // out of sight now: gone, if the client may have it
+    // a player out of sight now: the stub whole if the client may hold it in
+    // sight, else only the shown fields that changed
+    let f = null;
+    if (anyVis || ns === null) f = snapFogStub(packed);
+    else if (ns) for (const k of ns) if (SNAP_FOG_KEEP.has(k)) { if (k in packed) (f = f || {})[k] = packed[k]; else ((f = f || {}).$del = f.$del || []).push(k); }
+    if (f) out.ch.push([n, f]);
+  }
+  return moved;
+}
+// a body sent whole after the fog: the keys it does not carry left while the
+// client was not told (the per-machine ones stay: SNAP_SKIP, and the `_` easing)
+function snapFogWhole(e, f) {
+  for (const k of Object.keys(e)) if (!(k in f) && !SNAP_SKIP.has(k) && k[0] !== '_') delete e[k];
+}
+// a client's own build, for its check against a side's full form: each
+// player the host stubbed, stubbed here too
+function snapBuildSeen(full) {
+  const s = snapBuild();
+  s.players = s.players.map((p, i) => (full.players[i] && full.players[i].fogHid ? snapFogStub(p) : p));
+  return s;
 }
 
 // ------------------------------------------------------------ encode
@@ -723,6 +840,7 @@ function snapCompareLoose(a, b, path, out, max) {
   if (a === b) return;
   const ta = typeof a, tb = typeof b;
   if (ta === 'number' && tb === 'number' && Math.abs(a - b) <= 1) return;
+  if (b === null && snapIsToken(a) && !snapDeref(a)) return; // a link to a body this side is not sent (the `fog` banner)
   if (ta !== tb || a === null || b === null || ta !== 'object') { out.push(path + ': ' + JSON.stringify(a) + ' -> ' + JSON.stringify(b)); return; }
   const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
   for (const k of keys) if (!SNAP_LOOSE_SKIP.has(k)) snapCompareLoose(a[k], b[k], path + '.' + k, out, max);
