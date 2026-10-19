@@ -9,7 +9,7 @@
 // yours, or whoever steps up while you are busy - starts from what is left.
 // What a rock pays when the bar fills is its kind's row below: gold on the
 // spot, ORE that bursts out of it onto the snow for the pickup to take into
-// the bag, and a roll at a find (dropLoot, js/sim/tools.js). A mined rock stays
+// the bag. A mined rock stays
 // where it stood as rubble - it is still solid - and grows back after its
 // kind's `regrow`.
 //
@@ -20,17 +20,16 @@
 //   mine    - seconds of pick from nothing to broken
 //   gold    - paid on the spot (awardGold: gold only, never XP), before harvestMul
 //   ore     - how many of `item` burst out, [min, max]
-//   loot    - the chance of a find, at `lootTier` or below
 //   regrow  - seconds the rubble stands before the rock is back
 //   glint   - seconds between glints on its crystal (0: plain stone never glints)
 //   chip    - the colour of what flies off it
 //   lift    - px above the anchor's tile the rock's top stands (the prompt and the floaters)
 const ROCK_KINDS = [
-  { key: 'common',    name: 'STONE',            item: 'ironstone',  mine: 2, gold: 3,  ore: [3, 5], loot: 0.2, lootTier: 0,
+  { key: 'common',    name: 'STONE',            item: 'ironstone',  mine: 2, gold: 3,  ore: [3, 5],
     regrow: 120, glint: 0,   chip: '#a8b0c4', lift: 12 },
-  { key: 'rare',      name: 'FROSTGLASS SPIRE', item: 'frostglass', mine: 3, gold: 8,  ore: [1, 2], loot: 0.5, lootTier: 1,
+  { key: 'rare',      name: 'FROSTGLASS SPIRE', item: 'frostglass', mine: 3, gold: 8,  ore: [1, 2],
     regrow: 180, glint: 2.4, chip: '#8fd4f4', lift: 20 },
-  { key: 'legendary', name: 'SUNSTONE',         item: 'sunstone',   mine: 4, gold: 20, ore: [1, 1], loot: 1,   lootTier: 2,
+  { key: 'legendary', name: 'SUNSTONE',         item: 'sunstone',   mine: 4, gold: 20, ore: [1, 1],
     regrow: 300, glint: 1.2, chip: '#f4bc44', lift: 24 },
 ];
 const MINE_STRIKE = 0.5;   // s between the pick's bites while it works
@@ -208,7 +207,6 @@ function finishMine(p, o, K) {
   const n = K.ore[0] + Math.floor(rng() * (K.ore[1] - K.ore[0] + 1));
   const d = Math.hypot(p.x - cx, p.y - cy) || 1;
   for (let i = 0; i < n; i++) flingDrop(spawnDrop(cx + rand(-6, 6), cy + 2, K.item, 1), (p.x - cx) / d * ORE_FLING, (p.y - cy) / d * ORE_FLING);
-  dropLoot(cx, cy - 4, K.lootTier, K.loot);
 }
 // Letting go of the rock: out of reach, off your feet, dead. The progress
 // stays on the rock and closes slowly (tickRock) until a pick is back at it.

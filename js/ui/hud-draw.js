@@ -138,9 +138,7 @@ function tierPlate(type, lit) {
 // hatch stops a px inside the rim, so the rim stays one clean line. Called on
 // the drawn plate, under the icon; (y, h) are the plate's own, since a
 // hovered cell lifts and the counter's plate is shorter than its well. `g` is
-// the context to paint - the live HUD's unless a bake hands its own, which is
-// what lets the CONTROLS page's primer stamp this exact mark into a static
-// diagram.
+// the context to paint - the live HUD's unless a bake hands its own.
 function modPlate(type, r, y, h, g) {
   const id = type && bitIdOf(type);
   if (!id || !BITS[id] || BITS[id].proj) return;
@@ -551,116 +549,36 @@ function shelfWell(r, type, lit, rim) {
   ctx.fillStyle = tp.plate;
   ctx.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
 }
-// THE SHELF, DRAWN - the weapon and everything loaded in it, on screen the
-// whole match, so every mark on it has to survive being looked at for an
-// hour rather than for the second a hover lasted. Three marks, no words:
-//   * the WEAPON is the big well at the left end; its bits are the smaller
-//     wells after it, shots on the left and modifiers on the right, so what
-//     flies and what shapes it are told apart by where they sit.
-//   * the TIER is the rim's colour (tierPlate), a MODIFIER's well is hatched
-//     in that colour too (modPlate).
-//   * a LINE over the row runs from each modifier to every shot it powers, in
-//     the modifier's own colour, with an arrowhead into each - into the
-//     weapon well itself when no shot is loaded, since that is where the
-//     plain shot comes from. Every line lands on a shot at its own x, so none
-//     ever sits on another. Hover a cell and the lines that touch it stay
-//     lit while the rest dim.
-// ...and one event: every cell the last press SPENT flashes white and fades
-// (bitLitAt, js/sim/tools.js), its lines with it, so the left button teaches the
-// row it is firing.
-const SHELF_LINE_STEP = 4; // px between two lines landing on the same shot
+// THE SHELF, DRAWN - the class weapon and the six item slots, on screen the
+// whole match, so every mark on it has to survive being looked at for an hour
+// rather than for the second a hover lasted. No words: the weapon in its big
+// well wears its rate-of-fire sweep (the same hand the ability wells turn,
+// drawSweepCover, so the two clocks a press waits on read in one shape), and
+// each slot wears its item's icon on the shop's own rims - a part on the
+// bottom tier's, a finished item on the top tier's - so a glance tells how
+// far the build has come.
 function drawShelf(now) {
   if (!shelfUp()) return;
   const cell = shelfCell();
   const hov = mouse.inside ? shelfHit(mouse.x, mouse.y) : null;
-  const hovBit = hov && hov.kind === 'bit' ? hov.i : -1;
   // the plate the row stands on, flush with the view's left edge (so only
   // its right corners are cut), under everything the shelf draws
   const pl = shelfPlateRect();
   drawHudFrame(pl.x, pl.y, pl.w, pl.h, { corners: { tl: false, tr: true, bl: false, br: true } });
-  // the tool leads the row in its own bigger well. This is the weapon's one
-  // well, so it carries every tell the strip's used to: the refusal red
-  // (toolFlash) when a bit will not fit, and the SWEEP - the rate of fire,
-  // the same hand the ability wells turn (drawSweepCover), so the two clocks a
-  // press waits on read in one shape
-  const p = player, t = shelfCellRect(-1), red = toolFlash > 0;
-  ctx.save();
-  if (red) ctx.translate(((now * 40) | 0) % 2 ? -1 : 1, 0);
-  shelfWell(t, cell && cell.type, !!hov && hov.kind === 'tool', red ? '#c2465a' : null);
+  const p = player, t = shelfCellRect(-1);
+  shelfWell(t, cell && cell.type, !!hov && hov.kind === 'tool');
   if (cell) {
     drawItemIcon(cell.type, t, t.y, null, 2);
     if (p.nockT > 0) {
       drawSweepCover(t.x + 1, t.y + 1, t.w - 2, t.h - 2,
         Math.min(1, p.nockT / Math.max(0.01, toolCycle(p))), CD_SWEEP, CD_EDGE);
     }
-    // ...and the tool's own share of the row flash: a press never lights this
-    // cell, so a lit TOOL means one thing only - the body itself just changed
-    // under you (swapFx, js/sim/tools.js)
-    const tlit = bitLitAt(cell, -1);
-    if (tlit > 0) {
-      ctx.globalAlpha = 0.6 * tlit;
-      ctx.fillStyle = bitLitCol();
-      ctx.fillRect(t.x, t.y, t.w, t.h);
-      ctx.globalAlpha = 1;
-    }
   }
-  drawWellLit(t, 'slot', SHELF_SLOT); // ...and the pulse a weapon landing here wears
-  ctx.restore();
-  if (!cell) return;
-  const plan = toolPlan(cell);
-
-  // THE LINES, drawn before the cells so a cell's own rim closes over the
-  // tip of each arrowhead. The modifier nearest the shots takes the line
-  // nearest the row; every line runs LEFT from its stem to the first shot.
-  const rails = shelfRails(cell, plan), rowY = shelfRowY();
-  const cx = (i) => { const r = shelfCellRect(i); return r.x + (r.w >> 1); };
-  // where line d lands on shot j: the lines that reach j, spread
-  // SHELF_LINE_STEP apart about its centre, the nearer ones on the left
-  const land = (j, d) => {
-    const at = [];
-    rails.forEach((r, k) => { if (r.hits.indexOf(j) >= 0) at.push(k); });
-    return cx(j) + Math.round((at.indexOf(d) - (at.length - 1) / 2) * SHELF_LINE_STEP);
-  };
-  rails.forEach((rail, d) => {
-    const y = rowY - 3 - d * SHELF_LINE, x0 = cx(rail.i), y0 = shelfCellRect(rail.i).y;
-    const first = rail.hits[0], xl = land(first, d);
-    const hot = hovBit < 0 || hovBit === rail.i || rail.hits.indexOf(hovBit) >= 0;
-    const lit = bitLitAt(cell, rail.i);
-    ctx.globalAlpha = hot ? 1 : 0.35;
-    ctx.fillStyle = lit > 0.4 ? bitLitCol() : rail.col;
-    ctx.fillRect(x0 - 1, y0 - 2, 3, 2);           // a node on the modifier
-    ctx.fillRect(x0, y + 2, 1, y0 - y - 4);       // its stem
-    ctx.fillRect(x0 - 1, y + 1, 1, 1);            // the rounded corner
-    ctx.fillRect(xl + 2, y, x0 - xl - 3, 1);      // the run, left
-    for (const j of rail.hits) {
-      const tx = land(j, d), ty = shelfCellRect(j).y, end = j === first;
-      if (end) ctx.fillRect(tx + 1, y + 1, 1, 1); else ctx.fillRect(tx, y, 1, 1);
-      ctx.fillRect(tx, y + (end ? 2 : 1), 1, ty - y - (end ? 5 : 4));
-      ctx.fillRect(tx - 1, ty - 3, 3, 1); ctx.fillRect(tx, ty - 2, 1, 1); // the arrowhead
-    }
-    ctx.globalAlpha = 1;
-  });
-
-  for (let i = 0; i < cell.bits.length; i++) {
-    const r = shelfCellRect(i), id = cell.bits[i];
-    // the other end of a line: a hovered FITTING rims every shot it powers
-    // in its own colour, so the question is answered from either end
-    const hovId = hovBit >= 0 ? cell.bits[hovBit] : null;
-    const reached = hovId && !BITS[hovId].proj &&
-      plan.shots.some((s) => s.i === i && s.mods.indexOf(hovBit) >= 0);
-    shelfWell(r, id && bitType(id), hovBit === i, reached ? BITS[hovId].col : null);
-    if (id) {
-      modPlate(bitType(id), r, r.y);
-      drawItemIcon(bitType(id), r, r.y, null, 2);
-    }
-    const lit = bitLitAt(cell, i);
-    if (lit > 0) { // what the last press spent, still glowing - or the whole row, on a swap
-      ctx.globalAlpha = 0.6 * lit;
-      ctx.fillStyle = bitLitCol();
-      ctx.fillRect(r.x, r.y, r.w, r.h);
-      ctx.globalAlpha = 1;
-    }
-    drawWellLit(r, 'bit', i, SHELF_SLOT); // ...and a bit that just landed here
+  for (let i = 0; i < ITEM_SLOTS; i++) {
+    const r = shelfCellRect(i), id = p.items[i];
+    const lit = !!hov && hov.kind === 'item' && hov.i === i && !!id;
+    shelfWell(r, null, lit, id ? (lit ? '#9ca1aa' : TOOL_TIERS[isPart(id) ? 0 : 2].rim) : null);
+    if (id) shopIcon(itemIcon(id), r);
   }
 }
 
@@ -668,23 +586,13 @@ function drawShelf(now) {
 // might be dropped into. It wears its own tier plate, so the thing in your
 // hand is read exactly the way it is read in a cell.
 // The promise, on top of everything: which well the release would land in and
-// what it would do there. It asks the wells in the SAME order dragDrop
-// resolves in, so the ring can never point at a well the release would not
-// take. The strip's own weapon slot is left out on purpose - it is drawn under
-// the strip's size transform (drawHudScaled) while this pass is in plain view
-// space, and the shelf's tool well, which dragDrop tries first, is the one a
-// drag actually aims at.
+// what it would do there. Only a pack cell takes a carried item, so only a
+// pack cell is ringed (dropKindBag, the branch dragDropBag takes).
 function drawDropPromise() {
   if (!state.drag || !mouse.inside || shopHit(mouse.x, mouse.y)) return;
   // the ring is painted in screen space after the corner's bake, so a 1x
   // rect of the shelf or the drawer is mapped through the corner's size first
   const k = cornerSc(), sc = (r) => ({ x: Math.round(r.x * k), y: Math.round(r.y * k), w: Math.round(r.w * k), h: Math.round(r.h * k) });
-  const fh = shelfHit(mouse.x, mouse.y);
-  if (fh) {
-    if (fh.kind === 'bit') drawDropRing(sc(shelfCellRect(fh.i)), dropKindBit(SHELF_SLOT, fh.i));
-    else drawDropRing(sc(shelfCellRect(-1)), dropKindSlot(SHELF_SLOT));
-    return;
-  }
   const bh = bagHit(mouse.x, mouse.y);
   if (!bh || bh.kind !== 'cell') return;
   const r = bagCellRect(bh.i);

@@ -327,7 +327,7 @@ keeps them marked down, so the START that opened the slab does not close it (`pa
 While the pad owns the pointer `mouse.inside` is held true, so a mouse parked off the window
 never hides the pad's hand. `padActive()` — plugged in and touched within `PAD_IDLE` — is what
 the CONTROLS page reads, and what every **keybind indicator** reads: while it is true the HOP
-OFF cap, the work prompts, the strip's 1-4 and Q/F, the SHIFT plate, the flight HUD's two and
+OFF cap, the work prompts, the strip's 1-4 and Q/F, the flight HUD's two and
 the ESC BACK / CLOSE line under a slab all wear the pad's button instead of the key
 (`PAD_BIND`, keyed by action → `drawPadBind` / `drawBackHint`, js/ui/wheel.js; `drawDropBind`, eagle.js) —
 a change in `PAD_PLAY` is a row there.
@@ -993,7 +993,9 @@ The ladder:
    build ([`BOT_BUILDS`](gameplay.md#buying-and-selling)) at whichever counter it is standing at, a part or the whole
    item, through the same `input.cmd` a human's click sends, and when its purse covers the next
    whole item and it is out of a fight it walks to its own side's counter if that is within
-   `AI_SHOP_DETOUR` (12 tiles), which ends its ladder for that think. Then income, bought by payback (`aiEcoBuy`,
+   `AI_SHOP_DETOUR` (32 tiles; farther out it recalls, `aiRecall`), which ends its ladder for that think. With the slots full it sells
+   a stray part at the counter (`botStrayPart`: one no item left on its list is built from, a
+   chest's gift usually), and a stray it could sell counts as room for the walk. Then income, bought by payback (`aiEcoBuy`,
    js/ai/ai-team.js): a new generator, its own generator's next tier, or (the side's builder,
    `T.builder`, the most patient mood on the side, only) a bot bay, priced by the game's
    `buildCost` (each one the owner has costs 1.5× more) over the gold a minute it adds (a

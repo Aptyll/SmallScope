@@ -1457,11 +1457,10 @@ function cursorInfo() {
   if (sp) return { kind: sp === 'panel' || sp.kind === 'foodWell' ? 'arrow' : 'hand' };
   // the backpack widget: a hand over anything in it that does something, a
   // plain arrow over the rest of its frame (which still swallows the click).
-  // The weapon shelf standing on it is the other left-draggable HUD.
   const bh = bagHit(mouse.x, mouse.y);
   if (gearHit(mouse.x, mouse.y) >= 0 || (bh && bh.kind !== 'frame')) return { kind: 'hand' };
   if (bh) return { kind: 'arrow' };
-  if (shelfHit(mouse.x, mouse.y)) return { kind: 'hand' };
+  if (shelfHit(mouse.x, mouse.y)) return { kind: 'arrow' }; // read, not handled
   if (abBuyHit(mouse.x, mouse.y) >= 0) return { kind: 'hand' };
   const sh = stripHit(mouse.x, mouse.y);
   if (sh && (sh.kind === 'ab' || sh.kind === 'food' || sh.kind === 'fishPick')) return { kind: 'hand' };
