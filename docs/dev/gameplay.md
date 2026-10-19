@@ -3344,7 +3344,9 @@ human idle, and deep in a ten-bot match with hundreds of buildings and robots st
 **The party lobby** (js/ui/rooms.js, `menu.screen = 'room'`) is where QUICKPLAY, RANKED and
 PRACTICE TOOL on the title land: the page hosts its own party at once (`beginParty`: a room on the relay, or a
 Steam lobby) and NET.mode names the mode. One centred column, League's lobby in Graphite: the
-mode's name and "n / 5" at the head, the party's four-letter code top-right in gold (a click copies
+mode's name and "n / 5" at the head (the leader's name wears a gold step mark: a click, or the keys'
+cursor on it with left and right, turns the party to the next mode in place, `modeSwap`, and
+spends every guest's READY, since it was said to the old mode), the party's four-letter code top-right in gold (a click copies
 it, white for a moment) beside a relay pip, and in a Steam lobby INVITE beside it, which opens
 Steam's friends overlay. Five seats of your side: a face, a name, a READY tick, the rating in
 RANKED, a guest's link bars (green, amber, red as the round trip grows), a crown over the leader;

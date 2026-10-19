@@ -338,7 +338,7 @@ function roomInfo() {
 function roomInfoIn(msg) {
   if (msg.ready) NET.ready = new Set(msg.ready);
   if (msg.lvl !== undefined) NET.aiLevel = msg.lvl | 0;
-  if (msg.mode !== undefined) NET.mode = msg.mode;
+  if (msg.mode !== undefined && msg.mode !== NET.mode) { if (NET.mode) state.menu.modeFx = 0.25; NET.mode = msg.mode; } // the leader turned the mode: the head flashes
   if (msg.code) NET.code = String(msg.code);
   if (Array.isArray(msg.ranks)) NET.ranks = msg.ranks;
 }
