@@ -354,7 +354,7 @@ leave message (a leave is the transport's `gone`).
 
 ### The delta (`d`)
 
-Cut by `snapDeltaFrom(h, base)` and applied by `snapApplyDelta`. `{v, tick, base}` (`base` -1
+Cut by `snapDeltaFrom(h, base, team)` and applied by `snapApplyDelta`. `{v, tick, base}` (`base` -1
 for "from nothing"), then only what was touched since the base:
 
 | Key | Carries |
@@ -367,8 +367,18 @@ for "from nothing"), then only what was touched since the base:
 | `groundDiff` | a flat `[index, type, ...]`; each cell is `repaintGround`ed |
 | `structs` | the registry as tile indices, when it moved |
 
-Every client gets every player's every field, bag included: there is no per-recipient field
-policy yet.
+**Each side is sent only what it sees** (the `fog` banner, js/net/snapshot.js; the rule is
+[the fog of war](dev/gameplay.md#fog-of-war)). Each ring entry keeps the ids each side cannot see
+(`snapFogHid`); a peer's full form (`snapBuild(team)`) and its deltas are cut for its side
+(`netFogTeam`: its own, or everything once its bird is gone - a change of side is a full sync).
+A rival `R`/`A`/`W` out of sight is left out: `del` the tick it goes, sent whole (its id in the
+kind's `whole`, so keys left over from before are dropped) the tick it comes back, never in
+`order` while hidden. A rival player out of sight goes as a stub: `fogHid: 1` and only
+`SNAP_FOG_KEEP` (name, class, level, hp, kills and the rest of what the rail, the scoreboard and
+the post-game lobby show); every other field the client holds is the last-seen value and drawn
+nowhere. A link to a body the side was not sent resolves to null and is put back when it arrives
+(`snapPendRetry`). Within what a side sees, every player's every field goes, bag included: there
+is no per-recipient field policy beyond the fog.
 
 ### Events
 
@@ -376,7 +386,9 @@ policy yet.
 (cue at a place with a radius; `EV_ANYWHERE` reaches every screen), `sfxp` (cue for a player id),
 `sfxo` (owner cue / bystander cue), `shake` and `shakep` entries as `{k, a}`, recorded inside the
 step on the host (`evInStep` and `evRecord`, which is on only while there are peers; `EV_MAX` 1024
-per flush) and replayed by `evPlay` on a client against *its* player. Everything that changes
+per flush) and replayed by `evPlay` on a client against *its* player. A side's peers get only the
+`burst`, `stream`, `float` and last-hit `coin` entries raised where it sees, and the bot calls and
+missed coins meant for it (`netEvSeen`). Everything that changes
 state - a build, a ground change, a death, a respawn, a trade, the end of the match - arrives as
 snapshot state, not as an event, so a lost `snap` loses only cosmetics. Two wrinkles: a floater
 that carries a team's paint records the HOST's `skin()` colour, and `burst` draws off the sim's

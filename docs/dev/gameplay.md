@@ -1520,9 +1520,14 @@ js/draw/fog.js (the picture).
   that side's sight, and the soldier, hunt and bot-API loops ask `inSight` straight. So a bot's
   profile sight (up to 267 px) is capped by what its side can see, and a bot never shoots into
   the fog. The CLICK scheme's lock and acquire ask the same.
-- **Nothing is stored or sent**: it is all read off where things stand, so a client works out its
-  own side's view from its copy of the world. The host still sends every body to every client
-  (hiding them on the wire is separate, later work).
+- **Nothing is stored**: it is all read off where things stand. **Online, each side is sent only
+  what it sees** (the `fog` banner in js/net/snapshot.js): a rival soldier, creature or shot out of
+  a client's side's sight is not in its snapshot at all, and a rival player out of it comes as a
+  stub (`fogHid` and the fields the rail and scoreboard show). The puffs, streams, numbers and coins
+  raised out of a side's sight are left out of its cosmetics too (`netEvSeen`, asking `sightAt`).
+  A client draws the host's verdict: `inSight` and `fogShown` answer no for a body with `fogHid`.
+- **Shots and numbers.** A rival's arrow or rock in the fog is not drawn, nor its flame's light,
+  and a damage number raised in the fog is not shown (`fogShown` on the shot or the floater).
 
 ## Wildlife
 

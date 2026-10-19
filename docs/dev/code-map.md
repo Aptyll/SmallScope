@@ -497,7 +497,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | whether the fog is up at all | `fogUp` (`DBG.fog`) | `fog of war` |
 | a side's eyes, and a sight line meeting stone (built walls by tile, the cistern by its distance field) | `sightSources`, `sightEye`, `sightReach`, `sightWalls`, `sightWallAt` | `fog of war` |
 | the woods as brush | `inWoods`, `woodsHide` | `fog of war` |
-| what a side sees (the bots ask it, and `seenAt(p, range, team)` through it) | `inSight` | `fog of war` |
+| what a side sees (the bots ask it, and `seenAt(p, range, team)` through it), and the bare point test (the wire's cosmetics) | `inSight`, `fogEyesOf`, `sightAt` | `fog of war` |
 
 ## js/ai/ai-skill.js
 
@@ -601,7 +601,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | --- | --- | --- |
 | which role this screen plays, the transport interface and the loopback solo speaks through, who counts as a person, whether another screen shares the match (then nothing pauses it) | `NET`, `SNAP_EVERY`/`LATE_JOIN_T`/`RECONNECT_GRACE`/`IN_QMAX`/`IN_QWIN`, `isHuman`, `netShared`, `loopbackTransport`, `netSetup` | `net roles` |
 | which relay or transport a screen uses, the three doors the title opens (host, join, leave), a room's listing and the roster to every peer | `RELAY_DEFAULT`, `netRelay`, `netSteam`, `netTransportFor`, `netHost`, `netJoin`, `netLeave`, `netHostRoom`, `netHostRoster`, `netClientRoster` | `net roles` |
-| a host's half: inputs in (queued, one per peer per step, a press latched), HELLO / leave, the roster, the snapshot flush and the tile slices between flushes | `netHostStep`, `netInEdges`, `netHostHello`, `netHostFull`, `netHostLeave`, `netRoster`, `netHostFlush` | `host` |
+| a host's half: inputs in (queued, one per peer per step, a press latched), HELLO / leave, the roster, the snapshot flush and the tile slices between flushes, the side each peer is cut for and the cosmetics it may see | `netHostStep`, `netInEdges`, `netHostHello`, `netHostFull`, `netFogTeam`, `netEvSeen`, `netHostLeave`, `netRoster`, `netHostFlush` | `host` |
 | the party's moves: the page (seats or hero select) turned on every screen, a person shown out, a hero picked (a guest's through the leader) | `seatsOpen`, `netPhase`, `netClientPhase`, `seatKick`, `seatPick`, `netPick`, `NET.kicked`, `NET.phase` | `seats` |
 | the party's READY list, bot level, mode, code, ratings and pings, sent with every roster | `roomInfo`, `roomInfoIn`, `seatReady`, `netReady`, `PING_EVERY`, `PING_EASE`, `pingsHost`, `pongIn`, `NET.ready`, `NET.pings`, `NET.aiLevel`, `NET.mode`, `NET.code`, `NET.ranks`, `NET.botLv` | `room info` |
 | a client's half: its input out, welcome / full / snap in, the screen the local body calls for | `netClientStep`, `netClientHello`, `netClientWelcome`, `netClientApply`, `netClientMode` | `client` |
@@ -634,10 +634,11 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | Looking for | Start at | Banner |
 | --- | --- | --- |
 | the match's state as one plain object: which fields are skipped, which singletons ride | `SNAP_SKIP`, `SNAP_STATE` | `snapshot` |
-| network ids: a stable id per moving entity, refs as tokens, the pack and its inverse | `snapNids`, `snapMaps`, `snapNid`, `snapNidSet`, `snapKindOf`, `snapToken`/`snapDeref`, `packEnt`, `pack`/`unpack`/`snapResolve` | `snapshot` › `network ids` |
+| network ids: a stable id per moving entity, refs as tokens, the pack and its inverse, and a link to a body not sent yet put back when it is | `snapNids`, `snapMaps`, `snapNid`, `snapNidSet`, `snapKindOf`, `snapToken`/`snapDeref`, `packEnt`, `pack`/`unpack`/`snapResolve`, `snapPending`/`snapDerefAt`/`snapPendRetry` | `snapshot` › `network ids` |
 | building the full form and weighing it | `snapBuild`, `snapSize` | `snapshot` › `build` |
 | writing a full form back into the world | `snapApply` | `snapshot` › `apply` |
 | the ack-keyed delta: the shadow, the history ring, the cut from a base, the in-place apply | `HIST_KEEP`, `snapShadow`, `snapShadowReset`, `snapSame`, `snapFieldDiff`, `snapHistoryPush`, `snapTileScan` (a slice of the tiles; `netHostFlush` runs one each step between flushes), `snapHistoryAt`, `snapDeltaFrom`, `snapBuildDelta`, `snapTileSame`, `snapApplyDelta`, `snapAssign`/`SNAP_MERGE` | `delta` |
+| each side sent only what it sees: the hidden ids per tick, a hidden player's stub and the fields it keeps, one kind's cut for a side, a body sent whole after the fog, a client's build for its self-check | `SNAP_FOG_KEEP`, `SNAP_FOG_KINDS`, `snapFogHid`, `snapFogStub`, `snapFogCut`, `snapFogWhole`, `snapBuildSeen` (`snapBuild(team)`, `snapDeltaFrom(h, base, team)`) | `fog` (the rule: js/sim/fog.js) |
 | the bytes: the binary form, the shared key dictionary, the quantized positions and velocities | `SNAP_Q`, `SNAP_QPOS`, `SNAP_QUANT`, `snapQable`, `snapQi`, `snapQv`, `ENC_TAG`, `encDict`, `snapEncode`, `snapDecode` | `encode` |
 | the wire's proofs: the echo through the bytes, a run sent as deltas, the compare and its one tolerance | `snapBlank`, `snapFrame`, `snapCompare`, `snapCompareLoose`, `snapQuantize`, `netEcho`, `netEchoRun`, `netDeltaRun` | `the echo harness` (how to run them: [checklists](checklists.md#verifying-a-change); the design: [pvp-architecture](../pvp-architecture.md)) |
 
