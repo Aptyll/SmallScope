@@ -263,13 +263,10 @@ function keyPress(e) {
   if (directorKey(e)) return;
   if (state.mode === 'title') { menuKey(e); return; }
   if (state.mode === 'drop') {
-    // the map key raises the world map mid-flight, Esc puts it away; the map
-    // does not stop the sim, so the jump keys stay live under it. The lock
-    // inside dropJump refuses (and denies) a jump before the window - the
-    // repeat guard keeps a held key from machine-gunning that deny.
+    // the map key raises the world map mid-flight, Esc puts it away; nothing
+    // else is asked of a rider until the bird is down
     if (keyIs(e, 'map')) { state.mapOpen = !state.mapOpen; SFX.ui(state.mapOpen); return; }
     if (e.key === 'Escape') { if (state.mapOpen) SFX.ui(false); state.mapOpen = false; return; }
-    if ((keyIs(e, 'dodge') || e.key === 'Enter' || keyIs(e, 'work')) && !e.repeat) dropPress(); // the step performs it (updatePlay)
     return;
   }
   if (state.mode === 'dead') { deadKey(e.key.toLowerCase()); return; }
@@ -515,7 +512,7 @@ function pointerPress(button) {
   if (button === 1) { if (msOn()) msWheelPress(); return; } // the middle button is the MOUSE scheme's action wheel, and nobody else's
   if (button !== 0) return;
   if (state.mode === 'title') { menuClick(); return; }
-  if (state.mode === 'drop') { SFX.unlock(); if (!state.mapOpen) dropPress(); else if (mapCloseHit()) state.mapOpen = false; return; }
+  if (state.mode === 'drop') { SFX.unlock(); if (state.mapOpen && mapCloseHit()) state.mapOpen = false; return; }
   if (state.mode === 'dead') { SFX.unlock(); if (!voteClick()) deadClick(); return; }
   if (state.mode !== 'play') return;
   if (ckOn() && ck.arm) { ckArmedPress(); return; } // an armed attack-move: this press lays it
@@ -792,9 +789,9 @@ function ckRightPress() {
   const pt = ckPoint();
   if (!pt) return;
   const { wx, wy, tx, ty } = pt;
-  // riding or seated: the press is the hop, and the walk waits for the landing
-  if (state.mode === 'drop') { dropPress(); if (player.aboard) return; }
-  else if (player.aboard) ck.hop = true;
+  // riding in, the press waits for the landing; seated, it is the hop
+  if (state.mode === 'drop') return;
+  if (player.aboard) ck.hop = true;
   // on a zipline the press lets go of it, and walking to one it calls the
   // walk off; a press ON a drawn cable (zipUnder, js/sim/zipline.js - the
   // strand the hover lights) clips on under it or walks there and clips on

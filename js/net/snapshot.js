@@ -32,10 +32,9 @@
 // fills it), `ai` (the bot brain runs only on the host), `nav` (a route is
 // the mover's own business and the client moves nothing), and the `_`
 // fields the client's interpolation keeps (js/net/net.js). The eagle's
-// `spur` and `pad` are entries of the road registry (`spurs`, js/sim/world.js)
-// shared by identity, so the registry is a section of its own and an eagle
-// is re-pointed at its entry after the apply; its `lane` (the felling plan,
-// with clocks that advance) is merged into the object already there.
+// `pad` is an entry of the road registry (`pads`, js/sim/world.js) shared by
+// identity, so the registry is a section of its own and an eagle is
+// re-pointed at its entry after the apply.
 const SNAP_SKIP = new Set(['input', 'ai', 'nav', '_fx', '_fy', '_tx', '_ty', '_t0', '_nid',
   // ...and the sim's own bookkeeping that ticks every step and that no draw
   // pass reads: a client neither steps nor shows these, and each is a few
@@ -145,7 +144,7 @@ function snapSingles() {
   for (const k of SNAP_STATE) { const v = pack(state[k], 0); if (v !== undefined) s.state[k] = v; }
   for (const c of camps) s.camps.push({ repopT: c.repopT }); // the rest of a camp is written down by worldgen
   s.dropMeta = state.drop ? { firstFlight: state.drop.firstFlight } : null;
-  s.spurs = pack(spurs, 0); // the road registry: each side's paved spur and its crash pad
+  s.pads = pack(pads, 0); // the road registry: each side's crash pad
   s.holes = holes.slice();
   s.iceCracks = [...iceCracks.entries()];
   s.iceBreaks = iceBreaks.slice(); // plain numbers and tile lists: every screen rebuilds the pixels (js/sim/icebreak.js)
@@ -180,15 +179,15 @@ function snapApplySingles(s) {
     if (!s.dropMeta) state.drop = null;
     else { if (!state.drop) state.drop = { eagles: [], firstFlight: s.dropMeta.firstFlight }; state.drop.firstFlight = s.dropMeta.firstFlight; }
   }
-  if (s.spurs) {
-    // the road registry, merged by (team, pad) so an entry keeps its identity
+  if (s.pads) {
+    // the road registry, merged by team so an entry keeps its identity
     const keep = [];
-    for (const src of unpack(s.spurs)) {
-      let sp = spurs.find((q) => q.team === src.team && !!q.pad === !!src.pad);
+    for (const src of unpack(s.pads)) {
+      let sp = pads.find((q) => q.team === src.team);
       if (sp) { for (const k of Object.keys(sp)) delete sp[k]; Object.assign(sp, src); } else sp = src;
       keep.push(sp);
     }
-    spurs.length = 0; for (const sp of keep) spurs.push(sp);
+    pads.length = 0; for (const sp of keep) pads.push(sp);
   }
   if (s.holes) { holes.length = 0; for (const h of s.holes) holes.push(h); }
   if (s.iceCracks) { iceCracks.clear(); for (const [k, v] of s.iceCracks) iceCracks.set(k, v); }
@@ -212,18 +211,12 @@ function snapAssign(e, k, v) {
 }
 // an eagle's fields onto the object already there (the drop points at it)
 function snapEagleFields(e, src) {
-  for (const k of Object.keys(src)) {
-    const u = unpack(src[k]);
-    // the lane keeps its identity (its clocks are read by the object's own handle)
-    if (k === 'lane' && u && e.lane && typeof e.lane === 'object') { for (const kk of Object.keys(e.lane)) delete e.lane[kk]; Object.assign(e.lane, u); }
-    else e[k] = u;
-  }
+  for (const k of Object.keys(src)) e[k] = unpack(src[k]);
 }
 function snapEaglesRepoint() {
   if (!state.drop) return;
   for (const e of state.drop.eagles) {
-    if (e.spur) e.spur = spurs.find((q) => q.team === e.team && !q.pad) || e.spur;
-    if (e.pad) e.pad = spurs.find((q) => q.team === e.team && q.pad) || e.pad;
+    if (e.pad) e.pad = pads.find((q) => q.team === e.team) || e.pad;
   }
 }
 // the tiles and the ground: wholesale from the full form, where they changed
@@ -689,7 +682,7 @@ function snapBlank() {
   objects.fill(null); structures.length = 0;
   for (const k in SNAP_KINDS) SNAP_KINDS[k]().length = 0;
   nets.length = 0;
-  holes.length = 0; iceCracks.clear(); iceBreaks.length = 0; spurs.length = 0;
+  holes.length = 0; iceCracks.clear(); iceBreaks.length = 0; pads.length = 0;
   Object.assign(orca, ORCA_FRESH());
   for (const c of camps) c.repopT = 0;
   if (state.drop) for (const e of state.drop.eagles) for (const k of Object.keys(e)) if (!SNAP_SKIP.has(k) && k !== 'team') e[k] = typeof e[k] === 'number' ? 0 : null;
@@ -754,7 +747,7 @@ function snapQuantize() {
   };
   walk(players); for (const k in SNAP_KINDS) walk(SNAP_KINDS[k]());
   if (state.drop) walk(state.drop.eagles);
-  walk(objects); walk(nets); walk(spurs); walk(state.end); walk(state.eagleCine);
+  walk(objects); walk(nets); walk(pads); walk(state.end); walk(state.eagleCine);
 }
 // One echo: quantize, frame, snapshot, blank, apply, frame; the pixels that differ,
 // the frame's own noise (two renders of the same state, for anything that

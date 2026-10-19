@@ -23,11 +23,11 @@ const AI_ABIL_T = 0.5;    // s between ability rolls
 const AI_ANCHOR_R = 260;  // px round an anchor (its bird, the human) a rival is noticed from
 const AI_ANCHOR_D = 420;  // ...but never from farther than this
 const AI_HOLD = 96;       // px a hunter holds off the rival bird at (outside its gust)
-const AI_GATE = 128;      // px up the road from a spur's junction where a walk to a roost stages
-const AI_FORT_N = 3;      // turrets a side's guards keep standing along its spur
+const AI_GATE = 128;      // px up the road from a base's junction where a walk to a roost stages
+const AI_FORT_N = 3;      // turrets a side's guards keep standing along its road home
 const AI_PATROL_T = 40;   // s of a guard's cycle...
 const AI_PATROL_OUT = 14; // ...the first of which it spends scouting out up the road
-const AI_PATROL_D = 360;  // px up the road from the spur's junction the scouting walk reaches
+const AI_PATROL_D = 360;  // px up the road from the base's junction the scouting walk reaches
 const AI_ROOST_BUDGET = NAV_BUDGET * 4; // A* expansions a walk into a roost's forest may spend
 const AI_ESCORT = 120;    // px an escort lets the human get away before it follows
 const AI_ESCORT_R = 400;  // px past which the human is too far to escort
@@ -112,9 +112,9 @@ function aiOnGuard(p, prof) {
   const T = aiPlan(p.team), r = aiRank(p);
   return r >= T.nPush && r < T.nPush + T.nGuard ? e : null;
 }
-// the staging point of a roost: AI_GATE px up the road from the spur's
+// the staging point of a roost: AI_GATE px up the road from the base's
 // junction (e.mouth) toward the field, on the road itself, so the way in is
-// always road -> junction -> spur -> bird (roadNest/roadPoint, world.js)
+// always road -> junction -> the road through the hollow -> bird (roadNest/roadPoint, world.js)
 function aiLaneGate(e) {
   return roadPoint(roadNest(e.team).u + (e.team === 0 ? 1 : -1) * AI_GATE / (TILE * Math.SQRT2));
 }
@@ -143,7 +143,7 @@ function aiInLane(p, e) {
   return (t >= -0.1 && t <= 1.08 && perp < 40) || Math.hypot(px, py) < 90;
 }
 // The next turret job for a guard of the bird e, or null: { tx, ty, n } to
-// raise one more of the side's AI_FORT_N along the spur - pairs either side
+// raise one more of the side's AI_FORT_N along the road home - pairs either side
 // of its axis, out from the bird, on a tile with three open sides so the
 // lane is never walled in - or { tx, ty, up } to raise one of them a tier
 // once they all stand and the purse holds twice the price (gear comes first)
@@ -1161,9 +1161,9 @@ function aiThink(p, dt) {
   }
 
   // 5b''. a guard is a proactive defender, never a sentry: it raises its
-  //       side's turrets along the spur (AI_FORT_N, then their tiers once the
+  //       side's turrets along the road home (AI_FORT_N, then their tiers once the
   //       purse is deep), and for AI_PATROL_OUT of every AI_PATROL_T walks
-  //       out past the spur's junction and up the road to see who is coming
+  //       out past the base's junction and up the road to see who is coming
   //       (what it sees is the side's, aiLook - the brace reads it); the rest
   //       of the time it works what is near the bird (the rungs below).
   //       Any other bot at home with nothing to push or answer lends a hand
@@ -1299,7 +1299,7 @@ function aiThink(p, dt) {
       ai.pushCd = 10;
     } else {
       // the archer's station: AI_HOLD out from the bird ON THE LANE'S AXIS,
-      // where the spur keeps the line to the roost open (off the axis a
+      // where the road keeps the line to the roost open (off the axis a
       // wall the defenders raised may eat the shot), outside the gust
       const sx = e.x + e.laneDir.x * AI_HOLD, sy = e.y + e.laneDir.y * AI_HOLD;
       const ux = (e.x - p.x) / (d || 1), uy = (e.y - p.y) / (d || 1);

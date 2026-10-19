@@ -523,7 +523,7 @@ function makeInput() {
     work: false,         // E held
     slide: false,        // shift held
     dodge: false,        // edge-triggered, cleared once the sim reads it
-    jump: false,         // edge-triggered: the leap off the eagle, or the hop off the roost (dropJump, js/sim/eagle.js)
+    jump: false,         // edge-triggered: the hop off the roost (hopOff, js/sim/eagle.js), or on/off a cable or a deer
     grapple: false,      // held: the grapple reels only while this is down
                          // (key 3 for the human; the burrow itself is now the
                          // hunter's SNOW COVER cast, key 4, not an input)
@@ -610,11 +610,10 @@ class Player {
     this.items = new Array(ITEM_SLOTS).fill(null); // the six item slots, ids or null (js/sim/items.js) - like cards, they survive a respawn
     this.fightT = 0; this.kindleN = 0;  // s since the last hit given or taken, and KINDLING's count (itemsOnHit)
     refreshKit(this);                   // builds this.kit and this.maxHp from class + gear + skill
-    this.aboard = false;                // riding the eagle (beginDrop sets it, dropJump clears it)
-    this.dropT = 0;                     // seconds of free fall left after jumping (0 = on the ground)
-    this.dropAlt = 0;                   // px the fall started from: the flight's DROP_ALT, or a hop's HOP_ALT off the roost
-    this.dropSc = 1;                    // the body's drawn scale as it left the seat (riderScale), shrinking to 1 as it falls
-    this.dropU = 1;                     // route fraction at which an bot jumps
+    this.aboard = false;                // riding the eagle (beginDrop sets it, hopOff clears it)
+    this.dropT = 0;                     // seconds left of the step down off the roost (0 = on the ground)
+    this.dropAlt = 0;                   // px the step down started from: HOP_ALT off the roost
+    this.dropSc = 1;                    // the body's drawn scale as it left the seat, shrinking to 1 as it lands
     // bot brain (unused by a human player): current job, give-up timers and the
     // short blacklists that keep a bot from re-picking work it cannot reach
     this.ai = {
@@ -1107,7 +1106,7 @@ function updateRespawns(dt) {
 // stand on there - so the way back into the match is the road everyone
 // else walked out on.
 const RESPAWN_OUT = 40;
-// the tile a body is set down on at its own roost: RESPAWN_OUT down the spur
+// the tile a body is set down on at its own roost: RESPAWN_OUT up the road
 // from the bird, the nearest dry one - null while the bird is not down. The
 // carried-back scout and the recall (js/sim/recall.js) both land here.
 function roostTile(p) {

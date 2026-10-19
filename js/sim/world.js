@@ -317,7 +317,7 @@ for (let i = 0; i < RING_N; i++) {
 
 const BORDER_MIN = 30, BORDER_MAX = 70; // forest boundary depth range (avg ~50)
 // The two ROOST corners - bottom-left and top-right, where the eagles always
-// come down (makeEagleRoute, eagle.js) - are forested to ROOST_R outright: a
+// come down (makeEagles, eagle.js) - are forested to ROOST_R outright: a
 // quarter-disc of woods UNIONED with the noise border, so whatever the seed
 // grew there the corner holds one solid block for the bird to bury itself in,
 // and the treeline its lane cuts to is at least the disc's arc (ROOST_R along
@@ -349,7 +349,7 @@ function borderDepth(tx, ty) {
   if (c >= R) return d;
   // inside the disc: deeper than this tile's own edge distance by the tile's
   // depth into the disc, so genWorld's `edge < borderDepth` plants it and
-  // forestDepth (eagle.js) reads how far inside the arc it sits
+  // the arc reads as one solid block round the base (js/sim/base.js)
   return Math.max(d, Math.min(tx, ty, WORLD - 1 - tx, WORLD - 1 - ty) + R - c);
 }
 
@@ -452,7 +452,7 @@ function mapTerrain(k, tx, ty) {
   if (Math.hypot(tx - cx, ty - cy) <= CENTER_R + 3) return MT_SNOW;
   // the lake stops at the road's own dry keep-out, so the lane is dry end to
   // end on every shape (the road, below) - roadMainDist and not roadDist,
-  // because a shape must read the same before a spur or a path exists
+  // because a shape must read the same before a pad or a path exists
   const wet = M.land !== undefined && roadMainDist(tx, ty) >= ROAD_ICE_KEEP;
   if (M.shore && edge - bd < M.shore + (vnoise(tx / 7 + 3.3, ty / 7 + 9.1) - 0.5) * 8) return wet ? MT_ICE : MT_SNOW;
   const n = mapFbm(tx, ty, M.scale);
@@ -645,6 +645,7 @@ function placeChests() {
     const o = objects[idx(tx, ty)];
     if (!o || o.type !== 'tree') continue;
     if (dug.some((C) => Math.hypot(tx - C.tx, ty - C.ty) <= C.r + 4) || drawn.some((C) => campNear(C, tx, ty, 1))) continue;
+    if (baseAt(tx, ty, BASE_KEEP) >= 0) continue; // ...nor in a base's wall (js/sim/base.js)
     // the forest's inner edge: at least one cardinal neighbour is open snow
     if (SIDES.some(([dx, dy]) => !objects[idx(tx + dx, ty + dy)] &&
       ground[idx(tx + dx, ty + dy)] === 0)) edge.push({ tx, ty });
@@ -744,9 +745,9 @@ function placeRocks() {
     }
     return true;
   };
-  // an anchor a rock may take, `hi` tiles out at most: both tiles open, out of the camps
+  // an anchor a rock may take, `hi` tiles out at most: both tiles open, out of the camps and the bases
   const fits = (tx, ty, hi) => open(tx, ty) && open(tx + 1, ty) && dist[idx(tx, ty)] <= hi &&
-    !camps.some((C) => campNear(C, tx + 0.5, ty, 2.5));
+    !camps.some((C) => campNear(C, tx + 0.5, ty, 2.5)) && baseAt(tx, ty, BASE_KEEP) < 0 && baseAt(tx + 1, ty, BASE_KEEP) < 0;
   const placed = [];
   const clear = (tx, ty) => !placed.some((c) => Math.hypot(c.tx - tx, c.ty - ty) < ROCK_SPACING);
   const stand = (tx, ty, kind) => {
@@ -839,46 +840,34 @@ function fellScenery(tx, ty) {
 }
 
 // ---- the road -------------------------------------------------------------
-// THE ROAD: one straight lane down the map's whole diagonal, corner to
-// corner, world edge to world edge - a route that comes from somewhere
-// beyond and goes on past us, not a thing that starts and ends on this map.
-// Across the open field it is ROAD_HW tiles either side of the centreline,
-// room for a whole side and a wave to fight in; where it enters each roost
-// corner's woods (the GATE - roadSpan, the treeline on the diagonal, two
-// pennant poles in the side's colour) it narrows to ROAD_HW_WOOD, a forest
-// road with the pines closing in, and ROAD_LOG_IN past its nest's junction a
-// felled trunk lies across it (`log`): the way on is blocked, and the road
-// running on under it to the edge says the route does not end here. Ground
-// 3, packed earth showing through the snow, two ruts down its length. It
-// walks like snow (only ice and holes are special-cased in updatePlayer's
-// momentum block) but it is not snow: nothing digs into it (tryProne, the
-// hunter's burrow), nothing grows or is built on it (every `ground === 0`
-// site test refuses it), and a fish never counts it as water (fishWater).
-// Laid by placeRoad AFTER genWorld and BEFORE the camps, on pure reads of
-// the same treeline rule diagEnd (eagle.js) flies the eagles by, so it
-// neither moves the shared rng stream nor differs run to run. Its EDGE is
-// ragged, not a tile staircase: roadEdgeAt wanders the half-width along the
-// lane on the position noise, per side, and roadDist measures any point - a
-// tile centre for the ground array, a pixel for the ground bake
-// (paintRoadOverlay, draw-world.js) - against that wandering edge, so the
-// two agree. It never meets ice: genWorld's carve rules keep every pond and
-// river ROAD_ICE_KEEP tiles off its edge (a river running at it peters out
-// over ROAD_ICE_TAPER first), so the lane is dry end to end and the ice
-// network lives further out. A rock or a bush on it is gone. Every camp site
-// (CAMP_SITES) is written well off its centreline, so the wolves are never
-// on it. Its centre is open ground.
-// THE NESTS sit beside it, not on it: each bird flies the road home and
-// banks off to its own right into the woods (roadNest - RED's to the
-// top-left side of the bottom-left corner's road, BLUE's to the bottom-right
-// of the top-right's, mirrored through the centre like the camps), and its
-// crash cuts a SPUR from the crater straight back to the road, paved behind
-// the felling front (planLane/laneStep, eagle.js) into a narrower track
-// (SPUR_HW) that joins the road at the JUNCTION. So from the road the way to
-// a bird is one straight sightline down its spur. roadDist is the min over
-// the diagonal AND the paved spurs (the `spurs` registry below), so the
-// ground bake, the ice rules and every `onRoad` read see one road system.
-// The waves (the `soldiers` banner, robots.js) march its waypoints from
-// junction to junction, then the rival's spur.
+// THE ROAD: one straight lane down the map's diagonal, from one side's
+// perch to the other's (the bases, js/sim/base.js: each a fixed hollow in its
+// roost corner's woods, the road coming in through its mouth and ending on
+// the bird). Across the open field it is ROAD_HW tiles either side of the
+// centreline, room for a whole side and a wave to fight in; where it enters
+// each roost corner's woods (the GATE - roadSpan, the treeline on the
+// diagonal, two pennant poles in the side's colour) it narrows to
+// ROAD_HW_WOOD, a forest road with the pines closing in. Ground 3, packed
+// earth showing through the snow, two ruts down its length. It walks like
+// snow (only ice and holes are special-cased in updatePlayer's momentum
+// block) but it is not snow: nothing digs into it (tryProne, the hunter's
+// burrow), nothing grows on it, and a fish never counts it as water
+// (fishWater). Laid by placeRoad AFTER genWorld and BEFORE the camps, on pure
+// reads, so it neither moves the shared rng stream nor differs run to run.
+// Its EDGE is ragged, not a tile staircase: roadEdgeAt wanders the half-width
+// along the lane on the position noise, per side, and roadMainDist measures
+// any point - a tile centre for the ground array, a pixel for the ground bake
+// (paintRoadOverlay, js/draw/ground.js) - against that wandering edge, so the
+// two agree. roadMainDist has no ends: genWorld's carve rules read it whole
+// (every pond and river ROAD_ICE_KEEP tiles off its edge, a river running at
+// it petering out over ROAD_ICE_TAPER first), as they always did, so no
+// seed's ice moves; the road as laid (laneDist) is that line ended on the two
+// perches and the cistern's gates. A rock or a bush on it is gone. Every camp
+// site (CAMP_SITES) is written well off its centreline. Its centre is open
+// ground. Under each bird lies a PAD, the crash's packed-earth disc (the
+// `pads` registry below), so the road, the pad and the roost are one ground.
+// The waves (the `soldiers` banner, robots.js) march its waypoints from one
+// side's JUNCTION (where the road leaves its base, roadNest) to the rival's.
 const ROAD_HW = 3.5;        // tiles either side of the centreline across the field: a seven-tile lane
 const ROAD_HW_WOOD = 2.5;   // ...and through each corner's woods: a five-tile forest road
 const ROAD_GATE_BLEND = 2;  // u either side of a gate the width eases from one to the other
@@ -889,12 +878,6 @@ const ROAD_ICE_KEEP = 6;    // tiles past the edge no pond or river reaches (gen
 const ROAD_ICE_TAPER = 7;   // ...and the tiles over which a river narrows to nothing on its way in
 const ROAD_STEP = 20;       // tiles between a wave's waypoints along it
 const ROAD_POLE_OUT = 0.9;  // tiles past the edge a pennant pole stands
-const ROAD_NEST_IN = 8;     // u past a gate, into the woods, the nest's junction sits at least...
-const ROAD_NEST_MAX = 40;   // ...and at most: roadNest walks inward until the nest is deep enough (roadNestDeep)
-const ROAD_NEST_OFF = 13;   // tiles off the centreline, to the bird's own right, the nest itself sits
-const ROAD_LOG_IN = 10;     // u past the junction the felled trunk lies across the road
-const ROAD_LOG_HALF = 2;    // tiles of trunk either side of the centreline along the cross-diagonal: five pieces, a little over the forest road's width
-const SPUR_HW = 1.25;       // tiles either side of a spur's centreline that are felled and paved - so the paved track stays clear of the crash's stumps
 // the diagonal in tile space: tx + ty = WORLD - 1, `u` running 0 at the
 // bottom-left corner to WORLD - 1 at the top-right. All three take a tile
 // index (the tile's centre) or a continuous tile coordinate alike.
@@ -919,59 +902,37 @@ function roadEdgeAt(u, side) {
   return roadHW(u) + n * 2 * ROAD_RAG + r * 0.5;
 }
 // signed distance (tiles) from the diagonal road's ragged edge: negative
-// inside it. No ends: the road runs off both edges of the world.
+// inside it. No ends: genWorld reads the line whole (the road as laid ends on
+// the perches - roadDist's `laid`)
 function roadMainDist(fx, fy) {
   if (PRACTICE) return 99;
   const o = roadOffS(fx, fy);
   return Math.abs(o) - roadEdgeAt(roadAlong(fx, fy), o < 0 ? -1 : 1);
 }
-// THE SPURS: one per roost, cut and paved by the bird's own felling front
-// (planLane/laneStep, eagle.js) from the crater back to the road. Continuous
-// tile-index coordinates (an integer is a tile's centre, like planLane's):
-// the junction on the road's centreline, the unit direction toward the
-// crater, the track's length (it stops `end` tiles short of the crater, at
-// the rim of the blast) and how much is paved so far, measured back from
-// the crater end - the front walks crater -> road, so the paved stretch is
-// [len - paved, len]. A spur is only a road where it is paved: spurDist
-// answers 99 for the unpaved rest, so the bake, the maps and onRoad all
-// turn to earth exactly as the front passes. A team crashing twice on one
-// page (a rematch) re-registers its spur (and its pad, addPad) in place.
-const spurs = [];
-function addSpur(team, jx, jy, cx, cy, end) {
-  const dx = cx - jx, dy = cy - jy, L = Math.hypot(dx, dy) || 1;
-  const sp = { team, x: jx, y: jy, dx: dx / L, dy: dy / L, len: Math.max(0, L - end), paved: 0 };
-  const i = spurs.findIndex((s) => s.team === team);
-  if (i >= 0) spurs[i] = sp; else spurs.push(sp);
-  return sp;
-}
 // THE PADS: the blown disc under each roost, packed earth from the crash
-// (eagleCrash, eagle.js) - the same registry, so a pad is a road to every
-// reader, and the spur starts at its rim
+// (eagleCrash, js/sim/eagle.js) - a pad is road to every reader. Continuous
+// tile-index coordinates (an integer is a tile's centre). A team crashing
+// twice on one page (a rematch) re-registers its pad in place.
+const pads = [];
 function addPad(team, cx, cy, r) {
-  const sp = { team, pad: true, x: cx, y: cy, hw: r, paved: 1 };
-  const i = spurs.findIndex((s) => s.team === team && s.pad);
-  if (i >= 0) spurs[i] = sp; else spurs.push(sp);
+  const sp = { team, x: cx, y: cy, hw: r };
+  const i = pads.findIndex((s) => s.team === team);
+  if (i >= 0) pads[i] = sp; else pads.push(sp);
   return sp;
 }
-function spurDist(sp, fx, fy) {
-  if (sp.pad) return Math.hypot(fx - sp.x, fy - sp.y) - sp.hw;
-  if (sp.paved <= 0) return 99;
-  const px = fx - sp.x, py = fy - sp.y;
-  const a = px * sp.dx + py * sp.dy, lat = Math.abs(px * sp.dy - py * sp.dx);
-  const c = Math.max(sp.len - sp.paved, Math.min(sp.len, a));
-  return Math.hypot(lat, a - c) - SPUR_HW;
-}
-// signed distance (tiles) from the nearest road edge - the diagonal's or a
-// paved spur's: negative inside. What a tile IS (onRoad) and what a pixel
-// looks like (paintRoadOverlay) both ask this one function.
-function roadDist(fx, fy) {
+// signed distance (tiles) from the nearest road edge - the diagonal's, a
+// pad's or a path's: negative inside. `laid` is the road as it stands, ended
+// on the two perches (baseRoadEnd, js/sim/base.js); without it the diagonal
+// runs whole, which is what genWorld's carve rules have always read.
+function roadDist(fx, fy, laid) {
   let d = roadMainDist(fx, fy);
-  for (const sp of spurs) { const e = spurDist(sp, fx, fy); if (e < d) d = e; }
+  if (laid) d = Math.max(d, baseRoadEnd(fx, fy));
+  for (const sp of pads) { const e = Math.hypot(fx - sp.x, fy - sp.y) - sp.hw; if (e < d) d = e; }
   const t = pathDist(fx, fy); // a grown shape's own paths (below); 99 on every shape that lays none
   return t < d ? t : d;
 }
 // the GATES: where the road crosses each corner's treeline on the diagonal -
-// the first open tile past the last wooded one, diagEnd's own rule. u0 is
+// the first open tile past the last wooded one. u0 is
 // the bottom-left corner's (RED's), u1 the top-right's (BLUE's); the field
 // lies between them, the forest roads outside.
 let roadSpanC = null;
@@ -988,58 +949,24 @@ function roadSpan() {
   roadSpanC = { u0: last(true), u1: WORLD - 1 - last(false) };
   return roadSpanC;
 }
-// the road as it is LAID and DRAWN: roadDist, ended on the cistern's gates
-// (cisternLane, js/sim/cistern.js) - the road through the middle is the orca's
-// ice. Not genWorld's: its carve rules ask roadDist itself, before the creek
-// is in, so no seed's ponds move
-function laneDist(fx, fy) { return Math.max(roadDist(fx, fy), cisternLane(fx, fy)); }
+// the road as it is LAID and DRAWN: roadDist ended on the perches, and on the
+// cistern's gates (cisternLane, js/sim/cistern.js) - the road through the
+// middle is the orca's ice. Not genWorld's: its carve rules ask the whole
+// line, before the creek is in, so no seed's ponds move
+function laneDist(fx, fy) { return Math.max(roadDist(fx, fy, true), cisternLane(fx, fy)); }
 function onRoad(tx, ty) { return laneDist(tx, ty) < 0; }
-// where a side's bird roosts, off its own forest road: the JUNCTION on the
-// centreline at least ROAD_NEST_IN past the gate, and the NEST ROAD_NEST_OFF
-// tiles off it to the bird's own right - RED (team 0) flies down to the
-// bottom-left and its right is the top-left side (roadOffS < 0), BLUE's the
-// bottom-right - so the two nests mirror through the map's centre like the
-// camps. The junction walks inward from the gate until the nest is DEEP
-// (roadNestDeep) with MIN_CRASH_TREES round it (eagle.js's crash rule: trees
-// all round, never the tree edge or a bay), the deepest, densest spot seen
-// standing in if none qualifies. Pure reads, cached - a seed's nests are
-// where they always are. Returns the junction u, the side, both points in
-// tile-index space (jx/jy, nx/ny) and the junction in px.
-// Deep means two things at once: CRASH_DEPTH inside the treeline by the
-// border's own measure (forestDepth, eagle.js - the nearest world edge's
-// woods) AND CRASH_DEPTH inside the corner's roost disc (ROOST_R less its
-// wobble), because forestDepth only knows the nearest edge and a spot can
-// be deep in the right-hand border's pines with the open field five tiles
-// off it across the disc's arc.
-function roadNestDeep(tx, ty) {
-  const c = Math.min(Math.hypot(tx, WORLD - 1 - ty), Math.hypot(WORLD - 1 - tx, ty)); // to the nearer roost corner
-  return forestDepth(tx, ty) >= CRASH_DEPTH && c <= ROOST_R - ROOST_WOBBLE - CRASH_DEPTH;
-}
+// where a side's bird roosts and where its road leaves home: the NEST is the
+// perch at the back of the side's base, on the centreline (basePerch,
+// js/sim/base.js), and the JUNCTION the point on the centreline where the
+// road goes out through the hollow's mouth (baseGateU). Fixed, so cached:
+// u (the junction's), side (the bird's own right: RED's the top-left side,
+// roadOffS < 0, BLUE's the bottom-right), both points in tile-index space
+// (jx/jy, nx/ny) and the junction in px.
 const roadNestC = [null, null];
 function roadNest(team) {
   if (roadNestC[team]) return roadNestC[team];
-  const s = roadSpan(), side = team === 0 ? -1 : 1, dir = team === 0 ? -1 : 1; // dir: u toward this side's corner
-  const gate = team === 0 ? s.u0 : s.u1, off = side * ROAD_NEST_OFF / Math.SQRT2;
-  const treesAt = (tx, ty) => {
-    let n = 0;
-    for (let dy = -3; dy <= 3; dy++) for (let dx = -3; dx <= 3; dx++) {
-      const o = objAt(tx + dx, ty + dy);
-      if (o && (o.type === 'tree' || o.type === 'deadTree')) n++;
-    }
-    return n;
-  };
-  let pick = null, best = null, bestScore = -Infinity;
-  for (let i = ROAD_NEST_IN; i <= ROAD_NEST_MAX; i++) {
-    const u = gate + dir * i, tx = Math.round(u + off), ty = Math.round(WORLD - 1 - u + off);
-    if (tx < 4 || ty < 4 || tx >= WORLD - 4 || ty >= WORLD - 4) break;
-    const n = treesAt(tx, ty);
-    if (roadNestDeep(tx, ty) && n >= MIN_CRASH_TREES) { pick = u; break; }
-    const score = Math.min(forestDepth(tx, ty), CRASH_DEPTH) * 4 + n + i;
-    if (score > bestScore) { bestScore = score; best = u; }
-  }
-  const u = pick != null ? pick : best != null ? best : gate + dir * ROAD_NEST_IN;
-  const jx = u, jy = WORLD - 1 - u;
-  return (roadNestC[team] = { u, side, jx, jy, nx: jx + off, ny: jy + off, x: (jx + 0.5) * TILE, y: (jy + 0.5) * TILE });
+  const u = baseGateU(team), n = basePerch(team), jx = u, jy = WORLD - 1 - u;
+  return (roadNestC[team] = { u, side: team === 0 ? -1 : 1, jx, jy, nx: n.tx, ny: n.ty, x: (jx + 0.5) * TILE, y: (jy + 0.5) * TILE });
 }
 function placeRoad() {
   if (PRACTICE) return;
@@ -1066,19 +993,6 @@ function placeRoad() {
   for (const side of [-1, 1]) {
     mark(s.u0 + 2, side, ROAD_POLE_OUT, 'banner', { team: 0 }); // RED roosts bottom-left (game.md)
     mark(s.u1 - 2, side, ROAD_POLE_OUT, 'banner', { team: 1 });
-  }
-  // the felled trunk across each forest road, ROAD_LOG_IN past its junction:
-  // one `log` per tile along the cross-diagonal, the pieces touching corner
-  // to corner so nothing squeezes between them; a pine on the verge gives
-  // way to the ends. Its pixels are the ground's (paintLog, draw-world.js).
-  for (const team of [0, 1]) {
-    const uc = Math.round(roadNest(team).u + (team === 0 ? -1 : 1) * ROAD_LOG_IN);
-    for (let k = -ROAD_LOG_HALF; k <= ROAD_LOG_HALF; k++) {
-      const tx = uc + k, ty = WORLD - 1 - uc + k;
-      if (!inWorld(tx, ty) || waterAt(tx, ty)) continue;
-      objects[idx(tx, ty)] = null;
-      placeObj(tx, ty, 'log', { seg: k === -ROAD_LOG_HALF ? 0 : k === ROAD_LOG_HALF ? 2 : 1 });
-    }
   }
 }
 // the march: the centreline every ROAD_STEP tiles from a side's own junction
@@ -1124,7 +1038,7 @@ const PATH_ICE = 1.3;   // ...and a tile of frozen lake this many
 const PATH_LANE = 18;   // ...and a tile inside the road's corridor this many
 const PATH_CAMP = 3;    // tiles past a camp's cleared ground (r + 2) a branch stops, so clearCamp never eats the path's end
 const PATH_SEG = 4;     // tiles of route per registered segment: the polyline that smooths the search's staircase
-const paths = [];       // { x, y, dx, dy, len } in tile-index space, like a spur
+const paths = [];       // { x, y, dx, dy, len } in tile-index space
 // which segment is nearest a tile's centre, and which is next - stamped once
 // by indexPaths, so roadDist costs one array read and at most two segments
 // per PIXEL of the ground bake instead of a walk down the whole network
