@@ -592,12 +592,20 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| QUICKPLAY and RANKED: a party hosted at once, leaving it, RANKED's rating and the bots' level read off it, FIND MATCH (every empty seat a bot, the party to the hero select) | `PARTY_MODES`, `RANK_STEP`/`RANK_BAND`, `beginParty`, `leaveRoom`, `partySeats`, `partyName`, `partySize`, `rankLevel`, `rankResult` (its caller: `endMatch`, player.js), `partyFind` | `party lobby` |
+| QUICKPLAY and RANKED: a party hosted at once, leaving it, the leader turning its mode, RANKED's rating and the bots' level read off it, FIND MATCH (matchmaking first, then every empty seat a bot, the party to the hero select) | `PARTY_MODES`, `RANK_STEP`/`RANK_BAND`, `beginParty`, `leaveRoom`, `partySeats`, `partyName`, `modeSwapOk`/`modeSwap`/`modeRect`, `partySize`, `rankLevel`, `rankResult` (its caller: `endMatch`, player.js), `partyFind`, `partyStart` | `party lobby` |
 | joining a friend's party by its code: the list looked up (the relay's, or Steam lobbies' data), typing and pasting, a join answered or refused | `SEEK_T`, `roomsFeed`/`roomsFeedOpen`/`roomsFeedClose`, `roomOk`, `partySeek`, `seekMatch`, `joinRoom`, `partyBootJoin` (its caller: boot.js), `codeType`, `codeBoxShown`, the `paste` listener, `updateRooms` | `party lobby` › `joining a friend's party by its code` |
 | the party screen: your side's five seats, the empty seat's invite, the leader's kick, READY and its tick, the ping bars, the code copied on a click | `RS_*`, `RM_CODE_*`, `beginRoom`, `roomHost`, `roomSide`, `roomLayout`, `roomWords`, `seatAct`, `roomCode`, `roomCodeRect`, `roomHit`, `roomCopy`, `seatInvite`, `roomDo`, `roomClick`, `roomKey`, `roomAllReady`, `roomLevel` (the moves themselves: `seatKick`/`seatPick`, js/net/net.js) | `the room` |
 | the rematch: the next seed at a match's end, the reload back into the same party with the same code, the seats carried over, a guest's retried join | `REMATCH_*`, `rematchCarry`, `rematchOffer`, `rematchUrl` (read by `toLobby`, js/ui/screens.js), `rematchHeard`, `rematchSeat`, `rematchBootHost`, `rematchBootJoin` | `the rematch` |
 | the practice field with a party: START, the leader's page hosting the code, the guests told and following, the two boots | `partyPractice`, `practiceUrl`, `practiceGo`, `practiceHeard` (from the `practice` message, js/net/net.js), `practiceBootHost`/`practiceBootJoin` (from boot.js), `partyGiveUp`; on the field `practiceSeat`/`practiceVacate` (js/sim/practice.js) | `the practice field` |
 | the pixels: the seat, the code box, the relay pip, the code plate on the hero select, the in-match link pip | `RM_OK`/`RM_SLOW`/`RM_BAD`, `PING_GOOD`/`PING_OK`, `drawRoomWord`, `drawTick`, `drawPingBars`, `drawRelayPip`, `drawCodeBox`, `drawRoomSeat`, `renderRoom`, `drawCodePlate`, `drawRoomPlate`, `drawNetLink` | `the pixels` |
+
+## js/ui/matchmaking.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| a party looking for another: the list read, the lowest code hosting, the clock, a second press stopping it | `MATCH_WAIT`/`MATCH_HOLD`, `seekKey`, `seekRivals`, `seekStart`, `seekCancel`, `updateSeek` (from `updateRooms`), `seekGo`, `seekClock`, `seekText`, `NET.seek`/`NET.seekAt` (js/net/net.js) | `matchmaking` |
+| crossing over: the guests told, the reload with the party's code in the hello, the host seating one party on its rival side | `seekCross`, `crossHeard` (the `cross` message), `crossUrl`, `CROSS`, `crossAdmit` and `crossedIn` (from `netHostHello`), `MATCH_GATHER`, `MATCH_JOIN` | `matchmaking` |
+| going home: the crossed party back to its own code after the match, a refusal or a lost host | `HOME_KEY`, `homeParty`, `homeSave`, `homeSeed`, `crossHomeUrl` (read by `rematchUrl`), `crossHome`, `partyLost` (from `updateTitle`, menu.js) | `matchmaking` |
 
 ## js/ui/roomtalk.js
 
