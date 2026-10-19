@@ -861,7 +861,7 @@ consumes `p.input.ability` as a buy whenever `abLvCanBuy(p, i)` holds and as a c
 (js/sim/sim.js, beside the other edge intents), so key 2 with a point in hand levels ability 2 and the
 next press casts it; a maxed key casts straight through an unspent point. That reaches every
 controller and the well click alike, since all of them set the one field. Hover lights the plate
-and the tooltip carries the numbers (`LOCKED` and `UNLOCK 1 SKILL PT` on a dark key). Bots spend each free point in rung 0 of the ladder (`aiThink`, js/ai/ai.js), lowest ability
+and the tooltip carries the numbers (`LOCKED` and `UNLOCK 1 SKILL PT` on a dark key). Bots spend each free point in rung 0 of the ladder (`aiSpend`, js/ai/ai.js, first thing `aiThink` asks), lowest ability
 level first — which spends their first four unlocking all four keys before any gets a cut. The cd
 column in the tables below is the level-1 base.
 
@@ -2555,7 +2555,7 @@ read through `charHit`) is shared by the click handler, `cursorInfo` (hand curso
 `tipAt`, so the three can never disagree. The click is swallowed **before** `clickAction` — the
 panel, the backpack widget, the hud strip (the weapon well, an ability well casting and its buy
 badge) and the weapon shelf are the left-clickable HUD in play. Bots buy at rung 0 of
-`aiThink` (js/ai/ai.js), from anywhere, once their [item build](#buying-and-selling) is finished: cheapest piece
+`aiThink` (`aiSpend`, js/ai/ai.js), from anywhere, once their [item build](#buying-and-selling) is finished: cheapest piece
 first, keeping a 15-gold float so they still build.
 
 ## Roguelike cards
