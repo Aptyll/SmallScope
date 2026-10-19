@@ -144,9 +144,9 @@ function zipUnder(wx, wy) {
 // below, and a bot's, steerTo in ai.js) has a goal the feet can reach: the
 // track point itself, or a tile's width to either side of it (still well
 // inside ZIP_GRAB, so the press works from there) - the nearest along the
-// cable first, out to ten tiles either way. The first span out of a base
-// runs the spur's treeline, where the track is under pines for its whole
-// length and only the verge beside it can be stood on. Null when nothing
+// cable first, out to ten tiles either way. A span through the forest road
+// runs its treeline, where the track is under pines for its length and only
+// the verge beside it can be stood on. Null when nothing
 // that far will do. The point comes back as the tile's centre in BODY
 // coordinates (feet at y + 4, as nearestDryTile hands one back), so the tile
 // the feet were tested on is the tile navTo routes to - an offset point off a

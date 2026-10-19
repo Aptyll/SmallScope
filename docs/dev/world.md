@@ -475,13 +475,37 @@ Both maps paint it: a tan stroke on the minimap, a brown ink line down the parch
 tiles of the edge, as snow first and then hands it to `paintRoadOverlay` (the `the road's pixels`
 group, js/draw/ground.js), which asks `roadDist` per pixel — inside, packed earth in two tones by 8 px
 quad, the two ruts at `ROAD_RUT` (1.0) tiles off the *diagonal's* centreline (broken, wandering a
-little along the lane on a per-quarter-tile cached noise — a spur, measured off the same line, is
-too far off it to carry them), the odd stone and hoof-dark spot, and drifts of snow lying over the
+little along the lane on a per-quarter-tile cached noise), the odd stone and hoof-dark spot, and drifts of snow lying over the
 last 0.7 tiles of the verge; outside, mud spread off the road in patches thinning to greyed snow
 and then the field. The drifts and the mud are placed on a low-frequency `clump` noise read per
 pixel, not on a per-pixel roll, so the melt reads as patches rather than sand. The whole bake
-costs ~0.2 s at boot on top of the ground's own; a spur's paving repaints three tiles round each
-tile it lays, a few tiles a frame for the seconds the front takes.
+costs ~0.2 s at boot on top of the ground's own; a roost pad's paving repaints its disc and three
+tiles round it once, the frame the bird lands.
+
+## The bases
+
+**Each side's home is a fixed hollow cut into its own roost corner's woods**, on the road's
+diagonal: the `base` banner of [js/sim/base.js](../../js/sim/base.js). It is the same spot on every
+seed, so a base is designed rather than found, and every bot knows it. RED (team 0) holds the
+bottom-left corner, BLUE the top-right, mirrored across the creek like the camps (`baseU(team, u)`:
+u → `WORLD - 1 - u`).
+
+- The **hollow** is a clearing of radius `BASE_R` (15) tiles round `baseCentre(team)`, `BASE_U`
+  (30) u from the corner; its wall wanders ±`BASE_RAG` (1.2) tiles on the position noise
+  (`baseWall`), so it reads as a clearing, not a circle.
+- The **perch** (`basePerch(team)`) is `PERCH_U` (21) u from the corner, at the back of the hollow
+  and deepest in the woods: the bird roosts there ([eagle drop](rendering.md#eagle-drop-mode-drop)).
+- The **mouth** is where the road leaves the hollow, `baseGateU(team)` (u `BASE_U + BASE_R`): the
+  side's junction (`roadNest`, [the road](#the-road)), the way in for every walker.
+- The road runs in through the mouth and **ends on the perch**: `baseRoadEnd(fx, fy)` is positive
+  past either perch, and `laneDist` takes it, so the lane as laid and drawn stops at the bird.
+- `baseAt(tx, ty, pad)` names the side whose hollow holds a tile (`pad` tiles past the wall
+  counted in), or −1, always −1 under `PRACTICE`. The chests and the rocks keep `BASE_KEEP` (3)
+  tiles off a hollow's wall (`placeChests`, `placeRocks`).
+
+`placeBase()` runs at boot right after `placeRoad()` (js/app/boot.js): every object inside a
+hollow goes through `fellScenery` (a rock with both its tiles) and any ice there turns to snow. Pure
+position noise, no `rng()`, so no seed moves. Not under `PRACTICE`.
 
 ## The creek
 
@@ -729,19 +753,15 @@ its tile (`deepTileOpen`) and `deepPx` works each depth in it out once.
 One cable per team along the road, the `zipline` banner of [js/sim/zipline.js](../../js/sim/zipline.js): a
 polyline of **pylon** points `zips[team] = { team, pts, cum, len }` (`pts` are body positions —
 a rider's `p.y + 4` sits on the pylon tile's centre — `cum` the px along at each point) laid by
-`placeZips()` at boot **right after `placeRoad()`**, on pure reads (`roadNest`, `roadSpan`,
-`roadEdgeAt`, `findCrashPoint`, `objAt`): nothing rolls, so `genWorld` and every seed's ground are
+`placeZips()` at boot **right after `placeRoad()` and `placeBase()`**, on pure reads (`basePerch`,
+`roadNest`, `roadSpan`, `roadEdgeAt`, `objAt`): nothing rolls, so `genWorld` and every seed's ground are
 untouched. Not under `PRACTICE`. The points, base to front:
 
-1. the **base pylon**, `ZIP_BASE_OUT` (4.4) tiles from the crater along the spur's axis (the crash
-   point by the crash's own rule, `findCrashPoint`) and `ZIP_SPUR_OFF` (1.9) tiles off that axis
-   toward the front — in the middle stump ring beside the bird, so the ride home lets go there,
-   and over `SPUR_HW` so the track is never blocked;
-2. the **verge pylon** where the spur meets the road, `ZIP_SPUR_OFF` along the road from the
-   junction and `roadEdgeAt(u, side) + ZIP_OUT` (0.6) tiles off the centreline on the bird's own
-   right (`roadNest(team).side` — the two cables sit on opposite verges and mirror through the
-   centre like the nests and camps);
-3. a pylon every `ZIP_SPAN` (10) u along the same verge to the **terminus** at `ZIP_MID_GAP`
+1. the **base pylon**, `ZIP_BASE_OUT` (4.4) u up the road from the perch, `roadEdgeAt(u, side) +
+   ZIP_OUT` (0.6) tiles off the centreline on the bird's own right (`roadNest(team).side`: the two
+   cables sit on opposite verges and mirror through the centre like the camps), past the crash pad,
+   so the ride home lets go beside the bird;
+2. a pylon every `ZIP_SPAN` (10) u along the same verge to the **terminus** at `ZIP_MID_GAP`
    (20) u short of the road's centre — a stub of a span at the end joins the one before it — so the
    middle stretch where the waves meet is cable-free.
 
@@ -751,7 +771,7 @@ else refuses, and the point stands whether or not a pylon does. It is an `OBJECT
 (`pylon`: solid, inert to E, carrying its `team`; `mm` grey), so `isSolidTile`, `canPlaceAt` and
 both maps handle it for free. Its pixels are `PYLON_SPRS` (one bake per team skin) and the cable
 pass `drawZips` in [js/draw/zipline.js](../../js/draw/zipline.js); both maps stroke each line in
-its side's ink. Seed 42: RED's line runs u 35→91, BLUE's 131→196.
+its side's ink. Seed 42: RED's line runs u 23→88, BLUE's 134→208.
 
 `zipPoint(z, d)` is the cable at `d` px along (position, unit tangent, span and how far across
 it), `zipLift(z, d)` how high it hangs there (`ZIP_H` 31 at a pylon, `ZIP_SAG` 3 less mid-span),

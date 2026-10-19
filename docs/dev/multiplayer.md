@@ -67,9 +67,9 @@ fire          bow held: rising edge draws, falling edge looses. The rising edge
 work          E held (with it clear, the hands still take a tree, a bush or a fish in reach: autoWork/autoFish)
 slide         shift held
 dodge         edge-triggered, cleared by the sim when it reads it
-jump          edge-triggered: the leap off the eagle, or the hop off the roost -
-              the ride's one act (dropJump, js/sim/eagle.js; read at the top of
-              updatePlay's player loop, before the air skips the body) - and
+jump          edge-triggered: the hop off the roosted bird (hopOff,
+              js/sim/eagle.js; read at the top of updatePlay's player loop,
+              before the air skips the body) - and
               on the ground the zipline's: clip on under either side's cable,
               let go while riding, or - out of reach with the aim on a
               cable as drawn - the walk there that clips on (zipToggle,
@@ -590,7 +590,7 @@ base wait — 5 / 6 / 7 / 9 / 11 s for levels 1-5, 14 / 18 / 23 / 29 s for 6-9, 
 climbs, so the level *is* the clock. An early death costs a few seconds and a late one costs real match, which is what makes a wiped side late in a game (everyone
 high) a real window on a roost its defenders otherwise come back to from sixty pixels away every
 few seconds. At zero it calls `respawnPlayer(p)`, which puts `p.spawn`
-`RESPAWN_OUT` (40 px) down the spur from the bird (`e.laneDir`; the nearest standable tile there
+`RESPAWN_OUT` (40 px) up the road from the bird (`e.laneDir`; the nearest standable tile there
 through `nearestDryTile`, the same spiral a hole is climbed out of) and calls `p.reset(false)`,
 the transient-clear a fresh landing gets, i-frames included — so the way back into the match is
 the road everyone walked out on, past the merchant. A bird still in the air (a player
@@ -878,12 +878,12 @@ The ladder:
 7. **guard** — from 0.6 × `push.t` on, the plan's guards (`T.nGuard`: the profile's `guard` bots, 1 / 2 / 0 — a relentless side keeps none; allies 1 — but at most one
    unless the bird was hit in the last `AI_GUARD_HOT` (60 s), and the braced pushers) after
    the pushers in the plan's order (`aiRank`, the team brain above) keep their own bird, as
-   proactive defenders, not sentries: a guard raises the side's turrets along the spur
+   proactive defenders, not sentries: a guard raises the side's turrets along the road home
    (`aiFortSite`: `AI_FORT_N` (3), in pairs either side of its axis on tiles with three open
    sides, then a tier at a time once the purse holds twice the price), lays walls before those
    tiers (`aiWallSite`, from `aiWallPlan`: the defence line below, then three tiles on the
    lane-gate side of each turret; one wall a side a step, `T.wallTick`), and for `AI_PATROL_OUT`
-   (14 s) of every `AI_PATROL_T` (40 s) walks out past the spur's junction `AI_PATROL_D` (360 px)
+   (14 s) of every `AI_PATROL_T` (40 s) walks out past the base's junction `AI_PATROL_D` (360 px)
    up the road to see who is coming (the brace reads what it sees). Otherwise it goes on down
    the ladder to work what is near while inside `AI_GUARD_R` of the bird, its anchor.
    **The defence line** (`aiRingPlan`, once per side every `AI_RING_T` (10 s), kept on `T.ring`):
@@ -918,15 +918,16 @@ The ladder:
    pusher leaves the rival wave to its own: a rival soldier is fought only inside `AI_SIEGE_R`,
    unless its own bird is threatened and it is near home. (A relentless
    side skips the column and waits for its whole pack instead — the profile, above.)
-   The walk is `aiToRoost`: the roost sits in its corner's woods at the end of its spur and the
-   spur is the only way in, so off it the route is road → `aiLaneGate` (`AI_GATE` px up the road
-   from the junction, toward the field) → junction (`e.mouth`) → spur → bird, on a bigger pathfinder budget (`AI_ROOST_BUDGET`,
+   The walk is `aiToRoost`: the roost sits at the back of its [base](world.md#the-bases)'s
+   hollow, at the end of the road, so off the road the route is road → `aiLaneGate` (`AI_GATE` px
+   up the road from the junction, toward the field) → junction (`e.mouth`) → the road through the
+   hollow → bird, on a bigger pathfinder budget (`AI_ROOST_BUDGET`,
    `navTo`'s optional last argument); a route straight at the bird runs `NAV_BUDGET` out in
-   the border and leaves a bot wedged in a pocket, which is what this exists to prevent. In the
-   spur, any **turret the defenders raised comes down first** (E, `STRUCT_HIT_DMG` a swing, 10 of it once
+   the border and leaves a bot wedged in a pocket, which is what this exists to prevent. On the
+   way in, any **turret the defenders raised comes down first** (E, `STRUCT_HIT_DMG` a swing, 10 of it once
    `STRUCT_DR` has taken its cut — a bot
    standing off the bird under a turret's rocks never finishes a draw), then a hunter takes its
-   station `AI_HOLD` (96 px) out **on the spur's axis**, where the spur keeps the line to
+   station `AI_HOLD` (96 px) out **on the road's axis**, where the road keeps the line to
    the roost open (off the axis a wall the defenders raised may eat the shot) and outside the gust, and looses at the
    profile's draw; a warrior walks up to the nearest roost tile (`aiEagleTile`) and swings E on
    it, gust and all, exactly as a hand does. Defenders in sight are rung 3's business — until
@@ -1105,30 +1106,23 @@ what the rest of the code needs to know is this:
   escort. A human flag does lead its side for either kind (`isHuman`). Notices (`raiseNotice`) and
   the own-bird alarm are raised on the host's screen only.
 - **What the step gates on `p === player`, a client does for itself.** The profile's lifetime
-  stats, `markDropped` and the leap's hard music cut never run on a client's screen, so
+  stats and `markDropped` never run on a client's screen, so
   `netClientStats` (js/net/net.js) reads them off its snapshot body each step: `xp` climbing is gold,
-  `kills` climbing a kill, `dead` rising a death, `aboard` falling the leap, and the first step of
-  the ride the match and its first day. A new local-only side effect in the sim needs its edge there.
+  `kills` climbing a kill, `dead` rising a death, `aboard` falling the hop, and the first step of
+  the ride the match and its first day. Its own landing (mode `play` and the landing's hard music
+  cut once its bird is `down`) is `netClientMode`'s. A new local-only side effect in the sim needs its edge there.
 
 ## Where players start
 
-Nowhere, until they land: every active player boards **its team's** eagle in `beginDrop()` — RED
-and BLUE fly the map's one diagonal (a fixed `EAGLE_FLIGHT_T` 10 s each) in opposite directions,
-RED from the top-right corner down to the bottom-left, BLUE the reverse, so the two sides salt
-themselves along it from opposite ends and each roosts in its own fixed corner — and gets its
-`spawn` from `landPlayer()`, the
-nearest open tile to where it jumped. Jumping only unlocks over the line's **last `DROP_LOCK_T`
-(4 s)**: bots jump at a hashed fraction of that window (never past its end, the last open
-ground before the corner's treeline — no bot is ever force-dropped in the trees), the human where
-they press Space — drifting with WASD on the way down — or **not at all**: a human who never
-jumps rides the dive and the crash on the bird's back, sits through the
-[drop brief](rendering.md#the-drop-brief) (the camera tour of both roosts), then hops off the
-roost with E (or by walking) under the E HOP OFF indicator. A profile's first flight is exactly that ride with
-the manual leap refused — scripted onboarding — and a real jump is the opt-out for everyone
-after. That tile is what the bot brain
-treats as "home". There are no spawn pockets, no starter rings, and no guaranteed resources near
-a landing — reading the ride (the dotted path over the snow, or M for the map) is the whole
-point. `ringPts` (six points on a ring
+Nowhere, until they land: every active player boards **its team's** eagle in `beginDrop()`. Each
+bird flies a short fixed line in over its own corner (`EAGLE_FLIGHT_T`, 2.5 s), RED's the
+bottom-left and BLUE's the top-right, and roosts on its [base](world.md#the-bases)'s perch with
+the whole side on its back. The bots hop off one by one once the wings fold; a human hops off
+with E, the roll button or by walking, under the E HOP OFF indicator, after the
+[drop brief](rendering.md#the-drop-brief) on a profile's first flight. Each rider's `spawn` comes
+from `landPlayer()`, the nearest open tile to where its hop came down, and that tile is what the
+bot brain treats as "home". There are no spawn pockets, no starter rings, and no guaranteed
+resources near a landing. `ringPts` (six points on a ring
 `SPAWN_D` tiles from the centre — `RING_N` is frozen at 6, decoupled from the player count) is the
 old camp ring, kept only because river spokes and the keep-clear rules in `genWorld()` are built
 on it.

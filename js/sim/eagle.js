@@ -105,7 +105,7 @@ const FLEE_SPD = 220;       // px/s once airborne - faster than it arrived, it w
 const EAGLE_CINE_T = 3.2;   // s the camera holds the takeoff before the end screens queue
 const RUFFLE_T = 0.45;      // s of the resting idle's wing shuffle (frame 1 only - a full
                             // spread is the gust telegraph, and the idle must never wear it)
-const BOOM_R = 3.6;         // tiles of trees the impact clears outright - and paves: the roost stands on packed earth, one ground with its spur and the road (the pad, addPad)
+const BOOM_R = 3.6;         // tiles of trees the impact clears outright - and paves: the roost stands on packed earth, one ground with the road it ends (the pad, addPad)
 const BOOM_STUMP_R = 4.8;   // ...the MIDDLE ring beyond snapped to stumps: build sites round the bird...
 const BOOM_STUMP_R2 = 6.0;  // ...and the OUTER ring beyond that - two layers, so a side can stand guns inside a wall
 const BOOM_LIFE = 0.9;      // seconds the impact shockwave rings run

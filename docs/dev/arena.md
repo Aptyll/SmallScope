@@ -69,7 +69,7 @@ What differs from a real match, on purpose:
 - **The clock never stops for seat 0's death.** A dead `player` puts the page in `'dead'`, which
   stops `state.elapsed` and the day. The harness puts it back to `'play'` each tick, so the match
   runs on as it does for everyone else in it. The respawn itself is the game's.
-- **The first flight is not scripted** (`PROFILE.markDropped()`), so every rider may leap.
+- **No drop brief** (`PROFILE.markDropped()`), so seat 0 hops off the roost like every other bot.
 
 ## Setups
 

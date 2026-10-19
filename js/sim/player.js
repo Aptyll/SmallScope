@@ -1055,7 +1055,7 @@ function updateRespawns(dt) {
 // stand on there - so the way back into the match is the road everyone
 // else walked out on.
 const RESPAWN_OUT = 40;
-// the tile a body is set down on at its own roost: RESPAWN_OUT down the spur
+// the tile a body is set down on at its own roost: RESPAWN_OUT up the road
 // from the bird, the nearest dry one - null while the bird is not down. The
 // carried-back scout and the recall (js/sim/recall.js) both land here.
 function roostTile(p) {

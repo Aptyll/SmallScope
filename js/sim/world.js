@@ -452,7 +452,7 @@ function mapTerrain(k, tx, ty) {
   if (Math.hypot(tx - cx, ty - cy) <= CENTER_R + 3) return MT_SNOW;
   // the lake stops at the road's own dry keep-out, so the lane is dry end to
   // end on every shape (the road, below) - roadMainDist and not roadDist,
-  // because a shape must read the same before a spur or a path exists
+  // because a shape must read the same before a pad or a path exists
   const wet = M.land !== undefined && roadMainDist(tx, ty) >= ROAD_ICE_KEEP;
   if (M.shore && edge - bd < M.shore + (vnoise(tx / 7 + 3.3, ty / 7 + 9.1) - 0.5) * 8) return wet ? MT_ICE : MT_SNOW;
   const n = mapFbm(tx, ty, M.scale);
@@ -1038,7 +1038,7 @@ const PATH_ICE = 1.3;   // ...and a tile of frozen lake this many
 const PATH_LANE = 18;   // ...and a tile inside the road's corridor this many
 const PATH_CAMP = 3;    // tiles past a camp's cleared ground (r + 2) a branch stops, so clearCamp never eats the path's end
 const PATH_SEG = 4;     // tiles of route per registered segment: the polyline that smooths the search's staircase
-const paths = [];       // { x, y, dx, dy, len } in tile-index space, like a spur
+const paths = [];       // { x, y, dx, dy, len } in tile-index space
 // which segment is nearest a tile's centre, and which is next - stamped once
 // by indexPaths, so roadDist costs one array read and at most two segments
 // per PIXEL of the ground bake instead of a walk down the whole network

@@ -135,7 +135,8 @@ order, so the script tags still interleave them:
 | [js/ui/lobby.js](../../js/ui/lobby.js) | ~470 | shared scope, no `window.*` export | the post-game lobby: the match's own record, and the sampling during play its graphs are drawn from |
 | [js/sim/save.js](../../js/sim/save.js) | ~350 | shared scope, no `window.*` export | the replay proof: the valley's baseline, the match as one object graph (`saveCapture`/`saveApply`), `saveHash`, and the record put back on a fresh page (`saveDevLoad`) |
 | [js/ui/botview.js](../../js/ui/botview.js) | ~470 | shared scope, no `window.*` export | the bot dev view: every bot's thought read one way, the recorder, the F4 map overlay and table, the link to the out-of-game page [botlab.html](../../botlab.html) ([botview.md](botview.md)) |
-| [js/sim/eagle.js](../../js/sim/eagle.js) | ~1510 | shared scope, no `window.*` export | the eagle drop: the corner roosts, the ride and the jump, the crash and the spur, the drop brief, the bird each side guards |
+| [js/sim/eagle.js](../../js/sim/eagle.js) | ~1180 | shared scope, no `window.*` export | the eagle drop: each bird's flight in over its own corner, the ride, the hop off, the crash on the perch, the drop brief, the bird each side guards |
+| [js/sim/base.js](../../js/sim/base.js) | ~60 | shared scope, no `window.*` export | the bases: each side's fixed hollow, perch and mouth in its roost corner, the road's two ends, `placeBase` |
 | [js/app/boot.js](../../js/app/boot.js) | ~700 | `DBG` + shared scope | the last file to load: the boot order, `window.DBG`, the rAF loop and the fixed 1/60 s step it feeds the sim |
 
 Line counts are approximate on purpose; they are here for a sense of scale, not to be maintained.

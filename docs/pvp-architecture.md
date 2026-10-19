@@ -175,7 +175,7 @@ netClientStep(dt): send {t:'in'} - this tick's input and the ack - step our own 
 | every own field of every player (position, hp, gold, bag, gear, cooldowns, status timers, aboard/drop...) except `SNAP_SKIP` | host | snapshot fields, by reflection; every client gets every player's fields |
 | arrows, drops, robots, animals (camp monsters among them), fish, the two eagles | host | snapshot lists keyed by network id (players by slot, eagles by team) |
 | `objects` tiles (a build, a demolish, a felled tree), `ground`, the `structures` registry | host | whole in the full sync; in a delta only the tiles, tile fields and ground cells touched since the peer's ack (`objDiff`, `objWholeAt`, `groundDiff`, `structs`) - state, not events, and no hash check |
-| the nets, the holes and ice cracks, the ice breaks, the orca (eased like a body: `netClientLerp`), the road registry (`spurs`), the camps' `repopT` | host | snapshot singletons, sent when touched |
+| the nets, the holes and ice cracks, the ice breaks, the orca (eased like a body: `netClientLerp`), the road registry (`pads`), the camps' `repopT` | host | snapshot singletons, sent when touched |
 | `state`: `SNAP_STATE` (`time`, `elapsed`, `day`, `tick`, `darkness`, the wind's three, `fishT`, `creekGone`, `over`, `end`, `eagleCine`) | host | snapshot singleton, by the names touched; a client keeps its own `over`/`end` and holds the host's as `NET.hostOver` |
 | deaths, respawns, the end of the match | host | snapshot state - `netClientMode` reads the local body (`aboard`, `dropT`, `dead`, `eliminated`) and the host's verdict turned to its own side |
 | a hit's puff and number, a cue, a shake | host | the cosmetic ring (`ev` on a `snap`), replayed by `evPlay` |
@@ -204,10 +204,10 @@ tomorrow is carried the day it is added. A reference to another entity crosses a
 kind and id (`P` player slot, `R`/`A`/`W`/`D`/`F` robot/animal/arrow/drop/fish by network id, `O`
 object tile index, `C` camp index, `E` eagle by team) and `snapResolve` rebuilds it once everything
 it can name exists. A player's `input`, `ai` and `nav` never cross. `Infinity`/`NaN`, a `Map`, a
-`Set` and a `Uint8Array` ride as marked objects (`$n`, `$map`, `$set`, `$u8`). An eagle's `spur`
-and `pad` are entries of the road registry (`spurs`) shared by identity, so the registry is a
-singleton of its own, merged by (team, pad), and the eagles are re-pointed at it after every apply
-(`snapEaglesRepoint`); its `lane` is merged into the object already there. The wire form is cut
+`Set` and a `Uint8Array` ride as marked objects (`$n`, `$map`, `$set`, `$u8`). An eagle's `pad`
+is an entry of the road registry (`pads`) shared by identity, so the registry is a singleton of
+its own, merged by team, and the eagles are re-pointed at it after every apply
+(`snapEaglesRepoint`). The wire form is cut
 from this snapshot, not written beside it:
 
 - **Stable ids and field deltas.** Every moving entity carries a network id for its life
@@ -362,7 +362,7 @@ for "from nothing"), then only what was touched since the base:
 | `P`, `R`, `A`, `W`, `D`, `F` | per kind: `ch` - `[id, fields]` pairs, the fields touched as they stand now (whole for an entity new since the base), names that left as `$del`; `del` - ids gone; `order` - the array's ids in order, when it moved. An id a client has not seen is made; an `order` naming an id it lacks returns null and earns a `resync` |
 | `eagles` | `[team, fields]` pairs |
 | `state`, `orca`, `dropMeta` | a plain-object singleton, by the names touched |
-| `camps`, `spurs`, `holes`, `iceCracks`, `nets` | an array singleton, whole when touched |
+| `camps`, `pads`, `holes`, `iceCracks`, `nets` | an array singleton, whole when touched |
 | `objDiff`, `objWholeAt`, `objWhole` | tiles by index: touched fields (with `$del`), `null` for a tile gone, the whole tile for one made or unmade since the base (its index listed in `objWholeAt`; `objWhole` when there was no base). A tile still there changes in place |
 | `groundDiff` | a flat `[index, type, ...]`; each cell is `repaintGround`ed |
 | `structs` | the registry as tile indices, when it moved |
@@ -430,7 +430,7 @@ The same screens and the same protocol ride either transport; only the list and 
 6. **The drop.** The count ends in `lockIn` and `beginDrop`, which seats by slot. A client
    never starts anything: the ride arrives as snapshot state (`state.drop`, `aboard`, `dropT`, the
    eagles) and `netClientMode` moves its screen from the title to the ride, to play, to the death
-   overlay and back. The leap is an input (`input.jump`), like everything else a hand does.
+   overlay and back. The hop off the roost is an input (`input.work`, `input.dodge` or `input.jump`), like everything else a hand does.
 7. **In match.** The party stays listed as `live`, which is how a dropped client finds it. On
    Steam the host learns who came and went from the lobby's chat updates (`LobbyChatUpdate` ->
    `peer`/`gone`).

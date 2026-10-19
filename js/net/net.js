@@ -471,7 +471,7 @@ function netClientStep(dt) {
 // runs, so a client reads the same facts off its own body as the snapshots
 // move it: xp is the match's gold earned (gainGold), kills only climbs, a
 // death is dead's rising edge, the match and its first day start at takeoff
-// (beginDrop's two, which a client never calls) and the leap off the bird is
+// (beginDrop's two, which a client never calls) and the hop off the bird is
 // aboard's falling edge (hopOff's markDropped - the hop's cue itself
 // arrives as sfxFor's event). A redial
 // keeps the baseline, so what was earned while the socket was down still counts.

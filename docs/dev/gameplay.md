@@ -1677,7 +1677,7 @@ bob; the plate holds still on the standing frame's seat. The hands stay free: th
 
 The roll key is **the leap** (`tryDodge` → `rideLeap`): `RIDE_LEAP_T` in the air at the gallop,
 owning the velocity the way a roll does (`rideLeapStep`), clearing any tile whose `OBJECTS` entry
-says `leap` (the road's felled trunk, `isSolidTile`). A leap never lands on a trunk: it holds up to
+says `leap` (a felled trunk, the practice field's `log`, `isSolidTile`). A leap never lands on a trunk: it holds up to
 `RIDE_LEAP_HOLD` longer to come down clear. E again hops off (`rideEnd`) and the deer bolts, wild
 again. A stun on either body, a fall through the ice, the zipline, the air, or either one dying
 throws the rider at rest (`rideCheck`, `stunUnit`, `die`, `animalDies`); nobody goes prone or
@@ -2033,7 +2033,7 @@ holds, because that pickup is an exchange.
 ## The merchant's counter
 
 **Each eagle's merchant keeps a shop, and both shops serve everybody.** Walk up to either team's
-**stall** (the stall its [merchant](#the-merchant) pitches beside the spur's head) or to the
+**stall** (the stall its [merchant](#the-merchant) pitches beside the road's head) or to the
 merchant itself, press **E**, and the counter opens: the **SHOP**, an items shop in League's
 mould. It sells five cheap **parts** and eight **finished items** built out of them into
 [six item slots](#the-items), and fish and berries at a fixed price; anything in the pack sells by
@@ -2997,8 +2997,8 @@ The `soldiers` banner (js/sim/robots.js). Every `STRUCTS.barracks.waveT` seconds
 side's pennant (`drawRobot` stamps `drawFlagPennant` on a `kind: 'soldier'` body, the one thing
 that says this bot is not here to chop) — that marches [the road](world.md#the-road) to the rival
 bird. `makeSoldier(o)` is `makeRobot` with `kind: 'soldier'`, `owner: -1` (no flag reads it, no
-cargo, no payout but the bounty) and a **route**: its own eagle's junction (`e.mouth` — down the
-roost's spur to the road), `roadWaypoints(team)`, the rival's junction; the rival roost itself is
+cargo, no payout but the bounty) and a **route**: its own eagle's junction (`e.mouth`, where the
+road leaves its [base](world.md#the-bases)), `roadWaypoints(team)`, the rival's junction; the rival roost itself is
 read live each frame, since
 it may have flown. The road's middle is swapped for a way round [the cistern](world.md#the-cistern)
 (`cisternWayRound`): the road just short of its own gate, the bank of one of the fords outside the
@@ -3013,7 +3013,7 @@ waves meet on the stones, never on the orca's ice. `updateSoldier` is four rungs
    `SOLDIER_EAGLE_DMG` (8, against a hand's 20) a swing through `hurtEagle` — ahead of any
    building, since whatever a side builds round its bird stands within a step of it;
 3. a rival **building** inside `SOLDIER_SIEGE` (40 px — what is in its way: a turret, a
-   wall across the spur, a rival bay): `hurtStruct` through the same `robotStrike`;
+   wall across the road, a rival bay): `hurtStruct` through the same `robotStrike`;
 4. the **march**: first **the zipline** (`soldierBoard`): a cable within `SOLDIER_ZIP_REACH`
    (96 px) whose end nearer the rival bird is `SOLDIER_ZIP_GAIN` (96 px) nearer it than the
    soldier stands — walked to at its mount (`zipMount`), clipped onto inside `ZIP_GRAB`, ridden
@@ -3050,17 +3050,17 @@ first job is its **stall**, and after that **home production**: it fells the **b
 raises the **bot bays** there.
 
 **The stall** (`OBJECTS.stall`, world.js) is the shop players walk to. The moment the merchant is
-off the bird it looks for a 3×2 site (`merchStallSite`) about `MERCH_STALL_OUT` (4.6) tiles from
-the roost at `MERCH_STALL_ANG` (0.9 rad) either side of the spur's axis: beside the track's head,
-where everybody lands and respawns, never on the track itself (`SPUR_HW` and a tile more), dry
-land holding nothing the axe cannot take. It clears and hammers it exactly as a bay (the shared
+off the bird it looks for a 3×2 site (`merchStallSite`) about `MERCH_STALL_OUT` (6) tiles from
+the roost at `MERCH_STALL_ANG` (1.0 rad) either side of the road's axis (`e.laneDir`): just past the
+paved crater, beside the road's head, where everybody lands and respawns, never on the road itself
+(`laneDist`), on snow holding nothing the axe cannot take. It clears and hammers it exactly as a bay (the shared
 `raise` inside `updateMerchant`), and `pitchStall` sets it: the anchor is the front-left tile (the
 row the y-sort reads, like the hut's), parts east and north, and the ground under its shade is
 repainted. It carries its `team` and nothing else: no `tool`, no hp and no place in `structures`,
 so nothing swings at it, shoots it or sieges it. It goes up once, about twenty seconds after the
 landing, and until then the merchant's own body is the only counter. A pine or snag it fells is a **log** in its own stock (`b.wood`, no gold, like
-the crater and the spur). The back woods are every pine inside `MERCH_BACK_R` (13 tiles) of the
-roost whose bearing off the spur's axis (`e.laneDir`, 0 toward the road) is at least
+the crater). The back woods are every pine inside `MERCH_BACK_R` (13 tiles) of the
+roost whose bearing off the road's axis (`e.laneDir`, 0 up the road) is at least
 `MERCH_BACK_ARC` (90°): the half facing away from the road. `merchBackPine` picks the one nearest
 the roost first (the merchant's own distance breaks near ties) that still has an open side to
 stand on, so the clearing grows out from home as one front. Each falls to a **stump** at
@@ -3072,7 +3072,7 @@ The first is due `MERCH_BAY_T` (30 s) after the landing and is free; each after 
 `MERCH_BAY_WOOD` (40) logs, up to `MERCH_BAYS` (3), which lands them at about 1:00, 2:00 and
 3:45 of match time. They fan round the back of the roost `MERCH_BAY_BACK` (8) tiles out, on the
 slots `merchBaySlots` lists in order: the first corner (`merchBayDir`: of the two back corners,
-±135° off the spur's axis, the one pointing nearer the world's edge, mirrored for both sides),
+±135° off the road's axis, the one pointing nearer the world's edge, mirrored for both sides),
 straight back, then the other corner. `merchNextBay` takes the first slot with no bay standing on
 it, and `merchBaySite` the nearest 3×2 placement to that slot's point whose footprint is dry land
 holding nothing the axe cannot take. `merchBayBlocker` hands it every pine, snag and rock on the
@@ -3083,9 +3083,9 @@ with the merchant wholly off the footprint so the bay never goes up round it, se
 (`createStruct`, nobody pays gold). A wrecked bay drops out of `b.bays` and holds the next raise
 `MERCH_BAY_REBUILD` (45 s); the first bay of an empty yard is always free again, so a side is
 never out of waves. The waves find the road themselves ([Soldiers](#soldiers-the-waves)): every
-soldier's route starts at its own spur's junction.
+soldier's route starts at its own base's junction.
 
-With nothing due and the back woods felled, it keeps to its post at the head of the spur, a step or
+With nothing due and the back woods felled, it keeps to its post on the road just up from the bird, a step or
 two either way. **Wherever it is, it keeps shop** too: its own body is a
 [counter](#the-merchants-counter) as well as its stall, open to either team, and it stands still
 and faces a customer served at its body for as long as the sale takes.
@@ -3743,15 +3743,15 @@ victory, the lobby) can never be undone by a release arriving after it. The
 | `intro` — FROZEN NORTH RUN INTRO | boot, and `leaveLobby()` back to the menu | yes |
 | `lobby` — FROZEN NORTH RUN CLASS SELECTION | `beginLobby()`; the hero pop-up keeps it | yes |
 | `eagle` — FLYING ON EAGLE | `beginDrop()` | yes |
-| `jump` — JUMPING OFF EAGLE | `dropJump()` for the local player | no → `foxglove` |
+| `jump` — JUMPING OFF EAGLE | `landAboard()` at the crash with the local player aboard (a client: `netClientMode`) | no → `foxglove` |
 | `foxglove` — FOXGLOVE DROP | the end of `jump`, via `TRACKS.next` | no → silence |
 | `village` — FOREST VILLAGE LOOP | `openShop()`, as a **hold**; `closeShop()` releases it | yes |
 | `wiki` — WHISPERING WOODS | `beginWiki()`, as an ordinary **play**; `leaveWiki()` puts `intro` back | yes |
 | `victory` — DROP THE ICE | `endMatch('won')` | yes |
 | `defeat` — SLEEPY GAME SAVE | `endMatch('lost')` | yes |
 
-The jump is a **hard cut**, not a crossfade (`{ out: 0.1, in: 0.05 }`): the ride's song is
-interrupted by the leap. From there the layer runs itself — `jump` reaches its end, its `ended`
+The landing is a **hard cut**, not a crossfade (`{ out: 0.1, in: 0.05 }`): the ride's song is
+interrupted by the impact. From there the layer runs itself — `jump` reaches its end, its `ended`
 handler follows `TRACKS.next` into `foxglove`, and when *that* ends nothing follows it, so the
 match plays out in silence until an end screen. `endMatch` is gated on `'won'`/`'lost'`, each with
 its own song (`victory` / `defeat`); a `'respawning'` overlay is not the end of anything and must

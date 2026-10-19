@@ -2521,7 +2521,7 @@ does not follow the day clock: the shade lies where it lies at night too, under 
 - **Nobody has to report a change.** `castAt` remembers the caster each tile's shade was painted
   with, and `syncCasts` — the first thing `render()` does before the ground blit — compares it
   with what stands there now over the view plus `CAST_REACH`, and repaints the reach of any that
-  changed, each dirty tile once. A pine felled by an axe, a crater, the spur or a snapshot takes
+  changed, each dirty tile once. A pine felled by an axe, a crater or a snapshot takes
   its shade with it, and a new kind of scenery only needs a `CASTERS` entry.
 - **Bodies draw their own each frame** (`drawCastShade(spr, x, y)` before the sprite, a
   `WeakMap` of shades per frame): players (the standing frame through a roll; none lying prone or
