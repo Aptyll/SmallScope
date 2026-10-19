@@ -6,28 +6,29 @@
 // and js/ui/wiki.js.
 // ------------------------------------------------------------ main menu
 // The title screen is a real menu over the living world: the camera drifts
-// around the interior while animals, fish and snow keep running, the items
-// (SINGLEPLAYER / MULTIPLAYER / PRACTICE TOOL / SETTINGS / the reroll die) take
-// mouse or arrows+enter, and every mode change is a transition rather than a cut.
+// around the interior while animals, fish and snow keep running, the three
+// modes (QUICKPLAY / RANKED / PRACTICE TOOL) take mouse or arrows+enter, and
+// every mode change is a transition rather than a cut.
 const INTRO_T = 1.6;    // title -> play: tint dissolves, camera settles, HUD slides in
 const HUD_IN_T = 0.7;   // the HUD slide occupies the last part of the intro
 const PANEL_SLIDE_T = 0.32;
-const MENU_ITEMS = ['SINGLEPLAYER', 'MULTIPLAYER', 'PRACTICE TOOL', 'BOT LADDER'];
+const MENU_ITEMS = ['QUICKPLAY', 'RANKED', 'PRACTICE TOOL'];
 // SETTINGS has no plank: it is the ESC panel's in play (js/ui/panels.js). The
 // seed lives on the lobby under the map's name (rerollWorld below),
 // and the WIKI is a tab beside the patch notes (js/ui/notes.js).
 // The items are plain words at MENU_TXT_SCALE - white, the picked one gold -
 // stacked at the bottom middle of the view, MENU_TXT_PITCH apart with the
 // last one's foot MENU_BOTTOM above the edge; no plank, slab or frame around
-// them, and all three live from the first boot (PRACTICE TOOL boots the
-// training arena, beginPractice).
+// them, and all three live from the first boot. QUICKPLAY and RANKED open
+// the party lobby (beginParty, js/ui/rooms.js), whose FIND MATCH goes on to
+// the hero select below; PRACTICE TOOL boots the training arena (beginPractice).
 const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // The frost plank (drawMenuButton) is no longer the title's: MENU_BW x
 // MENU_BH at MENU_Y0 in the 270-tall authored frame is where the lobby's
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.483';
+const PATCH_TXT = 'PATCH 0.484';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -43,6 +44,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.484', 'ONE WAY IN, LEAGUE STYLE: THE TITLE OFFERS QUICKPLAY, RANKED AND PRACTICE TOOL; QUICKPLAY AND RANKED OPEN YOUR PARTY, WHERE FRIENDS JOIN BY CODE OR STEAM INVITE, SAY READY AND CHAT, AND FIND MATCH FILLS EVERY EMPTY SEAT WITH BOTS AND TAKES EVERYONE TO PICK A HERO; RANKED KEEPS A RATING AND ITS BOTS MATCH IT; SINGLEPLAYER, THE ROOM LIST AND THE BOT LADDER SCREEN ARE GONE.'],
   ['0.483', 'YOU CAN SURRENDER NOW: AFTER 15 MINUTES ANYONE CAN START A VOTE FROM THE ESC MENU, EVERY TEAMMATE CLICKS YES OR NO UNDER THE CLOCK, AND 4 OF 5 YES ENDS THE MATCH STRAIGHT ON THE STATS, WITH THE BOTS VOTING ALONG WITH THE PLAYERS.'],
   ['0.482', 'HEROES, LEAGUE STYLE: THE CHARACTER CREATOR AND LIST ARE GONE, YOU ARE ONE PROFILE - YOUR NAME AND LIFETIME STATS, OPENED FROM YOUR NAME ON THE TITLE - THAT YOUR OLD CHARACTERS FOLD INTO WITH EVERY WIN KEPT, AND EACH MATCH YOU PICK HUNTER OR WARRIOR FROM A ROW OF HEROES ON THE LOBBY, EVERY HERO WEARING ONE LOOK FOR BOTS AND PLAYERS ALIKE, WITH SLEET AND DURAVO SHOWN AS SILHOUETTES UNTIL THEY ARRIVE.'],
   ['0.481', 'BEHIND THE SCENES: THE GAME\'S CODE IS SORTED INTO FOLDERS BY JOB. NOTHING YOU PLAY CHANGES.'],
@@ -577,10 +579,9 @@ function menuSelect(i) {
 function menuActivate(i) {
   SFX.unlock();
   const it = MENU_ITEMS[i];
-  if (it === 'SINGLEPLAYER') beginLobby();
-  else if (it === 'MULTIPLAYER') beginRooms();
+  if (it === 'QUICKPLAY') beginParty('quick'); // the party lobby (js/ui/rooms.js)
+  else if (it === 'RANKED') beginParty('ranked');
   else if (it === 'PRACTICE TOOL') beginPractice();
-  else if (it === 'BOT LADDER') beginLadder(); // the ladder's standings (js/ui/ladder.js)
 }
 
 // Into the training arena: the same whiteout-and-reload the die uses, onto
@@ -647,9 +648,7 @@ function menuKey(e) {
   if (m.screen === 'saves') { if (m.popT >= 1) savesKey(k); return; } // its own keys, the X included (js/ui/saves.js)
   if (m.screen === 'lobby') { if (m.screenT >= 1 && m.popT <= 0) lobbyKey(k); return; }
   if (m.screen === 'skins') { if (m.skinT >= 1) skinsKey(k); return; }
-  if (m.screen === 'ladder') { if (m.ladT >= 1) ladderKey(k); return; }
-  if (m.screen === 'rooms') { if (m.roomsT >= 1) roomsKey(k, e); return; }
-  if (m.screen === 'room' || m.screen === 'host') { if (m.roomsT >= 1) roomKey(k, e); return; } // the waiting room and CREATE's page (js/ui/rooms.js)
+  if (m.screen === 'room') { if (m.roomsT >= 1) roomKey(k, e); return; } // the party lobby (js/ui/rooms.js)
   if (m.screen === 'profile') return; // its keys arrive through profileKey (input.js), never here
   if (m.panel) {
     if (k === 'escape' || k === 'backspace' || (m.panel !== 'settings' && (k === 'enter' || k === ' '))) closeMenuPanel();
@@ -673,9 +672,7 @@ function menuClick() {
   if (m.screen === 'saves') { if (m.popT >= 1 && !m.lockT) savesClick(); return; }
   if (m.screen === 'lobby') { lobbyClick(); return; }
   if (m.screen === 'skins') { skinsClick(); return; }
-  if (m.screen === 'ladder') { ladderClick(); return; }
-  if (m.screen === 'rooms') { roomsClick(); return; }
-  if (m.screen === 'room' || m.screen === 'host') { roomClick(); return; }
+  if (m.screen === 'room') { roomClick(); return; }
   if (m.screen === 'profile') { profileClick(); return; }
   if (m.panel) {
     if (!menuPanelReady()) return;
@@ -748,9 +745,9 @@ function titleCamTarget() {
 
 function updateTitle(dt) {
   const m = state.menu;
-  // the waiting room's comings and goings: a card whose kind changed (a bot
-  // became a person, or the reverse) flashes and sounds; a guest whose host
-  // left, or who was shown out, is back on the rooms list with a rattle
+  // the party's comings and goings: a card whose kind changed (an empty seat
+  // became a person, or the reverse) flashes and sounds; a guest whose
+  // leader left, or who was shown out, is back in a party of its own
   if (NET.role !== 'solo' && (m.screen === 'lobby' || m.screen === 'room' || popOpen())) {
     if (!m.cardFx) { m.cardFx = {}; m.cardKind = players.map((p) => isHuman(p)); }
     for (const p of players) {
@@ -759,7 +756,7 @@ function updateTitle(dt) {
       m.cardKind[p.id] = h;
       if (m.cardFx[p.id] > 0) m.cardFx[p.id] -= dt;
     }
-    if (NET.isClient && (NET.refused === 'HOSTGONE' || NET.refused === 'KICKED')) { if (popOpen()) leavePop(); netLeave(); beginRooms(); m.roomsShake = NAME_SHAKE_T; SFX.deny(); }
+    if (NET.isClient && (NET.refused === 'HOSTGONE' || NET.refused === 'KICKED')) { if (popOpen()) leavePop(); const mode = NET.mode; netLeave(); beginParty(mode || 'quick'); SFX.deny(); }
   } else m.cardFx = null;
   m.t += dt;
   m.camT += dt;
@@ -778,8 +775,7 @@ function updateTitle(dt) {
   if (m.screen === 'profile') updateProfile(dt);
   m.skinT = Math.max(0, Math.min(1, m.skinT + (m.screen === 'skins' ? 1 : -1) * dt / 0.35)); // the skins screen (js/ui/skins.js)
   if (m.screen === 'skins') updateSkins(dt);
-  updateLadder(dt); // the bot ladder screen's ease and hovers (js/ui/ladder.js)
-  m.roomsT = Math.max(0, Math.min(1, m.roomsT + (m.screen === 'rooms' || m.screen === 'room' || m.screen === 'host' ? 1 : -1) * dt / 0.35));
+  m.roomsT = Math.max(0, Math.min(1, m.roomsT + (m.screen === 'room' ? 1 : -1) * dt / 0.35));
   updateRooms(dt);
   // a word lights under the pointer, or as the keys' pick until the pointer moves
   const hit = !m.panel && m.screen === 'menu' && mouse.inside ? menuHit() : -1;
@@ -812,7 +808,7 @@ function updateTitle(dt) {
   // one's) the face it wears changes and the target jolts
   if (m.mapSlide) { m.mapSlide.t = Math.min(1, m.mapSlide.t + dt / 0.35); if (m.mapSlide.t >= 1) m.mapSlide = null; }
   if (m.lockFx > 0) m.lockFx = Math.max(0, m.lockFx - dt);
-  const tl = ah && ah.startsWith('diff') ? +ah.slice(4) : settings.aiLevel | 0;
+  const tl = ah && ah.startsWith('diff') ? +ah.slice(4) : roomLevel();
   if (tl !== m.tgtLv) { m.tgtLv = tl; m.tgtT = 0; }
   m.tgtT = Math.min(1, (m.tgtT || 0) + dt);
   if (m.countT > 0) {
@@ -1114,7 +1110,8 @@ function buildHelpPanel() {
 }
 
 // ---- lobby --------------------------------------------------------
-// SINGLEPLAYER goes here (menu.screen = 'lobby'): ONE screen on its own
+// The HERO SELECT (menu.screen = 'lobby'), where a party's FIND MATCH lands
+// (js/ui/rooms.js) and every member follows (netPhase 'pick'): ONE screen on its own
 // painted night - never the live world - laid out the way a League lobby is.
 // Two TEAM PANELS stand glued to the screen's edges, your side's on the LEFT
 // and the rivals' on the RIGHT: five frames each, in player order, a frame
@@ -1899,11 +1896,11 @@ function lobbyHit() {
   const { play, figure, tgt, mapc, savc, heroes } = lobbyLayout();
   const over = (r, px, py) => mouse.x >= r.x - px && mouse.x < r.x + r.w + px && mouse.y >= r.y - py && mouse.y < r.y + r.h + py;
   if (over(figure, 0, 0)) return 'hero';
-  const hi = NET.isClient ? -1 : heroCellAt(heroes);
+  const hi = heroCellAt(heroes);
   if (hi >= 0 && hi < CLASSES.length) return 'pick' + hi;
   if (NET.isClient) return null; // a guest's room: the host's word, the host's difficulty, the host's world, its own character as it came
   if (over(play, 2, 3)) return 'play';
-  if (over(tgt, 2, 2)) return 'ai';
+  if (over(tgt, 2, 2) && NET.mode !== 'ranked') return 'ai'; // RANKED's bots follow the party's rating
   // the shape and the seed are picked before a room is opened: a pick is a
   // page, and a host reloading would drop the room under everyone in it
   if (NET.role === 'solo' && over(mapc, 2, 2)) return 'map';
@@ -1932,13 +1929,12 @@ function beginLobby() {
   m.cswapT = 1;
   m.countT = 0; m.countN = -1; // every rival frame face-down again
   m.lockFx = 0; m.mapSlide = null;
-  m.tgtLv = settings.aiLevel | 0; m.tgtT = 1; // the target lands with the screen, no jolt
+  m.tgtLv = roomLevel(); m.tgtT = 1; // the target lands with the screen, no jolt
   SFX.place();
   SFX.music.play('lobby');
 }
 function leaveLobby() {
-  if (NET.role !== 'solo') { netLeave(); beginRooms(); return; } // a guest walks out of a room, back to the list (a host's ESC goes back to the seats: lobbyKey)
-  ladderFoe = null; // a ladder bot picked for this lobby stays behind with it (js/ui/ladder.js)
+  if (NET.role !== 'solo') { leaveRoom(); return; } // a guest walks out of the party, back to the title (a leader's ESC goes back to the seats: lobbyKey)
   state.menu.screen = 'menu';
   state.menu.countT = 0;
   SFX.pickup();
@@ -2014,9 +2010,7 @@ function lockIn() {
 }
 // the rivals' difficulty: one of AI_LEVELS, remembered with the profile
 function setAiLevel(k) {
-  const foe = ladderFoe;
-  ladderFoe = null; // a level picked is the built-in rivals again, not the ladder bot (js/ui/ladder.js)
-  if (settings.aiLevel === k && !foe) return;
+  if (settings.aiLevel === k) return;
   settings.aiLevel = k;
   saveSettings();
   SFX.pickup();
@@ -2354,9 +2348,9 @@ function drawLobbyTop(now, a) {
   drawMapPlate(mapc, mh ? 1 : 0);
   const shape = mapName(settings.mapType | 0);
   drawPixelTextShadow(ctx, shape, mn.x - (pixelTextWidth(shape) >> 1), mn.y, mh ? '#ffd95c' : '#f4f7ff', '#0a0e23');
-  const lv = settings.aiLevel | 0;
+  const lv = roomLevel(); // a guest's is the leader's, RANKED's the party's rating's (js/ui/rooms.js)
   drawLobbyTarget(tgt.x, tgt.y - (th ? 1 : 0), tgt.w, lv, now, a);
-  const level = ladderFoe ? ladderName(ladderFoe) : AI_LEVELS[lv].name; // a ladder bot names the rivals (js/ui/ladder.js)
+  const level = AI_LEVELS[lv].name;
   drawPixelTextShadow(ctx, level, tn.x - (pixelTextWidth(level) >> 1), tn.y, th ? '#ffd95c' : '#f4f7ff', '#0a0e23');
   if (savc) {
     const sh = hover === 'saves';
@@ -2847,10 +2841,9 @@ function renderTitle(now) {
   const tc = easeInOut(m.wikiT);               // ...and the wiki's own
   const nc = easeInOut(m.notesT);              // ...and the patch notes'
   const kc = easeInOut(m.charT);               // ...and the profile card's
-  const rc = easeInOut(m.roomsT);              // ...and the rooms screen's
+  const rc = easeInOut(m.roomsT);              // ...and the party lobby's
   const bc = easeInOut(m.skinT);               // ...and the skins screen's
-  const lc = easeInOut(m.ladT || 0);           // ...and the bot ladder's
-  const pan = Math.max(m.panel ? easeOut(m.panelT) : 0, sc, tc, nc, kc, rc, bc, lc); // chrome ducks under a panel or any full screen
+  const pan = Math.max(m.panel ? easeOut(m.panelT) : 0, sc, tc, nc, kc, rc, bc); // chrome ducks under a panel or any full screen
   const { toy, rects } = menuLayout();
   const cx = Math.round(VIEW_W / 2);
   const chromeA = (1 - out) * (1 - pan);
@@ -2919,9 +2912,8 @@ function renderTitle(now) {
   if (tc > 0.005) renderWiki(now, tc * (1 - out));
   if (nc + tc > 0.005) drawPageTabs(Math.min(1, nc + tc) * (1 - out)); // one row over both, so a switch never fades it
   if (kc > 0.005) renderProfileCard(now, kc * (1 - out));
-  if (rc > 0.005) renderRooms(now, rc * (1 - out));
+  if (rc > 0.005) renderRoom(now, rc * (1 - out));
   if (bc > 0.005) renderSkins(now, bc * (1 - out));
-  if (lc > 0.005) renderLadder(now, lc * (1 - out));
 
   // sub-panels slide up from the bottom edge over the still-visible world
   if (m.panel) {

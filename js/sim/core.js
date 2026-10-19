@@ -156,7 +156,7 @@ const state = {
   // table in a file that loads later, so the ease loop tops up a missing
   // cell rather than trusting it - a short array turned into NaN and
   // silently deleted a row when a fifth plank arrived.
-  menu: { sel: 0, hover: [0, 0, 0, 0], t: 0,
+  menu: { sel: 0, hover: [0, 0, 0], t: 0,
     panel: null, panelT: 0, closing: false,
     // the profile card (screen 'profile', js/ui/profile-card.js): charT its
     // ease, nameBuf the name field's buffer, nameSel whether the next letter
@@ -177,8 +177,8 @@ const state = {
     iceT: 0, iceI: -1, iceSeed: 0, iceX: 0, iceY: 0,
     // lobby: which screen the menu shows, its cross-fade, the chosen hero
     // (csel, the hero row - js/ui/heroes.js), the stage's swap pop, lock-in hold.
-    // screen: 'menu' | 'lobby' | 'hero' | 'map' | 'ai' | 'wiki' | 'notes' | 'profile' | 'skins' | 'ladder'
-    // (the bot ladder, js/ui/ladder.js: ladT its ease, ldSel its row, ldTop the first row shown, ldHover its hover eases).
+    // screen: 'menu' | 'lobby' | 'hero' | 'map' | 'ai' | 'wiki' | 'notes' | 'profile' | 'skins' | 'room'
+    // ('room' is the party lobby, js/ui/rooms.js; 'lobby' the hero select).
     // 'hero', 'map' and 'ai' are the three pop-ups over the still-lit lobby:
     // pop names the one open (kept while it fades out) and popT is its ease;
     // grow is the hero pop-up's keyboard row (the gear column, the ability
@@ -199,10 +199,10 @@ const state = {
     // ran out); dhover the AI pop-up's three plates' hover eases (menu.js
     // `lobby`)
     countT: 0, countN: -1, dhover: [0, 0, 0],
-    // the rooms screen (the MULTIPLAYER plank, js/ui/menu.js): its ease, the
-    // relay's open rooms, whether the relay answered, the row hovers, the
-    // keyboard row, and the refusal rattle of a room that would not have us
-    roomsT: 0, rooms: [], roomsOk: false, rhover: {}, rsel: -1, roomsShake: 0,
+    // the party lobby (js/ui/rooms.js): its ease, the open rooms a typed code
+    // is looked up in and whether the list answered, the code being looked
+    // for (seek), and a join under way
+    roomsT: 0, rooms: [], roomsOk: false, seek: null, joining: false,
     pop: null, popT: 0, grow: 0, gearFxT: 0, gearFxSlot: 0, mrow: 0, wikiT: 0, wikiTab: 0, notesT: 0, notesTab: 0, notesSel: 0 },
   intro: 0,            // seconds left of the title -> drop / landing -> play transition (0 = none)
   introLen: 1,         // that transition's full length (the camera ease divides by it)

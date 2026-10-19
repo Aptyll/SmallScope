@@ -1,7 +1,7 @@
 # Rendering
 
-> The title's MULTIPLAYER item, its CUSTOM GAMES list and room, and the waiting room:
-> [gameplay.md](gameplay.md#settings) (they are a lobby, not a surface of their own).
+> The party lobby that QUICKPLAY and RANKED open:
+> [gameplay.md](gameplay.md#settings) (it is a lobby, not a surface of their own).
 
 Everything that draws: the camera, the pass order, the baked panels, and the pixel cursor.
 Read this before touching `render()`, adding a draw pass, or changing anything positioned off
@@ -1849,13 +1849,13 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
 `BORDER_MAX + 6` tiles clear of the forest. Everything lives in the `main menu` banner and on
 `state.menu`:
 
-- **Items** `MENU_ITEMS` (SINGLEPLAYER / MULTIPLAYER / PRACTICE TOOL / BOT LADDER —
-  all four live from the first boot, and nothing else: a [saved match](gameplay.md#saved-matches)
+- **Items** `MENU_ITEMS` (QUICKPLAY / RANKED / PRACTICE TOOL —
+  all three live from the first boot, and nothing else: a [saved match](gameplay.md#saved-matches)
   is picked up from the lobby's SAVES plate; `menuActivate` dispatches on the word; PRACTICE TOOL's activation is `beginPractice()` (the
   reroll's whiteout onto
-  `?practice=1`, the [practice arena](world.md#the-practice-arena)). SINGLEPLAYER leads
-  the column as the first live way in; MULTIPLAYER opens the rooms screen; BOT LADDER opens
-  [the bot ladder screen](#the-bot-ladder-screen);
+  `?practice=1`, the [practice arena](world.md#the-practice-arena)). QUICKPLAY and
+  RANKED open the [party lobby](gameplay.md#settings) in that mode (`beginParty`), whose FIND
+  MATCH leads to the [lobby](#lobby)'s hero select;
   there is no WIKI or SETTINGS item: the [wiki](#the-wiki-screen) opens from a word in the corner of
   the patch notes, settings are the ESC panel's in play, and the seed lives on
   [lobby](#lobby) under the map), stacked `MENU_TXT_PITCH` apart, climbing from `MENU_BOTTOM`
@@ -1885,7 +1885,7 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   it a px; at rest nothing is lit. No plank, slab or frame — the
   **frost plank** (`drawMenuButton`: chamfered slab with hashed wood-grain, a snow cap, icicles,
   corner rivets, a gold rule when hot, and a sealed ice glaze with a cold shimmer when `frozen`)
-  is drawn by the lobby's PLAY, the rooms screen, the notes' WIKI and the end screens,
+  is drawn by the lobby's PLAY, the notes' WIKI and the end screens,
   sized `MENU_BW`×`MENU_BH` at `MENU_Y0` where those stand it.
 - **Die** (`drawSeedDie`): shows `1 + (SEED % 6)` (faces
   1–6), cycles faces and jitters while hovered, tumbles while `menu.rolling`. It stands on
@@ -1911,13 +1911,13 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   the purse, gold with an underline on hover) opens the [skins screen](#the-skins-screen).
   Any open panel ducks the logo to zero alpha.
 <a id="lobby"></a>
-- **Lobby** (`menu.screen = 'lobby'`, entered by SINGLEPLAYER via `beginLobby`): ONE
+- **Lobby** (`menu.screen = 'lobby'`, the HERO SELECT, entered by a party's FIND MATCH via `beginLobby`): ONE
   screen on its **own painted night** (`drawLobbyBackdrop` — starfield, two additive aurora
   ribbons, a vnoise ridge over a pine line, a lit snow floor, stateless snowfall off the clock,
   the cinematic band; fully opaque at rest, so the live ambient world is never this screen's
   backdrop), laid out **the way a League lobby is**, in the full view (no authored frame).
-  `lobbyLayout()`/`lobbyHit()` (which answers `'play'`, `'gear'`, `'map'`, `'ai'`, `'saves'`, `'charl'`/`'charr'`
-  or null) are the rect source for both drawing and the mouse.
+  `lobbyLayout()`/`lobbyHit()` (which answers `'play'`, `'gear'`, `'map'`, `'ai'`, `'saves'`, `'pickN'` (a hero on
+  the row) or null) are the rect source for both drawing and the mouse.
   **Two team panels stand glued to the screen's edges** (`LOBBY_PANEL_W` wide, `drawLobbyRosters`/
   `drawLobbyCard`): your side's five **frames** down the left, the rivals' down the right, in
   player order under a `LOBBY_HEAD` head, each frame as tall as the view allows up to
@@ -1994,9 +1994,8 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   `AI_LEVELS` row, stacked easy to hard, each carrying its level's name (js/ai/ai-skill.js — EASY /
   NORMAL / HARD / IMPOSSIBLE) and its tier in pips, the picked one filled in the rivals' paint, the hovered one
   lifting (`menu.dhover`)); a click or Up/Down is `setAiLevel`, which saves the profile's
-  settings, and Enter closes. While a ladder bot is picked for this lobby (`ladderFoe`, from the
-  [bot ladder screen](#the-bot-ladder-screen)) the target's name is the bot's; `setAiLevel` and
-  leaving the lobby drop it.
+  settings, and Enter closes. In RANKED the target is not pressed: the bots'
+  level follows the party's rating (`NET.botLv`, js/ui/rooms.js).
 
   At the foot of the view, **LOCK
   IN** is a bare word in the [main menu](#main-menu-title)'s grammar, big (`LOBBY_LOCK_SCALE`, white,
@@ -2137,48 +2136,6 @@ is the one rect source for the draw, the hit test (`skinsHit`) and the cursor.
   not sent over the wire). `drawEagle` asks it at draw time; it is paint, never read by the sim.
   `scoutBody(p)` is the same for a player: only the local player wears the scout skin worn, as a
   body of its own (the IRON SCOUT, [sprites](sprites.md)), and every other player the class body.
-
-### The bot ladder screen
-
-On the lobby's painted night, in [js/ui/ladder.js](../../js/ui/ladder.js) (`menu.screen = 'ladder'`,
-`beginLadder`/`leaveLadder`, its own ease `menu.ladT`). `ladderLayout()` is the one rect source for
-the draw, the hit test (`ladderHit`) and the cursor (`ladderCursor`).
-
-- **The data** is the offline ladder's ([docs/bots/ladder.md](../bots/ladder.md)):
-  `ladder-data/standings.js` beside index.html sets `window.LADDER_DATA` (`rows`, the standings;
-  `bots`, each entered file's source, added to `BOT_LIB` on the sealed `'worker'` transport, never
-  `'inline'`; written by `writePage`, app/ladder/page.js). The game never fetches, so
-  `ladderLoad` adds it as a script each time the screen opens; a missing file is a ladder with no
-  matches. `ladderTake` builds the rows, best first, and lists every `BOT_LIB` bot the ladder has
-  not met at the start rating.
-- **A face per bot** (`ladderFace`, keyed by id in `LAD_FACES`): a scout in the rivals' paint
-  (`SPRITES.portrait`), a colour and a 9x9 emblem of how it plays (`LAD_GLYPHS`); any other id
-  gets a scout rolled from its id and the steel cog.
-- **The list**, left: a well per bot (`drawLadderRow`) with its rank, emblem, name (a red dot if its code
-  threw), a steel bar of its rating against the field with the number, and its last five results
-  as green / grey / red chips. Slate rims, lighter under the hand, bright steel on the picked row
-  (`menu.ldSel`; Up/Down or a click; `menu.ldTop` scrolls past `LAD_ROWS_MAX`).
-- **The card**, right (`drawLadderCard`): the picked bot's portrait on a glow of its colour, its
-  emblem, its name big, its author, its rating big
-  and its last move in green or red, the trend (`ladTrend`, a 1 px line over the start's level),
-  the record as one W/D/L bar with the counts, a W/D/L bar against each rival it has met, and
-  **FIGHT** and **WATCH** at the foot, bare words like LOCK IN (Left/Right pick one for the keys,
-  `menu.ldBtn`).
-- **FIGHT** (`ladderFight`, or Enter) sets `ladderFoe` and opens the [lobby](#lobby); the drop
-  (`beginDrop` → `ladderSeat`) hands every rival `'ai'` seat of a solo match to that bot
-  (`botAssign`), the ladder's own rule of one file playing a whole side.
-- **WATCH** (`ladderWatchPick`) turns the list into the other side's pick (`menu.ldRival`, the
-  row in the rivals' colour, the card's foot reading A VS B); a row or Enter starts it
-  (`ladderWatchStart`), Esc steps back. `ladderWatch` (`{ a, b, speed, won }`) goes straight to the
-  drop with every seat a bot's, seat 0 included (`player.control = 'ai'`, the arena's trick). While
-  it is set: `sampleHumanInput` is skipped, keys and clicks are `ladderWatchKey`/`ladderWatchClick`
-  (Left/Right follow the next living player through `state.spec`, Up/Down or 1-4 the speed, M the
-  map, Esc leaves through `toLobby`), the wheel zooms, renderUI treats the HUD as `out` and drops
-  the notices, and `drawLadderWatch` draws the followed player between two arrows under the rail,
-  A VS B over the 1X-8X chips at the foot, and the winner's banner. The loop steps `speed` times
-  as many ticks (boot.js); `endMatch` hands the ending to `ladderWatchOver` instead of the end
-  screens, a seat 0 respawn leaves the camera alone, `canSave` refuses and `PROFILE.quiet` keeps
-  the character's stats untouched until the page reloads.
 
 ## Eagle drop (mode `drop`)
 

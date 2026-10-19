@@ -12,8 +12,9 @@
 // A press puts the hero on the stage at once (setClass: its look, kit and
 // loadout); LOCK IN keeps it as the profile's hero (lockIn, PROFILE.setHero),
 // which is where the next match's pick opens. The row is still while the
-// count runs. A guest's room plays the hero its profile arrived with (the
-// hello, js/net/net.js), so a client's row is shown but not pressed.
+// count runs. In a party every press goes through the leader (netPick,
+// js/net/net.js), so each member's hero shows on every screen; a guest
+// arrives on its profile's hero (the hello).
 
 const HERO_CELL = 44;                  // a cell's side: a 20 px head crop at 2x, and its rim
 const HERO_GAP = 8;
@@ -41,10 +42,11 @@ function heroCellAt(cells) {
 // put hero i on the stage (a playable one, before the count)
 function lobbyPick(i) {
   const m = state.menu;
-  if (m.countT > 0 || m.lockT > 0 || NET.isClient || i < 0 || i >= CLASSES.length) { SFX.deny(); return; }
+  if (m.countT > 0 || m.lockT > 0 || i < 0 || i >= CLASSES.length) { SFX.deny(); return; }
   if (i === m.csel) return;
   m.csel = i;
   setClass(player, i);
+  if (NET.role !== 'solo') netPick(i); // the party sees it (a guest's goes through the leader, js/net/net.js)
   m.cswapT = 0; // the stage's pop
   SFX.pickup();
 }

@@ -71,8 +71,8 @@ declare victory. The affordances:
   - **Under the wrapper — Noah runs this by hand; a session never starts Electron or makes a
     Steam lobby.** `cd desktop && npm start -- --net=host` on one machine and `--join=LOBBYID`
     on another (Steam running on both) ride the same match over a Steam lobby; with Steam up
-    the MULTIPLAYER plank lists the open lobbies and a click joins one (`--transport=relay` for
-    the relay's rooms instead). `DBG.netStatus().lobby` is the id to hand a joiner and `DBG.lobbies()` lists them raw.
+    QUICKPLAY hosts a party as a public lobby whose code a friend types into their own party
+    (`--transport=relay` for the relay's rooms instead). `DBG.netStatus().lobby` is the id to hand a joiner and `DBG.lobbies()` lists them raw.
     `npm start -- --seed=42 --shot=out.png --wait=4 --quit` boots the game from disk headlessly
     and captures it.
 - **The counter needs a merchant, and a merchant needs a roost**: `startGame()`, step until

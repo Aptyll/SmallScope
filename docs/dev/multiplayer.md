@@ -657,9 +657,7 @@ and a `think` stored as `p.ai.thought`. It runs inline (the examples baked from 
 js/baked/bot-lib.js by `app/bake-bots.js`), in a Web Worker (a person's file) or on any transport a
 harness registers in `BOT_TRANSPORTS`; a headless runner steps only while `botPending()` is
 false, so a seed and the same files replay exactly. The live half of a seat (`botRt`) is never
-saved: a save keeps `p.botId` and the first step after a load reopens the program. In a solo match
-the title's BOT LADDER screen can seat one on the whole rival side (`ladderSeat`, js/ui/ladder.js,
-at the drop). The author's contract: [docs/bots/](../bots/README.md).
+saved: a save keeps `p.botId` and the first step after a load reopens the program. The author's contract: [docs/bots/](../bots/README.md).
 
 `updateAI(p, dt)` (the `ai` banner) writes `p.input` and nothing else — a bot can never do anything
 a human couldn't. It is a priority ladder re-picked a few times a second, and **a profile says how
@@ -1081,7 +1079,10 @@ what the rest of the code needs to know is this:
   copies onto that slot's `p.input`, `netHostStep`) and draws the snapshots the host sends every
   `SNAP_EVERY` (4) ticks, eased between two (`netClientLerp`). A key handler that calls a sim
   function directly therefore does nothing on a client.
-- **A joiner takes an open seat.** `netHostHello` refuses a different patch or seed, deals the first
+- **A joiner takes an open seat.** `netHostHello` refuses a different patch or seed. In a party
+  (`NET.mode`, js/ui/rooms.js) it seats the joiner on the leader's side, only while the party is
+  on its seats (BUSY once the hero select or the match has begun; FULL past five). A host with no
+  mode (a harness's `?net=host`) deals the first
   empty seat, then the first bot slot, of the side with fewer people - a bot's slot first on a
   side already at the room's size (its fullest side's seats, TEAMS) - (a match under way offers
   bots' bodies only; none left: FULL; past `LATE_JOIN_T`, 300 s into a
@@ -1089,9 +1090,8 @@ what the rest of the code needs to know is this:
   `welcome` carries the roster (`netRoster`: control, team, name, cls, look per slot), which the
   client hands to `initPlayers(roster, slot)` with its own seat as the `'human'`. A peer that
   drops gives its body back to a bot, and its seat waits `RECONNECT_GRACE` (60 s) for it.
-- **A side is a field, not a slot.** Before the drop a person changes sides in the waiting room
-  by swapping `p.team` with a bot or empty seat across the rule (`seatSwap`, js/net/net.js), so
-  slots, inputs and connections never move; anything that wants "which side" reads `p.team`.
+- **A side is a field, not a slot.** Anything that wants "which side" reads `p.team`, never the
+  slot number; a party sits on the leader's side.
 - **A cue reaches a client only if the sim said where and who.** Inside the step, `sfxAt`,
   `sfxFor`, `sfxOwn`, `shakeAt` and `shakeFor` (js/net/events.js) play the cosmetic on the host and
   record it (`evPush`; `burst` and the floaters record themselves); the ring rides out with the
