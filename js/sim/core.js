@@ -65,12 +65,13 @@ function mulberry32(a) {
 }
 // Practice mode: ?practice=1 (the PRACTICE const above WORLD) boots the
 // training arena (the `practice arena` banner, js/sim/practice.js) instead of a
-// match - no title menu, no eagles, no other players, and the clock pinned to
+// match - no title menu, no eagles, no bots, and the clock pinned to
 // early morning (sim.js never advances state.time under PRACTICE). It pins
 // SEED to a constant BELOW ?seed on purpose, so the arena is the same ground
 // on every machine every time: a practice room the seed can never reshuffle.
-// Entered from the menu plank (menu.js beginPractice), left from the ESC
-// panel (leavePractice) - both are page reloads, like the reroll.
+// Entered from the party's START (partyPractice, js/ui/rooms.js), left from
+// the ESC panel's LEAVE - both are page reloads, like the reroll. A party
+// plays it together: the leader's page hosts, friends join on the spawn.
 const PRACTICE_SEED = 0x50524143; // 'PRAC'
 
 // one run seed drives every deterministic value: worldgen, per-tile hashes, fx.

@@ -22,7 +22,7 @@
 // to the drop. The rival side is never shown here: it is all bots until
 // matchmaking pairs parties. After the match, LOBBY brings the party back to
 // this screen on a fresh valley (the rematch, below).
-const PARTY_MODES = { quick: 'QUICKPLAY', ranked: 'RANKED' };
+const PARTY_MODES = { quick: 'QUICKPLAY', ranked: 'RANKED', practice: 'PRACTICE TOOL' };
 const RM_CODE_N = 4;                   // letters in a code (makeCode, app/server.js; steamCode, js/net/transport-steam.js)
 const RM_CODE_W = 52, RM_CODE_H = 16;  // the CODE box
 const RS_TOP = 58, RS_H = 34, RS_GAP = 4, RS_W = 260; // the seats: first one's top, a seat's height, between seats, the column's width
@@ -113,6 +113,8 @@ function joinRoom(r) {
   m.seek = null;
   roomsFeedClose();
   const seed = r.data && +r.data.seed, map = (r.data && r.data.map | 0) || 0;
+  // a party already on the practice field: this page follows it there
+  if (r.data && +r.data.practice && !PRACTICE) { location.search = '?practice=1&join=' + r.room + '&back=1' + (netSteam() ? '&transport=steam' : ''); return; }
   if (seed && (seed !== SEED || map !== MAP_TYPE)) { location.search = '?seed=' + seed + '&map=' + map + '&join=' + r.room + (netSteam() ? '&transport=steam' : ''); return; }
   netJoin(r.room);
   m.joining = true;
@@ -157,25 +159,31 @@ function updateRooms(dt) {
   if (m.seek) {
     const r = m.rooms.find((q) => seekMatch(q, m.seek.code));
     if (r) joinRoom(r);
-    else if ((m.seek.t -= dt) <= 0) { m.seek = null; roomsFeedClose(); m.codeShake = NAME_SHAKE_T; SFX.deny(); if (m.joining) beginParty(NET.mode || 'quick'); }
+    else if ((m.seek.t -= dt) <= 0) { m.seek = null; roomsFeedClose(); m.codeShake = NAME_SHAKE_T; SFX.deny(); if (m.joining) partyGiveUp(); }
   }
   // a join answered: the party's seats on a welcome, our own party again on a refusal
-  if (m.screen === 'room' && NET.role === 'client' && m.joining) {
-    if (NET.welcomed) { m.joining = false; m.joinWait = 0; m.codeOn = false; m.code = ''; beginRoom(); }
+  if ((m.screen === 'room' || PRACTICE) && NET.role === 'client' && m.joining) {
+    if (NET.welcomed) { m.joining = false; m.joinWait = 0; m.codeOn = false; m.code = ''; if (!PRACTICE) beginRoom(); }
     else if (NET.refused || (NET.transport.error && !NET.transport.open)) {
       const why = NET.refused || NET.transport.error;
       netLeave();
       // back from a match: the leader may not have reopened the party yet, so
       // the join is tried again for a while before it counts as a refusal
       if (m.joinWait > 0 && why !== 'KICKED' && why !== 'VERSION') m.joinRetry = REMATCH_RETRY;
-      else { m.joining = false; m.codeShake = NAME_SHAKE_T; SFX.deny(); beginParty(NET.mode || 'quick'); }
+      else { m.joining = false; m.codeShake = NAME_SHAKE_T; SFX.deny(); partyGiveUp(); }
     }
   }
   if (m.joinWait > 0) {
     m.joinWait -= dt;
     if (m.joinRetry > 0 && NET.role === 'solo' && (m.joinRetry -= dt) <= 0) netJoin(JOIN_AT_BOOT);
-    if (m.joinWait <= 0 && NET.role === 'solo') { m.joining = false; beginParty(NET.mode || 'quick'); }
+    if (m.joinWait <= 0 && NET.role === 'solo') { m.joining = false; partyGiveUp(); }
   }
+}
+// a join that never landed: our own party again on the title, or the field
+// alone on the practice page
+function partyGiveUp() {
+  if (PRACTICE) { NET.mode = null; return; }
+  beginParty(NET.mode || 'quick');
 }
 
 // ------------------------------------------------------------ the room
@@ -197,7 +205,7 @@ function roomSide(t) { return players.filter((p) => p.team === t); }
 function roomLayout() {
   const x = 24, w = VIEW_W - 48, sx = Math.round((VIEW_W - RS_W) / 2);
   const seats = roomSide(player ? player.team : 0).map((p, k) => ({ x: sx, y: RS_TOP + k * (RS_H + RS_GAP), w: RS_W, h: RS_H, p, k }));
-  const labels = NET.isClient ? ['LEAVE', 'READY'] : ['LEAVE', 'FIND MATCH'];
+  const labels = NET.isClient ? ['LEAVE', 'READY'] : ['LEAVE', NET.mode === 'practice' ? 'START' : 'FIND MATCH'];
   const box = { x: x + w - RM_CODE_W, y: 28, w: RM_CODE_W, h: RM_CODE_H };
   return { x, w, seats, box, words: roomWords(labels), labels };
 }
@@ -265,6 +273,7 @@ function roomDo(h) {
   if (h.kind === 'word') {
     if (h.w === 'LEAVE') leaveRoom();
     else if (h.w === 'FIND MATCH') partyFind();
+    else if (h.w === 'START') partyPractice();
     else if (h.w === 'READY') { netReady(!NET.ready.has(localId)); SFX.place(); }
     return;
   }
@@ -331,11 +340,12 @@ let rematchCarry = null;  // a reopened party's: { seats: uid -> slot } from the
 
 function rematchUrl() {
   if (!NET.mode) return null; // a page that never opened a party: the title, as it was
-  const base = location.pathname + '?map=' + MAP_TYPE, steam = netSteam() ? '&transport=steam' : '';
+  const map = PRACTICE ? settings.mapType | 0 : MAP_TYPE; // the field is no shape: back to the profile's pick
+  const base = location.pathname + '?map=' + map, steam = netSteam() ? '&transport=steam' : '';
   const code = roomCode();
   if (NET.isHost) {
     const seed = NET.nextSeed || rollSeed();
-    if (NET.peers.size) NET.transport.send('*', { t: 'rematch', seed, map: MAP_TYPE });
+    if (NET.peers.size) NET.transport.send('*', { t: 'rematch', seed, map });
     const seats = {};
     for (const pr of NET.peers.values()) seats[pr.uid] = pr.slot;
     try { sessionStorage.setItem(REMATCH_KEY, JSON.stringify({ mode: NET.mode, seats })); } catch (e) { }
@@ -350,7 +360,10 @@ function rematchOffer() {
   NET.nextSeed = rollSeed();
   NET.transport.send('*', { t: 'rematch', seed: NET.nextSeed, map: MAP_TYPE });
 }
-function rematchHeard(msg) { NET.rematch = { seed: msg.seed | 0, map: msg.map | 0, room: roomCode() }; }
+function rematchHeard(msg) {
+  NET.rematch = { seed: msg.seed | 0, map: msg.map | 0, room: roomCode() };
+  if (PRACTICE) toLobby(); // the leader left the field: the party follows it back (js/ui/screens.js)
+}
 // the slot a returning person held last match, for netHostHello
 function rematchSeat(uid) {
   const s = rematchCarry ? rematchCarry.seats[uid] : undefined;
@@ -368,6 +381,62 @@ function rematchBootHost() {
 }
 function rematchBootJoin() {
   if (/[?&]back=1/.test(location.search)) state.menu.joinWait = REMATCH_WAIT;
+}
+
+// ------------------------------------------------------------ the practice field
+// PRACTICE TOOL is a party too: the leader's START (every friend READY)
+// takes the whole party onto the field (?practice=1). The leader's page
+// reloads hosting on the party's code; each guest is told (`practice`) and
+// reloads joining it, trying the code while the leader's page comes up. On
+// the field friends join at any time and stand on the spawn (practiceSeat,
+// js/sim/practice.js). The leader's LEAVE takes everyone back to the party on
+// the title (rematchUrl, rematchHeard); a guest's LEAVE takes only them to the title.
+function practiceUrl(host) {
+  const code = roomCode(), steam = netSteam() ? '&transport=steam' : '';
+  if (host) return location.pathname + '?practice=1&net=host&back=1' + steam + (code ? (steam ? '&code=' : '&room=') + code : '');
+  return location.pathname + '?practice=1&join=' + code + '&back=1' + steam;
+}
+function practiceGo(url) {
+  if (state.fade) return;
+  SFX.dodge();
+  SFX.music.stop(0.45);
+  state.fade = { a: 0, to: 1, spd: 1 / 0.55, color: '#f4f7ff', then: () => {
+    try { sessionStorage.setItem('softfall.reroll', '1'); } catch (e) { }
+    location.href = url;
+  } };
+}
+function partyPractice() {
+  const m = state.menu;
+  if (NET.role !== 'host' || !seatsOpen()) return;
+  if (!roomAllReady()) {
+    for (const p of players) if (p.control === 'remote' && !NET.ready.has(p.id)) m.cardFx[p.id] = 0.6;
+    SFX.deny();
+    return;
+  }
+  m.pressT = 0.12;
+  const seats = {};
+  for (const pr of NET.peers.values()) seats[pr.uid] = pr.slot;
+  try { sessionStorage.setItem(REMATCH_KEY, JSON.stringify({ mode: 'practice', seats })); } catch (e) { }
+  if (NET.peers.size) NET.transport.send('*', { t: 'practice' });
+  practiceGo(practiceUrl(true));
+}
+// a guest told the party is going: after it
+function practiceHeard() { if (!PRACTICE && roomCode()) practiceGo(practiceUrl(false)); }
+// the field's two boots (js/app/boot.js): the leader's page hosting the party
+// again, a guest's page joining it
+function practiceBootHost() {
+  if (NET.role !== 'host' || !/[?&]back=1/.test(location.search)) return;
+  let c = null;
+  try { c = JSON.parse(sessionStorage.getItem(REMATCH_KEY) || 'null'); sessionStorage.removeItem(REMATCH_KEY); } catch (e) { }
+  NET.mode = 'practice';
+  rematchCarry = { seats: (c && c.seats) || {} };
+}
+function practiceBootJoin(code) {
+  const m = state.menu;
+  NET.mode = 'practice'; m.joining = true;
+  if (netSteam() && code.length === RM_CODE_N) { partySeek(code, REMATCH_WAIT); return; }
+  netJoin(code);
+  rematchBootJoin();
 }
 
 // ------------------------------------------------------------ the pixels
@@ -473,7 +542,7 @@ function renderRoom(now, a) {
   for (let i = 0; i < L.words.length; i++) {
     const w = L.words[i], hot = hit ? hit.kind === 'word' && hit.w === w.label : m.rkeys && m.rseat < 0 && m.rword === i;
     // FIND MATCH is dim until every friend is READY; a guest's READY is green once said
-    drawRoomWord(w, hot, (w.label === 'FIND MATCH' && !roomAllReady()) || (m.joining && w.label !== 'LEAVE'), w.label === 'READY' && NET.ready.has(localId) ? RM_OK : null);
+    drawRoomWord(w, hot, ((w.label === 'FIND MATCH' || w.label === 'START') && !roomAllReady()) || (m.joining && w.label !== 'LEAVE'), w.label === 'READY' && NET.ready.has(localId) ? RM_OK : null);
   }
   ctx.globalAlpha = 1;
 }
