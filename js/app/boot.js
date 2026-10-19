@@ -221,7 +221,7 @@ window.DBG = {
   spawnDrop, throwCell, flingDrop, lockDrop, dropLocked, TOSS_SPEED, TOSS_LOCK_T,
   shedBits, SHED_KICK, BIT_STACK, swaps, SWAP_T,
   // death keeps everything (die): the one number a kill is worth
-  KILL_BOUNTY,
+  get KILL_BOUNTY() { return killBounty(); },
   toolUpgrade: (cell, p) => toolUpgrade(p || player, cell),
   takeUpgrade: (cell, p) => takeUpgrade(p || player, cell),
   // the draw curve: 0..1 off a player's chargeT, and the flight and damage it buys a bit

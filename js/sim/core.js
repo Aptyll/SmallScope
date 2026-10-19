@@ -378,9 +378,11 @@ function clockTxt(sec) {
   return m + ':' + (s < 10 ? '0' : '') + s;
 }
 
-function addFloater(x, y, txt, color) {
-  evPush('float', [x, y, txt, color]); // the sim's cosmetics are recorded for screens that do not run it (js/net/events.js)
-  floaters.push({ x, y, txt, color: color || '#ffffff', t: 0 });
+// `o` is optional: { scale, rise, life } for a word bigger, faster or longer
+// than a number's (the SHUTDOWN over a body, payTakedown js/sim/player.js)
+function addFloater(x, y, txt, color, o) {
+  evPush('float', [x, y, txt, color, o]); // the sim's cosmetics are recorded for screens that do not run it (js/net/events.js)
+  floaters.push(Object.assign({ x, y, txt, color: color || '#ffffff', t: 0 }, o));
 }
 
 // Combat damage is ONE running total per body, worn beside its health bar

@@ -1526,7 +1526,7 @@ function updateFx(dt) {
   for (let i = floaters.length - 1; i >= 0; i--) {
     const f = floaters[i];
     f.t += dt;
-    if (f.t > 0.9) floaters.splice(i, 1);
+    if (f.t > (f.life || 0.9)) floaters.splice(i, 1);
   }
   for (let i = wordPops.length - 1; i >= 0; i--) { // a target's word (hitPTarget, js/sim/practice.js)
     wordPops[i].t += dt;

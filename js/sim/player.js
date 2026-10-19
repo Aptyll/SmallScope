@@ -513,6 +513,8 @@ const PLAYER_RECORD = {
   streak: 0, bestStreak: 0,      // rivals downed since this body last went down, and the most of it
   multiN: 0, multiT: -1e9, bestMulti: 0, // the run of kills MULTI_T apart, when the last one was, the most of it
   ccOut: 0,                      // s of stun, root and net put on RIVAL players (ccCredit, js/sim/actions.js)
+  assists: 0,                    // rivals this body helped down without the last blow (payTakedown)
+  feed: 0,                       // deaths since this body's last kill or assist: past FEED_FROM it is worth less (killWorth)
 };
 class Player {
   constructor(id, control, team) {
@@ -555,6 +557,7 @@ class Player {
     this.level = 1; this.xp = 0;        // hero level and lifetime gold earned; survive death
     this.trickleT = 0;                  // s toward the next passive coin (TRICKLE_T, js/sim/sim.js)
     this.kills = 0;                     // rivals downed; scoreboard only, survives death
+    this.foeHits = {};                  // rival id -> state.elapsed of its latest blow or crowd control on this body (noteFoe); a death clears it
     this.lastDeath = null;              // { by, cause, tick } of the latest death: the kill feed's line, as data (js/ai/bot-api.js)
     this.lastCmd = null;                // { kind, tick, ok, why } of the latest order run (runCmd)
     // The rest of the match record, for the post-game lobby (js/ui/lobby.js).
@@ -891,7 +894,7 @@ function damagePlayer(p, dmg, dx, dy, src, cause, crit, kb) {
   // Only a RIVAL's blow is anybody's damage dealt: the world's and your own
   // side's still show up as damage taken, which is the honest read of both.
   p.dmgIn += dmg;
-  if (src instanceof Player && src !== p && src.team !== p.team) { src.dmgOut += dmg; p.dmgInP += dmg; }
+  if (src instanceof Player && src !== p && src.team !== p.team) { src.dmgOut += dmg; p.dmgInP += dmg; noteFoe(p, src); }
   else if (BEAST_CAUSES.has(cause)) p.dmgInB += dmg;
   p.hurtT = 0.25;
   p.fightT = ITEM_FIGHT_T; // in a fight: DEN's heal waits (js/sim/items.js)
@@ -923,11 +926,9 @@ const KILL_VERB = { worker: 'CUT DOWN', fire: 'BURNED' };
 // and its build, the cards, the gear, the level. Nothing spills and nothing
 // is looted (the 1.25-3.54 rule, where the killer pocketed the wallet and the
 // build lay where it fell, is gone - it made the fifteenth minute a bag you
-// were afraid to carry). What a kill is worth is a flat bounty from nowhere,
-// paid to the credited killer through awardGold so it levels them, sized
-// against a scrapped soldier's SOLDIER_BOUNTY (4): a player is three of them.
-// The one stake left on a death is the wait below and the walk back.
-const KILL_BOUNTY = 12;   // gold (and so xp) a downed rival pays its killer
+// were afraid to carry). What a kill is worth is gold from nowhere, paid out
+// by payTakedown (the `takedowns` banner below). The one stake left on a
+// death is the wait below and the walk back.
 const MULTI_T = 10;       // s a kill may follow the one before and still count toward a multi-kill (the post-game record)
 
 // The wait for the bird to set a downed player back down: a read of the
@@ -989,13 +990,21 @@ function die(p, src, cause) {
   // practice: nothing is at stake and nobody is ever out - a death is undone
   // on the spot, back at the spawn tile with the build and the bag untouched
   if (PRACTICE && p === player) { practiceRevive(p); return; }
+  // what this body is worth is read before the death clears the streak it wears
+  const worth = killWorth(p), bounty = bountyOf(p);
   p.deaths++;      // the match record; a respawn never clears it (js/ui/lobby.js)
+  p.feed++;        // ...a run of deaths without a takedown makes it worth less (killWorth)
   p.streak = 0;    // ...and the run of kills ends with the body
   bodyOut(p);
   burst(p.x, p.y - 6, TEAMS[skin(p.team)].mark, 12, 55, 0.6);
   // kill credit and the feed line: the killer's colours if there is one,
   // otherwise the victim's, since the victim is who the line is about
-  const killer = src && src !== p ? src : null;
+  // A death the world dealt (the ice, the orca, the wolves) goes to the rival
+  // who hit this body last inside ASSIST_T, the way League hands a tower's
+  // execution to the last champion in; losing the bird is nobody's kill.
+  const foes = cause === 'eagle' ? [] : recentFoes(p);
+  p.foeHits = {};
+  const killer = src && src !== p ? src : foes.length ? foes[0] : null;
   p.lastDeath = { by: killer && players.includes(killer) ? killer.id : -1, cause: cause || null, tick: state.tick };
   if (killer) {
     killer.kills++;
@@ -1005,7 +1014,7 @@ function die(p, src, cause) {
     killer.multiT = state.elapsed;
     killer.bestMulti = Math.max(killer.bestMulti, killer.multiN);
     if (killer.control === 'ai') aiDowned(killer, p); // a bot remembers who it keeps downing (the grudge, js/ai/ai-team.js)
-    if (!killer.dead) awardGold(killer, KILL_BOUNTY, killer.x, killer.y); // the bounty, not the victim's purse
+    payTakedown(p, killer, foes, worth, bounty); // the kill's gold, the assists' share and a shutdown's bounty
     if (killer === player && !PRACTICE) PROFILE.addKill(); // the profile's lifetime count
     // BLOODLUST/VAMPIRE: a flat heal on a confirmed kill, the one card
     // effect that isn't a plain kitOf() field - mirrors eatBerry's heal
@@ -1016,7 +1025,9 @@ function die(p, src, cause) {
     }
   }
   storyDown(killer, p); // the match story (js/ui/story.js): who keeps downing whom
-  logEvent(killer ? killer.name + ' ' + (KILL_VERB[cause] || 'SHOT') + ' ' + p.name
+  // a killer the world stood in for keeps the world's line, in the killer's colours
+  const shot = killer && killer === src;
+  logEvent(shot ? killer.name + ' ' + (bounty ? 'SHUT DOWN' : KILL_VERB[cause] || 'SHOT') + ' ' + p.name
     : p.name + ' ' + (DEATH_CAUSE[cause] || 'WENT DOWN'), killer || p);
   // the bird is the way back - a side whose objective has fallen is out,
   // however its players go down after that
@@ -1217,3 +1228,60 @@ function endMatch(how) {
   if (how === 'respawning') { state.deadView = 'spec'; state.spec = -1; specNext(1); }
 }
 
+
+// ------------------------------------------------------------ takedowns
+// What a downed rival pays, League's way. The KILLER takes the body's worth;
+// every other rival who hit it or pinned it in the last ASSIST_T s (noteFoe,
+// fed by damagePlayer and ccCredit, js/sim/actions.js) takes an ASSIST and a
+// share of half that worth. A body on a streak wears a BOUNTY (bountyOf, the
+// coin over its name, drawBountyTag js/draw/overhead.js) that its killer
+// cashes as a SHUTDOWN on top. A body that keeps going down without a kill or
+// an assist (p.feed) is worth less, down to FEED_FLOOR, so feeding one side
+// never funds the other. Every amount is counted in SCRAPPED SOLDIERS
+// (SOLDIER_BOUNTY, js/sim/robots.js, read at the kill), so the kill keeps its
+// place in the farm whatever a last hit is retuned to: a plain kill is three
+// of them, the biggest shutdown eight, so ending a streak pays without
+// erasing the lead the streak built. Gold only goes to the living, as a kill
+// always has.
+const KILL_SOLDIERS = 3;    // soldiers a downed rival is worth to its killer, before feed and bounty
+const ASSIST_T = 10;        // s a rival's blow or crowd control stays on a body's record
+const ASSIST_SHARE = 0.5;   // of the worth, split evenly among the assists (each at least 1)
+const BOUNTY_FROM = 2;      // the streak at which a body starts wearing a bounty
+const BOUNTY_STEP = 1;      // soldiers the bounty grows by each kill from there...
+const BOUNTY_MAX = 5;       // ...up to this (a streak of 6)
+const FEED_FROM = 2;        // deaths without a takedown before a body is worth less
+const FEED_STEP = 0.2;      // ...the worth lost each death past that...
+const FEED_FLOOR = 1 / 3;   // ...down to this share of the plain kill
+
+// a rival player's blow or crowd control on a player, for the assist list
+function noteFoe(p, src) {
+  if (!(src instanceof Player) || !(p instanceof Player) || src === p || src.team === p.team) return;
+  (p.foeHits || (p.foeHits = {}))[src.id] = state.elapsed;
+}
+// the rivals inside ASSIST_T on p's record, the latest first
+function recentFoes(p) {
+  const h = p.foeHits || {}, out = [];
+  for (const id in h) {
+    const q = players[id];
+    if (q && q.active && q.team !== p.team && state.elapsed - h[id] <= ASSIST_T) out.push(q);
+  }
+  return out.sort((a, b) => h[b.id] - h[a.id] || a.id - b.id);
+}
+// the plain kill in gold, and a body's bounty and worth
+function killBounty() { return KILL_SOLDIERS * SOLDIER_BOUNTY; }
+function bountyOf(p) { return p.streak < BOUNTY_FROM ? 0 : SOLDIER_BOUNTY * Math.min(BOUNTY_MAX, BOUNTY_STEP * (p.streak - BOUNTY_FROM + 1)); }
+function killWorth(p) { return Math.round(killBounty() * Math.max(FEED_FLOOR, 1 - FEED_STEP * Math.max(0, p.feed - FEED_FROM + 1))); }
+
+// p is down: the killer and the assists are paid, and every one of them has
+// broken their run of feeding. The SHUTDOWN word rises over the body.
+function payTakedown(p, killer, foes, worth, bounty) {
+  killer.feed = 0;
+  if (!killer.dead) awardGold(killer, worth + bounty, killer.x, killer.y); // from nowhere, never the victim's purse
+  const help = foes.filter((q) => q !== killer);
+  const share = help.length ? Math.max(1, Math.round(worth * ASSIST_SHARE / help.length)) : 0;
+  for (const q of help) {
+    q.assists++; q.feed = 0;
+    if (!q.dead) awardGold(q, share, q.x, q.y);
+  }
+  if (bounty > 0) addFloater(p.x, p.y - 40, 'SHUTDOWN', '#f2cc6a', { scale: 2, rise: 20, life: 1.4 });
+}

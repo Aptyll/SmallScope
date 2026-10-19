@@ -1991,9 +1991,8 @@ every payout is also XP, see [Hero levels](multiplayer.md#hero-levels)): the `+N
 at the place the action happened (the tree, the kill, the wreck), and the local earner gets the
 coin blip. Who earns is always the actor: the swinger of the blow, the final-blow shooter of an
 animal or a loaded worker bot (its `b.carry` goes to whoever downed it), the breaker of an enemy
-building (the 50% wreck refund, same as a demolishing owner's), the killer of a player (a flat
-`KILL_BOUNTY` of 12 from nowhere — the victim's own purse is untouched, and an uncredited death
-pays nobody), and a
+building (the 50% wreck refund, same as a demolishing owner's), the killer of a player and the assists
+(gold from nowhere, the victim's own purse untouched — see [Takedowns](#takedowns-assists-bounties-and-shutdowns)), and a
 gold pump's **owner**, into whose wallet each `pay` tick deposits directly. Robots carry a
 single gold number (`b.carry`) and deposit at 8+ into their owner's wallet.
 
@@ -3211,10 +3210,8 @@ level and xp all stay on the body, and `reset(false)` brings the same player bac
 spills, nothing is looted, and the snow around a corpse is as clean as it was. (An item riding
 the cursor mid-drag goes back in the bag, so it is still there when the body comes back instead
 of vanishing with the hand holding it.) **What a kill is worth
-is a flat bounty from nowhere**: `KILL_BOUNTY` (12, beside `die`; a scrapped soldier's
-`SOLDIER_BOUNTY` is 4, so a player is three of them) to the credited killer through `awardGold`,
-so a kill still levels the killer and taking the fight is still worth it — while an uncredited
-death (ice, wolves, or the killer already dead) pays nobody. `die` also credits the kill (and
+is gold from nowhere**, paid by `payTakedown` to the killer and the assists (see
+[Takedowns](#takedowns-assists-bounties-and-shutdowns) below). `die` also credits the kill (and
 heals the killer if their kit carries `killHeal`, off a card) and writes the log line — see
 [Kills and the event log](multiplayer.md#kills-and-the-event-log) — then asks
 `teamEagleDown(p.team)`: with the eagle still roosting, `p.respawnT` starts counting down
@@ -3265,6 +3262,34 @@ match another screen shares (`netShared`, js/net/net.js: a host's menu never sto
 its P does nothing); `update()` (time, darkness, camera, fx) always keeps running. In `title` only
 the ambient half runs (`updateTitle`: animals and fish), and not even that once a room is shared
 — see [Main menu](rendering.md#main-menu-title).
+
+### Takedowns: assists, bounties and shutdowns
+
+League's kill economy, in the `takedowns` banner at the end of js/sim/player.js. Every rival
+player's blow on a player (`damagePlayer`) and every stun, root or net it puts on one
+(`ccCredit`, js/sim/actions.js) stamps `p.foeHits[src.id] = state.elapsed` through `noteFoe`;
+`recentFoes` reads back the rivals inside `ASSIST_T` (10 s), latest first, and `die` clears the
+record. On a death, `die` reads the victim's **worth** (`killWorth`) and **bounty** (`bountyOf`)
+before it clears the streak, and `payTakedown` pays:
+
+- the **killer**: the worth plus the bounty, through `awardGold`. A death with no rival `src`
+  (the ice, the creek, the orca, wolves, a bear, a wave) goes to the latest rival on the record,
+  who takes the kill, the streak and the gold; losing the bird (`cause` `eagle`) is nobody's.
+  Its log line stays the world's (`DEATH_CAUSE`), in the killer's colours.
+- every other recent rival: an **assist** (`p.assists`) and an even share of `ASSIST_SHARE`
+  (half) of the worth, at least 1 each.
+- gold goes only to the living, as a kill always has; a dead killer still takes the credit.
+
+**Worth** is `killBounty()`: `KILL_SOLDIERS` (3) scrapped soldiers' `SOLDIER_BOUNTY`
+(js/sim/robots.js, read at the kill, so retuning a last hit moves the kill with it; 12 gold at a
+4-gold soldier), shrunk by `FEED_STEP` (20%) per death past `FEED_FROM` (2) the victim has died
+without a kill or assist (`p.feed`, reset by either), to a floor of `FEED_FLOOR` (a third): so feeding
+never funds the other side. **Bounty** grows from a streak of `BOUNTY_FROM` (2) by `BOUNTY_STEP`
+(1 soldier) a kill to `BOUNTY_MAX` (5 soldiers); the killer cashes it as a **SHUTDOWN** (the log says SHUT DOWN,
+and a 2x gold word rises off the body for 1.4 s), so ending a streak pays without erasing the
+lead it built. The bounty is worn over the name for every screen to see (`drawBountyTag`,
+js/draw/overhead.js: a 5 px gold coin and the number over the name tag). Bots run the same
+`die`, so they assist, wear bounties and shut down like anyone.
 
 ## The M map does not pause
 
