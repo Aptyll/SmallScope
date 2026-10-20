@@ -739,6 +739,18 @@
       tone(196, 1.2, 'triangle', 0.09, -20);
       tone(147, 1.4, 'triangle', 0.08, -15, 0.15);
     },
+    // THE ANNOUNCER'S STING (annSting, js/ui/announcer.js): a bell run as the
+    // call's plate comes up, `step` notes long (a multi-kill's count, so a
+    // PENTA is five), RISING when your side made the call and FALLING when
+    // the other side did - the ear knows whose news it is before the eye reads
+    // it. An ACE ends on a held fifth; a tower or a bear lands on a low thud.
+    announce(kind, step, ours) {
+      const run = ours ? [523, 659, 784, 988, 1175] : [784, 659, 523, 440, 392];
+      const n = Math.max(1, Math.min(5, step)), gap = 0.085;
+      for (let i = 0; i < n; i++) tone(run[i], i === n - 1 ? 0.32 : 0.1, 'triangle', 0.075, 0, i * gap);
+      if (kind === 'ace') tone(run[0] * 1.5, 0.6, 'triangle', 0.06, 0, n * gap);
+      if (kind === 'tower' || kind === 'beast') { tone(110, 0.35, 'sine', 0.1, -30); noise(0.2, 0.05, 900); }
+    },
     dawnChime() {
       tone(523, 0.35, 'triangle', 0.07);
       tone(659, 0.35, 'triangle', 0.07, 0, 0.18);

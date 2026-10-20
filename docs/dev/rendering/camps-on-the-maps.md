@@ -12,11 +12,5 @@ so the same glyph reads on the chart, on snow and over forest.
   apart — clamped
   to the map rect so a camp near the edge keeps its label. It opens mid-flight too (M in
   mode `drop`).
-- **Arrival** — `updatePlay` keeps `state.loc` (`{ L, t }`) for the local player from
-  `campAt(player.x, player.y)`, and `renderUI` shows a toast top centre for ~3.5 s whenever it
-  changes: a dark plate ruled in the spec's `mark`, the glyph, the name at 2× and the `tag` under
-  it. It sits on a plate, so it uses `drawPixelTextShadow` (see
-  [Text over the world](text-over-the-world.md)). The **day headline** (`state.dayPop`, set by each dawn and the landing in sim.js)
-  shares the spot but not the plate: bare `DAY N` at 2×, nothing else. It wants BOTH the fade and
-  the outline text over the world demands, so the opaque outlined stamp is baked once per day
-  number (`dayPopCv`) and the canvas fades. It steps under the location plate when both are up.
+- **Arrival** says nothing: walking into a camp raises no plate (0.516 gave the top centre to the
+  announcer, js/ui/announcer.js). The maps are where a camp is read by name.

@@ -98,13 +98,13 @@ function railLayout() {
 function railCap(L) { return L ? hudSnapDown((VIEW_W - 2 * 4) / (L.span + 2)) : HUD_MAX; }
 function railSc(L) { return hudPick(settings.hudRail || 1, railCap(L)); }
 // the rail's bottom edge in view px (0 while there is no rail): what the
-// top-centre headlines - the camp plate and DAY N - hang under
+// top-centre headlines - the spectate control, the vote, the announcer - hang under
 function railBottom() {
   const L = railLayout();
   return L ? Math.round((RAIL_Y + RAIL_H) * railSc(L)) : 0;
 }
 function headlineY() { const b = railBottom(); return b ? b + 6 : 14; }
-// where the top-centre notes (the camp plate, DAY N) start: under the rail,
+// where the top-centre note (the announcer's plate, js/ui/announcer.js) starts: under the rail,
 // and under the spectate control while that is up (specLayout, screens.js)
 function voteY() { return headlineY() + (state.mode === 'dead' && state.deadView === 'spec' ? SPEC_H + 4 : 0); }
 // ...and under the surrender vote while that is up (drawVotePanel, js/ui/vote.js)

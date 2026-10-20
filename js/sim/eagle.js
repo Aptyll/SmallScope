@@ -1108,13 +1108,10 @@ function drawHopPrompt(now) {
   drawCapBind(padActive() ? 'dodge' : 'work', 'HOP OFF', cx, y, FLIGHT_OPEN, true);
 }
 
-// the brief is over, however it ended: the controls come back, and the DAY 1
-// headline the landing owes (the camera banner, js/sim/sim.js, holds it while the
-// tour has the top of the screen) pops now
+// the brief is over, however it ended: the controls come back
 function endBrief() {
   if (!state.dropBrief) return;
   state.dropBrief = null;
-  if (!PRACTICE && state.mode === 'play') state.dayPop = { day: state.day, t: 0 };
 }
 
 // where the drop brief's camera is looking right now: the sim camera
@@ -1134,7 +1131,7 @@ function dropBriefTarget() {
 // down). One line, verb first, nothing under it: the roost's team colour at
 // four times the drop HUD's text scale, low in the view under the bird, on
 // no plate - a 2 px dark rim carries it over the pines instead. Baked opaque
-// and faded as a canvas, the dayPop grammar: an outline stamped under
+// and faded as a canvas: an outline stamped under
 // globalAlpha goes blotchy (the CLAUDE.md text rule).
 let briefCv = null, briefCvKey = '';
 function drawDropBrief() {

@@ -125,8 +125,7 @@ const state = {
   msg: null, msgT: 0,
   fishT: FISH_SPAWN_T, // countdown to the next fish swimming in (see updateFish)
   creekGone: {}, // the creek's caught fish: index -> the windT it swims back at (creekFishAt, js/sim/world.js)
-  loc: null,     // the named place the local player is standing in: { L, t }
-  dayPop: null,  // the dawn headline, top centre: { day, t } - set by each dawn and the landing (js/sim/sim.js), drawn by renderUI
+  firstBlood: false, // the match's first player kill has been called (callKill, the `calls` banner, js/sim/player.js)
   paused: false,
   mapOpen: false,
   bagOpen: false,      // the inventory drawer top-left (B, or its tab): HUD, it does NOT stop the sim

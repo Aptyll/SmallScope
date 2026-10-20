@@ -103,8 +103,9 @@ const STRUCTS = {
   // its deck that holds its stretch of road, and a side's cable runs only as
   // far as its furthest standing one. Never on the wheel, nobody's to
   // upgrade, repair or pull down (`fixed`); the wrecker is paid half its cost
-  // like any wreck. Its gun's numbers sit with its sim (TOWER_*, towers.js).
-  tower: { name: 'ROAD TOWER', w: 3, h: 2, fixed: true, mm: mmTeam, map: chTeam, tiers: [
+  // like any wreck, and its fall is the announcer's (`call`, callStruct). Its
+  // gun's numbers sit with its sim (TOWER_*, towers.js).
+  tower: { name: 'ROAD TOWER', w: 3, h: 2, fixed: true, call: true, mm: mmTeam, map: chTeam, tiers: [
     { cost: { gold: 150 }, hp: 700, buildT: 1 },
   ]},
   // The fish net: the one building that goes on water instead of snow.
