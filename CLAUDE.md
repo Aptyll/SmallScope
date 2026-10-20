@@ -41,9 +41,7 @@ Shorts, GIFs, storyboards and stills use the kit in [media](docs/dev/media.md).
    single-winner actions go through `contest()`; sim sounds and shakes use `sfxAt`/`sfxFor`/`shakeFor`.
    A client never runs the sim, so anything else is dead online.
 3. **Never shift the seed.** Never add or remove an `rng()` call inside `genWorld()`.
-4. **A tool is an instance.** Move it between bag, slot and drop; never rebuild it from its type.
-   A tool dropped in the snow calls `shedBits` first.
-5. **Pixels stay exact.** Zoom scales the world, never the UI, and rests on a whole `kWant`. Screen
+4. **Pixels stay exact.** Zoom scales the world, never the UI, and rests on a whole `kWant`. Screen
    position is `round(world - camera)`, rounded once. Layout reads `VIEW_W`/`VIEW_H`, never 640/360.
 
 ## UI: show, don't label
