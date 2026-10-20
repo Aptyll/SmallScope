@@ -3,7 +3,7 @@
 | Looking for | Start at | Banner |
 | --- | --- | --- |
 | what each hero's left button IS: its row, and the renock a press starts | `attackOf`, `attackCycle` (the rows: `CLASSES[c].attack`, js/sim/player.js; the attack speed they make: `classAs`, stats.js) | `basic attack` (its head) |
-| the draw curve: what a hold buys an attack, how long a full draw takes, the one flight envelope the sim fires and the aim line measures, and what it lands for | `DRAW_RANGE_MIN`/`DRAW_SPEED_MIN`/`DRAW_DMG_MIN`, `drawTime`, `drawPow`, `drawSpeedMul`/`drawRangeMul`/`drawDmgMul`, `shotFlight`, `attackDmg` | `basic attack` › `the draw` |
+| the draw curve: what a hold buys an attack, how long a full draw takes, the one flight envelope the sim fires and the aim line measures, and what it lands for | `DRAW_RANGE_MIN`/`DRAW_SPEED_MIN`/`DRAW_DMG_MIN`, `drawTime`, `drawPow`, `drawSpeedMul`/`drawRangeMul`/`drawDmgMul`, `shotFlight`, `attackDmg` (SNOW COVER's rank on the ambush: `ambushRank`) | `basic attack` › `the draw` |
 | **what one press does**, for every player | `basicAttack` (called by `playerAttack`, sim.js) | `basic attack` › `the press` |
 | a shot's press: the one arrow it puts in the air | `shootAttack` | `basic attack` › `the shot` |
 | a blade's press: the wedge it sweeps at this draw, and the sweep left on the snow | `cutAttack`, `slashReach`, `SLASH_T`, `SLASH_REACH_MIN`, `slashes`, `updateSlashes` (the hand's own swing: `p.slashT`/`slashA`/`slashHalf`, player.js, drawn by `drawHeldTool`, js/draw/bodies.js) | `basic attack` › `the cut` |

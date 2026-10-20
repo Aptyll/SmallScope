@@ -2,7 +2,7 @@
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| players, teams, heroes (`CLASSES`: kit, stats (`base`, `grow`) and one fixed look each, or a hero's own looks (`skins`, worn per player: `heroSkinOf`, `cleanHeroSkins`); `HEROES_SOON`, the ones to come), hero levels, the input struct, contested orders, the local slot and the roster a match is built from | `Player`, `CLASSES`, `HEROES_SOON`, `kitOf`, `setClass`, `gainGold`, `levelUp`, `makeInput`, `localId`/`LOCAL_SLOT`, `defaultRoster`, `initPlayers(roster, local)`, `applyProfile()`, `contest` | `players` |
+| players, teams, heroes (`CLASSES`: kit, stats (`base`, `grow`), the order a bot ranks its keys (`rankOrder`) and one fixed look each, or a hero's own looks (`skins`, worn per player: `heroSkinOf`, `cleanHeroSkins`); `HEROES_SOON`, the ones to come), hero levels, the input struct, contested orders, the local slot and the roster a match is built from | `Player`, `CLASSES`, `HEROES_SOON`, `kitOf`, `setClass`, `gainGold`, `levelUp`, `makeInput`, `localId`/`LOCAL_SLOT`, `defaultRoster`, `initPlayers(roster, local)`, `applyProfile()`, `contest` | `players` |
 | the one on-the-spot gold payout every source uses (gold is never a drop) | `awardGold` | `players` (beside `gainGold`) |
 | XP: the one way it enters a body (the bar, the levels it crosses, the running total), and a death's XP shared by the side standing near | `gainXp`, `shareXp`, `XP_R`/`XP_SHARE`, `LEVEL_XP` (the table: `players`) (what each death is worth: `SOLDIER_XP`, robots.js; `KILL_XP`/`KILL_XP_LV`, `damage & death`; `YIELD`'s `xp`, core.js) | `players` |
 | the one way health comes back to a player - a meal, daylight, a second wind, a kill's heal - capped and counted | `healPlayer` | `players` (beside `gainGold`) |
