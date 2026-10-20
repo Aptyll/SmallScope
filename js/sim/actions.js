@@ -873,6 +873,7 @@ function hurtUnit(e, dmg, nx, ny, src, o) {
   // a bear buff (campBuff, wildlife.js): every blow a player wearing it lands
   // is worth more, whatever landed it - a shot, a roll, a stomp alike
   if (src instanceof Player && src.buffT > 0) dmg = Math.round(dmg * statBuffMul(src, 'dmg'));
+  dmg = passiveDeal(src, e, dmg, o); // ...and a hero's passive may make more of it (HERO_PASSIVE deal, js/sim/heroes.js)
   const ty = DMG_TYPES[o.type] || DMG_TYPES.blunt;
   const km = o.kbMul === undefined ? 1 : o.kbMul;
   if (e instanceof Player) {
@@ -913,8 +914,9 @@ function ccCredit(e, cur, t, src) {
 }
 // TENACITY: the share a body shrugs off every stun, root and slow it is put
 // under - each lasts ccMul of its length. From a rallying standard today
-// (guardTen, js/sim/armatos.js); a knock-up is the one control it never cuts.
-function ccMul(e) { return 1 - guardTen(e); }
+// (guardTen, js/sim/armatos.js) and any hero's own (HERO_TEN, js/sim/heroes.js);
+// a knock-up is the one control it never cuts.
+function ccMul(e) { return heroTen(e); }
 function stunUnit(e, t, src, firm) {
   if (!firm) t *= ccMul(e);
   if (t <= 0 || !unitAlive(e)) return;
@@ -931,7 +933,7 @@ function stunUnit(e, t, src, firm) {
     e.castT = 0; e.castAb = -1;                    // the cast is knocked out of the hands
     breakEat(e);                                   // ...and so is the meal (js/sim/core.js)
     if (e.shieldT > 0) abShieldDown(e, false);     // ...and the shield, at its full cooldown
-    if (e.rushT > 0) { e.rushT = 0; e.rushVictim = null; e.march = false; } // (a march too: js/sim/armatos.js)
+    if (e.rushT > 0) { e.rushT = 0; e.rushVictim = null; e.dash = ''; } // (a hero's dash too: HERO_DASH, js/sim/heroes.js)
     if (e.grapT > 0) grapEnd(e);                   // the rope is knocked loose too, at its cooldown
     if (e.mount) rideEnd(e, true);                 // ...and the deer's back (js/sim/wildlife.js)
     // ...and if it is YOUR hands the swing, the cast, the shield and the meal

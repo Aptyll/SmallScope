@@ -29,7 +29,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.505';
+const PATCH_TXT = 'PATCH 0.507';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -45,6 +45,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.507', 'HEROES NOW PLUG INTO THE GAME THROUGH ONE SHARED SET OF HOOKS, SO THE NEXT HEROES CAN BE BUILT SIDE BY SIDE.'],
   ['0.505', 'A WRITTEN RECIPE FOR NEW HEROES, SO EVERY HERO AFTER ARMATOS IS BUILT, SHOWN AND TESTED THE SAME WAY.'],
   ['0.504', 'THE FIRST HERO, ARMATOS THE LAST STANDARD: A SHIELD-CAPTAIN WITH A GREATSWORD WHO SLAMS A LINE, BRACES AND BASHES, MARCHES INTO A HERO TO STUN THEM AND PLANTS HIS STANDARD SO HIS SIDE STANDS ITS GROUND, AND HIS FIRST SKIN, IRON OATH, IS ON THE SKINS SCREEN.'],
   ['0.503', 'ROAD TOWERS: EVERY LANE\'S ZIPLINE HAS TWO STONE TOWERS WITH A GREAT CROSSBOW BESIDE IT, THAT SHOOT THE RIVAL WAVE FIRST AND ANY SCOUT WHO HITS ONE OF THEIRS UNDER THEM, WITH A DASHED LINE ON THE SNOW BEFORE EACH BOLT, AND EACH ZIPLINE NOW RUNS ONLY AS FAR AS ITS LAST TOWER STANDING.'],

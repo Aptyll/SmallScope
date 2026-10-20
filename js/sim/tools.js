@@ -886,7 +886,7 @@ function slashTool(p, cell, plan, melee, amb) {
     for (const q of targets) {
       const d = Math.hypot(q.x - p.x, q.y - p.y) || 1;
       hurtUnit(q, dmg, (q.x - p.x) / d, (q.y - p.y) / d, p, {
-        type: m.type, burn: m.burn, burnDps: m.burnDps, ambush: amb, kb: 30, kbMul: kb,
+        type: m.type, burn: m.burn, burnDps: m.burnDps, ambush: amb, kb: 30, kbMul: kb, basic: true, // a basic attack (passiveDeal, js/sim/heroes.js)
       });
       burst(q.x, unitMidY(q), '#eef4fb', 4, 40, 0.3, true);
     }

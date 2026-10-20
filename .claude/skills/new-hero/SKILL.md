@@ -41,19 +41,20 @@ LOOKS (optional): default look name, first buyable skin name
    the picks; never park on a question.
 2. **Build the kit on a borrowed body.** One file per side, named for the hero:
    - `js/sim/<hero>.js`: its ability rows (the `ARM_AB` shape: `cd`, `cast`, `blurb`, `use`,
-     `tele`, a `bot` hint saying when a bot should press it, its own `icon`), its passive in
-     `HERO_PASSIVE`, any entities it leaves (tick, `SAVE_ROOTS` in js/sim/save.js, packed in
-     js/net/snapshot.js).
+     `tele`, a `bot` hint saying when a bot should press it, its own `icon`; `recast`/`ok` if
+     needed), its passive in `HERO_PASSIVE`, any entities it leaves (tick, `SAVE_ROOTS` in
+     js/sim/save.js, packed in js/net/snapshot.js).
    - `js/draw/<hero>.js`: tells, rings, entities, the held weapon.
    - `js/sprites/<hero>.js`: ability icons, then bodies and weapon once picked (step 4).
    - Its `CLASSES` row in js/sim/player.js with `body:` (the hero whose loadout and outfit it
      borrows through `heroBody`), `passive`, `base`/`grow` stats; `HERO_N` in js/app/profile.js;
      the 12px emblem in js/ui/menu.js; a build in `BOT_BUILDS` (js/sim/items.js); its name in
      `BOT_CALL_LOW` (js/ai/bot-api.js); the scripts in `index.html` in load order.
-   - **Generalize, don't stack.** Armatos added hero-named hooks (`holdTaken`, `guardStat`,
-     `updateGuards`, `drawGuards`, `passiveCast`). When the second hero needs the same kind of
-     hook, turn it into a per-hero table or list that both heroes register into, rather than a
-     second named call beside the first.
+   - **Register, don't stack.** The shared sim reaches a hero only through the lists and tables
+     in js/sim/heroes.js (`HERO_PASSIVE` with hurt/deal/cast/tick, `HERO_TAKEN`, `HERO_STAT`,
+     `HERO_TEN`, `HERO_MOVE`, `HERO_DASH`, `HERO_TICK`, `HERO_GROUND`) and js/draw/heroes.js
+     (`HERO_BLADES`). A hero file pushes into them at load. When a kit needs a kind of hook none
+     of them is, add a new list there rather than a hero-named call in shared code.
 3. **Concept sheet of in-game visuals.** Through the `concept-art` skill: 3 bodies and 3 weapons
    as real 16px grids, staged live in a real game frame beside players (Armatos round 4,
    `/mnt/project-files/armatos/round4/`). Noah rejected 3D renders and 32px art: show what the
@@ -63,7 +64,7 @@ LOOKS (optional): default look name, first buyable skin name
    per look in `app/bake-player/bodies.py`, then `python app/bake-player/bake.py`. The rebake
    must only add lines to js/baked/motion.js: every other hero's frames stay byte-identical.
    Add the hero's tab in js/ui/skins.js (`hero:` its index). The weapon is held naturally in all
-   four facings (Armatos: `heroBlade`, `heroCarry`, a slanted grip facing up and down).
+   four facings (a `HERO_BLADES` row: flat and slanted art, the grip, the hip by facing).
 5. **Verify headless** (`node app/server.js` + Playwright, [how](../../../docs/dev/checklists.md#verifying-a-change)):
    each ability hits the other team's heroes, soldiers, wildlife and towers and spares its own;
    a bot playing the hero spends all four keys; the four facings, running, rolling, both looks;

@@ -440,7 +440,7 @@ function drawPlayer(p, ex, ey, now) {
       ctx.beginPath(); ctx.rect(sx - 32, py + bob + seat.hip - 64, spr.width + 64, 64); ctx.clip();
     }
     if (p.invuln > 0 && state.mode !== 'title' && ((now * 12) | 0) % 2 === 0) ctx.globalAlpha = 0.45;
-    drawHeroBack(p, ax, ay, now, false); // a hero's standard behind the body (js/draw/armatos.js)
+    drawHeroBack(p, ax, ay, now, false); // a hero's standard behind the body (js/draw/heroes.js)
     if (pose && pose.rot) {
       ctx.save();
       // turned about the body's middle: a worn body's own, or the cell's for a
@@ -805,7 +805,7 @@ function drawHeldTool(p, px, py) {
   const fwd = wDef ? TOOL_FWD[wDef.art] || 0 : 0;
   // the blade at its real length, where the art has one (TOOL_HELD_ART,
   // js/sim/tools.js); everything else is its bag icon
-  const wHeld = wDef ? heroBlade(p, wDef) || SPRITES['toolHeld_' + wDef.art + '_' + wDef.tier] || wIcon : null; // a hero's own blade first (js/draw/armatos.js)
+  const wHeld = wDef ? heroBlade(p, wDef) || SPRITES['toolHeld_' + wDef.art + '_' + wDef.tier] || wIcon : null; // a hero's own blade first (js/draw/heroes.js)
 
   // THE SWING: a blade mid-cut is swung through its whole wedge, pivoting at
   // the hands - the sword itself at the sweep's edge with two ghosts of it
@@ -856,7 +856,7 @@ function drawHeldTool(p, px, py) {
   const hx = p.dir === 'left' || p.dir === 'up' ? px + 2 : px + 14; // the leading hand (up: the far one, occluded by the body - the caller draws us first)
   const hy = cyp - (p.dir === 'left' || p.dir === 'right' ? 2 : 1) + bob;
   if (t.key !== 'bow') { ctx.drawImage(icon, hx - half, hy - half); return; }
-  if (heroCarry(p, px, py + bob)) return; // a hero's own way of holding it facing down or up (js/draw/armatos.js)
+  if (heroCarry(p, px, py + bob)) return; // a hero's own way of holding it facing down or up (js/draw/heroes.js)
   const face = p.dir === 'right' ? 0 : p.dir === 'down' ? Math.PI / 2 : p.dir === 'left' ? Math.PI : -Math.PI / 2;
   ctx.save();
   ctx.translate(hx, hy);

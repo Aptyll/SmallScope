@@ -48,32 +48,16 @@ function drawHeroBack(p, ax, ay, now, front) {
 }
 
 // ---- the greatsword in his hands -----------------------------------------------
-// His blade replaces the sword's held art wherever a hand holds it (drawHeldTool,
-// js/draw/bodies.js): flat for the side, the swing and the wind-up, and slanted
-// for a body facing down (the grip at his right hip, the blade up and out past
-// the shoulder, his face clear) or up (the same blade rising behind that
-// shoulder: drawn before the body, which covers the grip).
+// His blade (HERO_BLADES.oath, js/draw/heroes.js): flat for the side, the swing
+// and the wind-up, and slanted for a body facing down (the grip at his right
+// hip, the blade up and out past the shoulder, his face clear) or up (the same
+// blade rising behind that shoulder: drawn before the body, which covers the grip).
 let armSwordArt = null;
 function armSwords() {
   if (armSwordArt) return armSwordArt;
-  const bake = (rows) => {
-    const c = document.createElement('canvas'); c.width = rows[0].length; c.height = rows.length;
-    const g = c.getContext('2d');
-    rows.forEach((r, y) => { for (let x = 0; x < r.length; x++) { const col = ARM_SWORD_PAL[r[x]]; if (col) { g.fillStyle = col; g.fillRect(x, y, 1, 1); } } });
-    return c;
-  };
-  return (armSwordArt = { flat: bake(ARM_SWORD), diag: bake(ARM_SWORD_DIAG) });
+  return (armSwordArt = { flat: bakeBladeArt(ARM_SWORD, ARM_SWORD_PAL), diag: bakeBladeArt(ARM_SWORD_DIAG, ARM_SWORD_PAL) });
 }
-// the blade a hero's hands hold in place of a melee tool's own, or null
-function heroBlade(p, wDef) { return wDef.melee && CLASSES[p.cls].blade === 'oath' ? armSwords().flat : null; }
-const ARM_HIP = { down: [13, 12], up: [11, 10] }; // where the grip sits on the 16 px cell, by facing
-// the carried blade facing down or up; false where the side's level carry stands
-function heroCarry(p, px, py) {
-  const at = ARM_HIP[p.dir], w = heldTool(p), def = w ? TOOLS[toolIdOf(w.type)] : null;
-  if (!at || !def || !heroBlade(p, def)) return false;
-  ctx.drawImage(armSwords().diag, Math.round(px + at[0] - ARM_GRIP[0]), Math.round(py + at[1] - ARM_GRIP[1]));
-  return true;
-}
+HERO_BLADES.oath = { art: armSwords, hip: { down: [13, 12], up: [11, 10] }, grip: ARM_GRIP };
 
 // ---- on the snow --------------------------------------------------------------
 // a box laid down a bearing: the IRON VERDICT's line, (px, py) its near end
@@ -126,7 +110,7 @@ function drawMarchTele(p, a, col, closing, now, ex, ey) {
 }
 // THE OLD GUARD: the ring in the side's colour, the standard planted at its
 // heart, both thinning out over its last second. Drawn on the snow with the
-// other ability shapes (drawAbilityGround, js/sim/abilities.js), for both sides.
+// other ability shapes (HERO_GROUND, js/sim/heroes.js), for both sides.
 function drawGuards(ex, ey, now) {
   for (const g of guards) {
     const px = Math.round(g.x - ex), py = Math.round(g.y - ey);
@@ -143,3 +127,4 @@ function drawGuards(ex, ey, now) {
     ctx.globalAlpha = 1;
   }
 }
+HERO_GROUND.push(drawGuards);
