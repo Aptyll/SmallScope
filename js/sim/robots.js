@@ -171,7 +171,7 @@ function updateRobot(b, dt) {
     const t = b.tgt, ox = t.tx * TILE + 8, oy = t.ty * TILE + 8;
     joltObj(t, 0.1, 0.22);
     if (t.type === 'tree' || t.type === 'deadTree') {
-      const dry = t.type === 'deadTree';   // a rookery perch: quicker, same gold
+      const dry = t.type === 'deadTree';   // a rookery perch: quicker, a plain pine's gold
       t.hp--;
       b.carry += dry ? YIELD.deadTreeHit : YIELD.treeHit;
       sfxAt('chop', ox, oy);

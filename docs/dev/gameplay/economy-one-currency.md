@@ -3,8 +3,8 @@
 **Gold is not XP.** Gold buys; XP levels, and it comes only from being near when a rival body
 dies — a soldier, a scout, a deer, a wolf, a bear — shared by the side standing there
 ([Hero levels](../multiplayer.md#hero-levels)). Nothing in this section pays XP: the works, the
-clock, a pump and a sale are gold alone, so the road is where a scout levels and the woods are
-where it gets rich.
+clock, a pump and a sale are gold alone, so the road is where a scout levels; the lanes' soldiers
+and the dens are where it gets rich, and the woods are pocket money.
 
 Every player owns a wallet **and** a bag. `p.inv` is `{ gold }` — currency only, no ceiling —
 while everything you *carry* lives in `p.bag`, the slot array described in
@@ -19,9 +19,9 @@ rather than a different resource (the League model: one number, many ways to ear
 | Source | Pays | Profile |
 | --- | --- | --- |
 | the clock | `TRICKLE_GOLD` (1) every `TRICKLE_T` (4 s) — the `passive income` banner, js/sim/sim.js | 15 a minute to every player on the ground, silently (no floater, no blip); the floor under everyone's purse |
-| tree (`TREE_HP` 3, js/sim/world.js) | `treeFall` 1 on the fell (`treeHit` is 0 — a swing is work, the fell is the pay) | slow, safe, everywhere — a pine a second chained, so a gold a second is the ceiling of full-time farming; leaves a stump |
+| tree (`TREE_HP` 3, js/sim/world.js) | `treeFall` 0: a plain pine pays nothing (`treeHit` is 0 too) | side income, never the farm — a pine a second chained, and only a gold pine pays; leaves a stump |
 | dead tree (3 hp) | `deadTreeFall` 1 | a tree; none stand since 4.82 (the brown bear's ring went with its den) |
-| rare tree (8%) | + `treeRare` 3 → 4 | jackpot roll, see `treeRare()` |
+| gold pine (25%) | `treeRare` 2 on the fell | the `rare` roll, `treeRare()`: one pine in four, unmarked, so a chain of pines pays about 28 a minute |
 | rock | its kind's `gold` (`ROCK_KINDS`, js/sim/mining.js): STONE 3, FROSTGLASS SPIRE 8, SUNSTONE 20 | 2 / 3 / 4 s of standing by it, paid with **ore** besides; it regrows ([Mining a rock](mining-a-rock.md)) |
 | rabbit | `rabbit` 2 coins × 5 → 10 | bolts when approached; jinks one shot per 10 s |
 | deer | `deer` 3 coins × 6 → 18 | the big mobile target: two of them, each running its side's line |
@@ -33,9 +33,11 @@ rather than a different resource (the League model: one number, many ways to ear
 | chest | `CHEST_GOLD_MIN`–`MAX` (8–20) + a card + a free item part | ~14 caches along the treeline, one free E press — the world's one source of cards, and a part for nothing (`chestPart`, [the items](the-merchants-counter.md#the-items)) |
 | a sale at [the counter](the-merchants-counter.md) | half a made thing's or an item's price, or the fixed price for fish and berries | the one payout that does not count as earned (`tradeGold`) — a trade is an exchange, not a source, and the counter buys food at the price it sells it |
 
-The table is sized so that a
-player chaining pines nonstop earns about a gold a second, the trickle is a quarter of that,
-and the animals, chests, kills and rocks are where the rest comes from. PACKMULE and the
+The table is sized so that soldiers stay the better farm: a lane's last hits pay 96 a minute at
+the start (3 soldiers a wave every 30 s at 16 each) and grow with the wave and the bounty, while
+a player chaining pines nonstop earns about 28 a minute (measured headless, 56 fells a minute),
+under half of it and a little under twice the trickle. The animals, chests, kills and rocks are
+where the rest comes from. PACKMULE and the
 FORAGER card multiply the fell (`harvestMul`, +25% a level and +50%; the payout rounds).
 
 **Gold is never a physical drop.** Every source pays the earner on the spot through
