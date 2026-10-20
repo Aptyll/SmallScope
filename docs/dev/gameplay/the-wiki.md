@@ -16,9 +16,9 @@ typed twice, so a retune can never leave the wiki lying.
   level 1 health, damage, attack speed, armor and move speed (`WIKI_STATS`, off `statFrom`); under each, its
   passive (a `P` plate and `passiveIcon`, when the hero has one) and four abilities in key order — the key on a plate, the strip's own 32 px icon in a well
   (`classAbIcon`), the name, COOLDOWN and CAST in the columns (`WIKI_AB_COLS`, off `CLASS_AB`)
-  and the blurb wrapped beneath. A hover raises the lobby's ability card (`tipClassAb` with
-  the class passed, so the base cooldown). The intro names what a skill point does
-  (`AB_LV_CD`, `AB_LV_MAX`, [Hero levels](../multiplayer.md#hero-levels)).
+  (the cooldown at rank 1) and the blurb wrapped beneath. A hover raises the lobby's ability card
+  (`tipClassAb` with the class passed: every rank's numbers, none lit). The intro names what a
+  skill point does (`AB_RANK_LV`, `AB_ULT_LV`, [Hero levels](../multiplayer.md#hero-levels)).
 - **BEASTS** — the meadow's two kinds and the camps' three, each drawn wearing the frame it wears in the snow; a
   legend naming the frame's parts once (the level plate, health, the stamina bar that is a
   camp monster's leash bar, the `!` noticed mark); and per kind a line of what it does and a growth

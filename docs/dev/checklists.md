@@ -297,7 +297,8 @@ new class needs written:
    each look's standing grids and a doll named in its row, [hero looks](sprites.md#hero-looks))
    and a skins tab with `hero` in js/ui/skins.js;
 3. a `CLASS_AB` row of four actives ([js/sim/abilities.js](../../js/sim/abilities.js)): each ability's
-   `cd`/`cast`/`blurb`/`use(p)` (plus `acol`/`activeF` if a state runs on the body), its
+   `cd`/`cast`/`blurb`/`use(p)` and its per-rank numbers (`rank`, read by `abRk`; `cd` a list when it
+   shrinks by rank; [ranks](gameplay/class-abilities-keys-1-4.md)) (plus `acol`/`activeF` if a state runs on the body), its
    `abilityPose` case, any world entities it leaves and their tick/draw, and its on-body draw
    in `drawAbilityOnPlayer` if it leaves a visible state;
 4. four detailed 32×32 icons in `AB32` (on `AB32_PAL` — one palette across every big icon);

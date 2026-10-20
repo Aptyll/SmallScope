@@ -142,6 +142,7 @@ const CLASSES = [
     blurb: ['STRENGTH IS THE POWER TO REFUSE TO KNEEL.', 'THE LONGER THE FIGHT, THE HARDER SHE IS TO STOP.', 'THE EDGE OF THE ARC HEALS HER. THE SHIELD PAYS BACK WHAT IT TOOK.'],
     base: { hp: 132, dmg: 18, armor: 20, ap: 0, haste: 0, ms: PLAYER_SPEED - 3 },
     grow: { hp: 16, dmg: 2.6, as: 0.015, armor: 4 },
+    rankOrder: [0, 2, 1], // the sever, the yoke, the heart
     attack: { name: 'CHAIN GREATSWORD', art: 'sword', cycle: 30 / 60, kb: 1.2, cut: { reach: 28, half: 1.05 } },
     // her own body in each of her looks (FORT_SKINS, js/sprites/fortiva.js),
     // worn per player (heroSkinOf) in her iron over the side's coat

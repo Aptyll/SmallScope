@@ -49,8 +49,8 @@ detailed 32px icon (`classAbIcon`, baked from `AB32` in js/sim/abilities.js) is 
 **sweep** round the well is its cooldown (against the level-cut `abCdOf`, not the table base —
 see below), and the key
 digit sits big at 2× in the bottom-left corner (the keybind-indicator carve-out). Along the top
-inner edge, fat **buy pips** on dark seats count the points in the key — one seat per
-level it can hold, `AB_LV_MAX` of them, the first being the unlock
+inner edge, centred **buy pips** on dark seats count the ranks in the key — one seat per
+rank it can hold (`abLvMax`: five on keys 1-3, three on the ultimate), the first being the unlock
 ([gameplay.md](../../gameplay/class-abilities-keys-1-4.md)). A key with no point in it is **locked**,
 and the well says so in the meal button's own grammar: dark rim, the icon at `LOCK_DIM` (0.28),
 an empty pip row and a grey key digit — dim, never absent, so the strip never rearranges and you

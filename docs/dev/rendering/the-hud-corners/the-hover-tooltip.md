@@ -45,6 +45,8 @@ The builders, one per kind: `tipAttack` (the hero's basic attack: its full-draw 
 full draw, the renock and the reach, read off the sim's own functions),
 `tipStack` (a meal), `tipGold`, `tipRail` (a rail
 chip), `tipShop` (the counter's wells, js/ui/shop.js), `tipClassAb` (a strip
-ability well in play, or the lobby's stage wells with `cls` passed — the in-play cooldown
-and cast-hint rows only appear in play), and the shop's `tipItem` (an item slot on the strip or the character panel, a
+ability well in play, or the lobby's stage wells with `cls` passed: the cooldown and every key of
+the row's `rank` table as one row each, every rank's number slashed together and the rank held
+lit gold (`tipRanks`, labels in `AB_RANK_STAT`; a row value may be such a list of coloured
+segments), the AP ratio, the cast; the rank, next-rank and ready rows only in play), and the shop's `tipItem` (an item slot on the strip or the character panel, a
 wiki ITEMS row). `tipCell(s)` is the builder for whatever a bag cell holds.
