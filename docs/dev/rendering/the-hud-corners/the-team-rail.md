@@ -28,11 +28,11 @@ scoreboard's own line. *Where* anyone is stays the minimap's job.
 
 It is drawn straight after the minimap in `renderUI` (under the counter's wash with it), rides
 the intro slide up by `RAIL_SLIDE`, and **stays up while you are dead** — the side's state is
-what a spectator reads, so the spectate control (`specLayout`, js/ui/screens.js), the camp plate and the
-DAY headline all hang `headlineY()` under `railBottom()` (14 from the top when there is no rail:
+what a spectator reads, so the spectate control (`specLayout`, js/ui/screens.js), the surrender vote and the
+announcer's plate all hang `headlineY()` under `railBottom()` (14 from the top when there is no rail:
 the practice arena, or a match with an empty side — `railSides` is null, nothing draws, and the
 clock goes back under the minimap: `mmClockShown`), and
-the two notes step under the spectate control as well while it is up (`noteY`).
+the announcer's plate steps under the spectate control and the vote as well while they are up (`noteY`).
 **Its scale is its own dial**, TOP BAR SIZE: `railSc` is `settings.hudRail` at its nearest stop
 (`hudPick`), capped on the device grid where the plate would reach the view's edge (`railCap`);
 the bake is blitted about the **top-centre** anchor and `railMouse` maps the pointer back through

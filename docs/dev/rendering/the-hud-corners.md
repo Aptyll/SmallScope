@@ -9,9 +9,9 @@ bottom right is empty world.
 | Where | What | Function |
 | --- | --- | --- |
 | top left | the small tab of the **inventory drawer**, shut until B or the tab | `drawBag` |
-| top right, under the disc | the **notice lane**: the roost warning and the **stat sheet** that flies in when a number on yours moves | `renderNotices` |
+| top right, under the disc | the **notice lane**: the roost warning and the **stat sheet** that flies in when a number on yours moves — and under the plates, the **kill feed** | `renderNotices`, `renderAnnouncer` |
 | top right | the minimap and its day/night ring — the black outline sits `MM_GAP` (4 px) off the top edge and the right edge alike (`applyMinimapSize`, core.js) — the clock centred under it while no team rail is up (`mmClockShown`), and the notice plates under that | `renderMinimap`, `renderNotices` |
-| top centre | the **team rail**: one thin plate, every other player in the match as a 12px emblem over a hp bar in the side's colour, your teammates left (never you: your own hp is the strip's) and the rival right, the match clock over the two kill totals between them — and under it, the camp plate, the DAY headline and the spectate control (`headlineY`) | `drawRailScaled` |
+| top centre | the **team rail**: one thin plate, every other player in the match as a 12px emblem over a hp bar in the side's colour, your teammates left (never you: your own hp is the strip's) and the rival right, the match clock over the two kill totals between them — and under it, the spectate control, the surrender vote and the **announcer's plate** (`headlineY`, `noteY`) | `drawRailScaled` |
 | beside the pointer, or bottom left | the hover tooltip, wherever the TOOLTIP row puts it | `tipPos`, `drawTooltip` |
 | bottom centre | the hud strip, flush to the bottom: the stat panel, your portrait (xp round its edge, the level on its corner), the four ability wells over the health and stamina bars, the six item slots, the two meal wells over the gold | `drawHudStrip` |
 | centre, on G | the character panel: the live body, the stat ledger, the six item slots | `drawCharPanel` |
@@ -23,6 +23,7 @@ Every widget slides **its own size** away for the landing intro — the minimap 
 ## Parts
 
 - [Notices: the plates under the minimap](the-hud-corners/notices-the-plates-under-the-minimap.md) (6 KB)
+- [The announcer and the kill feed](the-hud-corners/the-announcer.md) (2 KB)
 - [The stat ledger: your sheet, as a notice](the-hud-corners/the-stat-ledger-your-sheet-as-a-notice.md) (4 KB)
 - [The hover tooltip](the-hud-corners/the-hover-tooltip.md) (3 KB)
 - [The patch notes screen](the-hud-corners/the-patch-notes-screen.md) (2 KB)

@@ -257,7 +257,6 @@ tag). The store behind it is [profile.js](../architecture.md#profilejs): one nam
   (the minimap and the team rail down from the top, the top-left corner — the pack's tab and its
   drawer — from the left by `CORNER_REACH`, and the hud strip up from the bottom by `HUD_SLIDE`)
   while the camera settles onto the play framing.
-  The DAY 1 headline fires when that intro ends.
 
 `DBG` exposes `menu`, `menuHit`, `menuClick`, `menuKey`, `settingsHit`, `beginIntro`, `beginLobby`,
 `lobbyLayout`, `lobbyHit`, `pressPlay`, `DRAFT`/`draftAct`/`draftPoint`/`draftConfirm`, `setAiLevel`, `lockIn` and `layout()` (the live `VIEW_W`/`VIEW_H`, `SET_X`/`SET_Y`, `SL_X`, `PANEL_X`/`PANEL_Y` and `MM_CX`/`MM_CY` anchors) for driving all of this headlessly.

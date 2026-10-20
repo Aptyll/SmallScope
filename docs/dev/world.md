@@ -875,10 +875,9 @@ no map, chart or HUD code knows a camp by name:
 
 | Field | Meaning |
 | --- | --- |
-| `name` | printed by the minimap (glyph only), the M map and the arrival toast |
-| `tag` | the one-line personality under the name on the toast (`THE PACK PAYS IN GOLD`) |
+| `name` | printed by the M map (the minimap shows the glyph alone) |
 | `r` | footprint radius in tiles: the clearing, the props, and the radius `campAt()` calls "here" |
-| `mark` | map ink for its glyph and its toast rule |
+| `mark` | map ink for its glyph |
 | `icon` | the glyph itself: `[x, y, w, h]` rects inside a 7×7 box, stamped by `drawCampIcon()` with a dark rim pass so it reads on parchment, snow and forest alike |
 | `kind` / `pop` | the monster kind (`MONSTER`, wildlife.js) and how many the camp holds (`a.home === C` is the backref; prey, the warren's rabbits, carries `a.meadow === C` instead, so it is never a camp fight) |
 | `repop` | seconds after the **last** one dies before the whole camp is back — a camp is cleared or it is not; nothing trickles |
@@ -969,8 +968,7 @@ leash, the rocks, the drifts and the landmarks all keep off or count the bank th
 through a den and nothing happens. A hit wakes the whole camp on the hitter, the camp leashes
 when the hitter leaves its ground and heals — the rules are in
 [gameplay.md](gameplay/wildlife.md#camp-monsters-neutral-until-hit). `campAt(x, y)` returns the camp a
-world position stands in; `updatePlay` feeds it `state.loc` (`{ L, t }`), which drives the
-arrival toast in [rendering.md](rendering/camps-on-the-maps.md).
+world position stands in (the leash and the keep-out ask it).
 
 `updateCamps(dt)` (from `updateWildlife`, `updatePlay`'s wildlife step) runs each camp's respawn clock (`C.repopT`), kept honest
 enough to be shown: a camp with anything alive in it holds the clock at `repop` — a half-killed
@@ -1300,10 +1298,8 @@ in `title` mode the main menu prints the seed instead, next to the reroll die.
 ## Day/night
 
 `DAY_LEN = 110`, `NIGHT_LEN = 55`, so a full `CYCLE` is 165 s. `state.time` runs within the cycle,
-`state.day` increments at wrap. Each wrap (and the landing, for DAY 1) raises the **day headline**
-— `state.dayPop`, a ~3.5 s fade of bare `DAY N` at 2×, top centre (drawn in `renderUI`, js/ui/compose.js) —
-because days are the calendar a survival strategy is timed against, so a new one headlines
-rather than riding the bottom message line.
+`state.day` increments at wrap; a dawn rings `SFX.dawnChime` and raises no headline (0.516 gave
+the top centre to the announcer).
 `update()` derives `state.darkness` (0→1) from a hand-written
 ramp: dusk over the last 12 s of day, full dark, then a 10 s dawn.
 

@@ -853,6 +853,7 @@ function animalDies(a) {
         campBuff(q, CAMP_BUFF_EPIC_T, a.kind);
       }
       logEvent(hunter.name + ' SLEW THE ' + MONSTER[a.kind].feed, hunter);
+      callBeast(a, hunter); // ...and the announcer calls it (the `calls` banner, js/sim/player.js)
     }
   }
   if (a.kind === 'bird') {
@@ -871,7 +872,7 @@ function animalDies(a) {
 // body's radius and mass (unitRadius/UNIT_MASS read these, nav.js) - a
 // bear is a big sprite and a body a roll does NOT pass through - and
 // `teamPay` for the two midline camps' ones, whose kill pays the killer's
-// whole team and gives it the bear's own `buff` (animalDies, worn in `buffCol`) and names it in the feed as `feed`. The creek gives one to each side's bank
+// whole team and gives it the bear's own `buff` (animalDies, worn in `buffCol`) and names it as `feed` in the feed and the announcer's call (callBeast). The creek gives one to each side's bank
 // (creekBends, world.js), so the two are one fight in two coats: the brown
 // bear (`dire`, RED's bank) and the black bear (`alpha`, BLUE's) have the
 // same row, the same hp (ANIMAL_HP) and the same pay. `cause` is the

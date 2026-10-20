@@ -93,7 +93,6 @@ function update(dt) {
       // match: its dawns count nothing, like the rest of its stats.
       if (!player.eliminated && !PRACTICE) PROFILE.addDay();
       SFX.dawnChime();
-      state.dayPop = { day: state.day, t: 0 }; // the dawn headline, top centre (renderUI)
       // carved ice holes freeze back over during the night; cracks heal too.
       // A hole with a net on it is the exception - the net is what holds that
       // water open - so it stays in the list and refreezes the dawn after
@@ -234,11 +233,6 @@ function update(dt) {
       const q = easeInOut(1 - state.intro / state.introLen);
       camX = state.introFrom.x + (tx - state.introFrom.x) * q;
       camY = state.introFrom.y + (ty - state.introFrom.y) * q;
-      // the landing anchors the calendar: DAY 1, the same headline every
-      // dawn after it re-raises (practice is a training room, not a day). A
-      // drop brief owns the top of the screen until it hands back, so it
-      // pops the day itself (endBrief, js/sim/eagle.js)
-      if (state.intro === 0 && !PRACTICE && !state.dropBrief) state.dayPop = { day: state.day, t: 0 };
     } else {
       camX += (tx - camX) * Math.min(1, dt * 7);
       camY += (ty - camY) * Math.min(1, dt * 7);
@@ -262,7 +256,6 @@ function update(dt) {
 
   state.shake = Math.max(0, state.shake - dt * 12);
   state.msgT = Math.max(0, state.msgT - dt);
-  if (state.dayPop && (state.dayPop.t += dt) >= 3.5) state.dayPop = null;
 
   updateFx(dt);
 }
@@ -704,15 +697,6 @@ function updatePlay(dt) {
 
   updateWildlife(dt); // the animals, the fish, the orca and the camps (below)
   if (PRACTICE) updatePractice(dt); // the dummy mends itself between combos
-
-  // the named place the local player is standing in drives the arrival toast
-  if (player.dead || inAir(player)) state.loc = null;
-  else {
-    const here = campAt(player.x, player.y);
-    if (!here) state.loc = null;
-    else if (!state.loc || state.loc.L !== here) state.loc = { L: here, t: 0 };
-    else state.loc.t += dt;
-  }
 
   // structures + their robots
   updateStructures(dt);
@@ -1502,5 +1486,6 @@ function updateFx(dt) {
     if (f.t > (f.k === 1 ? SNOW_TRAIL_LIFE : 9)) footprints.splice(i, 1);
   }
   ageNotices(dt); // the news plates under the minimap age here too (js/ui/notices.js)
+  ageAnnouncer(dt); // ...and the announcer's queue and the kill feed (js/ui/announcer.js)
   updateStatLedger(dt); // ...and the stat sheet that flies into that lane when a number moves
 }

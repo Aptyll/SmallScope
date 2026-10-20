@@ -1040,6 +1040,7 @@ function die(p, src, cause) {
       sfxAt('heal', killer.x, killer.y);
     }
   }
+  callKill(p, killer, bounty); // the announcer's call and the kill feed's row (the `calls` banner below)
   // the XP is the rival side's whoever landed it - a scout the bear or the
   // orca took still teaches the rivals who stood by
   shareXp(p, KILL_XP + KILL_XP_LV * p.level, 1 - p.team, killer);
@@ -1303,4 +1304,41 @@ function payTakedown(p, killer, foes, worth, bounty) {
     if (!q.dead) awardGold(q, share, q.x, q.y);
   }
   if (bounty > 0) addFloater(p.x, p.y - 40, 'SHUTDOWN', '#f2cc6a', { scale: 2, rise: 20, life: 1.4 });
+}
+
+// ------------------------------------------------------------ calls
+// What the sim hands the announcer (js/ui/announcer.js): the moment, who made
+// it and who it was made on, and nothing about how it looks or sounds. A call
+// is raised here, inside the step, and annRaise records it for the clients the
+// way a cue is recorded (the `sim events` banner, js/net/events.js) - and every
+// side hears every call, the way League's announcer speaks to the whole match.
+// Practice is never a match: it calls nothing.
+//
+// One call per kill, the biggest it earns: FIRST BLOOD (the match's first),
+// else a MULTI-kill of 2..5 (the run die() keeps, MULTI_T apart), else a
+// SHUTDOWN (the body wore a bounty). Every player kill leaves a row on the
+// feed whether it earned a call or not. An ACE follows when that kill left
+// every body on the fallen side down.
+const ANN_MULTI_MAX = 5; // PENTA is the last multi-kill with a name
+function callKill(p, killer, bounty) {
+  if (PRACTICE || !killer || !players.includes(killer)) return;
+  let kind = 'kill', n = 0;
+  if (!state.firstBlood) { state.firstBlood = true; kind = 'first'; }
+  else if (killer.multiN >= 2 && killer.multiN <= ANN_MULTI_MAX) { kind = 'multi'; n = killer.multiN; }
+  else if (bounty > 0) kind = 'shut';
+  annRaise(kind, n, killer.id, killer.team, 'p', p.id);
+  const side = players.filter((q) => q.active && q.team === p.team);
+  if (side.length > 1 && side.every((q) => q.dead)) annRaise('ace', 0, killer.id, killer.team, 'side', p.team);
+}
+// a road tower down (STRUCTS[type].call, hurtStruct): credited to the player
+// who broke it, or to the side whose wave did
+function callStruct(o, p) {
+  if (PRACTICE) return;
+  const by = p && players.includes(p) ? p : null;
+  annRaise('tower', 0, by ? by.id : -1, by ? by.team : 1 - o.team, 'tower', o.team);
+}
+// a midline bear down (MONSTER[kind].teamPay, animalDies): the hunter's call
+function callBeast(a, hunter) {
+  if (PRACTICE || !hunter) return;
+  annRaise('beast', 0, hunter.id, hunter.team, 'beast', a.kind);
 }
