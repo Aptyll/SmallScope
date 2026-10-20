@@ -59,8 +59,9 @@ consumes `p.input.ability` as a buy whenever `abLvCanBuy(p, i)` holds and as a c
 next press casts it; a maxed key casts straight through an unspent point. That reaches every
 controller and the well click alike, since all of them set the one field. Hover lights the plate
 and the tooltip carries the numbers, kept to what a mid-fight glance needs: the cooldown and the
-one number a rank raises (a `rank` key given as a list; plain numbers stay off it), every rank's
-on one row with the held rank lit gold, and the row's one-line `tip`
+one number a rank raises (a `rank` key given as a list; plain numbers stay off it) at the rank
+held, and the row's one-line `tip`; Shift (or ABILITY DETAILS on ALWAYS) shows every rank's,
+the held one lit gold
 ([the hover tooltip](../rendering/the-hud-corners/the-hover-tooltip.md); `LOCKED` and
 `UNLOCK 1 SKILL PT` on a dark key). Bots spend each free point in rung 0 of the ladder (`aiSpend`,
 js/ai/ai.js, first thing `aiThink` asks): the ultimate whenever it can rank, then each basic key

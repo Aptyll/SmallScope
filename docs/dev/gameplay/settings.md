@@ -61,6 +61,7 @@ remembered with the settings (`settings.relay`), else the page's own host.
 `teamPal` — the VIDEO page's COLOUR BLIND dropdown: `def` (OFF) or a colour-blind palette (`rg`, `by`, `hc`), same section —
 `tipFollow` — the TOOLTIP row, the hover panel beside the pointer (the default) or parked bottom
 left ([the hover tooltip](../rendering/the-hud-corners/the-hover-tooltip.md)) —
+`tipFull` — the ABILITY DETAILS row: HOLD SHIFT (the default: an ability's hover is the short card, Shift opens every rank's numbers) or ALWAYS (`tipClassAb`) —
 `aiLevel` — the rival bots' level, picked in the lobby's AI pop-up, an index into `AI_LEVELS` (js/ai/ai-skill.js), NORMAL until moved (a settings save from before EASY is moved up one, `loadSettings`) —
 `mapType` — the map shape picked in the lobby's map pop-up, an index into `MAPS` (js/sim/world.js); it is
 what the NEXT load grows — LOCK IN reloads onto it when it is not this page's shape ([map shapes](../world.md#map-shapes)) —
@@ -106,7 +107,7 @@ never land on two rows. It answers a row id, `'mute'`, `'close'`, `'leave'`, `'t
 `'d:<row>:<opt>'` (an entry of the open list). A **choice row** carries its
 own `val()` and `pick(id)` in `SET_TABS` — QUALITY's are the preset macro — so the draw (the word in force wears gold), the hit and
 the click all read one table. A **toggle row** whose two states have names of their own carries
-them there too, as `on`/`off` (CURSOR's PIXEL / BROWSER, TOOLTIP's FOLLOWS POINTER / BOTTOM LEFT,
+them there too, as `on`/`off` (CURSOR's PIXEL / BROWSER, TOOLTIP's FOLLOWS POINTER / BOTTOM LEFT, ABILITY DETAILS' ALWAYS / HOLD SHIFT,
 MY TEAM's ALWAYS BLUE / AS DEALT); a row without them reads ON / OFF, and a plain toggle's row id
 **is** its `settings` key, which is the whole of what its click does. A **dropdown row** (`kind: 'drop'`)
 carries `val`/`pick` like a choice row; its box shows the entry in force and a click hangs the

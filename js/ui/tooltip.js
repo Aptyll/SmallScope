@@ -163,20 +163,26 @@ function tipClassAb(i, cls, k) {
   const ab = abOptions(c, i)[opt] || CLASS_AB[c][i];
   const d = { title: ab.name, tcol: '#f4f7ff', kind: CLASSES[c].name + ' ABILITY',
     rows: [], notes: [], icon: classAbIcon(c, i, opt), plate: BAG_WELL, rim: '#3c4048' };
-  // Read mid-fight, so only what decides a press: the cooldown and the
-  // number a rank raises (a `rank` key given as a list), every rank's on one
-  // row with the held rank lit gold, the hero level a rank is waiting for,
-  // and the row's one line (`tip`). The pips on the well say the rank, its
-  // sweep the wait. On the lobby nothing is held yet, so none is lit.
+  // Read mid-fight, so the short card says only what decides a press: the
+  // cooldown and the number a rank raises (a `rank` key given as a list), at
+  // the rank you hold (rank 1 on a dark key or the lobby), and the row's one
+  // line (`tip`). Shift held - or ABILITY DETAILS on ALWAYS (settings.tipFull)
+  // - opens every rank's numbers on each row, the held rank lit gold, and the
+  // hero level the next rank waits for. The pips on the well say the rank,
+  // its sweep the wait.
+  const full = settings.tipFull || !!keys.shift;
   const lv = cls == null ? player.abLv[i] : 0;
   const hm = cls == null ? hasteMul(player) : 1;
+  const val = (v, fmt, unit) => (full ? tipRanks(v, lv, fmt, unit) : fmt(rankAt(v, lv)) + unit);
   const cds = Array.isArray(ab.cd) ? ab.cd.map((v) => v * hm) : ab.cd * hm;
-  d.rows.push(['COOLDOWN', tipRanks(cds, lv, tipNum, 'S'), '#f4f7ff']);
+  // (short, the cooldown takes the line under the name the long card gives the hero's name)
+  if (full) d.rows.push(['COOLDOWN', val(cds, tipNum, 'S'), '#f4f7ff']);
+  else d.kind = 'COOLDOWN ' + val(cds, tipNum, 'S');
   for (const k in ab.rank || {}) {
     const st = AB_RANK_STAT[k];
-    if (st && Array.isArray(ab.rank[k])) d.rows.push([st[0], tipRanks(ab.rank[k], lv, st[1], st[2]), '#f4f7ff']);
+    if (st && Array.isArray(ab.rank[k])) d.rows.push([st[0], val(ab.rank[k], st[1], st[2]), '#f4f7ff']);
   }
-  if (cls == null) {
+  if (cls == null && full) {
     const need = abReqOf(ab, i)[player.abLv[i]]; // the next rank waits for the hero (abLvCanBuy)
     if (need && player.level < need) d.rows.push(['HERO LEVEL', String(need), '#e0637a']);
   }

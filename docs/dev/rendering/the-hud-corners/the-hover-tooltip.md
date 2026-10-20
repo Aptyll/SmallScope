@@ -45,9 +45,11 @@ The builders, one per kind: `tipAttack` (the hero's basic attack: its full-draw 
 full draw, the renock and the reach, read off the sim's own functions),
 `tipStack` (a meal), `tipGold`, `tipRail` (a rail
 chip), `tipShop` (the counter's wells, js/ui/shop.js), `tipClassAb` (a strip
-ability well in play, or the lobby's stage wells with `cls` passed: kept to a mid-fight glance —
-the cooldown and each key of the row's `rank` table given as a list, every rank's number slashed
-together and the rank held lit gold (`tipRanks`, labels in `AB_RANK_STAT`; a row value may be
-such a list of coloured segments), the hero level the next rank waits for (in play), and the
-row's one-line `tip`; the full `blurb` stays on the wiki), and the shop's `tipItem` (an item slot on the strip or the character panel, a
+ability well in play, or the lobby's stage wells with `cls` passed: kept to a mid-fight glance.
+The short card is the name with its cooldown under it, the number its rank raises (each key of
+the row's `rank` table given as a list) at the rank held, and the row's one-line `tip`; the full
+`blurb` stays on the wiki. **Shift held**, or ABILITY DETAILS on ALWAYS (`settings.tipFull`),
+opens the long card, League's way: every rank's numbers slashed together on each row with the
+rank held lit gold (`tipRanks`, labels in `AB_RANK_STAT`; a row value may be such a list of
+coloured segments), and the hero level the next rank waits for), and the shop's `tipItem` (an item slot on the strip or the character panel, a
 wiki ITEMS row). `tipCell(s)` is the builder for whatever a bag cell holds.
