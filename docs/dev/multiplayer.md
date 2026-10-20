@@ -358,10 +358,11 @@ read through `statOf(p, key)` (js/sim/stats.js), never off the kit. `setClass(p,
 | --- | --- | --- | --- | --- |
 | 0 | **HUNTER** — bow, distance control, the one class that hides | keep the gap and own the ground between | the ranged numbers: quick nock (0.4 s), full draw power, 92 hp | a SHORTBOW with an ARROW in its second cell, the first held open |
 | 1 | **WARRIOR** — close pressure, blocking, momentum | get to arm's length and stay there | 120 hp, faster on ice (×1.15), +5 speed damage, dash 230, softer bow numbers | a LONGSWORD — the one melee body — with a BARBED SHOT on its edge in the second cell, the first held open |
+| 2 | **ARMATOS** — THE LAST STANDARD, the defensive initiator (a passive, `CLASSES[c].passive`) | make the whole team stand its ground | the warrior's body and kit (`heroBody`), 130 hp, 24 armor | the warrior's LONGSWORD |
 
 The **weapon is part of the class**: `CLASS_LOADOUT` (js/sim/tools.js) pairs each one with a tool
 and **one projectile**, and `setClass` / `Player.reset` (the first landing) hand it over — so the
-two classes do not shoot the same thing and every bot arrives armed; a respawn keeps the weapon it
+hunter and the swordsmen do not shoot the same thing and every bot arrives armed; a respawn keeps the weapon it
 died with ([death keeps everything](gameplay.md#death-and-respawn)). The cell in FRONT of that projectile is
 deliberately empty, so the first modifier you walk over auto-fits there and shapes the shot you are
 already firing: [starting loadouts](gameplay.md#starting-loadouts). See
