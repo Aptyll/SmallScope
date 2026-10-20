@@ -35,7 +35,7 @@ const HERO_TICK = [];
 const HERO_GROUND = [];
 
 // the ability whose use() is running right now, so a blow it lands says so
-// (o.ab in a passive's deal); '' between casts. Never state: set and cleared
+// (o.ab, stamped by hurtUnit, js/sim/actions.js); '' between casts. Never state: set and cleared
 // inside one call.
 let heroAbNow = '';
 
@@ -49,7 +49,6 @@ function passiveDeal(src, e, dmg, o) {
   if (!(src instanceof Player)) return dmg;
   const h = heroPassive(src);
   if (!h || !h.deal) return dmg;
-  if (heroAbNow && o.ab === undefined) o.ab = heroAbNow;
   return h.deal(src, e, dmg, o);
 }
 function heroTaken(p, dmg, dx, dy, src) { for (const f of HERO_TAKEN) dmg = f(p, dmg, dx, dy, src); return dmg; }

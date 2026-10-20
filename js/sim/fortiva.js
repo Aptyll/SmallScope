@@ -170,7 +170,7 @@ function defyRelease(p) {
   const dmg = Math.round(abRk(p, 'defy', 'dmg') + took * DEFY_PAY + abAp(p, 'defy'));
   for (const q of unitsHit(p, p.x, p.y, DEFY_R)) {
     const d = Math.hypot(q.x - p.x, q.y - p.y) || 1;
-    hurtUnit(q, dmg, (q.x - p.x) / d, (q.y - p.y) / d, p, { kb: 90 });
+    hurtUnit(q, dmg, (q.x - p.x) / d, (q.y - p.y) / d, p, { kb: 90, ab: 'defy' });
     burst(q.x, unitMidY(q), '#f2cc6a', 6, 45, 0.4, true);
   }
   for (const s of structsNear(p, p.x, p.y, DEFY_R)) hurtStruct(s, dmg, p);
@@ -207,7 +207,7 @@ function yokeStrike(p) {
   let hero = false;
   for (const q of unitsHit(p, cx, cy, YOKE_R)) {
     const d = Math.hypot(q.x - cx, q.y - cy) || 1;
-    hurtUnit(q, dmg, (q.x - cx) / d, (q.y - cy) / d, p, { kb: 60 });
+    hurtUnit(q, dmg, (q.x - cx) / d, (q.y - cy) / d, p, { kb: 60, ab: 'yoke' });
     if (!q.dead) slowUnit(q, abRk(p, 'yoke', 'slowT'), abRk(p, 'yoke', 'slow'));
     burst(q.x, unitMidY(q), '#cfd8e8', 6, 45, 0.4, true);
     if (q instanceof Player && q.team !== p.team) hero = true;
@@ -254,7 +254,7 @@ function noKneelLand(p) {
   const dmg = abDmg(p, 'nokneel', abRk(p, 'nokneel', 'dmg'));
   for (const q of unitsHit(p, p.x, p.y, NOKNEEL_R)) {
     const d = Math.hypot(q.x - p.x, q.y - p.y) || 1;
-    hurtUnit(q, dmg, (q.x - p.x) / d, (q.y - p.y) / d, p, { kb: 80 });
+    hurtUnit(q, dmg, (q.x - p.x) / d, (q.y - p.y) / d, p, { kb: 80, ab: 'nokneel' });
     if (!q.dead && d <= NOKNEEL_UP_R) knockUp(q, abRk(p, 'nokneel', 'up'), p);
     burst(q.x, unitMidY(q), '#f2cc6a', 8, 50, 0.45, true);
   }

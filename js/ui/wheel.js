@@ -287,6 +287,7 @@ const PAD_BIND = {
   ab1: ['face', 'Y'], ab2: ['face', 'B'], ab3: ['bump', 'LB'], ab4: ['bump', 'RB'],
   berry: ['dpad', 'L'], fish: ['dpad', 'R'], char: ['dpad', 'U'], build: ['dpad', 'D'], map: ['pill', 'BACK'], board: ['pill', 'BACK'],
   esc: ['face', 'B'], enter: ['face', 'A'], move: ['stick', 'L'],
+  recap: ['face', 'Y'], // the death recap's views (recapCycle, js/ui/recap.js)
 };
 // a filled disc and a 1px ring, in scanlines, so they are pixel art and not
 // an anti-aliased arc (a pad's face buttons and sticks, here and on the

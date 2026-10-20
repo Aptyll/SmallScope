@@ -224,7 +224,7 @@ function marchStep(p, mv, dt) {
     p.marchHit.push(q);
     const side = (q.x - p.x) * -p.rushNY + (q.y - p.y) * p.rushNX >= 0 ? 1 : -1;
     const sx = -p.rushNY * side, sy = p.rushNX * side;
-    hurtUnit(q, abDmg(p, 'march', abRk(p, 'march', 'shove')), sx, sy, p, { kb: MARCH_SHOVE });
+    hurtUnit(q, abDmg(p, 'march', abRk(p, 'march', 'shove')), sx, sy, p, { kb: MARCH_SHOVE, ab: 'march' });
     burst(q.x, unitMidY(q), '#eef4fb', 5, 40, 0.35, true);
   }
   if (mv.blockedX || mv.blockedY || p.rushT <= 0) marchEnd(p, null);
@@ -237,7 +237,7 @@ function marchEnd(p, q) {
   p.vx = p.rushNX * 40; p.vy = p.rushNY * 40;
   if (!q) return;
   p.vx = -p.rushNX * 30; p.vy = -p.rushNY * 30; // the collision rocks him back
-  hurtUnit(q, abDmg(p, 'march', abRk(p, 'march', 'dmg')), p.rushNX, p.rushNY, p, { kb: 60 });
+  hurtUnit(q, abDmg(p, 'march', abRk(p, 'march', 'dmg')), p.rushNX, p.rushNY, p, { kb: 60, ab: 'march' });
   if (!q.dead) stunUnit(q, abRk(p, 'march', 'stun'), p);
   burst(q.x, unitMidY(q), '#ffd95c', 10, 55, 0.5, true);
   shakeFor(p, 5, q);

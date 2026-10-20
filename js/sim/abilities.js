@@ -414,7 +414,7 @@ function abPierce(p) {
     t: 0, life, dmg, pow: 1,
     owner: p.id, team: p.team, ambush: false, trailD: 0,
     solid: true, col: '#f4f7ff',
-    pierce: true, pierceHit: [],
+    pierce: true, pierceHit: [], ab: 'pierce', // what the death recap names (hurtUnit)
     ang: a, spd, ox: p.x, oy: p.y - BOW_Y,
   });
   // the snap: arrowhead flash at the bow, and the sound of the lock letting go
@@ -616,7 +616,7 @@ function rushEnd(p, wall) {
   }
   if (v && unitAlive(v)) {
     const mul = wall ? RUSH_WALL_MUL : 1;
-    hurtUnit(v, Math.round(abDmg(p, 'rush', abRk(p, 'rush', 'dmg')) * mul), p.rushNX, p.rushNY, p, { kb: 110 * mul });
+    hurtUnit(v, Math.round(abDmg(p, 'rush', abRk(p, 'rush', 'dmg')) * mul), p.rushNX, p.rushNY, p, { kb: 110 * mul, ab: 'rush' });
     if (!v.dead) stunUnit(v, abRk(p, 'rush', 'stun') * mul, p);
     burst(v.x, v.y - 5, '#cfd8e8', 8, 50, 0.5);
     burst(v.x, v.y - 4, '#eef4fb', 10, 55, 0.5, true);
@@ -800,7 +800,7 @@ function updateAbilityWorld(dt) {
       if (q instanceof Player && abShieldBlocks(q, n.nx, n.ny)) {
         burst(n.x, n.y, '#cfd8e8', 6, 40, 0.35, true); dead = true; break;
       }
-      hurtUnit(q, abDmg(abCredit(n), 'net', n.dmg), n.nx, n.ny, abCredit(n), { kb: 40 });
+      hurtUnit(q, abDmg(abCredit(n), 'net', n.dmg), n.nx, n.ny, abCredit(n), { kb: 40, ab: 'net' });
       if (!q.dead) netUnit(q, n.slowT, n.slow, abCredit(n)); // the drape the slow is read off
       burst(q.x, unitMidY(q), '#cfd8e8', 8, 45, 0.4, true);
       dead = true;

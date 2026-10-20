@@ -247,6 +247,7 @@ function padTake() {
 function padPress(i, menu) {
   if (menu) {
     if (i === 0) { padTake(); return; }
+    if (i === 3 && recapCycle()) return; // Y walks the death recap's views (js/ui/recap.js)
     // over an end screen the dpad is the emote bar rather than the arrows -
     // a quick chat's grammar, and the planks keep the stick and the bumpers
     // (emotePad, js/ui/screens.js)

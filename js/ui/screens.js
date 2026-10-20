@@ -240,6 +240,7 @@ function renderReplay() {
     ctx.fillRect(c.x, c.y, 1, c.h); ctx.fillRect(c.x + c.w - 1, c.y, 1, c.h);
     ctx.fillStyle = hot ? '#ffd95c' : '#cfe0ff';
     for (let k = 0; k < 6; k++) { ctx.fillRect(c.x + 3 + k, c.y + 3 + k, 1, 1); ctx.fillRect(c.x + 8 - k, c.y + 3 + k, 1, 1); }
+    drawRecap(); // why: who hit you, with what, how much (js/ui/recap.js)
     // the way back to the allies: the key cap (or the pad's button) with its
     // verb, over the world, so it wears the outline the world demands
     const verb = 'BACK';
@@ -467,7 +468,7 @@ function deadKey(k) {
 function deadClick() {
   if (state.fade) return;
   if (state.deadView === 'scores') { scoresClick(); return; }
-  if (replayFull()) { if (rpCloseHit()) replayClose(); return; } // the recap's box is its only target
+  if (replayFull()) { if (rpCloseHit()) replayClose(); else recapClick(); return; } // the close box, and the recap's fold buttons (js/ui/recap.js)
   if (state.deadView === 'spec') {
     const d = specHit(); if (d) { specNext(d); SFX.pickup(); }
     return;
