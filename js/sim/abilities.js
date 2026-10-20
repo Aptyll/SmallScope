@@ -297,6 +297,7 @@ function tryAbility(p, i) {
     if (!inWorld(tx, ty) || ground[idx(tx, ty)] !== 0) { sfxFor(p, 'deny'); return; }
   }
   if (ab.ok && !ab.ok(p)) { sfxFor(p, 'deny'); return; } // a row that needs something the press lacks (a target near the aim)
+  p.castSlam = false; // a fresh press is never a second half (one knocked out of the hands mid-cast must not linger)
   startCast(p, i, ab.cast);
 }
 // is the key pressed now its row's second half (castSlam)

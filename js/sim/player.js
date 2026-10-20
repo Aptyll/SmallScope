@@ -158,6 +158,7 @@ const CLASSES = [
     name: 'BELLA', role: 'THE IMPERIAL GENERAL', body: 1, passive: 'calculated', // HERO_PASSIVE, js/sim/heroes.js
     look: { sex: 1, tone: 1, hair: 3, hairCol: 0, beard: 0, face: 2 },
     blurb: ['FIND THE WEAKNESS. SPEND IT FIRST.', 'THE LUNGE, THE SLIP AND THE PARRY CHAIN INTO EACH OTHER.', 'CALL OUT ONE HERO AND FINISH THEM.'],
+    attack: { name: 'IMPERIAL SABER', art: 'sword', cycle: 26 / 60, kb: 1, cut: { reach: 26, half: 0.95 } }, // quicker and a little shorter than the longsword
     base: { hp: 104, dmg: 18, armor: 16, ap: 0, haste: 0, ms: PLAYER_SPEED + 4 },
     grow: { hp: 11, dmg: 2.6, as: 0.02, armor: 3.2 },
     kit: { iceMax: 1.15, iceSteer: 3.4, slideMin: 70, fatigue: 0.75, chargeMul: 0.7,
