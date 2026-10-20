@@ -26,12 +26,11 @@
    ice** (`drawLakeSky`, js/draw/lakes.js: blown streaks over big lakes, a frosty night's glints
    and cracks, fresh dust while it snows - [the wind's leavings](../world.md#the-winds-leavings));
 5. flat objects (stumps, and **fish nets** via `drawNet`);
-6. `drawFlagRings` (your side's flag rings, and the ring a held flag wheel previews) →
-   `drawClickMarks` (the CLICK scheme's order and lock rings) → `drawCastPreview` (the MOUSE
+6. `drawRecallGround` (the roost rings and the recall's) → `drawClickMarks` (the CLICK scheme's order and lock rings) → `drawCastPreview` (the MOUSE
    scheme's range preview) → `drawAbilityGround` (craters,
    the piercing shot's telegraph) → item drops;
 7. the **y-sorted `draws` array** (tall objects, every player, animals, robots, the practice
-   targets and your side's flags, sorted by feet Y; empty player slots draw as team-tinted
+   targets, sorted by feet Y; empty player slots draw as team-tinted
    silhouettes via `drawGhost`; `pushMiddleDraws` adds the cistern's stone, piece by piece at
    the key of a body standing on it, and the orca out of the water, `drawOrcaBreach`, sorted by
    its hole's waterline and cut at it - [the cistern](../world.md#the-cistern));
@@ -75,7 +74,7 @@ itself) → `tipResolve` ([the hover tooltip](the-hud-corners/the-hover-tooltip.
 `play`, only while [the drop brief](eagle-drop-mode-drop.md#the-drop-brief) holds a roost) or `drawHopPrompt` (mode
 `play`, the local player still seated on its roost: the HOP OFF key cap — E, or the pad's A disc
 while one is in hand) → `renderWorldMap` (the M map, in `play` and `drop`) → `renderWheel` (the radial menu — after
-the chart, because a flag wheel opens over it) → `renderSettings` → `renderTitle` (the main
+the chart, because a ping wheel opens over it) → `renderSettings` → `renderTitle` (the main
 menu, also during the play intro) → `renderReplay` (the replay window: the whole frame on a
 death, the corner on pause — **before** the death overlay, whose countdown and ESC prompt draw
 over it) → the end-of-match overlay (`renderDead`: the death dim and its planks, or

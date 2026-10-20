@@ -1,9 +1,8 @@
 'use strict';
-// The worker bots and the one flag per player the whole side reads: a bot's
-// life from the bay's mouth to its wreck, the frame it spends deciding what to
-// do, and the order marker it reads to decide it. Everything here is sim - a
-// flag's pixels are the `what a flag looks like` group in js/draw-world.js,
-// and how an AI PLAYER answers one is the `flag` rung in js/ai/ai.js.
+// The worker bots: a bot's life from the bay's mouth to its wreck and the
+// frame it spends deciding what to do (cut trees round its own bay and haul
+// the gold home), then the eagle's merchant and a wave's soldiers, who share
+// the body. Everything here is sim.
 // ------------------------------------------------------------ workers
 function makeRobot(sp) {
   const t = STRUCTS[sp.type].tiers[sp.tier]; // the bay's worker, or the barracks' soldier (makeSoldier): both carry botHp
@@ -24,9 +23,7 @@ function makeRobot(sp) {
     x: sx, y: sy, hp: t.botHp, maxHp: t.botHp, vx: 0, vy: 0, // vx/vy: a bot never drifts, but a rival's aim leads by them (updateAI)
     home: sp, team: sp.team === undefined ? 0 : sp.team, owner: sp.owner === undefined ? 0 : sp.owner,
     tgt: null, workT: 0, atkCd: 0, avoid: null, avoidT: 0, nav: null,
-    // the fight, all of it: what it is swinging at right now (drawRobot reads
-    // it), and who hit it last - a struck worker fights back for ROBOT_MAD s
-    atkAim: null, mad: null, madT: 0, madX: 0, madY: 0,
+    atkAim: null, // what a soldier is swinging at right now (drawRobot reads it)
     carry: 0, // gold held, deposited at home
     moveT: 0, idleT: rand(0.3, 1), mvx: 0, mvy: 0, moving: false,
     animT: rng() * 2, flash: 0, kbx: 0, kby: 0, dead: false,
@@ -55,11 +52,6 @@ const ROBOT_KB = 40;
 // since this is a named function and nothing stops a later caller finding it.
 function hurtRobot(b, dmg, nx, ny, src) {
   if (!unitAlive(b)) return;
-  // a worker under a flag remembers who hit it and swings back; with no flag
-  // it is the same defenceless hauler it always was
-  // madX/madY is where it was standing when it was hit: the leash it fights
-  // back inside, so a raider cannot walk a worker off its post
-  if (src && src.team !== b.team && flagOf(b)) { b.mad = src; b.madT = ROBOT_MAD; b.madX = b.x; b.madY = b.y; }
   b.hp -= dmg;
   b.flash = 0.12;
   b.kbx = nx * ROBOT_KB; b.kby = ny * ROBOT_KB;
@@ -143,7 +135,7 @@ function updateRobot(b, dt) {
     return n.d;
   };
 
-  // loiter around an anchor - home with no orders, the flag's post with them.
+  // loiter around home.
   // Steered by hand rather than routed, so the net/crater drag is folded in
   // here the way navStep does it for every walk with a goal (js/sim/actions.js)
   const wander = (ax, ay) => {
@@ -165,12 +157,6 @@ function updateRobot(b, dt) {
         b.idleT = rand(0.8, 2);
       }
     }
-  };
-
-  // walk to a post and stand on it: the flag's own hold, and a guard's ring
-  const holdAt = (px, py) => {
-    if (Math.hypot(px - b.x, py - b.y) > 22) { if (walkToward(px, py) >= 0) return; }
-    wander(px, py);
   };
 
   const deposit = () => {
@@ -224,80 +210,12 @@ function updateRobot(b, dt) {
     return true;
   };
   const homeRun = () => { const d = walkToward(hx, hy); if (d >= 0 && d < 14) deposit(); };
-  // anything a worker will cut, anywhere near a point, that no sibling has
-  const cutNear = (cx, cy, r) => nearestObj(cx, cy, r, (o) =>
-    (o.type === 'tree' || o.type === 'deadTree') && o !== b.avoid && !objTaken(b, o));
 
-  // close on a foe and swing at it. `leash` (px, measured from lx/ly) is what
-  // keeps a worker on a defensive job from being kited off it.
-  const engage = (foe, lx, ly, leash) => {
-    const pt = foePoint(foe, b.x, b.y - 1);
-    if (leash !== undefined && Math.hypot(pt.x - lx, pt.y - ly) > leash) return false;
-    if (Math.hypot(pt.x - b.x, pt.y - (b.y - 1)) > ROBOT_REACH) {
-      // a building is a solid tile: stop beside it, not on it
-      return walkToward(pt.x, pt.y, foe.tx !== undefined ? 1 : 0) >= 0;
-    }
-    b.atkAim = pt;
-    if (b.atkCd <= 0) { b.atkCd = ROBOT_ATK_CD; robotStrike(b, foe, pt); }
-    return true;
-  };
-
-  // ---- the flag is the order -------------------------------------------
-  // No flag and this is the bay-centred gather it has always been. With one,
-  // its kind says what the crew does with the ground inside its ring (the
-  // `team flags` banner below), and only an ATTACK lets a worker chase.
-  const fl = flagOf(b);
-  const type = fl ? fl.type : null;
-  const fx = fl ? fl.tx * TILE + 8 : hx, fy = fl ? fl.ty * TILE + 8 : hy;
-  if (b.avoidT > 0) b.avoidT -= dt; else b.avoid = null;
-  // anger only lives under a flag - an unflagged worker is the same
-  // defenceless hauler it always was
-  if (b.madT > 0 && fl && foeAlive(b, b.mad)) b.madT -= dt;
-  else { b.mad = null; b.madT = 0; }
-  b.atkAim = null;
-  // one post each, spaced around the flag, so a crew holding ground is a
-  // ring on it and not a pile
-  const post = () => {
-    const a = (Math.max(0, home.bots.indexOf(b))) * 2.4;
-    holdAt(fx + Math.cos(a) * 18, fy + Math.sin(a) * 11);
-  };
-
-  if (!fl) {
-    if (b.carry >= 8) homeRun();
-    else if (!gather(() => nearestObj(hx, hy, 8, (o) =>
-      o.type === 'tree' && o !== b.avoid))) {
-      if (b.carry > 0) homeRun(); else wander();
-    }
-  } else if (type === 'attack') {
-    b.tgt = null;
-    // whatever hostile is on it first, then the nearest thing inside the
-    // ring - units before buildings - chased no further than a leash past
-    // the ring's edge, so a raider cannot walk the crew off across the map
-    const foe = robotFoeUnit(b, ROBOT_AGGRO) || flagFoe(b, fx, fy, true);
-    if (!foe || !engage(foe, fx, fy, FLAG_R + ROBOT_LEASH)) post(); // nothing left to break: hold the ground
-  } else if (b.carry >= 8) {
-    homeRun();
-  } else if (b.mad && engage(b.mad, b.madX, b.madY, ROBOT_LEASH)) {
-    // struck at its post: swings back from where it was standing, and never
-    // follows past the leash - chasing is what an attack flag is for
-  } else if (type === 'defend') {
-    b.tgt = null;
-    // anything that comes into the ring is met, and never followed out of it
-    const foe = flagFoe(b, fx, fy, false);
-    if (!foe || !engage(foe, fx, fy, FLAG_R)) {
-      if (b.carry > 0 && Math.hypot(hx - b.x, hy - b.y) < 40) homeRun();
-      else post();
-    }
-  } else if (type === 'gather') {
-    // everything inside the ring, nearest the flag first
-    if (!gather(() => cutNear(fx, fy, FLAG_R / TILE))) {
-      if (b.carry > 0) homeRun(); else post();
-    }
-  } else {
-    // rally: come and stand. A load is banked only if home is right there.
-    b.tgt = null;
-    if (b.carry > 0 && Math.hypot(hx - b.x, hy - b.y) < 40) homeRun();
-    else post();
+  // the whole job: cut the trees round its own bay and haul a load home at 8
+  if (b.carry >= 8) homeRun();
+  else if (!gather(() => nearestObj(hx, hy, 8, (o) =>
+    o.type === 'tree' && o !== b.avoid))) {
+    if (b.carry > 0) homeRun(); else wander();
   }
 
   b.animT += dt * (moving ? 8 : 0);
@@ -325,7 +243,7 @@ function updateRobot(b, dt) {
 // It is a unit in `robots` with `merchant: true`: the same separation and
 // draw pipelines a worker rides, dispatched to updateMerchant/drawMerchant by
 // that flag (updateRobot's status/stun handling is shared). owner -1: it
-// obeys no flag and pays nobody - its work is the eagle's, free like the
+// pays nobody - its work is the eagle's, free like the
 // crater, the same for both sides.
 //
 // It CANNOT BE KILLED, and it has no hp at all rather than a large number:
@@ -385,7 +303,7 @@ function spawnMerchant(e) {
     bayGift: [true, true, true], // per lane: its first bay is still the eagle's gift
     stall: null, stallT: 0, stallSite: null, // the shop it pitches first (OBJECTS.stall), the clock to asking again for a site, where
     hopT: MERCH_HOP_T, dir: 'down', moving: false, animT: 0, mvx: 0, mvy: 0, moveT: 0, idleT: 1,
-    atkAim: null, atkCd: 0, mad: null, madT: 0, carry: 0, flash: 0, kbx: 0, kby: 0, dead: false,
+    atkAim: null, atkCd: 0, carry: 0, flash: 0, kbx: 0, kby: 0, dead: false,
   };
   clearUnitStatus(b);
   e.merchant = b;
@@ -708,7 +626,7 @@ function updateMerchant(b, dt) {
 // (the `merchant` banner above) rolls out a column of soldiers - the worker's
 // chassis under its side's pennant (drawRobot) - that marches the ROAD
 // (placeRoad, world.js) to the rival bird and strikes it. A soldier is
-// allowed to FIGHT and nothing else: no flag reads it (owner -1), no tree
+// allowed to FIGHT and nothing else: nobody owns it (owner -1), no tree
 // tempts it, and it swings the worker's own axe (robotStrike) at any rival
 // unit inside SOLDIER_AGGRO, any rival building inside SOLDIER_SIEGE (a
 // turret or wall in its way, their bays), and then the bird itself,
@@ -745,7 +663,7 @@ function makeSoldier(o) {
   // tougher every `grow`, like its bounty (soldierBounty, js/sim/farm.js), so a
   // hero's grown blow never makes every hit on one a last hit
   b.hp = b.maxHp = b.maxHp + SOLDIER_HP_GROW * Math.floor(state.elapsed / STRUCTS.barracks.tiers[0].grow);
-  b.owner = -1; // nobody's: no flag, no cargo, no payout but the bounty
+  b.owner = -1; // nobody's: no cargo, no payout but the bounty
   b.lane = o.lane === undefined ? 1 : o.lane; // the bay's lane (updateMerchant): 0 top, 1 mid, 2 bot
   b.wayI = 0;
   b.rode = false; // boarded a zipline since the route was last read (soldierRejoin)
@@ -886,124 +804,12 @@ function updateSoldier(b, dt) {
   if (b.hp <= 0 && !b.dead) robotDies(b, null);
 }
 
-// ------------------------------------------------------------ team flags
-// The flag: ONE order marker per player, of four kinds, that the whole side
-// reads - every worker bot out of a bay the planter owns (the dispatch at the
-// tail of updateRobot) and every AI player on the team (the `flag` rung,
-// js/ai/ai.js). A flag is an AREA: FLAG_R px round the tile it stands on is the
-// ground the order is about, drawn as a ring on the snow (drawFlagRing,
-// js/draw-world.js) so what an order covers is never a guess.
-const FLAG_R = 192;        // px round a flag its order covers (12 tiles)
-const ROBOT_DMG = 5;       // one worker swing, against a unit or a building
+// ------------------------------------------------------------ worker blows
+// What a wave's soldier swings (the `soldiers` banner above) - the worker's
+// own axe, aimed at a body instead of a trunk.
+const ROBOT_DMG = 5;       // one swing, against a unit or a building
 const ROBOT_ATK_CD = 1.1;  // seconds between those swings
-const ROBOT_REACH = 15;    // px from a worker's body to what its axe can reach
-const ROBOT_AGGRO = 70;    // px a worker on any flag notices a foe inside
-const ROBOT_LEASH = 90;    // px a worker on a *defensive* flag will leave its post to swing
-const ROBOT_MAD = 6;       // seconds a struck worker stays angry at whoever hit it
-
-//   p.flag = { tx, ty, type, owner }   // owner: the planter's player id
-//
-// The four orders, and what each asks of the ground inside the ring:
-//   attack - kill every rival unit and break every rival building in it
-//   defend - hold it, and swing at whatever comes in; never chase out of it
-//   gather - cut and mine everything in it
-//   rally  - come here and stand; nothing is fought on the way
-// Which flag a body serves is servedFlag(): A HUMAN'S FLAG IS THE SIDE'S
-// WHOLE PLAN - while one stands every bot on the team lifts its own and
-// follows it (aiFlagSync, js/ai/ai.js), and every worker on the side reads it.
-// With no human flag a bot serves the one it planted itself (a bot's flag is
-// only ever the ladder's own decision made visible) or a teammate's it
-// joined instead of planting a twin over the same ground.
-// TWO colours only, and they carry the STAKES, not the order - the icon is
-// what says which order it is. The two pointed at your own side wear the
-// game's plain pale ink; the one pointed at another team is the danger red
-// every other hostile thing in the game already uses. Amber and green are
-// spoken for (affordable / interactable, and good), and an order is neither.
-// The pale one is the game's standard bright ink, NOT a soft slate: this
-// world is snow, and anything near it disappears into the ground. It reads
-// for the same reason drawSelection's brackets do - a dark rim under white.
-const FLAG_MINE = '#f4f7ff', FLAG_FOE = '#ff8a7a';
-const FLAG_TYPES = {
-  // icon: rects on a 7x7 grid, stamped by drawFlagIcon (the camp glyph's idiom)
-  attack: { name: 'ATTACK', col: FLAG_FOE,  icon: [[2, 0, 3, 3], [1, 3, 5, 1], [3, 4, 1, 3]] },                     // a sword
-  defend: { name: 'DEFEND', col: FLAG_MINE, icon: [[0, 0, 7, 2], [1, 2, 5, 2], [2, 4, 3, 1], [3, 5, 1, 1]] },       // a shield
-  gather: { name: 'GATHER', col: FLAG_MINE, icon: [[0, 0, 5, 1], [0, 1, 6, 1], [1, 2, 5, 1], [3, 3, 1, 4]] },       // an axe
-  rally:  { name: 'RALLY',  col: FLAG_MINE, icon: [[0, 0, 2, 1], [5, 0, 2, 1], [1, 1, 2, 1], [4, 1, 2, 1], [2, 2, 3, 1], [3, 3, 1, 1], [2, 5, 3, 1]] }, // a chevron down onto the ground
-};
-// the radial's wedges, clockwise from straight up (wheelOptions, js/ui.js)
-const FLAG_ORDER = ['attack', 'defend', 'gather', 'rally'];
-
-// where a flag stands, in world px, and whether a point is inside its ring
-function flagPos(f) { return { x: f.tx * TILE + 8, y: f.ty * TILE + 8 }; }
-function inFlag(f, x, y) { return Math.hypot(f.tx * TILE + 8 - x, f.ty * TILE + 8 - y) < FLAG_R; }
-// the flag a HUMAN on this team has standing - the side's plan while it stands
-function humanFlag(team) {
-  for (const q of players) if (q.active && isHuman(q) && q.team === team && q.flag) return q.flag;
-  return null;
-}
-// the flag this player's crews and, for a bot, the bot itself answer to:
-// a human teammate's, else the teammate's flag a bot has joined, else its own
-function servedFlag(p) {
-  const h = humanFlag(p.team);
-  if (h) return h;
-  if (p.control === 'ai' && p.ai.join >= 0) {
-    const q = players[p.ai.join];
-    if (q && q.active && q.flag) return q.flag;
-  }
-  return p.flag;
-}
-// a teammate (not `except`) already flying an order of this kind whose ring
-// covers (x, y) - the flag a bot joins instead of planting a twin
-function teamFlagAt(team, type, x, y, except) {
-  for (const q of players) {
-    if (!q.active || q === except || q.team !== team || !q.flag || q.flag.type !== type) continue;
-    if (inFlag(q.flag, x, y)) return q;
-  }
-  return null;
-}
-// the nearest standing flag on the side that passes `pred(flag)`, whoever
-// planted it (a bot with nothing of its own to do goes and helps: aiHelps,
-// js/ai/ai.js, says at which)
-function nearestTeamFlag(p, pred) {
-  let best = null, bd = Infinity;
-  for (const q of players) {
-    if (!q.active || q === p || q.team !== p.team || !q.flag || (pred && !pred(q.flag))) continue;
-    const d = Math.hypot(q.flag.tx * TILE + 8 - p.x, q.flag.ty * TILE + 8 - p.y);
-    if (d < bd) { bd = d; best = q; }
-  }
-  return best;
-}
-
-// plant / move: one flag per player, so planting anywhere moves it. The
-// burst and the sound are the local side's only - a rival's flag is not
-// intelligence to hand across the map, and neither is the puff it lands with.
-function plantFlag(p, tx, ty, type) {
-  if (!inWorld(tx, ty) || !FLAG_TYPES[type]) return;
-  p.flag = { tx, ty, type, owner: p.id };
-  flagRecall(p);
-  if (player && p.team === player.team) burst(tx * TILE + 8, ty * TILE + 8, FLAG_TYPES[type].col, 8, 45, 0.4, true);
-  sfxFor(p, 'place');
-}
-function clearFlag(p) {
-  if (!p.flag) return;
-  const x = p.flag.tx * TILE + 8, y = p.flag.ty * TILE + 8;
-  p.flag = null;
-  flagRecall(p);
-  if (player && p.team === player.team) burst(x, y, '#c9d0e2', 6, 40, 0.35, true);
-  sfxFor(p, 'pickup');
-}
-// every worker that will read the new order drops what it was doing and
-// turns for it the same frame it lands - an order has to be visibly obeyed
-// at once. A human's flag is read by the whole side's crews; a bot's by its own.
-function flagRecall(p) {
-  const side = isHuman(p);
-  for (const b of robots) {
-    if (b.dead || b.merchant || b.kind === 'soldier') continue;
-    if (b.owner === p.id || (side && b.team === p.team)) { b.tgt = null; b.atkAim = null; navClear(b); }
-  }
-}
-// the order a given worker is under: what its bay's owner serves, or none
-function flagOf(b) { const p = players[b.owner]; return p && p.active ? servedFlag(p) : null; }
+const ROBOT_REACH = 15;    // px from the body to what its axe can reach
 
 // nearest building belonging to any other team, within r px of (x, y)
 function enemyStructNear(team, x, y, r) {
@@ -1016,45 +822,10 @@ function enemyStructNear(team, x, y, r) {
   }
   return best;
 }
-// The nearest hostile INSIDE a flag's ring, measured from the worker: a
-// unit first (a player through seenAt, so a buried archer is not there for
-// the crew either; a rival wave's soldiers count), then - when `structs` -
-// a building. Units before buildings because a building does not swing back.
-function flagFoe(b, fx, fy, structs) {
-  let best = null, bd = Infinity;
-  for (const q of players) {
-    if (!q.active || q.dead || inAir(q) || q.team === b.team) continue;
-    const df = Math.hypot(q.x - fx, q.y - 6 - fy);
-    if (df >= FLAG_R || df > seenAt(q, FLAG_R)) continue;
-    const d = Math.hypot(q.x - b.x, q.y - 6 - b.y);
-    if (d < bd) { bd = d; best = q; }
-  }
-  for (const r of robots) {
-    if (r === b || !unitAlive(r) || r.team === b.team) continue;
-    if (Math.hypot(r.x - fx, r.y - 1 - fy) >= FLAG_R) continue;
-    const d = Math.hypot(r.x - b.x, r.y - 1 - b.y);
-    if (d < bd) { bd = d; best = r; }
-  }
-  if (!best && structs) best = enemyStructNear(b.team, fx, fy, FLAG_R);
-  return best;
-}
-// is another live worker out of the same bay already swinging at this?
-function objTaken(b, o) {
-  for (const s of b.home.bots) if (s !== b && !s.dead && s.tgt === o) return true;
-  return false;
-}
-
 // ---- a worker's simple attack -------------------------------------------
-// Workers were never fighters; a flag that points at another team has to hand
-// them something to point back with. One axe swing on a flat cooldown - the
+// One axe swing on a flat cooldown - the
 // same swing the harvest animation already draws, aimed at a body instead of
 // a trunk. Nothing here scales with anything yet; that is the balance pass.
-function foeAlive(b, e) {
-  if (!e) return false;
-  if (e.tx !== undefined) return structOf(objAt(e.tx, e.ty)) === e && e.team !== b.team;
-  if (e.input) return e.active && !e.dead && !inAir(e) && e.team !== b.team;
-  return !e.dead && e.team !== b.team;
-}
 // Where a worker aims. A body is a point a little above its feet; a building
 // is the nearest point on its FOOTPRINT, not its centre - the bay is 3x2, and
 // a worker measuring to the middle of it could never reach its own axe past

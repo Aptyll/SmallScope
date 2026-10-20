@@ -90,4 +90,4 @@ files or processes in it. Going online changes where things run, not what a bot 
    logs, served to a web version of the standings page.
 4. **People upload files** instead of `add`; a changed upload is a new revision, as now.
 
-A bot written today against `api: 1` runs unchanged on that ladder.
+A bot written today against `api: 2` runs unchanged on that ladder.

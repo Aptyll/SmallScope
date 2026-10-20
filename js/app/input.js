@@ -70,8 +70,8 @@ function keyLabel(k) {
 // `ck` its key on the CLICK scheme (settings.scheme; the scheme itself is
 // the `click to move` banner below): an action with no key on a scheme is
 // not on that scheme at all - the four walk keys and the harvest key are the
-// right button's under CLICK, and STOP, ATTACK MOVE and the held FLAG WHEEL
-// key have no WASD life. Each scheme keeps its own binds (settings.binds,
+// right button's under CLICK, and STOP, ATTACK MOVE and the PING key have
+// no WASD life (WASD pings with the right button). Each scheme keeps its own binds (settings.binds,
 // settings.bindsClick), so a rebind on one never moves the other, and
 // binds() is whichever is live. CLICK's defaults are the genre's: QWER the
 // abilities (R the big one), A the attack-move, S the stop, D and F the two
@@ -92,7 +92,7 @@ const KEY_ACTIONS = [
   { id: 'dodge', verb: 'DODGE', key: ' ', ck: ' ', ms: 'Mouse4' }, { id: 'slide', verb: 'SLIDE', key: 'Shift', ck: 'Shift', ms: 'Mouse5' }, { id: 'work', verb: 'HARVEST', key: 'e' },
   { id: 'berry', verb: 'EAT BERRY', key: 'q', ck: 'd' }, { id: 'fish', verb: 'EAT FISH', key: 'f', ck: 'f' },
   { id: 'recall', verb: 'RECALL', key: 'h', ck: 'h' },
-  { id: 'flag', verb: 'FLAG WHEEL', ck: 'g' },
+  { id: 'ping', verb: 'PING', ck: 'g', was: 'flag' }, // `was`: the id a saved bind of it went by
   { id: 'tunnel', verb: 'DIG BURROW', key: 'v', ck: 'v' }, { id: 'bag', verb: 'INVENTORY', key: 'b', ck: 'b' },
   { id: 'char', verb: 'CHARACTER', key: 'g', ck: 'c' },
   { id: 'build', verb: 'BUILD', key: 't', ck: 't' }, { id: 'rotate', verb: 'ROTATE', key: 'r', ck: 'x' },
@@ -124,7 +124,7 @@ function mendBinds() {
     const s = map && typeof map === 'object' ? map : {};
     const out = {}, used = {};
     for (const a of schemeActs(scheme)) {
-      const k = s[a.id];
+      const k = s[a.id] !== undefined ? s[a.id] : a.was && s[a.was];
       out[a.id] = typeof k === 'string' && k && !keyReserved(k) && !used[k] ? k : schemeKey(a, scheme);
       used[out[a.id]] = true;
     }
@@ -276,13 +276,13 @@ function keyPress(e) {
   if (state.settingsOpen && settingsKey(e.key.toLowerCase())) return;
   // the CLICK scheme's own keys (the `click to move` banner): S drops every
   // order and the lock, A arms the pointer for an attack-move - the next
-  // left press lays it, A again or Escape disarms - and G holds the flag
-  // wheel open over the pointer, the pad's R3 grammar; its release plants
-  // (keyRelease)
+  // left press lays it, A again or Escape disarms - and G is the ping: a
+  // tap pings GO HERE at the pointer, a hold opens the ping wheel there, the
+  // pad's R3 grammar; its release pings (keyRelease)
   if (ckOn() && !e.repeat) {
     if (keyIs(e, 'stop')) { ckClear(); SFX.unlock(); }
     if (keyIs(e, 'amove') && !player.dead && !state.settingsOpen) { ck.arm = !ck.arm; SFX.unlock(); }
-    if (keyIs(e, 'flag')) openFlagWheel();
+    if (keyIs(e, 'ping')) openPingWheel();
   }
   // edge-triggered intents go into the local player's input struct; the sim
   // reads and clears them, exactly as it does for an bot
@@ -418,9 +418,9 @@ pageListen(window, 'keyup', (e) => {
   keyRelease({ key: k, char: e.key });
 });
 function keyRelease(e) {
-  // letting go of the flag key with the wheel it held up plants the pick (or
-  // lifts from the hub), exactly as the pad's R3 and the right button do
-  if (keyIs(e, 'flag') && state.wheel && state.wheel.kind === 'flag') { resolveWheel(); state.wheel = null; return; }
+  // letting go of the ping key pings the pick (GO HERE on a tap), exactly
+  // as the pad's R3 and the right button do
+  if (keyIs(e, 'ping') && state.wheel && state.wheel.kind === 'ping' && !state.wheel.stand) { resolveWheel(); state.wheel = null; return; }
   // letting go of the build key: a tap toggles the list, a hold picks off the piece wheel
   if (keyIs(e, 'build')) { buildKeyRelease(); return; }
   // letting go of the work key with a wheel it held up (armory, roll die or
@@ -446,7 +446,7 @@ pageListen(window, 'blur', () => {
   // its keyup is lost with the focus, so it closes (choosing nothing)
   // instead of sticking open
   if (state.wheel && (state.wheel.kind === 'pkdie' || state.wheel.kind === 'agbell' || state.wheel.kind === 'manage' || state.wheel.kind === 'piece')) state.wheel = null;
-  // ...and so is the flag wheel G holds, and a held right button's follow
+  // ...and so is the ping wheel G holds, and a held right button's follow
   if (ckOn()) { if (state.wheel) state.wheel = null; ck.follow = false; ck.arm = false; }
 });
 
@@ -500,12 +500,12 @@ function pointerPress(button) {
     if (state.build) { SFX.unlock(); state.build = null; return; } // the right button puts the build list away
     if (state.tunAim) { SFX.unlock(); state.tunAim = false; return; } // ...and the burrow's ghost
     if (cheatAimOff()) { SFX.unlock(); return; } // ...and the practice bar's aim
-    if (state.mapOpen) { openFlagWheel(); return; } // over the chart: the flag wheel, the one way to order a tile off-screen
+    if (state.mapOpen || overMinimap()) { openPingWheel(); return; } // over the chart or the disc: a ping where it points
     if (bagHit(mouse.x, mouse.y) || charHit(mouse.x, mouse.y) || stripHit(mouse.x, mouse.y) ||
         shopHit(mouse.x, mouse.y) || cheatHit(mouse.x, mouse.y)) return; // no wheel through the HUD
-    // any tile on the map is a place to plant a flag on (building is the
-    // list on T, managing is E beside your own building)
-    openFlagWheel();
+    // any point on the map is a place to ping (building is the list on T,
+    // managing is E beside your own building)
+    openPingWheel();
     return;
   }
   if (button === 1) { if (msOn()) msWheelPress(); return; } // the middle button is the MOUSE scheme's action wheel, and nobody else's
@@ -515,7 +515,7 @@ function pointerPress(button) {
   if (state.mode === 'dead') { SFX.unlock(); if (!voteClick()) deadClick(); return; }
   if (state.mode !== 'play') return;
   if (ckOn() && ck.arm) { ckArmedPress(); return; } // an armed attack-move: this press lays it
-  if (state.wheel && state.wheel.stand) { resolveWheel(); state.wheel = null; return; } // a standing flag wheel: this press picks
+  if (state.wheel && state.wheel.stand) { resolveWheel(); state.wheel = null; return; } // a standing ping wheel: this press picks
   if (state.wheel) { state.wheel = null; return; } // left-click while it is open: cancel
   if (state.settingsOpen) { mouse.down = true; settingsMouseDown(); return; }
   if (state.mapOpen) { if (mapCloseHit()) { SFX.unlock(); state.mapOpen = false; } return; } // a press off the slab closes the chart; on it, the press is swallowed
@@ -657,28 +657,21 @@ function haptic(kind) {
   } catch (e) { /* no actuator, or a browser that refuses one: the ear and the eye still answered */ }
 }
 
-// The flag wheel: the four orders (FLAG_ORDER, robots.js) round the tile
-// under the pointer, on the build wheel's own grammar - held open, the
-// travel picks, the release plants (resolveWheel, ui.js). Over the chart it
-// opens on the chart's tile and is pinned to the press point (sx/sy), the
-// one way to order a tile that is off-screen. The right button and R3 on a
-// pad both hold it; the caller resolves it on its
-// own release, as the right button does. False when nothing opened.
-function openFlagWheel() {
+// The ping button (the `pings` banner, js/sim/pings.js): the ping wheel's
+// four pings (PING_WHEEL) round the point under the pointer - the world's,
+// or the chart's or the minimap disc's, where the wheel is pinned to the
+// press (sx/sy), the way to ping a spot off-screen. Nothing shows until the
+// hold has lasted PING_HOLD or the pointer has left the hub
+// (pingWheelShown, js/ui/wheel.js): a tap is GO HERE, a flick is its
+// wedge. The right button, G and R3 on a pad all hold it; the caller
+// resolves it on its own release. False when nothing opened.
+function openPingWheel() {
   if (state.mode !== 'play' || state.settingsOpen || state.wheel || player.dead) return false;
-  let tx, ty, sx, sy;
-  if (state.mapOpen) {
-    const mt = mapTileAt(mouse.x, mouse.y);
-    if (!mt) return false;
-    tx = mt.tx; ty = mt.ty; sx = mouse.x; sy = mouse.y;
-  } else {
-    if (overHud(mouse.x, mouse.y)) return false; // the HUD swallows its own presses
-    tx = Math.floor(mouseWX() / TILE); ty = Math.floor(mouseWY() / TILE);
-  }
-  if (!inWorld(tx, ty)) return false;
+  const pt = ckPoint(); // the world, the chart or the disc - never the rest of the HUD
+  if (!pt) return false;
   SFX.unlock();
-  SFX.wheelUp();
-  state.wheel = { kind: 'flag', tx, ty, seg: -1, ax: mouse.x, ay: mouse.y, sx, sy };
+  state.wheel = { kind: 'ping', tx: pt.tx, ty: pt.ty, wx: pt.wx, wy: pt.wy, seg: -1, ax: mouse.x, ay: mouse.y,
+    sx: pt.far ? mouse.x : undefined, sy: pt.far ? mouse.y : undefined, t0: performance.now() / 1000 };
   return true;
 }
 
@@ -775,9 +768,9 @@ function merchUnder(wx, wy) {
 function ckRightPress() {
   if ((state.mode !== 'play' && state.mode !== 'drop') || state.settingsOpen) return;
   // a wheel a walk opened (manage, the armory, the die, the bell) stands
-  // until a press picks; the flag wheel is G's, and G's release plants it -
+  // until a press picks; the ping wheel is G's, and G's release pings -
   // unless the action wheel stood it up, when this press picks too
-  if (state.wheel) { if (state.wheel.kind !== 'flag' || state.wheel.stand) { resolveWheel(); state.wheel = null; } return; }
+  if (state.wheel) { if (state.wheel.kind !== 'ping' || state.wheel.stand) { resolveWheel(); state.wheel = null; } return; }
   if (state.build) { SFX.unlock(); state.build = null; return; } // the right button puts the build list away
   if (state.tunAim) { SFX.unlock(); state.tunAim = false; return; } // ...and the burrow's ghost
   if (cheatAimOff()) { SFX.unlock(); return; } // ...and the practice bar's aim
@@ -815,7 +808,7 @@ function ckRightRelease() {
   // a wheel held open by the press that walked up to it: letting go on a
   // wedge takes it; letting go on the hub leaves it standing for a pick
   const w = state.wheel;
-  if (w && w.kind !== 'flag' && wheelLayout().seg >= 0) { resolveWheel(); state.wheel = null; }
+  if (w && w.kind !== 'ping' && wheelLayout().seg >= 0) { resolveWheel(); state.wheel = null; }
 }
 // the left press that lays an armed attack-move: on a body, that body; on
 // the ground (the chart's and the disc's included), the walk that fights
@@ -965,11 +958,11 @@ function ckStep(p, dt, smx, smy) {
 //   goes to the body - CLICK's assist - and the auto-attack keeps working it
 //   from where you stand; it never walks, which is the right button's job;
 // - HOLDING THE MIDDLE BUTTON opens the ACTION WHEEL at the pointer: the four
-//   abilities, the two meals and the flag (MS_WHEEL). The travel picks and
+//   abilities, the two meals and the ping (MS_WHEEL). The travel picks and
 //   the release performs. An ability casts at the point the press was made,
 //   not where the flick ended (ms.castAt, held through the wind-up - ckStep),
-//   and the flag wedge stands the flag wheel up on that tile for the next
-//   press to pick (w.stand);
+//   and the ping wedge stands the ping wheel up on that point for the next
+//   press to pick (w.stand; a press in its hub is GO HERE);
 // - a click on an ABILITY WELL readies it (ms.ready) where a key would cast:
 //   the snow shows its reach from the body toward the pointer
 //   (drawCastPreview, js/draw/marks.js), the next left press on the world
@@ -978,7 +971,7 @@ function ckStep(p, dt, smx, smy) {
 //   CLASS_AB (a self-cast, or a ring round the body) casts at once, and a
 //   skill point in hand buys, exactly as the key does.
 // Nothing here reaches the sim but the input struct, as for CLICK.
-const MS_WHEEL = ['ab1', 'ab2', 'ab3', 'ab4', 'berry', 'fish', 'flag'];
+const MS_WHEEL = ['ab1', 'ab2', 'ab3', 'ab4', 'berry', 'fish', 'ping'];
 // ready: the readied well, -1 none; castAt: the world point a mouse cast
 // aims at until it lands; reel: a grapple cast off the mouse, reeling to its
 // end with no key to hold (inp.grapple, sampleHumanInput)
@@ -1013,7 +1006,7 @@ function msLeftPress() {
 function msWheelPress() {
   if (state.mode !== 'play' || state.settingsOpen || player.dead) return;
   if (state.wheel) { if (state.wheel.stand) { resolveWheel(); state.wheel = null; } return; }
-  if (state.mapOpen) { openFlagWheel(); return; } // over the chart, a flag is the one thing the wheel can mean
+  if (state.mapOpen) { openPingWheel(); return; } // over the chart, a ping is the one thing the wheel can mean
   if (overHud(mouse.x, mouse.y)) return;
   const wx = mouseWX(), wy = mouseWY(), tx = Math.floor(wx / TILE), ty = Math.floor(wy / TILE);
   if (!inWorld(tx, ty)) return;
@@ -1026,16 +1019,16 @@ function msWheelRelease() {
   const w = state.wheel;
   if (!w || w.stand) return;
   if (w.kind === 'kit') { const seg = wheelLayout().seg; state.wheel = null; msKitPick(w, seg); return; }
-  if (w.kind === 'flag') { resolveWheel(); state.wheel = null; } // the chart's flag wheel the press opened
+  if (w.kind === 'ping') { resolveWheel(); state.wheel = null; } // the chart's ping wheel the press opened
 }
 // the action wheel's pick: an ability cast at the press point, a meal, or
-// the flag wheel stood up on the press's tile
+// the ping wheel stood up on the press's point
 function msKitPick(w, seg) {
   if (seg < 0) return;
   const id = MS_WHEEL[seg];
   if (id === 'berry') player.input.eatBerry = true;
   else if (id === 'fish') player.input.eatFish = true;
-  else if (id === 'flag') { SFX.wheelUp(); state.wheel = { kind: 'flag', tx: w.tx, ty: w.ty, seg: -1, ax: mouse.x, ay: mouse.y, stand: true }; }
+  else if (id === 'ping') { SFX.wheelUp(); state.wheel = { kind: 'ping', tx: w.tx, ty: w.ty, wx: w.wx, wy: w.wy, seg: -1, ax: mouse.x, ay: mouse.y, stand: true }; }
   else msCast(+id.slice(2) - 1, w.wx, w.wy);
 }
 

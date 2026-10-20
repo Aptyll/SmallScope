@@ -28,16 +28,16 @@ function wheelOptions() {
   if (w.kind === 'build') return buildOptionsAt(w.tx, w.ty).map((type) => ({ id: type }));
   // the build key's piece wheel: every buildable, in the list's own order
   if (w.kind === 'piece') return BUILD_ORDER.map((type) => ({ id: type }));
-  // the flag wheel: the four orders, attack straight up (the `team flags`
-  // banner, robots.js)
-  if (w.kind === 'flag') return FLAG_ORDER.map((id) => ({ id }));
+  // the ping wheel: the four pings, attack straight up (the `pings` banner,
+  // js/sim/pings.js) - the tap's GO HERE has no wedge
+  if (w.kind === 'ping') return PING_WHEEL.map((id) => ({ id }));
   // the parkour die and the range bell: the three difficulties, easy
   // straight up - picking one IS the roll (or the ring), so neither carries
   // a separate go wedge
   if (w.kind === 'pkdie') return [{ id: 'easy' }, { id: 'medium' }, { id: 'hard' }];
   if (w.kind === 'agbell') return AG_WEDGES.map((id) => ({ id })); // one wedge per round (js/sim/practice.js)
   // the MOUSE scheme's action wheel: the four abilities clockwise from the
-  // top, then the two meals and the flag (MS_WHEEL, js/app/input.js)
+  // top, then the two meals and the ping (MS_WHEEL, js/app/input.js)
   if (w.kind === 'kit') return MS_WHEEL.map((id) => ({ id }));
   // upgrade is always the wedge straight up and demolish always the last one,
   // with repair between them. A site still going up (w.site, fixed when the
@@ -59,10 +59,11 @@ function wheelLayout() {
   const edge = WHEEL_R + WHEEL_PAD;
   // the wheel is UI, not world: it sits over its tile but keeps its own pixel
   // size at every zoom, so the anchor comes through wToS and the radii don't
-  // (a flag wheel over the chart is pinned to its press point instead: the
-  // chart's tile is under the pointer, not under the camera)
-  let cx = w.sx !== undefined ? Math.round(w.sx) : Math.round(wToSX(w.tx * TILE + 8));
-  let cy = w.sx !== undefined ? Math.round(w.sy) : Math.round(wToSY(w.ty * TILE + 8));
+  // (a ping wheel over the chart or the minimap is pinned to its press point
+  // instead: the spot is under the pointer, not under the camera; a ping
+  // wheel stands on its exact world point, wx/wy, not on a tile's middle)
+  let cx = w.sx !== undefined ? Math.round(w.sx) : Math.round(wToSX(w.wx !== undefined ? w.wx : w.tx * TILE + 8));
+  let cy = w.sx !== undefined ? Math.round(w.sy) : Math.round(wToSY(w.wy !== undefined ? w.wy : w.ty * TILE + 8));
   cx = Math.max(edge + 2, Math.min(VIEW_W - edge - 2, cx));
   cy = Math.max(edge + 2, Math.min(VIEW_H - edge - 14, cy)); // bottom margin fits the label
   const opts = wheelOptions();
@@ -88,26 +89,32 @@ function resolveWheel() {
   const w = state.wheel;
   const L = wheelLayout();
   // the action wheel performs its own pick (msKitPick, js/app/input.js); only its
-  // own release stands the flag wheel up, so any other close drops that wedge
-  if (w.kind === 'kit') { if (L.seg >= 0 && MS_WHEEL[L.seg] !== 'flag') msKitPick(w, L.seg); return; }
+  // own release stands the ping wheel up, so any other close drops that wedge
+  if (w.kind === 'kit') { if (L.seg >= 0 && MS_WHEEL[L.seg] !== 'ping') msKitPick(w, L.seg); return; }
+  // the ping wheel: a wedge is its ping; a TAP - let go before the wheel
+  // showed - or a press in the hub of one the action wheel stood up is GO
+  // HERE; a hold let go in the hub is the cancel
+  if (w.kind === 'ping') {
+    const k = L.seg >= 0 ? L.opts[L.seg].id : w.stand || !pingWheelShown(w, L) ? 'go' : null;
+    if (k) player.input.cmd = { kind: 'ping', k, x: Math.round(w.wx), y: Math.round(w.wy) };
+    return;
+  }
   // the piece wheel is the build key's alone: its release (buildKeyRelease)
   // is the only thing that picks from it, so any other close picks nothing
   if (w.kind === 'piece') return;
-  if (L.seg < 0) {
-    // released in the hub = cancel - except a flag wheel held over your own
-    // flag, whose hub IS the flag (drawWheelHub): releasing there lifts it
-    if (w.kind === 'flag' && wheelOnOwnFlag()) player.input.cmd = { kind: 'flag', tx: w.tx, ty: w.ty, id: null };
-    return;
-  }
+  if (L.seg < 0) return; // released in the hub = cancel
   player.input.cmd = {
-    kind: w.kind === 'build' ? 'build' : w.kind === 'flag' ? 'flag' : w.kind === 'pkdie' ? 'pkdie' : w.kind === 'agbell' ? 'agbell' : L.opts[L.seg].id,
+    kind: w.kind === 'build' ? 'build' : w.kind === 'pkdie' ? 'pkdie' : w.kind === 'agbell' ? 'agbell' : L.opts[L.seg].id,
     tx: w.tx, ty: w.ty, id: L.opts[L.seg].id,
   };
 }
-// is the open wheel standing on the local player's own flag?
-function wheelOnOwnFlag() {
-  const w = state.wheel, f = player.flag;
-  return !!(w && f && f.tx === w.tx && f.ty === w.ty);
+// THE TAP: a ping wheel draws nothing until the button has been held
+// PING_HOLD or the pointer has left the hub, so a tap is a GO HERE that
+// never flashes a wheel - and a flick out of the hub picks before it shows
+const PING_HOLD = 0.18; // s
+function pingWheelShown(w, L) {
+  if (w.kind !== 'ping' || w.stand) return true;
+  return performance.now() / 1000 - w.t0 >= PING_HOLD || (L || wheelLayout()).dist >= WHEEL_HUB;
 }
 
 // is an order the right shape to act on? A bot file or a remote client can
@@ -132,7 +139,7 @@ function cmdOk(c) {
     return c.act === 'sell' && cmdInt(c.i, 0, Infinity);
   }
   if (c.kind === 'build') return cmdKey(STRUCTS, c.id) && cmdTile(c) && (c.tx2 === undefined || (Number.isInteger(c.tx2) && Number.isInteger(c.ty2)));
-  if (c.kind === 'flag') return !c.id || (cmdKey(FLAG_TYPES, c.id) && cmdTile(c));
+  if (c.kind === 'ping') return cmdKey(PING_CALLS, c.k) && Number.isFinite(c.x) && Number.isFinite(c.y);
   if (c.kind === 'tunnel') return cmdTile(c);
   if (c.kind === 'pkdie' || c.kind === 'agbell' || c.kind === 'cheat') return true; // the practice props check their own
   return cmdTile(c); // a building's manage wheel: its tile
@@ -153,9 +160,9 @@ function runCmd(p, c) {
     if (c.tx2 !== undefined) return placeLine(p, c); // a dragged run (the list's `line` pieces)
     return placeStruct(c.tx, c.ty, c.id, p, c.rot); // rot: the list's R (a wheel's order is unturned)
   }
-  // the flag: per-player state, planted anywhere on the map (no reach, no
-  // contest); id null is the lift (the `team flags` banner, js/sim/robots.js)
-  if (c.kind === 'flag') { if (c.id) plantFlag(p, c.tx, c.ty, c.id); else clearFlag(p); return true; }
+  // a ping: anywhere on the map, no reach, no contest - a mark for the side
+  // and a hint to its bots (the `pings` banner, js/sim/pings.js)
+  if (c.kind === 'ping') return pingCmd(p, c);
   if (c.kind === 'tunnel') return digTunnel(p, c.tx, c.ty); // a burrow's near hole (js/sim/tunnel.js) - it checks its own reach
   if (c.kind === 'pkdie') { pkWheelPick(p, c); return true; } // the parkour roll die (js/sim/practice.js)
   if (c.kind === 'agbell') { agRing(p, c); return true; } // the archery range's bell (js/sim/practice.js)
@@ -497,17 +504,13 @@ function drawWheelStick(L) {
 // - which is where the pointer starts, so the way out is the way you came in.
 function drawWheelHub(L) {
   const cancel = L.seg < 0;
-  // a flag wheel over your own flag: the hub IS the flag, and releasing in
-  // it lifts the flag - so it wears the pennant, lit while the pointer is in
-  const lift = state.wheel.kind === 'flag' && wheelOnOwnFlag();
   ctx.beginPath();
   ctx.arc(L.cx, L.cy, WHEEL_HUB - 1.5, 0, Math.PI * 2);
-  ctx.fillStyle = lift ? '#131519' : cancel ? '#3a1f2c' : '#131519';
+  ctx.fillStyle = cancel ? '#3a1f2c' : '#131519';
   ctx.fill();
-  ctx.strokeStyle = lift ? (cancel ? '#ffd95c' : '#2c2f36') : cancel ? '#ff8a7a' : '#2c2f36';
+  ctx.strokeStyle = cancel ? '#ff8a7a' : '#2c2f36';
   ctx.lineWidth = 1;
   ctx.stroke();
-  if (lift) { drawFlagPennant(ctx, L.cx - 2, L.cy + 4, cancel ? '#ffd95c' : TEAMS[skin(player.team)].mark); return; }
   ctx.fillStyle = cancel ? '#ff8a7a' : '#46527a';
   for (let d = -3; d <= 3; d++) { // rasterised, so the cross stays crisp
     ctx.fillRect(L.cx + d, L.cy + d, 1, 1);
@@ -519,6 +522,8 @@ function renderWheel(now) {
   const w = state.wheel;
   if (!pieceWheelShown(w)) return; // the build key still reads as a tap
   const L = wheelLayout();
+  if (!pingWheelShown(w, L)) return; // ...and so does the ping button
+  if (w.kind === 'ping' && !w.shown) { w.shown = true; SFX.wheelUp(); } // it rolls open only once it shows
   // backing disc
   ctx.fillStyle = 'rgba(6,10,24,0.6)';
   ctx.beginPath();
@@ -559,10 +564,9 @@ function renderWheel(now) {
         ctx.fillRect(Math.round(ix - 8), Math.round(iy - 8), 16, 16);
       }
       ctx.globalAlpha = 1;
-    } else if (w.kind === 'flag') {
-      // the order's glyph at twice its banner size, in its own ink (the
-      // stakes: pale for your side, red for theirs) - lit gold under the pick
-      drawFlagIcon(ctx, opt.id, ix, iy, hovered ? '#ffd95c' : FLAG_TYPES[opt.id].col, '#191b1f', 2);
+    } else if (w.kind === 'ping') {
+      // the ping's glyph at twice its mark's size, in its own ink - lit gold under the pick
+      drawPingGlyph(ctx, opt.id, ix, iy, 2, hovered ? '#ffd95c' : CALLS[opt.id].ink, '#191b1f');
     } else if (w.kind === 'pkdie') {
       // a difficulty wedge is that difficulty's DIE: the same coloured cube
       // the station's die becomes when this wedge is picked, pip count on its
@@ -604,10 +608,8 @@ function renderWheel(now) {
   drawWheelHub(L);
   drawWheelStick(L);
 
-  // hovered label + cost under the wheel (or CANCEL, from inside the hub -
-  // LIFT, from the hub of a flag wheel standing on your own flag)
+  // hovered label + cost under the wheel (or CANCEL, from inside the hub)
   let label = 'CANCEL', color = '#b4b8bf';
-  if (L.seg < 0 && w.kind === 'flag' && wheelOnOwnFlag()) { label = 'LIFT'; color = '#ffd95c'; }
   if (L.seg >= 0) {
     const opt = L.opts[L.seg];
     const o = structOf(objAt(w.tx, w.ty));
@@ -615,9 +617,9 @@ function renderWheel(now) {
       const c0 = buildCost(opt.id, player);
       label = STRUCTS[opt.id].name + ' : ' + costText(c0);
       color = canAfford(c0) ? '#ffd95c' : '#ff8a7a';
-    } else if (w.kind === 'flag') {
-      label = FLAG_TYPES[opt.id].name;
-      color = FLAG_TYPES[opt.id].col;
+    } else if (w.kind === 'ping') {
+      label = CALLS[opt.id].word();
+      color = CALLS[opt.id].ink;
     } else if (w.kind === 'pkdie') {
       label = 'ROLL ' + opt.id.toUpperCase();
       color = PK_PIP_COL[PK_DIFFS.indexOf(opt.id)];
@@ -654,7 +656,7 @@ function renderWheel(now) {
 // The MOUSE scheme's wheel (msWheelPress, js/app/input.js) wears what the strip
 // wears: an ability's own icon at half size, dark where it cannot cast yet
 // (locked or waiting), a meal's bag icon, dark with none in the bag, and
-// the flag's pennant in the side's ink.
+// the ping's GO HERE glyph.
 function kitAb(id) { return /^ab\d$/.test(id) ? +id[2] - 1 : -1; }
 function drawKitWedge(id, x, y, hot) {
   const i = kitAb(id);
@@ -664,18 +666,18 @@ function drawKitWedge(id, x, y, hot) {
     ctx.globalAlpha = 1;
     return;
   }
-  if (id === 'flag') { drawFlagPennant(ctx, x - 2, y + 4, hot ? '#ffd95c' : TEAMS[skin(player.team)].mark); return; }
+  if (id === 'ping') { drawPingGlyph(ctx, 'go', x, y, 2, hot ? '#ffd95c' : CALLS.go.ink, '#191b1f'); return; }
   const im = SPRITES[ITEMS[id].icon];
   ctx.globalAlpha = bagCount(player, id) > 0 ? 1 : 0.4;
   ctx.drawImage(im, x - (im.width >> 1), y - (im.height >> 1));
   ctx.globalAlpha = 1;
 }
 // the line under the wheel: the ability's name (gold when it will cast), the
-// meal's verb with the count in the bag, or the flag wheel's own verb
+// meal's verb with the count in the bag, or the ping's own verb
 function kitLabel(id) {
   const i = kitAb(id);
   if (i >= 0) return { label: abOf(player, i).name, color: abReady(player, i) ? '#ffd95c' : '#8c919a' };
-  if (id === 'flag') return { label: KEY_ACT.flag.verb, color: '#ffd95c' };
+  if (id === 'ping') return { label: KEY_ACT.ping.verb, color: '#ffd95c' };
   const n = bagCount(player, id);
   return { label: KEY_ACT[id].verb + ' ' + n, color: n > 0 ? '#ffd95c' : '#8c919a' };
 }
@@ -711,7 +713,7 @@ function kitLabel(id) {
 // the whole run, going grey where the purse gives out.
 const BUILD_ROW = 20;        // a row's pitch
 const BUILD_W = 62;          // a row's width: icon, price, the rotate cap
-const BUILD_OK = '#f4f7ff', BUILD_NO = '#ff8a7a'; // the ghost's two answers (the flag's own pair, robots.js)
+const BUILD_OK = '#f4f7ff', BUILD_NO = '#ff8a7a'; // the ghost's two answers
 const BUILD_BROKE = '#8c919a'; // ...and the third: it could stand, but the purse cannot pay (the strip's dim ink)
 const BUILD_LIT = '#ffd95c'; // the picked row's rim and the pointer's piece: one gold says "this one"
 const PIECE_HOLD = 0.18;     // s the build key is held before its press is a hold (the wheel) and not a tap (the list)

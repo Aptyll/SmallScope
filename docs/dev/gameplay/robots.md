@@ -7,14 +7,14 @@ jobs — `updateUnitStatus` first, so a chassis wears every state a player can b
 (`makeRobot` clears the full set into it): rooted, netted, slowed, marked, stunned, on fire, and
 scrapped by a burn like anything else ([status effects](status-effects-one-set-for-every-unit.md)).
 The root and the slow are spent inside `navStep` for a routed drive and folded into `wander()` by
-hand for the loiter, which is the only movement a worker steers itself. **What job it runs is decided by the [flag](team-flags.md) the player who owns its
-bay serves** (`flagOf(b)` — a human teammate's flag over the owner's own); with no flag it falls back to the original bay-centred gather: pick the
-nearest tree/rock within 8 tiles of the bay's mouth (`structMouth`, also where they deposit)
+hand for the loiter, which is the only movement a worker steers itself. **It has one job, the bay-centred gather** (pings steer the bots, never the
+workers — [Pings](pings.md)): pick the
+nearest tree within 8 tiles of the bay's mouth (`structMouth`, also where they deposit)
 (`nearestObj`), work it in 0.9 s ticks into a
 `carry` gold count (same `YIELD` numbers as `hitObject`, tree-fall leaves a stump and pays the
 jackpot — banked in the carry rather than paid on the spot), and walk home to deposit into their
 owner's `inv.gold` with a floater at 8+ carried. A worker's `harvest()` handles **deadTree** too (the brown bear den's ring: quicker,
-`YIELD.deadTree*`, and felling one calls `flushBirds`), because a flag can be planted on one.
+`YIELD.deadTree*`, and felling one calls `flushBirds`).
 Robots drive on `navStep` ([Pathfinding](pathfinding.md): reach 1 to a tree, rock or building,
 reach 0 to a body or home) and are solid to players and animals (see
 [Unit collisions](unit-collisions.md)); a target
@@ -24,17 +24,16 @@ their bay and are reaped like animals. They inherit their bay's `team`/`owner`, 
 carried gold shows as a nugget up front), and show a health bar. Their SFX are positional
 (`sfxAt`) so a remote base doesn't spam audio.
 
-**A worker can fight.** One axe swing, `ROBOT_DMG` (5) every `ROBOT_ATK_CD` (1.1 s) at
-anything inside `ROBOT_REACH` (15 px) — flat, with nothing scaling it. `robotStrike(b, e, pt)` is the single blow: a building goes through
+**A worker never fights; a [soldier](#soldiers-the-waves) swings the same axe.** One swing,
+`ROBOT_DMG` (5) every `ROBOT_ATK_CD` (1.1 s) at anything inside `ROBOT_REACH` (15 px) — flat, with nothing scaling it. `robotStrike(b, e, pt)` is the single blow: a building goes through
 `hurtStruct` (the same path a player's E swing takes, so the wreck, the rubble payout and the
-`WRECKED A` line are one code path), and any **body** through `hurtUnit` with `cause: 'worker'` —
-all credited to `players[b.owner]`, so a worker kill pays its owner the kill gold like any
-other. `cause` doubles as the feed's **verb** (`KILL_VERB`), so a
-worker kill reads `YOU CUT DOWN <NAME>` instead of `SHOT`. Targets come from
+`WRECKED A` line are one code path), and any **body** through `hurtUnit` with `cause: 'soldier'`,
+credited to `players[b.owner]` (nobody, for a soldier). `cause` doubles as the feed's **verb**
+(`KILL_VERB`). Targets come from
 `robotFoeUnit(b, range)` (nearest enemy player or worker; players are noticed through `seenAt`, so a
-buried body is as invisible to a worker as to a wolf) and `enemyStructNear(team, x, y, r)`.
+buried body is as invisible to a soldier as to a wolf) and `enemyStructNear(team, x, y, r)`.
 `foePoint(e, fx, fy)` is where the axe lands: a body a little above its feet, or **the nearest
-point on a building's footprint** — the bay is 3×2 and a worker measuring to its centre could
+point on a building's footprint** — the bay is 3×2 and a body measuring to its centre could
 never reach past the wall it is standing against. The same swing animation `drawRobot()` already
 had draws it, off `b.atkAim` and `b.atkCd` instead of `b.tgt` and `b.workT`.
 
@@ -49,23 +48,19 @@ is what keeps shooting a loaded worker on its way home worth the arrows — and 
 `<NAME> SCRAPPED A WORKER` to the feed. A downed worker is not a downed player, so it never touches
 the kill count. `updateRobot`'s own `hp <= 0` check routes through the same function (with no
 `src`, so the wreck goes unclaimed). A turret's rocks ride the arrow pipeline, so a turret's mark
-dies to them; a rival's **worker on an attack flag** melees one; a rival's abilities and roll catch
+dies to them; a rival **soldier** melees one; a rival's abilities and roll catch
 one like any other body; nothing else — a player's E swing, wildlife, the AI's target
 picker — goes after a worker.
-
-`hurtRobot` also sets `b.mad`/`b.madT`/`b.madX`/`b.madY` when the hit came from another team **and
-the worker is under a flag**: it fights back for `ROBOT_MAD` (6 s) from where it was standing, and
-never follows past `ROBOT_LEASH` (90 px) of that spot. An unflagged worker is a defenceless
-hauler — see [Team flags](team-flags.md) for why the anger is gated on the flag.
+A struck worker never swings back: it is a defenceless hauler.
 
 ## Soldiers: the waves
 
 The `soldiers` banner (js/sim/robots.js). Every `STRUCTS.barracks.waveT` seconds each merchant's
 [barracks](base-building.md) rolls out a column of **soldiers** — the worker's chassis under its
-side's pennant (`drawRobot` stamps `drawFlagPennant` on a `kind: 'soldier'` body, the one thing
+side's pennant (`drawRobot` stamps `drawPennant` on a `kind: 'soldier'` body, the one thing
 that says this bot is not here to chop) — that marches **its bay's lane** (`b.lane`, from the
 bay's `o.lane`: 0 top, 1 mid, 2 bot) to the rival bird. `makeSoldier(o)` is `makeRobot` with
-`kind: 'soldier'`, `owner: -1` (no flag reads it, no cargo, no payout but the bounty) and a
+`kind: 'soldier'`, `owner: -1` (no cargo, no payout but the bounty) and a
 **route**. A top or bot soldier's is its own mouth of the [base](../world.md#the-bases) (`baseGate`),
 then `laneWaypoints(team, lane)`: [the side lane](../world.md#the-side-lanes) every `ROAD_STEP` tiles to
 the rival mouth, then the rival hollow's centre. A mid soldier's is its own eagle's junction
@@ -98,7 +93,7 @@ waves meet on the stones, never on the orca's ice. `updateSoldier` is four rungs
    route to is *skipped*, never waited on, so a column never stands on a blocked tile), then the
    roost through its lane, stopping at every rival road tower standing on the way.
 
-It is allowed to fight and nothing else — no tree tempts it, no flag recalls it. Two waves
+It is allowed to fight and nothing else — no tree tempts it. Two waves
 meeting on the road therefore grind each other down (they are rival units to each other), which
 is the stalemate a player breaks by walking out. It takes every hit, state and sweep like any
 other body (`bot: true` is what `isAnimalUnit` reads to send a blow down the robot path rather
@@ -208,12 +203,12 @@ It is a unit in `robots` with `merchant: true` and `kind: 'merchant'`: the same
 `separateUnits` (player radius and mass — `unitRadius`/`UNIT_MASS.merchant`) and y-sorted draw a
 worker rides, dispatched to `updateMerchant`/`drawMerchant` off the flag after `updateRobot`'s
 shared status/stun handling. A bay's owner is the team's first player (`createStruct` needs
-one). `owner` is -1, so it reads no flag and no flag ever recalls it.
+one). `owner` is -1: it pays nobody.
 
 **It cannot be hurt, and it has no `hp` field at all rather than a large one.** `unitAlive`
 (js/sim/actions.js) answers false for a merchant, and that one function is the gate every target
 picker in the game asks (CLAUDE.md's `unitAlive` rule; here also a turret's `turretAim`, a
-worker's `robotFoeUnit` and a flag's `flagFoe`) — so
+soldier's `robotFoeUnit`) — so
 it is invisible to every weapon in the world rather than merely immune to one of them. It draws no
 health bar either: a full bar that could never move would promise a fight that is not on offer.
 `DBG.merchants` lists both.

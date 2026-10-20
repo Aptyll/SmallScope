@@ -594,9 +594,8 @@ Code that is dead **on purpose** is the next section.
 - **The AI does not play around the new states.** `updateAI` reads no `burnT`, `netT` or `rootT`,
   so a bot on fire does not break off and a netted one does not change its mind. Everything lands
   on them correctly; nothing reacts to it yet.
-- **bots never plant a RALLY flag.** Every other order a bot flies is its ladder's own decision
-  made visible (`aiFlagSync`, ai.js); nothing in the ladder is a retreat, so the fourth wedge is a
-  human's alone until one is.
+- **bots never ping.** A ping is a human's hint to the bots (`pingSteer`); the ladder makes no
+  ping of its own, so a bot's plan is read off its callouts and the F4 table, not off the map.
 - **[README.md](../../README.md) is bare on purpose**: the main menu still
   (`docs/media/github-title.png`), the Steam, Discord, YouTube and X links and the license line; the store
   copy lives on Steam. The other `github-*` stills, the capsule set and the gallery pngs stay in

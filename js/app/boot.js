@@ -193,14 +193,12 @@ window.DBG = {
   // geometry the hover test and the pixels both use
   wheelLayout, wheelSpan, wheelAng, WHEEL_HUB, WHEEL_R, WHEEL_RING,
   structures, robots, tracers, arrows, STRUCTS, SWING_TOOLS,
-  // the team flag: plant one without a mouse (any player), lift it, open the
-  // wheel by hand, and read back whose flag a body serves and the ring
-  FLAG_TYPES, FLAG_ORDER, FLAG_R, mapTileAt, mapCloseHit, servedFlag, humanFlag, inFlag, openFlagWheel,
+  // pings: make one without a mouse (any player, through its order, as the
+  // wheel does), open the wheel by hand, and read back the table
+  PING_CALLS, PING_WHEEL, PING_R, mapTileAt, mapCloseHit, openPingWheel, pingWheelShown,
   // the two coordinate bridges, so a driver can put the pointer on a tile
   wToSX, wToSY, mouseWX, mouseWY,
-  plantFlag: (tx, ty, type, p) => plantFlag(p || player, tx, ty, type),
-  clearFlag: (p) => clearFlag(p || player),
-  get flag() { return player.flag; },
+  ping: (k, x, y, p) => runCmd(p || player, { kind: 'ping', k, x, y }),
   // the hud strip - portrait, abilities, items, bars and meals, bottom-centre;
   // `itemCellRect(i)` is item slot i's well, and `stripHit` names any well.
   hudStripRect, stripHit, itemCellRect, abCellRect, portraitRect,

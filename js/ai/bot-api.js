@@ -17,14 +17,14 @@
 // realm of its own, sealed (BOT_SEAL): no game globals, no way out.
 // A bot can never do what a hand cannot: the act IS the input struct, the sim
 // re-validates every order, and the hands are the ladder's (skillHands).
-const BOT_API = 1;          // the message shape's version; a rename bumps it
+const BOT_API = 2;          // the message shape's version; a rename bumps it
 const BOT_THINK = 6;        // ticks between thinks: 10 a second at TICK_DT
 const BOT_OBS_R = 24 * TILE; // px: how far round its side a bot sees (the minimap's default reach, MM_R tiles)
 const BOT_SAY_MAX = 256;    // bytes of JSON a `say` may carry to the side
 const BOT_WHY_MAX = 20;     // chars of a thought's `why` (the dashboard's plate)
 const BOT_ERR_MAX = 8;      // errors kept per seat for the ladder page
 const BOT_LATE_MAX = 10;    // thinks in a row a bot may miss (1 s) before its seat lets go of every key
-const BOT_CMDS = new Set(['build', 'upgrade', 'repair', 'demolish', 'ability', 'flag', 'shop', 'recall']);
+const BOT_CMDS = new Set(['build', 'upgrade', 'repair', 'demolish', 'ability', 'ping', 'shop', 'recall']);
 const BOT_NODES_N = 64;     // workable tiles an observation lists, nearest first
 const BOT_NODES = new Set(['tree', 'deadTree', 'rock', 'bush', 'chest']);
 const BOT_CALLS = new Set(['bird', 'help', 'low', 'push', 'here']); // CALLS' kinds a bot may say
@@ -148,8 +148,9 @@ function botObserve(p) {
   for (const d of drops) if (near(d.x, d.y)) dropsSeen.push({ id: botIdOf(d), type: d.type, n: d.n, x: botR(d.x), y: botR(d.y) });
   const shots = [];
   for (const a of arrows) if (near(a.x, a.y)) shots.push({ x: botR(a.x), y: botR(a.y), vx: botR(a.vx), vy: botR(a.vy), team: a.team });
-  const flags = [];
-  for (const q of players) if (q.active && q.team === p.team && q.flag) flags.push({ owner: q.id, type: q.flag.type, tx: q.flag.tx, ty: q.flag.ty });
+  // your side's pings up now (js/sim/pings.js): who, which, where, s left
+  const pings = [];
+  for (const c of callouts) if (c.see === p.team && CALLS[c.k].ping) pings.push({ owner: c.id, k: c.k, x: botR(c.x), y: botR(c.y), t: botR(callLife(c) - c.t) });
   // the merchants are as plain to see as their birds; the catalogue only
   // from the counter, where a hand would read it off the shelf
   const merchants = [];
@@ -174,7 +175,7 @@ function botObserve(p) {
     kills.push({ victim: q.id, team: q.team, by: d.by, cause: d.cause, tick: d.tick, out: !!q.eliminated });
   }
   const team = r ? r.inbox.splice(0) : [];
-  return { tick: state.tick, time: botR(state.elapsed), me, allies, enemies, soldiers, animals: animalsSeen, eagles, structs, nodes, drops: dropsSeen, shots, flags,
+  return { tick: state.tick, time: botR(state.elapsed), me, allies, enemies, soldiers, animals: animalsSeen, eagles, structs, nodes, drops: dropsSeen, shots, pings,
     merchants, shop, kills, team };
 }
 // one key: what it is on this body (abOf: a warrior may carry an alternate),

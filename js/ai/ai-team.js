@@ -121,7 +121,7 @@ const AI_ODDS_R = 150;      // px round a fight the numbers are counted in (the 
 // the side's shared mind, one per team; it is saved whole (SAVE_ROOTS,
 // js/sim/save.js), the bear by reference like any other shared body
 function aiTeamNew() {
-  return { at: -1, stance: 'FARM', why: '', winT: 0, roles: {}, lanes: {}, order: [], seen: [], calls: [], focus: -1, bear: null, bearT: 0, builder: -1, answerT: 0, guarded: '', nPush: 0, nGuard: 0, braceT: 0, braceN: 0, wallTick: -1, ring: null, wallNo: {} };
+  return { at: -1, stance: 'FARM', why: '', winT: 0, roles: {}, lanes: {}, order: [], seen: [], calls: [], focus: -1, bear: null, bearT: 0, builder: -1, answerT: 0, nPush: 0, nGuard: 0, braceT: 0, braceN: 0, wallTick: -1, ring: null, wallNo: {} };
 }
 const aiTeams = [aiTeamNew(), aiTeamNew()];
 
@@ -303,44 +303,31 @@ function aiGrudgeFoe(p, prof) {
   if (g.seenT < 0) g.seenT = state.elapsed;
   return m;
 }
-// Whether an ALLY answers its human's flag: rolled once a flag, off the
-// profile's `obey` (a missing knob obeys). The appeal read: an ally that
-// ignores you is worse than a dumb one that follows - keep it high.
-function aiObeys(p, prof, f) {
-  if (p.ai.obeyFor !== f) { p.ai.obeyFor = f; p.ai.obeyOk = rng() < aiKnob(prof, 'obey'); }
-  return p.ai.obeyOk;
-}
-
-// A bot answering its human's flag says so - ON IT, or GUARDING for one bot
-// that stays on the bird instead - once a flag. The side answers one at a
-// time, AI_ONIT_T apart (by seat, so it reads as a crew rather than a
-// chorus), and never past CALL_SIDE_MAX plates up at once: an answer waits
-// its turn, and one still waiting AI_ONIT_STALE after the flag went up is
-// not said at all. The words are the callouts' (CALLS, js/ai/ai-callouts.js).
+// A bot taking up its human's ping says so - ON IT - once a ping (pingSteer,
+// js/sim/pings.js). The side answers one at a time, AI_ONIT_T apart (by
+// seat, so it reads as a crew rather than a chorus), and never past
+// CALL_SIDE_MAX plates up at once: an answer waits its turn, and one still
+// waiting AI_ONIT_STALE after the ping is not said at all. The words are the
+// callouts' (CALLS, js/ai/ai-callouts.js).
 const AI_ONIT_T = [0.2, 0.6]; // s between two answers of a side: the least and the most, by seat
-const AI_ONIT_STALE = 4;      // s after the flag an unsaid answer is dropped
-function aiFlagKey(f) { return f.owner + ':' + f.type + ':' + f.tx + ':' + f.ty; }
-function aiAnswerFlag(p, f, kind) {
+const AI_ONIT_STALE = 4;      // s after the ping an unsaid answer is dropped
+function aiAnswer(p, kind, key) {
   const ai = p.ai;
-  if (ai.answered === f) return;
-  ai.answered = f;
+  if (ai.answerKey === key) return;
   ai.answerAt = state.elapsed + AI_ONIT_T[0];
   ai.answerKind = kind;
-  ai.answerKey = aiFlagKey(f);
+  ai.answerKey = key;
 }
 function aiAnswerStep(p) {
   const ai = p.ai, T = aiTeams[p.team];
   if (!ai.answerKind || state.elapsed < ai.answerAt) return;
   if (state.elapsed - ai.answerAt > AI_ONIT_STALE) { ai.answerKind = null; return; }
-  // one GUARDING a side a flag: the human only needs to know the bird is covered
-  if (ai.answerKind === 'guarding' && T.guarded === ai.answerKey) { ai.answerKind = null; return; }
   if (state.elapsed < T.answerT) return;
   let up = 0;
-  for (const c of callouts) if (c.see === p.team) up++;
+  for (const c of callouts) if (c.see === p.team && !CALLS[c.k].ping) up++;
   if (up >= CALL_SIDE_MAX) return;
   const k = ai.answerKind;
   ai.answerKind = null;
-  if (k === 'guarding') T.guarded = ai.answerKey;
   T.answerT = state.elapsed + AI_ONIT_T[0] + (AI_ONIT_T[1] - AI_ONIT_T[0]) * (p.id % 5) / 4;
   if (CALLS[k]) addCallout(k, CALLS[k].word(p), p.id, p.team, p.x, p.y);
 }

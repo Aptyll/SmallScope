@@ -1,7 +1,7 @@
 'use strict';
 // The glyph grammar both maps and the world share: a camp's icon and
-// clock, the flag family (icon, pennant, ring, mark, the planted banner),
-// and what a body looks like as a dot on the minimap or the chart.
+// clock, a soldier's pennant, and what a body looks like as a dot on the
+// minimap or the chart.
 // ---- the camp glyph both maps and the drop chart stamp -------------------
 // a camp's glyph, centred on x,y: a rim pass so it reads on parchment,
 // snow and forest alike, then the ink
@@ -46,69 +46,16 @@ function drawCampMark(g, C, x, y) {
   if (n) drawPixelTextOutline(g, String(n), Math.round(x - pixelTextWidth(String(n)) / 2), Math.round(y) + 5, CAMP_CLOCK_INK, HUD_INK);
 }
 
-// ---- what a flag looks like ---------------------------------------------
-// the order's glyph, 7x7 about (x, y) at scale s (1 on a banner, 2 on the
-// wheel), stamped with the 1px dark rim a camp's icon uses so it reads on
-// snow, on parchment and on team cloth alike
-function drawFlagIcon(g, type, x, y, col, rim, s) {
-  const spec = FLAG_TYPES[type];
-  if (!spec) return;
-  s = s || 1;
-  const x0 = Math.round(x) - 3 * s, y0 = Math.round(y) - 3 * s;
-  g.fillStyle = rim || '#0f1632';
-  for (const [rx, ry, rw, rh] of spec.icon) g.fillRect(x0 + rx * s - 1, y0 + ry * s - 1, rw * s + 2, rh * s + 2);
-  g.fillStyle = col || spec.col;
-  for (const [rx, ry, rw, rh] of spec.icon) g.fillRect(x0 + rx * s, y0 + ry * s, rw * s, rh * s);
-}
-// the small marker - a pole and a pennant, (x, y) is its FOOT. Both maps and
-// the wheel's lift hub draw the same one, so a flag is the same shape
-// whatever it is standing on.
-function drawFlagPennant(g, x, y, col, rim) {
+// ---- a pennant ------------------------------------------------------------
+// a pole and a pennant, (x, y) is its FOOT, rimmed dark: the side's pennant a
+// wave's soldier carries (drawRobot, js/draw/bodies.js)
+function drawPennant(g, x, y, col, rim) {
   const px = Math.round(x), py = Math.round(y);
   const rects = [[px, py - 7, 1, 8], [px + 1, py - 7, 4, 3]];
   g.fillStyle = rim || '#0f1632';
   for (const [rx, ry, rw, rh] of rects) g.fillRect(rx - 1, ry - 1, rw + 2, rh + 2);
   g.fillStyle = col;
   for (const [rx, ry, rw, rh] of rects) g.fillRect(rx, ry, rw, rh);
-}
-// THE RING: the ground an order covers, FLAG_R about the flag, drawn flat on
-// the snow under everything that walks it. A dark line under a dashed one
-// in THE SIDE'S INK (3.32: it wore FLAG_MINE before, and white on snow was a
-// ring nobody saw - the glyph on the pennant says which order, the ring
-// says whose ground), two pixels wide, the dashes crawling round it so a
-// standing order reads as live and not as a boundary painted on the map;
-// `a` fades the one a held wheel previews, which keeps the lit wedge's
-// colour since it is the wheel's, not yet an order. g is the world canvas at
-// whatever zoom, so the ring scales with the tile - it is a place, not a HUD
-// element.
-function drawFlagRing(g, cx, cy, col, now, a) {
-  g.save();
-  g.globalAlpha = a;
-  g.lineWidth = 2;
-  g.setLineDash([4, 4]);
-  g.lineDashOffset = -((now * 6) % 8);
-  g.strokeStyle = '#0f1632';
-  g.beginPath(); g.arc(cx, cy + 1, FLAG_R, 0, Math.PI * 2); g.stroke();
-  g.strokeStyle = col;
-  g.beginPath(); g.arc(cx, cy, FLAG_R, 0, Math.PI * 2); g.stroke();
-  g.restore();
-}
-// every standing ring on your side (the y-sorted pole is drawFlag's), and -
-// while a flag wheel is held - the ring the pick would lay, in the lit
-// wedge's colour, or grey from the hub where nothing is chosen yet
-function drawFlagRings(ox, oy, now) {
-  const team = viewPlayer().team;
-  for (const q of players) {
-    if (!q.active || !q.flag || q.team !== team) continue;
-    const f = q.flag;
-    drawFlagRing(ctx, f.tx * TILE + 8 - ox, f.ty * TILE + 8 - oy, TEAMS[skin(q.team)].mark, now, 0.85);
-  }
-  const w = state.wheel;
-  if (w && w.kind === 'flag' && !state.mapOpen) {
-    const L = wheelLayout();
-    const col = L.seg >= 0 ? FLAG_TYPES[L.opts[L.seg].id].col : '#8fa4c8';
-    drawFlagRing(ctx, w.tx * TILE + 8 - ox, w.ty * TILE + 8 - oy, col, now, L.seg >= 0 ? 0.7 : 0.3);
-  }
 }
 // The CLICK scheme's two rings (the `click to move` banner, input.js), flat
 // on the snow under everything that walks: where the last order landed - a
@@ -182,44 +129,6 @@ function drawCastPreview(ex, ey, now) {
   ctx.translate(0, -1); ctx.strokeStyle = col; shape(ctx);
   ctx.restore();
 }
-// The planted flag itself, in the world pass (y-sorted with the entities): a
-// pole at the tile's centre and a dark banner on it carrying the SAME order
-// icon the wheel offered, inked in the team's colour - so what the side was
-// told, and who told them, both read from across the field. Dark cloth and a
-// bright glyph, not the other way round: at nine pixels square a solid
-// colour with a hole punched in it is a blob, and the glyph is the message.
-function drawFlag(q, ex, ey, now) {
-  const f = q.flag;
-  const bx = Math.round(f.tx * TILE + 8 - ex), by = Math.round((f.ty + 1) * TILE - 2 - ey);
-  const col = TEAMS[skin(q.team)].mark;
-  ctx.fillStyle = 'rgba(110,130,170,0.35)';
-  ctx.fillRect(bx - 3, by - 1, 7, 2);
-  ctx.fillStyle = '#0f1632'; ctx.fillRect(bx - 1, by - 21, 3, 21);
-  ctx.fillStyle = '#c9d0e2'; ctx.fillRect(bx, by - 20, 1, 19);
-  ctx.fillStyle = col; ctx.fillRect(bx - 1, by - 4, 3, 3); // a team-coloured collar at the foot
-  const w = Math.round(Math.sin(now * 2.4 + f.tx)); // 1px of flutter
-  ctx.fillStyle = '#0f1632';
-  ctx.fillRect(bx + w, by - 21, 13, 11);
-  ctx.fillStyle = '#141c3c';
-  ctx.fillRect(bx + 1 + w, by - 20, 11, 9);
-  drawFlagIcon(ctx, f.type, bx + 6 + w, by - 16, col, '#141c3c');
-}
-// a flag on either map: the pennant with the ring it covers about it, at that
-// map's px per tile - the ring is the order's whole meaning, so the maps
-// carry it too: the ground inside washed in the side's ink, a dark rim under
-// a solid line of the same ink (3.32: a lone line at a third alpha was a
-// ring nobody saw). (x, y) is the pennant's foot.
-function drawFlagMark(g, x, y, f, col, rim, s) {
-  const r = FLAG_R / TILE * s, cx = Math.round(x) + 0.5, cy = Math.round(y) - 2.5;
-  g.save();
-  g.beginPath(); g.arc(cx, cy, r, 0, Math.PI * 2);
-  g.globalAlpha = 0.18; g.fillStyle = col; g.fill();
-  g.globalAlpha = 0.7; g.lineWidth = 3; g.strokeStyle = rim || '#0f1632'; g.stroke();
-  g.globalAlpha = 1; g.lineWidth = 1; g.strokeStyle = col; g.stroke();
-  g.restore();
-  drawFlagPennant(g, x, y, col, rim);
-}
-
 // ---- what a body looks like on a map ------------------------------------
 // ONE GRAMMAR FOR BOTH MAPS (3.32). The minimap disc (renderMinimap, ui.js)
 // and the parchment chart (renderWorldMap, panels.js) draw every moving thing

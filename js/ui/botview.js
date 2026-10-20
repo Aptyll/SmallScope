@@ -54,7 +54,7 @@ function botThought(p) {
   };
 }
 // Today's brain keeps no goal of its own, but its rungs leave marks: the
-// flag it would fly (`want`), the work it holds (`tgt`), its prey, its hide
+// push or defence it chose (`want`), the work it holds (`tgt`), its prey, its hide
 // clock, its roam point. Read in the ladder's order, top rung first.
 function botGuess(p) {
   const ai = p.ai, inp = p.input;

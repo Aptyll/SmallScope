@@ -643,7 +643,7 @@ function hitDummy(o, dmg, hx, hy) {
 // a building number), which is what the fourth argument says.
 const STRUCT_DR = 0.6;
 // One blow against a building on another team. Everything that can land one -
-// a player's E swing, a shot, an ability, a worker bot's axe on a siege flag -
+// a player's E swing, a shot, an ability, a soldier's axe -
 // comes through here, so the damping, the flash, the floater, the wreck's
 // payout and the feed line are one path and cannot drift apart. `p` is who
 // gets the credit (null = nobody); `bot` is the chassis that swung, on the one
@@ -725,7 +725,7 @@ function isAnimalUnit(e) { return !(e instanceof Player) && !e.bot; }
 function unitMidY(e) { return e.y - (e.alt || 0) - 6; }
 // Can this be hit at all right now - and it is the ONE gate every target
 // picker in the game asks, not just the blow itself: the arrow pipeline, the
-// roll's sweep, a turret's mark, a worker's foe and a flag's quarry all run
+// roll's sweep, a turret's mark and a soldier's foe all run
 // their candidates through it, so a body that answers false is invisible to
 // every weapon in the world rather than merely immune to one of them.
 // A MERCHANT always answers false. It is a shopfront, not a combatant - both

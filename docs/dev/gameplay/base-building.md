@@ -72,7 +72,7 @@ least 1 — and the building mends at `REPAIR_RATE` of its max hp a second (`o.m
 `updateStructures`) whether or not it is being hit; the wheel's label says the price, or FULL
 HEALTH. E never swings at a
 building of your own (`workTarget`), which is what leaves the key free to open it. The right
-button is the [flag wheel](team-flags.md) everywhere.
+button is the [ping](pings.md) everywhere.
 
 **A pad builds from a wheel.** `openWheelNear` (dpad down) opens the build wheel on the tile the body **faces**, offering `STRUCT_ORDER` on land and
 `WATER_STRUCT_ORDER` over a hole (the wedges follow the table's length — see *One geometry*
@@ -96,9 +96,9 @@ are the two gold sinks.
 
 Mechanics (the wheel in [js/ui/wheel.js](../../../js/ui/wheel.js), the buildings in [structures.js](../../../js/sim/structures.js)):
 
-- `state.wheel` (`{kind:'build'|'manage'|'flag'|'pkdie'|'agbell', tx, ty, seg, ax, ay}`, plus
-  `sx`/`sy` on a flag wheel opened over the chart) is the open wheel — `'flag'` is the
-  [flag wheel](team-flags.md), `'pkdie'` the parkour roll die and `'agbell'` the archery
+- `state.wheel` (`{kind:'build'|'manage'|'ping'|'pkdie'|'agbell', tx, ty, seg, ax, ay}`, plus
+  `sx`/`sy` on a ping wheel opened over the chart or the minimap) is the open wheel — `'ping'` is the
+  [ping wheel](pings.md), `'pkdie'` the parkour roll die and `'agbell'` the archery
   range's bell, both opened by holding **E**
   beside them and resolved on its release
   ([world.md](../world.md#the-practice-arena)); ESC/M/settings/death
@@ -129,7 +129,7 @@ Mechanics (the wheel in [js/ui/wheel.js](../../../js/ui/wheel.js), the buildings
   both close the wheel outright, and the left-click also stops the right-release that follows from
   firing the order.
 - **The pointer is measured from `ax`/`ay`, the point the press that opened the wheel went down
-  at** (the pointer's spot at the right press for a flag wheel, at the E or dpad press for the others), not from
+  at** (the pointer's spot at the right press for a ping wheel, at the E or dpad press for the others), not from
   the wheel's drawn hub: that press is what the hand remembers, and the hub is pinned to the tile,
   so it drifts as the camera follows the player and gets clamped near a screen edge. Because that
   travel is invisible (the cursor can be anywhere on screen), `drawWheelStick()` draws it at the
@@ -254,7 +254,7 @@ Mechanics (the wheel in [js/ui/wheel.js](../../../js/ui/wheel.js), the buildings
     `structsInCone`), the charge's slam into whatever it was driven into, the net, and the
     piercing shot, which rides the arrows array like any arrow — and a blade's cut, whose wedge
     reaches a wall the same way;
-  - a **worker or soldier bot's axe** on a siege flag (`robotStrike`).
+  - a **soldier's axe** (`robotStrike`).
 
   **`STRUCT_DR` (0.6) damps a player's blow, and only a player's.** Every one of those player
   numbers was tuned against a 40–160 hp *body* and would melt a 60 hp wall, so the damping is

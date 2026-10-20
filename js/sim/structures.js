@@ -80,7 +80,7 @@ const STRUCTS = {
   ]},
   // the bot bay is a big build like the pump: a single tier on a 3x2 tile footprint
   // (w/h - see footprint()/findSite()), its three bots rolling out one by one
-  spawner: { name: 'BOT BAY', blurb: 'ROLLS OUT BOTS THAT DIG GOLD FOR YOU. THEY WORK WHERE YOUR FLAG SAYS.', ramp: 1.5, w: 3, h: 2, mm: mmTeam, map: chTeam, tiers: [
+  spawner: { name: 'BOT BAY', blurb: 'ROLLS OUT BOTS THAT CUT GOLD FOR YOU FROM THE TREES ROUND IT.', ramp: 1.5, w: 3, h: 2, mm: mmTeam, map: chTeam, tiers: [
     { cost: { gold: 45 }, hp: 220, buildT: 16, bots: 3, botHp: 24 },
   ]},
   // THE BARRACKS: the wave bays each merchant raises in the back woods

@@ -153,8 +153,8 @@ function renderScoreboard() {
 // when MAP_W changes.
 
 // a screen point over the chart -> the world tile under it (null off the map).
-// The chart is the only way to flag a tile that is off-screen, so the flag
-// wheel needs the inverse of the MAP_S projection everything else draws with.
+// The chart is a way to ping a spot that is off-screen, so the ping wheel
+// needs the inverse of the MAP_S projection everything else draws with.
 function mapTileAt(sx, sy) {
   if (sx < MAP_X || sy < MAP_Y || sx >= MAP_X + MAP_W || sy >= MAP_Y + MAP_W) return null;
   const tx = Math.floor((sx - MAP_X) / MAP_S), ty = Math.floor((sy - MAP_Y) / MAP_S);
@@ -366,29 +366,14 @@ function renderWorldMap(now) {
     drawMapBird(ctx, mx(e.x), my(e.y), TEAMS[skin(e.team)].mark, CHART_DARK);
   }
 
-  // flags, your side's only: the same pennant and ring the minimap draws,
-  // with the order's icon over it - the chart is where an order across the
-  // world is given and read, so it has room to say which order it was
-  for (const q of players) {
-    if (!q.active || q.team !== vp.team || !q.flag) continue;
-    const lx = MAP_X + Math.round((q.flag.tx + 0.5) * MAP_S);
-    const ly = MAP_Y + Math.round((q.flag.ty + 0.5) * MAP_S);
-    drawFlagMark(ctx, lx, ly, q.flag, TEAMS[skin(q.team)].mark, CHART_DARK, MAP_S);
-    drawFlagIcon(ctx, q.flag.type, lx + 3, ly - 10, TEAMS[skin(q.team)].mark, CHART_DARK);
+  // your side's pings, the minimap's glyph at the spot (drawPingGlyph,
+  // js/draw/callouts.js): the chart is where a ping across the world is made
+  for (const c of callouts) {
+    if (c.see !== vp.team || !CALLS[c.k].ping) continue;
+    ctx.globalAlpha = Math.max(0, callFade(c));
+    drawPingGlyph(ctx, c.k, MAP_X + (c.x / TILE) * MAP_S, MAP_Y + (c.y / TILE) * MAP_S, 1, CALLS[c.k].ink, CHART_DARK);
   }
-  // the tile a flag wheel held over the chart would plant on: the ring it
-  // would cover, in the lit wedge's colour (the wheel itself draws after)
-  const w = state.wheel;
-  if (w && w.kind === 'flag' && w.sx !== undefined) {
-    const L = wheelLayout();
-    const gx = MAP_X + Math.round((w.tx + 0.5) * MAP_S), gy = MAP_Y + Math.round((w.ty + 0.5) * MAP_S);
-    const col = L.seg >= 0 ? FLAG_TYPES[L.opts[L.seg].id].col : '#c9d0e2';
-    ctx.save();
-    ctx.globalAlpha = L.seg >= 0 ? 0.7 : 0.35;
-    ctx.strokeStyle = col; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.arc(gx + 0.5, gy + 0.5, FLAG_R / TILE * MAP_S, 0, Math.PI * 2); ctx.stroke();
-    ctx.restore();
-  }
+  ctx.globalAlpha = 1;
 
   // the watched body - you, or whoever the camera rides: the white heart in
   // its side's ink, under a pulse ring in the same ink
@@ -710,20 +695,20 @@ ctrlCvs.pad.width = SET_W; ctrlCvs.pad.height = PAD_READ_Y + PAD_READ_H;
 const KEY_ROWS = {
   wasd: [
     [{ acts: ['up', 'left', 'down', 'right'], verb: 'MOVE' }, { acts: ['ab1', 'ab2', 'ab3', 'ab4'], verb: 'ABILITIES' },
-      ['CLICK', 'FIRE'], 'dodge', 'slide', 'work', ['RMB', 'FLAG WHEEL']],
+      ['CLICK', 'FIRE'], 'dodge', 'slide', 'work', ['RMB', 'PING']],
     ['berry', 'fish', 'recall', 'tunnel', 'bag', 'char', 'build', 'rotate'],
     ['map', 'board', 'mute', 'pause', ['ESC', 'SETTINGS'], ['SCROLL', 'ZOOM'], ['F3', 'INFO'], ['.', 'HITBOX']],
   ],
   click: [
     [['RMB', 'MOVE / ACT'], ['HOLD RMB', 'FOLLOW'], { acts: ['ab1', 'ab2', 'ab3', 'ab4'], verb: 'ABILITIES' },
       ['CLICK', 'FIRE'], 'amove', 'stop', 'dodge', 'slide'],
-    ['berry', 'fish', 'flag', 'tunnel', 'bag', 'char', 'build', 'rotate'],
+    ['berry', 'fish', 'ping', 'tunnel', 'bag', 'char', 'build', 'rotate'],
     ['recall', 'map', 'board', 'mute', 'pause', ['ESC', 'SETTINGS'], ['SCROLL', 'ZOOM'], ['F3', 'INFO']],
   ],
   mouse: [
     [['RMB', 'MOVE / ACT'], ['HOLD RMB', 'FOLLOW'], ['CLICK', 'FIRE'], ['HOLD MMB', 'ACTION WHEEL'],
       'dodge', 'slide', { acts: ['ab1', 'ab2', 'ab3', 'ab4'], verb: 'ABILITIES' }, 'amove'],
-    ['stop', 'berry', 'fish', 'flag', 'tunnel', 'bag', 'char', 'build'],
+    ['stop', 'berry', 'fish', 'ping', 'tunnel', 'bag', 'char', 'build'],
     ['rotate', 'recall', 'map', 'board', 'mute', 'pause', ['ESC', 'SETTINGS'], ['SCROLL', 'ZOOM']],
   ],
 };
@@ -846,7 +831,7 @@ function drawPadReadout(x0, y0) {
   // every row is [glyph kind, its label, the verb]
   const cols = [
     [['stick', 'L', 'MOVE'], ['stick', 'R', 'AIM'], ['trig', 'RT', 'FIRE'], ['trig', 'LT', 'SLIDE'], ['face', 'A', 'DODGE - HOP OFF'], ['face', 'X', 'HARVEST'],
-      ['stick', 'R3', 'HOLD: FLAG WHEEL'], ['dpad', 'D', 'HOLD: BUILD WHEEL']],
+      ['stick', 'R3', 'PING'], ['dpad', 'D', 'HOLD: BUILD WHEEL']],
     [['face', 'Y', 'ABILITY 1'], ['face', 'B', 'ABILITY 2'], ['bump', 'LB', 'ABILITY 3'], ['bump', 'RB', 'ABILITY 4'], ['dpad', 'L', 'EAT BERRY'], ['dpad', 'R', 'EAT FISH'],
       ['stick', 'L3', 'INVENTORY'], ['dpad', 'U', 'CHARACTER']],
     [['pill', 'BACK', 'WORLD MAP'], ['pill', 'BACK', 'HOLD: STANDINGS'], ['pill', 'START', 'SETTINGS'], null,
