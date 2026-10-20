@@ -42,9 +42,9 @@ const AB_RANK_STAT = {
   slow: ['SLOW', (v) => tipCent(1 - v), '%'], slowT: ['SLOW FOR', tipNum, 'S'], stun: ['STUN', tipNum, 'S'],
   root: ['ROOT', tipNum, 'S'], up: ['KNOCK UP', tipNum, 'S'], t: ['LASTS', tipNum, 'S'],
   armor: ['ARMOR', tipNum, ''], ten: ['TENACITY', tipCent, '%'], heal: ['HEALS OF MOST HP', tipCent, '%'],
-  mul: ['DAMAGE', (v) => 'x' + tipNum(v), ''], mark: ['MARKED FOR', tipNum, 'S'],
+  mark: ['MARKED FOR', tipNum, 'S'],
   missing: ['OF HP ALREADY LOST', tipCent, '%'], bonus: ['MOST EXTRA', tipNum, ''],
-  shot: ['SHOT DAMAGE', (v) => 'x' + tipNum(v), ''],
+  shot: ['DAMAGE x', tipNum, ''], ambush: ['AMBUSH SHOT x', tipNum, ''],
 };
 const TIP_RANK_ON = '#f2cc6a';
 // one ranked value as a row's value: plain text when it never changes, else
