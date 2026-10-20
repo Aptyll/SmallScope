@@ -433,7 +433,7 @@ window.DBG = {
   // weatherOf(day) what a day rolls on this seed
   weather: (name) => { state.wxForce = name && WEATHERS[name] ? name : null; },
   get wx() { return weatherNow(); }, weatherOf,
-  startGame, beginIntro, beginLobby, lockIn, pressPlay, cancelCount, setAiLevel, lobbyLayout, AI_LEVELS, AI_ALLIES, aiProfile, setClass, CLASSES, menu: state.menu, menuHit, menuClick, menuKey, lobbyHit,
+  startGame, beginIntro, beginLobby, lockIn, pressPlay, setAiLevel, DRAFT, draftAct, draftPoint, draftConfirm, lobbyLayout, AI_LEVELS, AI_ALLIES, aiProfile, setClass, CLASSES, menu: state.menu, menuHit, menuClick, menuKey, lobbyHit,
   // the ESC panel: what the pointer is over, the speaker's plate, the open
   // page's row anchors (already scrolled - a row's y is where it is on
   // screen) and the navbar cells - so a driver can click a dial without

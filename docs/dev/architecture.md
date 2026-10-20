@@ -149,7 +149,8 @@ order, so the script tags still interleave them:
 | [js/ui/notes.js](../../js/ui/notes.js) | ~420 | shared scope, no `window.*` export | the title's WIKI / PATCH NOTES / ROADMAP tabs and the KITCHEN link, the roadmap, and the patch notes screen |
 | [js/ui/wiki.js](../../js/ui/wiki.js) | ~520 | shared scope, no `window.*` export | the wiki: its pages as data, the slab, tabs and rail, and drawing each page |
 | [js/ui/profile-card.js](../../js/ui/profile-card.js) | ~190 | shared scope, no `window.*` export | the title's name tag and the profile card: the name, renaming it, the lifetime ledger; `drawWell`, the plate grammar the hero row shares |
-| [js/ui/heroes.js](../../js/ui/heroes.js) | ~90 | shared scope, no `window.*` export | the lobby's hero row: a head per hero, the coming heroes as silhouettes, the pick |
+| [js/ui/heroes.js](../../js/ui/heroes.js) | ~110 | shared scope, no `window.*` export | the lobby's hero row: a head per hero, the coming heroes as silhouettes, banned and taken cells |
+| [js/ui/draft.js](../../js/ui/draft.js) | ~400 | shared scope, no `window.*` export | the lobby's draft: bans, everyone's blind pick, the bots' choices, the host's copy per side, the clock, the ban wells and the roster frames |
 | [js/ui/skins.js](../../js/ui/skins.js) | ~250 | shared scope, no `window.*` export | the skins screen the coins buy from, the title's coin tag, and `birdSkinFor`, which skin a bird wears |
 | [js/ui/screens.js](../../js/ui/screens.js) | ~1380 | shared scope, no `window.*` export | the replay window, the death overlay and spectating, the victory and defeat ceremonies |
 | [js/ui/lobby.js](../../js/ui/lobby.js) | ~470 | shared scope, no `window.*` export | the post-game lobby: the match's own record, and the sampling during play its graphs are drawn from |

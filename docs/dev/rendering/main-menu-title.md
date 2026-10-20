@@ -75,16 +75,21 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   backdrop), laid out **the way a League lobby is**, in the full view (no authored frame).
   `lobbyLayout()`/`lobbyHit()` (which answers `'play'`, `'hero'`, `'map'`, `'ai'`, `'pickN'` (a hero on
   the row) or null) are the rect source for both drawing and the mouse.
+  The screen runs the **draft** ([below](../rendering.md#lobby-draft), js/ui/draft.js).
   **Two team panels stand glued to the screen's edges** (`LOBBY_PANEL_W` wide, `drawLobbyRosters`/
-  `drawLobbyCard`): your side's five **frames** down the left, the rivals' down the right, in
+  `drawLobbyCard`, js/ui/draft.js): your side's five **frames** down the left, the rivals' down the right, in
   player order under a `LOBBY_HEAD` head, each frame as tall as the view allows up to
-  `LOBBY_FRAME_MAX` — the side's paint as a bar down the screen edge, the player's body at 2×
-  toward it (1× in a short view) and the name inward of the body, yours gold-rimmed, a rival's
-  **face-down** (the body as one flat shade through the scratch canvas) until the countdown
-  turns it. Both panels' heads are empty, level with each other. At the **top centre**, a row
-  centred `LOBBY_TOP_GAP` apart (`drawLobbyTop`), stand the **map plate** and the
-  **target**, each `LOBBY_MAP` square with its name under it in plain white — the
-  shape's, the level's — gold only while the picture over it is under the hand, when
+  `LOBBY_FRAME_MAX` — the side's paint as a bar down the screen edge, the hero's body at 2×
+  toward it (1× in a short view), the name inward of the body and the hero's name under it,
+  yours gold-rimmed. Your side's frames show each seat's hero in the pick — faded while only
+  pointed at, whole once locked; a gold pip in the inner corner marks a seat that has confirmed
+  (its ban or its pick). A rival's frame is **face-down** (the body it came in on as one flat
+  shade through the scratch canvas) through the whole draft, until the countdown turns it. At
+  the **top centre** is the draft's band (`drawDraftTop`, `DRAFT_TOP` tall): the clock, the
+  phase's word, and each side's ban wells. At the **foot**, either side of the draft's word and
+  `LOBBY_MAP_IN` in from the panels (`drawLobbyTop`), stand the **map plate** and the
+  **target**, each `LOBBY_MAP` square with its name beside it toward the middle in plain white — the
+  shape's, the level's — gold only while the picture is under the hand, when
   the plate lifts a px: each is the way into its own pop-up. The map plate (`drawMapPlate`) holds this seed's own
   valley in the picked shape ([map shapes](../world.md#map-shapes)) — `mapChip` bakes it at 1 px a
   sampled tile straight off the grown `ground` (the ice sheets and holes as rolled, the road as
@@ -100,19 +105,22 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   Whenever the level it shows changes (`menu.tgtLv`) the
   face swaps and the target jolts for a moment (`menu.tgtT`). In a
   room the map is a readout (the host's world: `'map'` is hit only when `NET.role` is
-  `'solo'`) and a guest's target is too. Under their names stands the **hero row**
+  `'solo'`) and a guest's target is too. Under the draft's band stands the **hero row**
   (js/ui/heroes.js, `heroCells`/`heroCellAt`/`drawHeroRow`): a `HERO_CELL` well per hero —
   every `CLASSES` entry, then every `HEROES_SOON` one — holding the hero's model cropped to its
-  head at 2×. Each hero wears **one fixed look** (`CLASSES[i].look`), so the face is the hero.
-  The pick (`menu.csel`) is gold, a hovered cell lifts, and the name under the row is the
-  hovered hero's, else the pick's. A coming hero is its model's head as one flat shade
+  head at 2×, as many to a row as fit between the panels (`heroCols`), each row centred. Each
+  hero wears **one fixed look** (`CLASSES[i].look`), so the face is the hero. What you point at
+  is gold (red-rimmed while it is a ban), a hovered cell lifts, and the name under the row is the
+  hovered hero's, else yours. A banned hero is dimmed and struck through in red (flashing white
+  as the bans land); one a person on your side locked is dimmed with your side's bar under it;
+  one only a bot of yours holds keeps the bar but stays bright. A coming hero is its model's head as one flat shade
   (`HERO_SOON_INK`), its name grey on hover, and takes no press. A click (`'pickN'` in
-  `lobbyHit`) or Left/Right/Up/Down (`lobbyStep(±1)`, through the playable ones) is
-  `lobbyPick(i)`: `setClass` puts the hero, its look and kit on the stage at once and
-  `menu.cswapT` pops it. The row dims and refuses while the count runs, and a guest's room shows
-  it without taking a press (a guest plays the hero its profile sent in the hello). LOCK IN keeps
-  the pick as the profile's hero (`lockIn` → `PROFILE.setHero`), which is where the next lobby
-  opens. The **stage** under the row holds **your hero** alone (`drawLobbyStage`): the 48 px
+  `lobbyHit`) or Left/Right/Up/Down (`lobbyStep(±1)`, past the banned ones) is
+  `lobbyPick(i)` → `draftPoint`: in the pick, `setClass` puts the hero, its look and kit on the
+  stage at once and `menu.cswapT` pops it. The row dims and refuses outside the draft's two phases
+  and once you have confirmed. The hero you fly out with is kept as the profile's hero
+  (`draftCount` → `PROFILE.setHero`), which is the one a person starts the next pick pointing at.
+  The **stage** under the row holds **your hero** alone (`drawLobbyStage`): the 48 px
   model (`SPRITES.portrait`, [sprites.md](../sprites.md#looks-a-character-on-the-class-body)) at
   `LOBBY_MODEL` (3×; `lobbyLayout` drops it to 2× when the view is too short for its head to
   clear the row and its name, `HERO_ROW_H`) in your side's paint under a warm pool of light with
@@ -150,22 +158,41 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   settings, and Enter closes. In RANKED the target is not pressed: the bots'
   level follows the party's rating (`NET.botLv`, js/ui/rooms.js).
 
-  At the foot of the view, **LOCK
-  IN** is a bare word in the [main menu](main-menu-title.md)'s grammar, big (`LOBBY_LOCK_SCALE`, white,
-  gold and lifted a px under the hand, sunk a px on the press — no plank). Enter, Space or the
-  word call `pressPlay()` — `setClass` locks the class and the **countdown** starts:
-  `menu.countT` runs `COUNT_T` (5) seconds; a gold ring bursts out from the figure's feet across
-  the snow (`menu.lockFx` over `LOCK_FX_T`) and its light stays up, the character chevrons dim,
-  and the word gives its place to the whole second left in 2× gold digits (`drawLobbyCount`,
+  <a id="lobby-draft"></a>**The draft** (js/ui/draft.js, `DRAFT`, kept by the host and
+  copied to each guest cut to what its side may see, `draftMsg`): `beginLobby` opens it
+  (`draftStart`). **Bans** first (`DRAFT_BAN_T`): each team bans one hero while the roster is
+  under `DRAFT_BAN_MANY`, one per seat from then on, never leaving fewer than `DRAFT_KEEP`
+  (`draftBansPerTeam`; none at all on a roster too small). Every seat points at a hero and
+  **BAN** confirms it; a team's bans are its most pointed-at heroes, the people's before the
+  bots' (`draftTeamBans`), shown in your side's wells as dim faces while the vote stands, the
+  rivals' hidden until the phase ends, then both struck through in red. Then the **blind pick**
+  (`DRAFT_PICK_T`), all ten seats at once: a person starts pointing at the hero they came in on,
+  **LOCK IN** confirms (`draftConfirm`, the gold ring bursting off the figure). A hero a person
+  on your side locked is out for you until your side's people hold every hero still in the pick
+  (`draftCanLock`/`draftSideFull`); the rivals may take the same one, and you never see what
+  they point at or took, only that they locked. Bots act the moment a phase opens
+  (`draftBotBan`: the rival people's own heroes, never their own side's people's;
+  `draftBotPick`: the hero their side has least of, leaning to about `DRAFT_RANGED` at range)
+  and give a hero up when a person of theirs locks it (`draftYield`). A phase ends early once
+  every seat that must act has (`draftCheck`); the clock running out confirms what each seat
+  points at, or picks for it the way a bot would (`draftReveal`). The top band's **clock**
+  (`drawDraftTop`) is gold while you still have to act; the word at the foot (`draftWord`) is
+  BAN or LOCK IN in the [main menu](main-menu-title.md)'s grammar, big (`LOBBY_LOCK_SCALE`,
+  white, gold and lifted a px under the hand, sunk a px on the press — no plank), slate once
+  you have confirmed. Enter, Space or the word call `pressPlay()` → `draftConfirm`.
+
+  When the pick ends every seat's hero is set (`setClass`) and the **countdown** starts
+  (`draftCount`): `menu.countT` runs `COUNT_T` (5) seconds; a gold ring bursts out from the figure's feet across
+  the snow (`menu.lockFx` over `LOCK_FX_T`) and its light stays up, the hero row dims,
+  and the word gives its place to the whole second left in gold digits (`drawLobbyCount`,
   white the instant it changes, sinking through its second),
   `SFX.countTick` ticking each one (a low bell), and **one rival frame turning face-up per
-  tick** (`lobbyRevealed()`: the first on the press, the last on ONE, all of them once it has
-  run out, and none at rest — a white flash as each turns). The hero pop-up stays open through the count
-  (the figure still opens it, which shuts itself at zero); a hero pick or a map step is
-  refused with `SFX.deny`; Esc/Backspace call it off (`cancelCount`) and, at rest, go back to
-  the menu; **LOCK IN again skips the rest of it** — the second `pressPlay()` ends the count
-  where zero would have (every frame face-up, the hero pop-up shut). <a id="lobby-lock-in"></a>At
-  zero, or on that press, `lockIn()` — `menu.lockT`, then straight to `beginDrop()` (the eagle
+  tick** (`lobbyRevealed()`: the first at the start, the last on ONE, all of them once it has
+  run out — a white flash as each turns). The hero pop-up stays open through the count
+  (the figure still opens it, which shuts itself at zero); the count runs to the end (Esc waits
+  it out). At rest, Esc/Backspace go back: a leader's to the party's seats (`draftStop`), a
+  guest's out of the party. <a id="lobby-lock-in"></a>At
+  zero, `lockIn()` — `menu.lockT`, then straight to `beginDrop()` (the eagle
   ride, below) — unless the picked shape is not the one this page grew: a shape is grown at boot
   (`MAP_TYPE`), so `lockIn` then loads `?seed=<this seed>&map=<the pick>` with the ability picks in
   `sessionStorage['softfall.drop']` (no profile holds them) and js/app/boot.js puts them back on and
@@ -232,7 +259,7 @@ tag). The store behind it is [profile.js](../architecture.md#profilejs): one nam
   while the camera settles onto the play framing.
 
 `DBG` exposes `menu`, `menuHit`, `menuClick`, `menuKey`, `settingsHit`, `beginIntro`, `beginLobby`,
-`lobbyLayout`, `lobbyHit`, `pressPlay`, `cancelCount`, `setAiLevel`, `lockIn` and `layout()` (the live `VIEW_W`/`VIEW_H`, `SET_X`/`SET_Y`, `SL_X`, `PANEL_X`/`PANEL_Y` and `MM_CX`/`MM_CY` anchors) for driving all of this headlessly.
+`lobbyLayout`, `lobbyHit`, `pressPlay`, `DRAFT`/`draftAct`/`draftPoint`/`draftConfirm`, `setAiLevel`, `lockIn` and `layout()` (the live `VIEW_W`/`VIEW_H`, `SET_X`/`SET_Y`, `SL_X`, `PANEL_X`/`PANEL_Y` and `MM_CX`/`MM_CY` anchors) for driving all of this headlessly.
 The map and the seed die on it are driven the same way through the globals `mapStep`, `rerollWorld` and `pickMap` (which navigates), with `DBG.MAP_TYPE`,
 `DBG.MAPS` and `DBG.mapTerrain` reading back what a shape is.
 

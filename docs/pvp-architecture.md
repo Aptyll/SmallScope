@@ -331,7 +331,8 @@ wire: the handshake is `PATCH_TXT`, the seed and the map shape in the `hello` (a
 | `refuse` | h→c | JSON | `why`: `VERSION` / `SEED` / `LATE` / `FULL` / `KICKED` / `BUSY` / `MATCHED` (a crossing party the host did not seat) from the host; `NOROOM` / `FULL` from the relay. A client also sets `NET.refused` itself to `BYTES` (a frame it could not decode) and `HOSTGONE` |
 | `roster` | h→c (`*`) | JSON | `roster`: ten `{control, team, name, cls}`, on every join and leave. A client turns the host's `human` into `remote` and keeps its own slot `human`. With it `ready` (the slots whose person said READY), `lvl` (the host's bot level), `mode`, `code`, `ranks` (each person's rating) and `seek` (seconds since FIND MATCH while the party is looking, else -1), `roomInfo` |
 | `count` | h→c (`*`) | JSON | the waiting room's countdown: `ct`, the host's `countT`, and `n`, the digit shown |
-| `pick` | c→h | JSON | `cls`: the guest's hero on the hero select (`netPick` -> `seatPick`); the host answers with a `roster` |
+| `draft` | c→h | JSON | `k` (`hover` or `lock`), `h`: the guest's press in the draft, a hero pointed at or confirmed (`draftAct`, js/ui/draft.js); the host answers with a `draft` |
+| `draft` | h→c | JSON | `ph`, `tl` (s left), `n` (bans per team), `banned`, `hover`/`lock` per slot, `lead` (each team's bans): the draft as THIS peer's side may see it (`draftMsg`) - a rival's points hidden (-1), its lock only as -2, its bans until the ban phase ends; all of it once `ph` is `done`. Sent per peer on every change. Through the draft a `roster` carries each seat's starting hero, not its pick |
 | `ready` | c→h | JSON | `on`: the guest's READY said or taken back (`seatReady`); the host answers with a `roster` |
 | `ping` | h→c | JSON | `at`: the host's clock, every `PING_EVERY` (2 s); the guest sends it straight back as `pong` |
 | `pong` | c→h | JSON | `at` as it came: the host eases that peer's round trip (`pongIn`). It is answered in the step, so it carries up to a frame's wait on each end |
@@ -340,7 +341,7 @@ wire: the handshake is `PATCH_TXT`, the seed and the map shape in the `hello` (a
 | `said` | h→c (`*`) | JSON | `slot`, `s`: a line of the room's chat, the host's own and every guest's it kept, cleaned to the pixel font's letters (`talkClean`) |
 | `rematch` | h→c (`*`) | JSON | `seed`, `map`: the valley the room plays next, sent the moment a match ends (`rematchOffer`, js/ui/rooms.js) and again on the host's LOBBY. A guest's LOBBY reloads onto it and joins the same code; once the host has gone after it, the guest drops whatever else the old socket brings and does not end on HOST LEFT |
 | `cross` | h→c (`*`) | JSON | `room`, `seed`, `map`, `code`, `n`: the leader's party is crossing to meet another (`seekCross`, js/ui/matchmaking.js); each guest saves its party and reloads to join that room with `party`/`pn` in its hello |
-| `phase` | h→c (`*`) | JSON | `phase`: the host turned the waiting room's page, `room` (the seats) or `pick` (the stage and LOCK IN) |
+| `phase` | h→c (`*`) | JSON | `phase`: the host turned the waiting room's page, `room` (the seats) or `pick` (the hero select's draft) |
 | `full` | h→c | bytes, reliable | `tick`, `ia` (as on a `snap`), `snap`: the whole `snapBuild()` - players, `objects` as a sparse map by tile index, `structs`, the five kinds, `eagles`, `ground` (base64 of the byte array), the singletons. The dictionary from index 0. Sent after the welcome, on a `resync`, and to a peer whose ack aged out of the ring |
 | `snap` | h→c | bytes, lossy | `tick`, `d` (the delta, below), `ev` (the cosmetics drained this flush), `ia` (the newest of THIS peer's inputs the host has stepped: where its prediction replays from), and `full` when `NET.verify` is on and the tick is a `VERIFY_EVERY` one |
 | `in` | c→h | JSON | `tick` (the client's own send counter), `ack` (the newest snapshot tick applied), `in`: `{mx, my, aimX, aimY, fire, work, slide, grapple, dodge, jump, eatBerry, eatFish, useCard, ability, cmd}`. One struct per client tick, sent once; the host queues them and steps one per tick (`netHostStep`); the client clears its edges after sending and the host latches them until the sim consumes them. A `cmd` rides inside it - there is no separate command message |
@@ -436,11 +437,11 @@ The same screens and the same protocol ride either transport; only the list and 
    FIND MATCH (`partyFind`) first looks for another party (**matchmaking**, below), then
    (`partyStart`) fills every empty seat on both sides with a bot, pins the bots' level
    in RANKED (`NET.botLv` from the people's average rating) and turns the page to the HERO SELECT
-   (`pick`, the lobby): each member picks a hero (`pick` message, `seatPick`), a guest sees the
-   leader's name where LOCK IN would be, and the leader's ESC turns back to the seats. Seats are
+   (`pick`, the lobby), which runs the DRAFT (js/ui/draft.js): bans, then everyone's blind pick,
+   the host keeping it and each guest pressing through `draft` messages; the leader's ESC turns back to the seats. Seats are
    locked once the drop is under way (`seatsOpen`). The client builds its bodies from the
    welcome's roster (`initPlayers(roster, slot)`) and updates them in place on each `roster`.
-   LOCK IN's count reaches every screen as `count`.
+   The draft's closing count reaches every screen as `count`.
 6. **The drop.** The count ends in `lockIn` and `beginDrop`, which seats by slot. A client
    never starts anything: the ride arrives as snapshot state (`state.drop`, `aboard`, `dropT`, the
    eagles) and `netClientMode` moves its screen from the title to the ride, to play, to the death

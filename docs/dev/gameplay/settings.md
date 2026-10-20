@@ -27,10 +27,10 @@ nobody found within 8 s, bots take the rival side. After the match each party go
 own party lobby. Then every empty seat on both sides takes a bot and the whole party goes to the
 **hero select** (netPhase 'pick', the lobby, js/ui/menu.js), which every member sees as the
 leader does, with the code on a 2x plate at the head of your side's roster and a crown over the
-leader's card. Each member picks a hero on the row (`netPick`: a guest's press goes through the
-leader, js/net/net.js); a guest sees the leader's map and target but cannot press them, and
-where LOCK IN would be a frozen plank wearing the leader's name: the leader's count comes over
-it and the eagle on its zero; the leader's ESC takes everyone back to the party. RANKED keeps a
+leader's card. Everyone drafts there (js/ui/draft.js: bans, then a blind pick all at once; a
+guest's presses go through the leader as `draft` messages); a guest sees the leader's map and
+target but cannot press them; the count after the pick and the eagle on its zero are the
+leader's; the leader's ESC takes everyone back to the party. RANKED keeps a
 rating per profile (`PROFILE.rank`, starts at 1000): a win adds RANK_STEP, a loss takes it
 (`rankResult`), and the bots' level is read off the party's average rating (`rankLevel`), so
 the target cannot be picked there. PRACTICE TOOL's leader has START in place of FIND MATCH
