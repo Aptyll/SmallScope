@@ -1,40 +1,43 @@
 'use strict';
-// The team rail: every other player in the match as a chip along the top edge,
+// The team rail: every player in the match as a chip along the top edge,
 // and the anchors (railBottom, headlineY, noteY) the screens hang under it.
 // ---- the team rail: the roster along the top edge ----------------------
-// THE TEAM RAIL (3.33, joined into one scoreboard in 4.16, slimmed in 0.422):
-// every other player in the match along the top centre, Dota's top bar kept
-// clean and minimal. ONE thin plate (the hud frame's outline and flat
-// ground, no bevel, no snow): your side's chips on the left, the rival's on
-// the right, and between them the match clock with the kill score under
-// it, each total in its side's mark. A CHIP per player: the class emblem at
-// 12px (CLASS12, js/menu.js) with no rim - the side is the thin hp bar under
-// it, in the side's colour (one solid run, no segments). You are not on it:
-// your own hp and level are the strip's, so the rail is the other nine.
-// A dead player's emblem gives way to the seconds until the bird sets them
+// THE TEAM RAIL (3.33, joined into one scoreboard in 4.16, slimmed in 0.422,
+// faces in 0.528): every player in the match along the top centre, Dota's
+// top bar kept clean and minimal, five a side. ONE thin plate (the hud
+// frame's outline and flat ground, no bevel, no snow): your side's chips on
+// the left, you first, the rival's on the right, and between them the match
+// clock with the kill score under it, each total in its side's mark. A CHIP
+// per player: the hero's face (drawFace, js/ui/hud-draw.js - the model it
+// wears, skin and all) in a 1px ink rim, and under it the thin hp bar in
+// the side's colour (one solid run, no segments).
+// A dead player's face darkens under the seconds until the bird sets them
 // down again, Dota's grey portrait with its number; a chip that is never
-// coming back is its emblem at LOCK_DIM. The tooltip carries the name, class
+// coming back is its face darker still. The tooltip carries the name, class
 // and level of the one chip the pointer is on (tipRail). WHERE anyone is
 // stays the minimap's job.
 // It scales with its own TOP BAR size dial about its top-centre anchor
 // (drawRailScaled), capped so the plate clears the view's edge (railSc),
 // rides the intro slide down from above with the minimap, and stays up while
 // you are dead - the side's state is exactly what a spectator reads.
-const RAIL_CHIP = 12;               // a chip: the 12px emblem, no rim
+const RAIL_CHIP = 16;               // a chip: the 14px face in its 1px ink rim
 const RAIL_BAR = 3;                 // the hp bar under a chip: 1px air, the 2px bar
 const RAIL_BODY = RAIL_CHIP + RAIL_BAR;
-const RAIL_GAP = 3;                 // the air between two chips
+const RAIL_GAP = 2;                 // the air between two chips
 const RAIL_SEP = 6;                 // the air between a side's chips and the score well
 const RAIL_CLOCK_W = 19;            // the score well's least width: M:SS up to MM:SS at 1x
 const RAIL_LINE = 8;                // the clock's row to the score's row
+const RAIL_TOP = 2;                 // the clock's row under the chips' top edge: the two rows sit centred on the face
 const RAIL_WAIT = '#d4d7dc';        // a waiting chip's seconds
-const RAIL_HOV = '#6a6f79';         // the outline round the chip under the pointer
+const RAIL_HOV = '#6a6f79';         // the rim of the chip under the pointer, and the score's colon
+const RAIL_WAIT_DIM = 'rgba(7,8,10,0.6)'; // over a waiting face, under its seconds
+const RAIL_OUT_DIM = 'rgba(7,8,10,0.75)'; // over a face that is not coming back
 const RAIL_Y = MM_GAP;              // the plate's top edge: level with the minimap's outline
 const RAIL_PAD = AB_PAD;            // the plate's margin: line, light, ground
 const RAIL_H = RAIL_PAD + RAIL_BODY + RAIL_PAD;
 const RAIL_SLIDE = RAIL_Y + RAIL_H + 4; // how far it rises to be AWAY: the plate, the cap and the sky over it
 const RAIL_TRACK = '#25282d';       // an hp bar's empty track
-// the roster: your teammates then the rival's, each by id - never you.
+// the roster: your side then the rival's, each by id, you first on yours.
 // Null unless the rival side has a body - the practice arena has no rail.
 function railSides() {
   const mine = [], theirs = [];
@@ -42,6 +45,7 @@ function railSides() {
   if (!theirs.length) return null;
   const byId = (a, b) => a.id - b.id;
   mine.sort(byId); theirs.sort(byId);
+  if (player.active) mine.unshift(player);
   return [mine, theirs];
 }
 // a side's kills: every player who has worn its colour this match, a
@@ -68,7 +72,7 @@ function railLayout() {
   const wellW = Math.max(RAIL_CLOCK_W, pixelTextWidth(clock), scoreW);
   const w = RAIL_PAD + railChipsW(sides[0].length) + wellW + railChipsW(sides[1].length) + RAIL_PAD;
   // the score well holds the centre, so the clock never drifts when one
-  // side is a chip short (yours always is: you are not on it)
+  // side is a chip short (a seat left empty)
   const x0 = Math.round(VIEW_W / 2 - RAIL_PAD - railChipsW(sides[0].length) - wellW / 2), y = RAIL_Y + RAIL_PAD;
   const span = 2 * Math.max(VIEW_W / 2 - x0, x0 + w - VIEW_W / 2);
   const chips = [];
@@ -81,7 +85,7 @@ function railLayout() {
   row(0, x);
   x += railChipsW(sides[0].length);
   const well = { x, y, w: wellW, h: RAIL_BODY };
-  const clk = { x: x + Math.round((wellW - pixelTextWidth(clock)) / 2), y: y + 1, txt: clock };
+  const clk = { x: x + Math.round((wellW - pixelTextWidth(clock)) / 2), y: y + RAIL_TOP, txt: clock };
   const sx = x + Math.round((wellW - scoreW) / 2), sy = clk.y + RAIL_LINE;
   const score = [
     { x: sx, y: sy, txt: kt[0], team: teams[0] },
@@ -94,8 +98,13 @@ function railLayout() {
 }
 // the size the rail is drawn at: its own dial (settings.hudRail, the stops
 // hudSizes offers, js/ui/strip.js), capped on the device grid where the plate
-// would reach the view's edge (railCap); no layout yet = no cap but the dial's
-function railCap(L) { return L ? hudSnapDown((VIEW_W - 2 * 4) / (L.span + 2)) : HUD_MAX; }
+// would reach the view's edge or the minimap's outline, MM_GAP short of it
+// (railCap); no layout yet = no cap but the dial's
+function railCap(L) {
+  if (!L) return HUD_MAX;
+  const mmLeft = MM_CX - MM_R - MM_OUT - MM_GAP;
+  return hudSnapDown(Math.min((VIEW_W - 2 * 4) / (L.span + 2), (mmLeft - VIEW_W / 2) / (L.span / 2 + 1)));
+}
 function railSc(L) { return hudPick(settings.hudRail || 1, railCap(L)); }
 // the rail's bottom edge in view px (0 while there is no rail): what the
 // top-centre headlines - the spectate control, the vote, the announcer - hang under
@@ -123,25 +132,22 @@ function railHit(mx, my) {
   }
   return null;
 }
-// a chip: the emblem is the class, the bar its hp in the side's colour;
-// while the body waits on the bird the emblem gives way to the seconds left,
-// and a body that is never coming back keeps its emblem at LOCK_DIM
+// a chip: the face is the hero, the bar its hp in the side's colour; while
+// the body waits on the bird the face darkens under the seconds left, and a
+// body that is never coming back darkens further. The rim greys under the
+// pointer, no wider.
 function drawRailChip(c, now, on) {
   const p = c.p, tm = TEAMS[skin(p.team)];
   const gone = p.dead && (p.eliminated || p.respawnT <= 0);
   const wait = p.dead && !gone;
-  if (on) {
-    ctx.fillStyle = RAIL_HOV;
-    ctx.fillRect(c.x - 1, c.y - 1, c.w + 2, 1); ctx.fillRect(c.x - 1, c.y + c.h, c.w + 2, 1);
-    ctx.fillRect(c.x - 1, c.y, 1, c.h); ctx.fillRect(c.x + c.w, c.y, 1, c.h);
-  }
+  ctx.fillStyle = on ? RAIL_HOV : HUD_INK;
+  ctx.fillRect(c.x, c.y, c.w, c.h);
+  const fx = c.x + 1, fy = c.y + 1, fs = c.w - 2;
+  drawFace(fx, fy, fs, p);
+  if (wait || gone) { ctx.fillStyle = gone ? RAIL_OUT_DIM : RAIL_WAIT_DIM; ctx.fillRect(fx, fy, fs, fs); }
   if (wait) {
     const t = String(Math.ceil(p.respawnT));
-    drawPixelText(ctx, t, c.x + Math.round((c.w - pixelTextWidth(t)) / 2), c.y + Math.round((c.h - 5) / 2), RAIL_WAIT);
-  } else {
-    if (gone) ctx.globalAlpha = LOCK_DIM;
-    ctx.drawImage(classIcon12(p.cls, false), c.x, c.y);
-    ctx.globalAlpha = 1;
+    drawPixelTextOutline(ctx, t, c.x + Math.round((c.w - pixelTextWidth(t)) / 2), c.y + Math.round((c.h - 5) / 2), RAIL_WAIT, HUD_INK);
   }
   // the hp bar hangs off the chip's foot: one solid run of the side's
   // colour on a dark track, no segments - a glance, not a count

@@ -612,7 +612,7 @@ function snapApplyDelta(d) {
 // same union rule as the fields: a body that came into sight at any tick the
 // client may hold goes WHOLE (and `whole` names it, so keys the client still
 // holds from before are dropped), one that left it goes as gone.
-const SNAP_FOG_KEEP = new Set(['id', 'team', 'control', 'botId', '_name', 'look', 'cls', 'active', 'dead', 'eliminated', 'respawnT',
+const SNAP_FOG_KEEP = new Set(['id', 'team', 'control', 'botId', '_name', 'look', 'cls', 'skins', 'active', 'dead', 'eliminated', 'respawnT',
   'level', 'xp', 'kills', 'deaths', 'hp', 'maxHp', 'items', 'lastDeath', 'hGold', 'hDmg', 'dmgOut', 'dmgIn', 'dmgBird', 'dmgStruct', ...Object.keys(PLAYER_RECORD)]);
 const SNAP_FOG_KINDS = ['P', 'R', 'A', 'W']; // players, robots, animals, shots
 // the ids each side cannot see now, per kind; null with the fog down

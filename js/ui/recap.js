@@ -93,12 +93,8 @@ function rcFace(x, y, f, gold, team) {
   const ix = x + 2, iy = y + 2, is = s - 4;
   const q = e.by >= 0 ? players[e.by] : null;
   ctx.save(); ctx.beginPath(); ctx.rect(ix, iy, is, is); ctx.clip();
-  if (q) {
-    ctx.fillStyle = PORT_SKY; ctx.fillRect(ix, iy, is, is);
-    ctx.fillStyle = PORT_GROUND; ctx.fillRect(ix, iy + (is >> 1) + 3, is, is - (is >> 1) - 3);
-    const spr = portraitSprite(q), k = 2;
-    ctx.drawImage(spr, ix + ((is - spr.width * k) >> 1), iy + (is >> 1) - 14, spr.width * k, spr.height * k);
-  } else {
+  if (q) drawFace(ix, iy, is, q);
+  else {
     ctx.fillStyle = SC_PLATE; ctx.fillRect(ix, iy, is, is);
     const fig = e.s === 0 ? null : rcWorldFig(e.c, team);
     // a tall figure shows its upper body: a tower's stone, a bear's head

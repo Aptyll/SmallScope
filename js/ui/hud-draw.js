@@ -28,6 +28,17 @@ function portraitSprite(p) {
   const rb = scoutBody(p);
   return rb ? rb.down.idle[0] : classSet(p).down[0];
 }
+// a player's FACE in an fs-square window: the dusk behind, the model's head
+// and shoulders at 2x, clipped to the window - the small faces, where the
+// strip's is 3x: the announcer's plate and feed, and the team rail
+function drawFace(fx, fy, fs, p) {
+  ctx.fillStyle = PORT_SKY; ctx.fillRect(fx, fy, fs, fs);
+  ctx.fillStyle = PORT_GROUND; ctx.fillRect(fx, fy + (fs >> 1) + 3, fs, fs - (fs >> 1) - 3);
+  const spr = portraitSprite(p);
+  ctx.save(); ctx.beginPath(); ctx.rect(fx, fy, fs, fs); ctx.clip();
+  ctx.drawImage(spr, fx + ((fs - spr.width * 2) >> 1), fy + (fs >> 1) - 14, spr.width * 2, spr.height * 2);
+  ctx.restore();
+}
 function drawPortrait(now) {
   const p = player, r = portraitRect();
   if (p.level > abLvSeen && abLvSeen > 0) abLvFlash = now + 0.5;
