@@ -733,6 +733,7 @@ function updateWildlife(dt) {
   updateFish(dt);
   updateOrca(dt); // the orca under its lake's ice: the cruise, the hunt and the breach (js/sim/orca.js)
   updateCamps(dt); // a cleared camp counts down and comes back whole
+  updateCampSight(); // and each side learns the clocks it can see
   if (!PRACTICE) updatePreyStock(dt); // and the meadow keeps its rabbits and deer
 }
 

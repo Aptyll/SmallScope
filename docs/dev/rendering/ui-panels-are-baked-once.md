@@ -54,8 +54,9 @@ buffers and re-bakes the slab whenever `MAP_W` changes. The slab is the HUD's **
 and so does a press anywhere off the slab (`mapCloseHit` in `pointerPress`, play and drop alike).
 There is no compass (the chart is north-up, as the world is), no key (the marks are the minimap's
 own), no clock (the rail or the disc wears it), no title, and **no camp names until asked**: each
-camp is its glyph in its camp's ink (grey with its seconds under it while it is cleared,
-`drawCampMark`, as on the minimap), and the one under the pointer (within `CHART_HOVER_R`) lights
+camp is its glyph in its camp's ink (while it is cleared and your side knows it, its seconds in
+white under the glyph, stamped after every dot: `drawCampMark`/`drawChartClocks`, as
+on the minimap), and the one under the pointer (within `CHART_HOVER_R`) lights
 white and wears its name on a small graphite tag running away from the chart's middle
 (`drawChartCamps`/`chartTag`). The ziplines on both maps are `drawMapZip` (js/draw/marks.js): a
 crisp two-pixel ribbon in the side's ink, pylon to pylon, each pylon a pale pixel on it

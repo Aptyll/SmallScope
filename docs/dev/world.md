@@ -785,7 +785,7 @@ is pure reads, so no seed shifts.
 The jungle: named places at **fixed, mirrored sites** where neutral monsters stand — the things
 a team is choosing between while the eagle is still in the air, and the places it walks out of
 its base for. They live in the `camps` banner of [camps.js](../../js/sim/camps.js) and in the
-module-scope `camps` array (`{ key, spec, name, tag, tx, ty, r, repopT }` per placed site).
+module-scope `camps` array (`{ key, spec, name, tag, tx, ty, r, repopT, seen }` per placed site).
 Five kinds, one reward each:
 
 - **WOLF DEN** (`resource`, r 5, ×4) — a `den` in an open clearing and a pack of 4
@@ -811,7 +811,7 @@ Five kinds, one reward each:
   ([the dawn shield](gameplay/the-dawn-shield.md)), and the clearing filled to the trees with
   deep snow, which is brush (`layMeadowDrifts`, js/sim/depth.js). The rabbits are the only ones on the map
   ([wildlife](gameplay/wildlife.md)); nothing in it is hostile. Cleared, the three are back 40 s
-  later on the camp clock; with no anchor prop, nothing wears it.
+  later on the camp clock, worn over the clearing's middle (`campClockDraws`).
 
 **One entry in `CAMPS` is one kind of camp**, and that entry plus its site is the whole feature —
 no map, chart or HUD code knows a camp by name:
@@ -918,12 +918,19 @@ enough to be shown: a camp with anything alive in it holds the clock at `repop` 
 pack never trickles back; cleared, it counts down; and due, it **holds at zero** for as long as
 any player is within `CAMP_HOLD` (96 px) — clearing a camp is a real reward for a while and it
 still grows back, the moment the intruder leaves — then every slot is refilled at once. **The
-anchor prop wears the clock** (a river camp has no anchor, so the bears' clock is not shown in the world): `drawCampClock` (js/draw/marks.js) prints the seconds left over
-the den mouth at all times while the camp is cleared, and `drawCampMark` greys the camp's glyph
-on both maps with the same seconds under it, so a jungle route can be walked on the clock. A camp
-with anything alive in it wears none, and neither does one that is due and waiting for you to go.
-Under the fog a side knows a clock only while it sees the camp (`campClockSeen`): out of sight it
-counts the last clock it saw down, and a camp cleared unseen shows none.
+camp wears the clock** (`drawCampClock`, js/draw/marks.js): the seconds left (m:ss from a minute)
+over the den mouth, or for a camp with no anchor prop (the warren, the bears' river camps) over
+its mark (`campClockDraws`), and on both maps the seconds sit in white under the camp's glyph,
+stamped over every dot (`drawCampMark`/`drawCampMapClock`), so a jungle route can be walked
+on the clock. A camp with anything alive in it wears none, and neither does one that is due and
+waiting for you to go. **A side times only a clear it saw happen** (League's rule):
+`updateCampSight` (run after `updateCamps`) writes `C.seen[team]` whenever the side sees the
+camp's mark (`sightAt`): the tick it is due back if the side had it in sight the tick before it
+fell (`C.look`) or was already timing it, 0 when it is up, and for a camp found empty without
+seeing it fall minus the tick it is surely back by: the glyph greys with no number
+(`campEmpty`) and the bots leave it alone. Out of sight a known clock keeps running down. `campLeft(C, team)` reads it: the draws (for the watched
+side), the jungler bots (`aiDenSpot`) and the wire (`snapFogCamps` sends each side only its own
+`seen`, never `repopT`) all ask it. `campCleared(C)` reads the clock alone, so it holds on a client.
 
 `DBG` exposes `camps`, `CAMPS`, `CAMP_SITES`, `campSites`, `campTile`, `campAt`, `stockCamps`,
 `campBuff` and `warp(tx, ty, p?)` — warping a player beside a site is how to stage one (never

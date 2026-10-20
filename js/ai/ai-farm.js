@@ -121,7 +121,7 @@ function aiBrushWait(p, h) {
 }
 
 // where a jungler goes: its side's den with the pack up (walked into), or the
-// cleared one coming back soonest, waited on outside its ground; null when
+// cleared one coming back soonest by its side's clocks, waited on outside its ground; null when
 // the soonest one is further off in time than the walk (work what is near)
 function aiDenSpot(p) {
   const own = aiOwnEagle(p), rival = aiRivalEagle(p);
@@ -132,9 +132,14 @@ function aiDenSpot(p) {
     const cx = (C.tx + 0.5) * TILE, cy = (C.ty + 0.5) * TILE;
     if (rival && Math.hypot(cx - rival.x, cy - rival.y) < Math.hypot(cx - own.x, cy - own.y)) continue; // the rival's half
     const d = Math.hypot(cx - p.x, cy - p.y);
-    if (campPop(C) > 0) { if (d < ud) { ud = d; up = { x: cx, y: cy, d, wait: false }; } continue; }
-    const t = Math.max(C.repopT, aiWalkT(p, d));
-    if (t < nt) { nt = t; next = { x: cx, y: cy, d, wait: true, left: C.repopT }; }
+    // the clock as p's side knows it (campLeft, camps.js): a den it has not
+    // seen cleared is taken as up and walked to, as a player would; one it
+    // found empty without a time is left alone
+    const left = campLeft(C, p.team);
+    if (!left && campEmpty(C, p.team)) continue; // found empty, time unknown: not worth the walk
+    if (!left) { if (d < ud) { ud = d; up = { x: cx, y: cy, d, wait: false }; } continue; }
+    const t = Math.max(left, aiWalkT(p, d));
+    if (t < nt) { nt = t; next = { x: cx, y: cy, d, wait: true, left }; }
   }
   if (up) return up;
   if (!next || next.left - aiWalkT(p, next.d) > AI_DEN_EARLY) return null;

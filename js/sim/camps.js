@@ -267,7 +267,7 @@ function placeCamps() {
     const bad = spec.woods ? edge + spec.r + 2 > BORDER_MIN || edge < spec.r + 4
       : spec.treeline ? edge - spec.r - 2 < BORDER_MIN || edge > CAMP_EDGE : edge < CAMP_EDGE;
     if (bad) throw new Error('camp ' + site.key + (spec.woods ? ' not in the woods' : spec.treeline ? ' not on the treeline' : ' too near the edge'));
-    const C = { key: site.key, spec, name: spec.name, tx: t.tx, ty: t.ty, r: spec.r, repopT: spec.repop };
+    const C = { key: site.key, spec, name: spec.name, tx: t.tx, ty: t.ty, r: spec.r, repopT: spec.repop, seen: [0, 0], look: [-1, -1] };
     camps.push(C);
     if (spec.plan) layCampPlan(C);
     else clearCamp(C);
@@ -341,7 +341,8 @@ function campAt(x, y) {
 // half-killed pack never trickles back; cleared, it counts down; and due, it
 // holds at zero for as long as someone is standing in the site (CAMP_HOLD
 // px), then the whole camp is back at once. A cleared camp wears its seconds
-// on its anchor prop and on both maps (drawCampClock, js/draw/marks.js).
+// over its ground and on both maps (drawCampClock, js/draw/marks.js), but
+// only to a side that knows them (campLeft, below).
 const CAMP_HOLD = 96;
 function updateCamps(dt) {
   for (const C of camps) {
@@ -353,4 +354,52 @@ function updateCamps(dt) {
     for (let i = 0; i < C.spec.pop; i++) spawnCampMonster(C, i);
     C.repopT = C.spec.repop;
   }
+}
+
+// whether a camp is cleared and counting: the clock is held at the top while
+// anything in it lives (updateCamps), so this reads the clock alone and
+// holds on a client too, which has no say over a body in the fog
+function campCleared(C) { return C.spec.pop > 0 && C.repopT > 0 && C.repopT < C.spec.repop; }
+// What each side KNOWS of a camp's clock - League's rule: a side times a
+// camp only from a clear it SAW, the camp in its sight as it fell (sight
+// held from the tick before the clear on). Walking into an empty camp it did
+// not see cleared tells it the camp is empty, never when it is back: the
+// glyph greys with no number (campEmpty) until the longest it could still be
+// out (its full repop) has run, or the side sees it again. Seeing the camp up
+// forgets both. Out of sight a known clock keeps running down.
+// `C.seen[team]`: > 0 the tick the side expects it back, < 0 minus the tick
+// an empty-but-untimed camp is surely back by, 0 nothing known (up, or
+// never looked). `C.look[team]`: the last tick the side saw the camp.
+// Run after updateCamps, so the tick the last one dies is seen with the clock
+// already started. The bots ask it (aiDenSpot), the draws ask it
+// (drawCampClock, drawCampMark) and the wire sends each side only its own
+// `seen` (snapFogCamps, js/net/snapshot.js)
+function updateCampSight() {
+  for (const C of camps) {
+    if (!C.spec.pop) continue;
+    if (!C.seen) C.seen = [0, 0];
+    if (!C.look) C.look = [-1, -1];
+    const m = campMark(C), x = (m.tx + 0.5) * TILE, y = (m.ty + 0.5) * TILE;
+    for (const team of [0, 1]) {
+      if (!sightAt(team, x, y)) continue;
+      const was = C.seen[team], watched = C.look[team] === state.tick - 1;
+      C.look[team] = state.tick;
+      if (!campCleared(C)) { C.seen[team] = 0; continue; }
+      const due = state.tick + Math.ceil(C.repopT / TICK_DT);
+      if (was > 0 || (watched && was === 0)) C.seen[team] = due; // timed: seen falling, or already timed
+      else if (was === 0) C.seen[team] = -(state.tick + Math.ceil(C.spec.repop / TICK_DT)); // found empty
+    }
+  }
+}
+// seconds until camp C is back as `team` knows it (0: up, or not known);
+// any other team (a screen watching from no side) reads the true clock
+function campLeft(C, team) {
+  if (team !== 0 && team !== 1) return campCleared(C) ? C.repopT : 0;
+  const due = C.seen ? C.seen[team] : 0;
+  return due > state.tick ? (due - state.tick) * TICK_DT : 0;
+}
+// whether `team` found camp C empty without seeing it cleared, so knows no time
+function campEmpty(C, team) {
+  const v = C.seen && (team === 0 || team === 1) ? C.seen[team] : 0;
+  return v < 0 && -v > state.tick;
 }

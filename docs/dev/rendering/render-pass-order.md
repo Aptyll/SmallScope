@@ -116,8 +116,9 @@ a bare bush never rims because `workTarget`'s `ready` gate already refuses it �
 bush shows its regrow clock instead, the neutral unit bar (`drawHealthBar`, gold) over the plant
 filling toward `BUSH_REGROW`, drawn only while the pointer's tile is that bush (`hovO`, resolved
 beside `wkO` at any reach, since a look asks nothing of the legs). A **camp anchor**
-(a wolf den's mouth; the bears' river camps have none) wears the seconds until the camp is back
-over the prop, hovered or not, while the camp is cleared (`drawCampClock`,
+(a wolf den's mouth) wears the seconds until the camp is back over the prop, hovered or not,
+while the camp is cleared and the watched side knows it (`drawCampClock`; a camp with no anchor
+wears it over its mark through a `fn` entry of the sorted list, `campClockDraws`,
 [world.md](../world.md#runtime)), nothing while anything in it lives. Only a
 covering canopy leaves the atlas batch, so the batch below stays whole. A **dead tree** is a 16×24 snag at `py - 8`. Short ground sprites (bush,
 stump) all draw at `py + 4` to stay clear of that band — drop one lower and

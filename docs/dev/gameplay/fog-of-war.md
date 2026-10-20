@@ -35,7 +35,7 @@ js/draw/fog.js (the picture).
   that side's sight, and the soldier, hunt and bot-API loops ask `inSight` straight. So a bot's
   profile sight (up to 267 px) is capped by what its side can see, and a bot never shoots into
   the fog. The CLICK scheme's lock and acquire ask the same.
-- **Nothing is stored**: it is all read off where things stand. **Online, each side is sent only
+- **Nothing is stored** but the camp clocks: it is all read off where things stand. **Online, each side is sent only
   what it sees** (the `fog` banner in js/net/snapshot.js): a rival soldier, creature or shot out of
   a client's side's sight is not in its snapshot at all, and a rival player out of it comes as a
   stub (`fogHid` and the fields the rail and scoreboard show). The puffs, streams, numbers and coins
@@ -43,3 +43,8 @@ js/draw/fog.js (the picture).
   A client draws the host's verdict: `inSight` and `fogShown` answer no for a body with `fogHid`.
 - **Shots and numbers.** A rival's arrow or rock in the fog is not drawn, nor its flame's light,
   and a damage number raised in the fog is not shown (`fogShown` on the shot or the floater).
+- **Camp clocks.** A side times a cleared camp only if it had the camp in sight as it fell
+  (`updateCampSight`/`campLeft`, js/sim/camps.js: each side's `C.seen`, refreshed whenever it sees
+  the camp's mark); out of sight the known clock runs on. A clear in the fog shows nothing, and
+  walking into it later only greys the glyph (`campEmpty`): empty, time unknown.
+  The draws, the jungler bots and each side's snapshot (`snapFogCamps`) read only that.
