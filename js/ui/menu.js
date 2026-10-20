@@ -1537,6 +1537,20 @@ const CLASS12 = [
     '.....g.oCsso',
     '........ooo.',
   ],
+  [ // BELLA: the saber, its edge curving up to the point, the gold guard
+    '.........oo.',
+    '........oWo.',
+    '.......oCo..',
+    '......oCo...',
+    '.....oCo....',
+    '....oCso....',
+    '.o.oCso.....',
+    '.ogoCo......',
+    '..oggo......',
+    '.owoGgo.....',
+    'owo..o......',
+    '.o..........',
+  ],
 ];
 const class12Cache = new Map();
 function classIcon12(i, you) {
