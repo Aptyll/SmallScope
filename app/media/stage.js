@@ -24,7 +24,7 @@ window.MEDIA = (function () {
     sampleHumanInput = function () {}; drawAimLine = function () {};
     autoWork = function () {}; drawWorkHint = function () {};
     for (const n of o.mute || []) window[n] = function () {};
-    for (const p of players) { p.control = 'human'; p.name = o.names ? p.name : ''; p.flag = null; }
+    for (const p of players) { p.control = 'human'; p.name = o.names ? p.name : ''; }
     settings.teamBlue = !!o.teamBlue;
     D.hideUI = true; D.setK(o.k, true);
     D.fog = !!o.fog; // the fog of war hides what a scene stages: off unless the scene asks (o.fog)

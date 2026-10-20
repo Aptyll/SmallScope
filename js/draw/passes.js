@@ -134,10 +134,7 @@ function drawFlatPass(ox, oy, ex, ey, tx0, ty0, tx1, ty1, now) {
   }
   // the mounds of bodies riding a tunnel, and the dig's clock under a digger
   drawTunnelGround(ex, ey, now);
-  // your side's flag rings - the ground each order covers - flat on the snow
-  // under everything that walks it, and the ring a held flag wheel previews
-  drawFlagRings(ox, oy, now);
-  drawRecallGround(ex, ey); // ...each roost's healing ring and the recall's closing on the feet (js/draw/recall.js)
+  drawRecallGround(ex, ey); // each roost's healing ring and the recall's closing on the feet (js/draw/recall.js)
   // ...and the pick's reach round a rock (drawMineRing, beside drawRock)
   drawMineRing(ox, oy);
   // the CLICK scheme's rings: where the last order landed, and the lock's
@@ -205,18 +202,12 @@ function gatherDraws(ox, oy, tx0, ty0, tx1, ty1, now) {
   for (const t of ptargets) draws.push({ y: t.y + 1, pt: t });
   // the middle's stone and the orca out of its ice (js/draw/cistern.js)
   pushMiddleDraws(draws, ox, oy);
-  // your side's flags, half a pixel behind their own tile so a flag planted
-  // on a tree is never swallowed by that tree's canopy
-  for (const q of players) {
-    if (!q.active || !q.flag || q.team !== viewPlayer().team) continue;
-    draws.push({ y: (q.flag.ty + 1) * TILE + 0.5, f: q });
-  }
   reedDraws(draws, ox, oy); // the brush's reeds, each sorted by its foot (js/draw/depth.js)
   draws.sort((a, b) => a.y - b.y);
   return draws;
 }
 
-// the y-sorted pass: bodies, animals, flags and the scenery, back to front
+// the y-sorted pass: bodies, animals and the scenery, back to front
 function drawSorted(draws, ox, oy, ex, ey, now) {
   // whose view the canopies must not hide (null while dead or airborne - no
   // sprite on the ground to hide; the canopy window, js/draw/canopy.js) and
@@ -244,7 +235,6 @@ function drawSorted(draws, ox, oy, ex, ey, now) {
     if (d.p) { if (d.ghost) drawGhost(d.p, ex, ey); else drawPlayer(d.p, ex, ey, now); continue; }
     if (d.a) { drawAnimal(d.a, ex, ey, now); continue; }
     if (d.r) { drawRobot(d.r, ex, ey, now); continue; }
-    if (d.f) { drawFlag(d.f, ex, ey, now); continue; }
     if (d.pt) { drawPTarget(d.pt, ex, ey, now); continue; }
     if (d.fn) { d.fn(d, ex, ey, now); continue; }
     drawSceneryObj(d, ox, oy, now, wkO, hovO);
@@ -609,7 +599,7 @@ function renderScreen(ox, oy, shx, shy, now) {
   else if (state.mode === 'play' && player.aboard) drawHopPrompt(now); // still seated on the roost: E - HOP OFF
   // the M map works mid-flight too: the ride's wider read lives here now
   if ((state.mode === 'play' || state.mode === 'drop') && state.mapOpen) renderWorldMap(now);
-  // after the chart: a flag wheel opens over it too (pinned to the press point)
+  // after the chart: a ping wheel opens over it too (pinned to the press point)
   if (state.mode === 'play' && state.wheel) renderWheel(now);
   if (state.mode === 'play' && state.settingsOpen) renderSettings(now);
   if (state.mode === 'title' || state.intro > 0) renderTitle(now);

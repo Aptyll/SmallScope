@@ -12,6 +12,10 @@
 //             and the plate is on it)
 //   the map   the same pulse on the minimap disc (drawCalloutsMap), for the
 //             calls about a place
+// A player's PING (the `pings` banner, js/sim/pings.js) is a callout with no
+// plate: its glyph stands over the spot on a one-pixel stem, rimmed dark,
+// above the same two pulses, and the same glyph sits on the minimap disc and
+// the chart for the whole of its life (drawPingMark, drawPingGlyph).
 // All of it draws above the lighting, like every other world text, so a call
 // reads at midnight.
 const CALL_PLATE = 'rgba(12,18,42,0.84)';
@@ -29,9 +33,14 @@ const CALL_GLYPHS = {
   low:  ['.##.##.', '#..#..#', '#.....#', '#######', '.#####.', '..###..', '...#...'], // a heart, emptied to its last third
   push: ['...#...', '..###..', '.##.##.', '##...##', '...#...', '..###..', '.##.##.'], // forward, twice
   order:  ['.......', '......#', '.....##', '#...##.', '##.##..', '.###...', '..#....'], // a tick: understood
-  guard:  ['#######', '#ooooo#', '#ooooo#', '.#ooo#.', '.#ooo#.', '..#o#..', '...#...'], // a shield: holding the bird
   grudge: ['...#...', '.#####.', '.#.#.#.', '#######', '.#.#.#.', '.#####.', '...#...'], // a crosshair: you, again
   here: ['...#...', '..#.#..', '..#.#..', '.#.#.#.', '.#...#.', '#..#..#', '#######'], // the warning sign: rivals at the roost
+  // the pings' (PING_CALLS, js/sim/pings.js)
+  go:     ['..###..', '..###..', '#######', '.#####.', '..###..', '...#...', '.......'], // an arrow down onto the spot
+  attack: ['.....##', '....###', '...###.', '.#.##..', '..##...', '.#.#...', '#......'], // a sword
+  omw:    ['..###..', '..###..', '..###..', '..####.', '.######', '#######', '.......'], // a boot
+  danger: ['..###..', '..###..', '..###..', '..###..', '...#...', '.......', '..###..'], // a bang
+  defend: ['#######', '#######', '#######', '.#####.', '.#####.', '..###..', '...#...'], // a shield
 };
 const CALL_DIM = 0.3; // the 'o' wash
 
@@ -51,6 +60,7 @@ function drawCallouts(ex, ey) {
     if ((c.see === undefined ? c.team : c.see) !== vp.team) continue;
     const spec = CALLS[c.k], a = Math.max(0, callFade(c));
     const sx = Math.round(c.x - ex), sy = Math.round(c.y - ey);
+    if (spec.ping) { drawPingMark(c, spec, sx, sy, a); continue; }
     if (!spec.pin) {
       for (let i = 0; i < 2; i++) {
         const u = (c.t - i * CALL_PULSE) / CALL_PULSE;
@@ -97,20 +107,56 @@ function drawCallPlate(c, spec, x, y, a) {
   drawPixelTextOutline(ctx, c.word, x0 + 11, y0 + 3, CALL_TEXT, '#0f1632');
 }
 
-// the same pulse on the minimap disc, for calls the screen may not show
+// a ping on the world: two pulses at the spot, the spot's tick, and the
+// glyph over it on a stem, lifting into place as it rises in
+function drawPingMark(c, spec, sx, sy, a) {
+  if (sx < -20 || sy < -30 || sx > WV_W + 20 || sy > WV_H + 20) return;
+  for (let i = 0; i < 2; i++) {
+    const u = (c.t - i * CALL_PULSE) / CALL_PULSE;
+    if (u < 0 || u > 1) continue;
+    ctx.globalAlpha = a * (1 - u);
+    hbRing(sx, sy, 3 + u * (CALL_RING - 3), spec.ink);
+  }
+  ctx.globalAlpha = a;
+  ctx.fillStyle = '#0f1632';
+  ctx.fillRect(sx - 2, sy - 1, 5, 3); ctx.fillRect(sx - 1, sy - 2, 3, 5);
+  ctx.fillStyle = spec.ink;
+  ctx.fillRect(sx - 1, sy, 3, 1); ctx.fillRect(sx, sy - 1, 1, 3);
+  const lift = c.t < CALL_IN ? 2 : 0;
+  ctx.fillRect(sx, sy - 6 - lift, 1, 3 + lift); // the stem
+  drawPingGlyph(ctx, c.k, sx, sy - 10 - lift, 1, spec.ink);
+  ctx.globalAlpha = 1;
+}
+// a ping's glyph centred on (cx, cy) at s px a glyph pixel, with a dark rim
+// a pixel wide round every lit one: the world's mark, both maps' and the
+// ping wheel's wedges all stamp it
+function drawPingGlyph(g, k, cx, cy, s, ink, rim) {
+  const rows = CALL_GLYPHS[CALLS[k].icon];
+  s = s || 1;
+  const x0 = Math.round(cx) - Math.floor(7 * s / 2), y0 = Math.round(cy) - Math.floor(7 * s / 2);
+  g.fillStyle = rim || '#0f1632';
+  for (let r = 0; r < 7; r++) for (let q = 0; q < 7; q++) if (rows[r][q] === '#') g.fillRect(x0 + q * s - 1, y0 + r * s - 1, s + 2, s + 2);
+  g.fillStyle = ink;
+  for (let r = 0; r < 7; r++) for (let q = 0; q < 7; q++) if (rows[r][q] === '#') g.fillRect(x0 + q * s, y0 + r * s, s, s);
+}
+
+// the same pulse on the minimap disc, for calls the screen may not show -
+// and a ping's glyph on the spot for the whole of its life
 function drawCalloutsMap(ptx, pty, s, vp) {
   ctx.save();
   ctx.beginPath(); ctx.arc(MM_CX, MM_CY, MM_R - 1, 0, Math.PI * 2); ctx.clip();
   for (const c of callouts) {
     if ((c.see === undefined ? c.team : c.see) !== vp.team) continue;
-    const u = (c.t % CALL_PULSE) / CALL_PULSE;
-    if (c.t > CALL_PULSE * 2 || CALLS[c.k].map === false) continue;
     const mx = Math.round(MM_CX + (c.x / TILE - ptx) * s), my = Math.round(MM_CY + (c.y / TILE - pty) * s);
-    const r = 1 + Math.round(u * 4), d = r * 2 + 1;
-    ctx.globalAlpha = 1 - u;
-    ctx.fillStyle = CALLS[c.k].ink;
-    ctx.fillRect(mx - r, my - r, d, 1); ctx.fillRect(mx - r, my + r, d, 1);
-    ctx.fillRect(mx - r, my - r, 1, d); ctx.fillRect(mx + r, my - r, 1, d);
+    const u = (c.t % CALL_PULSE) / CALL_PULSE;
+    if (c.t <= CALL_PULSE * 2 && CALLS[c.k].map !== false) {
+      const r = 1 + Math.round(u * (CALLS[c.k].ping ? 6 : 4)), d = r * 2 + 1;
+      ctx.globalAlpha = 1 - u;
+      ctx.fillStyle = CALLS[c.k].ink;
+      ctx.fillRect(mx - r, my - r, d, 1); ctx.fillRect(mx - r, my + r, d, 1);
+      ctx.fillRect(mx - r, my - r, 1, d); ctx.fillRect(mx + r, my - r, 1, d);
+    }
+    if (CALLS[c.k].ping) { ctx.globalAlpha = Math.max(0, callFade(c)); drawPingGlyph(ctx, c.k, mx, my, 1, CALLS[c.k].ink); }
   }
   ctx.globalAlpha = 1;
   ctx.restore();

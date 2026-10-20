@@ -15,7 +15,8 @@
 //
 // The live list is sim state (SAVE_ROOTS); addCallout records each one for a
 // host's clients (the `sim events` banner, js/net/events.js), and the pixels
-// are js/draw/callouts.js.
+// are js/draw/callouts.js. A player's ping rides the same list as a callout
+// of its own kind (the `pings` banner, js/sim/pings.js).
 const CALL_T = 2.4;         // s a callout stays up
 const CALL_BOT_CD = 7;      // s a bot waits between two calls of its own
 const CALL_SAME_T = 9;      // s a side will not repeat the same call...
@@ -42,30 +43,31 @@ const CALLS = {
   low:    { word: (n) => n + ' LOW!', icon: 'low', ink: '#ff5a6a' },
   push:   { word: () => 'PUSH!', icon: 'push', ink: '#8fe3ff' },
   here:   { word: (n) => n + ' HERE!', icon: 'here', ink: '#ffd166' },
-  // the answers to a human's flag: said by the team brain, which decides
-  // who answers and when (aiAnswerFlag/aiAnswerStep, js/ai/ai-team.js)
+  // the answer to a human's ping: said by the team brain, which decides
+  // who answers and when (aiAnswer/aiAnswerStep, js/ai/ai-team.js)
   onit:     { word: () => 'ON IT', icon: 'order', ink: '#e8eeff', pin: true, t: 1.6, map: false },
-  guarding: { word: () => 'GUARDING', icon: 'guard', ink: '#b9a3ff', pin: true, t: 1.8, map: false },
   // a rival who has downed the same scout twice, on seeing them again:
   // said to the MARK's side (callGrudge)
   grudge: { word: () => 'YOU AGAIN', icon: 'grudge', ink: '#ff4d5e', pin: true, map: false },
+  // a player's pings (the `pings` banner, js/sim/pings.js)
+  ...PING_CALLS,
 };
 function callLife(c) { return CALLS[c.k].t || CALL_T; }
 const CALL_KINDS = Object.keys(CALLS);
 
 const callouts = []; // live: { k, word, id (caller seat), team, see (the side shown it), x, y, t }
 
-// The one door in: every call, a bot's own or (later) a scripted bot's
-// `act.call`, goes through here. Records itself for the clients, the way a
-// floater does, and rings the notch for the screen whose side sees it -
-// the caller's own side, unless `see` names the other (a grudge).
+// The one door in: every call, a bot's own, a scripted bot's or a player's
+// ping (pingCmd), goes through here. Records itself for the clients, the way
+// a floater does, and rings the notch - a ping its own cue - for the screen
+// whose side sees it: the caller's own side, unless `see` names the other (a grudge).
 function addCallout(k, word, id, team, x, y, see) {
   if (!CALLS[k]) return;
   if (see === undefined) see = team;
   evPush('call', [k, word, id, team, x, y, see]);
   callouts.push({ k, word, id, team, see, x, y, t: 0 });
-  if (see === team) callSaid[team][k] = callSaid[team].any = { t: state.elapsed, x, y };
-  if (player && see === player.team && !PRACTICE) SFX.notch();
+  if (see === team && !CALLS[k].ping) callSaid[team][k] = callSaid[team].any = { t: state.elapsed, x, y };
+  if (player && see === player.team && (!PRACTICE || CALLS[k].ping)) { if (CALLS[k].ping) SFX.ping(k); else SFX.notch(); }
 }
 
 function updateCallouts(dt) {
@@ -91,7 +93,7 @@ function updateCallouts(dt) {
 function callFree(team, k, x, y) {
   let up = 0;
   for (const c of callouts) {
-    if (c.see !== team) continue;
+    if (c.see !== team || CALLS[c.k].ping) continue; // a player's ping is not a bot's voice
     up++;
     if (c.k === k && Math.hypot(c.x - x, c.y - y) < CALL_SAME_R) return false;
   }

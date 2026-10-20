@@ -217,7 +217,7 @@ from this snapshot, not written beside it:
   singleton field by field (the ack-keyed base, below). A client updates its
   entities **in place** under those ids, so a reference resolved a tick ago still points at the
   thing - which is also why a tile changes in place, and why a player's aliased plain objects
-  (`SNAP_MERGE`: `inv`, `food`, `kit`, `flag`, `spawn`, `look`) are merged rather than replaced
+  (`SNAP_MERGE`: `inv`, `food`, `kit`, `spawn`, `look`) are merged rather than replaced
   - an allow-list, because a token merged into the live object it names guts that object.
 - **Bytes with a dictionary.** The whole message is binary: every object key an index into a
   dictionary both ends grow in step (a message leads with the names it is the first to use, the

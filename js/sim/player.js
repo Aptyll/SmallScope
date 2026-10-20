@@ -549,10 +549,9 @@ class Player {
     this.abLv = [0, 0, 0, 0];           // ability ranks, 0 (LOCKED) ..abLvMax (5, the ultimate 3), a skill point each - like cards and items, NOT cleared by reset(): a death keeps what was bought
     this.abPick = [0, 0, 0, 0];         // which option each key carries (abOf, js/sim/abilities.js), picked pre-match in the hero pop-up; a bot keeps the first
     this.cards = [];                    // picked roguelike cards, {rarity,id} - like items, survives a respawn
-    // the one order marker this player has standing (the right-click radial;
-    // see the `team flags` banner in js/sim/robots.js): null, or { tx, ty, type,
-    // owner }. NOT cleared by reset() - an order outlives the hand that gave it.
-    this.flag = null;
+    // the times of this player's recent pings, the spam guard's memory
+    // (pingReady, js/sim/pings.js)
+    this.pingLog = [];
     // the tile index of the near hole of this body's one tunnel (js/sim/tunnel.js),
     // -1 for none. NOT cleared by reset() - a dug tunnel outlives its digger.
     this.tunHole = -1;
@@ -597,25 +596,24 @@ class Player {
       // noticed, sk the skill layer's hands (skillOf, made on first use),
       // abilOk this tick's ability roll, pushCd a roost it could not reach
       prof: null, seeT: 0, sk: null, abilT: 0, abilOk: true, pushCd: 0,
-      // the flag (aiFlagSync, ai.js): want is the order this tick's ladder
-      // would fly ({ type, x, y } or null), wantT how long it has flown one
-      // with no reason left, join the teammate whose flag it serves instead
-      // of planting a twin (-1 = none), flagT the re-read clock
-      want: null, wantT: 0, join: -1, flagT: 0,
+      // want is what this tick's ladder decided ({ type, x, y } or null:
+      // DEFEND at its bird, ATTACK at the rival's - the dashboard reads it),
+      // ping the human's ping it has taken up ({ k, x, y, owner, t, at }:
+      // pingSteer, js/sim/pings.js) and backOff a DANGER it is backing off
+      // from ({ x, y, t })
+      want: null, ping: null, backOff: null,
       // the team brain (js/ai/ai-team.js): mood its temperament's key (dealt on
       // first read), helping the teammate whose call it answers, foeId the
       // player it is shooting (the side's focus tally), focusT/focusOk the
       // focus roll, lastFoe/lastFoeT the rival it last fought and when (the
       // commit window, aiHoldFoe), fleeT until when a fall-back holds,
       // downs/grudge who it has downed
-      // and the mark it holds a grudge on, obeyFor/obeyOk the human flag it
-      // rolled on and the roll, guarding its guard holding the bird past an
-      // attack flag, answered/answerAt/answerKind/answerKey the human flag it last
-      // answered and when its ON IT is due (aiAnswerFlag), band its range band
+      // and the mark it holds a grudge on, answerAt/answerKind/answerKey the
+      // human ping it last answered and when its ON IT is due (aiAnswer), band its range band
       // in a fight (aiRangeBand), fortCd the wait before it next chooses a turret or wall job (fortJob, held between), packT how long it has waited at the rally, scout/scoutN
       // the scout's point and step along its beat, thought what it is doing
       // and why (the dashboard's record)
-      mood: null, helping: -1, foeId: -1, focusT: 0, focusOk: false, packT: 0, scout: null, scoutN: 0, thought: null, lastFoe: null, lastFoeT: -1e9, fleeT: -1e9, downs: {}, grudge: null, obeyFor: null, obeyOk: true, guarding: false, scoutCd: 0, answered: null, answerAt: 0, answerKind: null, answerKey: "", band: null, fortCd: 0, fortJob: null,
+      mood: null, helping: -1, foeId: -1, focusT: 0, focusOk: false, packT: 0, scout: null, scoutN: 0, thought: null, lastFoe: null, lastFoeT: -1e9, fleeT: -1e9, downs: {}, grudge: null, scoutCd: 0, answerAt: 0, answerKind: null, answerKey: "", band: null, fortCd: 0, fortJob: null,
     };
     this.reset(true);
   }
