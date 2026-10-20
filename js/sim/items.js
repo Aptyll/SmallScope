@@ -197,6 +197,7 @@ const BOT_BUILDS = {
   HUNTER: ['horn', 'feathers', 'fang', 'sunstone', 'skates', 'bearskin'],
   WARRIOR: ['bearskin', 'brand', 'fang', 'skates', 'cloak', 'sunstone'],
   ARMATOS: ['bearskin', 'cloak', 'brand', 'skates', 'fang', 'sunstone'], // the wall first: health and armor, then the walk to the fight
+  FORTIVA: ['brand', 'bearskin', 'skates', 'fang', 'cloak', 'sunstone'], // the hit first, the health to stay in the fight, then the legs to reach it
 };
 // the next finished item on p's list it does not have yet, or null when done
 function botNextItem(p) {

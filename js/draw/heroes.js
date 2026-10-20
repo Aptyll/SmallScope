@@ -13,6 +13,12 @@ function bakeBladeArt(rows, pal) {
   rows.forEach((r, y) => { for (let x = 0; x < r.length; x++) { const col = pal[r[x]]; if (col) { g.fillStyle = col; g.fillRect(x, y, 1, 1); } } });
   return c;
 }
+// What a hero wears on or around its body beyond its sprite: fn(p, ax, ay, now,
+// front), called by drawPlayer (js/draw/bodies.js) once behind the body
+// (front false) and once over it (front true); (ax, ay) is the 16 px cell's
+// top-left. ARMATOS's standard on his back registers here.
+const HERO_BODY_FX = [];
+function heroBodyFx(p, ax, ay, now, front) { for (const f of HERO_BODY_FX) f(p, ax, ay, now, front); }
 function heroBladeOf(p) { const c = CLASSES[p.cls]; return c && c.blade ? HERO_BLADES[c.blade] : null; }
 // the blade a hero's hands hold in place of its sword's own art, or null
 function heroBlade(p) { const b = attackOf(p).cut ? heroBladeOf(p) : null; return b ? b.art().flat : null; }

@@ -1544,6 +1544,19 @@ const CLASS12 = [
     '.owo........',
     '.owo........',
     '..o.........',
+  ],  [ // FORTIVA: the broken chain - a link snapped, its two ends apart
+    '............',
+    '..oooo......',
+    '.oCCCso.....',
+    '.oCo.so.....',
+    '.oCo.so.g...',
+    '.oCo.so..g..',
+    '.oCsso.g....',
+    '..oooo.oooo.',
+    '....g..oCCso',
+    '...g...oCo.o',
+    '.....g.oCsso',
+    '........ooo.',
   ],
 ];
 const class12Cache = new Map();
