@@ -32,5 +32,7 @@ Stay out: code-only work, statistics, and anything Noah has not seen.
    ([lore.md](../../../docs/dev/lore.md)). A board idea that starts cooking moves to `cooking` and
    gets a `cover` cropped from real art.
 3. Open `index.html` headless (file:// works) and look at the board and the dish.
-4. Commit straight to `main` (content only, no patch number) and push. Pages updates on its own.
+4. Commit on a branch `kitchen/<dish id>-round-<n>`, push it, open a PR on Aptyll/softfall-kitchen
+   and merge it yourself (content only, no patch number). Noah's project instructions allow this;
+   never push straight to `main`. Pages updates on its own.
 5. Mention it in your reply to Noah in one line.
