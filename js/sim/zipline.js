@@ -229,8 +229,7 @@ function zipStart(p, near) {
   if (p.dead || p.stunT > 0 || p.fallT > 0 || p.dodgeT > 0 || p.rushT > 0 || p.castT > 0 || p.shieldT > 0 || inAir(p)) return;
   if (p.grapT > 0) grapEnd(p);      // off the rope and onto the handle
   risePlayer(p);                    // up out of the snow first
-  breakEat(p);                      // the meal is over: both hands are on the handle
-  cancelCatch(p);
+  breakRecall(p);                   // the recall is over: both hands are on the handle
   if (p.charging) { p.charging = false; p.chargeT = 0; }
   p.fireArmed = false;
   p.sliding = false; p.slideT = 0;

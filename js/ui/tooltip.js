@@ -64,13 +64,6 @@ function tipValW(v) { return Array.isArray(v) ? v.reduce((w, sg) => w + pixelTex
 // sum: [value, col] (a total under a rule, optional), notes: [[text, col]],
 // icon, plate, rim }. Everything below builds one of
 // these and drawTooltip is the only thing that knows how to paint it.
-function tipBase(type, title, kind) {
-  const tp = cellPlate(true);
-  return {
-    title, tcol: '#f4f7ff', kind, rows: [], notes: [],
-    icon: ITEMS[type] && SPRITES[ITEMS[type].icon], plate: tp.plate, rim: tp.rim, type,
-  };
-}
 // THE HERO'S BASIC ATTACK (CLASSES[c].attack, js/sim/attack.js): what one
 // full-draw hit does, how often it comes, and how far it reaches - read off
 // the same functions the sim swings by, so the card can never disagree
@@ -99,27 +92,6 @@ function tipRail(c) {
 function tipGold() {
   return { title: 'GOLD', tcol: '#f5c542', kind: 'PURSE', icon: SPRITES.itemGold, plate: BAG_WELL, rim: '#3c4048',
     rows: [['CARRIED', String(inv.gold), '#f5c542']], notes: [] };
-}
-// a food in the pouch: what it heals, how long it takes, how many are carried
-function tipStack(s) {
-  if (ITEMS[s.type] && ITEMS[s.type].heal) {
-    const heal = Math.round(ITEMS[s.type].heal * kitOf(player).foodMul);
-    const d = tipBase(s.type, ITEMS[s.type].name || 'BERRIES', 'FOOD');
-    d.tcol = RES_COLORS[s.type];
-    d.rows.push(['HEALS', '+' + heal, '#8fe08a']);
-    // the two halves of a meal, said the way an ability well says them: how
-    // long you stand there eating it, and how long BOTH meals are away after
-    d.rows.push(['EAT', tipSec(FOOD_EAT), '#f4f7ff']);
-    d.rows.push(['COOLDOWN', tipSec(FOOD_CD), '#f4f7ff']);
-    d.rows.push(['CARRIED', String(s.n), '#f4f7ff']);
-    if (player.foodCd > 0) d.rows.push(['READY IN', tipSec(player.foodCd), '#e0637a']);
-    d.notes.push(['A HIT BREAKS THE MEAL - CLICK OR ROLL TO CANCEL', TIP_DIM]);
-    d.notes.push([s.type === 'berry' ? 'Q OR CLICK TO EAT' : 'F OR CLICK TO EAT', TIP_DIM]);
-    return d;
-  }
-  const d = tipBase(s.type, s.type.toUpperCase(), 'ITEM');
-  d.rows.push(['CARRIED', String(s.n), '#f4f7ff']);
-  return d;
 }
 // a class ability well - the strip's in play (cls omitted: the local player's
 // class, live cooldown, the cast hint), or the lobby's stage (cls given:
@@ -193,12 +165,6 @@ function tipAt(mx, my) {
   if (sh && sh.kind === 'item') return player.items[sh.i] ? tipItem(player.items[sh.i]) : null; // an empty slot says nothing
   if (sh && sh.kind === 'port') return tipAttack(player); // the hero's face names the hero's own basic attack
   if (sh && sh.kind === 'stat') return tipStat(sh.key); // the stat panel's breakdown (js/ui/statpanel.js)
-  // a meal button describes the meal it eats
-  if (sh && (sh.kind === 'fishPick' || sh.kind === 'fishPop' || (sh.kind === 'food' && FOOD_BTNS[sh.i].type === 'fish'))) return null; // the picker says it (drawFishPop)
-  if (sh && sh.kind === 'food') {
-    const type = FOOD_BTNS[sh.i].type;
-    return tipStack({ type, n: bagCount(player, type) });
-  }
   if (sh && sh.kind === 'frame') {
     const g = goldCellRect(), m = stripMouse(mx, my);
     if (m.x >= g.x && m.x < g.x + g.w && m.y >= g.y && m.y < g.y + g.h) return tipGold();

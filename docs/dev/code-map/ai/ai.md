@@ -9,6 +9,7 @@
 | what every bot knows about both birds: nerve, last hit, who is at each (a rival wave counted at half strength), the `threat` read the defend and push rungs ask, how many a threat calls home | `aiSituation`, `aiDefendersWanted`, `AI_ROOST_R`/`AI_DEFEND_T`/`AI_JOIN_HP`/`AI_ALARM_HP` | `ai` › `difficulty` › `the two birds` |
 | the waves as a bot sees them: a rival soldier in sight is a target, its own column's head is what a pusher walks with | `aiNearestEnemy` (its `robots` loop), `aiWaveHead`, `AI_WAVE_R`/`AI_WAVE_D` (the `head` read in rung 5c of `updateAI`) | `ai` |
 | the road or the work: a bot's roll between the waves (XP) and the harvest (gold), and the walk to the nearest rival wave (rung 5g of `aiThink`) | `aiRoad`, `AI_ROAD_T`/`AI_ROAD_P`/`AI_ROAD_LV`/`AI_ROAD_D` | `ai` (the `the road, and the roam` sub-banner) |
-| where a bot with nothing to do wanders next (rung 11) | `aiRoamPick` | `ai` (the `the road, and the roam` sub-banner) |
+| where a bot with nothing to do wanders next (rung 13) | `aiRoamPick` | `ai` (the `the road, and the roam` sub-banner) |
 | a bot the orca is after: off its ice by the nearest way, a beat late | rung 0b of `aiThink` (`orcaShore`, js/sim/orca.js) | `ai` |
 | an ally at your side: the escorts, the anchors that let it join your fight and your push | `aiEscorts`, `AI_ESCORT`/`AI_ESCORT_R`, `AI_ANCHOR_R`/`AI_ANCHOR_D` | `ai` › `difficulty` |
+| a bot's heals: the potion it drinks (rung 1), and hurt with nobody near, the ripe bush it walks into or the creek fish it rolls over from the dry bank (rung 5'); the potions it buys | `aiDrink`, `aiHealRung`, `aiFishRoll`, `AI_POTION_HP`/`AI_HEAL_HP`/`AI_HEAL_R`/`AI_HEAL_SAFE`/`AI_FISH_T`/`AI_FISH_REST`; the buy: `aiSpend` asking `botWantsPotion` (js/sim/items.js) | `ai` |

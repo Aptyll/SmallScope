@@ -75,12 +75,10 @@ cover for free, and there is no canvas readback anywhere in the feature.
 **The fish catch is three more DOWN frames** in every class set - `catch: [stoop, haul, hoist]` beside
 the four directions and `prone`, baked by `catchSet` from `catchStoop`/`catchHaul`/`catchHold` (the
 skater's `skCatch*` on her body plan) through the class palette plus `CATCHPAL_EXTRA`, the frost
-pike's own letters (outline, two blues, belly, eye, a flying drop) so the catch keeps its colour under
-either team's paint. `catchSun` is the same three frames over `CATCHPAL_SUN`, the gold sunfish, shown
-when `p.catchKind` is `sunfish`. The hoist is **16x20**: four rows of fish above the hat on the same feet, which is why
-`drawPlayer` draws a hand-drawn frame at `ay + (16 - spr.height)` and lifts the overhead stack 4 px while it
-is up. Look A off `docs/media/concepts/fish-catch-concepts-1.png`; which frame shows and for how long
-is `catchFrame` / `CATCH_T` in [js/sim/attack.js](../../js/sim/attack.js) - [fishing](world.md#ice-holes-and-fishing).
+pike's own letters, so the catch keeps its colour under either team's paint. Nothing fishes any
+more: the frames live on as the CATCH emote's (`EMOTES`, js/ui/screens.js). The hoist is
+**16x20**: four rows of fish above the hat on the same feet. Look A off
+`docs/media/concepts/fish-catch-concepts-1.png`.
 
 ## The run and the roll
 
@@ -124,7 +122,7 @@ near eye shows as it does on the hand-drawn side frame, and the pom trails behin
 **What each set holds.** `run` is eight frames, two steps: contact, down, pass and float off the
 right foot, then the left. The arms pump against the legs and the pom lags the bob by a frame.
 `hold` is the same legs with the arms at the sides, for a body whose hands are busy (`handsBusy`,
-js/draw/bodies.js: a drawn weapon, a swing, a meal, a cast, the shield up, the grapple's rope), so
+js/draw/bodies.js: a drawn weapon, a swing, a cast, the shield up, the grapple's rope), so
 nothing pumps under a drawn bow; it only dips onto each strike. `roll` is a crouch, a dive, the
 tucked ball turning over once in 30° steps from the dive's end to sitting curled again, a deep
 squat and a rise. The ball is a body of its own (`paint_ball`: the back of the coat is the ball,
@@ -384,28 +382,23 @@ alpha**. Two rules come out of that and both matter:
   the palette never had, which reads as blur against hard-edged art at a whole-number zoom.
   Nothing bakes at anything but its own cell size.
 
-**Two item icons are loops rather than stamps**, both off 16×16 strips and both shipped at the
-**8×8** every other item icon is, so what changed is the art and not the fit. The gold is
-resampled from `docs/media/new_media3/`; the **berry is drawn by hand**
-from `docs/media/new_media4/new-berries-spritesheet.png`, because a 2×2 average of its
-four-berry cluster is mud. It keeps the sheet's colours and its leaf timing (up, soft, mid, flat,
-flat, mid, mid, up), and its body holds still: the sheet's one-pixel dip would be half a pixel
-at 8×8. (The old finning ice-fish loop off `fish.png` went with the ice fish in 0.444: every fish
-icon now comes from app/bake-fish, below.)
+**The gold piece is a loop rather than a stamp**, off a 16×16 strip and shipped at the
+**8×8** every other bag icon is, so what changed is the art and not the fit. It is resampled
+from `docs/media/new_media3/`. (The berry loop went with the food pouch, and the old
+finning ice-fish loop off `fish.png` with the ice fish in 0.444.)
 
 | icon | source | frames | palette | the loop |
 | --- | --- | --- | --- | --- |
 | `itemGold` | `gold_nugget.png` | 8 | `NUGPAL` (14) | a shine crossing the face |
-| `itemBerry` | `new-berries-spritesheet.png` | 8 | `BERPAL` (8) | the two leaves flapping |
 
 They are exposed as **live canvases**, and that is the whole trick. `SPRITES.itemAnim[key]` holds
 the frames; `SPRITES[key]` is one canvas per icon that `stepItemIcons()` (js/draw/render.js) stamps the
-current frame into, once a frame, before anything draws. So `SPRITES[ITEMS[type].icon]` — how the
-pouch, a shop price, a sale row, a drop on the snow, a tooltip and the wiki all reach an item icon —
-stays **one generic read**, and no call site has to know which three goods move. Handing those
-reads a frame array instead would mean teaching every one of them about three special cases; the
-three are not special, they are icons that happen to move. One clock drives all of them
-(`ITEM_FR`, 100 ms), so every berry on the screen is on the same beat — a dozen icons each looping
+current frame into, once a frame, before anything draws. So `SPRITES[icon]` — how the
+purse, a shop price, a sale row, a tooltip and the wiki all reach an item icon —
+stays **one generic read**, and no call site has to know which goods move. Handing those
+reads a frame array instead would mean teaching every one of them about a special case; a moving
+icon is not special, it is an icon that happens to move. One clock drives all of them
+(`ITEM_FR`, 100 ms), so every coin on the screen is on the same beat — a dozen icons each looping
 to their own is a fruit machine, not a HUD — and a frame that has not changed is not redrawn.
 Each canvas starts on frame 0, so a panel that bakes an item icon into a still image at boot gets
 a picture rather than a hole.
@@ -537,15 +530,15 @@ Keys marked **(dead)** are still baked but read by nothing outside js/sprites/ a
 | `terrain.js` | trees, bush, the dead snags, the den, the hog hut | `tree`, `treeAtlas`, `stump`, `bush*`, `deadTree`, `den`, `hogHut` |
 | `beasts.js` | imp, rabbit, deer, wolf, the bird | `rabbit`, `wolf`, `bird`, `deer`, `imp` **(dead)** |
 | `bears.js` | none: generated by app/bake-bears/bake.py | `dire` (brown bear), `alpha` (black bear) |
-| `fish.js` | none: generated by app/bake-fish/paint.py | `creekFish[kind]` (`whitefish`/`snowChar`: `swim[heading][frame]`, 16 headings, 2 tail frames, rimmed in the water's shade; `icon` side-on), `iceFish[kind]` (`fish` the frost pike, `sunfish` the gold sunfish: `swim` and the cold `shadow` under the ice, same headings and frames; `icon`), `itemWhitefish`, `itemSnowChar`, `itemFrostPike`, `itemSunfish`; looks E/F, I/K and shadow N off `docs/media/concepts/winter-fish-concepts-2/3/4.png` |
+| `fish.js` | none: generated by app/bake-fish/paint.py | `creekFish[kind]` (`whitefish`/`snowChar`: `swim[heading][frame]`, 16 headings, 2 tail frames, rimmed in the water's shade; `icon` side-on), `iceFish[kind]` (`fish` the frost pike, `sunfish` the gold sunfish: `swim` and the cold `shadow` under the ice, same headings and frames; `icon`), `itemWhitefish`, `itemSnowChar`, `itemFrostPike`, `itemSunfish` (the icons and the snow char went unused when the pouch's fish did; the creek swims `whitefish` alone); looks E/F, I/K and shadow N off `docs/media/concepts/winter-fish-concepts-2/3/4.png` |
 | `orca.js` | none: generated by app/bake-orca/paint.py | `orca` (`breach`: `open`/`shut` side-on, head up and left, `openR`/`shutR` their mirrors, `jaw` the pixel between the jaws in the `bcell`; `shade(heading, step)`, 64 headings from east clockwise, 8 steps of the flukes' up-and-down beat, in `cell` squares, packed run-length and baked on first use); look D BOLD off `docs/media/concepts/orca-concepts-2.png` |
 | `cistern.js` | none: generated by app/bake-cistern/paint.py | `cistern` (`geo`, the ring's measures in tiles the sim reads; `flat`, the sills and every shadow, one canvas; `segs`, the standing stone cut into pieces two ground rows deep, each with its y-sort key `k`; `solid`, the footprint as on/off runs per ground row; all in px of a box `rb` round the crossing); a heightfield painted per world px in the 3/4 view, look H CUT BLOCKS off `docs/media/concepts/cistern-concepts-4.png` |
 | `snowdrops.js` | none: generated by app/bake-snowdrops/bake.js | `snowdrop[variant]` (`closed`/`open` at three leans, `picked`, `glow[lean][phase]`) |
 | `robot.js` | none: generated by app/bake-robot/bake.py | `robotSkin` (the IRON SCOUT skin, per team) |
 | `eagle.js` | none: only `BIRD_SKINS`, the skins' table | none |
 | `perch.js` | palettes, shapes, the bird, poses, painter, cache | `perch` (no grids: painted in code, below) |
-| `items.js` | items, gold nugget, gold sack, axe icon | `itemWood` **(dead)**, `itemAnim` + the live icons, `goldSack`, `itemAxe`/`itemBow` |
-| `buildings.js` | fish net, the barracks bay, soldiers, the merchant's stall, spikes, fire, torch | `teamBuild` (`spawner`, `net`, `stall`), `robotTeam`, `net`, `robot`, `spikes` **(dead)**, `fire`, `torch` **(dead)** |
+| `items.js` | items, gold nugget, gold sack, axe icon | `itemWood` **(dead)**, `itemPotion` (the health potion's 11×12 flask), `itemAnim` + the gold's live icon, `goldSack`, `itemAxe`/`itemBow` |
+| `buildings.js` | the barracks bay, soldiers, the merchant's stall, spikes, fire, torch | `teamBuild` (`spawner`, `stall`), `robotTeam`, `robot`, `spikes` **(dead)**, `fire`, `torch` **(dead)** |
 | `landmarks.js` | landmarks | `landmark` (`boat`) |
 | `icons.js` | gear icons (item icon art), heart, cursors | `gearIcons`, `heart*`, `cursor`, `cursorShadow` |
 

@@ -433,15 +433,6 @@ function streamTo(x0, y0, x1, y1, color, n, life) {
   }
 }
 
-// n = how much the pickup is worth. type is always an ITEMS key now (a berry,
-// a fish) - gold is paid on the spot through awardGold, never dropped.
-function spawnDrop(x, y, type, n) {
-  const a = rng() * Math.PI * 2;
-  const d = { x, y, vx: Math.cos(a) * rand(20, 45), vy: Math.sin(a) * rand(20, 45) - 30, z: 0, vz: rand(30, 60), type, n: n || 1, t: 0 };
-  drops.push(d);
-  return d;
-}
-
 // wallets are per player: every cost check and payment names whose it is
 function canAfford(cost, p) { const w = (p || player).inv; for (const k in cost) if ((w[k] || 0) < cost[k]) return false; return true; }
 function pay(cost, p) {
@@ -449,8 +440,8 @@ function pay(cost, p) {
   for (const k in cost) p.inv[k] -= cost[k];
   if (cost.gold > 0) p.goldSpent += cost.gold; // the post-game record (js/ui/lobby.js)
 }
-// A COUNT ON THE HUD, cut to four characters. Gold and the two meals have no
-// ceiling any more - a purse and a pouch both climb all match - so past a
+// A COUNT ON THE HUD, cut to four characters. Gold has no ceiling any more -
+// a purse climbs all match - so past a
 // thousand the number carries its MAGNITUDE instead of its digits: 999, then
 // 1.2K, 12K, 340K, 1.2M. What a HUD number is being read for is "about how
 // much", and a fifth digit only pushes its neighbour along the strip; the
@@ -474,100 +465,4 @@ function costText(cost) {
   return parts.join('  ');
 }
 
-// ---- food: a meal is a channel, not a keypress ---------------------------
-// Berries and fish answer the same question - "can I take this fight" - so
-// they share ONE clock: eating either puts both away for FOOD_CD. And the meal
-// itself takes time you have to survive, because a heal you can tap out from
-// under an arrow is a heal nobody gets to play around.
-//
-// Nothing is spent up front. The food leaves the bag and the cooldown starts
-// when the channel LANDS, exactly the way an ability's cooldown starts when
-// its cast does (js/sim/abilities.js), so a meal knocked out of your hands costs
-// the time and nothing else. `breakEat` is every way one is knocked out - a
-// hit, a stun, the ice - and every way one is DROPPED on purpose: the roll,
-// and the fire button, which cancels the meal and draws in the same frame so a
-// body chewing is never a body that cannot fight back (updatePlayer, sim.js).
-// The two keys that stay refused mid-meal are the E swing and an ability -
-// both spend a cooldown a stray press should not.
-const FOOD_CD = 3;       // shared by both meals: the clock belongs to the food, not the type
-const FOOD_EAT = 1.5;    // the channel, interruptible for its whole length
-const FOOD_SLOW = 0.5;   // eating walks you - the same drag a cast puts on the legs
-const FOOD_FX_T = 0.12;  // seconds between crumbs while chewing
-
-// Q / F and a click on a food cell all arrive here. Refused - the meal button
-// that was asked reddens and shakes and speaks the deny (foodDenied, ui.js,
-// the pack's and the weapon well's own refusal) - while the clock is up, the
-// body is busy, or there is nothing a meal could do.
-function startEat(p, type) {
-  if (p.dead || p.eatT > 0 || p.foodCd > 0 || p.hp >= p.maxHp ||
-    bagCount(p, type) <= 0 || p.stunT > 0 || p.fallT > 0 || p.dodgeT > 0 ||
-    p.castT > 0 || p.rushT > 0 || inAir(p)) {
-    if (p === player) foodDenied(type);
-    return;
-  }
-  p.eatT = FOOD_EAT;
-  p.eatType = type;
-  p.eatFxT = 0;
-  if (p.charging) { p.charging = false; p.chargeT = 0; } // the bow comes down for the meal
-  p.fireArmed = false;
-  sfxAt('eat', p.x, p.y);
-}
-
-// the two edge-triggered intents (the input struct, multiplayer.md) - still
-// two names because Q and F are two keys and two meals, even though one clock
-// now covers both
-function eatBerry(p) { startEat(p, 'berry'); }
-function eatFish(p) { startEat(p, fishToEat(p)); }
-// which fish the fish key eats: the picked kind, or with none picked the
-// first FISH_KINDS kind in the pouch (the smallest meal first). A pick you
-// hold none of is still the answer, so the press is refused rather than
-// eating the fish you were saving.
-function fishToEat(p) {
-  if (p.fishPick) return p.fishPick;
-  for (const k of FISH_KINDS) if (bagCount(p, k) > 0) return k;
-  return FISH_KINDS[0];
-}
-
-// The meal ticking, and the shared clock beside it. Called from updatePlayer
-// next to the ability clock, for every player alike.
-function updateEat(p, dt) {
-  if (p.foodCd > 0) p.foodCd = Math.max(0, p.foodCd - dt);
-  if (p.eatT <= 0) return;
-  p.eatT -= dt;
-  // crumbs at the mouth for the whole channel: a meal is a tell a rival can
-  // act on, and a buried body gives it away exactly as little as its bars do
-  p.eatFxT -= dt;
-  if (p.eatFxT <= 0) {
-    p.eatFxT = FOOD_FX_T;
-    particles.push({
-      x: p.x + rand(-3, 3), y: p.y - 5, vx: rand(-9, 9), vy: rand(-20, -8),
-      life: rand(0.3, 0.5), maxLife: 0.4, color: RES_COLORS[p.eatType],
-      size: 1, grav: 45, alpha: 1 - concealOf(p),
-    });
-  }
-  if (p.eatT > 0) return;
-  const type = p.eatType;
-  p.eatT = 0;
-  p.eatType = null;
-  if (bagCount(p, type) <= 0) return; // spilled out from under the meal
-  bagTake(p, type, 1);
-  p.foodCd = FOOD_CD;
-  const heal = Math.round(ITEMS[type].heal * kitOf(p).foodMul); // a kit's foodMul scales the meal
-  healPlayer(p, heal);
-  sfxAt('heal', p.x, p.y);
-  addFloater(p.x, p.y - 14, '+' + heal, '#8fe08a');
-  burst(p.x, p.y - 8, RES_COLORS[type], 6, 30, 0.4);
-}
-
-// The meal dropped, from every side that can drop one. Nothing is spent, so an
-// interruption costs the time and the tempo and nothing out of the bag.
-// Every way a meal is knocked out (a hit, a stun, the roll, the fire button,
-// the water, the cable) knocks the recall's channel out too (js/sim/recall.js).
-function breakEat(p) {
-  breakRecall(p);
-  if (p.eatT <= 0) return;
-  burst(p.x, p.y - 6, RES_COLORS[p.eatType] || '#f4f7ff', 4, 34, 0.35, true);
-  p.eatT = 0;
-  p.eatType = null;
-}
 

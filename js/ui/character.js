@@ -1,6 +1,5 @@
 'use strict';
-// The HUD's shared well tones and big well, overHud, the character panel (G)
-// and the meal clock.
+// The HUD's shared well tones and big well, overHud and the character panel (G).
 // ---- the HUD's wells --------------------------------------------------------
 // THE HUD'S BIG WELL (HUD_CELL): the strip's ability wells, their art doubled.
 // A filled well recesses BELOW the frame's ground (BAG_BG) and an empty one
@@ -151,28 +150,4 @@ function drawCharPanel(now) {
     ctx.fillRect(L.xr.x + 3 + k2, L.xr.y + 3 + k2, 1, 1);
     ctx.fillRect(L.xr.x + L.xr.w - 4 - k2, L.xr.y + 3 + k2, 1, 1);
   }
-}
-
-// The shared meal clock over one food well: the cooldown SWEEPING round it
-// behind the hand (drawSweepCover, the strip's one cooldown shape), or a white
-// lift while THIS meal is the one being chewed - the two states an ability
-// well already draws, said about food. (x, y, w, h) is the well's inner rect;
-// the meal buttons are the only surface left that draws it, but it stays a
-// function of the rect so anything that shows a meal wears the same clock.
-function drawFoodClock(x, y, w, h, type) {
-  const p = player;
-  if (p.eatT > 0 && p.eatType === type) {
-    ctx.globalAlpha = 0.32;
-    ctx.fillStyle = '#f4f7ff';
-    ctx.fillRect(x, y, w, h);
-    ctx.globalAlpha = 1;
-    return;
-  }
-  if (p.foodCd <= 0) return;
-  // the hand only where there is room for one: under about twelve pixels it
-  // is four long and lands ACROSS the icon, reading as a scratch on the fruit
-  // rather than a clock over it, so the smallest wells turn the bare veil -
-  // the same wedge sweeping the same way, minus the stroke that would own the
-  // icon
-  drawSweepCover(x, y, w, h, Math.min(1, p.foodCd / FOOD_CD), CD_SWEEP, w >= 12 ? CD_EDGE : null);
 }

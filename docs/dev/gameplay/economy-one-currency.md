@@ -6,10 +6,10 @@ dies — a soldier, a scout, a deer, a wolf, a bear — shared by the side stand
 clock, a pump and a sale are gold alone, so the road is where a scout levels; the lanes' soldiers
 and the dens are where it gets rich, and the woods are pocket money.
 
-Every player owns a wallet **and** a pouch. `p.inv` is `{ gold }` — currency only, no ceiling —
-while the food you carry lives in `p.food` ([The pouch](the-pouch.md)). (`inv` is an alias for
-the local player's wallet.) **Gold is the only currency**; berries and fish are consumables
-([Food](food-the-meal-is-a-channel.md)), never spent on anything. The whole economy is the
+Every player owns a wallet. `p.inv` is `{ gold }` — currency only, no ceiling — and the six
+item slots beside it are the build. (`inv` is an alias for the local player's wallet.) **Gold is
+the only currency**; the heals in the world (creek fish, berry bushes) are taken where they stand
+and never carried ([Heals](heals.md)). The whole economy is the
 `YIELD` table in the constants banner of [js/sim/core.js](../../../js/sim/core.js) - the one tuning table
 with no single owner - which gives every source a different **yield profile**
 rather than a different resource (the League model: one number, many ways to earn it):
@@ -27,7 +27,7 @@ rather than a different resource (the League model: one number, many ways to ear
 | brown bear | `dire` 6 coins × 15 → 90 | RED's river camp's one; `EPIC_TEAM_GOLD` (40) to every teammate besides, and the BROWN BUFF for the whole team |
 | bird | `bird` 2 coins × 4 → 8 | dormant: nothing spawns one |
 | gold pump (`generator`) | `tiers[0].pay` (3) every `period` (10 s) to every hero of the side holding it — 18 a minute each | one of the map's two neutral objectives, taken by standing in its ring ([The gold pumps](buildings.md#the-gold-pumps)); both held is 36 a minute each, a little over twice the trickle |
-| a sale at [the counter](the-merchants-counter.md) | half an item's price, or the fixed price for fish and berries | the one payout that does not count as earned (`tradeGold`) — a trade is an exchange, not a source, and the counter buys food at the price it sells it |
+| a sale at [the counter](the-merchants-counter.md) | half an item's price (a potion one at a time) | the one payout that does not count as earned (`tradeGold`) — a trade is an exchange, not a source |
 
 The table is sized so that soldiers stay the better farm: a lane's last hits pay 96 a minute at
 the start (3 soldiers a wave every 30 s at 16 each) and grow with the wave and the bounty, while
@@ -47,12 +47,7 @@ building (half its cost, `wreckPay`), the killer of a player and the assists
 one payout to many is a held gold pump: each `pay` tick goes through `gainGold` to every hero on
 the holding side, with one +3 over the barrel and a coin cue for each.
 
-Physical drops exist for everything **carried**, which is food: `spawnDrop(x, y, type, n)`
-(js/sim/core.js) lays one, `d.n` its count (default 1). A berried bush pays two `berry` drops and
-a wrecked [fish net](../world.md#fish-nets) spills `fish` and `sunfish`; a caught fish goes
-straight into the pouch (`autoFish`). Gold, berries and fish all read on the **hud strip's right
-end** (bottom centre), on screen all match, and death touches none of them (see
-[Death and respawn](death-and-respawn.md)). Drops are neutral: after 0.35 s they drift toward the
-nearest player inside 28 px, and everyone standing on one contests it (`contest`); the winner
-takes the whole drop through `bagAdd`, floating the number in `RES_COLORS[type]`. The pouch has
-no ceiling, so a drop is never refused and never left half taken.
+Nothing lies on the ground to be picked up: every payout lands in the wallet on the spot, and
+the only things a player carries are gold and the six item slots. Gold reads on the **hud strip's
+right end** (bottom centre), on screen all match, and death touches none of it (see
+[Death and respawn](death-and-respawn.md)).

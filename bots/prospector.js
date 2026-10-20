@@ -1,5 +1,5 @@
 // PROSPECTOR: the farmer. Spends the early match getting rich: loot on the
-// ground first, then berry bushes, rabbits and deer, and pines
+// ground first, then rabbits and deer, and pines
 // when nothing better is near. Every coin goes on items and every point on
 // the class keys. It only defends when its own bird is struck. At nine
 // minutes (or from five, once a seat holds four items) it calls the push, and the
@@ -48,8 +48,7 @@ defineBot({
       return act;
     }
 
-    if (me.hp < me.maxHp * 0.6 && me.food.berry > 0) { act.eatBerry = true; act.think = { goal: 'EAT', why: 'LOW HP' }; return act; }
-    if (me.hp < me.maxHp * 0.6 && me.food.fish > 0) { act.eatFish = true; act.think = { goal: 'EAT', why: 'LOW HP' }; return act; }
+    drink(me, act, 0.6);
     buyItem(obs.shop, me, act, 0);
 
     if (this.push && bird) {
@@ -58,13 +57,7 @@ defineBot({
       return act;
     }
 
-    // loot on the ground near, then the best node
-    const drop = obs.drops.filter((d) => dist(d) < 200).sort((a, b) => dist(a) - dist(b))[0];
-    if (drop) {
-      act.goTo = { x: drop.x, y: drop.y };
-      act.think = { goal: 'LOOT', why: drop.type, plan: 'FARM', target: { kind: 'drop', id: drop.id, x: drop.x, y: drop.y } };
-      return act;
-    }
+    // game near, then the best node
     const game = obs.animals.filter((a) => (a.kind === 'rabbit' || a.kind === 'deer') && dist(a) < 220).sort((a, b) => dist(a) - dist(b))[0];
     if (game) {
       fight(this, me, game, act);
@@ -73,7 +66,7 @@ defineBot({
     }
     // the side spreads out: each seat farms its own patch on its half
     const half = { x: home.x + (1856 - home.x) * ((me.id >> 1) % 5) / 6, y: home.y + (1856 - home.y) * ((me.id >> 1) % 5) / 6 };
-    const n = pickNode(this, obs, half, 700, ['bush', 'tree']);
+    const n = pickNode(this, obs, half, 700, ['tree']);
     if (n) {
       work(me, n, act);
       act.think = { goal: 'GATHER', why: n.kind.toUpperCase(), plan: 'FARM', target: { kind: 'object', x: n.x, y: n.y } };
@@ -164,7 +157,19 @@ function work(me, n, act) {
 // gold to spare at a counter: the dearest item the purse covers, keeping
 // `keep` back (the obs lists the shop only while me.atShop)
 function buyItem(shop, me, act, keep) {
-  if (act.cmd || !shop || !me.items.includes(null)) return;
-  const can = shop.filter((s) => s.price <= me.gold - keep).sort((a, b) => b.price - a.price);
+  if (act.cmd || !shop) return;
+  // one potion on hand first (it stacks in its own slot), then the dearest item the purse covers
+  const pot = shop.find((s) => s.id === 'potion');
+  if (pot && me.potions < 1 && me.items.filter((x) => x === null).length > 1 && pot.price <= me.gold - keep) {
+    act.cmd = { kind: 'shop', act: 'item', id: 'potion' };
+    return;
+  }
+  if (!me.items.includes(null)) return;
+  const can = shop.filter((s) => !s.stack && s.price <= me.gold - keep).sort((a, b) => b.price - a.price);
   if (can.length) act.cmd = { kind: 'shop', act: 'item', id: can[0].id };
+}
+// hurt: drink a potion if one is on hand and none is running (it never stops the hands)
+function drink(me, act, share) {
+  const s = me.items.indexOf('potion');
+  if (s >= 0 && me.potionT <= 0 && me.hp < me.maxHp * share) act.useItem = s;
 }

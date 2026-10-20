@@ -50,8 +50,8 @@ cooldown at the held rank under COOLDOWN SPEED, which every cooldown-setting sit
 the row's `cd` (the cast landing, and the shield's comes-down reset). `p.abLv` resets with the match (every boot builds fresh `Player`s). The wells carry the progress — fat
 buy pips along the top edge, **one seat per rank the key can hold**, so an empty row
 is a locked ability — and a locked well stands dim (dark rim, the icon at `LOCK_DIM`, a grey key
-digit), exactly as a meal button with nothing behind it does; a press on one reddens and shakes
-it (`abDenied`, the twin of `foodDenied`). The ASK floats clear of the wells: while a
+digit), as an empty item slot does; a press on one reddens and shakes
+it (`abDenied`, the twin of `itemDenied`). The ASK floats clear of the wells: while a
 point is unspent each un-maxed key grows a bobbing gold plus plate in the open screen above its
 well (`abBuyRect`/`abBuyHit`/`drawAbBuyPlate`, UI › `hud strip`). The plate press buys — and so does **the key itself while a point is unspent**: the sim
 consumes `p.input.ability` as a buy whenever `abLvCanBuy(p, i)` holds and as a cast otherwise

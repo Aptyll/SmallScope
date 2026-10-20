@@ -3,7 +3,7 @@
 //   - think(obs) is called 10 times a second for YOUR seat only, with what your
 //     player could see. Return an act: the keys you are holding, plus a thought.
 //   - Held keys (move, goTo, aim, fire, work, slide) stay held until your next act.
-//     One-shot keys (dodge, ability, eatBerry, cmd...) fire once.
+//     One-shot keys (dodge, ability, useItem, cmd...) fire once.
 //   - `this` is your bot object, so keep memory on it (this.drawT below).
 defineBot({
   name: 'STARTER',
@@ -37,10 +37,15 @@ defineBot({
       if (d < fd) { fd = d; foe = f; }
     }
 
-    // hurt, nobody close, a berry in the pouch: eat (a hit knocks the meal away)
-    if (me.hp < me.maxHp * 0.5 && me.food.berry > 0 && fd > 120) {
-      act.eatBerry = true;
-      act.think = { goal: 'EAT', why: 'LOW HP' };
+    // hurt: drink a potion (useItem is the slot's key; it heals over time and
+    // never stops the hands), and with nobody close walk into a ripe berry
+    // bush (obs.nodes lists only ripe ones; touching one heals at once)
+    const pot = me.items.indexOf('potion');
+    if (me.hp < me.maxHp * 0.5 && pot >= 0 && me.potionT <= 0) act.useItem = pot;
+    const bush = obs.nodes.find((n) => n.kind === 'bush');
+    if (me.hp < me.maxHp * 0.5 && bush && fd > 160) {
+      act.goTo = { x: bush.tx * 16 + 8, y: bush.ty * 16 + 4 };
+      act.think = { goal: 'HEAL', why: 'LOW HP' };
       return act;
     }
 

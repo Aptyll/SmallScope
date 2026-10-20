@@ -33,7 +33,7 @@ const NOTE_SLIDE = 30;   // px it travels, in and out
 const NOTE_W = 78, NOTE_H = 22;
 const NOTE_AIR = 4;      // the air between two plates in the lane
 const NOTE_GAP = 18;     // below the disc's clock, which ends 14px under it
-const notices = [];      // {kind, txt, good, t}; ageNotices runs the clock
+const notices = [];      // {kind, txt, t}; ageNotices runs the clock
 // A PLATE IS ITS KIND'S SIZE. Every kind but one is the 78x22 card; the STATS kind is the same card grown to seat
 // a ledger, and nothing in the lane is special-cased for it - the stack sums
 // the heights it finds. Ask the table, never the kind's name.
@@ -77,7 +77,7 @@ const NOTE_TAILS = {
 // prices a pick from and the character panel spells a body out with, so the
 // three can never disagree about what a stat is, how it prints, or which way
 // is up. It is the seven hero stats and nothing else, so a bonus to anything
-// outside them (ice, dodge, stealth, food, hunts, fells, killHeal, ambushMul,
+// outside them (ice, dodge, stealth, hunts, fells, killHeal, ambushMul,
 // an item's passive) lights nothing.
 const STAT_PAD = 4;      // the plate's margin inside its frame
 const STAT_TOP = 4;      // ...and above the first row
@@ -98,7 +98,7 @@ const statLit = [];     // per row: { d, t } - the delta and the seconds of hold
 // of the lane, shoving whatever stood there down, and re-runs its own pulse
 function raiseStatNote() {
   for (let i = notices.length - 1; i >= 0; i--) if (notices[i].kind === 'stats') notices.splice(i, 1);
-  notices.push({ kind: 'stats', txt: '', good: null, t: 0 });
+  notices.push({ kind: 'stats', txt: '', t: 0 });
   while (notices.length > NOTE_MAX * 2) notices.shift();
 }
 // Watching the kit beats hooking the writers: levelUp and buyItem
@@ -226,11 +226,9 @@ const NOTE_MARKS = {
   ],
 };
 
-// raise one. `good` is a GOODS/ITEMS key whose icon rides beside the text, or
-// null for a notice about the counter itself - or about something that is not
-// the counter at all.
-function raiseNotice(kind, txt, good) {
-  notices.push({ kind, txt: String(txt).toUpperCase(), good, t: 0 });
+// raise one: a kind (NOTE_KIND) and its headline
+function raiseNotice(kind, txt) {
+  notices.push({ kind, txt: String(txt).toUpperCase(), t: 0 });
   while (notices.length > NOTE_MAX * 2) notices.shift();
 }
 
@@ -352,21 +350,15 @@ function noteBody(x, y, e, K, a) {
   // your side's colour, with the rim pass so it reads on the wash
   stampGrid(NOTE_MARKS[K.glyph], { '.': null, h: TEAMS[skin(player.team)].mark },
     x + 2, y + 6, 1, '#0b1024');
-  // What it is about, centred in the well between the mark and the tail: an
-  // item's own icon (when `good` names one) and the number, sized TOGETHER -
-  // the icon is drawn at the text's own scale, so the pair reads as one
-  // number with a face on it, and both drop to 1x together if a headline is
-  // too long for 2x. A kind with no tail runs the well out to the frame.
+  // What it is about, centred in the well between the mark and the tail, at
+  // 2x, dropping to 1x if a headline is too long for 2x. A kind with no tail
+  // runs the well out to the frame.
   const tail = NOTE_TAILS[K.tail];
   const cx0 = x + 20, cw = NOTE_W - 22 - (tail ? 8 : 0);
-  const im = e.good && ITEMS[e.good] && SPRITES[ITEMS[e.good].icon];
   const sh = 'rgba(4,6,18,0.9)'; // the plate is opaque and it fades: shadow font, not outline
-  const runW = (sc) => (im ? im.width * sc + 3 : 0) + pixelTextWidth(e.txt, sc);
-  const ts = runW(2) <= cw ? 2 : 1;
-  const bx = cx0 + Math.max(0, (cw - runW(ts)) >> 1);
-  if (im) ctx.drawImage(im, bx, y + ((NOTE_H - im.height * ts) >> 1), im.width * ts, im.height * ts);
-  drawPixelTextShadow(ctx, e.txt, bx + (im ? im.width * ts + 3 : 0),
-    y + ((NOTE_H - ts * 5) >> 1), K.fg, sh, ts);
+  const ts = pixelTextWidth(e.txt, 2) <= cw ? 2 : 1;
+  const bx = cx0 + Math.max(0, (cw - pixelTextWidth(e.txt, ts)) >> 1);
+  drawPixelTextShadow(ctx, e.txt, bx, y + ((NOTE_H - ts * 5) >> 1), K.fg, sh, ts);
   if (tail) stampGrid(tail, K.tp, x + NOTE_W - 10, y + 7, 1);
 }
 

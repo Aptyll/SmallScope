@@ -78,7 +78,7 @@ said. State on the body: `p.zip` (the line's index in `zips`, −1 for none), `p
 `p.zipDir`, `p.lastMx/lastMy` — declared in `reset()` beside the grapple's, so a respawn never
 comes back clipped on; `die` lets go too.
 
-**The cable under the pointer.** `hoverZip()` (actions.js, beside `hoverFish`) is either
+**The cable under the pointer.** `hoverZip()` (actions.js) is either
 side's cable under the pointer as drawn (`zipUnder`, js/sim/zipline.js — within `ZIP_HOVER` of the
 strand, never the invisible track under it), while the body is on the ground with nothing open
 over it. While it holds, `drawZips` lights the whole line in the work-target rim's two golds on
@@ -106,9 +106,9 @@ rides the way you were walking before the press. While it runs, the cable stays 
 line stays, pointer or no pointer (`zipLitLine`, js/draw/zipline.js).
 
 **Hands on the handle.** `p.zip >= 0` joins the inline gates of `tryWork`, `autoWork`,
-`tryAbility`, the bow draw (updatePlayer), `autoFish` and `tryProne`; `zipStart` itself refuses
+`tryAbility`, the bow draw (updatePlayer) and `tryProne`; `zipStart` itself refuses
 a stunned, floundering, rolling, rushing, casting or shielded body and ends a grapple, a draw, a
-meal, a catch and a slide. A meal is the one thing a rider may still use. `tryDodge`
+recall and a slide. A potion is the one thing a rider may still use. `tryDodge`
 rolls off the cable the way it rolls off the rope (`zipEnd` first, then the dash). **A rider is
 still a body to every weapon** — arrows, the roll's sweep, a tower, a wolf, `seenAt` — and plain
 damage never dismounts (its knockback decays unspent, since the ride branch never applies

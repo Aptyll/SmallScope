@@ -1,6 +1,6 @@
 // KEEPER: stays home. Chops the woods by its own bird for gold, spends it on
 // items at its counter, and turns on anything that comes for the bird. Shows work (E), an
-// order (`cmd`) and reading your own bird's `hitT`.
+// order (`cmd`), a heal from a berry bush and reading your own bird's `hitT`.
 defineBot({
   name: 'KEEPER',
   author: 'Softfall',
@@ -13,7 +13,7 @@ defineBot({
     if (me.dead || me.aboard) return { think: { goal: 'IDLE', why: 'DOWN' } };
     const act = {};
     if (me.skillPts > 0) act.ability = me.abilities.reduce((b, a) => (a.lv < b.lv ? a : b)).key;
-    else if (obs.shop && me.items.includes(null)) { const can = obs.shop.filter((s) => s.price <= me.gold).sort((a, b) => b.price - a.price); if (can.length) act.cmd = { kind: 'shop', act: 'item', id: can[0].id }; }
+    else if (obs.shop && me.items.includes(null)) { const can = obs.shop.filter((s) => !s.stack && s.price <= me.gold).sort((a, b) => b.price - a.price); if (can.length) act.cmd = { kind: 'shop', act: 'item', id: can[0].id }; }
 
     const own = obs.eagles.find((e) => e.team === me.team && e.state === 'down');
     const home = own || { x: me.x, y: me.y };
@@ -33,8 +33,12 @@ defineBot({
     }
     this.drawT = 0;
 
-    // hurt: eat
-    if (me.hp < me.maxHp * 0.6 && me.food.berry > 0) { act.eatBerry = true; act.think = { goal: 'EAT', why: 'LOW HP' }; return act; }
+    // hurt: walk into the nearest ripe bush near home (obs.nodes lists only ripe ones); it heals on touch
+    if (me.hp < me.maxHp * 0.6) {
+      const b = obs.nodes.filter((n) => n.kind === 'bush').map((n) => ({ x: n.tx * 16 + 8, y: n.ty * 16 + 4 }))
+        .filter((q) => Math.hypot(q.x - home.x, q.y - home.y) < 300).sort((a, c) => dist(a) - dist(c))[0];
+      if (b) { act.goTo = { x: b.x, y: b.y }; act.think = { goal: 'HEAL', why: 'LOW HP', target: { kind: 'point', x: b.x, y: b.y } }; return act; }
+    }
 
     // work the nearest tree within 250 of home; a tree it found no way to is
     // skipped from then on (me.nav says 'fail' when the last goTo had no route)

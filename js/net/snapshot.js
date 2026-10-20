@@ -40,7 +40,7 @@ const SNAP_SKIP = new Set(['input', 'ai', 'nav', '_fx', '_fy', '_tx', '_ty', '_t
   // pass reads: a client neither steps nor shows these, and each is a few
   // bytes per body per snapshot. The echo harness runs WITHOUT them, so
   // adding a name here is proven harmless or caught as pixels
-  'faceT', 'trickleT', 'footT', 'footSide', 'puffT', 'dodgeDustT', 'slideDustT', 'eatFxT', 'burnTick', 'fishCd', 'catchT', 'swingCd',
+  'faceT', 'trickleT', 'footT', 'footSide', 'puffT', 'dodgeDustT', 'slideDustT', 'burnTick', 'swingCd',
   'idleT', 'wary', 'thinkT', 'moveT', 'turnT', 'emT', 'spook', 'biteCd', 'alertT', 'dashT', 'dashX', 'dashY', 'fleeT', 'fleeGoal', 'goal',
   'avoidT', 'baySite', 'zipLast', 'pingLog',
   'hurtLog']); // the blows a body is taking (recapNote): only a death's copy, deathLog, is ever drawn
@@ -49,7 +49,7 @@ const SNAP_SKIP = new Set(['input', 'ai', 'nav', '_fx', '_fy', '_tx', '_ty', '_t
 const SNAP_STATE = ['time', 'elapsed', 'day', 'tick', 'darkness', 'wind', 'windDir', 'windT', 'fishT', 'creekGone', 'over', 'end', 'eagleCine', 'story', 'votes', 'voteCd', 'surrendered'];
 const SNAP_DEPTH = 8; // how deep pack() follows plain objects before giving up (a cycle guard)
 // the moving kinds, their arrays and their token letters
-const SNAP_KINDS = { R: () => robots, A: () => animals, W: () => arrows, D: () => drops, F: () => fish };
+const SNAP_KINDS = { R: () => robots, A: () => animals, W: () => arrows, F: () => fish };
 
 // ---- network ids ----------------------------------------------------------
 // A stable id per moving entity for its life, so a delta can name it and a
@@ -58,7 +58,7 @@ const SNAP_KINDS = { R: () => robots, A: () => animals, W: () => arrows, D: () =
 // TOLD the id with each entity and registers it (snapNidSet), so its maps
 // answer the same tokens the host wrote.
 const snapNids = new WeakMap(); // entity -> nid
-const snapMaps = { R: new Map(), A: new Map(), W: new Map(), D: new Map(), F: new Map() }; // kind -> nid -> entity
+const snapMaps = { R: new Map(), A: new Map(), W: new Map(), F: new Map() }; // kind -> nid -> entity
 let snapNidNext = 16;
 function snapNid(e) { let n = snapNids.get(e); if (n === undefined) { n = snapNidNext++; snapNids.set(e, n); } return n; }
 function snapNidSet(e, n) { snapNids.set(e, n); if (n >= snapNidNext) snapNidNext = n + 1; }
@@ -230,9 +230,9 @@ function snapApplySingles(s) {
 }
 // a field onto an entity the game holds by identity: a nested plain object
 // is merged into the one already there (a player's `inv` is aliased by the
-// HUD, its `food`, `kit` and `look` are read through the body), the
+// HUD, its `kit` and `look` are read through the body), the
 // rest is set
-const SNAP_MERGE = new Set(['inv', 'food', 'kit', 'spawn', 'look']); // the only fields merged in place: plain data the game holds by handle
+const SNAP_MERGE = new Set(['inv', 'kit', 'spawn', 'look']); // the only fields merged in place: plain data the game holds by handle
 function snapAssign(e, k, v) {
   const old = e[k];
   // never a token (it names another entity; merging its two keys into the
@@ -335,7 +335,7 @@ function snapApply(s) {
 // reliable channel the ack simply trails the send by a round trip and the
 // delta is a few fields fatter for it. A primitive field compares by value
 // - a quantized one (SNAP_QUANT, the `encode` banner) by the value the
-// client will hold - a nested one (the pouch, a route's points) by its JSON. A
+// client will hold - a nested one (the wallet, a route's points) by its JSON. A
 // tile goes field by field against what it was at the
 // base: each ring entry keeps the before-form of every tile it changed, so
 // any base in the ring can be reconstructed tile by tile without a shadow
@@ -609,7 +609,7 @@ function snapApplyDelta(d) {
 // (fogShown and inSight answer no for a body with `fogHid`). A field the
 // rail or the scoreboard starts reading about rivals joins SNAP_FOG_KEEP,
 // or it shows the last-seen value while the rival is in the fog. Everything
-// not in SNAP_FOG_KINDS (the tiles, the drops, the fish, the eagles, the
+// not in SNAP_FOG_KINDS (the tiles, the fish, the eagles, the
 // clock) goes to both sides alike.
 //   The ring keeps each tick's hidden ids per side (snapFogHid); a cut from a
 // base for one side reads that side's sight at every entry after it, the

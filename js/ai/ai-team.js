@@ -88,7 +88,7 @@ const AI_ROLES = {
   slayer:   { name: 'SLAYER' },   // one of the party the side sends to its bear
   jungler:  { name: 'JUNGLER' },  // walks its side's wolf dens on their clocks (js/ai/ai-farm.js)
   laner:    { name: 'LANER' },    // last-hits the rival wave behind its own (js/ai/ai-farm.js)
-  gatherer: { name: 'GATHERER' }, // the ladder as it always was: hunt, loot, harvest
+  gatherer: { name: 'GATHERER' }, // the ladder as it always was: hunt, harvest
 };
 const AI_PLAN_T = 2;        // s between a side's re-plans
 const AI_SCOUT_AT = 45;     // s into the match the side sends its scout out

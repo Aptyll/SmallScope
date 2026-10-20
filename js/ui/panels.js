@@ -700,19 +700,19 @@ const KEY_ROWS = {
   wasd: [
     [{ acts: ['up', 'left', 'down', 'right'], verb: 'MOVE' }, { acts: ['ab1', 'ab2', 'ab3', 'ab4'], verb: 'ABILITIES' },
       ['CLICK', 'FIRE'], 'dodge', 'slide', 'work', ['RMB', 'PING']],
-    ['berry', 'fish', 'recall', 'char'],
+    [{ acts: ['item1', 'item2', 'item3'], verb: 'ITEMS' }, { acts: ['item4', 'item5', 'item6'], verb: 'ITEMS' }, 'recall', 'char'],
     ['map', 'board', 'mute', 'pause', ['ESC', 'SETTINGS'], ['SCROLL', 'ZOOM'], ['F3', 'INFO'], ['.', 'HITBOX']],
   ],
   click: [
     [['RMB', 'MOVE / ACT'], ['HOLD RMB', 'FOLLOW'], { acts: ['ab1', 'ab2', 'ab3', 'ab4'], verb: 'ABILITIES' },
       ['CLICK', 'FIRE'], 'amove', 'stop', 'dodge', 'slide'],
-    ['berry', 'fish', 'ping', 'char', 'recall'],
+    [{ acts: ['item1', 'item2', 'item3'], verb: 'ITEMS' }, { acts: ['item4', 'item5', 'item6'], verb: 'ITEMS' }, 'ping', 'char', 'recall'],
     [ 'map', 'board', 'mute', 'pause', ['ESC', 'SETTINGS'], ['SCROLL', 'ZOOM'], ['F3', 'INFO']],
   ],
   mouse: [
     [['RMB', 'MOVE / ACT'], ['HOLD RMB', 'FOLLOW'], ['CLICK', 'FIRE'], ['HOLD MMB', 'ACTION WHEEL'],
       'dodge', 'slide', { acts: ['ab1', 'ab2', 'ab3', 'ab4'], verb: 'ABILITIES' }, 'amove'],
-    ['stop', 'berry', 'fish', 'ping', 'char', 'recall'],
+    ['stop', { acts: ['item1', 'item2', 'item3'], verb: 'ITEMS' }, { acts: ['item4', 'item5', 'item6'], verb: 'ITEMS' }, 'ping', 'char', 'recall'],
     ['map', 'board', 'mute', 'pause', ['ESC', 'SETTINGS'], ['SCROLL', 'ZOOM'], ['F3', 'INFO']],
   ],
 };

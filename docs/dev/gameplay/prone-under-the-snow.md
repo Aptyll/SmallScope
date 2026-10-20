@@ -65,8 +65,7 @@ that made it — and it is the counterplay: a line like that leads straight to t
 items) plus what SNOW COVER's rank adds (`ambushRank`: its `rank` `ambush`, ×2.5/3/3.5,
 over the base), tags the arrow `ambush: true`, and calls
 `risePlayer` after the loose — one ambush per burrow, then you are a player lying in the open with
-a bow that still has to be renocked. A level-1 HUNTER's full draw (DAMAGE 16) goes 16 → 40. A fish taken off the ice (`autoFish`) is not a shot: it never touches the attack and breaks
-no cover.
+a bow that still has to be renocked. A level-1 HUNTER's full draw (DAMAGE 16) goes 16 → 40.
 
 Wherever the tagged arrow lands — player, soldier or animal — `ambushFx()` puts a gold flare
 over the ordinary hit puff and plays `SFX.ambush()`; `damagePlayer`'s `crit` argument doubles the

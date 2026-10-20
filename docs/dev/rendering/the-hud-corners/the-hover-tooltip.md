@@ -25,7 +25,7 @@ does, so what the panel describes and what a click would do can never be two dif
 In `play`, in order: the merchant's counter (`shopHit` → `tipShop`, first), the build list's rows (`buildListHit`), the character panel's item slots (`charItemHit`, answering `tipItem`), a rail chip
 (`railHit`), a
 floating buy plate (`abBuyHit`), the strip (`stripHit`: an ability well, an item slot answering
-`tipItem`, a meal well, the purse, and the portrait answering `tipAttack`). In `title` it answers the wiki's rows and
+`tipItem`, the purse, and the portrait answering `tipAttack`). In `title` it answers the wiki's rows and
 ability cards and the lobby's stage wells; every other mode returns null.
 
 `tipResolve()` runs **once per frame in `render()`, before `renderUI`**, so every draw in the
@@ -40,7 +40,7 @@ short tooltip is a short panel.
 
 The builders, one per kind: `tipAttack` (the hero's basic attack: its full-draw damage, the
 full draw, the renock and the reach, read off the sim's own functions),
-`tipStack` (a meal), `tipGold`, `tipRail` (a rail
+`tipGold`, `tipRail` (a rail
 chip), `tipShop` (the counter's wells, js/ui/shop.js), `tipClassAb` (a strip
 ability well in play, or the lobby's stage wells with `cls` passed: kept to a mid-fight glance.
 The short card is the name with its cooldown under it, the number its rank raises (each key of

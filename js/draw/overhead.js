@@ -71,7 +71,7 @@ function paintArrowPx(px) {
 //   stamina - WHITE for every side (the one bar with no side to it).
 //   the draw meter - GOLD filling, PALE GOLD the instant it peaks (a single
 //             white blink, DRAW_FULL_FLASH, marks the moment), slate while
-//             the renock runs, heal green for a meal. Never orange: orange
+//             the renock runs. Never orange: orange
 //             beside a red rival bar was two warm bars, and it is fire's.
 // The cursor's bow ring, the aim line and the mouse icon speak the same
 // gold / pale gold (render.js, ui.js), so "full draw" is one colour everywhere.
@@ -82,7 +82,7 @@ const BAR_FRAME = '#0f1632', BAR_TRACK = '#3a3448';
 const BAR_NEUTRAL = '#f2cc6a';
 const STAM_COL = '#f4f7ff', STAM_GHOST = '#9aa4c0'; // the fill, and the dimmer chunk just spent draining into place
 const DRAW_COL = '#ffd95c', DRAW_FULL_COL = '#fff3c4', DRAW_FULL_FLASH = 0.12; // s of white the peak blinks for
-const NOCK_COL = '#6f7ca8', EAT_COL = '#8fe08a'; // reloading; eating (the heal colour the floater lands in)
+const NOCK_COL = '#6f7ca8'; // reloading
 const THREAT_COL = '#ff6a6a'; // a wolf's threat bar: the red it already wears on the debug overlay
 function barCol(team) { return team === undefined || team === null ? BAR_NEUTRAL : TEAMS[skin(team)].mark; }
 

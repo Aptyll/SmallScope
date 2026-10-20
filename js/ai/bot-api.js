@@ -17,7 +17,7 @@
 // realm of its own, sealed (BOT_SEAL): no game globals, no way out.
 // A bot can never do what a hand cannot: the act IS the input struct, the sim
 // re-validates every order, and the hands are the ladder's (skillHands).
-const BOT_API = 3;          // the message shape's version; a rename bumps it
+const BOT_API = 4;          // the message shape's version; a rename bumps it (4: food -> potions, eatBerry/eatFish -> useItem)
 const BOT_THINK = 6;        // ticks between thinks: 10 a second at TICK_DT
 const BOT_OBS_R = 24 * TILE; // px: how far round its side a bot sees (the minimap's default reach, MM_R tiles)
 const BOT_SAY_MAX = 256;    // bytes of JSON a `say` may carry to the side
@@ -55,7 +55,7 @@ function botIdOf(o) {
 }
 // the refs of things gone from the world, let go of now and then
 function botIdPrune() {
-  const live = new Set([...robots, ...animals, ...structures, ...drops]);
+  const live = new Set([...robots, ...animals, ...structures]);
   for (const [id, o] of botRefs) if (!live.has(o)) botRefs.delete(id);
 }
 
@@ -91,11 +91,11 @@ function botObserve(p) {
     prone: !!p.prone, hide: botR(p.hide || 0), aboard: !!p.aboard, falling: p.dropT > 0, zip: p.zip,
     abilities: p.abLv.map((lv, i) => botAbility(p, i, lv)),
     attack: attackOf(p).cut ? 'cut' : 'shot', // the basic attack: a blade's wedge or a bow's shot (js/sim/attack.js)
-    food: Object.assign({}, p.food),
     charging: !!p.charging, chargeT: botR(p.chargeT),
     nav: botRt.get(p.id) ? botRt.get(p.id).nav : null,
     lastCmd: p.lastCmd ? Object.assign({}, p.lastCmd) : null,
     items: p.items.slice(), // ITEM_SLOTS slots, an item id or null each (js/sim/items.js)
+    potions: p.potions || 0, potionT: botR(p.potT || 0), // potions in the 'potion' slot, and s left of the one being drunk
     atShop: !!merchNear(p),
     orca: botR(orcaLine(p)), // the line over the head (js/sim/orca.js): s left, -1 when it is not after you
   };
@@ -143,8 +143,6 @@ function botObserve(p) {
   nodes.sort((a, b) => a.d - b.d);
   nodes.length = Math.min(nodes.length, BOT_NODES_N);
   for (const n of nodes) delete n.d;
-  const dropsSeen = [];
-  for (const d of drops) if (near(d.x, d.y)) dropsSeen.push({ id: botIdOf(d), type: d.type, n: d.n, x: botR(d.x), y: botR(d.y) });
   const shots = [];
   for (const a of arrows) if (near(a.x, a.y)) shots.push({ x: botR(a.x), y: botR(a.y), vx: botR(a.vx), vy: botR(a.vy), team: a.team });
   // your side's pings up now (js/sim/pings.js): who, which, where, s left
@@ -162,7 +160,7 @@ function botObserve(p) {
   let shop = null;
   if (me.atShop) {
     shop = [];
-    for (const id in BUILD_ITEMS) shop.push({ id, part: isPart(id), price: itemCost(p, id).gold, from: (BUILD_ITEMS[id].from || []).slice() });
+    for (const id in BUILD_ITEMS) shop.push({ id, part: isPart(id), stack: BUILD_ITEMS[id].stack || 0, price: itemCost(p, id).gold, from: (BUILD_ITEMS[id].from || []).slice() });
   }
   const r = botRt.get(p.id);
   // the kill feed every screen shows: each death since this seat's last think
@@ -174,7 +172,7 @@ function botObserve(p) {
     kills.push({ victim: q.id, team: q.team, by: d.by, cause: d.cause, tick: d.tick, out: !!q.eliminated });
   }
   const team = r ? r.inbox.splice(0) : [];
-  return { tick: state.tick, time: botR(state.elapsed), me, allies, enemies, soldiers, animals: animalsSeen, eagles, structs, nodes, drops: dropsSeen, shots, pings,
+  return { tick: state.tick, time: botR(state.elapsed), me, allies, enemies, soldiers, animals: animalsSeen, eagles, structs, nodes, shots, pings,
     merchants, shop, kills, team };
 }
 // one key: what it is on this body (abOf: a warrior may carry an alternate),
@@ -215,8 +213,8 @@ const botNum = (v, lo, hi, d) => (typeof v === 'number' && isFinite(v) ? Math.ma
 function botAct(a) {
   if (!a || typeof a !== 'object') return null;
   const W = WORLD * TILE, out = { mx: 0, my: 0, aimX: NaN, aimY: NaN, fire: !!a.fire, work: !!a.work, slide: !!a.slide, grapple: !!a.grapple,
-    goTo: null, dodge: !!a.dodge, jump: !!a.jump, eatBerry: !!a.eatBerry, eatFish: !!a.eatFish,
-    ability: -1, cmd: null, call: null, say: undefined, think: null };
+    goTo: null, dodge: !!a.dodge, jump: !!a.jump,
+    ability: -1, useItem: -1, cmd: null, call: null, say: undefined, think: null };
   if (Array.isArray(a.move)) { out.mx = botNum(a.move[0], -1, 1, 0); out.my = botNum(a.move[1], -1, 1, 0); }
   if (Array.isArray(a.aim)) { out.aimX = botNum(a.aim[0], -W, 2 * W, NaN); out.aimY = botNum(a.aim[1], -W, 2 * W, NaN); }
   if (a.goTo && typeof a.goTo === 'object') {
@@ -224,6 +222,7 @@ function botAct(a) {
     if (x === x && y === y) { out.goTo = { x, y, reach: botNum(a.goTo.reach, 0, 3, 0) | 0 }; out.x0 = x; out.y0 = y; out.reach0 = out.goTo.reach; }
   }
   if (typeof a.ability === 'number') out.ability = botNum(a.ability | 0, -1, AB_KEYS - 1, -1);
+  if (typeof a.useItem === 'number') out.useItem = botNum(a.useItem | 0, -1, ITEM_SLOTS - 1, -1); // an item slot's key: a potion drunk
   if (a.cmd && typeof a.cmd === 'object' && BOT_CMDS.has(a.cmd.kind)) {
     const c = {};
     for (const k in a.cmd) {
@@ -368,8 +367,8 @@ function botStep(p, dt) {
   if (r.edge) {
     r.edge = false;
     inp.dodge = inp.dodge || a.dodge; inp.jump = inp.jump || a.jump;
-    inp.eatBerry = inp.eatBerry || a.eatBerry; inp.eatFish = inp.eatFish || a.eatFish;
     if (a.ability >= 0) inp.ability = a.ability;
+    if (a.useItem >= 0) inp.useItem = a.useItem;
     if (a.cmd) inp.cmd = a.cmd;
     // through the side's own anti-spam, on the same cooldown as a native bot's calls
     const c = a.call;

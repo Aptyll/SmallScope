@@ -21,9 +21,10 @@ function aiThink(p, dt) {
   const shore = orcaShore(p, prof.react);
   if (shore) { inp.fire = false; k.walkTo(shore.x, shore.y, 0); aiNote(p, 'FLEE', 'ORCA', shore); return; }
 
-  // 1. food - the rival in sight read first, since a meal waits on them
+  // 1. the rival in sight read first; a potion is drunk over everything
+  //    below, since it never stops the hands (js/sim/items.js)
   aiFoe(k);
-  aiEat(p, k.foeD);
+  aiDrink(p);
   // 2. the burrow, decided before the ladder (rungs 3 and 5 read it)
   if (aiBurrow(k)) return;
   if (aiBackOffRung(k)) return; // 2b. a human's DANGER ping
@@ -31,8 +32,9 @@ function aiThink(p, dt) {
   if (aiCampFight(k)) return;  // 4. a camp it woke
   // 5. lying low with nothing in sight: hold still and let the snow finish.
   //    Everything below this rung walks somewhere, and a bot crawling to a
-  //    berry bush at PRONE_SPEED is a bot that has stopped playing.
+  //    bush at PRONE_SPEED is a bot that has stopped playing.
   if (p.prone) { inp.fire = false; aiNote(p, 'HIDE', 'LYING LOW', null); return; }
+  if (aiHealRung(k)) return;   // 5'. hurt and alone: a ripe bush, a creek fish
   if (aiPingRung(k)) return;   // 5a. a human's ping
   if (aiDefendRung(k)) return; // 5b. its bird
   if (aiHomeRung(k)) return;   // 5b''. the guard's scouting walk
@@ -44,7 +46,6 @@ function aiThink(p, dt) {
   if (aiRoamJobs(k)) return;   // 5f. the bear party, the stalker, the scout
   if (aiRoadRung(k)) return;   // 5g. the road
   if (aiHuntRung(k)) return;   // 6. meat
-  if (aiLootRung(k)) return;   // 7. loot
   if (aiHarvestRung(k)) return; // 8. harvest
   aiRoam(k);                   // 9. nothing to do
 }
@@ -169,11 +170,8 @@ function aiOrders(k) {
 // it first)
 function aiFoe(k) {
   const { p, dt, ai, prof, T, mine, theirs, own, pushE, defend, guardE, ward, order, caller } = k;
-  // 1. food, exactly as a human eats it (Q / F) - but a meal is a 1.5 s
-  //    channel now and a hit knocks it out of the hands (js/sim/core.js), so a bot
-  //    only starts one with nobody close enough to do that. Standing there
-  //    chewing under fire is not patience, it is a free kill. `foe` is read
-  //    here rather than at rung 2 because this rung is the first to need it.
+  // 1. the rival in sight. `foe` is read here rather than at rung 2 because
+  //    the heal rung (5') asks it too: nobody walks to a bush under fire.
   // (a ping's spot is an anchor too: a rival on it is found on arrival)
   // (and a teammate it is answering is one: the fight it walks into is found)
   let foe = aiNearestEnemy(p, prof, [defend || guardE, pushE, ward, order, caller]);
@@ -755,39 +753,17 @@ function aiHuntRung(k) {
   return false;
 }
 
-function aiLootRung(k) {
-  const { p, dt, ai, steerTo, aimAt, ward, escort } = k;
-  // 7. loot on the ground is neutral and first-come: pick up what is close.
-  let loot = null, ld = 72 * aiMood(p).greed; // (a greedy bot walks further for it)
-  for (const d of drops) {
-    if (d.t < 0.35) continue;
-    const dd = Math.hypot(d.x - p.x, d.y - p.y);
-    if (dd < ld) { ld = dd; loot = d; }
-  }
-  if (loot && escort && Math.hypot(loot.x - ward.x, loot.y - ward.y) > AI_ESCORT) loot = null; // (the escort's leash bounds the loot as it does the work)
-  if (loot && ai.lootT < 4) {
-    aiNote(p, 'LOOT', 'ON THE GROUND', loot);
-    ai.lootT += dt; aimAt(loot.x, loot.y);
-    if (steerTo(loot.x, loot.y) < 0) ai.lootT = 4; // no way to it: let it lie
-    return true;
-  }
-  if (!loot) ai.lootT = 0;
-  return false;
-}
-
 function aiHarvestRung(k) {
   const { p, dt, inp, ai, prof, steerTo, aimAt, guardE, ward, escort } = k;
-  // 8. harvest: walk to a tree or a berry bush and hold E on it
-  // (a stripped bush stops being work, so drop it the moment it empties)
-  if (ai.tgt && (objects[idx(ai.tgt.tx, ai.tgt.ty)] !== ai.tgt ||
-    (ai.tgt.type === 'bush' && ai.tgt.berries <= 0))) { ai.tgt = null; ai.thinkT = 0; } // (finished: look for the next at once)
+  // 8. harvest: walk to a tree and hold E on it
+  if (ai.tgt && objects[idx(ai.tgt.tx, ai.tgt.ty)] !== ai.tgt) { ai.tgt = null; ai.thinkT = 0; } // (finished: look for the next at once)
   ai.avoidT -= dt;
   if (ai.avoidT <= 0) ai.avoid = null;
   if (ai.tgt && escort && Math.hypot(ai.tgt.tx * TILE + 8 - ward.x, ai.tgt.ty * TILE + 8 - ward.y) > AI_ESCORT * 0.9) ai.tgt = null; // (the human walked on: the work goes with them)
   if (!ai.tgt && ai.thinkT <= 0) {
     ai.thinkT = 0.6;
     ai.tgt = nearestObj(p.x, p.y, Math.round(AI_FORAGE * aiMood(p).greed), (o) => o !== ai.avoid &&
-      (o.type === 'tree' || (o.type === 'bush' && o.berries > 0)) &&
+      o.type === 'tree' &&
       aiOpenSides(o.tx, o.ty) >= 1 &&
       (!escort || Math.hypot(o.tx * TILE + 8 - ward.x, o.ty * TILE + 8 - ward.y) < AI_ESCORT * 0.7) && // (an escort works inside its leash)
       (!guardE || Math.hypot(o.tx * TILE + 8 - guardE.x, o.ty * TILE + 8 - guardE.y) < AI_GUARD_R * 0.85)); // (a guard works inside its leash)

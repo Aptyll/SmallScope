@@ -3,20 +3,23 @@
 `drawHudStrip` is one plate, flush to the bottom — the [hud frame](the-hud-frame.md) — read left to
 right the way a MOBA's bottom bar is (0.426), and the HUD's one bar: the **stat panel**, the **portrait**, then **four 34px ability wells**
 `[1][2][3][4]` in key order with the **health bar** and the **stamina bar** under them, then the
-**six item slots** in a three-by-two grid of 24px wells (`ITEM_CELL`), then the **two meal wells**
-(the items' size) with the **purse** under them (`abCellRect(i)`, `itemCellRect(i)`,
-`foodCellRect(i)`, `portraitRect`, `hpBarRect`, `stBarRect`, `goldCellRect`). The hero's basic
+**six item slots** in a three-by-two grid of 24px wells (`ITEM_CELL`), then the **purse**, one
+well wide and both rows tall (`abCellRect(i)`, `itemCellRect(i)`, `portraitRect`, `hpBarRect`,
+`stBarRect`, `goldCellRect`). The hero's basic
 attack has no well: hovering the portrait names it (`tipAttack`). There is no
 build well on the strip either (the build key opens the list). The plate swallows clicks so nothing fires through it.
 
 An **item slot** (`drawItemCell`) holds `p.items[i]` ([the items](../../gameplay/the-merchants-counter.md#the-items)), filled
 left to right and top row first as the shop fills them: the item's icon (`shopIcon`) on its rim,
 a part's green or a finished item's gold (`itemMetal`), so a glance tells how far the build has
-come, and an empty slot shows its number, dim. It is read, never pressed or dragged: `stripHit`
-answers `{kind:'item', i}`, the hover lights the rim and raises the shop's own card (`tipItem`).
-
-A **meal well** (`drawFoodCell`) is the ability well's grammar at the items' size: the meal's icon
-doubled, its key at 1× in the bottom-left corner and the count in the top-right.
+come, and an empty slot shows its key (`ITEM_KEYS`), dim. `stripHit` answers `{kind:'item', i}`,
+the hover lights the rim and raises the shop's own card (`tipItem`). Never dragged. A **potion**
+slot ([Heals](../../gameplay/heals.md)) is the one that is pressed: its key bottom-left (the pad's
+glyph while one is in hand), white while a drink would land and grey while it would not, the stack's
+count top-right, and while a drink runs the cooldown sweep over the time left of it. A press or its
+key sets `input.useItem`, the same intent online and for a bot; a refusal (any other item, a
+drink already running, full health) takes the red band and 1px shake for `itemFlash` seconds
+(`itemDenied(i)`, aged in `updateFx`).
 
 The **stat panel** (`drawStatPanel`, js/ui/statpanel.js) is a plate of its own butted to the
 strip's left frame, the strip's height: the seven [hero stats](../../gameplay/hero-stats.md) in two
@@ -51,11 +54,11 @@ digit sits big at 2× in the bottom-left corner (the keybind-indicator carve-out
 inner edge, centred **buy pips** on dark seats count the ranks in the key — one seat per
 rank it can hold (`abLvMax`: five on keys 1-3, three on the ultimate), the first being the unlock
 ([gameplay.md](../../gameplay/class-abilities-keys-1-4.md)). A key with no point in it is **locked**,
-and the well says so in the meal button's own grammar: dark rim, the icon at `LOCK_DIM` (0.28),
+and the well says so in its own grammar: dark rim, the icon at `LOCK_DIM` (0.28),
 an empty pip row and a grey key digit — dim, never absent, so the strip never rearranges and you
 can read what you have not bought. A press on one is refused with the same red band and 1px
-shake the meal buttons refuse in (`abDenied`, aged in `updateFx` beside
-`foodFlash`); a cooldown is NOT that refusal, because the sweep already says when it
+shake an item slot refuses in (`abDenied`, aged in `updateFx` beside
+`itemFlash`); a cooldown is NOT that refusal, because the sweep already says when it
 comes home. The ASK lives off the well: while a
 skill point is unspent and the key has room a **floating buy plate** bobs in the open screen
 above the well, `AB_BUY_AIR` clear of the strip's line at the bottom of its bob, shadow included
@@ -83,18 +86,12 @@ cooldown, level and next-level price, the blurb, nothing the well itself already
 ## The cooldown sweep
 
 `drawSweepCover(x, y, w, h, frac, col, edge)` is League's radial cooldown **cut to a square**, and
-the **one readout the four ability wells and the meal wells share**: the
+the **one readout the four ability wells and a drinking potion share**: the
 veil fills the well and retreats **clockwise from 12 o'clock**, so the dark that is left is the
 wait that is left and the hand's angle is the fraction at a glance — a hand at 4 o'clock and one
 at 7 read apart in the corner of an eye mid-fight, where two bars part-way down do not. It is
-the **one shape every wait on the HUD is drawn in** — an ability's cooldown, the meal clock, a
+the **one shape every wait on the HUD is drawn in** — an ability's cooldown, a potion's drink, a
 rail chip's respawn — so only the speed of the hand tells one clock from another.
-
-The **meal clock** turns it too (`drawFoodClock`): both meal buttons off the one shared
-`p.foodCd`, so the two turn **together** — which is the thing that says it is one clock and not
-two. `drawFoodClock` passes `CD_EDGE` only at `w >= 12`; below that a cell turns the **bare
-veil**, because at that size the hand's stroke lands ACROSS the berry and reads as a scratch on
-the fruit rather than as a clock over it.
 
 Two things it does not do the obvious way. It is **rasterised a pixel at a time**, for the reason
 `mmRing` rasterises every curve of the minimap ([UI panels are baked once](../ui-panels-are-baked-once.md)):
@@ -112,25 +109,7 @@ draws the hand itself, centre to rim, as a 1px bright line; pass `null` instead 
 turns the veil alone. The pips and the key digit are
 drawn **after** it: the wait is what the veil is for, and what you own is never dimmed by it.
 
-The **meal wells** (`drawFoodCell`, `FOOD_BTNS`: berry, fish, in `stripHit`'s `food` order) are
-the ability wells' size and grammar: the item icon **doubled** in the middle, the key at 2× in the
-**bottom-left** corner where an ability prints its key (the keybind-indicator carve-out, wearing
-the pad's own glyph while one is in hand), and the count in the **top-right** — `shortNum`,
-because the pouch has no ceiling. Hover lights the rim, a press sets the same edge-triggered
-intent the key does (`eatBerry`/`eatFish`), so `startEat` speaks every refusal and a well can
-never disagree with its key. A refusal *shows*: whatever the reason (none in the pouch, the clock
-still up, full health, a busy body), the asked well takes the red band and 1px shake for
-`foodFlash` seconds — `foodDenied(type)`, aged in `updateFx` beside `bagDenied()`.
-The shared food clock (`drawFoodClock`) sweeps both together and lifts the one being chewed
-white. A meal you have none of keeps its seat but dims to 0.35, so the pair never rearranges.
-The fish well shows the fish F will eat next (`fishToEat`) and, with nothing picked, the count of
-all four. Pointing at it raises the **fish picker** (`drawFishPop`): the four fish in ability-size
-wells in a column growing straight up out of the strip over the fish well (`FISH_POP` order: frost
-pike nearest it, then gold sunfish, whitefish, snow char),
-its frame running on into the strip's, each with its count; the hovered one's name in its colour
-and its `+heal` stand over the column, the picked one wears a gold rim and the
-others dim. The bake grows by `fishPopHeadroom()` while it is up.
-The **purse** under them (`drawGoldCell`, `goldCellRect`) is the coin and the gold, centred, in
-the same rim — a readout, not a button: no key, no hover, no refusal; `stripHit` answers `frame`
+The **purse** after the slots (`drawGoldCell`, `goldCellRect`) is the coin at 2× over the gold,
+centred, in the same rim — a readout, not a button: no key, no hover, no refusal; `stripHit` answers `frame`
 over it and `tipGold` gives the exact figure — inked `#f5c542` because the one number on the HUD
 that is money must never read as a count of something carried.

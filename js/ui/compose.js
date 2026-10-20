@@ -11,10 +11,9 @@ function renderUI(now) {
   // title -> play: the HUD slides in over the last part of the intro - the
   // minimap from the top, the hud strip from
   // below.
-  // The TOP LEFT is deliberately empty: the berry and fish counts that used
-  // to stack there (and the gold that sat left of the minimap) live on the
-  // hud strip's meal buttons and the purse tab over them now, which is why
-  // nothing slides in from the left any more. Health lives on the in-world
+  // The TOP LEFT is deliberately empty: the gold that sat left of the
+  // minimap lives in the hud strip's purse now, which is why nothing slides
+  // in from the left any more. Health lives on the in-world
   // bar.
   const hudIn = hudInT(); // 0 away .. 1 home; a drop brief pins it at 0 for the tour
   const slide = 1 - hudIn;
@@ -46,7 +45,7 @@ function renderUI(now) {
   // the practice bar down the left edge, PRACTICE TOOL only (js/ui/cheats.js)
   if (!out && PRACTICE) drawCheatBar(now);
 
-  // hud strip (the portrait, the ability wells over the bars, the meals),
+  // hud strip (the portrait, the ability wells over the bars, the items),
   // bottom-centre; it rides the intro slide up from below, at whatever HUD
   // SIZE the settings dial holds (drawHudScaled).
   if (!out) drawHudScaled(now, Math.round(slide * HUD_SLIDE));
@@ -93,15 +92,14 @@ function renderUI(now) {
 // the info stack (settings.info - the INFO row in the ESC menu, or F3, the
 // minecraft reflex): fps, the ms a frame spends stepping and drawing, the
 // framed player's tile coordinates, and the run seed as one vertical list on
-// the left edge at the top quarter of the view, clear of the berry/fish
-// counters above it, above every overlay. In title only the fps, sim and
+// the left edge at the top quarter of the view, above every overlay. In title only the fps, sim and
 // draw lines show - nobody stands anywhere yet, and the menu prints the seed
 // itself with the reroll die.
 function drawTags() {
   if (!settings.info) return;
   // two columns: a dim label, then the value on one shared x so the numbers
   // line up down the stack - the same dim-label / bright-value pairing the
-  // berry and fish counters use. Red means one thing and one thing only:
+  // tooltips use. Red means one thing and one thing only:
   // something is wrong (a bad frame rate, a sample bank that did not load).
   // Nothing else is tinted for decoration.
   const lx = 5, vx = lx + Math.max(pixelTextWidth('SEED'), pixelTextWidth('DRAW')) + 5;

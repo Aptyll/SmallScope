@@ -1,4 +1,4 @@
-# Bot API reference (api 3)
+# Bot API reference (api 4)
 
 Everything a bot file reads and writes. Units: world pixels (y grows downward), seconds, ticks
 of 1/60 s. A tile is 16 px; the world is `hello.map.world` tiles square. Teams are `0` and `1`,
@@ -88,12 +88,12 @@ obs = {
     aboard, falling, zip,  // on the eagle; in the drop; -1 or the cable ridden
     abilities: [{ key, id, lv, cd, ready, range }],  // keys 0..3; lv 0 = locked; range px or null
     attack,                // your basic attack: 'shot' (a bow) or 'cut' (a blade)
-    food: { berry, fish, ... },            // the pouch: meals
     charging, chargeT,     // the draw in progress
     nav,                   // your last goTo: 'ok' | 'arrived' | 'fail' | null
                            // 'arrived' also beside a goal no path enters (a bird, a tree); 'fail' = no route
     lastCmd: { kind, tick, ok, why } | null,  // what came of your latest order
-    items,                 // your six item slots: an item id or null each
+    items,                 // your six item slots: an item id or null each ('potion' for the potion stack)
+    potions, potionT,      // potions in that stack (0..5); s left of the one being drunk (0 when none)
     atShop,                // standing at a merchant's counter
     orca,                  // s left on the orca's countdown over your head; -1 when it is not after you
   },
@@ -103,12 +103,11 @@ obs = {
   animals:  [{ id, kind, level, x, y, hp, maxHp }],   // near you: rabbit, deer, wolf, alpha, dire, bird
   eagles:   [{ team, x, y, state, hp, maxHp, hitT, mouth }],  // both birds, always
   structs:  [{ id, type, team, tx, ty, hp, maxHp, building }],  // buildings near you
-  nodes:    [{ kind, tx, ty }],    // tree, deadTree, bush near you; nearest 64, nearest first
-  drops:    [{ id, type, n, x, y }],   // loot on the ground near you
+  nodes:    [{ kind, tx, ty }],    // tree, deadTree, ripe bush near you; nearest 64, nearest first
   shots:    [{ x, y, vx, vy, team }],  // shots in flight near you
   pings:    [{ owner, k, x, y, t }],   // your side's pings up now: k is go, attack, omw, danger or defend; t the seconds left
   merchants: [{ team, x, y, stall }],  // both merchants, always; stall: { tx, ty } | null
-  shop:     [{ id, part, price, from }] | null,  // every item, priced for you; only while atShop
+  shop:     [{ id, part, stack, price, from }] | null,  // every item, priced for you; only while atShop
   kills:    [{ victim, team, by, cause, tick, out }], // the kill feed since your last think
   team:     [{ from, say }],           // what teammates said since your last think
 }
@@ -143,7 +142,12 @@ obs = {
 - **Shopping.** Walk to a merchant or its stall until `me.atShop`; `shop` then lists every item,
   always on sale. `part` is true for a cheap part; a finished item names the parts it is built
   `from`, and `price` already takes off the parts you hold. Buy with
-  `cmd: { kind: 'shop', act: 'item', id }`; it needs a free slot once its parts are used.
+  `cmd: { kind: 'shop', act: 'item', id }`; it needs a free slot once its parts are used. The
+  health potion (`stack` 5) is the one that stacks: the first takes a slot, the next ones join it.
+- **Healing.** Drink a potion with `useItem` (its slot): 100 health over 15 s that nothing
+  stops, one at a time. Walk into a ripe bush (`nodes`, kind `bush`) for 30 at once. Roll
+  (`dodge`) over a creek fish from the bank for 40 at once. Fish and bushes do nothing at full
+  health.
 
 ## The act
 
@@ -160,7 +164,7 @@ act = {
   slide, grapple,          // shift held; the grapple reels while held
   // edge (once)
   dodge, jump,             // roll; hop on/off a zipline, leap off the eagle
-  eatBerry, eatFish,
+  useItem,                 // 0..5: use that item slot - drinks a health potion (me.items[i] === 'potion')
   ability,                 // 0..3: cast that key (or buy its level when a skill point waits)
   cmd,                     // an order: see below
   // talk
@@ -181,7 +185,7 @@ again on its side, exactly as it does a player's.
 | `{ kind: 'ability', i }` | spend a skill point on key `i` |
 | `{ kind: 'ping', k, x, y }` | ping a spot for your side (`k` as above; a mark only, it steers no bot; at most 3 in 5 s) |
 | `{ kind: 'recall' }` | channel home: 6 s standing still, then set down at your roost. Any move, shot, ability, roll or blow ends it |
-| `{ kind: 'shop', act: 'item', id }` / `{ act: 'sellItem', slot }` / `{ act: 'trade', good, dir, n }` | at a merchant's counter: buy an item, sell a slot, buy `n` or sell all of `fish`/`berry` (`dir` 1 or -1) |
+| `{ kind: 'shop', act: 'item', id }` / `{ act: 'sellItem', slot }` | at a merchant's counter: buy an item, sell a slot (a potion stack sells one) |
 
 ## The team channel
 
@@ -220,7 +224,7 @@ think: {
 The game shows every bot's thought in the bot view (F4) and records it in match logs. Goals the
 bot view colours: `DEFEND PUSH GUARD FIGHT FLEE HIDE EAT HUNT GATHER LOOT BUILD ESCORT RALLY
 ROAM WOLF`; any other word shows plain. Target kinds: `player`, `soldier`, `bird` (id = team),
-`animal`, `object`, `drop`, `point`.
+`animal`, `object`, `point`.
 
 ## Hands
 
@@ -236,5 +240,5 @@ where you *want* to aim; lead a moving target yourself.
 
 ## Versioning
 
-`hello.api` is 3 (2 swapped the side's `flags` for `pings`, and the `flag` order for `ping`; 3 dropped `me.bag`, the `useCard` edge and the shop's `sell` act, with the backpack and cards). A new field may appear at any time; a field is never renamed or removed without
+`hello.api` is 4 (2 swapped the side's `flags` for `pings`, and the `flag` order for `ping`; 3 dropped `me.bag`, the `useCard` edge and the shop's `sell` act, with the backpack and cards; 4 dropped `me.food`, `drops`, the `eatBerry`/`eatFish` edges and the shop's `trade` act, and added `me.potions`/`me.potionT` and the `useItem` edge). A new field may appear at any time; a field is never renamed or removed without
 the number going up.

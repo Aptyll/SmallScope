@@ -145,7 +145,7 @@ function netHostRoster() { if (NET.role === 'host' && NET.peers.size) NET.transp
 // Runs at the top of the step: the peers' messages become their bodies'
 // input structs, a HELLO becomes a slot, a vanished peer becomes a bot.
 // A remote input is MERGED, not copied: held fields overwrite, edge fields
-// (dodge, a meal, an ability, an order) latch until the sim consumes them,
+// (dodge, a potion, an ability, an order) latch until the sim consumes them,
 // since a press between two steps must not be lost to the next struct.
 function netHostStep(dt) {
   if (NET.role !== 'host') return;
@@ -197,8 +197,9 @@ function netHostStep(dt) {
 }
 // a press in `m` latched into `i` until the sim consumes it
 function netInEdges(i, m) {
-  i.dodge = i.dodge || m.dodge; i.jump = i.jump || m.jump; i.eatBerry = i.eatBerry || m.eatBerry; i.eatFish = i.eatFish || m.eatFish;
+  i.dodge = i.dodge || m.dodge; i.jump = i.jump || m.jump;
   if (m.ability >= 0) i.ability = m.ability;
+  if (m.useItem >= 0) i.useItem = m.useItem;
   if (m.cmd) i.cmd = m.cmd;
 }
 function netHostHello(peer, msg) {
@@ -439,11 +440,11 @@ function netClientStep(dt) {
   const T = NET.transport;
   if (NET.synced && player) {
     const i = player.input;
-    const msg = { t: 'in', tick: ++NET.inTick, ack: NET.lastTick, in: { mx: i.mx, my: i.my, aimX: i.aimX, aimY: i.aimY, fire: i.fire, work: i.work, slide: i.slide, grapple: i.grapple, dodge: i.dodge, jump: i.jump, eatBerry: i.eatBerry, eatFish: i.eatFish, ability: i.ability, cmd: i.cmd } };
+    const msg = { t: 'in', tick: ++NET.inTick, ack: NET.lastTick, in: { mx: i.mx, my: i.my, aimX: i.aimX, aimY: i.aimY, fire: i.fire, work: i.work, slide: i.slide, grapple: i.grapple, dodge: i.dodge, jump: i.jump, ability: i.ability, useItem: i.useItem, cmd: i.cmd } };
     if (T.send('host', msg)) NET.bytesOut += JSON.stringify(msg).length;
     netPredictStep(msg.tick, i, dt); // our own walk goes ahead of the host's word
     // the edges are the host's now: a press is sent once
-    i.dodge = false; i.jump = false; i.eatBerry = false; i.eatFish = false; i.ability = -1; i.cmd = null;
+    i.dodge = false; i.jump = false; i.ability = -1; i.useItem = -1; i.cmd = null;
   }
   netClientLerp();
   netClientStats();

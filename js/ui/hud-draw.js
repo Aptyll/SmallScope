@@ -1,6 +1,6 @@
 'use strict';
 // Drawing the strip: the portrait, the health and stamina bars, the cell
-// plate, item icons, the cooldown sweep, the ability, item, meal and gold
+// plate, item icons, the cooldown sweep, the ability, item and gold
 // cells, drawHudStrip and the scaled bakes, then the drop promise and the
 // drag ghost.
 // ---- the plates, bars and icons the widgets share --------------------------
@@ -131,29 +131,17 @@ function drawStBar() {
 // while it is the one being handled.
 function cellPlate(lit) { return { plate: BAG_WELL, rim: lit ? '#9ca1aa' : '#3c4048' }; }
 
-// an item icon centred in a cell of any size, so one call covers every well; k doubles it
-// for the HUD_CELL wells, where 1x art would swim
-function drawItemIcon(type, r, y, g, k) {
-  const d = ITEMS[type];
-  if (!d) return;
-  const im = SPRITES[d.icon];
-  if (!im) return;
-  k = k || 1;
-  const w = im.width * k, h = im.height * k;
-  (g || ctx).drawImage(im, r.x + ((r.w - w) >> 1), y + ((r.h - h) >> 1), w, h);
-}
-
 // ---- drawing the strip ------------------------------------------------------
 // THE COOLDOWN SWEEP - League's radial clock cut to a SQUARE, and now the
 // ONE shape every wait in the game is drawn in: the four ability wells and
-// both meal buttons through drawFoodClock.
+// a potion's drink.
 // The veil fills the well and retreats CLOCKWISE FROM
 // 12 O'CLOCK, so the dark that is left is the wait that is left, and the
 // hand's angle is the fraction at a glance - which a top-down wipe cannot
 // say, because a bar three quarters down and a bar half down look alike in
-// the corner of your eye. An ability's cooldown and the meal clock are the
+// the corner of your eye. An ability's cooldown and a potion's drink are the
 // same question asked of different clocks: answer them in the same shape and
-// only the SPEED of the hand tells a 20 s fury from a meal, and nothing on
+// only the SPEED of the hand tells a 20 s fury from a potion, and nothing on
 // the HUD has to be learned twice.
 //
 // It scales down further than it looks like it should, which is why the size
@@ -214,7 +202,7 @@ function drawSweepCover(x, y, w, h, frac, col, edge) {
 }
 // An ability well says everything without a word: the 32px icon is the
 // ability, a SWEEP round the well is its cooldown (drawSweepCover above - the
-// meal wells turn the same hand), the rim goes white while the
+// potion's well turns the same hand), the rim goes white while the
 // body performs the cast, an ACTIVE ability (the shield up, the fury running)
 // pulses the rim in its own colour and drains a bar of it along the bottom
 // edge, and the well pops white the frame a cooldown comes home. The big
@@ -224,12 +212,12 @@ function drawSweepCover(x, y, w, h, frac, col, edge) {
 // lives off the well entirely, on the floating plate above it
 // (drawAbBuyPlate), so the well's rim carries combat states only.
 //
-// A key with no point in it is LOCKED, and the well says so exactly the way a
-// meal button with nothing behind it does: dark rim, the icon at LOCK_DIM,
+// A key with no point in it is LOCKED, and the well says so plainly: dark
+// rim, the icon at LOCK_DIM,
 // the pips all empty and the key digit dim - grey, not absent, so the strip
 // never rearranges and you can read what you have not bought yet. A press on
 // one reddens it (abDenied above).
-const LOCK_DIM = 0.28; // the locked icon's alpha - the meal button's grammar, one shade darker
+const LOCK_DIM = 0.28; // the locked icon's alpha
 let abCdSeen = [0, 0, 0, 0], abReadyFlash = [0, 0, 0, 0];
 function drawClassAbCell(i, now, on) {
   const p = player, ab = abOf(p, i);
@@ -321,112 +309,57 @@ function drawAbBuyPlate(i, now, hot) {
   ctx.fillStyle = hot ? '#f4f7ff' : '#f2cc6a';
   ctx.fillRect(r.x + 6, y + 3, 2, 8); ctx.fillRect(r.x + 3, y + 6, 8, 2);
 }
-// A MEAL WELL: an ability well's grammar pointed at the pouch, at the items'
-// size - the item icon doubled in the middle, the key in the bottom-left
-// corner (the pad's glyph while one is in hand), and how many
-// you carry in the top-right, shortNum's four characters at most (the pouch
-// has no ceiling). It wipes on the shared food clock. A meal you have none
-// of keeps its seat but dims, so the pair never rearranges; the click sets
-// the same edge-trigger the key does and startEat speaks every refusal - the
-// refused well wears the ability wells' red and their 1px shake for it
-// (foodDenied).
-function drawFoodCell(i, now, on) {
-  const p = player, b = FOOD_BTNS[i], r = foodCellRect(i);
-  // the fish well counts every fish you carry and shows the one its key eats
-  // next - or only the picked kind (the picker over it, drawFishPop)
-  const fish = b.type === 'fish', type = fish ? fishToEat(p) : b.type;
-  const n = fish && !p.fishPick ? fishHeld(p) : bagCount(p, type);
-  const red = foodFlash > 0 && foodFlashI === i;
-  const live = n > 0 && p.foodCd <= 0;
+// AN ITEM WELL: the item's icon on its rim - a part's green, a finished
+// item's gold (itemMetal), so a glance tells how far the build has come - and
+// an empty slot's key, dim, so the six read as six before the first buy. The
+// hover lights the rim and names it (tipItem). A POTION slot is pressed like
+// an ability: its key in the bottom-left corner (the pad's glyph while one is
+// in hand), the stack in the top-right, the drink running as the cooldown
+// sweep (drawSweepCover) - the next one waits on it - and a refusal's red and
+// shake (itemDenied).
+function drawItemCell(i, now, on) {
+  const p = player, r = itemCellRect(i), id = p.items[i];
+  const red = itemFlash > 0 && itemFlashI === i;
   if (red) {
     ctx.save();
     ctx.translate(((now * 40) | 0) % 2 ? -1 : 1, 0);
     ctx.fillStyle = '#c2465a';
     ctx.fillRect(r.x - 2, r.y - 2, r.w + 4, r.h + 4);
   }
-  ctx.fillStyle = red ? '#c2465a' : on ? '#9ca1aa' : n > 0 ? '#3c4048' : '#2b2e34';
+  ctx.fillStyle = red ? '#c2465a' : id ? (on ? '#9ca1aa' : itemMetal(id).rim) : '#33363d';
   ctx.fillRect(r.x, r.y, r.w, r.h);
   ctx.fillStyle = BAG_WELL;
   ctx.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
-  const icon = SPRITES[ITEMS[type].icon], iw = icon.width * 2, ih = icon.height * 2;
-  if (n <= 0) ctx.globalAlpha = 0.35;
-  ctx.drawImage(icon, r.x + ((r.w - iw) >> 1), r.y + ((r.h - ih) >> 1), iw, ih);
-  ctx.globalAlpha = 1;
-  drawFoodClock(r.x + 1, r.y + 1, r.w - 2, r.h - 2, fish && FISH_KINDS.includes(p.eatType) ? p.eatType : type);
-  if (padActive()) drawPadBind(ctx, r.x + 2, r.y + r.h - 11, b.act, 1, !live);
-  else drawPixelTextOutline(ctx, keyCapShort(b.act), r.x + 2, r.y + r.h - 7, live ? '#f4f7ff' : '#8c919a', '#191b1f');
-  const t = shortNum(n);
-  drawPixelTextOutline(ctx, t, r.x + r.w - 2 - pixelTextWidth(t), r.y + 2, n > 0 ? '#f4f7ff' : '#8c919a', '#191b1f');
-  if (red) ctx.restore();
-}
-// The fish picker's column (FISH_POP, js/ui/strip.js): the meal wells' own
-// wells on the hud plate, each kind's icon and count; the picked one rings gold
-// and the rest dim, none picked leaves all of them lit. The pointed-at kind's
-// name and meal stand over the column.
-function drawFishPop(hov) {
-  const m = stripMouse(mouse.x, mouse.y);
-  if (!fishPopUp(m.x, m.y)) return;
-  const p = player, R = fishPopRect(), S = hudStripRect();
-  // the column grows out of the strip: its frame, then the seam opened so its
-  // ground runs on into the strip's and its sides turn into the strip's top
-  // edge (a side flush with the strip's own outer side just carries on down)
-  drawHudFrame(R.x, R.y, R.w, R.h);
-  ctx.fillStyle = AB_BG; ctx.fillRect(R.x + 2, S.y, R.w - 4, R.h - (S.y - R.y));
-  for (const [ink, edge] of [[R.x, R.x + 1], [R.x + R.w - 1, R.x + R.w - 2]]) {
-    if (ink === S.x - 3 || ink === S.x + S.w + 2) continue;
-    ctx.fillStyle = HUD_EDGE; ctx.fillRect(ink, S.y + 1, 1, 1);
-    ctx.fillStyle = AB_BG; ctx.fillRect(ink, S.y + 2, 1, R.y + R.h - S.y - 2); ctx.fillRect(edge, S.y + 2, 1, R.y + R.h - S.y - 2);
-  }
-  for (let j = 0; j < FISH_POP.length; j++) {
-    const t = FISH_POP[j], r = fishPopCellRect(j), n = bagCount(p, t);
-    const picked = p.fishPick === t, on = hov && hov.kind === 'fishPick' && hov.j === j;
-    ctx.fillStyle = picked ? '#f5c542' : on ? '#9ca1aa' : n > 0 ? '#3c4048' : '#2b2e34';
-    ctx.fillRect(r.x, r.y, r.w, r.h);
-    ctx.fillStyle = BAG_WELL;
-    ctx.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
-    const icon = SPRITES[ITEMS[t].icon], iw = icon.width * 2, ih = icon.height * 2;
-    if (n <= 0 || (p.fishPick && !picked)) ctx.globalAlpha = 0.35;
-    ctx.drawImage(icon, r.x + ((r.w - iw) >> 1), r.y + ((r.h - ih) >> 1), iw, ih);
-    ctx.globalAlpha = 1;
-    const c = shortNum(n);
-    drawPixelTextOutline(ctx, c, r.x + r.w - 2 - pixelTextWidth(c), r.y + 2, n > 0 ? '#f4f7ff' : '#8c919a', '#191b1f');
-    if (on) {
-      const name = ITEMS[t].name, heal = '+' + Math.round(ITEMS[t].heal * kitOf(p).foodMul);
-      // over the column's top, flush with its right side: clear of the
-      // ability buy plates whichever fish is hovered
-      const x = R.x + R.w - 1 - pixelTextWidth(name) - 4 - pixelTextWidth(heal), y = R.y - FISH_POP_NAME + 2; // 1 in: the outline stays inside the bake
-      drawPixelTextOutline(ctx, name, x, y, RES_COLORS[t], '#191b1f');
-      drawPixelTextOutline(ctx, heal, x + pixelTextWidth(name) + 4, y, '#8fe08a', '#191b1f');
+  const act = ITEM_KEYS[i];
+  if (!id) {
+    const t = keyCapShort(act);
+    drawPixelText(ctx, t, r.x + ((r.w - pixelTextWidth(t)) >> 1) + 1, r.y + ((r.h - 5) >> 1), '#33363d', 1);
+  } else {
+    shopIcon(itemIcon(id), r);
+    if (id === 'potion') {
+      if (p.potT > 0) drawSweepCover(r.x + 1, r.y + 1, r.w - 2, r.h - 2, Math.min(1, p.potT / POTION_T), CD_SWEEP, CD_EDGE);
+      const live = !(p.potT > 0) && p.hp < p.maxHp;
+      if (padActive()) drawPadBind(ctx, r.x + 2, r.y + r.h - 11, 'potion', 1, !live);
+      else drawPixelTextOutline(ctx, keyCapShort(act), r.x + 2, r.y + r.h - 7, live ? '#f4f7ff' : '#8c919a', '#191b1f');
+      const t = String(p.potions);
+      drawPixelTextOutline(ctx, t, r.x + r.w - 2 - pixelTextWidth(t), r.y + 2, '#f4f7ff', '#191b1f');
     }
   }
+  if (red) ctx.restore();
 }
-// AN ITEM WELL: the item's icon on its rim - a part's green, a finished
-// item's gold (itemMetal), so a glance tells how far the build has come - and
-// an empty slot's number, dim, so the six read as six before the first buy.
-// Read, never pressed: the hover lights the rim and names it (tipItem).
-function drawItemCell(i, on) {
-  const r = itemCellRect(i), id = player.items[i];
-  ctx.fillStyle = id ? (on ? '#9ca1aa' : itemMetal(id).rim) : '#33363d';
-  ctx.fillRect(r.x, r.y, r.w, r.h);
-  ctx.fillStyle = BAG_WELL;
-  ctx.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
-  if (id) { shopIcon(itemIcon(id), r); return; }
-  const t = String(i + 1);
-  drawPixelText(ctx, t, r.x + ((r.w - pixelTextWidth(t)) >> 1) + 1, r.y + ((r.h - 5) >> 1), '#33363d', 1);
-}
-// THE PURSE under the meals: the coin and the gold, centred, inked '#f5c542'
+// THE PURSE after the items: the coin over the gold, centred, inked '#f5c542'
 // because the one number on the HUD that is money must never read as a count
-// of something carried. A readout, not a button - the meal wells' rim, but no
+// of something carried. A readout, not a button - an item well's rim, but no
 // key, no hover and no refusal.
 function drawGoldCell() {
   const r = goldCellRect();
-  ctx.fillStyle = HUD_INK; ctx.fillRect(r.x - 1, r.y - 1, r.w + 2, r.h + 2);
   ctx.fillStyle = '#3c4048'; ctx.fillRect(r.x, r.y, r.w, r.h);
   ctx.fillStyle = BAG_WELL; ctx.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
-  const t = shortNum(inv.gold), coin = SPRITES.itemGold, w = coin.width + 2 + pixelTextWidth(t);
-  const x = r.x + ((r.w - w) >> 1), y = r.y + ((r.h - coin.height) >> 1);
-  ctx.drawImage(coin, x, y);
-  drawPixelTextOutline(ctx, t, x + coin.width + 2, r.y + ((r.h - 5) >> 1), '#f5c542', '#191b1f');
+  const t = shortNum(inv.gold), coin = SPRITES.itemGold, k = 2;
+  const cw = coin.width * k, ch = coin.height * k, gap = 4, h = ch + gap + 5;
+  const y = r.y + ((r.h - h) >> 1);
+  ctx.drawImage(coin, r.x + ((r.w - cw) >> 1), y, cw, ch);
+  drawPixelTextOutline(ctx, t, r.x + ((r.w - pixelTextWidth(t)) >> 1), y + ch + gap, '#f5c542', '#191b1f');
 }
 function drawHudStrip(now) {
   const R = hudStripRect();
@@ -441,14 +374,10 @@ function drawHudStrip(now) {
     drawClassAbCell(i, now, hov && hov.kind === 'ab' && hov.i === i);
     drawAbBuyPlate(i, now, bhov === i);
   }
-  for (let i = 0; i < ITEM_SLOTS; i++) drawItemCell(i, hov && hov.kind === 'item' && hov.i === i);
-  for (let i = 0; i < FOOD_BTNS.length; i++) {
-    drawFoodCell(i, now, hov && hov.kind === 'food' && hov.i === i);
-  }
+  for (let i = 0; i < ITEM_SLOTS; i++) drawItemCell(i, now, hov && hov.kind === 'item' && hov.i === i);
   drawHpBar();
   drawStBar();
   drawGoldCell();
-  drawFishPop(hov);
 }
 // The strip and its buy plates at the size its dial holds (hudSc). At 1x
 // everything draws straight to the frame as it always did; any other size
@@ -456,7 +385,7 @@ function drawHudStrip(now) {
 // bottom-centre anchor - uictx's smoothing is off, so the art scales
 // nearest-neighbour instead of every fillRect going soft under a fractional
 // transform. The bake's headroom covers the buy plates' bob and the xp
-// numbers over the portrait, and the fish picker's column (fishPopHeadroom).
+// numbers over the portrait.
 const HUD_BAKE_HEAD = 26;
 const hudScaleCv = document.createElement('canvas');
 const hudScaleCtx = hudScaleCv.getContext('2d');
@@ -470,7 +399,7 @@ function drawHudScaled(now, slideY) {
     return;
   }
   const R = hudStripRect();
-  const head = Math.max(HUD_BAKE_HEAD, fishPopHeadroom());
+  const head = HUD_BAKE_HEAD;
   const bx = statPanelRect().x, by = R.y - head, bw = R.x + R.w + 3 - bx, bh = R.h + head;
   if (hudScaleCv.width !== bw || hudScaleCv.height !== bh) {
     hudScaleCv.width = bw; hudScaleCv.height = bh;

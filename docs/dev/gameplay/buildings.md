@@ -4,13 +4,13 @@
 [road towers](../world.md#the-road) stand at boot (`placeTowers`, js/sim/towers.js), so do the
 two neutral **gold pumps** ([below](#the-gold-pumps)), each
 [merchant](robots.md#the-merchant) raises its side's **barracks** just inside its base's lane
-mouths, and a **fish net** goes over an open hole ([Fish nets](../world.md#fish-nets)). Player
+mouths. Player
 building (the T build list, walls, gates, turrets, bot bays and worker bots, and the E manage
-wheel) was cut in 0.525.
+wheel) was cut in 0.525, and the fish net with food in 0.538.
 
 All the data lives in the `STRUCTS` table ([structures.js](../../../js/sim/structures.js)): the
-gold pump (`generator`, 4x2), the barracks (3x2, wearing the bay's grid through `art: 'spawner'`),
-the road tower (3x2) and the net (1x1, `water: true`). Each has one tier: a gold `cost`, `hp`,
+gold pump (`generator`, 4x2), the barracks (3x2, wearing the bay's grid through `art: 'spawner'`)
+and the road tower (3x2). Each has one tier: a gold `cost`, `hp`,
 `buildT` and its per-type stats. The cost is only what a wrecker is paid half of (`wreckPay`).
 
 - **One constructor.** `createStruct(tx, ty, type, tier, p, building)` drops the anchor object
@@ -61,7 +61,7 @@ the road tower (3x2) and the net (1x1, `water: true`). Each has one tier: a gold
   argument and keeps its full `ROBOT_DMG`, which is already a building number. `STRUCT_HIT_DMG` is
   the **raw** E swing (25) and lands 10 after the damping. At 0 hp it calls
   `destroyStructure(o, p)`, and the wreck pays the wrecker `wreckPay` (half the cost) on the spot
-  through `awardGold`. A net going down tips its fish back onto the ice. Wildlife damages nothing.
+  through `awardGold`. Wildlife damages nothing.
 
   **`structsNear(src, x, y, r)` is the buildings half of `unitsNear`**: every rival building the
   circle touches, resolved to its anchor and listed once, so an **area** effect reaches a building

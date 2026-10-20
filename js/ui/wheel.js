@@ -30,7 +30,7 @@ function wheelOptions() {
   if (w.kind === 'pkdie') return [{ id: 'easy' }, { id: 'medium' }, { id: 'hard' }];
   if (w.kind === 'agbell') return AG_WEDGES.map((id) => ({ id })); // one wedge per round (js/sim/practice.js)
   // the MOUSE scheme's action wheel: the four abilities clockwise from the
-  // top, then the two meals and the ping (MS_WHEEL, js/app/input.js)
+  // top, then the potion and the ping (MS_WHEEL, js/app/input.js)
   return MS_WHEEL.map((id) => ({ id })); // 'kit'
 }
 
@@ -111,12 +111,9 @@ function cmdOk(c) {
   if (!c || typeof c !== 'object') return false;
   if (c.kind === 'recall') return true;
   if (c.kind === 'ability') return cmdInt(c.i, 0, AB_KEYS);
-  if (c.kind === 'fishPick') return c.type === null || FISH_KINDS.includes(c.type);
   if (c.kind === 'shop') {
     if (c.act === 'item') return cmdKey(BUILD_ITEMS, c.id);
     if (c.act === 'sellItem') return cmdInt(c.slot, 0, ITEM_SLOTS);
-    if (c.act === 'trade') return FOOD_GOODS.includes(c.good) && (c.dir === 1 || c.dir === -1) &&
-      (c.n === undefined || (Number.isInteger(c.n) && c.n >= 1));
     return false;
   }
   if (c.kind === 'ping') return cmdKey(PING_CALLS, c.k) && Number.isFinite(c.x) && Number.isFinite(c.y);
@@ -130,7 +127,6 @@ function cmdOk(c) {
 function runCmd(p, c) {
   if (!cmdOk(c)) return 'bad';
   if (c.kind === 'ability') return buyAbilityLv(p, c.i); // an ability level: a skill point, from anywhere
-  if (c.kind === 'fishPick') { p.fishPick = c.type; return true; } // the fish well's picker (fishPick, js/ui/strip.js): which fish the key eats
   if (c.kind === 'recall') return startRecall(p); // the walk home, from anywhere (js/sim/recall.js)
   if (c.kind === 'shop') return shopCmd(p, c); // the merchant's counter (js/shop.js) - it checks its own reach
 
@@ -180,7 +176,6 @@ function drawWorkHint(ox, oy) {
   if (state.mode !== 'play' || state.mapOpen || state.settingsOpen || state.wheel || state.shop || window.DBG.hideUI) return;
   if (player.charging || player.fallT > 0 || player.dodgeT > 0 || player.zip >= 0) return; // a rider's hands are full, and the cable is the only thing E does
   if (player.mount) return; // on deer-back E is the hop off, and the deer under you says so
-  if (hoverFish()) return; // the fish brackets win over the cap on the same tile
   // a MERCHANT in reach owns the key outright (keyPress, js/app/input.js), so its
   // cap is the one that shows - trunk under the aim or not
   if (drawShopHint(ox, oy)) return;
@@ -240,7 +235,7 @@ function drawWorkHint(ox, oy) {
 const PAD_BIND = {
   work: ['face', 'X'], dodge: ['face', 'A'], slide: ['trig', 'LT'], click: ['trig', 'RT'],
   ab1: ['face', 'Y'], ab2: ['face', 'B'], ab3: ['bump', 'LB'], ab4: ['bump', 'RB'],
-  berry: ['dpad', 'L'], fish: ['dpad', 'R'], char: ['dpad', 'U'], map: ['pill', 'BACK'], board: ['pill', 'BACK'],
+  potion: ['dpad', 'L'], char: ['dpad', 'U'], map: ['pill', 'BACK'], board: ['pill', 'BACK'],
   esc: ['face', 'B'], enter: ['face', 'A'], move: ['stick', 'L'],
   recap: ['face', 'Y'], // the death recap's views (recapCycle, js/ui/recap.js)
 };
@@ -414,31 +409,6 @@ function drawShopHint(ox, oy) {
 }
 
 
-// hovering a fish: white brackets on the fish (the same "this reacts" cue as
-// stumps), full-bright once it is inside the automatic catch's reach (autoFish,
-// js/sim/attack.js) and dimmed until then - the mechanic is standing on the ice
-// beside it, and the brackets' brightness is the whole of that hint
-function drawFishHint(ex, ey, now) {
-  if (state.mode !== 'play' || state.mapOpen || state.settingsOpen || state.wheel) return;
-  if (player.fallT > 0 || player.dodgeT > 0) return;
-  const f = hoverFish();
-  if (!f) return;
-  const fx = Math.round(f.x - ex), fy = Math.round(f.y - ey);
-  const near = fishInRange(f);
-  // brackets: 16x12 box, pulsing like the stump selection
-  ctx.globalAlpha = (near ? 0.6 : 0.4) + 0.3 * Math.sin(now * 6);
-  const corners = (c, px, py) => {
-    ctx.fillStyle = c;
-    ctx.fillRect(px, py, 3, 1); ctx.fillRect(px, py, 1, 3);
-    ctx.fillRect(px + 13, py, 3, 1); ctx.fillRect(px + 15, py, 1, 3);
-    ctx.fillRect(px, py + 11, 3, 1); ctx.fillRect(px, py + 9, 1, 3);
-    ctx.fillRect(px + 13, py + 11, 3, 1); ctx.fillRect(px + 15, py + 9, 1, 3);
-  };
-  corners('rgba(15,22,50,0.9)', fx - 7, fy - 5);
-  corners(near ? '#ffffff' : '#b4b8bf', fx - 8, fy - 6);
-  ctx.globalAlpha = 1;
-}
-
 // How far the pointer has travelled since the press that opened the wheel,
 // drawn from the hub as a knob. The cursor itself can be anywhere on screen,
 // so this is the only readout of the input the choice is actually made with:
@@ -573,7 +543,7 @@ function renderWheel(now) {
 // ---- the action wheel's wedges ------------------------------------------
 // The MOUSE scheme's wheel (msWheelPress, js/app/input.js) wears what the strip
 // wears: an ability's own icon at half size, dark where it cannot cast yet
-// (locked or waiting), a meal's icon, dark with none in the pouch, and
+// (locked or waiting), the potion, dark with none carried, and
 // the ping's GO HERE glyph.
 function kitAb(id) { return /^ab\d$/.test(id) ? +id[2] - 1 : -1; }
 function drawKitWedge(id, x, y, hot) {
@@ -585,17 +555,17 @@ function drawKitWedge(id, x, y, hot) {
     return;
   }
   if (id === 'ping') { drawPingGlyph(ctx, 'go', x, y, 2, hot ? '#ffd95c' : CALLS.go.ink, '#191b1f'); return; }
-  const im = SPRITES[ITEMS[id].icon];
-  ctx.globalAlpha = bagCount(player, id) > 0 ? 1 : 0.4;
+  const im = SPRITES.itemPotion; // the potion
+  ctx.globalAlpha = potionSlot(player) >= 0 ? 1 : 0.4;
   ctx.drawImage(im, x - (im.width >> 1), y - (im.height >> 1));
   ctx.globalAlpha = 1;
 }
 // the line under the wheel: the ability's name (gold when it will cast), the
-// meal's verb with the count in the pouch, or the ping's own verb
+// potion's name with how many you carry, or the ping's own verb
 function kitLabel(id) {
   const i = kitAb(id);
   if (i >= 0) return { label: abOf(player, i).name, color: abReady(player, i) ? '#ffd95c' : '#8c919a' };
   if (id === 'ping') return { label: KEY_ACT.ping.verb, color: '#ffd95c' };
-  const n = bagCount(player, id);
-  return { label: KEY_ACT[id].verb + ' ' + n, color: n > 0 ? '#ffd95c' : '#8c919a' };
+  const n = potionSlot(player) >= 0 ? player.potions : 0;
+  return { label: BUILD_ITEMS.potion.name + ' ' + n, color: n > 0 && !(player.potT > 0) ? '#ffd95c' : '#8c919a' };
 }

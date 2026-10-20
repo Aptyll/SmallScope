@@ -1,7 +1,7 @@
 'use strict';
 // Everything built: the STRUCTS table every building is an entry in, making
 // and wrecking one, and the per-type building sim (road towers, barracks,
-// gold pumps, nets). Nobody builds by hand: every building is the map's or
+// gold pumps). Nobody builds by hand: every building is the map's or
 // the eagle's merchant's. The soldiers a barracks rolls out are
 // js/sim/robots.js, which loads next.
 // ------------------------------------------------------------ structures
@@ -47,23 +47,8 @@ const STRUCTS = {
   tower: { name: 'ROAD TOWER', w: 3, h: 2, call: true, sight: 240, eye: (o) => towerFoot(o), mm: mmTeam, map: chTeam, tiers: [
     { cost: { gold: 150 }, hp: 700, buildT: 1 },
   ]},
-  // The fish net: the one building that goes on water instead of snow.
-  // `water: true` is the whole difference, and every site reads that flag
-  // rather than the type name - it never freezes over while it stands (the
-  // dawn refreeze), and is not solid (isSolidTile), because walking onto it
-  // is how anyone - owner or not - takes the catch out of it.
-  net: { name: 'FISH NET', water: true, mm: mmTeam, map: chTeam, tiers: [
-    { cost: { gold: 8 }, hp: 45, buildT: 5 },
-  ]},
 };
 const BARRACKS_ROLL = 0.5; // s between the soldiers of one wave leaving the door
-
-// fish nets: a building laid over an open hole that fishes it on its own
-const NET_CAP = 3;         // fish a net holds before it stops catching
-const NET_R = 9;           // px from the net's centre a fish is caught at
-const NET_LURE = 44;       // ...and px it draws fish gently toward
-const NET_CATCH_T = 2.2;   // seconds between catches, so a net fills visibly
-const NET_TAKE_T = 0.3;    // seconds between fish handed to whoever stands on it
 
 // The one place a building object is made (the merchant's barracks, the road
 // towers and DBG.buildStruct): the anchor object, its footprint fillers, the
@@ -87,9 +72,6 @@ function createStruct(tx, ty, type, tier, p, building) {
   // waveT: the clock to the next wave. queue/rollT: soldiers still to leave
   // the door, and the gap to the next. born: when it stood, for the growth.
   if (type === 'barracks') { o.waveT = t.waveT; o.queue = 0; o.rollT = 0; o.born = state.elapsed; o.door = 0; }
-  // fish: what the net is holding. catchT/takeT are the two clocks that let
-  // it fill and empty a fish at a time instead of all at once
-  if (type === 'net') { o.fish = 0; o.sun = 0; o.catchT = NET_CATCH_T; o.takeT = 0; } // o.sun: how many of o.fish are gold sunfish
   o.sparkT = 0;
   structures.push(o);
   return o;
@@ -110,7 +92,7 @@ function removeStruct(o) {
 
 // ------------------------------------------------------------ the building sim
 const RES_COLORS = {
-  gold: '#f2cc6a', berry: '#f2707a', fish: '#9fd0ea', sunfish: '#f2b640', whitefish: '#cfdcec', snowChar: '#d47e8e',
+  gold: '#f2cc6a',
 };
 // audio/screen gating: is this happening near the local listener?
 function nearPlayer(x, y, r) { return !!player && Math.hypot(player.x - x, player.y - y) < (r || 180); }
@@ -199,46 +181,6 @@ function updateStructures(dt) {
       }
       const want = o.queue > 0 ? 1 : 0; // the shutter is up only while a column is leaving
       o.door += Math.sign(want - o.door) * Math.min(Math.abs(want - o.door), dt * 2.2);
-    } else if (o.type === 'net') {
-      // The net fishes on its own: any born fish that swims over the rope is
-      // caught and comes out of the shoal (which is what the trickle in
-      // updateFish refills), one every NET_CATCH_T so a net visibly fills
-      // rather than snapping shut on the whole pond at once.
-      o.catchT -= dt;
-      if (o.fish < NET_CAP && o.catchT <= 0) {
-        for (let k = fish.length - 1; k >= 0; k--) {
-          const f = fish[k];
-          if (!f.born || Math.hypot(f.x - ox, f.y - oy) > NET_R) continue;
-          fish.splice(k, 1);
-          o.fish++;
-          if (f.kind === 'sunfish') o.sun = (o.sun || 0) + 1;
-          o.catchT = NET_CATCH_T;
-          sfxAt('splash', ox, oy);
-          burst(ox, oy, '#7fa9c6', 6, 40, 0.4, true);
-          burst(ox, oy, '#ddf1f8', 5, 45, 0.4, true);
-          break;
-        }
-      }
-      // ...and it hands the catch to whoever is standing on it, theirs or
-      // not: a net is a thing lying on the ice, not a locked chest. Contested,
-      // so two players over one rope cannot take the same fish.
-      o.takeT -= dt;
-      if (o.fish > 0 && o.takeT <= 0) {
-        for (const p of players) {
-          if (!p.active || p.dead || inAir(p)) continue;
-          if (Math.floor(p.x / TILE) !== o.tx || Math.floor((p.y + 4) / TILE) !== o.ty) continue;
-          contest('net:' + idx(o.tx, o.ty), p, () => {
-            const k = o.sun > 0 ? 'sunfish' : 'fish'; // the rare one comes off the rope first
-            if (o.fish <= 0 || bagAdd(p, k, 1) < 1) return;
-            o.fish--;
-            if (k === 'sunfish') o.sun--;
-            o.takeT = NET_TAKE_T;
-            if (p.catchT <= 0) startCatch(p, k); // the first fish off the rope is hoisted; the rest come up under it
-            addFloater(p.x, p.y - 14, '+1', RES_COLORS[k]);
-            sfxFor(p, 'stash');
-          });
-        }
-      }
     }
   }
 }

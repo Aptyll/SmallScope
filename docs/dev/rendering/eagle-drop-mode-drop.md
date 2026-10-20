@@ -187,5 +187,5 @@ under it). Text scale follows the view (2× when tall). Once `down`, both object
 the minimap disc and the M map as the same bird diamond in team colour.
 
 Airborne players (`inAir(p)`: aboard or `dropT > 0`) are skipped by `updatePlayer`/`updateAI`, arrows,
-drops, wildlife scares, `enemyOf`, the y-sorted draws, the minimap and the M map. The god rays answer
+wildlife scares, `enemyOf`, the y-sorted draws, the minimap and the M map. The god rays answer
 the ride alone (`rayLight` asks `aboard`/`dropT`, never `inAir`).

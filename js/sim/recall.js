@@ -2,13 +2,13 @@
 // THE WAY HOME, and the ground that heals you there. League's loop: fight,
 // go back, heal, shop, ride the zipline out.
 //
-// THE RECALL is a channel, the meal's kind (js/sim/core.js): RECALL_T seconds
+// THE RECALL is a channel: RECALL_T seconds
 // standing still, then the body is set down at its own roost on the tile a
 // carried-back scout lands on (roostTile, js/sim/player.js). It arrives as a
 // cmd ({ kind: 'recall' }: the H key, a bot, the bots' API) so it rides the one
 // input path online. Anything the body DOES ends it - a step, the bow, an
-// ability, E, the roll, the slide - and so does every way a meal is knocked
-// out (breakEat calls breakRecall: a hit, a stun, the water, the cable). It is
+// ability, E, the roll, the slide - and so does every way a channel is knocked
+// out (breakRecall: a hit, a stun, the roll, the fire button, the water, the cable). It is
 // refused while the bird is not down, in the air, under the snow, riding,
 // stunned or busy with something that already owns the hands. The tell is the
 // whole point of a channel: a ring closing on the feet in your side's colour
@@ -70,7 +70,7 @@ function recallIntents(p) {
 }
 
 // the step: the channel's clock and the landing, then the ring's heal.
-// Called from updatePlayer beside the meal's clock.
+// Called from updatePlayer, after the abilities' clock.
 function updateRecall(p, dt) {
   if (p.recallT > 0) {
     p.recallT -= dt;

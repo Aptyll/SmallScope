@@ -21,7 +21,7 @@ to the world.
   client's own slot is its `'human'` and the host's is a `'remote'` (`netClientApply`).
 - `control: 'ai'` — driven by `updateAI()`. Every place nobody takes is filled with one at boot.
 - `control: 'none'` — nobody is in it. The player still exists; it is drawn as a flat team-tinted
-  silhouette at its `spawn` (`drawGhost`) and is skipped by the sim, arrows and drops. A player
+  silhouette at its `spawn` (`drawGhost`) and is skipped by the sim and arrows. A player
   emptied before it ever landed stands at the world centre, the placeholder `spawn`.
   `p.active` is the `control !== 'none'` test every such loop uses.
 
@@ -44,14 +44,14 @@ wears the **profile's** name and last hero — `applyProfile()`, called by `init
 `CLASSES[cls].look` that every `setClass` writes, so every copy of a hero looks the same), `spawn` (the tile it landed
 on from the eagle), `aboard`/`dropT`/`dropU`
 (the eagle ride, see [Eagle drop](rendering/eagle-drop-mode-drop.md)), its own `inv` wallet and
-`food` pouch (see [the pouch](gameplay/the-pouch.md)),
+`potions`/`potT` (the stack and the running drink, [Heals](gameplay/heals.md)),
 `level`/`xp` (see [Hero levels](#hero-levels)), `earned` (the match's gold earned), `kills`, an `input` struct and an `ai` brain.
 `reset(first)` places it at `spawn` and clears every transient; it is the single definition of
 "a fresh player". Boot calls it with `first` true, and `respawnPlayer` — the team's bird setting a
 downed player back down — with `false`, which is what gives the return its 3 s of i-frames.
 
 Behaviour lives in free functions taking `p` (`updatePlayer`, `tryWork`, `basicAttack`, `tryDodge`,
-`startEat`, `damagePlayer`, `die`, …), matching the rest of the file's
+`useItem`, `damagePlayer`, `die`, …), matching the rest of the file's
 style — the class is the state container, not a god object.
 
 ## The input struct
@@ -61,10 +61,9 @@ style — the class is the state container, not a god object.
 ```
 mx, my        movement axis, -1..1 (the sim normalises)
 aimX, aimY    world-space aim point — cursor for a human, target for a bot
-fire          bow held: rising edge draws, falling edge looses. The rising edge
-              also CANCELS a meal in progress (see Food in gameplay.md), so the
-              button a player reaches for in a fight is never refused
-work          E held (with it clear, the hands still take a tree, a bush or a fish in reach: autoWork/autoFish)
+fire          bow held: rising edge draws, falling edge looses; any of it ends
+              a recall (recallIntents, js/sim/recall.js)
+work          E held (with it clear, the hands still take a tree, a chest or a snowdrop in reach: autoWork)
 slide         shift held
 dodge         edge-triggered, cleared by the sim when it reads it
 jump          edge-triggered: the hop off the roosted bird (hopOff,
@@ -77,17 +76,17 @@ jump          edge-triggered: the hop off the roosted bird (hopOff,
 grapple       held (key 3): the hunter's grapple reels only while this is down -
               the one held ability input (playerMove's grapple branch reads it;
               the burrow is the SNOW COVER cast on `ability`, not a field here)
-eatBerry      edge-triggered (Q): STARTS the 1.5s meal, it does not heal on the spot
-eatFish       edge-triggered (F): same, and off the same shared 3s clock
-              (startEat, js/sim/core.js - see Food in gameplay.md)
+useItem       edge-triggered, -1 or an item slot (0-5): that slot's key or a click
+              on its well - drinks a health potion (useItem, js/sim/items.js;
+              see Heals in gameplay.md)
 ability       edge-triggered (keys 1-4): cast that class ability, -1 = none
               (tryAbility, js/sim/abilities.js - see Classes below)
 cmd           one-shot order, run by runCmd (js/ui/wheel.js):
               {kind:'ability', i} - an ability level: no tile, no reach, no
               contest, paid with a skill point
               or {kind:'shop', act, ...} - at the merchant's counter: act
-              'item' (buy an item, id), 'sellItem' (slot) or 'trade' (food:
-              good, dir, n?); no tile and no contest
+              'item' (buy an item, id) or 'sellItem' (slot; a potion stack
+              sells one); no tile and no contest
               (every item is always on sale), but it re-checks its own reach
               (shopCmd, js/ui/shop.js)
               or {kind:'ping', k, x, y} - a ping at that world point, no
@@ -106,7 +105,7 @@ the auto-attack's fire edges into the same struct from its orders), and zeroes i
 [map](gameplay/the-m-map-does-not-pause.md) don't stop the sim and so don't zero the whole struct:
 each drops only the intents it swallows (the map keeps movement, the wheel keeps movement minus
 the roll). The keydown
-handlers and `resolveWheel()` never act directly: they set `input.dodge` / `input.eatFish` /
+handlers and `resolveWheel()` never act directly: they set `input.dodge` / `input.useItem` /
 `input.cmd` and let the next `updatePlayer` perform it. **A new ability must be a field here** —
 and in the `in` message a client sends and `netHostStep` copies (js/net/net.js) — or bots and
 remote humans can't use it.
@@ -139,7 +138,7 @@ font cannot draw (the arrows, the modifiers, punctuation with no glyph) is a wor
 SPACE, SHIFT, UP, SEMI …).
 
 **What a key does is an action, and an action has a key.** `KEY_ACTIONS` is every rebindable
-verb — the four walk keys, the four abilities, dodge, slide, harvest, the two meals, recall, the sheet, the map, the standings, mute,
+verb — the four walk keys, the four abilities, dodge, slide, harvest, the six item keys, recall, the sheet, the map, the standings, mute,
 pause, and the CLICK
 scheme's three of its own (attack-move, stop, the ping) — with the key each starts on
 per scheme (`key` on WASD, `ck` on CLICK, `ms` on MOUSE where it differs from `ck`; an action
@@ -245,7 +244,7 @@ what CLICK leaves on the keyboard moves onto the mouse. The keys still work; not
   A stand lock never walks (the chase is the right button's) and a new order drops it; a left
   press at open snow lets it go.
 - **Holding the middle button opens the ACTION WHEEL** at the pointer (`msWheelPress`, wheel
-  kind `'kit'`, `MS_WHEEL`): the four abilities clockwise from the top, the two meals, the ping.
+  kind `'kit'`, `MS_WHEEL`): the four abilities clockwise from the top, the potion, the ping.
   The travel picks and the release performs (`msKitPick`). An ability casts at the point the
   press was made, not where the flick ended: `ms.castAt` holds the aim through the whole
   wind-up (`ckStep`), since the effect lands at the aim held at its end. The ping wedge stands
@@ -284,7 +283,7 @@ not the game's. In play every button is a key (`PAD_PLAY`): A rolls (and hops
 off a landed eagle: `updateDrop` reads the roll intent beside E's work, so the jump button is the
 way off the roost), X works,
 Y / B / LB / RB are abilities 1-4 in strip order (LB held is the grapple), START the ESC slab,
-dpad up the sheet, dpad left/right the two meals. Four are gestures: RT is the draw
+dpad up the sheet, dpad left a potion. Four are gestures: RT is the draw
 (held, released fires — the same falling edge as the button), LT the slide, R3 pings at the aim
 (a tap is GO HERE, a hold opens the ping wheel; the right stick picks the wedge by its tilt from the
 wheel's own hub, `PAD_WHEEL_R` off `wheelLayout` — the same over a wheel X holds open: the
@@ -523,7 +522,7 @@ swing is refused. It is not helpless either: a rival lingering in `GUST_R` makes
 `seenAt`, like every other watcher — and after `PREEN_DELAY` unhit it preens `PREEN_RATE`
 hp/s back.
 
-`die(p, src, cause)` takes **nothing off the body** regardless of what happens next: wallet, pouch,
+`die(p, src, cause)` takes **nothing off the body** regardless of what happens next: wallet,
 weapon and build all stay, and the killer and the assists are paid by `payTakedown`
 ([Takedowns](gameplay/death-and-respawn.md#takedowns-assists-bounties-and-shutdowns)) — gold is never a physical drop. What happens next
 depends on `teamEagleDown(p.team)` alone: the wait and the return of
@@ -594,7 +593,7 @@ the road everyone walked out on, past the merchant. A bird still in the air (a p
 shot in the seconds between its own landing and the bird's) has nowhere to set anyone down, so
 the timer holds at zero until it roosts; a bird that has fled mid-timer is left to
 `eagleFleeResolve`, which puts the whole side out at the end of the ceremony. `reset()` never
-touches `p.items`, skill ranks, level, xp, the wallet or the pouch, and with `first` false it leaves the weapon slots alone too (the class kit is only handed
+touches `p.items`, skill ranks, level, xp or the wallet, and with `first` false it leaves the weapon slots alone too (the class kit is only handed
 over again when every slot is bare), so the whole player survives every respawn within a match —
 the wait is the entire cost ([death keeps everything](gameplay/death-and-respawn.md)).
 
@@ -632,10 +631,8 @@ contest('work:' + idx(tx, ty), p, () => { /* runs only if p wins */ });
 (drop pickups). Claims must re-check their preconditions inside the callback — cost is paid at
 resolution, so a loser keeps its gold.
 
-Currently contested: work swings (`swingHit`, keyed by tile), fish catches (`autoFish`, keyed by fish index — nothing refuses one, since fish go in the
-pouch), drop pickups (keyed by drop index — every player standing on a drop claims it, and the magnet
-pulls it toward the nearest player; a drop is food, which nothing refuses, so it is first-come
-whichever team gets there). A shop buy
+Currently contested: work swings (`swingHit`, keyed by tile), creek fish (`creekFishCatch`, keyed by fish index) and ripe bushes (`bushTouch`, keyed by
+tile), first-come whichever team gets there. A shop buy
 is not contested: every item is always on sale, so two buyers never want the same thing.
 
 ## Bots
@@ -807,7 +804,7 @@ other fields; `p.ai` never rides the wire.
 
 The ladder:
 
-1. **eat** — fish below 50% hp, berry below 80%.
+1. **drink** — a potion under 60% hp (`aiDrink`), read beside the foe pick; it never costs the step.
 2. **burrow** — a hunter bot only, and decided up front, because two rungs below read the answer.
    A bot that has come off
    worse (under the profile's `flee`) with no rival and no camp monster on it goes [prone](gameplay/prone-under-the-snow.md)
@@ -857,6 +854,8 @@ The ladder:
    the side it is chasing.
 5. **lie low** — prone with nothing in sight: hold still and let the snow finish. Everything below
    this rung walks somewhere, and a bot crawling to a berry bush at 20 px/s has stopped playing.
+5'. **heal** — hurt, out of its roost ring and no rival within `AI_HEAL_SAFE`: roll over a showing
+   creek fish from the dry bank, else walk into a ripe bush near by (`aiHealRung`, [Heals](gameplay/heals.md#bots)).
 5a. **the ping** — a human teammate's [ping](gameplay/pings.md) this bot took up (`ai.ping`,
    set by `pingSteer` for the two bots nearest the spot). Read before the ladder (the `order`
    block of `aiOrders`): it overrides the defend, guard, push and escort reads below — the one
@@ -921,7 +920,7 @@ The ladder:
    (10 s).
 9. **escort** (allies only) — the two lowest allied bots (`aiEscorts`) keep within
    `AI_ESCORT` (120 px) of the human while they are on the ground and inside `AI_ESCORT_R`
-   (400 px), going on down the ladder while they are close. An escort's harvest, hunt and loot
+   (400 px), going on down the ladder while they are close. An escort's harvest and hunt
    stay inside that leash, and work the human walks away from is dropped.
 9a. **help** — a teammate's call this bot answers (`aiHelpCall`; never a pusher, a guard, a
    defender or a bot under an order): walk to the caller and stay by them (48 px) while the call is open;
@@ -942,16 +941,15 @@ The ladder:
 10. **hunt** — an animal within `AI_HUNT` (120 px), with a 6 s catch timer per animal (prey
    outruns a walk; 8 s for a blade). A bow shoots from 55 px; a blade walks in to `AI_MELEE_D`
    and swings only inside `AI_MELEE_D` + 8 px. Birds are excluded: they fly, and no ground route catches a flushed flock.
-11. **loot** — walk onto a drop within 72 px (drops are neutral and first-come).
-12. **spend** — **Items come first, at rung 0** (`aiSpend`, beside the skill point): a bot buys its class's
+11. **spend** — **Items come first, at rung 0** (`aiSpend`, beside the skill point): a bot buys its class's
    build ([`BOT_BUILDS`](gameplay/the-merchants-counter.md#buying-and-selling)) at whichever counter it is standing at, a part or the whole
    item, through the same `input.cmd` a human's click sends, and when its purse covers the next
    whole item and it is out of a fight it walks to its own side's counter if that is within
    `AI_SHOP_DETOUR` (32 tiles; farther out it recalls, `aiRecall`), which ends its ladder for that think. With the slots full it sells
    a stray part at the counter (`botStrayPart`: one no item left on its list is built from), and a stray it could sell counts as room for the walk.
-13. **harvest** — walk to a tree or berried bush nobody is at within
+12. **harvest** — walk to a tree nobody is at within
    `AI_FORAGE` (12 tiles) and hold E at the profile's `work` duty cycle.
-14. **roam** — wander between its landing site and the map centre.
+13. **roam** — wander between its landing site and the map centre.
 
 **The two birds.** `aiSituation()` (the `the two birds` sub-banner) is what every bot knows
 about the objective, both sides of it, all match — read once per sim step (cached on
@@ -982,7 +980,7 @@ never coasts to the terminus by accident, and rungs 3 and 4 let go before they f
 rides past an enemy holding the handle (roost to the map's centre is about 12.5 s by the cable against
 23 s on foot, seed 42). The -1, not a
 timer, is what makes a bot drop a goal: harvest puts the target on `ai.avoid` for 12 s, hunt on
-`ai.huntAvoid`, loot lets the drop lie, spend backs off for 15 s, a push on `ai.pushCd`, roam
+`ai.huntAvoid`, spend backs off for 15 s, a push on `ai.pushCd`, roam
 re-picks. Harvest routes
 with reach `WORK_REACH` (any open tile beside the target), so `aiOpenSides() >= 1` is the only
 prefilter on work; a build site still wants `>= 3` open sides. Keep the -1 branches when you

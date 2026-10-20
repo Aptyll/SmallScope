@@ -119,7 +119,7 @@ function workTargetAt(p, tx, ty) {
     if (STRUCTS[st.type]) { if (!ownsStruct(st, p)) t = SWING_AXE; }
     else {
       // scenery answers from its OBJECTS entry: `tool` is what E reaches for,
-      // and `ready` (the bush's berries) is what decides it is worth
+      // and `ready`, where an entry has one, is what decides it is worth
       // reaching. An object carrying a `team` (a roosting eagle's hitbox
       // tiles) is a rival-only target, the same rule a building answers above.
       const d = OBJECTS[st.type];
@@ -141,12 +141,6 @@ function workTargetAt(p, tx, ty) {
   return { o, tx, ty, tool: t, near };
 }
 
-// the fish under the cursor, if any (their bodies are ~10x5, so a 7px disc)
-function hoverFish() {
-  const wx = mouseWX(), wy = mouseWY();
-  for (const f of fish) if (f.born && Math.hypot(f.x - wx, f.y - wy) < 7) return f;
-  return null;
-}
 // the cable under the local player's pointer (zipUnder, js/sim/zipline.js), while
 // it is on the ground with the world under the pointer and nothing open over
 // it - or null. The cable pass lights the strand on it and the guide line
@@ -156,19 +150,12 @@ function hoverZip() {
   if (player.dead || player.zip >= 0 || inAir(player)) return null;
   return zipUnder(mouseWX(), mouseWY());
 }
-// bow-fishing works when the player stands on ice with the fish in FISH_CATCH_R
-function fishInRange(f, p) {
-  p = p || player;
-  const ftx = Math.floor(p.x / TILE), fty = Math.floor((p.y + 4) / TILE);
-  return f.born && inWorld(ftx, fty) && ground[idx(ftx, fty)] === 1 &&
-    Math.hypot(f.x - p.x, f.y - p.y) < FISH_CATCH_R;
-}
 
 // E: swing the right tool at the cursor's tile. Held E repeats every swing
 // cooldown; the bow comes back on its own once the cooldown runs out.
 function tryWork(p) {
   if (p.swingCd > 0 || p.fallT > 0 || p.dodgeT > 0 || p.stunT > 0 ||
-    p.castT > 0 || p.rushT > 0 || p.shieldT > 0 || p.eatT > 0 || p.zip >= 0) return; // both hands are on the ability, on the meal or on the zipline's handle
+    p.castT > 0 || p.rushT > 0 || p.shieldT > 0 || p.zip >= 0) return; // both hands are on the ability or on the zipline's handle
   if (p.prone) { risePlayer(p); return; } // no swinging an axe on your belly: E stands you up
   const t = workTarget(p);
   if (!t || !t.near) return;
@@ -196,11 +183,10 @@ function startSwing(p, t) {
 }
 
 // The hands work on their own. Whatever an OBJECTS entry marks `auto` (a
-// tree, a dead tree, a berried bush, a rival's roosting
+// tree, a dead tree, a rival's roosting
 // eagle) and any building on the other team is swung at the moment it is in
 // WORK_REACH, with no key held: the closest such tile in the ring around the
-// player, nearest tile centre first. Fish are the same idea on ice (autoFish,
-// js/sim/attack.js). E keeps its day job for what is left - bare ice and the
+// player, nearest tile centre first. E keeps its day job for what is left - bare ice and the
 // practice dummy - and a held E always wins the hands.
 // Whether a tile is the hands' business, and with which tool (-1 = not). A
 // rival's building or roosting eagle answers with AUTO_PRIO_FOE, scenery with
@@ -237,13 +223,12 @@ function autoTarget(p) {
 // a draw or a held button (updatePlayer lets the draw begin under it,
 // p.autoSwing), does not stand a crawler up, and does not touch the aim.
 // The same gates as tryWork otherwise: a swing on cooldown, or a body busy
-// with a fall, a roll, a stun, an ability or a meal, waits.
+// with a fall, a roll, a stun or an ability, waits.
 function autoWork(p) {
   if (p.swingCd > 0 || p.fallT > 0 || p.dodgeT > 0 || p.stunT > 0 ||
-    p.castT > 0 || p.rushT > 0 || p.shieldT > 0 || p.eatT > 0 || p.prone || inAir(p) || p.zip >= 0) return;
+    p.castT > 0 || p.rushT > 0 || p.shieldT > 0 || p.prone || inAir(p) || p.zip >= 0) return;
   const t = autoTarget(p);
   if (!t) return;
-  cancelCatch(p); // a swing is a swing: the hoist gives way to it
   p.autoSwing = true;
   startSwing(p, t);
 }
@@ -255,7 +240,7 @@ function tryDodge(p) {
   if (p.dodgeT > 0 || p.dodgeCharges <= 0 || p.fallT > 0 || p.dead || p.stunT > 0 ||
     p.rootT > 0 || p.rushT > 0) return; // a trap pins the roll too, and a charge is already a dash
   risePlayer(p); // a roll is the fast way out of the snow, and it costs a charge
-  breakEat(p);   // ...and out of a meal: the roll is the one way YOU end your own channel
+  breakRecall(p); // ...and out of the recall: the roll is the one way YOU end your own channel
   if (p.grapT > 0) grapEnd(p); // rolling off the rope: the reel's speed feeds the dash below
   if (p.zip >= 0) zipEnd(p, false); // ...and off the zipline's handle the same way
   let dx = p.input.mx, dy = p.input.my;
@@ -517,14 +502,6 @@ function hitObject(o, p) {
     sfxAt('chop', ox, oy);
   } else if (o.type === 'dummy') {
     hitDummy(o, DUMMY_WORK_DMG, ox, oy - 10);
-  } else if (o.type === 'bush') {
-    if (o.berries > 0) {
-      o.berries = 0;
-      o.regrow = BUSH_REGROW; // its clock was enrolled by the blink above (joltObj)
-      sfxAt('stash', ox, oy);
-      spawnDrop(ox, oy, 'berry'); spawnDrop(ox, oy, 'berry');
-      burst(ox, oy - 4, '#4c8560', 5, 35, 0.4, true);
-    } else sfxAt('swing', ox, oy);
   } else if (o.type === 'snowdrop') {
     if (OBJECTS.snowdrop.ready(o)) pickSnowdrop(o, p);
     else sfxAt('swing', ox, oy);
@@ -616,13 +593,9 @@ function hurtStruct(o, dmg, p, bot) {
 // `p` is the wrecker, paid wreckPay (structures.js). With nobody to pay the
 // rubble is just rubble.
 function destroyStructure(o, p) {
-  // a net going down tips its catch back out onto the ice - the fish in it
-  // were never the owner's, and wrecking one should not delete them
-  const spill = o.type === 'net' ? o.fish || 0 : 0, sun = o.type === 'net' ? o.sun || 0 : 0;
   if (STRUCTS[o.type]) removeStruct(o);
   else objects[idx(o.tx, o.ty)] = null;
   const c = structCenter(o), ox = c.x, oy = c.y;
-  for (let i = 0; i < spill; i++) spawnDrop(ox, oy, i < sun ? 'sunfish' : 'fish');
   sfxAt('break_', ox, oy);
   burst(ox, oy, '#8a6142', 10, 50, 0.5, true);
   burst(ox, oy, '#eef4fb', 6, 40, 0.5, true);
@@ -865,12 +838,12 @@ function stunUnit(e, t, src, firm) {
     e.swingT = 0; e.swingHitDone = true;           // the swing in flight never lands
     e.sliding = false;
     e.castT = 0; e.castAb = -1;                    // the cast is knocked out of the hands
-    breakEat(e);                                   // ...and so is the meal (js/sim/core.js)
+    breakRecall(e);                                // ...and so is the recall (js/sim/recall.js)
     if (e.shieldT > 0) abShieldDown(e, false);     // ...and the shield, at its full cooldown
     if (e.rushT > 0) { e.rushT = 0; e.rushVictim = null; e.dash = ''; } // (a hero's dash too: HERO_DASH, js/sim/heroes.js)
     if (e.grapT > 0) grapEnd(e);                   // the rope is knocked loose too, at its cooldown
     if (e.mount) rideEnd(e, true);                 // ...and the deer's back (js/sim/wildlife.js)
-    // ...and if it is YOUR hands the swing, the cast, the shield and the meal
+    // ...and if it is YOUR hands the swing, the cast and the shield
     // were just knocked out of, you are told. Only the local player, only a
     // FRESH stun (a second blow inside the window extends it and says nothing
     // new), and it is the one status whose cue is about being unable to act -

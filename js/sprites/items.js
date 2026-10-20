@@ -1,7 +1,6 @@
 'use strict';
-// Goods and their icons: wood, the animated goods and
-// their live icons, the merchant's sack, and the axe and bow a
-// drop shows on the snow.
+// Goods and their icons: wood, the health potion, the gold piece and its
+// live icon, the merchant's sack, and the axe and bow a drop shows on the snow.
 (() => {
   const { bake, liveIcon } = SPR;
 
@@ -26,109 +25,35 @@
     '..ooo...',
     '........',
   ];
-  // The berry is a LOOP rather than a stamp, like the gold piece: a cluster
-  // of four berries under two leaves that flap
-  // (docs/media/new_media4/new-berries-spritesheet.png, eight frames). It
-  // is drawn by hand at the 8x8 every other item icon is, on the sheet's own
-  // colours and to its leaf timing - a 2x2 average of the 16px cluster is
-  // mud - and its body holds still, because the sheet's one-pixel dip is
-  // half a pixel here. They are exposed the way the gold piece is - one LIVE
-  // canvas per icon that stepItemIcons (js/draw/render.js) stamps the frame
-  // into - so `SPRITES[ITEMS[type].icon]` stays one generic read everywhere
-  // in the game.
-  const BERPAL = {
+  // THE HEALTH POTION (BUILD_ITEMS.potion, js/sim/items.js): a round red
+  // flask on a short neck under a cork, 11 wide so it mirrors on one middle
+  // column. Flat planes - the lit red, its shade down the right and along the
+  // bottom, a lighter band where the drink meets the glass - one glint on
+  // the upper left, and the dark outline every item icon wears.
+  const POTPAL = {
     '.': null,
-    'o': '#3e1000', // outline
-    'k': '#4a0501', // the seams between berries, and the stalk
-    'D': '#860005', // berry, shade
-    'r': '#a50006', // berry
-    'h': '#e14c4e', // berry, shine
-    'w': '#fdfcfa', // highlight
-    'g': '#038603', // leaf
-    'G': '#02bc05', // leaf, light
+    'o': '#1c1218', // outline
+    'C': '#c8945a', // cork
+    'c': '#8a6142', // cork, shade
+    'G': '#cfe3f0', // the empty glass of the neck
+    'L': '#ff7b7b', // the drink's top
+    'R': '#e0303a', // the drink
+    'r': '#991a26', // the drink, shade
+    'W': '#ffffff', // glint
   };
-
-  const berry = [
-    [
-      'gG....Gg',
-      'oGGkkGGo',
-      '..owro..',
-      '.rkDDkr.',
-      'orDkkrDo',
-      '.okhrko.',
-      '..oDDo..',
-      '...oo...',
-    ],
-    [
-      '.g....g.',
-      'gGGkkGGg',
-      '..owro..',
-      '.rkDDkr.',
-      'orDkkrDo',
-      '.okhrko.',
-      '..oDDo..',
-      '...oo...',
-    ],
-    [
-      '........',
-      'gGGkkGGg',
-      '..owro..',
-      '.rkDDkr.',
-      'orDkkrDo',
-      '.okhrko.',
-      '..oDDo..',
-      '...oo...',
-    ],
-    [
-      '........',
-      'oGGkkGGo',
-      'goowroog',
-      '.rkDDkr.',
-      'orDkkrDo',
-      '.okhrko.',
-      '..oDDo..',
-      '...oo...',
-    ],
-    [
-      '........',
-      'oGGkkGGo',
-      'goowroog',
-      '.rkDDkr.',
-      'orDkkrDo',
-      '.okhrko.',
-      '..oDDo..',
-      '...oo...',
-    ],
-    [
-      '........',
-      'gGGkkGGg',
-      '..owro..',
-      '.rkDDkr.',
-      'orDkkrDo',
-      '.okhrko.',
-      '..oDDo..',
-      '...oo...',
-    ],
-    [
-      '........',
-      'gGGkkGGg',
-      '..owro..',
-      '.rkDDkr.',
-      'orDkkrDo',
-      '.okhrko.',
-      '..oDDo..',
-      '...oo...',
-    ],
-    [
-      'Gg....gG',
-      'oGGkkGGo',
-      '..owro..',
-      '.rkDDkr.',
-      'orDkkrDo',
-      '.okhrko.',
-      '..oDDo..',
-      '...oo...',
-    ],
+  const itemPotion = [
+    '....ooo....',
+    '...oCCco...',
+    '...ooooo...',
+    '....oGo....',
+    '...oGLGo...',
+    '..oLLLLLo..',
+    '.oWRRRRRro.',
+    '.oWRRRRRro.',
+    '.oRRRRRRro.',
+    '.orRRRRrro.',
+    '..orrrrro..',
+    '...ooooo...',
   ];
 
   // ---------------------------------------------------------------- gold nugget
@@ -475,13 +400,12 @@
     '...ou...',
   ];
 
-  // The two goods that MOVE. Their frames bake like anything else; what
+  // The good that MOVES. Its frames bake like anything else; what
   // ships beside them is a blank canvas of the same size per icon, which
   // stepItemIcons (js/render.js) redraws each frame. It starts on frame 0 so
   // anything that bakes an item icon into a still panel at boot gets a
   // picture rather than a hole.
   const goldFrames = nugget.map((f) => bake(f, NUGPAL));
-  const berryFrames = berry.map((f) => bake(f, BERPAL));
 
   Object.assign(SPRITES, {
     itemWood: bake(itemWood, ITPAL),
@@ -489,13 +413,13 @@
     // is one LIVE canvas per icon that stepItemIcons (js/render.js) stamps the
     // current frame into, once a frame, off one clock. That indirection is the
     // point: an item icon is reached generically all over the game
-    // (`SPRITES[ITEMS[type].icon]` - the pouch, a price, a sale row, a drop on
-    // the snow, a tooltip), and handing those reads an ARRAY would mean
+    // (`SPRITES[icon]` - the purse, a price, a sale row, a tooltip), and
+    // handing those reads an ARRAY would mean
     // teaching every one of them which goods are special. They are not
     // special: they are icons that happen to move.
-    itemAnim: { itemGold: goldFrames, itemBerry: berryFrames },
+    itemAnim: { itemGold: goldFrames },
     itemGold: liveIcon(goldFrames),
-    itemBerry: liveIcon(berryFrames),
+    itemPotion: bake(itemPotion, POTPAL),
     // the merchant's sack, ten frames of coin catching the light: 16x16
     goldSack: sack.map((f) => bake(f, SACKPAL)),
     itemAxe: bake(itemAxe, AXPAL),

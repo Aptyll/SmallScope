@@ -28,8 +28,7 @@ one over the full draw plus the renock (js/sim/stats.js).
 `basicAttack(p)` is the one entry point, the falling edge of `input.fire`, for every player alike
 (`playerAttack`, js/sim/sim.js):
 
-1. The fish hoist gives way (`cancelCatch`), and the cover is read (`ambushReady`) before
-   anything below can break it.
+1. The cover is read (`ambushReady`) before anything below can break it.
 2. A `cut` runs `cutAttack`, a `shot` runs `shootAttack` plus one `sfxAt('arrow', …)`.
 3. `p.nockT = attackCycle(p)` ([the cycle](the-swing-tools-e.md#the-cycle)), and `risePlayer` (the attack is what
    breaks cover).
@@ -102,7 +101,7 @@ the one place a shot sieges**: when the tile that stopped it is a rival's buildi
 
 **The six item slots are on the bottom bar at all times**: a three-by-two grid after the ability
 wells (`itemCellRect(0..5)`, js/ui/strip.js), showing `p.items` ([the items](the-merchants-counter.md#the-items)) left to
-right and top row first as the shop fills them. With the meal wells and the purse beside them it
+right and top row first as the shop fills them. With the purse beside them it
 is the whole of what a player carries into a fight: there is no backpack (cut in 0.531). The
 hero's basic attack has no well: it is the hero's own, and hovering the portrait raises
 `tipAttack` (its damage, draw, renock and reach).

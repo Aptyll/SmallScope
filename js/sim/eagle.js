@@ -644,7 +644,7 @@ function hurtEagle(e, dmg, src, hx, hy) {
     // head and the plate says what happened, which is the market's split too;
     // the feed line goes with it, since the log is the match's record.
     logEvent('YOUR EAGLE IS UNDER ATTACK', null, NOTE_KIND.roost);
-    raiseNotice('roost', Math.round(Math.max(0, e.hp) / e.maxHp * 100) + '%', null);
+    raiseNotice('roost', Math.round(Math.max(0, e.hp) / e.maxHp * 100) + '%');
     SFX.alarm();
   }
   if (e.hp <= 0) eagleFlee(e, src);

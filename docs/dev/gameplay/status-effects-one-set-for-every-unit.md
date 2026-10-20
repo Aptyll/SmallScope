@@ -88,8 +88,8 @@ Two rules make the burn behave like fire rather than like a stream of small arro
 
 - **`DOT_CAUSE`** (js/sim/player.js) — a bite of fire is *not a blow*. It goes **through** the i-frames
   a body does have — a roll does not put a fire out, and neither does a respawn — and never shoves:
-  a burn is a condition on the body, not a blow landing on it. It still breaks cover and the meal:
-  you cannot lie hidden, or eat, while you are alight.
+  a burn is a condition on the body, not a blow landing on it. It still breaks cover:
+  you cannot lie hidden while you are alight.
 - **The tick's own damage type is `burn`, not `fire`** — otherwise the bite would relight the fire
   dealing it and nothing would ever go out.
 

@@ -5,7 +5,7 @@ away): night still falls, arrows still fly, bots still hunt you.
 `sampleHumanInput` handles it in its own branch, and the rule is *the map keeps your feet and
 nothing else*: `mx`/`my`, `slide` and the grapple's held key are read as usual, the edge-triggered
 `dodge` passes
-straight through, and `fire`/`work`/`eatBerry`/`eatFish`/`cmd` are dropped along with any held
+straight through, and `fire`/`work`/`useItem`/`cmd` are dropped along with any held
 draw (the pointer is over the parchment, so there is nothing to aim or work at, and an ability level
 bought blind under the dim would be bought by accident). So you walk with the chart up and watch
 your own marker cross it. Consequences worth knowing:

@@ -121,7 +121,6 @@
     roar: ['low_bear_roar_4.mp3'],
     timber: ['tree_falling_down_#1-1787704695709.mp3', 'tree_falling_down_#3-1787704695712.mp3'],
     coin: ['gold_coin_dropping_o_#1-1787704006953.mp3', 'gold_coin_dropping_o_#4-1787704018023.mp3'],
-    stash: ['pocket_items_thrown__#2-1787704061469.mp3', 'pocket_items_thrown__#4-1787704061471.mp3'],
     hammer: ['hammer_on_nails_cons_#1-1787704939116.mp3', 'hammer_on_nails_cons_#4-1787704939119.mp3'],
     chew: ['Mouthwatering_chewin_#1-1787704822637.mp3', 'Mouthwatering_chewin_#2-1787704817176.mp3'],
     power: ['power_up_gentle_#1-1787704980322.mp3'],
@@ -631,12 +630,10 @@
     mine() { if (smp('mine', { vol: 0.57, rate: 1.05, jitter: 0.12, dur: 0.4 })) return; noise(0.06, 0.25, 2200); tone(320, 0.05, 'square', 0.06, -80); },
     // the UI blip: a selection moving, a panel answering. Synth on purpose -
     // menus need a click that is instant and identical every time, and the
-    // world's own pickups have coin()/stash() of their own.
+    // world's own pickups have coin() and heal() of their own.
     pickup() { tone(660, 0.07, 'square', 0.16); tone(990, 0.09, 'square', 0.16, 0, 0.06); },
     // gold landing in the purse
     coin() { if (smp('coin', { vol: 0.59, jitter: 0.12, dur: 0.55 })) return; tone(880, 0.06, 'square', 0.07); tone(1320, 0.09, 'triangle', 0.06, 0, 0.05); },
-    // something going into the pouch
-    stash() { if (smp('stash', { vol: 0.58, jitter: 0.12 })) return; tone(520, 0.06, 'triangle', 0.08); tone(760, 0.08, 'triangle', 0.07, 0, 0.05); },
     swing() { if (smp('whoosh', { vol: 0.56, rate: 1.6, jitter: 0.12, hp: 400, dur: 0.45 })) return; noise(0.07, 0.1, 600); },
     bowDraw() { noise(0.14, 0.06, 350); tone(160, 0.12, 'triangle', 0.04, 60); },
     dodge() { if (smp('whoosh', { vol: 0.53, rate: 0.8, jitter: 0.08, lp: 2400, dur: 0.6 })) return; noise(0.16, 0.14, 550); tone(340, 0.12, 'triangle', 0.06, -220); },

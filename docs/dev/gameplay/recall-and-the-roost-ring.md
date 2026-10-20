@@ -19,9 +19,9 @@ The play camera cuts to a body that moved more than `CAM_CUT` in one frame inste
 the map (js/sim/sim.js).
 
 **What breaks it**: `recallIntents` at the top of `playerIntents` ends it on any action of the
-body's own (a step, the bow, E, the slide, the roll, a jump, an ability), and `breakEat` calls
-`breakRecall`, so every way a meal is knocked out (a hit, a stun, the water, the cable, the
-fire button) knocks the recall out too. Death clears it.
+body's own (a step, the bow, E, the slide, the roll, a jump, an ability), and `breakRecall` is
+called from every way a body is knocked out of standing still (a hit through `damagePlayer`, a
+stun, the water, the cable, the roll). A potion never ends it. Death clears it.
 
 **The roost ring** is the packed-earth disc the bird blew clear (`BOOM_R`, js/sim/eagle.js), read
 off the bird where it sits, so it follows the roost wherever a map puts it (`roostRing`). Inside

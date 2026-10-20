@@ -387,8 +387,8 @@ function drawCreekFlow(ox, oy, tx0, ty0, tx1, ty1) {
   }
   ctx.globalAlpha = 1;
 }
-// THE CREEK'S FISH (creekFishAt, js/sim/world.js: where each is, what kind, how
-// much shows), drawn UNDER the water: the sprite (SPRITES.creekFish, baked by
+// THE CREEK'S FISH (creekFishAt, js/sim/world.js: where each is and how
+// much shows), every one a whitefish, drawn UNDER the water: the sprite (SPRITES.creekFish, baked by
 // app/bake-fish/paint.py) is rimmed in the water's own shade and laid at
 // part alpha, so the creek shows through it, and the current's glints are
 // drawn after it, so the streaks run over the fish. The heading is the
@@ -401,7 +401,7 @@ function drawCreekFish(ox, oy) {
   for (let i = 0; i < n; i++) {
     const f = creekFishAt(i);
     if (f.show <= 0 || f.x < ox - 16 || f.y < oy - 16 || f.x > ox + WV_W + 16 || f.y > oy + WV_H + 16) continue;
-    const S = SPRITES.creekFish[f.kind].swim;
+    const S = SPRITES.creekFish.whitefish.swim; // the creek's one fish
     const hd = ((Math.round(Math.atan2(f.fdy, f.fdx) / (Math.PI * 2) * S.length) % S.length) + S.length) % S.length;
     const img = S[hd][Math.floor(state.windT * SWIM_BEAT + i * 0.37) & 1];
     ctx.globalAlpha = f.show * SWIM_A;

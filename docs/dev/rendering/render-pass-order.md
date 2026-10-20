@@ -5,7 +5,7 @@
 `renderScreen` and the rest). **World space** (`ctx = wctx`):
 
 1. `syncCasts` (repaint the shade of any scenery that changed, [cast shadows](light-and-weather.md#cast-shadows)) →
-   ground blit → **the creek's fish** (`drawCreekFish`, js/draw/ground.js: whitefish and snow char under the
+   ground blit → **the creek's fish** (`drawCreekFish`, js/draw/ground.js: the whitefish under the
    water, at `SWIM_A` alpha with a rim in the water's own shade) → **the creek's current**
    (`drawCreekFlow`, the same file: glints drifting downstream over the still water the bake laid
    and over the fish, on the field's clock) → under-ice fish (`drawIceFish`, js/draw/lakes.js: frost pike and gold sunfish,
@@ -25,17 +25,17 @@
    blizzard day's low streaks, [the day's weather](drawing-a-thousand-of-something.md#the-days-weather)) → **the weather on the
    ice** (`drawLakeSky`, js/draw/lakes.js: blown streaks over big lakes, a frosty night's glints
    and cracks, fresh dust while it snows - [the wind's leavings](../world.md#the-winds-leavings));
-5. flat objects (stumps, and **fish nets** via `drawNet`);
+5. flat objects (stumps, and a burrow's holes via `drawTunnelHole`);
 6. `drawRecallGround` (the roost rings and the recall's) → `drawClickMarks` (the CLICK scheme's order and lock rings) → `drawCastPreview` (the MOUSE
    scheme's range preview) → `drawAbilityGround` (craters,
-   the piercing shot's telegraph) → item drops;
+   the piercing shot's telegraph);
 7. the **y-sorted `draws` array** (tall objects, every player, animals, robots, the practice
    targets, sorted by feet Y; empty player slots draw as team-tinted
    silhouettes via `drawGhost`; `pushMiddleDraws` adds the cistern's stone, piece by piece at
    the key of a body standing on it, and the orca out of the water, `drawOrcaBreach`, sorted by
    its hole's waterline and cut at it - [the cistern](../world.md#the-cistern));
 8. `drawSelection` (white pulsing corners with a dark shadow over an open wheel's target)
-   → `drawWorkHint` (the E work prompt) → `drawFishHint` (the fish brackets);
+   → `drawWorkHint` (the E work prompt);
 9. `PRACTICE` only: `drawParkour` (the lap clock and BEST/LAST plate), `drawAgame`,
    `drawAgRings`;
 10. construction progress bars → particles → `drawAimLine` (the bow's) → `drawZipGuide` (the
@@ -107,12 +107,12 @@ the model pixels its own ink covers (`canopyOver`). A covering one composes off-
 model's silhouette cut out of it plus a two-pixel falloff (`CANOPY_CUT`), opened in proportion to
 the covered share (full at `CANOPY_FULL`), so the body reads crisp, the forest round it stays
 whole, and a tree merely beside or in front of the hero draws untouched. Nothing is stored per
-tree. The hero's **work target** — the hovered tree, dead tree or
-berried bush — draws under a **pulsing gold rim** (`drawTargetRim`: the buy plates' two
+tree. The hero's **work target** — the hovered tree or dead tree —
+draws under a **pulsing gold rim** (`drawTargetRim`: the buy plates' two
 golds, stamped through the scratch canvas at the eight neighbours, the rim grammar of
 `drawPixelTextOutline`; a windowed pine's rim opens with it), so the target is its own visible
 state everywhere the cursor lands;
-a bare bush never rims because `workTarget`'s `ready` gate already refuses it — a *hovered* bare
+a bush never rims (E does nothing to it: walking into a ripe one heals) — a *hovered* bare
 bush shows its regrow clock instead, the neutral unit bar (`drawHealthBar`, gold) over the plant
 filling toward `BUSH_REGROW`, drawn only while the pointer's tile is that bush (`hovO`, resolved
 beside `wkO` at any reach, since a look asks nothing of the legs). A **camp anchor**
@@ -124,15 +124,6 @@ covering canopy leaves the atlas batch, so the batch below stays whole. A **dead
 stump) all draw at `py + 4` to stay clear of that band — drop one lower and
 a tree on the tile below hides it almost completely. The den is tall enough not to need it: its 21 rows
 sit at `py - 4`, the lip on the foot of its two tiles.
-
-The **fish net** is the one building that is not in `draws` at all. It lies flat on its hole and
-gets walked over, so y-sorting it would put it in front of the player standing on it: `drawNet`
-runs in the flat pre-pass instead, at `(px, py)` filling its tile exactly, with its own health bar
-and its catch (up to `NET_CAP` fish at `NET_FISH_AT`, each on its own bob, the gold sunfish first in
-`NET_FISH_SUN`, the pike in `NET_FISH_PIKE`) drawn into the mesh —
-the catch showing through the rope is the only thing that says a net is worth walking to. An
-unfinished net fades in with `buildT`, because there is nothing out on the water to stand a frame on. Its construction bar comes from the shared progress-bar pass
-like every other building's.
 
 Sprite hit-flash goes through `drawSpriteFlash()`, which recolours via a shared 128×128 `scratch`
 canvas with `source-in` — sprites larger than 128×128 will clip (a bear's 112×76 frame is the biggest).

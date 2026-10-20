@@ -61,7 +61,7 @@ function botGuess(p) {
   const g = (goal, why, x, y, ref, kind) => ({ goal, why, x: x === undefined ? null : x, y: y === undefined ? null : y,
     ref: ref || null, kind: kind || '', guess: true, role: '', mood: '', plan: '', options: null, skill: null, src: '' });
   if (p.dead) return g('DEAD', '');
-  if (p.eatT > 0) return g('EAT', 'HURT');
+  if (p.potT > 0) return g('POTION', 'HURT');
   if (p.recallT > 0) return g('RECALL', 'LOW HP');
   if (p.prone && ai.hideT > 0) return g('HIDE', 'OUTMATCHED');
   // a shot at game is the hunt it belongs to, not a fight: the same goal
