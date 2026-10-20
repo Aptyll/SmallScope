@@ -3,8 +3,8 @@
 A rabbit's kill leaves a **burrow** one time in four (`TUN_DROP`), carried as a stack in a pack
 cell (`ITEMS.tunnel`, stack 5; a full pack leaves it in the snow) and on no hud cell of its own.
 Used (V, or a click on its cell in the drawer), it stands a **hole ghost** on the tile under
-the pointer, the build list's grammar (`tunnelAimToggle`/`drawTunnelGhost`): the builder's reach
-dotted round the body, green where `tunPlaceOk` says it can go (inside `BUILD_REACH`, on open
+the pointer (`tunnelAimToggle`/`drawTunnelGhost`): the digger's reach
+dotted round the body, green where `tunPlaceOk` says it can go (inside `TUN_REACH`, on open
 snow or the road, nothing standing there), red where not. A left press sends the `tunnel` order
 (`runCmd` → `digTunnel`); the key again, the right button or Escape puts the ghost away.
 

@@ -95,7 +95,6 @@ const KEY_ACTIONS = [
   { id: 'ping', verb: 'PING', ck: 'g', was: 'flag' }, // `was`: the id a saved bind of it went by
   { id: 'tunnel', verb: 'DIG BURROW', key: 'v', ck: 'v' }, { id: 'bag', verb: 'INVENTORY', key: 'b', ck: 'b' },
   { id: 'char', verb: 'CHARACTER', key: 'g', ck: 'c' },
-  { id: 'build', verb: 'BUILD', key: 't', ck: 't' }, { id: 'rotate', verb: 'ROTATE', key: 'r', ck: 'x' },
   { id: 'map', verb: 'WORLD MAP', key: 'm', ck: 'm' }, { id: 'board', verb: 'STANDINGS', key: 'Tab', ck: 'Tab' },
   { id: 'mute', verb: 'MUTE', key: 'n', ck: 'n' }, { id: 'pause', verb: 'PAUSE', key: 'p', ck: 'p' },
 ];
@@ -297,15 +296,6 @@ function keyPress(e) {
   // HUD and not an overlay, so unlike the map and ESC it neither stops the
   // sim nor swallows anything but its own clicks.
   if (keyIs(e, 'bag')) { state.bagOpen = !state.bagOpen; SFX.ui(state.bagOpen); }
-  // THE BUILD LIST (the `build list` group, js/ui/wheel.js): a tap of T
-  // opens it over the strip's meal wells on the last piece and a tap again
-  // closes it (so do Escape and the right button); holding T
-  // opens the piece wheel, and the release on a wedge opens the list on that
-  // piece (buildKeyRelease). While it is up the ghost under the pointer is
-  // what a left-click lays, the wheel walks the rows, and R turns a piece
-  // that turns.
-  if (keyIs(e, 'build') && !e.repeat) buildKeyPress();
-  if (keyIs(e, 'rotate') && !e.repeat && state.build) { state.build.rot ^= 1; SFX.turn(); }
   // The work key at a practice prop (the parkour die, the range bell): the
   // press opens its wheel over it, the pointer picks, and RELEASING it takes
   // - the right-click wheel's own hold-and-release grammar, moved onto the
@@ -352,30 +342,22 @@ function keyPress(e) {
     if (hoverZip()) { player.input.jump = true; return; }
     const t = workTarget(player);
     if (!t || !t.near) {
-      // one of your OWN buildings in reach: the press opens its manage
-      // wheel (upgrade / demolish) on the die's grammar - E is the one verb
-      // for the world, and a building of yours is the one thing it never
-      // swings at (manageNear, structures.js)
-      const mg = manageNear(player);
-      if (mg) { SFX.unlock(); state.wheel = { kind: 'manage', tx: mg.tx, ty: mg.ty, site: mg.building, seg: -1, ax: mouse.x, ay: mouse.y }; }
+      // the parkour die: holding the key beside it opens the roll wheel -
+      // the three difficulties
+      const pk = pkDieNear(player);
+      if (pk) { SFX.unlock(); state.wheel = { kind: 'pkdie', tx: pk.tx, ty: pk.ty, seg: -1, ax: mouse.x, ay: mouse.y }; }
       else {
-        // the parkour die: holding the key beside it opens the roll wheel -
-        // ROLL plus the three difficulties - on the manage wheel's own grammar
-        const pk = pkDieNear(player);
-        if (pk) { SFX.unlock(); state.wheel = { kind: 'pkdie', tx: pk.tx, ty: pk.ty, seg: -1, ax: mouse.x, ay: mouse.y }; }
-        else {
-          // the range bell: holding the key beside it opens the difficulty
-          // wheel - easy, medium, hard - and releasing on a wedge rings the
-          // round in at that difficulty (the roll die's own grammar). Only
-          // while the range is idle: mid-round the bell is under the snow
-          // with the rest of the furniture, and the sink and rise are
-          // mid-ceremony.
-          const bl = agBellNear(player);
-          if (bl && agame.phase === 'off') { SFX.unlock(); state.wheel = { kind: 'agbell', tx: bl.tx, ty: bl.ty, seg: -1, ax: mouse.x, ay: mouse.y }; }
-        }
+        // the range bell: holding the key beside it opens the difficulty
+        // wheel - easy, medium, hard - and releasing on a wedge rings the
+        // round in at that difficulty (the roll die's own grammar). Only
+        // while the range is idle: mid-round the bell is under the snow
+        // with the rest of the furniture, and the sink and rise are
+        // mid-ceremony.
+        const bl = agBellNear(player);
+        if (bl && agame.phase === 'off') { SFX.unlock(); state.wheel = { kind: 'agbell', tx: bl.tx, ty: bl.ty, seg: -1, ax: mouse.x, ay: mouse.y }; }
       }
     }
-    // ...and whichever of those four wheels opened rolls out on one cue -
+    // ...and whichever of those wheels opened rolls out on one cue -
     // one line at the end of the chain rather than one per branch, since the
     // guard above means nothing was up when the press arrived
     if (state.wheel) SFX.wheelUp();
@@ -398,7 +380,6 @@ function keyPress(e) {
     else if (ms.ready >= 0) ms.ready = -1; // ...and so is a readied ability (the `mouse only` banner)
     else if (state.drag) { dragReturn(); state.dragPend = null; }
     else if (state.wheel) state.wheel = null;
-    else if (state.build) { state.build = null; SFX.ui(false); }
     else if (state.tunAim) { state.tunAim = false; SFX.ui(false); }
     else if (cheatAimOff()) { /* the practice bar's armed aim, put down */ }
     else if (state.mapOpen) { state.mapOpen = false; SFX.ui(false); }
@@ -421,13 +402,11 @@ function keyRelease(e) {
   // letting go of the ping key pings the pick (GO HERE on a tap), exactly
   // as the pad's R3 and the right button do
   if (keyIs(e, 'ping') && state.wheel && state.wheel.kind === 'ping' && !state.wheel.stand) { resolveWheel(); state.wheel = null; return; }
-  // letting go of the build key: a tap toggles the list, a hold picks off the piece wheel
-  if (keyIs(e, 'build')) { buildKeyRelease(); return; }
-  // letting go of the work key with a wheel it held up (armory, roll die or
-  // range bell) takes what the pointer is on (or cancels from the hub),
+  // letting go of the work key with a wheel it held up (roll die or range
+  // bell) takes what the pointer is on (or cancels from the hub),
   // exactly as releasing the right button does
   if (keyIs(e, 'work') && state.wheel &&
-      (state.wheel.kind === 'pkdie' || state.wheel.kind === 'agbell' || state.wheel.kind === 'manage')) {
+      (state.wheel.kind === 'pkdie' || state.wheel.kind === 'agbell')) {
     resolveWheel();
     state.wheel = null;
   }
@@ -441,11 +420,10 @@ pageListen(window, 'blur', () => {
   state.rebind = null; // a cap left listening would eat the first key back
   state.dragPend = null;
   if (state.drag) dragReturn();
-  // an E-held wheel (armory, roll die or range bell) - or the build key's
-  // piece wheel - is a held gesture too:
-  // its keyup is lost with the focus, so it closes (choosing nothing)
-  // instead of sticking open
-  if (state.wheel && (state.wheel.kind === 'pkdie' || state.wheel.kind === 'agbell' || state.wheel.kind === 'manage' || state.wheel.kind === 'piece')) state.wheel = null;
+  // an E-held wheel (roll die or range bell) is a held gesture too: its
+  // keyup is lost with the focus, so it closes (choosing nothing) instead of
+  // sticking open
+  if (state.wheel && (state.wheel.kind === 'pkdie' || state.wheel.kind === 'agbell')) state.wheel = null;
   // ...and so is the ping wheel G holds, and a held right button's follow
   if (ckOn()) { if (state.wheel) state.wheel = null; ck.follow = false; ck.arm = false; }
 });
@@ -497,14 +475,12 @@ function pointerPress(button) {
   if (button === 2) {
     if (ckOn()) { ckRightPress(); return; } // the CLICK scheme: the right button is the hand
     if (state.mode !== 'play' || state.settingsOpen || state.wheel) return;
-    if (state.build) { SFX.unlock(); state.build = null; return; } // the right button puts the build list away
-    if (state.tunAim) { SFX.unlock(); state.tunAim = false; return; } // ...and the burrow's ghost
+    if (state.tunAim) { SFX.unlock(); state.tunAim = false; return; } // the right button puts the burrow's ghost away
     if (cheatAimOff()) { SFX.unlock(); return; } // ...and the practice bar's aim
     if (state.mapOpen || overMinimap()) { openPingWheel(); return; } // over the chart or the disc: a ping where it points
     if (bagHit(mouse.x, mouse.y) || charHit(mouse.x, mouse.y) || stripHit(mouse.x, mouse.y) ||
         shopHit(mouse.x, mouse.y) || cheatHit(mouse.x, mouse.y)) return; // no wheel through the HUD
-    // any point on the map is a place to ping (building is the list on T,
-    // managing is E beside your own building)
+    // any point on the map is a place to ping
     openPingWheel();
     return;
   }
@@ -520,28 +496,12 @@ function pointerPress(button) {
   if (state.settingsOpen) { mouse.down = true; settingsMouseDown(); return; }
   if (state.mapOpen) { if (mapCloseHit()) { SFX.unlock(); state.mapOpen = false; } return; } // a press off the slab closes the chart; on it, the press is swallowed
   if (voteClick()) return; // the surrender vote's YES / NO (js/ui/vote.js)
-  // the build list: a press on a row picks it, a press on the world lays
-  // the ghost (a red ghost refuses with the deny cue and nothing else);
-  // presses over the rest of the HUD go on to it as ever
   // the burrow's ghost: a press on the world digs there (a red ghost refuses
   // with the deny cue); presses over the HUD go on to it as ever
   if (state.tunAim && !overHud(mouse.x, mouse.y)) { tunnelAimPress(); return; }
   // the practice bar (js/ui/cheats.js): a press on it, then its armed aim on the world
   if (cheatClick(mouse.x, mouse.y)) return;
   if (cheatAimLive() && !overHud(mouse.x, mouse.y)) { cheatAimPress(); return; }
-  if (state.build) {
-    const row = buildListHit(mouse.x, mouse.y);
-    if (row >= 0) { SFX.unlock(); buildPick(row); return; }
-    if (!overHud(mouse.x, mouse.y)) {
-      const g = buildGhostAt();
-      // a `line` piece waits for the release: a drag lays the run, a click the one
-      if (STRUCTS[g.type].line) { SFX.unlock(); state.build.drag = { tx: g.tx, ty: g.ty }; return; }
-      const c = buildOrder(g);
-      if (c) { SFX.unlock(); player.input.cmd = c; }
-      else SFX.deny();
-      return;
-    }
-  }
   // The backpack widget and the strip swallow every press over themselves
   // before the world ever sees them. The character panel
   // is asked first while it is up - the X closes, and the slab eats
@@ -573,15 +533,6 @@ function pointerRelease(button) {
   if (button === 2 && ckOn()) { ckRightRelease(); return; }
   if (button === 2 && state.wheel) { resolveWheel(); state.wheel = null; return; }
   if (button === 1) { if (msOn()) msWheelRelease(); return; }
-  // the release that ends a wall's drag lays the run the ghost shows (a
-  // press and release on one tile is the single piece)
-  if (button === 0 && state.build && state.build.drag) {
-    const c = buildOrder(buildGhostAt());
-    state.build.drag = null;
-    if (c) player.input.cmd = c;
-    else SFX.deny();
-    return;
-  }
   // a carried item is put down (or thrown), and an armed press that never
   // travelled resolves as the plain click it was - both before the tool's own
   // release, so a drag never also looses a shot
@@ -675,29 +626,6 @@ function openPingWheel() {
   return true;
 }
 
-// A build wheel with no pointer to lay a ghost with - a pad's dpad: it opens on the tile the body FACES, offering what
-// stands there (the net over a hole, the land list otherwise); the pick is
-// laid on that tile, a big one fitted round it (placeStruct -> findSite).
-// With a building of the player's own on that tile it is the manage wheel
-// instead. ax/ay is the press point the pick travels from (wheelLayout,
-// ui.js); the caller resolves the wheel on its own release, as the right
-// button does.
-function openWheelNear(p, ax, ay) {
-  if (state.mode !== 'play' || state.mapOpen || state.settingsOpen || state.wheel || p.dead) return false;
-  const dx = p.dir === 'left' ? -1 : p.dir === 'right' ? 1 : 0, dy = p.dir === 'up' ? -1 : p.dir === 'down' ? 1 : 0;
-  const tx = Math.floor(p.x / TILE) + dx, ty = Math.floor((p.y + 4) / TILE) + dy;
-  if (!inWorld(tx, ty)) { SFX.deny(); return false; }
-  const o = structOf(objAt(tx, ty));
-  let kind = null;
-  if (o && STRUCTS[o.type] && !STRUCTS[o.type].fixed && o.team === p.team) kind = 'manage'; // a site too: its wheel is the demolish alone
-  else if (buildOptionsAt(tx, ty).some((t) => canPlaceAt(t, tx, ty, 0, p).ok || findSite(t, tx, ty))) kind = 'build';
-  if (!kind) { SFX.deny(); return false; }
-  SFX.unlock();
-  SFX.wheelUp();
-  state.wheel = { kind, tx, ty, site: kind === 'manage' && o.building, seg: -1, ax, ay };
-  return true;
-}
-
 // ------------------------------------------------------------ click to move
 // THE SECOND KEYBOARD SCHEME (settings.scheme 'click'; 'wasd' is the first,
 // and the KEYBOARD listing's top row switches): the right button is the hand
@@ -705,8 +633,8 @@ function openWheelNear(p, ax, ay) {
 // there by route - navTo, the bots' own walker, so the same feet round the
 // same trees - and holding it drags the goal under the pointer (the League
 // habit). On a tree, a bush, a hole or a rival building it is a walk into
-// reach and the swing; on one of your own buildings, a merchant or the
-// practice furniture a walk into reach and the thing opening; on the chart
+// reach and the swing; on a merchant or the practice furniture a walk into
+// reach and the thing opening; on the chart
 // or the minimap a walk across the map; seated on the roost, the hop. On a
 // rival body it is a CHASE with a LOCK: the body walks into its tool's reach
 // by route, stands, and the tool draws and looses at the target by itself
@@ -736,7 +664,7 @@ const CK_ARRIVE = 5;      // px from a goal that counts as arrived
 const CK_MARK_T = 0.6;    // s the click ring lives on the snow
 const CK_COL = { move: '#f4f7ff', work: '#ffd95c', foe: '#ff6a5c' }; // the ring: a walk, a job, a fight
 // order: {kind:'move'|'amove', x, y} | {kind:'work', tx, ty} | {kind:'chase', t}
-//        | {kind:'use', what:'manage'|'shop'|'pkdie'|'agbell', o, tx, ty}
+//        | {kind:'use', what:'shop'|'pkdie'|'agbell', o, tx, ty}
 // lock: the unit the tool is on; stand: that lock is the LEFT press's (the
 // MOUSE scheme's), which aims and auto-attacks but never walks the body;
 // arm: A pressed, the next left press lays the attack-move; follow: the
@@ -767,12 +695,11 @@ function merchUnder(wx, wy) {
 }
 function ckRightPress() {
   if ((state.mode !== 'play' && state.mode !== 'drop') || state.settingsOpen) return;
-  // a wheel a walk opened (manage, the armory, the die, the bell) stands
+  // a wheel a walk opened (the die, the bell) stands
   // until a press picks; the ping wheel is G's, and G's release pings -
   // unless the action wheel stood it up, when this press picks too
   if (state.wheel) { if (state.wheel.kind !== 'ping' || state.wheel.stand) { resolveWheel(); state.wheel = null; } return; }
-  if (state.build) { SFX.unlock(); state.build = null; return; } // the right button puts the build list away
-  if (state.tunAim) { SFX.unlock(); state.tunAim = false; return; } // ...and the burrow's ghost
+  if (state.tunAim) { SFX.unlock(); state.tunAim = false; return; } // the right button puts the burrow's ghost away
   if (cheatAimOff()) { SFX.unlock(); return; } // ...and the practice bar's aim
   ck.arm = false;
   ms.ready = -1; // a readied ability is put down by the walk, League's grammar
@@ -796,7 +723,6 @@ function ckRightPress() {
     const m = merchUnder(wx, wy);
     if (m) { const c = counterPt(m); ckOrder({ kind: 'use', what: 'shop', o: m, tx, ty }, c.x, c.y + 2, 'work'); return; }
     const o = structOf(objAt(tx, ty));
-    if (o && STRUCTS[o.type] && !STRUCTS[o.type].fixed && o.team === player.team) { ckOrder({ kind: 'use', what: 'manage', o, tx, ty }, wx, wy, 'work'); return; }
     if (o && (o.type === 'pkdie' || o.type === 'agbell')) { ckOrder({ kind: 'use', what: o.type, o, tx, ty }, wx, wy, 'work'); return; }
     if (workTargetAt(player, tx, ty)) { ckOrder({ kind: 'work', tx, ty }, tx * TILE + 8, ty * TILE + 8, 'work'); return; }
   }
@@ -857,15 +783,14 @@ function ckHoldR(p, reach) {
 function ckUse(p, o, walk, r) {
   if (state.wheel || state.shop) { ck.order = null; return; }
   const cx = o.tx * TILE + 8, cy = o.ty * TILE + 8;
-  r.aimX = p.input.aimX = cx; r.aimY = p.input.aimY = cy; // manageNear reads the aim
+  r.aimX = p.input.aimX = cx; r.aimY = p.input.aimY = cy;
   const k = o.what;
-  const near = k === 'manage' ? (manageNear(p) === o.o ? o.o : null) : k === 'shop' ? (merchNear(p) === o.o ? o.o : null)
-    : k === 'pkdie' ? pkDieNear(p) : agBellNear(p);
+  const near = k === 'shop' ? (merchNear(p) === o.o ? o.o : null) : k === 'pkdie' ? pkDieNear(p) : agBellNear(p);
   if (near) {
     ck.order = null;
     SFX.unlock();
     if (k === 'shop') openShop(near);
-    else if (k !== 'agbell' || agame.phase === 'off') state.wheel = { kind: k, tx: near.tx, ty: near.ty, site: k === 'manage' && near.building, seg: -1, ax: mouse.x, ay: mouse.y };
+    else if (k !== 'agbell' || agame.phase === 'off') state.wheel = { kind: k, tx: near.tx, ty: near.ty, seg: -1, ax: mouse.x, ay: mouse.y };
     return;
   }
   const shopPt = k === 'shop' ? counterPt(o.o) : null;
@@ -1071,16 +996,9 @@ pageListen(canvas, 'wheel', (e) => {
   if (state.settingsOpen) { settingsScrollBy(e.deltaY > 0 ? 14 : -14); return; }
   if (state.mapOpen || state.wheel) return;
   // a readied ability (the MOUSE scheme): the wheel walks it along the four
-  // wells, as it walks the build list's rows - the camera's zoom waits
+  // wells - the camera's zoom waits
   if (ms.ready >= 0) {
     ms.ready = (ms.ready + (e.deltaY > 0 ? 1 : -1) + AB_KEYS) % AB_KEYS;
-    SFX.notch();
-    return;
-  }
-  // the build list up: the wheel walks its rows (the camera's zoom waits)
-  if (state.build) {
-    const n = BUILD_ORDER.length;
-    buildPick((state.build.sel + (e.deltaY > 0 ? 1 : -1) + n) % n);
     SFX.notch();
     return;
   }

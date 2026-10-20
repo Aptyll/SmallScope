@@ -83,9 +83,9 @@ function drawBird(a, ex, ey, now) {
   drawUnitStates(a, px, py, spr.width, spr.height, now); // a burning bird still reads as one
 }
 
-// Worker bot: one sprite, two tread frames. The whole thing bobs 1px while
-// driving so body and tread never part. No face - the states are the tread
-// rolling, the tool swinging at a target, and the gold held up front.
+// A bot (a wave's soldier): one sprite, two tread frames. The whole thing
+// bobs 1px while driving so body and tread never part. No face - the states
+// are the tread rolling and the axe swinging at a foe.
 function drawRobot(b, ex, ey, now) {
   if (b.merchant) { drawMerchant(b, ex, ey, now); return; }
   const set = SPRITES.robotTeam[skin(b.team === undefined ? 0 : b.team)] || SPRITES.robot;
@@ -97,45 +97,28 @@ function drawRobot(b, ex, ey, now) {
 
   drawCastShade(spr, bx, by + bob + zl); // on the ground under the bob
 
-  // one swing animation, two jobs: the harvest tick, or - a soldier's blow -
-  // the same axe aimed at whatever b.atkAim points to (`soldiers`, robots.js)
-  let tdx = 0, tdy = 0, working = false, icon = null, prog = 0;
+  // a soldier's blow: the axe aimed at whatever b.atkAim points to (`soldiers`, robots.js)
+  let tdx = 0, tdy = 0, working = false, prog = 0;
   if (b.atkAim) {
     tdx = b.atkAim.x - b.x; tdy = b.atkAim.y - b.y;
     working = true;
-    icon = SPRITES.itemAxe;
     prog = 1 - b.atkCd / ROBOT_ATK_CD;
-  } else if (b.tgt && !b.moving) {
-    tdx = b.tgt.tx * TILE + 8 - b.x; tdy = b.tgt.ty * TILE + 8 - b.y;
-    working = Math.hypot(tdx, tdy) <= 20;
-    icon = SPRITES[b.tgt.type === 'rock' ? 'itemPick' : 'itemAxe'];
-    prog = Math.min(1, b.workT / 0.9);
   }
 
   if (zl) drawZipHandle(b, Math.round(b.x - ex), by, ey); // the handle over the chassis and the rope up to the cable (js/draw/zipline.js)
   drawSpriteFlash(spr, bx, by, b.flash);
-  // a soldier (the `soldiers` banner, robots.js) flies its side's pennant
-  // off the chassis: the one thing that says this bot is not here to chop
-  if (b.kind === 'soldier') drawPennant(ctx, bx + 10, by + 2, TEAMS[skin(b.team)].mark);
+  // a soldier (the `soldiers` banner, robots.js) flies its side's pennant off the chassis
+  drawPennant(ctx, bx + 10, by + 2, TEAMS[skin(b.team)].mark);
 
-  // carried gold: a nugget held up in front of the body
-  if (b.carry > 0 && !working) {
-    const gx = bx + 3, gy = by + 2;
-    ctx.fillStyle = '#1c2130'; ctx.fillRect(gx, gy, 6, 4);
-    ctx.fillStyle = '#f2cc6a'; ctx.fillRect(gx + 1, gy + 1, 4, 2);
-    ctx.fillStyle = '#fff1b0'; ctx.fillRect(gx + 1, gy + 1, 2, 1);
-    ctx.fillStyle = '#b8902e'; ctx.fillRect(gx + 3, gy + 2, 2, 1);
-  }
-
-  // working: raised away from the target through a slow wind-up, then a
-  // fast chop that lands pointing at it (workT resets on the hit)
+  // swinging: raised away from the target through a slow wind-up, then a
+  // fast chop that lands pointing at it
   if (working) {
     const e = prog < 0.7 ? prog / 0.7 * 0.3 : 0.3 + (prog - 0.7) / 0.3 * 0.7;
     const a = Math.atan2(tdy, tdx) - 1.6 * (1 - e);
     ctx.save();
     ctx.translate(Math.round(bx + 6 + Math.cos(a) * 7), Math.round(by + 3 + Math.sin(a) * 7));
     ctx.rotate(a + Math.PI / 2);
-    ctx.drawImage(icon, -4, -4);
+    ctx.drawImage(SPRITES.itemAxe, -4, -4);
     ctx.restore();
   }
 
@@ -148,7 +131,7 @@ function drawRobot(b, ex, ey, now) {
 // The merchant (the `merchant` banner, robots.js): its own 16x18 hooded-robe
 // grids (sprites.js), two rows taller than a slot, standing on player feet
 // (b.y + 8 in the sort, the feet on the player's own foot row),
-// with the worker's axe swing over whatever it is felling or setting, the hop
+// with the soldier's axe swing over whatever it is felling or setting, the hop
 // off the bird as a lift, the shared tells, and a MERCH nameplate in the
 // side's paint - a name, the one text a body over the world gets (the bird it
 // drives wears PERCH the same way, drawEagle in eagle.js). NO HEALTH BAR: it
@@ -165,7 +148,7 @@ function drawMerchant(b, ex, ey, now) {
     (b.moving ? Math.floor(b.animT / 2) % 2 : 0);
   drawCastShade(spr, px, py); // stays on the snow through a hop
   drawSpriteFlash(spr, px, py - lift, b.flash);
-  // the swing: the worker's wind-up and chop, aimed at the tile in hand
+  // the swing: the soldier's wind-up and chop, aimed at the tile in hand
   if (b.tgt && !b.moving && lift === 0) {
     const tdx = b.tgt.tx * TILE + 8 - b.x, tdy = b.tgt.ty * TILE + 8 - b.y;
     if (Math.hypot(tdx, tdy) <= 20) {

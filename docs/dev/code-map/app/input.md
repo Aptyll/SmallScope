@@ -7,7 +7,7 @@
 | a cap listening for its key, the swap on a conflict, the reset | `state.rebind`, `rebindStart`, `rebindKey`, `setBind`, `resetBinds`, `bindsDefault`, `rebindLive` | `keys and binds` |
 | the raw state, and who moved the pointer last | `keys`, `mouse` (`mouse.src`: mouse / pad) | `input` |
 | what a key does, what a button does - the four entry points every controller presses through | `keyPress`/`keyRelease`, `pointerMove`, `pointerPress`/`pointerRelease` | `input` |
-| the bare gestures a pad's trigger sends: the draw, the ping wheel (`openPingWheel`: the spot under the pointer, or the map's or chart's), a build wheel with no tile under a pointer, a page scroll | `fireDown`/`fireUp`, `openPingWheel`, `openWheelNear`, `panelScrollBy` | `input` |
+| the bare gestures a pad's trigger sends: the draw, the ping wheel (`openPingWheel`: the spot under the pointer, or the map's or chart's), a page scroll | `fireDown`/`fireUp`, `openPingWheel`, `panelScrollBy` | `input` |
 | telling the HAND something happened - a pad's rumble, one call whichever controller is in hand | `HAPTIC`, `haptic` (its caller: `hudFx`, js/ui/bag.js; its off switch: the RUMBLE row, `SET_TABS` js/ui/panels.js) | `haptics` |
 | the zoom wheel, the listeners | the `pageListen` block (attached at boot, js/sim/core.js), `wheelZoom` (in play, and dead while watching somebody) | `input` |
 | folding keys, mouse and both sticks into the local player's struct | `sampleHumanInput` | `input` |

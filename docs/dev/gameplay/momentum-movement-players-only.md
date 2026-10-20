@@ -110,7 +110,7 @@ line stays, pointer or no pointer (`zipLitLine`, js/draw/zipline.js).
 a stunned, floundering, rolling, rushing, casting or shielded body and ends a grapple, a draw, a
 meal, a catch and a slide. A meal and a card are the two things a rider may still use. `tryDodge`
 rolls off the cable the way it rolls off the rope (`zipEnd` first, then the dash). **A rider is
-still a body to every weapon** — arrows, the roll's sweep, a turret, a wolf, `seenAt` — and plain
+still a body to every weapon** — arrows, the roll's sweep, a tower, a wolf, `seenAt` — and plain
 damage never dismounts (its knockback decays unspent, since the ride branch never applies
 `kbx/kby`); a **stun, a root or a net** does, through `zipEnd(p, true)` inside `stunUnit`,
 `rootUnit` and `netUnit` (any body's, a soldier's too): dropped at rest on the snow under the

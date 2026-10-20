@@ -17,7 +17,7 @@
 // any hole takes it again. A rival standing on either hole for TUN_BREAK caves
 // the whole tunnel. One tunnel a digger: a new one caves the old, and a digger
 // who goes down before the far end opens loses the near hole with it.
-// Bots never take a hole (yet), so a worker swinging beside one stays put.
+// Bots never take a hole (yet).
 const TUN_DIG = 10;        // s from the near hole going down to the far one opening
 const TUN_CD = 3;          // s after coming up before any hole takes the body again
 const TUN_BREAK = 3;       // s of a rival standing on a hole that caves the tunnel
@@ -27,6 +27,7 @@ const TUN_ON = 9;          // px from a hole's centre that counts as standing on
 const TUN_UP = 10;         // px ABOVE a hole's centre a body comes up: off it (TUN_ON), and the hole lies in front of the boots where neither the body nor its frame hides it
 const TUN_FAR = 2;         // tiles round the digger the far hole may shift to, off a tree or the water
 const TUN_DROP = 0.25;     // a rabbit's chance of leaving a burrow behind
+const TUN_REACH = 64;      // px from the digger to the near hole it lays
 
 // the hole's centre in world px: its tile's middle, a row low like the art
 function tunX(o) { return o.tx * TILE + 8; }
@@ -39,11 +40,11 @@ function tunSiteOk(tx, ty) {
   return g === 0 || g === 3;
 }
 // THE one placement rule for the near hole: the ghost's colour, the click and
-// the order all ask it. Inside the builder's reach, on a free site, with a
+// the order all ask it. Inside the digger's reach (TUN_REACH), on a free site, with a
 // burrow in the pack and no far end already being dug.
 function tunPlaceOk(p, tx, ty) {
   if (p.dead || inAir(p) || p.digT > 0 || bagCount(p, 'tunnel') <= 0) return false;
-  if (Math.hypot(tx * TILE + 8 - p.x, ty * TILE + 8 - p.y) > BUILD_REACH) return false;
+  if (Math.hypot(tx * TILE + 8 - p.x, ty * TILE + 8 - p.y) > TUN_REACH) return false;
   return tunSiteOk(tx, ty);
 }
 // the `tunnel` order (runCmd, js/ui/wheel.js): the near hole goes down and the
@@ -176,14 +177,13 @@ function updateTunnels(dt) {
 
 // ---- the aim: the local hand's ghost ---------------------------------------
 // The burrow's key (or a click on its pack cell) stands a hole ghost on the
-// tile under the pointer, the build list's grammar: green where tunPlaceOk says it can go,
-// red where not, and the builder's reach dotted round the body. A left press
+// tile under the pointer: green where tunPlaceOk says it can go,
+// red where not, and the digger's reach dotted round the body. A left press
 // on the world sends the order; the key again, the right button or Escape
 // puts it away. state.tunAim is the screen's, never the match's (SAVE_STATE_SKIP).
 function tunnelAimToggle() {
   if (state.tunAim) { state.tunAim = false; SFX.ui(false); return; }
   if (player.dead || inAir(player) || player.digT > 0 || bagCount(player, 'tunnel') <= 0) { bagDenied(); return; }
-  state.build = null;
   state.tunAim = true;
   SFX.ui(true);
 }

@@ -189,36 +189,8 @@ function tipClassAb(i, cls, k) {
   d.notes.push([ab.tip || ab.blurb.split('. ')[0].replace(/\.$/, ''), TIP_DIM]);
   return d;
 }
-// A PIECE on the build list: the numbers a piece is chosen on - the price in
-// the row's own pair of inks, then what it stands up to, how long it takes,
-// and whatever that type alone has - and under them what it is FOR, one line
-// a sentence (STRUCTS[type].blurb). Always the first tier: the one the list lays.
-function tipStruct(type) {
-  const S = STRUCTS[type], t = S.tiers[0];
-  const d = { title: S.name, tcol: '#f4f7ff', kind: 'BUILDING', rows: [], notes: [],
-    icon: buildIcon(type), plate: '#1d1f24', rim: '#3c4048' };
-  const c0 = buildCost(type, player); // what the NEXT one costs: an income building's ramp
-  d.rows.push(['COST', (c0.gold || 0) + ' GOLD', canAfford(c0) ? RES_COLORS.gold : '#e0637a']);
-  d.rows.push(['HEALTH', String(t.hp), '#f4f7ff']);
-  d.rows.push(['BUILDS IN', tipSec(t.buildT), '#f4f7ff']);
-  if (t.dmg) {
-    d.rows.push(['DAMAGE', String(t.dmg), '#e0637a']);
-    d.rows.push(['FIRES EVERY', tipSec(t.rate), '#f4f7ff']);
-    d.rows.push(['RANGE', String(t.range), '#f4f7ff']);
-    if (t.acc) d.rows.push(['ACCURACY', Math.round(t.acc * 100) + '%', '#f4f7ff']);
-  }
-  if (t.pay) d.rows.push(['GOLD A MINUTE', String(Math.round(t.pay * 60 / t.period)), RES_COLORS.gold]);
-  if (t.bots) {
-    d.rows.push(['BOTS', String(t.bots), '#f4f7ff']);
-    d.rows.push(['BOT HEALTH', String(t.botHp), '#f4f7ff']);
-  }
-  if (S.water) d.rows.push(['HOLDS', NET_CAP + ' FISH', '#7ac0e8']);
-  for (const s of S.blurb.split('. ')) d.notes.push([s.replace(/\.$/, ''), TIP_DIM]);
-  return d;
-}
 // What the pointer is on, asked once per frame. The order mirrors the
-// mousedown handler exactly: the build list's rows, the character panel's
-// items, then the strip, then the backpack - so the
+// mousedown handler exactly: the character panel's items, then the strip, then the backpack - so the
 // panel and the click always agree.
 function tipAt(mx, my) {
   if (window.DBG.hideUI || !mouse.inside) return null;
@@ -248,8 +220,6 @@ function tipAt(mx, my) {
     if (d) d.notes.push(['SHIFT CLICK KEEPS THIS IN HAND', TIP_DIM]);
     return d;
   }
-  const bl = buildListHit(mx, my);
-  if (bl >= 0) return tipStruct(BUILD_ORDER[bl]);
   const ci = charItemHit(mx, my);
   if (ci >= 0 && player.items[ci]) return tipItem(player.items[ci]);
   const rc = railHit(mx, my);

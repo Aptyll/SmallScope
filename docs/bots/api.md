@@ -118,10 +118,10 @@ obs = {
 - **"Near"** is `rules.obsR` px (384, 24 tiles: the minimap's reach). `enemies` and `soldiers`
   are near *anyone on your side*; the rest is near *you*.
 - **Hidden rivals.** A rival buried past the point where it drops off the minimap is not listed,
-  unless a falcon mark is on it. The game's own sight rule decides, the one every turret and wolf
+  unless a falcon mark is on it. The game's own sight rule decides, the one every road tower and wolf
   uses.
 - **The fog of war.** A rival player, a rival soldier or an animal outside your side's sight (a
-  circle round each of your heroes, soldiers and turrets, cut by stone; the woods hide a body
+  circle round each of your heroes, soldiers and road towers, cut by stone; the woods hide a body
   until one of you stands close) is not listed either - the same fog a human plays under.
 - **Birds.** `state` is `'fly' | 'dive' | 'down' | 'flee' | 'gone'`. A bird `'down'` is the
   objective: drive the rival one to `'flee'` and your side wins. `hp` is its nerve. `hitT` is
@@ -180,8 +180,6 @@ again on its side, exactly as it does a player's.
 | `cmd` | what it does |
 | --- | --- |
 | `{ kind: 'ability', i }` | spend a skill point on key `i` |
-| `{ kind: 'build', tx, ty, id, rot }` | place a building |
-| `{ kind: 'upgrade' \| 'repair' \| 'demolish', tx, ty }` | manage your side's building there (within 60 px) |
 | `{ kind: 'ping', k, x, y }` | ping a spot for your side (`k` as above; a mark only, it steers no bot; at most 3 in 5 s) |
 | `{ kind: 'recall' }` | channel home: 6 s standing still, then set down at your roost. Any move, shot, ability, roll or blow ends it |
 | `{ kind: 'shop', act: 'item', id }` / `{ act: 'sellItem', slot }` / `{ act: 'trade', good, dir, n }` / `{ act: 'sell', i }` | at a merchant's counter: buy an item, sell a slot, buy `n` or sell all of `fish`/`berry` (`dir` 1 or -1), sell bag cell `i` |

@@ -2,8 +2,7 @@
 # with the 2D cutout painter (app/media/paint.py) - never typed by hand.
 # pump(tier, f) is one 64x64 frame of the stroke: the crank turns, the
 # pitman arm rocks the walking beam, the horse head nods, the gold level in
-# the barrel bobs and a glint runs down the pipe on the down-stroke. icon()
-# is the 16x16 build-list glyph. The team paint is the 'team' material; the
+# the barrel bobs and a glint runs down the pipe on the down-stroke. The team paint is the 'team' material; the
 # bake (bake.py) swaps it for sentinels and writes the grids.
 import os, sys, math, numpy as np
 sys.path.insert(0, os.path.normpath(os.path.dirname(os.path.abspath(__file__)) + '/../media'))
@@ -101,16 +100,3 @@ def pump(tier=0, f=0, frames=8):
 # where the barrel's mouth is, in the 64 px frame, per tier: the payout's coin hops from here
 def barrel_mouth(tier): return (28, 41 - tier)
 
-def icon():
-    # the 16x16 build-list glyph: the same jack, nose down, on its skid
-    c = Canvas(16)
-    box(c, 1, 11, 14, 1.5, 2.5, 'stone')
-    box(c, 1, 14, 14, 0, 0.8, 'team', ft=0.75)
-    c.tube((5.4, 12), (7.6, 4.5), 0.6, mat='wood', bias=0.2)
-    c.tube((9.8, 12), (7.6, 4.5), 0.6, mat='wood', bias=0.0)
-    c.tube((2.2, 6.2), (12, 3.6), 0.65, mat='iron', bias=0.15)
-    c.dome((2.6, 7.2), 1.4, 1.4, mat='iron', bias=-0.1)
-    c.lens((11.8, 2.4), (12.6, 7.4), 2.8, mat='team', prof='petal', fold=0.45)
-    c.tube((13.2, 7), (13.2, 11), 0.35, mat='gold', bias=0.35)
-    c.dome((7.6, 4.5), 0.8, 0.8, mat='gold', bias=0.2)
-    return c.render()

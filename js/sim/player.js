@@ -520,7 +520,7 @@ function makeInput() {
     eatBerry: false, eatFish: false, // edge-triggered
     useCard: false,      // edge-triggered: draw one unopened card at random (useCard, js/sim/core.js)
     ability: -1,         // edge-triggered: cast the class ability on this key (1-4), js/sim/abilities.js
-    cmd: null,           // one-shot: {kind:'build'|'upgrade'|'demolish'|'craft', tx, ty, id} or {kind:'ability', i}
+    cmd: null,           // one-shot: {kind:'shop'|'ping'|'tunnel'|..., ...} or {kind:'ability', i} (cmdOk, js/ui/wheel.js)
   };
 }
 
@@ -609,7 +609,7 @@ class Player {
     this.ai = {
       tgt: null, avoid: null, avoidT: 0, thinkT: 0,
       huntTgt: null, huntT: 0, huntAvoid: null, huntAvoidT: 0,
-      lootT: 0, spendT: 0, buildT: 0,
+      lootT: 0,
       hideT: 0, hideCd: 0,
       wx: 0, wy: 0, roam: 0,
       // the difficulty profile's clocks (ai-skill.js): prof overrides the
@@ -631,10 +631,10 @@ class Player {
       // downs/grudge who it has downed
       // and the mark it holds a grudge on, answerAt/answerKind/answerKey the
       // human ping it last answered and when its ON IT is due (aiAnswer), band its range band
-      // in a fight (aiRangeBand), fortCd the wait before it next chooses a turret or wall job (fortJob, held between), packT how long it has waited at the rally, scout/scoutN
+      // in a fight (aiRangeBand), packT how long it has waited at the rally, scout/scoutN
       // the scout's point and step along its beat, thought what it is doing
       // and why (the dashboard's record)
-      mood: null, helping: -1, foeId: -1, focusT: 0, focusOk: false, packT: 0, scout: null, scoutN: 0, thought: null, lastFoe: null, lastFoeT: -1e9, fleeT: -1e9, downs: {}, grudge: null, scoutCd: 0, answerAt: 0, answerKind: null, answerKey: "", band: null, fortCd: 0, fortJob: null,
+      mood: null, helping: -1, foeId: -1, focusT: 0, focusOk: false, packT: 0, scout: null, scoutN: 0, thought: null, lastFoe: null, lastFoeT: -1e9, fleeT: -1e9, downs: {}, grudge: null, scoutCd: 0, answerAt: 0, answerKind: null, answerKey: "", band: null,
     };
     this.reset(true);
   }
@@ -688,7 +688,7 @@ class Player {
     // Every state ANY unit can be under - stun, root, slow and its net
     // drape, the mark, and fire - is written and cleared in one place for
     // all three kinds of unit (`status effects`, js/sim/actions.js), so a player,
-    // a deer and a worker bot wear the identical set.
+    // a deer and a bot wear the identical set.
     clearUnitStatus(this);
     this.shieldT = 0; this.shieldA = 0;            // the tower shield, and where it faces
     this.rushT = 0; this.rushNX = 0; this.rushNY = 0; this.rushVictim = null;
@@ -821,11 +821,11 @@ function concealOf(p) { return p.hide > 0 ? p.hide * (p.moving ? PRONE_MOVE : 1)
 // How far p is noticed from by a watcher whose plain sight range is `range`.
 // The kit's stealth (cards, items) shortens it; lying under the snow shortens it hard - but
 // never past PRONE_SNIFF, because at arm's length you are found whatever you
-// are lying under. Every watcher in the game (the pack, the turrets, the bot
+// are lying under. Every watcher in the game (the pack, the towers, the bot
 // brain) resolves through this one function so they cannot disagree about who
 // is hidden. A watcher that plays by the fog of war (a bot, a hand's lock-on)
 // names its side as `team`: a rival outside that side's sight is not seen at
-// all (inSight, js/sim/fog.js). Creatures and turrets watch without it.
+// all (inSight, js/sim/fog.js). Creatures watch without it.
 function seenAt(p, range, team) {
   // the falcon's mark is the ONE legal bypass: a swept rival is simply seen,
   // whatever they are lying under or however deep in the fog, until the mark
@@ -864,9 +864,8 @@ function resolveContests() {
 }
 
 const animals = []; // passive wildlife: rabbits and deer, spawned once at boot
-const structures = []; // every tiered building (walls included)
-const robots = []; // spawner-owned worker bots
-const tracers = []; // turret shot lines: {x0,y0,x1,y1,t}
+const structures = []; // every building: road towers, barracks, pumps, nets
+const robots = []; // the bots: wave soldiers and the merchants
 const arrows = []; // live bow shots: {x,y,vx,vy,t,life,dmg,pow}
 const ARROW_PX = []; // scratch x,y,colour triples for one rasterised arrow body (render only)
 const drops = [];
@@ -892,7 +891,7 @@ const DOT_CAUSE = { fire: true };
 // The shove a blow lands on a body, in px/s. It is the BASELINE, not the
 // whole story: `kb` is a multiplier on it, so a basic attack's KNOCKBACK
 // (js/sim/attack.js) scales a player's shove exactly as it scales an animal's or a
-// worker's, and the ordinary blow is 1.
+// soldier's, and the ordinary blow is 1.
 const HIT_KB = 110;
 
 // A hit grants NO i-frames. `invuln` is only ever set by something DELIBERATE -
@@ -956,8 +955,8 @@ function damagePlayer(p, dmg, dx, dy, src, cause, crit, kb, o) {
 // what the log says when nobody gets the credit
 const DEATH_CAUSE = { ice: 'FELL THROUGH THE ICE', creek: 'WENT IN THE CREEK', wolf: 'WENT TO THE WOLVES', bear: 'MET A BEAR', tackle: 'RAN INTO SOMETHING SOLID', eagle: 'LOST THEIR EAGLE', fire: 'BURNED IN THE SNOW', soldier: 'FELL TO THE WAVE', orca: 'WENT TO THE ORCA', tower: 'TOOK A TOWER BOLT' };
 // ...and what the line says when there IS credit but no arrow: `cause` is
-// read for the verb too, so a worker's axe doesn't get written up as a shot
-const KILL_VERB = { worker: 'CUT DOWN', fire: 'BURNED' };
+// read for the verb too, so a burn doesn't get written up as a shot
+const KILL_VERB = { fire: 'BURNED' };
 
 // DEATH COSTS TIME, NOTHING ELSE. A body goes down with everything it had
 // and comes back with all of it: the wallet, the pouch, the bag, the weapon
@@ -1251,7 +1250,6 @@ function endMatch(how) {
   state.bagOpen = false;
   state.settingsOpen = false; setDrop = null;
   state.wheel = null;
-  state.build = null;
   state.deadTimer = 0;
   state.defeatT = 0;
   state.rpClosed = false; // every death opens the replay again
@@ -1312,7 +1310,7 @@ const FEED_FLOOR = 1 / 3;   // ...down to this share of the plain kill
 // kind of blow it was stays (an arrow in you is an arrow you saw).
 // An entry: { t, d, by (player id or -1), k ('atk'|'ab'|'burn'|'world'),
 // c (the hitter's class, or the world's cause), i/o (key and option),
-// m (a hit's `ab` that is no key: 'roll', 'turret'), s (0: unseen) }
+// m (a hit's `ab` that is no key: 'roll'), s (0: unseen) }
 const RECAP_T = 10;  // s of blows a death looks back over
 const RECAP_N = 64;  // most blows kept (a long burn is many small ones)
 function recapNote(p, dmg, src, cause, o) {

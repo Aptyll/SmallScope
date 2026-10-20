@@ -134,7 +134,7 @@ function drawCastPreview(ex, ey, now) {
 // and the parchment chart (renderWorldMap, panels.js) draw every moving thing
 // through these three, so a shape learnt on one is read on the other:
 //   a SQUARE in the side's ink is a body, and its size says which - a player
-//   k + 1 px, a robot (a worker, a soldier, the merchant) k px, so a base's
+//   k + 1 px, a robot (a soldier, the merchant) k px, so a base's
 //   crew never outweighs the ten that matter (k is 2 on the chart, 1 on the
 //   disc);
 //   the WATCHED body - you, or whoever the camera rides - is a player's

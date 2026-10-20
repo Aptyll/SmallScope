@@ -24,8 +24,7 @@
 // walkable one where no body fits at the middle (every route and spawn,
 // and every tile a body is put down on: nearestDryTile, landPlayer), and
 // findPath refuses a step between two tiles' middles that a block lies
-// across (cisternCuts); a route's straight lines ask the px (navLineClear),
-// canPlaceAt one with any stone on it. Every way in stays open: the bake
+// across (cisternCuts); a route's straight lines ask the px (navLineClear). Every way in stays open: the bake
 // keeps the fallen blocks LANE px off each breach's middle line (two tiles
 // clear) and checks the gates and the breaches before it writes.
 // Pure position: nothing rolls and nothing changes, so there is no sim

@@ -101,7 +101,7 @@ function bagCellRect(i) {
 // the pointer is over HUD that owns its own clicks, not over the world
 function overHud(x, y) {
   return !!bagHit(x, y) || !!charHit(x, y) || !!shopHit(x, y) || !!stripHit(x, y) || abBuyHit(x, y) >= 0 ||
-    buildListHit(x, y) >= 0 || overMinimap() || !!cheatHit(x, y);
+    overMinimap() || !!cheatHit(x, y);
 }
 // THE CORNER SCALES WITH ITS OWN SIZE DIAL (cornerSc), about the top-left corner
 // (drawCornerScaled, js/ui/hud-draw.js). Every rect in this banner stays in 1x space; a pointer is mapped back through the corner

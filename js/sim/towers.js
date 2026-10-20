@@ -24,7 +24,7 @@
 // own side's scouts standing inside its ring (TOWER_CALL_T, read off the
 // victim's foeHits, player.js) - the dive answered at once, mid-wind or not;
 // (2) the mark it already holds, while it stays in the ring; (3) the nearest
-// rival bot (a wave's soldier, a bay's worker); (4) the nearest rival scout.
+// rival bot (a wave's soldier); (4) the nearest rival scout.
 // A wave walking in under it soaks the bolts, so the scouts with it may hit
 // the tower freely; a scout alone under it is shot, and every bolt in a row
 // into the same scout hits harder (TOWER_HEAT).
@@ -91,7 +91,7 @@ function towerStand(team, at) {
   offs.sort((a, b) => a[0] * a[0] + a[1] * a[1] - b[0] * b[0] - b[1] * b[1] || a[1] - b[1] || a[0] - b[0]);
   for (const road of [false, true]) for (const [dx, dy] of offs) {
     const ax = tx0 + dx - (w >> 1), ay = ty0 + dy - (h - 1);
-    const tiles = footprint('tower', ax, ay, 0);
+    const tiles = footprint('tower', ax, ay);
     const ok = tiles.every(([x, y]) => {
       if (!inWorld(x, y) || waterAt(x, y) || cisternTouches(x, y)) return false;
       const g = ground[idx(x, y)], o = objects[idx(x, y)];
@@ -107,7 +107,7 @@ function towerStand(team, at) {
     for (let y = ay - TOWER_CLEAR; y < ay + h + TOWER_CLEAR + 1; y++) for (let x = ax - TOWER_CLEAR; x < ax + w + TOWER_CLEAR; x++) {
       if (inWorld(x, y) && objects[idx(x, y)] && laneFells(objects[idx(x, y)])) objects[idx(x, y)] = null;
     }
-    return createStruct(ax, ay, 'tower', 0, { id: -1, team }, false, 0);
+    return createStruct(ax, ay, 'tower', 0, { id: -1, team }, false);
   }
   return null;
 }

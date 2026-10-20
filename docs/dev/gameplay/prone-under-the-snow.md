@@ -28,16 +28,16 @@ those, never `p.hide` directly**:
 - `concealOf(p)` = `hide`, discounted to `PRONE_MOVE` (×0.5) while `p.moving`. A crawling mound is
   worth half a still one, which is what makes "stop before you shoot" a real decision.
 - `seenAt(p, range, team)` = the distance a watcher with plain sight `range` actually notices p from
-  (0 when `team` is given and p is in that side's [fog](fog-of-war.md); creatures and turrets give none):
+  (0 when `team` is given and p is in that side's [fog](fog-of-war.md); creatures give none):
   `range × kit.stealth × (1 − PRONE_CUT × conceal)`, floored at `PRONE_SNIFF` (22 px) whenever
   there is any cover at all — **nothing hides at arm's length**. A bot's sight is its profile's
   (`AI_LEVELS`, js/ai/ai-skill.js: EASY 120, NORMAL 147, HARD 200, IMPOSSIBLE 267 px), so full cover takes those to
-  22 (the floor), 22, 28 and 37, and a tier-3 turret's 124 down to 22.
+  22 (the floor), 22, 28 and 37.
 
 **Every watcher resolves through `seenAt`, and a new one must too** (a bot's names its side, so the
 fog holds for it). Today's callers: a bot's
-target pick and its roost-threat count (`aiNearestEnemy`, `aiSituation`, js/ai/ai.js), a turret
-(`turretMark`/`turretHolds`), a soldier's quarry (`robotFoeUnit`, js/sim/robots.js), prey
+target pick and its roost-threat count (`aiNearestEnemy`, `aiSituation`, js/ai/ai.js), a road tower
+(`towerMark`, js/sim/towers.js), a soldier's quarry (`robotFoeUnit`, js/sim/robots.js), prey
 deciding to bolt (`updatePrey`), the eagle's gust (js/sim/eagle.js) and the CLICK scheme's lock and
 acquire (js/app/input.js). A camp monster has no sight
 to resolve, since a hit is its only trigger ([Camp monsters](wildlife.md#camp-monsters-neutral-until-hit)).
@@ -68,7 +68,7 @@ over the base), tags the arrow `ambush: true`, and calls
 a bow that still has to be renocked. A level-1 HUNTER's full draw (DAMAGE 16) goes 16 → 40. A fish taken off the ice (`autoFish`) is not a shot: it never touches the attack and breaks
 no cover.
 
-Wherever the tagged arrow lands — player, worker bot or animal — `ambushFx()` puts a gold flare
+Wherever the tagged arrow lands — player, soldier or animal — `ambushFx()` puts a gold flare
 over the ordinary hit puff and plays `SFX.ambush()`; `damagePlayer`'s `crit` argument doubles the
 local shake.
 

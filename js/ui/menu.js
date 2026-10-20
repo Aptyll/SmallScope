@@ -29,7 +29,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.524';
+const PATCH_TXT = 'PATCH 0.525';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -45,6 +45,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.525', 'NOBODY BUILDS ANY MORE: THE T BUILD LIST, WALLS, GATES, TURRETS, GOLD PUMPS, BOT BAYS AND THEIR WORKER BOTS ARE GONE, SO THE MAP\'S ROAD TOWERS AND THE MERCHANTS\' BARRACKS ARE THE ONLY BUILDINGS.'],
   ['0.524', 'TREES ARE SIDE INCOME NOW: MOST PINES FALL FOR NOTHING AND ONE IN FOUR HOLDS 2 GOLD, SO CHOPPING NONSTOP PAYS LESS THAN HALF OF WHAT A LANE\'S SOLDIERS DO.'],
   ['0.523', 'UNDER THE HOOD: FINISHED SHORTS NOW GO TO THE KITCHEN SITE, WHICH REPLACES THE PRIVATE MEDIA BOARD.'],
   ['0.522', 'A NEW HERO, BELLA THE IMPERIAL GENERAL: A QUICK DUELIST WHO BUILDS PRECISION ON HEROES, LUNGES THROUGH A LINE, PARRIES A BLOW AND STUNS BACK, SLIPS THROUGH A RIVAL TO MARK THEM, AND CALLS ONE HERO OUT FOR A FINISHING FLURRY, AND HER FIRST SKIN, TRAITOR\'S BLADE, IS ON THE SKINS SCREEN.'],
@@ -1095,7 +1096,7 @@ function buildHelpPanel() {
   const g = helpPanelCv.getContext('2d');
   bakeFrostSlab(g, SET_W, SET_H, 'TUTORIAL');
   const cols = [
-    [['WASD', 'MOVE'], ['SPACE', 'DODGE ROLL'], ['SHIFT', 'SLIDE'], ['1-4', 'CLASS ABILITIES'], ['CLICK', 'DRAW THE BOW'], ['E', 'CHOP MINE PICK'], ['RCLICK', 'BUILD ON STUMP']],
+    [['WASD', 'MOVE'], ['SPACE', 'DODGE ROLL'], ['SHIFT', 'SLIDE'], ['1-4', 'CLASS ABILITIES'], ['CLICK', 'DRAW THE BOW'], ['E', 'CHOP MINE PICK'], ['RCLICK', 'PING']],
     [['Q', 'EAT BERRY'], ['F', 'EAT FISH'], ['M', 'WORLD MAP'], ['TAB', 'SCOREBOARD'], ['SCROLL', 'ZOOM'], ['N', 'MUTE'], ['P', 'PAUSE']],
   ];
   for (let c = 0; c < 2; c++) {
@@ -1117,7 +1118,6 @@ function buildHelpPanel() {
   const lines = [
     ['GOLD IS THE ONLY CURRENCY', '#cfe0ff'],
     ['TREES ROCKS AND GAME ALL PAY IT', '#9fb6d8'],
-    ['RIGHT CLICK A STUMP TO RAISE A BASE', '#9fb6d8'],
     ['WALK THE ICE AND THE FISH COME UP', '#9fb6d8'],
     ['RIVERS ARE FAST - CHAIN DODGES TO FLY', '#9fb6d8'],
     ['NAMED PLACES ARE ON THE MAP - WOLVES DEN UP', '#ff9a8a'],

@@ -62,7 +62,7 @@ const ARROW_BODY = [];    // flat [i, j, key] triples parsed from the map once,
   for (const p of px) ARROW_BODY.push(p[0], p[1], p[2]);
 }
 const WORK_REACH = 1;     // E (and the hands on their own: autoWork) work tiles within this many tiles (Chebyshev) of the player's tile
-const STRUCT_HIT_DMG = 25; // RAW axe damage per E swing against an ENEMY building - STRUCT_DR takes its 60% off like any other player blow, so a swing lands 10 (own buildings are demolished from the wheel)
+const STRUCT_HIT_DMG = 25; // RAW axe damage per E swing against an ENEMY building - STRUCT_DR takes its 60% off like any other player blow, so a swing lands 10
 
 // The roll as a weapon. A dash goes *through* anything small - rabbits,
 // wolves, robots, other players - swiping each of them once per roll and
@@ -115,7 +115,7 @@ function workTargetAt(p, tx, ty) {
   let t = -1;
   if (o) {
     // a building (any tile of its footprint - `part` resolves to the anchor) is a
-    // target only for the other team; you take your own down from the wheel instead
+    // target only for the other team
     const st = structOf(o);
     if (STRUCTS[st.type]) { if (!ownsStruct(st, p)) t = SWING_AXE; }
     else {
@@ -211,7 +211,7 @@ function startSwing(p, t) {
 const AUTO_PRIO_FOE = 2, AUTO_PRIO_PRIZE = 1;
 function autoToolFor(o, p) {
   const st = structOf(o); // a `part` tile answers for the building it belongs to
-  if (STRUCTS[st.type]) return ownsStruct(st, p) ? -1 : SWING_AXE; // yours stay wheel-only
+  if (STRUCTS[st.type]) return ownsStruct(st, p) ? -1 : SWING_AXE; // your side's is never swung at
   const d = OBJECTS[o.type];
   // an object carrying a team (the eagles' hitbox tiles) is a rival-only target, as in workTarget
   if (!d || !d.auto || (d.ready && !d.ready(o)) || (o.team !== undefined && o.team === p.team)) return -1;
@@ -345,7 +345,7 @@ function tackleObject(o, dmg, p) {
   o.hp -= dmg;
   tallyHit(o, dmg);
   if (o.hp <= 0) {
-    destroyStructure(o, true, p);
+    destroyStructure(o, p);
     logEvent(p.name + ' WRECKED A ' + STRUCTS[o.type].name, p);
   }
 }
@@ -626,13 +626,13 @@ function hitDummy(o, dmg, hx, hy) {
 }
 
 // What a building shrugs off a PLAYER's blow. Every way a hand can reach a
-// wall now lands here - the E swing, every basic attack (js/sim/attack.js), the
+// building lands here - the E swing, every basic attack (js/sim/attack.js), the
 // abilities' rings and slams (js/sim/abilities.js) - and every one of those
-// numbers was tuned against a 40-160 hp BODY, which would melt a 60 hp wall.
+// numbers was tuned against a 40-160 hp BODY, which would melt a tower.
 // So the damping is charged ONCE, here, on the one path, rather than as a
 // building-sized number written out per weapon: raise a shot's damage and the
 // siege scales with it, and nothing new ever has to remember the rule. It is
-// a player's blow that is damped, never a worker's axe (ROBOT_DMG is already
+// a player's blow that is damped, never a soldier's axe (ROBOT_DMG is already
 // a building number), which is what the fourth argument says.
 const STRUCT_DR = 0.6;
 // One blow against a building on another team. Everything that can land one -
@@ -655,17 +655,16 @@ function hurtStruct(o, dmg, p, bot) {
   shakeFor(p, 1);
   if (o.hp <= 0) {
     const name = STRUCTS[o.type].name;
-    // the wreck pays out half of what was spent, straight to whoever broke it
-    destroyStructure(o, true, p);
+    // the wreck pays out half its price, straight to whoever broke it
+    destroyStructure(o, p);
     if (p) logEvent(p.name + ' WRECKED A ' + name, p);
     if (STRUCTS[o.type].call) callStruct(o, p); // the announcer's TOWER DESTROYED (the `calls` banner, js/sim/player.js)
   }
 }
 
-// `p` is who gets the refund gold - the demolishing owner or the wrecker.
-// refund is true for the half, 'own' for a demolish by the building's side
-// (structRefund, structures.js). With nobody to pay the rubble is just rubble.
-function destroyStructure(o, refund, p) {
+// `p` is the wrecker, paid wreckPay (structures.js). With nobody to pay the
+// rubble is just rubble.
+function destroyStructure(o, p) {
   // a net going down tips its catch back out onto the ice - the fish in it
   // were never the owner's, and wrecking one should not delete them
   const spill = o.type === 'net' ? o.fish || 0 : 0, sun = o.type === 'net' ? o.sun || 0 : 0;
@@ -676,14 +675,13 @@ function destroyStructure(o, refund, p) {
   sfxAt('break_', ox, oy);
   burst(ox, oy, '#8a6142', 10, 50, 0.5, true);
   burst(ox, oy, '#eef4fb', 6, 40, 0.5, true);
-  // paid out on the spot: half of everything spent (structRefund), or the
-  // whole price of an owner's own site still going up
-  if (refund && STRUCTS[o.type] && p) awardGold(p, structRefund(o, refund === 'own'), ox, oy);
+  // paid out on the spot: half its price (wreckPay)
+  if (STRUCTS[o.type] && p) awardGold(p, wreckPay(o), ox, oy);
 }
 
 // ------------------------------------------------------------ status effects
-// Three kinds of thing walk this world - a player, an animal, a worker
-// bot - and ANYTHING that hurts one is allowed to hurt all three the same way.
+// Three kinds of thing walk this world - a player, an animal, a bot
+// - and ANYTHING that hurts one is allowed to hurt all three the same way.
 // These are the funnels that make that true: `hurtUnit` is the one blow, the
 // setters beside it are the one place each state is written, and
 // `unitsNear`/`unitsHit` are the one list an area effect sweeps. A hit site says
@@ -706,10 +704,10 @@ const DMG_TYPES = {
 };
 
 // ---- what a unit IS ------------------------------------------------------
-// A player is a Player, an animal has a `kind`, a worker bot is what is left.
+// A player is a Player, an animal has a `kind`, a bot (a soldier, a merchant) says `bot`.
 // Asked here rather than duck-typed at each site (`e.input`, `e.tx`), so a new
 // kind of walker is one line rather than a hunt through every hit in the game.
-// a body that is neither a player nor one of the bay's (or the eagle's)
+// a body that is neither a player nor one of the barracks' (or the eagle's)
 // machines is wildlife - the machines say so themselves (`bot`, makeRobot /
 // spawnMerchant, js/sim/robots.js), because a soldier carries a `kind` too
 function isAnimalUnit(e) { return !(e instanceof Player) && !e.bot; }
@@ -718,7 +716,7 @@ function isAnimalUnit(e) { return !(e instanceof Player) && !e.bot; }
 function unitMidY(e) { return e.y - (e.alt || 0) - 6; }
 // Can this be hit at all right now - and it is the ONE gate every target
 // picker in the game asks, not just the blow itself: the arrow pipeline, the
-// roll's sweep, a turret's mark and a soldier's foe all run
+// roll's sweep, a tower's mark and a soldier's foe all run
 // their candidates through it, so a body that answers false is invisible to
 // every weapon in the world rather than merely immune to one of them.
 // A MERCHANT always answers false. It is a shopfront, not a combatant - both
@@ -748,7 +746,7 @@ function unitFoe(src, e) {
   return !PVP || t !== src.team;
 }
 // Every living thing inside a circle that `src` is allowed to touch, in ONE
-// list: players, animals and worker bots together. An area effect walks this
+// list: players, animals and bots together. An area effect walks this
 // rather than a loop per kind - which is the whole reason a stomp can no
 // longer quietly forget the wildlife.
 function unitsNear(src, x, y, r) {
@@ -784,16 +782,16 @@ function unitUnder(src, wx, wy) {
   return null;
 }
 
-// A building anyone but its own side may swing at. A wall has a team and no
-// life of its own, so this is the whole of unitFoe for one: never your own,
-// never a neutral, and PVP has nothing to say about it - a wall is not a body.
+// A building anyone but its own side may swing at. A building has a team and
+// no life of its own, so this is the whole of unitFoe for one: never your own,
+// never a neutral, and PVP has nothing to say about it - a tower is not a body.
 // `src` is a player or a sideOf() stand-in for a thing lying in the world.
 function structFoe(src, s) {
   return !!s && !!STRUCTS[s.type] && s.team !== undefined && !!src && s.team !== src.team;
 }
 // Every rival building the circle touches, resolved to its anchor and listed
 // ONCE: the buildings half of unitsNear, and the one door an AREA effect gets
-// to a wall. A tile counts when its own centre is inside the reach plus a
+// to a building. A tile counts when its own centre is inside the reach plus a
 // tile's half width (exactly how abHitDummies measures), so a 3x2 bay is
 // caught by whichever of its six tiles the ring actually crosses.
 function structsNear(src, x, y, r) {
@@ -828,7 +826,7 @@ function unitsInCone(src, x, y, a, r, half) {
 }
 function structsInCone(src, x, y, a, r, half) {
   return structsNear(src, x, y, r).filter((s) =>
-    footprint(s.type, s.tx, s.ty, s.rot).some(([tx, ty]) => inCone(x, y, a, r, half, tx * TILE + 8, ty * TILE + 8, 8)));
+    footprint(s.type, s.tx, s.ty).some(([tx, ty]) => inCone(x, y, a, r, half, tx * TILE + 8, ty * TILE + 8, 8)));
 }
 
 // ---- the one blow --------------------------------------------------------
@@ -838,17 +836,17 @@ function structsInCone(src, x, y, a, r, half) {
 // that want a particular one add it themselves), `cause` for the feed line,
 // `ambush`, `crit`, `basic` (a hero's basic attack, for passiveDeal and the
 // item passives) and `ab`, the id of the ability that landed it (its CLASS_AB
-// row's, or a move with no key: 'roll', 'turret'; a blow inside a key's use()
+// row's, or a move with no key: 'roll'; a blow inside a key's use()
 // gets it stamped) - what the death recap
 // names (recapNote, js/sim/player.js): a hero hit that names neither shows as
 // an unnamed ability. Everything an ability or an attack lands comes
 // through here; the three per-kind functions under it stay for what is
-// genuinely per-kind (a den waking, a worker turning on whoever hit it).
+// genuinely per-kind (a den waking, a soldier turning on whoever hit it).
 //
 // KNOCKBACK is the one number written in TWO ways, because the callers mean
 // two different things by it. `kb` is an absolute px/s an ability picks for a
 // particular blow; `kbMul` is a MULTIPLIER on whatever shove that kind takes
-// anyway - a player's HIT_KB, a worker's ROBOT_KB, an animal's own curve - and
+// anyway - a player's HIT_KB, a soldier's ROBOT_KB, an animal's own curve - and
 // it is what a basic attack's `kb` rides in on (CLASSES[c].attack, js/sim/attack.js),
 // so one number on an attack means the same thing landed on any of the three.
 function hurtUnit(e, dmg, nx, ny, src, o) {
@@ -1048,7 +1046,7 @@ function douseUnit(e) { e.burnT = 0; e.burnDps = 0; e.burnTick = 0; e.burnBy = -
 
 // ---- the clock every non-player unit runs --------------------------------
 // A player ages these inside updateAbilities, which owns most of them; an animal
-// and a worker bot call this from their own update, so the two halves of the
+// and a bot call this from their own update, so the two halves of the
 // world can never drift on how long a net holds.
 function updateUnitStatus(e, dt) {
   if (e.rootT > 0) e.rootT = Math.max(0, e.rootT - dt);
@@ -1061,7 +1059,7 @@ function updateUnitStatus(e, dt) {
 }
 // What is left of a non-player unit's speed - the same root/slow fold
 // abilityMoveMul does for a player. navStep multiplies its speed by this, so
-// every animal and every worker in the game is slowed by one edit; the two
+// every animal and every bot in the game is slowed by one edit; the two
 // movers that steer themselves instead of routing (a bot loitering, a bird in
 // flight) multiply it in by hand.
 function unitMoveMul(e) {

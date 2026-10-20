@@ -46,7 +46,7 @@ guild sells — not from a new faction or a new magic.
 | only a bird leaving ends a match | the claim |
 | the merchant raises your base, sells to both sides and cannot be hurt | the counter is its own guild; nobody lays a hand on one |
 | the counter's items and food have one fixed price, the same for both sides | the prices are the guild's, not the companies', and the guild does not haggle |
-| robots, turrets, generators and a barracks beside bows and swords | the works' machines, woken with gold; nobody knows who built them |
+| robots, road towers, gold pumps and a barracks beside bows and swords | the works' machines, woken with gold; nobody knows who built them |
 | one straight road, corner to corner | the works' haul road, older than everything but the machines |
 | two road towers on every zipline, and a company's zipline runs no further than its last one standing | the works raised them to hold the haul road and gold woke their crossbows; each company strings its cable out to its own |
 | a creek down the other diagonal that never freezes, but for a frozen pool where the road crosses it | the works' old outfall, still running warm under the snow; at the crossing it slows to a pool, and the pool freezes |

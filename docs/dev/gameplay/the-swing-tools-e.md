@@ -68,12 +68,11 @@ instead. Since it only appears in reach, it doubles as the "you're close enough"
 always pick the right tool, so normal play never reaches it; buildings are not gated
 at all, since the axe is the only tool E ever brings out for one.
 
-**Stumps and open ice holes** are not E targets — a stump is ground a piece may stand on and a hole the net's site (`canPlaceAt`, the [build list](base-building.md)). **Buildings on another
+**Stumps and open ice holes** are not E targets. **Buildings on another
 team are**: `workTarget()` resolves the tile through `structOf()` (so any tile of a 3×2 footprint
 counts, via its `part`) and returns the axe when `ownsStruct()` is false, and `swingHit` routes
-the swing to the anchor. Your own buildings are never swung at: E in reach of one opens its
-manage wheel instead (`manageNear`, js/sim/structures.js), so E is never ambiguous. See
-[Base building](base-building.md) for the damage numbers. The axe and the pick never hit a living
+the swing to the anchor. Your own buildings are never swung at. See
+[Buildings](buildings.md) for the damage numbers. The axe and the pick never hit a living
 thing: the hero's basic attack is the only weapon aimed at one.
 
 Every basic attack is **hold-to-charge**: holding the button arms it (`p.fireArmed`), the draw
@@ -165,8 +164,7 @@ degenerates to plain rounding. `paintArrowPx` dilates every pixel into `ARROW_RI
 plus-shaped 1 px dark edge) so the shaft reads over snow. `drawShaft` (js/draw/render.js) draws it;
 `a.x`/`a.y` is the TIP (the point the sim tests) and the body trails `ARROW_LEN` (15) px behind
 it, which is why the view cull uses the widened ±22 bound. The whole body is 16 long by 7 deep —
-one 16×16 sprite cell, the scale everything else in the world is drawn at. A turret's rock turns
-as a block through `stampTurned`.
+one 16×16 sprite cell, the scale everything else in the world is drawn at.
 
 Behind it, each shot lays a **trail of team-coloured motes** into `particles`, one every
 `ARROW_TRAIL_STEP` (4) px of *flight distance* — not per tick, so a slow arrow streaks as evenly

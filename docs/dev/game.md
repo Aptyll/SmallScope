@@ -165,17 +165,9 @@ vote calls its own bird home, so even giving up is the bird leaving
 card** (and gives a free item part), which opens itself the moment it is held, one at random, without pausing the sim, and
 the card is baked into the kit for the rest of the match. [Roguelike cards](gameplay/roguelike-cards.md).
 
-**T is the build list, and the ghost under the pointer is what a click lays.** A tap opens it on
-the last piece and holding T flicks a piece off a wheel. Any open snow or road tile within reach
-takes a piece — a wall, a long wall R turns, a gate only your side walks through, a turret, a
-gold pump, a bot bay — snapped to the
-tile grid, the footprint rimmed white where it can stand, red where it cannot and grey where the
-purse cannot pay, and the list stays up; a wall is dragged out as a run. Standing by a site of
-your side's speeds it. Holding E beside a building of your own manages it: upgrade, repair, or
-demolish — a site still going up comes back at its whole price. **An ice hole is the one site left**: break the ice twice and the hole it leaves takes the one
-`water` building — a **fish net**, laid flat and walked *on* rather than into — over a live fish
-population that walkers on the ice and nets draw down and a trickle refills.
-[Base building](gameplay/base-building.md), [Ice holes and fishing](world.md#ice-holes-and-fishing).
+**Nobody builds.** Every building on the map is the map's own or the merchant's: the road
+towers and the barracks. Player building (walls, gates, turrets, gold pumps, bot bays and the
+build list) was cut in 0.525. [Buildings](gameplay/buildings.md).
 
 **Pings, League's way: tap the right button to ping GO HERE, hold it and flick for ATTACK, ON
 MY WAY, DANGER or DEFEND** (G on the keyboard's CLICK scheme, where the right button walks the
@@ -209,7 +201,7 @@ walks in alone, gets the bolt: it winds for a beat with a dashed line on the sno
 each bolt in a row into the same scout hits harder. [Road towers](gameplay/robots.md#road-towers),
 [the road](world.md#the-road), [the zipline](world.md#the-zipline),
 [the ride](gameplay/momentum-movement-players-only.md#the-zipline), [the waves](gameplay/robots.md#soldiers-the-waves),
-[the barracks](gameplay/base-building.md).
+[the barracks](gameplay/buildings.md).
 
 ## What the design is not
 

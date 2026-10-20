@@ -374,8 +374,6 @@ function drawSceneryObj(d, ox, oy, now, wkO, hovO) {
     drawSpriteFlash(spr, sx, sy, o.flash);
     if (open) litDrops.push({ o, V, lean, sx, sy });
     else if (o === hovO) drawHealthBar(px + 8, sy + 4, SNOWDROP_CD - left, SNOWDROP_CD, 12, undefined, BAR_NEUTRAL);
-  } else if (STRUCTS[o.type] && STRUCTS[o.type].tiled) {
-    drawTiledStruct(o, px, py, sh, now); // one tile of art per footprint tile (the long wall)
   } else if (STRUCTS[o.type]) {
     drawStructObj(o, px, py, sh, now); // a building: below
   }
@@ -388,39 +386,31 @@ function drawStructObj(o, px, py, sh, now) {
   const off = structArtOff(o, spr); // skirt on the footprint's bottom edge, centred over its width
   const sx = px + off.x, sy = py + off.y;
   if (o.building) {
-    const p = o.buildT / o.buildTotal;
-    if (spr.width > 16) {
-      // a big build: the foundation is staked out first, then the walls
-      // rise out of it behind a weld line (bigBuildReveal for the split)
-      const fw = structW(o) * TILE, fh = structH(o) * TILE;
-      ctx.fillStyle = 'rgba(58,66,82,0.5)';
-      ctx.fillRect(px + 1, py + 1, fw - 2, fh - 2);
-      ctx.fillStyle = '#1c2130';
-      ctx.fillRect(px, py, fw, 1); ctx.fillRect(px, py + fh - 1, fw, 1);
-      ctx.fillRect(px, py, 1, fh); ctx.fillRect(px + fw - 1, py, 1, fh);
-      for (const [cx, cy] of [[px + 1, py - 2], [px + fw - 3, py - 2], [px + 1, py + fh - 5], [px + fw - 3, py + fh - 5]]) {
-        ctx.fillStyle = '#1c2130'; ctx.fillRect(cx, cy, 2, 4);
-        ctx.fillStyle = '#e0b83f'; ctx.fillRect(cx, cy, 2, 1);
+    // a build: the foundation is staked out first, then the walls
+    // rise out of it behind a weld line (bigBuildReveal for the split)
+    const fw = structW(o) * TILE, fh = structH(o) * TILE;
+    ctx.fillStyle = 'rgba(58,66,82,0.5)';
+    ctx.fillRect(px + 1, py + 1, fw - 2, fh - 2);
+    ctx.fillStyle = '#1c2130';
+    ctx.fillRect(px, py, fw, 1); ctx.fillRect(px, py + fh - 1, fw, 1);
+    ctx.fillRect(px, py, 1, fh); ctx.fillRect(px + fw - 1, py, 1, fh);
+    for (const [cx, cy] of [[px + 1, py - 2], [px + fw - 3, py - 2], [px + 1, py + fh - 5], [px + fw - 3, py + fh - 5]]) {
+      ctx.fillStyle = '#1c2130'; ctx.fillRect(cx, cy, 2, 4);
+      ctx.fillStyle = '#e0b83f'; ctx.fillRect(cx, cy, 2, 1);
+    }
+    const r = bigBuildReveal(o);
+    if (r.rows > 0) {
+      ctx.save();
+      ctx.beginPath(); ctx.rect(sx - 2, sy + spr.height - r.rows, spr.width + 4, r.rows); ctx.clip();
+      drawSpriteFlash(spr, sx + sh, sy, o.flash);
+      ctx.restore();
+      if (r.rows < spr.height) {
+        const ey = sy + spr.height - r.rows;
+        ctx.fillStyle = '#fff1b0'; ctx.fillRect(sx + 2, ey, spr.width - 4, 1);
+        ctx.globalAlpha = 0.55 + 0.45 * Math.sin(now * 40);
+        ctx.fillStyle = '#ffd95c'; ctx.fillRect(sx + 4, ey - 1, spr.width - 8, 1);
+        ctx.globalAlpha = 1;
       }
-      const r = bigBuildReveal(o);
-      if (r.rows > 0) {
-        ctx.save();
-        ctx.beginPath(); ctx.rect(sx - 2, sy + spr.height - r.rows, spr.width + 4, r.rows); ctx.clip();
-        drawSpriteFlash(spr, sx + sh, sy, o.flash);
-        ctx.restore();
-        if (r.rows < spr.height) {
-          const ey = sy + spr.height - r.rows;
-          ctx.fillStyle = '#fff1b0'; ctx.fillRect(sx + 2, ey, spr.width - 4, 1);
-          ctx.globalAlpha = 0.55 + 0.45 * Math.sin(now * 40);
-          ctx.fillStyle = '#ffd95c'; ctx.fillRect(sx + 4, ey - 1, spr.width - 8, 1);
-          ctx.globalAlpha = 1;
-        }
-      }
-    } else if (p < 1 / 3) ctx.drawImage(SPRITES.scaffold[0], px, py);
-    else if (p < 2 / 3) ctx.drawImage(SPRITES.scaffold[1], px, py);
-    else {
-      drawSpriteFlash(spr, px + sh, py, o.flash);
-      ctx.drawImage(SPRITES.scaffold[2], px, py);
     }
   } else {
     // the gold pump strokes: the frame off its payout clock (pumpFrame)
@@ -428,10 +418,8 @@ function drawStructObj(o, px, py, sh, now) {
     drawCastShade(art, sx, sy); // a standing building throws the sun's shade like a body (ground.js)
     drawSpriteFlash(art, sx + sh, sy, o.flash);
     if (o.type === 'generator') drawPumpCoin(o, sx + sh, sy);
-    if (o.type === 'spawner') drawBayOverlay(o, sx + sh, sy, now);
     if (o.type === 'barracks') drawBarracksOverlay(o, sx + sh, sy, now);
-    // the gun is not in the grid: rasterise it at the live bearing, on the collar
-    if (o.type === 'turret') drawTurretHead(o, sx + sh + 16, sy + 12); else if (o.type === 'tower') drawTowerTop(o, sx + sh, sy); // a tower's gun in its deck, and its bar (js/draw/towers.js)
+    if (o.type === 'tower') drawTowerTop(o, sx + sh, sy); // a tower's gun in its deck, and its bar (js/draw/towers.js)
     if (o.hp < o.maxHp * 0.6) {
       // four crack marks, placed as fractions of the sprite so they fit any size
       const w = spr.width, h = spr.height;
@@ -440,12 +428,11 @@ function drawStructObj(o, px, py, sh, now) {
       ctx.fillRect(sx + (w * 5 >> 3), sy + (h * 3 >> 4), 1, 4); ctx.fillRect(sx + (w * 5 >> 3) + 1, sy + (h * 7 >> 4), 1, 2);
     }
     // damage readout: only once hurt, so an untouched base stays clean.
-    // the bay has its own bar inside drawBayOverlay - don't draw two.
+    // The barracks and the tower draw their own bars - don't draw two.
     // `+ sh` so the readout rides the hit shudder with the building it
-    // belongs to: it only ever appears while the thing is being hit, and a
-    // bar holding still over a wall that is rocking is a bar centred on
-    // nothing. drawBayOverlay is handed `sx + sh` and has always done this.
-    if (o.type !== 'spawner' && o.type !== 'barracks' && o.type !== 'tower' && o.hp < o.maxHp) {
+    // belongs to: a bar holding still over a building that is rocking is a
+    // bar centred on nothing.
+    if (o.type !== 'barracks' && o.type !== 'tower' && o.hp < o.maxHp) {
       drawHealthBar(sx + sh + (spr.width >> 1), sy - 5, o.hp, o.maxHp, evenBarW(Math.max(12, Math.min(24, spr.width - 4))), o.team, undefined, o);
     }
   }
@@ -488,25 +475,10 @@ function drawArrows(ex, ey, now) {
   // readable over snow. a.x/a.y is the TIP - the point the sim tests - and
   // the body trails ARROW_LEN px behind it.
   for (const a of arrows) { if (!fogShown(a, now)) continue; // a rival's shot in the fog is not there (js/draw/fog.js)
-    if (a.kind === 'rock') { drawSlungRock(a, ex, ey); continue; }
     const hx = Math.round(a.x - ex), hy = Math.round(a.y - ey);
     if (hx < -22 || hx > WV_W + 22 || hy < -22 || hy > WV_H + 22) continue;
     drawShaft(a, a.x - ex, a.y - ey);
   }
-}
-
-function drawTracers(ex, ey) {
-  // turret tracers
-  for (const t of tracers) {
-    ctx.globalAlpha = Math.max(0, Math.min(1, t.t / 0.08));
-    ctx.strokeStyle = '#f6d35c';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(Math.round(t.x0 - ex) + 0.5, Math.round(t.y0 - ey) + 0.5);
-    ctx.lineTo(Math.round(t.x1 - ex) + 0.5, Math.round(t.y1 - ey) + 0.5);
-    ctx.stroke();
-  }
-  ctx.globalAlpha = 1;
 }
 
 function drawSwingArcs(ex, ey, now) {
@@ -623,7 +595,6 @@ function renderScreen(ox, oy, shx, shy, now) {
   // pointer, last of all so it sits above every overlay
   const cur = cursorInfo();
   applyCursorStyle(cur);
-  if (!window.DBG.hideUI) drawBuildCursor(cur); // the build list's piece, under the pointer's own glyph
   if (settings.pixelCursor && mouse.inside && !window.DBG.hideUI) drawCursor(cur, now);
   // director mode (js/app/director.js): the finished frame goes to a take being
   // recorded, and only then the director's strip over it

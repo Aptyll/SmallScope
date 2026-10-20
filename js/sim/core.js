@@ -146,15 +146,11 @@ const state = {
   dragPend: null,
   settingsOpen: false,
   rebind: null,        // a cap on the CONTROLS page listening for its key: the action's id (input.js), or null
-  // radial menu: { kind: 'build'|'manage'|'ping'|..., tx, ty, seg, ax, ay } - ax/ay is the
+  // radial menu: { kind: 'ping'|..., tx, ty, seg, ax, ay } - ax/ay is the
   // press point; a ping wheel carries its world point wx/wy and its press
   // time t0, and one opened over the chart or the disc carries sx/sy, the
   // screen point it is pinned to (wheelLayout, js/ui/wheel.js)
   wheel: null,
-  // the build list (T, js/ui.js): { sel, rot } while it is open - the row
-  // picked and whether the piece is turned; the ghost under the pointer is
-  // what a click lays. Null while it is closed.
-  build: null,
   // main menu (mode === 'title'): keyboard selection, per-item hover eases,
   // the open sub-panel ('settings' | 'help' | null) and its slide progress
   // one hover ease per MENU_ITEMS entry. That length is a coupling to a

@@ -41,8 +41,8 @@ stable per tile.
   `{ type, tx, ty, hp, flash, shake, ...extra }`. The `OBJECTS` table's types: `tree`,
   `deadTree`, `rock`, `bush`, `chest`, `den`, `dummy`, `banner`, `cairn`, `log`,
   `pylon`, `pkdie`, `agbell`, `stump`, `eagle`, `hut`, `part`, and the
-  [story landmarks](#story-landmarks)' `boat` (added from `LANDMARKS`); the `STRUCTS` table's: `wall`,
-  `longwall`, `turret`, `generator`, `spawner`, `barracks`, `net`. `banner`/`log` are
+  [story landmarks](#story-landmarks)' `boat` (added from `LANDMARKS`); the `STRUCTS` table's: `generator`,
+  `barracks`, `tower`, `net`. `banner`/`log` are
   [the road](#the-road)'s furniture (`banner` is also the practice gate's flag), `pylon`
   [the zipline](#the-zipline)'s, and `dummy`/`pkdie`/`agbell` exist only in
   [the practice arena](#the-practice-arena). `den` (solid, inert scenery
@@ -59,12 +59,11 @@ stable per tile.
   bears moved to the river (4.82): no camp stamps them, and their types and art are kept unused.
 - Index with `idx(tx, ty)`, read safely with `objAt`, create with `placeObj`. Deleting is
   `objects[idx] = null` (structures should go through `destroyStructure` so the `structures`
-  registry stays in sync — it routes tiered types through `removeStruct`).
-- `wall`, `longwall`, `turret`, `generator`, `spawner` are the **structures** any open snow or road tile takes (see
-  [Base building](gameplay/base-building.md)). Each carries `{ tier, maxHp, building, buildT,
-  buildTotal, dustT, sparkT }` plus per-type fields (turret `cd`, `ang`, `tgt`/`tgtK`, `off`,
-  `chg`, `rec`, `scan`; generator `payT`; spawner `mode`,
-  `bots`, `respawnT`/`respawnTotal`, `door`), and every live one is also referenced from the module-scope `structures`
+  registry stays in sync — it routes `STRUCTS` types through `removeStruct`).
+- `generator`, `barracks`, `tower` and `net` are the **structures** (see
+  [Buildings](gameplay/buildings.md)); nobody builds by hand. Each carries `{ tier, maxHp, building, buildT,
+  buildTotal, dustT, sparkT }` plus per-type fields (generator `payT`; barracks `waveT`, `queue`,
+  `rollT`, `born`, `door`; tower `ang`, `tgt`, `chg`, `cd`, `bolt`; net `fish`), and every live one is also referenced from the module-scope `structures`
   array so `updateStructures()` never scans the 53,824-tile grid. Nor do the object clocks
   (`flash`/`shake`, bush regrow, a rock's crack and rubble): `tickObjTimers` (js/sim/sim.js, the
   `object timers` banner) ticks only the objects in `objTimed`, in map order, and drops each one
@@ -77,12 +76,10 @@ stable per tile.
   branch, so a player reads wait-or-move-on off the plant at a glance, and **under the pointer a
   regrowing bush wears the neutral unit bar** filling toward ripe (the frames say roughly, a hover
   says exactly — [rendering.md](rendering/render-pass-order.md)); `ready` refuses E until the
-  berries are ripe, so neither in-between frame ever rims. The first
-  three have three tiers; the spawner
-  (the bot bay) has one and a **3×2 footprint** — `STRUCTS.spawner.w/h`, with `footprint()`,
+  berries are ripe, so neither in-between frame ever rims. Each
+  type has one tier and a footprint (`STRUCTS[type].w/h`, 1×1 when absent), with `footprint()`,
   `structCenter()` and `structMouth()` (the ground point in front of the doorway) as the geometry
-  helpers. Stumps are **consumable build anchors**: building on one replaces it (a bay consumes
-  every stump under it), and demolition/destruction leaves the tiles empty, not stumps.
+  helpers. A wreck leaves the tiles empty.
 - The world center is an empty clearing: `CENTER_R` (beside `MAPS`) keeps ice ponds, rocks,
   bushes and every [shape](#map-shapes)'s own interior clear of it, so the river spokes meet in
   open ground. The ore loop there draws two
@@ -411,8 +408,7 @@ group of the `world` banner, js/sim/world.js). Ground `3`, packed earth showing
 through the snow with two ruts down its length: it **walks like snow** (only ice and holes are
 special-cased in `updatePlayer`'s momentum block) but it is **not snow** — nothing digs into it
 (`tryProne`, the hunter's burrow), nothing grows on it, a fish never counts it
-as water (`fishWater`), and the footprint emitter leaves no prints on it. A building **does**
-stand on it: `canPlaceAt` (js/sim/structures.js) takes ground `0` and `3` alike.
+as water (`fishWater`), and the footprint emitter leaves no prints on it.
 
 **Its edge is ragged, never a tile staircase.** `roadEdgeAt(u, side)` wanders the half-width
 along the lane on the position noise — a slow drift of ±`ROAD_RAG` (0.8) and a fine ripple, each
@@ -670,7 +666,7 @@ not short of it. A body already touching it may move any way but deeper. The til
 coarser reads off `placeCistern`'s flags: `cisternTile` (a tile whose middle is stone: a wall
 to `isSolidTile`, so to every shot, but not to `moveEntity`, which passes `swept`,
 nor to the `.` view's cyan boxes), `cisternBlocks` (no body fits at the middle: `walkable`, so every route, spawn and
-`nearestDryTile`, and `landPlayer`) and `cisternTouches` (any stone: `canPlaceAt`, and both maps
+`nearestDryTile`, and `landPlayer`) and `cisternTouches` (any stone: both maps
 ink it). `findPath` refuses a step between two tiles' middles that a block lies across
 (`cisternCuts`), `navLineClear` asks the px (`cisternCrowds`), and whatever puts a body down (a
 warp, a hop off a cable or a deer) moves it off the stone the same way. The `.` view draws the
@@ -810,7 +806,7 @@ lane's middle. `zipLay(team, lane, tiles)` stands every line's pylons.
 A pylon's tile is the nearest along the road (u, u±1, u±2) that is dry and holds nothing but
 worldgen's scenery — a pine or a rock gives way, like the road's poles (`laneFells`); anything
 else refuses, and the point stands whether or not a pylon does. It is an `OBJECTS` entry
-(`pylon`: solid, inert to E, carrying its `team`; `mm` grey), so `isSolidTile`, `canPlaceAt` and
+(`pylon`: solid, inert to E, carrying its `team`; `mm` grey), so `isSolidTile` and
 both maps handle it for free. Its pixels are `PYLON_SPRS` (one bake per team skin) and the cable
 pass `drawZips` in [js/draw/zipline.js](../../js/draw/zipline.js); both maps stroke each line in
 its side's ink. Seed 42: RED's line runs u 23→88, BLUE's 134→208.
@@ -1072,7 +1068,7 @@ trailhead (`PR_DEER`); `prDeerStep` (from `updatePractice`) puts it back on its 
 felled nook off the walk's south side, adjacent to the walk so its `E ROLL` cap rises as you
 pass (`pkdie`, `PK_DIE` — `pkDieNear` resolves it, shared by the prompt, `drawPkHint` in
 js/ui/wheel.js, and the press in js/app/input.js). **Holding E beside it opens a three-wedge radial
-wheel** (kind `'pkdie'`, the manage wheel's own hold-and-release grammar and the ordinary wheel
+wheel** (kind `'pkdie'`, the [radial wheel](gameplay/radial-wheel.md)'s hold-and-release grammar and the ordinary wheel
 pipeline): one wedge per difficulty, each drawn as **that difficulty's coloured die** — a
 green, amber or red cube with its pip count (`PK_DIE_COL`, js/draw/practice.js), the current track's
 one wearing a gold frame. Releasing on a wedge IS the roll (`pkWheelPick`, through the same
@@ -1405,8 +1401,7 @@ sits beside `STRUCTS` in [js/sim/structures.js](../../js/sim/structures.js) with
   A hole gives the frost pike (`fish`, +50, `SPRITES.itemFrostPike`) or the gold sunfish
   (`sunfish`, +80, `SPRITES.itemSunfish`); with the creek's whitefish (+40) and snow char (+70)
   they are the four fish the fish well eats ([Food](gameplay/food-the-meal-is-a-channel.md)). `SFX.splash()` is the water cue. `DBG`
-  exposes `fish`, `iceCracks`, `holes`, `crackIce`, `addFish`, `spawnEmerger`, `netAt`,
-  `buildSiteAt`.
+  exposes `fish`, `iceCracks`, `holes`, `crackIce`, `addFish`, `spawnEmerger`, `netAt`.
 
 ### Ice breaks
 
@@ -1483,17 +1478,12 @@ one flag — never the type name — is what every site reads:
 
 | `water: true` means | where |
 | --- | --- |
-| built on a bare open hole, not snow | `canPlaceAt` (the ghost's colour, the click, and the contest callback re-checks it) |
-| a pad's wheel over open water offers it, and only it | `buildSiteAt` → `buildOptionsAt` → `WATER_STRUCT_ORDER` |
 | not solid — you walk **on** it, and the plunge check skips it | `isSolidTile`, `updatePlayer` |
 | its hole never refreezes while it stands | the dawn branch, via `netAt` |
 | drawn flat, under everything, never y-sorted | `drawNet` in the flat pass — see [rendering](rendering/render-pass-order.md) |
 
-The net is the [build list](gameplay/base-building.md)'s last row: its ghost is white over a bare
-hole and red anywhere else, the same `canPlaceAt` read as every other piece. A pad's build wheel
-over a hole offers the net alone, and nothing is special-cased for a one-option wheel:
-`wheelSpan(1)` is the full circle, so any direction out of the hub picks the net and the hub
-still cancels.
+Nobody can lay a net since player building was cut (0.525); `DBG.buildStruct` still stages one
+over a bare hole.
 
 A finished net runs two clocks in `updateStructures`' `net` branch:
 
@@ -1509,6 +1499,5 @@ A finished net runs two clocks in `updateStructures`' `net` branch:
   take the same fish. Sunfish come out first. Nothing can refuse a catch: fish are a pouch kind and take no bag cell.
 
 Enemies break a net with **E** like any other building (`workTarget` finds the object on the tile
-and gates on `ownsStruct`); the owner demolishes it from the manage wheel. Either way
-`destroyStructure` tips what it was holding back out as `sunfish` and `fish` drops before it goes.
+and gates on `ownsStruct`). `destroyStructure` tips what it was holding back out as `sunfish` and `fish` drops before it goes.
 

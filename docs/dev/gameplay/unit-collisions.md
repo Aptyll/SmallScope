@@ -2,7 +2,7 @@
 
 Players, animals and robots are solid circles to each other (`PLAYER_R` 4.5 — a merchant takes it
 too — deer 5, rabbit 2.5, a camp monster its `MONSTER` row's `r`: the wolf 4.5, either bear 18;
-everything else, worker bots and wave soldiers included, 3 — `unitRadius`). **Birds are the exception**: they fly, so `separateUnits()`
+everything else, wave soldiers included, 3 — `unitRadius`). **Birds are the exception**: they fly, so `separateUnits()`
 skips them entirely and they have no `UNIT_MASS` entry. Tile collision stays per-mover in
 `moveEntity`; unit-vs-unit is a separate relaxation pass, `separateUnits(dt)` in the
 `movement & collision` banner, that `updatePlay` runs once after every player, animal and robot

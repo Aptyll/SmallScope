@@ -36,7 +36,7 @@ function aiThink(p, dt) {
   if (p.prone) { inp.fire = false; aiNote(p, 'HIDE', 'LYING LOW', null); return; }
   if (aiPingRung(k)) return;   // 5a. a human's ping
   if (aiDefendRung(k)) return; // 5b. its bird
-  if (aiHomeRung(k)) return;   // 5b''. walls and turrets at home
+  if (aiHomeRung(k)) return;   // 5b''. the guard's scouting walk
   if (aiGuardRung(k)) return;  // 5b'. on guard
   if (aiPushRung(k)) return;   // 5c. the rival bird
   if (aiEscortRung(k)) return; // 5d. the human
@@ -45,9 +45,8 @@ function aiThink(p, dt) {
   if (aiRoadRung(k)) return;   // 5g. the road
   if (aiHuntRung(k)) return;   // 6. meat
   if (aiLootRung(k)) return;   // 7. loot
-  if (aiBuyRung(k)) return;    // 8. income
-  if (aiHarvestRung(k)) return; // 9. harvest
-  aiRoam(k);                   // 10. nothing to do
+  if (aiHarvestRung(k)) return; // 8. harvest
+  aiRoam(k);                   // 9. nothing to do
 }
 
 // the think's read, shared by every rung: the profile, the side's plan and
@@ -96,7 +95,6 @@ function aiRead(p, dt) {
   const aimAt = (x, y) => { inp.aimX = x; inp.aimY = y; };
 
   ai.thinkT -= dt;
-  if (ai.buildT > 0) ai.buildT -= dt;
   if (ai.hideCd > 0) ai.hideCd -= dt;
   if (ai.pushCd > 0) ai.pushCd -= dt;
   // the profile's clocks: the skill layer's (ai-skill.js), the ability roll
@@ -472,49 +470,17 @@ function aiDefendRung(k) {
 }
 
 function aiHomeRung(k) {
-  const { p, dt, inp, ai, T, steerTo, aimAt, pushE, defend, guardE, order } = k;
-  // 5b''. a guard is a proactive defender, never a sentry: it raises its
-  //       side's turrets along the road home (AI_FORT_N, then their tiers once the
-  //       purse is deep), and for AI_PATROL_OUT of every AI_PATROL_T walks
-  //       out past the base's junction and up the road to see who is coming
-  //       (what it sees is the side's, aiLook - the brace reads it); the rest
-  //       of the time it works what is near the bird (the rungs below).
-  //       Any other bot at home with nothing to push or answer lends a hand
-  //       while the roost is open (aiRingPlan): it lays the defence line's
-  //       walls, and nothing else of the guard's (a job it took at home is
-  //       walked to, wherever the line runs)
-  const homeE = guardE || (!pushE && !defend && !order && aiOwnEagle(p));
-  const wallE = homeE && homeE.mouth && (guardE || ((ai.fortJob || Math.hypot(homeE.x - p.x, homeE.y - p.y) < AI_GUARD_R) && aiRingPlan(p.team, homeE).open)) ? homeE : null;
-  if (wallE) {
-    ai.fortCd = (ai.fortCd || 0) - dt;
-    if (ai.fortCd <= 0) { // the job is chosen once a second at most (the floods are not free) and held between
-      let job = guardE ? aiFortSite(p, guardE) : null;
-      if (!job || job.up) job = aiWallSite(p, wallE, !guardE) || job; // walls when no new turret is due, and before any tier
-      ai.fortJob = job; ai.fortCd = job ? 1 : 3;
-    }
-    const fort = ai.fortJob;
-    if (fort) {
-      const fx = fort.tx * TILE + 8, fy = fort.ty * TILE + 8, d = Math.hypot(fx - p.x, fy - p.y);
-      const wall = fort.of !== undefined, T = aiPlan(p.team);
-      aiNote(p, 'BUILD', wall ? 'WALL ' + (fort.n + 1) + ' OF ' + fort.of : fort.up ? 'TURRET UP' : 'TURRET ' + (fort.n + 1) + ' OF ' + AI_FORT_N, { x: fx, y: fy });
-      if (d > 48 || d < 16) { // walk up to it - or off the very tile
-        const tx = d < 16 ? wallE.x : fx, ty = d < 16 ? wallE.y : fy;
-        if (steerTo(tx, ty, 1, AI_ROOST_BUDGET) >= 0) { aimAt(fx, fy); inp.fire = false; ai.tgt = null; return true; }
-        ai.fortJob = null; ai.fortCd = 15; // no way to it: leave it a while
-      } else if (wall && (T.wallTick === state.tick || !canPlaceAt('wall', fort.tx, fort.ty, 0, p).ok || !aiKeepsWay(wallE, [[fort.tx, fort.ty]]))) {
-        ai.fortJob = null; ai.fortCd = T.wallTick === state.tick ? 0.1 : 0; // the world moved since it chose (or a friend lays one this very step): choose again
-      } else {
-        inp.cmd = fort.up ? { kind: 'upgrade', tx: fort.tx, ty: fort.ty, id: 'upgrade' } : { kind: 'build', tx: fort.tx, ty: fort.ty, id: wall ? 'wall' : 'turret' };
-        if (wall) T.wallTick = state.tick; // one wall a side a step, so no two pass the way-check apart and cut it together
-        ai.fortJob = null; ai.fortCd = wall ? 1 : 2; aimAt(fx, fy); inp.fire = false; ai.tgt = null; return true;
-      }
-    }
-    if (guardE && (state.elapsed + p.id * 9) % AI_PATROL_T < AI_PATROL_OUT && guardE.mouth) {
-      const u = roadNest(guardE.team).u + (guardE.team === 0 ? 1 : -1) * AI_PATROL_D / (TILE * Math.SQRT2);
-      const pt = roadPoint(u);
-      aiNote(p, 'GUARD', 'SCOUTING', pt);
-      if (steerTo(pt.x, pt.y, 3, AI_ROOST_BUDGET) >= 0) { aimAt(pt.x, pt.y); inp.fire = false; ai.tgt = null; return true; }
-    }
+  const { p, inp, ai, steerTo, aimAt, guardE } = k;
+  // 5b''. a guard is a proactive defender, never a sentry: for AI_PATROL_OUT
+  //       of every AI_PATROL_T it walks out past the base's junction and up
+  //       the road to see who is coming (what it sees is the side's, aiLook -
+  //       the brace reads it); the rest of the time it works what is near
+  //       the bird (the rungs below).
+  if (guardE && (state.elapsed + p.id * 9) % AI_PATROL_T < AI_PATROL_OUT && guardE.mouth) {
+    const u = roadNest(guardE.team).u + (guardE.team === 0 ? 1 : -1) * AI_PATROL_D / (TILE * Math.SQRT2);
+    const pt = roadPoint(u);
+    aiNote(p, 'GUARD', 'SCOUTING', pt);
+    if (steerTo(pt.x, pt.y, 3, AI_ROOST_BUDGET) >= 0) { aimAt(pt.x, pt.y); inp.fire = false; ai.tgt = null; return true; }
   }
   return false;
 }
@@ -546,12 +512,8 @@ function aiPushRung(k) {
     // the roost sits in the corner's forest at the end of its lane, and the
     // lane is the only way in: off it, the walk is aiToRoost's (gate, mouth,
     // lane); on it, the class decides the approach
-    // a turret the defenders raised by the lane: any bot in it takes those down
-    // first with E (STRUCT_HIT_DMG a swing, 10 of it once STRUCT_DR has taken
-    // its cut), exactly as a hand would, since
-    // a bot standing off the bird under bolt fire never gets a draw finished
-    // ...and a rival ROAD TOWER its own wave stands under (aiLaneFort, ai.js):
-    // the wave takes the bolts, so the push stops to bring the tower down with it
+    // a rival ROAD TOWER its own wave stands under (aiLaneFort, ai.js): the
+    // wave takes the bolts, so the push stops to bring the tower down with it
     const tur = aiLaneFort(p, e);
     // the wave is the push: off the rival's lane, a pusher walks with the
     // head of its side's column rather than ahead of it alone
@@ -772,65 +734,9 @@ function aiLootRung(k) {
   return false;
 }
 
-function aiBuyRung(k) {
-  const { p, dt, inp, ai, steerTo, mine, foe } = k;
-  // 9. spend the purse (items went at rung 0, at a counter) on income, by
-  //    payback (aiEcoBuy, the team brain): a stump to build on, or its own
-  //    generator to raise a tier. Never with its bird under attack or a
-  //    rival in sight; short of the price, it saves for it.
-  const buy = ai.buildT <= 0 && !(mine && mine.threat) && !(foe instanceof Player) ? aiEcoBuy(p) : null;
-  const buyWhy = buy ? 'PAYS IN ' + Math.ceil(buy.pay) + ' MIN' : '';
-  const wantType = buy && buy.type && p.inv.gold >= buy.cost ? buy.type : null;
-  if (wantType) {
-    const st = aiBuildSite(p, wantType);
-    if (st) {
-      const sx = st.tx * TILE + 8, sy = st.ty * TILE + 8;
-      const d = Math.hypot(sx - p.x, sy - p.y);
-      aiNote(p, 'BUILD', buyWhy, { x: sx, y: sy });
-      if (d > 40) {
-        // a site it cannot route to must not pin it there
-        if (steerTo(sx, sy) < 0) { ai.buildT = 15; ai.spendT = 0; }
-        return true;
-      }
-      if (d > 16) { // clear of the site: order it
-        ai.spendT = 0;
-        inp.cmd = { kind: 'build', tx: st.tx, ty: st.ty, id: wantType };
-        ai.buildT = 12;
-        return true;
-      }
-      // standing on the site: step off toward the openest neighbouring tile
-      // (straight back can be a tree, and then the bot never gets to build)
-      let bx = st.tx, by = st.ty, bs = -1;
-      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
-        if (!dx && !dy) continue;
-        const nx = st.tx + dx, ny = st.ty + dy;
-        if (!inWorld(nx, ny) || isSolidTile(nx, ny) || waterAt(nx, ny)) continue;
-        const o2 = aiOpenSides(nx, ny);
-        if (o2 > bs) { bs = o2; bx = nx; by = ny; }
-      }
-      steerTo((bx + 0.5) * TILE, (by + 0.5) * TILE);
-      ai.spendT += dt;
-      if (ai.spendT > 3) { ai.buildT = 15; ai.spendT = 0; } // wedged: go do something else
-      return true;
-    }
-    ai.buildT = 4; // no stump near: look again shortly
-  } else if (buy && buy.up && canAfford(STRUCTS[buy.up.type].tiers[buy.up.tier + 1].cost, p)) {
-    const o = buy.up, ux = o.tx * TILE + 8, uy = o.ty * TILE + 8;
-    aiNote(p, 'BUILD', buyWhy, o);
-    if (Math.hypot(ux - p.x, uy - p.y) > 48) {
-      if (steerTo(ux, uy) < 0) ai.buildT = 15;
-      return true;
-    }
-    inp.cmd = { kind: 'upgrade', tx: o.tx, ty: o.ty, id: 'upgrade' };
-    ai.buildT = 10;
-    return true;
-  } else if (ai.buildT <= 0) ai.buildT = 4; // nothing worth it, or saving up: look again shortly
-  return false;
-}
-
 function aiHarvestRung(k) {
   const { p, dt, inp, ai, prof, steerTo, aimAt, guardE, ward, escort } = k;
-  // 10. harvest: walk to a tree/rock/berry bush/chest and hold E on it
+  // 8. harvest: walk to a tree/rock/berry bush/chest and hold E on it
   // (a stripped bush stops being work, so drop it the moment it empties)
   if (ai.tgt && (objects[idx(ai.tgt.tx, ai.tgt.ty)] !== ai.tgt ||
     (ai.tgt.type === 'bush' && ai.tgt.berries <= 0) ||
@@ -872,7 +778,7 @@ function aiHarvestRung(k) {
 
 function aiRoam(k) {
   const { p, dt, inp, ai, steerTo, aimAt, guardE, ward, escort } = k;
-  // 10. nothing to do: roam between its camp and the middle of the map
+  // 9. nothing to do: roam between its camp and the middle of the map
   // a guard or an escort with nothing to do walks its rounds inside its leash
   // (roaming off the edge of the leash had it flipping between its rung and
   // this every few ticks)

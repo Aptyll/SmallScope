@@ -45,11 +45,10 @@ FORAGER card multiply the fell (`harvestMul`, +25% a level and +50%; the payout 
 paying the purse and `p.earned`, the match's gold earned): the plain gold number rises
 at the place the action happened (the tree, the kill, the wreck), and the local earner gets the
 coin blip. Who earns is always the actor: the swinger of the blow, the final-blow shooter of an
-animal or a loaded worker bot (its `b.carry` goes to whoever downed it), the breaker of an enemy
-building (the 50% wreck refund, same as a demolishing owner's), the killer of a player and the assists
+animal or a soldier (its bounty), the breaker of an enemy
+building (half its cost, `wreckPay`), the killer of a player and the assists
 (gold from nowhere, the victim's own purse untouched — see [Takedowns](death-and-respawn.md#takedowns-assists-bounties-and-shutdowns)), and a
-gold pump's **owner**, into whose wallet each `pay` tick deposits directly. Robots carry a
-single gold number (`b.carry`) and deposit at 8+ into their owner's wallet.
+gold pump's **owner**, into whose wallet each `pay` tick deposits directly.
 
 **Treasure chests** are the free-money exception to earning it: `placeChests()`
 ([world.md](../world.md#treasure-chests)) swaps ~14 inner-edge border trees for chests, and one E

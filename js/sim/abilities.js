@@ -323,7 +323,7 @@ function updateAbilities(p, dt) {
   for (let i = 0; i < AB_KEYS; i++) if (p.abCd[i] > 0) p.abCd[i] = Math.max(0, p.abCd[i] - dt);
   if (p.hopT > 0) p.hopT = Math.max(0, p.hopT - dt);
   // root / slow / net / mark / fire: the shared clock every kind of unit runs
-  // (updateUnitStatus, js/sim/actions.js) - an animal and a worker bot age the
+  // (updateUnitStatus, js/sim/actions.js) - an animal and a bot age the
   // identical states off the identical timers
   updateUnitStatus(p, dt);
   if (p.dead) return; // a burn can finish a player mid-tick
@@ -578,7 +578,7 @@ function rushStep(p, mv, dt) {
     burst(p.x + p.rushNX * 5, p.y + 4, '#eef4fb', 2, 30, 0.35, true);
   }
   // p.rushVictim is the BODY, whatever kind it is: the charge picks up a deer
-  // or a worker bot the same way it picks up a rival, and slams it just as hard
+  // or a bot the same way it picks up a rival, and slams it just as hard
   const v = p.rushVictim;
   if (!v) {
     for (const q of unitsHit(p, p.x, p.y, ROLL_HIT_R + PLAYER_R)) {
@@ -635,7 +635,7 @@ function rushEnd(p, wall) {
 
 function abStomp(p) {
   const px = p.x, py = p.y;
-  // one list, every living thing in the ring: players, wildlife and worker bots
+  // one list, every living thing in the ring: players, wildlife and bots
   // take the same damage, the same shove and the same beat of stun
   for (const q of unitsHit(p, px, py, STOMP_R)) {
     const d = Math.hypot(q.x - px, q.y - py) || 1;
@@ -764,7 +764,7 @@ function abHitDummies(x, y, r, dmg) {
 
 // Each of them is asked about through `sideOf` (js/sim/actions.js), which hands
 // unitsNear/unitsHit the side a thing in the world is on rather than a living
-// caster. Everything those two return is fair game: players, wildlife AND worker
+// caster. Everything those two return is fair game: players, wildlife AND
 // bots, none of them a special case.
 // This is the other half: who to credit a kill to - the caster, if they are
 // still standing. A trap that outlives its hunter kills for nobody.
@@ -1084,7 +1084,7 @@ function abilityPose(p) {
 // the gold mark chevrons (root and mark currently have no caster in the
 // game, but the tells stay with the universal status set - see Known drift,
 // docs/dev/checklists.md). Takes the sprite's
-// own box, so a rabbit, a worker bot
+// own box, so a rabbit, a bot
 // and a player wear the same four tells at their own size - a state you
 // cannot see is a rule you cannot play around, and that is as true of a deer
 // as of a rival. Called by drawAbilityOnPlayer below and by drawAnimal /
