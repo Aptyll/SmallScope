@@ -337,7 +337,7 @@ function renderWorldMap(now) {
   drawChartCamps();
 
   // every body on the chart wears the one grammar both maps share (drawMap*,
-  // draw-world.js), in its side's ink: the robots first - every worker,
+  // draw-world.js), in its side's ink: the robots first - every
   // soldier and merchant standing, none of them hides - then the players,
   // then the birds over all of them, since the objective is the read
   for (const r of robots) {
@@ -692,20 +692,20 @@ const KEY_ROWS = {
   wasd: [
     [{ acts: ['up', 'left', 'down', 'right'], verb: 'MOVE' }, { acts: ['ab1', 'ab2', 'ab3', 'ab4'], verb: 'ABILITIES' },
       ['CLICK', 'FIRE'], 'dodge', 'slide', 'work', ['RMB', 'PING']],
-    ['berry', 'fish', 'recall', 'char', 'build', 'rotate'],
+    ['berry', 'fish', 'recall', 'char'],
     ['map', 'board', 'mute', 'pause', ['ESC', 'SETTINGS'], ['SCROLL', 'ZOOM'], ['F3', 'INFO'], ['.', 'HITBOX']],
   ],
   click: [
     [['RMB', 'MOVE / ACT'], ['HOLD RMB', 'FOLLOW'], { acts: ['ab1', 'ab2', 'ab3', 'ab4'], verb: 'ABILITIES' },
       ['CLICK', 'FIRE'], 'amove', 'stop', 'dodge', 'slide'],
-    ['berry', 'fish', 'ping', 'char', 'build', 'rotate'],
-    ['recall', 'map', 'board', 'mute', 'pause', ['ESC', 'SETTINGS'], ['SCROLL', 'ZOOM'], ['F3', 'INFO']],
+    ['berry', 'fish', 'ping', 'char', 'recall'],
+    [ 'map', 'board', 'mute', 'pause', ['ESC', 'SETTINGS'], ['SCROLL', 'ZOOM'], ['F3', 'INFO']],
   ],
   mouse: [
     [['RMB', 'MOVE / ACT'], ['HOLD RMB', 'FOLLOW'], ['CLICK', 'FIRE'], ['HOLD MMB', 'ACTION WHEEL'],
       'dodge', 'slide', { acts: ['ab1', 'ab2', 'ab3', 'ab4'], verb: 'ABILITIES' }, 'amove'],
-    ['stop', 'berry', 'fish', 'ping', 'char', 'build'],
-    ['rotate', 'recall', 'map', 'board', 'mute', 'pause', ['ESC', 'SETTINGS'], ['SCROLL', 'ZOOM']],
+    ['stop', 'berry', 'fish', 'ping', 'char', 'recall'],
+    ['map', 'board', 'mute', 'pause', ['ESC', 'SETTINGS'], ['SCROLL', 'ZOOM'], ['F3', 'INFO']],
   ],
 };
 const KEY_ROW_H = 12, KEY_ROWS_Y = 5;
@@ -827,7 +827,7 @@ function drawPadReadout(x0, y0) {
   // every row is [glyph kind, its label, the verb]
   const cols = [
     [['stick', 'L', 'MOVE'], ['stick', 'R', 'AIM'], ['trig', 'RT', 'FIRE'], ['trig', 'LT', 'SLIDE'], ['face', 'A', 'DODGE - HOP OFF'], ['face', 'X', 'HARVEST'],
-      ['stick', 'R3', 'PING'], ['dpad', 'D', 'HOLD: BUILD WHEEL']],
+      ['stick', 'R3', 'PING']],
     [['face', 'Y', 'ABILITY 1'], ['face', 'B', 'ABILITY 2'], ['bump', 'LB', 'ABILITY 3'], ['bump', 'RB', 'ABILITY 4'], ['dpad', 'L', 'EAT BERRY'], ['dpad', 'R', 'EAT FISH'],
       ['stick', 'L3', 'INVENTORY'], ['dpad', 'U', 'CHARACTER']],
     [['pill', 'BACK', 'WORLD MAP'], ['pill', 'BACK', 'HOLD: STANDINGS'], ['pill', 'START', 'SETTINGS'], null,

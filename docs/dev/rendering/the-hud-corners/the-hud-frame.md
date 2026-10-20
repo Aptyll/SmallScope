@@ -6,7 +6,7 @@ drawn the way League's and Dota's HUDs get their contrast, kept simple (4.18): a
 solid dark ground (`o.bg`, `AB_BG` by default). **The palette is neutral graphite** (0.421): the
 cold steel line and the navy grounds it replaced pulled the eye off the game, so the frame is the
 quietest thing on screen and the icons, the sides' colours and the gold carry the contrast. The
-strip, the rail, the build list, the practice bar and the tooltips share it;
+strip, the rail, the practice bar and the tooltips share it;
 the M map and the minimap wear it too (0.459), and the shop (0.484); the menus are still navy. The outline holds the plate apart from bright
 snow at noon, the faint line finishes its edge against the forest at night, and the ground keeps every
 well readable over both. No bevel, no snow, no ornament. The top corners are cut two pixels and
@@ -37,11 +37,8 @@ stops past the size where its widget would outgrow the view (`stripCap`, `railCa
 through `hudFit`); the track past that is sunk. `hudPick` draws a stored value at its nearest stop,
 which also carries a setting across to a screen with other stops; `hudSc()` is the strip's size
 (the practice bar rides it too), `railSc` the rail's, and a bake and its size land on the device grid
-(`hudPx`). The
-[build list](../../gameplay/base-building.md)'s column is the strip's: its bake grows by
-`buildHeadroom` while the column stands over the meal wells, and `buildListHit` maps the pointer
-back through `stripMouse`. While the slider's knob is in hand,
-`renderSettings` draws its widget live over the slab — the minimap slider's
+(`hudPx`). While the slider's knob is in hand,
+`renderSettings` draws the strip live over the slab — the minimap slider's
 preview grammar.
 
 The strip's **upgrade** half is entirely the floating buy plates above these wells — a skill

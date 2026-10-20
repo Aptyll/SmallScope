@@ -39,9 +39,6 @@
 // most. Under them, level with the bars, THE PURSE: the coin and the gold, on
 // screen for the whole match, since money is the number a player decides on
 // all game.
-//
-// The build list's way in is not on the strip: the build key opens it, and
-// its column stands over the meal wells (buildTabRect, js/ui/wheel.js).
 const AB_CELL = HUD_CELL, AB_GAP = 2, AB_N = 4; // AB_CELL: a strip well (the one size, above); AB_N: abilities
 const AB_PAD = 3;                         // the frame's outline, its edge and one px of ground (drawHudFrame)
 const PORT_SQ = 51;                       // the portrait square, the plate's full inner height
@@ -253,7 +250,7 @@ function fishPopCellRect(j) {
 }
 // is the column up, for a pointer at strip-space (mx, my)
 function fishPopUp(mx, my) {
-  if (state.mode !== 'play' || player.dead || state.paused || state.build || !hudHome() ||
+  if (state.mode !== 'play' || player.dead || state.paused || !hudHome() ||
       state.mapOpen || state.settingsOpen || state.wheel || window.DBG.hideUI || !mouse.inside) return false;
   const r = fishPopRect(), s = foodCellRect(1);
   if (mx >= r.x && mx < r.x + r.w && my >= r.y && my < s.y) return true; // the column and the gap under it

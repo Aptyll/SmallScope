@@ -146,7 +146,6 @@
     uiOpen: ['dongding.mp3'],            // a panel, drawer or chart coming up
     uiShut: ['swirl_down_quiet.mp3'],    // ...and going away
     notch: ['mip.mp3'],                  // one step of a stepped control
-    turn: ['dialquick.mp3'],             // a piece turned on the spot
     wheelUp: ['ollolodolo.mp3'],         // a radial wheel rolling open
     record: ['dinglechime.mp3'],         // a new BEST on an instrument
     runUp: ['wooow.mp3'],                // a run of hits reaching a milestone
@@ -159,7 +158,6 @@
     spectate: ['reverb_ghost.mp3'],      // the camera handed to another body
     defeat: ['lowwarp.mp3'],             // the match lost, victory's opposite
     bigHurt: ['bull_grunt.mp3'],         // a great bird taking a blow
-    botOut: ['digital_scan.mp3'],        // a machine rolling out of the bay
   };
 
   const bank = {};   // key -> [{ buf, s, d, g }], one entry per file that decoded
@@ -666,7 +664,7 @@
       if (!smp('bow', { vol: 0.79, rate: 0.8, jitter: 0.04, dur: 0.7 })) tone(720, 0.05, 'square', 0.1, -520);
       noise(0.12, 0.32, 1700); tone(104, 0.2, 'sawtooth', 0.13, -34, 0.02);
     },
-    // a turret letting go: the cords whipping through the fork and the timber
+    // a road tower's crossbow letting go: the cords whipping through the fork and the timber
     // kicking under them. All wood and air - nothing electric, because the thing
     // is a sling, and nothing twangy, because it must not read as a bow either.
     turretFire() { noise(0.06, 0.16, 1500); tone(196, 0.09, 'triangle', 0.08, -70); tone(120, 0.13, 'sine', 0.06, -30, 0.02); },
@@ -796,12 +794,10 @@
       tone(open ? 420 : 620, 0.06, 'triangle', 0.09, open ? 170 : -170);
       tone(open ? 620 : 420, 0.09, 'triangle', 0.07, open ? 120 : -120, 0.05);
     },
-    // ONE NOTCH of a stepped control - a zoom rung, a build row, a minimap
+    // ONE NOTCH of a stepped control - a zoom rung, a minimap
     // step, a wheel wedge the travel crossed. It fires as fast as a hand can
     // step, so it is quiet and holds its own gap.
     notch() { if (smp('notch', { vol: 0.35, jitter: 0, gap: 0.05 })) return; tone(1180, 0.025, 'square', 0.03); },
-    // a piece turned on the spot (R over the build ghost): a dial, not a step
-    turn() { if (smp('turn', { vol: 0.45, jitter: 0, dur: 0.45 })) return; tone(520, 0.05, 'square', 0.05, 260); },
     // a radial wheel rolling open under the held key or button
     wheelUp() { if (smp('wheelUp', { vol: 0.56, jitter: 0 })) return; tone(480, 0.05, 'triangle', 0.06, 200); tone(720, 0.07, 'triangle', 0.05, 160, 0.04); },
     // A PING on your side (js/sim/pings.js): two quick notes up, a DANGER's
@@ -851,8 +847,6 @@
     // chart) and stunned out of your own hands
     marked() { if (smp('marked', { vol: 0.71, jitter: 0 })) return; tone(1320, 0.05, 'sine', 0.05); tone(1320, 0.05, 'sine', 0.05, 0, 0.18); },
     dazed() { if (smp('dazed', { vol: 0.71, jitter: 0 })) return; tone(180, 0.3, 'sawtooth', 0.1, -60); noise(0.2, 0.1, 400); },
-    // a worker rolling out of the bay's shutter
-    botOut() { if (smp('botOut', { vol: 0.56, jitter: 0.04, gap: 0.4 })) return; tone(300, 0.07, 'square', 0.05, 200); noise(0.1, 0.08, 1800); },
     // the camera handed to another body, watching from nowhere
     spectate() { if (smp('spectate', { vol: 0.56, jitter: 0, gap: 0.2 })) return; tone(520, 0.2, 'sine', 0.05, -200); },
     // a finished item landing in a slot (buyItem, js/sim/items.js): the ding

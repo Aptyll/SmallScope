@@ -38,9 +38,9 @@ const RC_KIND = {
 };
 const RC_KINDS = ['atk', 'ab', 'other'];
 // the world's names, by cause, for the pointer
-const RC_WORLD = { tower: 'TOWER', soldier: 'WAVE', worker: 'WORKER', wolf: 'WOLF', bear: 'BEAR', fire: 'FIRE',
+const RC_WORLD = { tower: 'TOWER', soldier: 'WAVE', wolf: 'WOLF', bear: 'BEAR', fire: 'FIRE',
   orca: 'ORCA', ice: 'ICE', creek: 'CREEK', tackle: 'A TACKLE', eagle: 'EAGLE' };
-const RC_MOVE = { roll: 'ROLL', turret: 'TURRET' };
+const RC_MOVE = { roll: 'ROLL' };
 // 0 the ring alone, 1 the lines, 2 opened out: this screen's, kept across deaths
 const recap = { view: 1 };
 
@@ -77,7 +77,7 @@ function rcWorldFig(c, team) {
   const rival = skin(1 - team);
   switch (c) {
     case 'tower': return towerFigure(rival);
-    case 'soldier': case 'worker': return SPRITES.robotTeam[rival][0];
+    case 'soldier': return SPRITES.robotTeam[rival][0];
     case 'wolf': return SPRITES.wolf.right.idle[0];
     case 'bear': return SPRITES.alpha && SPRITES.alpha.right.idle[0];
     case 'fire': return SPRITES.fire[0];

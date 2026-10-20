@@ -49,7 +49,7 @@
 // epic:     the brown bear - the whole team is paid and given the BROWN BUFF for the kill;
 //           it walks RED's bank of the upstream bend
 // hut:      no monster - a hut buried in the treeline, scenery since its
-//           chests went (0.524)
+//           chests went (0.531)
 // meadow:   the WARREN, drawn by hand (its `plan`): a round clearing in a
 //           ring of pines, open to the field at one mouth, three rabbits in
 //           the middle, three snowdrops at the back that each shield the

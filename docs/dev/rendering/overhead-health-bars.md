@@ -3,7 +3,7 @@
 Beside the bar sits the other thing drawn on every body alike: **`drawUnitStates(e, px, py, w, h,
 now)`** ([js/sim/abilities.js](../../../js/sim/abilities.js)) paints the net drape, the root's sprung jaws,
 the fire and the mark's gold chevrons over whatever sprite is wearing them, taking the sprite's own box so
-a rabbit, a worker bot and a player get the same four tells at their own size. `drawPlayer`
+a rabbit, a soldier and a player get the same four tells at their own size. `drawPlayer`
 reaches it through `drawAbilityOnPlayer` (which adds the one a player alone can show — a raised
 shield); `drawAnimal`, `drawBird` and `drawRobot` call it directly. **The
 fire never washes over the body** — tongues off the crown and a lit row under the feet — because a

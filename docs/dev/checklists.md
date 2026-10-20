@@ -225,7 +225,7 @@ glows — there is no light registry to add it to
 is not an object type: it is a `STRUCTS` entry in [js/sim/structures.js](../../js/sim/structures.js),
 which carries the same `mm`/`map` pair and gets solidity, both maps and the E prompt for free.
 
-**Adding a carried item** — only food is carried (there is no backpack since 0.524), and **a new
+**Adding a carried item** — only food is carried (there is no backpack since 0.531), and **a new
 FOOD is already generic**: one `ITEMS` row with an `icon` and a `heal` picks up the pouch, the drop
 pickup, the meal channel, the shared clock and the tooltip rows for free (`startEat`,
 js/sim/core.js — see [Food](gameplay/food-the-meal-is-a-channel.md)). What it still needs is an
@@ -346,7 +346,7 @@ pinned to it** asks `fogShown(u, now)` first (js/draw/fog.js), or it shows in th
 **Adding a way to hurt anything** — call `hurtUnit(e, dmg, nx, ny, src, o)`, never `damagePlayer` /
 `hurtAnimal` / `hurtRobot` directly, and put a state on a body with its setter (`stunUnit`,
 `rootUnit`, `slowUnit`, `netUnit`, `markUnit`, `igniteUnit`). One call, and a player, a deer and a
-worker bot all take it; the three per-kind functions under `hurtUnit` exist for what is genuinely
+soldier all take it; the three per-kind functions under `hurtUnit` exist for what is genuinely
 per-kind and are not the entry point. For an **area** effect sweep `unitsHit(src, x, y, r)` (a blow:
 a player mid-roll or fresh off a respawn is dropped) or `unitsNear` (a lasting ground condition,
 which a roll should not shrug off) rather than writing a loop per kind — that loop is exactly how wildlife and bots
@@ -384,32 +384,19 @@ What it must do to get them:
    never advances; miss `idle` and `clipFrame` has nothing to fall back to
    ([the clips](gameplay/wildlife.md#what-a-beast-is-doing-the-clips)).
 
-**Adding a structure** — add a `STRUCTS` entry (3 tiers, and a `blurb` saying what it is for,
-each sentence short enough for one tooltip line) and its row in `BUILD_ORDER` (the build list's
-icon, `buildIcon`, is the local team's `SPRITES.teamBuild[team][type][0]` or, for a sprite too
-big to be its own 16×16 icon — see the bay, the turret — a dedicated entry in
-`teamBuild[team].icon`; a new row is a new row, no layout to touch, and the row's hover prints the
-entry's numbers - a new per-type number is a row in `tipStruct`) and, unless it is the net's kind, in `STRUCT_ORDER` too
-(the pad's wheel sizes itself: a sixth entry is six even wedges). A piece that wears another
-type's tile on every footprint tile (`tiled: 'wall'`, the long wall) needs no grid at all and may
-`rotates`; anything else with art of its own needs a grid baked into the per-team `teamBuild` sets
-(see [sprites.md](sprites.md)), and both
-maps colour it from the entry's `mm`/`map` — every building wears its side's ink (`mmTeam`/`chTeam`,
-world.js), and `updateMinimap`/`buildWorldMapImg` resolve a multi-tile footprint's `part`
-fillers through `structOf()` first, so the anchor's entry colours the whole building. `isSolidTile()` is now generic (`!!STRUCTS[o.type] || ...`) — a new
-`STRUCTS` entry is automatically solid for free, and only a genuinely new *non-`STRUCTS`* scenery
-type needs a line there. `hitObject()`, the draws pass (via `structSprite`), construction,
-ownership and refunds already dispatch on `STRUCTS[o.type]` too — no per-type work there, and
-a shot meets the grid's own opaque box (`structShotBox`, js/sim/sim.js), so taller art is a taller
-target for free; only a part drawn outside the grid (the turret's sling) declares its reach
-(`head`) — and
-nothing to add unless the type does something once built (a functional tick branch in
-`updateStructures()`, e.g. the generator's payout timer or the bay's roll-out).
-**The manage wheel is a separate, hand-built list, not generic over `STRUCT_ORDER`**:
-`wheelOptions()` (js/ui/wheel.js) only ever returns `[upgrade, demolish]`, so a structure with its own extra manage-wheel order needs a
-line there, between the two (and a matching `runCmd()` branch, plus a `cmdOk()` line if the order
-carries anything but a tile), regardless of how automatic the
-*build* wheel's sizing is.
+**Adding a structure** — add a `STRUCTS` entry (one tier: `cost`, `hp`, `buildT` and the type's
+own numbers) and stand it with `createStruct` from whatever owns it (the map at boot, as
+`placeTowers` does, or the merchant). Nobody builds by hand, so there is no list or wheel to add
+it to. Art of its own needs a grid baked into the per-team `teamBuild` sets (see
+[sprites.md](sprites.md)), and both maps colour it from the entry's `mm`/`map` — every building
+wears its side's ink (`mmTeam`/`chTeam`, world.js), and `updateMinimap`/`buildWorldMapImg`
+resolve a multi-tile footprint's `part` fillers through `structOf()` first, so the anchor's entry
+colours the whole building. `isSolidTile()` is generic (`!!STRUCTS[o.type] || ...`) — a new
+`STRUCTS` entry is solid for free. `hitObject()`, the draws pass (via `structSprite`),
+construction, ownership and the wreck's pay already dispatch on `STRUCTS[o.type]` too, and a shot
+meets the grid's own opaque box (`structShotBox`, js/sim/sim.js), so taller art is a taller target
+for free. There is nothing to add unless the type does something once built (a functional tick
+branch in `updateStructures()`, e.g. the generator's payout timer or the barracks' waves).
 
 **Adding a camp** — a `CAMPS` entry plus a site in `CAMP_SITES`; that is the whole feature (see
 [world.md](world.md#camps) for the fields). The entry's shape:
@@ -423,7 +410,7 @@ shipwreck: { name,                // what the M map prints
 ```
 
 A camp with no monster (the HOG HUT) is `kind: null, pop: 0`: nothing stocks it, its clock never
-runs, and what it offers is its `props` (the hog hut is scenery only since 0.524).
+runs, and what it offers is its `props` (the hog hut is scenery only since 0.531).
 
 The site is written **once, for the RED half**, in road coordinates (`u` along the diagonal, `s`
 off it) and mirrored for BLUE by `campSites()` — never write both halves by hand, and never a
@@ -516,7 +503,7 @@ already current, so it is safe to call from a state change that repeats.
 | js/sim/world.js | `TREE_HP`; `TREE_RARE_CHANCE` in `treeRare()`; the road (`ROAD_HW`/`ROAD_RAG`/`ROAD_ICE_KEEP`/`ROAD_ICE_TAPER`/`ROAD_STEP`/`ROAD_HW_WOOD`/`ROAD_NEST_IN`/`ROAD_NEST_OFF`/`ROAD_LOG_IN`/`SPUR_HW`), which reshapes the map |
 | js/sim/base.js | the bases (`BASE_U`/`BASE_R`/`BASE_RAG`/`PERCH_U`/`BASE_KEEP`, the side mouths `BASE_SIDE_U`/`BASE_SIDE_S`, the bay spots `BASE_BAYS`), which reshape both roost corners |
 | js/sim/lanes.js | the top and bot lanes (`LANE_HALF`, their fixed control points, `LANE_HW`/`LANE_RAG`, the ford's `LANE_FORD_HW`) and their cables (`LANE_ZIP_*`) |
-| js/sim/structures.js | `STRUCTS` costs/HP/build times (plus turret range/dmg/rate/traverse/aim/`acc`, generator pay/period, bay bot count/HP and its `w`/`h` footprint; the bay's roll-out cadence is inline in `updateStructures()`'s spawner branch); the turret's own throw (`TUR_*`, `ROCK_SPD`/`ROCK_FALL`/`ROCK_MISS`/`ROCK_SPLASH`, under the `turret gunnery` banner); the waves (`STRUCTS.barracks`'s `wave`/`waveT`/`grow`/`cap`/`botHp`/`hp`, `BARRACKS_ROLL`) |
+| js/sim/structures.js | `STRUCTS` costs/HP/build times (plus generator pay/period and each type's `w`/`h` footprint); the waves (`STRUCTS.barracks`'s `wave`/`waveT`/`grow`/`cap`/`botHp`/`hp`, `BARRACKS_ROLL`) |
 | js/sim/robots.js | `SOLDIER_*` (speed, aggro, siege reach, the bird damage, `SOLDIER_HP_GROW`); `MERCH_BAYS`/`MERCH_BAY_*` (how many bays, the logs a rebuild costs, when the first is due, the order the lanes get theirs, the rebuild wait); `MERCH_BACK_R`/`MERCH_BACK_ARC` (how far and how wide the back woods reach) |
 | js/sim/farm.js | `SOLDIER_BOUNTY`/`SOLDIER_BOUNTY_GROW` (a soldier's last hit), `COIN_POP_T`; the bots' farm knobs `AI_FARM_*`/`AI_DEN_EARLY`/`AI_LANE_N`/`AI_JUNGLE_N` sit in js/ai/ai-farm.js |
 | js/sim/actions.js | `WORK_REACH` and the roll/prone blocks |
@@ -575,9 +562,6 @@ Code that is dead **on purpose** is the next section.
   the fight rung, but seed 2 on NORMAL was never re-run): the way in is the harness's per-minute
   rows (own/rival roost distance per player) and `settings.hitbox = 1` on the stalled bots'
   routes.
-- **No bot targets a worker bot on purpose.** `aiNearestEnemy` (js/ai/ai.js) takes players and a
-  rival wave's soldiers; a worker only falls to a shot meant for somebody else, though every
-  weapon, ability and the roll land on it like any other body.
 - **Fire stops at buildings and the bird.** A structure (`hurtStruct`) and the roosting eagle
   (`hurtEagle`) are not units: a flaming shot does its impact damage and neither burns. Deliberate,
   but it is the obvious next place fire could go — it would need a burn clock and a draw pass on
@@ -622,15 +606,13 @@ Kept on purpose — do not "clean up", and a verbatim code move carries it along
   one — a camp that wants a flock stands it up again with `deadTree` props and a perching spawn
   beside `spawnCampMonster` (js/sim/camps.js) ([Birds](gameplay/wildlife.md#birds-the-flock-dormant)). The
   `flushBirds(campAt(...))` calls on a felled snag are the live hooks it would wake through.
-- `SPRITES.imp` (the `imp1`/`imp2` grids, `IPAL`) is baked but unreferenced since the worker bot
-  got its own grids — kept in case the imp returns.
+- `SPRITES.imp` (the `imp1`/`imp2` grids, `IPAL`) is baked but unreferenced since the bots
+  got their own grids — kept in case the imp returns.
 - A tree's `variant` (rolled by `randi(0, 1)` in `genWorld`) picks no art any more: there is one
   pine in twenty-four bend frames, `treeFrame` reads the wind for the lean it wears, and the tile's
   own `hash2` mirrors it, gives it a standing lean, a palette row and a nudge.
   **The roll has to stay** — removing an `rng()` call inside `genWorld` reshuffles every
   existing seed. `deadTree` still uses its `variant` for real.
-- The flat `SPRITES.spawner` (the old 16×16 hut grid in the three tier palettes) is baked but
-  unreferenced since the bot bay; the live sprite is `teamBuild[team].spawner[0]`.
 - `SPRITES.spikes`, `SPRITES.fire`, `SPRITES.torch`, and the three heart sprites are baked but
   unreferenced since the buildables/HUD removal — kept in case those features return (the heart
   grids also carry the file's mangled-byte repair).
@@ -651,6 +633,3 @@ Kept on purpose — do not "clean up", and a verbatim code move carries it along
   recover one with `git show ee284a0:"audio/music/<name>"` if a cue ever wants it. A track is
   live only once it is in `TRACKS`. `app/server.js`'s `.ogg`/`.wav` MIME rows are forward-looking — every asset in the repo
   is an mp3.
-- The `tracers` array (js/sim/player.js), its ageing (js/sim/structures.js) and its draw pass
-  (js/draw/render.js) are kept working but nothing pushes to them — they went idle with the
-  raiders, and the live turret slings a travelling rock through `arrows` instead.

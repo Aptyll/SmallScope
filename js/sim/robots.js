@@ -1,11 +1,12 @@
 'use strict';
-// The worker bots: a bot's life from the bay's mouth to its wreck and the
-// frame it spends deciding what to do (cut trees round its own bay and haul
-// the gold home), then the eagle's merchant and a wave's soldiers, who share
-// the body. Everything here is sim.
-// ------------------------------------------------------------ workers
+// The bots: a soldier's body from the barracks' door to its wreck, the
+// eagle's merchant and a wave's soldiers, who share the body. Everything here
+// is sim.
+// ------------------------------------------------------------ bots
+// A bot's body, rolled out of building sp's mouth: the barracks' soldier
+// (makeSoldier) - its tier carries botHp
 function makeRobot(sp) {
-  const t = STRUCTS[sp.type].tiers[sp.tier]; // the bay's worker, or the barracks' soldier (makeSoldier): both carry botHp
+  const t = STRUCTS[sp.type].tiers[sp.tier];
   const m = structMouth(sp);
   let sx = m.x, sy = m.y;
   if (isSolidTile(Math.floor(sx / TILE), Math.floor(sy / TILE))) {
@@ -21,22 +22,21 @@ function makeRobot(sp) {
   const b = {
     bot: true, // a machine, not wildlife: what isAnimalUnit (js/sim/actions.js) reads
     x: sx, y: sy, hp: t.botHp, maxHp: t.botHp, vx: 0, vy: 0, // vx/vy: a bot never drifts, but a rival's aim leads by them (updateAI)
-    home: sp, team: sp.team === undefined ? 0 : sp.team, owner: sp.owner === undefined ? 0 : sp.owner,
-    tgt: null, workT: 0, atkCd: 0, avoid: null, avoidT: 0, nav: null,
+    team: sp.team === undefined ? 0 : sp.team, owner: sp.owner === undefined ? 0 : sp.owner,
+    tgt: null, atkCd: 0, nav: null,
     atkAim: null, // what a soldier is swinging at right now (drawRobot reads it)
-    carry: 0, // gold held, deposited at home
-    moveT: 0, idleT: rand(0.3, 1), mvx: 0, mvy: 0, moving: false,
-    animT: rng() * 2, flash: 0, kbx: 0, kby: 0, dead: false,
+    animT: rng() * 2, flash: 0, kbx: 0, kby: 0, dead: false, moving: false,
     zip: -1, zipD: 0, zipDir: 1, zipLast: 0, // the zipline (js/sim/zipline.js), the player's own fields: a soldier rides it (soldierBoard)
   };
-  // a worker takes every state a player can be put under - snared,
-  // netted, marked, alight - written by the same setters (`status effects`,
-  // js/sim/actions.js). A bot rolling out of the bay is not a different rulebook.
+  // a bot takes every state a player can be put under - snared, netted,
+  // marked, alight - written by the same setters (`status effects`,
+  // js/sim/actions.js). A bot rolling out of the barracks is not a different
+  // rulebook.
   clearUnitStatus(b);
   return b;
 }
 
-// A worker is a 12x10 body standing on its treads at b.y + 4, so the disc a
+// A bot is a 12x10 body standing on its treads at b.y + 4, so the disc a
 // shot lands in is centred a pixel above the anchor. The arrow loop sweeps a
 // shot's step against it (sweepDisc, js/sim/sim.js).
 const ROBOT_HIT_R = 7;
@@ -45,8 +45,7 @@ function robotHitY(b) { return b.y - 1; }
 // px/s a chassis is shoved by an ordinary blow. hurtUnit writes over it for
 // anything carrying a shove of its own or a KNOCKBACK multiplier.
 const ROBOT_KB = 40;
-// an arrow landing on a worker - and a turret bolt too, since bolts ride the
-// same pipeline. src is the shooter, for the feed line on the kill. Reached
+// a blow landing on a bot. src is the shooter, for the feed line on the kill. Reached
 // only through hurtUnit, which asks unitAlive first, so a merchant never
 // arrives here - the guard below is the same question asked twice on purpose,
 // since this is a named function and nothing stops a later caller finding it.
@@ -63,35 +62,23 @@ function hurtRobot(b, dmg, nx, ny, src) {
   if (b.hp <= 0) robotDies(b, src);
 }
 
-// The wreck. Whatever gold it was hauling goes to whoever downed it - the
-// final blow takes the cargo, which is what keeps shooting a loaded worker
-// on its way home worth the arrows. A wreck nobody caused eats its load.
+// The wreck. A merchant cannot be downed (unitAlive, js/sim/actions.js), so
+// nothing reaches here but a soldier.
 function robotDies(b, src) {
   b.dead = true;
   sfxAt('break_', b.x, b.y);
   burst(b.x, b.y - 4, '#98a1b0', 10, 50, 0.5, true);
   burst(b.x, b.y - 4, '#3b4150', 4, 35, 0.4);
-  if (b.carry > 0) {
-    if (src && src.inv) awardGold(src, b.carry, b.x, b.y);
-    b.carry = 0;
-  }
-  // a soldier carries a bounty instead of cargo: the rival who lands the
+  // a soldier carries a bounty: the rival who lands the
   // LAST HIT is paid it on the spot (soldierBounty, the `farm` banner of
   // js/sim/farm.js) and counts a farm, and every rival scout standing near
   // shares its SOLDIER_XP whoever scrapped it (shareXp, js/sim/player.js) -
-  // the road pays, which is what makes walking out to meet a wave worth the walk. One the waves, a turret or a
+  // the road pays, which is what makes walking out to meet a wave worth the walk. One the waves, a tower or a
   // beast finish pays nobody, and its rivals near it see the coin go grey.
   // Three a wave, so no feed line: the fight is the news, not each wreck.
-  if (b.kind === 'soldier') {
-    if (src && src.inv && src.team !== b.team) { awardGold(src, soldierBounty(), b.x, b.y); farmHit(src, b.x, b.y - 6); }
-    else coinPop(b.x, b.y - 6, true, 1 - b.team);
-    shareXp(b, SOLDIER_XP, 1 - b.team, src);
-    return;
-  }
-  // a downed worker is not a downed player: it makes the feed, never the kill
-  // count. There is no merchant line any more: a merchant cannot be downed
-  // (unitAlive, js/sim/actions.js), so nothing reaches here carrying one.
-  if (src && src.team !== b.team) logEvent(src.name + ' SCRAPPED A WORKER', src);
+  if (src && src.inv && src.team !== b.team) { awardGold(src, soldierBounty(), b.x, b.y); farmHit(src, b.x, b.y - 6); }
+  else coinPop(b.x, b.y - 6, true, 1 - b.team);
+  shareXp(b, SOLDIER_XP, 1 - b.team, src);
 }
 
 function updateRobot(b, dt) {
@@ -120,110 +107,7 @@ function updateRobot(b, dt) {
     return;
   }
   if (b.merchant) { updateMerchant(b, dt); return; } // the eagle's driver: its own brain, the shared body above
-  if (b.kind === 'soldier') { updateSoldier(b, dt); return; } // a wave's soldier: the march (the `soldiers` banner below)
-  const home = b.home;
-  const hm = structMouth(home), hx = hm.x, hy = hm.y;
-  let moving = false;
-  const SPD = 40;
-
-  // route there (reach 1 = stop beside a tile it cannot stand on); an
-  // unreachable goal comes back as -1 and the caller drops it
-  const walkToward = (px, py, reach) => {
-    const n = navStep(b, px, py, 3, SPD, dt, reach);
-    if (!n.ok) return -1;
-    moving = true;
-    return n.d;
-  };
-
-  // loiter around home.
-  // Steered by hand rather than routed, so the net/crater drag is folded in
-  // here the way navStep does it for every walk with a goal (js/sim/actions.js)
-  const wander = (ax, ay) => {
-    if (ax === undefined) { ax = hx; ay = hy; }
-    const drag = unitMoveMul(b);
-    if (b.moveT > 0) {
-      b.moveT -= dt;
-      moving = true;
-      const mv = moveEntity(b, (b.mvx * 24 * drag + b.kbx) * dt, (b.mvy * 24 * drag + b.kby) * dt, 3);
-      if (mv.blockedX || mv.blockedY) b.moveT = 0;
-    } else {
-      b.idleT -= dt;
-      if (Math.abs(b.kbx) + Math.abs(b.kby) > 1) moveEntity(b, b.kbx * dt, b.kby * dt, 3); // shoved while idle
-      if (b.idleT <= 0) {
-        let ang = rng() * Math.PI * 2;
-        if (Math.hypot(ax - b.x, ay - b.y) > 2.5 * TILE) ang = Math.atan2(ay - b.y, ax - b.x) + rand(-0.5, 0.5);
-        b.mvx = Math.cos(ang); b.mvy = Math.sin(ang);
-        b.moveT = rand(0.5, 1.2);
-        b.idleT = rand(0.8, 2);
-      }
-    }
-  };
-
-  const deposit = () => {
-    if (b.carry <= 0) return;
-    gainGold(players[b.owner] || player, b.carry);
-    addFloater(hx, hy - 14, String(b.carry), RES_COLORS.gold);
-    b.carry = 0;
-    sfxAt('coin', hx, hy);
-  };
-
-  const harvest = () => {
-    const t = b.tgt, ox = t.tx * TILE + 8, oy = t.ty * TILE + 8;
-    joltObj(t, 0.1, 0.22);
-    if (t.type === 'tree' || t.type === 'deadTree') {
-      const dry = t.type === 'deadTree';   // a rookery perch: quicker, same gold
-      t.hp--;
-      b.carry += dry ? YIELD.deadTreeHit : YIELD.treeHit;
-      sfxAt('chop', ox, oy);
-      burst(ox, oy - 10, '#eef4fb', 3, 35, 0.4, true);
-      if (t.hp <= 0) {
-        objects[idx(t.tx, t.ty)] = { type: 'stump', tx: t.tx, ty: t.ty, flash: 0, shake: 0 };
-        b.carry += dry ? YIELD.deadTreeFall : YIELD.treeFall;
-        if (t.rare) b.carry += YIELD.treeRare;
-        burst(ox, oy - 8, '#eef4fb', 8, 45, 0.5, true);
-        sfxAt('treeFall', ox, oy);
-        if (dry) flushBirds(campAt(ox, oy), { x: ox, y: oy }); // the flock loses its perch (dormant: see the birds banner, wildlife.js)
-        b.tgt = null;
-      }
-    }
-  };
-
-  // walk to the current target and swing at it; false = it gave the tile up
-  const workTgt = () => {
-    const txp = b.tgt.tx * TILE + 8, typ = b.tgt.ty * TILE + 8;
-    if (Math.hypot(txp - b.x, typ - b.y) > 20) {
-      // no route to it (walled in, or pinned on the way): leave it alone a while
-      if (walkToward(txp, typ, 1) < 0) { b.avoid = b.tgt; b.avoidT = 12; b.tgt = null; return false; }
-    } else {
-      b.workT += dt;
-      if (b.workT >= 0.9) { b.workT = 0; harvest(); }
-    }
-    return true;
-  };
-  // hold the current target if it still stands, otherwise take what `pick`
-  // offers; false = there was nothing left to work
-  const gather = (pick) => {
-    if (b.tgt && objects[idx(b.tgt.tx, b.tgt.ty)] !== b.tgt) b.tgt = null;
-    if (!b.tgt) b.tgt = pick();
-    if (!b.tgt) return false;
-    workTgt();
-    return true;
-  };
-  const homeRun = () => { const d = walkToward(hx, hy); if (d >= 0 && d < 14) deposit(); };
-
-  // the whole job: cut the trees round its own bay and haul a load home at 8
-  if (b.carry >= 8) homeRun();
-  else if (!gather(() => nearestObj(hx, hy, 8, (o) =>
-    o.type === 'tree' && o !== b.avoid))) {
-    if (b.carry > 0) homeRun(); else wander();
-  }
-
-  b.animT += dt * (moving ? 8 : 0);
-  b.moving = moving;
-  b.x = Math.max(8, Math.min(WORLD * TILE - 8, b.x));
-  b.y = Math.max(8, Math.min(WORLD * TILE - 8, b.y));
-
-  if (b.hp <= 0 && !b.dead) robotDies(b, null);
+  updateSoldier(b, dt); // a wave's soldier: the march (the `soldiers` banner below)
 }
 
 // ------------------------------------------------------------ merchant
@@ -241,14 +125,14 @@ function updateRobot(b, dt) {
 // team's and E opens the shop.
 //
 // It is a unit in `robots` with `merchant: true`: the same separation and
-// draw pipelines a worker rides, dispatched to updateMerchant/drawMerchant by
+// draw pipelines a soldier rides, dispatched to updateMerchant/drawMerchant by
 // that flag (updateRobot's status/stun handling is shared). owner -1: it
 // pays nobody - its work is the eagle's, free like the
 // crater, the same for both sides.
 //
 // It CANNOT BE KILLED, and it has no hp at all rather than a large number:
 // unitAlive (js/sim/actions.js) answers false for a merchant, which takes it out
-// of every arrow, blow, sweep, turret mark and worker's quarry in one place.
+// of every arrow, blow, sweep, tower mark and soldier's foe in one place.
 // Both sides trade at both counters, so neither side may shoot one, and
 // nothing may stand between a player and the shop they walked to.
 const MERCH_SPD = 46;        // px/s
@@ -623,13 +507,13 @@ function updateMerchant(b, dt) {
 
 // ------------------------------------------------------------ soldiers
 // The WAVES. Every STRUCTS.barracks.waveT seconds each merchant's barracks
-// (the `merchant` banner above) rolls out a column of soldiers - the worker's
+// (the `merchant` banner above) rolls out a column of soldiers - a bot's
 // chassis under its side's pennant (drawRobot) - that marches the ROAD
 // (placeRoad, world.js) to the rival bird and strikes it. A soldier is
 // allowed to FIGHT and nothing else: nobody owns it (owner -1), no tree
-// tempts it, and it swings the worker's own axe (robotStrike) at any rival
-// unit inside SOLDIER_AGGRO, any rival building inside SOLDIER_SIEGE (a
-// turret or wall in its way, their bays), and then the bird itself,
+// tempts it, and it swings its axe (robotStrike) at any rival unit inside
+// SOLDIER_AGGRO, any rival building inside SOLDIER_SIEGE (their barracks in
+// its way), and then the bird itself,
 // SOLDIER_EAGLE_DMG a swing through hurtEagle - which is why two waves
 // meeting on the road grind each other down until somebody breaks the tie.
 // It carries a bounty paid to the rival who lands its last hit (robotDies,
@@ -658,7 +542,7 @@ const SOLDIER_ZIP_GAIN = 96;   // px nearer the rival bird a ride's end must be 
 const SOLDIER_ZIP_REACH = 96;  // px off a cable's track a marching soldier turns aside to it: the road's own width and the verge, so a column on the lane finds the line beside it
 
 function makeSoldier(o) {
-  const b = makeRobot(o); // the bay's roll-out geometry, the barracks' botHp
+  const b = makeRobot(o); // the barracks' roll-out geometry and botHp
   b.kind = 'soldier';
   // tougher every `grow`, like its bounty (soldierBounty, js/sim/farm.js), so a
   // hero's grown blow never makes every hit on one a last hit
@@ -773,8 +657,7 @@ function updateSoldier(b, dt) {
       }
     }
   }
-  // 3. a rival building in its way: a turret, a wall across the road,
-  //    their bays - and a rival ROAD TOWER from further off, since one holds
+  // 3. a rival building in its way: their barracks - and a rival ROAD TOWER from further off, since one holds
   //    the road and a column that walked past it would leave it standing
   //    (towerNear, js/sim/towers.js)
   if (!busy) {
@@ -804,9 +687,8 @@ function updateSoldier(b, dt) {
   if (b.hp <= 0 && !b.dead) robotDies(b, null);
 }
 
-// ------------------------------------------------------------ worker blows
-// What a wave's soldier swings (the `soldiers` banner above) - the worker's
-// own axe, aimed at a body instead of a trunk.
+// ------------------------------------------------------------ soldier blows
+// What a wave's soldier swings (the `soldiers` banner above): an axe.
 const ROBOT_DMG = 5;       // one swing, against a unit or a building
 const ROBOT_ATK_CD = 1.1;  // seconds between those swings
 const ROBOT_REACH = 15;    // px from the body to what its axe can reach
@@ -822,14 +704,13 @@ function enemyStructNear(team, x, y, r) {
   }
   return best;
 }
-// ---- a worker's simple attack -------------------------------------------
-// One axe swing on a flat cooldown - the
-// same swing the harvest animation already draws, aimed at a body instead of
-// a trunk. Nothing here scales with anything yet; that is the balance pass.
-// Where a worker aims. A body is a point a little above its feet; a building
-// is the nearest point on its FOOTPRINT, not its centre - the bay is 3x2, and
-// a worker measuring to the middle of it could never reach its own axe past
-// the wall it is standing against.
+// ---- a soldier's simple attack ------------------------------------------
+// One axe swing on a flat cooldown. Nothing here scales with anything yet;
+// that is the balance pass.
+// Where a soldier aims. A body is a point a little above its feet; a building
+// is the nearest point on its FOOTPRINT, not its centre - the barracks is
+// 3x2, and a soldier measuring to the middle of it could never reach its own
+// axe past the wall it is standing against.
 function foePoint(e, fx, fy) {
   if (e.tx === undefined) return { x: e.x, y: e.y - 4 };
   if (fx === undefined) return structCenter(e);
@@ -839,8 +720,8 @@ function foePoint(e, fx, fy) {
     y: Math.max(y0, Math.min(y0 + structH(e) * TILE, fy)),
   };
 }
-// nearest enemy UNIT (player or worker) inside range. Players are noticed through
-// seenAt, so a body under the snow is as invisible to a worker as to a wolf.
+// nearest enemy UNIT (player or bot) inside range. Players are noticed through
+// seenAt, so a body under the snow is as invisible to a soldier as to a wolf.
 function robotFoeUnit(b, range) {
   let best = null, bd = range;
   for (const q of players) {
@@ -857,13 +738,12 @@ function robotFoeUnit(b, range) {
 }
 // the blow itself: a building goes through hurtStruct (the same path an E
 // swing takes), any BODY through the one blow every unit takes (hurtUnit,
-// js/sim/actions.js), all credited to the bay's owner so a worker kill still pays
-// and still levels
+// js/sim/actions.js), credited to the bot's owner (a soldier's is nobody)
 function robotStrike(b, e, pt) {
   const src = players[b.owner] || null;
   const d = Math.hypot(pt.x - b.x, pt.y - (b.y - 1)) || 1;
   const nx = (pt.x - b.x) / d, ny = (pt.y - (b.y - 1)) / d;
   sfxAt('swing', b.x, b.y);
   if (e.tx !== undefined) hurtStruct(e, ROBOT_DMG, src, b); // `b` swung it, so STRUCT_DR stays off: ROBOT_DMG is already a building number
-  else hurtUnit(e, ROBOT_DMG, nx, ny, src, { cause: b.kind === 'soldier' ? 'soldier' : 'worker' });
+  else hurtUnit(e, ROBOT_DMG, nx, ny, src, { cause: 'soldier' });
 }

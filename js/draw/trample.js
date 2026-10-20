@@ -327,7 +327,12 @@ function trPaint(ci, c) {
 }
 
 // under the footprints (render.js): every live chunk in view, repainted
-// when its grid moved, a few a frame; the chunk canvases are pooled
+// when its grid moved, a few a frame; the chunk canvases are pooled.
+// trCatchUp lifts the budget and the wait for one render, so every dirty
+// chunk in view paints now and the frame is the grid's alone: the echo
+// harness sets it (snapFrame, js/net/snapshot.js), whose two frames of one
+// state would otherwise differ by whichever chunks the budget held back
+let trCatchUp = false;
 function drawTrample(ox, oy) {
   trFrame++;
   const cx0 = Math.max(0, Math.floor(ox / TR_CPX)), cy0 = Math.max(0, Math.floor(oy / TR_CPX));
@@ -338,7 +343,7 @@ function drawTrample(ox, oy) {
     if (!c || (!c.live && !c.cv)) continue;
     // a chunk repaints at most every TR_REPAINT frames: the footprints carry
     // the moment, this only has to catch up with it
-    if (c.dirty && builds > 0 && (!c.cv || trFrame - c.painted >= TR_REPAINT)) {
+    if (c.dirty && (trCatchUp || builds > 0 && (!c.cv || trFrame - c.painted >= TR_REPAINT))) {
       builds--;
       if (!c.live) { c.cv = null; c.img = null; c.dirty = false; trCanvases--; continue; } // all white again
       trPaint(cy * TR_NCH + cx, c);

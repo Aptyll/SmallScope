@@ -5,18 +5,13 @@ the very last thing in `render()` (above every overlay and the info stack), so i
 game's pixel grid at every zoom level. `cursorInfo()` resolves the pointer state once per
 frame from `mouse`, `state`, `player` (draw/flounder/roll), and what's under the pointer, and
 both the pixel cursor and the browser-cursor fallback read from it. It returns
-`{ kind, mode, dim, frac, nock, amb, piece }`:
+`{ kind, mode, dim, frac, nock, amb }`:
 
 - `kind` **arrow** — dead (off a plank), paused, map, and anywhere in the title/settings/wheel that isn't
   a widget; **hand** — over a live main-menu item (`menuHit()`, frozen planks stay an arrow), a death-overlay plank (`deadHit()`) or spectate arrow (`specHit()`), a settings widget (`settingsHit()`, shared with the click handler
   so hover and click can never disagree), a live wheel segment, or an ability or meal well (`stripHit()`); an item slot is read, not
   handled, and stays an arrow, as does the strip's gold plate (see [The HUD corners](the-hud-corners.md)); **grab** — dragging a
-  slider; **hammer** — over the world while the build list
-  is up (`dim` where the ghost cannot stand, and wearing the picked piece as `piece` wherever a
-  press would lay it — `drawBuildCursor` puts its icon under the hotspot; the list's rows
-  are a **hand**), or over a building of your side's that E manages
-  (`dim` beyond the 60 px reach, except under the CLICK scheme, where the press walks there);
-  **reticle** — everywhere else in play.
+  slider; **reticle** — everywhere else in play.
 - Reticle `mode` (table `RETICLE`): **idle** white cross; **cast** gold ring — the MOUSE scheme's
   readied ability, dim while it cannot cast ([the mouse scheme](../multiplayer.md#the-mouse-scheme));
   **amove** red ring — the CLICK scheme's
@@ -39,7 +34,7 @@ both the pixel cursor and the browser-cursor fallback read from it. It returns
   so a bow that is both reloading and buried says two separate things at once. Both come from
   the one `ret()` helper inside `cursorInfo`, so no return site can forget them. See
   [the cycle](../gameplay/the-swing-tools-e.md#the-cycle) and [Prone](../gameplay/prone-under-the-snow.md).
-- Sprites live in `SPRITES.cursor.{arrow,hand,grab,hammer}` (`CUPAL`, lit top-left, icy
+- Sprites live in `SPRITES.cursor.{arrow,hand,grab}` (`CUPAL`, lit top-left, icy
   bevel) with one-colour `SPRITES.cursorShadow` twins drawn 1 px offset beneath; hotspots are
   in `CUR_HOT`. Reticles are procedural via `drawOutlinedRects()` (dark rim pass, then fill),
   which the aim line's markers reuse.

@@ -51,7 +51,7 @@ on from the eagle), `aboard`/`dropT`/`dropU`
 downed player back down — with `false`, which is what gives the return its 3 s of i-frames.
 
 Behaviour lives in free functions taking `p` (`updatePlayer`, `tryWork`, `basicAttack`, `tryDodge`,
-`startEat`, `damagePlayer`, `die`, `placeStruct`, …), matching the rest of the file's
+`startEat`, `damagePlayer`, `die`, …), matching the rest of the file's
 style — the class is the state container, not a god object.
 
 ## The input struct
@@ -83,9 +83,7 @@ eatFish       edge-triggered (F): same, and off the same shared 3s clock
 ability       edge-triggered (keys 1-4): cast that class ability, -1 = none
               (tryAbility, js/sim/abilities.js - see Classes below)
 cmd           one-shot order, run by runCmd (js/ui/wheel.js):
-              {kind:'build'|'upgrade'|'demolish', tx, ty, id} - a build also
-              carries rot, the list's R (a wheel's order is unturned)
-              or {kind:'ability', i} - an ability level: no tile, no reach, no
+              {kind:'ability', i} - an ability level: no tile, no reach, no
               contest, paid with a skill point
               or {kind:'shop', act, ...} - at the merchant's counter: act
               'item' (buy an item, id), 'sellItem' (slot) or 'trade' (food:
@@ -141,7 +139,7 @@ font cannot draw (the arrows, the modifiers, punctuation with no glyph) is a wor
 SPACE, SHIFT, UP, SEMI …).
 
 **What a key does is an action, and an action has a key.** `KEY_ACTIONS` is every rebindable
-verb — the four walk keys, the four abilities, dodge, slide, harvest, the two meals, recall, the sheet, the build list and its rotate, the map, the standings, mute,
+verb — the four walk keys, the four abilities, dodge, slide, harvest, the two meals, recall, the sheet, the map, the standings, mute,
 pause, and the CLICK
 scheme's three of its own (attack-move, stop, the ping) — with the key each starts on
 per scheme (`key` on WASD, `ck` on CLICK, `ms` on MOUSE where it differs from `ck`; an action
@@ -178,9 +176,7 @@ on blur and on any press but its own cap, and `resetBinds` puts the defaults bac
 pad's trigger or button: `fireDown`/`fireUp` (the draw — the mouse goes through `pointerPress`
 because a press has the HUD to get past first, a trigger is never over a well),
 `openPingWheel()` (the ping wheel on the point under the pointer — the chart's or the minimap
-disc's point when the pointer is on one), `openWheelNear(p, ax, ay)` (a build wheel on the tile the body faces — or the manage
-wheel, with a building of the player's own there — for a controller with no pointer to lay the
-build list's ghost with) and `panelScrollBy(d)` (whichever page is up). `mouse.src` is who moved the pointer
+disc's point when the pointer is on one) and `panelScrollBy(d)` (whichever page is up). `mouse.src` is who moved the pointer
 last — `'mouse'` or `'pad'` — and in play the pad keeps rewriting the aim
 through it every frame so the reticle rides the body, until the mouse itself moves.
 
@@ -204,9 +200,9 @@ bot fills, once per step from `sampleHumanInput`.
   or from out of reach walks the body there and clips on (`zipWalkStart` — the channel, ended by
   any order of your own; a press anywhere else is the walk it always was).
 - **On a tree, a bush, an ice hole or a rival building it is a walk into reach and the swing**
-  (`workTargetAt`, the work target by tile), held until the thing is spent. On one of your own
-  buildings, a merchant or the practice furniture it is a walk into reach and the thing opening
-  (`ckUse`: the counter as a panel; the manage, armory, die and bell wheels as wheels left
+  (`workTargetAt`, the work target by tile), held until the thing is spent. On a merchant or the
+  practice furniture it is a walk into reach and the thing opening
+  (`ckUse`: the counter as a panel; the die and bell wheels as wheels left
   standing, which the next right press picks from, or the press that walked up to them, held
   and released on a wedge).
 - **On a rival body it is a CHASE with a LOCK** (`unitUnder`, the hunt reticle's own boxes):
@@ -258,8 +254,7 @@ what CLICK leaves on the keyboard moves onto the mouse. The keys still work; not
 - **A click on an ability well readies it** (`msWell`, `ms.ready`) where the key would cast: the
   well's rim goes gold, the pointer wears the `cast` reticle, the next left press on the world
   casts there, and a right press (the walk), Escape or the well again puts it down. The scroll
-  wheel walks the readied ability along the wells while one is up (the zoom waits, as it does
-  for the build list). Only a row whose `aim` is a line or a cone readies (`msAims`); the rest
+  wheel walks the readied ability along the wells while one is up (the zoom waits). Only a row whose `aim` is a line or a cone readies (`msAims`); the rest
   cast at once, and a skill point in hand buys, as the key does.
 - **A grapple cast off the mouse reels to its end** (`ms.reel` stands in for the held key;
   any right press lets go).
@@ -291,9 +286,9 @@ way off the roost), X works,
 Y / B / LB / RB are abilities 1-4 in strip order (LB held is the grapple), START the ESC slab,
 dpad up the sheet, dpad left/right the two meals. Four are gestures: RT is the draw
 (held, released fires — the same falling edge as the button), LT the slide, R3 pings at the aim
-(a tap is GO HERE, a hold opens the ping wheel), dpad down holds the build wheel over the tile the body faces — a pad has no pointer to lay the list's ghost with, so `openWheelNear` offers the wheel there and lays the pick on that tile — (the right stick picks the wedge by its tilt from the
+(a tap is GO HERE, a hold opens the ping wheel; the right stick picks the wedge by its tilt from the
 wheel's own hub, `PAD_WHEEL_R` off `wheelLayout` — the same over a wheel X holds open: the
-armory, the roll die, the range bell), and BACK is the standings while held and the map on a
+roll die, the range bell), and dpad down is unbound in play; BACK is the standings while held and the map on a
 tap under `PAD_TAP`. The
 left stick is the walk; the right stick is the aim, a bearing off the body at
 `PAD_AIM_R0`..`PAD_AIM_R1` world px by tilt, remembered while the stick rests. Over a menu or a
@@ -392,7 +387,7 @@ wave get 65% each and five get 46% each. What a death is worth:
 | a scout (`die`) | `KILL_XP` 40 + `KILL_XP_LV` 15 × its level | its rival side, whatever downed it |
 | a beast with an `xp` in `YIELD` (`animalDies`): deer 40, wolf 15, black and brown bear 150 | grown `ANIMAL_LV_XP` (a tenth) a level | the side of whoever landed the last blow |
 
-Rabbits, workers, buildings, the works (pines), fish, sales and the clock pay **no
+Rabbits, buildings, the works (pines), fish, sales and the clock pay **no
 XP** — the road is where a scout levels. The table is sized against a scout who keeps to the road
 and the camps: about level 6 at ten minutes and level 12 near minute 25 (sized when 12 was the
 cap, the arena's 4.37 runs); levels 13-18 continue the same curve and have not been timed. Dying never touches `xp`; level and xp are set in the
@@ -469,15 +464,12 @@ A team colour drives both **characters** and **buildings**:
 - `SPRITES.teamBuild[team][type][tier]` — the tier material (wood → stone → gold) with the iron
   fittings and glow repainted in team colour, so tier still reads as tier. `structSprite(o)` is the
   lookup; it falls back to team 0 for an object with no `team`.
-- `SPRITES.robotTeam[team]` — bay robots wear their owner's colour, and the bay itself is one
-  palette per team (`bayTeamPal`: its lintel band), not a tier material.
+- `SPRITES.robotTeam[team]` — soldiers wear their side's colour, and the barracks is one
+  palette per team (`bayTeamPal`: its lintel band).
 
-Structures carry `owner` (player id) and `team`, set by `placeStruct()`. Ownership is the
-**team's**: `ownsStruct(o, p)` (`o.team === p.team`, or no team at all) gates upgrades and
-demolition in `runCmd`, and the same team test opens the manage wheel (hold E, or a pad's
-`openWheelNear`) on anything not `fixed`. `cursorInfo()` (js/draw/render.js) shows the hammer in two
-places only: over the world while the T build list is up (dim where the ghost cannot stand, and
-wearing the picked piece's icon), and over a building of your side's. The right button builds nothing — it is the ping.
+Structures carry `owner` (player id) and `team`, set by `createStruct()`. Ownership is the
+**team's**: `ownsStruct(o, p)` (`o.team === p.team`, or no team at all) keeps E from swinging at
+your own side's building. Nobody builds by hand ([Buildings](gameplay/buildings.md)); the right button is the ping.
 
 Five players per colour means **teammates share it**, so anything that names one player in text
 takes a second axis: `playerTint(p)` returns a per-player shade of that team's palette (`trim`,
@@ -504,13 +496,12 @@ riding a zipline is a target like any other, and cannot shoot back ([the ride](g
 
 **Whether a rival can be seen at all is a separate question from whether they can be shot.**
 `enemyOf` answers the second; `seenAt(p, range)` answers the first, and every watcher in the
-game — the bot brain (naming its side, so the [fog of war](gameplay/fog-of-war.md) holds), both turret checks — resolves through it (a camp monster has no sight: a hit is its only trigger). See
+game — the bot brain (naming its side, so the [fog of war](gameplay/fog-of-war.md) holds), the road towers — resolves through it (a camp monster has no sight: a hit is its only trigger). See
 [Prone](gameplay/prone-under-the-snow.md).
 
-**A rival's worker bots are targets too** — they are tested straight after the players, on the same
-team rule, through `hurtRobot` (see [Robots](gameplay/robots.md)). Shooting one costs the owner
-its income and hands the gold it was carrying to whoever downed it, so a base's economy can be
-raided without ever touching the base; the feed says so, but a worker is never a kill on the scoreboard.
+**A rival's soldiers are targets too** — they are tested straight after the players, on the same
+team rule, through `hurtRobot` (see [Robots](gameplay/robots.md)). The last hit on one pays its
+bounty and counts a farm, never a kill on the scoreboard.
 
 **So is a rival's grounded eagle** — tested before tile solidity (its own roost tiles are solid,
 and would otherwise eat the shot), same team rule, through `hurtEagle` (the `eagle drop` banner in
@@ -614,12 +605,12 @@ The last two arguments are the whole credit system. `src` is the player who deal
 there is no `src` (`DEATH_CAUSE`, js/sim/player.js: `ice`, `wolf` — a den's pack — `bear`,
 `tackle`, `eagle`, `fire`, `soldier`, `orca`; an unnamed one reads WENT DOWN). A death with an `src` other than
 the victim bumps `src.kills` — the scoreboard's K/D/A column — and writes `"<killer> SHOT <victim>"` (SHUT DOWN when the victim wore a bounty) into the log in the killer's colours
-(`KILL_VERB` swaps the verb where the cause was no arrow: a `worker`'s axe CUT DOWN, `fire` BURNED);
+(`KILL_VERB` swaps the verb where the cause was no arrow: `fire` BURNED);
 without one the latest rival who hit the victim inside `ASSIST_T` takes the kill, and the cause's line — `"<victim> FELL THROUGH THE ICE"` — is written in that killer's colours, or the victim's when there is none. **Any new way to hurt a
 player must pass its `src`**, or the kill goes uncredited and the log line reads as an accident.
 
 The log also takes a level-up at `LOG_LEVEL` (5) or above — the early levels come too
-fast to be news — a wrecked building, a scrapped worker, a bear's slayer, each eagle
+fast to be news — a wrecked building, a bear's slayer, each eagle
 landing, coming under attack and being driven off, and a peer joining or leaving. `logEvent(txt, p, o)` is the whole interface (`o` a palette for a line
 no player owns); the log is not drawn
 ([rendering.md](rendering/scoreboard-and-event-log.md)). `DBG.logEvent`/`DBG.events` stage lines
@@ -641,8 +632,7 @@ contest('work:' + idx(tx, ty), p, () => { /* runs only if p wins */ });
 (drop pickups). Claims must re-check their preconditions inside the callback — cost is paid at
 resolution, so a loser keeps its gold.
 
-Currently contested: work swings (`swingHit`, keyed by tile), build orders (`placeStruct`, keyed by
-tile), fish catches (`autoFish`, keyed by fish index — nothing refuses one, since fish go in the
+Currently contested: work swings (`swingHit`, keyed by tile), fish catches (`autoFish`, keyed by fish index — nothing refuses one, since fish go in the
 pouch), drop pickups (keyed by drop index — every player standing on a drop claims it, and the magnet
 pulls it toward the nearest player; a drop is food, which nothing refuses, so it is first-come
 whichever team gets there). A shop buy
@@ -866,7 +856,7 @@ The ladder:
    exception the **alarm** (its own bird under `AI_ALARM_HP`), which no ping overrides — and an
    ATTACK within `PING_R` of the rival bird, or a DEFEND within it of its own, is folded straight
    into `pushE`/`defend` so rungs 6 and 8 play them with everything they know (the lane, the
-   defenders' turrets, the archer's station). Every other ping this rung walks: farther than
+   road towers, the archer's station). Every other ping this rung walks: farther than
    `PING_IN` it goes there (on the roost budget) for up to `PING_FOLLOW`, and a spot it cannot
    route to is let go; there, it holds the spot `PING_STAY` seconds, and an ATTACK breaks the
    nearest rival building within `PING_R` with E first (rivals in sight are rung 3's — the spot
@@ -881,28 +871,10 @@ The ladder:
 7. **guard** — from 0.6 × `push.t` on, the plan's guards (`T.nGuard`: the profile's `guard` bots, 1 / 2 / 0 — a relentless side keeps none; allies 1 — but at most one
    unless the bird was hit in the last `AI_GUARD_HOT` (60 s), and the braced pushers) after
    the pushers in the plan's order (`aiRank`, the team brain above) keep their own bird, as
-   proactive defenders, not sentries: a guard raises the side's turrets along the road home
-   (`aiFortSite`: `AI_FORT_N` (3), in pairs either side of its axis on tiles with three open
-   sides, then a tier at a time once the purse holds twice the price), lays walls before those
-   tiers (`aiWallSite`, from `aiWallPlan`: the defence line below, then three tiles on the
-   lane-gate side of each turret; one wall a side a step, `T.wallTick`), and for `AI_PATROL_OUT`
-   (14 s) of every `AI_PATROL_T` (40 s) walks out past the base's junction `AI_PATROL_D` (360 px)
+   proactive defenders, not sentries: for `AI_PATROL_OUT`
+   (14 s) of every `AI_PATROL_T` (40 s) a guard walks out past the base's junction `AI_PATROL_D` (360 px)
    up the road to see who is coming (the brace reads what it sees). Otherwise it goes on down
    the ladder to work what is near while inside `AI_GUARD_R` of the bird, its anchor.
-   **The defence line** (`aiRingPlan`, once per side every `AI_RING_T` (10 s), kept on `T.ring`):
-   a flood steps out from the bird 8 ways, as a walker moves, with the side's own walls counted
-   as ground so the plan holds still while they go up. Between `AI_RING_K` (5 to 12) steps out
-   it takes the ring with the fewest tiles that still lead on to the edge of the `AI_WALL_BOX`
-   (24 tiles) square: the roost's narrowest line, a straight run in the open. All of it is
-   walled but one gate of `AI_RING_GAP` (3) tiles where the road crosses it, so every other way
-   in closes and the road, under the turrets, is the way in. Trees chopped round a base widen
-   the line and the next look plans the walls that close it. While the line is wider than the
-   gate, any bot at home (inside `AI_GUARD_R`, no push, defence or ping) lays its walls too.
-   Walls may stand on the road. **No bot building ever cuts a way:** every bot wall, turret and bay near its own
-   roost must pass `aiKeepsWay`, which floods the box from the lane gate with and without the
-   piece, one tile at a time and again as a 2×2 body, and refuses it if anywhere reachable
-   before is not after (a refused wall tile waits for the next look, `T.wallNo`). That keeps
-   the bird and the spawn reachable for both sides, since a wall is solid to everyone.
 8. **push (the objective)** — after `push.t` (360 / 360 / 300 s; allies 720 / 480 / 420) the
    side's `push.n` lowest-ranked bots (2 / 3 / everyone), **one more every `AI_ESCALATE`** (120 s) so a
    stalemate always breaks (`aiPushers`; the plan's `T.nPush`, so more in a window and none in a
@@ -927,13 +899,12 @@ The ladder:
    hollow → bird, on a bigger pathfinder budget (`AI_ROOST_BUDGET`,
    `navTo`'s optional last argument); a route straight at the bird runs `NAV_BUDGET` out in
    the border and leaves a bot wedged in a pocket, which is what this exists to prevent. On the
-   way in, any **turret the defenders raised comes down first**, and anywhere a rival
-   [road tower](gameplay/robots.md#road-towers) does while the bot's own wave stands under it to take the
+   way in, a rival
+   [road tower](gameplay/robots.md#road-towers) comes down first while the bot's own wave stands under it to take the
    bolts (`aiLaneFort`, `towerTanked`; a bot never walks in under a tower alone) (E, `STRUCT_HIT_DMG` a swing, 10 of it once
-   `STRUCT_DR` has taken its cut — a bot
-   standing off the bird under a turret's rocks never finishes a draw), then a hunter takes its
+   `STRUCT_DR` has taken its cut), then a hunter takes its
    station `AI_HOLD` (96 px) out **on the road's axis**, where the road keeps the line to
-   the roost open (off the axis a wall the defenders raised may eat the shot) and outside the gust, and looses at the
+   the roost open and outside the gust, and looses at the
    profile's draw; a warrior walks up to the nearest roost tile (`aiEagleTile`) and swings E on
    it, gust and all, exactly as a hand does. Defenders in sight are rung 3's business — until
    the pusher is at the bird: inside `AI_ROOST_R` of it (the `siege` read, above rung 3) it keeps
@@ -970,21 +941,7 @@ The ladder:
    item, through the same `input.cmd` a human's click sends, and when its purse covers the next
    whole item and it is out of a fight it walks to its own side's counter if that is within
    `AI_SHOP_DETOUR` (32 tiles; farther out it recalls, `aiRecall`), which ends its ladder for that think. With the slots full it sells
-   a stray part at the counter (`botStrayPart`: one no item left on its list is built from), and a stray it could sell counts as room for the walk. Then income, bought by payback (`aiEcoBuy`,
-   js/ai/ai-team.js): a new generator, its own generator's next tier, or (the side's builder,
-   `T.builder`, the most patient mood on the side, only) a bot bay, priced by the game's
-   `buildCost` (each one the owner has costs 1.5× more) over the gold a minute it adds (a
-   generator's `pay`/`period`; a bay `AI_BAY_RATE`, 12, measured). A buy passes when it pays back
-   within the mood's `eco` × the minutes left (`AI_MATCH_MIN` 15 less the clock, never under 3),
-   and the quickest of those is the one; short of its price the bot saves, and it buys nothing
-   with its bird under attack or a rival in sight. The thought's why is PAYS IN N MIN. So a side
-   builds a few early, upgrades in the middle and nothing late. A building goes on the site `aiBuildSite` finds: the nearest tile within `AI_BUILD_R` (5 tiles)
-   that passes `canPlaceAt` — the build list's own rule, any open snow or road tile, reach aside
-   since the bot walks there — a 1×1 only with three open sides so it never walls itself in, none
-   that fails `aiKeepsWay` round its own roost, the
-   bay wherever its 3×2 fits; an upgrade is walked to (60 px reach). It steps off
-   a build site first, since a building is solid, and a site it cannot reach (or is wedged on for
-   3 s) is left for 15 s.
+   a stray part at the counter (`botStrayPart`: one no item left on its list is built from), and a stray it could sell counts as room for the walk.
 13. **harvest** — walk to a tree or berried bush nobody is at within
    `AI_FORAGE` (12 tiles) and hold E at the profile's `work` duty cycle.
 14. **roam** — wander between its landing site and the map centre.

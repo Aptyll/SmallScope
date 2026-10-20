@@ -145,7 +145,7 @@ window.DBG = {
   botThought, botGuess, BOTLOG, botLogExport, openBotLab, botViewStep,
   get botView() { return botView; }, set botView(v) { botView = v | 0; },
   SEED, state, animals, objects, ground, mouse, keys, drops, footprints, flakes,
-  fish, holes, addFish, spawnEmerger, netAt, buildSiteAt,
+  fish, holes, addFish, spawnEmerger, netAt,
   // the ice breaking in its own shape (js/sim/icebreak.js): DBG.iceBreak(x, y, 'breach', 0, { warn: 0.9 })
   iceBreaks, iceBreak, iceBreakAge, iceBreakCovers, iceBreakHolds, iceBreakWet, ICE_BREAK_SHAPES,
   // the orca and its lake (js/sim/orca.js, js/sim/world.js): its state, the line over a head, the disc
@@ -191,7 +191,7 @@ window.DBG = {
   // the radial wheel: open one by hand (state.wheel) and read back the
   // geometry the hover test and the pixels both use
   wheelLayout, wheelSpan, wheelAng, WHEEL_HUB, WHEEL_R, WHEEL_RING,
-  structures, robots, tracers, arrows, STRUCTS, SWING_TOOLS,
+  structures, robots, arrows, STRUCTS, SWING_TOOLS,
   // pings: make one without a mouse (any player, through its order, as the
   // wheel does), open the wheel by hand, and read back the table
   PING_CALLS, PING_WHEEL, PING_R, mapTileAt, mapCloseHit, openPingWheel, pingWheelShown,
@@ -389,17 +389,11 @@ window.DBG = {
   // and their restock (which a driver can call by hand to run one now)
   animalLevel, updatePreyStock, spawnDeer, get deerRoutes() { return deerRoutes; },
   // debug staging: place a construction site directly, no cost or validation
-  buildStruct: (tx, ty, type, tier, rot) => {
+  buildStruct: (tx, ty, type, tier) => {
     const t = Math.min(STRUCTS[type].tiers.length - 1, tier || 0);
-    return createStruct(tx, ty, type, t, player, true, rot); // anchor = top-left for a big footprint
+    return createStruct(tx, ty, type, t, player, true); // anchor = top-left for a big footprint
   },
-  findSite, structOf, footprint,
-  // the build list and its ghost: the one placement rule, the list's order
-  // and reach, what the ghost snaps to right now, and the building E manages
-  canPlaceAt, BUILD_ORDER, BUILD_REACH, buildGhostAt, manageNear, placeStruct,
-  // ...and the hammer plate that opens it, the rows under it (1x corner
-  // space - the hit tests take the pointer's own), and the one toggle
-  buildTabRect, buildRowRect, buildListHit, toggleBuild,
+  structOf, footprint,
   finishBuild: (o) => { if (o && o.building) o.buildT = o.buildTotal; },
   // z is a world scale; it lands on the nearest pixel-exact rung, as the
   // wheel does. snap skips the ease. setK sets the rung itself.

@@ -26,8 +26,9 @@
 // the saved valley and not the fresh one.
 
 // ---- tuning ---------------------------------------------------------------
-const SAVE_V = 2;           // the body's shape; a body of another shape is refused, never half-read
-                            // (2: the generator grew to the 4x2 gold pump - a 1x1 one would load without its footprint)
+const SAVE_V = 3;           // the body's shape; a body of another shape is refused, never half-read
+                            // (2: the generator grew to the 4x2 gold pump - a 1x1 one would load without its footprint;
+                            //  3: player building cut - a save holding a wall or a turret has no STRUCTS entry to load it by)
 
 // ---- what is saved ----------------------------------------------------------
 // [name, get, put]: get() hands the live value in, put(v) takes the decoded
@@ -38,7 +39,7 @@ function saveArr(a) { return [() => a, (v) => { a.length = 0; if (v) for (const 
 // state's own UI keys are this screen's and never the match's: a load opens
 // with every panel shut
 const SAVE_STATE_SKIP = new Set(['paused', 'mapOpen', 'charOpen', 'shop',
-  'settingsOpen', 'rebind', 'wheel', 'build', 'menu', 'intro', 'introLen', 'introFrom', 'fade', 'shake',
+  'settingsOpen', 'rebind', 'wheel', 'menu', 'intro', 'introLen', 'introFrom', 'fade', 'shake',
   'shopSel', 'shopSlot', 'shopCat']); // the counter's pick and filter (js/ui/shop.js)
 const SAVE_ROOTS = [
   ['state', () => { const o = {}; for (const k of Object.keys(state)) if (!SAVE_STATE_SKIP.has(k)) o[k] = state[k]; return o; },
@@ -46,7 +47,7 @@ const SAVE_ROOTS = [
   ['players', ...saveArr(players)],
   ['localId', () => localId, (v) => { localId = v; player = players[v]; inv = player.inv; }],
   ['animals', ...saveArr(animals)], ['structures', ...saveArr(structures)], ['robots', ...saveArr(robots)],
-  ['tracers', ...saveArr(tracers)], ['arrows', ...saveArr(arrows)], ['drops', ...saveArr(drops)],
+  ['arrows', ...saveArr(arrows)], ['drops', ...saveArr(drops)],
   ['particles', ...saveArr(particles)], ['floaters', ...saveArr(floaters)], ['footprints', ...saveArr(footprints)],
   ['fish', ...saveArr(fish)], ['holes', ...saveArr(holes)], ['camps', ...saveArr(camps)],
   ['craters', ...saveArr(craters)], ['nets', ...saveArr(nets)], ['abFx', ...saveArr(abFx)],

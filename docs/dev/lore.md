@@ -40,13 +40,13 @@ guild sells — not from a new faction or a new magic.
 | every seed is a new map | every winter's snow redraws the valley |
 | gold in the pines | the works are under everything: the pines grew up through them |
 | gold is the only currency in a match (the coins that buy skins are outside the valley) | the valley pays in one thing |
-| XP comes from being near when rival bodies fall, never from gold; felling pays gold only | the works make a scout rich; the road is what teaches one |
+| XP comes from being near when rival bodies fall, never from gold; felling pays gold only | the works pay a scout pocket money; the road is what teaches one |
 | nobody dies; a scout comes back at the roost with everything; the wait grows with level | valley law; they are carried back, and the better the scout, the longer the company sits them first |
 | the eagle's hp is nerve, it gusts at a crowd, it is driven off and never killed | a bird is brave only up to a point |
 | only a bird leaving ends a match | the claim |
 | the merchant raises your base, sells to both sides and cannot be hurt | the counter is its own guild; nobody lays a hand on one |
 | the counter's items and food have one fixed price, the same for both sides | the prices are the guild's, not the companies', and the guild does not haggle |
-| robots, turrets, generators and a barracks beside bows and swords | the works' machines, woken with gold; nobody knows who built them |
+| robots, road towers, gold pumps and a barracks beside bows and swords | the works' machines, woken with gold; nobody knows who built them |
 | one straight road, corner to corner | the works' haul road, older than everything but the machines |
 | two road towers on every zipline, and a company's zipline runs no further than its last one standing | the works raised them to hold the haul road and gold woke their crossbows; each company strings its cable out to its own |
 | a creek down the other diagonal that never freezes, but for a frozen pool where the road crosses it | the works' old outfall, still running warm under the snow; at the crossing it slows to a pool, and the pool freezes |

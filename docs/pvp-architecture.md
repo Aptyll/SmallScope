@@ -174,7 +174,7 @@ netClientStep(dt): send {t:'in'} - this tick's input and the ack - step our own 
 | --- | --- | --- |
 | every own field of every player (position, hp, gold, pouch, items, cooldowns, status timers, aboard/drop...) except `SNAP_SKIP` | host | snapshot fields, by reflection; every client gets every player's fields |
 | arrows, drops, robots, animals (camp monsters among them), fish, the two eagles | host | snapshot lists keyed by network id (players by slot, eagles by team) |
-| `objects` tiles (a build, a demolish, a felled tree), `ground`, the `structures` registry | host | whole in the full sync; in a delta only the tiles, tile fields and ground cells touched since the peer's ack (`objDiff`, `objWholeAt`, `groundDiff`, `structs`) - state, not events, and no hash check |
+| `objects` tiles (a building raised or wrecked, a felled tree), `ground`, the `structures` registry | host | whole in the full sync; in a delta only the tiles, tile fields and ground cells touched since the peer's ack (`objDiff`, `objWholeAt`, `groundDiff`, `structs`) - state, not events, and no hash check |
 | the nets, the holes and ice cracks, the ice breaks, the orca (eased like a body: `netClientLerp`), the road registry (`pads`), the camps' `repopT` | host | snapshot singletons, sent when touched |
 | `state`: `SNAP_STATE` (`time`, `elapsed`, `day`, `tick`, `darkness`, the wind's three, `fishT`, `creekGone`, `over`, `end`, `eagleCine`) | host | snapshot singleton, by the names touched; a client keeps its own `over`/`end` and holds the host's as `NET.hostOver` |
 | deaths, respawns, the end of the match | host | snapshot state - `netClientMode` reads the local body (`aboard`, `dropT`, `dead`, `eliminated`) and the host's verdict turned to its own side |
@@ -240,7 +240,8 @@ from this snapshot, not written beside it:
 **The proofs** (all on `DBG`, recipes in [checklists](dev/checklists.md)): `netEcho()` renders the
 world frame, snapshots through the bytes, blanks every singleton, applies and renders again - the
 pixels that differ are what the snapshot misses, and `snapCompare` names the fields (the harness
-pins the wall clock and the shake, which `render()` would otherwise roll). `netDeltaRun(ticks,
+pins the wall clock and the shake, which `render()` would otherwise roll, and catches the
+trampled snow's chunk repaints up whole, `trCatchUp`, which it would otherwise spread over frames). `netDeltaRun(ticks,
 every, loss)` applies a run of deltas back in the page and compares after each.
 `DBG.netVerify(on)` makes a host ride its full form along every `VERIFY_EVERY` (300) ticks so each
 client checks itself (`netStatus().verifyFail`), and `DBG.netLoss(f)` throws away that share of a

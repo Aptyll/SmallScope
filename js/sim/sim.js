@@ -327,12 +327,10 @@ function sweepBox(x0, y0, dx, dy, b) {
 
 // A STANDING BUILDING stops a shot wherever it is DRAWN, not only on the
 // footprint tiles the walk asks: its art stands on the footprint's bottom
-// edge and may rise past the top (the bay's roof) or overhang the sides (the
-// turret's mount, 32 px on one tile), and a turret's head is rasterised above
-// its tile at the pivot (drawTurretHead) - so a shot through any of that flew
-// through the building. Its shape is the box its sprite's opaque pixels cover
-// where the draw lays them (structArtOff), the footprint included, plus for a
-// type with a `head` (STRUCTS) a disc that wide round turretPivot. Null for a
+// edge and may rise past the top (the barracks' roof) or overhang the sides
+// - so a shot through any of that flew through the building. Its shape is the
+// box its sprite's opaque pixels cover where the draw lays them
+// (structArtOff), the footprint included. Null for a
 // site still going up, which is its footprint alone (the art is not up yet),
 // and for a building a shot never meets (the net lies flat on the water).
 // The `.` overlay draws exactly this (drawHitboxes).
@@ -355,15 +353,10 @@ function artBox(spr) {
 function structShotBox(o) {
   if (o.building || !isSolidTile(o.tx, o.ty)) return null;
   const fx = o.tx * TILE, fy = o.ty * TILE;
-  const b = { x0: fx, y0: fy, x1: fx + structW(o) * TILE, y1: fy + structH(o) * TILE, hr: 0, hx: 0, hy: 0 };
-  // a `tiled` piece wears one tile of art per footprint tile: its footprint is its art
-  if (!STRUCTS[o.type].tiled) {
-    const spr = structSprite(o), a = artBox(spr), off = structArtOff(o, spr);
-    b.x0 = Math.min(b.x0, fx + off.x + a.x0); b.x1 = Math.max(b.x1, fx + off.x + a.x1);
-    b.y0 = Math.min(b.y0, fy + off.y + a.y0); b.y1 = Math.max(b.y1, fy + off.y + a.y1);
-  }
-  const hr = STRUCTS[o.type].head;
-  if (hr) { const pv = turretPivot(o); b.hr = hr; b.hx = pv.x; b.hy = pv.y; }
+  const b = { x0: fx, y0: fy, x1: fx + structW(o) * TILE, y1: fy + structH(o) * TILE };
+  const spr = structSprite(o), a = artBox(spr), off = structArtOff(o, spr);
+  b.x0 = Math.min(b.x0, fx + off.x + a.x0); b.x1 = Math.max(b.x1, fx + off.x + a.x1);
+  b.y0 = Math.min(b.y0, fy + off.y + a.y0); b.y1 = Math.max(b.y1, fy + off.y + a.y1);
   return b;
 }
 
@@ -422,10 +415,7 @@ function shotContacts(a, x0, y0, dx, dy) {
         if (!a.pierce) { stop = s; break; }
       }
     }
-    // a bit whose `solid` is false passes through the world - that is the
-    // whole of "never hits ground", and the only reason a wisp can circle you
-    // through a treeline
-    if (a.solid !== false && isSolidTile(tx, ty)) {
+    if (isSolidTile(tx, ty)) {
       shotHits.push({ s, k: 'wall', tx, ty }); stop = s; break;
     }
   }
@@ -435,14 +425,11 @@ function shotContacts(a, x0, y0, dx, dy) {
   // above) where that reaches past the footprint the walk asked: the first
   // one the step meets ends it, cutting off whatever the walk met beyond it.
   // It rides as its anchor tile, so the wall branch sieges it like any other.
-  if (a.solid !== false) for (const o of structures) {
+  for (const o of structures) {
     const b = structShotBox(o);
     if (!b) continue;
-    const bx0 = b.hr ? Math.min(b.x0, b.hx - b.hr) : b.x0, bx1 = b.hr ? Math.max(b.x1, b.hx + b.hr) : b.x1;
-    const by0 = b.hr ? Math.min(b.y0, b.hy - b.hr) : b.y0, by1 = b.hr ? Math.max(b.y1, b.hy + b.hr) : b.y1;
-    if (bx1 < lx || bx0 > hx || by1 < ly || by0 > hy) continue;
-    let s = sweepBox(x0, y0, dx, dy, b);
-    if (b.hr) { const sh = sweepDisc(x0, y0, dx, dy, b.hx, b.hy, b.hr); if (sh >= 0 && (s < 0 || sh < s)) s = sh; }
+    if (b.x1 < lx || b.x0 > hx || b.y1 < ly || b.y0 > hy) continue;
+    const s = sweepBox(x0, y0, dx, dy, b);
     if (s < 0 || s >= stop) continue;
     for (let i = shotHits.length - 1; i >= 0; i--) if (shotHits[i].s > s) shotHits.splice(i, 1);
     shotHits.push({ s, k: 'wall', tx: o.tx, ty: o.ty }); stop = s;
@@ -469,7 +456,7 @@ function shotContacts(a, x0, y0, dx, dy) {
     const s = sweepDisc(x0, y0, dx, dy, t.x, cy, r);
     if (s >= 0 && s < stop) { shotHits.push({ s, k: 'player', t }); if (!a.pierce) stop = s; }
   }
-  // worker bots take the same shot: they are units in the open, on a team
+  // bots take the same shot: they are units in the open, on a team
   for (const t of robots) {
     if (a.team === t.team) continue;
     const r = ROBOT_HIT_R, cy = robotHitY(t);
@@ -573,14 +560,11 @@ function updatePlay(dt) {
   shedStep(dt); // the gusts knocking snow off the pines (js/sim/shed.js)
   updateCallouts(dt); // the bots' calls to their side (js/ai/ai-callouts.js)
 
-  // Shots in flight. A bow's basic attack, the pierce and a turret's rock all
-  // ride this one array - steerShot() is where the rock's sag rewrites its
-  // velocity before the step is taken (js/sim/attack.js), so the trail, the
-  // hit tests and the drawn body all just follow wherever it went.
+  // Shots in flight. A bow's basic attack and the pierce ride this one
+  // array: every shot flies straight.
   for (let i = arrows.length - 1; i >= 0; i--) {
     const a = arrows[i];
     a.t += dt;
-    steerShot(a, dt);
     const vd = Math.hypot(a.vx, a.vy) || 1;
     const nx = a.vx / vd, ny = a.vy / vd;
     // the step is a SEGMENT, and what it crossed is what it meets (the
@@ -589,7 +573,7 @@ function updatePlay(dt) {
     a.x += dx; a.y += dy;
     // What the shot does to a BODY, said once for all three kinds: the
     // damage and the shove it lands go through hurtUnit (js/sim/actions.js) to
-    // a player, a deer or a worker bot alike. Only the hit disc differs per
+    // a player, a deer or a bot alike. Only the hit disc differs per
     // kind (shotContacts, above). `base` is the px/s shove this KIND of body
     // takes from a shot; the shot's own KNOCKBACK (a.kb) scales it - and
     // scales a player's HIT_KB too, which is why it travels as a multiplier.
@@ -663,7 +647,7 @@ function updatePlay(dt) {
     // archer's back.
     a.trailD += vd * dt * end;
     a.flown = (a.flown || 0) + vd * dt * end;
-    const tailB = a.kind === 'rock' ? 0 : ARROW_LEN;
+    const tailB = ARROW_LEN;
     while (a.trailD >= ARROW_TRAIL_STEP) {
       a.trailD -= ARROW_TRAIL_STEP;
       if (a.flown < tailB + a.trailD) continue;
@@ -676,11 +660,6 @@ function updatePlay(dt) {
       });
     }
     if (dead) {
-      // A TURRET'S ROCK comes down where it was thrown rather than simply
-      // stopping, and the thump is the only door a rock has to a building -
-      // it flies over the world and never meets one in the air (rockLands,
-      // js/sim/structures.js).
-      if (a.kind === 'rock') rockLands(a);
       // a practice shot that ends any way but in a target face breaks the
       // range's consecutive-hit run (agStreak, js/sim/practice.js) - minigame or not
       // ...and a run worth mourning says so on the way out: dropping one shot

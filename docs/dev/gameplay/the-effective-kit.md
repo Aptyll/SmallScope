@@ -9,7 +9,8 @@ every kit read site (movement, `attackDmg`, dodge timing, the AI, the draw meter
 item up without knowing it exists. Sites that read the bonus fields: `statOf` (`add`),
 `updateEat`'s landing and the daylight regen (`foodMul`/`nightHeal`), `hitObject`'s fell/break
 payouts (`harvestMul`), `animalDies` (`huntMul`, paid to `a.lastHit`, stamped by the arrow loop),
-**`seenAt()`** (`stealth`, see [Prone](prone-under-the-snow.md); the wolf pack, both turret checks
+**`seenAt()`** (`stealth`, see [Prone](prone-under-the-snow.md); the wolf pack, the road towers
 *and* `aiNearestEnemy` all go through it, so a stealth item works against a rival player
-as well as against wolves and turrets), and the three dodge-refill sites (`dodgeCd`). No item raises
-`huntMul`, `foodMul`, `nightHeal` or `harvestMul` now (the [parked cards](roguelike-cards.md) did); they sit at their defaults.
+as well as against wolves and towers), and the three dodge-refill sites (`dodgeCd`). No item
+raises `huntMul`, `foodMul`, `nightHeal` or `harvestMul` now (the [parked cards](roguelike-cards.md)
+did); they sit at their defaults.

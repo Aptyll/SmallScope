@@ -1,6 +1,6 @@
 # Roguelike cards (parked)
 
-**Cards are out of the game since 0.524** (Noah, 2026-10-20: "keep the card system and find a way
+**Cards are out of the game since 0.531** (Noah, 2026-10-20: "keep the card system and find a way
 to rebuild it in the future ... but remove the cards as well for now"). Chests, which were the only
 source of cards, went in the same patch. This page is the note for building them back.
 

@@ -213,6 +213,6 @@ does not follow the day clock: the shade lies where it lies at night too, under 
   its shade with it, and a new kind of scenery only needs a `CASTERS` entry.
 - **Bodies draw their own each frame** (`drawCastShade(spr, x, y)` before the sprite, a
   `WeakMap` of shades per frame): players (the standing frame through a roll; none lying prone or
-  in a hole), animals, worker bots and soldiers, merchants (on the snow through a hop) and
+  in a hole), animals, soldiers, merchants (on the snow through a hop) and
   finished buildings. It is flat `SHADE_BODY` at `SHADE_BODY_A`, which reads the same on the snow
   as the multiply. Birds, pylons and the practice furniture keep their small flat marks.

@@ -34,7 +34,7 @@ weapon — the moment a swing ends. Two verbs, two inputs:
   It is what reaches **the practice dummy** — the one thing not marked `auto` — and it still
   works anything else if you insist. It resolves `workTarget(p)`: the tile that player is
   aiming at, if it holds a tree or a dead tree, a berried bush or a rival's building (all → axe;
-  bare ice is nothing since the pick went in 0.524); and `near` = the tile is
+  bare ice is nothing since the pick went in 0.531); and `near` = the tile is
   within `WORK_REACH` (1) tiles, Chebyshev, of the tile the player stands on — i.e. the 3×3
   ring around you, never a second row, regardless of where in your tile you stand. Out of reach or nothing workable, E
   does nothing — and **standing at a merchant's counter, E is the counter's** and swings at nothing
@@ -66,12 +66,11 @@ instead. Since it only appears in reach, it doubles as the "you're close enough"
 always pick the right tool, so normal play never reaches it; buildings are not gated
 at all, since the axe is the only tool E ever brings out for one.
 
-**Stumps and open ice holes** are not E targets — a stump is ground a piece may stand on and a hole the net's site (`canPlaceAt`, the [build list](base-building.md)). **Buildings on another
+**Stumps and open ice holes** are not E targets. **Buildings on another
 team are**: `workTarget()` resolves the tile through `structOf()` (so any tile of a 3×2 footprint
 counts, via its `part`) and returns the axe when `ownsStruct()` is false, and `swingHit` routes
-the swing to the anchor. Your own buildings are never swung at: E in reach of one opens its
-manage wheel instead (`manageNear`, js/sim/structures.js), so E is never ambiguous. See
-[Base building](base-building.md) for the damage numbers. The axe never hits a living
+the swing to the anchor. Your own buildings are never swung at. See
+[Buildings](buildings.md) for the damage numbers. The axe never hits a living
 thing: the hero's basic attack is the only weapon aimed at one.
 
 Every basic attack is **hold-to-charge**: holding the button arms it (`p.fireArmed`), the draw
@@ -163,8 +162,7 @@ degenerates to plain rounding. `paintArrowPx` dilates every pixel into `ARROW_RI
 plus-shaped 1 px dark edge) so the shaft reads over snow. `drawShaft` (js/draw/render.js) draws it;
 `a.x`/`a.y` is the TIP (the point the sim tests) and the body trails `ARROW_LEN` (15) px behind
 it, which is why the view cull uses the widened ±22 bound. The whole body is 16 long by 7 deep —
-one 16×16 sprite cell, the scale everything else in the world is drawn at. A turret's rock turns
-as a block through `stampTurned`.
+one 16×16 sprite cell, the scale everything else in the world is drawn at.
 
 Behind it, each shot lays a **trail of team-coloured motes** into `particles`, one every
 `ARROW_TRAIL_STEP` (4) px of *flight distance* — not per tick, so a slow arrow streaks as evenly

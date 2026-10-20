@@ -29,8 +29,7 @@ const PAD_IDLE = 30;                      // s since its last input before a pad
 // sheet, left and right the two meals; L3 is free. Four are gestures rather
 // than keys and are handled by hand in padPress/padRelease: RT is the draw
 // (held) and LT the slide, R3 is the ping at the aim (a tap pings GO HERE,
-// a hold opens the ping wheel), down holds the build wheel,
-// and BACK is the standings while held and the map on a tap.
+// a hold opens the ping wheel), and BACK is the standings while held and the map on a tap.
 const PAD_PLAY = { 0: 'dodge', 1: 'ab2', 2: 'work', 3: 'ab1', 4: 'ab3', 5: 'ab4', 9: 'Escape', 12: 'char', 14: 'berry', 15: 'fish' };
 // Over a menu or a panel: A takes (whatever the pointer is on, or the
 // selection where a menu is key-driven - padTake), B, BACK and START back
@@ -48,7 +47,6 @@ const pad = {
   scroll: 0,                    // the right stick's fractional scroll, spent in whole px
   lt: false, rt: false,
   backT: -1,                    // seconds BACK has been held; -1 while it is up
-  wheel: false,                 // dpad down is holding the build wheel open
   ping: false,                  // R3 is holding the ping wheel open
   click: false,                 // A is holding the pointer's button down over a panel
   menu: false,                  // last poll's mode, so a flip mid-hold releases cleanly
@@ -208,8 +206,8 @@ function padCalibrate(g) {
   return { at, sticks, trig: [trig.length > 0 ? trig[0] : -1, trig.length > 1 ? trig[1] : -1] };
 }
 
-// the pointer, from the right stick: over an open wheel - the dpad's build
-// wheel or one X holds open (the armory, the roll die, the range bell) - it
+// the pointer, from the right stick: over an open wheel - the ping wheel or
+// one X holds open (the roll die, the range bell) - it
 // is the stick's tilt from the wheel's own hub (wheelLayout, ui.js: the
 // press point may sit a body's aim away from it), so a tilt is a wedge and
 // rest is the hub, the cancel; otherwise the aim, a bearing off the body
@@ -259,7 +257,6 @@ function padPress(i, menu) {
   }
   if (i === 8) { actHeld.board = true; pad.backT = 0; return; }
   if (i === 11) { pad.ping = openPingWheel(); return; }
-  if (i === 13) { pad.wheel = openWheelNear(player, mouse.x, mouse.y); return; }
   // a button names an ACTION: the event carries it (e.act) and the held
   // state is actHeld's, so a keyboard scheme's map never sits between the
   // button and its verb (keyIs / keyHeld, input.js)
@@ -283,7 +280,6 @@ function padRelease(i, menu) {
     return;
   }
   if (i === 11) { if (pad.ping && state.wheel) { resolveWheel(); state.wheel = null; } pad.ping = false; return; } // a tap is GO HERE (resolveWheel)
-  if (i === 13) { if (pad.wheel && state.wheel) { resolveWheel(); state.wheel = null; } pad.wheel = false; return; }
   const a = PAD_PLAY[i];
   if (!a) return;
   actHeld[a] = false;
@@ -297,7 +293,7 @@ function padReleaseAll() {
   if (pad.lt) actHeld.slide = false;
   if (pad.rt) { if (pad.menu) { if (pad.click) pointerRelease(0); } else fireUp(); }
   pad.lt = pad.rt = false;
-  pad.click = pad.ping = pad.wheel = false;
+  pad.click = pad.ping = false;
   pad.backT = -1;
   pad.rep.k = null;
 }

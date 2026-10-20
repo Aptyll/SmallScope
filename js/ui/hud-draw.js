@@ -438,7 +438,6 @@ function drawHudStrip(now) {
   drawStBar();
   drawGoldCell();
   drawFishPop(hov);
-  drawBuildList(now); // last: the open column stands over the meal wells
 }
 // The strip and its buy plates at the size its dial holds (hudSc). At 1x
 // everything draws straight to the frame as it always did; any other size
@@ -446,8 +445,7 @@ function drawHudStrip(now) {
 // bottom-centre anchor - uictx's smoothing is off, so the art scales
 // nearest-neighbour instead of every fillRect going soft under a fractional
 // transform. The bake's headroom covers the buy plates' bob and the xp
-// numbers over the portrait - and, while the build list is open, the column
-// standing over the meal wells (buildHeadroom, js/ui/wheel.js).
+// numbers over the portrait, and the fish picker's column (fishPopHeadroom).
 const HUD_BAKE_HEAD = 26;
 const hudScaleCv = document.createElement('canvas');
 const hudScaleCtx = hudScaleCv.getContext('2d');
@@ -461,8 +459,8 @@ function drawHudScaled(now, slideY) {
     return;
   }
   const R = hudStripRect();
-  const head = Math.max(HUD_BAKE_HEAD, buildHeadroom(), fishPopHeadroom());
-  const bx = statPanelRect().x, by = R.y - head, bw = Math.max(R.x + R.w + 3 - bx, buildTabRect().x + BUILD_W + 1 - bx), bh = R.h + head;
+  const head = Math.max(HUD_BAKE_HEAD, fishPopHeadroom());
+  const bx = statPanelRect().x, by = R.y - head, bw = R.x + R.w + 3 - bx, bh = R.h + head;
   if (hudScaleCv.width !== bw || hudScaleCv.height !== bh) {
     hudScaleCv.width = bw; hudScaleCv.height = bh;
     hudScaleCtx.imageSmoothingEnabled = false; // resizing resets ctx state; the wells' 2x art must stay chunky

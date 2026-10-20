@@ -178,9 +178,8 @@ function objChart(o) {
 // what the minimap paints an object whose entry has no `mm` at all
 const MM_UNKNOWN = [188, 200, 218];
 
-// `e`, when given, is who is walking: a `gate` stands open to its own side
-// and to nobody else (the rest of the world - shots, wildlife, the maps -
-// asks without one and meets a wall). `swept`: the caller holds the body to
+// `e`, when given, is who is walking (a deer in mid-leap goes over what it
+// would meet). `swept`: the caller holds the body to
 // the cistern's stone by the pixel itself (moveEntity), so its tiles do not
 // count here; to everyone else a tile whose middle is its stone is a wall
 // (cisternTile, js/sim/cistern.js).
@@ -189,9 +188,8 @@ function isSolidTile(tx, ty, e, swept) {
   if (!swept && cisternTile(tx, ty)) return true;
   const o = objects[idx(tx, ty)];
   if (!o) return false;
-  if (e && o.team !== undefined && e.team === o.team && STRUCTS[o.type] && STRUCTS[o.type].gate) return false;
-  // Two tables, no list: any STRUCTS entry (wall/turret/generator/spawner/
-  // keep/...) is solid for free, and everything else answers from its OBJECTS
+  // Two tables, no list: any STRUCTS entry (tower/barracks/generator/...)
+  // is solid for free, and everything else answers from its OBJECTS
   // entry - so neither a new building nor a new kind of scenery ever needs
   // this function touched. A `water` building (the fish net) is the one
   // exception: it lies flat on the surface and is walked over, not into.
@@ -220,60 +218,27 @@ function netAt(tx, ty) {
   return o && o.type === 'net' ? o : null;
 }
 
-// A bare open hole is the one SITE left in the game: the `water` building
-// (the net) goes on it, and everything else stands on any open snow or road
-// tile the build list's ghost is over (canPlaceAt, structures.js - the one
-// placement rule). Kept for the pad's wheel (buildOptionsAt), which offers
-// the net over a hole and the land list anywhere else.
-function buildSiteAt(tx, ty) {
-  const o = objAt(tx, ty);
-  if (o) return null;
-  return inWorld(tx, ty) && ground[idx(tx, ty)] === 2 ? 'water' : null;
-}
-function buildOptionsAt(tx, ty) {
-  return buildSiteAt(tx, ty) === 'water' ? WATER_STRUCT_ORDER : STRUCT_ORDER;
-}
-
 // Multi-tile buildings. STRUCTS[type].w/h > 1 means the anchor tile (top-left)
 // holds the building object and every other footprint tile holds a 'part'
 // filler { type: 'part', of } pointing back at it, so objAt() on any covered
 // tile is solid and structOf() resolves to the building. One object per tile
-// still holds - the fillers are the object on their tile. A type that
-// `rotates` may stand TURNED (`o.rot` 1): its w and h swap, and that is the
-// whole of rotation - such a type is `tiled` (each footprint tile wears one
-// tile of art), so nothing in the art has to turn. structW/structH take the
-// OBJECT, so a turned one answers turned, or a bare type name (unturned).
-function structW(x) { const S = STRUCTS[typeof x === 'string' ? x : x.type]; if (!S) return 1; return (typeof x !== 'string' && x.rot ? S.h : S.w) || 1; }
-function structH(x) { const S = STRUCTS[typeof x === 'string' ? x : x.type]; if (!S) return 1; return (typeof x !== 'string' && x.rot ? S.w : S.h) || 1; }
+// still holds - the fillers are the object on their tile. structW/structH
+// take the OBJECT or a bare type name.
+function structW(x) { const S = STRUCTS[typeof x === 'string' ? x : x.type]; return (S && S.w) || 1; }
+function structH(x) { const S = STRUCTS[typeof x === 'string' ? x : x.type]; return (S && S.h) || 1; }
 function structOf(o) { return o && o.type === 'part' ? o.of : o; }
-function footprint(type, tx, ty, rot) {
-  const r = [], f = { type, rot: rot ? 1 : 0 };
-  for (let dy = 0; dy < structH(f); dy++) for (let dx = 0; dx < structW(f); dx++) r.push([tx + dx, ty + dy]);
+function footprint(type, tx, ty) {
+  const r = [];
+  for (let dy = 0; dy < structH(type); dy++) for (let dx = 0; dx < structW(type); dx++) r.push([tx + dx, ty + dy]);
   return r;
 }
 function structCenter(o) {
   return { x: (o.tx + structW(o) / 2) * TILE, y: (o.ty + structH(o) / 2) * TILE };
 }
-// where a building meets the ground in front: bots roll out of, and return to, this point
+// where a building meets the ground in front: soldiers roll out of this point
 function structMouth(o) {
   return { x: (o.tx + structW(o) / 2) * TILE, y: (o.ty + structH(o)) * TILE + 6 };
 }
-// The anchor for a w x h building that covers the tile at (tx, ty) - the
-// pad's wheel and the AI order a big building by ONE tile: every candidate
-// placement containing it is tried through canPlaceAt (reach aside, unturned),
-// and the one covering the most stumps wins. Null when none stands.
-function findSite(type, tx, ty) {
-  const w = structW(type), h = structH(type);
-  let best = null, bs = -1;
-  for (let ay = ty - h + 1; ay <= ty; ay++) for (let ax = tx - w + 1; ax <= tx; ax++) {
-    if (!canPlaceAt(type, ax, ay, 0, null).ok) continue;
-    let stumps = 0;
-    for (const [x, y] of footprint(type, ax, ay)) { const o = objects[idx(x, y)]; if (o && o.type === 'stump') stumps++; }
-    if (stumps > bs) { bs = stumps; best = { tx: ax, ty: ay }; }
-  }
-  return best;
-}
-
 function placeObj(tx, ty, type, extra) {
   const o = Object.assign({ type, tx, ty, hp: 1, flash: 0, shake: 0 }, extra || {});
   objects[idx(tx, ty)] = o;
@@ -369,11 +334,12 @@ function warrenGrove(tx, ty, d) {
 
 // swings to fell a pine, everywhere one is planted (the border, the practice
 // arena's forest, the regrown treeline): three at 0.34 s is a one-second tree,
-// and what it pays is YIELD.treeFall (js/sim/core.js)
+// and what it pays is YIELD.treeFall, or treeRare on a gold pine (js/sim/core.js)
 const TREE_HP = 3;
-// per-tile jackpot roll for trees: hash-based, so it stays stable for a tile
-// regardless of generation order, and reshuffles with the run seed
-const TREE_RARE_CHANCE = 0.08;
+// per-tile roll for a gold pine (YIELD.treeRare on the fell, js/sim/core.js):
+// hash-based, so it stays stable for a tile regardless of generation order,
+// and spends no rng() draw
+const TREE_RARE_CHANCE = 0.25;
 function treeRare(tx, ty) {
   return hash2(tx * 5 + 11, ty * 7 + 23) < TREE_RARE_CHANCE;
 }
@@ -606,7 +572,7 @@ function genWorld() {
   }
 }
 
-// THE ROCKS ARE GONE (0.524), but genWorld still rolls its two rock passes
+// THE ROCKS ARE GONE (0.531), but genWorld still rolls its two rock passes
 // (the interior scatter and a grown shape's top-up): taking their rng() calls
 // out would reshuffle every seed, and the rock each one stands is what the
 // later rolls in the same passes test `free` against. So they still stand

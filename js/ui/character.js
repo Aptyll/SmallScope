@@ -13,7 +13,7 @@ const BAG_WELL = '#0e0f12';   // a filled well
 // the pointer is over HUD that owns its own clicks, not over the world
 function overHud(x, y) {
   return !!charHit(x, y) || !!shopHit(x, y) || !!stripHit(x, y) || abBuyHit(x, y) >= 0 ||
-    buildListHit(x, y) >= 0 || overMinimap() || !!cheatHit(x, y);
+    overMinimap() || !!cheatHit(x, y);
 }
 
 // ---- the character panel (G) ---------------------------------------------

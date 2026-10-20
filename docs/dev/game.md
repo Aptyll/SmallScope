@@ -128,8 +128,8 @@ currency earned many ways (last hits, kills, camps, the works, gold pumps, a slo
 source with its own yield profile, and it pays itself: gold is never a pickup on the ground,
 every source pays the earner on the spot. **XP comes from being near when a rival body dies** —
 a soldier, a scout, a camp monster — shared among the allies standing there, so the last hit
-is gold and being there is XP. Felling and fishing pay gold only: **the woods make you
-rich and the road makes you level**, and the late levels come late. **Fish and berries have a fixed price**, and the counter buys them at
+is gold and being there is XP. Felling and fishing pay gold only: **soldiers are the farm,
+the woods are side income, and the road makes you level**, and the late levels come late. **Fish and berries have a fixed price**, and the counter buys them at
 the same number it sells them for; a bigger fish fetches more.
 [Economy](gameplay/economy-one-currency.md), [the counter](gameplay/the-merchants-counter.md),
 [Hero levels](multiplayer.md#hero-levels).
@@ -160,20 +160,12 @@ vote calls its own bird home, so even giving up is the bird leaving
 ([Surrender vote](multiplayer.md#surrender-vote)). [Eagle drop](rendering/eagle-drop-mode-drop.md),
 [Death and respawn](gameplay/death-and-respawn.md), [Bots](multiplayer.md#bots).
 
-**Roguelike cards are parked** (0.524): the cards and the treeline's chests that dropped them are
+**Roguelike cards are parked** (0.531): the cards and the treeline's chests that dropped them are
 out of the game for now, to be rebuilt later. [Roguelike cards](gameplay/roguelike-cards.md).
 
-**T is the build list, and the ghost under the pointer is what a click lays.** A tap opens it on
-the last piece and holding T flicks a piece off a wheel. Any open snow or road tile within reach
-takes a piece — a wall, a long wall R turns, a gate only your side walks through, a turret, a
-gold pump, a bot bay — snapped to the
-tile grid, the footprint rimmed white where it can stand, red where it cannot and grey where the
-purse cannot pay, and the list stays up; a wall is dragged out as a run. Standing by a site of
-your side's speeds it. Holding E beside a building of your own manages it: upgrade, repair, or
-demolish — a site still going up comes back at its whole price. **An ice hole is the one site left**: break the ice twice and the hole it leaves takes the one
-`water` building — a **fish net**, laid flat and walked *on* rather than into — over a live fish
-population that walkers on the ice and nets draw down and a trickle refills.
-[Base building](gameplay/base-building.md), [Ice holes and fishing](world.md#ice-holes-and-fishing).
+**Nobody builds.** Every building on the map is the map's own or the merchant's: the road
+towers and the barracks. Player building (walls, gates, turrets, gold pumps, bot bays and the
+build list) was cut in 0.525. [Buildings](gameplay/buildings.md).
 
 **Pings, League's way: tap the right button to ping GO HERE, hold it and flick for ATTACK, ON
 MY WAY, DANGER or DEFEND** (G on the keyboard's CLICK scheme, where the right button walks the
@@ -207,7 +199,7 @@ walks in alone, gets the bolt: it winds for a beat with a dashed line on the sno
 each bolt in a row into the same scout hits harder. [Road towers](gameplay/robots.md#road-towers),
 [the road](world.md#the-road), [the zipline](world.md#the-zipline),
 [the ride](gameplay/momentum-movement-players-only.md#the-zipline), [the waves](gameplay/robots.md#soldiers-the-waves),
-[the barracks](gameplay/base-building.md).
+[the barracks](gameplay/buildings.md).
 
 ## What the design is not
 

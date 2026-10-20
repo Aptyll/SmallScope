@@ -2,7 +2,7 @@
 
 A player carries food and gold, and nothing else: the six item slots are the build
 ([the merchant's counter](the-merchants-counter.md)), and there is no backpack. (The backpack
-drawer, its drag and the burrow it held were cut in 0.524, with the ore and the cards.)
+drawer, its drag and the burrow it held were cut in 0.531, with the ore and the cards.)
 
 **The pouch** (`p.food`, `newPouch()` in the `players` › `inventory: the pouch` banner of
 js/sim/player.js) is a set of uncapped counters beside the wallet, one per `ITEMS` row. It
