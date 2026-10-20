@@ -316,7 +316,9 @@ needs nothing else; anything that happens on a hit or on the clock goes in `item
 the bots' `BOT_BUILDS` if a class should buy it. A new **fish** needs no shop edit at all: a place
 in `FISH_KINDS` prices it off its `heal` (`foodPrice`).
 
-**Adding a class** — the tables make most of it mechanical, and every screen picks the new
+**Adding a class** — a named hero goes through the `new-hero` skill
+([.claude/skills/new-hero/](../../.claude/skills/new-hero/SKILL.md)), which runs this list in order
+with Noah's picks around it. The tables make most of it mechanical, and every screen picks the new
 entry up with no edit: the lobby's hero row grows a cell, the strip, the hero
 pop-up's preview/ledger and the bot class hash
 (`initPlayers`, already `floor(hash × CLASSES.length)`) are all generic over the tables. What a
