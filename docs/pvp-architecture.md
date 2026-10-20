@@ -240,7 +240,8 @@ from this snapshot, not written beside it:
 **The proofs** (all on `DBG`, recipes in [checklists](dev/checklists.md)): `netEcho()` renders the
 world frame, snapshots through the bytes, blanks every singleton, applies and renders again - the
 pixels that differ are what the snapshot misses, and `snapCompare` names the fields (the harness
-pins the wall clock and the shake, which `render()` would otherwise roll). `netDeltaRun(ticks,
+pins the wall clock and the shake, which `render()` would otherwise roll, and catches the
+trampled snow's chunk repaints up whole, `trCatchUp`, which it would otherwise spread over frames). `netDeltaRun(ticks,
 every, loss)` applies a run of deltas back in the page and compares after each.
 `DBG.netVerify(on)` makes a host ride its full form along every `VERIFY_EVERY` (300) ticks so each
 client checks itself (`netStatus().verifyFail`), and `DBG.netLoss(f)` throws away that share of a

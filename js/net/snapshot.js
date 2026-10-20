@@ -814,10 +814,13 @@ const SNAP_T0 = 1e6; // the one instant every harness frame is rendered at (ms)
 function snapFrame() {
   const now = performance.now;
   // ...and the shake: render() rolls a fresh random offset for the frame
-  // while it is up, which would make two frames of one state disagree
+  // while it is up, which would make two frames of one state disagree.
+  // The trampled snow repaints a few chunks a frame (drawTrample): caught
+  // up whole here, or a chunk the budget held back on one frame paints on
+  // the next and shows as pixels no field explains
   const shake = state.shake; state.shake = 0;
-  performance.now = () => SNAP_T0;
-  try { render(); } finally { performance.now = now; state.shake = shake; }
+  performance.now = () => SNAP_T0; trCatchUp = true;
+  try { render(); } finally { performance.now = now; state.shake = shake; trCatchUp = false; }
   return new Uint32Array(wctx.getImageData(0, 0, WV_W, WV_H).data.buffer);
 }
 // every path at which two packed snapshots disagree (the first `max`): the
