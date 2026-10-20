@@ -111,10 +111,12 @@ function paintDressing(g, tx, ty, px, py) {
   penFlush();
 }
 // is this world pixel free for the dressing: not the road's band, not the
-// creek, not a tile the deep band owns
-function dressFree(tx, ty) {
+// creek, not a tile the deep band owns - unless `rim`: the mid band's piles
+// are worked out per pixel and stop where the deep band starts on their own,
+// so a tile whose middle is deep still wears the skirt round its edge
+function dressFree(tx, ty, rim) {
   return inWorld(tx, ty) && ground[idx(tx, ty)] !== 3 && !creekNear(tx, ty) && !objAt(tx, ty)
-    && laneDist(tx, ty) >= ROAD_SHOULDER + 1.2 && !deepSnowAt(tx, ty);
+    && laneDist(tx, ty) >= ROAD_SHOULDER + 1.2 && (rim || !deepSnowAt(tx, ty));
 }
 
 // ------------------------------------------------------------ drifts in the lee
@@ -141,7 +143,7 @@ function bakeDrifts() {
   for (let ty = 0; ty < WORLD; ty++) for (let tx = 0; tx < WORLD; tx++) {
     const k = idx(tx, ty);
     if (!leeCell[k] && !driftCell[k]) continue;
-    if (ground[k] !== 0 || !dressFree(tx, ty)) continue;
+    if (ground[k] !== 0 || !dressFree(tx, ty, true)) continue;
     const edge = lakesAround(tx, ty) > 0;
     // the tile's band and a pixel round it, for the rim and the shade
     for (let j = 0; j < W; j++) for (let i = 0; i < W; i++) H[j * W + i] = band(tx * TILE + i - 1, ty * TILE + j - 1);
