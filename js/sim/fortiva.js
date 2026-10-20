@@ -48,6 +48,7 @@ const FORT_AB = [
   {
     id: 'sever', name: 'SEVER THE CHAINS', cd: [7, 6.5, 6, 5.5, 5], ap: 0.6, cast: 0.3, aim: { cone: SEVER_R, half: SEVER_HALF },
     rank: { dmg: [14, 19, 24, 29, 34] }, // the inner arc's; the edge cuts SEVER_EDGE_MUL harder
+    tip: 'WIDE SWING. THE EDGE HEALS YOU',
     blurb: 'A WIDE SWING. THE OUTER EDGE HITS HARDER, AND HEALS YOU FOR EVERY HERO IT CATCHES.',
     use: (p) => fortSever(p),
     tele: (p, px, py, a, col, closing) => drawSeverTele(px, py, a, col, closing),
@@ -58,6 +59,7 @@ const FORT_AB = [
   {
     id: 'defy', name: 'DEFIANT HEART', cd: [13, 12, 11, 10, 9], ap: 0.4, cast: 0.1,
     rank: { shieldHp: [0.12, 0.14, 0.16, 0.18, 0.2], t: DEFY_T, dmg: [8, 12, 16, 20, 24] }, // dmg: the wave, + DEFY_PAY of what the shield took
+    tip: 'A SHIELD, THEN A SHOCKWAVE',
     blurb: 'A SHIELD. WHEN IT BREAKS OR FADES, A SHOCKWAVE HITS AROUND YOU, HARDER FOR ALL IT TOOK.',
     use: (p) => fortDefy(p),
     acol: '#f2cc6a', activeF: (p) => (p.defyT > 0 ? p.defyT / DEFY_T : 0),
@@ -68,6 +70,7 @@ const FORT_AB = [
   {
     id: 'yoke', name: 'BREAK THE YOKE', cd: [10, 9.5, 9, 8.5, 8], ap: 0.5, cast: 0.15, aim: { line: YOKE_SPD * YOKE_T },
     rank: { dmg: [12, 16, 20, 24, 28], slow: 0.5, slowT: 1 },
+    tip: 'LUNGE AND SLOW. A HERO HIT CUTS THE WAIT',
     blurb: 'LUNGE AND STRIKE THE GROUND. SLOWS ALL IT HITS. A HERO HIT GIVES BACK MUCH OF THE WAIT.',
     use: (p) => fortYoke(p),
     tele: (p, px, py, a, col, closing, now, ex, ey) => drawYokeTele(p, a, col, closing, now, ex, ey),
@@ -78,6 +81,7 @@ const FORT_AB = [
   {
     id: 'nokneel', name: 'NO KNEELING', cd: [90, 80, 70], ap: 0.8, cast: 0.3, aim: { ring: NOKNEEL_R },
     rank: { dmg: [30, 45, 60], up: 0.6, t: NOKNEEL_T, ten: NOKNEEL_TEN }, // up: the heart of it; t/ten: the after
+    tip: 'LEAP IN AND KNOCK UP',
     blurb: 'LEAP AND BRING THE SWORD DOWN. THE HEART OF THE BLOW THROWS THEM UP. AFTER, YOU ARE HARD TO STOP AND HIT HARDER.',
     use: (p) => fortNoKneel(p),
     tele: (p, px, py, a, col, closing, now, ex, ey) => drawNoKneelTele(p, col, closing, ex, ey),

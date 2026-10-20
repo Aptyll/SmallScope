@@ -48,7 +48,9 @@ LOOKS (optional): default look name, first buyable skin name
        keys 1-3 hold 5 ranks (hero levels 1/3/5/7/9), key 4 is the ultimate with 3 (6/11/16), no
        `lvReq`. Each row's `rank: { dmg: [5 numbers], stun: 1, ... }` holds its numbers (a list
        scales, a plain number stays flat) and `cd` is a list when the wait shrinks. Every rank
-       raises damage or the effect by a clear step; rank 1 is the number you would ship flat.
+       raises ONE number (damage, or the effect) by a clear step; rank 1 is the number you would
+       ship flat. Each row also gets a `tip`: one line of at most 40 characters, all the tooltip
+       shows under the cooldown and that number (the full `blurb` stays on the wiki).
        `use()` reads them through `abRk(p, id, key)`, never a module constant, and anything a
        cast leaves in the world copies its rank numbers when it is cast. A `rank` key the
        tooltip has no words for gets a line in `AB_RANK_STAT` (js/ui/tooltip.js). Use Noah's

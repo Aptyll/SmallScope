@@ -90,23 +90,27 @@ const CLASS_AB = [
     {
       id: 'pierce', name: 'PIERCING SHOT', cd: [12, 11, 10, 9, 8], ap: 0.6, cast: PIERCE_WIND, aim: { line: PIERCE_RANGE },
       rank: { shot: [1.5, 1.7, 1.9, 2.1, 2.3] }, // times a fully drawn plain arrow's damage
+      tip: 'A SHOT THROUGH EVERYONE IN A LINE',
       blurb: 'LOCK A FULL DRAW, THEN LOOSE. THE SHOT GOES THROUGH EVERYONE ON THE LINE. EVERY MODIFIER ON YOUR TOOL RIDES IT.',
       use: (p) => abPierce(p),
     },
     {
       id: 'net', name: 'NET SHOT', cd: [15, 14, 13, 12, 11], ap: 0.4, cast: 0.18, aim: { line: NET_RANGE },
-      rank: { dmg: [4, 8, 12, 16, 20], slow: 0.4, slowT: [2, 2.25, 2.5, 2.75, 3] }, // slow: walk x0.4 under the net
+      rank: { dmg: [4, 8, 12, 16, 20], slow: 0.4, slowT: 2 }, // slow: walk x0.4 under the net
+      tip: 'A NET THAT SLOWS. KICKS YOU BACK',
       blurb: 'A WEIGHTED NET THAT TANGLES. THE RECOIL KICKS YOU BACKWARD.',
       use: (p) => abNetShot(p),
     },
     {
       id: 'grap', name: 'GRAPPLE', cd: [8, 7, 6, 5, 4], cast: 0.12, aim: { line: GRAP_RANGE }, // a rank is a hook back sooner
+      tip: 'HOOK A TREE OR ROCK. HOLD TO REEL',
       blurb: 'HOOK A TREE OR A ROCK. HOLD TO REEL IN, LET GO TO KEEP THE SPEED.',
       use: (p) => abGrapple(p),
     },
     {
       id: 'snow', name: 'SNOW COVER', cd: [60, 50, 40], cast: 0.22,
       rank: { ambush: [2.5, 3, 3.5] }, // the shot out of full cover, times its damage (attackDmg, js/sim/attack.js)
+      tip: 'HIDE IN THE SNOW. AMBUSH SHOT HITS HARD',
       blurb: 'LIE DOWN AND PULL THE SNOW OVER YOU. THE KEY AGAIN STANDS YOU UP.',
       use: (p) => abSnowCover(p),
       // the strip's active tell: how deep under the snow the body is
@@ -117,6 +121,7 @@ const CLASS_AB = [
     {
       id: 'shield', name: 'SHIELD WALL', cd: [9, 8.5, 8, 7.5, 7], ap: 0.4, cast: 0.12, wall: true,
       rank: { t: 2.2, dmg: [8, 12, 16, 20, 24], stun: 1.1 }, // t: the wall held up; dmg/stun: the slam
+      tip: 'BLOCKS SHOTS. AGAIN TO SLAM AND STUN',
       blurb: 'RAISE THE TOWER SHIELD. PRESS AGAIN TO SLAM: STUNS WHAT IS AHEAD, ENDS THE WALL.',
       // the one key with two halves: the raise, and - pressed again while the
       // wall is up or mid-charge (tryAbility sets castSlam) - the slam
@@ -127,18 +132,21 @@ const CLASS_AB = [
     {
       id: 'rush', name: 'BULL RUSH', cd: [12, 11.5, 11, 10.5, 10], ap: 0.6, cast: 0.3, aim: { line: RUSH_SPD * RUSH_T },
       rank: { dmg: [10, 15, 20, 25, 30], stun: 0.6 }, // the slam at the end, x RUSH_WALL_MUL into a wall
+      tip: 'CHARGE. CARRY AND SLAM THE FIRST RIVAL',
       blurb: 'CHARGE A LINE. THE FIRST RIVAL HIT IS CARRIED AND SLAMMED.',
       use: (p) => abRush(p),
     },
     {
       id: 'stomp', name: 'STOMP', cd: [14, 13, 12, 11, 10], ap: 0.7, cast: 0.28, aim: { ring: STOMP_R },
       rank: { dmg: [12, 17, 22, 27, 32], stun: 0.25 },
+      tip: 'LEAP AND STUN ALL AROUND YOU',
       blurb: 'LEAP AND SLAM THE SNOW. THE CRATER SLOWS WHOEVER CROSSES IT.',
       use: (p) => abStomp(p),
     },
     {
       id: 'exec', name: 'EXECUTE', cd: [18, 15, 12], ap: 0.5, cast: 0.55, aim: { cone: EXEC_R, half: EXEC_HALF },
-      rank: { dmg: [10, 20, 30], missing: 0.5, bonus: [40, 60, 80] }, // dmg at full life, + `missing` of the life lost, at most `bonus` more
+      rank: { dmg: [10, 20, 30], missing: 0.5, bonus: 40 }, // dmg at full life, + `missing` of the life lost, at most `bonus` more
+      tip: 'HITS HARDER THE LESS LIFE THEY HAVE',
       blurb: 'A HEAVY OVERHEAD CUT. THE LESS LIFE THEY HAVE LEFT, THE HARDER IT LANDS.',
       use: (p) => abExecute(p),
     },
@@ -173,25 +181,29 @@ const CLASS_AB_ALT = [
   [ // the warrior's other four
     [{
       id: 'cry', name: 'WAR CRY', cd: [16, 15, 14, 13, 12], cast: 0.25, aim: { ring: CRY_R },
-      rank: { slow: 0.6, slowT: [2.5, 2.75, 3, 3.25, 3.5], mark: [4, 4.5, 5, 5.5, 6] }, // slowed to 60%, marked for both maps
+      rank: { slow: 0.6, slowT: [2.5, 2.75, 3, 3.25, 3.5], mark: 4 }, // slowed to 60%, marked for both maps
+      tip: 'SLOWS AND MARKS RIVALS NEAR YOU',
       blurb: 'A SHOUT THAT CARRIES. EVERY RIVAL IN EARSHOT IS SLOWED AND MARKED FOR YOUR SIDE TO SEE.',
       use: (p) => abWarCry(p),
     }],
     [{
       id: 'whirl', name: 'WHIRLWIND', cd: [11, 10.5, 10, 9.5, 9], ap: 0.5, cast: 0.3, aim: { ring: WHIRL_R },
       rank: { dmg: [7, 11, 15, 19, 23] },
+      tip: 'SPIN AND CUT ALL AROUND YOU',
       blurb: 'SPIN THE BLADE A FULL TURN. EVERYTHING AT ARM\'S LENGTH IS CUT AND THROWN BACK.',
       use: (p) => abWhirlwind(p),
     }],
     [{
       id: 'ham', name: 'HAMSTRING', cd: [13, 12.5, 12, 11.5, 11], ap: 0.3, cast: 0.25, aim: { cone: HAM_R, half: HAM_HALF },
-      rank: { dmg: [3, 6, 9, 12, 15], root: [1.4, 1.5, 1.6, 1.7, 1.8] },
+      rank: { dmg: [3, 6, 9, 12, 15], root: 1.4 },
+      tip: 'ROOTS RIVALS IN FRONT OF YOU',
       blurb: 'A LOW SWEEP ACROSS THE SHINS AHEAD. WHOEVER IT CATCHES IS PINNED WHERE THEY STAND.',
       use: (p) => abHamstring(p),
     }],
     [{
       id: 'wind', name: 'SECOND WIND', cd: [40, 35, 30], cast: 0.4,
       rank: { heal: [0.3, 0.4, 0.5], t: 4 }, // that share of max hp back over t s
+      tip: 'HEAL OVER FOUR SECONDS',
       blurb: 'A BREATH TAKEN MID-FIGHT. A THIRD OF YOUR LIFE COMES BACK OVER FOUR SECONDS.',
       use: (p) => abSecondWind(p),
       acol: '#f2937f', activeF: (p) => (p.windT > 0 ? p.windT / abRk(p, 'wind', 't') : 0),

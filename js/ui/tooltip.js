@@ -163,34 +163,24 @@ function tipClassAb(i, cls, k) {
   const ab = abOptions(c, i)[opt] || CLASS_AB[c][i];
   const d = { title: ab.name, tcol: '#f4f7ff', kind: CLASSES[c].name + ' ABILITY',
     rows: [], notes: [], icon: classAbIcon(c, i, opt), plate: BAG_WELL, rim: '#3c4048' };
-  // every rank's numbers in one row each, the rank held lit (in play): the
-  // cooldown (the live one, COOLDOWN SPEED and all), then the row's `rank`
-  // table in its own order. On the lobby nothing is held yet, so none is lit.
+  // Read mid-fight, so only what decides a press: the cooldown and the
+  // number a rank raises (a `rank` key given as a list), every rank's on one
+  // row with the held rank lit gold, the hero level a rank is waiting for,
+  // and the row's one line (`tip`). The pips on the well say the rank, its
+  // sweep the wait. On the lobby nothing is held yet, so none is lit.
   const lv = cls == null ? player.abLv[i] : 0;
   const hm = cls == null ? hasteMul(player) : 1;
   const cds = Array.isArray(ab.cd) ? ab.cd.map((v) => v * hm) : ab.cd * hm;
   d.rows.push(['COOLDOWN', tipRanks(cds, lv, tipNum, 'S'), '#f4f7ff']);
   for (const k in ab.rank || {}) {
     const st = AB_RANK_STAT[k];
-    if (st) d.rows.push([st[0], tipRanks(ab.rank[k], lv, st[1], st[2]), '#f4f7ff']);
+    if (st && Array.isArray(ab.rank[k])) d.rows.push([st[0], tipRanks(ab.rank[k], lv, st[1], st[2]), '#f4f7ff']);
   }
-  if (ab.ap) d.rows.push(['ABILITY POWER', '+' + tipCent(ab.ap) + '%', '#c9a0f0']);
-  d.rows.push(['CAST', tipSec(ab.cast), '#f4f7ff']);
-  const req = abReqOf(ab, i);
   if (cls == null) {
-    const lock = !abUnlocked(player, i);
-    d.rows.push(['RANK', lock ? 'LOCKED' : player.abLv[i] + '/' + req.length,
-      lock ? '#e0637a' : '#f4f7ff']);
-    if (player.abLv[i] < req.length) d.rows.push([lock ? 'UNLOCK' : 'NEXT RANK', '1 SKILL PT',
-      player.skillPts > 0 ? '#f2cc6a' : '#e0637a']);
-    const need = req[player.abLv[i]]; // the next rank waits for the hero (abLvCanBuy)
+    const need = abReqOf(ab, i)[player.abLv[i]]; // the next rank waits for the hero (abLvCanBuy)
     if (need && player.level < need) d.rows.push(['HERO LEVEL', String(need), '#e0637a']);
-    if (player.abCd[i] > 0) d.rows.push(['READY IN', tipSec(player.abCd[i]), '#e0637a']);
-  } else d.rows.push(['RANKS AT LEVEL', req.join('/'), '#f4f7ff']);
-  for (const s of ab.blurb.split('. ')) for (const ln of wikiWrap(s.replace(/\.$/, ''), TIP_MAXW)) d.notes.push([ln, TIP_DIM]); // a long sentence wraps, never spills past the panel
-  if (cls == null) d.notes.push([abUnlocked(player, i)
-    ? 'PRESS ' + (i + 1) + ' OR CLICK TO CAST'
-    : 'SPEND A SKILL POINT TO UNLOCK IT', TIP_DIM]);
+  }
+  d.notes.push([ab.tip || ab.blurb.split('. ')[0].replace(/\.$/, ''), TIP_DIM]);
   return d;
 }
 // A PIECE on the build list: the numbers a piece is chosen on - the price in

@@ -37,7 +37,8 @@ let guardN = 0;    // a standard's number, so a rival remembers WHICH ring it st
 
 // ---- the keys ---------------------------------------------------------------
 // His row in CLASS_AB (js/sim/abilities.js). Beyond the shared fields a row
-// carries what its key IS: `rank` (its numbers at each rank, read by abRk -
+// carries what its key IS: `tip` (the tooltip's one line, read mid-fight),
+// `rank` (its numbers at each rank, read by abRk -
 // the per-rank tuning; a `cd` list is its cooldown at each rank), `wall` (the
 // key raises the shieldT state, and the key again is its second half), `tele` (the wind-up's shape on the snow), `pose` (the body's), `icon`
 // (its 32x32 grid, js/sprites/armatos.js) and `bot` (when a bot reaches for it,
@@ -46,6 +47,7 @@ const ARM_AB = [
   {
     id: 'verdict', name: 'IRON VERDICT', cd: [8, 7.5, 7, 6.5, 6], ap: 0.6, cast: 0.32, aim: { line: VERDICT_LEN },
     rank: { dmg: [14, 19, 24, 29, 34], slow: 0.6, slowT: 1.5, up: 0.6 }, // slow: walk x0.6; up: s in the air (the line's middle)
+    tip: 'LINE SLAM. SLOWS. THE MIDDLE KNOCKS UP',
     blurb: 'THE SWORD COMES DOWN IN A LINE. SLOWS ALL IT HITS. THE MIDDLE OF THE LINE THROWS THEM UP.',
     use: (p) => armVerdict(p),
     tele: (p, px, py, a, col, closing) => drawVerdictTele(px, py, a, col, closing),
@@ -56,6 +58,7 @@ const ARM_AB = [
   {
     id: 'hold', name: 'HOLD THE LINE', cd: [12, 11.5, 11, 10.5, 10], ap: 0.5, cast: 0.12, wall: true, recast: (p) => p.shieldT > 0,
     rank: { t: 2.5, cut: 0.6, dmg: [10, 14, 18, 22, 26], stun: 1 }, // t: the brace; cut: off a front hit; dmg/stun: the bash (stun only primed)
+    tip: 'BLOCK THE FRONT. AGAIN TO BASH',
     blurb: 'BRACE BEHIND THE SHIELD: THE FRONT TAKES LESS. A HERO WHO STRIKES IT PRIMES THE BASH. PRESS AGAIN TO BASH.',
     use: (p) => (p.castSlam ? armBash(p) : armBrace(p)),
     tele: (p, px, py, a, col, closing) => { if (p.castSlam) drawWedge(px, py, a, BASH_R, BASH_HALF, p.holdHit ? TELE_HOT : col, 0.55 + 0.4 * closing, closing); }, // the bash's wedge; the raise shows none
@@ -67,7 +70,8 @@ const ARM_AB = [
   },
   {
     id: 'march', name: "VETERAN'S MARCH", cd: [14, 13, 12, 11, 10], ap: 0.5, cast: 0.25, aim: { line: MARCH_SPD * MARCH_T },
-    rank: { dmg: [12, 16, 20, 24, 28], stun: 1, shove: [5, 7, 9, 11, 13] }, // dmg/stun: the hero it stops on; shove: each lesser body
+    rank: { dmg: [12, 16, 20, 24, 28], stun: 1, shove: 5 }, // dmg/stun: the hero it stops on; shove: each lesser body
+    tip: 'CHARGE. STUNS THE FIRST HERO HIT',
     blurb: 'CHARGE. SOLDIERS AND BEASTS ARE SHOVED ASIDE. THE FIRST HERO IN THE WAY STOPS YOU AND IS STUNNED.',
     use: (p) => armMarch(p),
     tele: (p, px, py, a, col, closing, now, ex, ey) => drawMarchTele(p, a, col, closing, now, ex, ey),
@@ -78,6 +82,7 @@ const ARM_AB = [
   {
     id: 'guard', name: 'THE OLD GUARD', cd: [80, 70, 60], cast: 0.45, aim: { ring: GUARD_R },
     rank: { armor: [40, 60, 80], ten: 0.5, slow: 0.5, slowT: 2, t: 6 }, // allies inside: armor, tenacity; a rival leaving: slowed; t: s it stands
+    tip: 'ALLIES INSIDE GAIN ARMOR',
     blurb: 'PLANT THE STANDARD. YOUR SIDE INSIDE TAKES LESS AND SHRUGS OFF STUNS. RIVALS WHO RUN FROM IT ARE SLOWED.',
     use: (p) => armGuard(p),
     tele: (p, px, py, a, col, closing) => drawRing(px, py + 2, GUARD_R, col, 0.45 + 0.4 * closing, closing * 0.5),

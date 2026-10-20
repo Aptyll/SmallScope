@@ -417,8 +417,8 @@ It no longer levels anyone. A sale at the counter pays through `tradeGold`, whic
 neither.
 
 Growth is the hero's own: each level past 1 adds its `CLASSES[c].grow` to the
-[hero stats](gameplay/hero-stats.md) (HUNTER +10 hp, +2 damage, +2% attack speed, +3 armor;
-WARRIOR +14, +2.5, +1.5%, +4), the health healed on the spot in `levelUp`. A level-up pushes a 2× gold `LEVEL n` floater over the slot (skipped while `inAir`) and
+[hero stats](gameplay/hero-stats.md) (HUNTER +7 hp, +1.3 damage, +1.3% attack speed, +2 armor;
+WARRIOR +9, +1.6, +1%, +2.6 — sized when the cap went to 18 so 17 levels grow about what 11 did), the health healed on the spot in `levelUp`. A level-up pushes a 2× gold `LEVEL n` floater over the slot (skipped while `inAir`) and
 raises its cue through `sfxOwn(p, 'levelUp', 'pickup')` — the level's own ring on the screen that
 is that player, a pickup to bystanders in earshot. What the level BOUGHT flies into the notice
 lane as the [stat sheet](rendering/the-hud-corners/the-stat-ledger-your-sheet-as-a-notice.md), the rows it grew
