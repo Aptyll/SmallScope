@@ -2,7 +2,7 @@
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| what a click / E / space actually does, and the work the hands take with no key (a tree, a berried bush in reach) | `clickAction`, `tryWork`, `workTarget`/`workTargetAt` (by tile: the CLICK scheme's right button), `startSwing`, `autoToolFor`, `autoPrio`/`AUTO_PRIO_*`, `autoTarget`, `autoWork`, `tryDodge`, `hitObject`, `crackIce` (what a click FIRES: `basicAttack`, attack.js; the fish half: `autoFish`, attack.js) | `actions` |
+| what a click / E / space actually does, and the work the hands take with no key (a tree, a berried bush in reach) | `clickAction`, `tryWork`, `workTarget`/`workTargetAt` (by tile: the CLICK scheme's right button), `startSwing`, `autoToolFor`, `autoPrio`/`AUTO_PRIO_FOE`, `autoTarget`, `autoWork`, `tryDodge`, `hitObject` (what a click FIRES: `basicAttack`, attack.js; the fish half: `autoFish`, attack.js) | `actions` |
 | the dawn shield: a snowdrop picked, the shield it lays on the picker's whole side (spent before health in `damagePlayer`, player.js; cleared by `die`) | `pickSnowdrop`, `DAWN_SHIELD`/`DAWN_SHIELD_MAX` (`p.dawnShield`; reached from `hitObject`'s snowdrop branch) | `actions` |
 | one chop into a standing tree - gold, stump, fell payout (a gold pine's) - whatever landed it | `chopTree` | `actions` (above `hitObject`) |
 | the tuning for everything a player does: the three SWING tools, the shot trail, E's reach, the roll, prone | `SWING_TOOLS`/`SWING_*`, `BOW_Y`, `ARROW_*`, `WORK_REACH`, `STRUCT_HIT_DMG`, `ROLL_*`/`TACKLE_*`, `PRONE_*`, `AMBUSH_MUL` | `actions` (its head; the two kit baselines `BOW_CHARGE`/`BOW_NOCK`: `players`, player.js; the weapon's own tuning: `CLASSES[c].attack`, player.js) |

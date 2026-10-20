@@ -1,5 +1,5 @@
 // PROSPECTOR: the farmer. Spends the early match getting rich: loot on the
-// ground first, then chests, rocks, berry bushes, rabbits and deer, and pines
+// ground first, then berry bushes, rabbits and deer, and pines
 // when nothing better is near. Every coin goes on items and every point on
 // the class keys. It only defends when its own bird is struck. At nine
 // minutes (or from five, once a seat holds four items) it calls the push, and the
@@ -73,10 +73,10 @@ defineBot({
     }
     // the side spreads out: each seat farms its own patch on its half
     const half = { x: home.x + (1856 - home.x) * ((me.id >> 1) % 5) / 6, y: home.y + (1856 - home.y) * ((me.id >> 1) % 5) / 6 };
-    const n = pickNode(this, obs, half, 700, ['chest', 'rock', 'bush', 'tree']);
+    const n = pickNode(this, obs, half, 700, ['bush', 'tree']);
     if (n) {
       work(me, n, act);
-      act.think = { goal: n.kind === 'rock' ? 'MINE' : 'GATHER', why: n.kind.toUpperCase(), plan: 'FARM', target: { kind: 'object', x: n.x, y: n.y } };
+      act.think = { goal: 'GATHER', why: n.kind.toUpperCase(), plan: 'FARM', target: { kind: 'object', x: n.x, y: n.y } };
       return act;
     }
     act.goTo = { x: half.x, y: half.y };
@@ -153,12 +153,12 @@ function pickNode(bot, obs, home, range, kinds) {
   return best;
 }
 
-// work a node: walk up beside it and hold E (a rock needs no key: standing by it mines it)
+// work a node: walk up beside it and hold E
 function work(me, n, act) {
   const d = Math.hypot(n.x - me.x, n.y - me.y);
   act.goTo = { x: n.x, y: n.y, reach: 1 };
   act.aim = [n.x, n.y];
-  act.work = d < 28 && n.kind !== 'rock';
+  act.work = d < 28;
 }
 
 // gold to spare at a counter: the dearest item the purse covers, keeping

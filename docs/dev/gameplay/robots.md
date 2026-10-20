@@ -165,7 +165,7 @@ landing; `merchNextBay` takes the lanes in `MERCH_BAY_ORDER` (mid, top, bot) and
 bay standing, and `merchBaySite` the nearest 3×2 placement to its spot whose footprint is dry land
 off the road holding nothing the axe cannot take. Each lane's **first** bay is free
 (`b.bayGift`), so all three go up one after another, about 1:00 to 1:40 of match time on seed 42.
-`merchBayBlocker` hands it every pine, snag and rock on the
+`merchBayBlocker` hands it every pine and snag on the
 footprint and a `MERCH_BAY_RING` (1) ring round it, and the stumps on the footprint alone, felled
 at `MERCH_BAY_SWING` (0.34 s) through `merchFell` (the axe always leaves a stump everywhere but
 the footprint itself). Then `MERCH_BAY_HAMMER` (2.6 s) of hammering from the tile below the door,

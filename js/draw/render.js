@@ -42,7 +42,7 @@ function drawFrameFlash(atlas, fi, x, y, flash) {
 // canvas the game holds for it, once a frame, before anything draws.
 //
 // Doing it here rather than at the call sites is what keeps an item icon one
-// generic read: `SPRITES[ITEMS[type].icon]` is how the bag, a shop price, a
+// generic read: `SPRITES[ITEMS[type].icon]` is how the pouch, a shop price, a
 // sale row, a drop on the snow, a tooltip and the wiki all reach one, and
 // none of them has to know which goods move. They share ONE clock, so
 // every berry on the screen is on the same beat - a dozen icons each looping
@@ -63,71 +63,12 @@ function stepItemIcons(nowMs) {
 }
 
 // The work-target rim: the hero's hovered workable object (tree, dead tree,
-// berried bush, chest) draws under a 1px pulsing gold outline - the
+// berried bush) draws under a 1px pulsing gold outline - the
 // buy plates' two golds on the same beat, so "you can act on this" reads in
 // its standing ink. The sprite (or atlas frame) tints through the scratch
 // canvas and stamps the eight neighbours, the same rim grammar as
 // drawPixelTextOutline. Call it right before drawing the
 // object itself so the rim sits under the body.
-// A rock (ROCK_KINDS, js/sim/mining.js) from its anchor at (x, y): two tiles
-// wide, feet on the tile's bottom edge, so a taller kind stands up into the
-// row behind it the way a pine does. Rubble while it regrows; under a
-// channel, its cracks by thirds and a bar over it filling in the kind's own
-// colour; and now and then a glint off one of its crystal's brightest
-// pixels - rarer at night, never on plain stone. A glint is a reflection,
-// not a light: it is drawn here, under the night grade, like the rock.
-const ROCK_GLINT_T = 0.32;   // s a glint lasts
-const ROCK_GLINT_NIGHT = 2.5; // ...and how much longer the wait between two is after dark
-// The pick's reach, flat on the snow under the rock: in the kind's colour
-// round the rock your pick is at, and faint round a free one close enough
-// to step into (MINE_RING_NEAR past MINE_R, js/sim/mining.js)
-const MINE_RING_NEAR = 24;
-function drawMineRing(ox, oy) {
-  const v = viewPlayer();
-  if (!v || v.dead) return;
-  const o = v.mineO || mineFree(v, MINE_R + MINE_RING_NEAR);
-  if (!o) return;
-  ctx.save();
-  ctx.globalAlpha = v.mineO ? 0.8 : 0.45;
-  hbRing(rockCx(o) - ox, rockCy(o) - oy, MINE_R, v.mineO ? ROCK_KINDS[o.kind].chip : '#c4cad8');
-  ctx.restore();
-}
-function drawRock(o, x, y, now) {
-  const K = ROCK_KINDS[o.kind];
-  if (!rockReady(o)) {
-    const r = SPRITES.rockSpent[o.kind];
-    drawSpriteFlash(r, x, y + TILE - r.height + 1, o.flash);
-    return;
-  }
-  const spr = SPRITES.rock[o.kind], top = y + TILE - spr.height + 1;
-  drawSpriteFlash(spr, x, top, o.flash);
-  if (o.crack > 0) {
-    // the kind's colour rising up the body from its foot as the bar fills,
-    // its top row lit full (SPRITES.rockFill, js/sim/mining.js)
-    const F = SPRITES.rockFill[o.kind], fh = Math.round(F.height * o.crack), fy = F.height - fh;
-    if (fh > 0) {
-      ctx.globalAlpha = 0.4;
-      ctx.drawImage(F, 0, fy, F.width, fh, x, top + fy, F.width, fh);
-      ctx.globalAlpha = 0.9;
-      ctx.drawImage(F, 0, fy, F.width, 1, x, top + fy, F.width, 1);
-      ctx.globalAlpha = 1;
-    }
-    ctx.drawImage(SPRITES.rockCracks[o.kind][Math.min(2, Math.floor(o.crack * 3))], x, top);
-    const w = 20, bx = x + ((spr.width - w) >> 1), by = top - 5;
-    ctx.fillStyle = '#1a1c28'; ctx.fillRect(bx - 1, by - 1, w + 2, 4);
-    ctx.fillStyle = '#3a3f52'; ctx.fillRect(bx, by, w, 2);
-    ctx.fillStyle = K.chip; ctx.fillRect(bx, by, Math.round(w * o.crack), 2);
-  }
-  const G = SPRITES.rockGlints[o.kind];
-  if (!K.glint || !G.length) return;
-  const every = K.glint * (state.time < DAY_LEN ? 1 : ROCK_GLINT_NIGHT);
-  const t = now + hash2(o.tx, o.ty) * every, ph = t % every;
-  if (ph > ROCK_GLINT_T) return;
-  const [gx, gy] = G[Math.floor(t / every) % G.length], r = ph < ROCK_GLINT_T / 2 ? 2 : 1;
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(x + gx - r, top + gy, r * 2 + 1, 1);
-  ctx.fillRect(x + gx, top + gy - r, 1, r * 2 + 1);
-}
 
 function drawTargetRim(src, sx, sy, w, h, x, y, now) {
   sctx.clearRect(0, 0, w, h);
@@ -192,7 +133,6 @@ function render() {
   drawSorted(draws, ox, oy, ex, ey, now);
 
   drawSelection(ox, oy, now);
-  drawTunnelGhost(ox, oy);
   drawCheatGhost(ox, oy); // the practice bar's armed teleport / dummy (js/ui/cheats.js)
   drawWorkHint(ox, oy);
   drawFishHint(ex, ey, now);
@@ -513,18 +453,10 @@ function cursorInfo() {
   if (state.mapOpen) return { kind: 'arrow' };
   if (state.paused) return { kind: 'arrow' };
   if (state.wheel) return { kind: wheelLayout().seg >= 0 ? 'hand' : 'arrow' };
-  // an item riding the pointer hides the reticle entirely: the drag ghost IS
-  // the cursor until it is put down somewhere
-  if (state.drag) return { kind: 'grab' };
   // the merchant's counter: a hand over anything that trades, an arrow over
   // the rest of the slab (which still swallows the click)
   const sp = shopHit(mouse.x, mouse.y);
   if (sp) return { kind: sp === 'panel' || sp.kind === 'foodWell' ? 'arrow' : 'hand' };
-  // the backpack widget: a hand over anything in it that does something, a
-  // plain arrow over the rest of its frame (which still swallows the click).
-  const bh = bagHit(mouse.x, mouse.y);
-  if (bh && bh.kind !== 'frame') return { kind: 'hand' };
-  if (bh) return { kind: 'arrow' };
   if (abBuyHit(mouse.x, mouse.y) >= 0) return { kind: 'hand' };
   const sh = stripHit(mouse.x, mouse.y);
   if (sh && (sh.kind === 'ab' || sh.kind === 'food' || sh.kind === 'fishPick')) return { kind: 'hand' };

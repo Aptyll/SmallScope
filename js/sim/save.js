@@ -38,9 +38,9 @@ const SAVE_V = 3;           // the body's shape; a body of another shape is refu
 function saveArr(a) { return [() => a, (v) => { a.length = 0; if (v) for (const x of v) a.push(x); }]; }
 // state's own UI keys are this screen's and never the match's: a load opens
 // with every panel shut
-const SAVE_STATE_SKIP = new Set(['paused', 'mapOpen', 'bagOpen', 'charOpen', 'shop', 'drag', 'dragPend',
+const SAVE_STATE_SKIP = new Set(['paused', 'mapOpen', 'charOpen', 'shop',
   'settingsOpen', 'rebind', 'wheel', 'menu', 'intro', 'introLen', 'introFrom', 'fade', 'shake',
-  'shopSel', 'shopSlot', 'shopCat', 'tunAim']); // the counter's pick and filter (js/ui/shop.js)
+  'shopSel', 'shopSlot', 'shopCat']); // the counter's pick and filter (js/ui/shop.js)
 const SAVE_ROOTS = [
   ['state', () => { const o = {}; for (const k of Object.keys(state)) if (!SAVE_STATE_SKIP.has(k)) o[k] = state[k]; return o; },
     (v) => Object.assign(state, v)],
@@ -54,7 +54,6 @@ const SAVE_ROOTS = [
   ['guards', () => [guards, guardN], (v) => { saveArr(guards)[1](v && v[0]); guardN = v ? v[1] : 0; }], // ARMATOS's standards (js/sim/armatos.js)
   ['wordPops', ...saveArr(wordPops)], ['coinPops', ...saveArr(coinPops)], ['ptargets', ...saveArr(ptargets)], ['slashes', ...saveArr(slashes)],
   ['shed', () => [shedWait, shedLive], (v) => { saveArr(shedWait)[1](v[0]); shedLive = v[1]; }],
-  ['iceCracks', () => iceCracks, (v) => { iceCracks.clear(); for (const [k, x] of v) iceCracks.set(k, x); }],
   ['iceBreaks', ...saveArr(iceBreaks)], // the breaks in their own shape (js/sim/icebreak.js); their pixels rebuild off them
   // the orca (js/sim/orca.js); a save from before it carries none, and it stays where boot put it
   ['orca', () => orca, (v) => { if (v) Object.assign(orca, ORCA_FRESH(), v); }],

@@ -33,7 +33,7 @@ defineBot({
 
 `think(obs)` returns an **act**: held keys (`move`, `goTo`, `aim`, `fire`, `work`, `slide`,
 `grapple`) stay held until your next act; one-shot keys (`dodge`, `jump`, `ability`, `eatBerry`,
-`eatFish`, `useCard`, `cmd`) fire once. Return `null` to keep holding what you held. Keep memory
+`eatFish`, `cmd`) fire once. Return `null` to keep holding what you held. Keep memory
 on `this` (the object you passed to `defineBot`).
 
 ## Running your bot

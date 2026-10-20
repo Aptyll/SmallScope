@@ -116,8 +116,7 @@ function drawStBar() {
   ctx.fillStyle = HUD_INK;
   for (let k = 1; k < DODGE_CHARGES; k++) ctx.fillRect(r.x + Math.round(k * r.w / DODGE_CHARGES), r.y, 1, r.h);
 }
-// The plate behind a carried thing's icon, wherever that icon sits: a bag
-// cell, the drag ghost, the tooltip. A dark well with a 1px rim that lights
+// The plate behind a carried thing's icon, wherever that icon sits. A dark well with a 1px rim that lights
 // while it is the one being handled.
 function cellPlate(lit) { return { plate: BAG_WELL, rim: lit ? '#9ca1aa' : '#3c4048' }; }
 
@@ -133,7 +132,7 @@ function drawItemIcon(type, r, y, g, k) {
   (g || ctx).drawImage(im, r.x + ((r.w - w) >> 1), y + ((r.h - h) >> 1), w, h);
 }
 
-// ---- drawing the strip and the carried item --------------------------------
+// ---- drawing the strip ------------------------------------------------------
 // THE COOLDOWN SWEEP - League's radial clock cut to a SQUARE, and now the
 // ONE shape every wait in the game is drawn in: the four ability wells and
 // both meal buttons through drawFoodClock.
@@ -311,9 +310,6 @@ function drawAbBuyPlate(i, now, hot) {
   ctx.fillStyle = hot ? '#f4f7ff' : '#f2cc6a';
   ctx.fillRect(r.x + 6, y + 3, 2, 8); ctx.fillRect(r.x + 3, y + 6, 8, 2);
 }
-// a card key with nothing to draw: the deny cue (unopened cards are bag
-// items, so the pack is where they are read)
-function cardDenied() { SFX.deny(); }
 // A MEAL WELL: an ability well's grammar pointed at the pouch, at the items'
 // size - the item icon doubled in the middle, the key in the bottom-left
 // corner (the pad's glyph while one is in hand), and how many
@@ -425,8 +421,8 @@ function drawHudStrip(now) {
   const R = hudStripRect();
   const hov = mouse.inside ? stripHit(mouse.x, mouse.y) : null;
   const bhov = mouse.inside ? abBuyHit(mouse.x, mouse.y) : -1;
-  // one frame behind portrait, wells and bars (drawHudFrame): the bag's
-  // ground and the bag's chrome, so the HUD pieces sit in the same family
+  // one frame behind portrait, wells and bars (drawHudFrame): one
+  // ground and one chrome, so the HUD pieces sit in the same family
   drawHudFrame(R.x - 3, R.y, R.w + 6, R.h);
   drawStatPanel(hov); // left of the portrait (js/ui/statpanel.js)
   drawPortrait(now);
@@ -481,97 +477,4 @@ function drawHudScaled(now, slideY) {
     hudPx(VIEW_W / 2 - (VIEW_W / 2 - bx) * s),
     hudPx(VIEW_H - (VIEW_H - by) * s) + slideY,
     hudPx(bw * s), hudPx(bh * s)); // the size, too, on the device grid
-}
-
-// THE CORNER - the backpack's arrow and its drawer - at its own size (cornerSc), scaled about the
-// TOP-LEFT corner so the arrow stays put in it. The same deal as
-// drawHudScaled: at 1x straight to the frame, otherwise a 1x bake blitted
-// with smoothing off. The bake is sized to the widget's reach (CORNER_REACH,
-// the open drawer) so nothing of it is left behind.
-const cornerScaleCv = document.createElement('canvas');
-const cornerScaleCtx = cornerScaleCv.getContext('2d');
-function drawCorner(now) { drawBag(now); }
-function drawCornerScaled(now, slideX) {
-  const s = cornerSc();
-  if (s === 1) {
-    ctx.save();
-    ctx.translate(slideX, 0);
-    drawCorner(now);
-    ctx.restore();
-    return;
-  }
-  const f = bagFrameRect();
-  const bw = Math.max(CORNER_REACH, f.x + f.w + 4), bh = f.y + f.h + 6;
-  if (cornerScaleCv.width !== bw || cornerScaleCv.height !== bh) {
-    cornerScaleCv.width = bw; cornerScaleCv.height = bh;
-    cornerScaleCtx.imageSmoothingEnabled = false;
-  }
-  const o = ctx;
-  ctx = cornerScaleCtx;
-  ctx.clearRect(0, 0, bw, bh);
-  drawCorner(now);
-  ctx = o;
-  ctx.drawImage(cornerScaleCv, slideX, 0, hudPx(bw * s), hudPx(bh * s)); // the size on the device grid
-}
-
-// Whatever is riding the pointer, drawn last so it is over every well it
-// might be dropped into. It wears its own tier plate, so the thing in your
-// hand is read exactly the way it is read in a cell.
-// The promise, on top of everything: which well the release would land in and
-// what it would do there. Only a pack cell takes a carried item, so only a
-// pack cell is ringed (dropKindBag, the branch dragDropBag takes).
-function drawDropPromise() {
-  if (!state.drag || !mouse.inside || shopHit(mouse.x, mouse.y)) return;
-  // the ring is painted in screen space after the corner's bake, so a 1x
-  // rect of the drawer is mapped through the corner's size first
-  const k = cornerSc(), sc = (r) => ({ x: Math.round(r.x * k), y: Math.round(r.y * k), w: Math.round(r.w * k), h: Math.round(r.h * k) });
-  const bh = bagHit(mouse.x, mouse.y);
-  if (!bh || bh.kind !== 'cell') return;
-  const r = bagCellRect(bh.i);
-  if (player.bag[bh.i]) r.y -= 1; // a hovered FULL cell's plate lifts a pixel; the ring rides with it
-  drawDropRing(sc(r), dropKindBag(bh.i));
-}
-function drawDragGhost(now) {
-  const d = state.drag;
-  if (!d || !mouse.inside) return;
-  const r = { x: Math.round(mouse.x) - 8, y: Math.round(mouse.y) - 8, w: 18, h: 18 };
-  const tp = cellPlate(true);
-  ctx.globalAlpha = 0.9;
-  ctx.fillStyle = tp.rim;
-  ctx.fillRect(r.x, r.y, r.w, r.h);
-  ctx.fillStyle = tp.plate;
-  ctx.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
-  drawItemIcon(d.cell.type, r, r.y);
-  ctx.globalAlpha = 1;
-  if (d.cell.n > 1) {
-    const t = String(d.cell.n);
-    drawPixelTextOutline(ctx, t, r.x + r.w - 2 - pixelTextWidth(t), r.y + r.h - 7, '#f4f7ff', '#191b1f');
-  }
-  // THE HAND ITSELF, WHEN A SWAP CHANGED WHAT IS IN IT. A trade hands you the
-  // ousted item back, which is the one thing a release can do that you did not
-  // ask for by name - so the ghost flares gold for a beat and grows a ring,
-  // and the item you are now carrying is impossible to mistake for the one you
-  // let go of. Aged in updateFx beside the wells' own pulse.
-  if (dragLit > 0) {
-    const k = Math.min(1, dragLit / DRAG_LIT_T);
-    const g = Math.round(2 + 4 * (1 - k)); // a ring opening off the ghost as it fades
-    ctx.globalAlpha = 0.85 * k;
-    ctx.fillStyle = FX_SWAP;
-    ctx.fillRect(r.x - g, r.y - g, r.w + g * 2, 1);
-    ctx.fillRect(r.x - g, r.y + r.h + g - 1, r.w + g * 2, 1);
-    ctx.fillRect(r.x - g, r.y - g, 1, r.h + g * 2);
-    ctx.fillRect(r.x + r.w + g - 1, r.y - g, 1, r.h + g * 2);
-    ctx.globalAlpha = 0.4 * k;
-    ctx.fillRect(r.x, r.y, r.w, r.h);
-    ctx.globalAlpha = 1;
-  }
-  // over the world rather than over any well: the release throws it, and the
-  // ghost says so by growing a fall shadow under itself
-  if (!overHud(mouse.x, mouse.y)) {
-    ctx.globalAlpha = 0.5;
-    ctx.fillStyle = '#121418';
-    ctx.fillRect(r.x + 3, r.y + r.h + 3, r.w - 6, 2);
-    ctx.fillRect(r.x + 5, r.y + r.h + 6, r.w - 10, 1);
-    ctx.globalAlpha = 1;
-  }
 }

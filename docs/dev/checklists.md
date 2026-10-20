@@ -201,7 +201,7 @@ rival building needs no flag — `autoToolFor` asks `STRUCTS` and `ownsStruct`),
 null = any), `verb` and `lift` (the E key prompt, which an `auto` type never shows), and `mm`/`map` (what each of the two maps
 paints it — `mm` an `[r, g, b]` for the minimap disc, `map` a `CH_*` class the chart files it
 under, each a constant or a function of the object, as a roosting eagle's side is; leave `map`
-out for anything that stands alone on its tile — a bush, a rock, a stump — since at the chart's
+out for anything that stands alone on its tile — a bush, a stump — since at the chart's
 scale a speck is noise, and read [rendering](rendering/ui-panels-are-baked-once.md) for what the
 chart does with a class). `isSolidTile()`, `workTarget()`, `autoTarget()`, `hitObject()`'s tool
 gate, `drawWorkHint()`, `updateMinimap()` and `buildWorldMapImg()` all read that one entry and
@@ -225,27 +225,20 @@ glows — there is no light registry to add it to
 is not an object type: it is a `STRUCTS` entry in [js/sim/structures.js](../../js/sim/structures.js),
 which carries the same `mm`/`map` pair and gets solidity, both maps and the E prompt for free.
 
-**Adding a carried item** — one `ITEMS` entry (`icon`, `stack`, plus `heal` and `pouch: true` if
-it is food) is the storage half: the bag *or* the [pouch](gameplay/inventory-and-the-backpack.md),
-the drop pickup, the drag and the refusal tell are all generic over that table.
-What is *not* generic and must be written per item: an 8×8 icon sprite (bake it beside its own
-code, not in the byte-fragile grid files under js/sprites/ — see `SPR.bake` in js/sprites/core.js, and `CHEST_SPR`; an
-icon that should **loop** is still one canvas to everything that draws it — put the frames in
-`SPRITES.itemAnim[key]` and the canvas in `SPRITES[key]`, and `stepItemIcons` animates it, see
-[sprites.md](sprites.md)), a colour in `RES_COLORS` for the pickup floater, **what it is worth** (see the counter below, or
-it sells for nothing), whatever *makes* the item, and what using it does — a `use` on its
-`ITEMS` row, which a click on its cell runs (`sendBagCell`); without one, clicking its cell just
-denies (`bagClick`) — and a branch in `tipStack` (the `tooltips` banner, js/ui/tooltip.js) or
-hovering it says only its raw type name. **A new FOOD is the one item that is already generic**:
-give its `ITEMS` row a `heal` and `pouch: true` and it picks up the pouch, the meal channel, the
-shared clock and the tooltip rows for free (`startEat`, js/sim/core.js — see
-[Food](gameplay/food-the-meal-is-a-channel.md)); what it still needs is its own key and a seat in
-`FOOD_BTNS` (js/ui/strip.js), because a meal is pressed from the hud strip and never from a cell
-(a new fish instead joins `FISH_KINDS`, js/sim/player.js, and `FISH_POP`, and eats off the fish well). The
-drop draw pass and the bag cell both centre an icon
-on its own width, so a 12×12 needs no branch. Gold is **not** an `ITEMS` entry and must not become
-one: it is a wallet number with no ceiling. See
-[gameplay.md](gameplay/inventory-and-the-backpack.md).
+**Adding a carried item** — only food is carried (there is no backpack since 0.531), and **a new
+FOOD is already generic**: one `ITEMS` row with an `icon` and a `heal` picks up the pouch, the drop
+pickup, the meal channel, the shared clock and the tooltip rows for free (`startEat`,
+js/sim/core.js — see [Food](gameplay/food-the-meal-is-a-channel.md)). What it still needs is an
+8×8 icon sprite (bake it beside its own code, not in the byte-fragile grid files under
+js/sprites/ — see `SPR.bake` in js/sprites/core.js; an icon that should **loop** is still one
+canvas to everything that draws it — put the frames in `SPRITES.itemAnim[key]` and the canvas in
+`SPRITES[key]`, and `stepItemIcons` animates it, see [sprites.md](sprites.md)), a colour in
+`RES_COLORS` for the pickup floater, a price at the counter (`foodPrice`, js/ui/shop.js, prices a
+fish off its `heal`), whatever *makes* it, and its own key and a seat in `FOOD_BTNS`
+(js/ui/strip.js), because a meal is pressed from the hud strip (a new fish instead joins
+`FISH_KINDS`, js/sim/player.js, and `FISH_POP`, and eats off the fish well). Gold is **not** an
+`ITEMS` entry and must not become one: it is a wallet number with no ceiling. See
+[the pouch](gameplay/the-pouch.md).
 
 **Adding or changing a hero's basic attack** — one `attack` row on its `CLASSES` entry
 (js/sim/player.js; [the basic attack](gameplay/the-basic-attack.md)): a `name`, an `art`, a
@@ -324,7 +317,7 @@ existing save, or an old profile reaches its readers without it. Give it an acce
 `saveNow()` for something the player just chose, `scheduleSave()` for anything the sim writes
 mid-match. Nothing outside that file may name a storage key.
 
-**Adding a swing tool** (the axe/pick family that E brings out — *not* a weapon, which is the
+**Adding a swing tool** (the axe's family that E brings out — *not* a weapon, which is the
 entry above) — append to `SWING_TOOLS` with a `SWING_*` index constant, add an 8×8 icon sprite and
 name it in the entry's `icon` field, map the object types it works in `workTarget()` (that is the
 only selection logic — there are no keys or bar slots), and give its `key` behavior in
@@ -417,8 +410,7 @@ shipwreck: { name,                // what the M map prints
 ```
 
 A camp with no monster (the HOG HUT) is `kind: null, pop: 0`: nothing stocks it, its clock never
-runs, and what it offers is its `props` — a `chest` there is stamped with `{ hp: 1 }` like
-`placeChests`' own.
+runs, and what it offers is its `props` (the hog hut is scenery only since 0.531).
 
 The site is written **once, for the RED half**, in road coordinates (`u` along the diagonal, `s`
 off it) and mirrored for BLUE by `campSites()` — never write both halves by hand, and never a
@@ -446,7 +438,7 @@ swimmable grounds outright.
 **Adding a map shape** — one `MAPS` entry in [js/sim/world.js](../../js/sim/world.js) (the `map types`
 group) plus whatever `mapTerrain` needs to read it, and that is the feature: `genWorld`'s
 interior pass plants from `mapTerrain`, the class screen's chip draws from it, `layPaths` cuts
-its paths if it grows woods (`mapGrown`), and the ore/berry top-up puts it back to OPEN FIELD's
+its paths if it grows woods (`mapGrown`), and the rock/berry top-up puts it back to OPEN FIELD's
 strength. Nothing else in the game knows a shape by name. Three rules bound one:
 
 - **The border forest and the two roost corners stay.** `borderDepth` is what the road's gates
@@ -506,9 +498,9 @@ already current, so it is safe to call from a state change that repeats.
 
 | File | The numbers |
 | --- | --- |
-| js/sim/core.js | the `YIELD` table (every gold payout, the one table still in core.js); `useCard`'s random draw |
-| js/sim/player.js | `RESPAWN_WAIT` (the wait for the bird, beside `die()`) and the takedown gold (`KILL_SOLDIERS`, `ASSIST_*`, `BOUNTY_*`, `FEED_*`, the `takedowns` banner); the `CARDS` table (every card's effect, by rarity); the hero-level table (`LEVEL_XP` — sized against the road's XP, see [multiplayer.md](multiplayer.md#hero-levels)) and what a downed scout is worth (`KILL_XP`/`KILL_XP_LV`); each hero's stats and growth (`CLASSES[c].base`/`.grow`, read through js/sim/stats.js); `BOW_CHARGE` and the momentum constants (`ICE_MAX`, `SLIDE_MIN`/`SLIDE_EXIT`, `TRAIL_MIN`) above `CLASSES`; the player count (`MAX_PLAYERS`) |
-| js/sim/world.js | the chests (`CHEST_*` above `placeChests()`: count, spacing, payout, and `CHEST_ODDS`, a chest's card rarity roll); `TREE_HP`; `TREE_RARE_CHANCE` in `treeRare()`; the road (`ROAD_HW`/`ROAD_RAG`/`ROAD_ICE_KEEP`/`ROAD_ICE_TAPER`/`ROAD_STEP`/`ROAD_HW_WOOD`/`ROAD_NEST_IN`/`ROAD_NEST_OFF`/`ROAD_LOG_IN`/`SPUR_HW`), which reshapes the map |
+| js/sim/core.js | the `YIELD` table (every gold payout, the one table still in core.js) |
+| js/sim/player.js | `RESPAWN_WAIT` (the wait for the bird, beside `die()`) and the takedown gold (`KILL_SOLDIERS`, `ASSIST_*`, `BOUNTY_*`, `FEED_*`, the `takedowns` banner); the hero-level table (`LEVEL_XP` — sized against the road's XP, see [multiplayer.md](multiplayer.md#hero-levels)) and what a downed scout is worth (`KILL_XP`/`KILL_XP_LV`); each hero's stats and growth (`CLASSES[c].base`/`.grow`, read through js/sim/stats.js); `BOW_CHARGE` and the momentum constants (`ICE_MAX`, `SLIDE_MIN`/`SLIDE_EXIT`, `TRAIL_MIN`) above `CLASSES`; the player count (`MAX_PLAYERS`) |
+| js/sim/world.js | `TREE_HP`; `TREE_RARE_CHANCE` in `treeRare()`; the road (`ROAD_HW`/`ROAD_RAG`/`ROAD_ICE_KEEP`/`ROAD_ICE_TAPER`/`ROAD_STEP`/`ROAD_HW_WOOD`/`ROAD_NEST_IN`/`ROAD_NEST_OFF`/`ROAD_LOG_IN`/`SPUR_HW`), which reshapes the map |
 | js/sim/base.js | the bases (`BASE_U`/`BASE_R`/`BASE_RAG`/`PERCH_U`/`BASE_KEEP`, the side mouths `BASE_SIDE_U`/`BASE_SIDE_S`, the bay spots `BASE_BAYS`), which reshape both roost corners |
 | js/sim/lanes.js | the top and bot lanes (`LANE_HALF`, their fixed control points, `LANE_HW`/`LANE_RAG`, the ford's `LANE_FORD_HW`) and their cables (`LANE_ZIP_*`) |
 | js/sim/structures.js | `STRUCTS` costs/HP/build times (plus generator pay/period and each type's `w`/`h` footprint); the waves (`STRUCTS.barracks`'s `wave`/`waveT`/`grow`/`cap`/`botHp`/`hp`, `BARRACKS_ROLL`) |
@@ -516,7 +508,6 @@ already current, so it is safe to call from a state change that repeats.
 | js/sim/farm.js | `SOLDIER_BOUNTY`/`SOLDIER_BOUNTY_GROW` (a soldier's last hit), `COIN_POP_T`; the bots' farm knobs `AI_FARM_*`/`AI_DEN_EARLY`/`AI_LANE_N`/`AI_JUNGLE_N` sit in js/ai/ai-farm.js |
 | js/sim/actions.js | `WORK_REACH` and the roll/prone blocks |
 | js/sim/player.js, js/sim/attack.js | each hero's basic attack (`CLASSES[c].attack`: cycle, knockback, a shot's speed and life or a cut's reach and sweep); the draw curve (`DRAW_*_MIN`) and the damage roll in `attackDmg()` |
-| js/sim/mining.js | `ROCK_KINDS` (each rock kind's mining time, gold, ore and regrow), `ORE_PRICE`, `MINE_STRIKE`/`MINE_R`/`MINE_DECAY`/`MINE_HIT_HOLD`/`MINE_STREAM_T`/`MINE_MOVE`/`ORE_FLING` |
 | js/sim/items.js | `BUILD_ITEMS` (every part's and item's price, stats and passive), `ITEM_PASSIVES`, `ITEM_SELL`, `ITEM_FIGHT_T`, `KINDLE_EVERY`/`KINDLE_BURN`, `CHILL_T`/`CHILL_MUL`, the bots' `BOT_BUILDS` |
 | js/ui/shop.js | `FOOD_PRICE` (the frost pike and the berry; every other fish off its heal), `SHOP_REACH` |
 | js/ai/ai-skill.js | every level's numbers (`AI_LEVELS`: the hand fields, the choice knobs, `push`/`guard`), the ally clocks (`AI_ALLY_PUSH`), the ladder's hands (`AI_LADDER_HANDS`), the skill layer's clocks (`AI_SETTLE`, `AI_WOBBLE_T`, `AI_ALERT_T`, `AI_AIM_ON`, `AI_BLADE_CLOSE`, `AI_BLADE_HOLD`) |
@@ -628,15 +619,14 @@ Kept on purpose — do not "clean up", and a verbatim code move carries it along
 - The `<` glyph in [js/app/font.js](../../js/app/font.js) was added for the removed resolution cycle
   control and is currently unreferenced — kept as generic font coverage. (`>` is live again: it
   marks your own row on the scoreboard.)
-- `SPRITES.raider` (+ `RDPAL`) and `SPRITES.mine` are still baked but unreferenced since the
-  raider/mine removal — kept in case a threat returns; the raider set shares the player grids
+- `SPRITES.raider` (+ `RDPAL`) is still baked but unreferenced since the
+  raider removal — kept in case a threat returns; the raider set shares the player grids
   (as do the four `playerTeam` sets, which are the live ones).
-- `SPRITES.goldOre`, `SPRITES.itemWood`, and `SPRITES.itemStone` are baked but unreferenced since
-  the single-currency change (no ore object, no wood/stone drops or HUD counters). They are now
-  one `ITEMS` entry each away from being carryable, should a resource ever return.
+- `SPRITES.itemWood` is baked but unreferenced since the single-currency change (no wood drops
+  or HUD counters).
 - `SWING_TOOLS[SWING_BOW].icon` (`'itemBow'`) is unread —
-  `drawHeldTool` puts the hero's own weapon in the hands at rest, and only the axe and pick rows'
-  icons are still resolved through the table. The row is kept so `SWING_TOOLS` stays one entry per
+  `drawHeldTool` puts the hero's own weapon in the hands at rest, and only the axe row's
+  icon is still resolved through the table. The row is kept so `SWING_TOOLS` stays one entry per
   `p.swing` value, and `SPRITES.itemBow` itself is live on the end screen's kills plate.
 - `audio/music/` holds the nine mp3s `TRACKS` names, plus two tracked images nothing loads
   (`AlbumArtSmall.jpg`, `Folder.jpg`). The alternate takes (34 MB) were deleted in `PATCH 1.53`;

@@ -539,10 +539,9 @@ function eagleCrash(e) {
     const o = objAt(tx, ty);
     if (!o) continue;
     const ox = tx * TILE + 8, oy = ty * TILE + 8;
-    const so = structOf(o); // a rock's east tile is the rock
-    if (so.type === 'rock' || so.type === 'bush') { // shattered or flattened outright, out to the outer ring: a rock in the wall's band would leave a hole in it
+    if (o.type === 'bush') { // flattened outright, out to the outer ring: a bush in the wall's band would leave a hole in it
       fellScenery(tx, ty);
-      burst(ox, oy - 6, so.type === 'rock' ? '#9aa4b4' : '#88b090', 6, 50, 0.45, true);
+      burst(ox, oy - 6, '#88b090', 6, 50, 0.45, true);
       continue;
     }
     if (o.type !== 'tree' && o.type !== 'deadTree') continue;
@@ -590,7 +589,7 @@ function eagleCrash(e) {
 }
 
 // what the road's furniture and the cables may stand on in place of: a pine,
-// a snag or a rock gives way (a rock's east tile is the rock)
+// a snag or one of genWorld's placeholder rocks gives way (liftRocks, world.js)
 function laneFells(o) { o = structOf(o); return !!o && (o.type === 'tree' || o.type === 'deadTree' || o.type === 'rock'); }
 
 // the impact language, shared by the landing and the loss (k scales it up):

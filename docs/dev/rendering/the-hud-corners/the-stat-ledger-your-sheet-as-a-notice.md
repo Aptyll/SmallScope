@@ -2,8 +2,8 @@
 
 The answer to *what did that DO?* — the `stat ledger` block in
 [js/ui/notices.js](../../../../js/ui/notices.js), watched by `updateStatLedger(dt)` from `updateFx` and drawn as
-a [notice](notices-the-plates-under-the-minimap.md) kind. A hero level, a card drawn on C and an
-item bought all rewrite the kit silently: the floater over the body names the *thing* taken and never the
+a [notice](notices-the-plates-under-the-minimap.md) kind. A hero level and an
+item bought both rewrite the kit silently: the floater over the body names the *thing* taken and never the
 *number* it moved, so until this plate the only place to read the change was the character panel — a
 key press and a pause in the middle of a fight.
 
@@ -29,8 +29,7 @@ own `dir`.
 fresh one, so the plate is what your sheet is *now* rather than a stack of what it has been; a row
 still inside its own hold comes along on the new plate until that hold runs out.
 
-It **watches the kit** rather than hooking the writers — `levelUp`, `itemsChanged`, `useCard` and a
-bot's `resolveCardForBot` all land in it for free, a host's snapshot lands a client's the same way,
+It **watches the kit** rather than hooking the writers — `levelUp` and `itemsChanged` land in it for free, a host's snapshot lands a client's the same way,
 and nothing that edits a kit has to remember to announce it. The test is the **printed** number,
 not the raw one: a change too small to move the row is one the plate cannot show, and a `+0` beside
 an unchanged number would be a lie. One cue per batch (`SFX.stat(up)`), never one per row — a gold
@@ -44,5 +43,5 @@ about what a stat is, how it prints, or which way is up. The getters take `(kit,
 **hero level** is not in the kit, so a live body is passed and its level read; the hero pop-up
 prices a pre-match pick where every hero is level 1 and passes nothing (the kit says whose it is).
 
-**Anything outside the seven lights nothing** — a card or item bonus to ice, the dodge, stealth,
+**Anything outside the seven lights nothing** — an item bonus to ice, the dodge, stealth,
 food, hunts, fells, `killHeal` or `ambushMul` moves no row.

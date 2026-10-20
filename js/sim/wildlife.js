@@ -307,8 +307,7 @@ function deerRouteGoal(a) {
 }
 
 // ------------------------------------------------------------ fish
-// ice fishing: the pickaxe opens holes in bare ice, fish swim underneath
-const ICE_HOLE_HITS = 2;   // pickaxe hits to break through
+// ice fishing: fish swim under the ice, seen through its open holes
 const HOLE_FALL_DMG = 15;  // falling into open water hurts
 const HOLE_FALL_T = 1.1;   // seconds floundering before climbing back out
 const FISH_CATCH_R = 16;   // bow-fishing: fish must be this close under the player
@@ -829,7 +828,6 @@ function animalDies(a) {
   if (a.kind === 'rabbit') {
     burst(a.x, a.y - 3, '#9a6a45', 10, 45, 0.5);
     burst(a.x, a.y - 3, '#c29068', 6, 35, 0.4);
-    if (rng() < TUN_DROP) spawnDrop(a.x, a.y, 'tunnel'); // ...and now and then the burrow it came out of (js/sim/tunnel.js)
   } else if (a.kind === 'deer') {
     burst(a.x, a.y - 5, '#8f582f', 12, 50, 0.55);
     burst(a.x, a.y - 5, '#f2cc6a', 8, 45, 0.5);

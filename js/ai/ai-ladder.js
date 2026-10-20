@@ -9,7 +9,6 @@ function aiThink(p, dt) {
   const inp = p.input, ai = p.ai;
   inp.mx = 0; inp.my = 0; inp.work = false; inp.slide = false;
   if (p.dead || p.fallT > 0) { inp.fire = false; aiNote(p, 'IDLE', p.dead ? 'DOWN' : 'IN THE ICE', null); return; }
-  resolveCardForBot(p);
   const k = aiRead(p, dt), prof = k.prof;
   aiOrders(k);
 
@@ -736,33 +735,30 @@ function aiLootRung(k) {
 
 function aiHarvestRung(k) {
   const { p, dt, inp, ai, prof, steerTo, aimAt, guardE, ward, escort } = k;
-  // 8. harvest: walk to a tree/rock/berry bush/chest and hold E on it
+  // 8. harvest: walk to a tree or a berry bush and hold E on it
   // (a stripped bush stops being work, so drop it the moment it empties)
   if (ai.tgt && (objects[idx(ai.tgt.tx, ai.tgt.ty)] !== ai.tgt ||
-    (ai.tgt.type === 'bush' && ai.tgt.berries <= 0) ||
-    (ai.tgt.type === 'rock' && (!rockReady(ai.tgt) || (rockMiner(ai.tgt) && rockMiner(ai.tgt) !== p))))) { ai.tgt = null; ai.thinkT = 0; } // (finished: look for the next at once)
+    (ai.tgt.type === 'bush' && ai.tgt.berries <= 0))) { ai.tgt = null; ai.thinkT = 0; } // (finished: look for the next at once)
   ai.avoidT -= dt;
   if (ai.avoidT <= 0) ai.avoid = null;
   if (ai.tgt && escort && Math.hypot(ai.tgt.tx * TILE + 8 - ward.x, ai.tgt.ty * TILE + 8 - ward.y) > AI_ESCORT * 0.9) ai.tgt = null; // (the human walked on: the work goes with them)
   if (!ai.tgt && ai.thinkT <= 0) {
     ai.thinkT = 0.6;
     ai.tgt = nearestObj(p.x, p.y, Math.round(AI_FORAGE * aiMood(p).greed), (o) => o !== ai.avoid &&
-      (o.type === 'tree' || o.type === 'chest' || (o.type === 'rock' && rockReady(o) && !rockMiner(o)) ||
-        (o.type === 'bush' && o.berries > 0)) &&
+      (o.type === 'tree' || (o.type === 'bush' && o.berries > 0)) &&
       aiOpenSides(o.tx, o.ty) >= 1 &&
       (!escort || Math.hypot(o.tx * TILE + 8 - ward.x, o.ty * TILE + 8 - ward.y) < AI_ESCORT * 0.7) && // (an escort works inside its leash)
       (!guardE || Math.hypot(o.tx * TILE + 8 - guardE.x, o.ty * TILE + 8 - guardE.y) < AI_GUARD_R * 0.85)); // (a guard works inside its leash)
   }
   if (ai.tgt) {
     const t = ai.tgt;
-    aiNote(p, t.type === 'rock' ? 'MINE' : 'GATHER', t.type.toUpperCase(), t);
+    aiNote(p, 'GATHER', t.type.toUpperCase(), t);
     aimAt(t.tx * TILE + 8, t.ty * TILE + 8);
     const ptx = Math.floor(p.x / TILE), pty = Math.floor(p.y / TILE);
     if (Math.max(Math.abs(t.tx - ptx), Math.abs(t.ty - pty)) <= WORK_REACH) {
       // the E key at the profile's duty cycle - a slow side rests between
-      // swings, which is what sets how fast it earns. A rock takes no key:
-      // standing by it is the mining (updateMine, js/sim/mining.js).
-      inp.work = t.type !== 'rock' && (prof.work >= 1 || (state.tick % 120) < 120 * prof.work);
+      // swings, which is what sets how fast it earns
+      inp.work = prof.work >= 1 || (state.tick % 120) < 120 * prof.work;
       return true;
     }
     // route to any tile within WORK_REACH of it, whichever side is open;

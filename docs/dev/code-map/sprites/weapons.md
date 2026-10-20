@@ -2,4 +2,4 @@
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| the heroes' weapons as the hand holds them (a basic attack's `art`), which way each points as drawn, and the three item icons drawn in the same ink (FLINT HEAD, HUNTER'S HORN, IRON BRAND) | `SPRITES.weaponArt`, `SPRITES.weaponHeld`, `WEAPON_FWD`, `SPRITES.itemArt_*` | `weapon art` |
+| the heroes' weapons as the hand holds them (a basic attack's `art`), which way each points as drawn, and the four item icons drawn there (FLINT HEAD, HUNTER'S HORN, IRON BRAND, SUNSTONE: the old sunstone ore's cut gem) | `SPRITES.weaponArt`, `SPRITES.weaponHeld`, `WEAPON_FWD`, `SPRITES.itemArt_*` | `weapon art` |

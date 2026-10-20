@@ -19,7 +19,7 @@ const BOT_PUSH = '#d55181', BOT_RETREAT = '#c98500', BOT_DEFEND = '#9085e9', BOT
 const BOT_GOALS = {
   PUSH: BOT_PUSH, RALLY: BOT_PUSH, REGROUP: BOT_PUSH, SIEGE: BOT_PUSH, FLEE: BOT_RETREAT, HIDE: BOT_RETREAT, RECALL: BOT_RETREAT,
   DEFEND: BOT_DEFEND, GUARD: BOT_DEFEND, ESCORT: BOT_DEFEND, FOLLOW: BOT_DEFEND, HELP: BOT_DEFEND, FIGHT: BOT_FIGHT, WOLF: BOT_FIGHT, STALK: BOT_FIGHT, ROAD: BOT_FIGHT,
-  GATHER: BOT_FARM, FARM: BOT_FARM, JUNGLE: BOT_FARM, MINE: BOT_FARM, HUNT: BOT_FARM, EAT: BOT_FARM, LOOT: BOT_FARM, BUILD: BOT_FARM, SPEND: BOT_FARM, SHOP: BOT_FARM,
+  GATHER: BOT_FARM, FARM: BOT_FARM, JUNGLE: BOT_FARM, HUNT: BOT_FARM, EAT: BOT_FARM, LOOT: BOT_FARM, BUILD: BOT_FARM, SPEND: BOT_FARM, SHOP: BOT_FARM,
   ROAM: BOT_ROAM, IDLE: BOT_ROAM, SCOUT: BOT_ROAM, ORDER: BOT_ROAM, DEAD: '#454b5a',
 };
 const BOT_GOAL_ANY = '#c8d0e0'; // a goal word the table above does not know yet
@@ -84,7 +84,7 @@ function botGuess(p) {
   if (ai.huntTgt && !ai.huntTgt.dead) return g('HUNT', 'FOOD', ai.huntTgt.x, ai.huntTgt.y, ai.huntTgt, 'ANIMAL');
   if (ai.tgt) {
     const x = ai.tgt.tx * TILE + TILE / 2, y = ai.tgt.ty * TILE + TILE / 2, what = String(ai.tgt.type || '').toUpperCase();
-    return g(ai.tgt.type === 'rock' ? 'MINE' : 'GATHER', what, x, y, null, what);
+    return g('GATHER', what, x, y, null, what);
   }
   if (ai.roam > 0) return g('ROAM', 'NOTHING NEAR', ai.wx, ai.wy, null, 'POINT');
   return g('IDLE', '');

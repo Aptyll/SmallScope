@@ -1,4 +1,4 @@
-# Bot API reference (api 1)
+# Bot API reference (api 3)
 
 Everything a bot file reads and writes. Units: world pixels (y grows downward), seconds, ticks
 of 1/60 s. A tile is 16 px; the world is `hello.map.world` tiles square. Teams are `0` and `1`,
@@ -69,7 +69,7 @@ strings, one per row, one character per tile (`grid[ty][tx]`):
 
 | `#` | `~` | `-` | `=` | `,` | `.` |
 | --- | --- | --- | --- | --- | --- |
-| solid (tree, rock, wall, the cistern's stone) | open water | ice | road or a gate's sill | ford | snow |
+| solid (tree, wall, the cistern's stone) | open water | ice | road or a gate's sill | ford | snow |
 
 Trees fall and buildings rise after that: `obs.nodes` and `obs.structs` are the live word near you.
 
@@ -88,8 +88,7 @@ obs = {
     aboard, falling, zip,  // on the eagle; in the drop; -1 or the cable ridden
     abilities: [{ key, id, lv, cd, ready, range }],  // keys 0..3; lv 0 = locked; range px or null
     attack,                // your basic attack: 'shot' (a bow) or 'cut' (a blade)
-    bag: [{ type, n } | null],
-    food: { berry, fish, ... },            // the pouch: meals and unopened cards
+    food: { berry, fish, ... },            // the pouch: meals
     charging, chargeT,     // the draw in progress
     nav,                   // your last goTo: 'ok' | 'arrived' | 'fail' | null
                            // 'arrived' also beside a goal no path enters (a bird, a tree); 'fail' = no route
@@ -104,7 +103,7 @@ obs = {
   animals:  [{ id, kind, level, x, y, hp, maxHp }],   // near you: rabbit, deer, wolf, alpha, dire, bird
   eagles:   [{ team, x, y, state, hp, maxHp, hitT, mouth }],  // both birds, always
   structs:  [{ id, type, team, tx, ty, hp, maxHp, building }],  // buildings near you
-  nodes:    [{ kind, tx, ty }],    // tree, deadTree, rock, bush, chest near you; nearest 64, nearest first
+  nodes:    [{ kind, tx, ty }],    // tree, deadTree, bush near you; nearest 64, nearest first
   drops:    [{ id, type, n, x, y }],   // loot on the ground near you
   shots:    [{ x, y, vx, vy, team }],  // shots in flight near you
   pings:    [{ owner, k, x, y, t }],   // your side's pings up now: k is go, attack, omw, danger or defend; t the seconds left
@@ -157,11 +156,11 @@ act = {
                            // Unreachable: dropped, and me.nav says 'fail' next think
   aim: [x, y],             // the world point you want the crosshair on
   fire,                    // held: a bow draws while held and looses on release; a blade swings
-  work,                    // E held: chop, pick, strike a rival building or bird under the aim
+  work,                    // E held: chop, strike a rival building or bird under the aim
   slide, grapple,          // shift held; the grapple reels while held
   // edge (once)
   dodge, jump,             // roll; hop on/off a zipline, leap off the eagle
-  eatBerry, eatFish, useCard,
+  eatBerry, eatFish,
   ability,                 // 0..3: cast that key (or buy its level when a skill point waits)
   cmd,                     // an order: see below
   // talk
@@ -182,7 +181,7 @@ again on its side, exactly as it does a player's.
 | `{ kind: 'ability', i }` | spend a skill point on key `i` |
 | `{ kind: 'ping', k, x, y }` | ping a spot for your side (`k` as above; a mark only, it steers no bot; at most 3 in 5 s) |
 | `{ kind: 'recall' }` | channel home: 6 s standing still, then set down at your roost. Any move, shot, ability, roll or blow ends it |
-| `{ kind: 'shop', act: 'item', id }` / `{ act: 'sellItem', slot }` / `{ act: 'trade', good, dir, n }` / `{ act: 'sell', i }` | at a merchant's counter: buy an item, sell a slot, buy `n` or sell all of `fish`/`berry` (`dir` 1 or -1), sell bag cell `i` |
+| `{ kind: 'shop', act: 'item', id }` / `{ act: 'sellItem', slot }` / `{ act: 'trade', good, dir, n }` | at a merchant's counter: buy an item, sell a slot, buy `n` or sell all of `fish`/`berry` (`dir` 1 or -1) |
 
 ## The team channel
 
@@ -219,7 +218,7 @@ think: {
 ```
 
 The game shows every bot's thought in the bot view (F4) and records it in match logs. Goals the
-bot view colours: `DEFEND PUSH GUARD FIGHT FLEE HIDE EAT HUNT GATHER MINE LOOT BUILD ESCORT RALLY
+bot view colours: `DEFEND PUSH GUARD FIGHT FLEE HIDE EAT HUNT GATHER LOOT BUILD ESCORT RALLY
 ROAM WOLF`; any other word shows plain. Target kinds: `player`, `soldier`, `bird` (id = team),
 `animal`, `object`, `drop`, `point`.
 
@@ -237,5 +236,5 @@ where you *want* to aim; lead a moving target yourself.
 
 ## Versioning
 
-`hello.api` is 2 (2 swapped the side's `flags` for `pings`, and the `flag` order for `ping`). A new field may appear at any time; a field is never renamed or removed without
+`hello.api` is 3 (2 swapped the side's `flags` for `pings`, and the `flag` order for `ping`; 3 dropped `me.bag`, the `useCard` edge and the shop's `sell` act, with the backpack and cards). A new field may appear at any time; a field is never renamed or removed without
 the number going up.

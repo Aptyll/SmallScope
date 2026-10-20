@@ -39,7 +39,7 @@ stable per tile.
   instead of ending in a cut. Neither test rolls anything, so a seed's rng stream is what it was.
 - `objects` — flat `Array(WORLD*WORLD)`, **at most one object per tile**. Every object is
   `{ type, tx, ty, hp, flash, shake, ...extra }`. The `OBJECTS` table's types: `tree`,
-  `deadTree`, `rock`, `bush`, `chest`, `den`, `dummy`, `banner`, `cairn`, `log`,
+  `deadTree`, `rock` (genWorld's placeholder, [lifted at boot](#rocks)), `bush`, `den`, `dummy`, `banner`, `cairn`, `log`,
   `pylon`, `pkdie`, `agbell`, `stump`, `eagle`, `hut`, `part`, and the
   [story landmarks](#story-landmarks)' `boat` (added from `LANDMARKS`); the `STRUCTS` table's: `generator`,
   `barracks`, `tower`, `net`. `banner`/`log` are
@@ -50,8 +50,7 @@ stable per tile.
   carries its `site`, the camp record, so a hover on either tile can wear the camp's clock)
   exists only inside [camps](#camps) (the wolf dens), and so does `hut` (the HOG
   HUT: solid, inert, 2×2 by `OBJECTS.hut.w`/`h`, its parts stamped east and north so the anchor is
-  the front row, drawing the whole building); `chest` is a [treasure chest](#treasure-chests)
-  standing where a border tree stood, or round a hog hut. `part` is the filler a multi-tile building (or a prop
+  the front row, drawing the whole building). `part` is the filler a multi-tile building (or a prop
   with a `w`/`h` in `OBJECTS`, the den and the hut) leaves on every footprint tile but its anchor (`{ type: 'part', of: <building> }`): solid, coloured like its
   building on both maps, ignored by work swings, and resolved by `structOf()` for every "what building
   is here" read (right-click, cursor, wheel, orders). `deadTree` (a 3 hp snag, chopped like a
@@ -65,7 +64,7 @@ stable per tile.
   buildTotal, dustT, sparkT }` plus per-type fields (generator `payT`; barracks `waveT`, `queue`,
   `rollT`, `born`, `door`; tower `ang`, `tgt`, `chg`, `cd`, `bolt`; net `fish`), and every live one is also referenced from the module-scope `structures`
   array so `updateStructures()` never scans the 53,824-tile grid. Nor do the object clocks
-  (`flash`/`shake`, bush regrow, a rock's crack and rubble): `tickObjTimers` (js/sim/sim.js, the
+  (`flash`/`shake`, bush regrow): `tickObjTimers` (js/sim/sim.js, the
   `object timers` banner) ticks only the objects in `objTimed`, in map order, and drops each one
   once its clocks run down. A clock is started only through `joltObj(o, flash, shake)` or
   `timeObj(o)`, which enrol the object; one set straight on the object never runs.
@@ -80,9 +79,9 @@ stable per tile.
   type has one tier and a footprint (`STRUCTS[type].w/h`, 1×1 when absent), with `footprint()`,
   `structCenter()` and `structMouth()` (the ground point in front of the doorway) as the geometry
   helpers. A wreck leaves the tiles empty.
-- The world center is an empty clearing: `CENTER_R` (beside `MAPS`) keeps ice ponds, rocks,
+- The world center is an empty clearing: `CENTER_R` (beside `MAPS`) keeps ice ponds, the placeholder rocks,
   bushes and every [shape](#map-shapes)'s own interior clear of it, so the river spokes meet in
-  open ground. The ore loop there draws two
+  open ground. The old ore loop there draws two
   `rand()` per spot and places nothing — **no-ops kept on purpose**, so every seed's stream
   stays what it is.
 - Every `tree` carries `rare` (boolean), set at worldgen from `treeRare(tx, ty)`: a `hash2`
@@ -175,7 +174,7 @@ across a tile edge carries on, and a hole that refreezes gets its crack back.
   a tile the deep band owns, so a pile that looks deep is always deep snow. Nothing is stamped on
   a tile an object stands on (a landmark on the ice covers its own).
 - **Drifts in the lee**: the map's mid band drawn per pixel (`bakeDrifts`, reading `leeDepth` and
-  `driftsDepth`) - the pads the map lays behind a pine, a rock or the hut, and the skirt round each
+  `driftsDepth`) - the pads the map lays behind a pine or the hut, and the skirt round each
   deep drift - as a low flat pile, sunward rim lit and a pixel of shade past its lee. Its shape is
   the map's, so it ends where the deep band's own look begins. Nothing on ice, the road, the
   creek or a tile something stands on.
@@ -205,7 +204,7 @@ are fixed, and nothing may move them.
 | --- | --- |
 | **OPEN FIELD** | one wide interior inside a ring of pines. The only wood is the border's — the world the game shipped with. |
 | **THICKET** | the woods took the whole valley in stands (`scale` how big a stand runs, `wood` how much of the noise is one), and what is left between them are the pathways. |
-| **FROZEN ISLES** | one frozen lake with wooded islands standing out of it: `land` is an island's shore, the ring of snow round its pines that ore, berries and anything built have to stand on, and `shore` is how far the lake laps **into** the treeline, drowning any island inside it — so the woods' own edge is always water and no island is reached dry-shod from the border. The band wobbles on the fine noise, like the roost discs' arc. |
+| **FROZEN ISLES** | one frozen lake with wooded islands standing out of it: `land` is an island's shore, the ring of snow round its pines that berries and anything built have to stand on, and `shore` is how far the lake laps **into** the treeline, drowning any island inside it — so the woods' own edge is always water and no island is reached dry-shod from the border. The band wobbles on the fine noise, like the roost discs' arc. |
 
 **`mapTerrain(k, tx, ty)` IS a shape**: one pure function of the position noise (`mapFbm`, three
 octaves) saying what shape `k` makes of a tile — `MT_SNOW`, `MT_ICE` or `MT_FOREST`. `genWorld`
@@ -222,12 +221,12 @@ would drop its room, and a guest's world is the host's (`netHostHello` refuses a
 is not the host's, exactly as it refuses a seed; `joinRoom` carries `&map=` with `&seed=`).
 
 **A shape may not move OPEN FIELD.** The interior pass runs after the ponds and rivers, whose
-retries read what stands on a tile, and before the ore and the berries, whose rolls do not; it is
+retries read what stands on a tile, and before the rock and berry scatters, whose rolls do not; it is
 pure position noise and draws no `rng()` at all, and the only `rng()` calls a shape adds — the
-ore and berry **top-up** (`MAP_ROCKS`/`MAP_BUSHES`, which put a grown shape back to OPEN FIELD's
+rock and berry **top-up** (`MAP_ROCKS`/`MAP_BUSHES`, which put a grown shape back to OPEN FIELD's
 own strength, since most of the two scatter loops now land in wood or on the lake) — sit at the
 very end of `genWorld` behind `mapGrown(MAP_TYPE)` (the rocks they stand are lifted again by
-[`placeRocks`](#rocks), which moves every rock to the rim). Verified: OPEN FIELD's ground, objects,
+[`liftRocks`](#rocks)). Verified: OPEN FIELD's ground, objects,
 animals and fish hash bit-identical to the shape before the shapes existed, on seeds 42, 7, 55,
 999 and 1234.
 
@@ -239,8 +238,6 @@ What a shape changes downstream, without a line of its own anywhere:
 
 - **the camps** stay at their fixed mirrored [sites](#camps) — `clearCamp` cuts the same clearing
   out of whatever grew there, so a camp on THICKET is a clearing in the woods;
-- **the chests** ([below](#treasure-chests)) keep `CHEST_BURIED` of their number back for a pine
-  standing *inside* a stand;
 - **the shoal** rides how much swimmable ice there is (`FISH_WATER_REF`/`FISH_CAP_MUL`, the
   `fish` banner of js/sim/wildlife.js) — FROZEN ISLES holds 75 fish where OPEN FIELD holds 30;
 - **building** needs ground `0` or `3` as it always did, so on FROZEN ISLES a base stands on an
@@ -306,65 +303,16 @@ walled in by design: [camps](#camps)).
 
 ## Rocks
 
-`placeRocks()` (the `world` banner, js/sim/world.js) runs at boot after `placeChests()` and stands
-**the rocks in a few clusters, mining spots a player goes to**, each on the open snow just out
-from the border forest: 2–8 tiles (`ROCK_BAND_MIN`/`ROCK_BAND_MAX`, walked 4-way) from the nearest
-**border** pine — one on `borderDepth`'s side of the line, so a grown shape's inner woods draw no
-band of their own — never touching a pine, never inside a camp's clearing (`r + 2`),
-`ROCK_SPACING` apart, within `ROCK_CLUSTER_R` of the cluster's centre. Every rock is **two tiles
-wide** (`OBJECTS.rock.w`): both tiles must be open snow in the band, and the east one takes a
-`part` pointing at the anchor, the den's filler. So the ore is out at the valley's rim and the
-middle stays open ground; no camp stands a rock.
-
-**`ROCK_CLUSTERS`** says where: each entry is a heading from the valley's centre, `turn` degrees
-off RED's roost toward the top-left corner (+) or the bottom-right (−), and a `kinds` list, one
-per rock a side stands there. The centre is RED's rim anchor nearest that heading whose mirror
-`(ty, tx)` fits too and with room round both for the cluster (`ROCK_CLUSTER_SLACK`: first within
-25° with room to spare, then further round), and each side fills its own spot with the same
-kinds; a side that got fewer leaves the other its count, so **both sides always have the same
-rocks**. A cluster turned 90° (a corner neither side owns) straddles the creek, each side's share
-on its own bank, unless it had to slide far enough round to be two spots. As shipped: a side
-cluster of five STONE each way at ±50° (four spots) and a corner cluster at each unowned corner
-of one SUNSTONE, one FROSTGLASS and one STONE a side: 32 rocks, fewer on a cramped seed (seed 9:
-30). A shape whose rim cannot hold a cluster (FROZEN ISLES, whose rim is lake) widens the band
-`ROCK_BAND_GROW` (8) tiles at a time, out to `ROCK_BAND_LIMIT` (40).
-
-genWorld's own rock passes — the interior scatter and a grown shape's top-up (`MAP_ROCKS`) —
-still run and still roll: taking their `rng()` calls out would reshuffle every seed
-([determinism](#determinism-and-noise)). `placeRocks` lifts every rock they stood first, then
-places its own on a stream of its own, `mulberry32(SEED ^ 0x524f434b)` (`rkRng`), touching only
-`objects`, so terrain stays bit-identical for an existing seed.
-
-**The kind** ([Mining a rock](gameplay/mining-a-rock.md)) is the cluster's `kinds` list: the
-SUNSTONE and FROSTGLASS SPIRE are out at the contested corners, the plain STONE nearer home.
-
-A rock is only ever taken off the map whole: `fellScenery(tx, ty)` clears every tile of the
-footprint from either of them, and the runtime clears that reach scenery (the base's hollow at
-boot, the crash's ring, the merchant's axe) go through it.
-
-## Treasure chests
-
-`placeChests()` (the `world` banner, js/sim/world.js) runs at boot after
-`placeCamps()`: it scans for **border trees on the forest's inner edge** (a `tree` with at
-least one cardinal neighbour of open snow — reachable with E from open ground) and swaps
-`CHEST_COUNT` (14) of them for `chest` objects, at least `CHEST_SPACING` (22) tiles apart.
-On a shape that grows its own woods ([map shapes](#map-shapes)) `CHEST_BURIED` (0.3) of them are
-held back for a **buried** one instead — a pine with no open ground touching it and more pines
-two tiles off on all four sides, so the only way to that cache is to chop one down. OPEN FIELD's
-wood is one treeline and everything in it is on the inner edge, so OPEN FIELD buries none and
-rolls exactly the draws it always did. No tree within a `woods` camp's `r + 4` is a candidate:
-the rim of a [hog hut](#camps)'s clearing is not the forest's inner edge, and the hut brings its
-own three chests (camp `props`, stamped by `placeCamps` with the same `{ hp: 1 }`).
-Selection rolls on its own `mulberry32(SEED ^ 0x43484553)` stream (`chRng`) so it
-can never perturb the shared `rng` stream and terrain stays bit-identical for an existing seed
-(chests place after the camps and touch only `objects`, never `ground`). A chest is solid, gold
-on both maps (its `mm`/`map` entry), and one free E press (`OPEN`, `needs: null`) springs it —
-`hitObject`'s chest branch pays `CHEST_GOLD_MIN`–`CHEST_GOLD_MAX` (8–20) gold on the spot, drops one
-card rolled from `CHEST_ODDS` (those constants beside `placeChests`) and gives a free item part
-(`chestPart`, js/sim/items.js; [the items](gameplay/the-merchants-counter.md#the-items)). The tile empties with
-it, leaving a one-tile notch in the treeline where the cache was dug out. The sprite bakes in
-[js/draw/ground.js](../../js/draw/ground.js) (`CHEST_SPR`, under the `the scenery bakes` banner) rather than
-in the byte-fragile grid files under js/sprites/.
+**There are no rocks in the game** (cut in 0.531, with the ore, the pick and the chests), but
+genWorld's two rock passes (the interior scatter and a grown shape's top-up, `MAP_ROCKS`) still
+run and still roll: taking their `rng()` calls out would reshuffle every seed
+([determinism](#determinism-and-noise)), and the later rolls in the same passes test what those
+rocks stand on. So they still stand placeholder `rock` objects (`OBJECTS.rock`: solid, nothing
+else), the road, the base, the cables and the camps are laid round them exactly as before
+(`laneFells` lets one give way), and **`liftRocks()`** (the `world` banner, js/sim/world.js),
+called at boot straight after `placeCamps()`, takes every one up again. A seed grows the same
+valley it always did, with open snow where its rocks stood. The only map change is that the
+treeline's old chest spots are pines again.
 
 ## Story landmarks
 
@@ -381,7 +329,7 @@ north the way the hog hut's are.
 | --- | --- | --- | --- | --- |
 | boat | 3×1 | yes | `lake`: every tile ice at least 4 deep | up to 2 |
 
-`placeLandmarks()` runs at boot straight after `placeRocks()`. It works out each ice tile's
+`placeLandmarks()` runs at boot straight after `liftRocks()`. It works out each ice tile's
 distance from the shore itself (`lmIceDepth`), because the painter's `lakeDepth` is baked later,
 by the draw. Then, kind by kind in table order, it lists every anchor its rule allows, shuffles
 the list on its own stream (`mulberry32(SEED ^ 0x4c4d524b)`, so no `rng()` is drawn and every
@@ -447,8 +395,8 @@ on its spot, since the gate stands in the treeline, but gives way to a rock or a
 E (no `tool`). The shoulders are otherwise bare: a lane's edge is not a thing to look at, and the
 centre where the waves meet is open ground. The pole's pixels are `drawBanner`.
 
-`placeRoad()` runs at boot **after `placeCreek()`, `layPaths()` and `layLanes()`** (then `placeZips()`, `placeCamps()`,
-`placeChests()` — js/app/boot.js), on pure reads —
+`placeRoad()` runs at boot **after `placeCreek()`, `layPaths()` and `layLanes()`** (then `placeZips()`, `placeTowers()`, `placeCamps()`,
+`liftRocks()` — js/app/boot.js), on pure reads —
 `roadSpan()` scans the diagonal for the last wooded tile out from each corner by `borderDepth`,
 so the gates are where the treeline is — and it rolls nothing, so it neither moves the shared `rng` stream nor differs run to
 run. Whatever the interior grew across the band is overwritten: a rock or a bush on it is gone,
@@ -501,11 +449,10 @@ u → `WORLD - 1 - u`).
   (`BASE_BAYS`, beside the lane in and clear of the stall), both through `baseTile(team, u, s)`,
   the side's frame: u along the road from its own corner, s tiles across (− the top side).
 - `baseAt(tx, ty, pad)` names the side whose hollow holds a tile (`pad` tiles past the wall
-  counted in), or −1, always −1 under `PRACTICE`. The chests and the rocks keep `BASE_KEEP` (3)
-  tiles off a hollow's wall (`placeChests`, `placeRocks`).
+  counted in), or −1, always −1 under `PRACTICE`.
 
 `placeBase()` runs at boot right after `placeRoad()` (js/app/boot.js): every object inside a
-hollow goes through `fellScenery` (a rock with both its tiles) and any ice there turns to snow. Pure
+hollow goes through `fellScenery` (a wide piece with all its tiles) and any ice there turns to snow. Pure
 position noise, no `rng()`, so no seed moves. Not under `PRACTICE`.
 
 ## The side lanes
@@ -737,7 +684,7 @@ asks it; its bands:
 - **MID** (`DEPTH_MID` 0.25 up to deep) is a drift you see and do not hide in: the skirt
   round each brush patch (`BRUSH_SKIRT`), and the **lee pad**
   every standing thing out in the open holds (`layLees`/`leeDepth`, `leeCell`): the same shape a
-  tile or two long downwind of a pine on the forest's edge, a rock, a bush, a stump, a snag, a
+  tile or two long downwind of a pine on the forest's edge, a bush, a stump, a snag, a
   den or a hut, at most `LEE_AMP` (0.42) tall. Forest floor (`LEE_WOODS` breakers among its eight
   neighbours) gets none.
 - **Shallow** is the rest, down to a dusting in the hollows (`hollowDepth`, low on the
@@ -759,9 +706,9 @@ once every worldgen pass has stood its scenery up (after `stockCamps`, before `p
   inside edge, one either side of the mid road, one each side between the mid road and the
   dens, and one each side short of the creek toward the bears. A patch (`brushDepth`) is deep
   from its rim in (`brushIn`, tiles in from the rim, is what the fog of war measures) with a MID
-  skirt `BRUSH_SKIRT` wide outside it. Laying it fells the pines, rocks, bushes, stumps and
+  skirt `BRUSH_SKIRT` wide outside it. Laying it fells the pines, bushes, stumps and
   snags within `BRUSH_CLEAR` of the rim and turns ice there to snow, so no seed's ice or forest
-  eats a patch; a chest, a landmark or a camp's prop stands. `brushNear` finds a patch near a
+  eats a patch; a landmark or a camp's prop stands. `brushNear` finds a patch near a
   point for the bots.
 - **The warrens' own.** Each [SNOWDROP WARREN](#camps) is brush too: `layMeadowDrifts` lays one
   round **pool** (`MEADOW_POOL`, a drift with `pool` set that `driftDepth` hands to `poolDepth`,
@@ -853,10 +800,9 @@ Five kinds, one reward each:
   `YIELD.dire` and **every teammate** `EPIC_TEAM_GOLD`, gives the whole team the BROWN BUFF for 120 s, and
   writes the feed. Back in 300 s.
 - **HOG HUT** (`hut`, r 4, ×6) — no monster: a log hut (`hut`, a 2×2
-  footprint; `SPRITES.hogHut`, eight frames of chimney smoke) with **three chests** round it, in
-  a clearing buried in the **border forest** (`woods`). No path leads there: it is reached with
-  an axe, and the chests are why that is worth doing. They are ordinary
-  [chests](#treasure-chests) and never come back; `pop` 0 means nothing restocks and the anchor
+  footprint; `SPRITES.hogHut`, eight frames of chimney smoke) in a clearing buried in the
+  **border forest** (`woods`). No path leads there: it is reached with an axe. It is scenery
+  only since its three chests went in 0.531; `pop` 0 means nothing restocks and the anchor
   wears no clock.
 - **SNOWDROP WARREN** (`meadow`, ×2) — dug into the treeline (`treeline`) halfway out from each
   roost, and the one camp **drawn by hand** (its `plan`): a round clearing in a ring of pines
@@ -880,7 +826,7 @@ no map, chart or HUD code knows a camp by name:
 | `repop` | seconds after the **last** one dies before the whole camp is back — a camp is cleared or it is not; nothing trickles |
 | `props` | what stands in it: `[dx, dy, type, variant]` off the centre, stamped in worldgen **before** the ground bakes; the prop at `0, 0` is the anchor and carries `site` |
 | `spots` | where each monster stands, `[dx, dy]` off the centre (`spawnCampMonster` takes the nearest free tile if a slot is taken) |
-| `woods` | the site is **in the border forest**, not the valley: `placeCamps` checks it is, `layPaths` cuts no branch to it and `placeChests` keeps off its rim |
+| `woods` | the site is **in the border forest**, not the valley: `placeCamps` checks it is, `layPaths` cuts no branch to it |
 | `treeline` | the site is **on the treeline**: between the border's shallowest edge and `CAMP_EDGE`, with the border grown out round it on every seed (the warren groves, below) |
 | `plan` | the camp is **drawn**: rows of characters from the back of the clearing (into the woods) to its front (the field), centred on the middle of the middle row, turned to face the field from whichever edge the site is nearest (`campFrame`), so the mirrored site gets the mirrored drawing. `layCampPlan` stamps it in place of `clearCamp`, `props` and `spots`: `-` left as the seed grew it, `.` cleared snow, `T` a pine, `f` a snowdrop, `r` a monster's spot (kept on the camp as `C.spots`). `campNear` covers the whole drawing, so no later pass (rocks, chests, landmarks, drifts) lands in it |
 | `river` | the camp is a **stretch of riverbank**, not a den: tiles of bank either way along the creek's bend round the site that its monster walks ([river camps](#river-camps)); `props` and `spots` are empty |
@@ -918,8 +864,8 @@ hold one of each side's, and each side has one more halfway along an edge of its
 The two midline sites sit on the cross-diagonal, which is [the creek](#the-creek)'s line: the
 creek bends round each, so the brown bear den stands on RED's bank and the black bear stone on BLUE's.
 
-`placeCamps()` runs as worldgen's last ground pass (boot: after `placeRoad()` and `placeZips()`,
-before `placeChests()`), then
+`placeCamps()` runs as worldgen's last ground pass (boot: after `placeRoad()`, `placeZips()` and `placeTowers()`,
+before `liftRocks()`), then
 `stockCamps()` fills every camp once `spawnAnimals`/`spawnFish` are done (and tops one up to
 strength, never past it, when `DBG` calls it by hand). Every site sits at least `CAMP_EDGE`
 (72) tiles from the world's edge — past the deepest treeline the border noise grows
@@ -956,7 +902,7 @@ and the fishing are [gameplay.md](gameplay/wildlife.md#camp-monsters-neutral-unt
 
 `campNear(C, tx, ty, pad)` is every question about a camp's ground: inside `C.r + pad` of the
 site, or for a river camp within `RIVER_BAND` (2) + `pad` of any point of its bank. `campAt`, the
-leash, the rocks, the drifts and the landmarks all keep off or count the bank through it.
+leash, the drifts and the landmarks all keep off or count the bank through it.
 `campMark(C)` is where both maps stamp the glyph: the site, or the middle of a river camp's bank.
 
 ### Runtime
@@ -1000,7 +946,7 @@ START takes the whole party there (`partyPractice`, js/ui/rooms.js; [gameplay.md
 the leader's page hosting and friends joining on the spawn tile (`practiceSeat`; an empty seat is
 parked in the corner forest, `practiceVacate`, js/sim/practice.js). `?practice=1` boots `genPracticeWorld()` (the
 `practice arena` banner, js/sim/practice.js) **instead of** `genWorld()`, and js/app/boot.js skips
-camps, chests, wildlife spawns and the eagle drop entirely. **The practice world is
+camps, wildlife spawns and the eagle drop entirely. **The practice world is
 `WORLD` 112 under `PRACTICE`, against the match's 232** (the conditional above the `WORLD`
 const, js/sim/core.js; everything downstream sizes itself off `WORLD`, so the match world is
 untouched). The field and the ice loop's collar round it are one `PR_RING` (76) tile square
@@ -1018,7 +964,7 @@ in it:
 - the **range bell** five tiles west of the dummy on its own row;
 - the **archery targets** riding a two-rail track around the field's whole perimeter (below).
 
-No fences, no wildlife, no chests, no pond, no harvest, and nothing spawns or restocks outside
+No fences, no wildlife, no pond, no harvest, and nothing spawns or restocks outside
 a round. `PRACTICE` (js/sim/core.js) pins `SEED` to `PRACTICE_SEED` *above* the `?seed` parse, so
 the field is bit-identical on every visit and no seed can reshape it.
 
@@ -1044,9 +990,8 @@ below), while LAST stays session-only.
 
 Everything is coordinate tests against the carved ice — no objects, no triggers. The trickle that refills a
 match's shoal is **off entirely under `PRACTICE`** (js/sim/wildlife.js), because the only ice in the
-world is the race line and a fish emerging into it would be absurd; `crackIce` still works on
-the track (a hole in the racing line is the player's own doing, and re-entering rebuilds —
-and a reroll unregisters the old track's cracks and holes before the forest regrows). Ice a
+world is the race line and a fish emerging into it would be absurd (a reroll unregisters the
+old track's holes before the forest regrows). Ice a
 roll lays down after the bake is labelled as it lands (`relabelIce`, called by `repaintGround`,
 js/draw/ground.js): the style of the lake it joins and the edge's depth, so the shore painter
 can read it.
@@ -1216,7 +1161,7 @@ on a frost plate over the bell (`drawAgame`). **BEST is the profile's all-time r
 lap record's twin and the second of the only two things practice ever writes.
 
 **The practice bar** (js/ui/cheats.js, League's practice-tool column) hangs down the left edge
-under the corner's open drawer, at the corner's size (`cornerSc`) (capped so it never runs off the
+from the top-left corner, at the strip's size (`hudSc`) (capped so it never runs off the
 bottom): icon wells on one hud plate in two groups — LEVEL UP, ADD GOLD (`CHEAT_GOLD`, through
 `tradeGold`, so it never counts as earned), REFRESH COOLDOWNS and REFRESH HEALTH (standing toggles,
 `CHEAT_AUTO`, applied every tick by `cheatAuto` from `updatePractice`, frost-rimmed while on),
@@ -1279,12 +1224,10 @@ in `title` mode the main menu prints the seed instead, next to the reroll die.
   it is asked (ground texture, forest boundary, tree rare-drops, the frost slabs' mottling).
   `borderDepth()` rides on `vnoise`, so the seed reshapes the forest and with it the whole map
   (everywhere but inside the two roost discs, which every seed grows alike).
-- Two exceptions to the single stream, both for the same reason — nothing outside worldgen may
+- An exception to the single stream — nothing outside worldgen may
   perturb the main `rng`'s worldgen prefix. `fxRng` (`SEED ^ 0x9e3779b9`) feeds resize-driven
   snowflake top-ups in `fitFlakes()`, so window size / resolution changes cannot move the world
-  (the boot-time 70 flakes still draw from `rng`, unchanged). `chRng` (`SEED ^ 0x43484553`) feeds
-  the [treasure chests](#treasure-chests)' placement, and `rkRng` (`SEED ^ 0x524f434b`) the
-  [rocks](#rocks)'. The [camps](#camps) roll nothing at all -
+  (the boot-time 70 flakes still draw from `rng`, unchanged). The [camps](#camps) roll nothing at all -
   their sites are written down - and neither does [the creek](#the-creek); the creek and the
   camps' clearings are the boot passes that write `ground` after `genWorld`, so a seed's ground
   hash includes them.
@@ -1317,7 +1260,7 @@ in wildlife or the AI reads `state.darkness`. What keys off the cycle:
   into a mirror on it with the **reflected stars** coming up inside that
   ([the reflected sky](rendering/light-and-weather.md#the-reflected-sky)) - so a frozen lake reads darker than the
   snow around it after dusk, and an ice hole is a hole in the reflection.
-- Carved ice holes refreeze at dawn and cracks heal — **unless a fish net stands on the hole**,
+- Ice holes refreeze at dawn — **unless a fish net stands on the hole**,
   which is what holds that water open. The shoal is not topped up at dawn; it refills
   continuously. See [Ice holes and fishing](#ice-holes-and-fishing).
 
@@ -1327,13 +1270,11 @@ plunge through the ice (see [PvP](multiplayer.md#pvp)), and the wolves of a
 
 ## Ice holes and fishing
 
-**E over a bare ice tile** (no object) brings out the pickaxe and calls `crackIce(tx, ty)` on
-that tile (see [The swing tools](gameplay/the-swing-tools-e.md); the weapon:
-[the basic attack](gameplay/the-basic-attack.md)). Hits accumulate in the
-`iceCracks` map (`tile idx → hits`, rendered as bright fracture decals in their own pass);
-`ICE_HOLE_HITS` (2) breaks through — the tile becomes `ground = 2` (open water), joins the
-`holes` list, and is repainted into the ground canvas via `repaintGround()`. Constants live in the `fish` banner of
-[js/sim/wildlife.js](../../js/sim/wildlife.js) (`ICE_HOLE_HITS`, `HOLE_FALL_DMG`, `HOLE_FALL_T`,
+**Holes are open water in the ice** (`ground = 2`), opened by an [ice break](#ice-breaks); a
+broken tile a net stands on stays open when the break freezes back, and joins the `holes` list
+(`breakClose`, js/sim/icebreak.js). Nothing a player carries opens one any more: the pick and its
+`crackIce` were cut in 0.531. Constants live in the `fish` banner of
+[js/sim/wildlife.js](../../js/sim/wildlife.js) (`HOLE_FALL_DMG`, `HOLE_FALL_T`,
 `FISH_MAX`/`FISH_MIN`/`FISH_WATER_REF`/`FISH_CAP_MUL`, `FISH_CATCH_R`; `FISH_SPAWN_T` alone stays in core.js, and the `NET_*` set
 sits beside `STRUCTS` in [js/sim/structures.js](../../js/sim/structures.js) with the net entry it tunes).
 
@@ -1351,8 +1292,7 @@ sits beside `STRUCTS` in [js/sim/structures.js](../../js/sim/structures.js) with
   except the player, so animals and robots never wade in — a net does not change that, because
   `walkable()` refuses `ground === 2`, so no bot ever routes over one. `isSolidTile`
   skips any `water: true` STRUCTS entry, so a net is not solid either; arrows still fly over holes.
-- **Refreeze**: at dawn every hole reverts to ice (`repaintGround` again) and `iceCracks`
-  clears — except a hole carrying a net, which stays open water *and stays in `holes`*, so it
+- **Refreeze**: at dawn every hole reverts to ice (`repaintGround` again) — except a hole carrying a net, which stays open water *and stays in `holes`*, so it
   refreezes the dawn after somebody wrecks the net.
 - **Fish**: the `fish` array holds up to `fishCap` passive swimmers — `FISH_MAX` (30) times how
   much swimmable ice the world has against `FISH_WATER_REF`, floored at 1 and capped at
@@ -1374,7 +1314,7 @@ sits beside `STRUCTS` in [js/sim/structures.js](../../js/sim/structures.js) with
   alone, solid round its rim and half as strong in its core, so a pike and a sunfish are told apart
   by shape, never colour) at 0.42 alpha; where a fish crosses an open hole the crisp swim sprite is drawn clipped to the hole's
   tiles, so only what is in the open water shows in colour. Both are baked by
-  app/bake-fish/paint.py (16 headings, 2 tail frames). Cracking ice spooks nearby fish into a fast dart.
+  app/bake-fish/paint.py (16 headings, 2 tail frames). An ice break spooks nearby fish into a fast dart.
 - **Fishing is automatic**: `autoFish(p, dt)` (js/sim/attack.js, called from `updatePlayer` every
   step) checks whether that player stands on an ice tile with a fish within `FISH_CATCH_R`
   (16 px); if so the fish is taken with no press — once per `FISH_AUTO_CD` (1.2 s), spending no
@@ -1397,11 +1337,11 @@ sits beside `STRUCTS` in [js/sim/structures.js](../../js/sim/structures.js) with
   holds, dimmed blue-grey outside it, and no verb: the mechanic is proximity, not aim, and the
   brackets' brightness is the whole of that hint. Fish are food: **F** eats one over a 1.5 s channel a
   hit can break (`eatFish`, mirroring the berry's Q/+20; both meals share one 3 s clock - see
-  [Food](gameplay/food-the-meal-is-a-channel.md)), counted beside the berries on the backpack strip.
+  [Food](gameplay/food-the-meal-is-a-channel.md)), counted beside the berries on the hud strip.
   A hole gives the frost pike (`fish`, +50, `SPRITES.itemFrostPike`) or the gold sunfish
   (`sunfish`, +80, `SPRITES.itemSunfish`); with the creek's whitefish (+40) and snow char (+70)
   they are the four fish the fish well eats ([Food](gameplay/food-the-meal-is-a-channel.md)). `SFX.splash()` is the water cue. `DBG`
-  exposes `fish`, `iceCracks`, `holes`, `crackIce`, `addFish`, `spawnEmerger`, `netAt`.
+  exposes `fish`, `holes`, `addFish`, `spawnEmerger`, `netAt`.
 
 ### Ice breaks
 
@@ -1436,7 +1376,7 @@ round a world point and returns the break (null where no bare ice lies under it)
   (`iceBreakWet`): the plunge in `playerPlunge` and the climb out (`nearestDryTile`) go by the
   water as drawn, and a strict move (`moveEntity`) stops at its edge. A net built on a break's
   water keeps it open and joins `holes`, so the dawn refreeze has it from there.
-- **The pixels** (`drawIceBreaks`, flat after the pick cracks in `render()`): one small canvas a
+- **The pixels** (`drawIceBreaks`, flat in `render()`): one small canvas a
   break, repainted each frame it is on screen, clipped to where the ice is drawn (`iceAtPx`).
 
 ### The shoal is a population, not a nightly reset
@@ -1461,7 +1401,7 @@ clamp keeps `vis` at 1 forever). The **draw alpha ramps off the back half of it*
 under the ice, and by the time anything is drawn the only part still outside is a pixel or two of
 tail at a fraction of 0.4. An emerger that has not made it in
 `FISH_EMERGE_MAX` (14 s) is dropped, unseen. Everything that selects a fish — `hoverFish`,
-`fishInRange`, `autoFish`, the net, the `crackIce` spook — tests
+`fishInRange`, `autoFish`, the net, an ice break's spook — tests
 `born` first.
 
 **The emerge sites are found once and cached** (`emergeSites`/`buildEmergeSites`, a lazy one-time

@@ -247,7 +247,6 @@ function breakOpen(b) {
   for (const [i] of b.open) {
     if (ground[i] !== 1 || objects[i]) continue; // something changed under it since: left as it is
     ground[i] = 2;
-    iceCracks.delete(i);
     repaintGround(i % WORLD, (i / WORLD) | 0);
   }
   sfxAt('splash', b.x, b.y);
@@ -258,7 +257,7 @@ function breakOpen(b) {
     if (f.born && Math.hypot(f.x - b.x, f.y - b.y) < 60) { f.a = Math.atan2(f.y - b.y, f.x - b.x); f.spook = 1.2; }
   }
 }
-// one tile frozen back: ice again, unless a pick hole took it over since or
+// one tile frozen back: ice again, unless it is already a listed hole or
 // a net stands on it (the net holds that water open: it joins `holes` and
 // the dawn refreeze has it from there)
 function breakClose(b, i) {

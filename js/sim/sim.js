@@ -7,7 +7,7 @@
 let camX = 0, camY = 0;
 // the body the play camera followed last frame and where it stood: a body
 // that moved further than CAM_CUT in one frame was set down somewhere else (a
-// recall, a burrow's far hole), and the camera cuts to it instead of sweeping
+// recall), and the camera cuts to it instead of sweeping
 // the map. Render-side, so a client's view cuts the same way.
 const CAM_CUT = 6 * TILE;
 let camVp = null, camVpX = 0, camVpY = 0;
@@ -93,7 +93,7 @@ function update(dt) {
       // match: its dawns count nothing, like the rest of its stats.
       if (!player.eliminated && !PRACTICE) PROFILE.addDay();
       SFX.dawnChime();
-      // carved ice holes freeze back over during the night; cracks heal too.
+      // open ice holes freeze back over during the night.
       // A hole with a net on it is the exception - the net is what holds that
       // water open - so it stays in the list and refreezes the dawn after
       // whoever wrecks the net.
@@ -105,7 +105,6 @@ function update(dt) {
       }
       holes.length = 0;
       for (const i of kept) holes.push(i);
-      iceCracks.clear();
       // the shoal is not reset here any more: it is a live population now,
       // fished down and refilled a fish at a time by updateFish's trickle
     }
@@ -479,7 +478,7 @@ function shotContacts(a, x0, y0, dx, dy) {
 }
 // ------------------------------------------------------------ object timers
 // A map object's running clocks: the hit blink (flash), the shiver (shake),
-// a picked bush growing back, a rock's crack fading and its rubble regrowing.
+// a picked bush growing back.
 // Only the objects with one running are ticked: the map is ~54,000 tiles and
 // ~33,000 of them pines, and walking all of them every step to find the few
 // that blink cost half the step. So a clock is only ever STARTED through
@@ -493,20 +492,18 @@ function joltObj(o, flash, shake) {
   if (shake !== undefined) o.shake = shake;
   objTimed.add(o);
 }
-const objTiming = (o) => o.flash > 0 || o.shake > 0 || (o.type === 'bush' && o.berries === 0) ||
-  (o.type === 'rock' && (o.crack > 0 || o.regrow > 0));
+const objTiming = (o) => o.flash > 0 || o.shake > 0 || (o.type === 'bush' && o.berries === 0);
 function objTimersRescan() {
   objTimed.clear();
   for (const o of objects) if (o && objTiming(o)) objTimed.add(o);
 }
 const objTickList = [];
 function tickObjTimers(dt) {
-  // in map order, as the whole-map walk ran them, so a regrowing rock's
-  // burst draws off rng() in the same order it always did
+  // in map order, as the whole-map walk ran them
   objTickList.length = 0;
   for (const o of objTimed) {
     if (objects[idx(o.tx, o.ty)] === o) objTickList.push(o);
-    else objTimed.delete(o); // felled, mined away or a new match: no longer on the map
+    else objTimed.delete(o); // felled or a new match: no longer on the map
   }
   if (objTickList.length > 1) objTickList.sort((a, b) => idx(a.tx, a.ty) - idx(b.tx, b.ty));
   for (const o of objTickList) {
@@ -515,7 +512,7 @@ function tickObjTimers(dt) {
     if (o.type === 'bush' && o.berries === 0) {
       o.regrow -= dt;
       if (o.regrow <= 0) o.berries = 2;
-    } else if (o.type === 'rock') tickRock(o, dt); // the rubble growing back (js/sim/mining.js)
+    }
     if (!objTiming(o)) objTimed.delete(o);
   }
 }
@@ -553,7 +550,6 @@ function updatePlay(dt) {
     updatePlayer(p, dt);
     trickle(p, dt);
   }
-  updateTunnels(dt); // the burrows: the digs, the rides under the snow and the holes caving (js/sim/tunnel.js)
   updateIceBreaks(); // a break's hole opening and its tiles freezing back (js/sim/icebreak.js)
   botLogStep(dt);    // the bot dev view's recorder: reads what the bots just decided (js/ui/botview.js)
   resolveContests(); // this step's work swings, build orders and fish claims
@@ -692,7 +688,6 @@ function updatePlay(dt) {
   for (let i = drops.length - 1; i >= 0; i--) {
     const d = drops[i];
     d.t += dt;
-    if (d.lockT > 0) d.lockT = Math.max(0, d.lockT - dt); // what one player threw, still refusing that one hand
     d.vz -= 220 * dt;
     d.z += d.vz * dt;
     if (d.z < 0) { d.z = 0; d.vz = -d.vz * 0.4; if (Math.abs(d.vz) < 15) d.vz = 0; }
@@ -700,13 +695,11 @@ function updatePlay(dt) {
     d.vx *= Math.pow(0.05, dt); d.vy *= Math.pow(0.05, dt);
     // drops are neutral: they drift toward whoever is closest, and everyone
     // standing on one claims it - the contest decides who actually gets it.
-    // A player with no room for it is neither magnetised nor a claimant, so a
-    // full bag hands the pickup to whoever else is standing there instead of
-    // sitting on it. (Gold never lies here - awardGold pays it on the spot.)
-    const roomFor = (p) => bagRoom(p, d.type) > 0;
+    // A meal always fits: the pouch is uncapped. (Gold never lies here -
+    // awardGold pays it on the spot.)
     let near = null, pd = 1e9;
     for (const p of players) {
-      if (!p.active || p.dead || inAir(p) || dropLocked(d, p) || !roomFor(p)) continue;
+      if (!p.active || p.dead || inAir(p)) continue;
       const dd = Math.hypot(d.x - p.x, d.y - p.y);
       if (dd < pd) { pd = dd; near = p; }
     }
@@ -716,25 +709,13 @@ function updatePlay(dt) {
     }
     if (d.t > 0.35) for (const p of players) {
       if (!p.active || p.dead || inAir(p) || Math.hypot(d.x - p.x, d.y - p.y) >= 7) continue;
-      // your own throw, inside its three seconds: not a claimant and not a
-      // refusal either - you are standing on something you meant to put down
-      if (dropLocked(d, p)) continue;
-      // standing on a pickup you cannot carry says so on the HUD and leaves
-      // it lying there - the drop is not consumed and not destroyed
-      if (!roomFor(p)) { if (p === player) bagDenied(); continue; }
       contest('drop:' + i, p, () => {
         const j = drops.indexOf(d);
         if (j < 0) return;
-        // a pickup takes only what fits, and what was taken comes OFF the
-        // drop, so a stack that only partly fits leaves its remainder lying
-        // there instead of being picked up forever
         const got = bagAdd(p, d.type, d.n);
-        if (got > 0) {
-          d.n -= got;
-          addFloater(p.x, p.y - 14, (d.type === 'gold' ? '' : '+') + got, RES_COLORS[d.type]);
-          sfxFor(p, 'stash');
-        }
-        if (d.n <= 0) drops.splice(j, 1); else d.t = 0;
+        addFloater(p.x, p.y - 14, '+' + got, RES_COLORS[d.type]);
+        sfxFor(p, 'stash');
+        drops.splice(j, 1);
       });
     }
   }
@@ -894,7 +875,7 @@ function playerIntents(p, dt) {
   // you, and the surface spends it like any other momentum.
   if (p.stunT > 0) {
     p.stunT = Math.max(0, p.stunT - dt);
-    inp.dodge = inp.eatBerry = inp.eatFish = inp.useCard = false;
+    inp.dodge = inp.eatBerry = inp.eatFish = false;
     inp.work = inp.fire = inp.slide = false;
     inp.ability = -1;
     inp.cmd = null;
@@ -912,15 +893,9 @@ function playerIntents(p, dt) {
   }
 
   // edge-triggered intents, consumed here so a controller only has to set them
-  // (the burrow lost its own key: SNOW COVER, hunter key 4, is the door in now)
   if (inp.dodge) { inp.dodge = false; tryDodge(p); }
   if (inp.eatBerry) { inp.eatBerry = false; eatBerry(p); }
   if (inp.eatFish) { inp.eatFish = false; eatFish(p); }
-  if (inp.useCard) { inp.useCard = false; useCard(p); }
-  // an unopened card opens the moment it is held and the body is on the
-  // ground (0.426): no key and no strip button, so a card is a buff that
-  // lands, never a thing to remember to press
-  if (cardsHeld(p) > 0 && !inAir(p)) useCard(p);
   // an ability key with a skill point in hand LEVELS the key instead of
   // casting it (the plate is the same buy for the mouse); the cast waits for
   // the next press. A maxed key casts through an unspent point as ever.
@@ -1055,7 +1030,6 @@ function playerPlunge(p) {
       if (p.grapT > 0) grapEnd(p);                          // the rope goes slack with you
       p.castT = 0; p.castAb = -1; p.shieldT = 0;           // and so does whatever was being cast
       breakEat(p);                                         // the meal goes in the water with you
-      breakMine(p);                                        // ...and the rock is left where it stood
       p.prone = false; p.hide = 0; p.riseT = 0; // crawled off the edge: no cover in the water
       if (p.charging) { p.charging = false; p.chargeT = 0; }
       p.fireArmed = false;
@@ -1204,8 +1178,7 @@ function playerTrails(p, dt, onIce) {
 }
 
 // the hands: the swing's clock and its hit, the work key, the hands' own
-// work and fishing. True when a fresh press took the body down a tunnel,
-// which ends its step there
+// work and fishing
 function playerSwing(p, dt) {
   const inp = p.input;
   // swing
@@ -1221,13 +1194,8 @@ function playerSwing(p, dt) {
   // back, and with no E the hands find their own work (autoWork, js/sim/actions.js:
   // a tree or a berried bush in reach) - and their own fish (autoFish, js/sim/attack.js)
   if (p.swingT <= 0 && p.swingCd <= 0) p.swing = SWING_BOW;
-  // a tunnel's hole underfoot takes a FRESH press of the work key ahead of
-  // the swing (js/sim/tunnel.js) - a key held since before stays the swing's
-  if (inp.work && !p.tunE && tunnelEnter(p)) { p.tunE = true; return true; }
-  p.tunE = !!inp.work;
   if (inp.work) tryWork(p); else autoWork(p);
   autoFish(p, dt);
-  return false;
 }
 
 function playerAttack(p, dt) {
@@ -1287,7 +1255,7 @@ function updatePlayer(p, dt) {
   const inp = p.input;
 
   if (p.dead) { // out of the match: nothing it wants gets through
-    inp.dodge = inp.eatBerry = inp.eatFish = inp.useCard = false;
+    inp.dodge = inp.eatBerry = inp.eatFish = false;
     inp.ability = -1;
     inp.cmd = null;
     return;
@@ -1304,8 +1272,6 @@ function updatePlayer(p, dt) {
   updateEat(p, dt);
   // ...and the recall's, with the roost ring's heal (js/sim/recall.js)
   updateRecall(p, dt);
-  // ...and the pick's: the rock in reach mining itself (js/sim/mining.js)
-  updateMine(p, dt);
 
   // a stun, a fall, going prone or the cable takes a rider out of the saddle (js/sim/wildlife.js)
   rideCheck(p);
@@ -1335,7 +1301,7 @@ function updatePlayer(p, dt) {
   playerCover(p, dt, ftx, fty, kit);
   playerStamina(p, dt, kit);
   playerTrails(p, dt, onIce);
-  if (playerSwing(p, dt)) return; // gone down a tunnel: under the snow, the step ends
+  playerSwing(p, dt);
   playerAttack(p, dt);
 
   p.hurtT = Math.max(0, p.hurtT - dt);
@@ -1449,15 +1415,6 @@ function updateFx(dt) {
     if (wordPops[i].t > WORD_POP_T) wordPops.splice(i, 1);
   }
   updateSlashes(dt); // the sword's sweep on the snow (js/sim/attack.js)
-  if (bagFlash > 0) bagFlash -= dt; // the backpack's refusal red is chrome: wall time
-  // ...and the positive half of the same idiom: the well an item just landed
-  // in, and the cursor when a swap changed what the hand is holding (hudFx, ui.js)
-  if (wellLit && (wellLit.t -= dt) <= 0) wellLit = null;
-  if (dragLit > 0) dragLit -= dt;
-  { // ...and so is the drawer's slide (bagEase chases bagOpenNow, ui.js)
-    const want = bagOpenNow() ? 1 : 0, d = want - bagEase;
-    bagEase += Math.sign(d) * Math.min(Math.abs(d), dt / BAG_SLIDE_T);
-  }
   if (foodFlash > 0) foodFlash -= dt; // ... and the meal button's
   if (abFlash > 0) abFlash -= dt;     // ... and a locked ability well's
   for (let i = footprints.length - 1; i >= 0; i--) {

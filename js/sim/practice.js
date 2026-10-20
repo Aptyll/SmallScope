@@ -12,7 +12,7 @@
 // field's perimeter - stills, movers and pop-ups on trolleys, movers hopping
 // lanes around anything in their way - shoot them from anywhere, roll
 // straight past them; ringing the bell runs the timed, scored round over the
-// same track. No wildlife, no chests, no pond, no harvest: the world drops
+// same track. No wildlife, no pond, no harvest: the world drops
 // nothing and asks nothing.
 //
 // Around the field, through the forest collar, runs the ICE PARKOUR: a
@@ -1006,10 +1006,9 @@ function pkRoll(diff) {
   const old = pkTiles;
   const gen = pkGenPath(spec);
   pkTiles = pkPlanCarve(gen.path, spec.rad);
-  // the old track takes its scars with it: any crack or hole the player put
+  // the old track takes its scars with it: any hole the player put
   // in it is unregistered before the forest grows back over the tile
   for (const i of old) {
-    iceCracks.delete(i);
     const hi = holes.indexOf(i);
     if (hi >= 0) holes.splice(hi, 1);
   }
