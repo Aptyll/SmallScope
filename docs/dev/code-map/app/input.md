@@ -1,0 +1,15 @@
+# js/app/input.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| the physical key -> game key name translation (e.code, AZERTY-proof), and what a key prints on screen (the layout map) | `CODE_KEY`, `keyName`, `KEY_LABEL`, `keyLabel`, `kbLayout` | `keys and binds` |
+| the rebindable actions, their defaults per scheme, the two bind maps and the live one, how anything asks for a key, and a pad's held actions (`actHeld`, written by gamepad.js) | `KEY_ACTIONS`/`KEY_ACT` (`key` / `ck`), `SCHEMES`, `schemeKey`/`schemeActs`, `settings.binds`/`settings.bindsClick`/`binds()`, `mendBinds`, `actKey`, `actHeld`, `keyIs`/`keyHeld`/`keyBound`, `moveDir`, `keyCap`/`keyCapShort`, `keyReserved` | `keys and binds` |
+| a cap listening for its key, the swap on a conflict, the reset | `state.rebind`, `rebindStart`, `rebindKey`, `setBind`, `resetBinds`, `bindsDefault`, `rebindLive` | `keys and binds` |
+| the raw state, and who moved the pointer last | `keys`, `mouse` (`mouse.src`: mouse / pad) | `input` |
+| what a key does, what a button does - the four entry points every controller presses through | `keyPress`/`keyRelease`, `pointerMove`, `pointerPress`/`pointerRelease` | `input` |
+| the bare gestures a pad's trigger sends: the draw, the flag wheel, a build wheel with no tile under a pointer, a page scroll | `fireDown`/`fireUp`, `openFlagWheel`, `openWheelNear`, `panelScrollBy` | `input` |
+| telling the HAND something happened - a pad's rumble, one call whichever controller is in hand | `HAPTIC`, `haptic` (its caller: `hudFx`, js/ui/bag.js; its off switch: the RUMBLE row, `SET_TABS` js/ui/panels.js) | `haptics` |
+| the zoom wheel, the listeners | the `pageListen` block (attached at boot, js/sim/core.js), `wheelZoom` (in play, and dead while watching somebody) | `input` |
+| folding keys, mouse and both sticks into the local player's struct | `sampleHumanInput` | `input` |
+| the CLICK scheme: its state and constants, the right press and its release, the armed left press, what an order does per step (the walk, the chase and lock, the auto-attack, a use), who an attack-move takes, how far the tool reaches | `ck`, `CK_*`, `ckOn`/`ckClear`/`ckOrder`, `ckPoint`, `merchUnder`, `ckRightPress`/`ckRightRelease`, `ckArmedPress`, `ckSees`, `ckAcquire`, `ckReach`/`ckHoldR`, `ckUse`, `ckStep` (the rings: `drawClickMarks`, js/draw/marks.js; the armed reticle: `cursorInfo`, render.js; the scheme's listing and the navbar cell that picks it: `KEY_ROWS`/`ctrlCellNow`, js/ui/panels.js) | `click to move` |
+| the MOUSE scheme (CLICK for one hand): its state, the side buttons as keys, the middle button's action wheel and its pick, readying a well and casting it, the left press's lock | `MS_WHEEL`, `ms`, `msOn`/`msClear`, `msAims`, `msCast`, `msWell`, `msLeftPress`, `msWheelPress`/`msWheelRelease`, `msKitPick`, `sideButton` (the wheel's wedges and label: `drawKitWedge`/`kitLabel`/`kitAb`, js/ui/wheel.js; the range preview: `drawCastPreview`, js/draw/marks.js, reading each row's `aim`, `CLASS_AB` js/sim/abilities.js; the readied well's rim: `drawClassAbCell`, js/ui/hud-draw.js; the `cast` reticle: `cursorInfo`, render.js) | `mouse only` |

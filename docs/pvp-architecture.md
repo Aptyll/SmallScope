@@ -369,7 +369,7 @@ for "from nothing"), then only what was touched since the base:
 | `structs` | the registry as tile indices, when it moved |
 
 **Each side is sent only what it sees** (the `fog` banner, js/net/snapshot.js; the rule is
-[the fog of war](dev/gameplay.md#fog-of-war)). Each ring entry keeps the ids each side cannot see
+[the fog of war](dev/gameplay/fog-of-war.md)). Each ring entry keeps the ids each side cannot see
 (`snapFogHid`); a peer's full form (`snapBuild(team)`) and its deltas are cut for its side
 (`netFogTeam`: its own, or everything once its bird is gone - a change of side is a full sync).
 A rival `R`/`A`/`W` out of sight is left out: `del` the tick it goes, sent whole (its id in the

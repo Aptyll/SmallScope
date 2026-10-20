@@ -1,0 +1,6 @@
+# js/draw/practice.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| the practice dummy's baked sprite, and its LAST HIT / DPS / TOTAL plate | `DUMMY_SPR`, `drawDummyMeter` (its linger: `DUMMY_METER_LINGER`, js/sim/practice.js) | the file's head, above `the training grounds' pixels` (drawn by `drawSceneryObj`, js/draw/passes.js) |
+| the training field's pixels: the target face bakes (both sizes), the perimeter track's rails, a carriage target in any habit, the range bell, the round's readouts and its off-screen target chevrons, the big gate flag, the two-tile bow rack, the parkour's line and readouts, the roll die | `bakeTargetFace`/`TARGET_SPR`/`TARGET_SPR_S`, `drawAgTrack`, `drawPTarget`, `drawRaider`, `drawDfHold`, `AG_WEDGE_ART`/`drawAgRoundWedge`, `MEDAL_SPR`, `drawAgRings`, `drawAgBell`, `drawAgame`, `drawAgameUI`, `drawAgMarkers`/`AG_MARK_*`/`agMarkAtlas`, `drawBanner`/`bannerCloth`, `RACK_SPR`, `drawParkourLine`, `drawParkour`, `drawPkDie`, `PK_DIE_COL`/`PK_PIP_COL`/`PK_PIP_AT` | `the training grounds' pixels`, `the ice parkour's pixels`, `the roll station's pixels`, `the archery track's pixels`, `the range bell's pixels` (the records they draw: `practice arena`, js/sim/practice.js) |

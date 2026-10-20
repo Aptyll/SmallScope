@@ -7,7 +7,7 @@ entry, a patch note, store copy), and before proposing a feature whose reason to
 valley* is not obvious.
 
 **The player-facing canon is the wiki's WORLD page** (`WIKI_WORLD`, [js/ui/wiki.js](../../js/ui/wiki.js);
-what the page is: [gameplay.md](gameplay.md#the-wiki)). The sentences live there and only there.
+what the page is: [gameplay.md](gameplay/the-wiki.md)). The sentences live there and only there.
 This file is the rules they answer to, and it never restates them.
 
 ## The premise: the claim
@@ -129,7 +129,7 @@ The game already has a voice; new lines match it. `THE BOW IS THE ARGUMENT: KEEP
 store copy; a trailer's cards.
 
 **It never goes in:** the HUD, a hint, a tooltip's body (that carve-out is for numbers —
-[the UI rule](rendering.md#show-dont-label)), or anything between a player and PLAY:
+[the UI rule](rendering/show-dont-label.md)), or anything between a player and PLAY:
 no crawl, no cutscene, no codex to unlock. The snow never has to explain itself, and the fiction
 is for whoever goes looking.
 

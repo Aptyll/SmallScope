@@ -257,9 +257,9 @@ an outlined string under a fade therefore fades evenly, and the rim colour need 
 opaque. The cache is dropped whole at `CACHE_MAX` (2048) strings — a clock retires one a
 second, never thousands.
 
-**Which one to use is a rendering rule, not a taste call** ([rendering](rendering.md#text-over-the-world)): a rim
+**Which one to use is a rendering rule, not a taste call** ([rendering](rendering/text-over-the-world.md)): a rim
 over the world, a shadow on a panel. The site-by-site list:
-[rendering.md](rendering.md#text-over-the-world).
+[rendering.md](rendering/text-over-the-world.md).
 
 See [Intentional dead code](checklists.md#intentional-dead-code) before deleting a glyph that looks unused (`<`).
 
@@ -316,7 +316,7 @@ not this repo's. desktop/build.js copies it with the page.
 Three layers under one master dial: a WebAudio synth for UI blips *and* as the fallback line
 under every sampled cue, one-shot samples decoded out of `SFXDATA`, and `SFX.music` streaming
 `audio/music/` through one `HTMLAudioElement` per track. Master / MUSIC / SOUNDS dials, the cue
-list, the mixing targets and the track table: [gameplay.md](gameplay.md#audio).
+list, the mixing targets and the track table: [gameplay.md](gameplay/audio.md).
 
 Cues come in two grammars and the file is ordered by them: **world** cues, which are a thing on
 the map making a noise and are pitch-jittered per shot, and the **notification** layer — the

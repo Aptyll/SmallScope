@@ -83,20 +83,20 @@ declare victory. The affordances:
   and `shopLayout()` drive the panel without a pointer; `DBG.itemCost(id, p?)`, `botNextItem` and
   `botItemBuy` read what an item costs a seat and what a bot would buy, and `BUILD_ITEMS` is the
   catalogue. (`buyItem` and the trades still check the reach: warp to a counter first.) The
-  [plates under the minimap](rendering.md#notices-the-plates-under-the-minimap):
+  [plates under the minimap](rendering/the-hud-corners/notices-the-plates-under-the-minimap.md):
   `DBG.notices` is the live stack, `DBG.noteRect(k)` where slot `k` sits, and
   `DBG.raiseNotice(kind, txt, good)` raises one.
   A plate ages on wall time in `updateFx`, so `DBG.step` runs its arrival and its fade.
 - **`?seed=N`** pins the world — the same seed twice proves a change is deterministic, two seeds
   prove worldgen still varies. Without it every reload is a different world and A/B screenshots
-  are meaningless. The seed prints in the [info stack](gameplay.md#settings) — top quarter of the
+  are meaningless. The seed prints in the [info stack](gameplay/settings.md) — top quarter of the
   left edge — but only while `settings.info` is on, and it defaults **off**: flip it on (the ESC
   menu's INFO row, or F3) before capturing anything you intend to compare later.
-- **`.`** cycles the [debug overlay](rendering.md#debug-overlays-hitboxes-and-routes): one press
+- **`.`** cycles the [debug overlay](rendering/debug-overlays-hitboxes-and-routes.md): one press
   for the boxes and circles the sim tests, a second for the route every walker is following and
   the tile it is heading for. Reach for it before reasoning about a collision from the code alone.
   It also draws the **pink centre column** down every player, animal, robot and building
-  ([hbMid](rendering.md#the-centre-column-hbmid)) — the only way to see whether an overhead frame
+  ([hbMid](rendering/debug-overlays-hitboxes-and-routes.md#the-centre-column-hbmid)) — the only way to see whether an overhead frame
   is square with the sprite it belongs to, since the true middle of an even-width sprite is a pixel
   boundary and being three pixels out is invisible without it.
   It draws in every mode, `settings.hitbox` sets it from `DBG` without the keypress, and
@@ -113,13 +113,13 @@ declare victory. The affordances:
   controllers](multiplayer.md#the-two-controllers) list what each does.
 - **`localStorage.removeItem('softfall.profile')`** re-stages a first launch: a fresh profile
   boots on the title with a pre-rolled name, and its `dropped` flag comes back false, so the next
-  ride runs the scripted first flight and its [drop brief](rendering.md#eagle-drop-mode-drop).
+  ride runs the scripted first flight and its [drop brief](rendering/eagle-drop-mode-drop.md).
   A v2 save (`{ v: 2, active, chars: [{ name, cls, stats }..] }` written before a reload) stages
   the fold into one profile. `DBG.PROFILE` is the store; `DBG.beginProfile()` opens the profile
   card, driven by `profileHit`, `profileKey`, `profileCommit`/`leaveProfile` and read back
   through `profileLayout`/`profileTagRect`; `DBG.lobbyPick(i)` and `DBG.heroList()` drive the
   lobby's hero row. See [architecture.md](architecture.md#profilejs).
-- **The [wiki](gameplay.md#the-wiki) needs no staging**: it is driven headlessly by `DBG.beginWiki()`, `wikiSetTab(i)`, `wikiScrollBy(px)`,
+- **The [wiki](gameplay/the-wiki.md) needs no staging**: it is driven headlessly by `DBG.beginWiki()`, `wikiSetTab(i)`, `wikiScrollBy(px)`,
   `wikiLayout()` (tabs, rows, the window, the rail) and `wikiHit(x, y)`; the ease takes 0.35 s
   of real frames, so wait for `state.menu.wikiT` to read 1 before hovering anything. The patch
   notes and roadmap open with `DBG.beginNotes()` and `DBG.openPageTab(i)` (0 wiki, 1 patch notes,
@@ -152,7 +152,7 @@ blocked against the page's own folder. Point the driver at the repo's own
   the maximum: world cues land at **0.2–0.55**, the synth UI blips at 0.15–0.18, and anything
   reading 0 never made signal. It proves a cue *fires*, not that it is mixed right — the bank is
   levelled on loudness, not peak, so two cues at the same rung of the `vol` ladder can sit 0.2
-  apart on this meter and still be as loud as each other ([Audio](gameplay.md#audio)). The meter
+  apart on this meter and still be as loud as each other ([Audio](gameplay/audio.md)). The meter
   costs nothing until first called, and `SFX.debug()` prints the `g` every clip was levelled by.
 - `SFX.music.current` names the track the state machine thinks should be sounding, and
   `SFX.music.el(key)` hands out the live `<audio>` element: seek it to `duration - 0.6` to prove
@@ -165,7 +165,7 @@ blocked against the page's own folder. Point the driver at the repo's own
   treat a multi-MB mp3 as an unbounded stream.
 - `DBG.tipAt(x, y)` is the tooltip the pointer would get there (`null` for none) and
   `DBG.tipRect()` the rect this frame's panel is painted at - which is how the TOOLTIP row's two
-  modes ([the hover tooltip](rendering.md#the-hover-tooltip)) are read without eyeballing pixels.
+  modes ([the hover tooltip](rendering/the-hud-corners/the-hover-tooltip.md)) are read without eyeballing pixels.
 - For the ESC panel, `DBG.settingsRows` gives the open page's row anchors (already scrolled -
   a row's `y` is where it is on screen), the navbar cells and the scroll state;
   `DBG.setSettingsTab(id)` flips the page, `DBG.settingsScrollBy(px)` walks it, and
@@ -201,7 +201,7 @@ null = any), `verb` and `lift` (the E key prompt, which an `auto` type never sho
 paints it — `mm` an `[r, g, b]` for the minimap disc, `map` a `CH_*` class the chart files it
 under, each a constant or a function of the object, as a roosting eagle's side is; leave `map`
 out for anything that stands alone on its tile — a bush, a rock, a stump — since at the chart's
-scale a speck is noise, and read [rendering](rendering.md#ui-panels-are-baked-once) for what the
+scale a speck is noise, and read [rendering](rendering/ui-panels-are-baked-once.md) for what the
 chart does with a class). `isSolidTile()`, `workTarget()`, `autoTarget()`, `hitObject()`'s tool
 gate, `drawWorkHint()`, `updateMinimap()` and `buildWorldMapImg()` all read that one entry and
 need no edit — none of them names a type any more. An object *instance* carrying a `team` field
@@ -217,15 +217,15 @@ What is still per-type and has to be written by hand: the sprite branch in the f
 [rendering.md](rendering.md)), what a swing actually **does** to it in `hitObject()` (its
 particles, its sounds, what it leaves behind), a `CASTERS` entry in js/draw/ground.js if it
 stands up off the snow (its art and where it sits, so its shade is baked and follows it —
-[cast shadows](rendering.md#cast-shadows)), and a pass of its own in `renderLighting` if it
+[cast shadows](rendering/light-and-weather.md#cast-shadows)), and a pass of its own in `renderLighting` if it
 glows — there is no light registry to add it to
-([rendering](rendering.md#light-and-weather)). A new thing that **walks** draws
+([rendering](rendering/light-and-weather.md)). A new thing that **walks** draws
 `drawCastShade(spr, x, y)` under its sprite instead of a flat rect. A **building**
 is not an object type: it is a `STRUCTS` entry in [js/sim/structures.js](../../js/sim/structures.js),
 which carries the same `mm`/`map` pair and gets solidity, both maps and the E prompt for free.
 
 **Adding a carried item** — one `ITEMS` entry (`icon`, `stack`, plus `heal` and `pouch: true` if
-it is food) is the storage half: the bag *or* the [pouch](gameplay.md#inventory-and-the-backpack),
+it is food) is the storage half: the bag *or* the [pouch](gameplay/inventory-and-the-backpack.md),
 the drop pickup, the drag and the refusal tell are all generic over that table.
 What is *not* generic and must be written per item: an 8×8 icon sprite (bake it beside its own
 code, not in the byte-fragile grid files under js/sprites/ — see `bakeGrid` in js/sim/tools.js and `CHEST_SPR`; an
@@ -238,20 +238,20 @@ denies (`bagClick`) — and a branch in `tipStack` (the `tooltips` banner, js/ui
 hovering it says only its raw type name. **A new FOOD is the one item that is already generic**:
 give its `ITEMS` row a `heal` and `pouch: true` and it picks up the pouch, the meal channel, the
 shared clock and the tooltip rows for free (`startEat`, js/sim/core.js — see
-[Food](gameplay.md#food-the-meal-is-a-channel)); what it still needs is its own key and a seat in
+[Food](gameplay/food-the-meal-is-a-channel.md)); what it still needs is its own key and a seat in
 `FOOD_BTNS` (js/ui/strip.js), because a meal is pressed from the hud strip and never from a cell
 (a new fish instead joins `FISH_KINDS`, js/sim/player.js, and `FISH_POP`, and eats off the fish well). The
 drop draw pass and the bag cell both centre an icon
 on its own width, so a 12×12 needs no branch. Gold is **not** an `ITEMS` entry and must not become
 one: it is a wallet number with no ceiling. See
-[gameplay.md](gameplay.md#inventory-and-the-backpack).
+[gameplay.md](gameplay/inventory-and-the-backpack.md).
 
 **Adding a weapon (a tool) or a bit** — both are one entry in `TOOLS` / `BITS`
 ([js/sim/tools.js](../../js/sim/tools.js)); the loop at the foot of that file registers the `ITEMS` and
 `RES_COLORS` rows, so storage, drops and the drag all pick it up
 with no other edit. Nothing drops a tool or a bit in a match; a new one reaches a player through
 `CLASS_LOADOUT`. Both need a `price`, or the merchant buys it back
-for nothing ([the counter](gameplay.md#buying-and-selling) - half the price is what it fetches,
+for nothing ([the counter](gameplay/the-merchants-counter.md#buying-and-selling) - half the price is what it fetches,
 and a tool carries its loaded bits into that sum). A **tool** needs `rof`/`cap`/`tensile`/`tier`
 and an `art` key — every tool has a 12×12 silhouette of its own in `TOOL_ART` (bow, recurve,
 horn, long, sword, sling; each baked once per tier), so add one, with its heading in `TOOL_FWD`,
@@ -260,7 +260,7 @@ is the **weight budget one press spends**, not a ceiling on one bit: price it ag
 roughly four weight a cell, or the tool either cannot fire what it holds or never has to choose.
 `tier` and `cap` together also decide what a find does when it is walked over: a higher tier with
 a `cap` at least as big **swaps itself into the hand** and takes the build with it
-([the swap](gameplay.md#where-tools-and-bits-come-from)), so a new tool that is a straight upgrade
+([the swap](gameplay/tools-and-bits/where-tools-and-bits-come-from.md)), so a new tool that is a straight upgrade
 of an existing one needs no pickup code — and one that is better but *narrower* is deliberately
 left an ordinary pickup rather than being made to drop somebody's bits.
 
@@ -270,10 +270,10 @@ one path is the only one in the game handing the next person to walk over it a f
 
 **Every bit needs a `weight`**, both kinds, because weight is what the press spends. A
 **projectile bit** also needs `path`/`solid`/`ff`/`kb`/`life`/`speed`/`dmg`/`col` and an
-8×8 grid in `BIT_ART` (the icon grammar: [tiers, and how a find reads](gameplay.md#tiers-and-how-a-find-reads))
+8×8 grid in `BIT_ART` (the icon grammar: [tiers, and how a find reads](gameplay/tools-and-bits/tiers-and-how-a-find-reads.md))
 — `kb` being KNOCKBACK, a *multiplier* on the shove that kind of body
 takes anyway, where 1 is the ordinary blow and a missing one means the same
-([knockback](gameplay.md#knockback-one-number-thrown-at-three-weights)); a **modifier bit** needs
+([knockback](gameplay/tools-and-bits/a-bit.md#knockback-one-number-thrown-at-three-weights)); a **modifier bit** needs
 `proj: false` and a `mod(m)` that edits the envelope `toolPlan` walks forward.
 
 **A `mod` MUST COMPOSE with the value it is handed** — `*=` a multiplier, `+=` a quantity — and
@@ -281,7 +281,7 @@ must never `=` or `Math.max` it. A modifier only reaches the projectiles *after*
 is ordered by design and two of a kind are meant to stack: two SPEEDUPs are ×4 speed, two FLAMEs
 burn twice as long at twice the rate. A `mod` that sets a value silently makes the second copy
 worthless, which is the one bug the whole
-[forward walk](gameplay.md#toolplan-one-activation-in-one-pass) exists to prevent — and it is not
+[forward walk](gameplay/tools-and-bits/firing.md#toolplan-one-activation-in-one-pass) exists to prevent — and it is not
 visible in the tool that holds one. The single exception is `m.type`, a category rather than a
 magnitude.
 
@@ -345,7 +345,7 @@ new class needs written:
    in `drawAbilityOnPlayer` if it leaves a visible state;
 4. four detailed 32×32 icons in `AB32` (on `AB32_PAL` — one palette across every big icon);
 5. a 12×12 class **emblem** in `CLASS12` ([js/ui/menu.js](../../js/ui/menu.js), same palette),
-   drawn by hand (never a shrink), which the [team rail](rendering.md#the-team-rail), the rooms
+   drawn by hand (never a shrink), which the [team rail](rendering/the-hud-corners/the-team-rail.md), the rooms
    and the tooltips wear;
 5b. an `OUTFIT` layer for the 48 px model ([js/sprites/looks.js](../../js/sprites/looks.js) —
    the hat stopping at row 8 so the hair shows under it) and `HERO_N` bumped in
@@ -387,9 +387,9 @@ stares straight through the cover with nothing in the code to say why. If it als
 player somewhere the player can read (a map dot, an icon), gate that on
 `concealOf(p) >= PRONE_MAP` the way both maps do. A bot or anything else that plays for a side
 passes that side: `seenAt(p, range, team)`, and `inSight(team, u)` for a body that is not a player,
-or it sees through the [fog of war](gameplay.md#fog-of-war). **Drawing a body, its dot or anything
+or it sees through the [fog of war](gameplay/fog-of-war.md). **Drawing a body, its dot or anything
 pinned to it** asks `fogShown(u, now)` first (js/draw/fog.js), or it shows in the fog. See
-[gameplay.md](gameplay.md#prone-under-the-snow).
+[gameplay.md](gameplay/prone-under-the-snow.md).
 
 **Adding a way to hurt anything** — call `hurtUnit(e, dmg, nx, ny, src, o)`, never `damagePlayer` /
 `hurtAnimal` / `hurtRobot` directly, and put a state on a body with its setter (`stunUnit`,
@@ -405,7 +405,7 @@ the body the way `fire` does, it also needs a `DOT_CAUSE` key, or a roll or a re
 fire out. **A hit grants no i-frames** — two shots landing in the same step both count, which is
 what makes a volley worth its weight; only something deliberate (the roll, a respawn, the landing)
 ever sets `p.invuln`. See
-[gameplay.md](gameplay.md#status-effects-one-set-for-every-unit) and
+[gameplay.md](gameplay/status-effects-one-set-for-every-unit.md) and
 [multiplayer.md](multiplayer.md#kills-and-the-event-log).
 
 **Adding a kind of unit (neutral fauna included)** — a new thing that walks and can be hit is
@@ -430,7 +430,7 @@ What it must do to get them:
    the frame the wiki's card takes — plus an `ANIM_CLIPS` row naming the same clips with their
    frames a second, and a `setClip(a, name)` at the end of its update. Miss the row and the clip
    never advances; miss `idle` and `clipFrame` has nothing to fall back to
-   ([the clips](gameplay.md#what-a-beast-is-doing-the-clips)).
+   ([the clips](gameplay/wildlife.md#what-a-beast-is-doing-the-clips)).
 
 **Adding a structure** — add a `STRUCTS` entry (3 tiers, and a `blurb` saying what it is for,
 each sentence short enough for one tooltip line) and its row in `BUILD_ORDER` (the build list's
@@ -530,7 +530,7 @@ optional** — `smp` returns false until the file has decoded, and a cue with no
 silent on the first swing of every session. `trim()` levels the file to `SMP_LUFS` for you, so
 **pick `vol` as a rung on the ladder the other cues already stand on** — a rare big moment near
 0.89, an event worth turning your head for near 0.71, the work you do all match near 0.56, a thing
-that never stops near 0.4 ([Audio](gameplay.md#audio)) — and never against the file's own loudness,
+that never stops near 0.4 ([Audio](gameplay/audio.md)) — and never against the file's own loudness,
 which the bank has already taken out. Anything that repeats goes **under** anything that happens
 once. `SFX.meter()` proves the cue fires; it does not prove the level, because the bank is levelled
 on loudness and the meter reads peak. Set `dur` if the clip holds more than one hit; several of the
@@ -549,7 +549,7 @@ ways. Two clips as one cue is one `smp` per clip with a `delay` on the second, a
 than being two cues a caller has to choose between. Before
 writing a new one, read the eighteen in the notification block: a surface opening, a step of a
 stepped control and a countdown second already have cues, and the answer is usually to call one
-of those from a new place. See [Audio](gameplay.md#audio).
+of those from a new place. See [Audio](gameplay/audio.md).
 
 **Adding a song** — one `TRACKS` entry in [js/app/audio.js](../../js/app/audio.js) (`f`, `loop`, `vol`,
 and `next` if it should chain into another when it ends), then one `SFX.music.play('key')` at the
@@ -597,7 +597,7 @@ grep all files for duplicate top-level names (a duplicate `function` silently ov
 must print nothing); scan the moved code's **top-level statements** — every name a
 load-time statement references must live in a file loaded above it in index.html (runtime calls
 may point anywhere); never reorder existing `<script>` tags; and update the docs in the same
-commit — the architecture.md file table, code-map.md's sections, index.html's comment. Then the
+commit — the architecture.md file table, the code-map page for each file, index.html's comment. Then the
 full browser pass off both
 the served URL and `file://`. The git index is LF and the working tree CRLF through autocrlf, so
 an editor that writes LF is fine and git normalises, but `sed -i` still strips CRs and is banned;
@@ -649,7 +649,7 @@ Code that is dead **on purpose** is the next section.
 - **A record put back counts its lifetime stats again.** The profile's stats
   (`PROFILE.addKill`/`addDay`/`addWin`...) are written as they happen, so replaying a stretch
   with `DBG.saveLoad` adds its kills, days and a win a second time on the dev profile; only the
-  lifetime tally is not rewound ([saved matches](gameplay.md#saved-matches)).
+  lifetime tally is not rewound ([saved matches](gameplay/saved-matches.md)).
 - **The day clock turns under the ESC panel and the pause plate.** `update` advances
   `state.time`/`state.elapsed` in play and drop whatever `state.paused`/`state.settingsOpen`
   say, while every body stands still; the match clock under the minimap ticks on behind the
@@ -665,13 +665,13 @@ Kept on purpose — do not "clean up", and a verbatim code move carries it along
 - **`rootUnit`/`markUnit` have no caster** (since the hunter's 2.47 rework retired the snare
   trap and the falcon): the two setters, their `drawUnitStates` tells (the sprung jaws, the gold
   chevrons) and mark's `seenAt` bypass all stay, because they are part of the
-  [universal status set](gameplay.md#status-effects-one-set-for-every-unit) a future ability or
+  [universal status set](gameplay/status-effects-one-set-for-every-unit.md) a future ability or
   bit lands on for free.
 - **The bird kind is dormant** (3.20, when the camps replaced the landmarks and the rookery went
   with them): `updateBird`/`flushBirds`/`rookeryPerch`/`drawBird`, the `BIRD_*` constants,
   `YIELD.bird`, `ANIMAL_HP.bird` and every `kind === 'bird'` branch stay, and nothing spawns
   one — a camp that wants a flock stands it up again with `deadTree` props and a perching spawn
-  beside `spawnCampMonster` (js/sim/camps.js) ([Birds](gameplay.md#birds-the-flock-dormant)). The
+  beside `spawnCampMonster` (js/sim/camps.js) ([Birds](gameplay/wildlife.md#birds-the-flock-dormant)). The
   `flushBirds(campAt(...))` calls on a felled snag are the live hooks it would wake through.
 - `SPRITES.imp` (the `imp1`/`imp2` grids, `IPAL`) is baked but unreferenced since the worker bot
   got its own grids — kept in case the imp returns.

@@ -1,0 +1,7 @@
+# js/ui/tooltip.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| what the pointer is on, said in words | `tipAt`, `tipResolve`, `tipNow`, `tipSize`, `drawTooltip`, `TIP_*` | `tooltips` (resolved once per frame in `renderScreen`, js/draw/passes.js) |
+| where that panel sits — beside the pointer, or parked bottom left | `tipPos`, `TIP_GAP`, `TIP_EDGE` (the row that picks: `settings.tipFollow`, `SET_TABS` js/ui/panels.js) | `tooltips` |
+| the per-kind descriptions that panel is built from | `tipBase`, `tipTool`, `tipBit`, `tipStack`, `tipCell`, `tipGold`, `tipTunnel`, `tipClassAb`, `tipRail`, `tipStruct` (a build list row), `tipSec`, `TIP_PATH` | `tooltips` (the shop's own: `tipShop`/`tipItem`, js/ui/shop.js, which also answers a shelf item slot and a wiki ITEMS row) |
