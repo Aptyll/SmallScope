@@ -115,7 +115,7 @@ function drawGuards(ex, ey, now) {
   for (const g of guards) {
     const px = Math.round(g.x - ex), py = Math.round(g.y - ey);
     if (px < -GUARD_R - 8 || py < -GUARD_R - 20 || px > WV_W + GUARD_R + 8 || py > WV_H + GUARD_R + 8) continue;
-    const fade = Math.min(1, (GUARD_T - g.t) / 1, g.t / 0.2);
+    const fade = Math.min(1, (g.life - g.t) / 1, g.t / 0.2);
     const col = TEAMS[skin(g.team)].mark;
     drawRing(px, py + 2, GUARD_R, col, 0.75 * fade, 0);
     // the inner ring breathes, so the zone reads as alive

@@ -259,17 +259,19 @@ function drawClassAbCell(i, now, on) {
     drawSweepCover(r.x + 1, r.y + 1, r.w - 2, r.h - 2,
       Math.min(1, cd / abCdOf(p, i)), CD_SWEEP, CD_EDGE);
   }
-  // the level, as buy pips along the top inner edge - fat blocks with a
+  // the rank, as buy pips centred along the top inner edge - blocks with a
   // dark seat, so the bought count reads from across the screen. ONE SEAT PER
-  // POINT the key can hold (AB_LV_MAX of them, the first of which is the
-  // unlock), so an empty row is a locked ability and the row filling up is the
-  // whole ladder in one readout. They sit ABOVE the sweep: the wait is what
-  // the cover is for, and what you own is never dimmed by it
-  for (let k = 0; k < AB_LV_MAX; k++) {
+  // RANK the key can hold (abLvMax: five on a basic key, three on the
+  // ultimate, the first of which is the unlock), so an empty row is a locked
+  // ability and the row filling up is the whole ladder in one readout. They
+  // sit ABOVE the sweep: the wait is what the cover is for, and what you own
+  // is never dimmed by it
+  const pips = abLvMax(p, i), px0 = r.x + ((r.w - pips * 6 + 1) >> 1);
+  for (let k = 0; k < pips; k++) {
     ctx.fillStyle = '#191b1f';
-    ctx.fillRect(r.x + 2 + k * 10, r.y + 2, 9, 5);
+    ctx.fillRect(px0 + k * 6, r.y + 2, 5, 5);
     ctx.fillStyle = k < p.abLv[i] ? '#f2cc6a' : '#33363d';
-    ctx.fillRect(r.x + 3 + k * 10, r.y + 3, 7, 3);
+    ctx.fillRect(px0 + 1 + k * 6, r.y + 3, 3, 3);
   }
   if (act > 0) {
     ctx.fillStyle = '#191b1f';

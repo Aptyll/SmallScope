@@ -10,20 +10,20 @@
 
 // ---- tuning --------------------------------------------------------------
 const AB_KEYS = 4;          // keys 1-4
-// ability levels: the hero's own growth, never the purse's. A key starts
-// LOCKED at level 0 - the kit hands you the four actives, not the use of
-// them - and every level costs ONE SKILL POINT, the only thing a point buys,
-// one per hero level. The FIRST point on a key UNLOCKS it (that is the whole
-// gate: level 1 casts, level 0 refuses); each one after shaves AB_LV_CD off
-// that ability's cooldown - one lever, universally meaningful (more nets in
-// the air, the wall up more often), read back through abCdOf so every
-// cooldown-setting site scales alike. Four keys x AB_LV_MAX is 12 points
-// against the 12 a capped hero earns, so the ladder ends exactly where the
-// hero does: every point has a home, and the order you spend them in - which
-// key you can use at all, and how early - is the whole build.
-const AB_LV_MAX = 3;
-const AB_LV_CD = 0.12;
-const AB_LV_MATS = ['#8a6a4a', '#9aa3ad', '#9fc4dd', '#f2cc6a']; // the level-up floater's ink, by the key's new level
+// ability ranks, League-style: the hero's own growth, never the purse's. A
+// key starts LOCKED at rank 0 - the kit hands you the four actives, not the
+// use of them - and every rank costs ONE SKILL POINT, the only thing a point
+// buys, one per hero level. The FIRST point UNLOCKS the key; every one after
+// is a clear step in what it does - the numbers in its row's `rank` table
+// (and a `cd` given as a list), read through abRk/abCdOf. A basic key (1-3)
+// holds AB_RANK_LV.length ranks, rank n waiting for hero level AB_RANK_LV[n-1];
+// the ultimate (key 4, AB_ULT) holds three, at AB_ULT_LV. 5 + 5 + 5 + 3 is the
+// 18 points a capped hero earns, so the ladder ends exactly where the hero
+// does, and the ORDER you spend them in is the whole build.
+const AB_RANK_LV = [1, 3, 5, 7, 9];  // hero level each rank of a basic key waits for (rank n at 2n - 1)
+const AB_ULT_LV = [6, 11, 16];       // ...and of the ultimate's
+const AB_ULT = 3;                    // the key that is the ultimate (4, R)
+const AB_LV_MATS = ['#8a6a4a', '#9aa3ad', '#9fc4dd', '#cfe0ff', '#f2cc6a']; // the rank-up floater's ink, by the key's new rank (the last one gold)
 // the warrior's alternate keys (CLASS_AB_ALT below)
 const CRY_R = 96;           // px: the shout's reach
 const CRY_SLOW_T = 2.5, CRY_SLOW = 0.6, CRY_MARK_T = 4; // slowed to 60% for 2.5 s, marked for 4
@@ -207,12 +207,28 @@ function abOptions(cls, i) { return [CLASS_AB[cls][i]].concat(CLASS_AB_ALT[cls] 
 function abOf(p, i) { const o = abOptions(p.cls, i); return o[Math.min(o.length - 1, p.abPick ? p.abPick[i] | 0 : 0)]; }
 function abKeyOf(p, id) { for (let i = 0; i < AB_KEYS; i++) if (abOf(p, i).id === id) return i; return -1; }
 function abReady(p, i) { return p.abLv[i] > 0 && p.abCd[i] <= 0; } // bought AND off cooldown: what a bot reaches for
-// ...and a key whose row names `lvReq` (a hero's ultimate) waits for that hero level per point
+// The rank ladder of key `i` carrying row `ab`: the hero level each rank
+// waits for - the row's own `lvReq` when it names one, else the basic or the
+// ultimate ladder - and so how many ranks the key holds.
+function abReqOf(ab, i) { return ab.lvReq || (i === AB_ULT ? AB_ULT_LV : AB_RANK_LV); }
+function abLvMax(p, i) { return abReqOf(abOf(p, i), i).length; }
 function abLvCanBuy(p, i) {
-  const req = abOf(p, i).lvReq;
-  return p.skillPts > 0 && p.abLv[i] < AB_LV_MAX && (!req || p.level >= req[p.abLv[i]]);
+  const req = abReqOf(abOf(p, i), i);
+  return p.skillPts > 0 && p.abLv[i] < req.length && p.level >= req[p.abLv[i]];
 }
-function abCdOf(p, i) { return abOf(p, i).cd * (1 - AB_LV_CD * (Math.max(1, p.abLv[i]) - 1)) * hasteMul(p); } // COOLDOWN SPEED (js/sim/stats.js)
+// a ranked number at rank `lv`: a list is read at that rank (rank 0, a key
+// not bought yet, reads as rank 1, what the first point would give), a plain
+// number is the same at every rank
+function rankAt(v, lv) { return Array.isArray(v) ? v[Math.max(0, Math.min(v.length - 1, lv - 1))] : v; }
+// THE ONE READER of an ability's ranked numbers: `key` of the `rank` table on
+// ability `id`, at the rank `p` holds it. Every use() reads its numbers here,
+// so a rank point lands in every blow alike.
+function abRk(p, id, key) {
+  const i = p instanceof Player ? abKeyOf(p, id) : -1;
+  const ab = i >= 0 ? abOf(p, i) : null;
+  return ab ? rankAt(ab.rank[key], p.abLv[i]) : NaN;
+}
+function abCdOf(p, i) { return rankAt(abOf(p, i).cd, p.abLv[i]) * hasteMul(p); } // COOLDOWN SPEED (js/sim/stats.js)
 // what ABILITY POWER adds to ability `id`'s blow: the stat times the ratio its
 // entry carries (`ap`), nothing for one that has none or is not on a key
 function abAp(p, id) {
@@ -228,8 +244,9 @@ function buyAbilityLv(p, i) {
   // the first point is the one that changes what you CAN do, so it says so;
   // every one after is a number going up
   const nm = abOf(p, i).name;
-  addFloater(p.x, p.y - 18, p.abLv[i] === 1 ? nm + ' UNLOCKED' : nm + ' ' + p.abLv[i], AB_LV_MATS[p.abLv[i] - 1]);
-  burst(p.x, p.y - 8, AB_LV_MATS[p.abLv[i] - 1], p.abLv[i] === 1 ? 14 : 8, p.abLv[i] === 1 ? 55 : 40, 0.45);
+  const ink = p.abLv[i] === abLvMax(p, i) ? AB_LV_MATS[AB_LV_MATS.length - 1] : AB_LV_MATS[p.abLv[i] - 1]; // a full key is gold
+  addFloater(p.x, p.y - 18, p.abLv[i] === 1 ? nm + ' UNLOCKED' : nm + ' ' + p.abLv[i], ink);
+  burst(p.x, p.y - 8, ink, p.abLv[i] === 1 ? 14 : 8, p.abLv[i] === 1 ? 55 : 40, 0.45);
   sfxOwn(p, 'levelUp', 'pickup');
   return true;
 }
