@@ -30,7 +30,7 @@ const NET = {
   pingT: 0,                  // a host's: s toward the next round of pings
   chat: [],                  // the waiting room's last lines, { name, team, s } (js/ui/roomtalk.js)
   hostSlot: 0,               // a client's: which slot the host's own player sits in
-  phase: 'room',             // the party's page, the host's to turn: 'room' (the seats, js/ui/rooms.js) or 'pick' (the hero select: the lobby's stage and LOCK IN)
+  phase: 'room',             // the party's page, the host's to turn: 'room' (the seats, js/ui/rooms.js) or 'pick' (the hero select: the lobby's draft, js/ui/draft.js)
   synced: false,             // a client's: has the first full snapshot landed
   inTick: 0,                 // a client's: the tick its last input went out for
   lastTick: -1,              // a client's: the newest snapshot tick applied
@@ -157,7 +157,7 @@ function netHostStep(dt) {
     if (!pr) continue;
     if (msg.t === 'resync') { netHostFull(peer, pr); continue; } // a delta the client could not take: the whole thing again
     if (msg.t === 'ready') { seatReady(pr.slot, !!msg.on); continue; }    // the party: a guest's READY
-    if (msg.t === 'pick') { seatPick(pr.slot, msg.cls | 0); continue; }   // ...a guest's hero, on the hero select
+    if (msg.t === 'draft') { draftAct(pr.slot, msg.k === 'lock' ? 'lock' : 'hover', msg.h | 0); continue; } // ...a guest's press in the draft (js/ui/draft.js)
     if (msg.t === 'say') { talkFrom(pr, msg.s); continue; }               // ...a line for the room's chat
     if (msg.t === 'pong') { pongIn(pr, msg); continue; }                   // ...and its answer to a ping
     if (msg.t === 'in') {
@@ -299,9 +299,9 @@ function netHostLeave(peer) {
   netHostRoster(); netHostRoom();
 }
 // ------------------------------------------------------------ seats
-// The party's moves, every one the host's to make: a friend shown out, a
-// guest's hero picked on the hero select, and the page (the party's seats,
-// or the pick) turned on every screen. Only before the count: once LOCK IN
+// The party's moves, every one the host's to make: a friend shown out and
+// the page (the party's seats, or the hero select's draft, js/ui/draft.js)
+// turned on every screen. Only before the count: once LOCK IN
 // is pressed the sides are what the eagles will carry.
 function seatsOpen() { return state.mode === 'title' && !state.drop && !(state.menu.countT > 0) && !(state.menu.lockT > 0); }
 // the host turns the party's page (the seats, or the pick) on every screen
@@ -333,18 +333,6 @@ function seatKick(slot) {
     netHostRoster(); netHostRoom();
     return;
   }
-}
-// a hero picked on the hero select: the host sets its own, a guest asks the
-// host (`pick`), and every screen sees it with the next roster
-function seatPick(slot, cls) {
-  const p = players[slot];
-  if (NET.role === 'client' || !p || !seatsOpen() || !CLASSES[cls]) return;
-  setClass(p, cls);
-  netHostRoster();
-}
-function netPick(cls) {
-  if (NET.isClient) NET.transport.send('host', { t: 'pick', cls });
-  else seatPick(localId, cls);
 }
 // ------------------------------------------------------------ room info
 // What the party shows beyond the seats, the host's to keep and sent with
@@ -396,7 +384,8 @@ function pongIn(pr, msg) {
   if (!(rtt >= 0 && rtt < 60000)) return;
   pr.rtt = pr.rtt === undefined ? rtt : pr.rtt + (rtt - pr.rtt) * PING_EASE;
 }
-function netRoster() { return players.map((p) => ({ control: p.control, team: p.team, name: p._name, cls: p.cls })); }
+// (through the draft each seat shows the hero it came in on: the picks are the draft's, cut per side - draftMsg)
+function netRoster() { return players.map((p) => ({ control: p.control, team: p.team, name: p._name, cls: draftHiding() ? DRAFT.cls0[p.id] : p.cls })); }
 // after the step: every SNAP_EVERY ticks this tick goes into the ring and
 // each peer gets the delta from ITS acked tick (peers on one ack share the
 // cut), with the cosmetics the step recorded; a peer whose ack has aged out
@@ -496,6 +485,7 @@ function netClientStep(dt) {
     if (msg.t === 'said') { talkAdd(msg.slot | 0, talkClean(msg.s)); continue; } // the room's chat, as the host passed it on
     if (msg.t === 'count') { state.menu.countT = msg.ct; state.menu.countN = msg.n; continue; }
     if (msg.t === 'phase') { netClientPhase(msg.phase); continue; }
+    if (msg.t === 'draft') { draftIn(msg); continue; } // the host's draft, as our side may see it (js/ui/draft.js)
   }
   if (T.open && !NET.helloed) { netClientHello(); NET.helloed = true; }
   if (!T.open) NET.helloed = false;

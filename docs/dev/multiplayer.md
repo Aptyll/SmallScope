@@ -367,12 +367,11 @@ hand over or lose. See [the basic attack](gameplay/the-basic-attack.md). The fou
 one does, its cooldown, cast, and the states it leaves on a body — are
 [Class abilities](gameplay/class-abilities-keys-1-4.md) in gameplay.md.
 
-The local player's class is its **hero, picked each match** on the lobby's hero row
-([lobby](rendering.md#lobby), js/ui/heroes.js); the one locked in is kept as the profile's
-hero (js/app/profile.js), where the next pick opens. Bots hash theirs (hero, and with it its look) from the seed in `initPlayers()` so a replayed
-world fields the same roster. Lobby shows that roster as two team panels on the screen's edges — your side left, the
-rivals right, their picks face-down until LOCK IN's countdown turns them (a second press skips
-the rest of the count) — and the target at the top, whose pop-up's four plates
+The local player's class is its **hero, picked each match** in the lobby's draft
+([lobby](rendering.md#lobby), js/ui/draft.js: a ban phase, then everyone's blind pick); the one
+it flies out with is kept as the profile's hero (js/app/profile.js), the one the next pick starts on. Bots hash theirs (hero, and with it its look) from the seed in `initPlayers()`, and in the draft
+take what it gives them (`draftBotPick`). Lobby shows that roster as two team panels on the screen's edges — your side left, the
+rivals right, their picks face-down until the draft's countdown turns them — and the target at the foot, whose pop-up's four plates
 set `settings.aiLevel` (`AI_LEVELS`, js/ai/ai-skill.js: EASY / NORMAL / HARD /
 IMPOSSIBLE, remembered with the profile), the profile the rivals play by
 (`aiProfile`, [Bots](#bots)). Sprites live in `SPRITES.champ[c][team]` (the sprite key keeps its legacy name;

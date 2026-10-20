@@ -118,7 +118,8 @@ declare victory. The affordances:
   the fold into one profile. `DBG.PROFILE` is the store; `DBG.beginProfile()` opens the profile
   card, driven by `profileHit`, `profileKey`, `profileCommit`/`leaveProfile` and read back
   through `profileLayout`/`profileTagRect`; `DBG.lobbyPick(i)` and `DBG.heroList()` drive the
-  lobby's hero row. See [architecture.md](architecture.md#profilejs).
+  lobby's hero row, and `DBG.DRAFT`, `DBG.draftAct(slot, 'hover'|'lock', h)`, `DBG.draftPoint(h)` and
+  `DBG.draftConfirm()` the draft (set `DBG.DRAFT.t` low to run a clock out). See [architecture.md](architecture.md#profilejs).
 - **The [wiki](gameplay/the-wiki.md) needs no staging**: it is driven headlessly by `DBG.beginWiki()`, `wikiSetTab(i)`, `wikiScrollBy(px)`,
   `wikiLayout()` (tabs, rows, the window, the rail) and `wikiHit(x, y)`; the ease takes 0.35 s
   of real frames, so wait for `state.menu.wikiT` to read 1 before hovering anything. The patch
