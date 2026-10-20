@@ -38,6 +38,7 @@ Rules that make a sheet honest:
 2. Paint the candidates in a work folder outside the repo, `lint` them, build the sheet with
    `sheet.py`, look at it yourself at full size.
 3. Hand it over with one line per letter plus your pick and why. **Stop and wait** for the letter.
+   Once he answers, add the sheet as a round to the Kitchen (the `kitchen` skill).
 4. Polish only the pick. To ship it, its painter becomes a bake script under `app/bake-<thing>/`
    that writes the generated sprite file under `js/baked/` (never hand-edited, as bears.js and
    robot.js), a team-painted set bakes inside `SPR.onTeams`, and the pick's sheet is saved to

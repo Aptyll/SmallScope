@@ -142,7 +142,7 @@ order, so the script tags still interleave them:
 | [js/ui/shop.js](../../js/ui/shop.js) | ~590 | shared scope, no `window.*` export | the merchant's counter: which counter a body stands at, buying and selling (items through js/sim/items.js, fish and berries at a fixed price, any pack cell dragged onto it), and the panel (category filters, the parts and items grid, the read-out with its build tree, your six slots, the food plates) |
 | [js/ui/panels.js](../../js/ui/panels.js) | ~1210 | shared scope, no `window.*` export | the TAB scoreboard + the (undrawn) event log, the M world map, the ESC settings slab |
 | [js/ui/menu.js](../../js/ui/menu.js) | ~3050 | shared scope, no `window.*` export | the title screen: menu planks, reroll die, tutorial panel, the lobby, the hero pop-up, `PATCH_TXT` and `PATCH_NOTES` |
-| [js/ui/notes.js](../../js/ui/notes.js) | ~420 | shared scope, no `window.*` export | the title's WIKI / PATCH NOTES / ROADMAP tabs, the roadmap, and the patch notes screen |
+| [js/ui/notes.js](../../js/ui/notes.js) | ~420 | shared scope, no `window.*` export | the title's WIKI / PATCH NOTES / ROADMAP tabs and the KITCHEN link, the roadmap, and the patch notes screen |
 | [js/ui/wiki.js](../../js/ui/wiki.js) | ~520 | shared scope, no `window.*` export | the wiki: its pages as data, the slab, tabs and rail, and drawing each page |
 | [js/ui/profile-card.js](../../js/ui/profile-card.js) | ~190 | shared scope, no `window.*` export | the title's name tag and the profile card: the name, renaming it, the lifetime ledger; `drawWell`, the plate grammar the hero row shares |
 | [js/ui/heroes.js](../../js/ui/heroes.js) | ~90 | shared scope, no `window.*` export | the lobby's hero row: a head per hero, the coming heroes as silhouettes, the pick |

@@ -2,11 +2,15 @@
 
 `m.screen = 'notes'` (js/ui/notes.js `patch notes`), opened from the `PATCH_TXT` tag and eased in
 on its own `notesT` like the wiki. **The title's tabs** (js/ui/notes.js `the pages' tabs`) stand
-over it and over the wiki: WIKI, PATCH NOTES and ROADMAP at scale 2 across the top at `NOTES_TOP`,
+over it and over the wiki: WIKI, PATCH NOTES, ROADMAP and KITCHEN at scale 2 across the top at `NOTES_TOP`,
 the open one gold over the gold rule, the rest dim and lighter under the pointer. `drawPageTabs`
 draws the row once for both screens (from `renderTitle`), so switching between them cross-fades
 the page under a steady row; `openPageTab(i)` switches, and Left/Right walk the wiki's pages, then
-PATCH NOTES, then ROADMAP. The `PATCH_TXT` tag always opens on PATCH NOTES (`menu.notesTab` 0).
+PATCH NOTES, then ROADMAP. KITCHEN (`PAGE_LINK_TAB`) is a link, not a page: a small arrow
+(`drawLinkArrow`) follows the word, a click opens `KITCHEN_URL` (the Softfall Kitchen website, its own
+repo) with `window.open`, which the Electron build hands to the player's browser
+(`setWindowOpenHandler`, desktop/main.js), and the keys stop at ROADMAP so they never leave the game.
+The `PATCH_TXT` tag always opens on PATCH NOTES (`menu.notesTab` 0).
 It is the whole view: a dark veil over the world, the tabs, and one column (`NOTES_W_MAX` = 440, narrowing with
 the view) of folding groups, newest at the top. First EVERY PATCH: `PATCH_NOTES` folded by tenth
 (0.390 - 0.391, 0.380 - 0.389 ... `NOTES_GROUPS`, built off the list, so a new patch needs nothing

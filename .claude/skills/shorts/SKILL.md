@@ -58,6 +58,9 @@ Add one working title per letter. Send the board image with these lines, your pi
 
 ### 4. Iterate or pick
 
+Each answered round (a letter, "more", or none) goes to the Kitchen as a round of its dish (the
+`kitchen` skill).
+
 - "more", "more like B", or a note: make the next round of three (variations of the named frame
   when one is named, new directions otherwise), same rules, next letters.
 - A letter: that frame is the Short's frame 0. Write the beats from it: peak inside the first
