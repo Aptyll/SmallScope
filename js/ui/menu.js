@@ -29,7 +29,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.531';
+const PATCH_TXT = 'PATCH 0.534';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -45,6 +45,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.534', 'YOUR BASE AND LANES SEE NOW: TOWERS SEE MUCH FURTHER, AND THE PERCH, BOT BAYS, SHOP, MERCHANT AND YOUR ZIPLINES LIFT THE FOG AROUND THEM.'],
   ['0.531', 'ROCKS, ORE, THE PICK, THE TREELINE\'S CHESTS, THE CARDS AND THE BACKPACK WITH ITS BURROW ARE GONE, SO THE AXE AND THE TREES ARE THE WHOLE HARVEST AND FOOD IS ALL YOU CARRY.'],
   ['0.527', 'UNDER THE HOOD: THE ONLINE SNAPSHOT CHECK NO LONGER MISTAKES THE TRAMPLED SNOW CATCHING UP FOR A DESYNC.'],
   ['0.525', 'NOBODY BUILDS ANY MORE: THE T BUILD LIST, WALLS, GATES, TURRETS, GOLD PUMPS, BOT BAYS AND THEIR WORKER BOTS ARE GONE, SO THE MAP\'S ROAD TOWERS AND THE MERCHANTS\' BARRACKS ARE THE ONLY BUILDINGS.'],

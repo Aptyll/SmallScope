@@ -126,7 +126,7 @@ The `road towers` banner (js/sim/towers.js). Every zipline has two `STRUCTS.towe
 
 A wave turns on a tower inside `SOLDIER_TOWER_R` ([the waves](#soldiers-the-waves)), and a
 pushing bot only walks in to hit one while its own wave stands in the ring (`aiLaneFort`,
-`towerTanked`, [bots](../multiplayer.md#bots)). Its eye joins the side's fog sight (`FOG_TOWER`).
+`towerTanked`, [bots](../multiplayer.md#bots)). Its eye joins the side's fog sight (`STRUCTS.tower.sight`).
 
 ## The merchant
 
