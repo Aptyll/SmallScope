@@ -54,7 +54,7 @@ px/s, js/sim/player.js), a worker at `ROBOT_KB` (40, js/sim/robots.js), an anima
 the draw (25–70) — and one number on an attack has to mean the same thing landed on any of them.
 It rides to `hurtUnit` as `o.kbMul`, which scales whatever shove that kind takes; `o.kb` beside it
 is still the absolute px/s an *ability* (or the cut's own 30) picks for a particular blow. A shot
-with no `kb` at all (a turret's rock) takes the ordinary shove, ×1.
+with no `kb` at all takes the ordinary shove, ×1.
 
 ## The cut
 
@@ -77,18 +77,14 @@ and only presses fire once the target is under the edge (`aiMelee`, js/ai/ai.js)
 
 ## A shot in flight
 
-`steerShot(a, dt)` runs once per shot per sim step **before** the step is integrated. A plain
-arrow flies straight; a turret's rock (`path: 'sling'`) sags under its own `fall` on an exact
-parabola, which is why its life is its time of flight (`turretLaunch`, js/sim/structures.js).
+Every shot flies straight.
 
 **A shot meets everything its step crossed, then one blow.** A step is a *segment*, never a point:
 `shotContacts` (js/sim/sim.js, `the shot's sweep`) lists what the segment met in the order it met
 it — the tiles it entered (a grid DDA) up to the first that ends it (a rival roost, the practice
 dummy, a solid tile), every **standing building by the shape it is drawn in** — `structShotBox`,
-the box its sprite's opaque pixels cover where the draw lays it (`structArtOff`, so the bay's roof
-6 px over its footprint and the turret's timber base up to 2 px past each side — the tier-3
-plinth; tier 1 sits inside its tile — stop a shot), plus a turret's head as a disc of the entry's
-`head` (6 px) round `turretPivot`; a site still going up is its footprint alone — a target face,
+the box its sprite's opaque pixels cover where the draw lays it (`structArtOff`, so the barracks'
+roof 6 px over its footprint stops a shot); a site still going up is its footprint alone — a target face,
 and every body whose hit disc it crossed (`sweepDisc`, and `sweepBox` for the building's box): the
 `ARROW_HIT_R` (10 px) disc at a player's chest, `ROBOT_HIT_R` (7) about `robotHitY` for a chassis,
 `animalHitR` about `animalHitY` for a body that may be up on its own altitude. So speed never

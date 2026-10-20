@@ -3,7 +3,7 @@
 // the same input struct a human fills - it can never do what a player cannot.
 // ------------------------------------------------------------ ai
 // Bots. A bot only ever writes the same input struct a human fills in -
-// movement axis, aim point, fire / work / slide / dodge and the odd build
+// movement axis, aim point, fire / work / slide / dodge and the odd one-shot
 // order - so it can never do anything a player couldn't. The brain is a small
 // priority ladder, re-picked a few times a second: eat, fight, wolves, defend
 // the bird, push the rival bird, escort, hunt, loot, spend, harvest, roam -
@@ -24,7 +24,6 @@ const AI_ANCHOR_R = 260;  // px round an anchor (its bird, the human) a rival is
 const AI_ANCHOR_D = 420;  // ...but never from farther than this
 const AI_HOLD = 96;       // px a hunter holds off the rival bird at (outside its gust)
 const AI_GATE = 128;      // px up the road from a base's junction where a walk to a roost stages
-const AI_FORT_N = 3;      // turrets a side's guards keep standing along its road home
 const AI_PATROL_T = 40;   // s of a guard's cycle...
 const AI_PATROL_OUT = 14; // ...the first of which it spends scouting out up the road
 const AI_PATROL_D = 360;  // px up the road from the base's junction the scouting walk reaches
@@ -139,210 +138,12 @@ function aiInLane(p, e) {
   return (t >= -0.1 && t <= 1.08 && perp < 40) || Math.hypot(px, py) < 90;
 }
 // THE FORT IN A PUSHER'S WAY, as the tile of it nearest the bot (a part of a
-// big building carries its own tx/ty), or null: in the rival's lane, a
-// turret its defenders raised; anywhere, a rival road tower (towerNear,
-// js/sim/towers.js) with the bot's own wave under it to take the bolts
-// (towerTanked) - a bot never walks in under a tower alone
+// big building carries its own tx/ty), or null: a rival road tower
+// (towerNear, js/sim/towers.js) with the bot's own wave under it to take the
+// bolts (towerTanked) - a bot never walks in under a tower alone
 function aiLaneFort(p, e) {
-  if (aiInLane(p, e)) return nearestObj(p.x, p.y, 4, (o) => { const st = structOf(o); return st.type === 'turret' && st.team === e.team && !st.building; });
   const t = towerNear(p.team, p.x, p.y, TOWER_RANGE + 24);
   return t && towerTanked(t, p.team) ? nearestObj(p.x, p.y, 9, (o) => structOf(o) === t) : null;
-}
-// The next turret job for a guard of the bird e, or null: { tx, ty, n } to
-// raise one more of the side's AI_FORT_N along the road home - pairs either side
-// of its axis, out from the bird, on a tile with three open sides so the
-// lane is never walled in - or { tx, ty, up } to raise one of them a tier
-// once they all stand and the purse holds twice the price (items come first)
-function aiFortSite(p, e) {
-  if (!e.mouth) return null;
-  let n = 0, low = null;
-  for (const o of structures) {
-    if (o.type !== 'turret' || o.team !== p.team || Math.hypot(o.tx * TILE + 8 - e.x, o.ty * TILE + 8 - e.y) > AI_ROOST_R * 1.5) continue;
-    n++;
-    if (!o.building && o.tier < STRUCTS.turret.tiers.length - 1 && (!low || o.tier < low.tier)) low = o;
-  }
-  if (n < AI_FORT_N) {
-    if (p.inv.gold < buildCost('turret', p).gold) return null;
-    const L = Math.max(1, Math.hypot(e.mouth.x - e.x, e.mouth.y - e.y));
-    const ux = (e.mouth.x - e.x) / L, uy = (e.mouth.y - e.y) / L;
-    for (const t of [0.55, 0.75, 0.4, 0.9]) for (const side of [-1, 1]) for (const off of [40, 56]) {
-      const tx = Math.floor((e.x + (e.mouth.x - e.x) * t - uy * off * side) / TILE);
-      const ty = Math.floor((e.y + (e.mouth.y - e.y) * t + ux * off * side) / TILE);
-      if (canPlaceAt('turret', tx, ty, 0, p).ok && aiOpenSides(tx, ty) >= 3 && aiKeepsWay(e, [[tx, ty]])) return { tx, ty, n };
-    }
-    return null;
-  }
-  if (low && p.inv.gold >= STRUCTS.turret.tiers[low.tier + 1].cost.gold * 2) return { tx: low.tx, ty: low.ty, up: true };
-  return null;
-}
-// ---- bot walls --------------------------------------------------------------
-// Bots wall their own roost (rung 5b''): a defence line that closes every
-// wide opening round the bird down to a gap (aiRingPlan), and a shield on the
-// road side of each turret (the rock lobs over it, the arrows coming back
-// stop on it). A wall may stand anywhere, the road too, but none stands unless
-// aiKeepsWay says nothing walkable round the roost is cut off by it, so every
-// way in stays open, two tiles wide or more.
-const AI_WALL_BOX = 24;    // tiles round a bird aiKeepsWay and aiRingPlan look at
-// does a piece on `tiles` leave every way round the roost of e open? Floods
-// the AI_WALL_BOX square from the lane gate twice - one tile at a time, then
-// as a 2x2 body, so a gap one tile wide does not count as a way - with and
-// without the piece: every place reachable before must be reachable after,
-// save the ground the piece stands on. Floods walk 4-ways, the strictest
-// reading of a squeeze. Bots only (the build rule itself is canPlaceAt's).
-const AI_WAY_N = AI_WALL_BOX * 2 + 1;
-const AI_WAY_A = new Uint8Array(AI_WAY_N * AI_WAY_N), AI_WAY_B = new Uint8Array(AI_WAY_N * AI_WAY_N);
-const AI_WAY_Q = new Int32Array(AI_WAY_N * AI_WAY_N);
-function aiKeepsWay(e, tiles) {
-  const N = AI_WAY_N, x0 = Math.floor(e.x / TILE) - AI_WALL_BOX, y0 = Math.floor(e.y / TILE) - AI_WALL_BOX;
-  const inBox = (x, y) => x >= x0 && y >= y0 && x < x0 + N && y < y0 + N;
-  if (!tiles.some(([x, y]) => inBox(x, y))) return true;
-  const shut = (x, y) => tiles.some(([a, b]) => a === x && b === y);
-  const g = aiLaneGate(e), gx = Math.floor(g.x / TILE), gy = Math.floor(g.y / TILE);
-  for (const size of [1, 2]) {
-    const cell = (x, y, piece) => {
-      for (let dy = 0; dy < size; dy++) for (let dx = 0; dx < size; dx++) {
-        const tx = x + dx, ty = y + dy;
-        if (!inBox(tx, ty) || !walkable(tx, ty) || (piece && shut(tx, ty))) return false;
-      }
-      return true;
-    };
-    const flood = (mark, piece) => {
-      mark.fill(0);
-      let sx = -1, sy = -1; // the seed: the gate's cell, or the nearest open one round it
-      for (let r = 0; r <= 2 && sx < 0; r++) for (let dy = -r; dy <= r && sx < 0; dy++) for (let dx = -r; dx <= r; dx++) {
-        if (cell(gx + dx, gy + dy, piece)) { sx = gx + dx; sy = gy + dy; break; }
-      }
-      if (sx < 0) return false;
-      let n = 0;
-      AI_WAY_Q[n++] = (sy - y0) * N + (sx - x0); mark[AI_WAY_Q[0]] = 1;
-      while (n) {
-        const i = AI_WAY_Q[--n], x = x0 + i % N, y = y0 + ((i / N) | 0);
-        for (let k = 0; k < 4; k++) {
-          const nx = x + NAV_DX[k], ny = y + NAV_DY[k], j = (ny - y0) * N + (nx - x0);
-          if (!inBox(nx, ny) || mark[j] || !cell(nx, ny, piece)) continue;
-          mark[j] = 1; AI_WAY_Q[n++] = j;
-        }
-      }
-      return true;
-    };
-    if (!flood(AI_WAY_A, false)) return false; // no gate to start from: no proof, no wall
-    if (!flood(AI_WAY_B, true)) return false;
-    for (let i = 0; i < N * N; i++) {
-      if (AI_WAY_A[i] && !AI_WAY_B[i] && cell(x0 + i % N, y0 + ((i / N) | 0), true)) return false;
-    }
-  }
-  return true;
-}
-// px from (x, y) to the lane's line of e: bird -> mouth -> gate
-function aiLaneDist(e, x, y) {
-  const seg = (ax, ay, bx, by) => {
-    const vx = bx - ax, vy = by - ay, L2 = vx * vx + vy * vy || 1;
-    const t = Math.max(0, Math.min(1, ((x - ax) * vx + (y - ay) * vy) / L2));
-    return Math.hypot(x - ax - vx * t, y - ay - vy * t);
-  };
-  const g = aiLaneGate(e);
-  return Math.min(seg(e.x, e.y, e.mouth.x, e.mouth.y), seg(e.mouth.x, e.mouth.y, g.x, g.y));
-}
-// HOW OPEN IS THE ROOST: walk out from the bird a step at a time (a flood,
-// 8-ways as a walker steps, so in the open each step is a square and the
-// line a straight run; the side's own walls count as ground so the answer
-// holds still while they go up) and, between AI_RING_K steps out, find the ring of tiles
-// with the fewest that still lead on outward - the roost's narrowest line.
-// All of that line is walled but one gate of AI_RING_GAP tiles where the
-// road crosses it, so every other way in closes. Chopping trees round a base widens the line, and the next
-// look (every AI_RING_T) plans the walls that close it again. One look is a
-// flood of the AI_WALL_BOX square, once per side per AI_RING_T; the result
-// rides the team brain (T.ring). A line no wider than the gate it would
-// keep is already a choke: open is false and nothing is planned.
-const AI_RING_T = 10;      // s between a side's looks at how open its roost is
-const AI_RING_K = [5, 12]; // steps out from the bird the defence line may run, near the guards and turrets
-const AI_RING_GAP = 3;     // tiles of the line's one gate, on the road
-const AI_RING_D = new Int16Array(AI_WAY_N * AI_WAY_N), AI_RING_L = new Uint8Array(AI_WAY_N * AI_WAY_N);
-function aiRingPlan(team, e) {
-  const T = aiPlan(team);
-  if (T.ring && T.ring.at >= 0 && state.elapsed - T.ring.at < AI_RING_T) return T.ring;
-  const N = AI_WAY_N, x0 = Math.floor(e.x / TILE) - AI_WALL_BOX, y0 = Math.floor(e.y / TILE) - AI_WALL_BOX;
-  const inBox = (x, y) => x >= x0 && y >= y0 && x < x0 + N && y < y0 + N;
-  const ground = (x, y) => { if (!inBox(x, y)) return false; if (walkable(x, y)) return true; const o = objects[idx(x, y)]; return !!(o && o.type === 'wall' && o.team === team); };
-  AI_RING_D.fill(-1); AI_RING_L.fill(0);
-  let n = 0;
-  const cx = Math.floor(e.x / TILE), cy = Math.floor(e.y / TILE);
-  for (let y = cy - 2; y <= cy + 2; y++) for (let x = cx - 2; x <= cx + 2; x++) { // the ground round the bird is step 0
-    if (ground(x, y)) { const i = (y - y0) * N + (x - x0); AI_RING_D[i] = 0; AI_WAY_Q[n++] = i; }
-  }
-  for (let h = 0; h < n; h++) { // breadth first: AI_WAY_Q ends up in step order
-    const i = AI_WAY_Q[h], x = x0 + i % N, y = y0 + ((i / N) | 0);
-    for (let k = 0; k < 8; k++) {
-      const nx = x + NAV_DX[k], ny = y + NAV_DY[k], j = (ny - y0) * N + (nx - x0);
-      if (!ground(nx, ny) || AI_RING_D[j] >= 0) continue;
-      if (k >= 4 && !(ground(nx, y) && ground(x, ny))) continue; // no corner squeezed past, as a walker
-      AI_RING_D[j] = AI_RING_D[i] + 1; AI_WAY_Q[n++] = j;
-    }
-  }
-  // which tiles lead on out (to the box's edge), walked back from the farthest
-  for (let h = n - 1; h >= 0; h--) {
-    const i = AI_WAY_Q[h], x = x0 + i % N, y = y0 + ((i / N) | 0);
-    if (x === x0 || y === y0 || x === x0 + N - 1 || y === y0 + N - 1) { AI_RING_L[i] = 1; continue; }
-    for (let k = 0; k < 8; k++) { const j = (y + NAV_DY[k] - y0) * N + (x + NAV_DX[k] - x0); if (AI_RING_D[j] === AI_RING_D[i] + 1 && AI_RING_L[j]) { AI_RING_L[i] = 1; break; } }
-  }
-  const width = new Array(AI_RING_K[1] + 1).fill(0);
-  for (let h = 0; h < n; h++) { const i = AI_WAY_Q[h], d = AI_RING_D[i]; if (d >= AI_RING_K[0] && d <= AI_RING_K[1] && AI_RING_L[i]) width[d]++; }
-  let k = -1;
-  for (let d = AI_RING_K[0]; d <= AI_RING_K[1]; d++) if (width[d] && (k < 0 || width[d] <= width[k])) k = d;
-  const old = T.ring && T.ring.k; // keep the line it has started unless another is clearly narrower
-  if (old >= AI_RING_K[0] && width[old] && width[old] <= width[k] + 2) k = old;
-  const line = [];
-  for (let h = 0; h < n; h++) { const i = AI_WAY_Q[h]; if (AI_RING_D[i] === k && AI_RING_L[i]) line.push([x0 + i % N, y0 + ((i / N) | 0)]); }
-  // one gate: the AI_RING_GAP tiles of the line nearest where the road crosses
-  // it (the way the side walks in and out, and where its turrets look); every
-  // other tile is walled, so each other opening closes and the road is the
-  // way in. A tile whose wall would cut ground off stays open (aiKeepsWay).
-  const walls = [], open = line.length > AI_RING_GAP;
-  if (open) {
-    const road = line.map(([x, y]) => aiLaneDist(e, x * TILE + 8, y * TILE + 8));
-    let mid = 0;
-    for (let j = 1; j < line.length; j++) if (road[j] < road[mid]) mid = j;
-    const byGap = line.map((t, j) => j).sort((a, b) => Math.hypot(line[a][0] - line[mid][0], line[a][1] - line[mid][1]) - Math.hypot(line[b][0] - line[mid][0], line[b][1] - line[mid][1]) || a - b);
-    for (const j of byGap.slice(AI_RING_GAP)) walls.push(line[j]);
-  }
-  walls.sort((a, b) => Math.atan2(a[1] - cy, a[0] - cx) - Math.atan2(b[1] - cy, b[0] - cx) || a[0] - b[0] || a[1] - b[1]);
-  T.ring = { at: state.elapsed, k, open, width: k >= 0 ? width[k] : 0, walls };
-  return T.ring;
-}
-// the walls a side wants round the roost of e, as tiles: the defence line
-// first (aiRingPlan), then three in front of each of its turrets there,
-// facing the lane gate (none of those for ringOnly)
-function aiWallPlan(team, e, ringOnly) {
-  const out = [], seen = new Set();
-  const add = (tx, ty) => { const k = idx(tx, ty); if (inWorld(tx, ty) && !seen.has(k)) { seen.add(k); out.push([tx, ty]); } };
-  for (const [x, y] of aiRingPlan(team, e).walls) add(x, y);
-  if (ringOnly) return out;
-  const g = aiLaneGate(e);
-  for (const o of structures) {
-    if (o.type !== 'turret' || o.team !== team || Math.hypot(o.tx * TILE + 8 - e.x, o.ty * TILE + 8 - e.y) > AI_ROOST_R * 1.5) continue;
-    const d = Math.max(1, Math.hypot(g.x - (o.tx * TILE + 8), g.y - (o.ty * TILE + 8)));
-    const fx = Math.round((g.x - (o.tx * TILE + 8)) / d * 1.4), fy = Math.round((g.y - (o.ty * TILE + 8)) / d * 1.4);
-    const px = Math.round(-fy / Math.max(1, Math.hypot(fx, fy))), py = Math.round(fx / Math.max(1, Math.hypot(fx, fy)));
-    add(o.tx + fx, o.ty + fy); add(o.tx + fx + px, o.ty + fy + py); add(o.tx + fx - px, o.ty + fy - py);
-  }
-  return out;
-}
-// the next wall job for a bot at the bird e, or null: { tx, ty, n, of },
-// the first tile of the plan that is free, placeable and keeps every way
-// open (n: how many of the plan already stand)
-function aiWallSite(p, e, ringOnly) {
-  if (!e.mouth || p.inv.gold < buildCost('wall', p).gold) return null;
-  const plan = aiWallPlan(p.team, e, ringOnly), T = aiPlan(p.team);
-  let n = 0, pick = null;
-  for (const [tx, ty] of plan) {
-    const o = objects[idx(tx, ty)];
-    if (o && o.type === 'wall' && o.team === p.team) { n++; continue; }
-    if (pick) continue;
-    if (!canPlaceAt('wall', tx, ty, 0, null).ok || (T.wallNo[idx(tx, ty)] || 0) > state.elapsed) continue;
-    if (aiKeepsWay(e, [[tx, ty]])) pick = { tx, ty };
-    else T.wallNo[idx(tx, ty)] = state.elapsed + AI_RING_T; // it would cut a way: not asked again till the next look
-  }
-  return pick && { tx: pick.tx, ty: pick.ty, n, of: plan.length };
 }
 // the eagle hitbox tile nearest p (a warrior's E target on a push)
 function aiEagleTile(e, p) {
@@ -578,7 +379,7 @@ function aiLineClear(p, x, y) {
 }
 
 // open tiles around a target: work needs at least one to stand on (the
-// route finds the way to it), and a build site wants room around it
+// route finds the way to it)
 function aiOpenSides(tx, ty) {
   let n = 0;
   for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
@@ -588,27 +389,6 @@ function aiOpenSides(tx, ty) {
   }
   return n;
 }
-// where a bot lays a building: the nearest tile within AI_BUILD_R of it the
-// piece can stand on (canPlaceAt, structures.js - the same rule the ghost
-// answers, reach aside, since the bot walks there), a 1x1 with room round
-// it (aiOpenSides) so it never walls itself in, a big one wherever it fits.
-// Null when nothing near will take it.
-const AI_BUILD_R = 5; // tiles
-function aiBuildSite(p, type) {
-  const ptx = Math.floor(p.x / TILE), pty = Math.floor(p.y / TILE);
-  const big = structW(type) > 1 || structH(type) > 1;
-  const sites = [];
-  for (let ty = pty - AI_BUILD_R; ty <= pty + AI_BUILD_R; ty++) for (let tx = ptx - AI_BUILD_R; tx <= ptx + AI_BUILD_R; tx++) {
-    if (!inWorld(tx, ty) || !canPlaceAt(type, tx, ty, 0, null).ok) continue;
-    if (!big && aiOpenSides(tx, ty) < 3) continue;
-    sites.push({ tx, ty, d: Math.hypot(tx * TILE + 8 - p.x, ty * TILE + 8 - p.y) });
-  }
-  sites.sort((a, b) => a.d - b.d || a.ty - b.ty || a.tx - b.tx);
-  const home = aiOwnEagle(p); // and never one that cuts a way round its own roost (aiKeepsWay)
-  for (const s of sites) if (!home || !home.mouth || aiKeepsWay(home, footprint(type, s.tx, s.ty, 0))) return { tx: s.tx, ty: s.ty };
-  return null;
-}
-
 // a bot draws the instant it holds a card: the same random pick useCard
 // (js/sim/core.js) makes for a human, minus the key, the burst and the floater -
 // the rarest first, since a bot has no reason to sit on one

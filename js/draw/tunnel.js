@@ -101,16 +101,16 @@ function drawTunnelGround(ex, ey, now) {
     }
   }
 }
-// the aim's ghost on the tile under the pointer, beside the build list's
-// (drawBuildGhost, js/ui/wheel.js) and in its grammar: the reach dotted round
-// the body, the hole at half strength, its rim in the ghost's two answers
+// the aim's ghost on the tile under the pointer: the reach dotted round the
+// body, the hole at half strength, its rim in the ghost's two answers
+// (GHOST_OK/GHOST_NO, js/ui/wheel.js)
 function drawTunnelGhost(ox, oy) {
   if (state.mode !== 'play' || !state.tunAim || state.mapOpen || state.settingsOpen || state.wheel) return;
   const ptx = Math.floor(player.x / TILE), pty = Math.floor(player.y / TILE);
-  const r = Math.ceil(BUILD_REACH / TILE) + 1;
+  const r = Math.ceil(TUN_REACH / TILE) + 1;
   ctx.fillStyle = 'rgba(15,22,50,0.4)';
   for (let ty = pty - r; ty <= pty + r; ty++) for (let tx = ptx - r; tx <= ptx + r; tx++) {
-    if (Math.hypot(tx * TILE + 8 - player.x, ty * TILE + 8 - player.y) > BUILD_REACH) continue;
+    if (Math.hypot(tx * TILE + 8 - player.x, ty * TILE + 8 - player.y) > TUN_REACH) continue;
     ctx.fillRect(tx * TILE - ox, ty * TILE - oy, 1, 1);
   }
   if (!mouse.inside || overHud(mouse.x, mouse.y)) return;
@@ -121,7 +121,7 @@ function drawTunnelGhost(ox, oy) {
   ctx.globalAlpha = 1;
   const rim = (c, x, y) => { ctx.fillStyle = c; ctx.fillRect(x, y, TILE, 1); ctx.fillRect(x, y + TILE - 1, TILE, 1); ctx.fillRect(x, y, 1, TILE); ctx.fillRect(x + TILE - 1, y, 1, TILE); };
   rim('rgba(15,22,50,0.9)', px + 1, py + 1);
-  rim(ok ? BUILD_OK : BUILD_NO, px, py);
+  rim(ok ? GHOST_OK : GHOST_NO, px, py);
 }
 // The work key's claim on a hole (drawWorkHint, js/ui/wheel.js): standing on
 // one with a far end, the bare cap over it says the key takes you down - the

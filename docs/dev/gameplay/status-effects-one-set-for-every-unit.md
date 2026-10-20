@@ -2,7 +2,7 @@
 
 Everything in this section lives under the **`status effects`** banner at the foot of
 [js/sim/actions.js](../../../js/sim/actions.js). Three kinds of thing walk this world — a **player**, an
-**animal**, a **worker bot** — and all three take a blow and a state through the same funnels
+**animal**, a **bot** — and all three take a blow and a state through the same funnels
 (the [CLAUDE.md](../../../CLAUDE.md) hard rule; the detail is here):
 
 | Reach for | When |
@@ -26,7 +26,7 @@ caster, so a net outlives the hunter who threw it and still knows whose it was; 
 
 ## I-frames: only something deliberate grants them
 
-`p.invuln` (players only — an animal or a worker bot has no such field and never had) counts down
+`p.invuln` (players only — an animal or a bot has no such field and never had) counts down
 in `updatePlayer` and is read by every picker at once: the arrow loop skips a player that has it,
 `unitsHit` drops one, `rollSweep` passes over one, and `damagePlayer` returns early on one. **A hit
 sets it nowhere.** The only things that grant it are deliberate:

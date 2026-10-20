@@ -1,10 +1,9 @@
 // BULWARK: the turtle. Holds the spur in front of its own bird: warriors
-// stand at its head, hunters a step behind, and one seat spends the side's
-// first gold on turrets along it. Everyone else chops the woods by the roost
+// stand at its head, hunters a step behind. Everyone else chops the woods by the roost
 // for items. It only leaves when it has just wiped an attack, or the snow has
 // been quiet a long while, and the side is up: then the first seat calls a sally, everyone goes at the
 // rival bird together, and the first blow on its own bird calls them home.
-// Shows `cmd` builds, team `say` and reading your own bird's `hitT`.
+// Shows team `say` and reading your own bird's `hitT`.
 defineBot({
   name: 'BULWARK',
   author: 'Softfall',
@@ -14,8 +13,7 @@ defineBot({
     this.drawT = 0; this.swing = false;
     this.quietT = 0;      // s since anyone of the side last saw a rival near home
     this.sally = 0;       // the match second the side's sally began (0: none)
-    this.tried = {};      // turret sites already tried
-    this.lead = hello.seat === hello.team; // the side's first seat calls the sally and builds
+    this.lead = hello.seat === hello.team; // the side's first seat calls the sally
     this.seenT = -99; this.seenN = 0;      // when, and how many, rivals were last at the spur
   },
 
@@ -84,24 +82,6 @@ defineBot({
 
     if (me.hp < me.maxHp * 0.6 && me.food.berry > 0) { act.eatBerry = true; act.think = { goal: 'EAT', why: 'LOW HP' }; return act; }
 
-    // the first seat builds turrets along the spur while it has the gold
-    if (this.lead && !act.cmd && me.gold >= 10) {
-      const mine = obs.structs.filter((s) => s.type === 'turret' && s.team === me.team).length;
-      const site = mine < 6 && turretSite(this, own, mouth, mine);
-      if (site) {
-        const x = site.tx * 16 + 8, y = site.ty * 16 + 8, d = dist({ x, y });
-        act.goTo = { x, y, reach: 1 };
-        if (d < 56) { act.cmd = { kind: 'build', tx: site.tx, ty: site.ty, id: 'turret', rot: 0 }; this.tried[site.tx + ',' + site.ty] = true; }
-        act.think = { goal: 'BUILD', why: 'TURRET ' + (mine + 1) + ' OF 6', plan: 'HOLD', target: { kind: 'point', x, y } };
-        return act;
-      }
-    }
-    // rich: raise a turret a tier (a top-tier one just refuses)
-    if (this.lead && !act.cmd && me.gold >= 80) {
-      const t = obs.structs.filter((s) => s.type === 'turret' && s.team === me.team && !s.building)[(obs.tick / 60 | 0) % 6];
-      if (t && Math.hypot(t.tx * 16 + 8 - me.x, t.ty * 16 + 8 - me.y) < 56) act.cmd = { kind: 'upgrade', tx: t.tx, ty: t.ty };
-      else if (t) { act.goTo = { x: t.tx * 16 + 8, y: t.ty * 16 + 8, reach: 1 }; act.think = { goal: 'BUILD', why: 'UPGRADE', plan: 'HOLD' }; return act; }
-    }
     buyItem(obs.shop, me, act, this.lead ? 40 : 0);
 
     // the rest of the time: warriors at the post, hunters chop close by
@@ -118,19 +98,6 @@ defineBot({
     return act;
   },
 });
-
-// the next untried turret site: pairs either side of the spur, from the head
-// back toward the bird (a site that never rose is not tried again)
-function turretSite(bot, own, mouth, mine) {
-  const L = Math.max(1, Math.hypot(mouth.x - own.x, mouth.y - own.y));
-  const ux = (mouth.x - own.x) / L, uy = (mouth.y - own.y) / L;
-  for (const t of [0.75, 0.55, 0.9, 0.4]) for (const side of [-1, 1]) for (const off of [40, 56]) {
-    const x = own.x + (mouth.x - own.x) * t - uy * off * side, y = own.y + (mouth.y - own.y) * t + ux * off * side;
-    const tx = Math.floor(x / 16), ty = Math.floor(y / 16);
-    if (!bot.tried[tx + ',' + ty]) return { tx, ty };
-  }
-  return null;
-}
 
 // ---- shared moves (every bot file stands alone, so these are copied) --------
 

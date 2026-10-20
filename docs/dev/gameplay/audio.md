@@ -102,7 +102,7 @@ than clicking off mid-waveform. A key with several files picks one at random per
 Sampled cues that sit beside a synth sibling: `coin()` (gold into the purse — an `awardGold`
 payout, a bot's deposit) and `stash()` (something into the backpack) are the world's;
 `pickup()` stays the synth UI blip so menus keep an instant, identical
-click. `hammer()` (raising, upgrading or finishing a structure) stands beside `place()` the same
+click. `hammer()` (finishing a structure, the merchant raising one) stands beside `place()` the same
 way, with `building()` as its quieter, shorter sibling on a site's dust tick — it repeats for as
 long as the build takes, so it is widely jittered and must never settle into a rhythm. `step()` is
 one boot per footprint the local player leaves; `land()` is the same boot dropped an octave under a
@@ -122,15 +122,14 @@ axes and bowstrings in the same instant, and that is exactly what the synth blip
 of them are the same square wave two notes apart, which is why `pickup`/`place`/`swap` all read as
 "the UI answered" and nothing more. They are **unjittered** (`jitter: 0`) for the buy ding's reason: each says
 *this happened*, and a cue that arrives a little different every time reads as texture — but the
-two that *are* a body in the world, `bigHurt` and `botOut`, keep a 0.04 jitter.
+one that *is* a body in the world, `bigHurt`, keeps a 0.04 jitter.
 
 | Cue | Says | Fired from |
 | --- | --- | --- |
 | `countTick()` | one whole second of a wait gone | the class screen's PLAY count (`state.menu.countT`, js/ui/menu.js) and the range's 3-2-1 (`agUpdate`, js/sim/practice.js) — never the `nock` blip, which is the sound of a bow being ready |
-| `ui(open)` | a surface came up, or went away | every overlay toggle in `keyPress` (js/app/input.js): the pack drawer, the sheet, the chart, the build list, the ESC slab, the pause plate, and each of Escape's back-outs |
-| `notch()` | one step of a stepped control | the zoom rung and the build list's rows (the `wheel` listener), the minimap's steps, and a radial wheel's wedge as the travel crosses it (`pointerMove`) |
-| `turn()` | a piece turned on the spot | R over the build ghost |
-| `wheelUp()` | a radial wheel rolled open | a ping wheel the first frame it shows (`renderWheel`), `openWheelNear`, and whichever of the work key's three (manage, roll die, range bell) the press opened |
+| `ui(open)` | a surface came up, or went away | every overlay toggle in `keyPress` (js/app/input.js): the pack drawer, the sheet, the chart, the ESC slab, the pause plate, and each of Escape's back-outs |
+| `notch()` | one step of a stepped control | the zoom rung (the `wheel` listener), the minimap's steps, and a radial wheel's wedge as the travel crosses it (`pointerMove`) |
+| `wheelUp()` | a radial wheel rolled open | a ping wheel the first frame it shows (`renderWheel`), and whichever of the work key's two (roll die, range bell) the press opened |
 | `record()` | a new BEST | `agEndRound` and the parkour line (js/sim/practice.js) — one cue for one meaning, on both instruments |
 | `runUp(n)` / `runBroke()` | a run of hits reaching a milestone, and a run lost | `hitPTarget` every `AG_RUN_STEP` in a row (**pitched up as the run climbs** — the one place a rate is meant to be heard, because the number it tracks is the thing being climbed), and the arrow loop (js/sim/sim.js) when a run of that length ends in the snow |
 | `alarm()` | **your roost is being struck and you cannot see it** | `hurtEagle` (js/sim/eagle.js) when the bird is out of earshot and it is your own — the one cue in the game that speaks for something off screen, held to one warning per `EAGLE_WARN_GAP`, and the one that arrives with a **plate**: the `roost` notice under the minimap ([the plates](../rendering/the-hud-corners/notices-the-plates-under-the-minimap.md)) and a feed line, so the ear turns your head and the corner says what happened |
@@ -140,7 +139,6 @@ two that *are* a body in the world, `bigHurt` and `botOut`, keep a 0.04 jitter.
 | `spectate()` | the camera handed to another body | `specNext` (js/ui/screens.js) |
 | `defeat()` | the match lost | `endMatch` (js/sim/player.js) — the sting the defeat song comes up under, as `victory()` is the win's |
 | `bigHurt()` | a great bird taking a blow | `hurtEagle` within earshot — never `hurt()`, a man's winded oof. The clip is a bull at rest, so it plays `BIGHURT_RATE` (1.5) up with a 320 Hz highpass under it — pitch and the chest resonance are what separate a beast in a field from something with a beak |
-| `botOut()` | a machine rolling out of the bay | the spawner's shutter (js/sim/structures.js), through `sfxAt` |
 
 **Never borrow a cue** for a new event: a borrowed cue teaches the ear the wrong thing — an
 eagle that goes "oof" is a person, and two instruments that award a record two different ways

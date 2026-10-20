@@ -1,7 +1,7 @@
 'use strict';
 // The fog of war's rule: what a side can see. Each hero, wave soldier and
-// finished turret of a side lights a circle round it; solid stone (the
-// cistern's wall, built walls) stops a line of sight, pines never do; a body
+// road tower of a side lights a circle round it; solid stone (the cistern's
+// wall) stops a line of sight, pines never do; a body
 // standing deep in the woods is hidden from the outside until one of the side
 // stands close, and a body in the brush (deep snow, js/sim/depth.js) until
 // one of the side stands in that patch or right at its rim. Rival bodies and every creature outside a side's sight are
@@ -14,7 +14,6 @@
 // ------------------------------------------------------------ fog of war
 const FOG_HERO = 160;    // px a hero sees
 const FOG_SOLDIER = 112; // px a wave soldier sees (past its SOLDIER_AGGRO, so it sees what it turns on)
-const FOG_TURRET = 128;  // px a turret sees (past its longest throw)
 const FOG_TOWER = 136;   // px a road tower sees from its foot (past its TOWER_RANGE)
 const FOG_WOODS_N = 9;   // pines in the 5x5 tiles round a walkable tile that make it the woods
 const FOG_BRUSH = 48;    // px a side's hero or soldier must be inside to see someone in the woods
@@ -27,45 +26,31 @@ function fogUp() {
   return !PRACTICE && state.mode === 'play' && window.DBG.fog !== false;
 }
 
-// a built wall on the tile: the stone a side builds (gates too)
-function sightWallAt(tx, ty) {
-  if (!inWorld(tx, ty)) return true;
-  const s = structOf(objects[ty * WORLD + tx]);
-  return !!s && (s.type === 'wall' || s.type === 'longwall' || s.type === 'gate');
-}
-
-// Every eye a side has, as { x, y, r, near, walls, stone, open }: near for a
-// body (a hero or a soldier: what can walk up to the woods' edge and look in);
-// walls and stone for a built wall or the cistern within its reach, so a line
-// from it traces only what could stop it; open when neither is, so every line
-// is clear (most eyes, in the field - those cost nothing to trace)
+// Every eye a side has, as { x, y, r, near, stone, open }: near for a body (a
+// hero or a soldier: what can walk up to the woods' edge and look in); stone
+// for the cistern within its reach, so a line from it traces only what could
+// stop it; open when it is not, so every line is clear (most eyes, in the
+// field - those cost nothing to trace)
 function sightSources(team, out) {
   out.length = 0;
   for (const p of players) if (p.team === team && p.active && !p.dead && !inAir(p)) out.push(sightEye(p.x, p.y, FOG_HERO, true));
   for (const b of robots) if (b.team === team && b.kind === 'soldier' && unitAlive(b)) out.push(sightEye(b.x, b.y, FOG_SOLDIER, true));
   for (const o of structures) {
     if (o.team !== team || o.building || o.dead) continue;
-    if (o.type === 'turret') { const pv = turretPivot(o); out.push(sightEye(pv.x, pv.y, FOG_TURRET, false)); }
-    else if (o.type === 'tower') { const f = towerFoot(o); out.push(sightEye(f.x, f.y, FOG_TOWER, false)); }
+    if (o.type === 'tower') { const f = towerFoot(o); out.push(sightEye(f.x, f.y, FOG_TOWER, false)); }
   }
   return out;
 }
 function sightEye(x, y, r, near) {
   const stone = cisternDist(x, y) <= r + 1;
-  let walls = false;
-  const t0x = Math.floor((x - r) / TILE), t1x = Math.floor((x + r) / TILE);
-  const t0y = Math.floor((y - r) / TILE), t1y = Math.floor((y + r) / TILE);
-  for (let ty = t0y; ty <= t1y && !walls; ty++) for (let tx = t0x; tx <= t1x; tx++) if (sightWallAt(tx, ty)) { walls = true; break; }
-  return { x, y, r, near, walls, stone, open: !walls && !stone };
+  return { x, y, r, near, stone, open: !stone };
 }
 
 // How far a sight line from (x, y) along the unit vector (dx, dy) runs before
-// stone stops it, up to r: walls tile by tile (a grid walk), the cistern by
-// its distance field (each step as long as the nearest stone is far)
-function sightReach(x, y, dx, dy, r, walls, stone) {
+// stone stops it, up to r: the cistern by its distance field (each step as
+// long as the nearest stone is far)
+function sightReach(x, y, dx, dy, r, stone) {
   let t = r;
-  // the walls: step from tile edge to tile edge
-  if (walls) t = sightWalls(x, y, dx, dy, r);
   // the cistern: march by the distance to the nearest stone
   if (stone && cistOn) {
     let s = 0;
@@ -77,21 +62,6 @@ function sightReach(x, y, dx, dy, r, walls, stone) {
   }
   return t;
 }
-// how far the line runs before a built wall's tile (r if none): tile edge to tile edge
-function sightWalls(x, y, dx, dy, r) {
-  let tx = Math.floor(x / TILE), ty = Math.floor(y / TILE);
-  const sx = dx > 0 ? 1 : -1, sy = dy > 0 ? 1 : -1;
-  const ix = dx !== 0 ? Math.abs(TILE / dx) : Infinity, iy = dy !== 0 ? Math.abs(TILE / dy) : Infinity;
-  let nx = dx !== 0 ? ((dx > 0 ? (tx + 1) * TILE - x : x - tx * TILE) / Math.abs(dx)) : Infinity;
-  let ny = dy !== 0 ? ((dy > 0 ? (ty + 1) * TILE - y : y - ty * TILE) / Math.abs(dy)) : Infinity;
-  for (;;) {
-    let e;
-    if (nx < ny) { e = nx; nx += ix; tx += sx; } else { e = ny; ny += iy; ty += sy; }
-    if (e >= r) return r;
-    if (sightWallAt(tx, ty)) return e;
-  }
-}
-
 // the woods: a walkable tile with FOG_WOODS_N pines or more in the 5x5 round it
 function inWoods(x, y) {
   const tx = Math.floor(x / TILE), ty = Math.floor(y / TILE);
@@ -156,7 +126,7 @@ function sightAt(team, x, y) {
   for (const s of srcs) {
     const dx = x - s.x, dy = y - s.y, d = Math.hypot(dx, dy);
     if (d > s.r) continue;
-    if (s.open || d < 1 || sightReach(s.x, s.y, dx / d, dy / d, d, s.walls, s.stone) >= d) { seen = true; break; }
+    if (s.open || d < 1 || sightReach(s.x, s.y, dx / d, dy / d, d, s.stone) >= d) { seen = true; break; }
   }
   return seen && !coverHide(srcs, x, y);
 }

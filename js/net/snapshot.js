@@ -332,8 +332,8 @@ function snapApply(s) {
 // reliable channel the ack simply trails the send by a round trip and the
 // delta is a few fields fatter for it. A primitive field compares by value
 // - a quantized one (SNAP_QUANT, the `encode` banner) by the value the
-// client will hold - a nested one (a bag, a route's points, a building's
-// bots) by its JSON. A tile goes field by field against what it was at the
+// client will hold - a nested one (a bag, a route's points) by its JSON. A
+// tile goes field by field against what it was at the
 // base: each ring entry keeps the before-form of every tile it changed, so
 // any base in the ring can be reconstructed tile by tile without a shadow
 // of the whole world per tick.

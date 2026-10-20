@@ -144,15 +144,6 @@ function updateSlashes(dt) {
   }
 }
 
-// ---- a shot's flight -----------------------------------------------------
-// Called once per shot per sim step, BEFORE the step is integrated. Every
-// shot flies straight but a turret's SLUNG ROCK: no drag and one constant sag
-// (`a.fall`, ROCK_FALL, js/sim/structures.js), so the flight is an exact
-// parabola that lands on the point turretLaunch solved for.
-function steerShot(a, dt) {
-  if (a.path === 'sling') a.vy += (a.fall || 0) * dt;
-}
-
 // ------------------------------------------------------------ fishing
 // Fishing is the hands working on their own, like a tree in reach
 // (autoWork, js/sim/actions.js): standing on ice with a fish inside FISH_CATCH_R

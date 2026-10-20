@@ -311,5 +311,5 @@ function drawCheatGhost(ox, oy) {
   }
   const rim = (c, x, y) => { ctx.fillStyle = c; ctx.fillRect(x, y, TILE, 1); ctx.fillRect(x, y + TILE - 1, TILE, 1); ctx.fillRect(x, y, 1, TILE); ctx.fillRect(x + TILE - 1, y, 1, TILE); };
   rim('rgba(15,22,50,0.9)', px + 1, py + 1);
-  rim(ok ? BUILD_OK : BUILD_NO, px, py);
+  rim(ok ? GHOST_OK : GHOST_NO, px, py);
 }

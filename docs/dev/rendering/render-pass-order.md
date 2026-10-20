@@ -34,17 +34,14 @@
    silhouettes via `drawGhost`; `pushMiddleDraws` adds the cistern's stone, piece by piece at
    the key of a body standing on it, and the orca out of the water, `drawOrcaBreach`, sorted by
    its hole's waterline and cut at it - [the cistern](../world.md#the-cistern));
-8. `drawSelection` (white pulsing corners with a dark shadow over the hovered stump / open ice
-   hole / finished structure, or the wheel's target) → `drawBuildGhost` (the build list's ghost)
+8. `drawSelection` (white pulsing corners with a dark shadow over an open wheel's target)
    → `drawWorkHint` (the E work prompt) → `drawFishHint` (the fish brackets);
 9. `PRACTICE` only: `drawParkour` (the lap clock and BEST/LAST plate), `drawAgame`,
    `drawAgRings`;
 10. construction progress bars → particles → `drawAimLine` (the bow's) → `drawZipGuide` (the
-    dotted walk to the hovered zipline, js/draw/zipline.js) → arrows (a turret's rocks branch to
-    `drawSlungRock`, the rest to `drawShaft`);
+    dotted walk to the hovered zipline, js/draw/zipline.js) → arrows (`drawShaft`);
 11. `drawAbilityAir` (the spinning net, the grapple's rope)
-    → `drawTurretFx` (each turret's dashed aim **arc** and the cords snapping on the release)
-    → turret tracers;
+    → `drawTowerFx` (each road tower's dashed aim line and ring, js/draw/towers.js);
 12. `drawSlashes` (the sword's sweeps) → swing arcs (one per swinging player) → `drawPops`
     (js/draw/pops.js): the floaters (queued through `drawWorldText`, see
     [Text over the world](text-over-the-world.md)) and the farm's coins (plates,
@@ -82,9 +79,7 @@ over it) → the end-of-match overlay (`renderDead`: the death dim and its plank
 (every mode but an end screen) → the held-TAB scoreboard (deliberately **above** the death dim,
 see [Scoreboard and event log](scoreboard-and-event-log.md)) → the info stack (`drawTags`, left
 edge at the top quarter: FPS / POS / SEED as aligned label-value rows — one ESC-menu toggle or
-F3; only the fps line in `title`) → the screen fade (`state.fade`, the reroll whiteout) → the
-build list's piece under the pointer (`drawBuildCursor`, beside the pixel cursor or the
-browser's own) → the pixel cursor (always last).
+F3; only the fps line in `title`) → the screen fade (`state.fade`, the reroll whiteout) → the pixel cursor (always last).
 
 Anything that should be occluded by trees goes into `draws` with a sort key; anything flat goes
 in the pre-pass.
@@ -139,8 +134,7 @@ runs in the flat pre-pass instead, at `(px, py)` filling its tile exactly, with 
 and its catch (up to `NET_CAP` fish at `NET_FISH_AT`, each on its own bob, the gold sunfish first in
 `NET_FISH_SUN`, the pike in `NET_FISH_PIKE`) drawn into the mesh —
 the catch showing through the rope is the only thing that says a net is worth walking to. An
-unfinished net fades in with `buildT` rather than wearing a scaffold, because there is nothing out
-on the water to stand a frame on. Its construction bar comes from the shared progress-bar pass
+unfinished net fades in with `buildT`, because there is nothing out on the water to stand a frame on. Its construction bar comes from the shared progress-bar pass
 like every other building's.
 
 Sprite hit-flash goes through `drawSpriteFlash()`, which recolours via a shared 128×128 `scratch`

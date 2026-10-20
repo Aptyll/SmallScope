@@ -148,7 +148,7 @@ function renderMinimap(now) {
     if (z) drawMapZip(ctx, z, (x) => MM_CX + (x / TILE - ptx) * s, (y) => MM_CY + (y / TILE - pty) * s, TEAMS[skin(z.team)].mark, mmIn);
   }
   // every body inside the view in the grammar both maps share (drawMap*,
-  // draw-world.js), in its side's ink: the robots first - every worker,
+  // draw-world.js), in its side's ink: the robots first - every
   // soldier and merchant standing, none of them hides - then the players. A
   // rival buried past PRONE_MAP drops off it entirely - a dot that survived
   // the cover would make the whole thing pointless. Your own side never does.

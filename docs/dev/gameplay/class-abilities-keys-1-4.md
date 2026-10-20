@@ -70,8 +70,8 @@ shot, net, grapple; WARRIOR stomp, rush, shield; ARMATOS verdict, march, brace; 
 yoke, heart). The cd column in the tables below is every rank's; the numbers in the text are rank
 1's, and each row's `rank` table has the rest.
 
-**Every ability lands on every kind of body.** A player, a rabbit, a deer, a bird, a wolf and a worker
-bot out of the [bot bay](robots.md) take the same damage and the same states from every key — the
+**Every ability lands on every kind of body.** A player, a rabbit, a deer, a bird, a wolf and a
+[soldier](robots.md) take the same damage and the same states from every key — the
 tables below say "rival" because that is who you are usually casting at, not because anything else
 is exempt. That is not written into each ability: they sweep `unitsNear`/`unitsHit` and land through
 `hurtUnit` and the state setters ([status effects](status-effects-one-set-for-every-unit.md)), so the

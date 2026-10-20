@@ -5,9 +5,10 @@
 // (structSprite, laid by drawStructObj like any building, js/draw/passes.js), the
 // gun at its live heading and frame on the turntable, and the deck's front
 // parapet over it - drawTowerTop lays the last two and the bar, from the
-// building pass. drawTowerFx, over the bodies with the turret's arcs, is
+// building pass. drawTowerFx, over the bodies, is
 // what is in the air: the line the gun is aimed down while it winds on a
 // scout, the bolt in flight, and the spent one standing in the snow.
+const TOWER_RIM = '#0d1226';    // the dark shadow pixel under the aim line, so it reads on snow
 const TOWER_HEADS = 16;          // the baked headings (app/bake-tower/bake.py)
 const TOWER_LOOSE_SHOW = 0.15;   // s the loosed frame holds before the winding starts
 const TOWER_PIN_FADE = 0.6;      // s a spent bolt takes to fade out at the end of its TOWER_PIN_T
@@ -62,14 +63,14 @@ function drawTowerFx(ex, ey, now) {
       for (let i = 4; i < n; i++) {
         if ((i - crawl) % 4 >= 2) continue;
         const x = Math.round(foot.x + dx * i / n - ex), y = Math.round(foot.y + dy * i / n - ey);
-        ctx.fillStyle = TUR_RIM; ctx.fillRect(x, y + 1, 1, 1);
+        ctx.fillStyle = TOWER_RIM; ctx.fillRect(x, y + 1, 1, 1);
         ctx.fillStyle = hot ? '#ffffff' : tm.mark; ctx.fillRect(x, y, 1, 1);
       }
       const rx = Math.round(tg.x - ex), ry = Math.round(tg.y + 4 - ey), r = Math.round(9 - 3 * o.chg);
       for (let a = 0; a < 24; a++) {
         if (a % 2) continue;
         const x = Math.round(rx + Math.cos(a / 24 * Math.PI * 2) * r), y = Math.round(ry + Math.sin(a / 24 * Math.PI * 2) * r * 0.55);
-        ctx.fillStyle = TUR_RIM; ctx.fillRect(x, y + 1, 1, 1);
+        ctx.fillStyle = TOWER_RIM; ctx.fillRect(x, y + 1, 1, 1);
         ctx.fillStyle = hot ? '#ffffff' : tm.mark; ctx.fillRect(x, y, 1, 1);
       }
       ctx.globalAlpha = 1;

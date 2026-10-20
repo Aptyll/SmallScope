@@ -303,22 +303,6 @@
     '..owwwwbBo.',
     '...oooooo..',
   ];
-  // builder's mallet: a stump or structure you can right-click. The head sits
-  // top-right so the handle trails away from the hotspot at the face (6,5).
-  const cursorHammer = [
-    '......oooo..',
-    '.....oSSSso.',
-    '....oSSSsso.',
-    '...oSSSssso.',
-    '...ossssssso',
-    '..oHoossssso',
-    '.oHho.oooooo',
-    'oHho........',
-    'ohho........',
-    'oho.........',
-    'oo..........',
-  ];
-
   Object.assign(SPRITES, {
     // gearIcons[slot][variant][material]: 12 distinct variant glyphs, each in
     // leather / iron / steel / gold
@@ -333,11 +317,11 @@
     heartEmpty: bake(heartEmpty, HEPAL),
     cursor: {
       arrow: bake(cursorArrow, CUPAL), hand: bake(cursorHand, CUPAL),
-      grab: bake(cursorGrab, CUPAL), hammer: bake(cursorHammer, CUPAL),
+      grab: bake(cursorGrab, CUPAL),
     },
     cursorShadow: {
       arrow: bake(cursorArrow, CUSHADOW), hand: bake(cursorHand, CUSHADOW),
-      grab: bake(cursorGrab, CUSHADOW), hammer: bake(cursorHammer, CUSHADOW),
+      grab: bake(cursorGrab, CUSHADOW),
     },
   });
 })();

@@ -34,18 +34,17 @@ function fogView(now) {
   if (fogTeam < 0) return false;
   sightSources(fogTeam, fogEyesDraw);
   // an eye that has not moved a px since the last frame keeps its lines
-  // (unless something was built or knocked down: the walls are structures)
-  const was = fogLines, ver = structures.length;
+  const was = fogLines;
   fogLines = new Map();
   for (const s of fogEyesDraw) {
     s.n = Math.ceil(Math.PI * 2 * s.r / FOG_ARC);
     if (s.open) continue;
-    const key = Math.round(s.x) + ',' + Math.round(s.y) + ',' + s.r + ',' + ver;
+    const key = Math.round(s.x) + ',' + Math.round(s.y) + ',' + s.r;
     let d = was.get(key);
     if (!d) {
       d = new Float32Array(s.n);
       for (let i = 0; i < s.n; i++) {
-        const a = i / s.n * Math.PI * 2, t = sightReach(s.x, s.y, Math.cos(a), Math.sin(a), s.r, s.walls, s.stone);
+        const a = i / s.n * Math.PI * 2, t = sightReach(s.x, s.y, Math.cos(a), Math.sin(a), s.r, s.stone);
         d[i] = t >= s.r ? s.r : Math.min(s.r, t + FOG_FACE);
       }
     }

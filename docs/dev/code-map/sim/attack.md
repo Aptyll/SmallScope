@@ -7,6 +7,5 @@
 | **what one press does**, for every player | `basicAttack` (called by `playerAttack`, sim.js) | `basic attack` › `the press` |
 | a shot's press: the one arrow it puts in the air | `shootAttack` | `basic attack` › `the shot` |
 | a blade's press: the wedge it sweeps at this draw, and the sweep left on the snow | `cutAttack`, `slashReach`, `SLASH_T`, `SLASH_REACH_MIN`, `slashes`, `updateSlashes` (the hand's own swing: `p.slashT`/`slashA`/`slashHalf`, player.js, drawn by `drawHeldTool`, js/draw/bodies.js) | `basic attack` › `the cut` |
-| how a shot steers before its step (the turret rock's sag) | `steerShot` | `basic attack` › `a shot's flight` |
 | the fish taken with no press at all; the catch pose: its clock and which fish it hoists (`p.catchKind`), the cancel every step, press and hit call, which of its three frames is up | `autoFish`, `FISH_AUTO_CD`, `CATCH_T`, `startCatch(p, kind)`, `cancelCatch`, `catchFrame` | `fishing` (ticked in `updatePlayer`, sim.js; drawn by `drawPlayer`, js/draw/bodies.js; the net take in `updateStructures`, structures.js) |
 | how hard an attack shoves what it hits | `kb` on each `attack` row (`HIT_KB` player.js, `ROBOT_KB` robots.js, `o.kbMul` in `hurtUnit`) | `basic attack` |

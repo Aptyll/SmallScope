@@ -4,7 +4,7 @@
 // blow (robotDies, robots.js) and a camp monster pays its killer
 // (animalDies, wildlife.js). Each of those is one FARM on the body's record
 // (p.farm, PLAYER_RECORD in player.js), which the scoreboard and the
-// post-game page print beside the kills. A soldier the waves, a turret or
+// post-game page print beside the kills. A soldier the waves, a tower or
 // a beast finish pays nobody: that is the miss, and it costs the side the
 // whole bounty.
 //

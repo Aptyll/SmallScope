@@ -6,7 +6,7 @@
 // gold bobs); the generator's draw picks the frame off its payout clock
 // (drawPump, js/draw/structs.js). k/K/e are the team paint (fit, fitL,
 // glow), baked inside onTeams; frame 0 of each tier is the building's
-// still sprite (structSprite) and ICON its build-list glyph.
+// still sprite (structSprite).
 (() => {
   const { bake, onTeams, TEAM_SKINS, teamBuildPal } = SPR;
   const BASE = { 'a': '#221c2e', 'b': '#8b93a8', 'c': '#3a4056', 'd': '#5c6884', 'f': '#a3794f', 'g': '#6b4a30', 'h': '#8a6142', 'i': '#3c2a1e', 'j': '#fff2c0', 'l': '#eef4fb', 'm': '#d6e1f6', 'n': '#9eaed6', 'o': '#bccbea', 'p': '#a8b0c4', 'q': '#666d84', 'r': '#4a5068', 's': '#d8a850', 't': '#f2cc6a', 'u': '#b9884f', 'v': '#6b4a1e', '.': null };
@@ -1458,31 +1458,12 @@
       ],
     ],
   ];
-  const ICON = [
-    '................',
-    '...........aa...',
-    '.........aaKKa..',
-    '.....aaaabKKKKa.',
-    '..aaabbjtbKKKKa.',
-    '.accbbddgaaeKKa.',
-    'abbdaaghhaaeea..',
-    'abddaafiha.aeja.',
-    '.ada.afahga.aja.',
-    '..a.afhahha.aja.',
-    '.aaaafhaahaaaja.',
-    'aqqqqfqqqhgqqqqa',
-    'abbbbbbbbbbbbbba',
-    'abbbbbbbqqqqqqqa',
-    'aeeeeKKKKKKKKKKa',
-    '.aaaaaaaaaaaaaa.',
-  ];
   // the barrel's mouth in each tier's frame, px from its top-left: the payout's coin hops from here
   const MOUTH = [[24, 40], [24, 39], [24, 38]];
   onTeams(() => TEAM_SKINS.forEach((t, i) => {
     const pal = teamBuildPal(BASE, t), set = SPRITES.teamBuild[i];
     set.pumpAnim = TIERS.map((fr) => fr.map((g) => bake(g, pal)));
     set.generator = set.pumpAnim.map((fr) => fr[0]);
-    set.icon.generator = bake(ICON, pal);
     if (i === 0) SPRITES.generator = set.generator;
   }));
   SPRITES.pumpMouth = MOUTH;

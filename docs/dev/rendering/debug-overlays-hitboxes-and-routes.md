@@ -17,8 +17,7 @@ is its footprint's edge px instead, with a green ring round the feet of each bod
 `drawCisternHitbox`), **blue** open water — a wall to
 animals and robots, a hole a player falls into — **green** the body circle
 `moveEntity`/`separateUnits` push apart, plus a dot on the anchor point itself, **red** the circle
-an arrow is tested against (on a standing building, the box of its drawn art and a turret
-turntable's ring — `structShotBox`, past the cyan footprint wherever the art stands past it), **violet** a walk-over pickup or a click target, **gold** a projectile
+an arrow is tested against (on a standing building, the box of its drawn art — `structShotBox`, past the cyan footprint wherever the art stands past it), **violet** a walk-over pickup or a click target, **gold** a projectile
 (a point, never a circle), **pink** the model's own centre column (`hbMid`).
 
 Every shape is read from the expression the sim uses, never a copy of the number — an overlay that
@@ -41,7 +40,7 @@ frame that is genuinely centred has as many columns strictly left of the line as
 line rightwards. It is dotted so the frame it is measuring reads through it.
 
 **Reaches and sight ranges are deliberately not drawn.** `WORK_REACH`, a wolf's bite and a camp's ground, a
-turret's acquisition ring, the bird flush, the fish catch: they are wide enough to bury the 7 px
+road tower's range, the bird flush, the fish catch: they are wide enough to bury the 7 px
 circle the overlay exists to show, and a sight range is per-target (`seenAt`), so it needs a
 design of its own rather than a ring.
 
@@ -60,7 +59,7 @@ runs through the waypoints it has left (`nav.i` onward), and ends in a box on `n
 the tile the unit decided to go to, which is the answer to *why is it walking over there*. The leg
 it is on now is solid and the legs beyond it are dotted, so a route being followed reads
 differently from one being replanned. One colour per kind of walker, as on the minimap: players
-gold, a camp monster red, the rest of the wildlife green, a worker bot blue.
+gold, a camp monster red, the rest of the wildlife green, a soldier blue.
 
 Most routes are one leg: `navTo` takes the straight line whenever `navLineClear` allows it and
 `navSmooth` collapses the rest, so a chain of waypoints means the unit is genuinely going around

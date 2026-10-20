@@ -40,6 +40,6 @@ gold only, never XP), throws its ore onto the snow one piece at a time toward th
 (`ORE_FLING`) for the [drop pickup](inventory-and-the-backpack.md), and lies as **rubble** (`o.regrow`, `SPRITES.rockSpent`) — still solid, not
 offered to E (`OBJECTS.rock.ready` is `rockReady`) — until `tickRock` in the object timers
 grows it back. The bots mine by the same rule (the harvest rung walks them beside a rock and
-they stand there, key up, until it breaks); the worker bots leave rocks alone, and the merchant's axe, a crater and the
+they stand there, key up, until it breaks); the merchant's axe, a crater and the
 landing's lane take a rock off the map whole (`fellScenery`, js/sim/world.js). The ore sells at
 [the counter](the-merchants-counter.md#buying-and-selling) for half its `ORE_PRICE` (IRONSTONE 2, FROSTGLASS 12, SUNSTONE 40).

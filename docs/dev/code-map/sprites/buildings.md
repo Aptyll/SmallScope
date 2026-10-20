@@ -2,4 +2,4 @@
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| the wall, every tiered piece, the fish net, the bot bay, spikes, fire, the torch | by banner | `wall`, `tiered structures`, `fish net`, `bot bay`, `spikes`, `fire`, `torch` |
+| the fish net, the barracks bay (`teamBuild[team].spawner`), the soldiers (`robotTeam`), the merchant's stall, spikes, fire, the torch | by banner | `fish net`, `barracks bay`, `spikes`, `fire`, `torch` |

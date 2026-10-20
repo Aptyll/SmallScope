@@ -192,7 +192,6 @@ function render() {
   drawSorted(draws, ox, oy, ex, ey, now);
 
   drawSelection(ox, oy, now);
-  drawBuildGhost(ox, oy, now);
   drawTunnelGhost(ox, oy);
   drawCheatGhost(ox, oy); // the practice bar's armed teleport / dummy (js/ui/cheats.js)
   drawWorkHint(ox, oy);
@@ -216,9 +215,8 @@ function render() {
   // between a reeling body and its anchor - with the arrows, over the entities
   drawAbilityAir(ex, ey, now);
 
-  drawTurretFx(ex, ey, now);
+  drawTowerFx(ex, ey, now); // the road towers' aim lines and bolts (js/draw/towers.js)
 
-  drawTracers(ex, ey);
 
   // the sword's sweeps (js/sim/abilities.js draws them: every player who just cut)
   drawSlashes(ex, ey);
@@ -253,24 +251,6 @@ function drawShaft(a, x, y) {
     TEAMS[skin(a.team)].mark, TEAMS[skin(a.team)].coatD, a.col || ARROW_INK.G, 0);
   paintArrowPx(ARROW_PX);
 }
-// A small map TURNED to any angle by inverse sampling: every pixel in the box
-// it can reach asks which map cell it falls in, so a spinning body has no
-// holes at any angle (stamping each cell forward leaves gaps on the
-// diagonals). Writes into `body`, the pixel map paintRimmed takes - the
-// turret's slung rock is drawn this way (drawSlungRock, js/draw/structs.js).
-function stampTurned(body, rows, ink, cx, cy, ang) {
-  const h = rows.length, w = rows[0].length;
-  const c = Math.cos(ang), s = Math.sin(ang);
-  const R = Math.ceil(Math.hypot(w, h) / 2);
-  const X = Math.round(cx), Y = Math.round(cy);
-  for (let dy = -R; dy <= R; dy++) for (let dx = -R; dx <= R; dx++) {
-    const col = Math.round(dx * c + dy * s + (w - 1) / 2);
-    const row = Math.round(-dx * s + dy * c + (h - 1) / 2);
-    if (row < 0 || row >= h || col < 0 || col >= w || rows[row][col] === '.') continue;
-    body.set((X + dx) + ',' + (Y + dy), ink[rows[row][col]]);
-  }
-}
-
 // ------------------------------------------------------------ debug overlays
 // What the sim actually tests, drawn on top of what the art shows. One key:
 // '.' toggles `settings.hitbox` between 0 (off) and 2 (bodies + the route
@@ -428,15 +408,13 @@ function drawHitboxes(ox, oy, ex, ey) {
   // itself over (`sx` in the structure draw) whether it is wider than its
   // tiles or not - so it is the line the damage bar has to sit on too. And
   // the shape a shot meets it by (structShotBox, sim.js): the drawn art's box
-  // and, on a turret, the head's disc - past the cyan footprint wherever the
-  // art stands past it
+  // - past the cyan footprint wherever the art stands past it
   for (const o of structures) {
     const w = structW(o) * TILE, h = structH(o) * TILE;
     hbMid(o.tx * TILE + w / 2 - ox, o.ty * TILE - 24 - oy, o.ty * TILE + h - oy);
     const b = structShotBox(o);
     if (!b) continue;
     hbBox(b.x0 - ox, b.y0 - oy, b.x1 - b.x0, b.y1 - b.y0, HB_HURT);
-    if (b.hr) hbRing(b.hx - ox, b.hy - oy, b.hr, HB_HURT);
   }
 
   // an arrow is a point: it is the tile under that point that stops it, and
@@ -486,7 +464,7 @@ function drawNavPaths(ox, oy, ex, ey) {
     hbBox(a.perch.tx * TILE - ox, a.perch.ty * TILE - oy, TILE, TILE, col);
   };
   // one colour per kind of walker, as they read on the minimap: the players
-  // gold, a wolf red, the rest of the wildlife green, a worker bot blue
+  // gold, a wolf red, the rest of the wildlife green, a bot blue
   for (const p of players) if (p.active && !p.dead && !inAir(p)) one(p, '#ffe27a');
   for (const a of animals) {
     if (a.dead) continue;
@@ -504,7 +482,7 @@ function drawNavPaths(ox, oy, ex, ey) {
 // game's pixel grid at every zoom. cursorInfo() resolves what it should look
 // like this frame, once, and both the pixel cursor and the browser-cursor
 // fallback read from it:
-//   kind  arrow | hand | grab | hammer | reticle
+//   kind  arrow | hand | grab | reticle
 //   mode  (reticle only) idle | lock | hunt | fish | ice | bow
 //   dim   the action under the pointer is currently blocked / out of reach
 function cursorInfo() {
@@ -563,8 +541,6 @@ function cursorInfo() {
     Object.assign({ kind: 'reticle', mode, dim, nock: nockF, amb: ambushReady(player) }, extra);
 
   const wx = mouseWX(), wy = mouseWY();
-  const tx = Math.floor(wx / TILE), ty = Math.floor(wy / TILE);
-  const o = structOf(objAt(tx, ty));
   const busy = player.fallT > 0 || player.dodgeT > 0; // tools locked out
   // the CLICK scheme's armed attack-move: the pointer is the order waiting to
   // be laid, and reads as one wherever it is
@@ -572,20 +548,6 @@ function cursorInfo() {
   // the MOUSE scheme's readied ability: the pointer is where the next left
   // press casts it, dim while it cannot
   if (ms.ready >= 0) return ret('cast', !abReady(player, ms.ready));
-  // the build list up: a hand over its rows, the hammer over the world -
-  // wearing the picked piece (drawBuildCursor, js/ui/wheel.js) wherever a
-  // press would lay it, and dim where the ghost cannot stand
-  if (state.build) {
-    if (buildListHit(mouse.x, mouse.y) >= 0) return { kind: 'hand' };
-    const g = buildGhostAt();
-    return { kind: 'hammer', dim: !g || !g.can.ok, piece: g && !overHud(mouse.x, mouse.y) ? g.type : null };
-  }
-  // one of your own buildings (E manages it) outranks tool hints; beyond the
-  // 60px reach it dims - not under CLICK, where the press walks there
-  if (o && STRUCTS[o.type] && !STRUCTS[o.type].fixed && o.team === player.team) {
-    const far = Math.hypot(tx * TILE + 8 - player.x, ty * TILE + 8 - player.y) > 60;
-    return { kind: 'hammer', dim: far && !ckOn() };
-  }
   if (player.charging) {
     return ret('bow', false, { frac: drawPow(player) });
   }
@@ -605,7 +567,7 @@ function cursorInfo() {
 }
 
 // sprite hotspots (the pixel that sits under the true mouse position)
-const CUR_HOT = { arrow: [0, 0], hand: [4, 0], grab: [5, 4], hammer: [6, 5] };
+const CUR_HOT = { arrow: [0, 0], hand: [4, 0], grab: [5, 4] };
 // reticle looks: colour, tick gap from centre, corner dots
 const RETICLE = {
   idle: { col: '#f4f7ff', gap: 3 },

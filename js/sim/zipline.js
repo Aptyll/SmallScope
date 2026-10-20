@@ -16,7 +16,7 @@
 // the grapple. Riding is hands-on-the-handle: no swing, shot, cast, fish or
 // prone (every gate lists `p.zip >= 0` beside fallT and dodgeT), but a
 // rider is still a body to every weapon - arrows, the roll's sweep, a
-// turret, a wolf - and plain damage never dismounts. A stun, a root or a
+// tower, a wolf - and plain damage never dismounts. A stun, a root or a
 // net does (zipEnd with `fell`: dropped at rest on the snow under the
 // cable). Two RIVALS meeting on one cable crash (zipCrash): both stunned
 // ZIP_CRASH_STUN and dropped where they met; a side's own riders pass

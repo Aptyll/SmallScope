@@ -40,11 +40,11 @@
 //   roam   x how wide it wanders with nothing to do
 //   fit    how well it suits each role (the plan hands jobs out by this)
 const AI_MOODS = {
-  brave:    { name: 'BRAVE',    flee: -0.15, judge: -0.25, help: 1.3, stalk: true,  greed: 0.9, eco: 0.3, roam: 1.1, fit: { pusher: 4, stalker: 3, guard: 0, scout: 1, slayer: 3, jungler: 2, laner: 2 } },
-  cautious: { name: 'CAUTIOUS', flee: 0.15,  judge: 0.25,  help: 0.8, stalk: false, greed: 1,   eco: 0.5, roam: 0.8, fit: { pusher: 0, stalker: 0, guard: 4, scout: 2, slayer: 1, jungler: 1, laner: 3 } },
-  greedy:   { name: 'GREEDY',   flee: 0.05,  judge: 0.1,   help: 0.5, stalk: false, greed: 1.5, eco: 0.7, roam: 0.9, fit: { pusher: 1, stalker: 0, guard: 1, scout: 0, slayer: 3, jungler: 3, laner: 3 } },
-  loyal:    { name: 'LOYAL',    flee: 0,     judge: 0.1,   help: 1.8, stalk: true,  greed: 1,   eco: 0.5, roam: 1,   fit: { pusher: 3, stalker: 1, guard: 3, scout: 0, slayer: 2, jungler: 1, laner: 2 } },
-  wild:     { name: 'WILD',     flee: -0.05, judge: -0.1,  help: 1,   stalk: true,  greed: 1,   eco: 0.4, roam: 1.6, fit: { pusher: 2, stalker: 4, guard: 0, scout: 4, slayer: 2, jungler: 3, laner: 1 } },
+  brave:    { name: 'BRAVE',    flee: -0.15, judge: -0.25, help: 1.3, stalk: true,  greed: 0.9, roam: 1.1, fit: { pusher: 4, stalker: 3, guard: 0, scout: 1, slayer: 3, jungler: 2, laner: 2 } },
+  cautious: { name: 'CAUTIOUS', flee: 0.15,  judge: 0.25,  help: 0.8, stalk: false, greed: 1,   roam: 0.8, fit: { pusher: 0, stalker: 0, guard: 4, scout: 2, slayer: 1, jungler: 1, laner: 3 } },
+  greedy:   { name: 'GREEDY',   flee: 0.05,  judge: 0.1,   help: 0.5, stalk: false, greed: 1.5, roam: 0.9, fit: { pusher: 1, stalker: 0, guard: 1, scout: 0, slayer: 3, jungler: 3, laner: 3 } },
+  loyal:    { name: 'LOYAL',    flee: 0,     judge: 0.1,   help: 1.8, stalk: true,  greed: 1,   roam: 1,   fit: { pusher: 3, stalker: 1, guard: 3, scout: 0, slayer: 2, jungler: 1, laner: 2 } },
+  wild:     { name: 'WILD',     flee: -0.05, judge: -0.1,  help: 1,   stalk: true,  greed: 1,   roam: 1.6, fit: { pusher: 2, stalker: 4, guard: 0, scout: 4, slayer: 2, jungler: 3, laner: 1 } },
 };
 const AI_MOOD_KEYS = Object.keys(AI_MOODS);
 // A bot's mood is for life, not for a match: a body with a roster name of
@@ -88,7 +88,7 @@ const AI_ROLES = {
   slayer:   { name: 'SLAYER' },   // one of the party the side sends to its bear
   jungler:  { name: 'JUNGLER' },  // walks its side's wolf dens on their clocks (js/ai/ai-farm.js)
   laner:    { name: 'LANER' },    // last-hits the rival wave behind its own (js/ai/ai-farm.js)
-  gatherer: { name: 'GATHERER' }, // the ladder as it always was: hunt, loot, build, harvest
+  gatherer: { name: 'GATHERER' }, // the ladder as it always was: hunt, loot, harvest
 };
 const AI_PLAN_T = 2;        // s between a side's re-plans
 const AI_SCOUT_AT = 45;     // s into the match the side sends its scout out
@@ -121,7 +121,7 @@ const AI_ODDS_R = 150;      // px round a fight the numbers are counted in (the 
 // the side's shared mind, one per team; it is saved whole (SAVE_ROOTS,
 // js/sim/save.js), the bear by reference like any other shared body
 function aiTeamNew() {
-  return { at: -1, stance: 'FARM', why: '', winT: 0, roles: {}, lanes: {}, order: [], seen: [], calls: [], focus: -1, bear: null, bearT: 0, builder: -1, answerT: 0, nPush: 0, nGuard: 0, braceT: 0, braceN: 0, wallTick: -1, ring: null, wallNo: {} };
+  return { at: -1, stance: 'FARM', why: '', winT: 0, roles: {}, lanes: {}, order: [], seen: [], calls: [], focus: -1, bear: null, bearT: 0, answerT: 0, nPush: 0, nGuard: 0, braceT: 0, braceN: 0 };
 }
 const aiTeams = [aiTeamNew(), aiTeamNew()];
 
@@ -232,12 +232,6 @@ function aiPlan(team) {
   order.sort((a, b) => pri(a) - pri(b));
   T.roles = roles; T.order = order;
   T.lanes = aiLaneDeal(T); // each laner its own lane (js/ai/ai-farm.js)
-  // the side's builder, the one bot that raises bays (aiEcoBuy): the most
-  // patient purse on the side, kept while it is up
-  if (!bots.some((q) => q.id === T.builder)) {
-    let bk = -1;
-    for (const q of bots) if (aiMood(q).eco > bk) { bk = aiMood(q).eco; T.builder = q.id; }
-  }
   // the stance, the one word the dashboard shows for the side
   if (mine && mine.threat) { T.stance = 'HOLD'; T.why = mine.hp < AI_ALARM_HP ? 'BIRD HURT' : 'BIRD HIT'; }
   else if (T.braceT > 0 && T.winT <= 0) { T.stance = 'BRACE'; T.why = T.braceN + ' COMING'; }
@@ -330,41 +324,6 @@ function aiAnswerStep(p) {
   ai.answerKind = null;
   T.answerT = state.elapsed + AI_ONIT_T[0] + (AI_ONIT_T[1] - AI_ONIT_T[0]) * (p.id % 5) / 4;
   if (CALLS[k]) addCallout(k, CALLS[k].word(p), p.id, p.team, p.x, p.y);
-}
-
-// The purse: what a bot buys with its gold, judged by payback. A generator,
-// a generator's next tier or (the side's builder only) a bay is bought only
-// when it pays for itself in AI_ECO_K x the minutes the match has left - the
-// mood's `eco`, so a greedy bot farms longer and a brave one stops sooner -
-// and of those that pass, the quickest to pay back. Prices are the game's
-// (buildCost, js/sim/structures.js: each one the owner has raises the next), so
-// the side builds a few early, upgrades in the middle and nothing late.
-// Items (rung 0, aiSpend) are power, not income, and go first.
-const AI_MATCH_MIN = 15;  // min a match is reckoned to run (the minutes left, never under 3)
-const AI_BAY_RATE = 12;   // gold a minute a bay's three workers bring home (measured: seed 7, NORMAL, 4.65)
-// gold a minute one income building at tier t pays its owner
-function aiIncome(type, t) {
-  if (type === 'spawner') return AI_BAY_RATE;
-  const r = STRUCTS[type].tiers[t];
-  return r.pay * 60 / r.period;
-}
-// p's best income buy now, or null: { type } to build, or { up } (its own
-// generator) to raise a tier; `pay` is the payback in minutes, `cost` the gold
-function aiEcoBuy(p) {
-  const most = aiMood(p).eco * Math.max(3, AI_MATCH_MIN - state.elapsed / 60);
-  let best = null;
-  const offer = (cost, gain, buy) => {
-    const pay = cost / gain;
-    if (pay <= most && (!best || pay < best.pay)) { best = buy; best.pay = pay; best.cost = cost; }
-  };
-  offer(buildCost('generator', p).gold, aiIncome('generator', 0), { type: 'generator' });
-  if (aiTeams[p.team].builder === p.id) offer(buildCost('spawner', p).gold, AI_BAY_RATE, { type: 'spawner' });
-  for (const o of structures) {
-    if (o.owner !== p.id || o.type !== 'generator' || o.building) continue;
-    const tiers = STRUCTS[o.type].tiers;
-    if (o.tier < tiers.length - 1) offer(tiers[o.tier + 1].cost.gold, aiIncome(o.type, o.tier + 1) - aiIncome(o.type, o.tier), { up: o });
-  }
-  return best;
 }
 
 // the side's bear: the living teamPay camp monster nearest its own bird
