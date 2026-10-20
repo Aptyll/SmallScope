@@ -37,7 +37,7 @@ those, never `p.hide` directly**:
 **Every watcher resolves through `seenAt`, and a new one must too** (a bot's names its side, so the
 fog holds for it). Today's callers: a bot's
 target pick and its roost-threat count (`aiNearestEnemy`, `aiSituation`, js/ai/ai.js), a turret
-(`turretMark`/`turretHolds`), a worker bot's quarry and the flag's reach (js/sim/robots.js), prey
+(`turretMark`/`turretHolds`), a soldier's quarry (`robotFoeUnit`, js/sim/robots.js), prey
 deciding to bolt (`updatePrey`), the eagle's gust (js/sim/eagle.js) and the CLICK scheme's lock and
 acquire (js/app/input.js). A camp monster has no sight
 to resolve, since a hit is its only trigger ([Camp monsters](wildlife.md#camp-monsters-neutral-until-hit)).

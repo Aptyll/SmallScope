@@ -97,8 +97,8 @@ function drawRobot(b, ex, ey, now) {
 
   drawCastShade(spr, bx, by + bob + zl); // on the ground under the bob
 
-  // one swing animation, two jobs: the harvest tick, or - on an attack flag -
-  // the same axe aimed at whatever b.atkAim points to (`worker flags`, robots.js)
+  // one swing animation, two jobs: the harvest tick, or - a soldier's blow -
+  // the same axe aimed at whatever b.atkAim points to (`soldiers`, robots.js)
   let tdx = 0, tdy = 0, working = false, icon = null, prog = 0;
   if (b.atkAim) {
     tdx = b.atkAim.x - b.x; tdy = b.atkAim.y - b.y;
@@ -116,7 +116,7 @@ function drawRobot(b, ex, ey, now) {
   drawSpriteFlash(spr, bx, by, b.flash);
   // a soldier (the `soldiers` banner, robots.js) flies its side's pennant
   // off the chassis: the one thing that says this bot is not here to chop
-  if (b.kind === 'soldier') drawFlagPennant(ctx, bx + 10, by + 2, TEAMS[skin(b.team)].mark);
+  if (b.kind === 'soldier') drawPennant(ctx, bx + 10, by + 2, TEAMS[skin(b.team)].mark);
 
   // carried gold: a nugget held up in front of the body
   if (b.carry > 0 && !working) {

@@ -1,6 +1,6 @@
 // ------------------------------------------------------------ recall's pixels
-// Flat on the snow, under everything that walks it (drawn after the flag
-// rings in render()): each roost's healing ring, and the recall's channel
+// Flat on the snow, under everything that walks it (drawn in the world
+// flat pass, drawFlatPass in js/draw/passes.js): each roost's healing ring, and the recall's channel
 // closing on the feet of whoever is leaving (js/sim/recall.js).
 //
 // THE ROOST RING is a soft glowing edge in the bird's side's colour round the

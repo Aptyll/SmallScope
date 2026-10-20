@@ -177,15 +177,12 @@ demolish — a site still going up comes back at its whole price. **An ice hole 
 population that walkers on the ice and nets draw down and a trickle refills.
 [Base building](gameplay/base-building.md), [Ice holes and fishing](world.md#ice-holes-and-fishing).
 
-**Right-click anywhere and the flag wheel offers four orders — ATTACK, DEFEND, GATHER, RALLY — and
-the ring on the snow is the ground the order covers** (on the keyboard's CLICK scheme, where the
-right button walks and orders the body itself, the wheel is held on G instead:
-[the click scheme](multiplayer.md#the-click-scheme))**.** One flag per player, read by the whole
-side: every worker bot the planter's bays roll out, and every AI teammate. Bots fly flags of
-their own — a bot's flag is only ever its own decision made visible — and join a teammate's
-rather than twin it, but **a human's flag is the side's whole plan**: while it stands every
-bot on the team lifts its own and follows it. [Team flags](gameplay/team-flags.md),
-[Robots](gameplay/robots.md), [Bots](multiplayer.md#bots).
+**Pings, League's way: tap the right button to ping GO HERE, hold it and flick for ATTACK, ON
+MY WAY, DANGER or DEFEND** (G on the keyboard's CLICK scheme, where the right button walks the
+body: [the click scheme](multiplayer.md#the-click-scheme)). A ping is a glyph at the spot, on the
+minimap and on the chart, with a short cue, for your own side only. It is a hint, not an order:
+the two bots nearest an ATTACK, ON MY WAY, DEFEND or GO HERE say ON IT and go there, and the
+bots near a DANGER back off. [Pings](gameplay/pings.md), [Bots](multiplayer.md#bots).
 
 **The camps are the jungle, and the jungle is symmetric.** Six fixed sites, three on each side of the
 road, mirrored so both teams walk the same distance: four **WOLF DENS** that pay gold, and one

@@ -94,8 +94,8 @@ cmd           one-shot order, run by runCmd (js/ui/wheel.js):
               good, dir, n?) or 'sell' (a bag cell, i); no tile and no contest
               (every item is always on sale), but it re-checks its own reach
               (shopCmd, js/ui/shop.js)
-              or {kind:'flag', tx, ty, id} - plant that order's flag there, no
-              reach and no contest; id null lifts it
+              or {kind:'ping', k, x, y} - a ping at that world point, no
+              reach and no contest (pingCmd, js/sim/pings.js)
               or {kind:'pkdie'|'agbell', ...} - the practice room's
               roll die and range bell
               An order of the wrong shape (a string where an index goes, a key
@@ -156,7 +156,7 @@ SPACE, SHIFT, UP, SEMI …).
 verb — the four walk keys, the four abilities, dodge, slide, harvest, the two meals, the card
 draw, the inventory drawer, the sheet, the build list and its rotate, the map, the standings, mute,
 pause, and the CLICK
-scheme's three of its own (attack-move, stop, the held flag wheel) — with the key each starts on
+scheme's three of its own (attack-move, stop, the ping) — with the key each starts on
 per scheme (`key` on WASD, `ck` on CLICK, `ms` on MOUSE where it differs from `ck`; an action
 with none is not on that scheme), in the
 order the CONTROLS page lists them. **The keyboard has three schemes and each keeps its own map**
@@ -190,8 +190,8 @@ two share one. Every held key lets go on a rebind, the listen dies with the slab
 on blur and on any press but its own cap, and `resetBinds` puts the defaults back. Four gestures have no key and are exposed bare for a
 pad's trigger or button: `fireDown`/`fireUp` (the draw — the mouse goes through `pointerPress`
 because a press has the HUD to get past first, a trigger is never over a well),
-`openFlagWheel()` (the flag wheel on the tile under the pointer — the chart's tile while the map
-is up), `openWheelNear(p, ax, ay)` (a build wheel on the tile the body faces — or the manage
+`openPingWheel()` (the ping wheel on the point under the pointer — the chart's or the minimap
+disc's point when the pointer is on one), `openWheelNear(p, ax, ay)` (a build wheel on the tile the body faces — or the manage
 wheel, with a building of the player's own there — for a controller with no pointer to lay the
 build list's ghost with) and `panelScrollBy(d)` (whichever page is up). `mouse.src` is who moved the pointer
 last — `'mouse'` or `'pad'` — and in play the pad keeps rewriting the aim
@@ -235,8 +235,9 @@ bot fills, once per step from `sampleHumanInput`.
   **attack-move**: walk there, lock the first foe seen within `CK_ACQ_R` (160 px) on the way —
   a rival player through `seenAt`, a rival robot, a camp's monster, never a deer — chase it,
   and walk on when it is down. On a body, that body. **S (`stop`) drops the lot**, and so does a
-  new order, a death and the scheme switch; Escape disarms A. **G (`flag`) holds the flag wheel**
-  open over the pointer and its release plants, the pad's R3 grammar.
+  new order, a death and the scheme switch; Escape disarms A. **G (`ping`) pings**: a tap is GO
+  HERE at the pointer, a hold opens the ping wheel there and its release pings, the pad's R3
+  grammar ([Pings](gameplay/pings.md)).
 - **The balance of the assist:** a locked shot goes where the target *is*, never led, so a
   strafing rival at range is missed where a hand would lead it; the lock holds only to
   `CK_LOCK_R` (240 px) and through `seenAt`, so cover and GHOSTSTEP break it (`ckSees`); the
@@ -261,12 +262,12 @@ what CLICK leaves on the keyboard moves onto the mouse. The keys still work; not
   A stand lock never walks (the chase is the right button's) and a new order drops it; a left
   press at open snow lets it go.
 - **Holding the middle button opens the ACTION WHEEL** at the pointer (`msWheelPress`, wheel
-  kind `'kit'`, `MS_WHEEL`): the four abilities clockwise from the top, the two meals, the flag.
+  kind `'kit'`, `MS_WHEEL`): the four abilities clockwise from the top, the two meals, the ping.
   The travel picks and the release performs (`msKitPick`). An ability casts at the point the
   press was made, not where the flick ended: `ms.castAt` holds the aim through the whole
-  wind-up (`ckStep`), since the effect lands at the aim held at its end. The flag wedge stands
-  the flag wheel up on that tile (`w.stand`), and the next press of any button picks from it.
-  Over the chart the middle button opens the flag wheel directly.
+  wind-up (`ckStep`), since the effect lands at the aim held at its end. The ping wedge stands
+  the ping wheel up on that point (`w.stand`), and the next press of any button picks from it
+  (its hub is GO HERE). Over the chart the middle button opens the ping wheel directly.
 - **A click on an ability well readies it** (`msWell`, `ms.ready`) where the key would cast: the
   well's rim goes gold, the pointer wears the `cast` reticle, the next left press on the world
   casts there, and a right press (the walk), Escape or the well again puts it down. The scroll
@@ -302,8 +303,8 @@ off a landed eagle: `updateDrop` reads the roll intent beside E's work, so the j
 way off the roost), X works,
 Y / B / LB / RB are abilities 1-4 in strip order (LB held is the grapple), START the ESC slab,
 L3 the inventory drawer, dpad up the sheet, dpad left/right the two meals. Four are gestures: RT is the draw
-(held, released fires — the same falling edge as the button), LT the slide, R3 holds the flag
-wheel open over the aim (and draws a card on a tap under `PAD_TAP`, the way BACK splits map from standings), dpad down holds the build wheel over the tile the body faces — a pad has no pointer to lay the list's ghost with, so `openWheelNear` offers the wheel there and lays the pick on that tile — (the right stick picks the wedge by its tilt from the
+(held, released fires — the same falling edge as the button), LT the slide, R3 pings at the aim
+(a tap is GO HERE, a hold opens the ping wheel), dpad down holds the build wheel over the tile the body faces — a pad has no pointer to lay the list's ghost with, so `openWheelNear` offers the wheel there and lays the pick on that tile — (the right stick picks the wedge by its tilt from the
 wheel's own hub, `PAD_WHEEL_R` off `wheelLayout` — the same over a wheel X holds open: the
 armory, the roll die, the range bell), and BACK is the standings while held and the map on a
 tap under `PAD_TAP`. The
@@ -488,7 +489,7 @@ Structures carry `owner` (player id) and `team`, set by `placeStruct()`. Ownersh
 demolition in `runCmd`, and the same team test opens the manage wheel (hold E, or a pad's
 `openWheelNear`) on anything not `fixed`. `cursorInfo()` (js/draw/render.js) shows the hammer in two
 places only: over the world while the T build list is up (dim where the ghost cannot stand, and
-wearing the picked piece's icon), and over a building of your side's. The right button builds nothing — it is the flag wheel.
+wearing the picked piece's icon), and over a building of your side's. The right button builds nothing — it is the ping.
 
 Five players per colour means **teammates share it**, so anything that names one player in text
 takes a second axis: `playerTint(p)` returns a per-player shade of that team's palette (`trim`,
@@ -783,11 +784,9 @@ Three small rules, and the teamwork is what they add up to:
   the side's one stalker job first, it walks to its mark's last known spot, and the mark in sight
   is its foe over anyone nearer (`aiGrudgeFoe`, the thought's why YOU AGAIN). `ai.grudge.seenT`
   is when it first saw its mark since, for the callouts.
-- **Your flag.** An ally rolls once a human flag whether it answers it (`aiObeys`, the profile's
-  `obey`, 1 when missing). The side's guard keeps the bird when the human's flag is an ATTACK
-  (`ai.guarding`, the thought's GUARDING). Each bot answering says so once a flag
-  (`aiAnswerFlag`/`aiAnswerStep`): ON IT on its way, nothing when already in the ring, GUARDING
-  when the guard or its bird's alarm keeps it home (one GUARDING a side a flag, `T.guarded`).
+- **Your ping.** An ally rolls once a ping whether it takes it up (`pingSteer`, the profile's
+  `obey`, 1 when missing), and the side's guard never leaves the bird for an ATTACK. Each bot
+  taking one up says ON IT once (`aiAnswer`/`aiAnswerStep`).
   The side answers one at a time, `AI_ONIT_T` (0.2 to 0.6 s, by seat) apart, never past
   `CALL_SIDE_MAX` plates up; an answer still waiting `AI_ONIT_STALE` (4 s) is dropped.
 
@@ -836,6 +835,9 @@ The ladder:
    give-up: a spot that will not take burns it four times as fast and ends in the lockout.
    Both directions go through `inp.ability = 3`, exactly the cast key a human presses (rising is
    free — tryAbility's snow toggle).
+2b. **back off** — a human's DANGER ping near it (`ai.backOff`, `pingSteer`): for `PING_BACK_T`
+   it walks home, or straight out of the danger, fighting nothing, until it is
+   `PING_DANGER_R` x 1.6 clear (`aiBackOffRung`).
 3. **fight** — a rival within the profile's `sight` (`aiNearestEnemy`, filtered through `seenAt()`
    so a buried one is simply not there — plus anyone within `AI_ANCHOR_R` of an **anchor** the bot
    is minding, noticed from up to `AI_ANCHOR_D`: its own bird under attack, the rival bird it is
@@ -872,31 +874,17 @@ The ladder:
    the side it is chasing.
 5. **lie low** — prone with nothing in sight: hold still and let the snow finish. Everything below
    this rung walks somewhere, and a bot crawling to a berry bush at 20 px/s has stopped playing.
-5a. **the order** — a [flag](gameplay/team-flags.md) somebody else on the side planted that
-   this bot serves (`servedFlag`): a human teammate's, which is the side's whole plan while it
-   stands, or a teammate's it joined. Read before the ladder (`aiFlagSync`, then the `order`
-   block): it overrides the defend, guard, push and escort reads below — the one exception the
-   **alarm** (its own bird under `AI_ALARM_HP`), which no order overrides — and an ATTACK whose
-   ring covers the rival bird, or a DEFEND whose ring covers its own, is folded straight into
-   `pushE`/`defend` so rungs 6 and 8 play them with everything they know (the lane, the defenders'
-   turrets, the archer's station). Every other order this rung walks: outside `AI_FLAG_IN` of
-   the flag it goes there (on the roost budget — a ring in a corner's woods is a walk into
-   trees), and a flag it cannot route to is left to the ladder; inside, ATTACK breaks the
-   nearest rival building in the ring with E and holds the ground when nothing is left (rivals
-   in sight are rung 3's — the ring is an anchor), RALLY stands (and on the way only a rival
-   inside `AI_SIEGE_R` is fought: a rally is a disengage), DEFEND and GATHER go on down the
-   ladder with the harvest bounded to the ring and the roam replaced by standing. **A bot's own
-   flag is the ladder made visible**: rung 6 answering a threat flies DEFEND at its bird, rung 8
-   pushing flies ATTACK at the rival bird, rung 13 flies GATHER where it works (`ai.want`, read
-   every `AI_FLAG_T` and kept `AI_FLAG_DROP` past its last reason; a guard's station, rung 7,
-   is a routine and flies nothing). It plants nothing a
-   teammate is already flying over the same ground — it joins that flag (`ai.join`) — and a bot
-   with nothing of its own to fly helps at the side's nearest standing flag that wants hands
-   (`aiHelps`: an ATTACK from anywhere unless it is a guard, a GATHER only inside
-   `AI_FLAG_HELP`, a DEFEND never — the threat read already calls the right number home — a
-   RALLY from anywhere). A human's flag pulls every own flag down.
-   Planting goes through `plantFlag` directly rather than `input.cmd`: a flag is per-player
-   state, not an act in the world, and the human's radial ends in the same function.
+5a. **the ping** — a human teammate's [ping](gameplay/pings.md) this bot took up (`ai.ping`,
+   set by `pingSteer` for the two bots nearest the spot). Read before the ladder (the `order`
+   block of `aiOrders`): it overrides the defend, guard, push and escort reads below — the one
+   exception the **alarm** (its own bird under `AI_ALARM_HP`), which no ping overrides — and an
+   ATTACK within `PING_R` of the rival bird, or a DEFEND within it of its own, is folded straight
+   into `pushE`/`defend` so rungs 6 and 8 play them with everything they know (the lane, the
+   defenders' turrets, the archer's station). Every other ping this rung walks: farther than
+   `PING_IN` it goes there (on the roost budget) for up to `PING_FOLLOW`, and a spot it cannot
+   route to is let go; there, it holds the spot `PING_STAY` seconds, and an ATTACK breaks the
+   nearest rival building within `PING_R` with E first (rivals in sight are rung 3's — the spot
+   is an anchor). `ai.want` still records the ladder's own push or defence for the dashboard.
 6. **defend** — its own bird under `threat` on the shared read (**the two birds**, below): as
    many bots as `aiDefendersWanted` calls home walk to it (`aiToRoost`, below) from wherever on the map they are,
    farming, escorting or guarding, and sweep round it 70 px out, looking outward, never standing
@@ -923,7 +911,7 @@ The ladder:
    walled but one gate of `AI_RING_GAP` (3) tiles where the road crosses it, so every other way
    in closes and the road, under the turrets, is the way in. Trees chopped round a base widen
    the line and the next look plans the walls that close it. While the line is wider than the
-   gate, any bot at home (inside `AI_GUARD_R`, no push, defence or flag) lays its walls too.
+   gate, any bot at home (inside `AI_GUARD_R`, no push, defence or ping) lays its walls too.
    Walls may stand on the road. **No bot building ever cuts a way:** every bot wall, turret and bay near its own
    roost must pass `aiKeepsWay`, which floods the box from the lane gate with and without the
    piece, one tile at a time and again as a 2×2 body, and refuses it if anywhere reachable
@@ -985,7 +973,7 @@ The ladder:
    (`animalLevel`), `AI_ROAD_LV` (0.15) more for each level it trails that average and less for
    each it leads, divided by its mood's `greed` (a greedy bot works longer). On a road stretch it
    walks to the nearest rival soldier inside `AI_ROAD_D` (720 px), thought ROAD; rung 3 does the
-   fighting once the wave is in sight. Off an order's ring, an escort's leash and a guard's post
+   fighting once the wave is in sight. Off an escort's leash and a guard's post
    only. No wave out, or a work stretch, and it goes on down the ladder.
 10. **hunt** — an animal within `AI_HUNT` (120 px), with a 6 s catch timer per animal (prey
    outruns a walk; 8 s for a blade). A bow shoots from 55 px; a blade walks in to `AI_MELEE_D`
@@ -1094,10 +1082,10 @@ runs every `CALL_LOOK` ticks staggered by seat and draws no `rng()`, so a match 
 same with callouts as without them. `callouts` and `callSaid` are in `SAVE_ROOTS`, and
 `addCallout` records each call (`evPush('call')`) so a host's clients raise the same one.
 
-**The team brain speaks through the same door.** A bot answering a human's flag says ON IT, or
-GUARDING for one bot it keeps on the bird (`aiAnswerFlag`/`aiAnswerStep`, js/ai/ai-team.js: who
-answers, and the stagger by seat, are the brain's); the callouts own only the words, the icons
-and the life on screen (`CALLS.onit`, `CALLS.guarding`). **A grudge** is voiced here: a rival bot
+**The team brain speaks through the same door.** A bot taking up a human's ping says ON IT
+(`aiAnswer`/`aiAnswerStep`, js/ai/ai-team.js: the stagger by seat is the brain's); the callouts
+own only the words, the icons and the life on screen (`CALLS.onit`). **A player's ping** rides the
+same list as a callout kind of its own (`PING_CALLS`, [Pings](gameplay/pings.md)). **A grudge** is voiced here: a rival bot
 whose `p.ai.grudge` has just stamped `seenT` (its first sight of its mark) says YOU AGAIN over its
 head to the mark's side only (a call's `see`), once per pair per `CALL_GRUDGE_T` (`callGrudge`).
 A scripted bot may say only `BOT_CALLS` (js/ai/bot-api.js), none of these three.
@@ -1146,7 +1134,7 @@ what the rest of the code needs to know is this:
   `player.team` and the rival profile to the other side, so a client on the far team plays beside
   rival-grade bots; `aiSituation`'s `human` flag, `aiRank`'s skip and the escort's ward are the
   host's `player` alone — a remote human is counted at a roost but starts no ally push and gets no
-  escort. A human flag does lead its side for either kind (`isHuman`). Notices (`raiseNotice`) and
+  escort. A human's ping does steer its side's bots for either kind (`isHuman`). Notices (`raiseNotice`) and
   the own-bird alarm are raised on the host's screen only.
 - **What the step gates on `p === player`, a client does for itself.** The profile's lifetime
   stats and `markDropped` never run on a client's screen, so

@@ -809,6 +809,12 @@
     turn() { if (smp('turn', { vol: 0.45, jitter: 0, dur: 0.45 })) return; tone(520, 0.05, 'square', 0.05, 260); },
     // a radial wheel rolling open under the held key or button
     wheelUp() { if (smp('wheelUp', { vol: 0.56, jitter: 0 })) return; tone(480, 0.05, 'triangle', 0.06, 200); tone(720, 0.07, 'triangle', 0.05, 160, 0.04); },
+    // A PING on your side (js/sim/pings.js): two quick notes up, a DANGER's
+    // two notes down - short enough to sit under a fight, never a world sound
+    ping(k) {
+      if (k === 'danger') { tone(700, 0.06, 'triangle', 0.08); tone(470, 0.1, 'triangle', 0.08, 0, 0.07); return; }
+      tone(880, 0.05, 'triangle', 0.07); tone(1320, 0.08, 'triangle', 0.06, 0, 0.055);
+    },
     // A NEW BEST on any of the practice instruments - the range's round, the
     // parkour's lap. One cue for the one meaning: it was the level-up sample
     // at the bell and the dawn chime at the line, so the same event sounded

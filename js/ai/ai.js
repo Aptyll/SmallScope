@@ -31,10 +31,6 @@ const AI_PATROL_D = 360;  // px up the road from the base's junction the scoutin
 const AI_ROOST_BUDGET = NAV_BUDGET * 4; // A* expansions a walk into a roost's forest may spend
 const AI_ESCORT = 120;    // px an escort lets the human get away before it follows
 const AI_ESCORT_R = 400;  // px past which the human is too far to escort
-const AI_FLAG_T = 0.5;    // s between a bot's re-reads of the side's flags (aiFlagSync)
-const AI_FLAG_DROP = 3;   // s a bot keeps its own flag flying past the last reason for it
-const AI_FLAG_IN = FLAG_R * 0.6; // px from a flag inside which a bot counts as AT it (the flag rung)
-const AI_FLAG_HELP = FLAG_R * 2; // px within which an idle bot joins a teammate's GATHER (a fight it joins from anywhere)
 // the two objectives as a bot sees them: a roosting bird, or null
 function aiRivalEagle(p) { const e = state.drop && state.drop.eagles[1 - p.team]; return e && e.state === 'down' ? e : null; }
 function aiOwnEagle(p) { const e = state.drop && state.drop.eagles[p.team]; return e && e.state === 'down' ? e : null; }
@@ -361,62 +357,8 @@ function aiEagleTile(e, p) {
   return best;
 }
 
-// ---- the flag ---------------------------------------------------------------
-// A bot's flag is the ladder's own decision made visible (the `team flags`
-// banner, robots.js): ai.want is what the last tick decided - DEFEND at its
-// bird, ATTACK at the rival's, GATHER where it works - and this flies it.
-// Coordination is one flag a plan, not one a bot: a teammate already flying
-// the same order over the same ground is JOINED (ai.join) instead of
-// twinned, a bot with nothing of its own to fly helps at the side's nearest
-// flag, and a HUMAN teammate's flag pulls every own flag down - while it
-// stands the side has one plan, the human's. Re-read every AI_FLAG_T; an own
-// flag outlives its reason by AI_FLAG_DROP so a threat that flickers does
-// not flicker the flag with it.
-function aiFlagSync(p, dt) {
-  const ai = p.ai;
-  ai.flagT -= dt;
-  if (ai.flagT > 0) return;
-  ai.flagT = AI_FLAG_T;
-  const w = ai.want;
-  if (humanFlag(p.team)) { if (p.flag) clearFlag(p); ai.join = -1; ai.wantT = 0; return; }
-  if (!w) {
-    if (p.flag) {
-      ai.wantT += AI_FLAG_T;
-      if (ai.wantT >= AI_FLAG_DROP) { clearFlag(p); ai.wantT = 0; }
-      ai.join = -1;
-      return;
-    }
-    // nothing of its own to fly: help at whatever the side has standing that
-    // wants hands (aiHelps)
-    const j = ai.join >= 0 ? players[ai.join] : null;
-    if (j && j.active && j.flag && aiHelps(p, j.flag)) return;
-    const q = nearestTeamFlag(p, (f) => aiHelps(p, f));
-    ai.join = q ? q.id : -1;
-    return;
-  }
-  ai.wantT = 0;
-  const q = teamFlagAt(p.team, w.type, w.x, w.y, p);
-  if (q) { if (p.flag) clearFlag(p); ai.join = q.id; return; }
-  ai.join = -1;
-  const f = p.flag;
-  if (f && f.type === w.type && Math.hypot(f.tx * TILE + 8 - w.x, f.ty * TILE + 8 - w.y) < FLAG_R * 0.5) return; // the standing flag already says it
-  plantFlag(p, Math.floor(w.x / TILE), Math.floor(w.y / TILE), w.type);
-}
-// Would an idle bot go and help at a teammate's flag? An ATTACK from
-// anywhere - unless it is one of the side's guards, who keep the bird - so
-// a push one bot starts is a push the free hands join; a GATHER only when it
-// is near (a workplace is one bot's, and four bots crossing the map to
-// share a tree is a side that has stopped farming); a DEFEND never - the
-// threat read (aiDefendersWanted) already calls exactly the number home,
-// and a side that empties the map for one arrow never pushes; a RALLY from
-// anywhere (a human's only, and a human's flag is served regardless).
-function aiHelps(p, f) {
-  if (f.type === 'attack') return !aiOnGuard(p, aiProfile(p));
-  if (f.type === 'gather') return aiRole(p) === 'gatherer' && Math.hypot(f.tx * TILE + 8 - p.x, f.ty * TILE + 8 - p.y) < AI_FLAG_HELP; // (a scout, stalker or slayer has a job of its own: the team brain)
-  return f.type === 'rally';
-}
 // the nearest tile of a building's footprint to p, as a work target (E on
-// an enemy building under an ATTACK flag)
+// an enemy building round an ATTACK ping)
 function aiStructTile(o, p) {
   let best = null, bd = 1e9;
   for (let dy = 0; dy < structH(o); dy++) for (let dx = 0; dx < structW(o); dx++) {

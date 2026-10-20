@@ -70,7 +70,7 @@ hand feel like one control. A save written before `settings.v` indexes the old s
 and is carried across by `MM_MIGRATE` on load. Stepped by the
 scroll wheel while `overMinimap()` (pointer inside the disc + ring), which pre-empts the camera
 zoom in the wheel handler and is saved with the settings. Every marker drawn over it (robots, players,
-camp glyphs, your side's [flags](../gameplay/team-flags.md) with their rings) multiplies its tile
+camp glyphs, the callouts and your side's [pings](../gameplay/pings.md)) multiplies its tile
 offset by `s`. The disc sits on an opaque graphite
 backing (`AB_BG`, to `MM_R + 5`; its day ring's track is `HUD_EDGE`) inside a **strong 2 px
 `HUD_INK` outline** (to `MM_R + 7`), the HUD frame's own three inks since 0.459, and it has **no

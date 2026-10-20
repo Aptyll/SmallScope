@@ -96,7 +96,7 @@ function applyResult(ladder, m, log, logPath) {
     return t;
   };
   return {
-    v: 1, id: m.id, date: new Date().toISOString(), api: 1, patch: log.patch || null,
+    v: 1, id: m.id, date: new Date().toISOString(), api: 2, patch: log.patch || null,
     seed: m.seed, shape: m.shape, shapeName: log.shapeName || null,
     team0: { id: m.team0, rev: A.rev, before: before[0], after: A.rating, stats: side(0) },
     team1: { id: m.team1, rev: B.rev, before: before[1], after: B.rating, stats: side(1) },

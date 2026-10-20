@@ -165,19 +165,7 @@ function renderMinimap(now) {
     if (Math.hypot(dx, dy) > MM_R - 1) continue;
     drawMapUnit(ctx, MM_CX + dx, MM_CY + dy, TEAMS[skin(p.team)].mark, HUD_INK, 1, false, foeCue(p.team));
   }
-  // flags on your side, as the same pennant and ring the chart draws: where
-  // the side was sent is exactly the kind of thing you check without opening
-  // a map (the disc clips the ring, so a flag off its edge shows as its rim)
-  for (const q of players) {
-    if (!q.active || q.team !== vp.team || !q.flag) continue;
-    const dx = (q.flag.tx + 0.5 - ptx) * s, dy = (q.flag.ty + 0.5 - pty) * s;
-    if (Math.hypot(dx, dy) > MM_R - 2 + FLAG_R / TILE * s) continue;
-    ctx.save();
-    ctx.beginPath(); ctx.arc(MM_CX, MM_CY, MM_R - 1, 0, Math.PI * 2); ctx.clip();
-    drawFlagMark(ctx, MM_CX + dx, MM_CY + dy + 3, q.flag, TEAMS[skin(q.team)].mark, undefined, s);
-    ctx.restore();
-  }
-  if (callouts.length) drawCalloutsMap(ptx, pty, s, vp); // the bots' calls, pulsing where they are about (js/draw/callouts.js)
+  if (callouts.length) drawCalloutsMap(ptx, pty, s, vp); // the bots' calls pulsing where they are about, and your side's pings (js/draw/callouts.js)
   // the downed eagles: both objectives, always on the disc - keeping yours
   // alive (and finding theirs) is the match
   if (state.drop) for (const e of state.drop.eagles) {

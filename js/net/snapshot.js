@@ -42,7 +42,7 @@ const SNAP_SKIP = new Set(['input', 'ai', 'nav', '_fx', '_fy', '_tx', '_ty', '_t
   // adding a name here is proven harmless or caught as pixels
   'faceT', 'trickleT', 'footT', 'footSide', 'puffT', 'dodgeDustT', 'slideDustT', 'eatFxT', 'burnTick', 'fishCd', 'catchT', 'swingCd',
   'idleT', 'wary', 'thinkT', 'moveT', 'turnT', 'emT', 'spook', 'biteCd', 'alertT', 'dashT', 'dashX', 'dashY', 'fleeT', 'fleeGoal', 'goal',
-  'avoidT', 'madT', 'madX', 'madY', 'baySite', 'zipLast']);
+  'avoidT', 'baySite', 'zipLast', 'pingLog']);
 // the match's own state keys: the clock, the result, the birds. Everything
 // else on `state` is one screen's UI (overlays, the menu, the death view)
 const SNAP_STATE = ['time', 'elapsed', 'day', 'tick', 'darkness', 'wind', 'windDir', 'windT', 'fishT', 'creekGone', 'over', 'end', 'eagleCine', 'story', 'votes', 'voteCd', 'surrendered'];
@@ -226,9 +226,9 @@ function snapApplySingles(s) {
 }
 // a field onto an entity the game holds by identity: a nested plain object
 // is merged into the one already there (a player's `inv` is aliased by the
-// HUD, its `food`, `kit`, `flag` and `look` are read through the body), the
+// HUD, its `food`, `kit` and `look` are read through the body), the
 // rest is set
-const SNAP_MERGE = new Set(['inv', 'food', 'kit', 'flag', 'spawn', 'look']); // the only fields merged in place: plain data the game holds by handle
+const SNAP_MERGE = new Set(['inv', 'food', 'kit', 'spawn', 'look']); // the only fields merged in place: plain data the game holds by handle
 function snapAssign(e, k, v) {
   const old = e[k];
   // never a token (it names another entity; merging its two keys into the
@@ -625,7 +625,7 @@ function snapFogHid() {
   }
   return out;
 }
-// a hidden player's packed form: the fields every screen shows, and the flag
+// a hidden player's packed form: the fields every screen shows
 function snapFogStub(packed) {
   const o = { fogHid: 1 };
   for (const k of Object.keys(packed)) if (SNAP_FOG_KEEP.has(k)) o[k] = packed[k];

@@ -54,8 +54,8 @@ const RECONNECT_GRACE = 60;
 const IN_QMAX = 4;  // a peer's inputs a host holds in line (netHostStep): past this, 66 ms of them, the oldest fold together
 const IN_QWIN = 30; // steps: a line that never fell under two in this long is standing, and gives one back
 // which controls are a person: a `remote` body is a human on another screen,
-// and everything that treats a human differently from a bot (a whole side
-// reading its flag, the pack auto-fitting, the eagle never force-dropping it)
+// and everything that treats a human differently from a bot (its pings
+// steering the side's bots, the pack auto-fitting, the eagle never force-dropping it)
 // asks this rather than the string
 function isHuman(p) { return p.control === 'human' || p.control === 'remote'; }
 // is this match shared with another screen: then nobody can pause it - the
