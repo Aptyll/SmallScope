@@ -77,19 +77,26 @@ const BUILD_ITEMS = {
   cloak:    { name: 'SNOW CLOAK', price: 120, from: ['boots', 'hide'], stats: { hp: 20, ms: 4 }, passive: 'drift', icon: ['gear', 3, 2, 3] },
   feathers: { name: 'FEATHERS', price: 130, from: ['string', 'boots'], stats: { as: 0.18, ms: 4 }, passive: 'light', icon: ['gear', 3, 1, 3] },
   sunstone: { name: 'SUNSTONE', price: 200, from: ['flint', 'flint'], stats: { dmg: 7 }, passive: 'ambush', icon: 'itemArt_sunstone' },
+
+  // THE CONSUMABLE: a stack of up to `stack` in ONE slot (League's potions),
+  // drunk off that slot's key (the `potion` banner below). No stats, no passive,
+  // never a part of anything.
+  potion: { name: 'HEALTH POTION', price: 50, stack: 5, stats: {}, icon: 'itemPotion' },
 };
-const ITEM_PARTS = Object.keys(BUILD_ITEMS).filter((id) => !BUILD_ITEMS[id].from);
+const ITEM_PARTS = Object.keys(BUILD_ITEMS).filter((id) => !BUILD_ITEMS[id].from && !BUILD_ITEMS[id].stack);
 const ITEM_DONE = Object.keys(BUILD_ITEMS).filter((id) => BUILD_ITEMS[id].from);
 
 function itemIcon(id) {
   const ic = BUILD_ITEMS[id].icon;
   return Array.isArray(ic) ? SPRITES.gearIcons[ic[1]][ic[2]][ic[3]] : SPRITES[ic];
 }
-function isPart(id) { return !BUILD_ITEMS[id].from; }
+function isPart(id) { return !BUILD_ITEMS[id].from && !BUILD_ITEMS[id].stack; }
+function isStack(id) { return !!BUILD_ITEMS[id].stack; }
 // the metal an item is drawn in, everywhere it shows: a part in dim green, a
 // finished item in gold (its well's rim, and the ink its name is printed in)
+// (the potion wears the part's green: cheap, and spent)
 const ITEM_METAL = { part: { rim: '#3f6e44', ink: '#7fb87f' }, done: { rim: '#ffcf33', ink: '#fff6c8' } };
-function itemMetal(id) { return isPart(id) ? ITEM_METAL.part : ITEM_METAL.done; }
+function itemMetal(id) { return BUILD_ITEMS[id].from ? ITEM_METAL.done : ITEM_METAL.part; }
 
 // THE PRICE STILL TO PAY for an item: its own price minus every part of it
 // already in a slot, each slot counted once - so a Sunstone with one Flint
@@ -132,6 +139,7 @@ function itemsChanged(p) {
 // stock is endless, so two buyers never want the same thing.
 function buyItem(p, id) {
   if (!Object.hasOwn(BUILD_ITEMS, id) || !merchNear(p)) { shopDeny(p); return false; }
+  if (id === 'potion') return buyPotion(p);
   const c = itemCost(p, id);
   if (p.inv.gold < c.gold || itemRoom(p, c.used) < 1) { shopDeny(p); return false; }
   pay({ gold: c.gold }, p);
@@ -148,7 +156,8 @@ function sellItem(p, slot) {
   const id = p.items[slot];
   if (!id || !merchNear(p)) { shopDeny(p); return false; }
   const v = itemSellValue(id);
-  p.items[slot] = null;
+  if (id === 'potion') takePotion(p); // a stack sells one at a time
+  else p.items[slot] = null;
   itemsChanged(p);
   tradeGold(p, v);
   shopFx(p, String(v), RES_COLORS.gold);
@@ -174,6 +183,72 @@ function itemsOnHit(src, e, o) {
 function itemsTick(p, dt) {
   if (p.fightT > 0) p.fightT = Math.max(0, p.fightT - dt);
   else if (p.kit.restHeal > 0 && p.hp < p.maxHp) healPlayer(p, p.kit.restHeal * dt);
+  potionTick(p, dt);
+}
+
+// ---- potion --------------------------------------------------------------
+// THE HEAL A PLAYER CARRIES, League's way: bought at either counter for its
+// price, stacked up to BUILD_ITEMS.potion.stack in ONE item slot (`p.items`
+// holds 'potion' there and `p.potions` is how many), and drunk off that slot's
+// key or a click on its well (the input's useItem intent, useItem below).
+// One drink heals POTION_HEAL over POTION_T through healPlayer, and nothing
+// breaks it: a hit, a stun and a roll all let it run. A second one waits for
+// the first to finish (the well sweeps for the time left), and a body at full
+// health keeps its potion. Death pours it out (Player.reset).
+const POTION_HEAL = 100;  // health one potion gives back...
+const POTION_T = 15;      // ...over this many seconds
+const POTION_FX_T = 0.35; // s between the green motes rising off a drinker
+function potionSlot(p) { return p.items ? p.items.indexOf('potion') : -1; }
+// room for one more: a stack with space, or a free slot to start one in
+function potionRoom(p) {
+  return potionSlot(p) >= 0 ? (p.potions || 0) < BUILD_ITEMS.potion.stack : p.items.includes(null);
+}
+function buyPotion(p) {
+  const price = BUILD_ITEMS.potion.price;
+  if (p.inv.gold < price || !potionRoom(p)) { shopDeny(p); return false; }
+  pay({ gold: price }, p);
+  if (potionSlot(p) < 0) { p.items[p.items.indexOf(null)] = 'potion'; p.potions = 0; }
+  p.potions++;
+  shopFx(p, '-' + price, RES_COLORS.gold);
+  sfxFor(p, 'coin');
+  return true;
+}
+// one out of the stack; the last one frees its slot
+function takePotion(p) {
+  p.potions = Math.max(0, (p.potions || 0) - 1);
+  if (p.potions <= 0) { const i = potionSlot(p); if (i >= 0) p.items[i] = null; }
+}
+// the useItem intent (updatePlayer, js/sim/sim.js): an item slot's key or a
+// click on its well. Only the potion has a use today; any other slot is
+// refused with the well's red.
+function useItem(p, slot) {
+  if (p.items[slot] === 'potion') { drinkPotion(p, slot); return; }
+  if (p === player) itemDenied(slot);
+}
+function drinkPotion(p, slot) {
+  if (p.dead || p.potT > 0 || p.hp >= p.maxHp || (p.potions || 0) <= 0 || inAir(p)) {
+    if (p === player) itemDenied(slot);
+    return;
+  }
+  takePotion(p);
+  p.potT = POTION_T;
+  p.potFxT = 0;
+  sfxAt('heal', p.x, p.y);
+  burst(p.x, p.y - 8, '#e0505a', 6, 30, 0.4);
+}
+function potionTick(p, dt) {
+  if (!(p.potT > 0)) return;
+  const t = Math.min(dt, p.potT);
+  p.potT -= t;
+  healPlayer(p, POTION_HEAL / POTION_T * t);
+  p.potFxT -= dt;
+  if (p.potFxT <= 0) {
+    p.potFxT = POTION_FX_T;
+    particles.push({
+      x: p.x + rand(-4, 4), y: p.y - 3, vx: rand(-4, 4), vy: rand(-22, -12),
+      life: rand(0.4, 0.6), maxLife: 0.5, color: '#8fe08a', size: 1, grav: 0, alpha: 1 - concealOf(p),
+    });
+  }
 }
 
 // ---- bots ------------------------------------------------------------------
@@ -200,7 +275,8 @@ function botNextItem(p) {
 }
 // a held part no item still left on p's list is built from (bought off an
 // old list): the slot index of the first one, or -1. Sold at a counter once
-// the slots are full, so a stray part never blocks the build.
+// the slots are full, so a stray part never blocks the build - and so are the
+// potions, last, once the build still wants their slot.
 function botStrayPart(p) {
   const list = BOT_BUILDS[CLASSES[p.cls].name] || BOT_BUILDS.HUNTER;
   const want = new Set();
@@ -209,7 +285,16 @@ function botStrayPart(p) {
     const id = p.items[i];
     if (id && isPart(id) && !want.has(id)) return i;
   }
-  return -1;
+  return botNextItem(p) ? potionSlot(p) : -1;
+}
+// A bot keeps potions on it the way a League bot does: the first one before
+// anything else on its list, and topped up to BOT_POTIONS when the build has
+// nothing it can buy right now. Never while the build needs the slot.
+const BOT_POTIONS = 2;
+function botWantsPotion(p, first) {
+  const n = potionSlot(p) >= 0 ? p.potions : 0;
+  if (n >= (first ? 1 : BOT_POTIONS) || p.inv.gold < BUILD_ITEMS.potion.price || !potionRoom(p)) return false;
+  return n > 0 || p.items.filter((x) => x === null).length > 1 || !botNextItem(p);
 }
 // what a bot would buy RIGHT NOW with its purse: the next item whole, or a part
 // of it. null when nothing on its list is affordable.

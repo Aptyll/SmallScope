@@ -140,7 +140,7 @@ settings panel, and its pause key does nothing):
 sampleHumanInput(player)
 netHostStep(dt):  drain the transport - hello -> a slot, gone -> a bot, resync -> a full sync,
                   in -> that peer's queue; then ONE queued input per peer goes into its body's
-                  p.input (held fields overwrite; the edges dodge, jump, eatBerry, eatFish,
+                  p.input (held fields overwrite; the edges dodge, jump, useItem,
                   ability and cmd latch until the sim consumes them). An empty queue holds the last
                   input; past IN_QMAX, or never under two for IN_QWIN steps, the oldest folds into
                   the next (netInEdges keeps its edges)
@@ -172,7 +172,7 @@ netClientStep(dt): send {t:'in'} - this tick's input and the ack - step our own 
 
 | Thing | Owner | Reaches a client as |
 | --- | --- | --- |
-| every own field of every player (position, hp, gold, pouch, items, cooldowns, status timers, aboard/drop...) except `SNAP_SKIP` | host | snapshot fields, by reflection; every client gets every player's fields |
+| every own field of every player (position, hp, gold, items, potions, cooldowns, status timers, aboard/drop...) except `SNAP_SKIP` | host | snapshot fields, by reflection; every client gets every player's fields |
 | arrows, drops, robots, animals (camp monsters among them), fish, the two eagles | host | snapshot lists keyed by network id (players by slot, eagles by team) |
 | `objects` tiles (a building raised or wrecked, a felled tree), `ground`, the `structures` registry | host | whole in the full sync; in a delta only the tiles, tile fields and ground cells touched since the peer's ack (`objDiff`, `objWholeAt`, `groundDiff`, `structs`) - state, not events, and no hash check |
 | the nets, the holes and ice cracks, the ice breaks, the orca (eased like a body: `netClientLerp`), the road registry (`pads`), the camps' `repopT` and `seen` (a side's cut: its own `seen` only, `snapFogCamps`) | host | snapshot singletons, sent when touched |
@@ -217,7 +217,7 @@ from this snapshot, not written beside it:
   singleton field by field (the ack-keyed base, below). A client updates its
   entities **in place** under those ids, so a reference resolved a tick ago still points at the
   thing - which is also why a tile changes in place, and why a player's aliased plain objects
-  (`SNAP_MERGE`: `inv`, `food`, `kit`, `spawn`, `look`) are merged rather than replaced
+  (`SNAP_MERGE`: `inv`, `kit`, `spawn`, `look`) are merged rather than replaced
   - an allow-list, because a token merged into the live object it names guts that object.
 - **Bytes with a dictionary.** The whole message is binary: every object key an index into a
   dictionary both ends grow in step (a message leads with the names it is the first to use, the
@@ -345,7 +345,7 @@ wire: the handshake is `PATCH_TXT`, the seed and the map shape in the `hello` (a
 | `phase` | h→c (`*`) | JSON | `phase`: the host turned the waiting room's page, `room` (the seats) or `pick` (the hero select's draft) |
 | `full` | h→c | bytes, reliable | `tick`, `ia` (as on a `snap`), `snap`: the whole `snapBuild()` - players, `objects` as a sparse map by tile index, `structs`, the five kinds, `eagles`, `ground` (base64 of the byte array), the singletons. The dictionary from index 0. Sent after the welcome, on a `resync`, and to a peer whose ack aged out of the ring |
 | `snap` | h→c | bytes, lossy | `tick`, `d` (the delta, below), `ev` (the cosmetics drained this flush), `ia` (the newest of THIS peer's inputs the host has stepped: where its prediction replays from), and `full` when `NET.verify` is on and the tick is a `VERIFY_EVERY` one |
-| `in` | c→h | JSON | `tick` (the client's own send counter), `ack` (the newest snapshot tick applied), `in`: `{mx, my, aimX, aimY, fire, work, slide, grapple, dodge, jump, eatBerry, eatFish, ability, cmd}`. One struct per client tick, sent once; the host queues them and steps one per tick (`netHostStep`); the client clears its edges after sending and the host latches them until the sim consumes them. A `cmd` rides inside it - there is no separate command message |
+| `in` | c→h | JSON | `tick` (the client's own send counter), `ack` (the newest snapshot tick applied), `in`: `{mx, my, aimX, aimY, fire, work, slide, grapple, dodge, jump, ability, useItem, cmd}`. One struct per client tick, sent once; the host queues them and steps one per tick (`netHostStep`); the client clears its edges after sending and the host latches them until the sim consumes them. A `cmd` rides inside it - there is no separate command message |
 | `resync` | c→h | JSON | no body: the client could not take a delta; the host answers with a `full` |
 | `peer` / `gone` | transport→h | - | someone joined or left the room or lobby (`gone` hands the body to a bot and parks the slot, below) |
 | `closed` / `hostGone` | transport→c | - | the client's own socket dropped (relay; it redials) / the host is gone: its socket closed on the relay, or the lobby's owner left on Steam |
@@ -380,7 +380,7 @@ kind's `whole`, so keys left over from before are dropped) the tick it comes bac
 `SNAP_FOG_KEEP` (name, class, level, hp, kills and the rest of what the rail, the scoreboard and
 the post-game lobby show); every other field the client holds is the last-seen value and drawn
 nowhere. A link to a body the side was not sent resolves to null and is put back when it arrives
-(`snapPendRetry`). Within what a side sees, every player's every field goes, pouch included: there
+(`snapPendRetry`). Within what a side sees, every player's every field goes, items included: there
 is no per-recipient field policy beyond the fog.
 
 ### Events
@@ -542,14 +542,14 @@ its line.
    the page is hidden the loop is driven by a worker's clock (`watchHidden`, js/app/boot.js) and the
    wrapper sets `backgroundThrottling: false`. A client shows a blinking relay pip when its socket
    is down, but nothing when snapshots merely stop arriving.
-4. **Edge-triggered inputs under loss.** `dodge`, `jump`, the meals, `ability` and `cmd`
+4. **Edge-triggered inputs under loss.** `dodge`, `jump`, `useItem`, `ability` and `cmd`
    are one-tick pulses sent ONCE, and the host latches them. Every `in` rides the reliable
    channel on both transports, so none is lost today; moving inputs to an unreliable channel
    would need the edges resent until acked.
 5. **Host advantage and trust.** The host sees zero latency and can edit anything; accepted for a
    friends game. The host clamps nothing in a remote input today (`mx`/`my` are copied as sent).
 6. **Latency is real.** The walk is predicted, so it answers at once; everything else a client
-   does (a shot, a roll, a meal, an ability) lands a round trip later, on the relay (two hops
+   does (a shot, a roll, a potion, an ability) lands a round trip later, on the relay (two hops
    through Noah's server) more than on Steam, and other bodies are drawn about half a round trip
    plus an ease behind. There is no ping: the ease is sized from how deltas arrive, not from an
    RTT.

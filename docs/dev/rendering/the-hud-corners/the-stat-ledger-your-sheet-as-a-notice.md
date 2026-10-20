@@ -44,4 +44,4 @@ about what a stat is, how it prints, or which way is up. The getters take `(kit,
 prices a pre-match pick where every hero is level 1 and passes nothing (the kit says whose it is).
 
 **Anything outside the seven lights nothing** — an item bonus to ice, the dodge, stealth,
-food, hunts, fells, `killHeal` or `ambushMul` moves no row.
+hunts, fells, `killHeal` or `ambushMul` moves no row.

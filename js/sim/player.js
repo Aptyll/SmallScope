@@ -50,7 +50,7 @@ const SNOW_TRAIL_FADE = 1.4; // fade window at the end of that life: hold crisp,
 // Hero levels (League-style, max 18). XP is its own number, apart from gold:
 // it comes from being NEAR when a rival body dies - a soldier, a scout, a
 // camp monster - shared among the allies standing there (shareXp, below), so
-// the last hit is gold and the being-there is XP. Felling, fishing
+// the last hit is gold and the being-there is XP. Felling
 // and the clock pay gold and never XP: the road is where you level.
 // LEVEL_XP[n-1] is the total needed to reach level n, the gap growing by 30 a
 // level. It is sized against a scout who keeps to the road and the camps
@@ -193,7 +193,7 @@ function kitOf(p) { return p.kit || CLASSES[p.cls].kit; }
 function setClass(p, c) { p.cls = c; p.look = Object.assign({}, CLASSES[c].look); refreshKit(p); p.hp = p.maxHp; }
 // the hero's HEALTH stat: its base, its levels and its bonuses (statOf, js/sim/stats.js)
 function levelMaxHp(p) { return statOf(p, 'hp'); }
-// THE ONE WAY HEALTH COMES BACK to a player: a meal, the daylight, a second
+// THE ONE WAY HEALTH COMES BACK to a player: a potion, a creek fish, a berry bush, the daylight, a second
 // wind, a kill's heal. Capped at the most, and what it actually gave back is
 // counted for the post-game record (js/ui/lobby.js) and returned.
 function healPlayer(p, n) {
@@ -213,9 +213,9 @@ function gainGold(p, n) {
   if (p === player && !PRACTICE) PROFILE.addGold(n);
 }
 // The merchant's till, and the ONE way gold reaches a wallet without counting
-// as earned. A SALE is an exchange, not a source: the counter buys fish and
-// berries at the same price it sells them, so counting one would turn two
-// clicks into a scoreboard farm rather than into a trade. Everything that
+// as earned. A SALE is an exchange, not a source: an item sold back is gold the
+// player already spent, so counting it would turn a buy and a sell into a
+// scoreboard farm rather than into a trade. Everything that
 // EARNS gold - a fell, a kill, the clock - still goes through gainGold.
 function tradeGold(p, n) { if (p && n > 0) p.inv.gold += n; }
 // Gold is never a physical drop: every source pays the earner on the spot
@@ -300,58 +300,12 @@ function playerTint(p) {
   return [t.trim, t.hatL, t.trimD, t.hat][Math.floor(p.id / TEAM_COUNT) % 4];
 }
 
-// ---- inventory: the pouch -------------------------------------------------
+// ---- inventory -------------------------------------------------------------
 // Gold is a wallet number and never an item - it is currency, and a purse
 // that could run out of room would make a kill refuse its own bounty. The six
-// item slots are their own list (p.items, js/sim/items.js). What else a body
-// carries is the POUCH: `p.food`, a set of uncapped counters beside the
-// wallet, one per meal. The two meals are pressed on Q and F from the hud
-// strip's own wells, so nothing in it is ever laid out, dragged or refused.
-// (The 12-cell backpack that held the burrow and the ores went in 0.531.)
-// The four helpers below are the whole API: the pickup, the catch, the sale
-// and the AI's food check go through them and never touch p.food themselves.
-// `heal` is what a meal is worth before the kit's foodMul - the ONE place the number
-// lives, so the tooltip and the meal that lands can never disagree (js/sim/core.js).
-const ITEMS = {
-  berry: { icon: 'itemBerry', heal: 20 },
-  // the lake's two, caught through a hole in the ice (the `fish` shoal,
-  // js/sim/wildlife.js): the FROST PIKE - still the `fish` key, which the market,
-  // the nets and every save already name - and the rare GOLD SUNFISH
-  fish: { icon: 'itemFrostPike', heal: 50, name: 'FROST PIKE' },
-  sunfish: { icon: 'itemSunfish', heal: 80, name: 'GOLD SUNFISH' },
-  // the creek's two (CREEK_FISH, js/sim/world.js): caught by rolling over the
-  // water onto one, eaten off the fish well like the lake's
-  whitefish: { icon: 'itemWhitefish', heal: 40, name: 'WHITEFISH' },
-  snowChar: { icon: 'itemSnowChar', heal: 70, name: 'SNOW CHAR' },
-};
-// THE FISH a body can eat, in the order the fish well eats them when no kind
-// is picked: the smallest meal first, so the best one is kept. The well's
-// picker (fishPick, js/ui/strip.js) sets p.fishPick to one of them, or null
-// for "whichever comes next" (fishToEat, js/sim/core.js).
-const FISH_KINDS = ['whitefish', 'fish', 'snowChar', 'sunfish'];
-function fishHeld(p) { let n = 0; for (const k of FISH_KINDS) n += bagCount(p, k); return n; }
-// a fresh pouch: every kind at zero, so a count is never undefined
-function newPouch() { const o = {}; for (const k in ITEMS) o[k] = 0; return o; }
-// how many of `type` the pouch holds
-function bagCount(p, type) { return (ITEMS[type] && p.food[type]) || 0; }
-// how many more fit: always all of them, so a pickup, a catch and a market
-// buy can never refuse
-function bagRoom(p, type) { return ITEMS[type] ? Infinity : 0; }
-// adds n and returns how many went in (a save from before a kind existed
-// carries no counter for it, hence the `|| 0`)
-function bagAdd(p, type, n) {
-  if (!ITEMS[type]) return 0;
-  p.food[type] = (p.food[type] || 0) + n;
-  return n;
-}
-// spends up to n and returns how many it spent
-function bagTake(p, type, n) {
-  if (!ITEMS[type]) return 0;
-  const took = Math.min(n, p.food[type] || 0);
-  p.food[type] -= took;
-  return took;
-}
-
+// item slots are their own list (p.items, js/sim/items.js), and a health
+// potion stacks in one of them. Nothing else is carried: a creek fish and a
+// berry bush heal where they stand (js/sim/world.js).
 // the class kit plus the defaults no class kit carries; an
 // item's mod() edits them in place. Shared by refreshKit and the hero
 // pop-up's preview ledger (js/ui/menu.js), so the numbers that page shows can
@@ -359,7 +313,7 @@ function bagTake(p, type, n) {
 function baseKit(cls) {
   return Object.assign({}, CLASSES[cls].kit, {
     cls, add: statBag(), // whose kit, and the stat bonuses items write (js/sim/stats.js)
-    huntMul: 1, foodMul: 1, nightHeal: false,
+    huntMul: 1, nightHeal: false,
     harvestMul: 1, dodgeCd: DODGE_CD, stealth: 1,
     ambushMul: AMBUSH_MUL, bury: PRONE_BURY,
     killHeal: 0, kindle: false, chill: false, restHeal: 0, // the item passives (js/sim/items.js)
@@ -386,7 +340,7 @@ function makeInput() {
     grapple: false,      // held: the grapple reels only while this is down
                          // (key 3 for the human; the burrow itself is now the
                          // hunter's SNOW COVER cast, key 4, not an input)
-    eatBerry: false, eatFish: false, // edge-triggered
+    useItem: -1,         // edge-triggered: use what is in this item slot (0-5) - drink a potion (useItem, js/sim/items.js)
     ability: -1,         // edge-triggered: cast the class ability on this key (1-4), js/sim/abilities.js
     cmd: null,           // one-shot: {kind:'shop'|'ping'|..., ...} or {kind:'ability', i} (cmdOk, js/ui/wheel.js)
   };
@@ -423,12 +377,7 @@ class Player {
     this.look = Object.assign({}, CLASSES[0].look); // the hero's face, set again by every setClass
     this.skins = {};                   // hero slot -> the look worn on that hero (heroSkinOf); a person's, from their profile
     this.spawn = { tx: WORLD >> 1, ty: WORLD >> 1 }; // landing tile once the eagle drops this player (the bot brain's "home")
-    this.inv = { gold: 0 };             // the wallet is currency only - the meals are in the pouch
-    // the POUCH: the two meals, uncapped and cell-free (the ITEMS `pouch`
-    // flag above). Read and written only through the bag helpers, so every
-    // caller stays generic over where a kind actually lives.
-    this.food = newPouch();             // the pouch: the meals, uncapped
-    this.fishPick = null;               // the fish the fish well eats (a FISH_KINDS key), or null for whichever comes next
+    this.inv = { gold: 0 };             // the wallet is currency only
     this.cls = 0;                       // CLASSES index; the lobby sets the local one
     this.skillPts = 1;                  // unspent; level 1 starts with one, each levelUp adds one - spent on ability levels (buyAbilityLv, js/sim/abilities.js)
     this.abLv = [0, 0, 0, 0];           // ability ranks, 0 (LOCKED) ..abLvMax (5, the ultimate 3), a skill point each - like items, NOT cleared by reset(): a death keeps what was bought
@@ -460,6 +409,7 @@ class Player {
     this.hGold = [];                    // the lobby's two graphs, sampled every STAT_STEP: gold earned...
     this.hDmg = [];                     // ...and damage dealt, both cumulative (sampleStats, js/ui/lobby.js)
     this.items = new Array(ITEM_SLOTS).fill(null); // the six item slots, ids or null (js/sim/items.js) - they survive a respawn
+    this.potions = 0;                   // how many potions stand in the slot that holds 'potion' (the `potion` banner, js/sim/items.js)
     this.fightT = 0; this.kindleN = 0;  // s since the last hit given or taken, and KINDLING's count (itemsOnHit)
     refreshKit(this);                   // builds this.kit and this.maxHp from class + items
     this.aboard = false;                // riding the eagle (beginDrop sets it, hopOff clears it)
@@ -471,7 +421,6 @@ class Player {
     this.ai = {
       tgt: null, avoid: null, avoidT: 0, thinkT: 0,
       huntTgt: null, huntT: 0, huntAvoid: null, huntAvoidT: 0,
-      lootT: 0,
       hideT: 0, hideCd: 0,
       wx: 0, wy: 0, roam: 0,
       // the difficulty profile's clocks (ai-skill.js): prof overrides the
@@ -515,14 +464,12 @@ class Player {
     this.hp = this.maxHp;
     this.dead = false;
     this.charging = false; this.chargeT = 0;      // bow draw state
-    // the meal being chewed and the clock BOTH meals share (js/sim/core.js)
-    this.eatT = 0; this.eatType = null; this.eatFxT = 0; this.foodCd = 0;
+    // the potion being drunk: its heal's time left, and its motes' clock (js/sim/items.js)
+    this.potT = 0; this.potFxT = 0;
     // the recall's channel, and the roost ring's motes' clock (js/sim/recall.js)
     this.recallT = 0; this.ringFxT = 0;
     this.nockT = 0;                                // the cycle: seconds until the next press (attackCycle, js/sim/attack.js)
     this.slashT = 0; this.slashA = 0; this.slashHalf = 0; // a blade's sweep in flight: the hand swings the sword through it (cutAttack, js/sim/attack.js; drawHeldTool, js/draw/bodies.js)
-    this.catchT = 0;                               // the fish hoist's clock (startCatch/catchFrame, js/sim/attack.js)
-    this.catchKind = 'fish';                       // ...and which fish is hoisted (an ITEMS key)
     this.fireArmed = false;                        // the bow button has been pressed since the last loose
     this.readyFlash = 0;                           // the HUD's tell: renocked
     this.dodgeT = 0; this.dodgeVX = 0; this.dodgeVY = 0; this.dodgeDustT = 0;
@@ -537,7 +484,6 @@ class Player {
     this.swingT = 0; this.swingCd = 0; this.swingDir = 0; this.swingHitDone = false;
     this.swing = SWING_BOW;                        // held SWING_TOOLS index (bow at rest)
     this.autoSwing = false;                        // the swing in flight was the hands' own (autoWork), so a draw may begin under it
-    this.fishCd = 0;                               // the automatic catch's clock (autoFish, js/sim/attack.js)
     // the class abilities (keys 1-4, js/sim/abilities.js): per-key cooldowns, the
     // cast in progress, and every timed state one can leave on a body -
     // slowed under a net or a crater, mid-reel on the grapple, shielded,
@@ -722,7 +668,6 @@ const structures = []; // every building: road towers, barracks, pumps, nets
 const robots = []; // the bots: wave soldiers and the merchants
 const arrows = []; // live bow shots: {x,y,vx,vy,t,life,dmg,pow}
 const ARROW_PX = []; // scratch x,y,colour triples for one rasterised arrow body (render only)
-const drops = [];
 const particles = []; // {x,y,vx,vy,life,color,size,grav} + optional `alpha` fade ceiling
 const floaters = [];
 const footprints = [];
@@ -793,8 +738,7 @@ function damagePlayer(p, dmg, dx, dy, src, cause, crit, kb, o) {
     p.kbx = dx * k; p.kby = dy * k;
   }
   risePlayer(p); // nobody stays buried through a hit: the cover is blown with the body
-  breakEat(p);   // ...and the meal goes with it - that is what makes the channel a channel
-  cancelCatch(p); // ...and the hoist: a fish over your head is a hit you did not see coming
+  breakRecall(p); // ...and the walk home goes with it - that is what makes the channel a channel
   // a burn shakes and shouts once, when it lights (igniteUnit) - not four
   // times a second for as long as it runs
   if (!dot) shakeFor(p, crit ? 6 : 3);
@@ -811,7 +755,7 @@ const DEATH_CAUSE = { ice: 'FELL THROUGH THE ICE', creek: 'WENT IN THE CREEK', w
 const KILL_VERB = { fire: 'BURNED' };
 
 // DEATH COSTS TIME, NOTHING ELSE. A body goes down with everything it had
-// and comes back with all of it: the wallet, the pouch, the bag, the weapon
+// and comes back with all of it: the wallet, the weapon
 // and its build, the items, the level. Nothing spills and nothing
 // is looted (the 1.25-3.54 rule, where the killer pocketed the wallet and the
 // build lay where it fell, is gone - it made the fifteenth minute a bag you
@@ -854,8 +798,8 @@ function bodyOut(p) {
   p.prone = false; p.hide = 0; p.riseT = 0;
   p.fallT = 0;
   p.swingT = p.swingCd = 0;
-  // whatever ability the body was mid-way through dies with it, and the meal
-  p.eatT = 0; p.eatType = null;
+  // whatever ability the body was mid-way through dies with it, and the potion
+  p.potT = 0;
   p.recallT = 0; // ...and the walk home it was channelling
   p.castT = 0; p.castAb = -1;
   p.shieldT = 0; p.rushT = 0; p.rushVictim = null;
@@ -911,7 +855,7 @@ function die(p, src, cause) {
     payTakedown(p, killer, foes, worth, bounty); // the kill's gold, the assists' share and a shutdown's bounty
     if (killer === player && !PRACTICE) PROFILE.addKill(); // the profile's lifetime count
     // FEAST (js/sim/items.js): a flat heal on a confirmed kill, the one
-    // passive that isn't a plain kitOf() field - mirrors eatBerry's heal
+    // passive that isn't a plain kitOf() field
     if (killer.kit.killHeal > 0 && killer.hp < killer.maxHp) {
       const heal = healPlayer(killer, killer.kit.killHeal);
       addFloater(killer.x, killer.y - 14, '+' + heal, '#8fe08a');
@@ -1039,10 +983,10 @@ function practiceRevive(p) {
   p.vx = p.vy = 0;
   p.dodgeT = 0;
   clearUnitStatus(p); // the fire goes out with the fall, same as the stun
-  p.fallT = 0; p.sliding = false; p.catchT = 0;
+  p.fallT = 0; p.sliding = false;
   p.prone = false; p.hide = 0; p.riseT = 0;
   p.charging = false; p.chargeT = 0; p.fireArmed = false;
-  p.eatT = 0; p.eatType = null;                  // the meal dies with the body here too
+  p.potT = 0;                                    // the potion dies with the body here too
   p.recallT = 0;                                 // ...and the recall
   const s = p.spawn || { tx: WORLD >> 1, ty: WORLD >> 1 };
   p.x = (s.tx + 0.5) * TILE; p.y = (s.ty + 0.5) * TILE;

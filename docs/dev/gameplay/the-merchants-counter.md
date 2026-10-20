@@ -4,7 +4,8 @@
 **stall** (the stall its [merchant](robots.md#the-merchant) pitches beside the road's head) or to the
 merchant itself, press **E**, and the counter opens: the **SHOP**, an items shop in League's
 mould. It sells five cheap **parts** and eight **finished items** built out of them into
-[six item slots](#the-items), and fish and berries at a fixed price. **Every item is on sale all the time, at one fixed price, and nothing sells
+[six item slots](#the-items), and the **health potion** (50, stacked up to 5 in one slot,
+[Heals](heals.md)). **Every item is on sale all the time, at one fixed price, and nothing sells
 out**, so a player can save up for the one they want. The items themselves are
 [js/sim/items.js](../../../js/sim/items.js) (the `items` banner); the counter is
 [js/ui/shop.js](../../../js/ui/shop.js) (the `the counters`, `buying and selling` and `the shop panel`
@@ -127,20 +128,19 @@ A part plays the coin and a finished item the money ding (`SFX.buy`).
 **Selling an item** back pays `ITEM_SELL` (half) of its whole price (`itemSellValue`), whatever it
 cost you.
 
-**Fish and berries have a fixed price, the same both ways** (`FOOD_PRICE` in js/ui/shop.js: a frost
-pike 18, a berry 4). Every other fish is priced off the pike by what it heals against what the pike
-heals (`foodPrice`): a whitefish 14, a snow char 25, a gold sunfish 29, so a new fish is priced the
-moment it has a `heal`. The food row's BUY takes one (as many as the order's `n`, the purse and the
-pouch cover) and its SELL sells every one of that good you carry, every fish of every kind for
-fish, as one payment (`shopTrade`).
+**The potion stacks.** Buying one (`buyPotion`) takes a free slot for the first and adds to that
+slot's stack after, up to five (`potionRoom`); selling the slot sells **one** potion at half price
+(25), and the last frees the slot (`takePotion`). It is built from nothing and into nothing, so its
+read-out shows what one drink heals, over how long, and how many you carry instead of a tree.
+Fish and berries are never bought or sold: they heal where they stand.
 
 **A sale pays gold but does not count as earned**: `tradeGold`, the one documented exception to
 the `gainGold` rule in [CLAUDE.md](../../../CLAUDE.md). It adds nothing to `p.earned`, so selling
 back and forth never climbs the scoreboard.
 
-**Every order goes through `input.cmd`** `{kind: 'shop', act: 'item' | 'sellItem' | 'trade'}`
+**Every order goes through `input.cmd`** `{kind: 'shop', act: 'item' | 'sellItem'}`
 → `runCmd` → `shopCmd`, validated on arrival by `cmdOk` (js/ui/wheel.js), so the HUD click and a
-bot buy the same way. `buyItem`, `sellItem` and `shopTrade` re-check the reach, the gold and the
+bot buy the same way. `buyItem` and `sellItem` re-check the reach, the gold and the
 room themselves, so a stale order is harmless. Nothing is [contested](../multiplayer.md#contested-orders):
 the stock is endless, so two buyers never want the same thing.
 
@@ -172,8 +172,9 @@ and a stray it could sell counts as room when it decides to walk there.
   one dim line, and its **build tree** (`shopTree`): a finished item over its parts, or a part
   under the items it goes into. A part already in your slots is rimmed green with a tick and wears
   no price;
-- along the bottom, **your six slots**, then one plate per food good (`FOOD_GOODS`): its icon, how
-  many you carry, its price, and BUY and SELL in plain words.
+- along the bottom, **your six slots** (a potion stack wearing its count), then the **potion
+  plate** (`drawShopPotion`): the flask and how many you carry, its price, and BUY. A click on the
+  flask picks it into the read-out; BUY buys one.
 
 A click **picks** (an item on the grid, a node of the tree, one of your slots: `state.shopSel`,
 `state.shopSlot`) and the plate acts on the pick, BUY for an item on sale, SELL for one in your

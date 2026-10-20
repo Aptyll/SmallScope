@@ -202,8 +202,7 @@ canvas rasterises later off the main thread),
 **POS**, the tile coordinates of the player the camera frames (`viewPlayer()`, so spectators read
 the watched player), and **SEED**, the run seed (see
 [world.md](../world.md#determinism-and-noise)) — each drawn as a dim label plus a value on one
-shared x, so the numbers line up in a column; that dim-label / bright-value pairing is the same
-one the berry and fish counters use. **Red on the fps value (below 45) is the only colour in the
+shared x, so the numbers line up in a column. **Red on the fps value (below 45) is the only colour in the
 stack that means anything** alongside **SIM/DRAW** and **SFX** (below), and nothing else is
 tinted, which is what lets a warning read. In title, FPS, SIM, DRAW and SFX show and POS and SEED
 do not.

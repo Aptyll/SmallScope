@@ -9,7 +9,7 @@ weapon — the moment a swing ends. Two verbs, two inputs:
   `input.fire`); `updatePlayer` starts the draw on the rising edge and fires on the falling one.
 - **The hands work on their own** (`autoWork(p)`, js/sim/actions.js — `updatePlayer` calls it every
   step `p.input.work` is *not* set). Whatever an `OBJECTS` entry marks `auto` — a tree, a dead
-  tree, a berried bush, a rival's roosting eagle — and **any building on the
+  tree, a snowdrop clump, a rival's roosting eagle — and **any building on the
   other team** (`autoToolFor`, resolving a footprint tile through `structOf` and refusing your
   own via `ownsStruct`, exactly as `workTarget` does) is swung at the moment it is inside
   `WORK_REACH`, no key held: `autoTarget(p)` takes the nearest such tile in the ring around
@@ -21,19 +21,14 @@ weapon — the moment a swing ends. Two verbs, two inputs:
   keep shooting, walking or drawing through it, and the tree comes down beside you, with
   **both tools on the sprite**: the axe sweeping in one hand, the drawn weapon on the aim
   in the other (`drawHeldTool`, [below](#the-draw)). It obeys the
-  same busy gates as E (a fall, a roll, a stun, an ability, a meal, the swing cooldown).
-  **Fish are the same idea on ice** (`autoFish(p, dt)`, js/sim/attack.js, called right after it):
-  standing on an ice tile with a fish inside `FISH_CATCH_R` catches it with no press, once
-  every `FISH_AUTO_CD` (1.2 s, `p.fishCd`) so a walk along a shoal is a stride per fish, and
-  nothing can refuse the catch, because fish go in the pouch. It spends no attack cycle and runs
-  under a draw; the fire button never spears — `basicAttack` attacks, fish or no fish. Nothing in this is a key: the swing itself, the catch pose and the rim are the whole
-  signal, so `drawWorkHint` shows no prompt over an `auto` target and the fish brackets carry
-  no verb (bright inside catch reach, dim outside).
+  same busy gates as E (a fall, a roll, a stun, an ability, the swing cooldown).
+  Nothing in this is a key: the swing itself and the rim are the whole
+  signal, so `drawWorkHint` shows no prompt over an `auto` target.
 - **E = work** (`tryWork(p)`, auto-repeating every swing cooldown while held — `updatePlayer`
   calls it whenever `p.input.work` is set, and a held E always beats the hands' own choice).
   It is what reaches **the practice dummy** — the one thing not marked `auto` — and it still
   works anything else if you insist. It resolves `workTarget(p)`: the tile that player is
-  aiming at, if it holds a tree or a dead tree, a berried bush or a rival's building (all → axe;
+  aiming at, if it holds a tree or a dead tree or a rival's building (all → axe;
   bare ice is nothing since the pick went in 0.531); and `near` = the tile is
   within `WORK_REACH` (1) tiles, Chebyshev, of the tile the player stands on — i.e. the 3×3
   ring around you, never a second row, regardless of where in your tile you stand. Out of reach or nothing workable, E
@@ -86,7 +81,7 @@ bot** (`hurtRobot`) or on any animal hit (knockback scales with power) — which
 first ([a shot in flight](the-basic-attack.md#a-shot-in-flight)) — or at the end of the shot's life.
 
 `p.fireArmed` is what makes the draw survive an attack that isn't ready. It is set on the press edge,
-cleared on release and at every point that cancels a draw (`tryWork`, falling in a hole, a meal,
+cleared on release and at every point that cancels a draw (`tryWork`, falling in a hole,
 an ability cast, clipping onto the zipline, an
 overlay opening in `sampleHumanInput`, `die`), and the draw begins on the first
 step where it is set *and* `nockT <= 0`. Requiring a fresh press instead

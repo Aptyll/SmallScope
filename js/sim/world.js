@@ -14,8 +14,8 @@ function objAt(tx, ty) { return inWorld(tx, ty) ? objects[idx(tx, ty)] : null; }
 // needs to know about one without naming its type: whether it blocks a walker,
 // which tool E reaches for (`tool`) and which one a swing must already be
 // holding (`needs`, null = any), whether the hands go to it on their own the
-// moment it is in reach (`auto` - a tree, a bush, a rival's eagle:
-// autoWork, js/sim/actions.js - bare ice and the dummy wait for E), the verb the key prompt prints and how far
+// moment it is in reach (`auto` - a tree, a snowdrop, a rival's eagle:
+// autoWork, js/sim/actions.js - the dummy waits for E), the verb the key prompt prints and how far
 // above the tile it sits, and the colour each of the two maps paints it.
 // Buildings are NOT in here - they are STRUCTS entries carrying the same
 // mm/map fields, and every site below asks that table first. Adding a scenery
@@ -54,10 +54,11 @@ const OBJECTS = {
   // drawn, never seen; solid and two wide as it always was, so the worldgen
   // passes laid round it lay the same valley.
   rock:     { solid: true,  w: 2 },
-  // a picked bush is still a bush: `ready` is what decides whether E offers it
-  // (a bush is on the minimap and off the chart: one tile of anything is
-  // noise at the chart's scale)
-  bush:     { solid: false, tool: 'axe',  needs: null,   verb: 'PICK', lift: 10, auto: true,
+  // a BERRY BUSH: walked into ripe, it heals the walker and empties
+  // (bushTouch, below) - no tool, no key, nothing carried. An emptied bush is
+  // still a bush; `ready` says whether it is ripe. (On the minimap and off the
+  // chart: one tile of anything is noise at the chart's scale.)
+  bush:     { solid: false, lift: 10,
               ready: (o) => o.berries > 0,
               mm: [88, 148, 108] },
   // a SNOWDROP clump, stamped only by the warren camp (CAMPS.meadow): open
@@ -134,14 +135,14 @@ const OBJECTS = {
   // structOf() has resolved them to their anchor long before either map sees one
   part:     { solid: true },
 };
-// A picked bush regrows on its own clock (`regrow`, counted down with the
-// object timers in js/sim/sim.js; the pick sets it, hitObject in js/sim/actions.js),
-// and the plant IS the clock: bare for the first stretch, pale BUDS where
-// the berries will be once ripening is within BUSH_BUD_T seconds, the
-// berries back but dull inside BUSH_RIPEN_T, ripe at zero (the frames:
-// bushEmpty / bushBud / bushRipen / bush, picked in render.js) - so a player
-// reads "wait" or "move on" off the bush itself, with no bar and no number.
-const BUSH_REGROW = 70;   // s from a pick to the next two berries
+// An emptied bush regrows on its own clock (`regrow`, counted down with the
+// object timers in js/sim/sim.js; bushTouch sets it), and the plant IS the
+// clock - the heal's cooldown, read off the bush: bare for the first stretch,
+// pale BUDS where the berries will be once ripening is within BUSH_BUD_T
+// seconds, the berries back but dull inside BUSH_RIPEN_T, ripe at zero (the
+// frames: bushEmpty / bushBud / bushRipen / bush, picked in render.js) - so a
+// player reads "wait" or "move on" off the bush itself, with no bar and no number.
+const BUSH_REGROW = 70;   // s from an emptying to ripe again
 const BUSH_BUD_T = 35;    // s left when the buds show
 const BUSH_RIPEN_T = 12;  // s left when the berries come in dull
 // A SNOWDROP's rest: a picked clump is a snapped stem for the first stretch
@@ -195,9 +196,8 @@ function isSolidTile(tx, ty, e, swept) {
   // Two tables, no list: any STRUCTS entry (tower/barracks/generator/...)
   // is solid for free, and everything else answers from its OBJECTS
   // entry - so neither a new building nor a new kind of scenery ever needs
-  // this function touched. A `water` building (the fish net) is the one
-  // exception: it lies flat on the surface and is walked over, not into.
-  if (STRUCTS[o.type]) return !STRUCTS[o.type].water;
+  // this function touched.
+  if (STRUCTS[o.type]) return true;
   const d = OBJECTS[o.type];
   if (d && d.leap && e && e.leapT > 0) return false; // a deer in mid-leap goes over (js/sim/wildlife.js)
   return !!(d && d.solid);
@@ -212,14 +212,6 @@ function waterAt(tx, ty) {
   if (!inWorld(tx, ty)) return false;
   const g = ground[idx(tx, ty)];
   return g === 2 || g === 4;
-}
-
-// the fish net on a tile, if one stands there - the single read that says
-// "this open water is planked over": the dawn refreeze skips it, the plunge
-// check skips it, and drawing it is a flat pass
-function netAt(tx, ty) {
-  const o = objAt(tx, ty);
-  return o && o.type === 'net' ? o : null;
 }
 
 // Multi-tile buildings. STRUCTS[type].w/h > 1 means the anchor tile (top-left)
@@ -545,7 +537,9 @@ function genWorld() {
       }
     }
   }
-  // berry bushes
+  // berry bushes. These stand here only to keep the seed: every roll below is
+  // the stream the map has always drawn, and the bushes themselves are taken
+  // up again and set by the camps and the river (placeBushes).
   for (let c = 0; c < 96; c++) {
     const tx = randi(BORDER_MIN, WORLD - 1 - BORDER_MIN), ty = randi(BORDER_MIN, WORLD - 1 - BORDER_MIN);
     if (free(tx, ty) && !nearSpawn(tx, ty) && Math.hypot(tx - cx, ty - cy) > CENTER_R + 3) {
@@ -1219,29 +1213,28 @@ function placeCreek() {
   placeCistern();
 }
 
-// THE CREEK'S FISH: a LAKE WHITEFISH or a SNOW CHAR every CREEK_FISH_GAP
+// THE CREEK'S FISH, the river's heal: a WHITEFISH every CREEK_FISH_GAP
 // tiles of creek, swimming downstream under the water, now and then down out
 // of sight and back, in under the cistern's wall and its ice and never over
 // a ford. Each one
 // is a pure function of its index and the field's clock (state.windT), so
 // nothing has to move them and every client places them alike; the one thing
 // the match keeps is which were caught: state.creekGone maps an index to the
-// windT it swims back at. A body ROLLING over the water onto one catches it
-// (creekFishCatch, from the roll in playerMove) - the only way to them, since
-// walking in is a plunge - and it goes in the pouch (ITEMS.whitefish /
-// ITEMS.snowChar) to be eaten off the fish well. They are not the `fish` an
-// ice hole or a net gives up (the `fish` banner, js/sim/wildlife.js). The pixels:
+// windT it swims back at. A hurt body ROLLING over the water onto one takes
+// it (creekFishCatch, from the roll in playerMove) - the only way to them,
+// since walking in is a plunge - and is healed CREEK_FISH_HEAL on the spot:
+// nothing is carried, and nothing buys or sells one. The lake's fish under
+// the ice are scenery (the `fish` banner, js/sim/wildlife.js). The pixels:
 // drawCreekFish, js/draw/ground.js.
 const CREEK_FISH_GAP = 5;        // tiles of creek per fish
 const CREEK_FISH_SPD = [18, 34]; // px/s downstream, the slowest fish .. the fastest
-const CREEK_FISH_CHAR = 0.35;    // the share of them that are snow char (the bigger meal); the rest are whitefish
+const CREEK_FISH_HEAL = 40;      // health one gives back
 const CREEK_FISH_LANE = CREEK_HW - 0.9; // tiles either side of the water's middle a fish keeps to: its body clear of the banks
 const CREEK_FISH_R = 11;         // px from a roller's feet that a fish is caught
 const CREEK_FISH_BACK = 45;      // s before a caught fish's place in the shoal swims back
-const CF = { x: 0, y: 0, w: 0, kind: 'whitefish', show: 0, fdx: 1, fdy: 0 };
+const CF = { x: 0, y: 0, w: 0, show: 0, fdx: 1, fdy: 0 };
 function creekFishN() { return PRACTICE ? 0 : Math.ceil((WORLD - 1) * Math.SQRT2 / CREEK_FISH_GAP); }
-// where fish i is now, into CF: world px, w along the creek, its kind, how
-// much of it shows (0 gone or dived, 1 plain to see) and its heading
+// where fish i is now, into CF: world px, w along the creek, how much of it shows (0 gone or dived, 1 plain to see) and its heading
 function creekFishAt(i) {
   const now = state.windT, span = (WORLD - 1) * Math.SQRT2, half = span / 2;
   const h = hash2(i * 13 + 7, 41), h2 = hash2(i * 5 + 3, 77), h3 = hash2(i + 19, i * 3 + 11);
@@ -1261,28 +1254,121 @@ function creekFishAt(i) {
   const f = creekFlow(fx, fy);
   CF.fdx = f.fdx; CF.fdy = f.fdy;
   CF.x = (fx + 0.5) * TILE; CF.y = (fy + 0.5) * TILE; CF.w = w; CF.show = show;
-  CF.kind = hash2(i * 3 + 101, 59) < CREEK_FISH_CHAR ? 'snowChar' : 'whitefish';
   return CF;
 }
-// A roll over the creek takes any fish it passes over (from the roll in
-// playerMove, js/sim/sim.js). Two rollers can reach one fish in a step, so it is
+// A hurt body's roll over the creek takes a fish it passes over and is healed
+// by it (from the roll in playerMove, js/sim/sim.js); a whole one rolls past
+// and leaves it swimming. Two rollers can reach one fish in a step, so it is
 // contested, not first-come.
 function creekFishCatch(p) {
-  if (PRACTICE || creekAt(p.x / TILE - 0.5, (p.y + 4) / TILE - 0.5) > 0.6) return;
+  if (PRACTICE || p.hp >= p.maxHp || creekAt(p.x / TILE - 0.5, (p.y + 4) / TILE - 0.5) > 0.6) return;
   const n = creekFishN(), g = state.creekGone;
   for (const k in g) if (state.windT > g[k] + 1) delete g[k]; // swum back in: forgotten
   for (let i = 0; i < n; i++) {
     const f = creekFishAt(i);
     if (f.show < 0.5 || Math.hypot(f.x - p.x, f.y - (p.y + 4)) > CREEK_FISH_R) continue;
-    const kind = f.kind, x = f.x, y = f.y;
+    const x = f.x, y = f.y;
     contest('creekfish:' + i, p, () => {
       if (g[i] !== undefined && state.windT < g[i] + 1) return;
       g[i] = state.windT + CREEK_FISH_BACK;
-      bagAdd(p, kind, 1);
-      addFloater(x, y - 10, ITEMS[kind].name + '!', RES_COLORS[kind]);
+      healFx(p, healPlayer(p, CREEK_FISH_HEAL));
       burst(x, y, '#9fc4dd', 8, 45, 0.45, true);
       burst(x, y, '#ddf1f8', 5, 35, 0.4, true);
-      sfxAt('splash', x, y); sfxAt('stash', x, y);
+      sfxAt('splash', x, y);
     });
   }
+}
+
+// ------------------------------------------------------------ berry bushes
+// THE BUSHES' PLACES, laid at boot after the camps and the landmarks
+// (js/app/boot.js), on no rng at all: genWorld's own bushes are taken up (they
+// stand there only to keep its stream) and new ones are set near the jungle's
+// camps and on the river's banks, so both sides walk the same way to the
+// same heal. BUSH_DEN_N stand round each of RED's wolf dens, on the den's side
+// toward the map's middle, and are mirrored onto BLUE's dens (tx <-> ty): a
+// spot that is not open snow on BOTH halves is nudged to the nearest one that
+// is, within BUSH_NUDGE tiles, or dropped - the woods and the ice are not
+// mirrored, so a pair is only laid where both tiles are clear. The creek
+// meanders, so its mirror is not itself: a river bush stands instead on EACH
+// bank at the same place along the water (BUSH_RIVER_W, either way from its
+// middle - the outer two by the bears' stretches), BUSH_BANK off the water,
+// nudged the same way.
+const BUSH_DEN_N = 2, BUSH_DEN_OUT = 3;  // bushes round a wolf den, and tiles past its ground they stand
+const BUSH_DEN_ARC = 0.9;                // radians either side of the den's way to the middle
+const BUSH_BANK = 1.6;                   // tiles of dry snow between a river bush and the water's bank
+const BUSH_RIVER_W = [26, 48, 70];       // tiles along the creek either way from its middle a river pair stands at
+const BUSH_NUDGE = 4, BUSH_SPACING = 3;  // the search for open snow, and the least gap between two bushes
+function placeBushes() {
+  for (let i = 0; i < objects.length; i++) if (objects[i] && objects[i].type === 'bush') objects[i] = null;
+  if (PRACTICE) return;
+  const placed = [];
+  const open = (tx, ty) => {
+    if (!inWorld(tx, ty)) return false;
+    const i = idx(tx, ty);
+    if (objects[i] || ground[i] !== 0 || creekAt(tx, ty) < BUSH_BANK - 0.5 || orcaLakeNear(tx, ty)) return false;
+    if (baseAt(tx, ty, BASE_KEEP) >= 0 || camps.some((C) => campNear(C, tx, ty, 0.5))) return false;
+    return !placed.some((q) => Math.hypot(q.tx - tx, q.ty - ty) < BUSH_SPACING);
+  };
+  // the nearest tile to (fx, fy) on RED's half that is open there AND at
+  // its mirror, searched ring by ring in a fixed order; both are laid
+  const stand = (fx, fy) => {
+    const cx = Math.round(fx), cy = Math.round(fy);
+    for (let r = 0; r <= BUSH_NUDGE; r++) for (let a = -r; a <= r; a++) for (let b = -r; b <= r; b++) {
+      const tx = cx + a, ty = cy + b;
+      if (Math.max(Math.abs(a), Math.abs(b)) !== r || tx >= ty || !open(tx, ty) || !open(ty, tx)) continue;
+      for (const t of [{ tx, ty }, { tx: ty, ty: tx }]) { placeObj(t.tx, t.ty, 'bush', { berries: 2, regrow: 0 }); placed.push(t); }
+      return;
+    }
+  };
+  // ...and one bush on the nearest open tile, the same search
+  const bank = (fx, fy) => {
+    const cx = Math.round(fx), cy = Math.round(fy);
+    for (let r = 0; r <= BUSH_NUDGE; r++) for (let a = -r; a <= r; a++) for (let b = -r; b <= r; b++) {
+      if (Math.max(Math.abs(a), Math.abs(b)) !== r || !open(cx + a, cy + b)) continue;
+      placeObj(cx + a, cy + b, 'bush', { berries: 2, regrow: 0 });
+      placed.push({ tx: cx + a, ty: cy + b });
+      return;
+    }
+  };
+  const mid = (WORLD - 1) / 2;
+  for (const C of camps) {
+    if (C.key === 'resource' && C.tx < C.ty) { // RED's dens; the mirror stands BLUE's
+      const a0 = Math.atan2(mid - C.ty, mid - C.tx), R = C.r + 2 + BUSH_DEN_OUT;
+      for (let k = 0; k < BUSH_DEN_N; k++) {
+        const a = a0 + (k - (BUSH_DEN_N - 1) / 2) * 2 * BUSH_DEN_ARC / Math.max(1, BUSH_DEN_N - 1);
+        stand(C.tx + Math.cos(a) * R, C.ty + Math.sin(a) * R);
+      }
+    }
+  }
+  // the river: both banks (the creek's - side is RED's, + BLUE's) at each place
+  for (const w0 of BUSH_RIVER_W) for (const w of [-w0, w0]) for (const s of [-1, 1]) {
+    const n = creekMid(w) + s * (creekHW(w, s) + BUSH_BANK);
+    bank(((w + n) * Math.SQRT2 + WORLD - 1) / 2, ((w - n) * Math.SQRT2 + WORLD - 1) / 2);
+  }
+}
+// A RIPE BUSH WALKED INTO (updatePlayer, js/sim/sim.js): the feet on its tile
+// heal BUSH_HEAL on the spot and empty it, and it starts regrowing. A body at
+// full health walks through and leaves it ripe. Two bodies can reach one bush
+// in a step, so it is contested.
+const BUSH_HEAL = 30;
+function bushTouch(p) {
+  if (p.hp >= p.maxHp || inAir(p) || p.fallT > 0) return;
+  const tx = Math.floor(p.x / TILE), ty = Math.floor((p.y + 4) / TILE), o = objAt(tx, ty);
+  if (!o || o.type !== 'bush' || o.berries <= 0) return;
+  contest('bush:' + idx(tx, ty), p, () => {
+    if (o.berries <= 0 || objects[idx(tx, ty)] !== o) return;
+    o.berries = 0;
+    o.regrow = BUSH_REGROW;
+    joltObj(o, 0.1, 0.22); // the blink and the shiver, which also enrol its regrow clock (js/sim/sim.js)
+    healFx(p, healPlayer(p, BUSH_HEAL));
+    burst((tx + 0.5) * TILE, ty * TILE + 4, '#4c8560', 5, 35, 0.4, true);
+    burst((tx + 0.5) * TILE, ty * TILE + 4, '#a50006', 4, 30, 0.35, true);
+  });
+}
+// a heal taken off the world, said the one way: the number in the heal green
+// over the body and the heal's sound
+function healFx(p, n) {
+  if (n <= 0) return;
+  addFloater(p.x, p.y - 14, '+' + Math.round(n), '#8fe08a');
+  sfxAt('heal', p.x, p.y);
 }

@@ -93,20 +93,14 @@ function update(dt) {
       // match: its dawns count nothing, like the rest of its stats.
       if (!player.eliminated && !PRACTICE) PROFILE.addDay();
       SFX.dawnChime();
-      // open ice holes freeze back over during the night.
-      // A hole with a net on it is the exception - the net is what holds that
-      // water open - so it stays in the list and refreezes the dawn after
-      // whoever wrecks the net.
-      const kept = [];
+      // open ice holes freeze back over during the night
       for (const i of holes) {
-        if (netAt(i % WORLD, (i / WORLD) | 0)) { kept.push(i); continue; }
         ground[i] = 1;
         repaintGround(i % WORLD, (i / WORLD) | 0);
       }
       holes.length = 0;
-      for (const i of kept) holes.push(i);
-      // the shoal is not reset here any more: it is a live population now,
-      // fished down and refilled a fish at a time by updateFish's trickle
+      // the shoal is not reset here: it is a live population, refilled a fish
+      // at a time by updateFish's trickle
     }
   }
   // darkness curve
@@ -552,7 +546,7 @@ function updatePlay(dt) {
   }
   updateIceBreaks(); // a break's hole opening and its tiles freezing back (js/sim/icebreak.js)
   botLogStep(dt);    // the bot dev view's recorder: reads what the bots just decided (js/ui/botview.js)
-  resolveContests(); // this step's work swings, build orders and fish claims
+  resolveContests(); // this step's work swings, creek fish and bush claims
   if (!PRACTICE) sampleStats(dt); // the post-game lobby's two graphs (js/ui/lobby.js)
   if (!PRACTICE) updateShop(); // the counter shuts when you walk off (js/ui/shop.js)
   updateAbilityWorld(dt); // craters and nets in flight
@@ -684,45 +678,7 @@ function updatePlay(dt) {
   // everyone has stepped: push overlapping units apart (players, animals, robots)
   separateUnits(dt);
 
-  // drops
-  for (let i = drops.length - 1; i >= 0; i--) {
-    const d = drops[i];
-    d.t += dt;
-    d.vz -= 220 * dt;
-    d.z += d.vz * dt;
-    if (d.z < 0) { d.z = 0; d.vz = -d.vz * 0.4; if (Math.abs(d.vz) < 15) d.vz = 0; }
-    d.x += d.vx * dt; d.y += d.vy * dt;
-    d.vx *= Math.pow(0.05, dt); d.vy *= Math.pow(0.05, dt);
-    // drops are neutral: they drift toward whoever is closest, and everyone
-    // standing on one claims it - the contest decides who actually gets it.
-    // A meal always fits: the pouch is uncapped. (Gold never lies here -
-    // awardGold pays it on the spot.)
-    let near = null, pd = 1e9;
-    for (const p of players) {
-      if (!p.active || p.dead || inAir(p)) continue;
-      const dd = Math.hypot(d.x - p.x, d.y - p.y);
-      if (dd < pd) { pd = dd; near = p; }
-    }
-    if (near && d.t > 0.35 && pd < 28) {
-      d.x += (near.x - d.x) * dt * 10;
-      d.y += (near.y - d.y) * dt * 10;
-    }
-    if (d.t > 0.35) for (const p of players) {
-      if (!p.active || p.dead || inAir(p) || Math.hypot(d.x - p.x, d.y - p.y) >= 7) continue;
-      contest('drop:' + i, p, () => {
-        const j = drops.indexOf(d);
-        if (j < 0) return;
-        const got = bagAdd(p, d.type, d.n);
-        addFloater(p.x, p.y - 14, '+' + got, RES_COLORS[d.type]);
-        sfxFor(p, 'stash');
-        drops.splice(j, 1);
-      });
-    }
-  }
-
   tickObjTimers(dt); // the blinks, shivers and regrowth running on map objects (the `object timers` banner)
-
-  resolveContests(); // the drop pickups queued above
 }
 
 // wildlife, one step of updatePlay: the animals, the lake's fish, the orca,
@@ -796,10 +752,8 @@ function walkStep(p, dt, mx, my, len, onIce, kit) {
   let sp = Math.hypot(p.vx, p.vy);
   const chargeMul = p.charging ? kit.chargeMul : 1; // drawn bow slows you
   // every cap an ability may drag on (root, net, crater, cast, shield),
-  // folded once - js/sim/abilities.js - with the meal's
-  // own drag beside them (js/sim/core.js): a body chewing walks, exactly the way
-  // a body mid-cast does
-  const abMul = abilityMoveMul(p) * (p.eatT > 0 ? FOOD_SLOW : 1);
+  // folded once - js/sim/abilities.js
+  const abMul = abilityMoveMul(p);
   // a belly crawl is a flat crawl on any surface - no ice cap, no draw
   // penalty, nothing to stack. Getting back up costs a moment of it too.
   // a rider goes at the deer's gallop (RIDE, js/sim/wildlife.js): not the
@@ -863,8 +817,8 @@ function walkStep(p, dt, mx, my, len, onIce, kit) {
 // a stretch moved ahead of another changes what each reads, and the rand()
 // calls inside them draw on the sim's stream in exactly this order.
 
-// what the controller asked for this step: a stun or a fish hoist first,
-// then the edge-triggered intents, each consumed where it lands
+// what the controller asked for this step: a stun first, then the
+// edge-triggered intents, each consumed where it lands
 function playerIntents(p, dt) {
   const inp = p.input;
   recallIntents(p); // anything the body does itself ends the walk home (js/sim/recall.js)
@@ -876,27 +830,17 @@ function playerIntents(p, dt) {
   // you, and the surface spends it like any other momentum.
   if (p.stunT > 0) {
     p.stunT = Math.max(0, p.stunT - dt);
-    inp.dodge = inp.eatBerry = inp.eatFish = false;
+    inp.dodge = false;
+    inp.useItem = -1;
     inp.work = inp.fire = inp.slide = false;
     inp.ability = -1;
     inp.cmd = null;
     inp.mx = inp.my = 0;
   }
 
-  // the fish hoist (startCatch, js/sim/attack.js) is a pose the body holds only
-  // while it is idle: a step, or any other intent (a fresh press, a roll, a
-  // cast, a swing, a meal), ends it at once. The catch is automatic
-  // (autoFish), so it must never cost the player a single frame of control.
-  if (p.catchT > 0) {
-    p.catchT = Math.max(0, p.catchT - dt);
-    if (inp.dodge || inp.ability >= 0 || inp.work || inp.slide || inp.mx || inp.my ||
-        inp.eatBerry || inp.eatFish || inp.cmd || (inp.fire && !p.firePrev)) cancelCatch(p);
-  }
-
   // edge-triggered intents, consumed here so a controller only has to set them
   if (inp.dodge) { inp.dodge = false; tryDodge(p); }
-  if (inp.eatBerry) { inp.eatBerry = false; eatBerry(p); }
-  if (inp.eatFish) { inp.eatFish = false; eatFish(p); }
+  if (inp.useItem >= 0) { const i = inp.useItem; inp.useItem = -1; if (Number.isInteger(i) && i < ITEM_SLOTS) useItem(p, i); } // an item slot's key: a potion (js/sim/items.js)
   // an ability key with a skill point in hand LEVELS the key instead of
   // casting it (the plate is the same buy for the mouse); the cast waits for
   // the next press. A maxed key casts through an unspent point as ever.
@@ -950,7 +894,7 @@ function playerMove(p, dt, mx, my, len, onIce, kit) {
     } else {
       rollSweep(p); // everything small in the way takes a swipe and is rolled through
     }
-    creekFishCatch(p); // ...and a fish in the creek under it is taken (js/sim/world.js)
+    creekFishCatch(p); // ...and a fish in the creek under it is a heal taken (js/sim/world.js)
     p.dodgeDustT -= dt;
     if (p.dodgeDustT <= 0) {
       p.dodgeDustT = 0.05;
@@ -1016,10 +960,8 @@ function playerPlunge(p) {
     // a tile an ice break holds open is wet only where its pixels are: the
     // break's own shape says where the water is (iceBreakWet, js/sim/icebreak.js)
     const held = g === 2 && iceBreakHolds(idx(htx, hty));
-    // a net is planked over its hole: you stand on it, and that is how the
-    // catch comes out of it (see updateStructures' net branch)
-    if ((g === 2 && !held && p.dodgeT <= 0 && !netAt(htx, hty)) ||
-      (iceBreaks.length && p.dodgeT <= 0 && !netAt(htx, hty) && iceBreakWet(p.x, p.y + 4)) ||
+    if ((g === 2 && !held && p.dodgeT <= 0) ||
+      (iceBreaks.length && p.dodgeT <= 0 && iceBreakWet(p.x, p.y + 4)) ||
       (g === 4 && p.dodgeT <= 0 && creekWet(p.x / TILE - 0.5, (p.y + 4) / TILE - 0.5))) {
       p.dodgeT = 0; p.rollHit.length = 0; // a roll ends in the water
       p.fallT = HOLE_FALL_T;
@@ -1030,7 +972,7 @@ function playerPlunge(p) {
       if (p.rushT > 0) { p.rushT = 0; p.rushVictim = null; p.dash = ''; } // the charge ends in the water
       if (p.grapT > 0) grapEnd(p);                          // the rope goes slack with you
       p.castT = 0; p.castAb = -1; p.shieldT = 0;           // and so does whatever was being cast
-      breakEat(p);                                         // the meal goes in the water with you
+      breakRecall(p);                                      // the recall goes in the water with you
       p.prone = false; p.hide = 0; p.riseT = 0; // crawled off the edge: no cover in the water
       if (p.charging) { p.charging = false; p.chargeT = 0; }
       p.fireArmed = false;
@@ -1179,7 +1121,7 @@ function playerTrails(p, dt, onIce) {
 }
 
 // the hands: the swing's clock and its hit, the work key, the hands' own
-// work and fishing
+// work
 function playerSwing(p, dt) {
   const inp = p.input;
   // swing
@@ -1193,10 +1135,9 @@ function playerSwing(p, dt) {
   }
   // the work tool goes away with the swing cooldown; held E brings it right
   // back, and with no E the hands find their own work (autoWork, js/sim/actions.js:
-  // a tree or a berried bush in reach) - and their own fish (autoFish, js/sim/attack.js)
+  // a tree in reach)
   if (p.swingT <= 0 && p.swingCd <= 0) p.swing = SWING_BOW;
   if (inp.work) tryWork(p); else autoWork(p);
-  autoFish(p, dt);
 }
 
 function playerAttack(p, dt) {
@@ -1217,20 +1158,10 @@ function playerAttack(p, dt) {
   // the cycle draws the moment it runs out. Without that, a controller that
   // holds fire down - every bot does - would attack once and then wait
   // forever for an edge it already spent.
-  if (inp.fire && !p.firePrev) {
-    // THE BUTTON IS THE CANCEL. A meal must never trap the hands: deciding
-    // mid-chew that the fight matters more drops it on the spot and the draw
-    // below arms in the same frame. It costs the 1.5 s and nothing else - the
-    // food is only spent when the channel lands (js/sim/core.js) - so a cancelled
-    // meal can be started again the moment the shot is away. The roll is the
-    // other escape; E and the ability keys stay refused instead, because those
-    // spend a cooldown a stray press should not.
-    breakEat(p);
-    p.fireArmed = true;
-  }
+  if (inp.fire && !p.firePrev) p.fireArmed = true; // (the press already ended a recall: recallIntents)
   if (!inp.fire) p.fireArmed = false;
   if (p.fireArmed && !p.charging && p.nockT <= 0 && p.fallT <= 0 && (p.swingT <= 0 || p.autoSwing) &&
-    p.castT <= 0 && p.shieldT <= 0 && p.rushT <= 0 && p.eatT <= 0 && p.zip < 0) { // ...and both hands on a zipline's handle // a body mid-ability has no hand free for the draw (a meal is already cancelled by the press above); an auto swing is never in the way
+    p.castT <= 0 && p.shieldT <= 0 && p.rushT <= 0 && p.zip < 0) { // ...and both hands on a zipline's handle // a body mid-ability has no hand free for the draw ; an auto swing is never in the way
     p.charging = true;
     p.chargeT = 0;
     sfxAt('bowDraw', p.x, p.y);
@@ -1256,7 +1187,8 @@ function updatePlayer(p, dt) {
   const inp = p.input;
 
   if (p.dead) { // out of the match: nothing it wants gets through
-    inp.dodge = inp.eatBerry = inp.eatFish = false;
+    inp.dodge = false;
+    inp.useItem = -1;
     inp.ability = -1;
     inp.cmd = null;
     return;
@@ -1268,11 +1200,10 @@ function updatePlayer(p, dt) {
   // timed state one leaves on this body (js/sim/abilities.js)
   updateAbilities(p, dt);
   if (p.dead) return; // a burn can finish the player in there; a body takes no more steps
-  // ...and the meal's clock beside it: the channel landing its heal, and the
-  // one cooldown a berry and a fish share (js/sim/core.js)
-  updateEat(p, dt);
   // ...and the recall's, with the roost ring's heal (js/sim/recall.js)
   updateRecall(p, dt);
+  // ...and a ripe berry bush walked into is a heal taken (js/sim/world.js)
+  bushTouch(p);
 
   // a stun, a fall, going prone or the cable takes a rider out of the saddle (js/sim/wildlife.js)
   rideCheck(p);
@@ -1306,7 +1237,7 @@ function updatePlayer(p, dt) {
   playerAttack(p, dt);
 
   p.hurtT = Math.max(0, p.hurtT - dt);
-  itemsTick(p, dt); // the fight clock and DEN's heal (js/sim/items.js)
+  itemsTick(p, dt); // the fight clock, DEN's heal and a potion's (js/sim/items.js)
   p.faceT = Math.max(0, p.faceT - dt);
   p.invuln = Math.max(0, p.invuln - dt);
 
@@ -1416,7 +1347,7 @@ function updateFx(dt) {
     if (wordPops[i].t > WORD_POP_T) wordPops.splice(i, 1);
   }
   updateSlashes(dt); // the sword's sweep on the snow (js/sim/attack.js)
-  if (foodFlash > 0) foodFlash -= dt; // ... and the meal button's
+  if (itemFlash > 0) itemFlash -= dt; // ... and an item well's
   if (abFlash > 0) abFlash -= dt;     // ... and a locked ability well's
   for (let i = footprints.length - 1; i >= 0; i--) {
     const f = footprints[i];

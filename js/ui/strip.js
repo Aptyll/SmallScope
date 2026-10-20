@@ -7,8 +7,8 @@
 // One opaque plate, read left to right the way a MOBA's bottom bar is (0.426),
 // and the one bar the HUD has:
 //
-//   [portrait] [1][2][3][4] [i1][i2][i3] [berry][fish]
-//              [ health bar ] [i4][i5][i6] [  gold  ]
+//   [portrait] [1][2][3][4] [i1][i2][i3] [coin]
+//              [ health bar ] [i4][i5][i6] [gold]
 //              [ stamina    ]
 //
 // THE PORTRAIT is a square well holding your hero's face, framed in the
@@ -24,21 +24,18 @@
 // THE SIX ITEMS stand after the abilities in a three-by-two grid of smaller
 // wells (ITEM_CELL), left to right and top row first as the shop fills them
 // (p.items, js/sim/items.js): the whole of what the HUD says about what you
-// carry into a fight. Nothing on them is pressed or dragged - a hover names
-// what is there (tooltip.js) - and an empty one shows its slot number, dim.
+// carry into a fight. Each slot has a key (ITEM_KEYS, js/app/input.js) and an
+// empty one shows it, dim. A slot holding the POTION is pressed the way an
+// ability is - its key or a click drinks one - and wears the key in its
+// bottom-left corner, the stack in its top-right, and the drink's time left as
+// the cooldown sweep; a refusal reddens and shakes it (itemDenied). Every
+// other item is read, not pressed: a hover names what is there (tooltip.js).
 // The hero's own basic attack has no well: it is the hero's, not a thing
 // carried, and the portrait's hover names it (tipAttack, tooltip.js).
 //
-// The meals sit after the items in wells of the items' size, pressed the way
-// the abilities are (Q and F, a click), each with its key in the
-// bottom-left corner and its count in the top-right; both
-// wipe on the shared food clock (drawFoodClock). THE MEALS ARE ALWAYS HERE:
-// food is the pouch (the `inventory` banner, js/sim/player.js),
-// so these two wells are the whole of where a berry and a fish are read and
-// pressed, and the counts are uncapped - hence shortNum, four characters at
-// most. Under them, level with the bars, THE PURSE: the coin and the gold, on
-// screen for the whole match, since money is the number a player decides on
-// all game.
+// After the items, the full height of the plate, THE PURSE: the coin over the
+// gold, on screen for the whole match, since money is the number a player
+// decides on all game.
 const AB_CELL = HUD_CELL, AB_GAP = 2, AB_N = 4; // AB_CELL: a strip well (the one size, above); AB_N: abilities
 const AB_PAD = 3;                         // the frame's outline, its edge and one px of ground (drawHudFrame)
 const PORT_SQ = 51;                       // the portrait square, the plate's full inner height
@@ -48,15 +45,13 @@ const ITEM_CELL = 24, ITEM_GAP = 2;       // an item well, and the air between t
 const ITEM_COLS = 3;                      // the six items: three wide, two high
 const ITEM_GRID_W = ITEM_COLS * ITEM_CELL + (ITEM_COLS - 1) * ITEM_GAP;
 const ITEM_X_GAP = 5;                     // abilities to the items
-const FOOD_GAP = 5;                       // items to the meals
-const FOOD_N = 2;                         // the meal wells: berry, fish
-const FOOD_CELL = ITEM_CELL;              // a meal well: the items' size
-const FOOD_W = FOOD_N * FOOD_CELL + (FOOD_N - 1) * AB_GAP;
+const PURSE_GAP = 5;                      // items to the purse
+const PURSE_W = ITEM_CELL;                // the purse: one item well wide, the plate's full inner height
 const HP_H = 7, ST_H = 4;                 // the health bar (tall enough for its number) and the stamina bar
 const BAR_TOP = AB_CELL + 3;              // the health bar's outline, under the wells
 const ST_TOP = BAR_TOP + HP_H + 1;        // the stamina bar's outline: shares the health bar's bottom ink
 const XP_TAG = 9;                         // the xp numbers standing over the portrait
-const AB_W = PORT_SQ + PORT_GAP + AB_ROW_W + ITEM_X_GAP + ITEM_GRID_W + FOOD_GAP + FOOD_W; // the content, inside the frame's pads
+const AB_W = PORT_SQ + PORT_GAP + AB_ROW_W + ITEM_X_GAP + ITEM_GRID_W + PURSE_GAP + PURSE_W; // the content, inside the frame's pads
 const AB_H = AB_PAD + ST_TOP + ST_H + 2 + AB_PAD; // wells, bars, the stamina bar's outline, the pads
 const AB_BG = '#16181c';
 // ---- the hud frame: the one plate the bottom widgets stand on ----------
@@ -209,77 +204,28 @@ function portraitRect() {
 // the health bar's and the stamina bar's insides, under the ability wells
 function hpBarRect() { const r = abCellRect(0); return { x: r.x + 1, y: r.y + BAR_TOP + 1, w: AB_ROW_W - 2, h: HP_H }; }
 function stBarRect() { const r = abCellRect(0); return { x: r.x + 1, y: r.y + ST_TOP + 1, w: AB_ROW_W - 2, h: ST_H }; }
-// the two meal BUTTONS, in stripHit's 'food' order: the berry (0), the fish
-// (1). Each carries the action whose key its corner prints and the input
-// intent its press sets.
-const FOOD_BTNS = [
-  { type: 'berry', act: 'berry', intent: 'eatBerry' },
-  { type: 'fish', act: 'fish', intent: 'eatFish' },
-];
-function foodCellRect(i) {
-  const R = hudStripRect(), x0 = R.x + PORT_SQ + PORT_GAP + AB_ROW_W + ITEM_X_GAP + ITEM_GRID_W + FOOD_GAP;
-  return { x: x0 + i * (FOOD_CELL + AB_GAP), y: R.y + AB_PAD, w: FOOD_CELL, h: FOOD_CELL };
-}
-// the purse: a readout well under the meals, level with the items' lower row
+// the purse: a readout well after the items, the plate's full inner height
 function goldCellRect() {
-  const r = foodCellRect(0);
-  return { x: r.x, y: r.y + FOOD_CELL + 3, w: FOOD_W, h: FOOD_CELL - 1 };
+  const R = hudStripRect(), x0 = R.x + PORT_SQ + PORT_GAP + AB_ROW_W + ITEM_X_GAP + ITEM_GRID_W + PURSE_GAP;
+  return { x: x0, y: R.y + AB_PAD, w: PURSE_W, h: 2 * ITEM_CELL + ITEM_GAP + 1 };
 }
-// THE FISH PICKER: the fish well holds four kinds (FISH_KINDS, js/sim/player.js),
-// and pointing at it raises a column of them straight up off the well - the
-// lake's frost pike nearest it, its gold sunfish, then the creek's whitefish
-// and snow char, each with how many you carry. With
-// none picked all four stand lit and the key eats whichever comes next (the
-// well shows that one); a click on one picks it, and the key eats only that
-// (it rings gold, the others dim), and a click on the picked one lets it go.
-// The pick is the body's own (p.fishPick), set through the input's cmd like
-// every other order, so it holds online. It stays up while the pointer is on
-// the well or the column. The column is a part of the strip, not a plate over
-// it: its frame runs on down into the strip's (drawFishPop), so the rect below
-// reaches into the strip's top frame. The fish well has no buy plate over it,
-// so the column hides none.
-const FISH_POP = ['fish', 'sunfish', 'whitefish', 'snowChar']; // the column, bottom to top: the lake's, then the creek's
-const FISH_POP_NAME = 10;  // the hovered kind's name, standing over the column
-function fishPopRect() {
-  const s = foodCellRect(1), top = hudStripRect().y - (FISH_POP.length * FOOD_CELL + (FISH_POP.length - 1) * AB_GAP + AB_PAD);
-  return { x: s.x - AB_PAD, y: top, w: FOOD_CELL + 2 * AB_PAD, h: s.y - top };
-}
-function fishPopCellRect(j) {
-  const r = fishPopRect();
-  return { x: r.x + AB_PAD, y: r.y + AB_PAD + (FISH_POP.length - 1 - j) * (FOOD_CELL + AB_GAP), w: FOOD_CELL, h: FOOD_CELL };
-}
-// is the column up, for a pointer at strip-space (mx, my)
-function fishPopUp(mx, my) {
-  if (state.mode !== 'play' || player.dead || state.paused || !hudHome() ||
-      state.mapOpen || state.settingsOpen || state.wheel || window.DBG.hideUI || !mouse.inside) return false;
-  const r = fishPopRect(), s = foodCellRect(1);
-  if (mx >= r.x && mx < r.x + r.w && my >= r.y && my < s.y) return true; // the column and the gap under it
-  return mx >= s.x && mx < s.x + s.w && my >= s.y - 1 && my < s.y + s.h;
-}
-function fishPopHeadroom() {
-  const m = stripMouse(mouse.x, mouse.y);
-  return fishPopUp(m.x, m.y) ? hudStripRect().y - fishPopRect().y + FISH_POP_NAME + 2 : 0;
-}
-// The meal buttons' share of that refusal: a press that could not become a
-// meal - nothing in the pouch, the clock still up, full health, a busy body -
-// reddens and shakes the button that was asked, in the red the well already
-// refuses in, so a Q with no berry reads as denied rather than
-// dead. startEat is the one path every press takes (key or click), so it is
-// the one caller; a second press on the same button while the red is up is
-// swallowed, while the other meal's button answers fresh.
-// updateFx ages it on wall time.
-let foodFlash = 0, foodFlashI = 0;
-function foodDenied(type) {
-  const i = FISH_KINDS.includes(type) ? 1 : 0;
-  if (foodFlash > 0 && foodFlashI === i) return;
-  foodFlash = 0.6;
-  foodFlashI = i;
+// The item wells' share of the refusal: a slot's key or click that could not
+// be used - nothing usable in it, a potion already running, full health -
+// reddens and shakes the well that was asked, in the red the ability wells
+// already refuse in. useItem / drinkPotion are the one caller, so key and
+// click speak alike; a second press on the same well while the red is up is
+// swallowed. updateFx ages it on wall time.
+let itemFlash = 0, itemFlashI = 0;
+function itemDenied(i) {
+  if (itemFlash > 0 && itemFlashI === i) return;
+  itemFlash = 0.6;
+  itemFlashI = i;
   SFX.deny();
 }
 // And the ability wells' share of it: a key nobody has spent a point on is
 // LOCKED (abUnlocked, js/sim/abilities.js), and its well already stands dim with
 // a dark icon - but a press has to answer, so the asked well reddens and
-// shakes in the same red the meal buttons
+// shakes in the same red the item wells
 // refuse in. tryAbility is the one caller, so key and click speak alike; a
 // cooldown is NOT this refusal - the wipe already says when it comes home.
 let abFlash = 0, abFlashI = 0;
@@ -318,21 +264,12 @@ function abBuyHit(mx, my) {
   }
   return -1;
 }
-// { kind:'ab', i } | { kind:'item', i } | { kind:'food', i } | { kind:'fishPick', j } | { kind:'fishPop' } | { kind:'port' } | { kind:'frame' }
-// | null. Shared by the click handler, the cursor and the strip's own hover
+// { kind:'ab', i } | { kind:'item', i } | { kind:'port' } | { kind:'frame' } | null. Shared by the click handler, the cursor and the strip's own hover
 // so they cannot disagree.
 function stripHit(mx, my) {
   if (state.mode !== 'play' || player.dead || state.paused ||
       state.mapOpen || state.settingsOpen || state.wheel || window.DBG.hideUI) return null;
   ({ x: mx, y: my } = stripMouse(mx, my));
-  if (fishPopUp(mx, my)) {
-    for (let j = 0; j < FISH_POP.length; j++) {
-      const s = fishPopCellRect(j);
-      if (mx >= s.x && mx < s.x + s.w && my >= s.y && my < s.y + s.h) return { kind: 'fishPick', j };
-    }
-    const r = fishPopRect();
-    if (my < r.y + r.h + 2) return { kind: 'fishPop' }; // the row's frame and the gap: nothing, but not the world either
-  }
   const sp = statPanelHit(mx, my); // the stat panel left of the portrait (js/ui/statpanel.js)
   if (sp) return sp;
   const R = hudStripRect();
@@ -344,10 +281,6 @@ function stripHit(mx, my) {
   for (let i = 0; i < ITEM_SLOTS; i++) {
     const s = itemCellRect(i);
     if (mx >= s.x && mx < s.x + s.w && my >= s.y && my < s.y + s.h) return { kind: 'item', i };
-  }
-  for (let i = 0; i < FOOD_BTNS.length; i++) {
-    const s = foodCellRect(i);
-    if (mx >= s.x && mx < s.x + s.w && my >= s.y - 1 && my < s.y + s.h) return { kind: 'food', i };
   }
   const pr = portraitRect();
   if (mx >= pr.x && mx < pr.x + pr.w && my >= pr.y && my < pr.y + pr.h) return { kind: 'port' };
@@ -369,12 +302,7 @@ function hudPress(mx, my) {
   const sh = stripHit(mx, my);
   if (sh) {
     if (sh.kind === 'ab') { if (msOn()) msWell(sh.i); else player.input.ability = sh.i; } // click-to-cast: the well IS the key (under MOUSE it readies - msWell)
-    else if (sh.kind === 'food') player.input[FOOD_BTNS[sh.i].intent] = true; // the button IS the key, refusals and all (startEat)
-    else if (sh.kind === 'fishPick') { // pick that fish, or let the picked one go
-      const t = FISH_POP[sh.j];
-      SFX.unlock();
-      player.input.cmd = { kind: 'fishPick', type: player.fishPick === t ? null : t };
-    }
+    else if (sh.kind === 'item' && player.items[sh.i] === 'potion') player.input.useItem = sh.i; // the well IS the key, refusals and all (useItem)
     return true;
   }
   return false;

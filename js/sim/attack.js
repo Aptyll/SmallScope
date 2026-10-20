@@ -3,8 +3,7 @@
 // belongs to the hero's kit, the same every match, never found, bought or
 // swapped. What a hero's attack IS lives on its CLASSES row (`attack`,
 // js/sim/player.js); this file is how any attack is pressed, drawn, timed and
-// landed. Then the fishing the hands do on their own, which shares its clock
-// with nothing here but lives beside it since the old weapon file held it.
+// landed.
 // Loads after js/sim/actions.js: a shot rides the arrow pipeline and reads its
 // tuning (BOW_Y, AMBUSH_MUL) at runtime.
 // ------------------------------------------------------------ basic attack
@@ -75,7 +74,6 @@ function attackDmg(p, pw, amb) {
 // lands, the cycle starts, and the loose is what stands a crawler up - one
 // ambush per burrow.
 function basicAttack(p) {
-  cancelCatch(p); // a press is a press: the hoist gives way to the attack
   const amb = ambushReady(p);
   const A = attackOf(p);
   if (A.cut) cutAttack(p, A, amb);
@@ -144,58 +142,3 @@ function updateSlashes(dt) {
   }
 }
 
-// ------------------------------------------------------------ fishing
-// Fishing is the hands working on their own, like a tree in reach
-// (autoWork, js/sim/actions.js): standing on ice with a fish inside FISH_CATCH_R
-// takes it through the sheet with no press - once every FISH_AUTO_CD, so a
-// walk along a shoal is a stride per fish, not a vacuum. It never touches the
-// attack: no cycle is spent and a draw runs on under it. Nothing can refuse
-// the catch: fish are a POUCH kind and take no bag cell (the `inventory`
-// banner, js/sim/player.js). Two players can reach one fish in a step, so it
-// is contested, not first-come.
-const FISH_AUTO_CD = 1.2;
-function autoFish(p, dt) {
-  p.fishCd = Math.max(0, p.fishCd - dt);
-  if (p.fishCd > 0 || p.fallT > 0 || p.dodgeT > 0 || p.stunT > 0 || inAir(p) || p.zip >= 0) return;
-  const ftx = Math.floor(p.x / TILE), fty = Math.floor((p.y + 4) / TILE);
-  if (!inWorld(ftx, fty) || ground[idx(ftx, fty)] !== 1) return;
-  let bi = -1, bd = FISH_CATCH_R;
-  for (let i = 0; i < fish.length; i++) {
-    if (!fish[i].born) continue; // still swimming in from under the shore
-    const d = Math.hypot(fish[i].x - p.x, fish[i].y - p.y);
-    if (d < bd) { bd = d; bi = i; }
-  }
-  if (bi < 0) return;
-  const f = fish[bi];
-  p.fishCd = FISH_AUTO_CD;
-  contest('fish:' + bi, p, () => {
-    const j = fish.indexOf(f);
-    if (j < 0) return;
-    fish.splice(j, 1);
-    const k = f.kind || 'fish';
-    bagAdd(p, k, 1);
-    startCatch(p, k);
-    addFloater(f.x, f.y - 10, ITEMS[k].name + '!', RES_COLORS[k]);
-    burst(f.x, f.y, '#9fc4dd', 8, 45, 0.45, true);
-    burst(f.x, f.y, '#ddf1f8', 5, 35, 0.4, true);
-    sfxAt('splash', f.x, f.y); sfxAt('stash', f.x, f.y);
-  });
-}
-
-// The catch is a pose the body performs - CATCH_STOOP s bent to the hole,
-// CATCH_HAUL s with the fish coming up, then the trophy hoist for the rest of
-// CATCH_T - three DOWN-facing frames whatever the body was facing
-// (classSet(p).catch, drawn by drawPlayer). It is shown only by a body that
-// is standing still anyway: a step, a fresh press, a roll, a cast, a swing,
-// a meal or a hit drops it at once (cancelCatch, from updatePlayer and
-// damagePlayer), because an automatic catch may never hold the player.
-// A net hands its first fish up the same way (updateStructures, js/sim/structures.js).
-const CATCH_T = 2, CATCH_STOOP = 0.16, CATCH_HAUL = 0.22;
-function startCatch(p, kind) { p.catchT = CATCH_T; p.catchKind = kind || 'fish'; }
-function cancelCatch(p) { p.catchT = 0; }
-// which catch frame the body is on: 0 stoop, 1 haul, 2 hoist, -1 not catching
-function catchFrame(p) {
-  if (p.catchT <= 0) return -1;
-  const t = CATCH_T - p.catchT;
-  return t < CATCH_STOOP ? 0 : t < CATCH_STOOP + CATCH_HAUL ? 1 : 2;
-}

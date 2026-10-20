@@ -2,7 +2,7 @@
 
 `renderUI()` owns three corners, the top edge and one strip, and every one of them is positioned off
 `VIEW_W`/`VIEW_H` (never a literal), so a resize needs nothing from them. **The bottom bar is
-the HUD's one bar**: the hud strip carries the abilities, the six item slots, the meals and the
+the HUD's one bar**: the hud strip carries the abilities, the six item slots and the
 gold. The top left is empty (the practice bar hangs there in PRACTICE TOOL), and so is the
 bottom right.
 
@@ -12,7 +12,7 @@ bottom right.
 | top right | the minimap and its day/night ring — the black outline sits `MM_GAP` (4 px) off the top edge and the right edge alike (`applyMinimapSize`, core.js) — the clock centred under it while no team rail is up (`mmClockShown`), and the notice plates under that | `renderMinimap`, `renderNotices` |
 | top centre | the **team rail**: one thin plate, every player in the match as a hero face over a hp bar in the side's colour, your side left (you first) and the rival right, five a side, the match clock over the two kill totals between them — and under it, the spectate control, the surrender vote and the **announcer's plate** (`headlineY`, `noteY`) | `drawRailScaled` |
 | beside the pointer, or bottom left | the hover tooltip, wherever the TOOLTIP row puts it | `tipPos`, `drawTooltip` |
-| bottom centre | the hud strip, flush to the bottom: the stat panel, your portrait (xp round its edge, the level on its corner), the four ability wells over the health and stamina bars, the six item slots, the two meal wells over the gold | `drawHudStrip` |
+| bottom centre | the hud strip, flush to the bottom: the stat panel, your portrait (xp round its edge, the level on its corner), the four ability wells over the health and stamina bars, the six item slots, the purse | `drawHudStrip` |
 | centre, on G | the character panel: the live body, the stat ledger, the six item slots | `drawCharPanel` |
 
 Every widget slides **its own size** away for the landing intro — the minimap up by

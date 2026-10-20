@@ -257,12 +257,9 @@ function breakOpen(b) {
     if (f.born && Math.hypot(f.x - b.x, f.y - b.y) < 60) { f.a = Math.atan2(f.y - b.y, f.x - b.x); f.spook = 1.2; }
   }
 }
-// one tile frozen back: ice again, unless it is already a listed hole or
-// a net stands on it (the net holds that water open: it joins `holes` and
-// the dawn refreeze has it from there)
+// one tile frozen back: ice again, unless another break holds it or it is a listed hole
 function breakClose(b, i) {
   if (ground[i] !== 2 || holes.includes(i) || iceBreakHolds(i)) return; // (b has let go of it: another break still holds it)
-  if (netAt(i % WORLD, (i / WORLD) | 0)) { holes.push(i); repaintGround(i % WORLD, (i / WORLD) | 0); return; }
   ground[i] = 1;
   repaintGround(i % WORLD, (i / WORLD) | 0);
 }

@@ -74,8 +74,8 @@ function keyLabel(k) {
 // no WASD life (WASD pings with the right button). Each scheme keeps its own binds (settings.binds,
 // settings.bindsClick), so a rebind on one never moves the other, and
 // binds() is whichever is live. CLICK's defaults are the genre's: QWER the
-// abilities (R the big one), A the attack-move, S the stop, D and F the two
-// meals, G the ping wheel, C the sheet.
+// abilities (R the big one), A the attack-move, S the stop, 1-6 the item
+// slots, G the ping wheel, C the sheet. (D and F stand free.)
 //
 // THE THIRD SCHEME, MOUSE (the `mouse only` banner below), is CLICK for one
 // hand: the same actions and the same keys (`ms` is only where it differs
@@ -90,7 +90,12 @@ const KEY_ACTIONS = [
   { id: 'ab3', verb: 'ABILITY 3', key: '3', ck: 'e' }, { id: 'ab4', verb: 'ABILITY 4', key: '4', ck: 'r' },
   { id: 'amove', verb: 'ATTACK MOVE', ck: 'a' }, { id: 'stop', verb: 'STOP', ck: 's' },
   { id: 'dodge', verb: 'DODGE', key: ' ', ck: ' ', ms: 'Mouse4' }, { id: 'slide', verb: 'SLIDE', key: 'Shift', ck: 'Shift', ms: 'Mouse5' }, { id: 'work', verb: 'HARVEST', key: 'e' },
-  { id: 'berry', verb: 'EAT BERRY', key: 'q', ck: 'd' }, { id: 'fish', verb: 'EAT FISH', key: 'f', ck: 'f' },
+  // the six item slots' keys (useItem, js/sim/items.js): what a slot holds is
+  // used off its key - a potion drunk. On WASD they run on past the abilities'
+  // 1-4; under CLICK, where QWER are the abilities, they are 1-6
+  { id: 'item1', verb: 'ITEM 1', key: '5', ck: '1' }, { id: 'item2', verb: 'ITEM 2', key: '6', ck: '2' },
+  { id: 'item3', verb: 'ITEM 3', key: '7', ck: '3' }, { id: 'item4', verb: 'ITEM 4', key: '8', ck: '4' },
+  { id: 'item5', verb: 'ITEM 5', key: '9', ck: '5' }, { id: 'item6', verb: 'ITEM 6', key: '0', ck: '6' },
   { id: 'recall', verb: 'RECALL', key: 'h', ck: 'h' },
   { id: 'ping', verb: 'PING', ck: 'g', was: 'flag' }, // `was`: the id a saved bind of it went by
   { id: 'char', verb: 'CHARACTER', key: 'g', ck: 'c' },
@@ -99,6 +104,7 @@ const KEY_ACTIONS = [
 ];
 const KEY_ACT = {};
 for (const a of KEY_ACTIONS) KEY_ACT[a.id] = a;
+const ITEM_KEYS = ['item1', 'item2', 'item3', 'item4', 'item5', 'item6']; // slot i's key is ITEM_KEYS[i]
 const SCHEMES = ['wasd', 'click', 'mouse'];
 function schemeKey(a, scheme) { // the action's default on a scheme, or undefined
   const s = scheme || settings.scheme;
@@ -285,8 +291,11 @@ function keyPress(e) {
   // edge-triggered intents go into the local player's input struct; the sim
   // reads and clears them, exactly as it does for an bot
   if (keyIs(e, 'dodge')) player.input.dodge = true;
-  if (keyIs(e, 'berry')) player.input.eatBerry = true;
-  if (keyIs(e, 'fish')) player.input.eatFish = true;
+  // an item slot's key uses what is in it (js/sim/items.js); a pad's dpad left
+  // is the potion's, wherever it stands
+  const it = e.repeat ? -1 : ITEM_KEYS.findIndex((a) => keyIs(e, a));
+  if (it >= 0) player.input.useItem = it;
+  if (keyIs(e, 'potion') && !e.repeat) player.input.useItem = Math.max(0, potionSlot(player));
   // the walk home (js/sim/recall.js): a CLICK order would walk out of it, so the press drops the order
   if (keyIs(e, 'recall') && !e.repeat) { player.input.cmd = { kind: 'recall' }; if (ckOn()) ckClear(); }
   // The work key at a practice prop (the parkour die, the range bell): the
@@ -806,7 +815,7 @@ function ckStep(p, dt, smx, smy) {
 //   goes to the body - CLICK's assist - and the auto-attack keeps working it
 //   from where you stand; it never walks, which is the right button's job;
 // - HOLDING THE MIDDLE BUTTON opens the ACTION WHEEL at the pointer: the four
-//   abilities, the two meals and the ping (MS_WHEEL). The travel picks and
+//   abilities, the potion and the ping (MS_WHEEL). The travel picks and
 //   the release performs. An ability casts at the point the press was made,
 //   not where the flick ended (ms.castAt, held through the wind-up - ckStep),
 //   and the ping wedge stands the ping wheel up on that point for the next
@@ -819,7 +828,7 @@ function ckStep(p, dt, smx, smy) {
 //   CLASS_AB (a self-cast, or a ring round the body) casts at once, and a
 //   skill point in hand buys, exactly as the key does.
 // Nothing here reaches the sim but the input struct, as for CLICK.
-const MS_WHEEL = ['ab1', 'ab2', 'ab3', 'ab4', 'berry', 'fish', 'ping'];
+const MS_WHEEL = ['ab1', 'ab2', 'ab3', 'ab4', 'potion', 'ping'];
 // ready: the readied well, -1 none; castAt: the world point a mouse cast
 // aims at until it lands; reel: a grapple cast off the mouse, reeling to its
 // end with no key to hold (inp.grapple, sampleHumanInput)
@@ -869,13 +878,12 @@ function msWheelRelease() {
   if (w.kind === 'kit') { const seg = wheelLayout().seg; state.wheel = null; msKitPick(w, seg); return; }
   if (w.kind === 'ping') { resolveWheel(); state.wheel = null; } // the chart's ping wheel the press opened
 }
-// the action wheel's pick: an ability cast at the press point, a meal, or
+// the action wheel's pick: an ability cast at the press point, a potion, or
 // the ping wheel stood up on the press's point
 function msKitPick(w, seg) {
   if (seg < 0) return;
   const id = MS_WHEEL[seg];
-  if (id === 'berry') player.input.eatBerry = true;
-  else if (id === 'fish') player.input.eatFish = true;
+  if (id === 'potion') player.input.useItem = Math.max(0, potionSlot(player));
   else if (id === 'ping') { SFX.wheelUp(); state.wheel = { kind: 'ping', tx: w.tx, ty: w.ty, wx: w.wx, wy: w.wy, seg: -1, ax: mouse.x, ay: mouse.y, stand: true }; }
   else msCast(+id.slice(2) - 1, w.wx, w.wy);
 }
@@ -984,7 +992,7 @@ function sampleHumanInput(p, dt) {
     inp.slide = keyHeld('slide');
     inp.grapple = keyHeld('ab3') || ms.reel; // a reel in progress keeps answering the held key (or the mouse's cast)
     inp.fire = inp.work = false;
-    inp.eatBerry = inp.eatFish = false;
+    inp.useItem = -1;
     inp.ability = -1;
     inp.cmd = null;
     if (p.charging) { p.charging = false; p.chargeT = 0; }
@@ -997,7 +1005,8 @@ function sampleHumanInput(p, dt) {
   if (!live) {
     inp.mx = inp.my = 0;
     inp.fire = inp.work = inp.slide = inp.grapple = false;
-    inp.dodge = inp.eatBerry = inp.eatFish = false;
+    inp.dodge = false;
+    inp.useItem = -1;
     inp.ability = -1;
     inp.cmd = null;
     if (p.charging) { p.charging = false; p.chargeT = 0; }

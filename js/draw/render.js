@@ -36,16 +36,14 @@ function drawFrameFlash(atlas, fi, x, y, flash) {
   }
 }
 
-// THE ANIMATED GOODS. Two item icons are loops rather than stamps - the
-// gold piece and the berry cluster (`SPRITES.itemAnim`,
-// js/sprites.js) - and this stamps each one's current frame into the LIVE
+// THE ANIMATED GOODS. An item icon may be a loop rather than a stamp - the
+// gold piece is (`SPRITES.itemAnim`, js/sprites/items.js) - and this stamps each one's current frame into the LIVE
 // canvas the game holds for it, once a frame, before anything draws.
 //
 // Doing it here rather than at the call sites is what keeps an item icon one
-// generic read: `SPRITES[ITEMS[type].icon]` is how the pouch, a shop price, a
-// sale row, a drop on the snow, a tooltip and the wiki all reach one, and
-// none of them has to know which goods move. They share ONE clock, so
-// every berry on the screen is on the same beat - a dozen icons each looping
+// generic read: `SPRITES[icon]` is how the purse, a shop price, a sale row,
+// a tooltip and the wiki all reach one, and none of them has to know which goods move. They share ONE clock, so
+// every coin on the screen is on the same beat - a dozen icons each looping
 // to their own is a fruit machine, not a HUD. A frame that has not changed
 // is not redrawn, so a still HUD costs nothing.
 const ITEM_FR = 100; // ms a frame
@@ -63,7 +61,7 @@ function stepItemIcons(nowMs) {
 }
 
 // The work-target rim: the hero's hovered workable object (tree, dead tree,
-// berried bush) draws under a 1px pulsing gold outline - the
+// a rival's roosting eagle) draws under a 1px pulsing gold outline - the
 // buy plates' two golds on the same beat, so "you can act on this" reads in
 // its standing ink. The sprite (or atlas frame) tints through the scratch
 // canvas and stamps the eight neighbours, the same rim grammar as
@@ -127,7 +125,6 @@ function render() {
   const ty1 = Math.min(WORLD - 1, Math.ceil((oy + WV_H) / TILE) + 2);
 
   drawFlatPass(ox, oy, ex, ey, tx0, ty0, tx1, ty1, now); // the ice's sky, the flat objects, the rings
-  drawDrops(ex, ey, now);
 
   const draws = gatherDraws(ox, oy, tx0, ty0, tx1, ty1, now);
   drawSorted(draws, ox, oy, ex, ey, now);
@@ -135,7 +132,6 @@ function render() {
   drawSelection(ox, oy, now);
   drawCheatGhost(ox, oy); // the practice bar's armed teleport / dummy (js/ui/cheats.js)
   drawWorkHint(ox, oy);
-  drawFishHint(ex, ey, now);
   // the parkour's two readouts: the lap clock over the runner, BEST / LAST
   // on the frost plate at the gate (drawParkour, js/draw-world.js) - and the
   // archery range's own BEST / LAST plate over the bell (drawAgame), with
@@ -363,8 +359,7 @@ function drawHitboxes(ox, oy, ex, ey) {
 
   // walk-over and click targets, claimed from their own centres - what the
   // sim measures to
-  for (const d of drops) hbRing(d.x - ex, d.y - ey, 7, HB_PICK);
-  for (const f of fish) hbRing(f.x - ex, f.y - ey, 7, HB_PICK); // hoverFish
+  for (let i = 0, n = creekFishN(); i < n; i++) { const f = creekFishAt(i); if (f.show >= 0.5) hbRing(f.x - ex, f.y - ey, CREEK_FISH_R, HB_PICK); } // a roll over one takes it (creekFishCatch)
 }
 
 // debug: every walker's live route - '.' (settings.hitbox 2), or
@@ -423,7 +418,7 @@ function drawNavPaths(ox, oy, ex, ey) {
 // like this frame, once, and both the pixel cursor and the browser-cursor
 // fallback read from it:
 //   kind  arrow | hand | grab | reticle
-//   mode  (reticle only) idle | lock | hunt | fish | ice | bow
+//   mode  (reticle only) idle | lock | hunt | ice | bow
 //   dim   the action under the pointer is currently blocked / out of reach
 function cursorInfo() {
   if (state.mode === 'title') {
@@ -456,10 +451,10 @@ function cursorInfo() {
   // the merchant's counter: a hand over anything that trades, an arrow over
   // the rest of the slab (which still swallows the click)
   const sp = shopHit(mouse.x, mouse.y);
-  if (sp) return { kind: sp === 'panel' || sp.kind === 'foodWell' ? 'arrow' : 'hand' };
+  if (sp) return { kind: sp === 'panel' ? 'arrow' : 'hand' };
   if (abBuyHit(mouse.x, mouse.y) >= 0) return { kind: 'hand' };
   const sh = stripHit(mouse.x, mouse.y);
-  if (sh && (sh.kind === 'ab' || sh.kind === 'food' || sh.kind === 'fishPick')) return { kind: 'hand' };
+  if (sh && (sh.kind === 'ab' || (sh.kind === 'item' && player.items[sh.i] === 'potion'))) return { kind: 'hand' };
   if (sh) return { kind: 'arrow' };
 
   // Every reticle in play carries the attack's state, whatever it is
@@ -487,8 +482,6 @@ function cursorInfo() {
   // - the boxes the CLICK scheme's right button picks a body by, so the ring
   // and the click agree; a merchant is not a mark)
   if (unitUnder(player, wx, wy)) return ret('hunt', busy);
-  // a fish under the ice: water-blue ring (the bow spears it from point-blank)
-  if (hoverFish()) return ret('fish', busy);
   // something E can work: lock ring (ice-blue over bare ice), dim out of
   // reach. Nothing at a counter: inside a merchant's reach E is the shop's
   // (keyPress, js/app/input.js), and a ring there would promise a swing the key
@@ -505,7 +498,6 @@ const RETICLE = {
   idle: { col: '#f4f7ff', gap: 3 },
   lock: { col: '#ffd95c', gap: 3, diag: true },
   hunt: { col: '#f2cc6a', gap: 4, diag: true },
-  fish: { col: '#7ac0e8', gap: 4, diag: true },
   ice:  { col: '#a8e0f8', gap: 3, diag: true },
   bow:  { col: '#ffd95c', gap: 6, diag: true },
   amove: { col: '#ff6a5c', gap: 4, diag: true }, // the CLICK scheme's armed attack-move

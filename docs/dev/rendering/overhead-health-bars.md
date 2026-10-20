@@ -49,15 +49,15 @@ by `a.alt` instead, which is the only read on how high one is.
 The overhead bar is the **only** player health display (the heart sprites in
 js/sprites/icons.js are baked but unreferenced). Above it sits one
 more small meter — **the slot the hands report to**, and it carries three states that can never
-overlap, since a meal puts the bow down and blocks the draw for its whole length: gold while
+overlap, since a recall stands the body still and anything it does ends the channel: gold while
 charging (`DRAW_COL`), one white blink (`DRAW_FULL_FLASH`, 0.12 s) and then pale gold
 (`DRAW_FULL_COL`) at full draw — brighter, never a new hue: two discrete states, since a gradient
 is unreadable at 14 px, and never orange, which beside a red rival's bar is two warm bars; slate
 while the renock runs, pale gold the instant it comes back (the bow's own ready colour
-— white is the stamina bar's); and **heal green** filling
-left to right while a meal is being chewed (`FOOD_EAT`, [Food](../gameplay/food-the-meal-is-a-channel.md)).
+— white is the stamina bar's); and the **side's own glow** filling
+left to right while a recall channels (`RECALL_T`, [Recall](../gameplay/recall-and-the-roost-ring.md)).
 All three are drawn for **everyone**, because each is a tell somebody can act on — a shot is
-coming, a shot is not coming, a heal is coming and hitting them takes it away. The overhead stack
+coming, a shot is not coming, a body is leaving and hitting them keeps it there. The overhead stack
 floats clear of the sprite: stamina plate at `py - 4` (white, `STAM_COL`, on every side — the one
 bar with no side to it; every player, since the level badge spans both
 bars), health at `py - 7`, that meter at

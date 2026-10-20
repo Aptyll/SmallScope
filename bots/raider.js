@@ -66,7 +66,7 @@ defineBot({
       this.waitT = 0;
     }
     siege(this, me, bird, act);
-    if (me.hp < me.maxHp * 0.35 && me.food.berry > 0 && !foes.some((f) => dist(f) < 160)) act.eatBerry = true;
+    drink(me, act, 0.5);
     act.think = { goal: 'PUSH', why: dist(bird) > 200 ? 'RUN THE ROAD' : 'HIT THE BIRD', plan: 'RAID', mood: 'RECKLESS', target: { kind: 'bird', id: bird.team, x: bird.x, y: bird.y } };
     return act;
   },
@@ -151,7 +151,19 @@ function work(me, n, act) {
 // gold to spare at a counter: the dearest item the purse covers, keeping
 // `keep` back (the obs lists the shop only while me.atShop)
 function buyItem(shop, me, act, keep) {
-  if (act.cmd || !shop || !me.items.includes(null)) return;
-  const can = shop.filter((s) => s.price <= me.gold - keep).sort((a, b) => b.price - a.price);
+  if (act.cmd || !shop) return;
+  // one potion on hand first (it stacks in its own slot), then the dearest item the purse covers
+  const pot = shop.find((s) => s.id === 'potion');
+  if (pot && me.potions < 1 && me.items.filter((x) => x === null).length > 1 && pot.price <= me.gold - keep) {
+    act.cmd = { kind: 'shop', act: 'item', id: 'potion' };
+    return;
+  }
+  if (!me.items.includes(null)) return;
+  const can = shop.filter((s) => !s.stack && s.price <= me.gold - keep).sort((a, b) => b.price - a.price);
   if (can.length) act.cmd = { kind: 'shop', act: 'item', id: can[0].id };
+}
+// hurt: drink a potion if one is on hand and none is running (it never stops the hands)
+function drink(me, act, share) {
+  const s = me.items.indexOf('potion');
+  if (s >= 0 && me.potionT <= 0 && me.hp < me.maxHp * share) act.useItem = s;
 }

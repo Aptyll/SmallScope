@@ -12,7 +12,6 @@
 // around obstacles (see pathfinding) and reports an unreachable goal as -1 -
 // that, not a timer, is what makes a bot drop a target.
 const AI_SIGHT = 200;   // px: how far a wolf on a bot is still tracked (a rival's reach is the profile's sight)
-const AI_EAT_R = 110;   // px: a rival closer than this will knock the meal out of its hands, so it waits
 const AI_HUNT = 120;    // px: how far it will go after an animal
 const AI_FORAGE = 12;   // tiles: how far from itself it looks for work
 const AI_GUARD_R = 160;   // px a guard lets itself drift from its bird before walking back
@@ -410,10 +409,13 @@ function aiSpend(p, inp, steerTo) {
     if (ba >= 0) inp.cmd = { kind: 'ability', i: ba };
   }
   if (!inp.cmd && p.items) {
+    // a potion first when it carries none, and topped up when nothing on its list is buyable yet
+    if (merchNear(p) && botWantsPotion(p, true)) { inp.cmd = { kind: 'shop', act: 'item', id: 'potion' }; return false; }
     const buy = botItemBuy(p);
     if (buy && merchNear(p)) { inp.cmd = { kind: 'shop', act: 'item', id: buy }; return false; }
     const stray = !p.items.includes(null) && merchNear(p) ? botStrayPart(p) : -1;
     if (stray >= 0) { inp.cmd = { kind: 'shop', act: 'sellItem', slot: stray }; return false; }
+    if (merchNear(p) && botWantsPotion(p, false)) { inp.cmd = { kind: 'shop', act: 'item', id: 'potion' }; return false; }
     const next = botNextItem(p);
     // the walk: the next WHOLE item is in the purse and the counter will
     // seat it (a stray part sold there makes the room), never out of a fight
@@ -444,15 +446,64 @@ function updateAI(p, dt) {
   // riding with no rung wanting the ride this think: let go (the ride, above)
   if (p.zip >= 0 && !ai.zipUsed) p.input.jump = true;
 }
-// rung 1's meal (aiThink): fish when badly hurt, berries when a little, and
-// only with no rival close enough to knock it out of the hands
-function aiEat(p, foeD) {
-  const inp = p.input;
-  if (p.eatT <= 0 && p.foodCd <= 0 && foeD > AI_EAT_R) {
-    if (p.hp < p.maxHp * 0.5 && fishHeld(p) > 0) inp.eatFish = true;
-    else if (p.hp < p.maxHp * 0.8 && bagCount(p, 'berry') > 0) inp.eatBerry = true;
+// THE HEALS a bot takes, as a human takes them. Rung 1 drinks a potion under
+// AI_POTION_HP - early, since the heal comes over POTION_T and a level-1 body
+// is rarely a whole potion short before it goes home - never in its own roost ring, which heals faster for free. Rung 5' (aiHealRung)
+// is the free heals: hurt, with no rival near, a ripe bush within AI_HEAL_R
+// is walked into (bushTouch, js/sim/world.js), and a showing creek fish is
+// rolled over from the bank (creekFishCatch) - only a roll whose end lands
+// on dry ground, so the bot never rolls itself into the current.
+const AI_POTION_HP = 0.6;   // share of max health under which a bot drinks
+const AI_HEAL_HP = 0.85;    // ...and under which it walks to a bush or a fish
+const AI_HEAL_R = 10;       // tiles it walks for one
+const AI_HEAL_SAFE = 200;   // px: a rival in sight this close and it fights instead
+const AI_FISH_T = 5, AI_FISH_REST = 10; // s a fish is chased, and s before the next chase
+function aiDrink(p) {
+  const s = potionSlot(p);
+  if (s < 0 || p.potT > 0 || p.dead || inAir(p) || roostRing(p)) return;
+  if (p.hp < p.maxHp * AI_POTION_HP) p.input.useItem = s;
+}
+function aiHealRung(k) {
+  const { p, dt, inp, ai, steerTo } = k;
+  if (k.foeD < AI_HEAL_SAFE || p.hp >= p.maxHp * AI_HEAL_HP || roostRing(p)) { ai.fishT = 0; return false; }
+  const miss = p.maxHp - p.hp, px = p.x, py = p.y + 4;
+  // a fish first: it swims off, a bush waits. A chase that has not landed a
+  // roll in AI_FISH_T is dropped for AI_FISH_REST, so no bot follows the
+  // current down the map
+  ai.fishT = (ai.fishT || 0) + dt;
+  if (ai.fishT > AI_FISH_T + AI_FISH_REST) ai.fishT = 0;
+  if (miss >= CREEK_FISH_HEAL && p.dodgeCharges > 0 && ai.fishT < AI_FISH_T && aiFishRoll(p, inp, steerTo, px, py)) return true;
+
+  if (miss < BUSH_HEAL) return false;
+  const b = nearestObj(p.x, p.y, AI_HEAL_R, (o) => o.type === 'bush' && o.berries > 0);
+  if (!b) return false;
+  if (steerTo(b.tx * TILE + 8, b.ty * TILE + 4, 0) < 0) return false;
+  aiNote(p, 'HEAL', 'BUSH', b);
+  return true;
+}
+// the nearest showing fish: roll at it from the dry bank when the roll ends on
+// dry ground past it, else walk to the bank across from it (CREEK_HW + 0.4
+// tiles off the water's middle, at the fish's place along the creek)
+function aiFishRoll(p, inp, steerTo, px, py) {
+  const reach = kitOf(p).dodgeSpeed * DODGE_T;
+  let best = null, bd = AI_HEAL_R * TILE;
+  for (let i = 0, n = creekFishN(); i < n; i++) {
+    const f = creekFishAt(i), d = Math.hypot(f.x - px, f.y - py);
+    if (f.show >= 0.5 && d < bd) { bd = d; best = { x: f.x, y: f.y, w: f.w }; }
   }
-  if (p.eatT > 0) aiNote(p, 'EAT', 'LOW HP', null);
+  if (!best) return false;
+  const nx = (best.x - px) / (bd || 1), ny = (best.y - py) / (bd || 1);
+  const dry = creekAt(px / TILE - 0.5, py / TILE - 0.5) > 0;
+  if (dry && bd < reach - 6 && creekAt((px + nx * reach) / TILE - 0.5, (py + ny * reach) / TILE - 0.5) > 0.3) {
+    inp.mx = nx; inp.my = ny; inp.dodge = true;
+    aiNote(p, 'HEAL', 'FISH', best);
+    return true;
+  }
+  const side = (px - py) > (best.x - best.y) ? 1 : -1, q = creekMid(best.w) + side * (CREEK_HW + 0.4);
+  const sx = (((best.w + q) * Math.SQRT2 + WORLD - 1) / 2 + 0.5) * TILE, sy = (((best.w - q) * Math.SQRT2 + WORLD - 1) / 2 + 0.5) * TILE;
+  if (steerTo(sx, sy - 4, 0) < 0) return false;
+  aiNote(p, 'HEAL', 'FISH', best);
+  return true;
 }
 // THE WAY HOME (js/sim/recall.js). Read after the ladder, so it overrides
 // what the ladder asked only when nothing rival is within AI_RECALL_SAFE: a
@@ -474,7 +525,7 @@ function aiRecall(p) {
   const inp = p.input, low = p.hp < p.maxHp * AI_RECALL_HP;
   const next = p.items && botNextItem(p), nc = next && itemCost(p, next);
   const rich = !!nc && p.fightT <= 0 && p.inv.gold >= nc.gold && (itemRoom(p, nc.used) >= 1 || botStrayPart(p) >= 0);
-  const go = p.recallT <= 0 && (low || rich) && p.eatT <= 0 && !recallBlocked(p) && Math.hypot(e.x - p.x, e.y - p.y) > AI_RECALL_FAR;
+  const go = p.recallT <= 0 && (low || rich) && !recallBlocked(p) && Math.hypot(e.x - p.x, e.y - p.y) > AI_RECALL_FAR;
   const wait = roostRing(p) && p.fightT <= 0 && p.hp < p.maxHp * AI_RING_FULL; // a body still in a fight is the ladder's
   if (!go && !(p.recallT > 0) && !wait) return;
   if (go) inp.cmd = { kind: 'recall' };

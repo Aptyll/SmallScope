@@ -106,8 +106,6 @@ function drawFlatPass(ox, oy, ex, ey, tx0, ty0, tx1, ty1, now) {
       const px = tx * TILE - ox, py = ty * TILE - oy;
       // +4 like bushes - any lower and the canopy of a tree on the tile below buries it
       if (o.type === 'stump') ctx.drawImage(SPRITES.stump, px, py + 4);
-      // nets lie flat on the water, under everything that walks on them
-      else if (o.type === 'net') drawNet(o, px, py, now);
     }
   }
   drawRecallGround(ex, ey); // each roost's healing ring and the recall's closing on the feet (js/draw/recall.js)
@@ -120,19 +118,8 @@ function drawFlatPass(ox, oy, ex, ey, tx0, ty0, tx1, ty1, now) {
   drawCastPreview(ex, ey, now);
 
   // what the abilities left flat on the snow - craters, and the piercing
-  // shot's telegraph line - then drops (all under entities)
+  // shot's telegraph line (all under entities)
   drawAbilityGround(ex, ey, now);
-}
-
-// the items lying on the ground
-function drawDrops(ex, ey, now) {
-  for (const d of drops) {
-    const spr = SPRITES[ITEMS[d.type] ? ITEMS[d.type].icon : 'itemGold'];
-    const h = spr.width >> 1;
-    ctx.fillStyle = 'rgba(120,140,175,0.35)';
-    ctx.fillRect(Math.round(d.x - ex) - 2, Math.round(d.y - ey) + 2, 4, 2);
-    ctx.drawImage(spr, Math.round(d.x - ex) - h, Math.round(d.y - d.z - ey) - h);
-  }
 }
 
 // the y-sorted list: what stands up, sorted by its feet
@@ -145,9 +132,9 @@ function gatherDraws(ox, oy, tx0, ty0, tx1, ty1, now) {
   for (let ty = ty0; ty <= ty1; ty++) {
     for (let tx = tx0; tx <= tx1; tx++) {
       let o = objects[idx(tx, ty)];
-      // stumps, nets and holes are all drawn flat, above, and never y-sorted; an
+      // stumps and holes are both drawn flat, above, and never y-sorted; an
       // eagle's hitbox tiles have no pixels of their own (drawEagle draws the bird)
-      if (!o || o.type === 'stump' || o.type === 'net' || o.type === 'eagle') continue;
+      if (!o || o.type === 'stump' || o.type === 'eagle') continue;
       if (o.type === 'part') {
         o = o.of;
         if ((o.tx >= tx0 && o.tx <= tx1 && o.ty >= ty0 && o.ty <= ty1) || seen.has(o)) continue;
@@ -186,7 +173,7 @@ function drawSorted(draws, ox, oy, ex, ey, now) {
   canopyFrame(heroP);
   let wkO = null;
   // the scenery under the pointer, for the one thing a hover shows on a
-  // thing E cannot act on yet: a regrowing bush's clock (its branch below).
+  // thing that is resting: a regrowing bush's clock (its branch below).
   // Any reach: a look asks nothing of the legs
   let hovO = null;
   if (heroP) {
@@ -309,13 +296,12 @@ function drawSceneryObj(d, ox, oy, now, wkO, hovO) {
     const spr = o.berries > 0 ? SPRITES.bush
       : o.regrow <= BUSH_RIPEN_T ? SPRITES.bushRipen
       : o.regrow <= BUSH_BUD_T ? SPRITES.bushBud : SPRITES.bushEmpty;
-    // a bare bush never rims: workTarget's `ready` gate already refuses it,
-    // so the rim only ever lands on berries worth picking
-    if (o === wkO) drawTargetRim(spr, 0, 0, spr.width, spr.height, px + sh, py + 4, now);
+    // no rim: E does nothing to a bush - walking into a ripe one heals
+    // (bushTouch, world.js), so the berries themselves are the whole tell
     drawSpriteFlash(spr, px + sh, py + 4, o.flash);
     // hovered while regrowing: the clock itself, the neutral unit bar over
     // the plant filling toward ripe - the frames say roughly, a look asks
-    // exactly. A ripe bush wears the rim instead, and says pick me.
+    // exactly - the cooldown of the heal it gives.
     if (o.berries <= 0 && o === hovO) drawHealthBar(px + 8, py + 1, BUSH_REGROW - o.regrow, BUSH_REGROW, 12, undefined, BAR_NEUTRAL);
   } else if (o.type === 'snowdrop') {
     // a warren's clump: open until picked, then the snapped stem, then the

@@ -52,9 +52,9 @@ robots' gold).
   `performance.now` stubbed before load) driven by the same steps reaches the same position, hp
   and gold for all ten players at every 10 s of a two-minute match on seed 42 as the arena does.
 - **Pixels the sim reads.** The one pixel read in the sim is a building's shot box off its
-  sprite's opaque pixels (`artBox`, js/sim/sim.js). The bounding box and pixel count of 764 of the 769
-  sprite canvases match Chromium exactly, every building among them; the other five are the
-  berry and fish icons and the three `rockFill` overlays, which only the draw reads.
+  sprite's opaque pixels (`artBox`, js/sim/sim.js). The bounding box and pixel count of nearly every
+  sprite canvas match Chromium exactly, every building among them; the few that do not are
+  item icons and the three `rockFill` overlays, which only the draw reads.
 - **Replays.** One seed is one exact match: two runs give byte-identical samples and events.
 
 What differs from a real match, on purpose:

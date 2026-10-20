@@ -235,12 +235,12 @@ function atFeet(x, y, sc, fn) {
 // frame is picked off how far through DODGE_T the roll is (SPRITES.rollAt).
 const RUN_STEP = 2;
 function runFrame(p) { return Math.floor(p.animT * RUN_STEP) % SPRITES.runBob.length; }
-// A body whose hands are busy - a drawn weapon, a swing, a meal, a cast, the
+// A body whose hands are busy - a drawn weapon, a swing, a cast, the
 // shield up, the grapple's rope - runs on the held run instead, its arms at its
 // sides rather than pumping under what they hold. runBob is the bob of the
 // frame on show, whole px up, for what rides the body.
 function handsBusy(p) {
-  return p.charging || p.swingT > 0 || p.slashT > 0 || p.eatT > 0 || p.castT > 0 || p.shieldT > 0 || p.grapT > 0;
+  return p.charging || p.swingT > 0 || p.slashT > 0 || p.castT > 0 || p.shieldT > 0 || p.grapT > 0;
 }
 function runBob(p) { return (handsBusy(p) ? SPRITES.holdBob : SPRITES.runBob)[runFrame(p)]; }
 function rollFrame(prog) {
@@ -303,20 +303,15 @@ function drawPlayer(p, ex, ey, now) {
   const seat = p.mount ? riderSeat(p) : null;
   const rl = rideLift(p) + (seat ? seat.lift : 0);
   let spr = set[frame];
-  // the fish catch: three DOWN-facing frames whatever the body faces
-  // (catchFrame, js/sim/attack.js). The hoist frame is 20 tall on the same feet,
-  // which is what `sy` below pays for
-  const catchF = !lying && p.fallT <= 0 && p.dodgeT <= 0 ? catchFrame(p) : -1;
-  if (catchF >= 0) { const cs = classSet(p); spr = (p.catchKind === 'sunfish' && cs.catchSun || cs.catch)[catchF]; }
-  // ...or the worn body: lying and the catch keep the class body, which has
-  // the only poses for them
-  const rb = !lying && catchF < 0 ? scoutBody(p) : null;
+  // ...or the worn body: lying keeps the class body, which has the only
+  // poses for it
+  const rb = !lying ? scoutBody(p) : null;
   if (rb) {
     const c = rb[p.dir];
     spr = frame > 0 ? c.run[Math.floor(p.animT) % c.run.length] : c.idle[Math.floor(now * ROBOT_IDLE_FPS) % c.idle.length];
   }
   // ...and a class body on the move runs: the doll's eight frames (runFrame)
-  const running = frame > 0 && !lying && catchF < 0 && !rb && p.fallT <= 0;
+  const running = frame > 0 && !lying && !rb && p.fallT <= 0;
   if (running) spr = classSet(p)[handsBusy(p) ? 'hold' : 'run'][p.dir][runFrame(p)];
   const MB = SPRITES.motionBox;
   // the crawl inches: the second frame sits one pixel further along the facing
@@ -412,7 +407,7 @@ function drawPlayer(p, ex, ey, now) {
     // lying player shows one only while the bow is actually drawn - a carried
     // axe bobbing over a body on its belly reads as a floating axe. A body
     // mid-cast (or holding the shield, or charging) has no hand free for it.
-    const held = state.mode !== 'title' && (!lying || p.charging) && catchF < 0 &&
+    const held = state.mode !== 'title' && (!lying || p.charging) &&
       p.castT <= 0 && p.shieldT <= 0 && p.rushT <= 0 && p.zip < 0; // ...or holding a zipline's handle
     const toolBehind = held && p.dir === 'up' && !p.charging && p.swingT <= 0 && p.slashT <= 0; // a blade mid-sweep is always in front
     if (toolBehind) atFeet(fx0, fy0, wsc, () => drawHeldTool(p, px, py + bob));
@@ -471,7 +466,7 @@ function drawPlayer(p, ex, ey, now) {
   // the whole stack hangs off one y so it can drop with the body: a prone
   // pose starts ~6 rows lower in the same 16x16 cell, and bars floating where
   // a head no longer is look broken
-  const hy = py + (lying ? 6 : 0) - (catchF === 2 ? 4 : 0) - (zl ? zl + 5 : 0) + // the hoist holds the fish where the plate would sit; a rider's frame rises with it and clears the handle
+  const hy = py + (lying ? 6 : 0) - (zl ? zl + 5 : 0) + // a rider's frame rises with it and clears the handle
     (rb ? by + rb.top - py : 0) - // ...and a worn body's frame sits on its taller head
     (p.mount ? MOUNT_BAR_ROWS : 0); // ...and a deer's rider stands the frame up off the head for the deer's row
   // fx is the stack's own centre column - the body's, shifted by FRAME_DX so
@@ -577,25 +572,21 @@ function drawPlayer(p, ex, ey, now) {
     // mirror of the stamina bar below it: its backing adds the rows above the
     // hp backing (frame top at hy-11, fill hy-10..-9) and the hp backing's top
     // row hy-8 is the frame-colour gap row, so the frame stays one outline.
-    // The same slot carries the renock cooldown when the bow is not drawn, AND
-    // the meal being chewed (js/sim/core.js) - the three states of one pair of
-    // hands, and never two at once, since a meal puts the bow down and blocks
-    // the draw for its whole length. So one strip above a head answers the only
-    // question a fight asks about it: gold filling = drawing (a shot is coming),
-    // pale gold = it peaked, slate filling = reloading (it is not), pale gold
-    // again for the instant it came back (the bow's own ready colour; white is
-    // the stamina bar's), GREEN filling = eating (a heal is coming, and hitting
-    // them takes it away), and the recall's channel in the side's own glow
-    // (js/sim/recall.js: a scout leaving, and a hit keeps them there).
+    // The same slot carries the renock cooldown when the bow is not drawn. So
+    // one strip above a head answers the only question a fight asks about it:
+    // gold filling = drawing (a shot is coming), pale gold = it peaked, slate
+    // filling = reloading (it is not), pale gold again for the instant it came
+    // back (the bow's own ready colour; white is the stamina bar's), and the
+    // recall's channel in the side's own glow (js/sim/recall.js: a scout
+    // leaving, and a hit keeps them there).
     // All of them use the identical geometry, so the bar never jumps when one
     // hands over to the next.
-    if (p.eatT > 0 || p.recallT > 0 || p.charging || p.nockT > 0 || p.readyFlash > 0) {
-      const eating = p.eatT > 0, drawing = p.charging, home = !eating && p.recallT > 0;
+    if (p.recallT > 0 || p.charging || p.nockT > 0 || p.readyFlash > 0) {
+      const drawing = p.charging, home = p.recallT > 0;
       // the reload divides by attackCycle - the same span the reticle's marks
       // read - so the slate fill starts at zero the frame the
       // shot leaves (dividing by the bare kit.nock sat it at 1 px for half the cycle)
-      const frac = eating ? 1 - p.eatT / FOOD_EAT
-        : home ? 1 - p.recallT / RECALL_T
+      const frac = home ? 1 - p.recallT / RECALL_T
         : drawing ? drawPow(p)
         : p.readyFlash > 0 ? 1 : 1 - p.nockT / Math.max(0.01, attackCycle(p));
       const x = fx - 7, y = hy - 10 - lift;
@@ -603,8 +594,7 @@ function drawPlayer(p, ex, ey, now) {
       ctx.fillRect(x - 1, y - 1, 16, 3); // rows above the hp backing only
       ctx.fillStyle = BAR_TRACK;
       ctx.fillRect(x, y, 14, 2);         // the fill rows; the gap row under is the hp backing's
-      ctx.fillStyle = eating ? EAT_COL
-        : home ? TEAMS[skin(p.team)].glow
+      ctx.fillStyle = home ? TEAMS[skin(p.team)].glow
         : !drawing ? (p.readyFlash > 0 ? DRAW_FULL_COL : NOCK_COL)
         : frac < 1 ? DRAW_COL
         : p.chargeT < drawTime(p) + DRAW_FULL_FLASH ? '#ffffff' : DRAW_FULL_COL;

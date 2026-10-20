@@ -17,7 +17,7 @@ Every margin inside the outline is three pixels — line, edge, ground — which
 `BAG_PAD` are, so a well sits the same distance from the edge on every side of every widget.
 
 **Two well sizes on the HUD**: the strip's ability wells are `HUD_CELL` (34) square, its item
-and meal wells `ITEM_CELL` (24).
+slots and purse `ITEM_CELL` (24).
 
 The whole widget — plate, wells and buy plates — draws at the size of its own dial, BOTTOM BAR SIZE
 on the ESC panel's GAME page (`settings.hudScale`, default 1×). All geometry stays in 1×

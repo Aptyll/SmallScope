@@ -307,14 +307,14 @@ function deerRouteGoal(a) {
 }
 
 // ------------------------------------------------------------ fish
-// ice fishing: fish swim under the ice, seen through its open holes
+// The lake's fish are SCENERY: shadows swimming under the ice, nobody's to
+// catch (the creek's whitefish are the river's heal, js/sim/world.js).
 const HOLE_FALL_DMG = 15;  // falling into open water hurts
 const HOLE_FALL_T = 1.1;   // seconds floundering before climbing back out
-const FISH_CATCH_R = 16;   // bow-fishing: fish must be this close under the player
 const FISH_MARGIN = 6;     // body clearance from snow: soft-steered away, hard-clamped
-// The shoal is a live population, not a nightly reset: it is fished down by
-// spears and nets and refilled by a trickle of new fish swimming in from
-// under the snow - the deep water no hole ever reaches (see spawnEmerger).
+// The shoal is a live population, not a nightly reset: it fills up to its
+// cap by a trickle of new fish swimming in from under the snow - the deep
+// water no hole ever reaches (see spawnEmerger).
 const FISH_MAX = 30;       // cap: the boot shoal, and the ceiling the trickle fills to
 const FISH_RARE = 0.2;     // the share of the shoal that is GOLD SUNFISH; the rest are FROST PIKE
 const FISH_MIN = 10;       // floor: below it the trickle runs at FISH_SPAWN_FAST instead
@@ -337,10 +337,9 @@ const FISH_EMERGE_SPD = 7; // px/s an unborn fish creeps out from under the shor
 const FISH_EMERGE_MAX = 14; // seconds before an emerger that never found water is dropped
 
 // passive swimmers that live under the frozen water, visible as silhouettes
-// through the ice; the bow spears one when it's right under the player
+// through the ice.
 // `born` is the whole two-state life of a fish. A born fish is the one the
-// game has always had: hard-clamped inside the water, drawn, spearable,
-// catchable. An emerger is none of those yet - it is still under the snow
+// game has always had: hard-clamped inside the water and drawn. An emerger is none of those yet - it is still under the snow
 // (the deep water the map does not draw), swimming for the shallows at
 // FISH_EMERGE_SPD with the clamp lifted, and `vis` - how much of its body is
 // over water - is both its alpha and the test that promotes it. So a fish is
@@ -350,8 +349,9 @@ function addFish(x, y, a, born) {
     x, y, a: a === undefined ? rand(0, Math.PI * 2) : a, spd: rand(9, 18), t: rand(0, 9), turnT: rand(1, 3),
     spook: 0, ts: rng() < 0.5 ? -1 : 1, // preferred turn direction at a dead end
     born: born !== false, vis: born === false ? 0 : 1, emT: 0,
-    // its kind, an ITEMS key: hashed off where it came in rather than drawn
-    // from rng, so the shoal's stream is the one it always was
+    // its look, the frost pike's or the rarer gold sunfish's shadow: hashed
+    // off where it came in rather than drawn from rng, so the shoal's stream
+    // is the one it always was
     kind: hash2(Math.floor(x) * 7 + Math.floor(y), Math.floor(y) * 3 + 11) < FISH_RARE ? 'sunfish' : 'fish',
   });
 }
@@ -448,18 +448,6 @@ function angDelta(a, b) {
   return d;
 }
 
-// the standing, room-to-spare net nearest a point, within its lure radius
-function nearestNet(x, y) {
-  let best = null, bd = NET_LURE;
-  for (const o of structures) {
-    if (o.type !== 'net' || o.building || o.fish >= NET_CAP) continue;
-    const cx = o.tx * TILE + 8, cy = o.ty * TILE + 8;
-    const d = Math.hypot(cx - x, cy - y);
-    if (d < bd) { bd = d; best = { cx, cy, o, d }; }
-  }
-  return best;
-}
-
 function updateFish(dt) {
   for (let i = fish.length - 1; i >= 0; i--) {
     const f = fish[i];
@@ -480,12 +468,6 @@ function updateFish(dt) {
     f.turnT -= dt;
     if (f.turnT <= 0) { f.turnT = rand(1, 3); f.a += rand(-1.1, 1.1); }
     const spd = f.spd * (f.spook > 0 ? 3 : 1);
-    // a net baits the water around it: nothing forced, just a lean toward the
-    // rope, which is what makes a net visibly work instead of waiting on luck
-    if (f.spook <= 0) {
-      const nt = nearestNet(f.x, f.y);
-      if (nt) f.a += angDelta(f.a, Math.atan2(nt.cy - f.y, nt.cx - f.x)) * 1.2 * dt;
-    }
     // soft edge cap: veer away well before the shore, turning toward
     // whichever side opens into water (falling back to the fish's own bias)
     if (!fishClear(f.x + Math.cos(f.a) * 10, f.y + Math.sin(f.a) * 10)) {
@@ -499,7 +481,7 @@ function updateFish(dt) {
     else f.a += f.ts * 5 * dt; // pinned: keep rotating until a way out opens
   }
   // the trickle that keeps the shoal alive: one fish at a time, twice as fast
-  // once the water is fished down past FISH_MIN, nothing at all at the cap.
+  // while it is under FISH_MIN, nothing at all at the cap.
   // The practice arena has NO fishable water - its only ice is the parkour
   // track, and a fish emerging into a race line would be absurd - so under
   // PRACTICE the trickle is off entirely.
@@ -997,7 +979,6 @@ function rideStart(p, a) {
   if (!a || p.mount || a.rider || p.dead || p.stunT > 0 || p.fallT > 0 || p.dodgeT > 0 || p.rushT > 0 ||
     p.grapT > 0 || p.zip >= 0 || p.prone || inAir(p)) return;
   if (p.zipWalk) zipWalkEnd(p);
-  cancelCatch(p);
   p.sliding = false; p.slideT = 0;
   p.mount = a; a.rider = p; a.team = p.team;
   p.leapT = 0; p.leapCd = 0;

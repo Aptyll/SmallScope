@@ -1,46 +1,11 @@
 'use strict';
-// The map's own buildings and what they roll out: the net, the barracks bay
-// and its soldiers, the merchant's stall, spikes, fire and the torch. The
+// The map's own buildings and what they roll out: the barracks bay and its
+// soldiers, the merchant's stall, spikes, fire and the torch. The
 // generator is the gold pump and the road tower is its own file, both baked
 // after this one (js/baked/pump.js, js/baked/tower.js) into the same
 // teamBuild sets.
 (() => {
   const { bake, TEAM_SKINS, teamBuildPal } = SPR;
-
-  // ---------------------------------------------------------------- fish net
-  // A fishing net, laid flat over an open water hole (STRUCTS.net, water: true)
-  // instead of standing on the snow: it is the one building drawn under
-  // everything rather than y-sorted, because a player walks onto it. 14x14 of
-  // rope inside a 16x16 tile - a squared frame on four corner floats, a plain
-  // orthogonal mesh (a diagonal one turns to mush at this size), and the water
-  // showing through every gap. k/K/e are the team fitting/glow keys
-  // teamBuildPal swaps, so the frame and the floats carry the owner's colour.
-  const NETPAL = {
-    '.': null,
-    'n': '#c0ab84', // rope
-    'N': '#e6d9b6', // rope knot
-    'k': '#3a4056', // frame dark  (team fit)
-    'K': '#5c6884', // frame light (team fitL)
-    'e': '#ffd95c', // corner float (team glow)
-  };
-  const net = [
-    '................',
-    '.ekKKKKKKKKKKke.',
-    '..k..n..n..n.k..',
-    '..K..n..n..n.K..',
-    '..k..n..n..n.k..',
-    '..knnNnnNnnNnk..',
-    '..K..n..n..n.K..',
-    '..k..n..n..n.k..',
-    '..KnnNnnNnnNnK..',
-    '..k..n..n..n.k..',
-    '..K..n..n..n.K..',
-    '..knnNnnNnnNnk..',
-    '..K..n..n..n.K..',
-    '..k..n..n..n.k..',
-    '.ekKKKKKKKKKKke.',
-    '................',
-  ];
 
   // ---------------------------------------------------------------- barracks bay
   // The barracks' art (STRUCTS.barracks, art: 'spawner'): a 48x38 bot garage on a 3x2 tile footprint
@@ -349,7 +314,6 @@
   SPR.onTeams(() => TEAM_SKINS.forEach((t, i) => {
     teamBuild[i] = {
       spawner: [bake(bay, bayTeamPal(t))],
-      net: [bake(net, teamBuildPal(NETPAL, t))],
       stall: bake(stall, stallPal(t)), // the merchant's shop (render.js reads SPRITES.teamBuild[skin(team)].stall)
     };
     teamRobots[i] = [bake(botA, teamRobotPal(t)), bake(botB, teamRobotPal(t))];
@@ -358,7 +322,6 @@
   Object.assign(SPRITES, {
     teamBuild: teamBuild,
     robotTeam: teamRobots,
-    net: [bake(net, NETPAL)],
     robot: teamRobots[0],
     spikes: bake(spikes, SPAL),
     fire: [bake(fire1, FPAL), bake(fire2, FPAL), bake(fire3, FPAL)],

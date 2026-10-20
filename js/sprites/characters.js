@@ -113,17 +113,15 @@
   ]);
 
   // ---------------------------------------------------------------- the fish catch
-  // Three DOWN-facing frames the catch plays through whichever way the body
-  // faces (catchFrame, js/sim/attack.js; drawn by drawPlayer): a STOOP to the hole,
+  // Three DOWN-facing frames, the end-of-match cheer emote's (EMOTES,
+  // js/ui/screens.js; the ice catch they were drawn for is gone): a STOOP to the hole,
   // the fish HAULED up tail-first with the water flying off it, and the trophy
   // HOIST - both arms straight up, the fish flat above the hat - which is why
   // the hold frame is 16x20 and draws four rows higher on the same feet. Look
   // A off docs/media/concepts/fish-catch-concepts-1.png. The fish letters
   // (CATCHPAL_EXTRA): n outline, f/F body, w belly, i eye, c a flying drop -
-  // a FROST PIKE's colours; CATCHPAL_SUN repaints it as the GOLD SUNFISH
-  // (the lake's two, js/baked/fish.js), so the hoist shows what was caught.
+  // a FROST PIKE's colours.
   const CATCHPAL_EXTRA = { 'n': '#2e4a5e', 'f': '#7ab0cc', 'F': '#b4dcec', 'w': '#eaf8ff', 'i': '#101d2c', 'c': '#9fd6f2' };
-  const CATCHPAL_SUN = { 'n': '#6a3a12', 'f': '#e0a030', 'F': '#f6d46a', 'w': '#fbe6a0' };
   const catchStoop = [
     '................',
     '................',
@@ -714,10 +712,9 @@
   const teamPlayerPal = (t) => Object.assign({}, PPAL, {
     r: t.coat, R: t.coatL, d: t.coatD, t: t.hat, T: t.hatL, m: t.trim, M: t.trimD,
   });
-  // the three catch frames in a class's team paint (the fish keeps its own
-  // colours); sun = the gold sunfish's
-  const catchSet = (pal, stoop, haul, hold, sun) => {
-    const cp = Object.assign({}, pal, CATCHPAL_EXTRA, sun ? CATCHPAL_SUN : null);
+  // the three catch frames in a class's team paint (the fish keeps its own colours)
+  const catchSet = (pal, stoop, haul, hold) => {
+    const cp = Object.assign({}, pal, CATCHPAL_EXTRA);
     return [bake(stoop, cp), bake(haul, cp), bake(hold, cp)];
   };
   const playerSet = (pal, mask) => Object.assign({
@@ -726,7 +723,6 @@
     right: [bake(playerSideIdle, pal), bake(playerSideA, pal), bake(playerSideB, pal)],
     left: [flipH(bake(playerSideIdle, pal)), flipH(bake(playerSideA, pal)), flipH(bake(playerSideB, pal))],
     catch: catchSet(pal, catchStoop, catchHaul, catchHold),
-    catchSun: catchSet(pal, catchStoop, catchHaul, catchHold, true),
     // belly-down: a sibling of the four walking directions, same frame order
     prone: {
       down: [bakeSpan(pnDownIdle, pal), bakeSpan(pnDownA, pal), bakeSpan(pnDownB, pal)],
@@ -744,7 +740,6 @@
       right: [bake(skSideIdle, sp), bake(skSideA, sp), bake(skSideB, sp)],
       left: [flipH(bake(skSideIdle, sp)), flipH(bake(skSideA, sp)), flipH(bake(skSideB, sp))],
       catch: catchSet(sp, skCatchStoop, skCatchHaul, skCatchHold),
-      catchSun: catchSet(sp, skCatchStoop, skCatchHaul, skCatchHold, true),
       prone: {
         down: [bakeSpan(pnSkDownIdle, sp), bakeSpan(pnSkDownA, sp), bakeSpan(pnSkDownB, sp)],
         up: [bakeSpan(pnSkUpIdle, sp), bakeSpan(pnSkUpA, sp), bakeSpan(pnSkUpB, sp)],

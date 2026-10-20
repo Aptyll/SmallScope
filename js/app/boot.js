@@ -48,6 +48,7 @@ if (PRACTICE) {
   liftRocks();       // ...then genWorld's placeholder rocks come up again (world.js)
   placeLandmarks();  // ...and the story landmarks take their spots, on a stream of their own (landmarks.js)
   placePumps();      // ...and the two gold pumps beside the top and bot lanes' middles, with no rng() (js/sim/pumps.js)
+  placeBushes();     // ...and the berry bushes move to the camps and the river, on no rng at all (world.js)
   spawnAnimals();
   spawnFish();
   spawnOrca();       // ...and the orca under its lake (js/sim/orca.js)
@@ -145,8 +146,8 @@ window.DBG = {
   // the bot dev view (js/ui/botview.js): what a bot thinks, the recorder, the page
   botThought, botGuess, BOTLOG, botLogExport, openBotLab, botViewStep,
   get botView() { return botView; }, set botView(v) { botView = v | 0; },
-  SEED, state, animals, objects, ground, mouse, keys, drops, footprints, flakes,
-  fish, holes, addFish, spawnEmerger, netAt,
+  SEED, state, animals, objects, ground, mouse, keys, footprints, flakes,
+  fish, holes, addFish, spawnEmerger,
   // the ice breaking in its own shape (js/sim/icebreak.js): DBG.iceBreak(x, y, 'breach', 0, { warn: 0.9 })
   iceBreaks, iceBreak, iceBreakAge, iceBreakCovers, iceBreakHolds, iceBreakWet, ICE_BREAK_SHAPES,
   // the orca and its lake (js/sim/orca.js, js/sim/world.js): its state, the line over a head, the disc
@@ -199,7 +200,7 @@ window.DBG = {
   // the two coordinate bridges, so a driver can put the pointer on a tile
   wToSX, wToSY, mouseWX, mouseWY,
   ping: (k, x, y, p) => runCmd(p || player, { kind: 'ping', k, x, y }),
-  // the hud strip - portrait, abilities, items, bars and meals, bottom-centre;
+  // the hud strip - portrait, abilities, items, bars and purse, bottom-centre;
   // `itemCellRect(i)` is item slot i's well, and `stripHit` names any well.
   hudStripRect, stripHit, itemCellRect, abCellRect, portraitRect,
   // the hero's basic attack (CLASSES[c].attack, js/sim/attack.js): its row,
@@ -209,7 +210,6 @@ window.DBG = {
   basicAttack: (p) => basicAttack(p || player), attackDmg: (pw, p) => attackDmg(p || player, pw == null ? 1 : pw, false),
   drawTime,
   // a drop on the snow, so a driver can stage a pickup
-  spawnDrop,
   // death keeps everything (die): the one number a kill is worth
   get KILL_BOUNTY() { return killBounty(); },
   // the draw curve: 0..1 off a player's chargeT, and the flight and damage it buys a shot
@@ -238,21 +238,21 @@ window.DBG = {
   // without the pointer
   BUILD_ITEMS, ITEM_PARTS, ITEM_DONE, itemCost: (id, p) => itemCost(p || player, id),
   buyItem: (id, p) => buyItem(p || player, id), sellItem: (slot, p) => sellItem(p || player, slot),
-  botNextItem, botItemBuy, FOOD_PRICE, foodPrice,
+  botNextItem, botItemBuy,
+  // the heals: the potion's slot and its drink, a creek fish's heal and the bushes'
+  potionSlot: (p) => potionSlot(p || player), useItem: (slot, p) => useItem(p || player, slot),
+  POTION_HEAL, POTION_T, CREEK_FISH_HEAL, BUSH_HEAL, BUSH_REGROW, creekFishN, creekFishAt, placeBushes,
   // the news plates under the minimap: the live stack, where a slot lands,
   // and a way to raise one
   notices, noteRect, NOTE_KIND, raiseNotice,
   merchNear: (p) => merchNear(p || player),
   openShop: (p) => openShop(merchNear(p || player)), closeShop, shopOpen,
   shopLayout, shopHit: (x, y) => shopHit(x == null ? mouse.x : x, y == null ? mouse.y : y),
-  shopTrade: (good, dir, p) => shopTrade(p || player, good, dir),
   // what the pointer is on, as the panel would describe it (null = nothing)
   tipAt: (x, y) => tipAt(x == null ? mouse.x : x, y == null ? mouse.y : y),
   // and where this frame's panel is sitting, the rect drawTooltip paints -
   // which is how the TOOLTIP row's two modes are read without eyeballing px
   tipRect: () => { if (!tipNow) return null; const s = tipSize(tipNow); return Object.assign(tipPos(s.w, s.h), s); },
-  // the fish catch's three beats: start one by hand, read which frame a body is on
-  startCatch: (p) => startCatch(p || player), cancelCatch: (p) => cancelCatch(p || player), catchFrame,
   setNock: (t, p) => { (p || player).nockT = t; }, // a huge t parks a player's bow for a capture
   // the players: all ten, the local one, and the teams table
   players, MAX_PLAYERS, TEAMS, Player, ringPts, contestRank,
@@ -277,17 +277,11 @@ window.DBG = {
   teamEagleDown,
   get player() { return player; },
   get inv() { return player.inv; },
-  // the pouch: the food table, and add/take/count without walking onto a
-  // drop. goldCellRect is the always-on gold readout on the hud strip.
-  ITEMS, goldCellRect, foodCellRect, shortNum, hudPress,
-  get food() { return player.food; },
-  bagAdd: (type, n, p) => bagAdd(p || player, type, n || 1),
-  bagTake: (type, n, p) => bagTake(p || player, type, n || 1),
-  bagCount: (type, p) => bagCount(p || player, type),
-  bagRoom: (type, p) => bagRoom(p || player, type),
+  // goldCellRect is the always-on gold readout on the hud strip
+  goldCellRect, shortNum, hudPress,
   // hand a player to an AI, a human, or nobody (a ghost at its camp)
   setControl: (id, mode) => { const p = players[id]; if (p) p.control = mode; return p; },
-  // reseat this screen's player in slot `id` (a fresh roster: bots and pouches
+  // reseat this screen's player in slot `id` (a fresh roster: bots and items
   // reset), the camera on it - the same thing ?local=N does at load
   setLocal: (id) => { initPlayers(undefined, id); camX = player.x - WV_W / 2; camY = player.y - WV_H / 2; return player; },
   localId: () => localId,
@@ -304,7 +298,7 @@ window.DBG = {
   netDeltaRun, netVerify: (on) => { NET.verify = !!on; return NET.verify; }, netLoss: (f) => { NET.lossOut = +f || 0; return NET.lossOut; }, snapHistoryPush, snapDeltaFrom, snapBuildDelta, snapEncode, snapDecode, encDict,
   // the wrapper's lobbies, for a joiner picking one by hand (steamBridge only)
   lobbies: () => (window.steamBridge ? window.steamBridge.lobbies() : Promise.resolve([])),
-  placeObj, idx, objAt, hoverFish, damagePlayer, die, endMatch, specNext, aliveCount, updateAI, contest,
+  placeObj, idx, objAt, damagePlayer, die, endMatch, specNext, aliveCount, updateAI, contest,
   // the post-game lobby (js/ui/lobby.js): freeze the table by hand, open the
   // screen without walking a ceremony, drive it, and read back both the
   // frozen record and the live screen state
@@ -509,7 +503,6 @@ function tweenMark() {
   for (const a of animals) w.push(a, a.x, a.y);
   for (const r of robots) w.push(r, r.x, r.y);
   for (const a of arrows) w.push(a, a.x, a.y);
-  for (const d of drops) w.push(d, d.x, d.y);
 }
 function tweenIn() {
   tween.now.length = 0;

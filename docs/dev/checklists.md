@@ -79,7 +79,7 @@ declare victory. The affordances:
   `DBG.merchants.length` is 2 and the mode is `play`, step out the `state.dropBrief`, `hopOff()`,
   then `warp` beside `DBG.merchants[i]` — it is a working NPC and wanders off its post, so re-warp
   before each check unless a counter is open (an open counter pins it: `shopServing`). `DBG.openShop()`,
-  `shopHit(x, y)`, `buyItem(id, p?)`/`sellItem(slot, p?)`/`shopSellCell(i, p?)`/`shopTrade(good, dir, p?)`
+  `shopHit(x, y)`, `buyItem(id, p?)`/`sellItem(slot, p?)`/`shopSellCell(i, p?)`
   and `shopLayout()` drive the panel without a pointer; `DBG.itemCost(id, p?)`, `botNextItem` and
   `botItemBuy` read what an item costs a seat and what a bot would buy, and `BUILD_ITEMS` is the
   catalogue. (`buyItem` and the trades still check the reach: warp to a counter first.) The
@@ -195,7 +195,7 @@ that preserve the described structure.
 
 **Adding an object type** — one `OBJECTS` entry in [js/sim/world.js](../../js/sim/world.js) is most of
 it: `solid` (does it block a walker), `tool` (what E reaches for) and `ready` (whether it is worth
-reaching *right now* — the bush's berries), `auto` (the hands go to it on their own the moment it
+reaching *right now* — a rock's regrowth, a snowdrop's rest), `auto` (the hands go to it on their own the moment it
 is in reach — `autoWork`; without it the thing waits for E, as only bare ice and the dummy do; a
 rival building needs no flag — `autoToolFor` asks `STRUCTS` and `ownsStruct`), `needs` (the tool a swing must already be holding,
 null = any), `verb` and `lift` (the E key prompt, which an `auto` type never shows), and `mm`/`map` (what each of the two maps
@@ -225,20 +225,17 @@ glows — there is no light registry to add it to
 is not an object type: it is a `STRUCTS` entry in [js/sim/structures.js](../../js/sim/structures.js),
 which carries the same `mm`/`map` pair and gets solidity, both maps and the E prompt for free.
 
-**Adding a carried item** — only food is carried (there is no backpack since 0.531), and **a new
-FOOD is already generic**: one `ITEMS` row with an `icon` and a `heal` picks up the pouch, the drop
-pickup, the meal channel, the shared clock and the tooltip rows for free (`startEat`,
-js/sim/core.js — see [Food](gameplay/food-the-meal-is-a-channel.md)). What it still needs is an
-8×8 icon sprite (bake it beside its own code, not in the byte-fragile grid files under
-js/sprites/ — see `SPR.bake` in js/sprites/core.js; an icon that should **loop** is still one
-canvas to everything that draws it — put the frames in `SPRITES.itemAnim[key]` and the canvas in
-`SPRITES[key]`, and `stepItemIcons` animates it, see [sprites.md](sprites.md)), a colour in
-`RES_COLORS` for the pickup floater, a price at the counter (`foodPrice`, js/ui/shop.js, prices a
-fish off its `heal`), whatever *makes* it, and its own key and a seat in `FOOD_BTNS`
-(js/ui/strip.js), because a meal is pressed from the hud strip (a new fish instead joins
-`FISH_KINDS`, js/sim/player.js, and `FISH_POP`, and eats off the fish well). Gold is **not** an
-`ITEMS` entry and must not become one: it is a wallet number with no ceiling. See
-[the pouch](gameplay/the-pouch.md).
+**Adding a carried item** — nothing is carried but gold and the six item slots (the backpack
+went in 0.531, the food pouch with the potions). A new carried thing is a **shop item**: one
+`BUILD_ITEMS` entry (js/sim/items.js) with a `price`, its stats, an `icon` and, for a consumable
+that stacks in one slot, a `stack` (the potion, [Heals](gameplay/heals.md)), used off its slot's
+key through `useItem`. What it still needs is its icon sprite (bake it beside its own code, not in
+the byte-fragile grid files under js/sprites/ — see `SPR.bake` in js/sprites/core.js; an icon that
+should **loop** is still one canvas to everything that draws it — put the frames in
+`SPRITES.itemAnim[key]` and the canvas in `SPRITES[key]`, and `stepItemIcons` animates it, see
+[sprites.md](sprites.md)). A heal the WORLD hands out is not carried at all: it is taken where it
+stands through `healPlayer`, like the creek fish and the berry bush. Gold is **not** an item and
+must not become one: it is a wallet number with no ceiling.
 
 **Adding or changing a hero's basic attack** — one `attack` row on its `CLASSES` entry
 (js/sim/player.js; [the basic attack](gameplay/the-basic-attack.md)): a `name`, an `art`, a
@@ -264,8 +261,9 @@ what it writes into the kit) plus its place in `ITEM_STAT_ORDER` and an icon in 
 (js/ui/shop.js). A new **passive** is one `ITEM_PASSIVES` row: a kit field the sim already reads
 needs nothing else; anything that happens on a hit or on the clock goes in `itemsOnHit` or
 `itemsTick`, and a new kit field gets its default in `baseKit` (js/sim/player.js). Put the item in
-the bots' `BOT_BUILDS` if a class should buy it. A new **fish** needs no shop edit at all: a place
-in `FISH_KINDS` prices it off its `heal` (`foodPrice`).
+the bots' `BOT_BUILDS` if a class should buy it. A **stack** item (`stack: n`, the potion) is
+built from nothing and into nothing, sits in one slot with its count in `p.potions`, and needs its
+own buy, sell and use branches (`buyPotion`, `takePotion`, `useItem`).
 
 **Adding a class** — a named hero goes through the `new-hero` skill
 ([.claude/skills/new-hero/](../../.claude/skills/new-hero/SKILL.md)), which runs this list in order
@@ -439,7 +437,7 @@ swimmable grounds outright.
 group) plus whatever `mapTerrain` needs to read it, and that is the feature: `genWorld`'s
 interior pass plants from `mapTerrain`, the class screen's chip draws from it, `layPaths` cuts
 its paths if it grows woods (`mapGrown`), and the rock/berry top-up puts it back to OPEN FIELD's
-strength. Nothing else in the game knows a shape by name. Three rules bound one:
+strength (its bushes only keep the stream; `placeBushes` lays the real ones after). Nothing else in the game knows a shape by name. Three rules bound one:
 
 - **The border forest and the two roost corners stay.** `borderDepth` is what the road's gates
   (`roadSpan`) are measured off and what walls in the fixed [bases](world.md#the-bases), and a
@@ -510,7 +508,7 @@ already current, so it is safe to call from a state change that repeats.
 | js/sim/actions.js | `WORK_REACH` and the roll/prone blocks |
 | js/sim/player.js, js/sim/attack.js | each hero's basic attack (`CLASSES[c].attack`: cycle, knockback, a shot's speed and life or a cut's reach and sweep); the draw curve (`DRAW_*_MIN`) and the damage roll in `attackDmg()` |
 | js/sim/items.js | `BUILD_ITEMS` (every part's and item's price, stats and passive), `ITEM_PASSIVES`, `ITEM_SELL`, `ITEM_FIGHT_T`, `KINDLE_EVERY`/`KINDLE_BURN`, `CHILL_T`/`CHILL_MUL`, the bots' `BOT_BUILDS` |
-| js/ui/shop.js | `FOOD_PRICE` (the frost pike and the berry; every other fish off its heal), `SHOP_REACH` |
+| js/ui/shop.js | `SHOP_REACH` |
 | js/ai/ai-skill.js | every level's numbers (`AI_LEVELS`: the hand fields, the choice knobs, `push`/`guard`), the ally clocks (`AI_ALLY_PUSH`), the ladder's hands (`AI_LADDER_HANDS`), the skill layer's clocks (`AI_SETTLE`, `AI_WOBBLE_T`, `AI_ALERT_T`, `AI_AIM_ON`, `AI_BLADE_CLOSE`, `AI_BLADE_HOLD`) |
 | js/ai/ai.js | the bot ranges (`AI_SIGHT`, `AI_HUNT`, `AI_FORAGE`); the objective clocks (`AI_ESCALATE`, `AI_JOIN_HP`, `AI_ALARM_HP`, `AI_ROOST_R`); the waves as a bot reads them (`AI_WAVE_R`/`AI_WAVE_D`); how far a bot walks to its counter to buy (`AI_SHOP_DETOUR`) |
 | js/sim/sim.js | the trickle (`TRICKLE_GOLD`/`TRICKLE_T`); the per-surface steer/decay rates inline in `updatePlayer()`'s movement block; the darkness ramp in `update()`; `FLAKE_BASE`/`FLAKE_MIN`/`FLAKE_MAX` beside the flake block |

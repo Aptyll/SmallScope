@@ -47,7 +47,7 @@ const SAVE_ROOTS = [
   ['players', ...saveArr(players)],
   ['localId', () => localId, (v) => { localId = v; player = players[v]; inv = player.inv; }],
   ['animals', ...saveArr(animals)], ['structures', ...saveArr(structures)], ['robots', ...saveArr(robots)],
-  ['arrows', ...saveArr(arrows)], ['drops', ...saveArr(drops)],
+  ['arrows', ...saveArr(arrows)],
   ['particles', ...saveArr(particles)], ['floaters', ...saveArr(floaters)], ['footprints', ...saveArr(footprints)],
   ['fish', ...saveArr(fish)], ['holes', ...saveArr(holes)], ['camps', ...saveArr(camps)],
   ['craters', ...saveArr(craters)], ['nets', ...saveArr(nets)], ['abFx', ...saveArr(abFx)],
@@ -294,6 +294,7 @@ function saveApply(rec) {
   // a save from before a record field existed: the field starts at nothing
   for (const p of players) for (const k in PLAYER_RECORD) if (p[k] === undefined) p[k] = PLAYER_RECORD[k];
   for (const p of players) if (!p.items) p.items = new Array(ITEM_SLOTS).fill(null); // ...and from before items (js/sim/items.js)
+  for (const p of players) { if (!(p.potions >= 0)) p.potions = 0; if (!(p.potT >= 0)) p.potT = 0; } // ...and from before potions
   objTimersRescan(); // the objects with a clock running are an index of the tiles, rebuilt rather than saved (js/sim/sim.js)
 }
 

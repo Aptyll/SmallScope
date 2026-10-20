@@ -128,16 +128,18 @@ currency earned many ways (last hits, kills, camps, the works, holding a gold pu
 source with its own yield profile, and it pays itself: gold is never a pickup on the ground,
 every source pays the earner on the spot. **XP comes from being near when a rival body dies** —
 a soldier, a scout, a camp monster — shared among the allies standing there, so the last hit
-is gold and being there is XP. Felling and fishing pay gold only: **soldiers are the farm,
-the woods are side income, and the road makes you level**, and the late levels come late. **Fish and berries have a fixed price**, and the counter buys them at
-the same number it sells them for; a bigger fish fetches more.
+is gold and being there is XP. Felling pays gold only: **soldiers are the farm,
+the woods are side income, and the road makes you level**, and the late levels come late.
 [Economy](gameplay/economy-one-currency.md), [the counter](gameplay/the-merchants-counter.md),
 [Hero levels](multiplayer.md#hero-levels).
 
-**You carry gold and food, and nothing else.** The wallet (`p.inv`) is gold, and food is an
-uncapped **pouch** (`p.food`) pressed on Q and F from the HUD, because a meal is never arranged,
-only eaten. There is no backpack.
-[The pouch](gameplay/the-pouch.md).
+**You carry gold and items, and nothing else.** The wallet (`p.inv`) is gold, and the six item
+slots are the build. There is no backpack and no food pouch.
+
+**Heals are League's.** A **health potion** (50 gold, up to five stacked in one item slot) heals
+100 over 15 s on the slot's key and nothing stops it; a **creek fish** rolled over heals 40 at
+once, a ripe **berry bush** walked into heals 30 and regrows. Nothing else is eaten.
+[Heals](gameplay/heals.md).
 
 **Items are bought at a counter.** You walk to a body to get them.
 [Buying and selling](gameplay/the-merchants-counter.md#buying-and-selling).
@@ -150,7 +152,7 @@ easier opening for a new player who can help fortify before walking out. Its hp 
 hits spook it, it calms back down between scares, it defends its own ground with a wing gust —
 and when its nerve breaks it is **driven off**, not killed: every camera pans to watch it fly
 away, and its whole side falls with it as it goes. **It is also the way back**: a player who
-goes down waits out a timer and is set down again at the roost with everything it had — wallet, pouch, weapon and build;
+goes down waits out a timer and is set down again at the roost with everything it had — wallet, weapon and build;
 death costs the wait and the walk, League-style, and a kill pays its
 taker and the assists gold, more for ending a streak (a shutdown), less for a player who keeps dying. The bird is the **only objective** and the one way a
 match ends, which is why both teams always have somewhere worth walking to — and why every bot
