@@ -4,10 +4,8 @@ A player carries in two places, and which one a kind lives in is **one flag on i
 
 **The bag** (`p.bag`) is a fixed array of `p.bagCap` cells, each one `null`
 or a `{ type, n }` stack of at most `ITEMS[type].stack`. Everyone starts with **one bag of 12**
-(`BAG_CAP`, two rows of `BAG_COLS` 6 in the [drawer](../rendering/the-hud-corners/the-backpack.md) under the weapon shelf, shut until B); a second bag is a bigger `bagCap` and a longer array,
-nothing else. It holds the consumables and the ore (and a stray tool or bit, which nothing drops
-now) — and a bit only takes a cell once every tool carried (the one in hand, then
-each in the pack) is full, since `fitAdd` (js/sim/tools.js) loads it into them first.
+(`BAG_CAP`, two rows of `BAG_COLS` 6 in the [drawer](../rendering/the-hud-corners/the-backpack.md) top-left, shut until B); a second bag is a bigger `bagCap` and a longer array,
+nothing else. It holds the consumables (the burrow) and the ore.
 
 **The pouch** (`p.food`, `newPouch()`) is a set of uncapped counters beside the wallet, and it
 holds the two **meals** and the five **unopened card** rarities — everything with
@@ -25,25 +23,13 @@ numbers.
 | `fish` (frost pike) / `sunfish` / `whitefish` / `snowChar` | `itemFrostPike` / `itemSunfish` / `itemWhitefish` / `itemSnowChar` | pouch, no cap | F, or clicking its meal well — eats one (same; which one: `fishToEat`) |
 | `cardWhite`/`cardGreen`/`cardBlue`/`cardPurple`/`cardGold` | `itemCard<Rarity>` | pouch, no cap | nothing: it opens itself the moment it is held, one at random (see [Roguelike cards](roguelike-cards.md)) |
 | `tunnel` | `itemTunnel` | bag, stack 5 | a **consumable** (`use`): V, or clicking its pack cell (`sendBagCell`) — stands the hole's ghost up, and the dig spends one (see [The burrow](the-burrow-a-tunnel-anyone-can-ride.md)) |
-| `tool:<id>` | `toolArt_<shape>_<tier>` | bag, stack 1 | nothing but the counter, which buys it back (see [Tools and bits](tools-and-bits.md)) |
-| `bit:<id>` | `bitArt_<id>` | bag, stack `BIT_STACK` 255 | loads itself into the tool in hand on pickup (`fitAdd`) |
 | `ironstone`/`frostglass`/`sunstone` | `itemOre_<key>` | bag, stack `ORE_STACK` 99 | nothing yet but the counter, which buys it at half its `price` (2 / 12 / 40); see [Mining a rock](mining-a-rock.md) |
 
 An unopened card is an ordinary `ITEMS` entry (`pouch: true`) — one per rarity, since a white
 card and a gold card are not interchangeable — which is what makes the drop pickup and the
-counting helpers free for it, same as any other carried item. Tools and bits
-register their rows the same way, from [js/sim/tools.js](../../../js/sim/tools.js), under namespaced keys so
-a kind can never collide with a berry.
-
-A tool is the **one instanced** item (the [CLAUDE.md](../../../CLAUDE.md) hard rule): it stacks to 1
-and moves as a whole object (`bagPut(p, cell)`, and `spawnDrop`'s `it` payload). `bagAdd` cannot make one and must not be asked to — the drop pickup
-branches on `d.it` for exactly this reason. Everything else in the bag is stateless.
-
-**A bit stacks to `BIT_STACK` (255)**, which is a deliberate "as many as you will ever find". A
-bit is ammunition for the build rather than a thing to ration: the twelve cells are for the *choice*
-between kinds. 255 is the ceiling because the count still reads in three characters inside an 18 px
-well — past that the number would need `shortNum` and a cell would stop saying exactly what is in
-it. A tool stacks to 1; the pouch kinds (meals, cards) have no stack at all.
+counting helpers free for it, same as any other carried item. Everything in the bag is
+stateless: a `{ type, n }` stack that `bagAdd` makes and `bagPut` moves. The pouch kinds (meals,
+cards) have no stack at all.
 
 **The slot is the unit of capacity for what the bag holds**, which is the whole reason it is an
 array and not a row of counters: two half stacks cost two cells, so a bag genuinely fills and the

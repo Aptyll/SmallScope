@@ -7,7 +7,7 @@ Everything in this section lives under the **`status effects`** banner at the fo
 
 | Reach for | When |
 | --- | --- |
-| `hurtUnit(e, dmg, nx, ny, src, o)` | **any** blow. `o` = `{ type, kb, kbMul, cause, ambush, crit, burn, burnDps }` — `kb` the absolute px/s of shove an ability picks, `kbMul` the multiplier on whatever shove that kind takes anyway ([knockback](tools-and-bits/a-bit.md#knockback-one-number-thrown-at-three-weights)). Routes to `damagePlayer` / `hurtAnimal` / `hurtRobot`, which stay for what is genuinely per-kind (a den waking, a worker turning on whoever hit it) |
+| `hurtUnit(e, dmg, nx, ny, src, o)` | **any** blow. `o` = `{ type, kb, kbMul, cause, ambush, crit, basic }` — `kb` the absolute px/s of shove an ability picks, `kbMul` the multiplier on whatever shove that kind takes anyway ([knockback](the-basic-attack.md#knockback)). Routes to `damagePlayer` / `hurtAnimal` / `hurtRobot`, which stay for what is genuinely per-kind (a den waking, a worker turning on whoever hit it) |
 | `unitsNear(src, x, y, r)` | every living thing in a circle that `src` may touch — players, wildlife **and** bots in one list |
 | `unitsHit(src, x, y, r)` | the same, minus anyone whose i-frames are up: the list a **blow** sweeps, so a rival mid-roll is untouchable. A lasting ground *condition* (a crater) wants `unitsNear` — a condition is not a hit, and a roll should not shrug one off |
 | `stunUnit` `rootUnit` `slowUnit` `netUnit` `markUnit` `igniteUnit` | the one place each state is written. Each takes the worse/longer of what is already on the body |
@@ -41,7 +41,7 @@ sets it nowhere.** The only things that grant it are deliberate:
 
 `rollTackle` **drops** them ([the roll is a hit](dodge-roll.md#the-roll-is-a-hit)).
 
-Because a hit grants none, every bit of a volley ([tools and bits](tools-and-bits.md)) lands its own
+Because a hit grants none, every blow lands its own
 damage, its own shove and its own fire, nothing caps a wolf pack
 ([Camp monsters](wildlife.md#camp-monsters-neutral-until-hit)), and
 a body can take several hits in one frame — `SFX.hurt()`’s 0.03 s `gap` collapses the oofs into
@@ -53,7 +53,7 @@ The six states, and what each does to a body:
 | state | field | what it does | the tell on the body |
 | --- | --- | --- | --- |
 | **stun** | `stunT`/`stunMax` | a player has every intent dropped out of `p.input` at the top of `updatePlayer` (movement, fire, work, slide, the edge-triggered lot) rather than each action refusing separately, so a human and an AI fill are pinned by the identical window — the draw, the swing in flight and any roll are cancelled outright; an animal or a bot skips its brain for the window in `updateAnimal`/`updateRobot`. Never touches velocity: whatever hit you still slides you | three sparks orbiting (`drawStunStars`) |
-| **root** | `rootT` | move multiplier 0 — no walk, no roll, no slide; tools still work. Currently no ability or bit sets it — the state and its tell stay with the universal set ([Intentional dead code](../checklists.md#intentional-dead-code)) | sprung iron jaws at the feet |
+| **root** | `rootT` | move multiplier 0 — no walk, no roll, no slide; attacks still work. Currently no ability sets it — the state and its tell stay with the universal set ([Intentional dead code](../checklists.md#intentional-dead-code)) | sprung iron jaws at the feet |
 | **slow** | `slowT`/`slowMul` | the multiplier on every speed cap | — (the net's drape says it, when a net is why) |
 | **net** | `netT` | the slow, plus the reason for it | a mesh drape over the sprite |
 | **mark** | `markT` | on a player, `seenAt()` returns full range and both maps keep drawing them (its one legal bypass); an animal or a bot has no cover to strip, so it is the reveal alone. Like root, currently sourceless — kept with the set | gold chevrons falling toward the head |
@@ -93,6 +93,6 @@ Two rules make the burn behave like fire rather than like a stream of small arro
 - **The tick's own damage type is `burn`, not `fire`** — otherwise the bite would relight the fire
   dealing it and nothing would ever go out.
 
-Where fire comes from: the three **fire modifier bits**
-([tools and bits](tools-and-bits.md)) — FLAME, PYRE, CINDER BURST. Nothing else on the map is on fire:
+Where fire comes from: the KINDLING item passive ([the items](the-merchants-counter.md#the-items)), which lights every
+`KINDLE_EVERY`-th hit for `KINDLE_BURN` s. Nothing else on the map is on fire:
 the roosting eagle is an objective with its own damage path, not a unit, and takes no status at all.

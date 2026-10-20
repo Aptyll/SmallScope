@@ -262,7 +262,7 @@ function skillHands(p, prof, dt) {
 // gave up. Every bot, every level, every rung (a camp, prey, a rival); a
 // scripted seat's release is its own to call
 function skillBlade(p, sk, inp, dt) {
-  const cell = heldTool(p), m = cell && TOOLS[toolIdOf(cell.type)].melee;
+  const m = attackOf(p).cut;
   if (!m || !p.charging) sk.holdT = 0;
   if (!m) return;
   const wd = Math.hypot(sk.wishX - p.x, sk.wishY - p.y);

@@ -100,9 +100,8 @@ WARRIOR — close pressure, blocking, momentum:
 ARMATOS, THE LAST STANDARD — the defensive initiator, the first hero with a passive. His rules
 live in **[js/sim/armatos.js](../../../js/sim/armatos.js)** (`ARM_AB`, its `armatos` banner), his
 pixels in [js/draw/armatos.js](../../../js/draw/armatos.js), his icons in
-[js/sprites/armatos.js](../../../js/sprites/armatos.js). He fights with the warrior's sword and loadout
-(`heroBody(cls)`, js/sim/player.js, maps a hero to the loadout it borrows), drawn as his OATH
-GREATSWORD, in a body of his own ([hero looks](../sprites.md#hero-looks-armatos)), with his side's torn
+[js/sprites/armatos.js](../../../js/sprites/armatos.js). He fights with a cut of his own (his `attack` row, the
+OATH GREATSWORD: [the basic attack](the-basic-attack.md)), drawn as his own blade, in a body of his own ([hero looks](../sprites.md#hero-looks-armatos)), with his side's torn
 standard on his back (`drawHeroBack`):
 
 | key | name | cd | what it does |

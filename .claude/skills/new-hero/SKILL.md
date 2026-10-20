@@ -46,10 +46,14 @@ LOOKS (optional): default look name, first buyable skin name
      js/sim/save.js, packed in js/net/snapshot.js).
    - `js/draw/<hero>.js`: tells, rings, entities, the held weapon.
    - `js/sprites/<hero>.js`: ability icons, then bodies and weapon once picked (step 4).
-   - Its `CLASSES` row in js/sim/player.js with `body:` (the hero whose loadout and outfit it
-     borrows through `heroBody`), `passive`, `base`/`grow` stats; `HERO_N` in js/app/profile.js;
-     the 12px emblem in js/ui/menu.js; a build in `BOT_BUILDS` (js/sim/items.js); its name in
-     `BOT_CALL_LOW` (js/ai/bot-api.js); the scripts in `index.html` in load order.
+   - Its `CLASSES` row in js/sim/player.js with `body:` (the hero whose outfit it borrows
+     through `heroBody`), `passive`, `base`/`grow` stats, and its own **basic attack**: an
+     `attack` row (`name`, `art`, `cycle`, `kb`, and a `shot` `{ speed, life, col }` or a `cut`
+     `{ reach, half }`; [the basic attack](../../../docs/dev/gameplay/the-basic-attack.md)). Copy the
+     closest hero's row and say in the PR what you changed; a new `art` goes in
+     js/sprites/weapons.js. `HERO_N` in js/app/profile.js; the 12px emblem in js/ui/menu.js; a
+     build in `BOT_BUILDS` (js/sim/items.js); its name in `BOT_CALL_LOW` (js/ai/bot-api.js); the
+     scripts in `index.html` in load order.
    - **Register, don't stack.** The shared sim reaches a hero only through the lists and tables
      in js/sim/heroes.js (`HERO_PASSIVE` with hurt/deal/cast/tick, `HERO_TAKEN`, `HERO_STAT`,
      `HERO_TEN`, `HERO_MOVE`, `HERO_DASH`, `HERO_TICK`, `HERO_GROUND`) and js/draw/heroes.js

@@ -39,12 +39,12 @@ stable per tile.
   instead of ending in a cut. Neither test rolls anything, so a seed's rng stream is what it was.
 - `objects` — flat `Array(WORLD*WORLD)`, **at most one object per tile**. Every object is
   `{ type, tx, ty, hp, flash, shake, ...extra }`. The `OBJECTS` table's types: `tree`,
-  `deadTree`, `rock`, `bush`, `chest`, `den`, `dummy`, `banner`, `rack`, `cairn`, `log`,
+  `deadTree`, `rock`, `bush`, `chest`, `den`, `dummy`, `banner`, `cairn`, `log`,
   `pylon`, `pkdie`, `agbell`, `stump`, `eagle`, `hut`, `part`, and the
   [story landmarks](#story-landmarks)' `boat` (added from `LANDMARKS`); the `STRUCTS` table's: `wall`,
   `longwall`, `turret`, `generator`, `spawner`, `barracks`, `net`. `banner`/`log` are
   [the road](#the-road)'s furniture (`banner` is also the practice gate's flag), `pylon`
-  [the zipline](#the-zipline)'s, and `dummy`/`rack`/`pkdie`/`agbell` exist only in
+  [the zipline](#the-zipline)'s, and `dummy`/`pkdie`/`agbell` exist only in
   [the practice arena](#the-practice-arena). `den` (solid, inert scenery
   two tiles wide — `OBJECTS.den.w`, so `placeCamps` fills the tile east of it with a `part` — that
   carries its `site`, the camp record, so a hover on either tile can wear the camp's clock)
@@ -1026,24 +1026,12 @@ The arena is one open **40×23-tile snowfield** (`PR_W`/`PR_H`) cut to pure comb
 in it:
 
 - a single **dummy** in the open snow in the middle, the spawn (`PR_SPAWN`) just south of it;
-- the two-tile bow **rack** east of the dummy on its own row, and the **range bell** west of it
-  as the rack's mirror, each five tiles out;
+- the **range bell** five tiles west of the dummy on its own row;
 - the **archery targets** riding a two-rail track around the field's whole perimeter (below).
 
 No fences, no wildlife, no chests, no pond, no harvest, and nothing spawns or restocks outside
 a round. `PRACTICE` (js/sim/core.js) pins `SEED` to `PRACTICE_SEED` *above* the `?seed` parse, so
 the field is bit-identical on every visit and no seed can reshape it.
-
-**The rack is the armory.** It is a `lead` on the left tile and a solid silent follower on the
-right; a two-tile pair can only centre on a tile boundary, so the lead carries `dx: -8` and the
-sprite, brackets and prompt all draw nudged 8 px left (`RACK_SPR` is baked per-pixel in
-js/draw/practice.js). Standing within E's own reach (`rackNear`) raises an `E ARM` key-cap over
-it (`drawRackHint`, js/ui/wheel.js — proximity, not hover); **holding E opens a radial wheel** of
-every tool in the game (`state.wheel` kind `'rack'`, the ordinary wheel pipeline), the pointer
-picks, and **releasing E takes** (a real work target in reach keeps E's day job, the same rule
-that decides which prompt shows). The pick lands in `rackEquip` (`PRACTICE`-gated, the practice
-banner): the selected slot is replaced with a fresh instance of the picked tool, a plain arrow
-seated so it fires the moment it is taken.
 
 **The ice parkour** runs through the forest collar around the field: a narrow carved-ice loop
 (`PK_PATH` is the *stock* centreline in world tiles, carved by `pkCarve` — trees hug
@@ -1091,7 +1079,7 @@ trailhead (`PR_DEER`); `prDeerStep` (from `updatePractice`) puts it back on its 
 felled nook off the walk's south side, adjacent to the walk so its `E ROLL` cap rises as you
 pass (`pkdie`, `PK_DIE` — `pkDieNear` resolves it, shared by the prompt, `drawPkHint` in
 js/ui/wheel.js, and the press in js/app/input.js). **Holding E beside it opens a three-wedge radial
-wheel** (kind `'pkdie'`, the armory rack's own hold-and-release grammar and the ordinary wheel
+wheel** (kind `'pkdie'`, the manage wheel's own hold-and-release grammar and the ordinary wheel
 pipeline): one wedge per difficulty, each drawn as **that difficulty's coloured die** — a
 green, amber or red cube with its pip count (`PK_DIE_COL`, js/draw/practice.js), the current track's
 one wearing a gold frame. Releasing on a wedge IS the roll (`pkWheelPick`, through the same
@@ -1216,8 +1204,8 @@ and each wheel wedge its round's best (`MEDAL_SPR`, js/draw/practice.js).
 Releasing on a wedge IS the ring (`agRing`, through the same `input.cmd` → `runCmd` path every
 order takes) and runs the show — this is the range's (`AG_ROUNDS.range`); the other rounds share
 everything up to GO (`agame.phase`, ticked by `agUpdate` from `updatePractice`): the
-stock roster bursts away and **the dummy, the rack and the bell itself sink under the snow**
-(`agSinkU` crops their sprites in js/draw/render.js; at full depth their objects leave the grid
+stock roster bursts away and **the dummy and the bell itself sink under the snow**
+(`agSinkU` crops their sprites in js/draw/passes.js; at full depth their objects leave the grid
 entirely, so nothing blocks a shot — which is also why a running round cannot be rung off, and
 `agEndRound` puts the same instances back), a **3-2-1 countdown** lands (a second per tick on
 `SFX.countTick`, the class screen's own cue) in the eagle drop's
@@ -1264,7 +1252,7 @@ slab's LEAVE plank ([settings](gameplay/settings.md)).
 
 The **dummy** is an `OBJECTS` entry (`solid`, any tool, verb HIT) with one solid tile and a
 26×42 sprite (`DUMMY_SPR`, baked in js/draw/practice.js). Every way of hurting it
-lands in `hitDummy` (js/sim/actions.js): the E swing (`DUMMY_WORK_DMG`), every bit — the arrow loop
+lands in `hitDummy` (js/sim/actions.js): the E swing (`DUMMY_WORK_DMG`), every basic attack — the arrow loop
 tests the dummy across its base tile and the two above it, so torso and head shots land — and
 the roll's tackle. It never breaks: the pool floors at zero, the overhead bar appears only
 while it is hurt, and `updatePractice` (called from `updatePlay` under `PRACTICE`) mends it
@@ -1353,8 +1341,8 @@ plunge through the ice (see [PvP](multiplayer.md#pvp)), and the wolves of a
 ## Ice holes and fishing
 
 **E over a bare ice tile** (no object) brings out the pickaxe and calls `crackIce(tx, ty)` on
-that tile (see [The swing tools](gameplay/the-swing-tools-e.md); the weapons:
-[Tools and bits](gameplay/tools-and-bits.md)). Hits accumulate in the
+that tile (see [The swing tools](gameplay/the-swing-tools-e.md); the weapon:
+[the basic attack](gameplay/the-basic-attack.md)). Hits accumulate in the
 `iceCracks` map (`tile idx → hits`, rendered as bright fracture decals in their own pass);
 `ICE_HOLE_HITS` (2) breaks through — the tile becomes `ground = 2` (open water), joins the
 `holes` list, and is repainted into the ground canvas via `repaintGround()`. Constants live in the `fish` banner of
@@ -1400,13 +1388,13 @@ sits beside `STRUCTS` in [js/sim/structures.js](../../js/sim/structures.js) with
   by shape, never colour) at 0.42 alpha; where a fish crosses an open hole the crisp swim sprite is drawn clipped to the hole's
   tiles, so only what is in the open water shows in colour. Both are baked by
   app/bake-fish/paint.py (16 headings, 2 tail frames). Cracking ice spooks nearby fish into a fast dart.
-- **Fishing is automatic**: `autoFish(p, dt)` (js/sim/tools.js, called from `updatePlayer` every
+- **Fishing is automatic**: `autoFish(p, dt)` (js/sim/attack.js, called from `updatePlayer` every
   step) checks whether that player stands on an ice tile with a fish within `FISH_CATCH_R`
   (16 px); if so the fish is taken with no press — once per `FISH_AUTO_CD` (1.2 s), spending no
-  tool cycle — into the `p.food` pouch, splash, no arrow, and the press on the ice
+  attack cycle — into the `p.food` pouch, splash, no arrow, and the press on the ice
   flies like any other ([the swing tools](gameplay/the-swing-tools-e.md)). The catch is
   [contested](multiplayer.md#contested-orders), so two players can't land the same fish. **The catch is a pose**: the contest's
-  callback calls `startCatch(p, kind)` (below `autoFish` in js/sim/tools.js), `CATCH_T` (2 s) of three
+  callback calls `startCatch(p, kind)` (below `autoFish` in js/sim/attack.js), `CATCH_T` (2 s) of three
   down-facing frames whatever the body faced - `CATCH_STOOP` (0.16 s) bent to the hole,
   `CATCH_HAUL` (0.22 s) with the fish coming up, then the trophy hoist over the head
   (`catchFrame(p)` says which; `drawPlayer` draws it, the held tool off, the

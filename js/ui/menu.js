@@ -29,7 +29,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.508';
+const PATCH_TXT = 'PATCH 0.509';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -45,6 +45,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.509', 'EVERY HERO NOW FIGHTS WITH ITS OWN PLAIN BASIC ATTACK, AND ONE BOTTOM BAR HOLDS YOUR PORTRAIT, ABILITIES, SIX ITEMS, MEALS AND GOLD.'],
   ['0.508', 'UNDER THE HOOD: THE BIG DEVELOPER NOTES ARE SPLIT INTO SMALL PAGES, SO EACH CHANGE READS ONLY WHAT IT NEEDS.'],
   ['0.507', 'HEROES NOW PLUG INTO THE GAME THROUGH ONE SHARED SET OF HOOKS, SO THE NEXT HEROES CAN BE BUILT SIDE BY SIDE.'],
   ['0.505', 'A WRITTEN RECIPE FOR NEW HEROES, SO EVERY HERO AFTER ARMATOS IS BUILT, SHOWN AND TESTED THE SAME WAY.'],
@@ -1886,9 +1887,8 @@ function drawHeroPreview(r, now) {
   ctx.fillStyle = 'rgba(4,6,18,0.6)';
   ctx.beginPath(); ctx.ellipse(sx + 32, r.y + r.h - 6, 22, 4, 0, 0, Math.PI * 2); ctx.fill();
   ctx.drawImage(classSet(player).down[1 + (Math.floor(now * 3) % 2)], sx, sy, 64, 64);
-  // the class weapon rides along - the other half of what you fly out with
-  const L = CLASS_LOADOUT[m.csel] || CLASS_LOADOUT[0];
-  const im = SPRITES[ITEMS[toolType(L.tool)].icon];
+  // the hero's own weapon rides along - its basic attack (CLASSES[c].attack)
+  const im = SPRITES.weaponArt[(CLASSES[m.csel] || CLASSES[0]).attack.art];
   ctx.drawImage(im, r.x + r.w - 31, r.y + r.h - 33 + Math.round(Math.sin(now * 2.2) * 1.5), 24, 24);
 }
 

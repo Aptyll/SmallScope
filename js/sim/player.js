@@ -73,7 +73,7 @@ const DODGE_CD = 3.5;     // seconds to refill one charge
 
 // The two bow numbers a class kit is expressed against - CLASSES below
 // reads both at load time, which is why they sit here and the rest of the
-// bow (the draw curve and the cycle: js/sim/tools.js; the trail: js/sim/actions.js).
+// bow (the draw curve and the cycle: js/sim/attack.js; the trail: js/sim/actions.js).
 const BOW_CHARGE = 0.9;   // seconds to a full draw
 const BOW_NOCK = 0.45;    // WREN's seconds between loosing and the next draw
 
@@ -82,8 +82,10 @@ const BOW_NOCK = 0.45;    // WREN's seconds between loosing and the next draw
 // js/sprites/looks.js) worn by ONE fixed `look` - the face, hair and beard
 // every copy of it has, the way a League champion looks the same in every
 // match (skins come later, never sliders) - plus a kit - the numbers
-// updatePlayer / emitBit / tryDodge read through kitOf(p) instead of the bare
-// constants - plus its four ACTIVE ABILITIES on keys 1-4 (CLASS_AB,
+// updatePlayer / basicAttack / tryDodge read through kitOf(p) instead of the bare
+// constants - plus its BASIC ATTACK on the left button (`attack`, read by
+// js/sim/attack.js, which says what each field means) and its four ACTIVE
+// ABILITIES on keys 1-4 (CLASS_AB,
 // js/sim/abilities.js). Picked on the lobby's hero row (local, js/ui/chars.js)
 // or hashed from the seed (bots) in initPlayers(). `look` axes are
 // js/sprites/looks.js's: { sex, tone, hair, hairCol, beard, face }.
@@ -98,6 +100,7 @@ const CLASSES = [
     grow: { hp: 10, dmg: 2, as: 0.02, armor: 3 },
     kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1, chargeMul: 0.55,
       bowCharge: BOW_CHARGE, nock: 0.4, spdDmg: 0, dodgeSpeed: DODGE_SPEED },
+    attack: { name: 'SHORTBOW', art: 'bow', cycle: 55 / 60, kb: 1, shot: { speed: 320, life: 0.85, col: '#e8dcb4' } },
   },
   {
     name: 'WARRIOR', role: 'PRESSURE, BLOCKING, MOMENTUM',
@@ -107,10 +110,11 @@ const CLASSES = [
     grow: { hp: 14, dmg: 2.5, as: 0.015, armor: 4 },
     kit: { iceMax: 1.15, iceSteer: 3.2, slideMin: 70, fatigue: 0.7, chargeMul: 0.7,
       bowCharge: 0.75, nock: 0.5, spdDmg: 5, dodgeSpeed: 230 },
+    attack: { name: 'LONGSWORD', art: 'sword', cycle: 30 / 60, kb: 1.2, cut: { reach: 28, half: 1.05 } },
   },
   {
-    // the first named hero (js/sim/armatos.js): the WARRIOR's sword and
-    // loadout (`body`), his own 16 px body and looks (`skins`), and a kit of
+    // the first named hero (js/sim/armatos.js): the WARRIOR's body (`body`),
+    // his own 16 px look over it (`skins`), his greatsword's cut and a kit of
     // his own on keys 1-4
     name: 'ARMATOS', role: 'THE LAST STANDARD', body: 1, passive: 'resolve', // HERO_PASSIVE, js/sim/heroes.js
     look: { sex: 0, tone: 1, hair: 2, hairCol: 6, beard: 3, face: 0 },
@@ -119,15 +123,16 @@ const CLASSES = [
     grow: { hp: 15, dmg: 2.2, as: 0.012, armor: 4.5 },
     kit: { iceMax: 1.1, iceSteer: 3.2, slideMin: 70, fatigue: 0.7, chargeMul: 0.7,
       bowCharge: 0.75, nock: 0.5, spdDmg: 5, dodgeSpeed: 225 },
+    attack: { name: 'OATH GREATSWORD', art: 'sword', cycle: 30 / 60, kb: 1.2, cut: { reach: 28, half: 1.05 } },
     // his own body in each of his looks (ARM_SKINS, js/sprites/armatos.js),
     // worn per player (heroSkinOf) in his iron over the side's coat
     skins: ARM_SKINS, skinPal: ARM_PAL, skinSlot: 'armatos',
-    blade: 'oath', // his OATH GREATSWORD in his hands, whatever sword he holds (HERO_BLADES, js/draw/heroes.js)
+    blade: 'oath', // his OATH GREATSWORD in his hands in place of the sword's own art (HERO_BLADES, js/draw/heroes.js)
     paint48: { t: '#7d8699', T: '#b4bdcc', g: '#1c2232', G: '#9aa3b8', m: '#5c6478', M: '#454c5e' }, // the 48 px model's (js/sprites/looks.js): its K is skin
   },
 ];
-// the body a hero wears - its sprites, its weapon, its loadout: a hero that
-// names none is its own (HUNTER 0, WARRIOR 1), a named hero borrows one
+// the body a hero wears - its sprites and its 48 px model: a hero that names
+// none is its own (HUNTER 0, WARRIOR 1), a named hero borrows one
 function heroBody(cls) { const c = CLASSES[cls]; return c && c.body != null ? c.body : cls; }
 // the heroes announced but not yet playable: the hero row shows each as a
 // dark silhouette of this body and look, its name on hover, and no press.
@@ -143,9 +148,8 @@ function kitOf(p) { return p.kit || CLASSES[p.cls].kit; }
 // swap a player's hero: its look comes with it (a copy - a snapshot merges
 // `look` in place, js/net/snapshot.js, and must never write into CLASSES),
 // kit hp applies on the spot (full heal, it's a pre-match choice), and the
-// new hero brings its own tool and bits - the loadout is part of who you
-// picked, not a thing carried across (js/sim/tools.js)
-function setClass(p, c) { p.cls = c; p.look = Object.assign({}, CLASSES[c].look); refreshKit(p); p.hp = p.maxHp; giveLoadout(p); }
+// new hero's basic attack comes with its row (attackOf, js/sim/attack.js)
+function setClass(p, c) { p.cls = c; p.look = Object.assign({}, CLASSES[c].look); refreshKit(p); p.hp = p.maxHp; }
 // the hero's HEALTH stat: its base, its levels and its bonuses (statOf, js/sim/stats.js)
 function levelMaxHp(p) { return statOf(p, 'hp'); }
 // THE ONE WAY HEALTH COMES BACK to a player: a meal, the daylight, a second
@@ -240,7 +244,7 @@ function cleanHeroSkins(m) {
   return out;
 }
 // The local player wears the PROFILE: its name, and the hero it last locked
-// in (js/app/profile.js), whose look and loadout come with it. Called from
+// in (js/app/profile.js), whose look and kit come with it. Called from
 // initPlayers; the hero row (js/ui/chars.js) re-picks through setClass.
 function applyProfile() {
   player.name = PROFILE.name();
@@ -263,14 +267,9 @@ function playerTint(p) {
 // The slot is the unit of capacity for everything the bag holds, so two half
 // stacks cost two cells the way they do in any RPG bag, and the pickup path
 // can genuinely refuse a find when there is nowhere to put it - which is the
-// whole reason the bag is slots and not a row of counters. What that
-// capacity is FOR is the build: tools, bits and unopened cards, the things a
-// player lays out, compares and chooses between.
-//
-// A cell may also be INSTANCED: a tool's cell carries the bits loaded into it
-// (`bits`, `idx` - see js/sim/tools.js), which is why a tool stacks to 1 and is
-// moved with bagPut() rather than rebuilt from a type name. Nothing else in
-// the bag has state of its own.
+// whole reason the bag is slots and not a row of counters. What it holds is
+// what the world hands you to carry and use later (the burrow, the ores).
+// Nothing in the bag has state of its own: a cell is a type and a count.
 //
 // FOOD AND CARDS ARE NOT IN THE BAG AT ALL. An item marked `pouch` lives in
 // `p.food`, a set of uncapped counters beside the wallet, and takes no cell:
@@ -280,8 +279,8 @@ function playerTint(p) {
 // js/sim/core.js) - so none of them is ever laid out, compared or
 // dragged, and every cell one of them took was a cell taken off the build.
 // The six helpers below route them there, which is what keeps the pickup, the
-// catch, the sale and the AI's food check generic over "a
-// berry" and "a bit" alike.
+// catch, the sale and the AI's food check generic over "a berry" and "a
+// burrow" alike.
 // `heal` is what a meal is worth before the kit's foodMul - the ONE place the number
 // lives, so the tooltip and the meal that lands can never disagree (js/sim/core.js).
 const ITEMS = {
@@ -321,13 +320,10 @@ function cardKey(rarity) { return 'card' + rarity[0].toUpperCase() + rarity.slic
 const CARD_TYPE_RARITY = {}; // 'cardWhite' -> 'white', the inverse of cardKey
 for (const r of CARD_RARITIES) CARD_TYPE_RARITY[cardKey(r)] = r;
 // The one bag everyone starts with; a second one raises p.bagCap. Two rows
-// of BAG_COLS small cells in the drawer under the weapon shelf (3.23, the
-// backpack banner in js/ui.js): the spare tools a walk turns up and the bits
-// no tool had a cell for, with every cell earned by choosing what to keep.
-// Nothing that is merely COUNTED lives in it (meals and cards are the
-// pouch), and a found bit loads itself into a tool before it ever takes a
-// cell (fitAdd, js/sim/tools.js). A kind with a `use` (the burrow) is spent from
-// its cell: a click on it is the use (sendBagCell, js/ui/strip.js).
+// of BAG_COLS small cells in the drawer top-left (the backpack banner,
+// js/ui/bag.js). Nothing that is merely COUNTED lives in it (meals and cards
+// are the pouch). A kind with a `use` (the burrow) is spent from its cell: a
+// click on it is the use (sendBagCell, js/ui/strip.js).
 const BAG_CAP = 12;
 // Is this kind carried in the POUCH (p.food) rather than in a cell? One test,
 // asked by all four counting helpers, so a pouch kind can never be half in
@@ -372,10 +368,9 @@ function bagAdd(p, type, n) {
   }
   return n - left;
 }
-// An instanced cell (a tool, which carries its own bits) cannot be rebuilt
-// from a type name, so it is placed whole into the first free slot rather than
-// merged into a stack. Returns false when there was nowhere to put it, and the
-// caller decides - the drop path leaves it lying in the snow.
+// A whole cell (one the drag is carrying home) goes into the first free slot
+// as it is rather than merged into a stack. Returns false when there was
+// nowhere to put it, and the caller decides (dragReturn throws it).
 function bagPut(p, cell) {
   for (let i = 0; i < p.bag.length; i++) if (!p.bag[i]) { p.bag[i] = cell; return true; }
   return false;
@@ -572,7 +567,7 @@ class Player {
     this.ai = {
       tgt: null, avoid: null, avoidT: 0, thinkT: 0,
       huntTgt: null, huntT: 0, huntAvoid: null, huntAvoidT: 0,
-      lootT: 0, spendT: 0, buildT: 0, fitT: 0,
+      lootT: 0, spendT: 0, buildT: 0,
       hideT: 0, hideCd: 0,
       wx: 0, wy: 0, roam: 0,
       // the difficulty profile's clocks (ai-skill.js): prof overrides the
@@ -621,12 +616,12 @@ class Player {
     this.eatT = 0; this.eatType = null; this.eatFxT = 0; this.foodCd = 0;
     // the recall's channel, and the roost ring's motes' clock (js/sim/recall.js)
     this.recallT = 0; this.ringFxT = 0;
-    this.nockT = 0;                                // the cycle: seconds until the next press (toolCycle, js/sim/tools.js)
-    this.slashT = 0; this.slashA = 0; this.slashHalf = 0; // a blade's sweep in flight: the hand swings the sword through it (slashTool, js/sim/tools.js; drawHeldTool, js/draw-world.js)
-    this.catchT = 0;                               // the fish hoist's clock (startCatch/catchFrame, js/sim/tools.js)
+    this.nockT = 0;                                // the cycle: seconds until the next press (attackCycle, js/sim/attack.js)
+    this.slashT = 0; this.slashA = 0; this.slashHalf = 0; // a blade's sweep in flight: the hand swings the sword through it (cutAttack, js/sim/attack.js; drawHeldTool, js/draw/bodies.js)
+    this.catchT = 0;                               // the fish hoist's clock (startCatch/catchFrame, js/sim/attack.js)
     this.catchKind = 'fish';                       // ...and which fish is hoisted (an ITEMS key)
     this.fireArmed = false;                        // the bow button has been pressed since the last loose
-    this.readyFlash = 0; this.dryT = 0;            // HUD tells: renocked / pressed empty
+    this.readyFlash = 0;                           // the HUD's tell: renocked
     this.dodgeT = 0; this.dodgeVX = 0; this.dodgeVY = 0; this.dodgeDustT = 0;
     this.dodgeCharges = DODGE_CHARGES; this.dodgeRegenT = 0;
     this.wade = 0; // how deep in the snow (wadeStep, js/sim/depth.js)
@@ -640,7 +635,7 @@ class Player {
     this.swingT = 0; this.swingCd = 0; this.swingDir = 0; this.swingHitDone = false;
     this.swing = SWING_BOW;                        // held SWING_TOOLS index (bow at rest)
     this.autoSwing = false;                        // the swing in flight was the hands' own (autoWork), so a draw may begin under it
-    this.fishCd = 0;                               // the automatic catch's clock (autoFish, js/sim/tools.js)
+    this.fishCd = 0;                               // the automatic catch's clock (autoFish, js/sim/attack.js)
     this.mineO = null; this.mineStrikeT = 0;       // the rock this body's pick is at, and its next bite (js/sim/mining.js)
     this.mineHoldT = 0;                            // ...and how long a rival's blow keeps it off
     // the class abilities (keys 1-4, js/sim/abilities.js): per-key cooldowns, the
@@ -683,15 +678,6 @@ class Player {
     // the deer ridden (the `riding` banner, js/sim/wildlife.js), or null; the leap
     // in the air (s left), how long it has been up, and the wait before the next
     this.mount = null; this.leapT = 0; this.leapUp = 0; this.leapCd = 0;
-    // The one weapon slot the button fires. It holds a tool CELL - the same
-    // object a bag cell is, bits and all - so moving one between the bag and
-    // the slot is a reference move and a tool never loses what is loaded
-    // into it. Granted on the FIRST landing only: a death keeps the build
-    // (die), so a respawn comes back holding what it went down holding -
-    // unless every slot is bare, when the bird hands the class's own
-    // loadout over rather than set down a body with nothing to fire.
-    // js/sim/tools.js owns all of it.
-    if (first || !this.tools || !this.tools.some((t) => t)) giveLoadout(this);
     this.workTx = -1; this.workTy = -1;            // tile the current E swing is aimed at
     this.hurtT = 0; this.invuln = first ? 0 : 3;
     this.kbx = 0; this.kby = 0;
@@ -853,8 +839,8 @@ const camps = []; // the jungle camps, stood up at fixed sites by worldgen (see 
 const DOT_CAUSE = { fire: true };
 
 // The shove a blow lands on a body, in px/s. It is the BASELINE, not the
-// whole story: `kb` is a multiplier on it, so a projectile bit's KNOCKBACK
-// (js/sim/tools.js) scales a player's shove exactly as it scales an animal's or a
+// whole story: `kb` is a multiplier on it, so a basic attack's KNOCKBACK
+// (js/sim/attack.js) scales a player's shove exactly as it scales an animal's or a
 // worker's, and the ordinary blow is 1.
 const HIT_KB = 110;
 

@@ -228,7 +228,7 @@ which carries the same `mm`/`map` pair and gets solidity, both maps and the E pr
 it is food) is the storage half: the bag *or* the [pouch](gameplay/inventory-and-the-backpack.md),
 the drop pickup, the drag and the refusal tell are all generic over that table.
 What is *not* generic and must be written per item: an 8×8 icon sprite (bake it beside its own
-code, not in the byte-fragile grid files under js/sprites/ — see `bakeGrid` in js/sim/tools.js and `CHEST_SPR`; an
+code, not in the byte-fragile grid files under js/sprites/ — see `SPR.bake` in js/sprites/core.js, and `CHEST_SPR`; an
 icon that should **loop** is still one canvas to everything that draws it — put the frames in
 `SPRITES.itemAnim[key]` and the canvas in `SPRITES[key]`, and `stepItemIcons` animates it, see
 [sprites.md](sprites.md)), a colour in `RES_COLORS` for the pickup floater, **what it is worth** (see the counter below, or
@@ -246,62 +246,19 @@ on its own width, so a 12×12 needs no branch. Gold is **not** an `ITEMS` entry 
 one: it is a wallet number with no ceiling. See
 [gameplay.md](gameplay/inventory-and-the-backpack.md).
 
-**Adding a weapon (a tool) or a bit** — both are one entry in `TOOLS` / `BITS`
-([js/sim/tools.js](../../js/sim/tools.js)); the loop at the foot of that file registers the `ITEMS` and
-`RES_COLORS` rows, so storage, drops and the drag all pick it up
-with no other edit. Nothing drops a tool or a bit in a match; a new one reaches a player through
-`CLASS_LOADOUT`. Both need a `price`, or the merchant buys it back
-for nothing ([the counter](gameplay/the-merchants-counter.md#buying-and-selling) - half the price is what it fetches,
-and a tool carries its loaded bits into that sum). A **tool** needs `rof`/`cap`/`tensile`/`tier`
-and an `art` key — every tool has a 12×12 silhouette of its own in `TOOL_ART` (bow, recurve,
-horn, long, sword, sling; each baked once per tier), so add one, with its heading in `TOOL_FWD`,
-and draw a bow the way it is held (string toward the archer, arrowhead at +x). `tensile`
-is the **weight budget one press spends**, not a ceiling on one bit: price it against `cap` at
-roughly four weight a cell, or the tool either cannot fire what it holds or never has to choose.
-`tier` and `cap` together also decide what a find does when it is walked over: a higher tier with
-a `cap` at least as big **swaps itself into the hand** and takes the build with it
-([the swap](gameplay/tools-and-bits/where-tools-and-bits-come-from.md)), so a new tool that is a straight upgrade
-of an existing one needs no pickup code — and one that is better but *narrower* is deliberately
-left an ordinary pickup rather than being made to drop somebody's bits.
-
-**A new way to put a tool on the ground must call `shedBits` first** (js/sim/tools.js) — the one that
-exists, `throwCell` (js/ui/bag.js), does (a death puts nothing down since 3.55). Skip it and that
-one path is the only one in the game handing the next person to walk over it a finished weapon.
-
-**Every bit needs a `weight`**, both kinds, because weight is what the press spends. A
-**projectile bit** also needs `path`/`solid`/`ff`/`kb`/`life`/`speed`/`dmg`/`col` and an
-8×8 grid in `BIT_ART` (the icon grammar: [tiers, and how a find reads](gameplay/tools-and-bits/tiers-and-how-a-find-reads.md))
-— `kb` being KNOCKBACK, a *multiplier* on the shove that kind of body
-takes anyway, where 1 is the ordinary blow and a missing one means the same
-([knockback](gameplay/tools-and-bits/a-bit.md#knockback-one-number-thrown-at-three-weights)); a **modifier bit** needs
-`proj: false` and a `mod(m)` that edits the envelope `toolPlan` walks forward.
-
-**A `mod` MUST COMPOSE with the value it is handed** — `*=` a multiplier, `+=` a quantity — and
-must never `=` or `Math.max` it. A modifier only reaches the projectiles *after* it, so the fold
-is ordered by design and two of a kind are meant to stack: two SPEEDUPs are ×4 speed, two FLAMEs
-burn twice as long at twice the rate. A `mod` that sets a value silently makes the second copy
-worthless, which is the one bug the whole
-[forward walk](gameplay/tools-and-bits/firing.md#toolplan-one-activation-in-one-pass) exists to prevent — and it is not
-visible in the tool that holds one. The single exception is `m.type`, a category rather than a
-magnitude.
-
-Both need a `name` and a `blurb` — the tooltip prints them, and they are the only words the kind
-ever gets; a modifier's blurb says "EVERY SHOT AFTER IT …", because that is what it does. A
-modifier that carries a **damage type** sets `m.type` (see `DMG_TYPES`, js/sim/actions.js) and the
-arrow carries it to `hurtUnit` with no per-kind code; add its numbers to `tipBit`'s modifier
-branch, which reads them back out of `bitMods` rather than restating them.
-
-**A `TECH` node** (js/sim/tools.js) is what `noteSeen` records a kind against; no page lists the
-kinds now (the wiki's ITEMS page reads `BUILD_ITEMS`). Give a node a `req` naming the node
-beneath it (null only on the tier-0 row); nothing draws that edge, but it is the lineage on paper.
-
-A brand-new `path` is the only thing that is not table-driven: it needs a
-branch in `steerBit` — plus a line in `drawAimLine`'s honesty
-rule, which refuses to draw a straight line for a path that does not fly straight. A new **body**
-is table-driven again: name it in the bit's `body` and add that name to `BIT_BODY`
-(js/draw/render.js), which is the only place the names mean anything. Same for a new **impact** —
-what the shot does where it *lands* — one `impact` on the bit and one row in `BIT_IMPACT`
-(js/sim/tools.js), which the arrow update calls only when the shot ended on something.
+**Adding or changing a hero's basic attack** — one `attack` row on its `CLASSES` entry
+(js/sim/player.js; [the basic attack](gameplay/the-basic-attack.md)): a `name`, an `art`, a
+`cycle` (the renock, in seconds, before `kit.nock` and ATTACK SPEED scale it), a `kb`
+([knockback](gameplay/the-basic-attack.md#knockback): a multiplier, 1 the ordinary shove), and either a `shot`
+(`speed`, `life`, `col`) or a `cut` (`reach`, `half`). The press, the draw, the aim line, the held
+weapon, the tooltip, the bots (`aiMelee` reads `cut`) and the ATTACK SPEED stat (`classAs`) all
+read the row, so nothing else is edited. A new `art` is a 12×12 grid in `SPRITES.weaponArt`
+(js/sprites/weapons.js), a blade's real-length grid in `SPRITES.weaponHeld`, and its heading in
+`WEAPON_FWD`; draw a bow the way it is held (string toward the archer, arrowhead at +x). A hero
+with a blade of its own sets `blade` on its `CLASSES` row and draws it through `heroBlade`
+(js/draw/heroes.js). **Run the feel numbers after any change** (a shot's speed and life and a
+cut's reach and damage at a tap, half and full draw, and the cycle): nothing else says when an
+edit has changed how an attack plays.
 
 **Adding an item to the merchant's counter**: one `BUILD_ITEMS` entry in
 [js/sim/items.js](../../js/sim/items.js). A part has a `price`, one stat and an `icon`; a finished
@@ -352,7 +309,7 @@ new class needs written:
    [js/app/profile.js](../../js/app/profile.js), which looks.js asserts against at load; a `champLook`
    branch in characters.js saying where the new body's fringe sits
    ([sprites.md](sprites.md#looks-a-character-on-the-class-body));
-6. a `CLASS_LOADOUT` entry ([js/sim/tools.js](../../js/sim/tools.js));
+6. an `attack` row on its `CLASSES` entry ([the basic attack](gameplay/the-basic-attack.md));
 7. a fight rung in `updateAI` ([js/ai/ai.js](../../js/ai/ai.js)) that spends the four keys at the
    ranges the kit is good at — the class branch there is per-class content and the one `if`
    that must grow. Ask **`abReady(p, i)`**, never a bare `p.abCd[i] <= 0`: a key starts locked
@@ -411,7 +368,7 @@ ever sets `p.invuln`. See
 **Adding a kind of unit (neutral fauna included)** — a new thing that walks and can be hit is
 pushed into `animals` (neutral: give it no `team`, and `unitFoe` makes it fair game to everyone) or
 `robots` (sided). What it gets for free, with no edit at the call sites: every class ability, the
-roll sweep, every bit the left button fires, all six status effects, and the four on-body tells.
+roll sweep, every basic attack, all six status effects, and the four on-body tells.
 What it must do to get them:
 
 1. build it through a maker that calls **`clearUnitStatus(e)`** (as `makeAnimal`/`makeRobot` do),
@@ -569,7 +526,7 @@ already current, so it is safe to call from a state change that repeats.
 | js/sim/robots.js | `SOLDIER_*` (speed, aggro, siege reach, the bird damage, `SOLDIER_HP_GROW`); `MERCH_BAYS`/`MERCH_BAY_*` (how many bays, the logs a rebuild costs, when the first is due, the order the lanes get theirs, the rebuild wait); `MERCH_BACK_R`/`MERCH_BACK_ARC` (how far and how wide the back woods reach) |
 | js/sim/farm.js | `SOLDIER_BOUNTY`/`SOLDIER_BOUNTY_GROW` (a soldier's last hit), `COIN_POP_T`; the bots' farm knobs `AI_FARM_*`/`AI_DEN_EARLY`/`AI_LANE_N`/`AI_JUNGLE_N` sit in js/ai/ai-farm.js |
 | js/sim/actions.js | `WORK_REACH` and the roll/prone blocks |
-| js/sim/tools.js | the `TOOLS` and `BITS` tables; the flight-path constants beside `steerBit`; the damage roll in `emitBit()` |
+| js/sim/player.js, js/sim/attack.js | each hero's basic attack (`CLASSES[c].attack`: cycle, knockback, a shot's speed and life or a cut's reach and sweep); the draw curve (`DRAW_*_MIN`) and the damage roll in `attackDmg()` |
 | js/sim/mining.js | `ROCK_KINDS` (each rock kind's mining time, gold, ore and regrow), `ORE_PRICE`, `MINE_STRIKE`/`MINE_R`/`MINE_DECAY`/`MINE_HIT_HOLD`/`MINE_STREAM_T`/`MINE_MOVE`/`ORE_FLING` |
 | js/sim/items.js | `BUILD_ITEMS` (every part's and item's price, stats and passive), `ITEM_PASSIVES`, `ITEM_SELL`, `ITEM_FIGHT_T`, `KINDLE_EVERY`/`KINDLE_BURN`, `CHILL_T`/`CHILL_MUL`, the bots' `BOT_BUILDS` |
 | js/ui/shop.js | `FOOD_PRICE` (the frost pike and the berry; every other fish off its heal), `SHOP_REACH` |
@@ -597,7 +554,7 @@ grep all files for duplicate top-level names (a duplicate `function` silently ov
 must print nothing); scan the moved code's **top-level statements** — every name a
 load-time statement references must live in a file loaded above it in index.html (runtime calls
 may point anywhere); never reorder existing `<script>` tags; and update the docs in the same
-commit — the architecture.md file table, the code-map page for each file, index.html's comment. Then the
+commit — the architecture.md file table, code-map.md's sections, index.html's comment. Then the
 full browser pass off both
 the served URL and `file://`. The git index is LF and the working tree CRLF through autocrlf, so
 an editor that writes LF is fine and git normalises, but `sed -i` still strips CRs and is banned;
@@ -666,7 +623,7 @@ Kept on purpose — do not "clean up", and a verbatim code move carries it along
   trap and the falcon): the two setters, their `drawUnitStates` tells (the sprung jaws, the gold
   chevrons) and mark's `seenAt` bypass all stay, because they are part of the
   [universal status set](gameplay/status-effects-one-set-for-every-unit.md) a future ability or
-  bit lands on for free.
+  attack lands on for free.
 - **The bird kind is dormant** (3.20, when the camps replaced the landmarks and the rookery went
   with them): `updateBird`/`flushBirds`/`rookeryPerch`/`drawBird`, the `BIRD_*` constants,
   `YIELD.bird`, `ANIMAL_HP.bird` and every `kind === 'bird'` branch stay, and nothing spawns
@@ -694,8 +651,8 @@ Kept on purpose — do not "clean up", and a verbatim code move carries it along
 - `SPRITES.goldOre`, `SPRITES.itemWood`, and `SPRITES.itemStone` are baked but unreferenced since
   the single-currency change (no ore object, no wood/stone drops or HUD counters). They are now
   one `ITEMS` entry each away from being carryable, should a resource ever return.
-- `SWING_TOOLS[SWING_BOW].icon` (`'itemBow'`) is unread since the weapon slots landed —
-  `drawHeldTool` puts the *equipped* tool in the hands at rest, and only the axe and pick rows'
+- `SWING_TOOLS[SWING_BOW].icon` (`'itemBow'`) is unread —
+  `drawHeldTool` puts the hero's own weapon in the hands at rest, and only the axe and pick rows'
   icons are still resolved through the table. The row is kept so `SWING_TOOLS` stays one entry per
   `p.swing` value, and `SPRITES.itemBow` itself is live on the end screen's kills plate.
 - `audio/music/` holds the nine mp3s `TRACKS` names, plus two tracked images nothing loads

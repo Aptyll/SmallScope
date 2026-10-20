@@ -200,7 +200,7 @@ function tunnelAimPress() {
 // the burrow's 8x8 icon (ITEMS.tunnel): a hole in a snow mound with a
 // rabbit's ears in it - the pack cell, the drop on the snow and the floater
 // all draw this one canvas
-SPRITES.itemTunnel = bakeGrid([
+SPRITES.itemTunnel = SPR.bake([
   '...b.b..',
   '...b.b..',
   '.wwbwbw.',
@@ -209,4 +209,4 @@ SPRITES.itemTunnel = bakeGrid([
   'swdkkdws',
   '.ssssss.',
   '........',
-], { w: '#e8eef8', s: '#a9b6d0', d: '#6a5040', k: '#1a1220', b: '#9a6a45' }, 8);
+], { w: '#e8eef8', s: '#a9b6d0', d: '#6a5040', k: '#1a1220', b: '#9a6a45' });

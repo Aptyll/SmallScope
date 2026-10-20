@@ -38,7 +38,7 @@ function renderUI(now) {
 
   // THE COUNTER WASHES THE FRAME (shopScrim, js/ui/shop.js), and exactly what a
   // trade is made of stays lit above the wash: the counter itself, the corner
-  // - the weapon shelf and the pack drawer a sale is dragged out of - the item
+  // - the pack drawer a sale is dragged out of - the item
   // on the cursor, and the tooltip that prices what the pointer is on (drawn
   // later still, js/render.js). Everything else goes under it, the minimap and
   // the hud strip included: neither is part of a sale, and a counter that only
@@ -48,9 +48,9 @@ function renderUI(now) {
   // So the ORDER is the whole mechanism, and it is here rather than in the
   // panel: minimap and strip, the wash, then the corner and the slab.
   const shop = !out && shopOpen();
-  // The top-left corner - the weapon shelf and the drawer under it - rides
+  // The top-left corner - the pack's arrow and the drawer under it - rides
   // the intro slide in from the LEFT as one widget, at its own size dial
-  // (cornerSc, drawCornerScaled), by its widest reach so no tool's row is left
+  // (cornerSc, drawCornerScaled), by its widest reach so none of it is left
   // parked over the cinematic.
   const cornerSlide = -Math.round(slide * CORNER_REACH * cornerSc());
   if (!out && !shop) drawCornerScaled(now, cornerSlide);

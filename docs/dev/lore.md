@@ -38,7 +38,7 @@ guild sells — not from a new faction or a new magic.
 | --- | --- |
 | two identical sides on a mirrored map | two companies after the same claim; neither is the villain |
 | every seed is a new map | every winter's snow redraws the valley |
-| gold in pines and rocks, tools and bits inside them, chests at the treeline | the works are under everything: the pines grew up through them, the rocks are their rubble, the crates never shipped |
+| gold in pines and rocks, ore inside them, chests at the treeline | the works are under everything: the pines grew up through them, the rocks are their rubble, the crates never shipped |
 | gold is the only currency in a match (the coins that buy skins are outside the valley) | the valley pays in one thing |
 | XP comes from being near when rival bodies fall, never from gold; digging pays gold only | the works make a scout rich; the road is what teaches one |
 | nobody dies; a scout comes back at the roost with everything; the wait grows with level | valley law; they are carried back, and the better the scout, the longer the company sits them first |

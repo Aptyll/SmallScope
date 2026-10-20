@@ -4,10 +4,10 @@
 // ------------------------------------------------------------ tooltips
 // One panel that says what the pointer is on - and the one
 // deliberate exception to show-don't-label in the HUD, recorded as such in
-// CLAUDE.md's UI rule. The reason it earns the exception: a tool's rate of
-// fire, a bit's weight and a card's effect are NUMBERS the player is being
-// asked to compare, and there is no shape that compares numbers. The wells
-// keep doing the at-a-glance job - tier plate, pips, wipes - and this is where
+// CLAUDE.md's UI rule. The reason it earns the exception: an attack's speed,
+// an item's stats and a card's effect are NUMBERS the player is being asked
+// to compare, and there is no shape that compares numbers. The wells keep
+// doing the at-a-glance job - rims, pips, wipes - and this is where
 // you go when at-a-glance is not enough.
 //
 // WHERE it sits is the player's (settings.tipFollow - the TOOLTIP row on the
@@ -35,81 +35,24 @@ function tipSec(s) { return (Math.round(s * 100) / 100).toFixed(2) + 'S'; }
 // icon, plate, rim }. Everything below builds one of
 // these and drawTooltip is the only thing that knows how to paint it.
 function tipBase(type, title, kind) {
-  const t = itemTier(type);
-  const tp = tierPlate(type, true);
+  const tp = cellPlate(true);
   return {
-    title, tcol: t >= 0 ? TOOL_TIERS[t].ink : '#f4f7ff',
-    kind, rows: [], notes: [],
+    title, tcol: '#f4f7ff', kind, rows: [], notes: [],
     icon: ITEMS[type] && SPRITES[ITEMS[type].icon], plate: tp.plate, rim: tp.rim, type,
   };
 }
-const TIP_PATH = { line: 'STRAIGHT', orbit: 'ORBIT', boomer: 'BOOMERANG', lob: 'ARCS DOWN', curve: 'CURVES' };
-// KNOCKBACK is the one bit number that is a multiple rather than a quantity
-// (see BITS, js/sim/tools.js), so it prints as one - 'x1' is the ordinary shove
-const TIP_KB = (kb) => 'x' + (Math.round((kb === undefined ? 1 : kb) * 10) / 10);
-// A TOOL: the numbers that are the whole of what a tool is, and then what is
-// loaded in it - which is the other half of "what will this do". The list
-// reads as the row does, shots then modifiers, each bit's weight beside it,
-// because the weight is what the draw pays for (toolDrawMul).
-function tipTool(cell) {
-  const id = toolIdOf(cell.type), T = TOOLS[id];
-  const d = tipBase(cell.type, T.name, TOOL_TIERS[T.tier].name + ' TOOL');
-  const plan = toolPlan(cell);
-  const slow = toolDrawMul(cell) > 1;
-  d.rows.push(['RATE OF FIRE', tipSec(T.rof * TOOL_ROF_STEP), '#f4f7ff']);
-  d.rows.push(['BIT SLOTS', bitsIn(cell) + '/' + T.cap, '#f4f7ff']);
-  d.rows.push(['TENSILE', String(plan.tensile), '#f2cc6a']);
-  d.rows.push(['LOADED WEIGHT', String(plan.load), '#f4f7ff']);
-  d.rows.push(['FULL DRAW', tipSec(kitOf(player).bowCharge * toolDrawMul(cell) / asMul(player)), slow ? '#ffd95c' : '#f4f7ff']);
-  d.rows.push(['SHOTS A PRESS', String(plan.shots.length), '#8fe08a']);
-  for (let i = 0; i < cell.bits.length; i++) {
-    const b = cell.bits[i] && BITS[cell.bits[i]];
-    if (b) d.notes.push(['  ' + b.name + ' ' + b.weight, b.col]);
-  }
-  if (plan.shots[0].base) d.notes.push(['NO SHOT LOADED - FIRES A PLAIN ARROW', TIP_DIM]);
-  if (slow) d.notes.push(['HEAVY - IT TAKES LONGER TO DRAW', '#ffd95c']);
-  return d;
-}
-// A BIT: every property the shot carries, because that is exactly the list a
-// player is choosing between when they drag one into a cell.
-function tipBit(id) {
-  const b = BITS[id];
-  const d = tipBase(bitType(id), b.name,
-    TOOL_TIERS[b.tier].name + (b.proj ? ' BIT' : ' MODIFIER'));
-  if (b.proj) {
-    d.rows.push(['DAMAGE', String(b.dmg), '#e0637a']);
-    d.rows.push(['WEIGHT', String(b.weight), '#f2cc6a']);
-    d.rows.push(['SPEED', String(b.speed), '#f4f7ff']);
-    d.rows.push(['KNOCKBACK', TIP_KB(b.kb), '#cfe0f2']);
-    d.rows.push(['LIFESPAN', tipSec(b.life), '#f4f7ff']);
-    d.rows.push(['FLIGHT', TIP_PATH[b.path] || b.path, b.col]);
-    // the flags, only when they are true: an absent line is the default, and
-    // four rows of NO would drown the three that matter
-    if (b.solid === false) d.notes.push(['PASSES THROUGH WALLS', '#8fd8ff']);
-    if (b.ff) d.notes.push(['HITS YOUR OWN TEAM TOO', '#e0637a']);
-    if (b.lit) d.notes.push(['LIGHTS THE GROUND IT PASSES', '#ffd95c']);
-    // what it does where it LANDS, when that is more than damage (BIT_IMPACT)
-    if (b.impact === 'warp') d.notes.push(['LAND IT ON ANYTHING AND YOU ARE THERE', '#c58fff']);
-    if (b.impact === 'chop') d.notes.push(['CHOPS EVERY TREE IT LANDS AMONG', '#8fe08a']);
-  } else {
-    // a fitting weighs what a shot does, and the draw pays for both
-    d.rows.push(['WEIGHT', String(b.weight), '#f2cc6a']);
-    // A fire modifier is chosen on two numbers - how long the burn runs and
-    // how hard it bites - so it prints them, the same reason the projectile
-    // rows above exist. Read out of the envelope itself rather than written
-    // twice, so a retuned FLAME can never disagree with its own tooltip.
-    const m = bitMods(id);
-    if (m.burn > 0) {
-      d.rows.push(['BURNS FOR', tipSec(m.burn), '#ff9440']);
-      d.rows.push(['BURN RATE', m.burnDps + '/S', '#ff9440']);
-      if (m.cinder > 0) d.rows.push(['EMBER RING', String(m.cinder), '#ffb347']);
-    }
-    // the two rules a modifier lives by, and neither is guessable from the art
-    d.notes.push(['CHANGES EVERY SHOT YOUR WEAPON FIRES', '#8fd8ff']);
-    d.notes.push(['A SECOND ONE COMPOUNDS WITH THIS', '#8fe08a']);
-    if (m.type === 'fire') d.notes.push(['FIRE KEEPS BURNING WHATEVER IT LANDS ON', '#ff9440']);
-  }
-  d.notes.push([b.blurb, TIP_DIM]);
+// THE HERO'S BASIC ATTACK (CLASSES[c].attack, js/sim/attack.js): what one
+// full-draw hit does, how often it comes, and how far it reaches - read off
+// the same functions the sim swings by, so the card can never disagree
+function tipAttack(p) {
+  const A = attackOf(p), tp = cellPlate(true);
+  const d = { title: A.name, tcol: '#f4f7ff', kind: 'BASIC ATTACK', rows: [], notes: [],
+    icon: SPRITES.weaponArt[A.art], plate: tp.plate, rim: tp.rim };
+  d.rows.push(['DAMAGE', String(attackDmg(p, 1, false)), '#e0637a']);
+  d.rows.push(['FULL DRAW', tipSec(drawTime(p)), '#f4f7ff']);
+  d.rows.push(['RENOCK', tipSec(attackCycle(p)), '#f4f7ff']);
+  const reach = A.cut ? A.cut.reach : (() => { const f = shotFlight(A.shot, 1); return Math.round(f.spd * f.life); })();
+  d.rows.push(['REACH', String(reach), '#f4f7ff']);
   return d;
 }
 // the burrow's pack cell (js/sim/tunnel.js): the dig, the wait after a ride, and how
@@ -177,14 +120,8 @@ function tipStack(s) {
   d.rows.push(['CARRIED', String(s.n), '#f4f7ff']);
   return d;
 }
-// whatever is in a bag cell, a slot, a bit cell or on the cursor
-function tipCell(s) {
-  if (!s) return null;
-  if (isToolCell(s)) return tipTool(s);
-  const b = bitIdOf(s.type);
-  if (b) return tipBit(b);
-  return tipStack(s);
-}
+// whatever is in a bag cell or on the cursor
+function tipCell(s) { return s ? tipStack(s) : null; }
 // a class ability well - the strip's in play (cls omitted: the local player's
 // class, live cooldown, the cast hint), or the lobby's stage (cls given:
 // the previewed class, before it is ever locked, with nothing castable yet)
@@ -245,7 +182,7 @@ function tipStruct(type) {
 }
 // What the pointer is on, asked once per frame. The order mirrors the
 // mousedown handler exactly: the build list's rows, the character panel's
-// items, then the shelf, then the weapon strip, then the backpack - so the
+// items, then the strip, then the backpack - so the
 // panel and the click always agree.
 function tipAt(mx, my) {
   if (window.DBG.hideUI || !mouse.inside) return null;
@@ -283,17 +220,12 @@ function tipAt(mx, my) {
   if (rc) return tipRail(rc);
   const ch = cheatHit(mx, my);
   if (ch && ch.kind === 'cell') return tipCheat(ch.i);
-  const fh = shelfHit(mx, my);
-  if (fh) {
-    // the class weapon, or an item slot: what is there, or nothing for an empty slot
-    if (fh.kind === 'tool') return shelfCell() ? tipCell(shelfCell()) : null;
-    const id = player.items[fh.i];
-    return id ? tipItem(id) : null;
-  }
   const abb = abBuyHit(mx, my);
   if (abb >= 0) return tipClassAb(abb); // the buy plate describes the ability it upgrades
   const sh = stripHit(mx, my);
   if (sh && sh.kind === 'ab') return tipClassAb(sh.i);
+  if (sh && sh.kind === 'item') return player.items[sh.i] ? tipItem(player.items[sh.i]) : null; // an empty slot says nothing
+  if (sh && sh.kind === 'port') return tipAttack(player); // the hero's face names the hero's own basic attack
   if (sh && sh.kind === 'stat') return tipStat(sh.key); // the stat panel's breakdown (js/ui/statpanel.js)
   // a meal button describes the meal it eats - the bag cell's own food
   // descriptor, so the two surfaces can never disagree about a berry
@@ -376,7 +308,6 @@ function drawTooltip() {
     const iw = d.icon.width, ih = d.icon.height;
     ctx.fillStyle = d.plate || BAG_WELL;
     ctx.fillRect(tx - 1, cy - 1, iw + 2, ih + 2);
-    modPlate(d.type, { x: tx - 1, y: cy - 1, w: iw + 2, h: ih + 2 }, cy - 1);
     ctx.drawImage(d.icon, tx, cy);
     tx += iw + 3;
   }

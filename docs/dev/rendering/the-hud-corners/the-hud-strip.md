@@ -1,14 +1,23 @@
 # The hud strip
 
 `drawHudStrip` is one plate, flush to the bottom — the [hud frame](the-hud-frame.md) — read left to
-right the way a MOBA's bottom bar is (0.426): the **stat panel**, the **portrait**, then **four 34px ability wells**
+right the way a MOBA's bottom bar is (0.426), and the HUD's one bar: the **stat panel**, the **portrait**, then **four 34px ability wells**
 `[1][2][3][4]` in key order with the **health bar** and the **stamina bar** under them, then the
-**two meal wells** with the **purse** under them (`stripCellRect(j)`: 0-3 the abilities, 4-5 the
-meals; `abCellRect(i)`, `foodCellRect(i)`, `portraitRect`, `hpBarRect`, `stBarRect`,
-`goldCellRect`). The weapon is not on the strip — its one well is
-[the shelf's tool cell](the-weapon-shelf.md) — and nor are unopened cards (they open the moment they
-are held, [gameplay](../../gameplay/roguelike-cards.md)) or a build well (the build key opens the list).
-The plate swallows clicks so nothing fires through it.
+**six item slots** in a three-by-two grid of 24px wells (`ITEM_CELL`), then the **two meal wells**
+(the items' size) with the **purse** under them (`abCellRect(i)`, `itemCellRect(i)`,
+`foodCellRect(i)`, `portraitRect`, `hpBarRect`, `stBarRect`, `goldCellRect`). The hero's basic
+attack has no well: hovering the portrait names it (`tipAttack`). Unopened cards are not on the
+strip either (they open the moment they are held, [gameplay](../../gameplay/roguelike-cards.md)), nor a
+build well (the build key opens the list). The plate swallows clicks so nothing fires through it.
+
+An **item slot** (`drawItemCell`) holds `p.items[i]` ([the items](../../gameplay/the-merchants-counter.md#the-items)), filled
+left to right and top row first as the shop fills them: the item's icon (`shopIcon`) on its rim,
+a part's green or a finished item's gold (`itemMetal`), so a glance tells how far the build has
+come, and an empty slot shows its number, dim. It is read, never pressed or dragged: `stripHit`
+answers `{kind:'item', i}`, the hover lights the rim and raises the shop's own card (`tipItem`).
+
+A **meal well** (`drawFoodCell`) is the ability well's grammar at the items' size: the meal's icon
+doubled, its key at 1× in the bottom-left corner and the count in the top-right.
 
 The **stat panel** (`drawStatPanel`, js/ui/statpanel.js) is a plate of its own butted to the
 strip's left frame, the strip's height: the seven [hero stats](../../gameplay/hero-stats.md) in two
@@ -75,13 +84,12 @@ cooldown, level and next-level price, the blurb, nothing the well itself already
 ## The cooldown sweep
 
 `drawSweepCover(x, y, w, h, frac, col, edge)` is League's radial cooldown **cut to a square**, and
-the **one readout the shelf's tool cell and the four ability wells share**: the
+the **one readout the four ability wells and the meal wells share**: the
 veil fills the well and retreats **clockwise from 12 o'clock**, so the dark that is left is the
 wait that is left and the hand's angle is the fraction at a glance — a hand at 4 o'clock and one
 at 7 read apart in the corner of an eye mid-fight, where two bars part-way down do not. It is
-the **one shape every wait on the HUD is drawn in** — the weapon's rate of fire, an ability's
-cooldown, the meal clock, a rail chip's respawn — so only the speed of the hand tells a 0.8 s
-bow from a 20 s fury.
+the **one shape every wait on the HUD is drawn in** — an ability's cooldown, the meal clock, a
+rail chip's respawn — so only the speed of the hand tells one clock from another.
 
 The **meal clock** turns it too (`drawFoodClock`): both meal buttons off the one shared
 `p.foodCd`, so the two turn **together** — which is the thing that says it is one clock and not

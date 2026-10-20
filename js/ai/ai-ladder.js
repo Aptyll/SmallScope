@@ -46,14 +46,9 @@ function aiThink(p, dt) {
   if (aiRoadRung(k)) return;   // 5g. the road
   if (aiHuntRung(k)) return;   // 6. meat
   if (aiLootRung(k)) return;   // 7. loot
-  // 8. put the loot to work: bits into the tool being fired, a spare tool onto
-  //    a free key (botFitLoadout, js/sim/tools.js). On a slow timer because it is
-  //    housekeeping, not a decision - nothing about the fight waits on it.
-  ai.fitT -= dt;
-  if (ai.fitT <= 0) { ai.fitT = 2.5; botFitLoadout(p); }
-  if (aiBuyRung(k)) return;    // 9. income
-  if (aiHarvestRung(k)) return; // 10. harvest
-  aiRoam(k);                   // 11. nothing to do
+  if (aiBuyRung(k)) return;    // 8. income
+  if (aiHarvestRung(k)) return; // 9. harvest
+  aiRoam(k);                   // 10. nothing to do
 }
 
 // the think's read, shared by every rung: the profile, the side's plan and
@@ -889,7 +884,7 @@ function aiHarvestRung(k) {
 
 function aiRoam(k) {
   const { p, dt, inp, ai, steerTo, aimAt, guardE, ward, bound, escort } = k;
-  // 11. nothing to do: roam between its camp and the middle of the map -
+  // 10. nothing to do: roam between its camp and the middle of the map -
   //     unless an order has it on its ring, where nothing to do is standing
   if (bound) { inp.fire = false; aiNote(p, 'IDLE', 'ON THE FLAG', null); return true; }
   // a guard or an escort with nothing to do walks its rounds inside its leash

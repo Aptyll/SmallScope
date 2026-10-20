@@ -465,15 +465,12 @@ function shotContacts(a, x0, y0, dx, dy) {
     const s = sweepDisc(x0, y0, dx, dy, f.x, f.y, ptHitR(t));
     if (s >= 0 && s < stop) { shotHits.push({ s, k: 'face', t }); stop = s; }
   }
-  // THE BODIES, all three kinds, each by its own hit disc widened by the
-  // bit's `reach`. A bit with friendly fire on skips the team check - but
-  // never the shooter, who is not a target of their own tool at any weight.
-  // A pierce skips whoever it has already cut (a.pierceHit), so a slow
-  // overlap never pays twice.
-  const pad = a.reach || 0;
+  // THE BODIES, all three kinds, each by its own hit disc - never the
+  // shooter's own side, and never the shooter. A pierce skips whoever it has
+  // already cut (a.pierceHit), so a slow overlap never pays twice.
   for (const t of players) {
-    if ((a.team === t.team && !a.ff) || t.id === a.owner) continue;
-    const r = ARROW_HIT_R + pad, cy = t.y - 6;
+    if (a.team === t.team || t.id === a.owner) continue;
+    const r = ARROW_HIT_R, cy = t.y - 6;
     if (t.x + r < lx || t.x - r > hx || cy + r < ly || cy - r > hy) continue;
     if (!t.active || t.dead || inAir(t) || t.invuln > 0) continue;
     if (a.pierce && a.pierceHit.includes(t)) continue;
@@ -482,16 +479,16 @@ function shotContacts(a, x0, y0, dx, dy) {
   }
   // worker bots take the same shot: they are units in the open, on a team
   for (const t of robots) {
-    if (a.team === t.team && !a.ff) continue;
-    const r = ROBOT_HIT_R + pad, cy = robotHitY(t);
+    if (a.team === t.team) continue;
+    const r = ROBOT_HIT_R, cy = robotHitY(t);
     if (t.x + r < lx || t.x - r > hx || cy + r < ly || cy - r > hy) continue;
     if (!unitAlive(t) || (a.pierce && a.pierceHit.includes(t))) continue;
     const s = sweepDisc(x0, y0, dx, dy, t.x, cy, r);
     if (s >= 0 && s < stop) { shotHits.push({ s, k: 'robot', t }); if (!a.pierce) stop = s; }
   }
   for (const t of animals) {
-    if (t.team !== undefined && a.team === t.team && !a.ff) continue; // a deer ridden by the shot's side (js/sim/wildlife.js)
-    const r = animalHitR(t) + pad, cy = animalHitY(t);
+    if (t.team !== undefined && a.team === t.team) continue; // a deer ridden by the shot's side (js/sim/wildlife.js)
+    const r = animalHitR(t), cy = animalHitY(t);
     if (t.x + r < lx || t.x - r > hx || cy + r < ly || cy - r > hy) continue;
     if (!unitAlive(t) || (a.pierce && a.pierceHit.includes(t))) continue;
     const s = sweepDisc(x0, y0, dx, dy, t.x, cy, r);
@@ -587,33 +584,30 @@ function updatePlay(dt) {
   shedStep(dt); // the gusts knocking snow off the pines (js/sim/shed.js)
   updateCallouts(dt); // the bots' calls to their side (js/ai/ai-callouts.js)
 
-  // Shots in flight. Everything a tool fires rides this one array, whatever
-  // bit it came out of - steerBit() is where the bit's flight path gets to
-  // rewrite the velocity before the step is taken, so the trail, the hit
-  // tests and the drawn body all just follow wherever it went. A turret's
-  // rock rides the 'sling' path: one constant sag onto the point it was
-  // thrown at.
+  // Shots in flight. A bow's basic attack, the pierce and a turret's rock all
+  // ride this one array - steerShot() is where the rock's sag rewrites its
+  // velocity before the step is taken (js/sim/attack.js), so the trail, the
+  // hit tests and the drawn body all just follow wherever it went.
   for (let i = arrows.length - 1; i >= 0; i--) {
     const a = arrows[i];
     a.t += dt;
-    steerBit(a, dt);
+    steerShot(a, dt);
     const vd = Math.hypot(a.vx, a.vy) || 1;
     const nx = a.vx / vd, ny = a.vy / vd;
     // the step is a SEGMENT, and what it crossed is what it meets (the
     // shot's sweep, above) - never only where it happened to end
     const x0 = a.x, y0 = a.y, dx = a.vx * dt, dy = a.vy * dt;
     a.x += dx; a.y += dy;
-    // What the shot does to a BODY, said once for all three kinds: the damage
-    // type, the fire it lights and the shove it lands are the bit's, and
-    // hurtUnit (js/sim/actions.js) hands them to a player, a deer or a worker bot
-    // alike. Only the hit disc differs per kind (shotContacts, above).
-    // `base` is the px/s shove this KIND of body takes from a shot; the bit's
-    // own KNOCKBACK (a.kb) scales it - and scales a player's HIT_KB too, which
-    // is the whole reason it travels as a multiplier (js/sim/tools.js).
+    // What the shot does to a BODY, said once for all three kinds: the
+    // damage and the shove it lands go through hurtUnit (js/sim/actions.js) to
+    // a player, a deer or a worker bot alike. Only the hit disc differs per
+    // kind (shotContacts, above). `base` is the px/s shove this KIND of body
+    // takes from a shot; the shot's own KNOCKBACK (a.kb) scales it - and
+    // scales a player's HIT_KB too, which is why it travels as a multiplier.
     const blow = (t, base, hx, hy) => {
       hurtUnit(t, a.dmg, nx, ny, players[a.owner], {
-        type: a.type, burn: a.burn, burnDps: a.burnDps, ambush: a.ambush,
-        kb: base, kbMul: a.kb, basic: !a.pierce, // a press of the bow, not the pierce: a basic attack (passiveDeal, js/sim/heroes.js)
+        ambush: a.ambush, kb: base, kbMul: a.kb,
+        basic: !!a.basic, // a press of the bow, not the pierce: a basic attack (passiveDeal, js/sim/heroes.js)
       });
       if (a.ambush) ambushFx(hx, hy);
       a.struck = true;
@@ -647,15 +641,11 @@ function updatePlay(dt) {
       } else if (h.k === 'wall') {
         dead = true;
         // ...and when the wall that stopped it is a RIVAL'S BUILDING, the shot
-        // SIEGES it. Every bit a wall stops does, whatever it is, at STRUCT_DR
-        // off (hurtStruct, js/sim/actions.js) - and a bit that passes walls
-        // (`solid: false`: the care arrow, the wisp, the hook) buys that with
-        // its siege, which is the whole of the trade and needs no second flag.
+        // SIEGES it, at STRUCT_DR off (hurtStruct, js/sim/actions.js).
         const st = structOf(objAt(h.tx, h.ty));
         if (structFoe(sideOf(a), st)) hurtStruct(st, a.dmg, players[a.owner]);
         else shedHit(objAt(h.tx, h.ty)); // a shot into a pine knocks its crown's snow loose (js/sim/shed.js)
         burst(hx, hy, '#cfd8e8', 3, 25, 0.25, true);
-        if (a.burn > 0) burst(hx, hy, '#ff9440', 7, 50, 0.5);
       } else if (h.k === 'player' && abShieldBlocks(t, nx, ny)) {
         // a raised tower shield eats any shot flying into its front arc -
         // bolts and pierces included - before the body behind it is ever asked
@@ -683,7 +673,7 @@ function updatePlay(dt) {
     // archer's back.
     a.trailD += vd * dt * end;
     a.flown = (a.flown || 0) + vd * dt * end;
-    const tailB = (a.kind === 'rock' || a.path === 'lob' || a.path === 'orbit') ? 0 : ARROW_LEN;
+    const tailB = a.kind === 'rock' ? 0 : ARROW_LEN;
     while (a.trailD >= ARROW_TRAIL_STEP) {
       a.trailD -= ARROW_TRAIL_STEP;
       if (a.flown < tailB + a.trailD) continue;
@@ -691,9 +681,7 @@ function updatePlay(dt) {
         x: a.x - nx * (tailB + a.trailD), y: a.y - ny * (tailB + a.trailD),
         vx: -nx * 8, vy: -ny * 8,
         life: ARROW_TRAIL_LIFE, maxLife: ARROW_TRAIL_LIFE,
-        // the trail says WHOSE shot it is, which is what it is for - except a
-        // burning one, where the fire is the more urgent fact about it
-        color: a.burn > 0 ? (((a.trailD * 3) | 0) % 2 ? '#ff9440' : '#ffd95c') : TEAMS[skin(a.team)].mark,
+        color: TEAMS[skin(a.team)].mark, // the trail says WHOSE shot it is, which is what it is for
         size: 1, grav: 0, alpha: ARROW_TRAIL_A,
       });
     }
@@ -703,22 +691,6 @@ function updatePlay(dt) {
       // it flies over the world and never meets one in the air (rockLands,
       // js/sim/structures.js).
       if (a.kind === 'rock') rockLands(a);
-      // CINDER BURST: the shot ends and its embers go everywhere. Everything
-      // alive in the ring catches - the ring is the bit, so it does not care
-      // what kind of body is standing in it (unitsNear, js/sim/actions.js).
-      if (a.cinder > 0) {
-        const src = players[a.owner];
-        for (const t of unitsNear(sideOf(a), a.x, a.y, a.cinder)) igniteUnit(t, a.burn, a.burnDps, src);
-        burst(a.x, a.y, '#ff9440', 14, 90, 0.5);
-        burst(a.x, a.y, '#ffd95c', 10, 70, 0.45);
-        sfxAt('break_', a.x, a.y);
-      } else if (a.burn > 0) {
-        burst(a.x, a.y, '#ff9440', 8, 55, 0.55);
-      }
-      // ...and what the BIT does where it ends, but only if it ended ON
-      // something rather than simply running out over open snow: that
-      // distinction is the teleport request's whole rule (js/sim/tools.js).
-      if (a.impact && a.struck) bitImpact(a);
       // a practice shot that ends any way but in a target face breaks the
       // range's consecutive-hit run (agStreak, js/sim/practice.js) - minigame or not
       // ...and a run worth mourning says so on the way out: dropping one shot
@@ -767,12 +739,7 @@ function updatePlay(dt) {
     // A player with no room for it is neither magnetised nor a claimant, so a
     // full bag hands the pickup to whoever else is standing there instead of
     // sitting on it. (Gold never lies here - awardGold pays it on the spot.)
-    // ...and "room" counts the free cells of the tool in hand, not just the
-    // pack's: a found bit arms itself (fitRoom / fitAdd, js/sim/tools.js), so a
-    // full pack with an empty bit cell still pulls a bit in and still claims
-    // it - and a body that will SWAP for the one in hand is always room,
-    // because that pickup is an exchange and not an addition (toolUpgrade)
-    const roomFor = (p) => fitRoom(p, d.type) > 0 || toolUpgrade(p, d.it);
+    const roomFor = (p) => bagRoom(p, d.type) > 0;
     let near = null, pd = 1e9;
     for (const p of players) {
       if (!p.active || p.dead || inAir(p) || dropLocked(d, p) || !roomFor(p)) continue;
@@ -796,23 +763,11 @@ function updatePlay(dt) {
         if (j < 0) return;
         // a pickup takes only what fits, and what was taken comes OFF the
         // drop, so a stack that only partly fits leaves its remainder lying
-        // there instead of being picked up forever. An instanced drop (a
-        // loaded tool) goes in whole or not at all - it cannot be split.
-        //
-        // A STRICTLY BETTER BODY takes the hand instead, and the build with
-        // it (takeUpgrade, js/sim/tools.js). What comes off is then treated
-        // exactly as this find was a moment ago: the pack, or the snow it was
-        // lying in - so the exchange never needs a cell that is not there.
-        let got;
-        if (toolUpgrade(p, d.it)) {
-          const old = takeUpgrade(p, d.it);
-          got = 1;
-          if (!bagPut(p, old)) spawnDrop(d.x, d.y, old.type, 1, old);
-        } else got = d.it ? (bagPut(p, d.it) ? 1 : 0) : fitAdd(p, d.type, d.n);
+        // there instead of being picked up forever
+        const got = bagAdd(p, d.type, d.n);
         if (got > 0) {
           d.n -= got;
           addFloater(p.x, p.y - 14, (d.type === 'gold' ? '' : '+') + got, RES_COLORS[d.type]);
-          noteSeen(p, d.type); // the local player has now held one: mark the tech node
           sfxFor(p, 'stash');
         }
         if (d.n <= 0) drops.splice(j, 1); else d.t = 0;
@@ -845,7 +800,7 @@ const WADE_SHOVE = 40; // px/s of knockback that carries a bot into open water i
 // input. The walk inside it comes first, in pieces: the surface model's step for a body on its feet: the input accelerates
 // vx/vy, the surface sets the friction and the caps, and the body moves
 // against the tiles. Then the step's own named stretches (playerIntents to
-// playerTool), in the order updatePlayer runs them. playerMove runs the walk whenever nothing else owns the
+// playerAttack), in the order updatePlayer runs them. playerMove runs the walk whenever nothing else owns the
 // velocity (a roll, a rush, the rope, a leap, the cable, the water), and a
 // client runs these same functions on its own body ahead of the host's word
 // (netPredict, js/net/net.js) - so they read only the body, its input and
@@ -982,7 +937,7 @@ function playerIntents(p, dt) {
     inp.mx = inp.my = 0;
   }
 
-  // the fish hoist (startCatch, js/sim/tools.js) is a pose the body holds only
+  // the fish hoist (startCatch, js/sim/attack.js) is a pose the body holds only
   // while it is idle: a step, or any other intent (a fresh press, a roll, a
   // cast, a swing, a meal), ends it at once. The catch is automatic
   // (autoFish), so it must never cost the player a single frame of control.
@@ -1303,7 +1258,7 @@ function playerSwing(p, dt) {
   }
   // the work tool goes away with the swing cooldown; held E brings it right
   // back, and with no E the hands find their own work (autoWork, js/sim/actions.js:
-  // a tree or a berried bush in reach) - and their own fish (autoFish, js/sim/tools.js)
+  // a tree or a berried bush in reach) - and their own fish (autoFish, js/sim/attack.js)
   if (p.swingT <= 0 && p.swingCd <= 0) p.swing = SWING_BOW;
   // a tunnel's hole underfoot takes a FRESH press of the work key ahead of
   // the swing (js/sim/tunnel.js) - a key held since before stays the swing's
@@ -1314,9 +1269,9 @@ function playerSwing(p, dt) {
   return false;
 }
 
-function playerTool(p, dt) {
+function playerAttack(p, dt) {
   const inp = p.input;
-  // the cycle: the cooldown a shot starts (toolCycle, js/sim/tools.js) counts
+  // the cycle: the cooldown an attack starts (attackCycle, js/sim/attack.js) counts
   // down, and its end is the ONE gate between presses. It runs for every
   // player - dead or alive is already filtered above - so a bot recovers on
   // exactly the human's clock.
@@ -1325,17 +1280,13 @@ function playerTool(p, dt) {
     if (p.nockT === 0) { p.readyFlash = 0.16; sfxFor(p, 'nock'); }
   }
   p.readyFlash = Math.max(0, p.readyFlash - dt);
-  p.dryT = Math.max(0, p.dryT - dt);
-  p.slashT = Math.max(0, p.slashT - dt); // the blade's sweep in the hand (slashTool, js/sim/tools.js)
+  p.slashT = Math.max(0, p.slashT - dt); // the blade's sweep in the hand (cutAttack, js/sim/attack.js)
 
-  // The tool: pressing arms the shot, releasing fires it. The press does not
-  // have to land on a ready tool - it stays armed, so holding through the
-  // cycle draws the moment the wipe clears. Without that, a controller that
-  // holds fire down - every bot does - would fire once and then wait
-  // forever for an edge it already spent. `toolReady` is the only other
-  // refusal: a slot with no tool in it, or a tool with no bit light enough to
-  // throw, is dry.
-  const armed = toolReady(p);
+  // The basic attack: pressing arms it, releasing lands it. The press does
+  // not have to land on a ready weapon - it stays armed, so holding through
+  // the cycle draws the moment it runs out. Without that, a controller that
+  // holds fire down - every bot does - would attack once and then wait
+  // forever for an edge it already spent.
   if (inp.fire && !p.firePrev) {
     // THE BUTTON IS THE CANCEL. A meal must never trap the hands: deciding
     // mid-chew that the fight matters more drops it on the spot and the draw
@@ -1346,10 +1297,9 @@ function playerTool(p, dt) {
     // spend a cooldown a stray press should not.
     breakEat(p);
     p.fireArmed = true;
-    if (!armed && p.dryT <= 0) dryFire(p);
   }
   if (!inp.fire) p.fireArmed = false;
-  if (p.fireArmed && !p.charging && p.nockT <= 0 && armed && p.fallT <= 0 && (p.swingT <= 0 || p.autoSwing) &&
+  if (p.fireArmed && !p.charging && p.nockT <= 0 && p.fallT <= 0 && (p.swingT <= 0 || p.autoSwing) &&
     p.castT <= 0 && p.shieldT <= 0 && p.rushT <= 0 && p.eatT <= 0 && p.zip < 0) { // ...and both hands on a zipline's handle // a body mid-ability has no hand free for the draw (a meal is already cancelled by the press above); an auto swing is never in the way
     p.charging = true;
     p.chargeT = 0;
@@ -1357,7 +1307,7 @@ function playerTool(p, dt) {
   }
   if (!inp.fire && p.charging) {
     p.charging = false;
-    fireTool(p);
+    basicAttack(p);
     p.chargeT = 0;
   }
   p.firePrev = inp.fire;
@@ -1425,7 +1375,7 @@ function updatePlayer(p, dt) {
   playerStamina(p, dt, kit);
   playerTrails(p, dt, onIce);
   if (playerSwing(p, dt)) return; // gone down a tunnel: under the snow, the step ends
-  playerTool(p, dt);
+  playerAttack(p, dt);
 
   p.hurtT = Math.max(0, p.hurtT - dt);
   itemsTick(p, dt); // the fight clock and DEN's heal (js/sim/items.js)
@@ -1537,9 +1487,7 @@ function updateFx(dt) {
     wordPops[i].t += dt;
     if (wordPops[i].t > WORD_POP_T) wordPops.splice(i, 1);
   }
-  updateWarps(dt); // the silhouettes a teleport request left behind (js/sim/tools.js)
-  updateSwaps(dt); // ...and the risen icon a tool that traded itself up leaves
-  updateSlashes(dt); // ...and the sword's sweep on the snow (js/sim/tools.js)
+  updateSlashes(dt); // the sword's sweep on the snow (js/sim/attack.js)
   if (bagFlash > 0) bagFlash -= dt; // the backpack's refusal red is chrome: wall time
   // ...and the positive half of the same idiom: the well an item just landed
   // in, and the cursor when a swap changed what the hand is holding (hudFx, ui.js)
@@ -1551,8 +1499,6 @@ function updateFx(dt) {
   }
   if (foodFlash > 0) foodFlash -= dt; // ... and the meal button's
   if (abFlash > 0) abFlash -= dt;     // ... and a locked ability well's
-  // the shelf's flash is chrome too: what the last press spent, fading (js/sim/tools.js)
-  if (bitLit && (bitLit.t -= dt) <= 0) bitLit = null;
   for (let i = footprints.length - 1; i >= 0; i--) {
     const f = footprints[i];
     f.t += dt;

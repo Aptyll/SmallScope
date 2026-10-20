@@ -1,12 +1,11 @@
 # The backpack
 
-**A drawer under the weapon shelf, shut until asked for**. The HUD shows one weapon —
-[the shelf](the-weapon-shelf.md) — and everything else a player carries in a cell is in here: the
-consumables and the ore. It is **invisible by default**: the
-pack key (B; L3 on a pad) or a click on the **tab** under the weapon well (`bagTabRect`: a small
-`BAG_TAB_W`×`BAG_TAB_H` [hud frame](the-hud-frame.md) of its own, `BAG_TAB_AIR` (4) clear of the
-shelf's plate and centred under the weapon, holding a small chevron pointing the way the drawer
-will go) sets `state.bagOpen`, the
+**A drawer in the top-left corner, shut until asked for**. The six items are on
+[the strip](the-hud-strip.md), and everything else a player carries in a cell is in here: the
+cards and the ore. It is **invisible by default**: the
+pack key (B; L3 on a pad) or a click on the **tab** in the corner (`bagTabRect`: a small
+`BAG_TAB_W`×`BAG_TAB_H` [hud frame](the-hud-frame.md) of its own, `MM_GAP` in from the top and left
+edges, holding a small chevron pointing the way the drawer will go) sets `state.bagOpen`, the
 same again or ESC clears it, and the merchant's counter
 holds it open while it is up because a sale is a drag out of it. `bagOpenNow()` is the one
 answer everything reads; `bagEase` chases it on wall time over `BAG_SLIDE_T` (0.15 s,
@@ -15,7 +14,7 @@ the tab's bottom edge so it emerges rather than fades. It answers the pointer on
 open; the tab always answers. `endMatch` shuts it.
 
 While that counter is up the **corner is drawn out of the counter's wash** — the whole frame goes
-dark under `shopScrim` and the shelf and this drawer are two of the four things left lit above it
+dark under `shopScrim` and this drawer is one of the four things left lit above it
 ([the counter](../../gameplay/the-merchants-counter.md#opening-it)) — so `renderUI` draws `drawCornerScaled` *after* the wash
 in that case and before it otherwise. The corner's own reach is `cornerClaim()` across and `cornerBottom()` down, which is
 what the counter's slab is pinned clear of.
@@ -29,10 +28,6 @@ There is no numbers row — the two meals and the gold are the
 under the pointer, **amber** when no cell is free, red on a refusal (`bagDenied()`, aged in
 `updateFx`, which also reddens and shakes the open drawer for `bagFlash` seconds).
 
-A grid cell holding a tool or a bit wears that item's **tier plate** rather than the default well,
-so a find is read at a glance without a rarity word anywhere; a tool also counts its loaded bits
-as pips along the bottom, in the corner a stack number would have used.
-
 - **One background, one frame, no internal line.** Every part of the drawer is the same opaque
   `BAG_BG` inside the [hud frame](the-hud-frame.md) the strip wears (free corners cut).
 - **Depth comes from the cells, not from panels.** Three tones say it without a line: a filled
@@ -42,14 +37,14 @@ as pips along the bottom, in the corner a stack number would have used.
   grid is being read for, while a full cell goes dark behind its item. A stack of one prints no
   number — an empty corner says it.
 - **A click on a cell uses what is in it** — a consumable's `use`, such as the burrow
-  ([sendBagCell](../../gameplay/tools-and-bits/the-weapon-shelf.md)) — resolved on the
+  ([sendBagCell](../../gameplay/the-basic-attack.md#the-item-slots-and-the-drag)) — resolved on the
   release so that a press which travels is still a drag. Putting a *carried* item down is on the
   release too.
 - **A well answers when something lands in it**: a `WELL_LIT_T` (0.3 s) wash in the colour of what
   happened — blue placed, green merged, gold swapped, red refused (`drawWellLit`) — drawn last,
   over the item. Its colours come back as a **ring** around the pack cell under the pointer
   while something is on the cursor, saying what letting go there *would* do before it does it
-  ([what a gesture answers with](../../gameplay/tools-and-bits/what-a-gesture-answers-with.md)); that ring is painted
+  ([what a gesture answers with](../../gameplay/the-basic-attack.md#what-a-gesture-answers-with)); that ring is painted
   after the drag ghost and outside the well, because the ghost is exactly as big as the cell.
 - **The drawer swallows every click over itself.** `bagHit` reports `tab`, `cell` or `frame`
   (anywhere else inside, inert but eaten).

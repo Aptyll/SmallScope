@@ -130,13 +130,13 @@ two that *are* a body in the world, `bigHurt` and `botOut`, keep a 0.04 jitter.
 | `ui(open)` | a surface came up, or went away | every overlay toggle in `keyPress` (js/app/input.js): the pack drawer, the sheet, the chart, the build list, the ESC slab, the pause plate, and each of Escape's back-outs |
 | `notch()` | one step of a stepped control | the zoom rung and the build list's rows (the `wheel` listener), the minimap's steps, and a radial wheel's wedge as the travel crosses it (`pointerMove`) |
 | `turn()` | a piece turned on the spot | R over the build ghost |
-| `wheelUp()` | a radial wheel rolled open | `openFlagWheel`, `openWheelNear`, and whichever of the work key's four (manage, rack, roll die, range bell) the press opened |
+| `wheelUp()` | a radial wheel rolled open | `openFlagWheel`, `openWheelNear`, and whichever of the work key's three (manage, roll die, range bell) the press opened |
 | `record()` | a new BEST | `agEndRound` and the parkour line (js/sim/practice.js) — one cue for one meaning, on both instruments |
 | `runUp(n)` / `runBroke()` | a run of hits reaching a milestone, and a run lost | `hitPTarget` every `AG_RUN_STEP` in a row (**pitched up as the run climbs** — the one place a rate is meant to be heard, because the number it tracks is the thing being climbed), and the arrow loop (js/sim/sim.js) when a run of that length ends in the snow |
 | `alarm()` | **your roost is being struck and you cannot see it** | `hurtEagle` (js/sim/eagle.js) when the bird is out of earshot and it is your own — the one cue in the game that speaks for something off screen, held to one warning per `EAGLE_WARN_GAP`, and the one that arrives with a **plate**: the `roost` notice under the minimap ([the plates](../rendering/the-hud-corners/notices-the-plates-under-the-minimap.md)) and a feed line, so the ear turns your head and the corner says what happened |
 | `marked()` / `dazed()` | you have been found; you are stunned out of your own hands | `markUnit`/`stunUnit` (js/sim/actions.js), **local player only and fresh applications only** — a state re-applied every second would otherwise re-ring every second |
 | `nightFall()` | the cold coming down | the darkness curve crossing `NIGHT_CUE` upward (js/sim/sim.js), `dawnChime`'s opposite number |
-| `warp()` | a body moved without walking it | `warpPlayer` (js/sim/tools.js) — never the dodge whoosh, the sound of air being crossed, the one thing a teleport never does |
+| `warp()` | a body moved without walking it | the recall's arrival home (`sfxAt('warp')`, js/sim/recall.js) — never the dodge whoosh, the sound of air being crossed, the one thing a teleport never does |
 | `spectate()` | the camera handed to another body | `specNext` (js/ui/screens.js) |
 | `defeat()` | the match lost | `endMatch` (js/sim/player.js) — the sting the defeat song comes up under, as `victory()` is the win's |
 | `bigHurt()` | a great bird taking a blow | `hurtEagle` within earshot — never `hurt()`, a man's winded oof. The clip is a bull at rest, so it plays `BIGHURT_RATE` (1.5) up with a 320 Hz highpass under it — pitch and the chest resonance are what separate a beast in a field from something with a beak |
@@ -196,9 +196,8 @@ why the dev server ([app/server.js](../../../app/server.js)) answers Range reque
 `<audio>` element treats a multi-MB mp3 as an unbounded stream (`duration` `Infinity`) and cannot
 seek in it.
 
-The bow's rhythm has two of its own: `SFX.nock()` (a dry wooden tick when the renock clears —
-deliberately near-silent, since it fires after every shot) and `SFX.dryFire()` (a slack string on
-a press the tool cannot answer). See [the cycle](the-swing-tools-e.md#the-cycle).
+The bow's rhythm has one of its own: `SFX.nock()` (a dry wooden tick when the renock clears —
+deliberately near-silent, since it fires after every shot). See [the cycle](the-swing-tools-e.md#the-cycle).
 
 [Prone](prone-under-the-snow.md) has four: `SFX.bury()` (a body dropping into deep snow — low crunch,
 no pitch), `SFX.hidden()` (the cover finishing, barely there on purpose: it is the sound of *not*

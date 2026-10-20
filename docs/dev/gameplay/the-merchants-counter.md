@@ -42,7 +42,7 @@ swallows it.
 
 **The frame goes under a wash while the counter is open** (`shopScrim`, `SHOP_WASH`), and exactly
 four things stay lit above it — the ones a trade is made of: **the counter**, **the corner** (the
-weapon shelf and the pack drawer a sale is dragged out of), **the item on the cursor**, and **the
+pack drawer a sale is dragged out of), **the item on the cursor**, and **the
 [tooltip](../rendering/the-hud-corners/the-hover-tooltip.md)** pricing whatever the pointer is on. The minimap, the
 hud strip and the world all go under. The mechanism is the draw ORDER in `renderUI` (js/ui/compose.js) and
 not the panel: a panel cannot dim what is drawn after it, so the minimap and the strip are drawn,
@@ -143,9 +143,7 @@ pouch cover) and its SELL sells every one of that good you carry, every fish of 
 fish, as one payment (`shopTrade`).
 
 **Anything in the pack sells by a drag**: pick a cell out of the grid and let go anywhere on the
-panel (`shopDropSell`, reached from `dragDrop`). The whole cell goes (an instanced tool cannot be
-split) and **a loaded tool sells with its bits**, at half of each, so nothing is ever quietly
-emptied for gold (`cellValue` → `sellValue`). Made goods (a tool, a bit, an ore off its `ITEMS`
+panel (`shopDropSell`, reached from `dragDrop`). The whole cell goes (`cellValue` → `sellValue`). Made goods (an ore off its `ITEMS`
 row's `price`) fetch **half** their worth (`itemValue`); food fetches its fixed price. Unlike the
 other orders, a drag sale resolves on the spot rather than through `input.cmd`: what is on the
 cursor is out of the bag already, and a command the sim might drop that frame would take the item
@@ -205,8 +203,8 @@ SELL) are names and plates in plain words like the menus; everything else is ico
 numbers.
 
 **It is pinned clear of the corner**: **a counter may not stand on
-the pack it is sold out of** — a sale is a drag from that drawer into this slab. The weapon shelf
-and the pack drawer are in the top-left (`cornerClaim` / `cornerBottom`, js/ui/strip.js), and the slab
+the pack it is sold out of** — a sale is a drag from that drawer into this slab. The pack drawer
+is in the top-left (`cornerClaim` / `cornerBottom`, js/ui/bag.js), and the slab
 takes the room **beside** the corner where there is one and the room **under** it where there is
 not:
 
@@ -216,7 +214,6 @@ not:
 | **under** | it does not, but the slab clears both the frame's bottom and the deepest tooltip below the drawer (`SHOP_TIP_CLEAR`, 196) | centred across, `y = cornerBottom() + 6`, on a **tall, narrow** frame where nothing fits beside the slab |
 | **neither** | both fail | `x` at the view's right rim, `y = 4` (the minimap's rim goes under it) |
 
-The width claim is the corner's **fixed** reach (`CORNER_CLAIM`: the shelf's plate, a fixed
-width, or the drawer, whichever is wider). Every icon is
+The width claim is the corner's **fixed** reach (`CORNER_CLAIM`: the drawer's width). Every icon is
 drawn at the largest **whole-number** scale that fits its well (`shopIcon`): a fractional one
 stretches every third source pixel and frays 1 px linework.

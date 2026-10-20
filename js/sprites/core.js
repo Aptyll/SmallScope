@@ -2,8 +2,7 @@
 // All pixel art is defined as character grids and baked to canvases at load.
 // This keeps every sprite hand-editable, pixel by pixel. SPRITES is the one
 // registry the game reads; each js/sprites/ file is a private IIFE that bakes
-// its own grids and Object.assign()s the keys it owns into it (tools.js adds
-// its tool and bit art the same way). SPR carries the helpers they share, so
+// its own grids and Object.assign()s the keys it owns into it. SPR carries the helpers they share, so
 // this file loads first and the rest in any order.
 window.SPRITES = {};
 window.SPR = (() => {

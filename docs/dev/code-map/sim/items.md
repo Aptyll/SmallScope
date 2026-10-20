@@ -2,7 +2,7 @@
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| the catalogue: the five parts, the eight finished items built from them, their stats, passives and icons | `BUILD_ITEMS` (`from`, `stats`, `passive`, `icon`), `ITEM_PARTS`/`ITEM_DONE`, `ITEM_STATS` + `ITEM_STAT_ORDER` (the shop's filter order), `ITEM_PASSIVES`, `itemIcon`, `isPart` | `items` |
+| the catalogue: the five parts, the eight finished items built from them, their stats, passives and icons | `BUILD_ITEMS` (`from`, `stats`, `passive`, `icon`), `ITEM_PARTS`/`ITEM_DONE`, `ITEM_STATS` + `ITEM_STAT_ORDER` (the shop's filter order), `ITEM_PASSIVES`, `itemIcon`, `isPart`, `ITEM_METAL`/`itemMetal` (the rim and ink a part or a finished item wears everywhere) | `items` |
 | the six slots and what they cost: a finished item minus the parts already held, the room a buy needs, the half an item sells back for | `ITEM_SLOTS` (`p.items`, js/sim/player.js), `itemCost`, `itemRoom`, `ITEM_SELL`, `itemSellValue` | `items` |
 | folding the slots into the kit, and the kit rebuilt when they change | `itemMods` (called from `refreshKit`, js/sim/player.js), `itemsChanged` | `items` |
 | one buy and one sale (reached through `shopCmd`, js/ui/shop.js) | `buyItem`, `sellItem` | `items` |

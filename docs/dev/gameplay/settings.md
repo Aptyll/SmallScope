@@ -74,7 +74,7 @@ and the five video toggles `vidClouds`/`vidRays`/`vidStars`/`vidSnow`/`vidVig`) 
 **under the player profile** — `saveSettings()` is a call to `PROFILE.putSettings()` and
 `loadSettings()` reads `PROFILE.settings()`, which returns `null` when this profile has never
 saved any (the pre-profile migration: [architecture.md](../architecture.md#profilejs)). `applyMinimapSize()` must be called after changing `mmR` —
-it recomputes `MM_R`/`MM_CX`/`MM_CY`. `hudScale`, `hudCorner` and `hudRail` (the BOTTOM BAR, WEAPON BAR and TOP BAR SIZE sliders, default **1**; each stops every 5% from 0.5 to 2 and on the screen's crisp sizes, `hudSizes`, and a stored value draws at the nearest stop, `hudSc`/`cornerSc`/`railSc`) need no apply
+it recomputes `MM_R`/`MM_CX`/`MM_CY`. `hudScale`, `hudCorner` and `hudRail` (the BOTTOM BAR, BACKPACK and TOP BAR SIZE sliders, default **1**; each stops every 5% from 0.5 to 2 and on the screen's crisp sizes, `hudSizes`, and a stored value draws at the nearest stop, `hudSc`/`cornerSc`/`railSc`) need no apply
 call: the hud strip, the corner and the rail read them live every frame. A save from before the split (`v` < 4) copies its one `hudScale` to the other two, and `mmR` is clamped to `MM_R_MIN`..`MM_R_MAX` (12..48, shown as a percent of 24)
 ([rendering.md](../rendering/the-hud-corners/the-hud-strip.md)). The **backpack** has no open/closed state: it is always up
 ([rendering.md](../rendering/the-hud-corners/the-backpack.md)). (Old saves may still carry `res`, `fps`, `seed` or `paths` keys from removed settings;
@@ -89,7 +89,7 @@ under it (`drawSlabHead`). A toggle is a switch (gold track, knob
 right when on), and the row under the pointer lifts as a band with its name white.
 
 **The panel is tabbed.** A navbar under the title splits the rows into four pages — GAME
-(weapon bar size, top bar size, minimap size, bottom bar size, screen shake, rumble, info display, cursor, tooltip, my team), VIDEO (below),
+(backpack size, top bar size, minimap size, bottom bar size, screen shake, rumble, info display, cursor, tooltip, my team), VIDEO (below),
 AUDIO (the three sound dials and the speaker), CONTROLS (the listings, below) — and each page scrolls independently
 inside the content window (`SET_CONTENT_Y`..`SET_CONTENT_B`, panel-local 43..202) when its rows
 outgrow it, which is what lets the slab hold any number of future settings: the slab is 320×226

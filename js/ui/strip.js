@@ -1,13 +1,14 @@
 'use strict';
 // The hud strip's bones: its constants, the hud frame every bottom widget
-// stands on, the HUD size dials, every cell rect and refusal flash, the weapon
-// shelf's geometry and drops, sending a cell across, and the press / move /
-// release the drag is made of. Drawing is js/ui/hud-draw.js.
+// stands on, the HUD size dials, every cell rect and refusal flash, the drops,
+// sending a cell across, and the press / move / release the drag is made of.
+// Drawing is js/ui/hud-draw.js.
 // ---- hud strip: portrait, wells and bars, bottom-centre ------------------
-// One opaque plate, read left to right the way a MOBA's bottom bar is (0.426):
+// One opaque plate, read left to right the way a MOBA's bottom bar is (0.426),
+// and the one bar the HUD has:
 //
-//   [portrait] [1][2][3][4] [berry][fish]
-//              [ health bar ] [  gold  ]
+//   [portrait] [1][2][3][4] [i1][i2][i3] [berry][fish]
+//              [ health bar ] [i4][i5][i6] [  gold  ]
 //              [ stamina    ]
 //
 // THE PORTRAIT is a square well holding your hero's face, framed in the
@@ -20,9 +21,17 @@
 // each, the overhead bar's twin (drawOverhead, js/draw/bodies.js). It is the
 // seat a mana bar takes when heroes come.
 //
-// The meals sit beside the abilities in wells of the SAME size, because they
-// are pressed the same way (Q and F, a click), each with its key in the
-// corner an ability prints its key in and its count in the top-right; both
+// THE SIX ITEMS stand after the abilities in a three-by-two grid of smaller
+// wells (ITEM_CELL), left to right and top row first as the shop fills them
+// (p.items, js/sim/items.js): the whole of what the HUD says about what you
+// carry into a fight. Nothing on them is pressed or dragged - a hover names
+// what is there (tooltip.js) - and an empty one shows its slot number, dim.
+// The hero's own basic attack has no well: it is the hero's, not a thing
+// carried, and the portrait's hover names it (tipAttack, tooltip.js).
+//
+// The meals sit after the items in wells of the items' size, pressed the way
+// the abilities are (Q and F, a click), each with its key in the
+// bottom-left corner and its count in the top-right; both
 // wipe on the shared food clock (drawFoodClock). THE MEALS ARE ALWAYS HERE:
 // food is a pouch and not a bag stack (the `inventory` banner, js/sim/player.js),
 // so these two wells are the whole of where a berry and a fish are read and
@@ -32,22 +41,26 @@
 // all game. Unopened cards are not on the strip: they are bag items, drawn
 // from the pack or on the card key.
 //
-// The weapon is not on the strip either (the shelf, top-left), and nor is the
-// build list's way in: the build key opens it, and its column stands over the
-// meal wells (buildTabRect, js/ui/wheel.js).
+// The build list's way in is not on the strip: the build key opens it, and
+// its column stands over the meal wells (buildTabRect, js/ui/wheel.js).
 const AB_CELL = HUD_CELL, AB_GAP = 2, AB_N = 4; // AB_CELL: a strip well (the one size, above); AB_N: abilities
 const AB_PAD = 3;                         // the frame's outline, its edge and one px of ground (drawHudFrame)
 const PORT_SQ = 51;                       // the portrait square, the plate's full inner height
 const PORT_GAP = 4;                       // portrait to the first well
 const AB_ROW_W = AB_N * AB_CELL + (AB_N - 1) * AB_GAP; // the four ability wells
-const FOOD_GAP = 5;                       // abilities to the meals
+const ITEM_CELL = 24, ITEM_GAP = 2;       // an item well, and the air between two
+const ITEM_COLS = 3;                      // the six items: three wide, two high
+const ITEM_GRID_W = ITEM_COLS * ITEM_CELL + (ITEM_COLS - 1) * ITEM_GAP;
+const ITEM_X_GAP = 5;                     // abilities to the items
+const FOOD_GAP = 5;                       // items to the meals
 const FOOD_N = 2;                         // the meal wells: berry, fish
-const FOOD_W = FOOD_N * AB_CELL + (FOOD_N - 1) * AB_GAP;
+const FOOD_CELL = ITEM_CELL;              // a meal well: the items' size
+const FOOD_W = FOOD_N * FOOD_CELL + (FOOD_N - 1) * AB_GAP;
 const HP_H = 7, ST_H = 4;                 // the health bar (tall enough for its number) and the stamina bar
 const BAR_TOP = AB_CELL + 3;              // the health bar's outline, under the wells
 const ST_TOP = BAR_TOP + HP_H + 1;        // the stamina bar's outline: shares the health bar's bottom ink
 const XP_TAG = 9;                         // the xp numbers standing over the portrait
-const AB_W = PORT_SQ + PORT_GAP + AB_ROW_W + FOOD_GAP + FOOD_W; // the content, inside the frame's pads
+const AB_W = PORT_SQ + PORT_GAP + AB_ROW_W + ITEM_X_GAP + ITEM_GRID_W + FOOD_GAP + FOOD_W; // the content, inside the frame's pads
 const AB_H = AB_PAD + ST_TOP + ST_H + 2 + AB_PAD; // wells, bars, the stamina bar's outline, the pads
 const AB_BG = '#16181c';
 // ---- the hud frame: the one plate the bottom widgets stand on ----------
@@ -116,7 +129,7 @@ function hudInT() {
 function hudHome() { return hudInT() >= 1; }
 // THE HUD SIZE DIALS (the ESC panel's GAME page): one per widget, so each
 // part of the HUD is sized on its own - the strip (settings.hudScale), the
-// top-left corner of weapon shelf and drawer (settings.hudCorner), the team
+// backpack drawer top-left (settings.hudCorner), the team
 // rail along the top (settings.hudRail); the minimap has its own radius dial
 // (settings.mmR, applyMinimapSize, js/sim/core.js). Each widget keeps ALL its
 // geometry in 1x space and its draw bakes it at 1x and blits it scaled about
@@ -169,8 +182,7 @@ function hudPick(want, cap) {
 // reach the view's edges, on the device grid so a crisp size can sit there
 function hudFit(w, h) { return hudSnapDown(Math.min((VIEW_W - 8) / w, (VIEW_H - 8) / h)); }
 // THE SCALES. The strip's caps where its plate would outgrow the view; the
-// corner's where its claim would cross half the view or its open drawer the
-// view's foot. The rail's is railSc (js/ui/rail.js), capped by its own width.
+// corner's where the drawer would cross half the view or reach the view's foot. The rail's is railSc (js/ui/rail.js), capped by its own width.
 function stripCap() { return hudFit(AB_W + 6 + STAT_PANEL_W - 1, AB_H + XP_TAG); }
 function cornerCap() { const f = bagFrameRect(); return hudFit(CORNER_CLAIM * 2, f.y + f.h + 6); }
 function hudSc() { return hudPick(settings.hudScale || 1, stripCap()); }
@@ -183,14 +195,21 @@ function stripMouse(mx, my) {
   if (s === 1) return { x: mx, y: my };
   return { x: VIEW_W / 2 + (mx - VIEW_W / 2) / s, y: VIEW_H + (my - VIEW_H) / s };
 }
-// well j, left to right after the portrait: 0-3 the abilities, then the meals
-function stripCellRect(j) {
-  const R = hudStripRect();
-  const x = R.x + PORT_SQ + PORT_GAP + j * (AB_CELL + AB_GAP) + (j >= AB_N ? FOOD_GAP - AB_GAP : 0);
-  return { x, y: R.y + AB_PAD, w: AB_CELL, h: AB_CELL };
-}
 // ability i's well: keys 1-4, in order after the portrait
-function abCellRect(i) { return stripCellRect(i); }
+function abCellRect(i) {
+  const R = hudStripRect();
+  return { x: R.x + PORT_SQ + PORT_GAP + i * (AB_CELL + AB_GAP), y: R.y + AB_PAD, w: AB_CELL, h: AB_CELL };
+}
+// item slot i's well (0..ITEM_SLOTS-1): the grid after the abilities, top row
+// first; the rows share the plate's full inner height
+function itemCellRect(i) {
+  const R = hudStripRect(), x0 = R.x + PORT_SQ + PORT_GAP + AB_ROW_W + ITEM_X_GAP;
+  return {
+    x: x0 + (i % ITEM_COLS) * (ITEM_CELL + ITEM_GAP),
+    y: R.y + AB_PAD + ((i / ITEM_COLS) | 0) * (ITEM_CELL + ITEM_GAP + 1),
+    w: ITEM_CELL, h: ITEM_CELL,
+  };
+}
 // the portrait square, the plate's full inner height at its left end
 function portraitRect() {
   const R = hudStripRect();
@@ -206,11 +225,14 @@ const FOOD_BTNS = [
   { type: 'berry', act: 'berry', intent: 'eatBerry' },
   { type: 'fish', act: 'fish', intent: 'eatFish' },
 ];
-function foodCellRect(i) { return stripCellRect(AB_N + i); }
-// the purse: a readout well under the meals, level with the two bars
+function foodCellRect(i) {
+  const R = hudStripRect(), x0 = R.x + PORT_SQ + PORT_GAP + AB_ROW_W + ITEM_X_GAP + ITEM_GRID_W + FOOD_GAP;
+  return { x: x0 + i * (FOOD_CELL + AB_GAP), y: R.y + AB_PAD, w: FOOD_CELL, h: FOOD_CELL };
+}
+// the purse: a readout well under the meals, level with the items' lower row
 function goldCellRect() {
   const r = foodCellRect(0);
-  return { x: r.x, y: r.y + BAR_TOP, w: FOOD_W, h: ST_TOP + ST_H + 2 - BAR_TOP };
+  return { x: r.x, y: r.y + FOOD_CELL + 3, w: FOOD_W, h: FOOD_CELL - 1 };
 }
 // THE FISH PICKER: the fish well holds four kinds (FISH_KINDS, js/sim/player.js),
 // and pointing at it raises a column of them straight up off the well - the
@@ -228,12 +250,12 @@ function goldCellRect() {
 const FISH_POP = ['fish', 'sunfish', 'whitefish', 'snowChar']; // the column, bottom to top: the lake's, then the creek's
 const FISH_POP_NAME = 10;  // the hovered kind's name, standing over the column
 function fishPopRect() {
-  const s = foodCellRect(1), top = hudStripRect().y - (FISH_POP.length * AB_CELL + (FISH_POP.length - 1) * AB_GAP + AB_PAD);
-  return { x: s.x - AB_PAD, y: top, w: AB_CELL + 2 * AB_PAD, h: s.y - top };
+  const s = foodCellRect(1), top = hudStripRect().y - (FISH_POP.length * FOOD_CELL + (FISH_POP.length - 1) * AB_GAP + AB_PAD);
+  return { x: s.x - AB_PAD, y: top, w: FOOD_CELL + 2 * AB_PAD, h: s.y - top };
 }
 function fishPopCellRect(j) {
   const r = fishPopRect();
-  return { x: r.x + AB_PAD, y: r.y + AB_PAD + (FISH_POP.length - 1 - j) * (AB_CELL + AB_GAP), w: AB_CELL, h: AB_CELL };
+  return { x: r.x + AB_PAD, y: r.y + AB_PAD + (FISH_POP.length - 1 - j) * (FOOD_CELL + AB_GAP), w: FOOD_CELL, h: FOOD_CELL };
 }
 // is the column up, for a pointer at strip-space (mx, my)
 function fishPopUp(mx, my) {
@@ -266,7 +288,7 @@ function foodDenied(type) {
 // And the ability wells' share of it: a key nobody has spent a point on is
 // LOCKED (abUnlocked, js/sim/abilities.js), and its well already stands dim with
 // a dark icon - but a press has to answer, so the asked well reddens and
-// shakes in the same red the pack, the weapon well and the meal buttons
+// shakes in the same red the pack and the meal buttons
 // refuse in. tryAbility is the one caller, so key and click speak alike; a
 // cooldown is NOT this refusal - the wipe already says when it comes home.
 let abFlash = 0, abFlashI = 0;
@@ -305,7 +327,7 @@ function abBuyHit(mx, my) {
   }
   return -1;
 }
-// { kind:'ab', i } | { kind:'food', i } | { kind:'fishPick', j } | { kind:'fishPop' } | { kind:'port' } | { kind:'frame' }
+// { kind:'ab', i } | { kind:'item', i } | { kind:'food', i } | { kind:'fishPick', j } | { kind:'fishPop' } | { kind:'port' } | { kind:'frame' }
 // | null. Shared by the click handler, the cursor and the strip's own hover
 // so they cannot disagree.
 function stripHit(mx, my) {
@@ -328,6 +350,10 @@ function stripHit(mx, my) {
     const s = abCellRect(i);
     if (mx >= s.x && mx < s.x + s.w && my >= s.y - 1 && my < s.y + s.h) return { kind: 'ab', i };
   }
+  for (let i = 0; i < ITEM_SLOTS; i++) {
+    const s = itemCellRect(i);
+    if (mx >= s.x && mx < s.x + s.w && my >= s.y && my < s.y + s.h) return { kind: 'item', i };
+  }
   for (let i = 0; i < FOOD_BTNS.length; i++) {
     const s = foodCellRect(i);
     if (mx >= s.x && mx < s.x + s.w && my >= s.y - 1 && my < s.y + s.h) return { kind: 'food', i };
@@ -337,84 +363,7 @@ function stripHit(mx, my) {
   return { kind: 'frame' };
 }
 
-// ---- the weapon shelf ----------------------------------------------------
-// THE CLASS WEAPON AND THE SIX ITEM SLOTS, TOP-LEFT, ON SCREEN AT ALL TIMES:
-// the weapon at the left end in its own bigger well (fixed by class - it is
-// read here, never moved), then the ITEM_SLOTS slots (p.items, js/sim/items.js)
-// in the smaller wells after it, left to right as the shop fills them. It is
-// the whole of what the HUD says about what you carry into a fight; the pack
-// is the drawer under this plate, shut until asked for (the backpack banner).
-//
-// It stands on the hud frame, like the strip and the rail: one plate flush
-// with the view's left edge and level with the minimap's top, hugging the
-// row. The plate swallows its own clicks (shelfPlateHit); nothing on it is
-// dragged - a hover names what is there (tooltip.js).
-const SHELF_CELL = HUD_CELL;   // the weapon's own well: the one HUD size
-const SHELF_ITEM = 26;         // an item slot: smaller than the weapon, so the weapon reads as the lead
-const SHELF_GAP = 3;           // the air between two item slots
-const SHELF_WGAP = 5;          // ...and between the weapon and the first slot
-const SHELF_PAD = 4;           // the plate's ground round the row
-const SHELF_TOP = MM_GAP;      // the plate's top edge: level with the minimap's and the rail's
-const SHELF_SLOT = 0;          // the weapon slot it shows (TOOL_SLOTS is 1)
-const SHELF_X = SHELF_PAD;     // the weapon well's left edge: the plate's ground in from the view's edge
-// the row's top: under the plate's margin
-function shelfRowY() { return SHELF_TOP + SHELF_PAD; }
-// the plate under the row: flush with the view's left edge, its ground round the row
-function shelfPlateRect() {
-  return { x: 0, y: SHELF_TOP, w: SHELF_ROW_MAX + SHELF_PAD, h: SHELF_CELL + SHELF_PAD * 2 };
-}
-// whether the pointer is on that plate - the shelf's cells answer for
-// themselves; this is the ground between them, which takes the click so it
-// never falls through to the world
-function shelfPlateHit(mx, my) {
-  if (!shelfUp()) return false;
-  ({ x: mx, y: my } = cornerMouse(mx, my));
-  const r = shelfPlateRect();
-  return mx >= r.x && mx < r.x + r.w && my >= r.y && my < r.y + r.h;
-}
-// the row: the weapon and the six slots, always the same width
-const SHELF_ROW_MAX = SHELF_X + SHELF_CELL + SHELF_WGAP + ITEM_SLOTS * SHELF_ITEM + (ITEM_SLOTS - 1) * SHELF_GAP;
-// how far in from the left edge the corner widget reaches: what the intro
-// slide and the bake are sized by
-const CORNER_REACH = Math.max(BAG_W, SHELF_ROW_MAX + SHELF_PAD) + 4;
-// WHAT THE CORNER CLAIMS OF THE FRAME, in view px at the corner's own size
-// (cornerSc): the row or the drawer under it, whichever reaches further. The
-// merchant's slab is pinned off this (shopLayout, js/ui/shop.js) so a trade
-// never stands on the pack it is dragged out of.
-const CORNER_CLAIM = Math.max(BAG_W, SHELF_ROW_MAX + SHELF_PAD); // ...and the plate's margin past it
-function cornerClaim() { return Math.round(CORNER_CLAIM * cornerSc()); }
-// ...and how far DOWN it reaches with the drawer open: the other half of the
-// room a panel pinned off the corner has to miss, for a view too NARROW to
-// stand one beside it
-function cornerBottom() { const f = bagFrameRect(); return Math.round((f.y + f.h + 2) * cornerSc()); }
-// the weapon the shelf is showing, or null with the weapon well empty
-function shelfCell() { return player.tools[SHELF_SLOT] || null; }
-// ...and whether the shelf is on screen and answering the pointer at all: the
-// backpack's own gate, since the two are one widget in the corner now
-function shelfUp() {
-  return state.mode === 'play' && !player.dead && !state.paused &&
-    !state.mapOpen && !state.settingsOpen && !state.wheel && !window.DBG.hideUI;
-}
-// Cell -1 is the WEAPON, in the full-size well, and 0..ITEM_SLOTS-1 are the
-// item slots, in the smaller ones centred on the weapon's height
-function shelfCellRect(i) {
-  const y = shelfRowY();
-  if (i < 0) return { x: SHELF_X, y, w: SHELF_CELL, h: SHELF_CELL };
-  return { x: SHELF_X + SHELF_CELL + SHELF_WGAP + i * (SHELF_ITEM + SHELF_GAP), y: y + ((SHELF_CELL - SHELF_ITEM) >> 1), w: SHELF_ITEM, h: SHELF_ITEM };
-}
-// What the pointer is on: { kind: 'tool' } | { kind: 'item', i } | null. The
-// gaps are not hit tested; the plate behind them swallows the click.
-function shelfHit(mx, my) {
-  if (!shelfUp()) return null;
-  ({ x: mx, y: my } = cornerMouse(mx, my));
-  const t = shelfCellRect(-1);
-  if (mx >= t.x && mx < t.x + t.w && my >= t.y && my < t.y + t.h) return { kind: 'tool' };
-  for (let i = 0; i < ITEM_SLOTS; i++) {
-    const r = shelfCellRect(i);
-    if (mx >= r.x && mx < r.x + r.w && my >= r.y && my < r.y + r.h) return { kind: 'item', i };
-  }
-  return null;
-}
+// ---- the drops ------------------------------------------------------------
 // Where the carried item is being let go. Every well that can hold one is
 // tried, then the rest of the HUD sends it home, and only the WORLD throws it
 // away - so a fumbled release inside the frame costs nothing and a deliberate
@@ -423,7 +372,7 @@ function dragDrop(mx, my) {
   // the counter first: a release anywhere on it is a sale - the one place a
   // release turns an item into gold (shopDropSell, js/ui/shop.js)
   if (shopHit(mx, my)) { shopDropSell(); return; }
-  if (shelfHit(mx, my) || stripHit(mx, my)) { dragReturn(); return; } // neither the shelf nor the strip takes a carried item
+  if (stripHit(mx, my)) { dragReturn(); return; } // the strip takes no carried item
   const bh = bagHit(mx, my);
   if (bh) { if (bh.kind === 'cell') dragDropBag(bh.i); else dragReturn(); return; }
   if (overHud(mx, my)) { dragReturn(); return; }
@@ -455,8 +404,8 @@ function sendAt(mx, my) {
 // ---- the press / move / release the drag is made of ---------------------
 // A press ARMS a pick-up rather than performing one, and only movement past a
 // few pixels promotes it into a live drag. That is what keeps one gesture
-// doing two jobs: a tap on a card still draws from it and a tap on a bit sends
-// it into the weapon, while a drag off either one picks it up. `state.dragPend`
+// doing two jobs: a tap on a card still draws from it, while a drag off it
+// picks it up. `state.dragPend`
 // is the armed press; it never survives the release that resolves it, and it
 // is also where a press made WHILE CARRYING records which of the two things
 // this gesture is (`keep`), so letting go of shift mid-click cannot change
@@ -481,7 +430,6 @@ function hudPress(mx, my) {
     state.dragPend = keyHeld('slide') ? { keep: true } : { hold: true };
     return true;
   }
-  if (shelfHit(mx, my)) return true; // the shelf is read, not handled: it swallows the press
   // the floating buy plate over an ability well: its own press, clear of the
   // strip, so buying a level and casting can never steal each other's click
   const abb = abBuyHit(mx, my);

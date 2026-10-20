@@ -84,7 +84,7 @@ either team's paint. `catchSun` is the same three frames over `CATCHPAL_SUN`, th
 when `p.catchKind` is `sunfish`. The hoist is **16x20**: four rows of fish above the hat on the same feet, which is why
 `drawPlayer` draws a hand-drawn frame at `ay + (16 - spr.height)` and lifts the overhead stack 4 px while it
 is up. Look A off `docs/media/concepts/fish-catch-concepts-1.png`; which frame shows and for how long
-is `catchFrame` / `CATCH_T` in [js/sim/tools.js](../../js/sim/tools.js) - [fishing](world.md#ice-holes-and-fishing).
+is `catchFrame` / `CATCH_T` in [js/sim/attack.js](../../js/sim/attack.js) - [fishing](world.md#ice-holes-and-fishing).
 
 ## The run and the roll
 
@@ -297,8 +297,9 @@ the side's colour and the passage open below. It is look **C**, "raised portcull
 **The swing tool icons** (`itemBow`/`itemAxe`/`itemPick`) are 8×8 grids sharing `AXPAL`, drawn at **1×** by
 `drawHeldTool()` (inside a translate/rotate, resolved through `SPRITES[t.icon]` from the
 `SWING_TOOLS` table) and by `drawRobot()` for a bot's swing — E picks the tool, there is no tool
-bar. At rest `drawHeldTool()` draws the **weapon on the selected slot** instead, which is a 12×12
-`toolArt_*` canvas baked in [js/sim/tools.js](../../js/sim/tools.js) rather than here; both sizes go
+bar. At rest `drawHeldTool()` draws the **hero's own weapon** instead, a 12×12
+`SPRITES.weaponArt` canvas baked in [js/sprites/weapons.js](../../js/sprites/weapons.js) (a blade at
+its real length in `SPRITES.weaponHeld`); both sizes go
 through the same code because the icon is centred on its own half-width.
 
 The **gear icons** are twelve 12×12 grids (`gearLongsight` … `gearGhoststep`), each baked once per
@@ -562,12 +563,10 @@ Anything drawn through `drawSpriteFlash()` must stay within **64×64**: it recol
 shared 64×64 scratch canvas and a larger sprite clips ([rendering.md](rendering/render-pass-order.md)).
 
 **New sprites bake beside the code that draws them, not here.** The treasure chest (`CHEST_SPR`,
-js/draw/ground.js) and every tool and bit icon (`TOOL_ART` / `BIT_ART` / `bakeGrid`, js/sim/tools.js)
+js/draw/ground.js), the ores (js/sim/mining.js) and the burrow (js/sim/tunnel.js)
 paint their char grids onto their own canvases and assign into `SPRITES`, which works because it
 is a plain object - exactly what each js/sprites/ file does for its own keys (the paragraph
-below), so a sprite that belongs to a drawer can live beside it. Tool art goes further and follows the gear icons'
-material trick — one 12×12 silhouette per weapon, baked once per **tier** through `TOOL_ART_PAL`, so shape
-says which weapon and palette says how good it is. The detailed 32×32 ability icons (`AB32`/`AB32_PAL`,
+below), so a sprite that belongs to a drawer can live beside it. The detailed 32×32 ability icons (`AB32`/`AB32_PAL`,
 js/sim/abilities.js) bake lazily beside their drawer.
 
 **The story landmarks** (`landmarks.js`, palette `LMPAL`) are E of

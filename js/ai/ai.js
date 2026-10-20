@@ -458,7 +458,7 @@ function aiRangeBand(band, d, edges) {
   if (b > band) return d > edges[b - 1] + AI_BAND_HYS ? b : (b > band + 1 ? b - 1 : band);
   return d < edges[b] - AI_BAND_HYS ? b : (b < band - 1 ? b + 1 : band);
 }
-function aiMelee(p) { const c = heldTool(p); return !!c && !!TOOLS[toolIdOf(c.type)].melee; }
+function aiMelee(p) { return !!attackOf(p).cut; }
 function aiNearestEnemy(p, prof, anchors) {
   let best = null, bs = Infinity;
   for (const q of players) {

@@ -335,7 +335,7 @@ function heroWalk(b) {
 
 // ------------------------------------------------------------ armatos greatsword
 // The OATH GREATSWORD as he holds it (drawArmSword, js/draw/armatos.js): laid
-// flat with the point left like every held blade (TOOL_HELD_ART, js/sim/tools.js),
+// flat with the point left like every held blade (SPRITES.weaponHeld, js/sprites/weapons.js),
 // for the side, the swing and the wind-up; and at 45 degrees with the point up
 // and right, for a body facing down or up, the grip in his hands at ARM_GRIP.
 const ARM_SWORD = [

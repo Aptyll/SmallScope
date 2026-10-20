@@ -342,7 +342,7 @@ function drawWikiRail(L) {
 function drawWikiRow(r, L, hot) {
   const id = r.bl.id, y = r.y - L.scroll;
   const n = { x: L.left, y: y + (hot ? 0 : 1), w: 12, h: 12 };
-  ctx.fillStyle = hot ? '#ffffff' : TOOL_TIERS[isPart(id) ? 0 : 2].rim; ctx.fillRect(n.x, n.y, n.w, n.h);
+  ctx.fillStyle = hot ? '#ffffff' : itemMetal(id).rim; ctx.fillRect(n.x, n.y, n.w, n.h);
   ctx.fillStyle = '#080b1c'; ctx.fillRect(n.x + 1, n.y + 1, n.w - 2, n.h - 2);
   shopIcon(itemIcon(id), { x: n.x + 1, y: n.y + 1, w: n.w - 2 + 4, h: n.h - 2 + 4 });
   const name = BUILD_ITEMS[id].name;

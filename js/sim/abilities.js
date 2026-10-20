@@ -3,7 +3,7 @@
 // cooldown, a cast the body visibly performs, and world entities of its own
 // (a piercing shot, nets, a grapple line, a shield, a rush, a crater, a fury).
 // Everything here runs per player off p.input.ability, so a bot casts through
-// exactly the key a human presses. Loaded after tools.js (it shares the
+// exactly the key a human presses. Loaded after attack.js (it shares the
 // world's fx helpers at runtime and nothing at load time - and it must draw
 // no load-time rng(), or every seed reshuffles).
 // ------------------------------------------------------------ class abilities
@@ -372,54 +372,26 @@ function abilityMoveMul(p) {
 // The cue that the lock released is hard and unmissable: the nock snap, a
 // white flash on the arrowhead, and the shot itself already gone.
 //
-// IT WEARS EVERY FITTING ON THE TOOL IN HAND. pierceMods folds each modifier
-// loaded on it into one envelope - wherever it sits in the row, and whatever
-// the tensile budget says: the pierce is the class's shot, not a press of the
-// tool, so neither the order nor the budget that ration a press apply to it.
-// The envelope is then spent exactly as a press spends one - SPEEDUP and
-// LONGSHOT stretch the flight, HEFT and SPLITTER scale the damage, the fire
-// rides it, SPLITTER fans it and DUPLICATE fires the fan again, and every arm
-// is a piercing shot of its own. Every mod composes (BITS, js/sim/tools.js), so
-// the fold's order is the row's order or any other: the answer is the same.
-function pierceMods(p) {
-  const m = newMods();
-  const cell = heldTool(p);
-  if (cell) for (const id of cell.bits) {
-    const b = id ? BITS[id] : null;
-    if (b && !b.proj && b.mod) b.mod(m);
-  }
-  return m;
-}
-// ...and the flight that envelope buys: a full-draw shot at the pierce's own
-// speed and reach, through shotFlight (js/sim/tools.js) - the rule every press
-// flies by, so a SPEEDUP carries it further as well as faster, as it does a bow's
+// The flight: a full-draw shot at the pierce's own speed and reach, through
+// shotFlight (js/sim/attack.js) - the rule every bow's shot flies by.
 const PIERCE_FLIGHT = { speed: PIERCE_SPD, life: PIERCE_RANGE / PIERCE_SPD };
-function pierceFlight(m) { return shotFlight(PIERCE_FLIGHT, m, 1); }
+function pierceFlight() { return shotFlight(PIERCE_FLIGHT, 1); }
 function abPierce(p) {
-  const b = BITS.arrow;
-  const m = pierceMods(p);
-  const { spd, life } = pierceFlight(m);
+  const { spd, life } = pierceFlight();
   const dx = p.input.aimX - p.x, dy = p.input.aimY - (p.y - BOW_Y);
   const a = Math.atan2(dy, dx);
-  // a fully drawn plain arrow's own damage math (emitBit at pw = 1), the
-  // pierce multiplier over it, its ABILITY POWER share, and then the
-  // fittings, folded as emitBit folds them
-  const full = bitDmg(p, b) * PIERCE_MUL + abAp(p, 'pierce');
-  const dmg = Math.round(full * m.dmgMul + m.dmgAdd);
-  for (let d = 0; d < m.dup; d++) for (let k = 0; k < m.fan; k++) {
-    const ak = a + armOff(m, k, d);
-    arrows.push({
-      x: p.x, y: p.y - BOW_Y,
-      vx: Math.cos(ak) * spd, vy: Math.sin(ak) * spd,
-      t: 0, life, dmg, pow: 1,
-      owner: p.id, team: p.team, ambush: false, trailD: 0,
-      bit: 'arrow', path: 'line', solid: true, ff: false,
-      lit: m.lit, col: '#f4f7ff',
-      type: m.type, burn: m.burn, burnDps: m.burnDps, cinder: m.cinder,
-      pierce: true, pierceHit: [],
-      ang: ak, spd, ox: p.x, oy: p.y - BOW_Y,
-    });
-  }
+  // the hero's DAMAGE at a full draw (attackDmg, js/sim/attack.js), the
+  // pierce multiplier over it, and its ABILITY POWER share
+  const dmg = Math.round(statOf(p, 'dmg') * PIERCE_MUL + abAp(p, 'pierce'));
+  arrows.push({
+    x: p.x, y: p.y - BOW_Y,
+    vx: Math.cos(a) * spd, vy: Math.sin(a) * spd,
+    t: 0, life, dmg, pow: 1,
+    owner: p.id, team: p.team, ambush: false, trailD: 0,
+    solid: true, col: '#f4f7ff',
+    pierce: true, pierceHit: [],
+    ang: a, spd, ox: p.x, oy: p.y - BOW_Y,
+  });
   // the snap: arrowhead flash at the bow, and the sound of the lock letting go
   burst(p.x + Math.cos(a) * 7, p.y - BOW_Y + Math.sin(a) * 7, '#f4f7ff', 8, 55, 0.3, true);
   burst(p.x + Math.cos(a) * 9, p.y - BOW_Y + Math.sin(a) * 9, '#ffd95c', 5, 45, 0.25, true);
@@ -934,22 +906,16 @@ function drawAbilityGround(ex, ey, now) {
     const closing = castProg(p);
     const col = closing > 0.75 ? TELE_HOT : TELE_COL;
     const px = Math.round(p.x - ex), py = Math.round(p.y - 2 - ey);
-    // the pierce's line is the flight the loose will take, the fittings in
-    // hand included (pierceMods), so it can cross the screen from a caster
-    // well off it - the cull reaches as far as the line does
-    const pm = ab.id === 'pierce' ? pierceMods(p) : null;
-    const pfl = pm && pierceFlight(pm);
-    const cull = pm ? pfl.spd * pfl.life : 80;
+    // the pierce's line is the flight the loose will take, so it can cross
+    // the screen from a caster well off it - the cull reaches as far as the
+    // line does
+    const pfl = ab.id === 'pierce' ? pierceFlight() : null;
+    const cull = pfl ? pfl.spd * pfl.life : 80;
     if (px < -cull || py < -cull || px > WV_W + cull || py > WV_H + cull) continue;
     const dx = p.input.aimX - p.x, dy = p.input.aimY - (p.y - BOW_Y);
     const a = Math.atan2(dy, dx), nx = Math.cos(a), ny = Math.sin(a);
     if (ab.id === 'pierce') {
-      // one line per arm of a SPLITTER's fan, each where armOff will send it
-      // (a DUPLICATE's repeats ride inside their arm's line)
-      for (let k = 0; k < pm.fan; k++) {
-        const ak = a + armOff(pm, k, 0), kx = Math.cos(ak), ky = Math.sin(ak);
-        drawTeleLine(p.x, p.y - BOW_Y, kx, ky, teleLen(p.x, p.y - BOW_Y, kx, ky, cull), col, 0.5 + 0.45 * closing, now, ex, ey);
-      }
+      drawTeleLine(p.x, p.y - BOW_Y, nx, ny, teleLen(p.x, p.y - BOW_Y, nx, ny, cull), col, 0.5 + 0.45 * closing, now, ex, ey);
     } else if (ab.id === 'rush') {
       const len = teleLen(p.x, p.y, nx, ny, RUSH_SPD * RUSH_T);
       drawTeleLine(p.x, p.y, nx, ny, len, col, 0.5 + 0.45 * closing, now, ex, ey);

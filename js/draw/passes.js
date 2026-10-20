@@ -156,7 +156,7 @@ function drawFlatPass(ox, oy, ex, ey, tx0, ty0, tx1, ty1, now) {
 function drawDrops(ex, ey, now) {
   for (const d of drops) {
     const spr = SPRITES[ITEMS[d.type] ? ITEMS[d.type].icon : 'itemGold'];
-    const h = spr.width >> 1; // a tool's icon is 12x12, everything else 8x8
+    const h = spr.width >> 1;
     // WHAT YOU JUST THREW AWAY LIES DIM. A drop inside its lock is not yours
     // to walk back over (dropLocked, js/sim/core.js) - no glint, no magnet - so it
     // goes half-lit until the three seconds are up and it comes back to life.
@@ -164,15 +164,6 @@ function drawDrops(ex, ey, now) {
     const held = dropLocked(d, viewPlayer());
     ctx.fillStyle = 'rgba(120,140,175,0.35)';
     ctx.fillRect(Math.round(d.x - ex) - 2, Math.round(d.y - ey) + 2, 4, 2);
-    // a find glints in the colour of its own tier, so something worth walking
-    // to is told from a berry at a distance
-    const tier = itemTier(d.type);
-    if (tier >= 0 && !held) {
-      ctx.globalAlpha = 0.35 + 0.25 * Math.sin(now * 5 + d.x);
-      ctx.fillStyle = TOOL_TIERS[tier].rim;
-      ctx.fillRect(Math.round(d.x - ex) - h - 1, Math.round(d.y - d.z - ey) - h - 1, h * 2 + 2, h * 2 + 2);
-      ctx.globalAlpha = 1;
-    }
     ctx.globalAlpha = held ? 0.5 : 1;
     ctx.drawImage(spr, Math.round(d.x - ex) - h, Math.round(d.y - d.z - ey) - h);
     ctx.globalAlpha = 1;
@@ -343,25 +334,6 @@ function drawSceneryObj(d, ox, oy, now, wkO, hovO) {
     drawPylon(o, px + sh, py); // a zipline's post (js/draw/zipline.js); the cable itself is drawZips, below
   } else if (o.type === 'banner') {
     drawBanner(o, px + sh, py, now);
-  } else if (o.type === 'rack') {
-    // two tiles per rack: the lead (left) tile draws the whole sprite
-    // centred over the pair; the follower tile is solid and silent
-    if (o.lead) {
-      // `dx` nudges the picture off the tile grid (the practice rack sits
-      // half a tile left of its pair, square under the dummy's axis)
-      const rx = px + sh + (o.dx || 0);
-      // mid-sink for the archery round: dropped and cropped like the dummy
-      const su = PRACTICE ? agSinkU() : 0;
-      if (su > 0) {
-        const vis = Math.round(RACK_SPR.height * (1 - su));
-        if (vis > 0) ctx.drawImage(RACK_SPR, 0, 0, RACK_SPR.width, vis,
-          rx + ((TILE * 2 - RACK_SPR.width) >> 1), py + TILE + 1 - vis, RACK_SPR.width, vis);
-        return;
-      }
-      ctx.fillStyle = 'rgba(40,60,100,0.25)';
-      ctx.fillRect(rx + 2, py + TILE - 2, TILE * 2 - 4, 2);
-      drawSpriteFlash(RACK_SPR, rx + ((TILE * 2 - RACK_SPR.width) >> 1), py + TILE - RACK_SPR.height + 1, o.flash);
-    }
   } else if (o.type === 'pkdie') {
     drawPkDie(o, px, py, now);
   } else if (o.type === 'agbell') {
@@ -520,7 +492,7 @@ function drawParticles(ex, ey) {
 
 function drawArrows(ex, ey, now) {
   // arrows: the one shared body (ARROW_MAP, js/sim/actions.js - white tip, flint
-  // head, the loaded bit's collar, one-gold shaft, team feathers) rasterised
+  // head, the shot's own collar, one-gold shaft, team feathers) rasterised
   // at the live bearing by arrowBodyPx and rimmed in dark so the shot stays
   // readable over snow. a.x/a.y is the TIP - the point the sim tests - and
   // the body trails ARROW_LEN px behind it.
@@ -528,17 +500,7 @@ function drawArrows(ex, ey, now) {
     if (a.kind === 'rock') { drawSlungRock(a, ex, ey); continue; }
     const hx = Math.round(a.x - ex), hy = Math.round(a.y - ey);
     if (hx < -22 || hx > WV_W + 22 || hy < -22 || hy > WV_H + 22) continue;
-    // Not every bit flies as the plain arrow: a bit may name a BODY of its
-    // own (`body`, js/sim/tools.js) - a barbed or an icy shaft, a grapple on its
-    // cord, a tumbling log, a mote with no bearing at all, a swung fist or
-    // axe, a teleport request that is not a shape - and BIT_BODY (the bodies
-    // a bit flies as, below) is where that name is answered. Everything else
-    // is the arrow, wearing the bit's own colour on the collar behind the head.
-    const bd = a.body && BIT_BODY[a.body];
-    if (bd) bd(a, hx, hy, now, a.x - ex, a.y - ey);
-    else drawShaft(a, a.x - ex, a.y - ey);
-    // ...and whatever it flies as, a shot carrying fire burns on its head
-    if (a.burn > 0) drawShotFire(a, hx, hy, now);
+    drawShaft(a, a.x - ex, a.y - ey);
   }
 }
 
