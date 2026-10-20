@@ -7,8 +7,8 @@
 // Every action takes the player performing it, so the local human, an AI fill
 // and a future network peer all reach the world through the same calls.
 
-// The three infinite SWING tools - what E has in hand, never what the button
-// fires. Not player-selectable: E auto-swaps to the axe / pick for whatever is
+// The SWING tools - what E has in hand, never what the button fires: the
+// axe, the one tool left. Not player-selectable: E brings it out for whatever is
 // under the cursor, and the hero's weapon comes back the moment the swing ends.
 // The weapon the button fires is the hero's basic attack (CLASSES[c].attack,
 // js/sim/attack.js).
@@ -19,9 +19,8 @@ const SWING_TOOLS = [
   // plate). Kept so the table stays one row per p.swing value.
   { key: 'bow',  name: 'BOW',     icon: 'itemBow' },
   { key: 'axe',  name: 'AXE',     icon: 'itemAxe' },
-  { key: 'pick', name: 'PICKAXE', icon: 'itemPick' },
 ];
-const SWING_BOW = 0, SWING_AXE = 1, SWING_PICK = 2;
+const SWING_BOW = 0, SWING_AXE = 1;
 const BOW_Y = 6;          // arrows spawn (and are aimed from) this far above the player's feet
 const ARROW_TRAIL_STEP = 4;    // px of flight between trail motes (distance, not time, so a
 const ARROW_TRAIL_LIFE = 0.22; // slow arrow streaks as evenly as a fast one); motes fade over
@@ -67,7 +66,7 @@ const STRUCT_HIT_DMG = 25; // RAW axe damage per E swing against an ENEMY buildi
 // The roll as a weapon. A dash goes *through* anything small - rabbits,
 // wolves, robots, other players - swiping each of them once per roll and
 // leaving them seeing stars; anything too big to go through (a deer, a tree,
-// a rock, a building) is a tackle instead, which hurts and stuns both sides
+// a building) is a tackle instead, which hurts and stuns both sides
 // and ends the roll where it hit. Everything scales off the speed the roll is
 // actually carrying, so a dash launched out of an ice slide lands far harder
 // than one off a standing start - which is the whole reason to chain them.
@@ -104,7 +103,7 @@ function clickAction(p) {
 }
 
 // what E would work right now for p: the tile p is aiming at, if it holds
-// something a tool can harvest (bare ice counts, for the pick). Shared by
+// something a tool can harvest. Shared by
 // tryWork(), the AI and the cursor, so the lock ring can never lie about E.
 function workTarget(p) { return workTargetAt(p, Math.floor(p.input.aimX / TILE), Math.floor(p.input.aimY / TILE)); }
 // ...and the same answer for any tile: what the CLICK scheme's right button
@@ -120,20 +119,19 @@ function workTargetAt(p, tx, ty) {
     if (STRUCTS[st.type]) { if (!ownsStruct(st, p)) t = SWING_AXE; }
     else {
       // scenery answers from its OBJECTS entry: `tool` is what E reaches for,
-      // and `ready` (the bush's berries, a rock's rubble) is what decides it
-      // is worth reaching. An object carrying a `team` (a roosting eagle's
-      // hitbox tiles) is a rival-only target, the same rule a building
-      // answers above. A two-tile rock's `part` answers for the rock.
+      // and `ready` (the bush's berries) is what decides it is worth
+      // reaching. An object carrying a `team` (a roosting eagle's hitbox
+      // tiles) is a rival-only target, the same rule a building answers above.
       const d = OBJECTS[st.type];
       if (d && d.tool && (!d.ready || d.ready(st)) &&
-        (st.team === undefined || st.team !== p.team)) t = d.tool === 'pick' ? SWING_PICK : SWING_AXE;
+        (st.team === undefined || st.team !== p.team)) t = SWING_AXE;
     }
-  } else if (ground[idx(tx, ty)] === 1) t = SWING_PICK;
+  }
   if (t < 0) return null;
   // tile-based, not a radius: only the ring of tiles around the one you stand on
   const ptx = Math.floor(p.x / TILE), pty = Math.floor(p.y / TILE);
   const near = Math.max(Math.abs(tx - ptx), Math.abs(ty - pty)) <= WORK_REACH;
-  // scenery wider than a tile (a rock) is the target as a whole, from its
+  // scenery wider than a tile is the target as a whole, from its
   // anchor, and in reach while any tile of it is
   const so = o && structOf(o), w = so && !STRUCTS[so.type] && OBJECTS[so.type] && OBJECTS[so.type].w;
   if (w) {
@@ -154,7 +152,7 @@ function hoverFish() {
 // it - or null. The cable pass lights the strand on it and the guide line
 // walks the body to it (drawZips/drawZipGuide, js/draw/zipline.js)
 function hoverZip() {
-  if (!mouse.inside || state.mode !== 'play' || state.mapOpen || state.settingsOpen || state.wheel || state.shop || state.drag) return null;
+  if (!mouse.inside || state.mode !== 'play' || state.mapOpen || state.settingsOpen || state.wheel || state.shop) return null;
   if (player.dead || player.zip >= 0 || inAir(player)) return null;
   return zipUnder(mouseWX(), mouseWY());
 }
@@ -198,28 +196,27 @@ function startSwing(p, t) {
 }
 
 // The hands work on their own. Whatever an OBJECTS entry marks `auto` (a
-// tree, a dead tree, a berried bush, a rock, a chest, a rival's roosting
+// tree, a dead tree, a berried bush, a rival's roosting
 // eagle) and any building on the other team is swung at the moment it is in
 // WORK_REACH, with no key held: the closest such tile in the ring around the
 // player, nearest tile centre first. Fish are the same idea on ice (autoFish,
 // js/sim/attack.js). E keeps its day job for what is left - bare ice and the
 // practice dummy - and a held E always wins the hands.
 // Whether a tile is the hands' business, and with which tool (-1 = not). A
-// rival's building or roosting eagle answers with AUTO_PRIO_FOE, a chest with
-// AUTO_PRIO_PRIZE, scenery with 0: at equal distance the fight and the prize
-// beat the pine beside them (autoTarget ranks by prio first, then distance).
-const AUTO_PRIO_FOE = 2, AUTO_PRIO_PRIZE = 1;
+// rival's building or roosting eagle answers with AUTO_PRIO_FOE, scenery with
+// 0: at equal distance the fight beats the pine beside it (autoTarget ranks by
+// prio first, then distance).
+const AUTO_PRIO_FOE = 1;
 function autoToolFor(o, p) {
   const st = structOf(o); // a `part` tile answers for the building it belongs to
   if (STRUCTS[st.type]) return ownsStruct(st, p) ? -1 : SWING_AXE; // your side's is never swung at
   const d = OBJECTS[o.type];
   // an object carrying a team (the eagles' hitbox tiles) is a rival-only target, as in workTarget
   if (!d || !d.auto || (d.ready && !d.ready(o)) || (o.team !== undefined && o.team === p.team)) return -1;
-  return d.tool === 'pick' ? SWING_PICK : SWING_AXE;
+  return SWING_AXE;
 }
 function autoPrio(o) {
-  if (STRUCTS[structOf(o).type] || o.team !== undefined) return AUTO_PRIO_FOE;
-  return o.type === 'chest' ? AUTO_PRIO_PRIZE : 0;
+  return STRUCTS[structOf(o).type] || o.team !== undefined ? AUTO_PRIO_FOE : 0;
 }
 function autoTarget(p) {
   const ptx = Math.floor(p.x / TILE), pty = Math.floor(p.y / TILE);
@@ -282,7 +279,7 @@ function tryDodge(p) {
   p.stamGhost = Math.max(p.stamGhost, (p.dodgeCharges + regenP) / DODGE_CHARGES);
   p.stamGhostT = 0.3;
   p.dodgeCharges--;
-  if (p.dodgeRegenT <= 0) p.dodgeRegenT = kitOf(p).dodgeCd; // cards and the LIGHT item shorten the refill
+  if (p.dodgeRegenT <= 0) p.dodgeRegenT = kitOf(p).dodgeCd; // the LIGHT item shorten the refill
   p.invuln = Math.max(p.invuln, DODGE_T + 0.05);
   p.kbx = p.kby = 0;
   faceToward(p, dx, dy, true);
@@ -331,10 +328,9 @@ function rollTackle(p, sp, nx, ny) {
 }
 
 // The other half of a tackle into scenery. A building on another team takes
-// the hit for real - it has an hp pool and a body to break. A tree or a rock
-// has neither (a pine's `hp` is a chop count behind a tool gate, a rock is
-// mined by a channel), so being run into shakes it and dumps its snow and
-// nothing more.
+// the hit for real - it has an hp pool and a body to break. A tree has
+// neither (a pine's `hp` is a chop count behind a tool gate), so being run
+// into shakes it and dumps its snow and nothing more.
 function tackleObject(o, dmg, p) {
   if (!o) return;
   joltObj(o, 0.1, 0.26);
@@ -444,37 +440,8 @@ function swingHit(p) {
       const st = structOf(o); // a `part` tile hits the building it belongs to
       if (STRUCTS[st.type]) { if (!ownsStruct(st, p)) hitObject(st, p); }
       else if (o.type !== 'stump') hitObject(o, p);
-    } else if (ground[idx(tx, ty)] === 1) crackIce(tx, ty, p);
-  });
-}
-
-function crackIce(tx, ty, p) {
-  p = p || player;
-  const i = idx(tx, ty);
-  const px = tx * TILE + 8, py = ty * TILE + 8;
-  const hits = (iceCracks.get(i) || 0) + 1;
-  sfxAt('mine', px, py);
-  burst(px, py, '#ddf1f8', 6, 45, 0.4, true);
-  if (hits >= ICE_HOLE_HITS) {
-    // broken through: the tile becomes open water
-    iceCracks.delete(i);
-    ground[i] = 2;
-    holes.push(i);
-    repaintGround(tx, ty);
-    sfxAt('splash', px, py);
-    shakeFor(p, 2);
-    burst(px, py, '#3a6080', 10, 50, 0.5, true);
-    burst(px, py, '#ddf1f8', 8, 55, 0.5, true);
-    // the noise sends nearby fish darting away
-    for (const f of fish) {
-      if (f.born && Math.hypot(f.x - px, f.y - py) < 40) {
-        f.a = Math.atan2(f.y - py, f.x - px);
-        f.spook = 1.2;
-      }
     }
-  } else {
-    iceCracks.set(i, hits);
-  }
+  });
 }
 
 // nearest tile a player can stand on - used to climb out of a hole. Out of
@@ -534,7 +501,7 @@ function hitObject(o, p) {
   const d = OBJECTS[o.type];
   if (d && d.needs && k !== d.needs) {
     sfxAt('deny', ox, oy);
-    addFloater(ox, oy - 14, d.needs === 'pick' ? 'NEEDS PICKAXE' : 'NEEDS AXE', '#9fb6d8');
+    addFloater(ox, oy - 14, 'NEEDS AXE', '#9fb6d8');
     return;
   }
   joltObj(o, 0.1, 0.22);
@@ -561,22 +528,6 @@ function hitObject(o, p) {
   } else if (o.type === 'snowdrop') {
     if (OBJECTS.snowdrop.ready(o)) pickSnowdrop(o, p);
     else sfxAt('swing', ox, oy);
-  } else if (o.type === 'chest') {
-    // a buried cache in the treeline (placeChests, js/sim/world.js): one free E
-    // press springs it - gold straight into the purse, a card drop rolled
-    // from CHEST_ODDS, and a free item part (chestPart, js/sim/items.js). The
-    // tile opens with it, so a sprung chest leaves a gap in the forest wall.
-    objects[idx(o.tx, o.ty)] = null;
-    sfxAt('stash', ox, oy);
-    shakeFor(p, 1.5);
-    awardGold(p, randi(CHEST_GOLD_MIN, CHEST_GOLD_MAX), ox, oy);
-    const rarity = rollCardRarity(CHEST_ODDS);
-    const key = cardKey(rarity);
-    spawnDrop(ox, oy, key, 1);
-    addFloater(ox, oy - 24, rarity.toUpperCase() + ' CARD', RES_COLORS[key]);
-    chestPart(p, ox, oy);
-    burst(ox, oy - 6, '#f2cc6a', 12, 55, 0.6, true);
-    burst(ox, oy - 6, '#8a6142', 8, 45, 0.5, true);
   } else if (STRUCTS[o.type]) {
     // reached from swingHit only for a building on ANOTHER team
     hurtStruct(o, STRUCT_HIT_DMG, p);

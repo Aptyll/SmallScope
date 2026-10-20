@@ -33,13 +33,12 @@
 // the abilities are (Q and F, a click), each with its key in the
 // bottom-left corner and its count in the top-right; both
 // wipe on the shared food clock (drawFoodClock). THE MEALS ARE ALWAYS HERE:
-// food is a pouch and not a bag stack (the `inventory` banner, js/sim/player.js),
+// food is the pouch (the `inventory` banner, js/sim/player.js),
 // so these two wells are the whole of where a berry and a fish are read and
 // pressed, and the counts are uncapped - hence shortNum, four characters at
 // most. Under them, level with the bars, THE PURSE: the coin and the gold, on
 // screen for the whole match, since money is the number a player decides on
-// all game. Unopened cards are not on the strip: they are bag items, drawn
-// from the pack or on the card key.
+// all game.
 const AB_CELL = HUD_CELL, AB_GAP = 2, AB_N = 4; // AB_CELL: a strip well (the one size, above); AB_N: abilities
 const AB_PAD = 3;                         // the frame's outline, its edge and one px of ground (drawHudFrame)
 const PORT_SQ = 51;                       // the portrait square, the plate's full inner height
@@ -61,7 +60,7 @@ const AB_W = PORT_SQ + PORT_GAP + AB_ROW_W + ITEM_X_GAP + ITEM_GRID_W + FOOD_GAP
 const AB_H = AB_PAD + ST_TOP + ST_H + 2 + AB_PAD; // wells, bars, the stamina bar's outline, the pads
 const AB_BG = '#16181c';
 // ---- the hud frame: the one plate the bottom widgets stand on ----------
-// The strip, the pack and the team rail stand on one plate, drawn the way
+// The strip and the team rail stand on one plate, drawn the way
 // League's and Dota's HUDs get their contrast, kept simple: a dark outline,
 // a faint line just inside it, and a solid dark ground, all neutral
 // graphite (0.421: the cold steel line pulled the eye off the game). The
@@ -76,11 +75,10 @@ const AB_BG = '#16181c';
 //     screen's edge, since a notch of world there reads as a hole;
 //   * the EDGE, one faint line just inside it, following the same cuts;
 //   * the GROUND inside that, one opaque colour.
-// `ink` and `lit` are what a widget's state colours (the pack's full amber,
-// a refusal's red): `lit` repaints the edge. Every margin inside the outline is three pixels -
+// `ink` and `lit` are what a widget's state colours (a refusal's red): `lit` repaints the edge. Every margin inside the outline is three pixels -
 // line, edge, ground - which is what AB_PAD and BAG_PAD are.
 const HUD_INK = '#07080a';   // the silhouette
-const HUD_EDGE = '#2f3238';  // the faint line inside it: one step off the ground, apart from the pack's amber and red states
+const HUD_EDGE = '#2f3238';  // the faint line inside it: one step off the ground
 const HUD_FROST = '#d4d7dc'; // a pale "on": the practice bar's lit toggles (cheats.js)
 // a rect with its corners cut two pixels where `c` says so
 function chamCut(x, y, w, h, c) {
@@ -125,13 +123,12 @@ function hudInT() {
 }
 function hudHome() { return hudInT() >= 1; }
 // THE HUD SIZE DIALS (the ESC panel's GAME page): one per widget, so each
-// part of the HUD is sized on its own - the strip (settings.hudScale), the
-// backpack drawer top-left (settings.hudCorner), the team
-// rail along the top (settings.hudRail); the minimap has its own radius dial
+// part of the HUD is sized on its own - the strip (settings.hudScale) and
+// the team rail along the top (settings.hudRail); the minimap has its own radius dial
 // (settings.mmR, applyMinimapSize, js/sim/core.js). Each widget keeps ALL its
 // geometry in 1x space and its draw bakes it at 1x and blits it scaled about
-// its anchor (drawHudScaled, drawCornerScaled, drawRailScaled); the pointer is
-// mapped back through the same anchor (stripMouse, cornerMouse), so every hit
+// its anchor (drawHudScaled, drawRailScaled); the pointer is
+// mapped back through the same anchor (stripMouse), so every hit
 // test converts first and the rects themselves never move.
 // A dial stops every HUD_FINE from HUD_MIN to HUD_MAX, plus on each CRISP size
 // - one at which a HUD pixel is a whole number of device pixels, so a 1px
@@ -178,12 +175,9 @@ function hudPick(want, cap) {
 // the cap a widget `w` x `h` view px at 1x passes: the size at which it would
 // reach the view's edges, on the device grid so a crisp size can sit there
 function hudFit(w, h) { return hudSnapDown(Math.min((VIEW_W - 8) / w, (VIEW_H - 8) / h)); }
-// THE SCALES. The strip's caps where its plate would outgrow the view; the
-// corner's where the drawer would cross half the view or reach the view's foot. The rail's is railSc (js/ui/rail.js), capped by its own width.
+// THE SCALES. The strip's caps where its plate would outgrow the view. The rail's is railSc (js/ui/rail.js), capped by its own width.
 function stripCap() { return hudFit(AB_W + 6 + STAT_PANEL_W - 1, AB_H + XP_TAG); }
-function cornerCap() { const f = bagFrameRect(); return hudFit(CORNER_CLAIM * 2, f.y + f.h + 6); }
 function hudSc() { return hudPick(settings.hudScale || 1, stripCap()); }
-function cornerSc() { return hudPick(settings.hudCorner || 1, cornerCap()); }
 // a view coordinate put on the device grid, where a scaled HUD bake has to
 // land for its pixels to stay whole
 function hudPx(v) { return Math.round(v * devScale) / devScale; }
@@ -267,13 +261,13 @@ function fishPopHeadroom() {
   return fishPopUp(m.x, m.y) ? hudStripRect().y - fishPopRect().y + FISH_POP_NAME + 2 : 0;
 }
 // The meal buttons' share of that refusal: a press that could not become a
-// meal - nothing in the bag, the clock still up, full health, a busy body -
-// reddens and shakes the button that was asked, in the red the well and the
-// pack already refuses in, so a Q with no berry reads as denied rather than
+// meal - nothing in the pouch, the clock still up, full health, a busy body -
+// reddens and shakes the button that was asked, in the red the well already
+// refuses in, so a Q with no berry reads as denied rather than
 // dead. startEat is the one path every press takes (key or click), so it is
 // the one caller; a second press on the same button while the red is up is
-// swallowed as the pack's is, while the other meal's button answers fresh.
-// updateFx ages it on wall time beside bagFlash.
+// swallowed, while the other meal's button answers fresh.
+// updateFx ages it on wall time.
 let foodFlash = 0, foodFlashI = 0;
 function foodDenied(type) {
   const i = FISH_KINDS.includes(type) ? 1 : 0;
@@ -285,7 +279,7 @@ function foodDenied(type) {
 // And the ability wells' share of it: a key nobody has spent a point on is
 // LOCKED (abUnlocked, js/sim/abilities.js), and its well already stands dim with
 // a dark icon - but a press has to answer, so the asked well reddens and
-// shakes in the same red the pack and the meal buttons
+// shakes in the same red the meal buttons
 // refuse in. tryAbility is the one caller, so key and click speak alike; a
 // cooldown is NOT this refusal - the wipe already says when it comes home.
 let abFlash = 0, abFlashI = 0;
@@ -360,73 +354,10 @@ function stripHit(mx, my) {
   return { kind: 'frame' };
 }
 
-// ---- the drops ------------------------------------------------------------
-// Where the carried item is being let go. Every well that can hold one is
-// tried, then the rest of the HUD sends it home, and only the WORLD throws it
-// away - so a fumbled release inside the frame costs nothing and a deliberate
-// drag out onto the snow is the one way to get rid of something.
-function dragDrop(mx, my) {
-  // the counter first: a release anywhere on it is a sale - the one place a
-  // release turns an item into gold (shopDropSell, js/ui/shop.js)
-  if (shopHit(mx, my)) { shopDropSell(); return; }
-  if (stripHit(mx, my)) { dragReturn(); return; } // the strip takes no carried item
-  const bh = bagHit(mx, my);
-  if (bh) { if (bh.kind === 'cell') dragDropBag(bh.i); else dragReturn(); return; }
-  if (overHud(mx, my)) { dragReturn(); return; }
-  throwCell(state.drag.cell);
-  state.drag = null;
-}
-
-// ---- one click uses it --------------------------------------------------
-// A click on a pack cell USES what is in it (ITEMS[type].use - a card is
-// drawn, a burrow dug). It is resolved on the RELEASE like every other click
-// (hudRelease), never on the press, so a press that travels is still a drag
-// and arranging the pack by hand is untouched. Returns whether it HANDLED the
-// click: a kind with no use falls through to the click it always was.
-function sendBagCell(i) {
-  const s = player.bag[i];
-  if (!s) return false;
-  if (ITEMS[s.type] && ITEMS[s.type].use) { ITEMS[s.type].use(); return true; }
-  return false;
-}
-// Where a SHIFT-held release lands while something is riding the cursor: it
-// spends the click on the pack cell under the pointer instead of on what is
-// in hand. Everything else does nothing at all, because shift's whole promise
-// is that the item in hand is still in hand afterwards.
-function sendAt(mx, my) {
-  const bh = bagHit(mx, my);
-  return !!bh && bh.kind === 'cell' && sendBagCell(bh.i);
-}
-
-// ---- the press / move / release the drag is made of ---------------------
-// A press ARMS a pick-up rather than performing one, and only movement past a
-// few pixels promotes it into a live drag. That is what keeps one gesture
-// doing two jobs: a tap on a card still draws from it, while a drag off it
-// picks it up. `state.dragPend`
-// is the armed press; it never survives the release that resolves it, and it
-// is also where a press made WHILE CARRYING records which of the two things
-// this gesture is (`keep`), so letting go of shift mid-click cannot change
-// its mind halfway through.
-const DRAG_SLOP = 3; // px of travel before a press becomes a drag
+// ---- the press ------------------------------------------------------------
+// A press on the HUD: the buy plate over an ability well, or a well of the
+// strip itself. Returns whether it was the HUD's, so the world never sees it.
 function hudPress(mx, my) {
-  // ALREADY CARRYING SOMETHING: the press ARMS, exactly as every branch below
-  // does, and the RELEASE is what puts the item down. It used to resolve here,
-  // on the press, and that was a real bug rather than an inconsistency: a drop
-  // onto a loaded well swaps, and a swap whose displaced item cannot go home
-  // puts that item back on the cursor - so `state.drag` was full again by the
-  // time the mouseup arrived, hudRelease ran the very same dragDrop at the very
-  // same pixel, and one physical click swapped TWICE. The two items flipped
-  // back and forth, one flip per click, and the well ended up exactly where it
-  // started.
-  //
-  // Arming also buys the gesture what every other well already had: a press
-  // you can think better of. The pointer may still travel after it, the
-  // hovered well says what letting go will do (dropKindAt), and moving off
-  // before the release is how a mis-aimed drop is called off.
-  if (state.drag) {
-    state.dragPend = keyHeld('slide') ? { keep: true } : { hold: true };
-    return true;
-  }
   // the floating buy plate over an ability well: its own press, clear of the
   // strip, so buying a level and casting can never steal each other's click
   const abb = abBuyHit(mx, my);
@@ -446,42 +377,5 @@ function hudPress(mx, my) {
     }
     return true;
   }
-  const bh = bagHit(mx, my);
-  if (bh) {
-    if (bh.kind === 'cell' && player.bag[bh.i]) state.dragPend = { src: { k: 'bag', i: bh.i }, x: mx, y: my };
-    else if (bh.kind !== 'cell') return bagClick(bh); // the frame eats the press
-    return true;
-  }
   return false;
-}
-// the pointer moved: an armed press that has travelled far enough becomes the
-// drag itself, lifting the item out of wherever it was sitting
-function hudMove(mx, my) {
-  const q = state.dragPend;
-  // an empty well has nothing to lift, and neither a shift-hold nor a press
-  // made with something ALREADY in hand is a pick-up at all - both are aimed
-  // at the well under the pointer when the button comes back up
-  if (!q || q.keep || q.hold) return;
-  if (Math.abs(mx - q.x) < DRAG_SLOP && Math.abs(my - q.y) < DRAG_SLOP) return;
-  state.dragPend = null;
-  dragLift(q.src);
-}
-// The release, where every click in this widget is actually decided. A live
-// drag is put down - or, when the press was begun with shift held, spends
-// itself on the well under the pointer and stays in hand (sendAt). An armed
-// press that never travelled is the click it always was: the bag cell's own
-// use (sendBagCell), otherwise bagClick's refusal. With shift held while
-// carrying, the click is aimed at the cell under the pointer instead of at
-// what is in hand (sendAt above).
-function hudRelease(mx, my) {
-  const q = state.dragPend;
-  state.dragPend = null;
-  if (state.drag) {
-    if (q && q.keep) sendAt(mx, my);
-    else dragDrop(mx, my);
-    return true;
-  }
-  if (!q) return false;
-  if (!sendBagCell(q.src.i)) bagClick({ kind: 'cell', i: q.src.i });
-  return true;
 }

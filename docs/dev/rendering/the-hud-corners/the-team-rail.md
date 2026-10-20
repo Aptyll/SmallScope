@@ -7,11 +7,11 @@
 a match shows) on top, and `RAIL_LINE` under it the two kill totals at 1x in their sides' `mark`
 either side of a quiet colon (`railKills` sums `p.kills` over every player who wore the side's
 colour). A **chip** per active player (`railLayout`: `RAIL_CHIP`, `RAIL_GAP`, `RAIL_PAD`) is the
-hero's **face** (0.528): `drawFace` (js/ui/hud-draw.js, the announcer's, the death recap's and the post-game lobby's
+hero's **face** (0.536): `drawFace` (js/ui/hud-draw.js, the announcer's, the death recap's and the post-game lobby's
 too) puts the model the player wears (`portraitSprite`: hero, skin, team paint) at 2x in a 14px
 window over the strip portrait's dusk, inside a 1px `HUD_INK` rim. Under it the side's **hp bar**,
 hung a pixel under its foot, one solid 2px run of the side's `mark` on a `RAIL_TRACK` groove,
-deliberately unsegmented. `railSides` orders each side by id with **you first** on yours (0.528:
+deliberately unsegmented. `railSides` orders each side by id with **you first** on yours (0.536:
 five a side, a proper 5v5; until then you were left off for the strip's sake). A side a seat
 short still keeps the score well, not the plate, on the view's centre (`span` is the plate's
 reach either side of that, what `railSc` caps on), so the clock never drifts. A chip's state,

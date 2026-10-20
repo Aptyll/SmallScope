@@ -50,8 +50,7 @@ as the overhead tells do (`alpha: 1 - concealOf(p)`).
   heal green — gold = drawing, slate = reloading, **green = eating** — so a rival can see the meal
   and take it away ([Overhead health bars](../rendering/overhead-health-bars.md));
 - crumbs in the meal's own colour fly at the mouth for the whole channel;
-- the shared clock **wipes top-down over the food itself** (`drawFoodClock`, UI › `backpack`) — in
-  the bag cell the click that eats lands on, on the open pack's strip counters *and* on the hud
+- the shared clock **wipes top-down over the food itself** (`drawFoodClock`, js/ui/character.js) on the hud
   strip's two **meal buttons** (`drawFoodCell`, [rendering.md](../rendering/the-hud-corners/the-hud-strip.md) — icon,
   count, key letter, and a click that sets the same `eatBerry`/`eatFish` intent the key does).
   All wipe together: that is the point of one clock. The meal being chewed lights its own well

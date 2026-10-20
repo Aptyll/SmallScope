@@ -45,7 +45,6 @@ const YIELD = {
   treeHit: 0,   treeFall: 0,            // 3 hp tree (TREE_HP, js/sim/world.js): the fell itself pays nothing...
   treeRare: 2,                          // ...and a gold pine pays this on the fell
   deadTreeHit: 0, deadTreeFall: 1,      // 3 hp snag  -> 1 gold, the rookery's cover; leaves a stump
-  // (a rock pays by its kind, with its ore: ROCK_KINDS, js/sim/mining.js)
   rabbit: { coins: 2, each: 5 },        // 10 gold, but it bolts
   deer:   { coins: 3, each: 6, xp: 40 },  // 18 gold, the big mobile target
   wolf:   { coins: 2, each: 8, xp: 15 },  // 16 gold, a den's four (64): the jungle's farm, a soldier's last hit apiece, and it bites back once woken
@@ -131,19 +130,11 @@ const state = {
   firstBlood: false, // the match's first player kill has been called (callKill, the `calls` banner, js/sim/player.js)
   paused: false,
   mapOpen: false,
-  bagOpen: false,      // the inventory drawer top-left (B, or its tab): HUD, it does NOT stop the sim
-  charOpen: false,     // the character panel (G): HUD, it does NOT stop the sim either
-  // the MERCHANT whose counter is open (js/shop.js), or null. HUD like the two
-  // above - the sim runs on underneath - and it holds the merchant itself
+  charOpen: false,     // the character panel (G): HUD, it does NOT stop the sim
+  // the MERCHANT whose counter is open (js/shop.js), or null. HUD like the
+  // panel above - the sim runs on underneath - and it holds the merchant itself
   // rather than a flag, because walking out of that body's reach is what shuts it.
   shop: null,
-  // a pack cell riding the pointer: { cell, from } - see the drag banner in
-  // js/ui/bag.js. The cell is the same object the bag held.
-  drag: null,
-  // a press on a holdable cell that has not travelled far enough to become a
-  // drag yet: { src, x, y }. Resolves as a plain click if the button comes
-  // back up without moving - see the drag banner in js/ui.js.
-  dragPend: null,
   settingsOpen: false,
   rebind: null,        // a cap on the CONTROLS page listening for its key: the action's id (input.js), or null
   // radial menu: { kind: 'ping'|..., tx, ty, seg, ax, ay } - ax/ay is the
@@ -250,9 +241,6 @@ const settings = { v: 4, volume: 0.5, musicVol: 0.7, sfxVol: 1, mmR: 24, mmZoom:
   // (tipClassAb, js/ui/tooltip.js)
   tipFull: false,
   relay: '',          // the match relay (host:port) this screen talks to; empty = the page's own host (netRelay, js/net/net.js)
-  // the pad's rumble on a gesture that moves an item
-  // (haptic, js/app/input.js). A mouse has no motor and never notices this row.
-  haptics: true,
   // the keyboard scheme: 'wasd' (the keys walk, the mouse aims), 'click'
   // (the right button walks and orders - the `click to move` banner,
   // js/app/input.js) or 'mouse' (CLICK for one hand - the `mouse only` banner).
@@ -260,9 +248,9 @@ const settings = { v: 4, volume: 0.5, musicVol: 0.7, sfxVol: 1, mmR: 24, mmZoom:
   // (settings.binds / bindsClick / bindsMouse, mended by mendBinds).
   scheme: 'wasd',
   // the GAME page's size dials, one per HUD widget (hudSizes, js/ui/strip.js):
-  // hudScale the bottom strip, hudCorner the pack drawer top-left,
-  // hudRail the team rail along the top; the minimap's is mmR above
-  hudCorner: 1, hudRail: 1 };
+  // hudScale the bottom strip, hudRail the team rail along the top; the
+  // minimap's is mmR above
+  hudRail: 1 };
 // Minimap zoom ladder, px per world tile: index settings.mmZoom (5 = the 1:1
 // baseline). Twice the rungs and twice the reach of the old six, and like the
 // camera it eases between them rather than snapping - mmCur is what anything
@@ -321,10 +309,10 @@ function loadSettings() {
       if (s.aiLevel != null) settings.aiLevel = (s.aiLevel | 0) + 1;
       settings.v = 3;
     }
-    // ...and one from before the HUD's one size dial split in three: the
-    // corner and the rail keep the size the one dial gave them
+    // ...and one from before the HUD's one size dial split: the rail keeps
+    // the size the one dial gave it
     if (s && (s.v | 0) < 4) {
-      if (s.hudScale != null) settings.hudCorner = settings.hudRail = s.hudScale;
+      if (s.hudScale != null) settings.hudRail = s.hudScale;
       settings.v = 4;
     }
     settings.mmR = Math.max(MM_R_MIN, Math.min(MM_R_MAX, settings.mmR | 0 || 24));
@@ -445,30 +433,14 @@ function streamTo(x0, y0, x1, y1, color, n, life) {
   }
 }
 
-// n = how much the pickup is worth. type is always an ITEMS key now (berry,
-// fish, a card) - gold is paid on the spot through awardGold, never dropped.
+// n = how much the pickup is worth. type is always an ITEMS key now (a berry,
+// a fish) - gold is paid on the spot through awardGold, never dropped.
 function spawnDrop(x, y, type, n) {
   const a = rng() * Math.PI * 2;
-  const d = { x, y, vx: Math.cos(a) * rand(20, 45), vy: Math.sin(a) * rand(20, 45) - 30, z: 0, vz: rand(30, 60), type, n: n || 1, t: 0, lock: -1, lockT: 0 };
+  const d = { x, y, vx: Math.cos(a) * rand(20, 45), vy: Math.sin(a) * rand(20, 45) - 30, z: 0, vz: rand(30, 60), type, n: n || 1, t: 0 };
   drops.push(d);
   return d;
 }
-// A THROW IS NOT A SPILL. Something let go on purpose - dragged out of the
-// pack onto the snow - leaves along a heading
-// with real speed behind it, and is DEAF TO THE HAND THAT THREW IT for
-// TOSS_LOCK_T seconds. Without that second half the pickup magnet simply
-// hands back what you just decided to be rid of, and a bag you cannot empty
-// standing still is a bag with no throw in it at all. The lock is ONE
-// player's (`lock`, a player id): everyone else may take it the instant it
-// lands, which is what keeps a hand-off across a fight working.
-const TOSS_SPEED = 130;  // px/s a thrown item leaves the body at
-const TOSS_LOCK_T = 3;   // s it refuses the hand that threw it
-// on top of the little hop spawnDrop already gave it: the heading a throw
-// carries, plus a touch more height so a fling reads as a fling
-function flingDrop(d, vx, vy) { d.vx += vx; d.vy += vy; d.vz += 26; return d; }
-function lockDrop(d, p) { d.lock = p ? p.id : -1; d.lockT = TOSS_LOCK_T; return d; }
-// the question the pickup asks before magnetising or claiming anything
-function dropLocked(d, p) { return d.lockT > 0 && d.lock === p.id; }
 
 // wallets are per player: every cost check and payment names whose it is
 function canAfford(cost, p) { const w = (p || player).inv; for (const k in cost) if ((w[k] || 0) < cost[k]) return false; return true; }
@@ -554,51 +526,6 @@ function fishToEat(p) {
   if (p.fishPick) return p.fishPick;
   for (const k of FISH_KINDS) if (bagCount(p, k) > 0) return k;
   return FISH_KINDS[0];
-}
-
-// how many unopened cards the pouch holds, all rarities together
-function cardsHeld(p) { let n = 0; for (const r of CARD_RARITIES) n += bagCount(p, cardKey(r)); return n; }
-// DRAWING A CARD. A card opens itself the moment it is held (updatePlayer,
-// js/sim/sim.js) and the input's useCard intent (the bots' API) arrives here
-// too: one unopened card is taken at random from everything the
-// pouch holds (so a rarer card is exactly as likely as it is common in your
-// hand), one entry of its rarity is picked at random, and the buff lands on
-// the spot - onto p.cards, into the kit, and as a burst in the rarity's
-// colour with the card's name rising out of it. No screen, no choice, no
-// pause: the pick of three was the one thing in the game that asked you to
-// read a menu mid-fight. An intent with nothing to draw is refused
-// (cardDenied, js/ui/hud-draw.js). The built-in brain opens its own first,
-// the lowest rarity it holds (resolveCardForBot, js/ai/ai.js).
-function useCard(p) {
-  if (p.dead) { return; }
-  const total = cardsHeld(p);
-  if (total <= 0 || inAir(p)) { if (p === player) cardDenied(); return; }
-  let pick = Math.floor(rng() * total), rarity = CARD_RARITIES[0];
-  for (const r of CARD_RARITIES) { pick -= bagCount(p, cardKey(r)); if (pick < 0) { rarity = r; break; } }
-  bagTake(p, cardKey(rarity), 1);
-  const id = Math.floor(rng() * CARDS[rarity].length);
-  p.cards.push({ rarity, id });
-  refreshKit(p);
-  const col = RES_COLORS[cardKey(rarity)];
-  cardFx(p.x, p.y, col);
-  addFloater(p.x, p.y - 18, CARDS[rarity][id].name, col);
-  sfxAt('levelUp', p.x, p.y);
-}
-// the buff landing: a ring of sparks thrown out and up in the card's colour,
-// a white flare in the middle, and a slow column of motes climbing out of
-// the body for a moment after - the level-up's own language, in the rarity's
-// ink, so what you just became is read at a glance from across the clearing
-function cardFx(x, y, color) {
-  burst(x, y - 6, '#fff6d8', 8, 60, 0.35);
-  for (let i = 0; i < 22; i++) {
-    const a = rng() * Math.PI * 2, s = rand(30, 70);
-    particles.push({ x, y: y - 4, vx: Math.cos(a) * s, vy: Math.sin(a) * s * 0.5 - 40,
-      life: rand(0.5, 0.9), maxLife: 0.5, color, size: rng() < 0.4 ? 2 : 1, grav: 60 });
-  }
-  for (let i = 0; i < 14; i++) {
-    particles.push({ x: x + rand(-7, 7), y: y + rand(-4, 4), vx: rand(-4, 4), vy: rand(-55, -25),
-      life: rand(0.7, 1.2), maxLife: 0.6, color, size: 1, grav: 0 });
-  }
 }
 
 // The meal ticking, and the shared clock beside it. Called from updatePlayer

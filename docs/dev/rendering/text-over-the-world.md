@@ -23,7 +23,7 @@ passes never overlap on the target. Which call reaches it depends on the pass:
   the lowest tag on screen where it is and climbs any tag that would touch a placed one until it
   clears (`TAG_GAP`, at most `TAG_CLIMB` climbs).
 - **In a UI pass** call `drawPixelTextOutline` directly: the radial-wheel labels, the strip's
-  and the drawer's counts, the clock under the minimap (the rail's clock is on its own well, `drawPixelText`), `state.msg`, the DAY headline's bake,
+  counts, the clock under the minimap (the rail's clock is on its own well, `drawPixelText`), `state.msg`, the DAY headline's bake,
   the info stack, and the drop-UI text. A keybind prompt's verb is outlined by `drawKeyPrompt`
   (js/ui/wheel.js) itself.
 

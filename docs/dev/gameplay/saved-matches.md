@@ -14,8 +14,8 @@ out** the same from that step: the proof is below. Nothing a player reaches call
 by reference with a hash of its contents, and the ground); `saveCapture` then writes
 
 - **the roots** (`SAVE_ROOTS`): every mutable global the sim reads - `state` without its UI keys
-  (`SAVE_STATE_SKIP`: the panels, the drag, the fade, the intro), `players`, the entity arrays,
-  `iceCracks`, `iceBreaks`, `orca`, the streams, wildlife's and the bot brain's module `let`s, the post-game
+  (`SAVE_STATE_SKIP`: the panels, the fade, the intro), `players`, the entity arrays,
+  `iceBreaks`, `orca`, the streams, wildlife's and the bot brain's module `let`s, the post-game
   record, and the camera and zoom - **as one object graph**, so a reference shared anywhere (a
   bot's hunt target, a den's camp, `player` as `players[localId]`) comes back shared. JSON with a
   handful of `$` tags: an object reached twice is written once and pointed at, a `Player` comes

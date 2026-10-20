@@ -120,25 +120,24 @@ lives inside it. It is a class ability (the hunter's key 4); a warrior never hid
 [Prone](gameplay/prone-under-the-snow.md).
 
 **E is the one verb for the world.** The same key harvests a tree, breaks an
-enemy building, and strikes a rival's grounded eagle — and the axe and pick it swings are never
-selected, they come out on their own for whatever is under the cursor. A rock needs no key at all: it
-mines itself for whoever stands by it. [The swing tools](gameplay/the-swing-tools-e.md).
+enemy building, and strikes a rival's grounded eagle — and the axe it swings is never
+selected, it comes out on its own for whatever is under the cursor. [The swing tools](gameplay/the-swing-tools-e.md).
 
 **Gold is the only currency; XP is a separate number, League style.** No wood, no stone — one
-currency earned many ways (last hits, kills, camps, the works, gold pumps, a slow trickle), each
+currency earned many ways (last hits, kills, camps, the works, holding a gold pump, a slow trickle), each
 source with its own yield profile, and it pays itself: gold is never a pickup on the ground,
 every source pays the earner on the spot. **XP comes from being near when a rival body dies** —
 a soldier, a scout, a camp monster — shared among the allies standing there, so the last hit
-is gold and being there is XP. Mining, felling and fishing pay gold only: **soldiers are the farm,
+is gold and being there is XP. Felling and fishing pay gold only: **soldiers are the farm,
 the woods are side income, and the road makes you level**, and the late levels come late. **Fish and berries have a fixed price**, and the counter buys them at
 the same number it sells them for; a bigger fish fetches more.
 [Economy](gameplay/economy-one-currency.md), [the counter](gameplay/the-merchants-counter.md),
 [Hero levels](multiplayer.md#hero-levels).
 
-**You carry a 12-cell backpack.** The wallet (`p.inv`) is gold and nothing
-else, and the twelve cells (`BAG_CAP`) are for the consumables and ore a match hands you. Berries and fish are not in it: food is an uncapped **pouch**
-(`p.food`) pressed on Q and F from the HUD, because a meal is never arranged, only eaten.
-[Inventory and the backpack](gameplay/inventory-and-the-backpack.md).
+**You carry gold and food, and nothing else.** The wallet (`p.inv`) is gold, and food is an
+uncapped **pouch** (`p.food`) pressed on Q and F from the HUD, because a meal is never arranged,
+only eaten. There is no backpack.
+[The pouch](gameplay/the-pouch.md).
 
 **Items are bought at a counter.** You walk to a body to get them.
 [Buying and selling](gameplay/the-merchants-counter.md#buying-and-selling).
@@ -151,7 +150,7 @@ easier opening for a new player who can help fortify before walking out. Its hp 
 hits spook it, it calms back down between scares, it defends its own ground with a wing gust —
 and when its nerve breaks it is **driven off**, not killed: every camera pans to watch it fly
 away, and its whole side falls with it as it goes. **It is also the way back**: a player who
-goes down waits out a timer and is set down again at the roost with everything it had — wallet, bag, weapon and build;
+goes down waits out a timer and is set down again at the roost with everything it had — wallet, pouch, weapon and build;
 death costs the wait and the walk, League-style, and a kill pays its
 taker and the assists gold, more for ending a streak (a shutdown), less for a player who keeps dying. The bird is the **only objective** and the one way a
 match ends, which is why both teams always have somewhere worth walking to — and why every bot
@@ -161,13 +160,18 @@ vote calls its own bird home, so even giving up is the bird leaving
 ([Surrender vote](multiplayer.md#surrender-vote)). [Eagle drop](rendering/eagle-drop-mode-drop.md),
 [Death and respawn](gameplay/death-and-respawn.md), [Bots](multiplayer.md#bots).
 
-**Roguelike cards come out of the treeline's chests.** A sprung chest drops a **rarity-rolled
-card** (and gives a free item part), which opens itself the moment it is held, one at random, without pausing the sim, and
-the card is baked into the kit for the rest of the match. [Roguelike cards](gameplay/roguelike-cards.md).
+**Roguelike cards are parked** (0.531): the cards and the treeline's chests that dropped them are
+out of the game for now, to be rebuilt later. [Roguelike cards](gameplay/roguelike-cards.md).
 
 **Nobody builds.** Every building on the map is the map's own or the merchant's: the road
-towers and the barracks. Player building (walls, gates, turrets, gold pumps, bot bays and the
-build list) was cut in 0.525. [Buildings](gameplay/buildings.md).
+towers, the barracks and the two gold pumps. Player building (walls, gates, turrets, bot bays
+and the build list) was cut in 0.525. [Buildings](gameplay/buildings.md).
+
+**Two gold pumps are the map's objectives**, one beside the middle of the top lane and one beside
+the bot lane's, off the road. Heroes take one by standing in its ring with no rival hero inside
+(5 s; a rival inside pauses it), and while a side holds it every hero on that side gets 3 gold
+every 10 s. The ring and the pump wear the holder's colour, grey when nobody holds it; no text.
+Bots take and contest them. [The gold pumps](gameplay/buildings.md#the-gold-pumps).
 
 **Pings, League's way: tap the right button to ping GO HERE, hold it and flick for ATTACK, ON
 MY WAY, DANGER or DEFEND** (G on the keyboard's CLICK scheme, where the right button walks the

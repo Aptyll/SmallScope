@@ -59,4 +59,7 @@ const WEAPON_FWD = { bow: 0, sword: Math.PI };
   SPRITES.itemArt_flint = SPR.bake(FLINT, FLINT_PAL);
   SPRITES.itemArt_horn = SPR.bake(ART.horn, GILT);
   SPRITES.itemArt_brand = SPR.bake(ART.sword, GILT);
+  // SUNSTONE's icon: a cut gem, amber lit from the top-left (the old sunstone ore's)
+  const SUNSTONE = ['..mmmm..', '.mNAAam.', 'mNAAaanm', 'mAAaannm', 'maaannnm', '.mannnm.', '..mnnm..', '...mm...'];
+  SPRITES.itemArt_sunstone = SPR.bake(SUNSTONE, { '.': null, m: '#5c2c0c', n: '#9a4e16', a: '#d8862a', A: '#f4bc44', N: '#fff1b0' });
 })();

@@ -78,7 +78,7 @@ within `BOOM_R` (3.6 tiles) outright and **paves the disc** (the pad: every snow
 to ground `3` that frame and `addPad` registers it with the road, [world.md](../world.md#the-road),
 so the roost stands on the same packed earth as the road it ends), snaps **two rings** to
 stumps — the middle out to `BOOM_STUMP_R` (4.8) and the outer out to `BOOM_STUMP_R2` (6.0), two layers of
-build sites round the bird, so a side can stand guns inside a wall — and clears every rock and
+build sites round the bird, so a side can stand guns inside a wall — and clears every
 bush out to the outer ring outright, so the whole disc is ground a side can build on —
 **paying no gold**, a crater of free fells would warp the economy at minute one — plants the
 **roost hitbox** (`eagle` objects on the open tiles within `EAGLE_TILE_R`, solid to walkers and a
@@ -186,7 +186,6 @@ handled in input.js's drop branch, a click only closes the map, and the sim keep
 under it). Text scale follows the view (2× when tall). Once `down`, both objectives are marked on
 the minimap disc and the M map as the same bird diamond in team colour.
 
-Airborne players (`inAir(p)`: aboard or `dropT > 0` — or riding a [tunnel](../gameplay/the-burrow-a-tunnel-anyone-can-ride.md), `p.tun`) are skipped by `updatePlayer`/`updateAI`, arrows,
-drops, wildlife scares, `enemyOf`, the y-sorted draws, the minimap and the M map. A tunnel's rider
-is drawn as its mound instead (`drawTunnelGround`, js/draw/tunnel.js), and the god rays answer
+Airborne players (`inAir(p)`: aboard or `dropT > 0`) are skipped by `updatePlayer`/`updateAI`, arrows,
+drops, wildlife scares, `enemyOf`, the y-sorted draws, the minimap and the M map. The god rays answer
 the ride alone (`rayLight` asks `aboard`/`dropT`, never `inAir`).

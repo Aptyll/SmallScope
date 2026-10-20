@@ -5,23 +5,20 @@ the very last thing in `render()` (above every overlay and the info stack), so i
 game's pixel grid at every zoom level. `cursorInfo()` resolves the pointer state once per
 frame from `mouse`, `state`, `player` (draw/flounder/roll), and what's under the pointer, and
 both the pixel cursor and the browser-cursor fallback read from it. It returns
-`{ kind, mode, dim, frac, nock, amb, piece }`:
+`{ kind, mode, dim, frac, nock, amb }`:
 
 - `kind` **arrow** — dead (off a plank), paused, map, and anywhere in the title/settings/wheel that isn't
   a widget; **hand** — over a live main-menu item (`menuHit()`, frozen planks stay an arrow), a death-overlay plank (`deadHit()`) or spectate arrow (`specHit()`), a settings widget (`settingsHit()`, shared with the click handler
-  so hover and click can never disagree), a live wheel segment, or a control inside the backpack
-  widget (`bagHit()`) or an ability or meal well (`stripHit()`); an item slot is read, not
+  so hover and click can never disagree), a live wheel segment, or an ability or meal well (`stripHit()`); an item slot is read, not
   handled, and stays an arrow, as does the strip's gold plate (see [The HUD corners](the-hud-corners.md)); **grab** — dragging a
-  slider, **or carrying an item on the cursor** (`state.drag`, which outranks everything: the drag
-  ghost *is* the cursor until it is put down);
-  **reticle** — everywhere else in play.
+  slider; **reticle** — everywhere else in play.
 - Reticle `mode` (table `RETICLE`): **idle** white cross; **cast** gold ring — the MOUSE scheme's
   readied ability, dim while it cannot cast ([the mouse scheme](../multiplayer.md#the-mouse-scheme));
   **amove** red ring — the CLICK scheme's
   A is armed and the next left press lays the attack-move
   ([the click scheme](../multiplayer.md#the-click-scheme); its rings on the snow are
   `drawClickMarks`, js/draw/marks.js); **lock** gold ring — E will work
-  the object under the pointer (`workTarget()` is non-null: tree, rock, berried bush),
+  the object under the pointer (`workTarget()` is non-null: tree, berried bush, a rival's building),
   dimmed when it is beyond `WORK_REACH`, and **never inside a merchant's reach**, where E is the
   counter's ([opening it](../gameplay/the-merchants-counter.md#opening-it)) and a ring would promise a swing the key does
   not make; **ice** the same lock in pale blue over bare ice;

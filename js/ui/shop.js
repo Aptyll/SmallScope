@@ -17,13 +17,13 @@
 //   - the COUNTERS: which one a body is standing at, and the reach that keeps
 //     the panel open.
 //   - BUYING AND SELLING: items through buyItem/sellItem, fish and berries at
-//     their fixed price, and anything in the pack dragged onto the panel.
+//     their fixed price.
 //   - the PANEL, layout A: category filters down the left, the parts and the
 //     finished items in a grid, the picked item read out on the right with its
 //     build tree, and along the bottom your six slots and the food.
 //
 // The counter does not stop the sim, and standing at one does not protect you:
-// it is HUD like the backpack and the character sheet, and walking out of
+// it is HUD like the character sheet, and walking out of
 // reach shuts it.
 // ------------------------------------------------------------ the counters
 const SHOP_REACH = 34; // px from a counter the shop is open
@@ -92,11 +92,7 @@ function updateShop() {
 }
 
 // ------------------------------------------------------------ buying and selling
-// One price list, read two ways: `itemValue` is what the counter ASKS for one
-// of a kind, `sellValue` is what it PAYS for what is in a bag cell. Half, for
-// everything that was made - which is the whole margin the merchant lives on.
-//
-// FISH AND BERRIES are the exception: a fixed price, the same both ways. A
+// FISH AND BERRIES trade at a fixed price, the same both ways. A
 // frost pike is the `fish` price, and every other fish is priced off it by
 // what it heals against what the pike heals, so a new fish is priced the
 // moment it has a `heal`.
@@ -107,45 +103,8 @@ function foodPrice(type) {
   if (type === 'berry') return FOOD_PRICE.berry;
   return Math.max(1, Math.round(FOOD_PRICE.fish * ITEMS[type].heal / ITEMS.fish.heal));
 }
-// what one of a kind costs at the counter
-function itemValue(type) {
-  if (isFood(type)) return foodPrice(type);
-  return (ITEMS[type] && ITEMS[type].price) || 0; // a kind priced on its own ITEMS row (an ore, js/sim/mining.js)
-}
-// a whole bag cell at asking price
-function cellValue(s) { return s ? itemValue(s.type) * s.n : 0; }
-// ...and what the merchant hands over for it
-function sellValue(s) {
-  if (!s) return 0;
-  if (isFood(s.type)) return foodPrice(s.type) * s.n;
-  return Math.max(1, Math.floor(cellValue(s) / 2));
-}
-
 // the local refusals, so a bot's failed order is silent
 function shopDeny(p) { sfxFor(p, 'deny'); }
-function shopNoRoom(p) { if (p === player) bagDenied(); }
-
-// A bag cell over the counter. The whole cell goes, and the gold is a TRADE, not a payout: see tradeGold
-// (js/sim/player.js) for why a sale earns no levels. Returns the gold paid.
-function shopSell(p, s) {
-  if (!s || !merchNear(p)) { shopDeny(p); return 0; }
-  const v = sellValue(s);
-  if (v <= 0) { shopDeny(p); return 0; }
-  tradeGold(p, v);
-  shopFx(p, String(v), RES_COLORS.gold);
-  sfxFor(p, 'coin');
-  return v;
-}
-// ...the same sale, addressed by bag index: the path a bot or a later caller
-// takes, since only the local human ever has an item on a cursor
-function shopSellCell(p, i) {
-  const s = p.bag[i];
-  if (!s) { shopDeny(p); return 0; }
-  const v = shopSell(p, s);
-  if (v > 0) p.bag[i] = null;
-  return v;
-}
-
 // Food over the counter at its fixed price. `dir` +1 buys `n` (one when left
 // out) - as many as the purse and the pouch cover - and -1 sells ALL of that
 // good: every berry, or every fish of every kind. One payment either way.
@@ -154,7 +113,7 @@ function shopTrade(p, good, dir, n) {
   if (dir > 0) {
     const price = foodPrice(good);
     const k = Math.min(Math.max(1, Math.floor(n) || 1), Math.floor(p.inv.gold / price), bagRoom(p, good));
-    if (k < 1) { if (p.inv.gold < price) shopDeny(p); else shopNoRoom(p); return false; }
+    if (k < 1) { shopDeny(p); return false; }
     const got = bagAdd(p, good, k);
     pay({ gold: price * got }, p);
     shopFx(p, '-' + price * got, RES_COLORS[good]);
@@ -183,7 +142,6 @@ function shopCmd(p, c) {
   if (c.act === 'item') return !!buyItem(p, c.id);
   if (c.act === 'sellItem') return !!sellItem(p, c.slot);
   if (c.act === 'trade') return !!shopTrade(p, c.good, c.dir, c.n);
-  if (c.act === 'sell') return !!shopSellCell(p, c.i);
   return false;
 }
 
@@ -200,13 +158,10 @@ function shopCmd(p, c) {
 // and the plate on the read-out acts on the pick: BUY for an item on sale,
 // SELL for one in your slots. The category plates down the left dim every
 // item without that stat rather than hiding it, so nothing on the grid moves.
-// Anything in the pack sells by being dragged onto the panel.
 //
-// It is pinned BESIDE the top-left corner, where the pack drawer stands (a sale is a drag out of that drawer), and near the top
-// edge, clear of the bottom-left corner the tooltip grows up out of.
+// It is centred near the top edge, clear of the bottom-left corner the
+// tooltip grows up out of.
 const SHOP_W = 344, SHOP_H = 206, SHOP_Y = 4;
-const SHOP_CORNER_GAP = 6; // frame left between the corner widget and the slab
-const SHOP_TIP_CLEAR = 196; // the deepest tooltip: the UNDER placement stays above it
 const SHOP_PART = 22, SHOP_ITEM = 26, SHOP_CAT = 16, SHOP_SLOT = 22;
 const SHOP_PITCH = 25, SHOP_ITEM_PITCH = 31, SHOP_ITEM_ROW = 39, SHOP_COLS = 4;
 const SHOP_PANE_X = 160;   // the read-out's left edge, from the slab's
@@ -219,8 +174,7 @@ const SHOP_PANE_BG = '#111216', SHOP_PLATE = '#2a2d33', SHOP_PLATE_HOT = '#3a3e4
 const SHOP_DEAR_RIM = '#6b2230', SHOP_DEAR_BAND = '#3a1420', SHOP_DEAR_INK = '#e0637a';
 const SHOP_DEAR_WASH = 'rgba(8,9,12,0.62)';
 
-// the counter is up: the panel is drawn, eats its own clicks, and holds the
-// pack open beside it
+// the counter is up: the panel is drawn and eats its own clicks
 function shopOpen() {
   return !!state.shop && state.mode === 'play' && !player.dead && !state.paused &&
     !state.mapOpen && !state.settingsOpen && !state.wheel && !window.DBG.hideUI;
@@ -258,22 +212,10 @@ function shopFiltered(id) {
   return c >= 0 && !(ITEM_STAT_ORDER[c] in BUILD_ITEMS[id].stats);
 }
 
-// The whole geometry in one place. WHERE IT STANDS is one rule: A COUNTER MAY
-// NOT STAND ON THE PACK IT IS SOLD OUT OF. The pack drawer is in the top-left
-// (cornerClaim / cornerBottom, js/ui/bag.js), so the slab
-// takes the room BESIDE the corner where there is one (keeping the centre when
-// the view is wide enough), the room UNDER it on a tall narrow frame - as long
-// as that stays clear of the deepest tooltip - and otherwise stops at the
-// view's right rim, over the minimap.
+// The whole geometry in one place: the slab centred across the view, SHOP_Y
+// down from its top.
 function shopLayout() {
-  const mid = Math.max(2, Math.round((VIEW_W - SHOP_W) / 2));
-  const rim = VIEW_W - SHOP_W - 2;
-  const beside = cornerClaim() + SHOP_CORNER_GAP;
-  const under = cornerBottom() + SHOP_CORNER_GAP;
-  let x = mid, y = SHOP_Y;
-  if (beside <= rim) x = Math.max(mid, beside);
-  else if (under + SHOP_H <= VIEW_H - SHOP_TIP_CLEAR) y = under;
-  else x = Math.max(2, rim);
+  const x = Math.max(2, Math.round((VIEW_W - SHOP_W) / 2)), y = SHOP_Y;
   const gx = x + 28, by = y + SHOP_H - 30;
   const cats = [], parts = [], items = [], slots = [], food = [];
   for (let i = 0; i <= ITEM_STAT_ORDER.length; i++) cats.push({ c: i - 1, x: x + 6, y: y + 26 + i * 18, w: SHOP_CAT, h: SHOP_CAT });
@@ -349,21 +291,10 @@ function shopClick(h) {
   if (h.kind === 'food') { SFX.unlock(); player.input.cmd = { kind: 'shop', act: 'trade', good: h.good, dir: h.dir }; return true; }
   return true; // the slab eats the rest; the world never sees it
 }
-// A carried cell let go anywhere over the panel (dragDrop, js/ui/strip.js).
-// It resolves on the spot rather than through input.cmd: what is on the
-// cursor is out of the bag already, and a command the sim might drop that
-// frame would take the item with it.
-function shopDropSell() {
-  const d = state.drag;
-  if (!d) return;
-  if (shopSell(player, d.cell) > 0) state.drag = null;
-  else dragReturn();
-}
 
 // ---- drawing -------------------------------------------------------------
 // THE COUNTER'S WASH, over the whole frame. What stays LIT above it is
-// everything a trade is made of: this slab, the corner (the pack a sale is
-// dragged out of), the item on the cursor and the tooltip. The ORDER that does
+// everything a trade is made of: this slab and the tooltip. The ORDER that does
 // that is in renderUI (js/ui/compose.js): a panel cannot dim what is drawn
 // after it, and the corner has to be drawn after.
 const SHOP_WASH = 'rgba(6,7,10,0.55)';

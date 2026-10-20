@@ -46,7 +46,7 @@ const NOTE_TAILS = {
   down: ['..ahha..', '..ahha..', '..ahha..', 'aahhhhaa', '.ahhhha.', '..ahha..', '...aa...', '........'],
 };
 // ---- the stat ledger: your sheet, as a notice ------------------------------
-// THE ANSWER TO "WHAT DID THAT DO?". A hero level, a card drawn on C and an
+// THE ANSWER TO "WHAT DID THAT DO?". A hero level and an
 // item bought all rewrite the kit silently - the floater over your head names the
 // thing you TOOK and never the number it moved - so until this plate the only
 // place to read the change was the character panel, which is a key press and a
@@ -101,8 +101,8 @@ function raiseStatNote() {
   notices.push({ kind: 'stats', txt: '', good: null, t: 0 });
   while (notices.length > NOTE_MAX * 2) notices.shift();
 }
-// Watching the kit beats hooking the writers: levelUp, buyItem, useCard and a
-// bot's resolveCardForBot all land here for free, a host's snapshot lands a
+// Watching the kit beats hooking the writers: levelUp and buyItem
+// land here for free, a host's snapshot lands a
 // client's here the same way, and nothing that ever edits a kit has to
 // remember to announce it. Aged from updateFx (js/sim/sim.js) beside ageNotices.
 function updateStatLedger(dt) {

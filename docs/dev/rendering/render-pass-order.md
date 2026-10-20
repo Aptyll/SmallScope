@@ -107,8 +107,8 @@ the model pixels its own ink covers (`canopyOver`). A covering one composes off-
 model's silhouette cut out of it plus a two-pixel falloff (`CANOPY_CUT`), opened in proportion to
 the covered share (full at `CANOPY_FULL`), so the body reads crisp, the forest round it stays
 whole, and a tree merely beside or in front of the hero draws untouched. Nothing is stored per
-tree. The hero's **work target** — the hovered tree, dead tree, rock,
-berried bush or chest — draws under a **pulsing gold rim** (`drawTargetRim`: the buy plates' two
+tree. The hero's **work target** — the hovered tree, dead tree or
+berried bush — draws under a **pulsing gold rim** (`drawTargetRim`: the buy plates' two
 golds, stamped through the scratch canvas at the eight neighbours, the rim grammar of
 `drawPixelTextOutline`; a windowed pine's rim opens with it), so the target is its own visible
 state everywhere the cursor lands;
@@ -122,11 +122,7 @@ over the prop, hovered or not, while the camp is cleared (`drawCampClock`,
 covering canopy leaves the atlas batch, so the batch below stays whole. A **dead tree** is a 16×24 snag at `py - 8`. Short ground sprites (bush,
 stump) all draw at `py + 4` to stay clear of that band — drop one lower and
 a tree on the tile below hides it almost completely. The den is tall enough not to need it: its 21 rows
-sit at `py - 4`, the lip on the foot of its two tiles. A **rock** (`drawRock`) stands on the foot of its two tiles like
-the den, as tall as its kind: its rubble while it regrows, its cracks and a bar over it while it is
-being mined (and closing back up) with the kind's colour risen up its body as far as the bar has come (`SPRITES.rockFill`), a ring of the pick's reach under it (`drawMineRing`), and now and then a glint (a `+` of white, `ROCK_GLINT_T`) off one of its crystal's or
-amber's brightest pixels (`SPRITES.rockGlints`) every `glint` s of its kind, `ROCK_GLINT_NIGHT`
-times rarer after dark — a reflection, drawn under the grade, never a light. Plain stone never glints.
+sit at `py - 4`, the lip on the foot of its two tiles.
 
 The **fish net** is the one building that is not in `draws` at all. It lies flat on its hole and
 gets walked over, so y-sorting it would put it in front of the player standing on it: `drawNet`
@@ -140,10 +136,7 @@ like every other building's.
 Sprite hit-flash goes through `drawSpriteFlash()`, which recolours via a shared 128×128 `scratch`
 canvas with `source-in` — sprites larger than 128×128 will clip (a bear's 112×76 frame is the biggest).
 
-An **item drop** wears its icon centred on its own width over a flat shadow. A drop inside
-its [throw lock](../gameplay/the-basic-attack.md#the-item-slots-and-the-drag) draws at half alpha, and only
-for the one player it is locked against (`dropLocked(d, viewPlayer())`) — what you just threw away
-lies dim until it is yours again, and everyone else sees it whole.
+An **item drop** wears its icon centred on its own width over a flat shadow.
 
 ## Snow
 

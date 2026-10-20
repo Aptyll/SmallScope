@@ -3,12 +3,11 @@
 `renderUI()` owns three corners, the top edge and one strip, and every one of them is positioned off
 `VIEW_W`/`VIEW_H` (never a literal), so a resize needs nothing from them. **The bottom bar is
 the HUD's one bar**: the hud strip carries the abilities, the six item slots, the meals and the
-gold, while the top left holds only the inventory drawer's tab, the drawer shut under it. The
-bottom right is empty world.
+gold. The top left is empty (the practice bar hangs there in PRACTICE TOOL), and so is the
+bottom right.
 
 | Where | What | Function |
 | --- | --- | --- |
-| top left | the small tab of the **inventory drawer**, shut until B or the tab | `drawBag` |
 | top right, under the disc | the **notice lane**: the roost warning and the **stat sheet** that flies in when a number on yours moves — and under the plates, the **kill feed** | `renderNotices`, `renderAnnouncer` |
 | top right | the minimap and its day/night ring — the black outline sits `MM_GAP` (4 px) off the top edge and the right edge alike (`applyMinimapSize`, core.js) — the clock centred under it while no team rail is up (`mmClockShown`), and the notice plates under that | `renderMinimap`, `renderNotices` |
 | top centre | the **team rail**: one thin plate, every player in the match as a hero face over a hp bar in the side's colour, your side left (you first) and the rival right, five a side, the match clock over the two kill totals between them — and under it, the spectate control, the surrender vote and the **announcer's plate** (`headlineY`, `noteY`) | `drawRailScaled` |
@@ -18,7 +17,7 @@ bottom right is empty world.
 
 Every widget slides **its own size** away for the landing intro — the minimap up by
 `MM_R * 2 + 40`, the rail up by `RAIL_SLIDE`, the strip down by
-`HUD_SLIDE` (`AB_H` + `XP_TAG` + 5), the top-left corner left by `CORNER_REACH` (the drawer's width).
+`HUD_SLIDE` (`AB_H` + `XP_TAG` + 5).
 
 ## Parts
 
@@ -31,5 +30,4 @@ Every widget slides **its own size** away for the landing intro — the minimap 
 - [The hud strip](the-hud-corners/the-hud-strip.md) (11 KB)
 - [The team rail](the-hud-corners/the-team-rail.md) (3 KB)
 - [The hud frame](the-hud-corners/the-hud-frame.md) (4 KB)
-- [The backpack](the-hud-corners/the-backpack.md) (4 KB)
 - [The character panel (G)](the-hud-corners/the-character-panel-g.md) (1 KB)

@@ -24,26 +24,6 @@ function drawGroundPass(ox, oy, ex, ey, now) {
   // the orca, a shadow under the same ice (js/draw/orca.js)
   drawOrcaShadow(ex, ey, now);
 
-  // pick-cracked ice: bright fractures radiating from the struck tile
-  for (const [ci, hits] of iceCracks) {
-    const ctx2 = ci % WORLD, cty2 = (ci / WORLD) | 0;
-    const px = ctx2 * TILE - ox, py = cty2 * TILE - oy;
-    if (px < -TILE || py < -TILE || px > WV_W || py > WV_H) continue;
-    const n = 3 + hits * 3;
-    for (let j = 0; j < n; j++) {
-      const h = hash2(ci * 7 + j * 13, j * 31 + hits);
-      const a = (j / n) * Math.PI * 2 + h;
-      let x0 = px + 8, y0 = py + 8;
-      const steps = 2 + hits;
-      ctx.fillStyle = j % 2 ? 'rgba(238,248,253,0.9)' : 'rgba(163,203,224,0.9)';
-      for (let s = 0; s < steps; s++) {
-        x0 += Math.cos(a) * 2 + (hash2(ci + s, j) - 0.5);
-        y0 += Math.sin(a) * 2 + (hash2(j + 7, ci + s) - 0.5);
-        ctx.fillRect(Math.round(x0), Math.round(y0), 1, 1);
-      }
-    }
-  }
-
   // the ice breaks: their water, plates and cracks, in their own shape (js/draw/icebreak.js)
   drawIceBreaks(ox, oy);
 
@@ -124,19 +104,14 @@ function drawFlatPass(ox, oy, ex, ey, tx0, ty0, tx1, ty1, now) {
       const o = objects[idx(tx, ty)];
       if (!o) continue;
       const px = tx * TILE - ox, py = ty * TILE - oy;
-      // +4 like rocks and bushes - any lower and the canopy of a tree on the tile below buries it
+      // +4 like bushes - any lower and the canopy of a tree on the tile below buries it
       if (o.type === 'stump') ctx.drawImage(SPRITES.stump, px, py + 4);
       // nets lie flat on the water, under everything that walks on them
       else if (o.type === 'net') drawNet(o, px, py, now);
-      // ...and so do a burrow's holes (js/draw/tunnel.js)
-      else if (o.type === 'tunnel') drawTunnelHole(o, px, py, now);
     }
   }
-  // the mounds of bodies riding a tunnel, and the dig's clock under a digger
-  drawTunnelGround(ex, ey, now);
   drawRecallGround(ex, ey); // each roost's healing ring and the recall's closing on the feet (js/draw/recall.js)
-  // ...and the pick's reach round a rock (drawMineRing, beside drawRock)
-  drawMineRing(ox, oy);
+  drawPumpRings(ex, ey);    // ...and each gold pump's ring in its holder's colour, and the fill of a side taking it (js/draw/structs.js)
   // the CLICK scheme's rings: where the last order landed, and the lock's
   // ring under its target
   drawClickMarks(ex, ey, now);
@@ -154,16 +129,9 @@ function drawDrops(ex, ey, now) {
   for (const d of drops) {
     const spr = SPRITES[ITEMS[d.type] ? ITEMS[d.type].icon : 'itemGold'];
     const h = spr.width >> 1;
-    // WHAT YOU JUST THREW AWAY LIES DIM. A drop inside its lock is not yours
-    // to walk back over (dropLocked, js/sim/core.js) - no glint, no magnet - so it
-    // goes half-lit until the three seconds are up and it comes back to life.
-    // Everyone else sees it whole: the lock is one hand's, not the world's.
-    const held = dropLocked(d, viewPlayer());
     ctx.fillStyle = 'rgba(120,140,175,0.35)';
     ctx.fillRect(Math.round(d.x - ex) - 2, Math.round(d.y - ey) + 2, 4, 2);
-    ctx.globalAlpha = held ? 0.5 : 1;
     ctx.drawImage(spr, Math.round(d.x - ex) - h, Math.round(d.y - d.z - ey) - h);
-    ctx.globalAlpha = 1;
   }
 }
 
@@ -179,7 +147,7 @@ function gatherDraws(ox, oy, tx0, ty0, tx1, ty1, now) {
       let o = objects[idx(tx, ty)];
       // stumps, nets and holes are all drawn flat, above, and never y-sorted; an
       // eagle's hitbox tiles have no pixels of their own (drawEagle draws the bird)
-      if (!o || o.type === 'stump' || o.type === 'net' || o.type === 'tunnel' || o.type === 'eagle') continue;
+      if (!o || o.type === 'stump' || o.type === 'net' || o.type === 'eagle') continue;
       if (o.type === 'part') {
         o = o.of;
         if ((o.tx >= tx0 && o.tx <= tx1 && o.ty >= ty0 && o.ty <= ty1) || seen.has(o)) continue;
@@ -223,7 +191,7 @@ function drawSorted(draws, ox, oy, ex, ey, now) {
   if (heroP) {
     const wk = workTarget(heroP);
     if (wk && !window.DBG.hideUI) wkO = wk.o; // no gold rim on a clean frame (director mode, the media kit)
-    if (mouse.inside && state.mode === 'play' && !state.mapOpen && !state.settingsOpen && !state.wheel && !state.drag && !window.DBG.hideUI)
+    if (mouse.inside && state.mode === 'play' && !state.mapOpen && !state.settingsOpen && !state.wheel && !window.DBG.hideUI)
       hovO = structOf(objAt(Math.floor(mouseWX() / TILE), Math.floor(mouseWY() / TILE)));
   }
 
@@ -241,7 +209,7 @@ function drawSorted(draws, ox, oy, ex, ey, now) {
   }
 }
 
-// one tile object in the y-sorted pass: a tree, a rock, a bush, a building...
+// one tile object in the y-sorted pass: a tree, a bush, a building...
 function drawSceneryObj(d, ox, oy, now, wkO, hovO) {
   const o = d.o;
   const px = d.tx * TILE - ox, py = d.ty * TILE - oy;
@@ -293,11 +261,6 @@ function drawSceneryObj(d, ox, oy, now, wkO, hovO) {
     drawSpriteFlash(spr, px + sh, py + TILE - spr.height, o.flash);
   } else if (LANDMARKS[o.type]) {
     drawLandmark(o, px + sh, py); // the boat (js/draw/landmarks.js); their parts draw nothing
-  } else if (o.type === 'rock') {
-    drawRock(o, px + sh, py, now);
-  } else if (o.type === 'chest') {
-    if (o === wkO) drawTargetRim(CHEST_SPR, 0, 0, CHEST_SPR.width, CHEST_SPR.height, px + sh, py + TILE - CHEST_SPR.height, now);
-    drawSpriteFlash(CHEST_SPR, px + sh, py + TILE - CHEST_SPR.height, o.flash);
   } else if (o.type === 'dummy') {
     // the practice target: skids on its tile, everything else drawn up off
     // it like a tree. The readout bar only appears once it is hurt, and

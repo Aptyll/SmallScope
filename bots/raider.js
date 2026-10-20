@@ -140,12 +140,12 @@ function pickNode(bot, obs, home, range, kinds) {
   return best;
 }
 
-// work a node: walk up beside it and hold E (a rock needs no key: standing by it mines it)
+// work a node: walk up beside it and hold E
 function work(me, n, act) {
   const d = Math.hypot(n.x - me.x, n.y - me.y);
   act.goTo = { x: n.x, y: n.y, reach: 1 };
   act.aim = [n.x, n.y];
-  act.work = d < 28 && n.kind !== 'rock';
+  act.work = d < 28;
 }
 
 // gold to spare at a counter: the dearest item the purse covers, keeping

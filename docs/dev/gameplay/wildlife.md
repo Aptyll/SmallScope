@@ -83,8 +83,8 @@ owning the velocity the way a roll does (`rideLeapStep`), clearing any tile whos
 says `leap` (a felled trunk, the practice field's `log`, `isSolidTile`). A leap never lands on a trunk: it holds up to
 `RIDE_LEAP_HOLD` longer to come down clear. E again hops off (`rideEnd`) and the deer bolts, wild
 again. A stun on either body, a fall through the ice, the zipline, the air, or either one dying
-throws the rider at rest (`rideCheck`, `stunUnit`, `die`, `animalDies`); nobody goes prone or
-under the snow in a tunnel from deer-back. Bots never mount. The `riding` banner in
+throws the rider at rest (`rideCheck`, `stunUnit`, `die`, `animalDies`); nobody goes prone from
+deer-back. Bots never mount. The `riding` banner in
 js/sim/wildlife.js holds all of it.
 
 ## What a beast is doing: the clips
@@ -195,7 +195,7 @@ included, which is what keeps the `.` overlay honest ([rendering.md](../renderin
 
 A kill pays its `YIELD` gold, grown a tenth a level for the animal's level (`ANIMAL_LV_GOLD`,
 above), straight to whoever landed the final blow (`a.lastHit`, through
-`awardGold` — see [Economy](economy-one-currency.md)); rabbits also drop, one in four (`TUN_DROP`), a [burrow](the-burrow-a-tunnel-anyone-can-ride.md), and a burn credits the player that lit it, so an animal that walks away and dies of its
+`awardGold` — see [Economy](economy-one-currency.md)); and a burn credits the player that lit it, so an animal that walks away and dies of its
 fire still pays. Shots, rolls and the class abilities are what hurt them (there is no
 melee — the E swing is for scenery, never for a body); animals are solid
 to players, robots and each other except birds, which fly (see

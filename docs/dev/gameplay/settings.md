@@ -56,7 +56,7 @@ patch, seed, state, seat counts and code into the lobby's data). Which relay:
 `netRelay()` (js/net/net.js) - `?relay=host:port` once,
 remembered with the settings (`settings.relay`), else the page's own host.
 
-`settings` (`v`, `volume`, `musicVol`, `sfxVol`, `mmR`, `mmZoom`, `hudScale`, `hudCorner`, `hudRail`, `shake`, `muted`, `info`, `pixelCursor`, `hitbox`,
+`settings` (`v`, `volume`, `musicVol`, `sfxVol`, `mmR`, `mmZoom`, `hudScale`, `hudRail`, `shake`, `muted`, `info`, `pixelCursor`, `hitbox`,
 `teamBlue` — your side always painted BLUE, see [teams and colours](../multiplayer.md#teams-and-colours) —
 `teamPal` — the VIDEO page's COLOUR BLIND dropdown: `def` (OFF) or a colour-blind palette (`rg`, `by`, `hc`), same section —
 `tipFollow` — the TOOLTIP row, the hover panel beside the pointer (the default) or parked bottom
@@ -68,17 +68,16 @@ what the NEXT load grows — LOCK IN reloads onto it when it is not this page's 
 `scheme` — the keyboard scheme, `'wasd'` or `'click'` — with `binds` / `bindsClick`, the key
 each action is bound to under each
 ([the two controllers](../multiplayer.md#the-two-controllers)) —
-`haptics` — the RUMBLE row, the pad's motor — `relay` (above) —
+`relay` (above) —
 `fpsCap` — the FPS CAP row, frames the loop may present a second, 0 = every frame the screen
 offers ([the fixed step](../code-map/app/boot.md)) —
 and the five video toggles `vidClouds`/`vidRays`/`vidStars`/`vidSnow`/`vidVig`) persists
 **under the player profile** — `saveSettings()` is a call to `PROFILE.putSettings()` and
 `loadSettings()` reads `PROFILE.settings()`, which returns `null` when this profile has never
 saved any (the pre-profile migration: [architecture.md](../architecture.md#profilejs)). `applyMinimapSize()` must be called after changing `mmR` —
-it recomputes `MM_R`/`MM_CX`/`MM_CY`. `hudScale`, `hudCorner` and `hudRail` (the BOTTOM BAR, BACKPACK and TOP BAR SIZE sliders, default **1**; each stops every 5% from 0.5 to 2 and on the screen's crisp sizes, `hudSizes`, and a stored value draws at the nearest stop, `hudSc`/`cornerSc`/`railSc`) need no apply
-call: the hud strip, the corner and the rail read them live every frame. A save from before the split (`v` < 4) copies its one `hudScale` to the other two, and `mmR` is clamped to `MM_R_MIN`..`MM_R_MAX` (12..48, shown as a percent of 24)
-([rendering.md](../rendering/the-hud-corners/the-hud-strip.md)). The **backpack** has no open/closed state: it is always up
-([rendering.md](../rendering/the-hud-corners/the-backpack.md)). (Old saves may still carry `res`, `fps`, `seed` or `paths` keys from removed settings;
+it recomputes `MM_R`/`MM_CX`/`MM_CY`. `hudScale` and `hudRail` (the BOTTOM BAR and TOP BAR SIZE sliders, default **1**; each stops every 5% from 0.5 to 2 and on the screen's crisp sizes, `hudSizes`, and a stored value draws at the nearest stop, `hudSc`/`railSc`) need no apply
+call: the hud strip and the rail read them live every frame. A save from before the split (`v` < 4) copies its one `hudScale` to `hudRail`, and `mmR` is clamped to `MM_R_MIN`..`MM_R_MAX` (12..48, shown as a percent of 24)
+([rendering.md](../rendering/the-hud-corners/the-hud-strip.md)). (Old saves may still carry `res`, `fps`, `seed`, `paths`, `hudCorner` or `haptics` keys from removed settings;
 `Object.assign` in `loadSettings` copies them harmlessly and nothing reads them.)
 
 There is no fullscreen control in the ESC menu (players use F11); a `fullscreenchange` listener still refits the canvas when the
@@ -90,7 +89,7 @@ under it (`drawSlabHead`). A toggle is a switch (gold track, knob
 right when on), and the row under the pointer lifts as a band with its name white.
 
 **The panel is tabbed.** A navbar under the title splits the rows into four pages — GAME
-(backpack size, top bar size, minimap size, bottom bar size, screen shake, rumble, info display, cursor, tooltip, my team), VIDEO (below),
+(top bar size, minimap size, bottom bar size, screen shake, info display, cursor, tooltip, my team), VIDEO (below),
 AUDIO (the three sound dials and the speaker), CONTROLS (the listings, below) — and each page scrolls independently
 inside the content window (`SET_CONTENT_Y`..`SET_CONTENT_B`, panel-local 43..202) when its rows
 outgrow it, which is what lets the slab hold any number of future settings: the slab is 320×226
@@ -216,7 +215,7 @@ red on anything missing — why it is there: [Audio](audio.md), *a failed load m
 draws the circles and boxes the sim actually tests over the sprites that hide them, *and* the
 route every walker is following with the tile it is heading for; the next press turns both off. It
 has no ESC-menu row, only the `. HITBOX` line in the WASD scheme's CONTROLS block (CLICK and
-MOUSE leave it out to make room for the burrow); the rest is in
+MOUSE leave it out); the rest is in
 [Debug overlays](../rendering/debug-overlays-hitboxes-and-routes.md).
 
 Beneath the minimap `renderMinimap()` prints the elapsed clock alone, centred on the disc. There

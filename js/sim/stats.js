@@ -2,7 +2,7 @@
 // Every hero is the same seven numbers, League-style: HEALTH, DAMAGE, ATTACK
 // SPEED, ARMOR, ABILITY POWER, COOLDOWN SPEED and MOVE SPEED. A hero starts
 // from its own base and grows a set amount a level (CLASSES[c].base / .grow,
-// js/sim/player.js); cards and items add to the kit's bonus bag (`kit.add`,
+// js/sim/player.js); items add to the kit's bonus bag (`kit.add`,
 // written by their mod() and rebuilt by refreshKit); a bear buff multiplies
 // at the moment it counts (statBuffMul). statOf is the ONE reader: the sim,
 // the HUD's stat panel (js/ui/statpanel.js) and the bots all ask it, so no
@@ -63,19 +63,15 @@ function statBuffMul(p, key) {
 // the number the panel prints: the sheet with its buffs on
 function statShown(p, key) { return statOf(p, key) * statBuffMul(p, key); }
 // The panel's hover: where a number comes from, row by row. Each row is
-// [source, value, kind] - kind 'base', 'lv', 'add' (cards, or items) or 'buff'
+// [source, value, kind] - kind 'base', 'lv', 'add' (items) or 'buff'
 // (a multiplier, printed as a percent) - and rows that add nothing are left out.
 function statParts(p, key) {
   const c = CLASSES[p.cls], add = kitOf(p).add, n = Math.max(0, p.level - 1), rows = [];
-  // the items' share of the bonus, folded into a spare kit the way refreshKit
-  // folds them; the rest of the bag is cards
-  const ik = baseKit(p.cls);
-  if (p.items) itemMods(ik, p);
-  const it = ik.add[key] || 0, rest = ((add && add[key]) || 0) - it;
+  // the items' share of the bonus: every kit.add point comes from the six slots
+  const it = (add && add[key]) || 0;
   const kind = key === 'as' ? ['lvp', 'addp'] : ['lv', 'add'];
   rows.push(['BASE', key === 'as' ? classAs(p.cls) : c.base[key] || 0, 'base']);
   if (n && c.grow[key]) rows.push(['LEVEL ' + p.level, c.grow[key] * n, kind[0]]);
-  if (Math.abs(rest) > 1e-9) rows.push(['CARDS', rest, kind[1]]);
   if (Math.abs(it) > 1e-9) rows.push(['ITEMS', it, kind[1]]);
   for (const h of HERO_STAT) { const v = h.add(p, key); if (v) rows.push([h.name, v, 'add']); } // a hero's own: a rallying standard underfoot (js/sim/heroes.js)
   const b = statBuffMul(p, key);

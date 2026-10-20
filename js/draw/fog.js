@@ -199,11 +199,15 @@ function fogMapFrame(now) {
   fogMapKey = key;
   const FOG = (255 << 24) | (FOG_TINT[2] << 16) | (FOG_TINT[1] << 8) | FOG_TINT[0];
   fogMapPx.fill(FOG);
+  // a tile is lit when any one eye reaches its centre, so each eye lights
+  // only what it reaches itself (the same answer as fogMargin, one eye at a time)
   for (const s of fogEyesDraw) {
     const t0x = Math.max(0, Math.floor((s.x - s.r) / TILE)), t1x = Math.min(WORLD - 1, Math.floor((s.x + s.r) / TILE));
     const t0y = Math.max(0, Math.floor((s.y - s.r) / TILE)), t1y = Math.min(WORLD - 1, Math.floor((s.y + s.r) / TILE));
     for (let ty = t0y; ty <= t1y; ty++) for (let tx = t0x; tx <= t1x; tx++) {
-      if (fogMapPx[ty * WORLD + tx] && fogMargin((tx + 0.5) * TILE, (ty + 0.5) * TILE) >= 0) fogMapPx[ty * WORLD + tx] = 0;
+      if (!fogMapPx[ty * WORLD + tx]) continue;
+      const dx = (tx + 0.5) * TILE - s.x, dy = (ty + 0.5) * TILE - s.y, dist = Math.sqrt(dx * dx + dy * dy);
+      if ((s.open ? s.r : s.d[fogRay(s, dx, dy)]) - dist >= 0) fogMapPx[ty * WORLD + tx] = 0;
     }
   }
   fogMapCtx.putImageData(fogMapImg, 0, 0);

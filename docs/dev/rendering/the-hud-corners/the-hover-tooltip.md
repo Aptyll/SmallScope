@@ -9,13 +9,12 @@ sweeps are for.
 row on the ESC panel's GAME page (`settings.tipFollow`, default **on**):
 
 - **FOLLOWING** (the default) rides it beside the pointer, so the numbers arrive where the eye
-  already is. `TIP_GAP` (11 px) is measured **sideways**, because every cursor glyph and the 18 px
-  drag ghost reach further below the hotspot than beside it — one sideways step clears the lot
+  already is. `TIP_GAP` (11 px) is measured **sideways**, because every cursor glyph reaches further below the hotspot than beside it — one sideways step clears the lot
   without flinging the panel away from the thing it describes. The head row sits level with the
   pointer (`y = my - TIP_PAD`), the panel flips to the pointer's other side rather than cross the
   right edge, and both axes clamp `TIP_EDGE` (4 px) inside the view, so a hover in any corner reads.
 - **FIXED** parks it bottom **left**, the corner the pointer is furthest from while it hovers the
-  backpack or a wiki row — so the panel can never cover the well beside the one
+  strip or a wiki row — so the panel can never cover the well beside the one
   being read, and nothing else lives in that corner.
 
 `DBG.tipRect()` returns the rect the
@@ -23,12 +22,10 @@ panel is painted at this frame, which is how the two modes are read without eyeb
 
 **`tipAt(mx, my)` is the only source**, and it asks the same hit-testers the press handler
 does, so what the panel describes and what a click would do can never be two different things.
-In `play`, in order: the merchant's counter (`shopHit` → `tipShop` — first, so a drag held over
-its sell well is priced rather than merely described), then a **live drag** (whatever is on the
-cursor describes itself, `tipCell`), the character panel's item slots (`charItemHit`, answering `tipItem`), a rail chip
+In `play`, in order: the merchant's counter (`shopHit` → `tipShop`, first), the build list's rows (`buildListHit`), the character panel's item slots (`charItemHit`, answering `tipItem`), a rail chip
 (`railHit`), a
 floating buy plate (`abBuyHit`), the strip (`stripHit`: an ability well, an item slot answering
-`tipItem`, a meal well, the purse, and the portrait answering `tipAttack`) and last the drawer (`bagHit`). In `title` it answers the wiki's rows and
+`tipItem`, a meal well, the purse, and the portrait answering `tipAttack`). In `title` it answers the wiki's rows and
 ability cards and the lobby's stage wells; every other mode returns null.
 
 `tipResolve()` runs **once per frame in `render()`, before `renderUI`**, so every draw in the
@@ -52,4 +49,4 @@ the row's `rank` table given as a list) at the rank held, and the row's one-line
 opens the long card, League's way: every rank's numbers slashed together on each row with the
 rank held lit gold (`tipRanks`, labels in `AB_RANK_STAT`; a row value may be such a list of
 coloured segments), and the hero level the next rank waits for), and the shop's `tipItem` (an item slot on the strip or the character panel, a
-wiki ITEMS row). `tipCell(s)` is the builder for whatever a bag cell holds.
+wiki ITEMS row).

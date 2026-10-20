@@ -15,8 +15,8 @@ Every hero is the same seven League-style numbers, all in js/sim/stats.js (`STAT
 
 The base and growth sit in each hero's `CLASSES` entry (`base`, `grow`); attack speed's base is
 not written down but is the hero's own attack cycle (`classAs`: the kit's full draw plus the
-attack row's renock), and its growth and bonuses are fractions. Cards and items
+attack row's renock), and its growth and bonuses are fractions. Items
 (`ITEM_STATS`, js/sim/items.js) add to the kit's bonus bag `kit.add` (rebuilt by `refreshKit`); a bear buff multiplies at the moment it counts
 (`statBuffMul`: damage dealt in `hurtUnit`, the walk in `abilityMoveMul`), and `statShown` is the
-sheet with that on. `statParts` is the breakdown the panel's hover lists (base, levels, cards, items, buff). Ice handling, the dodge
+sheet with that on. `statParts` is the breakdown the panel's hover lists (base, levels, items, buff). Ice handling, the dodge
 roll, hiding and food are class traits on the kit, not stats. There are no pre-match stat points.

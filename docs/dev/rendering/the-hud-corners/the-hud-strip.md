@@ -6,9 +6,8 @@ right the way a MOBA's bottom bar is (0.426), and the HUD's one bar: the **stat 
 **six item slots** in a three-by-two grid of 24px wells (`ITEM_CELL`), then the **two meal wells**
 (the items' size) with the **purse** under them (`abCellRect(i)`, `itemCellRect(i)`,
 `foodCellRect(i)`, `portraitRect`, `hpBarRect`, `stBarRect`, `goldCellRect`). The hero's basic
-attack has no well: hovering the portrait names it (`tipAttack`). Unopened cards are not on the
-strip either (they open the moment they are held, [gameplay](../../gameplay/roguelike-cards.md)), nor a
-build well (the build key opens the list). The plate swallows clicks so nothing fires through it.
+attack has no well: hovering the portrait names it (`tipAttack`). There is no
+build well on the strip either (the build key opens the list). The plate swallows clicks so nothing fires through it.
 
 An **item slot** (`drawItemCell`) holds `p.items[i]` ([the items](../../gameplay/the-merchants-counter.md#the-items)), filled
 left to right and top row first as the shop fills them: the item's icon (`shopIcon`) on its rim,
@@ -27,7 +26,7 @@ ring colour while it runs). The strip and the panel are one widget: `hudStripRec
 **pair** on the view, `stripCap` fits the pair, and `drawHudScaled` bakes from the panel's left
 edge. `stripHit` answers it first (`statPanelHit`: `{kind: 'stat', key}` on a cell, the plate's
 `'frame'` off one), so a press on it never reaches the world, and a hover raises the tooltip's
-**breakdown** (`tipStat`, off `statParts`): BASE, the LEVEL's growth, what CARDS and ITEMS
+**breakdown** (`tipStat`, off `statParts`): BASE, the LEVEL's growth, what ITEMS
 gave, the buff, then the total under a rule (the descriptor's `sum`).
 
 The **portrait** (`drawPortrait`) is a `PORT_SQ` square in the wells' own border (ink, then the

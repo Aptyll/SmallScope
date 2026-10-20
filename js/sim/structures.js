@@ -11,13 +11,17 @@
 // and nothing else. Every building wears ITS SIDE'S INK on both (mmTeam /
 // chTeam, world.js): at a map's scale whose base it is is the whole read -
 // the type is the sprite's job. A building's cost is what a wrecker is paid
-// half of (wreckPay).
+// half of (wreckPay). `sight` is the px of fog of war a standing one of a
+// side lifts round its middle, or round `eye(o)` (sightSources, js/sim/fog.js).
 const STRUCTS = {
-  // THE GOLD PUMP (type 'generator'): a pump jack on a 4x2 tile pad. Its art
-  // is baked per tier (js/sprites/pump.js) and its stroke runs off o.payT
-  // against `period` (pumpFrame, js/draw/structs.js).
-  generator: { name: 'GOLD PUMP', w: 4, h: 2, mm: mmTeam, map: chTeam, tiers: [
-    { cost: { gold: 60 },  hp: 160, buildT: 20, pay: 2, period: 10 },
+  // THE GOLD PUMP (type 'generator'): a pump jack on a 4x2 tile pad, the
+  // map's two neutral objectives (the `pumps` banner, js/sim/pumps.js). It
+  // wears its HOLDER's paint, or grey held by nobody (mmPump/chPump, world.js;
+  // pumpSet, js/draw/structs.js). While a side holds it, every hero on that
+  // side is paid `pay` every `period` s; its stroke runs off o.payT against
+  // `period` (pumpFrame). Nothing hurts it, so its hp and cost go unread.
+  generator: { name: 'GOLD PUMP', w: 4, h: 2, mm: mmPump, map: chPump, tiers: [
+    { cost: { gold: 60 },  hp: 160, buildT: 20, pay: 3, period: 10 },
   ]},
   // THE BARRACKS: the wave bays each merchant raises in the back woods
   // behind its roost, the first MERCH_BAY_T after the landing and up to
@@ -30,7 +34,7 @@ const STRUCTS = {
   // most of a SIDE's soldiers alive at once, every bay counted: a side
   // nobody fights back against does not fill the map, it waits for its
   // column to spend itself.
-  barracks: { name: 'BARRACKS', w: 3, h: 2, art: 'spawner', mm: mmTeam, map: chTeam, tiers: [
+  barracks: { name: 'BARRACKS', w: 3, h: 2, art: 'spawner', sight: 176, mm: mmTeam, map: chTeam, tiers: [
     { cost: { gold: 40 }, hp: 320, buildT: 12, wave: 3, waveT: 30, grow: 180, botHp: 60, cap: 8 }, // cap: soldiers a LANE holds, queued or out; botHp: a soldier's health at the start, grown by SOLDIER_HP_GROW (js/sim/robots.js)
   ]},
   // THE ROAD TOWER: the map's, never a wallet's - two stand on each side's
@@ -39,7 +43,8 @@ const STRUCTS = {
   // far as its furthest standing one. The wrecker is paid half its cost like any wreck, and its fall
   // is the announcer's (`call`, callStruct). Its gun's numbers sit with its
   // sim (TOWER_*, towers.js).
-  tower: { name: 'ROAD TOWER', w: 3, h: 2, call: true, mm: mmTeam, map: chTeam, tiers: [
+  // It sees from its foot, half again past a hero (TOWER_RANGE is 112).
+  tower: { name: 'ROAD TOWER', w: 3, h: 2, call: true, sight: 240, eye: (o) => towerFoot(o), mm: mmTeam, map: chTeam, tiers: [
     { cost: { gold: 150 }, hp: 700, buildT: 1 },
   ]},
   // The fish net: the one building that goes on water instead of snow.
@@ -78,7 +83,7 @@ function createStruct(tx, ty, type, tier, p, building) {
   // reload; heat/heatId: bolts in a row into one scout; bolt/pin: the one in the
   // air and the spent one in the snow (updateTower, js/sim/towers.js)
   if (type === 'tower') { o.zl = -1; o.zi = -1; o.ang = p.team === 0 ? -Math.PI / 4 : Math.PI * 3 / 4; o.tgt = null; o.chg = 0; o.cd = 0; o.heat = 0; o.heatId = -1; o.bolt = null; o.pin = null; o.loose = -9; }
-  if (type === 'generator') o.payT = 0;
+  if (type === 'generator') { o.hold = -1; o.cap = 0; o.capBy = -1; o.payT = t.period; o.paid = false; } // the ring's state (updatePump, js/sim/pumps.js)
   // waveT: the clock to the next wave. queue/rollT: soldiers still to leave
   // the door, and the gap to the next. born: when it stood, for the growth.
   if (type === 'barracks') { o.waveT = t.waveT; o.queue = 0; o.rollT = 0; o.born = state.elapsed; o.door = 0; }
@@ -94,19 +99,6 @@ function createStruct(tx, ty, type, tier, p, building) {
 // (autoToolFor, js/sim/actions.js)
 function ownsStruct(o, p) { return o.team === undefined || o.team === p.team; }
 
-// rolls a card rarity against an odds table (CHEST_ODDS - a sprung chest is
-// where a card comes from, hitObject in js/sim/actions.js) using the shared
-// runtime rng() - never called from genWorld, so this never perturbs a
-// seed's terrain
-function rollCardRarity(odds) {
-  let r = rng(), acc = 0;
-  for (const rarity of CARD_RARITIES) {
-    acc += odds[rarity] || 0;
-    if (r < acc) return rarity;
-  }
-  return CARD_RARITIES[0];
-}
-
 // WHAT A WRECK PAYS whoever brought it down: half the building's price
 function wreckPay(o) { return Math.floor((STRUCTS[o.type].tiers[o.tier].cost.gold || 0) / 2); }
 
@@ -119,12 +111,6 @@ function removeStruct(o) {
 // ------------------------------------------------------------ the building sim
 const RES_COLORS = {
   gold: '#f2cc6a', berry: '#f2707a', fish: '#9fd0ea', sunfish: '#f2b640', whitefish: '#cfdcec', snowChar: '#d47e8e',
-  // card rarities - kept out of the amber family so a "gold" card drop never
-  // reads as a currency floater; must match CARD_PALS in js/sprites/items.js
-  cardWhite: '#d9dfe8', cardGreen: '#5fd18a', cardBlue: '#4a90e2', cardPurple: '#a259e6', cardGold: '#e8a33d',
-  // the three ores (js/sim/mining.js), their rocks' own inks
-  ironstone: '#c4cad8', frostglass: '#8fd4f4', sunstone: '#f4bc44',
-  tunnel: '#b98a5e', // the burrow (js/sim/tunnel.js): its floater and its hud cell's count
 };
 // audio/screen gating: is this happening near the local listener?
 function nearPlayer(x, y, r) { return !!player && Math.hypot(player.x - x, player.y - y) < (r || 180); }
@@ -192,18 +178,8 @@ function updateStructures(dt) {
     }
     const t = STRUCTS[o.type].tiers[o.tier];
     if (o.type === 'tower') updateTower(o, dt);
-    else if (o.type === 'generator') {
-      o.payT -= dt;
-      if (o.payT <= 0) {
-        o.payT = t.period;
-        // passive income deposits straight into the owner's wallet - gold is
-        // never a physical drop, so there is no pile to collect or to cap.
-        // The +N rises over the pump's barrel, where the drawn coin hops out
-        const c = structCenter(o);
-        awardGold(players[o.owner], t.pay, c.x - 5, c.y);
-        burst(c.x - 5, c.y - 6, '#c9d0e2', 2, 20, 0.3);
-      }
-    } else if (o.type === 'barracks') {
+    else if (o.type === 'generator') updatePump(o, dt); // the ring and the pay (js/sim/pumps.js)
+    else if (o.type === 'barracks') {
       // the wave clock: every waveT a wave is queued - `wave` soldiers, one
       // more per `grow` seconds stood - and the queue leaves the door one
       // soldier every BARRACKS_ROLL, so a wave reads as a column, not a heap

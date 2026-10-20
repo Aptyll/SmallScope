@@ -70,7 +70,7 @@ const DUMMY_SPR = (() => {
 // concentric rings want true circles, and the hand-made feel comes back in
 // through hash dithering on every band edge, a top-left light direction on
 // every band, straw ticks around the batt, four iron pins and a dusting of
-// snow on the wooden rim. Same bake-beside-the-draw rule as the chest. One
+// snow on the wooden rim. Same bake-beside-the-draw rule as the cairn. One
 // bake, two sizes: every ring threshold scales with the face, so the small
 // face is its own crisp sprite instead of a runtime downscale of the big one.
 // bare leaves the snow off the rim (the lobby's copy, js/ui/menu.js, which
@@ -232,8 +232,8 @@ const PK_DIE_COL = [
 ];
 const PK_PIP_AT = [[[3, 3]], [[1, 1], [5, 5]], [[1, 5], [3, 3], [5, 1]]]; // die-face pip layouts, on an 8x8 face
 
-// The die on its pedestal: a cube on a slate plinth with a gilt trim (the
-// chest's gold - "this is worth walking to"), its whole BODY dyed the
+// The die on its pedestal: a cube on a slate plinth with a gilt trim
+// ("this is worth walking to"), its whole BODY dyed the
 // current track's difficulty colour with the matching pip count on its face
 // - the die is the readout of what the track is. While rollT runs it
 // tumbles - jitters on its plinth scrambling the face - which is the whole

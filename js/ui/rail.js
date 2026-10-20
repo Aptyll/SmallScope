@@ -3,7 +3,7 @@
 // and the anchors (railBottom, headlineY, noteY) the screens hang under it.
 // ---- the team rail: the roster along the top edge ----------------------
 // THE TEAM RAIL (3.33, joined into one scoreboard in 4.16, slimmed in 0.422,
-// faces in 0.528): every player in the match along the top centre, Dota's
+// faces in 0.536): every player in the match along the top centre, Dota's
 // top bar kept clean and minimal, five a side. ONE thin plate (the hud
 // frame's outline and flat ground, no bevel, no snow): your side's chips on
 // the left, you first, the rival's on the right, and between them the match

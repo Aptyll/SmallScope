@@ -47,7 +47,7 @@ FIGHT.
 
 A goal is coloured by what it is for, six kinds: PUSH (push, rally, regroup, siege), RETREAT (flee,
 hide), DEFEND (defend, guard, escort, follow, help) and FIGHT (fight, wolf, stalk) are loud; FARM
-(gather, mine, hunt, eat, loot, build, spend, shop) and ROAM (roam, idle, scout, order) are
+(gather, hunt, eat, loot, build, spend, shop) and ROAM (roam, idle, scout, order) are
 quiet, because they are most of any
 match and a fight or a push is what the eye should find. The six were checked as a set on the page's
 panel for colour-blind separation in their stacking order, and none is a side's red or blue.

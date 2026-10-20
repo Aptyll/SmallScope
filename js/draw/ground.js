@@ -3,7 +3,7 @@
 // reads), the prerendered ground canvas and its runtime repaints, the road,
 // the lakes' shores, the cast shadows (baked for the scenery, drawn per
 // frame for bodies), and the scenery bakes that ride on it (the pine's wind
-// frame, the chest, the cairn). First of the js/draw/ files: everything
+// frame, the cairn). First of the js/draw/ files: everything
 // after it calls hash2.
 // ------------------------------------------------------------ ground prerender
 const groundCv = document.createElement('canvas');
@@ -75,7 +75,7 @@ function paintGroundTile(g, tx, ty) {
         }
       };
       if (gv === 2) {
-        // pick-carved hole: dark open water, drifting glints, chipped ice rim
+        // a hole in the ice: dark open water, drifting glints, chipped ice rim
         quad(g, '#1e3a54', '#234159');
         g.fillStyle = '#2e5573';
         const n = 2 + ((h * 5) | 0) % 2;
@@ -1067,13 +1067,9 @@ const CASTERS = {
                 return [A, f * A.fw, A.fw, A.fh, -5 + nx, -21 + ny];
               } },
   deadTree: { code: (o) => 100 + o.variant, art: (c) => whole(SPRITES.deadTree[c - 100], 0, -8) },
-  // a rock's code is its kind and whether it stands or lies as rubble (drawRock, render.js)
-  rock:     { code: (o) => 130 + o.kind * 2 + (rockReady(o) ? 0 : 1),
-              art: (c) => { const k = (c - 130) >> 1, s = (c & 1 ? SPRITES.rockSpent : SPRITES.rock)[k]; return whole(s, 0, TILE - s.height + 1); } },
   bush:     { code: () => 120, art: () => whole(SPRITES.bush, 0, 4) },
   stump:    { code: () => 121, art: () => whole(SPRITES.stump, 0, 4) },
   den:      { code: () => 122, art: () => whole(SPRITES.den, 0, -4) },
-  chest:    { code: () => 123, art: () => whole(CHEST_SPR, 0, TILE - CHEST_SPR.height) },
   cairn:    { code: () => 124, art: () => whole(CAIRN_SPR, 1, TILE - CAIRN_SPR.height + 1) },
   hut:      { code: () => 125, art: () => { const s = SPRITES.hogHut[0]; return whole(s, TILE - (s.width >> 1), TILE - s.height); } },
   stall:    { code: () => 126, art: () => { const s = SPRITES.teamBuild[0].stall; return whole(s, 0, TILE - s.height); } }, // one silhouette for both sides
@@ -1281,34 +1277,8 @@ const TREE_NUDGE_X = 2, TREE_NUDGE_Y = 1;
 function treeNudgeX(tx, ty) { return Math.floor(hash2(tx * 11 + 5, ty * 13 + 9) * (TREE_NUDGE_X * 2 + 1)) - TREE_NUDGE_X; }
 function treeNudgeY(tx, ty) { return Math.floor(hash2(tx * 17 + 2, ty * 19 + 4) * (TREE_NUDGE_Y * 2 + 1)) - TREE_NUDGE_Y; }
 
-// The treasure chest's sprite bakes HERE, from its own grid - js/sprites.js
-// is byte-fragile (BOM, mangled-byte repair) and is never rewritten, so a
-// new scenery sprite bakes beside its draw pass instead. Snow-capped lid,
-// gold banding and lock: the same gold the payout floater speaks in.
-const CHEST_SPR = (() => {
-  const pal = { o: '#241a12', w: '#8a6142', W: '#a3794f', d: '#6b4a34', g: '#f2cc6a', G: '#c9a23f', s: '#eef4fb' };
-  const rows = [
-    '..oooooooooooo..',
-    '.osssssssssssso.',
-    '.oWwwwwwwwwwwWo.',
-    '.oWwwwddwwwwwWo.',
-    '.oggggggggggggo.',
-    '.owwwwwGGwwwwwo.',
-    '.owwwwwggwwwwwo.',
-    '.owwdwwwwwwdwwo.',
-    '.oddddddddddddo.',
-    '..oooooooooooo..',
-  ];
-  const c = document.createElement('canvas');
-  c.width = 16; c.height = rows.length;
-  const g = c.getContext('2d');
-  rows.forEach((r, y) => {
-    for (let x = 0; x < 16; x++) if (pal[r[x]]) { g.fillStyle = pal[r[x]]; g.fillRect(x, y, 1, 1); }
-  });
-  return c;
-})();
 // The cairn (the BLACK BEAR STONE camp's old anchor: no camp stamps one now,
-// OBJECTS.cairn in world.js), baked here like the chest: a heap of river
+// OBJECTS.cairn in world.js), baked beside its draw: a heap of river
 // stones under snow.
 const CAIRN_SPR = (() => {
   const pal = { o: '#2a2e3a', G: '#9aa2b2', g: '#737b8c', d: '#596072', s: '#f4f7ff', S: '#d8e4f2' };
@@ -1335,7 +1305,7 @@ const CAIRN_SPR = (() => {
   return c;
 })();
 // The practice dummy (the `practice arena` banner, js/sim/practice.js), baked here
-// for the same reason the chest is. A big target you read across the arena:
+// for the same reason the cairn is. A big target you read across the arena:
 // a burlap sack head with stitched eyes under a snow cap, arms lashed to a
 // crossbar with rope, a sack torso wearing a painted red ring, straw leaking
 // out of the cinch, and a post into crossed skids in the drift. 26x42 - a
