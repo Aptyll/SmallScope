@@ -93,8 +93,9 @@ const OBJECTS = {
   // its `team` and its `merch`. No `tool` and no hp: nothing swings at it,
   // nothing shoots it, and it is in no `structures` list for a wave to
   // siege - the counter is as untouchable as its keeper. E in front of it
-  // opens the shop (merchNear, js/ui/shop.js).
-  stall:    { solid: true,  w: 3, h: 2, mm: (o) => mmTeam(o) },
+  // opens the shop (merchNear, js/ui/shop.js). `sight`: px of fog its side
+  // sees round it (sightSources, js/sim/fog.js).
+  stall:    { solid: true,  w: 3, h: 2, sight: 176, mm: (o) => mmTeam(o) },
   // the practice arena's target (the `practice arena` banner, js/sim/practice.js): any tool
   // hits it, it never falls, and it mends itself between combos. E swings,
   // every attack and the roll's tackle all land through hitDummy (js/sim/actions.js).

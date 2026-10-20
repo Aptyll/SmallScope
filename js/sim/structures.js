@@ -11,7 +11,8 @@
 // and nothing else. Every building wears ITS SIDE'S INK on both (mmTeam /
 // chTeam, world.js): at a map's scale whose base it is is the whole read -
 // the type is the sprite's job. A building's cost is what a wrecker is paid
-// half of (wreckPay).
+// half of (wreckPay). `sight` is the px of fog of war a standing one of a
+// side lifts round its middle, or round `eye(o)` (sightSources, js/sim/fog.js).
 const STRUCTS = {
   // THE GOLD PUMP (type 'generator'): a pump jack on a 4x2 tile pad. Its art
   // is baked per tier (js/sprites/pump.js) and its stroke runs off o.payT
@@ -30,7 +31,7 @@ const STRUCTS = {
   // most of a SIDE's soldiers alive at once, every bay counted: a side
   // nobody fights back against does not fill the map, it waits for its
   // column to spend itself.
-  barracks: { name: 'BARRACKS', w: 3, h: 2, art: 'spawner', mm: mmTeam, map: chTeam, tiers: [
+  barracks: { name: 'BARRACKS', w: 3, h: 2, art: 'spawner', sight: 176, mm: mmTeam, map: chTeam, tiers: [
     { cost: { gold: 40 }, hp: 320, buildT: 12, wave: 3, waveT: 30, grow: 180, botHp: 60, cap: 8 }, // cap: soldiers a LANE holds, queued or out; botHp: a soldier's health at the start, grown by SOLDIER_HP_GROW (js/sim/robots.js)
   ]},
   // THE ROAD TOWER: the map's, never a wallet's - two stand on each side's
@@ -39,7 +40,8 @@ const STRUCTS = {
   // far as its furthest standing one. The wrecker is paid half its cost like any wreck, and its fall
   // is the announcer's (`call`, callStruct). Its gun's numbers sit with its
   // sim (TOWER_*, towers.js).
-  tower: { name: 'ROAD TOWER', w: 3, h: 2, call: true, mm: mmTeam, map: chTeam, tiers: [
+  // It sees from its foot, half again past a hero (TOWER_RANGE is 112).
+  tower: { name: 'ROAD TOWER', w: 3, h: 2, call: true, sight: 240, eye: (o) => towerFoot(o), mm: mmTeam, map: chTeam, tiers: [
     { cost: { gold: 150 }, hp: 700, buildT: 1 },
   ]},
   // The fish net: the one building that goes on water instead of snow.

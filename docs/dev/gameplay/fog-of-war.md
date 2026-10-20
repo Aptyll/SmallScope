@@ -1,8 +1,18 @@
 # Fog of war
 
-A side sees a circle round each of its heroes (`FOG_HERO`, 10 tiles), wave soldiers
-(`FOG_SOLDIER`, 7) and road towers from their foot (`FOG_TOWER`,
-8.5, past their reach). Everything else is dimmed, never black: terrain, buildings and both eagles stay, but a rival
+A side sees a circle round each of its heroes (`FOG_HERO`, 10 tiles) and wave soldiers
+(`FOG_SOLDIER`, 7), and its base and lanes see on their own (`sightSources`):
+
+- every standing building with a `sight` in its entry: road towers from their foot
+  (`STRUCTS.tower.sight`, 15 tiles, half again a hero's), bot bays (`STRUCTS.barracks.sight`, 11)
+  and the merchant's stall (`OBJECTS.stall.sight`, 11). One under construction or wrecked sees nothing.
+- the bird while it roosts on the perch (`FOG_PERCH`, 14) and the merchant wherever it works (`FOG_MERCH`, 8).
+- each of the side's own cables: a row of small eyes (`FOG_ZIP` every `FOG_ZIP_STEP` px, `zipEyes`),
+  a band about 2.5 tiles either side. A cable runs only to its furthest standing tower
+  (`towersSync`), so the band shrinks as towers fall.
+
+None of these is a body (`near` false): they never see into the woods or the brush.
+Everything else is dimmed, never black: terrain, buildings and both eagles stay, but a rival
 player, a rival bot and every creature outside the side's sight are not there for it — not drawn on
 the screen, the minimap or the M map, and not seen by its bots. Code: js/sim/fog.js (the rule),
 js/draw/fog.js (the picture).

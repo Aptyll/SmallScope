@@ -1,6 +1,9 @@
 'use strict';
-// The fog of war's rule: what a side can see. Each hero, wave soldier and
-// road tower of a side lights a circle round it; solid stone (the cistern's
+// The fog of war's rule: what a side can see. Each hero and wave soldier of
+// a side lights a circle round it, and so does every standing building of the
+// side's that has a `sight` (its STRUCTS or OBJECTS entry: the road towers, the bot
+// bays, the merchant's stall), its roosted bird (the perch), its merchant and
+// a narrow band along each of its own cables; solid stone (the cistern's
 // wall) stops a line of sight, pines never do; a body
 // standing deep in the woods is hidden from the outside until one of the side
 // stands close, and a body in the brush (deep snow, js/sim/depth.js) until
@@ -14,7 +17,10 @@
 // ------------------------------------------------------------ fog of war
 const FOG_HERO = 160;    // px a hero sees
 const FOG_SOLDIER = 112; // px a wave soldier sees (past its SOLDIER_AGGRO, so it sees what it turns on)
-const FOG_TOWER = 136;   // px a road tower sees from its foot (past its TOWER_RANGE)
+const FOG_PERCH = 224;   // px the side's bird sees while it roosts on the perch
+const FOG_MERCH = 128;   // px the side's merchant sees, wherever it works
+const FOG_ZIP = 48;      // px each of a cable's eyes sees...
+const FOG_ZIP_STEP = 48; // ...and px between them along it: a band about 42 px either side of the cable
 const FOG_WOODS_N = 9;   // pines in the 5x5 tiles round a walkable tile that make it the woods
 const FOG_BRUSH = 48;    // px a side's hero or soldier must be inside to see someone in the woods
 const FOG_BRUSH_RIM = 1.5; // tiles outside a brush patch's rim a side's hero or soldier still sees into it
@@ -34,12 +40,40 @@ function fogUp() {
 function sightSources(team, out) {
   out.length = 0;
   for (const p of players) if (p.team === team && p.active && !p.dead && !inAir(p)) out.push(sightEye(p.x, p.y, FOG_HERO, true));
-  for (const b of robots) if (b.team === team && b.kind === 'soldier' && unitAlive(b)) out.push(sightEye(b.x, b.y, FOG_SOLDIER, true));
-  for (const o of structures) {
-    if (o.team !== team || o.building || o.dead) continue;
-    if (o.type === 'tower') { const f = towerFoot(o); out.push(sightEye(f.x, f.y, FOG_TOWER, false)); }
+  for (const b of robots) {
+    if (b.team !== team) continue;
+    if (b.kind === 'soldier' && unitAlive(b)) out.push(sightEye(b.x, b.y, FOG_SOLDIER, true));
+    if (b.merchant && !b.dead) {
+      out.push(sightEye(b.x, b.y, FOG_MERCH, false));
+      if (stallUp(b.stall)) { const c = objCentre(b.stall); out.push(sightEye(c.x, c.y, OBJECTS.stall.sight, false)); }
+    }
   }
+  for (const o of structures) {
+    const S = STRUCTS[o.type];
+    if (o.team !== team || o.building || o.dead || !S.sight) continue;
+    const c = S.eye ? S.eye(o) : structCentre(o);
+    out.push(sightEye(c.x, c.y, S.sight, false));
+  }
+  const e = state.drop && state.drop.eagles[team];
+  if (e && e.state === 'down') out.push(sightEye(e.x, e.y, FOG_PERCH, false));
+  for (const z of zips) if (z && z.team === team) for (const q of zipEyes(z)) out.push(sightEye(q.x, q.y, FOG_ZIP, false));
   return out;
+}
+// a building's middle: a STRUCTS footprint runs east and south of its anchor
+function structCentre(o) { return { x: (o.tx + structW(o) / 2) * TILE, y: (o.ty + structH(o) / 2) * TILE }; }
+// a scenery object's middle (the stall): its footprint runs east and north of its anchor
+function objCentre(o) { const d = OBJECTS[o.type]; return { x: (o.tx + (d.w || 1) / 2) * TILE, y: (o.ty + 1 - (d.h || 1) / 2) * TILE }; }
+// the points along a cable its eyes stand at, every FOG_ZIP_STEP px from the
+// base to its end; kept per cable (a tower's fall lays a new, shorter one: towersSync)
+const fogZipPts = new WeakMap();
+function zipEyes(z) {
+  let pts = fogZipPts.get(z);
+  if (pts) return pts;
+  pts = [];
+  const n = Math.max(1, Math.ceil(z.len / FOG_ZIP_STEP));
+  for (let i = 0; i <= n; i++) { const q = zipPoint(z, z.len * i / n); pts.push({ x: q.x, y: q.y }); }
+  fogZipPts.set(z, pts);
+  return pts;
 }
 function sightEye(x, y, r, near) {
   const stone = cisternDist(x, y) <= r + 1;
