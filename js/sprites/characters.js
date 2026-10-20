@@ -737,7 +737,7 @@
   }, motionSet(0, pal, mask));                 // run and roll (the `run and roll` banner)
   const teamPlayers = [];
   const skaterSet = (pal, mask) => {
-    const sp = Object.assign({}, pal, SKPAL_EXTRA);
+    const sp = Object.assign({}, SKPAL_EXTRA, pal);
     return Object.assign({
       down: [bake(skDownIdle, sp), bake(skDownA, sp), bake(skDownB, sp)],
       up: [bake(skUpIdle, sp), bake(skUpA, sp), bake(skUpB, sp)],
@@ -808,7 +808,7 @@
   const lookSet = (cls, pal, look) => {
     const f = LOOK.hairs[look.hair] || LOOK.hairs[0];
     if (cls === 1) {
-      const sp = Object.assign({}, pal, SKPAL_EXTRA);
+      const sp = Object.assign({}, SKPAL_EXTRA, pal); // (a hero's paint, in pal, wins over the skater's extras)
       const dn = (g) => fringed(g, 4, 6, [f[0].slice(1, 5), f[1].slice(1, 5)]);
       const sd = (g) => fringed(g, 4, 9, [f[0].slice(4), '..']);
       return Object.assign(skaterSet(sp, f), {
@@ -830,12 +830,17 @@
   // is all that ever asks, so the cache stays small. Every reader of a
   // player's body goes through classSet(p) (js/sim/player.js), which asks here.
   const lookCache = new Map();
+  // A named hero wears a class body (heroBody, js/sim/player.js) in its own
+  // paint (CLASSES[cls].paint: letters laid over the team's), so `cls` is the
+  // hero and `body` the grids it is baked from.
   function champLook(cls, look, team) {
-    if (!look) return champPlayers[cls][team];
+    const body = heroBody(cls), paint = CLASSES[cls] && CLASSES[cls].paint;
+    if (!look && !paint) return champPlayers[body][team];
+    look = look || CLASSES[cls].look;
     const key = cls + '|' + team + '|' + look.tone + '|' + look.hair + '|' + look.hairCol;
     let set = lookCache.get(key);
     if (!set) {
-      set = lookSet(cls, lookPal(teamPlayerPal(TEAM_SKINS[team]), look), look);
+      set = lookSet(body, Object.assign(lookPal(teamPlayerPal(TEAM_SKINS[team]), look), paint), look);
       lookCache.set(key, set);
     }
     return set;

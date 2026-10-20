@@ -192,6 +192,7 @@ function itemsTick(p, dt) {
 const BOT_BUILDS = {
   HUNTER: ['horn', 'feathers', 'fang', 'sunstone', 'skates', 'bearskin'],
   WARRIOR: ['bearskin', 'brand', 'fang', 'skates', 'cloak', 'sunstone'],
+  ARMATOS: ['bearskin', 'cloak', 'brand', 'skates', 'fang', 'sunstone'], // the wall first: health and armor, then the walk to the fight
 };
 // the next finished item on p's list it does not have yet, or null when done
 function botNextItem(p) {

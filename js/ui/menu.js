@@ -1525,6 +1525,20 @@ const CLASS12 = [
     '..oggggggggo',
     '..ooooooooo.',
   ],
+  [ // ARMATOS: the broken standard - the pole, the torn cloth off its head
+    '..o.........',
+    '.ogooooo....',
+    '.oGrrrrro...',
+    '.owrRRrrro..',
+    '.owrrrrro...',
+    '.owrrRro....',
+    '.owrro.o....',
+    '.owro.......',
+    '.owo........',
+    '.owo........',
+    '.owo........',
+    '..o.........',
+  ],
 ];
 const class12Cache = new Map();
 function classIcon12(i, you) {

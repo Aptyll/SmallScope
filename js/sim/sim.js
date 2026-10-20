@@ -1068,15 +1068,17 @@ function playerMove(p, dt, mx, my, len, onIce, kit) {
   } else if (p.rushT > 0) {
     // BULL RUSH: the charge owns the velocity the way a roll does - straight
     // down its line, walls and the first body met resolved by rushStep
+    // (ARMATOS's VETERAN'S MARCH rides the same state at its own pace: p.march, js/sim/armatos.js)
     p.rushT -= dt;
     // the first RUSH_RAMP seconds come up to speed rather than snapping to
     // it, so the charge leaves the wind-up smooth instead of teleporting a
     // frame down the line
-    const ramp = Math.min(1, 0.4 + 0.6 * (RUSH_T - p.rushT) / RUSH_RAMP);
-    p.vx = p.rushNX * RUSH_SPD * ramp;
-    p.vy = p.rushNY * RUSH_SPD * ramp;
+    const [spd, len, rampT] = p.march ? [MARCH_SPD, MARCH_T, MARCH_RAMP] : [RUSH_SPD, RUSH_T, RUSH_RAMP];
+    const ramp = Math.min(1, 0.4 + 0.6 * (len - p.rushT) / rampT);
+    p.vx = p.rushNX * spd * ramp;
+    p.vy = p.rushNY * spd * ramp;
     const mv = moveEntity(p, p.vx * dt, p.vy * dt, PLAYER_R);
-    rushStep(p, mv, dt);
+    if (p.march) marchStep(p, mv, dt); else rushStep(p, mv, dt);
   } else if (p.grapT > 0) {
     // GRAPPLE: the rope owns the velocity while the key is held - hauled
     // straight at the anchor at GRAP_REEL. Letting go of the key, arriving,
@@ -1132,7 +1134,7 @@ function playerPlunge(p) {
       p.vx = p.vy = 0;
       p.sliding = false;
       p.slideT = 0;
-      if (p.rushT > 0) { p.rushT = 0; p.rushVictim = null; } // the charge ends in the water
+      if (p.rushT > 0) { p.rushT = 0; p.rushVictim = null; p.march = false; } // the charge ends in the water
       if (p.grapT > 0) grapEnd(p);                          // the rope goes slack with you
       p.castT = 0; p.castAb = -1; p.shieldT = 0;           // and so does whatever was being cast
       breakEat(p);                                         // the meal goes in the water with you

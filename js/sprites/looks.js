@@ -325,7 +325,7 @@
   check('LOOK.tones', LOOK.tones.length, N.tone);
   check('LOOK.hairCols', LOOK.hairCols.length, N.hairCol);
   check('LOOK.hairs', LOOK.hairs.length, N.hair);
-  check('OUTFIT', OUTFIT.length, PROFILE.HERO_N);
+  check('OUTFIT', OUTFIT.length, 2); // one a BODY (the hunter's, the warrior's): a named hero wears its body's (heroBody, js/sim/player.js)
   for (const L of [].concat(BODY, HEAD, BEARD, HAIR, OUTFIT)) {
     if (!L) continue;
     for (const r of L.rows) if (r.length !== L.rows[0].length) throw new Error('looks.js: ragged grid row "' + r + '"');
@@ -365,12 +365,12 @@
     c = document.createElement('canvas');
     c.width = 48; c.height = 48;
     const g = c.getContext('2d');
-    const pal = modelPal(look, team);
+    const pal = Object.assign(modelPal(look, team), CLASSES[cls] && CLASSES[cls].paint48);
     stamp(g, BODY[look.sex] || BODY[0], pal);
     stamp(g, HEAD[look.face] || HEAD[0], pal);
     stamp(g, BEARD[look.beard], pal);
     stamp(g, HAIR[look.hair], pal);
-    stamp(g, OUTFIT[cls] || OUTFIT[0], pal);
+    stamp(g, OUTFIT[heroBody(cls)] || OUTFIT[0], pal); // a named hero wears its body's outfit (heroBody, js/sim/player.js)
     if (cache.size >= PORTRAIT_KEEP) cache.clear();
     cache.set(key, c);
     return c;

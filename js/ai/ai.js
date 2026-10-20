@@ -694,7 +694,7 @@ function aiSpend(p, inp, steerTo) {
   // (level 0 casts nothing) before any of them gets a cooldown cut.
   if (p.skillPts > 0 && !inp.cmd) {
     let ba = -1, bl = AB_LV_MAX - 1;
-    for (let i = 0; i < AB_KEYS; i++) if (p.abLv[i] - 1 < bl) { bl = p.abLv[i] - 1; ba = i; }
+    for (let i = 0; i < AB_KEYS; i++) if (abLvCanBuy(p, i) && p.abLv[i] - 1 < bl) { bl = p.abLv[i] - 1; ba = i; } // (a key still waiting on its hero level is no buy yet)
     if (ba >= 0) inp.cmd = { kind: 'ability', i: ba };
   }
   if (!inp.cmd && p.items) {

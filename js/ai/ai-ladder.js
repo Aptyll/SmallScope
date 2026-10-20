@@ -342,7 +342,8 @@ function aiFight(k) {
     // the class abilities, spent off cooldown at the foe - through the same
     // edge key a human presses, so a bot can never cast what a hand couldn't
     if (ai.abilOk && p.castT <= 0 && p.grapT <= 0 && inp.ability < 0) {
-      if (p.cls === 0) { // hunter: skewer the open lane, tangle the gap
+      if (CLASS_AB[p.cls].some((ab) => ab.bot)) inp.ability = abBotKey(p, foe, d, clear); // a hero whose rows say when (ARM_AB's `bot`, js/sim/armatos.js)
+      else if (p.cls === 0) { // hunter: skewer the open lane, tangle the gap
         // (the grapple is a held key and a terrain read - a hand skill the
         // ladder does not try to fake; snow cover is spent at rung 2)
         if (abReady(p, 0) && d > 55 && d < 230 && clear) inp.ability = 0; // lock the piercing draw on them
@@ -620,7 +621,7 @@ function aiPushRung(k) {
       if (Math.max(Math.abs(tur.tx - ptx), Math.abs(tur.ty - pty)) <= WORK_REACH) { inp.work = true; inp.fire = false; ai.tgt = null; return true; }
       if (steerTo(tx, ty, WORK_REACH, AI_ROOST_BUDGET) >= 0) { inp.fire = false; ai.tgt = null; return true; }
       ai.pushCd = 10;
-    } else if (p.cls === 1) {
+    } else if (aiMelee(p)) { // a blade works the roost's tiles; a bow keeps its station
       const t = aiEagleTile(e, p);
       if (t) {
         const tx = t.tx * TILE + 8, ty = t.ty * TILE + 8;

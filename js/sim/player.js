@@ -108,7 +108,26 @@ const CLASSES = [
     kit: { iceMax: 1.15, iceSteer: 3.2, slideMin: 70, fatigue: 0.7, chargeMul: 0.7,
       bowCharge: 0.75, nock: 0.5, spdDmg: 5, dodgeSpeed: 230 },
   },
+  {
+    // the first named hero (js/sim/armatos.js): the WARRIOR's body and sword
+    // (`body`) in his own iron paint (`paint`, the 16 px letters a team's
+    // paint would otherwise fill), and a kit of his own on keys 1-4
+    name: 'ARMATOS', role: 'THE LAST STANDARD', body: 1, passive: 'resolve', // HERO_PASSIVE, js/sim/armatos.js
+    look: { sex: 0, tone: 1, hair: 2, hairCol: 6, beard: 3, face: 0 },
+    blurb: ['NO SOLDIER LEFT BEHIND.', 'THE SHIELD TAKES THE HIT. THE BASH ANSWERS IT.', 'PLANT THE STANDARD: YOUR SIDE HOLDS, THEIRS CANNOT LEAVE.'],
+    base: { hp: 130, dmg: 16, armor: 24, ap: 0, haste: 0, ms: PLAYER_SPEED },
+    grow: { hp: 15, dmg: 2.2, as: 0.012, armor: 4.5 },
+    kit: { iceMax: 1.1, iceSteer: 3.2, slideMin: 70, fatigue: 0.7, chargeMul: 0.7,
+      bowCharge: 0.75, nock: 0.5, spdDmg: 5, dodgeSpeed: 225 },
+    // an iron helm with the visor's slits where the goggles were, a white
+    // beard at the chin, iron at the trim; the coat keeps the side's colour
+    paint: { t: '#7d8699', T: '#b4bdcc', g: '#1c2232', G: '#9aa3b8', K: '#e6e1d6', m: '#5c6478', M: '#454c5e' },
+    paint48: { t: '#7d8699', T: '#b4bdcc', g: '#1c2232', G: '#9aa3b8', m: '#5c6478', M: '#454c5e' }, // the 48 px model's (js/sprites/looks.js): its K is skin
+  },
 ];
+// the body a hero wears - its sprites, its weapon, its loadout: a hero that
+// names none is its own (HUNTER 0, WARRIOR 1), a named hero borrows one
+function heroBody(cls) { const c = CLASSES[cls]; return c && c.body != null ? c.body : cls; }
 // the heroes announced but not yet playable: the hero row shows each as a
 // dark silhouette of this body and look, its name on hover, and no press.
 // One moves into CLASSES (with a kit and abilities) the day it ships.
@@ -626,6 +645,14 @@ class Player {
     this.buffT = 0;                                // s of a bear buff left (campBuff, wildlife.js): harder blows, a quicker walk
     this.buffKind = null;                          // ...and which bear's ('alpha' or 'dire'): its name and its ring's colour
     this.dawnShield = 0;                           // hp of the DAWN SHIELD left (pickSnowdrop, js/sim/actions.js): spent before health
+    this.wardHp = 0; this.wardT = 0;               // a timed shield (shieldUnit, js/sim/actions.js): spent after the dawn's, gone when its clock runs out
+    // ARMATOS (js/sim/armatos.js): his resolve (0..1, full = the next key shields him) and
+    // the seconds since a hit last fed it; the brace (`hold`, on the shieldT state) and
+    // whether a hero has struck it (the bash primed); the march (on the rushT state) and the
+    // lesser bodies it has already shouldered aside (once each)
+    this.resolve = 0; this.resolveIdle = 0;
+    this.hold = false; this.holdHit = false;
+    this.march = false; this.marchHit = [];
     // the tunnels (js/sim/tunnel.js): the one being ridden ({ fx, fy, tx, ty, t, len },
     // px and s), the wait after coming up before any hole takes this body
     // again, the seconds left on the far end being dug, and the work key held
@@ -827,6 +854,8 @@ function damagePlayer(p, dmg, dx, dy, src, cause, crit, kb) {
   const dot = !!DOT_CAUSE[cause];
   if (p.dead || (p.invuln > 0 && !dot)) return;
   dmg = armorTaken(p, dmg); // ARMOR cuts every hit by its share, never to zero (js/sim/stats.js)
+  dmg = holdTaken(p, dmg, dx, dy, src); // ...and ARMATOS's brace a front hit's (js/sim/armatos.js)
+  passiveHurt(p, dmg); // a hero's passive fed by the hits it takes (LEGION'S RESOLVE)
   // the dawn shield (pickSnowdrop, js/sim/actions.js) takes the hit first, a burn
   // included; what is left of the blow goes on to health
   const shielded = Math.min(p.dawnShield, dmg);
@@ -835,7 +864,14 @@ function damagePlayer(p, dmg, dx, dy, src, cause, crit, kb) {
     burst(p.x, p.y - 10, '#ffd84a', 4, 36, 0.35);
     if (p.dawnShield <= 0) { sfxAt('shieldBreak', p.x, p.y); burst(p.x, p.y - 10, '#fff4b8', 10, 60, 0.5); }
   }
-  p.hp -= dmg - shielded;
+  // ...then a timed shield (shieldUnit), the same way
+  const warded = Math.min(p.wardHp, dmg - shielded);
+  if (warded > 0) {
+    p.wardHp -= warded;
+    burst(p.x, p.y - 10, '#f2cc6a', 4, 36, 0.35);
+    if (p.wardHp <= 0) { p.wardT = 0; sfxAt('shieldBreak', p.x, p.y); }
+  }
+  p.hp -= dmg - shielded - warded;
   // the match record both ends of the blow keep (the post-game lobby, js/ui/lobby.js).
   // What is counted is what LANDED, DR already off it - the overkill on the
   // last hit of a kill included, because that is what the swing was worth.
@@ -922,6 +958,8 @@ function bodyOut(p) {
   p.castSlam = false; p.hopT = 0; p.grapT = 0;
   p.buffT = 0; // the bear buff goes with the body too
   p.dawnShield = 0; // ...and the dawn's shield
+  p.wardHp = 0; p.wardT = 0; p.resolve = 0; // ...and any other shield, and ARMATOS's resolve
+  p.hold = false; p.holdHit = false; p.march = false; p.marchHit.length = 0;
   clearUnitStatus(p); // root, slow, net, mark and the fire go out with the body
   // an item on the cursor goes back in the bag, so it is still there when the
   // body comes back instead of vanishing with the hand that was holding it

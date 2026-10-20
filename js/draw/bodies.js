@@ -440,6 +440,7 @@ function drawPlayer(p, ex, ey, now) {
       ctx.beginPath(); ctx.rect(sx - 32, py + bob + seat.hip - 64, spr.width + 64, 64); ctx.clip();
     }
     if (p.invuln > 0 && state.mode !== 'title' && ((now * 12) | 0) % 2 === 0) ctx.globalAlpha = 0.45;
+    drawHeroBack(p, ax, ay, now, false); // a hero's standard behind the body (js/draw/armatos.js)
     if (pose && pose.rot) {
       ctx.save();
       // turned about the body's middle: a worn body's own, or the cell's for a
@@ -453,6 +454,7 @@ function drawPlayer(p, ex, ey, now) {
     } else {
       drawSpriteFlash(spr, sx, sy, p.hurtT > 0.12 ? 1 : 0);
     }
+    drawHeroBack(p, ax, ay, now, true); // ...or over its back, facing away
     if (seat) ctx.restore();
     ctx.globalAlpha = 1;
     if (held && !toolBehind) atFeet(fx0, fy0, wsc, () => drawHeldTool(p, px, py + bob));

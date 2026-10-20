@@ -911,7 +911,12 @@ function hurtUnit(e, dmg, nx, ny, src, o) {
 function ccCredit(e, cur, t, src) {
   if (src instanceof Player && e instanceof Player && src.team !== e.team) { src.ccOut += Math.max(0, t - Math.max(0, cur)); noteFoe(e, src); }
 }
-function stunUnit(e, t, src) {
+// TENACITY: the share a body shrugs off every stun, root and slow it is put
+// under - each lasts ccMul of its length. From a rallying standard today
+// (guardTen, js/sim/armatos.js); a knock-up is the one control it never cuts.
+function ccMul(e) { return 1 - guardTen(e); }
+function stunUnit(e, t, src, firm) {
+  if (!firm) t *= ccMul(e);
   if (t <= 0 || !unitAlive(e)) return;
   const cur = e.stunT || 0;
   ccCredit(e, cur, t, src);
@@ -926,7 +931,7 @@ function stunUnit(e, t, src) {
     e.castT = 0; e.castAb = -1;                    // the cast is knocked out of the hands
     breakEat(e);                                   // ...and so is the meal (js/sim/core.js)
     if (e.shieldT > 0) abShieldDown(e, false);     // ...and the shield, at its full cooldown
-    if (e.rushT > 0) { e.rushT = 0; e.rushVictim = null; }
+    if (e.rushT > 0) { e.rushT = 0; e.rushVictim = null; e.march = false; } // (a march too: js/sim/armatos.js)
     if (e.grapT > 0) grapEnd(e);                   // the rope is knocked loose too, at its cooldown
     if (e.mount) rideEnd(e, true);                 // ...and the deer's back (js/sim/wildlife.js)
     // ...and if it is YOUR hands the swing, the cast, the shield and the meal
@@ -946,6 +951,7 @@ function stunUnit(e, t, src) {
 // both end at zero, so a snared deer stands in the jaws exactly as long as a
 // snared rival does.
 function rootUnit(e, t, src) {
+  t *= ccMul(e);
   if (t <= 0 || !unitAlive(e)) return;
   ccCredit(e, e.rootT || 0, t, src);
   e.rootT = Math.max(e.rootT || 0, t);
@@ -956,6 +962,7 @@ function rootUnit(e, t, src) {
 // Always the WORSE of what is already on you and what has just landed, which
 // is how the net and the crater have stacked on a player from the start.
 function slowUnit(e, t, mul) {
+  t *= ccMul(e);
   if (t <= 0 || !unitAlive(e)) return;
   e.slowT = Math.max(e.slowT || 0, t);
   e.slowMul = Math.min(e.slowMul === undefined ? 1 : e.slowMul, mul);
@@ -963,10 +970,30 @@ function slowUnit(e, t, mul) {
 // Netted: the slow, plus the drape drawn over the body that says why it is slow.
 function netUnit(e, t, mul, src) {
   if (!unitAlive(e)) return;
+  t *= ccMul(e); // (slowUnit cuts the slow's own length again: the drape is what is cut here)
   ccCredit(e, e.netT || 0, t, src);
   slowUnit(e, t, mul);
   e.netT = Math.max(e.netT || 0, t);
   if (e.zip >= 0) zipEnd(e, true); // the drape brings a rider down
+}
+// KNOCKED UP: thrown into the air - a stun no tenacity shortens, with the body
+// lifted off the snow for it (upT/upMax: abilityPose, js/sim/abilities.js, for
+// a player; upLift for anything that draws one)
+function knockUp(e, t, src) {
+  if (t <= 0 || !unitAlive(e)) return;
+  stunUnit(e, t, src, true);
+  e.upT = Math.max(e.upT || 0, t);
+  e.upMax = e.upT;
+  burst(e.x, e.y + 3, '#eef4fb', 6, 40, 0.35, true);
+}
+function upLift(e) { return e.upT > 0 ? Math.round(7 * Math.sin(Math.PI * (1 - e.upT / (e.upMax || 1)))) : 0; }
+// SHIELDED: hp that a hit spends before health, for a while (damagePlayer,
+// js/sim/player.js, spends it after the dawn's). A fresh one never stacks on
+// one still up: the bigger hp, the longer clock. Players only, today.
+function shieldUnit(p, hp, t) {
+  if (!(p instanceof Player) || !unitAlive(p) || hp <= 0) return;
+  p.wardHp = Math.max(p.wardHp, hp);
+  p.wardT = Math.max(p.wardT, t);
 }
 // Marked: revealed. On a player seenAt() returns its full range and both maps
 // keep drawing them; an animal or a bot has no cover to strip, so it is the
@@ -1042,6 +1069,7 @@ function updateUnitStatus(e, dt) {
   if (e.netT > 0) e.netT = Math.max(0, e.netT - dt);
   if (e.slowT > 0) e.slowT = Math.max(0, e.slowT - dt);
   else e.slowMul = 1;
+  if (e.upT > 0) e.upT = Math.max(0, e.upT - dt);
   updateBurn(e, dt);
 }
 // What is left of a non-player unit's speed - the same root/slow fold
@@ -1057,7 +1085,7 @@ function unitMoveMul(e) {
 // every timed state a fresh body starts with none of, on any kind of unit
 function clearUnitStatus(e) {
   e.stunT = 0; e.stunMax = 0;
-  e.rootT = 0; e.slowT = 0; e.slowMul = 1; e.netT = 0; e.markT = 0;
+  e.rootT = 0; e.slowT = 0; e.slowMul = 1; e.netT = 0; e.markT = 0; e.upT = 0;
   douseUnit(e);
 }
 
