@@ -396,7 +396,7 @@ colours the whole building. `isSolidTile()` is generic (`!!STRUCTS[o.type] || ..
 construction, ownership and the wreck's pay already dispatch on `STRUCTS[o.type]` too, and a shot
 meets the grid's own opaque box (`structShotBox`, js/sim/sim.js), so taller art is a taller target
 for free. There is nothing to add unless the type does something once built (a functional tick
-branch in `updateStructures()`, e.g. the generator's payout timer or the barracks' waves).
+branch in `updateStructures()`, e.g. the gold pump's ring (`updatePump`, js/sim/pumps.js) or the barracks' waves).
 
 **Adding a camp** — a `CAMPS` entry plus a site in `CAMP_SITES`; that is the whole feature (see
 [world.md](world.md#camps) for the fields). The entry's shape:
@@ -503,7 +503,8 @@ already current, so it is safe to call from a state change that repeats.
 | js/sim/world.js | `TREE_HP`; `TREE_RARE_CHANCE` in `treeRare()`; the road (`ROAD_HW`/`ROAD_RAG`/`ROAD_ICE_KEEP`/`ROAD_ICE_TAPER`/`ROAD_STEP`/`ROAD_HW_WOOD`/`ROAD_NEST_IN`/`ROAD_NEST_OFF`/`ROAD_LOG_IN`/`SPUR_HW`), which reshapes the map |
 | js/sim/base.js | the bases (`BASE_U`/`BASE_R`/`BASE_RAG`/`PERCH_U`/`BASE_KEEP`, the side mouths `BASE_SIDE_U`/`BASE_SIDE_S`, the bay spots `BASE_BAYS`), which reshape both roost corners |
 | js/sim/lanes.js | the top and bot lanes (`LANE_HALF`, their fixed control points, `LANE_HW`/`LANE_RAG`, the ford's `LANE_FORD_HW`) and their cables (`LANE_ZIP_*`) |
-| js/sim/structures.js | `STRUCTS` costs/HP/build times (plus generator pay/period and each type's `w`/`h` footprint); the waves (`STRUCTS.barracks`'s `wave`/`waveT`/`grow`/`cap`/`botHp`/`hp`, `BARRACKS_ROLL`) |
+| js/sim/structures.js | `STRUCTS` costs/HP/build times (plus the gold pump's pay/period and each type's `w`/`h` footprint); the waves (`STRUCTS.barracks`'s `wave`/`waveT`/`grow`/`cap`/`botHp`/`hp`, `BARRACKS_ROLL`) |
+| js/sim/pumps.js | the gold pumps: the ring's size and speed (`PUMP_R`, `PUMP_CAP_T`, `PUMP_FADE_T`) and where they stand (`PUMP_SEEK`/`PUMP_SEEK_FAR`, `PUMP_ROAD`, `PUMP_STAND`/`PUMP_STAND_LONE`, `PUMP_CLEAR`); the bots' `AI_PUMP_*` sit with `aiPumpRung` in js/ai/ai-ladder.js |
 | js/sim/robots.js | `SOLDIER_*` (speed, aggro, siege reach, the bird damage, `SOLDIER_HP_GROW`); `MERCH_BAYS`/`MERCH_BAY_*` (how many bays, the logs a rebuild costs, when the first is due, the order the lanes get theirs, the rebuild wait); `MERCH_BACK_R`/`MERCH_BACK_ARC` (how far and how wide the back woods reach) |
 | js/sim/farm.js | `SOLDIER_BOUNTY`/`SOLDIER_BOUNTY_GROW` (a soldier's last hit), `COIN_POP_T`; the bots' farm knobs `AI_FARM_*`/`AI_DEN_EARLY`/`AI_LANE_N`/`AI_JUNGLE_N` sit in js/ai/ai-farm.js |
 | js/sim/actions.js | `WORK_REACH` and the roll/prone blocks |

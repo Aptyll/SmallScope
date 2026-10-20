@@ -40,6 +40,7 @@ function objAt(tx, ty) { return inWorld(tx, ty) ? objects[idx(tx, ty)] : null; }
 const CH_SNOW = 0, CH_FOREST = 1, CH_ROAD = 2, CH_ICE = 3, CH_HOLE = 4,
       CH_RED = 5, CH_BLUE = 6, CH_EAGLE_RED = 7, CH_EAGLE_BLUE = 8, CH_STONE = 9;
 const chTeam = (o) => skin(o.team === undefined ? 0 : o.team) ? CH_BLUE : CH_RED;   // a side's building
+const chPump = (o) => o.hold >= 0 ? (skin(o.hold) ? CH_BLUE : CH_RED) : CH_STONE; // a gold pump: its holder's, or nobody's grey (js/sim/pumps.js)
 const chEagle = (o) => skin(o.team === undefined ? 0 : o.team) ? CH_EAGLE_BLUE : CH_EAGLE_RED; // its bird, its gate
 const OBJECTS = {
   // lift 33: the pine's canopy reaches 21 px above its own tile (drawn at
@@ -157,6 +158,8 @@ function snowdropLeft(o) { return Math.max(0, (o.readyAt || 0) - state.elapsed);
 const MM_EAGLE_RED = [224, 85, 72], MM_EAGLE_BLUE = [106, 168, 232];
 const MM_TEAM_RED = [172, 68, 60], MM_TEAM_BLUE = [78, 128, 188];
 const mmTeam = (o) => skin(o.team === undefined ? 0 : o.team) ? MM_TEAM_BLUE : MM_TEAM_RED; // STRUCTS' mm (structures.js)
+const MM_PUMP = [150, 156, 172]; // a gold pump nobody holds
+const mmPump = (o) => o.hold >= 0 ? (skin(o.hold) ? MM_TEAM_BLUE : MM_TEAM_RED) : MM_PUMP;
 const MM_BANNER = [214, 88, 76]; // the practice gate's own red
 
 // What stands on a tile, on each map: objMapColor is the `mm` colour the

@@ -40,6 +40,7 @@ function aiThink(p, dt) {
   if (aiPushRung(k)) return;   // 5c. the rival bird
   if (aiEscortRung(k)) return; // 5d. the human
   if (aiHelpRung(k)) return;   // 5e. a call for help
+  if (aiPumpRung(k)) return;   // 5e'. a gold pump to take or hold
   if (aiRoamJobs(k)) return;   // 5f. the bear party, the stalker, the scout
   if (aiRoadRung(k)) return;   // 5g. the road
   if (aiHuntRung(k)) return;   // 6. meat
@@ -637,6 +638,47 @@ function aiHelpRung(k) {
     if (steerTo(caller.x, caller.y, 3) >= 0) { aimAt(caller.x, caller.y); inp.fire = false; ai.tgt = null; return true; }
   }
   return false;
+}
+
+// 5e'. THE GOLD PUMPS (js/sim/pumps.js): a pump its side does not hold, or
+//      holds with a rival hero in the ring, is walked to and stood in until
+//      it is the side's. Its lane's laner goes from anywhere; anyone else
+//      free (not pushing, defending, on guard, escorting or under a ping)
+//      only from within AI_PUMP_NEAR, and no more than AI_PUMP_N of a side
+//      at one pump. A rival in the ring is rung 3's the moment it is seen,
+//      so taking a held pump is a fight at it. No rng(): the stream is as it was.
+const AI_PUMP_NEAR = 30 * TILE; // px from a pump a bot that is not its lane's laner will go for it
+const AI_PUMP_N = 2;            // bots of a side going for one pump at once
+const AI_PUMP_IN = 0.6;         // share of the ring's radius out from the pump a bot stands
+function aiPumpRung(k) {
+  const { p, inp, ai, role, steerTo, aimAt, pushE, defend, guardE, escort, order } = k;
+  ai.pump = -1; // the pump it is going for, by its tile, for its side's count
+  if (pushE || defend || guardE || escort || order || role === 'pusher') return false;
+  const lane = role === 'laner' ? aiLane(p) : -1;
+  let best = null, bd = Infinity;
+  for (const o of structures) {
+    if (o.type !== 'generator') continue;
+    const n = pumpCount(o);
+    if (o.hold === p.team && !n[1 - p.team]) continue; // its side's, and nobody taking it
+    const c = structCenter(o), d = Math.hypot(c.x - p.x, c.y - p.y);
+    if (o.lane !== lane && d > AI_PUMP_NEAR) continue;
+    const key = idx(o.tx, o.ty);
+    let going = 0;
+    for (const q of players) if (q !== p && q.team === p.team && q.ai && q.ai.pump === key && !q.dead) going++;
+    if (going >= AI_PUMP_N || d >= bd) continue;
+    bd = d; best = o;
+  }
+  if (!best) return false;
+  ai.pump = idx(best.tx, best.ty);
+  const c = structCenter(best), R = pumpRingPx();
+  aiNote(p, 'PUMP', best.hold === p.team ? 'HOLD IT' : 'TAKE IT', c);
+  inp.fire = false; ai.tgt = null;
+  if (bd <= R * 0.85) { aimAt(p.x * 2 - c.x, p.y * 2 - c.y); return true; } // in: stand and look out
+  const ux = (p.x - c.x) / (bd || 1), uy = (p.y - c.y) / (bd || 1);
+  const sx = c.x + ux * R * AI_PUMP_IN, sy = c.y + uy * R * AI_PUMP_IN;
+  if (steerTo(sx, sy, 1) < 0) { ai.pump = -1; return false; }
+  aimAt(sx, sy);
+  return true;
 }
 
 function aiRoamJobs(k) {

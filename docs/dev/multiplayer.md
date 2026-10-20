@@ -753,7 +753,14 @@ Three small rules, and the teamwork is what they add up to:
   hurt under 60% or outnumbered in a fight **calls** (`aiCall`); a hurt human with a rival on
   them calls without pressing anything (`aiHumanCall`). A free bot within `AI_CALL_R` × its
   mood's `help` answers, at most `AI_CALL_N` (2) a call (rung 5e), and the caller is an anchor
-  for rung 3, so the helper joins the fight it walks into. On the profile's `focus` roll a bot
+  for rung 3, so the helper joins the fight it walks into.
+- **Gold pumps** ([the pumps](gameplay/buildings.md#the-gold-pumps)). Rung 5e' (`aiPumpRung`):
+  a pump its side does not hold, or holds with a rival hero in the ring, is walked to and stood
+  in (`AI_PUMP_IN` of the ring out, on the side it came from) until it is the side's. The pump's
+  lane's laner goes from anywhere; any other bot not pushing, defending, on guard, escorting or
+  under a ping goes only from within `AI_PUMP_NEAR`, and never more than `AI_PUMP_N` (2) of a
+  side at one pump (`ai.pump`, the pump's tile, is what the side counts). A rival in the ring is
+  rung 3's the moment it is seen, so taking a held pump is a fight at it. On the profile's `focus` roll a bot
   shoots the rival most of its side is already shooting (`T.focus`).
 - **Grudge.** `die` tells the brain who a bot downed (`aiDowned`); the `AI_GRUDGE_N`-th time
   (2) it is the same player, the bot holds a grudge for `AI_GRUDGE_T` (90 s): the plan hands it

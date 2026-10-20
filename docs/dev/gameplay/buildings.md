@@ -1,11 +1,12 @@
 # Buildings
 
 **Nobody builds by hand.** Every building on the map is the map's own or the merchant's: the
-[road towers](../world.md#the-road) stand at boot (`placeTowers`, js/sim/towers.js), each
+[road towers](../world.md#the-road) stand at boot (`placeTowers`, js/sim/towers.js), so do the
+two neutral **gold pumps** ([below](#the-gold-pumps)), each
 [merchant](robots.md#the-merchant) raises its side's **barracks** just inside its base's lane
 mouths, and a **fish net** goes over an open hole ([Fish nets](../world.md#fish-nets)). Player
 building (the T build list, walls, gates, turrets, bot bays and worker bots, and the E manage
-wheel) was cut in 0.525. The gold pump stays in the table for the map objective.
+wheel) was cut in 0.525.
 
 All the data lives in the `STRUCTS` table ([structures.js](../../../js/sim/structures.js)): the
 gold pump (`generator`, 4x2), the barracks (3x2, wearing the bay's grid through `art: 'spawner'`),
@@ -30,9 +31,8 @@ the road tower (3x2) and the net (1x1, `water: true`). Each has one tier: a gold
   along the roofline and shakes. A yellow progress bar renders over the roof of every site
   (`drawBuildBars`). A big building y-sorts by the bottom of its footprint and sits its snow skirt
   on that edge.
-- **Gold pump** (`generator`): deposits `tiers[0].pay` gold every `period` seconds into its
-  **owner's** wallet (`awardGold`; the gold number rises over the pump's barrel as a drawn coin
-  hops out of it). Its stroke runs off `o.payT` (`pumpFrame`, js/draw/structs.js).
+- **Gold pump** (`generator`): the map's objective, [below](#the-gold-pumps). It is nobody's,
+  so nothing can hurt it.
 - **Barracks** (`barracks`): the wave bay. It wears the bay's 3×2 grid under its own overlay
   (`drawBarracksOverlay`: the shutter, the next soldier sliding down the door, the wave clock on
   the flank in the side's paint, the beacon amber while a column is leaving). Every `waveT` (30 s)
@@ -73,3 +73,37 @@ the road tower (3x2) and the net (1x1, `water: true`). Each has one tier: a gold
   barracks and the tower draw their own. Below 60% hp a building also picks up four crack marks
   placed as fractions of its sprite, so damage reads without the bar.
 - No structure emits light; an open snowdrop is the one thing on the map that does (see [Lighting](../rendering/light-and-weather.md)).
+
+## The gold pumps
+
+Two **neutral gold pumps** stand at boot (`placePumps`, js/sim/pumps.js, after the landmarks and
+with no `rng()`), one beside the middle of the top lane and one beside the middle of the bot lane
+(`pumpLaneMid`, where each lane crosses the creek), set off the road so a wave walks past. The
+spot is the nearest 4x2 footprint of plain snow to the top lane's middle (`pumpSeek`, inside
+`PUMP_SEEK` tiles) whose centre keeps `PUMP_ROAD` tiles off every road, clear of camps and the
+cistern, with no water in its ring, **and whose point mirror on the bot lane passes the same
+test** (`pumpSpotOk`, `pumpMirror`), so the pair is fair: each side has one pump a little nearer.
+A shape where no pair stands (the frozen isles' lake) takes the nearest spot on each lane alone,
+out to `PUMP_SEEK_FAR`, with `PUMP_STAND_LONE` of the ring standable. The pines in the
+ring are felled (`pumpStand`). The pump's `team` stays undefined: `structFoe` is false for it, so
+nothing hurts it, and `ownsStruct` is true, so E never swings at it.
+
+- **The ring.** A hero (a player, never a soldier) counts when `unitAlive` and within `PUMP_R`
+  (4.5) tiles of the pump's centre (`pumpCount`). One side alone in the ring fills it toward
+  itself over `PUMP_CAP_T` (5 s): a rival's part-fill drains first at the same rate, and the
+  holder alone in its own ring wipes a rival's part-fill out. Both sides inside pause it. An empty
+  ring loses a part-fill over `PUMP_FADE_T` (10 s). A full fill flips the pump (`pumpFlip`: the
+  jolt, a `place` cue, a ring of sparks in the side's mark). Holding needs nobody in the ring.
+- **The pay.** While a side holds it, every `period` (10 s) each active hero on that side, alive
+  or not, wherever they are, gets `tiers[0].pay` (3) through `gainGold` and a coin cue; one plain
+  +3 rises over the barrel as the drawn coin hops out (`drawPumpCoin`, only after a pay). It
+  strokes only while held: the frame runs off `o.payT` (`pumpFrame`).
+- **The colour is the whole read** (no text). The pump wears its holder's team paint, or a grey
+  set held by nobody (`pumpSet`, js/draw/structs.js; `SPRITES.pumpNeutral`, js/baked/pump.js).
+  `drawPumpRings` lays the roost's glowing rim (`roostRingArt`) flat on the snow in the holder's
+  mark, or `PUMP_GREY`, and the fill of the side taking it as a three-pixel arc of its mark
+  running round from the top; the fill shows only where the viewer's side can see. Both maps ink
+  it the holder's colour or grey (`mmPump`/`chPump`, world.js).
+- **State** rides the pump's tile object (`hold`, `cap`, `capBy`, `payT`, `paid`, `lane`), so the
+  snapshot and the save carry it with the tile.
+- **Bots** take and contest them (rung 5e', `aiPumpRung`, [Bots](../multiplayer.md#bots)).

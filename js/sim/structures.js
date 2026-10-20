@@ -14,11 +14,14 @@
 // half of (wreckPay). `sight` is the px of fog of war a standing one of a
 // side lifts round its middle, or round `eye(o)` (sightSources, js/sim/fog.js).
 const STRUCTS = {
-  // THE GOLD PUMP (type 'generator'): a pump jack on a 4x2 tile pad. Its art
-  // is baked per tier (js/sprites/pump.js) and its stroke runs off o.payT
-  // against `period` (pumpFrame, js/draw/structs.js).
-  generator: { name: 'GOLD PUMP', w: 4, h: 2, mm: mmTeam, map: chTeam, tiers: [
-    { cost: { gold: 60 },  hp: 160, buildT: 20, pay: 2, period: 10 },
+  // THE GOLD PUMP (type 'generator'): a pump jack on a 4x2 tile pad, the
+  // map's two neutral objectives (the `pumps` banner, js/sim/pumps.js). It
+  // wears its HOLDER's paint, or grey held by nobody (mmPump/chPump, world.js;
+  // pumpSet, js/draw/structs.js). While a side holds it, every hero on that
+  // side is paid `pay` every `period` s; its stroke runs off o.payT against
+  // `period` (pumpFrame). Nothing hurts it, so its hp and cost go unread.
+  generator: { name: 'GOLD PUMP', w: 4, h: 2, mm: mmPump, map: chPump, tiers: [
+    { cost: { gold: 60 },  hp: 160, buildT: 20, pay: 3, period: 10 },
   ]},
   // THE BARRACKS: the wave bays each merchant raises in the back woods
   // behind its roost, the first MERCH_BAY_T after the landing and up to
@@ -80,7 +83,7 @@ function createStruct(tx, ty, type, tier, p, building) {
   // reload; heat/heatId: bolts in a row into one scout; bolt/pin: the one in the
   // air and the spent one in the snow (updateTower, js/sim/towers.js)
   if (type === 'tower') { o.zl = -1; o.zi = -1; o.ang = p.team === 0 ? -Math.PI / 4 : Math.PI * 3 / 4; o.tgt = null; o.chg = 0; o.cd = 0; o.heat = 0; o.heatId = -1; o.bolt = null; o.pin = null; o.loose = -9; }
-  if (type === 'generator') o.payT = 0;
+  if (type === 'generator') { o.hold = -1; o.cap = 0; o.capBy = -1; o.payT = t.period; o.paid = false; } // the ring's state (updatePump, js/sim/pumps.js)
   // waveT: the clock to the next wave. queue/rollT: soldiers still to leave
   // the door, and the gap to the next. born: when it stood, for the growth.
   if (type === 'barracks') { o.waveT = t.waveT; o.queue = 0; o.rollT = 0; o.born = state.elapsed; o.door = 0; }
@@ -175,18 +178,8 @@ function updateStructures(dt) {
     }
     const t = STRUCTS[o.type].tiers[o.tier];
     if (o.type === 'tower') updateTower(o, dt);
-    else if (o.type === 'generator') {
-      o.payT -= dt;
-      if (o.payT <= 0) {
-        o.payT = t.period;
-        // passive income deposits straight into the owner's wallet - gold is
-        // never a physical drop, so there is no pile to collect or to cap.
-        // The +N rises over the pump's barrel, where the drawn coin hops out
-        const c = structCenter(o);
-        awardGold(players[o.owner], t.pay, c.x - 5, c.y);
-        burst(c.x - 5, c.y - 6, '#c9d0e2', 2, 20, 0.3);
-      }
-    } else if (o.type === 'barracks') {
+    else if (o.type === 'generator') updatePump(o, dt); // the ring and the pay (js/sim/pumps.js)
+    else if (o.type === 'barracks') {
       // the wave clock: every waveT a wave is queued - `wave` soldiers, one
       // more per `grow` seconds stood - and the queue leaves the door one
       // soldier every BARRACKS_ROLL, so a wave reads as a column, not a heap

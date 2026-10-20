@@ -26,7 +26,7 @@ rather than a different resource (the League model: one number, many ways to ear
 | black bear | `alpha` 6 coins × 15 → 90 | BLUE's river camp's one; `EPIC_TEAM_GOLD` (40) to every teammate besides, and the BLACK BUFF for the whole team |
 | brown bear | `dire` 6 coins × 15 → 90 | RED's river camp's one; `EPIC_TEAM_GOLD` (40) to every teammate besides, and the BROWN BUFF for the whole team |
 | bird | `bird` 2 coins × 4 → 8 | dormant: nothing spawns one |
-| gold pump (`generator`) | `tiers[tier].pay` every `period` s: 2 / 4 / 7 every 10 s — 12 / 24 / 42 a minute, so the first pays back in 5 min and each upgrade in 6.7 and 7.8 | passive income, deposited to its owner; a 4x2 building, and each one its owner already has makes the next cost 2.5x (`ramp`, `buildCost`: 60, 150, 375), so the second pays back in 12.5 min and the next tier is the better buy |
+| gold pump (`generator`) | `tiers[0].pay` (3) every `period` (10 s) to every hero of the side holding it — 18 a minute each | one of the map's two neutral objectives, taken by standing in its ring ([The gold pumps](buildings.md#the-gold-pumps)); both held is 36 a minute each, a little over twice the trickle |
 | a sale at [the counter](the-merchants-counter.md) | half an item's price, or the fixed price for fish and berries | the one payout that does not count as earned (`tradeGold`) — a trade is an exchange, not a source, and the counter buys food at the price it sells it |
 
 The table is sized so that soldiers stay the better farm: a lane's last hits pay 96 a minute at
@@ -43,8 +43,9 @@ at the place the action happened (the tree, the kill, the wreck), and the local 
 coin blip. Who earns is always the actor: the swinger of the blow, the final-blow shooter of an
 animal or a soldier (its bounty), the breaker of an enemy
 building (half its cost, `wreckPay`), the killer of a player and the assists
-(gold from nowhere, the victim's own purse untouched — see [Takedowns](death-and-respawn.md#takedowns-assists-bounties-and-shutdowns)), and a
-gold pump's **owner**, into whose wallet each `pay` tick deposits directly.
+(gold from nowhere, the victim's own purse untouched — see [Takedowns](death-and-respawn.md#takedowns-assists-bounties-and-shutdowns)). The
+one payout to many is a held gold pump: each `pay` tick goes through `gainGold` to every hero on
+the holding side, with one +3 over the barrel and a coin cue for each.
 
 Physical drops exist for everything **carried**, which is food: `spawnDrop(x, y, type, n)`
 (js/sim/core.js) lays one, `d.n` its count (default 1). A berried bush pays two `berry` drops and

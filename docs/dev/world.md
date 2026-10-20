@@ -61,7 +61,7 @@ stable per tile.
   registry stays in sync — it routes `STRUCTS` types through `removeStruct`).
 - `generator`, `barracks`, `tower` and `net` are the **structures** (see
   [Buildings](gameplay/buildings.md)); nobody builds by hand. Each carries `{ tier, maxHp, building, buildT,
-  buildTotal, dustT, sparkT }` plus per-type fields (generator `payT`; barracks `waveT`, `queue`,
+  buildTotal, dustT, sparkT }` plus per-type fields (generator `hold`, `cap`, `capBy`, `payT`, `paid`, `lane`: [the gold pumps](gameplay/buildings.md#the-gold-pumps); barracks `waveT`, `queue`,
   `rollT`, `born`, `door`; tower `ang`, `tgt`, `chg`, `cd`, `bolt`; net `fish`), and every live one is also referenced from the module-scope `structures`
   array so `updateStructures()` never scans the 53,824-tile grid. Nor do the object clocks
   (`flash`/`shake`, bush regrow): `tickObjTimers` (js/sim/sim.js, the

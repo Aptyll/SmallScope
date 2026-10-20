@@ -124,7 +124,7 @@ enemy building, and strikes a rival's grounded eagle — and the axe it swings i
 selected, it comes out on its own for whatever is under the cursor. [The swing tools](gameplay/the-swing-tools-e.md).
 
 **Gold is the only currency; XP is a separate number, League style.** No wood, no stone — one
-currency earned many ways (last hits, kills, camps, the works, gold pumps, a slow trickle), each
+currency earned many ways (last hits, kills, camps, the works, holding a gold pump, a slow trickle), each
 source with its own yield profile, and it pays itself: gold is never a pickup on the ground,
 every source pays the earner on the spot. **XP comes from being near when a rival body dies** —
 a soldier, a scout, a camp monster — shared among the allies standing there, so the last hit
@@ -164,8 +164,14 @@ vote calls its own bird home, so even giving up is the bird leaving
 out of the game for now, to be rebuilt later. [Roguelike cards](gameplay/roguelike-cards.md).
 
 **Nobody builds.** Every building on the map is the map's own or the merchant's: the road
-towers and the barracks. Player building (walls, gates, turrets, gold pumps, bot bays and the
-build list) was cut in 0.525. [Buildings](gameplay/buildings.md).
+towers, the barracks and the two gold pumps. Player building (walls, gates, turrets, bot bays
+and the build list) was cut in 0.525. [Buildings](gameplay/buildings.md).
+
+**Two gold pumps are the map's objectives**, one beside the middle of the top lane and one beside
+the bot lane's, off the road. Heroes take one by standing in its ring with no rival hero inside
+(5 s; a rival inside pauses it), and while a side holds it every hero on that side gets 3 gold
+every 10 s. The ring and the pump wear the holder's colour, grey when nobody holds it; no text.
+Bots take and contest them. [The gold pumps](gameplay/buildings.md#the-gold-pumps).
 
 **Pings, League's way: tap the right button to ping GO HERE, hold it and flick for ATTACK, ON
 MY WAY, DANGER or DEFEND** (G on the keyboard's CLICK scheme, where the right button walks the
