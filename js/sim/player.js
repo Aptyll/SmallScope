@@ -562,6 +562,8 @@ class Player {
     this.kills = 0;                     // rivals downed; scoreboard only, survives death
     this.foeHits = {};                  // rival id -> state.elapsed of its latest blow or crowd control on this body (noteFoe); a death clears it
     this.lastDeath = null;              // { by, cause, tick } of the latest death: the kill feed's line, as data (js/ai/bot-api.js)
+    this.hurtLog = [];                  // the blows of the last RECAP_T s, as the side saw them (recapNote); a death hands it to deathLog
+    this.deathLog = null;               // ...the latest death's: what the death recap reads (js/ui/recap.js)
     this.lastCmd = null;                // { kind, tick, ok, why } of the latest order run (runCmd)
     // The rest of the match record, for the post-game lobby (js/ui/lobby.js).
     // Every one of them is a running total for the WHOLE match: a death
@@ -874,7 +876,7 @@ const HIT_KB = 110;
 // src: the player who dealt it (kill credit + the log line), null for the
 // world; cause: a DEATH_CAUSE key naming what the world did, when src is null;
 // kb: the multiplier on HIT_KB (hurtUnit's `kbMul`, undefined = an ordinary shove)
-function damagePlayer(p, dmg, dx, dy, src, cause, crit, kb) {
+function damagePlayer(p, dmg, dx, dy, src, cause, crit, kb, o) {
   const dot = !!DOT_CAUSE[cause];
   if (p.dead || (p.invuln > 0 && !dot)) return;
   dmg = armorTaken(p, dmg); // ARMOR cuts every hit by its share, never to zero (js/sim/stats.js)
@@ -902,6 +904,7 @@ function damagePlayer(p, dmg, dx, dy, src, cause, crit, kb) {
   // Only a RIVAL's blow is anybody's damage dealt: the world's and your own
   // side's still show up as damage taken, which is the honest read of both.
   p.dmgIn += dmg;
+  recapNote(p, dmg, src, cause, o);
   if (src instanceof Player && src !== p && src.team !== p.team) { src.dmgOut += dmg; p.dmgInP += dmg; noteFoe(p, src); }
   else if (BEAST_CAUSES.has(cause)) p.dmgInB += dmg;
   p.hurtT = 0.25;
@@ -1006,6 +1009,7 @@ function die(p, src, cause) {
   if (PRACTICE && p === player) { practiceRevive(p); return; }
   // what this body is worth is read before the death clears the streak it wears
   const worth = killWorth(p), bounty = bountyOf(p);
+  p.deathLog = p.hurtLog; p.hurtLog = []; // the blows that did it, for the death recap (js/ui/recap.js)
   p.deaths++;      // the match record; a respawn never clears it (js/ui/lobby.js)
   p.feed++;        // ...a run of deaths without a takedown makes it worth less (killWorth)
   p.streak = 0;    // ...and the run of kills ends with the body
@@ -1270,6 +1274,37 @@ const BOUNTY_MAX = 5;       // ...up to this (a streak of 6)
 const FEED_FROM = 2;        // deaths without a takedown before a body is worth less
 const FEED_STEP = 0.2;      // ...the worth lost each death past that...
 const FEED_FLOOR = 1 / 3;   // ...down to this share of the plain kill
+
+// ---- the death recap's record --------------------------------------------
+// Every blow a player takes, kept for RECAP_T s: how much, from whom, and with
+// what - a basic attack (`basic`), a key (`ab`, the ability's id, found on the
+// hitter's keys here), a burn, or the world (`cause`). It is written AS THE
+// SIDE SAW IT: a rival out of the side's sight when the blow landed (inSight,
+// js/sim/fog.js) is kept as nobody - no id, no hero, no key - so neither the
+// recap nor the wire can say what the dead player could not have known. What
+// kind of blow it was stays (an arrow in you is an arrow you saw).
+// An entry: { t, d, by (player id or -1), k ('atk'|'ab'|'burn'|'world'),
+// c (the hitter's class, or the world's cause), i/o (key and option),
+// m (a hit's `ab` that is no key: 'roll', 'turret'), s (0: unseen) }
+const RECAP_T = 10;  // s of blows a death looks back over
+const RECAP_N = 64;  // most blows kept (a long burn is many small ones)
+function recapNote(p, dmg, src, cause, o) {
+  const log = p.hurtLog || (p.hurtLog = []), now = state.elapsed;
+  while (log.length && (now - log[0].t > RECAP_T || log.length >= RECAP_N)) log.shift();
+  const e = { t: now, d: dmg, by: -1, k: 'world', c: cause || '' };
+  if (src instanceof Player && src !== p) {
+    const ab = o && o.ab;
+    e.k = cause === 'fire' ? 'burn' : o && o.basic ? 'atk' : 'ab';
+    e.c = '';
+    if (src.team !== p.team && !inSight(p.team, src)) e.s = 0;
+    else {
+      e.by = src.id; e.c = src.cls;
+      const i = e.k === 'ab' && ab ? abKeyOf(src, ab) : -1;
+      if (i >= 0) { e.i = i; e.o = src.abPick ? src.abPick[i] | 0 : 0; } else if (e.k === 'ab' && ab) e.m = ab;
+    }
+  }
+  log.push(e);
+}
 
 // a rival player's blow or crowd control on a player, for the assist list
 function noteFoe(p, src) {

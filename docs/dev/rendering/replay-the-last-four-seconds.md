@@ -12,6 +12,16 @@ are **dead** or **paused**, in one of two shapes (`rpFull()`/`rpRect()`):
   action, so a pad wears its B), and `deadKey` takes ESC, BACKSPACE, ENTER and SPACE as
   `replayClose()` — a pad's B arrives as escape. `state.rpClosed`
   remembers, reset by every `endMatch`, so it opens once per death.
+  In the frame's top-left corner sits **the death recap** (`drawRecap`, js/ui/recap.js): a ring
+  of all the damage split by kind (`RC_KIND`: basic attacks, abilities, the rest) with the total in
+  it, then up to `RC_ROWS` hitters, biggest first, each a face (the hitter's portrait, the world's
+  figure, or `?` for a rival the side did not see), its total over a bar split by kind, and the
+  icons of what it hit with. The killing blow's face wears the gold rim. Its `-` button folds the
+  lines away and `>` opens them out (names, and a number under each icon); `recap.view` keeps the
+  choice for the session. Under the pointer a face names the hitter, an icon its ability and damage,
+  and the ring its kinds. It reads `player.deathLog`, which `die()` hands over from the body's
+  `hurtLog` (`recapNote`, js/sim/player.js: the last `RECAP_T` s of blows, written as the side saw
+  them, so nothing on it is anything the dead player could not have known).
 - **The window**, on **pause**: the **bottom-left corner** at `RP_W`×`RP_H` (160×90), under the
   pause planks.
 

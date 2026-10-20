@@ -154,6 +154,7 @@ order, so the script tags still interleave them:
 | [js/ui/draft.js](../../js/ui/draft.js) | ~400 | shared scope, no `window.*` export | the lobby's draft: bans, everyone's blind pick, the bots' choices, the host's copy per side, the clock, the ban wells and the roster frames |
 | [js/ui/skins.js](../../js/ui/skins.js) | ~250 | shared scope, no `window.*` export | the skins screen the coins buy from, the title's coin tag, and `birdSkinFor`, which skin a bird wears |
 | [js/ui/screens.js](../../js/ui/screens.js) | ~1380 | shared scope, no `window.*` export | the replay window, the death overlay and spectating, the victory and defeat ceremonies |
+| [js/ui/recap.js](../../js/ui/recap.js) | ~280 | shared scope, no `window.*` export | the death recap in the replay's top-left corner: who hit you, with what, how much, and the split by kind |
 | [js/ui/lobby.js](../../js/ui/lobby.js) | ~470 | shared scope, no `window.*` export | the post-game lobby: the match's own record, and the sampling during play its graphs are drawn from |
 | [js/sim/save.js](../../js/sim/save.js) | ~350 | shared scope, no `window.*` export | the replay proof: the valley's baseline, the match as one object graph (`saveCapture`/`saveApply`), `saveHash`, and the record put back on a fresh page (`saveDevLoad`) |
 | [js/ui/botview.js](../../js/ui/botview.js) | ~470 | shared scope, no `window.*` export | the bot dev view: every bot's thought read one way, the recorder, the F4 map overlay and table, the link to the out-of-game page [botlab.html](../../botlab.html) ([botview.md](botview.md)) |

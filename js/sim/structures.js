@@ -579,7 +579,7 @@ function rockLands(a) {
   // no `kb`: the thump names no shove of its own, so each kind takes the one
   // it always takes (hurtUnit, js/sim/actions.js) scaled by the rock's own kbMul
   for (const t of unitsHit(src, a.x, a.y, ROCK_SPLASH)) {
-    hurtUnit(t, a.dmg, a.vx / vd, a.vy / vd, players[a.owner], { kbMul: a.kb });
+    hurtUnit(t, a.dmg, a.vx / vd, a.vy / vd, players[a.owner], { kbMul: a.kb, ab: 'turret' });
   }
 }
 // one step of a standing turret (updateStructures): the mark, the swing, the

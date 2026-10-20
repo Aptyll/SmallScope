@@ -372,7 +372,7 @@ function rollSweep(p) {
     if (!unitFoe(p, a) || a.kind === 'bird' || p.rollHit.includes(a)) continue; // a deer your side rides is rolled under
     if (Math.hypot(a.x - p.x, a.y - p.y) > ROLL_HIT_R + unitRadius(a)) continue;
     p.rollHit.push(a);
-    hurtUnit(a, dmg, nx, ny, p, { kb: ROLL_KB });
+    hurtUnit(a, dmg, nx, ny, p, { kb: ROLL_KB, ab: 'roll' });
     if (a.hp > 0 && !isAnchored(a)) stunUnit(a, stun); // a bear is not knocked out of its stride by a body
     if (a.kind === 'deer' || isBigBeast(a)) { rollTackle(p, sp, nx, ny); return; } // too much animal to go through
   }
@@ -380,7 +380,7 @@ function rollSweep(p) {
     if (!unitAlive(b) || b.team === p.team || p.rollHit.includes(b)) continue;
     if (Math.hypot(b.x - p.x, b.y - p.y) > ROLL_HIT_R + unitRadius(b)) continue;
     p.rollHit.push(b);
-    hurtUnit(b, dmg, nx, ny, p);
+    hurtUnit(b, dmg, nx, ny, p, { ab: 'roll' });
     if (!b.dead) stunUnit(b, stun, p);
   }
   for (const q of players) {
@@ -388,7 +388,7 @@ function rollSweep(p) {
     if (Math.hypot(q.x - p.x, q.y - p.y) > ROLL_HIT_R + PLAYER_R) continue;
     p.rollHit.push(q);
     if (q.invuln > 0) continue; // a rival mid-roll of their own is untouchable: rolls cancel rolls
-    hurtUnit(q, dmg, nx, ny, p);
+    hurtUnit(q, dmg, nx, ny, p, { ab: 'roll' });
     if (!q.dead) stunUnit(q, stun, p);
   }
 }
@@ -843,8 +843,12 @@ function structsInCone(src, x, y, a, r, half) {
 // the world. `o` carries the rest: `type` (a DMG_TYPES key), `kb` px/s of shove
 // for an animal or a bot (a player's shove is damagePlayer's own, so the callers
 // that want a particular one add it themselves), `cause` for the feed line,
-// `ambush`, `crit` and `basic` (a hero's basic attack, for passiveDeal and the
-// item passives). Everything an ability or an attack lands comes
+// `ambush`, `crit`, `basic` (a hero's basic attack, for passiveDeal and the
+// item passives) and `ab`, the id of the ability that landed it (its CLASS_AB
+// row's, or a move with no key: 'roll', 'turret'; a blow inside a key's use()
+// gets it stamped) - what the death recap
+// names (recapNote, js/sim/player.js): a hero hit that names neither shows as
+// an unnamed ability. Everything an ability or an attack lands comes
 // through here; the three per-kind functions under it stay for what is
 // genuinely per-kind (a den waking, a worker turning on whoever hit it).
 //
@@ -857,6 +861,9 @@ function structsInCone(src, x, y, a, r, half) {
 function hurtUnit(e, dmg, nx, ny, src, o) {
   if (!unitAlive(e)) return;
   o = o || {};
+  // a blow inside a key's use() is that key's (heroAbNow, js/sim/heroes.js); one
+  // that lands later (a charge, a net in flight, a shot) names its own `ab`
+  if (heroAbNow && o.ab === undefined && src instanceof Player) o.ab = heroAbNow;
   // a bear buff (campBuff, wildlife.js): every blow a player wearing it lands
   // is worth more, whatever landed it - a shot, a roll, a stomp alike
   if (src instanceof Player && src.buffT > 0) dmg = Math.round(dmg * statBuffMul(src, 'dmg'));
@@ -864,7 +871,7 @@ function hurtUnit(e, dmg, nx, ny, src, o) {
   const ty = DMG_TYPES[o.type] || DMG_TYPES.blunt;
   const km = o.kbMul === undefined ? 1 : o.kbMul;
   if (e instanceof Player) {
-    damagePlayer(e, dmg, nx, ny, src, o.cause || null, o.crit, km);
+    damagePlayer(e, dmg, nx, ny, src, o.cause || null, o.crit, km, o);
   } else if (isAnimalUnit(e)) {
     if (src instanceof Player) src.dmgBeast += Math.min(dmg, Math.max(0, e.hp)); // the post-game record (js/ui/lobby.js)
     hurtAnimal(e, dmg, nx, ny, (o.kb === undefined ? 30 : o.kb) * km, src ? src.id : undefined, o.ambush);

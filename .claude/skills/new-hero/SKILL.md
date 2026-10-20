@@ -36,7 +36,9 @@ LOOKS (optional): default look name, first buyable skin name
 
 1. **Read and map.** Read `docs/dev/game.md`, `lore.md`, the `gameplay.md` index and only the gameplay pages the kit touches, and the Armatos files.
    Map every ability onto what already exists (`hurtUnit`, the status setters, `knockUp`,
-   `shieldUnit`, tenacity through `ccMul`, `unitsNear`, `navTo`). Where the text forks on a
+   `shieldUnit`, tenacity through `ccMul`, `unitsNear`, `navTo`). A blow that lands after its
+   key's `use()` returns (a dash, a projectile, a ground zone) passes `ab: '<row id>'` to
+   `hurtUnit`, or the death recap shows it as an unnamed ability. Where the text forks on a
    detail (a range, a ring size, which body it borrows), pick a default,
    write it in the PR, and ask at most 3 one-letter questions with the pick marked. Keep going on
    the picks; never park on a question.
