@@ -94,6 +94,7 @@ const SKIN_TABS = [
   // a hero's looks (CLASSES[c].skins): real, worn in a match and seen on every screen (heroSkinOf, player.js)
   { id: 'armatos', name: 'ARMATOS', slot: 'armatos', rows: ARM_SKINS, hero: 2, glyph: ['.wwww...', '.w..ww..', '.wwww...', '.w......', '.w......', '.w......', '.w......', 'www.....'] },
   { id: 'fortiva', name: 'FORTIVA', slot: 'fortiva', rows: FORT_SKINS, hero: 3, glyph: ['..ww....', '.w..w...', '.w..w...', '..w.....', '.....w..', '...w..w.', '...w..w.', '....ww..'] },
+  { id: 'bella', name: 'BELLA', slot: 'bella', rows: BELLA_SKINS, hero: 4, glyph: ['..www...', '.wwwwww.', '.w...w.w', '.w...w.w', '..www..w', '...w....', '.wwwww..', '.wwwww..'] },
 ];
 const SK_TAB_BIRD = 1; // SKIN_TABS' eagle and scout, the two tabs a match reads
 const SK_TAB_SCOUT = 0;

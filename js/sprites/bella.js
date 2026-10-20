@@ -5,7 +5,7 @@
 // (AB32_PAL, js/sim/abilities.js; baked by classAbIcon from each row's `icon`).
 // Laid by a script (blades, marks, arcs, then the outline); the grids are the source now.
 const BELLA_ICON32 = {
-  firstblood: [ // FIRST BLOOD: the lunge, the speed behind it and the white cut ahead
+  firstcut: [ // FIRST CUT: the lunge, the speed behind it and the white cut ahead
     '................................',
     '................................',
     '................................',
@@ -176,3 +176,167 @@ const BELLA_ICON32 = {
     '...........oo...................',
   ],
 };
+
+// ------------------------------------------------------------ bella bodies
+// BELLA's own 16 px body in each of her looks (BELLA_SKINS), on ARMATOS's frame
+// and legs (ARM_BODY, js/sprites/armatos.js): the standing frame for each facing,
+// hand-drawn in the player letters plus her own (a/A her dark hair, q/Q the
+// traitor's mask and mantle, y/Y gold); the walk lifted off it (heroWalk), the
+// run, held run and roll baked off a doll of the same body (app/bake-player/,
+// `general` and `traitor` in js/baked/motion.js). Three shapes carry her from
+// across the snow: the ponytail, the gold epaulettes and her side's coat.
+const BELLA_BODY = {
+  // IMPERIAL GENERAL: a gold circlet, the high ponytail, gold epaulettes on her side's coat
+  general: {
+      down: [
+        '................',
+        '.....oooooo.....',
+        '....oaAAAAaoo...',
+        '....oaAAAAaoAo..',
+        '....oyyyyyyoao..',
+        '....oaekkeaoao..',
+        '....oakkkkaoao..',
+        '....odrKKrdoo...',
+        '...oyYrrrrYyo...',
+        '...omrrRRrrmo...',
+        '...omrrRRrrmo...',
+        '...okrrrrrrko...',
+        '....oddyyddo....',
+        '.....pp..pp.....',
+        '.....bb..bb.....',
+        '.....BB..BB.....',
+      ],
+      up: [
+        '................',
+        '.....oooooo.....',
+        '....oaAAAAao....',
+        '....oaAAAAao....',
+        '....oyyyyyyo....',
+        '....oaaAAaao....',
+        '....onoAaono....',
+        '....odoAaodo....',
+        '...oyYoaAoYyo...',
+        '...omrrRRrrmo...',
+        '...omrrRRrrmo...',
+        '...otrrrrrrto...',
+        '....oddyyddo....',
+        '.....pp..pp.....',
+        '.....bb..bb.....',
+        '.....BB..BB.....',
+      ],
+      side: [
+        '................',
+        '.....oooooo.....',
+        '...ooaAAAAAo....',
+        '..oAaaAAAAAo....',
+        '.oAaoyyyyyyo....',
+        '.oaooaaakeko....',
+        '.oao.oaakkKo....',
+        '..oao.odrKo.....',
+        '..oaoyYrrRro....',
+        '...oomrrRRro....',
+        '....omrrRRro....',
+        '....okrrrrro....',
+        '....oddyyddo....',
+        '......pp.pp.....',
+        '......bb.bb.....',
+        '......BB.BB.....',
+      ],
+  },
+  // TRAITOR'S BLADE: the ponytail kept; an iron band for the circlet, a dark mask,
+  // a dark mantle where the gold was
+  traitor: {
+      down: [
+        '................',
+        '.....oooooo.....',
+        '....oaAAAAaoo...',
+        '....oaAAAAaoAo..',
+        '....onnnnnnoao..',
+        '....oaekkeaoao..',
+        '....oaqqqqaoao..',
+        '....oqqQQqqoo...',
+        '...oqQqrrqQqo...',
+        '...omqrRRrqmo...',
+        '...omrrRRrrmo...',
+        '...okrrrrrrko...',
+        '....oddnnddo....',
+        '.....pp..pp.....',
+        '.....bb..bb.....',
+        '.....BB..BB.....',
+      ],
+      up: [
+        '................',
+        '.....oooooo.....',
+        '....oaAAAAao....',
+        '....oaAAAAao....',
+        '....onnnnnno....',
+        '....oaaAAaao....',
+        '....oqoAaoqo....',
+        '....oqoAaoqo....',
+        '...oqQoaAoQqo...',
+        '...omqqqqqqmo...',
+        '...omrrRRrrmo...',
+        '...otrrrrrrto...',
+        '....oddnnddo....',
+        '.....pp..pp.....',
+        '.....bb..bb.....',
+        '.....BB..BB.....',
+      ],
+      side: [
+        '................',
+        '.....oooooo.....',
+        '...ooaAAAAAo....',
+        '..oAaaAAAAAo....',
+        '.oAaonnnnnno....',
+        '.oaooaaakeko....',
+        '.oao.oaaqqQo....',
+        '..oao.oqqQo.....',
+        '..oaoqQqrRro....',
+        '...oomqrRRro....',
+        '....omrrRRro....',
+        '....okrrrrro....',
+        '....oddnnddo....',
+        '......pp.pp.....',
+        '......bb.bb.....',
+        '......BB.BB.....',
+      ],
+  },
+};
+// her hair and the traitor's mantle over ARMATOS's iron
+const BELLA_PAL = Object.assign({}, ARM_PAL, { a: '#3a2a3e', A: '#5e4660', q: '#2b3042', Q: '#3d4459' });
+// The looks she can wear: the first is her own and free, the rest are bought
+// with coins on the skins screen (js/ui/skins.js, the BELLA tab).
+const BELLA_SKINS = [
+  { id: 'general', name: 'IMPERIAL GENERAL', rarity: 'common', price: 0, grids: BELLA_BODY.general, motion: 'general' },
+  { id: 'traitor', name: "TRAITOR'S BLADE", rarity: 'rare', price: 200, grids: BELLA_BODY.traitor, motion: 'traitor' },
+];
+
+// ------------------------------------------------------------ bella spatha
+// The EAGLE SPATHA as she holds it (HERO_BLADES.spatha, js/draw/bella.js): a straight
+// blade laid flat with the point left like every held blade (SPRITES.weaponHeld,
+// js/sprites/weapons.js), its guard spread like an eagle's wings, the grip and a gold pommel.
+const BELLA_SPATHA = [
+  '......................',
+  '......................',
+  '......................',
+  '......................',
+  '......................',
+  '......................',
+  '..............o.......',
+  '.............oYoo.....',
+  '..............oyYo..o.',
+  '..ooooooooooooooyoooyo',
+  '.oWTTTTTTTTTTTTTygGgyY',
+  '.oeEEEEEEEEEEEEEyGgGyY',
+  '..ooooooooooooooyoooyo',
+  '..............oyYo..o.',
+  '.............oYoo.....',
+  '..............o.......',
+  '......................',
+  '......................',
+  '......................',
+  '......................',
+  '......................',
+  '......................',
+];
+const BELLA_SPATHA_PAL = { o: '#241a12', e: '#c8d2e4', E: '#8b93a8', W: '#ffffff', T: '#eef2f8', g: '#6b4a30', G: '#a3794f', y: '#f2cc6a', Y: '#b98a2e' };

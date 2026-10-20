@@ -29,7 +29,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.521';
+const PATCH_TXT = 'PATCH 0.522';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -45,6 +45,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.522', 'A NEW HERO, BELLA THE IMPERIAL GENERAL: A QUICK DUELIST WHO BUILDS PRECISION ON HEROES, LUNGES THROUGH A LINE, PARRIES A BLOW AND STUNS BACK, SLIPS THROUGH A RIVAL TO MARK THEM, AND CALLS ONE HERO OUT FOR A FINISHING FLURRY, AND HER FIRST SKIN, TRAITOR\'S BLADE, IS ON THE SKINS SCREEN.'],
   ['0.521', 'WHEN YOU GO DOWN, A DEATH RECAP IN THE TOP LEFT OF THE REPLAY SHOWS WHO HIT YOU, WITH WHAT AND HOW HARD, BIGGEST FIRST, WITH A RING OF ALL THE DAMAGE BY KIND; FOLD IT OR OPEN IT OUT, AND A RIVAL YOU NEVER SAW STAYS A QUESTION MARK.'],
   ['0.520', 'UNDER THE HOOD: EVERY ROUND OF ART OR SHORTS NOAH PICKS FROM NOW REACHES THE KITCHEN SITE THROUGH ITS OWN SMALL PULL REQUEST.'],
   ['0.519', 'PINGS REPLACE FLAGS: TAP THE PING BUTTON FOR GO HERE OR HOLD AND FLICK FOR ATTACK, ON MY WAY, DANGER OR DEFEND, ONLY YOUR TEAM SEES THEM, AND THE TWO NEAREST BOTS COME WHERE YOU PING OR BACK OFF A DANGER.'],
@@ -1523,7 +1524,8 @@ const CLASS12 = [
     '.owo........',
     '.owo........',
     '..o.........',
-  ],  [ // FORTIVA: the broken chain - a link snapped, its two ends apart
+  ],
+  [ // FORTIVA: the broken chain - a link snapped, its two ends apart
     '............',
     '..oooo......',
     '.oCCCso.....',

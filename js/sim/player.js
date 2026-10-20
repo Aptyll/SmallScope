@@ -153,14 +153,21 @@ const CLASSES = [
       bowCharge: 0.75, nock: 0.5, spdDmg: 5, dodgeSpeed: 225 },
   },
   {
-    // a duelist on the WARRIOR's sword and loadout (js/sim/bella.js): quick and
-    // light, her damage in the keys she chains, her life thin if she is caught
+    // the third named hero (js/sim/bella.js): a duelist on the WARRIOR's frames
+    // and his sword's cut (`body`, `attack`): quick and light, her damage in the
+    // keys she chains, her life thin if she is caught
     name: 'BELLA', role: 'THE IMPERIAL GENERAL', body: 1, passive: 'calculated', // HERO_PASSIVE, js/sim/heroes.js
     look: { sex: 1, tone: 1, hair: 3, hairCol: 0, beard: 0, face: 2 },
     blurb: ['FIND THE WEAKNESS. SPEND IT FIRST.', 'THE LUNGE, THE SLIP AND THE PARRY CHAIN INTO EACH OTHER.', 'CALL OUT ONE HERO AND FINISH THEM.'],
-    attack: { name: 'IMPERIAL SABER', art: 'sword', cycle: 26 / 60, kb: 1, cut: { reach: 26, half: 0.95 } }, // quicker and a little shorter than the longsword
+    attack: { name: 'EAGLE SPATHA', art: 'sword', cycle: 26 / 60, kb: 1, cut: { reach: 26, half: 0.95 } }, // quicker and a little shorter than the longsword
+    // her own body in each of her looks (BELLA_SKINS, js/sprites/bella.js),
+    // worn per player (heroSkinOf) over the side's coat
+    skins: BELLA_SKINS, skinPal: BELLA_PAL, skinSlot: 'bella',
+    blade: 'spatha', // her EAGLE SPATHA in her hands (HERO_BLADES, js/draw/bella.js)
+    paint48: { t: '#7d8699', T: '#b4bdcc', g: '#1c2232', G: '#9aa3b8', m: '#5c6478', M: '#454c5e' }, // the 48 px model's (js/sprites/looks.js): its K is skin
     base: { hp: 104, dmg: 18, armor: 16, ap: 0, haste: 0, ms: PLAYER_SPEED + 4 },
-    grow: { hp: 11, dmg: 2.6, as: 0.02, armor: 3.2 },
+    grow: { hp: 7, dmg: 1.7, as: 0.013, armor: 2.1 }, // sized so 17 levels grow what 11 did when the cap was 12
+    rankOrder: [0, 2, 1], // the lunge, the slip, the parry
     kit: { iceMax: 1.15, iceSteer: 3.4, slideMin: 70, fatigue: 0.75, chargeMul: 0.7,
       bowCharge: 0.75, nock: 0.5, spdDmg: 5, dodgeSpeed: 240 },
   },

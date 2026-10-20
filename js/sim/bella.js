@@ -17,18 +17,16 @@ const EDGE_DMG = 8;             // the bonus on a consuming key's blows...
 const EDGE_AD = 0.3;            // ...plus this share of her DAMAGE stat
 const EDGE_T = 0.4;             // s every blow of that key keeps the bonus (a dash's whole path, a flurry's start)
 const EDGE_MS = 1.35, EDGE_MS_T = 1.5; // the burst: walk x1.35 for 1.5 s
-// Q FIRST BLOOD: a short dash, slashing every rival body on its path
+// Q FIRST CUT: a short dash, slashing every rival body on its path
 const LUNGE_LEN = 56;           // px
 const LUNGE_SPD = 360;          // px/s
 const LUNGE_R = 9;              // px either side of the path that the blade reaches
-const LUNGE_DMG = 12;
 const LUNGE_REFUND = 0.6;       // share of the cooldown a hero hit gives back
 // W PERFECT PARRY: a short stance; the first rival hero blow inside it is
 // mostly turned aside and answered with a riposte that stuns
 const PARRY_T = 0.75;           // s the stance holds
 const PARRY_CUT = 0.75;         // share of that blow the parry takes off
 const PARRY_REACH = 56;         // px the riposte reaches (a shot from further is only turned)
-const PARRY_DMG = 14;
 const PARRY_STUN = 0.9;
 // E OUTMANEUVER: slip through a rival body near the aim, cut it, mark it;
 // her next basic attack on the mark hits harder
@@ -38,7 +36,7 @@ const OUT_PAST = 14;            // px past it she comes out
 const OUT_SPD = 420;
 const OUT_DMG = 8;
 const OUT_MARK_T = 4;           // s the mark waits for her blade
-const OUT_BONUS = 12, OUT_BONUS_AD = 0.4; // the marked blow: this much, plus this share of her DAMAGE
+const OUT_BONUS_AD = 0.4;        // the marked blow's extra (its rank's markDmg) adds this share of her DAMAGE
 // R THE FINAL GAMBIT: mark a rival hero for a duel; running at them is quicker,
 // and the key again lunges in and lands the flurry, its finish worth more the
 // less life they have left
@@ -49,9 +47,7 @@ const DUEL_MS = 1.3;            // walk toward them x1.3
 const FLURRY_REACH = 64;        // px the key again can close (a short lunge in)
 const FLURRY_N = 3, FLURRY_GAP = 0.12; // three strikes, this far apart
 const FLURRY_DMG = 9;
-const FINISH_DMG = 18;
 const FINISH_MISSING = 0.3;     // ...plus this share of the life they are missing
-const DUEL_LV = [6, 9, 12];     // the hero level each of its three points waits for
 
 // ---- the keys ---------------------------------------------------------------
 // Her row in CLASS_AB (js/sim/abilities.js), in ARM_AB's shape (js/sim/armatos.js):
@@ -59,16 +55,20 @@ const DUEL_LV = [6, 9, 12];     // the hero level each of its three points waits
 // `recast` that the key pressed again is the second half (the flurry).
 const BELLA_AB = [
   {
-    id: 'lunge', name: 'FIRST BLOOD', cd: 7, ap: 0.5, cast: 0.12, aim: { line: LUNGE_LEN },
+    id: 'lunge', name: 'FIRST CUT', cd: [7, 6.5, 6, 5.5, 5], ap: 0.5, cast: 0.12, aim: { line: LUNGE_LEN },
+    rank: { dmg: [12, 17, 22, 27, 32] },
+    tip: 'DASH AND CUT. A HERO HIT CUTS THE WAIT',
     blurb: 'DASH A SHORT LINE AND CUT EVERY RIVAL IN THE PATH. HITTING A HERO GIVES BACK MOST OF THE COOLDOWN.',
     use: (p) => bellaLunge(p),
     tele: (p, px, py, a, col, closing, now, ex, ey) => drawTeleLine(p.x, p.y, Math.cos(a), Math.sin(a), teleLen(p.x, p.y, Math.cos(a), Math.sin(a), LUNGE_LEN), col, 0.5 + 0.45 * closing, now, ex, ey),
     pose: (p, prog) => ({ dx: 0, dy: prog < 0.6 ? 1 : 0, rot: 0.18 * (p.dir === 'left' ? -1 : 1) }), // low, coiled
-    icon: BELLA_ICON32.firstblood,
+    icon: BELLA_ICON32.firstcut,
     bot: (p, foe, d, clear) => clear && d > 14 && d < LUNGE_LEN + 4,
   },
   {
-    id: 'parry', name: 'PERFECT PARRY', cd: 10, ap: 0.5, cast: 0.05,
+    id: 'parry', name: 'PERFECT PARRY', cd: [10, 9.5, 9, 8.5, 8], ap: 0.5, cast: 0.05,
+    rank: { dmg: [14, 19, 24, 29, 34], stun: PARRY_STUN, t: PARRY_T, cut: PARRY_CUT }, // dmg/stun: the riposte
+    tip: 'PARRY A HERO. RIPOSTE AND STUN',
     blurb: 'A SHORT STANCE. THE FIRST HERO WHO STRIKES YOU IN IT IS TURNED ASIDE AND ANSWERED: A RIPOSTE THAT STUNS.',
     use: (p) => bellaParry(p),
     acol: '#f2cc6a', activeF: (p) => (p.parryT > 0 ? p.parryT / PARRY_T : 0),
@@ -76,7 +76,9 @@ const BELLA_AB = [
     bot: (p, foe, d) => foe instanceof Player && d < PARRY_REACH && bellaThreat(foe),
   },
   {
-    id: 'slip', name: 'OUTMANEUVER', cd: 9, ap: 0.4, cast: 0.1, aim: { line: OUT_RANGE },
+    id: 'slip', name: 'OUTMANEUVER', cd: [9, 8.5, 8, 7.5, 7], ap: 0.4, cast: 0.1, aim: { line: OUT_RANGE },
+    rank: { markDmg: [12, 18, 24, 30, 36], dmg: OUT_DMG, mark: OUT_MARK_T }, // markDmg: the marked blow's extra, + OUT_BONUS_AD of her DAMAGE
+    tip: 'SLIP THROUGH AND MARK. HIT THE MARK',
     blurb: 'SLIP THROUGH THE RIVAL AT THE AIM, CUTTING AND MARKING THEM. YOUR NEXT ATTACK ON THE MARK HITS HARDER.',
     use: (p) => bellaSlip(p),
     ok: (p) => !!slipTarget(p),
@@ -85,7 +87,9 @@ const BELLA_AB = [
     bot: (p, foe, d) => d < OUT_RANGE - 8 && !(p.duelT > 0 && foe.id !== p.duelId),
   },
   {
-    id: 'gambit', name: 'THE FINAL GAMBIT', cd: 70, cast: 0.2, aim: { ring: DUEL_RANGE }, lvReq: DUEL_LV,
+    id: 'gambit', name: 'THE FINAL GAMBIT', cd: [70, 60, 50], cast: 0.2, aim: { ring: DUEL_RANGE },
+    rank: { dmg: [18, 30, 42], missing: FINISH_MISSING, t: DUEL_T }, // dmg/missing: the finisher; each strike before it FLURRY_DMG
+    tip: 'DUEL A HERO. AGAIN TO FINISH THEM',
     blurb: 'CALL OUT THE RIVAL HERO AT THE AIM. YOU RUN AT THEM FASTER. PRESS AGAIN TO LUNGE IN AND STRIKE: THE LAST BLOW IS WORTH MORE THE LESS LIFE THEY HAVE.',
     use: (p) => (p.castSlam ? bellaFlurry(p) : bellaDuel(p)),
     ok: (p) => (p.duelT > 0 ? !!flurryTarget(p) : !!duelTarget(p)),
@@ -112,7 +116,7 @@ function precisionDeal(p, q, dmg, o) {
     }
     if (q.outBy === p.id && state.elapsed < q.outUntil) { // OUTMANEUVER's mark, spent
       q.outBy = -1;
-      dmg += Math.round(OUT_BONUS + statOf(p, 'dmg') * OUT_BONUS_AD);
+      dmg += Math.round(abRk(p, 'slip', 'markDmg') + statOf(p, 'dmg') * OUT_BONUS_AD);
       burst(q.x, unitMidY(q), '#f2cc6a', 8, 50, 0.4, true);
     }
     return dmg;
@@ -154,7 +158,7 @@ function bellaMoveMul(p) {
   return m;
 }
 
-// ---- Q FIRST BLOOD --------------------------------------------------------------
+// ---- Q FIRST CUT ----------------------------------------------------------------
 // The dash rides the charge state (rushT, HERO_DASH: js/sim/heroes.js) at its
 // own pace; every rival body (and building) the blade passes is cut once.
 function bellaLunge(p) {
@@ -179,7 +183,7 @@ function lungeStep(p, mv, dt) {
   for (const q of unitsHit(p, p.x + p.rushNX * 4, p.y + p.rushNY * 4, LUNGE_R + PLAYER_R)) {
     if (p.lungeHit.includes(q)) continue;
     p.lungeHit.push(q);
-    hurtUnit(q, abDmg(p, 'lunge', LUNGE_DMG), p.rushNX, p.rushNY, p, { kb: 40, ab: 'lunge' });
+    hurtUnit(q, abDmg(p, 'lunge', abRk(p, 'lunge', 'dmg')), p.rushNX, p.rushNY, p, { kb: 40, ab: 'lunge' });
     burst(q.x, unitMidY(q), '#eef4fb', 6, 45, 0.4, true);
     sfxAt('hit', q.x, q.y);
     if (q instanceof Player && p.lungeKey >= 0) { // a hero cut: most of the wait given back, once
@@ -191,12 +195,12 @@ function lungeStep(p, mv, dt) {
   for (const s of structsNear(p, p.x + p.rushNX * 6, p.y + p.rushNY * 6, LUNGE_R)) {
     if (p.lungeHit.includes(s)) continue;
     p.lungeHit.push(s);
-    hurtStruct(s, abDmg(p, 'lunge', LUNGE_DMG), p);
+    hurtStruct(s, abDmg(p, 'lunge', abRk(p, 'lunge', 'dmg')), p);
   }
   if (mv.blockedX || mv.blockedY || p.rushT <= 0) bellaDashEnd(p);
 }
 function bellaDashEnd(p) {
-  if (PRACTICE && p.dash === 'lunge') abHitDummies(p.x, p.y, LUNGE_R + 6, abDmg(p, 'lunge', LUNGE_DMG));
+  if (PRACTICE && p.dash === 'lunge') abHitDummies(p.x, p.y, LUNGE_R + 6, abDmg(p, 'lunge', abRk(p, 'lunge', 'dmg')));
   const slip = p.dash === 'slip';
   p.rushT = 0;
   p.dash = '';
@@ -228,7 +232,7 @@ function bellaRiposte(p) {
   if (!q || !unitAlive(q) || q.team === p.team || Math.hypot(q.x - p.x, q.y - p.y) > PARRY_REACH + PLAYER_R) return;
   const d = Math.hypot(q.x - p.x, q.y - p.y) || 1, nx = (q.x - p.x) / d, ny = (q.y - p.y) / d;
   faceToward(p, nx, ny, true);
-  hurtUnit(q, abDmg(p, 'parry', PARRY_DMG), nx, ny, p, { kb: 60, ab: 'parry' });
+  hurtUnit(q, abDmg(p, 'parry', abRk(p, 'parry', 'dmg')), nx, ny, p, { kb: 60, ab: 'parry' });
   if (!q.dead) stunUnit(q, PARRY_STUN, p);
   p.slashT = SLASH_T; p.slashA = Math.atan2(ny, nx); p.slashHalf = 0.9; // the blade answers through the arc
   abFx.push({ kind: 'line', x: p.x, y: p.y - 2, a: p.slashA, r: d, half: 3, t: 0, col: '#ffd95c' });
@@ -305,7 +309,7 @@ function bellaStrike(p) {
   const d = Math.hypot(q.x - p.x, q.y - p.y) || 1, nx = (q.x - p.x) / d, ny = (q.y - p.y) / d;
   const last = p.flurryN === 0;
   const dmg = last
-    ? abDmg(p, 'gambit', FINISH_DMG) + Math.round(Math.max(0, q.maxHp - q.hp) * FINISH_MISSING)
+    ? abDmg(p, 'gambit', abRk(p, 'gambit', 'dmg')) + Math.round(Math.max(0, q.maxHp - q.hp) * FINISH_MISSING)
     : abDmg(p, 'gambit', FLURRY_DMG);
   faceToward(p, nx, ny, true);
   hurtUnit(q, dmg, nx, ny, p, { kb: last ? 90 : 0, kbMul: last ? 1 : 0, ab: 'gambit', crit: last }); // (held in place until the finish throws them)

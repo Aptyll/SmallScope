@@ -18,7 +18,7 @@ and items, cards and levels grow it through the hero's stats ([hero stats](hero-
 
 Today's rows: the HUNTER's SHORTBOW (a shot, 320 px/s for 0.85 s, `cycle` 55/60 s), the WARRIOR's
 LONGSWORD, ARMATOS's OATH GREATSWORD and FORTIVA's CHAIN GREATSWORD (a cut, 28 px and 1.05 rad,
-`cycle` 30/60 s, `kb` 1.2; each named hero's blade is drawn as its own through `heroBlade`,
+`cycle` 30/60 s, `kb` 1.2), and BELLA's EAGLE SPATHA (a quicker, shorter cut: 26 px, 0.95 rad, `cycle` 26/60 s, `kb` 1; each named hero's blade is drawn as its own through `heroBlade`,
 js/draw/heroes.js). A new hero is a new
 `attack` row and nothing else. The ATTACK SPEED stat is read off the same row: `classAs(cls)` is
 one over the full draw plus the renock (js/sim/stats.js).

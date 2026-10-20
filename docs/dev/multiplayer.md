@@ -361,6 +361,7 @@ read through `statOf(p, key)` (js/sim/stats.js), never off the kit. `setClass(p,
 | 1 | **WARRIOR** — close pressure, blocking, momentum | get to arm's length and stay there | 120 hp, faster on ice (×1.15), +5 speed damage, dash 230, softer bow numbers | the LONGSWORD: a 28 px cut, 1.05 rad either side of the aim |
 | 2 | **ARMATOS** — THE LAST STANDARD, the defensive initiator (a passive, `CLASSES[c].passive`) | make the whole team stand its ground | his own body (LAST STANDARD, or a look bought on the skins screen) and the warrior's kit (`heroBody`), 130 hp, 24 armor | the OATH GREATSWORD: the LONGSWORD's cut, drawn as his own blade |
 | 3 | **FORTIVA** — THE UNBROKEN, the juggernaut (passive UNBROKEN) | win the long fight: harder to stop the longer she trades | her own body (UNBROKEN, or CHAINBREAKER bought on the skins screen) and the warrior's frames (`heroBody`), 132 hp, 20 armor, a step slower | the CHAIN GREATSWORD: the LONGSWORD's cut, drawn as her own blade |
+| 4 | **BELLA** — THE IMPERIAL GENERAL, the duelist (passive CALCULATED STRIKES) | find one weakness and spend it before the rival can react | her own body (IMPERIAL GENERAL, or TRAITOR'S BLADE bought on the skins screen) and the warrior's frames (`heroBody`), 104 hp, 16 armor, a step faster | the EAGLE SPATHA: a quicker, shorter cut (26 px, 0.95 rad, `cycle` 26/60 s), drawn as her own blade |
 
 The **weapon is part of the hero**: each `CLASSES` entry carries its own `attack` row, so the
 hunter and the swordsmen do not attack the same way and every bot arrives armed, with nothing to

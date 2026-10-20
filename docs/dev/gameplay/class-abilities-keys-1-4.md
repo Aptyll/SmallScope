@@ -142,6 +142,25 @@ glints, the shield's shell, the after's embers) is `drawFortBody`, a `HERO_BODY_
 | 3 | **BREAK THE YOKE** | 10/9.5/9/8.5/8 s | a lunge (`p.dash = 'yoke'`, `HERO_DASH`) at `YOKE_SPD` for `YOKE_T` that stops on the first rival hero, then a ground strike (`yokeStrike`) in `YOKE_R`: `dmg` (12/16/20/24/28) and a `slow` slow for `slowT`; a rival hero hit gives back `YOKE_REFUND` of the cooldown |
 | 4 | **NO KNEELING** | 90/80/70 s | a leap (`p.dash = 'vault'`) to the aim, at most `NOKNEEL_RANGE`; a wall stops it short and a stun drops her where she is. Landing (`noKneelLand`): `dmg` (30/45/60) in `NOKNEEL_R`, knocked up `up` within `NOKNEEL_UP_R`, then for `NOKNEEL_T` she has `NOKNEEL_TEN` tenacity and `NOKNEEL_AD` + `NOKNEEL_AD_LV` per level attack damage (a `HERO_STAT` row) |
 
+BELLA, THE IMPERIAL GENERAL — the duelist who finds one weakness and spends it first, the third hero
+with a passive. Her rules live in **[js/sim/bella.js](../../../js/sim/bella.js)** (`BELLA_AB`, its
+`bella` banner), her pixels in [js/draw/bella.js](../../../js/draw/bella.js), her icons, looks and
+blade in [js/sprites/bella.js](../../../js/sprites/bella.js). She is quick and light (104 hp, 16
+armor, a step faster than the warrior) with a quicker, shorter cut (her `attack` row, the EAGLE
+SPATHA), drawn as her own blade, in a body of her own ([hero looks](../sprites.md#hero-looks)).
+What her state puts on a body (her pips, the parry's blade, the marks) is `drawBellaMarks`, a
+`HERO_MARK` row; the duel's ring under the hero she called out is a `HERO_GROUND` row. Her two
+dashes pass through the small bodies a roll passes (`through` on the `HERO_DASH` row,
+`heroDashThrough` in `separateUnits`):
+
+| key | name | cd | what it does |
+| --- | --- | --- | --- |
+| P | **CALCULATED STRIKES** | — | each basic attack on a rival hero adds a stack of `p.prec` (`PREC_MAX`, 3; they fall away after `PREC_IDLE` without a hero hit). Full, the next key spends them: its blows for `EDGE_T` deal `EDGE_DMG` + `EDGE_AD` of her damage more, and she walks ×`EDGE_MS` for `EDGE_MS_T` (`bellaMoveMul`, a `HERO_MOVE` row). The same `deal` hook pays OUTMANEUVER's mark. `HERO_PASSIVE.calculated`: `deal`, `tick`, `out` |
+| 1 | **FIRST CUT** | 7/6.5/6/5.5/5 s | a lunge (`p.dash = 'lunge'`) `LUNGE_LEN` ahead at `LUNGE_SPD`, cutting every rival body within `LUNGE_R` of the path once (`lungeStep`): `dmg` (12/17/22/27/32); the first rival hero cut gives back `LUNGE_REFUND` of the cooldown, once a cast |
+| 2 | **PERFECT PARRY** | 10/9.5/9/8.5/8 s | a stance for `t`: the first rival hero's blow is cut by `cut` (`parryTaken`, a `HERO_TAKEN` fold) and, within `PARRY_REACH`, answered (`bellaRiposte`): `dmg` (14/19/24/29/34) and a `stun` stun |
+| 3 | **OUTMANEUVER** | 9/8.5/8/7.5/7 s | refused without a rival body within `OUT_PICK` of the aim and `OUT_RANGE` of her (`slipTarget`, the row's `ok`); she slips through it (`p.dash = 'slip'`) to `OUT_PAST` beyond, dealing `dmg` and marking it for `mark`: her next basic attack on it deals `markDmg` (12/18/24/30/36) + `OUT_BONUS_AD` of her damage more |
+| 4 | **THE FINAL GAMBIT** | 70/60/50 s | calls out a rival hero within `DUEL_RANGE` (`duelTarget`) for `t`: she walks ×`DUEL_MS` toward them. The key again (`recast`, refused past `FLURRY_REACH`) closes in and strikes `FLURRY_N` times `FLURRY_GAP` apart (`bellaStrike`): `FLURRY_DMG`, then a finisher of `dmg` (18/30/42) + `missing` of the life they are missing |
+
 Bots play the named heroes through each row's `bot(p, foe, d, clear)` (`abBotKey`, asked by the ladder's
 ability block in js/ai/ai-ladder.js); a hero whose rows carry no `bot` keeps the ladder's old range rules.
 

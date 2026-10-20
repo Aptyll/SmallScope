@@ -3,7 +3,8 @@
 // BELLA's pixels (her rules: js/sim/bella.js): the precision she has built,
 // as gold pips beside her head; the parry's stance, a blade held crosswise in
 // front; OUTMANEUVER's mark and THE FINAL GAMBIT's duel on whoever wears them,
-// seen by both sides; and the duel's ring on the snow under the called-out hero.
+// seen by both sides; the duel's ring on the snow under the called-out hero;
+// and the EAGLE SPATHA in her hands.
 
 const BELLA_GOLD = '#f2cc6a', BELLA_GOLD_D = '#b98a2e', BELLA_INK = '#141a2c';
 
@@ -55,5 +56,16 @@ function drawBellaDuels(ex, ey, now) {
     drawRing(px, py + 3, r - 2 - Math.round(Math.sin(now * 8)), BELLA_GOLD, 0.35, 0);
   }
 }
+// ---- the spatha in her hands ---------------------------------------------------
+// Her EAGLE SPATHA (HERO_BLADES.spatha, js/draw/heroes.js): no slanted carry, so
+// facing down or up she holds it upright in the leading hand like any sword
+let bellaSpathaArt = null;
+function bellaSpathas() {
+  if (bellaSpathaArt) return bellaSpathaArt;
+  const flat = bakeBladeArt(BELLA_SPATHA, BELLA_SPATHA_PAL);
+  return (bellaSpathaArt = { flat, diag: flat });
+}
+HERO_BLADES.spatha = { art: bellaSpathas, hip: {}, grip: [0, 0] };
+
 HERO_MARK.push(drawBellaMarks);
 HERO_GROUND.push(drawBellaDuels);

@@ -373,5 +373,64 @@ class Coif(Standard):
         Body.ball_head(self, cv, cam, hc, Rh)
 
 
+class General(Standard):
+    """BELLA as IMPERIAL GENERAL (her default look): dark hair under a gold circlet, a high
+    ponytail that streams behind her in the run, gold epaulettes on her side's coat, bare
+    hands. Armatos's frame, legs and boots under it."""
+    ARM_MAT, MITT_MAT = 'trim', 'skin'
+    BAND = 'y'
+    # the circlet across the brow, then the eyes
+    MARKS = [(-1.5, -0.4, 'y'), (-0.5, -0.4, 'y'), (0.5, -0.4, 'y'), (1.5, -0.4, 'y'),
+             (-1.5, 0.9, 'e'), (1.5, 0.9, 'e')]
+
+    @staticmethod
+    def face_region(n, q):
+        """the hair frames the face under the circlet: narrower than his helm's opening"""
+        return np.where((q[0] > 0.2) & (np.abs(q[1]) < 0.75) & (q[2] < 0.1) & (q[2] > -0.95), 'skin', 'hair')
+
+    def head(self, cv, cam, hc, Rh, pose, snap):
+        cv.blob(cam, hc, Rh, self.HEAD_R, 'head', 'hair', p=self.HEAD_P, region=self.face_region)
+        self.face_marks(cv, cam, hc, Rh)
+
+    def coat(self, cv, cam, U, R):
+        cv.blob(cam, U(v3(0, 0, Z(6.1))), R, (2.75, 3.05, Z(2.05)), 'coat', 'coat', p=2.2)
+        cv.blob(cam, U(v3(0, 0, Z(4.0))), R, (2.6, 3.1, Z(0.6)), 'hem', 'hem', bias=-0.3)
+        cv.blob(cam, U(v3(0.1, 0, Z(8.75))), R, (2.2, 2.5, Z(0.42)), 'scarf', 'hem', bias=0.2)
+        self.shoulders(cv, cam, U, R)
+
+    def shoulders(self, cv, cam, U, R):
+        for s in (1, -1):    # the epaulettes, gold over each shoulder
+            cv.blob(cam, U(v3(0.1, 2.9 * s, Z(8.0))), R, (0.9, 0.95, Z(0.42)), 'epau' + ('L' if s > 0 else 'R'), 'gold', bias=0.5)
+
+    def ponytail(self, cv, cam, p, blow, flap):
+        # three links off the crown: hanging down her back at rest, streaming behind in the run
+        d0 = v3(-0.55 - 0.75 * blow, 0.0, -1.0 + 0.55 * blow)
+        for i in range(3):
+            k = i / 2
+            d = d0 + v3(0, 0.3 * math.sin(flap + i * 1.4) * blow, 0.2 * math.sin(flap + i * 1.9) * blow)
+            d = d / np.linalg.norm(d)
+            q = p + d * 1.15
+            cv.tube(cam, p, q, 0.95 - 0.15 * k, 0.85 - 0.15 * k, 'pony', 'hair', bias=-0.2)
+            p = q
+
+    def extras(self, cv, cam, U, R, pose):
+        self.ponytail(cv, cam, U(v3(-2.2, 0, Z(11.9))), pose.get('tail', 0.0), pose.get('flap', 0.0))
+
+    def ball_head(self, cv, cam, hc, Rh):
+        cv.blob(cam, hc, Rh, (2.6, 2.85, 2.5), 'head', 'hair', p=self.HEAD_P)
+        self.ponytail(cv, cam, hc + Rh @ v3(-2.3, 0, 0.8), 0.6, 0.0)
+
+
+class Traitor(General):
+    """BELLA as TRAITOR'S BLADE (the first skin): the same ponytail, a dark iron band for the
+    circlet, a dark mask over the lower face and a dark mantle over her shoulders in place of
+    the gold"""
+    MARKS = [(-1.5, -0.4, 'n'), (-0.5, -0.4, 'n'), (0.5, -0.4, 'n'), (1.5, -0.4, 'n'),
+             (-0.5, 2.0, 'q'), (0.5, 2.0, 'q'), (-1.5, 0.9, 'e'), (1.5, 0.9, 'e')]
+
+    def shoulders(self, cv, cam, U, R):
+        cv.blob(cam, U(v3(-0.2, 0, Z(8.2))), R, (2.6, 3.4, Z(1.0)), 'mantle', 'cloak', bias=0.4)
+
+
 BODIES = {'hunter': Hunter(), 'warrior': Warrior(), 'standard': Standard(), 'oath': Oath(),
-          'unbroken': Unbroken(), 'coif': Coif()}
+          'unbroken': Unbroken(), 'coif': Coif(), 'general': General(), 'traitor': Traitor()}
