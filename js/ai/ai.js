@@ -609,19 +609,6 @@ function aiBuildSite(p, type) {
   return null;
 }
 
-// a bot draws the instant it holds a card: the same random pick useCard
-// (js/sim/core.js) makes for a human, minus the key, the burst and the floater -
-// the rarest first, since a bot has no reason to sit on one
-function resolveCardForBot(p) {
-  for (const rarity of CARD_RARITIES) {
-    if (bagCount(p, cardKey(rarity)) <= 0) continue;
-    bagTake(p, cardKey(rarity), 1);
-    p.cards.push({ rarity, id: Math.floor(rng() * CARDS[rarity].length) });
-    refreshKit(p);
-    return;
-  }
-}
-
 // aiThink's rung 0: a free skill point, then the purse. Items first, off the
 // class's build (BOT_BUILDS, js/sim/items.js): at a counter it buys whatever
 // of the build it can afford, a part or the whole item, and a purse that

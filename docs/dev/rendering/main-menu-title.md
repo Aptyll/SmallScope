@@ -254,8 +254,7 @@ tag). The store behind it is [profile.js](../architecture.md#profilejs): one nam
   `state.introFrom` on the same curve instead of the play lerp.
 - **Landing intro**: the human's `landPlayer` sets `state.intro = state.introLen = HUD_IN_T` (0.7 s)
   with `introFrom` at the touchdown framing, so `renderUI` (js/ui/compose.js) slides the HUD in
-  (the minimap and the team rail down from the top, the top-left corner — the pack's tab and its
-  drawer — from the left by `CORNER_REACH`, and the hud strip up from the bottom by `HUD_SLIDE`)
+  (the minimap and the team rail down from the top, and the hud strip up from the bottom by `HUD_SLIDE`)
   while the camera settles onto the play framing.
 
 `DBG` exposes `menu`, `menuHit`, `menuClick`, `menuKey`, `settingsHit`, `beginIntro`, `beginLobby`,

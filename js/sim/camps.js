@@ -48,8 +48,8 @@
 //           it walks BLUE's bank of the downstream bend
 // epic:     the brown bear - the whole team is paid and given the BROWN BUFF for the kill;
 //           it walks RED's bank of the upstream bend
-// hut:      no monster - three chests round a hut buried in the treeline,
-//           worth the chopping it takes to reach
+// hut:      no monster - a hut buried in the treeline, scenery since its
+//           chests went (0.524)
 // meadow:   the WARREN, drawn by hand (its `plan`): a round clearing in a
 //           ring of pines, open to the field at one mouth, three rabbits in
 //           the middle, three snowdrops at the back that each shield the
@@ -88,7 +88,7 @@ const CAMPS = {
     r: 4, mark: '#c9925a', woods: true,
     icon: [[3, 0, 1, 1], [2, 1, 3, 1], [1, 2, 5, 1], [0, 3, 7, 1], [1, 4, 5, 1], [1, 5, 2, 2], [4, 5, 2, 2]], // a hut
     kind: null, pop: 0, repop: 0,
-    props: [[0, 0, 'hut'], [-2, -1, 'chest'], [3, -1, 'chest'], [0, 2, 'chest']],
+    props: [[0, 0, 'hut']],
     spots: [],
   },
   meadow: {
@@ -279,7 +279,7 @@ function placeCamps() {
       }
     }
     for (const [dx, dy, type, variant] of spec.props) {
-      const extra = type === 'deadTree' ? { hp: 3, variant } : type === 'chest' ? { hp: 1 } : type === 'snowdrop' ? { variant, readyAt: 0 } : {};
+      const extra = type === 'deadTree' ? { hp: 3, variant } : type === 'snowdrop' ? { variant, readyAt: 0 } : {};
       if (dx === 0 && dy === 0) extra.site = C; // the anchor knows its camp: its clock is drawn off it (drawCampClock)
       const o = placeObj(C.tx + dx, C.ty + dy, type, extra);
       // a prop bigger than a tile (OBJECTS' w, h) fills the rest with parts, as a

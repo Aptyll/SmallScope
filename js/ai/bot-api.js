@@ -17,7 +17,7 @@
 // realm of its own, sealed (BOT_SEAL): no game globals, no way out.
 // A bot can never do what a hand cannot: the act IS the input struct, the sim
 // re-validates every order, and the hands are the ladder's (skillHands).
-const BOT_API = 2;          // the message shape's version; a rename bumps it
+const BOT_API = 3;          // the message shape's version; a rename bumps it
 const BOT_THINK = 6;        // ticks between thinks: 10 a second at TICK_DT
 const BOT_OBS_R = 24 * TILE; // px: how far round its side a bot sees (the minimap's default reach, MM_R tiles)
 const BOT_SAY_MAX = 256;    // bytes of JSON a `say` may carry to the side
@@ -26,7 +26,7 @@ const BOT_ERR_MAX = 8;      // errors kept per seat for the ladder page
 const BOT_LATE_MAX = 10;    // thinks in a row a bot may miss (1 s) before its seat lets go of every key
 const BOT_CMDS = new Set(['build', 'upgrade', 'repair', 'demolish', 'ability', 'ping', 'shop', 'recall']);
 const BOT_NODES_N = 64;     // workable tiles an observation lists, nearest first
-const BOT_NODES = new Set(['tree', 'deadTree', 'rock', 'bush', 'chest']);
+const BOT_NODES = new Set(['tree', 'deadTree', 'bush']);
 const BOT_CALLS = new Set(['bird', 'help', 'low', 'push', 'here']); // CALLS' kinds a bot may say
 const BOT_CALL_LOW = new Set(['HUNTER', 'WARRIOR', 'ARMATOS', 'FORTIVA', 'BELLA', 'BEAR']);       // what a 'low' call may name
 
@@ -91,7 +91,6 @@ function botObserve(p) {
     prone: !!p.prone, hide: botR(p.hide || 0), aboard: !!p.aboard, falling: p.dropT > 0, zip: p.zip,
     abilities: p.abLv.map((lv, i) => botAbility(p, i, lv)),
     attack: attackOf(p).cut ? 'cut' : 'shot', // the basic attack: a blade's wedge or a bow's shot (js/sim/attack.js)
-    bag: p.bag.map((s) => (s ? { type: s.type, n: s.n } : null)),
     food: Object.assign({}, p.food),
     charging: !!p.charging, chargeT: botR(p.chargeT),
     nav: botRt.get(p.id) ? botRt.get(p.id).nav : null,
@@ -216,7 +215,7 @@ const botNum = (v, lo, hi, d) => (typeof v === 'number' && isFinite(v) ? Math.ma
 function botAct(a) {
   if (!a || typeof a !== 'object') return null;
   const W = WORLD * TILE, out = { mx: 0, my: 0, aimX: NaN, aimY: NaN, fire: !!a.fire, work: !!a.work, slide: !!a.slide, grapple: !!a.grapple,
-    goTo: null, dodge: !!a.dodge, jump: !!a.jump, eatBerry: !!a.eatBerry, eatFish: !!a.eatFish, useCard: !!a.useCard,
+    goTo: null, dodge: !!a.dodge, jump: !!a.jump, eatBerry: !!a.eatBerry, eatFish: !!a.eatFish,
     ability: -1, cmd: null, call: null, say: undefined, think: null };
   if (Array.isArray(a.move)) { out.mx = botNum(a.move[0], -1, 1, 0); out.my = botNum(a.move[1], -1, 1, 0); }
   if (Array.isArray(a.aim)) { out.aimX = botNum(a.aim[0], -W, 2 * W, NaN); out.aimY = botNum(a.aim[1], -W, 2 * W, NaN); }
@@ -369,7 +368,7 @@ function botStep(p, dt) {
   if (r.edge) {
     r.edge = false;
     inp.dodge = inp.dodge || a.dodge; inp.jump = inp.jump || a.jump;
-    inp.eatBerry = inp.eatBerry || a.eatBerry; inp.eatFish = inp.eatFish || a.eatFish; inp.useCard = inp.useCard || a.useCard;
+    inp.eatBerry = inp.eatBerry || a.eatBerry; inp.eatFish = inp.eatFish || a.eatFish;
     if (a.ability >= 0) inp.ability = a.ability;
     if (a.cmd) inp.cmd = a.cmd;
     // through the side's own anti-spam, on the same cooldown as a native bot's calls

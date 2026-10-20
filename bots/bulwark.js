@@ -111,7 +111,7 @@ defineBot({
       act.think = { goal: 'GUARD', why: 'HOLD THE SPUR', plan: 'HOLD', mood: 'STEADY', target: { kind: 'point', x: post.x, y: post.y } };
       return act;
     }
-    const n = pickNode(this, obs, own, 220, ['tree', 'bush', 'rock']);
+    const n = pickNode(this, obs, own, 220, ['tree', 'bush']);
     if (n) { work(me, n, act); act.think = { goal: 'GATHER', why: 'GOLD FOR ITEMS', plan: 'HOLD', target: { kind: 'point', x: n.x, y: n.y } }; return act; }
     act.goTo = { x: post.x, y: post.y };
     act.think = { goal: 'GUARD', why: 'NOTHING TO DO', plan: 'HOLD' };
@@ -200,12 +200,12 @@ function pickNode(bot, obs, home, range, kinds) {
   return best;
 }
 
-// work a node: walk up beside it and hold E (a rock needs no key: standing by it mines it)
+// work a node: walk up beside it and hold E
 function work(me, n, act) {
   const d = Math.hypot(n.x - me.x, n.y - me.y);
   act.goTo = { x: n.x, y: n.y, reach: 1 };
   act.aim = [n.x, n.y];
-  act.work = d < 28 && n.kind !== 'rock';
+  act.work = d < 28;
 }
 
 // gold to spare at a counter: the dearest item the purse covers, keeping

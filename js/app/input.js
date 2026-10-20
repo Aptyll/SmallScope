@@ -93,7 +93,6 @@ const KEY_ACTIONS = [
   { id: 'berry', verb: 'EAT BERRY', key: 'q', ck: 'd' }, { id: 'fish', verb: 'EAT FISH', key: 'f', ck: 'f' },
   { id: 'recall', verb: 'RECALL', key: 'h', ck: 'h' },
   { id: 'ping', verb: 'PING', ck: 'g', was: 'flag' }, // `was`: the id a saved bind of it went by
-  { id: 'tunnel', verb: 'DIG BURROW', key: 'v', ck: 'v' }, { id: 'bag', verb: 'INVENTORY', key: 'b', ck: 'b' },
   { id: 'char', verb: 'CHARACTER', key: 'g', ck: 'c' },
   { id: 'build', verb: 'BUILD', key: 't', ck: 't' }, { id: 'rotate', verb: 'ROTATE', key: 'r', ck: 'x' },
   { id: 'map', verb: 'WORLD MAP', key: 'm', ck: 'm' }, { id: 'board', verb: 'STANDINGS', key: 'Tab', ck: 'Tab' },
@@ -291,12 +290,6 @@ function keyPress(e) {
   if (keyIs(e, 'fish')) player.input.eatFish = true;
   // the walk home (js/sim/recall.js): a CLICK order would walk out of it, so the press drops the order
   if (keyIs(e, 'recall') && !e.repeat) { player.input.cmd = { kind: 'recall' }; if (ckOn()) ckClear(); }
-  // the burrow stands its hole ghost under the pointer, and puts it away (js/sim/tunnel.js)
-  if (keyIs(e, 'tunnel') && !e.repeat) tunnelAimToggle();
-  // the pack key drops the inventory drawer in the top-left corner. It is
-  // HUD and not an overlay, so unlike the map and ESC it neither stops the
-  // sim nor swallows anything but its own clicks.
-  if (keyIs(e, 'bag')) { state.bagOpen = !state.bagOpen; SFX.ui(state.bagOpen); }
   // THE BUILD LIST (the `build list` group, js/ui/wheel.js): a tap of T
   // opens it over the strip's meal wells on the last piece and a tap again
   // closes it (so do Escape and the right button); holding T
@@ -319,7 +312,7 @@ function keyPress(e) {
   // roost, and the counter opening instead would swallow the very key that
   // gets you down.
   if (keyIs(e, 'work') && !e.repeat && !state.wheel && !state.mapOpen &&
-      !state.settingsOpen && !state.drag && !player.dead && !player.aboard) {
+      !state.settingsOpen && !player.dead && !player.aboard) {
     // Riding a zipline, the key lets go of it - ahead of everything, since a
     // rider passes the counter and every trunk at 220 px/s (zipToggle,
     // world.js, through the hop intent the step reads for every player)
@@ -381,7 +374,7 @@ function keyPress(e) {
     if (state.wheel) SFX.wheelUp();
   }
   // the sheet key raises the character panel - the body, the live stat
-  // ledger and the six item slots. HUD like the bag: the sim runs on
+  // ledger and the six item slots. HUD: the sim runs on
   // underneath.
   if (keyIs(e, 'char') && !state.settingsOpen) { state.charOpen = !state.charOpen; SFX.ui(state.charOpen); }
   // the four ability binds cast, left to right exactly as the strip shows
@@ -392,19 +385,16 @@ function keyPress(e) {
   if (ab >= 0) { SFX.unlock(); player.input.ability = ab; }
   if (keyIs(e, 'map') && !state.settingsOpen && !state.dropBrief) { state.wheel = null; state.mapOpen = !state.mapOpen; SFX.ui(state.mapOpen); }
   if (e.key === 'Escape') {
-    // a carried item goes back first, then an open wheel: both are gestures
-    // half-finished, and Escape is how either is thought better of
+    // an open wheel goes first: a gesture half-finished, and Escape is how
+    // it is thought better of
     if (ck.arm) ck.arm = false; // an armed attack-move is the lightest gesture to think better of
     else if (ms.ready >= 0) ms.ready = -1; // ...and so is a readied ability (the `mouse only` banner)
-    else if (state.drag) { dragReturn(); state.dragPend = null; }
     else if (state.wheel) state.wheel = null;
     else if (state.build) { state.build = null; SFX.ui(false); }
-    else if (state.tunAim) { state.tunAim = false; SFX.ui(false); }
     else if (cheatAimOff()) { /* the practice bar's armed aim, put down */ }
     else if (state.mapOpen) { state.mapOpen = false; SFX.ui(false); }
     else if (state.shop) closeShop();
     else if (state.charOpen) { state.charOpen = false; SFX.ui(false); }
-    else if (state.bagOpen) { state.bagOpen = false; SFX.ui(false); } // the drawer slides back up
     else {
       state.settingsOpen = !state.settingsOpen; dragSlider = null; setDrop = null; state.wheel = null; SFX.ui(state.settingsOpen);
     }
@@ -434,13 +424,9 @@ function keyRelease(e) {
 }
 // a key held while the window loses focus never sends its keyup: alt-tabbing
 // out would otherwise leave the scoreboard (or a walk direction) stuck on
-// - and an item on the cursor goes back where it came from rather than
-// hanging there over a game that has stopped listening
 pageListen(window, 'blur', () => {
   for (const k in keys) keys[k] = false;
   state.rebind = null; // a cap left listening would eat the first key back
-  state.dragPend = null;
-  if (state.drag) dragReturn();
   // an E-held wheel (armory, roll die or range bell) - or the build key's
   // piece wheel - is a held gesture too:
   // its keyup is lost with the focus, so it closes (choosing nothing)
@@ -461,9 +447,6 @@ function pointerMove(x, y, src) {
   mouse.inside = true;
   mouse.src = src || 'mouse';
   state.menu.moved = true; // the menu only lets the mouse steal the selection when it actually moves
-  // a press on a bag/slot/bit cell only becomes a DRAG once it travels: that
-  // is what lets one gesture both use an item and move it (see hudMove, ui.js)
-  if (state.dragPend) hudMove(mouse.x, mouse.y);
   // a radial wheel is a stepped control like the zoom's rungs: one notch per
   // wedge the travel crosses. Every controller moves the pointer through
   // here, so a pad's stick steps it exactly as a mouse does.
@@ -498,10 +481,9 @@ function pointerPress(button) {
     if (ckOn()) { ckRightPress(); return; } // the CLICK scheme: the right button is the hand
     if (state.mode !== 'play' || state.settingsOpen || state.wheel) return;
     if (state.build) { SFX.unlock(); state.build = null; return; } // the right button puts the build list away
-    if (state.tunAim) { SFX.unlock(); state.tunAim = false; return; } // ...and the burrow's ghost
     if (cheatAimOff()) { SFX.unlock(); return; } // ...and the practice bar's aim
     if (state.mapOpen || overMinimap()) { openPingWheel(); return; } // over the chart or the disc: a ping where it points
-    if (bagHit(mouse.x, mouse.y) || charHit(mouse.x, mouse.y) || stripHit(mouse.x, mouse.y) ||
+    if (charHit(mouse.x, mouse.y) || stripHit(mouse.x, mouse.y) ||
         shopHit(mouse.x, mouse.y) || cheatHit(mouse.x, mouse.y)) return; // no wheel through the HUD
     // any point on the map is a place to ping (building is the list on T,
     // managing is E beside your own building)
@@ -523,9 +505,6 @@ function pointerPress(button) {
   // the build list: a press on a row picks it, a press on the world lays
   // the ghost (a red ghost refuses with the deny cue and nothing else);
   // presses over the rest of the HUD go on to it as ever
-  // the burrow's ghost: a press on the world digs there (a red ghost refuses
-  // with the deny cue); presses over the HUD go on to it as ever
-  if (state.tunAim && !overHud(mouse.x, mouse.y)) { tunnelAimPress(); return; }
   // the practice bar (js/ui/cheats.js): a press on it, then its armed aim on the world
   if (cheatClick(mouse.x, mouse.y)) return;
   if (cheatAimLive() && !overHud(mouse.x, mouse.y)) { cheatAimPress(); return; }
@@ -542,18 +521,12 @@ function pointerPress(button) {
       return;
     }
   }
-  // The backpack widget and the strip swallow every press over themselves
-  // before the world ever sees them. The character panel
-  // is asked first while it is up - the X closes, and the slab eats
-  // every press. Everything else goes through
-  // hudPress, which arms a drag the mouseup below either completes or reads
-  // as a click.
+  // The strip swallows every press over itself before the world ever sees
+  // it. The character panel is asked first while it is up - the X closes,
+  // and the slab eats every press. Everything else goes through hudPress.
   if (shopClick(shopHit(mouse.x, mouse.y))) return;
   if (state.charOpen && charClick(charHit(mouse.x, mouse.y))) return;
   if (hudPress(mouse.x, mouse.y)) { SFX.unlock(); return; }
-  // pressing on the world while carrying something: the release throws it,
-  // and nothing is fired
-  if (state.drag) return;
   if (msOn() && msLeftPress()) return; // a readied ability casts here instead of the tool
   mouse.down = true;
   clickAction(player);
@@ -582,16 +555,6 @@ function pointerRelease(button) {
     else SFX.deny();
     return;
   }
-  // a carried item is put down (or thrown), and an armed press that never
-  // travelled resolves as the plain click it was - both before the tool's own
-  // release, so a drag never also looses a shot
-  if (button === 0 && state.mode === 'play' && (state.drag || state.dragPend)) {
-    hudRelease(mouse.x, mouse.y);
-    player.input.fire = false;
-    mouse.down = false;
-    dragSlider = null;
-    return;
-  }
   // releasing the button just drops the held intent; updatePlayer fires the
   // tool on that falling edge, the same way an AI's shot is timed
   if (button === 0) player.input.fire = false;
@@ -608,7 +571,7 @@ function pointerRelease(button) {
 // press has the HUD to get past first; a trigger is never over a well.
 function fireDown() {
   if (state.mode !== 'play' || state.wheel || state.settingsOpen || state.mapOpen ||
-      state.drag || state.dragPend || state.shop || player.dead) return false;
+      state.shop || player.dead) return false;
   mouse.down = true;
   clickAction(player);
   return true;
@@ -616,45 +579,6 @@ function fireDown() {
 function fireUp() {
   player.input.fire = false;
   mouse.down = false;
-}
-
-// ---- haptics: telling the HAND something happened ------------------------
-// A gesture that moves an item has to answer in the hand that made it and not
-// only on the screen: a pad rumbles and a mouse cannot,
-// so for a mouse the answer is the cue and the pulse the caller raises beside
-// this. ONE entry point, for the same reason a key is asked for through its
-// action - a caller must never have to know which controller is in hand. It
-// lives here because this is the file they meet in; `pad` (gamepad.js) is a
-// run-time read, that file loading after this one.
-//
-// The four strengths are a LANGUAGE, not a volume dial: a grab is the lightest
-// thing the hand can feel, a place is firmer, a SWAP is the longest and
-// hardest because it is the one move that also changes what you are holding,
-// and a refusal is a single hard knock. Told apart with the eyes shut, which
-// is the whole job.
-const HAPTIC = {
-  grab:  { ms: 18, s: 0.22 },
-  place: { ms: 28, s: 0.45 },
-  swap:  { ms: 55, s: 0.8 },
-  deny:  { ms: 75, s: 0.95 },
-};
-function haptic(kind) {
-  const h = HAPTIC[kind];
-  if (!h || !settings.haptics) return;
-  try {
-    // the pad's own actuator: a rumble belongs in the hands holding the game
-    const gp = padActive() && pad.slot >= 0 ? (navigator.getGamepads() || [])[pad.slot] : null;
-    const act = gp && (gp.vibrationActuator || (gp.hapticActuators && gp.hapticActuators[0]));
-    if (act && act.playEffect) {
-      // playEffect REJECTS rather than throws (a pad that went away
-      // mid-gesture, an effect the browser will not run), and an unhandled
-      // rejection in a hot path is a console full of noise
-      const p = act.playEffect('dual-rumble', { duration: h.ms, strongMagnitude: h.s, weakMagnitude: h.s * 0.6 });
-      if (p && p.catch) p.catch(() => {});
-      return;
-    }
-    if (act && act.pulse) { const p = act.pulse(h.s, h.ms); if (p && p.catch) p.catch(() => {}); }
-  } catch (e) { /* no actuator, or a browser that refuses one: the ear and the eye still answered */ }
 }
 
 // The ping button (the `pings` banner, js/sim/pings.js): the ping wheel's
@@ -723,7 +647,7 @@ function openWheelNear(p, ax, ay) {
 // What balances the assist: a locked shot goes where the target IS, never
 // led, so a strafing rival at range is missed where a hand would lead it;
 // the lock holds only to CK_LOCK_R and through seenAt, so cover and a
-// stealth card or item break it; the auto-draw is a bot's, under the hand's; and
+// stealth item break it; the auto-draw is a bot's, under the hand's; and
 // nothing here reaches the sim but the same input struct a bot fills
 // (ckStep -> sampleHumanInput), so the sim never learns which scheme is in
 // hand. The rings on the snow are drawClickMarks (draw-world.js); the armed
@@ -772,7 +696,6 @@ function ckRightPress() {
   // unless the action wheel stood it up, when this press picks too
   if (state.wheel) { if (state.wheel.kind !== 'ping' || state.wheel.stand) { resolveWheel(); state.wheel = null; } return; }
   if (state.build) { SFX.unlock(); state.build = null; return; } // the right button puts the build list away
-  if (state.tunAim) { SFX.unlock(); state.tunAim = false; return; } // ...and the burrow's ghost
   if (cheatAimOff()) { SFX.unlock(); return; } // ...and the practice bar's aim
   ck.arm = false;
   ms.ready = -1; // a readied ability is put down by the walk, League's grammar
@@ -1143,7 +1066,7 @@ function sampleHumanInput(p, dt) {
     inp.slide = keyHeld('slide');
     inp.grapple = keyHeld('ab3') || ms.reel; // a reel in progress keeps answering the held key (or the mouse's cast)
     inp.fire = inp.work = false;
-    inp.eatBerry = inp.eatFish = inp.useCard = false;
+    inp.eatBerry = inp.eatFish = false;
     inp.ability = -1;
     inp.cmd = null;
     if (p.charging) { p.charging = false; p.chargeT = 0; }
@@ -1156,7 +1079,7 @@ function sampleHumanInput(p, dt) {
   if (!live) {
     inp.mx = inp.my = 0;
     inp.fire = inp.work = inp.slide = inp.grapple = false;
-    inp.dodge = inp.eatBerry = inp.eatFish = inp.useCard = false;
+    inp.dodge = inp.eatBerry = inp.eatFish = false;
     inp.ability = -1;
     inp.cmd = null;
     if (p.charging) { p.charging = false; p.chargeT = 0; }

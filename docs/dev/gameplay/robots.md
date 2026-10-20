@@ -15,7 +15,7 @@ nearest tree within 8 tiles of the bay's mouth (`structMouth`, also where they d
 jackpot — banked in the carry rather than paid on the spot), and walk home to deposit into their
 owner's `inv.gold` with a floater at 8+ carried. A worker's `harvest()` handles **deadTree** too (the brown bear den's ring: quicker,
 `YIELD.deadTree*`, and felling one calls `flushBirds`).
-Robots drive on `navStep` ([Pathfinding](pathfinding.md): reach 1 to a tree, rock or building,
+Robots drive on `navStep` ([Pathfinding](pathfinding.md): reach 1 to a tree or building,
 reach 0 to a body or home) and are solid to players and animals (see
 [Unit collisions](unit-collisions.md)); a target
 with no route, or one they get pinned on the way to, goes on `b.avoid` for 12 s. They die with
@@ -185,7 +185,7 @@ landing; `merchNextBay` takes the lanes in `MERCH_BAY_ORDER` (mid, top, bot) and
 bay standing, and `merchBaySite` the nearest 3×2 placement to its spot whose footprint is dry land
 off the road holding nothing the axe cannot take. Each lane's **first** bay is free
 (`b.bayGift`), so all three go up one after another, about 1:00 to 1:40 of match time on seed 42.
-`merchBayBlocker` hands it every pine, snag and rock on the
+`merchBayBlocker` hands it every pine and snag on the
 footprint and a `MERCH_BAY_RING` (1) ring round it, and the stumps on the footprint alone, felled
 at `MERCH_BAY_SWING` (0.34 s) through `merchFell` (the axe always leaves a stump everywhere but
 the footprint itself). Then `MERCH_BAY_HAMMER` (2.6 s) of hammering from the tile below the door,

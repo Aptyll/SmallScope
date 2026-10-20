@@ -8,7 +8,7 @@ underfoot sets friction and speed caps. All the tuning constants live in the `pl
 — animals, robots, and knockback move directly (a direction times a speed through `moveEntity`).
 
 **Facing** (`p.dir`, the sprite a body shows) only ever changes through `faceToward(p, dx, dy, hold)`
-in the `facing` banner of js/sim/player.js: the walk, a draw's aim, a raised shield, a work or mining
+in the `facing` banner of js/sim/player.js: the walk, a draw's aim, a raised shield, a work
 swing, the zipline, and every aimed action. Near a diagonal the axis the body already faces wins
 until the other one leads by `FACE_BIAS` (1.25), so walking or aiming along 45 degrees does not
 flick between two sprites each frame. A shot, a slash, a cast, a rush and a roll pass `hold`: the
@@ -108,7 +108,7 @@ line stays, pointer or no pointer (`zipLitLine`, js/draw/zipline.js).
 **Hands on the handle.** `p.zip >= 0` joins the inline gates of `tryWork`, `autoWork`,
 `tryAbility`, the bow draw (updatePlayer), `autoFish` and `tryProne`; `zipStart` itself refuses
 a stunned, floundering, rolling, rushing, casting or shielded body and ends a grapple, a draw, a
-meal, a catch and a slide. A meal and a card are the two things a rider may still use. `tryDodge`
+meal, a catch and a slide. A meal is the one thing a rider may still use. `tryDodge`
 rolls off the cable the way it rolls off the rope (`zipEnd` first, then the dash). **A rider is
 still a body to every weapon** — arrows, the roll's sweep, a turret, a wolf, `seenAt` — and plain
 damage never dismounts (its knockback decays unspent, since the ride branch never applies
@@ -124,7 +124,7 @@ met. A side's own riders pass through each other. Players (any seat) and soldier
 **Letting go keeps the cable's speed** — `zipEnd(p, false)` leaves `vx/vy` at 220 px/s for the
 surface model to spend exactly as `grapEnd` leaves the reel's, so a hop-off is a dash (snow kills
 it in under a second) and shift on landing carves a slide; a body coming down over a solid tile
-(the odd pine or rock on the shoulder) is set beside it (`nearestDryTile`). Riders draw lifted
+(the odd pine on the shoulder) is set beside it (`nearestDryTile`). Riders draw lifted
 `ZIP_ALT` px with their shadow on the ground, the handle over the head and a rope up to the cable
 (`drawZipHandle`, js/draw/zipline.js), in the standing pose; the bare key cap over the cable is
 `drawZipHint` (js/ui/wheel.js). Bots ride it too, through the same hop intent, folded into every

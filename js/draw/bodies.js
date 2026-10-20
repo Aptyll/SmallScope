@@ -108,7 +108,7 @@ function drawRobot(b, ex, ey, now) {
   } else if (b.tgt && !b.moving) {
     tdx = b.tgt.tx * TILE + 8 - b.x; tdy = b.tgt.ty * TILE + 8 - b.y;
     working = Math.hypot(tdx, tdy) <= 20;
-    icon = SPRITES[b.tgt.type === 'rock' ? 'itemPick' : 'itemAxe'];
+    icon = SPRITES.itemAxe;
     prog = Math.min(1, b.workT / 0.9);
   }
 
@@ -775,7 +775,7 @@ function drawHeldTool(p, px, py) {
   const t = SWING_TOOLS[p.swing];
   // At rest the hands hold the hero's WEAPON (its basic attack's `art`,
   // SPRITES.weaponArt, js/sprites/weapons.js), so what somebody fights with
-  // reads off their sprite from across the snow. Mid-swing (axe, pick) the
+  // reads off their sprite from across the snow. Mid-swing the
   // swing tool's own 8x8 icon sweeps - and a draw running at the same time
   // (an auto swing, autoWork, chops under a draw) puts BOTH up: one hand
   // sweeps the axe, the other holds the drawn weapon on the aim.

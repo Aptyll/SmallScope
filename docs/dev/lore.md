@@ -38,9 +38,9 @@ guild sells — not from a new faction or a new magic.
 | --- | --- |
 | two identical sides on a mirrored map | two companies after the same claim; neither is the villain |
 | every seed is a new map | every winter's snow redraws the valley |
-| gold in pines and rocks, ore inside them, chests at the treeline | the works are under everything: the pines grew up through them, the rocks are their rubble, the crates never shipped |
+| gold in the pines | the works are under everything: the pines grew up through them |
 | gold is the only currency in a match (the coins that buy skins are outside the valley) | the valley pays in one thing |
-| XP comes from being near when rival bodies fall, never from gold; digging pays gold only | the works make a scout rich; the road is what teaches one |
+| XP comes from being near when rival bodies fall, never from gold; felling pays gold only | the works make a scout rich; the road is what teaches one |
 | nobody dies; a scout comes back at the roost with everything; the wait grows with level | valley law; they are carried back, and the better the scout, the longer the company sits them first |
 | the eagle's hp is nerve, it gusts at a crowd, it is driven off and never killed | a bird is brave only up to a point |
 | only a bird leaving ends a match | the claim |
@@ -114,8 +114,8 @@ The game already has a voice; new lines match it. `THE BOW IS THE ARGUMENT: KEEP
 
 - **Plain English, often a compound**: BEARSKIN, SUNSTONE, SNOW CLOAK, ICE LANCE. No invented
   proper nouns but SOFTFALL, no apostrophe-fantasy, no real places, brands or dates.
-- **A kind is named for what it is or does** (THROWING LOG, HOOKSHOT); **a perk or a card for the
-  person it makes you** (SPRINTER, FORAGER, WINTER'S CHILD).
+- **A kind is named for what it is or does** (THROWING LOG, HOOKSHOT); **a perk for the
+  person it makes you** (SPRINTER, FORAGER, WINTER'S CHILD: the parked cards, gameplay/roguelike-cards.md).
 - **A place is THE and a plain noun** — THE ROAD, THE ROOST, THE WORKS, THE COUNTER — and a camp
   is what is in it: WOLF DEN, BLACK BEAR STONE, BROWN BEAR DEN.
 - **A person is a winter word**: a tree, a weather, a small animal, a bird (`NAME_POOL`,

@@ -13,7 +13,7 @@ aside and barely notices, two players split it evenly). Every
 push goes through `moveEntity(…, strict)`, which treats open water as a wall even for players
 (a shove never dunks anyone), and **any push a wall refuses is handed to the other unit** — the
 player's share is tried first, so a small unit can never pin a player in a corner: the pinner
-is the one that gets moved (a rabbit wedged between you and a rock squirts out sideways).
+is the one that gets moved (a rabbit wedged between you and a tree squirts out sideways).
 Two passes settle piles; the pass is deterministic (fixed order, no `rng`).
 
 **Room.** Past the hard circle every body keeps a soft ring of personal space, `unitSpace` (its

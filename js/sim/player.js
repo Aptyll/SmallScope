@@ -1,6 +1,6 @@
 'use strict';
 // Every combatant in the match: the numbers a player is made of, the Player
-// class and the ten of them, the two playable classes and their kits, cards,
+// class and the ten of them, the two playable classes and their kits,
 // the input struct, contested orders, the entity arrays - and the damage &
 // death lifecycle those players live and die by.
 // ------------------------------------------------------------ players
@@ -50,8 +50,8 @@ const SNOW_TRAIL_FADE = 1.4; // fade window at the end of that life: hold crisp,
 // Hero levels (League-style, max 18). XP is its own number, apart from gold:
 // it comes from being NEAR when a rival body dies - a soldier, a scout, a
 // camp monster - shared among the allies standing there (shareXp, below), so
-// the last hit is gold and the being-there is XP. Mining, felling, fishing,
-// chests and the clock pay gold and never XP: the road is where you level.
+// the last hit is gold and the being-there is XP. Felling, fishing
+// and the clock pay gold and never XP: the road is where you level.
 // LEVEL_XP[n-1] is the total needed to reach level n, the gap growing by 30 a
 // level. It is sized against a scout who keeps to the road and the camps
 // (waves every 30 s growing a soldier every 3 min, a share of the kills, a
@@ -182,7 +182,7 @@ const HEROES_SOON = [
   { name: 'SLEET', cls: 0, look: { sex: 1, tone: 1, hair: 4, hairCol: 6, beard: 0, face: 2 } },
   { name: 'DURAVO', cls: 1, look: { sex: 0, tone: 3, hair: 2, hairCol: 0, beard: 3, face: 0 } },
 ];
-// the kit every sim site reads: the class's numbers with the player's cards
+// the kit every sim site reads: the class's numbers with the player's items
 // and items folded in. refreshKit() rebuilds the cache whenever one of them
 // changes; kitOf() itself is called many times a frame and must stay a read.
 function kitOf(p) { return p.kit || CLASSES[p.cls].kit; }
@@ -209,14 +209,14 @@ function gainGold(p, n) {
   p.inv.gold += n;
   p.earned += n;
   // lifetime total, coalesced - see profile.js. Practice gold is play money:
-  // a free room with chests in it must never farm the tech tree's points.
+  // a free room must never farm the tech tree's points.
   if (p === player && !PRACTICE) PROFILE.addGold(n);
 }
 // The merchant's till, and the ONE way gold reaches a wallet without counting
 // as earned. A SALE is an exchange, not a source: the counter buys fish and
 // berries at the same price it sells them, so counting one would turn two
 // clicks into a scoreboard farm rather than into a trade. Everything that
-// EARNS gold - a fell, a kill, a chest, the clock - still goes through gainGold.
+// EARNS gold - a fell, a kill, the clock - still goes through gainGold.
 function tradeGold(p, n) { if (p && n > 0) p.inv.gold += n; }
 // Gold is never a physical drop: every source pays the earner on the spot
 // through this one wrapper - the wallet (via gainGold), the '+N' popup at
@@ -300,205 +300,74 @@ function playerTint(p) {
   return [t.trim, t.hatL, t.trimD, t.hat][Math.floor(p.id / TEAM_COUNT) % 4];
 }
 
-// ---- inventory: the backpack ---------------------------------------------
-// Gold is a wallet number and never a bag item - it is currency, and a purse
-// that could run out of room would make a kill refuse its own bounty. What
-// you CARRY lives in slots instead: `p.bag` is a fixed array of `p.bagCap`
-// cells, each one null or a { type, n } stack of at most ITEMS[type].stack.
-// The slot is the unit of capacity for everything the bag holds, so two half
-// stacks cost two cells the way they do in any RPG bag, and the pickup path
-// can genuinely refuse a find when there is nowhere to put it - which is the
-// whole reason the bag is slots and not a row of counters. What it holds is
-// what the world hands you to carry and use later (the burrow, the ores).
-// Nothing in the bag has state of its own: a cell is a type and a count.
-//
-// FOOD AND CARDS ARE NOT IN THE BAG AT ALL. An item marked `pouch` lives in
-// `p.food`, a set of uncapped counters beside the wallet, and takes no cell:
-// the two meals are pressed on Q and F from the hud strip's own wells, and
-// an unopened card (3.23) opens itself the moment it is held (0.426) - one
-// at random from everything held, its buff picked at random (useCard,
-// js/sim/core.js) - so none of them is ever laid out, compared or
-// dragged, and every cell one of them took was a cell taken off the build.
-// The six helpers below route them there, which is what keeps the pickup, the
-// catch, the sale and the AI's food check generic over "a berry" and "a
-// burrow" alike.
+// ---- inventory: the pouch -------------------------------------------------
+// Gold is a wallet number and never an item - it is currency, and a purse
+// that could run out of room would make a kill refuse its own bounty. The six
+// item slots are their own list (p.items, js/sim/items.js). What else a body
+// carries is the POUCH: `p.food`, a set of uncapped counters beside the
+// wallet, one per meal. The two meals are pressed on Q and F from the hud
+// strip's own wells, so nothing in it is ever laid out, dragged or refused.
+// (The 12-cell backpack that held the burrow and the ores went in 0.524.)
+// The four helpers below are the whole API: the pickup, the catch, the sale
+// and the AI's food check go through them and never touch p.food themselves.
 // `heal` is what a meal is worth before the kit's foodMul - the ONE place the number
 // lives, so the tooltip and the meal that lands can never disagree (js/sim/core.js).
 const ITEMS = {
-  berry: { icon: 'itemBerry', stack: Infinity, pouch: true, heal: 20 },
+  berry: { icon: 'itemBerry', heal: 20 },
   // the lake's two, caught through a hole in the ice (the `fish` shoal,
   // js/sim/wildlife.js): the FROST PIKE - still the `fish` key, which the market,
   // the nets and every save already name - and the rare GOLD SUNFISH
-  fish: { icon: 'itemFrostPike', stack: Infinity, pouch: true, heal: 50, name: 'FROST PIKE' },
-  sunfish: { icon: 'itemSunfish', stack: Infinity, pouch: true, heal: 80, name: 'GOLD SUNFISH' },
+  fish: { icon: 'itemFrostPike', heal: 50, name: 'FROST PIKE' },
+  sunfish: { icon: 'itemSunfish', heal: 80, name: 'GOLD SUNFISH' },
   // the creek's two (CREEK_FISH, js/sim/world.js): caught by rolling over the
   // water onto one, eaten off the fish well like the lake's
-  whitefish: { icon: 'itemWhitefish', stack: Infinity, pouch: true, heal: 40, name: 'WHITEFISH' },
-  snowChar: { icon: 'itemSnowChar', stack: Infinity, pouch: true, heal: 70, name: 'SNOW CHAR' },
-  // unopened roguelike cards - one ITEMS entry per rarity, in the pouch like
-  // a meal, so the drop pickup and the counter are all free
-  // (see checklists.md "adding a carried item"). Drawing one (useCard,
-  // js/sim/core.js) applies a random entry of its rarity; see CARDS below.
-  cardWhite:  { icon: 'itemCardWhite',  stack: Infinity, pouch: true },
-  cardGreen:  { icon: 'itemCardGreen',  stack: Infinity, pouch: true },
-  cardBlue:   { icon: 'itemCardBlue',   stack: Infinity, pouch: true },
-  cardPurple: { icon: 'itemCardPurple', stack: Infinity, pouch: true },
-  cardGold:   { icon: 'itemCardGold',   stack: Infinity, pouch: true },
-  // the burrow, a rabbit's drop: a CONSUMABLE in the pack, stacked in one
-  // cell. Clicking the cell (or the burrow key) is `use`: it stands the hole's
-  // ghost up, and the dig spends one (js/sim/tunnel.js, where its icon is baked).
-  tunnel:     { icon: 'itemTunnel',     stack: 5, use: () => tunnelAimToggle() },
+  whitefish: { icon: 'itemWhitefish', heal: 40, name: 'WHITEFISH' },
+  snowChar: { icon: 'itemSnowChar', heal: 70, name: 'SNOW CHAR' },
 };
-const CARD_RARITIES = ['white', 'green', 'blue', 'purple', 'gold'];
 // THE FISH a body can eat, in the order the fish well eats them when no kind
 // is picked: the smallest meal first, so the best one is kept. The well's
 // picker (fishPick, js/ui/strip.js) sets p.fishPick to one of them, or null
 // for "whichever comes next" (fishToEat, js/sim/core.js).
 const FISH_KINDS = ['whitefish', 'fish', 'snowChar', 'sunfish'];
 function fishHeld(p) { let n = 0; for (const k of FISH_KINDS) n += bagCount(p, k); return n; }
-// 'white' <-> the 'cardWhite' ITEMS/RES_COLORS key every rarity is stored under
-function cardKey(rarity) { return 'card' + rarity[0].toUpperCase() + rarity.slice(1); }
-const CARD_TYPE_RARITY = {}; // 'cardWhite' -> 'white', the inverse of cardKey
-for (const r of CARD_RARITIES) CARD_TYPE_RARITY[cardKey(r)] = r;
-// The one bag everyone starts with; a second one raises p.bagCap. Two rows
-// of BAG_COLS small cells in the drawer top-left (the backpack banner,
-// js/ui/bag.js). Nothing that is merely COUNTED lives in it (meals and cards
-// are the pouch). A kind with a `use` (the burrow) is spent from its cell: a
-// click on it is the use (sendBagCell, js/ui/strip.js).
-const BAG_CAP = 12;
-// Is this kind carried in the POUCH (p.food) rather than in a cell? One test,
-// asked by all four counting helpers, so a pouch kind can never be half in
-// one store and half in the other.
-function isPouch(type) { return !!(ITEMS[type] && ITEMS[type].pouch); }
-// a fresh pouch: every pouch kind at zero, so a count is never undefined
-function newPouch() { const o = {}; for (const k in ITEMS) if (ITEMS[k].pouch) o[k] = 0; return o; }
-function bagCount(p, type) {
-  if (isPouch(type)) return p.food[type] || 0;
-  let n = 0;
-  for (const s of p.bag) if (s && s.type === type) n += s.n;
-  return n;
-}
-function bagUsed(p) { let n = 0; for (const s of p.bag) if (s) n++; return n; }
-// how many more of `type` fit: the room left in its partial stacks plus a
-// whole stack for every empty cell - and Infinity for a pouch kind, which is
-// what makes a berry pickup, a catch and a market buy incapable of refusing
-function bagRoom(p, type) {
-  if (isPouch(type)) return Infinity;
-  const max = ITEMS[type] ? ITEMS[type].stack : 0;
-  let n = 0;
-  for (const s of p.bag) n += !s ? max : s.type === type ? max - s.n : 0;
-  return n;
-}
-// adds what fits - topping up partial stacks before opening a cell - and
-// returns how many went in; the caller decides what happens to the remainder
+// a fresh pouch: every kind at zero, so a count is never undefined
+function newPouch() { const o = {}; for (const k in ITEMS) o[k] = 0; return o; }
+// how many of `type` the pouch holds
+function bagCount(p, type) { return (ITEMS[type] && p.food[type]) || 0; }
+// how many more fit: always all of them, so a pickup, a catch and a market
+// buy can never refuse
+function bagRoom(p, type) { return ITEMS[type] ? Infinity : 0; }
+// adds n and returns how many went in (a save from before a kind existed
+// carries no counter for it, hence the `|| 0`)
 function bagAdd(p, type, n) {
   if (!ITEMS[type]) return 0;
-  if (isPouch(type)) { p.food[type] = (p.food[type] || 0) + n; return n; } // the pouch always takes it (a save from before a kind existed carries no counter for it)
-  const max = ITEMS[type].stack;
-  let left = n;
-  for (const s of p.bag) {
-    if (left <= 0) break;
-    if (!s || s.type !== type || s.n >= max) continue;
-    const take = Math.min(left, max - s.n);
-    s.n += take; left -= take;
-  }
-  for (let i = 0; i < p.bag.length && left > 0; i++) {
-    if (p.bag[i]) continue;
-    const take = Math.min(left, max);
-    p.bag[i] = { type, n: take }; left -= take;
-  }
-  return n - left;
+  p.food[type] = (p.food[type] || 0) + n;
+  return n;
 }
-// A whole cell (one the drag is carrying home) goes into the first free slot
-// as it is rather than merged into a stack. Returns false when there was
-// nowhere to put it, and the caller decides (dragReturn throws it).
-function bagPut(p, cell) {
-  for (let i = 0; i < p.bag.length; i++) if (!p.bag[i]) { p.bag[i] = cell; return true; }
-  return false;
-}
-// spends from the LAST stack backwards, so partial stacks empty and free
-// their cell instead of leaving a trail of ones across the bag
+// spends up to n and returns how many it spent
 function bagTake(p, type, n) {
-  if (isPouch(type)) {
-    const took = Math.min(n, p.food[type] || 0);
-    p.food[type] -= took;
-    return took;
-  }
-  let left = n;
-  for (let i = p.bag.length - 1; i >= 0 && left > 0; i--) {
-    const s = p.bag[i];
-    if (!s || s.type !== type) continue;
-    const take = Math.min(left, s.n);
-    s.n -= take; left -= take;
-    if (s.n <= 0) p.bag[i] = null;
-  }
-  return n - left;
+  if (!ITEMS[type]) return 0;
+  const took = Math.min(n, p.food[type] || 0);
+  p.food[type] -= took;
+  return took;
 }
 
-// ---- roguelike cards ------------------------------------------------------
-// Dropped by a sprung chest in the treeline (hitObject's chest branch,
-// js/sim/actions.js, rolled against CHEST_ODDS), carried in the pouch, and DRAWN
-// on the card key: one card at random from everything held, one entry at
-// random from its rarity (useCard, js/sim/core.js) - no draft screen (3.23).
-// A card's mod(k) writes into the kit - folded in cumulatively by
-// refreshKit below, so every kit-reading site in the sim picks them up for
-// free the same way it does items. killHeal is the one field no
-// class kit carries; die()'s kill-credit line reads it.
-const CARDS = {
-  white: [
-    { name: 'QUICK HANDS', blurb: 'FASTER RENOCK', mod: (k) => { k.add.as += 0.04; } },
-    { name: 'THICK SOLES', blurb: 'WALK FASTER', mod: (k) => { k.add.ms += 2; } },
-    { name: 'SOFT LANDING', blurb: 'DODGES COME BACK SOONER', mod: (k) => { k.dodgeCd -= 0.25; } },
-    { name: 'FORAGER', blurb: 'FELLS AND BREAKS PAY MORE', mod: (k) => { k.harvestMul += 0.5; } },
-    { name: 'STEADY HAND', blurb: 'FASTER FULL DRAW', mod: (k) => { k.add.as += 0.02; } },
-  ],
-  green: [
-    { name: 'SHARP POINT', blurb: 'ARROWS HIT HARDER', mod: (k) => { k.add.dmg += 1; } },
-    { name: 'PADDED VEST', blurb: 'MORE HEALTH', mod: (k) => { k.add.hp += 12; } },
-    { name: 'LIGHT FEET', blurb: 'WALK FASTER', mod: (k) => { k.add.ms += 4; } },
-    { name: 'CAMOUFLAGE', blurb: 'FOES SPOT YOU FROM CLOSER', mod: (k) => { k.stealth -= 0.08; } },
-    { name: "FLETCHER'S TOUCH", blurb: 'FASTER RENOCK', mod: (k) => { k.add.as += 0.07; } },
-  ],
-  blue: [
-    { name: 'HEAVY DRAW', blurb: 'HITS HARDER, SLOWER DRAW', mod: (k) => { k.add.dmg += 2; k.add.as -= 0.03; } },
-    { name: 'IRON WILL', blurb: 'LESS DAMAGE, MORE HEALTH', mod: (k) => { k.add.armor += 10; k.add.hp += 10; } },
-    { name: 'SPRINTER', blurb: 'WALK FASTER, DODGES SOONER', mod: (k) => { k.add.ms += 6; k.dodgeCd -= 0.3; } },
-    { name: "AMBUSHER'S EDGE", blurb: 'AMBUSH SHOTS HIT HARDER', mod: (k) => { k.ambushMul += 0.4; } },
-    { name: 'ICE RUNNER', blurb: 'FASTER, SHARPER ON ICE', mod: (k) => { k.iceMax *= 1.15; k.iceSteer += 0.2; } },
-  ],
-  purple: [
-    { name: 'EXECUTIONER', blurb: 'ARROWS HIT MUCH HARDER', mod: (k) => { k.add.dmg += 4; } },
-    { name: 'STONE SKIN', blurb: 'MUCH LESS DAMAGE TAKEN', mod: (k) => { k.add.armor += 20; } },
-    { name: 'GHOST', blurb: 'SEEN FROM MUCH CLOSER', mod: (k) => { k.stealth -= 0.18; } },
-    { name: 'BLOODLUST', blurb: 'HEAL ON A KILL', mod: (k) => { k.killHeal = (k.killHeal || 0) + 12; } },
-    { name: 'RELENTLESS', blurb: 'FASTER DODGES AND ARROWS', mod: (k) => { k.dodgeCd -= 0.7; k.add.as += 0.1; } },
-  ],
-  gold: [
-    { name: "BERSERKER'S HEART", blurb: 'HITS HARDER, LESS HEALTH', mod: (k) => { k.add.dmg += 5; k.add.hp -= 15; } },
-    { name: 'FORTRESS', blurb: 'MUCH LESS DAMAGE, MORE HP', mod: (k) => { k.add.armor += 35; k.add.hp += 25; } },
-    { name: 'PHANTOM', blurb: 'SEEN CLOSER, HARDER AMBUSH', mod: (k) => { k.stealth -= 0.3; k.ambushMul += 0.5; } },
-    { name: 'VAMPIRE', blurb: 'HEAL ON KILL, HITS HARDER', mod: (k) => { k.killHeal = (k.killHeal || 0) + 25; k.add.dmg += 1; } },
-    { name: "WINTER'S CHILD", blurb: 'MUCH FASTER, SHARPER ON ICE', mod: (k) => { k.iceMax *= 1.3; k.iceSteer += 0.35; k.add.ms += 4; } },
-  ],
-};
-
-// the class kit plus the defaults no class kit carries; a card's or an
+// the class kit plus the defaults no class kit carries; an
 // item's mod() edits them in place. Shared by refreshKit and the hero
 // pop-up's preview ledger (js/ui/menu.js), so the numbers that page shows can
 // never drift from the ones the sim reads.
 function baseKit(cls) {
   return Object.assign({}, CLASSES[cls].kit, {
-    cls, add: statBag(), // whose kit, and the stat bonuses cards and items write (js/sim/stats.js)
+    cls, add: statBag(), // whose kit, and the stat bonuses items write (js/sim/stats.js)
     huntMul: 1, foodMul: 1, nightHeal: false,
     harvestMul: 1, dodgeCd: DODGE_CD, stealth: 1,
     ambushMul: AMBUSH_MUL, bury: PRONE_BURY,
     killHeal: 0, kindle: false, chill: false, restHeal: 0, // the item passives (js/sim/items.js)
   });
 }
-// rebuild p.kit from class + cards + items
+// rebuild p.kit from class + items
 function refreshKit(p) {
   const k = baseKit(p.cls);
-  for (const c of p.cards) CARDS[c.rarity][c.id].mod(k);
   itemMods(k, p); // the six item slots (js/sim/items.js)
   p.kit = k;
   p.maxHp = levelMaxHp(p);
@@ -518,7 +387,6 @@ function makeInput() {
                          // (key 3 for the human; the burrow itself is now the
                          // hunter's SNOW COVER cast, key 4, not an input)
     eatBerry: false, eatFish: false, // edge-triggered
-    useCard: false,      // edge-triggered: draw one unopened card at random (useCard, js/sim/core.js)
     ability: -1,         // edge-triggered: cast the class ability on this key (1-4), js/sim/abilities.js
     cmd: null,           // one-shot: {kind:'build'|'upgrade'|'demolish'|'craft', tx, ty, id} or {kind:'ability', i}
   };
@@ -555,25 +423,19 @@ class Player {
     this.look = Object.assign({}, CLASSES[0].look); // the hero's face, set again by every setClass
     this.skins = {};                   // hero slot -> the look worn on that hero (heroSkinOf); a person's, from their profile
     this.spawn = { tx: WORLD >> 1, ty: WORLD >> 1 }; // landing tile once the eagle drops this player (the bot brain's "home")
-    this.inv = { gold: 0 };             // the wallet is currency only - carried goods are in the bag
-    this.bagCap = BAG_CAP;              // slots; one starting backpack
-    this.bag = new Array(this.bagCap).fill(null); // each cell null or { type, n }
+    this.inv = { gold: 0 };             // the wallet is currency only - the meals are in the pouch
     // the POUCH: the two meals, uncapped and cell-free (the ITEMS `pouch`
     // flag above). Read and written only through the bag helpers, so every
     // caller stays generic over where a kind actually lives.
-    this.food = newPouch();             // the pouch: the meals and the unopened cards, uncapped
+    this.food = newPouch();             // the pouch: the meals, uncapped
     this.fishPick = null;               // the fish the fish well eats (a FISH_KINDS key), or null for whichever comes next
     this.cls = 0;                       // CLASSES index; the lobby sets the local one
     this.skillPts = 1;                  // unspent; level 1 starts with one, each levelUp adds one - spent on ability levels (buyAbilityLv, js/sim/abilities.js)
-    this.abLv = [0, 0, 0, 0];           // ability ranks, 0 (LOCKED) ..abLvMax (5, the ultimate 3), a skill point each - like cards and items, NOT cleared by reset(): a death keeps what was bought
+    this.abLv = [0, 0, 0, 0];           // ability ranks, 0 (LOCKED) ..abLvMax (5, the ultimate 3), a skill point each - like items, NOT cleared by reset(): a death keeps what was bought
     this.abPick = [0, 0, 0, 0];         // which option each key carries (abOf, js/sim/abilities.js), picked pre-match in the hero pop-up; a bot keeps the first
-    this.cards = [];                    // picked roguelike cards, {rarity,id} - like items, survives a respawn
     // the times of this player's recent pings, the spam guard's memory
     // (pingReady, js/sim/pings.js)
     this.pingLog = [];
-    // the tile index of the near hole of this body's one tunnel (js/sim/tunnel.js),
-    // -1 for none. NOT cleared by reset() - a dug tunnel outlives its digger.
-    this.tunHole = -1;
     this.eliminated = false;            // its bird was driven off: no coming back - see die()/eagleFleeResolve
     this.respawnT = 0;                  // seconds left on an active respawn countdown
     this.level = 1; this.xp = 0;        // hero level and its XP (gainXp); survive death
@@ -597,9 +459,9 @@ class Player {
     Object.assign(this, PLAYER_RECORD); // the rest of the record, which a save older than a field fills from too (saveApply)
     this.hGold = [];                    // the lobby's two graphs, sampled every STAT_STEP: gold earned...
     this.hDmg = [];                     // ...and damage dealt, both cumulative (sampleStats, js/ui/lobby.js)
-    this.items = new Array(ITEM_SLOTS).fill(null); // the six item slots, ids or null (js/sim/items.js) - like cards, they survive a respawn
+    this.items = new Array(ITEM_SLOTS).fill(null); // the six item slots, ids or null (js/sim/items.js) - they survive a respawn
     this.fightT = 0; this.kindleN = 0;  // s since the last hit given or taken, and KINDLING's count (itemsOnHit)
-    refreshKit(this);                   // builds this.kit and this.maxHp from class + cards + items
+    refreshKit(this);                   // builds this.kit and this.maxHp from class + items
     this.aboard = false;                // riding the eagle (beginDrop sets it, hopOff clears it)
     this.dropT = 0;                     // seconds left of the step down off the roost (0 = on the ground)
     this.dropAlt = 0;                   // px the step down started from: HOP_ALT off the roost
@@ -676,8 +538,6 @@ class Player {
     this.swing = SWING_BOW;                        // held SWING_TOOLS index (bow at rest)
     this.autoSwing = false;                        // the swing in flight was the hands' own (autoWork), so a draw may begin under it
     this.fishCd = 0;                               // the automatic catch's clock (autoFish, js/sim/attack.js)
-    this.mineO = null; this.mineStrikeT = 0;       // the rock this body's pick is at, and its next bite (js/sim/mining.js)
-    this.mineHoldT = 0;                            // ...and how long a rival's blow keeps it off
     // the class abilities (keys 1-4, js/sim/abilities.js): per-key cooldowns, the
     // cast in progress, and every timed state one can leave on a body -
     // slowed under a net or a crater, mid-reel on the grapple, shielded,
@@ -715,11 +575,6 @@ class Player {
     this.lungeHit = []; this.lungeKey = -1;
     this.parryT = 0; this.riposteId = -1;
     this.duelId = -1; this.duelT = 0; this.flurryN = 0; this.flurryT = 0; this.flurryId = -1; this.flurryArm = false;
-    // the tunnels (js/sim/tunnel.js): the one being ridden ({ fx, fy, tx, ty, t, len },
-    // px and s), the wait after coming up before any hole takes this body
-    // again, the seconds left on the far end being dug, and the work key held
-    // through the last step (a hole takes a fresh press, never a held one)
-    this.tun = null; this.tunCd = 0; this.digT = 0; this.tunE = false;
     this.hopT = 0;                                 // the net shot's recoil hop, on the body
     this.grapT = 0; this.grapX = 0; this.grapY = 0; // the grapple: reel time left, and the anchor it hauls toward
     this.zip = -1; this.zipD = 0; this.zipDir = 1;  // the zipline (js/sim/zipline.js): the line ridden (its index in zips, or -1), px along it, and which way
@@ -791,9 +646,8 @@ function initPlayers(roster, local) {
 // who p is allowed to shoot: another live player on another team (this is the
 // one place the FFA/friendly-fire rule lives)
 function enemyOf(p, q) { return q !== p && q.active && !q.dead && !inAir(q) && (!PVP || q.team !== p.team); }
-// riding the eagle or falling from it - or under the snow in a tunnel
-// (js/sim/tunnel.js): not in the world, nothing can touch it
-function inAir(p) { return p.aboard || p.dropT > 0 || !!p.tun; }
+// riding the eagle or falling from it: not in the world, nothing can touch it
+function inAir(p) { return p.aboard || p.dropT > 0; }
 
 // ---- facing --------------------------------------------------------------
 // The one way a body turns (faceToward). Near a diagonal the facing it
@@ -819,7 +673,7 @@ function faceToward(p, dx, dy, hold) {
 // which is the whole reason to stop moving before you shoot.
 function concealOf(p) { return p.hide > 0 ? p.hide * (p.moving ? PRONE_MOVE : 1) : 0; }
 // How far p is noticed from by a watcher whose plain sight range is `range`.
-// The kit's stealth (cards, items) shortens it; lying under the snow shortens it hard - but
+// The kit's stealth (items) shortens it; lying under the snow shortens it hard - but
 // never past PRONE_SNIFF, because at arm's length you are found whatever you
 // are lying under. Every watcher in the game (the pack, the turrets, the bot
 // brain) resolves through this one function so they cannot disagree about who
@@ -874,7 +728,6 @@ const particles = []; // {x,y,vx,vy,life,color,size,grav} + optional `alpha` fad
 const floaters = [];
 const footprints = [];
 const fish = []; // swimmers under the ice: {x,y,a,spd,t,turnT,spook}
-const iceCracks = new Map(); // tile idx -> pickaxe hits taken (cracked, not yet open)
 const holes = []; // tile idx of open water holes; they refreeze each dawn
 const camps = []; // the jungle camps, stood up at fixed sites by worldgen (see the camps banner, js/sim/camps.js)
 
@@ -942,7 +795,6 @@ function damagePlayer(p, dmg, dx, dy, src, cause, crit, kb, o) {
   }
   risePlayer(p); // nobody stays buried through a hit: the cover is blown with the body
   breakEat(p);   // ...and the meal goes with it - that is what makes the channel a channel
-  if (src && src.team !== p.team) mineHit(p); // ...and a rival's blow knocks the pick off a rock (js/sim/mining.js)
   cancelCatch(p); // ...and the hoist: a fish over your head is a hit you did not see coming
   // a burn shakes and shouts once, when it lights (igniteUnit) - not four
   // times a second for as long as it runs
@@ -961,7 +813,7 @@ const KILL_VERB = { worker: 'CUT DOWN', fire: 'BURNED' };
 
 // DEATH COSTS TIME, NOTHING ELSE. A body goes down with everything it had
 // and comes back with all of it: the wallet, the pouch, the bag, the weapon
-// and its build, the cards, the items, the level. Nothing spills and nothing
+// and its build, the items, the level. Nothing spills and nothing
 // is looted (the 1.25-3.54 rule, where the killer pocketed the wallet and the
 // build lay where it fell, is gone - it made the fifteenth minute a bag you
 // were afraid to carry). What a kill is worth is gold from nowhere, paid out
@@ -1006,7 +858,6 @@ function bodyOut(p) {
   // whatever ability the body was mid-way through dies with it, and the meal
   p.eatT = 0; p.eatType = null;
   p.recallT = 0; // ...and the walk home it was channelling
-  breakMine(p);
   p.castT = 0; p.castAb = -1;
   p.shieldT = 0; p.rushT = 0; p.rushVictim = null;
   p.castSlam = false; p.hopT = 0; p.grapT = 0;
@@ -1018,7 +869,6 @@ function bodyOut(p) {
   clearUnitStatus(p); // root, slow, net, mark and the fire go out with the body
   // an item on the cursor goes back in the bag, so it is still there when the
   // body comes back instead of vanishing with the hand that was holding it
-  if (p === player && state.drag) { dragReturn(); state.dragPend = null; }
 }
 
 // A player goes down two ways. While its team's bird still roosts (or is
@@ -1061,8 +911,8 @@ function die(p, src, cause) {
     if (killer.control === 'ai') aiDowned(killer, p); // a bot remembers who it keeps downing (the grudge, js/ai/ai-team.js)
     payTakedown(p, killer, foes, worth, bounty); // the kill's gold, the assists' share and a shutdown's bounty
     if (killer === player && !PRACTICE) PROFILE.addKill(); // the profile's lifetime count
-    // BLOODLUST/VAMPIRE: a flat heal on a confirmed kill, the one card
-    // effect that isn't a plain kitOf() field - mirrors eatBerry's heal
+    // FEAST (js/sim/items.js): a flat heal on a confirmed kill, the one
+    // passive that isn't a plain kitOf() field - mirrors eatBerry's heal
     if (killer.kit.killHeal > 0 && killer.hp < killer.maxHp) {
       const heal = healPlayer(killer, killer.kit.killHeal);
       addFloater(killer.x, killer.y - 14, '+' + heal, '#8fe08a');
@@ -1248,7 +1098,6 @@ function endMatch(how) {
   state.deadSel = 0;
   state.deadHover = [0, 0];
   state.mapOpen = false;
-  state.bagOpen = false;
   state.settingsOpen = false; setDrop = null;
   state.wheel = null;
   state.build = null;

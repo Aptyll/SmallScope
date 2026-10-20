@@ -3,7 +3,7 @@
 // The pixels of a break (the thing itself, its footprint and its clock:
 // js/sim/icebreak.js). Each break owns a small canvas over its box, repainted
 // every frame it is on screen from its age, and laid flat over the ground
-// right after the pick cracks in render(). Under it the ground canvas still
+// right after the ice fish in render(). Under it the ground canvas still
 // shows the sheet, even on a tile the break holds open (paintGroundTile asks
 // iceBreakHolds), so what reads as water here is exactly the break's shape:
 //   the warning   bright cracks tracing the outline round, before it opens
@@ -17,7 +17,7 @@
 //                 new ice dark and thin, thickening into the sheet's own tone
 // Every pixel is clipped to where the ice is drawn (iceAtPx), so a break at
 // the shore never bites the bank.
-const IB_WATER = [[0x1e, 0x3a, 0x54], [0x23, 0x41, 0x59]]; // the pick hole's two water tones (paintGroundTile)
+const IB_WATER = [[0x1e, 0x3a, 0x54], [0x23, 0x41, 0x59]]; // an open hole's two water tones (paintGroundTile)
 const IB_GLINT = [0x2e, 0x55, 0x73];
 const IB_RIM = [[0x16, 0x2c, 0x40], [0x1a, 0x33, 0x49]];  // the shade under the far lip, two rows
 const IB_CHIP = [0xd6, 0xec, 0xf4];                      // the chipped lip, the plates
@@ -175,7 +175,7 @@ function paintIceBreak(b, a) {
   A.cx.putImageData(A.img, 0, 0);
 }
 
-// every break on screen, flat over the ground (render(), after the pick cracks)
+// every break on screen, flat over the ground (render())
 function drawIceBreaks(ox, oy) {
   breakCacheSweep();
   for (const b of iceBreaks) {

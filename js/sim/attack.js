@@ -19,7 +19,7 @@
 //   cut     { reach px, half rad }: a wedge swept off the aim, the blade's
 //           length at full draw and its sweep to either side
 // The damage is the hero's DAMAGE stat (statOf, js/sim/stats.js), always: a
-// level, a card or an item that raises it raises the attack, and the draw
+// level or an item that raises it raises the attack, and the draw
 // scales the whole of it (the draw, below).
 function attackOf(p) { return CLASSES[p.cls].attack; }
 // The cycle a press starts, for THIS player right now - and the one number

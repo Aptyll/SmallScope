@@ -637,13 +637,8 @@
     pickup() { tone(660, 0.07, 'square', 0.16); tone(990, 0.09, 'square', 0.16, 0, 0.06); },
     // gold landing in the purse
     coin() { if (smp('coin', { vol: 0.59, jitter: 0.12, dur: 0.55 })) return; tone(880, 0.06, 'square', 0.07); tone(1320, 0.09, 'triangle', 0.06, 0, 0.05); },
-    // something going into the backpack
+    // something going into the pouch
     stash() { if (smp('stash', { vol: 0.58, jitter: 0.12 })) return; tone(520, 0.06, 'triangle', 0.08); tone(760, 0.08, 'triangle', 0.07, 0, 0.05); },
-    // ...and a SWAP: one item out as another comes in. Two notes CROSSING -
-    // the first falling, the second rising under it - so an exchange is told
-    // from a plain put-down by ear alone, which is the whole point of it
-    // having its own cue: a swap is the one move that hands you something back.
-    swap() { tone(780, 0.07, 'triangle', 0.09, -260); tone(430, 0.09, 'triangle', 0.08, 240, 0.05); },
     swing() { if (smp('whoosh', { vol: 0.56, rate: 1.6, jitter: 0.12, hp: 400, dur: 0.45 })) return; noise(0.07, 0.1, 600); },
     bowDraw() { noise(0.14, 0.06, 350); tone(160, 0.12, 'triangle', 0.04, 60); },
     dodge() { if (smp('whoosh', { vol: 0.53, rate: 0.8, jitter: 0.08, lp: 2400, dur: 0.6 })) return; noise(0.16, 0.14, 550); tone(340, 0.12, 'triangle', 0.06, -220); },
@@ -792,7 +787,7 @@
     // which is the sound of a bow being ready and says nothing about time.
     countTick() { if (smp('count', { vol: 0.63, jitter: 0 })) return; tone(220, 0.1, 'triangle', 0.1, -40); tone(110, 0.16, 'sine', 0.08, -20, 0.02); },
     // A PANEL, DRAWER OR CHART, and `open` says which way it went - so one
-    // call site does the pair: SFX.ui(state.bagOpen) reads as the toggle it
+    // call site does the pair: SFX.ui(state.mapOpen) reads as the toggle it
     // follows, and the two halves can never drift apart.
     ui(open) {
       // one vol for both halves: they arrive matched out of the bank now, the
@@ -840,7 +835,7 @@
       if (smp('alarm', { vol: 0.89, jitter: 0 })) return;
       tone(880, 0.12, 'square', 0.08); tone(660, 0.16, 'square', 0.08, 0, 0.14); tone(880, 0.2, 'square', 0.08, 0, 0.3);
     },
-    // A NUMBER ON YOUR OWN SHEET MOVED - a hero level, a card drawn, an
+    // A NUMBER ON YOUR OWN SHEET MOVED - a hero level, an
     // item bought (updateStatLedger, js/ui/minimap.js), under the row that
     // lights with it. Two notes, up for better and down for worse, and quiet
     // and HIGH on purpose: a level raises this on top of its own fanfare, so
@@ -870,11 +865,6 @@
     heal() { if (smp('warm', { vol: 0.73, rate: 1.3, jitter: 0.06 })) return; tone(440, 0.1, 'triangle', 0.08); tone(554, 0.12, 'triangle', 0.08, 0, 0.08); },
     // the dawn shield laid on you (pickSnowdrop), and the last of it broken
     shieldUp() { if (smp('warm', { vol: 0.7, rate: 1.6, jitter: 0.04 })) return; tone(659, 0.12, 'triangle', 0.07); tone(988, 0.2, 'triangle', 0.06, 0, 0.09); },
-    // a burrow (js/sim/tunnel.js): a hole dug, a body going under and coming up, a tunnel caving
-    tunnelDig() { noise(0.16, 0.16, 900); noise(0.1, 0.1, 1800, 0.12); tone(150, 0.12, 'triangle', 0.06, -60, 0.05); },
-    tunnelIn() { noise(0.2, 0.14, 700); tone(320, 0.16, 'sine', 0.07, -200); },
-    tunnelOut() { noise(0.18, 0.16, 1400); tone(200, 0.14, 'sine', 0.07, 240); },
-    tunnelCave() { noise(0.35, 0.22, 500); tone(110, 0.3, 'sawtooth', 0.06, -50); },
     shieldBreak() { tone(1318, 0.09, 'square', 0.05, -400); tone(880, 0.16, 'triangle', 0.06, -300, 0.04); noise(0.12, 0.05, 5200); },
     splash() { noise(0.28, 0.28, 750); tone(300, 0.22, 'sine', 0.1, -190); noise(0.14, 0.12, 1500, 0.06); },
     // a camp waking: the pack answering, or a rising synth howl that sags at the end

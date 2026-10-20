@@ -315,7 +315,7 @@ shape; round 2 grew it).
 the side's colour and the passage open below. It is look **C**, "raised portcullis", off
 `docs/media/concepts/gate-concepts-1.png`.
 
-**The swing tool icons** (`itemBow`/`itemAxe`/`itemPick`) are 8×8 grids sharing `AXPAL`, drawn at **1×** by
+**The swing tool icons** (`itemBow`/`itemAxe`) are 8×8 grids sharing `AXPAL`, drawn at **1×** by
 `drawHeldTool()` (inside a translate/rotate, resolved through `SPRITES[t.icon]` from the
 `SWING_TOOLS` table) and by `drawRobot()` for a bot's swing — E picks the tool, there is no tool
 bar. At rest `drawHeldTool()` draws the **hero's own weapon** instead, a 12×12
@@ -327,18 +327,8 @@ The **gear icons** are twelve 12×12 grids (`gearLongsight` … `gearGhoststep`)
 **material** — `GEAR_MAT_PALS`, leather → iron → steel → gold, plus the shared accent chars `w`
 (ice-white) and `r` (hearth-red) — into `SPRITES.gearIcons[slot][variant][material]`. They are
 item icon art now: a `BUILD_ITEMS` entry's `icon` of `['gear', slot, variant, material]` names one
-(`itemIcon`, js/sim/items.js; see [the items](gameplay/the-merchants-counter.md#the-items)). `itemBag` is
-12×12 too, since it sits in the same 18 px HUD well, but shares `ITPAL` with the
-8×8 item icons rather than taking a material palette: it is one object, not four materials of one.
-
-The five **roguelike card** icons are one card back — the full 8 px of height, lit along its top
-and left edge (`L`), shaded along its bottom and right (`c`), inside a dark rim that holds it off
-white snow — in the rarity's colour (`C`, the same five hexes as `RES_COLORS`), with the rarity
-**counted** on it the way a die counts: one pip on White, two on Green, three, four, five on Gold
-(`E`, dark on the pale White card and white on the rest). The count is what tells the five apart
-under any palette, so colour is never the only thing carrying a rarity; Purple and Gold also throw
-a glint off the corner (`x`). `itemCards` holds the five grids (the pips differ, so they are five
-grids on one `CARD_PAL`, not one grid swapped five ways), baked as `itemCardWhite`…`itemCardGold`.
+(`itemIcon`, js/sim/items.js; see [the items](gameplay/the-merchants-counter.md#the-items)). SUNSTONE's icon is the old
+sunstone ore's 8×8 cut gem, baked in js/sprites/weapons.js (`SPRITES.itemArt_sunstone`).
 
 **The pine is twenty-four bend frames of one tree**, and the first of the imported sprites — the
 others are the gold sack, the three animated goods and both prey, below:
@@ -421,7 +411,7 @@ icon now comes from app/bake-fish, below.)
 They are exposed as **live canvases**, and that is the whole trick. `SPRITES.itemAnim[key]` holds
 the frames; `SPRITES[key]` is one canvas per icon that `stepItemIcons()` (js/draw/render.js) stamps the
 current frame into, once a frame, before anything draws. So `SPRITES[ITEMS[type].icon]` — how the
-bag, a shop price, a sale row, a drop on the snow, a tooltip and the wiki all reach an item icon —
+pouch, a shop price, a sale row, a drop on the snow, a tooltip and the wiki all reach an item icon —
 stays **one generic read**, and no call site has to know which three goods move. Handing those
 reads a frame array instead would mean teaching every one of them about three special cases; the
 three are not special, they are icons that happen to move. One clock drives all of them
@@ -429,12 +419,6 @@ three are not special, they are icons that happen to move. One clock drives all 
 to their own is a fruit machine, not a HUD — and a frame that has not changed is not redrawn.
 Each canvas starts on frame 0, so a panel that bakes an item icon into a still image at boot gets
 a picture rather than a hole.
-
-**The crate is hand-drawn.** `SPRITES.crate` is the 16×16
-`crate` grid on `CRATE_PAL` (five colours: an outline, plank in shade and in light, the pale X of
-bracing, and the top rail's highlight), drawn by hand at the 16×16 it ships at rather than
-resampled down from a sheet. Its only caller is THE WORKS' figure on the wiki's world page, beside
-a rock (`WIKI_WORLD`, js/ui/wiki.js): a crate that never shipped.
 
 **The turret is half grid, half raster, and it is THREE grids.** Its base is timber at every
 tier — the upgrade is more of it, never a change of material — so unlike every other tiered
@@ -569,22 +553,11 @@ the four berry pixels change (ripe, gone, pale `b` buds, dull `d` berries), beca
 a clock the player reads at a glance and a bush that seemed to move would read as a different
 plant ([the regrow stages](world.md#the-tile-world)).
 
-The **rocks** ([js/sprites/rocks.js](../../js/sprites/rocks.js)) are look B, STANDING CRAGS, of
-[rock-concepts-1.png](../media/concepts/rock-concepts-1.png) (A snow boulders, B standing crags,
-C strata ledge), one outline per kind so the kind reads without its colour: STONE is two leaning
-slabs (32×22), a FROSTGLASS SPIRE is ice prisms thrust through the slabs (32×29), a SUNSTONE a
-black obelisk seamed with amber and ringed with amber shards (32×35), each on `RKPAL` with its
-32-wide rubble. The grids came off a generator (faceted stone lit from the upper left, prisms in
-three faces) and are kept verbatim; the crack overlays are baked from them at load (`cracks`, a
-seeded walk down the body, dark on stone and white on crystal) and so are the glint sites
-(`glints`, every third of the brightest crystal and amber pixels). The three ore icons are 8×8
-grids baked beside their code in js/sim/mining.js (`ORE_ICONS`): a lump, a shard and a cut gem.
-
 Anything drawn through `drawSpriteFlash()` must stay within **64×64**: it recolours through a
 shared 64×64 scratch canvas and a larger sprite clips ([rendering.md](rendering/render-pass-order.md)).
 
-**New sprites bake beside the code that draws them, not here.** The treasure chest (`CHEST_SPR`,
-js/draw/ground.js), the ores (js/sim/mining.js) and the burrow (js/sim/tunnel.js)
+**New sprites bake beside the code that draws them, not here.** The cairn (`CAIRN_SPR`,
+js/draw/ground.js) and the practice dummy (`DUMMY_SPR`, js/draw/practice.js)
 paint their char grids onto their own canvases and assign into `SPRITES`, which works because it
 is a plain object - exactly what each js/sprites/ file does for its own keys (the paragraph
 below), so a sprite that belongs to a drawer can live beside it. The detailed 32×32 ability icons (`AB32`/`AB32_PAL`,
@@ -618,8 +591,7 @@ Keys marked **(dead)** are still baked but read by nothing outside js/sprites/ a
 | `motion.js` | none: generated by app/bake-player/bake.py | `SPR.motion` (not `SPRITES`: the run, held run and roll grids, their fringe rows, the bobs and the roll's timing, for characters.js) |
 | `characters.js` | player, the fish catch, skater, prone, run and roll, raider, looks, the merchant | `playerTeam`, `champ` (with each set's `run`/`hold`/`roll`), `LOOK`, `champLook`, `player`, `raider` **(dead)**, `merchant`, `motionBox`/`runBob`/`holdBob`/`rollAt` |
 | `looks.js` | bodies, heads, beards, hair, outfits | `portrait`, `MODEL_LAYERS` |
-| `terrain.js` | trees, gold ore, gold mine, bush, the dead snags, the den, the hog hut | `tree`, `treeAtlas`, `stump`, `goldOre` **(dead)**, `mine` **(dead)**, `bush*`, `deadTree`, `den`, `hogHut` |
-| `rocks.js` | the three rock kinds, their rubble, the channel's cracks, the glint sites | `rock[kind]`, `rockSpent[kind]`, `rockCracks[kind][stage]`, `rockGlints[kind]` |
+| `terrain.js` | trees, bush, the dead snags, the den, the hog hut | `tree`, `treeAtlas`, `stump`, `bush*`, `deadTree`, `den`, `hogHut` |
 | `beasts.js` | imp, rabbit, deer, wolf, the bird | `rabbit`, `wolf`, `bird`, `deer`, `imp` **(dead)** |
 | `bears.js` | none: generated by app/bake-bears/bake.py | `dire` (brown bear), `alpha` (black bear) |
 | `fish.js` | none: generated by app/bake-fish/paint.py | `creekFish[kind]` (`whitefish`/`snowChar`: `swim[heading][frame]`, 16 headings, 2 tail frames, rimmed in the water's shade; `icon` side-on), `iceFish[kind]` (`fish` the frost pike, `sunfish` the gold sunfish: `swim` and the cold `shadow` under the ice, same headings and frames; `icon`), `itemWhitefish`, `itemSnowChar`, `itemFrostPike`, `itemSunfish`; looks E/F, I/K and shadow N off `docs/media/concepts/winter-fish-concepts-2/3/4.png` |
@@ -630,7 +602,7 @@ Keys marked **(dead)** are still baked but read by nothing outside js/sprites/ a
 | `eagle.js` | none: only `BIRD_SKINS`, the skins' table | none |
 | `perch.js` | palettes, shapes, the bird, poses, painter, cache | `perch` (no grids: painted in code, below) |
 | `buildings.js` | wall, tiered structures, the turret's three timber bases, fish net, bot bay, spikes, fire, torch | `teamBuild`, `robotTeam`, `wall`, `turret` (`turretT1`/`T2`/`T3` through `TUR_PALS` and `turretPal`), `spawner` **(dead**: the flat 16×16; the bay is `teamBuild[team].spawner`**)**, `net`, `scaffold`, `robot`, `spikes` **(dead)**, `fire` **(dead)**, `torch` **(dead)** |
-| `items.js` | items, gold nugget, gold sack, crate, axe icon | `itemWood`/`itemStone`/`itemBag`, `itemAnim` + the three live icons, `goldSack`, `crate`, `itemCard*`, `itemAxe`/`itemBow`/`itemPick` |
+| `items.js` | items, gold nugget, gold sack, axe icon | `itemWood` **(dead)**, `itemAnim` + the live icons, `goldSack`, `itemAxe`/`itemBow` |
 | `landmarks.js` | landmarks | `landmark` (`boat`) |
 | `icons.js` | gear icons (item icon art), heart, cursors | `gearIcons`, `heart*`, `cursor`, `cursorShadow` |
 

@@ -187,11 +187,11 @@ function mapAlloc() {
   buildMapPanel();
 }
 // one flat ink per class, indexed by CH_* (world.js) - the snow, the
-// woods, the road, the ice, open water, a chest, then a side's buildings
+// woods, the road, the ice, open water, then a side's buildings
 // and its bird in the two depths of each team's ink, the cistern's stone
 const CHART_INK = [
   [214, 219, 226], [44, 60, 62], [150, 136, 116], [170, 192, 208], [52, 74, 98],
-  [222, 176, 76], [168, 66, 58], [74, 114, 174], [224, 85, 72], [106, 168, 232],
+  [168, 66, 58], [74, 114, 174], [224, 85, 72], [106, 168, 232],
   [104, 112, 128],
 ];
 const CHART_NEED = []; // neighbours of its own class a tile needs to stay on the chart
@@ -490,14 +490,10 @@ function drawFlatButton(r, label, hv) {
 const SET_TABS = [
   { id: 'game', label: 'GAME', rows: [
     // one size dial per HUD widget (HUD_DIALS, below), top of the screen first
-    { id: 'hudCorner', label: 'BACKPACK SIZE', kind: 'slider' },
     { id: 'hudRail', label: 'TOP BAR SIZE', kind: 'slider' },
     { id: 'map', label: 'MINIMAP SIZE', kind: 'slider' },
     { id: 'hud', label: 'BOTTOM BAR SIZE', kind: 'slider' },
     { id: 'shake', label: 'SCREEN SHAKE', kind: 'toggle' },
-    // the pad's rumble when an item is grabbed, placed or
-    // swapped (haptic, js/app/input.js) - dead on a mouse, which has no motor
-    { id: 'haptics', label: 'RUMBLE', kind: 'toggle' },
     { id: 'info', label: 'INFO DISPLAY', kind: 'toggle' },
     { id: 'cursor', label: 'CURSOR', kind: 'toggle', on: 'PIXEL', off: 'BROWSER' },
     // where the hover tooltip sits (tipPos, js/ui/tooltip.js) - beside the
@@ -696,19 +692,19 @@ const KEY_ROWS = {
   wasd: [
     [{ acts: ['up', 'left', 'down', 'right'], verb: 'MOVE' }, { acts: ['ab1', 'ab2', 'ab3', 'ab4'], verb: 'ABILITIES' },
       ['CLICK', 'FIRE'], 'dodge', 'slide', 'work', ['RMB', 'PING']],
-    ['berry', 'fish', 'recall', 'tunnel', 'bag', 'char', 'build', 'rotate'],
+    ['berry', 'fish', 'recall', 'char', 'build', 'rotate'],
     ['map', 'board', 'mute', 'pause', ['ESC', 'SETTINGS'], ['SCROLL', 'ZOOM'], ['F3', 'INFO'], ['.', 'HITBOX']],
   ],
   click: [
     [['RMB', 'MOVE / ACT'], ['HOLD RMB', 'FOLLOW'], { acts: ['ab1', 'ab2', 'ab3', 'ab4'], verb: 'ABILITIES' },
       ['CLICK', 'FIRE'], 'amove', 'stop', 'dodge', 'slide'],
-    ['berry', 'fish', 'ping', 'tunnel', 'bag', 'char', 'build', 'rotate'],
+    ['berry', 'fish', 'ping', 'char', 'build', 'rotate'],
     ['recall', 'map', 'board', 'mute', 'pause', ['ESC', 'SETTINGS'], ['SCROLL', 'ZOOM'], ['F3', 'INFO']],
   ],
   mouse: [
     [['RMB', 'MOVE / ACT'], ['HOLD RMB', 'FOLLOW'], ['CLICK', 'FIRE'], ['HOLD MMB', 'ACTION WHEEL'],
       'dodge', 'slide', { acts: ['ab1', 'ab2', 'ab3', 'ab4'], verb: 'ABILITIES' }, 'amove'],
-    ['stop', 'berry', 'fish', 'ping', 'tunnel', 'bag', 'char', 'build'],
+    ['stop', 'berry', 'fish', 'ping', 'char', 'build'],
     ['rotate', 'recall', 'map', 'board', 'mute', 'pause', ['ESC', 'SETTINGS'], ['SCROLL', 'ZOOM']],
   ],
 };
@@ -879,7 +875,6 @@ function applySliderDrag() {
 // is the same size on every row.
 const HUD_DIALS = {
   hud: { key: 'hudScale', cap: () => stripCap() },
-  hudCorner: { key: 'hudCorner', cap: () => cornerCap() },
   hudRail: { key: 'hudRail', cap: () => railCap(railLayout()) },
 };
 function hudDialT(v) { return (v - HUD_MIN) / (HUD_MAX - HUD_MIN); }
@@ -1205,7 +1200,6 @@ function renderSettings(now, opts) {
   // as long as the hand is resizing it.
   if (HUD_DIALS[dragSlider] && state.mode === 'play' && !player.dead) {
     if (dragSlider === 'hud') drawHudScaled(now, 0);
-    else if (dragSlider === 'hudCorner') drawCornerScaled(now, 0);
     else drawRailScaled(now, 0);
   }
 }

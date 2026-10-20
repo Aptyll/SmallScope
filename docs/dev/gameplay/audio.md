@@ -100,7 +100,7 @@ hold more than one cue — the footstep file is a whole walking loop, the coin r
 than clicking off mid-waveform. A key with several files picks one at random per shot.
 
 Sampled cues that sit beside a synth sibling: `coin()` (gold into the purse — an `awardGold`
-payout, a bot's deposit) and `stash()` (something into the backpack) are the world's;
+payout, a bot's deposit) and `stash()` (a drop or a catch into the pouch) are the world's;
 `pickup()` stays the synth UI blip so menus keep an instant, identical
 click. `hammer()` (raising, upgrading or finishing a structure) stands beside `place()` the same
 way, with `building()` as its quieter, shorter sibling on a site's dust tick — it repeats for as
@@ -127,7 +127,7 @@ two that *are* a body in the world, `bigHurt` and `botOut`, keep a 0.04 jitter.
 | Cue | Says | Fired from |
 | --- | --- | --- |
 | `countTick()` | one whole second of a wait gone | the class screen's PLAY count (`state.menu.countT`, js/ui/menu.js) and the range's 3-2-1 (`agUpdate`, js/sim/practice.js) — never the `nock` blip, which is the sound of a bow being ready |
-| `ui(open)` | a surface came up, or went away | every overlay toggle in `keyPress` (js/app/input.js): the pack drawer, the sheet, the chart, the build list, the ESC slab, the pause plate, and each of Escape's back-outs |
+| `ui(open)` | a surface came up, or went away | every overlay toggle in `keyPress` (js/app/input.js): the sheet, the chart, the build list, the ESC slab, the pause plate, and each of Escape's back-outs |
 | `notch()` | one step of a stepped control | the zoom rung and the build list's rows (the `wheel` listener), the minimap's steps, and a radial wheel's wedge as the travel crosses it (`pointerMove`) |
 | `turn()` | a piece turned on the spot | R over the build ghost |
 | `wheelUp()` | a radial wheel rolled open | a ping wheel the first frame it shows (`renderWheel`), `openWheelNear`, and whichever of the work key's three (manage, roll die, range bell) the press opened |

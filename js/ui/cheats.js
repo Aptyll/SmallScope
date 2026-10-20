@@ -10,9 +10,8 @@
 // tile under the pointer, a left press there sends the order (teleport once,
 // dummies until the button, the right button or Escape puts it down). The
 // chevron tab on the plate's right edge folds the column away to the tab.
-// It hangs under the corner (the pack's arrow and its open drawer),
-// and scales with the corner's size dial (cornerSc) about its own top-left
-// like the corner does (drawCornerScaled) - capped so the column never runs off the bottom.
+// It hangs in the top-left corner and scales with the strip's size dial
+// (hudSc) about its own top-left, capped so the column never runs off the bottom.
 const CB_CELL = 16;          // a well: a 12px icon, 1px rim and 1px air round it
 const CB_GAP = 2;            // between two wells
 const CB_SPLIT = 7;          // between the two groups
@@ -165,12 +164,12 @@ function cheatPlateRect() {
   const w = AB_PAD * 2 + CB_CELL;
   return { x: 0, y: 0, w, h };
 }
-// where the bar's top lands in the view: clear of the corner's open drawer
-// at the corner's own scale, on the device grid (hudPx)
-function cheatTop() { const f = bagFrameRect(); return hudPx((f.y + f.h) * cornerSc() + 6); }
+// where the bar's top lands in the view: level with the minimap's and the
+// rail's tops, on the device grid (hudPx)
+function cheatTop() { return hudPx(MM_GAP); }
 // the bar's scale: the dial's, unless that would run it off the bottom
 function cheatSc() {
-  const s = cornerSc(), room = VIEW_H - cheatTop() - 4, h = cheatPlateRect().h;
+  const s = hudSc(), room = VIEW_H - cheatTop() - 4, h = cheatPlateRect().h;
   return h * s <= room ? s : Math.min(s, hudSnapDown(room / h));
 }
 function cheatCellRect(i) {

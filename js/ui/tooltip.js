@@ -5,7 +5,7 @@
 // One panel that says what the pointer is on - and the one
 // deliberate exception to show-don't-label in the HUD, recorded as such in
 // CLAUDE.md's UI rule. The reason it earns the exception: an attack's speed,
-// an item's stats and a card's effect are NUMBERS the player is being asked
+// an item's stats and an ability's ranks are NUMBERS the player is being asked
 // to compare, and there is no shape that compares numbers. The wells keep
 // doing the at-a-glance job - rims, pips, wipes - and this is where
 // you go when at-a-glance is not enough.
@@ -15,7 +15,7 @@
 //   FOLLOWING, the default: beside the pointer, so the numbers arrive where the
 //     eye already is and reading one costs no glance across the screen.
 //   FIXED: bottom left - the corner the pointer is furthest from while it hovers
-//     the backpack, the weapon strip or a tech node, so the panel can never
+//     the strip or an item, so the panel can never
 //     cover the well beside the one being read, and nothing else lives there.
 //
 // EVERY tooltip comes from tipAt(), which asks the same hit-testers, in the
@@ -85,19 +85,6 @@ function tipAttack(p) {
   d.rows.push(['REACH', String(reach), '#f4f7ff']);
   return d;
 }
-// the burrow's pack cell (js/sim/tunnel.js): the dig, the wait after a ride, and how
-// long a rival's boots take to cave it - the numbers the hole itself shows
-function tipTunnel() {
-  const n = bagCount(player, 'tunnel');
-  const d = tipBase('tunnel', 'BURROW', 'TUNNEL');
-  d.tcol = RES_COLORS.tunnel;
-  d.rows.push(['DIG', tipSec(TUN_DIG), '#f4f7ff']);
-  d.rows.push(['COOLDOWN', tipSec(TUN_CD), '#f4f7ff']);
-  d.rows.push(['CAVES IN', tipSec(TUN_BREAK), '#e0637a']);
-  d.rows.push(['CARRIED', String(n), '#f4f7ff']);
-  if (player.digT > 0) d.rows.push(['OPENS IN', tipSec(player.digT), '#f2cc6a']);
-  return d;
-}
 // the gold plate: the exact figure, since the plate itself is rounded
 // a chip on the team rail: the name in the player's tint, the class under it,
 // the level - and, while the body is down, the seconds until the bird sets it
@@ -113,15 +100,8 @@ function tipGold() {
   return { title: 'GOLD', tcol: '#f5c542', kind: 'PURSE', icon: SPRITES.itemGold, plate: BAG_WELL, rim: '#3c4048',
     rows: [['CARRIED', String(inv.gold), '#f5c542']], notes: [] };
 }
-// anything else a bag cell can hold
+// a food in the pouch: what it heals, how long it takes, how many are carried
 function tipStack(s) {
-  const r = CARD_TYPE_RARITY[s.type];
-  if (r) {
-    const d = tipBase(s.type, r.toUpperCase() + ' CARD', 'UNOPENED');
-    d.tcol = RES_COLORS[s.type];
-    d.rows.push(['CARRIED', String(s.n), '#f4f7ff']);
-    return d;
-  }
   if (ITEMS[s.type] && ITEMS[s.type].heal) {
     const heal = Math.round(ITEMS[s.type].heal * kitOf(player).foodMul);
     const d = tipBase(s.type, ITEMS[s.type].name || 'BERRIES', 'FOOD');
@@ -137,21 +117,10 @@ function tipStack(s) {
     d.notes.push([s.type === 'berry' ? 'Q OR CLICK TO EAT' : 'F OR CLICK TO EAT', TIP_DIM]);
     return d;
   }
-  if (isOre(s.type)) {
-    // an ore: its name in its rock's colour, what kind of rock it came out of
-    const K = ROCK_KINDS[ITEMS[s.type].ore];
-    const d = tipBase(s.type, ITEMS[s.type].name, K.key.toUpperCase() + ' ORE');
-    d.tcol = RES_COLORS[s.type];
-    d.rows.push(['CARRIED', String(s.n), '#f4f7ff']);
-    d.rows.push(['FROM', K.name, '#f4f7ff']);
-    return d;
-  }
   const d = tipBase(s.type, s.type.toUpperCase(), 'ITEM');
   d.rows.push(['CARRIED', String(s.n), '#f4f7ff']);
   return d;
 }
-// whatever is in a bag cell or on the cursor
-function tipCell(s) { return s ? tipStack(s) : null; }
 // a class ability well - the strip's in play (cls omitted: the local player's
 // class, live cooldown, the cast hint), or the lobby's stage (cls given:
 // the previewed class, before it is ever locked, with nothing castable yet)
@@ -218,7 +187,7 @@ function tipStruct(type) {
 }
 // What the pointer is on, asked once per frame. The order mirrors the
 // mousedown handler exactly: the build list's rows, the character panel's
-// items, then the strip, then the backpack - so the
+// items, then the strip - so the
 // panel and the click always agree.
 function tipAt(mx, my) {
   if (window.DBG.hideUI || !mouse.inside) return null;
@@ -235,19 +204,10 @@ function tipAt(mx, my) {
     return null;
   }
   if (state.mode !== 'play') return null;
-  // the counter is asked first, so a drag held over its sell well is priced
-  // rather than merely described; over the bare slab it answers nothing and
-  // the carried item below takes over
+  // the counter is asked first
   const sp = shopHit(mx, my);
   const stip = sp && tipShop(sp);
   if (stip) return stip;
-  if (state.drag) {
-    // what is in hand, and the one thing shift is for: spending the click on a
-    // well without putting this down
-    const d = tipCell(state.drag.cell);
-    if (d) d.notes.push(['SHIFT CLICK KEEPS THIS IN HAND', TIP_DIM]);
-    return d;
-  }
   const bl = buildListHit(mx, my);
   if (bl >= 0) return tipStruct(BUILD_ORDER[bl]);
   const ci = charItemHit(mx, my);
@@ -263,8 +223,7 @@ function tipAt(mx, my) {
   if (sh && sh.kind === 'item') return player.items[sh.i] ? tipItem(player.items[sh.i]) : null; // an empty slot says nothing
   if (sh && sh.kind === 'port') return tipAttack(player); // the hero's face names the hero's own basic attack
   if (sh && sh.kind === 'stat') return tipStat(sh.key); // the stat panel's breakdown (js/ui/statpanel.js)
-  // a meal button describes the meal it eats - the bag cell's own food
-  // descriptor, so the two surfaces can never disagree about a berry
+  // a meal button describes the meal it eats
   if (sh && (sh.kind === 'fishPick' || sh.kind === 'fishPop' || (sh.kind === 'food' && FOOD_BTNS[sh.i].type === 'fish'))) return null; // the picker says it (drawFishPop)
   if (sh && sh.kind === 'food') {
     const type = FOOD_BTNS[sh.i].type;
@@ -273,18 +232,6 @@ function tipAt(mx, my) {
   if (sh && sh.kind === 'frame') {
     const g = goldCellRect(), m = stripMouse(mx, my);
     if (m.x >= g.x && m.x < g.x + g.w && m.y >= g.y && m.y < g.y + g.h) return tipGold();
-  }
-  const bh = bagHit(mx, my);
-  if (!bh) return null;
-  if (bh.kind === 'cell') {
-    const s = player.bag[bh.i];
-    const d = s && s.type === 'tunnel' ? tipTunnel() : tipCell(s);
-    // ...and while the counter is up, what it is worth over there
-    if (d && shopOpen()) {
-      d.rows.push(['SELLS FOR', sellValue(s) + ' GOLD', RES_COLORS.gold]);
-      d.notes.push(['DRAG IT TO THE COUNTER TO SELL', TIP_DIM]);
-    }
-    return d;
   }
   return null;
 }
@@ -302,8 +249,8 @@ function tipSize(d) {
 }
 // WHERE the panel goes, the one answer for both modes. FIXED is the corner it
 // was born in; FOLLOWING rides the pointer, and the whole of that is clearing
-// the hand: TIP_GAP is measured sideways because every cursor glyph and the
-// 18px drag ghost are wider below the hotspot than beside it, so a panel held
+// the hand: TIP_GAP is measured sideways because every cursor glyph is
+// wider below the hotspot than beside it, so a panel held
 // TIP_GAP px to one side is clear of the lot without being flung away from the
 // numbers it is there to put under the eye. It flips to the pointer's other
 // side at the right edge and clamps into the view, so a corner still reads.

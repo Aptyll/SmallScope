@@ -313,20 +313,20 @@ function spawnMerchant(e) {
   return b;
 }
 
-// one axe swing on a pine, a snag or a rock; true when it came down (the
+// one axe swing on a pine or a snag; true when it came down (the
 // tile is emptied - the back woods get a stump back, a bay's footprint does
 // not) and a log in the merchant's stock if it was timber. Pays no gold,
 // like the crater and the lane.
 function merchFell(b, t) {
   const px = t.tx * TILE + 8, py = t.ty * TILE + 8;
   t.hp--; joltObj(t, 0.1, 0.22);
-  sfxAt(t.type === 'rock' ? 'mine' : 'chop', px, py);
+  sfxAt('chop', px, py);
   burst(px, py - 10, '#eef4fb', 3, 35, 0.4, true);
   if (t.hp > 0) return false;
-  fellScenery(t.tx, t.ty); // a rock's east tile goes with it
+  fellScenery(t.tx, t.ty);
   burst(px, py - 8, '#eef4fb', 8, 45, 0.5, true);
-  burst(px, py - 8, t.type === 'tree' ? '#2f5c4b' : t.type === 'rock' ? '#9aa4b4' : '#6b5a48', 5, 45, 0.5, true);
-  sfxAt(t.type === 'rock' ? 'break_' : 'treeFall', px, py);
+  burst(px, py - 8, t.type === 'tree' ? '#2f5c4b' : '#6b5a48', 5, 45, 0.5, true);
+  sfxAt('treeFall', px, py);
   if (t.type === 'deadTree') flushBirds(campAt(px, py), { x: px, y: py });
   if (t.type === 'tree' || t.type === 'deadTree') b.wood++;
   b.tgt = null;
@@ -389,7 +389,7 @@ function merchNextBay(b) {
 }
 // a bay's 3x2 anchor at lane `lane`'s spot inside its mouth - the nearest
 // placement to it whose footprint is dry land off the road holding nothing
-// the axe cannot take (a pine, a snag, a rock, a stump: never the bird's own
+// the axe cannot take (a pine, a snag, a stump: never the bird's own
 // tiles or a building, another bay included)
 function merchBaySite(team, lane) {
   const p = baseBaySpot(team, lane), cx = p.tx - 1, cy = p.ty - 0.5;
@@ -414,7 +414,7 @@ function merchOnBay(s, x, y) { return x >= s.tx && x < s.tx + 3 && y >= s.ty && 
 function merchBayBlocker(b, s) {
   let best = null, bd = 1e9;
   for (let y = s.ty - MERCH_BAY_RING; y < s.ty + 2 + MERCH_BAY_RING; y++) for (let x = s.tx - MERCH_BAY_RING; x < s.tx + 3 + MERCH_BAY_RING; x++) {
-    const o = structOf(objAt(x, y)); // a rock's east tile is the rock
+    const o = structOf(objAt(x, y));
     if (!o || !(laneFells(o) || (o.type === 'stump' && merchOnBay(s, x, y))) || b.avoids.some((a) => a.o === o)) continue;
     const d = Math.hypot(x * TILE + 8 - b.x, y * TILE + 8 - b.y);
     if (d < bd) { bd = d; best = o; }

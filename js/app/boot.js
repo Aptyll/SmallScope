@@ -23,7 +23,7 @@ SFX.music.play('intro', { in: 1.5 });
 if (PRACTICE) {
   // the training field (the `practice arena` banner, js/sim/practice.js): a fixed
   // room instead of a match world - one dummy, open targets, the ice parkour,
-  // and nothing that spawns or restocks: no camps, chests, wildlife or
+  // and nothing that spawns or restocks: no camps, wildlife or
   // eagles at all
   genPracticeWorld();
 } else {
@@ -45,8 +45,7 @@ if (PRACTICE) {
   placeZips();       // ...and each side's cable along it (js/sim/zipline.js)
   placeTowers();     // ...and two road towers on each side's cable, which it is cut back to (js/sim/towers.js)
   placeCamps();      // worldgen's last pass, before the ground is baked: the camps clear their sites
-  placeChests();     // ...then the caches take their trees (objects only, no ground)
-  placeRocks();      // ...and the rocks move out to their clusters on the rim, on their own stream (world.js)
+  liftRocks();       // ...then genWorld's placeholder rocks come up again (world.js)
   placeLandmarks();  // ...and the story landmarks take their spots, on a stream of their own (landmarks.js)
   spawnAnimals();
   spawnFish();
@@ -146,7 +145,7 @@ window.DBG = {
   botThought, botGuess, BOTLOG, botLogExport, openBotLab, botViewStep,
   get botView() { return botView; }, set botView(v) { botView = v | 0; },
   SEED, state, animals, objects, ground, mouse, keys, drops, footprints, flakes,
-  fish, iceCracks, holes, crackIce, addFish, spawnEmerger, netAt, buildSiteAt,
+  fish, holes, addFish, spawnEmerger, netAt, buildSiteAt,
   // the ice breaking in its own shape (js/sim/icebreak.js): DBG.iceBreak(x, y, 'breach', 0, { warn: 0.9 })
   iceBreaks, iceBreak, iceBreakAge, iceBreakCovers, iceBreakHolds, iceBreakWet, ICE_BREAK_SHAPES,
   // the orca and its lake (js/sim/orca.js, js/sim/world.js): its state, the line over a head, the disc
@@ -208,10 +207,8 @@ window.DBG = {
   attackOf: (p) => attackOf(p || player), attackCycle: (p) => attackCycle(p || player),
   basicAttack: (p) => basicAttack(p || player), attackDmg: (pw, p) => attackDmg(p || player, pw == null ? 1 : pw, false),
   drawTime,
-  // a thing put down on purpose: the throw (out of the pack, along the
-  // cursor) and the lock that keeps it out of the thrower's own hands - so a
-  // driver can stage a discard without a drag
-  spawnDrop, throwCell, flingDrop, lockDrop, dropLocked, TOSS_SPEED, TOSS_LOCK_T,
+  // a drop on the snow, so a driver can stage a pickup
+  spawnDrop,
   // death keeps everything (die): the one number a kill is worth
   get KILL_BOUNTY() { return killBounty(); },
   // the draw curve: 0..1 off a player's chargeT, and the flight and damage it buys a shot
@@ -240,14 +237,13 @@ window.DBG = {
   // without the pointer
   BUILD_ITEMS, ITEM_PARTS, ITEM_DONE, itemCost: (id, p) => itemCost(p || player, id),
   buyItem: (id, p) => buyItem(p || player, id), sellItem: (slot, p) => sellItem(p || player, slot),
-  botNextItem, botItemBuy, FOOD_PRICE, foodPrice, itemValue, cellValue, sellValue,
+  botNextItem, botItemBuy, FOOD_PRICE, foodPrice,
   // the news plates under the minimap: the live stack, where a slot lands,
   // and a way to raise one
   notices, noteRect, NOTE_KIND, raiseNotice,
   merchNear: (p) => merchNear(p || player),
   openShop: (p) => openShop(merchNear(p || player)), closeShop, shopOpen,
   shopLayout, shopHit: (x, y) => shopHit(x == null ? mouse.x : x, y == null ? mouse.y : y),
-  shopSellCell: (i, p) => shopSellCell(p || player, i),
   shopTrade: (good, dir, p) => shopTrade(p || player, good, dir),
   // what the pointer is on, as the panel would describe it (null = nothing)
   tipAt: (x, y) => tipAt(x == null ? mouse.x : x, y == null ? mouse.y : y),
@@ -280,28 +276,17 @@ window.DBG = {
   teamEagleDown,
   get player() { return player; },
   get inv() { return player.inv; },
-  // the backpack: the item table, the slot array, and add/take/count without
-  // walking onto a drop. bagHit is what the pointer tests against; food is a
-  // POUCH and takes no cell, so `food` is where a berry actually sits, and
-  // goldCellRect is the always-on gold readout on the hud strip.
-  ITEMS, BAG_CAP, bagFrameRect, bagTabRect, bagCellRect, bagHit, goldCellRect, foodCellRect, shortNum, useCard: (p) => useCard(p || player),
-  get bagEase() { return bagEase; },
-  // the drag, and what it answers with: the armed press, the three moves, the
-  // cue/rumble/pulse raiser, and what a release on a given well WOULD do -
-  // so a driver can prove the promise and the move agree without a mouse
-  dragLift, dragDrop, dragReturn, hudPress, hudRelease, hudFx, haptic,
-  dropKindBag,
-  get wellLit() { return wellLit; }, get dragLit() { return dragLit; },
-  get bag() { return player.bag; },
+  // the pouch: the food table, and add/take/count without walking onto a
+  // drop. goldCellRect is the always-on gold readout on the hud strip.
+  ITEMS, goldCellRect, foodCellRect, shortNum, hudPress,
   get food() { return player.food; },
   bagAdd: (type, n, p) => bagAdd(p || player, type, n || 1),
   bagTake: (type, n, p) => bagTake(p || player, type, n || 1),
   bagCount: (type, p) => bagCount(p || player, type),
   bagRoom: (type, p) => bagRoom(p || player, type),
-  bagUsed: (p) => bagUsed(p || player),
   // hand a player to an AI, a human, or nobody (a ghost at its camp)
   setControl: (id, mode) => { const p = players[id]; if (p) p.control = mode; return p; },
-  // reseat this screen's player in slot `id` (a fresh roster: bots and bags
+  // reseat this screen's player in slot `id` (a fresh roster: bots and pouches
   // reset), the camera on it - the same thing ?local=N does at load
   setLocal: (id) => { initPlayers(undefined, id); camX = player.x - WV_W / 2; camY = player.y - WV_H / 2; return player; },
   localId: () => localId,
@@ -341,12 +326,12 @@ window.DBG = {
   // moves (the `stat ledger` block, js/ui/shop.js): the table every surface
   // prices a body with, the plate's own size, the live values, what each row
   // is still lit for, and the raise without a change behind it - so a driver
-  // can prove a level, a card or an item moved the number it was meant to
+  // can prove a level or an item moved the number it was meant to
   STAT_ROWS, STAT_W, statPlateH, raiseStatNote, noteLaneFloor,
   statValues: (p) => STAT_ROWS.map(([n, get, fmt]) => [n, fmt(get(kitOf(p || player), p || player))]),
   statLit: () => STAT_ROWS.map(([n], i) => (statLit[i] ? [n, statDeltaTxt(statLit[i].d, STAT_ROWS[i][2]), statLit[i].t] : null)).filter(Boolean),
   // a player's effective kit, the G panel's geometry, and the hero pop-up
-  kitOf, refreshKit, charItemHit, charLayout, charHit, BAG_CELL,
+  kitOf, refreshKit, charItemHit, charLayout, charHit,
   heroLayout, heroScreenHit, beginHero,
   // the match readouts: the log (not drawn - read it here), staged lines
   // without the kills behind them, and the standings (hold TAB in game, or

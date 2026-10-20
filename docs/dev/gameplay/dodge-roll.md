@@ -36,14 +36,14 @@ takes everything inside `ROLL_HIT_R` (7px) of the roller's own radius and splits
   small, so there is nothing to bump against. Friendly bots and teammates are passed through
   untouched — you roll *under* them, you do not run them down. A rival with i-frames up (mid-roll
   of their own) refuses the whole thing, damage and stun both, so **rolls cancel rolls**.
-- **Big — a deer, a bear, a tree, a rock, a building.** A **tackle**: both sides take it, both are
+- **Big — a deer, a bear, a tree, a building.** A **tackle**: both sides take it, both are
   stunned (except a bear: it takes the damage and keeps its stride, roar and attacks included), and the roll ends on the spot. `rollTackle` drops the roller's own i-frames first,
   because the tackle is the one hit a roll cannot dodge, and bounces them back off the contact.
   A wall only counts when it is taken head-on — the speed actually driven into the axis
   `moveEntity` refused has to clear `TACKLE_MIN` (120 px/s), so brushing past a pine at a run is
   free and dashing straight into one is not. `tackleObject` puts real damage into an **enemy
-  building** (it has an hp pool); a tree or a rock only shudders, because a pine's `hp` is a chop
-  count behind a tool gate, a rock mines itself for whoever stands by it, and a shoulder is neither. Fish are under the ice and are in none of it — and
+  building** (it has an hp pool); a tree only shudders, because a pine's `hp` is a chop
+  count behind a tool gate, and a shoulder is not a tool. Fish are under the ice and are in none of it — and
   nor is a **fish net**, which is not solid, so a roll crosses one without a contact at all.
 
 **Everything scales with the speed the roll is actually carrying** — `rollPow` runs from the
