@@ -43,6 +43,7 @@ if (PRACTICE) {
   placeRoad();       // the diagonal lane, and the paths and side lanes with it (world.js)
   placeBase();       // ...and each side's hollow round the end of it, where its bird roosts (js/sim/base.js)
   placeZips();       // ...and each side's cable along it (js/sim/zipline.js)
+  placeTowers();     // ...and two road towers on each side's cable, which it is cut back to (js/sim/towers.js)
   placeCamps();      // worldgen's last pass, before the ground is baked: the camps clear their sites
   placeChests();     // ...then the caches take their trees (objects only, no ground)
   placeRocks();      // ...and the rocks move out to their clusters on the rim, on their own stream (world.js)

@@ -14,6 +14,7 @@
 const FOG_HERO = 160;    // px a hero sees
 const FOG_SOLDIER = 112; // px a wave soldier sees (past its SOLDIER_AGGRO, so it sees what it turns on)
 const FOG_TURRET = 128;  // px a turret sees (past its longest throw)
+const FOG_TOWER = 136;   // px a road tower sees from its foot (past its TOWER_RANGE)
 const FOG_WOODS_N = 9;   // pines in the 5x5 tiles round a walkable tile that make it the woods
 const FOG_BRUSH = 48;    // px a side's hero or soldier must be inside to see someone in the woods
 const FOG_FACE = 6;      // px past where a sight line meets stone still lit, so the wall's face shows
@@ -41,9 +42,9 @@ function sightSources(team, out) {
   for (const p of players) if (p.team === team && p.active && !p.dead && !inAir(p)) out.push(sightEye(p.x, p.y, FOG_HERO, true));
   for (const b of robots) if (b.team === team && b.kind === 'soldier' && unitAlive(b)) out.push(sightEye(b.x, b.y, FOG_SOLDIER, true));
   for (const o of structures) {
-    if (o.type !== 'turret' || o.team !== team || o.building || o.dead) continue;
-    const pv = turretPivot(o);
-    out.push(sightEye(pv.x, pv.y, FOG_TURRET, false));
+    if (o.team !== team || o.building || o.dead) continue;
+    if (o.type === 'turret') { const pv = turretPivot(o); out.push(sightEye(pv.x, pv.y, FOG_TURRET, false)); }
+    else if (o.type === 'tower') { const f = towerFoot(o); out.push(sightEye(f.x, f.y, FOG_TOWER, false)); }
   }
   return out;
 }

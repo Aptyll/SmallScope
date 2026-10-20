@@ -98,6 +98,15 @@ const STRUCTS = {
   barracks: { name: 'BARRACKS', w: 3, h: 2, art: 'spawner', fixed: true, mm: mmTeam, map: chTeam, tiers: [
     { cost: { gold: 40 }, hp: 320, buildT: 12, wave: 3, waveT: 30, grow: 180, botHp: 60, cap: 8 }, // cap: soldiers a LANE holds, queued or out; botHp: a soldier's health at the start, grown by SOLDIER_HP_GROW (js/sim/robots.js)
   ]},
+  // THE ROAD TOWER: the map's, never a wallet's - two stand on each side's
+  // cable at boot (placeTowers, js/sim/towers.js), each with a crossbow on
+  // its deck that holds its stretch of road, and a side's cable runs only as
+  // far as its furthest standing one. Never on the wheel, nobody's to
+  // upgrade, repair or pull down (`fixed`); the wrecker is paid half its cost
+  // like any wreck. Its gun's numbers sit with its sim (TOWER_*, towers.js).
+  tower: { name: 'ROAD TOWER', w: 3, h: 2, fixed: true, mm: mmTeam, map: chTeam, tiers: [
+    { cost: { gold: 150 }, hp: 700, buildT: 1 },
+  ]},
   // The fish net: the one building that goes on water instead of snow.
   // `water: true` is the whole difference, and every site reads that flag
   // rather than the type name - it builds on an open hole (canPlaceAt),
@@ -286,6 +295,10 @@ function createStruct(tx, ty, type, tier, p, building, rot) {
   // ang: where the barrel points. tgt/chg: the mark and how locked on it is.
   // rec/mz: recoil slide and muzzle flash. scan: the idle sweep's phase.
   if (type === 'turret') { o.cd = 0; o.ang = -Math.PI / 2; o.tgt = null; o.tgtK = null; o.off = null; o.chg = 0; o.rec = 0; o.scan = 0; }
+  // ang: the gun's bearing; tgt/chg: its mark and how far it has wound; cd: the
+  // reload; heat/heatId: bolts in a row into one scout; bolt/pin: the one in the
+  // air and the spent one in the snow (updateTower, js/sim/towers.js)
+  if (type === 'tower') { o.zl = -1; o.zi = -1; o.ang = p.team === 0 ? -Math.PI / 4 : Math.PI * 3 / 4; o.tgt = null; o.chg = 0; o.cd = 0; o.heat = 0; o.heatId = -1; o.bolt = null; o.pin = null; o.loose = -9; }
   if (type === 'generator') o.payT = 0;
   if (type === 'spawner') { o.bots = []; o.respawnT = o.respawnTotal = 1; o.door = 1; }
   // waveT: the clock to the next wave. queue/rollT: soldiers still to leave
@@ -568,6 +581,52 @@ function rockLands(a) {
     hurtUnit(t, a.dmg, a.vx / vd, a.vy / vd, players[a.owner], { kbMul: a.kb });
   }
 }
+// one step of a standing turret (updateStructures): the mark, the swing, the
+// draw and the throw
+function updateTurret(o, t, dt) {
+  o.cd -= dt;
+  o.rec = Math.max(0, o.rec - dt / TUR_SNAP);  // the pouch snapping forward again
+  const pv = turretPivot(o);
+  // A HELD MARK IS KEPT while it holds - a sling that jumped to whichever
+  // body was a pixel nearer would swing forever and never finish a draw -
+  // but a BETTER-RANKED one takes it the moment it arrives: a wall is
+  // never worth throwing at while a raider is standing there.
+  const m = turretMark(o, t.range, pv);
+  const held = o.tgt && turretHolds(o, o.tgt, o.tgtK, t.range, pv);
+  if (!held || (m && TUR_RANK[m.k] < TUR_RANK[o.tgtK])) {
+    o.tgt = m && m.tg; o.tgtK = m && m.k;
+    turretRoll(o, t); // a fresh mark is a fresh roll of the accuracy
+  }
+  let want, rate = t.traverse;
+  const goal = turretGoal(o);
+  if (goal) {
+    // the LAUNCH bearing, never the bearing to the mark: the fork stands
+    // ABOVE what it is throwing at, because the rock sags onto it
+    want = turretLaunch(pv, goal.x, goal.y).ang;
+  } else {
+    // idle sweep, at a third of the traverse: a live turret should never
+    // read as a dead prop, and the sweep telegraphs its arc to a raider
+    o.scan += dt * 0.55;
+    want = -Math.PI / 2 + Math.sin(o.scan) * 1.15;
+    rate = t.traverse * 0.35;
+  }
+  let da = want - o.ang;
+  while (da > Math.PI) da -= Math.PI * 2;
+  while (da < -Math.PI) da += Math.PI * 2;
+  const step = rate * dt;
+  o.ang += Math.max(-step, Math.min(step, da));  // swing, never snap
+  if (goal && Math.abs(da) < TUR_LOCK) {
+    o.chg = Math.min(1, o.chg + dt / t.aim);
+    if (o.chg >= 1 && o.cd <= 0) {
+      fireRock(o, t, pv);
+      o.cd = t.rate; o.chg = 0; o.rec = 1;
+      turretRoll(o, t); // ...and the next throw rolls a miss of its own
+    }
+  } else {
+    o.chg = Math.max(0, o.chg - dt * 2.5); // lost the bearing: ease the draw back down
+  }
+}
+
 // how many of a site's side stand within BUILD_REACH of it, alive and on
 // the ground - each one speeds it (CREW_BOOST)
 function buildCrew(o) {
@@ -593,6 +652,7 @@ function barracksLaneLoad(o) {
 }
 
 function updateStructures(dt) {
+  towersSync(); // a side's cable runs to its furthest standing road tower (js/sim/towers.js)
   for (let i = tracers.length - 1; i >= 0; i--) {
     tracers[i].t -= dt;
     if (tracers[i].t <= 0) tracers.splice(i, 1);
@@ -656,49 +716,9 @@ function updateStructures(dt) {
       continue;
     }
     const t = STRUCTS[o.type].tiers[o.tier];
-    if (o.type === 'turret') {
-      o.cd -= dt;
-      o.rec = Math.max(0, o.rec - dt / TUR_SNAP);  // the pouch snapping forward again
-      const pv = turretPivot(o);
-      // A HELD MARK IS KEPT while it holds - a sling that jumped to whichever
-      // body was a pixel nearer would swing forever and never finish a draw -
-      // but a BETTER-RANKED one takes it the moment it arrives: a wall is
-      // never worth throwing at while a raider is standing there.
-      const m = turretMark(o, t.range, pv);
-      const held = o.tgt && turretHolds(o, o.tgt, o.tgtK, t.range, pv);
-      if (!held || (m && TUR_RANK[m.k] < TUR_RANK[o.tgtK])) {
-        o.tgt = m && m.tg; o.tgtK = m && m.k;
-        turretRoll(o, t); // a fresh mark is a fresh roll of the accuracy
-      }
-      let want, rate = t.traverse;
-      const goal = turretGoal(o);
-      if (goal) {
-        // the LAUNCH bearing, never the bearing to the mark: the fork stands
-        // ABOVE what it is throwing at, because the rock sags onto it
-        want = turretLaunch(pv, goal.x, goal.y).ang;
-      } else {
-        // idle sweep, at a third of the traverse: a live turret should never
-        // read as a dead prop, and the sweep telegraphs its arc to a raider
-        o.scan += dt * 0.55;
-        want = -Math.PI / 2 + Math.sin(o.scan) * 1.15;
-        rate = t.traverse * 0.35;
-      }
-      let da = want - o.ang;
-      while (da > Math.PI) da -= Math.PI * 2;
-      while (da < -Math.PI) da += Math.PI * 2;
-      const step = rate * dt;
-      o.ang += Math.max(-step, Math.min(step, da));  // swing, never snap
-      if (goal && Math.abs(da) < TUR_LOCK) {
-        o.chg = Math.min(1, o.chg + dt / t.aim);
-        if (o.chg >= 1 && o.cd <= 0) {
-          fireRock(o, t, pv);
-          o.cd = t.rate; o.chg = 0; o.rec = 1;
-          turretRoll(o, t); // ...and the next throw rolls a miss of its own
-        }
-      } else {
-        o.chg = Math.max(0, o.chg - dt * 2.5); // lost the bearing: ease the draw back down
-      }
-    } else if (o.type === 'generator') {
+    if (o.type === 'turret') updateTurret(o, t, dt);
+    else if (o.type === 'tower') updateTower(o, dt);
+    else if (o.type === 'generator') {
       o.payT -= dt;
       if (o.payT <= 0) {
         o.payT = t.period;

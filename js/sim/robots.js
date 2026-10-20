@@ -724,15 +724,16 @@ function updateMerchant(b, dt) {
 // to the roost; a top or bot soldier's is its own mouth, down its lane to the
 // rival mouth and into the rival hollow (laneWaypoints, js/sim/lanes.js). A
 // waypoint it cannot reach is skipped, not waited on, so a wave never stands
-// still on a blocked tile. On the march it rides any ZIPLINE of its lane that
-// carries it toward the rival bird (soldierBoard):
-// its own side's out to the front, the rival's in to their roost - hands on
+// still on a blocked tile. On the march it rides its own side's ZIPLINE of its
+// lane out to the front (soldierBoard; never the rival's, which ends under a
+// standing rival road tower) - hands on
 // the handle, so a soldier on the cable swings at nothing, and a rival who
 // meets it on the line crashes with it (zipCrash, js/sim/zipline.js).
 const SOLDIER_SPD = 44;        // px/s, a step slower than a walking player
 const SOLDIER_AGGRO = 96;      // px it turns on a rival unit inside
 const SOLDIER_SIEGE = 40;      // px it turns on a rival building inside - what is in its way, not the whole ring round a roost
 const SOLDIER_HP_GROW = 10;    // health a soldier gains for every barracks `grow` the match has run
+const SOLDIER_TOWER_R = 160;   // px it turns on a rival road tower inside: the road's own stretch of it, so no column marches past one
 const SOLDIER_EAGLE_DMG = 8;   // nerve one swing takes off the rival bird (a hand's E swing is EAGLE_WORK_DMG, 20)
 const SOLDIER_XP = 20;         // XP it is worth to the rival scouts standing near (shareXp)
 const SOLDIER_WP_R = 28;       // px from a waypoint that counts as reached
@@ -782,7 +783,10 @@ function soldierBoard(b, walkToward) {
   if (!g) return false;
   const here = Math.hypot(g.x - b.x, g.y - b.y);
   for (const z of zips) {
-    if (!z || z.lane !== b.lane) continue; // its own lane's cables: a column never rides off to another lane
+    // its own side's cable of its own lane: a column never rides off to another
+    // lane, and the rival's always ends under a standing rival road tower
+    // (towersSync), so a ride in on it would skip that tower
+    if (!z || z.lane !== b.lane || z.team !== b.team) continue;
     const n = zipNearest(z, b.x, b.y);
     if (n.dist > SOLDIER_ZIP_REACH) continue;
     const p0 = z.pts[0], p1 = z.pts[z.pts.length - 1];
@@ -853,9 +857,11 @@ function updateSoldier(b, dt) {
     }
   }
   // 3. a rival building in its way: a turret, a wall across the road,
-  //    their bays
+  //    their bays - and a rival ROAD TOWER from further off, since one holds
+  //    the road and a column that walked past it would leave it standing
+  //    (towerNear, js/sim/towers.js)
   if (!busy) {
-    const st = enemyStructNear(b.team, b.x, b.y - 1, SOLDIER_SIEGE);
+    const st = enemyStructNear(b.team, b.x, b.y - 1, SOLDIER_SIEGE) || towerNear(b.team, b.x, b.y - 1, SOLDIER_TOWER_R);
     if (st) {
       const pt = foePoint(st, b.x, b.y - 1);
       if (Math.hypot(pt.x - b.x, pt.y - (b.y - 1)) > ROBOT_REACH) busy = walkToward(pt.x, pt.y, 1) >= 0;

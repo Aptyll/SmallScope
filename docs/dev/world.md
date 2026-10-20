@@ -830,6 +830,18 @@ the lift where it lands (once for the span, once more with that span's sag), wit
 (6) px — which the pointer's hover and the click scheme's press ask. The ride itself:
 [the zipline](gameplay.md#the-zipline).
 
+**The road towers cut it.** `placeTowers()` (js/sim/towers.js, right after `placeZips()` in boot)
+keeps every cable whole in `zipWhole[line]` (a line is its index in `zips`), stands two towers on
+each at the points `TOWER_AT` (half and all of the way, base to front) picks, and moves those
+points onto the tower, so the cable runs into it: two towers a lane, six a side. Each tower records its line and point (`o.zl`, `o.zi`). Every frame `towersSync()` cuts
+`zips[line]` to the furthest standing tower's point on it, or sets it to null when none stand. The cut is read off the
+structures alone, which are synced, so a client cuts the same line. A tower's 3x2 footprint is the
+nearest to its point, inside `TOWER_SEEK` (6) tiles, that is dry, clear of the cistern and holds
+nothing but scenery or a pylon, on plain snow if any such footprint is near and else on road
+tiles (`towerStand`). The pylon it replaces is taken out, and so are pines and rocks
+`TOWER_CLEAR` (1) tile round it and one more in front, so nothing stands over its face. All of it
+is pure reads, so no seed shifts.
+
 ## Camps
 
 The jungle: named places at **fixed, mirrored sites** where neutral monsters stand — the things
