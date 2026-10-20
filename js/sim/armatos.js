@@ -68,7 +68,7 @@ const ARM_AB = [
     bot: (p, foe, d, clear) => clear && d < VERDICT_LEN - 6,
   },
   {
-    id: 'hold', name: 'HOLD THE LINE', cd: 12, ap: 0.5, cast: 0.12, wall: true,
+    id: 'hold', name: 'HOLD THE LINE', cd: 12, ap: 0.5, cast: 0.12, wall: true, recast: (p) => p.shieldT > 0,
     blurb: 'BRACE BEHIND THE SHIELD: THE FRONT TAKES LESS. A HERO WHO STRIKES IT PRIMES THE BASH. PRESS AGAIN TO BASH.',
     use: (p) => (p.castSlam ? armBash(p) : armBrace(p)),
     tele: (p, px, py, a, col, closing) => { if (p.castSlam) drawWedge(px, py, a, BASH_R, BASH_HALF, p.holdHit ? TELE_HOT : col, 0.55 + 0.4 * closing, closing); }, // the bash's wedge; the raise shows none
@@ -98,16 +98,9 @@ const ARM_AB = [
   },
 ];
 
-// the passives, by the name a hero's CLASSES entry gives (`passive`): what a
-// hit taken, a key cast and a sim step do to the body wearing one
-const HERO_PASSIVE = {
-  resolve: { hurt: resolveHurt, cast: resolveCast, tick: resolveTick,
-    name: "LEGION'S RESOLVE", blurb: 'THE HITS YOU TAKE BUILD RESOLVE. FULL, YOUR NEXT KEY GIVES YOU A SHIELD.', icon: ARM_ICON32.resolve },
-};
-function heroPassive(p) { const c = CLASSES[p.cls]; return c && c.passive ? HERO_PASSIVE[c.passive] : null; }
-function passiveHurt(p, dmg) { const h = heroPassive(p); if (h) h.hurt(p, dmg); }
-function passiveCast(p) { const h = heroPassive(p); if (h) h.cast(p); }
-function passiveTick(p, dt) { const h = heroPassive(p); if (h) h.tick(p, dt); }
+// the passive, by the name his CLASSES entry gives (`passive`; HERO_PASSIVE, js/sim/heroes.js)
+HERO_PASSIVE.resolve = { hurt: resolveHurt, cast: resolveCast, tick: resolveTick,
+  name: "LEGION'S RESOLVE", blurb: 'THE HITS YOU TAKE BUILD RESOLVE. FULL, YOUR NEXT KEY GIVES YOU A SHIELD.', icon: ARM_ICON32.resolve };
 
 // ---- LEGION'S RESOLVE -------------------------------------------------------
 function resolveHurt(p, dmg) {
@@ -185,6 +178,7 @@ function holdTaken(p, dmg, dx, dy, src) {
   burst(p.x + Math.cos(p.shieldA) * 7, p.y - 6 + Math.sin(p.shieldA) * 5, '#c8d2e4', 4, 30, 0.3, true);
   return Math.max(1, Math.round(dmg * (1 - HOLD_CUT)));
 }
+HERO_TAKEN.push(holdTaken);
 // the key again: the shield's face driven into the wedge ahead. Primed (a
 // hero struck the brace) it stuns; unprimed it is a shove and a knock.
 function armBash(p) {
@@ -209,20 +203,21 @@ function armBash(p) {
 // ---- E VETERAN'S MARCH --------------------------------------------------------
 // The charge rides the rush's state (rushT, rushNX/NY: the movement branch in
 // playerMove, js/sim/sim.js, and every gate that already knows a charging body),
-// with p.march saying it is this one: marchStep instead of rushStep.
+// with p.dash = 'march' saying it is this one (HERO_DASH, js/sim/heroes.js).
 function armMarch(p) {
   const dx = p.input.aimX - p.x, dy = p.input.aimY - p.y;
   const d = Math.hypot(dx, dy) || 1;
   p.rushNX = dx / d; p.rushNY = dy / d;
   p.rushT = MARCH_T;
   p.rushVictim = null;
-  p.march = true;
+  p.dash = 'march';
   p.marchHit.length = 0;
   p.sliding = false;
   faceToward(p, dx, dy, true);
   burst(p.x, p.y + 4, '#dfe8f4', 8, 45, 0.4, true);
   sfxAt('dodge', p.x, p.y);
 }
+HERO_DASH.march = { spd: MARCH_SPD, t: MARCH_T, ramp: MARCH_RAMP, step: (p, mv, dt) => marchStep(p, mv, dt) };
 function marchStep(p, mv, dt) {
   p.rushFxT = (p.rushFxT || 0) - dt;
   if (p.rushFxT <= 0) { p.rushFxT = 0.04; burst(p.x + p.rushNX * 5, p.y + 4, '#eef4fb', 2, 30, 0.35, true); }
@@ -242,7 +237,7 @@ function marchStep(p, mv, dt) {
 // the end of the march: against a body (the stun), a wall, or the clock
 function marchEnd(p, q) {
   p.rushT = 0;
-  p.march = false;
+  p.dash = '';
   p.marchHit.length = 0;
   p.vx = p.rushNX * 40; p.vy = p.rushNY * 40;
   if (!q) return;
@@ -274,6 +269,8 @@ function guardFor(e) {
 // tenacity it gives (ccMul, js/sim/actions.js)
 function guardStat(p, key) { return key === 'armor' && guardFor(p) ? GUARD_ARMOR : 0; }
 function guardTen(e) { return guardFor(e) ? GUARD_TEN : 0; }
+HERO_STAT.push({ name: 'THE OLD GUARD', add: guardStat });
+HERO_TEN.push(guardTen);
 // allies (him included) a standard planted here would cover: the bot's reason to plant one
 function guardAllies(p) {
   let n = 0;
@@ -301,6 +298,7 @@ function updateGuards(dt) {
     }
   }
 }
+HERO_TICK.push(updateGuards);
 // does `p` have a standard in the ground right now (his back is bare while it stands)
 function guardPlanted(p) { return guards.some((g) => g.owner === p.id); }
 
@@ -312,7 +310,7 @@ function abBotKey(p, foe, d, clear) {
   for (let i = 0; i < AB_KEYS; i++) {
     const ab = abOf(p, i);
     if (!ab.bot || !abUnlocked(p, i)) continue;
-    const up = ab.wall && p.shieldT > 0;
+    const up = abRecast(p, ab);
     if ((up || abReady(p, i)) && ab.bot(p, foe, d, clear)) return i;
   }
   return -1;

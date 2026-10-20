@@ -250,10 +250,11 @@ function tryAbility(p, i) {
   // stops on the spot (the body it carried is slammed where it stands) and
   // the wind-up begins from there; without a wall up the slam is the shield's
   // own cast, so it waits on the shield's cooldown like the raise would
-  // (a row with `wall` is a shield key: the warrior's, ARMATOS's brace; his march is no rush to slam out of)
-  if (ab.wall && (p.shieldT > 0 || (p.rushT > 0 && !p.march))) {
+  // (abRecast: a row's own `recast`, else a shield key's - `wall` - while
+  // the wall is up or a rush, not a hero's dash, is running)
+  if (abRecast(p, ab)) {
     if (p.shieldT <= 0 && p.abCd[i] > 0) { sfxFor(p, 'deny'); return; }
-    if (p.rushT > 0) rushEnd(p, false);
+    if (p.rushT > 0) rushEnd(p, false); // a charge, or a hero's dash, stops where it is
     p.castSlam = true;
     startCast(p, i, SLAM_CAST);
     return;
@@ -268,8 +269,11 @@ function tryAbility(p, i) {
     const tx = Math.floor(p.x / TILE), ty = Math.floor((p.y + 4) / TILE);
     if (!inWorld(tx, ty) || ground[idx(tx, ty)] !== 0) { sfxFor(p, 'deny'); return; }
   }
+  if (ab.ok && !ab.ok(p)) { sfxFor(p, 'deny'); return; } // a row that needs something the press lacks (a target near the aim)
   startCast(p, i, ab.cast);
 }
+// is the key pressed now its row's second half (castSlam)
+function abRecast(p, ab) { return ab.recast ? !!ab.recast(p) : !!(ab.wall && (p.shieldT > 0 || (p.rushT > 0 && !p.dash))); }
 // the wind-up itself: cover broken, the draw dropped, the body turned to the
 // aim and the clock set. `t` is the cast's length - the table's, or the slam's
 function startCast(p, i, t) {
@@ -323,8 +327,11 @@ function updateAbilities(p, dt) {
       p.castAb = -1;
       p.castT = 0;
       p.abCd[i] = abCdOf(p, i);
-      abOf(p, i).use(p);
-      passiveCast(p); // a hero's passive that answers a key landing (HERO_PASSIVE, js/sim/armatos.js)
+      const ab = abOf(p, i);
+      heroAbNow = ab.id; // a blow the key lands says which key (passiveDeal, js/sim/heroes.js)
+      ab.use(p);
+      heroAbNow = '';
+      passiveCast(p); // a hero's passive that answers a key landing (HERO_PASSIVE, js/sim/heroes.js)
     }
   }
   passiveTick(p, dt);
@@ -353,6 +360,7 @@ function abilityMoveMul(p) {
   if (p.shieldT > 0) m *= 0.4;
   if (p.slowT > 0) m *= p.slowMul;
   m *= statBuffMul(p, 'ms'); // a bear buff (campBuff, wildlife.js; js/sim/stats.js)
+  m *= heroMove(p); // a hero's own (HERO_MOVE, js/sim/heroes.js)
   return m;
 }
 
@@ -596,6 +604,7 @@ function rushStep(p, mv, dt) {
 }
 function rushEnd(p, wall) {
   p.rushT = 0;
+  p.dash = ''; // (a hero's dash cut short by its second key ends here too)
   const v = p.rushVictim;
   p.rushVictim = null;
   p.vx = p.rushNX * 60; p.vy = p.rushNY * 60;
@@ -765,7 +774,7 @@ function updateAbilityWorld(dt) {
     abFx[i].t += dt;
     if (abFx[i].t >= AB_FX_T) abFx.splice(i, 1);
   }
-  updateGuards(dt); // ARMATOS's planted standards (js/sim/armatos.js)
+  heroTick(dt); // what the heroes leave in the world: ARMATOS's standards (HERO_TICK, js/sim/heroes.js)
   for (let i = craters.length - 1; i >= 0; i--) {
     const z = craters[i];
     z.t += dt;
@@ -917,7 +926,7 @@ function drawAbilityGround(ex, ey, now) {
   // the last quarter, filling in as the landing nears. It teaches the caster
   // what the key reaches, and it gives whoever is inside the whole wind-up
   // to not be
-  drawGuards(ex, ey, now); // ARMATOS's planted standards under it all (js/draw/armatos.js)
+  heroGround(ex, ey, now); // the heroes' marks under it all: ARMATOS's standards (HERO_GROUND, js/sim/heroes.js)
   for (const p of players) {
     if (!p.active || p.dead || inAir(p) || p.castT <= 0) continue;
     const ab = abOf(p, p.castAb);
@@ -1625,7 +1634,7 @@ function bakeAb32(rows) {
   }
   return cv;
 }
-// a named hero's passive icon (HERO_PASSIVE, js/sim/armatos.js)
+// a named hero's passive icon (HERO_PASSIVE, js/sim/heroes.js)
 function passiveIcon(cls) {
   const key = cls + ':p';
   if (!ab32Cache.has(key)) ab32Cache.set(key, bakeAb32(HERO_PASSIVE[CLASSES[cls].passive].icon));

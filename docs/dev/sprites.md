@@ -190,8 +190,8 @@ They are F and G off armatos-round4.png in the project files. His 48 px model on
 the strip is still the warrior's in his paint (`paint48`).
 
 His OATH GREATSWORD (`ARM_SWORD`, `ARM_SWORD_DIAG`) replaces the sword's held art in his hands
-(`heroBlade`, asked by `drawHeldTool`): flat for the side, the swing and the wind-up, and slanted
-facing down or up (`heroCarry`), the grip at his right hip (`ARM_HIP`) and the blade up past the
+(`HERO_BLADES.oath`, js/draw/heroes.js: `heroBlade`, asked by `drawHeldTool`): flat for the side, the swing and the wind-up, and slanted
+facing down or up (`heroCarry`), the grip at his right hip (the row's `hip`) and the blade up past the
 shoulder, drawn behind the body facing up.
 
 The **48 px model** ([looks.js](../../js/sprites/looks.js), `SPRITES.portrait(cls, look,

@@ -495,14 +495,20 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | the burrow's tunnels: the tuning, the one placement rule, the dig order, the holes standing and caving, the far end, going under and coming up, and the step that runs it all | `TUN_*`, `tunSiteOk`, `tunPlaceOk`, `digTunnel` (the `tunnel` order: `runCmd`, js/ui/wheel.js), `tunHoleOf`/`tunHoles`, `caveTunnel`, `tunFarSite`, `tunnelEnter` (ahead of the swing in `playerSwing`, sim.js; `p.tunE` the fresh press), `tunUnder`, `tunnelExit`, `updateTunnels` (from `updatePlay`, sim.js) | `tunnels` (the hole's `OBJECTS` row: world.js; the rider out of the world: `inAir`, player.js; the drop: `animalDies`, wildlife.js; the state: `p.tun`/`p.tunCd`/`p.digT`/`p.tunHole`, player.js) |
 | the aim: the local hand's ghost, standing it up and putting it away, and the press that sends the order; the burrow's icon | `tunnelAimToggle` (V: `keyPress`, input.js; a click on its pack cell: `ITEMS.tunnel.use`, run by `sendBagCell`), `tunnelAimTile`, `tunnelAimPress` (`pointerPress`, input.js), `state.tunAim` (in `SAVE_STATE_SKIP`), `SPRITES.itemTunnel` | `tunnels` › `the aim` |
 
+## js/sim/heroes.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| where a named hero's kit reaches the shared sim: the passive table and its hooks, the hit-taken fold, stat bonuses, tenacity, walk multipliers, dashes on the rush state, world ticks and ground draws, each a list or table every hero file registers into | `HERO_PASSIVE` (`passiveHurt` in `damagePlayer`, `passiveDeal` in `hurtUnit`, `passiveCast`/`passiveTick` in `updateAbilities`), `HERO_TAKEN`/`heroTaken` (`damagePlayer`), `HERO_STAT`/`heroStat` (`statOf`, `statParts`), `HERO_TEN`/`heroTen` (`ccMul`), `HERO_MOVE`/`heroMove` (`abilityMoveMul`), `HERO_DASH`/`heroDash` (`p.dash`, the rush branch in sim.js), `HERO_TICK`/`heroTick` (`updateAbilityWorld`), `HERO_GROUND`/`heroGround` (`drawAbilityGround`), `heroAbNow`; a row's `recast`/`ok` (`abRecast`, `tryAbility`) | `hero hooks` |
+
 ## js/sim/armatos.js
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
 | ARMATOS's tuning and his four keys | `RESOLVE_*`, `VERDICT_*`, `HOLD_*`/`BASH_*`, `MARCH_*`, `GUARD_*`, `ARM_AB` (joined into `CLASS_AB`, abilities.js) | `armatos` › `tuning`, `the keys` |
-| a hero's passive: the table and its three hooks; LEGION'S RESOLVE | `HERO_PASSIVE`, `heroPassive`, `passiveHurt` (`damagePlayer`, player.js), `passiveCast`/`passiveTick` (`updateAbilities`), `resolveHurt`/`resolveCast`/`resolveTick` | `armatos` › `LEGION'S RESOLVE` |
-| Q, W, E: the line slam, the brace and its bash, the march | `unitsInLine`, `armVerdict`; `armBrace`, `holdTaken` (`damagePlayer`), `armBash`; `armMarch`, `marchStep` (the rush branch, sim.js), `marchEnd` | `armatos` › `Q IRON VERDICT`, `W HOLD THE LINE`, `E VETERAN'S MARCH` |
-| R: the planted standard, who it guards, its armor and tenacity, the slow on leaving | `guards`, `armGuard`, `guardFor`, `guardStat` (`statOf`, stats.js), `guardTen` (`ccMul`, actions.js), `guardAllies`, `updateGuards` (`updateAbilityWorld`), `guardPlanted` | `armatos` › `R THE OLD GUARD` |
+| LEGION'S RESOLVE, his passive (`HERO_PASSIVE.resolve`, js/sim/heroes.js) | `resolveHurt`/`resolveCast`/`resolveTick` | `armatos` › `LEGION'S RESOLVE` |
+| Q, W, E: the line slam, the brace and its bash, the march | `unitsInLine`, `armVerdict`; `armBrace`, `holdTaken` (`HERO_TAKEN`), `armBash`; `armMarch`, `marchStep` (`HERO_DASH.march`), `marchEnd` | `armatos` › `Q IRON VERDICT`, `W HOLD THE LINE`, `E VETERAN'S MARCH` |
+| R: the planted standard, who it guards, its armor and tenacity, the slow on leaving | `guards`, `armGuard`, `guardFor`, `guardStat` (`HERO_STAT`), `guardTen` (`HERO_TEN`), `guardAllies`, `updateGuards` (`HERO_TICK`), `guardPlanted` | `armatos` › `R THE OLD GUARD` |
 | how a bot picks one of his keys | `abBotKey` (each row's `bot`; asked by `aiThink`, ai-ladder.js) | `armatos` › `bots` |
 
 ## js/sim/abilities.js
@@ -834,12 +840,18 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | --- | --- | --- |
 | the canopy window: a pine or snag drawn over the viewed hero's model opens round exactly what it covers, eased by how much | `CANOPY_FULL`, `CANOPY_CUT`, `canopyFrame` (from `render`), `heroLayerOpen`/`heroLayerClose` (from `drawPlayer`, js/draw/bodies.js), `canopyOver`, `drawWindowed` (the tree and snag branches of `render`'s y-sorted pass), `inkMask` | `canopy window` (the shin clip it copies: `wadeCut`, js/draw/depth.js) |
 
+## js/draw/heroes.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| a hero's own blade in its hands: the table each hero registers into, the flat blade asked by `drawHeldTool` (bodies.js), the slanted carry facing down or up | `HERO_BLADES`, `bakeBladeArt`, `heroBladeOf`, `heroBlade`, `heroCarry` | `hero blades` |
+
 ## js/draw/armatos.js
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| his greatsword in his hands: the blade a hero's hands hold, the slanted carry facing down or up | `heroBlade` (asked by `drawHeldTool`, bodies.js), `heroCarry`, `ARM_HIP`, `armSwords` | `armatos` |
-| ARMATOS's standard: on his back (cloth gold with resolve), planted with its ring; his keys' wind-up and landing shapes | `drawStandard`, `drawStdCloth`, `drawHeroBack` (`drawPlayer`, bodies.js), `drawGuards`, `drawLineBox`, `drawVerdictTele`, `drawMarchTele` (`drawAbilityGround`, abilities.js) | `armatos` |
+| his greatsword in his hands (`HERO_BLADES.oath`) | `armSwords` | `armatos` |
+| ARMATOS's standard: on his back (cloth gold with resolve), planted with its ring; his keys' wind-up and landing shapes | `drawStandard`, `drawStdCloth`, `drawHeroBack` (`drawPlayer`, bodies.js), `drawGuards` (`HERO_GROUND`), `drawLineBox`, `drawVerdictTele`, `drawMarchTele` (`drawAbilityGround`, abilities.js) | `armatos` |
 
 ## js/draw/bodies.js
 

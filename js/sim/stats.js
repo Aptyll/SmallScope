@@ -50,8 +50,8 @@ function statFrom(cls, level, add, key) {
   const c = CLASSES[cls];
   return (c.base[key] || 0) + (c.grow[key] || 0) * Math.max(0, level - 1) + (add ? add[key] : 0);
 }
-// (plus what standing inside a rallying standard adds: guardStat, js/sim/armatos.js)
-function statOf(p, key) { return statFrom(p.cls, p.level, kitOf(p).add, key) + guardStat(p, key); }
+// (plus what a hero's own state adds: HERO_STAT, js/sim/heroes.js)
+function statOf(p, key) { return statFrom(p.cls, p.level, kitOf(p).add, key) + heroStat(p, key); }
 function asMul(p) { return asMulFrom(p.cls, p.level, kitOf(p).add); }
 // what a running buff multiplies a stat by right now (1 = nothing). The bear
 // buffs (campBuff, js/sim/wildlife.js) raise every blow landed and the walk;
@@ -77,8 +77,7 @@ function statParts(p, key) {
   if (n && c.grow[key]) rows.push(['LEVEL ' + p.level, c.grow[key] * n, kind[0]]);
   if (Math.abs(rest) > 1e-9) rows.push(['CARDS', rest, kind[1]]);
   if (Math.abs(it) > 1e-9) rows.push(['ITEMS', it, kind[1]]);
-  const gs = guardStat(p, key); // a rallying standard underfoot (js/sim/armatos.js)
-  if (gs) rows.push(['THE OLD GUARD', gs, 'add']);
+  for (const h of HERO_STAT) { const v = h.add(p, key); if (v) rows.push([h.name, v, 'add']); } // a hero's own: a rallying standard underfoot (js/sim/heroes.js)
   const b = statBuffMul(p, key);
   if (b !== 1) rows.push([(MONSTER[p.buffKind] && MONSTER[p.buffKind].buff) || 'BUFF', b - 1, 'buff']);
   return rows;
