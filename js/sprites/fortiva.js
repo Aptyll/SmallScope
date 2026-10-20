@@ -177,3 +177,197 @@ const FORT_ICON32 = {
     '................................',
   ],
 };
+
+// ------------------------------------------------------------ fortiva body
+// FORTIVA's own 16 px body in each of her looks (FORT_SKINS), on ARMATOS's
+// frame (ARM_BODY, js/sprites/armatos.js) and in his iron: the standing frame
+// per facing, walked by heroWalk, and the run, held run and roll baked off a
+// doll of the same body (app/bake-player/, `unbroken` and `coif` in
+// js/baked/motion.js). The coat letters r/R/d stay the side's (her tabard);
+// a/A is her copper hair, c/C chain and the shackles on her wrists.
+const FORT_BODY = {
+  // UNBROKEN: his open helm with the gold band, a copper braid over her right
+  // shoulder (clear of the greatsword carried on her left), a broken shackle
+  // on her left wrist
+  unbroken: {
+    down: [
+      '................',
+      '.....oooooo.....',
+      '....otTTTTto....',
+      '....otTTTtto....',
+      '....onyyyyno....',
+      '....oaekkeao....',
+      '....oAkkkkao....',
+      '....oanKKnno....',
+      '...oTArRRrtTo...',
+      '...onarRRrtno...',
+      '...omArRRromo...',
+      '...ocarRRcoco...',
+      '....oddyyddoCo..',
+      '.....pp..ppoco..',
+      '.....bb..bb.o...',
+      '.....BB..BB.....',
+    ],
+    up: [
+      '................',
+      '.....oooooo.....',
+      '....otTTTTto....',
+      '....otTTTtto....',
+      '....onyyyyno....',
+      '....oaaAAaao....',
+      '....oaaAAaao....',
+      '....onnaanno....',
+      '...oTtrrrrtTo...',
+      '...ontrRRrtno...',
+      '...omorRRromo...',
+      '...ocorrrroco...',
+      '..oCoddyyddo....',
+      '..ocopp..pp.....',
+      '...o.bb..bb.....',
+      '.....BB..BB.....',
+    ],
+    side: [
+      '................',
+      '.....oooooo.....',
+      '....otTTTTto....',
+      '....otTTTTTo....',
+      '....onnyyyyo....',
+      '...oatttkeko....',
+      '...oAtttkkKo....',
+      '...oaonnnno.....',
+      '..oAomTTrRRo....',
+      '..oaomtnrRRo....',
+      '..oAommnrRRo....',
+      '...oomckrrro....',
+      '....odCyyddo....',
+      '......pp.pp.....',
+      '......bb.bb.....',
+      '......BB.BB.....',
+    ],
+  },
+  // CHAINBREAKER: a mail coif round her face, chain across the tabard's collar,
+  // shackles on both wrists
+  coif: {
+    down: [
+      '................',
+      '.....oooooo.....',
+      '....omtTTtmo....',
+      '....otTTTTto....',
+      '....otyyyyto....',
+      '....otekketo....',
+      '....otkkkkto....',
+      '....omtKKtmo....',
+      '...oTtcrrctTo...',
+      '...ontrcCrtno...',
+      '...omorRRromo...',
+      '...ocorRRroco...',
+      '..oCoddyyddoCo..',
+      '..ocopp..ppoco..',
+      '...o.bb..bb.o...',
+      '.....BB..BB.....',
+    ],
+    up: [
+      '................',
+      '.....oooooo.....',
+      '....omtTTtmo....',
+      '....otTTTTto....',
+      '....otyyyyto....',
+      '....otttttto....',
+      '....omttttmo....',
+      '....ommmmmmo....',
+      '...oTtrrrrtTo...',
+      '...ontrRRrtno...',
+      '...omorRRromo...',
+      '...ocorrrroco...',
+      '..oCoddyyddoCo..',
+      '..ocopp..ppoco..',
+      '...o.bb..bb.o...',
+      '.....BB..BB.....',
+    ],
+    side: [
+      '................',
+      '.....oooooo.....',
+      '....omtTTTTo....',
+      '....otTTTTTo....',
+      '....ottyyyyo....',
+      '....otttkeko....',
+      '....otttkkKo....',
+      '....omttnnno....',
+      '....omTTrRco....',
+      '....omtnrcRo....',
+      '....ommnrRRo....',
+      '....omckrrro....',
+      '....odCyyddo....',
+      '......pp.pp.....',
+      '......bb.bb.....',
+      '......BB.BB.....',
+    ],
+  },
+};
+// her iron is ARMATOS's (ARM_PAL), with her hair and her chain
+const FORT_PAL = Object.assign({}, ARM_PAL, { a: '#9a4a26', A: '#c86a34', c: '#b4bdcc', C: '#7d8699' });
+// The looks she can wear: the first is her own and free, the rest are bought
+// with coins on the skins screen (js/ui/skins.js, the FORTIVA tab).
+const FORT_SKINS = [
+  { id: 'unbroken', name: 'UNBROKEN', rarity: 'common', price: 0, grids: FORT_BODY.unbroken, motion: 'unbroken' },
+  { id: 'coif', name: 'CHAINBREAKER', rarity: 'rare', price: 200, grids: FORT_BODY.coif, motion: 'coif' },
+];
+
+// ------------------------------------------------------------ fortiva greatsword
+// The CHAIN GREATSWORD as she holds it (HERO_BLADES.chain, js/draw/fortiva.js):
+// a long blade in dark iron, its grip and the foot of the blade wound in the
+// chain she broke. Flat with the point left for the side, the swing and the
+// wind-up; at 45 degrees with the point up and right for a body facing down or
+// up, the grip in her hands at FORT_GRIP (ARMATOS's slant, js/sprites/armatos.js).
+const FORT_SWORD = [
+  '......................',
+  '......................',
+  '......................',
+  '......................',
+  '......................',
+  '......................',
+  '......................',
+  '...............oo.....',
+  '..............onto....',
+  '.oooooooooooooontoo.oo',
+  'oeTTTTTTTTTcTcTntoCoCn',
+  'WWEeEEEEEEEEEeEntcCcCn',
+  'oeeeeeeeeeeececntoCoCn',
+  '.oooooooooooooontoo.oo',
+  '..............onto....',
+  '...............oo.....',
+  '......................',
+  '......................',
+  '......................',
+  '......................',
+  '......................',
+  '......................',
+];
+const FORT_SWORD_DIAG = [
+  '........................',
+  '........................',
+  '...................oo...',
+  '..................oTWo..',
+  '.................oTEeo..',
+  '................oTEeo...',
+  '...............oTEeo....',
+  '..............oTEeo.....',
+  '.............oTEeo......',
+  '............oTEeo.......',
+  '...........oTEeo........',
+  '..........oTceo.........',
+  '.........oTEeo..........',
+  '.....o..oTceo...........',
+  '....onooTEeo............',
+  '.....onTEeo.............',
+  '......oneo..............',
+  '.....oCoto..............',
+  '....oco.oto.............',
+  '...oCo...o..............',
+  '..ono...................',
+  '...o....................',
+  '........................',
+  '........................',
+];
+const FORT_GRIP = [5, 18];
+const FORT_SWORD_PAL = { o: '#241a12', e: '#c8d2e4', E: '#8b93a8', W: '#ffffff', T: '#eef2f8', n: '#4f5668', t: '#7d8699', c: '#9aa3b8', C: '#5c6478' };

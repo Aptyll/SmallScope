@@ -1,5 +1,6 @@
 # The two class bodies on the doll (doll.py): the HUNTER (pom beanie) and the WARRIOR
-# (fur hood with goggles, a trailing scarf, skate blades). Their sizes are measured off the
+# (fur hood with goggles, a trailing scarf, skate blades), and each named hero's looks
+# (ARMATOS: standard, oath; FORTIVA: unbroken, coif). Their sizes are measured off the
 # hand-drawn 16 px frames in js/sprites/characters.js, so the doll's idle lands on those
 # frames pixel for pixel and the run and the roll it paints wear the same body.
 #
@@ -328,4 +329,49 @@ class Oath(Standard):
         cv.blob(cam, hc, Rh, (2.6, 2.85, 2.5), 'head', 'helm', p=2.6)
 
 
-BODIES = {'hunter': Hunter(), 'warrior': Warrior(), 'standard': Standard(), 'oath': Oath()}
+class Unbroken(Standard):
+    """FORTIVA as UNBROKEN (her default look): ARMATOS's open helm with the gold brow band
+    over a bare face, a copper braid out from under it down her right shoulder, mail sleeves
+    and steel gauntlets over her side's tabard"""
+    MARKS = [(-1.5, -0.4, 'y'), (-0.5, -0.4, 'y'), (0.5, -0.4, 'y'), (1.5, -0.4, 'y'),
+             (-1.5, 0.9, 'e'), (1.5, 0.9, 'e')]
+
+    def __init__(self):
+        super().__init__()
+        # no ink between the helm and the hair out from under it, or along the braid
+        self.SOFT |= {frozenset(('head', 'hair')), frozenset(('hair', 'braid'))}
+
+    def head(self, cv, cam, hc, Rh, pose, snap):
+        cv.blob(cam, hc, Rh, self.HEAD_R, 'head', 'hat', p=self.HEAD_P, region=self.face_region)
+        self.face_marks(cv, cam, hc, Rh)
+        # the hair out from under the back of the helm, and the braid off it, over her right
+        # shoulder and down the front of it, swung back in the run's wind
+        cv.blob(cam, hc + Rh @ v3(-2.4, 0.3, -1.6), Rh, (1.5, 2.0, 1.6), 'hair', 'hair', bias=0.5)
+        blow = pose.get('tail', 0.0)
+        p = hc + Rh @ v3(0.3, -2.7, -1.9)
+        for i in range(3):
+            q = p + v3(0.35 - 1.2 * blow, 0.05, -1.2 + 0.3 * blow)
+            cv.tube(cam, p, q, 0.75, 0.65, 'braid', 'hair', bias=0.6)
+            p = q
+
+    def ball_head(self, cv, cam, hc, Rh):
+        Body.ball_head(self, cv, cam, hc, Rh)
+        cv.blob(cam, hc + Rh @ v3(-1.6, 0.6, -1.6), Rh, (1.1, 1.8, 1.0), 'hair', 'hair', bias=0.3)
+
+
+class Coif(Standard):
+    """FORTIVA as CHAINBREAKER (the first skin): a mail coif round her face with the gold
+    brow band, mail sleeves and steel gauntlets over her side's tabard"""
+    MARKS = [(-1.5, -0.4, 'y'), (-0.5, -0.4, 'y'), (0.5, -0.4, 'y'), (1.5, -0.4, 'y'),
+             (-1.5, 0.9, 'e'), (1.5, 0.9, 'e')]
+
+    def head(self, cv, cam, hc, Rh, pose, snap):
+        cv.blob(cam, hc, Rh, self.HEAD_R, 'head', 'hat', p=self.HEAD_P, region=self.face_region)
+        self.face_marks(cv, cam, hc, Rh)
+
+    def ball_head(self, cv, cam, hc, Rh):
+        Body.ball_head(self, cv, cam, hc, Rh)
+
+
+BODIES = {'hunter': Hunter(), 'warrior': Warrior(), 'standard': Standard(), 'oath': Oath(),
+          'unbroken': Unbroken(), 'coif': Coif()}

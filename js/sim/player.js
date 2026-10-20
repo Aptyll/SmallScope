@@ -132,7 +132,7 @@ const CLASSES = [
   },
   {
     // the second named hero (js/sim/fortiva.js): a juggernaut on the WARRIOR's
-    // body and his sword's cut (`body`, `attack`) who wins the long fight: the most health of
+    // frames and his sword's cut (`body`, `attack`) who wins the long fight: the most health of
     // anyone and a hard hit, a step slower so a hero who keeps its distance
     // can beat her
     name: 'FORTIVA', role: 'THE UNBROKEN', body: 1, passive: 'unbroken', // HERO_PASSIVE, js/sim/fortiva.js
@@ -141,6 +141,11 @@ const CLASSES = [
     base: { hp: 132, dmg: 18, armor: 20, ap: 0, haste: 0, ms: PLAYER_SPEED - 3 },
     grow: { hp: 16, dmg: 2.6, as: 0.015, armor: 4 },
     attack: { name: 'CHAIN GREATSWORD', art: 'sword', cycle: 30 / 60, kb: 1.2, cut: { reach: 28, half: 1.05 } },
+    // her own body in each of her looks (FORT_SKINS, js/sprites/fortiva.js),
+    // worn per player (heroSkinOf) in her iron over the side's coat
+    skins: FORT_SKINS, skinPal: FORT_PAL, skinSlot: 'fortiva',
+    blade: 'chain', // her CHAIN GREATSWORD in her hands (HERO_BLADES, js/draw/heroes.js)
+    paint48: { t: '#7d8699', T: '#b4bdcc', g: '#1c2232', G: '#9aa3b8', m: '#5c6478', M: '#454c5e' }, // the 48 px model's (js/sprites/looks.js): its K is skin
     kit: { iceMax: 1.1, iceSteer: 3.2, slideMin: 70, fatigue: 0.7, chargeMul: 0.7,
       bowCharge: 0.75, nock: 0.5, spdDmg: 5, dodgeSpeed: 225 },
   },

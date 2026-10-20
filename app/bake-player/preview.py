@@ -13,8 +13,10 @@ PPAL = {
     'b': '#6f4d38', 'B': '#4a3324', 'S': '#c8d8e8', 'g': '#203a52', 'G': '#8fd8ff', 'h': '#5c3b20',
     'w': '#e6e1d6', 'W': '#f4f0e8', 'n': '#3a4052', 'y': '#f2cc6a', 'Y': '#b98a2e',
 }
-# ARMATOS's iron: his bodies wear it over the team's coat (CLASSES[2].skins, js/sim/player.js)
-IRON = dict(t='#7d8699', T='#b4bdcc', m='#5c6478', M='#454c5e', k='#fbe0c4', K='#e2b898')
+# the named heroes' iron (ARM_PAL; FORT_PAL adds her copper hair): their bodies wear it over
+# the team's coat (CLASSES[c].skins, js/sim/player.js)
+IRON = dict(t='#7d8699', T='#b4bdcc', m='#5c6478', M='#454c5e', k='#fbe0c4', K='#e2b898', a='#9a4a26', A='#c86a34')
+HEROES = ('standard', 'oath', 'unbroken', 'coif')
 TEAMS = [
     dict(r='#c9524e', R='#df7358', d='#96393f', t='#3e8c81', T='#58ab98', m='#f6ecd4', M='#d9c5a0'),
     dict(r='#3f6fb0', R='#5e93d8', d='#2b4d7d', t='#cfe4f2', T='#f4faff', m='#e8f2fb', M='#bcd0e4'),
@@ -41,7 +43,7 @@ if __name__ == '__main__':
         for kind in ('run', 'hold', 'roll'):
             for d in ('right', 'down', 'up'):
                 for team in (0, 1):
-                    rows.append([image(g, team, cls in ('standard', 'oath')) for g in frames(cls, kind, d)])
+                    rows.append([image(g, team, cls in HEROES) for g in frames(cls, kind, d)])
     fw, fh = rows[0][0].size
     n = max(len(r) for r in rows)
     sheet = Image.new('RGBA', (n * (fw + 2) + 2, len(rows) * (fh + 2) + 2), (18, 22, 34, 255))

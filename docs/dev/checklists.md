@@ -294,7 +294,7 @@ new class needs written:
    measured off the new idle frames, rebaked into js/baked/motion.js, with its name in
    characters.js's `MOTION_CLS` ([the run and the roll](sprites.md#the-run-and-the-roll));
    a named hero may instead carry its own looks (`skins`, `skinPal`, `skinSlot` on its `CLASSES` row:
-   each look's standing grids and a doll named in its row, [hero looks](sprites.md#hero-looks-armatos))
+   each look's standing grids and a doll named in its row, [hero looks](sprites.md#hero-looks))
    and a skins tab with `hero` in js/ui/skins.js;
 3. a `CLASS_AB` row of four actives ([js/sim/abilities.js](../../js/sim/abilities.js)): each ability's
    `cd`/`cast`/`blurb`/`use(p)` (plus `acol`/`activeF` if a state runs on the body), its

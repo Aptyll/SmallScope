@@ -1,7 +1,7 @@
 'use strict';
 // ------------------------------------------------------------ fortiva
 // FORTIVA's pixels (her rules: js/sim/fortiva.js): the shapes her keys put on the
-// snow while they wind up, and what her state wears on her body - resolve high
+// snow while they wind up, her greatsword, and what her state wears on her body - resolve high
 // as gold glints circling her, DEFIANT HEART's shield as a gold shell round
 // her, NO KNEELING's after as embers off her shoulders.
 
@@ -37,6 +37,17 @@ function drawNoKneelTele(p, col, closing, ex, ey) {
   drawRing(px, py + 2, NOKNEEL_UP_R, TELE_HOT, 0.4 + 0.5 * closing, closing);
   if (d > 4) drawTeleLine(p.x, p.y, (tx - p.x) / d, (ty - p.y) / d, d, col, 0.3 + 0.3 * closing, 0, ex, ey);
 }
+
+// ---- the greatsword in her hands -----------------------------------------------
+// Her CHAIN GREATSWORD (HERO_BLADES.chain, js/draw/heroes.js), carried the way
+// ARMATOS carries his: flat for the side, the swing and the wind-up, slanted
+// from the right hip facing down, rising behind the shoulder facing up.
+let fortSwordArt = null;
+function fortSwords() {
+  if (fortSwordArt) return fortSwordArt;
+  return (fortSwordArt = { flat: bakeBladeArt(FORT_SWORD, FORT_SWORD_PAL), diag: bakeBladeArt(FORT_SWORD_DIAG, FORT_SWORD_PAL) });
+}
+HERO_BLADES.chain = { art: fortSwords, hip: { down: [13, 12], up: [11, 10] }, grip: FORT_GRIP };
 
 // ---- on her body ------------------------------------------------------------------
 function drawFortBody(p, ax, ay, now, front) {
