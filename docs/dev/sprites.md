@@ -25,9 +25,11 @@ stroke of 8 frames (the crank turns, the pitman rocks the beam, a glint runs dow
 barrel's gold bobs): planks, then stone flags with the team band and a pennant, then a gold beam,
 head and barrel. The team paint is `k`/`K`/`e`, baked inside `SPR.onTeams` into
 `teamBuild[team].pumpAnim[tier]`; frame 0 is `teamBuild[team].generator[tier]`, the still that
-`structSprite` hands every other reader. `pumpFrame` (js/draw/structs.js) picks the frame off the
-pump's `payT`, a whole number of `PUMP_STROKE` strokes to a payout, and `drawPumpCoin` hops a coin
-out of `SPRITES.pumpMouth[tier]` for `PUMP_HOP` s after each pay.
+`structSprite` hands every other reader. A pump nobody holds wears the same grids with the team
+paint in grey, baked once outside `onTeams` into `SPRITES.pumpNeutral` (`pumpAnim`, `generator`);
+`pumpSet` (js/draw/structs.js) picks the holder's set or that one. `pumpFrame` picks the frame off
+the pump's `payT`, a whole number of `PUMP_STROKE` strokes to a payout, and `drawPumpCoin` hops a
+coin out of `SPRITES.pumpMouth[tier]` for `PUMP_HOP` s after each pay.
 
 **The road tower** is a cut-stone tower with a gun deck and a great crossbow on a turntable,
 painted in code by `app/bake-tower/tower.py` with the cutout painter and baked by

@@ -47,6 +47,7 @@ if (PRACTICE) {
   placeCamps();      // worldgen's last pass, before the ground is baked: the camps clear their sites
   liftRocks();       // ...then genWorld's placeholder rocks come up again (world.js)
   placeLandmarks();  // ...and the story landmarks take their spots, on a stream of their own (landmarks.js)
+  placePumps();      // ...and the two gold pumps beside the top and bot lanes' middles, with no rng() (js/sim/pumps.js)
   spawnAnimals();
   spawnFish();
   spawnOrca();       // ...and the orca under its lake (js/sim/orca.js)
