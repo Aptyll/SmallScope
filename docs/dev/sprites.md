@@ -429,7 +429,7 @@ spread is `SL_FLARE` (7 / 7 / 9). `slingInk()` resolves a role against the tier'
 a row; adding a piece is adding one.
 
 Two knock-ons: the sprite is wider than its one-tile footprint, so the draw pass centres it (`sx`
-in the structure branch of `render()`); and a 32px sprite is too big for a radial-wheel segment, so
+in `drawStructObj`, js/draw/passes.js); and a 32px sprite is too big for a radial-wheel segment, so
 `turretIcon` (a 16×16 sling on a post, the same silhouette as the SLING a player carries) is baked
 into `teamBuild[team].icon.turret`, the same escape hatch the bay uses.
 
