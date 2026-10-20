@@ -78,6 +78,7 @@ function evPlay(ev) {
     case 'sfxp': if (a[1] === player.id) SFX[a[0]](a[2]); break;
     case 'sfxo': if (a[2] === player.id) SFX[a[0]](); else if (nearPlayer(a[3], a[4])) SFX[a[1]](); break;
     case 'shakep': if (a[0] === player.id || a[2] === player.id) state.shake = Math.max(state.shake, a[1]); break;
+    case 'ann': annTake({ k: a[0], n: a[1], a: a[2], at: a[3], bk: a[4], bv: a[5] }); break; // the announcer's call, for every side (js/ui/announcer.js)
     case 'call': addCallout(a[0], a[1], a[2], a[3], a[4], a[5], a[6]); break; // a bot's callout (js/ai/ai-callouts.js)
     case 'shake': if (nearPlayer(a[0], a[1], a[3])) state.shake = Math.max(state.shake, a[2]); break;
   }

@@ -12,7 +12,7 @@
 // and mirrored for BLUE (campSites), and nothing rolls. Terrain still comes
 // from the seed; a camp's footprint is cleared out of whatever grew there.
 //
-//   name/tag    what the maps and the arrival toast print
+//   name        what the M map prints (the minimap shows the glyph alone)
 //   r           footprint radius in tiles: the clearing, the props, and how
 //               close you must be to be "here" (campAt)
 //   mark/icon   map ink, and a glyph as rects in a 7x7 box (drawCampIcon)
@@ -60,7 +60,7 @@
 //           warren each side, halfway out along the treeline
 const CAMPS = {
   resource: {
-    name: 'WOLF DEN', tag: 'THE PACK PAYS IN GOLD',
+    name: 'WOLF DEN',
     r: 5, mark: '#d8c0c4',
     icon: [[2, 3, 3, 3], [1, 4, 5, 2], [0, 1, 1, 2], [2, 0, 1, 2], [4, 0, 1, 2], [6, 1, 1, 2]], // paw print
     kind: 'wolf', pop: 4, repop: 75, // about one lap of a side's two dens: a jungle route on the clock
@@ -68,7 +68,7 @@ const CAMPS = {
     spots: [[-2, -1], [2, -1], [-2, 2], [2, 2]],
   },
   buff: {
-    name: 'BLACK BEAR STONE', tag: 'THE BLACK BEAR FISHES HERE',
+    name: 'BLACK BEAR STONE',
     r: 4, mark: '#c2a6ff', river: 9,
     icon: [[3, 1, 1, 1], [2, 2, 3, 1], [1, 3, 5, 1], [2, 4, 3, 1], [3, 5, 1, 1]], // a cut stone
     kind: 'alpha', pop: 1, repop: 300,
@@ -76,7 +76,7 @@ const CAMPS = {
     spots: [],
   },
   epic: {
-    name: 'BROWN BEAR DEN', tag: 'THE BROWN BEAR FISHES HERE',
+    name: 'BROWN BEAR DEN',
     r: 6, mark: '#ffb04a', river: 9,
     icon: [[0, 0, 2, 2], [5, 0, 2, 2], [0, 1, 7, 2], [1, 3, 1, 1], [3, 3, 1, 1], [5, 3, 1, 1], [1, 4, 5, 1], [2, 5, 3, 1]], // a bear's head, the eyes left dark
     kind: 'dire', pop: 1, repop: 300,
@@ -84,7 +84,7 @@ const CAMPS = {
     spots: [],
   },
   hut: {
-    name: 'HOG HUT', tag: 'THE STOVE IS STILL WARM',
+    name: 'HOG HUT',
     r: 4, mark: '#c9925a', woods: true,
     icon: [[3, 0, 1, 1], [2, 1, 3, 1], [1, 2, 5, 1], [0, 3, 7, 1], [1, 4, 5, 1], [1, 5, 2, 2], [4, 5, 2, 2]], // a hut
     kind: null, pop: 0, repop: 0,
@@ -92,7 +92,7 @@ const CAMPS = {
     spots: [],
   },
   meadow: {
-    name: 'SNOWDROP WARREN', tag: 'A SNOWDROP SHIELDS YOUR SIDE',
+    name: 'SNOWDROP WARREN',
     r: 6, mark: '#e8eef8', treeline: true,
     icon: [[1, 0, 1, 3], [4, 0, 1, 3], [1, 3, 4, 3], [0, 4, 1, 2], [5, 4, 1, 2], [2, 6, 2, 1]], // a rabbit's head
     kind: 'rabbit', pop: 3, repop: 40,
@@ -267,7 +267,7 @@ function placeCamps() {
     const bad = spec.woods ? edge + spec.r + 2 > BORDER_MIN || edge < spec.r + 4
       : spec.treeline ? edge - spec.r - 2 < BORDER_MIN || edge > CAMP_EDGE : edge < CAMP_EDGE;
     if (bad) throw new Error('camp ' + site.key + (spec.woods ? ' not in the woods' : spec.treeline ? ' not on the treeline' : ' too near the edge'));
-    const C = { key: site.key, spec, name: spec.name, tag: spec.tag, tx: t.tx, ty: t.ty, r: spec.r, repopT: spec.repop };
+    const C = { key: site.key, spec, name: spec.name, tx: t.tx, ty: t.ty, r: spec.r, repopT: spec.repop };
     camps.push(C);
     if (spec.plan) layCampPlan(C);
     else clearCamp(C);

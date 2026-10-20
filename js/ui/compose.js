@@ -1,12 +1,8 @@
 'use strict';
 // renderUI: the frame's UI pass in order - what goes over the world while
-// you play, from the minimap to the day headline - and the F3 info stack.
+// you play, from the minimap to the announcer - and the F3 info stack.
 // Last of the HUD files.
 // ------------------------------------------------------------ renderUI
-// the day headline's bake: bare outlined text wants a fade, and an outline
-// stamped under globalAlpha goes blotchy (the CLAUDE.md text rule), so the
-// opaque stamp is baked once per day number and the CANVAS fades
-let dayPopCv = null, dayPopDay = 0;
 function renderUI(now) {
   if (state.mode === 'title' || state.mode === 'drop' || window.DBG.hideUI) return;
   drawNetLink(now); // a client's dropped link, or nothing (the `rooms` banner, menu.js)
@@ -86,49 +82,10 @@ function renderUI(now) {
   // like the feed.
   renderNotices();
 
-  // arriving at a camp announces it, top centre: the name big, its
-  // personality under it. Fades on the plate, so it uses the shadow font.
-  if (state.loc) {
-    const L = state.loc.L, t = state.loc.t;
-    const a = t < 0.25 ? t / 0.25 : t > 2.8 ? Math.max(0, 1 - (t - 2.8) / 0.7) : 1;
-    if (a > 0) {
-      const nw = pixelTextWidth(L.name, 2), tw = pixelTextWidth(L.tag);
-      const w = Math.max(nw, tw) + 26;
-      const bx = Math.round((VIEW_W - w) / 2), by = noteY();
-      ctx.globalAlpha = a;
-      ctx.fillStyle = 'rgba(12,18,42,0.72)';
-      ctx.fillRect(bx, by, w, 24);
-      ctx.fillStyle = L.spec.mark;
-      ctx.fillRect(bx, by, w, 1); ctx.fillRect(bx, by + 23, w, 1);
-      drawCampIcon(ctx, L, bx + 10, by + 12, L.spec.mark, '#0a0e23');
-      drawPixelTextShadow(ctx, L.name, Math.round((VIEW_W - nw) / 2) + 7, by + 4, '#f4f7ff', '#0a0e23', 2);
-      drawPixelTextShadow(ctx, L.tag, Math.round((VIEW_W - tw) / 2) + 7, by + 15, L.spec.mark, '#0a0e23');
-      ctx.globalAlpha = 1;
-    }
-  }
-
-  // a new day announces itself, top centre: DAY N at 2x, bare text, nothing
-  // else. It is the survival calendar a strategy is timed against ("push at
-  // day 2", "hole up for night 1"), so it headlines instead of riding the
-  // bottom message line. Drawn from the bake above so the outline survives
-  // the fade; steps under the location plate when both are up.
-  if (state.dayPop) {
-    const t = state.dayPop.t;
-    const a = t < 0.25 ? t / 0.25 : t > 2.8 ? Math.max(0, 1 - (t - 2.8) / 0.7) : 1;
-    if (a > 0) {
-      if (!dayPopCv || dayPopDay !== state.dayPop.day) {
-        const txt = 'DAY ' + state.dayPop.day;
-        dayPopCv = document.createElement('canvas');
-        dayPopCv.width = pixelTextWidth(txt, 2) + 4;
-        dayPopCv.height = 16;
-        drawPixelTextOutline(dayPopCv.getContext('2d'), txt, 2, 2, '#f4f7ff', '#0f1632', 2);
-        dayPopDay = state.dayPop.day;
-      }
-      ctx.globalAlpha = a;
-      ctx.drawImage(dayPopCv, Math.round((VIEW_W - dayPopCv.width) / 2), noteY() + (state.loc ? 30 : 0));
-      ctx.globalAlpha = 1;
-    }
-  }
+  // the announcer, top centre under the rail, and the kill feed under the
+  // news plates (js/ui/announcer.js): over the panels like the news, and up
+  // while you are down - a spectator is exactly who wants the calls
+  renderAnnouncer();
 
   // message
   if (state.msgT > 0 && state.msg) {

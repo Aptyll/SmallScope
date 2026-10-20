@@ -421,7 +421,7 @@ carries anything but a tile), regardless of how automatic the
 [world.md](world.md#camps) for the fields). The entry's shape:
 
 ```js
-shipwreck: { name, tag,           // what both maps and the arrival toast print
+shipwreck: { name,                // what the M map prints
              r, mark, icon,       // footprint radius in tiles; map ink; the glyph as [x,y,w,h] rects in a 7x7 box
              kind, pop, repop,    // the monster kind and how many; seconds after the last dies before all are back
              props, spots,        // [dx, dy, type, variant] to stamp (the 0,0 one is the anchor); [dx, dy] a monster stands on

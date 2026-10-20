@@ -259,6 +259,15 @@ function noteRect(k) {
   for (let j = 0; j < k; j++) y += notePitch(noteKindAt(j));
   return { x: MM_CX + MM_R - w, y, w, h: noteH(K) };
 }
+// Where the lane's plates end right now, for whatever hangs under them (the
+// kill feed, js/ui/announcer.js): the plates up and still holding, summed the
+// way noteRect sums them; a plate on its way out has given its room back.
+function noteLaneBottom() {
+  let y = MM_CY + MM_R + NOTE_GAP;
+  const n = Math.min(NOTE_MAX, notices.length);
+  for (let k = 0; k < n; k++) if (notices[notices.length - 1 - k].t < NOTE_LIFE - NOTE_OUT) y += notePitch(noteKindAt(k));
+  return y;
+}
 // The lane's floor: the top of the hud strip's xp numbers, at whatever size
 // its dial holds (hudSc). Three plates of a price's height never came near it, but the
 // stats sheet is five of them, so on a short view the lane can reach the

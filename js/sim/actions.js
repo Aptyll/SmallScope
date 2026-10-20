@@ -665,6 +665,7 @@ function hurtStruct(o, dmg, p, bot) {
     // the wreck pays out half of what was spent, straight to whoever broke it
     destroyStructure(o, true, p);
     if (p) logEvent(p.name + ' WRECKED A ' + name, p);
+    if (STRUCTS[o.type].call) callStruct(o, p); // the announcer's TOWER DESTROYED (the `calls` banner, js/sim/player.js)
   }
 }
 
