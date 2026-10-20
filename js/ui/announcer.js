@@ -87,8 +87,8 @@ function annSting(c) {
 
 // ---- the faces --------------------------------------------------------------
 // A square in the side's colour (1px), dusk inside (the HUD portrait's own
-// PORT_SKY/PORT_GROUND), and what it shows: a player's standing frame at 2x
-// (portraitSprite, js/ui/hud-draw.js), a tower glyph in its side's colour, a
+// PORT_SKY/PORT_GROUND), and what it shows: a player's face (drawFace,
+// js/ui/hud-draw.js, the team rail's too), a tower glyph in its side's colour, a
 // bear's camp glyph in the camp's colour, or for a side and no player, the
 // side's colour alone. `dim` darkens what was taken.
 function annSide(c, who) { return who === 'a' ? c.at : c.bk === 'p' ? players[c.bv].team : c.bk === 'beast' ? -1 : c.bv; }
@@ -99,13 +99,8 @@ function annFace(x, y, S, k, v, team, dim) {
   const fx = x + 1, fy = y + 1, fs = S - 2;
   ctx.fillStyle = k === 'side' || (k === 'p' && v < 0) ? TEAMS[skin(team)].coatD : PORT_SKY;
   ctx.fillRect(fx, fy, fs, fs);
-  if (k === 'p' && v >= 0) {
-    ctx.fillStyle = PORT_GROUND; ctx.fillRect(fx, fy + (fs >> 1) + 3, fs, fs - (fs >> 1) - 3);
-    const spr = portraitSprite(players[v]);
-    ctx.save(); ctx.beginPath(); ctx.rect(fx, fy, fs, fs); ctx.clip();
-    ctx.drawImage(spr, fx + ((fs - spr.width * 2) >> 1), fy + (fs >> 1) - 14, spr.width * 2, spr.height * 2);
-    ctx.restore();
-  } else if (k === 'tower') annGlyph(ANN_TOWER, TEAMS[skin(v)].mark, fx, fy, fs);
+  if (k === 'p' && v >= 0) drawFace(fx, fy, fs, players[v]);
+  else if (k === 'tower') annGlyph(ANN_TOWER, TEAMS[skin(v)].mark, fx, fy, fs);
   else if (k === 'beast') annGlyph(annCamp(v).icon, annCamp(v).mark, fx, fy, fs);
   if (dim) { ctx.fillStyle = ANN_DIM; ctx.fillRect(fx, fy, fs, fs); }
 }

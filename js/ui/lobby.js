@@ -354,15 +354,8 @@ function drawScoreFace(x, y, s, r) {
   const q = players[r.id];
   ctx.fillStyle = SC_INK; ctx.fillRect(x, y, s, s);
   ctx.fillStyle = r.you ? '#c89a3c' : SC_EDGE; ctx.fillRect(x + 1, y + 1, s - 2, s - 2);
-  ctx.fillStyle = PORT_SKY; ctx.fillRect(x + 2, y + 2, s - 4, s - 4);
-  const half = (s - 4) >> 1;
-  ctx.fillStyle = PORT_GROUND; ctx.fillRect(x + 2, y + 2 + half + 3, s - 4, s - 4 - half - 3);
-  if (q) {
-    const spr = portraitSprite(q), k = 2;
-    ctx.save(); ctx.beginPath(); ctx.rect(x + 2, y + 2, s - 4, s - 4); ctx.clip();
-    ctx.drawImage(spr, x + 2 + ((s - 4 - spr.width * k) >> 1), y + 2 + half - 14, spr.width * k, spr.height * k);
-    ctx.restore();
-  }
+  if (q) drawFace(x + 2, y + 2, s - 4, q);
+  else { ctx.fillStyle = PORT_SKY; ctx.fillRect(x + 2, y + 2, s - 4, s - 4); }
   ctx.fillStyle = TEAMS[skin(r.team)].mark; ctx.fillRect(x, y + s + 1, s, 1);
   const lv = String(r.level), bw = pixelTextWidth(lv) + 4;
   const lx = x + s - bw + 2, ly = y + s - 6;
