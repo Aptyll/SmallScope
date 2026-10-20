@@ -321,7 +321,7 @@ function drawPlayer(p, ex, ey, now) {
   const rl = rideLift(p) + (seat ? seat.lift : 0);
   let spr = set[frame];
   // the fish catch: three DOWN-facing frames whatever the body faces
-  // (catchFrame, js/sim/tools.js). The hoist frame is 20 tall on the same feet,
+  // (catchFrame, js/sim/attack.js). The hoist frame is 20 tall on the same feet,
   // which is what `sy` below pays for
   const catchF = !lying && p.fallT <= 0 && p.dodgeT <= 0 ? catchFrame(p) : -1;
   if (catchF >= 0) { const cs = classSet(p); spr = (p.catchKind === 'sunfish' && cs.catchSun || cs.catch)[catchF]; }
@@ -608,13 +608,13 @@ function drawPlayer(p, ex, ey, now) {
     // hands over to the next.
     if (p.eatT > 0 || p.recallT > 0 || p.charging || p.nockT > 0 || p.readyFlash > 0) {
       const eating = p.eatT > 0, drawing = p.charging, home = !eating && p.recallT > 0;
-      // the reload divides by toolCycle - the same span the well's wipe and the
-      // reticle's marks read - so the slate fill starts at zero the frame the
+      // the reload divides by attackCycle - the same span the reticle's marks
+      // read - so the slate fill starts at zero the frame the
       // shot leaves (dividing by the bare kit.nock sat it at 1 px for half the cycle)
       const frac = eating ? 1 - p.eatT / FOOD_EAT
         : home ? 1 - p.recallT / RECALL_T
         : drawing ? drawPow(p)
-        : p.readyFlash > 0 ? 1 : 1 - p.nockT / Math.max(0.01, toolCycle(p));
+        : p.readyFlash > 0 ? 1 : 1 - p.nockT / Math.max(0.01, attackCycle(p));
       const x = fx - 7, y = hy - 10 - lift;
       ctx.fillStyle = BAR_FRAME;
       ctx.fillRect(x - 1, y - 1, 16, 3); // rows above the hp backing only
@@ -768,20 +768,20 @@ function drawGhost(p, ex, ey) {
   ctx.globalAlpha = 1;
 }
 
-// the held tool, drawn on a player: carried at the hand while idle or
+// the hero's weapon, drawn on a player: carried at the hand while idle or
 // walking, swept along the arc during a melee swing, aimed at that player's
 // aim point while the bow is drawn. px/py are the sprite's top-left on screen.
 function drawHeldTool(p, px, py) {
   const t = SWING_TOOLS[p.swing];
-  // At rest the hands hold the WEAPON on the selected slot, whose art carries
-  // its own tier colour - so what somebody is carrying reads off their sprite
-  // from across the snow, and an empty slot reads as empty hands. Mid-swing
-  // (axe, pick) the swing tool's own 8x8 icon sweeps - and a draw running at
-  // the same time (an auto swing, autoWork, chops under a draw) puts BOTH up:
-  // one hand sweeps the axe, the other holds the drawn weapon on the aim.
-  const weapon = heldTool(p);
-  const wIcon = weapon ? SPRITES[ITEMS[weapon.type].icon] : null;
-  const drawing = p.charging && !!wIcon;
+  // At rest the hands hold the hero's WEAPON (its basic attack's `art`,
+  // SPRITES.weaponArt, js/sprites/weapons.js), so what somebody fights with
+  // reads off their sprite from across the snow. Mid-swing (axe, pick) the
+  // swing tool's own 8x8 icon sweeps - and a draw running at the same time
+  // (an auto swing, autoWork, chops under a draw) puts BOTH up: one hand
+  // sweeps the axe, the other holds the drawn weapon on the aim.
+  const A = attackOf(p), cut = A.cut;
+  const wIcon = SPRITES.weaponArt[A.art];
+  const drawing = p.charging;
   const swinging = t.key !== 'bow' && p.swingT > 0;
   const cxp = px + 8, cyp = py + 10; // roughly the hands
 
@@ -798,20 +798,19 @@ function drawHeldTool(p, px, py) {
     ctx.restore();
   }
 
-  // the weapon's art points its business end along TOOL_FWD (js/sim/tools.js);
-  // rotating by the aim (or the facing) minus that puts the arrowhead, the
-  // sword's point or the sling's stone toward where its owner is looking
-  const wDef = weapon ? TOOLS[toolIdOf(weapon.type)] : null;
-  const fwd = wDef ? TOOL_FWD[wDef.art] || 0 : 0;
-  // the blade at its real length, where the art has one (TOOL_HELD_ART,
-  // js/sim/tools.js); everything else is its bag icon
-  const wHeld = wDef ? heroBlade(p, wDef) || SPRITES['toolHeld_' + wDef.art + '_' + wDef.tier] || wIcon : null; // a hero's own blade first (js/draw/heroes.js)
+  // the weapon's art points its business end along WEAPON_FWD
+  // (js/sprites/weapons.js); rotating by the aim (or the facing) minus that
+  // puts the arrowhead or the sword's point toward where its owner is looking
+  const fwd = WEAPON_FWD[A.art] || 0;
+  // the blade at its real length, where the art has one (SPRITES.weaponHeld);
+  // a hero's own blade first (js/draw/heroes.js)
+  const wHeld = heroBlade(p) || SPRITES.weaponHeld[A.art] || wIcon;
 
   // THE SWING: a blade mid-cut is swung through its whole wedge, pivoting at
   // the hands - the sword itself at the sweep's edge with two ghosts of it
   // trailing, so the arc the cut took is read off the weapon and not only off
   // the snow. Over everything, whichever way the body faces.
-  if (p.slashT > 0 && wDef && wDef.melee && wHeld) {
+  if (p.slashT > 0 && cut) {
     const half = wHeld.width >> 1;
     const prog = 1 - p.slashT / SLASH_T;
     const sw = Math.min(1, prog / 0.7); // the blade crosses in the first 70%, then hangs at the end of the arc
@@ -833,12 +832,12 @@ function drawHeldTool(p, px, py) {
   // leave is the thing to read. A blade is drawn back to the START of its
   // arc, wound up, so the draw reads as the swing it is about to be.
   if (drawing) {
-    const spr = wDef.melee ? wHeld : wIcon;
+    const spr = cut ? wHeld : wIcon;
     const half = spr.width >> 1;
     const a = Math.atan2(p.input.aimY - (p.y - BOW_Y), p.input.aimX - p.x);
-    const t = wDef.melee ? a - wDef.melee.half * (0.4 + 0.6 * drawPow(p)) : a;
+    const t = cut ? a - cut.half * (0.4 + 0.6 * drawPow(p)) : a;
     ctx.save();
-    ctx.translate(Math.round(cxp + Math.cos(t) * (wDef.melee ? 4 : 8)), Math.round(cyp - 2 + Math.sin(t) * (wDef.melee ? 3 : 8)));
+    ctx.translate(Math.round(cxp + Math.cos(t) * (cut ? 4 : 8)), Math.round(cyp - 2 + Math.sin(t) * (cut ? 3 : 8)));
     ctx.rotate(t - fwd);
     ctx.drawImage(spr, -half, -half);
     ctx.restore();

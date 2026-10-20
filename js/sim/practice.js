@@ -7,8 +7,7 @@
 // to pure combat. The practice world itself is SMALL - WORLD is 76 under
 // PRACTICE (js/sim/core.js) - so the forest is a collar, not a wilderness. In the
 // middle of the field: one dummy standing in the open snow, spawn just
-// south of it, and the range BELL and bow rack flanking the dummy on its own
-// row - bell west, rack east, mirrored about its axis.
+// south of it, and the range BELL west of the dummy on its own row.
 // The archery targets all ride one TWO-RAIL TRACK around the
 // field's perimeter - stills, movers and pop-ups on trolleys, movers hopping
 // lanes around anything in their way - shoot them from anywhere, roll
@@ -40,7 +39,7 @@ const PR_W = 40, PR_H = 23;                      // the open field, in tiles
 const PR_RING = 76;
 const PR_OX = (WORLD - PR_RING) >> 1, PR_OY = 0;
 const PR_X0 = PR_OX + ((PR_RING - PR_W) >> 1), PR_Y0 = PR_OY + ((PR_RING - PR_H) >> 1);
-const PR_SPAWN = { tx: PR_X0 + 20, ty: PR_Y0 + 17 }; // south of the rack, facing it and the dummy behind
+const PR_SPAWN = { tx: PR_X0 + 20, ty: PR_Y0 + 17 }; // south of the dummy, facing it
 // who stands on the field: a person on the spawn tile (separateUnits eases
 // a party apart), every empty seat parked deep in the corner forest, far
 // outside the arena, so no ghost silhouette wanders into a capture
@@ -217,7 +216,7 @@ function agShatter(t) {
 // (AG_WEDGES: RANGE, QUICK DRAW, DEFEND), each in its own mark with its best
 // medal, the last-rung one wearing a gold frame. Releasing on a
 // wedge IS the ring (agRing, through the same input.cmd -> runCmd path every
-// order takes): the stock roster bursts away, the dummy, the rack AND THE
+// order takes): the stock roster bursts away, the dummy AND THE
 // BELL ITSELF sink under the snow (their objects leave the grid at full
 // depth, so nothing blocks a shot or a runner - which is also why a running
 // round cannot be rung off: the timer alone ends it), a 3-2-1 countdown
@@ -235,7 +234,7 @@ function agShatter(t) {
 // js/draw-world.js.
 const AG_T = 30;         // s a round runs
 const AG_COUNT_T = 3;    // the countdown, one tick per second
-const AG_SINK_T = 0.9;   // s the dummy, rack and bell take to sink / rise
+const AG_SINK_T = 0.9;   // s the dummy and bell take to sink / rise
 const AG_END_T = 2.4;    // s the final score stands before the field resets
 const AG_BELL = { tx: PR_X0 + 15, ty: PR_Y0 + 12 }; // the bell, west of the dummy on its own row
 // one spawn table per difficulty, which the range climbs: spd = the
@@ -453,7 +452,7 @@ const agame = { phase: 'off', t: 0, score: 0, hits: 0, last: 0, lastHits: 0,
   best: 0, record: false, diff: 'medium', mode: 'range', pid: 0, left: 0, bests: {}, spawnT: 0, tick: 0, dustT: 0,
   lives: 0, hurtT: 0, dfGap: 0, lastLine: '', lastMedal: 0 }; // DEFEND's: lives left, the plate's red flash, the raiders' spacing
 let agBellObj = null;    // the bell object, for its ring animation
-let agFurniture = [];    // the dummy + rack + bell objects the round sinks away
+let agFurniture = [];    // the dummy + bell objects the round sinks away
 // the consecutive-hit run: every arrow into a face extends it, minigame or
 // not, and any practice arrow that ends without striking a face breaks it
 // (the arrow loop, js/sim/sim.js). The hit popup carries it from the second hit
@@ -487,7 +486,7 @@ function agBlocked(lane, s, r, skip) {
 }
 
 // how deep the furniture is right now: 0 standing, 1 under the snow - the
-// dummy and rack draw branches (js/render.js) crop and drop their sprites by
+// dummy and bell draw branches (js/draw/passes.js) crop and drop their sprites by
 // it, so the whole sink is one number and no second animation state
 function agSinkU() {
   if (agame.phase === 'sink') return Math.min(1, agame.t / AG_SINK_T);
@@ -683,7 +682,7 @@ const parkour = { on: false, t: 0, cp: false, wasLine: false, offT: 0, last: 0, 
 
 // ---- the roll station: one die, one held wheel ---------------------------
 // A die on a pedestal in a felled nook off the walk rerolls the loop: HOLD E
-// beside it (pkDieNear - the armory rack's own proximity gesture, wired in
+// beside it (pkDieNear - the bell's own proximity gesture, wired in
 // js/app/input.js and hinted by drawPkHint, js/ui.js) and a three-wedge radial
 // wheel opens - one wedge per difficulty, each drawn as that difficulty's
 // coloured die. Releasing on a wedge IS the roll: it carves a fresh track at
@@ -722,25 +721,6 @@ const PK_ANIM_CAP = 48;        // max tile events spent per frame (dt-spike guar
 // trail is what the front's sparkle plume rides, so the sweep stays visible
 // even where the old and new track share tiles and no event fires
 let pkAnim = null;
-
-// The rack is the practice armory: right-clicking either of its tiles opens
-// a radial wheel of every tool in the game (kind 'rack' - input.js opens it,
-// wheelOptions/renderWheel list and draw it, and the pick lands here through
-// the same input.cmd -> runCmd path a build order takes). The selected slot
-// becomes a fresh instance of the picked tool with a plain arrow seated, so
-// it fires the moment it is taken. PRACTICE-gated: a rack in a match world
-// must never be a free-weapons kiosk.
-function rackEquip(p, c) {
-  if (!PRACTICE) return;
-  const o = objAt(c.tx, c.ty);
-  if (!o || o.type !== 'rack' || !TOOLS[c.id]) return;
-  if (Math.hypot(c.tx * TILE + 8 - p.x, c.ty * TILE + 8 - p.y) > 60) return;
-  const cell = makeTool(c.id);
-  cell.bits[0] = 'arrow';
-  p.tools[p.toolSel] = cell;
-  burst(p.x, p.y - 8, '#e8dcb4', 6, 40, 0.4, true);
-  sfxAt('place', p.x, p.y);
-}
 
 // ---- the practice bar: League's practice-tool cheats -----------------------
 // The column of buttons down the left edge (js/ui/cheats.js) sends each press
@@ -838,18 +818,6 @@ function cheatDummyGone(o) {
   burst(o.tx * TILE + 8, o.ty * TILE - 4, '#e0c890', 6, 40, 0.4, true);
 }
 
-// the rack the player is standing at - Chebyshev 1 of any of its tiles, E's
-// own WORK_REACH - resolved to its lead. What the E ARM prompt, the E-opens
-// gesture and the hover brackets all agree on.
-function rackNear(p) {
-  const ptx = Math.floor(p.x / TILE), pty = Math.floor(p.y / TILE);
-  for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
-    const o = objAt(ptx + dx, pty + dy);
-    if (o && o.type === 'rack') return o.lead ? o : objAt(o.tx - 1, o.ty);
-  }
-  return null;
-}
-
 function genPracticeWorld() {
   const ax = PR_X0, ay = PR_Y0;
   // solid forest everywhere, then the field carved out of it - the whole
@@ -862,24 +830,17 @@ function genPracticeWorld() {
       placeObj(tx, ty, 'tree', { hp: TREE_HP, variant: randi(0, 1), rare: treeRare(tx, ty) });
     }
   }
-  // ---- the dummy in the open snow, the armory rack squared under it ------
+  // ---- the dummy in the open snow ---------------------------------------
   const put = (tx, ty, type, extra) => { if (!objects[idx(ax + tx, ay + ty)]) return placeObj(ax + tx, ay + ty, type, extra); return null; };
   const d = put(20, 12, 'dummy', { hp: DUMMY_HP, maxHp: DUMMY_HP, hitT: 99,
     mLast: 0, mTotal: 0, mT0: 0, mT1: 0 }); // the meter's combo ledger
   if (d) practiceDummies.push(d);
-  // the bell and the rack FLANK the dummy on its own row, mirrored about its
-  // axis in the open snow, five tiles out each way. A two-tile pair can only
-  // centre on a tile boundary,
-  // so the rack sits at (25,12)-(26,12) and `dx` nudges the drawn sprite
-  // (and its brackets and prompt) 8px left, landing its visual centre
-  // exactly opposite the bell's - the tiles stay honest, the picture mirrors
-  const rk1 = put(25, 12, 'rack', { lead: true, dx: -8 }), rk2 = put(26, 12, 'rack', {});
-  // ---- the range bell, the rack's western mirror -------------------------
+  // ---- the range bell, five tiles west of the dummy on its row ----------
   agBellObj = put(15, 12, 'agbell', { ring: 0 });
   // the archery round sinks exactly these under the snow - the bell
   // included, which is why a running round cannot be rung off - and
   // agEndRound raises the same instances back
-  agFurniture = [d, rk1, rk2, agBellObj].filter(Boolean);
+  agFurniture = [d, agBellObj].filter(Boolean);
   // ---- the targets: the free-practice roster, out on the perimeter track -
   agStock(true);
   // ---- the ice parkour: the gate walk, the carved loop, the flags --------
@@ -1188,7 +1149,7 @@ function pkDieNear(p) {
 // a pick released off the die's wheel, through the same input.cmd -> runCmd
 // path every wheel uses: the wedge IS the roll - picking a difficulty carves
 // a fresh track at it, and the die recolours to match. PRACTICE-gated like
-// rackEquip, and pkRoll itself refuses a roll while a sweep is out.
+// cheatCmd, and pkRoll itself refuses a roll while a sweep is out.
 function pkWheelPick(p, c) {
   if (!PRACTICE || !PK_DIFF[c.id]) return;
   if (Math.hypot(c.tx * TILE + 8 - p.x, c.ty * TILE + 8 - p.y) > 60) return;

@@ -109,19 +109,11 @@ function foodPrice(type) {
 }
 // what one of a kind costs at the counter
 function itemValue(type) {
-  const t = toolIdOf(type); if (t) return TOOLS[t].price;
-  const b = bitIdOf(type); if (b) return BITS[b].price;
   if (isFood(type)) return foodPrice(type);
   return (ITEMS[type] && ITEMS[type].price) || 0; // a kind priced on its own ITEMS row (an ore, js/sim/mining.js)
 }
-// a whole bag cell at asking price - a tool carries its loaded bits, and they
-// are worth what they are worth, so a loaded weapon is never sold as an empty one
-function cellValue(s) {
-  if (!s) return 0;
-  let v = itemValue(s.type) * s.n;
-  if (s.bits) for (const b of s.bits) if (b) v += BITS[b].price;
-  return v;
-}
+// a whole bag cell at asking price
+function cellValue(s) { return s ? itemValue(s.type) * s.n : 0; }
 // ...and what the merchant hands over for it
 function sellValue(s) {
   if (!s) return 0;
@@ -133,8 +125,7 @@ function sellValue(s) {
 function shopDeny(p) { sfxFor(p, 'deny'); }
 function shopNoRoom(p) { if (p === player) bagDenied(); }
 
-// A bag cell over the counter. The whole cell goes - an instanced tool cannot
-// be split - and the gold is a TRADE, not a payout: see tradeGold
+// A bag cell over the counter. The whole cell goes, and the gold is a TRADE, not a payout: see tradeGold
 // (js/sim/player.js) for why a sale earns no levels. Returns the gold paid.
 function shopSell(p, s) {
   if (!s || !merchNear(p)) { shopDeny(p); return 0; }
@@ -211,8 +202,7 @@ function shopCmd(p, c) {
 // item without that stat rather than hiding it, so nothing on the grid moves.
 // Anything in the pack sells by being dragged onto the panel.
 //
-// It is pinned BESIDE the top-left corner, where the weapon shelf and the
-// pack drawer stand (a sale is a drag out of that drawer), and near the top
+// It is pinned BESIDE the top-left corner, where the pack drawer stands (a sale is a drag out of that drawer), and near the top
 // edge, clear of the bottom-left corner the tooltip grows up out of.
 const SHOP_W = 344, SHOP_H = 206, SHOP_Y = 4;
 const SHOP_CORNER_GAP = 6; // frame left between the corner widget and the slab
@@ -269,8 +259,8 @@ function shopFiltered(id) {
 }
 
 // The whole geometry in one place. WHERE IT STANDS is one rule: A COUNTER MAY
-// NOT STAND ON THE PACK IT IS SOLD OUT OF. The weapon shelf and the pack drawer
-// are in the top-left (cornerClaim / cornerBottom, js/ui/strip.js), so the slab
+// NOT STAND ON THE PACK IT IS SOLD OUT OF. The pack drawer is in the top-left
+// (cornerClaim / cornerBottom, js/ui/bag.js), so the slab
 // takes the room BESIDE the corner where there is one (keeping the centre when
 // the view is wide enough), the room UNDER it on a tall narrow frame - as long
 // as that stays clear of the deepest tooltip - and otherwise stops at the
@@ -406,7 +396,7 @@ function shopItemWell(r, id, h, price) {
   const dear = price !== undefined && price > player.inv.gold;
   const hot = !!h && h.kind === 'pick' && h.id === id;
   const pick = shopPicked().slot < 0 && shopPicked().id === id;
-  const rim = pick ? SHOP_PICK : hot ? SHOP_HOT : dear ? SHOP_DEAR_RIM : TOOL_TIERS[isPart(id) ? 0 : 2].rim;
+  const rim = pick ? SHOP_PICK : hot ? SHOP_HOT : dear ? SHOP_DEAR_RIM : itemMetal(id).rim;
   shopWell(r, rim);
   shopIcon(itemIcon(id), r);
   if (dear || shopFiltered(id)) { ctx.fillStyle = SHOP_DEAR_WASH; ctx.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2); }
@@ -448,8 +438,8 @@ function drawShopPanel(now) {
 // The category plates: ALL, then one a stat, each that stat's own picture.
 // The picked one is rimmed lit; picking it again clears the filter.
 function drawShopCats(L, h) {
-  const icons = { dmg: SPRITES.bitArt_barb, hp: SPRITES.heartFull, armor: SPRITES.gearIcons[1][1][1],
-    as: SPRITES.toolArt_bow_0, ms: SPRITES.gearIcons[3][0][1] };
+  const icons = { dmg: SPRITES.itemArt_flint, hp: SPRITES.heartFull, armor: SPRITES.gearIcons[1][1][1],
+    as: SPRITES.weaponArt.bow, ms: SPRITES.gearIcons[3][0][1] };
   for (const r of L.cats) {
     const on = (state.shopCat === undefined ? -1 : state.shopCat) === r.c;
     const hot = !!h && h.kind === 'cat' && h.c === r.c;
@@ -471,7 +461,7 @@ function drawShopPane(L, h) {
   const R = L.pane, pk = shopPicked(), it = BUILD_ITEMS[pk.id];
   shopWell(R, HUD_EDGE, SHOP_PANE_BG);
   const big = { x: R.x + 5, y: R.y + 5, w: 28, h: 28 };
-  shopWell(big, TOOL_TIERS[isPart(pk.id) ? 0 : 2].rim);
+  shopWell(big, itemMetal(pk.id).rim);
   shopIcon(itemIcon(pk.id), big);
   drawPixelText(ctx, it.name, R.x + 38, R.y + 7, SHOP_INK);
   shopPrice(it.price, R.x + 38, R.y + 19);
@@ -513,7 +503,7 @@ function drawShopPane(L, h) {
     const i = r.id !== pk.id && isPart(r.id) ? held.indexOf(r.id) : -1;
     if (i >= 0) held[i] = null;
     const hot2 = !!h && h.kind === 'pick' && h.id === r.id;
-    shopWell(r, i >= 0 ? SHOP_STAT : hot2 ? SHOP_HOT : TOOL_TIERS[isPart(r.id) ? 0 : 2].rim);
+    shopWell(r, i >= 0 ? SHOP_STAT : hot2 ? SHOP_HOT : itemMetal(r.id).rim);
     shopIcon(itemIcon(r.id), r);
     if (i >= 0) { ctx.fillStyle = SHOP_STAT; ctx.fillRect(r.x + r.w - 4, r.y + 1, 3, 3); }
     else if (r.id !== pk.id) shopPrice(BUILD_ITEMS[r.id].price, r.x, r.y + r.h + 4, BUILD_ITEMS[r.id].price > player.inv.gold);
@@ -526,7 +516,7 @@ function drawShopSlots(L, h) {
   for (const r of L.slots) {
     const id = player.items[r.i];
     const hot = !!h && h.kind === 'slot' && h.i === r.i && id;
-    shopWell(r, state.shopSlot === r.i && id ? SHOP_PICK : hot ? SHOP_HOT : id ? TOOL_TIERS[isPart(id) ? 0 : 2].rim : SHOP_RIM);
+    shopWell(r, state.shopSlot === r.i && id ? SHOP_PICK : hot ? SHOP_HOT : id ? itemMetal(id).rim : SHOP_RIM);
     if (id) shopIcon(itemIcon(id), r);
   }
 }
@@ -573,8 +563,8 @@ function tipShop(h) {
 // one item: its stats, its passive, and what it costs you now
 function tipItem(id, cost) {
   const it = BUILD_ITEMS[id];
-  const d = { title: it.name, tcol: isPart(id) ? TOOL_TIERS[0].ink : TOOL_TIERS[2].ink, kind: isPart(id) ? 'PART' : 'ITEM',
-    rows: [], notes: [], icon: itemIcon(id), plate: BAG_WELL, rim: TOOL_TIERS[isPart(id) ? 0 : 2].rim };
+  const d = { title: it.name, tcol: itemMetal(id).ink, kind: isPart(id) ? 'PART' : 'ITEM',
+    rows: [], notes: [], icon: itemIcon(id), plate: BAG_WELL, rim: itemMetal(id).rim };
   if (cost !== undefined) d.rows.push(['PRICE', cost + ' GOLD', cost <= player.inv.gold ? RES_COLORS.gold : SHOP_DEAR_INK]);
   for (const s of ITEM_STAT_ORDER) if (s in it.stats) d.rows.push([ITEM_STATS[s].label, ITEM_STATS[s].fmt(it.stats[s]), SHOP_STAT]);
   if (it.passive) {

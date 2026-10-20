@@ -78,9 +78,6 @@ function botNearSide(p, x, y) {
   }
   return false;
 }
-function botToolOf(c) {
-  return c ? { type: c.type, bits: c.bits.map((b) => (b ? (b.type || b) : null)) } : null;
-}
 // a body's hero stats as the panel reads them, buffs on, keyed as STATS
 function botStats(p) { const o = {}; for (const s of STATS) o[s.key] = Math.round(statShown(p, s.key) * 100) / 100; return o; }
 function botObserve(p) {
@@ -93,8 +90,7 @@ function botObserve(p) {
     stats: botStats(p), // the seven hero stats, the numbers the HUD's panel prints (js/sim/stats.js)
     prone: !!p.prone, hide: botR(p.hide || 0), aboard: !!p.aboard, falling: p.dropT > 0, zip: p.zip,
     abilities: p.abLv.map((lv, i) => botAbility(p, i, lv)),
-    tool: botToolOf(heldTool(p)), toolSel: p.toolSel,
-    tools: (p.tools || []).map((c) => (c ? c.type : null)),
+    attack: attackOf(p).cut ? 'cut' : 'shot', // the basic attack: a blade's wedge or a bow's shot (js/sim/attack.js)
     bag: p.bag.map((s) => (s ? { type: s.type, n: s.n } : null)),
     food: Object.assign({}, p.food),
     charging: !!p.charging, chargeT: botR(p.chargeT),

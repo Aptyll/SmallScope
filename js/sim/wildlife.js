@@ -166,8 +166,7 @@ function makeAnimal(kind, x, y) {
 // the body an arrow (and the aim line) tests against. Birds ride their alt
 // and are a smaller mark - that is most of what makes them a hard shot.
 // The disc is animalHitR round (a.x, animalHitY): the arrow loop sweeps a
-// shot's whole step against it (sweepDisc, js/sim/sim.js), widened by the shot's
-// own `reach` (the fist, the axe; js/sim/tools.js); the aim line asks animalHit.
+// shot's whole step against it (sweepDisc, js/sim/sim.js); the aim line asks animalHit.
 // The stag stands twice a player's height (its 38 px cell, js/sprites/beasts.js),
 // and a bear is wider still (its 112x76 frame, js/baked/bears.js), so their
 // discs are wider and sit up on the flank.

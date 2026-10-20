@@ -48,7 +48,7 @@ ten-player `Player` array, the input struct and the bot brain are what keep the 
 
 - **The step is fixed.** `loop()` (js/app/boot.js) banks the frame's time and hands `update(TICK_DT)`
   zero or more times per frame (`TICK_DT = 1/60`, at most `TICK_MAX` steps), then `render()` once.
-  It is 1/60 because `TOOL_ROF_STEP` counts rate of fire in 1/60 steps and every integrator was
+  It is 1/60 because the attack cycles were counted in 1/60 steps and every integrator was
   tuned there; a coarser network tick is a snapshot cadence (`SNAP_EVERY`), never a sim one.
   Practice and the title step the same way. The leftover fraction is banked, and only the drop is
   drawn in between steps (`tweenIn`: the camera, both birds, riders and fallers, restored by

@@ -63,7 +63,7 @@ without a walker). It is hurt, upgraded and wrecked like a wall, and laid one at
 
 **Managing is E.** Holding E beside one of your own buildings (`manageNear`: the one
 under the aim in reach, else the nearest in reach; never the barracks, which is `fixed`) opens
-the **manage wheel** on the practice rack's grammar — upgrade straight up, **repair** between,
+the **manage wheel** on the parkour die's grammar — upgrade straight up, **repair** between,
 demolish last — and the release takes. A **site still going up** offers the demolish alone (the
 wheel's `site`, fixed when it opens so the wedges never shift under the pointer). This list is
 *not* generic over a table (`wheelOptions()` hand-builds it). **Repair** (`startRepair`) pays
@@ -96,10 +96,10 @@ are the two gold sinks.
 
 Mechanics (the wheel in [js/ui/wheel.js](../../../js/ui/wheel.js), the buildings in [structures.js](../../../js/sim/structures.js)):
 
-- `state.wheel` (`{kind:'build'|'manage'|'flag'|'rack'|'pkdie'|'agbell', tx, ty, seg, ax, ay}`, plus
+- `state.wheel` (`{kind:'build'|'manage'|'flag'|'pkdie'|'agbell', tx, ty, seg, ax, ay}`, plus
   `sx`/`sy` on a flag wheel opened over the chart) is the open wheel — `'flag'` is the
-  [flag wheel](team-flags.md), `'rack'` is the practice armory, `'pkdie'` the parkour roll die and `'agbell'` the archery
-  range's bell, all three opened by holding **E**
+  [flag wheel](team-flags.md), `'pkdie'` the parkour roll die and `'agbell'` the archery
+  range's bell, both opened by holding **E**
   beside them and resolved on its release
   ([world.md](../world.md#the-practice-arena)); ESC/M/settings/death
   close it, a left-click cancels it, and the game **keeps running** — opening the
@@ -181,7 +181,7 @@ Mechanics (the wheel in [js/ui/wheel.js](../../../js/ui/wheel.js), the buildings
   **The throw is solved, once, by `turretLaunch(pv, ax, ay)`**: the velocity that carries a rock
   from the pivot onto the aim point at `ROCK_SPD` (190 px/s over the ground) while `ROCK_FALL`
   (240 px/s²) pulls it down, the seconds that takes, and the bearing it leaves on. The flight is an
-  exact parabola — no drag, one constant sag (the `sling` [path](tools-and-bits/flight-paths.md)) — so **its life IS
+  exact parabola — no drag, one constant sag (the `sling` path, [a shot in flight](the-basic-attack.md#a-shot-in-flight)) — so **its life IS
   its time of flight**, and a rock that runs out of life has *arrived*. The sag is slight and grows
   with the range: ~3 px off the chord at 64, ~12 px at 124.
 
@@ -245,16 +245,14 @@ Mechanics (the wheel in [js/ui/wheel.js](../../../js/ui/wheel.js), the buildings
   drift apart. Four things reach it:
   - the **E swing**, `hitObject()`'s structure branch, **contested** with everything else E does
     (it runs inside `swingHit`'s `contest('work:' + idx)`);
-  - **every bit a tool fires**, in the arrow update's solid-tile branch (js/sim/sim.js): a shot
+  - **every arrow**, in the arrow update's solid-tile branch (js/sim/sim.js): a shot
     that dies on a wall sieges it first — anywhere on the building's drawn shape, the turret's
-    turntable included ([the sweep](tools-and-bits/flight-paths.md), `structShotBox`). A bit whose `solid` is `false`
-    (the care arrow, the wisp, the hook) passes through buildings without touching them — that
-    is the trade for passing walls, and it needs no second flag;
+    turntable included ([the sweep](the-basic-attack.md#a-shot-in-flight), `structShotBox`);
   - a **turret's rock LANDING** (`rockLands`, js/sim/structures.js), which is how a piece that flies
     over the world reaches a building at all — see [Turret](../gameplay.md#the-buildings) above;
   - the **abilities**: the stomp's ring, the shield's slam and the execute (their wedge, through
     `structsInCone`), the charge's slam into whatever it was driven into, the net, and the
-    piercing shot, which rides the arrows array like any bit — and the sword's cut, whose wedge
+    piercing shot, which rides the arrows array like any arrow — and a blade's cut, whose wedge
     reaches a wall the same way;
   - a **worker or soldier bot's axe** on a siege flag (`robotStrike`).
 

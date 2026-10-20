@@ -114,7 +114,7 @@
 
   // ---------------------------------------------------------------- the fish catch
   // Three DOWN-facing frames the catch plays through whichever way the body
-  // faces (catchFrame, js/sim/tools.js; drawn by drawPlayer): a STOOP to the hole,
+  // faces (catchFrame, js/sim/attack.js; drawn by drawPlayer): a STOOP to the hole,
   // the fish HAULED up tail-first with the water flying off it, and the trophy
   // HOIST - both arms straight up, the fish flat above the hat - which is why
   // the hold frame is 16x20 and draws four rows higher on the same feet. Look

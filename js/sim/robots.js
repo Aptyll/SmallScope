@@ -41,8 +41,7 @@ function makeRobot(sp) {
 
 // A worker is a 12x10 body standing on its treads at b.y + 4, so the disc a
 // shot lands in is centred a pixel above the anchor. The arrow loop sweeps a
-// shot's step against it (sweepDisc, js/sim/sim.js), widened by the shot's own
-// `reach` (the fist, the axe; js/sim/tools.js).
+// shot's step against it (sweepDisc, js/sim/sim.js).
 const ROBOT_HIT_R = 7;
 function robotHitY(b) { return b.y - 1; }
 

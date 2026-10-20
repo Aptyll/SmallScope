@@ -5,7 +5,7 @@ kit and adds the bonus fields (`add`, the [hero stat](hero-stats.md) bonus bag, 
 `foodMul`, `nightHeal`, `harvestMul`, `dodgeCd`, `stealth`, `ambushMul` and the item passives'
 fields), then every [card](roguelike-cards.md) in `p.cards` and the six item slots (`itemMods`,
 js/sim/items.js; see [the items](the-merchants-counter.md#the-items)) write into it. `kitOf(p)` returns that cache, so
-every kit read site (movement, `emitBit`, dodge timing, the AI, the draw meter) picks a card or
+every kit read site (movement, `attackDmg`, dodge timing, the AI, the draw meter) picks a card or
 an item up without knowing it exists. Sites that read the bonus fields: `statOf` (`add`),
 `updateEat`'s landing and the daylight regen (`foodMul`/`nightHeal`), `hitObject`'s fell/break
 payouts (`harvestMul`), `animalDies` (`huntMul`, paid to `a.lastHit`, stamped by the arrow loop),

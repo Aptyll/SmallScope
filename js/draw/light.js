@@ -11,8 +11,8 @@
 // There is no darkness-and-lamps model any more. Nothing punches a hole in a
 // dark overlay, and the player carries no personal glow: NIGHT IS A COLOUR.
 // A blue multiply cools and darkens the whole frame, the field stays readable
-// at midnight, and the two things that still glow - a shot with a `lit` bit
-// in it, and a warren's open snowdrop - read as warm against the blue
+// at midnight, and the things that still glow - a warren's open snowdrop
+// among them - read as warm against the blue
 // instead of being the only thing on screen.
 //
 // Everything here runs on the SIM clock (state.windT), not on wall time, so
@@ -904,7 +904,6 @@ function renderLighting(ox, oy, now) {
   // says nothing, and at night the blue it sits in is what makes it catch
   if (settings.vidStars) drawFrostGlint(ox, oy);
 
-  litShots(ox, oy, now, dark);
   litSnowdrops(now, dark);
   // ...and last, the readouts the grade was never allowed to touch
   flushWorldInk();
@@ -949,32 +948,6 @@ function lightAir(x, y, w, h) {
   ctx.globalCompositeOperation = 'source-over';
   ctx.restore();
   flushWorldInk();
-}
-
-// A shot can still carry its own light: the CARE ARROW and the WISP do, and
-// anything a FLAME modifier is riding (`lit` in the BITS table, js/sim/tools.js).
-// They are read straight off the live shots rather than registered anywhere,
-// and with the open snowdrops they are the only light left in the game -
-// additive, so they warm the night blue rather than cutting a clean hole in it.
-function litShots(ox, oy, now, dark) {
-  let any = false;
-  for (const a of arrows) if (a.lit) { any = true; break; }
-  if (!any) return;
-  const s = 0.20 + dark * 0.55; // barely there at noon, a real lantern at night
-  ctx.globalCompositeOperation = 'lighter';
-  for (const a of arrows) {
-    if (!a.lit || !fogShown(a)) continue; // a rival's flame in the fog lights nothing you see
-    const r = a.lit * (1 + Math.sin(now * 11 + a.x) * 0.06);
-    const lx = a.x - ox, ly = a.y - oy;
-    if (lx < -r || ly < -r || lx > WV_W + r || ly > WV_H + r) continue;
-    const g = ctx.createRadialGradient(lx, ly, 1, lx, ly, r);
-    g.addColorStop(0, 'rgba(255,214,150,' + (s * 0.5).toFixed(3) + ')');
-    g.addColorStop(0.45, 'rgba(255,192,116,' + (s * 0.2).toFixed(3) + ')');
-    g.addColorStop(1, 'rgba(255,176,86,0)');
-    ctx.fillStyle = g;
-    ctx.fillRect(lx - r, ly - r, r * 2, r * 2);
-  }
-  ctx.globalCompositeOperation = 'source-over';
 }
 
 // World-space flakes wrapped into the view (see the flakes block in fx

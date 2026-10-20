@@ -14,7 +14,7 @@ verdict inks as the [sheet that flies into the notice lane](the-stat-ledger-your
 opened out: the panel's job is reading a body at leisure, the plate's is catching what moved.
 
 RIGHT: the **six item slots**, one a row: a 28 px icon well (`itemIcon`) rimmed as a part or a
-finished item (the shelf's own rims), the item's name beside it and its passive under that. Hovering
+finished item (the strip's own rims), the item's name beside it and its passive under that. Hovering
 a slot raises the shop's item card (`tipItem`; `charItemHit` reads through `charHit`, so the
 tooltip and the click can never disagree). Nothing is bought here: items are bought and sold at a
 [counter](../../gameplay/the-merchants-counter.md).

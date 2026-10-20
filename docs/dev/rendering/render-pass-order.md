@@ -42,10 +42,8 @@
    `drawAgRings`;
 10. construction progress bars → particles → `drawAimLine` (the bow's) → `drawZipGuide` (the
     dotted walk to the hovered zipline, js/draw/zipline.js) → arrows (a turret's rocks branch to
-    `drawSlungRock`, a bit with a `body` to `BIT_BODY`, the rest to `drawShaft`; then
-    `drawShotFire` on any shot that is burning);
-11. `drawWarps` (the silhouettes a teleport strung across its jump) → **`drawSwaps`**
-    ([the tool swap](#the-tool-swap)) → `drawAbilityAir` (the spinning net, the grapple's rope)
+    `drawSlungRock`, the rest to `drawShaft`);
+11. `drawAbilityAir` (the spinning net, the grapple's rope)
     → `drawTurretFx` (each turret's dashed aim **arc** and the cords snapping on the release)
     → turret tracers;
 12. `drawSlashes` (the sword's sweeps) → swing arcs (one per swinging player) → `drawPops`
@@ -149,27 +147,10 @@ like every other building's.
 Sprite hit-flash goes through `drawSpriteFlash()`, which recolours via a shared 128×128 `scratch`
 canvas with `source-in` — sprites larger than 128×128 will clip (a bear's 112×76 frame is the biggest).
 
-An **item drop** wears its icon centred on its own width (a tool's is 12×12, everything else 8×8)
-over a flat shadow, and a find — anything with a tier — pulses a plate of that tier's rim behind
-it, so something worth walking to is told from a berry at a distance. One exception: a drop inside
-its [throw lock](../gameplay/tools-and-bits/the-weapon-shelf.md) draws at half alpha with the glint **off**, and only
+An **item drop** wears its icon centred on its own width over a flat shadow. A drop inside
+its [throw lock](../gameplay/the-basic-attack.md#the-item-slots-and-the-drag) draws at half alpha, and only
 for the one player it is locked against (`dropLocked(d, viewPlayer())`) — what you just threw away
 lies dim until it is yours again, and everyone else sees it whole.
-
-## The tool swap
-
-`drawSwaps(ex, ey)` is the world half of the tell a
-[tool trading itself up](../gameplay/tools-and-bits/where-tools-and-bits-come-from.md) raises, over one entry per
-swap in `swaps` (js/sim/tools.js, pushed by `swapFx`, aged by `updateSwaps` in `updateFx`). It is
-drawn for **every** player, not only the local one: a rival rearming mid-fight is news to whoever
-is shooting at them, and the ring's colour is the whole of the news.
-
-The beat is `SWAP_T` (1.1 s) in two parts. The **ring** — a hollow square in the new tier's `rim`,
-opening from 4 to 18 px out of the chest — is the first third and then gone, so the icon is what
-is left to read. The **icon** is the new body's own 12×12, on the tier `plate` inside a `rim`
-frame it wears in every well it will ever sit in, climbing `SWAP_RISE` (26 px) on an ease-out and
-fading only over the last third. `swapFx` also fires two `burst`s in the tier's ink and rim at the
-body, `SFX.levelUp` for the local player (`SFX.pickup` for anyone else in earshot).
 
 ## Snow
 

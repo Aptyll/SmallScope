@@ -32,14 +32,14 @@ const STATS = [
 ];
 // an empty bonus bag, every key at nothing: what baseKit starts a kit with
 function statBag() { const b = {}; for (const s of STATS) b[s.key] = 0; return b; }
-// the class weapon's own full cycle, as attacks a second: the full draw plus
-// the renock after it (the loadout tool's rate, toolRof, js/sim/tools.js)
+// the basic attack's own full cycle, as attacks a second: the full draw plus
+// the renock after it (attackCycle, js/sim/attack.js)
 function classAs(cls) {
-  const k = CLASSES[cls].kit, tool = TOOLS[CLASS_LOADOUT[heroBody(cls)].tool];
-  return 1 / (k.bowCharge + tool.rof * TOOL_ROF_STEP * (k.nock / BOW_NOCK));
+  const c = CLASSES[cls], k = c.kit;
+  return 1 / (k.bowCharge + c.attack.cycle * (k.nock / BOW_NOCK));
 }
 // the multiplier attack speed puts on the cycle: every draw and renock is
-// divided by it (drawTime, toolRof, toolCycle)
+// divided by it (drawTime, attackCycle)
 function asMulFrom(cls, level, add) {
   return Math.max(0.25, 1 + (CLASSES[cls].grow.as || 0) * Math.max(0, level - 1) + (add ? add.as : 0));
 }

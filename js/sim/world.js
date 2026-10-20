@@ -97,21 +97,17 @@ const OBJECTS = {
   stall:    { solid: true,  w: 3, h: 2, mm: (o) => mmTeam(o) },
   // the practice arena's target (the `practice arena` banner, js/sim/practice.js): any tool
   // hits it, it never falls, and it mends itself between combos. E swings,
-  // every bit and the roll's tackle all land through hitDummy (js/sim/actions.js).
+  // every attack and the roll's tackle all land through hitDummy (js/sim/actions.js).
   dummy:    { solid: true,  tool: 'axe',  needs: null,   verb: 'HIT', lift: 28,
               mm: [216, 178, 122] },
   // The training field's dressing (practice arena only): inert scenery like
   // the den - no `tool`, so E never offers them - drawn in the y-sorted pass.
-  // The banner is the parkour gate's flag; the rack spans TWO tiles - the
-  // left one carries `lead` and draws the whole sprite, the right tile is a
-  // plain solid follower the draw pass skips.
   // the parkour gate's flag - and, carrying a `team`, the two pennant poles
   // at each of the road's mouths (placeRoad), which paint the maps in that
   // side's ink the way a roosting eagle does
   banner:   { solid: true,
               mm: (o) => o.team === undefined ? MM_BANNER : skin(o.team) ? MM_EAGLE_BLUE : MM_EAGLE_RED,
               map: (o) => o.team === undefined ? null : chEagle(o) },
-  rack:     { solid: true,  mm: [168, 132, 92] },
   // the BLACK BEAR STONE camp's old anchor: a heap of stones, solid. No
   // camp stamps one since the bears moved to the river (CAMPS' `river`);
   // kept so a save from before still loads what stood in it. Inert to E (no `tool`); its pixels are CAIRN_SPR in

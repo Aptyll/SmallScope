@@ -1,6 +1,6 @@
 'use strict';
 // ------------------------------------------------------------ hero blades
-// A named hero's own blade in place of a melee tool's held art (drawHeldTool,
+// A named hero's own blade in place of its sword's held art (drawHeldTool,
 // js/draw/bodies.js), by the name its CLASSES row gives (`blade`). Each hero's
 // draw file registers HERO_BLADES[name] = { art() -> { flat, diag } canvases,
 // hip: { down, up } where the grip sits on the 16 px cell by facing, grip:
@@ -14,12 +14,12 @@ function bakeBladeArt(rows, pal) {
   return c;
 }
 function heroBladeOf(p) { const c = CLASSES[p.cls]; return c && c.blade ? HERO_BLADES[c.blade] : null; }
-// the blade a hero's hands hold in place of a melee tool's own, or null
-function heroBlade(p, wDef) { const b = wDef.melee ? heroBladeOf(p) : null; return b ? b.art().flat : null; }
+// the blade a hero's hands hold in place of its sword's own art, or null
+function heroBlade(p) { const b = attackOf(p).cut ? heroBladeOf(p) : null; return b ? b.art().flat : null; }
 // the carried blade facing down or up; false where the side's level carry stands
 function heroCarry(p, px, py) {
-  const b = heroBladeOf(p), at = b && b.hip[p.dir], w = heldTool(p), def = w ? TOOLS[toolIdOf(w.type)] : null;
-  if (!at || !def || !def.melee) return false;
+  const b = heroBladeOf(p), at = b && b.hip[p.dir];
+  if (!at || !attackOf(p).cut) return false;
   ctx.drawImage(b.art().diag, Math.round(px + at[0] - b.grip[0]), Math.round(py + at[1] - b.grip[1]));
   return true;
 }

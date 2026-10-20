@@ -84,13 +84,6 @@
       bestLap: 0,      // the ice parkour's all-time best lap in seconds (0 = never lapped)
       bestRange: 0,    // the archery range's all-time best round score (0 = never played)
       bestRounds: {},  // ...and the bell's other rounds' (AG_ROUNDS, js/sim/practice.js), by round id - these three are all practice writes
-      // The arsenal tree. A MATCH reads nothing back out of here - every kind
-      // is unlocked for every profile alike - so the one live list is `seen`:
-      // every `TECH` node id this profile has ever held, written from the
-      // pickup and drawn as a pip on the node. `done` is the research a save
-      // from before the unlock (PATCH 2.08) had bought; it is still carried
-      // through so a veteran's record is not thrown away, and nothing reads it.
-      tech: { seen: [], done: [] },
       // the cosmetics' purse and what it bought: coins, the owned ids, and
       // per slot ('bird') the id worn. A free cosmetic is never written to
       // `owned`, and an id the game no longer has is kept but never worn
@@ -184,17 +177,6 @@
         } else addStats(profile.stats, s.stats);
         if (typeof name === 'string' && validate(name).ok) profile.name = validate(name).name;
         if (typeof hero === 'number' && isFinite(hero) && hero >= 0 && hero < HERO_N) profile.hero = Math.floor(hero);
-        // the tech lists: strings only, de-duplicated, and a save written
-        // before the tree existed simply arrives without them and keeps the
-        // empty pair blank() made
-        if (s.tech && typeof s.tech === 'object') {
-          for (const k of ['seen', 'done']) {
-            if (!Array.isArray(s.tech[k])) continue;
-            for (const id of s.tech[k]) {
-              if (typeof id === 'string' && profile.tech[k].indexOf(id) < 0) profile.tech[k].push(id);
-            }
-          }
-        }
         if (s.settings && typeof s.settings === 'object') profile.settings = s.settings;
         // a profile from before the purse arrives without it and keeps the
         // START_COINS blank() gave it, like a fresh one
@@ -335,25 +317,6 @@
     addRank(d) { profile.rank = Math.max(RANK_MIN, profile.rank + (Math.round(d) || 0)); saveNow(); },
     // DBG only: set the purse (a staged screenshot, a test of the short purse)
     setCoins(n) { profile.coins = Math.max(0, Math.floor(n) || 0); saveNow(); },
-
-    // ---- tech tree ----------------------------------------------------------
-    // Ids in and out; what a node IS lives in js/sim/tools.js. This file only
-    // remembers which kinds have been held.
-    techSeen(id) { return profile.tech.seen.indexOf(id) >= 0; },
-    // fired from the pickup, so it is coalesced like the stat calls
-    markSeen(id) {
-      if (profile.tech.seen.indexOf(id) >= 0) return false;
-      profile.tech.seen.push(id);
-      scheduleSave();
-      return true;
-    },
-    // back to an unmarked tree without losing the name or the stats behind it
-    // - the only way to re-stage the page for a look at it (DBG.wipeTech)
-    clearTech() {
-      profile.tech.seen.length = 0;
-      profile.tech.done.length = 0;
-      saveNow();
-    },
 
     flush,
   };

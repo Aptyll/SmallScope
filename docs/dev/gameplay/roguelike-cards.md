@@ -21,7 +21,7 @@ card's name. The floater names the CARD; what it did to the NUMBERS flies into t
 as the [stat sheet](../rendering/the-hud-corners/the-stat-ledger-your-sheet-as-a-notice.md), every row the pick
 moved lit and blinking on it. An intent with nothing to draw is refused (`cardDenied`, the deny cue). `refreshKit` folds every entry in `p.cards` in before the items, cumulatively
 (`for (const c of p.cards) CARDS[c.rarity][c.id].mod(k);`), so picking the same effect twice stacks
-it, and every existing kit-reading site in the sim — movement, `emitBit`, dodge timing, the AI,
+it, and every existing kit-reading site in the sim — movement, `attackDmg`, dodge timing, the AI,
 `seenAt`'s stealth — picks a card up for free, the same way it does for items. `p.cards` is
 set once in the `Player` constructor and never touched by `reset()`, so a build survives every
 respawn within a match.

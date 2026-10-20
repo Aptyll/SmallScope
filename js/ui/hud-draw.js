@@ -1,9 +1,8 @@
 'use strict';
-// Drawing the strip and the shelf: the portrait, the health and stamina
-// bars, tier and mod plates, item icons, the cooldown sweep, the ability,
-// meal and gold cells,
-// drawHudStrip and the scaled bakes, then the shelf's wells, the drop
-// promise and the drag ghost.
+// Drawing the strip: the portrait, the health and stamina bars, the cell
+// plate, item icons, the cooldown sweep, the ability, item, meal and gold
+// cells, drawHudStrip and the scaled bakes, then the drop promise and the
+// drag ghost.
 // ---- the plates, bars and icons the widgets share --------------------------
 // THE PORTRAIT: the hero's face in a square well, framed in the wells' own
 // border (ink, then the rim). Inside the rim a 3px band is the XP, filling
@@ -117,47 +116,12 @@ function drawStBar() {
   ctx.fillStyle = HUD_INK;
   for (let k = 1; k < DODGE_CHARGES; k++) ctx.fillRect(r.x + Math.round(k * r.w / DODGE_CHARGES), r.y, 1, r.h);
 }
-// The tier behind an item's icon, wherever that icon sits: a bag cell, the
-// weapon well, a bit cell, the drag ghost. This is the ONLY place a tier is
-// stated, and it is stated the same way everywhere - a dark well with a 1px
-// rim in the tier's colour, dim green, blue, gold, brighter as it gets better
-// (TOOL_TIERS, js/sim/tools.js) - which is what lets a find be read at a glance
-// without a rarity word anywhere on screen. Nothing on it moves.
-function tierPlate(type, lit) {
-  const t = itemTier(type);
-  if (t < 0) return { plate: BAG_WELL, rim: lit ? '#9ca1aa' : '#3c4048' };
-  const T = TOOL_TIERS[t];
-  return { plate: T.plate, rim: lit ? T.ink : T.rim };
-}
-// The one thing that tells the two kinds of BIT apart wherever either one
-// sits - the bag grid, the tool's row, the cursor, the counter, the tech
-// tree. A PROJECTILE is a thing you fire, and it keeps the flat plate every
-// other carried item wears. A MODIFIER never flies: it is fitted INTO the
-// tool and shapes every shot on it, so its plate is hatched - in its TIER's
-// colour, the same one its rim wears, so a well says its rarity once. The
-// hatch stops a px inside the rim, so the rim stays one clean line. Called on
-// the drawn plate, under the icon; (y, h) are the plate's own, since a
-// hovered cell lifts and the counter's plate is shorter than its well. `g` is
-// the context to paint - the live HUD's unless a bake hands its own.
-function modPlate(type, r, y, h, g) {
-  const id = type && bitIdOf(type);
-  if (!id || !BITS[id] || BITS[id].proj) return;
-  g = g || ctx;
-  h = h || r.h;
-  const x0 = r.x + 2, y0 = y + 2, x1 = r.x + r.w - 2, y1 = y + h - 2;
-  g.globalAlpha = 0.35;
-  g.fillStyle = TOOL_TIERS[BITS[id].tier].rim;
-  for (let d = 1 - h; d < r.w; d += 4) { // 1px diagonals, four apart
-    for (let k = 0; k < h; k++) {
-      const px = r.x + d + k, py = y + k;
-      if (px >= x0 && px < x1 && py >= y0 && py < y1) g.fillRect(px, py, 1, 1);
-    }
-  }
-  g.globalAlpha = 1;
-}
+// The plate behind a carried thing's icon, wherever that icon sits: a bag
+// cell, the drag ghost, the tooltip. A dark well with a 1px rim that lights
+// while it is the one being handled.
+function cellPlate(lit) { return { plate: BAG_WELL, rim: lit ? '#9ca1aa' : '#3c4048' }; }
 
-// an item icon centred in a cell of any size (tools are 12x12, everything
-// else 8x8), so one call covers every well the two sizes share; k doubles it
+// an item icon centred in a cell of any size, so one call covers every well; k doubles it
 // for the HUD_CELL wells, where 1x art would swim
 function drawItemIcon(type, r, y, g, k) {
   const d = ITEMS[type];
@@ -169,18 +133,18 @@ function drawItemIcon(type, r, y, g, k) {
   (g || ctx).drawImage(im, r.x + ((r.w - w) >> 1), y + ((r.h - h) >> 1), w, h);
 }
 
-// ---- drawing the strip, the shelf and the carried item -----------------
+// ---- drawing the strip and the carried item --------------------------------
 // THE COOLDOWN SWEEP - League's radial clock cut to a SQUARE, and now the
-// ONE shape every wait in the game is drawn in: the weapon well, the four
-// ability wells, and both meal buttons through drawFoodClock.
+// ONE shape every wait in the game is drawn in: the four ability wells and
+// both meal buttons through drawFoodClock.
 // The veil fills the well and retreats CLOCKWISE FROM
 // 12 O'CLOCK, so the dark that is left is the wait that is left, and the
 // hand's angle is the fraction at a glance - which a top-down wipe cannot
 // say, because a bar three quarters down and a bar half down look alike in
-// the corner of your eye. A rate of fire, an ability's cooldown and the meal
-// clock are the same question asked of different clocks: answer them in the
-// same shape and only the SPEED of the hand tells a 0.8 s bow from a 20 s
-// fury, and nothing on the HUD has to be learned twice.
+// the corner of your eye. An ability's cooldown and the meal clock are the
+// same question asked of different clocks: answer them in the same shape and
+// only the SPEED of the hand tells a 20 s fury from a meal, and nothing on
+// the HUD has to be learned twice.
 //
 // It scales down further than it looks like it should, which is why the size
 // gate below outlived the 8x8 wells it was written for: under twelve pixels
@@ -240,7 +204,7 @@ function drawSweepCover(x, y, w, h, frac, col, edge) {
 }
 // An ability well says everything without a word: the 32px icon is the
 // ability, a SWEEP round the well is its cooldown (drawSweepCover above - the
-// weapon well turns the same hand), the rim goes white while the
+// meal wells turn the same hand), the rim goes white while the
 // body performs the cast, an ACTIVE ability (the shield up, the fury running)
 // pulses the rim in its own colour and drains a bar of it along the bottom
 // edge, and the well pops white the frame a cooldown comes home. The big
@@ -348,9 +312,9 @@ function drawAbBuyPlate(i, now, hot) {
 // a card key with nothing to draw: the deny cue (unopened cards are bag
 // items, so the pack is where they are read)
 function cardDenied() { SFX.deny(); }
-// A MEAL WELL: an ability well's grammar pointed at the pouch - the item icon
-// doubled in the middle, the key in the bottom-left corner at the size an
-// ability prints its key (the pad's glyph while one is in hand), and how many
+// A MEAL WELL: an ability well's grammar pointed at the pouch, at the items'
+// size - the item icon doubled in the middle, the key in the bottom-left
+// corner (the pad's glyph while one is in hand), and how many
 // you carry in the top-right, shortNum's four characters at most (the pouch
 // has no ceiling). It wipes on the shared food clock. A meal you have none
 // of keeps its seat but dims, so the pair never rearranges; the click sets
@@ -380,8 +344,8 @@ function drawFoodCell(i, now, on) {
   ctx.drawImage(icon, r.x + ((r.w - iw) >> 1), r.y + ((r.h - ih) >> 1), iw, ih);
   ctx.globalAlpha = 1;
   drawFoodClock(r.x + 1, r.y + 1, r.w - 2, r.h - 2, fish && FISH_KINDS.includes(p.eatType) ? p.eatType : type);
-  if (padActive()) drawPadBind(ctx, r.x + 3, r.y + r.h - 13 - 2 * 3, b.act, 2, !live);
-  else drawPixelTextOutline(ctx, keyCapShort(b.act), r.x + 3, r.y + r.h - 13, live ? '#f4f7ff' : '#8c919a', '#191b1f', 2);
+  if (padActive()) drawPadBind(ctx, r.x + 2, r.y + r.h - 11, b.act, 1, !live);
+  else drawPixelTextOutline(ctx, keyCapShort(b.act), r.x + 2, r.y + r.h - 7, live ? '#f4f7ff' : '#8c919a', '#191b1f');
   const t = shortNum(n);
   drawPixelTextOutline(ctx, t, r.x + r.w - 2 - pixelTextWidth(t), r.y + 2, n > 0 ? '#f4f7ff' : '#8c919a', '#191b1f');
   if (red) ctx.restore();
@@ -427,6 +391,20 @@ function drawFishPop(hov) {
     }
   }
 }
+// AN ITEM WELL: the item's icon on its rim - a part's green, a finished
+// item's gold (itemMetal), so a glance tells how far the build has come - and
+// an empty slot's number, dim, so the six read as six before the first buy.
+// Read, never pressed: the hover lights the rim and names it (tipItem).
+function drawItemCell(i, on) {
+  const r = itemCellRect(i), id = player.items[i];
+  ctx.fillStyle = id ? (on ? '#9ca1aa' : itemMetal(id).rim) : '#33363d';
+  ctx.fillRect(r.x, r.y, r.w, r.h);
+  ctx.fillStyle = BAG_WELL;
+  ctx.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
+  if (id) { shopIcon(itemIcon(id), r); return; }
+  const t = String(i + 1);
+  drawPixelText(ctx, t, r.x + ((r.w - pixelTextWidth(t)) >> 1) + 1, r.y + ((r.h - 5) >> 1), '#33363d', 1);
+}
 // THE PURSE under the meals: the coin and the gold, centred, inked '#f5c542'
 // because the one number on the HUD that is money must never read as a count
 // of something carried. A readout, not a button - the meal wells' rim, but no
@@ -454,6 +432,7 @@ function drawHudStrip(now) {
     drawClassAbCell(i, now, hov && hov.kind === 'ab' && hov.i === i);
     drawAbBuyPlate(i, now, bhov === i);
   }
+  for (let i = 0; i < ITEM_SLOTS; i++) drawItemCell(i, hov && hov.kind === 'item' && hov.i === i);
   for (let i = 0; i < FOOD_BTNS.length; i++) {
     drawFoodCell(i, now, hov && hov.kind === 'food' && hov.i === i);
   }
@@ -488,7 +467,7 @@ function drawHudScaled(now, slideY) {
   const bx = statPanelRect().x, by = R.y - head, bw = Math.max(R.x + R.w + 3 - bx, buildTabRect().x + BUILD_W + 1 - bx), bh = R.h + head;
   if (hudScaleCv.width !== bw || hudScaleCv.height !== bh) {
     hudScaleCv.width = bw; hudScaleCv.height = bh;
-    hudScaleCtx.imageSmoothingEnabled = false; // resizing resets ctx state; the tool well's 2x art must stay chunky
+    hudScaleCtx.imageSmoothingEnabled = false; // resizing resets ctx state; the wells' 2x art must stay chunky
   }
   const o = ctx;
   ctx = hudScaleCtx;
@@ -504,17 +483,14 @@ function drawHudScaled(now, slideY) {
     hudPx(bw * s), hudPx(bh * s)); // the size, too, on the device grid
 }
 
-// THE CORNER - the shelf and the drawer under it - at its own size (cornerSc), scaled about the
-// TOP-LEFT corner so the tool cell stays put in it. The same deal as
+// THE CORNER - the backpack's arrow and its drawer - at its own size (cornerSc), scaled about the
+// TOP-LEFT corner so the arrow stays put in it. The same deal as
 // drawHudScaled: at 1x straight to the frame, otherwise a 1x bake blitted
 // with smoothing off. The bake is sized to the widget's reach (CORNER_REACH,
 // the open drawer) so nothing of it is left behind.
 const cornerScaleCv = document.createElement('canvas');
 const cornerScaleCtx = cornerScaleCv.getContext('2d');
-function drawCorner(now) {
-  drawShelf(now);
-  drawBag(now);
-}
+function drawCorner(now) { drawBag(now); }
 function drawCornerScaled(now, slideX) {
   const s = cornerSc();
   if (s === 1) {
@@ -538,50 +514,6 @@ function drawCornerScaled(now, slideX) {
   ctx.drawImage(cornerScaleCv, slideX, 0, hudPx(bw * s), hudPx(bh * s)); // the size on the device grid
 }
 
-// ONE WELL OF THE SHELF: the tier rim and the dark well inside it, one px
-// all round, sunk in the shelf's own plate. `rim` overrides the tier's own,
-// which is how the refusal's red and a hovered fitting's reach are said in
-// one place.
-function shelfWell(r, type, lit, rim) {
-  const tp = type ? tierPlate(type, lit) : { plate: BAG_WELL, rim: lit ? '#9ca1aa' : '#33363d' };
-  ctx.fillStyle = rim || tp.rim;
-  ctx.fillRect(r.x, r.y, r.w, r.h);
-  ctx.fillStyle = tp.plate;
-  ctx.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
-}
-// THE SHELF, DRAWN - the class weapon and the six item slots, on screen the
-// whole match, so every mark on it has to survive being looked at for an hour
-// rather than for the second a hover lasted. No words: the weapon in its big
-// well wears its rate-of-fire sweep (the same hand the ability wells turn,
-// drawSweepCover, so the two clocks a press waits on read in one shape), and
-// each slot wears its item's icon on the shop's own rims - a part on the
-// bottom tier's, a finished item on the top tier's - so a glance tells how
-// far the build has come.
-function drawShelf(now) {
-  if (!shelfUp()) return;
-  const cell = shelfCell();
-  const hov = mouse.inside ? shelfHit(mouse.x, mouse.y) : null;
-  // the plate the row stands on, flush with the view's left edge (so only
-  // its right corners are cut), under everything the shelf draws
-  const pl = shelfPlateRect();
-  drawHudFrame(pl.x, pl.y, pl.w, pl.h, { corners: { tl: false, tr: true, bl: false, br: true } });
-  const p = player, t = shelfCellRect(-1);
-  shelfWell(t, cell && cell.type, !!hov && hov.kind === 'tool');
-  if (cell) {
-    drawItemIcon(cell.type, t, t.y, null, 2);
-    if (p.nockT > 0) {
-      drawSweepCover(t.x + 1, t.y + 1, t.w - 2, t.h - 2,
-        Math.min(1, p.nockT / Math.max(0.01, toolCycle(p))), CD_SWEEP, CD_EDGE);
-    }
-  }
-  for (let i = 0; i < ITEM_SLOTS; i++) {
-    const r = shelfCellRect(i), id = p.items[i];
-    const lit = !!hov && hov.kind === 'item' && hov.i === i && !!id;
-    shelfWell(r, null, lit, id ? (lit ? '#9ca1aa' : TOOL_TIERS[isPart(id) ? 0 : 2].rim) : null);
-    if (id) shopIcon(itemIcon(id), r);
-  }
-}
-
 // Whatever is riding the pointer, drawn last so it is over every well it
 // might be dropped into. It wears its own tier plate, so the thing in your
 // hand is read exactly the way it is read in a cell.
@@ -591,7 +523,7 @@ function drawShelf(now) {
 function drawDropPromise() {
   if (!state.drag || !mouse.inside || shopHit(mouse.x, mouse.y)) return;
   // the ring is painted in screen space after the corner's bake, so a 1x
-  // rect of the shelf or the drawer is mapped through the corner's size first
+  // rect of the drawer is mapped through the corner's size first
   const k = cornerSc(), sc = (r) => ({ x: Math.round(r.x * k), y: Math.round(r.y * k), w: Math.round(r.w * k), h: Math.round(r.h * k) });
   const bh = bagHit(mouse.x, mouse.y);
   if (!bh || bh.kind !== 'cell') return;
@@ -603,13 +535,12 @@ function drawDragGhost(now) {
   const d = state.drag;
   if (!d || !mouse.inside) return;
   const r = { x: Math.round(mouse.x) - 8, y: Math.round(mouse.y) - 8, w: 18, h: 18 };
-  const tp = tierPlate(d.cell.type, true);
+  const tp = cellPlate(true);
   ctx.globalAlpha = 0.9;
   ctx.fillStyle = tp.rim;
   ctx.fillRect(r.x, r.y, r.w, r.h);
   ctx.fillStyle = tp.plate;
   ctx.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
-  modPlate(d.cell.type, r, r.y);
   drawItemIcon(d.cell.type, r, r.y);
   ctx.globalAlpha = 1;
   if (d.cell.n > 1) {

@@ -123,64 +123,6 @@ function bakeTargetFace(size, bare) {
 const TARGET_SPR = bakeTargetFace(32);   // the large face
 const TARGET_SPR_S = bakeTargetFace(20); // the small one (32 * AG_SIZE[0])
 
-// The weapon rack, TWO TILES wide (the `rack` entry in js/sim/world.js carries
-// the lead/follower pair). Baked per-pixel like the target face rather than
-// from a grid, because a strung bow stave wants a true curve: an A-frame of
-// posts and rails with three strung longbows leaned against the top rail and
-// a hung quiver of fletched shafts. Snow rides the rail and the post caps.
-const RACK_SPR = (() => {
-  const c = document.createElement('canvas');
-  c.width = 34; c.height = 28;
-  const g = c.getContext('2d');
-  const px = (x, y, col) => { g.fillStyle = col; g.fillRect(x, y, 1, 1); };
-  const rect = (x, y, w, h, col) => { g.fillStyle = col; g.fillRect(x, y, w, h); };
-  const O = '#241a12', wd = '#5c4226', wl = '#8a6142', wp = '#a3794f';
-  // the two posts, into flared feet
-  for (const x0 of [1, 29]) {
-    rect(x0, 2, 4, 23, O);
-    rect(x0 + 1, 3, 1, 21, wl);
-    rect(x0 + 2, 3, 1, 21, wd);
-    rect(x0 - 1, 24, 6, 3, O);       // the foot block
-    rect(x0, 25, 4, 1, wd);
-    px(x0, 25, wl);
-  }
-  // rails: the heavy top rail the bows lean on, a thin keeper rail below
-  rect(0, 5, 34, 4, O);
-  rect(1, 6, 32, 1, wl); rect(1, 7, 32, 1, wd);
-  px(0, 6, wp); px(33, 6, wp);       // end-grain glints on the overhang
-  rect(1, 18, 32, 3, O);
-  rect(2, 19, 30, 1, wd);
-  // three strung longbows, tips hooked over the top rail. The stave bends
-  // left off the straight string, each with its own height and draw
-  const bows = [[9, 2, 3], [16, 4, 2], [23, 2, 3]]; // centre, top y, belly
-  for (const [cx2, ty0, bend] of bows) {
-    rect(cx2, ty0 + 1, 1, 23 - ty0 - 1, '#f0e6cc');            // the string
-    for (let y = ty0; y <= 23; y++) {                           // the stave
-      const u = (y - ty0) / (23 - ty0);
-      const b = Math.round(Math.sin(u * Math.PI) * bend);
-      px(cx2 - b, y, '#6b4a30');
-      px(cx2 - b - 1, y, '#c9a874');
-    }
-    rect(cx2 - bend - 1, 11, 2, 3, '#5c4226');                  // the grip wrap
-  }
-  // the quiver, leaned inside the right post, shafts fletched red and straw
-  rect(25, 10, 4, 13, O);
-  rect(26, 11, 1, 11, '#93744a'); rect(27, 11, 1, 11, '#6e4f2f');
-  rect(26, 13, 2, 1, '#8b93a8');                                // iron band
-  rect(26, 20, 2, 1, '#8b93a8');
-  for (const [sx2, sy0, f] of [[26, 6, '#d0453a'], [28, 7, '#e0c890'], [27, 5, '#d0453a']]) {
-    rect(sx2, sy0 + 2, 1, 10 - sy0, wp);                        // shaft into the mouth
-    px(sx2, sy0, f); px(sx2, sy0 + 1, f);                       // the fletching
-  }
-  // snow: a broken run along the top rail and caps on both posts
-  for (let x = 0; x < 34; x++) {
-    if (hash2(x * 7, 91) > 0.45) px(x, 4, '#f4f7ff');
-    if (hash2(x * 5, 93) > 0.75) px(x, 5, '#c4d4ea');
-  }
-  for (const x0 of [1, 29]) { rect(x0, 1, 4, 1, '#f4f7ff'); px(x0 + 3, 2, '#c4d4ea'); }
-  return c;
-})();
-
 // The damage meter over a dummy's head: LAST HIT / DPS / TOTAL for the combo
 // in progress, on a small frost plate in the overhead frame's language. A
 // deliberate labelled-row carve-out from show-don't-label (recorded in

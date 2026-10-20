@@ -41,7 +41,7 @@ const SNAP_SKIP = new Set(['input', 'ai', 'nav', '_fx', '_fy', '_tx', '_ty', '_t
   // bytes per body per snapshot. The echo harness runs WITHOUT them, so
   // adding a name here is proven harmless or caught as pixels
   'wade', 'wadeX', 'wadeY', 'wadePuffT', 'wadeAt', 'wadeV', 'wadeDX', 'wadeDY', 'wadeMv', // the wade: each machine eases its own (js/sim/depth.js, js/draw/depth.js)
-  'faceT', 'trickleT', 'footT', 'footSide', 'puffT', 'dodgeDustT', 'slideDustT', 'eatFxT', 'burnTick', 'fishCd', 'catchT', 'dryT', 'swingCd',
+  'faceT', 'trickleT', 'footT', 'footSide', 'puffT', 'dodgeDustT', 'slideDustT', 'eatFxT', 'burnTick', 'fishCd', 'catchT', 'swingCd',
   'idleT', 'wary', 'thinkT', 'moveT', 'turnT', 'emT', 'spook', 'biteCd', 'alertT', 'dashT', 'dashX', 'dashY', 'fleeT', 'fleeGoal', 'goal',
   'avoidT', 'madT', 'madX', 'madY', 'baySite', 'zipLast']);
 // the match's own state keys: the clock, the result, the birds. Everything

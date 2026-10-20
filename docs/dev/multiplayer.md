@@ -50,7 +50,7 @@ and `food` pouch (see [the backpack](gameplay/inventory-and-the-backpack.md)),
 "a fresh player". Boot calls it with `first` true, and `respawnPlayer` — the team's bird setting a
 downed player back down — with `false`, which is what gives the return its 3 s of i-frames.
 
-Behaviour lives in free functions taking `p` (`updatePlayer`, `tryWork`, `fireTool`, `tryDodge`,
+Behaviour lives in free functions taking `p` (`updatePlayer`, `tryWork`, `basicAttack`, `tryDodge`,
 `startEat`, `damagePlayer`, `die`, `placeStruct`, …), matching the rest of the file's
 style — the class is the state container, not a god object.
 
@@ -96,8 +96,8 @@ cmd           one-shot order, run by runCmd (js/ui/wheel.js):
               (shopCmd, js/ui/shop.js)
               or {kind:'flag', tx, ty, id} - plant that order's flag there, no
               reach and no contest; id null lifts it
-              or {kind:'rack'|'pkdie'|'agbell', ...} - the practice room's
-              armory, roll die and range bell
+              or {kind:'pkdie'|'agbell', ...} - the practice room's
+              roll die and range bell
               An order of the wrong shape (a string where an index goes, a key
               off Object's prototype) is dropped by cmdOk before any branch runs:
               a bot file or a remote client can send anything.
@@ -137,7 +137,7 @@ happened (`grab`, `place`, `seat`, `swap`, `deny` — sized so the five are told
 eyes shut) and never which controller is in hand, exactly as a key is asked for through its
 action. The RUMBLE row on the ESC panel's GAME page (`settings.haptics`) is its off switch. Its
 one caller today is the backpack's own feedback
-([hudFx](gameplay/tools-and-bits/what-a-gesture-answers-with.md)).
+([hudFx](gameplay/the-basic-attack.md#what-a-gesture-answers-with)).
 
 **The keyboard is read by where a key sits, not by what it prints** (the `keys and binds`
 banner, input.js; issue #43). The listeners translate `e.code` — the physical key — into the
@@ -348,25 +348,21 @@ on a class, card or item change — never per frame). The kit fields: `iceMax` (
 [the cycle](gameplay/the-swing-tools-e.md#the-cycle)),
 `spdDmg` (extra damage scaled by the shooter's speed at release, capped at 200 px/s),
 `dodgeSpeed`, plus `cls` (whose kit) and `add`, the bag of [hero stat](gameplay/hero-stats.md)
-bonuses cards and items write. Sites that read it: `updatePlayer`'s movement block, `emitBit`,
+bonuses cards and items write. Sites that read it: `updatePlayer`'s movement block, `attackDmg`,
 `tryDodge`, the AI's draw timing, the cursor, aim line and draw meter. The seven hero stats
 themselves (health, damage, attack speed, armor, ability power, cooldown speed, move speed) are
 read through `statOf(p, key)` (js/sim/stats.js), never off the kit. `setClass(p, c)` swaps one in
 (full heal — it's a pre-match choice); `p.maxHp` is always `levelMaxHp(p)` = `statOf(p, 'hp')`.
 
-| # | Name | Fantasy | Kit | Flies in with |
+| # | Name | Fantasy | Kit | Basic attack |
 | --- | --- | --- | --- | --- |
-| 0 | **HUNTER** — bow, distance control, the one class that hides | keep the gap and own the ground between | the ranged numbers: quick nock (0.4 s), full draw power, 92 hp | a SHORTBOW with an ARROW in its second cell, the first held open |
-| 1 | **WARRIOR** — close pressure, blocking, momentum | get to arm's length and stay there | 120 hp, faster on ice (×1.15), +5 speed damage, dash 230, softer bow numbers | a LONGSWORD — the one melee body — with a BARBED SHOT on its edge in the second cell, the first held open |
-| 2 | **ARMATOS** — THE LAST STANDARD, the defensive initiator (a passive, `CLASSES[c].passive`) | make the whole team stand its ground | his own body (LAST STANDARD, or a look bought on the skins screen) and the warrior's kit (`heroBody`), 130 hp, 24 armor | the warrior's LONGSWORD, held as his OATH GREATSWORD |
+| 0 | **HUNTER** — bow, distance control, the one class that hides | keep the gap and own the ground between | the ranged numbers: quick nock (0.4 s), full draw power, 92 hp | the SHORTBOW: one arrow, 320 px/s for 0.85 s at full draw |
+| 1 | **WARRIOR** — close pressure, blocking, momentum | get to arm's length and stay there | 120 hp, faster on ice (×1.15), +5 speed damage, dash 230, softer bow numbers | the LONGSWORD: a 28 px cut, 1.05 rad either side of the aim |
+| 2 | **ARMATOS** — THE LAST STANDARD, the defensive initiator (a passive, `CLASSES[c].passive`) | make the whole team stand its ground | his own body (LAST STANDARD, or a look bought on the skins screen) and the warrior's kit (`heroBody`), 130 hp, 24 armor | the OATH GREATSWORD: the LONGSWORD's cut, drawn as his own blade |
 
-The **weapon is part of the class**: `CLASS_LOADOUT` (js/sim/tools.js) pairs each one with a tool
-and **one projectile**, and `setClass` / `Player.reset` (the first landing) hand it over — so the
-hunter and the swordsmen do not shoot the same thing and every bot arrives armed; a respawn keeps the weapon it
-died with ([death keeps everything](gameplay/death-and-respawn.md)). The cell in FRONT of that projectile is
-deliberately empty, so the first modifier you walk over auto-fits there and shapes the shot you are
-already firing: [starting loadouts](gameplay/tools-and-bits/starting-loadouts.md). See
-[Tools and bits](gameplay/tools-and-bits.md). The four ABILITIES beside the weapon — what each
+The **weapon is part of the hero**: each `CLASSES` entry carries its own `attack` row, so the
+hunter and the swordsmen do not attack the same way and every bot arrives armed, with nothing to
+hand over or lose. See [the basic attack](gameplay/the-basic-attack.md). The four ABILITIES beside the weapon — what each
 one does, its cooldown, cast, and the states it leaves on a body — are
 [Class abilities](gameplay/class-abilities-keys-1-4.md) in gameplay.md.
 
@@ -504,7 +500,7 @@ shade). The team colour stays the background, the tint is the ink — see the
 
 `enemyOf(p, q)` is the one place the rule lives: another live, active player on **another** team.
 Arrows carry `owner`/`team` and meet players in `updatePlay`'s arrow loop — swept along each step,
-so a fast shot never steps over one ([flight paths](gameplay/tools-and-bits/flight-paths.md)) — on an
+so a fast shot never steps over one ([a shot in flight](gameplay/the-basic-attack.md#a-shot-in-flight)) — on an
 `ARROW_HIT_R` (10 px) disc round the player's centre — wider than the 4.5 px body a walker
 collides with, because a walking target crosses its own width twice in the quarter second a
 full-draw arrow takes to fly 80 px, and the same disc on every side keeps it a fact of arrows
@@ -1018,9 +1014,7 @@ The ladder:
    3 s) is left for 15 s. Picking up a dropped card off the ground already falls out of the loot rung
    (drops are type-agnostic loot); the
    instant one is carried, `resolveCardForBot` (top of every think) makes the same single random
-   pick `useCard` makes for a hand, rarest first, minus the burst and the floater. The loot
-   itself is put to work between the loot and spend rungs: every 2.5 s `botFitLoadout`
-   (js/sim/tools.js) loads found bits into the tool being fired.
+   pick `useCard` makes for a hand, rarest first, minus the burst and the floater.
 13. **harvest** — walk to a tree/chest/berried bush or a standing rock nobody is at within
    `AI_FORAGE` (12 tiles) and hold E at the profile's `work` duty cycle - at a rock it just stands,
    key up, since the rock mines itself.

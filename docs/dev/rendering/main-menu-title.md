@@ -108,7 +108,7 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   hovered hero's, else the pick's. A coming hero is its model's head as one flat shade
   (`HERO_SOON_INK`), its name grey on hover, and takes no press. A click (`'pickN'` in
   `lobbyHit`) or Left/Right/Up/Down (`lobbyStep(±1)`, through the playable ones) is
-  `lobbyPick(i)`: `setClass` puts the hero, its look, kit and loadout on the stage at once and
+  `lobbyPick(i)`: `setClass` puts the hero, its look and kit on the stage at once and
   `menu.cswapT` pops it. The row dims and refuses while the count runs, and a guest's room shows
   it without taking a press (a guest plays the hero its profile sent in the hello). LOCK IN keeps
   the pick as the profile's hero (`lockIn` → `PROFILE.setHero`), which is where the next lobby
@@ -227,7 +227,7 @@ tag). The store behind it is [profile.js](../architecture.md#profilejs): one nam
   `state.introFrom` on the same curve instead of the play lerp.
 - **Landing intro**: the human's `landPlayer` sets `state.intro = state.introLen = HUD_IN_T` (0.7 s)
   with `introFrom` at the touchdown framing, so `renderUI` (js/ui/compose.js) slides the HUD in
-  (the minimap and the team rail down from the top, the top-left corner — the weapon shelf and its
+  (the minimap and the team rail down from the top, the top-left corner — the pack's tab and its
   drawer — from the left by `CORNER_REACH`, and the hud strip up from the bottom by `HUD_SLIDE`)
   while the camera settles onto the play framing.
   The DAY 1 headline fires when that intro ends.

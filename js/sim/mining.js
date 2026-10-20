@@ -86,7 +86,7 @@ const ORE_PAL = {
 const ORE_PRICE = { ironstone: 2, frostglass: 12, sunstone: 40 };
 ROCK_KINDS.forEach((K, k) => {
   const icon = 'itemOre_' + K.item;
-  SPRITES[icon] = bakeGrid(ORE_ICONS[K.item], ORE_PAL, 8);
+  SPRITES[icon] = SPR.bake(ORE_ICONS[K.item], ORE_PAL);
   ITEMS[K.item] = { icon, stack: ORE_STACK, ore: k, price: ORE_PRICE[K.item],
     name: K.item.toUpperCase() };
 });

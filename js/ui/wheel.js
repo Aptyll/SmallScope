@@ -1,6 +1,6 @@
 'use strict';
 // The HUD that lives in world space: the radial wheel and runCmd, the tile
-// brackets and selection, the key and pad prompts, the work/rack/bell/shop
+// brackets and selection, the key and pad prompts, the work/die/bell/shop
 // hints, and the build list with its ghost.
 // ------------------------------------------------------------ radial wheel
 // One geometry, any number of options: n wedges of exactly 2*PI/n, the first
@@ -31,9 +31,6 @@ function wheelOptions() {
   // the flag wheel: the four orders, attack straight up (the `team flags`
   // banner, robots.js)
   if (w.kind === 'flag') return FLAG_ORDER.map((id) => ({ id }));
-  // the practice rack offers every tool in the game, in table (tier) order -
-  // the arena is the one place trying an unearned weapon costs nothing
-  if (w.kind === 'rack') return Object.keys(TOOLS).map((id) => ({ id }));
   // the parkour die and the range bell: the three difficulties, easy
   // straight up - picking one IS the roll (or the ring), so neither carries
   // a separate go wedge
@@ -103,7 +100,7 @@ function resolveWheel() {
     return;
   }
   player.input.cmd = {
-    kind: w.kind === 'build' ? 'build' : w.kind === 'flag' ? 'flag' : w.kind === 'rack' ? 'rack' : w.kind === 'pkdie' ? 'pkdie' : w.kind === 'agbell' ? 'agbell' : L.opts[L.seg].id,
+    kind: w.kind === 'build' ? 'build' : w.kind === 'flag' ? 'flag' : w.kind === 'pkdie' ? 'pkdie' : w.kind === 'agbell' ? 'agbell' : L.opts[L.seg].id,
     tx: w.tx, ty: w.ty, id: L.opts[L.seg].id,
   };
 }
@@ -137,7 +134,7 @@ function cmdOk(c) {
   if (c.kind === 'build') return cmdKey(STRUCTS, c.id) && cmdTile(c) && (c.tx2 === undefined || (Number.isInteger(c.tx2) && Number.isInteger(c.ty2)));
   if (c.kind === 'flag') return !c.id || (cmdKey(FLAG_TYPES, c.id) && cmdTile(c));
   if (c.kind === 'tunnel') return cmdTile(c);
-  if (c.kind === 'rack' || c.kind === 'pkdie' || c.kind === 'agbell' || c.kind === 'cheat') return true; // the practice props check their own
+  if (c.kind === 'pkdie' || c.kind === 'agbell' || c.kind === 'cheat') return true; // the practice props check their own
   return cmdTile(c); // a building's manage wheel: its tile
 }
 
@@ -160,7 +157,6 @@ function runCmd(p, c) {
   // contest); id null is the lift (the `team flags` banner, js/sim/robots.js)
   if (c.kind === 'flag') { if (c.id) plantFlag(p, c.tx, c.ty, c.id); else clearFlag(p); return true; }
   if (c.kind === 'tunnel') return digTunnel(p, c.tx, c.ty); // a burrow's near hole (js/sim/tunnel.js) - it checks its own reach
-  if (c.kind === 'rack') { rackEquip(p, c); return true; } // the practice armory (js/sim/practice.js)
   if (c.kind === 'pkdie') { pkWheelPick(p, c); return true; } // the parkour roll die (js/sim/practice.js)
   if (c.kind === 'agbell') { agRing(p, c); return true; } // the archery range's bell (js/sim/practice.js)
   if (c.kind === 'cheat') return cheatCmd(p, c); // the practice bar (js/sim/practice.js, js/ui/cheats.js)
@@ -185,21 +181,19 @@ function drawSelection(ox, oy, now) {
   } else {
     tx = Math.floor(mouseWX() / TILE);
     ty = Math.floor(mouseWY() / TILE);
-    // what E opens rather than swings at: the practice rack, and one of
-    // your own finished buildings (its manage wheel) - in reach
+    // what E opens rather than swings at: one of your own finished
+    // buildings (its manage wheel) - in reach
     const o = structOf(objAt(tx, ty));
     if (!o) return;
-    if (o.type !== 'rack' && !(STRUCTS[o.type] && !o.building && !STRUCTS[o.type].fixed && o.team === player.team)) return;
+    if (!(STRUCTS[o.type] && !o.building && !STRUCTS[o.type].fixed && o.team === player.team)) return;
     if (Math.hypot(tx * TILE + 8 - player.x, ty * TILE + 8 - player.y) > 60) return;
   }
-  // a big building brackets its whole footprint, from its anchor - and the
-  // practice rack its whole two-tile pair, from its lead
+  // a big building brackets its whole footprint, from its anchor
   const o2 = structOf(objAt(tx, ty));
   const big = o2 && STRUCTS[o2.type] && (structW(o2) > 1 || structH(o2) > 1);
-  const rk = o2 && o2.type === 'rack' ? (o2.lead ? o2 : objAt(o2.tx - 1, o2.ty)) : null;
-  const bx = rk ? rk.tx * TILE + (rk.dx || 0) - ox : (big ? o2.tx : tx) * TILE - ox;
+  const bx = (big ? o2.tx : tx) * TILE - ox;
   const by = (big ? o2.ty : ty) * TILE - oy;
-  const bw = rk ? TILE * 2 : (big ? structW(o2) : 1) * TILE, bh = (big ? structH(o2) : 1) * TILE;
+  const bw = (big ? structW(o2) : 1) * TILE, bh = (big ? structH(o2) : 1) * TILE;
   ctx.globalAlpha = 0.6 + 0.3 * Math.sin(now * 6);
   // four 3px corner brackets, dark shadow first so white reads on snow
   const corners = (c, px, py) => {
@@ -237,9 +231,9 @@ function drawWorkHint(ox, oy) {
   // rival's building or eagle) asks for no key - the swing itself is the whole signal
   if (t && t.o && autoToolFor(t.o, player) >= 0) t = null;
   
-  // no work target: the armory, the roll station or the range bell may still
-  // be in reach (the merchant answered above)
-  if (!t || !t.near) { drawRackHint(ox, oy); drawPkHint(ox, oy); drawBellHint(ox, oy); return; }
+  // no work target: the roll station or the range bell may still be in
+  // reach (the merchant answered above)
+  if (!t || !t.near) { drawPkHint(ox, oy); drawBellHint(ox, oy); return; }
   const st = t.o && structOf(t.o);
   const isStruct = !!(st && STRUCTS[st.type]);
   const d = t.o && OBJECTS[t.o.type];
@@ -361,7 +355,7 @@ function drawKeyCap(g, x, y, label, pressed, hot, now) {
   drawPixelText(g, label, x + 3, cy + 3, '#121418');
   return w;
 }
-// the key-cap + verb pair itself, shared by the work prompt and the rack's
+// the key-cap + verb pair itself, shared by the work prompt and the die's
 // plate: pressed = the face drops a pixel and the verb goes
 // gold. `action` is what the cap is FOR (the work key unless said otherwise),
 // and the cap prints whatever key that action is bound to (keyCap,
@@ -409,21 +403,8 @@ function drawRideHint(ox, oy) {
 }
 const RIDE_HINT_Y = 56; // px above a deer's feet: clear of its plate and its noticed mark
 
-// The practice armory's prompt: PROXIMITY, not hover - standing beside the
-// rack is the whole gesture (rackNear, js/sim/practice.js), so the E ARM cap rises
-// over the rack itself the moment you are in reach, wherever the pointer is.
-// Pressing E opens the wheel, which hides every hint including this one.
-function drawRackHint(ox, oy) {
-  const rk = rackNear(player);
-  if (!rk) return;
-  const verb = 'ARM';
-  const totalW = promptW(verb, 'work');
-  const hx = (rk.tx + 1) * TILE + (rk.dx || 0); // the pair's centre, nudged with the sprite
-  drawKeyPrompt(Math.round(hx - ox - totalW / 2), Math.round(rk.ty * TILE - oy - 24), verb, keyHeld('work'));
-}
-
-// The parkour die's prompt, the rack's own proximity grammar: an E ROLL cap
-// over the die while it is in reach (pkDieNear, js/sim/practice.js - the same
+// The parkour die's prompt, PROXIMITY, not hover: an E ROLL cap over the
+// die while it is in reach (pkDieNear, js/sim/practice.js - the same
 // resolver the wheel-open press uses). Holding E opens the roll wheel, which
 // hides every hint including this one.
 function drawPkHint(ox, oy) {
@@ -452,7 +433,7 @@ function drawBellHint(ox, oy) {
 // 9x11 pixel mouse, the "click" key-cap. Only the LEFT button carries colour
 // (gold = the game's "active" accent, hot orange while pressed); the right
 // button is plain body so nothing suggests right-click.
-// The merchant's prompt, the rack's own proximity grammar one body over: an
+// The merchant's prompt, the die's own proximity grammar one body over: an
 // E SHOP cap over whichever merchant is in reach (merchNear, js/ui/shop.js -
 // the same resolver the press uses), either team's. It hides while the
 // counter is up, the way every hint hides under a wheel. Returns whether it
@@ -472,7 +453,7 @@ function drawShopHint(ox, oy) {
 
 // hovering a fish: white brackets on the fish (the same "this reacts" cue as
 // stumps), full-bright once it is inside the automatic catch's reach (autoFish,
-// js/sim/tools.js) and dimmed until then - the mechanic is standing on the ice
+// js/sim/attack.js) and dimmed until then - the mechanic is standing on the ice
 // beside it, and the brackets' brightness is the whole of that hint
 function drawFishHint(ex, ey, now) {
   if (state.mode !== 'play' || state.mapOpen || state.settingsOpen || state.wheel) return;
@@ -582,10 +563,6 @@ function renderWheel(now) {
       // the order's glyph at twice its banner size, in its own ink (the
       // stakes: pale for your side, red for theirs) - lit gold under the pick
       drawFlagIcon(ctx, opt.id, ix, iy, hovered ? '#ffd95c' : FLAG_TYPES[opt.id].col, '#191b1f', 2);
-    } else if (w.kind === 'rack') {
-      // a tool's own strip icon: the family silhouette in its tier's metal
-      const T = TOOLS[opt.id];
-      ctx.drawImage(SPRITES['toolArt_' + T.art + '_' + T.tier], Math.round(ix - 6), Math.round(iy - 6));
     } else if (w.kind === 'pkdie') {
       // a difficulty wedge is that difficulty's DIE: the same coloured cube
       // the station's die becomes when this wedge is picked, pip count on its
@@ -641,9 +618,6 @@ function renderWheel(now) {
     } else if (w.kind === 'flag') {
       label = FLAG_TYPES[opt.id].name;
       color = FLAG_TYPES[opt.id].col;
-    } else if (w.kind === 'rack') {
-      label = TOOLS[opt.id].name;
-      color = TOOL_TIERS[TOOLS[opt.id].tier].rim; // the name in its tier's metal
     } else if (w.kind === 'pkdie') {
       label = 'ROLL ' + opt.id.toUpperCase();
       color = PK_PIP_COL[PK_DIFFS.indexOf(opt.id)];

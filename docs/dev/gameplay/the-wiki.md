@@ -41,15 +41,5 @@ typed twice, so a retune can never leave the wiki lying.
   sentences live in that table alone; the premise, the fixed words and the voice they are
   written in are [lore.md](../lore.md).
 
-The `TECH` table in [js/sim/tools.js](../../../js/sim/tools.js) carries the kinds and exactly one
-edge per node — `req`, the node beneath it, null on the tier-0 row. Nothing at runtime reads the
-edge: it is the arsenal's lineage on paper (each root plus at most two children — SHORTBOW →
-RECURVE BOW → LONGBOW, ARROW → CARE ARROW → ICE LANCE, BARBED SHOT → THROWING LOG → HEFT, and so
-on), and no page lists it now.
-
-`PROFILE.markSeen(id)` is all a profile remembers about the old arsenal, and it gates
-**nothing**: it is fired for the local player only (`noteSeen(p, type)`) from the drop pickup and
-from the loadout they fly in with, and nothing reads it back.
-
 Storage is [js/app/profile.js](../../../js/app/profile.js) and nothing here writes a key — see
 [architecture.md](../architecture.md#profilejs).

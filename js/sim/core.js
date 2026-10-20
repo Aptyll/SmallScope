@@ -129,15 +129,14 @@ const state = {
   dayPop: null,  // the dawn headline, top centre: { day, t } - set by each dawn and the landing (js/sim/sim.js), drawn by renderUI
   paused: false,
   mapOpen: false,
-  bagOpen: false,      // the inventory drawer under the weapon shelf (B, or its tab): HUD, it does NOT stop the sim
+  bagOpen: false,      // the inventory drawer top-left (B, or its tab): HUD, it does NOT stop the sim
   charOpen: false,     // the character panel (G): HUD, it does NOT stop the sim either
   // the MERCHANT whose counter is open (js/shop.js), or null. HUD like the two
   // above - the sim runs on underneath - and it holds the merchant itself
   // rather than a flag, because walking out of that body's reach is what shuts it.
   shop: null,
-  // an item riding the pointer between the grid, the four weapon slots and a
-  // tool's own bit cells: { cell, from } - see the drag banner in js/ui.js. The
-  // cell is the same object the bag held, so a tool keeps its bits across it.
+  // a pack cell riding the pointer: { cell, from } - see the drag banner in
+  // js/ui/bag.js. The cell is the same object the bag held.
   drag: null,
   // a press on a holdable cell that has not travelled far enough to become a
   // drag yet: { src, x, y }. Resolves as a plain click if the button comes
@@ -258,7 +257,7 @@ const settings = { v: 4, volume: 0.5, musicVol: 0.7, sfxVol: 1, mmR: 24, mmZoom:
   // (settings.binds / bindsClick / bindsMouse, mended by mendBinds).
   scheme: 'wasd',
   // the GAME page's size dials, one per HUD widget (hudSizes, js/ui/strip.js):
-  // hudScale the bottom strip, hudCorner the weapon shelf and drawer top-left,
+  // hudScale the bottom strip, hudCorner the pack drawer top-left,
   // hudRail the team rail along the top; the minimap's is mmR above
   hudCorner: 1, hudRail: 1 };
 // Minimap zoom ladder, px per world tile: index settings.mmZoom (5 = the 1:1
@@ -445,18 +444,14 @@ function streamTo(x0, y0, x1, y1, color, n, life) {
 
 // n = how much the pickup is worth. type is always an ITEMS key now (berry,
 // fish, a card) - gold is paid on the spot through awardGold, never dropped.
-// `it` is the instanced cell an item with state of its own travels as - a
-// tool and the bits loaded into it. It is the SAME object the bag held and the
-// same one the bag gets back, so a tool never loses its build to a throw, a
-// death or a hand-off. Plain stacking items leave it undefined.
-function spawnDrop(x, y, type, n, it) {
+function spawnDrop(x, y, type, n) {
   const a = rng() * Math.PI * 2;
-  const d = { x, y, vx: Math.cos(a) * rand(20, 45), vy: Math.sin(a) * rand(20, 45) - 30, z: 0, vz: rand(30, 60), type, n: n || 1, t: 0, it: it || null, lock: -1, lockT: 0 };
+  const d = { x, y, vx: Math.cos(a) * rand(20, 45), vy: Math.sin(a) * rand(20, 45) - 30, z: 0, vz: rand(30, 60), type, n: n || 1, t: 0, lock: -1, lockT: 0 };
   drops.push(d);
   return d;
 }
 // A THROW IS NOT A SPILL. Something let go on purpose - dragged out of the
-// pack onto the snow, or shaken off a discarded tool - leaves along a heading
+// pack onto the snow - leaves along a heading
 // with real speed behind it, and is DEAF TO THE HAND THAT THREW IT for
 // TOSS_LOCK_T seconds. Without that second half the pickup magnet simply
 // hands back what you just decided to be rid of, and a bag you cannot empty

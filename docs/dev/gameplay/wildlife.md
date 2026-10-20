@@ -134,7 +134,7 @@ hunt reticle, and joins the y-sorted draws.
 
 **An animal is a unit like any other.** `makeAnimal` hands every kind the full status set through
 `clearUnitStatus`, so a rabbit, a deer, a wolf and a bird take the same damage and the same six
-states from every ability and every bit that a player does — rooted, netted, slowed, marked,
+states from every ability and every attack that a player does — rooted, netted, slowed, marked,
 stunned, set alight — and wear the same tells at their own size
 ([status effects](status-effects-one-set-for-every-unit.md)). Nothing about wildlife is exempted
 anywhere; what makes them everybody's target rather than nobody's is simply that they carry no

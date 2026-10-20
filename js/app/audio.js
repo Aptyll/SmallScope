@@ -647,7 +647,7 @@
     swing() { if (smp('whoosh', { vol: 0.56, rate: 1.6, jitter: 0.12, hp: 400, dur: 0.45 })) return; noise(0.07, 0.1, 600); },
     bowDraw() { noise(0.14, 0.06, 350); tone(160, 0.12, 'triangle', 0.04, 60); },
     dodge() { if (smp('whoosh', { vol: 0.53, rate: 0.8, jitter: 0.08, lp: 2400, dur: 0.6 })) return; noise(0.16, 0.14, 550); tone(340, 0.12, 'triangle', 0.06, -220); },
-    // A BODY MOVED WITHOUT WALKING IT (warpPlayer, js/sim/tools.js). It borrowed
+    // A BODY MOVED WITHOUT WALKING IT (the recall home, js/sim/recall.js). It borrowed
     // the dodge whoosh, which is the sound of air being crossed - the one
     // thing a teleport never does. Nothing else in the game moves a body this
     // way, so it gets the one cue nothing else in the game sounds like.
@@ -658,8 +658,6 @@
     // the shot rhythm: a dry wooden tick the moment the next arrow is nocked and
     // the bow can be drawn again. Quiet on purpose - it plays after every shot.
     nock() { tone(880, 0.03, 'square', 0.035); tone(1240, 0.03, 'square', 0.025, 0, 0.03); },
-    // pressing a tool that cannot answer (an empty slot, nothing light enough to throw): a slack string and nothing behind it
-    dryFire() { noise(0.05, 0.07, 260); tone(120, 0.09, 'triangle', 0.06, -40); },
     // going to ground: a body dropping into deep snow, all low crunch and no pitch
     bury() { noise(0.22, 0.2, 380); tone(96, 0.16, 'triangle', 0.06, -26); },
     // the cover finishes settling. Barely there on purpose - it is the sound of

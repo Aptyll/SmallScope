@@ -79,7 +79,7 @@ Trees fall and buildings rise after that: `obs.nodes` and `obs.structs` are the 
 obs = {
   tick, time,              // sim tick; match seconds
   me: {
-    id, team, cls,         // cls: 'HUNTER' | 'WARRIOR'
+    id, team, cls,         // cls: the hero's name ('HUNTER', 'WARRIOR', 'ARMATOS', ...)
     x, y, vx, vy,
     hp, maxHp, dead, respawnT, eliminated,
     level, xp, gold, skillPts,
@@ -87,8 +87,7 @@ obs = {
     prone, hide,           // hide 0..1: how buried under the snow
     aboard, falling, zip,  // on the eagle; in the drop; -1 or the cable ridden
     abilities: [{ key, id, lv, cd, ready, range }],  // keys 0..3; lv 0 = locked; range px or null
-    tool: { type, bits, lvl } | null,      // the weapon in hand and the bits loaded in it
-    toolSel, tools: [type | null],
+    attack,                // your basic attack: 'shot' (a bow) or 'cut' (a blade)
     bag: [{ type, n } | null],
     food: { berry, fish, ... },            // the pouch: meals and unopened cards
     charging, chargeT,     // the draw in progress

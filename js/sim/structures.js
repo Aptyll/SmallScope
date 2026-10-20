@@ -450,7 +450,7 @@ function turretMouth(o) {
 // rock from `pv` onto (ax, ay) at ROCK_SPD over the ground while ROCK_FALL
 // pulls it down, the seconds that takes, and the bearing it leaves on. The
 // flight is an exact parabola (no drag, one constant sag - the `sling` path,
-// steerBit in js/sim/tools.js), so `T` IS the rock's life: a throw that runs out
+// steerShot in js/sim/attack.js), so `T` IS the rock's life: a throw that runs out
 // of life is a throw that has ARRIVED, which is what rockLands reads.
 function turretLaunch(pv, ax, ay) {
   const dx = ax - pv.x, dy = ay - pv.y;

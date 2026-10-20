@@ -2,18 +2,19 @@
 // What a player does: click/E/space resolved - the swing tools and what they
 // harvest, the empty-press tell, the roll as a hit, prone, and one
 // blow against anything built, each with its own tuning above it. What the
-// LEFT button fires is a tool on one of the four slots: js/sim/tools.js.
+// LEFT button fires is the hero's basic attack: js/sim/attack.js.
 // ------------------------------------------------------------ actions
 // Every action takes the player performing it, so the local human, an AI fill
 // and a future network peer all reach the world through the same calls.
 
 // The three infinite SWING tools - what E has in hand, never what the button
 // fires. Not player-selectable: E auto-swaps to the axe / pick for whatever is
-// under the cursor, and the player's weapon comes back the moment the swing ends.
-// The player-selectable weapons are the four slots in TOOLS (js/sim/tools.js).
+// under the cursor, and the hero's weapon comes back the moment the swing ends.
+// The weapon the button fires is the hero's basic attack (CLASSES[c].attack,
+// js/sim/attack.js).
 const SWING_TOOLS = [
   // the 'bow' row is the AT REST state, not a thing that draws: drawHeldTool
-  // puts the weapon on the selected slot in the hands instead, so this entry's
+  // puts the hero's own weapon (attackOf) in the hands instead, so this entry's
   // `icon` is unread (SPRITES.itemBow is still live on the end screen's kills
   // plate). Kept so the table stays one row per p.swing value.
   { key: 'bow',  name: 'BOW',     icon: 'itemBow' },
@@ -28,8 +29,7 @@ const ARROW_TRAIL_A = 0.7;     // their whole life from this alpha, so the tail 
 const ARROW_RIM = '#0d1226';  // 1px dark rim under the shaft, so it reads over snow
 // The arrow's body, one ASCII master: i runs 0 (tip) .. ARROW_LEN (tail) along
 // the flight, j -3..+3 across it. W the white tip, F the flint head, B the
-// loaded bit's colour (the collar behind the head - the shaft itself never
-// recolours), G the shaft's one gold, T the team feather (TEAMS mark), D the
+// collar behind the head (the shaft's gold, on a plain arrow), G the shaft's one gold, T the team feather (TEAMS mark), D the
 // feather's dark edge (TEAMS coatD). Every arrow in flight - the piercing
 // shot included - draws THIS body
 // through arrowBodyPx/paintArrowPx (js/draw-world.js) - change it here and
@@ -46,7 +46,7 @@ const ARROW_MAP = [
   '.............DDD',
 ];
 const ARROW_LEN = 15;     // i of the tail pixel: trail motes lay off behind this
-const ARROW_INK = { W: '#ffffff', F: '#9aa3b8', G: '#d09549' }; // T/D per team, B per bit
+const ARROW_INK = { W: '#ffffff', F: '#9aa3b8', G: '#d09549' }; // T/D per team
 const ARROW_BODY = [];    // flat [i, j, key] triples parsed from the map once,
 // fill first and structure last: arrowBodyPx paints in this order, so when a
 // diagonal bearing lands two body pixels on one cell (the DDA chain has fewer
@@ -97,7 +97,7 @@ const PRONE_SNIFF = 22;   // px: nothing hides at arm's length, whatever it is u
 const PRONE_MAP = 0.55;   // cover past this drops a rival off both maps (a crawler never reaches it)
 const AMBUSH_MUL = 2.5;   // damage on the shot loosed out of full cover
 
-// left click fires the selected tool slot: the press only records the intent
+// left click is the hero's basic attack: the press only records the intent
 function clickAction(p) {
   SFX.unlock();
   p.input.fire = true;
@@ -202,7 +202,7 @@ function startSwing(p, t) {
 // eagle) and any building on the other team is swung at the moment it is in
 // WORK_REACH, with no key held: the closest such tile in the ring around the
 // player, nearest tile centre first. Fish are the same idea on ice (autoFish,
-// js/sim/tools.js). E keeps its day job for what is left - bare ice and the
+// js/sim/attack.js). E keeps its day job for what is left - bare ice and the
 // practice dummy - and a held E always wins the hands.
 // Whether a tile is the hands' business, and with which tool (-1 = not). A
 // rival's building or roosting eagle answers with AUTO_PRIO_FOE, a chest with
@@ -432,16 +432,6 @@ function risePlayer(p) {
   }
 }
 
-// ---- the empty press ----------------------------------------------------
-// pressing a tool that cannot answer - an empty slot, or a tool with no bit
-// light enough to throw: the tell, rate-limited to the press. What the press
-// WOULD have fired lives in fireTool (js/sim/tools.js).
-function dryFire(p) {
-  p.dryT = 0.45;
-  burst(p.x, p.y - BOW_Y, '#8a97bd', 3, 22, 0.3, true);
-  sfxFor(p, 'dryFire');
-}
-
 // the swing lands on the tile tryWork() locked, whatever is there by now
 // (a robot may have felled the tree mid-swing: then it's just air). Two
 // players can land on the same tile in one step - only one swing counts.
@@ -512,11 +502,8 @@ function nearestDryTile(x, y, p) {
 }
 
 // ONE chop into a standing tree, live or dead: the gold for the bite, the
-// stump and the fell payout, the loot roll and the rare pine's jackpot. Two
-// things land it - an E swing through hitObject, and a BIG AXE bit thrown
-// into the treeline (BIT_IMPACT.chop, js/sim/tools.js) - and they are the same
-// blow on purpose: an axe in the air is still an axe, and nothing about what
-// a tree is worth should depend on which of them felled it.
+// stump and the fell payout, the loot roll and the rare pine's jackpot,
+// landed by an E swing through hitObject.
 function chopTree(o, p) {
   const ox = o.tx * TILE + 8, oy = o.ty * TILE + 8;
   const dead = o.type === 'deadTree'; // the rookery's cover: quicker, same gold
@@ -626,7 +613,7 @@ function pickSnowdrop(o, p) {
 }
 
 // Every way of hurting the practice dummy lands here - the E swing, every
-// bit an arrow pipeline shot can be (js/sim/sim.js), and the roll's tackle - so
+// basic attack and arrow (js/sim/attack.js, js/sim/sim.js), and the roll's tackle - so
 // the numbers read the same whatever is thrown at it. The dummy never
 // breaks: the pool floors at zero and updatePractice (js/sim/practice.js) mends it
 // after DUMMY_RESET_T of quiet, which is what makes it a combo readout.
@@ -646,7 +633,7 @@ function hitDummy(o, dmg, hx, hy) {
 }
 
 // What a building shrugs off a PLAYER's blow. Every way a hand can reach a
-// wall now lands here - the E swing, every bit a tool fires (js/sim/sim.js), the
+// wall now lands here - the E swing, every basic attack (js/sim/attack.js), the
 // abilities' rings and slams (js/sim/abilities.js) - and every one of those
 // numbers was tuned against a 40-160 hp BODY, which would melt a 60 hp wall.
 // So the damping is charged ONCE, here, on the one path, rather than as a
@@ -715,13 +702,12 @@ function destroyStructure(o, refund, p) {
 // an axe, a shoulder - and is the default when nothing names one. What a type
 // DOES lives in this table, never in an `if` at a hit site: the sparks it
 // throws off a body, and how long it leaves that body burning.
-const BURN_T = 3;        // s a plain fire hit burns for...
+const BURN_T = 3;        // s a plain fire burns for...
 const BURN_DPS = 6;      // ...at this many hp a second, paid...
 const BURN_TICK = 0.4;   // ...in bites this far apart, so a burn reads as ticks rather than a drain
 const BURN_MAX = 8;      // s of burn one body can carry at once, however many shots land on it
 const DMG_TYPES = {
   blunt: { spark: null, ignite: 0 },
-  fire: { spark: '#ffd95c', ignite: BURN_T }, // sets alight whatever it lands on
   burn: { spark: null, ignite: 0 },           // the fire already lit, paying a bite: it must never relight itself
 };
 
@@ -856,8 +842,8 @@ function structsInCone(src, x, y, a, r, half) {
 // the world. `o` carries the rest: `type` (a DMG_TYPES key), `kb` px/s of shove
 // for an animal or a bot (a player's shove is damagePlayer's own, so the callers
 // that want a particular one add it themselves), `cause` for the feed line,
-// `ambush`, `crit`, and `burn`/`burnDps` for a shot that names its own fire -
-// otherwise the type's own. Everything an ability or a tool lands comes
+// `ambush`, `crit` and `basic` (a hero's basic attack, for passiveDeal and the
+// item passives). Everything an ability or an attack lands comes
 // through here; the three per-kind functions under it stay for what is
 // genuinely per-kind (a den waking, a worker turning on whoever hit it).
 //
@@ -865,8 +851,8 @@ function structsInCone(src, x, y, a, r, half) {
 // two different things by it. `kb` is an absolute px/s an ability picks for a
 // particular blow; `kbMul` is a MULTIPLIER on whatever shove that kind takes
 // anyway - a player's HIT_KB, a worker's ROBOT_KB, an animal's own curve - and
-// it is what a projectile bit's `kb` field rides in on (js/sim/tools.js), so one
-// number on a bit means the same thing thrown at any of the three.
+// it is what a basic attack's `kb` rides in on (CLASSES[c].attack, js/sim/attack.js),
+// so one number on an attack means the same thing landed on any of the three.
 function hurtUnit(e, dmg, nx, ny, src, o) {
   if (!unitAlive(e)) return;
   o = o || {};
@@ -892,10 +878,8 @@ function hurtUnit(e, dmg, nx, ny, src, o) {
   }
   if (ty.spark) burst(e.x, unitMidY(e), ty.spark, 6, 50, 0.45);
   if (src instanceof Player && src !== e) itemsOnHit(src, e, o); // the item passives a blow carries (js/sim/items.js)
-  // fire outlives its own blow: the shot's `burn` seconds if it named any,
-  // else whatever the damage type is worth on its own
-  const bt = o.burn === undefined ? ty.ignite : o.burn;
-  if (bt > 0) igniteUnit(e, bt, o.burnDps, src);
+  // fire outlives its own blow: whatever the damage type is worth on its own
+  if (ty.ignite > 0) igniteUnit(e, ty.ignite, BURN_DPS, src);
 }
 
 // ---- the states a unit can be under --------------------------------------
@@ -1014,8 +998,9 @@ function markUnit(e, t) {
 // The one damage type that outlives its own blow. An ignited unit pays
 // `burnDps` in bites BURN_TICK apart until its clock runs out. A fresh
 // ignition REFRESHES that clock (capped at BURN_MAX) and takes the hotter of
-// the two rates rather than lighting a second fire, so a SPLITTER fan sets you
-// properly alight instead of banking half a minute of it. Credit rides along
+// the two rates rather than lighting a second fire, so repeated lights set you
+// properly alight instead of banking half a minute of it. Today the one
+// light is the KINDLING item passive (itemsOnHit, js/sim/items.js). Credit rides along
 // in `burnBy`, so burning to death is a kill for whoever struck the light.
 // Every kind of unit burns, and every kind wears the flames (drawUnitStates).
 function igniteUnit(e, t, dps, src) {

@@ -60,7 +60,7 @@ Physical drops exist for everything **carried**: `spawnDrop(x, y, type, n)` take
 value of the drop (`d.n`, default 1) and the pickup adds what fits through `bagAdd`, floating
 that number in `RES_COLORS[type]`. It **returns the drop** it made, which is what lets a
 deliberate throw give it a heading and a lock on top (`flingDrop`/`lockDrop`, js/sim/core.js). **Whatever was taken comes off `d.n`, and the drop is only
-removed when `d.n` hits zero** — that is what lets a stack of 5 bits half-fill a bag and
+removed when `d.n` hits zero** — that is what lets a stack of 5 ore half-fill a bag and
 leave 3 lying in the snow. A drop's `type` is always an `ITEMS` key: sources pay `berry` and
 the card rarities, a caught fish goes straight into the pouch (taken by `autoFish`, or handed over by a
 [fish net](../world.md#fish-nets) you are standing on), and a wrecked net's
@@ -76,9 +76,7 @@ cannot carry fires the [refusal tell](inventory-and-the-backpack.md) rather than
 outside all of that: the pouch has no ceiling, so a berry is never left in the snow.
 
 Two things bend "no room" and "everyone standing on one". A drop inside its
-[throw lock](tools-and-bits/the-weapon-shelf.md) is neither magnetised by nor claimable by **the one player who
+[throw lock](the-basic-attack.md#the-item-slots-and-the-drag) is neither magnetised by nor claimable by **the one player who
 threw it** — and raises no refusal for them either, since standing on something you meant to put
-down is not a denial; it draws at half alpha with its tier glint off for that player alone, and
-comes back to life when the three seconds are up. And a body that would
-[swap for the tool in hand](tools-and-bits/where-tools-and-bits-come-from.md) counts as room whatever the pack
-holds, because that pickup is an exchange.
+down is not a denial; it draws at half alpha for that player alone, and comes back to life when the three seconds are
+up.

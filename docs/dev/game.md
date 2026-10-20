@@ -74,12 +74,11 @@ nothing in it is at stake. See [the practice arena](world.md#the-practice-arena)
 
 ## The pillars
 
-**Your weapon is your class's.** One weapon slot holds a **tool** (a body with a rate of fire,
-a number of bit cells and a weight it is strong enough to throw), and what comes out of it is the
-**bits** loaded into it. Each class flies in with its own (the HUNTER a bow, the WARRIOR a
-sword), and nothing on the map drops another: what grows over a match is the six item slots. The
-**shelf** over the backpack shows the weapon and those six slots at all times.
-[Tools and bits](gameplay/tools-and-bits.md).
+**Your weapon is your hero's.** The left button is one plain MOBA basic attack that belongs to
+the hero's kit (the HUNTER's SHORTBOW, the WARRIOR's LONGSWORD, ARMATOS's OATH GREATSWORD), held
+to draw and released to land, and nothing on the map drops another: what grows over a match is the
+hero's level and the six item slots. The **bottom bar** shows those six slots beside the
+abilities at all times. [The basic attack](gameplay/the-basic-attack.md).
 
 **Gold buys items, League's way.** Either team's **merchant's counter** sells five cheap parts and
 eight finished items built out of them into six item slots, every one always on sale at one

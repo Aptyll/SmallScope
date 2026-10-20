@@ -505,7 +505,7 @@ function drawFlatButton(r, label, hv) {
 const SET_TABS = [
   { id: 'game', label: 'GAME', rows: [
     // one size dial per HUD widget (HUD_DIALS, below), top of the screen first
-    { id: 'hudCorner', label: 'WEAPON BAR SIZE', kind: 'slider' },
+    { id: 'hudCorner', label: 'BACKPACK SIZE', kind: 'slider' },
     { id: 'hudRail', label: 'TOP BAR SIZE', kind: 'slider' },
     { id: 'map', label: 'MINIMAP SIZE', kind: 'slider' },
     { id: 'hud', label: 'BOTTOM BAR SIZE', kind: 'slider' },

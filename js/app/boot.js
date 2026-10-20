@@ -192,7 +192,7 @@ window.DBG = {
   // the radial wheel: open one by hand (state.wheel) and read back the
   // geometry the hover test and the pixels both use
   wheelLayout, wheelSpan, wheelAng, WHEEL_HUB, WHEEL_R, WHEEL_RING,
-  structures, robots, tracers, arrows, STRUCTS, SWING_TOOLS, TOOLS, BITS,
+  structures, robots, tracers, arrows, STRUCTS, SWING_TOOLS,
   // the team flag: plant one without a mouse (any player), lift it, open the
   // wheel by hand, and read back whose flag a body serves and the ring
   FLAG_TYPES, FLAG_ORDER, FLAG_R, mapTileAt, mapCloseHit, servedFlag, humanFlag, inFlag, openFlagWheel,
@@ -201,37 +201,24 @@ window.DBG = {
   plantFlag: (tx, ty, type, p) => plantFlag(p || player, tx, ty, type),
   clearFlag: (p) => clearFlag(p || player),
   get flag() { return player.flag; },
-  // the hud strip - portrait, abilities, bars and meals, bottom-centre.
-  hudStripRect, stripHit,
-  // Tools and bits: the two tables, the tier palette, an instance maker, the
-  // firing pipeline - so a driver can stage a build. `shelfCellRect(-1)` is
-  // the weapon's one well and 0..5 the item slots; `shelfHit` names either.
-  // `fitAdd` is the pickup's own path: a bit into the tool, the rest in the pack.
-  TOOL_TIERS, TOOL_SLOTS, makeTool, toolType, bitType, bitMods, newMods, fitAdd,
-  // toolPlan is the whole press resolved without firing it: what the budget
-  // reaches, through which envelope, and where it runs out (`cut`)
-  toolPlan, toolLoad, toolDrawMul, drawTime, sortBits,
-  toolRof, toolCycle, peekBit, toolReady, giveLoadout, CLASS_LOADOUT,
+  // the hud strip - portrait, abilities, items, bars and meals, bottom-centre;
+  // `itemCellRect(i)` is item slot i's well, and `stripHit` names any well.
+  hudStripRect, stripHit, itemCellRect, abCellRect, portraitRect,
+  // the hero's basic attack (CLASSES[c].attack, js/sim/attack.js): its row,
+  // the renock it waits, the press itself, and its damage at a draw - so a
+  // driver can land one without holding the button.
+  attackOf: (p) => attackOf(p || player), attackCycle: (p) => attackCycle(p || player),
+  basicAttack: (p) => basicAttack(p || player), attackDmg: (pw, p) => attackDmg(p || player, pw == null ? 1 : pw, false),
+  drawTime,
   // a thing put down on purpose: the throw (out of the pack, along the
-  // cursor), the lock that keeps it out of the thrower's own hands, and the
-  // bits a tool sheds as it lands - so a driver can stage a discard without
-  // a drag. And the swap: whether a find would take the hand, doing it, and
-  // the risen icons it leaves for drawSwaps.
+  // cursor) and the lock that keeps it out of the thrower's own hands - so a
+  // driver can stage a discard without a drag
   spawnDrop, throwCell, flingDrop, lockDrop, dropLocked, TOSS_SPEED, TOSS_LOCK_T,
-  shedBits, SHED_KICK, BIT_STACK, swaps, SWAP_T,
   // death keeps everything (die): the one number a kill is worth
   get KILL_BOUNTY() { return killBounty(); },
-  toolUpgrade: (cell, p) => toolUpgrade(p || player, cell),
-  takeUpgrade: (cell, p) => takeUpgrade(p || player, cell),
-  // the draw curve: 0..1 off a player's chargeT, and the flight and damage it buys a bit
+  // the draw curve: 0..1 off a player's chargeT, and the flight and damage it buys a shot
   drawPow, shotFlight, drawDmgMul, DRAW_RANGE_MIN, DRAW_SPEED_MIN, DRAW_DMG_MIN,
-  shelfCellRect, shelfHit, tierPlate,
-  // the closing line's three bits: what a shot does where it LANDS, the
-  // teleport with no shot to fire it, the flashes it strings across the jump,
-  // and the chop a thrown axe lands - so a driver can prove an arrival or a
-  // fell without waiting for one to connect
-  BIT_IMPACT, warps, WARP_FLASH_T, AXE_CHOP_R, chopTree,
-  warpPlayer: (x, y, p) => warpPlayer(p || player, x, y),
+  cellPlate, chopTree,
   // the class abilities: the table, a keypress by hand, and the entity lists
   // an ability leaves in the world - so a driver can stage a crater or a net
   // without walking a bot into one
@@ -244,16 +231,11 @@ window.DBG = {
   // level 0 is LOCKED: nothing casts off a key no point has been spent on
   abUnlocked: (i, p) => abUnlocked(p || player, i), abReady: (i, p) => abReady(p || player, i),
   buyAbilityLv: (i, p) => buyAbilityLv(p || player, i), abBuyRect, abBuyHit,
-  // the old arsenal tree's graph (nothing drops off it now; the items page is
-  // BUILD_ITEMS). `wipeTech` forgets what this profile has HELD (the blue pips), which is
-  // all a profile still remembers about the tree.
-  TECH,
   // the wiki: its pages, the live layout (tabs, rows, window, rail), what is
   // under a point, the open page's scroll, and the way in and out; the
   // title's three tabs over it and the notes screen (js/ui/notes.js)
   WIKI_PAGES, wikiLayout, wikiHit, wikiScrollBy, wikiSetTab, beginWiki, leaveWiki,
   beginNotes, openPageTab, pageTabsLayout, notesLayout,
-  wipeTech: () => PROFILE.clearTech(),
   // The merchant's counter (js/ui/shop.js) and the items it sells
   // (js/sim/items.js): the catalogue, the panel's geometry, and every trade
   // without the pointer
@@ -273,18 +255,8 @@ window.DBG = {
   // and where this frame's panel is sitting, the rect drawTooltip paints -
   // which is how the TOOLTIP row's two modes are read without eyeballing px
   tipRect: () => { if (!tipNow) return null; const s = tipSize(tipNow); return Object.assign(tipPos(s.w, s.h), s); },
-  fireTool: (p) => fireTool(p || player),
   // the fish catch's three beats: start one by hand, read which frame a body is on
   startCatch: (p) => startCatch(p || player), cancelCatch: (p) => cancelCatch(p || player), catchFrame,
-  get tools() { return player.tools; },
-  // stage a loaded tool straight onto a slot: DBG.equip(0, 'longbow', ['arrow','flame'])
-  equip: (slot, id, bits, p) => {
-    const q = p || player, cell = makeTool(id);
-    (bits || []).forEach((b, i) => { if (i < cell.bits.length) cell.bits[i] = b; });
-    sortBits(cell);
-    q.tools[slot] = cell;
-    return cell;
-  },
   setNock: (t, p) => { (p || player).nockT = t; }, // a huge t parks a player's bow for a capture
   // the players: all ten, the local one, and the teams table
   players, MAX_PLAYERS, TEAMS, Player, ringPts, contestRank,
@@ -404,7 +376,7 @@ window.DBG = {
   // fire: light a body, put it out, and the numbers a burn runs on
   igniteUnit: (t, dps, e, src) => igniteUnit(e || player, t, dps, src === undefined ? player : src),
   douseUnit: (e) => douseUnit(e || player),
-  DMG_TYPES, BURN_T, BURN_DPS, BURN_TICK, BURN_MAX, PYRE_T, PYRE_DPS, CINDER_R,
+  DMG_TYPES, BURN_T, BURN_DPS, BURN_TICK, BURN_MAX,
   // the roll as a hit: stun anything by hand, and read back what a roll at a
   // given speed would deal (`.` draws the sweep circle over a live dash)
   stunUnit: (t, e) => stunUnit(e || player, t),
@@ -512,8 +484,8 @@ window.DBG = {
 // machine whatever the refresh rate. That is what lets a step be numbered
 // (state.tick), stamped onto an input and replayed by a host: the
 // precondition for online play (docs/pvp-architecture.md). 1/60 because
-// that is the step the game was tuned under - TOOL_ROF_STEP counts rate of
-// fire in it, and the integrators have only ever seen 16 ms - so the feel
+// that is the step the game was tuned under - the attack cycles were
+// counted in it, and the integrators have only ever seen 16 ms - so the feel
 // is the one it had; a coarser network tick is a snapshot cadence, not a
 // sim one. render() still runs once per frame, and draws the world part of
 // the way between the last two steps (the in-between frames, below).

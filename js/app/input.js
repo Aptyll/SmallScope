@@ -293,7 +293,7 @@ function keyPress(e) {
   if (keyIs(e, 'recall') && !e.repeat) { player.input.cmd = { kind: 'recall' }; if (ckOn()) ckClear(); }
   // the burrow stands its hole ghost under the pointer, and puts it away (js/sim/tunnel.js)
   if (keyIs(e, 'tunnel') && !e.repeat) tunnelAimToggle();
-  // the pack key drops the inventory drawer under the weapon shelf. It is
+  // the pack key drops the inventory drawer in the top-left corner. It is
   // HUD and not an overlay, so unlike the map and ESC it neither stops the
   // sim nor swallows anything but its own clicks.
   if (keyIs(e, 'bag')) { state.bagOpen = !state.bagOpen; SFX.ui(state.bagOpen); }
@@ -306,9 +306,10 @@ function keyPress(e) {
   // that turns.
   if (keyIs(e, 'build') && !e.repeat) buildKeyPress();
   if (keyIs(e, 'rotate') && !e.repeat && state.build) { state.build.rot ^= 1; SFX.turn(); }
-  // The work key at the practice rack: the press opens the armory wheel over
-  // it, the pointer picks, and RELEASING it takes - the right-click wheel's
-  // own hold-and-release grammar, moved onto the key. A real work target in
+  // The work key at a practice prop (the parkour die, the range bell): the
+  // press opens its wheel over it, the pointer picks, and RELEASING it takes
+  // - the right-click wheel's own hold-and-release grammar, moved onto the
+  // key. A real work target in
   // reach keeps the key's day job over any of that furniture (the same rule
   // that decides which prompt is showing) - but NOT over a merchant, which
   // takes the key ahead of the work itself; ordinary work is suppressed
@@ -352,16 +353,14 @@ function keyPress(e) {
     const t = workTarget(player);
     if (!t || !t.near) {
       // one of your OWN buildings in reach: the press opens its manage
-      // wheel (upgrade / demolish) on the rack's grammar - E is the one verb
+      // wheel (upgrade / demolish) on the die's grammar - E is the one verb
       // for the world, and a building of yours is the one thing it never
       // swings at (manageNear, structures.js)
       const mg = manageNear(player);
-      const rk = mg ? null : rackNear(player);
       if (mg) { SFX.unlock(); state.wheel = { kind: 'manage', tx: mg.tx, ty: mg.ty, site: mg.building, seg: -1, ax: mouse.x, ay: mouse.y }; }
-      else if (rk) { SFX.unlock(); state.wheel = { kind: 'rack', tx: rk.tx, ty: rk.ty, seg: -1, ax: mouse.x, ay: mouse.y }; }
       else {
         // the parkour die: holding the key beside it opens the roll wheel -
-        // ROLL plus the three difficulties - on the rack wheel's own grammar
+        // ROLL plus the three difficulties - on the manage wheel's own grammar
         const pk = pkDieNear(player);
         if (pk) { SFX.unlock(); state.wheel = { kind: 'pkdie', tx: pk.tx, ty: pk.ty, seg: -1, ax: mouse.x, ay: mouse.y }; }
         else {
@@ -388,7 +387,7 @@ function keyPress(e) {
   // the four ability binds cast, left to right exactly as the strip shows
   // them (a click on the well sets the same field - hudPress, js/ui.js).
   // Edge-triggered like the dodge; the sim consumes it (tryAbility,
-  // js/sim/abilities.js). What is loaded in the weapon is on the shelf over the pack.
+  // js/sim/abilities.js).
   const ab = e.repeat ? -1 : ['ab1', 'ab2', 'ab3', 'ab4'].findIndex((a) => keyIs(e, a));
   if (ab >= 0) { SFX.unlock(); player.input.ability = ab; }
   if (keyIs(e, 'map') && !state.settingsOpen && !state.dropBrief) { state.wheel = null; state.mapOpen = !state.mapOpen; SFX.ui(state.mapOpen); }
@@ -428,7 +427,7 @@ function keyRelease(e) {
   // range bell) takes what the pointer is on (or cancels from the hub),
   // exactly as releasing the right button does
   if (keyIs(e, 'work') && state.wheel &&
-      (state.wheel.kind === 'rack' || state.wheel.kind === 'pkdie' || state.wheel.kind === 'agbell' || state.wheel.kind === 'manage')) {
+      (state.wheel.kind === 'pkdie' || state.wheel.kind === 'agbell' || state.wheel.kind === 'manage')) {
     resolveWheel();
     state.wheel = null;
   }
@@ -446,7 +445,7 @@ pageListen(window, 'blur', () => {
   // piece wheel - is a held gesture too:
   // its keyup is lost with the focus, so it closes (choosing nothing)
   // instead of sticking open
-  if (state.wheel && (state.wheel.kind === 'rack' || state.wheel.kind === 'pkdie' || state.wheel.kind === 'agbell' || state.wheel.kind === 'manage' || state.wheel.kind === 'piece')) state.wheel = null;
+  if (state.wheel && (state.wheel.kind === 'pkdie' || state.wheel.kind === 'agbell' || state.wheel.kind === 'manage' || state.wheel.kind === 'piece')) state.wheel = null;
   // ...and so is the flag wheel G holds, and a held right button's follow
   if (ckOn()) { if (state.wheel) state.wheel = null; ck.follow = false; ck.arm = false; }
 });
@@ -503,7 +502,7 @@ function pointerPress(button) {
     if (cheatAimOff()) { SFX.unlock(); return; } // ...and the practice bar's aim
     if (state.mapOpen) { openFlagWheel(); return; } // over the chart: the flag wheel, the one way to order a tile off-screen
     if (bagHit(mouse.x, mouse.y) || charHit(mouse.x, mouse.y) || stripHit(mouse.x, mouse.y) ||
-        shopHit(mouse.x, mouse.y) || shelfHit(mouse.x, mouse.y) || shelfPlateHit(mouse.x, mouse.y) || cheatHit(mouse.x, mouse.y)) return; // no wheel through the HUD
+        shopHit(mouse.x, mouse.y) || cheatHit(mouse.x, mouse.y)) return; // no wheel through the HUD
     // any tile on the map is a place to plant a flag on (building is the
     // list on T, managing is E beside your own building)
     openFlagWheel();
@@ -543,8 +542,8 @@ function pointerPress(button) {
       return;
     }
   }
-  // The backpack widget, the weapon slots and the weapon shelf swallow every
-  // press over themselves before the tool ever sees them. The character panel
+  // The backpack widget and the strip swallow every press over themselves
+  // before the world ever sees them. The character panel
   // is asked first while it is up - the X closes, and the slab eats
   // every press. Everything else goes through
   // hudPress, which arms a drag the mouseup below either completes or reads
@@ -636,7 +635,6 @@ function fireUp() {
 const HAPTIC = {
   grab:  { ms: 18, s: 0.22 },
   place: { ms: 28, s: 0.45 },
-  seat:  { ms: 34, s: 0.55 },
   swap:  { ms: 55, s: 0.8 },
   deny:  { ms: 75, s: 0.95 },
 };
@@ -745,7 +743,7 @@ const CK_ARRIVE = 5;      // px from a goal that counts as arrived
 const CK_MARK_T = 0.6;    // s the click ring lives on the snow
 const CK_COL = { move: '#f4f7ff', work: '#ffd95c', foe: '#ff6a5c' }; // the ring: a walk, a job, a fight
 // order: {kind:'move'|'amove', x, y} | {kind:'work', tx, ty} | {kind:'chase', t}
-//        | {kind:'use', what:'manage'|'shop'|'rack'|'pkdie'|'agbell', o, tx, ty}
+//        | {kind:'use', what:'manage'|'shop'|'pkdie'|'agbell', o, tx, ty}
 // lock: the unit the tool is on; stand: that lock is the LEFT press's (the
 // MOUSE scheme's), which aims and auto-attacks but never walks the body;
 // arm: A pressed, the next left press lays the attack-move; follow: the
@@ -806,7 +804,7 @@ function ckRightPress() {
     if (m) { const c = counterPt(m); ckOrder({ kind: 'use', what: 'shop', o: m, tx, ty }, c.x, c.y + 2, 'work'); return; }
     const o = structOf(objAt(tx, ty));
     if (o && STRUCTS[o.type] && !STRUCTS[o.type].fixed && o.team === player.team) { ckOrder({ kind: 'use', what: 'manage', o, tx, ty }, wx, wy, 'work'); return; }
-    if (o && (o.type === 'rack' || o.type === 'pkdie' || o.type === 'agbell')) { ckOrder({ kind: 'use', what: o.type, o, tx, ty }, wx, wy, 'work'); return; }
+    if (o && (o.type === 'pkdie' || o.type === 'agbell')) { ckOrder({ kind: 'use', what: o.type, o, tx, ty }, wx, wy, 'work'); return; }
     if (workTargetAt(player, tx, ty)) { ckOrder({ kind: 'work', tx, ty }, tx * TILE + 8, ty * TILE + 8, 'work'); return; }
   }
   ckOrder({ kind: 'move', x: wx, y: wy }, wx, wy, 'move');
@@ -847,22 +845,17 @@ function ckAcquire(p) {
   for (const a of animals) if (a.home && unitAlive(a)) take(a, CK_ACQ_R);
   return best;
 }
-// how far the tool in hand lands a blow at the auto-draw: a blade's reach, a
-// bow's flight at CK_AUTO_DRAW (shotFlight, the loose's own envelope); 0 with
-// nothing to swing, and then nothing fires by itself
+// how far the hero's basic attack lands a blow at the auto-draw: a blade's
+// reach, a bow's flight at CK_AUTO_DRAW (shotFlight, the loose's own envelope)
 function ckReach(p) {
-  const cell = heldTool(p);
-  if (!cell) return 0;
-  const T = TOOLS[toolIdOf(cell.type)];
-  if (T.melee) return T.melee.reach + 6;
-  const plan = toolPlan(cell);
-  if (!plan.shots.length) return 0;
-  const lead = plan.shots[0], fl = shotFlight(BITS[lead.id], lead.m, CK_AUTO_DRAW);
+  const A = attackOf(p);
+  if (A.cut) return A.cut.reach + 6;
+  const fl = shotFlight(A.shot, CK_AUTO_DRAW);
   return fl.spd * fl.life;
 }
 function ckHoldR(p, reach) {
-  const cell = heldTool(p), T = cell && TOOLS[toolIdOf(cell.type)];
-  if (T && T.melee) return T.melee.reach * 0.8;
+  const A = attackOf(p);
+  if (A.cut) return A.cut.reach * 0.8;
   return reach > 0 ? Math.min(CK_HOLD_BOW, reach * 0.85) : CK_HOLD_BOW;
 }
 // a 'use' order: walk into the thing's reach, then open it - the counter as
@@ -874,7 +867,7 @@ function ckUse(p, o, walk, r) {
   r.aimX = p.input.aimX = cx; r.aimY = p.input.aimY = cy; // manageNear reads the aim
   const k = o.what;
   const near = k === 'manage' ? (manageNear(p) === o.o ? o.o : null) : k === 'shop' ? (merchNear(p) === o.o ? o.o : null)
-    : k === 'rack' ? rackNear(p) : k === 'pkdie' ? pkDieNear(p) : agBellNear(p);
+    : k === 'pkdie' ? pkDieNear(p) : agBellNear(p);
   if (near) {
     ck.order = null;
     SFX.unlock();

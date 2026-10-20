@@ -10,7 +10,7 @@
 // tile under the pointer, a left press there sends the order (teleport once,
 // dummies until the button, the right button or Escape puts it down). The
 // chevron tab on the plate's right edge folds the column away to the tab.
-// It hangs under the corner (the weapon shelf and the pack's open drawer),
+// It hangs under the corner (the pack's arrow and its open drawer),
 // and scales with the corner's size dial (cornerSc) about its own top-left
 // like the corner does (drawCornerScaled) - capped so the column never runs off the bottom.
 const CB_CELL = 16;          // a well: a 12px icon, 1px rim and 1px air round it

@@ -119,12 +119,8 @@ the other way round:
   that room's whole point is that its light never changes. (It gets no shafts either, for free —
   its clock is pinned nowhere near noon and it has no eagle.)
 
-Then [the hour](#the-hour) (`todGrade`), then the night multiply, then **`litShots`** — the one
-light left in the game. A shot carrying a `lit` bit (the CARE ARROW, the WISP, anything a FLAME
-modifier is riding — see [tools and bits](../gameplay/tools-and-bits.md)) gets an additive warm
-halo read straight off the live `arrows`, so it warms the night blue rather than cutting a hole
-in it. It is drawn **after** the night grade, which is why it reads at midnight and barely at all
-at noon. Then **`litSnowdrops`**, the other light: each open snowdrop the object pass drew hands
+Then [the hour](#the-hour) (`todGrade`), then the night multiply, then **`litSnowdrops`**, the
+one light left in the game: each open snowdrop the object pass drew hands
 its place over (`litDrops`), and this lays the rest above every grade — a stepped pool of warm light
 (`SNOWDROP_POOL`, added, breathing on `SNOWDROP_BREATH`, stronger with the dark), the bell again
 (`SPRITES.snowdrop[v].bell`, so no cloud shadow, hour or night dulls it), its halo of sparks
