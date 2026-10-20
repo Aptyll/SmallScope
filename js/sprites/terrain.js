@@ -1,6 +1,6 @@
 'use strict';
 // The ground's furniture: the pine and its 24 wind frames (and the one atlas
-// every pine on screen draws from), stumps, the dead gold ore and mine, the berry
+// every pine on screen draws from), stumps, the berry
 // bush's four states, the camps' dead snags, the wolf den and the hog hut.
 (() => {
   const { bake, flipH } = SPR;
@@ -1012,85 +1012,6 @@
     '................',
   ];
 
-  // ---------------------------------------------------------------- gold ore
-  const GOPAL = {
-    '.': null,
-    'o': '#3a3f52',
-    'y': '#8b93a8',
-    'Y': '#a8b0c4',
-    'v': '#666d84',
-    'w': '#eef4fb',
-    'W': '#ffffff',
-    's': '#c9dcee',
-    'n': '#d8a850', // gold
-    'N': '#f2cc6a', // gold bright
-  };
-  const goldOre = [
-    '................',
-    '......oWwo......',
-    '....owwwwwso....',
-    '...oYwwnNYyo....',
-    '..oYYwYyNnyvo...',
-    '..oYYnNyyvnvo...',
-    '..oYynvyNyvvo...',
-    '..oyyvnNvyvvo...',
-    '...ovvvnvvvo....',
-    '....sssssss.....',
-  ];
-
-  // ---------------------------------------------------------------- gold mine (32x32, occupies 2x2 tiles)
-  const MIPAL = {
-    '.': null,
-    'o': '#2c2c3c', // outline
-    'y': '#8b93a8', // rock mid
-    'Y': '#a8b0c4', // rock light
-    'v': '#666d84', // rock dark
-    'V': '#4e5266', // rock deep
-    'k': '#0c0f1e', // shaft black
-    'K': '#1d2438', // shaft edge
-    'u': '#8a6142', // timber
-    'U': '#a3794f', // timber light
-    'n': '#d8a850', // gold vein
-    'N': '#f2cc6a', // gold bright
-    'w': '#eef4fb', // snow
-    'W': '#ffffff',
-    's': '#c9dcee', // snow shade
-  };
-  const mine = [
-    '..............WWw...............',
-    '............owwwwwo.............',
-    '...........owwwwwwyo............',
-    '..........oYwwwwYyyvo...........',
-    '.........oYYwwwYYyyyvo..........',
-    '........oYYYwwYYyyyyvvo.........',
-    '.......oYYYYYYYyyyyvvvvo........',
-    '......oYYYYnYYyyyyyvvvvvo.......',
-    '.....oYYYYNnYyyyyyyvvvvvvo......',
-    '....oYYYYYnYyyyyyyyyvvvvVVo.....',
-    '...oYYYwwYYyyyyNnyyyvvvVVVVo....',
-    '..oYYYwwwYyyyyyNyyyyvvvvVVVVo...',
-    '..oYYYYYyyyyyyyyyyyyvvvvVVVVo...',
-    '.oYYYYYyyyoKKKKKKKKovyvvVVVVVo..',
-    '.oYYYnNyyoKkkkkkkkkKovvvVVVVVo..',
-    '.oYYYYnyyoUuuuuuuuuUovvVVVVVVo..',
-    '.oYYYyyyyoUukkkkkkuUovvvVVVVVo..',
-    'oYYYyyyyyoUukkkkkkuUoyvvVVVVVVo.',
-    'oYYyyyyyyoUukkkkkkuUovvvVVVVVVo.',
-    'oYyyyNnyyoUukkkkkkuUovvVvVVVVVo.',
-    'oYyyyynyyoUukkkkkkuUovvvVVVVVVo.',
-    'oYyyyyyyyoUukkkkkkuUovvVVVVVVVo.',
-    'oyyyyyyyyoUukkkkkkuUonvVVVVVVVo.',
-    'oyyyynyyyoUukkkkkkuUoNnVVVVVVVo.',
-    'oyyyyyyyyoUukkkkkkuUovvVVVVVVVo.',
-    'oyyyyyyyyoUukkkkkkuUovvVVVVVVVo.',
-    '.oyyyyyyyoUukkkkkkuUovvVVVVVVo..',
-    '.oyyyyyyyoUukkkkkkuUovvVVVVVo...',
-    '..ooyyyyyoUukkkkkkuUovvVVVoo....',
-    '....ooooooooskkkksoooooooo......',
-    '.....ssssssssssssssssssss.......',
-    '................................',
-  ];
-
   // ---------------------------------------------------------------- bush
   const BPAL = {
     '.': null,
@@ -1686,8 +1607,6 @@
       return c;
     })(),
     stump: bake(stump, TPAL),
-    goldOre: bake(goldOre, GOPAL),
-    mine: bake(mine, MIPAL),
     bush: bake(bush, BPAL),
     bushEmpty: bake(bushEmpty, BPAL),
     bushBud: bake(bushBud, BPAL),

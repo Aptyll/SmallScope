@@ -6,16 +6,14 @@ set down again at the bird ([Respawn at the bird](../multiplayer.md#respawn-at-t
 eagle has been driven off every death on that side is permanent, and that is the only way anyone
 is ever out of a match (a side that surrenders calls its own bird home: [Surrender vote](../multiplayer.md#surrender-vote)). `die(p, src, cause)` marks that player dead and drops its bow draw,
 momentum and zipline handle either way (that half is `bodyOut(p)`, which a surrender runs alone, since nobody went down). **Death keeps everything**: the wallet, the pouch, the
-bag, the weapon and the build loaded into it, the unopened cards, the items, the skill ranks, the
+weapon and the build loaded into it, the items, the skill ranks, the
 level and xp all stay on the body, and `reset(false)` brings the same player back — nothing
-spills, nothing is looted, and the snow around a corpse is as clean as it was. (An item riding
-the cursor mid-drag goes back in the bag, so it is still there when the body comes back instead
-of vanishing with the hand holding it.) **What a kill is worth
+spills, nothing is looted, and the snow around a corpse is as clean as it was. **What a kill is worth
 is gold from nowhere**, paid by `payTakedown` to the killer and the assists (see
 [Takedowns](#takedowns-assists-bounties-and-shutdowns) below). The XP is separate and never needs
 the credit: `KILL_XP` (40) + `KILL_XP_LV` (15) × the downed scout's level, shared by every rival
 standing near, the killer too wherever it stood ([Hero levels](../multiplayer.md#hero-levels)). `die` also credits the kill (and
-heals the killer if their kit carries `killHeal`, off a card) and writes the log line — see
+heals the killer if their kit carries `killHeal`, off the FEAST passive) and writes the log line — see
 [Kills and the event log](../multiplayer.md#kills-and-the-event-log) — then asks
 `teamEagleDown(p.team)`: with the eagle still roosting, `p.respawnT` starts counting down
 (`respawnTime(p)`, `updateRespawns` — see [Respawn at the bird](../multiplayer.md#respawn-at-the-bird)

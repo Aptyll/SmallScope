@@ -11,8 +11,7 @@
 // wasted gold, and saving toward a finished item can start one part at a time.
 //
 // What an item does is all in this file: its stats and its passive both write
-// into the kit through refreshKit (js/sim/player.js), the same way a card
-// does, so every kit-reading site (damage, movement, dodge,
+// into the kit through refreshKit (js/sim/player.js), so every kit-reading site (damage, movement, dodge,
 // stealth, the bots) picks an item up without knowing items exist. The two
 // passives that are not a kit number - a hit that does something, a heal out
 // of a fight - hang off hurtUnit (itemsOnHit) and the player's clock
@@ -32,8 +31,7 @@ const CHILL_T = 1, CHILL_MUL = 0.7; // CHILL: a hit slows the target this long, 
 
 // What each stat line IS: the label the shop prints, how its number reads,
 // and what it writes into the kit. Every line is one of the hero stats
-// (js/sim/stats.js) and adds to the kit's stat bag, `kit.add`, the same bag
-// cards add to, so statOf reads an item without knowing items
+// (js/sim/stats.js) and adds to the kit's stat bag, `kit.add`, so statOf reads an item without knowing items
 // exist. ARMOR is League's (each point a share off every hit), ATTACK SPEED a
 // share added to the hero's attack speed, MOVE SPEED flat (the hero's walk is
 // PLAYER_SPEED).
@@ -78,7 +76,7 @@ const BUILD_ITEMS = {
   skates:   { name: 'SKATES', price: 80, from: ['boots'], stats: { ms: 6 }, passive: 'glide', icon: ['gear', 3, 0, 3] },
   cloak:    { name: 'SNOW CLOAK', price: 120, from: ['boots', 'hide'], stats: { hp: 20, ms: 4 }, passive: 'drift', icon: ['gear', 3, 2, 3] },
   feathers: { name: 'FEATHERS', price: 130, from: ['string', 'boots'], stats: { as: 0.18, ms: 4 }, passive: 'light', icon: ['gear', 3, 1, 3] },
-  sunstone: { name: 'SUNSTONE', price: 200, from: ['flint', 'flint'], stats: { dmg: 7 }, passive: 'ambush', icon: 'itemOre_sunstone' },
+  sunstone: { name: 'SUNSTONE', price: 200, from: ['flint', 'flint'], stats: { dmg: 7 }, passive: 'ambush', icon: 'itemArt_sunstone' },
 };
 const ITEM_PARTS = Object.keys(BUILD_ITEMS).filter((id) => !BUILD_ITEMS[id].from);
 const ITEM_DONE = Object.keys(BUILD_ITEMS).filter((id) => BUILD_ITEMS[id].from);
@@ -171,17 +169,6 @@ function itemsOnHit(src, e, o) {
   }
   if (k.chill) slowUnit(e, CHILL_T, CHILL_MUL);
 }
-// A sprung chest's free part (hitObject, js/sim/actions.js): one part off the
-// shared rng, straight into a free slot. With every slot full it pays the
-// part's price in gold instead, so a chest is never worth less for a full build.
-function chestPart(p, x, y) {
-  const id = ITEM_PARTS[Math.floor(rng() * ITEM_PARTS.length)];
-  const slot = p.items.indexOf(null);
-  if (slot < 0) { tradeGold(p, BUILD_ITEMS[id].price); addFloater(x, y - 34, '+' + BUILD_ITEMS[id].price, RES_COLORS.gold); return; }
-  p.items[slot] = id;
-  itemsChanged(p);
-  addFloater(x, y - 34, BUILD_ITEMS[id].name, '#9fd6a0');
-}
 // the player's own clock, once a step (js/sim/sim.js): the fight timer, and
 // DEN's heal once it has run out
 function itemsTick(p, dt) {
@@ -211,8 +198,8 @@ function botNextItem(p) {
   }
   return null;
 }
-// a held part no item still left on p's list is built from (a chest's gift,
-// usually): the slot index of the first one, or -1. Sold at a counter once
+// a held part no item still left on p's list is built from (bought off an
+// old list): the slot index of the first one, or -1. Sold at a counter once
 // the slots are full, so a stray part never blocks the build.
 function botStrayPart(p) {
   const list = BOT_BUILDS[CLASSES[p.cls].name] || BOT_BUILDS.HUNTER;

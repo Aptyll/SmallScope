@@ -101,7 +101,7 @@ Once the planks are up there is nothing left to win, which is the moment a score
 to the players. Four emotes — a cheer, a shuffle, a twirl, a flop — sit on a bar of four picture
 plates under the planks (`emoteLayout`, the `emotes` banner): a digit plays one, and so does the
 pad's dpad read clockwise from up, which is why a plate wears its direction in the corner the way
-a bag slot wears its number rather than a word of hint. `emotePad` is what `padPress` asks, so the
+an item slot wears its number rather than a word of hint. `emotePad` is what `padPress` asks, so the
 dpad *is* the bar over an end screen and the planks keep the stick and the bumpers. The bar is
 live exactly when the planks are (`emoteLive`): before that a press is a skip (`endSkip`).
 

@@ -43,8 +43,8 @@ wears the **profile's** name and last hero — `applyProfile()`, called by `init
 [architecture.md](architecture.md#profilejs)), `look` (the hero's fixed face, a copy of
 `CLASSES[cls].look` that every `setClass` writes, so every copy of a hero looks the same), `spawn` (the tile it landed
 on from the eagle), `aboard`/`dropT`/`dropU`
-(the eagle ride, see [Eagle drop](rendering/eagle-drop-mode-drop.md)), its own `inv` wallet, `bag`
-and `food` pouch (see [the backpack](gameplay/inventory-and-the-backpack.md)),
+(the eagle ride, see [Eagle drop](rendering/eagle-drop-mode-drop.md)), its own `inv` wallet and
+`food` pouch (see [the pouch](gameplay/the-pouch.md)),
 `level`/`xp` (see [Hero levels](#hero-levels)), `earned` (the match's gold earned), `kills`, an `input` struct and an `ai` brain.
 `reset(first)` places it at `spawn` and clears every transient; it is the single definition of
 "a fresh player". Boot calls it with `first` true, and `respawnPlayer` — the team's bird setting a
@@ -80,16 +80,14 @@ grapple       held (key 3): the hunter's grapple reels only while this is down -
 eatBerry      edge-triggered (Q): STARTS the 1.5s meal, it does not heal on the spot
 eatFish       edge-triggered (F): same, and off the same shared 3s clock
               (startEat, js/sim/core.js - see Food in gameplay.md)
-useCard       edge-triggered (bots only: a held card opens itself anyway):
-              draw one unopened card at random (useCard, js/sim/core.js)
 ability       edge-triggered (keys 1-4): cast that class ability, -1 = none
               (tryAbility, js/sim/abilities.js - see Classes below)
 cmd           one-shot order, run by runCmd (js/ui/wheel.js):
               {kind:'ability', i} - an ability level: no tile, no reach, no
               contest, paid with a skill point
               or {kind:'shop', act, ...} - at the merchant's counter: act
-              'item' (buy an item, id), 'sellItem' (slot), 'trade' (food:
-              good, dir, n?) or 'sell' (a bag cell, i); no tile and no contest
+              'item' (buy an item, id), 'sellItem' (slot) or 'trade' (food:
+              good, dir, n?); no tile and no contest
               (every item is always on sale), but it re-checks its own reach
               (shopCmd, js/ui/shop.js)
               or {kind:'ping', k, x, y} - a ping at that world point, no
@@ -127,16 +125,6 @@ carrying the pointer. A pad button presses a *key* through those, so it cannot
 drift from the keyboard and a new key handled in a listener alone is dead on a pad (the rule in
 [CLAUDE.md](../../CLAUDE.md#hard-rules)).
 
-**And the answer runs back out the same way.** `haptic(kind)` (the `haptics` banner, input.js) is
-the one call that tells the *hand* something happened — a pad through its own
-`vibrationActuator`, a mouse not at all, since it has no
-motor and the cue and the on-screen pulse beside it are its whole answer. A caller names what
-happened (`grab`, `place`, `seat`, `swap`, `deny` — sized so the five are told apart with the
-eyes shut) and never which controller is in hand, exactly as a key is asked for through its
-action. The RUMBLE row on the ESC panel's GAME page (`settings.haptics`) is its off switch. Its
-one caller today is the backpack's own feedback
-([hudFx](gameplay/the-basic-attack.md#what-a-gesture-answers-with)).
-
 **The keyboard is read by where a key sits, not by what it prints** (the `keys and binds`
 banner, input.js; issue #43). The listeners translate `e.code` — the physical key — into the
 game's key *name*, the face that key wears on a US board, lowercase for a letter (`keyName`:
@@ -151,8 +139,7 @@ font cannot draw (the arrows, the modifiers, punctuation with no glyph) is a wor
 SPACE, SHIFT, UP, SEMI …).
 
 **What a key does is an action, and an action has a key.** `KEY_ACTIONS` is every rebindable
-verb — the four walk keys, the four abilities, dodge, slide, harvest, the two meals, the card
-draw, the inventory drawer, the sheet, the map, the standings, mute,
+verb — the four walk keys, the four abilities, dodge, slide, harvest, the two meals, recall, the sheet, the map, the standings, mute,
 pause, and the CLICK
 scheme's three of its own (attack-move, stop, the ping) — with the key each starts on
 per scheme (`key` on WASD, `ck` on CLICK, `ms` on MOUSE where it differs from `ck`; an action
@@ -297,7 +284,7 @@ not the game's. In play every button is a key (`PAD_PLAY`): A rolls (and hops
 off a landed eagle: `updateDrop` reads the roll intent beside E's work, so the jump button is the
 way off the roost), X works,
 Y / B / LB / RB are abilities 1-4 in strip order (LB held is the grapple), START the ESC slab,
-L3 the inventory drawer, dpad up the sheet, dpad left/right the two meals. Four are gestures: RT is the draw
+dpad up the sheet, dpad left/right the two meals. Four are gestures: RT is the draw
 (held, released fires — the same falling edge as the button), LT the slide, R3 pings at the aim
 (a tap is GO HERE, a hold opens the ping wheel; the right stick picks the wedge by its tilt from the
 wheel's own hub, `PAD_WHEEL_R` off `wheelLayout` — the same over a wheel X holds open: the
@@ -336,15 +323,15 @@ one option or several — `CLASS_AB_ALT`, picked pre-match, [class abilities](ga
 [js/sim/abilities.js](../../js/sim/abilities.js) — see [Class abilities](gameplay/class-abilities-keys-1-4.md)).
 The kit is the handful of numbers the sim reads through `kitOf(p)`
 instead of the bare constants. **`kitOf(p)` returns the *effective* kit**: the class's numbers
-with the player's cards and items folded in by `refreshKit(p)` ([the effective kit](gameplay/the-effective-kit.md); cached on `p.kit`, rebuilt
-on a class, card or item change — never per frame). The kit fields: `iceMax` (× `ICE_MAX`), `iceSteer`, `slideMin`, `fatigue`
+with the player's items folded in by `refreshKit(p)` ([the effective kit](gameplay/the-effective-kit.md); cached on `p.kit`, rebuilt
+on a class or item change — never per frame). The kit fields: `iceMax` (× `ICE_MAX`), `iceSteer`, `slideMin`, `fatigue`
 (snow-slide fatigue rate), `chargeMul` (speed while drawn), `bowCharge` (seconds to full draw),
 `nock` (the baseline every rate of fire is scaled against — a tool's own `rof` is multiplied by
 `nock / BOW_NOCK`, so a class's hands still set the rhythm; see
 [the cycle](gameplay/the-swing-tools-e.md#the-cycle)),
 `spdDmg` (extra damage scaled by the shooter's speed at release, capped at 200 px/s),
 `dodgeSpeed`, plus `cls` (whose kit) and `add`, the bag of [hero stat](gameplay/hero-stats.md)
-bonuses cards and items write. Sites that read it: `updatePlayer`'s movement block, `attackDmg`,
+bonuses items write. Sites that read it: `updatePlayer`'s movement block, `attackDmg`,
 `tryDodge`, the AI's draw timing, the cursor, aim line and draw meter. The seven hero stats
 themselves (health, damage, attack speed, armor, ability power, cooldown speed, move speed) are
 read through `statOf(p, key)` (js/sim/stats.js), never off the kit. `setClass(p, c)` swaps one in
@@ -400,7 +387,7 @@ wave get 65% each and five get 46% each. What a death is worth:
 | a scout (`die`) | `KILL_XP` 40 + `KILL_XP_LV` 15 × its level | its rival side, whatever downed it |
 | a beast with an `xp` in `YIELD` (`animalDies`): deer 40, wolf 15, black and brown bear 150 | grown `ANIMAL_LV_XP` (a tenth) a level | the side of whoever landed the last blow |
 
-Rabbits, buildings, the works (pines, rocks, chests), fish, sales and the clock pay **no
+Rabbits, buildings, the works (pines), fish, sales and the clock pay **no
 XP** — the road is where a scout levels. The table is sized against a scout who keeps to the road
 and the camps: about level 6 at ten minutes and level 12 near minute 25 (sized when 12 was the
 cap, the arena's 4.37 runs); levels 13-18 continue the same curve and have not been timed. Dying never touches `xp`; level and xp are set in the
@@ -537,7 +524,7 @@ swing is refused. It is not helpless either: a rival lingering in `GUST_R` makes
 hp/s back.
 
 `die(p, src, cause)` takes **nothing off the body** regardless of what happens next: wallet, pouch,
-bag, weapon and build all stay, and the killer and the assists are paid by `payTakedown`
+weapon and build all stay, and the killer and the assists are paid by `payTakedown`
 ([Takedowns](gameplay/death-and-respawn.md#takedowns-assists-bounties-and-shutdowns)) — gold is never a physical drop. What happens next
 depends on `teamEagleDown(p.team)` alone: the wait and the return of
 [Respawn at the bird](#respawn-at-the-bird) while the team's eagle still roosts, or
@@ -607,8 +594,7 @@ the road everyone walked out on, past the merchant. A bird still in the air (a p
 shot in the seconds between its own landing and the bird's) has nowhere to set anyone down, so
 the timer holds at zero until it roosts; a bird that has fled mid-timer is left to
 `eagleFleeResolve`, which puts the whole side out at the end of the ceremony. `reset()` never
-touches `p.cards` (picked roguelike cards), `p.items`, skill ranks, level, xp, the wallet, the pouch or
-the bag, and with `first` false it leaves the weapon slots alone too (the class kit is only handed
+touches `p.items`, skill ranks, level, xp, the wallet or the pouch, and with `first` false it leaves the weapon slots alone too (the class kit is only handed
 over again when every slot is bare), so the whole player survives every respawn within a match —
 the wait is the entire cost ([death keeps everything](gameplay/death-and-respawn.md)).
 
@@ -647,10 +633,9 @@ contest('work:' + idx(tx, ty), p, () => { /* runs only if p wins */ });
 resolution, so a loser keeps its gold.
 
 Currently contested: work swings (`swingHit`, keyed by tile), fish catches (`autoFish`, keyed by fish index — nothing refuses one, since fish go in the
-pouch), drop pickups (keyed by drop index — every player standing on a drop
-claims it *if they have room for it*, and the magnet pulls it toward the nearest such player,
-so a full bag hands the pickup on rather than sitting on it, and only food is never refused — a
-dropped card is a neutral pickup the same way, first-come whichever team gets there). A shop buy
+pouch), drop pickups (keyed by drop index — every player standing on a drop claims it, and the magnet
+pulls it toward the nearest player; a drop is food, which nothing refuses, so it is first-come
+whichever team gets there). A shop buy
 is not contested: every item is always on sale, so two buyers never want the same thing.
 
 ## Bots
@@ -956,14 +941,9 @@ The ladder:
    item, through the same `input.cmd` a human's click sends, and when its purse covers the next
    whole item and it is out of a fight it walks to its own side's counter if that is within
    `AI_SHOP_DETOUR` (32 tiles; farther out it recalls, `aiRecall`), which ends its ladder for that think. With the slots full it sells
-   a stray part at the counter (`botStrayPart`: one no item left on its list is built from, a
-   chest's gift usually), and a stray it could sell counts as room for the walk. Picking up a dropped card off the ground already falls out of the loot rung
-   (drops are type-agnostic loot); the
-   instant one is carried, `resolveCardForBot` (top of every think) makes the same single random
-   pick `useCard` makes for a hand, rarest first, minus the burst and the floater.
-13. **harvest** — walk to a tree/chest/berried bush or a standing rock nobody is at within
-   `AI_FORAGE` (12 tiles) and hold E at the profile's `work` duty cycle - at a rock it just stands,
-   key up, since the rock mines itself.
+   a stray part at the counter (`botStrayPart`: one no item left on its list is built from), and a stray it could sell counts as room for the walk.
+13. **harvest** — walk to a tree or berried bush nobody is at within
+   `AI_FORAGE` (12 tiles) and hold E at the profile's `work` duty cycle.
 14. **roam** — wander between its landing site and the map centre.
 
 **The two birds.** `aiSituation()` (the `the two birds` sub-banner) is what every bot knows
@@ -981,7 +961,7 @@ other. Nothing in it lets a bot do what a hand cannot: a human reads the same fa
 map's eagle marks and the bird's nerve bar.
 
 Every walk goes through `steerTo(x, y, reach, budget)`, which is `navTo` on the bot's own player
-([gameplay.md](gameplay/pathfinding.md)) — it routes around trees, rocks, buildings and water,
+([gameplay.md](gameplay/pathfinding.md)) — it routes around trees, buildings and water,
 and returns **-1 when there is no route** (or the bot has been pinned for a while). **It rides
 the zipline** ([the ride](gameplay/momentum-movement-players-only.md#the-zipline)) the way a hand does, through the same hop
 intent, and nothing in the ladder knows: `steerTo` asks `aiZipWorth` first — would walking to

@@ -1,7 +1,7 @@
 # The swing tools (E)
 
-The axe and the pick are **not selectable and are not weapons**. `SWING_TOOLS` (`bow`, `axe`,
-`pick`, indices `SWING_BOW/AXE/PICK`) is an internal table for icons and names; `p.swing` is what
+The axe is **not selectable and is not a weapon**. `SWING_TOOLS` (`bow`, `axe`, indices
+`SWING_BOW/AXE`) is an internal table for icons and names; `p.swing` is what
 that player is *holding for work*, and it returns to `SWING_BOW` — which draws the hero's own
 weapon — the moment a swing ends. Two verbs, two inputs:
 
@@ -9,17 +9,17 @@ weapon — the moment a swing ends. Two verbs, two inputs:
   `input.fire`); `updatePlayer` starts the draw on the rising edge and fires on the falling one.
 - **The hands work on their own** (`autoWork(p)`, js/sim/actions.js — `updatePlayer` calls it every
   step `p.input.work` is *not* set). Whatever an `OBJECTS` entry marks `auto` — a tree, a dead
-  tree, a berried bush, a chest, a rival's roosting eagle — and **any building on the
+  tree, a berried bush, a rival's roosting eagle — and **any building on the
   other team** (`autoToolFor`, resolving a footprint tile through `structOf` and refusing your
   own via `ownsStruct`, exactly as `workTarget` does) is swung at the moment it is inside
   `WORK_REACH`, no key held: `autoTarget(p)` takes the nearest such tile in the ring around
-  the player — a rival's building or eagle first (`AUTO_PRIO_FOE`), then a chest (`AUTO_PRIO_PRIZE`), then scenery, and by tile centre to body within a rank (`autoPrio`) — and `startSwing` runs the same swing E's would. What makes it
+  the player — a rival's building or eagle first (`AUTO_PRIO_FOE`), then scenery, and by tile centre to body within a rank (`autoPrio`) — and `startSwing` runs the same swing E's would. What makes it
   automatic and not a cancel: it never drops a draw or the held button (`p.autoSwing` lets the
   draw begin under it, and the release fires on the frame the button lifts, swing or no swing),
   never stands a crawler up (`p.prone` waits, unlike E), and never touches the aim (`startSwing`
   leaves the facing alone while a draw is running, so the aim never flicks toward the tile) — you
   keep shooting, walking or drawing through it, and the tree comes down beside you, with
-  **both tools on the sprite**: the axe or pick sweeping in one hand, the drawn weapon on the aim
+  **both tools on the sprite**: the axe sweeping in one hand, the drawn weapon on the aim
   in the other (`drawHeldTool`, [below](#the-draw)). It obeys the
   same busy gates as E (a fall, a roll, a stun, an ability, a meal, the swing cooldown).
   **Fish are the same idea on ice** (`autoFish(p, dt)`, js/sim/attack.js, called right after it):
@@ -31,18 +31,17 @@ weapon — the moment a swing ends. Two verbs, two inputs:
   no verb (bright inside catch reach, dim outside).
 - **E = work** (`tryWork(p)`, auto-repeating every swing cooldown while held — `updatePlayer`
   calls it whenever `p.input.work` is set, and a held E always beats the hands' own choice).
-  It is what reaches **bare ice** (cracking toward a hole) and **the practice dummy** — the
-  things not marked `auto` — and it still works anything else if you insist. A rock is not E's:
-  it mines itself for whoever stands by it ([Mining a rock](mining-a-rock.md)). It resolves `workTarget(p)`: the tile that player is
-  aiming at, if it holds a tree or a dead tree (→ axe), a berried bush (→ axe), or
-  is bare ice with no object (→ pick, cracking toward a fishing hole); and `near` = the tile is
+  It is what reaches **the practice dummy** — the one thing not marked `auto` — and it still
+  works anything else if you insist. It resolves `workTarget(p)`: the tile that player is
+  aiming at, if it holds a tree or a dead tree, a berried bush or a rival's building (all → axe;
+  bare ice is nothing since the pick went in 0.531); and `near` = the tile is
   within `WORK_REACH` (1) tiles, Chebyshev, of the tile the player stands on — i.e. the 3×3
   ring around you, never a second row, regardless of where in your tile you stand. Out of reach or nothing workable, E
   does nothing — and **standing at a merchant's counter, E is the counter's** and swings at nothing
   at all ([opening it](the-merchants-counter.md#opening-it)). A valid target swaps `p.swing` to the right one, drops any draw, faces the
   tile, and starts the swing; `swingHit(p)` **contests** the locked tile (`p.workTx/Ty`) so only
   one player's swing lands on it in a step, then hits whatever is there via
-  `hitObject(o, p)`/`crackIce()`. Once `swingT` and `swingCd`
+  `hitObject(o, p)`. Once `swingT` and `swingCd`
   both reach 0, `updatePlayer` puts the weapon back (`p.swing = SWING_BOW`), so the axe only
   exists visually for the duration of the work. `workTarget()` is shared with the cursor, so the
   lock ring is exactly "E will do something here".
@@ -51,11 +50,10 @@ Whenever `workTarget()` is non-null, `near`, **and not something the hands take 
 (`autoToolFor(t.o, player) >= 0` nulls it — and tools aren't blocked, the bow drawn or a cable
 ridden), `drawWorkHint()` — called right after `drawSelection` in the overlay pass — floats a
 key prompt over the target: a pixel key-cap wearing the work key (**E** until rebound) plus the
-verb. Since every tree, bush, chest and rival building is `auto`, the only prompts that
-show in play are **CRACK ICE** over bare ice, **HIT** over the practice dummy and **MINE** over a
-standing rock; the verb and the lift are still read off the `OBJECTS` entry (`verb`, `lift`: 33
-for a pine, 20 for a dead tree, 28 for the dummy, 10–12 for the short ones, a rock's by its kind,
-8 over bare ice), a two-tile rock takes it on its middle (`w`), and the building branch — BREAK,
+verb. Since every tree, bush and rival building is `auto`, the only prompt that shows in play
+is **HIT** over the practice dummy; the verb and the lift are still read off the `OBJECTS` entry
+(`verb`, `lift`: 33 for a pine, 20 for a dead tree, 28 for the dummy, 10–12 for the short ones),
+scenery wider than a tile takes it on its middle (`w`), and the building branch — BREAK,
 clearing the sprite and centred on the footprint — stays for a building that is ever not `auto`.
 A merchant and a zipline in reach claim the cap first (`drawShopHint`, `drawZipHint`). The cap
 visibly presses (face drops a pixel, highlight gone, label goes gold) while the local player's
@@ -64,7 +62,7 @@ If the prompt would overlap the player sprite (an adjacent target) it flips unde
 instead. Since it only appears in reach, it doubles as the "you're close enough" signal.
 
 `hitObject()` keeps its hard tool gating (trees need the axe, with
-`SFX.deny` + a `NEEDS AXE`/`NEEDS PICKAXE` floater) as a safety net: `tryWork` and `autoWork`
+`SFX.deny` + a `NEEDS AXE` floater) as a safety net: `tryWork` and `autoWork`
 always pick the right tool, so normal play never reaches it; buildings are not gated
 at all, since the axe is the only tool E ever brings out for one.
 
@@ -72,7 +70,7 @@ at all, since the axe is the only tool E ever brings out for one.
 team are**: `workTarget()` resolves the tile through `structOf()` (so any tile of a 3×2 footprint
 counts, via its `part`) and returns the axe when `ownsStruct()` is false, and `swingHit` routes
 the swing to the anchor. Your own buildings are never swung at. See
-[Buildings](buildings.md) for the damage numbers. The axe and the pick never hit a living
+[Buildings](buildings.md) for the damage numbers. The axe never hits a living
 thing: the hero's basic attack is the only weapon aimed at one.
 
 Every basic attack is **hold-to-charge**: holding the button arms it (`p.fireArmed`), the draw
@@ -203,9 +201,9 @@ Every art says which way its business end points as drawn (`WEAPON_FWD`, js/spri
 and the hand turns it by the facing or the aim minus that: a bow's arrowhead is at +x, drawn the
 way a bow is held — string toward the archer, belly toward the target — and the sword's point at
 −x.
-A melee swing sweeps the axe or pick's icon along the swing arc instead, and a swing running
+A melee swing sweeps the axe's icon along the swing arc instead, and a swing running
 under a draw (an automatic one — `autoWork`) draws **both**: the sweep first, the drawn weapon
 on top, since the attack about to leave is the thing to read.
-Mid-swing the axe or pick takes over, swept along the same arc as the swing effect. Both sizes go
-through the same code: the icon is centred on its own half-width, 8×8 for a swing tool and 12×12
+Mid-swing the axe takes over, swept along the same arc as the swing effect. Both sizes go
+through the same code: the icon is centred on its own half-width, 8×8 for the axe and 12×12
 for a weapon.

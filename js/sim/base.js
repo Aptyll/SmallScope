@@ -14,7 +14,7 @@ const BASE_U = 30;    // u from the corner along the diagonal the hollow's centr
 const BASE_R = 15;    // tiles: the hollow's radius
 const BASE_RAG = 1.2; // tiles its wall wanders either way: a clearing, not a circle
 const PERCH_U = 21;   // u from the corner the bird roosts: the back of the hollow, deepest in the woods
-const BASE_KEEP = 3;  // tiles past the wall the later worldgen passes (rocks, chests) keep off
+const BASE_KEEP = 3;  // tiles past the wall the later worldgen passes keep off
 // a RED-side u for either team: BLUE's base is RED's mirrored along the road
 function baseU(team, u) { return team === 0 ? u : WORLD - 1 - u; }
 // THE MOUTHS: the hollow opens three ways, one a LANE (js/sim/lanes.js) -

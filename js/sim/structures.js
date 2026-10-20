@@ -94,19 +94,6 @@ function createStruct(tx, ty, type, tier, p, building) {
 // (autoToolFor, js/sim/actions.js)
 function ownsStruct(o, p) { return o.team === undefined || o.team === p.team; }
 
-// rolls a card rarity against an odds table (CHEST_ODDS - a sprung chest is
-// where a card comes from, hitObject in js/sim/actions.js) using the shared
-// runtime rng() - never called from genWorld, so this never perturbs a
-// seed's terrain
-function rollCardRarity(odds) {
-  let r = rng(), acc = 0;
-  for (const rarity of CARD_RARITIES) {
-    acc += odds[rarity] || 0;
-    if (r < acc) return rarity;
-  }
-  return CARD_RARITIES[0];
-}
-
 // WHAT A WRECK PAYS whoever brought it down: half the building's price
 function wreckPay(o) { return Math.floor((STRUCTS[o.type].tiers[o.tier].cost.gold || 0) / 2); }
 
@@ -119,12 +106,6 @@ function removeStruct(o) {
 // ------------------------------------------------------------ the building sim
 const RES_COLORS = {
   gold: '#f2cc6a', berry: '#f2707a', fish: '#9fd0ea', sunfish: '#f2b640', whitefish: '#cfdcec', snowChar: '#d47e8e',
-  // card rarities - kept out of the amber family so a "gold" card drop never
-  // reads as a currency floater; must match CARD_PALS in js/sprites/items.js
-  cardWhite: '#d9dfe8', cardGreen: '#5fd18a', cardBlue: '#4a90e2', cardPurple: '#a259e6', cardGold: '#e8a33d',
-  // the three ores (js/sim/mining.js), their rocks' own inks
-  ironstone: '#c4cad8', frostglass: '#8fd4f4', sunstone: '#f4bc44',
-  tunnel: '#b98a5e', // the burrow (js/sim/tunnel.js): its floater and its hud cell's count
 };
 // audio/screen gating: is this happening near the local listener?
 function nearPlayer(x, y, r) { return !!player && Math.hypot(player.x - x, player.y - y) < (r || 180); }

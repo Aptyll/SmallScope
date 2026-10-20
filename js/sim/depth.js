@@ -148,7 +148,7 @@ function brushNear(x, y, r, ok) {
 }
 // lay the patches, both sides', and clear what stands in them: the pines,
 // rocks, bushes, stumps and snags inside BRUSH_CLEAR of the rim, and the ice
-// (to snow). Anything else on a tile there - a chest, a landmark, a camp's
+// (to snow). Anything else on a tile there - a landmark, a camp's
 // prop - stands, and the reeds round it. No rng(): placed, never rolled.
 function layBrush() {
   brushes.length = 0;
@@ -175,7 +175,7 @@ const BRUSH_FELLS = { tree: true, rock: true, bush: true, stump: true, snag: tru
 
 // ---- laying the drifts ----------------------------------------------------
 // what breaks the wind: anything worldgen stood up that stands above the
-// snow (a pine, a snag, a rock, a chest, a den, a hut) and the berry bushes,
+// snow (a pine, a snag, a den, a hut) and the berry bushes,
 // which trap it the way a hedge does - each holds a lee pad (layLees)
 function driftBreak(tx, ty) {
   const o = objAt(tx, ty);

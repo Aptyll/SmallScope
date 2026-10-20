@@ -7,7 +7,7 @@ on live around it** — a light dim, no pause, and it swallows only its own clic
 LEFT: the **body as it stands right now** — the class sprite walking in place at 4× with the held
 weapon beside it — under a header naming the sheet (the profile
 name in the team's mark, the class and hero level beside it). Below, the **stat ledger**:
-`STAT_ROWS` read off the **live kit** (`kitOf`) *and handed the player*, so items, cards and
+`STAT_ROWS` read off the **live kit** (`kitOf`) *and handed the player*, so items and
 the hero level's own growth are all already in the numbers — dotted leaders, label left,
 value right, the panels' text carve-out. It is the same table, the same numbers and the same
 verdict inks as the [sheet that flies into the notice lane](the-stat-ledger-your-sheet-as-a-notice.md),

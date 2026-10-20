@@ -172,7 +172,6 @@ function snapSingles() {
   s.dropMeta = state.drop ? { firstFlight: state.drop.firstFlight } : null;
   s.pads = pack(pads, 0); // the road registry: each side's crash pad
   s.holes = holes.slice();
-  s.iceCracks = [...iceCracks.entries()];
   s.iceBreaks = iceBreaks.slice(); // plain numbers and tile lists: every screen rebuilds the pixels (js/sim/icebreak.js)
   s.orca = pack(orca, 0); // the orca's few numbers (js/sim/orca.js); a client eases its x/y like a body's
   s.nets = pack(nets, 0);
@@ -219,7 +218,6 @@ function snapApplySingles(s) {
     pads.length = 0; for (const sp of keep) pads.push(sp);
   }
   if (s.holes) { holes.length = 0; for (const h of s.holes) holes.push(h); }
-  if (s.iceCracks) { iceCracks.clear(); for (const [k, v] of s.iceCracks) iceCracks.set(k, v); }
   if (s.iceBreaks) { iceBreaks.length = 0; for (const b of s.iceBreaks) iceBreaks.push(Object.assign({}, b)); }
   if (s.orca) Object.assign(orca, unpack(s.orca));
   if (s.nets) { nets.length = 0; for (const n of unpack(s.nets)) nets.push(n); }
@@ -332,7 +330,7 @@ function snapApply(s) {
 // reliable channel the ack simply trails the send by a round trip and the
 // delta is a few fields fatter for it. A primitive field compares by value
 // - a quantized one (SNAP_QUANT, the `encode` banner) by the value the
-// client will hold - a nested one (a bag, a route's points) by its JSON. A
+// client will hold - a nested one (the pouch, a route's points) by its JSON. A
 // tile goes field by field against what it was at the
 // base: each ring entry keeps the before-form of every tile it changed, so
 // any base in the ring can be reconstructed tile by tile without a shadow
@@ -801,7 +799,7 @@ function snapBlank() {
   objects.fill(null); structures.length = 0;
   for (const k in SNAP_KINDS) SNAP_KINDS[k]().length = 0;
   nets.length = 0; guards.length = 0;
-  holes.length = 0; iceCracks.clear(); iceBreaks.length = 0; pads.length = 0;
+  holes.length = 0; iceBreaks.length = 0; pads.length = 0;
   Object.assign(orca, ORCA_FRESH());
   for (const c of camps) c.repopT = 0;
   if (state.drop) for (const e of state.drop.eagles) for (const k of Object.keys(e)) if (!SNAP_SKIP.has(k) && k !== 'team') e[k] = typeof e[k] === 'number' ? 0 : null;

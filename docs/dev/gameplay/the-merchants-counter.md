@@ -4,8 +4,7 @@
 **stall** (the stall its [merchant](robots.md#the-merchant) pitches beside the road's head) or to the
 merchant itself, press **E**, and the counter opens: the **SHOP**, an items shop in League's
 mould. It sells five cheap **parts** and eight **finished items** built out of them into
-[six item slots](#the-items), and fish and berries at a fixed price; anything in the pack sells by
-being dragged onto it. **Every item is on sale all the time, at one fixed price, and nothing sells
+[six item slots](#the-items), and fish and berries at a fixed price. **Every item is on sale all the time, at one fixed price, and nothing sells
 out**, so a player can save up for the one they want. The items themselves are
 [js/sim/items.js](../../../js/sim/items.js) (the `items` banner); the counter is
 [js/ui/shop.js](../../../js/ui/shop.js) (the `the counters`, `buying and selling` and `the shop panel`
@@ -32,22 +31,19 @@ swing that outranked the counter would leave the shop unopenable under its own `
 One rule answers in all three places: the press, the cap, and whether the
 cursor's [lock ring](../rendering/cursor.md) promises a swing. The counter is a **panel, not a held wheel**:
 the press opens it and E, Escape, the X or **walking out of reach** shuts it (`updateShop`
-re-checks `inReach` every step). It is HUD like the pack and the character sheet — **the sim runs
+re-checks `inReach` every step). It is HUD like the character sheet — **the sim runs
 on underneath, and standing at a counter protects nobody**.
 
-The **backpack** is already up beside it, because a sale is a drag out of the grid; the character
-sheet closes, since the two slabs would sit on each other.
+The character sheet closes when it opens, since the two slabs would sit on each other.
 While it is up, E does not swing at the world (`sampleHumanInput`), the way a wheel already
 swallows it.
 
 **The frame goes under a wash while the counter is open** (`shopScrim`, `SHOP_WASH`), and exactly
-four things stay lit above it — the ones a trade is made of: **the counter**, **the corner** (the
-pack drawer a sale is dragged out of), **the item on the cursor**, and **the
+two things stay lit above it — the ones a trade is made of: **the counter** and **the
 [tooltip](../rendering/the-hud-corners/the-hover-tooltip.md)** pricing whatever the pointer is on. The minimap, the
 hud strip and the world all go under. The mechanism is the draw ORDER in `renderUI` (js/ui/compose.js) and
 not the panel: a panel cannot dim what is drawn after it, so the minimap and the strip are drawn,
-then the wash, then the corner and the slab — which is why the corner is drawn in two places
-there. Everything painted after that block (the news plates, the tooltip)
+then the wash, then the slab. Everything painted after that block (the news plates, the tooltip)
 is above the wash by arriving late.
 
 **The post has its own song.** `openShop` calls `SFX.music.hold('village', …)` — FOREST VILLAGE
@@ -90,9 +86,9 @@ needed twice) and carries bigger stats and one **passive**.
 | SUNSTONE | 200 | FLINT HEAD, FLINT HEAD | +7 DAMAGE | AMBUSH |
 
 **What an item does goes through the kit.** `itemMods` folds every slot into the kit inside
-`refreshKit` (js/sim/player.js), the way a card does, so every site that reads the
+`refreshKit` (js/sim/player.js), so every site that reads the
 kit picks an item up without knowing items exist. Each stat line is an `ITEM_STATS` row, and every row adds
-its number to the same hero stat in the kit's bonus bag `kit.add` that cards add to (see
+its number to the same hero stat in the kit's bonus bag `kit.add` (see
 [Hero stats](hero-stats.md)): ARMOR is League armor, ATTACK SPEED a share of the hero's attack speed,
 MOVE SPEED flat on the hero's walk. `ITEM_STAT_ORDER` is the
 order the stats print in and the order of the panel's category filters. Two items add their stats
@@ -115,14 +111,10 @@ so they never feed KINDLING or CHILL; `itemsTick` runs the player's fight clock 
 set by `damagePlayer`) and DEN's heal once a step from `updatePlayer` (js/sim/sim.js).
 
 Items are **ids** in `p.items` (`ITEM_SLOTS`, six of them, an id or `null` each), never instances:
-an item has no state of its own, so a slot is just the name of what is in it. Like cards, they
+an item has no state of its own, so a slot is just the name of what is in it. They
 survive a respawn. They ride the save on the player, and a save from before items gets six empty
 slots (`saveApply`, js/sim/save.js). When the slots change, `itemsChanged` rebuilds the kit: new max
 health arrives filled, the way a hero level does, and lost max health clamps.
-
-**A sprung chest gives a part for free** (`chestPart`, js/sim/items.js): a random one of
-`ITEM_PARTS` into the first empty slot, named in a floater over the chest. With all six slots full
-it pays that part's price in gold instead (`tradeGold`).
 
 ## Buying and selling
 
@@ -142,19 +134,11 @@ moment it has a `heal`. The food row's BUY takes one (as many as the order's `n`
 pouch cover) and its SELL sells every one of that good you carry, every fish of every kind for
 fish, as one payment (`shopTrade`).
 
-**Anything in the pack sells by a drag**: pick a cell out of the grid and let go anywhere on the
-panel (`shopDropSell`, reached from `dragDrop`). The whole cell goes (`cellValue` → `sellValue`). Made goods (an ore off its `ITEMS`
-row's `price`) fetch **half** their worth (`itemValue`); food fetches its fixed price. Unlike the
-other orders, a drag sale resolves on the spot rather than through `input.cmd`: what is on the
-cursor is out of the bag already, and a command the sim might drop that frame would take the item
-with it. `shopSellCell` is the same sale addressed by bag index, for a bot or any later caller.
-While the counter is up, every bag cell's tooltip gains a SELLS FOR row.
-
 **A sale pays gold but does not count as earned**: `tradeGold`, the one documented exception to
 the `gainGold` rule in [CLAUDE.md](../../../CLAUDE.md). It adds nothing to `p.earned`, so selling
 back and forth never climbs the scoreboard.
 
-**Every other order goes through `input.cmd`** `{kind: 'shop', act: 'item' | 'sellItem' | 'trade' | 'sell'}`
+**Every order goes through `input.cmd`** `{kind: 'shop', act: 'item' | 'sellItem' | 'trade'}`
 → `runCmd` → `shopCmd`, validated on arrival by `cmdOk` (js/ui/wheel.js), so the HUD click and a
 bot buy the same way. `buyItem`, `sellItem` and `shopTrade` re-check the reach, the gold and the
 room themselves, so a stale order is harmless. Nothing is [contested](../multiplayer.md#contested-orders):
@@ -168,8 +152,7 @@ buy now: that item whole if the purse covers it, else the first of its parts it 
 the bot is at a counter. When the purse covers the next **whole** item and the bot is out of a
 fight (`p.fightT`), it walks to its own side's counter (the stall, or the merchant's body) if that
 is within `AI_SHOP_DETOUR` (32 tiles), noting `SHOP` and the item as its thought (`aiNote`), which ends its
-ladder for that think. A part no item still left on its list is built from (a chest's gift,
-usually) is a **stray** (`botStrayPart`): with the slots full, the bot sells it at the counter,
+ladder for that think. A part no item still left on its list is built from is a **stray** (`botStrayPart`): with the slots full, the bot sells it at the counter,
 and a stray it could sell counts as room when it decides to walk there.
 
 ## The panel
@@ -202,18 +185,5 @@ its passive), and a slot adds what it SELLS FOR. The words on it (the head, PART
 SELL) are names and plates in plain words like the menus; everything else is icons, rims and
 numbers.
 
-**It is pinned clear of the corner**: **a counter may not stand on
-the pack it is sold out of** — a sale is a drag from that drawer into this slab. The pack drawer
-is in the top-left (`cornerClaim` / `cornerBottom`, js/ui/bag.js), and the slab
-takes the room **beside** the corner where there is one and the room **under** it where there is
-not:
-
-| | when | where it goes |
-| --- | --- | --- |
-| **beside** | `cornerClaim() + 6` still leaves the slab inside the frame | `x = max(centred, cornerClaim() + 6)`, `y = 4`. It keeps the centre whenever the view is wide enough for both |
-| **under** | it does not, but the slab clears both the frame's bottom and the deepest tooltip below the drawer (`SHOP_TIP_CLEAR`, 196) | centred across, `y = cornerBottom() + 6`, on a **tall, narrow** frame where nothing fits beside the slab |
-| **neither** | both fail | `x` at the view's right rim, `y = 4` (the minimap's rim goes under it) |
-
-The width claim is the corner's **fixed** reach (`CORNER_CLAIM`: the drawer's width). Every icon is
-drawn at the largest **whole-number** scale that fits its well (`shopIcon`): a fractional one
+**It is centred across the view**, `SHOP_Y` (4) from the top (`shopLayout`). Every icon is drawn at the largest **whole-number** scale that fits its well (`shopIcon`): a fractional one
 stretches every third source pixel and frays 1 px linework.

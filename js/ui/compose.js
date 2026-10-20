@@ -9,7 +9,7 @@ function renderUI(now) {
   if (endScreen()) return; // a victory or defeat screen owns the whole frame
 
   // title -> play: the HUD slides in over the last part of the intro - the
-  // minimap from the top, the backpack from the right, the hud strip from
+  // minimap from the top, the hud strip from
   // below.
   // The TOP LEFT is deliberately empty: the berry and fish counts that used
   // to stack there (and the gold that sat left of the minimap) live on the
@@ -33,45 +33,30 @@ function renderUI(now) {
   drawVotePanel(); // the surrender vote, under the rail (js/ui/vote.js)
 
   // THE COUNTER WASHES THE FRAME (shopScrim, js/ui/shop.js), and exactly what a
-  // trade is made of stays lit above the wash: the counter itself, the corner
-  // - the pack drawer a sale is dragged out of - the item
-  // on the cursor, and the tooltip that prices what the pointer is on (drawn
-  // later still, js/render.js). Everything else goes under it, the minimap and
+  // trade is made of stays lit above the wash: the counter itself and the
+  // tooltip that prices what the pointer is on (drawn later still,
+  // js/render.js). Everything else goes under it, the minimap and
   // the hud strip included: neither is part of a sale, and a counter that only
   // dimmed the world left the two brightest widgets on screen competing with
   // the thing you opened.
   //
   // So the ORDER is the whole mechanism, and it is here rather than in the
-  // panel: minimap and strip, the wash, then the corner and the slab.
+  // panel: minimap and strip, the wash, then the slab.
   const shop = !out && shopOpen();
-  // The top-left corner - the pack's arrow and the drawer under it - rides
-  // the intro slide in from the LEFT as one widget, at its own size dial
-  // (cornerSc, drawCornerScaled), by its widest reach so none of it is left
-  // parked over the cinematic.
-  const cornerSlide = -Math.round(slide * CORNER_REACH * cornerSc());
-  if (!out && !shop) drawCornerScaled(now, cornerSlide);
   // the practice bar down the left edge, PRACTICE TOOL only (js/ui/cheats.js)
   if (!out && PRACTICE) drawCheatBar(now);
 
   // hud strip (the portrait, the ability wells over the bars, the meals),
   // bottom-centre; it rides the intro slide up from below, at whatever HUD
-  // SIZE the settings dial holds (drawHudScaled). The carried item rides the
-  // pointer over everything, so it stays outside the scale and the slide.
+  // SIZE the settings dial holds (drawHudScaled).
   if (!out) drawHudScaled(now, Math.round(slide * HUD_SLIDE));
 
   // the merchant's counter (js/ui/shop.js): over the HUD like the character
-  // sheet, with the pack open beside it to drag a sale out of - and lit,
-  // with the corner, out of the wash the two of them stand in
+  // sheet, and lit out of the wash it stands in
   if (shop) {
     shopScrim();
-    drawCornerScaled(now, cornerSlide);
     drawShopPanel(now);
   }
-
-  // whatever is riding the pointer, and the ring promising where a release
-  // lands: last of the HUD, so it is over every well it could be dropped into
-  // - the counter's sell strip and its wash included
-  if (!out && hudIn >= 1) { drawDragGhost(now); drawDropPromise(); }
 
   // the character panel (G): over the HUD, under the toasts and the tooltip
   if (!out && state.charOpen && !player.dead) drawCharPanel(now);

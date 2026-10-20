@@ -1,6 +1,6 @@
 'use strict';
-// The frozen world: the tile grid and its objects, worldgen (rivers, ponds,
-// rocks), the road, the paths and the creek. The zipline, the camps and the
+// The frozen world: the tile grid and its objects, worldgen (rivers, ponds),
+// the road, the paths and the creek. The zipline, the camps and the
 // practice arena load right after it (js/sim/zipline.js, js/sim/camps.js, js/sim/practice.js).
 // ------------------------------------------------------------ world
 const ground = new Uint8Array(WORLD * WORLD); // 0 snow, 1 ice, 2 hole (open water), 3 the road (placeRoad)
@@ -14,7 +14,7 @@ function objAt(tx, ty) { return inWorld(tx, ty) ? objects[idx(tx, ty)] : null; }
 // needs to know about one without naming its type: whether it blocks a walker,
 // which tool E reaches for (`tool`) and which one a swing must already be
 // holding (`needs`, null = any), whether the hands go to it on their own the
-// moment it is in reach (`auto` - a tree, a rock, a chest, a rival's eagle:
+// moment it is in reach (`auto` - a tree, a bush, a rival's eagle:
 // autoWork, js/sim/actions.js - bare ice and the dummy wait for E), the verb the key prompt prints and how far
 // above the tile it sits, and the colour each of the two maps paints it.
 // Buildings are NOT in here - they are STRUCTS entries carrying the same
@@ -29,7 +29,7 @@ function objAt(tx, ty) { return inWorld(tx, ty) ? objects[idx(tx, ty)] : null; }
 // a pinhole is filled, each mass is inked with a rim - so it reads as a
 // drawn chart, not a photograph of the ground. `map` on an OBJECTS/STRUCTS
 // entry is a class, or a function of the object returning one; an entry
-// with none lets the ground show through (a bush, a rock, a stump, a camp's
+// with none lets the ground show through (a bush, a stump, a camp's
 // props - the glyph marks those): at the chart's scale a thing that stands
 // alone on its tile is a speck, and a speck is noise. The ORDER is the paint priority: where one chart
 // pixel covers two tiles (WORLD tiles into MAP_W px) the higher class wins,
@@ -37,8 +37,8 @@ function objAt(tx, ty) { return inWorld(tx, ty) ? objects[idx(tx, ty)] : null; }
 // its eagle are two depths of the same ink, so a base reads as a shape in
 // its colour with the bird bright at its heart - and both go through skin()
 // like every other team paint. The cistern's stone (cisternTouches) inks last.
-const CH_SNOW = 0, CH_FOREST = 1, CH_ROAD = 2, CH_ICE = 3, CH_HOLE = 4, CH_CHEST = 5,
-      CH_RED = 6, CH_BLUE = 7, CH_EAGLE_RED = 8, CH_EAGLE_BLUE = 9, CH_STONE = 10;
+const CH_SNOW = 0, CH_FOREST = 1, CH_ROAD = 2, CH_ICE = 3, CH_HOLE = 4,
+      CH_RED = 5, CH_BLUE = 6, CH_EAGLE_RED = 7, CH_EAGLE_BLUE = 8, CH_STONE = 9;
 const chTeam = (o) => skin(o.team === undefined ? 0 : o.team) ? CH_BLUE : CH_RED;   // a side's building
 const chEagle = (o) => skin(o.team === undefined ? 0 : o.team) ? CH_EAGLE_BLUE : CH_EAGLE_RED; // its bird, its gate
 const OBJECTS = {
@@ -48,12 +48,11 @@ const OBJECTS = {
               mm: [52, 100, 82],   map: CH_FOREST },
   deadTree: { solid: true,  tool: 'axe',  needs: 'axe',  verb: 'CHOP', lift: 20, auto: true,
               mm: [138, 128, 116], map: CH_FOREST },
-  // a rock (ROCK_KINDS, js/sim/mining.js): two tiles wide, the anchor its west
-  // tile and a `part` on the east one (placeRocks). It mines itself for
-  // whoever stands by it (updateMine), so it has no `tool`: E never reaches
-  // for it and the hands never swing at it.
-  rock:     { solid: true,  w: 2,
-              mm: [122, 131, 153] },
+  // genWorld's placeholder (liftRocks): its rock passes still stand one so
+  // the seed's rolls stay put, and every one is lifted before the match. Never
+  // drawn, never seen; solid and two wide as it always was, so the worldgen
+  // passes laid round it lay the same valley.
+  rock:     { solid: true,  w: 2 },
   // a picked bush is still a bush: `ready` is what decides whether E offers it
   // (a bush is on the minimap and off the chart: one tile of anything is
   // noise at the chart's scale)
@@ -68,17 +67,6 @@ const OBJECTS = {
   // both maps: a speck on the snow is noise.
   snowdrop: { solid: false, tool: 'axe', needs: null,   verb: 'PICK', lift: 14, auto: true,
               ready: (o) => snowdropLeft(o) <= 0 },
-  // one end of a burrow's tunnel (js/sim/tunnel.js): `mate` the other end (null
-  // while it is still being dug), `owner` the digger's id, `team` the side a
-  // rival's boots cave it for, `crumble` the s of that so far. Flat, walked
-  // over, nothing for a tool - the work key on it is the way down
-  // (tunnelEnter), drawn in the flat pass (drawTunnelHole, js/draw/tunnel.js).
-  tunnel:   { solid: false, tool: null, needs: null },
-  // a buried cache swapped in for an inner-edge border tree (placeChests):
-  // one free E press springs it - hitObject's chest branch pays the gold and
-  // rolls the card. Any tool opens it, so `needs` stays null.
-  chest:    { solid: true,  tool: 'axe',  needs: null,   verb: 'OPEN', lift: 12, auto: true,
-              mm: [242, 204, 100], map: CH_CHEST },
   // a camp's cave (the wolf den and the brown bear den): inert scenery, two
   // tiles wide - `w` stamps a `part` filler per extra tile, east of the
   // anchor (placeCamps), so both tiles are solid and read back as the den
@@ -422,7 +410,7 @@ function mapTerrain(k, tx, ty) {
   if (wet && n < M.land) return MT_ICE;
   return MT_SNOW;
 }
-// A shape that swallows the open field would also starve it: the ore and the
+// A shape that swallows the open field would also starve it: the rocks and the
 // berries are scattered over the interior on rolls that do not care what
 // stands there, so most of them land in wood or on the lake and are dropped.
 // Each grown shape is topped back up to OPEN FIELD's own strength afterwards
@@ -584,213 +572,18 @@ function genWorld() {
   }
 }
 
-// Treasure chests: a handful of border trees swapped for buried caches,
-// always on the forest's inner edge so E can reach one from open ground.
-// Opening is hitObject's chest branch (js/sim/actions.js); what one pays is the
-// three constants here. Placement rolls on its own seeded stream (chRng)
-// AFTER genWorld and placeCamps have finished, so it can never reshuffle
-// the terrain a seed already produces.
-const CHEST_COUNT = 14;
-const CHEST_SPACING = 22;                       // min tiles between two chests
-const CHEST_GOLD_MIN = 8, CHEST_GOLD_MAX = 20;  // the free gold inside
-const CHEST_ODDS = { white: 0.55, green: 0.28, blue: 0.12, purple: 0.04, gold: 0.01 };
-const CHEST_BURIED = 0.3;  // ...of them, on a shape that grows its own woods, stand buried inside a stand instead of on its edge
-function placeChests() {
-  const chRng = mulberry32((SEED ^ 0x43484553) >>> 0);
-  const SIDES = [[1, 0], [-1, 0], [0, 1], [0, -1]];
-  const edge = [], deep = [];
-  // a camp dug into the woods (CAMPS.hut) brings its own chests, and the rim
-  // of its clearing is not the forest's inner edge: no cache stands on it -
-  // nor in a drawn camp's wall of pines (CAMPS' `plan`)
-  const dug = camps.filter((C) => C.spec.woods), drawn = camps.filter((C) => C.spec.plan);
-  for (let ty = 1; ty < WORLD - 1; ty++) for (let tx = 1; tx < WORLD - 1; tx++) {
-    const o = objects[idx(tx, ty)];
-    if (!o || o.type !== 'tree') continue;
-    if (dug.some((C) => Math.hypot(tx - C.tx, ty - C.ty) <= C.r + 4) || drawn.some((C) => campNear(C, tx, ty, 1))) continue;
-    if (baseAt(tx, ty, BASE_KEEP) >= 0) continue; // ...nor in a base's wall (js/sim/base.js)
-    // the forest's inner edge: at least one cardinal neighbour is open snow
-    if (SIDES.some(([dx, dy]) => !objects[idx(tx + dx, ty + dy)] &&
-      ground[idx(tx + dx, ty + dy)] === 0)) edge.push({ tx, ty });
-    // ...and, on a shape that grows woods over the valley, a pine with pines
-    // on all four sides and more behind them: a cache nobody walks past
-    else if (mapGrown(MAP_TYPE) && SIDES.every(([dx, dy]) => {
-      const q = objAt(tx + dx * 2, ty + dy * 2);
-      return q && q.type === 'tree';
-    })) deep.push({ tx, ty });
-  }
-  const placed = [];
-  // a BURIED chest is the same cache dug in deeper: standing in a stand with
-  // no open ground touching it, so the only way to it is to chop one down.
-  // Only a grown shape has such a place (OPEN FIELD's wood is one treeline
-  // and everything in it is on the inner edge), so only a grown shape keeps
-  // any back for it - and the edge chests are rolled FIRST off the same
-  // stream, exactly as they always were.
-  const nBury = mapGrown(MAP_TYPE) && deep.length ? Math.round(CHEST_COUNT * CHEST_BURIED) : 0;
-  const take = (cands, want) => {
-    for (let tries = 0; tries < 400 && placed.length < want; tries++) {
-      const c = cands[Math.floor(chRng() * cands.length)];
-      if (!c || placed.some((q) => Math.hypot(q.tx - c.tx, q.ty - c.ty) < CHEST_SPACING)) continue;
-      placed.push(c);
-      placeObj(c.tx, c.ty, 'chest', { hp: 1 });
-    }
-  };
-  take(edge, CHEST_COUNT - nBury);
-  if (nBury) take(deep, CHEST_COUNT);
-}
-
-// Rocks: they stand in CLUSTERS, a few mining spots a player goes to, each
-// on the open snow just out from the border forest - a band ROCK_BAND_MIN..
-// ROCK_BAND_MAX tiles (walked, 4-way) from its nearest pine, a border pine,
-// one standing on borderDepth's side of the line, so a grown shape's inner
-// woods draw no band of their own - never touching a pine and never in a
-// camp's clearing, so the middle stays open ground.
-// Every rock is two tiles wide (OBJECTS.rock's w): both tiles must be open
-// snow, and the east one takes a `part` pointing at the anchor.
-// genWorld still rolls its own rock passes (the interior scatter and a grown
-// shape's top-up): taking their rng() calls out would reshuffle every seed,
-// so they run as they always did and placeRocks lifts what they stood before
-// placing its own, on its own stream (rkRng) AFTER the camps and the chests.
-//
-// Where the clusters go (ROCK_CLUSTERS): each is a direction from the
-// valley's centre, turned `turn` degrees off RED's roost toward the
-// top-left corner (+) or the bottom-right (-), and it stands on the rim
-// that way. The centre is mirrored (ty, tx), the camps' mirror, and each
-// side stands the same kinds round its own, so BLUE has the same spot: a side cluster (turned
-// less than 90) is two spots, one per side, and a corner cluster (turned
-// 90, one of the two corners neither side owns) is one spot, each side's
-// share of it on its own bank of the creek. `kinds` goes down the rocks
-// a side stands there, in order (ROCK_KINDS, js/sim/mining.js): the sunstone
-// and the frostglass are out at the contested corners, the plain stone
-// nearer home.
-const ROCK_CLUSTERS = [
-  { turn: 50,  kinds: [0, 0, 0, 0, 0] },
-  { turn: -50, kinds: [0, 0, 0, 0, 0] },
-  { turn: 90,  kinds: [2, 1, 0] },
-  { turn: -90, kinds: [2, 1, 0] },
-];
-const ROCK_CLUSTER_R = 6;     // tiles from a cluster's centre its rocks stand within
-// how far off its heading a cluster's centre may slide to find room (the
-// cosine), and how many rocks more than it stands that room must hold:
-// tried in order, so a cramped rim takes a spot further round, and a shape
-// with no dry rim that way (FROZEN ISLES) the nearest that has one
-const ROCK_CLUSTER_SLACK = [[Math.cos(25 * Math.PI / 180), 2], [Math.cos(45 * Math.PI / 180), 0], [Math.cos(70 * Math.PI / 180), 0], [-1, 0]];
-const ROCK_BAND_MIN = 2;      // tiles out from the border's pines the band starts...
-const ROCK_BAND_MAX = 8;      // ...and ends
-const ROCK_BAND_GROW = 8;     // a shape whose rim cannot hold a cluster (FROZEN ISLES: the rim is lake) widens the band by this...
-const ROCK_BAND_LIMIT = 40;   // ...a step at a time, out to here
-const ROCK_SPACING = 3;       // min tiles between two rocks' anchors
-function placeRocks() {
+// THE ROCKS ARE GONE (0.531), but genWorld still rolls its two rock passes
+// (the interior scatter and a grown shape's top-up): taking their rng() calls
+// out would reshuffle every seed, and the rock each one stands is what the
+// later rolls in the same passes test `free` against. So they still stand
+// OBJECTS.rock, the road, the base, the cables and the camps are laid round
+// them exactly as before (laneFells lets a rock give way), and liftRocks takes
+// every one up again after the camps - the valley a seed grows keeps its shape.
+function liftRocks() {
   for (let i = 0; i < objects.length; i++) if (objects[i] && objects[i].type === 'rock') objects[i] = null;
-  const rkRng = mulberry32((SEED ^ 0x524f434b) >>> 0);
-  // distance from the border pines, flooded out across everything else
-  const dist = new Int16Array(WORLD * WORLD).fill(-1), q = [];
-  for (let ty = 0; ty < WORLD; ty++) for (let tx = 0; tx < WORLD; tx++) {
-    const o = objects[idx(tx, ty)];
-    if (o && o.type === 'tree' && Math.min(tx, ty, WORLD - 1 - tx, WORLD - 1 - ty) < borderDepth(tx, ty)) { dist[idx(tx, ty)] = 0; q.push(idx(tx, ty)); }
-  }
-  for (let h = 0; h < q.length; h++) {
-    const i = q[h], x = i % WORLD, y = (i / WORLD) | 0, d = dist[i] + 1;
-    if (d > ROCK_BAND_LIMIT) continue;
-    for (const [nx, ny] of [[x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]]) {
-      if (!inWorld(nx, ny) || dist[idx(nx, ny)] >= 0) continue;
-      dist[idx(nx, ny)] = d; q.push(idx(nx, ny));
-    }
-  }
-  // a tile a rock may cover: open snow, holding nothing, touching no pine
-  const open = (tx, ty) => {
-    if (!inWorld(tx, ty)) return false;
-    const i = idx(tx, ty);
-    if (objects[i] || ground[i] !== 0 || dist[i] < ROCK_BAND_MIN) return false;
-    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
-      const o = objAt(tx + dx, ty + dy);
-      if (o && o.type === 'tree') return false;
-    }
-    return true;
-  };
-  // an anchor a rock may take, `hi` tiles out at most: both tiles open, out of the camps and the bases
-  const fits = (tx, ty, hi) => open(tx, ty) && open(tx + 1, ty) && dist[idx(tx, ty)] <= hi &&
-    !camps.some((C) => campNear(C, tx + 0.5, ty, 2.5)) && baseAt(tx, ty, BASE_KEEP) < 0 && baseAt(tx + 1, ty, BASE_KEEP) < 0;
-  const placed = [];
-  const clear = (tx, ty) => !placed.some((c) => Math.hypot(c.tx - tx, c.ty - ty) < ROCK_SPACING);
-  const stand = (tx, ty, kind) => {
-    const o = placeObj(tx, ty, 'rock', { kind, regrow: 0, crack: 0, miner: -1 });
-    objects[idx(tx + 1, ty)] = { type: 'part', tx: tx + 1, ty, of: o, flash: 0, shake: 0 };
-    placed.push({ tx, ty });
-  };
-  // the halves: RED's below the mirror line (tx < ty), BLUE's above it, a
-  // rock's two tiles wholly on its own side
-  const half = (tx, ty, side) => side ? tx > ty : tx + 1 < ty;
-  const c0 = (WORLD - 1) / 2, rx = -Math.SQRT1_2, ry = Math.SQRT1_2; // toward RED's roost
-  for (const K of ROCK_CLUSTERS) {
-    // RED's roost direction turned toward the top-left corner (+) or the bottom-right (-)
-    const a = Math.abs(K.turn) * Math.PI / 180, cn = K.turn > 0 ? -Math.SQRT1_2 : Math.SQRT1_2;
-    const vx = rx * Math.cos(a) + cn * Math.sin(a), vy = ry * Math.cos(a) + cn * Math.sin(a);
-    // the centre: RED's rim anchor nearest the heading, whose mirror fits too
-    // and with room round both for the cluster (a spot where the rim is a
-    // thin strip between the pines and a lake holds too few). A corner
-    // cluster straddles the line, so its centre is on it - unless it had to
-    // slide far enough round to be two spots, one per side.
-    const corner = Math.abs(K.turn) >= 90;
-    // how many rocks a centre can hold, ROCK_SPACING apart
-    const room = (kx, ky, side, hi) => {
-      const got = [];
-      for (let ty = Math.floor(ky) - ROCK_CLUSTER_R; ty <= ky + ROCK_CLUSTER_R; ty++) for (let tx = Math.floor(kx) - ROCK_CLUSTER_R; tx <= kx + ROCK_CLUSTER_R; tx++) {
-        if (inWorld(tx, ty) && Math.hypot(tx - kx, ty - ky) <= ROCK_CLUSTER_R && half(tx, ty, side) && fits(tx, ty, hi) &&
-          clear(tx, ty) && got.every((g) => Math.hypot(g.tx - tx, g.ty - ty) >= ROCK_SPACING)) got.push({ tx, ty });
-      }
-      return got.length;
-    };
-    let best = null;
-    for (const [slide, spare] of ROCK_CLUSTER_SLACK) for (let hi = ROCK_BAND_MAX; hi <= ROCK_BAND_LIMIT && !best; hi += ROCK_BAND_GROW) {
-      const heads = [];
-      for (let ty = 1; ty < WORLD - 1; ty++) for (let tx = 1; tx < WORLD - 2; tx++) {
-        const ox = tx - c0, oy = ty - c0, l = Math.hypot(ox, oy) || 1, cosA = (ox * vx + oy * vy) / l;
-        if (cosA > slide && half(tx, ty, 0) && fits(tx, ty, hi) && fits(ty, tx, hi)) heads.push({ tx, ty, cosA });
-      }
-      heads.sort((u, v) => v.cosA - u.cosA);
-      for (const h of heads) {
-        const m = (h.tx + h.ty) / 2;
-        h.straddle = corner && Math.abs(h.tx - h.ty) <= 2 * ROCK_CLUSTER_R;
-        const ok = h.straddle ? room(m, m, 0, hi) >= K.kinds.length + spare && room(m, m, 1, hi) >= K.kinds.length + spare
-          : room(h.tx, h.ty, 0, hi) >= K.kinds.length + spare && room(h.ty, h.tx, 1, hi) >= K.kinds.length + spare;
-        if (ok) { best = h; break; }
-      }
-    }
-    if (!best) continue;
-    const m = (best.tx + best.ty) / 2, stood = [[], []];
-    for (const side of [0, 1]) {
-      const kx = best.straddle ? m : side ? best.ty : best.tx, ky = best.straddle ? m : side ? best.tx : best.ty;
-      let n = 0;
-      // each side fills its own spot with the same kinds, reaching further
-      // in only when the rim near the centre cannot hold them
-      for (let hi = ROCK_BAND_MAX; hi <= ROCK_BAND_LIMIT && n < K.kinds.length; hi += ROCK_BAND_GROW) {
-        const cand = [];
-        const R = Math.ceil(ROCK_CLUSTER_R);
-        for (let ty = Math.floor(ky) - R; ty <= ky + R; ty++) for (let tx = Math.floor(kx) - R; tx <= kx + R; tx++) {
-          if (inWorld(tx, ty) && Math.hypot(tx - kx, ty - ky) <= ROCK_CLUSTER_R && half(tx, ty, side) && fits(tx, ty, hi)) cand.push({ tx, ty });
-        }
-        // shuffled first, then in reading order for any a crowded shuffle left out
-        const order = cand.slice();
-        for (let i = cand.length - 1; i > 0; i--) { const j = Math.floor(rkRng() * (i + 1)); const t = cand[i]; cand[i] = cand[j]; cand[j] = t; }
-        for (const c of cand.concat(order)) {
-          if (n >= K.kinds.length) break;
-          if (!fits(c.tx, c.ty, hi) || !clear(c.tx, c.ty)) continue;
-          stand(c.tx, c.ty, K.kinds[n++]);
-          stood[side].push(placed[placed.length - 1]);
-        }
-      }
-    }
-    // a side that got fewer leaves the other its count, never more: the
-    // last-stood (plainest) go
-    const keep = Math.min(stood[0].length, stood[1].length);
-    for (const st of stood) for (const c of st.slice(keep)) {
-      objects[idx(c.tx, c.ty)] = objects[idx(c.tx + 1, c.ty)] = null;
-      placed.splice(placed.indexOf(c), 1);
-    }
-  }
 }
 // Taking a piece of scenery off the map at runtime (a crater, the landing's
-// lane, the merchant's axe): the whole footprint goes, so a two-tile rock
+// lane, the merchant's axe): the whole footprint goes, so a wide piece
 // never leaves half of itself behind. Returns what stood there, or null.
 function fellScenery(tx, ty) {
   const o = structOf(objAt(tx, ty));

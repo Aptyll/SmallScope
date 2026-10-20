@@ -117,10 +117,9 @@ function cmdOk(c) {
     if (c.act === 'sellItem') return cmdInt(c.slot, 0, ITEM_SLOTS);
     if (c.act === 'trade') return FOOD_GOODS.includes(c.good) && (c.dir === 1 || c.dir === -1) &&
       (c.n === undefined || (Number.isInteger(c.n) && c.n >= 1));
-    return c.act === 'sell' && cmdInt(c.i, 0, Infinity);
+    return false;
   }
   if (c.kind === 'ping') return cmdKey(PING_CALLS, c.k) && Number.isFinite(c.x) && Number.isFinite(c.y);
-  if (c.kind === 'tunnel') return cmdTile(c);
   return c.kind === 'pkdie' || c.kind === 'agbell' || c.kind === 'cheat'; // the practice props check their own
 }
 
@@ -138,7 +137,6 @@ function runCmd(p, c) {
   // a ping: anywhere on the map, no reach, no contest - a mark for the side
   // and a hint to its bots (the `pings` banner, js/sim/pings.js)
   if (c.kind === 'ping') return pingCmd(p, c);
-  if (c.kind === 'tunnel') return digTunnel(p, c.tx, c.ty); // a burrow's near hole (js/sim/tunnel.js) - it checks its own reach
   if (c.kind === 'pkdie') { pkWheelPick(p, c); return true; } // the parkour roll die (js/sim/practice.js)
   if (c.kind === 'agbell') { agRing(p, c); return true; } // the archery range's bell (js/sim/practice.js)
   if (c.kind === 'cheat') return cheatCmd(p, c); // the practice bar (js/sim/practice.js, js/ui/cheats.js)
@@ -146,7 +144,7 @@ function runCmd(p, c) {
 }
 
 // ------------------------------------------------------------ selection, hints & wheel
-// an aimed ghost's rim (the burrow's hole, the practice bar's drop): the
+// an aimed ghost's rim (the practice bar's drop): the
 // bright ink where it can go, the danger red where it cannot
 const GHOST_OK = '#f4f7ff', GHOST_NO = '#ff8a7a';
 // white corner brackets over the tile a wheel is open on
@@ -182,7 +180,7 @@ function drawWorkHint(ox, oy) {
   if (state.mode !== 'play' || state.mapOpen || state.settingsOpen || state.wheel || state.shop || window.DBG.hideUI) return;
   if (player.charging || player.fallT > 0 || player.dodgeT > 0 || player.zip >= 0) return; // a rider's hands are full, and the cable is the only thing E does
   if (player.mount) return; // on deer-back E is the hop off, and the deer under you says so
-  if (hoverFish()) return; // the fish brackets win over CRACK ICE on the same tile
+  if (hoverFish()) return; // the fish brackets win over the cap on the same tile
   // a MERCHANT in reach owns the key outright (keyPress, js/app/input.js), so its
   // cap is the one that shows - trunk under the aim or not
   if (drawShopHint(ox, oy)) return;
@@ -190,10 +188,8 @@ function drawWorkHint(ox, oy) {
   if (drawZipHint(ox, oy)) return;
   // ...then a deer in reach (keyPress again)
   if (drawRideHint(ox, oy)) return;
-  // ...then a tunnel's hole underfoot (tunnelEnter takes the fresh press ahead of the swing)
-  if (drawTunnelHint(ox, oy)) return;
   let t = workTarget(player);
-  // what the hands take on their own (autoToolFor: a tree, a rock, a chest, a
+  // what the hands take on their own (autoToolFor: a tree, a bush, a
   // rival's building or eagle) asks for no key - the swing itself is the whole signal
   if (t && t.o && autoToolFor(t.o, player) >= 0) t = null;
   
@@ -203,15 +199,15 @@ function drawWorkHint(ox, oy) {
   const st = t.o && structOf(t.o);
   const isStruct = !!(st && STRUCTS[st.type]);
   const d = t.o && OBJECTS[t.o.type];
-  const verb = !t.o ? 'CRACK ICE' : isStruct ? 'BREAK' : (d && d.verb) || 'MINE';
+  const verb = isStruct ? 'BREAK' : (d && d.verb) || 'HIT';
   // sit above the sprite: the entry's `lift` is how far above its tile the
   // prompt goes - 33 for the 37px pine, 20 for a dead tree's 8px overhang, 10
   // for the short ones. A building is drawn up from its footprint's bottom
   // edge and can be taller than its tiles, so clear its own sprite instead.
   const lift = isStruct ? structSprite(st).height - structH(st) * TILE + 12 :
-    t.o ? ((d && (typeof d.lift === 'function' ? d.lift(t.o) : d.lift)) || 10) : 8;
+    (d && (typeof d.lift === 'function' ? d.lift(t.o) : d.lift)) || 10;
   // a multi-tile building takes the prompt on its centre, not the tile you aimed at,
-  // and so does scenery wider than a tile (a rock: its OBJECTS `w`)
+  // and so does scenery wider than a tile (its OBJECTS `w`)
   const hx = isStruct ? (st.tx + structW(st) / 2) * TILE : t.tx * TILE + ((d && d.w) || 1) * 8;
   const hty = isStruct ? st.ty * TILE : t.ty * TILE;
   const hby = isStruct ? (st.ty + structH(st)) * TILE : t.ty * TILE + TILE;
@@ -577,7 +573,7 @@ function renderWheel(now) {
 // ---- the action wheel's wedges ------------------------------------------
 // The MOUSE scheme's wheel (msWheelPress, js/app/input.js) wears what the strip
 // wears: an ability's own icon at half size, dark where it cannot cast yet
-// (locked or waiting), a meal's bag icon, dark with none in the bag, and
+// (locked or waiting), a meal's icon, dark with none in the pouch, and
 // the ping's GO HERE glyph.
 function kitAb(id) { return /^ab\d$/.test(id) ? +id[2] - 1 : -1; }
 function drawKitWedge(id, x, y, hot) {
@@ -595,7 +591,7 @@ function drawKitWedge(id, x, y, hot) {
   ctx.globalAlpha = 1;
 }
 // the line under the wheel: the ability's name (gold when it will cast), the
-// meal's verb with the count in the bag, or the ping's own verb
+// meal's verb with the count in the pouch, or the ping's own verb
 function kitLabel(id) {
   const i = kitAb(id);
   if (i >= 0) return { label: abOf(player, i).name, color: abReady(player, i) ? '#ffd95c' : '#8c919a' };
