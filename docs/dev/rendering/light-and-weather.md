@@ -41,7 +41,7 @@ the glyphs (`worldInk`) and `flushWorldInk` stamps them at the **end of `renderL
 the tint, the depth wash and the rim. It is the same carve-out the two debug overlays get, for
 the same reason. **The frames over a body are held back the same way**: `overheadPlate(fn)` queues
 one closure per body (`worldPlates`, with the `globalAlpha` and transform standing at the call -
-a buried body's fade, a wader's sink), and `flushPlates`, first thing in `flushWorldInk`, runs
+a buried body's fade), and `flushPlates`, first thing in `flushWorldInk`, runs
 them in draw order. A player's whole frame (bars, level plate, stun plate, meter and name), a
 beast's, every `drawHealthBar` (robots, buildings, the regrow clocks) and the roost's PERCH bar
 go through it, so a bar is the same pixels in any light and nothing standing in front of a body

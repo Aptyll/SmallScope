@@ -13,6 +13,10 @@ js/draw/fog.js (the picture).
 - **Pines cast no shadow. The woods are brush instead**: a body standing on a walkable tile with
   `FOG_WOODS_N` pines or more in the 5x5 round it is hidden from a side even inside its circles,
   until one of that side's heroes or soldiers stands within `FOG_BRUSH` px (`woodsHide`).
+- **Deep snow is brush too**: a body in a patch (`brushOf`) is hidden from a side until one of
+  its heroes or soldiers stands in that patch or within `FOG_BRUSH_RIM` tiles of its rim
+  (`brushHide`). `coverHide` asks both; `sightAt` and `fogShown` ask it
+  ([deep snow](deep-snow.md)).
 - **The falcon's mark sees through it**, as it sees through cover.
 - **Where it is up** (`fogUp`): a match on the ground. Never the practice field, the drop's flight
   or the title tour; `DBG.fog = false` lifts it for a debug look, and the media

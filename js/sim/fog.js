@@ -3,7 +3,8 @@
 // finished turret of a side lights a circle round it; solid stone (the
 // cistern's wall, built walls) stops a line of sight, pines never do; a body
 // standing deep in the woods is hidden from the outside until one of the side
-// stands close. Rival bodies and every creature outside a side's sight are
+// stands close, and a body in the brush (deep snow, js/sim/depth.js) until
+// one of the side stands in that patch or right at its rim. Rival bodies and every creature outside a side's sight are
 // gone for it: from the screen and both maps (js/draw/fog.js draws that) and
 // from its bots (they ask through seenAt(q, range, team) and inSight).
 // Terrain, buildings and the eagles are never fogged.
@@ -17,6 +18,7 @@ const FOG_TURRET = 128;  // px a turret sees (past its longest throw)
 const FOG_TOWER = 136;   // px a road tower sees from its foot (past its TOWER_RANGE)
 const FOG_WOODS_N = 9;   // pines in the 5x5 tiles round a walkable tile that make it the woods
 const FOG_BRUSH = 48;    // px a side's hero or soldier must be inside to see someone in the woods
+const FOG_BRUSH_RIM = 1.5; // tiles outside a brush patch's rim a side's hero or soldier still sees into it
 const FOG_FACE = 6;      // px past where a sight line meets stone still lit, so the wall's face shows
 
 // whether the fog is up: a match on the ground, never the practice field or
@@ -109,6 +111,18 @@ function woodsHide(srcs, x, y) {
   return true;
 }
 
+// the brush's rule: a body in a deep snow patch (brushOf) is hidden unless
+// one of the side's heroes or soldiers stands in the same patch or within
+// FOG_BRUSH_RIM of its rim. Seeing OUT of it is nothing special
+function brushHide(srcs, x, y) {
+  const D = brushOf(x, y);
+  if (!D) return false;
+  for (const s of srcs) if (s.near && brushIn(D, s.x / TILE, s.y / TILE) > -FOG_BRUSH_RIM) return false;
+  return true;
+}
+// every cover a body can be in that the side's eyes reach: the woods, the brush
+function coverHide(srcs, x, y) { return woodsHide(srcs, x, y) || brushHide(srcs, x, y); }
+
 // Whether `team` can see unit u right now. Its own side always; a rival the
 // falcon marked always (the mark's one bypass, js/sim/abilities.js); on a
 // client, never a body the host said is out of its sight (`fogHid`, the `fog`
@@ -132,8 +146,9 @@ function fogEyesOf(team) {
   return fogEyes[team];
 }
 // whether `team` sees the point (x, y): inside an eye's reach with no stone
-// between, and not deep in the woods out of a near eye's reach. What a body
-// is asked through inSight; a puff or a number on the wire, bare
+// between, and not in the woods or the brush out of a near eye's reach
+// (coverHide). What a body is asked through inSight; a puff or a number on
+// the wire, bare
 function sightAt(team, x, y) {
   if (!fogUp() || (team !== 0 && team !== 1)) return true;
   const srcs = fogEyesOf(team);
@@ -143,5 +158,5 @@ function sightAt(team, x, y) {
     if (d > s.r) continue;
     if (s.open || d < 1 || sightReach(s.x, s.y, dx / d, dy / d, d, s.walls, s.stone) >= d) { seen = true; break; }
   }
-  return seen && !woodsHide(srcs, x, y);
+  return seen && !coverHide(srcs, x, y);
 }

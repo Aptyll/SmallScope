@@ -44,7 +44,7 @@ profile's saved matches from before saves were removed are cleared from storage 
 **The proof** (`DBG.saveHash`: a hash of everything a save carries, less the camera and what
 runs on the frame's clock rather than the match's - the snowfall, which `updateFx` sways on
 `performance.now` and tops up off `fxRng`, so an ember's tint, the one draw that stream lends the
-sim, and the wade's look a draw pass eases on each body, `SAVE_FRAME_KEYS`). Step a match on a frozen page, `saveCapture`, keep stepping and hash; `saveLoad` the record onto a
+sim). Step a match on a frozen page, `saveCapture`, keep stepping and hash; `saveLoad` the record onto a
 page frozen from its first frame, step the same counts and hash: the two must agree at every
 count, across all three shapes, from a save made in the eagle's ride, early in play with the local
 human idle, and deep in a ten-bot match with hundreds of buildings and robots standing.

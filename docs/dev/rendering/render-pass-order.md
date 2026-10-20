@@ -107,8 +107,8 @@ canvas — see [Drawing a thousand of something](drawing-a-thousand-of-something
 largest performance fact in this file. A pine (or a dead snag) drawn **over the viewed hero's
 model** opens the **canopy window** ([js/draw/canopy.js](../../../js/draw/canopy.js)): `drawPlayer`
 draws that hero's model (body in any pose, held tool, ability marks, snow cover; never its shade
-or foot rings) through a small layer as well as onto the world (`heroLayerOpen`/`heroLayerClose`,
-clipped at `wadeCut` like the body), and each canopy drawn after the hero in the y-sort counts
+or foot rings) through a small layer as well as onto the world (`heroLayerOpen`/`heroLayerClose`),
+and each canopy drawn after the hero in the y-sort counts
 the model pixels its own ink covers (`canopyOver`). A covering one composes off-batch with the
 model's silhouette cut out of it plus a two-pixel falloff (`CANOPY_CUT`), opened in proportion to
 the covered share (full at `CANOPY_FULL`), so the body reads crisp, the forest round it stays

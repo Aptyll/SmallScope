@@ -78,7 +78,7 @@ function fogMargin(x, y) {
 
 // Whether body u is drawn this frame: always with no fog up, on the viewed
 // side, or falcon-marked; otherwise inside the side's sight and not hidden in
-// the woods. The one question every body draw and map dot asks.
+// the woods or the brush (coverHide). The one question every body draw and map dot asks.
 // With no `now` (a pass outside the frame's draw: the trample) it asks the
 // frame the screen last drew.
 function fogShown(u, now) {
@@ -86,7 +86,7 @@ function fogShown(u, now) {
   if (u.fogHid) return false; // a client: the host said this body is out of the side's sight, and what is held of it is stale
   if (fogTeam < 0 || u.team === fogTeam || u.markT > 0) return true;
   let v = fogShownMap.get(u);
-  if (v === undefined) { v = fogMargin(u.x, u.y) >= 0 && !woodsHide(fogEyesDraw, u.x, u.y); fogShownMap.set(u, v); }
+  if (v === undefined) { v = fogMargin(u.x, u.y) >= 0 && !coverHide(fogEyesDraw, u.x, u.y); fogShownMap.set(u, v); }
   return v;
 }
 

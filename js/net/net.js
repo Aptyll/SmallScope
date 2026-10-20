@@ -712,7 +712,6 @@ function netPredictable(p) {
 }
 // one step of the walk, as updatePlayer takes it, on our own body
 function netPredictWalk(p, inp, dt) {
-  wadeEase(p, dt);
   const hd = walkHeading(p, inp.mx, inp.my, false);
   kbDecay(p, dt);
   const onIce = iceUnder(p), kit = kitOf(p);

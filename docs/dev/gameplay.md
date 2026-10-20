@@ -5,7 +5,7 @@
 Read only the page you need. Big pages list their parts at the bottom. A new section is a new
 page linked here; a page past about 30 KB splits into a folder of parts.
 
-- [Deep snow](gameplay/deep-snow.md) (3 KB): The DEEP band of the snow depth map slows **every** walker, not only players
+- [Deep snow](gameplay/deep-snow.md) (2 KB): Deep snow is the valley's **brush**: hand-placed mirrored patches of frosted reeds that hide a body from the other side
 - [Momentum movement (players only)](gameplay/momentum-movement-players-only.md) (11 KB): A player moves on a real velocity (`p.vx/vy`)
 - [Trampled snow](gameplay/trampled-snow.md) (2 KB): Visual only (js/draw/trample.js)
 - [Unit collisions](gameplay/unit-collisions.md) (5 KB): Players, animals and robots are solid circles to each other (`PLAYER_R` 4.5 — a merchant takes it too —...

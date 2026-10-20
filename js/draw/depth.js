@@ -1,6 +1,7 @@
 'use strict';
 // How deep snow looks: the DEEP band's raised drift baked into the ground,
-// and a body wading through it. The map itself is js/sim/depth.js.
+// and the frosted reeds standing in it that make it read as brush. The map
+// itself is js/sim/depth.js; who it hides, js/sim/fog.js.
 // ------------------------------------------------------------ deep snow's look
 // A deep drift has to read as HIGHER than the snow round it at a glance, in
 // the game's own light (the sun is top-left, like every cast shade): a white
@@ -72,59 +73,76 @@ function deepTone(x, y, t) {
   return s > 0.5 ? DEEP_T0 + 2 : s < -0.5 ? DEEP_T0 : DEEP_T0 + 1;
 }
 
-// ---- a body wading -----------------------------------------------------------
-// In deep snow a body sinks to the shins: drawn WADE_SINK rows lower and cut
-// off at the snow's surface, with a collar of drift round the cut. The look
-// eases on the frame's own clock toward what is under the feet now, so a
-// client (whose sim never runs) draws the same thing the host does.
-const WADE_SINK = 2;         // rows the body drops at full depth...
-const WADE_CUT = 3;          // ...and rows over the feet the surface stands
-function wadeLook(e, now) {
-  const dt = e.wadeAt === undefined ? 0 : Math.max(0, Math.min(0.1, now - e.wadeAt));
-  e.wadeAt = now;
-  e.wadeMv = e.wadeDX !== undefined && Math.abs(e.x - e.wadeDX) + Math.abs(e.y - e.wadeDY) > 0.05; // moved since the last frame
-  e.wadeDX = e.x; e.wadeDY = e.y;
-  const want = deepAt(e.x, e.y + 4) ? 1 : 0;
-  e.wadeV = want + ((e.wadeV || 0) - want) * Math.exp(-DEEP_EASE * dt);
-  return e.wadeV;
+// ---- the reeds -----------------------------------------------------------------
+// Every patch of brush (a deep drift: brushOf, js/sim/depth.js) is a stand of
+// dead reeds poking out of the drift, frost on their tips: what says "hide
+// here" at a glance. Each reed is a small sprite y-sorted with the bodies
+// (gatherDraws, js/draw/passes.js), so a body standing among them is half
+// behind the ones in front of it. Round the viewed hero they thin to
+// REED_SEE, so your own body in the brush is never lost in it. Placed on a
+// staggered REED_STEP grid jittered off the position hash, wherever the snow
+// is deep: pure position, so every screen stands the same reeds.
+const REED_PAL = { root: '#8d8270', blade: '#c9bc9c', lit: '#e4dccb', tip: '#ffffff', foot: '#c6d4e8' };
+const REED_STEP = 6;   // px between reeds on the grid
+const REED_JIT = 4;    // px either way a reed wanders off its grid point
+const REED_IN = 0.03;  // depth past DEPTH_DEEP a reed's foot needs: none on the rim's own line
+const REED_FADE = 16;  // px from the viewed hero's feet the reeds thin...
+const REED_SEE = 0.3;  // ...to this alpha
+const REED_VARS = 8, REED_W = 11, REED_H = 12; // the atlas: variants, and each cell's size
+let reedCv = null;
+// the atlas: REED_VARS clumps of 3 to 5 blades fanning up from one root,
+// dark at the root, lit on the sun's (left) side, a white frost tip each
+function reedAtlas() {
+  if (reedCv) return reedCv;
+  reedCv = document.createElement('canvas'); reedCv.width = REED_W * REED_VARS; reedCv.height = REED_H;
+  const g = reedCv.getContext('2d');
+  for (let v = 0; v < REED_VARS; v++) {
+    const h = (v + 0.5) / REED_VARS, n = 3 + (v % 3), tall = REED_H - 4 + ((v * 5) % 4);
+    const x0 = v * REED_W + (REED_W >> 1), y0 = REED_H - 2;
+    const px = (x, y, c) => { g.fillStyle = c; g.fillRect(x, y, 1, 1); };
+    px(x0 - 1, y0 + 1, REED_PAL.foot); px(x0, y0 + 1, REED_PAL.foot); px(x0 + 1, y0 + 1, REED_PAL.foot);
+    for (let k = 0; k < n; k++) {
+      const lean = (k - (n - 1) / 2) * 0.55 + (h - 0.5) * 0.6, len = tall - Math.abs(k - (n - 1) / 2) - (k & 1);
+      for (let j = 0; j < len; j++) {
+        const c = j === len - 1 ? REED_PAL.tip : j < 2 ? REED_PAL.root : k === 0 ? REED_PAL.lit : REED_PAL.blade;
+        px(x0 + Math.round(lean * j * 0.6), y0 - j, c);
+      }
+    }
+  }
+  return reedCv;
 }
-// how wide a body's collar is - 0 for one that is not standing in the snow:
-// a player lying under it (the cover is its own look), in the water, on the
-// cable, on a deer's back or in the air, a kind that runs on the crust (ON_CRUST, js/sim/depth.js:
-// a rabbit, a bird), and the merchant, who never leaves the road
-function wadeWidth(e) {
-  if (e instanceof Player) return e.prone || e.fallT > 0 || e.zip >= 0 || e.mount || inAir(e) || e.dead ? 0 : 10; // a rider sits up on its deer
-  if (ON_CRUST[e.kind] || e.merchant) return 0;
-  return e.kind === 'deer' ? 18 : MONSTER[e.kind] && MONSTER[e.kind].big ? 40 : 10;
+// a deep drift's reeds, laid on its first draw and kept on it
+function reedsOf(D) {
+  if (D.reeds) return D.reeds;
+  const out = D.reeds = [];
+  const r = (D.len + 1) * TILE, X = D.x * TILE, Y = D.y * TILE;
+  const y0 = Math.floor((Y - r) / REED_STEP), y1 = Math.ceil((Y + r) / REED_STEP);
+  const x0 = Math.floor((X - r) / REED_STEP), x1 = Math.ceil((X + r) / REED_STEP);
+  for (let j = y0; j <= y1; j++) for (let i = x0; i <= x1; i++) {
+    const gx = i * REED_STEP + (j & 1 ? REED_STEP / 2 : 0), gy = j * REED_STEP;
+    const x = Math.round(gx + (hash2(gx, gy) - 0.5) * REED_JIT), y = Math.round(gy + (hash2(gy + 9, gx + 3) - 0.5) * REED_JIT);
+    if (driftDepth(D, x / TILE, y / TILE) < DEPTH_DEEP + REED_IN) continue;
+    out.push({ x, y, v: (hash2(x * 3, y * 7) * REED_VARS) | 0 });
+  }
+  out.sort((a, b) => a.y - b.y);
+  return out;
 }
-// draw a body through fn() as it stands in the snow; while fn() runs, wadeCut
-// is the world-buffer row the drift swallows the body from (the canopy
-// window's hero layer clips there too, js/draw/canopy.js)
-let wadeCut = Infinity;
-function drawWading(e, ex, ey, now, fn) {
-  const w = wadeWidth(e), k = w ? wadeLook(e, now) : 0;
-  if (k < 0.05) { fn(); return; }
-  const fy = Math.round(e.y + 4 - ey), sx = Math.round(e.x - ex);
-  const sink = Math.round(WADE_SINK * k), cut = fy - Math.round(WADE_CUT * k);
-  ctx.save();
-  ctx.beginPath(); ctx.rect(sx - 64, fy - 128, 128, cut - (fy - 128)); ctx.clip();
-  ctx.translate(0, sink);
-  wadeCut = cut;
-  fn();
-  wadeCut = Infinity;
-  ctx.restore();
-  // the collar: a mound of the drift round the shins - a sunlit crest over
-  // the body, the hole's own shade where the legs go in, the drift's top
-  // either side and its dark lip at the foot. It shivers a pixel while the
-  // body is pushing through.
-  const hw = Math.round(w / 2 * k) + 1;
-  const m = e.wadeMv ? ((now * 8) | 0) & 1 : 0;
-  const row = (c, x0, x1, y) => { ctx.fillStyle = DEEP_PAL[c]; ctx.fillRect(sx + x0, y, x1 - x0, 1); };
-  row(7, -hw, -hw + 1, cut); row(7, hw - 1 + m, hw + m, cut); // the thin line round its ends
-  row(3, -hw + 1, hw - 1 + m, cut);       // the crest
-  row(1, -hw, hw + m, cut + 1);           // the top
-  row(5, -hw + 2, hw - 2 + m, cut + 1);   // ...and the hole the legs go into
-  row(1, -hw, hw + m, cut + 2);
-  row(4, -hw + 1, hw - 1 + m, cut + 3);   // the lip
-  row(6, -hw + 2, hw - 2 + m, cut + 4);   // ...and its shade
+// the reeds over the view, into the frame's y-sorted draws (gatherDraws)
+function reedDraws(draws, ox, oy) {
+  for (const D of drifts) {
+    const r = (D.len + 1) * TILE, X = D.x * TILE, Y = D.y * TILE;
+    if (X + r < ox || Y + r < oy - REED_H || X - r > ox + WV_W || Y - r > oy + WV_H + REED_H) continue;
+    for (const q of reedsOf(D)) {
+      if (q.x < ox - REED_W || q.x > ox + WV_W + REED_W || q.y < oy || q.y > oy + WV_H + REED_H) continue;
+      if (ground[idx(q.x >> 4, q.y >> 4)] !== 0) continue; // paved or holed since: no snow, no reeds
+      draws.push({ y: q.y, reed: q });
+    }
+  }
+}
+// one reed, thinned round the viewed hero (null while dead or airborne)
+function drawReed(q, ex, ey, hero) {
+  const near = hero && Math.hypot(q.x - hero.x, q.y - hero.y - 4) < REED_FADE;
+  if (near) ctx.globalAlpha = REED_SEE;
+  ctx.drawImage(reedAtlas(), q.v * REED_W, 0, REED_W, REED_H, Math.round(q.x - ex) - (REED_W >> 1), Math.round(q.y - ey) - REED_H + 2, REED_W, REED_H);
+  if (near) ctx.globalAlpha = 1;
 }

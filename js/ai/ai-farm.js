@@ -7,7 +7,9 @@
 //            then bot, one laner each), walks to where its side's wave on
 //            that lane meets the rival one and stands just behind its own
 //            column - or, with no column of its own on the lane, waits at
-//            the lane's hold point (laneHold, js/sim/lanes.js); the fight there is rung 3's, and
+//            the lane's hold point (laneHold, js/sim/lanes.js) - in ambush in
+//            the nearest brush patch on its own side of that point when one
+//            is near (aiBrushWait); the fight there is rung 3's, and
 //            on a rival soldier its own soldiers are wearing down it holds
 //            the draw until one blow finishes it (aiFarmFire) - the last
 //            hit, never the softening. A lone soldier is simply killed.
@@ -28,6 +30,8 @@ const AI_FARM_ARROW = 300; // px/s a bot reckons its shot flies (the plain arrow
 const AI_FARM_SWING = 0.2; // s from a blade's release to the cut landing, as a bot reckons it
 const AI_FARM_STAND = [40, 90]; // px a blade and a bow wait off a soldier they are holding for
 const AI_FARM_BACK = 40; // px a laner stands behind its own column, toward its own bird
+const AI_BRUSH_R = 480; // px from a laner's hold point a brush patch's middle may be for it to wait in that instead...
+const AI_BRUSH_FWD = 96; // ...and px further from its own base than the hold point it may lie
 const AI_DEN_EARLY = 15; // s ahead of a den's clock a jungler sets off (time to walk in on top of the walk)
 
 // is foe a rival soldier p should leave alone until one blow finishes it?
@@ -100,10 +104,20 @@ function aiLaneSpot(p) {
     }
   }
   const b = best || head;
-  if (!b) return laneHold(p.team, lane);
+  if (!b) return aiBrushWait(p, laneHold(p.team, lane));
   if (!own) return { x: b.x, y: b.y };
   const ux = own.x - b.x, uy = own.y - b.y, ud = Math.hypot(ux, uy) || 1;
   return { x: b.x + ux / ud * AI_FARM_BACK, y: b.y + uy / ud * AI_FARM_BACK };
+}
+
+// where a laner with nothing to farm waits instead of its hold point h: the
+// brush nearest h within AI_BRUSH_R that is no further out from its own base
+// than h (AI_BRUSH_FWD), so the wait is an ambush on its own ground, never a
+// walk forward; h itself with none
+function aiBrushWait(p, h) {
+  const c = baseCentre(p.team), hx = (c.tx + 0.5) * TILE, hy = (c.ty + 0.5) * TILE;
+  const reach = Math.hypot(h.x - hx, h.y - hy) + AI_BRUSH_FWD;
+  return brushNear(h.x, h.y, AI_BRUSH_R, (x, y) => Math.hypot(x - hx, y - hy) <= reach) || h;
 }
 
 // where a jungler goes: its side's den with the pack up (walked into), or the

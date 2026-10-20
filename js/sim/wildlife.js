@@ -91,9 +91,8 @@ const RABBIT_DODGE_CD = 6;     // s for the charge to come back
 const RABBIT_ALERT = 0.3;
 // A warren's rabbit never runs out of its snow: every leg of a flight and
 // every graze must end on its warren's deep snow (warrenHolds), and a flight
-// is a chain of RABBIT_LEG-tile legs, each picked away from the threat, so on
-// the crust (ON_CRUST, js/sim/depth.js) at PREY_RUN it circles a wading scout
-// rather than leaving the circle.
+// is a chain of RABBIT_LEG-tile legs, each picked away from the threat, so at
+// PREY_RUN it circles a scout rather than leaving the circle.
 const RABBIT_LEG = 3.5;
 function warrenHolds(C, x, y) { return campNear(C, x / TILE - 0.5, y / TILE - 0.5, 0) && deepAt(x, y); }
 // The head-up window: seconds either prey keeps WATCHING after the last sign
@@ -1072,7 +1071,7 @@ function rideLeap(p) {
     dy = p.dir === 'up' ? -1 : p.dir === 'down' ? 1 : 0;
   }
   const d = Math.hypot(dx, dy) || 1;
-  const v = Math.max(PLAYER_SPEED * RIDE[p.mount.kind].mul * wadeMul(p), Math.hypot(p.vx, p.vy));
+  const v = Math.max(PLAYER_SPEED * RIDE[p.mount.kind].mul, Math.hypot(p.vx, p.vy));
   p.vx = dx / d * v; p.vy = dy / d * v;
   p.leapT = RIDE_LEAP_T; p.leapUp = 0;
   sfxAt('dodge', p.x, p.y);
