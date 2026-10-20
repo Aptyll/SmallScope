@@ -246,6 +246,10 @@ const settings = { v: 4, volume: 0.5, musicVol: 0.7, sfxVol: 1, mmR: 24, mmZoom:
   // where the hover tooltip sits: true = it rides beside the pointer, false =
   // the fixed bottom-left corner it was born in (tipPos, js/ui/tooltip.js).
   tipFollow: true,
+  // an ability's hover: false = the short card (the numbers at the rank you
+  // hold), Shift held opens every rank's; true = every rank's always
+  // (tipClassAb, js/ui/tooltip.js)
+  tipFull: false,
   relay: '',          // the match relay (host:port) this screen talks to; empty = the page's own host (netRelay, js/net/net.js)
   // the pad's rumble on a gesture that moves an item
   // (haptic, js/app/input.js). A mouse has no motor and never notices this row.

@@ -58,11 +58,14 @@ function shotFlight(s, pw) {
 }
 // what the attack lands for at draw `pw`: the hero's DAMAGE, the kit's speed
 // bonus on a body that is moving, the draw over the whole sum, the ambush
+// what SNOW COVER's rank adds to the shot out of full cover: its row's
+// `ambush` over the kit's base AMBUSH_MUL, nothing on a body without the key
+function ambushRank(p) { const v = abRk(p, 'snow', 'ambush'); return v === v ? v - AMBUSH_MUL : 0; }
 function attackDmg(p, pw, amb) {
   const kit = kitOf(p);
   const spdBonus = kit.spdDmg * Math.min(1, Math.hypot(p.vx, p.vy) / 200);
   let dmg = Math.round((statOf(p, 'dmg') + spdBonus) * drawDmgMul(pw));
-  if (amb) dmg = Math.round(dmg * kit.ambushMul);
+  if (amb) dmg = Math.round(dmg * (kit.ambushMul + ambushRank(p)));
   return dmg;
 }
 

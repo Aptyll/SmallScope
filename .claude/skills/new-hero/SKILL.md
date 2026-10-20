@@ -28,6 +28,7 @@ Q:
 W:
 E:
 R:
+RANKS (optional): what each key gains per rank, e.g. "Q damage 60/90/120/150/180"
 LOOKS (optional): default look name, first buyable skin name
 ```
 
@@ -36,13 +37,25 @@ LOOKS (optional): default look name, first buyable skin name
 1. **Read and map.** Read `docs/dev/game.md`, `lore.md`, the `gameplay.md` index and only the gameplay pages the kit touches, and the Armatos files.
    Map every ability onto what already exists (`hurtUnit`, the status setters, `knockUp`,
    `shieldUnit`, tenacity through `ccMul`, `unitsNear`, `navTo`). Where the text forks on a
-   detail (a range, a ring size, the R unlock level, which body it borrows), pick a default,
+   detail (a range, a ring size, which body it borrows), pick a default,
    write it in the PR, and ask at most 3 one-letter questions with the pick marked. Keep going on
    the picks; never park on a question.
 2. **Build the kit on a borrowed body.** One file per side, named for the hero:
    - `js/sim/<hero>.js`: its ability rows (the `ARM_AB` shape: `cd`, `cast`, `blurb`, `use`,
      `tele`, a `bot` hint saying when a bot should press it, its own `icon`; `recast`/`ok` if
-     needed), its passive in `HERO_PASSIVE`, any entities it leaves (tick, `SAVE_ROOTS` in
+     needed), its passive in `HERO_PASSIVE`,
+     - **Rank numbers on every key**, League-style ([class abilities](../../../docs/dev/gameplay/class-abilities-keys-1-4.md)):
+       keys 1-3 hold 5 ranks (hero levels 1/3/5/7/9), key 4 is the ultimate with 3 (6/11/16), no
+       `lvReq`. Each row's `rank: { dmg: [5 numbers], stun: 1, ... }` holds its numbers (a list
+       scales, a plain number stays flat) and `cd` is a list when the wait shrinks. Every rank
+       raises ONE number (damage, or the effect) by a clear step; rank 1 is the number you would
+       ship flat. Each row also gets a `tip`: one line of at most 40 characters, all the tooltip
+       shows under the cooldown and that number (the full `blurb` stays on the wiki).
+       `use()` reads them through `abRk(p, id, key)`, never a module constant, and anything a
+       cast leaves in the world copies its rank numbers when it is cast. A `rank` key the
+       tooltip has no words for gets a line in `AB_RANK_STAT` (js/ui/tooltip.js). Use Noah's
+       RANKS line when given; otherwise scale like Armatos (`js/sim/armatos.js`) and show them.
+       The `CLASSES` row's `rankOrder` is the order a bot maxes keys 1-3 (it takes R whenever it can). any entities it leaves (tick, `SAVE_ROOTS` in
      js/sim/save.js, packed in js/net/snapshot.js).
    - `js/draw/<hero>.js`: tells, rings, entities, the held weapon.
    - `js/sprites/<hero>.js`: ability icons, then bodies and weapon once picked (step 4).
@@ -76,7 +89,7 @@ LOOKS (optional): default look name, first buyable skin name
    skins on; `node app/check-globals.js` clean, including the size lint. Turn off respawn
    `invuln` before capturing, or the body draws faded.
 6. **Show Noah before merging.** One reply: an in-game sheet (the hero in each look, each
-   ability's tell) attached from `/mnt/project-files/<hero>/`, the PR link, and the open calls as
+   ability's tell, and the four ability tooltips with their per-rank numbers) attached from `/mnt/project-files/<hero>/`, the PR link, and the open calls as
    one-letter questions. Taste-heavy work is never merged unseen.
 7. **Docs and patch.** Fix every doc line the hero makes false (Armatos touched sprites,
    gameplay, multiplayer, rendering, architecture, checklists, code-map, game). Bump

@@ -689,12 +689,14 @@ function resolveCardForBot(p) {
 const AI_SHOP_DETOUR = 32 * TILE; // px: how far a bot walks to its counter to buy; past it (AI_RECALL_FAR) it recalls
 function aiSpend(p, inp, steerTo) {
   // spend a free skill point before the ladder - waiting on it is leaving
-  // growth on the table. Lowest ability level first, so the kit rises
-  // evenly - which spends the first four points UNLOCKING all four keys
-  // (level 0 casts nothing) before any of them gets a cooldown cut.
+  // growth on the table. League's order: the ultimate whenever it can rank,
+  // then every basic key unlocked once (level 0 casts nothing), then the
+  // basics maxed in the hero's own rankOrder (CLASSES), first to last.
   if (p.skillPts > 0 && !inp.cmd) {
-    let ba = -1, bl = AB_LV_MAX - 1;
-    for (let i = 0; i < AB_KEYS; i++) if (abLvCanBuy(p, i) && p.abLv[i] - 1 < bl) { bl = p.abLv[i] - 1; ba = i; } // (a key still waiting on its hero level is no buy yet)
+    const order = CLASSES[p.cls].rankOrder || [0, 1, 2];
+    let ba = abLvCanBuy(p, AB_ULT) ? AB_ULT : -1;
+    for (const i of order) if (ba < 0 && p.abLv[i] === 0 && abLvCanBuy(p, i)) ba = i;
+    for (const i of order) if (ba < 0 && abLvCanBuy(p, i)) ba = i; // (a key still waiting on its hero level is no buy yet)
     if (ba >= 0) inp.cmd = { kind: 'ability', i: ba };
   }
   if (!inp.cmd && p.items) {

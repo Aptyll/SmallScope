@@ -17,17 +17,10 @@ const RESOLVE_SHIELD_T = 4;     // ...held for this long
 // Q IRON VERDICT: the sword slammed down a line ahead
 const VERDICT_LEN = 64;         // px of line
 const VERDICT_HALF = 9;         // px either side of it
-const VERDICT_DMG = 14;
-const VERDICT_SLOW = 0.6, VERDICT_SLOW_T = 1.5; // walk x0.6 for 1.5 s
 const VERDICT_MID = [0.4, 0.75]; // the stretch of the line that is its centre: knocked up there
-const VERDICT_UP = 0.6;         // s in the air
 // W HOLD THE LINE: braced behind the shield, the front takes less; a hero who
 // strikes the front primes the bash, the key again
-const HOLD_T = 2.5;             // s the brace can be held
-const HOLD_CUT = 0.6;           // share of a front hit the shield takes off
 const BASH_R = 30, BASH_HALF = 0.85; // the bash's wedge, the slam's shape
-const BASH_DMG = 10;
-const BASH_STUN = 1.0;          // only when primed
 const BASH_KB = 150;
 // E VETERAN'S MARCH: a charge that shoulders soldiers and beasts aside and
 // stops dead on the first hero, stunning them
@@ -35,31 +28,26 @@ const MARCH_SPD = 280;
 const MARCH_T = 0.45;           // s of charge (~8 tiles)
 const MARCH_RAMP = 0.08;
 const MARCH_SHOVE = 160;        // px/s a lesser body is thrown off the line
-const MARCH_SHOVE_DMG = 5;
-const MARCH_DMG = 12;
-const MARCH_STUN = 1.0;
 // R THE OLD GUARD: the standard planted; a ring his side stands in
 const GUARD_R = 72;             // px
-const GUARD_T = 6;              // s it stands
-const GUARD_ARMOR = 40;         // armor every ally inside gains
-const GUARD_TEN = 0.5;          // tenacity inside: stuns, roots and slows last half as long
 const GUARD_EDGE = 80;          // px past the rim a fleeing rival is still caught by it (a dodge roll out included)
-const GUARD_SLOW = 0.5, GUARD_SLOW_T = 2;
-const GUARD_LV = [6, 9, 12];    // the hero level each of its three points waits for
 
-const guards = []; // {x, y, team, owner, t, n} - the planted standards, stepped by updateGuards
+const guards = []; // {x, y, team, owner, t, n, life, armor, ten, slow, slowT} - the planted standards, stepped by updateGuards, each carrying its planter's rank
 let guardN = 0;    // a standard's number, so a rival remembers WHICH ring it stood in
 
 // ---- the keys ---------------------------------------------------------------
 // His row in CLASS_AB (js/sim/abilities.js). Beyond the shared fields a row
-// carries what its key IS: `wall` (the key raises the shieldT state, and the
-// key again is its second half), `lvReq` (the hero level each point waits
-// for), `tele` (the wind-up's shape on the snow), `pose` (the body's), `icon`
+// carries what its key IS: `tip` (the tooltip's one line, read mid-fight),
+// `rank` (its numbers at each rank, read by abRk -
+// the per-rank tuning; a `cd` list is its cooldown at each rank), `wall` (the
+// key raises the shieldT state, and the key again is its second half), `tele` (the wind-up's shape on the snow), `pose` (the body's), `icon`
 // (its 32x32 grid, js/sprites/armatos.js) and `bot` (when a bot reaches for it,
 // js/ai/ai-ladder.js).
 const ARM_AB = [
   {
-    id: 'verdict', name: 'IRON VERDICT', cd: 8, ap: 0.6, cast: 0.32, aim: { line: VERDICT_LEN },
+    id: 'verdict', name: 'IRON VERDICT', cd: [8, 7.5, 7, 6.5, 6], ap: 0.6, cast: 0.32, aim: { line: VERDICT_LEN },
+    rank: { dmg: [14, 19, 24, 29, 34], slow: 0.6, slowT: 1.5, up: 0.6 }, // slow: walk x0.6; up: s in the air (the line's middle)
+    tip: 'LINE SLAM. SLOWS. THE MIDDLE KNOCKS UP',
     blurb: 'THE SWORD COMES DOWN IN A LINE. SLOWS ALL IT HITS. THE MIDDLE OF THE LINE THROWS THEM UP.',
     use: (p) => armVerdict(p),
     tele: (p, px, py, a, col, closing) => drawVerdictTele(px, py, a, col, closing),
@@ -68,18 +56,22 @@ const ARM_AB = [
     bot: (p, foe, d, clear) => clear && d < VERDICT_LEN - 6,
   },
   {
-    id: 'hold', name: 'HOLD THE LINE', cd: 12, ap: 0.5, cast: 0.12, wall: true, recast: (p) => p.shieldT > 0,
+    id: 'hold', name: 'HOLD THE LINE', cd: [12, 11.5, 11, 10.5, 10], ap: 0.5, cast: 0.12, wall: true, recast: (p) => p.shieldT > 0,
+    rank: { t: 2.5, cut: 0.6, dmg: [10, 14, 18, 22, 26], stun: 1 }, // t: the brace; cut: off a front hit; dmg/stun: the bash (stun only primed)
+    tip: 'BLOCK THE FRONT. AGAIN TO BASH',
     blurb: 'BRACE BEHIND THE SHIELD: THE FRONT TAKES LESS. A HERO WHO STRIKES IT PRIMES THE BASH. PRESS AGAIN TO BASH.',
     use: (p) => (p.castSlam ? armBash(p) : armBrace(p)),
     tele: (p, px, py, a, col, closing) => { if (p.castSlam) drawWedge(px, py, a, BASH_R, BASH_HALF, p.holdHit ? TELE_HOT : col, 0.55 + 0.4 * closing, closing); }, // the bash's wedge; the raise shows none
-    acol: '#f2cc6a', activeF: (p) => (p.shieldT > 0 && p.hold ? p.shieldT / HOLD_T : 0),
+    acol: '#f2cc6a', activeF: (p) => (p.shieldT > 0 && p.hold ? p.shieldT / abRk(p, 'hold', 't') : 0),
     icon: ARM_ICON32.hold,
     bot: (p, foe, d) => (p.shieldT > 0 && p.hold
       ? d < BASH_R - 4 && (p.holdHit || p.shieldT < 0.4) // the bash: primed, or before the brace drops anyway
       : d < 110 && foe instanceof Player),
   },
   {
-    id: 'march', name: "VETERAN'S MARCH", cd: 14, ap: 0.5, cast: 0.25, aim: { line: MARCH_SPD * MARCH_T },
+    id: 'march', name: "VETERAN'S MARCH", cd: [14, 13, 12, 11, 10], ap: 0.5, cast: 0.25, aim: { line: MARCH_SPD * MARCH_T },
+    rank: { dmg: [12, 16, 20, 24, 28], stun: 1, shove: 5 }, // dmg/stun: the hero it stops on; shove: each lesser body
+    tip: 'CHARGE. STUNS THE FIRST HERO HIT',
     blurb: 'CHARGE. SOLDIERS AND BEASTS ARE SHOVED ASIDE. THE FIRST HERO IN THE WAY STOPS YOU AND IS STUNNED.',
     use: (p) => armMarch(p),
     tele: (p, px, py, a, col, closing, now, ex, ey) => drawMarchTele(p, a, col, closing, now, ex, ey),
@@ -88,7 +80,9 @@ const ARM_AB = [
     bot: (p, foe, d, clear) => clear && foe instanceof Player && d > 34 && d < MARCH_SPD * MARCH_T - 10,
   },
   {
-    id: 'guard', name: 'THE OLD GUARD', cd: 80, cast: 0.45, aim: { ring: GUARD_R }, lvReq: GUARD_LV,
+    id: 'guard', name: 'THE OLD GUARD', cd: [80, 70, 60], cast: 0.45, aim: { ring: GUARD_R },
+    rank: { armor: [40, 60, 80], ten: 0.5, slow: 0.5, slowT: 2, t: 6 }, // allies inside: armor, tenacity; a rival leaving: slowed; t: s it stands
+    tip: 'ALLIES INSIDE GAIN ARMOR',
     blurb: 'PLANT THE STANDARD. YOUR SIDE INSIDE TAKES LESS AND SHRUGS OFF STUNS. RIVALS WHO RUN FROM IT ARE SLOWED.',
     use: (p) => armGuard(p),
     tele: (p, px, py, a, col, closing) => drawRing(px, py + 2, GUARD_R, col, 0.45 + 0.4 * closing, closing * 0.5),
@@ -136,12 +130,13 @@ function unitsInLine(p, a, len, half) {
 function armVerdict(p) {
   const a = Math.atan2(p.input.aimY - (p.y - BOW_Y), p.input.aimX - p.x);
   const nx = Math.cos(a), ny = Math.sin(a);
-  const dmg = abDmg(p, 'verdict', VERDICT_DMG);
+  const dmg = abDmg(p, 'verdict', abRk(p, 'verdict', 'dmg'));
+  const slow = abRk(p, 'verdict', 'slow'), slowT = abRk(p, 'verdict', 'slowT'), up = abRk(p, 'verdict', 'up');
   for (const [q, f] of unitsInLine(p, a, VERDICT_LEN, VERDICT_HALF)) {
     hurtUnit(q, dmg, nx, ny, p, { kb: 40 });
     if (q.dead) continue;
-    slowUnit(q, VERDICT_SLOW_T, VERDICT_SLOW);
-    if (f >= VERDICT_MID[0] && f <= VERDICT_MID[1]) knockUp(q, VERDICT_UP, p);
+    slowUnit(q, slowT, slow);
+    if (f >= VERDICT_MID[0] && f <= VERDICT_MID[1]) knockUp(q, up, p);
     burst(q.x, unitMidY(q), '#cfd8e8', 8, 50, 0.45);
   }
   const seen = [];
@@ -159,7 +154,7 @@ function armVerdict(p) {
 // ---- W HOLD THE LINE ----------------------------------------------------------
 function armBrace(p) {
   abShieldUp(p);
-  p.shieldT = HOLD_T;
+  p.shieldT = abRk(p, 'hold', 't');
   p.hold = true;
   p.holdHit = false;
 }
@@ -176,7 +171,7 @@ function holdTaken(p, dmg, dx, dy, src) {
     sfxFor(p, 'pickup');
   }
   burst(p.x + Math.cos(p.shieldA) * 7, p.y - 6 + Math.sin(p.shieldA) * 5, '#c8d2e4', 4, 30, 0.3, true);
-  return Math.max(1, Math.round(dmg * (1 - HOLD_CUT)));
+  return Math.max(1, Math.round(dmg * (1 - abRk(p, 'hold', 'cut'))));
 }
 HERO_TAKEN.push(holdTaken);
 // the key again: the shield's face driven into the wedge ahead. Primed (a
@@ -185,10 +180,10 @@ function armBash(p) {
   p.castSlam = false;
   const a = Math.atan2(p.input.aimY - (p.y - BOW_Y), p.input.aimX - p.x);
   const nx = Math.cos(a), ny = Math.sin(a), primed = p.holdHit;
-  const dmg = abDmg(p, 'hold', BASH_DMG);
+  const dmg = abDmg(p, 'hold', abRk(p, 'hold', 'dmg')), stun = abRk(p, 'hold', 'stun');
   for (const q of unitsInCone(p, p.x, p.y, a, BASH_R, BASH_HALF)) {
     hurtUnit(q, dmg, nx, ny, p, { kb: BASH_KB });
-    if (!q.dead) { if (primed) stunUnit(q, BASH_STUN, p); q.kbx += nx * BASH_KB * 0.5; q.kby += ny * BASH_KB * 0.5; }
+    if (!q.dead) { if (primed) stunUnit(q, stun, p); q.kbx += nx * BASH_KB * 0.5; q.kby += ny * BASH_KB * 0.5; }
     burst(q.x, unitMidY(q), primed ? '#ffd95c' : '#cfd8e8', 8, 50, 0.45, true);
     shakeFor(p, primed ? 5 : 3, q);
   }
@@ -229,7 +224,7 @@ function marchStep(p, mv, dt) {
     p.marchHit.push(q);
     const side = (q.x - p.x) * -p.rushNY + (q.y - p.y) * p.rushNX >= 0 ? 1 : -1;
     const sx = -p.rushNY * side, sy = p.rushNX * side;
-    hurtUnit(q, abDmg(p, 'march', MARCH_SHOVE_DMG), sx, sy, p, { kb: MARCH_SHOVE });
+    hurtUnit(q, abDmg(p, 'march', abRk(p, 'march', 'shove')), sx, sy, p, { kb: MARCH_SHOVE });
     burst(q.x, unitMidY(q), '#eef4fb', 5, 40, 0.35, true);
   }
   if (mv.blockedX || mv.blockedY || p.rushT <= 0) marchEnd(p, null);
@@ -242,8 +237,8 @@ function marchEnd(p, q) {
   p.vx = p.rushNX * 40; p.vy = p.rushNY * 40;
   if (!q) return;
   p.vx = -p.rushNX * 30; p.vy = -p.rushNY * 30; // the collision rocks him back
-  hurtUnit(q, abDmg(p, 'march', MARCH_DMG), p.rushNX, p.rushNY, p, { kb: 60 });
-  if (!q.dead) stunUnit(q, MARCH_STUN, p);
+  hurtUnit(q, abDmg(p, 'march', abRk(p, 'march', 'dmg')), p.rushNX, p.rushNY, p, { kb: 60 });
+  if (!q.dead) stunUnit(q, abRk(p, 'march', 'stun'), p);
   burst(q.x, unitMidY(q), '#ffd95c', 10, 55, 0.5, true);
   shakeFor(p, 5, q);
   sfxAt('hit', q.x, q.y);
@@ -252,7 +247,9 @@ function marchEnd(p, q) {
 // ---- R THE OLD GUARD ------------------------------------------------------------
 function armGuard(p) {
   for (let i = guards.length - 1; i >= 0; i--) if (guards[i].owner === p.id) guards.splice(i, 1); // one standard each
-  guards.push({ x: p.x, y: p.y, team: p.team, owner: p.id, t: 0, n: ++guardN });
+  const rk = (k) => abRk(p, 'guard', k); // the rank he planted it at stays with the standard
+  guards.push({ x: p.x, y: p.y, team: p.team, owner: p.id, t: 0, n: ++guardN,
+    life: rk('t'), armor: rk('armor'), ten: rk('ten'), slow: rk('slow'), slowT: rk('slowT') });
   abFx.push({ kind: 'ring', x: p.x, y: p.y, r: GUARD_R, t: 0, col: '#f2cc6a' });
   burst(p.x, p.y + 2, '#eef4fb', 14, 60, 0.5, true);
   shakeFor(p, 4);
@@ -267,8 +264,8 @@ function guardFor(e) {
 }
 // what standing in one adds to a stat (statOf, js/sim/stats.js), and the
 // tenacity it gives (ccMul, js/sim/actions.js)
-function guardStat(p, key) { return key === 'armor' && guardFor(p) ? GUARD_ARMOR : 0; }
-function guardTen(e) { return guardFor(e) ? GUARD_TEN : 0; }
+function guardStat(p, key) { const g = key === 'armor' && guardFor(p); return g ? g.armor : 0; }
+function guardTen(e) { const g = guardFor(e); return g ? g.ten : 0; }
 HERO_STAT.push({ name: 'THE OLD GUARD', add: guardStat });
 HERO_TEN.push(guardTen);
 // allies (him included) a standard planted here would cover: the bot's reason to plant one
@@ -285,14 +282,14 @@ function updateGuards(dt) {
   for (let i = guards.length - 1; i >= 0; i--) {
     const g = guards[i];
     g.t += dt;
-    if (g.t >= GUARD_T) { guards.splice(i, 1); continue; }
+    if (g.t >= g.life) { guards.splice(i, 1); continue; }
     for (const q of unitsNear(sideOf(g), g.x, g.y, GUARD_R + GUARD_EDGE)) {
       if (unitTeam(q) === g.team) continue;
       const inside = Math.hypot(q.x - g.x, q.y - g.y) <= GUARD_R;
       if (inside) q.guardIn = g.n;
       else if (q.guardIn === g.n) {
         q.guardIn = 0;
-        slowUnit(q, GUARD_SLOW_T, GUARD_SLOW);
+        slowUnit(q, g.slowT, g.slow);
         burst(q.x, unitMidY(q), '#f2cc6a', 6, 35, 0.4, true);
       }
     }

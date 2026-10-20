@@ -387,11 +387,11 @@ carries, so every screen draws the look they bought;
 
 ## Hero levels
 
-League-style: every player has `p.level` (1–`LEVEL_MAX` = 12) and `p.xp`, and XP is its own number,
+League-style: every player has `p.level` (1–`LEVEL_MAX` = 18) and `p.xp`, and XP is its own number,
 apart from gold. **`gainXp(p, n)` is the only way XP enters a body**: it adds to `xp`, to the running
 total over the head (`xpN` since `xpTick`, the [purple number](rendering/damage-feedback.md#the-running-xp-total)) and
 calls `levelUp(p)` while `xp >= LEVEL_XP[level]` (cumulative thresholds 60, 150, 270, 420, 600, 810,
-1050, 1320, 1620, 1950, 2310 — the gap grows by 30 each level). XP comes from being **near when a
+1050, 1320, 1620, 1950, 2310, 2700, 3120, 3570, 4050, 4560, 5100 — the gap grows by 30 each level). XP comes from being **near when a
 rival body dies**, never from the last hit: `shareXp(dead, xp, team, src)` hands a death's XP to
 every scout of `team` that `unitsNear(dead, …, XP_R)` finds (160 px, about half the view at the
 default zoom; alive and on the ground), plus `src` — the one who landed the blow — wherever it
@@ -406,8 +406,8 @@ wave get 65% each and five get 46% each. What a death is worth:
 
 Rabbits, workers, buildings, the works (pines, rocks, chests), fish, sales and the clock pay **no
 XP** — the road is where a scout levels. The table is sized against a scout who keeps to the road
-and the camps: about level 6 at ten minutes and the cap near minute 25, where the old gold-fed table
-capped near 13 (the arena's 4.37 runs). Dying never touches `xp`; level and xp are set in the
+and the camps: about level 6 at ten minutes and level 12 near minute 25 (sized when 12 was the
+cap, the arena's 4.37 runs); levels 13-18 continue the same curve and have not been timed. Dying never touches `xp`; level and xp are set in the
 constructor, not `reset()`, so they survive a `reset`.
 
 **`gainGold(p, n)` is the only way gold enters a wallet** (`awardGold` — the on-the-spot payout
@@ -417,8 +417,8 @@ It no longer levels anyone. A sale at the counter pays through `tradeGold`, whic
 neither.
 
 Growth is the hero's own: each level past 1 adds its `CLASSES[c].grow` to the
-[hero stats](gameplay/hero-stats.md) (HUNTER +10 hp, +2 damage, +2% attack speed, +3 armor;
-WARRIOR +14, +2.5, +1.5%, +4), the health healed on the spot in `levelUp`. A level-up pushes a 2× gold `LEVEL n` floater over the slot (skipped while `inAir`) and
+[hero stats](gameplay/hero-stats.md) (HUNTER +7 hp, +1.3 damage, +1.3% attack speed, +2 armor;
+WARRIOR +9, +1.6, +1%, +2.6 — sized when the cap went to 18 so 17 levels grow about what 11 did), the health healed on the spot in `levelUp`. A level-up pushes a 2× gold `LEVEL n` floater over the slot (skipped while `inAir`) and
 raises its cue through `sfxOwn(p, 'levelUp', 'pickup')` — the level's own ring on the screen that
 is that player, a pickup to bystanders in earshot. What the level BOUGHT flies into the notice
 lane as the [stat sheet](rendering/the-hud-corners/the-stat-ledger-your-sheet-as-a-notice.md), the rows it grew
@@ -429,14 +429,14 @@ unhurt animal that hunts nobody (`relevelAnimal`) —
 [gameplay.md](gameplay/wildlife.md).
 
 Each level also grants **one skill point** (`p.skillPts`, starting with one at level 1), and a
-point buys exactly one thing: **a level on one of the four class abilities**
+point buys exactly one thing: **a rank on one of the four abilities**
 ([gameplay.md](gameplay/class-abilities-keys-1-4.md)), spent on the hud strip's floating buy
-plates or by pressing the ability's own key while the point is unspent. The keys start **locked at level 0** — the first point on one is what makes it castable
-at all — and the four of them hold exactly 12 levels, so twelve points by level 12 cap all four
-with nothing stranded; what a build chooses is the ORDER, since you land with one point, four
-dark keys and a match to spend the rest across. Bots spend each
-free point in `updateAI`'s rung 0, lowest ability level first, so their first four unlock all
-four keys.
+plates or by pressing the ability's own key while the point is unspent. The keys start **locked at rank 0** — the first point on one is what makes it castable
+at all — and they hold exactly 18 ranks (5 on each of keys 1-3, 3 on the ultimate), so eighteen
+points by level 18 cap all four with nothing stranded; what a build chooses is the ORDER, since you
+land with one point, four dark keys and a match to spend the rest across. Bots spend each
+free point in `updateAI`'s rung 0 (`aiSpend`): the ultimate whenever it can rank, then each basic
+key unlocked once, then the basics maxed in the hero's own `rankOrder`.
 
 The level shows as a 7-tall badge in `drawPlayer`, flush against the left edge of the overhead
 bars' backing and spanning the health bar + stamina bar stacked (`py-8 .. py-1`), drawn for every
@@ -603,8 +603,8 @@ The team's roosting eagle is the way back, and the only thing
 that takes a player out for good is that eagle being driven off. `updateRespawns(dt)` (called from
 `updatePlay` beside `updateStructures`) counts down every `p.dead && !p.eliminated` player's
 `p.respawnT` — `respawnTime(p)`: the hero level's entry in `RESPAWN_WAIT`, shaped like League's
-base wait — 5 / 6 / 7 / 9 / 11 s for levels 1-5, 14 / 18 / 23 / 29 s for 6-9, 36 / 43 / 50 s for
-10 to the `LEVEL_MAX` of 12 — and nothing off the match clock: XP only climbs and comes
+base wait — 5 / 6 / 7 / 8 / 10 s for levels 1-5, 12 / 14 / 17 / 20 / 23 s for 6-10, then three
+more a level to 41 at 16, 45 and 50 s at 17 and the `LEVEL_MAX` of 18 — and nothing off the match clock: XP only climbs and comes
 every wave, so the level *is* the clock. An early death costs a few seconds and a late one costs real match, which is what makes a wiped side late in a game (everyone
 high) a real window on a roost its defenders otherwise come back to from sixty pixels away every
 few seconds. At zero it calls `respawnPlayer(p)`, which puts `p.spawn`

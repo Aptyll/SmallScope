@@ -10,37 +10,31 @@
 
 // ---- tuning --------------------------------------------------------------
 const AB_KEYS = 4;          // keys 1-4
-// ability levels: the hero's own growth, never the purse's. A key starts
-// LOCKED at level 0 - the kit hands you the four actives, not the use of
-// them - and every level costs ONE SKILL POINT, the only thing a point buys,
-// one per hero level. The FIRST point on a key UNLOCKS it (that is the whole
-// gate: level 1 casts, level 0 refuses); each one after shaves AB_LV_CD off
-// that ability's cooldown - one lever, universally meaningful (more nets in
-// the air, the wall up more often), read back through abCdOf so every
-// cooldown-setting site scales alike. Four keys x AB_LV_MAX is 12 points
-// against the 12 a capped hero earns, so the ladder ends exactly where the
-// hero does: every point has a home, and the order you spend them in - which
-// key you can use at all, and how early - is the whole build.
-const AB_LV_MAX = 3;
-const AB_LV_CD = 0.12;
-const AB_LV_MATS = ['#8a6a4a', '#9aa3ad', '#9fc4dd', '#f2cc6a']; // the level-up floater's ink, by the key's new level
+// ability ranks, League-style: the hero's own growth, never the purse's. A
+// key starts LOCKED at rank 0 - the kit hands you the four actives, not the
+// use of them - and every rank costs ONE SKILL POINT, the only thing a point
+// buys, one per hero level. The FIRST point UNLOCKS the key; every one after
+// is a clear step in what it does - the numbers in its row's `rank` table
+// (and a `cd` given as a list), read through abRk/abCdOf. A basic key (1-3)
+// holds AB_RANK_LV.length ranks, rank n waiting for hero level AB_RANK_LV[n-1];
+// the ultimate (key 4, AB_ULT) holds three, at AB_ULT_LV. 5 + 5 + 5 + 3 is the
+// 18 points a capped hero earns, so the ladder ends exactly where the hero
+// does, and the ORDER you spend them in is the whole build.
+const AB_RANK_LV = [1, 3, 5, 7, 9];  // hero level each rank of a basic key waits for (rank n at 2n - 1)
+const AB_ULT_LV = [6, 11, 16];       // ...and of the ultimate's
+const AB_ULT = 3;                    // the key that is the ultimate (4, R)
+const AB_LV_MATS = ['#8a6a4a', '#9aa3ad', '#9fc4dd', '#cfe0ff', '#f2cc6a']; // the rank-up floater's ink, by the key's new rank (the last one gold)
 // the warrior's alternate keys (CLASS_AB_ALT below)
 const CRY_R = 96;           // px: the shout's reach
-const CRY_SLOW_T = 2.5, CRY_SLOW = 0.6, CRY_MARK_T = 4; // slowed to 60% for 2.5 s, marked for 4
-const WHIRL_R = 36, WHIRL_DMG = 7, WHIRL_KB = 120;     // the blade ring
-const HAM_R = 46, HAM_HALF = 1.15, HAM_DMG = 3, HAM_ROOT = 1.4; // the sweep ahead, and the root it leaves
-const WIND_T = 4, WIND_HEAL = 0.3;                     // 30% of max hp back over 4 s
+const WHIRL_R = 36, WHIRL_KB = 120;     // the blade ring
+const HAM_R = 46, HAM_HALF = 1.15;     // the sweep ahead
 // hunter
 const PIERCE_WIND = 0.7;    // s the draw is LOCKED before the shot looses itself
-const PIERCE_MUL = 1.5;     // over a fully drawn plain arrow's damage
 const PIERCE_SPD = 380;     // px/s (a plain arrow flies 320)
 const PIERCE_RANGE = 520;   // px of flight before the fittings stretch it - the telegraph draws the stretched one
 const PIERCE_SLOW = 0.15;   // walk multiplier while the draw is locked: commitment
 const NET_SPD = 300;
 const NET_RANGE = 130;
-const NET_DMG = 4;
-const NET_SLOW = 0.4;       // speed multiplier under the net...
-const NET_SLOW_T = 2;       // ...for this long
 const NET_KICK = 150;       // px/s of recoil the hunter takes backward
 const GRAP_RANGE = 170;     // px a thrown hook can reach
 const GRAP_ASSIST = 12;     // px either side of the aim ray a trunk still catches
@@ -50,7 +44,6 @@ const GRAP_MAX_T = 1.5;     // s of reel before the hook slips (safety rail)
 const GRAP_MISS_CD = 1;     // s a hook that caught nothing costs
 // (snow cover has no numbers of its own: the burrow it opens is PRONE_*, js/sim/actions.js)
 // warrior
-const SHIELD_T = 2.2;       // s the shield can be held up
 const SHIELD_ARC = 0.35;    // cos-margin of the front arc that blocks
 // the SLAM: the shield key again while the wall is up (or mid-charge) - a
 // short wind-up, then the shield's face driven into everything in the wedge
@@ -59,31 +52,22 @@ const SHIELD_ARC = 0.35;    // cos-margin of the front arc that blocks
 const SLAM_CAST = 0.16;     // s of wind-up the wedge is on the snow for
 const SLAM_R = 30;          // px of reach
 const SLAM_HALF = 0.85;     // rad either side of the shield's face
-const SLAM_DMG = 8;
-const SLAM_STUN = 1.1;
 const SLAM_KB = 150;        // px/s of shove, straight down the face
 const RUSH_SPD = 300;
 const RUSH_T = 0.42;        // s of charge (~4 tiles)
 const RUSH_RAMP = 0.08;     // s the charge takes to reach full speed, so it leaves smooth
-const RUSH_DMG = 10;
-const RUSH_STUN = 0.6;
 const RUSH_WALL_MUL = 1.6;  // driven into a tree/rock/wall: the slam is worse
 const STOMP_R = 34;
-const STOMP_DMG = 12;
 const STOMP_KB = 170;       // px/s radial shove
-const STOMP_STUN = 0.25;
 const CRATER_R = 30;        // the deep-snow crater the stomp leaves...
 const CRATER_T = 4;         // ...and how long it slows rivals crossing it
 const CRATER_SLOW = 0.55;
 // the EXECUTE: a slow overhead cut whose worth is the target's MISSING life -
-// the finisher the other three keys set up. A whole body of life missing is
-// EXEC_MISSING of it again on top of the base, capped so a bear at a
-// sliver is not a one-line kill.
+// the finisher the other three keys set up. Its row's `rank` says the base,
+// the share of the lost life added on top, and the cap on that extra, so a
+// bear at a sliver is not a one-line kill.
 const EXEC_R = 30;
 const EXEC_HALF = 0.75;     // rad either side of the aim: narrower than the sword
-const EXEC_DMG = 10;        // the base, at full life
-const EXEC_MISSING = 0.5;   // ...plus this share of the life the target has lost
-const EXEC_BONUS_MAX = 40;  // ...to at most this much extra
 const EXEC_KB = 120;
 // every readable shape an ability puts on the snow for BOTH sides: the
 // telegraph while a cast winds up (the wedge, the ring, the charge's line),
@@ -104,22 +88,29 @@ const TELE_HOT = '#ffd95c'; // ...and the last quarter of it, when it is about t
 const CLASS_AB = [
   [ // HUNTER - bow, distance control, the ground between
     {
-      id: 'pierce', name: 'PIERCING SHOT', cd: 12, ap: 0.6, cast: PIERCE_WIND, aim: { line: PIERCE_RANGE },
+      id: 'pierce', name: 'PIERCING SHOT', cd: [12, 11, 10, 9, 8], ap: 0.6, cast: PIERCE_WIND, aim: { line: PIERCE_RANGE },
+      rank: { shot: [1.5, 1.7, 1.9, 2.1, 2.3] }, // times a fully drawn plain arrow's damage
+      tip: 'A SHOT THROUGH EVERYONE IN A LINE',
       blurb: 'LOCK A FULL DRAW, THEN LOOSE. THE SHOT GOES THROUGH EVERYONE ON THE LINE. EVERY MODIFIER ON YOUR TOOL RIDES IT.',
       use: (p) => abPierce(p),
     },
     {
-      id: 'net', name: 'NET SHOT', cd: 15, ap: 0.4, cast: 0.18, aim: { line: NET_RANGE },
+      id: 'net', name: 'NET SHOT', cd: [15, 14, 13, 12, 11], ap: 0.4, cast: 0.18, aim: { line: NET_RANGE },
+      rank: { dmg: [4, 8, 12, 16, 20], slow: 0.4, slowT: 2 }, // slow: walk x0.4 under the net
+      tip: 'A NET THAT SLOWS. KICKS YOU BACK',
       blurb: 'A WEIGHTED NET THAT TANGLES. THE RECOIL KICKS YOU BACKWARD.',
       use: (p) => abNetShot(p),
     },
     {
-      id: 'grap', name: 'GRAPPLE', cd: 8, cast: 0.12, aim: { line: GRAP_RANGE },
+      id: 'grap', name: 'GRAPPLE', cd: [8, 7, 6, 5, 4], cast: 0.12, aim: { line: GRAP_RANGE }, // a rank is a hook back sooner
+      tip: 'HOOK A TREE OR ROCK. HOLD TO REEL',
       blurb: 'HOOK A TREE OR A ROCK. HOLD TO REEL IN, LET GO TO KEEP THE SPEED.',
       use: (p) => abGrapple(p),
     },
     {
-      id: 'snow', name: 'SNOW COVER', cd: 60, cast: 0.22,
+      id: 'snow', name: 'SNOW COVER', cd: [60, 50, 40], cast: 0.22,
+      rank: { ambush: [2.5, 3, 3.5] }, // the shot out of full cover, times its damage (attackDmg, js/sim/attack.js)
+      tip: 'HIDE IN THE SNOW. AMBUSH SHOT HITS HARD',
       blurb: 'LIE DOWN AND PULL THE SNOW OVER YOU. THE KEY AGAIN STANDS YOU UP.',
       use: (p) => abSnowCover(p),
       // the strip's active tell: how deep under the snow the body is
@@ -128,26 +119,34 @@ const CLASS_AB = [
   ],
   [ // WARRIOR - close pressure, blocking, momentum
     {
-      id: 'shield', name: 'SHIELD WALL', cd: 9, ap: 0.4, cast: 0.12, wall: true,
+      id: 'shield', name: 'SHIELD WALL', cd: [9, 8.5, 8, 7.5, 7], ap: 0.4, cast: 0.12, wall: true,
+      rank: { t: 2.2, dmg: [8, 12, 16, 20, 24], stun: 1.1 }, // t: the wall held up; dmg/stun: the slam
+      tip: 'BLOCKS SHOTS. AGAIN TO SLAM AND STUN',
       blurb: 'RAISE THE TOWER SHIELD. PRESS AGAIN TO SLAM: STUNS WHAT IS AHEAD, ENDS THE WALL.',
       // the one key with two halves: the raise, and - pressed again while the
       // wall is up or mid-charge (tryAbility sets castSlam) - the slam
       use: (p) => (p.castSlam ? abSlam(p) : abShieldUp(p)),
       // the strip's active tell: how much of the wall is left, and its colour
-      acol: '#f2cc6a', activeF: (p) => (p.shieldT > 0 ? p.shieldT / SHIELD_T : 0),
+      acol: '#f2cc6a', activeF: (p) => (p.shieldT > 0 ? p.shieldT / abRk(p, 'shield', 't') : 0),
     },
     {
-      id: 'rush', name: 'BULL RUSH', cd: 12, ap: 0.6, cast: 0.3, aim: { line: RUSH_SPD * RUSH_T },
+      id: 'rush', name: 'BULL RUSH', cd: [12, 11.5, 11, 10.5, 10], ap: 0.6, cast: 0.3, aim: { line: RUSH_SPD * RUSH_T },
+      rank: { dmg: [10, 15, 20, 25, 30], stun: 0.6 }, // the slam at the end, x RUSH_WALL_MUL into a wall
+      tip: 'CHARGE. CARRY AND SLAM THE FIRST RIVAL',
       blurb: 'CHARGE A LINE. THE FIRST RIVAL HIT IS CARRIED AND SLAMMED.',
       use: (p) => abRush(p),
     },
     {
-      id: 'stomp', name: 'STOMP', cd: 14, ap: 0.7, cast: 0.28, aim: { ring: STOMP_R },
+      id: 'stomp', name: 'STOMP', cd: [14, 13, 12, 11, 10], ap: 0.7, cast: 0.28, aim: { ring: STOMP_R },
+      rank: { dmg: [12, 17, 22, 27, 32], stun: 0.25 },
+      tip: 'LEAP AND STUN ALL AROUND YOU',
       blurb: 'LEAP AND SLAM THE SNOW. THE CRATER SLOWS WHOEVER CROSSES IT.',
       use: (p) => abStomp(p),
     },
     {
-      id: 'exec', name: 'EXECUTE', cd: 18, ap: 0.5, cast: 0.55, aim: { cone: EXEC_R, half: EXEC_HALF },
+      id: 'exec', name: 'EXECUTE', cd: [18, 15, 12], ap: 0.5, cast: 0.55, aim: { cone: EXEC_R, half: EXEC_HALF },
+      rank: { dmg: [10, 20, 30], missing: 0.5, bonus: 40 }, // dmg at full life, + `missing` of the life lost, at most `bonus` more
+      tip: 'HITS HARDER THE LESS LIFE THEY HAVE',
       blurb: 'A HEAVY OVERHEAD CUT. THE LESS LIFE THEY HAVE LEFT, THE HARDER IT LANDS.',
       use: (p) => abExecute(p),
     },
@@ -158,7 +157,7 @@ const CLASS_AB = [
 
 // the world the abilities put things into
 const craters = [];  // {x, y, team, t}
-const nets = [];     // {x, y, nx, ny, d, owner, team, spin}
+const nets = [];     // {x, y, nx, ny, d, owner, team, spin, dmg, slow, slowT}
 const abFx = [];     // {kind: 'wedge'|'ring', x, y, a, r, half, t, col} - where a blow landed, flashed for AB_FX_T
 
 // ---- levelling -----------------------------------------------------------
@@ -181,25 +180,33 @@ const CLASS_AB_ALT = [
   [[], [], [], []], // the hunter's keys carry one option each
   [ // the warrior's other four
     [{
-      id: 'cry', name: 'WAR CRY', cd: 16, cast: 0.25, aim: { ring: CRY_R },
+      id: 'cry', name: 'WAR CRY', cd: [16, 15, 14, 13, 12], cast: 0.25, aim: { ring: CRY_R },
+      rank: { slow: 0.6, slowT: [2.5, 2.75, 3, 3.25, 3.5], mark: 4 }, // slowed to 60%, marked for both maps
+      tip: 'SLOWS AND MARKS RIVALS NEAR YOU',
       blurb: 'A SHOUT THAT CARRIES. EVERY RIVAL IN EARSHOT IS SLOWED AND MARKED FOR YOUR SIDE TO SEE.',
       use: (p) => abWarCry(p),
     }],
     [{
-      id: 'whirl', name: 'WHIRLWIND', cd: 11, ap: 0.5, cast: 0.3, aim: { ring: WHIRL_R },
+      id: 'whirl', name: 'WHIRLWIND', cd: [11, 10.5, 10, 9.5, 9], ap: 0.5, cast: 0.3, aim: { ring: WHIRL_R },
+      rank: { dmg: [7, 11, 15, 19, 23] },
+      tip: 'SPIN AND CUT ALL AROUND YOU',
       blurb: 'SPIN THE BLADE A FULL TURN. EVERYTHING AT ARM\'S LENGTH IS CUT AND THROWN BACK.',
       use: (p) => abWhirlwind(p),
     }],
     [{
-      id: 'ham', name: 'HAMSTRING', cd: 13, ap: 0.3, cast: 0.25, aim: { cone: HAM_R, half: HAM_HALF },
+      id: 'ham', name: 'HAMSTRING', cd: [13, 12.5, 12, 11.5, 11], ap: 0.3, cast: 0.25, aim: { cone: HAM_R, half: HAM_HALF },
+      rank: { dmg: [3, 6, 9, 12, 15], root: 1.4 },
+      tip: 'ROOTS RIVALS IN FRONT OF YOU',
       blurb: 'A LOW SWEEP ACROSS THE SHINS AHEAD. WHOEVER IT CATCHES IS PINNED WHERE THEY STAND.',
       use: (p) => abHamstring(p),
     }],
     [{
-      id: 'wind', name: 'SECOND WIND', cd: 40, cast: 0.4,
+      id: 'wind', name: 'SECOND WIND', cd: [40, 35, 30], cast: 0.4,
+      rank: { heal: [0.3, 0.4, 0.5], t: 4 }, // that share of max hp back over t s
+      tip: 'HEAL OVER FOUR SECONDS',
       blurb: 'A BREATH TAKEN MID-FIGHT. A THIRD OF YOUR LIFE COMES BACK OVER FOUR SECONDS.',
       use: (p) => abSecondWind(p),
-      acol: '#f2937f', activeF: (p) => (p.windT > 0 ? p.windT / WIND_T : 0),
+      acol: '#f2937f', activeF: (p) => (p.windT > 0 ? p.windT / abRk(p, 'wind', 't') : 0),
     }],
   ],
 ];
@@ -207,12 +214,28 @@ function abOptions(cls, i) { return [CLASS_AB[cls][i]].concat(CLASS_AB_ALT[cls] 
 function abOf(p, i) { const o = abOptions(p.cls, i); return o[Math.min(o.length - 1, p.abPick ? p.abPick[i] | 0 : 0)]; }
 function abKeyOf(p, id) { for (let i = 0; i < AB_KEYS; i++) if (abOf(p, i).id === id) return i; return -1; }
 function abReady(p, i) { return p.abLv[i] > 0 && p.abCd[i] <= 0; } // bought AND off cooldown: what a bot reaches for
-// ...and a key whose row names `lvReq` (a hero's ultimate) waits for that hero level per point
+// The rank ladder of key `i` carrying row `ab`: the hero level each rank
+// waits for - the row's own `lvReq` when it names one, else the basic or the
+// ultimate ladder - and so how many ranks the key holds.
+function abReqOf(ab, i) { return ab.lvReq || (i === AB_ULT ? AB_ULT_LV : AB_RANK_LV); }
+function abLvMax(p, i) { return abReqOf(abOf(p, i), i).length; }
 function abLvCanBuy(p, i) {
-  const req = abOf(p, i).lvReq;
-  return p.skillPts > 0 && p.abLv[i] < AB_LV_MAX && (!req || p.level >= req[p.abLv[i]]);
+  const req = abReqOf(abOf(p, i), i);
+  return p.skillPts > 0 && p.abLv[i] < req.length && p.level >= req[p.abLv[i]];
 }
-function abCdOf(p, i) { return abOf(p, i).cd * (1 - AB_LV_CD * (Math.max(1, p.abLv[i]) - 1)) * hasteMul(p); } // COOLDOWN SPEED (js/sim/stats.js)
+// a ranked number at rank `lv`: a list is read at that rank (rank 0, a key
+// not bought yet, reads as rank 1, what the first point would give), a plain
+// number is the same at every rank
+function rankAt(v, lv) { return Array.isArray(v) ? v[Math.max(0, Math.min(v.length - 1, lv - 1))] : v; }
+// THE ONE READER of an ability's ranked numbers: `key` of the `rank` table on
+// ability `id`, at the rank `p` holds it. Every use() reads its numbers here,
+// so a rank point lands in every blow alike.
+function abRk(p, id, key) {
+  const i = p instanceof Player ? abKeyOf(p, id) : -1;
+  const ab = i >= 0 ? abOf(p, i) : null;
+  return ab ? rankAt(ab.rank[key], p.abLv[i]) : NaN;
+}
+function abCdOf(p, i) { return rankAt(abOf(p, i).cd, p.abLv[i]) * hasteMul(p); } // COOLDOWN SPEED (js/sim/stats.js)
 // what ABILITY POWER adds to ability `id`'s blow: the stat times the ratio its
 // entry carries (`ap`), nothing for one that has none or is not on a key
 function abAp(p, id) {
@@ -228,8 +251,9 @@ function buyAbilityLv(p, i) {
   // the first point is the one that changes what you CAN do, so it says so;
   // every one after is a number going up
   const nm = abOf(p, i).name;
-  addFloater(p.x, p.y - 18, p.abLv[i] === 1 ? nm + ' UNLOCKED' : nm + ' ' + p.abLv[i], AB_LV_MATS[p.abLv[i] - 1]);
-  burst(p.x, p.y - 8, AB_LV_MATS[p.abLv[i] - 1], p.abLv[i] === 1 ? 14 : 8, p.abLv[i] === 1 ? 55 : 40, 0.45);
+  const ink = p.abLv[i] === abLvMax(p, i) ? AB_LV_MATS[AB_LV_MATS.length - 1] : AB_LV_MATS[p.abLv[i] - 1]; // a full key is gold
+  addFloater(p.x, p.y - 18, p.abLv[i] === 1 ? nm + ' UNLOCKED' : nm + ' ' + p.abLv[i], ink);
+  burst(p.x, p.y - 8, ink, p.abLv[i] === 1 ? 14 : 8, p.abLv[i] === 1 ? 55 : 40, 0.45);
   sfxOwn(p, 'levelUp', 'pickup');
   return true;
 }
@@ -383,7 +407,7 @@ function abPierce(p) {
   const a = Math.atan2(dy, dx);
   // the hero's DAMAGE at a full draw (attackDmg, js/sim/attack.js), the
   // pierce multiplier over it, and its ABILITY POWER share
-  const dmg = Math.round(statOf(p, 'dmg') * PIERCE_MUL + abAp(p, 'pierce'));
+  const dmg = Math.round(statOf(p, 'dmg') * abRk(p, 'pierce', 'shot') + abAp(p, 'pierce'));
   arrows.push({
     x: p.x, y: p.y - BOW_Y,
     vx: Math.cos(a) * spd, vy: Math.sin(a) * spd,
@@ -404,7 +428,8 @@ function abNetShot(p) {
   const dx = p.input.aimX - p.x, dy = p.input.aimY - (p.y - BOW_Y);
   const d = Math.hypot(dx, dy) || 1;
   const nx = dx / d, ny = dy / d;
-  nets.push({ x: p.x, y: p.y - BOW_Y, nx, ny, d: 0, owner: p.id, team: p.team, spin: 0 });
+  nets.push({ x: p.x, y: p.y - BOW_Y, nx, ny, d: 0, owner: p.id, team: p.team, spin: 0, // ...and the rank it was thrown at
+    dmg: abRk(p, 'net', 'dmg'), slow: abRk(p, 'net', 'slow'), slowT: abRk(p, 'net', 'slowT') });
   // the recoil: a real backward hop, animated on the body (p.hopT)
   p.vx -= nx * NET_KICK;
   p.vy -= ny * NET_KICK;
@@ -485,7 +510,7 @@ function abSnowCover(p) {
 
 // ---- warrior: the four effects -------------------------------------------
 function abShieldUp(p) {
-  p.shieldT = SHIELD_T;
+  p.shieldT = abRk(p, 'shield', 't');
   p.shieldA = Math.atan2(p.input.aimY - (p.y - BOW_Y), p.input.aimX - p.x);
   burst(p.x, p.y - 4, '#9aa3ad', 6, 35, 0.35, true);
   sfxAt('place', p.x, p.y);
@@ -509,13 +534,13 @@ function abSlam(p) {
   const a = Math.atan2(p.input.aimY - (p.y - BOW_Y), p.input.aimX - p.x);
   const nx = Math.cos(a), ny = Math.sin(a);
   for (const q of unitsInCone(p, p.x, p.y, a, SLAM_R, SLAM_HALF)) {
-    hurtUnit(q, abDmg(p, 'shield', SLAM_DMG), nx, ny, p, { kb: SLAM_KB });
-    if (!q.dead) { stunUnit(q, SLAM_STUN, p); q.kbx += nx * SLAM_KB * 0.5; q.kby += ny * SLAM_KB * 0.5; }
+    hurtUnit(q, abDmg(p, 'shield', abRk(p, 'shield', 'dmg')), nx, ny, p, { kb: SLAM_KB });
+    if (!q.dead) { stunUnit(q, abRk(p, 'shield', 'stun'), p); q.kbx += nx * SLAM_KB * 0.5; q.kby += ny * SLAM_KB * 0.5; }
     burst(q.x, unitMidY(q), '#f2cc6a', 8, 50, 0.45, true);
     shakeFor(p, 4, q);
   }
-  for (const s of structsInCone(p, p.x, p.y, a, SLAM_R, SLAM_HALF)) hurtStruct(s, abDmg(p, 'shield', SLAM_DMG), p);
-  if (PRACTICE) abHitDummies(p.x + nx * SLAM_R * 0.5, p.y + ny * SLAM_R * 0.5, SLAM_R * 0.5, abDmg(p, 'shield', SLAM_DMG));
+  for (const s of structsInCone(p, p.x, p.y, a, SLAM_R, SLAM_HALF)) hurtStruct(s, abDmg(p, 'shield', abRk(p, 'shield', 'dmg')), p);
+  if (PRACTICE) abHitDummies(p.x + nx * SLAM_R * 0.5, p.y + ny * SLAM_R * 0.5, SLAM_R * 0.5, abDmg(p, 'shield', abRk(p, 'shield', 'dmg')));
   abFx.push({ kind: 'wedge', x: p.x, y: p.y - 2, a, r: SLAM_R, half: SLAM_HALF, t: 0, col: '#f2cc6a' });
   burst(p.x + nx * 8, p.y - 4 + ny * 6, '#9aa3ad', 8, 45, 0.4, true);
   abShieldDown(p, true);
@@ -587,12 +612,12 @@ function rushEnd(p, wall) {
   if (wall) {
     const bx = p.x + p.rushNX * (PLAYER_R + 6), by = p.y + p.rushNY * (PLAYER_R + 6);
     const st = structOf(objAt(Math.floor(bx / TILE), Math.floor(by / TILE)));
-    if (structFoe(p, st)) hurtStruct(st, Math.round(abDmg(p, 'rush', RUSH_DMG) * RUSH_WALL_MUL), p);
+    if (structFoe(p, st)) hurtStruct(st, Math.round(abDmg(p, 'rush', abRk(p, 'rush', 'dmg')) * RUSH_WALL_MUL), p);
   }
   if (v && unitAlive(v)) {
     const mul = wall ? RUSH_WALL_MUL : 1;
-    hurtUnit(v, Math.round(abDmg(p, 'rush', RUSH_DMG) * mul), p.rushNX, p.rushNY, p, { kb: 110 * mul });
-    if (!v.dead) stunUnit(v, RUSH_STUN * mul, p);
+    hurtUnit(v, Math.round(abDmg(p, 'rush', abRk(p, 'rush', 'dmg')) * mul), p.rushNX, p.rushNY, p, { kb: 110 * mul });
+    if (!v.dead) stunUnit(v, abRk(p, 'rush', 'stun') * mul, p);
     burst(v.x, v.y - 5, '#cfd8e8', 8, 50, 0.5);
     burst(v.x, v.y - 4, '#eef4fb', 10, 55, 0.5, true);
     shakeFor(p, wall ? 6 : 4, v);
@@ -612,13 +637,13 @@ function abStomp(p) {
   for (const q of unitsHit(p, px, py, STOMP_R)) {
     const d = Math.hypot(q.x - px, q.y - py) || 1;
     const nx = (q.x - px) / d, ny = (q.y - py) / d;
-    hurtUnit(q, abDmg(p, 'stomp', STOMP_DMG), nx, ny, p, { kb: STOMP_KB });
-    if (!q.dead) { stunUnit(q, STOMP_STUN, p); q.kbx += nx * STOMP_KB; q.kby += ny * STOMP_KB; }
+    hurtUnit(q, abDmg(p, 'stomp', abRk(p, 'stomp', 'dmg')), nx, ny, p, { kb: STOMP_KB });
+    if (!q.dead) { stunUnit(q, abRk(p, 'stomp', 'stun'), p); q.kbx += nx * STOMP_KB; q.kby += ny * STOMP_KB; }
   }
   // the ring does not stop at bodies: every rival building it touches takes
   // the same blow, damped once by STRUCT_DR inside hurtStruct (js/sim/actions.js)
-  for (const s of structsNear(p, px, py, STOMP_R)) hurtStruct(s, abDmg(p, 'stomp', STOMP_DMG), p);
-  if (PRACTICE) abHitDummies(px, py, STOMP_R, abDmg(p, 'stomp', STOMP_DMG));
+  for (const s of structsNear(p, px, py, STOMP_R)) hurtStruct(s, abDmg(p, 'stomp', abRk(p, 'stomp', 'dmg')), p);
+  if (PRACTICE) abHitDummies(px, py, STOMP_R, abDmg(p, 'stomp', abRk(p, 'stomp', 'dmg')));
   craters.push({ x: px, y: py + 3, team: p.team, t: 0 });
   abFx.push({ kind: 'ring', x: px, y: py, r: STOMP_R, t: 0, col: '#f4f7ff' });
   // the shockwave: one ring of snow thrown outward
@@ -640,20 +665,20 @@ function abStomp(p) {
 // blow for every kind of unit: a wolf at a sliver is finished like a rival.
 function execDmg(p, q) {
   const max = q.maxHp || q.hp;
-  return abDmg(p, 'exec', EXEC_DMG) + Math.min(EXEC_BONUS_MAX, Math.round(Math.max(0, max - q.hp) * EXEC_MISSING));
+  return abDmg(p, 'exec', abRk(p, 'exec', 'dmg')) + Math.min(abRk(p, 'exec', 'bonus'), Math.round(Math.max(0, max - q.hp) * abRk(p, 'exec', 'missing')));
 }
 function abExecute(p) {
   const a = Math.atan2(p.input.aimY - (p.y - BOW_Y), p.input.aimX - p.x);
   const nx = Math.cos(a), ny = Math.sin(a);
   for (const q of unitsInCone(p, p.x, p.y, a, EXEC_R, EXEC_HALF)) {
     const dmg = execDmg(p, q);
-    hurtUnit(q, dmg, nx, ny, p, { kb: EXEC_KB, crit: dmg > EXEC_DMG * 2 });
+    hurtUnit(q, dmg, nx, ny, p, { kb: EXEC_KB, crit: dmg > abRk(p, 'exec', 'dmg') * 2 });
     burst(q.x, unitMidY(q), '#cfd8e8', 10, 55, 0.5);
     burst(q.x, unitMidY(q), '#f4f7ff', 6, 45, 0.4, true);
     shakeFor(p, 5, q);
   }
-  for (const s of structsInCone(p, p.x, p.y, a, EXEC_R, EXEC_HALF)) hurtStruct(s, abDmg(p, 'exec', EXEC_DMG), p);
-  if (PRACTICE) abHitDummies(p.x + nx * EXEC_R * 0.5, p.y + ny * EXEC_R * 0.5, EXEC_R * 0.5, abDmg(p, 'exec', EXEC_DMG));
+  for (const s of structsInCone(p, p.x, p.y, a, EXEC_R, EXEC_HALF)) hurtStruct(s, abDmg(p, 'exec', abRk(p, 'exec', 'dmg')), p);
+  if (PRACTICE) abHitDummies(p.x + nx * EXEC_R * 0.5, p.y + ny * EXEC_R * 0.5, EXEC_R * 0.5, abDmg(p, 'exec', abRk(p, 'exec', 'dmg')));
   abFx.push({ kind: 'wedge', x: p.x, y: p.y - 2, a, r: EXEC_R, half: EXEC_HALF, t: 0, col: '#e05a4a' });
   burst(p.x + nx * 10, p.y - 2 + ny * 8, '#eef4fb', 8, 45, 0.4, true);
   sfxAt('break_', p.x, p.y);
@@ -666,8 +691,8 @@ function abExecute(p) {
 function abWarCry(p) {
   for (const q of unitsNear(p, p.x, p.y, CRY_R)) {
     if (q.team === p.team && q !== p) continue;
-    slowUnit(q, CRY_SLOW_T, CRY_SLOW);
-    markUnit(q, CRY_MARK_T);
+    slowUnit(q, abRk(p, 'cry', 'slowT'), abRk(p, 'cry', 'slow'));
+    markUnit(q, abRk(p, 'cry', 'mark'));
     burst(q.x, unitMidY(q), '#f2cc6a', 4, 30, 0.3, true);
   }
   abFx.push({ kind: 'ring', x: p.x, y: p.y, r: CRY_R, t: 0, col: '#f2cc6a' });
@@ -680,11 +705,11 @@ function abWhirlwind(p) {
   for (const q of unitsHit(p, p.x, p.y, WHIRL_R)) {
     const d = Math.hypot(q.x - p.x, q.y - p.y) || 1;
     const nx = (q.x - p.x) / d, ny = (q.y - p.y) / d;
-    hurtUnit(q, abDmg(p, 'whirl', WHIRL_DMG), nx, ny, p, { kb: WHIRL_KB });
+    hurtUnit(q, abDmg(p, 'whirl', abRk(p, 'whirl', 'dmg')), nx, ny, p, { kb: WHIRL_KB });
     burst(q.x, unitMidY(q), '#cfd8e8', 6, 45, 0.4);
   }
-  for (const s of structsNear(p, p.x, p.y, WHIRL_R)) hurtStruct(s, abDmg(p, 'whirl', WHIRL_DMG), p);
-  if (PRACTICE) abHitDummies(p.x, p.y, WHIRL_R, abDmg(p, 'whirl', WHIRL_DMG));
+  for (const s of structsNear(p, p.x, p.y, WHIRL_R)) hurtStruct(s, abDmg(p, 'whirl', abRk(p, 'whirl', 'dmg')), p);
+  if (PRACTICE) abHitDummies(p.x, p.y, WHIRL_R, abDmg(p, 'whirl', abRk(p, 'whirl', 'dmg')));
   abFx.push({ kind: 'ring', x: p.x, y: p.y, r: WHIRL_R, t: 0, col: '#c8d2e4' });
   burst(p.x, p.y - 4, '#eef4fb', 10, 60, 0.4, true);
   shakeFor(p, 4);
@@ -697,19 +722,19 @@ function abHamstring(p) {
   const a = Math.atan2(p.input.aimY - (p.y - BOW_Y), p.input.aimX - p.x);
   const nx = Math.cos(a), ny = Math.sin(a);
   for (const q of unitsInCone(p, p.x, p.y, a, HAM_R, HAM_HALF)) {
-    hurtUnit(q, abDmg(p, 'ham', HAM_DMG), nx, ny, p, { kb: 0 });
-    if (!q.dead) rootUnit(q, HAM_ROOT, p);
+    hurtUnit(q, abDmg(p, 'ham', abRk(p, 'ham', 'dmg')), nx, ny, p, { kb: 0 });
+    if (!q.dead) rootUnit(q, abRk(p, 'ham', 'root'), p);
     burst(q.x, q.y, '#cfd8e8', 5, 35, 0.35);
   }
-  if (PRACTICE) abHitDummies(p.x + nx * HAM_R * 0.5, p.y + ny * HAM_R * 0.5, HAM_R * 0.5, abDmg(p, 'ham', HAM_DMG));
+  if (PRACTICE) abHitDummies(p.x + nx * HAM_R * 0.5, p.y + ny * HAM_R * 0.5, HAM_R * 0.5, abDmg(p, 'ham', abRk(p, 'ham', 'dmg')));
   abFx.push({ kind: 'wedge', x: p.x, y: p.y - 2, a, r: HAM_R, half: HAM_HALF, t: 0, col: '#c8d2e4' });
   sfxAt('swing', p.x, p.y);
 }
-// SECOND WIND: the breath. The heal is paid out over WIND_T by updateAbilities,
+// SECOND WIND: the breath. The heal is paid out over its `t` by updateAbilities,
 // so a hit landed in the meantime still counts - it is a lifeline, not a wall.
 function abSecondWind(p) {
-  p.windT = WIND_T;
-  p.windRate = p.maxHp * WIND_HEAL / WIND_T;
+  p.windT = abRk(p, 'wind', 't');
+  p.windRate = p.maxHp * abRk(p, 'wind', 'heal') / p.windT;
   burst(p.x, p.y - 8, '#f2937f', 8, 40, 0.5, true);
   sfxAt('place', p.x, p.y);
 }
@@ -766,7 +791,7 @@ function updateAbilityWorld(dt) {
     if (!dead && isSolidTile(Math.floor(n.x / TILE), Math.floor(n.y / TILE))) {
       // a net that ends on a rival's building lands on it, the way a shot does
       const st = structOf(objAt(Math.floor(n.x / TILE), Math.floor(n.y / TILE)));
-      if (structFoe(sideOf(n), st)) hurtStruct(st, abDmg(abCredit(n), 'net', NET_DMG), abCredit(n));
+      if (structFoe(sideOf(n), st)) hurtStruct(st, abDmg(abCredit(n), 'net', n.dmg), abCredit(n));
       burst(n.x, n.y, '#cfd8e8', 4, 30, 0.3, true);
       dead = true;
     }
@@ -775,8 +800,8 @@ function updateAbilityWorld(dt) {
       if (q instanceof Player && abShieldBlocks(q, n.nx, n.ny)) {
         burst(n.x, n.y, '#cfd8e8', 6, 40, 0.35, true); dead = true; break;
       }
-      hurtUnit(q, abDmg(abCredit(n), 'net', NET_DMG), n.nx, n.ny, abCredit(n), { kb: 40 });
-      if (!q.dead) netUnit(q, NET_SLOW_T, NET_SLOW, abCredit(n)); // the drape the slow is read off
+      hurtUnit(q, abDmg(abCredit(n), 'net', n.dmg), n.nx, n.ny, abCredit(n), { kb: 40 });
+      if (!q.dead) netUnit(q, n.slowT, n.slow, abCredit(n)); // the drape the slow is read off
       burst(q.x, unitMidY(q), '#cfd8e8', 8, 45, 0.4, true);
       dead = true;
       break;

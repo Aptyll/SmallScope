@@ -20,40 +20,35 @@ const UNB_DRAIN = 0.15;        // ...this much of it a second
 const SEVER_R = 44;            // px reach
 const SEVER_HALF = 1.2;        // rad either side of the aim (a ~140 degree arc)
 const SEVER_EDGE = 26;         // px out from her where the edge begins
-const SEVER_DMG = 14;
 const SEVER_EDGE_MUL = 1.5;    // the edge's blow
 const SEVER_HEAL = 6, SEVER_HEAL_HP = 0.04; // heal per hero the edge catches: flat + share of her most health
 const SEVER_HEAL_N = 3;        // heroes that count toward it
 // W DEFIANT HEART: a shield; when it breaks or runs out, the shockwave pays back what it took
-const DEFY_HP = 0.12;          // the shield: this share of her most health...
-const DEFY_T = 2.5;            // ...held for this long
+const DEFY_T = 2.5;            // s the shield is held (its size is the row's `rank`)
 const DEFY_R = 40;             // px of shockwave
-const DEFY_DMG = 8;
 const DEFY_PAY = 0.8;          // share of what the shield absorbed added to the wave
 // E BREAK THE YOKE: a lunge, then the ground struck; a hero caught gives back the cooldown
 const YOKE_SPD = 300;
 const YOKE_T = 0.15;           // s of lunge (~45 px)
 const YOKE_R = 28;             // px of the strike at its end
-const YOKE_DMG = 12;
-const YOKE_SLOW = 0.5, YOKE_SLOW_T = 1.0;
 const YOKE_REFUND = 0.45;      // share of the cooldown a hero hit gives back
 // R NO KNEELING: the leap onto a spot, the sword brought down; after, harder to stop and hitting harder
 const NOKNEEL_RANGE = 110;     // px the leap may reach
 const NOKNEEL_SPD = 280;       // px/s through the air
 const NOKNEEL_R = 40;          // px of the impact
 const NOKNEEL_UP_R = 22;       // px about the heart of it that throws bodies up...
-const NOKNEEL_UP = 0.6;        // ...for this long
-const NOKNEEL_DMG = 30;
 const NOKNEEL_T = 4;           // s of the after
 const NOKNEEL_TEN = 0.5;       // tenacity in the after
 const NOKNEEL_AD = 8, NOKNEEL_AD_LV = 1.5; // attack damage in the after: flat + per level
-const NOKNEEL_LV = [6, 9, 12]; // the hero level each of its three points waits for
 
 // ---- the keys ---------------------------------------------------------------
-// Her row in CLASS_AB (js/sim/abilities.js), the ARM_AB shape (js/sim/armatos.js).
+// Her row in CLASS_AB (js/sim/abilities.js), the ARM_AB shape (js/sim/armatos.js):
+// `rank` holds each key's numbers by rank, read through abRk.
 const FORT_AB = [
   {
-    id: 'sever', name: 'SEVER THE CHAINS', cd: 7, ap: 0.6, cast: 0.3, aim: { cone: SEVER_R, half: SEVER_HALF },
+    id: 'sever', name: 'SEVER THE CHAINS', cd: [7, 6.5, 6, 5.5, 5], ap: 0.6, cast: 0.3, aim: { cone: SEVER_R, half: SEVER_HALF },
+    rank: { dmg: [14, 19, 24, 29, 34] }, // the inner arc's; the edge cuts SEVER_EDGE_MUL harder
+    tip: 'WIDE SWING. THE EDGE HEALS YOU',
     blurb: 'A WIDE SWING. THE OUTER EDGE HITS HARDER, AND HEALS YOU FOR EVERY HERO IT CATCHES.',
     use: (p) => fortSever(p),
     tele: (p, px, py, a, col, closing) => drawSeverTele(px, py, a, col, closing),
@@ -62,7 +57,9 @@ const FORT_AB = [
     bot: (p, foe, d) => d > SEVER_EDGE - 8 && d < SEVER_R - 2,
   },
   {
-    id: 'defy', name: 'DEFIANT HEART', cd: 13, ap: 0.4, cast: 0.1,
+    id: 'defy', name: 'DEFIANT HEART', cd: [13, 12, 11, 10, 9], ap: 0.4, cast: 0.1,
+    rank: { shieldHp: [0.12, 0.14, 0.16, 0.18, 0.2], t: DEFY_T, dmg: [8, 12, 16, 20, 24] }, // dmg: the wave, + DEFY_PAY of what the shield took
+    tip: 'A SHIELD, THEN A SHOCKWAVE',
     blurb: 'A SHIELD. WHEN IT BREAKS OR FADES, A SHOCKWAVE HITS AROUND YOU, HARDER FOR ALL IT TOOK.',
     use: (p) => fortDefy(p),
     acol: '#f2cc6a', activeF: (p) => (p.defyT > 0 ? p.defyT / DEFY_T : 0),
@@ -71,7 +68,9 @@ const FORT_AB = [
     bot: (p, foe, d) => foe instanceof Player && d < 70 && p.hp < p.maxHp * 0.9,
   },
   {
-    id: 'yoke', name: 'BREAK THE YOKE', cd: 10, ap: 0.5, cast: 0.15, aim: { line: YOKE_SPD * YOKE_T },
+    id: 'yoke', name: 'BREAK THE YOKE', cd: [10, 9.5, 9, 8.5, 8], ap: 0.5, cast: 0.15, aim: { line: YOKE_SPD * YOKE_T },
+    rank: { dmg: [12, 16, 20, 24, 28], slow: 0.5, slowT: 1 },
+    tip: 'LUNGE AND SLOW. A HERO HIT CUTS THE WAIT',
     blurb: 'LUNGE AND STRIKE THE GROUND. SLOWS ALL IT HITS. A HERO HIT GIVES BACK MUCH OF THE WAIT.',
     use: (p) => fortYoke(p),
     tele: (p, px, py, a, col, closing, now, ex, ey) => drawYokeTele(p, a, col, closing, now, ex, ey),
@@ -80,7 +79,9 @@ const FORT_AB = [
     bot: (p, foe, d, clear) => clear && d > 18 && d < YOKE_SPD * YOKE_T + YOKE_R - 10,
   },
   {
-    id: 'nokneel', name: 'NO KNEELING', cd: 90, ap: 0.8, cast: 0.3, aim: { ring: NOKNEEL_R }, lvReq: NOKNEEL_LV,
+    id: 'nokneel', name: 'NO KNEELING', cd: [90, 80, 70], ap: 0.8, cast: 0.3, aim: { ring: NOKNEEL_R },
+    rank: { dmg: [30, 45, 60], up: 0.6, t: NOKNEEL_T, ten: NOKNEEL_TEN }, // up: the heart of it; t/ten: the after
+    tip: 'LEAP IN AND KNOCK UP',
     blurb: 'LEAP AND BRING THE SWORD DOWN. THE HEART OF THE BLOW THROWS THEM UP. AFTER, YOU ARE HARD TO STOP AND HIT HARDER.',
     use: (p) => fortNoKneel(p),
     tele: (p, px, py, a, col, closing, now, ex, ey) => drawNoKneelTele(p, col, closing, ex, ey),
@@ -130,7 +131,7 @@ HERO_STAT.push({ name: 'NO KNEELING', add: (p, key) => (key === 'dmg' && isFort(
 // ---- Q SEVER THE CHAINS ---------------------------------------------------------
 function fortSever(p) {
   const a = Math.atan2(p.input.aimY - (p.y - BOW_Y), p.input.aimX - p.x);
-  const dmg = abDmg(p, 'sever', SEVER_DMG);
+  const dmg = abDmg(p, 'sever', abRk(p, 'sever', 'dmg'));
   let heroes = 0;
   for (const q of unitsInCone(p, p.x, p.y, a, SEVER_R, SEVER_HALF)) {
     const d = Math.hypot(q.x - p.x, q.y - p.y) || 1;
@@ -155,7 +156,7 @@ function fortSever(p) {
 // The shield is the shared timed one (shieldUnit); what it took is what is gone
 // from it when it breaks or runs out (defyHp, its size, less wardHp).
 function fortDefy(p) {
-  const hp = Math.round(p.maxHp * DEFY_HP + abAp(p, 'defy'));
+  const hp = Math.round(p.maxHp * abRk(p, 'defy', 'shieldHp') + abAp(p, 'defy'));
   shieldUnit(p, hp, DEFY_T + 0.25); // (a beat longer than the heart's clock, so what is left of it at the release is read before it fades)
   p.defyHp = p.wardHp;
   p.defyT = DEFY_T;
@@ -166,7 +167,7 @@ function defyRelease(p) {
   const took = Math.max(0, p.defyHp - p.wardHp);
   p.defyT = 0; p.defyHp = 0;
   if (p.wardHp > 0) { p.wardHp = 0; p.wardT = 0; } // the wave spends what is left of it
-  const dmg = Math.round(DEFY_DMG + took * DEFY_PAY + abAp(p, 'defy'));
+  const dmg = Math.round(abRk(p, 'defy', 'dmg') + took * DEFY_PAY + abAp(p, 'defy'));
   for (const q of unitsHit(p, p.x, p.y, DEFY_R)) {
     const d = Math.hypot(q.x - p.x, q.y - p.y) || 1;
     hurtUnit(q, dmg, (q.x - p.x) / d, (q.y - p.y) / d, p, { kb: 90 });
@@ -202,12 +203,12 @@ function yokeStrike(p) {
   p.rushT = 0; p.dash = '';
   p.vx = p.rushNX * 30; p.vy = p.rushNY * 30;
   const cx = p.x + p.rushNX * 8, cy = p.y + p.rushNY * 8;
-  const dmg = abDmg(p, 'yoke', YOKE_DMG);
+  const dmg = abDmg(p, 'yoke', abRk(p, 'yoke', 'dmg'));
   let hero = false;
   for (const q of unitsHit(p, cx, cy, YOKE_R)) {
     const d = Math.hypot(q.x - cx, q.y - cy) || 1;
     hurtUnit(q, dmg, (q.x - cx) / d, (q.y - cy) / d, p, { kb: 60 });
-    if (!q.dead) slowUnit(q, YOKE_SLOW_T, YOKE_SLOW);
+    if (!q.dead) slowUnit(q, abRk(p, 'yoke', 'slowT'), abRk(p, 'yoke', 'slow'));
     burst(q.x, unitMidY(q), '#cfd8e8', 6, 45, 0.4, true);
     if (q instanceof Player && q.team !== p.team) hero = true;
   }
@@ -250,11 +251,11 @@ HERO_DASH.vault = { spd: NOKNEEL_SPD, t: NOKNEEL_RANGE / NOKNEEL_SPD, ramp: 0.00
 function noKneelLand(p) {
   p.rushT = 0; p.dash = ''; p.vaultMax = 0;
   p.vx = p.vy = 0;
-  const dmg = abDmg(p, 'nokneel', NOKNEEL_DMG);
+  const dmg = abDmg(p, 'nokneel', abRk(p, 'nokneel', 'dmg'));
   for (const q of unitsHit(p, p.x, p.y, NOKNEEL_R)) {
     const d = Math.hypot(q.x - p.x, q.y - p.y) || 1;
     hurtUnit(q, dmg, (q.x - p.x) / d, (q.y - p.y) / d, p, { kb: 80 });
-    if (!q.dead && d <= NOKNEEL_UP_R) knockUp(q, NOKNEEL_UP, p);
+    if (!q.dead && d <= NOKNEEL_UP_R) knockUp(q, abRk(p, 'nokneel', 'up'), p);
     burst(q.x, unitMidY(q), '#f2cc6a', 8, 50, 0.45, true);
   }
   for (const s of structsNear(p, p.x, p.y, NOKNEEL_R)) hurtStruct(s, dmg, p);

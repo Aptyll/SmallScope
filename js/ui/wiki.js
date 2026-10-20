@@ -72,7 +72,7 @@ const WIKI_ITEM_COLS = [
 // the classes page: an ability row's two numbers (the tooltip's own rows,
 // tipClassAb), and the stats a class card shows at level 1 (WIKI_STATS)
 const WIKI_AB_COLS = [
-  { label: 'COOLDOWN', w: 40, get: (ab) => tipSec(ab.cd) },
+  { label: 'COOLDOWN', w: 40, get: (ab) => tipSec(rankAt(ab.cd, 1)) }, // rank 1's: the card says every rank's
   { label: 'CAST', w: 32, get: (ab) => tipSec(ab.cast) },
 ];
 const WIKI_STATS = ['hp', 'dmg', 'as', 'armor', 'ms']; // the class card's rows: its level 1 numbers (STATS, js/sim/stats.js)
@@ -127,7 +127,7 @@ const WIKI_PAGES = [
   { id: 'classes', label: 'CLASSES', build() {
     const b = [];
     b.push({ kind: 'line', h: 9, text: 'THE HEROES, ONE PICKED ON THE WAY IN. KEYS 1-4 ARE THE HERO, EACH ON ITS OWN COOLDOWN.', col: '#cfe0ff' });
-    b.push({ kind: 'line', h: 9, text: 'A SKILL POINT UNLOCKS A KEY. EACH ONE AFTER IS ' + Math.round(AB_LV_CD * 100) + '% OFF THAT ABILITY\'S COOLDOWN, TO LEVEL ' + AB_LV_MAX + '.', col: TIP_DIM });
+    b.push({ kind: 'line', h: 9, text: 'A SKILL POINT UNLOCKS A KEY OR RANKS IT UP: ' + AB_RANK_LV.length + ' RANKS ON KEYS 1-3, ' + AB_ULT_LV.length + ' ON 4 AT LEVELS ' + AB_ULT_LV.join(', ') + '.', col: TIP_DIM });
     CLASSES.forEach((c, cls) => {
       b.push({ kind: cls ? 'rule' : 'gap', h: cls ? 10 : 4 });
       b.push({ kind: 'cls', h: 52, cls });

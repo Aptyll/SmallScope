@@ -14,10 +14,10 @@ for keys by index. The hunter's keys carry one option each; the warrior's carry 
 
 | key | first | other |
 | --- | --- | --- |
-| 1 | SHIELD WALL | **WAR CRY** — every rival unit within `CRY_R` slowed (`CRY_SLOW` for `CRY_SLOW_T`) and marked (`CRY_MARK_T`) for both maps; nothing hurt (`abWarCry`) |
-| 2 | BULL RUSH | **WHIRLWIND** — everything alive within `WHIRL_R` cut for `WHIRL_DMG` and thrown `WHIRL_KB`, buildings cut too (`abWhirlwind`) |
-| 3 | STOMP | **HAMSTRING** — the wedge ahead (`HAM_R`/`HAM_HALF`) cut for `HAM_DMG` and rooted `HAM_ROOT` (`abHamstring`) |
-| 4 | EXECUTE | **SECOND WIND** — `WIND_HEAL` (30%) of max hp back over `WIND_T` (4 s), paid out each tick by `updateAbilities` (`p.windT`/`p.windRate`, `abSecondWind`); the strip's active tell |
+| 1 | SHIELD WALL | **WAR CRY** — every rival unit within `CRY_R` slowed (`rank` `slow` for `slowT`) and marked (`mark`) for both maps; nothing hurt (`abWarCry`) |
+| 2 | BULL RUSH | **WHIRLWIND** — everything alive within `WHIRL_R` cut for its `rank` `dmg` and thrown `WHIRL_KB`, buildings cut too (`abWhirlwind`) |
+| 3 | STOMP | **HAMSTRING** — the wedge ahead (`HAM_R`/`HAM_HALF`) cut for `dmg` and rooted `root` (its `rank`) (`abHamstring`) |
+| 4 | EXECUTE | **SECOND WIND** — `rank` `heal` (30/40/50%) of max hp back over `t` (4 s), paid out each tick by `updateAbilities` (`p.windT`/`p.windRate`, `abSecondWind`); the strip's active tell |
 
 The press goes
 through `input.ability` (edge-triggered, like the dodge) into `tryAbility(p, i)`, so a bot casts
@@ -26,24 +26,29 @@ cast, and ages every state an ability leaves on a body; `updateAbilityWorld(dt)`
 `updatePlay`) steps what they leave in the world.
 
 **Abilities are bought with skill points, never gold — and a key you have not bought does
-nothing.** Each key starts **LOCKED at level 0**: the class hands you the four actives, not the
-use of them. Every level costs **one skill point** — the only thing a point buys, one per
-[hero level](../multiplayer.md#hero-levels). The **first** point on a key unlocks it (`abUnlocked(p,
-i)`, the one gate: `tryAbility` refuses a level-0 key outright and every bot reaches for keys
-through `abReady(p, i)` = bought and off cooldown), and each one after shaves `AB_LV_CD` (12%)
-off that ability's cooldown — the one lever that means something on every key, twice at most,
-so a capped key comes back 24% faster than a freshly unlocked one. Four keys × `AB_LV_MAX` is
-**12 points against the 12 a capped hero earns**, so the ladder ends exactly where the hero does:
-every point has a home and nothing is stranded. A row may also carry `lvReq`, the hero level each of its points waits for (ARMATOS's R: 6, 9, 12), checked by `abLvCanBuy`. The choice is the ORDER — you land with one point
-and four dark keys, so the first thing a match asks is which ability you want to be, and a key
-taken to 3 early is three keys still dark at level 4.
-The rest of the set: `abLvCanBuy(p, i)` (a point in hand, room on the key),
+nothing.** Ranks work like League's. Each key starts **LOCKED at rank 0**: the class hands you the
+four actives, not the use of them. Every rank costs **one skill point** — the only thing a point
+buys, one per [hero level](../multiplayer.md#hero-levels). The **first** point on a key unlocks it
+(`abUnlocked(p, i)`, the one gate: `tryAbility` refuses a rank-0 key outright and every bot
+reaches for keys through `abReady(p, i)` = bought and off cooldown), and **every rank after is a
+clear step in what the key does**: its row's `rank` table holds each number per rank (`rank: {
+dmg: [14, 19, 24, 29, 34], stun: 1 }` — a list scales, a plain number stays flat; rank 1 is the
+old flat number), and a `cd` given as a list shrinks by rank. `abRk(p, id, key)` is the one
+reader: every `use()` asks it for its numbers at the rank the caster holds, and what a cast leaves
+in the world (a net in flight, a planted standard) copies its numbers when it is cast. Keys 1-3
+hold **5 ranks**, rank n waiting for hero level `AB_RANK_LV[n-1]` (1, 3, 5, 7, 9); key 4 is the
+**ultimate** (`AB_ULT`) with **3 ranks** at `AB_ULT_LV` (6, 11, 16) — `abReqOf(ab, i)` reads
+either (or a row's own `lvReq`) and `abLvMax(p, i)` is its length. 5 + 5 + 5 + 3 is **18 points
+against the 18 a capped hero earns**, so the ladder ends exactly where the hero does: every point
+has a home and nothing is stranded. The choice is the ORDER — you land with one point and four
+dark keys, so the first thing a match asks is which ability you want to be.
+The rest of the set: `abLvCanBuy(p, i)` (a point in hand, room on the key, the hero level reached),
 `buyAbilityLv(p, i)` (the single entry point, reached through `input.cmd {kind:'ability', i}` →
 `runCmd` by HUD plate click and bots alike — the unlock floats `NAME UNLOCKED` and a fatter
-burst, every level after floats the number), and `abCdOf(p, i)` — which every cooldown-setting
-site reads instead of the table's base `cd` (the cast landing, and the shield's comes-down
-reset). `p.abLv` resets with the match (every boot builds fresh `Player`s). The wells carry the progress — fat
-buy pips along the top edge, **one seat per point the key can hold**, so an empty row
+burst, every rank after floats the number, gold at the top rank), and `abCdOf(p, i)` — the
+cooldown at the held rank under COOLDOWN SPEED, which every cooldown-setting site reads instead of
+the row's `cd` (the cast landing, and the shield's comes-down reset). `p.abLv` resets with the match (every boot builds fresh `Player`s). The wells carry the progress — fat
+buy pips along the top edge, **one seat per rank the key can hold**, so an empty row
 is a locked ability — and a locked well stands dim (dark rim, the icon at `LOCK_DIM`, a grey key
 digit), exactly as a meal button with nothing behind it does; a press on one reddens and shakes
 it (`abDenied`, the twin of `foodDenied`). The ASK floats clear of the wells: while a
@@ -53,9 +58,17 @@ consumes `p.input.ability` as a buy whenever `abLvCanBuy(p, i)` holds and as a c
 (js/sim/sim.js, beside the other edge intents), so key 2 with a point in hand levels ability 2 and the
 next press casts it; a maxed key casts straight through an unspent point. That reaches every
 controller and the well click alike, since all of them set the one field. Hover lights the plate
-and the tooltip carries the numbers (`LOCKED` and `UNLOCK 1 SKILL PT` on a dark key). Bots spend each free point in rung 0 of the ladder (`aiSpend`, js/ai/ai.js, first thing `aiThink` asks), lowest ability
-level first — which spends their first four unlocking all four keys before any gets a cut. The cd
-column in the tables below is the level-1 base.
+and the tooltip carries the numbers, kept to what a mid-fight glance needs: the cooldown and the
+one number a rank raises (a `rank` key given as a list; plain numbers stay off it) at the rank
+held, and the row's one-line `tip`; Shift (or ABILITY DETAILS on ALWAYS) shows every rank's,
+the held one lit gold
+([the hover tooltip](../rendering/the-hud-corners/the-hover-tooltip.md); `LOCKED` and
+`UNLOCK 1 SKILL PT` on a dark key). Bots spend each free point in rung 0 of the ladder (`aiSpend`,
+js/ai/ai.js, first thing `aiThink` asks): the ultimate whenever it can rank, then each basic key
+unlocked once, then the basics maxed in the hero's `rankOrder` (its `CLASSES` row: HUNTER
+shot, net, grapple; WARRIOR stomp, rush, shield; ARMATOS verdict, march, brace; FORTIVA sever,
+yoke, heart). The cd column in the tables below is every rank's; the numbers in the text are rank
+1's, and each row's `rank` table has the rest.
 
 **Every ability lands on every kind of body.** A player, a rabbit, a deer, a bird, a wolf and a worker
 bot out of the [bot bay](robots.md) take the same damage and the same states from every key — the
@@ -83,19 +96,19 @@ HUNTER — bow, distance control, the ground between:
 
 | key | name | cd | what it does |
 | --- | --- | --- | --- |
-| 1 | **PIERCING SHOT** | 12 s | locks a full draw for `PIERCE_WIND` (0.7 s) — the body plants (`PIERCE_SLOW` ×0.15 walk), the pose leans back and holds, and a thin dashed **telegraph line** is drawn on the ground along the live aim for BOTH sides, gold-flaring as the loose nears. Then the shot fires itself: one enhanced arrow (a full-draw plain arrow ×`PIERCE_MUL` 1.5, `PIERCE_SPD` 380, `PIERCE_RANGE` 520) that **goes through every body on the line** (`a.pierce`/`a.pierceHit`, the arrow loop in js/sim/sim.js) — only a raised shield or the world stops it. **It wears every modifier on the tool in hand** (`pierceMods`) — folded into one envelope and spent as a press spends one: `pierceFlight` is `shotFlight` at full draw, so SPEEDUP and LONGSHOT stretch the reach as well as the speed; HEFT and SPLITTER scale the damage after the multiplier; the fire and CINDER BURST ride it; SPLITTER fans it and DUPLICATE repeats it (`armOff`), every arm a pierce of its own. The telegraph draws that flight, one line per fan arm, each to where the world stops it (`teleLen`). The loose is the unmissable cue: `SFX.nock` snap + a white flash on the arrowhead |
-| 2 | **NET SHOT** | 15 s | a weighted net down a line (`nets`): first rival hit takes 4 and is **slowed** (`p.slowT`/`slowMul` ×0.4, 2 s, the drape drawn on them); the recoil kicks the hunter backward with an animated hop (`p.hopT`) |
-| 3 | **GRAPPLE** | 8 s | throws a hook down the aim ray: the first **tree, dead tree or rock** within `GRAP_RANGE` (170 px) and `GRAP_ASSIST` of the line (the aim assist) anchors it, and the body is reeled straight at it at `GRAP_REEL` (260 px/s — over `SLIDE_MIN`, so shift on release carves a slide). The reel runs **while key 3 is held** (`input.grapple`, the one held ability input); releasing, arriving, a wall or a stun lets go through `grapEnd`, which KEEPS the momentum and starts the cooldown — a long ride and an instant release cost the same. A hook that catches nothing costs `GRAP_MISS_CD` (1 s) |
-| 4 | **SNOW COVER** | 60 s | the burrow ([Prone](prone-under-the-snow.md), which only this key opens): the cast kneels and calls `tryProne`, the 60 s clock is paid **on the way under**, and the key again — like every other way back up — rises free. A kneel the snow refuses (still moving, sliding, no snow underfoot) refunds the clock. The well's active tell drains with `p.hide` as the cover builds |
+| 1 | **PIERCING SHOT** | 12/11/10/9/8 s | locks a full draw for `PIERCE_WIND` (0.7 s) — the body plants (`PIERCE_SLOW` ×0.15 walk), the pose leans back and holds, and a thin dashed **telegraph line** is drawn on the ground along the live aim for BOTH sides, gold-flaring as the loose nears. Then the shot fires itself: one enhanced arrow (a full-draw plain arrow × its `rank` `shot`, 1.5/1.7/1.9/2.1/2.3, `PIERCE_SPD` 380, `PIERCE_RANGE` 520) that **goes through every body on the line** (`a.pierce`/`a.pierceHit`, the arrow loop in js/sim/sim.js) — only a raised shield or the world stops it. **It wears every modifier on the tool in hand** (`pierceMods`) — folded into one envelope and spent as a press spends one: `pierceFlight` is `shotFlight` at full draw, so SPEEDUP and LONGSHOT stretch the reach as well as the speed; HEFT and SPLITTER scale the damage after the multiplier; the fire and CINDER BURST ride it; SPLITTER fans it and DUPLICATE repeats it (`armOff`), every arm a pierce of its own. The telegraph draws that flight, one line per fan arm, each to where the world stops it (`teleLen`). The loose is the unmissable cue: `SFX.nock` snap + a white flash on the arrowhead |
+| 2 | **NET SHOT** | 15/14/13/12/11 s | a weighted net down a line (`nets`, each carrying the rank it was thrown at): first rival hit takes 4/8/12/16/20 and is **slowed** (`p.slowT`/`slowMul` ×0.4, 2 s, the drape drawn on them); the recoil kicks the hunter backward with an animated hop (`p.hopT`) |
+| 3 | **GRAPPLE** | 8/7/6/5/4 s | throws a hook down the aim ray: the first **tree, dead tree or rock** within `GRAP_RANGE` (170 px) and `GRAP_ASSIST` of the line (the aim assist) anchors it, and the body is reeled straight at it at `GRAP_REEL` (260 px/s — over `SLIDE_MIN`, so shift on release carves a slide). The reel runs **while key 3 is held** (`input.grapple`, the one held ability input); releasing, arriving, a wall or a stun lets go through `grapEnd`, which KEEPS the momentum and starts the cooldown — a long ride and an instant release cost the same. A hook that catches nothing costs `GRAP_MISS_CD` (1 s) |
+| 4 | **SNOW COVER** | 60/50/40 s | the burrow ([Prone](prone-under-the-snow.md), which only this key opens): the cast kneels and calls `tryProne`, the 60 s clock is paid **on the way under**, and the key again — like every other way back up — rises free. A kneel the snow refuses (still moving, sliding, no snow underfoot) refunds the clock. The well's active tell drains with `p.hide` as the cover builds |
 
 WARRIOR — close pressure, blocking, momentum:
 
 | key | name | cd | what it does |
 | --- | --- | --- | --- |
-| 1 | **SHIELD WALL** | 9 s | raises a tower shield toward the aim for up to 2.2 s (the cooldown starts when it comes DOWN). Any shot flying into the front arc dies on it (`abShieldBlocks`, checked in the arrow loop before the body); walking drops to 40 % and the weapon is out of hand. **The key again while the wall is up is the SLAM** (`tryAbility` sets `p.castSlam`, the row's `use` branches on it): a `SLAM_CAST` (0.16 s) wind-up with the wedge on the snow, then `abSlam` — `SLAM_DMG` (8), `SLAM_STUN` (1.1 s) and `SLAM_KB` down the face on everything in `SLAM_R`/`SLAM_HALF` (30 px, ±0.85 rad, `unitsInCone`/`structsInCone`, js/sim/actions.js) — and the wall is spent (`abShieldDown`, the cooldown starts). **Mid-charge the same key slams too**: the rush ends on the spot (`rushEnd`, the carried body slammed where it stands) and the wind-up begins there; with no wall up it waits on the shield's cooldown like the raise would. A rush may be cast with the wall up — only the charge itself refuses the other keys |
-| 2 | **BULL RUSH** | 12 s | a 0.3 s wind-up with **the line on the snow** for both sides (`RUSH_SPD × RUSH_T` long, stopped at solids, a bar at its end where the slam will be — the body faces the live aim the whole wind-up), then charges the aim line at 300 px/s for 0.42 s (its own movement branch in `updatePlayer`, no i-frames, ramping to speed over `RUSH_RAMP`): the **first rival hit is carried** on the shoulder and **slammed** at the end (a bear is never picked up: the charge stops against it and slams it where it stands) — 10 damage + 0.6 s stun, ×1.6 driven into a wall (`rushStep`/`rushEnd`) |
-| 3 | **STOMP** | 14 s | a leap-stomp at the feet — the ring of `STOMP_R` on the snow through the wind-up, filling in as it nears, and flashed white where it lands (`abFx`): 12 damage + radial knockback + a beat of stun in `STOMP_R`, and the **crater** (`craters`) is deep snow that slows rivals crossing it for 4 s |
-| 4 | **EXECUTE** | 18 s | a 0.55 s overhead wind-up with the wedge on the snow (`EXEC_R`/`EXEC_HALF`, 30 px, ±0.75 rad — narrower than the sword), then `abExecute`: every unit in it takes `execDmg` — `EXEC_DMG` (10) plus `EXEC_MISSING` (half) of the life it has already lost, capped at `EXEC_BONUS_MAX` (40) extra — so a body the other three keys have worked over is finished, and a full one takes ten. `EXEC_KB` shove; a cut over twice the base is a crit |
+| 1 | **SHIELD WALL** | 9/8.5/8/7.5/7 s | raises a tower shield toward the aim for up to its `rank` `t`, 2.2 s (the cooldown starts when it comes DOWN). Any shot flying into the front arc dies on it (`abShieldBlocks`, checked in the arrow loop before the body); walking drops to 40 % and the weapon is out of hand. **The key again while the wall is up is the SLAM** (`tryAbility` sets `p.castSlam`, the row's `use` branches on it): a `SLAM_CAST` (0.16 s) wind-up with the wedge on the snow, then `abSlam` — `dmg` (8/12/16/20/24), `stun` (1.1 s) and `SLAM_KB` down the face on everything in `SLAM_R`/`SLAM_HALF` (30 px, ±0.85 rad, `unitsInCone`/`structsInCone`, js/sim/actions.js) — and the wall is spent (`abShieldDown`, the cooldown starts). **Mid-charge the same key slams too**: the rush ends on the spot (`rushEnd`, the carried body slammed where it stands) and the wind-up begins there; with no wall up it waits on the shield's cooldown like the raise would. A rush may be cast with the wall up — only the charge itself refuses the other keys |
+| 2 | **BULL RUSH** | 12/11.5/11/10.5/10 s | a 0.3 s wind-up with **the line on the snow** for both sides (`RUSH_SPD × RUSH_T` long, stopped at solids, a bar at its end where the slam will be — the body faces the live aim the whole wind-up), then charges the aim line at 300 px/s for 0.42 s (its own movement branch in `updatePlayer`, no i-frames, ramping to speed over `RUSH_RAMP`): the **first rival hit is carried** on the shoulder and **slammed** at the end (a bear is never picked up: the charge stops against it and slams it where it stands) — 10/15/20/25/30 damage + 0.6 s stun, ×1.6 driven into a wall (`rushStep`/`rushEnd`) |
+| 3 | **STOMP** | 14/13/12/11/10 s | a leap-stomp at the feet — the ring of `STOMP_R` on the snow through the wind-up, filling in as it nears, and flashed white where it lands (`abFx`): 12/17/22/27/32 damage + radial knockback + a beat of stun in `STOMP_R`, and the **crater** (`craters`) is deep snow that slows rivals crossing it for 4 s |
+| 4 | **EXECUTE** | 18/15/12 s | a 0.55 s overhead wind-up with the wedge on the snow (`EXEC_R`/`EXEC_HALF`, 30 px, ±0.75 rad — narrower than the sword), then `abExecute`: every unit in it takes `execDmg` — its `rank` `dmg` (10/20/30) plus `missing` (half) of the life it has already lost, capped at `bonus` (40) extra — so a body the other three keys have worked over is finished, and a full one takes the base. `EXEC_KB` shove; a cut over twice the base is a crit |
 
 ARMATOS, THE LAST STANDARD — the defensive initiator, the first hero with a passive. His rules
 live in **[js/sim/armatos.js](../../../js/sim/armatos.js)** (`ARM_AB`, its `armatos` banner), his
@@ -107,10 +120,10 @@ standard on his back (`drawHeroBack`, a `HERO_BODY_FX` row):
 | key | name | cd | what it does |
 | --- | --- | --- | --- |
 | P | **LEGION'S RESOLVE** | — | damage taken fills `p.resolve` (`RESOLVE_FULL`, 30% of max hp, for a full bar; it drains after `RESOLVE_IDLE_T` without a hit). Full, the next key cast gives a shield of `RESOLVE_SHIELD` (14%) of max hp for `RESOLVE_SHIELD_T` (4 s), `shieldUnit` (`p.wardHp`, spent in `damagePlayer` after the dawn shield). The standard's cloth fills gold with it. `HERO_PASSIVE`, reached through `passiveHurt`/`passiveCast`/`passiveTick` |
-| 1 | **IRON VERDICT** | 8 s | a line slam `VERDICT_LEN` long, ±`VERDICT_HALF` (`unitsInLine`), the box on the snow through the wind-up with its middle hashed gold: `VERDICT_DMG` + `VERDICT_SLOW` for `VERDICT_SLOW_T` on all in it, and those in the middle stretch (`VERDICT_MID`) are knocked up `VERDICT_UP` instead (`knockUp`) |
-| 2 | **HOLD THE LINE** | 12 s | a brace for `HOLD_T` (the shield-wall state, `wall: true`): blows from the front take `HOLD_CUT` less (`holdTaken`, a `HERO_TAKEN` fold in `damagePlayer`). A rival hero's hit primes the bash (`p.holdHit`, the trim goes gold); the key again bashes the wedge ahead (`armBash`): `BASH_DMG`, shoved `BASH_KB`, and stunned `BASH_STUN` only when primed |
-| 3 | **VETERAN'S MARCH** | 14 s | a charge (the rush state with `p.dash = 'march'`, `HERO_DASH`) at `MARCH_SPD` for `MARCH_T`: lesser bodies are shoved aside once each (`marchStep`, `MARCH_SHOVE`), and the first rival hero (or an anchored body) stops it: `MARCH_DMG` and `MARCH_STUN` (`marchEnd`) |
-| 4 | **THE OLD GUARD** | 80 s | plants the standard (`guards`, one per owner) for `GUARD_T`: allies inside `GUARD_R` gain `GUARD_ARMOR` armor (`guardStat`, a `HERO_STAT` row read by `statOf`) and `GUARD_TEN` tenacity (`guardTen`); a rival who was inside and steps out (caught up to `GUARD_EDGE` past the rim, so a roll out still counts) is slowed `GUARD_SLOW` for `GUARD_SLOW_T` (`updateGuards`). Its points wait for hero levels 6, 9 and 12 (`GUARD_LV`) |
+| 1 | **IRON VERDICT** | 8/7.5/7/6.5/6 s | a line slam `VERDICT_LEN` long, ±`VERDICT_HALF` (`unitsInLine`), the box on the snow through the wind-up with its middle hashed gold: `dmg` (14/19/24/29/34) + `slow` for `slowT` on all in it, and those in the middle stretch (`VERDICT_MID`) are knocked up `up` instead (`knockUp`) |
+| 2 | **HOLD THE LINE** | 12/11.5/11/10.5/10 s | a brace for `t` (the shield-wall state, `wall: true`): blows from the front take `cut` less (`holdTaken`, a `HERO_TAKEN` fold in `damagePlayer`). A rival hero's hit primes the bash (`p.holdHit`, the trim goes gold); the key again bashes the wedge ahead (`armBash`): `dmg` (10/14/18/22/26), shoved `BASH_KB`, and stunned `stun` only when primed |
+| 3 | **VETERAN'S MARCH** | 14/13/12/11/10 s | a charge (the rush state with `p.dash = 'march'`, `HERO_DASH`) at `MARCH_SPD` for `MARCH_T`: lesser bodies are shoved aside once each for `shove` (5; `marchStep`, `MARCH_SHOVE`), and the first rival hero (or an anchored body) stops it: `dmg` (12/16/20/24/28) and `stun` (`marchEnd`) |
+| 4 | **THE OLD GUARD** | 80/70/60 s | plants the standard (`guards`, one per owner, carrying the rank's numbers) for `t`: allies inside `GUARD_R` gain `armor` (40/60/80; `guardStat`, a `HERO_STAT` row read by `statOf`) and `ten` tenacity (`guardTen`); a rival who was inside and steps out (caught up to `GUARD_EDGE` past the rim, so a roll out still counts) is slowed `slow` for `slowT` (`updateGuards`) |
 
 FORTIVA, THE UNBROKEN — the juggernaut who wins the long fight, the second hero with a passive.
 Her rules live in **[js/sim/fortiva.js](../../../js/sim/fortiva.js)** (`FORT_AB`, its `fortiva`
@@ -124,10 +137,10 @@ glints, the shield's shell, the after's embers) is `drawFortBody`, a `HERO_BODY_
 | key | name | cd | what it does |
 | --- | --- | --- | --- |
 | P | **UNBROKEN** | — | hero damage she deals or takes fills `p.resolve` (`unbFeed`; `UNB_FULL`, half her max hp traded, for a full bar; it drains `UNB_DRAIN` a second after `UNB_IDLE_T` without a trade). From `UNB_HIGH` she has `UNB_TEN` tenacity (a `HERO_TEN` row) and her basic attacks heal her `UNB_HEAL` of what they deal (`o.basic` in the `deal` hook). `HERO_PASSIVE.unbroken`: `hurt`, `deal`, `tick`, `out` |
-| 1 | **SEVER THE CHAINS** | 7 s | a wide arc, `SEVER_R` and ±`SEVER_HALF` (`unitsInCone`), wedge on the snow with its outer band hashed gold: `SEVER_DMG`, ×`SEVER_EDGE_MUL` past `SEVER_EDGE`, and each rival hero the edge catches (up to `SEVER_HEAL_N`) heals her `SEVER_HEAL` + `SEVER_HEAL_HP` of max hp |
-| 2 | **DEFIANT HEART** | 13 s | a shield of `DEFY_HP` of max hp (`shieldUnit`) for `DEFY_T`; when it breaks or runs out (`defyRelease`) a shockwave in `DEFY_R` deals `DEFY_DMG` + `DEFY_PAY` of what the shield absorbed |
-| 3 | **BREAK THE YOKE** | 10 s | a lunge (`p.dash = 'yoke'`, `HERO_DASH`) at `YOKE_SPD` for `YOKE_T` that stops on the first rival hero, then a ground strike (`yokeStrike`) in `YOKE_R`: `YOKE_DMG` and a `YOKE_SLOW` slow for `YOKE_SLOW_T`; a rival hero hit gives back `YOKE_REFUND` of the cooldown |
-| 4 | **NO KNEELING** | 90 s | a leap (`p.dash = 'vault'`) to the aim, at most `NOKNEEL_RANGE`; a wall stops it short and a stun drops her where she is. Landing (`noKneelLand`): `NOKNEEL_DMG` in `NOKNEEL_R`, knocked up `NOKNEEL_UP` within `NOKNEEL_UP_R`, then for `NOKNEEL_T` she has `NOKNEEL_TEN` tenacity and `NOKNEEL_AD` + `NOKNEEL_AD_LV` per level attack damage (a `HERO_STAT` row). Its points wait for hero levels 6, 9 and 12 (`NOKNEEL_LV`) |
+| 1 | **SEVER THE CHAINS** | 7/6.5/6/5.5/5 s | a wide arc, `SEVER_R` and ±`SEVER_HALF` (`unitsInCone`), wedge on the snow with its outer band hashed gold: `dmg` (14/19/24/29/34), ×`SEVER_EDGE_MUL` past `SEVER_EDGE`, and each rival hero the edge catches (up to `SEVER_HEAL_N`) heals her `SEVER_HEAL` + `SEVER_HEAL_HP` of max hp |
+| 2 | **DEFIANT HEART** | 13/12/11/10/9 s | a shield of `shieldHp` (12-20%) of max hp (`shieldUnit`) for `DEFY_T`; when it breaks or runs out (`defyRelease`) a shockwave in `DEFY_R` deals `dmg` (8/12/16/20/24) + `DEFY_PAY` of what the shield absorbed |
+| 3 | **BREAK THE YOKE** | 10/9.5/9/8.5/8 s | a lunge (`p.dash = 'yoke'`, `HERO_DASH`) at `YOKE_SPD` for `YOKE_T` that stops on the first rival hero, then a ground strike (`yokeStrike`) in `YOKE_R`: `dmg` (12/16/20/24/28) and a `slow` slow for `slowT`; a rival hero hit gives back `YOKE_REFUND` of the cooldown |
+| 4 | **NO KNEELING** | 90/80/70 s | a leap (`p.dash = 'vault'`) to the aim, at most `NOKNEEL_RANGE`; a wall stops it short and a stun drops her where she is. Landing (`noKneelLand`): `dmg` (30/45/60) in `NOKNEEL_R`, knocked up `up` within `NOKNEEL_UP_R`, then for `NOKNEEL_T` she has `NOKNEEL_TEN` tenacity and `NOKNEEL_AD` + `NOKNEEL_AD_LV` per level attack damage (a `HERO_STAT` row) |
 
 Bots play the named heroes through each row's `bot(p, foe, d, clear)` (`abBotKey`, asked by the ladder's
 ability block in js/ai/ai-ladder.js); a hero whose rows carry no `bot` keeps the ladder's old range rules.

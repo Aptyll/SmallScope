@@ -47,7 +47,7 @@ const TRAIL_MIN = 110;    // sliding faster than this carves the snow trail
 const SNOW_TRAIL_LIFE = 3.5; // snow groove lifetime (ice scratches keep the 9s footprint life)
 const SNOW_TRAIL_FADE = 1.4; // fade window at the end of that life: hold crisp, then wipe tail-first
 
-// Hero levels (League-style, max 12). XP is its own number, apart from gold:
+// Hero levels (League-style, max 18). XP is its own number, apart from gold:
 // it comes from being NEAR when a rival body dies - a soldier, a scout, a
 // camp monster - shared among the allies standing there (shareXp, below), so
 // the last hit is gold and the being-there is XP. Mining, felling, fishing,
@@ -55,13 +55,12 @@ const SNOW_TRAIL_FADE = 1.4; // fade window at the end of that life: hold crisp,
 // LEVEL_XP[n-1] is the total needed to reach level n, the gap growing by 30 a
 // level. It is sized against a scout who keeps to the road and the camps
 // (waves every 30 s growing a soldier every 3 min, a share of the kills, a
-// den now and then): about level 6 at ten minutes and the cap near 25, so a
-// lead in levels is still news late, where the old gold-fed table capped near
-// 13. XP is never spent or lost on death. What a level grows is the hero's
+// den now and then): about level 6 at ten minutes and 12 near 25, the cap of
+// 18 later still, so a lead in levels is still news late. XP is never spent or lost on death. What a level grows is the hero's
 // own: CLASSES[c].grow, read through statOf (js/sim/stats.js), the health it
 // adds healed on the spot.
-const LEVEL_MAX = 12;
-const LEVEL_XP = [0, 60, 150, 270, 420, 600, 810, 1050, 1320, 1620, 1950, 2310];
+const LEVEL_MAX = 18; // one skill point a level: 5 + 5 + 5 ranks on keys 1-3 and 3 on the ultimate (AB_RANK_LV, js/sim/abilities.js)
+const LEVEL_XP = [0, 60, 150, 270, 420, 600, 810, 1050, 1320, 1620, 1950, 2310, 2700, 3120, 3570, 4050, 4560, 5100];
 
 // The dodge roll as an ability: how long it lasts, how hard it throws you,
 // and how many charges refill how fast. What a roll HITS on the way through
@@ -97,9 +96,10 @@ const CLASSES = [
     // the seven stats at level 1, and what each level adds (js/sim/stats.js);
     // attack speed's base is the bow's own cycle (classAs), its growth a fraction
     base: { hp: 92, dmg: 16, armor: 12, ap: 0, haste: 0, ms: PLAYER_SPEED },
-    grow: { hp: 10, dmg: 2, as: 0.02, armor: 3 },
+    grow: { hp: 7, dmg: 1.3, as: 0.013, armor: 2 }, // sized so 17 levels grow what 11 did when the cap was 12
     kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1, chargeMul: 0.55,
       bowCharge: BOW_CHARGE, nock: 0.4, spdDmg: 0, dodgeSpeed: DODGE_SPEED },
+    rankOrder: [0, 1, 2], // the basic keys a bot ranks up first to last (aiSpend, js/ai/ai.js): the shot, the net, the grapple
     attack: { name: 'SHORTBOW', art: 'bow', cycle: 55 / 60, kb: 1, shot: { speed: 320, life: 0.85, col: '#e8dcb4' } },
   },
   {
@@ -107,9 +107,10 @@ const CLASSES = [
     look: { sex: 0, tone: 4, hair: 0, hairCol: 1, beard: 2, face: 0 },
     blurb: ['THE FIGHT IS AT ARM\'S LENGTH: GET THERE.', 'THE SHIELD EATS ARROWS. THE RUSH CARRIES BODIES.', 'THE SWORD REACHES A BODY LENGTH. THE EXECUTE FINISHES IT.'],
     base: { hp: 120, dmg: 18, armor: 20, ap: 0, haste: 0, ms: PLAYER_SPEED },
-    grow: { hp: 14, dmg: 2.5, as: 0.015, armor: 4 },
+    grow: { hp: 9, dmg: 1.6, as: 0.01, armor: 2.6 },
     kit: { iceMax: 1.15, iceSteer: 3.2, slideMin: 70, fatigue: 0.7, chargeMul: 0.7,
       bowCharge: 0.75, nock: 0.5, spdDmg: 5, dodgeSpeed: 230 },
+    rankOrder: [2, 1, 0], // the stomp, the rush, the shield
     attack: { name: 'LONGSWORD', art: 'sword', cycle: 30 / 60, kb: 1.2, cut: { reach: 28, half: 1.05 } },
   },
   {
@@ -120,9 +121,10 @@ const CLASSES = [
     look: { sex: 0, tone: 1, hair: 2, hairCol: 6, beard: 3, face: 0 },
     blurb: ['NO SOLDIER LEFT BEHIND.', 'THE SHIELD TAKES THE HIT. THE BASH ANSWERS IT.', 'PLANT THE STANDARD: YOUR SIDE HOLDS, THEIRS CANNOT LEAVE.'],
     base: { hp: 130, dmg: 16, armor: 24, ap: 0, haste: 0, ms: PLAYER_SPEED },
-    grow: { hp: 15, dmg: 2.2, as: 0.012, armor: 4.5 },
+    grow: { hp: 10, dmg: 1.4, as: 0.008, armor: 2.9 },
     kit: { iceMax: 1.1, iceSteer: 3.2, slideMin: 70, fatigue: 0.7, chargeMul: 0.7,
       bowCharge: 0.75, nock: 0.5, spdDmg: 5, dodgeSpeed: 225 },
+    rankOrder: [0, 2, 1], // the verdict, the march, the brace
     attack: { name: 'OATH GREATSWORD', art: 'sword', cycle: 30 / 60, kb: 1.2, cut: { reach: 28, half: 1.05 } },
     // his own body in each of his looks (ARM_SKINS, js/sprites/armatos.js),
     // worn per player (heroSkinOf) in his iron over the side's coat
@@ -139,7 +141,8 @@ const CLASSES = [
     look: { sex: 1, tone: 2, hair: 3, hairCol: 3, beard: 0, face: 1 },
     blurb: ['STRENGTH IS THE POWER TO REFUSE TO KNEEL.', 'THE LONGER THE FIGHT, THE HARDER SHE IS TO STOP.', 'THE EDGE OF THE ARC HEALS HER. THE SHIELD PAYS BACK WHAT IT TOOK.'],
     base: { hp: 132, dmg: 18, armor: 20, ap: 0, haste: 0, ms: PLAYER_SPEED - 3 },
-    grow: { hp: 16, dmg: 2.6, as: 0.015, armor: 4 },
+    grow: { hp: 10, dmg: 1.7, as: 0.01, armor: 2.6 },
+    rankOrder: [0, 2, 1], // the sever, the yoke, the heart
     attack: { name: 'CHAIN GREATSWORD', art: 'sword', cycle: 30 / 60, kb: 1.2, cut: { reach: 28, half: 1.05 } },
     // her own body in each of her looks (FORT_SKINS, js/sprites/fortiva.js),
     // worn per player (heroSkinOf) in her iron over the side's coat
@@ -543,7 +546,7 @@ class Player {
     this.fishPick = null;               // the fish the fish well eats (a FISH_KINDS key), or null for whichever comes next
     this.cls = 0;                       // CLASSES index; the lobby sets the local one
     this.skillPts = 1;                  // unspent; level 1 starts with one, each levelUp adds one - spent on ability levels (buyAbilityLv, js/sim/abilities.js)
-    this.abLv = [0, 0, 0, 0];           // ability ranks, 0 (LOCKED) ..AB_LV_MAX, a skill point each - like cards and items, NOT cleared by reset(): a death keeps what was bought
+    this.abLv = [0, 0, 0, 0];           // ability ranks, 0 (LOCKED) ..abLvMax (5, the ultimate 3), a skill point each - like cards and items, NOT cleared by reset(): a death keeps what was bought
     this.abPick = [0, 0, 0, 0];         // which option each key carries (abOf, js/sim/abilities.js), picked pre-match in the hero pop-up; a bot keeps the first
     this.cards = [];                    // picked roguelike cards, {rarity,id} - like items, survives a respawn
     // the one order marker this player has standing (the right-click radial;
@@ -938,7 +941,7 @@ const KILL_VERB = { worker: 'CUT DOWN', fire: 'BURNED' };
 // victim's level's worth (KILL_XP + KILL_XP_LV a level) shared by every
 // rival standing near (shareXp), so a kill teaches the fight, not the blow.
 // The one stake left on a death is the wait below and the walk back.
-const KILL_XP = 40, KILL_XP_LV = 15; // XP a downed scout is worth: 55 at level 1, 220 at 12
+const KILL_XP = 40, KILL_XP_LV = 15; // XP a downed scout is worth: 55 at level 1, 310 at 18
 const MULTI_T = 10;       // s a kill may follow the one before and still count toward a multi-kill (the post-game record)
 
 // The wait for the bird to set a downed player back down: a read of the
@@ -951,7 +954,7 @@ const MULTI_T = 10;       // s a kill may follow the one before and still count 
 // Nothing off the match clock: the level IS the clock, since XP only
 // climbs. With nothing else lost on a death, this wait is the
 // WHOLE penalty.
-const RESPAWN_WAIT = [5, 6, 7, 9, 11, 14, 18, 23, 29, 36, 43, 50]; // s, by hero level 1..LEVEL_MAX
+const RESPAWN_WAIT = [5, 6, 7, 8, 10, 12, 14, 17, 20, 23, 26, 29, 32, 35, 38, 41, 45, 50]; // s, by hero level 1..LEVEL_MAX
 function respawnTime(p) { return RESPAWN_WAIT[Math.max(1, Math.min(LEVEL_MAX, p.level)) - 1]; }
 
 // The body leaves the world: whatever it was holding, riding, casting or

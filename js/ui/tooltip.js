@@ -30,6 +30,36 @@ let tipNow = null;      // this frame's descriptor, resolved once in render()
 
 // seconds, to two places, without a trailing shout of precision
 function tipSec(s) { return (Math.round(s * 100) / 100).toFixed(2) + 'S'; }
+// An ability's ranked numbers (its row's `rank` table, read in play by abRk,
+// js/sim/abilities.js), said the League way: every rank's number in one row,
+// 14/19/24/29/34, the rank the hero holds lit gold. Here is how each key of a
+// `rank` table is said: [label, the number, its unit]. A new key a hero needs
+// gets its line here.
+const tipNum = (v) => String(Math.round(v * 100) / 100);
+const tipCent = (v) => String(Math.round(v * 100));
+const AB_RANK_STAT = {
+  dmg: ['DAMAGE', tipNum, ''], shove: ['SHOVE DAMAGE', tipNum, ''], cut: ['FRONT DAMAGE CUT', tipCent, '%'],
+  slow: ['SLOW', (v) => tipCent(1 - v), '%'], slowT: ['SLOW FOR', tipNum, 'S'], stun: ['STUN', tipNum, 'S'],
+  root: ['ROOT', tipNum, 'S'], up: ['KNOCK UP', tipNum, 'S'], t: ['LASTS', tipNum, 'S'],
+  armor: ['ARMOR', tipNum, ''], ten: ['TENACITY', tipCent, '%'], heal: ['HEALS OF MOST HP', tipCent, '%'],
+  mark: ['MARKED FOR', tipNum, 'S'], shieldHp: ['SHIELD OF MOST HP', tipCent, '%'],
+  missing: ['OF HP ALREADY LOST', tipCent, '%'], bonus: ['MOST EXTRA', tipNum, ''],
+  shot: ['DAMAGE x', tipNum, ''], ambush: ['AMBUSH SHOT x', tipNum, ''],
+};
+const TIP_RANK_ON = '#f2cc6a';
+// one ranked value as a row's value: plain text when it never changes, else
+// the segments, each rank's number with the held rank (`lv`, 0 for none) lit
+function tipRanks(v, lv, fmt, unit) {
+  if (!Array.isArray(v)) return fmt(v) + unit;
+  const seg = [];
+  v.forEach((x, k) => {
+    if (k) seg.push(['/', TIP_LABEL]);
+    seg.push([fmt(x) + (k === v.length - 1 ? unit : ''), !lv ? '#f4f7ff' : k === lv - 1 ? TIP_RANK_ON : TIP_LABEL]);
+  });
+  return seg;
+}
+// a row's value is a string, or segments [[text, col], ...] (tipRanks)
+function tipValW(v) { return Array.isArray(v) ? v.reduce((w, sg) => w + pixelTextWidth(sg[0]), 0) : pixelTextWidth(v); }
 // A descriptor is { title, tcol, kind, rows: [[label, value, col]],
 // sum: [value, col] (a total under a rule, optional), notes: [[text, col]],
 // icon, plate, rim }. Everything below builds one of
@@ -133,24 +163,30 @@ function tipClassAb(i, cls, k) {
   const ab = abOptions(c, i)[opt] || CLASS_AB[c][i];
   const d = { title: ab.name, tcol: '#f4f7ff', kind: CLASSES[c].name + ' ABILITY',
     rows: [], notes: [], icon: classAbIcon(c, i, opt), plate: BAG_WELL, rim: '#3c4048' };
-  // in play the cooldown is the LIVE one, level cuts and all; on the lobby
-  // there is no slot to have levelled anything yet, so it is the base
-  d.rows.push(['COOLDOWN', tipSec(cls == null ? abCdOf(player, i) : ab.cd), '#f4f7ff']);
-  d.rows.push(['CAST', tipSec(ab.cast), '#f4f7ff']);
-  if (cls == null) {
-    const lock = !abUnlocked(player, i);
-    d.rows.push(['LEVEL', lock ? 'LOCKED' : player.abLv[i] + '/' + AB_LV_MAX,
-      lock ? '#e0637a' : '#f4f7ff']);
-    if (player.abLv[i] < AB_LV_MAX) d.rows.push([lock ? 'UNLOCK' : 'NEXT LEVEL', '1 SKILL PT',
-      player.skillPts > 0 ? '#f2cc6a' : '#e0637a']);
-    const req = ab.lvReq && ab.lvReq[player.abLv[i]]; // an ultimate's next point waits for the hero (abLvCanBuy)
-    if (req && player.level < req) d.rows.push(['HERO LEVEL', String(req), '#e0637a']);
-    if (player.abCd[i] > 0) d.rows.push(['READY IN', tipSec(player.abCd[i]), '#e0637a']);
+  // Read mid-fight, so the short card says only what decides a press: the
+  // cooldown and the number a rank raises (a `rank` key given as a list), at
+  // the rank you hold (rank 1 on a dark key or the lobby), and the row's one
+  // line (`tip`). Shift held - or ABILITY DETAILS on ALWAYS (settings.tipFull)
+  // - opens every rank's numbers on each row, the held rank lit gold, and the
+  // hero level the next rank waits for. The pips on the well say the rank,
+  // its sweep the wait.
+  const full = settings.tipFull || !!keys.shift;
+  const lv = cls == null ? player.abLv[i] : 0;
+  const hm = cls == null ? hasteMul(player) : 1;
+  const val = (v, fmt, unit) => (full ? tipRanks(v, lv, fmt, unit) : fmt(rankAt(v, lv)) + unit);
+  const cds = Array.isArray(ab.cd) ? ab.cd.map((v) => v * hm) : ab.cd * hm;
+  // (short, the cooldown takes the line under the name the long card gives the hero's name)
+  if (full) d.rows.push(['COOLDOWN', val(cds, tipNum, 'S'), '#f4f7ff']);
+  else d.kind = 'COOLDOWN ' + val(cds, tipNum, 'S');
+  for (const k in ab.rank || {}) {
+    const st = AB_RANK_STAT[k];
+    if (st && Array.isArray(ab.rank[k])) d.rows.push([st[0], val(ab.rank[k], st[1], st[2]), '#f4f7ff']);
   }
-  for (const s of ab.blurb.split('. ')) d.notes.push([s.replace(/\.$/, ''), TIP_DIM]);
-  if (cls == null) d.notes.push([abUnlocked(player, i)
-    ? 'PRESS ' + (i + 1) + ' OR CLICK TO CAST'
-    : 'SPEND A SKILL POINT TO UNLOCK IT', TIP_DIM]);
+  if (cls == null && full) {
+    const need = abReqOf(ab, i)[player.abLv[i]]; // the next rank waits for the hero (abLvCanBuy)
+    if (need && player.level < need) d.rows.push(['HERO LEVEL', String(need), '#e0637a']);
+  }
+  d.notes.push([ab.tip || ab.blurb.split('. ')[0].replace(/\.$/, ''), TIP_DIM]);
   return d;
 }
 // A PIECE on the build list: the numbers a piece is chosen on - the price in
@@ -258,7 +294,7 @@ function tipSize(d) {
   const iw = d.icon ? d.icon.width + 3 : 0;
   let w = iw + pixelTextWidth(d.title);
   if (d.kind) w = Math.max(w, iw + pixelTextWidth(d.kind));
-  for (const [l, v] of d.rows) w = Math.max(w, pixelTextWidth(l) + 10 + pixelTextWidth(v));
+  for (const [l, v] of d.rows) w = Math.max(w, pixelTextWidth(l) + 10 + tipValW(v));
   for (const [t] of d.notes || []) w = Math.max(w, pixelTextWidth(t));
   const head = d.icon ? Math.max(14, d.icon.height + 2) : 14;
   const h = TIP_PAD * 2 + head + d.rows.length * TIP_ROW + (d.notes || []).length * TIP_ROW + (d.sum ? TIP_ROW + 3 : 0);
@@ -315,13 +351,16 @@ function drawTooltip() {
   if (d.kind) drawPixelTextShadow(ctx, d.kind, tx, cy + 7, TIP_LABEL, '#121418');
   cy += d.icon ? Math.max(14, d.icon.height + 2) : 14;
   for (const [label, value, col] of d.rows) {
-    const lw = pixelTextWidth(label), vw = pixelTextWidth(value);
+    const lw = pixelTextWidth(label), vw = tipValW(value);
     drawPixelTextShadow(ctx, label, x + TIP_PAD, cy, TIP_LABEL, '#121418');
     // the dotted leader ties the pair across the gap, exactly as the PLAYER
     // panel's stat rows do - a bare gap reads as two unrelated columns
     ctx.fillStyle = '#33363d';
     for (let px = x + TIP_PAD + lw + 3; px < x + w - TIP_PAD - vw - 2; px += 2) ctx.fillRect(px, cy + 4, 1, 1);
-    drawPixelTextShadow(ctx, value, x + w - TIP_PAD - vw, cy, col || '#f4f7ff', '#121418');
+    if (Array.isArray(value)) {
+      let vx = x + w - TIP_PAD - vw;
+      for (const [t, c] of value) { drawPixelTextShadow(ctx, t, vx, cy, c, '#121418'); vx += pixelTextWidth(t); }
+    } else drawPixelTextShadow(ctx, value, x + w - TIP_PAD - vw, cy, col || '#f4f7ff', '#121418');
     cy += TIP_ROW;
   }
   if (d.sum) { // a total under a rule (the stat panel's breakdown, tipStat)

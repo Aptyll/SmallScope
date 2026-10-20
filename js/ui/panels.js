@@ -518,6 +518,8 @@ const SET_TABS = [
     // where the hover tooltip sits (tipPos, js/ui/tooltip.js) - beside the
     // pointer, or parked in the bottom-left corner
     { id: 'tipFollow', label: 'TOOLTIP', kind: 'toggle', on: 'FOLLOWS POINTER', off: 'BOTTOM LEFT' },
+    // an ability's hover: the short card, every rank's numbers on Shift; or every rank's always
+    { id: 'tipFull', label: 'ABILITY DETAILS', kind: 'toggle', on: 'ALWAYS', off: 'HOLD SHIFT' },
     // BLUE always, or the roster's colour (skin, player.js)
     { id: 'teamBlue', label: 'MY TEAM', kind: 'toggle', on: 'ALWAYS BLUE', off: 'AS DEALT' },
   ] },

@@ -225,8 +225,9 @@ window.DBG = {
   CLASS_AB, abCraters: craters, abNets: nets,
   tryAbility: (i, p) => tryAbility(p || player, i),
   setAbilityCd: (i, t, p) => { (p || player).abCd[i] = t; },
-  // ability levels: a buy ladder on the four keys (js/sim/abilities.js)
-  AB_LV_MAX, abLvCanBuy: (i, p) => abLvCanBuy(p || player, i),
+  // ability ranks: a buy ladder on the four keys (js/sim/abilities.js)
+  AB_RANK_LV, AB_ULT_LV, abLvMax: (i, p) => abLvMax(p || player, i), abLvCanBuy: (i, p) => abLvCanBuy(p || player, i),
+  abRk: (id, key, p) => abRk(p || player, id, key),
   abCdOf: (i, p) => abCdOf(p || player, i),
   // level 0 is LOCKED: nothing casts off a key no point has been spent on
   abUnlocked: (i, p) => abUnlocked(p || player, i), abReady: (i, p) => abReady(p || player, i),
