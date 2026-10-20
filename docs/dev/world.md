@@ -89,9 +89,10 @@ stable per tile.
   `rand()` per spot and places nothing — **no-ops kept on purpose**, so every seed's stream
   stays what it is.
 - Every `tree` carries `rare` (boolean), set at worldgen from `treeRare(tx, ty)`: a `hash2`
-  roll gives each tree a `TREE_RARE_CHANCE` (8%) shot at a **jackpot** — `YIELD.treeRare` extra
-  gold (straight to the feller through `awardGold`, plus a `JACKPOT!` floater), paid by
-  `hitObject()` only when the tree actually falls, on top of the normal payout. Being a position hash rather than an `rng()`
+  roll makes a `TREE_RARE_CHANCE` (25%) of them **gold pines** — the only pines that pay:
+  `YIELD.treeRare` gold (straight to the feller through `awardGold`, the plain gold number and a
+  gold burst; nothing marks one standing), paid by `chopTree()` only when the tree actually
+  falls, so felling is side income ([Economy](gameplay/economy-one-currency.md)). Being a position hash rather than an `rng()`
   draw, the roll is the same whenever it is asked — `DBG.treeRare(tx, ty)` reports it for any
   tile, occupied or not.
 - **The ground is baked once, lazily.** The whole ground lives in one offscreen canvas and the

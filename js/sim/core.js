@@ -39,8 +39,11 @@ const FISH_SPAWN_T = 11;   // seconds between new fish while the shoal is health
 // a swing is work, the fell is the pay - because a per-swing coin on a one-second
 // pine was the firehose that had every bot at the level cap by two minutes.
 const YIELD = {
-  treeHit: 0,   treeFall: 1,            // 3 hp tree  -> 1 gold, slow and safe (TREE_HP, js/sim/world.js)
-  treeRare: 3,                          // rare-tree jackpot on top of the fall payout (1 pine in 12: four trees' worth)
+  // A pine is side income, never the farm: most fell for nothing and one in four
+  // (the `rare` roll, TREE_RARE_CHANCE in js/sim/world.js) holds a little gold, so
+  // chaining pines nonstop earns about a third of one lane's soldier last hits.
+  treeHit: 0,   treeFall: 0,            // 3 hp tree (TREE_HP, js/sim/world.js): the fell itself pays nothing...
+  treeRare: 2,                          // ...and a gold pine pays this on the fell
   deadTreeHit: 0, deadTreeFall: 1,      // 3 hp snag  -> 1 gold, the rookery's cover; leaves a stump
   // (a rock pays by its kind, with its ore: ROCK_KINDS, js/sim/mining.js)
   rabbit: { coins: 2, each: 5 },        // 10 gold, but it bolts

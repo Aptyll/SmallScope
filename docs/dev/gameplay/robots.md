@@ -11,8 +11,8 @@ hand for the loiter, which is the only movement a worker steers itself. **It has
 workers — [Pings](pings.md)): pick the
 nearest tree within 8 tiles of the bay's mouth (`structMouth`, also where they deposit)
 (`nearestObj`), work it in 0.9 s ticks into a
-`carry` gold count (same `YIELD` numbers as `hitObject`, tree-fall leaves a stump and pays the
-jackpot — banked in the carry rather than paid on the spot), and walk home to deposit into their
+`carry` gold count (same `YIELD` numbers as `hitObject`, tree-fall leaves a stump and a gold
+pine pays — banked in the carry rather than paid on the spot), and walk home to deposit into their
 owner's `inv.gold` with a floater at 8+ carried. A worker's `harvest()` handles **deadTree** too (the brown bear den's ring: quicker,
 `YIELD.deadTree*`, and felling one calls `flushBirds`).
 Robots drive on `navStep` ([Pathfinding](pathfinding.md): reach 1 to a tree, rock or building,

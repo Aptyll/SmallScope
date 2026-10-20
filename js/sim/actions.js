@@ -502,8 +502,8 @@ function nearestDryTile(x, y, p) {
 }
 
 // ONE chop into a standing tree, live or dead: the gold for the bite, the
-// stump and the fell payout, the loot roll and the rare pine's jackpot,
-// landed by an E swing through hitObject.
+// stump and the fell payout (a gold pine's on top), landed by an E swing
+// through hitObject.
 function chopTree(o, p) {
   const ox = o.tx * TILE + 8, oy = o.ty * TILE + 8;
   const dead = o.type === 'deadTree'; // the rookery's cover: quicker, same gold
@@ -517,20 +517,13 @@ function chopTree(o, p) {
   objects[idx(o.tx, o.ty)] = { type: 'stump', tx: o.tx, ty: o.ty, flash: 0, shake: 0 };
   sfxAt('treeFall', ox, oy);
   shakeFor(p, dead ? 2 : 2.5);
-  // FORAGER fattens the fell
-  awardGold(p, Math.round((dead ? YIELD.deadTreeFall : YIELD.treeFall) * kitOf(p).harvestMul), ox, oy - 6);
+  // the fell's one payout, a gold pine's included; FORAGER fattens it
+  const gold = !dead && o.rare;
+  awardGold(p, Math.round(((dead ? YIELD.deadTreeFall : YIELD.treeFall) + (gold ? YIELD.treeRare : 0)) * kitOf(p).harvestMul), ox, oy - 6);
   burst(ox, oy - 8, '#eef4fb', dead ? 12 : 14, 55, 0.7, true);
   burst(ox, oy - 8, dead ? '#6b5a48' : '#2f5c4b', dead ? 6 : 8, 45, 0.6, true);
-  if (dead) {
-    flushBirds(campAt(ox, oy), { x: ox, y: oy }); // felling a perch scatters the flock in it (dormant: see the birds banner, wildlife.js)
-    return;
-  }
-  if (o.rare) {
-    awardGold(p, YIELD.treeRare, ox, oy - 12);
-    burst(ox, oy - 8, '#f2cc6a', 10, 50, 0.6, true);
-    addFloater(ox, oy - 32, 'JACKPOT!', '#f2cc6a');
-    sfxAt('coin', ox, oy);
-  }
+  if (gold) burst(ox, oy - 8, '#f2cc6a', 10, 50, 0.6, true);
+  if (dead) flushBirds(campAt(ox, oy), { x: ox, y: oy }); // felling a perch scatters the flock in it (dormant: see the birds banner, wildlife.js)
 }
 
 function hitObject(o, p) {

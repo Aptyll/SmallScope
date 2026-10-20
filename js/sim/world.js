@@ -381,11 +381,12 @@ function warrenGrove(tx, ty, d) {
 
 // swings to fell a pine, everywhere one is planted (the border, the practice
 // arena's forest, the regrown treeline): three at 0.34 s is a one-second tree,
-// and what it pays is YIELD.treeFall (js/sim/core.js)
+// and what it pays is YIELD.treeFall, or treeRare on a gold pine (js/sim/core.js)
 const TREE_HP = 3;
-// per-tile jackpot roll for trees: hash-based, so it stays stable for a tile
-// regardless of generation order, and reshuffles with the run seed
-const TREE_RARE_CHANCE = 0.08;
+// per-tile roll for a gold pine (YIELD.treeRare on the fell, js/sim/core.js):
+// hash-based, so it stays stable for a tile regardless of generation order,
+// and spends no rng() draw
+const TREE_RARE_CHANCE = 0.25;
 function treeRare(tx, ty) {
   return hash2(tx * 5 + 11, ty * 7 + 23) < TREE_RARE_CHANCE;
 }

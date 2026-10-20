@@ -129,8 +129,8 @@ currency earned many ways (last hits, kills, camps, the works, gold pumps, a slo
 source with its own yield profile, and it pays itself: gold is never a pickup on the ground,
 every source pays the earner on the spot. **XP comes from being near when a rival body dies** —
 a soldier, a scout, a camp monster — shared among the allies standing there, so the last hit
-is gold and being there is XP. Mining, felling and fishing pay gold only: **the woods make you
-rich and the road makes you level**, and the late levels come late. **Fish and berries have a fixed price**, and the counter buys them at
+is gold and being there is XP. Mining, felling and fishing pay gold only: **soldiers are the farm,
+the woods are side income, and the road makes you level**, and the late levels come late. **Fish and berries have a fixed price**, and the counter buys them at
 the same number it sells them for; a bigger fish fetches more.
 [Economy](gameplay/economy-one-currency.md), [the counter](gameplay/the-merchants-counter.md),
 [Hero levels](multiplayer.md#hero-levels).

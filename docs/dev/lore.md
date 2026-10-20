@@ -40,7 +40,7 @@ guild sells — not from a new faction or a new magic.
 | every seed is a new map | every winter's snow redraws the valley |
 | gold in pines and rocks, ore inside them, chests at the treeline | the works are under everything: the pines grew up through them, the rocks are their rubble, the crates never shipped |
 | gold is the only currency in a match (the coins that buy skins are outside the valley) | the valley pays in one thing |
-| XP comes from being near when rival bodies fall, never from gold; digging pays gold only | the works make a scout rich; the road is what teaches one |
+| XP comes from being near when rival bodies fall, never from gold; digging pays gold only | the works pay a scout pocket money; the road is what teaches one |
 | nobody dies; a scout comes back at the roost with everything; the wait grows with level | valley law; they are carried back, and the better the scout, the longer the company sits them first |
 | the eagle's hp is nerve, it gusts at a crowd, it is driven off and never killed | a bird is brave only up to a point |
 | only a bird leaving ends a match | the claim |
