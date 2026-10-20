@@ -109,9 +109,9 @@ const CLASSES = [
       bowCharge: 0.75, nock: 0.5, spdDmg: 5, dodgeSpeed: 230 },
   },
   {
-    // the first named hero (js/sim/armatos.js): the WARRIOR's body and sword
-    // (`body`) in his own iron paint (`paint`, the 16 px letters a team's
-    // paint would otherwise fill), and a kit of his own on keys 1-4
+    // the first named hero (js/sim/armatos.js): the WARRIOR's sword and
+    // loadout (`body`), his own 16 px body and looks (`skins`), and a kit of
+    // his own on keys 1-4
     name: 'ARMATOS', role: 'THE LAST STANDARD', body: 1, passive: 'resolve', // HERO_PASSIVE, js/sim/armatos.js
     look: { sex: 0, tone: 1, hair: 2, hairCol: 6, beard: 3, face: 0 },
     blurb: ['NO SOLDIER LEFT BEHIND.', 'THE SHIELD TAKES THE HIT. THE BASH ANSWERS IT.', 'PLANT THE STANDARD: YOUR SIDE HOLDS, THEIRS CANNOT LEAVE.'],
@@ -119,9 +119,10 @@ const CLASSES = [
     grow: { hp: 15, dmg: 2.2, as: 0.012, armor: 4.5 },
     kit: { iceMax: 1.1, iceSteer: 3.2, slideMin: 70, fatigue: 0.7, chargeMul: 0.7,
       bowCharge: 0.75, nock: 0.5, spdDmg: 5, dodgeSpeed: 225 },
-    // an iron helm with the visor's slits where the goggles were, a white
-    // beard at the chin, iron at the trim; the coat keeps the side's colour
-    paint: { t: '#7d8699', T: '#b4bdcc', g: '#1c2232', G: '#9aa3b8', K: '#e6e1d6', m: '#5c6478', M: '#454c5e' },
+    // his own body in each of his looks (ARM_SKINS, js/sprites/armatos.js),
+    // worn per player (heroSkinOf) in his iron over the side's coat
+    skins: ARM_SKINS, skinPal: ARM_PAL, skinSlot: 'armatos',
+    blade: 'oath', // his OATH GREATSWORD in his hands, whatever sword he holds (heroBlade, js/draw/armatos.js)
     paint48: { t: '#7d8699', T: '#b4bdcc', g: '#1c2232', G: '#9aa3b8', m: '#5c6478', M: '#454c5e' }, // the 48 px model's (js/sprites/looks.js): its K is skin
   },
 ];
@@ -224,13 +225,27 @@ function levelUp(p) {
 }
 // the pose set a body draws from: its hero's body in its team's paint, worn
 // by the hero's look (tone and fringe at 16 px - js/sprites/characters.js)
-function classSet(p) { return SPRITES.champLook(p.cls, p.look, skin(p.team)); }
+function classSet(p) { return SPRITES.champLook(p.cls, p.look, skin(p.team), heroSkinOf(p)); }
+// the look a player wears on its hero (CLASSES[c].skins): the id its person
+// picked for that hero (`p.skins`, a slot -> id map from their profile, sent
+// with the hello and kept on the body, so every screen draws the same look),
+// or null for the hero's own
+function heroSkinOf(p) { const c = CLASSES[p.cls]; return c && c.skinSlot && p.skins ? p.skins[c.skinSlot] || null : null; }
+// a hello's skins (msg.skins, js/net/net.js) as the host keeps them: only a
+// hero's slot naming one of that hero's looks gets through
+function cleanHeroSkins(m) {
+  const out = {};
+  if (!m || typeof m !== 'object') return out;
+  for (const c of CLASSES) if (c.skinSlot && typeof m[c.skinSlot] === 'string' && c.skins.some((r) => r.id === m[c.skinSlot])) out[c.skinSlot] = m[c.skinSlot];
+  return out;
+}
 // The local player wears the PROFILE: its name, and the hero it last locked
 // in (js/app/profile.js), whose look and loadout come with it. Called from
 // initPlayers; the hero row (js/ui/chars.js) re-picks through setClass.
 function applyProfile() {
   player.name = PROFILE.name();
   setClass(player, PROFILE.hero());
+  player.skins = profileHeroSkins(); // the looks worn on each hero (js/ui/skins.js)
 }
 // Five players share each team colour, so text that names one player (the
 // scoreboard, the event log) also needs a per-player shade of that team's
@@ -502,6 +517,7 @@ class Player {
     // local player IS (name, hero) is applyProfile().
     this._name = control === 'human' ? PROFILE.name() : null; // a remote human is named by the roster
     this.look = Object.assign({}, CLASSES[0].look); // the hero's face, set again by every setClass
+    this.skins = {};                   // hero slot -> the look worn on that hero (heroSkinOf); a person's, from their profile
     this.spawn = { tx: WORLD >> 1, ty: WORLD >> 1 }; // landing tile once the eagle drops this player (the bot brain's "home")
     this.inv = { gold: 0 };             // the wallet is currency only - carried goods are in the bag
     this.bagCap = BAG_CAP;              // slots; one starting backpack

@@ -21,6 +21,7 @@ class Body:
     HEAD_R = (2.85, 3.0, 2.7)
     HEAD_P = 3.0
     lift = 0.0          # how much higher this body stands than the hunter (the blades)
+    ARM_MAT, MITT_MAT = 'coat', 'trim'   # the sleeves and the hands
 
     def __init__(self):
         L = self.lift
@@ -95,9 +96,9 @@ class Body:
             ep = pose.get('epole', v3(-1, 0, 0))
             el, hand = ik(sh, hand_t, *self.ARM, pole=R @ (ep + v3(0, 0.5 * s, 0)))
             el, hand = snap(el), snap(hand)
-            cv.tube(cam, sh, el, 0.8, 0.74, 'arm' + side, 'coat')
-            cv.tube(cam, el, hand, 0.74, 0.7, 'arm' + side, 'coat')
-            cv.ball(cam, snap(hand + R @ v3(0.05, 0, -0.3)), 0.86, 'mitt' + side, 'trim', bias=0.2)
+            cv.tube(cam, sh, el, 0.8, 0.74, 'arm' + side, self.ARM_MAT)
+            cv.tube(cam, el, hand, 0.74, 0.7, 'arm' + side, self.ARM_MAT)
+            cv.ball(cam, snap(hand + R @ v3(0.05, 0, -0.3)), 0.86, 'mitt' + side, self.MITT_MAT, bias=0.2)
         hy, hp = pose.get('head', (0.0, 0.0))
         Rh = R @ rot('z', hy) @ rot('y', hp)
         hc = U(v3(0, 0, self.HEAD_C))
@@ -265,4 +266,66 @@ class Warrior(Body):
             p = q
 
 
-BODIES = {'hunter': Hunter(), 'warrior': Warrior()}
+class Standard(Warrior):
+    """ARMATOS as LAST STANDARD (his default look): a nasal helm with a gold brow band, a
+    white beard over a mail collar, mail sleeves and steel gauntlets over his side's tabard,
+    and two rows of boot where the warrior has blades. He stands the warrior's height."""
+    ARM_MAT, MITT_MAT = 'trim', 'hat'
+    # the brow band across the helm, the eyes either side of the nasal, the nasal itself
+    MARKS = [(-1.5, -0.4, 'y'), (-0.5, -0.4, 'y'), (0.5, -0.4, 'y'), (1.5, -0.4, 'y'),
+             (-1.5, 0.9, 'e'), (1.5, 0.9, 'e'), (-0.5, 0.9, 't'), (0.5, 0.9, 't')]
+
+    @staticmethod
+    def face_region(n, q):
+        """the helm leaves the cheeks bare, under the brow, either side of the nasal"""
+        return np.where((q[0] > 0.2) & (np.abs(q[1]) < 0.85) & (q[2] < 0.1) & (q[2] > -0.95), 'skin', 'hat')
+
+    def coat(self, cv, cam, U, R):
+        cv.blob(cam, U(v3(0, 0, Z(6.1))), R, (2.75, 3.05, Z(2.05)), 'coat', 'coat', p=2.2)
+        cv.blob(cam, U(v3(0, 0, Z(4.0))), R, (2.6, 3.1, Z(0.6)), 'hem', 'hem', bias=-0.3)
+        cv.blob(cam, U(v3(0.1, 0, Z(8.75))), R, (2.45, 2.85, Z(0.42)), 'scarf', 'trim', bias=0.2)
+
+    def head(self, cv, cam, hc, Rh, pose, snap):
+        cv.blob(cam, hc, Rh, self.HEAD_R, 'head', 'hat', p=self.HEAD_P, region=self.face_region)
+        self.face_marks(cv, cam, hc, Rh)
+        # the beard: from the cheeks down over the collar, in front of the chin
+        cv.blob(cam, hc + Rh @ v3(1.6, 0, -3.5), Rh, (1.3, 2.6, 2.2), 'beard', 'beard', bias=0.6)
+
+    def under_boot(self, cv, cam, bc, Rf, side, snap):
+        # the second row of boot: the heel and sole under the shaft
+        cv.blob(cam, snap(bc + Rf @ v3(0.05, 0, -Z(0.9)), odd_y=True), Rf, (1.55, 0.95, Z(0.5)), 'blade' + side, 'boot', bias=0.4)
+
+    def extras(self, cv, cam, U, R, pose):
+        pass
+
+    def ball_head(self, cv, cam, hc, Rh):
+        Body.ball_head(self, cv, cam, hc, Rh)
+        cv.blob(cam, hc + Rh @ v3(1.4, 0, -2.0), Rh, (1.2, 2.0, 1.7), 'beard', 'beard', bias=0.6)
+
+
+class Oath(Standard):
+    """ARMATOS as IRON OATH (the first skin): a closed great helm in dark iron with a gold
+    cross for its slit, broad steel pauldrons and his side's cape down his back"""
+    ARM_MAT, MITT_MAT = 'helm', 'hat'
+    MARKS = [(0.0, -1.0, 'y'), (0.0, 0.0, 'y'), (0.0, 1.0, 'y'), (-1.0, 0.2, 'e'), (1.0, 0.2, 'e'),
+             (-2.0, 0.2, 'e'), (2.0, 0.2, 'e'), (0.0, 0.2, 'y')]
+
+    def head(self, cv, cam, hc, Rh, pose, snap):
+        cv.blob(cam, hc, Rh, self.HEAD_R, 'head', 'helm', p=2.6)
+        self.face_marks(cv, cam, hc, Rh)
+
+    def coat(self, cv, cam, U, R):
+        super().coat(cv, cam, U, R)
+        for s in (1, -1):    # the pauldrons, wide over each shoulder
+            cv.blob(cam, U(v3(0.1, 3.3 * s, Z(8.3))), R, (1.9, 1.7, Z(1.0)), 'paul' + ('L' if s > 0 else 'R'), 'hat', bias=0.5)
+
+    def extras(self, cv, cam, U, R, pose):
+        # the cape: off the back of the shoulders, hanging, swung back in the run's wind
+        blow = pose.get('tail', 0.0)
+        cv.blob(cam, U(v3(-2.4 - 0.9 * blow, 0, Z(5.6) + 0.6 * blow)), R @ rot('y', -0.35 * blow), (0.55, 2.9, Z(2.5)), 'cape', 'hem', bias=-0.6)
+
+    def ball_head(self, cv, cam, hc, Rh):
+        cv.blob(cam, hc, Rh, (2.6, 2.85, 2.5), 'head', 'helm', p=2.6)
+
+
+BODIES = {'hunter': Hunter(), 'warrior': Warrior(), 'standard': Standard(), 'oath': Oath()}

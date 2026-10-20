@@ -678,7 +678,7 @@
   // hundred-odd canvases, every character and team paint has one, and few bodies ever show
   // all of them - baked up front they made the drop's start and a palette repaint stall.
   const motionSet = (cls, pal, mask) => {
-    const M = SPR.motion, name = MOTION_CLS[cls], out = {};
+    const M = SPR.motion, name = typeof cls === 'string' ? cls : MOTION_CLS[cls], out = {}; // a class index, or a hero look's doll by name
     const once = (fn) => { let v = null; return () => v || (v = fn()); };
     for (const kind of ['run', 'hold', 'roll']) {
       const grids = M.GRIDS[name][kind], fr = M.FRINGE[name][kind];
@@ -833,7 +833,26 @@
   // A named hero wears a class body (heroBody, js/sim/player.js) in its own
   // paint (CLASSES[cls].paint: letters laid over the team's), so `cls` is the
   // hero and `body` the grids it is baked from.
-  function champLook(cls, look, team) {
+  // A hero with looks of its own (CLASSES[cls].skins, e.g. ARM_SKINS) wears
+  // one of those, `skinId` (the free first one for none): its own grids and
+  // doll, in its own paint over the team's coat. The fish and the burrow keep
+  // the borrowed body's frames in that paint.
+  function heroSkinSet(cls, team, skinId) {
+    const rows = CLASSES[cls].skins, row = rows.find((r) => r.id === skinId) || rows[0];
+    const key = cls + '|' + team + '|skin:' + row.id;
+    let set = lookCache.get(key);
+    if (set) return set;
+    const pal = Object.assign({}, teamPlayerPal(TEAM_SKINS[team]), CLASSES[cls].skinPal);
+    const sp = Object.assign({}, SKPAL_EXTRA, pal), w = heroWalk(row.grids);
+    const side = w.side.map((g) => bake(g, sp));
+    set = Object.assign(skaterSet(sp, null), {
+      down: w.down.map((g) => bake(g, sp)), up: w.up.map((g) => bake(g, sp)), right: side, left: side.map(flipH),
+    }, motionSet(row.motion, sp, null));
+    lookCache.set(key, set);
+    return set;
+  }
+  function champLook(cls, look, team, skinId) {
+    if (CLASSES[cls] && CLASSES[cls].skins) return heroSkinSet(cls, team, skinId);
     const body = heroBody(cls), paint = CLASSES[cls] && CLASSES[cls].paint;
     if (!look && !paint) return champPlayers[body][team];
     look = look || CLASSES[cls].look;

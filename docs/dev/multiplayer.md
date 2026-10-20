@@ -358,7 +358,7 @@ read through `statOf(p, key)` (js/sim/stats.js), never off the kit. `setClass(p,
 | --- | --- | --- | --- | --- |
 | 0 | **HUNTER** — bow, distance control, the one class that hides | keep the gap and own the ground between | the ranged numbers: quick nock (0.4 s), full draw power, 92 hp | a SHORTBOW with an ARROW in its second cell, the first held open |
 | 1 | **WARRIOR** — close pressure, blocking, momentum | get to arm's length and stay there | 120 hp, faster on ice (×1.15), +5 speed damage, dash 230, softer bow numbers | a LONGSWORD — the one melee body — with a BARBED SHOT on its edge in the second cell, the first held open |
-| 2 | **ARMATOS** — THE LAST STANDARD, the defensive initiator (a passive, `CLASSES[c].passive`) | make the whole team stand its ground | the warrior's body and kit (`heroBody`), 130 hp, 24 armor | the warrior's LONGSWORD |
+| 2 | **ARMATOS** — THE LAST STANDARD, the defensive initiator (a passive, `CLASSES[c].passive`) | make the whole team stand its ground | his own body (LAST STANDARD, or a look bought on the skins screen) and the warrior's kit (`heroBody`), 130 hp, 24 armor | the warrior's LONGSWORD, held as his OATH GREATSWORD |
 
 The **weapon is part of the class**: `CLASS_LOADOUT` (js/sim/tools.js) pairs each one with a tool
 and **one projectile**, and `setClass` / `Player.reset` (the first landing) hand it over — so the
@@ -381,8 +381,11 @@ IMPOSSIBLE, remembered with the profile), the profile the rivals play by
 (`aiProfile`, [Bots](#bots)). Sprites live in `SPRITES.champ[c][team]` (the sprite key keeps its legacy name;
 the grid files under js/sprites/ are never rewritten) — same
 16×16 body plan and frame set as the player, so `drawPlayer`/`drawGhost` just swap the set via
-`classSet(p)`, which asks `SPRITES.champLook(cls, look, skin(team))` for the class body in the
-character's tone and fringe ([sprites.md](sprites.md#looks-a-character-on-the-class-body));
+`classSet(p)`, which asks `SPRITES.champLook(cls, look, skin(team), heroSkinOf(p))` for the class body in the
+character's tone and fringe ([sprites.md](sprites.md#looks-a-character-on-the-class-body)), or a hero's
+own look ([hero looks](sprites.md#hero-looks-armatos)). A person's looks ride the hello (`skins`,
+`profileHeroSkins`, kept by the host through `cleanHeroSkins`) onto `p.skins`, which the snapshot
+carries, so every screen draws the look they bought;
 `SPRITES.playerTeam` is class 0 in the default look.
 
 ## Hero levels

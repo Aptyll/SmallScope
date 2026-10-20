@@ -47,6 +47,34 @@ function drawHeroBack(p, ax, ay, now, front) {
   drawStandard(fx, ay + 10, 11, dir, TEAMS[skin(p.team)].mark, p.resolve, now); // its head beside his, under the plate
 }
 
+// ---- the greatsword in his hands -----------------------------------------------
+// His blade replaces the sword's held art wherever a hand holds it (drawHeldTool,
+// js/draw/bodies.js): flat for the side, the swing and the wind-up, and slanted
+// for a body facing down (the grip at his right hip, the blade up and out past
+// the shoulder, his face clear) or up (the same blade rising behind that
+// shoulder: drawn before the body, which covers the grip).
+let armSwordArt = null;
+function armSwords() {
+  if (armSwordArt) return armSwordArt;
+  const bake = (rows) => {
+    const c = document.createElement('canvas'); c.width = rows[0].length; c.height = rows.length;
+    const g = c.getContext('2d');
+    rows.forEach((r, y) => { for (let x = 0; x < r.length; x++) { const col = ARM_SWORD_PAL[r[x]]; if (col) { g.fillStyle = col; g.fillRect(x, y, 1, 1); } } });
+    return c;
+  };
+  return (armSwordArt = { flat: bake(ARM_SWORD), diag: bake(ARM_SWORD_DIAG) });
+}
+// the blade a hero's hands hold in place of a melee tool's own, or null
+function heroBlade(p, wDef) { return wDef.melee && CLASSES[p.cls].blade === 'oath' ? armSwords().flat : null; }
+const ARM_HIP = { down: [13, 12], up: [11, 10] }; // where the grip sits on the 16 px cell, by facing
+// the carried blade facing down or up; false where the side's level carry stands
+function heroCarry(p, px, py) {
+  const at = ARM_HIP[p.dir], w = heldTool(p), def = w ? TOOLS[toolIdOf(w.type)] : null;
+  if (!at || !def || !heroBlade(p, def)) return false;
+  ctx.drawImage(armSwords().diag, Math.round(px + at[0] - ARM_GRIP[0]), Math.round(py + at[1] - ARM_GRIP[1]));
+  return true;
+}
+
 // ---- on the snow --------------------------------------------------------------
 // a box laid down a bearing: the IRON VERDICT's line, (px, py) its near end
 function drawLineBox(px, py, a, len, half, col, alpha, fill) {

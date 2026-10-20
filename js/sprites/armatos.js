@@ -177,3 +177,216 @@ const ARM_ICON32 = {
     '................................',
   ],
 };
+
+// ------------------------------------------------------------ armatos bodies
+// ARMATOS's own 16 px body in each of his looks (ARM_SKINS): the standing
+// frame for each facing, hand-drawn in the player letters plus his own (n dark
+// iron, y/Y gold, w/W the beard), the walk's two frames lifted off it
+// (heroWalk), and the run, held run and roll baked off a doll of the same body
+// (app/bake-player/, `standard` and `oath` in js/baked/motion.js).
+// characters.js bakes a look in any team's paint (heroSkinSet); the coat
+// letters r/R/d stay the side's.
+const ARM_BODY = {
+  standard: {
+    down: [
+      '................',
+      '.....oooooo.....',
+      '....otTTTTto....',
+      '....otTTTtto....',
+      '....onyyyyno....',
+      '....oketteko....',
+      '....owkttkwo....',
+      '....owwwwwwo....',
+      '...omtwwwwtmo...',
+      '...otrwwwwrto...',
+      '...omrrwwrrmo...',
+      '...otrrRRrrto...',
+      '....oddyyddo....',
+      '.....pp..pp.....',
+      '.....bb..bb.....',
+      '.....BB..BB.....',
+    ],
+    up: [
+      '................',
+      '.....oooooo.....',
+      '....otTTTTto....',
+      '....otTTTtto....',
+      '....onyyyyno....',
+      '....otttttto....',
+      '....onnnnnno....',
+      '...omttmmttmo...',
+      '...otrrrrrrto...',
+      '...omrrRRrrmo...',
+      '...omrrRRrrmo...',
+      '...otrrrrrrto...',
+      '....oddyyddo....',
+      '.....pp..pp.....',
+      '.....bb..bb.....',
+      '.....BB..BB.....',
+    ],
+    side: [
+      '................',
+      '.....oooooo.....',
+      '....otTTTTto....',
+      '....otTTTTTo....',
+      '....onnyyyyo....',
+      '....otttkeyo....',
+      '....otttkkwo....',
+      '....omtwwwwwo...',
+      '...omttrwwwo....',
+      '....otrrRRro....',
+      '....omrrRRro....',
+      '....otrrrrto....',
+      '....oddyyddo....',
+      '......pp.pp.....',
+      '......bb.bb.....',
+      '......BB.BB.....',
+    ],
+  },
+  oath: {
+    down: [
+      '................',
+      '.....oooooo.....',
+      '....onttTTno....',
+      '....ontTTTno....',
+      '....onnyynno....',
+      '....oeeyyeeo....',
+      '....onnyynno....',
+      '..oooonnnnoooo..',
+      '..oTTtommotTTo..',
+      '..ontomrromtno..',
+      '...odmrRRrmdo...',
+      '...odtrRRrtdo...',
+      '...odoyyyyodo...',
+      '....odp..pdo....',
+      '.....nn..nn.....',
+      '.....MM..MM.....',
+    ],
+    up: [
+      '................',
+      '.....oooooo.....',
+      '....onttTTno....',
+      '....ontTTTno....',
+      '....onttttno....',
+      '....onttttno....',
+      '....onnnnnno....',
+      '..oooonnnnoooo..',
+      '..oTTtoddotTTo..',
+      '..ontodrrdotno..',
+      '...odrrRRrrdo...',
+      '...odrrRRrrdo...',
+      '...odrrRRrrdo...',
+      '....oddddddo....',
+      '.....nn..nn.....',
+      '.....MM..MM.....',
+    ],
+    side: [
+      '................',
+      '.....oooooo.....',
+      '....onttTTTo....',
+      '....onttTTTo....',
+      '....onnnnyyo....',
+      '....onnneeyo....',
+      '....onnnnyyo....',
+      '...oooonnno.....',
+      '..doTTtomro.....',
+      '..dontomrRro....',
+      '..ddotrrRRro....',
+      '...dotrrRRro....',
+      '...doodyyydo....',
+      '......nn.nn.....',
+      '......nn.nn.....',
+      '......MM.MM.....',
+    ],
+  },
+};
+// his iron: helm, mail, gauntlets, gold and beard (and the letters the borrowed
+// catch and prone frames still use: g/G visor, S steel, x/h/H the face)
+const ARM_PAL = {
+  o: '#2e2440', t: '#7d8699', T: '#b4bdcc', n: '#4f5668', y: '#f2cc6a', Y: '#b98a2e', k: '#fbe0c4', K: '#e2b898',
+  e: '#2e2440', w: '#e6e1d6', W: '#f4f0e8', m: '#5c6478', M: '#454c5e', p: '#463c5c', b: '#6f4d38', B: '#4a3324',
+  g: '#1c2232', G: '#9aa3b8', S: '#c8d8e8', x: '#f0a89a', h: '#f4f0e8', H: '#ffffff',
+};
+// The looks he can wear: the first is his own and free, the rest are bought
+// with coins on the skins screen (js/ui/skins.js, the ARMATOS tab; the profile
+// keeps the pick under `slot`). `motion` names the doll body in js/baked/motion.js.
+const ARM_SKINS = [
+  { id: 'standard', name: 'LAST STANDARD', rarity: 'common', price: 0, grids: ARM_BODY.standard, motion: 'standard' },
+  { id: 'oath', name: 'IRON OATH', rarity: 'rare', price: 200, grids: ARM_BODY.oath, motion: 'oath' },
+];
+// the walk off a standing frame: down and up lift one foot then the other
+// (split at the body's middle column), the side spreads the feet then closes them
+function heroWalk(b) {
+  const lift = (g, s) => {
+    const r = g.slice(), a = r[14], c = r[15];
+    if (s > 0) { r[14] = a.slice(0, 8) + c.slice(8); r[15] = c.slice(0, 8) + '........'; }
+    else { r[14] = c.slice(0, 8) + a.slice(8); r[15] = '........' + c.slice(8); }
+    return r;
+  };
+  const spread = (row) => { let o = ''; for (let x = 0; x < 16; x++) o += (x < 8 ? row[x + 1] : x > 8 ? row[x - 1] : '.') || '.'; return o; };
+  const sideA = (g) => g.slice(0, 14).concat([spread(g[14]), spread(g[15])]);
+  const sideB = (g) => g.slice(0, 14).concat(['.......' + g[14].slice(6, 8) + '.......', '.......' + g[15].slice(6, 8) + '.......']);
+  return {
+    down: [b.down, lift(b.down, 1), lift(b.down, -1)],
+    up: [b.up, lift(b.up, 1), lift(b.up, -1)],
+    side: [b.side, sideA(b.side), sideB(b.side)],
+  };
+}
+
+// ------------------------------------------------------------ armatos greatsword
+// The OATH GREATSWORD as he holds it (drawArmSword, js/draw/armatos.js): laid
+// flat with the point left like every held blade (TOOL_HELD_ART, js/sim/tools.js),
+// for the side, the swing and the wind-up; and at 45 degrees with the point up
+// and right, for a body facing down or up, the grip in his hands at ARM_GRIP.
+const ARM_SWORD = [
+  '......................',
+  '......................',
+  '......................',
+  '......................',
+  '......................',
+  '......................',
+  '......................',
+  '................oo....',
+  '...............oYYo...',
+  '.oooooooooooooooyYo..o',
+  'oeTTTTTTTTTTTTTTyYoooy',
+  'WWeEEEEEEEEEEEeeyYGgGy',
+  'oeeeeeeeeeeeeeeeyYoooy',
+  '.oooooooooooooooyYo..o',
+  '...............oYYo...',
+  '................oo....',
+  '......................',
+  '......................',
+  '......................',
+  '......................',
+  '......................',
+  '......................',
+];
+const ARM_SWORD_DIAG = [
+  '........................',
+  '........................',
+  '...................oo...',
+  '..................oTWo..',
+  '.................oTEeo..',
+  '................oTEeo...',
+  '...............oTEeo....',
+  '..............oTEeo.....',
+  '.............oTEeo......',
+  '............oTEeo.......',
+  '...........oTEeo........',
+  '..........oTEeo.........',
+  '.........oTEeo..........',
+  '.....o..oTEeo...........',
+  '....oyooTEeo............',
+  '.....oyTEeo.............',
+  '......oyeo..............',
+  '.....ogoYo..............',
+  '....oGo.oYo.............',
+  '...ogo...o..............',
+  '..oyo...................',
+  '...o....................',
+  '........................',
+  '........................',
+];
+const ARM_GRIP = [5, 18];   // where the hands close on the slanted grid
+const ARM_SWORD_PAL = { o: '#241a12', e: '#c8d2e4', E: '#8b93a8', W: '#ffffff', T: '#eef2f8', g: '#6b4a30', G: '#a3794f', y: '#f2cc6a', Y: '#b98a2e' };
