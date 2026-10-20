@@ -211,6 +211,7 @@ function gatherDraws(ox, oy, tx0, ty0, tx1, ty1, now) {
     if (!q.active || !q.flag || q.team !== viewPlayer().team) continue;
     draws.push({ y: (q.flag.ty + 1) * TILE + 0.5, f: q });
   }
+  reedDraws(draws, ox, oy); // the brush's reeds, each sorted by its foot (js/draw/depth.js)
   draws.sort((a, b) => a.y - b.y);
   return draws;
 }
@@ -237,12 +238,12 @@ function drawSorted(draws, ox, oy, ex, ey, now) {
 
   airRiders.length = 0;
   for (const d of draws) {
-    // a body in deep snow is drawn sunk to the shins (drawWading, js/draw/depth.js)
+    if (d.reed) { drawReed(d.reed, ex, ey, heroP); continue; } // the brush's reeds (js/draw/depth.js)
     if (d.down) { drawDown(d.down, ex, ey, now); continue; }
     if (d.p && !d.ghost && d.p.zip >= 0) { airRiders.push(d.p); continue; } // on a cable: the air layer's, below
-    if (d.p) { if (d.ghost) drawGhost(d.p, ex, ey); else drawWading(d.p, ex, ey, now, () => drawPlayer(d.p, ex, ey, now)); continue; }
-    if (d.a) { drawWading(d.a, ex, ey, now, () => drawAnimal(d.a, ex, ey, now)); continue; }
-    if (d.r) { drawWading(d.r, ex, ey, now, () => drawRobot(d.r, ex, ey, now)); continue; }
+    if (d.p) { if (d.ghost) drawGhost(d.p, ex, ey); else drawPlayer(d.p, ex, ey, now); continue; }
+    if (d.a) { drawAnimal(d.a, ex, ey, now); continue; }
+    if (d.r) { drawRobot(d.r, ex, ey, now); continue; }
     if (d.f) { drawFlag(d.f, ex, ey, now); continue; }
     if (d.pt) { drawPTarget(d.pt, ex, ey, now); continue; }
     if (d.fn) { d.fn(d, ex, ey, now); continue; }
@@ -555,7 +556,7 @@ function renderAirLayer(shx, shy, now) {
     ctx = actx;
     ctx.clearRect(0, 0, WV_W, WV_H);
     if (state.drop) drawDropAir(ax, ay, now, true);
-    for (const p of airRiders) drawWading(p, ax, ay, now, () => drawPlayer(p, ax, ay, now));
+    for (const p of airRiders) drawPlayer(p, ax, ay, now);
     lightAir(airBox.x0, airBox.y0, airBox.x1 - airBox.x0, airBox.y1 - airBox.y0);
   }
 }

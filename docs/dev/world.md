@@ -170,7 +170,7 @@ creek and the cast shade). So a repaint lays back exactly what the bake laid, a 
 across a tile edge carries on, and a hole that refreezes gets its crack back.
 
 - **One snow depth, three bands.** The deep snow layer owns one seeded depth map (`snowDepth`,
-  `DEPTH_MID`/`DEPTH_DEEP`, `deepAt`, `driftWind`); its deepest band slows a walker, and this
+  `DEPTH_MID`/`DEPTH_DEEP`, `deepAt`, `driftWind`); its deepest band is the brush, and this
   file draws the two below it: the mid band (from `DRIFT_MID()`) as drifts,
   the shallow band as dust and banks. It reads the map only through `snowDepthAt`/`deepSnowAt`
   and the prevailing wind through `rollPrevailing` (`LW_X`/`LW_Y`, downwind), and draws nothing on
@@ -733,11 +733,12 @@ of the seed and the scenery worldgen stood up (`hash2`/`vnoise`, **no `rng()`**)
 client lays the same map and no seed's world moves. Anything that cares how deep the snow is
 asks it; its bands:
 
-- **DEEP** (`>= DEPTH_DEEP`, 0.6) is gameplay: `deepAt(x, y)` is true there on open snow
-  (ground 0) only, so a runtime paving or a hole takes it away. It slows every walker
-  ([Deep snow](gameplay/deep-snow.md)) and is drawn raised (`deepTone`, below).
-- **MID** (`DEPTH_MID` 0.25 up to deep) is a drift you see and do not wade: a drift's skirt
-  round its core, the whole of a small drift whose `amp` never reaches deep, and the **lee pad**
+- **DEEP** (`>= DEPTH_DEEP`, 0.6) is the **brush**: `brushOf(x, y)` names the patch a point
+  is in (`deepAt` is the yes/no), on open snow (ground 0) only, so a runtime paving or a hole
+  takes it away. A body in it is hidden from the other side ([Deep snow](gameplay/deep-snow.md))
+  and it is drawn raised (`deepTone`, below) with reeds standing in it.
+- **MID** (`DEPTH_MID` 0.25 up to deep) is a drift you see and do not hide in: the skirt
+  round each brush patch (`BRUSH_SKIRT`), and the **lee pad**
   every standing thing out in the open holds (`layLees`/`leeDepth`, `leeCell`): the same shape a
   tile or two long downwind of a pine on the forest's edge, a rock, a bush, a stump, a snag, a
   den or a hut, at most `LEE_AMP` (0.42) tall. Forest floor (`LEE_WOODS` breakers among its eight
@@ -746,45 +747,38 @@ asks it; its bands:
   position noise, capped at `DRIFT_HOLLOW` 0.2, so a hollow is never a drift). The field says
   nothing about the ground under it, so it reads over ice too.
 
-The depth is the tallest **drift** at a point (`drifts`, indexed per tile in `driftCell`),
-over the hollows. `layDrifts()` runs at boot once every worldgen pass has stood its scenery up
-(after `placeRocks`, before `prepGround`; under `PRACTICE` it lays none):
+The depth is the tallest **drift** at a point (`drifts`, the deep ones, indexed per tile in
+`driftCell` with their skirts), over the lee pads and the hollows. `layDrifts()` runs at boot
+once every worldgen pass has stood its scenery up (after `stockCamps`, before `prepGround`; under
+`PRACTICE` it lays none):
 
 - **The wind.** `driftWind` is the seed's prevailing wind, within `DRIFT_WIND_ARC` of the
-  creek's line and either way along it, so the upwind treeline is one the creek cuts in two.
-- **Where.** Every wind-breaker (`driftBreak`: anything solid worldgen stood - pine, snag,
-  rock, chest, den, hut - and the berry bushes, which trap snow like a hedge) with open snow
-  in its lee is a candidate, scored by how many breakers stand in the half-disc upwind of it,
-  so the treeline and a stand beat a lone rock. A low noise over the valley keeps only some
-  regions, so drifts come in groups with open lanes between them.
-- **Shape.** A drift (`driftDepth`) has a rounded crest against its breaker and a tail
-  tapering downwind, bent a little and with an edge wandering on a pre-sampled noise (`rag`);
-  depth falls off across it as 1 - q², so its deep core is the inner part of a wider skirt.
-  Length follows the open run in its lee (a rock or a bush may be buried, a pine stops it) and
-  size follows shelter.
-- **Keep-outs** (`driftFree`): the road and paths (`DRIFT_KEEP_ROAD`), the centre clearing,
-  both roost corners' woods (`ROOST_R + DRIFT_KEEP_ROOST`), every camp's clearing
-  (`DRIFT_KEEP_CAMP`), and anything within `DRIFT_KEEP_WET` of ice, a hole, the creek or a
-  ford. A drift whose skirt runs into one is shortened and narrowed, never cut.
-- **The warrens' own.** Each [SNOWDROP WARREN](#camps) is the one camp that wants deep snow in
-  it: `layMeadowDrifts` lays one round **pool** (`MEADOW_POOL`, a drift with `pool` set that
-  `driftDepth` hands to `poolDepth`) after the fair shares, in the camp's own frame
-  (`campFrame`), filling the clearing to its ring of pines. It can leave a crust island in its
-  middle (`ring`) or a crust lane winding in from the mouth (`lane`). Nothing in it reads the
-  seed (its rim wanders on a fixed wave), so both warrens wear the same pool, mirrored, on every
-  match. Rabbits run on the crust: `wadeStep` never slows one.
-- **Spacing and share.** Crests stand `DRIFT_HEAD` apart, deep cores `DRIFT_GAP`; drifts are
-  taken best first until the deep band covers `DEEP_COVER` of the interior's open snow or the
-  candidates run out (OPEN FIELD and THICKET land near 3-4.5%: there is only so much shelter).
-  **Fair shares:** neither side's half of the valley (split on the creek's line) keeps more
-  than `DRIFT_FAIR` times the other's deep snow; the richer half gives up its weakest drifts.
-  FROZEN ISLES grows none on the seeds checked, its snow being all lake shore.
+  creek's line and either way along it. The lee pads and the ground's swells (`SNOW_ANG`) follow it.
+- **The brush** (`layBrush`): hand-placed, the same on every seed. `BRUSH_PATCHES` lists RED's
+  half in the road's frame (`baseTile`: u along the road from RED's corner, s across it), each
+  an ellipse (half-length, half-width in tiles, world angle) with a rim wandering `BRUSH_WOB` on a
+  fixed noise; BLUE's half is the same list mirrored across the creek's line, (tx, ty) -> (ty, tx),
+  so both sides hold the same deep snow to the tile. Per side: one by each side lane on its
+  inside edge, one either side of the mid road, one each side between the mid road and the
+  dens, and one each side short of the creek toward the bears. A patch (`brushDepth`) is deep
+  from its rim in (`brushIn`, tiles in from the rim, is what the fog of war measures) with a MID
+  skirt `BRUSH_SKIRT` wide outside it. Laying it fells the pines, rocks, bushes, stumps and
+  snags within `BRUSH_CLEAR` of the rim and turns ice there to snow, so no seed's ice or forest
+  eats a patch; a chest, a landmark or a camp's prop stands. `brushNear` finds a patch near a
+  point for the bots.
+- **The warrens' own.** Each [SNOWDROP WARREN](#camps) is brush too: `layMeadowDrifts` lays one
+  round **pool** (`MEADOW_POOL`, a drift with `pool` set that `driftDepth` hands to `poolDepth`,
+  `poolIn` its rim distance) in the camp's own frame (`campFrame`), filling the clearing to its
+  ring of pines. It can leave a crust island in its middle (`ring`) or a crust lane winding in
+  from the mouth (`lane`). Nothing in it reads the seed (its rim wanders on a fixed wave), so
+  both warrens wear the same pool, mirrored, on every match.
 
 The deep band's pixels are baked into the ground: `snowTile` (js/draw/ground.js) hands every
 pixel of a tile with a `driftCell` entry to `deepTone` (js/draw/depth.js), which reads the same
 `driftsDepth` the sim does - a white crest and a thin outline on the sunlit edge, a smooth bright
 top with faint wind ripples, a two-pixel dark lip where it faces away, and a shade thrown
-down-right, longest at the tall crest. Its colours are `DEEP_PAL`, appended to `SNOW_INK`.
+down-right, longest at the tall crest. The frosted reeds standing in it are sprites, y-sorted with
+the bodies (`reedDraws`/`drawReed`, js/draw/depth.js; [Deep snow](gameplay/deep-snow.md)). Its colours are `DEEP_PAL`, appended to `SNOW_INK`.
 A pixel reads its neighbours' depths up to four pixels away, so `snowTile` opens a window over
 its tile (`deepTileOpen`) and `deepPx` works each depth in it out once.
 
@@ -872,7 +866,7 @@ Five kinds, one reward each:
   with one mouth out to the field, **three rabbits** in the middle, three **snowdrop** clumps at
   the back that each shield the picker's side and then rest on their own cooldown
   ([the dawn shield](gameplay/the-dawn-shield.md)), and the clearing filled to the trees with
-  deep snow (`layMeadowDrifts`, js/sim/depth.js). The rabbits are the only ones on the map
+  deep snow, which is brush (`layMeadowDrifts`, js/sim/depth.js). The rabbits are the only ones on the map
   ([wildlife](gameplay/wildlife.md)); nothing in it is hostile. Cleared, the three are back 40 s
   later on the camp clock; with no anchor prop, nothing wears it.
 

@@ -774,8 +774,8 @@ let platesNow = false; // set while the flush stamps them: a plate's own calls t
 function inWorldLayer() { return ctx === wctx || ctx === actx; }
 function overheadPlate(fn) {
   if (!inWorldLayer() || platesNow) { fn(); return; }
-  // the caller's fade (a buried body's) and its offset (a wader's sink,
-  // drawWading) ride along; a clip does not - a cut frame is the bug
+  // the caller's fade (a buried body's) and its offset ride along; a clip
+  // does not - a cut frame is the bug
   worldPlates.push(fn, ctx.globalAlpha, ctx.getTransform());
 }
 function flushPlates() {

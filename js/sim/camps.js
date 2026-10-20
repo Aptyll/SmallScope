@@ -55,8 +55,8 @@
 //           the middle, three snowdrops at the back that each shield the
 //           picker's whole company and then rest on their own cooldown
 //           (OBJECTS.snowdrop), and the whole clearing filled to the trees
-//           with deep snow (layMeadowDrifts, depth.js) - the rabbits run on
-//           the crust, a scout wades. The only rabbits on the map; one
+//           with deep snow (layMeadowDrifts, depth.js), brush the rabbits
+//           never leave. The only rabbits on the map; one
 //           warren each side, halfway out along the treeline
 const CAMPS = {
   resource: {

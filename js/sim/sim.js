@@ -833,7 +833,7 @@ function walkHeading(p, mx, my, auto) {
 function walkSlide(p, slide, dt, onIce, kit) {
   const sp = Math.hypot(p.vx, p.vy);
   const wantSlide = slide && p.dodgeT <= 0 && !p.prone && !p.mount; // nothing glides on its belly, or on deer-back
-  if (!p.sliding && wantSlide && sp > kit.slideMin && p.wade <= DEEP_SLIDE_BAR) { // nobody launches a slide out of a drift
+  if (!p.sliding && wantSlide && sp > kit.slideMin) {
     p.sliding = true;
   }
   if (p.sliding && (!wantSlide || sp < SLIDE_EXIT)) p.sliding = false;
@@ -861,7 +861,7 @@ function walkStep(p, dt, mx, my, len, onIce, kit) {
   const walkMax = (p.mount ? PLAYER_SPEED * RIDE[p.mount.kind].mul
     : p.prone ? PRONE_SPEED
       : p.riseT > 0 ? statOf(p, 'ms') * 0.45
-        : statOf(p, 'ms') * chargeMul) * abMul * wadeMul(p); // MOVE SPEED (js/sim/stats.js); deep snow drags (js/sim/depth.js)
+        : statOf(p, 'ms') * chargeMul) * abMul; // MOVE SPEED (js/sim/stats.js)
 
   if (p.prone || p.rootT > 0 || (!onIce && !p.sliding && sp <= walkMax + 6)) {
     // plain snow walking: near-instant vector approach, tuned so it feels
@@ -879,7 +879,7 @@ function walkStep(p, dt, mx, my, len, onIce, kit) {
       // snow friction ramps with slide fatigue: early glide is cheap, the
       // tail drops off hard so slides end decisively
       steer = 1.7; target = 0;
-      decay = onIce ? 0.15 : Math.min(2.6, 0.35 + 0.45 * p.slideT) * (1 + (DEEP_SLIDE - 1) * p.wade); // a drift eats a slide
+      decay = onIce ? 0.15 : Math.min(2.6, 0.35 + 0.45 * p.slideT);
     } else if (onIce) {
       const cap = ICE_MAX * kit.iceMax * chargeMul * abMul;
       if (len > 0) { steer = kit.iceSteer; target = cap; decay = sp < cap ? 1.1 : 0.35; }
@@ -996,10 +996,7 @@ function playerMove(p, dt, mx, my, len, onIce, kit) {
     // so whatever speed the dash reached is carried out for the surface to spend
     p.dodgeT -= dt;
     const vx0 = p.vx, vy0 = p.vy;
-    // deep snow shortens the roll's travel, not its speed: what it hits for
-    // and what it carries out are the dash's own
-    const rm = 1 - (1 - DEEP_DODGE) * p.wade;
-    const mv = moveEntity(p, p.vx * dt * rm, p.vy * dt * rm, PLAYER_R);
+    const mv = moveEntity(p, p.vx * dt, p.vy * dt, PLAYER_R);
     if (mv.blockedX) p.vx = 0; // a wall still kills that axis - see below for when it costs more
     if (mv.blockedY) p.vy = 0;
     // A wall taken head-on is a tackle, not a graze: only the speed actually
@@ -1196,8 +1193,8 @@ function playerTrails(p, dt, onIce) {
     while (footprints.length > 800) footprints.shift();
   }
   if (spNow > 8 && p.dodgeT <= 0 && !p.sliding && !p.prone && p.zip < 0) { // a rider's feet are off the snow
-    // the stride keeps time with the snow going by: a drawn bow's creep and a
-    // drift's wade step slower, an ice run a little quicker (nothing but the
+    // the stride keeps time with the snow going by: a drawn bow's creep
+    // steps slower, an ice run a little quicker (nothing but the
     // drawn stride reads it: drawPlayer, js/draw/bodies.js)
     p.animT += dt * 9 * Math.max(0.55, Math.min(1.3, spNow / PLAYER_SPEED));
     p.footT -= dt;

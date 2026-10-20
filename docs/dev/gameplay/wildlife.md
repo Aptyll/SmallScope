@@ -150,8 +150,7 @@ included, which is what keeps the `.` overlay honest ([rendering.md](../renderin
   animal is boxed in (the caller just idles and picks again). `preyWander` is the per-kind
   chooser: a rabbit off its warren's deep snow (`warrenHolds`) hops back toward the middle, and
   on it takes short 1–3 tile hops that end on it, so the warren reads as theirs; a deer takes an
-  open direction, 3–6 tiles. A rabbit runs on top of the deep snow (`ON_CRUST`, js/sim/depth.js:
-  `wadeStep` never slows one and `wadeWidth` never sinks it). `navStep` walks it at
+  open direction, 3–6 tiles. `navStep` walks it at
   `PREY_SPD`, and arriving (or `ok === false`) drops the goal and idles. The walk wears the
   `hop` / `run` clip at 0.6 rate — the same gait as a flight, taken lazily — and the idle at
   the end of it is where a settled deer's head actually goes down.

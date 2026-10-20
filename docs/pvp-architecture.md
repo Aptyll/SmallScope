@@ -184,7 +184,7 @@ netClientStep(dt): send {t:'in'} - this tick's input and the ack - step our own 
 
 **Only the client's own walk is predicted** (the `prediction` banner, js/net/net.js). Each step
 the input a client sends is also stepped on its own body through the same walk the host runs
-(`walkHeading`, `walkSlide`, `walkStep`, with `wadeEase`, `kbDecay`, `iceUnder` and `clampWorld`:
+(`walkHeading`, `walkSlide`, `walkStep`, with `kbDecay`, `iceUnder` and `clampWorld`:
 the `the walk` banner in js/sim/sim.js), and kept in `PRED.hist`. Each snapshot names `ia`, the newest
 of that client's inputs the host had stepped; `netPredictRestore` puts the body back on the host's
 last word before the apply, `netPredictMend` keeps the host's new word and walks every input after

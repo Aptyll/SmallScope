@@ -47,17 +47,15 @@ function canopyFrame(p) { canopyHero = p; heroAt = null; heroMask = null; holeOn
 
 // drawPlayer's model pass, (px, py) its 16x16 cell's top-left: from here to
 // heroLayerClose the global ctx is the hero layer, lined up with the world
-// buffer and clipped where the deep snow swallows the shins (wadeCut,
-// js/draw/depth.js), so the layer holds exactly what the world shows
+// buffer, so the layer holds exactly what the world shows
 function heroLayerOpen(p, px, py) {
   if (p !== canopyHero || ctx !== wctx) return false;
-  const T = wctx.getTransform(); // drawWading's sink
+  const T = wctx.getTransform();
   const lx = px + 8 - (HERO_LW >> 1), ly = py + 16 - HERO_FOOT;
   heroAt = { x: lx + T.e, y: ly + T.f };
   hctx.setTransform(1, 0, 0, 1, 0, 0);
   hctx.clearRect(0, 0, HERO_LW, HERO_LH);
   hctx.save();
-  if (wadeCut < Infinity) { hctx.beginPath(); hctx.rect(0, 0, HERO_LW, Math.max(0, wadeCut - heroAt.y)); hctx.clip(); }
   hctx.setTransform(1, 0, 0, 1, -lx, -ly);
   ctx = hctx;
   return true;
