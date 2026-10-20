@@ -152,6 +152,25 @@ const CLASSES = [
     kit: { iceMax: 1.1, iceSteer: 3.2, slideMin: 70, fatigue: 0.7, chargeMul: 0.7,
       bowCharge: 0.75, nock: 0.5, spdDmg: 5, dodgeSpeed: 225 },
   },
+  {
+    // the third named hero (js/sim/bella.js): a duelist on the WARRIOR's frames
+    // and his sword's cut (`body`, `attack`): quick and light, her damage in the
+    // keys she chains, her life thin if she is caught
+    name: 'BELLA', role: 'THE IMPERIAL GENERAL', body: 1, passive: 'calculated', // HERO_PASSIVE, js/sim/heroes.js
+    look: { sex: 1, tone: 1, hair: 3, hairCol: 0, beard: 0, face: 2 },
+    blurb: ['FIND THE WEAKNESS. SPEND IT FIRST.', 'THE LUNGE, THE SLIP AND THE PARRY CHAIN INTO EACH OTHER.', 'CALL OUT ONE HERO AND FINISH THEM.'],
+    attack: { name: 'EAGLE SPATHA', art: 'sword', cycle: 26 / 60, kb: 1, cut: { reach: 26, half: 0.95 } }, // quicker and a little shorter than the longsword
+    // her own body in each of her looks (BELLA_SKINS, js/sprites/bella.js),
+    // worn per player (heroSkinOf) over the side's coat
+    skins: BELLA_SKINS, skinPal: BELLA_PAL, skinSlot: 'bella',
+    blade: 'spatha', // her EAGLE SPATHA in her hands (HERO_BLADES, js/draw/bella.js)
+    paint48: { t: '#7d8699', T: '#b4bdcc', g: '#1c2232', G: '#9aa3b8', m: '#5c6478', M: '#454c5e' }, // the 48 px model's (js/sprites/looks.js): its K is skin
+    base: { hp: 104, dmg: 18, armor: 16, ap: 0, haste: 0, ms: PLAYER_SPEED + 4 },
+    grow: { hp: 7, dmg: 1.7, as: 0.013, armor: 2.1 }, // sized so 17 levels grow what 11 did when the cap was 12
+    rankOrder: [0, 2, 1], // the lunge, the slip, the parry
+    kit: { iceMax: 1.15, iceSteer: 3.4, slideMin: 70, fatigue: 0.75, chargeMul: 0.7,
+      bowCharge: 0.75, nock: 0.5, spdDmg: 5, dodgeSpeed: 240 },
+  },
 ];
 // the body a hero wears - its sprites and its 48 px model: a hero that names
 // none is its own (HUNTER 0, WARRIOR 1), a named hero borrows one
@@ -688,6 +707,14 @@ class Player {
     // FORTIVA (js/sim/fortiva.js; her resolve is `resolve` above): DEFIANT HEART's clock
     // and the shield's size at the cast, NO KNEELING's after, and the leap's length
     this.defyT = 0; this.defyHp = 0; this.nkT = 0; this.vaultMax = 0;
+    // BELLA (js/sim/bella.js): her precision (stacks) and the seconds since a hero hit fed
+    // it; the edge a consumed stack lends her key's blows and the burst of speed; the
+    // lunge's cut bodies and its key (its refund, once); the parry's stance and the hero
+    // owed a riposte; the duel (the hero called out, its clock) and the flurry's strikes
+    this.prec = 0; this.precIdle = 0; this.edgeT = 0; this.edgeMsT = 0;
+    this.lungeHit = []; this.lungeKey = -1;
+    this.parryT = 0; this.riposteId = -1;
+    this.duelId = -1; this.duelT = 0; this.flurryN = 0; this.flurryT = 0; this.flurryId = -1; this.flurryArm = false;
     // the tunnels (js/sim/tunnel.js): the one being ridden ({ fx, fy, tx, ty, t, len },
     // px and s), the wait after coming up before any hole takes this body
     // again, the seconds left on the far end being dug, and the work key held

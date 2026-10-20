@@ -20,9 +20,12 @@
 // - HERO_MOVE: fn(p) -> a multiplier on the walk (abilityMoveMul).
 // - HERO_DASH[id]: a charge riding the rush's state (rushT, rushNX/NY) at its
 //   own pace: { spd, t, ramp, step(p, mv, dt), pose(p)? }, picked by p.dash = id
-//   (`pose` is the body's while it runs: abilityPose; else the rush's lean).
+//   (`pose` is the body's while it runs: abilityPose; else the rush's lean); with
+//   `through` it passes the small bodies a roll passes (separateUnits).
 // - HERO_TICK: fn(dt) once a step for what a hero leaves in the world.
 // - HERO_GROUND: fn(ex, ey, now) drawn on the snow under the wind-ups.
+// - HERO_MARK: fn(e, px, py, w, h, now) drawn over any body with the states
+//   every unit wears (drawUnitStates): a mark a hero left on it, a hero's own stacks.
 // An ability row may also carry recast(p) (true: the key pressed again is
 // its second half, castSlam) and ok(p) (false: the press is refused).
 const HERO_PASSIVE = {};
@@ -33,6 +36,7 @@ const HERO_MOVE = [];
 const HERO_DASH = {};
 const HERO_TICK = [];
 const HERO_GROUND = [];
+const HERO_MARK = [];
 
 // the ability whose use() is running right now, so a blow it lands says so
 // (o.ab, stamped by hurtUnit, js/sim/actions.js); '' between casts. Never state: set and cleared
@@ -56,5 +60,7 @@ function heroStat(p, key) { let n = 0; for (const s of HERO_STAT) n += s.add(p, 
 function heroTen(e) { let m = 1; for (const f of HERO_TEN) m *= 1 - Math.min(1, Math.max(0, f(e))); return m; }
 function heroMove(p) { let m = 1; for (const f of HERO_MOVE) m *= f(p); return m; }
 function heroDash(p) { return p.dash ? HERO_DASH[p.dash] : null; }
+function heroDashThrough(p) { const d = p.rushT > 0 && heroDash(p); return !!(d && d.through); }
 function heroTick(dt) { for (const f of HERO_TICK) f(dt); }
 function heroGround(ex, ey, now) { for (const f of HERO_GROUND) f(ex, ey, now); }
+function heroMarks(e, px, py, w, h, now) { for (const f of HERO_MARK) f(e, px, py, w, h, now); }

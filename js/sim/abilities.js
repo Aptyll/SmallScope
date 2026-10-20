@@ -153,6 +153,7 @@ const CLASS_AB = [
   ],
   ARM_AB, // ARMATOS - the standard, the shield, the march (js/sim/armatos.js)
   FORT_AB, // FORTIVA - the arc, the defiant shield, the lunge, the leap (js/sim/fortiva.js)
+  BELLA_AB, // BELLA - the lunge, the parry, the slip, the duel (js/sim/bella.js)
 ];
 
 // the world the abilities put things into
@@ -278,7 +279,8 @@ function tryAbility(p, i) {
   // (abRecast: a row's own `recast`, else a shield key's - `wall` - while
   // the wall is up or a rush, not a hero's dash, is running)
   if (abRecast(p, ab)) {
-    if (p.shieldT <= 0 && p.abCd[i] > 0) { sfxFor(p, 'deny'); return; }
+    if (!ab.recast && p.shieldT <= 0 && p.abCd[i] > 0) { sfxFor(p, 'deny'); return; } // (a row's own second half is already paid for)
+    if (ab.recast && ab.ok && !ab.ok(p)) { sfxFor(p, 'deny'); return; } // ...and may still need its target
     if (p.rushT > 0) rushEnd(p, false); // a charge, or a hero's dash, stops where it is
     p.castSlam = true;
     startCast(p, i, SLAM_CAST);
@@ -295,6 +297,7 @@ function tryAbility(p, i) {
     if (!inWorld(tx, ty) || ground[idx(tx, ty)] !== 0) { sfxFor(p, 'deny'); return; }
   }
   if (ab.ok && !ab.ok(p)) { sfxFor(p, 'deny'); return; } // a row that needs something the press lacks (a target near the aim)
+  p.castSlam = false; // a fresh press is never a second half (one knocked out of the hands mid-cast must not linger)
   startCast(p, i, ab.cast);
 }
 // is the key pressed now its row's second half (castSlam)
@@ -1140,6 +1143,7 @@ function drawUnitStates(e, px, py, w, h, now) {
     }
     ctx.globalAlpha = 1;
   }
+  heroMarks(e, px, py, w, h, now); // what a hero puts on a body: BELLA's marks and stacks (HERO_MARK, js/sim/heroes.js)
 }
 
 // The player's own layer: the one state only a player can be in - a raised

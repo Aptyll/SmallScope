@@ -17,6 +17,8 @@ PPAL = {
 # the team's coat (CLASSES[c].skins, js/sim/player.js)
 IRON = dict(t='#7d8699', T='#b4bdcc', m='#5c6478', M='#454c5e', k='#fbe0c4', K='#e2b898', a='#9a4a26', A='#c86a34')
 HEROES = ('standard', 'oath', 'unbroken', 'coif')
+# BELLA's dark hair and mantle over the same iron (BELLA_PAL)
+HAIR = dict(IRON, a='#3a2a3e', A='#5e4660', q='#2b3042', Q='#3d4459')
 TEAMS = [
     dict(r='#c9524e', R='#df7358', d='#96393f', t='#3e8c81', T='#58ab98', m='#f6ecd4', M='#d9c5a0'),
     dict(r='#3f6fb0', R='#5e93d8', d='#2b4d7d', t='#cfe4f2', T='#f4faff', m='#e8f2fb', M='#bcd0e4'),
@@ -26,7 +28,7 @@ SNOW = (208, 221, 244, 255)
 
 def image(grid, team, iron=False):
     pal = dict(PPAL); pal.update(TEAMS[team])
-    if iron: pal.update(IRON)
+    if iron: pal.update(iron if isinstance(iron, dict) else IRON)
     im = Image.new('RGBA', (len(grid[0]), len(grid)), SNOW); px = im.load()
     for y, row in enumerate(grid):
         for x, c in enumerate(row):
@@ -43,7 +45,7 @@ if __name__ == '__main__':
         for kind in ('run', 'hold', 'roll'):
             for d in ('right', 'down', 'up'):
                 for team in (0, 1):
-                    rows.append([image(g, team, cls in HEROES) for g in frames(cls, kind, d)])
+                    rows.append([image(g, team, HAIR if cls in ('general', 'traitor') else cls in HEROES) for g in frames(cls, kind, d)])
     fw, fh = rows[0][0].size
     n = max(len(r) for r in rows)
     sheet = Image.new('RGBA', (n * (fw + 2) + 2, len(rows) * (fh + 2) + 2), (18, 22, 34, 255))

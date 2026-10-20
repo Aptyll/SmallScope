@@ -90,7 +90,7 @@ is `catchFrame` / `CATCH_T` in [js/sim/attack.js](../../js/sim/attack.js) - [fis
 
 **The run, the held run and the dodge roll are the one set of player frames not typed by hand.**
 [app/bake-player/](../../app/bake-player/) paints them off a jointed doll of each class body (and of
-each named hero's looks: ARMATOS's `standard` and `oath`, FORTIVA's `unbroken` and `coif`,
+each named hero's looks: ARMATOS's `standard` and `oath`, FORTIVA's `unbroken` and `coif`, BELLA's `general` and `traitor`,
 [hero looks](#hero-looks)) and
 writes them to js/baked/motion.js as char grids in characters.js's own letters, so `motionSet`
 bakes them through the same team and look palettes as every hand-drawn pose: `run[dir]`,
@@ -203,6 +203,17 @@ is bought. They are M and O off fortiva-round4.png in the project files; their d
 `Coif` in app/bake-player/bodies.py) paint the braid and hair in the doll's `hair` material. Her
 48 px model is the warrior's in her paint too. Her CHAIN GREATSWORD (`FORT_SWORD`,
 `FORT_SWORD_DIAG`, `HERO_BLADES.chain`) is held the way his is.
+
+BELLA's looks (`BELLA_SKINS`, js/sprites/bella.js) are built the same way on ARMATOS's frame, legs
+and torso planes (`BELLA_PAL` is `ARM_PAL` with her dark hair `a`/`A` and the traitor's mask and
+mantle `q`/`Q`). Three shapes carry her from a distance: the high ponytail, the gold epaulettes
+and her side's coat. IMPERIAL GENERAL (a gold circlet) is her own; TRAITOR'S BLADE (the same
+ponytail, an iron band, a dark mask, a dark mantle where the gold was) is bought. They are P off
+bella-round4.png in the project files and its skin; their dolls (`General`, `Traitor` in
+app/bake-player/bodies.py) stream the ponytail behind her in the run (the doll's `hair` and `cloak`
+materials). Her 48 px model is the warrior's in her paint too. Her EAGLE SPATHA (`BELLA_SPATHA`,
+`HERO_BLADES.spatha`) has no slanted carry (an empty `hip`): facing down or up she holds it upright
+in the leading hand like the warrior's sword.
 
 The **48 px model** ([looks.js](../../js/sprites/looks.js), `SPRITES.portrait(cls, look,
 team)`) is where the whole look reads — the lobby's stage and its hero row. Each hero wears one
