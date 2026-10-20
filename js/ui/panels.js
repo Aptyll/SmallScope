@@ -266,8 +266,8 @@ function buildMapPanel() {
   g.fillRect(mx - 1, my - 1, MAP_W + 2, MAP_W + 2);
 }
 
-// the camps on the chart: the glyph in its camp's ink (grey with its seconds
-// under it while it is cleared, drawCampMark). The camp
+// the camps on the chart: the glyph in its camp's ink (its seconds under it
+// while it is cleared, drawChartClocks). The camp
 // under the pointer lights white and wears its name on a small graphite tag
 // that runs away from the chart's middle (a name on every camp at the
 // chart's 3x5 font crowded the map and still read badly; the glyph says
@@ -293,8 +293,15 @@ function drawChartCamps() {
     if (mouse.inside && d < hd) { hd = d; hov = { L, lx, ly }; }
     return { L, lx, ly };
   });
-  for (const { L, lx, ly } of pts) drawCampMark(ctx, L, lx, ly); // a cleared one wears its seconds (js/draw/marks.js)
+  for (const { L, lx, ly } of pts) drawCampMark(ctx, L, lx, ly); // a cleared one's glyph gives way to its seconds (js/draw/marks.js)
   if (hov) chartTag(hov.lx, hov.ly, hov.L, hov.lx > MAP_X + MAP_W / 2);
+}
+// the cleared camps' seconds, stamped over every body (drawCampMapClock)
+function drawChartClocks() {
+  for (const L of camps) {
+    const m = campMark(L);
+    drawCampMapClock(ctx, L, MAP_X + Math.round((m.tx + 0.5) * MAP_S), MAP_Y + Math.round((m.ty + 0.5) * MAP_S));
+  }
 }
 
 function renderWorldMap(now) {
@@ -385,6 +392,7 @@ function renderWorldMap(now) {
   ctx.beginPath(); ctx.arc(pmx, pmy, 2 + ph * 6, 0, Math.PI * 2); ctx.stroke();
   ctx.globalAlpha = 1;
   drawMapYou(ctx, pmx, pmy, ink, CHART_DARK, 2);
+  drawChartClocks(); // the camps' clocks last: a number is never under a dot
 }
 
 // ------------------------------------------------------------ settings menu (ESC)

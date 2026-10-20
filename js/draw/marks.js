@@ -13,37 +13,57 @@ function drawCampIcon(g, C, x, y, col, rim) {
   for (const [rx, ry, rw, rh] of C.spec.icon) g.fillRect(x0 + rx, y0 + ry, rw, rh);
 }
 // A cleared camp's respawn clock, so a jungle route can be walked on it:
-// the seconds left until the whole camp is back (updateCamps, camps.js),
-// worn by its anchor prop (the den's mouth, the black bear stone - the one
-// carrying `site`) at all times, and the same seconds under its glyph on
-// both maps (drawCampMark). A camp with anything alive in it wears none, and
-// so does one that is due and only waiting for you to leave its ground.
-// Under the fog (js/sim/fog.js) a side knows a clock only while it can see
-// the camp: out of its sight it keeps counting the last clock it saw down
-// (this screen's own memory, never the match's), and a camp cleared where
-// nobody of the side was looking shows no clock at all - League's rule.
+// the seconds left until the whole camp is back (updateCamps, camps.js) as
+// the watched side knows them (campLeft: League's rule, a side times only a
+// clear it saw happen), plain seconds under a minute and m:ss above. In
+// the world it hangs over the camp: its anchor prop (the den's mouth, the
+// one carrying `site`) or, for a camp with none, its mark (a warren's
+// middle, a bear's bank, campClockDraws). On both maps the number takes the
+// under its glyph (drawCampMark, drawCampMapClock). A camp with anything alive in it wears none,
+// and so does one that is due and only waiting for you to leave its ground.
 const CAMP_CLOCK_INK = '#e8eef8';
-function campClock(C) { return C.spec.pop > 0 && C.repopT > 0 && campPop(C) === 0 ? Math.ceil(C.repopT) : 0; }
-const campSeen = new WeakMap(); // camp -> { left, tick, eye }: its clock when the watched side last saw it
-function campClockSeen(C) {
-  let m = campSeen.get(C);
-  if (!m) campSeen.set(C, m = { left: 0, tick: 0, eye: { x: (C.tx + 0.5) * TILE, y: (C.ty + 0.5) * TILE, team: -1 } });
+const CAMP_EMPTY_INK = '#8a93a8'; // a camp's glyph when it is known empty but not when it is back
+function campClockShown(C) {
   const vp = viewPlayer();
-  if (!vp || inSight(vp.team, m.eye)) { m.left = campClock(C); m.tick = state.tick; return m.left; }
-  return m.left ? Math.max(0, Math.ceil(m.left - (state.tick - m.tick) * TICK_DT)) : 0;
+  return C ? Math.ceil(campLeft(C, vp ? vp.team : -1)) : 0;
 }
-function drawCampClock(o, cx, topY) {
-  const n = o.site ? campClockSeen(o.site) : 0;
+function campClockTxt(n) { return n < 60 ? String(n) : clockTxt(n); }
+function drawCampClock(C, cx, topY) {
+  const n = campClockShown(C);
   if (!n) return;
-  const t = String(n);
+  const t = campClockTxt(n);
   drawWorldText(t, Math.round(cx - pixelTextWidth(t) / 2), Math.round(topY) - 6, CAMP_CLOCK_INK);
 }
-// a camp on a map: its glyph in its ink, or - cleared - in grey with the
-// seconds until it is back under it
+// whether a camp stamps an anchor prop (CAMPS' props: one at 0, 0) to wear its clock
+function campAnchored(C) { return C.spec.props.some(([dx, dy]) => !dx && !dy); }
+// the world clocks of the camps with no anchor to wear them, into the
+// y-sorted list (gatherDraws, js/draw/passes.js) at their mark
+function campClockDraws(draws, tx0, ty0, tx1, ty1) {
+  for (const C of camps) {
+    if (!C.spec.pop || campAnchored(C)) continue;
+    const m = campMark(C);
+    if (m.tx < tx0 || m.tx > tx1 || m.ty < ty0 || m.ty > ty1) continue;
+    draws.push({ y: (m.ty + 1) * TILE, fn: drawCampSpotClock, C });
+  }
+}
+function drawCampSpotClock(d, ex, ey) {
+  const m = campMark(d.C);
+  drawCampClock(d.C, (m.tx + 0.5) * TILE - ex, (m.ty + 0.5) * TILE - ey);
+}
+// a camp on a map: its glyph in its ink, always (grey when the watched side
+// found it empty without seeing it cleared, so knows no time: campEmpty);
+// cleared and timed, the seconds until it is back under it, stamped by the map
+// last, over every dot, so a clock is never hidden under the body that
+// cleared it
 function drawCampMark(g, C, x, y) {
-  const n = campClockSeen(C);
-  drawCampIcon(g, C, x, y, n ? '#8a93a8' : C.spec.mark, HUD_INK);
-  if (n) drawPixelTextOutline(g, String(n), Math.round(x - pixelTextWidth(String(n)) / 2), Math.round(y) + 5, CAMP_CLOCK_INK, HUD_INK);
+  const vp = viewPlayer();
+  drawCampIcon(g, C, x, y, vp && campEmpty(C, vp.team) ? CAMP_EMPTY_INK : C.spec.mark, HUD_INK);
+}
+function drawCampMapClock(g, C, x, y) {
+  const n = campClockShown(C);
+  if (!n) return;
+  const t = campClockTxt(n);
+  drawPixelTextOutline(g, t, Math.round(x - pixelTextWidth(t) / 2), Math.round(y) + 5, CAMP_CLOCK_INK, HUD_INK);
 }
 
 // ---- a pennant ------------------------------------------------------------

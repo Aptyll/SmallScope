@@ -174,17 +174,24 @@ function renderMinimap(now) {
     if (Math.hypot(dx, dy) > MM_R - 2) continue;
     drawMapBird(ctx, MM_CX + dx, MM_CY + dy, TEAMS[skin(e.team)].mark, HUD_INK);
   }
-  // the camps, glyph and a cleared one's clock - a name would not fit inside the disc (the
+  // the camps' glyphs - a name would not fit inside the disc (the
   // world map is where they are read by name)
   for (const L of camps) {
     const m = campMark(L);
     const dx = (m.tx + 0.5 - ptx) * s, dy = (m.ty + 0.5 - pty) * s;
     if (Math.hypot(dx, dy) > MM_R - 2) continue;
-    drawCampMark(ctx, L, MM_CX + dx, MM_CY + dy); // a cleared one wears its seconds (js/draw/marks.js)
+    drawCampMark(ctx, L, MM_CX + dx, MM_CY + dy); // a cleared one's glyph gives way to its seconds, below (js/draw/marks.js)
   }
   // the centre: the watched body - you, or a player you are watching - as
   // the white heart in its side's ink, the mark the chart gives it too
   drawMapYou(ctx, MM_CX, MM_CY, TEAMS[skin(vp.team)].mark, HUD_INK, 1);
+  // a cleared camp's seconds under its glyph, over every dot and you (drawCampMapClock)
+  for (const L of camps) {
+    const m = campMark(L);
+    const dx = (m.tx + 0.5 - ptx) * s, dy = (m.ty + 0.5 - pty) * s;
+    if (Math.hypot(dx, dy) > MM_R - 2) continue;
+    drawCampMapClock(ctx, L, MM_CX + dx, MM_CY + dy);
+  }
 
   // day/night cycle ring: a 3 px band of pixels, the elapsed part painted
   // clockwise from 12 o'clock in the day colour, then the night colour

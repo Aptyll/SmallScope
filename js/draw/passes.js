@@ -171,6 +171,7 @@ function gatherDraws(ox, oy, tx0, ty0, tx1, ty1, now) {
   // the middle's stone and the orca out of its ice (js/draw/cistern.js)
   pushMiddleDraws(draws, ox, oy);
   reedDraws(draws, ox, oy); // the brush's reeds, each sorted by its foot (js/draw/depth.js)
+  campClockDraws(draws, tx0, ty0, tx1, ty1); // the clocks of the camps with no anchor prop (js/draw/marks.js)
   draws.sort((a, b) => a.y - b.y);
   return draws;
 }
@@ -246,7 +247,7 @@ function drawSceneryObj(d, ox, oy, now, wkO, hovO) {
     if (open > 0) drawWindowed(open, x, y, spr.width, spr.height, drawSnag); else drawSnag();
   } else if (o.type === 'den') {
     drawSpriteFlash(SPRITES.den, px + sh, py - 4, o.flash);
-    drawCampClock(o, px + 16, py - 3); // a cleared camp's respawn clock (js/draw/marks.js)
+    drawCampClock(o.site, px + 16, py - 3); // a cleared camp's respawn clock (js/draw/marks.js)
   } else if (o.type === 'hut') {
     // the HOG HUT (CAMPS.hut, camps.js): the anchor is the front-left tile
     // of its 2x2 footprint and draws the whole building centred over the
@@ -283,7 +284,6 @@ function drawSceneryObj(d, ox, oy, now, wkO, hovO) {
     drawDummyMeter(o, px + 8, dy - 10);
   } else if (o.type === 'cairn') {
     drawSpriteFlash(CAIRN_SPR, px + sh + 1, py + TILE - CAIRN_SPR.height + 1, o.flash);
-    drawCampClock(o, px + 8, py + TILE - CAIRN_SPR.height - 2); // the black bear stone's clock
   } else if (o.type === 'pylon') {
     drawPylon(o, px + sh, py); // a zipline's post (js/draw/zipline.js); the cable itself is drawZips, below
   } else if (o.type === 'banner') {

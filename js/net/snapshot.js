@@ -168,7 +168,7 @@ function snapUnB64(b) { const s = atob(b), u = new Uint8Array(s.length); for (le
 function snapSingles() {
   const s = { state: {}, camps: [] };
   for (const k of SNAP_STATE) { const v = pack(state[k], 0); if (v !== undefined) s.state[k] = v; }
-  for (const c of camps) s.camps.push({ repopT: c.repopT }); // the rest of a camp is written down by worldgen
+  for (const c of camps) s.camps.push({ repopT: c.repopT, seen: (c.seen || [0, 0]).slice() }); // the rest of a camp is written down by worldgen
   s.dropMeta = state.drop ? { firstFlight: state.drop.firstFlight } : null;
   s.pads = pack(pads, 0); // the road registry: each side's crash pad
   s.holes = holes.slice();
@@ -188,6 +188,7 @@ function snapBuild(team) {
   for (const k in SNAP_KINDS) s[k] = SNAP_KINDS[k]().filter((e) => !(fog && fog[k] && fog[k].has(snapNid(e)))).map((e) => packEnt(e, k));
   s.eagles = state.drop ? state.drop.eagles.map((e) => pack(e, 0, true)) : [];
   s.ground = snapB64(ground);
+  if (team === 0 || team === 1) s.camps = snapFogCamps(s.camps, team);
   return s;
 }
 // bytes per section of the JSON form - the budget the wire form is cut from
@@ -202,7 +203,11 @@ function snapSize(s) {
 // the singletons back; `s` is a full snapshot or a delta carrying only what changed
 function snapApplySingles(s) {
   if (s.state) for (const k of Object.keys(s.state)) state[k] = unpack(s.state[k]);
-  if (s.camps) for (let i = 0; i < camps.length && i < s.camps.length; i++) camps[i].repopT = s.camps[i].repopT;
+  if (s.camps) for (let i = 0; i < camps.length && i < s.camps.length; i++) {
+    const c = s.camps[i];
+    if (c.repopT !== undefined) camps[i].repopT = c.repopT; // a side's cut carries no clock, only what it knows (snapFogCamps)
+    if (c.seen) camps[i].seen = c.seen.slice();
+  }
   if (s.dropMeta !== undefined) {
     if (!s.dropMeta) state.drop = null;
     else { if (!state.drop) state.drop = { eagles: [], firstFlight: s.dropMeta.firstFlight }; state.drop.firstFlight = s.dropMeta.firstFlight; }
@@ -505,6 +510,7 @@ function snapDeltaFrom(h, base, team) {
     if (ns === undefined) continue;
     if (ns === true || !isObj) d[k] = v; else { const f = pick(v, ns); if (f) d[k] = f; }
   }
+  if (d.camps && fogT >= 0) d.camps = snapFogCamps(d.camps, fogT);
   // tiles and ground: every cell any entry after the base touched. A tile
   // made or unmade at any point goes whole (or null, gone now); one only
   // edited goes by the names touched; a ground cell goes as it stands.
@@ -624,6 +630,12 @@ function snapFogHid() {
   }
   return out;
 }
+// the camps as side `team` may hold them: no true clock, only its own
+// knowledge of each (C.seen, updateCampSight in js/sim/camps.js), so a
+// camp cleared in the fog never reaches the side's screen as a number
+function snapFogCamps(list, team) {
+  return list.map((c) => ({ seen: c.seen.map((v, t) => (t === team ? v : 0)) }));
+}
 // a hidden player's packed form: the fields every screen shows
 function snapFogStub(packed) {
   const o = { fogHid: 1 };
@@ -668,6 +680,7 @@ function snapFogWhole(e, f) {
 function snapBuildSeen(full) {
   const s = snapBuild();
   s.players = s.players.map((p, i) => (full.players[i] && full.players[i].fogHid ? snapFogStub(p) : p));
+  if (full.camps && full.camps.length && full.camps[0].repopT === undefined) s.camps = s.camps.map((c) => ({ seen: c.seen })); // a side's cut (snapFogCamps)
   return s;
 }
 
@@ -801,7 +814,7 @@ function snapBlank() {
   nets.length = 0; guards.length = 0;
   holes.length = 0; iceBreaks.length = 0; pads.length = 0;
   Object.assign(orca, ORCA_FRESH());
-  for (const c of camps) c.repopT = 0;
+  for (const c of camps) { c.repopT = 0; c.seen = [0, 0]; }
   if (state.drop) for (const e of state.drop.eagles) for (const k of Object.keys(e)) if (!SNAP_SKIP.has(k) && k !== 'team') e[k] = typeof e[k] === 'number' ? 0 : null;
   for (const k of SNAP_STATE) if (typeof state[k] === 'number') state[k] = 0;
 }
