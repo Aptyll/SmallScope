@@ -153,6 +153,7 @@ const CLASS_AB = [
     },
   ],
   ARM_AB, // ARMATOS - the standard, the shield, the march (js/sim/armatos.js)
+  FORT_AB, // FORTIVA - the arc, the defiant shield, the lunge, the leap (js/sim/fortiva.js)
 ];
 
 // the world the abilities put things into
@@ -1021,6 +1022,8 @@ function drawAbilityAir(ex, ey, now) {
 function abilityPose(p) {
   if (p.upT > 0) return { dx: 0, dy: -upLift(p), rot: 0 }; // knocked up (knockUp, js/sim/actions.js)
   if (p.rushT > 0) {
+    const hd = heroDash(p);
+    if (hd && hd.pose) return hd.pose(p); // a hero's dash with a shape of its own (HERO_DASH, js/sim/heroes.js)
     return { dx: 0, dy: -1, rot: 0.26 * (p.rushNX >= 0 ? 1 : -1) };
   }
   if (p.hopT > 0) {

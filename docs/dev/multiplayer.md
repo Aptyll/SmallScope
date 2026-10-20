@@ -359,6 +359,7 @@ read through `statOf(p, key)` (js/sim/stats.js), never off the kit. `setClass(p,
 | 0 | **HUNTER** — bow, distance control, the one class that hides | keep the gap and own the ground between | the ranged numbers: quick nock (0.4 s), full draw power, 92 hp | the SHORTBOW: one arrow, 320 px/s for 0.85 s at full draw |
 | 1 | **WARRIOR** — close pressure, blocking, momentum | get to arm's length and stay there | 120 hp, faster on ice (×1.15), +5 speed damage, dash 230, softer bow numbers | the LONGSWORD: a 28 px cut, 1.05 rad either side of the aim |
 | 2 | **ARMATOS** — THE LAST STANDARD, the defensive initiator (a passive, `CLASSES[c].passive`) | make the whole team stand its ground | his own body (LAST STANDARD, or a look bought on the skins screen) and the warrior's kit (`heroBody`), 130 hp, 24 armor | the OATH GREATSWORD: the LONGSWORD's cut, drawn as his own blade |
+| 3 | **FORTIVA** — THE UNBROKEN, the juggernaut (passive UNBROKEN) | win the long fight: harder to stop the longer she trades | her own body (UNBROKEN, or CHAINBREAKER bought on the skins screen) and the warrior's frames (`heroBody`), 132 hp, 20 armor, a step slower | the CHAIN GREATSWORD: the LONGSWORD's cut, drawn as her own blade |
 
 The **weapon is part of the hero**: each `CLASSES` entry carries its own `attack` row, so the
 hunter and the swordsmen do not attack the same way and every bot arrives armed, with nothing to
@@ -379,7 +380,7 @@ the grid files under js/sprites/ are never rewritten) — same
 16×16 body plan and frame set as the player, so `drawPlayer`/`drawGhost` just swap the set via
 `classSet(p)`, which asks `SPRITES.champLook(cls, look, skin(team), heroSkinOf(p))` for the class body in the
 character's tone and fringe ([sprites.md](sprites.md#looks-a-character-on-the-class-body)), or a hero's
-own look ([hero looks](sprites.md#hero-looks-armatos)). A person's looks ride the hello (`skins`,
+own look ([hero looks](sprites.md#hero-looks)). A person's looks ride the hello (`skins`,
 `profileHeroSkins`, kept by the host through `cleanHeroSkins`) onto `p.skins`, which the snapshot
 carries, so every screen draws the look they bought;
 `SPRITES.playerTeam` is class 0 in the default look.

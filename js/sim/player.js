@@ -130,6 +130,25 @@ const CLASSES = [
     blade: 'oath', // his OATH GREATSWORD in his hands in place of the sword's own art (HERO_BLADES, js/draw/heroes.js)
     paint48: { t: '#7d8699', T: '#b4bdcc', g: '#1c2232', G: '#9aa3b8', m: '#5c6478', M: '#454c5e' }, // the 48 px model's (js/sprites/looks.js): its K is skin
   },
+  {
+    // the second named hero (js/sim/fortiva.js): a juggernaut on the WARRIOR's
+    // frames and his sword's cut (`body`, `attack`) who wins the long fight: the most health of
+    // anyone and a hard hit, a step slower so a hero who keeps its distance
+    // can beat her
+    name: 'FORTIVA', role: 'THE UNBROKEN', body: 1, passive: 'unbroken', // HERO_PASSIVE, js/sim/fortiva.js
+    look: { sex: 1, tone: 2, hair: 3, hairCol: 3, beard: 0, face: 1 },
+    blurb: ['STRENGTH IS THE POWER TO REFUSE TO KNEEL.', 'THE LONGER THE FIGHT, THE HARDER SHE IS TO STOP.', 'THE EDGE OF THE ARC HEALS HER. THE SHIELD PAYS BACK WHAT IT TOOK.'],
+    base: { hp: 132, dmg: 18, armor: 20, ap: 0, haste: 0, ms: PLAYER_SPEED - 3 },
+    grow: { hp: 16, dmg: 2.6, as: 0.015, armor: 4 },
+    attack: { name: 'CHAIN GREATSWORD', art: 'sword', cycle: 30 / 60, kb: 1.2, cut: { reach: 28, half: 1.05 } },
+    // her own body in each of her looks (FORT_SKINS, js/sprites/fortiva.js),
+    // worn per player (heroSkinOf) in her iron over the side's coat
+    skins: FORT_SKINS, skinPal: FORT_PAL, skinSlot: 'fortiva',
+    blade: 'chain', // her CHAIN GREATSWORD in her hands (HERO_BLADES, js/draw/heroes.js)
+    paint48: { t: '#7d8699', T: '#b4bdcc', g: '#1c2232', G: '#9aa3b8', m: '#5c6478', M: '#454c5e' }, // the 48 px model's (js/sprites/looks.js): its K is skin
+    kit: { iceMax: 1.1, iceSteer: 3.2, slideMin: 70, fatigue: 0.7, chargeMul: 0.7,
+      bowCharge: 0.75, nock: 0.5, spdDmg: 5, dodgeSpeed: 225 },
+  },
 ];
 // the body a hero wears - its sprites and its 48 px model: a hero that names
 // none is its own (HUNTER 0, WARRIOR 1), a named hero borrows one
@@ -664,6 +683,9 @@ class Player {
     this.resolve = 0; this.resolveIdle = 0;
     this.hold = false; this.holdHit = false;
     this.dash = ''; this.marchHit = [];
+    // FORTIVA (js/sim/fortiva.js; her resolve is `resolve` above): DEFIANT HEART's clock
+    // and the shield's size at the cast, NO KNEELING's after, and the leap's length
+    this.defyT = 0; this.defyHp = 0; this.nkT = 0; this.vaultMax = 0;
     // the tunnels (js/sim/tunnel.js): the one being ridden ({ fx, fy, tx, ty, t, len },
     // px and s), the wait after coming up before any hole takes this body
     // again, the seconds left on the far end being dug, and the work key held
@@ -962,6 +984,7 @@ function bodyOut(p) {
   p.dawnShield = 0; // ...and the dawn's shield
   p.wardHp = 0; p.wardT = 0; p.resolve = 0; // ...and any other shield, and ARMATOS's resolve
   p.hold = false; p.holdHit = false; p.dash = ''; p.marchHit.length = 0;
+  passiveOut(p); // ...and whatever a hero's passive keeps on the body (HERO_PASSIVE out, js/sim/heroes.js)
   clearUnitStatus(p); // root, slow, net, mark and the fire go out with the body
   // an item on the cursor goes back in the bag, so it is still there when the
   // body comes back instead of vanishing with the hand that was holding it

@@ -39,7 +39,7 @@ function drawStandard(fx, fy, h, dir, col, fill, now) {
 // behind it, over the far shoulder. While it stands planted in the snow the
 // back is bare. `front` says which pass this is.
 function drawHeroBack(p, ax, ay, now, front) {
-  if (!CLASSES[p.cls].passive || guardPlanted(p) || p.prone) return;
+  if (CLASSES[p.cls].passive !== 'resolve' || guardPlanted(p) || p.prone) return;
   const up = p.dir === 'up';
   if (front !== up) return;
   const fx = ax + (p.dir === 'left' ? 11 : 4); // over the shoulder the sword is not in
@@ -128,3 +128,4 @@ function drawGuards(ex, ey, now) {
   }
 }
 HERO_GROUND.push(drawGuards);
+HERO_BODY_FX.push(drawHeroBack);

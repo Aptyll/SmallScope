@@ -54,7 +54,7 @@ const SK_TICK_PAL = { w: '#cfe0ff' };
 // SPRITES (the robot: SPRITES.robotSkin, js/baked/robot.js) that the local
 // player wears in a match (scoutBody). The bird's table is real and lives with
 // its art (BIRD_SKINS, js/sprites/eagle.js), and so is a hero's (a tab with
-// `hero`: ARMATOS's looks, ARM_SKINS, js/sprites/armatos.js), which every
+// `hero`: each named hero's looks, e.g. ARM_SKINS, js/sprites/armatos.js), which every
 // screen in the match sees.
 // Every table's first row is free and is the slot's default; an id is what
 // a profile keeps, so it never changes.
@@ -93,6 +93,7 @@ const SKIN_TABS = [
   { id: 'trail', name: 'TRAIL', slot: 'trail', rows: TRAIL_SKINS, glyph: ['...w....', '..www.w.', '...w....', '......w.', '.w...www', 'www...w.', '.w......', '........'] },
   // a hero's looks (CLASSES[c].skins): real, worn in a match and seen on every screen (heroSkinOf, player.js)
   { id: 'armatos', name: 'ARMATOS', slot: 'armatos', rows: ARM_SKINS, hero: 2, glyph: ['.wwww...', '.w..ww..', '.wwww...', '.w......', '.w......', '.w......', '.w......', 'www.....'] },
+  { id: 'fortiva', name: 'FORTIVA', slot: 'fortiva', rows: FORT_SKINS, hero: 3, glyph: ['..ww....', '.w..w...', '.w..w...', '..w.....', '.....w..', '...w..w.', '...w..w.', '....ww..'] },
 ];
 const SK_TAB_BIRD = 1; // SKIN_TABS' eagle and scout, the two tabs a match reads
 const SK_TAB_SCOUT = 0;

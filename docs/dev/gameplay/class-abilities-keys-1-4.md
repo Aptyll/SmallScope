@@ -101,8 +101,8 @@ ARMATOS, THE LAST STANDARD — the defensive initiator, the first hero with a pa
 live in **[js/sim/armatos.js](../../../js/sim/armatos.js)** (`ARM_AB`, its `armatos` banner), his
 pixels in [js/draw/armatos.js](../../../js/draw/armatos.js), his icons in
 [js/sprites/armatos.js](../../../js/sprites/armatos.js). He fights with a cut of his own (his `attack` row, the
-OATH GREATSWORD: [the basic attack](the-basic-attack.md)), drawn as his own blade, in a body of his own ([hero looks](../sprites.md#hero-looks-armatos)), with his side's torn
-standard on his back (`drawHeroBack`):
+OATH GREATSWORD: [the basic attack](the-basic-attack.md)), drawn as his own blade, in a body of his own ([hero looks](../sprites.md#hero-looks)), with his side's torn
+standard on his back (`drawHeroBack`, a `HERO_BODY_FX` row):
 
 | key | name | cd | what it does |
 | --- | --- | --- | --- |
@@ -112,7 +112,24 @@ standard on his back (`drawHeroBack`):
 | 3 | **VETERAN'S MARCH** | 14 s | a charge (the rush state with `p.dash = 'march'`, `HERO_DASH`) at `MARCH_SPD` for `MARCH_T`: lesser bodies are shoved aside once each (`marchStep`, `MARCH_SHOVE`), and the first rival hero (or an anchored body) stops it: `MARCH_DMG` and `MARCH_STUN` (`marchEnd`) |
 | 4 | **THE OLD GUARD** | 80 s | plants the standard (`guards`, one per owner) for `GUARD_T`: allies inside `GUARD_R` gain `GUARD_ARMOR` armor (`guardStat`, a `HERO_STAT` row read by `statOf`) and `GUARD_TEN` tenacity (`guardTen`); a rival who was inside and steps out (caught up to `GUARD_EDGE` past the rim, so a roll out still counts) is slowed `GUARD_SLOW` for `GUARD_SLOW_T` (`updateGuards`). Its points wait for hero levels 6, 9 and 12 (`GUARD_LV`) |
 
-Bots play him through each row's `bot(p, foe, d, clear)` (`abBotKey`, asked by the ladder's
+FORTIVA, THE UNBROKEN — the juggernaut who wins the long fight, the second hero with a passive.
+Her rules live in **[js/sim/fortiva.js](../../../js/sim/fortiva.js)** (`FORT_AB`, its `fortiva`
+banner), her pixels in [js/draw/fortiva.js](../../../js/draw/fortiva.js), her icons, looks and
+blade in [js/sprites/fortiva.js](../../../js/sprites/fortiva.js). She has the most health of anyone
+and a step less speed than the warrior, so a hero who keeps away can beat her. Her cut is the
+warrior's (her `attack` row, the CHAIN GREATSWORD), drawn as her own blade, in a body of her own
+([hero looks](../sprites.md#hero-looks)); what her state wears on her body (high-resolve
+glints, the shield's shell, the after's embers) is `drawFortBody`, a `HERO_BODY_FX` row:
+
+| key | name | cd | what it does |
+| --- | --- | --- | --- |
+| P | **UNBROKEN** | — | hero damage she deals or takes fills `p.resolve` (`unbFeed`; `UNB_FULL`, half her max hp traded, for a full bar; it drains `UNB_DRAIN` a second after `UNB_IDLE_T` without a trade). From `UNB_HIGH` she has `UNB_TEN` tenacity (a `HERO_TEN` row) and her basic attacks heal her `UNB_HEAL` of what they deal (`o.basic` in the `deal` hook). `HERO_PASSIVE.unbroken`: `hurt`, `deal`, `tick`, `out` |
+| 1 | **SEVER THE CHAINS** | 7 s | a wide arc, `SEVER_R` and ±`SEVER_HALF` (`unitsInCone`), wedge on the snow with its outer band hashed gold: `SEVER_DMG`, ×`SEVER_EDGE_MUL` past `SEVER_EDGE`, and each rival hero the edge catches (up to `SEVER_HEAL_N`) heals her `SEVER_HEAL` + `SEVER_HEAL_HP` of max hp |
+| 2 | **DEFIANT HEART** | 13 s | a shield of `DEFY_HP` of max hp (`shieldUnit`) for `DEFY_T`; when it breaks or runs out (`defyRelease`) a shockwave in `DEFY_R` deals `DEFY_DMG` + `DEFY_PAY` of what the shield absorbed |
+| 3 | **BREAK THE YOKE** | 10 s | a lunge (`p.dash = 'yoke'`, `HERO_DASH`) at `YOKE_SPD` for `YOKE_T` that stops on the first rival hero, then a ground strike (`yokeStrike`) in `YOKE_R`: `YOKE_DMG` and a `YOKE_SLOW` slow for `YOKE_SLOW_T`; a rival hero hit gives back `YOKE_REFUND` of the cooldown |
+| 4 | **NO KNEELING** | 90 s | a leap (`p.dash = 'vault'`) to the aim, at most `NOKNEEL_RANGE`; a wall stops it short and a stun drops her where she is. Landing (`noKneelLand`): `NOKNEEL_DMG` in `NOKNEEL_R`, knocked up `NOKNEEL_UP` within `NOKNEEL_UP_R`, then for `NOKNEEL_T` she has `NOKNEEL_TEN` tenacity and `NOKNEEL_AD` + `NOKNEEL_AD_LV` per level attack damage (a `HERO_STAT` row). Its points wait for hero levels 6, 9 and 12 (`NOKNEEL_LV`) |
+
+Bots play the named heroes through each row's `bot(p, foe, d, clear)` (`abBotKey`, asked by the ladder's
 ability block in js/ai/ai-ladder.js); a hero whose rows carry no `bot` keeps the ladder's old range rules.
 
 Every wind-up with an area is **telegraphed on the snow for both sides** (`drawAbilityGround`): the

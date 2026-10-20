@@ -90,7 +90,8 @@ is `catchFrame` / `CATCH_T` in [js/sim/attack.js](../../js/sim/attack.js) - [fis
 
 **The run, the held run and the dodge roll are the one set of player frames not typed by hand.**
 [app/bake-player/](../../app/bake-player/) paints them off a jointed doll of each class body (and of
-each of ARMATOS's looks, `standard` and `oath`, [hero looks](#hero-looks-armatos)) and
+each named hero's looks: ARMATOS's `standard` and `oath`, FORTIVA's `unbroken` and `coif`,
+[hero looks](#hero-looks)) and
 writes them to js/baked/motion.js as char grids in characters.js's own letters, so `motionSet`
 bakes them through the same team and look palettes as every hand-drawn pose: `run[dir]`,
 `hold[dir]` and `roll[dir]` sit beside the walking directions, `left` the mirror of `right`.
@@ -176,7 +177,7 @@ upright frames by `fringeAt` ([the run and the roll](#the-run-and-the-roll)), an
 of a body goes through `classSet(p)` (player.js), which asks it. Body type, beard and face
 never touch the in-world body: it stays 16×16 permanently, and they read on the 48 px model only.
 
-### Hero looks: ARMATOS
+### Hero looks
 
 A hero with `skins` on its `CLASSES` row does not wear a class body: `champLook(cls, look, team,
 skinId)` hands it to `heroSkinSet`, which bakes the look's own grids (`ARM_SKINS`, js/sprites/armatos.js:
@@ -193,6 +194,15 @@ His OATH GREATSWORD (`ARM_SWORD`, `ARM_SWORD_DIAG`) replaces the sword's held ar
 (`HERO_BLADES.oath`, js/draw/heroes.js: `heroBlade`, asked by `drawHeldTool`): flat for the side, the swing and the wind-up, and slanted
 facing down or up (`heroCarry`), the grip at his right hip (the row's `hip`) and the blade up past the
 shoulder, drawn behind the body facing up.
+
+FORTIVA's looks (`FORT_SKINS`, js/sprites/fortiva.js) are built the same way on ARMATOS's frame and in
+his iron (`FORT_PAL` is `ARM_PAL` with her copper hair `a`/`A` and her chain `c`/`C`). UNBROKEN
+(his open helm with the gold band, a copper braid over her right shoulder, a broken shackle on her
+left wrist) is her own; CHAINBREAKER (a mail coif, chain across the tabard, shackles on both wrists)
+is bought. They are M and O off fortiva-round4.png in the project files; their dolls (`Unbroken`,
+`Coif` in app/bake-player/bodies.py) paint the braid and hair in the doll's `hair` material. Her
+48 px model is the warrior's in her paint too. Her CHAIN GREATSWORD (`FORT_SWORD`,
+`FORT_SWORD_DIAG`, `HERO_BLADES.chain`) is held the way his is.
 
 The **48 px model** ([looks.js](../../js/sprites/looks.js), `SPRITES.portrait(cls, look,
 team)`) is where the whole look reads — the lobby's stage and its hero row. Each hero wears one
