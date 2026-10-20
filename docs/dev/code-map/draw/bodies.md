@@ -1,0 +1,11 @@
+# js/draw/bodies.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| drawing players / animals / robots / the merchant / held tool; a worn skin body standing in for the class body (its clock, the held tool and ability marks grown about the feet) | `drawPlayer`, `ROBOT_IDLE_FPS`, `WORN_SC`, `atFeet`, `drawGhost`, `drawHeldTool`, `drawAnimal`, `drawBird`, `drawRobot`, `drawMerchant` (dispatched from `drawRobot`) | `the player` (`drawPlayer`, `drawGhost`, `drawHeldTool`) and `beasts, robots and the merchant` (the rest; the overhead block inside `drawPlayer` reads js/draw/overhead.js) |
+| which run or roll frame a class body shows: the stride off `animT`, the held run for busy hands, the bob what rides the body follows, the roll's frame off how far through `DODGE_T` | `RUN_STEP`, `runFrame`, `handsBusy`, `runBob`, `rollFrame` (the frames: `SPRITES.champ[c][team].run`/`hold`/`roll`, js/sprites/characters.js) | `the player` |
+| the frame a beast is on: its clip and how far into it, wrapped so any `animT` lands on a frame | `clipFrame` (the clip is `a.clip`, set in js/sim/wildlife.js from `ANIM_CLIPS`; the frames are `SPRITES[kind][dir][clip]`, built in js/sprites/beasts.js and bears.js by `bakeClips`/`mapClips`, js/sprites/core.js) | `beasts, robots and the merchant` |
+| a bear buff worn: the ring of pips around the feet in that bear's colour (`p.buffKind`) | `BUFF_RING`/`BUFF_COL`, `drawBuffRing` (above `drawPlayer`) | - |
+| a body going down: the frozen shatter or the wind, picked by `hash2(id, deaths)`, started off the edge of `p.dead` | `DOWN_T`, `trackDowns` (from `render()` before the draw list), `goingDown` (also held by `viewPlayer` and the replay), `drawDown` | `going down` |
+| the snow over a buried body, its row spans, and the bury meter | `drawSnowCover`, `poseBounds`, `poseSpans`, `drawBuryRing` | - |
+| where the overhead stack sits on a model, centring odd-width text on it, and the two frames that wear none of it | `FRAME_DX`, `centreTextX`, the `state.mode === 'title' || endScreen()` bail in `drawPlayer` (a composition somebody looks AT, not a match somebody reads) | - (the bars themselves: `drawHealthBar`, js/draw/overhead.js; `endScreen`: js/ui/screens.js) |

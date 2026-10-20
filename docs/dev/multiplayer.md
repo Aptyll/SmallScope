@@ -43,8 +43,8 @@ wears the **profile's** name and last hero — `applyProfile()`, called by `init
 [architecture.md](architecture.md#profilejs)), `look` (the hero's fixed face, a copy of
 `CLASSES[cls].look` that every `setClass` writes, so every copy of a hero looks the same), `spawn` (the tile it landed
 on from the eagle), `aboard`/`dropT`/`dropU`
-(the eagle ride, see [Eagle drop](rendering.md#eagle-drop-mode-drop)), its own `inv` wallet, `bag`
-and `food` pouch (see [the backpack](gameplay.md#inventory-and-the-backpack)),
+(the eagle ride, see [Eagle drop](rendering/eagle-drop-mode-drop.md)), its own `inv` wallet, `bag`
+and `food` pouch (see [the backpack](gameplay/inventory-and-the-backpack.md)),
 `level`/`xp` (see [Hero levels](#hero-levels)), `earned` (the match's gold earned), `kills`, an `input` struct and an `ai` brain.
 `reset(first)` places it at `spawn` and clears every transient; it is the single definition of
 "a fresh player". Boot calls it with `first` true, and `respawnPlayer` — the team's bird setting a
@@ -107,7 +107,7 @@ cmd           one-shot order, run by runCmd (js/ui/wheel.js):
 clamped in beside WASD — into the local player's struct once per step (under the
 [CLICK scheme](#the-click-scheme) the walk keys are gone and `ckStep` writes the walk, the aim and
 the auto-attack's fire edges into the same struct from its orders), and zeroes it — dropping any draw — while pause or the settings panel is up. The wheel and the
-[map](gameplay.md#the-m-map-does-not-pause) don't stop the sim and so don't zero the whole struct:
+[map](gameplay/the-m-map-does-not-pause.md) don't stop the sim and so don't zero the whole struct:
 each drops only the intents it swallows (the map keeps movement, the wheel keeps movement minus
 the roll). The keydown
 handlers and `resolveWheel()` never act directly: they set `input.dodge` / `input.eatFish` /
@@ -137,7 +137,7 @@ happened (`grab`, `place`, `seat`, `swap`, `deny` — sized so the five are told
 eyes shut) and never which controller is in hand, exactly as a key is asked for through its
 action. The RUMBLE row on the ESC panel's GAME page (`settings.haptics`) is its off switch. Its
 one caller today is the backpack's own feedback
-([hudFx](gameplay.md#what-a-gesture-answers-with)).
+([hudFx](gameplay/tools-and-bits/what-a-gesture-answers-with.md)).
 
 **The keyboard is read by where a key sits, not by what it prints** (the `keys and binds`
 banner, input.js; issue #43). The listeners translate `e.code` — the physical key — into the
@@ -181,7 +181,7 @@ rebind moves both controllers at once and neither scheme's map ever sits between
 and its verb — a pad on the CLICK scheme still works with X, because X names `work`, not E.
 
 **Rebinding** is a cap on the CONTROLS page's KEYBOARD listing
-([the panel](gameplay.md#settings); the listing is the live scheme's, and the CONTROLS navbar's
+([the panel](gameplay/settings.md); the listing is the live scheme's, and the CONTROLS navbar's
 WASD / CLICK / MOUSE cells are the scheme switch, `CTRL_TABS`/`KEY_ROWS`, panels.js): a click sets it listening (`state.rebind` is the action,
 `rebindStart`), the next key down is its key (`rebindKey`, first thing in `keyPress`), Escape calls
 it off, a reserved key is refused with the deny cue, and a key another action holds **swaps** —
@@ -315,7 +315,7 @@ pointer surface, and always Enter over a key-driven menu (the idle mouse may be 
 another plank than the dpad picked), which every such menu answers (`padTake`) — B / BACK /
 START are Escape, the dpad and bumpers the arrow keys (which also page the settings slab's tabs:
 `settingsKey`, js/ui/panels.js, reached from both the title's slide-in and the in-match slab) —
-with one exception, an [end screen](rendering.md#the-emote-bar), where the dpad is the emote bar
+with one exception, an [end screen](rendering/the-end-screens.md#the-emote-bar), where the dpad is the emote bar
 read clockwise from up (`emotePad`, js/ui/screens.js) and the bumpers keep the planks — the
 right stick scrolls the page, and the left stick is a pointer
 over pointer-only surfaces (a panel, the wiki, the lobby) and the arrow
@@ -336,18 +336,18 @@ a change in `PAD_PLAY` is a row there.
 
 Every player also carries a class (`p.cls`, an index into `CLASSES` in the `players` banner).
 A class is a look, a kit, and **four active abilities on keys 1-4** (`CLASS_AB`, a key carrying
-one option or several — `CLASS_AB_ALT`, picked pre-match, [class abilities](gameplay.md#class-abilities-keys-1-4);
-[js/sim/abilities.js](../../js/sim/abilities.js) — see [Class abilities](gameplay.md#class-abilities-keys-1-4)).
+one option or several — `CLASS_AB_ALT`, picked pre-match, [class abilities](gameplay/class-abilities-keys-1-4.md);
+[js/sim/abilities.js](../../js/sim/abilities.js) — see [Class abilities](gameplay/class-abilities-keys-1-4.md)).
 The kit is the handful of numbers the sim reads through `kitOf(p)`
 instead of the bare constants. **`kitOf(p)` returns the *effective* kit**: the class's numbers
-with the player's cards and items folded in by `refreshKit(p)` ([the effective kit](gameplay.md#the-effective-kit); cached on `p.kit`, rebuilt
+with the player's cards and items folded in by `refreshKit(p)` ([the effective kit](gameplay/the-effective-kit.md); cached on `p.kit`, rebuilt
 on a class, card or item change — never per frame). The kit fields: `iceMax` (× `ICE_MAX`), `iceSteer`, `slideMin`, `fatigue`
 (snow-slide fatigue rate), `chargeMul` (speed while drawn), `bowCharge` (seconds to full draw),
 `nock` (the baseline every rate of fire is scaled against — a tool's own `rof` is multiplied by
 `nock / BOW_NOCK`, so a class's hands still set the rhythm; see
-[the cycle](gameplay.md#the-cycle)),
+[the cycle](gameplay/the-swing-tools-e.md#the-cycle)),
 `spdDmg` (extra damage scaled by the shooter's speed at release, capped at 200 px/s),
-`dodgeSpeed`, plus `cls` (whose kit) and `add`, the bag of [hero stat](gameplay.md#hero-stats)
+`dodgeSpeed`, plus `cls` (whose kit) and `add`, the bag of [hero stat](gameplay/hero-stats.md)
 bonuses cards and items write. Sites that read it: `updatePlayer`'s movement block, `emitBit`,
 `tryDodge`, the AI's draw timing, the cursor, aim line and draw meter. The seven hero stats
 themselves (health, damage, attack speed, armor, ability power, cooldown speed, move speed) are
@@ -363,12 +363,12 @@ read through `statOf(p, key)` (js/sim/stats.js), never off the kit. `setClass(p,
 The **weapon is part of the class**: `CLASS_LOADOUT` (js/sim/tools.js) pairs each one with a tool
 and **one projectile**, and `setClass` / `Player.reset` (the first landing) hand it over — so the
 hunter and the swordsmen do not shoot the same thing and every bot arrives armed; a respawn keeps the weapon it
-died with ([death keeps everything](gameplay.md#death-and-respawn)). The cell in FRONT of that projectile is
+died with ([death keeps everything](gameplay/death-and-respawn.md)). The cell in FRONT of that projectile is
 deliberately empty, so the first modifier you walk over auto-fits there and shapes the shot you are
-already firing: [starting loadouts](gameplay.md#starting-loadouts). See
-[Tools and bits](gameplay.md#tools-and-bits). The four ABILITIES beside the weapon — what each
+already firing: [starting loadouts](gameplay/tools-and-bits/starting-loadouts.md). See
+[Tools and bits](gameplay/tools-and-bits.md). The four ABILITIES beside the weapon — what each
 one does, its cooldown, cast, and the states it leaves on a body — are
-[Class abilities](gameplay.md#class-abilities-keys-1-4) in gameplay.md.
+[Class abilities](gameplay/class-abilities-keys-1-4.md) in gameplay.md.
 
 The local player's class is its **hero, picked each match** on the lobby's hero row
 ([lobby](rendering.md#lobby), js/ui/heroes.js); the one locked in is kept as the profile's
@@ -392,7 +392,7 @@ carries, so every screen draws the look they bought;
 
 League-style: every player has `p.level` (1–`LEVEL_MAX` = 12) and `p.xp`, and XP is its own number,
 apart from gold. **`gainXp(p, n)` is the only way XP enters a body**: it adds to `xp`, to the running
-total over the head (`xpN` since `xpTick`, the [purple number](rendering.md#the-running-xp-total)) and
+total over the head (`xpN` since `xpTick`, the [purple number](rendering/damage-feedback.md#the-running-xp-total)) and
 calls `levelUp(p)` while `xp >= LEVEL_XP[level]` (cumulative thresholds 60, 150, 270, 420, 600, 810,
 1050, 1320, 1620, 1950, 2310 — the gap grows by 30 each level). XP comes from being **near when a
 rival body dies**, never from the last hit: `shareXp(dead, xp, team, src)` hands a death's XP to
@@ -420,20 +420,20 @@ It no longer levels anyone. A sale at the counter pays through `tradeGold`, whic
 neither.
 
 Growth is the hero's own: each level past 1 adds its `CLASSES[c].grow` to the
-[hero stats](gameplay.md#hero-stats) (HUNTER +10 hp, +2 damage, +2% attack speed, +3 armor;
+[hero stats](gameplay/hero-stats.md) (HUNTER +10 hp, +2 damage, +2% attack speed, +3 armor;
 WARRIOR +14, +2.5, +1.5%, +4), the health healed on the spot in `levelUp`. A level-up pushes a 2× gold `LEVEL n` floater over the slot (skipped while `inAir`) and
 raises its cue through `sfxOwn(p, 'levelUp', 'pickup')` — the level's own ring on the screen that
 is that player, a pickup to bystanders in earshot. What the level BOUGHT flies into the notice
-lane as the [stat sheet](rendering.md#the-stat-ledger-your-sheet-as-a-notice), the rows it grew
+lane as the [stat sheet](rendering/the-hud-corners/the-stat-ledger-your-sheet-as-a-notice.md), the rows it grew
 lit — `STAT_ROWS` read `statFrom` with the player's level, since the kit never holds it.
 The table's **average** level is also what the
 wildlife wears (`animalLevel`, js/sim/wildlife.js): dealt at spawn and followed after by every
 unhurt animal that hunts nobody (`relevelAnimal`) —
-[gameplay.md](gameplay.md#wildlife).
+[gameplay.md](gameplay/wildlife.md).
 
 Each level also grants **one skill point** (`p.skillPts`, starting with one at level 1), and a
 point buys exactly one thing: **a level on one of the four class abilities**
-([gameplay.md](gameplay.md#class-abilities-keys-1-4)), spent on the hud strip's floating buy
+([gameplay.md](gameplay/class-abilities-keys-1-4.md)), spent on the hud strip's floating buy
 plates or by pressing the ability's own key while the point is unspent. The keys start **locked at level 0** — the first point on one is what makes it castable
 at all — and the four of them hold exactly 12 levels, so twelve points by level 12 cap all four
 with nothing stranded; what a build chooses is the ORDER, since you land with one point, four
@@ -498,13 +498,13 @@ Five players per colour means **teammates share it**, so anything that names one
 takes a second axis: `playerTint(p)` returns a per-player shade of that team's palette (`trim`,
 `hatL`, `trimD`, `hat` by `floor(id / TEAM_COUNT) % 4` — the fifth teammate reuses the first
 shade). The team colour stays the background, the tint is the ink — see the
-[scoreboard and event log](rendering.md#scoreboard-and-event-log).
+[scoreboard and event log](rendering/scoreboard-and-event-log.md).
 
 ## PvP
 
 `enemyOf(p, q)` is the one place the rule lives: another live, active player on **another** team.
 Arrows carry `owner`/`team` and meet players in `updatePlay`'s arrow loop — swept along each step,
-so a fast shot never steps over one ([flight paths](gameplay.md#flight-paths)) — on an
+so a fast shot never steps over one ([flight paths](gameplay/tools-and-bits/flight-paths.md)) — on an
 `ARROW_HIT_R` (10 px) disc round the player's centre — wider than the 4.5 px body a walker
 collides with, because a walking target crosses its own width twice in the quarter second a
 full-draw arrow takes to fly 80 px, and the same disc on every side keeps it a fact of arrows
@@ -515,15 +515,15 @@ shooter. `damagePlayer` takes a seventh argument, `crit`, which the arrow loop p
 hit also calls `risePlayer` before anything else, so nobody stays buried through one. A hunter's
 PIERCING SHOT (`a.pierce`, every arm of it) is the one shot that takes a body and keeps flying — everyone on the
 line is hit once each (`a.pierceHit`), and only a raised shield or the world stops it. A player
-riding a zipline is a target like any other, and cannot shoot back ([the ride](gameplay.md#the-zipline)).
+riding a zipline is a target like any other, and cannot shoot back ([the ride](gameplay/momentum-movement-players-only.md#the-zipline)).
 
 **Whether a rival can be seen at all is a separate question from whether they can be shot.**
 `enemyOf` answers the second; `seenAt(p, range)` answers the first, and every watcher in the
-game — the bot brain (naming its side, so the [fog of war](gameplay.md#fog-of-war) holds), both turret checks — resolves through it (a camp monster has no sight: a hit is its only trigger). See
-[Prone](gameplay.md#prone-under-the-snow).
+game — the bot brain (naming its side, so the [fog of war](gameplay/fog-of-war.md) holds), both turret checks — resolves through it (a camp monster has no sight: a hit is its only trigger). See
+[Prone](gameplay/prone-under-the-snow.md).
 
 **A rival's worker bots are targets too** — they are tested straight after the players, on the same
-team rule, through `hurtRobot` (see [Robots](gameplay.md#robots)). Shooting one costs the owner
+team rule, through `hurtRobot` (see [Robots](gameplay/robots.md)). Shooting one costs the owner
 its income and hands the gold it was carrying to whoever downed it, so a base's economy can be
 raided without ever touching the base; the feed says so, but a worker is never a kill on the scoreboard.
 
@@ -539,8 +539,8 @@ branch (the roost tiles are `eagle` objects, a rival-only work target — `workT
 `team` they carry), and at zero the bird is **driven off**: `eagleFlee` lifts it away over the
 treeline while every camera pans to watch (`state.eagleCine`, the driven-off ceremony), and
 `EAGLE_CINE_T` later `eagleFleeResolve` takes the whole owning side out of the match (see
-[Death and respawn](gameplay.md#death-and-respawn) and the eagle-drop section in
-[rendering.md](rendering.md#eagle-drop-mode-drop)). Friendly arrows pass over it; a friendly
+[Death and respawn](gameplay/death-and-respawn.md) and the eagle-drop section in
+[rendering.md](rendering/eagle-drop-mode-drop.md)). Friendly arrows pass over it; a friendly
 swing is refused. It is not helpless either: a rival lingering in `GUST_R` makes it rear
 (wings spread for `GUST_WIND_T` — the telegraph) and **gust**, throwing every rival in
 `GUST_BLAST_R` into a `GUST_STUN` tumble with no damage — the trigger resolves through
@@ -549,7 +549,7 @@ hp/s back.
 
 `die(p, src, cause)` takes **nothing off the body** regardless of what happens next: wallet, pouch,
 bag, weapon and build all stay, and the killer and the assists are paid by `payTakedown`
-([Takedowns](gameplay.md#takedowns-assists-bounties-and-shutdowns)) — gold is never a physical drop. What happens next
+([Takedowns](gameplay/death-and-respawn.md#takedowns-assists-bounties-and-shutdowns)) — gold is never a physical drop. What happens next
 depends on `teamEagleDown(p.team)` alone: the wait and the return of
 [Respawn at the bird](#respawn-at-the-bird) while the team's eagle still roosts, or
 `p.eliminated = true`, the permanent path, once it has been driven off;
@@ -557,11 +557,11 @@ depends on `teamEagleDown(p.team)` alone: the wait and the return of
 takes the full death overlay with it (`endMatch('lost')`); a respawn-pending local death gets the
 lighter `endMatch('respawning')` wait instead — same `state.mode = 'dead'` machinery (so the
 replay window and the TAB scoreboard still work), but no dim and no planks: once the body's
-[fall](rendering.md#going-down) is over the camera goes to an ally (the wheel still zooms it), one countdown line sits over it, and the replay of the death opens large over the view until
+[fall](rendering/going-down.md) is over the camera goes to an ally (the wheel still zooms it), one countdown line sits over it, and the replay of the death opens large over the view until
 it is closed. An elimination offers spectating any living player through
 `viewPlayer()`/`specNext()` (a wait keeps to the side's own, `specOk`), or the way out to the
 title — which for an **elimination** goes
-through [the defeat screen](rendering.md#the-end-screens) first (`openDefeat()`, and its own plank
+through [the defeat screen](rendering/the-end-screens.md) first (`openDefeat()`, and its own plank
 calls `toLobby()`), because a lost match ends when you stop watching it rather than when you go
 down. Every death runs `checkLastStanding()`, which ends the match as a win once no **rival
 team** is left — `rivalTeamsInMatch()`/`teamInMatch()` read the same other-team rule `enemyOf`
@@ -572,7 +572,7 @@ dead and waiting on its bird is not out — kills never end a match, only the bi
 match keeps simulating while you are out** — `update()` runs `updatePlay` in both `play` and
 `dead` mode; only pause and the settings panel stop the world (the map does not), and not in a
 match another screen shares (`netShared`). Full detail:
-[Death and respawn](gameplay.md#death-and-respawn).
+[Death and respawn](gameplay/death-and-respawn.md).
 
 ### Surrender vote
 
@@ -595,7 +595,7 @@ any body runs, since `updatePlayer` drops every order of a body that is down or 
 only draws `state.votes`/`state.voteCd`/`state.surrendered`, which ride `SNAP_STATE` (and the save,
 with the rest of `state`). A vote that passes runs `surrenderSide`: the side's bodies leave the
 world through `bodyOut` (no death is counted), every seat is out for good, the local one goes
-through `endMatch('lost')` straight onto [the post-game stats](rendering.md#the-end-screens)
+through `endMatch('lost')` straight onto [the post-game stats](rendering/the-end-screens.md)
 (`openScores`, skipping the defeat), and the side's bird lifts off through `eagleFlee` with a
 SURRENDERED feed line, so the other side gets the driven-off ceremony and its victory exactly as
 if it had been beaten off.
@@ -621,7 +621,7 @@ the timer holds at zero until it roosts; a bird that has fled mid-timer is left 
 touches `p.cards` (picked roguelike cards), `p.items`, skill ranks, level, xp, the wallet, the pouch or
 the bag, and with `first` false it leaves the weapon slots alone too (the class kit is only handed
 over again when every slot is bare), so the whole player survives every respawn within a match —
-the wait is the entire cost ([death keeps everything](gameplay.md#death-and-respawn)).
+the wait is the entire cost ([death keeps everything](gameplay/death-and-respawn.md)).
 
 ### Kills and the event log
 
@@ -638,7 +638,7 @@ The log also takes a level-up at `LOG_LEVEL` (5) or above — the early levels c
 fast to be news — a wrecked building, a scrapped worker, a bear's slayer, each eagle
 landing, coming under attack and being driven off, and a peer joining or leaving. `logEvent(txt, p, o)` is the whole interface (`o` a palette for a line
 no player owns); the log is not drawn
-([rendering.md](rendering.md#scoreboard-and-event-log)). `DBG.logEvent`/`DBG.events` stage lines
+([rendering.md](rendering/scoreboard-and-event-log.md)). `DBG.logEvent`/`DBG.events` stage lines
 without staging the kills behind them.
 
 ## Contested orders
@@ -832,7 +832,7 @@ The ladder:
 1. **eat** — fish below 50% hp, berry below 80%.
 2. **burrow** — a hunter bot only, and decided up front, because two rungs below read the answer.
    A bot that has come off
-   worse (under the profile's `flee`) with no rival and no camp monster on it goes [prone](gameplay.md#prone-under-the-snow)
+   worse (under the profile's `flee`) with no rival and no camp monster on it goes [prone](gameplay/prone-under-the-snow.md)
    and waits the fight out for `ai.hideT` (7–12 s); it only ever tries where a player could — on
    snow, on its own feet, and with SNOW COVER's 60 s cooldown in hand. It gets
    straight back up for a monster hunting it, for a rival inside 48 px, or when the spell runs out, and rising
@@ -846,7 +846,7 @@ The ladder:
    pushing, the human it escorts — so a defender finds the archer standing off its roost and an
    ally joins the fight you are in; and a rival **wave's soldiers** in the same sight, with no cover
    to see through, a player in the same sight preferred by a small margin —
-   [the waves](gameplay.md#soldiers-the-waves)) and **reacted to** (`ai.seeT` past `react`): circle at ~70 px (a bow closes
+   [the waves](gameplay/robots.md#soldiers-the-waves)) and **reacted to** (`ai.seeT` past `react`): circle at ~70 px (a bow closes
    in past 85 px and backs off inside 50; a blade closes to `AI_MELEE_D` and circles there; each
    range band holds `AI_BAND_HYS` px past its edge, `aiRangeBand`, so a body on an edge does not
    swap moves every tick), draw and loose at the profile's `draw`, dodge at its rate, stand for the profile's share of
@@ -876,7 +876,7 @@ The ladder:
    the side it is chasing.
 5. **lie low** — prone with nothing in sight: hold still and let the snow finish. Everything below
    this rung walks somewhere, and a bot crawling to a berry bush at 20 px/s has stopped playing.
-5a. **the order** — a [flag](gameplay.md#team-flags) somebody else on the side planted that
+5a. **the order** — a [flag](gameplay/team-flags.md) somebody else on the side planted that
    this bot serves (`servedFlag`): a human teammate's, which is the side's whole plan while it
    stands, or a teammate's it joined. Read before the ladder (`aiFlagSync`, then the `order`
    block): it overrides the defend, guard, push and escort reads below — the one exception the
@@ -958,7 +958,7 @@ The ladder:
    `navTo`'s optional last argument); a route straight at the bird runs `NAV_BUDGET` out in
    the border and leaves a bot wedged in a pocket, which is what this exists to prevent. On the
    way in, any **turret the defenders raised comes down first**, and anywhere a rival
-   [road tower](gameplay.md#road-towers) does while the bot's own wave stands under it to take the
+   [road tower](gameplay/robots.md#road-towers) does while the bot's own wave stands under it to take the
    bolts (`aiLaneFort`, `towerTanked`; a bot never walks in under a tower alone) (E, `STRUCT_HIT_DMG` a swing, 10 of it once
    `STRUCT_DR` has taken its cut — a bot
    standing off the bird under a turret's rocks never finishes a draw), then a hunter takes its
@@ -996,7 +996,7 @@ The ladder:
    and swings only inside `AI_MELEE_D` + 8 px. Birds are excluded: they fly, and no ground route catches a flushed flock.
 11. **loot** — walk onto a drop within 72 px (drops are neutral and first-come).
 12. **spend** — **Items come first, at rung 0** (`aiSpend`, beside the skill point): a bot buys its class's
-   build ([`BOT_BUILDS`](gameplay.md#buying-and-selling)) at whichever counter it is standing at, a part or the whole
+   build ([`BOT_BUILDS`](gameplay/the-merchants-counter.md#buying-and-selling)) at whichever counter it is standing at, a part or the whole
    item, through the same `input.cmd` a human's click sends, and when its purse covers the next
    whole item and it is out of a fight it walks to its own side's counter if that is within
    `AI_SHOP_DETOUR` (32 tiles; farther out it recalls, `aiRecall`), which ends its ladder for that think. With the slots full it sells
@@ -1041,9 +1041,9 @@ other. Nothing in it lets a bot do what a hand cannot: a human reads the same fa
 map's eagle marks and the bird's nerve bar.
 
 Every walk goes through `steerTo(x, y, reach, budget)`, which is `navTo` on the bot's own player
-([gameplay.md](gameplay.md#pathfinding)) — it routes around trees, rocks, buildings and water,
+([gameplay.md](gameplay/pathfinding.md)) — it routes around trees, rocks, buildings and water,
 and returns **-1 when there is no route** (or the bot has been pinned for a while). **It rides
-the zipline** ([the ride](gameplay.md#the-zipline)) the way a hand does, through the same hop
+the zipline** ([the ride](gameplay/momentum-movement-players-only.md#the-zipline)) the way a hand does, through the same hop
 intent, and nothing in the ladder knows: `steerTo` asks `aiZipWorth` first — would walking to
 any cable (the best of them: a side has one down each lane), riding to the point nearest the goal and walking the rest beat the feet by
 `ZIP_AI_GAIN` (4 s)? — and if so walks to the mount (`zipMount`, js/sim/zipline.js — the nearest point of
@@ -1143,7 +1143,7 @@ what the rest of the code needs to know is this:
   snapshot and the client replays each entry against its *own* player (`evPlay`). A bare
   `if (p === player) SFX.cue()` in the step is a sound no client hears.
 - **A client holds only what its side sees.** The host cuts each peer's snapshot and cosmetics
-  for its side's [fog](gameplay.md#fog-of-war): a rival soldier, creature or shot out of sight is
+  for its side's [fog](gameplay/fog-of-war.md): a rival soldier, creature or shot out of sight is
   not in the client's arrays, and a rival player out of sight has `fogHid` set with every field
   but the rail's and scoreboard's (`SNAP_FOG_KEEP`) left at its last-seen value. Anything on a
   client that reads a rival's place asks `fogShown` or `inSight` first, never `p.x` bare; a new
@@ -1168,7 +1168,7 @@ bird flies a short fixed line in over its own corner (`EAGLE_FLIGHT_T`, 2.5 s), 
 bottom-left and BLUE's the top-right, and roosts on its [base](world.md#the-bases)'s perch with
 the whole side on its back. The bots hop off one by one once the wings fold; a human hops off
 with E, the roll button or by walking, under the E HOP OFF indicator, after the
-[drop brief](rendering.md#the-drop-brief) on a profile's first flight. Each rider's `spawn` comes
+[drop brief](rendering/eagle-drop-mode-drop.md#the-drop-brief) on a profile's first flight. Each rider's `spawn` comes
 from `landPlayer()`, the nearest open tile to where its hop came down, and that tile is what the
 bot brain treats as "home". There are no spawn pockets, no starter rings, and no guaranteed
 resources near a landing. `ringPts` (six points on a ring

@@ -53,7 +53,7 @@ four breaches with the fallen blocks round them, and nothing gets through the st
 or charge. Inside, the creek pools and freezes into **the orca's lake**, both sides' alike: anyone
 can walk over it, but the orca
 under the ice locks on a player out on it, stalks them while a 3 2 1 counts down over their head, and then it comes up
-through the ice and they go down. [The orca](gameplay.md#the-orca). It swings round the two
+through the ice and they go down. [The orca](gameplay/wildlife.md#the-orca). It swings round the two
 midline camps in a half-loop each, so each side owns one on its own bank: the brown bear is RED's,
 the black bear BLUE's, each walking its bank up and down and stopping to fish. Anyone who steps in plunges as through the ice, and a bot shoved off the
 bank goes in like anybody. [The creek](world.md#the-creek), [the cistern](world.md#the-cistern).
@@ -79,20 +79,20 @@ a number of bit cells and a weight it is strong enough to throw), and what comes
 **bits** loaded into it. Each class flies in with its own (the HUNTER a bow, the WARRIOR a
 sword), and nothing on the map drops another: what grows over a match is the six item slots. The
 **shelf** over the backpack shows the weapon and those six slots at all times.
-[Tools and bits](gameplay.md#tools-and-bits).
+[Tools and bits](gameplay/tools-and-bits.md).
 
 **Gold buys items, League's way.** Either team's **merchant's counter** sells five cheap parts and
 eight finished items built out of them into six item slots, every one always on sale at one
 fixed price, so you can save for the one you want. A finished item costs less by every part of it
 you already hold, carries damage, health, armor, attack speed or move speed, and one passive
 (a third hit that burns, a heal out of a fight, a slow on every hit). Bots buy their class's
-build the same way. [The counter](gameplay.md#the-merchants-counter).
+build the same way. [The counter](gameplay/the-merchants-counter.md).
 
 **Keys 1-4 are your class.** Each class carries four active abilities — the HUNTER's piercing
 shot, net, grapple and snow cover; the WARRIOR's shield (and its slam), rush, stomp and execute — each with a
 cooldown, a
 cast the body visibly performs, and effects drawn plainly for both sides: the game is readable
-first, sneaky second. [Class abilities](gameplay.md#class-abilities-keys-1-4),
+first, sneaky second. [Class abilities](gameplay/class-abilities-keys-1-4.md),
 [Classes](multiplayer.md#classes).
 
 **Every item is on the table from the first match.** A **wiki** on the main menu writes every
@@ -101,29 +101,29 @@ everybody alike, so a new player and a veteran play the same game and nothing is
 wiki is where the game explains itself — the beasts, what a level does to them, and on its WORLD
 page the valley itself: why two companies are on the snow and why nobody on it dies
 ([the setting](lore.md)) — one page a subject, so the snow never has to.
-[The wiki](gameplay.md#the-wiki).
+[The wiki](gameplay/the-wiki.md).
 
 **The draw is the ammunition.** There is no quiver: what a shot is worth — how far, how fast, how
 hard — is how long the string was held, and the tool's own cycle is all that sits between one
 press and the next. Spamming the button is punished by the shots themselves, short and weak, never
 by a counter, so what the meter shows is exactly what you get.
-[The draw](gameplay.md#the-draw).
+[The draw](gameplay/the-swing-tools-e.md#the-draw).
 
 **Momentum is the movement.** Ice is mechanically slippery, dodges chain, and **a roll is a hit** —
 the dodge is an attack, which is why a player mid-roll passes through small units instead of
-colliding with them. [Momentum movement](gameplay.md#momentum-movement-players-only),
-[the roll is a hit](gameplay.md#the-roll-is-a-hit).
+colliding with them. [Momentum movement](gameplay/momentum-movement-players-only.md),
+[the roll is a hit](gameplay/dodge-roll.md#the-roll-is-a-hit).
 
 **Snow cover goes prone and the snow covers you — and it is the hunter's.** Concealment is a real
 state the world reads, not a
 visual effect: everything that decides it can see a player goes through one function, and burial
 lives inside it. It is a class ability (the hunter's key 4); a warrior never hides.
-[Prone](gameplay.md#prone-under-the-snow).
+[Prone](gameplay/prone-under-the-snow.md).
 
 **E is the one verb for the world.** The same key harvests a tree, breaks an
 enemy building, and strikes a rival's grounded eagle — and the axe and pick it swings are never
 selected, they come out on their own for whatever is under the cursor. A rock needs no key at all: it
-mines itself for whoever stands by it. [The swing tools](gameplay.md#the-swing-tools-e).
+mines itself for whoever stands by it. [The swing tools](gameplay/the-swing-tools-e.md).
 
 **Gold is the only currency; XP is a separate number, League style.** No wood, no stone — one
 currency earned many ways (last hits, kills, camps, the works, gold pumps, a slow trickle), each
@@ -133,16 +133,16 @@ a soldier, a scout, a camp monster — shared among the allies standing there, s
 is gold and being there is XP. Mining, felling and fishing pay gold only: **the woods make you
 rich and the road makes you level**, and the late levels come late. **Fish and berries have a fixed price**, and the counter buys them at
 the same number it sells them for; a bigger fish fetches more.
-[Economy](gameplay.md#economy-one-currency), [the counter](gameplay.md#the-merchants-counter),
+[Economy](gameplay/economy-one-currency.md), [the counter](gameplay/the-merchants-counter.md),
 [Hero levels](multiplayer.md#hero-levels).
 
 **You carry a 12-cell backpack.** The wallet (`p.inv`) is gold and nothing
 else, and the twelve cells (`BAG_CAP`) are for the consumables and ore a match hands you. Berries and fish are not in it: food is an uncapped **pouch**
 (`p.food`) pressed on Q and F from the HUD, because a meal is never arranged, only eaten.
-[Inventory and the backpack](gameplay.md#inventory-and-the-backpack).
+[Inventory and the backpack](gameplay/inventory-and-the-backpack.md).
 
 **Items are bought at a counter.** You walk to a body to get them.
-[Buying and selling](gameplay.md#buying-and-selling).
+[Buying and selling](gameplay/the-merchants-counter.md#buying-and-selling).
 
 **Your eagle is your life.** The bird that carried the team in crashes onto its base's perch and
 roosts there, armoured in team colour — the hollow round it, the crater it blows (packed earth,
@@ -159,12 +159,12 @@ match ends, which is why both teams always have somewhere worth walking to — a
 on the map knows where both birds are and what is happening at them, and answers a hit on its
 own from anywhere. A side that wants out can **surrender** past fifteen minutes, League-style: a
 vote calls its own bird home, so even giving up is the bird leaving
-([Surrender vote](multiplayer.md#surrender-vote)). [Eagle drop](rendering.md#eagle-drop-mode-drop),
-[Death and respawn](gameplay.md#death-and-respawn), [Bots](multiplayer.md#bots).
+([Surrender vote](multiplayer.md#surrender-vote)). [Eagle drop](rendering/eagle-drop-mode-drop.md),
+[Death and respawn](gameplay/death-and-respawn.md), [Bots](multiplayer.md#bots).
 
 **Roguelike cards come out of the treeline's chests.** A sprung chest drops a **rarity-rolled
 card** (and gives a free item part), which opens itself the moment it is held, one at random, without pausing the sim, and
-the card is baked into the kit for the rest of the match. [Roguelike cards](gameplay.md#roguelike-cards).
+the card is baked into the kit for the rest of the match. [Roguelike cards](gameplay/roguelike-cards.md).
 
 **T is the build list, and the ghost under the pointer is what a click lays.** A tap opens it on
 the last piece and holding T flicks a piece off a wheel. Any open snow or road tile within reach
@@ -176,7 +176,7 @@ your side's speeds it. Holding E beside a building of your own manages it: upgra
 demolish — a site still going up comes back at its whole price. **An ice hole is the one site left**: break the ice twice and the hole it leaves takes the one
 `water` building — a **fish net**, laid flat and walked *on* rather than into — over a live fish
 population that walkers on the ice and nets draw down and a trickle refills.
-[Base building](gameplay.md#base-building), [Ice holes and fishing](world.md#ice-holes-and-fishing).
+[Base building](gameplay/base-building.md), [Ice holes and fishing](world.md#ice-holes-and-fishing).
 
 **Right-click anywhere and the flag wheel offers four orders — ATTACK, DEFEND, GATHER, RALLY — and
 the ring on the snow is the ground the order covers** (on the keyboard's CLICK scheme, where the
@@ -185,8 +185,8 @@ right button walks and orders the body itself, the wheel is held on G instead:
 side: every worker bot the planter's bays roll out, and every AI teammate. Bots fly flags of
 their own — a bot's flag is only ever its own decision made visible — and join a teammate's
 rather than twin it, but **a human's flag is the side's whole plan**: while it stands every
-bot on the team lifts its own and follows it. [Team flags](gameplay.md#team-flags),
-[Robots](gameplay.md#robots), [Bots](multiplayer.md#bots).
+bot on the team lifts its own and follows it. [Team flags](gameplay/team-flags.md),
+[Robots](gameplay/robots.md), [Bots](multiplayer.md#bots).
 
 **The camps are the jungle, and the jungle is symmetric.** Six fixed sites, three on each side of the
 road, mirrored so both teams walk the same distance: four **WOLF DENS** that pay gold, and one
@@ -194,7 +194,7 @@ road, mirrored so both teams walk the same distance: four **WOLF DENS** that pay
 gives the whole team that bear's own buff (the BLACK BUFF or the BROWN BUFF, which do the same thing).
 Every camp is **neutral until hit** — then the whole camp comes for the hitter, leashes when
 they leave its ground and heals — and every site sits well off the road, so the lane is never a
-wolf's. [Camps](world.md#camps), [camp monsters](gameplay.md#camp-monsters-neutral-until-hit).
+wolf's. [Camps](world.md#camps), [camp monsters](gameplay/wildlife.md#camp-monsters-neutral-until-hit).
 
 **The lanes are where the match is fought.** The waves are the match's clock: a column that is not
 met on its lane reaches the rival bird, and a scrapped soldier pays its killer gold and every
@@ -210,10 +210,10 @@ so six a side, and the cable runs only to the furthest one still standing, so br
 from the rival's ride. A tower shoots the rival wave first, so a scout who walks in under it with
 their own soldiers can bring it down, and a scout who hits one of its side's scouts in its ring, or
 walks in alone, gets the bolt: it winds for a beat with a dashed line on the snow to its mark, and
-each bolt in a row into the same scout hits harder. [Road towers](gameplay.md#road-towers),
+each bolt in a row into the same scout hits harder. [Road towers](gameplay/robots.md#road-towers),
 [the road](world.md#the-road), [the zipline](world.md#the-zipline),
-[the ride](gameplay.md#the-zipline), [the waves](gameplay.md#soldiers-the-waves),
-[the barracks](gameplay.md#base-building).
+[the ride](gameplay/momentum-movement-players-only.md#the-zipline), [the waves](gameplay/robots.md#soldiers-the-waves),
+[the barracks](gameplay/base-building.md).
 
 ## What the design is not
 
@@ -236,6 +236,6 @@ each bolt in a row into the same scout hits harder. [Road towers](gameplay.md#ro
   is stopped at a form. **A profile is never power**: a match reads its name and the hero picked
   and nothing else — everything about a match is decided inside that match, and every item is
   on sale to everybody alike. See [architecture.md](architecture.md#profilejs),
-  [the hero row](rendering.md#lobby) and [the profile card](rendering.md#the-profile-card). An
+  [the hero row](rendering.md#lobby) and [the profile card](rendering/main-menu-title.md#the-profile-card). An
   online lobby sends the host exactly that name and hero and nothing more; if a server ever
   holds the profile, it holds the same object.

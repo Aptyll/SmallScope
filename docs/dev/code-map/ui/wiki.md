@@ -1,0 +1,9 @@
+# js/ui/wiki.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| the wiki: its pages as data, the slab, tabs, window and rail, the per-page scroll, what is under a point, the way in and out | `WIKI_PAGES`, `WIKI_W_MAX`/`WIKI_H`, `wikiScroll`, `wikiBlocks`, `wikiPage`, `wikiLayout`, `wikiHit`, `beginWiki`/`leaveWiki` (Esc to the title, a tab to the notes), `wikiScrollBy`, `wikiSetTab`, `wikiKey`, `wikiClick`, `renderWiki`, `drawWikiRail` | `the wiki` (the tooltip a row raises: `tipItem`, js/ui/shop.js; the wheel: input.js; its song WHISPERING WOODS: `TRACKS.wiki`, audio.js) |
+| the BEASTS page: the five cards, a kind at a level, the figure wearing its frame, the labelled legend | `WIKI_BEASTS`, `WIKI_LEVELS`, `wikiBeastHp`, `wikiBeastGold`, `drawWikiBeast`, `wikiLeader` | `the wiki` (the numbers: `ANIMAL_HP`/`ANIMAL_LV_HP`/`ANIMAL_LV_GOLD`, wildlife.js; `YIELD`, core.js) |
+| the ITEMS page: PARTS then FINISHED, each row the item's icon in a part- or finished-rimmed well, its name, and STATS / PASSIVE / PRICE | `WIKI_ITEM_COLS`, `wikiItemStats`, `drawWikiRow` | `the wiki` (the items themselves: `BUILD_ITEMS`, `ITEM_STATS`, `ITEM_PASSIVES`, js/sim/items.js) |
+| the WORLD page: the setting's eleven entries (name, paragraph, the sprites on its mound), the figure column, the mound the beasts share, the `lore` draw in `renderWiki` | `WIKI_WORLD`, `WIKI_FIG_W`/`WIKI_TEXT_X`, `drawWikiFig`, `wikiMound` | `the wiki` (the premise, the fixed words and the voice: [lore.md](../../lore.md); the road's colours: `ROAD_COL_A`/`ROAD_COL_RUT`, js/draw/ground.js) |
+| the CLASSES page: an ability row's columns, the four stat pips, the word-wrap the blurbs and the WORLD page use, the `cls` and `ab` draws in `renderWiki` | `WIKI_AB_COLS`, `WIKI_STATS`, `wikiWrap` | `the wiki` (the classes and kits: `CLASSES`, player.js; the abilities: `CLASS_AB`, `classAbIcon`, abilities.js; the card a hover raises: `tipClassAb`, js/ui/tooltip.js) |

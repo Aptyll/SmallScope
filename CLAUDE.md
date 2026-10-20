@@ -3,7 +3,7 @@
 Softfall: a top-down pixel-art winter team battle in a browser canvas, wrapped in Electron for Steam.
 Ten players (bots fill empty seats) in two teams of HUNTERs and WARRIORs drive off the rival eagle.
 Read [game.md](docs/dev/game.md) before proposing a feature and [lore.md](docs/dev/lore.md) before
-writing a word a player reads. Before working in an area, read its doc: [code-map](docs/dev/code-map.md)
+writing a word a player reads. Before working in an area, read its doc (for a doc with a Pages index, only the pages you need): [code-map](docs/dev/code-map.md)
 (which file and banner owns a thing), [architecture](docs/dev/architecture.md),
 [rendering](docs/dev/rendering.md), [world](docs/dev/world.md), [gameplay](docs/dev/gameplay.md),
 [multiplayer](docs/dev/multiplayer.md), [online play](docs/pvp-architecture.md),
@@ -49,7 +49,7 @@ Shorts, GIFs, storyboards and stills use the kit in [media](docs/dev/media.md).
 ## UI: show, don't label
 
 Speak through icons, colour and hover state, not hint sentences. Text is for names, numbers,
-headlines and the carve-outs in [rendering](docs/dev/rendering.md#show-dont-label).
+headlines and the carve-outs in [rendering](docs/dev/rendering/show-dont-label.md).
 
 ## Git and docs
 

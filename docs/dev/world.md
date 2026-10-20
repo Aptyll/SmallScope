@@ -12,7 +12,7 @@ stable per tile.
   `BORDER_MIN`/`BORDER_MAX` (30–70, avg ~50) tiles deep round an interior ~132 tiles
   across — open on OPEN FIELD, and grown over by the other two [map shapes](#map-shapes). The two **roost corners** —
   bottom-left and top-right, where the eagles always come down
-  ([eagle drop](rendering.md#eagle-drop-mode-drop)) — are forested to `ROOST_R` (68 tiles from the
+  ([eagle drop](rendering/eagle-drop-mode-drop.md)) — are forested to `ROOST_R` (68 tiles from the
   corner, ~48 along the diagonal) outright: `borderDepth` is the seed's own `borderNoise` **or**
   a quarter-disc whose arc wobbles ±`ROOST_WOBBLE` (3) on the fine noise, so whatever the seed grew
   there the corner holds one solid block of woods round its [base](#the-bases)'s hollow, and
@@ -29,7 +29,7 @@ stable per tile.
   creek's open water and `5` a ford's stepping stone ([The creek](#the-creek)). **Open water is
   `waterAt(tx, ty)`** — a hole or the creek — the one read every walker, route, spawn and climb-out
   asks; a new check against `=== 2` alone is a hole the creek does not have. Ice is **mechanically slippery** (see
-  [Momentum movement](gameplay.md#momentum-movement-players-only)), and worldgen carves it as a travel
+  [Momentum movement](gameplay/momentum-movement-players-only.md)), and worldgen carves it as a travel
   network: 14 frozen lakes plus winding ~5-tile-wide rivers (`carveRiver` in `genWorld()`) —
   a spoke from each ring point to the central clearing and a ring linking each point to its
   neighbour. The shared `carveIce` rule skips existing objects, the ring points, the clearing and
@@ -61,7 +61,7 @@ stable per tile.
   `objects[idx] = null` (structures should go through `destroyStructure` so the `structures`
   registry stays in sync — it routes tiered types through `removeStruct`).
 - `wall`, `longwall`, `turret`, `generator`, `spawner` are the **structures** any open snow or road tile takes (see
-  [Base building](gameplay.md#base-building)). Each carries `{ tier, maxHp, building, buildT,
+  [Base building](gameplay/base-building.md)). Each carries `{ tier, maxHp, building, buildT,
   buildTotal, dustT, sparkT }` plus per-type fields (turret `cd`, `ang`, `tgt`/`tgtK`, `off`,
   `chg`, `rec`, `scan`; generator `payT`; spawner `mode`,
   `bots`, `respawnT`/`respawnTotal`, `door`), and every live one is also referenced from the module-scope `structures`
@@ -76,7 +76,7 @@ stable per tile.
   berries back but dull) inside `BUSH_RIPEN_T`, then `bush` — chosen in `render()`'s bush
   branch, so a player reads wait-or-move-on off the plant at a glance, and **under the pointer a
   regrowing bush wears the neutral unit bar** filling toward ripe (the frames say roughly, a hover
-  says exactly — [rendering.md](rendering.md#render-pass-order)); `ready` refuses E until the
+  says exactly — [rendering.md](rendering/render-pass-order.md)); `ready` refuses E until the
   berries are ripe, so neither in-between frame ever rims. The first
   three have three tiers; the spawner
   (the bot bay) has one and a **3×2 footprint** — `STRUCTS.spawner.w/h`, with `footprint()`,
@@ -112,7 +112,7 @@ stable per tile.
   edge rims depend on them). The runtime ground writers: [ice holes](#ice-holes-and-fishing) and
   their dawn refreeze, [ice breaks](#ice-breaks) opening and freezing back, a roost pad's paving ([the road](#the-road)), and the
   practice arena's track rolls. The bake also lays the scenery's
-  [cast shadows](rendering.md#cast-shadows), and `render()` repaints a caster's reach itself
+  [cast shadows](rendering/light-and-weather.md#cast-shadows), and `render()` repaints a caster's reach itself
   when what stands on a tile changes, so felling or placing scenery calls nothing.
 - **Open snow wears soft drifts** (the `snow's pixels` banner, js/draw/ground.js): swells laid
   along the wind (`SNOW_ANG`, which `layDrifts` turns onto the seed's prevailing wind, `driftWind`, so
@@ -137,7 +137,7 @@ only the pixels wander: `iceAtPx(x, y)` blends the four tile centres round a pix
 octaves of `vnoise`. Every style's noise stays under half a unit, so a tile whose 3x3 is all
 lake is solid ice and one with no lake in its 3x3 is untouched snow, and only the band along an
 edge pays for the per-pixel test (`paintIceTile` for an ice tile, `paintSnowShore` for the snow
-beside one). The light comes from the top-left, as for [cast shadows](rendering.md#cast-shadows)
+beside one). The light comes from the top-left, as for [cast shadows](rendering/light-and-weather.md#cast-shadows)
 and the map chart: the snow's lip over a lake's north and west sides is lit white and throws a
 band of shade on the ice under it, and the far bank's face is lit pale.
 
@@ -156,7 +156,7 @@ FROZEN ISLES, being one lake, is one style per seed.
 The looks are A and B of `docs/media/concepts/shore-shadow-concepts-1.png`, DEEP (B) being
 the pick, hence its double weight; C (a drifted, cracked edge) was cut as too noisy. Cracks and glints (the tile's own hash) only go on
 a tile whose 3x3 is all lake, so none lands on a bank. Where a [path](#the-paths) crosses a lake, `paintRoadOverlay` still paints over the
-shore. Night's mirror follows the same edge ([the reflected sky](rendering.md#the-reflected-sky)).
+shore. Night's mirror follows the same edge ([the reflected sky](rendering/light-and-weather.md#the-reflected-sky)).
 
 ### The wind's leavings
 
@@ -337,7 +337,7 @@ still run and still roll: taking their `rng()` calls out would reshuffle every s
 places its own on a stream of its own, `mulberry32(SEED ^ 0x524f434b)` (`rkRng`), touching only
 `objects`, so terrain stays bit-identical for an existing seed.
 
-**The kind** ([Mining a rock](gameplay.md#mining-a-rock)) is the cluster's `kinds` list: the
+**The kind** ([Mining a rock](gameplay/mining-a-rock.md)) is the cluster's `kinds` list: the
 SUNSTONE and FROSTGLASS SPIRE are out at the contested corners, the plain STONE nearer home.
 
 A rock is only ever taken off the map whole: `fellScenery(tx, ty)` clears every tile of the
@@ -363,7 +363,7 @@ can never perturb the shared `rng` stream and terrain stays bit-identical for an
 on both maps (its `mm`/`map` entry), and one free E press (`OPEN`, `needs: null`) springs it —
 `hitObject`'s chest branch pays `CHEST_GOLD_MIN`–`CHEST_GOLD_MAX` (8–20) gold on the spot, drops one
 card rolled from `CHEST_ODDS` (those constants beside `placeChests`) and gives a free item part
-(`chestPart`, js/sim/items.js; [the items](gameplay.md#the-items)). The tile empties with
+(`chestPart`, js/sim/items.js; [the items](gameplay/the-merchants-counter.md#the-items)). The tile empties with
 it, leaving a one-tile notch in the treeline where the cache was dug out. The sprite bakes in
 [js/draw/ground.js](../../js/draw/ground.js) (`CHEST_SPR`, under the `the scenery bakes` banner) rather than
 in the byte-fragile grid files under js/sprites/.
@@ -436,7 +436,7 @@ bird's perch at the back of the side's [base](#the-bases) (`basePerch`, on the c
 **junction**, the point on the centreline where the road leaves the base's hollow through its
 mouth (`baseGateU`): `{ u, side, jx, jy, nx, ny, x, y }`, `side` the bird's own right (RED's the
 top-left side, `roadOffS < 0`; BLUE's the bottom-right), which the cables use. The bird lands on
-the nest ([eagle drop](rendering.md#eagle-drop-mode-drop)), and the crater is a **pad** in the
+the nest ([eagle drop](rendering/eagle-drop-mode-drop.md)), and the crater is a **pad** in the
 `pads` registry (`addPad(team, cx, cy, r)`, a disc of `BOOM_R`, paved whole the frame the bird
 lands: `eagleCrash`, eagle.js), so the roost and the road are one ground. `roadDist(fx, fy)` is
 the min of `roadMainDist`, every pad, the paths and [the side lanes](#the-side-lanes), so the
@@ -463,7 +463,7 @@ the diagonal is `tx + ty = WORLD - 1`, `u` running from the bottom-left corner, 
 toward the bottom-right side — taking a tile index or a continuous tile coordinate alike;
 `onRoad(tx, ty)` is the membership test, and `roadWaypoints(team)` the centreline every
 `ROAD_STEP` (20) tiles from a side's own junction to the rival's, which is the march the waves
-walk ([Soldiers](gameplay.md#soldiers-the-waves)), round the cistern by one of its fords
+walk ([Soldiers](gameplay/robots.md#soldiers-the-waves)), round the cistern by one of its fords
 (`cisternWayRound`, [the cistern](#the-cistern)). Not under `PRACTICE` (`roadMainDist` answers
 99 and no pad is ever registered).
 
@@ -492,7 +492,7 @@ u → `WORLD - 1 - u`).
   (30) u from the corner; its wall wanders ±`BASE_RAG` (1.2) tiles on the position noise
   (`baseWall`), so it reads as a clearing, not a circle.
 - The **perch** (`basePerch(team)`) is `PERCH_U` (21) u from the corner, at the back of the hollow
-  and deepest in the woods: the bird roosts there ([eagle drop](rendering.md#eagle-drop-mode-drop)).
+  and deepest in the woods: the bird roosts there ([eagle drop](rendering/eagle-drop-mode-drop.md)).
 - The **mouth** is where the road leaves the hollow, `baseGateU(team)` (u `BASE_U + BASE_R`): the
   side's junction (`roadNest`, [the road](#the-road)), the way in for every walker.
 - The road runs in through the mouth and **ends on the perch**: `baseRoadEnd(fx, fy)` is positive
@@ -543,7 +543,7 @@ along the lane, whichever way the creek bends there.
 
 `laneWaypoints(team, lane)` is the march down a side lane: the centreline every `ROAD_STEP`
 tiles from the side's own mouth to the rival's (`laneAlong`, `laneAt`), then the rival hollow's
-centre ([Soldiers](gameplay.md#soldiers-the-waves)). `laneZipTiles(team, lane)` is a side's cable
+centre ([Soldiers](gameplay/robots.md#soldiers-the-waves)). `laneZipTiles(team, lane)` is a side's cable
 down it ([the zipline](#the-zipline)), and `laneHold(team, lane)` where a bot laner waits on any
 lane, mid included, with no column of its own there ([bots](multiplayer.md#bots)).
 
@@ -711,7 +711,7 @@ waves crossed on the stones, none set foot inside the ring and none stood in the
 
 ### The orca's lake
 
-**The cistern's pool is frozen over**; the orca lives under it ([the orca](gameplay.md#the-orca)).
+**The cistern's pool is frozen over**; the orca lives under it ([the orca](gameplay/wildlife.md#the-orca)).
 It is a disc `ORCA_LAKE_R` (= `CIST_ICE`) tiles round the crossing, its rim under the wall's
 inner face, so each side's half of the valley gets the same ice. `orcaLakeEdge(fx, fy)` is the
 signed distance in tiles to the rim (negative inside), `orcaLakeAt` the membership, `orcaLakeNear`
@@ -735,7 +735,7 @@ asks it; its bands:
 
 - **DEEP** (`>= DEPTH_DEEP`, 0.6) is gameplay: `deepAt(x, y)` is true there on open snow
   (ground 0) only, so a runtime paving or a hole takes it away. It slows every walker
-  ([Deep snow](gameplay.md#deep-snow)) and is drawn raised (`deepTone`, below).
+  ([Deep snow](gameplay/deep-snow.md)) and is drawn raised (`deepTone`, below).
 - **MID** (`DEPTH_MID` 0.25 up to deep) is a drift you see and do not wade: a drift's skirt
   round its core, the whole of a small drift whose `amp` never reaches deep, and the **lee pad**
   every standing thing out in the open holds (`layLees`/`leeDepth`, `leeCell`): the same shape a
@@ -828,7 +828,7 @@ clip on — the nearest, within `ZIP_GRAB` (32, two tiles) px of the track — o
 question for a world point against the cable **as drawn** — the point dropped to the track by
 the lift where it lands (once for the span, once more with that span's sag), within `ZIP_HOVER`
 (6) px — which the pointer's hover and the click scheme's press ask. The ride itself:
-[the zipline](gameplay.md#the-zipline).
+[the zipline](gameplay/momentum-movement-players-only.md#the-zipline).
 
 **The road towers cut it.** `placeTowers()` (js/sim/towers.js, right after `placeZips()` in boot)
 keeps every cable whole in `zipWhole[line]` (a line is its index in `zips`), stands two towers on
@@ -856,7 +856,7 @@ Five kinds, one reward each:
 - **BLACK BEAR STONE** (`buff`, r 4, ×1) — a [river camp](#river-camps): no props, one **black
   bear** (kind `alpha`) walking BLUE's bank of the downstream bend. The brown bear's match, the same
   body: the same hp, the same pay, its own BLACK BUFF for the whole team for 120 s
-  ([camp monsters](gameplay.md#camp-monsters-neutral-until-hit)). Back in 300 s.
+  ([camp monsters](gameplay/wildlife.md#camp-monsters-neutral-until-hit)). Back in 300 s.
 - **BROWN BEAR DEN** (`epic`, r 6, ×1) — a [river camp](#river-camps): no props, the **brown
   bear** (kind `dire`) walking RED's bank of the upstream bend: a big body with a wall of hp. The kill pays the killer
   `YIELD.dire` and **every teammate** `EPIC_TEAM_GOLD`, gives the whole team the BROWN BUFF for 120 s, and
@@ -871,9 +871,9 @@ Five kinds, one reward each:
   roost, and the one camp **drawn by hand** (its `plan`): a round clearing in a ring of pines
   with one mouth out to the field, **three rabbits** in the middle, three **snowdrop** clumps at
   the back that each shield the picker's side and then rest on their own cooldown
-  ([the dawn shield](gameplay.md#the-dawn-shield)), and the clearing filled to the trees with
+  ([the dawn shield](gameplay/the-dawn-shield.md)), and the clearing filled to the trees with
   deep snow (`layMeadowDrifts`, js/sim/depth.js). The rabbits are the only ones on the map
-  ([wildlife](gameplay.md#wildlife)); nothing in it is hostile. Cleared, the three are back 40 s
+  ([wildlife](gameplay/wildlife.md)); nothing in it is hostile. Cleared, the three are back 40 s
   later on the camp clock; with no anchor prop, nothing wears it.
 
 **One entry in `CAMPS` is one kind of camp**, and that entry plus its site is the whole feature —
@@ -962,7 +962,7 @@ way along the creek from its bend's apex, on the camp's own side of the water an
 its scoop lands in (`wx`, `wy`). Pure
 position off `creekBends`/`creekMid`: nothing rolls. Everything standing on the line or a tile
 either side of it is felled. The bear spawns, and comes back, at the stretch's middle; the walk
-and the fishing are [gameplay.md](gameplay.md#camp-monsters-neutral-until-hit)'s.
+and the fishing are [gameplay.md](gameplay/wildlife.md#camp-monsters-neutral-until-hit)'s.
 
 `campNear(C, tx, ty, pad)` is every question about a camp's ground: inside `C.r + pad` of the
 site, or for a river camp within `RIVER_BAND` (2) + `pad` of any point of its bank. `campAt`, the
@@ -974,9 +974,9 @@ leash, the rocks, the drifts and the landmarks all keep off or count the bank th
 **A camp is neutral until hit.** No sight, no bar filling while you linger: you can walk
 through a den and nothing happens. A hit wakes the whole camp on the hitter, the camp leashes
 when the hitter leaves its ground and heals — the rules are in
-[gameplay.md](gameplay.md#camp-monsters-neutral-until-hit). `campAt(x, y)` returns the camp a
+[gameplay.md](gameplay/wildlife.md#camp-monsters-neutral-until-hit). `campAt(x, y)` returns the camp a
 world position stands in; `updatePlay` feeds it `state.loc` (`{ L, t }`), which drives the
-arrival toast in [rendering.md](rendering.md#camps-on-the-maps).
+arrival toast in [rendering.md](rendering/camps-on-the-maps.md).
 
 `updateCamps(dt)` (from `updateWildlife`, `updatePlay`'s wildlife step) runs each camp's respawn clock (`C.repopT`), kept honest
 enough to be shown: a camp with anything alive in it holds the clock at `repop` — a half-killed
@@ -1007,7 +1007,7 @@ the checklist in [checklists.md](checklists.md#common-changes).
 ## The practice arena
 
 The TRAINING FIELD behind the title's PRACTICE TOOL, reached through a party: the party lobby's
-START takes the whole party there (`partyPractice`, js/ui/rooms.js; [gameplay.md](gameplay.md#settings)),
+START takes the whole party there (`partyPractice`, js/ui/rooms.js; [gameplay.md](gameplay/settings.md)),
 the leader's page hosting and friends joining on the spawn tile (`practiceSeat`; an empty seat is
 parked in the corner forest, `practiceVacate`, js/sim/practice.js). `?practice=1` boots `genPracticeWorld()` (the
 `practice arena` banner, js/sim/practice.js) **instead of** `genWorld()`, and js/app/boot.js skips
@@ -1020,7 +1020,7 @@ written in the block's own tiles); the **deer ride's forest wing** fills the row
 never advances it under `PRACTICE` — crisp daylight forever, no dusk, no dawn refreeze. The
 **cloud shadows are skipped there too** for the same reason the clock is pinned: a shadow drifting
 over the dummy's meter or the parkour's ice would change what those instruments measure between
-one lap and the next. The sun shafts stay ([rendering.md](rendering.md#light-and-weather)).
+one lap and the next. The sun shafts stay ([rendering.md](rendering/light-and-weather.md)).
 
 The arena is one open **40×23-tile snowfield** (`PR_W`/`PR_H`) cut to pure combat. What stands
 in it:
@@ -1164,7 +1164,7 @@ spent for good.
 list rides `SAVE_ROOTS`, and since `updatePractice` never runs in a match the face holds where
 it was put. One carrying a `word` scores nothing: `hitPTarget` shatters it and `wordPop`
 (js/sim/core.js) floats the word up from the face in the damage totals' gold
-([rendering](rendering.md#damage-feedback)).
+([rendering](rendering/damage-feedback.md)).
 
 **Every arrow into a face also extends a consecutive-hit run** (`agStreak`),
 minigame or not: the hit popup carries it from the second hit on (`X3` alone in free practice —
@@ -1260,7 +1260,7 @@ grace), `checkLastStanding()` never fires, and the profile is never written — 
 `PROFILE.addGold` and the pinned clock means `addDay` can never fire — with two deliberate
 exceptions: a record parkour lap (`PROFILE.setBestLap`) and a record bell round
 (`PROFILE.setBestRange` / `setBestRound`, both above). The way out is the ESC
-slab's LEAVE plank ([settings](gameplay.md#settings)).
+slab's LEAVE plank ([settings](gameplay/settings.md)).
 
 The **dummy** is an `OBJECTS` entry (`solid`, any tool, verb HIT) with one solid tile and a
 26×42 sprite (`DUMMY_SPR`, baked in js/draw/practice.js). Every way of hurting it
@@ -1273,7 +1273,7 @@ back to `DUMMY_HP` after `DUMMY_RESET_T` seconds unhit, with a shimmer for the a
 respawn, runs the archery round (`agUpdate`), and times the parkour laps.
 
 Over the dummy's head hangs its **damage meter** — LAST HIT / DPS / TOTAL for the combo in
-progress (an instrument, the [carve-out](rendering.md#show-dont-label)). `hitDummy` keeps the ledger (`mLast`/`mTotal`/`mT0`/`mT1` on the object; a
+progress (an instrument, the [carve-out](rendering/show-dont-label.md)). `hitDummy` keeps the ledger (`mLast`/`mTotal`/`mT0`/`mT1` on the object; a
 hit after the mend window starts it over), DPS is total over first-to-last hit floored at one
 second, and `drawDummyMeter` (js/draw/practice.js) draws the plate — visible only while a combo is
 live, lingering `DUMMY_METER_LINGER` past the mend so the final read stands, then fading.
@@ -1327,7 +1327,7 @@ ramp: dusk over the last 12 s of day, full dark, then a 10 s dawn.
 
 Night is a **colour**, not a darkness — a blue multiply over the finished frame with the
 stars reflected in the ice under it, and nothing to carry a lamp for
-([rendering.md](rendering.md#light-and-weather)) — and no sim rule sharpens at night: nothing
+([rendering.md](rendering/light-and-weather.md)) — and no sim rule sharpens at night: nothing
 in wildlife or the AI reads `state.darkness`. What keys off the cycle:
 
 - The only passive heal, slow HP regen in `updatePlayer()` for every player, runs while
@@ -1335,12 +1335,12 @@ in wildlife or the AI reads `state.darkness`. What keys off the cycle:
   js/sim/player.js; no card or item sets it now). There is no cold/warmth system.
 - **The wind dies with the light.** `windAmp()` squares `1 - darkness`, so the snow stops blowing
   sideways and every pine goes still over the twelve seconds of dusk and stays still until dawn
-  ([the wind field](rendering.md#the-wind-field)).
+  ([the wind field](rendering/drawing-a-thousand-of-something.md#the-wind-field)).
 - The **sun shafts** are not on the darkness curve at all: they are up for the eagle drop and for
   about fifteen seconds around noon, and dark otherwise
-  ([god rays](rendering.md#light-and-weather)). The **cloud shadows** fade out on it, and the **ice** darkens
+  ([god rays](rendering/light-and-weather.md)). The **cloud shadows** fade out on it, and the **ice** darkens
   into a mirror on it with the **reflected stars** coming up inside that
-  ([the reflected sky](rendering.md#the-reflected-sky)) - so a frozen lake reads darker than the
+  ([the reflected sky](rendering/light-and-weather.md#the-reflected-sky)) - so a frozen lake reads darker than the
   snow around it after dusk, and an ice hole is a hole in the reflection.
 - Carved ice holes refreeze at dawn and cracks heal — **unless a fish net stands on the hole**,
   which is what holds that water open. The shoal is not topped up at dawn; it refills
@@ -1353,8 +1353,8 @@ plunge through the ice (see [PvP](multiplayer.md#pvp)), and the wolves of a
 ## Ice holes and fishing
 
 **E over a bare ice tile** (no object) brings out the pickaxe and calls `crackIce(tx, ty)` on
-that tile (see [The swing tools](gameplay.md#the-swing-tools-e); the weapons:
-[Tools and bits](gameplay.md#tools-and-bits)). Hits accumulate in the
+that tile (see [The swing tools](gameplay/the-swing-tools-e.md); the weapons:
+[Tools and bits](gameplay/tools-and-bits.md)). Hits accumulate in the
 `iceCracks` map (`tile idx → hits`, rendered as bright fracture decals in their own pass);
 `ICE_HOLE_HITS` (2) breaks through — the tile becomes `ground = 2` (open water), joins the
 `holes` list, and is repainted into the ground canvas via `repaintGround()`. Constants live in the `fish` banner of
@@ -1404,7 +1404,7 @@ sits beside `STRUCTS` in [js/sim/structures.js](../../js/sim/structures.js) with
   step) checks whether that player stands on an ice tile with a fish within `FISH_CATCH_R`
   (16 px); if so the fish is taken with no press — once per `FISH_AUTO_CD` (1.2 s), spending no
   tool cycle — into the `p.food` pouch, splash, no arrow, and the press on the ice
-  flies like any other ([the swing tools](gameplay.md#the-swing-tools-e)). The catch is
+  flies like any other ([the swing tools](gameplay/the-swing-tools-e.md)). The catch is
   [contested](multiplayer.md#contested-orders), so two players can't land the same fish. **The catch is a pose**: the contest's
   callback calls `startCatch(p, kind)` (below `autoFish` in js/sim/tools.js), `CATCH_T` (2 s) of three
   down-facing frames whatever the body faced - `CATCH_STOOP` (0.16 s) bent to the hole,
@@ -1422,10 +1422,10 @@ sits beside `STRUCTS` in [js/sim/structures.js](../../js/sim/structures.js) with
   holds, dimmed blue-grey outside it, and no verb: the mechanic is proximity, not aim, and the
   brackets' brightness is the whole of that hint. Fish are food: **F** eats one over a 1.5 s channel a
   hit can break (`eatFish`, mirroring the berry's Q/+20; both meals share one 3 s clock - see
-  [Food](gameplay.md#food-the-meal-is-a-channel)), counted beside the berries on the backpack strip.
+  [Food](gameplay/food-the-meal-is-a-channel.md)), counted beside the berries on the backpack strip.
   A hole gives the frost pike (`fish`, +50, `SPRITES.itemFrostPike`) or the gold sunfish
   (`sunfish`, +80, `SPRITES.itemSunfish`); with the creek's whitefish (+40) and snow char (+70)
-  they are the four fish the fish well eats ([Food](gameplay.md#food-the-meal-is-a-channel)). `SFX.splash()` is the water cue. `DBG`
+  they are the four fish the fish well eats ([Food](gameplay/food-the-meal-is-a-channel.md)). `SFX.splash()` is the water cue. `DBG`
   exposes `fish`, `iceCracks`, `holes`, `crackIce`, `addFish`, `spawnEmerger`, `netAt`,
   `buildSiteAt`.
 
@@ -1434,7 +1434,7 @@ sits beside `STRUCTS` in [js/sim/structures.js](../../js/sim/structures.js) with
 **Something big coming up through a lake breaks the ice in its own shape**, never a tile's
 ([js/sim/icebreak.js](../../js/sim/icebreak.js), the pixels in
 [js/draw/icebreak.js](../../js/draw/icebreak.js)). The orca comes up through one
-([the orca](gameplay.md#the-orca): `orcaStrike`). `iceBreak(x, y, shape, ang, { warn, hold })` breaks the ice
+([the orca](gameplay/wildlife.md#the-orca): `orcaStrike`). `iceBreak(x, y, shape, ang, { warn, hold })` breaks the ice
 round a world point and returns the break (null where no bare ice lies under it);
 `DBG.iceBreak` stages one.
 
@@ -1508,9 +1508,9 @@ one flag — never the type name — is what every site reads:
 | a pad's wheel over open water offers it, and only it | `buildSiteAt` → `buildOptionsAt` → `WATER_STRUCT_ORDER` |
 | not solid — you walk **on** it, and the plunge check skips it | `isSolidTile`, `updatePlayer` |
 | its hole never refreezes while it stands | the dawn branch, via `netAt` |
-| drawn flat, under everything, never y-sorted | `drawNet` in the flat pass — see [rendering](rendering.md#render-pass-order) |
+| drawn flat, under everything, never y-sorted | `drawNet` in the flat pass — see [rendering](rendering/render-pass-order.md) |
 
-The net is the [build list](gameplay.md#base-building)'s last row: its ghost is white over a bare
+The net is the [build list](gameplay/base-building.md)'s last row: its ghost is white over a bare
 hole and red anywhere else, the same `canPlaceAt` read as every other piece. A pad's build wheel
 over a hole offers the net alone, and nothing is special-cased for a one-option wheel:
 `wheelSpan(1)` is the full circle, so any direction out of the hub picks the net and the hub

@@ -73,7 +73,7 @@ blade as a plate under each boot.
 These are the one place `bakeSpan()` is used instead of `bake()`: it attaches `spans`, the per-row
 `[firstX, lastX]` of painted pixels computed straight off the char grid, and `flipH` mirrors that
 array with the canvas. The game's snow cover reads it to size the mound to the pose
-([rendering.md](rendering.md#snow)) — which means editing a prone grid updates the
+([rendering.md](rendering/render-pass-order.md#snow)) — which means editing a prone grid updates the
 cover for free, and there is no canvas readback anywhere in the feature.
 
 **The fish catch is three more DOWN frames** in every class set - `catch: [stoop, haul, hoist]` beside
@@ -235,7 +235,7 @@ colours it was born with.
 - `teamBuild[team][type][tier]` — the tier material with the `k`/`K`/`e` accents repainted, so
   tier still reads as tier.
 - `robotTeam[team]`.
-- `merchant[team]` — the eagle's driver ([the merchant](gameplay.md#the-merchant)), below.
+- `merchant[team]` — the eagle's driver ([the merchant](gameplay/robots.md#the-merchant)), below.
 
 A new character or building sprite has to be added to those bakes, not just to the flat `SPRITES`
 entry, or it will not wear a team's colour — and every read indexes by `skin(team)` (the
@@ -305,7 +305,7 @@ The **gear icons** are twelve 12×12 grids (`gearLongsight` … `gearGhoststep`)
 **material** — `GEAR_MAT_PALS`, leather → iron → steel → gold, plus the shared accent chars `w`
 (ice-white) and `r` (hearth-red) — into `SPRITES.gearIcons[slot][variant][material]`. They are
 item icon art now: a `BUILD_ITEMS` entry's `icon` of `['gear', slot, variant, material]` names one
-(`itemIcon`, js/sim/items.js; see [the items](gameplay.md#the-items)). `itemBag` is
+(`itemIcon`, js/sim/items.js; see [the items](gameplay/the-merchants-counter.md#the-items)). `itemBag` is
 12×12 too, since it sits in the same 18 px HUD well, but shares `ITPAL` with the
 8×8 item icons rather than taking a material palette: it is one object, not four materials of one.
 
@@ -325,7 +325,7 @@ others are the gold sack, the three animated goods and both prey, below:
 frames. It draws at
 `(px - 5, py - 21)` with its trunk on the tile's centre line, and **through `SPRITES.treeAtlas`,
 never through `SPRITES.tree`** (the one-texture rule;
-[rendering.md](rendering.md#drawing-a-thousand-of-something)).
+[rendering.md](rendering/drawing-a-thousand-of-something.md)).
 
 The array is a **ladder, not a cycle**: index 0 is the tree thrown fully left, 23 fully right, 11
 and 12 are it standing up. A frame here is a *lean*, so `treeFrame` maps the wind's signed sway
@@ -350,10 +350,10 @@ blue-grey band; **C** adds a hue shift by value (shadows toward teal, lights tow
 (`TREE_TONES`, a needle L shift): the deep is the filtered look itself, the ring inside the edge
 +0.035, the edge +0.07 — nine pines in ten stand deep, so darkening the deep instead would darken
 the whole forest. Which row a tree wears is decided on its tile at draw time
-([rendering.md](rendering.md#render-pass-order)). `SPRITES.tree` is variant B's deep row.
+([rendering.md](rendering/render-pass-order.md)). `SPRITES.tree` is variant B's deep row.
 
 Which frame a tree is wearing is decided by the
-wind, not here - [rendering.md](rendering.md#the-wind-field).
+wind, not here - [rendering.md](rendering/drawing-a-thousand-of-something.md#the-wind-field).
 
 **The gold sack is the merchant's mark.** `SPRITES.goldSack` is
 `docs/media/new_media3/bag_of_gold_bouncing.png` — a 320×32 strip — split at 32 px into the ten
@@ -466,7 +466,7 @@ into `teamBuild[team].icon.turret`, the same escape hatch the bay uses.
 **object**, not a flat list: one array per behaviour, every kind carrying at least `idle` — the
 frame anything asking for "the beast" takes (the wiki's cards read `.right.idle[0]`). Which clip
 is playing is the animal's business, not the sprite's: js/sim/wildlife.js sets `a.clip` from what the
-beast is doing (`ANIM_CLIPS`, [gameplay.md](gameplay.md#what-a-beast-is-doing-the-clips)) and
+beast is doing (`ANIM_CLIPS`, [gameplay.md](gameplay/wildlife.md#what-a-beast-is-doing-the-clips)) and
 `clipFrame` in js/draw/bodies.js plays it. `bakeClips` builds a set and `mapClips` walks one — the
 mirror for `left`, the bears' `right` below.
 
@@ -482,7 +482,7 @@ snapped onto `RBPAL` (eleven colours) and `DEPAL` (thirteen), source order the a
 | `dire` / `alpha` (the bears) | `idle` 6, `walk` 8, `run` 6, `bite` 10, `paw` 10, `roar` 8, `fish` 12 | a painted rig | 112×76 |
 
 The rabbit is [resampled offline](#the-offline-resample) — at its own cell size the bunny stands taller
-than a 16 px player — and the deer only snapped, never scaled: the stag ships at its full cell, twice a player's height, so it reads as the animal you can ride ([riding](gameplay.md#riding-a-deer)). The **rabbit ships at 11×12**, deliberately
+than a 16 px player — and the deer only snapped, never scaled: the stag ships at its full cell, twice a player's height, so it reads as the animal you can ride ([riding](gameplay/wildlife.md#riding-a-deer)). The **rabbit ships at 11×12**, deliberately
 shy of half its source: a bunny the height of the hero read as a hare the size of a dog, and the
 stag beside it is the animal that is meant to look big. Each kind's three sheets share **one
 crop** — the box every frame of every clip fits inside — because a clip taking over on a different
@@ -506,7 +506,7 @@ each also mirrored), each **shut** and **open** at three wind leans and once **p
 open bloom's **glow**: a halo of sparks round the bell at `GLOW_N` (6) phases per lean, and the
 open **bell** alone at each lean with `at`, the point in the cell its light centres on. The bell,
 the glow and the light are laid above the night grade by `litSnowdrops`
-([rendering](rendering.md#light-and-weather)). Feet at the tile's (8, 15). The render picks the lean off `windSway` and jitters each clump inside its tile
+([rendering](rendering/light-and-weather.md)). Feet at the tile's (8, 15). The render picks the lean off `windSway` and jitters each clump inside its tile
 by its own hash. Repaint and rebake; never edit the grids.
 
 The camps' two [bears](world.md#camps), the brown (`dire`) and the black (`alpha`), live in
@@ -559,7 +559,7 @@ seeded walk down the body, dark on stone and white on crystal) and so are the gl
 grids baked beside their code in js/sim/mining.js (`ORE_ICONS`): a lump, a shard and a cut gem.
 
 Anything drawn through `drawSpriteFlash()` must stay within **64×64**: it recolours through a
-shared 64×64 scratch canvas and a larger sprite clips ([rendering.md](rendering.md#render-pass-order)).
+shared 64×64 scratch canvas and a larger sprite clips ([rendering.md](rendering/render-pass-order.md)).
 
 **New sprites bake beside the code that draws them, not here.** The treasure chest (`CHEST_SPR`,
 js/draw/ground.js) and every tool and bit icon (`TOOL_ART` / `BIT_ART` / `bakeGrid`, js/sim/tools.js)
