@@ -83,7 +83,7 @@ With the finished cut, deliver all four together:
   Discord link. Dates go here, not on the end card.
 
 Put the description and comment in a `writing_draft_v0` card so Noah can copy them, and add the
-video to the media board. Links: Steam https://store.steampowered.com/app/5244550/Softfall/,
+video to its dish on the Kitchen (the `kitchen` skill). Links: Steam https://store.steampowered.com/app/5244550/Softfall/,
 Discord https://discord.com/invite/24teKhrGb8.
 
 ## After posting
