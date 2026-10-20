@@ -16,7 +16,7 @@
 // upload), else Valve's Spacewar (480), the App ID every developer may test on.
 // Steam must be running and signed in, or
 // init fails and the bridge reports `ready: false` - the page then plays solo.
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
@@ -62,8 +62,12 @@ function createWindow() {
   win.setMenuBarVisibility(false);
   // a window the page opens (F6, the Bot Lab) is this one's child, and the
   // app goes with this one: closing the game quits it (and Steam's "playing")
-  // whatever else is still open
-  win.webContents.setWindowOpenHandler(() => ({ action: 'allow', overrideBrowserWindowOptions: { parent: win, autoHideMenuBar: true, backgroundColor: '#0b0f16' } }));
+  // whatever else is still open. A web page (the title's KITCHEN tab) opens
+  // in the player's own browser instead, never inside the game.
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    if (/^https:\/\//.test(url)) { shell.openExternal(url); return { action: 'deny' }; }
+    return { action: 'allow', overrideBrowserWindowOptions: { parent: win, autoHideMenuBar: true, backgroundColor: '#0b0f16' } };
+  });
   win.on('closed', () => { win = null; app.quit(); });
   win.on('focus', () => win.flashFrame(false)); // a nudge stops once the window is looked at
   const query = {};

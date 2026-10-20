@@ -8,14 +8,19 @@
 // switch between them cross-fades the page and never the row. The open one
 // is gold over the gold rule, the rest dim, lighter under the pointer. On
 // the keys the row is one walk left to right: the wiki's own pages, then
-// PATCH NOTES, then ROADMAP (wikiKey, notesKey).
-const PAGE_TABS = ['WIKI', 'PATCH NOTES', 'ROADMAP'];
+// PATCH NOTES, then ROADMAP (wikiKey, notesKey). The last tab, KITCHEN, is a
+// link, not a page: a click opens the Softfall Kitchen website (how the game
+// gets made) in the browser, and its small arrow says it leaves the game.
+const PAGE_TABS = ['WIKI', 'PATCH NOTES', 'ROADMAP', 'KITCHEN'];
+const PAGE_LINK_TAB = 3; // the tab that opens KITCHEN_URL
+const KITCHEN_URL = 'https://aptyll.github.io/softfall-kitchen/';
+const PAGE_LINK_ARROW = 16; // the link tab's arrow (10 px) and the gap before it, at scale 2
 const PAGE_TAB_GAP = 28;
 const NOTES_TOP = 12; // the row's top edge: the pages are the whole view, so it hugs the top
 // which tab is open: the wiki's screen, else the notes screen's own pick
 function pageTabOpen() { const m = state.menu; return m.screen === 'wiki' ? 0 : m.notesTab ? 2 : 1; }
 function pageTabsLayout() {
-  const ws = PAGE_TABS.map((t) => pixelTextWidth(t, 2));
+  const ws = PAGE_TABS.map((t, i) => pixelTextWidth(t, 2) + (i === PAGE_LINK_TAB ? PAGE_LINK_ARROW : 0));
   let x = Math.round((VIEW_W - ws.reduce((s, w) => s + w, 0) - PAGE_TAB_GAP * (ws.length - 1)) / 2);
   return PAGE_TABS.map((text, i) => { const r = { i, text, x, y: NOTES_TOP, w: ws[i], h: 10 }; x += ws[i] + PAGE_TAB_GAP; return r; });
 }
@@ -27,6 +32,7 @@ function pageTabHit(mx, my) {
 // open tab i from whichever page is up: the wiki is its own screen with its
 // own song, the other two are the notes screen's
 function openPageTab(i) {
+  if (i === PAGE_LINK_TAB) { SFX.place(); window.open(KITCHEN_URL, '_blank', 'noopener'); return; }
   const m = state.menu, from = pageTabOpen();
   if (i === from) return;
   if (i === 0) { beginWiki(); return; }
@@ -44,9 +50,20 @@ function drawPageTabs(a) {
     const on = r.i === open;
     const col = on ? '#ffd95c' : r.i === hot ? '#cfe0ff' : '#5a6690';
     drawPixelTextShadow(ctx, r.text, r.x, r.y - lift, col, on ? '#3c2a1e' : 'rgba(8,12,28,0.9)', 2);
+    if (r.i === PAGE_LINK_TAB) drawLinkArrow(r.x + r.w - 10, r.y - lift, col);
     if (on) drawGoldRule(r.x + (r.w >> 1), r.y + 15 - lift, (r.w >> 1) + 8, a);
   }
   ctx.globalAlpha = 1;
+}
+
+// a small arrow up and to the right, as tall as the tab's letters at scale 2,
+// with the same drop shadow: this tab leaves the game
+const LINK_ARROW = ['.####', '...##', '..#.#', '.#..#', '#....'];
+function drawLinkArrow(x, y, col) {
+  for (const [dx, c] of [[2, 'rgba(8,12,28,0.9)'], [0, col]]) {
+    ctx.fillStyle = c;
+    LINK_ARROW.forEach((row, j) => { for (let i = 0; i < 5; i++) if (row[i] === '#') ctx.fillRect(x + i * 2 + dx, y + j * 2 + dx, 2, 2); });
+  }
 }
 
 // ------------------------------------------------------------ roadmap
@@ -209,6 +226,7 @@ const PATCH_DIGEST = [
     ['THE PIERCING SHOT FLIES TWICE AS FAR', '0.273'],
   ]],
   ['MENUS AND CONTROLS', [
+    ['A KITCHEN TAB OPENS THE WEBSITE WHERE YOU WATCH THE GAME GET MADE', '0.510'],
     ['FIND MATCH PUTS ANOTHER PARTY AGAINST YOU, BOTS ONLY IF NOBODY IS LOOKING', '0.497'],
     ['THE PARTY LEADER SWITCHES MODES WITH A CLICK ON THE MODE NAME', '0.497'],
     ['THE PRACTICE TOOL WITH YOUR PARTY: START, THEN FRIENDS JOIN BY CODE ANY TIME', '0.489'],
@@ -358,7 +376,7 @@ function notesKey(k) {
   const m = state.menu;
   if (k === 'escape' || k === 'backspace') { leaveNotes(); return; }
   if (moveDir(k) === 'left') { if (!m.notesTab) m.wikiTab = WIKI_PAGES.length - 1; openPageTab(pageTabOpen() - 1); return; }
-  if (moveDir(k) === 'right') { openPageTab(Math.min(PAGE_TABS.length - 1, pageTabOpen() + 1)); return; }
+  if (moveDir(k) === 'right') { openPageTab(Math.min(PAGE_LINK_TAB - 1, pageTabOpen() + 1)); return; } // the keys never leave the game
   const d = moveDir(k) === 'up' ? -1 : moveDir(k) === 'down' ? 1 : 0;
   if (d) {
     if (m.keyNav) m.notesSel = Math.max(0, Math.min(notesGroups().length - 1, m.notesSel + d));
