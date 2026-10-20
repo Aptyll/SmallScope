@@ -53,7 +53,9 @@ const SK_TICK_PAL = { w: '#cfe0ff' };
 // two `cols`). A scout row with a `body` is real: it names a whole body in
 // SPRITES (the robot: SPRITES.robotSkin, js/baked/robot.js) that the local
 // player wears in a match (scoutBody). The bird's table is real and lives with
-// its art (BIRD_SKINS, js/sprites/eagle.js).
+// its art (BIRD_SKINS, js/sprites/eagle.js), and so is a hero's (a tab with
+// `hero`: ARMATOS's looks, ARM_SKINS, js/sprites/armatos.js), which every
+// screen in the match sees.
 // Every table's first row is free and is the slot's default; an id is what
 // a profile keeps, so it never changes.
 const SCOUT_SKINS = [
@@ -89,6 +91,8 @@ const SKIN_TABS = [
   { id: 'bird', name: 'EAGLE', slot: 'bird', rows: BIRD_SKINS, glyph: ['........', 'w......w', 'ww....ww', '.ww..ww.', '..wwww..', '...ww...', '...ww...', '..w..w..'] },
   { id: 'weapon', name: 'WEAPON', slot: 'weapon', rows: WEAPON_SKINS, glyph: ['...wwww.', '..w..ww.', '.w..w.w.', 'w..w..w.', 'w.w...w.', 'ww....w.', 'wwwwww..', '........'] },
   { id: 'trail', name: 'TRAIL', slot: 'trail', rows: TRAIL_SKINS, glyph: ['...w....', '..www.w.', '...w....', '......w.', '.w...www', 'www...w.', '.w......', '........'] },
+  // a hero's looks (CLASSES[c].skins): real, worn in a match and seen on every screen (heroSkinOf, player.js)
+  { id: 'armatos', name: 'ARMATOS', slot: 'armatos', rows: ARM_SKINS, hero: 2, glyph: ['.wwww...', '.w..ww..', '.wwww...', '.w......', '.w......', '.w......', '.w......', 'www.....'] },
 ];
 const SK_TAB_BIRD = 1; // SKIN_TABS' eagle and scout, the two tabs a match reads
 const SK_TAB_SCOUT = 0;
@@ -107,6 +111,14 @@ function skinHas(tab, r) { return r.price <= 0 || PROFILE.owns(skinKey(tab, r));
 function skinWorn(tab) {
   const r = skinRow(tab.rows, PROFILE.worn(tab.slot));
   return skinHas(tab, r) ? r : tab.rows[0];
+}
+// the looks this profile wears on each hero, as a player carries them
+// (p.skins: hero slot -> id; only owned, and only a look that is not the
+// hero's own free one)
+function profileHeroSkins() {
+  const out = {};
+  for (const tab of SKIN_TABS) if (tab.hero != null) { const r = skinWorn(tab); if (r !== tab.rows[0]) out[tab.slot] = r.id; }
+  return out;
 }
 function birdSkinRow(id) { return skinRow(BIRD_SKINS, id); }
 function skinOwned(r) { return skinHas(SKIN_TABS[SK_TAB_BIRD], r); } // a bird row
@@ -178,7 +190,8 @@ function skinArt(tab, r, t, f) {
   if (tab.id === 'scout') key += ':' + player.cls + ':' + JSON.stringify(player.look); // the scout you are
   let cv = skinArtCache.get(key);
   if (!cv) {
-    if (tab.id === 'scout' && r.body) cv = SPRITES[r.body][t].icon;
+    if (tab.hero != null) cv = SPRITES.champLook(tab.hero, null, t, r.id).down[0]; // the hero standing in that look
+    else if (tab.id === 'scout' && r.body) cv = SPRITES[r.body][t].icon;
     else if (tab.id === 'scout') cv = washed(SPRITES.portrait(player.cls, player.look, t), r.tint);
     else if (tab.id === 'weapon') cv = washed(SPRITES.itemBow, r.tint);
     else cv = trailArt(r.cols, f);
@@ -277,11 +290,13 @@ function skinPress(i) {
   if (skinHas(tab, r)) {
     m.skPick = -1;
     if (PROFILE.wear(tab.slot, i === 0 ? null : r.id)) SFX.place(); else SFX.pickup();
+    player.skins = profileHeroSkins(); // the stage and the next match wear it
     return;
   }
   if (m.skPick !== i) { m.skPick = i; SFX.pickup(); return; }
   if (!PROFILE.buy(skinKey(tab, r), r.price)) { m.skDeny = SK_SHAKE_T; SFX.deny(); return; }
   PROFILE.wear(tab.slot, r.id);
+  player.skins = profileHeroSkins();
   m.skPick = -1;
   m.skFlash = SK_FLASH_T; m.skFlashI = i;
   SFX.coin();

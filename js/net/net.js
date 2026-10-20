@@ -243,6 +243,7 @@ function netHostHello(peer, msg) {
   if (PRACTICE) practiceSeat(p); // onto the field's spawn, out of the corner it was parked in
   if (msg.name) p.name = msg.name;
   if (msg.cls !== undefined && msg.cls !== null) setClass(p, msg.cls);
+  p.skins = cleanHeroSkins(msg.skins); // the looks they wear, drawn on every screen (heroSkinOf, player.js)
   NET.ranks[slot] = msg.rank | 0 || null;
   const pr = { slot, uid: msg.uid, name: msg.name, cross: !!msg.party, lastTick: 0, ack: -1, dictAt: new Map(), q: [], qMin: Infinity, qN: 0 };
   NET.peers.set(peer, pr);
@@ -522,7 +523,7 @@ function netClientStats() {
   NET.was = { p: me, earned: me.earned, kills: me.kills, dead: me.dead, aboard: me.aboard };
 }
 function netClientHello() {
-  NET.transport.send('host', { t: 'hello', uid: NET.uid, patch: PATCH_TXT, seed: SEED, map: MAP_TYPE, name: PROFILE.name(), cls: PROFILE.hero(), rank: PROFILE.rank(),
+  NET.transport.send('host', { t: 'hello', uid: NET.uid, patch: PATCH_TXT, seed: SEED, map: MAP_TYPE, name: PROFILE.name(), cls: PROFILE.hero(), skins: profileHeroSkins(), rank: PROFILE.rank(),
     party: CROSS ? CROSS.party : undefined, pn: CROSS ? CROSS.n : undefined }); // a party crossing in (js/ui/matchmaking.js)
 }
 // the roster the host dealt: our slot is the human here, the host's is a

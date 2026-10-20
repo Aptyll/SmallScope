@@ -206,6 +206,8 @@ function tipClassAb(i, cls, k) {
       lock ? '#e0637a' : '#f4f7ff']);
     if (player.abLv[i] < AB_LV_MAX) d.rows.push([lock ? 'UNLOCK' : 'NEXT LEVEL', '1 SKILL PT',
       player.skillPts > 0 ? '#f2cc6a' : '#e0637a']);
+    const req = ab.lvReq && ab.lvReq[player.abLv[i]]; // an ultimate's next point waits for the hero (abLvCanBuy)
+    if (req && player.level < req) d.rows.push(['HERO LEVEL', String(req), '#e0637a']);
     if (player.abCd[i] > 0) d.rows.push(['READY IN', tipSec(player.abCd[i]), '#e0637a']);
   }
   for (const s of ab.blurb.split('. ')) d.notes.push([s.replace(/\.$/, ''), TIP_DIM]);

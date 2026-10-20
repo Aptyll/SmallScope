@@ -89,7 +89,8 @@ is `catchFrame` / `CATCH_T` in [js/sim/tools.js](../../js/sim/tools.js) - [fishi
 ## The run and the roll
 
 **The run, the held run and the dodge roll are the one set of player frames not typed by hand.**
-[app/bake-player/](../../app/bake-player/) paints them off a jointed doll of each class body and
+[app/bake-player/](../../app/bake-player/) paints them off a jointed doll of each class body (and of
+each of ARMATOS's looks, `standard` and `oath`, [hero looks](#hero-looks-armatos)) and
 writes them to js/baked/motion.js as char grids in characters.js's own letters, so `motionSet`
 bakes them through the same team and look palettes as every hand-drawn pose: `run[dir]`,
 `hold[dir]` and `roll[dir]` sit beside the walking directions, `left` the mirror of `right`.
@@ -156,7 +157,8 @@ a hundred-odd canvases, every character and team paint carries one, and baked up
 stalled the drop's start and a palette repaint.
 
 Edit the doll and rebake (`python app/bake-player/bake.py`, after `preview.py out.png` has laid
-every frame of both classes out on one sheet to judge); never edit the grids.
+every frame of every body out on one sheet to judge, or `preview.py out.png 4 standard,oath` for
+some); never edit the grids.
 
 ## Looks: a character on the class body
 
@@ -173,6 +175,24 @@ upright frames by `fringeAt` ([the run and the roll](#the-run-and-the-roll)), an
 (class, team, tone, hair, colour) — ten players and a menu is all that ever asks. Every reader
 of a body goes through `classSet(p)` (player.js), which asks it. Body type, beard and face
 never touch the in-world body: it stays 16×16 permanently, and they read on the 48 px model only.
+
+### Hero looks: ARMATOS
+
+A hero with `skins` on its `CLASSES` row does not wear a class body: `champLook(cls, look, team,
+skinId)` hands it to `heroSkinSet`, which bakes the look's own grids (`ARM_SKINS`, js/sprites/armatos.js:
+its standing frame per facing, the walk lifted off it by `heroWalk`, the run, held run and roll from
+its doll by name through `motionSet`) in the hero's paint (`skinPal`, `ARM_PAL`) over the team's coat,
+cached per (hero, team, look). The fish and the burrow frames are still the borrowed skater's in
+that paint. Which look a player wears is `heroSkinOf(p)` (player.js): the id in `p.skins` under the
+hero's `skinSlot`, or the free first row. LAST STANDARD (nasal helm, white beard, tabard) is his
+own; IRON OATH (closed helm with a gold cross, pauldrons, a cape) is bought on the skins screen.
+They are F and G off armatos-round4.png in the project files. His 48 px model on the hero row and
+the strip is still the warrior's in his paint (`paint48`).
+
+His OATH GREATSWORD (`ARM_SWORD`, `ARM_SWORD_DIAG`) replaces the sword's held art in his hands
+(`heroBlade`, asked by `drawHeldTool`): flat for the side, the swing and the wind-up, and slanted
+facing down or up (`heroCarry`), the grip at his right hip (`ARM_HIP`) and the blade up past the
+shoulder, drawn behind the body facing up.
 
 The **48 px model** ([looks.js](../../js/sprites/looks.js), `SPRITES.portrait(cls, look,
 team)`) is where the whole look reads — the lobby's stage and its hero row. Each hero wears one

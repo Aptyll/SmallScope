@@ -12,8 +12,8 @@ nine other people are on it.
 
 Ten players in `players` — **people and AI: every seat nobody takes is a bot's**, alone or in an
 online lobby ([online play](multiplayer.md#online-play)) — across **two teams of five, RED vs
-BLUE** (players alternate). Everyone plays one of **two classes** (the ranged HUNTER, the melee
-WARRIOR — a human's is the one their **character** was made with) and is **dropped in by their team's armoured eagle**, which flies in over its own corner and lands
+BLUE** (players alternate). Everyone plays one of **three heroes** (the ranged HUNTER, the melee
+WARRIOR, and ARMATOS the defensive initiator — a human's is the one picked on the lobby's hero row) and is **dropped in by their team's armoured eagle**, which flies in over its own corner and lands
 the whole side at home; nobody starts at a spawn camp. Each side's **base** is a fixed hollow cut
 into its **corner's** woods, RED always bottom-left, BLUE always top-right
 ([the bases](world.md#the-bases)); the bird roosts on its perch at the back and becomes its team's

@@ -80,10 +80,12 @@ RAMP = {
     'hem': ('d', 'd', 'd'), 'coat': ('d', 'r', 'R'), 'hat': ('t', 't', 'T'), 'trim': ('M', 'm', 'm'),
     'skin': ('K', 'k', 'k'), 'pants': ('p', 'p', 'p'), 'boot': ('B', 'b', 'b'),
     'goggle': ('g', 'G', 'G'), 'blade': ('S', 'S', 'S'),
+    'beard': ('w', 'w', 'W'), 'helm': ('n', 'n', 't'), 'gold': ('Y', 'y', 'y'),
 }
 CUTS = {
     'hem': (9, 9), 'coat': (0.3, 0.9), 'hat': (0.0, 0.86), 'trim': (0.30, 2), 'skin': (0.12, 2),
     'pants': (9, 9), 'boot': (0.30, 2), 'goggle': (0.55, 2), 'blade': (9, 9),
+    'beard': (0.0, 0.8), 'helm': (0.0, 0.8), 'gold': (0.3, 2),
 }
 MATS = list(RAMP)
 # a limb on the far side of a side-on body wears the next tone down (its pants stay pants:

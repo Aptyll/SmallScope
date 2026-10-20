@@ -35,7 +35,7 @@ function statBag() { const b = {}; for (const s of STATS) b[s.key] = 0; return b
 // the class weapon's own full cycle, as attacks a second: the full draw plus
 // the renock after it (the loadout tool's rate, toolRof, js/sim/tools.js)
 function classAs(cls) {
-  const k = CLASSES[cls].kit, tool = TOOLS[CLASS_LOADOUT[cls].tool];
+  const k = CLASSES[cls].kit, tool = TOOLS[CLASS_LOADOUT[heroBody(cls)].tool];
   return 1 / (k.bowCharge + tool.rof * TOOL_ROF_STEP * (k.nock / BOW_NOCK));
 }
 // the multiplier attack speed puts on the cycle: every draw and renock is
@@ -50,7 +50,8 @@ function statFrom(cls, level, add, key) {
   const c = CLASSES[cls];
   return (c.base[key] || 0) + (c.grow[key] || 0) * Math.max(0, level - 1) + (add ? add[key] : 0);
 }
-function statOf(p, key) { return statFrom(p.cls, p.level, kitOf(p).add, key); }
+// (plus what standing inside a rallying standard adds: guardStat, js/sim/armatos.js)
+function statOf(p, key) { return statFrom(p.cls, p.level, kitOf(p).add, key) + guardStat(p, key); }
 function asMul(p) { return asMulFrom(p.cls, p.level, kitOf(p).add); }
 // what a running buff multiplies a stat by right now (1 = nothing). The bear
 // buffs (campBuff, js/sim/wildlife.js) raise every blow landed and the walk;
@@ -76,6 +77,8 @@ function statParts(p, key) {
   if (n && c.grow[key]) rows.push(['LEVEL ' + p.level, c.grow[key] * n, kind[0]]);
   if (Math.abs(rest) > 1e-9) rows.push(['CARDS', rest, kind[1]]);
   if (Math.abs(it) > 1e-9) rows.push(['ITEMS', it, kind[1]]);
+  const gs = guardStat(p, key); // a rallying standard underfoot (js/sim/armatos.js)
+  if (gs) rows.push(['THE OLD GUARD', gs, 'add']);
   const b = statBuffMul(p, key);
   if (b !== 1) rows.push([(MONSTER[p.buffKind] && MONSTER[p.buffKind].buff) || 'BUFF', b - 1, 'buff']);
   return rows;

@@ -804,7 +804,7 @@ function armOff(m, k, d) { return (m.fan > 1 ? (k - (m.fan - 1) / 2) * FAN_SPREA
 // A full-draw blow with bit `b`: the hero's DAMAGE stat (statOf, js/sim/stats.js),
 // which is the class's own bit, plus however much more or less this bit hits
 // for than that one - a found log still lands harder than the plain arrow.
-function bitDmg(p, b) { return statOf(p, 'dmg') + b.dmg - BITS[CLASS_LOADOUT[p.cls].bits[0]].dmg; }
+function bitDmg(p, b) { return statOf(p, 'dmg') + b.dmg - BITS[CLASS_LOADOUT[heroBody(p.cls)].bits[0]].dmg; }
 function emitBit(p, b, id, m, amb, seq) {
   const kit = kitOf(p);
   const pw = drawPow(p);
@@ -1137,7 +1137,7 @@ const CLASS_LOADOUT = [
 function giveLoadout(p) {
   p.tools = new Array(TOOL_SLOTS).fill(null);
   p.toolSel = 0;
-  const L = CLASS_LOADOUT[p.cls] || CLASS_LOADOUT[0];
+  const L = CLASS_LOADOUT[heroBody(p.cls)] || CLASS_LOADOUT[0]; // a named hero carries its body's weapon (heroBody, player.js)
   const cell = makeTool(L.tool);
   for (let i = 0; i < L.bits.length && i < cell.bits.length; i++) cell.bits[i] = L.bits[i];
   sortBits(cell);

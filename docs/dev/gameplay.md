@@ -839,10 +839,10 @@ use of them. Every level costs **one skill point** — the only thing a point bu
 [hero level](multiplayer.md#hero-levels). The **first** point on a key unlocks it (`abUnlocked(p,
 i)`, the one gate: `tryAbility` refuses a level-0 key outright and every bot reaches for keys
 through `abReady(p, i)` = bought and off cooldown), and each one after shaves `AB_LV_CD` (12%)
-off that ability's cooldown — the one lever that means something on all eight keys, twice at most,
+off that ability's cooldown — the one lever that means something on every key, twice at most,
 so a capped key comes back 24% faster than a freshly unlocked one. Four keys × `AB_LV_MAX` is
 **12 points against the 12 a capped hero earns**, so the ladder ends exactly where the hero does:
-every point has a home and nothing is stranded. The choice is the ORDER — you land with one point
+every point has a home and nothing is stranded. A row may also carry `lvReq`, the hero level each of its points waits for (ARMATOS's R: 6, 9, 12), checked by `abLvCanBuy`. The choice is the ORDER — you land with one point
 and four dark keys, so the first thing a match asks is which ability you want to be, and a key
 taken to 3 early is three keys still dark at level 4.
 The rest of the set: `abLvCanBuy(p, i)` (a point in hand, room on the key),
@@ -866,11 +866,11 @@ level first — which spends their first four unlocking all four keys before any
 column in the tables below is the level-1 base.
 
 **Every ability lands on every kind of body.** A player, a rabbit, a deer, a bird, a wolf and a worker
-bot out of the [bot bay](#robots) take the same damage and the same states from all eight — the
+bot out of the [bot bay](#robots) take the same damage and the same states from every key — the
 tables below say "rival" because that is who you are usually casting at, not because anything else
 is exempt. That is not written into each ability: they sweep `unitsNear`/`unitsHit` and land through
 `hurtUnit` and the state setters ([status effects](#status-effects-one-set-for-every-unit)), so the
-next kind of neutral fauna pushed into `animals` is in range of all eight on the day it is added,
+next kind of neutral fauna pushed into `animals` is in range of every key on the day it is added,
 with no edit here. A **structure** is not a unit, so it takes no state — but a rival's building
 takes the *damage* of every blow with an area, through `hurtStruct` (`STRUCT_DR` off): the SLAM and
 the EXECUTE sweep `structsInCone`, the STOMP `structsNear`, the BULL RUSH's wall slam and the NET
@@ -905,6 +905,25 @@ WARRIOR — close pressure, blocking, momentum:
 | 3 | **STOMP** | 14 s | a leap-stomp at the feet — the ring of `STOMP_R` on the snow through the wind-up, filling in as it nears, and flashed white where it lands (`abFx`): 12 damage + radial knockback + a beat of stun in `STOMP_R`, and the **crater** (`craters`) is deep snow that slows rivals crossing it for 4 s |
 | 4 | **EXECUTE** | 18 s | a 0.55 s overhead wind-up with the wedge on the snow (`EXEC_R`/`EXEC_HALF`, 30 px, ±0.75 rad — narrower than the sword), then `abExecute`: every unit in it takes `execDmg` — `EXEC_DMG` (10) plus `EXEC_MISSING` (half) of the life it has already lost, capped at `EXEC_BONUS_MAX` (40) extra — so a body the other three keys have worked over is finished, and a full one takes ten. `EXEC_KB` shove; a cut over twice the base is a crit |
 
+ARMATOS, THE LAST STANDARD — the defensive initiator, the first hero with a passive. His rules
+live in **[js/sim/armatos.js](../../js/sim/armatos.js)** (`ARM_AB`, its `armatos` banner), his
+pixels in [js/draw/armatos.js](../../js/draw/armatos.js), his icons in
+[js/sprites/armatos.js](../../js/sprites/armatos.js). He fights with the warrior's sword and loadout
+(`heroBody(cls)`, js/sim/player.js, maps a hero to the loadout it borrows), drawn as his OATH
+GREATSWORD, in a body of his own ([hero looks](sprites.md#hero-looks-armatos)), with his side's torn
+standard on his back (`drawHeroBack`):
+
+| key | name | cd | what it does |
+| --- | --- | --- | --- |
+| P | **LEGION'S RESOLVE** | — | damage taken fills `p.resolve` (`RESOLVE_FULL`, 30% of max hp, for a full bar; it drains after `RESOLVE_IDLE_T` without a hit). Full, the next key cast gives a shield of `RESOLVE_SHIELD` (14%) of max hp for `RESOLVE_SHIELD_T` (4 s), `shieldUnit` (`p.wardHp`, spent in `damagePlayer` after the dawn shield). The standard's cloth fills gold with it. `HERO_PASSIVE`, reached through `passiveHurt`/`passiveCast`/`passiveTick` |
+| 1 | **IRON VERDICT** | 8 s | a line slam `VERDICT_LEN` long, ±`VERDICT_HALF` (`unitsInLine`), the box on the snow through the wind-up with its middle hashed gold: `VERDICT_DMG` + `VERDICT_SLOW` for `VERDICT_SLOW_T` on all in it, and those in the middle stretch (`VERDICT_MID`) are knocked up `VERDICT_UP` instead (`knockUp`) |
+| 2 | **HOLD THE LINE** | 12 s | a brace for `HOLD_T` (the shield-wall state, `wall: true`): blows from the front take `HOLD_CUT` less (`holdTaken`, in `damagePlayer`). A rival hero's hit primes the bash (`p.holdHit`, the trim goes gold); the key again bashes the wedge ahead (`armBash`): `BASH_DMG`, shoved `BASH_KB`, and stunned `BASH_STUN` only when primed |
+| 3 | **VETERAN'S MARCH** | 14 s | a charge (the rush state with `p.march`) at `MARCH_SPD` for `MARCH_T`: lesser bodies are shoved aside once each (`marchStep`, `MARCH_SHOVE`), and the first rival hero (or an anchored body) stops it: `MARCH_DMG` and `MARCH_STUN` (`marchEnd`) |
+| 4 | **THE OLD GUARD** | 80 s | plants the standard (`guards`, one per owner) for `GUARD_T`: allies inside `GUARD_R` gain `GUARD_ARMOR` armor (`guardStat`, read by `statOf`) and `GUARD_TEN` tenacity (`guardTen`); a rival who was inside and steps out (caught up to `GUARD_EDGE` past the rim, so a roll out still counts) is slowed `GUARD_SLOW` for `GUARD_SLOW_T` (`updateGuards`). Its points wait for hero levels 6, 9 and 12 (`GUARD_LV`) |
+
+Bots play him through each row's `bot(p, foe, d, clear)` (`abBotKey`, asked by the ladder's
+ability block in js/ai/ai-ladder.js); a hero whose rows carry no `bot` keeps the ladder's old range rules.
+
 Every wind-up with an area is **telegraphed on the snow for both sides** (`drawAbilityGround`): the
 pierce's and the charge's marching line, the stomp's ring, the slam's and the execute's wedge — in
 `TELE_COL` red, `TELE_HOT` gold for the last quarter, the inside hashing in as the landing nears
@@ -938,10 +957,10 @@ page itself — the slab, the tabs, the blocks, the rail — is in
 the numbers come from. Every number on a page is read off the constant the sim spends, never
 typed twice, so a retune can never leave the wiki lying.
 
-- **CLASSES** (the page the wiki opens on) — the two classes as the lobby reads them: the
+- **CLASSES** (the page the wiki opens on) — every hero as the lobby reads them: the
   body at 3x in the side you play in, the name and role, the three lines of the pitch, and its
   level 1 health, damage, attack speed, armor and move speed (`WIKI_STATS`, off `statFrom`); under each, its
-  four abilities in key order — the key on a plate, the strip's own 32 px icon in a well
+  passive (a `P` plate and `passiveIcon`, when the hero has one) and four abilities in key order — the key on a plate, the strip's own 32 px icon in a well
   (`classAbIcon`), the name, COOLDOWN and CAST in the columns (`WIKI_AB_COLS`, off `CLASS_AB`)
   and the blurb wrapped beneath. A hover raises the lobby's ability card (`tipClassAb` with
   the class passed, so the base cooldown). The intro names what a skill point does
@@ -1309,6 +1328,9 @@ Everything in this section lives under the **`status effects`** banner at the fo
 | `unitsHit(src, x, y, r)` | the same, minus anyone whose i-frames are up: the list a **blow** sweeps, so a rival mid-roll is untouchable. A lasting ground *condition* (a crater) wants `unitsNear` — a condition is not a hit, and a roll should not shrug one off |
 | `stunUnit` `rootUnit` `slowUnit` `netUnit` `markUnit` `igniteUnit` | the one place each state is written. Each takes the worse/longer of what is already on the body |
 | `unitMoveMul(e)` | what is left of a non-player's speed — `abilityMoveMul`'s twin. Spent inside `navStep`, so one edit slows every walker; the two movers that steer themselves rather than route (a loitering bot, a bird in flight) fold it in by hand |
+| `knockUp(e, t, src)` / `upLift(e)` | a knock-up: a stun that lifts the body (`e.upT`), drawn by `abilityPose` |
+| `shieldUnit(p, hp, t)` | a ward of `hp` for `t` s (`p.wardHp`/`p.wardT`), spent by `damagePlayer` before health |
+| `ccMul(e)` | **tenacity**: what is left of a stun, root, slow or net on this body (1 − `guardTen`); `stunUnit` with `firm` skips it |
 | `clearUnitStatus(e)` / `douseUnit(e)` | a fresh body, and a fire put out. Called by `Player.reset`, `die`, `makeAnimal`, `makeRobot` |
 
 `unitFoe(src, e)` is the side rule they all share, and it is where **wildlife being neutral** is

@@ -128,7 +128,7 @@ const CLASS_AB = [
   ],
   [ // WARRIOR - close pressure, blocking, momentum
     {
-      id: 'shield', name: 'SHIELD WALL', cd: 9, ap: 0.4, cast: 0.12,
+      id: 'shield', name: 'SHIELD WALL', cd: 9, ap: 0.4, cast: 0.12, wall: true,
       blurb: 'RAISE THE TOWER SHIELD. PRESS AGAIN TO SLAM: STUNS WHAT IS AHEAD, ENDS THE WALL.',
       // the one key with two halves: the raise, and - pressed again while the
       // wall is up or mid-charge (tryAbility sets castSlam) - the slam
@@ -152,6 +152,7 @@ const CLASS_AB = [
       use: (p) => abExecute(p),
     },
   ],
+  ARM_AB, // ARMATOS - the standard, the shield, the march (js/sim/armatos.js)
 ];
 
 // the world the abilities put things into
@@ -205,7 +206,11 @@ function abOptions(cls, i) { return [CLASS_AB[cls][i]].concat(CLASS_AB_ALT[cls] 
 function abOf(p, i) { const o = abOptions(p.cls, i); return o[Math.min(o.length - 1, p.abPick ? p.abPick[i] | 0 : 0)]; }
 function abKeyOf(p, id) { for (let i = 0; i < AB_KEYS; i++) if (abOf(p, i).id === id) return i; return -1; }
 function abReady(p, i) { return p.abLv[i] > 0 && p.abCd[i] <= 0; } // bought AND off cooldown: what a bot reaches for
-function abLvCanBuy(p, i) { return p.skillPts > 0 && p.abLv[i] < AB_LV_MAX; }
+// ...and a key whose row names `lvReq` (a hero's ultimate) waits for that hero level per point
+function abLvCanBuy(p, i) {
+  const req = abOf(p, i).lvReq;
+  return p.skillPts > 0 && p.abLv[i] < AB_LV_MAX && (!req || p.level >= req[p.abLv[i]]);
+}
 function abCdOf(p, i) { return abOf(p, i).cd * (1 - AB_LV_CD * (Math.max(1, p.abLv[i]) - 1)) * hasteMul(p); } // COOLDOWN SPEED (js/sim/stats.js)
 // what ABILITY POWER adds to ability `id`'s blow: the stat times the ratio its
 // entry carries (`ap`), nothing for one that has none or is not on a key
@@ -245,7 +250,8 @@ function tryAbility(p, i) {
   // stops on the spot (the body it carried is slammed where it stands) and
   // the wind-up begins from there; without a wall up the slam is the shield's
   // own cast, so it waits on the shield's cooldown like the raise would
-  if (ab.id === 'shield' && (p.shieldT > 0 || p.rushT > 0)) {
+  // (a row with `wall` is a shield key: the warrior's, ARMATOS's brace; his march is no rush to slam out of)
+  if (ab.wall && (p.shieldT > 0 || (p.rushT > 0 && !p.march))) {
     if (p.shieldT <= 0 && p.abCd[i] > 0) { sfxFor(p, 'deny'); return; }
     if (p.rushT > 0) rushEnd(p, false);
     p.castSlam = true;
@@ -309,7 +315,7 @@ function updateAbilities(p, dt) {
     // wind-up - the locked draw, the charge's line, the slam's and the
     // execute's wedge - so the shape and the body agree about where this is
     // going, and what lands is what was shown
-    if (ab && (ab.id === 'pierce' || ab.id === 'rush' || ab.id === 'exec' || (ab.id === 'shield' && p.castSlam))) {
+    if (ab && (ab.id === 'pierce' || ab.id === 'rush' || ab.id === 'exec' || ab.tele || (ab.wall && p.castSlam))) {
       faceToward(p, p.input.aimX - p.x, p.input.aimY - p.y);
     }
     if (p.castT <= 0) {
@@ -318,8 +324,12 @@ function updateAbilities(p, dt) {
       p.castT = 0;
       p.abCd[i] = abCdOf(p, i);
       abOf(p, i).use(p);
+      passiveCast(p); // a hero's passive that answers a key landing (HERO_PASSIVE, js/sim/armatos.js)
     }
   }
+  passiveTick(p, dt);
+  // a timed shield running out (shieldUnit), a knock-up coming down (knockUp, js/sim/actions.js)
+  if (p.wardT > 0) { p.wardT = Math.max(0, p.wardT - dt); if (p.wardT <= 0) p.wardHp = 0; }
   // SECOND WIND: the breath, a share of the life back each tick until the clock runs out
   if (p.windT > 0) {
     const step = Math.min(dt, p.windT);
@@ -504,7 +514,8 @@ function abShieldUp(p) {
 function abShieldDown(p, early) {
   if (p.shieldT <= 0 && !early) return;
   p.shieldT = 0;
-  const i = abKeyOf(p, 'shield');
+  const i = abKeyOf(p, p.hold ? 'hold' : 'shield');
+  p.hold = false; p.holdHit = false;
   if (i >= 0) p.abCd[i] = abCdOf(p, i);
   sfxAt('pickup', p.x, p.y);
 }
@@ -530,8 +541,9 @@ function abSlam(p) {
   sfxAt('hit', p.x, p.y);
 }
 // an incoming shot dies on a raised shield when it flies INTO the front arc
+// (ARMATOS's brace eats nothing whole: it takes a share off the hit instead, holdTaken)
 function abShieldBlocks(t, nx, ny) {
-  if (t.shieldT <= 0) return false;
+  if (t.shieldT <= 0 || t.hold) return false;
   return nx * Math.cos(t.shieldA) + ny * Math.sin(t.shieldA) < -SHIELD_ARC;
 }
 
@@ -753,6 +765,7 @@ function updateAbilityWorld(dt) {
     abFx[i].t += dt;
     if (abFx[i].t >= AB_FX_T) abFx.splice(i, 1);
   }
+  updateGuards(dt); // ARMATOS's planted standards (js/sim/armatos.js)
   for (let i = craters.length - 1; i >= 0; i--) {
     const z = craters[i];
     z.t += dt;
@@ -904,6 +917,7 @@ function drawAbilityGround(ex, ey, now) {
   // the last quarter, filling in as the landing nears. It teaches the caster
   // what the key reaches, and it gives whoever is inside the whole wind-up
   // to not be
+  drawGuards(ex, ey, now); // ARMATOS's planted standards under it all (js/draw/armatos.js)
   for (const p of players) {
     if (!p.active || p.dead || inAir(p) || p.castT <= 0) continue;
     const ab = abOf(p, p.castAb);
@@ -939,6 +953,8 @@ function drawAbilityGround(ex, ey, now) {
       drawRing(px, py + 2, STOMP_R, col, 0.55 + 0.4 * closing, closing);
     } else if (ab.id === 'exec') {
       drawWedge(px, py, a, EXEC_R, EXEC_HALF, col, 0.55 + 0.4 * closing, closing);
+    } else if (ab.tele) {
+      ab.tele(p, px, py, a, col, closing, now, ex, ey); // a row that draws its own (js/sim/armatos.js)
     } else if (ab.id === 'shield' && p.castSlam) {
       drawWedge(px, py, a, SLAM_R, SLAM_HALF, col, 0.55 + 0.4 * closing, closing);
     }
@@ -951,6 +967,7 @@ function drawAbilityGround(ex, ey, now) {
     const prog = f.t / AB_FX_T;
     const alpha = 0.9 * (1 - prog);
     if (f.kind === 'wedge') drawWedge(px, py, f.a, f.r + prog * 3, f.half, f.col, alpha, 1 - prog);
+    else if (f.kind === 'line') drawLineBox(px, py, f.a, f.r, f.half, f.col, alpha, 1 - prog);
     else drawRing(px, py + 2, f.r + prog * 4, f.col, alpha, 1 - prog);
   }
   for (const z of craters) {
@@ -1027,6 +1044,7 @@ function drawAbilityAir(ex, ey, now) {
 // the sprite itself: drawPlayer applies dx/dy/rot to the body draw, so every
 // ability visibly happens TO the model, not just around it.
 function abilityPose(p) {
+  if (p.upT > 0) return { dx: 0, dy: -upLift(p), rot: 0 }; // knocked up (knockUp, js/sim/actions.js)
   if (p.rushT > 0) {
     return { dx: 0, dy: -1, rot: 0.26 * (p.rushNX >= 0 ? 1 : -1) };
   }
@@ -1036,6 +1054,8 @@ function abilityPose(p) {
   if (p.castT <= 0 || p.castAb < 0) return null;
   const ab = abOf(p, p.castAb);
   const prog = 1 - p.castT / ab.cast;
+  if (ab.wall && p.castSlam) return { dx: p.dir === 'left' ? 1 : p.dir === 'right' ? -1 : 0, dy: prog < 0.6 ? 1 : -1, rot: 0 }; // coiled back, then the drive
+  if (ab.pose) return ab.pose(p, prog);
   switch (ab.id) {
     // the locked draw: leant back off the aim, planted, and it does not move
     // again until the loose - the body itself is part of the telegraph
@@ -1133,7 +1153,7 @@ function drawAbilityOnPlayer(p, px, py, now) {
     ctx.fillRect(-1, -6, 3, 12);
     ctx.fillStyle = '#c8d2e4';
     ctx.fillRect(-1, -6, 1, 12);
-    ctx.fillStyle = TEAMS[skin(p.team)].mark; // the trim carries the side
+    ctx.fillStyle = p.holdHit ? '#ffd95c' : TEAMS[skin(p.team)].mark; // the trim carries the side - gold while ARMATOS's bash is primed
     ctx.fillRect(0, -2, 1, 4);
     ctx.restore();
   }
@@ -1589,25 +1609,35 @@ const AB32_ALT = [
   ],
 ];
 const ab32Cache = new Map();
+// a 32x32 grid in AB32_PAL on its own canvas
+function bakeAb32(rows) {
+  const cv = document.createElement('canvas');
+  cv.width = cv.height = 32;
+  const g = cv.getContext('2d');
+  for (let r = 0; r < rows.length; r++) {
+    const row = rows[r];
+    for (let c = 0; c < row.length; c++) {
+      const col = AB32_PAL[row[c]];
+      if (!col) continue;
+      g.fillStyle = col;
+      g.fillRect(c, r, 1, 1);
+    }
+  }
+  return cv;
+}
+// a named hero's passive icon (HERO_PASSIVE, js/sim/armatos.js)
+function passiveIcon(cls) {
+  const key = cls + ':p';
+  if (!ab32Cache.has(key)) ab32Cache.set(key, bakeAb32(HERO_PASSIVE[CLASSES[cls].passive].icon));
+  return ab32Cache.get(key);
+}
 // the baked 32x32 icon for class ability (cls, i), option k (0 the first)
 function classAbIcon(cls, i, k) {
   k = k | 0;
   const key = cls + ':' + i + ':' + k;
   let cv = ab32Cache.get(key);
   if (!cv) {
-    cv = document.createElement('canvas');
-    cv.width = cv.height = 32;
-    const g = cv.getContext('2d');
-    const rows = k ? AB32_ALT[cls][i][k - 1] : AB32[cls][i];
-    for (let r = 0; r < rows.length; r++) {
-      const row = rows[r];
-      for (let c = 0; c < row.length; c++) {
-        const col = AB32_PAL[row[c]];
-        if (!col) continue;
-        g.fillStyle = col;
-        g.fillRect(c, r, 1, 1);
-      }
-    }
+    cv = bakeAb32(abOptions(cls, i)[k].icon || (k ? AB32_ALT[cls][i][k - 1] : AB32[cls][i])); // a row may carry its own (ARM_AB)
     ab32Cache.set(key, cv);
   }
   return cv;

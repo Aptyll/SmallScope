@@ -126,12 +126,13 @@ const WIKI_WORLD = [
 const WIKI_PAGES = [
   { id: 'classes', label: 'CLASSES', build() {
     const b = [];
-    b.push({ kind: 'line', h: 9, text: 'TWO CLASSES, PICKED ON THE WAY IN. KEYS 1-4 ARE THE CLASS, EACH ON ITS OWN COOLDOWN.', col: '#cfe0ff' });
+    b.push({ kind: 'line', h: 9, text: 'THE HEROES, ONE PICKED ON THE WAY IN. KEYS 1-4 ARE THE HERO, EACH ON ITS OWN COOLDOWN.', col: '#cfe0ff' });
     b.push({ kind: 'line', h: 9, text: 'A SKILL POINT UNLOCKS A KEY. EACH ONE AFTER IS ' + Math.round(AB_LV_CD * 100) + '% OFF THAT ABILITY\'S COOLDOWN, TO LEVEL ' + AB_LV_MAX + '.', col: TIP_DIM });
     CLASSES.forEach((c, cls) => {
       b.push({ kind: cls ? 'rule' : 'gap', h: cls ? 10 : 4 });
       b.push({ kind: 'cls', h: 52, cls });
       b.push({ kind: 'head', h: 12, text: 'KEYS 1-4', cols: WIKI_AB_COLS });
+      if (c.passive) b.push({ kind: 'ab', h: 36, cls, i: -1, cols: [] }); // a named hero's passive heads its keys (HERO_PASSIVE, js/sim/armatos.js)
       CLASS_AB[cls].forEach((ab, i) => abOptions(cls, i).forEach((o, k) => b.push({ kind: 'ab', h: 36, cls, i, k, cols: WIKI_AB_COLS })));
     });
     return b;
@@ -229,7 +230,7 @@ function wikiHit(mx, my) {
   if (L.maxScroll > 0 && mx >= L.rail.x - 2 && mx < L.rail.x + L.rail.w + 2 && my >= L.rail.y && my < L.rail.y + L.rail.h) return { kind: 'rail', y: my };
   if (my < L.winY || my >= L.winY + L.winH || mx < L.left || mx >= L.right) return null;
   for (const r of L.rows) {
-    if (r.bl.kind !== 'row' && r.bl.kind !== 'ab') continue;
+    if ((r.bl.kind !== 'row' && r.bl.kind !== 'ab') || r.bl.i < 0) continue; // (a passive's row has no card of its own)
     const ry = r.y - L.scroll;
     if (my < ry || my >= ry + r.bl.h) continue;
     return r.bl.kind === 'row' ? { kind: 'row', id: r.bl.id } : { kind: 'ab', cls: r.bl.cls, i: r.bl.i };
@@ -403,7 +404,7 @@ function renderWiki(now, a) {
       // name and role, the three lines of its pitch, and on the right its
       // stats at level 1
       const c = CLASSES[bl.cls];
-      const spr = SPRITES.champ[bl.cls][skin(player.team)].down[0];
+      const spr = SPRITES.champLook(bl.cls, c.look, skin(player.team)).down[0];
       ctx.drawImage(spr, L.left, y + 2, 48, 48);
       const tx = L.left + 56;
       drawPixelTextShadow(ctx, c.name, tx, y + 4, '#ffd95c', '#0a0e23');
@@ -418,15 +419,16 @@ function renderWiki(now, a) {
     } else if (bl.kind === 'ab') {
       // an ability: its key on a plate, its icon in a well (the strip's
       // own), its name, the two numbers in the columns, and what it does
-      const ab = abOptions(bl.cls, bl.i)[bl.k | 0];
+      // (key -1 is the hero's passive: no key, no numbers, its own icon)
+      const ab = bl.i < 0 ? HERO_PASSIVE[CLASSES[bl.cls].passive] : abOptions(bl.cls, bl.i)[bl.k | 0];
       const hot = hit && hit.kind === 'ab' && hit.cls === bl.cls && hit.i === bl.i && (hit.k | 0) === (bl.k | 0);
       const iy = y + 1, wx = L.left + 10;
       ctx.fillStyle = '#0a0e23'; ctx.fillRect(L.left, iy + 12, 7, 8);
       ctx.fillStyle = '#1c2750'; ctx.fillRect(L.left + 1, iy + 13, 5, 6);
-      drawPixelText(ctx, String(bl.i + 1), L.left + 2, iy + 14, '#ffd95c');
+      drawPixelText(ctx, bl.i < 0 ? 'P' : String(bl.i + 1), L.left + 2, iy + 14, '#ffd95c');
       ctx.fillStyle = hot ? '#7a8bb8' : '#0a0e23'; ctx.fillRect(wx - 1, iy - 1, 34, 34);
       ctx.fillStyle = BAG_WELL; ctx.fillRect(wx, iy, 32, 32);
-      ctx.drawImage(classAbIcon(bl.cls, bl.i, bl.k), wx, iy);
+      ctx.drawImage(bl.i < 0 ? passiveIcon(bl.cls) : classAbIcon(bl.cls, bl.i, bl.k), wx, iy);
       const tx = wx + 37;
       drawPixelTextShadow(ctx, ab.name, tx, y + 4, hot ? '#ffd95c' : '#f4f7ff', '#0a0e23');
       let rx = L.right, firstX = rx;

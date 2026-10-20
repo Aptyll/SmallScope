@@ -30,7 +30,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| the players' run, held run and dodge roll grids for both classes, each upright frame's first face row, the bobs and the roll's timing; never edit, rebake with app/bake-player/bake.py (doll.py paints and inks, bodies.py builds the two class bodies, anim.py poses them, preview.py lays every frame out on one sheet) | `BOX`, `GRIDS`, `FRINGE`, `RUN_BOB`/`HOLD_BOB`, `ROLL_AT` → `SPR.motion` | - |
+| the players' run, held run and dodge roll grids for both classes and ARMATOS's two looks, each upright frame's first face row, the bobs and the roll's timing; never edit, rebake with app/bake-player/bake.py (doll.py paints and inks, bodies.py builds the two class bodies, anim.py poses them, preview.py lays every frame out on one sheet) | `BOX`, `GRIDS`, `FRINGE`, `RUN_BOB`/`HOLD_BOB`, `ROLL_AT` → `SPR.motion` | - |
 
 ## js/sprites/characters.js (legacy IIFE)
 
@@ -39,6 +39,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | the player, the fish catch pose, the skater, prone, the raider | by banner | `player`, `the fish catch`, `skater (champion 2)`, `prone`, `raider` |
 | the run, the held run and the roll in a paint: motion.js's grids baked a facing at a time on first use, a look's fringe on their upright frames | `motionSet`, `fringeAt`, `MOTION_CLS` | `run and roll` |
 | a character's paint on the class body: the tone and hair-colour tables, the six fringes, the per-character bake and its cache | `LOOK`, `fringed`, `lookPal`, `lookSet`, `champLook` | `looks` |
+| a hero's own look in a team's paint (ARMATOS's LAST STANDARD and IRON OATH) | `heroSkinSet` (asked by `champLook`) | `looks` |
 
 ## js/sprites/looks.js (legacy IIFE)
 
@@ -141,6 +142,14 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | --- | --- | --- |
 | the gear icons (item icon art), the heart, the cursors | by banner | `gear icons`, `heart`, `cursors` |
 
+## js/sprites/armatos.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| ARMATOS's 32 px ability and passive icons (letters in `AB32_PAL`, baked by `bakeAb32`, abilities.js) | `ARM_ICON32` | `armatos icons` |
+| his looks: the standing grids, his iron, the skins table, the walk off a standing frame | `ARM_BODY`, `ARM_PAL`, `ARM_SKINS`, `heroWalk` | `armatos bodies` |
+| his greatsword's two grids and where the hands close on the slanted one | `ARM_SWORD`, `ARM_SWORD_DIAG`, `ARM_GRIP`, `ARM_SWORD_PAL` | `armatos greatsword` |
+
 ## js/sprites/landmarks.js (legacy IIFE)
 
 | Looking for | Start at | Banner |
@@ -187,7 +196,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| players, teams, heroes (`CLASSES`: kit, stats (`base`, `grow`) and one fixed look each; `HEROES_SOON`, the ones to come), hero levels, the input struct, contested orders, the local slot and the roster a match is built from | `Player`, `CLASSES`, `HEROES_SOON`, `kitOf`, `setClass`, `gainGold`, `levelUp`, `makeInput`, `localId`/`LOCAL_SLOT`, `defaultRoster`, `initPlayers(roster, local)`, `applyProfile()`, `contest` | `players` |
+| players, teams, heroes (`CLASSES`: kit, stats (`base`, `grow`) and one fixed look each, or a hero's own looks (`skins`, worn per player: `heroSkinOf`, `cleanHeroSkins`); `HEROES_SOON`, the ones to come), hero levels, the input struct, contested orders, the local slot and the roster a match is built from | `Player`, `CLASSES`, `HEROES_SOON`, `kitOf`, `setClass`, `gainGold`, `levelUp`, `makeInput`, `localId`/`LOCAL_SLOT`, `defaultRoster`, `initPlayers(roster, local)`, `applyProfile()`, `contest` | `players` |
 | the one on-the-spot gold payout every source uses (gold is never a drop) | `awardGold` | `players` (beside `gainGold`) |
 | XP: the one way it enters a body (the bar, the levels it crosses, the running total), and a death's XP shared by the side standing near | `gainXp`, `shareXp`, `XP_R`/`XP_SHARE`, `LEVEL_XP` (the table: `players`) (what each death is worth: `SOLDIER_XP`, robots.js; `KILL_XP`/`KILL_XP_LV`, `damage & death`; `YIELD`'s `xp`, core.js) | `players` |
 | the one way health comes back to a player - a meal, daylight, a second wind, a kill's heal - capped and counted | `healPlayer` | `players` (beside `gainGold`) |
@@ -486,11 +495,21 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | the burrow's tunnels: the tuning, the one placement rule, the dig order, the holes standing and caving, the far end, going under and coming up, and the step that runs it all | `TUN_*`, `tunSiteOk`, `tunPlaceOk`, `digTunnel` (the `tunnel` order: `runCmd`, js/ui/wheel.js), `tunHoleOf`/`tunHoles`, `caveTunnel`, `tunFarSite`, `tunnelEnter` (ahead of the swing in `playerSwing`, sim.js; `p.tunE` the fresh press), `tunUnder`, `tunnelExit`, `updateTunnels` (from `updatePlay`, sim.js) | `tunnels` (the hole's `OBJECTS` row: world.js; the rider out of the world: `inAir`, player.js; the drop: `animalDies`, wildlife.js; the state: `p.tun`/`p.tunCd`/`p.digT`/`p.tunHole`, player.js) |
 | the aim: the local hand's ghost, standing it up and putting it away, and the press that sends the order; the burrow's icon | `tunnelAimToggle` (V: `keyPress`, input.js; a click on its pack cell: `ITEMS.tunnel.use`, run by `sendBagCell`), `tunnelAimTile`, `tunnelAimPress` (`pointerPress`, input.js), `state.tunAim` (in `SAVE_STATE_SKIP`), `SPRITES.itemTunnel` | `tunnels` › `the aim` |
 
+## js/sim/armatos.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| ARMATOS's tuning and his four keys | `RESOLVE_*`, `VERDICT_*`, `HOLD_*`/`BASH_*`, `MARCH_*`, `GUARD_*`, `ARM_AB` (joined into `CLASS_AB`, abilities.js) | `armatos` › `tuning`, `the keys` |
+| a hero's passive: the table and its three hooks; LEGION'S RESOLVE | `HERO_PASSIVE`, `heroPassive`, `passiveHurt` (`damagePlayer`, player.js), `passiveCast`/`passiveTick` (`updateAbilities`), `resolveHurt`/`resolveCast`/`resolveTick` | `armatos` › `LEGION'S RESOLVE` |
+| Q, W, E: the line slam, the brace and its bash, the march | `unitsInLine`, `armVerdict`; `armBrace`, `holdTaken` (`damagePlayer`), `armBash`; `armMarch`, `marchStep` (the rush branch, sim.js), `marchEnd` | `armatos` › `Q IRON VERDICT`, `W HOLD THE LINE`, `E VETERAN'S MARCH` |
+| R: the planted standard, who it guards, its armor and tenacity, the slow on leaving | `guards`, `armGuard`, `guardFor`, `guardStat` (`statOf`, stats.js), `guardTen` (`ccMul`, actions.js), `guardAllies`, `updateGuards` (`updateAbilityWorld`), `guardPlanted` | `armatos` › `R THE OLD GUARD` |
+| how a bot picks one of his keys | `abBotKey` (each row's `bot`; asked by `aiThink`, ai-ladder.js) | `armatos` › `bots` |
+
 ## js/sim/abilities.js
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| the two kits' four actives each: name, cooldown, cast, and the whole effect | `CLASS_AB` (each row's `use(p)`) | `class abilities` |
+| each hero's four actives: name, cooldown, cast, and the whole effect | `CLASS_AB` (each row's `use(p)`) | `class abilities` |
 | the options on a key: the warrior's other four (WAR CRY, WHIRLWIND, HAMSTRING, SECOND WIND) and their tuning, what a key IS on a body, the key an id stands on | `CLASS_AB_ALT`, `abOptions`, `abOf`, `abKeyOf`, `CRY_*`/`WHIRL_*`/`HAM_*`/`WIND_*`, `abWarCry`, `abWhirlwind`, `abHamstring`, `abSecondWind` | `class abilities` › `the options on a key`, `warrior: the other four` (the pick: `p.abPick`, player.js; the strip: `pickAbility`, js/ui/menu.js) |
 | the piercing shot wearing every modifier on the tool in hand (row order and tensile ignored), the flight that buys, and the loose | `pierceMods`, `PIERCE_FLIGHT`/`pierceFlight`, `abPierce` | `class abilities` › `hunter: the four effects` |
 | tuning for every ability (pierce windup/multiplier/telegraph range, net slow, grapple reach/reel/assist, shield arc, the slam, rush ramp/slam, crater, the execute's missing-life scale, the telegraph colours and flash length) | `PIERCE_*`, `NET_*`, `GRAP_*`, `SHIELD_*`, `SLAM_*`, `RUSH_*`, `STOMP_*`/`CRATER_*`, `EXEC_*`, `AB_FX_T`/`TELE_COL`/`TELE_HOT` (snow cover's numbers are `PRONE_*`, actions.js) | `class abilities` (its head) |
@@ -815,6 +834,13 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | --- | --- | --- |
 | the canopy window: a pine or snag drawn over the viewed hero's model opens round exactly what it covers, eased by how much | `CANOPY_FULL`, `CANOPY_CUT`, `canopyFrame` (from `render`), `heroLayerOpen`/`heroLayerClose` (from `drawPlayer`, js/draw/bodies.js), `canopyOver`, `drawWindowed` (the tree and snag branches of `render`'s y-sorted pass), `inkMask` | `canopy window` (the shin clip it copies: `wadeCut`, js/draw/depth.js) |
 
+## js/draw/armatos.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| his greatsword in his hands: the blade a hero's hands hold, the slanted carry facing down or up | `heroBlade` (asked by `drawHeldTool`, bodies.js), `heroCarry`, `ARM_HIP`, `armSwords` | `armatos` |
+| ARMATOS's standard: on his back (cloth gold with resolve), planted with its ring; his keys' wind-up and landing shapes | `drawStandard`, `drawStdCloth`, `drawHeroBack` (`drawPlayer`, bodies.js), `drawGuards`, `drawLineBox`, `drawVerdictTele`, `drawMarchTele` (`drawAbilityGround`, abilities.js) | `armatos` |
+
 ## js/draw/bodies.js
 
 | Looking for | Start at | Banner |
@@ -1072,6 +1098,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | --- | --- | --- |
 | the catalogue: the navbar's categories, the rarity colours, the scout table (placeholders but the IRON SCOUT, whose `body` names its sprites), the placeholder weapon / trail tables, a bought skin's profile key | `SKIN_TABS`, `SKIN_RARITY`, `SCOUT_SKINS`, `WEAPON_SKINS`, `TRAIL_SKINS`, `skinRow`, `skinKey`, `skinHas`, `skinWorn` | `skins` › `the catalogue` (the eagle's table: `BIRD_SKINS`, js/sprites/eagle.js; the purse: `PROFILE.coins`/`buy`/`wear`, profile.js) |
 | which skin a bird wears on this screen (your company's bird wears yours, the other company's the free one) | `birdSkinFor` (asked by `drawEagle`, js/sim/eagle.js), `birdSkinRow`, `skinOwned` | `skins` › `the catalogue` |
+| the looks this profile wears on each hero, as `p.skins` carries them (the hello sends it) | `profileHeroSkins` (read by `applyProfile`, player.js, and the hello, net.js) | `skins` › `the catalogue` |
 | which body a player wears on this screen (only you wear your scout skin; everyone else the class body) | `scoutBody` (asked by `drawPlayer`, js/draw/bodies.js), `SK_TAB_SCOUT` | `skins` › `the catalogue` |
 | what a finished match pays | `COINS_MATCH`, `COINS_WIN`, `payMatchCoins` (its caller: `endMatch`, player.js) | `skins` › `the catalogue` |
 | a card's picture: the eagle's own icon (`SPRITES.birdSkinIcon`), a scout body's own `icon`, a placeholder washed in its tint, a trail's streak | `skinArt` (the eagle's: `SPRITES.birdSkinIcon`, perch.js), `washed`, `trailArt`, `SK_ART_MAX` | `skins` › `the pictures` |
