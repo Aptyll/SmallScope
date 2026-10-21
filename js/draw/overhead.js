@@ -407,7 +407,7 @@ function drawBarracksOverlay(o, px, sy, now) {
   ctx.fillStyle = '#1c2130'; ctx.fillRect(px + 35, sy + 23, 10, 9);
   ctx.fillStyle = '#3b4150'; ctx.fillRect(px + 36, sy + 24, 8, 2); ctx.fillRect(px + 36, sy + 28, 8, 2);
   ctx.fillStyle = TEAMS[skin(o.team === undefined ? 0 : o.team)].mark;
-  ctx.fillRect(px + 36, sy + 24, Math.max(1, Math.round(8 * (1 - o.waveT / t.waveT))), 2);
+  ctx.fillRect(px + 36, sy + 24, Math.max(1, Math.round(8 * (1 - Math.min(1, o.waveT / t.waveT)))), 2);
   if (o.queue > 0) ctx.fillRect(px + 36, sy + 28, Math.min(8, o.queue), 2);
   const slat = sy + 17 + (Math.floor(now * 5) % 3) * 2;
   ctx.fillStyle = '#6c7486';

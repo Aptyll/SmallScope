@@ -118,7 +118,7 @@ function updateRobot(b, dt) {
 // woods (the half of the roost facing away from the road) from
 // the roost outward, every pine and snag a log in its own stock (`wood`),
 // and raises the BOT BAYS (the barracks) on that cleared home ground - the
-// first on a clock, each after it for MERCH_BAY_WOOD logs, up to MERCH_BAYS -
+// first three straight after the stall, a rebuild for MERCH_BAY_WOOD logs -
 // whose waves walk themselves out to the road and march it (the `soldiers`
 // banner below). It raises no walls and no guns. Its stall and its own body
 // are both counters (the `shop` banner, js/ui/shop.js): walk up to either
@@ -135,7 +135,7 @@ function updateRobot(b, dt) {
 // of every arrow, blow, sweep, tower mark and soldier's foe in one place.
 // Both sides trade at both counters, so neither side may shoot one, and
 // nothing may stand between a player and the shop they walked to.
-const MERCH_SPD = 46;        // px/s
+const MERCH_SPD = 64;        // px/s, a step under a hero's: quick enough that all three bays stand before the first wave
 const MERCH_SWING_T = 0.7;   // s per axe swing (a pine is 4 hp: ~3 s a tree)
 const MERCH_BUILD_T = 0.9;   // s the hammer's wind-up reads as (drawMerchant)
 const MERCH_BACK_R = 13;     // tiles from the roost the back woods' felling reaches
@@ -146,7 +146,7 @@ const MERCH_STALL_ANG = 1.0; // rad either side of the road's axis it looks for 
 const MERCH_THINK = 0.35;    // s between job picks
 // the bot bays (STRUCTS.barracks): one per LANE, just inside that lane's
 // mouth of the hollow (baseBaySpot, js/sim/base.js), whose waves walk that
-// lane. MERCH_BAY_T after the landing the merchant clears the mid road's
+// lane. As soon as its stall stands the merchant clears the mid road's
 // site - the footprint to the ground and a MERCH_BAY_RING ring round it to
 // stumps, so the door opens onto walkable ground and there is room to fight
 // at it - and raises its bay, then the top lane's and the bot lane's
@@ -156,9 +156,8 @@ const MERCH_THINK = 0.35;    // s between job picks
 // stalls the next raise MERCH_BAY_REBUILD.
 const MERCH_BAYS = 3;         // bays the merchant keeps standing: one per lane
 const MERCH_BAY_WOOD = 40;    // logs (pines and snags felled) a rebuilt bay costs: about two minutes of the back woods
-const MERCH_BAY_T = 30;       // s after the landing the first bay is due
 const MERCH_BAY_RING = 1;     // tiles of woods cleared round the footprint
-const MERCH_BAY_SWING = 0.34; // s per axe swing on the clearing - the lane's pace, not the back woods', so the first bay is up before the second minute
+const MERCH_BAY_SWING = 0.17; // s per axe swing on the clearing - four times the back woods' pace, so all three bays stand before the first wave (STRUCTS.barracks `first`)
 const MERCH_BAY_REBUILD = 45; // s after a wreck before the next bay is raised
 const MERCH_BAY_HAMMER = 2.6; // s of hammering that sets the site
 
@@ -183,7 +182,7 @@ function spawnMerchant(e) {
     merchant: true, bot: true, kind: 'merchant', team: e.team, owner: -1, home: null,
     x: (at.tx + 0.5) * TILE, y: (at.ty + 0.5) * TILE, // no hp: nothing can hurt it (unitAlive)
     roost: e, tgt: null, workT: 0, thinkT: 0, avoids: [], avoid: null, avoidT: 0, nav: null,
-    bays: [], bayT: MERCH_BAY_T, baySite: null, wood: 0, // the bot bays standing, the clock to the next, where it goes; the logs in stock
+    bays: [], bayT: 0, baySite: null, wood: 0, // the bot bays standing, the clock to the next, where it goes; the logs in stock
     bayGift: [true, true, true], // per lane: its first bay is still the eagle's gift
     stall: null, stallT: 0, stallSite: null, // the shop it pitches first (OBJECTS.stall), the clock to asking again for a site, where
     hopT: MERCH_HOP_T, dir: 'down', moving: false, animT: 0, mvx: 0, mvy: 0, moveT: 0, idleT: 1,
@@ -423,9 +422,9 @@ function updateMerchant(b, dt) {
       return finish();
     }
   }
-  // ---- the bot bays: the first due MERCH_BAY_T after the landing, one
-  // per lane in MERCH_BAY_ORDER, ahead of the felling whenever one is due -
-  // the waves are the match's clock. A lane's first bay is free; a rebuild
+  // ---- the bot bays: due from the moment the stall stands, one per lane
+  // in MERCH_BAY_ORDER, ahead of the felling whenever one is due - the
+  // waves are the match's clock. A lane's first bay is free; a rebuild
   // waits for MERCH_BAY_WOOD logs unless the yard is empty. A wreck stalls
   // the next one MERCH_BAY_REBUILD.
   const standing = b.bays.filter((o) => structOf(objAt(o.tx, o.ty)) === o);
