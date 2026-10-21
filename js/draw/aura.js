@@ -58,6 +58,28 @@ function drawCurtainBand(px, py, nx, ny, len, col, alpha, fill) {
   }
   ctx.globalAlpha = 1;
 }
+// a round blot of `r` px at (px, py), one row at a time
+function auDisc(px, py, r, col) {
+  ctx.fillStyle = col;
+  for (let y = -Math.floor(r); y <= Math.floor(r); y++) { const w = Math.floor(Math.sqrt(r * r - y * y) + 0.35); ctx.fillRect(px - w, py + y, w * 2 + 1, 1); }
+}
+// THE CURTAIN coming down: ribbons of light standing up off the band, swaying,
+// fading out over CURTAIN_GLOW (`k` 0..1 through it)
+function drawCurtainFall(c, ex, ey, now, k) {
+  const a = 1 - k, h = Math.round(30 + 26 * (1 - k));
+  for (let s = 6, i = 0; s <= c.len; s += 7, i++) {
+    const bx = c.x + c.nx * s - ex, by = c.y + c.ny * s - ey;
+    if (bx < -10 || bx > WV_W + 10 || by < -4 || by > WV_H + h + 4) continue;
+    const sway = Math.sin(now * 3 + i * 0.7) * 2;
+    for (let y = 0; y < h; y += 1) {
+      const t = y / h, x = Math.round(bx + sway * t);
+      ctx.globalAlpha = a * (1 - t) * 0.8;
+      ctx.fillStyle = t < 0.25 ? AU_PALE : i % 3 ? AU_GREEN : AU_TEAL;
+      ctx.fillRect(x, Math.round(by - y), i % 2 ? 1 : 2, 1);
+    }
+  }
+  ctx.globalAlpha = 1;
+}
 // the stars waiting to fall, the orbs drifting, the curtains waiting to come down
 function drawAuraGround(ex, ey, now) {
   for (const s of auraStars) {
@@ -80,13 +102,11 @@ function drawAuraGround(ex, ey, now) {
     ctx.fillStyle = AU_PALE;
     for (let y = -4; y <= 4; y++) { const w = Math.round(ORB_R * Math.sqrt(1 - (y / 5) ** 2)); ctx.fillRect(px - w, py + 8 + y, w * 2 + 1, 1); }
     ctx.globalAlpha = 1;
-    const r = 2 + (Math.sin(now * 6 + o.x) > 0 ? 1 : 0);
-    ctx.fillStyle = AU_INK; ctx.fillRect(px - r - 1, py - r, (r + 1) * 2 + 1, r * 2 + 1); ctx.fillRect(px - r, py - r - 1, r * 2 + 1, (r + 1) * 2 + 1);
-    ctx.fillStyle = '#7cc4e8'; ctx.fillRect(px - r, py - r + 1, r * 2 + 1, r * 2 - 1); ctx.fillRect(px - r + 1, py - r, r * 2 - 1, r * 2 + 1);
-    ctx.fillStyle = AU_PALE; ctx.fillRect(px - r + 1, py - r + 1, r * 2 - 1, r * 2 - 1);
-    ctx.fillStyle = AU_WHITE; ctx.fillRect(px - 1, py - 1, 2, 2);
+    const r = 3 + (Math.sin(now * 6 + o.x) > 0 ? 1 : 0);
+    auDisc(px, py, r + 1, AU_INK); auDisc(px, py, r, '#7cc4e8'); auDisc(px, py, r - 1, AU_PALE); auDisc(px, py, r - 2.5, AU_WHITE);
   }
   for (const c of auraCurtains) {
+    if (c.t >= c.delay) { drawCurtainFall(c, ex, ey, now, (c.t - c.delay) / CURTAIN_GLOW); continue; }
     const k = Math.min(1, c.t / c.delay);
     drawCurtainBand(c.x - ex, c.y - ey, c.nx, c.ny, c.len, AU_GREEN, 0.55 + 0.4 * k, k);
   }

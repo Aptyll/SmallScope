@@ -34,6 +34,7 @@ const CURTAIN_LEN = 900;        // px of band (by day): most of the way across t
 const CURTAIN_HALF = 12;        // px either side of its middle a body is struck
 const CURTAIN_SEE = 40;         // px either side of it the hidden are revealed
 const CURTAIN_DELAY = 1.6;      // s from the cast to the fall
+const CURTAIN_GLOW = 0.9;       // s the light stands over the band after it falls (drawn only)
 
 const auraStars = [];    // {x, y, team, owner, t, delay, dmg} - Q's spots waiting to be struck
 const auraOrbs = [];     // {x, y, nx, ny, d, len, team, owner, slow} - W's drifting lights
@@ -235,8 +236,10 @@ function updateAuraWorld(dt) {
   updateAuraOrbs(dt);
   for (let i = auraCurtains.length - 1; i >= 0; i--) {
     const c = auraCurtains[i];
+    const fell = c.t >= c.delay;
     c.t += dt;
-    if (c.t >= c.delay) { auraCurtains.splice(i, 1); curtainFall(c); }
+    if (!fell && c.t >= c.delay) curtainFall(c);
+    if (c.t >= c.delay + CURTAIN_GLOW) auraCurtains.splice(i, 1); // the light lingers a moment, drawn only
   }
 }
 
