@@ -843,6 +843,21 @@
     set = Object.assign(skaterSet(sp, null), {
       down: w.down.map((g) => bake(g, sp)), up: w.up.map((g) => bake(g, sp)), right: side, left: side.map(flipH),
     }, motionSet(row.motion, sp, null));
+    // side-on the run and the held run are the hero's own standing frame, legs stepping
+    // (heroRunSide, js/sprites/armatos.js): the doll's are narrower than the hand-drawn body
+    for (const kind of ['run', 'hold']) {
+      const mo = set[kind], bob = kind === 'run' ? SPR.motion.RUN_BOB : SPR.motion.HOLD_BOB;
+      let r = null;
+      const right = () => r || (r = heroRunSide(row.grids.side, bob).map((g) => bake(g, sp)));
+      let l = null;
+      // ...and head-on and from behind too, for a look that says its doll does not match it
+      const drawn = row.run === 'drawn', fr = {};
+      const front = (d) => (drawn ? () => fr[d] || (fr[d] = heroRunFront(row.grids[d], bob).map((g) => bake(g, sp))) : () => mo[d]);
+      set[kind] = Object.defineProperties({}, {
+        down: { get: front('down'), enumerable: true }, up: { get: front('up'), enumerable: true },
+        right: { get: right, enumerable: true }, left: { get: () => l || (l = right().map(flipH)), enumerable: true },
+      });
+    }
     lookCache.set(key, set);
     return set;
   }

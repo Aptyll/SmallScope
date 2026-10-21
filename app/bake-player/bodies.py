@@ -1,6 +1,6 @@
 # The two class bodies on the doll (doll.py): the HUNTER (pom beanie) and the WARRIOR
 # (fur hood with goggles, a trailing scarf, skate blades), and each named hero's looks
-# (ARMATOS: standard, oath; FORTIVA: unbroken, coif). Their sizes are measured off the
+# (ARMATOS: standard, oath; FORTIVA: unbroken, coif; BELLA: general, traitor; IGNIA: hearth, wanderer). Their sizes are measured off the
 # hand-drawn 16 px frames in js/sprites/characters.js, so the doll's idle lands on those
 # frames pixel for pixel and the run and the roll it paints wear the same body.
 #
@@ -432,5 +432,69 @@ class Traitor(General):
         cv.blob(cam, U(v3(-0.2, 0, Z(8.2))), R, (2.6, 3.4, Z(1.0)), 'mantle', 'cloak', bias=0.4)
 
 
+class Hearth(Standard):
+    """IGNIA as HEARTHKEEPER (her default look): loose copper hair from a bare crown, down
+    over her shoulders and her back, an ember shawl over her side's robe, bare hands.
+    Armatos's frame, a robe to the knee and boots under it."""
+    ARM_MAT, MITT_MAT = 'coat', 'skin'
+    MARKS = [(-1.5, 0.9, 'e'), (1.5, 0.9, 'e')]
+
+    def __init__(self):
+        super().__init__()
+        self.SOFT |= {frozenset(('head', 'locks')), frozenset(('head', 'mane'))}
+
+    @staticmethod
+    def face_region(n, q):
+        """the hair frames the face from the brow down: the crown all hair"""
+        return np.where((q[0] > 0.2) & (np.abs(q[1]) < 0.75) & (q[2] < -0.15) & (q[2] > -0.95), 'skin', 'hair')
+
+    def head(self, cv, cam, hc, Rh, pose, snap):
+        cv.blob(cam, hc, Rh, self.HEAD_R, 'head', 'hair', p=self.HEAD_P, region=self.face_region)
+        self.face_marks(cv, cam, hc, Rh)
+
+    def coat(self, cv, cam, U, R):
+        cv.blob(cam, U(v3(0, 0, Z(6.1))), R, (2.75, 3.05, Z(2.05)), 'coat', 'coat', p=2.2)
+        cv.blob(cam, U(v3(0, 0, Z(4.0))), R, (2.6, 3.1, Z(0.6)), 'hem', 'coat', bias=-0.3)
+        cv.blob(cam, U(v3(0.2, 0, Z(7.7))), R, (2.5, 2.9, Z(0.7)), 'scarf', 'ember', bias=0.3)
+        for s in (1, -1):    # the locks over each shoulder, in front of the shawl's ends
+            cv.blob(cam, U(v3(0.0, 2.9 * s, Z(8.6))), R, (0.8, 0.75, Z(0.9)), 'locks' + ('L' if s > 0 else 'R'), 'hair', bias=0.4)
+
+    def extras(self, cv, cam, U, R, pose):
+        # the hair down her back, lifted behind her in the run's wind
+        blow = pose.get('tail', 0.0)
+        cv.blob(cam, U(v3(-1.9 - 0.8 * blow, 0, Z(9.4) + 0.4 * blow)), R @ rot('y', -0.3 * blow), (0.9, 2.6, Z(1.6)), 'mane', 'hair', bias=-0.2)
+
+    def ball_head(self, cv, cam, hc, Rh):
+        cv.blob(cam, hc, Rh, (2.6, 2.85, 2.5), 'head', 'hair', p=self.HEAD_P)
+
+
+class Wanderer(Standard):
+    """IGNIA as WANDERER (the first skin): her side's hood up over a copper fringe, a white
+    fur collar, the robe and boots of HEARTHKEEPER"""
+    ARM_MAT, MITT_MAT = 'coat', 'skin'
+    MARKS = [(-0.5, -0.4, 'A'), (0.5, -0.4, 'A'), (-1.5, -0.4, 'a'), (1.5, -0.4, 'a'), (-1.5, 0.9, 'e'), (1.5, 0.9, 'e')]
+
+    @staticmethod
+    def face_region(n, q):
+        """the hood's opening: the face and the fringe over it"""
+        return np.where((q[0] > 0.2) & (np.abs(q[1]) < 0.75) & (q[2] < 0.25) & (q[2] > -0.95), 'skin', 'coat')
+
+    def head(self, cv, cam, hc, Rh, pose, snap):
+        cv.blob(cam, hc, Rh, self.HEAD_R, 'head', 'coat', p=self.HEAD_P, region=self.face_region)
+        self.face_marks(cv, cam, hc, Rh)
+
+    def coat(self, cv, cam, U, R):
+        cv.blob(cam, U(v3(0, 0, Z(6.1))), R, (2.75, 3.05, Z(2.05)), 'coat', 'coat', p=2.2)
+        cv.blob(cam, U(v3(0, 0, Z(4.0))), R, (2.6, 3.1, Z(0.6)), 'hem', 'coat', bias=-0.3)
+        cv.blob(cam, U(v3(0.1, 0, Z(8.0))), R, (2.6, 3.3, Z(0.6)), 'scarf', 'beard', bias=0.3)
+
+    def extras(self, cv, cam, U, R, pose):
+        pass
+
+    def ball_head(self, cv, cam, hc, Rh):
+        cv.blob(cam, hc, Rh, (2.6, 2.85, 2.5), 'head', 'coat', p=self.HEAD_P)
+
+
 BODIES = {'hunter': Hunter(), 'warrior': Warrior(), 'standard': Standard(), 'oath': Oath(),
-          'unbroken': Unbroken(), 'coif': Coif(), 'general': General(), 'traitor': Traitor()}
+          'unbroken': Unbroken(), 'coif': Coif(), 'general': General(), 'traitor': Traitor(),
+          'hearth': Hearth(), 'wanderer': Wanderer()}

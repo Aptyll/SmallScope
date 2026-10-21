@@ -426,7 +426,8 @@ function drawArrows(ex, ey, now) {
   for (const a of arrows) { if (!fogShown(a, now)) continue; // a rival's shot in the fog is not there (js/draw/fog.js)
     const hx = Math.round(a.x - ex), hy = Math.round(a.y - ey);
     if (hx < -22 || hx > WV_W + 22 || hy < -22 || hy > WV_H + 22) continue;
-    drawShaft(a, a.x - ex, a.y - ey);
+    const own = a.look && HERO_SHOTS[a.look]; // a hero's own (js/draw/heroes.js)
+    if (own) own(a, a.x - ex, a.y - ey, now); else drawShaft(a, a.x - ex, a.y - ey);
   }
 }
 

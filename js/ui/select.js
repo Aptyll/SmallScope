@@ -146,14 +146,15 @@ const selDiscMask = (() => { // the disc's inside, cut once: a face is trimmed t
   for (let dy = -R; dy <= R; dy++) { const hw = Math.floor(Math.sqrt(R * R - dy * dy)); g.fillRect(SEL_DISC - hw, SEL_DISC + dy, hw * 2 + 1, 1); }
   return cv;
 })();
-function drawSelDisc(cx, cy, ring, h, look, team, alpha, pos) {
+function drawSelDisc(cx, cy, ring, h, look, team, alpha, pos, skinId) {
   ctx.fillStyle = ring; pxDisc(cx, cy, SEL_DISC);
   ctx.fillStyle = SC_INK; pxDisc(cx, cy, SEL_DISC - 1);
   if (h >= 0) {
     const g = selDiscG, S = HERO_CROP.s, n = SEL_DISC * 2 + 1;
     g.globalCompositeOperation = 'source-over';
     g.clearRect(0, 0, n, n);
-    g.drawImage(SPRITES.portrait(h, look, team), HERO_CROP.x, HERO_CROP.y, S, S, SEL_DISC - S, SEL_DISC - S + 2, S * 2, S * 2);
+    const f = heroHead(h, look, team, skinId);
+    g.drawImage(f.img, f.x, f.y, f.w, f.w, SEL_DISC - S, SEL_DISC - S + 2, S * 2, S * 2);
     g.globalCompositeOperation = 'destination-in';
     g.drawImage(selDiscMask, 0, 0);
     g.globalCompositeOperation = 'source-over';
@@ -188,7 +189,8 @@ function drawSeatRow(r, mine, hidden, flash, hot) {
   const dx = mine ? r.x + 26 : r.x + r.w - 26, dy = r.y + (r.h >> 1);
   const ring = h >= 0 && banning ? SEL_RED : h >= 0 && firm ? mark : me ? SEL_GOLD : SC_EDGE;
   const look = h >= 0 ? CLASSES[h].look : p.look;
-  drawSelDisc(dx, dy, ring, h, look, team, firm ? 1 : 0.45, role);
+  const worn = h >= 0 && CLASSES[h].skinSlot && p.skins ? p.skins[CLASSES[h].skinSlot] || null : null; // the look this seat wears
+  drawSelDisc(dx, dy, ring, h, look, team, firm ? 1 : 0.45, role, worn);
   if (h >= 0 && banning && D.lock[p.id] >= 0) draftSlash(dx - 10, dy - 10, 21);
   if (me && draftOpen()) drawSelSwap(r, hot === 'swap');
   // the three lines
@@ -279,7 +281,7 @@ function drawSplash(L, now, a) {
     const feet = S.y + S.h - 12, sc = 3, bw = 48 * sc;
     ctx.fillStyle = 'rgba(4,6,18,0.5)';
     ctx.beginPath(); ctx.ellipse(L.cx, feet, 36, 5, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.drawImage(SPRITES.portrait(h, player.look, skin(player.team)), L.cx - (bw >> 1), feet - 46 * sc + Math.round(Math.sin(now * 1.6)), bw, bw); // the model wears no skin: the strip and the name show it
+    ctx.drawImage(SPRITES.portrait(h, player.look, skin(player.team), row.id), L.cx - (bw >> 1), feet - 46 * sc + Math.round(Math.sin(now * 1.6)), bw, bw); // a named hero in the look picked on the strip
     ctx.restore();
   }
   const nm = k > 0 ? row.name + ' ' + CLASSES[h].name : CLASSES[h].name;

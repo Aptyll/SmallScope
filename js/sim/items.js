@@ -408,6 +408,7 @@ const BOT_BUILDS = {
   WARRIOR: ['grind', 'hobnail', 'maul', 'stonehide', 'beartooth', 'brambmail'],
   ARMATOS: ['bearskin', 'hobnail', 'brambmail', 'glacier', 'hearth', 'stonehide'], // the wall first: health and armor, then the walk to the fight
   FORTIVA: ['brand', 'mukluk', 'fang', 'stonehide', 'maul', 'collar'], // the hit first, the health to stay in the fight, then the legs to reach it
+  IGNIA: ['marsh', 'emberb', 'storm', 'deeprod', 'slate', 'clock'], // the fire first: power, haste and the scorch, then the boots and more power
   BELLA: ['beartooth', 'quick', 'maul', 'feathers', 'sunstone', 'collar'], // the blade first: damage and its cut, then the speed to chain it
 };
 function botBuild(p) { return BOT_BUILDS[CLASSES[p.cls].name] || BOT_BUILDS.HUNTER; }
