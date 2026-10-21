@@ -783,6 +783,7 @@ function hurtUnit(e, dmg, nx, ny, src, o) {
   // is worth more, whatever landed it - a shot, a roll, a stomp alike
   if (src instanceof Player && src.buffT > 0) dmg = Math.round(dmg * statBuffMul(src, 'dmg'));
   dmg = passiveDeal(src, e, dmg, o); // ...and a hero's passive may make more of it (HERO_PASSIVE deal, js/sim/heroes.js)
+  dmg = itemsDeal(src, e, dmg, o); // ...and so may an item's (CULL, SURGE: js/sim/items.js)
   const ty = DMG_TYPES[o.type] || DMG_TYPES.blunt;
   const km = o.kbMul === undefined ? 1 : o.kbMul;
   if (e instanceof Player) {
@@ -800,7 +801,8 @@ function hurtUnit(e, dmg, nx, ny, src, o) {
     }
   }
   if (ty.spark) burst(e.x, unitMidY(e), ty.spark, 6, 50, 0.45);
-  if (src instanceof Player && src !== e) itemsOnHit(src, e, o); // the item passives a blow carries (js/sim/items.js)
+  if (src instanceof Player && src !== e) itemsOnHit(src, e, o, dmg); // the item passives a blow carries (js/sim/items.js)
+  if (e instanceof Player && src && src !== e) itemsOnHurt(e, src, dmg, o); // ...and the ones a blow taken answers (THORNS)
   // fire outlives its own blow: whatever the damage type is worth on its own
   if (ty.ignite > 0) igniteUnit(e, ty.ignite, BURN_DPS, src);
 }
@@ -823,7 +825,7 @@ function ccCredit(e, cur, t, src) {
 // under - each lasts ccMul of its length. From a rallying standard today
 // (guardTen, js/sim/armatos.js) and any hero's own (HERO_TEN, js/sim/heroes.js);
 // a knock-up is the one control it never cuts.
-function ccMul(e) { return heroTen(e); }
+function ccMul(e) { return heroTen(e) * itemTen(e); } // (STEADY: itemTen, js/sim/items.js)
 function stunUnit(e, t, src, firm) {
   if (!firm) t *= ccMul(e);
   if (t <= 0 || !unitAlive(e)) return;

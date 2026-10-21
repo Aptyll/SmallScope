@@ -317,6 +317,7 @@ function baseKit(cls) {
     harvestMul: 1, dodgeCd: DODGE_CD, stealth: 1,
     ambushMul: AMBUSH_MUL, bury: PRONE_BURY,
     killHeal: 0, kindle: false, chill: false, restHeal: 0, // the item passives (js/sim/items.js)
+    leech: false, thorns: false, cull: false, steady: false, surge: false, brace: false, smolder: false, scorch: false,
   });
 }
 // rebuild p.kit from class + items
@@ -414,6 +415,7 @@ class Player {
     this.items = new Array(ITEM_SLOTS).fill(null); // the six item slots, ids or null (js/sim/items.js) - they survive a respawn
     this.potions = 0;                   // how many potions stand in the slot that holds 'potion' (the `potion` banner, js/sim/items.js)
     this.fightT = 0; this.kindleN = 0;  // s since the last hit given or taken, and KINDLING's count (itemsOnHit)
+    this.surgeT = 0; this.smolderT = 0; // SURGE's window after a key, SMOLDER's next pulse (itemsTick)
     refreshKit(this);                   // builds this.kit and this.maxHp from class + items
     this.aboard = false;                // riding the eagle (beginDrop sets it, hopOff clears it)
     this.dropT = 0;                     // seconds left of the step down off the roost (0 = on the ground)
