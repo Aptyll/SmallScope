@@ -23,7 +23,8 @@
 // chat line lands or the count to the match starts flashes in the taskbar
 // (the wrapper's `flash`) or, in a browser, marks its tab's title until it
 // is looked at.
-const TALK_KEEP = 4;       // lines the room shows
+const TALK_KEEP = 6;       // lines kept: the champ select shows them all, the party TALK_ROOM
+const TALK_ROOM = 4;       // lines the party shows
 const TALK_MAX = 48;       // characters a line may carry
 const TALK_GAP = 0.4;      // s a guest's lines must stand apart
 const TALK_PITCH = 9;      // px between lines
@@ -39,12 +40,14 @@ function talkAdd(slot, s) {
   while (NET.chat.length > TALK_KEEP) NET.chat.shift();
   if (slot !== localId) { SFX.pickup(); roomAttention(); }
 }
-// the host's: a line from slot, kept and handed to every screen
+// the host's: a line from slot, kept and handed to every screen - in the
+// champ select (the draft is on) only to the speaker's own side, League's
 function talkHeard(slot, s) {
   s = talkClean(s);
-  if (!s) return;
-  talkAdd(slot, s);
-  if (NET.peers.size) NET.transport.send('*', { t: 'said', slot, s });
+  if (!s || !players[slot]) return;
+  const side = DRAFT.phase !== 'off' ? players[slot].team : -1;
+  if (side < 0 || side === player.team) talkAdd(slot, s);
+  for (const [peer, pr] of NET.peers) if (side < 0 || (players[pr.slot] && players[pr.slot].team === side)) NET.transport.send(peer, { t: 'said', slot, s });
 }
 // the host's: a guest's `say`, unless it came too soon after its last
 function talkFrom(pr, s) {
@@ -82,16 +85,18 @@ function talkOpen() {
 }
 // the plate and the lines over it: where L puts it (L.ty; the party's
 // bottom-left corner, roomLayout's L.talk, as tall as the button beside it:
-// L.th; its lines may run L.cw wide), or at the foot of the screen
+// L.th; its lines may run L.cw wide; the champ select's bottom left with
+// L.lines lines), or at the foot of the screen
 function talkLayout(L) {
-  const y = L.ty != null ? L.ty : VIEW_H - 36 - 12 - TALK_H;
-  return { x: L.x, y, w: L.w, h: L.th || TALK_H, cw: L.cw || L.w, top: y - TALK_KEEP * TALK_PITCH - 2 };
+  const y = L.ty != null ? L.ty : VIEW_H - 36 - 12 - TALK_H, n = L.lines || TALK_ROOM;
+  return { x: L.x, y, w: L.w, h: L.th || TALK_H, cw: L.cw || L.w, n, top: y - n * TALK_PITCH - 2 };
 }
+function inTalk(L) { return overRect(talkLayout(L), 2, 2); }
 function drawTalk(L, now, hot) {
-  const m = state.menu, T = talkLayout(L);
+  const m = state.menu, T = talkLayout(L), lines = NET.chat.slice(-T.n);
   ctx.save(); ctx.beginPath(); ctx.rect(T.x, T.top - 2, T.cw, T.y - T.top + 2); ctx.clip(); // a long line stops at its edge
-  NET.chat.forEach((c, i) => {
-    const y = T.y - (NET.chat.length - i) * TALK_PITCH - 2, nm = c.name + ':';
+  lines.forEach((c, i) => {
+    const y = T.y - (lines.length - i) * TALK_PITCH - 2, nm = c.name + ':';
     drawPixelText(ctx, nm, T.x + 2, y, TEAMS[skin(c.team)].mark, 1);
     drawPixelText(ctx, c.s, T.x + 2 + pixelTextWidth(nm) + 5, y, SC_TXT, 1);
   });

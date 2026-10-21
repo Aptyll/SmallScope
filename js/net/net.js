@@ -24,6 +24,7 @@ const NET = {
   mode: null,                // the party's mode: 'quick' | 'ranked' | 'practice' (PARTY_MODES, js/ui/rooms.js), null with no party open; a guest's comes with the roster
   botLv: null,               // a host's: RANKED's bots' level, pinned at FIND MATCH (rankLevel); null leaves it settings.aiLevel (aiProfile, js/ai/ai-skill.js)
   ranks: [],                 // the party's: each person's RANKED rating per slot (their hello's, the host's own PROFILE.rank)
+  pos: [],                   // the host's: the draft position each guest asks for per slot (their hello's PROFILE.pos, js/ui/draft.js)
   code: '',                  // a guest's: the party's code, as the host sent it (roomCode, js/ui/rooms.js)
   seek: null,                // a host's: FIND MATCH looking for another party, { t, hold, rival, crossing } (js/ui/matchmaking.js)
   seekAt: null,              // a guest's: when, on its own clock, the party started looking (null while it is not)
@@ -82,7 +83,7 @@ function netSetup(role, transport) {
   if (NET.transport && NET.transport !== loopbackTransport) NET.transport.close();
   NET.role = role || 'solo';
   NET.transport = transport || loopbackTransport;
-  NET.peers.clear(); NET.parked.clear(); NET.kicked.clear(); NET.ready.clear(); NET.pings = []; NET.pingT = 0; NET.chat = []; NET.ranks = []; NET.botLv = null; NET.code = ''; NET.seek = null; NET.seekAt = null;
+  NET.peers.clear(); NET.parked.clear(); NET.kicked.clear(); NET.ready.clear(); NET.pings = []; NET.pingT = 0; NET.chat = []; NET.ranks = []; NET.pos = []; NET.botLv = null; NET.code = ''; NET.seek = null; NET.seekAt = null;
   NET.easeAt = 0; NET.gapAvg = 0; NET.gapDev = 0; NET.easeMs = 0;
   NET.synced = false; NET.welcomed = false; NET.helloed = false; NET.refused = null; NET.lastTick = -1; NET.hostOver = null; NET.countN = -1; NET.published = false; NET.phase = 'room'; NET.rematch = null; NET.nextSeed = 0; NET.was = null;
   NET.dictOut = encDict(); NET.dictIn = encDict(); NET.verifyFail = null;
@@ -157,7 +158,7 @@ function netHostStep(dt) {
     if (!pr) continue;
     if (msg.t === 'resync') { netHostFull(peer, pr); continue; } // a delta the client could not take: the whole thing again
     if (msg.t === 'ready') { seatReady(pr.slot, !!msg.on); continue; }    // the party: a guest's READY
-    if (msg.t === 'draft') { draftAct(pr.slot, msg.k === 'lock' ? 'lock' : 'hover', msg.h | 0); continue; } // ...a guest's press in the draft (js/ui/draft.js)
+    if (msg.t === 'draft') { draftAct(pr.slot, DRAFT_ACTS.includes(msg.k) ? msg.k : 'hover', msg.h | 0, msg.id); continue; } // ...a guest's press in the draft (js/ui/draft.js)
     if (msg.t === 'say') { talkFrom(pr, msg.s); continue; }               // ...a line for the room's chat
     if (msg.t === 'pong') { pongIn(pr, msg); continue; }                   // ...and its answer to a ping
     if (msg.t === 'in') {
@@ -246,6 +247,7 @@ function netHostHello(peer, msg) {
   if (msg.cls !== undefined && msg.cls !== null) setClass(p, msg.cls);
   p.skins = cleanHeroSkins(msg.skins); // the looks they wear, drawn on every screen (heroSkinOf, player.js)
   NET.ranks[slot] = msg.rank | 0 || null;
+  NET.pos[slot] = msg.pos >= 0 && msg.pos < POSITIONS.length ? msg.pos | 0 : -1;
   const pr = { slot, uid: msg.uid, name: msg.name, cross: !!msg.party, lastTick: 0, ack: -1, dictAt: new Map(), q: [], qMin: Infinity, qN: 0 };
   NET.peers.set(peer, pr);
   NET.transport.send(peer, Object.assign({ t: 'welcome', slot, hostSlot: localId, seed: SEED, tick: state.tick, roster: netRoster(), phase: NET.phase }, roomInfo()));
@@ -293,7 +295,7 @@ function netHostLeave(peer) {
   p.control = 'ai'; // the side keeps its number while the slot waits
   p.input = makeInput();
   NET.parked.set(pr.uid, { slot: pr.slot, t: 0 });
-  NET.ready.delete(pr.slot); NET.pings[pr.slot] = null; NET.ranks[pr.slot] = null;
+  NET.ready.delete(pr.slot); NET.pings[pr.slot] = null; NET.ranks[pr.slot] = null; NET.pos[pr.slot] = -1;
   if (NET.mode && state.mode === 'title' && NET.phase === 'room') p.control = 'none'; // a party's seat stands empty again for the next friend
   if (PRACTICE) practiceVacate(p); // the field has no bots: back to the corner, empty
   logEvent((p.name || 'A PLAYER') + ' LEFT', p);
@@ -327,7 +329,7 @@ function seatKick(slot) {
     NET.transport.send(peer, { t: 'refuse', why: 'KICKED' });
     NET.peers.delete(peer);
     NET.kicked.add(pr.uid);
-    NET.ready.delete(slot); NET.pings[slot] = null; NET.ranks[slot] = null;
+    NET.ready.delete(slot); NET.pings[slot] = null; NET.ranks[slot] = null; NET.pos[slot] = -1;
     const p = players[slot];
     p.control = NET.mode ? 'none' : 'ai'; p.input = makeInput(); p.name = null;
     logEvent((pr.name || 'A PLAYER') + ' LEFT', p);
@@ -514,7 +516,7 @@ function netClientStats() {
   NET.was = { p: me, earned: me.earned, kills: me.kills, dead: me.dead, aboard: me.aboard };
 }
 function netClientHello() {
-  NET.transport.send('host', { t: 'hello', uid: NET.uid, patch: PATCH_TXT, seed: SEED, map: MAP_TYPE, name: PROFILE.name(), cls: PROFILE.hero(), skins: profileHeroSkins(), rank: PROFILE.rank(),
+  NET.transport.send('host', { t: 'hello', uid: NET.uid, patch: PATCH_TXT, seed: SEED, map: MAP_TYPE, name: PROFILE.name(), cls: PROFILE.hero(), skins: profileHeroSkins(), rank: PROFILE.rank(), pos: PROFILE.pos(),
     party: CROSS ? CROSS.party : undefined, pn: CROSS ? CROSS.n : undefined }); // a party crossing in (js/ui/matchmaking.js)
 }
 // the roster the host dealt: our slot is the human here, the host's is a

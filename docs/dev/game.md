@@ -13,7 +13,7 @@ nine other people are on it.
 Ten players in `players` — **people and AI: every seat nobody takes is a bot's**, alone or in an
 online lobby ([online play](multiplayer.md#online-play)) — across **two teams of five, RED vs
 BLUE** (players alternate). Everyone plays one of **six heroes** (the ranged HUNTER, the melee
-WARRIOR, ARMATOS the defensive initiator, FORTIVA the juggernaut, BELLA the duelist, and IGNIA the firemage — a human's is the one picked on the lobby's hero row) and is **dropped in by their team's armoured eagle**, which flies in over its own corner and lands
+WARRIOR, ARMATOS the defensive initiator, FORTIVA the juggernaut, BELLA the duelist, and IGNIA the firemage — a human's is the one picked on the champ select's hero grid) and is **dropped in by their team's armoured eagle**, which flies in over its own corner and lands
 the whole side at home; nobody starts at a spawn camp. Each side's **base** is a fixed hollow cut
 into its **corner's** woods, RED always bottom-left, BLUE always top-right
 ([the bases](world.md#the-bases)); the bird roosts on its perch at the back and becomes its team's
@@ -230,6 +230,6 @@ each bolt in a row into the same scout hits harder. [Road towers](gameplay/robot
   is stopped at a form. **A profile is never power**: a match reads its name and the hero picked
   and nothing else — everything about a match is decided inside that match, and every item is
   on sale to everybody alike. See [architecture.md](architecture.md#profilejs),
-  [the hero row](rendering.md#lobby) and [the profile card](rendering/main-menu-title.md#the-profile-card). An
+  [the hero grid](rendering.md#lobby) and [the profile card](rendering/main-menu-title.md#the-profile-card). An
   online lobby sends the host exactly that name and hero and nothing more; if a server ever
   holds the profile, it holds the same object.

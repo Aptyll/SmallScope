@@ -6,7 +6,12 @@ Steam lobby) and NET.mode names the mode. League's party lobby in Graphite, over
 snowy valley behind a dark wash (`RM_WASH`): two mirrored plates at the head, the mode's name on
 the left (the leader's opens a list of the modes under it; a click on one, or the keys' Enter, up,
 down and Enter, sets it in place, `modeSet`, and spends every guest's READY, since it was said to
-the old mode). Down the right edge runs the social column (League's, js/ui/friends.js
+the old mode). Between them a smaller plate holds the bots' level (`drawRoomBots`): rising bars,
+as many lit as the level is hard, in its colour (green, amber, red, violet), and its name. The
+leader's click (or the keys: right off the mode's name, Enter) opens the levels under it, and one
+picked (`botsSet`) is `settings.aiLevel`, carried to every guest's screen with the room's info
+(`lvl`). In RANKED it only shows, the level the party's rating gives; PRACTICE TOOL has no bots,
+so it is gone there, and while the party looks for a match the clock stands in its place. Down the right edge runs the social column (League's, js/ui/friends.js
 `drawSocial`): your face and name at its head with the party's four-letter code in gold under them
 (a click copies it, white for a moment; dim with a red dot blinking after it while the link is
 down), and your Steam friends under that. Your side's five seats stand in a row with you in the
@@ -33,14 +38,12 @@ other, the one with the higher code reloading onto the other's valley as its riv
 nobody found within 8 s, bots take the rival side. After the match each party goes back to its
 own party lobby. Then every empty seat on both sides takes a bot and the whole party goes to the
 **hero select** (netPhase 'pick', the lobby, js/ui/menu.js), which every member sees as the
-leader does, with the code on a 2x plate at the head of your side's roster and a crown over the
-leader's card. Everyone drafts there (js/ui/draft.js: bans, then a blind pick all at once; a
-guest's presses go through the leader as `draft` messages); a guest sees the leader's map and
-target but cannot press them; the count after the pick and the eagle on its zero are the
+leader does. Everyone drafts there (js/ui/draft.js: bans, then a blind pick all at once; a
+guest's presses go through the leader as `draft` messages); the count after the pick and the eagle on its zero are the
 leader's; the leader's ESC takes everyone back to the party. RANKED keeps a
 rating per profile (`PROFILE.rank`, starts at 1000): a win adds RANK_STEP, a loss takes it
 (`rankResult`), and the bots' level is read off the party's average rating (`rankLevel`), so
-the target cannot be picked there. PRACTICE TOOL's leader has START in place of FIND MATCH
+it cannot be picked there. PRACTICE TOOL's leader has START in place of FIND MATCH
 (`partyPractice`): once every friend is READY the leader's page reloads onto the
 [practice arena](../world.md#the-practice-arena) hosting the party's code, each guest is told
 (`practice`) and follows, joining while the leader's page comes up (`practiceBootHost`,
@@ -69,9 +72,7 @@ remembered with the settings (`settings.relay`), else the page's own host.
 `tipFollow` — the TOOLTIP row, the hover panel beside the pointer (the default) or parked bottom
 left ([the hover tooltip](../rendering/the-hud-corners/the-hover-tooltip.md)) —
 `tipFull` — the ABILITY DETAILS row: HOLD SHIFT (the default: an ability's hover is the short card, Shift opens every rank's numbers) or ALWAYS (`tipClassAb`) —
-`aiLevel` — the rival bots' level, picked in the lobby's AI pop-up, an index into `AI_LEVELS` (js/ai/ai-skill.js), NORMAL until moved (a settings save from before EASY is moved up one, `loadSettings`) —
-`mapType` — the map shape picked in the lobby's map pop-up, an index into `MAPS` (js/sim/world.js); it is
-what the NEXT load grows — LOCK IN reloads onto it when it is not this page's shape ([map shapes](../world.md#map-shapes)) —
+`aiLevel` — the rival bots' level, picked by the leader on the party screen's head, an index into `AI_LEVELS` (js/ai/ai-skill.js), NORMAL until moved (a settings save from before EASY is moved up one, `loadSettings`) —
 `scheme` — the keyboard scheme, `'wasd'` or `'click'` — with `binds` / `bindsClick`, the key
 each action is bound to under each
 ([the two controllers](../multiplayer.md#the-two-controllers)) —

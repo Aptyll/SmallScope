@@ -27,15 +27,14 @@ if (PRACTICE) {
   // eagles at all
   genPracticeWorld();
 } else {
-  // the SHAPE this page grew (MAPS, js/sim/world.js): ?map=N wins, else the
-  // profile's pick, so a reload carries a pick the way ?seed carries a
-  // reroll. Read after loadSettings and before genWorld, and never again.
+  // the SHAPE this page grows (MAPS, js/sim/world.js): ?map=N (a rematch or a
+  // join carries the host's), else the first. Read before genWorld, and
+  // never again.
   MAP_TYPE = (function () {
     const q = /[?&]map=(\d+)/.exec(location.search);
-    const k = q ? +q[1] : settings.mapType | 0;
+    const k = q ? +q[1] : 0;
     return k >= 0 && k < MAPS.length ? k : 0;
   })();
-  settings.mapType = MAP_TYPE; // the lobby's pick starts as the shape standing (a ?map=N page may differ from the profile's)
   genWorld();
   placeCreek();     // the creek down the cross-diagonal, its bends and fords, and the cistern round its frozen middle (world.js, cistern.js)
   layPaths();       // ...and the paths a grown shape cuts through its own woods, forded where they cross it (world.js)
@@ -101,39 +100,11 @@ if (PRACTICE) {
 if (JOIN_AT_BOOT && !PRACTICE) partyBootJoin(JOIN_AT_BOOT); // the party screen, the join under way (js/ui/rooms.js)
 else if (JOIN_AT_BOOT) practiceBootJoin(JOIN_AT_BOOT); // a party's guest following its leader onto the field
 if (PRACTICE) practiceBootHost(); else rematchBootHost(); // a leader back from a match or the field: the party again, same people (js/ui/rooms.js)
-// landing from a reroll: the whiteout the die left behind clears to the new world
+// landing from a reload that whited out (a rematch, the field left): the white clears to the new world
 try {
   if (sessionStorage.getItem('softfall.reroll')) {
     sessionStorage.removeItem('softfall.reroll');
     state.fade = { a: 1, to: 0, spd: 1 / 0.8, color: '#f4f7ff', then: null };
-    state.menu.rolling = 0.5;
-  }
-  // ...and from a MAP PICK, which is the same page on the same seed in a new
-  // shape (pickMap, js/ui/menu.js): it clears onto the screen it was made on,
-  // so picking a shape is one press and not a walk back through the menu
-  // (through the lobby's own night, not the white: the screen went dark on
-  // itself and comes back up on itself)
-  if (sessionStorage.getItem('softfall.select')) {
-    sessionStorage.removeItem('softfall.select');
-    if (!PRACTICE && !JOIN_AT_BOOT) {
-      beginLobby(); state.menu.screenT = 1;
-      if (state.fade) state.fade.color = LOBBY_NIGHT;
-    }
-  }
-  // ...and from LOCK IN on a shape this page had not grown (lockIn, js/ui/menu.js):
-  // the page came back on this seed in that shape and goes straight to the
-  // eagle, the ability picks it carried put back on (no profile holds them)
-  const dropRaw = sessionStorage.getItem('softfall.drop');
-  if (dropRaw) {
-    sessionStorage.removeItem('softfall.drop');
-    if (!PRACTICE && !JOIN_AT_BOOT) {
-      try {
-        const d = JSON.parse(dropRaw);
-        if (d && Array.isArray(d.abPick)) player.abPick = d.abPick.map((v) => v | 0);
-      } catch (e) { }
-      setClass(player, player.cls);
-      beginDrop();
-    }
   }
 } catch (e) { }
 

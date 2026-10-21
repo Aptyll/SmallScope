@@ -90,6 +90,7 @@ const BOW_NOCK = 0.45;    // WREN's seconds between loosing and the next draw
 // js/sprites/looks.js's: { sex, tone, hair, hairCol, beard, face }.
 const CLASSES = [
   {
+    pos: ['bot', 'mid'], // the positions it plays, best first (POSITIONS, js/ui/draft.js)
     name: 'HUNTER', role: 'BOW, DISTANCE, AMBUSH',
     look: { sex: 0, tone: 2, hair: 1, hairCol: 2, beard: 0, face: 1 },
     blurb: ['THE BOW IS THE ARGUMENT: KEEP THE GAP.', 'THE NET TANGLES THEM. THE GRAPPLE PULLS YOU CLEAR.', 'THE SNOW HIDES YOU. THE SHOT OUT OF IT HITS MUCH HARDER.'],
@@ -104,6 +105,7 @@ const CLASSES = [
     attack: { name: 'SHORTBOW', art: 'bow', cycle: 55 / 60, kb: 1, shot: { speed: 320, life: 0.85, col: '#e8dcb4' } },
   },
   {
+    pos: ['top', 'jungle'], // the positions it plays, best first (POSITIONS, js/ui/draft.js)
     name: 'WARRIOR', role: 'PRESSURE, BLOCKING, MOMENTUM',
     look: { sex: 0, tone: 4, hair: 0, hairCol: 1, beard: 2, face: 0 },
     blurb: ['THE FIGHT IS AT ARM\'S LENGTH: GET THERE.', 'THE SHIELD EATS ARROWS. THE RUSH CARRIES BODIES.', 'THE SWORD REACHES A BODY LENGTH. THE EXECUTE FINISHES IT.'],
@@ -119,6 +121,7 @@ const CLASSES = [
     // the first named hero (js/sim/armatos.js): the WARRIOR's body (`body`),
     // his own 16 px look over it (`skins`), his greatsword's cut and a kit of
     // his own on keys 1-4
+    pos: ['support', 'top'], // the positions it plays, best first (POSITIONS, js/ui/draft.js)
     name: 'ARMATOS', role: 'THE LAST STANDARD', body: 1, passive: 'resolve', // HERO_PASSIVE, js/sim/heroes.js
     look: { sex: 0, tone: 1, hair: 2, hairCol: 6, beard: 3, face: 0 },
     blurb: ['NO SOLDIER LEFT BEHIND.', 'THE SHIELD TAKES THE HIT. THE BASH ANSWERS IT.', 'PLANT THE STANDARD: YOUR SIDE HOLDS, THEIRS CANNOT LEAVE.'],
@@ -140,6 +143,7 @@ const CLASSES = [
     // frames and his sword's cut (`body`, `attack`) who wins the long fight: the most health of
     // anyone and a hard hit, a step slower so a hero who keeps its distance
     // can beat her
+    pos: ['top', 'jungle'], // the positions it plays, best first (POSITIONS, js/ui/draft.js)
     name: 'FORTIVA', role: 'THE UNBROKEN', body: 1, passive: 'unbroken', // HERO_PASSIVE, js/sim/fortiva.js
     look: { sex: 1, tone: 2, hair: 3, hairCol: 3, beard: 0, face: 1 },
     blurb: ['STRENGTH IS THE POWER TO REFUSE TO KNEEL.', 'THE LONGER THE FIGHT, THE HARDER SHE IS TO STOP.', 'THE EDGE OF THE ARC HEALS HER. THE SHIELD PAYS BACK WHAT IT TOOK.'],
@@ -160,6 +164,7 @@ const CLASSES = [
     // the third named hero (js/sim/bella.js): a duelist on the WARRIOR's frames
     // and his sword's cut (`body`, `attack`): quick and light, her damage in the
     // keys she chains, her life thin if she is caught
+    pos: ['mid', 'jungle'], // the positions it plays, best first (POSITIONS, js/ui/draft.js)
     name: 'BELLA', role: 'THE IMPERIAL GENERAL', body: 1, passive: 'calculated', // HERO_PASSIVE, js/sim/heroes.js
     look: { sex: 1, tone: 1, hair: 3, hairCol: 0, beard: 0, face: 2 },
     blurb: ['FIND THE WEAKNESS. SPEND IT FIRST.', 'THE LUNGE, THE SLIP AND THE PARRY CHAIN INTO EACH OTHER.', 'CALL OUT ONE HERO AND FINISH THEM.'],
@@ -180,6 +185,7 @@ const CLASSES = [
     // the fourth named hero and the first mage (js/sim/ignia.js): fire that
     // spreads through a crowd and zones a lane, at the hunter's range or a
     // little short of it; slow damage, not burst, and the least life of anyone
+    pos: ['mid', 'support'], // the positions it plays, best first (POSITIONS, js/ui/draft.js)
     name: 'IGNIA', role: 'THE FIREMAGE', body: 1, passive: 'kindling', // HERO_PASSIVE, js/sim/ignia.js
     look: { sex: 1, tone: 1, hair: 3, hairCol: 3, beard: 0, face: 2 },
     blurb: ['THE ONLY FIRE FOR MILES.', 'ONE BURNING RIVAL SETS THE NEXT ALIGHT.', 'SNOW AND WATER PUT YOUR FIRE OUT.'],
