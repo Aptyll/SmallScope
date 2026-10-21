@@ -239,10 +239,19 @@ function drawSeats(L, a, hot) {
 
 // ------------------------------------------------------------ splash
 // Your locked hero, big, in the middle once the grid has done its work: the
-// skin's splash art (heroSplash: none painted yet) or, until it is, the
+// skin's splash art (heroSplash) or, for a look with none painted, the
 // hero's model at 3x on a slice of the valley's night - and its look's name
-// under it. A hero's splash is SPLASH_W x SPLASH_H at 1x.
-function heroSplash(h, id) { return null; }
+// under it. A hero's splash is SPLASH_W x SPLASH_H at 1x, its strip
+// thumbnail SKIN_THUMB_W x SKIN_THUMB_H (heroThumb), both baked by
+// app/bake-splash.js from docs/media/splash/<slot>-<id>(-thumb).png.
+const SPLASH_PICS = {}; // '<slot>-<id>' and '<slot>-<id>-thumb' -> Image, decoded at load
+for (const [k, src] of Object.entries(window.SPLASH_ART || {})) { const img = new Image(); img.src = src; SPLASH_PICS[k] = img; }
+function splashPic(h, id, tail) {
+  const slot = CLASSES[h] && CLASSES[h].skinSlot, img = slot && id ? SPLASH_PICS[slot + '-' + id + tail] : null;
+  return img && img.complete && img.naturalWidth ? img : null;
+}
+function heroSplash(h, id) { return splashPic(h, id, ''); }
+function heroThumb(h, id) { return splashPic(h, id, '-thumb'); }
 function selSkinRows(h) {
   const c = CLASSES[h], tab = c && c.skinSlot ? SKIN_TABS.find((t) => t.hero === h) : null;
   return tab ? tab.rows.map((r) => ({ r, tab, own: skinHas(tab, r) })) : [{ r: { id: null, name: c.name, rarity: 'common' }, tab: null, own: true }];
@@ -283,7 +292,7 @@ function drawSplash(L, now, a) {
 // Under the splash: the hero's looks, SKIN_SHOW at a time, the worn one in
 // gold, one this profile does not own dimmed with a lock; the chevrons walk
 // the window when there are more. A thumbnail is its splash's own
-// SKIN_THUMB_W x SKIN_THUMB_H (none yet: the look's body at 2x).
+// SKIN_THUMB_W x SKIN_THUMB_H (heroThumb; a look with none: its body at 2x).
 function selSkinCells(L) {
   const h = player.cls, rows = selSkinRows(h);
   const fit = Math.max(1, Math.floor((L.splash.w + SKIN_THUMB_G) / (SKIN_THUMB_W + SKIN_THUMB_G)));
@@ -305,8 +314,9 @@ function drawSkinStrip(L, a, hot) {
     ctx.save(); ctx.beginPath(); ctx.rect(c.x, c.y, c.w, c.h); ctx.clip();
     ctx.fillStyle = SKIN_RARITY[c.s.r.rarity] || SC_EDGE; ctx.globalAlpha = a * 0.18; ctx.fillRect(c.x, c.y, c.w, c.h);
     ctx.globalAlpha = a * (c.s.own ? 1 : 0.35);
-    const body = SPRITES.champLook(h, CLASSES[h].look, skin(player.team), c.k > 0 ? c.s.r.id : null).down[0];
-    ctx.drawImage(body, c.x + (c.w >> 1) - 16, c.y - 1, 32, 32);
+    const thumb = heroThumb(h, c.s.r.id);
+    if (thumb) ctx.drawImage(thumb, c.x, c.y);
+    else ctx.drawImage(SPRITES.champLook(h, CLASSES[h].look, skin(player.team), c.k > 0 ? c.s.r.id : null).down[0], c.x + (c.w >> 1) - 16, c.y - 1, 32, 32);
     ctx.restore();
     ctx.globalAlpha = a;
     ctx.fillStyle = SKIN_RARITY[c.s.r.rarity] || SC_EDGE; ctx.fillRect(c.x, c.y + c.h - 1, c.w, 1);

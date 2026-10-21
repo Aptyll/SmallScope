@@ -59,6 +59,7 @@ order, so the script tags still interleave them:
 | [js/app/audio.js](../../js/app/audio.js) | ~780 | `SFX` | synth, samples and music under one master dial |
 | [js/baked/logodata.js](../../js/baked/logodata.js) | ~6 | `LOGO_PNG` | **generated** — the title logo as a PNG data URL |
 | [js/baked/notesart.js](../../js/baked/notesart.js) | ~5 | `NOTES_ART` (on `window`) | **generated** — the patch notes' pictures as PNG data URLs |
+| [js/baked/splash.js](../../js/baked/splash.js) | ~12 | `SPLASH_ART` (on `window`) | **generated** — the champ select's splash art and skin thumbnails as PNG data URLs |
 | [js/sim/core.js](../../js/sim/core.js) | ~520 | shared scope, no `window.*` export | the base layer: the numbers with no one owner (grid, view, day cycle, `YIELD`), the seeded rng, `state`/`settings`, the fx/economy helpers |
 | [js/app/director.js](../../js/app/director.js) | ~210 | shared scope, no `window.*` export | director mode for filming: the free camera, the hidden HUD, the 9:16 frame `fitCanvas` asks for, and the canvas recorder; loaded before canvas.js because `fitCanvas()` runs at load |
 | [js/app/canvas.js](../../js/app/canvas.js) | ~270 | shared scope, no `window.*` export | screen + world + light buffers, `fitCanvas`, pixel-exact zoom, the panel layout anchors |
@@ -417,7 +418,7 @@ bytes both ways ([docs/pvp-architecture.md](../pvp-architecture.md)).
 ## app/
 
 None of the scripts is part of the game, and nothing in `js/` may depend on one having run — except
-`sfxdata.js`, `logodata.js` and `notesart.js`, which three of them write.
+`sfxdata.js`, `logodata.js`, `notesart.js` and `splash.js`, which four of them write.
 
 - **`app/server.js`** — a static server on `http://localhost:8471` with a `POST /shot` sink that
   writes the canvas to `shot.png`, and the **match relay** at `/ws` (`role=host` is given a
@@ -454,6 +455,8 @@ None of the scripts is part of the game, and nothing in `js/` may depend on one 
   (`--probe` prints the key's box without writing).
 - **`app/bake-notes-art.js`** — reads `docs/media/notes/*.png`, writes `js/baked/notesart.js`: the pictures
   a patch note names in its third field, as PNG data URLs (rerun after adding one).
+- **`app/bake-splash.js`** — reads `docs/media/splash/<slot>-<id>.png` (288x160) and `<slot>-<id>-thumb.png` (48x28), writes
+  `js/baked/splash.js`: each hero look's champ select splash and strip thumbnail (rerun after adding one; a wrong size fails).
 - **`app/check-globals.js`** — the shared scope's lint, run before every push (exit 1 on a
   problem; `--list` prints every name it found as JSON). It reads the scripts in `index.html`'s
   order and takes each file's depth-0 declarations (`const`/`let`/`var` with destructuring,
