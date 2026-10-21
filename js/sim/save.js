@@ -52,6 +52,7 @@ const SAVE_ROOTS = [
   ['fish', ...saveArr(fish)], ['holes', ...saveArr(holes)], ['camps', ...saveArr(camps)],
   ['craters', ...saveArr(craters)], ['nets', ...saveArr(nets)], ['abFx', ...saveArr(abFx)],
   ['guards', () => [guards, guardN], (v) => { saveArr(guards)[1](v && v[0]); guardN = v ? v[1] : 0; }], // ARMATOS's standards (js/sim/armatos.js)
+  ['brushfires', ...saveArr(brushfires)], // IGNIA's lines of fire (js/sim/ignia.js)
   ['wordPops', ...saveArr(wordPops)], ['coinPops', ...saveArr(coinPops)], ['ptargets', ...saveArr(ptargets)], ['slashes', ...saveArr(slashes)],
   ['shed', () => [shedWait, shedLive], (v) => { saveArr(shedWait)[1](v[0]); shedLive = v[1]; }],
   ['iceBreaks', ...saveArr(iceBreaks)], // the breaks in their own shape (js/sim/icebreak.js); their pixels rebuild off them

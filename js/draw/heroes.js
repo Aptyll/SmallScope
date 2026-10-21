@@ -18,6 +18,10 @@ function bakeBladeArt(rows, pal) {
 // (front false) and once over it (front true); (ax, ay) is the 16 px cell's
 // top-left. ARMATOS's standard on his back registers here.
 const HERO_BODY_FX = [];
+// A shot in flight with a `look` (a hero's thrown thing, a staff's bolt) is drawn
+// by HERO_SHOTS[look](a, sx, sy, now) in place of the arrow's shaft
+// (drawArrows, js/draw/passes.js); (sx, sy) is its tip on the screen.
+const HERO_SHOTS = {};
 function heroBodyFx(p, ax, ay, now, front) { for (const f of HERO_BODY_FX) f(p, ax, ay, now, front); }
 function heroBladeOf(p) { const c = CLASSES[p.cls]; return c && c.blade ? HERO_BLADES[c.blade] : null; }
 // the blade a hero's hands hold in place of its sword's own art, or null

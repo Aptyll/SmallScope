@@ -44,6 +44,7 @@ const AB_RANK_STAT = {
   armor: ['ARMOR', tipNum, ''], ten: ['TENACITY', tipCent, '%'], heal: ['HEALS OF MOST HP', tipCent, '%'],
   mark: ['MARKED FOR', tipNum, 'S'], shieldHp: ['SHIELD OF MOST HP', tipCent, '%'],
   missing: ['OF HP ALREADY LOST', tipCent, '%'], bonus: ['MOST EXTRA', tipNum, ''],
+  burn: ['BURN A SECOND', tipNum, ''], ms: ['WALK x', tipNum, ''],
   markDmg: ['MARKED HIT DAMAGE', tipNum, ''], shot: ['DAMAGE x', tipNum, ''], ambush: ['AMBUSH SHOT x', tipNum, ''],
 };
 const TIP_RANK_ON = '#f2cc6a';

@@ -154,6 +154,7 @@ const CLASS_AB = [
   ARM_AB, // ARMATOS - the standard, the shield, the march (js/sim/armatos.js)
   FORT_AB, // FORTIVA - the arc, the defiant shield, the lunge, the leap (js/sim/fortiva.js)
   BELLA_AB, // BELLA - the lunge, the parry, the slip, the duel (js/sim/bella.js)
+  IGNIA_AB, // IGNIA - the brand, the brushfire, the warm hands, the wildfire (js/sim/ignia.js)
 ];
 
 // the world the abilities put things into

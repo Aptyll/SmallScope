@@ -1567,6 +1567,20 @@ const CLASS12 = [
     'owo..o......',
     '.o..........',
   ],
+  [ // IGNIA: one flame, white at its heart
+    '.....o......',
+    '....oro.....',
+    '....oro.o...',
+    '...orrgoro..',
+    '..orrggoro..',
+    '..orgggrro..',
+    '.orggWggro..',
+    '.orgWWWgro..',
+    '.orgWWWgro..',
+    '..orgWgro...',
+    '...orrro....',
+    '....ooo.....',
+  ],
 ];
 const class12Cache = new Map();
 function classIcon12(i, you) {
