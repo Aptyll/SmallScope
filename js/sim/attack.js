@@ -95,7 +95,7 @@ function shootAttack(p, A, amb) {
     vx: Math.cos(a) * spd, vy: Math.sin(a) * spd,
     t: 0, life, dmg: attackDmg(p, pw, amb), pow: pw,
     owner: p.id, team: p.team, ambush: amb, trailD: 0,
-    solid: true, kb: A.kb, col: A.shot.col, basic: true,
+    solid: true, kb: A.kb, col: A.shot.col, basic: true, look: A.shot.look, // `look`: drawn as a hero's own shot (HERO_SHOTS, js/draw/heroes.js)
     ang: a, spd, ox: p.x, oy: p.y - BOW_Y,
   });
   faceToward(p, dx, dy, true);

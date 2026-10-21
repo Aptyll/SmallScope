@@ -406,9 +406,10 @@ function drawPlayer(p, ex, ey, now) {
     // held tool: behind the body when facing away, in the hand otherwise. A
     // lying player shows one only while the bow is actually drawn - a carried
     // axe bobbing over a body on its belly reads as a floating axe. A body
-    // mid-cast (or holding the shield, or charging) has no hand free for it.
+    // mid-cast (or holding the shield, or charging) has no hand free for it -
+    // but a mage casts with the staff in hand (heroStaffOf, js/draw/heroes.js).
     const held = state.mode !== 'title' && (!lying || p.charging) &&
-      p.castT <= 0 && p.shieldT <= 0 && p.rushT <= 0 && p.zip < 0; // ...or holding a zipline's handle
+      (p.castT <= 0 || heroStaffOf(p)) && p.shieldT <= 0 && p.rushT <= 0 && p.zip < 0; // ...or holding a zipline's handle
     const toolBehind = held && p.dir === 'up' && !p.charging && p.swingT <= 0 && p.slashT <= 0; // a blade mid-sweep is always in front
     if (toolBehind) atFeet(fx0, fy0, wsc, () => drawHeldTool(p, px, py + bob));
     // a rider's body stops at the deer's back: the rows from its hip down
@@ -769,6 +770,12 @@ function drawHeldTool(p, px, py) {
     ctx.rotate(a + Math.PI / 2);
     ctx.drawImage(icon, -half, -half);
     ctx.restore();
+  }
+
+  // a staff is carried upright in every facing, at rest, drawn or cast (HERO_STAVES, js/draw/heroes.js)
+  if (!swinging && heroStaffOf(p)) {
+    heroStaff(p, px, py + (!p.moving || p.prone ? 0 : scoutBody(p) ? Math.floor(p.animT) % 2 : -runBob(p)));
+    return;
   }
 
   // the weapon's art points its business end along WEAPON_FWD

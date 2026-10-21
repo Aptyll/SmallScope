@@ -28,7 +28,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.551';
+const PATCH_TXT = 'PATCH 0.552';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -44,6 +44,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.552', 'A NEW HERO, IGNIA THE FIREMAGE: SHE THROWS A FIREBRAND, LAYS LINES OF FIRE AND SETS A WILDFIRE, AND ONE BURNING RIVAL SETS THE NEXT ALIGHT UNTIL SNOW OR WATER PUTS IT OUT. HER WANDERER SKIN IS ON THE SKINS SCREEN, EVERY HERO NOW KEEPS THEIR FULL SIZE RUNNING LEFT OR RIGHT, AND CHAMP SELECT SHOWS EACH NAMED HERO\'S OWN FACE.'],
   ['0.551', 'THE FIRST WAVES ROLL OUT AT 1:00, ALL THREE LANES TOGETHER, BECAUSE THE MERCHANT RAISES EVERY BOT BAY RIGHT AFTER ITS SHOP; A REBUILT BAY JOINS THE NEXT WAVE.'],
   ['0.548', 'BOTS PLAY THE ROLE THEY GOT IN CHAMP SELECT: TOP, MID AND BOT HOLD THEIR LANE, THE JUNGLER WALKS THE DENS, AND THE SUPPORT STAYS WITH ITS BOT AND LEAVES IT THE LAST HITS; ANY HERO CAN PLAY ANY ROLE.'],
   ['0.546', 'CHAMP SELECT LOOKS LIKE LEAGUE: YOUR TEAM DOWN THE LEFT WITH EACH PLAYER\'S ROLE, TOP, JUNGLE, MID, BOT OR SUPPORT, A HERO GRID WITH ROLE FILTERS AND A SEARCH, A BIG SPLASH WITH YOUR SKINS UNDER IT ONCE YOU LOCK IN, AND A TEAM CHAT BOTTOM LEFT: ENTER TO TALK, SPACE TO LOCK IN. THE PARTY LEADER SETS THE BOTS\' LEVEL ON THE PARTY SCREEN.'],
@@ -1522,6 +1523,20 @@ const CLASS12 = [
     'owo..o......',
     '.o..........',
   ],
+  [ // IGNIA: one flame, white at its heart
+    '.....o......',
+    '....oro.....',
+    '....oro.o...',
+    '...orrgoro..',
+    '..orrggoro..',
+    '..orgggrro..',
+    '.orggWggro..',
+    '.orgWWWgro..',
+    '.orgWWWgro..',
+    '..orgWgro...',
+    '...orrro....',
+    '....ooo.....',
+  ],
 ];
 const class12Cache = new Map();
 function classIcon12(i, you) {
@@ -1596,7 +1611,7 @@ function drawLobbyStage(now, a, sw) {
   const rise = Math.round((1 - sw) * 8) - (hover === 'hero' ? 2 : 0);
   const bob = Math.round(Math.sin(now * 1.6));
   ctx.globalAlpha = a;
-  ctx.drawImage(SPRITES.portrait(player.cls, player.look, skin(player.team)), body.x, body.y + rise + bob, body.w, body.h);
+  ctx.drawImage(SPRITES.portrait(player.cls, player.look, skin(player.team), heroSkinOf(player)), body.x, body.y + rise + bob, body.w, body.h);
 }
 
 // a filled pixel disc, scanline by scanline

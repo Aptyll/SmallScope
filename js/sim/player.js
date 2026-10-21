@@ -147,7 +147,6 @@ const CLASSES = [
     // worn per player (heroSkinOf) in his iron over the side's coat
     skins: ARM_SKINS, skinPal: ARM_PAL, skinSlot: 'armatos',
     blade: 'oath', // his OATH GREATSWORD in his hands in place of the sword's own art (HERO_BLADES, js/draw/heroes.js)
-    paint48: { t: '#7d8699', T: '#b4bdcc', g: '#1c2232', G: '#9aa3b8', m: '#5c6478', M: '#454c5e' }, // the 48 px model's (js/sprites/looks.js): its K is skin
   },
   {
     // the second named hero (js/sim/fortiva.js): a juggernaut on the WARRIOR's
@@ -166,7 +165,6 @@ const CLASSES = [
     // worn per player (heroSkinOf) in her iron over the side's coat
     skins: FORT_SKINS, skinPal: FORT_PAL, skinSlot: 'fortiva',
     blade: 'chain', // her CHAIN GREATSWORD in her hands (HERO_BLADES, js/draw/heroes.js)
-    paint48: { t: '#7d8699', T: '#b4bdcc', g: '#1c2232', G: '#9aa3b8', m: '#5c6478', M: '#454c5e' }, // the 48 px model's (js/sprites/looks.js): its K is skin
     kit: { iceMax: 1.1, iceSteer: 3.2, slideMin: 70, fatigue: 0.7, chargeMul: 0.7,
       bowCharge: 0.75, nock: 0.5, spdDmg: 5, dodgeSpeed: 225 },
   },
@@ -183,12 +181,31 @@ const CLASSES = [
     // worn per player (heroSkinOf) over the side's coat
     skins: BELLA_SKINS, skinPal: BELLA_PAL, skinSlot: 'bella',
     blade: 'spatha', // her EAGLE SPATHA in her hands (HERO_BLADES, js/draw/bella.js)
-    paint48: { t: '#7d8699', T: '#b4bdcc', g: '#1c2232', G: '#9aa3b8', m: '#5c6478', M: '#454c5e' }, // the 48 px model's (js/sprites/looks.js): its K is skin
     base: { hp: 104, dmg: 18, armor: 16, ap: 0, haste: 0, ms: PLAYER_SPEED + 4 },
     grow: { hp: 7, dmg: 1.7, as: 0.013, armor: 2.1 }, // sized so 17 levels grow what 11 did when the cap was 12
     rankOrder: [0, 2, 1], // the lunge, the slip, the parry
     kit: { iceMax: 1.15, iceSteer: 3.4, slideMin: 70, fatigue: 0.75, chargeMul: 0.7,
       bowCharge: 0.75, nock: 0.5, spdDmg: 5, dodgeSpeed: 240 },
+  },
+  {
+    // the fourth named hero and the first mage (js/sim/ignia.js): fire that
+    // spreads through a crowd and zones a lane, at the hunter's range or a
+    // little short of it; slow damage, not burst, and the least life of anyone
+    name: 'IGNIA', role: 'THE FIREMAGE', body: 1, passive: 'kindling', // HERO_PASSIVE, js/sim/ignia.js
+    look: { sex: 1, tone: 1, hair: 3, hairCol: 3, beard: 0, face: 2 },
+    blurb: ['THE ONLY FIRE FOR MILES.', 'ONE BURNING RIVAL SETS THE NEXT ALIGHT.', 'SNOW AND WATER PUT YOUR FIRE OUT.'],
+    story: "SHE KEPT THE ETERNAL FLAME IN THE EMPIRE'S HIGH TEMPLE, AND LET IT GO OUT ONE WINTER SO A VILLAGE COULD KEEP WARM. THEY DID NOT TAKE IT WELL. IN THE VALLEY SHE IS THE ONLY FIRE FOR MILES, AND EVERYONE WANTS TO SIT NEAR HER.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
+    // a staff's ember, not an arrow: a little shorter and slower than the shortbow
+    staff: 'crook', // her CROOK AND LANTERN, carried upright (HERO_STAVES, js/draw/ignia.js)
+    attack: { name: 'CROOK AND LANTERN', art: 'staff', cycle: 60 / 60, kb: 0.6, shot: { speed: 260, life: 0.85, col: '#ff9a3a', look: 'ember' } },
+    base: { hp: 84, dmg: 14, armor: 10, ap: 0, haste: 0, ms: PLAYER_SPEED },
+    grow: { hp: 6, dmg: 1.1, as: 0.01, armor: 1.8 },
+    rankOrder: [0, 1, 2], // the brand, the brushfire, the warm hands
+    // her own body in each of her looks (IGNIA_SKINS, js/sprites/ignia.js), worn per
+    // player (heroSkinOf) over the side's coat
+    skins: IGNIA_SKINS, skinPal: IGNIA_PAL, skinSlot: 'ignia',
+    kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1, chargeMul: 0.55,
+      bowCharge: BOW_CHARGE, nock: 0.4, spdDmg: 0, dodgeSpeed: DODGE_SPEED },
   },
 ];
 // the body a hero wears - its sprites and its 48 px model: a hero that names
@@ -546,6 +563,9 @@ class Player {
     this.lungeHit = []; this.lungeKey = -1;
     this.parryT = 0; this.riposteId = -1;
     this.duelId = -1; this.duelT = 0; this.flurryN = 0; this.flurryT = 0; this.flurryId = -1; this.flurryArm = false;
+    // IGNIA (js/sim/ignia.js): WARM HANDS waiting; and on any body, whose fire it is
+    // burning with (KINDLING carries it on) and how long a wildfire's flame lets it jump
+    this.warmT = 0; this.kindleBy = -1; this.wildT = 0;
     this.hopT = 0;                                 // the net shot's recoil hop, on the body
     this.grapT = 0; this.grapX = 0; this.grapY = 0; // the grapple: reel time left, and the anchor it hauls toward
     this.zip = -1; this.zipD = 0; this.zipDir = 1;  // the zipline (js/sim/zipline.js): the line ridden (its index in zips, or -1), px along it, and which way
