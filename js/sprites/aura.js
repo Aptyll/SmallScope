@@ -177,13 +177,86 @@ const AURA_ICON32 = {
   ],
 };
 
+// ------------------------------------------------------------ aura bodies
+// Her own 16 px body, on ARMATOS's standing frame (his head box, legs and outline;
+// js/sprites/armatos.js), worn over the side's coat (r/R/d). Her silver hair is a/A,
+// the night-violet mantle q/Q, the star on her brow s. Side-on the head and the body are
+// as wide as head-on and the face is four pixels and a nose: a side view never reads
+// smaller than the front (measured, round 1: /mnt/project-files/aura/round1).
+const AURA_BODY = {
+  light: { // NORTHERN LIGHT: long silver hair to the waist, a night mantle, a star on the brow
+    down: [
+      '................',
+      '.....oooooo.....',
+      '....oaAAAAao....',
+      '....oAAAAAAo....',
+      '....oqQssQqo....',
+      '....oaekkeao....',
+      '....oakkkkao....',
+      '...oqaqKKqaqo...',
+      '...oQaqrRqaQo...',
+      '...oqarrRraqo...',
+      '...oqarrRraqo...',
+      '...okqrrRrqko...',
+      '....oqrrRrqo....',
+      '....oqrrRrqo....',
+      '.....bb..bb.....',
+      '.....BB..BB.....',
+    ],
+    up: [
+      '................',
+      '.....oooooo.....',
+      '....oaAAAAao....',
+      '....oAAAAAAo....',
+      '....oqQQQQqo....',
+      '....oAAAAAAo....',
+      '....oaAAAAao....',
+      '...oqaAAAAaqo...',
+      '...oQaAAAAaQo...',
+      '...oqaaAAaaqo...',
+      '...oqQaAAaQqo...',
+      '...otqQaaQqto...',
+      '....oqQQQQqo....',
+      '....oqqqqqqo....',
+      '.....bb..bb.....',
+      '.....BB..BB.....',
+    ],
+    side: [
+      '................',
+      '.....oooooo.....',
+      '....oaAAAAAo....',
+      '...oaAAAAAAAo...',
+      '...oaAqQQsQQo...',
+      '...oaAAakkekko..',
+      '...oaAakkkkko...',
+      '...oaAaqKKqqo...',
+      '...oaAqqrRqQo...',
+      '...oaaqrrRrqo...',
+      '...oqaqrrRrqo...',
+      '...oqqrrRrkqo...',
+      '....oqrrRrqo....',
+      '....oqrrRrqo....',
+      '......bb.bb.....',
+      '......BB.BB.....',
+    ],
+  },
+};
+// her hair, her mantle and her star over ARMATOS's iron
+const AURA_PAL = Object.assign({}, ARM_PAL, { a: '#a9b4cc', A: '#e8edf7', q: '#4a3a7a', Q: '#6b5aa8', s: '#fff3b0' });
+// Her one look (Noah, 10-21: one skin for now), free. `run: 'drawn'`: her mantle and hair
+// are not the doll's (app/bake-player: light), so her run is her drawn body in every
+// facing (heroRunFront, js/sprites/armatos.js); the doll rolls her.
+const AURA_SKINS = [
+  { id: 'light', name: 'NORTHERN LIGHT', rarity: 'common', price: 0, grids: AURA_BODY.light, motion: 'light', run: 'drawn' },
+];
+
 // ------------------------------------------------------------ aura staff
-// Her STAR RING staff as the weapon art the hands hold and the HUD shows
-// (SPRITES.weaponArt, js/sprites/weapons.js): a brass ring at the head with a
-// star in it, on a night-wood shaft; head left, like the sword's point.
+// Her STAR SHARD as the weapon art the HUD shows and the hands aim on a draw
+// (SPRITES.weaponArt, js/sprites/weapons.js): a fallen star's pale shard bound to a
+// dark staff, head left like the sword's point. Carried, it is upright (HERO_STAVES.shard, js/draw/aura.js).
 WEAPON_FWD.starstaff = Math.PI;
 SPRITES.weaponArt.starstaff = SPR.bake([
-  '............', '............', '.oyo........', 'oy.yo.......',
-  'ysSsyoooooo.', 'oy.yoGgGgGgo', '.oyo..ooooo.', '............',
+  '............', '............', '............', '..oo........',
+  '.oCCoo......', 'oCCcco.ooooo', 'occcCyoGgGgo', '.oooyo.ooooo',
   '............', '............', '............', '............',
-], { '.': null, o: '#241a12', y: '#f2cc6a', s: '#fff3b0', S: '#ffffff', g: '#3a2c40', G: '#5c4868' });
+], { '.': null, o: '#2e2440', C: '#e6f8ff', c: '#7cc4e8', y: '#f2cc6a', g: '#3a2c40', G: '#5c4868' });

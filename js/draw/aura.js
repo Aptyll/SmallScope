@@ -92,3 +92,41 @@ function drawAuraGround(ex, ey, now) {
   }
 }
 HERO_GROUND.push(drawAuraGround);
+
+// ---- the STAR SHARD ------------------------------------------------------------------
+// Her staff (CLASSES' `staff: 'shard'`; HERO_STAVES, js/draw/heroes.js): a fallen star's
+// pale shard bound in gold to a dark staff, carried upright; a glint walks up the shard
+// between two frames. The hand closes on the shaft at AURA_SHARD_GRIP.
+const AURA_SHARD = [
+  '...o...',
+  '..oCo..',
+  '..oCco.',
+  '.oCCco.',
+  '.oCcco.',
+  '.ocCco.',
+  '..occo.',
+  '..oco..',
+  '.oyYyo.',
+  '..oGo..',
+  '..oGo..',
+  '..oGo..',
+  '..oGo..',
+  '..oGo..',
+  '..oGo..',
+  '..oGo..',
+  '..oGo..',
+  '..oGo..',
+  '..ogo..',
+  '..ogo..',
+  '...o...',
+];
+const AURA_SHARD_GRIP = [3, 12];
+const AURA_SHARD_PAL = { o: '#2e2440', C: '#e6f8ff', c: '#7cc4e8', W: '#ffffff', y: '#f2cc6a', Y: '#b98a2e', g: '#3a2c40', G: '#5c4868' };
+let auraShardArt = null;
+function auraShard() {
+  if (auraShardArt) return auraShardArt;
+  const glint = AURA_SHARD.map((r, y) => (y === 3 ? '.oCWco.' : y === 1 ? '..oWo..' : r));
+  auraShardArt = [bakeBladeArt(AURA_SHARD, AURA_SHARD_PAL), bakeBladeArt(glint, AURA_SHARD_PAL)];
+  return auraShardArt;
+}
+HERO_STAVES.shard = { art: auraShard, grip: AURA_SHARD_GRIP };

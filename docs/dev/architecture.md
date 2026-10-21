@@ -52,7 +52,7 @@ order, so the script tags still interleave them:
 | [js/sprites/weapons.js](../../js/sprites/weapons.js) | ~50 | → `SPRITES`, `WEAPON_FWD` | the heroes' weapons as the hand holds them (a basic attack's `art`) |
 | [js/sprites/armatos.js](../../js/sprites/armatos.js) | ~180 | shared scope, no `window.*` export | ARMATOS's 32 px ability and passive icons (`ARM_ICON32`), his looks' 16 px grids and skins table (`ARM_BODY`, `ARM_SKINS`), and his greatsword (`ARM_SWORD`) |
 | [js/sprites/fortiva.js](../../js/sprites/fortiva.js) | ~370 | shared scope, no `window.*` export | FORTIVA's 32 px ability and passive icons (`FORT_ICON32`), her looks' 16 px grids and skins table (`FORT_BODY`, `FORT_SKINS`), and her greatsword (`FORT_SWORD`) |
-| [js/sprites/aura.js](../../js/sprites/aura.js) | ~190 | shared scope, no `window.*` export | AURA's 32 px ability and passive icons (`AURA_ICON32`) and her STAR RING staff's weapon art |
+| [js/sprites/aura.js](../../js/sprites/aura.js) | ~190 | shared scope, no `window.*` export | AURA's 32 px ability and passive icons (`AURA_ICON32`) and her STAR SHARD staff's weapon art |
 | [js/sprites/bella.js](../../js/sprites/bella.js) | ~340 | shared scope, no `window.*` export | BELLA's 32 px ability and passive icons (`BELLA_ICON32`), her looks' 16 px grids and skins table (`BELLA_BODY`, `BELLA_SKINS`), and her spatha (`BELLA_SPATHA`) |
 | [js/sprites/ignia.js](../../js/sprites/ignia.js) | ~310 | shared scope, no `window.*` export | IGNIA's 32 px ability and passive icons (`IGNIA_ICON32`), her looks' 16 px grids and skins table (`IGNIA_BODY`, `IGNIA_SKINS`) |
 | [js/sprites/landmarks.js](../../js/sprites/landmarks.js) | ~55 | → `SPRITES` | the story landmarks: the frozen boat |
