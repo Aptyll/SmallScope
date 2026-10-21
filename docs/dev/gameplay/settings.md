@@ -5,17 +5,19 @@ PRACTICE TOOL on the title land: the page hosts its own party at once (`beginPar
 Steam lobby) and NET.mode names the mode. One centred column, League's lobby in Graphite: the
 mode's name and "n / 5" at the head (the leader's name wears a gold step mark: a click, or the keys'
 cursor on it with left and right, turns the party to the next mode in place, `modeSwap`, and
-spends every guest's READY, since it was said to the old mode), the party's four-letter code top-right in gold (a click copies
-it, white for a moment) beside a relay pip, and in a Steam lobby INVITE beside it, which opens
-Steam's friends overlay. Five seats of your side: a face, a name, a READY tick, the rating in
+spends every guest's READY, since it was said to the old mode). Down the right edge runs the
+social column (League's, js/ui/friends.js `drawSocial`): your face and name at its head with the
+party's four-letter code in gold under them (a click copies it, white for a moment; dim with a red
+dot blinking after it while the link is down), your Steam friends down its middle, and at its foot
+JOIN with four slots. Five seats of your side: a face, a name, a READY tick, the rating in
 RANKED, a guest's link bars (green, amber, red as the round trip grows), a crown over the leader;
 an empty seat is a dotted well with a gold + that invites (the code copied, or Steam's overlay).
 The leader's pointer on a guest's seat end shows a red X that shows them out (`seatKick`). The
 rival side is never shown here: it is another party met by matchmaking, or bots. While you are alone
-the CODE box sits under the code: type or paste (Ctrl+V) a friend's four letters to join their
+the JOIN slots show at the column's foot: type or paste (Ctrl+V) a friend's four letters to join their
 party (`partySeek` looks the code up on the relay's list, or in a Steam lobby's data, which
 carries the same code: `steamCode`, js/net/transport-steam.js); a code nobody answers to
-rattles the box. Under the seats is the chat (js/ui/roomtalk.js): the last four lines, each a
+rattles the slots. Under the seats is the chat (js/ui/roomtalk.js): the last four lines, each a
 name in its side's paint, over a plate showing an ENTER key cap and a speech bubble; Enter or a
 click on the plate starts a line, Enter sends it, Esc drops it. At the foot LEAVE, and a guest's
 READY or the leader's FIND MATCH, dim and flashing the seats it waits on until every guest is

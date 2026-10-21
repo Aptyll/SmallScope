@@ -11,7 +11,7 @@ const path = require('path');
 const FRIEND_FLAG_IMMEDIATE = 0x04;   // k_EFriendFlagImmediate: real friends, not group members or requests
 const REL_FRIEND = 3;                 // k_EFriendRelationshipFriend
 const OVERLAY_DIALOGS = ['friendadd', 'steamid', 'chat']; // what the page may open on a user
-const RP_KEYS = ['status', 'connect', 'sf_lobby', 'sf_mode', 'sf_n', 'sf_state', 'sf_patch']; // the rich presence the page may set
+const RP_KEYS = ['status', 'connect', 'sf_lobby', 'sf_mode', 'sf_n', 'sf_state', 'sf_patch', 'sf_hero']; // the rich presence the page may set
 const RECENT_KEEP = 12;               // players met kept for the panel
 const COPLAY_KEEP = 40;               // Steam's own recent-players list is read this far
 
@@ -67,7 +67,7 @@ function steamFriends(appId) {
       const lobby = gi.lobby ? S(gi.lobby) : '0';
       p.lobby = lobby !== '0' ? lobby : rpOf(id, 'sf_lobby');
       p.mode = rpOf(id, 'sf_mode'); p.n = parseInt(rpOf(id, 'sf_n'), 10) || 0;
-      p.state = rpOf(id, 'sf_state'); p.patch = rpOf(id, 'sf_patch');
+      p.state = rpOf(id, 'sf_state'); p.patch = rpOf(id, 'sf_patch'); p.hero = rpOf(id, 'sf_hero');
     }
     return p;
   }

@@ -12,9 +12,9 @@
 // draws gets through (talkClean). The list lives in NET.chat and starts
 // empty with every room.
 //
-// INVITE (a Steam lobby only; every party has its code to copy as well;
-// one friend at a time from the friends column, js/ui/friends.js)
-// opens Steam's friends overlay on this lobby, and so does an empty seat's +. A friend's invite taken up, or
+// INVITE: in a Steam lobby an empty seat's + opens Steam's friends overlay
+// on it (every party has its code to copy as well; one friend at a time from
+// the social column, js/ui/friends.js). A friend's invite taken up, or
 // Steam's Join Game on a friend in a room, reloads this page onto that lobby
 // (`joinRequested` from desktop/main.js, or `+connect_lobby` at launch,
 // which main.js turns into ?join=); the join from boot does the rest.
@@ -108,12 +108,7 @@ function drawTalk(L, now, hot) {
 }
 
 // ------------------------------------------------------------ invite
-// INVITE sits before the party's code, top-right, in a Steam lobby: Steam's
-function roomInviteRect(L) {
-  if (!netSteam() || !NET.transport || !NET.transport.lobbyId) return null;
-  const w = pixelTextWidth('INVITE', 2), code = roomCode(), cw = code ? pixelTextWidth(code, 2) + 18 : 0;
-  return { x: L.x + L.w - cw - w, y: 16, w, h: 10 };
-}
+// An empty seat's + in a Steam lobby: Steam's friends overlay on this lobby
 function roomInvite() {
   const b = window.steamBridge;
   if (b && b.invite && NET.transport && NET.transport.lobbyId) { b.invite(NET.transport.lobbyId); SFX.place(); } else SFX.deny();
