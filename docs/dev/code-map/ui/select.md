@@ -7,5 +7,6 @@
 | the headline, the timer bar, the seconds, each side's bans in its corner | `selHeadline`, `selClock`, `selActing`, `drawSelectTop` | `top band` |
 | a seat row: the portrait disc, the position or PICKING..., the hero, the name; your trade mark; both columns and the seconds pointing at your row | `selDiscMask`, `drawSelDisc`, `selSwapRect`, `drawSelSwap`, `drawSeatRow`, `drawSeats` | `seat rows` |
 | your locked hero big: the splash art (or its stand-in), the look's name | `SPLASH_PICS`, `splashPic`, `heroSplash`, `heroThumb`, `selSkinRows`, `selSkinWorn`, `drawSplash` | `splash` |
+| the book on the splash and the hero's story laid over it | `SEL_BOOK`, `SEL_BOOK_ALPHA`, `SEL_STORY_PAD`/`SEL_STORY_PITCH`, `selBookRect`, `selStoryLines`, `selLoreOn`, `drawSelLore` | `lore book` (the story: `CLASSES` `story`, player.js; the press: `lobbyHit`/`lobbyClick` 'book', menu.js) |
 | the skins under the splash, the chevrons | `selSkinCells`, `drawSkinStrip`, `drawSelChevron` | `skin strip` |
 | the match's size and mode bottom right, the confirm plate | `selModeName`, `drawSelMode`, `drawSelPlay` | `foot` |

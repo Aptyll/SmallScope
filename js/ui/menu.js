@@ -28,7 +28,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.556';
+const PATCH_TXT = 'PATCH 0.557';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -44,6 +44,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.557', 'A BOOK ON THE CHAMP SELECT SPLASH: PRESS IT TO READ YOUR HERO\'S STORY WHILE YOU WAIT FOR THE MATCH.'],
   ['0.556', 'IGNIA\'S PASSIVE IS NOW CALLED SPREADING FLAME, SO IT IS NEVER CONFUSED WITH THE KINDLING ITEM PASSIVE.'],
   ['0.555', 'A NEW HERO, AURA THE NORTHERN LIGHT: SHE STRIKES FROM FURTHER THAN ANYONE WITH A FALLING STAR, A DRIFTING LIGHT AND A CURTAIN OF LIGHT ACROSS THE MAP, REACHES FURTHER AT NIGHT, AND EVERY RIVAL SHE TOUCHES IS REVEALED, EVEN IN THE WOODS.'],
   ['0.554', 'ONE MAP: THE THICKET AND FROZEN ISLES MAP SHAPES ARE GONE FOR NOW, SO EVERY MATCH PLAYS THE OPEN VALLEY.'],
@@ -1327,7 +1328,8 @@ function heroClick() {
 // what the pointer is on: 'play' (BAN / LOCK IN), 'hero' (the stage figure:
 // the hero pop-up), 'swap' (the trade mark on your row: the
 // next position), 'search' (the row over the grid), 'skin'N /
-// 'skinPrev' / 'skinNext' (the strip under the splash), 'talk' (the chat's
+// 'skinPrev' / 'skinNext' (the strip under the splash), 'book' (the story's
+// book on the splash, or the open story itself), 'talk' (the chat's
 // plate), 'pickN' (hero N's cell) or null.
 function lobbyHit() {
   const L = lobbyLayout();
@@ -1336,6 +1338,7 @@ function lobbyHit() {
   if (mineR && draftOpen() && over(selSwapRect(mineR), 1, 1)) return 'swap';
   if (inTalk(L.chat)) return 'talk';
   if (lobbySplash()) {
+    if (CLASSES[player.cls].story && (over(selBookRect(L), 2, 2) || (selLoreOn() && over(L.splash, 0, 0)))) return 'book'; // the story (js/ui/select.js)
     const S = selSkinCells(L);
     for (const c of S.cells) if (over(c, 1, 1)) return 'skin' + c.k;
     if (S.more && over(S.prev, 2, 2)) return 'skinPrev';
@@ -1370,6 +1373,7 @@ function beginLobby() {
   m.csel = player.cls;
   m.cswapT = 1;
   m.countT = 0; m.countN = -1; // every rival frame face-down again
+  m.loreOn = false;            // the story starts shut
   m.lockFx = 0;
   draftStart(); // the bans, then everyone's pick (js/ui/draft.js)
   SFX.place();
@@ -1440,6 +1444,7 @@ function lobbyClick() {
   else if (h === 'talk') { if (!m.talkOn) talkOpen(); }             // the chat's plate starts a line
   else if (h === 'search') SFX.pickup();                            // the field takes the keys
   else if (h === 'swap') draftRole(draftNextRole());            // the next position no person on your side holds
+  else if (h === 'book') { m.loreOn = !m.loreOn; SFX.pickup(); }   // the hero's story over the splash
   else if (h === 'skinPrev' || h === 'skinNext') { m.skinOff = Math.max(0, (m.skinOff | 0) + (h === 'skinNext' ? 1 : -1)); SFX.pickup(); }
   else if (h.startsWith('skin')) lobbySkin(+h.slice(4));
   else if (h.startsWith('pick')) lobbyPick(+h.slice(4));            // point at a hero on the grid (js/ui/heroes.js)
@@ -1652,6 +1657,7 @@ function renderLobby(now, a) {
   drawSeats(L, a, hot);                // both sides' seat rows
   if (lobbySplash()) {                 // your pick is in: the splash and the skins
     drawSplash(L, now, a);
+    drawSelLore(L, a, hot);            // the book, and the story when it is open
     drawSkinStrip(L, a, hot);
   } else {
     drawHeroFilters(L, a, hot, now);   // the positions and the search (js/ui/heroes.js)

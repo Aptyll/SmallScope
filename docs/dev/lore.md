@@ -147,7 +147,8 @@ Softfall shows its world the way League does: a title on every hero, a short bio
 from the hero, a page for the world, and art that tells most of it. Nothing is in the way of
 playing.
 
-**It goes in:** the WORLD page; each hero's story under its wiki card; a hero's name and title;
+**It goes in:** the WORLD page; each hero's story under its wiki card and behind the book on the
+champ select splash; a hero's name and title;
 names; event-log lines and headlines; patch notes; the README and store copy; a trailer's cards.
 
 **It never goes in:** the HUD, a hint, a tooltip's body (that carve-out is for numbers —
