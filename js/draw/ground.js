@@ -113,10 +113,10 @@ function paintGroundTile(g, tx, ty) {
         }
         if (inner && h < 0.12) { g.fillStyle = '#ddf1f8'; g.fillRect(px + ((h * 210) | 0) % 12, py + ((h * 87) | 0) % 12, 2, 2); }
         paintDressing(g, tx, ty, px, py); // long cracks, the downwind bank (js/draw/lakes.js)
-        // ...and, where a PATH crosses the lake (the paths, js/sim/world.js), the
-        // earth spilling over this tile's share of the crossing, rimmed along
-        // its own ragged edge rather than along the tile's sides. The diagonal
-        // road never meets ice on any shape (ROAD_ICE_KEEP); a path does.
+        // ...and, where any road reaches the lake, the earth spilling over
+        // this tile's share of the crossing, rimmed along its own ragged edge
+        // rather than along the tile's sides. The diagonal road never meets
+        // ice (ROAD_ICE_KEEP).
         if (laneDist(tx, ty) < ROAD_SHOULDER + 1.2) paintRoadOverlay(g, tx, ty, px, py, true);
       } else {
         // the drifts, every pixel (the `snow's pixels` banner below)
@@ -510,7 +510,7 @@ function repaintGround(tx, ty) {
 //
 // Each lake rolls ONE style for its whole body off its first tile's hash
 // (bakeLakes), so a seed paints the same lakes on every screen and nothing in
-// genWorld rolls for it; FROZEN ISLES, one lake, is one style a seed.
+// genWorld rolls for it.
 //   LIP    a soft bank, the edge wandering gently
 //   DEEP   pale shallows at the shore darkening in two steps to the middle
 //          (lakeDepth: tiles in from the edge), the bank's shade a deeper band

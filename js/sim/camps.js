@@ -31,12 +31,12 @@
 //                 T  a pine, the clearing's wall f  a snowdrop clump
 //                 r  a monster's spot
 //   woods       the site is IN the border forest, not the open valley:
-//               placeCamps checks it is, and layPaths cuts no branch to it
+//               placeCamps checks it is
 //   treeline    the site is ON the border forest's edge, in the band between
 //               the shallowest and the deepest treeline any seed grows, and
 //               the border is grown out round it (warrenGrove) so its
-//               clearing is cut out of the pines on every seed; layPaths cuts
-//               it a branch like any valley camp (no CAMP_EDGE, see placeCamps)
+//               clearing is cut out of the pines on every seed (no CAMP_EDGE,
+//               see placeCamps)
 //   river       the camp is a stretch of RIVERBANK, not a den: no props and
 //               no spots - its one monster walks `river` tiles of its own bank
 //               either way along the creek's bend round the site, up and

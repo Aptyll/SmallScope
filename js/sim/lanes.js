@@ -14,8 +14,8 @@
 // turns ice to road), both maps ink it and every reader of the road reads it.
 // Only it has no ruts (those are measured off the diagonal), and each side
 // strings its own cable down it (laneZipTiles, below). Laid by
-// layLanes at boot after the paths and before placeRoad (js/app/boot.js), so
-// neither genWorld's carve rules nor the paths' search ever saw it.
+// layLanes at boot after placeCreek and before placeRoad (js/app/boot.js), so
+// genWorld's carve rules never saw it.
 const LANE_HW = 3;        // tiles either side of the centreline: a six-tile lane, a tile narrower than the mid road across the field
 const LANE_RAG = 0.5;     // tiles its edge wanders either way on the position noise
 const LANE_SEG = 3;       // tiles of centreline per registered segment
@@ -82,7 +82,7 @@ function sideLaneDist(fx, fy) {
   if (lat >= 99) return 99;
   return lat - (LANE_HW + (vnoise(fx * 0.3 + 13.1, fy * 0.3 + 77.2) - 0.5) * 2 * LANE_RAG);
 }
-// Runs at boot after layPaths, before placeRoad (js/app/boot.js): registers
+// Runs at boot after placeCreek, before placeRoad (js/app/boot.js): registers
 // both lanes, and fords the creek where each crosses it. No rng(): no seed moves.
 function layLanes() {
   laneSegs.length = 0; laneA = laneB = null;

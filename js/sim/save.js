@@ -8,8 +8,8 @@
 // match, DBG.saveLoad(DBG.saveCapture()) onto a fresh page, step the same
 // count, compare.
 //
-// Nothing here knows what a field means. The world is a seed (SEED, MAP_TYPE):
-// a load is a page on the saved seed and shape, which grows the very same
+// Nothing here knows what a field means. The world is a seed (SEED):
+// a load is a page on the saved seed, which grows the very same
 // valley, and the save is what the match has done to it since. That is
 //   - the ROOTS below, every mutable global the sim reads, serialized as one
 //     object graph, so a reference shared anywhere (a bot's hunt target, a
@@ -64,8 +64,9 @@ const SAVE_ROOTS = [
   ['callSaid', () => callSaid, (v) => { callSaid[0] = v ? v[0] : {}; callSaid[1] = v ? v[1] : {}; }],
   ['rng', () => [rng.s, fxRng.s], (v) => { rng.s = v[0]; fxRng.s = v[1]; }], // (an old save's third, the market's, is ignored)
   // (a save from before the deer lines carries one number there: both sides start their clock fresh)
-  ['wild', () => [deerBackT, fishCap, fishFloor, emergeSites],
-    (v) => { deerBackT = Array.isArray(v[0]) ? v[0] : [DEER_BACK, DEER_BACK]; fishCap = v[1]; fishFloor = v[2]; emergeSites = v[3]; }],
+  // (a save from before one map carries the shoal's cap and floor between them: skipped)
+  ['wild', () => [deerBackT, emergeSites],
+    (v) => { deerBackT = Array.isArray(v[0]) ? v[0] : [DEER_BACK, DEER_BACK]; emergeSites = v.length > 2 ? v[3] : v[1]; }],
   ['ai', () => [aiSitTick, aiSit], (v) => { aiSitTick = v[0]; aiSit = v[1]; }],
   ['aiTeams', ...saveArr(aiTeams)], // the sides' shared minds (js/ai/ai-team.js)
   ['stats', () => [statT, matchStats], (v) => { statT = v[0]; matchStats = v[1]; }],
@@ -122,7 +123,7 @@ const SAVE_CLASSES = { Player };
 // static tables a live body may point INTO (a camp's CAMPS row, a tier of a
 // STRUCTS row): any object in them, three levels down, is written as its path
 const SAVE_STATIC_DEPTH = 3;
-function saveTables() { return { CAMPS, OBJECTS, STRUCTS, CLASSES, TEAMS, MAPS, AI_LEVELS }; }
+function saveTables() { return { CAMPS, OBJECTS, STRUCTS, CLASSES, TEAMS, AI_LEVELS }; }
 function saveStatics() {
   const m = new Map(), tables = saveTables();
   const walk = (o, path, d) => {
@@ -280,14 +281,14 @@ function saveCapture() {
   roots.ground = grd;
   const { body, dropped } = saveEncode(roots, touched);
   if (dropped.size) console.warn('save: dropped', [...dropped].slice(0, 12));
-  return { v: SAVE_V, seed: SEED, map: MAP_TYPE, body };
+  return { v: SAVE_V, seed: SEED, body };
 }
 // the record back onto this page, whose valley must be the saved one's fresh
-// (the same seed and shape, no step taken yet). Throws on a record of another
-// shape or another world, before touching anything.
+// (the same seed, no step taken yet). Throws on a record of another world,
+// before touching anything.
 function saveApply(rec) {
   if (!rec || rec.v !== SAVE_V) throw new Error('save: version ' + (rec && rec.v));
-  if (rec.seed !== SEED || rec.map !== MAP_TYPE) throw new Error('save: another world');
+  if (rec.seed !== SEED) throw new Error('save: another world');
   const r = saveDecode(rec.body, objects);
   for (const [i, o] of r.tiles) objects[i] = o;
   for (let j = 0; j < r.ground.length; j += 2) ground[r.ground[j]] = r.ground[j + 1];
@@ -318,12 +319,12 @@ function saveHash() {
 
 // ---- the dev load -------------------------------------------------------------
 // A record (saveCapture) put back on a fresh page: it rides sessionStorage to
-// the next page, which grows the record's seed in its shape and applies it at
+// the next page, which grows the record's seed and applies it at
 // boot (saveBootLoad). The replay proof's other half (DBG.saveLoad); nothing a
 // player reaches calls it.
 function saveDevLoad(rec) {
   try { sessionStorage.setItem('softfall.load', JSON.stringify(rec)); } catch (e) { return false; }
-  location.href = location.pathname + '?seed=' + SEED + '&map=' + MAP_TYPE;
+  location.href = location.pathname + '?seed=' + SEED;
   return true;
 }
 // boot's half (js/app/boot.js): true when a saved match was put back on this page

@@ -1,6 +1,6 @@
 'use strict';
 // The frozen world: the tile grid and its objects, worldgen (rivers, ponds),
-// the road, the paths and the creek. The zipline, the camps and the
+// the road and the creek. The zipline, the camps and the
 // practice arena load right after it (js/sim/zipline.js, js/sim/camps.js, js/sim/practice.js).
 // ------------------------------------------------------------ world
 const ground = new Uint8Array(WORLD * WORLD); // 0 snow, 1 ice, 2 hole (open water), 3 the road (placeRoad)
@@ -340,77 +340,11 @@ function treeRare(tx, ty) {
   return hash2(tx * 5 + 11, ty * 7 + 23) < TREE_RARE_CHANCE;
 }
 
-// ---- the map types -------------------------------------------------------
-// The valley comes out from under the snow a different shape each winter
-// (lore.md), and MAPS is the shapes it comes out in. One entry is one
-// INTERIOR: the border forest and the two roost corners are every shape's
-// alike, because the road's gates, both nests and the crash rule are all
-// measured off borderDepth and nothing may move them.
-//
-// `mapTerrain(k, tx, ty)` IS a shape - one pure function of the position
-// noise saying what shape k makes of a tile. genWorld plants from it.
-// Nothing in here rolls: the shared rng stream every
-// later pass draws from is exactly what OPEN FIELD's always was, so an
-// existing seed's ponds, rivers, ore and berries are where they always were
-// (CLAUDE.md's rule about genWorld's stream).
-//
-// MAP_TYPE is the shape this page booted on - `?map=N`, else the first
-// (nothing in the menus picks one: the MOBA plays one map). Another shape is
-// another PAGE, the way another seed is: SEED is a const every
-// deterministic value closes over, and so is the ground grown from it.
-const MT_SNOW = 0, MT_ICE = 1, MT_FOREST = 2;
-const CENTER_R = 8; // tiles of open ground kept at the world's centre on every shape, so the river spokes still meet in the open
-const MAPS = [
-  // OPEN FIELD - one wide interior inside a ring of pines. The only wood is
-  // the border's; `scale` missing is what says "the interior is open".
-  { name: 'OPEN FIELD' },
-  // THICKET - the woods took the whole valley in stands, and what is left
-  // between them are the pathways. `scale` is how big a stand runs, `wood`
-  // how much of the noise is one.
-  { name: 'THICKET', scale: 15, wood: 0.52 },
-  // FROZEN ISLES - one frozen lake with wooded islands standing out of it.
-  // `land` is an island's shore, the ring of snow round its pines that ore,
-  // berries and anything built have to stand on - ice takes no building and
-  // grows nothing, so the shore is the whole of an island's dry ground.
-  // `shore` is how far the lake laps INTO the treeline: an island within it
-  // is drowned, so the woods' own edge is always water and no island is
-  // reached dry-shod from the border. The band wobbles on the fine noise,
-  // like the roost discs' arc, so it never reads as a traced outline.
-  { name: 'FROZEN ISLES', scale: 16, wood: 0.605, land: 0.56, shore: 9 },
-];
-let MAP_TYPE = 0;                   // set at boot (js/app/boot.js), never after
-function mapName(k) { return (MAPS[k] || MAPS[0]).name; }
-function mapGrown(k) { return !!(MAPS[k] && MAPS[k].scale); } // does this shape grow an interior of its own?
-// three octaves of the position noise, so a stand has a shape and a coast
-// rather than a blob's outline
-function mapFbm(tx, ty, s) {
-  return vnoise(tx / s + 5.1, ty / s + 9.7) * 0.55
-    + vnoise(tx / (s * 0.45) + 21.3, ty / (s * 0.45) + 43.9) * 0.3
-    + vnoise(tx / (s * 0.19) + 71.7, ty / (s * 0.19) + 13.3) * 0.15;
-}
-function mapTerrain(k, tx, ty) {
-  const bd = borderDepth(tx, ty), edge = Math.min(tx, ty, WORLD - 1 - tx, WORLD - 1 - ty);
-  if (edge < bd) return MT_FOREST;
-  const M = MAPS[k];
-  if (!M || !M.scale) return MT_SNOW;
-  if (Math.hypot(tx - cx, ty - cy) <= CENTER_R + 3) return MT_SNOW;
-  // the lake stops at the road's own dry keep-out, so the lane is dry end to
-  // end on every shape (the road, below) - roadMainDist and not roadDist,
-  // because a shape must read the same before a pad or a path exists
-  const wet = M.land !== undefined && roadMainDist(tx, ty) >= ROAD_ICE_KEEP;
-  if (M.shore && edge - bd < M.shore + (vnoise(tx / 7 + 3.3, ty / 7 + 9.1) - 0.5) * 8) return wet ? MT_ICE : MT_SNOW;
-  const n = mapFbm(tx, ty, M.scale);
-  if (n > M.wood) return MT_FOREST;
-  if (wet && n < M.land) return MT_ICE;
-  return MT_SNOW;
-}
-// A shape that swallows the open field would also starve it: the rocks and the
-// berries are scattered over the interior on rolls that do not care what
-// stands there, so most of them land in wood or on the lake and are dropped.
-// Each grown shape is topped back up to OPEN FIELD's own strength afterwards
-// (the `top-up` pass in genWorld) - a shape is a shape, never a famine.
-const MAP_ROCKS = 120;  // rocks a grown shape is put back up to (OPEN FIELD's own passes leave 95-122 standing,
-const MAP_BUSHES = 48;  // ...and 25-47 bushes) - a little over, since a grown shape's paths pave more away after this
+// ---- the valley's centre ---------------------------------------------------
+// One map: the valley is one wide interior inside a ring of pines. (Other
+// map shapes, THICKET and FROZEN ISLES, stood here until PATCH 0.554; the
+// PR that removed them names the commit to recover them from.)
+const CENTER_R = 8; // tiles of open ground kept at the world's centre, so the river spokes still meet in the open
 
 function genWorld() {
   // solid irregular forest boundary - players carve their base out of this
@@ -499,22 +433,6 @@ function genWorld() {
     carveRiver(a.tx, a.ty, b.tx, b.ty);
   }
 
-  // THE SHAPE'S OWN INTERIOR (mapTerrain, the map types above): the stands
-  // of THICKET, the lake and islands of FROZEN ISLES. It runs AFTER the
-  // ponds and rivers, whose retries read what stands on a tile, and BEFORE
-  // the ore and the berries, whose rolls do not - so every shape draws the
-  // same numbers in the same order and OPEN FIELD's world is bit-identical
-  // to what it always was. Pure position noise: not one rng() call here.
-  if (mapGrown(MAP_TYPE)) {
-    for (let ty = 0; ty < WORLD; ty++) for (let tx = 0; tx < WORLD; tx++) {
-      const i = idx(tx, ty);
-      if (objects[i] || ground[i] !== 0) continue;
-      const t = mapTerrain(MAP_TYPE, tx, ty);
-      if (t === MT_ICE) ground[i] = 1;
-      else if (t === MT_FOREST) placeObj(tx, ty, 'tree', { hp: TREE_HP, variant: 0, rare: treeRare(tx, ty) });
-    }
-  }
-
   function free(tx, ty) {
     return inWorld(tx, ty) && !objects[idx(tx, ty)] && ground[idx(tx, ty)] === 0;
   }
@@ -544,32 +462,10 @@ function genWorld() {
       placeObj(tx, ty, 'bush', { berries: 2, regrow: 0 });
     }
   }
-
-  // the TOP-UP (MAP_ROCKS / MAP_BUSHES, the map types above): the two loops
-  // over it roll positions across the whole interior and drop whatever fell
-  // in wood or on the lake, so a grown shape ends with a fraction of the ore
-  // and berries OPEN FIELD gets. Each is put back to strength here, on tries
-  // of its own at the END of genWorld - so nothing before this line moves.
-  if (mapGrown(MAP_TYPE)) {
-    let rocks = 0, bushes = 0;
-    for (const o of objects) if (o) { if (o.type === 'rock') rocks++; else if (o.type === 'bush') bushes++; }
-    const spot = () => {
-      const tx = randi(BORDER_MIN, WORLD - 1 - BORDER_MIN), ty = randi(BORDER_MIN, WORLD - 1 - BORDER_MIN);
-      return free(tx, ty) && !nearSpawn(tx, ty) && Math.hypot(tx - cx, ty - cy) > CENTER_R + 3 ? { tx, ty } : null;
-    };
-    for (let c = 0; c < 4000 && rocks < MAP_ROCKS; c++) {
-      const t = spot();
-      if (t) { placeObj(t.tx, t.ty, 'rock', { hp: 5, variant: randi(0, 1) }); rocks++; }
-    }
-    for (let c = 0; c < 4000 && bushes < MAP_BUSHES; c++) {
-      const t = spot();
-      if (t) { placeObj(t.tx, t.ty, 'bush', { berries: 2, regrow: 0 }); bushes++; }
-    }
-  }
 }
 
 // THE ROCKS ARE GONE (0.531), but genWorld still rolls its two rock passes
-// (the interior scatter and a grown shape's top-up): taking their rng() calls
+// (the interior scatter): taking their rng() calls
 // out would reshuffle every seed, and the rock each one stands is what the
 // later rolls in the same passes test `free` against. So they still stand
 // OBJECTS.rock, the road, the base, the cables and the camps are laid round
@@ -672,15 +568,13 @@ function addPad(team, cx, cy, r) {
   return sp;
 }
 // signed distance (tiles) from the nearest road edge - the diagonal's, a
-// pad's, a path's or a side lane's: negative inside. `laid` is the road as it stands, ended
+// pad's or a side lane's: negative inside. `laid` is the road as it stands, ended
 // on the two perches (baseRoadEnd, js/sim/base.js); without it the diagonal
 // runs whole, which is what genWorld's carve rules have always read.
 function roadDist(fx, fy, laid) {
   let d = roadMainDist(fx, fy);
   if (laid) d = Math.max(d, baseRoadEnd(fx, fy));
   for (const sp of pads) { const e = Math.hypot(fx - sp.x, fy - sp.y) - sp.hw; if (e < d) d = e; }
-  const t = pathDist(fx, fy); // a grown shape's own paths (below); 99 on every shape that lays none
-  if (t < d) d = t;
   const l = sideLaneDist(fx, fy); // the top and bot lanes (js/sim/lanes.js); 99 until layLanes
   return l < d ? l : d;
 }
@@ -726,9 +620,8 @@ function placeRoad() {
   for (let ty = 0; ty < WORLD; ty++) for (let tx = 0; tx < WORLD; tx++) {
     if (!onRoad(tx, ty)) continue;
     const i = idx(tx, ty);
-    if (ground[i] === 4 || ground[i] === 5) continue; // the lane never paves the creek, and a path stops at its water
-    ground[i] = 3; // the lane is never ice (genWorld keeps it ROAD_ICE_KEEP away); a PATH crossing a frozen lake is
-
+    if (ground[i] === 4 || ground[i] === 5) continue; // the lane never paves the creek or a ford
+    ground[i] = 3; // the lane is never ice (genWorld keeps it ROAD_ICE_KEEP away)
     objects[i] = null; // only worldgen's scenery stands here yet: a pine of the woods it cuts through, a rock, a bush
   }
   // the furniture: a point `out` tiles past the ragged edge on one side of u,
@@ -757,104 +650,34 @@ function roadWaypoints(team) {
   return pts;
 }
 
-// ---- the paths ----------------------------------------------------------
-// A shape that grows woods over the whole valley (MAPS, above) would else be
-// a wall, so it lays PATHS through them: packed earth about a pine wide,
-// cut where the shape's own gaps run. A path IS road - roadDist mins over
-// the paths, so placeRoad paves them with the lane in its one pass, the
-// ground array says 3, both maps ink them, nothing grows on one, a building
-// stands on one and nobody digs into one - only narrower than the lane and
-// without its ruts, which paintRoadOverlay measures off the diagonal a path
-// is nowhere near.
-//
-// The network, laid by layPaths() between genWorld and placeRoad: ONE route
-// from a side's junction on the road to the rival's, and a BRANCH off it to
-// every camp, so the woods can never wall a camp in. Each is a Dijkstra over
-// the tiles on a cost field where WOOD IS A WALL (pathCost): open snow 1, the
-// frozen lake PATH_ICE, the road's own corridor PATH_LANE, and anything
-// standing refused outright. So what a route IS, is the SHORTEST WAY BETWEEN
-// THE TWO ROOSTS THROUGH THE GROUND THAT IS ALREADY CLEAR - the gaps the
-// noise left, threaded, never a line driven through a stand - and it CROSSES
-// the lane instead of joining it, a path being the way the road is not: a
-// flank, walked, with no cable on it. Only if a shape leaves no clear route
-// at all does layPaths search again with the axe (`cut`), because a route is
-// also the promise that there is one.
-//
-// The PAVING is a tile or so wider than the route either side, so a path
-// running down a gap trims the edge of the stands beside it - that is a
-// cleared verge, not the route breaking through: where a path GOES never
-// needed an axe.
-const PATH_HW = 1.15;   // tiles either side of a path's centreline
-const PATH_RAG = 0.3;   // ...that the half-width wanders on the position noise
-const PATH_WOOD = 9;    // a tile of pines costs a route this many tiles of open snow - in the `cut` fallback ONLY; a route normally refuses one
-const PATH_ICE = 1.3;   // ...and a tile of frozen lake this many
-const PATH_LANE = 18;   // ...and a tile inside the road's corridor this many
-const PATH_CAMP = 3;    // tiles past a camp's cleared ground (r + 2) a branch stops, so clearCamp never eats the path's end
-const PATH_SEG = 4;     // tiles of route per registered segment: the polyline that smooths the search's staircase
-const paths = [];       // { x, y, dx, dy, len } in tile-index space
-// which segment is nearest a tile's centre, and which is next - stamped once
-// by indexPaths, so roadDist costs one array read and at most two segments
-// per PIXEL of the ground bake instead of a walk down the whole network
-let pathA = null, pathB = null;
-
-function pathLat(t, fx, fy) {
+// ---- segment index ----------------------------------------------------
+// A polyline of straight segments and a per-tile index of its nearest two,
+// so a distance to it costs one array read and at most two segments per
+// PIXEL of the ground bake instead of a walk down the whole line. The side
+// lanes are laid on it (sideLaneDist, js/sim/lanes.js).
+function segLat(t, fx, fy) {
   const px = fx - t.x, py = fy - t.y;
   let a = px * t.dx + py * t.dy;
   a = a < 0 ? 0 : a > t.len ? t.len : a;
   return Math.hypot(px - t.dx * a, py - t.dy * a);
 }
 // tiles from (fx, fy) to the nearest of `segs` by an index's two stamped
-// segments (indexSegs), or 99 off every one's reach - shared with the side
-// lanes (sideLaneDist, js/sim/lanes.js)
+// segments (indexSegs), or 99 off every one's reach
 function segsLat(segs, A, B, fx, fy) {
   const tx = fx < 0 ? 0 : fx > WORLD - 1 ? WORLD - 1 : Math.round(fx);
   const ty = fy < 0 ? 0 : fy > WORLD - 1 ? WORLD - 1 : Math.round(fy);
   const i = ty * WORLD + tx;
   const a = A[i];
   if (a < 0) return 99;
-  let lat = pathLat(segs[a], fx, fy);
+  let lat = segLat(segs[a], fx, fy);
   const b = B[i];
-  if (b >= 0) { const e = pathLat(segs[b], fx, fy); if (e < lat) lat = e; }
+  if (b >= 0) { const e = segLat(segs[b], fx, fy); if (e < lat) lat = e; }
   return lat;
-}
-// signed distance (tiles) from the nearest path's ragged edge, negative
-// inside - roadDist's third term. 99 where no path was ever laid.
-function pathDist(fx, fy) {
-  if (!pathA) return 99;
-  const lat = segsLat(paths, pathA, pathB, fx, fy);
-  if (lat >= 99) return 99;
-  return lat - (PATH_HW + (vnoise(fx * 0.42 + 61.3, fy * 0.42 + 17.9) - 0.5) * 2 * PATH_RAG);
 }
 function addSeg(segs, x0, y0, x1, y1) {
   const dx = x1 - x0, dy = y1 - y0, L = Math.hypot(dx, dy);
   if (L < 0.001) return;
   segs.push({ x: x0, y: y0, dx: dx / L, dy: dy / L, len: L });
-}
-// a searched route (tiles) as segments every PATH_SEG tiles: consecutive
-// segments share an end, so the polyline is continuous and a bend is eased
-// rather than walked as an eight-way staircase
-function addPathRoute(path) {
-  for (let i = 0; i < path.length - 1; i += PATH_SEG) {
-    const j = Math.min(path.length - 1, i + PATH_SEG);
-    addSeg(paths, path[i][0], path[i][1], path[j][0], path[j][1]);
-  }
-  // ...and wherever it crosses the creek (the `the creek` group below), a
-  // ford of stepping stones at the middle of the crossing: placeRoad paves
-  // the path up to the water and leaves the water be
-  const wetOrFord = (t) => waterAt(t[0], t[1]) || ground[idx(t[0], t[1])] === 5;
-  for (let i = 0; i < path.length; i++) {
-    if (!wetOrFord(path[i])) continue;
-    let j = i;
-    while (j + 1 < path.length && wetOrFord(path[j + 1])) j++;
-    const m = path[(i + j) >> 1];
-    if (ground[idx(m[0], m[1])] === 4) creekFord(m[0], m[1]);
-    i = j;
-  }
-}
-function indexPaths() {
-  if (!paths.length) return;
-  const ix = indexSegs(paths, PATH_HW + PATH_RAG + ROAD_SHOULDER + 2.4); // past this a pixel of the tile can no longer be painted by the segment
-  pathA = ix.A; pathB = ix.B;
 }
 // every tile's nearest segment of `segs` and its next, out to R tiles off
 // it (-1 past): one array read per lookup instead of a walk down the list
@@ -868,7 +691,7 @@ function indexSegs(segs, R) {
     const x0 = Math.max(0, Math.floor(Math.min(t.x, ex) - R)), x1 = Math.min(WORLD - 1, Math.ceil(Math.max(t.x, ex) + R));
     const y0 = Math.max(0, Math.floor(Math.min(t.y, ey) - R)), y1 = Math.min(WORLD - 1, Math.ceil(Math.max(t.y, ey) + R));
     for (let ty = y0; ty <= y1; ty++) for (let tx = x0; tx <= x1; tx++) {
-      const d = pathLat(t, tx, ty);
+      const d = segLat(t, tx, ty);
       if (d > R) continue;
       const i = ty * WORLD + tx;
       if (d < dA[i]) { dB[i] = dA[i]; B[i] = A[i]; dA[i] = d; A[i] = s; }
@@ -876,132 +699,6 @@ function indexSegs(segs, R) {
     }
   }
   return { A, B };
-}
-
-// What one tile costs a route, in tiles of open snow; -1 refuses it outright.
-//
-// WOOD IS A WALL, NOT A PRICE. Anything standing that a walker would have to
-// break is refused, so the route the search returns is the shortest one
-// through the ground that is ALREADY CLEAR - the gaps between the stands, the
-// lake, the open snow - and never a line bulldozed through a stand. A bush is
-// not one of those: it is walked past, and the paving takes it like the lane
-// does. `cut` is the fallback layPaths falls back to when a shape leaves no
-// clear route at all, and then wood costs PATH_WOOD instead of refusing.
-//
-// The lane's own tiles are read as CLEAR whatever stands on them, because
-// placeRoad fells and paves the whole diagonal a moment after this runs -
-// which is also what lets a route start at a junction buried in the corner's
-// woods. It still pays PATH_LANE to be there, so it crosses and never joins.
-// The camps are not standing yet either (placeCamps runs after the road), so
-// their ground is kept off by geometry - `block`, the discs layPaths hands in.
-function pathCost(tx, ty, block, cut) {
-  if (Math.min(tx, ty, WORLD - 1 - tx, WORLD - 1 - ty) < 4 || cisternIn(tx, ty)) return -1; // a path goes round the cistern
-  const i = idx(tx, ty);
-  const g = ground[i];
-  if (g === 2) return -1;
-  if (block) for (const b of block) if (Math.hypot(tx - b.tx, ty - b.ty) < b.r) return -1;
-  const lane = roadMainDist(tx, ty);
-  const o = lane < 0 ? null : objects[i];
-  const wall = !!o && isSolidTile(tx, ty);
-  if (wall && (!cut || !laneFells(o))) return -1;
-  let c = g === 1 ? PATH_ICE : g === 4 ? CREEK_COST : 1; // the creek is crossed, briefly; a ford (5) is dry ground
-  if (wall) c += PATH_WOOD;
-  if (lane < ROAD_HW + 1) c += PATH_LANE;
-  return c;
-}
-let pathD = null, pathFrom = null, pathDone = null;
-// Dijkstra over the tile grid on pathCost, start tile to goal tile, or null
-// if the goal cannot be reached at any price. Runs at boot, a handful of
-// times, over the world's 53,824 tiles.
-function pathRoute(sx, sy, gx, gy, block, cut) {
-  const N = WORLD * WORLD;
-  if (!pathD) { pathD = new Float32Array(N); pathFrom = new Int32Array(N); pathDone = new Uint8Array(N); }
-  pathD.fill(Infinity); pathFrom.fill(-1); pathDone.fill(0);
-  const hn = [], hc = [];
-  const push = (n, c) => {
-    let i = hn.length; hn.push(n); hc.push(c);
-    while (i > 0) { const p = (i - 1) >> 1; if (hc[p] <= c) break; hn[i] = hn[p]; hc[i] = hc[p]; i = p; }
-    hn[i] = n; hc[i] = c;
-  };
-  const pop = () => {
-    const n = hn[0], ln = hn.pop(), lc = hc.pop();
-    if (hn.length) {
-      let i = 0;
-      for (;;) {
-        let c = i * 2 + 1;
-        if (c >= hn.length) break;
-        if (c + 1 < hn.length && hc[c + 1] < hc[c]) c++;
-        if (hc[c] >= lc) break;
-        hn[i] = hn[c]; hc[i] = hc[c]; i = c;
-      }
-      hn[i] = ln; hc[i] = lc;
-    }
-    return n;
-  };
-  if (!inWorld(sx, sy) || !inWorld(gx, gy)) return null;
-  const s = idx(sx, sy), g = idx(gx, gy);
-  pathD[s] = 0; push(s, 0);
-  while (hn.length) {
-    const n = pop();
-    if (pathDone[n]) continue;
-    pathDone[n] = 1;
-    if (n === g) break;
-    const tx = n % WORLD, ty = (n / WORLD) | 0, d = pathD[n];
-    for (let k = 0; k < 8; k++) {
-      const nx = tx + NAV_DX[k], ny = ty + NAV_DY[k];
-      if (!inWorld(nx, ny)) continue;
-      const m = ny * WORLD + nx;
-      if (pathDone[m]) continue;
-      const c = pathCost(nx, ny, block, cut);
-      if (c < 0) continue;
-      const nd = d + c * NAV_COST[k];
-      if (nd >= pathD[m]) continue;
-      pathD[m] = nd; pathFrom[m] = n; push(m, nd);
-    }
-  }
-  if (!pathDone[g]) return null;
-  const out = [];
-  for (let n = g; n >= 0; n = pathFrom[n]) out.push([n % WORLD, (n / WORLD) | 0]);
-  out.reverse();
-  return out;
-}
-// Runs at boot between genWorld() and placeRoad() (js/app/boot.js). A shape that
-// grows no interior of its own lays nothing at all, so OPEN FIELD - and the
-// practice arena, which has no road to hang one off - are untouched.
-function layPaths() {
-  if (PRACTICE || !mapGrown(MAP_TYPE)) return;
-  paths.length = 0; pathA = pathB = null;
-  // every camp's ground, kept off the route: placeCamps clears r + 2 back to
-  // snow afterwards and would eat a path that ran through one
-  const block = campSites().map((site) => {
-    const t = campTile(site.u, site.s);
-    return { tx: t.tx, ty: t.ty, r: CAMPS[site.key].r + PATH_CAMP, woods: CAMPS[site.key].woods };
-  });
-  // the STRICT search first - the shortest way through the clear ground - and
-  // the axe only if this shape left no clear way at all, because a route is
-  // also the promise that there IS one (world.md#the-paths)
-  const route = (sx, sy, gx, gy, bl) => pathRoute(sx, sy, gx, gy, bl, false) || pathRoute(sx, sy, gx, gy, bl, true);
-  const a = roadNest(0), b = roadNest(1);
-  const main = route(Math.round(a.jx), Math.round(a.jy), Math.round(b.jx), Math.round(b.jy), block);
-  if (!main) return;
-  addPathRoute(main);
-  // a branch to each camp: off the route's nearest point, out to the rim of
-  // the ground clearCamp will clear, and no further - but none to a camp in
-  // the border woods (CAMPS.hut), which is meant to be dug out with an axe
-  for (const c of block) {
-    if (c.woods) continue;
-    let sx = -1, sy = -1, bd = Infinity;
-    for (const pt of main) {
-      const d = Math.hypot(pt[0] - c.tx, pt[1] - c.ty);
-      if (d < bd) { bd = d; sx = pt[0]; sy = pt[1]; }
-    }
-    if (sx < 0 || bd <= c.r + 1) continue;
-    const an = Math.atan2(sy - c.ty, sx - c.tx);
-    const gx = Math.round(c.tx + Math.cos(an) * c.r), gy = Math.round(c.ty + Math.sin(an) * c.r);
-    const br = route(sx, sy, gx, gy, block.filter((o) => o !== c));
-    if (br) addPathRoute(br);
-  }
-  indexPaths();
 }
 
 // ---- the creek ------------------------------------------------------------
@@ -1023,8 +720,7 @@ function layPaths() {
 //     goes in at one gate and out at the other across the ice;
 //   - a FORD just outside each of its culverts (placeCistern's last step),
 //     the waves' way round it;
-//   - an outer FORD on each stretch between a bend and the treeline;
-//   - a ford wherever a grown shape's path crosses (addPathRoute).
+//   - an outer FORD on each stretch between a bend and the treeline.
 // A ford is a row of stepping stones (ground 5) along one tile row across
 // the water, so it is always four-connected and nobody's feet cut a corner
 // through the current.
@@ -1049,14 +745,13 @@ const CREEK_HW_RAG = 0.22;   // ...that each bank wanders on the position noise
 const CREEK_WANDER = 2.5;    // tiles the line itself wanders off the cross-diagonal, either way
 const CREEK_CALM = 10;       // tiles over which the wander eases to nothing at the cistern, a bend or a ford
 const CREEK_REACH = CREEK_WANDER + CREEK_HW + CREEK_HW_RAG + 0.4; // the farthest a bank ever stands off the line's bend
-const CREEK_COST = 6;        // what a tile of creek costs a path's route (pathCost): it crosses, and short
-const CREEK_BEND_GAP = 1.2;  // tiles of dry bank between a path's end at a bend's camp (r + PATH_CAMP) and the water
+const CREEK_BEND_GAP = 4.2;  // tiles of dry bank between a bend's camp's cleared ground (r) and the water
 const CREEK_BEND_LONG = 2.2; // a bend runs this many times its reach along the creek either way (2 or more keeps the camp clear)
 const CREEK_FORD_GAP = 14;   // tiles of creek an outer ford needs between a bend and the treeline
 function creekP(fx, fy) { return (fx - fy) / Math.SQRT2; }
 // the bends: every camp site on the mirror line, with how far the water's
-// centre swings off the diagonal at the camp (R, out past the ground a path
-// to it stops on), how far along it the swing runs either way (L) and which
+// centre swings off the diagonal at the camp (R, out past the camp's
+// ground), how far along it the swing runs either way (L) and which
 // way it swings (side: + toward BLUE's half, which leaves the camp RED's)
 let creekBendsC = null;
 function creekBends() {
@@ -1065,7 +760,7 @@ function creekBends() {
   for (const site of campSites()) {
     if (Math.abs(site.u - (WORLD - 1) / 2) > 0.01) continue;
     const t = campTile(site.u, site.s), w = roadOffS(t.tx, t.ty);
-    const R = CAMPS[site.key].r + PATH_CAMP + CREEK_BEND_GAP + CREEK_HW;
+    const R = CAMPS[site.key].r + CREEK_BEND_GAP + CREEK_HW;
     creekBendsC.push({ tx: t.tx, ty: t.ty, w, R, L: R * CREEK_BEND_LONG, side: w < 0 ? 1 : -1 });
   }
   return creekBendsC;
@@ -1193,9 +888,9 @@ function creekFord(fx, fy) {
   }
   return { ty, x0, x1 };
 }
-// Runs at boot right after genWorld() (js/app/boot.js), before the paths and the
-// road: the water fells whatever grew on it (its banks keep their pines) and
-// the fixed fords go down. A path's own fords follow in layPaths (addPathRoute).
+// Runs at boot right after genWorld() (js/app/boot.js), before the road: the
+// water fells whatever grew on it (its banks keep their pines) and the fixed
+// fords go down.
 // Last, the cistern stands round the middle and its pool freezes over: the
 // orca's lake (placeCistern, js/sim/cistern.js).
 function placeCreek() {

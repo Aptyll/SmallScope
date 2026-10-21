@@ -128,14 +128,14 @@ function netLeave() {
   if (was === 'client') { initPlayers(); camX = player.x - WV_W / 2; camY = player.y - WV_H / 2; } // the host's roster goes with the host
   else if (was === 'host') for (const p of players) if (p.control === 'remote') { p.control = 'ai'; p.input = makeInput(); }
 }
-// what the relay's list says of this room: who hosts it, on what patch, seed
-// and map shape, whether it is still open, and how many people are in it -
+// what the relay's list says of this room: who hosts it, on what patch and
+// seed, whether it is still open, and how many people are in it -
 // what a code typed into another party's box is matched against
 function netHostRoom() {
   if (NET.role !== 'host' || !NET.transport.roomData) return;
   let humans = 0; const sides = [0, 0];
   for (const p of players) if (isHuman(p)) { humans++; sides[p.team]++; }
-  NET.transport.roomData({ name: player ? player.name : '', patch: PATCH_TXT, seed: SEED, map: MAP_TYPE, practice: PRACTICE ? 1 : 0, state: state.drop ? 'live' : 'open', humans, sides,
+  NET.transport.roomData({ name: player ? player.name : '', patch: PATCH_TXT, seed: SEED, practice: PRACTICE ? 1 : 0, state: state.drop ? 'live' : 'open', humans, sides,
     seek: NET.seek && !NET.seek.rival && !NET.seek.crossing ? NET.mode : '' }); // a party looking for another (js/ui/matchmaking.js)
 }
 // the roster to every peer, on every change of it: a client's waiting room
@@ -208,7 +208,6 @@ function netHostHello(peer, msg) {
   if (NET.kicked.has(msg.uid)) return refuse('KICKED');
   if (msg.patch !== PATCH_TXT) return refuse('VERSION');
   if (msg.seed !== SEED) return refuse('SEED');
-  if ((msg.map | 0) !== MAP_TYPE) return refuse('SEED'); // the same world means the same shape of it (MAPS, world.js)
   let slot = -1;
   const park = NET.parked.get(msg.uid) || rematchSeat(msg.uid); // a dropped peer's slot, or the one it held last match
   if (park && !isHuman(players[park.slot])) { slot = park.slot; NET.parked.delete(msg.uid); }
@@ -516,7 +515,7 @@ function netClientStats() {
   NET.was = { p: me, earned: me.earned, kills: me.kills, dead: me.dead, aboard: me.aboard };
 }
 function netClientHello() {
-  NET.transport.send('host', { t: 'hello', uid: NET.uid, patch: PATCH_TXT, seed: SEED, map: MAP_TYPE, name: PROFILE.name(), cls: PROFILE.hero(), skins: profileHeroSkins(), rank: PROFILE.rank(), pos: PROFILE.pos(),
+  NET.transport.send('host', { t: 'hello', uid: NET.uid, patch: PATCH_TXT, seed: SEED, name: PROFILE.name(), cls: PROFILE.hero(), skins: profileHeroSkins(), rank: PROFILE.rank(), pos: PROFILE.pos(),
     party: CROSS ? CROSS.party : undefined, pn: CROSS ? CROSS.n : undefined }); // a party crossing in (js/ui/matchmaking.js)
 }
 // the roster the host dealt: our slot is the human here, the host's is a

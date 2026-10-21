@@ -38,8 +38,8 @@ function rate(ra, rb, sa) {
 
 // the next `count` matches: the entry with the fewest games first, against one
 // of the PAIR_SPREAD nearest to it in rating (never itself while there is
-// anyone else), on a fresh seed and shape, sides alternating by the match number
-function pairings(ladder, count, shapes) {
+// anyone else), on a fresh seed, sides alternating by the match number
+function pairings(ladder, count) {
   const ids = Object.keys(ladder.entries).filter((id) => !ladder.entries[id].retired && !ladder.entries[id].missing);
   if (!ids.length) return [];
   const games = Object.fromEntries(ids.map((id) => [id, ladder.entries[id].games]));
@@ -54,7 +54,7 @@ function pairings(ladder, count, shapes) {
     games[a]++; games[b]++;
     const swap = n % 2 === 1; // a takes team 1 on odd matches
     out.push({ n, id: 'L' + String(n + 1).padStart(5, '0'), team0: swap ? b : a, team1: swap ? a : b,
-      seed: 1 + Math.floor(rnd() * 999999), shape: Math.floor(rnd() * shapes) });
+      seed: 1 + Math.floor(rnd() * 999999), shape: 0 }); // one map: `shape` stays 0 so old logs still read
   }
   return out;
 }

@@ -174,10 +174,10 @@ function joinRoom(r) {
   const m = state.menu;
   m.seek = null;
   roomsFeedClose();
-  const seed = r.data && +r.data.seed, map = (r.data && r.data.map | 0) || 0;
+  const seed = r.data && +r.data.seed;
   // a party already on the practice field: this page follows it there
   if (r.data && +r.data.practice && !PRACTICE) { location.search = '?practice=1&join=' + r.room + '&back=1' + (netSteam() ? '&transport=steam' : ''); return; }
-  if (seed && (seed !== SEED || map !== MAP_TYPE)) { location.search = '?seed=' + seed + '&map=' + map + '&join=' + r.room + (netSteam() ? '&transport=steam' : ''); return; }
+  if (seed && seed !== SEED) { location.search = '?seed=' + seed + '&join=' + r.room + (netSteam() ? '&transport=steam' : ''); return; }
   netJoin(r.room);
   m.joining = true;
   SFX.place();
@@ -457,28 +457,27 @@ let rematchCarry = null;  // a reopened party's: { seats: uid -> slot } from the
 function rematchUrl() {
   if (homeParty) return crossHomeUrl(); // a party that crossed over for this match goes back to its own (js/ui/matchmaking.js)
   if (!NET.mode) return null; // a page that never opened a party: the title, as it was
-  const map = PRACTICE ? 0 : MAP_TYPE; // the field is no shape: back to the first
-  const base = location.pathname + '?map=' + map, steam = netSteam() ? '&transport=steam' : '';
+  const base = location.pathname + '?back=1', steam = netSteam() ? '&transport=steam' : '';
   const code = roomCode();
   if (NET.isHost) {
     const seed = NET.nextSeed || rollSeed();
-    if (NET.peers.size) NET.transport.send('*', { t: 'rematch', seed, map });
+    if (NET.peers.size) NET.transport.send('*', { t: 'rematch', seed });
     const seats = {};
     for (const pr of NET.peers.values()) if (!pr.cross) seats[pr.uid] = pr.slot; // the rival party goes home
     try { sessionStorage.setItem(REMATCH_KEY, JSON.stringify({ mode: NET.mode, seats })); } catch (e) { }
-    return base + '&seed=' + seed + '&net=host&back=1' + steam + (code ? (steam ? '&code=' : '&room=') + code : '');
+    return base + '&seed=' + seed + '&net=host' + steam + (code ? (steam ? '&code=' : '&room=') + code : '');
   }
-  if (NET.rematch && NET.rematch.room) return base.replace(/map=\d+/, 'map=' + NET.rematch.map) + '&seed=' + NET.rematch.seed + '&join=' + NET.rematch.room + '&back=1' + steam;
+  if (NET.rematch && NET.rematch.room) return base + '&seed=' + NET.rematch.seed + '&join=' + NET.rematch.room + steam;
   return null;
 }
 // the leader's, every step: the first step of an ended match picks the next valley
 function rematchOffer() {
   if (NET.nextSeed || !(state.over === 'won' || state.over === 'lost') || !roomCode()) return;
   NET.nextSeed = rollSeed();
-  NET.transport.send('*', { t: 'rematch', seed: NET.nextSeed, map: MAP_TYPE });
+  NET.transport.send('*', { t: 'rematch', seed: NET.nextSeed });
 }
 function rematchHeard(msg) {
-  NET.rematch = { seed: msg.seed | 0, map: msg.map | 0, room: roomCode() };
+  NET.rematch = { seed: msg.seed | 0, room: roomCode() };
   if (PRACTICE) toLobby(); // the leader left the field: the party follows it back (js/ui/screens.js)
 }
 // the slot a returning person held last match, for netHostHello

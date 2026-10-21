@@ -66,7 +66,7 @@ function steamTransport(lobbyId) {
         const l = await this.bridge.createLobby('public', STEAM_LOBBY_MAX);
         this.lobbyId = l.id; this.owner = l.owner;
         this.code = steamCode();
-        await this.bridge.setLobbyData(l.id, { patch: PATCH_TXT, seed: String(SEED), map: String(MAP_TYPE), state: 'open', name: info.name || '', code: this.code });
+        await this.bridge.setLobbyData(l.id, { patch: PATCH_TXT, seed: String(SEED), state: 'open', name: info.name || '', code: this.code });
         this.wire();
         this.open = true;
       } catch (e) { this.error = String(e); }
@@ -80,10 +80,10 @@ function steamTransport(lobbyId) {
         this.id = info.id;
         const l = await this.bridge.joinLobby(this.lobbyId);
         this.owner = l.owner;
-        // the world is the lobby's: a page born on another seed or shape
-        // starts over on it, and joins from boot (?join=, JOIN_AT_BOOT)
-        const seed = parseInt(l.data.seed, 10), map = parseInt(l.data.map, 10) || 0;
-        if (seed && (seed !== SEED || map !== MAP_TYPE)) { location.search = '?seed=' + seed + '&map=' + map + '&join=' + this.lobbyId + '&transport=steam'; return; }
+        // the world is the lobby's: a page born on another seed starts over
+        // on it, and joins from boot (?join=, JOIN_AT_BOOT)
+        const seed = parseInt(l.data.seed, 10);
+        if (seed && seed !== SEED) { location.search = '?seed=' + seed + '&join=' + this.lobbyId + '&transport=steam'; return; }
         this.wire();
         this.open = true;
       } catch (e) { this.error = String(e); }
