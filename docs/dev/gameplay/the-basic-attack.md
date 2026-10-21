@@ -19,7 +19,7 @@ and items and levels grow it through the hero's stats ([hero stats](hero-stats.m
 Today's rows: the HUNTER's SHORTBOW (a shot, 320 px/s for 0.85 s, `cycle` 55/60 s), the WARRIOR's
 LONGSWORD, ARMATOS's OATH GREATSWORD and FORTIVA's CHAIN GREATSWORD (a cut, 28 px and 1.05 rad,
 `cycle` 30/60 s, `kb` 1.2), and BELLA's EAGLE SPATHA (a quicker, shorter cut: 26 px, 0.95 rad, `cycle` 26/60 s, `kb` 1; each named hero's blade is drawn as its own through `heroBlade`,
-js/draw/heroes.js), and IGNIA's CROOK AND LANTERN (a slower ember shot: 260 px/s for 0.85 s, `cycle` 60/60 s, `kb` 0.6, drawn as `look: 'ember'`; her staff is carried, not swung: `staff` on the row, `HERO_STAVES`). A new hero is a new
+js/draw/heroes.js), and IGNIA's CROOK AND LANTERN (a slower ember shot: 260 px/s for 0.85 s, `cycle` 60/60 s, `kb` 0.6, drawn as `look: 'ember'`; her staff is carried, not swung: `staff` on the row, `HERO_STAVES`), and AURA's STAR SHARD (a star bolt, 270 px/s for 0.95 s, `cycle` 66/60 s, `kb` 0.5, drawn as `look: 'starbolt'`; carried upright like IGNIA's staff, `staff: 'shard'`). A new hero is a new
 `attack` row and nothing else. The ATTACK SPEED stat is read off the same row: `classAs(cls)` is
 one over the full draw plus the renock (js/sim/stats.js).
 

@@ -28,7 +28,7 @@ const BOT_CMDS = new Set(['ability', 'ping', 'shop', 'recall']);
 const BOT_NODES_N = 64;     // workable tiles an observation lists, nearest first
 const BOT_NODES = new Set(['tree', 'deadTree', 'bush']);
 const BOT_CALLS = new Set(['bird', 'help', 'low', 'push', 'here']); // CALLS' kinds a bot may say
-const BOT_CALL_LOW = new Set(['HUNTER', 'WARRIOR', 'ARMATOS', 'FORTIVA', 'BELLA', 'IGNIA', 'BEAR']);       // what a 'low' call may name
+const BOT_CALL_LOW = new Set(['HUNTER', 'WARRIOR', 'ARMATOS', 'FORTIVA', 'BELLA', 'IGNIA', 'AURA', 'BEAR']);       // what a 'low' call may name
 
 // ---- the library --------------------------------------------------------------
 // Every program a seat can run, by id: { id, name, src, run } - `run` names

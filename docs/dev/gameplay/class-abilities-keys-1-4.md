@@ -67,7 +67,7 @@ the held one lit gold
 js/ai/ai.js, first thing `aiThink` asks): the ultimate whenever it can rank, then each basic key
 unlocked once, then the basics maxed in the hero's `rankOrder` (its `CLASSES` row: HUNTER
 shot, net, grapple; WARRIOR stomp, rush, shield; ARMATOS verdict, march, brace; FORTIVA sever,
-yoke, heart). The cd column in the tables below is every rank's; the numbers in the text are rank
+yoke, heart; AURA star, orb, step). The cd column in the tables below is every rank's; the numbers in the text are rank
 1's, and each row's `rank` table has the rest.
 
 **Every ability lands on every kind of body.** A player, a rabbit, a deer, a bird, a wolf and a
@@ -181,8 +181,26 @@ sparks of WARM HANDS a `HERO_BODY_FX` row; `brushfires` is sim state (`SAVE_ROOT
 | 3 | **WARM HANDS** | 14/13/12/11/10 s | for `WARM_T` (`p.warmT`) the next key she casts burns ×`WARM_HOT` (`igniaHeat`, spent by that key), and she walks `walk` (15-35%) faster (`igniaMoveMul`, a `HERO_MOVE` row) |
 | 4 | **WILDFIRE** | 90/75/60 s | a ring `WILD_R` around the aim (at most `WILD_RANGE`): every rival inside not across water (`waterBetween`) takes `dmg` (20/35/50) and burns `burn` (16/24/32) a second for `WILD_BURN_T`; for `t` its flames jump `WILD_JUMP_R` between rivals and ignore the snow (`wildT`), but never across the creek |
 
+AURA, THE NORTHERN LIGHT — the far, patient mage: artillery. Her rules live in
+**[js/sim/aura.js](../../../js/sim/aura.js)** (`AURA_AB`, its `aura` banner), her pixels in
+[js/draw/aura.js](../../../js/draw/aura.js), her icons and staff art in
+[js/sprites/aura.js](../../../js/sprites/aura.js). The least life of anyone (78 hp, 9 armor) and a
+step slower than anyone, she shoots a star bolt (her `attack` row, the STAR SHARD, drawn as her own
+shot through its `look`; the shard is carried upright, `HERO_STAVES`) and strikes from further than any key in the game: slowly, and in plain
+view, since everything she casts is on the snow for both sides until it lands. Her strikes are
+things she leaves in the world (`auraStars`, `auraOrbs`, `auraCurtains`, each carrying the rank
+and reach it was cast with), stepped by `updateAuraWorld` (`HERO_TICK`):
+
+| key | name | cd | what it does |
+| --- | --- | --- | --- |
+| P | **STARLIGHT** | — | her reaches (the star's range, the orb's drift, the step, the curtain's length) grow with the dark: ×(1 + `STARLIGHT_REACH` × `state.darkness`), a quarter more at full night (`auraReach`). Every rival body one of her keys touches is revealed for `STARLIGHT_T` (`markUnit`: seen through the fog, the woods and the brush, `inSight`). `HERO_PASSIVE.starlight`; the `aim` the range preview draws is the day's |
+| 1 | **FALLING STAR** | 9/8.5/8/7.5/7 s | the aim, up to `STAR_RANGE` (300 px) away, is struck `STAR_DELAY` after the cast (`auraStar`, `starStrike`), its ring on the snow the whole time with the star coming down onto it: every rival body in `STAR_R` takes `dmg` (16/24/32/40/48), ×`STAR_CORE_MUL` within `STAR_CORE` of the centre; buildings in it take it too |
+| 2 | **DRIFTING LIGHT** | 13/12.5/12/11.5/11 s | an orb drifts from her down the aim at `ORB_SPD` for `ORB_LEN`, through trees and walls (`updateAuraOrbs`): every rival body within `ORB_R` is slowed to `slow` (×0.7/0.65/0.6/0.55/0.5), held `ORB_SLOW_T` after it passes, and revealed. No damage |
+| 3 | **STEP OF LIGHT** | 18/17/16/15/14 s | a blink down the aim, `STEP_LEN` (a hero dash so fast it lasts a few frames, `p.dash = 'step'`: a wall or the water's edge stops it short). Every rival body within `STEP_R` of where she stood is slowed ×`STEP_SLOW` for `slowT` (1/1.25/1.5/1.75/2 s). A bot spends it when a hero reaches her, aimed away (the row's `botAim`) |
+| 4 | **THE CURTAIN** | 110/95/80 s | a band `CURTAIN_LEN` (900 px) long down the aim from where she stands falls `CURTAIN_DELAY` after the cast (`auraCurtain`, `curtainFall`), its edges on the snow brightening until then: every rival body within `CURTAIN_SEE` of it is revealed, struck or not, and those within `CURTAIN_HALF` take `dmg` (70/110/150); buildings under it too |
+
 Bots play the named heroes through each row's `bot(p, foe, d, clear)` (`abBotKey`, asked by the ladder's
-ability block in js/ai/ai-ladder.js); a hero whose rows carry no `bot` keeps the ladder's old range rules.
+ability block in js/ai/ai-ladder.js); a row's `botAim(p, foe)` turns the aim to a point of its own for that cast (AURA's step away). A hero whose rows carry no `bot` keeps the ladder's old range rules.
 
 Every wind-up with an area is **telegraphed on the snow for both sides** (`drawAbilityGround`): the
 pierce's and the charge's marching line, the stomp's ring, the slam's and the execute's wedge — in

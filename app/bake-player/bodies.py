@@ -1,6 +1,6 @@
 # The two class bodies on the doll (doll.py): the HUNTER (pom beanie) and the WARRIOR
 # (fur hood with goggles, a trailing scarf, skate blades), and each named hero's looks
-# (ARMATOS: standard, oath; FORTIVA: unbroken, coif; BELLA: general, traitor; IGNIA: hearth, wanderer). Their sizes are measured off the
+# (ARMATOS: standard, oath; FORTIVA: unbroken, coif; BELLA: general, traitor; IGNIA: hearth, wanderer; AURA: light). Their sizes are measured off the
 # hand-drawn 16 px frames in js/sprites/characters.js, so the doll's idle lands on those
 # frames pixel for pixel and the run and the roll it paints wear the same body.
 #
@@ -495,6 +495,18 @@ class Wanderer(Standard):
         cv.blob(cam, hc, Rh, (2.6, 2.85, 2.5), 'head', 'coat', p=self.HEAD_P)
 
 
+class Light(Hearth):
+    """AURA's one look, NORTHERN LIGHT: Hearth's long hair (silver in her paint) over a
+    night mantle on her side's robe; the same frame, robe and boots"""
+
+    def coat(self, cv, cam, U, R):
+        cv.blob(cam, U(v3(0, 0, Z(6.1))), R, (2.75, 3.05, Z(2.05)), 'coat', 'coat', p=2.2)
+        cv.blob(cam, U(v3(0, 0, Z(4.0))), R, (2.6, 3.1, Z(0.6)), 'hem', 'coat', bias=-0.3)
+        cv.blob(cam, U(v3(-0.3, 0, Z(7.2))), R, (2.6, 3.2, Z(1.2)), 'scarf', 'cloak', bias=0.3)
+        for s in (1, -1):    # the locks over each shoulder, in front of the mantle
+            cv.blob(cam, U(v3(0.0, 2.9 * s, Z(8.6))), R, (0.8, 0.75, Z(0.9)), 'locks' + ('L' if s > 0 else 'R'), 'hair', bias=0.4)
+
+
 BODIES = {'hunter': Hunter(), 'warrior': Warrior(), 'standard': Standard(), 'oath': Oath(),
           'unbroken': Unbroken(), 'coif': Coif(), 'general': General(), 'traitor': Traitor(),
-          'hearth': Hearth(), 'wanderer': Wanderer()}
+          'hearth': Hearth(), 'wanderer': Wanderer(), 'light': Light()}

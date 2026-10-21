@@ -207,6 +207,26 @@ const CLASSES = [
     kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1, chargeMul: 0.55,
       bowCharge: BOW_CHARGE, nock: 0.4, spdDmg: 0, dodgeSpeed: DODGE_SPEED },
   },
+  {
+    // the fifth named hero (js/sim/aura.js): the far, patient mage - artillery.
+    // The longest reach in the game and the least life to back it, a step
+    // slower than anyone; slow, telegraphed strikes, one blink, and nothing else
+    name: 'AURA', role: 'THE NORTHERN LIGHT', body: 1, passive: 'starlight', // HERO_PASSIVE, js/sim/aura.js
+    look: { sex: 1, tone: 0, hair: 2, hairCol: 5, beard: 0, face: 2 },
+    blurb: ['THE NIGHT IS ON YOUR SIDE.', 'STRIKE FROM FURTHER THAN ANYONE. NOTHING HIDES FROM YOUR LIGHT.', 'CAUGHT UP CLOSE, YOU HAVE ONE STEP.'],
+    story: "SHE READ THE NIGHT SKY FOR THE EMPIRE'S NAVY, AND READ IN IT THAT THE FLEET WOULD SINK. IT DID. THEY DECIDED SHE MUST HAVE ARRANGED IT. THE VALLEY'S NIGHTS ARE CLEAR AND BLUE, AND SHE SAYS THE LIGHTS HERE SAY DIFFERENT THINGS.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
+    // a staff's star bolt: a little shorter and slower than the shortbow
+    staff: 'shard', // her STAR SHARD, carried upright (HERO_STAVES, js/draw/aura.js)
+    attack: { name: 'STAR SHARD', art: 'starstaff', cycle: 66 / 60, kb: 0.5, shot: { speed: 270, life: 0.95, col: '#e6f8ff', look: 'starbolt' } },
+    base: { hp: 78, dmg: 13, armor: 9, ap: 0, haste: 0, ms: PLAYER_SPEED - 4 },
+    grow: { hp: 5.5, dmg: 1, as: 0.01, armor: 1.7 },
+    rankOrder: [0, 1, 2], // the falling star, the drifting light, the step
+    // her own body (AURA_SKINS, js/sprites/aura.js; one look for now), worn over the side's coat
+    skins: AURA_SKINS, skinPal: AURA_PAL, skinSlot: 'aura',
+    paint48: { t: '#7d8699', T: '#b4bdcc', g: '#1c2232', G: '#9aa3b8', m: '#5c6478', M: '#454c5e' }, // the 48 px model's (js/sprites/looks.js): its K is skin
+    kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1, chargeMul: 0.55,
+      bowCharge: BOW_CHARGE, nock: 0.4, spdDmg: 0, dodgeSpeed: DODGE_SPEED },
+  },
 ];
 // the body a hero wears - its sprites and its 48 px model: a hero that names
 // none is its own (HUNTER 0, WARRIOR 1), a named hero borrows one
