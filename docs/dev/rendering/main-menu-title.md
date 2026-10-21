@@ -98,9 +98,11 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
     (`drawSelPlay`, `draftWord`): BAN (red) or LOCK IN, white and live while you have a confirm
     to make, gold under the hand, slate once made. **Once your pick is locked** (and through the
     count, `lobbySplash`) the grid gives way to the **splash** (`drawSplash`: `heroSplash(h, id)`
-    art `SPLASH_W`×`SPLASH_H` at 1×, centred and cut on a narrow view; with none painted yet the
+    art `SPLASH_W`×`SPLASH_H` at 1×, centred and cut on a narrow view, baked by
+    `app/bake-splash.js` from `docs/media/splash/<slot>-<id>.png`; a look with none painted shows the
     model at 3× on a slice of the night) with the look's name under it and the **skin strip**
     (`drawSkinStrip`/`selSkinCells`: up to `SKIN_SHOW` `SKIN_THUMB_W`×`SKIN_THUMB_H` thumbnails,
+    each `heroThumb(h, id)` or, with none, the look's body at 2×,
     chevrons when there are more; the worn one gold, one the profile does not own dimmed with a
     lock; a click wears an owned one, `draftSkin`).
   - **The foot**: the **chat** bottom left (`drawTalk` at `L.chat`, js/ui/roomtalk.js: up to
