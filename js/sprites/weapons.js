@@ -15,7 +15,7 @@ const WEAPON_FWD = { bow: 0, sword: Math.PI, staff: Math.PI };
   const PAL = {
     '.': null, o: '#241a12', s: '#e8dcb4', W: '#ffffff', g: '#6b4a30', G: '#a3794f', e: '#c8d2e4', E: '#8b93a8',
     q: '#9a917c', h: '#efe3c4', H: '#b39a6e', m: '#6b4a30', M: '#a3794f',
-    f: '#ff9a3a', F: '#ffe07a', u: '#d8502e', i: '#454c5e', I: '#5c6478',
+    f: '#ff9a3a', F: '#ffe07a', y: '#f2cc6a', Y: '#b98a2e',
   };
   // the gilded metal the finished items' icons wear
   const GILT = Object.assign({}, PAL, { m: '#b98a2e', M: '#ffe08a' });
@@ -33,11 +33,11 @@ const WEAPON_FWD = { bow: 0, sword: Math.PI, staff: Math.PI };
       '..eeeeeemM..', 'WeeeeeeemMgo', '..EEEEEEmM..', '........mM..',
       '............', '............', '............', '............',
     ],
-    // IGNIA's HEARTH STAFF: an ash staff, an iron cup at its head, the fire in it (head left)
+    // IGNIA's CROOK & LANTERN: the crook upright, the fire hung from its hook
     staff: [
-      '............', '............', '............', '.uf.........',
-      'ufFfi.......', 'fFFFIgGgGgGo', 'ufFfi.......', '.uf.........',
-      '............', '............', '............', '............',
+      '...oooo.....', '..oGggGo....', '.oGo..oGo...', '.oGo..oyo...',
+      '.oGo.oYyYo..', '.oGo.ofFfo..', '.oGo.oFWFo..', '.oGo.oYyYo..',
+      '.oGo..ooo...', '.oGo........', '.ogo........', '..o.........',
     ],
     // the HORN BOW's shape: limbs bulging forward, horn ears swept back
     horn: [

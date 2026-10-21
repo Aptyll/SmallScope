@@ -101,3 +101,38 @@ function drawIgniaHands(p, ax, ay, now, front) {
   }
 }
 HERO_BODY_FX.push(drawIgniaHands);
+
+// ---- the CROOK AND LANTERN ---------------------------------------------------------
+// Her staff (CLASSES' `staff: 'crook'`; HERO_STAVES, js/draw/heroes.js): a shepherd's
+// crook carried upright, the fire hung in a lantern from its hook, its heart beating
+// between two frames. The hand closes on the shaft at IGNIA_CROOK_GRIP.
+const IGNIA_CROOK = [
+  '..oooo...',
+  '.oGggGo..',
+  'oGo..oGo.',
+  'oGo..oGo.',
+  'oGo...o..',
+  'oGo..oyo.',
+  'oGo.oYyYo',
+  'oGo.ofFfo',
+  'oGo.oFWFo',
+  'oGo.ofFfo',
+  'oGo.oYyYo',
+  'oGo..ooo.',
+  'oGo......',
+  'oGo......',
+  'ogo......',
+  'oGo......',
+  'ogo......',
+  '.o.......',
+];
+const IGNIA_CROOK_GRIP = [1, 10];
+const IGNIA_CROOK_PAL = { o: '#2e2440', g: '#6b4a30', G: '#a3794f', y: '#f2cc6a', Y: '#b98a2e', f: '#ff9a3a', F: '#ffe07a', W: '#ffffff' };
+let igniaCrookArt = null;
+function igniaCrook() {
+  if (igniaCrookArt) return igniaCrookArt;
+  const beat = IGNIA_CROOK.map((r) => r.replace('oFWFo', 'oFFFo').replace('ofFfo', 'oFfFo'));
+  igniaCrookArt = [bakeBladeArt(IGNIA_CROOK, IGNIA_CROOK_PAL), bakeBladeArt(beat, IGNIA_CROOK_PAL)];
+  return igniaCrookArt;
+}
+HERO_STAVES.crook = { art: igniaCrook, grip: IGNIA_CROOK_GRIP };

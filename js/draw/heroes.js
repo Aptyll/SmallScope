@@ -22,6 +22,32 @@ const HERO_BODY_FX = [];
 // by HERO_SHOTS[look](a, sx, sy, now) in place of the arrow's shaft
 // (drawArrows, js/draw/passes.js); (sx, sy) is its tip on the screen.
 const HERO_SHOTS = {};
+// A hero whose CLASSES row names a `staff` carries it upright in the leading hand
+// in every facing, drawn or not (a mage's staff is held, never swung or aimed):
+// HERO_STAVES[name] = { art() -> [frame, frame] canvases (the flame's two beats),
+// grip: [x, y] where the hand closes on the art }. Facing left or up it is held in
+// the far hand, mirrored, so whatever hangs off it hangs outward.
+const HERO_STAVES = {};
+function heroStaffOf(p) { const c = CLASSES[p.cls]; return c && c.staff ? HERO_STAVES[c.staff] : null; }
+const staffFlips = new Map();
+function heroStaff(p, px, py) {
+  const s = heroStaffOf(p);
+  if (!s) return false;
+  const back = p.dir === 'left' || p.dir === 'up';
+  let img = s.art()[Math.floor(state.elapsed * 5) % 2];
+  if (back) {
+    if (!staffFlips.has(img)) {
+      const c = document.createElement('canvas'); c.width = img.width; c.height = img.height;
+      const g = c.getContext('2d'); g.scale(-1, 1); g.drawImage(img, -img.width, 0);
+      staffFlips.set(img, c);
+    }
+    img = staffFlips.get(img);
+  }
+  const gx = back ? img.width - 1 - s.grip[0] : s.grip[0];
+  const hx = back ? px + 2 : px + 13, hy = py + 10 - (p.charging ? 1 : 0); // a draw lifts it
+  ctx.drawImage(img, Math.round(hx - gx), Math.round(hy - s.grip[1]));
+  return true;
+}
 function heroBodyFx(p, ax, ay, now, front) { for (const f of HERO_BODY_FX) f(p, ax, ay, now, front); }
 function heroBladeOf(p) { const c = CLASSES[p.cls]; return c && c.blade ? HERO_BLADES[c.blade] : null; }
 // the blade a hero's hands hold in place of its sword's own art, or null
