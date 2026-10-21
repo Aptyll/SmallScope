@@ -336,6 +336,7 @@ function baseKit(cls) {
     harvestMul: 1, dodgeCd: DODGE_CD, stealth: 1,
     ambushMul: AMBUSH_MUL, bury: PRONE_BURY,
     killHeal: 0, kindle: false, chill: false, restHeal: 0, // the item passives (js/sim/items.js)
+    leech: false, thorns: false, cull: false, steady: false, surge: false, brace: false, smolder: false, scorch: false,
   });
 }
 // rebuild p.kit from class + items
@@ -382,6 +383,9 @@ const PLAYER_RECORD = {
   feed: 0,                       // deaths since this body's last kill or assist: past FEED_FROM it is worth less (killWorth)
   earned: 0,                     // gold earned this match, spent or not (gainGold): the scoreboard's rank
 };
+// gold every player lands with, League's start: a first part and a potion at the
+// counter before the walk out. Never `earned` (gainGold): nothing paid it.
+const START_GOLD = 500;
 class Player {
   constructor(id, control, team) {
     this.id = id;
@@ -396,7 +400,7 @@ class Player {
     this.look = Object.assign({}, CLASSES[0].look); // the hero's face, set again by every setClass
     this.skins = {};                   // hero slot -> the look worn on that hero (heroSkinOf); a person's, from their profile
     this.spawn = { tx: WORLD >> 1, ty: WORLD >> 1 }; // landing tile once the eagle drops this player (the bot brain's "home")
-    this.inv = { gold: 0 };             // the wallet is currency only
+    this.inv = { gold: START_GOLD };    // the wallet is currency only; a start that buys a first part and a potion
     this.cls = 0;                       // CLASSES index; the lobby sets the local one
     this.position = -1;                 // POSITIONS index the draft gave this seat, -1 none (draftReveal, js/ui/draft.js); the host's alone, never on the wire
     this.skillPts = 1;                  // unspent; level 1 starts with one, each levelUp adds one - spent on ability levels (buyAbilityLv, js/sim/abilities.js)
@@ -431,6 +435,7 @@ class Player {
     this.items = new Array(ITEM_SLOTS).fill(null); // the six item slots, ids or null (js/sim/items.js) - they survive a respawn
     this.potions = 0;                   // how many potions stand in the slot that holds 'potion' (the `potion` banner, js/sim/items.js)
     this.fightT = 0; this.kindleN = 0;  // s since the last hit given or taken, and KINDLING's count (itemsOnHit)
+    this.surgeT = 0; this.smolderT = 0; // SURGE's window after a key, SMOLDER's next pulse (itemsTick)
     refreshKit(this);                   // builds this.kit and this.maxHp from class + items
     this.aboard = false;                // riding the eagle (beginDrop sets it, hopOff clears it)
     this.dropT = 0;                     // seconds left of the step down off the roost (0 = on the ground)

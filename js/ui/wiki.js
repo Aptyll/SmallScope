@@ -63,7 +63,7 @@ function wikiBeastXp(kind, lv) { const y = YIELD[kind]; return y && y.xp ? Math.
 // item's own BUILD_ITEMS record. STATS is the shop's own wording (ITEM_STATS).
 function wikiItemStats(id) {
   const st = BUILD_ITEMS[id].stats;
-  return ITEM_STAT_ORDER.filter((k) => st[k]).map((k) => ITEM_STATS[k].fmt(st[k]) + ' ' + ITEM_STATS[k].label).join('  ');
+  return ITEM_STAT_ORDER.filter((k) => st[k]).map((k) => ITEM_STATS[k].fmt(st[k]) + ' ' + ITEM_STATS[k].short).join('  ');
 }
 const WIKI_ITEM_COLS = [
   { label: 'STATS', w: 150, get: wikiItemStats, col: '#f4f7ff' },
@@ -166,11 +166,11 @@ const WIKI_PAGES = [
   { id: 'items', label: 'ITEMS', build() {
     const b = [];
     b.push({ kind: 'line', h: 9, text: 'SIX SLOTS. EVERY ITEM IS ON SALE AT EITHER COUNTER, ALWAYS AT ONE PRICE.', col: '#cfe0ff' });
-    b.push({ kind: 'line', h: 9, text: 'A FINISHED ITEM COSTS LESS FOR EVERY PART OF IT YOU ALREADY HOLD.', col: TIP_DIM });
-    for (const [title, ids] of [['PARTS', ITEM_PARTS], ['FINISHED', ITEM_DONE]]) {
+    b.push({ kind: 'line', h: 9, text: 'AN ITEM COSTS LESS FOR EVERY PART OF IT YOU ALREADY HOLD. ONE PAIR OF BOOTS.', col: TIP_DIM });
+    for (const [title, kind] of [['BASIC', 'basic'], ['BOOTS', 'boots'], ['EPIC', 'epic'], ['LEGENDARY', 'legend']]) {
       b.push({ kind: 'gap', h: 4 });
       b.push({ kind: 'head', h: 12, text: title, cols: WIKI_ITEM_COLS });
-      for (const id of ids) b.push({ kind: 'row', h: 14, id, cols: WIKI_ITEM_COLS });
+      for (const id of ITEM_ALL) if (shopRowKind(id) === kind && !isStack(id)) b.push({ kind: 'row', h: 20, id, cols: WIKI_ITEM_COLS });
     }
     return b;
   } },
@@ -351,12 +351,12 @@ function drawWikiRail(L) {
 // (part or finished), its name, and its numbers in the columns
 function drawWikiRow(r, L, hot) {
   const id = r.bl.id, y = r.y - L.scroll;
-  const n = { x: L.left, y: y + (hot ? 0 : 1), w: 12, h: 12 };
+  const n = { x: L.left, y: y + (hot ? 0 : 1), w: 18, h: 18 };
   ctx.fillStyle = hot ? '#ffffff' : itemMetal(id).rim; ctx.fillRect(n.x, n.y, n.w, n.h);
   ctx.fillStyle = '#080b1c'; ctx.fillRect(n.x + 1, n.y + 1, n.w - 2, n.h - 2);
-  shopIcon(itemIcon(id), { x: n.x + 1, y: n.y + 1, w: n.w - 2 + 4, h: n.h - 2 + 4 });
+  shopIcon(itemIcon(id), { x: n.x, y: n.y, w: n.w + 2, h: n.h + 2 }); // a 16 px icon, flush in the 16 px ground
   const name = BUILD_ITEMS[id].name;
-  const nx = L.left + 17, ty = y + 4;
+  const nx = L.left + 23, ty = y + 7;
   drawPixelTextShadow(ctx, name, nx, ty, hot ? '#ffffff' : '#cfe0ff', '#0a0e23');
   // the columns, right to left off the content's right margin, each value
   // right-aligned under its head; a dotted leader ties the name to the first

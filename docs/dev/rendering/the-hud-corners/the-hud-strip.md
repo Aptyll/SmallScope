@@ -110,6 +110,7 @@ turns the veil alone. The pips and the key digit are
 drawn **after** it: the wait is what the veil is for, and what you own is never dimmed by it.
 
 The **purse** after the slots (`drawGoldCell`, `goldCellRect`) is the coin at 2× over the gold,
-centred, in the same rim — a readout, not a button: no key, no hover, no refusal; `stripHit` answers `frame`
+every digit up to 9999 (items are priced in the thousands, so `shortNum`'s 2.6K could not say
+whether a 2700 buy is there) and `shortNum` past it, centred, in the same rim — a readout, not a button: no key, no hover, no refusal; `stripHit` answers `frame`
 over it and `tipGold` gives the exact figure — inked `#f5c542` because the one number on the HUD
 that is money must never read as a count of something carried.

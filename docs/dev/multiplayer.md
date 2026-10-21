@@ -949,7 +949,7 @@ The ladder:
    outruns a walk; 8 s for a blade). A bow shoots from 55 px; a blade walks in to `AI_MELEE_D`
    and swings only inside `AI_MELEE_D` + 8 px. Birds are excluded: they fly, and no ground route catches a flushed flock.
 11. **spend** — **Items come first, at rung 0** (`aiSpend`, beside the skill point): a bot buys its class's
-   build ([`BOT_BUILDS`](gameplay/the-merchants-counter.md#buying-and-selling)) at whichever counter it is standing at, a part or the whole
+   build ([`BOT_BUILDS`](gameplay/the-merchants-counter.md#buying-and-selling)) at whichever counter it is standing at, a component or the whole
    item, through the same `input.cmd` a human's click sends, and when its purse covers the next
    whole item and it is out of a fight it walks to its own side's counter if that is within
    `AI_SHOP_DETOUR` (32 tiles; farther out it recalls, `aiRecall`), which ends its ladder for that think. With the slots full it sells

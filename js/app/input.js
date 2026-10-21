@@ -465,6 +465,7 @@ pageListen(canvas, 'mousedown', (e) => {
 function pointerPress(button) {
   if (button === 3 || button === 4) { sideButton(button, true); return; }
   if (button === 2) {
+    if (state.mode === 'play' && shopRightClick(shopHit(mouse.x, mouse.y))) return; // at the counter: buy or sell what is under it (js/ui/shop.js)
     if (ckOn()) { ckRightPress(); return; } // the CLICK scheme: the right button is the hand
     if (state.mode !== 'play' || state.settingsOpen || state.wheel) return;
     if (cheatAimOff()) { SFX.unlock(); return; } // ...and the practice bar's aim
