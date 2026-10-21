@@ -211,7 +211,6 @@ const CLASSES = [
     // the fifth named hero (js/sim/aura.js): the far, patient mage - artillery.
     // The longest reach in the game and the least life to back it, a step
     // slower than anyone; slow, telegraphed strikes, one blink, and nothing else
-    pos: ['mid', 'support'], // the positions it plays, best first (POSITIONS, js/ui/draft.js)
     name: 'AURA', role: 'THE NORTHERN LIGHT', body: 1, passive: 'starlight', // HERO_PASSIVE, js/sim/aura.js
     look: { sex: 1, tone: 0, hair: 2, hairCol: 5, beard: 0, face: 2 },
     blurb: ['THE NIGHT IS ON YOUR SIDE.', 'STRIKE FROM FURTHER THAN ANYONE. NOTHING HIDES FROM YOUR LIGHT.', 'CAUGHT UP CLOSE, YOU HAVE ONE STEP.'],

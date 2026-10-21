@@ -85,7 +85,7 @@ more: the frames live on as the CATCH emote's (`EMOTES`, js/ui/screens.js). The 
 **The run, the held run and the dodge roll are the one set of player frames not typed by hand.**
 [app/bake-player/](../../app/bake-player/) paints them off a jointed doll of each class body (and of
 each named hero's looks: ARMATOS's `standard` and `oath`, FORTIVA's `unbroken` and `coif`, BELLA's `general` and `traitor`,
-IGNIA's `hearth` and `wanderer`, [hero looks](#hero-looks)) and
+IGNIA's `hearth` and `wanderer`, AURA's `light`, [hero looks](#hero-looks)) and
 writes them to js/baked/motion.js as char grids in characters.js's own letters, so `motionSet`
 bakes them through the same team and look palettes as every hand-drawn pose: `run[dir]`,
 `hold[dir]` and `roll[dir]` sit beside the walking directions, `left` the mirror of `right`.
@@ -182,7 +182,7 @@ frame, not the doll**: `heroRunSide` (armatos.js) finds the leg rows, scissors t
 `HERO_STRIDE` and bobs the body over them, so the head and coat keep the standing width (the doll's
 side run was a pixel or two narrower and read as the hero shrinking when turning left or right).
 The run facing down and up is still the doll's, unless the look's row says `run: 'drawn'`: then
-`heroRunFront` lifts the drawn front and back the same way (IGNIA's two looks, whose shawl and hair
+`heroRunFront` lifts the drawn front and back the same way (IGNIA's two looks and AURA's, whose shawl, mantle and hair
 the doll does not match). The class bodies (HUNTER, WARRIOR) keep the doll's run. The fish and the burrow frames are still the borrowed skater's in
 that paint. Which look a player wears is `heroSkinOf(p)` (player.js): the id in `p.skins` under the
 hero's `skinSlot`, or the free first row. LAST STANDARD (nasal helm, white beard, tabard) is his
@@ -225,6 +225,15 @@ Her 48 px model is her own standing front too. Her CROOK AND LANTERN is not a bl
 `staff: 'crook'` names a `HERO_STAVES` entry (`IGNIA_CROOK`, js/draw/ignia.js), carried upright in
 the leading hand in every facing (`heroStaff`, asked by `drawHeldTool`, mirrored facing left or up)
 and held through a cast; the lantern's heart flickers between two baked frames.
+
+AURA has one look (`AURA_SKINS`, js/sprites/aura.js): NORTHERN LIGHT, drawn on ARMATOS's frame
+(`AURA_PAL` is `ARM_PAL` with her silver hair `a`/`A`, the night-blue mantle `q`/`Q` and the
+star-gold `s` of her circlet). It is A off aura-round1.png in the project files; its side frame
+keeps the head at the front's width, the face flush with it. Her doll (`Light` in
+app/bake-player/bodies.py) paints the mantle in the doll's `cloak` material and only the roll is
+used. Her 48 px model is the warrior's in her paint. Her STAR SHARD is a staff like IGNIA's:
+`staff: 'shard'` names `HERO_STAVES.shard` (`AURA_SHARD`, js/draw/aura.js), a fallen star's
+splinter on a dark shaft whose tip glints between two baked frames.
 
 The **48 px model** ([looks.js](../../js/sprites/looks.js), `SPRITES.portrait(cls, look,
 team)`) is where the whole look reads — the champ select's stage, grid and seat discs. Each hero wears one
