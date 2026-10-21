@@ -121,7 +121,7 @@ It drops 6 rows for a [prone](../gameplay/prone-under-the-snow.md) pose, which s
 lower in the same 16×16 cell — bars floating over a head that is not there look broken; it lifts
 4 rows while a caught fish is hoisted (the hoist holds the fish where the plate would sit), and
 by the lift + 5 for a zipline rider, so the frame rises with the body and clears the handle; a
-worn skin body (the IRON SCOUT) lifts it to its own head, `top` rows under its frame's top. And
+worn skin body (the IRON HERO) lifts it to its own head, `top` rows under its frame's top. And
 its alpha fades with
 `concealOf(p)`: name tag, both bars, the level badge and the draw meter that says a shot is coming
 all go with the cover, weighted so you keep a readable copy of your own (×0.55), your side keeps

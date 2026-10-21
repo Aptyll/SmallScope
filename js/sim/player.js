@@ -93,6 +93,7 @@ const CLASSES = [
     name: 'HUNTER', role: 'BOW, DISTANCE, AMBUSH',
     look: { sex: 0, tone: 2, hair: 1, hairCol: 2, beard: 0, face: 1 },
     blurb: ['THE BOW IS THE ARGUMENT: KEEP THE GAP.', 'THE NET TANGLES THEM. THE GRAPPLE PULLS YOU CLEAR.', 'THE SNOW HIDES YOU. THE SHOT OUT OF IT HITS MUCH HARDER.'],
+    story: 'THE EMPIRE FENCED ITS LAST FORESTS INTO HUNTING PARKS, AND ANYONE STILL HUNTING IN THEM BECAME A POACHER. THE VALLEY HAS NO FENCES. A HUNTER EATS WHAT THEY SHOOT AND SELLS THE REST AT THE COUNTER.', // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
     // the seven stats at level 1, and what each level adds (js/sim/stats.js);
     // attack speed's base is the bow's own cycle (classAs), its growth a fraction
     base: { hp: 92, dmg: 16, armor: 12, ap: 0, haste: 0, ms: PLAYER_SPEED },
@@ -106,6 +107,7 @@ const CLASSES = [
     name: 'WARRIOR', role: 'PRESSURE, BLOCKING, MOMENTUM',
     look: { sex: 0, tone: 4, hair: 0, hairCol: 1, beard: 2, face: 0 },
     blurb: ['THE FIGHT IS AT ARM\'S LENGTH: GET THERE.', 'THE SHIELD EATS ARROWS. THE RUSH CARRIES BODIES.', 'THE SWORD REACHES A BODY LENGTH. THE EXECUTE FINISHES IT.'],
+    story: 'THE EMPIRE SENDS ITS SOLDIERS HOME WHEN THE WAR ENDS, AND ITS WARS DO NOT END. A WARRIOR IS ONE WHO WALKED HOME ANYWAY. THE ONLY GATE STILL OPEN TO THEM WAS THE ONE AT THE PASS.', // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
     base: { hp: 120, dmg: 18, armor: 20, ap: 0, haste: 0, ms: PLAYER_SPEED },
     grow: { hp: 9, dmg: 1.6, as: 0.01, armor: 2.6 },
     kit: { iceMax: 1.15, iceSteer: 3.2, slideMin: 70, fatigue: 0.7, chargeMul: 0.7,
@@ -120,6 +122,7 @@ const CLASSES = [
     name: 'ARMATOS', role: 'THE LAST STANDARD', body: 1, passive: 'resolve', // HERO_PASSIVE, js/sim/heroes.js
     look: { sex: 0, tone: 1, hair: 2, hairCol: 6, beard: 3, face: 0 },
     blurb: ['NO SOLDIER LEFT BEHIND.', 'THE SHIELD TAKES THE HIT. THE BASH ANSWERS IT.', 'PLANT THE STANDARD: YOUR SIDE HOLDS, THEIRS CANNOT LEAVE.'],
+    story: 'HE CARRIED THE STANDARD OF A LEGION THE EMPIRE MARCHED INTO THE SNOW AND FORGOT. HE BROUGHT EVERY ONE OF THEM HOME, AND THE EMPIRE CALLED IT A RETREAT. THE STANDARD IS BROKEN NOW. HE STILL PLANTS IT.', // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
     base: { hp: 130, dmg: 16, armor: 24, ap: 0, haste: 0, ms: PLAYER_SPEED },
     grow: { hp: 10, dmg: 1.4, as: 0.008, armor: 2.9 },
     kit: { iceMax: 1.1, iceSteer: 3.2, slideMin: 70, fatigue: 0.7, chargeMul: 0.7,
@@ -140,6 +143,7 @@ const CLASSES = [
     name: 'FORTIVA', role: 'THE UNBROKEN', body: 1, passive: 'unbroken', // HERO_PASSIVE, js/sim/fortiva.js
     look: { sex: 1, tone: 2, hair: 3, hairCol: 3, beard: 0, face: 1 },
     blurb: ['STRENGTH IS THE POWER TO REFUSE TO KNEEL.', 'THE LONGER THE FIGHT, THE HARDER SHE IS TO STOP.', 'THE EDGE OF THE ARC HEALS HER. THE SHIELD PAYS BACK WHAT IT TOOK.'],
+    story: 'THE EMPIRE WORKED HER IN CHAINS AT ITS FORGES UNTIL THE DAY SHE STOOD UP AND DID NOT KNEEL AGAIN. SHE CUT THE CHAIN AND HAMMERED IT INTO A SWORD. THE VALLEY DOES NOT ASK WHERE A BLADE CAME FROM.', // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
     base: { hp: 132, dmg: 18, armor: 20, ap: 0, haste: 0, ms: PLAYER_SPEED - 3 },
     grow: { hp: 10, dmg: 1.7, as: 0.01, armor: 2.6 },
     rankOrder: [0, 2, 1], // the sever, the yoke, the heart
@@ -159,6 +163,7 @@ const CLASSES = [
     name: 'BELLA', role: 'THE IMPERIAL GENERAL', body: 1, passive: 'calculated', // HERO_PASSIVE, js/sim/heroes.js
     look: { sex: 1, tone: 1, hair: 3, hairCol: 0, beard: 0, face: 2 },
     blurb: ['FIND THE WEAKNESS. SPEND IT FIRST.', 'THE LUNGE, THE SLIP AND THE PARRY CHAIN INTO EACH OTHER.', 'CALL OUT ONE HERO AND FINISH THEM.'],
+    story: 'SHE WON THE EMPIRE A WAR ITS COURT HAD ALREADY CALLED LOST, AND THE COURT NEVER FORGAVE HER. TRAITOR WAS THE KINDEST WORD THEY HAD. SHE KEPT THE SPATHA WITH THE EAGLE ON IT. SHE SAYS IT IS HERS NOW.', // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
     attack: { name: 'EAGLE SPATHA', art: 'sword', cycle: 26 / 60, kb: 1, cut: { reach: 26, half: 0.95 } }, // quicker and a little shorter than the longsword
     // her own body in each of her looks (BELLA_SKINS, js/sprites/bella.js),
     // worn per player (heroSkinOf) over the side's coat

@@ -15,13 +15,15 @@ with its column heads over their columns), `row` (an item in its well with its n
 the columns, `WIKI_ITEM_COLS` naming each column's label, width and getter; hoverable, answering
 `tipItem`), `legend` (the deer wearing the overhead frame, a leader from each part of it
 to its name), `beast` (a kind standing on its snow beside its growth table, `WIKI_BEASTS`),
-`cls` (a class card: the body at 3x, pitch, health and the stat pips, `WIKI_STATS`), `ab`
+`cls` (a class card: the body at 3x, pitch, health and the stat pips, `WIKI_STATS`), `story`
+(the hero's story under its card, `CLASSES` `story` wrapped by `wikiWrap` from
+`WIKI_CLS_TEXT_X` in `WIKI_STORY_INK`, hung off a thin rule), `ab`
 (an ability: key plate, the strip's icon in a well, name, the `WIKI_AB_COLS` numbers, the blurb
 wrapped by `wikiWrap`; hoverable, answering `tipClassAb`) and `lore` (a WORLD entry,
 `WIKI_WORLD`: its figures in a `WIKI_FIG_W` column, its name in gold and its paragraph from
 `WIKI_TEXT_X`, as tall as the taller of the two) —
-each with a fixed height, built once per content width (`wikiBlocks(pageId, cw)`: the WORLD
-page is the only one whose `build` reads `cw`, to wrap its sentences to a slab that has
+each with a fixed height, built once per content width (`wikiBlocks(pageId, cw)`: a page whose
+`build` reads `cw` wraps its sentences, a hero's story or a beast's line, to a slab that has
 narrowed with the view). `wikiLayout()` is the single source of
 every rect: the slab, the tab cells, the window, each block's y (pre-scroll), the scroll bound,
 the rail and its thumb; `wikiHit(mx, my)` reads it back as a tab, a row (carrying its item id,

@@ -13,7 +13,7 @@ walk animation, and the held tool are suppressed (still collides with solids; a 
 that axis), and `drawPlayer` plays the roll's frames over `DODGE_T` - a crouch, a dive, the
 tucked ball turning over once, a squat ([the run and the roll](../sprites.md#the-run-and-the-roll))
 - with two afterimages of the frames just shown trailing the velocity, plus dust bursts. A
-worn IRON SCOUT has no tuck yet and spins its standing frame instead. The roll's exit speed is spent by the surface — see
+worn IRON HERO has no tuck yet and spins its standing frame instead. The roll's exit speed is spent by the surface — see
 [Momentum movement](momentum-movement-players-only.md). The charge meter is a single unsegmented **white** stamina
 bar (`STAM_COL`, js/draw/overhead.js — white on every side, since stamina has no side) on a plate
 directly beneath the overhead health bar — charges stay discrete in the sim,
