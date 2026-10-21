@@ -216,7 +216,9 @@ function aiNearestEnemy(p, prof, anchors) {
   }
   // a rival wave's soldiers are rivals too (the `soldiers` banner, robots.js):
   // the same sight and the same anchors, with no cover to see through
+  const leave = aiLeavesWave(p); // a support beside its carry leaves the last hits to it (js/ai/ai-farm.js)
   for (const b of robots) {
+    if (leave) break;
     if (b.kind !== 'soldier' || !unitAlive(b) || b.team === p.team || !inSight(p.team, b)) continue;
     const d = Math.hypot(b.x - p.x, b.y - p.y);
     let range = prof.sight;

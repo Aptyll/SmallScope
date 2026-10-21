@@ -77,6 +77,20 @@ const BOW_CHARGE = 0.9;   // seconds to a full draw
 const BOW_NOCK = 0.45;    // WREN's seconds between loosing and the next draw
 
 // ---- classes ------------------------------------------------------------
+// League's five POSITIONS. Each seat on a side plays one, handed out in the
+// draft (draftSeatRoles, js/ui/draft.js) and kept on the player as
+// `p.position` for the match (-1: none, a match that skipped the draft). A
+// bot plays its own (aiPosJob, js/ai/ai-farm.js): `lane` is the lane it
+// holds (lanes.js's 0 top, 1 mid, 2 bot; -1 none), `job` the plan's role
+// for it (AI_ROLES, js/ai/ai-team.js).
+const POSITIONS = [
+  { id: 'top', name: 'TOP', lane: 0, job: 'laner' },
+  { id: 'jungle', name: 'JUNGLE', lane: -1, job: 'jungler' },
+  { id: 'mid', name: 'MID', lane: 1, job: 'laner' },
+  { id: 'bot', name: 'BOT', lane: 2, job: 'laner' },
+  { id: 'support', name: 'SUPPORT', lane: 2, job: 'support' },
+];
+
 // Every player plays one of these HEROES. A hero is a body (its class outfit,
 // js/sprites/looks.js) worn by ONE fixed `look` - the face, hair and beard
 // every copy of it has, the way a League champion looks the same in every
@@ -389,6 +403,7 @@ class Player {
     this.spawn = { tx: WORLD >> 1, ty: WORLD >> 1 }; // landing tile once the eagle drops this player (the bot brain's "home")
     this.inv = { gold: 0 };             // the wallet is currency only
     this.cls = 0;                       // CLASSES index; the lobby sets the local one
+    this.position = -1;                 // POSITIONS index the draft gave this seat, -1 none (draftReveal, js/ui/draft.js); the host's alone, never on the wire
     this.skillPts = 1;                  // unspent; level 1 starts with one, each levelUp adds one - spent on ability levels (buyAbilityLv, js/sim/abilities.js)
     this.abLv = [0, 0, 0, 0];           // ability ranks, 0 (LOCKED) ..abLvMax (5, the ultimate 3), a skill point each - like items, NOT cleared by reset(): a death keeps what was bought
     this.abPick = [0, 0, 0, 0];         // which option each key carries (abOf, js/sim/abilities.js), picked pre-match in the hero pop-up; a bot keeps the first

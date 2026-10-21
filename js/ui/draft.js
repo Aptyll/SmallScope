@@ -77,7 +77,7 @@ function draftTeamBans(team) {
 }
 
 // ------------------------------------------------------------ draft roles
-// League's five POSITIONS, one per seat on each side, handed out as the
+// League's five POSITIONS (js/sim/player.js), one per seat on each side, handed out as the
 // draft opens (draftSeatRoles): the people first, each on the one their
 // profile asks for (PROFILE.pos; a guest's rides its hello, NET.pos) when
 // nobody earlier on the side took it, then any free one, the bots last. A
@@ -85,13 +85,6 @@ function draftTeamBans(team) {
 // a bot holding it trades, a person keeps theirs. A hero's positions are its
 // CLASSES entry's `pos`; the grid filters by them and a bot picks for its
 // own. Your side's positions are yours to see, the rivals' never.
-const POSITIONS = [
-  { id: 'top', name: 'TOP' },
-  { id: 'jungle', name: 'JUNGLE' },
-  { id: 'mid', name: 'MID' },
-  { id: 'bot', name: 'BOT' },
-  { id: 'support', name: 'SUPPORT' },
-];
 const DRAFT_ACTS = ['hover', 'lock', 'role', 'skin']; // what a guest's `draft` press may be
 function posAsk(p) { const r = p === player ? PROFILE.pos() : NET.pos[p.id]; return r >= 0 ? r : -1; }
 function heroPlays(h, r) { return r < 0 || !!(CLASSES[h] && CLASSES[h].pos.includes(POSITIONS[r].id)); }
@@ -203,7 +196,7 @@ function draftReveal() {
     if (own) draftYield(p, h);
   }
   D.phase = 'done';
-  for (const p of players) setClass(p, D.lock[p.id]);
+  for (const p of players) { setClass(p, D.lock[p.id]); p.position = D.role[p.id]; } // the position goes into the match: a bot plays it (aiPosJob, js/ai/ai-farm.js)
   draftSend();
   netHostRoster();
   draftCount();

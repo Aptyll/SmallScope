@@ -20,7 +20,7 @@
   const OLD_SAVES = 'softfall.saves', OLD_SAVE = 'softfall.save.';
   const OLD_SETTINGS = 'softfall.settings'; // pre-profile saves; migrated once
   const NAME_MAX = 16;
-  const POS_N = 5;                 // POSITIONS.length (js/ui/draft.js)
+  const POS_N = 5;                 // POSITIONS.length (js/sim/player.js)
   const HERO_N = 5;                // CLASSES.length (js/sim/player.js) - a hero index past this is repaired to 0
   // the coins a profile starts with: the cosmetics' purse, kept outside every
   // match (a match's gold never reaches it). What a coin buys is the skins

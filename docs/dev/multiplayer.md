@@ -727,24 +727,31 @@ Three small rules, and the teamwork is what they add up to:
   `greed` how far it looks for loot and work, `roam` how wide it wanders, `fit` which jobs suit it.
 - **Role.** Every `AI_PLAN_T` (2 s) the side re-plans (`aiPlan`): the profile still says how
   many push and guard (`aiPushers`, `prof.guard`), and the plan may change it (the window, the
-  brace, below); it says who, by mood fit, and a held job counts `AI_KEEP` extra so nobody
+  brace, below); it says who, by mood fit plus the position's (`AI_POS_FIT`: the jungler and
+  the support leave their post first), and a held job counts `AI_KEEP` extra so nobody
   flip-flops. `aiRank` is the plan's order (`aiPlanRank`) and `T.nPush`/`T.nGuard` its counts,
-  which the push and guard gates below read. From `AI_SCOUT_AT` (45 s) one bot
-  SCOUTs (walks the middle and the far road short of the rival lane), from `AI_STALK_AT`
-  (90 s) one STALKs (a mood with `stalk`), and a strong side sends three SLAYERs to its bear,
-  below. Before the scout and the stalker the side's free hands **farm** (js/ai/ai-farm.js):
-  `AI_JUNGLE_N` (2) JUNGLERs walk the side's own wolf dens on their clocks (`aiDenSpot`: a den
-  with its pack up is walked to and hunted by rung 6; a cleared one is waited on just outside
-  `CAMP_HOLD`, set off `AI_DEN_EARLY` before it is due, and worked away from until then), and
-  `AI_LANE_N` (3) LANERs, one per lane (`aiLaneDeal` hands them out mid, top, bot in
-  `AI_LANE_ORDER` and a laner keeps its lane while it stays one: `T.lanes`), stand
-  `AI_FARM_BACK` behind their own soldier on that lane nearest a clash, or wait at the lane's
-  hold point (`laneHold`, `LANE_HOLD` (0.6) of the way from their mouth to its middle) while
-  they have no column there (`aiLaneSpot`), and pick the lowest-health rival soldier in sight. Any bot on a rival soldier its
+  which the push and guard gates below read. A strong side sends three SLAYERs to its bear,
+  below. Every bot those leave plays its **position** (js/ai/ai-farm.js): the one the draft
+  gave its seat (`p.position`, `POSITIONS` in player.js, set by `draftReveal`; host-only, never
+  on the wire), or with no draft one dealt by seat, mid, top, bot, jungle, support
+  (`aiPosDeal`/`AI_POS_FILL` into `T.pos`; a person with none is left with none). TOP, MID and
+  BOT are LANERs on their position's lane (`aiLane`): they stand `AI_FARM_BACK` behind their
+  own soldier on that lane nearest a clash, or wait at the lane's hold point (`laneHold`,
+  `LANE_HOLD` (0.6) of the way from their mouth to its middle) while they have no column there
+  (`aiLaneSpot`), and pick the lowest-health rival soldier in sight. JUNGLE is the JUNGLER: it
+  walks the side's own wolf dens on their clocks (`aiDenSpot`: a den with its pack up is walked
+  to and hunted by rung 6; a cleared one is waited on just outside `CAMP_HOLD`, set off
+  `AI_DEN_EARLY` before it is due, and worked away from until then). SUPPORT walks with the
+  side's BOT, bot or person (`aiCarry`), `AI_SUP_BACK` behind it toward home and `AI_SUP_SIDE`
+  to one side (`aiSupportSpot`), and while within `AI_SUP_NEAR` of it looks only at rival
+  heroes, never the soldiers (`aiLeavesWave` in `aiNearestEnemy`): the last hits are the
+  carry's; with no carry on its feet it holds the bot lane as a laner. Any bot on a rival soldier its
   own wave is wearing down **holds its draw for the last hit** (`aiFarmFire` on rung 3's trigger):
   it waits at `AI_FARM_STAND` and lets go once the soldier, less the swings its wave lands while
-  the blow travels, is within its hardest recent blow (`ai.farmHit`, learned in `hurtRobot`). The
-  rest are GATHERERs: the ladder as it always was.
+  the blow travels, is within its hardest recent blow (`ai.farmHit`, learned in `hurtRobot`). A
+  bot with no position (more bots than positions) SCOUTs from `AI_SCOUT_AT` (45 s: walks the
+  middle and the far road short of the rival lane), then STALKs from `AI_STALK_AT` (90 s, a
+  mood with `stalk`); the rest are GATHERERs: the ladder as it always was.
 - **Memory.** Every rival a bot notices (through `seenAt`) goes on the side's board
   (`aiLook` → `T.seen`, kept up to `AI_SEEN_T`, trusted for the profile's `memory`). A bot
   hurt under 60% or outnumbered in a fight **calls** (`aiCall`); a hurt human with a rival on
