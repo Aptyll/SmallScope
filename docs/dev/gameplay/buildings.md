@@ -95,8 +95,8 @@ nothing hurts it, and `ownsStruct` is true, so E never swings at it.
   ring loses a part-fill over `PUMP_FADE_T` (10 s). A full fill flips the pump (`pumpFlip`: the
   jolt, a `place` cue, a ring of sparks in the side's mark). Holding needs nobody in the ring.
 - **The pay.** While a side holds it, every `period` (10 s) each active hero on that side, alive
-  or not, wherever they are, gets `tiers[0].pay` (3) through `gainGold` and a coin cue; one plain
-  +3 rises over the barrel as the drawn coin hops out (`drawPumpCoin`, only after a pay). It
+  or not, wherever they are, gets `tiers[0].pay` (30) through `gainGold` and a coin cue; one plain
+  30 rises over the barrel as the drawn coin hops out (`drawPumpCoin`, only after a pay). It
   strokes only while held: the frame runs off `o.payT` (`pumpFrame`).
 - **The colour is the whole read** (no text). The pump wears its holder's team paint, or a grey
   set held by nobody (`pumpSet`, js/draw/structs.js; `SPRITES.pumpNeutral`, js/baked/pump.js).

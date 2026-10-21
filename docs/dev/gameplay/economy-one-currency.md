@@ -16,25 +16,30 @@ rather than a different resource (the League model: one number, many ways to ear
 
 | Source | Pays | Profile |
 | --- | --- | --- |
-| the clock | `TRICKLE_GOLD` (1) every `TRICKLE_T` (4 s) — the `passive income` banner, js/sim/sim.js | 15 a minute to every player on the ground, silently (no floater, no blip); the floor under everyone's purse |
+| the start | `START_GOLD` (500, js/sim/player.js), in the wallet from the landing | League's start: a first part and a potion; never `earned` |
+| the clock | `TRICKLE_GOLD` (8) every `TRICKLE_T` (4 s) — the `passive income` banner, js/sim/sim.js | 120 a minute to every player on the ground, silently (no floater, no blip); the floor under everyone's purse |
 | tree (`TREE_HP` 3, js/sim/world.js) | `treeFall` 0: a plain pine pays nothing (`treeHit` is 0 too) | side income, never the farm — a pine a second chained, and only a gold pine pays; leaves a stump |
-| dead tree (3 hp) | `deadTreeFall` 1 | a tree; none stand since 4.82 (the brown bear's ring went with its den) |
-| gold pine (25%) | `treeRare` 2 on the fell | the `rare` roll, `treeRare()`: one pine in four, unmarked, so a chain of pines pays about 28 a minute |
-| rabbit | `rabbit` 2 coins × 5 → 10 | bolts when approached; jinks one shot per 10 s |
-| deer | `deer` 3 coins × 6 → 18 | the big mobile target: two of them, each running its side's line |
-| wolf | `wolf` 2 coins × 8 → 16 | a den's four (64), each a FARM ([Farming](robots.md#farming)); neutral until hit, and then the pack bites back |
-| black bear | `alpha` 6 coins × 15 → 90 | BLUE's river camp's one; `EPIC_TEAM_GOLD` (40) to every teammate besides, and the BLACK BUFF for the whole team |
-| brown bear | `dire` 6 coins × 15 → 90 | RED's river camp's one; `EPIC_TEAM_GOLD` (40) to every teammate besides, and the BROWN BUFF for the whole team |
-| bird | `bird` 2 coins × 4 → 8 | dormant: nothing spawns one |
-| gold pump (`generator`) | `tiers[0].pay` (3) every `period` (10 s) to every hero of the side holding it — 18 a minute each | one of the map's two neutral objectives, taken by standing in its ring ([The gold pumps](buildings.md#the-gold-pumps)); both held is 36 a minute each, a little over twice the trickle |
+| dead tree (3 hp) | `deadTreeFall` 10 | a tree; none stand since 4.82 (the brown bear's ring went with its den) |
+| gold pine (25%) | `treeRare` 20 on the fell | the `rare` roll, `treeRare()`: one pine in four, unmarked, so a chain of pines pays about 280 a minute |
+| rabbit | `rabbit` 2 coins × 50 → 100 | bolts when approached; jinks one shot per 10 s |
+| deer | `deer` 3 coins × 60 → 180 | the big mobile target: two of them, each running its side's line |
+| wolf | `wolf` 2 coins × 80 → 160 | a den's four (640), each a FARM ([Farming](robots.md#farming)); neutral until hit, and then the pack bites back |
+| black bear | `alpha` 6 coins × 150 → 900 | BLUE's river camp's one; `EPIC_TEAM_GOLD` (400) to every teammate besides, and the BLACK BUFF for the whole team |
+| brown bear | `dire` 6 coins × 150 → 900 | RED's river camp's one; `EPIC_TEAM_GOLD` (400) to every teammate besides, and the BROWN BUFF for the whole team |
+| bird | `bird` 2 coins × 40 → 80 | dormant: nothing spawns one |
+| gold pump (`generator`) | `tiers[0].pay` (30) every `period` (10 s) to every hero of the side holding it — 180 a minute each | one of the map's two neutral objectives, taken by standing in its ring ([The gold pumps](buildings.md#the-gold-pumps)); both held is 360 a minute each, three times the trickle |
 | a sale at [the counter](the-merchants-counter.md) | half an item's price (a potion one at a time) | the one payout that does not count as earned (`tradeGold`) — a trade is an exchange, not a source |
 
-The table is sized so that soldiers stay the better farm: a lane's last hits pay 96 a minute at
-the start (3 soldiers a wave every 30 s at 16 each) and grow with the wave and the bounty, while
-a player chaining pines nonstop earns about 28 a minute (measured headless, 56 fells a minute),
-under half of it and a little under twice the trickle. The animals, camps and kills are
-where the rest comes from. The kit's `harvestMul` multiplies the fell (the payout rounds); nothing
-raises it from 1 while the cards are parked.
+The scale is League's: a finished item costs about 2600-3400 ([the items](the-merchants-counter.md#the-items)),
+and the table is sized so a laner who lands about two in three last hits holds one at about 5:00
+(measured headless off the real waves, which first reach a lane's middle at about 2:20 to 2:40:
+every last hit about 4:00, two in three about 5:00, two in five about 6:00). Soldiers stay the
+better farm: a lane's last hits pay 960 a minute at the start (3 soldiers a wave every 30 s at
+160 each) and grow with the wave and the bounty, while a player chaining pines nonstop earns about
+280 a minute (56 fells a minute), under a third of it and a little over twice the trickle. The
+animals, camps, pumps and kills are where the rest comes from; a takedown is three soldiers' worth
+(480), so a kill lead is gold lead. The kit's `harvestMul` multiplies the fell (the payout
+rounds); nothing raises it from 1 while the cards are parked.
 
 **Gold is never a physical drop.** Every source pays the earner on the spot through
 `awardGold(p, n, x, y)` (`players` banner, js/sim/player.js, beside `gainGold` — which it wraps,

@@ -311,12 +311,14 @@ bar. At rest `drawHeldTool()` draws the **hero's own weapon** instead, a 12×12
 its real length in `SPRITES.weaponHeld`); both sizes go
 through the same code because the icon is centred on its own half-width.
 
-The **gear icons** are twelve 12×12 grids (`gearLongsight` … `gearGhoststep`), each baked once per
-**material** — `GEAR_MAT_PALS`, leather → iron → steel → gold, plus the shared accent chars `w`
-(ice-white) and `r` (hearth-red) — into `SPRITES.gearIcons[slot][variant][material]`. They are
-item icon art now: a `BUILD_ITEMS` entry's `icon` of `['gear', slot, variant, material]` names one
-(`itemIcon`, js/sim/items.js; see [the items](gameplay/the-merchants-counter.md#the-items)). SUNSTONE's icon is the old
-sunstone ore's 8×8 cut gem, baked in js/sprites/weapons.js (`SPRITES.itemArt_sunstone`).
+The **item icons** are one 16×16 grid an item in [js/sprites/item-icons.js](../../js/sprites/item-icons.js),
+`SPRITES['item_' + id]` (`itemIcon`, js/sim/items.js; see [the items](gameplay/the-merchants-counter.md#the-items)),
+so a 20 px shop well shows each at 1x. One ink for all of them: a dark outline, flat lit planes on
+the top-left and shade on the bottom-right, and the material says the stat (steel and wood for
+damage, hide and fur for health, plate for armor, amber and violet for ability power, glass for
+cooldown speed, leather for boots). Each carries its own small palette beside its grid. The grids
+began as a primitives-and-shading script (kept with the shop's concept sheets in the project
+files) and are hand-editable sprites now. The potion keeps its own flask (`itemPotion`).
 
 **The pine is twenty-four bend frames of one tree**, and the first of the imported sprites — the
 others are the gold sack, the three animated goods and both prey, below:
@@ -540,7 +542,8 @@ Keys marked **(dead)** are still baked but read by nothing outside js/sprites/ a
 | `items.js` | items, gold nugget, gold sack, axe icon | `itemWood` **(dead)**, `itemPotion` (the health potion's 11×12 flask), `itemAnim` + the gold's live icon, `goldSack`, `itemAxe`/`itemBow` |
 | `buildings.js` | the barracks bay, soldiers, the merchant's stall, spikes, fire, torch | `teamBuild` (`spawner`, `stall`), `robotTeam`, `robot`, `spikes` **(dead)**, `fire`, `torch` **(dead)** |
 | `landmarks.js` | landmarks | `landmark` (`boat`) |
-| `icons.js` | gear icons (item icon art), heart, cursors | `gearIcons`, `heart*`, `cursor`, `cursorShadow` |
+| `icons.js` | cursors | `cursor`, `cursorShadow` |
+| `item-icons.js` | item icons | `item_<id>` (one a `BUILD_ITEMS` entry) |
 
 The grids are **pure ASCII and byte-fragile**: `bake()` sizes each canvas from `rows[0].length`
 alone, and an unmatched palette char is indistinguishable from a transparent pixel, so a row that

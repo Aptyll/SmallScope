@@ -160,7 +160,7 @@ function botObserve(p) {
   let shop = null;
   if (me.atShop) {
     shop = [];
-    for (const id in BUILD_ITEMS) shop.push({ id, part: isPart(id), stack: BUILD_ITEMS[id].stack || 0, price: itemCost(p, id).gold, from: (BUILD_ITEMS[id].from || []).slice() });
+    for (const id in BUILD_ITEMS) shop.push({ id, part: isPart(id), tier: itemTier(id), boots: isBoots(id), stack: BUILD_ITEMS[id].stack || 0, price: itemCost(p, id).gold, from: (BUILD_ITEMS[id].from || []).slice() });
   }
   const r = botRt.get(p.id);
   // the kill feed every screen shows: each death since this seat's last think

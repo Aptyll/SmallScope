@@ -51,7 +51,8 @@ function statFrom(cls, level, add, key) {
   return (c.base[key] || 0) + (c.grow[key] || 0) * Math.max(0, level - 1) + (add ? add[key] : 0);
 }
 // (plus what a hero's own state adds: HERO_STAT, js/sim/heroes.js)
-function statOf(p, key) { return statFrom(p.cls, p.level, kitOf(p).add, key) + heroStat(p, key); }
+// (and what an item's passive adds while it holds: itemStat, js/sim/items.js)
+function statOf(p, key) { return statFrom(p.cls, p.level, kitOf(p).add, key) + heroStat(p, key) + itemStat(p, key); }
 function asMul(p) { return asMulFrom(p.cls, p.level, kitOf(p).add); }
 // what a running buff multiplies a stat by right now (1 = nothing). The bear
 // buffs (campBuff, js/sim/wildlife.js) raise every blow landed and the walk;
@@ -73,7 +74,8 @@ function statParts(p, key) {
   rows.push(['BASE', key === 'as' ? classAs(p.cls) : c.base[key] || 0, 'base']);
   if (n && c.grow[key]) rows.push(['LEVEL ' + p.level, c.grow[key] * n, kind[0]]);
   if (Math.abs(it) > 1e-9) rows.push(['ITEMS', it, kind[1]]);
-  for (const h of HERO_STAT) { const v = h.add(p, key); if (v) rows.push([h.name, v, 'add']); } // a hero's own: a rallying standard underfoot (js/sim/heroes.js)
+  for (const h of HERO_STAT) { const v = h.add(p, key); if (v) rows.push([h.name, v, 'add']); }
+  const iv = itemStat(p, key); if (iv) rows.push([ITEM_PASSIVES.brace.name, iv, 'add']); // BRACE while badly hurt (js/sim/items.js) // a hero's own: a rallying standard underfoot (js/sim/heroes.js)
   const b = statBuffMul(p, key);
   if (b !== 1) rows.push([(MONSTER[p.buffKind] && MONSTER[p.buffKind].buff) || 'BUFF', b - 1, 'buff']);
   return rows;

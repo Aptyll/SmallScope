@@ -259,13 +259,15 @@ edit has changed how an attack plays.
 **Adding an item to the merchant's counter**: one `BUILD_ITEMS` entry in
 [js/sim/items.js](../../js/sim/items.js). A part has a `price`, one stat and an `icon`; a finished
 item adds `from` (its parts, a part named twice is needed twice) and a `passive`. The grid, the
-build tree, the price that drops by the parts held, the tooltip and the save all pick it up; the
-panel's grid is four a row (`SHOP_COLS`), so a ninth finished item is a third row and the slab's
-`SHOP_H` has to grow with it. A new **stat** is one `ITEM_STATS` row (its label, its format and
-what it writes into the kit) plus its place in `ITEM_STAT_ORDER` and an icon in `drawShopCats`
-(js/ui/shop.js). A new **passive** is one `ITEM_PASSIVES` row: a kit field the sim already reads
-needs nothing else; anything that happens on a hit or on the clock goes in `itemsOnHit` or
-`itemsTick`, and a new kit field gets its default in `baseKit` (js/sim/player.js). Put the item in
+build tree, BUILDS INTO, the price that drops by the components held, the tooltip and the save all
+pick it up. It needs an icon: a 16×16 grid `I.<id>` in js/sprites/item-icons.js. The ALL ITEMS
+grid is `SHOP_COLS` (13) a row a kind, so a fourteenth item of one kind runs on into a new row and
+the slab's `SHOP_H` may have to grow with it. A new **stat** is one `ITEM_STATS` row (its label, its
+short label, its format and what it writes into the kit) plus its place in `ITEM_STAT_ORDER` and a
+`STAT_ICON` (js/ui/statpanel.js). A new **passive** is one `ITEM_PASSIVES` row: a kit field the sim
+already reads needs nothing else; anything that happens on a blow goes in `itemsDeal`,
+`itemsOnHit` or `itemsOnHurt`, on a key in `itemsOnCast`, on the clock in `itemsTick`, and a new kit
+field gets its default in `baseKit` (js/sim/player.js). Put the item in
 the bots' `BOT_BUILDS` if a class should buy it. A **stack** item (`stack: n`, the potion) is
 built from nothing and into nothing, sits in one slot with its count in `p.potions`, and needs its
 own buy, sell and use branches (`buyPotion`, `takePotion`, `useItem`).
@@ -512,7 +514,7 @@ already current, so it is safe to call from a state change that repeats.
 | js/sim/farm.js | `SOLDIER_BOUNTY`/`SOLDIER_BOUNTY_GROW` (a soldier's last hit), `COIN_POP_T`; the bots' farm knobs `AI_FARM_*`/`AI_DEN_EARLY`/`AI_LANE_N`/`AI_JUNGLE_N` sit in js/ai/ai-farm.js |
 | js/sim/actions.js | `WORK_REACH` and the roll/prone blocks |
 | js/sim/player.js, js/sim/attack.js | each hero's basic attack (`CLASSES[c].attack`: cycle, knockback, a shot's speed and life or a cut's reach and sweep); the draw curve (`DRAW_*_MIN`) and the damage roll in `attackDmg()` |
-| js/sim/items.js | `BUILD_ITEMS` (every part's and item's price, stats and passive), `ITEM_PASSIVES`, `ITEM_SELL`, `ITEM_FIGHT_T`, `KINDLE_EVERY`/`KINDLE_BURN`, `CHILL_T`/`CHILL_MUL`, the bots' `BOT_BUILDS` |
+| js/sim/items.js | `BUILD_ITEMS` (every item's price, recipe, stats and passive), `ITEM_PASSIVES`, `ITEM_SELL`, `ITEM_LEGEND_PRICE`, `ITEM_FIGHT_T`, every passive's numbers (`KINDLE_*`, `CHILL_*`, `LEECH_SHARE`, `THORN_SHARE`, `CULL_*`, `STEADY_MUL`, `SURGE_*`, `BRACE_*`, `SMOLDER_*`, `SCORCH_BURN`, `AMPLIFY_MUL`), the bots' `BOT_BUILDS` |
 | js/ui/shop.js | `SHOP_REACH` |
 | js/ai/ai-skill.js | every level's numbers (`AI_LEVELS`: the hand fields, the choice knobs, `push`/`guard`), the ally clocks (`AI_ALLY_PUSH`), the ladder's hands (`AI_LADDER_HANDS`), the skill layer's clocks (`AI_SETTLE`, `AI_WOBBLE_T`, `AI_ALERT_T`, `AI_AIM_ON`, `AI_BLADE_CLOSE`, `AI_BLADE_HOLD`) |
 | js/ai/ai.js | the bot ranges (`AI_SIGHT`, `AI_HUNT`, `AI_FORAGE`); the objective clocks (`AI_ESCALATE`, `AI_JOIN_HP`, `AI_ALARM_HP`, `AI_ROOST_R`); the waves as a bot reads them (`AI_WAVE_R`/`AI_WAVE_D`); how far a bot walks to its counter to buy (`AI_SHOP_DETOUR`) |

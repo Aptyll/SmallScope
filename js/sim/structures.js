@@ -21,7 +21,7 @@ const STRUCTS = {
   // side is paid `pay` every `period` s; its stroke runs off o.payT against
   // `period` (pumpFrame). Nothing hurts it, so its hp and cost go unread.
   generator: { name: 'GOLD PUMP', w: 4, h: 2, mm: mmPump, map: chPump, tiers: [
-    { cost: { gold: 60 },  hp: 160, buildT: 20, pay: 3, period: 10 },
+    { cost: { gold: 60 },  hp: 160, buildT: 20, pay: 30, period: 10 },
   ]},
   // THE BARRACKS: the wave bays each merchant raises in the back woods
   // behind its roost, the first MERCH_BAY_T after the landing and up to
@@ -35,7 +35,7 @@ const STRUCTS = {
   // nobody fights back against does not fill the map, it waits for its
   // column to spend itself.
   barracks: { name: 'BARRACKS', w: 3, h: 2, art: 'spawner', sight: 176, mm: mmTeam, map: chTeam, tiers: [
-    { cost: { gold: 40 }, hp: 320, buildT: 12, wave: 3, waveT: 30, grow: 180, botHp: 60, cap: 8 }, // cap: soldiers a LANE holds, queued or out; botHp: a soldier's health at the start, grown by SOLDIER_HP_GROW (js/sim/robots.js)
+    { cost: { gold: 400 }, hp: 320, buildT: 12, wave: 3, waveT: 30, grow: 180, botHp: 60, cap: 8 }, // cap: soldiers a LANE holds, queued or out; botHp: a soldier's health at the start, grown by SOLDIER_HP_GROW (js/sim/robots.js)
   ]},
   // THE ROAD TOWER: the map's, never a wallet's - two stand on each side's
   // cable at boot (placeTowers, js/sim/towers.js), each with a crossbow on
@@ -45,7 +45,7 @@ const STRUCTS = {
   // sim (TOWER_*, towers.js).
   // It sees from its foot, half again past a hero (TOWER_RANGE is 112).
   tower: { name: 'ROAD TOWER', w: 3, h: 2, call: true, sight: 240, eye: (o) => towerFoot(o), mm: mmTeam, map: chTeam, tiers: [
-    { cost: { gold: 150 }, hp: 700, buildT: 1 },
+    { cost: { gold: 1500 }, hp: 700, buildT: 1 },
   ]},
 };
 const BARRACKS_ROLL = 0.5; // s between the soldiers of one wave leaving the door
