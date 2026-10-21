@@ -12,6 +12,10 @@ const HERE = __dirname, ROOT = path.join(HERE, '..');
 const APP = path.join(HERE, 'app');   // the game's files, copied for the package
 const DIST = path.join(HERE, 'dist');
 const NAME = 'Softfall';
+// every package.json dependency must be installed, or the build ships without it (koffi: the friends panel)
+for (const dep of Object.keys(require('./package.json').dependencies)) {
+  try { require.resolve(dep + '/package.json', { paths: [HERE] }); } catch (e) { console.error('missing ' + dep + ': run npm install in desktop/'); process.exit(1); }
+}
 
 // the game: the page and its tab icon (and the bot lab's page, F6), the code, the music. Nothing from docs/, app/ or the wrapper's own
 // node_modules, and of audio/ only the streamed tracks - the sample clips are baked into
@@ -30,9 +34,9 @@ fs.rmSync(DIST, { recursive: true, force: true });
     dir: HERE, out: DIST, name: NAME, platform: 'win32', arch: 'x64', overwrite: true, asar: false,
     // anchored to this folder's own dist/: node_modules/steamworks.js/dist holds the native module and steam_api64.dll.
     // app.* catches a stale copy of the game parked beside app/ (app.stale-3.47 once shipped 46 MB);
-    // the type packages are editor-only
+    // the type packages are editor-only; koffi (desktop/steam-friends.js) ships every platform's binary and only win32_x64's is kept
     ignore: [/^[\\/]dist([\\/]|$)/, /^[\\/]app\.[^\\/]+/, /^[\\/]build\.js$/, /^[\\/]package-lock\.json$/,
-      /^[\\/]node_modules[\\/](@types|undici-types)([\\/]|$)/],
+      /^[\\/]node_modules[\\/](@types|undici-types)([\\/]|$)/, /^[\\/]node_modules[\\/]koffi[\\/]build[\\/]koffi[\\/](?!win32_x64)/],
     executableName: NAME,
   });
   // Steam's runtime reads the App ID from a file beside the exe

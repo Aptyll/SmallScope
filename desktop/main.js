@@ -37,6 +37,10 @@ try {
   steamworks.electronEnableSteamOverlay();
 } catch (e) { steamErr = e.message; }
 slog('appId ' + APP_ID + ' (env SteamAppId=' + (process.env.SteamAppId || '') + ') init ' + (steam ? 'OK' : 'FAILED: ' + steamErr));
+// the friends list and the direct invite, which steamworks.js lacks (steam-friends.js)
+const friends = steam ? require('./steam-friends.js').steamFriends(APP_ID) : null;
+if (steam) slog('friends ' + (friends.ok ? 'OK' : 'FAILED: ' + friends.error));
+const myId = () => (steam ? str(steam.localplayer.getSteamId().steamId64) : null);
 
 const args = {};
 for (const a of process.argv.slice(1)) { const m = /^--(\w+)(?:=(.*))?$/.exec(a); if (m) args[m[1]] = m[2] === undefined ? '1' : m[2]; }
@@ -124,6 +128,26 @@ ipcMain.handle('steam:setLobbyData', (e, id, data) => { const l = lobbies.get(St
 ipcMain.handle('steam:log', (e, line) => { slog(String(line).slice(0, 500)); return true; });
 ipcMain.handle('win:flash', () => { if (win && !win.isDestroyed() && !win.isFocused()) win.flashFrame(true); return true; });
 ipcMain.handle('steam:invite', (e, id) => { const l = lobbies.get(String(id)); if (l) l.openInviteDialog(); return !!l; });
+// THE FRIENDS PANEL (js/ui/friends.js). friends() is the list; inviteFriend
+// asks Steam to invite one friend to a lobby AND drops an INVITE_MAGIC packet
+// on them, which their game shows as an in-game card (the pump below); the
+// overlay calls open Steam's own pages, since a game cannot send a friend
+// request itself; presence sets this player's rich presence (Steam's own
+// friends list shows `status` and, through `connect`, Join Game); playedWith
+// marks the lobby's other members as played with
+const INVITE_MAGIC = 0xB2;
+ipcMain.handle('steam:friends', () => (friends ? friends.list(myId()) : { ok: false, error: steamErr }));
+ipcMain.handle('steam:inviteFriend', (e, lobby, id, card) => {
+  if (!friends || !friends.ok) return false;
+  const ok = friends.invite(lobby, id);
+  const body = Buffer.from(JSON.stringify(Object.assign({}, card, { lobby: String(lobby) })).slice(0, 1000), 'utf8');
+  steam.networking.sendP2PPacket(BigInt(id), 2, Buffer.concat([Buffer.from([INVITE_MAGIC]), body]));
+  return ok;
+});
+ipcMain.handle('steam:overlayUser', (e, dialog, id) => (friends ? friends.overlayUser(String(dialog), String(id)) : false));
+ipcMain.handle('steam:overlayFriends', () => (friends ? friends.overlay() : false));
+ipcMain.handle('steam:presence', (e, kv) => (friends ? friends.presence(kv) : false));
+ipcMain.handle('steam:playedWith', (e, lobby) => { const l = lobbies.get(String(lobby)); return friends && l ? friends.playedWith(l.getMembers().map((m) => str(m.steamId64)), myId()) : []; });
 // text goes as utf8, bytes as they are; steamworks.js exposes Steam's older
 // P2P sockets, whose reliable packet is capped at 1 MB and unreliable at
 // 1200 bytes - the transport (js/net/transport-steam.js) chunks a message to
@@ -138,11 +162,20 @@ function pump() {
   let n;
   while ((n = steam.networking.isP2PPacketAvailable()) > 0) {
     const pk = steam.networking.readP2PPacket(n);
+    if (pk.data[0] === INVITE_MAGIC) { invited(str(pk.steamId.steamId64), pk.data); continue; }
     // a binary frame (the transport's magic first byte) goes to the page as bytes, anything else as text
     list.push(pk.data[0] === 0xB1 ? { from: str(pk.steamId.steamId64), bin: new Uint8Array(pk.data) } : { from: str(pk.steamId.steamId64), text: pk.data.toString('utf8') });
     if (list.length >= 64) break;
   }
   if (list.length) win.webContents.send('steam:packets', list);
+}
+// a friend's invite packet: shown as a card in the game, from friends only
+function invited(from, data) {
+  if (!friends || !friends.isFriend(from)) return;
+  let c; try { c = JSON.parse(data.subarray(1).toString('utf8')); } catch (e) { return; }
+  if (!c || !/^\d+$/.test(String(c.lobby || ''))) return;
+  emit({ t: 'invite', from, name: friends.nameOf(from), lobby: String(c.lobby), mode: String(c.mode || ''), n: c.n | 0, patch: String(c.patch || '') });
+  if (win && !win.isDestroyed() && !win.isFocused()) win.flashFrame(true);
 }
 if (steam) {
   const CB = steam.callback.SteamCallback;
