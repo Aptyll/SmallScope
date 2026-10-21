@@ -22,8 +22,9 @@
 // and to the gold and XP a kill pays, at levels 1, 6 and 12, read off the same
 // constants the sim spends (ANIMAL_HP, ANIMAL_LV_HP, YIELD, ANIMAL_LV_GOLD, ANIMAL_LV_XP,
 // js/sim/wildlife.js and js/sim/core.js), so the page can never disagree with the
-// game. The CLASSES page is the two classes as the lobby reads them -
-// body, pitch and level 1 stats - and their eight abilities
+// game. The CLASSES page is every hero as the lobby reads them -
+// body, pitch and level 1 stats, the hero's story (who they were before
+// the pass, CLASSES `story`) - and their abilities
 // with the cooldown, the cast and what each does, off CLASS_AB itself. The
 // WORLD page is the one with no numbers on it: the valley written down - the
 // snow, what is under it, the one law, and who is on it - each entry a figure
@@ -75,6 +76,8 @@ const WIKI_AB_COLS = [
   { label: 'COOLDOWN', w: 40, get: (ab) => tipSec(rankAt(ab.cd, 1)) }, // rank 1's: the card says every rank's
   { label: 'CAST', w: 32, get: (ab) => tipSec(ab.cast) },
 ];
+const WIKI_CLS_TEXT_X = 56; // where a class card's words start, right of its 48 px model
+const WIKI_STORY_INK = '#a8b4d6'; // a hero's story: quieter than the pitch, warmer than the rules
 const WIKI_STATS = ['hp', 'dmg', 'as', 'armor', 'ms']; // the class card's rows: its level 1 numbers (STATS, js/sim/stats.js)
 // a sentence broken into lines no wider than maxW, on word boundaries
 function wikiWrap(text, maxW) {
@@ -88,7 +91,7 @@ function wikiWrap(text, maxW) {
   return lines;
 }
 
-// the world page: the setting, in the order a scout meets it. An entry is a
+// the world page: the setting, in the order an exile meets it. An entry is a
 // name, a paragraph (wrapped to the column when the page is built) and `fig` -
 // the sprites that stand on its mound, left to right, read at draw time so
 // they wear the side you play. `road` stands them on packed earth, not snow,
@@ -98,39 +101,46 @@ function wikiWrap(text, maxW) {
 const WIKI_FIG_W = 44;   // the figure column...
 const WIKI_TEXT_X = 52;  // ...and where an entry's words start, off the content's left margin
 const WIKI_BEAST_W = 52; // a beast card's figure column, at least: a wider beast widens its own
+// a hero standing in the snow as the world draws it, in your side's coat
+function wikiHero(cls, dir) { return SPRITES.champLook(cls, CLASSES[cls].look, skin(player.team))[dir][0]; }
 const WIKI_WORLD = [
   { name: 'SOFTFALL', fig: () => [SPRITES.tree[0]],
     text: 'THE SNOW CAME DOWN SOFT AND DID NOT STOP, AND THE VALLEY\'S OLD WORKS WENT UNDER WHOLE. IT STILL FALLS EVERY WINTER, AND THE VALLEY COMES OUT FROM UNDER IT A DIFFERENT SHAPE EACH TIME. NO MAP OF SOFTFALL IS GOOD FOR TWO WINTERS.' },
+  { name: 'THE EMPIRE', fig: () => [wikiHero(2, 'down'), wikiHero(4, 'down')],
+    text: 'OVER THE PASS IS AN EMPIRE BIG ENOUGH THAT IT HAS NEVER NEEDED A NAME. IT KEEPS WHAT IT CAN USE. THE REST IT WALKS UP TO THE LAST PASS, A GENERAL OR A LAMPLIGHTER ALIKE, AND SHUTS THE GATE BEHIND THEM. NOBODY IS LET BACK.' },
+  { name: 'THE EXILES', fig: () => [SPRITES.champ[0][skin(player.team)].down[0], SPRITES.champ[1][skin(player.team)].down[0]],
+    text: 'NOBODY IN SOFTFALL WAS BORN HERE. A SOLDIER WHO WALKED HOME, A SMITH WHO WOULD NOT KNEEL, A GENERAL WHO WON THE WRONG WAR: THE VALLEY TAKES ANYONE WHO CAN DIG. ONE WHO GOES DOWN IS CARRIED BACK TO THE ROOST AND SENT OUT AGAIN, AND THE BETTER THE EXILE, THE LONGER THE COMPANY MAKES THEM SIT FIRST.' },
   { name: 'THE WORKS', fig: () => [SPRITES.deadTree[0]],
     text: 'NOBODY ALIVE SAW THE WORKS RUNNING. THE PINES GREW UP THROUGH THEM, SO THERE IS GOLD IN THE WOOD. THE ROAD, ITS TOWERS AND THE MACHINES ARE WHAT STILL STANDS ABOVE THE SNOW.' },
   { name: 'THE CLAIM', fig: () => [SPRITES.champ[0][skin(player.team)].right[0], SPRITES.champ[1][skin(1 - player.team)].left[0]],
-    text: 'VALLEY LAW IS ONE LINE LONG: A CLAIM STANDS WHILE ITS BIRD HOLDS ITS ROOST. SO NOBODY COMES TO SOFTFALL TO KILL ANYBODY. SCARE THE OTHER COMPANY\'S BIRD OFF ITS GROUND AND THE WHOLE VALLEY IS YOURS UNTIL THE NEXT SNOW.' },
+    text: 'TWO COMPANIES HIRE EXILES TO DIG THE WORKS OUT, AND NEITHER ASKS WHERE THEY CAME FROM. VALLEY LAW IS ONE LINE LONG: A CLAIM STANDS WHILE ITS BIRD HOLDS ITS ROOST. SO NOBODY COMES TO SOFTFALL TO KILL ANYBODY. SCARE THE OTHER BIRD OFF ITS GROUND AND THE VALLEY IS YOURS UNTIL THE NEXT SNOW.' },
   { name: 'THE EAGLES', air: true, fig: () => [SPRITES.perch.figure(BIRD_SKINS[0].id, skin(player.team))],
-    text: 'BIG ENOUGH TO CARRY FIVE SCOUTS AND A MERCHANT, ARMOURED IN COMPANY COLOUR, AND BRAVE ONLY UP TO A POINT. IT BEATS ITS WINGS AT WHATEVER CROWDS IT. HIT IT ENOUGH AND ITS NERVE GOES. IT LEAVES, AND ITS COMPANY LEAVES WITH IT.' },
-  { name: 'THE SCOUTS', fig: () => [SPRITES.champ[0][skin(player.team)].down[0], SPRITES.champ[1][skin(player.team)].down[0]],
-    text: 'A COMPANY SENDS FIVE. HUNTERS KEEP THE GAP AND WARRIORS CLOSE IT. A SCOUT WHO GOES DOWN IS CARRIED BACK TO THE ROOST AND SENT OUT AGAIN WITH EVERYTHING THEY HAD. THE BETTER THE SCOUT, THE LONGER THE COMPANY MAKES THEM SIT FIRST.' },
+    text: 'BIG ENOUGH TO CARRY FIVE EXILES AND A MERCHANT, ARMOURED IN COMPANY COLOUR, AND BRAVE ONLY UP TO A POINT. IT BEATS ITS WINGS AT WHATEVER CROWDS IT. HIT IT ENOUGH AND ITS NERVE GOES. IT LEAVES, AND ITS COMPANY LEAVES WITH IT.' },
   { name: 'THE COUNTER', fig: () => [SPRITES.merchant[skin(player.team)].down[0]],
     text: 'THE MERCHANTS ARE A GUILD OF THEIR OWN. ONE RIDES IN WITH EACH BIRD, BUILDS ITS BARRACKS AND SELLS TO ANY PURSE THAT WALKS UP, YOURS OR THEIRS. THEY ARE NOT ON A SIDE. THEY ARE ON THE PRICE OF FISH. NOBODY LAYS A HAND ON ONE.' },
   { name: 'THE MACHINES', fig: () => [SPRITES.robotTeam[skin(player.team)][0], SPRITES.robotTeam[skin(player.team)][1]],
     text: 'OLDER THAN THE ROAD. THEY SLEEP UNDER THE SNOW UNTIL GOLD WAKES ONE, AND THEN THEY DO THE ONE THING THEY REMEMBER: GATHER, GUARD, OR MARCH. WHO BUILT THEM IS THE VALLEY\'S FAVOURITE ARGUMENT.' },
   { name: 'THE ROAD', road: true, fig: () => [SPRITES.robotTeam[skin(player.team)][0], SPRITES.robotTeam[skin(1 - player.team)][0]],
-    text: 'ONE STRAIGHT LANE FROM CORNER TO CORNER, PACKED HARD BY WHATEVER THE WORKS HAULED ALONG IT. BOTH BIRDS ROOST BESIDE IT AND BOTH COLUMNS MARCH DOWN IT, SO EVERYTHING IN SOFTFALL ENDS UP ON THE ROAD. MOST OF IT MEETS IN THE MIDDLE.' },
+    text: 'THE WORKS\' HAUL ROAD RUNS STRAIGHT FROM ROOST TO ROOST, PACKED HARD BY WHATEVER THEY HAULED ALONG IT, AND A TRACK RUNS ROUND EACH SIDE OF THE VALLEY BY THE TREES. BOTH COLUMNS MARCH DOWN ALL THREE, SO EVERYTHING IN SOFTFALL ENDS UP ON A ROAD. MOST OF IT MEETS IN THE MIDDLE.' },
   { name: 'THE TOWERS', road: true, fig: () => [towerFigure(skin(player.team))],
-    text: 'THE WORKS RAISED THEM IN CUT STONE TO HOLD THE ROADS, TWO TO EVERY CABLE, AND GOLD WOKE THE CROSSBOWS ON TOP. A COMPANY\'S CABLE RUNS NO FURTHER THAN ITS LAST TOWER STANDING. A TOWER SHOOTS THE MARCHING COLUMN, UNTIL A SCOUT HURTS ONE OF ITS OWN UNDER IT.' },
+    text: 'THE WORKS RAISED THEM IN CUT STONE TO HOLD THE ROADS, TWO TO EVERY CABLE, AND GOLD WOKE THE CROSSBOWS ON TOP. A COMPANY\'S CABLE RUNS NO FURTHER THAN ITS LAST TOWER STANDING. A TOWER SHOOTS THE MARCHING COLUMN, UNTIL AN EXILE HURTS ONE OF ITS OWN UNDER IT.' },
   { name: 'THE WOLVES', fig: () => [SPRITES.wolf.right.idle[0], SPRITES.wolf.left.idle[0]],
     text: 'THE WOLVES WERE HERE FIRST AND HAVE NO OPINION ABOUT CLAIMS. LEAVE A DEN ALONE AND IT LEAVES YOU ALONE. THE BLACK BEAR KEEPS TO ITS STONE AND THE BROWN BEAR TO ITS DEN, AND A COMPANY THAT BRINGS ONE DOWN WALKS TALLER FOR A WHILE.' },
   { name: 'GOLD', fig: () => [SPRITES.goldSack[SPRITES.goldSack.length - 1]],
-    text: 'THE ONLY THING THE VALLEY PAYS IN. THE WORKS WILL MAKE A SCOUT RICH, BUT A PINE NEVER TAUGHT ANYBODY ANYTHING. A SCOUT LEARNS ON THE ROAD, STANDING CLOSE WHEN THINGS FALL, AND THAT IS ALL A LEVEL IS.' },
+    text: 'THE ONLY THING THE VALLEY PAYS IN. THE WORKS WILL MAKE AN EXILE RICH, BUT A PINE NEVER TAUGHT ANYBODY ANYTHING. AN EXILE LEARNS ON THE ROAD, STANDING CLOSE WHEN THINGS FALL, AND THAT IS ALL A LEVEL IS.' },
 ];
 
 const WIKI_PAGES = [
-  { id: 'classes', label: 'CLASSES', build() {
+  { id: 'classes', label: 'CLASSES', build(cw) {
     const b = [];
     b.push({ kind: 'line', h: 9, text: 'THE HEROES, ONE PICKED ON THE WAY IN. KEYS 1-4 ARE THE HERO, EACH ON ITS OWN COOLDOWN.', col: '#cfe0ff' });
     b.push({ kind: 'line', h: 9, text: 'A SKILL POINT UNLOCKS A KEY OR RANKS IT UP: ' + AB_RANK_LV.length + ' RANKS ON KEYS 1-3, ' + AB_ULT_LV.length + ' ON 4 AT LEVELS ' + AB_ULT_LV.join(', ') + '.', col: TIP_DIM });
     CLASSES.forEach((c, cls) => {
       b.push({ kind: cls ? 'rule' : 'gap', h: cls ? 10 : 4 });
       b.push({ kind: 'cls', h: 52, cls });
+      // who the hero was before the pass, under the card the way League's
+      // champion page puts the bio over the abilities (CLASSES `story`)
+      if (c.story) { const lines = wikiWrap(c.story, cw - WIKI_CLS_TEXT_X); b.push({ kind: 'story', h: lines.length * 8 + 8, lines }); }
       b.push({ kind: 'head', h: 12, text: 'KEYS 1-4', cols: WIKI_AB_COLS });
       if (c.passive) b.push({ kind: 'ab', h: 36, cls, i: -1, cols: [] }); // a named hero's passive heads its keys (HERO_PASSIVE, js/sim/heroes.js)
       CLASS_AB[cls].forEach((ab, i) => abOptions(cls, i).forEach((o, k) => b.push({ kind: 'ab', h: 36, cls, i, k, cols: WIKI_AB_COLS })));
@@ -170,8 +180,8 @@ const WIKI_PAGES = [
     // tall as the taller of its figure and its paragraph
     const b = [];
     const para = (text, col) => { for (const t of wikiWrap(text, cw)) b.push({ kind: 'line', h: 9, text: t, col }); };
-    para('SOFTFALL IS A VALLEY AND THE SNOW THAT BURIED IT. EACH WINTER TWO COMPANIES FLY IN TO DIG.', '#cfe0ff');
-    para('NOBODY IS HERE TO KILL ANYBODY. THE VALLEY HAS ONE LAW, AND IT IS ABOUT A BIRD.', TIP_DIM);
+    para('SOFTFALL IS A VALLEY OVER THE EMPIRE\'S LAST PASS, AND THE SNOW THAT BURIED IT.', '#cfe0ff');
+    para('THE EMPIRE THROWS PEOPLE OUT. THE VALLEY TAKES ANYONE WHO CAN DIG.', TIP_DIM);
     b.push({ kind: 'rule', h: 10 });
     for (const e of WIKI_WORLD) {
       const lines = wikiWrap(e.text, cw - WIKI_TEXT_X);
@@ -184,7 +194,7 @@ const WIKI_PAGES = [
   } },
 ];
 // a page's blocks, built once per content width: the content is constant, and
-// only the WORLD page's wrap reads the width at all
+// only the sentences (the WORLD page, a hero's story) wrap to the width
 const wikiBuilt = {};
 function wikiBlocks(pageId, cw) {
   const key = pageId + ':' + cw;
@@ -406,7 +416,7 @@ function renderWiki(now, a) {
       const c = CLASSES[bl.cls];
       const spr = SPRITES.champLook(bl.cls, c.look, skin(player.team)).down[0];
       ctx.drawImage(spr, L.left, y + 2, 48, 48);
-      const tx = L.left + 56;
+      const tx = L.left + WIKI_CLS_TEXT_X;
       drawPixelTextShadow(ctx, c.name, tx, y + 4, '#ffd95c', '#0a0e23');
       drawPixelTextShadow(ctx, c.role, tx + pixelTextWidth(c.name) + 7, y + 4, TIP_LABEL, '#0a0e23');
       c.blurb.forEach((t, k) => drawPixelTextShadow(ctx, t, tx, y + 14 + k * 8, k ? TIP_DIM : '#cfe0ff', '#0a0e23'));
@@ -416,6 +426,11 @@ function renderWiki(now, a) {
         drawPixelTextShadow(ctx, s.name, lx - pixelTextWidth(s.name), ry, TIP_LABEL, '#0a0e23');
         drawPixelTextShadow(ctx, v, L.right - pixelTextWidth(v), ry, '#f4f7ff', '#0a0e23');
       });
+    } else if (bl.kind === 'story') {
+      // the hero's story under its card, hung off a thin rule like a quote
+      const tx = L.left + WIKI_CLS_TEXT_X;
+      ctx.fillStyle = '#2c3a68'; ctx.fillRect(tx - 5, y + 1, 1, bl.h - 6);
+      bl.lines.forEach((t, k) => drawPixelTextShadow(ctx, t, tx, y + 1 + k * 8, WIKI_STORY_INK, '#0a0e23'));
     } else if (bl.kind === 'ab') {
       // an ability: its key on a plate, its icon in a well (the strip's
       // own), its name, the two numbers in the columns, and what it does

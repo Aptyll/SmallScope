@@ -292,7 +292,7 @@ On the lobby's painted night, in [js/ui/skins.js](../../../js/ui/skins.js)
 (`menu.screen = 'skins'`, `beginSkins`/`leaveSkins`, its own ease `menu.skinT`). `skinsLayout()`
 is the one rect source for the draw, the hit test (`skinsHit`) and the cursor.
 
-- **The navbar** over the grid's left edge is one tab per `SKIN_TABS` category (SCOUT, EAGLE,
+- **The navbar** over the grid's left edge is one tab per `SKIN_TABS` category (HERO, EAGLE,
   WEAPON, TRAIL, then a tab per named hero, ARMATOS, FORTIVA and BELLA; `drawSkinTab`): an 8x8 glyph and the word, slate at rest, pale under the hand,
   white on the open tab (`menu.skTab`, the eagle at boot) with a 1 px line as wide as the word.
   A click, Q/E, or up off the grid's top row then left/right (`menu.skNav`) turns it. The purse
@@ -305,7 +305,7 @@ is the one rect source for the draw, the hit test (`skinsHit`) and the cursor.
   colour along the foot. Rims are slate, lighter under the hand, bright steel on the worn and the
   picked card. The weapon and trail tables and every tinted scout row are placeholders: today's
   portrait or bow washed in the row's tint, or a streak in its two colours, and nothing in a match
-  wears them. The IRON SCOUT row is real: its card is the robot's own 64 px `icon`, and a match
+  wears them. The IRON HERO row is real: its card is the robot's own 64 px `icon`, and a match
   wears it (below). So is a hero's tab (`hero` on the tab, ARMATOS's `ARM_SKINS`, FORTIVA's `FORT_SKINS`, BELLA's `BELLA_SKINS`): its card is the
   hero standing in that look.
 - **A press** (`skinPress`) on an owned card wears it; on a card for sale it picks it
@@ -317,6 +317,6 @@ is the one rect source for the draw, the hit test (`skinsHit`) and the cursor.
   local player's company wears the skin worn, the other company the free first row (skins are
   not sent over the wire). `drawEagle` asks it at draw time; it is paint, never read by the sim.
   `scoutBody(p)` is the same for a player: only the local player wears the scout skin worn, as a
-  body of its own (the IRON SCOUT, [sprites](../sprites.md)), and every other player the class body.
+  body of its own (the IRON HERO, [sprites](../sprites.md)), and every other player the class body.
   A hero's look is the exception: it is sent (`p.skins`, [classes](../multiplayer.md#classes)), so
   everyone sees the look a person wears; bots wear the hero's own.

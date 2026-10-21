@@ -64,7 +64,7 @@ const SCOUT_SKINS = [
   { id: 'frost', name: 'FROSTBITE', rarity: 'rare', price: 200, tint: '#8fd4ff' },
   { id: 'ember', name: 'EMBERWALK', rarity: 'rare', price: 200, tint: '#e0603a' },
   { id: 'aurora', name: 'AURORA', rarity: 'epic', price: 400, tint: '#6ae0c0' },
-  { id: 'robot', name: 'IRON SCOUT', rarity: 'legend', price: 800, body: 'robotSkin' },
+  { id: 'robot', name: 'IRON HERO', rarity: 'legend', price: 800, body: 'robotSkin' },
 ];
 const WEAPON_SKINS = [
   { id: 'plain', name: 'BARE WOOD', rarity: 'common', price: 0 },
@@ -87,7 +87,7 @@ const TRAIL_SKINS = [
 // the profile keeps its pick under, and its table. What a skin looks like on
 // a card is skinArt below.
 const SKIN_TABS = [
-  { id: 'scout', name: 'SCOUT', slot: 'scout', rows: SCOUT_SKINS, glyph: ['..ww....', '..ww....', '.wwww...', 'w.ww.w..', 'w.ww.w..', '..ww....', '.w..w...', '.w..w...'] },
+  { id: 'scout', name: 'HERO', slot: 'scout', rows: SCOUT_SKINS, glyph: ['..ww....', '..ww....', '.wwww...', 'w.ww.w..', 'w.ww.w..', '..ww....', '.w..w...', '.w..w...'] },
   { id: 'bird', name: 'EAGLE', slot: 'bird', rows: BIRD_SKINS, glyph: ['........', 'w......w', 'ww....ww', '.ww..ww.', '..wwww..', '...ww...', '...ww...', '..w..w..'] },
   { id: 'weapon', name: 'WEAPON', slot: 'weapon', rows: WEAPON_SKINS, glyph: ['...wwww.', '..w..ww.', '.w..w.w.', 'w..w..w.', 'w.w...w.', 'ww....w.', 'wwwwww..', '........'] },
   { id: 'trail', name: 'TRAIL', slot: 'trail', rows: TRAIL_SKINS, glyph: ['...w....', '..www.w.', '...w....', '......w.', '.w...www', 'www...w.', '.w......', '........'] },

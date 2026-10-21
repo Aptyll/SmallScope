@@ -13,7 +13,9 @@ typed twice, so a retune can never leave the wiki lying.
 
 - **CLASSES** (the page the wiki opens on) — every hero as the lobby reads them: the
   body at 3x in the side you play in, the name and role, the three lines of the pitch, and its
-  level 1 health, damage, attack speed, armor and move speed (`WIKI_STATS`, off `statFrom`); under each, its
+  level 1 health, damage, attack speed, armor and move speed (`WIKI_STATS`, off `statFrom`); under
+  the card, the hero's story (who they were before the pass: `story` on its `CLASSES` entry, the
+  rules it is written to in [lore.md](../lore.md)); under that, its
   passive (a `P` plate and `passiveIcon`, when the hero has one) and four abilities in key order — the key on a plate, the strip's own 32 px icon in a well
   (`classAbIcon`), the name, COOLDOWN and CAST in the columns (`WIKI_AB_COLS`, off `CLASS_AB`)
   (the cooldown at rank 1) and the blurb wrapped beneath. A hover raises the lobby's ability card
@@ -32,13 +34,13 @@ typed twice, so a retune can never leave the wiki lying.
   finished the way the shop rims it, its name, and STATS / PASSIVE / PRICE (`WIKI_ITEM_COLS`,
   `wikiItemStats`) read off `BUILD_ITEMS`, `ITEM_STATS` and `ITEM_PASSIVES`. A hover raises the
   shop's own item card (`tipItem`, js/ui/shop.js).
-- **WORLD** — the one page with no numbers on it: the valley written down. Eleven entries in the
-  order a scout meets them — SOFTFALL, THE WORKS, THE CLAIM, THE EAGLES, THE SCOUTS, THE
+- **WORLD** — the one page with no numbers on it: the valley written down. Twelve entries in the
+  order an exile meets them — SOFTFALL, THE EMPIRE, THE EXILES, THE WORKS, THE CLAIM, THE EAGLES, THE
   COUNTER, THE MACHINES, THE ROAD, THE TOWERS (a whole loaded tower, `towerFigure`, js/draw/towers.js),
   THE WOLVES, GOLD (`WIKI_WORLD`) — each a figure on its mound
   in the side you play beside a short paragraph, between a two-line opening and a one-line
   close. Every sentence is either something a match does or the valley's reason for it, and the
-  sentences live in that table alone; the premise, the fixed words and the voice they are
+  sentences live in that table and the heroes' stories alone; the premise, the fixed words and the voice they are
   written in are [lore.md](../lore.md).
 
 Storage is [js/app/profile.js](../../../js/app/profile.js) and nothing here writes a key — see
