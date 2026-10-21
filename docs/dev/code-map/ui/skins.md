@@ -2,7 +2,7 @@
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| the catalogue: the navbar's categories, the rarity colours, the scout table (placeholders but the IRON SCOUT, whose `body` names its sprites), the placeholder weapon / trail tables, a bought skin's profile key | `SKIN_TABS`, `SKIN_RARITY`, `SCOUT_SKINS`, `WEAPON_SKINS`, `TRAIL_SKINS`, `skinRow`, `skinKey`, `skinHas`, `skinWorn` | `skins` › `the catalogue` (the eagle's table: `BIRD_SKINS`, js/sprites/eagle.js; the purse: `PROFILE.coins`/`buy`/`wear`, profile.js) |
+| the catalogue: the navbar's categories, the rarity colours, the scout table (placeholders but the IRON HERO, whose `body` names its sprites), the placeholder weapon / trail tables, a bought skin's profile key | `SKIN_TABS`, `SKIN_RARITY`, `SCOUT_SKINS`, `WEAPON_SKINS`, `TRAIL_SKINS`, `skinRow`, `skinKey`, `skinHas`, `skinWorn` | `skins` › `the catalogue` (the eagle's table: `BIRD_SKINS`, js/sprites/eagle.js; the purse: `PROFILE.coins`/`buy`/`wear`, profile.js) |
 | which skin a bird wears on this screen (your company's bird wears yours, the other company's the free one) | `birdSkinFor` (asked by `drawEagle`, js/sim/eagle.js), `birdSkinRow`, `skinOwned` | `skins` › `the catalogue` |
 | the looks this profile wears on each hero, as `p.skins` carries them (the hello sends it) | `profileHeroSkins` (read by `applyProfile`, player.js, and the hello, net.js) | `skins` › `the catalogue` |
 | which body a player wears on this screen (only you wear your scout skin; everyone else the class body) | `scoutBody` (asked by `drawPlayer`, js/draw/bodies.js), `SK_TAB_SCOUT` | `skins` › `the catalogue` |
