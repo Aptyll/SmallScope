@@ -1,8 +1,7 @@
 'use strict';
 // ------------------------------------------------------------ hero grid
 // The HERO GRID on the lobby (menu.js `lobby`): a cell per hero in the
-// middle column under the filter row (the five positions and a search
-// field), League's champion grid at Softfall's size. A cell is the hero's
+// middle column under the search field, League's champion grid at Softfall's size. A cell is the hero's
 // own 48 px model (js/sprites/looks.js) cropped to the head at 2x - each hero
 // wears ONE fixed look (CLASSES, js/sim/player.js), so the face IS the hero.
 // What you point at is gold (red while it is a ban), a hovered cell lightens,
@@ -31,15 +30,11 @@ function heroList() {
   return CLASSES.map((c, i) => ({ name: c.name, cls: i, look: c.look, soon: false }))
     .concat(HEROES_SOON.map((h) => ({ name: h.name, cls: h.cls, look: h.look, soon: true })));
 }
-// the heroes the filters let through: the picked position's (menu.posFilter)
-// and the typed name's (menu.search, anywhere in the name); a coming hero
-// only while neither is set
+// the heroes the search lets through: the typed name's (menu.search,
+// anywhere in the name); a coming hero only while nothing is typed
 function heroShown() {
-  const m = state.menu, f = m.posFilter == null ? -1 : m.posFilter, q = m.search || '';
-  return heroList().map((h, i) => ({ h, i })).filter(({ h, i }) => {
-    if (h.soon) return f < 0 && !q;
-    return heroPlays(i, f) && h.name.includes(q);
-  });
+  const q = state.menu.search || '';
+  return heroList().map((h, i) => ({ h, i })).filter(({ h }) => (h.soon ? !q : h.name.includes(q)));
 }
 function heroCols(L) { return Math.max(1, Math.floor((L.grid.w + HERO_GAP) / (HERO_CELL + HERO_GAP))); }
 // the grid's cells from its top-left, as many to a row as its width takes
@@ -55,26 +50,14 @@ function heroCellAt(cells) {
   for (const c of cells) if (overRect(c, 2, 2)) return c.i;
   return -1;
 }
-// the filter row over the grid: a position emblem each, the search field right
+// the row over the grid: the search field, on the right
 function heroFilterRects(L) {
-  const y = L.filter.y;
-  return {
-    pos: POSITIONS.map((_, r) => ({ x: L.grid.x + r * 16, y, w: 13, h: 13, r })),
-    search: (() => { const w = Math.min(HERO_SEARCH_W, L.grid.w - POSITIONS.length * 16 - 4); return { x: L.grid.x + L.grid.w - w, y, w, h: 13 }; })(),
-  };
+  const w = Math.min(HERO_SEARCH_W, L.grid.w);
+  return { search: { x: L.grid.x + L.grid.w - w, y: L.filter.y, w, h: 13 } };
 }
-// a press on the filter row: a position's emblem filters to it (again: all),
-// the field takes the keys
+// a press on the row: the field takes the keys
 function heroFilterAt(L) {
-  const F = heroFilterRects(L);
-  for (const r of F.pos) if (overRect(r, 1, 1)) return 'pos' + r.r;
-  if (overRect(F.search, 1, 1)) return 'search';
-  return null;
-}
-function heroFilter(r) {
-  const m = state.menu;
-  m.posFilter = m.posFilter === r ? -1 : r;
-  SFX.pickup();
+  return overRect(heroFilterRects(L).search, 1, 1) ? 'search' : null;
 }
 // a key while the field has them: true when it took it
 function heroSearchKey(k, e) {
@@ -92,12 +75,8 @@ function lobbyPick(i) { draftPoint(i); }
 function lobbyStep(d) { draftStep(d); }
 
 function drawHeroFilters(L, a, hot, now) {
-  const m = state.menu, F = heroFilterRects(L), f = m.posFilter == null ? -1 : m.posFilter;
+  const m = state.menu, F = heroFilterRects(L);
   ctx.globalAlpha = a;
-  for (const r of F.pos) {
-    const on = f === r.r, hv = hot === 'pos' + r.r;
-    ctx.drawImage(posIcon(r.r, on ? SEL_GOLD : hv ? SC_LIT : SC_DIM), r.x + 1, r.y + 1);
-  }
   const s = F.search, q = m.search || '';
   ctx.fillStyle = m.searchOn ? SEL_GOLD : hot === 'search' ? SC_LBL : SC_EDGE; ctx.fillRect(s.x, s.y, s.w, s.h);
   ctx.fillStyle = SC_PLATE; ctx.fillRect(s.x + 1, s.y + 1, s.w - 2, s.h - 2);

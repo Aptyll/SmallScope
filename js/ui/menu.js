@@ -1318,7 +1318,7 @@ function heroClick() {
 
 // what the pointer is on: 'play' (BAN / LOCK IN), 'hero' (the stage figure:
 // the hero pop-up), 'swap' (the trade mark on your row: the
-// next position), 'pos'N / 'search' (the filter row), 'skin'N /
+// next position), 'search' (the row over the grid), 'skin'N /
 // 'skinPrev' / 'skinNext' (the strip under the splash), 'talk' (the chat's
 // plate), 'pickN' (hero N's cell) or null.
 function lobbyHit() {
@@ -1434,7 +1434,6 @@ function lobbyClick() {
   else if (h === 'swap') draftRole(draftNextRole());            // the next position no person on your side holds
   else if (h === 'skinPrev' || h === 'skinNext') { m.skinOff = Math.max(0, (m.skinOff | 0) + (h === 'skinNext' ? 1 : -1)); SFX.pickup(); }
   else if (h.startsWith('skin')) lobbySkin(+h.slice(4));
-  else if (h.startsWith('pos')) heroFilter(+h.slice(3));
   else if (h.startsWith('pick')) lobbyPick(+h.slice(4));            // point at a hero on the grid (js/ui/heroes.js)
 }
 // a look on the strip: worn at once when this profile owns it

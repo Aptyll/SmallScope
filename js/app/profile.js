@@ -81,7 +81,7 @@
       name: randomName(),
       stats: blankStats(),
       hero: 0,         // the hero last locked in (a CLASSES index): where the pick opens next time
-      pos: -1,         // the position this profile asks for in the draft (a POSITIONS index, js/ui/draft.js), -1 any
+      pos: -1,         // the position this profile asks for in the draft (a POSITIONS index, js/sim/player.js), -1 any
       dropped: false,  // has this profile ever jumped off the eagle - gates the first-flight countdown
       bestLap: 0,      // the ice parkour's all-time best lap in seconds (0 = never lapped)
       bestRange: 0,    // the archery range's all-time best round score (0 = never played)
