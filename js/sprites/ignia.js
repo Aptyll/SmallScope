@@ -176,3 +176,133 @@ const IGNIA_ICON32 = {
     '................................',
   ],
 };
+
+// ------------------------------------------------------------ ignia bodies
+// Her own 16 px body in each look, on ARMATOS's standing frame (his head box, legs and
+// outline; js/sprites/armatos.js), worn over the side's coat (r/R/d). Her copper hair is
+// a/A, her fire u (ember), f (flame) and F (its heart). Side-on the face is four pixels
+// and a nose, as wide as head-on: a side view never reads smaller than the front.
+const IGNIA_BODY = {
+  hearth: { // HEARTHKEEPER: loose copper hair over the shoulders, an ember shawl, a gold belt
+    down: [
+      '................',
+      '.....oooooo.....',
+      '....oaAAAAao....',
+      '....oAAAAAAo....',
+      '....oAaAAaAo....',
+      '....oaekkeao....',
+      '....oakkkkao....',
+      '...oaouKKuoao...',
+      '...oauffffuao...',
+      '...omruuuurmo...',
+      '...omrrRRrrmo...',
+      '...okrrRRrrko...',
+      '....oyyyyyyo....',
+      '....orrRRrro....',
+      '.....bb..bb.....',
+      '.....BB..BB.....',
+    ],
+    up: [
+      '................',
+      '.....oooooo.....',
+      '....oaAAAAao....',
+      '....oAAAAAAo....',
+      '....oAAAAAAo....',
+      '....oAAAAAAo....',
+      '....oaAAAAao....',
+      '...oaoAAAAoao...',
+      '...ouuaAAauuo...',
+      '...omruaaurmo...',
+      '...omrrRRrrmo...',
+      '...otrrRRrrto...',
+      '....oyyyyyyo....',
+      '....orrRRrro....',
+      '.....bb..bb.....',
+      '.....BB..BB.....',
+    ],
+    side: [
+      '................',
+      '.....oooooo.....',
+      '....oaAAAAAAo...',
+      '....oAAAAAAAo...',
+      '....oaAAAAAAo...',
+      '....oaAAkkekko..',
+      '....oaAakkkko...',
+      '...oaAaoKKuo....',
+      '...oaAouffffo...',
+      '...oaomuuurro...',
+      '...oaomrrRRro...',
+      '....okrrrRRro...',
+      '....oyyyyyyyo...',
+      '....orrrrRRro...',
+      '......bb.bb.....',
+      '......BB.BB.....',
+    ],
+  },
+  wanderer: { // WANDERER: her side's hood up over a copper fringe, a white fur collar
+    down: [
+      '................',
+      '......oooo......',
+      '.....odrrdo.....',
+      '....odrRRrdo....',
+      '....odaAAado....',
+      '....odekkedo....',
+      '....odkkkkdo....',
+      '...owwdKKdwwo...',
+      '...oWwwuuwwWo...',
+      '...omrrufrrmo...',
+      '...omrrRRrrmo...',
+      '...okrrRRrrko...',
+      '....oyyyyyyo....',
+      '....orrRRrro....',
+      '.....bb..bb.....',
+      '.....BB..BB.....',
+    ],
+    up: [
+      '................',
+      '......oooo......',
+      '.....odrrdo.....',
+      '....odrRRrdo....',
+      '....odrRRrdo....',
+      '....odrRRrdo....',
+      '....odrRRrdo....',
+      '...owwdrrdwwo...',
+      '...oWwwddwwWo...',
+      '...omrrRRrrmo...',
+      '...omrrRRrrmo...',
+      '...otrrRRrrto...',
+      '....oyyyyyyo....',
+      '....orrRRrro....',
+      '.....bb..bb.....',
+      '.....BB..BB.....',
+    ],
+    side: [
+      '................',
+      '.....ooooo......',
+      '....odrrRRo.....',
+      '...odrRRRRRo....',
+      '...odrRRRaAAo...',
+      '...odrRRakeko...',
+      '...oddRRakkkko..',
+      '...owwddKKKwo...',
+      '...oWwwwuuwwo...',
+      '...omrrrufrro...',
+      '...omrrrRRrro...',
+      '....okrrRRrro...',
+      '....oyyyyyyyo...',
+      '....orrrRRrro...',
+      '......bb.bb.....',
+      '......BB.BB.....',
+    ],
+  },
+};
+// her hair and her fire over ARMATOS's iron
+const IGNIA_PAL = Object.assign({}, ARM_PAL, { a: '#8e3a22', A: '#c85a2c', u: '#d8502e', f: '#ff9a3a', F: '#ffe07a' });
+// The looks she can wear: the first is her own and free, the rest are bought with
+// coins on the skins screen (js/ui/skins.js, the IGNIA tab). `run: 'drawn'`: her robe
+// and shawl are not the doll's (app/bake-player: hearth, wanderer), so her run is her
+// drawn body in every facing (heroRunFront, js/sprites/armatos.js); the doll rolls her.
+const IGNIA_SKINS = [
+  { id: 'hearth', name: 'HEARTHKEEPER', rarity: 'common', price: 0, grids: IGNIA_BODY.hearth, motion: 'hearth', run: 'drawn' },
+  { id: 'wanderer', name: 'WANDERER', rarity: 'rare', price: 200, grids: IGNIA_BODY.wanderer, motion: 'wanderer', run: 'drawn' },
+];

@@ -188,6 +188,10 @@ const CLASSES = [
     base: { hp: 84, dmg: 14, armor: 10, ap: 0, haste: 0, ms: PLAYER_SPEED },
     grow: { hp: 6, dmg: 1.1, as: 0.01, armor: 1.8 },
     rankOrder: [0, 1, 2], // the brand, the brushfire, the warm hands
+    // her own body in each of her looks (IGNIA_SKINS, js/sprites/ignia.js), worn per
+    // player (heroSkinOf) over the side's coat
+    skins: IGNIA_SKINS, skinPal: IGNIA_PAL, skinSlot: 'ignia',
+    paint48: { t: '#7d8699', T: '#b4bdcc', g: '#1c2232', G: '#9aa3b8', m: '#5c6478', M: '#454c5e' }, // the 48 px model's (js/sprites/looks.js): its K is skin
     kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1, chargeMul: 0.55,
       bowCharge: BOW_CHARGE, nock: 0.4, spdDmg: 0, dodgeSpeed: DODGE_SPEED },
   },
