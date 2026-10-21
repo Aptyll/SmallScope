@@ -232,7 +232,6 @@ tag). The store behind it is [profile.js](../architecture.md#profilejs): one nam
 
 `DBG` exposes `menu`, `menuHit`, `menuClick`, `menuKey`, `settingsHit`, `beginIntro`, `beginLobby`,
 `lobbyLayout`, `lobbyHit`, `pressPlay`, `DRAFT`/`draftAct`/`draftPoint`/`draftConfirm`, `setAiLevel`, `lockIn` and `layout()` (the live `VIEW_W`/`VIEW_H`, `SET_X`/`SET_Y`, `SL_X`, `PANEL_X`/`PANEL_Y` and `MM_CX`/`MM_CY` anchors) for driving all of this headlessly.
-`DBG.MAP_TYPE`, `DBG.MAPS` and `DBG.mapTerrain` read back what a map shape is (`?map=N` picks one).
 
 ## The skins screen
 

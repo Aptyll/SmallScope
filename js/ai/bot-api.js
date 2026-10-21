@@ -202,7 +202,7 @@ function botHello(p) {
   return {
     t: 'hello', api: BOT_API, seat: p.id, team: p.team, cls: CLASSES[p.cls].name, name: p.name, seed: SEED,
     rules: { tickDt: TICK_DT, thinkEvery: BOT_THINK, obsR: BOT_OBS_R, tile: TILE, world: WORLD },
-    map: { world: WORLD, tile: TILE, shape: MAP_TYPE, grid: botGrid(p) },
+    map: { world: WORLD, tile: TILE, grid: botGrid(p) },
   };
 }
 

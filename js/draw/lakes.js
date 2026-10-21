@@ -211,7 +211,7 @@ const BANK_MW = TILE + BANK_W[1] + 2, bankMask = new Uint8Array(BANK_MW * BANK_M
 // own tiles by hash (the lake's label and the crack's number), kept off the
 // shore's shelf (lakeDepth 2 and in), so a crack never climbs a bank.
 const CRACK_EVERY = 110;      // tiles of big lake per long crack
-const CRACK_MAX = 36;         // cracks on the biggest lake (FROZEN ISLES)
+const CRACK_MAX = 36;         // cracks on the biggest lake
 const CRACK_LEN = [50, 150];  // px a main crack runs
 const CRACK_TURN = 0.55;      // radians it can wander per step
 const CRACK_FORK = 0.16;      // chance a step forks a branch

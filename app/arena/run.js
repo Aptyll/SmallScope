@@ -9,7 +9,7 @@
 // Flags: --seeds a-b or a,b,c (default 1-4); --level n[,n] (the game's sides
 // at that difficulty, default 1 = NORMAL); --kind level|versus (--a/--b: each side's
 // AI_LEVELS index, default 1); --proxy n (the profile seat 0 plays in 'level', default 1 = NORMAL);
-// --shape n (MAPS index, default 0); --max min (timeout, default 40);
+// --max min (timeout, default 40);
 // --every s (sample pitch, default 2); --jobs n (default: cores); --out dir
 // (default arena-out/<date>; refused if it already holds a run, unless --force);
 // --wall s (kill a match after this much real time; default 1.5 x --max + 60 s);
@@ -140,7 +140,7 @@ async function main() {
   const queue = [];
   let n = 0;
   for (const level of levels) for (const seed of seeds) {
-    queue.push({ seed, level, kind, a: num(a.a), b: num(a.b), proxy: num(a.proxy), shape: +a.shape || 0,
+    queue.push({ seed, level, kind, a: num(a.a), b: num(a.b), proxy: num(a.proxy), shape: 0,
       maxMin: +a.max || 40, sampleEvery: +a.every || 2, wallSec: +a.wall || 0, n: n++ });
   }
   const t0 = Date.now();

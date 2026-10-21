@@ -43,12 +43,6 @@ function metaOf(src) {
   const f = (k) => { const m = new RegExp(k + '\\s*:\\s*[\'"`]([^\'"`]{1,40})[\'"`]').exec(src); return m ? m[1] : ''; };
   return { name: f('name'), author: f('author'), version: f('version') };
 }
-// how many map shapes the game has (MAPS, js/sim/world.js), read off the source
-function shapeCount() {
-  const s = fs.readFileSync(path.join(ROOT, 'js', 'sim', 'world.js'), 'utf8');
-  const i = s.indexOf('const MAPS = ['), j = s.indexOf('\n];', i);
-  return Math.max(1, (s.slice(i, j).match(/^\s*\{ name: /gm) || []).length);
-}
 
 // ---- the store: a folder of plain files ---------------------------------------------
 function store(dir) {
@@ -135,7 +129,6 @@ async function cmdRun(S, args) {
   const total = Math.max(1, +args.matches || 4);
   const jobs = Math.max(1, Math.min(+args.jobs || os.cpus().length, total));
   const maxMin = +args.max || 30;
-  const shapes = shapeCount();
   let ladder = S.load();
   const sources = S.sources();
   sync(ladder, sources);
@@ -143,7 +136,7 @@ async function cmdRun(S, args) {
   // schedule the whole batch up front from today's ratings, so the plan is a
   // pure function of the ladder; results are folded in in plan order, however
   // the matches finish, so --jobs never changes a rating
-  const plan = core.pairings(ladder, total, shapes);
+  const plan = core.pairings(ladder, total);
   ladder.n += plan.length;
   S.save(ladder);
   console.log('playing ' + plan.length + ' matches, ' + jobs + ' at a time, up to ' + maxMin + ' min each');

@@ -34,7 +34,7 @@ table, then the path of the standings page.
 - **An entry is one bot file playing all five seats of a side.** Seats 0, 2, 4, 6, 8 are team 0;
   1, 3, 5, 7, 9 are team 1. Sides alternate from one match to the next.
 - **Pairing:** the entry with the fewest games plays one of the four closest to it in rating.
-  Each match gets a fresh seed and map shape, both recorded, so any match can be replayed.
+  Each match gets a fresh seed, recorded, so any match can be replayed.
 - **Rating:** Elo, everyone starts at 1000, K = 32. A driven-off bird is a win; a match that
   reaches `--max` is a draw; a match that crashes is not rated.
 - **A changed file** keeps its rating and counts a new revision (`r2`, `r3` on the page), so

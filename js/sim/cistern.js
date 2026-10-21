@@ -29,7 +29,7 @@
 // clear) and checks the gates and the breaches before it writes.
 // Pure position: nothing rolls and nothing changes, so there is no sim
 // state to save, and the footprint is the same every seed and every client.
-// Laid by placeCreek (placeCistern), before the paths and the road.
+// Laid by placeCreek (placeCistern), before the lanes and the road.
 const CIST_GEO = SPRITES.cistern.geo;
 const CIST_RI = CIST_GEO.ri;         // tiles from the crossing to the wall's inner face...
 const CIST_RO = CIST_GEO.ro;         // ...and its outer face

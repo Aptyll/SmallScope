@@ -27,19 +27,10 @@ if (PRACTICE) {
   // eagles at all
   genPracticeWorld();
 } else {
-  // the SHAPE this page grows (MAPS, js/sim/world.js): ?map=N (a rematch or a
-  // join carries the host's), else the first. Read before genWorld, and
-  // never again.
-  MAP_TYPE = (function () {
-    const q = /[?&]map=(\d+)/.exec(location.search);
-    const k = q ? +q[1] : 0;
-    return k >= 0 && k < MAPS.length ? k : 0;
-  })();
   genWorld();
   placeCreek();     // the creek down the cross-diagonal, its bends and fords, and the cistern round its frozen middle (world.js, cistern.js)
-  layPaths();       // ...and the paths a grown shape cuts through its own woods, forded where they cross it (world.js)
   layLanes();       // ...and the top and bot lanes, forded where they cross it (js/sim/lanes.js)
-  placeRoad();       // the diagonal lane, and the paths and side lanes with it (world.js)
+  placeRoad();       // the diagonal lane, and the side lanes with it (world.js)
   placeBase();       // ...and each side's hollow round the end of it, where its bird roosts (js/sim/base.js)
   placeZips();       // ...and each side's cable along it (js/sim/zipline.js)
   placeTowers();     // ...and two road towers on each side's cable, which it is cut back to (js/sim/towers.js)
@@ -123,19 +114,13 @@ window.DBG = {
   iceBreaks, iceBreak, iceBreakAge, iceBreakCovers, iceBreakHolds, iceBreakWet, ICE_BREAK_SHAPES,
   // the orca and its lake (js/sim/orca.js, js/sim/world.js): its state, the line over a head, the disc
   orca, orcaLine, orcaAge, orcaShore, orcaLakeAt, orcaLakeEdge, ORCA_LINE,
-  // the shoal the water this shape froze can hold (the fish banner, wildlife.js)
-  get fishCap() { return fishCap; }, get fishFloor() { return fishFloor; },
   // the camps: the live registry, the table behind it, where each site is,
   // what is where, restock by hand, and give a player a bear buff by hand (campBuff(p, t, 'alpha' | 'dire'))
   camps, CAMPS, CAMP_SITES, campSites, campTile, campAt, stockCamps, campBuff, flushBirds,
-  // the map shape this page grew, the table behind it, the rule one IS, and
-  // the paths it cut: DBG.mapTerrain(k, tx, ty) answers for any shape
-  MAPS, mapTerrain, mapName, mapGrown, paths, pathDist,
   // the top and bot lanes (js/sim/lanes.js): a centreline, its distance, a march down one, and the hollows' gates and bay spots
   laneLine, sideLaneDist, laneWaypoints, baseGate, baseBaySpot,
   // the snow's depth (js/sim/depth.js): the map, the deep band, the drifts and the wind that laid them
   snowDepth, deepAt, drifts, driftWind,
-  get MAP_TYPE() { return MAP_TYPE; },
   // the practice arena: whether this boot is one, the dummy's live record,
   // the spawn tile, the shared hit paths, the archery targets, the parkour
   // clock and the ESC slab's exit plank

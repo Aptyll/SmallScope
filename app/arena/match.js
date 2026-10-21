@@ -22,7 +22,7 @@ const SETUPS = ['level', 'versus'];
 function playMatch(opts) {
   const o = Object.assign({ seed: 42, shape: 0, level: 1, kind: 'level', a: 1, b: 1, proxy: 1, maxMin: 40, sampleEvery: 2, n: 0 }, opts || {});
   if (!SETUPS.includes(o.kind)) throw new Error('kind must be one of ' + SETUPS.join(', '));
-  const g = bootGame({ seed: o.seed, search: '&map=' + (o.shape | 0) });
+  const g = bootGame({ seed: o.seed });
   // the page's function declarations are globals of this process now; its
   // top-level const/let live in the scripts' shared scope, so the few this
   // file reads are fetched once (each is a stable object or a constant)
@@ -212,7 +212,7 @@ function playMatch(opts) {
     patch: String(L.PATCH_TXT || '').replace(/^PATCH\s*/, ''),
     runner: 'node',
     world: W * TILE,
-    seed: o.seed, shape: g.run('MAP_TYPE'), shapeName: g.run('MAPS[MAP_TYPE].name'),
+    seed: o.seed, shape: 0, // one map; the field stays so old logs still read
     setup: o.kind === 'level'
       ? { kind: 'level', level: o.level, levelName: levels[o.level].name, proxy: levels[o.proxy].name }
       : { kind: 'versus', a: levels[o.a].name, b: levels[o.b].name },

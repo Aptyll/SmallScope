@@ -1,8 +1,8 @@
 # The world
 
-The tile grid, worldgen, the three **map shapes** a valley comes out of the snow in, the seeded
+The tile grid, worldgen, [one map](#one-map), the seeded
 RNG contract, the day/night cycle, and the one runtime ground change (ice holes). Read this
-before touching `genWorld()`, adding a ground type, adding a shape, or anything that must stay
+before touching `genWorld()`, adding a ground type, or anything that must stay
 stable per tile.
 
 ## The tile world
@@ -10,7 +10,7 @@ stable per tile.
 - `WORLD = 232` tiles of `TILE = 16` px → a 3712×3712 px world (under `PRACTICE` the const is
   76 instead — see [the practice arena](#the-practice-arena)). The forest border is
   `BORDER_MIN`/`BORDER_MAX` (30–70, avg ~50) tiles deep round an interior ~132 tiles
-  across — open on OPEN FIELD, and grown over by the other two [map shapes](#map-shapes). The two **roost corners** —
+  across, open snow. The two **roost corners** —
   bottom-left and top-right, where the eagles always come down
   ([eagle drop](rendering/eagle-drop-mode-drop.md)) — are forested to `ROOST_R` (68 tiles from the
   corner, ~48 along the diagonal) outright: `borderDepth` is the seed's own `borderNoise` **or**
@@ -80,8 +80,8 @@ stable per tile.
   type has one tier and a footprint (`STRUCTS[type].w/h`, 1×1 when absent), with `footprint()`,
   `structCenter()` and `structMouth()` (the ground point in front of the doorway) as the geometry
   helpers. A wreck leaves the tiles empty.
-- The world center is an empty clearing: `CENTER_R` (beside `MAPS`) keeps ice ponds, the placeholder rocks,
-  bushes and every [shape](#map-shapes)'s own interior clear of it, so the river spokes meet in
+- The world center is an empty clearing: `CENTER_R` keeps ice ponds, the placeholder rocks
+  and bushes clear of it, so the river spokes meet in
   open ground. The old ore loop there draws two
   `rand()` per spot and places nothing — **no-ops kept on purpose**, so every seed's stream
   stays what it is.
@@ -144,7 +144,6 @@ every lake by flood fill and rolls it off its first tile's `hash2` (`rollIceStyl
 `w`), and sweeps each tile's depth in from the shore (`lakeDepth`, 1 on the edge). It rolls no
 `rng()`, runs once before the bake, and is the same for a seed on every screen; the ground
 array only ever flips ice ↔ hole at runtime and both are lake, so it never needs redoing.
-FROZEN ISLES, being one lake, is one style per seed.
 
 | Style | Edge | The ice |
 | --- | --- | --- |
@@ -153,7 +152,7 @@ FROZEN ISLES, being one lake, is one style per seed.
 
 The looks are A and B of `docs/media/concepts/shore-shadow-concepts-1.png`, DEEP (B) being
 the pick, hence its double weight; C (a drifted, cracked edge) was cut as too noisy. Cracks and glints (the tile's own hash) only go on
-a tile whose 3x3 is all lake, so none lands on a bank. Where a [path](#the-paths) crosses a lake, `paintRoadOverlay` still paints over the
+a tile whose 3x3 is all lake, so none lands on a bank. Where a road reaches a lake, `paintRoadOverlay` still paints over the
 shore. Night's mirror follows the same edge ([the reflected sky](rendering/light-and-weather.md#the-reflected-sky)).
 
 ### The wind's leavings
@@ -193,29 +192,13 @@ across a tile edge carries on, and a hole that refreezes gets its crack back.
   night's glints and its long cracks darkening again; falling snow laying fresh grains from
   `dustCv`. The dials come in through `lakeSky()` alone, off `weatherNow()`.
 
-## Map shapes
+## One map
 
-**The valley comes out from under the snow a different shape each winter** ([lore](lore.md)), and
-`MAPS` (the `map types` group of [js/sim/world.js](../../js/sim/world.js)) is the shapes it comes out in.
-One entry is one **interior**; the border forest and the two roost corners are every shape's
-alike, because the road's gates are measured off `borderDepth` and the [bases](#the-bases)
-are fixed, and nothing may move them.
+The game plays **one map**: one wide interior inside a ring of pines, the only wood the
+border's. Two other map shapes (THICKET, all woods with paths cut through; FROZEN ISLES, one
+lake with wooded islands) and the path network they needed were removed for now; the PR that
+removed them names the commit to recover them from.
 
-| Shape | The interior |
-| --- | --- |
-| **OPEN FIELD** | one wide interior inside a ring of pines. The only wood is the border's — the world the game shipped with. |
-| **THICKET** | the woods took the whole valley in stands (`scale` how big a stand runs, `wood` how much of the noise is one), and what is left between them are the pathways. |
-| **FROZEN ISLES** | one frozen lake with wooded islands standing out of it: `land` is an island's shore, the ring of snow round its pines that berries and anything built have to stand on, and `shore` is how far the lake laps **into** the treeline, drowning any island inside it — so the woods' own edge is always water and no island is reached dry-shod from the border. The band wobbles on the fine noise, like the roost discs' arc. |
-
-**`mapTerrain(k, tx, ty)` IS a shape**: one pure function of the position noise (`mapFbm`, three
-octaves) saying what shape `k` makes of a tile — `MT_SNOW`, `MT_ICE` or `MT_FOREST`. `genWorld`
-plants from it.
-
-**`MAP_TYPE` is the shape this page grew** — `?map=N`, else the first (OPEN FIELD), read once
-in js/app/boot.js and never again. No menu picks one: the MOBA plays one map, and `?map=N` is
-for looking at the others. Another shape is a **page**, the way another seed is; a rematch and a
-join carry the host's (`&map=` with `&seed=`), and `netHostHello` refuses a hello whose map is
-not the host's, exactly as it refuses a seed.
 ## Determinism and noise
 
 Every run picks a fresh `SEED` at boot with `rollSeed()` — always **three digits**, 100..999, so
@@ -231,9 +214,7 @@ DISPLAY row in the ESC menu or **F3**, default **off**, so flip it on before com
 - `rng` is a single `mulberry32(SEED)` stream shared by worldgen *and* runtime effects (particle
   bursts, animal wanders, drop velocities). Worldgen is reproducible only because it runs first at
   boot — hence the CLAUDE.md rule against adding or removing an `rng()` call inside `genWorld()`;
-  adding one after boot reshuffles nothing. A [map shape](#map-shapes) is the one thing that adds
-  any, and only at the very end of `genWorld` behind `mapGrown(MAP_TYPE)`, so OPEN FIELD's stream
-  is untouched.
+  adding one after boot reshuffles nothing.
 - `hash2(x, y)` mixes `SEED` in, and `vnoise(x, y)` is built on it. Both are still pure functions
   of position *within a run* — use them for anything that must stay stable per tile no matter when
   it is asked (ground texture, forest boundary, tree rare-drops, the frost slabs' mottling).
@@ -290,7 +271,7 @@ carries opens one: the pick and its `crackIce` were cut in 0.531. The `holes` li
 outlive their break) has had no writer since the fish net went; the dawn refreeze still empties
 it, so an old save's holes close. Constants live in the `fish` banner of
 [js/sim/wildlife.js](../../js/sim/wildlife.js) (`HOLE_FALL_DMG`, `HOLE_FALL_T`,
-`FISH_MAX`/`FISH_MIN`/`FISH_WATER_REF`/`FISH_CAP_MUL`; `FISH_SPAWN_T` alone stays in core.js).
+`FISH_MAX`/`FISH_MIN`; `FISH_SPAWN_T` alone stays in core.js).
 
 - **Falling in**: standing over a hole tile (checked at each player's feet in `updatePlayer`,
   js/sim/sim.js) plunges that player: `HOLE_FALL_DMG` (15) via `damagePlayer`, velocity zeroed, and
@@ -305,11 +286,8 @@ it, so an old save's holes close. Constants live in the `fish` banner of
   except the player, so animals and robots never wade in, and `walkable()` refuses
   `ground === 2`, so no bot ever routes over one; arrows still fly over holes.
 - **Refreeze**: at dawn every listed hole reverts to ice (`repaintGround` again).
-- **Fish**: the `fish` array holds up to `fishCap` passive swimmers — `FISH_MAX` (30) times how
-  much swimmable ice the world has against `FISH_WATER_REF`, floored at 1 and capped at
-  `FISH_CAP_MUL` (2.5), so OPEN FIELD and THICKET hold the 30 the game has always had and
-  FROZEN ISLES holds 75 ([map shapes](#map-shapes)) — that many spawned at
-  boot (`spawnFish()`, after `spawnAnimals()`, which is also the one place the water is measured) on **interior** ice only (tile centers passing
+- **Fish**: the `fish` array holds up to `FISH_MAX` (30) passive swimmers, that many spawned at
+  boot (`spawnFish()`, after `spawnAnimals()`) on **interior** ice only (tile centers passing
   `fishClear` with a 14 px margin, ~a tile off the shore). `updateFish()` wanders them with a
   **soft edge cap**: `fishClear(x, y)` requires `FISH_MARGIN` (6 px) of water on all four sides
   of the body, the steering veers away from shore a look-ahead early (choosing the more open
@@ -370,10 +348,9 @@ round a world point and returns the break (null where no bare ice lies under it)
 
 Nothing catches the lake fish any more, but the population rules stand: what
 keeps it full is a trickle in `updateFish`: `state.fishT` counts down `FISH_SPAWN_T` (11 s), or
-`FISH_SPAWN_FAST` (4 s) while the shoal is under `fishFloor` (`FISH_MIN`, 10, on the same
-multiplier the cap rides), and each expiry calls `spawnEmerger()` unless the shoal is already at
-`fishCap`. Nothing takes a born fish out now, so the trickle only fills a shoal that has not
-reached `fishCap` yet, fastest while it is under its floor.
+`FISH_SPAWN_FAST` (4 s) while the shoal is under `FISH_MIN` (10), and each expiry calls
+`spawnEmerger()` unless the shoal is already at `FISH_MAX`. Nothing takes a born fish out now, so
+the trickle only fills a shoal that has not reached `FISH_MAX` yet, fastest while it is under its floor.
 
 **`born` is a fish's whole life story.** A born fish is hard-clamped
 inside the water and drawn. An **emerger** is none of those. `spawnEmerger()`

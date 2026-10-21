@@ -12,12 +12,11 @@ node app/arena/match.js '{"seed":42,"maxMin":3}' > one.json   # one match, its l
 ```
 
 `run.js` flags: `--seeds` (`a-b` or `a,b,c`), `--level` (one or a list of `AI_LEVELS` indexes: 0 EASY, 1 NORMAL, 2 HARD, 3 IMPOSSIBLE; default 1),
-`--kind level|versus` with `--a`/`--b`, `--proxy` (the profile seat 0 plays, below), `--shape`
-(`MAPS` index), `--max` (minutes before a timeout, default 40), `--every` (sample pitch in s,
+`--kind level|versus` with `--a`/`--b`, `--proxy` (the profile seat 0 plays, below), `--max` (minutes before a timeout, default 40), `--every` (sample pitch in s,
 default 2), `--jobs` (parallel matches, default one per core), `--out` (default
 `arena-out/<date>`, gitignored; a folder that already holds a run is refused unless `--force`),
 `--wall` (seconds of real time before a match is killed, default 1.5 x `--max` + 60), `--quiet`. It writes `<out>/<id>.json` per match,
-`<out>/summary.jsonl` (one line per match without the samples), `<out>/map-<seed>-<shape>.json` (the terrain as the minimap paints it, once per seed and shape) and `<out>/aggregate.json` (the
+`<out>/summary.jsonl` (one line per match without the samples), `<out>/map-<seed>-<shape>.json` (the terrain as the minimap paints it, once per seed; `shape` is always 0 now that the game has one map) and `<out>/aggregate.json` (the
 means per setup), and prints a table.
 
 From a script: `require('./app/arena/match').playMatch(opts)` plays one match in the calling

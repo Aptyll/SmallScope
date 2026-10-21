@@ -95,20 +95,20 @@ function seekCross(r) {
   s.crossing = true;
   roomsFeedClose();
   for (const pr of NET.peers.values()) seats[pr.uid] = pr.slot;
-  const code = roomCode(), n = partySize(), seed = +r.data.seed, map = r.data.map | 0;
+  const code = roomCode(), n = partySize(), seed = +r.data.seed;
   homeSave({ code, lead: true, mode: NET.mode, seats });
-  if (NET.peers.size) NET.transport.send('*', { t: 'cross', room: r.room, seed, map, code, n });
-  practiceGo(crossUrl(r.room, seed, map, code, n));
+  if (NET.peers.size) NET.transport.send('*', { t: 'cross', room: r.room, seed, code, n });
+  practiceGo(crossUrl(r.room, seed, code, n));
 }
 // a guest told its party is crossing: after it
 function crossHeard(msg) {
   if (state.mode !== 'title' || !msg.code) return;
   homeSave({ code: String(msg.code), lead: false, mode: NET.mode, seats: {} });
-  practiceGo(crossUrl(String(msg.room), msg.seed | 0, msg.map | 0, String(msg.code), msg.n | 0));
+  practiceGo(crossUrl(String(msg.room), msg.seed | 0, String(msg.code), msg.n | 0));
 }
-function crossUrl(room, seed, map, code, n) {
+function crossUrl(room, seed, code, n) {
   const steam = netSteam() ? '&transport=steam' : '';
-  return location.pathname + '?seed=' + seed + '&map=' + map + '&join=' + room + '&back=1&party=' + code + '&pn=' + n + steam;
+  return location.pathname + '?seed=' + seed + '&join=' + room + '&back=1&party=' + code + '&pn=' + n + steam;
 }
 function homeSave(h) { try { sessionStorage.setItem(HOME_KEY, JSON.stringify(h)); } catch (e) { } }
 // the valley a crossed party goes home to, read off its code and the valley
@@ -122,7 +122,7 @@ function homeSeed(code) {
 // its guests' seats kept, a guest joining it (rematchUrl, partyLost, partyGiveUp)
 function crossHomeUrl() {
   const h = homeParty, steam = netSteam() ? '&transport=steam' : '';
-  const base = location.pathname + '?seed=' + homeSeed(h.code) + '&map=' + MAP_TYPE;
+  const base = location.pathname + '?seed=' + homeSeed(h.code);
   try { sessionStorage.removeItem(HOME_KEY); } catch (e) { }
   if (h.lead) {
     try { sessionStorage.setItem(REMATCH_KEY, JSON.stringify({ mode: h.mode, seats: h.seats || {} })); } catch (e) { }
