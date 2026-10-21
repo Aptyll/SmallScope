@@ -183,6 +183,7 @@ const CLASSES = [
     name: 'IGNIA', role: 'THE FIREMAGE', body: 1, passive: 'kindling', // HERO_PASSIVE, js/sim/ignia.js
     look: { sex: 1, tone: 1, hair: 3, hairCol: 3, beard: 0, face: 2 },
     blurb: ['THE ONLY FIRE FOR MILES.', 'ONE BURNING RIVAL SETS THE NEXT ALIGHT.', 'SNOW AND WATER PUT YOUR FIRE OUT.'],
+    story: "SHE KEPT THE ETERNAL FLAME IN THE EMPIRE'S HIGH TEMPLE, AND LET IT GO OUT ONE WINTER SO A VILLAGE COULD KEEP WARM. THEY DID NOT TAKE IT WELL. IN THE VALLEY SHE IS THE ONLY FIRE FOR MILES, AND EVERYONE WANTS TO SIT NEAR HER.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
     // a staff's ember, not an arrow: a little shorter and slower than the shortbow
     attack: { name: 'HEARTH STAFF', art: 'staff', cycle: 60 / 60, kb: 0.6, shot: { speed: 260, life: 0.85, col: '#ff9a3a', look: 'ember' } },
     base: { hp: 84, dmg: 14, armor: 10, ap: 0, haste: 0, ms: PLAYER_SPEED },
