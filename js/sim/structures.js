@@ -24,10 +24,13 @@ const STRUCTS = {
     { cost: { gold: 60 },  hp: 160, buildT: 20, pay: 30, period: 10 },
   ]},
   // THE BARRACKS: the wave bays each merchant raises in the back woods
-  // behind its roost, the first MERCH_BAY_T after the landing and up to
-  // MERCH_BAYS for its logs (the `merchant` banner, robots.js).
-  // It wears the bay's own 3x2 grid (`art`). Every `waveT` seconds it queues a WAVE of soldiers (the
-  // `soldiers` banner, robots.js) that march the road to the rival bird:
+  // inside the lane mouths, all three straight after its stall and a rebuild
+  // for its logs (the `merchant` banner, robots.js).
+  // It wears the bay's own 3x2 grid (`art`). The waves keep the MATCH's beat, not
+  // the bay's: every bay standing queues a WAVE of soldiers (the
+  // `soldiers` banner, robots.js) at `first` seconds of match clock and every
+  // `waveT` after (barracksBeat), so the lanes roll out together and a rebuilt
+  // bay falls into step. Each wave marches its lane to the rival bird:
   // `wave` of them at first, one more for every `grow` seconds it has stood.
   // Its cost is what a wrecker is paid half of - breaking one stalls the
   // waves until the merchant walks back and raises it again. `cap` is the
@@ -35,7 +38,7 @@ const STRUCTS = {
   // nobody fights back against does not fill the map, it waits for its
   // column to spend itself.
   barracks: { name: 'BARRACKS', w: 3, h: 2, art: 'spawner', sight: 176, mm: mmTeam, map: chTeam, tiers: [
-    { cost: { gold: 400 }, hp: 320, buildT: 12, wave: 3, waveT: 30, grow: 180, botHp: 60, cap: 8 }, // cap: soldiers a LANE holds, queued or out; botHp: a soldier's health at the start, grown by SOLDIER_HP_GROW (js/sim/robots.js)
+    { cost: { gold: 400 }, hp: 320, buildT: 6, wave: 3, first: 60, waveT: 30, grow: 180, botHp: 60, cap: 8 }, // cap: soldiers a LANE holds, queued or out; botHp: a soldier's health at the start, grown by SOLDIER_HP_GROW (js/sim/robots.js)
   ]},
   // THE ROAD TOWER: the map's, never a wallet's - two stand on each side's
   // cable at boot (placeTowers, js/sim/towers.js), each with a crossbow on
@@ -49,6 +52,11 @@ const STRUCTS = {
   ]},
 };
 const BARRACKS_ROLL = 0.5; // s between the soldiers of one wave leaving the door
+// s to the next wave on the match's beat: `first` s of match clock, then every `waveT`
+function barracksBeat(t) {
+  const past = state.elapsed - t.first;
+  return past < 0 ? -past : t.waveT - (past % t.waveT);
+}
 
 // The one place a building object is made (the merchant's barracks, the road
 // towers and DBG.buildStruct): the anchor object, its footprint fillers, the
@@ -71,7 +79,7 @@ function createStruct(tx, ty, type, tier, p, building) {
   if (type === 'generator') { o.hold = -1; o.cap = 0; o.capBy = -1; o.payT = t.period; o.paid = false; } // the ring's state (updatePump, js/sim/pumps.js)
   // waveT: the clock to the next wave. queue/rollT: soldiers still to leave
   // the door, and the gap to the next. born: when it stood, for the growth.
-  if (type === 'barracks') { o.waveT = t.waveT; o.queue = 0; o.rollT = 0; o.born = state.elapsed; o.door = 0; }
+  if (type === 'barracks') { o.waveT = barracksBeat(t); o.queue = 0; o.rollT = 0; o.born = state.elapsed; o.door = 0; }
   o.sparkT = 0;
   structures.push(o);
   return o;
@@ -154,7 +162,7 @@ function updateStructures(dt) {
         }
         sfxAt('hammer', ox, oy); shakeAt(ox, oy, big ? 2.5 : 1.5);
         if (o.type === 'generator') o.payT = STRUCTS.generator.tiers[o.tier].period;
-        if (o.type === 'barracks') { o.waveT = STRUCTS.barracks.tiers[o.tier].waveT; o.born = state.elapsed; }
+        if (o.type === 'barracks') { o.waveT = barracksBeat(STRUCTS.barracks.tiers[o.tier]); o.born = state.elapsed; }
       }
       continue;
     }
@@ -162,12 +170,13 @@ function updateStructures(dt) {
     if (o.type === 'tower') updateTower(o, dt);
     else if (o.type === 'generator') updatePump(o, dt); // the ring and the pay (js/sim/pumps.js)
     else if (o.type === 'barracks') {
-      // the wave clock: every waveT a wave is queued - `wave` soldiers, one
-      // more per `grow` seconds stood - and the queue leaves the door one
-      // soldier every BARRACKS_ROLL, so a wave reads as a column, not a heap
+      // the wave clock: on every beat (barracksBeat) a wave is queued -
+      // `wave` soldiers, one more per `grow` seconds stood - and the queue
+      // leaves the door one soldier every BARRACKS_ROLL, so a wave reads as
+      // a column, not a heap. `+=` keeps the beat: no tick's overshoot drifts it
       o.waveT -= dt;
       if (o.waveT <= 0) {
-        o.waveT = t.waveT;
+        o.waveT += t.waveT;
         o.queue += Math.max(0, Math.min(t.cap - barracksLaneLoad(o), t.wave + Math.floor((state.elapsed - o.born) / t.grow)));
       }
       o.rollT -= dt;

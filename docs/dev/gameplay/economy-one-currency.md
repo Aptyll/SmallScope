@@ -31,9 +31,9 @@ rather than a different resource (the League model: one number, many ways to ear
 | a sale at [the counter](the-merchants-counter.md) | half an item's price (a potion one at a time) | the one payout that does not count as earned (`tradeGold`) — a trade is an exchange, not a source |
 
 The scale is League's: a finished item costs about 2600-3400 ([the items](the-merchants-counter.md#the-items)),
-and the table is sized so a laner who lands about two in three last hits holds one at about 5:00
-(measured headless off the real waves, which first reach a lane's middle at about 2:20 to 2:40:
-every last hit about 4:00, two in three about 5:00, two in five about 6:00). Soldiers stay the
+and a laner who lands about two in three last hits holds one at about 4:05 (measured headless off
+the real waves, which roll out at 1:00 and first meet in a lane's middle at about 1:20: every last
+hit about 3:15, two in three about 4:05, two in five about 5:05). Soldiers stay the
 better farm: a lane's last hits pay 960 a minute at the start (3 soldiers a wave every 30 s at
 160 each) and grow with the wave and the bounty, while a player chaining pines nonstop earns about
 280 a minute (56 fells a minute), under a third of it and a little over twice the trickle. The

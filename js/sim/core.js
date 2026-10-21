@@ -37,7 +37,7 @@ const FISH_SPAWN_T = 11;   // seconds between new fish while the shoal is health
 // START_GOLD (js/sim/player.js), a soldier's last hit (SOLDIER_BOUNTY,
 // js/sim/farm.js), a takedown (KILL_SOLDIERS soldiers' worth) and a held pump.
 // The scale is League's: a finished item is ~2600-3400 (BUILD_ITEMS,
-// js/sim/items.js), and a laner who lands most last hits holds one at about 5:00.
+// js/sim/items.js), and a laner who lands two in three last hits holds one at about 4:05.
 // A beast's `xp` is the one thing here that is not gold: what its death is worth
 // to the hunter's side standing near it (animalDies, js/sim/wildlife.js). The works pay no XP. The per-swing rows are 0 -
 // a swing is work, the fell is the pay - because a per-swing coin on a one-second
