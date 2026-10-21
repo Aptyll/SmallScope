@@ -9,11 +9,11 @@
 //          all five. A mood moves the choices - when to back off, how far it
 //          walks to help, how long it farms - never the hands (aim, draw and
 //          reactions are the profile's, js/ai/ai.js).
-//   ROLE   the side's plan hands out the jobs the ladder already had (who
-//          pushes, who guards) plus two new ones (a scout that walks the
-//          middle and the far bank, a stalker that goes after a rival the side
-//          saw alone), picked by fit to the mood, not by seat. A role is kept
-//          while it is still wanted, so nobody flip-flops.
+//   ROLE   every bot plays its drafted POSITION (laner, jungler, support:
+//          js/ai/ai-farm.js) unless the side's plan needs it for a bigger
+//          job - who pushes, who guards, who goes to the bear - picked by fit
+//          to the mood and the position. A role is kept while it is still
+//          wanted, so nobody flip-flops.
 //   MEMORY the side pools what it sees: every rival any bot notices is a
 //          sighting the whole side can act on, and a bot hurt or outnumbered
 //          in a fight calls for help - a friend near enough, free enough and
@@ -40,11 +40,11 @@
 //   roam   x how wide it wanders with nothing to do
 //   fit    how well it suits each role (the plan hands jobs out by this)
 const AI_MOODS = {
-  brave:    { name: 'BRAVE',    flee: -0.15, judge: -0.25, help: 1.3, stalk: true,  greed: 0.9, roam: 1.1, fit: { pusher: 4, stalker: 3, guard: 0, scout: 1, slayer: 3, jungler: 2, laner: 2 } },
-  cautious: { name: 'CAUTIOUS', flee: 0.15,  judge: 0.25,  help: 0.8, stalk: false, greed: 1,   roam: 0.8, fit: { pusher: 0, stalker: 0, guard: 4, scout: 2, slayer: 1, jungler: 1, laner: 3 } },
-  greedy:   { name: 'GREEDY',   flee: 0.05,  judge: 0.1,   help: 0.5, stalk: false, greed: 1.5, roam: 0.9, fit: { pusher: 1, stalker: 0, guard: 1, scout: 0, slayer: 3, jungler: 3, laner: 3 } },
-  loyal:    { name: 'LOYAL',    flee: 0,     judge: 0.1,   help: 1.8, stalk: true,  greed: 1,   roam: 1,   fit: { pusher: 3, stalker: 1, guard: 3, scout: 0, slayer: 2, jungler: 1, laner: 2 } },
-  wild:     { name: 'WILD',     flee: -0.05, judge: -0.1,  help: 1,   stalk: true,  greed: 1,   roam: 1.6, fit: { pusher: 2, stalker: 4, guard: 0, scout: 4, slayer: 2, jungler: 3, laner: 1 } },
+  brave:    { name: 'BRAVE',    flee: -0.15, judge: -0.25, help: 1.3, stalk: true,  greed: 0.9, roam: 1.1, fit: { pusher: 4, stalker: 3, guard: 0, scout: 1, slayer: 3 } },
+  cautious: { name: 'CAUTIOUS', flee: 0.15,  judge: 0.25,  help: 0.8, stalk: false, greed: 1,   roam: 0.8, fit: { pusher: 0, stalker: 0, guard: 4, scout: 2, slayer: 1 } },
+  greedy:   { name: 'GREEDY',   flee: 0.05,  judge: 0.1,   help: 0.5, stalk: false, greed: 1.5, roam: 0.9, fit: { pusher: 1, stalker: 0, guard: 1, scout: 0, slayer: 3 } },
+  loyal:    { name: 'LOYAL',    flee: 0,     judge: 0.1,   help: 1.8, stalk: true,  greed: 1,   roam: 1,   fit: { pusher: 3, stalker: 1, guard: 3, scout: 0, slayer: 2 } },
+  wild:     { name: 'WILD',     flee: -0.05, judge: -0.1,  help: 1,   stalk: true,  greed: 1,   roam: 1.6, fit: { pusher: 2, stalker: 4, guard: 0, scout: 4, slayer: 2 } },
 };
 const AI_MOOD_KEYS = Object.keys(AI_MOODS);
 // A bot's mood is for life, not for a match: a body with a roster name of
@@ -86,14 +86,18 @@ const AI_ROLES = {
   scout:    { name: 'SCOUT' },    // walks the middle and the far bank, eyes for the side
   stalker:  { name: 'STALKER' },  // goes after a rival the side saw alone
   slayer:   { name: 'SLAYER' },   // one of the party the side sends to its bear
-  jungler:  { name: 'JUNGLER' },  // walks its side's wolf dens on their clocks (js/ai/ai-farm.js)
-  laner:    { name: 'LANER' },    // last-hits the rival wave behind its own (js/ai/ai-farm.js)
+  jungler:  { name: 'JUNGLER' },  // JUNGLE: walks its side's wolf dens on their clocks (js/ai/ai-farm.js)
+  laner:    { name: 'LANER' },    // TOP, MID, BOT: last-hits the rival wave on its lane behind its own (js/ai/ai-farm.js)
+  support:  { name: 'SUPPORT' },  // SUPPORT: walks with its side's BOT and leaves it the last hits (js/ai/ai-farm.js)
   gatherer: { name: 'GATHERER' }, // the ladder as it always was: hunt, harvest
 };
 const AI_PLAN_T = 2;        // s between a side's re-plans
 const AI_SCOUT_AT = 45;     // s into the match the side sends its scout out
 const AI_STALK_AT = 90;     // s into the match the side lets a stalker off the leash
 const AI_KEEP = 2;          // fit a bot's current role is worth over a better-suited teammate's
+// fit a position adds to the side's bigger jobs, on top of the mood's: the
+// roamers leave their post first, the laners last
+const AI_POS_FIT = { jungle: { pusher: 1, slayer: 2 }, support: { pusher: 1, guard: 1 } };
 const AI_WINDOW_DOWN = 2;   // more rivals down than own: the side's free hands go for the bird
 const AI_WINDOW_MIN = 12;   // s a window, once opened, stays open (a respawn does not snap it shut)
 const AI_BEAR_AT = 240;     // s into the match before a side thinks about its bear
@@ -121,7 +125,7 @@ const AI_ODDS_R = 150;      // px round a fight the numbers are counted in (the 
 // the side's shared mind, one per team; it is saved whole (SAVE_ROOTS,
 // js/sim/save.js), the bear by reference like any other shared body
 function aiTeamNew() {
-  return { at: -1, stance: 'FARM', why: '', winT: 0, roles: {}, lanes: {}, order: [], seen: [], calls: [], focus: -1, bear: null, bearT: 0, answerT: 0, nPush: 0, nGuard: 0, braceT: 0, braceN: 0 };
+  return { at: -1, stance: 'FARM', why: '', winT: 0, roles: {}, pos: {}, order: [], seen: [], calls: [], focus: -1, bear: null, bearT: 0, answerT: 0, nPush: 0, nGuard: 0, braceT: 0, braceN: 0 };
 }
 const aiTeams = [aiTeamNew(), aiTeamNew()];
 
@@ -143,11 +147,11 @@ function aiDownCount(team) {
 // Re-plan a side: its stance, and who holds which job. The push and guard
 // counts are the profile's own (aiPushers, prof.guard - the difficulty),
 // so the plan decides WHO, not how many; the window is the one time it adds
-// pushers of its own. The free hands farm next - AI_JUNGLE_N junglers, then
-// AI_LANE_N laners, one per lane (aiLaneDeal, js/ai/ai-farm.js) - then one scout and one stalker once
-// the match is under way, while there are bots left for them, and anyone
-// left over is a gatherer. A bot keeps its role while the role
-// is still wanted (AI_KEEP), so the jobs do not reshuffle every re-plan.
+// pushers of its own. Every bot those and the bear party leave plays its
+// POSITION (aiPosDeal, aiPosJob, js/ai/ai-farm.js); a bot with no position
+// scouts or stalks once the match is under way, and anyone left over is a
+// gatherer. A bot keeps its role while the role is still wanted (AI_KEEP),
+// so the jobs do not reshuffle every re-plan.
 function aiPlan(team) {
   const T = aiTeams[team];
   if (state.elapsed < T.at) { Object.assign(T, aiTeamNew()); } // a new match on the same page
@@ -203,35 +207,39 @@ function aiPlan(team) {
   }
   if (party) { if (T.bear !== bear) T.bearT = 0; T.bear = bear; for (let i = 0; i < party; i++) want.push('slayer'); }
   else T.bear = null;
-  // the farm (js/ai/ai-farm.js): the side's free hands walk its dens and its wave
-  for (let i = 0; i < AI_JUNGLE_N && want.length < bots.length; i++) want.push('jungler');
-  for (let i = 0; i < AI_LANE_N && want.length < bots.length; i++) want.push('laner');
-  if (state.elapsed >= AI_SCOUT_AT && want.length < bots.length - 1) want.push('scout');
   // a grudge (aiDowned) takes the side's one stalker job first, whatever the clock
   const grudger = bots.find((q) => aiGrudge(q));
   if (grudger && want.length < bots.length) want.unshift('stalker');
-  else if (state.elapsed >= AI_STALK_AT && want.length < bots.length - 1) want.push('stalker');
   // hand the jobs out best fit first, a held job counting AI_KEEP extra
+  T.pos = aiPosDeal(team);
   const free = bots.slice(), roles = {}, order = [];
-  for (const r of want) {
+  const give = (r) => {
     let best = -1, bs = -Infinity;
     for (let i = 0; i < free.length; i++) {
-      const q = free[i], m = aiMood(q);
+      const q = free[i], m = aiMood(q), at = T.pos[q.id] >= 0 ? AI_POS_FIT[POSITIONS[T.pos[q.id]].id] : null;
       if (r === 'stalker' && !m.stalk && q !== grudger) continue;
-      const s = (m.fit[r] || 0) + (T.roles[q.id] === r ? AI_KEEP : 0) - q.id * 0.01 + (r === 'stalker' && q === grudger ? 100 : 0);
+      const s = (m.fit[r] || 0) + ((at && at[r]) || 0) + (T.roles[q.id] === r ? AI_KEEP : 0) - q.id * 0.01 + (r === 'stalker' && q === grudger ? 100 : 0);
       if (s > bs) { bs = s; best = i; }
     }
-    if (best < 0) continue;
+    if (best < 0) return;
     const q = free.splice(best, 1)[0];
     roles[q.id] = r; order.push(q.id);
+  };
+  for (const r of want) give(r);
+  // the rest play their position (js/ai/ai-farm.js)
+  for (const q of free.slice()) {
+    const r = aiPosJob(T, q);
+    if (r) { free.splice(free.indexOf(q), 1); roles[q.id] = r; order.push(q.id); }
   }
+  // and a bot with none scouts, then stalks, once the match is under way
+  if (state.elapsed >= AI_SCOUT_AT && free.length) { give('scout'); want.push('scout'); }
+  if (state.elapsed >= AI_STALK_AT && free.length && !grudger) { const n = free.length; give('stalker'); if (free.length < n) want.push('stalker'); }
   for (const q of free) { roles[q.id] = 'gatherer'; order.push(q.id); }
   // the order aiRank reads: pushers, then guards, then everyone else (a
   // grudge's stalker is handed out first, but never ranks ahead of them)
   const pri = (id) => (roles[id] === 'pusher' ? 0 : roles[id] === 'guard' ? 1 : 2);
   order.sort((a, b) => pri(a) - pri(b));
   T.roles = roles; T.order = order;
-  T.lanes = aiLaneDeal(T); // each laner its own lane (js/ai/ai-farm.js)
   // the stance, the one word the dashboard shows for the side
   if (mine && mine.threat) { T.stance = 'HOLD'; T.why = mine.hp < AI_ALARM_HP ? 'BIRD HURT' : 'BIRD HIT'; }
   else if (T.braceT > 0 && T.winT <= 0) { T.stance = 'BRACE'; T.why = T.braceN + ' COMING'; }

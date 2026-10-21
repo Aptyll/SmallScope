@@ -77,6 +77,20 @@ const BOW_CHARGE = 0.9;   // seconds to a full draw
 const BOW_NOCK = 0.45;    // WREN's seconds between loosing and the next draw
 
 // ---- classes ------------------------------------------------------------
+// League's five POSITIONS. Each seat on a side plays one, handed out in the
+// draft (draftSeatRoles, js/ui/draft.js) and kept on the player as
+// `p.position` for the match (-1: none, a match that skipped the draft). A
+// bot plays its own (aiPosJob, js/ai/ai-farm.js): `lane` is the lane it
+// holds (lanes.js's 0 top, 1 mid, 2 bot; -1 none), `job` the plan's role
+// for it (AI_ROLES, js/ai/ai-team.js).
+const POSITIONS = [
+  { id: 'top', name: 'TOP', lane: 0, job: 'laner' },
+  { id: 'jungle', name: 'JUNGLE', lane: -1, job: 'jungler' },
+  { id: 'mid', name: 'MID', lane: 1, job: 'laner' },
+  { id: 'bot', name: 'BOT', lane: 2, job: 'laner' },
+  { id: 'support', name: 'SUPPORT', lane: 2, job: 'support' },
+];
+
 // Every player plays one of these HEROES. A hero is a body (its class outfit,
 // js/sprites/looks.js) worn by ONE fixed `look` - the face, hair and beard
 // every copy of it has, the way a League champion looks the same in every
@@ -90,7 +104,6 @@ const BOW_NOCK = 0.45;    // WREN's seconds between loosing and the next draw
 // js/sprites/looks.js's: { sex, tone, hair, hairCol, beard, face }.
 const CLASSES = [
   {
-    pos: ['bot', 'mid'], // the positions it plays, best first (POSITIONS, js/ui/draft.js)
     name: 'HUNTER', role: 'BOW, DISTANCE, AMBUSH',
     look: { sex: 0, tone: 2, hair: 1, hairCol: 2, beard: 0, face: 1 },
     blurb: ['THE BOW IS THE ARGUMENT: KEEP THE GAP.', 'THE NET TANGLES THEM. THE GRAPPLE PULLS YOU CLEAR.', 'THE SNOW HIDES YOU. THE SHOT OUT OF IT HITS MUCH HARDER.'],
@@ -105,7 +118,6 @@ const CLASSES = [
     attack: { name: 'SHORTBOW', art: 'bow', cycle: 55 / 60, kb: 1, shot: { speed: 320, life: 0.85, col: '#e8dcb4' } },
   },
   {
-    pos: ['top', 'jungle'], // the positions it plays, best first (POSITIONS, js/ui/draft.js)
     name: 'WARRIOR', role: 'PRESSURE, BLOCKING, MOMENTUM',
     look: { sex: 0, tone: 4, hair: 0, hairCol: 1, beard: 2, face: 0 },
     blurb: ['THE FIGHT IS AT ARM\'S LENGTH: GET THERE.', 'THE SHIELD EATS ARROWS. THE RUSH CARRIES BODIES.', 'THE SWORD REACHES A BODY LENGTH. THE EXECUTE FINISHES IT.'],
@@ -121,7 +133,6 @@ const CLASSES = [
     // the first named hero (js/sim/armatos.js): the WARRIOR's body (`body`),
     // his own 16 px look over it (`skins`), his greatsword's cut and a kit of
     // his own on keys 1-4
-    pos: ['support', 'top'], // the positions it plays, best first (POSITIONS, js/ui/draft.js)
     name: 'ARMATOS', role: 'THE LAST STANDARD', body: 1, passive: 'resolve', // HERO_PASSIVE, js/sim/heroes.js
     look: { sex: 0, tone: 1, hair: 2, hairCol: 6, beard: 3, face: 0 },
     blurb: ['NO SOLDIER LEFT BEHIND.', 'THE SHIELD TAKES THE HIT. THE BASH ANSWERS IT.', 'PLANT THE STANDARD: YOUR SIDE HOLDS, THEIRS CANNOT LEAVE.'],
@@ -143,7 +154,6 @@ const CLASSES = [
     // frames and his sword's cut (`body`, `attack`) who wins the long fight: the most health of
     // anyone and a hard hit, a step slower so a hero who keeps its distance
     // can beat her
-    pos: ['top', 'jungle'], // the positions it plays, best first (POSITIONS, js/ui/draft.js)
     name: 'FORTIVA', role: 'THE UNBROKEN', body: 1, passive: 'unbroken', // HERO_PASSIVE, js/sim/fortiva.js
     look: { sex: 1, tone: 2, hair: 3, hairCol: 3, beard: 0, face: 1 },
     blurb: ['STRENGTH IS THE POWER TO REFUSE TO KNEEL.', 'THE LONGER THE FIGHT, THE HARDER SHE IS TO STOP.', 'THE EDGE OF THE ARC HEALS HER. THE SHIELD PAYS BACK WHAT IT TOOK.'],
@@ -164,7 +174,6 @@ const CLASSES = [
     // the third named hero (js/sim/bella.js): a duelist on the WARRIOR's frames
     // and his sword's cut (`body`, `attack`): quick and light, her damage in the
     // keys she chains, her life thin if she is caught
-    pos: ['mid', 'jungle'], // the positions it plays, best first (POSITIONS, js/ui/draft.js)
     name: 'BELLA', role: 'THE IMPERIAL GENERAL', body: 1, passive: 'calculated', // HERO_PASSIVE, js/sim/heroes.js
     look: { sex: 1, tone: 1, hair: 3, hairCol: 0, beard: 0, face: 2 },
     blurb: ['FIND THE WEAKNESS. SPEND IT FIRST.', 'THE LUNGE, THE SLIP AND THE PARRY CHAIN INTO EACH OTHER.', 'CALL OUT ONE HERO AND FINISH THEM.'],
@@ -393,6 +402,7 @@ class Player {
     this.spawn = { tx: WORLD >> 1, ty: WORLD >> 1 }; // landing tile once the eagle drops this player (the bot brain's "home")
     this.inv = { gold: START_GOLD };    // the wallet is currency only; a start that buys a first part and a potion
     this.cls = 0;                       // CLASSES index; the lobby sets the local one
+    this.position = -1;                 // POSITIONS index the draft gave this seat, -1 none (draftReveal, js/ui/draft.js); the host's alone, never on the wire
     this.skillPts = 1;                  // unspent; level 1 starts with one, each levelUp adds one - spent on ability levels (buyAbilityLv, js/sim/abilities.js)
     this.abLv = [0, 0, 0, 0];           // ability ranks, 0 (LOCKED) ..abLvMax (5, the ultimate 3), a skill point each - like items, NOT cleared by reset(): a death keeps what was bought
     this.abPick = [0, 0, 0, 0];         // which option each key carries (abOf, js/sim/abilities.js), picked pre-match in the hero pop-up; a bot keeps the first

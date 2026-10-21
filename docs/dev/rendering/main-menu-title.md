@@ -87,12 +87,11 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
     position no person of your side holds, `draftRole`). An acting row wears a bar down its
     outer edge (gold for yours). A rival's row is **face-down** — only PICKING... or LOCKED IN
     and the name — until the countdown turns it.
-  - **The middle**: the **filter row** (`drawHeroFilters`, js/ui/heroes.js: the five position
-    emblems, `POS11`/`posIcon`, a click filtering to that position and again back to all, and
-    the **search field**, a click giving it the keys, letters only) over the **hero grid**
+  - **The middle**: the **search field** (`drawHeroFilters`, js/ui/heroes.js: right-aligned, a
+    click giving it the keys, letters only) over the **hero grid**
     (`heroCells`/`drawHeroRow`: six `HERO_CELL` wells a row, fewer on a narrow view, each
-    hero's head at 2× with its name under it; `heroShown` lets through the filter's and the
-    search's heroes, the coming ones only while neither is set). Under the grid, when the view
+    hero's head at 2× with its name under it; `heroShown` lets through the search's heroes, the
+    coming ones only while nothing is typed). Under the grid, when the view
     has the room, the **stage** (`drawLobbyStage`): the hero you point at, its 48 px model at
     `LOBBY_MODEL` (2×) under a warm pool of light with a gold ring turning on the snow; clicking
     it opens the [hero pop-up](../rendering.md#the-hero-pop-up). Then the **confirm plate**
@@ -154,8 +153,9 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   people first, each on the one its profile asks for (`PROFILE.pos`; a guest's rides its
   hello, `NET.pos`) when nobody earlier on the side took it, then any free one, the bots last.
   A seat moves through the whole draft (`draftSwapRole`): a bot holding the asked one trades
-  (and picks again for its new one), a person keeps theirs. A hero's positions are its
-  `CLASSES` entry's `pos`; the grid's filter and the bots' pick read them (`heroPlays`). Your
+  (keeping its hero), a person keeps theirs. A hero has no position of its own: any hero plays
+  any of them, and the reveal hands each seat's into the match (`p.position`), where a bot
+  plays it (js/ai/ai-farm.js). Your
   side's positions reach a guest in the `draft` message, the rivals' never.
 
   When the pick ends every seat's hero is set (`setClass`) and the **countdown** starts

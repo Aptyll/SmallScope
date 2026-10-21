@@ -342,7 +342,7 @@ function treeRare(tx, ty) {
 
 // ---- the valley's centre ---------------------------------------------------
 // One map: the valley is one wide interior inside a ring of pines. (Other
-// map shapes, THICKET and FROZEN ISLES, stood here until PATCH 0.548; the
+// map shapes, THICKET and FROZEN ISLES, stood here until PATCH 0.549; the
 // PR that removed them names the commit to recover them from.)
 const CENTER_R = 8; // tiles of open ground kept at the world's centre, so the river spokes still meet in the open
 

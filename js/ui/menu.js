@@ -28,7 +28,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.548';
+const PATCH_TXT = 'PATCH 0.549';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -44,7 +44,8 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
-  ['0.548', 'ONE MAP: THE THICKET AND FROZEN ISLES MAP SHAPES ARE GONE FOR NOW, SO EVERY MATCH PLAYS THE OPEN VALLEY.'],
+  ['0.549', 'ONE MAP: THE THICKET AND FROZEN ISLES MAP SHAPES ARE GONE FOR NOW, SO EVERY MATCH PLAYS THE OPEN VALLEY.'],
+  ['0.548', 'BOTS PLAY THE ROLE THEY GOT IN CHAMP SELECT: TOP, MID AND BOT HOLD THEIR LANE, THE JUNGLER WALKS THE DENS, AND THE SUPPORT STAYS WITH ITS BOT AND LEAVES IT THE LAST HITS; ANY HERO CAN PLAY ANY ROLE.'],
   ['0.546', 'CHAMP SELECT LOOKS LIKE LEAGUE: YOUR TEAM DOWN THE LEFT WITH EACH PLAYER\'S ROLE, TOP, JUNGLE, MID, BOT OR SUPPORT, A HERO GRID WITH ROLE FILTERS AND A SEARCH, A BIG SPLASH WITH YOUR SKINS UNDER IT ONCE YOU LOCK IN, AND A TEAM CHAT BOTTOM LEFT: ENTER TO TALK, SPACE TO LOCK IN. THE PARTY LEADER SETS THE BOTS\' LEVEL ON THE PARTY SCREEN.'],
   ['0.545', 'THE SHOP IS LEAGUE\'S: OVER FIFTY ITEMS IN FOUR TIERS THAT BUILD INTO EACH OTHER, BOOTS THAT UPGRADE, NINE NEW PASSIVES, A RECOMMENDED TAB FOR YOUR HERO, TABS FOR TANK, BRUISER, MARKSMAN, ASSASSIN AND MAGE, STAT FILTERS DOWN THE LEFT AND A BUILDS INTO TREE; AND GOLD IS ON ITS SCALE: A SOLDIER\'S LAST HIT PAYS 160, EVERYONE STARTS WITH 500 AND EARNS 120 A MINUTE, DENS, BEARS, PUMPS AND KILLS PAY TEN TIMES MORE, SO A GOOD LANER AFFORDS A FIRST FINISHED ITEM AT ABOUT FIVE MINUTES.'],
   ['0.543', 'EVERY HERO HAS A STORY: THE WIKI TELLS WHO THEY WERE BEFORE THE EMPIRE THREW THEM OVER THE PASS, AND THE WORLD PAGE TELLS WHY THE VALLEY TAKES ANYONE WHO CAN DIG. THERE ARE NO MORE SCOUTS: THE SKINS SCREEN\'S FIRST TAB IS HERO, AND THE ROBOT SKIN IS THE IRON HERO.'],
@@ -1320,7 +1321,7 @@ function heroClick() {
 
 // what the pointer is on: 'play' (BAN / LOCK IN), 'hero' (the stage figure:
 // the hero pop-up), 'swap' (the trade mark on your row: the
-// next position), 'pos'N / 'search' (the filter row), 'skin'N /
+// next position), 'search' (the row over the grid), 'skin'N /
 // 'skinPrev' / 'skinNext' (the strip under the splash), 'talk' (the chat's
 // plate), 'pickN' (hero N's cell) or null.
 function lobbyHit() {
@@ -1436,7 +1437,6 @@ function lobbyClick() {
   else if (h === 'swap') draftRole(draftNextRole());            // the next position no person on your side holds
   else if (h === 'skinPrev' || h === 'skinNext') { m.skinOff = Math.max(0, (m.skinOff | 0) + (h === 'skinNext' ? 1 : -1)); SFX.pickup(); }
   else if (h.startsWith('skin')) lobbySkin(+h.slice(4));
-  else if (h.startsWith('pos')) heroFilter(+h.slice(3));
   else if (h.startsWith('pick')) lobbyPick(+h.slice(4));            // point at a hero on the grid (js/ui/heroes.js)
 }
 // a look on the strip: worn at once when this profile owns it
