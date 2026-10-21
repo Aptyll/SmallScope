@@ -4,19 +4,22 @@
 // Playwright, which the repo does not install: `PLAYWRIGHT=<path to the
 // package>` points at one, else `playwright` is required as usual.
 //   node app/check-join.js          every path, exit 1 on any failure
-//   node app/check-join.js steam-code   one path (relay-code, steam-code, steam-invite)
+//   node app/check-join.js steam-code   one path (relay-code, steam-code, steam-invite, friend-join, friend-invite)
 //
 // The Steam paths run against a FAKE Steam: one lobby-and-packet world in this
 // process, handed to each page as `window.steamBridge` with the calls and
 // event shapes desktop/main.js + preload.js give the real one (a lobby id is an
 // 18-digit string, binary frames lead with STEAM_MAGIC). It proves the page's
-// side of the wire; Steam itself still needs two machines.
+// side of the wire; Steam itself still needs two machines. The two pages are
+// each other's Steam friends there (the friends panel, js/ui/friends.js):
+// friend-join presses the host's row in the guest's column, friend-invite
+// sends the host's invite and presses JOIN on the guest's card.
 const path = require('path');
 const { spawn } = require('child_process');
 
 const CHECK_PORT = 8479;       // its own port, so a game already served on 8471 is left alone
 const JOIN_WAIT = 15;          // s a guest has to be welcomed
-const PATHS = ['relay-code', 'steam-code', 'steam-invite'];
+const PATHS = ['relay-code', 'steam-code', 'steam-invite', 'friend-join', 'friend-invite'];
 
 function loadPlaywright() {
   const tries = [process.env.PLAYWRIGHT, 'playwright', '/opt/node22/lib/node_modules/playwright'].filter(Boolean);
@@ -30,7 +33,7 @@ function fakeSteam() {
   const info = (l) => ({ id: l.id, owner: l.owner, members: [...l.members], data: Object.assign({}, l.data) });
   const chat = (l, user, change) => { for (const m of l.members) { const u = W.users.get(m); if (u) u.events.push({ t: 'chat', lobby: l.id, user, change }); } };
   async function attach(page, uid, name) {
-    const u = { events: [], packets: [] };
+    const u = { events: [], packets: [], name, rp: {} };
     W.users.set(uid, u);
     await page.exposeBinding('__steam', (src, method, a) => {
       const l = a && a[0] != null ? W.lobbies.get(String(a[0])) : null;
@@ -52,6 +55,11 @@ function fakeSteam() {
           else to.packets.push({ from: uid, text: Buffer.from(d.b64, 'base64').toString('utf8') });
           return true;
         }
+        case 'presence': Object.assign(u.rp, a[0] || {}); return true;
+        case 'friends': return { ok: true, recent: [], friends: [...W.users].filter(([id]) => id !== uid).map(([id, f]) => ({
+          id, name: f.name, st: 1, game: true, lobby: f.rp.sf_lobby || '', mode: f.rp.sf_mode || '', n: parseInt(f.rp.sf_n, 10) || 0, state: f.rp.sf_state || '', patch: f.rp.sf_patch || '' })) };
+        case 'inviteFriend': { const to = W.users.get(String(a[1])); if (!to) return false; const c = a[2] || {}; to.events.push({ t: 'invite', from: uid, name, lobby: String(a[0]), mode: c.mode, n: c.n, patch: c.patch }); return true; }
+        case 'playedWith': return [];
         case 'drain': { const out = { ev: u.events, pk: u.packets.splice(0, 64) }; u.events = []; return out; }
         default: return true; // invite, log, flash, accept
       }
@@ -65,6 +73,8 @@ function fakeSteam() {
         leaveLobby: (id) => call('leaveLobby', String(id)), lobby: (id) => call('lobby', String(id)), lobbies: () => call('lobbies'),
         setLobbyData: (id, d) => call('setLobbyData', String(id), d), invite: (id) => call('invite', String(id)), log: (l) => call('log', String(l)),
         flash: () => call('flash'), accept: (id) => call('accept', String(id)),
+        friends: () => call('friends'), inviteFriend: (l, id, c) => call('inviteFriend', String(l), String(id), c), presence: (kv) => call('presence', kv),
+        overlayUser: () => call('overlayUser'), overlayFriends: () => call('overlayFriends'), playedWith: (l) => call('playedWith', String(l)),
         send: (to, data, rel) => call('send', String(to), typeof data === 'string' ? data : { b64: b64(data), first: data[0] }, rel),
         onEvent: (cb) => evs.push(cb), onPackets: (cb) => pks.push(cb),
       };
@@ -80,7 +90,7 @@ function fakeSteam() {
 
 // ---- one path -------------------------------------------------------------
 async function runPath(browser, kind) {
-  const steam = kind.startsWith('steam'), S = fakeSteam(), errs = [];
+  const steam = kind !== 'relay-code', S = fakeSteam(), errs = [];
   const base = 'http://localhost:' + CHECK_PORT + '/';
   const mk = async (tag, uid) => {
     const c = await browser.newContext({ viewport: { width: 1280, height: 720 } });
@@ -95,22 +105,36 @@ async function runPath(browser, kind) {
   await open(A, 7);
   await A.evaluate(() => menuActivate(0)); // QUICKPLAY: a party, hosted
   await A.waitForFunction(() => NET.role === 'host' && NET.transport.open && roomCode(), null, { timeout: 10000 });
+  let why0 = '';
   const host = await A.evaluate(() => ({ code: roomCode(), lobby: NET.transport.lobbyId || null }));
   if (kind === 'steam-invite') await B.goto(base + '?join=' + host.lobby + q); // what a Steam invite opens (steamJoinRequested / +connect_lobby)
-  else { // a code typed into the guest's own party, on another seed: the page reloads onto the host's
+  else if (kind.startsWith('friend')) { // the guest in a party of its own, the host in its friends' column
+    await open(B, 9);
+    await B.evaluate(() => menuActivate(0));
+    await B.waitForFunction((l) => NET.role === 'host' && NET.transport.open && FRIENDS.on && FRIENDS.list.some((f) => f.lobby === l), host.lobby, { timeout: 10000 });
+    if (kind === 'friend-join') {
+      const act = await B.evaluate((l) => { const f = FRIENDS.list.find((q) => q.lobby === l); const a = friendAct(f); if (a === 'join') friendDo(f); return a; }, host.lobby);
+      if (act !== 'join') why0 = 'host row offers ' + act;
+    } else {
+      await A.waitForFunction(() => FRIENDS.list.some((f) => friendAct(f) === 'invite'), null, { timeout: 10000 });
+      await A.evaluate(() => friendDo(FRIENDS.list.find((f) => friendAct(f) === 'invite')));
+      await B.waitForFunction(() => !!friendCardRect(), null, { timeout: 5000 });
+      await B.evaluate(() => { const r = friendCardRect(); mouse.x = r.join.x + 2; mouse.y = r.join.y + 2; menuClick(); });
+    }
+  } else { // a code typed into the guest's own party, on another seed: the page reloads onto the host's
     await open(B, 9);
     await B.evaluate(() => menuActivate(0));
     await B.waitForFunction(() => NET.role === 'host' && NET.transport.open, null, { timeout: 10000 });
     await B.evaluate((c) => { state.menu.codeOn = true; state.menu.code = ''; for (const ch of c) codeType(ch); }, host.code);
   }
-  let ok = false, why = '';
+  let ok = false, why = why0;
   const t0 = Date.now();
   while (Date.now() - t0 < JOIN_WAIT * 1000) {
     await B.waitForTimeout(500);
     try { ok = await B.evaluate(() => NET.role === 'client' && NET.welcomed && SEED === 7); } catch (e) { ok = false; } // mid-reload
     if (ok) break;
   }
-  if (!ok) why = 'guest never welcomed';
+  if (!ok) why = why || 'guest never welcomed';
   else {
     // the page must still be running: a throw in a frame ends the loop and leaves the screen frozen
     const alive = async (pg) => { const a = await pg.evaluate(() => state.menu.t); await pg.waitForTimeout(400); return (await pg.evaluate(() => state.menu.t)) > a; };

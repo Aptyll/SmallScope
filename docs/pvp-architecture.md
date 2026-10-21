@@ -124,7 +124,12 @@ IPC (`steam:*`) and pumps packets and lobby events to the page every 8 ms; `prel
 `window.steamBridge` and nothing else of Node. It loads the same `index.html` a browser opens, so
 `node app/server.js` and a double-click still run the game solo; with Steam absent the bridge
 reports `ready: false` and the page plays solo. The App ID is the environment's `SteamAppId`, else
-`desktop/steam_appid.txt` (Softfall's, 5244550), else 480.
+`desktop/steam_appid.txt` (Softfall's, 5244550), else 480. steamworks.js has no friends API, so
+`desktop/steam-friends.js` calls the same steam_api64.dll's flat API through koffi for the friends
+panel (js/ui/friends.js): `friends`, `inviteFriend` (Steam's invite plus a `0xB2` packet the
+friend's pump turns into an `invite` event, from friends only), `overlayUser` (the add-friend
+page), `overlayFriends`, `presence` (rich presence: `status`, `connect`, `sf_*`) and `playedWith`.
+If koffi or the DLL fails, `friends()` answers `ok: false` and the panel never draws.
 
 **The role is decided by `netSetup(role, transport)`**: at boot from `?net=host|client` with
 `&room=CODE` or `&lobby=ID`, or from the rooms screen through `netHost()`/`netJoin(code)`;
@@ -417,7 +422,9 @@ The same screens and the same protocol ride either transport; only the list and 
    `code`; an entry on another patch never matches (`roomOk`), and a Steam lobby without a `patch`
    key is someone else's test on a shared App ID. A Steam invite taken up (`joinRequested`, or
    `+connect_lobby ID` on the launch line, which desktop/main.js turns into `?join=ID`) joins
-   directly (`partyBootJoin`).
+   directly (`partyBootJoin`), as does the gold step on a friend's row in the friends panel
+   (their lobby from Steam's game info or their `sf_lobby` presence) and JOIN on a friend's
+   invite card (js/ui/friends.js).
 3. **Join.** `joinRoom(r)`: **SEED is decided at load**, so a page born on another seed reloads
    itself onto the party's (`?seed=N&join=CODE`, plus `&transport=steam`; the Steam transport does
    the same from `connect()`, on another seed or map shape, with `&map=M&join=ID`) and joins from
@@ -520,7 +527,7 @@ Every step shipped as its own PR and kept solo play identical.
    tile scan spread over the steps - 0.467.
 
 Releases: every `v*` tag builds the portable zip (desktop/build.js - the page, `js/`, the
-mp3s of `audio/music/` and the wrapper with steamworks.js, nothing else; `npm run steam:stage`
+mp3s of `audio/music/` and the wrapper with steamworks.js and koffi (win32_x64's binary only), nothing else; `npm run steam:stage`
 builds the same package into the SDK's content folder for a steamcmd upload),
 .github/workflows/desktop.yml) and attaches it to a GitHub Release. A Steam tester's account
 must own the app.

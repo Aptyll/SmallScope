@@ -12,7 +12,8 @@
 // draws gets through (talkClean). The list lives in NET.chat and starts
 // empty with every room.
 //
-// INVITE (a Steam lobby only; every party has its code to copy as well)
+// INVITE (a Steam lobby only; every party has its code to copy as well;
+// one friend at a time from the friends column, js/ui/friends.js)
 // opens Steam's friends overlay on this lobby, and so does an empty seat's +. A friend's invite taken up, or
 // Steam's Join Game on a friend in a room, reloads this page onto that lobby
 // (`joinRequested` from desktop/main.js, or `+connect_lobby` at launch,

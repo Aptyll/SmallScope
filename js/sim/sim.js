@@ -160,6 +160,7 @@ function update(dt) {
     updateTitle(dt); // menu timers, camera drift, and the ambient world behind it
   }
   if (PRACTICE) updateRooms(dt); // a party's guest joining its leader on the field (js/ui/rooms.js)
+  friendsTick(dt); // the Steam friends' list, presence and invite card (js/ui/friends.js)
 
   // camera: director mode's own first (dirCam, js/app/director.js), when it has
   // the shot - the free camera anywhere but the title, the steady follow in play

@@ -218,7 +218,7 @@ function partyGiveUp() {
 function beginRoom() {
   const m = state.menu;
   m.screen = 'room';
-  m.rseat = -1; m.rword = 1; m.rkeys = false; m.talkOn = false;
+  m.rseat = -1; m.rword = 1; m.rkeys = false; m.talkOn = false; m.fcur = -1;
   m.countT = 0; m.countN = -1;
   m.code = m.code || ''; m.codeShake = 0;
   partySeats();
@@ -275,6 +275,8 @@ function roomHit() {
   const inv = roomInviteRect(L);
   if (inv && inRect(inv, 3)) return { kind: 'invite' };
   if (codeBoxShown() && inRect(L.box, 2)) return { kind: 'box' };
+  const fh = friendsHit(L); // the Steam friends' column (js/ui/friends.js)
+  if (fh) return fh;
   if (inRect(talkLayout(L), 2)) return { kind: 'talk' };
   if (m.joining) return null;
   for (const s of L.seats) if (inRect(s)) {
@@ -301,6 +303,7 @@ function roomDo(h) {
   if (h.kind === 'invite') { roomInvite(); return; }
   if (h.kind === 'box') { m.codeOn = true; m.code = ''; SFX.pickup(); return; }
   if (h.kind === 'talk') { talkOpen(); return; }
+  if (h.kind === 'friend') { if (h.f.head) friendHeadDo(); else friendDo(h.f); return; }
   if (h.kind === 'word') {
     if (h.w === 'LEAVE') leaveRoom();
     else if (h.w === 'FIND MATCH' || /^\d+:\d\d$/.test(h.w)) partyFind();
@@ -332,8 +335,10 @@ function roomKey(k, e) {
   }
   if (talkKey(k, e)) return; // a chat line being typed takes every key (js/ui/roomtalk.js)
   m.rkeys = true;
+  if (m.fcur >= 0 && friendsKey(k, L)) return; // the keys in the friends' column (js/ui/friends.js)
   if (k === 'escape' || k === 'backspace') { leaveRoom(); return; }
   const d = moveDir(k), at = L.seats.findIndex((s) => s.p.id === m.rseat);
+  if (d === 'right' && at >= 0 && friendsLayout(L)) { m.fcur = 0; SFX.pickup(); return; }
   if (m.rseat === RS_HEAD) { // the cursor on the mode's name: left and right turn it
     if (d === 'left' || d === 'right') modeSwap(d === 'right' ? 1 : -1);
     else if (k === 'enter' || k === ' ') modeSwap(1);
@@ -585,6 +590,7 @@ function renderRoom(now, a) {
     drawRoomSeat(s, act === 'none' ? null : act, m.cardFx && m.cardFx[s.p.id] > 0);
     if (m.rseat === s.p.id && !hit) { ctx.fillStyle = SC_GOLD; ctx.fillRect(s.x, s.y, 2, s.h); }
   }
+  if (!m.joining) drawFriends(L, hit && hit.kind === 'friend' ? hit : null);
   drawTalk(L, now, hit && hit.kind === 'talk');
   for (let i = 0; i < L.words.length; i++) {
     const w = L.words[i], hot = hit ? hit.kind === 'word' && hit.w === w.label : m.rkeys && m.rseat === -1 && m.rword === i;

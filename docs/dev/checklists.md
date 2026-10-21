@@ -69,8 +69,8 @@ declare victory. The affordances:
     the Claude browser pane a tab that never got a frame does not tick at all: drive a client
     with `setInterval(() => DBG.step(1/60, 4), 66)` and it plays.
   - **`node app/check-join.js`** — run it after touching the party screen, a join path or
-    `js/net/`: two headless pages join a party by code on the relay, by code on Steam and from a
-    Steam invite (Steam faked in the script with the wrapper's bridge calls), and each must end
+    `js/net/`: two headless pages join a party by code on the relay, by code on Steam, from a
+    Steam invite, from the friends panel's row and from its invite card (Steam faked in the script with the wrapper's bridge calls), and each must end
     welcomed with both pages still drawing. It serves the game itself on its own port and needs
     Playwright (`PLAYWRIGHT=<its folder>` if it is not on the require path).
   - **Under the wrapper — Noah runs this by hand; a session never starts Electron or makes a
