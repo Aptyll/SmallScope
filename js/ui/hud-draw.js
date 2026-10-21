@@ -30,13 +30,15 @@ function portraitSprite(p) {
 }
 // a player's FACE in an fs-square window: the dusk behind, the model's head
 // and shoulders at 2x, clipped to the window - the small faces, where the
-// strip's is 3x: the announcer's plate and feed, and the team rail
-function drawFace(fx, fy, fs, p) {
+// strip's is 3x: the announcer's plate and feed, and the team rail (sc:
+// another scale, the party's seats' 3x)
+function drawFace(fx, fy, fs, p, sc) {
+  sc = sc || 2;
   ctx.fillStyle = PORT_SKY; ctx.fillRect(fx, fy, fs, fs);
   ctx.fillStyle = PORT_GROUND; ctx.fillRect(fx, fy + (fs >> 1) + 3, fs, fs - (fs >> 1) - 3);
   const spr = portraitSprite(p);
   ctx.save(); ctx.beginPath(); ctx.rect(fx, fy, fs, fs); ctx.clip();
-  ctx.drawImage(spr, fx + ((fs - spr.width * 2) >> 1), fy + (fs >> 1) - 14, spr.width * 2, spr.height * 2);
+  ctx.drawImage(spr, fx + ((fs - spr.width * sc) >> 1), fy + (fs >> 1) - 7 * sc, spr.width * sc, spr.height * sc);
   ctx.restore();
 }
 function drawPortrait(now) {

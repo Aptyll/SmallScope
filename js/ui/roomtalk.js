@@ -80,23 +80,28 @@ function talkOpen() {
   m.talkOn = true; m.talk = '';
   SFX.pickup();
 }
-// the plate and the lines over it, at the foot of the seats
+// the plate and the lines over it: where L puts it (L.ty; the party's
+// bottom-left corner, roomLayout's L.talk), or at the foot of the screen
 function talkLayout(L) {
-  const y = VIEW_H - 36 - 12 - TALK_H;
+  const y = L.ty != null ? L.ty : VIEW_H - 36 - 12 - TALK_H;
   return { x: L.x, y, w: L.w, h: TALK_H, top: y - TALK_KEEP * TALK_PITCH - 2 };
 }
 function drawTalk(L, now, hot) {
   const m = state.menu, T = talkLayout(L);
+  ctx.save(); ctx.beginPath(); ctx.rect(T.x, T.top - 2, T.w, T.y - T.top + 2); ctx.clip(); // a long line stops at the plate's edge
   NET.chat.forEach((c, i) => {
     const y = T.y - (NET.chat.length - i) * TALK_PITCH - 2, nm = c.name + ':';
     drawPixelText(ctx, nm, T.x + 2, y, TEAMS[skin(c.team)].mark, 1);
     drawPixelText(ctx, c.s, T.x + 2 + pixelTextWidth(nm) + 5, y, SC_TXT, 1);
   });
+  ctx.restore();
   ctx.fillStyle = m.talkOn ? '#c89a3c' : hot ? SC_LBL : SC_EDGE; ctx.fillRect(T.x, T.y, T.w, T.h);
   ctx.fillStyle = m.talkOn ? SC_YOU : SC_PLATE; ctx.fillRect(T.x + 1, T.y + 1, T.w - 2, T.h - 2);
   if (m.talkOn) {
-    drawPixelText(ctx, m.talk, T.x + 5, T.y + 4, SC_LIT, 1);
-    if (Math.floor(now * 2.5) % 2) { ctx.fillStyle = SC_GOLD; ctx.fillRect(T.x + 6 + pixelTextWidth(m.talk), T.y + 3, 1, 7); }
+    let t = m.talk;
+    while (t && pixelTextWidth(t) > T.w - 12) t = t.slice(1); // a long line scrolls: its end stays in view
+    drawPixelText(ctx, t, T.x + 5, T.y + 4, SC_LIT, 1);
+    if (Math.floor(now * 2.5) % 2) { ctx.fillStyle = SC_GOLD; ctx.fillRect(T.x + 6 + pixelTextWidth(t), T.y + 3, 1, 7); }
     return;
   }
   // at rest: the key that starts a line, and a speech bubble

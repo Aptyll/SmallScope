@@ -29,8 +29,8 @@
 // lobby's other members are marked played with (friendsPlayed).
 //
 // No bridge, no friends call, or a bridge that answers `ok: false` (koffi
-// missing): FRIENDS.on stays false, the column keeps only its head and foot
-// (your code, the slots for a friend's), and an empty seat's + still opens
+// missing): FRIENDS.on stays false, the column keeps only its head (you and
+// your code), and an empty seat's + still opens
 // Steam's own invite.
 const FR_POLL = 3;          // s between reads of the list while the title is up
 const SOCIAL_W = 156;         // the social column down the right edge (drawSocial); the party's seats centre in what is left
@@ -129,11 +129,8 @@ function friendDo(f) {
 // One plate down the party screen's right edge, top to foot: YOU at its
 // head (your face, your name, and under it the party's code in gold - a
 // click copies it; dim, with a red dot blinking after it, while the link is
-// down), your friends down its middle, and at its foot, on the line LEAVE
-// and FIND MATCH stand on, JOIN and four slots that take a friend's code
-// while you are a party of one (codeType, rooms.js). Your code at the top,
-// theirs at the bottom, the same gold at the same size. Without Steam the
-// middle is empty.
+// down), and your friends down the rest of it. Without Steam the friends
+// are not there and the column is your head alone.
 function socialRect() { return { x: VIEW_W - SOCIAL_W, y: 0, w: SOCIAL_W, h: VIEW_H }; }
 function socialCodeRect() {
   const R = socialRect(), code = roomCode();
@@ -141,16 +138,11 @@ function socialCodeRect() {
 }
 // Steam's friends list: the person-plus at the head's far end, level with your name
 function socialAddRect() { const R = socialRect(); return { x: R.x + SOCIAL_W - SOCIAL_PAD - 8, y: 12, w: 8, h: 7 }; }
-// the foot's four slots, centred on the words' line
-function socialBoxRect() {
-  const R = socialRect(), w = SOCIAL_W - 2 * SOCIAL_PAD, y = VIEW_H - 36 + ((7 * MENU_TXT_SCALE + 4 - RM_CODE_H) >> 1);
-  return { x: R.x + SOCIAL_PAD, y, w, h: RM_CODE_H };
-}
-// the rows between the head and the foot, FRIENDS.scroll rows down
+// the rows under the head, FRIENDS.scroll rows down
 function friendsLayout(L) {
   if (!FRIENDS.on || !L.seats.length || state.menu.joining) return null;
   const R = socialRect(), x = R.x + SOCIAL_PAD, w = SOCIAL_W - 2 * SOCIAL_PAD, y = SOCIAL_HEAD;
-  const bottom = socialBoxRect().y - 6;
+  const bottom = VIEW_H - 10;
   const on = FRIENDS.list.filter((f) => frGroup(f) < 3), off = FRIENDS.list.filter((f) => frGroup(f) === 3);
   const rows = [];
   const group = (key, list) => {
@@ -187,7 +179,7 @@ function friendsKey(k, L) {
   if (!F || !F.rows.length) { m.fcur = -1; return false; }
   const rows = F.rows;
   const at = Math.max(0, Math.min(rows.length - 1, m.fcur));
-  if (d === 'left' || k === 'escape') { m.fcur = -1; m.rseat = L.seats[0].p.id; SFX.pickup(); return true; }
+  if (d === 'left' || k === 'escape') { m.fcur = -1; m.rseat = L.seats[L.seats.length - 1].p.id; SFX.pickup(); return true; }
   if (d === 'up' || d === 'down') {
     const to = at + (d === 'down' ? 1 : -1);
     if (to < 0 && FRIENDS.scroll > 0) friendsScrollBy(-1);
@@ -238,8 +230,6 @@ function drawSocial(L, now, hit) {
   if (!up && Math.floor(now * 3) % 2) { ctx.fillStyle = RM_BAD; ctx.fillRect(x + 34 + (cr ? cr.w + 4 : 0), 27, 4, 4); } // the link is down: the code would find nothing
   if (FRIENDS.on) { const a = socialAddRect(); frBmp(a.x, a.y, FR_ICON.add, hit && hit.f && hit.f.head ? '#ffd95c' : SC_GOLD); }
   ctx.fillStyle = SC_EDGE; ctx.fillRect(R.x, SOCIAL_HEAD, R.w, 1);
-  // the foot: the slots a friend's code goes in, while you are a party of one (or on your way into theirs)
-  if (codeBoxShown() || m.joining) drawCodeBox(socialBoxRect(), m.joining || m.seek ? Object.assign({}, m, { codeOn: true }) : m, now, hit && hit.kind === 'box');
   if (!m.joining) drawFriends(L, hit && hit.kind === 'friend' ? hit : null);
 }
 function drawFriends(L, hit) {
