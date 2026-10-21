@@ -910,6 +910,7 @@ pageListen(canvas, 'wheel', (e) => {
     if (state.menu.screen === 'notes' && state.menu.notesT >= 1) { e.preventDefault(); notesScrollBy(e.deltaY > 0 ? 16 : -16); }
     else if (state.menu.panel === 'settings') { e.preventDefault(); settingsScrollBy(e.deltaY > 0 ? 14 : -14); }
     else if (state.menu.screen === 'wiki' && state.menu.wikiT >= 1) { e.preventDefault(); wikiScrollBy(e.deltaY > 0 ? 14 : -14); }
+    else if (state.menu.screen === 'room' && friendsOver()) { e.preventDefault(); friendsScrollBy(e.deltaY > 0 ? 1 : -1); } // the friends' column (js/ui/friends.js)
     return;
   }
   // dead and watching somebody (a respawn wait, or SPECTATE after the end):

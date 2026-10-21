@@ -29,7 +29,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.540';
+const PATCH_TXT = 'PATCH 0.541';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -45,6 +45,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.541', 'YOUR STEAM FRIENDS SIT BESIDE YOUR PARTY: JOIN A FRIEND\'S PARTY IN ONE CLICK, INVITE AN ONLINE FRIEND STRAIGHT FROM THE GAME (THEY GET A JOIN CARD), AND ADD PEOPLE YOU JUST PLAYED WITH.'],
   ['0.540', 'JOINING A FRIEND\'S PARTY ON STEAM, BY ITS CODE OR FROM AN INVITE, NO LONGER FREEZES THE GAME ON A BLUE SCREEN.'],
   ['0.538', 'FOOD IS GONE AND HEALS WORK LIKE LEAGUE: BUY HEALTH POTIONS AT THE SHOP, UP TO FIVE IN ONE ITEM SLOT, AND PRESS ITS KEY TO HEAL 100 OVER 15 SECONDS; ROLL OVER A CREEK FISH OR WALK INTO A RIPE BERRY BUSH BY THE CAMPS AND THE RIVER TO HEAL AT ONCE.'],
   ['0.537', 'CAMP TIMERS: A CLEARED CAMP SHOWS ITS RESPAWN TIME OVER THE CAMP AND UNDER ITS ICON ON BOTH MAPS, BUT ONLY TO A TEAM THAT SAW IT CLEARED.'],
@@ -697,6 +698,7 @@ function menuClick() {
   const m = state.menu;
   SFX.unlock();
   if (state.fade) return;
+  if (friendCardClick()) return; // a Steam friend's invite card (js/ui/friends.js)
   if (m.screen === 'wiki') { wikiClick(); return; }
   if (m.screen === 'notes') { notesClick(); return; }
   if (m.screen === 'hero') { heroClick(); return; }
@@ -2218,6 +2220,7 @@ function renderTitle(now) {
   if (kc > 0.005) renderProfileCard(now, kc * (1 - out));
   if (rc > 0.005) renderRoom(now, rc * (1 - out));
   if (bc > 0.005) renderSkins(now, bc * (1 - out));
+  drawFriendCard(); // a Steam friend's invite, over whichever screen (js/ui/friends.js)
 
   // sub-panels slide up from the bottom edge over the still-visible world
   if (m.panel) {
