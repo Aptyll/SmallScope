@@ -17,7 +17,8 @@ ten-player `Player` array, the input struct and the bot brain are what keep the 
   binary deltas at 15 Hz, eased on the client, the client's own walk predicted), the cosmetic event ring, the
   HOST LEFT ending, and the wrapper with Steam lobbies listed through the same rooms screen.
 - **Unverified:** nothing on the Steam path (lobby round trip, P2P packets, the unreliable
-  channel's frames) has run against a live Steam - only in Node against a fake bridge and as a
+  channel's frames) has run against a live Steam - only against a fake bridge (Node, and
+  `app/check-join.js`, which joins two headless pages by code and by invite through one) and as a
   headless wrapper boot. The first live test should watch `DBG.netStatus()`: `framesLost` on a
   client (the receiver counts a delta it gave up on) and `fulls` on the host.
 - **Owed:** the host clamps nothing in a remote input; the roost alarm's notice plate (`raiseNotice`) and the own-bird alarm cue are raised on the host's screen only; a per-kind field policy if
