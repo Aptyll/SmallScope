@@ -12,9 +12,9 @@
 // draws gets through (talkClean). The list lives in NET.chat and starts
 // empty with every room.
 //
-// INVITE (a Steam lobby only; every party has its code to copy as well;
-// one friend at a time from the friends column, js/ui/friends.js)
-// opens Steam's friends overlay on this lobby, and so does an empty seat's +. A friend's invite taken up, or
+// INVITE: in a Steam lobby an empty seat's + opens Steam's friends overlay
+// on it (every party has its code to copy as well; one friend at a time from
+// the social column, js/ui/friends.js). A friend's invite taken up, or
 // Steam's Join Game on a friend in a room, reloads this page onto that lobby
 // (`joinRequested` from desktop/main.js, or `+connect_lobby` at launch,
 // which main.js turns into ?join=); the join from boot does the rest.
@@ -23,8 +23,7 @@
 // chat line lands or the count to the match starts flashes in the taskbar
 // (the wrapper's `flash`) or, in a browser, marks its tab's title until it
 // is looked at.
-const TALK_KEEP = 6;       // lines kept: the champ select shows them all, the room TALK_ROOM
-const TALK_ROOM = 4;       // lines the room shows
+const TALK_KEEP = 6;       // lines kept, and shown where the screen has the room
 const TALK_MAX = 48;       // characters a line may carry
 const TALK_GAP = 0.4;      // s a guest's lines must stand apart
 const TALK_PITCH = 9;      // px between lines
@@ -83,16 +82,18 @@ function talkOpen() {
   m.talkOn = true; m.talk = '';
   SFX.pickup();
 }
-// the plate and the lines over it: at the foot of the room's seats, or
-// where L puts it (L.ty, the champ select's bottom left) with L.lines lines
+// the plate and the lines over it: where L puts it (L.ty; the party's
+// bottom-left corner, roomLayout's L.talk, as tall as the button beside it:
+// L.th; its lines may run L.cw wide; the champ select's bottom left with
+// L.lines lines), or at the foot of the screen
 function talkLayout(L) {
-  const y = L.ty != null ? L.ty : VIEW_H - 36 - 12 - TALK_H, n = L.lines || TALK_ROOM;
-  return { x: L.x, y, w: L.w, h: TALK_H, n, top: y - n * TALK_PITCH - 2 };
+  const y = L.ty != null ? L.ty : VIEW_H - 36 - 12 - TALK_H, n = L.lines || TALK_KEEP;
+  return { x: L.x, y, w: L.w, h: L.th || TALK_H, cw: L.cw || L.w, n, top: y - n * TALK_PITCH - 2 };
 }
 function inTalk(L) { return overRect(talkLayout(L), 2, 2); }
 function drawTalk(L, now, hot) {
   const m = state.menu, T = talkLayout(L), lines = NET.chat.slice(-T.n);
-  ctx.save(); ctx.beginPath(); ctx.rect(T.x, T.top - 2, T.w, T.y - T.top + 2); ctx.clip(); // a long line stops at the plate's edge
+  ctx.save(); ctx.beginPath(); ctx.rect(T.x, T.top - 2, T.cw, T.y - T.top + 2); ctx.clip(); // a long line stops at its edge
   lines.forEach((c, i) => {
     const y = T.y - (lines.length - i) * TALK_PITCH - 2, nm = c.name + ':';
     drawPixelText(ctx, nm, T.x + 2, y, TEAMS[skin(c.team)].mark, 1);
@@ -102,25 +103,24 @@ function drawTalk(L, now, hot) {
   ctx.fillStyle = m.talkOn ? '#c89a3c' : hot ? SC_LBL : SC_EDGE; ctx.fillRect(T.x, T.y, T.w, T.h);
   ctx.fillStyle = m.talkOn ? SC_YOU : SC_PLATE; ctx.fillRect(T.x + 1, T.y + 1, T.w - 2, T.h - 2);
   if (m.talkOn) {
-    drawPixelText(ctx, m.talk, T.x + 5, T.y + 4, SC_LIT, 1);
-    if (Math.floor(now * 2.5) % 2) { ctx.fillStyle = SC_GOLD; ctx.fillRect(T.x + 6 + pixelTextWidth(m.talk), T.y + 3, 1, 7); }
+    let t = m.talk;
+    while (t && pixelTextWidth(t) > T.w - 12) t = t.slice(1); // a long line scrolls: its end stays in view
+    const ty = T.y + ((T.h - 5) >> 1);
+    drawPixelText(ctx, t, T.x + 5, ty, SC_LIT, 1);
+    if (Math.floor(now * 2.5) % 2) { ctx.fillStyle = SC_GOLD; ctx.fillRect(T.x + 6 + pixelTextWidth(t), ty - 1, 1, 7); }
     return;
   }
   // at rest: the key that starts a line, and a speech bubble
-  drawKeyCap(ctx, T.x + 3, T.y + 1, 'ENTER', false, hot);
-  const bx = T.x + 9 + pixelTextWidth('ENTER') + 6, by = T.y + 3;
+  const ky = T.y + ((T.h - 10) >> 1);
+  drawKeyCap(ctx, T.x + 3 + (T.h > TALK_H ? 3 : 0), ky, 'ENTER', false, hot);
+  const bx = T.x + 9 + (T.h > TALK_H ? 3 : 0) + pixelTextWidth('ENTER') + 6, by = ky + 2;
   ctx.fillStyle = hot ? SC_LIT : SC_DIM;
   ctx.fillRect(bx + 1, by, 7, 1); ctx.fillRect(bx, by + 1, 1, 3); ctx.fillRect(bx + 8, by + 1, 1, 3); ctx.fillRect(bx + 1, by + 4, 7, 1);
   ctx.fillRect(bx + 2, by + 5, 1, 1); ctx.fillRect(bx + 1, by + 6, 1, 1);
 }
 
 // ------------------------------------------------------------ invite
-// INVITE sits before the party's code, top-right, in a Steam lobby: Steam's
-function roomInviteRect(L) {
-  if (!netSteam() || !NET.transport || !NET.transport.lobbyId) return null;
-  const w = pixelTextWidth('INVITE', 2), code = roomCode(), cw = code ? pixelTextWidth(code, 2) + 18 : 0;
-  return { x: L.x + L.w - cw - w, y: 16, w, h: 10 };
-}
+// An empty seat's + in a Steam lobby: Steam's friends overlay on this lobby
 function roomInvite() {
   const b = window.steamBridge;
   if (b && b.invite && NET.transport && NET.transport.lobbyId) { b.invite(NET.transport.lobbyId); SFX.place(); } else SFX.deny();

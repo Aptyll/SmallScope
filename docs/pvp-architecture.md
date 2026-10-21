@@ -416,7 +416,7 @@ The same screens and the same protocol ride either transport; only the list and 
    `seed`, `state: 'open'`, `code` and the host's name into lobby data. The host publishes its
    list entry once the transport is open (`netHostRoom`), and again on every join, leave and at
    the drop (`state: 'live'`).
-2. **Join by code.** A friend types or pastes the code into the CODE box of their own party
+2. **Join by code.** A friend types or pastes the code into the JOIN slots of their own party
    (`partySeek`): the code is looked up on the list, fed live by `wsRooms`, or by `steamRooms`
    polled every `STEAM_LIST_T` (2 s) when `netSteam()`, matching a relay room's name or a lobby's
    `code`; an entry on another patch never matches (`roomOk`), and a Steam lobby without a `patch`
