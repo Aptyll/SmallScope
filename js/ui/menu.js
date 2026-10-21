@@ -28,7 +28,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.557';
+const PATCH_TXT = 'PATCH 0.558';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -44,6 +44,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.558', 'ON STEAM, TWO PARTIES THAT PRESS FIND MATCH NOW MEET IN ONE CHAMP SELECT, FROM ANY REGION, INSTEAD OF EACH PLAYING BOTS ALONE.'],
   ['0.557', 'A BOOK ON THE CHAMP SELECT SPLASH: PRESS IT TO READ YOUR HERO\'S STORY WHILE YOU WAIT FOR THE MATCH.'],
   ['0.556', 'IGNIA\'S PASSIVE IS NOW CALLED SPREADING FLAME, SO IT IS NEVER CONFUSED WITH THE KINDLING ITEM PASSIVE.'],
   ['0.555', 'A NEW HERO, AURA THE NORTHERN LIGHT: SHE STRIKES FROM FURTHER THAN ANYONE WITH A FALLING STAR, A DRIFTING LIGHT AND A CURTAIN OF LIGHT ACROSS THE MAP, REACHES FURTHER AT NIGHT, AND EVERY RIVAL SHE TOUCHES IS REVEALED, EVEN IN THE WOODS.'],

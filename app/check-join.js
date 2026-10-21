@@ -1,10 +1,12 @@
 // The join check: two headless pages meet through every way a friend joins a
-// party, and each must end WELCOMED with its page still drawing. It serves the
+// party, and each must end WELCOMED with its page still drawing; then FIND
+// MATCH must take a party, and two parties that meet, into ONE draft. It serves the
 // game itself (app/server.js on CHECK_PORT) and drives Chromium through
 // Playwright, which the repo does not install: `PLAYWRIGHT=<path to the
 // package>` points at one, else `playwright` is required as usual.
 //   node app/check-join.js          every path, exit 1 on any failure
-//   node app/check-join.js steam-code   one path (relay-code, steam-code, steam-invite, friend-join, friend-invite)
+//   node app/check-join.js steam-code   one path (relay-code, steam-code, steam-invite, friend-join,
+//                                       friend-invite, steam-party, steam-match, relay-match)
 //
 // The Steam paths run against a FAKE Steam: one lobby-and-packet world in this
 // process, handed to each page as `window.steamBridge` with the calls and
@@ -19,7 +21,8 @@ const { spawn } = require('child_process');
 
 const CHECK_PORT = 8479;       // its own port, so a game already served on 8471 is left alone
 const JOIN_WAIT = 15;          // s a guest has to be welcomed
-const PATHS = ['relay-code', 'steam-code', 'steam-invite', 'friend-join', 'friend-invite'];
+const PARTY_PATHS = ['steam-party', 'steam-match', 'relay-match'];
+const PATHS = ['relay-code', 'steam-code', 'steam-invite', 'friend-join', 'friend-invite'].concat(PARTY_PATHS);
 
 function loadPlaywright() {
   const tries = [process.env.PLAYWRIGHT, 'playwright', '/opt/node22/lib/node_modules/playwright'].filter(Boolean);
@@ -32,6 +35,7 @@ function fakeSteam() {
   const W = { lobbies: new Map(), users: new Map(), next: 109775240000000001n };
   const info = (l) => ({ id: l.id, owner: l.owner, members: [...l.members], data: Object.assign({}, l.data) });
   const chat = (l, user, change) => { for (const m of l.members) { const u = W.users.get(m); if (u) u.events.push({ t: 'chat', lobby: l.id, user, change }); } };
+  const leave = (l, uid) => { if (l && l.members.delete(uid)) { chat(l, uid, 2); if (!l.members.size) W.lobbies.delete(l.id); else if (l.owner === uid) l.owner = [...l.members][0]; } };
   async function attach(page, uid, name) {
     const u = { events: [], packets: [], name, rp: {} };
     W.users.set(uid, u);
@@ -41,9 +45,8 @@ function fakeSteam() {
         case 'info': return { ready: true, error: null, appId: 480, id: uid, name };
         case 'createLobby': { const id = String(W.next++), n = { id, owner: uid, members: new Set([uid]), data: {} }; W.lobbies.set(id, n); return info(n); }
         case 'joinLobby': if (!l) throw new Error('no lobby'); if (!l.members.has(uid)) { l.members.add(uid); chat(l, uid, 1); } return info(l);
-        case 'leaveLobby':
-          if (l && l.members.delete(uid)) { chat(l, uid, 2); if (!l.members.size) W.lobbies.delete(l.id); else if (l.owner === uid) l.owner = [...l.members][0]; }
-          return true;
+        case 'leaveLobby': leave(l, uid); return true;
+        case 'fresh': for (const q of [...W.lobbies.values()]) leave(q, uid); return true; // a page starting holds no lobby (main.js)
         case 'lobby': return l ? info(l) : null;
         case 'lobbies': return [...W.lobbies.values()].map((q) => Object.assign(info(q), { owner: '0' })); // a list sees no owner, as Steam's does
         case 'setLobbyData': if (!l) return false; Object.assign(l.data, a[1]); return true;
@@ -66,6 +69,7 @@ function fakeSteam() {
     });
     await page.addInitScript(() => {
       const call = (m, ...a) => window.__steam(m, a), evs = [], pks = [];
+      call('fresh'); // preload.js's first word
       const b64 = (u8) => { let s = ''; for (let i = 0; i < u8.length; i++) s += String.fromCharCode(u8[i]); return btoa(s); };
       const unb64 = (s) => { const t = atob(s), u = new Uint8Array(t.length); for (let i = 0; i < t.length; i++) u[i] = t.charCodeAt(i); return u; };
       window.steamBridge = {
@@ -148,6 +152,79 @@ async function runPath(browser, kind) {
   return why;
 }
 
+// ---- a party (or two) into one champ select ------------------------------
+// steam-party: a leader and two friends who joined by code; the friends say
+// READY, the leader presses FIND MATCH, and all three must stand in ONE draft
+// (the leader's seed, three people in it, a friend's point seen by the
+// leader). steam-match / relay-match: two parties of two press FIND MATCH at
+// once and must meet in one draft of four (js/ui/matchmaking.js), with no
+// lobby left on the list still saying it looks for a match.
+const PARTY_WAIT = 45;         // s the pages have to stand in one draft
+async function runParty(browser, kind) {
+  const steam = kind !== 'relay-match', S = fakeSteam(), errs = [], pages = [], leads = [];
+  const spec = kind === 'steam-party' ? [3] : [2, 2];
+  const base = 'http://localhost:' + CHECK_PORT + '/', q = steam ? '&transport=steam' : '';
+  const open = async (pg, seed) => { await pg.goto(base + '?seed=' + seed + q); await pg.waitForFunction(() => window.DBG && typeof menuActivate === 'function'); await pg.waitForTimeout(800); };
+  const hosted = (pg) => pg.waitForFunction(() => NET.role === 'host' && NET.transport.open && roomCode(), null, { timeout: 10000 });
+  let k = 0, why = '';
+  for (let pi = 0; pi < spec.length && !why; pi++) {
+    const mine = [];
+    for (let j = 0; j < spec[pi]; j++, k++) {
+      const c = await browser.newContext({ viewport: { width: 1280, height: 720 } });
+      const pg = await c.newPage(), tag = 'P' + k;
+      if (steam) await S.attach(pg, String(76561190000000010n + BigInt(k)), tag);
+      pg.on('pageerror', (e) => errs.push(tag + ': ' + e.message));
+      pages.push(pg); mine.push(pg);
+    }
+    const A = mine[0]; leads.push(A);
+    await open(A, 7 + pi * 100);
+    await A.evaluate(() => menuActivate(0)); // QUICKPLAY: a party, hosted
+    await hosted(A);
+    const host = await A.evaluate(() => ({ code: roomCode(), seed: SEED }));
+    for (const B of mine.slice(1)) {
+      await open(B, 9 + pi * 100);
+      await B.evaluate(() => menuActivate(0));
+      await hosted(B);
+      await B.evaluate((c) => { state.menu.codeOn = true; state.menu.code = ''; for (const ch of c) codeType(ch); }, host.code);
+      const t0 = Date.now(); let ok = false;
+      while (!ok && Date.now() - t0 < JOIN_WAIT * 1000) {
+        await B.waitForTimeout(400);
+        try { ok = await B.evaluate((sd) => NET.role === 'client' && NET.welcomed && SEED === sd, host.seed); } catch (e) { ok = false; } // mid-reload
+      }
+      if (!ok) { why = 'a friend never joined party ' + pi; break; }
+      await B.evaluate(() => netReady(true));
+    }
+  }
+  if (!why) {
+    await pages[0].waitForTimeout(1000);
+    for (const A of leads) await A.evaluate(() => partyFind());
+    const n = pages.length, t0 = Date.now();
+    let seen = [];
+    while (Date.now() - t0 < PARTY_WAIT * 1000) {
+      await pages[0].waitForTimeout(1000);
+      seen = await Promise.all(pages.map((pg) => pg.evaluate(() => ({ seed: SEED, screen: state.menu.screen, draft: DRAFT.phase, people: players.filter(isHuman).length })).catch(() => null)));
+      if (seen.every((v) => v && v.screen === 'lobby' && (v.draft === 'ban' || v.draft === 'pick') && v.people === n && v.seed === seen[0].seed)) break;
+      seen = seen.map((v) => (v ? v.seed + ' ' + v.screen + ' ' + v.draft + ' ' + v.people : 'reloading'));
+    }
+    if (typeof seen[0] === 'string') why = 'not one draft: ' + seen.join(' | ');
+    else {
+      // one press crosses the wire: a friend's point lands on the leader's draft
+      const roles = await Promise.all(pages.map((pg) => pg.evaluate(() => NET.role)));
+      const H = pages[roles.indexOf('host')], G = pages[roles.indexOf('client')];
+      const slot = await G.evaluate(() => { const h = CLASSES.findIndex((c, i) => !DRAFT.banned.includes(i) && DRAFT.hover[localId] !== i); draftPoint(h); return [localId, h]; });
+      await H.waitForTimeout(800);
+      if (!(await H.evaluate((s) => DRAFT.hover[s[0]] === s[1] || DRAFT.lock[s[0]] >= 0, slot))) why = "a friend's point never reached the leader";
+      if (steam && !why) {
+        const stale = await pages[0].evaluate(async () => (await window.steamBridge.lobbies()).filter((l) => l.data && l.data.seek).length);
+        if (stale) why = stale + ' lobby(s) still listed as looking';
+      }
+    }
+  }
+  if (errs.length) why = (why ? why + '; ' : '') + errs.slice(0, 3).join(' | ');
+  for (const pg of pages) await pg.context().close();
+  return why;
+}
+
 (async () => {
   const { chromium } = loadPlaywright();
   const only = process.argv[2], list = only ? [only] : PATHS;
@@ -158,7 +235,7 @@ async function runPath(browser, kind) {
   let bad = 0;
   for (const k of list) {
     let why;
-    try { why = await runPath(browser, k); } catch (e) { why = 'threw: ' + e.message.split('\n')[0]; }
+    try { why = await (PARTY_PATHS.includes(k) ? runParty : runPath)(browser, k); } catch (e) { why = 'threw: ' + e.message.split('\n')[0]; }
     console.log((why ? 'FAIL ' : 'ok   ') + k + (why ? '  ' + why : ''));
     if (why) bad++;
   }

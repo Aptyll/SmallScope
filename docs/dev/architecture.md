@@ -471,7 +471,8 @@ None of the scripts is part of the game, and nothing in `js/` may depend on one 
   kinds of collision cleanly and `node --check` passes each file alone, so nothing else catches them.
 - **`app/check-join.js`** — the join check (Playwright): two headless pages meet through every
   way a friend joins a party (relay code, Steam code, Steam invite, the friends panel's join and
-  its invite card, Steam faked with the wrapper's bridge calls) and must end welcomed with both pages still drawing
+  its invite card, Steam faked with the wrapper's bridge calls) and must end welcomed with both pages still drawing;
+  then a party of three, and two parties meeting by matchmaking, must stand in one draft
   ([checklists](checklists.md#verifying-a-change)).
 - **`app/check-size.js`** — the size check, run by `check-globals.js` (or alone; `--top N` lists
   the biggest files and functions). It counts code lines: blank, comment-only and data-only lines

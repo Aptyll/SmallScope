@@ -4,6 +4,9 @@
 // js/net/transport-steam.js is the adapter that speaks this to NET.
 const { contextBridge, ipcRenderer } = require('electron');
 
+// this page holds no lobby yet: the one before it may have (main.js, steam:fresh)
+ipcRenderer.invoke('steam:fresh');
+
 contextBridge.exposeInMainWorld('steamBridge', {
   info: () => ipcRenderer.invoke('steam:info'),
   createLobby: (kind, max) => ipcRenderer.invoke('steam:createLobby', kind, max),

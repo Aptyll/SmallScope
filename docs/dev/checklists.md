@@ -71,7 +71,9 @@ declare victory. The affordances:
   - **`node app/check-join.js`** — run it after touching the party screen, a join path or
     `js/net/`: two headless pages join a party by code on the relay, by code on Steam, from a
     Steam invite, from the friends panel's row and from its invite card (Steam faked in the script with the wrapper's bridge calls), and each must end
-    welcomed with both pages still drawing. It serves the game itself on its own port and needs
+    welcomed with both pages still drawing. Then FIND MATCH: a party of three on Steam, and two
+    parties of two on Steam and on the relay, must each end in ONE draft with a friend's point
+    reaching the leader (`steam-party`, `steam-match`, `relay-match`). It serves the game itself on its own port and needs
     Playwright (`PLAYWRIGHT=<its folder>` if it is not on the require path).
   - **Under the wrapper — Noah runs this by hand; a session never starts Electron or makes a
     Steam lobby.** `cd desktop && npm start -- --net=host` on one machine and `--join=LOBBYID`
