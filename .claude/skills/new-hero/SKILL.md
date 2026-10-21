@@ -63,7 +63,7 @@ LOOKS (optional): default look name, first buyable skin name
    - `js/sprites/<hero>.js`: ability icons, then bodies and weapon once picked (step 4).
    - Its `CLASSES` row in js/sim/player.js with `body:` (the hero whose outfit it borrows
      through `heroBody`), `passive`, `base`/`grow` stats, and its own **basic attack**: an
-     `attack` row (`name`, `art`, `cycle`, `kb`, and a `shot` `{ speed, life, col }` or a `cut`
+     `attack` row (`name`, `art`, `cycle`, `kb`, and a `shot` `{ speed, life, col, look }` or a `cut`
      `{ reach, half }`; [the basic attack](../../../docs/dev/gameplay/the-basic-attack.md)). Copy the
      closest hero's row and say in the PR what you changed; a new `art` goes in
      js/sprites/weapons.js. `HERO_N` in js/app/profile.js; the 12px emblem in js/ui/menu.js; a
@@ -72,7 +72,7 @@ LOOKS (optional): default look name, first buyable skin name
    - **Register, don't stack.** The shared sim reaches a hero only through the lists and tables
      in js/sim/heroes.js (`HERO_PASSIVE` with hurt/deal/cast/tick, `HERO_TAKEN`, `HERO_STAT`,
      `HERO_TEN`, `HERO_MOVE`, `HERO_DASH`, `HERO_TICK`, `HERO_GROUND`) and js/draw/heroes.js
-     (`HERO_BLADES`). A hero file pushes into them at load. When a kit needs a kind of hook none
+     (`HERO_BLADES`, `HERO_STAVES`, `HERO_SHOTS`, `HERO_BODY_FX`). A hero file pushes into them at load. When a kit needs a kind of hook none
      of them is, add a new list there rather than a hero-named call in shared code.
 3. **Concept sheet of in-game visuals.** Through the `concept-art` skill: 3 bodies and 3 weapons
    as real 16px grids, staged live in a real game frame beside players (Armatos round 4,
@@ -83,7 +83,10 @@ LOOKS (optional): default look name, first buyable skin name
    per look in `app/bake-player/bodies.py`, then `python app/bake-player/bake.py`. The rebake
    must only add lines to js/baked/motion.js: every other hero's frames stay byte-identical.
    Add the hero's tab in js/ui/skins.js (`hero:` its index). The weapon is held naturally in all
-   four facings (a `HERO_BLADES` row: flat and slanted art, the grip, the hip by facing).
+   four facings (a `HERO_BLADES` row: flat and slanted art, the grip, the hip by facing; a mage's
+   staff is a `HERO_STAVES` row named by `staff:` on the `CLASSES` row, IGNIA's crook). The side run
+   comes off the drawn side frame (`heroRunSide`), so draw the side view as wide as the front;
+   a look the doll's front run does not match takes `run: 'drawn'` on its skins row (IGNIA).
 5. **Verify headless** (`node app/server.js` + Playwright, [how](../../../docs/dev/checklists.md#verifying-a-change)):
    each ability hits the other team's heroes, soldiers, wildlife and towers and spares its own;
    a bot playing the hero spends all four keys; the four facings, running, rolling, both looks;

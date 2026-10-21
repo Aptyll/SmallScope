@@ -269,7 +269,7 @@ On the lobby's painted night, in [js/ui/skins.js](../../../js/ui/skins.js)
 is the one rect source for the draw, the hit test (`skinsHit`) and the cursor.
 
 - **The navbar** over the grid's left edge is one tab per `SKIN_TABS` category (HERO, EAGLE,
-  WEAPON, TRAIL, then a tab per named hero, ARMATOS, FORTIVA and BELLA; `drawSkinTab`): an 8x8 glyph and the word, slate at rest, pale under the hand,
+  WEAPON, TRAIL, then a tab per named hero, ARMATOS, FORTIVA, BELLA and IGNIA; `drawSkinTab`): an 8x8 glyph and the word, slate at rest, pale under the hand,
   white on the open tab (`menu.skTab`, the eagle at boot) with a 1 px line as wide as the word.
   A click, Q/E, or up off the grid's top row then left/right (`menu.skNav`) turns it. The purse
   (coin + number) sits over the grid's right edge.
@@ -282,7 +282,7 @@ is the one rect source for the draw, the hit test (`skinsHit`) and the cursor.
   picked card. The weapon and trail tables and every tinted scout row are placeholders: today's
   portrait or bow washed in the row's tint, or a streak in its two colours, and nothing in a match
   wears them. The IRON HERO row is real: its card is the robot's own 64 px `icon`, and a match
-  wears it (below). So is a hero's tab (`hero` on the tab, ARMATOS's `ARM_SKINS`, FORTIVA's `FORT_SKINS`, BELLA's `BELLA_SKINS`): its card is the
+  wears it (below). So is a hero's tab (`hero` on the tab, ARMATOS's `ARM_SKINS`, FORTIVA's `FORT_SKINS`, BELLA's `BELLA_SKINS`, IGNIA's `IGNIA_SKINS`): its card is the
   hero standing in that look.
 - **A press** (`skinPress`) on an owned card wears it; on a card for sale it picks it
   (`menu.skPick`) and its price plate lights and pulses; a second press on the same card buys it

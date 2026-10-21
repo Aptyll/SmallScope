@@ -85,7 +85,7 @@ more: the frames live on as the CATCH emote's (`EMOTES`, js/ui/screens.js). The 
 **The run, the held run and the dodge roll are the one set of player frames not typed by hand.**
 [app/bake-player/](../../app/bake-player/) paints them off a jointed doll of each class body (and of
 each named hero's looks: ARMATOS's `standard` and `oath`, FORTIVA's `unbroken` and `coif`, BELLA's `general` and `traitor`,
-[hero looks](#hero-looks)) and
+IGNIA's `hearth` and `wanderer`, [hero looks](#hero-looks)) and
 writes them to js/baked/motion.js as char grids in characters.js's own letters, so `motionSet`
 bakes them through the same team and look palettes as every hand-drawn pose: `run[dir]`,
 `hold[dir]` and `roll[dir]` sit beside the walking directions, `left` the mirror of `right`.
@@ -175,9 +175,15 @@ never touch the in-world body: it stays 16×16 permanently, and they read on the
 
 A hero with `skins` on its `CLASSES` row does not wear a class body: `champLook(cls, look, team,
 skinId)` hands it to `heroSkinSet`, which bakes the look's own grids (`ARM_SKINS`, js/sprites/armatos.js:
-its standing frame per facing, the walk lifted off it by `heroWalk`, the run, held run and roll from
-its doll by name through `motionSet`) in the hero's paint (`skinPal`, `ARM_PAL`) over the team's coat,
-cached per (hero, team, look). The fish and the burrow frames are still the borrowed skater's in
+its standing frame per facing, the walk lifted off it by `heroWalk`, the roll from its doll by name
+through `motionSet`) in the hero's paint (`skinPal`, `ARM_PAL`) over the team's coat,
+cached per (hero, team, look). **A hero's side run and held run come off its own drawn side
+frame, not the doll**: `heroRunSide` (armatos.js) finds the leg rows, scissors them by
+`HERO_STRIDE` and bobs the body over them, so the head and coat keep the standing width (the doll's
+side run was a pixel or two narrower and read as the hero shrinking when turning left or right).
+The run facing down and up is still the doll's, unless the look's row says `run: 'drawn'`: then
+`heroRunFront` lifts the drawn front and back the same way (IGNIA's two looks, whose shawl and hair
+the doll does not match). The class bodies (HUNTER, WARRIOR) keep the doll's run. The fish and the burrow frames are still the borrowed skater's in
 that paint. Which look a player wears is `heroSkinOf(p)` (player.js): the id in `p.skins` under the
 hero's `skinSlot`, or the free first row. LAST STANDARD (nasal helm, white beard, tabard) is his
 own; IRON OATH (closed helm with a gold cross, pauldrons, a cape) is bought on the skins screen.
@@ -208,6 +214,17 @@ app/bake-player/bodies.py) stream the ponytail behind her in the run (the doll's
 materials). Her 48 px model is the warrior's in her paint too. Her EAGLE SPATHA (`BELLA_SPATHA`,
 `HERO_BLADES.spatha`) has no slanted carry (an empty `hip`): facing down or up she holds it upright
 in the leading hand like the warrior's sword.
+
+IGNIA's looks (`IGNIA_SKINS`, js/sprites/ignia.js) are drawn on ARMATOS's frame too (`IGNIA_PAL` is
+`ARM_PAL` with her copper hair `a`/`A` and the ember letters `u`/`f`/`F`). HEARTHKEEPER (loose
+copper hair, an ember shawl) is her own; WANDERER (a hood up over the same hair, a pale collar) is
+bought. They are A and C off ignia-round2.png in the project files, with their side frames redrawn
+so the face and body hold their front width; their dolls (`Hearth`, `Wanderer` in
+app/bake-player/bodies.py) paint the shawl in the doll's `ember` material and only the roll is used.
+Her 48 px model is the warrior's in her paint. Her CROOK AND LANTERN is not a blade: the row's
+`staff: 'crook'` names a `HERO_STAVES` entry (`IGNIA_CROOK`, js/draw/ignia.js), carried upright in
+the leading hand in every facing (`heroStaff`, asked by `drawHeldTool`, mirrored facing left or up)
+and held through a cast; the lantern's heart flickers between two baked frames.
 
 The **48 px model** ([looks.js](../../js/sprites/looks.js), `SPRITES.portrait(cls, look,
 team)`) is where the whole look reads — the lobby's stage and its hero row. Each hero wears one
