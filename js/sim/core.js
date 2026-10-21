@@ -88,7 +88,6 @@ const SEED = (function () {
   if (q) return (parseInt(q[1], 10) >>> 0) || 1;
   return rollSeed();
 })();
-const SEED_TXT = 'SEED ' + SEED;
 const rng = mulberry32(SEED);
 function rand(a, b) { return a + rng() * (b - a); }
 function randi(a, b) { return Math.floor(rand(a, b + 1)); }
@@ -161,7 +160,7 @@ const state = {
     // the short purse's shake, skFlash the buy's flash over card skFlashI
     skinT: 0, skTab: 1, skSel: 0, skNav: false, skPick: -1, skHover: {}, skDeny: 0, skFlash: 0, skFlashI: -1,
     charT: 0, nameBuf: '', nameSel: false, nameEdit: false, nameShake: 0, khover: {},
-    moved: false, keyNav: false, dieT: 0, rolling: 0, camT: 0, pressT: 0, // keyNav: the keys made the pick (it lights until the pointer moves)
+    moved: false, keyNav: false, camT: 0, pressT: 0, // keyNav: the keys made the pick (it lights until the pointer moves)
     // a sealed plank's knock (drawMenuButton's frozen glaze cracks from
     // iceX/iceY while iceT runs, on the plank iceI names); nothing sets them
     // today - the title's items are all live - but a client's lobby still
@@ -169,33 +168,29 @@ const state = {
     iceT: 0, iceI: -1, iceSeed: 0, iceX: 0, iceY: 0,
     // lobby: which screen the menu shows, its cross-fade, the chosen hero
     // (csel, the hero row - js/ui/heroes.js), the stage's swap pop, lock-in hold.
-    // screen: 'menu' | 'lobby' | 'hero' | 'map' | 'ai' | 'wiki' | 'notes' | 'profile' | 'skins' | 'room'
+    // screen: 'menu' | 'lobby' | 'hero' | 'wiki' | 'notes' | 'profile' | 'skins' | 'room'
     // ('room' is the party lobby, js/ui/rooms.js; 'lobby' the hero select).
-    // 'hero', 'map' and 'ai' are the three pop-ups over the still-lit lobby:
-    // pop names the one open (kept while it fades out) and popT is its ease;
-    // grow is the hero pop-up's keyboard row (the ability column),
-    // mrow the map pop-up's keyboard row (0 the picture, 1 the seed); the wiki
+    // 'hero' is the pop-up over the still-lit lobby: pop names it while open
+    // (kept while it fades out) and popT is its ease; grow is its keyboard
+    // row (the ability column); the wiki
     // is a surface of its own on wikiT, with wikiTab the open page (js/ui/wiki.js
     // `the wiki`); the patch notes are one too, on notesT, notesTab its open
     // tab (0 PATCH NOTES, 1 ROADMAP), notesSel the group the keys have picked
     // (js/ui/notes.js `patch notes`).
     screen: 'menu', screenT: 0, csel: 0, cswapT: 1, lockT: 0,
-    // lobby's map slide (mapStep: {d, k, from, t}, null at rest), the lock-in's
-    // ring (lockFx, s left), and the difficulty target: the level it wears and
-    // how long since it changed (its jolt, menu.js `lobby`)
-    mapSlide: null, lockFx: 0, tgtLv: 0, tgtT: 1,
+    // the lock-in's ring (lockFx, s left, menu.js `lobby`)
+    lockFx: 0,
     // countT: seconds left of PLAY's countdown to the eagle (0 = not counting),
     // countN the last whole second it ticked on (-1 = never pressed, 0 = it
-    // ran out); dhover the AI pop-up's three plates' hover eases (menu.js
-    // `lobby`)
-    countT: 0, countN: -1, dhover: [0, 0, 0],
+    // ran out)
+    countT: 0, countN: -1,
     // the party lobby (js/ui/rooms.js): its ease, the open rooms a typed code
     // is looked up in and whether the list answered, the code being looked
     // for (seek), and a join under way. The CODE box (code, codeOn, codeShake)
     // starts empty here because a page booted to join (partyBootJoin) draws it
     // before any party screen has run
     roomsT: 0, rooms: [], roomsOk: false, seek: null, joining: false, code: '', codeOn: false, codeShake: 0,
-    pop: null, popT: 0, grow: 0, mrow: 0, wikiT: 0, wikiTab: 0, notesT: 0, notesTab: 0, notesSel: 0 },
+    pop: null, popT: 0, grow: 0, wikiT: 0, wikiTab: 0, notesT: 0, notesTab: 0, notesSel: 0 },
   intro: 0,            // seconds left of the title -> drop / landing -> play transition (0 = none)
   introLen: 1,         // that transition's full length (the camera ease divides by it)
   introFrom: null,     // camera position the transition started from
@@ -221,13 +216,8 @@ const settings = { v: 4, volume: 0.5, musicVol: 0.7, sfxVol: 1, mmR: 24, mmZoom:
   // puts it on the sprites; the COLOUR BLIND dropdown on the VIDEO page picks it
   teamPal: 'def',
   // the rival bots' difficulty: an index into AI_LEVELS (js/ai/ai-skill.js),
-  // picked on the lobby's plates and remembered; 1 (NORMAL) until someone moves it
+  // picked by the party's leader on the party screen and remembered; 1 (NORMAL) until someone moves it
   aiLevel: 1,
-  // the shape the valley comes out of the snow in: an index into MAPS
-  // (js/sim/world.js), picked on the lobby's map chip and remembered. A pick
-  // is a page (pickMap, js/ui/menu.js), so what this holds is what the NEXT
-  // load grows - MAP_TYPE is what THIS one did.
-  mapType: 0,
   // the VIDEO page's dressing toggles, all cosmetic-only passes a weak GPU
   // can shed (the ESC panel's QUALITY row presets them; panels.js)
   vidClouds: true, vidRays: true, vidStars: true, vidSnow: true, vidVig: true,

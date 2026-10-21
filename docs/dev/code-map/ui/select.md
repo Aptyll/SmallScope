@@ -8,4 +8,4 @@
 | a seat row: the portrait disc, the position or PICKING..., the hero, the name; your trade mark; both columns and the seconds pointing at your row | `selDiscMask`, `drawSelDisc`, `selSwapRect`, `drawSelSwap`, `drawSeatRow`, `drawSeats` | `seat rows` |
 | your locked hero big: the splash art (or its stand-in), the look's name | `heroSplash`, `selSkinRows`, `selSkinWorn`, `drawSplash` | `splash` |
 | the skins under the splash, the chevrons | `selSkinCells`, `drawSkinStrip`, `drawSelChevron` | `skin strip` |
-| the four keys at the foot, the mode with the map plate and the target, the confirm plate | `selLoadCells`, `drawLoadout`, `selModeName`, `drawSelMode`, `drawSelPlay` | `loadout` |
+| the match's size and mode bottom right, the confirm plate | `selModeName`, `drawSelMode`, `drawSelPlay` | `foot` |

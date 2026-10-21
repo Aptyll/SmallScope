@@ -44,14 +44,6 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   corner rivets, a gold rule when hot, and a sealed ice glaze with a cold shimmer when `frozen`)
   is drawn by the lobby's PLAY, the notes' WIKI and the end screens,
   sized `MENU_BW`×`MENU_BH` at `MENU_Y0` where those stand it.
-- **Die** (`drawSeedDie`): shows `1 + (SEED % 6)` (faces
-  1–6), cycles faces and jitters while hovered, tumbles while `menu.rolling`. It stands on
-  the seed row of the [lobby](../rendering.md#lobby)'s map pop-up. Activating it (`rerollWorld`) starts a fade (the lobby's night there) via
-  `state.fade` (`{ a, to, spd, color, then }`, stepped in `update()`, painted after the info
-  stack) and then navigates to `?seed=<new>&map=<this shape>` — `SEED` is a const everything
-  closes over, so a new world is a new page. Boot checks `sessionStorage['softfall.reroll']` and
-  lands with the fade clearing from white and the die still settling, and `softfall.select`
-  puts it back on the lobby.
 - **Panels** slide up from the bottom edge over the still-visible world (`menu.panel`,
   `menu.panelT` over `PANEL_SLIDE_T`, `menu.closing` on the way out); the menu chrome ducks to
   zero alpha underneath. The `'settings'` kind is the existing panel via `renderSettings(now, { bare, slide })` (nothing on the title opens it since the SETTINGS plank went; the code stays for the ESC panel's sake)
@@ -112,28 +104,11 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
     (`drawSkinStrip`/`selSkinCells`: up to `SKIN_SHOW` `SKIN_THUMB_W`×`SKIN_THUMB_H` thumbnails,
     chevrons when there are more; the worn one gold, one the profile does not own dimmed with a
     lock; a click wears an owned one, `draftSkin`).
-  - **The foot**: the **loadout** (`drawLoadout`): your hero's four keys as their picked
-    icons, the way into the hero pop-up; the **chat** bottom left (`drawTalk` at `L.chat`,
-    js/ui/roomtalk.js: up to `LOBBY_CHAT_LINES` lines over its plate, your side's only while
-    the draft is on); the **mode** bottom right (`drawSelMode`: 5V5 and the party's mode) with
-    the **map plate** and the **target** over it (beside it in a short view, in the top right in
-    a short and narrow one), each `LOBBY_MAP` square and each the way into its pop-up. The map
-    plate (`drawMapPlate`) holds this seed's own
-  valley in the picked shape ([map shapes](../world.md#map-shapes)) — `mapChip` bakes it at 1 px a
-  sampled tile straight off the grown `ground` (the ice sheets and holes as rolled, the road as
-  cut; a neighbouring shape, which has no ground yet, off `mapTerrain` with the road's diagonal
-  inked over it) and stamps the camps' glyphs over it (`drawCampIcon` at every `campSites()`
-  tile, inked as the chart inks them). The target
-  (`drawLobbyTarget`: the practice range's own archery face, `bakeTargetFace` from
-  js/draw/practice.js with `bare` set so the rim carries no snow — straw batt, wooden frame, red
-  ring, cream, red bullseye) is **worn by the level** (`wreckTargetFace`, baked once per size and
-  level, every mark laid out in a 32 px face's pixels and scaled): whole on EASY, one puncture on NORMAL, a few
-  punctures and one crack on HARD, crazed through on IMPOSSIBLE — one great split top to bottom
-  through the bullseye with branches off it, hairlines in from the rim, a few more punctures.
-  Whenever the level it shows changes (`menu.tgtLv`) the
-  face swaps and the target jolts for a moment (`menu.tgtT`). In a
-  room the map is a readout (the host's world: `'map'` is hit only when `NET.role` is
-  `'solo'`) and a guest's target is too.
+  - **The foot**: the **chat** bottom left (`drawTalk` at `L.chat`, js/ui/roomtalk.js: up to
+    `LOBBY_CHAT_LINES` lines over its plate, your side's only while the draft is on) and the
+    **mode** bottom right (`drawSelMode`: 5V5 and the party's mode). The bots' level is not
+    here: the leader sets it on the party screen ([settings](../gameplay/settings.md)), and the
+    hero's abilities show only in the hero pop-up off the stage figure.
 
   Each hero wears **one fixed look** (`CLASSES[i].look`), so the face is the hero. What you point at
   is gold (red-rimmed while it is a ban). A banned hero is dimmed and struck through in red (flashing white
@@ -148,34 +123,11 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   key), Space confirms, the arrows walk the heroes, Esc leaves; a chat line or the search field
   takes every key while it is open, and Backspace never leaves the screen.
 
-  **Three pop-ups** open over the still-lit lobby, one at a time, on one shared ease
-  (`menu.popT`, `menu.pop` naming the open one through its fade-out; `popOpen()`/`popHit()`/
+  **The hero pop-up** opens over the still-lit lobby off the stage figure, on its own ease
+  (`menu.popT`, `menu.pop` naming it through its fade-out; `popOpen()`/`popHit()`/
   `openPop`/`leavePop`, and `drawPopSlab`/`drawPopX`/`popFrameHit` for the slab, the X and the
-  inert hits they share; `m.screen` is `'hero'`, `'map'` or `'ai'` while one is open). Esc,
-  Backspace, the X or a click off the slab closes any of them. The **hero pop-up** is
-  [below](../rendering.md#the-hero-pop-up). The **map pop-up** (`menu.screen = 'map'`, off the map plate, solo
-  only — `beginMapPick`, `mapLayout`/`mapScreenHit`, `renderMapPick`): the picture `POP_PIC` big
-  in the middle with a bare **chevron either side** (`drawChevron`, white, gold under the hand) —
-  a click or Left/Right is `mapStep(±1)`: the picture slides toward the pressed chevron with the
-  neighbouring shape's coming in behind it (`menu.mapSlide = {d, k, from, t}`, clipped to the
-  plate, the name already the new one, the lobby's small plate sliding the same way under the
-  slab) and `pickMap` saves `settings.mapType` — **the screen never leaves**: the plate shows
-  the picked shape (off `mapTerrain` until it is grown) and the pick is spent at LOCK IN
-  ([below](../rendering.md#lobby-lock-in)) — the shape's name under it in white, and the **seed row** under
-  that (`SEED_TXT` and the [die](main-menu-title.md), gold under the hand; a click is
-  `rerollWorld`, which IS a page: it fades through the lobby's own night (`LOBBY_NIGHT`, the
-  sky's darkest) and js/app/boot.js clears from it, so a roll never flashes white over this screen —
-  white is the reroll's from anywhere else). The keyboard walks two rows (`menu.mrow`: the picture, then the seed —
-  Up/Down; the lit row stands in for the hand while the pointer is off the view), Enter on the
-  seed rolls, Enter on the picture closes. The **AI pop-up** (`menu.screen = 'ai'`, off the
-  target, host or solo — `beginAiPick`, `aiLayout`/`aiScreenHit`, `renderAiPick`): the target
-  `POP_PIC` big on the left worn as the hovered (else the picked) level wears it, and on the
-  right the **four difficulty plates** (`drawDiffPlates`: `LOBBY_LV_W`×`LOBBY_LV_H`, one per
-  `AI_LEVELS` row, stacked easy to hard, each carrying its level's name (js/ai/ai-skill.js — EASY /
-  NORMAL / HARD / IMPOSSIBLE) and its tier in pips, the picked one filled in the rivals' paint, the hovered one
-  lifting (`menu.dhover`)); a click or Up/Down is `setAiLevel`, which saves the profile's
-  settings, and Enter closes. In RANKED the target is not pressed: the bots'
-  level follows the party's rating (`NET.botLv`, js/ui/rooms.js).
+  inert hits; `m.screen` is `'hero'` while it is open). Esc, Backspace, the X or a click off the
+  slab closes it. It is [below](../rendering.md#the-hero-pop-up).
 
   <a id="lobby-draft"></a>**The draft** (js/ui/draft.js, `DRAFT`, kept by the host and
   copied to each guest cut to what its side may see, `draftMsg`): `beginLobby` opens it
@@ -217,10 +169,7 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   it out). At rest, Esc goes back: a leader's to the party's seats (`draftStop`), a
   guest's out of the party. <a id="lobby-lock-in"></a>At
   zero, `lockIn()` — `menu.lockT`, then straight to `beginDrop()` (the eagle
-  ride, below) — unless the picked shape is not the one this page grew: a shape is grown at boot
-  (`MAP_TYPE`), so `lockIn` then loads `?seed=<this seed>&map=<the pick>` with the ability picks in
-  `sessionStorage['softfall.drop']` (no profile holds them) and js/app/boot.js puts them back on and
-  calls `beginDrop()` itself; the old page holds the lobby until the new one paints. No
+  ride, below). No
   instructional text anywhere on the screen.
 
 ## The profile card
@@ -283,8 +232,7 @@ tag). The store behind it is [profile.js](../architecture.md#profilejs): one nam
 
 `DBG` exposes `menu`, `menuHit`, `menuClick`, `menuKey`, `settingsHit`, `beginIntro`, `beginLobby`,
 `lobbyLayout`, `lobbyHit`, `pressPlay`, `DRAFT`/`draftAct`/`draftPoint`/`draftConfirm`, `setAiLevel`, `lockIn` and `layout()` (the live `VIEW_W`/`VIEW_H`, `SET_X`/`SET_Y`, `SL_X`, `PANEL_X`/`PANEL_Y` and `MM_CX`/`MM_CY` anchors) for driving all of this headlessly.
-The map and the seed die on it are driven the same way through the globals `mapStep`, `rerollWorld` and `pickMap` (which navigates), with `DBG.MAP_TYPE`,
-`DBG.MAPS` and `DBG.mapTerrain` reading back what a shape is.
+`DBG.MAP_TYPE`, `DBG.MAPS` and `DBG.mapTerrain` read back what a map shape is (`?map=N` picks one).
 
 ## The skins screen
 

@@ -23,7 +23,8 @@
 // chat line lands or the count to the match starts flashes in the taskbar
 // (the wrapper's `flash`) or, in a browser, marks its tab's title until it
 // is looked at.
-const TALK_KEEP = 6;       // lines kept, and shown where the screen has the room
+const TALK_KEEP = 6;       // lines kept: the champ select shows them all, the party TALK_ROOM
+const TALK_ROOM = 4;       // lines the party shows
 const TALK_MAX = 48;       // characters a line may carry
 const TALK_GAP = 0.4;      // s a guest's lines must stand apart
 const TALK_PITCH = 9;      // px between lines
@@ -87,7 +88,7 @@ function talkOpen() {
 // L.th; its lines may run L.cw wide; the champ select's bottom left with
 // L.lines lines), or at the foot of the screen
 function talkLayout(L) {
-  const y = L.ty != null ? L.ty : VIEW_H - 36 - 12 - TALK_H, n = L.lines || TALK_KEEP;
+  const y = L.ty != null ? L.ty : VIEW_H - 36 - 12 - TALK_H, n = L.lines || TALK_ROOM;
   return { x: L.x, y, w: L.w, h: L.th || TALK_H, cw: L.cw || L.w, n, top: y - n * TALK_PITCH - 2 };
 }
 function inTalk(L) { return overRect(talkLayout(L), 2, 2); }

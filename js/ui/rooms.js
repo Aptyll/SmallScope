@@ -35,6 +35,8 @@ const RM_INVITED = 4;                  // names INVITE lists over its plate
 const RM_WASH = 0.84;                  // how much of the title world the screen's wash hides
 const RM_LIST_H = 14;                  // a row of the modes' list a click on the head opens
 const RS_HEAD = -2;                    // menu.rseat on the mode's name (-1 is the foot, else a seat's slot)
+const RS_BOTS = -3;                    // ...and on the bots' level, between the head's plates
+const RM_BOTS_W = 84;                  // the bots' level's plate at its widest
 const SEEK_T = 6;                      // s a typed code is looked for on the list before it rattles
 // RANKED: a rating per profile (PROFILE.rank, js/app/profile.js), RANK_STEP
 // up for a win and down for a loss, and the bots' level read off the party's
@@ -99,6 +101,28 @@ function modeSet(mode) {
 function modeRect(L) { return { x: L.x, y: RM_HEAD_Y, w: RM_HEAD_W, h: RM_HEAD_H }; }
 // the list under the head: every mode, the party's in gold
 function modeListRects(L) { return Object.keys(PARTY_MODES).map((k, i) => ({ k, x: L.x, y: RM_HEAD_Y + RM_HEAD_H + 1 + i * RM_LIST_H, w: RM_HEAD_W, h: RM_LIST_H })); }
+// The bots' level, the head's middle plate between the mode and JOIN: its
+// grade as rising bars in its colour (drawBotBars) and its name
+// (AI_LEVELS, js/ai/ai-skill.js). The leader's click opens the levels under
+// it (botsSet: settings.aiLevel, remembered, and the roster carries it to
+// every guest's screen). RANKED's level follows the party's rating, so there
+// it only shows; the practice field has no bots, and while the party looks
+// for a match the clock stands there instead.
+function botsShown() { return NET.mode !== 'practice' && seekClock() == null; }
+function botsOk() { return modeSwapOk() && NET.mode !== 'ranked'; }
+function botsRect(L) {
+  const l = L.x + RM_HEAD_W, r = L.x + L.w - RM_HEAD_W, w = Math.max(RM_HEAD_H, Math.min(RM_BOTS_W, r - l - 8));
+  return { x: l + ((r - l - w) >> 1), y: RM_HEAD_Y, w, h: RM_HEAD_H };
+}
+function botsListRects(L) { const b = botsRect(L); return AI_LEVELS.map((_, k) => ({ k, x: b.x, y: b.y + b.h + 1 + k * RM_LIST_H, w: b.w, h: RM_LIST_H })); }
+function botsSet(k) {
+  const m = state.menu;
+  m.botsOpen = false;
+  if (!botsOk() || !AI_LEVELS[k]) { SFX.deny(); return; }
+  setAiLevel(k); // js/ui/menu.js
+  netHostRoom();
+  SFX.pickup();
+}
 function partySize() { return roomSide(player.team).filter(isHuman).length; }
 // RANKED's bots: a level off the people's average rating (both parties' when two met), a band either side of the start
 function rankLevel() {
@@ -288,10 +312,12 @@ function roomCode() {
 function roomHit() {
   const m = state.menu, L = roomLayout();
   if (m.modeOpen) { for (const r of modeListRects(L)) if (inRect(r)) return { kind: 'modeItem', k: r.k }; }
+  if (m.botsOpen) { for (const r of botsListRects(L)) if (inRect(r)) return { kind: 'botsItem', k: r.k }; }
   if (inRect(L.leave, 1)) return { kind: 'leave' };
   if (inRect(L.go, 1)) return { kind: 'go' };
   if (inRect(L.invite, 1)) return { kind: 'invite' };
   if (modeSwapOk() && inRect(modeRect(L), 3)) return { kind: 'mode' };
+  if (botsShown() && botsOk() && inRect(botsRect(L), 3)) return { kind: 'bots' };
   const cr = socialCodeRect(); // the social column (js/ui/friends.js): your code at its head, the friends under it
   if (cr && inRect(cr, 3)) return { kind: 'code' };
   if (codeBoxShown() && inRect(L.box, 2)) return { kind: 'box' };
@@ -326,7 +352,9 @@ function roomDo(h) {
   const m = state.menu;
   if (!h) return;
   if (h.kind === 'code') { roomCopy(); return; }
-  if (h.kind === 'mode') { m.modeOpen = !m.modeOpen; m.modeSel = Math.max(0, Object.keys(PARTY_MODES).indexOf(NET.mode)); SFX.pickup(); return; }
+  if (h.kind === 'bots') { m.botsOpen = !m.botsOpen; m.modeOpen = false; m.botsSel = settings.aiLevel | 0; SFX.pickup(); return; }
+  if (h.kind === 'botsItem') { botsSet(h.k); return; }
+  if (h.kind === 'mode') { m.botsOpen = false; m.modeOpen = !m.modeOpen; m.modeSel = Math.max(0, Object.keys(PARTY_MODES).indexOf(NET.mode)); SFX.pickup(); return; }
   if (h.kind === 'modeItem') { modeSet(h.k); return; }
   if (h.kind === 'box') { m.codeOn = true; m.code = ''; SFX.pickup(); return; }
   if (h.kind === 'talk') { talkOpen(); return; }
@@ -344,6 +372,7 @@ function roomClick() {
   if (!h || h.kind !== 'talk') m.talkOn = false; // a click anywhere else puts the chat line away
   if (!h || h.kind !== 'box') m.codeOn = false;
   if (m.modeOpen && (!h || (h.kind !== 'modeItem' && h.kind !== 'mode'))) { m.modeOpen = false; SFX.pickup(); return; } // a click off the open list only shuts it
+  if (m.botsOpen && (!h || (h.kind !== 'botsItem' && h.kind !== 'bots'))) { m.botsOpen = false; SFX.pickup(); return; }
   roomDo(h);
 }
 // the keys walk a cursor along the five seats (left and right; right off the
@@ -370,11 +399,20 @@ function roomKey(k, e) {
     else if (k === 'escape' || k === 'backspace') { m.modeOpen = false; SFX.pickup(); }
     return;
   }
+  if (m.botsOpen) {
+    const n = AI_LEVELS.length;
+    if (d === 'up' || d === 'down') { m.botsSel = (m.botsSel + (d === 'down' ? 1 : n - 1)) % n; SFX.pickup(); }
+    else if (k === 'enter' || k === ' ') botsSet(m.botsSel);
+    else if (k === 'escape' || k === 'backspace') { m.botsOpen = false; SFX.pickup(); }
+    return;
+  }
   if (m.fcur >= 0 && friendsKey(k, L)) return; // the keys in the friends' column (js/ui/friends.js)
   if (k === 'escape' || k === 'backspace') { leaveRoom(); return; }
   const at = L.seats.findIndex((s) => s.p.id === m.rseat), mine = L.seats.findIndex((s) => s.p === player);
-  if (m.rseat === RS_HEAD) { // the cursor on the mode's name: Enter opens the list
-    if (k === 'enter' || k === ' ') roomDo({ kind: 'mode' });
+  if (m.rseat === RS_HEAD || m.rseat === RS_BOTS) { // the cursor on the mode's name or the bots' level: Enter opens its list
+    if (k === 'enter' || k === ' ') roomDo({ kind: m.rseat === RS_HEAD ? 'mode' : 'bots' });
+    else if (d === 'right' && m.rseat === RS_HEAD && botsShown() && botsOk()) { m.rseat = RS_BOTS; SFX.pickup(); }
+    else if (d === 'left' && m.rseat === RS_BOTS) { m.rseat = RS_HEAD; SFX.pickup(); }
     else if (d === 'down') { m.rseat = L.seats[mine].p.id; SFX.pickup(); }
     return;
   }
@@ -396,7 +434,7 @@ function roomKey(k, e) {
 }
 function roomAllReady() { return players.every((p) => p.control !== 'remote' || NET.ready.has(p.id)); }
 // the bots' level the room plays: RANKED's pinned one, the leader's own setting, a guest's copy of it
-function roomLevel() { return NET.isClient ? NET.aiLevel : NET.botLv != null ? NET.botLv : settings.aiLevel | 0; }
+function roomLevel() { return NET.isClient ? NET.aiLevel : NET.botLv != null ? NET.botLv : NET.mode === 'ranked' ? rankLevel() : settings.aiLevel | 0; }
 
 // ------------------------------------------------------------ the rematch
 // League's "play again". A world is grown at load, so a match's valley
@@ -419,7 +457,7 @@ let rematchCarry = null;  // a reopened party's: { seats: uid -> slot } from the
 function rematchUrl() {
   if (homeParty) return crossHomeUrl(); // a party that crossed over for this match goes back to its own (js/ui/matchmaking.js)
   if (!NET.mode) return null; // a page that never opened a party: the title, as it was
-  const map = PRACTICE ? settings.mapType | 0 : MAP_TYPE; // the field is no shape: back to the profile's pick
+  const map = PRACTICE ? 0 : MAP_TYPE; // the field is no shape: back to the first
   const base = location.pathname + '?map=' + map, steam = netSteam() ? '&transport=steam' : '';
   const code = roomCode();
   if (NET.isHost) {
@@ -644,6 +682,7 @@ function renderRoom(now, a) {
   drawPixelText(ctx, partyName(), mr.x + ((mr.w - pixelTextWidth(partyName(), 2)) >> 1), mr.y + 6, m.modeFx > 0 ? SC_GOLD : headHot ? '#ffd95c' : SC_LIT, 2);
   const clock = seekClock(); // looking for a party: a gold clock after the plate, on every screen
   if (clock != null) drawPixelText(ctx, seekText(clock), mr.x + mr.w + 8, mr.y + 6, SC_GOLD, 2);
+  if (botsShown()) drawRoomBots(L, hit ? hit.kind === 'bots' : (m.rkeys && m.rseat === RS_BOTS) || m.botsOpen);
   // alone, JOIN and the slots a friend's code goes in, right of the head; gold while its code is looked for
   if (codeBoxShown() || m.joining) drawCodeBox(L.box, m.joining || m.seek ? Object.assign({}, m, { codeOn: true }) : m, now, hit && hit.kind === 'box');
   ctx.fillStyle = SC_EDGE; ctx.fillRect(L.x, 46, L.w, 1);
@@ -670,7 +709,38 @@ function renderRoom(now, a) {
       drawPixelText(ctx, PARTY_MODES[keys[i]], r.x + ((r.w - pixelTextWidth(PARTY_MODES[keys[i]])) >> 1), r.y + 4, r.k === NET.mode ? SC_GOLD : hot ? SC_LIT : SC_TXT, 1);
     });
   }
+  if (m.botsOpen) { // the levels' list, over the seats
+    const rs = botsListRects(L), last = rs[rs.length - 1], lv = roomLevel();
+    ctx.fillStyle = SC_EDGE; ctx.fillRect(rs[0].x, rs[0].y - 1, rs[0].w, last.y + last.h - rs[0].y + 2);
+    for (const r of rs) {
+      const hot = hit ? hit.kind === 'botsItem' && hit.k === r.k : m.rkeys && m.botsSel === r.k;
+      ctx.fillStyle = hot ? SC_HOT : SC_PLATE; ctx.fillRect(r.x + 1, r.y, r.w - 2, r.h);
+      const nm = AI_LEVELS[r.k].name, bw = botBarsW(false) + 4, gx = r.x + ((r.w - bw - pixelTextWidth(nm)) >> 1);
+      drawBotBars(gx, r.y + 3, r.k, false);
+      drawPixelText(ctx, nm, gx + bw, r.y + 4, r.k === lv ? SC_GOLD : hot ? SC_LIT : SC_TXT, 1);
+    }
+  }
   ctx.globalAlpha = 1;
+}
+// a level's grade: a rising bar per level standing on y + H (big: the
+// head's, 10 tall; else the list's, 6), as many lit as the level is hard, in
+// its colour - green, amber, red, violet
+const BOT_COL = ['#7fd88a', '#e8b04a', '#e0524f', '#b77ce8'];
+function drawBotBars(x, y, k, big) {
+  const n = AI_LEVELS.length, w = big ? 3 : 2, g = big ? 2 : 1, H = big ? 10 : 6, col = BOT_COL[Math.min(BOT_COL.length - 1, k)];
+  for (let i = 0; i < n; i++) { const h = Math.round(H * (i + 1) / n); ctx.fillStyle = i <= k ? col : SC_EDGE; ctx.fillRect(x + i * (w + g), y + H - h, w, h); }
+}
+function botBarsW(big) { return AI_LEVELS.length * (big ? 5 : 3) - (big ? 2 : 1); }
+// the head's middle plate: the bots' level, lit under the leader's hand
+function drawRoomBots(L, hot) {
+  const r = botsRect(L), lv = roomLevel(), ok = botsOk(), nm = AI_LEVELS[lv].name;
+  hot = hot && ok;
+  ctx.fillStyle = hot ? SC_LBL : SC_EDGE; ctx.fillRect(r.x, r.y, r.w, r.h);
+  ctx.fillStyle = hot ? SC_HOT : SC_PLATE; ctx.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
+  const bw = botBarsW(true) + 5, sc = AI_LEVELS.every((l) => bw + pixelTextWidth(l.name, 2) <= r.w - 10) ? 2 : 1, tw = pixelTextWidth(nm, sc), named = bw + tw <= r.w - 8; // one size for every level: a change never jumps
+  const x0 = r.x + ((r.w - (named ? bw + tw : bw - 5)) >> 1);
+  drawBotBars(x0, r.y + ((r.h - 10) >> 1), lv, true);
+  if (named) drawPixelText(ctx, nm, x0 + bw, r.y + ((r.h - 5 * sc) >> 1), hot ? '#ffd95c' : ok ? SC_LIT : SC_TXT, sc);
 }
 
 // In a match, a client whose socket is down: a red pip blinking top-centre

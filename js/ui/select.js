@@ -6,8 +6,7 @@
 // BANS in its top corner, YOUR SIDE down the left as five SEAT ROWS (a
 // portrait disc, the position, the hero, the name) and THE RIVALS down the
 // right, the HERO GRID in the middle (js/ui/heroes.js), the CHAT bottom left
-// (js/ui/roomtalk.js), the LOADOUT (your hero's four keys) at the foot and the
-// MODE bottom right. Once your pick is locked the grid gives way to the
+// (js/ui/roomtalk.js) and the MODE bottom right. Once your pick is locked the grid gives way to the
 // SPLASH and the SKIN STRIP under it. Graphite and flat: the party room's
 // colours (SC_*, js/ui/lobby.js), no bevels.
 const SEL_ACCENT = 2;          // px: the bar down an acting row's outer edge
@@ -327,32 +326,16 @@ function drawSelChevron(r, d, hot) {
   ctx.fillRect(d < 0 ? r.x + 3 : r.x + 7, cy, 1, 1);
 }
 
-// ------------------------------------------------------------ loadout
-// The foot: your hero's four keys as their picked icons (a well each), the
-// way into the hero pop-up's stats and options, League's runes row; and the
-// match bottom right - its size, its mode, and the map plate and the target
-// (each the way into its pop-up where this screen may pick).
-function selLoadCells(L) {
-  return [0, 1, 2, 3].map((i) => ({ x: L.load.x + i * 38, y: L.load.y, w: 34, h: 34, i }));
-}
-function drawLoadout(L, a, hot) {
-  ctx.globalAlpha = a;
-  const on = hot === 'load';
-  for (const c of selLoadCells(L)) {
-    ctx.fillStyle = on ? SC_LBL : SC_EDGE; ctx.fillRect(c.x, c.y, c.w, c.h);
-    ctx.fillStyle = SC_INK; ctx.fillRect(c.x + 1, c.y + 1, c.w - 2, c.h - 2);
-    ctx.drawImage(classAbIcon(player.cls, c.i, player.abPick[c.i] | 0), c.x + 1, c.y + 1);
-  }
-}
+// ------------------------------------------------------------ foot
+// The foot: the match bottom right - its size and its mode - and the confirm
+// plate under the grid.
 function selModeName() { return PARTY_MODES[NET.mode] || (PRACTICE ? 'PRACTICE TOOL' : 'QUICKPLAY'); }
-function drawSelMode(L, now, a, hot) {
+function drawSelMode(L, a) {
   const mode = selModeName(), size = '5V5';
   const rx = VIEW_W - LOBBY_PAD;
   ctx.globalAlpha = a;
   drawPixelText(ctx, size, rx - pixelTextWidth(size), L.mode.y, SC_LBL, 1);
   drawPixelTextShadow(ctx, mode, rx - pixelTextWidth(mode, 2), L.mode.y + 8, '#f4f7ff', SC_INK, 2);
-  drawMapPlate(L.mapc, hot === 'map' ? 1 : 0);
-  drawLobbyTarget(L.tgt.x, L.tgt.y - (hot === 'ai' ? 1 : 0), L.tgt.w, roomLevel(), now, a);
 }
 // LOCK IN (BAN in the ban phase) on its plate under the grid: white and
 // live while there is a confirm to make, gold under the hand, red for a

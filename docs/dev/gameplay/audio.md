@@ -185,7 +185,7 @@ handler follows `TRACKS.next` into `foxglove`, and when *that* ends nothing foll
 match plays out in silence until an end screen. `endMatch` is gated on `'won'`/`'lost'`, each with
 its own song (`victory` / `defeat`); a `'respawning'` overlay is not the end of anything and must
 not start either.
-`rerollWorld()` and `toLobby()` fade the layer out under their wipe; both reload the page, so the
+`toLobby()` fades the layer out under its wipe; it reloads the page, so the
 title track comes back from boot.
 
 The **title track cannot start on its own** — no gesture has happened at boot. `musicPlay` catches
