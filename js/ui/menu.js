@@ -1610,7 +1610,7 @@ function drawLobbyStage(now, a, sw) {
   const rise = Math.round((1 - sw) * 8) - (hover === 'hero' ? 2 : 0);
   const bob = Math.round(Math.sin(now * 1.6));
   ctx.globalAlpha = a;
-  ctx.drawImage(SPRITES.portrait(player.cls, player.look, skin(player.team)), body.x, body.y + rise + bob, body.w, body.h);
+  ctx.drawImage(SPRITES.portrait(player.cls, player.look, skin(player.team), heroSkinOf(player)), body.x, body.y + rise + bob, body.w, body.h);
 }
 
 // a filled pixel disc, scanline by scanline

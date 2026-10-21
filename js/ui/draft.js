@@ -356,9 +356,20 @@ function draftStep(d) {
 // share from the draft: a hero's head, the ban's red stroke, and the word on
 // the confirm plate.
 const DRAFT_RED = '#e04848';
+// A hero's head and shoulders, the square every face cell draws (S = HERO_CROP.s
+// on a side at 1x): { img, x, y, w } the source square. A hero with looks of its
+// own shows its standing front in that look (`skinId`, else the free one), ten
+// of its 16 px wide and tall around the head at twice the scale of the 48 px
+// model's crop, so both fill the same cell at whole-pixel scales.
+const HERO_HEAD16 = { x: 3, y: 0, w: 10 };
+function heroHead(h, look, team, skinId) {
+  const c = CLASSES[h];
+  if (c && c.skins) return { img: SPRITES.champLook(h, look, team, skinId || null).down[0], x: HERO_HEAD16.x, y: HERO_HEAD16.y, w: HERO_HEAD16.w };
+  return { img: SPRITES.portrait(h, look, team), x: HERO_CROP.x, y: HERO_CROP.y, w: HERO_CROP.s };
+}
 function draftFace(h, x, y, s, dim) {
-  const c = CLASSES[h], S = HERO_CROP.s;
-  ctx.drawImage(SPRITES.portrait(h, c.look, skin(player.team)), HERO_CROP.x, HERO_CROP.y, S, S, x, y, S * s, S * s);
+  const c = CLASSES[h], S = HERO_CROP.s, f = heroHead(h, c.look, skin(player.team), null);
+  ctx.drawImage(f.img, f.x, f.y, f.w, f.w, x, y, S * s, S * s);
   if (dim) { const a = ctx.globalAlpha; ctx.globalAlpha = a * dim; ctx.fillStyle = '#0a0e23'; ctx.fillRect(x, y, S * s, S * s); ctx.globalAlpha = a; }
 }
 function draftSlash(x, y, n) { ctx.fillStyle = DRAFT_RED; for (let i = 0; i < n; i++) ctx.fillRect(x + n - 1 - i, y + i, 2, 1); }

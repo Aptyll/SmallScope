@@ -136,7 +136,6 @@ const CLASSES = [
     // worn per player (heroSkinOf) in his iron over the side's coat
     skins: ARM_SKINS, skinPal: ARM_PAL, skinSlot: 'armatos',
     blade: 'oath', // his OATH GREATSWORD in his hands in place of the sword's own art (HERO_BLADES, js/draw/heroes.js)
-    paint48: { t: '#7d8699', T: '#b4bdcc', g: '#1c2232', G: '#9aa3b8', m: '#5c6478', M: '#454c5e' }, // the 48 px model's (js/sprites/looks.js): its K is skin
   },
   {
     // the second named hero (js/sim/fortiva.js): a juggernaut on the WARRIOR's
@@ -156,7 +155,6 @@ const CLASSES = [
     // worn per player (heroSkinOf) in her iron over the side's coat
     skins: FORT_SKINS, skinPal: FORT_PAL, skinSlot: 'fortiva',
     blade: 'chain', // her CHAIN GREATSWORD in her hands (HERO_BLADES, js/draw/heroes.js)
-    paint48: { t: '#7d8699', T: '#b4bdcc', g: '#1c2232', G: '#9aa3b8', m: '#5c6478', M: '#454c5e' }, // the 48 px model's (js/sprites/looks.js): its K is skin
     kit: { iceMax: 1.1, iceSteer: 3.2, slideMin: 70, fatigue: 0.7, chargeMul: 0.7,
       bowCharge: 0.75, nock: 0.5, spdDmg: 5, dodgeSpeed: 225 },
   },
@@ -174,7 +172,6 @@ const CLASSES = [
     // worn per player (heroSkinOf) over the side's coat
     skins: BELLA_SKINS, skinPal: BELLA_PAL, skinSlot: 'bella',
     blade: 'spatha', // her EAGLE SPATHA in her hands (HERO_BLADES, js/draw/bella.js)
-    paint48: { t: '#7d8699', T: '#b4bdcc', g: '#1c2232', G: '#9aa3b8', m: '#5c6478', M: '#454c5e' }, // the 48 px model's (js/sprites/looks.js): its K is skin
     base: { hp: 104, dmg: 18, armor: 16, ap: 0, haste: 0, ms: PLAYER_SPEED + 4 },
     grow: { hp: 7, dmg: 1.7, as: 0.013, armor: 2.1 }, // sized so 17 levels grow what 11 did when the cap was 12
     rankOrder: [0, 2, 1], // the lunge, the slip, the parry
@@ -199,7 +196,6 @@ const CLASSES = [
     // her own body in each of her looks (IGNIA_SKINS, js/sprites/ignia.js), worn per
     // player (heroSkinOf) over the side's coat
     skins: IGNIA_SKINS, skinPal: IGNIA_PAL, skinSlot: 'ignia',
-    paint48: { t: '#7d8699', T: '#b4bdcc', g: '#1c2232', G: '#9aa3b8', m: '#5c6478', M: '#454c5e' }, // the 48 px model's (js/sprites/looks.js): its K is skin
     kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1, chargeMul: 0.55,
       bowCharge: BOW_CHARGE, nock: 0.4, spdDmg: 0, dodgeSpeed: DODGE_SPEED },
   },

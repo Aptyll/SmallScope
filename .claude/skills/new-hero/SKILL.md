@@ -86,7 +86,8 @@ LOOKS (optional): default look name, first buyable skin name
    Add the hero's tab in js/ui/skins.js (`hero:` its index). The weapon is held naturally in all
    four facings (a `HERO_BLADES` row: flat and slanted art, the grip, the hip by facing; a mage's
    staff is a `HERO_STAVES` row named by `staff:` on the `CLASSES` row, IGNIA's crook). The side run
-   comes off the drawn side frame (`heroRunSide`), so draw the side view as wide as the front;
+   comes off the drawn side frame (`heroRunSide`): keep the head as wide as the front and the body
+   about 2px narrower (ARMATOS: front body 10, side 8), or the run reads fat;
    a look the doll's front run does not match takes `run: 'drawn'` on its skins row (IGNIA).
 5. **Verify headless** (`node app/server.js` + Playwright, [how](../../../docs/dev/checklists.md#verifying-a-change)):
    each ability hits the other team's heroes, soldiers, wildlife and towers and spares its own;
