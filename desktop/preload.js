@@ -18,7 +18,7 @@ contextBridge.exposeInMainWorld('steamBridge', {
   send: (to, data, reliable) => ipcRenderer.invoke('steam:send', String(to), data, reliable), // data: a string, or a Uint8Array sent as bytes
   accept: (id) => ipcRenderer.invoke('steam:accept', String(id)),
   // the friends panel (js/ui/friends.js, desktop/steam-friends.js)
-  friends: () => ipcRenderer.invoke('steam:friends'), // { ok, friends: [{ id, name, st, game, lobby?, mode?, n?, state?, patch? }], recent: [{ id, name, st }] }
+  friends: () => ipcRenderer.invoke('steam:friends'), // { ok, friends: [{ id, name, st, game, lobby?, mode?, n?, state?, patch?, hero? }], recent: [{ id, name, st }] }
   inviteFriend: (lobby, id, card) => ipcRenderer.invoke('steam:inviteFriend', String(lobby), String(id), card), // card: { mode, n, patch }, shown on their screen
   overlayUser: (dialog, id) => ipcRenderer.invoke('steam:overlayUser', String(dialog), String(id)), // 'friendadd' | 'steamid' | 'chat'
   overlayFriends: () => ipcRenderer.invoke('steam:overlayFriends'),
