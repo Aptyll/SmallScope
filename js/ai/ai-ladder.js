@@ -309,7 +309,11 @@ function aiFight(k) {
     // the class abilities, spent off cooldown at the foe - through the same
     // edge key a human presses, so a bot can never cast what a hand couldn't
     if (ai.abilOk && p.castT <= 0 && p.grapT <= 0 && inp.ability < 0) {
-      if (CLASS_AB[p.cls].some((ab) => ab.bot)) inp.ability = abBotKey(p, foe, d, clear); // a hero whose rows say when (ARM_AB's `bot`, js/sim/armatos.js)
+      if (CLASS_AB[p.cls].some((ab) => ab.bot)) { // a hero whose rows say when (ARM_AB's `bot`, js/sim/armatos.js)
+        inp.ability = abBotKey(p, foe, d, clear);
+        const ab = inp.ability >= 0 && abOf(p, inp.ability);
+        if (ab && ab.botAim) { const to = ab.botAim(p, foe); aimAt(to.x, to.y); } // ...and where, when it is not at them (AURA's step away)
+      }
       else if (p.cls === 0) { // hunter: skewer the open lane, tangle the gap
         // (the grapple is a held key and a terrain read - a hand skill the
         // ladder does not try to fake; snow cover is spent at rung 2)

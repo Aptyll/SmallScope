@@ -178,6 +178,7 @@ function snapSingles() {
   s.nets = pack(nets, 0);
   s.guards = pack(guards, 0); // ARMATOS's planted standards (js/sim/armatos.js)
   s.brushfires = pack(brushfires, 0); // IGNIA's lines of fire (js/sim/ignia.js)
+  s.aura = [pack(auraStars, 0), pack(auraOrbs, 0), pack(auraCurtains, 0)]; // AURA's stars, orbs and curtains (js/sim/aura.js)
   return s;
 }
 // `team` (0 or 1): only what that side sees (the `fog` banner); left out, everything
@@ -230,6 +231,7 @@ function snapApplySingles(s) {
   if (s.nets) { nets.length = 0; for (const n of unpack(s.nets)) nets.push(n); }
   if (s.guards) { guards.length = 0; for (const g of unpack(s.guards)) guards.push(g); }
   if (s.brushfires) { brushfires.length = 0; for (const b of unpack(s.brushfires)) brushfires.push(b); }
+  if (s.aura) [auraStars, auraOrbs, auraCurtains].forEach((L, i) => { L.length = 0; for (const w of unpack(s.aura[i])) L.push(w); });
 }
 // a field onto an entity the game holds by identity: a nested plain object
 // is merged into the one already there (a player's `inv` is aliased by the
@@ -814,7 +816,7 @@ function snapBlank() {
   }
   objects.fill(null); structures.length = 0;
   for (const k in SNAP_KINDS) SNAP_KINDS[k]().length = 0;
-  nets.length = 0; guards.length = 0; brushfires.length = 0;
+  nets.length = 0; guards.length = 0; brushfires.length = 0; auraStars.length = 0; auraOrbs.length = 0; auraCurtains.length = 0;
   holes.length = 0; iceBreaks.length = 0; pads.length = 0;
   Object.assign(orca, ORCA_FRESH());
   for (const c of camps) { c.repopT = 0; c.seen = [0, 0]; }
@@ -884,7 +886,7 @@ function snapQuantize() {
   };
   walk(players); for (const k in SNAP_KINDS) walk(SNAP_KINDS[k]());
   if (state.drop) walk(state.drop.eagles);
-  walk(objects); walk(nets); walk(guards); walk(brushfires); walk(pads); walk(state.end); walk(state.eagleCine);
+  walk(objects); walk(nets); walk(guards); walk(brushfires); walk(auraStars); walk(auraOrbs); walk(auraCurtains); walk(pads); walk(state.end); walk(state.eagleCine);
 }
 // One echo: quantize, frame, snapshot, blank, apply, frame; the pixels that differ,
 // the frame's own noise (two renders of the same state, for anything that

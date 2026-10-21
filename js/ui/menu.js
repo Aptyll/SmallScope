@@ -1539,6 +1539,20 @@ const CLASS12 = [
     '...orrro....',
     '....ooo.....',
   ],
+  [ // AURA: the brass ring, a star held in it
+    '....oooo....',
+    '..oogggGoo..',
+    '.ogGooooGgo.',
+    '.ogo.oWo.ogo',
+    'ogo.oWWWo.go',
+    'ogooWWWWWoGo',
+    'ogo.oWWWo.go',
+    '.ogo.oWo.ogo',
+    '.oGgooooggo.',
+    '..ooGgggoo..',
+    '....oooo....',
+    '............',
+  ],
 ];
 const class12Cache = new Map();
 function classIcon12(i, you) {
