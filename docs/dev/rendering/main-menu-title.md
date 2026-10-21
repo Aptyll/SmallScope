@@ -104,7 +104,11 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
     (`drawSkinStrip`/`selSkinCells`: up to `SKIN_SHOW` `SKIN_THUMB_W`×`SKIN_THUMB_H` thumbnails,
     each `heroThumb(h, id)` or, with none, the look's body at 2×,
     chevrons when there are more; the worn one gold, one the profile does not own dimmed with a
-    lock; a click wears an owned one, `draftSkin`).
+    lock; a click wears an owned one, `draftSkin`). A **book** in the splash's top-right corner
+    (`drawSelLore`, `selBookRect`; no plate, see-through at `SEL_BOOK_ALPHA` over the art, gold under the hand or while open) lays the hero's story
+    (`CLASSES` `story`, wrapped by `selStoryLines` so no last word stands alone) over the dimmed
+    splash under its name and title; a press anywhere on the splash puts it away (`menu.loreOn`,
+    local only, shut by `beginLobby`).
   - **The foot**: the **chat** bottom left (`drawTalk` at `L.chat`, js/ui/roomtalk.js: up to
     `LOBBY_CHAT_LINES` lines over its plate, your side's only while the draft is on) and the
     **mode** bottom right (`drawSelMode`: 5V5 and the party's mode). The bots' level is not

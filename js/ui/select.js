@@ -288,6 +288,45 @@ function drawSplash(L, now, a) {
   drawPixelTextOutline(ctx, nm, L.cx - (pixelTextWidth(nm, 2) >> 1), S.y + S.h + 6, '#f4f7ff', SC_INK, 2);
 }
 
+// ------------------------------------------------------------ lore book
+// A see-through book in the splash's top-right corner, the way League's champion page
+// keeps the bio a click away: a press lays the hero's story (CLASSES `story`,
+// the rules it is written to: docs/dev/lore.md) over the splash under its
+// name and title, and a second press anywhere on the splash puts it away.
+// Nothing about it is sent: it is this screen's own (state.menu.loreOn,
+// shut again by beginLobby).
+const SEL_BOOK = ['.wwww.wwww.', 'w....w....w', 'w.ww.w.ww.w', 'w....w....w', 'w.ww.w.ww.w', 'w....w....w', '.wwwwwwwww.'];
+const SEL_BOOK_ALPHA = 0.55; // the book at rest: see-through over the splash
+const SEL_STORY_PAD = 10;  // px: the story's margin inside the splash
+const SEL_STORY_PITCH = 9; // px between two of its lines
+function selBookRect(L) { return { x: L.splash.x + L.splash.w - 17, y: L.splash.y + 5, w: SEL_BOOK[0].length + 2, h: SEL_BOOK.length + 2 }; }
+// the story wrapped to w, narrowed a little at a time while its last line is one lone word
+function selStoryLines(text, w) {
+  for (let ww = w; ww > w - 48; ww -= 6) { const l = wikiWrap(text, ww); if (l.length < 2 || l[l.length - 1].includes(' ')) return l; }
+  return wikiWrap(text, w);
+}
+function selLoreOn() { return !!state.menu.loreOn && !!CLASSES[player.cls].story; }
+function drawSelLore(L, a, hot) {
+  const c = CLASSES[player.cls];
+  if (!c.story) return;
+  const S = L.splash, on = selLoreOn();
+  ctx.globalAlpha = a;
+  if (on) {
+    ctx.fillStyle = 'rgba(7,8,10,0.86)'; ctx.fillRect(S.x, S.y, S.w, S.h);
+    const x = S.x + SEL_STORY_PAD, lines = selStoryLines(c.story, S.w - 2 * SEL_STORY_PAD);
+    const top = S.y + Math.max(SEL_STORY_PAD, (S.h - 12 - lines.length * SEL_STORY_PITCH) >> 1);
+    drawPixelTextShadow(ctx, c.name, x, top, SEL_GOLD, SC_INK);
+    drawPixelTextShadow(ctx, c.role, x + pixelTextWidth(c.name) + 7, top, SC_LBL, SC_INK);
+    lines.forEach((t, k) => drawPixelTextShadow(ctx, t, x, top + 12 + k * SEL_STORY_PITCH, SC_TXT, SC_INK));
+  }
+  // no plate: the glyph sits on the art, see-through until the hand or the open story lights it
+  const r = selBookRect(L), lit = on || hot === 'book';
+  const ink = (dx, dy) => SEL_BOOK.forEach((row, y) => { for (let x = 0; x < row.length; x++) if (row[x] === 'w') ctx.fillRect(r.x + 1 + x + dx, r.y + 1 + y + dy, 1, 1); });
+  ctx.globalAlpha = a * (lit ? 0.7 : 0.35); ctx.fillStyle = SC_INK; ink(1, 1); // its shadow keeps it read on snow
+  ctx.globalAlpha = a * (lit ? 1 : SEL_BOOK_ALPHA); ctx.fillStyle = lit ? SEL_GOLD : SC_LIT; ink(0, 0);
+  ctx.globalAlpha = a;
+}
+
 // ------------------------------------------------------------ skin strip
 // Under the splash: the hero's looks, SKIN_SHOW at a time, the worn one in
 // gold, one this profile does not own dimmed with a lock; the chevrons walk
