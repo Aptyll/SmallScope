@@ -91,7 +91,7 @@ sight, and a pusher walks with its own column ([multiplayer.md](../multiplayer.m
 ## Farming
 
 js/sim/farm.js. League's last hit: a rival soldier pays **only** the rival who lands its final
-blow — `soldierBounty()`, `SOLDIER_BOUNTY` (16) plus `SOLDIER_BOUNTY_GROW` (1) for every barracks
+blow — `soldierBounty()`, `SOLDIER_BOUNTY` (160) plus `SOLDIER_BOUNTY_GROW` (10) for every barracks
 `grow` (180 s) the match has run, paid by `robotDies` through `awardGold` — and a camp monster
 (`a.home`: the wolves and the bears) pays its killer as ever (`animalDies`). Each is one **farm**
 (`farmHit`: `p.farm`, in `PLAYER_RECORD`), which the scoreboard's FARM column and the post-game
@@ -100,7 +100,7 @@ COMBAT group's FARM row print. A soldier the waves, a tower or a beast finish pa
 do not run the step, aged by `state.tick`): a gold coin that hops and spins off a last hit, and a
 grey one that drops and fades where a miss fell, drawn only for the side that missed it and only
 within `COIN_MISS_R` of the watched body (`drawPops`, js/draw/pops.js). A rival's gold coin in
-the fog is not drawn. The wolf den is the jungle: four wolves at 16 each and back `repop` (75 s)
+the fog is not drawn. The wolf den is the jungle: four wolves at 160 each and back `repop` (75 s)
 after the last dies, its clock on the den and on both maps ([world.md](../world.md#runtime)).
 Bots farm through two roles, the LANER and the JUNGLER ([multiplayer.md](../multiplayer.md#bots)).
 

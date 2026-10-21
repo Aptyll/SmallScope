@@ -29,10 +29,10 @@ typed twice, so a retune can never leave the wiki lying.
   `ANIMAL_LV_HP` and `YIELD` / `ANIMAL_LV_GOLD` / `ANIMAL_LV_XP` through the same arithmetic `makeAnimal` and
   `animalDies` use ([Wildlife](wildlife.md)). The frames on the page wear the level a spawn would
   be dealt right now (`animalLevel()`).
-- **ITEMS**: the merchant's catalogue written down ([the items](the-merchants-counter.md#the-items)): two tables, PARTS
-  (`ITEM_PARTS`) then FINISHED (`ITEM_DONE`), each row the item's icon in a well rimmed part or
-  finished the way the shop rims it, its name, and STATS / PASSIVE / PRICE (`WIKI_ITEM_COLS`,
-  `wikiItemStats`) read off `BUILD_ITEMS`, `ITEM_STATS` and `ITEM_PASSIVES`. A hover raises the
+- **ITEMS**: the merchant's catalogue written down ([the items](the-merchants-counter.md#the-items)): four tables, BASIC,
+  BOOTS, EPIC and LEGENDARY (the shop's own rows, `shopRowKind`), each row the item's icon in a
+  well rimmed by its tier the way the shop rims it, its name, and STATS (short labels) / PASSIVE /
+  PRICE (`WIKI_ITEM_COLS`, `wikiItemStats`) read off `BUILD_ITEMS`, `ITEM_STATS` and `ITEM_PASSIVES`. A hover raises the
   shop's own item card (`tipItem`, js/ui/shop.js).
 - **WORLD** — the one page with no numbers on it: the valley written down. Twelve entries in the
   order an exile meets them — SOFTFALL, THE EMPIRE, THE EXILES, THE WORKS, THE CLAIM, THE EAGLES, THE

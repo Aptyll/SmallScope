@@ -14,7 +14,7 @@ Everything in this section lives under the **`status effects`** banner at the fo
 | `unitMoveMul(e)` | what is left of a non-player's speed — `abilityMoveMul`'s twin. Spent inside `navStep`, so one edit slows every walker; the two movers that steer themselves rather than route (a loitering bot, a bird in flight) fold it in by hand |
 | `knockUp(e, t, src)` / `upLift(e)` | a knock-up: a stun that lifts the body (`e.upT`), drawn by `abilityPose` |
 | `shieldUnit(p, hp, t)` | a ward of `hp` for `t` s (`p.wardHp`/`p.wardT`), spent by `damagePlayer` before health |
-| `ccMul(e)` | **tenacity**: what is left of a stun, root, slow or net on this body (the product of 1 − t over `HERO_TEN`, js/sim/heroes.js: `guardTen` today); `stunUnit` with `firm` skips it |
+| `ccMul(e)` | **tenacity**: what is left of a stun, root, slow or net on this body (the product of 1 − t over `HERO_TEN`, js/sim/heroes.js: `guardTen` today, times the STEADY passive's share, `itemTen`, js/sim/items.js); `stunUnit` with `firm` skips it |
 | `clearUnitStatus(e)` / `douseUnit(e)` | a fresh body, and a fire put out. Called by `Player.reset`, `die`, `makeAnimal`, `makeRobot` |
 
 `unitFoe(src, e)` is the side rule they all share, and it is where **wildlife being neutral** is
