@@ -34,6 +34,7 @@ const DRAFT = {
   lock: [],                    // per seat: the hero it confirmed, -1 none, -2 a rival's that is hidden
   lead: [[], []],              // per team: its bans as the votes stand (the rivals' hidden until the phase ends)
   banned: [],                  // the heroes out of the pick
+  role: [],                    // per seat: its POSITIONS index (your side's; a rival's is -1 on a guest)
   fx: 0,                       // s: the flash as a phase turns
 };
 function draftOpen() { return DRAFT.phase === 'ban' || DRAFT.phase === 'pick'; }
@@ -75,6 +76,51 @@ function draftTeamBans(team) {
   return out;
 }
 
+// ------------------------------------------------------------ draft roles
+// League's five POSITIONS, one per seat on each side, handed out as the
+// draft opens (draftSeatRoles): the people first, each on the one their
+// profile asks for (PROFILE.pos; a guest's rides its hello, NET.pos) when
+// nobody earlier on the side took it, then any free one, the bots last. A
+// seat may move to another position all through the draft (draftSwapRole):
+// a bot holding it trades, a person keeps theirs. A hero's positions are its
+// CLASSES entry's `pos`; the grid filters by them and a bot picks for its
+// own. Your side's positions are yours to see, the rivals' never.
+const POSITIONS = [
+  { id: 'top', name: 'TOP' },
+  { id: 'jungle', name: 'JUNGLE' },
+  { id: 'mid', name: 'MID' },
+  { id: 'bot', name: 'BOT' },
+  { id: 'support', name: 'SUPPORT' },
+];
+const DRAFT_ACTS = ['hover', 'lock', 'role', 'skin']; // what a guest's `draft` press may be
+function posAsk(p) { const r = p === player ? PROFILE.pos() : NET.pos[p.id]; return r >= 0 ? r : -1; }
+function heroPlays(h, r) { return r < 0 || !!(CLASSES[h] && CLASSES[h].pos.includes(POSITIONS[r].id)); }
+function draftSeatRoles() {
+  const role = players.map(() => -1);
+  for (const team of [0, 1]) {
+    const side = players.filter((q) => q.team === team), free = POSITIONS.map((_, i) => i);
+    const take = (q, r) => { role[q.id] = r; free.splice(free.indexOf(r), 1); };
+    for (const q of side) if (isHuman(q) && free.includes(posAsk(q))) take(q, posAsk(q));
+    for (const people of [true, false]) for (const q of side) if (role[q.id] < 0 && isHuman(q) === people && free.length) take(q, free[0]);
+  }
+  return role;
+}
+// the host's: slot moves to position r, trading with a bot of its side that
+// holds it (which picks again for its new one, if it has picked)
+function draftSwapRole(slot, r) {
+  const D = DRAFT, p = players[slot];
+  if (!p || !(r >= 0 && r < POSITIONS.length) || D.role[slot] === r) return false;
+  const q = players.find((o) => o.team === p.team && o !== p && D.role[o.id] === r);
+  if (q && isHuman(q)) return false;
+  if (q) {
+    D.role[q.id] = D.role[slot];
+    if (D.phase === 'pick') { D.lock[q.id] = D.hover[q.id] = -1; D.lock[q.id] = D.hover[q.id] = draftBotPick(q); }
+  }
+  D.role[slot] = r;
+  draftSend();
+  return true;
+}
+
 // ------------------------------------------------------------ draft bots
 // A bot bans what the rival people came in on (their mains), never a hero a
 // person on its own side came in on; with no people across, a free hero at random.
@@ -88,8 +134,9 @@ function draftBotBan(p) {
   }
   return best.length ? best[Math.floor(Math.random() * best.length)] : -1;
 }
-// A bot picks the hero its side has least of - a person's point counts as
-// theirs - leaning to the shape the side lacks (about DRAFT_RANGED at range)
+// A bot picks a hero its side does not hold yet - a person's point counts as
+// theirs - that plays its position, leaning to the shape the side lacks
+// (about DRAFT_RANGED at range)
 function draftBotPick(p) {
   const mates = draftMates(p);
   const held = (q) => DRAFT.lock[q.id] >= 0 ? DRAFT.lock[q.id] : isHuman(q) ? DRAFT.hover[q.id] : -1;
@@ -98,7 +145,7 @@ function draftBotPick(p) {
   let best = [], low = Infinity;
   for (let h = 0; h < CLASSES.length; h++) {
     if (DRAFT.banned.includes(h)) continue;
-    const s = mates.filter((q) => held(q) === h).length * 2 + (heroRanged(h) === want ? 0 : 1);
+    const s = mates.filter((q) => held(q) === h).length * 4 + (heroPlays(h, DRAFT.role[p.id]) ? 0 : 2) + (heroRanged(h) === want ? 0 : 1);
     if (s < low) { low = s; best = [h]; } else if (s === low) best.push(h);
   }
   return best.length ? best[Math.floor(Math.random() * best.length)] : 0;
@@ -122,7 +169,9 @@ function draftStart() {
   D.hover = players.map(() => -1); D.lock = players.map(() => -1);
   D.lead = [[], []]; D.banned = []; D.fx = 0;
   D.nBan = draftBansPerTeam();
+  D.role = players.map(() => -1);
   if (NET.isClient) { D.phase = 'wait'; return; }
+  D.role = draftSeatRoles();
   if (D.nBan > 0) {
     D.phase = 'ban'; D.t = DRAFT_BAN_T;
     for (const p of players) if (!isHuman(p)) D.lock[p.id] = D.hover[p.id] = draftBotBan(p);
@@ -183,10 +232,15 @@ function draftCheck() {
   if (!players.every((p) => D.lock[p.id] >= 0 || (D.phase === 'ban' && !isHuman(p)))) return;
   if (D.phase === 'ban') draftPickPhase(); else draftReveal();
 }
-// the host's hand on a seat's press: 'hover' points, 'lock' confirms (a ban, or the pick)
-function draftAct(slot, k, h) {
+// the host's hand on a seat's press: 'hover' points, 'lock' confirms (a ban,
+// or the pick), 'role' moves the seat to position h, 'skin' wears look id on hero h
+function draftAct(slot, k, h, id) {
   const D = DRAFT, p = players[slot];
-  if (NET.isClient || !p || !draftOpen() || D.lock[slot] >= 0) return false;
+  if (NET.isClient || !p) return false;
+  if (k === 'skin') return draftWearSkin(p, h, id);
+  if (!draftOpen()) return false;
+  if (k === 'role') return draftSwapRole(slot, h);
+  if (D.lock[slot] >= 0) return false;
   if (!(h >= 0 && h < CLASSES.length) || D.banned.includes(h)) return false;
   if (k === 'lock') {
     if (D.phase === 'pick' && !draftCanLock(p, h)) return false;
@@ -209,6 +263,7 @@ function draftMsg(team) {
   const D = DRAFT, open = D.phase === 'done';
   const seen = (i) => open || players[i].team === team;
   return { t: 'draft', ph: D.phase, tl: D.t, n: D.nBan, banned: D.banned,
+    role: D.role.map((r, i) => players[i].team === team ? r : -1),
     hover: D.hover.map((h, i) => seen(i) ? h : -1),
     lock: D.lock.map((h, i) => seen(i) ? h : h >= 0 ? -2 : -1),
     lead: [0, 1].map((t) => t === team || D.phase !== 'ban' ? D.lead[t] : []) };
@@ -220,7 +275,7 @@ function draftSend() {
 function draftIn(msg) {
   const D = DRAFT, was = D.phase;
   D.phase = String(msg.ph); D.t = +msg.tl || 0; D.nBan = msg.n | 0;
-  D.banned = msg.banned || []; D.hover = msg.hover || []; D.lock = msg.lock || []; D.lead = msg.lead || [[], []];
+  D.banned = msg.banned || []; D.hover = msg.hover || []; D.lock = msg.lock || []; D.lead = msg.lead || [[], []]; D.role = msg.role || [];
   if (D.phase === was) return;
   if (D.phase === 'pick') { D.fx = 0.5; SFX.place(); draftShow(D.hover[localId]); }
   if (D.phase === 'done') { setClass(player, D.lock[localId]); draftCount(); }
@@ -252,6 +307,43 @@ function draftConfirm() {
   if (NET.isClient) { D.lock[localId] = h; NET.transport.send('host', { t: 'draft', k: 'lock', h }); }
   else draftAct(localId, 'lock', h);
 }
+// this screen's own position: a bot holding the one asked for trades; the
+// profile keeps it as the one to ask for next draft
+function draftRole(r) {
+  const D = DRAFT, q = players.find((o) => o.team === player.team && o !== player && D.role[o.id] === r);
+  if (!draftOpen() || D.role[localId] === r || (q && isHuman(q))) { SFX.deny(); return; }
+  PROFILE.setPos(r);
+  if (NET.isClient) { D.role[localId] = r; NET.transport.send('host', { t: 'draft', k: 'role', h: r }); }
+  else draftAct(localId, 'role', r);
+  SFX.pickup();
+}
+// the next position along from this screen's own that no person on its side holds
+function draftNextRole() {
+  const D = DRAFT, cur = Math.max(0, D.role[localId]);
+  for (let d = 1; d < POSITIONS.length; d++) {
+    const r = (cur + d) % POSITIONS.length, q = players.find((o) => o.team === player.team && o !== player && D.role[o.id] === r);
+    if (!q || !isHuman(q)) return r;
+  }
+  return -1;
+}
+// the look this screen's player wears on hero h (null: the hero's own), from
+// the skin strip under the splash; the host takes a seat's the same way
+function draftWearSkin(p, h, id) {
+  const c = CLASSES[h];
+  if (!c || !c.skinSlot) return false;
+  const m = Object.assign({}, p.skins);
+  if (id) m[c.skinSlot] = String(id); else delete m[c.skinSlot];
+  p.skins = cleanHeroSkins(m);
+  return true;
+}
+function draftSkin(h, id) {
+  const c = CLASSES[h];
+  if (!c || !c.skinSlot) return;
+  PROFILE.wear(c.skinSlot, id || null);
+  draftWearSkin(player, h, id);
+  if (NET.isClient) NET.transport.send('host', { t: 'draft', k: 'skin', h, id: id || '' });
+  SFX.pickup();
+}
 // the keys' step through the heroes still in the pick
 function draftStep(d) {
   const n = CLASSES.length, D = DRAFT;
@@ -260,131 +352,22 @@ function draftStep(d) {
 }
 
 // ------------------------------------------------------------ draft pixels
-// The top centre: the clock (gold while this screen still has to act) and
-// the phase's word under it, each side's ban wells beside it - yours toward
-// your panel - a vote standing as a dim face, a ban made as a face struck
-// through in red.
-const DRAFT_WELL = 22, DRAFT_WELL_G = 3, DRAFT_CLOCK_W = 30; // a ban well; the clock's half-width
-const DRAFT_TOP = 46;          // the top band's height: the hero row starts under it
+// What the champ select's look (js/ui/select.js) and the grid (js/ui/heroes.js)
+// share from the draft: a hero's head, the ban's red stroke, and the word on
+// the confirm plate.
 const DRAFT_RED = '#e04848';
-const DRAFT_MUTE = '#3a4670';  // a word or a seat with nothing to do
 function draftFace(h, x, y, s, dim) {
   const c = CLASSES[h], S = HERO_CROP.s;
   ctx.drawImage(SPRITES.portrait(h, c.look, skin(player.team)), HERO_CROP.x, HERO_CROP.y, S, S, x, y, S * s, S * s);
   if (dim) { const a = ctx.globalAlpha; ctx.globalAlpha = a * dim; ctx.fillStyle = '#0a0e23'; ctx.fillRect(x, y, S * s, S * s); ctx.globalAlpha = a; }
 }
 function draftSlash(x, y, n) { ctx.fillStyle = DRAFT_RED; for (let i = 0; i < n; i++) ctx.fillRect(x + n - 1 - i, y + i, 2, 1); }
-function drawDraftTop(a) {
-  const D = DRAFT, cx = VIEW_W >> 1, y = LOBBY_PAD + 2;
-  if (D.phase === 'off' || D.phase === 'wait') return;
-  ctx.globalAlpha = a;
-  for (let t = 0; t < 2; t++) {
-    const mine = t === player.team, n = D.nBan;
-    if (!n) continue;
-    const span = n * (DRAFT_WELL + DRAFT_WELL_G) - DRAFT_WELL_G;
-    const x0 = mine ? cx - DRAFT_CLOCK_W - span : cx + DRAFT_CLOCK_W;
-    ctx.fillStyle = TEAMS[skin(t)].mark; ctx.fillRect(x0, y - 3, span, 1);
-    for (let k = 0; k < n; k++) {
-      const r = { x: x0 + k * (DRAFT_WELL + DRAFT_WELL_G), y, w: DRAFT_WELL, h: DRAFT_WELL };
-      drawWell(r, 0, false, false);
-      const h = D.lead[t] ? D.lead[t][k] : undefined;
-      if (h == null || !CLASSES[h]) continue;
-      const made = D.phase !== 'ban';
-      draftFace(h, r.x + 1, r.y + 1, 1, made ? 0.6 : 0.35);
-      if (made) draftSlash(r.x + 1, r.y + 1, DRAFT_WELL - 2);
-    }
-  }
-  if (!draftOpen()) return;
-  const act = D.lock[localId] < 0, col = act ? '#ffd95c' : '#9fb6d8';
-  const s = String(Math.ceil(D.t)), w = D.phase === 'ban' ? 'BAN' : 'PICK';
-  drawPixelTextOutline(ctx, s, cx - (pixelTextWidth(s, 3) >> 1), y, col, 'rgba(8,12,28,0.9)', 3);
-  drawPixelTextShadow(ctx, w, cx - (pixelTextWidth(w) >> 1), y + 26, col, '#0a0e23');
-}
-// The word at the foot: BAN or LOCK IN while this screen has a confirm to
-// make, slate once it is made (or with nothing pointed at); gone at the count
+// The confirm plate's word: BAN or LOCK IN while the draft is open, live
+// while this screen has a confirm to make (slate once made, or with nothing
+// pointed at)
 function draftWord() {
   const D = DRAFT;
   if (!draftOpen()) return null;
   const live = D.lock[localId] < 0 && D.hover[localId] >= 0 && (D.phase === 'ban' || draftCanLock(player, D.hover[localId]));
   return { w: D.phase === 'ban' ? 'BAN' : 'LOCK IN', live };
-}
-
-// One roster frame, glued to its screen edge: the side's paint as a bar down
-// that edge, the hero's body at 2x (1x in a short view) toward it, the name
-// inward of the body and the hero's name under it. Yours wears the gold rim.
-// Your side's frames show each seat's hero - faded while only pointed at,
-// whole once locked; a rival's is face-down (a flat shade of the body it came
-// in on) until the count turns it, and flashes white as it does. A seat that
-// has confirmed (a ban or its pick) carries a gold pip.
-function drawLobbyCard(r, mine, hidden, flash) {
-  const p = r.p, side = skin(p.team), me = p === player, D = DRAFT;
-  ctx.fillStyle = 'rgba(4,6,18,0.55)';
-  ctx.fillRect(r.x, r.y + 2, r.w + 2, r.h);
-  // in a room: a person's frame wears a brighter rim than a bot's, the host's
-  // a crown, and one that just came or went flashes white (cardFx)
-  const inRoom = NET.role !== 'solo', person = inRoom && isHuman(p);
-  const fx = inRoom && state.menu.cardFx && state.menu.cardFx[p.id] > 0;
-  ctx.fillStyle = flash || fx ? '#f4f7ff' : me ? '#c89a3c' : person ? '#6d7ea6' : '#2c3560';
-  ctx.fillRect(r.x, r.y, r.w, r.h);
-  ctx.fillStyle = me ? '#1a2142' : '#0f1632';
-  ctx.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
-  ctx.fillStyle = TEAMS[side].mark;
-  ctx.fillRect(mine ? r.x : r.x + r.w - 3, r.y, 3, r.h);
-  const s = r.h >= 38 ? 2 : 1, bw = 16 * s;
-  const bx = mine ? r.x + 8 : r.x + r.w - 8 - bw, by = r.y + ((r.h - bw) >> 1);
-  if (inRoom && p.id === (NET.isClient ? NET.hostSlot : localId)) { // the crown
-    ctx.fillStyle = '#ffd95c';
-    const cxx = bx + (bw >> 1) - 2;
-    ctx.fillRect(cxx, by - 3, 1, 1); ctx.fillRect(cxx + 2, by - 3, 1, 1); ctx.fillRect(cxx + 4, by - 3, 1, 1);
-    ctx.fillRect(cxx, by - 2, 5, 1);
-  }
-  if (draftOpen() && D.lock[p.id] !== -1) { // confirmed: the gold pip in the inner corner
-    ctx.fillStyle = '#ffd95c';
-    ctx.fillRect(mine ? r.x + r.w - 6 : r.x + 3, r.y + 3, 3, 3);
-  }
-  // the hero this frame shows: a pick in play on your side, else the body it wears
-  const h = draftOpen() && D.phase === 'pick' && !hidden ? draftWant(p.id) : -1;
-  const firm = h < 0 || D.lock[p.id] >= 0;
-  const spr = h >= 0 ? SPRITES.champLook(h, CLASSES[h].look, side, heroSkinOf({ cls: h, skins: p.skins })).down[0]
-    : SPRITES.champLook(p.cls, p.look, side, heroSkinOf(p)).down[0];
-  if (hidden) {
-    sctx.clearRect(0, 0, 16, 16);
-    sctx.globalCompositeOperation = 'source-over';
-    sctx.drawImage(spr, 0, 0);
-    sctx.globalCompositeOperation = 'source-in';
-    sctx.fillStyle = '#35426e';
-    sctx.fillRect(0, 0, 16, 16);
-    sctx.globalCompositeOperation = 'source-over';
-    ctx.drawImage(scratch, 0, 0, 16, 16, bx, by, bw, bw);
-  } else if (h >= 0 || D.phase !== 'pick') {
-    const a = ctx.globalAlpha;
-    if (!firm) ctx.globalAlpha = a * 0.45;
-    ctx.drawImage(spr, bx, by, bw, bw);
-    ctx.globalAlpha = a;
-  }
-  const hero = hidden ? '' : h >= 0 ? CLASSES[h].name : D.phase === 'done' ? CLASSES[p.cls].name : '';
-  const nm = p.name, col = me ? '#ffd95c' : hidden ? '#6d7ea6' : TEAMS[side].mark;
-  const tx = (t) => mine ? bx + bw + 5 : bx - 5 - pixelTextWidth(t);
-  const cy = r.y + ((r.h - 5) >> 1);
-  drawPixelTextShadow(ctx, nm, tx(nm), hero ? cy - 5 : cy, col, '#0a0e23');
-  if (hero) drawPixelTextShadow(ctx, hero, tx(hero), cy + 5, firm ? '#c8d4ee' : '#5a6690', '#0a0e23');
-}
-// The two panels' frames. A rival's stays face-down through the draft and
-// turns face-up when lobbyRevealed() passes it. slide is the entrance: each
-// panel rides in from its own edge.
-function drawLobbyRosters(now, a, slide) {
-  const m = state.menu;
-  const { cards } = lobbyLayout();
-  const shown = draftHiding() ? 0 : lobbyRevealed();
-  ctx.globalAlpha = a;
-  for (let mine = 1; mine >= 0; mine--) {
-    const col = cards[mine];
-    const dx = mine ? -slide : slide;
-    for (let k = 0; k < col.length; k++) {
-      const r = col[k];
-      const hidden = !mine && k >= shown;
-      const flash = !mine && !hidden && m.countT > 0 && (COUNT_T - k) - m.countT < 0.15;
-      drawLobbyCard({ x: r.x + dx, y: r.y, w: r.w, h: r.h, p: r.p }, mine, hidden, flash);
-    }
-  }
 }

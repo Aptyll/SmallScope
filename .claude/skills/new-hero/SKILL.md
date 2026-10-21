@@ -61,7 +61,8 @@ LOOKS (optional): default look name, first buyable skin name
      js/sim/save.js, packed in js/net/snapshot.js).
    - `js/draw/<hero>.js`: tells, rings, entities, the held weapon.
    - `js/sprites/<hero>.js`: ability icons, then bodies and weapon once picked (step 4).
-   - Its `CLASSES` row in js/sim/player.js with `body:` (the hero whose outfit it borrows
+   - Its `CLASSES` row in js/sim/player.js with `pos:` (the draft positions it plays, best first:
+     `POSITIONS` ids, js/ui/draft.js), `body:` (the hero whose outfit it borrows
      through `heroBody`), `passive`, `base`/`grow` stats, and its own **basic attack**: an
      `attack` row (`name`, `art`, `cycle`, `kb`, and a `shot` `{ speed, life, col }` or a `cut`
      `{ reach, half }`; [the basic attack](../../../docs/dev/gameplay/the-basic-attack.md)). Copy the

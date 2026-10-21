@@ -2,4 +2,4 @@
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| the lobby's hero row: a head per hero wrapping between the panels, the coming ones as silhouettes, banned / taken / pointed-at cells, the name under it, the press and the keys' step (both handed to the draft) | `HERO_CELL`/`HERO_CROP`/`HERO_ROW_H`, `heroList`, `heroCols`, `heroCells`, `heroCellAt`, `lobbyPick`, `lobbyStep`, `drawHeroRow` | `hero row` (the heroes: `CLASSES`/`HEROES_SOON`, player.js; where it stands: `lobbyLayout`, menu.js `lobby`) |
+| the champ select's hero grid: a head per hero with its name under it, the coming ones as silhouettes, banned / taken / pointed-at cells; the filter row (a position each, the search field) and what it lets through; the press and the keys' step (both handed to the draft) | `HERO_CELL`/`HERO_GAP`/`HERO_PITCH`/`HERO_CROP`/`HERO_SEARCH_W`, `heroList`, `heroShown`, `heroCols`, `heroCells`, `heroCellAt`, `heroFilterRects`, `heroFilterAt`, `heroFilter`, `heroSearchKey`, `lobbyPick`, `lobbyStep`, `drawHeroFilters`, `drawHeroRow` | `hero grid` (the heroes: `CLASSES`/`HEROES_SOON`, player.js; where it stands: `lobbyLayout`, menu.js `lobby`) |

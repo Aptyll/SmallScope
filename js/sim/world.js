@@ -348,18 +348,16 @@ function treeRare(tx, ty) {
 // measured off borderDepth and nothing may move them.
 //
 // `mapTerrain(k, tx, ty)` IS a shape - one pure function of the position
-// noise saying what shape k makes of a tile. genWorld plants from it and the
-// class screen's map draws from it (mapChip, js/ui/menu.js), so the
-// picture on the chip is this seed's own valley in that shape rather than an
-// illustration of one. Nothing in here rolls: the shared rng stream every
+// noise saying what shape k makes of a tile. genWorld plants from it.
+// Nothing in here rolls: the shared rng stream every
 // later pass draws from is exactly what OPEN FIELD's always was, so an
 // existing seed's ponds, rivers, ore and berries are where they always were
 // (CLAUDE.md's rule about genWorld's stream).
 //
-// MAP_TYPE is the shape this page booted on - `?map=N`, else the profile's
-// pick. Picking one is a PAGE, the way a reroll is (pickMap, js/ui/menu.js):
-// SEED is a const every deterministic value closes over, and so is the
-// ground grown from it.
+// MAP_TYPE is the shape this page booted on - `?map=N`, else the first
+// (nothing in the menus picks one: the MOBA plays one map). Another shape is
+// another PAGE, the way another seed is: SEED is a const every
+// deterministic value closes over, and so is the ground grown from it.
 const MT_SNOW = 0, MT_ICE = 1, MT_FOREST = 2;
 const CENTER_R = 8; // tiles of open ground kept at the world's centre on every shape, so the river spokes still meet in the open
 const MAPS = [

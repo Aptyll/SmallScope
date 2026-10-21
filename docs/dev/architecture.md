@@ -147,12 +147,13 @@ order, so the script tags still interleave them:
 | [js/ui/announcer.js](../../js/ui/announcer.js) | ~180 | shared scope, no `window.*` export | the announcer: a queued call (FIRST BLOOD, multi-kills, SHUTDOWN, ACE, TOWER DESTROYED, bears) on a plate under the team rail with both faces and a sting, and the kill feed under the notice lane |
 | [js/ui/shop.js](../../js/ui/shop.js) | ~570 | shared scope, no `window.*` export | the merchant's counter: which counter a body stands at, buying and selling (items and the health potion through js/sim/items.js), and League's panel (RECOMMENDED and ALL ITEMS with its stat filters, the pane with BUILDS INTO, the build tree, the card and BUY, your six slots and SELL) |
 | [js/ui/panels.js](../../js/ui/panels.js) | ~1210 | shared scope, no `window.*` export | the TAB scoreboard + the (undrawn) event log, the M world map, the ESC settings slab |
-| [js/ui/menu.js](../../js/ui/menu.js) | ~3050 | shared scope, no `window.*` export | the title screen: menu planks, reroll die, tutorial panel, the lobby, the hero pop-up, `PATCH_TXT` and `PATCH_NOTES` |
+| [js/ui/menu.js](../../js/ui/menu.js) | ~1850 | shared scope, no `window.*` export | the title screen: menu planks, tutorial panel, the lobby, the hero pop-up, `PATCH_TXT` and `PATCH_NOTES` |
 | [js/ui/notes.js](../../js/ui/notes.js) | ~420 | shared scope, no `window.*` export | the title's WIKI / PATCH NOTES / ROADMAP tabs and the KITCHEN link, the roadmap, and the patch notes screen |
 | [js/ui/wiki.js](../../js/ui/wiki.js) | ~520 | shared scope, no `window.*` export | the wiki: its pages as data, the slab, tabs and rail, and drawing each page |
-| [js/ui/profile-card.js](../../js/ui/profile-card.js) | ~190 | shared scope, no `window.*` export | the title's name tag and the profile card: the name, renaming it, the lifetime ledger; `drawWell`, the plate grammar the hero row shares |
-| [js/ui/heroes.js](../../js/ui/heroes.js) | ~110 | shared scope, no `window.*` export | the lobby's hero row: a head per hero, the coming heroes as silhouettes, banned and taken cells |
-| [js/ui/draft.js](../../js/ui/draft.js) | ~400 | shared scope, no `window.*` export | the lobby's draft: bans, everyone's blind pick, the bots' choices, the host's copy per side, the clock, the ban wells and the roster frames |
+| [js/ui/profile-card.js](../../js/ui/profile-card.js) | ~190 | shared scope, no `window.*` export | the title's name tag and the profile card: the name, renaming it, the lifetime ledger; `drawWell`, the plate grammar other screens share |
+| [js/ui/heroes.js](../../js/ui/heroes.js) | ~170 | shared scope, no `window.*` export | the champ select's hero grid: a head per hero, the coming heroes as silhouettes, banned and taken cells, the position filters and the search field |
+| [js/ui/draft.js](../../js/ui/draft.js) | ~380 | shared scope, no `window.*` export | the lobby's draft: the positions, bans, everyone's blind pick, the bots' choices, the host's copy per side |
+| [js/ui/select.js](../../js/ui/select.js) | ~350 | shared scope, no `window.*` export | the champ select's look: the headline and clock, the seat rows, the splash and the skin strip, the mode |
 | [js/ui/skins.js](../../js/ui/skins.js) | ~250 | shared scope, no `window.*` export | the skins screen the coins buy from, the title's coin tag, and `birdSkinFor`, which skin a bird wears |
 | [js/ui/screens.js](../../js/ui/screens.js) | ~1380 | shared scope, no `window.*` export | the replay window, the death overlay and spectating, the victory and defeat ceremonies |
 | [js/ui/recap.js](../../js/ui/recap.js) | ~280 | shared scope, no `window.*` export | the death recap in the replay's top-left corner: who hit you, with what, how much, and the split by kind |
@@ -198,7 +199,8 @@ tag `pre-split` keeps the one-file history.
 
 The local player profile — **one `name`** (every other player sees it), its lifetime `stats`
 (`wins` / `matches` / `gold` / `days` / `kills` / `deaths`), `hero` (the `CLASSES` index last
-locked in, where the lobby's hero row opens next time), the
+locked in, where the champ select's grid opens next time), `pos` (the draft position it asks
+for, a `POSITIONS` index or -1 any: `pos()`/`setPos()`), the
 one-shot `dropped` flag (`hasDropped()`/`markDropped()`: has this profile ever jumped off the
 eagle, gating the scripted first flight that rides the landing), `bestLap`
 (`bestLap()`/`setBestLap()`: the ice parkour's all-time record) and `bestRange`
@@ -241,7 +243,7 @@ file is a save file.
   js/sprites/eagle.js); an id the game no longer has is kept but never worn. A match's gold
   never becomes coins.
 
-The name tag and the profile card are js/ui/profile-card.js, the hero row js/ui/heroes.js, the
+The name tag and the profile card are js/ui/profile-card.js, the hero grid js/ui/heroes.js, the
 skins screen and the coin tag js/ui/skins.js; the local player takes the profile's name and hero
 on through `applyProfile()` (js/sim/player.js).
 
@@ -355,7 +357,7 @@ does). Each one says so in a comment; if you move a block and the console shows 
 `ReferenceError` naming a constant on load, this is why.
 
 The storage keys touched outside profile.js are all sessionStorage hand-offs to the next page:
-`softfall.reroll`, `softfall.select` and `softfall.drop` (written in menu.js), and `softfall.load`
+`softfall.reroll` (written in menu.js and rooms.js), and `softfall.load`
 (the replay proof's record on its way in, written in save.js); boot.js reads each — they survive the reload,
 not the tab.
 

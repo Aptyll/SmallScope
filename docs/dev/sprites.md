@@ -181,7 +181,7 @@ cached per (hero, team, look). The fish and the burrow frames are still the borr
 that paint. Which look a player wears is `heroSkinOf(p)` (player.js): the id in `p.skins` under the
 hero's `skinSlot`, or the free first row. LAST STANDARD (nasal helm, white beard, tabard) is his
 own; IRON OATH (closed helm with a gold cross, pauldrons, a cape) is bought on the skins screen.
-They are F and G off armatos-round4.png in the project files. His 48 px model on the hero row and
+They are F and G off armatos-round4.png in the project files. His 48 px model on the hero grid and
 the strip is still the warrior's in his paint (`paint48`).
 
 His OATH GREATSWORD (`ARM_SWORD`, `ARM_SWORD_DIAG`) replaces the sword's held art in his hands
@@ -210,7 +210,7 @@ materials). Her 48 px model is the warrior's in her paint too. Her EAGLE SPATHA 
 in the leading hand like the warrior's sword.
 
 The **48 px model** ([looks.js](../../js/sprites/looks.js), `SPRITES.portrait(cls, look,
-team)`) is where the whole look reads — the lobby's stage and its hero row. Each hero wears one
+team)`) is where the whole look reads — the champ select's stage, grid and seat discs. Each hero wears one
 fixed `look` (`CLASSES[i].look`, js/sim/player.js; the heroes still to come in `HEROES_SOON`
 are drawn from theirs as silhouettes). It is **layers stamped in order** onto one 48×48 canvas: `BODY[sex]` (24 wide at x 12:
 neck, shoulders, arms, undershirt `u`, pants, boots), `HEAD[face]` (16 wide at x 16: round,
