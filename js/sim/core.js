@@ -191,8 +191,10 @@ const state = {
     countT: 0, countN: -1, dhover: [0, 0, 0],
     // the party lobby (js/ui/rooms.js): its ease, the open rooms a typed code
     // is looked up in and whether the list answered, the code being looked
-    // for (seek), and a join under way
-    roomsT: 0, rooms: [], roomsOk: false, seek: null, joining: false,
+    // for (seek), and a join under way. The CODE box (code, codeOn, codeShake)
+    // starts empty here because a page booted to join (partyBootJoin) draws it
+    // before any party screen has run
+    roomsT: 0, rooms: [], roomsOk: false, seek: null, joining: false, code: '', codeOn: false, codeShake: 0,
     pop: null, popT: 0, grow: 0, mrow: 0, wikiT: 0, wikiTab: 0, notesT: 0, notesTab: 0, notesSel: 0 },
   intro: 0,            // seconds left of the title -> drop / landing -> play transition (0 = none)
   introLen: 1,         // that transition's full length (the camera ease divides by it)

@@ -68,6 +68,11 @@ declare victory. The affordances:
     the client takes the smaller side's first AI slot, or its own slot back after a reload. In
     the Claude browser pane a tab that never got a frame does not tick at all: drive a client
     with `setInterval(() => DBG.step(1/60, 4), 66)` and it plays.
+  - **`node app/check-join.js`** — run it after touching the party screen, a join path or
+    `js/net/`: two headless pages join a party by code on the relay, by code on Steam and from a
+    Steam invite (Steam faked in the script with the wrapper's bridge calls), and each must end
+    welcomed with both pages still drawing. It serves the game itself on its own port and needs
+    Playwright (`PLAYWRIGHT=<its folder>` if it is not on the require path).
   - **Under the wrapper — Noah runs this by hand; a session never starts Electron or makes a
     Steam lobby.** `cd desktop && npm start -- --net=host` on one machine and `--join=LOBBYID`
     on another (Steam running on both) ride the same match over a Steam lobby; with Steam up

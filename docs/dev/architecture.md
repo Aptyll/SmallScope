@@ -457,6 +457,10 @@ None of the scripts is part of the game, and nothing in `js/` may depend on one 
   missing), a `function`/`var` declared twice (**OVERRIDE**: the later one silently replaces the
   earlier everywhere), and a js file `index.html` never loads or loads twice. Git merges both
   kinds of collision cleanly and `node --check` passes each file alone, so nothing else catches them.
+- **`app/check-join.js`** — the join check (Playwright): two headless pages meet through every
+  way a friend joins a party (relay code, Steam code, Steam invite, Steam faked with the
+  wrapper's bridge calls) and must end welcomed with both pages still drawing
+  ([checklists](checklists.md#verifying-a-change)).
 - **`app/check-size.js`** — the size check, run by `check-globals.js` (or alone; `--top N` lists
   the biggest files and functions). It counts code lines: blank, comment-only and data-only lines
   (a pixel-grid row, a table of numbers) are free, and a function counts only its own lines, not
