@@ -239,7 +239,7 @@ function padRepeat(lx, ly, dt) {
 function padTake() {
   const c = cursorInfo();
   if (padPointerMode() && (c.kind === 'hand' || c.kind === 'grab')) { pointerPress(0); pad.click = true; }
-  else keyPress({ key: 'Enter', repeat: false });
+  else keyPress({ key: 'Enter', repeat: false, pad: true }); // pad: the champ select's Enter is chat, its A the confirm (lobbyKey)
 }
 
 function padPress(i, menu) {

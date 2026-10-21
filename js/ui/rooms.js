@@ -596,25 +596,6 @@ function renderRoom(now, a) {
   ctx.globalAlpha = 1;
 }
 
-// The room this screen is in, on the pick screen: the code on its plate
-// under the relay pip, at the head of your side's roster - what a host reads
-// to a friend, and what a guest sees it joined
-function drawCodePlate(x, y, code, col, sc) {
-  sc = sc || 1;
-  const w = pixelTextWidth(code, sc) + 6, h = 5 * sc + 6;
-  ctx.fillStyle = 'rgba(4,6,18,0.55)'; ctx.fillRect(x + 1, y + 1, w, h);
-  ctx.fillStyle = '#35426e'; ctx.fillRect(x, y, w, h);
-  ctx.fillStyle = '#0a0e23'; ctx.fillRect(x + 1, y + 1, w - 2, h - 2);
-  drawPixelTextShadow(ctx, code, x + 3, y + 3, col, '#0a0e23', sc);
-  return w;
-}
-function drawRoomPlate(now, a) {
-  if (NET.role === 'solo') return;
-  const code = roomCode(), x = LOBBY_PAD, y = LOBBY_HEAD - 20;
-  ctx.globalAlpha = a;
-  drawRelayPip(x, y + 6, !!(NET.transport && NET.transport.open), now);
-  if (code) drawCodePlate(x + 9, y, code, '#ffd95c', 2);
-}
 // In a match, a client whose socket is down: a red pip blinking top-centre
 // while the transport redials, and nothing at all while the link is good
 function drawNetLink(now) {

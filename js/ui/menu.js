@@ -679,7 +679,7 @@ function menuKey(e) {
   if (m.screen === 'hero') { if (m.popT >= 1) heroKey(k); return; }
   if (m.screen === 'map') { if (m.popT >= 1) mapKey(k); return; }
   if (m.screen === 'ai') { if (m.popT >= 1) aiKey(k); return; }
-  if (m.screen === 'lobby') { if (m.screenT >= 1 && m.popT <= 0) lobbyKey(k); return; }
+  if (m.screen === 'lobby') { if (m.screenT >= 1 && m.popT <= 0) lobbyKey(k, e); return; }
   if (m.screen === 'skins') { if (m.skinT >= 1) skinsKey(k); return; }
   if (m.screen === 'room') { if (m.roomsT >= 1) roomKey(k, e); return; } // the party lobby (js/ui/rooms.js)
   if (m.screen === 'profile') return; // its keys arrive through profileKey (input.js), never here
@@ -1142,70 +1142,106 @@ function buildHelpPanel() {
 
 // ---- lobby --------------------------------------------------------
 // The HERO SELECT (menu.screen = 'lobby'), where a party's FIND MATCH lands
-// (js/ui/rooms.js) and every member follows (netPhase 'pick'): ONE screen on its own
-// painted night - never the live world - laid out the way a League lobby is,
-// running the DRAFT (js/ui/draft.js: the bans, then everyone's blind pick,
-// then the reveal). Two TEAM PANELS stand glued to the screen's edges, your
-// side's on the LEFT and the rivals' on the RIGHT: five frames each, in
-// player order (drawLobbyCard, draft.js). The TOP CENTRE is the draft's band
-// - the clock, the phase's word, each side's ban wells (drawDraftTop) - and
-// under it the HERO ROW (js/ui/heroes.js). Under that the STAGE holds YOUR
-// HERO - the 48 px model (js/sprites/looks.js) at LOBBY_MODEL (2x when the
-// view is too short for 3x under the row) under its warm light, unarmed;
-// clicking it opens the HERO POP-UP (the stats and the abilities - `the hero
-// pop-up` above). The foot holds the draft's word, big (BAN or LOCK IN:
-// draftConfirm), flanked by the MAP PLATE - this seed's own valley in the
-// picked shape (mapChip, `the map` below) - and the TARGET - the practice
-// range's archery face worn by the rivals' level - each with its name beside
-// it and each the way into a POP-UP: the map's (solo only) and the AI's (the
-// plates named after AI_LEVELS, js/ai/ai-skill.js). When the pick ends the
-// COUNTDOWN runs where the word was (draftCount): a gold ring bursting off
-// the figure (lockFx), one rival frame turning face-up per tick, and at zero
-// lockIn() flies to the eagle (lockT -> beginDrop; a page first when the
-// picked shape is not this one's). Nothing on the screen is instructions:
-// the shapes carry it.
-const LOBBY_PANEL_W = 110;               // a team panel's width, glued to its screen edge
-const LOBBY_FRAME_MAX = 44;              // a roster frame's tallest; a short view shrinks it
-const LOBBY_FRAME_GAP = 4;
-const LOBBY_HEAD = 58;                   // the panels' head: the difficulty plates and the target, right; the left kept level with it
-const LOBBY_MODEL = 3;                   // the stage model's scale: the 48 px model at 3x
-const LOBBY_LOCK_SCALE = 3;              // LOCK IN's text scale, and the count's
+// (js/ui/rooms.js) and every member follows (netPhase 'pick'): League's champ
+// select in Softfall's graphite, ONE screen over its own painted night -
+// never the live world - running the DRAFT (js/ui/draft.js: the positions,
+// the bans, then everyone's blind pick, then the reveal); its pixels are
+// js/ui/select.js. The HEADLINE, the timer bar and the seconds top centre,
+// each side's bans in its top corner. YOUR SIDE's five seat rows down the
+// left in position order, THE RIVALS' down the right, face-down until the
+// count turns them. In the middle the FILTER ROW (the positions, the search)
+// over the HERO GRID (js/ui/heroes.js), the STAGE under it - the hero you
+// point at, the 48 px model at LOBBY_MODEL under its warm light, the way
+// into the HERO POP-UP (the stats and the abilities, `the hero pop-up`
+// below) - and the confirm plate (BAN / LOCK IN: draftConfirm). Once your
+// pick is locked the SPLASH and its SKIN STRIP take the middle. At the foot
+// the LOADOUT (your four keys, the hero pop-up too), the CHAT bottom left
+// (js/ui/roomtalk.js, your side's only), and bottom right the mode with the
+// MAP PLATE - this seed's own valley in the picked shape (mapChip, `the map`
+// below) - and the TARGET - the practice range's archery face worn by the
+// rivals' level - each the way into a POP-UP: the map's (solo only) and the
+// AI's (the plates named after AI_LEVELS, js/ai/ai-skill.js). When the pick
+// ends the COUNTDOWN runs in the top band (draftCount): a gold ring bursting
+// off the figure (lockFx), one rival row turning face-up per tick, and at
+// zero lockIn() flies to the eagle (lockT -> beginDrop; a page first when
+// the picked shape is not this one's). Nothing on the screen is
+// instructions: the shapes carry it.
+const LOBBY_PANEL_W = 148;               // a side's column of seat rows at its widest, glued to its screen edge
+const LOBBY_PANEL_MIN = 104;             // ...and its narrowest: a narrow view drops grid columns before going under it
+const LOBBY_GUTTER = 24;                 // between a column and the grid: the seconds that point at your row
+const LOBBY_ROW_MAX = 44;                // a seat row's tallest; a short view shrinks it...
+const LOBBY_ROW_MIN = 34;                // ...to this: the portrait disc and the three lines
+const LOBBY_HEAD = 44;                   // the band over the columns and the grid: the headline, the clock, the bans
+const LOBBY_MODEL = 2;                   // the stage model's scale under the grid: the 48 px model at 2x
 const LOBBY_PAD = 6;                     // the margin off the view's edge
-const LOBBY_MAP = 32;                    // the map plate and the target, either side of the word at the foot
-const LOBBY_MAP_IN = 10;                 // each one's gap in from its team panel
+const LOBBY_MAP = 24;                    // the map plate and the target, bottom right
 const LOBBY_LV_W = 61, LOBBY_LV_H = 13;    // a difficulty plate (the AI pop-up)
+const LOBBY_CHAT_LINES = 6;              // the chat's lines over its plate, bottom left
 const POP_PIC = 72;                      // the picture in a pop-up: the map, the target
 const COUNT_T = 5;                     // s: LOCK IN's countdown to the eagle
 function lobbyLayout() {
-  const cx = Math.round(VIEW_W / 2), pw = LOBBY_PANEL_W, pad = LOBBY_PAD;
-  // the two panels' frames: five each under the head, filling the height
-  const avail = VIEW_H - LOBBY_HEAD - pad;
-  const fh = Math.max(26, Math.min(LOBBY_FRAME_MAX, Math.floor(avail / (MAX_PLAYERS / 2)) - LOBBY_FRAME_GAP));
+  const cx = Math.round(VIEW_W / 2), pad = LOBBY_PAD;
+  // the grid takes six heroes a row where the view is wide enough for the
+  // columns beside it, fewer on a narrow (4:3) one
+  const gridW = (n) => n * HERO_CELL + (n - 1) * HERO_GAP;
+  let cols = 6;
+  while (cols > 3 && (VIEW_W - gridW(cols) - 2 * LOBBY_GUTTER) / 2 < LOBBY_PANEL_MIN) cols--;
+  const gw = gridW(cols), pw = Math.min(LOBBY_PANEL_W, Math.floor((VIEW_W - gw - 2 * LOBBY_GUTTER) / 2));
+  // the chat bottom left: its plate on the foot, its lines over it
+  const chat = { x: pad, w: pw - pad - 4, ty: VIEW_H - pad - TALK_H, lines: LOBBY_CHAT_LINES };
+  // the seat rows: five a side under the head, down to the chat (which
+  // keeps two lines at the least); yours in position order (TOP first), the
+  // rivals' in seat order
+  const room = chat.ty - 6 - 2 * TALK_PITCH - LOBBY_HEAD;
+  const fh = Math.max(LOBBY_ROW_MIN, Math.min(LOBBY_ROW_MAX, Math.floor(room / (MAX_PLAYERS / 2))));
+  chat.lines = Math.max(1, Math.min(LOBBY_CHAT_LINES, Math.floor((chat.ty - 6 - LOBBY_HEAD - fh * (MAX_PLAYERS / 2)) / TALK_PITCH)));
   const cards = [[], []];
   const mineTeam = player ? player.team : 0;
-  for (const p of players) {
+  const role = (p) => DRAFT.role[p.id] >= 0 ? DRAFT.role[p.id] : 9;
+  const ours = players.filter((p) => p.team === mineTeam).sort((p, q) => role(p) - role(q) || p.id - q.id);
+  for (const p of ours.concat(players.filter((p) => p.team !== mineTeam))) {
     const mine = p.team === mineTeam ? 1 : 0;
-    const y = LOBBY_HEAD + cards[mine].length * (fh + LOBBY_FRAME_GAP);
+    const y = LOBBY_HEAD + cards[mine].length * fh;
     cards[mine].push({ x: mine ? 0 : VIEW_W - pw, y, w: pw, h: fh, p });
   }
-  // the map plate and the target at the foot, in from the panels, each with
-  // its name beside it toward the middle
-  const my = VIEW_H - pad - LOBBY_MAP;
-  const mapc = { x: pw + LOBBY_MAP_IN, y: my, w: LOBBY_MAP, h: LOBBY_MAP };
-  const tgt = { x: VIEW_W - pw - LOBBY_MAP_IN - LOBBY_MAP, y: my, w: LOBBY_MAP, h: LOBBY_MAP };
-  const mapName = { x: mapc.x + LOBBY_MAP + 6, y: my + (LOBBY_MAP >> 1) - 2 }, tgtName = { x: tgt.x - 6, y: mapName.y };
-  // LOCK IN, a bare word at the foot, big; the stage figure on the snow above it
-  const pw2 = pixelTextWidth('LOCK IN', LOBBY_LOCK_SCALE) + 8;
-  const play = { x: cx - (pw2 >> 1), y: VIEW_H - pad - 7 * LOBBY_LOCK_SCALE - 8, w: pw2, h: 7 * LOBBY_LOCK_SCALE + 4 };
-  // the hero row under the draft's band; the stage stands its model at 3x
-  // when the head (2 rows down) clears the row's name, else at 2x
-  const heroes = heroCells(DRAFT_TOP);
-  const S = play.y - 22 - 44 * LOBBY_MODEL >= heroes[heroes.length - 1].y + HERO_ROW_H ? LOBBY_MODEL : 2;
-  const bs = 48 * S;
-  const body = { x: cx - (bs >> 1), y: play.y - 22 - 46 * S, w: bs, h: bs }; // its feet (46 rows down) 22 px over the word
-  const figure = { x: body.x + 14 * S, y: body.y + 4 * S, w: 20 * S, h: 42 * S }; // the body itself, the button into the hero pop-up
-  return { cx, play, S, body, figure, heroes, cards, tgt, mapc, mapName, tgtName };
+  // the middle column: the filter row, the grid, LOCK IN, the loadout at the foot
+  const gx = cx - (gw >> 1);
+  const load = { x: cx - 74, y: VIEW_H - pad - 34, w: 148, h: 34 };
+  const play = { x: cx - 56, y: load.y - 12 - 20, w: 112, h: 20 };
+  const filter = { y: LOBBY_HEAD };
+  const grid = { x: gx, y: LOBBY_HEAD + 19, w: gw };
+  const L = { cx, pw, play, load, filter, grid, cards, chat };
+  L.heroes = heroCells(L);
+  // the stage under the grid: the hero pointed at, standing at 2x, when the
+  // view has the room for it under the grid's last row
+  const last = L.heroes.length ? L.heroes[L.heroes.length - 1].y + HERO_PITCH : grid.y;
+  const S = LOBBY_MODEL, bs = 48 * S, feet = play.y - 10;
+  L.S = S;
+  L.body = { x: cx - (bs >> 1), y: feet - 46 * S, w: bs, h: bs };
+  L.stage = feet - 44 * S >= last + 4;
+  L.figure = L.stage ? { x: L.body.x + 14 * S, y: L.body.y + 4 * S, w: 20 * S, h: 42 * S } : { x: 0, y: 0, w: 0, h: 0 };
+  // the splash and its skin strip take the middle once your pick is in
+  const sh = Math.min(SPLASH_H, play.y - LOBBY_HEAD - 20 - SKIN_THUMB_H - 8);
+  const sw = Math.min(SPLASH_W, VIEW_W - 2 * pw - 16);
+  L.splash = { x: cx - (sw >> 1), y: LOBBY_HEAD, w: sw, h: sh };
+  L.skins = { y: L.splash.y + sh + 20 };
+  // bottom right, under the rivals: the mode's words on the foot, the
+  // target and the map plate over them
+  L.mode = { y: VIEW_H - pad - 18 };
+  L.tgt = { x: VIEW_W - pad - LOBBY_MAP, y: L.mode.y - 6 - LOBBY_MAP, w: LOBBY_MAP, h: LOBBY_MAP };
+  if (L.tgt.y < LOBBY_HEAD + fh * (MAX_PLAYERS / 2)) { // a short view: beside the words instead, in from them
+    L.tgt.x = VIEW_W - pad - pixelTextWidth(selModeName(), 2) - 8 - LOBBY_MAP;
+    L.tgt.y = VIEW_H - pad - LOBBY_MAP;
+  }
+  L.mapc = { x: L.tgt.x - 6 - LOBBY_MAP, y: L.tgt.y, w: LOBBY_MAP, h: LOBBY_MAP };
+  if (L.mapc.x < load.x + load.w + 6) { // short and narrow too: up in the top right, in from the rivals' bans
+    L.tgt.x = VIEW_W - pad - Math.max(1, DRAFT.nBan) * 24 - 6 - LOBBY_MAP; L.tgt.y = pad;
+    L.mapc.x = L.tgt.x - 6 - LOBBY_MAP; L.mapc.y = pad;
+  }
+  return L;
 }
+// the splash stands in the middle: this screen's pick is locked, or the count runs
+function lobbySplash() { return (DRAFT.phase === 'pick' && DRAFT.lock[localId] >= 0) || DRAFT.phase === 'done'; }
 
 // The screen's own painted night, fully opaque at rest so the live ambient
 // world is never the backdrop here: a starfield under two aurora ribbons, a
@@ -1361,22 +1397,37 @@ function heroClick() {
   if (h.ab != null) { m.grow = h.ab; pickAbility(h.ab, 1); } // the well turns to the next option
 }
 
-// what the pointer is on: 'play' (the draft's word), 'hero' (your figure: the hero pop-up),
-// 'ai' (the target: the AI pop-up), 'map' (the map plate: the map pop-up),
-// 'pickN' (playable hero N's cell on the hero row) or null. A guest's room
-// offers the hero pop-up alone.
+// what the pointer is on: 'play' (BAN / LOCK IN), 'hero' (the stage figure
+// or the loadout: the hero pop-up), 'swap' (the trade mark on your row: the
+// next position), 'pos'N / 'search' (the filter row), 'skin'N /
+// 'skinPrev' / 'skinNext' (the strip under the splash), 'talk' (the chat's
+// plate), 'ai' (the target), 'map' (the map plate), 'pickN' (hero N's cell)
+// or null. A guest's room offers neither the target nor the map.
 function lobbyHit() {
-  const { play, figure, tgt, mapc, heroes } = lobbyLayout();
+  const L = lobbyLayout();
   const over = (r, px, py) => mouse.x >= r.x - px && mouse.x < r.x + r.w + px && mouse.y >= r.y - py && mouse.y < r.y + r.h + py;
-  if (over(figure, 0, 0)) return 'hero';
-  const hi = heroCellAt(heroes);
-  if (hi >= 0 && hi < CLASSES.length) return 'pick' + hi;
-  if (over(play, 2, 3) && draftWord()) return 'play';
+  const mineR = L.cards[1].find((r) => r.p === player);
+  if (mineR && draftOpen() && over(selSwapRect(mineR), 1, 1)) return 'swap';
+  if (over(L.load, 0, 0)) return 'hero';
+  if (inTalk(L.chat)) return 'talk';
+  if (lobbySplash()) {
+    const S = selSkinCells(L);
+    for (const c of S.cells) if (over(c, 1, 1)) return 'skin' + c.k;
+    if (S.more && over(S.prev, 2, 2)) return 'skinPrev';
+    if (S.more && over(S.next, 2, 2)) return 'skinNext';
+  } else {
+    if (over(L.figure, 0, 0)) return 'hero';
+    const f = heroFilterAt(L);
+    if (f) return f;
+    const hi = heroCellAt(L.heroes);
+    if (hi >= 0 && hi < CLASSES.length) return 'pick' + hi;
+    if (over(L.play, 1, 1) && draftWord()) return 'play';
+  }
   if (NET.isClient) return null; // a guest's room: the host's difficulty, the host's world
-  if (over(tgt, 2, 2) && NET.mode !== 'ranked') return 'ai'; // RANKED's bots follow the party's rating
+  if (over(L.tgt, 2, 2) && NET.mode !== 'ranked') return 'ai'; // RANKED's bots follow the party's rating
   // the shape and the seed are picked before a room is opened: a pick is a
   // page, and a host reloading would drop the room under everyone in it
-  if (NET.role === 'solo' && over(mapc, 2, 2)) return 'map';
+  if (NET.role === 'solo' && over(L.mapc, 2, 2)) return 'map';
   return null;
 }
 // the four pop-ups over the lobby share one ease (menu.popT) and one way
@@ -1466,12 +1517,19 @@ function setAiLevel(k) {
   SFX.pickup();
 }
 
-function lobbyKey(k) {
+// the keys: a chat line or the search field being typed takes every key;
+// otherwise Enter starts a chat line (League's), Space - and a pad's A -
+// confirms (BAN / LOCK IN), the arrows walk the heroes, ESC leaves (never
+// Backspace: a slip off the search field or the chat would walk out)
+function lobbyKey(k, e) {
   const m = state.menu;
   if (m.lockT > 0) return;
-  if (k === 'escape' || k === 'backspace') { if (m.countT > 0) return; if (NET.role === 'host') { draftStop(); netPhase('room'); beginRoom(); } else leaveLobby(); } // a host's ESC takes the room back to its seats; the count runs out
-  else if (moveDir(k) === 'left' || moveDir(k) === 'up') lobbyStep(-1);   // the hero row (js/ui/heroes.js)
+  if (m.talkOn) { talkKey(k, e); return; }
+  if (heroSearchKey(k, e)) return;
+  if (k === 'escape') { if (m.countT > 0) return; if (NET.role === 'host') { draftStop(); netPhase('room'); beginRoom(); } else leaveLobby(); } // a host's ESC takes the room back to its seats; the count runs out
+  else if (moveDir(k) === 'left' || moveDir(k) === 'up') lobbyStep(-1);   // the hero grid (js/ui/heroes.js)
   else if (moveDir(k) === 'right' || moveDir(k) === 'down') lobbyStep(1);
+  else if (k === 'enter' && !(e && e.pad)) talkOpen();
   else if (k === 'enter' || k === ' ') pressPlay();
 }
 
@@ -1479,12 +1537,26 @@ function lobbyClick() {
   const m = state.menu;
   if (m.lockT > 0 || m.screenT < 1 || m.popT > 0) return;
   const h = lobbyHit();
+  m.searchOn = h === 'search';
+  if (m.talkOn && h !== 'talk') m.talkOn = false;
   if (!h) return;
   if (h === 'play') pressPlay();                                    // BAN / LOCK IN: the draft's confirm
-  else if (h === 'hero') { m.pressT = 0.12; beginHero(); }          // your figure opens the hero pop-up: stats, abilities
+  else if (h === 'hero') { m.pressT = 0.12; beginHero(); }          // the figure or the loadout opens the hero pop-up: stats, abilities
   else if (h === 'map') { m.pressT = 0.12; beginMapPick(); }        // the map plate its own: the shape, the seed, the die
   else if (h === 'ai') { m.pressT = 0.12; beginAiPick(); }          // the target its own: the rivals' level
-  else if (h.startsWith('pick')) lobbyPick(+h.slice(4));            // point at a hero on the row (js/ui/heroes.js)
+  else if (h === 'talk') { if (!m.talkOn) talkOpen(); }             // the chat's plate starts a line
+  else if (h === 'search') SFX.pickup();                            // the field takes the keys
+  else if (h === 'swap') draftRole(draftNextRole());            // the next position no person on your side holds
+  else if (h === 'skinPrev' || h === 'skinNext') { m.skinOff = Math.max(0, (m.skinOff | 0) + (h === 'skinNext' ? 1 : -1)); SFX.pickup(); }
+  else if (h.startsWith('skin')) lobbySkin(+h.slice(4));
+  else if (h.startsWith('pos')) heroFilter(+h.slice(3));
+  else if (h.startsWith('pick')) lobbyPick(+h.slice(4));            // point at a hero on the grid (js/ui/heroes.js)
+}
+// a look on the strip: worn at once when this profile owns it
+function lobbySkin(k) {
+  const h = player.cls, row = selSkinRows(h)[k];
+  if (!row || !row.own || k === selSkinWorn(h)) { if (row && !row.own) SFX.deny(); return; }
+  draftSkin(h, k > 0 ? row.r.id : null);
 }
 
 // The class EMBLEMS at 12px - the hunter's bow, the warrior's gauntlet - for
@@ -1599,7 +1671,8 @@ function classIcon12(i, you) {
 const LOCK_FX_T = 0.7; // s: the lock-in's ring
 function drawLobbyStage(now, a, sw) {
   const m = state.menu;
-  const { cx, body, S } = lobbyLayout();
+  const { cx, body, S, stage } = lobbyLayout();
+  if (!stage || DRAFT.phase === 'ban') return;
   const feet = body.y + 46 * S;
   const lit = m.countT > 0 || m.lockT > 0 ? 1.7 : 1;
   ctx.globalAlpha = a * 0.4;
@@ -1761,70 +1834,30 @@ function drawMapPlate(r, lift) {
   } else ctx.drawImage(mapChip(settings.mapType | 0, pic), r.x + 2, y + 2);
   ctx.restore();
 }
-// The foot's corners: the map plate and the target either side of the
-// word, mirrored about the middle, the shape's name and the level's beside
-// them toward the middle - plain white, gold only while the picture over it is under the
-// hand (each is the way into its pop-up: the map's shape, seed and die;
-// the rivals' level). In a room the map is a readout (the host's world)
-// and a guest's target is too.
-function drawLobbyTop(now, a) {
-  const m = state.menu;
-  const { mapc, tgt, mapName: mn, tgtName: tn } = lobbyLayout();
-  const hover = m.screenT >= 1 && m.popT <= 0 ? lobbyHit() : null;
-  const rc = TEAMS[skin(1 - (player ? player.team : 0))].mark;
-  ctx.globalAlpha = a;
-  const mh = hover === 'map', th = hover === 'ai';
-  drawMapPlate(mapc, mh ? 1 : 0);
-  const shape = mapName(settings.mapType | 0);
-  drawPixelTextShadow(ctx, shape, mn.x, mn.y, mh ? '#ffd95c' : '#f4f7ff', '#0a0e23');
-  const lv = roomLevel(); // a guest's is the leader's, RANKED's the party's rating's (js/ui/rooms.js)
-  drawLobbyTarget(tgt.x, tgt.y - (th ? 1 : 0), tgt.w, lv, now, a);
-  const level = AI_LEVELS[lv].name;
-  drawPixelTextShadow(ctx, level, tn.x - pixelTextWidth(level), tn.y, th ? '#ffd95c' : '#f4f7ff', '#0a0e23');
-  ctx.globalAlpha = a;
-}
-
-// The countdown: the whole second left in gold digits at LOCK IN's own
-// scale where the word was, white the instant it changes, sinking in alpha
-// through its second.
-function drawLobbyCount(a) {
-  const m = state.menu;
-  if (m.countT <= 0) return;
-  const { play } = lobbyLayout();
-  const n = Math.ceil(m.countT), frac = m.countT - (n - 1); // 1 fresh -> 0 about to change
-  const s = String(n);
-  ctx.globalAlpha = a * (0.7 + 0.3 * frac);
-  drawPixelTextOutline(ctx, s, play.x + ((play.w - pixelTextWidth(s, LOBBY_LOCK_SCALE)) >> 1), play.y + 2, frac > 0.85 ? '#f4f7ff' : '#ffd95c', 'rgba(8,12,28,0.9)', LOBBY_LOCK_SCALE);
-  ctx.globalAlpha = a;
-}
-
-// a (0..1) is the screen's own visibility; the whole surface rides it
+// a (0..1) is the screen's own visibility; the whole surface rides it.
+// Under it all the lobby's painted night, dimmed to the party room's
+// graphite so the columns and the grid read flat on it.
 function renderLobby(now, a) {
-  const m = state.menu;
-  const { play, heroes } = lobbyLayout();
+  const m = state.menu, L = lobbyLayout();
   drawLobbyBackdrop(now, a);
-  ctx.globalAlpha = a;
-  // the panels ride in from their edges; then the map, then the stage
-  const sw = easeOut(m.cswapT);
-  const slide = Math.round((1 - a) * 30);
-  drawLobbyRosters(now, a, slide);
-  drawLobbyTop(now, a);
-  drawDraftTop(a); // the clock and the bans (js/ui/draft.js)
-  drawLobbyStage(now, a, sw);
-  drawHeroRow(heroes, a);
-  drawRoomPlate(now, a);
-  // the draft's word (BAN / LOCK IN) - a bare word at the foot, the main
-  // menu's grammar: white, gold and lifted a px under the hand, sunk a px on
-  // the press, slate once confirmed, and gone while the count wears its place
-  const hover = m.screenT >= 1 && m.popT <= 0 ? lobbyHit() : null, dw = draftWord();
-  ctx.globalAlpha = a;
-  if (dw && m.countT <= 0) {
-    const hv = dw.live && hover === 'play' ? 1 : 0;
-    const pressed = dw.live && (m.pressT > 0 || (mouse.down && hover === 'play'));
-    const wx = play.x + ((play.w - pixelTextWidth(dw.w, LOBBY_LOCK_SCALE)) >> 1);
-    drawPixelTextOutline(ctx, dw.w, wx, play.y + 2 - hv + (pressed ? 1 : 0), hv ? '#ffd95c' : dw.live ? '#f4f7ff' : DRAFT_MUTE, 'rgba(8,12,28,0.9)', LOBBY_LOCK_SCALE);
+  ctx.globalAlpha = a * 0.78;
+  ctx.fillStyle = SC_BG; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+  const hot = m.screenT >= 1 && m.popT <= 0 ? lobbyHit() : null;
+  drawSelectTop(L, a);                 // the headline, the clock, the bans (js/ui/select.js)
+  drawSeats(L, a, hot);                // both sides' seat rows
+  if (lobbySplash()) {                 // your pick is in: the splash and the skins
+    drawSplash(L, now, a);
+    drawSkinStrip(L, a, hot);
+  } else {
+    drawHeroFilters(L, a, hot, now);   // the positions and the search (js/ui/heroes.js)
+    drawHeroRow(L.heroes, a);          // the grid
+    drawLobbyStage(now, a, easeOut(m.cswapT));
+    drawSelPlay(L, a, hot);            // BAN / LOCK IN
   }
-  drawLobbyCount(a);
+  drawLoadout(L, a, hot);              // your four keys: the hero pop-up
+  drawSelMode(L, now, a, hot);         // the mode, the map, the target
+  ctx.globalAlpha = a;
+  drawTalk(L.chat, now, hot === 'talk'); // the side's chat (js/ui/roomtalk.js)
   ctx.globalAlpha = 1;
 }
 

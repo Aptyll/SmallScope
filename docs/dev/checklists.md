@@ -123,7 +123,7 @@ declare victory. The affordances:
   the fold into one profile. `DBG.PROFILE` is the store; `DBG.beginProfile()` opens the profile
   card, driven by `profileHit`, `profileKey`, `profileCommit`/`leaveProfile` and read back
   through `profileLayout`/`profileTagRect`; `DBG.lobbyPick(i)` and `DBG.heroList()` drive the
-  lobby's hero row, and `DBG.DRAFT`, `DBG.draftAct(slot, 'hover'|'lock', h)`, `DBG.draftPoint(h)` and
+  champ select's hero grid, and `DBG.DRAFT`, `DBG.draftAct(slot, 'hover'|'lock'|'role'|'skin', h, id)`, `DBG.draftPoint(h)` and
   `DBG.draftConfirm()` the draft (set `DBG.DRAFT.t` low to run a clock out). See [architecture.md](architecture.md#profilejs).
 - **The [wiki](gameplay/the-wiki.md) needs no staging**: it is driven headlessly by `DBG.beginWiki()`, `wikiSetTab(i)`, `wikiScrollBy(px)`,
   `wikiLayout()` (tabs, rows, the window, the rail) and `wikiHit(x, y)`; the ease takes 0.35 s
@@ -273,7 +273,7 @@ own buy, sell and use branches (`buyPotion`, `takePotion`, `useItem`).
 **Adding a class** — a named hero goes through the `new-hero` skill
 ([.claude/skills/new-hero/](../../.claude/skills/new-hero/SKILL.md)), which runs this list in order
 with Noah's picks around it. The tables make most of it mechanical, and every screen picks the new
-entry up with no edit: the lobby's hero row grows a cell, the strip, the hero
+entry up with no edit: the champ select's grid grows a cell (give the entry its `pos` list, so the position filters and the bots' pick know it), the strip, the hero
 pop-up's preview/ledger and the bot class hash
 (`initPlayers`, already `floor(hash × CLASSES.length)`) are all generic over the tables. What a
 new class needs written:

@@ -20,6 +20,7 @@
   const OLD_SAVES = 'softfall.saves', OLD_SAVE = 'softfall.save.';
   const OLD_SETTINGS = 'softfall.settings'; // pre-profile saves; migrated once
   const NAME_MAX = 16;
+  const POS_N = 5;                 // POSITIONS.length (js/ui/draft.js)
   const HERO_N = 5;                // CLASSES.length (js/sim/player.js) - a hero index past this is repaired to 0
   // the coins a profile starts with: the cosmetics' purse, kept outside every
   // match (a match's gold never reaches it). What a coin buys is the skins
@@ -80,6 +81,7 @@
       name: randomName(),
       stats: blankStats(),
       hero: 0,         // the hero last locked in (a CLASSES index): where the pick opens next time
+      pos: -1,         // the position this profile asks for in the draft (a POSITIONS index, js/ui/draft.js), -1 any
       dropped: false,  // has this profile ever jumped off the eagle - gates the first-flight countdown
       bestLap: 0,      // the ice parkour's all-time best lap in seconds (0 = never lapped)
       bestRange: 0,    // the archery range's all-time best round score (0 = never played)
@@ -177,6 +179,7 @@
         } else addStats(profile.stats, s.stats);
         if (typeof name === 'string' && validate(name).ok) profile.name = validate(name).name;
         if (typeof hero === 'number' && isFinite(hero) && hero >= 0 && hero < HERO_N) profile.hero = Math.floor(hero);
+        if (typeof s.pos === 'number' && s.pos >= 0 && s.pos < POS_N) profile.pos = Math.floor(s.pos);
         if (s.settings && typeof s.settings === 'object') profile.settings = s.settings;
         // a profile from before the purse arrives without it and keeps the
         // START_COINS blank() gave it, like a fresh one
@@ -222,6 +225,15 @@
     setHero(i) {
       if (!(i >= 0 && i < HERO_N) || profile.hero === i) return;
       profile.hero = i | 0;
+      saveNow();
+    },
+
+    // the position the draft seats this profile in first (draftSeatRoles, js/ui/draft.js), -1 any
+    pos() { return profile.pos; },
+    setPos(i) {
+      i = i >= 0 && i < POS_N ? i | 0 : -1;
+      if (profile.pos === i) return;
+      profile.pos = i;
       saveNow();
     },
 
