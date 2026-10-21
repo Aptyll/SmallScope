@@ -81,14 +81,15 @@ function talkOpen() {
   SFX.pickup();
 }
 // the plate and the lines over it: where L puts it (L.ty; the party's
-// bottom-left corner, roomLayout's L.talk), or at the foot of the screen
+// bottom-left corner, roomLayout's L.talk, as tall as the button beside it:
+// L.th; its lines may run L.cw wide), or at the foot of the screen
 function talkLayout(L) {
   const y = L.ty != null ? L.ty : VIEW_H - 36 - 12 - TALK_H;
-  return { x: L.x, y, w: L.w, h: TALK_H, top: y - TALK_KEEP * TALK_PITCH - 2 };
+  return { x: L.x, y, w: L.w, h: L.th || TALK_H, cw: L.cw || L.w, top: y - TALK_KEEP * TALK_PITCH - 2 };
 }
 function drawTalk(L, now, hot) {
   const m = state.menu, T = talkLayout(L);
-  ctx.save(); ctx.beginPath(); ctx.rect(T.x, T.top - 2, T.w, T.y - T.top + 2); ctx.clip(); // a long line stops at the plate's edge
+  ctx.save(); ctx.beginPath(); ctx.rect(T.x, T.top - 2, T.cw, T.y - T.top + 2); ctx.clip(); // a long line stops at its edge
   NET.chat.forEach((c, i) => {
     const y = T.y - (NET.chat.length - i) * TALK_PITCH - 2, nm = c.name + ':';
     drawPixelText(ctx, nm, T.x + 2, y, TEAMS[skin(c.team)].mark, 1);
@@ -100,13 +101,15 @@ function drawTalk(L, now, hot) {
   if (m.talkOn) {
     let t = m.talk;
     while (t && pixelTextWidth(t) > T.w - 12) t = t.slice(1); // a long line scrolls: its end stays in view
-    drawPixelText(ctx, t, T.x + 5, T.y + 4, SC_LIT, 1);
-    if (Math.floor(now * 2.5) % 2) { ctx.fillStyle = SC_GOLD; ctx.fillRect(T.x + 6 + pixelTextWidth(t), T.y + 3, 1, 7); }
+    const ty = T.y + ((T.h - 5) >> 1);
+    drawPixelText(ctx, t, T.x + 5, ty, SC_LIT, 1);
+    if (Math.floor(now * 2.5) % 2) { ctx.fillStyle = SC_GOLD; ctx.fillRect(T.x + 6 + pixelTextWidth(t), ty - 1, 1, 7); }
     return;
   }
   // at rest: the key that starts a line, and a speech bubble
-  drawKeyCap(ctx, T.x + 3, T.y + 1, 'ENTER', false, hot);
-  const bx = T.x + 9 + pixelTextWidth('ENTER') + 6, by = T.y + 3;
+  const ky = T.y + ((T.h - 10) >> 1);
+  drawKeyCap(ctx, T.x + 3 + (T.h > TALK_H ? 3 : 0), ky, 'ENTER', false, hot);
+  const bx = T.x + 9 + (T.h > TALK_H ? 3 : 0) + pixelTextWidth('ENTER') + 6, by = ky + 2;
   ctx.fillStyle = hot ? SC_LIT : SC_DIM;
   ctx.fillRect(bx + 1, by, 7, 1); ctx.fillRect(bx, by + 1, 1, 3); ctx.fillRect(bx + 8, by + 1, 1, 3); ctx.fillRect(bx + 1, by + 4, 7, 1);
   ctx.fillRect(bx + 2, by + 5, 1, 1); ctx.fillRect(bx + 1, by + 6, 1, 1);

@@ -2,25 +2,29 @@
 
 **The party lobby** (js/ui/rooms.js, `menu.screen = 'room'`) is where QUICKPLAY, RANKED and
 PRACTICE TOOL on the title land: the page hosts its own party at once (`beginParty`: a room on the relay, or a
-Steam lobby) and NET.mode names the mode. League's party lobby in Graphite: the mode's name at
-the head (the leader's opens a list of the modes under it; a click on one, or the keys' Enter, up,
+Steam lobby) and NET.mode names the mode. League's party lobby in Graphite, over the title's
+snowy valley behind a dark wash (`RM_WASH`): two mirrored plates at the head, the mode's name on
+the left (the leader's opens a list of the modes under it; a click on one, or the keys' Enter, up,
 down and Enter, sets it in place, `modeSet`, and spends every guest's READY, since it was said to
 the old mode). Down the right edge runs the social column (League's, js/ui/friends.js
 `drawSocial`): your face and name at its head with the party's four-letter code in gold under them
 (a click copies it, white for a moment; dim with a red dot blinking after it while the link is
 down), and your Steam friends under that. Your side's five seats stand in a row with you in the
 middle and the others filling outward: a person's seat is a card with a 3x portrait, a name, the
-rating in RANKED, a guest's READY tick and link bars (green, amber, red as the round trip grows),
+hero they last locked in, the rating in RANKED, a guest's READY tick and link bars (green, amber, red as the round trip grows),
 a crown over the leader's portrait; an empty seat is a bare dotted well with a gold + that invites
 (the code copied, or Steam's overlay). The leader's pointer on a guest's card shows a red X that
 shows them out (`seatKick`). The rival side is never shown here: it is another party met by
-matchmaking, or bots. While you are alone JOIN and four slots sit right of the head: type or paste (Ctrl+V) a friend's four letters to join their
+matchmaking, or bots. While you are alone JOIN and four slots fill the head's right plate: type or paste (Ctrl+V) a friend's four letters to join their
 party (`partySeek` looks the code up on the relay's list, or in a Steam lobby's data, which
 carries the same code: `steamCode`, js/net/transport-steam.js); a code nobody answers to
-rattles the slots. The chat sits in the bottom-left corner (js/ui/roomtalk.js): the last four
-lines, each a name in its side's paint, clipped at the plate's width, over a plate showing an
-ENTER key cap and a speech bubble; Enter or a click on the plate starts a line, Enter sends it,
-Esc drops it. At the foot one button, League's, with an X attached before it that leaves: a
+rattles the slots. The foot is three plates as tall as each other. The chat sits in the
+bottom-left corner (js/ui/roomtalk.js): the last four lines, each a name in its side's paint,
+clipped at half the screen's width, over a plate showing an ENTER key cap and a speech bubble;
+Enter or a click on the plate starts a line, Enter sends it, Esc drops it. Its mirror in the
+bottom-right is INVITE (Steam's invite overlay, or the code copied, while a seat is empty), with
+the friends invited from the column listed over it, a green tick once they are in. Between them
+one button, League's, with an X attached before it that leaves: a
 guest's READY or the leader's FIND MATCH, dim and flashing the seats it waits on until every
 guest is ready (`partyFind`). In QUICKPLAY and RANKED the party then looks for another party doing the
 same (js/ui/matchmaking.js): the word becomes a gold clock (a press stops looking) and the clock

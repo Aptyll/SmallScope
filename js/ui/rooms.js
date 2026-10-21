@@ -26,14 +26,15 @@
 // this screen on a fresh valley (the rematch, below).
 const PARTY_MODES = { quick: 'QUICKPLAY', ranked: 'RANKED', practice: 'PRACTICE TOOL' };
 const RM_CODE_N = 4;                   // letters in a code (makeCode, app/server.js; steamCode, js/net/transport-steam.js)
-const RM_CODE_H = 16;                  // JOIN's slots for a friend's code, right of the head (roomLayout's L.box)
-const RS_TOP = 88, RS_H = 124, RS_GAP = 6, RS_W = 80; // the seats, League's row of five: top, a seat's height, between seats, a seat's width
-const RS_FACE = 64;                    // a seat's portrait, the hero at 3x
+const RS_TOP = 76, RS_H = 150, RS_GAP = 6, RS_W = 80; // the seats, League's row of five: top, a seat's height, between seats, a seat's width
+const RS_FACE = 72;                    // a seat's portrait, the hero at 3x
+const RM_HEAD_Y = 12, RM_HEAD_W = 176, RM_HEAD_H = 22; // the head's two plates, mirrored: the mode (left) and JOIN with its four slots (right)
 const RM_BTN_W = 140, RM_BTN_H = 22, RM_X_W = 22, RM_FOOT = 34; // the foot: FIND MATCH's button, the X attached before it, its top above the screen's foot
-const RM_JOIN_W = 104;                 // JOIN and its four slots, right of the head
-const RM_LIST_W = 112, RM_LIST_H = 14; // the modes' list a click on the head opens
-const RS_HEAD = -2;                    // menu.rseat on the mode's name (-1 is the words at the foot, else a seat's slot)
-const RS_TOOL = 24;                    // px at a seat's far end that is the leader's hand (show a friend out)
+const RM_SIDE_W = 128;                 // the foot's two end plates, mirrored and as tall as the button: the chat (left) and INVITE (right)
+const RM_INVITED = 4;                  // names INVITE lists over its plate
+const RM_WASH = 0.84;                  // how much of the title world the screen's wash hides
+const RM_LIST_H = 14;                  // a row of the modes' list a click on the head opens
+const RS_HEAD = -2;                    // menu.rseat on the mode's name (-1 is the foot, else a seat's slot)
 const SEEK_T = 6;                      // s a typed code is looked for on the list before it rattles
 // RANKED: a rating per profile (PROFILE.rank, js/app/profile.js), RANK_STEP
 // up for a win and down for a loss, and the bots' level read off the party's
@@ -65,6 +66,7 @@ function leaveRoom() {
   homeParty = null; // walked out of a match met by matchmaking: no party to go back to (js/ui/matchmaking.js)
   const m = state.menu;
   m.screen = 'menu'; m.seek = null; m.joining = false;
+  FRIENDS.invites = []; // the names over INVITE belong to the party just left
   SFX.pickup();
   SFX.music.play('intro');
 }
@@ -94,9 +96,9 @@ function modeSet(mode) {
   }
   SFX.pickup();
 }
-function modeRect(L) { return { x: L.x, y: 16, w: pixelTextWidth(partyName(), 2), h: 10 }; }
+function modeRect(L) { return { x: L.x, y: RM_HEAD_Y, w: RM_HEAD_W, h: RM_HEAD_H }; }
 // the list under the head: every mode, the party's in gold
-function modeListRects(L) { return Object.keys(PARTY_MODES).map((k, i) => ({ k, x: L.x, y: 30 + i * RM_LIST_H, w: RM_LIST_W, h: RM_LIST_H })); }
+function modeListRects(L) { return Object.keys(PARTY_MODES).map((k, i) => ({ k, x: L.x, y: RM_HEAD_Y + RM_HEAD_H + 1 + i * RM_LIST_H, w: RM_HEAD_W, h: RM_LIST_H })); }
 function partySize() { return roomSide(player.team).filter(isHuman).length; }
 // RANKED's bots: a level off the people's average rating (both parties' when two met), a band either side of the start
 function rankLevel() {
@@ -240,12 +242,13 @@ function beginRoom() {
 function roomHost() { return players[NET.isClient ? NET.hostSlot : localId]; }
 // the five seats of side t, in slot order: the same five, the same order, on every screen
 function roomSide(t) { return players.filter((p) => p.team === t); }
-// the screen laid out, League's party lobby: the mode's name at the head
-// (JOIN at its right while you are a party of one), your side's five seats
-// in a row with you in the middle and the others filling outward, the
-// party's one button at the foot with the X that leaves attached before it,
-// and the chat in the bottom-left corner. The social column takes the right
-// edge (js/ui/friends.js).
+// the screen laid out, League's party lobby: two plates at the head, the
+// mode's (left) and, while you are a party of one, JOIN's (right); your
+// side's five seats in a row with you in the middle and the others filling
+// outward; at the foot the party's one button with the X that leaves
+// attached before it, the chat in the bottom-left corner and INVITE in the
+// bottom-right, both as tall as the button. The social column takes the
+// right edge (js/ui/friends.js).
 function roomLayout() {
   const mw = VIEW_W - SOCIAL_W, x = 24, w = mw - 48;
   const side = roomSide(player ? player.team : 0), n = side.length, mid = n >> 1;
@@ -258,9 +261,10 @@ function roomLayout() {
   const label = NET.isClient ? 'READY' : NET.mode === 'practice' ? 'START' : find;
   const gx = Math.round((mw - RM_X_W - RM_BTN_W + 1) / 2), by = VIEW_H - RM_FOOT;
   const leave = { x: gx, y: by, w: RM_X_W, h: RM_BTN_H }, go = { x: gx + RM_X_W - 1, y: by, w: RM_BTN_W, h: RM_BTN_H, label };
-  const talk = { x, w: gx - 8 - x, ty: by + RM_BTN_H - TALK_H };
-  const box = { x: x + w - RM_JOIN_W, y: 13, w: RM_JOIN_W, h: RM_CODE_H };
-  return { x, w, seats, leave, go, talk, box };
+  const talk = { x, w: RM_SIDE_W, ty: by, th: RM_BTN_H, cw: (w >> 1) - 8 };
+  const invite = { x: x + w - RM_SIDE_W, y: by, w: RM_SIDE_W, h: RM_BTN_H };
+  const box = { x: x + w - RM_HEAD_W, y: RM_HEAD_Y, w: RM_HEAD_W, h: RM_HEAD_H };
+  return { x, w, seats, leave, go, talk, invite, box };
 }
 function inRect(r, pad) {
   pad = pad || 0;
@@ -286,6 +290,7 @@ function roomHit() {
   if (m.modeOpen) { for (const r of modeListRects(L)) if (inRect(r)) return { kind: 'modeItem', k: r.k }; }
   if (inRect(L.leave, 1)) return { kind: 'leave' };
   if (inRect(L.go, 1)) return { kind: 'go' };
+  if (inRect(L.invite, 1)) return { kind: 'invite' };
   if (modeSwapOk() && inRect(modeRect(L), 3)) return { kind: 'mode' };
   const cr = socialCodeRect(); // the social column (js/ui/friends.js): your code at its head, the friends under it
   if (cr && inRect(cr, 3)) return { kind: 'code' };
@@ -310,6 +315,8 @@ function roomCopy() {
 }
 // an empty seat's +: Steam's friends overlay where there is one, the code otherwise
 function seatInvite() { if (netSteam() && NET.transport && NET.transport.lobbyId) roomInvite(); else roomCopy(); }
+// INVITE (the foot's right plate, an empty seat's +): while a seat stands empty
+function roomInviteOk() { return seatsOpen() && roomSide(player.team).some((p) => p.control === 'none'); }
 function roomGo(label) {
   if (label === 'READY') { netReady(!NET.ready.has(localId)); SFX.place(); }
   else if (label === 'START') partyPractice();
@@ -325,6 +332,7 @@ function roomDo(h) {
   if (h.kind === 'talk') { talkOpen(); return; }
   if (h.kind === 'friend') { if (h.f.head) friendHeadDo(); else friendDo(h.f); return; }
   if (h.kind === 'leave') { leaveRoom(); return; }
+  if (h.kind === 'invite') { if (roomInviteOk()) seatInvite(); else SFX.deny(); return; }
   if (h.kind === 'go') { if (m.joining) SFX.deny(); else roomGo(roomLayout().go.label); return; }
   if (h.act === 'invite') seatInvite();
   else if (h.act === 'kick') { seatKick(h.id); SFX.deny(); }
@@ -340,7 +348,7 @@ function roomClick() {
 }
 // the keys walk a cursor along the five seats (left and right; right off the
 // last one enters the friends' column), up onto the mode's name and down
-// onto the foot (the X and the button); Enter does what a click there
+// onto the foot (the X, the button, INVITE); Enter does what a click there
 // would. The code's slots, while lit, take every key; the modes' list,
 // while open, takes up, down, Enter and Esc
 function roomKey(k, e) {
@@ -381,10 +389,10 @@ function roomKey(k, e) {
     else if (k === 'enter' || k === ' ') { const act = seatAct(L.seats[at]); if (act) roomDo({ kind: 'seat', id: m.rseat, act }); else SFX.deny(); }
     return;
   }
-  // on the foot: the X (rword 0) and the button (rword 1)
-  if (d === 'left' || d === 'right') { m.rword = d === 'right' ? 1 : 0; SFX.pickup(); }
+  // on the foot: the X (rword 0), the button (1) and INVITE (2)
+  if (d === 'left' || d === 'right') { m.rword = Math.max(0, Math.min(2, m.rword + (d === 'right' ? 1 : -1))); SFX.pickup(); }
   else if (d === 'up') { m.rseat = L.seats[mine].p.id; SFX.pickup(); }
-  else if (k === 'enter' || k === ' ') roomDo({ kind: m.rword ? 'go' : 'leave' });
+  else if (k === 'enter' || k === ' ') roomDo({ kind: ['leave', 'go', 'invite'][m.rword] });
 }
 function roomAllReady() { return players.every((p) => p.control !== 'remote' || NET.ready.has(p.id)); }
 // the bots' level the room plays: RANKED's pinned one, the leader's own setting, a guest's copy of it
@@ -531,6 +539,25 @@ function drawRoomFoot(L, hot, dim, col) {
   ctx.fillStyle = hot === 'leave' ? SC_HOT : SC_PLATE; ctx.fillRect(x.x + 1, x.y + 1, x.w - 2, x.h - 2);
   drawXMark(x.x + ((x.w - 5) >> 1), x.y + ((x.h - 5) >> 1), hot === 'leave' ? RM_BAD : SC_LBL);
 }
+// INVITE, the foot's right plate (the chat's mirror): the person-plus and
+// the word; a click opens Steam's invite on this lobby, or copies the code.
+// Over it, the friends invited from the column, newest lowest: a green tick
+// once they are in the party, the dim letter while the invite stands.
+function drawRoomInvite(L, hot) {
+  const r = L.invite, ok = roomInviteOk();
+  ctx.fillStyle = hot && ok ? SC_LBL : SC_EDGE; ctx.fillRect(r.x, r.y, r.w, r.h);
+  ctx.fillStyle = hot && ok ? SC_HOT : SC_PLATE; ctx.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
+  const word = 'INVITE', ww = pixelTextWidth(word) + 13, wx = r.x + ((r.w - ww) >> 1), col = !ok ? SC_DIM : hot ? '#ffd95c' : SC_TXT;
+  frBmp(wx, r.y + 7, FR_ICON.add, ok ? (hot ? '#ffd95c' : SC_GOLD) : SC_DIM);
+  drawPixelText(ctx, word, wx + 13, r.y + 8, col, 1);
+  const names = FRIENDS.invites.slice(-RM_INVITED), inParty = new Set(roomSide(player.team).filter(isHuman).map((p) => p.name));
+  names.forEach((f, i) => {
+    const y = r.y - (names.length - i) * TALK_PITCH - 2, nm = talkClean(f.name).slice(0, 16), nx = r.x + r.w - 2 - pixelTextWidth(nm);
+    const there = inParty.has(nm);
+    drawPixelText(ctx, nm, nx, y, there ? SC_TXT : SC_DIM, 1);
+    if (there) drawTick(nx - 8, y, RM_OK); else frBmp(nx - 10, y - 1, FR_ICON.invite, SC_EDGE);
+  });
+}
 const RM_OK = '#7fd88a', RM_SLOW = '#e8b04a', RM_BAD = '#e0524f'; // READY's tick and the link's three grades
 const PING_GOOD = 90, PING_OK = 180; // ms: three bars under the first, two under the second, one past it
 // a tick, 5x4
@@ -561,16 +588,16 @@ function drawCodeBox(r, m, now, hot) {
   const x = r.x + dx, y = r.y;
   ctx.fillStyle = m.codeOn ? '#c89a3c' : hot ? SC_LBL : SC_EDGE; ctx.fillRect(x, y, r.w, r.h);
   ctx.fillStyle = m.codeOn ? SC_YOU : SC_PLATE; ctx.fillRect(x + 1, y + 1, r.w - 2, r.h - 2);
-  const pitch = 14, word = 'JOIN', ww = pixelTextWidth(word) + 8, x0 = x + ((r.w - pitch * RM_CODE_N + 6 + ww) >> 1);
-  drawPixelText(ctx, word, x0 - ww, y + 6, m.codeOn || hot ? SC_TXT : SC_DIM, 1);
+  const pitch = 14, word = 'JOIN', ww = pixelTextWidth(word, 2) + 12, x0 = x + ((r.w - pitch * RM_CODE_N + 6 + ww) >> 1), ty = y + ((r.h - 10) >> 1);
+  drawPixelText(ctx, word, x0 - ww, ty, m.codeOn || hot ? SC_TXT : SC_DIM, 2);
   for (let i = 0; i < RM_CODE_N; i++) {
     const cx = x0 + i * pitch, ch = m.code[i];
-    if (ch) drawPixelText(ctx, ch, cx, y + 3, m.codeShake > 0 ? '#e0524f' : SC_GOLD, 2);
-    else { ctx.fillStyle = i === m.code.length && m.codeOn && Math.floor(now * 2.5) % 2 ? SC_GOLD : hot ? SC_LBL : SC_DIM; ctx.fillRect(cx, y + 12, 8, 1); }
+    if (ch) drawPixelText(ctx, ch, cx, ty, m.codeShake > 0 ? '#e0524f' : SC_GOLD, 2);
+    else { ctx.fillStyle = i === m.code.length && m.codeOn && Math.floor(now * 2.5) % 2 ? SC_GOLD : hot ? SC_LBL : SC_DIM; ctx.fillRect(cx, ty + 9, 8, 1); }
   }
 }
 // One seat, a card in League's row: the side's paint along its top, the
-// portrait, the name under it and in RANKED the person's rating, a crown
+// portrait, the name and the hero under it, in RANKED the person's rating, a crown
 // over the leader's portrait, a friend's READY tick and ping bars at its
 // foot. Yours wears the gold rim; a seat that just changed hands flashes
 // (cardFx, updateTitle). An empty seat is a dotted well with the gold + that
@@ -593,9 +620,10 @@ function drawRoomSeat(s, act, flash) {
   if (p === roomHost()) drawCrown(fx + (fs >> 1) - 2, fy - 5);
   let nm = p.name;
   while (nm.length > 1 && pixelTextWidth(nm) > w - 6) nm = nm.slice(0, -1);
-  const ny = fy + fs + 10;
+  const ny = fy + fs + 9, hero = CLASSES[p.cls] ? CLASSES[p.cls].name : '';
   drawPixelText(ctx, nm, x + ((w - pixelTextWidth(nm)) >> 1), ny, me ? SC_GOLD : SC_LIT, 1);
-  if (NET.mode === 'ranked') { const r = String(NET.ranks[p.id] || PROFILE.RANK_START); drawPixelText(ctx, r, x + ((w - pixelTextWidth(r)) >> 1), ny + 10, SC_DIM, 1); }
+  if (hero) drawPixelText(ctx, hero, x + ((w - pixelTextWidth(hero)) >> 1), ny + 10, SC_DIM, 1); // the hero they last locked in
+  if (NET.mode === 'ranked') { const r = String(NET.ranks[p.id] || PROFILE.RANK_START); drawPixelText(ctx, r, x + ((w - pixelTextWidth(r)) >> 1), ny + 20, SC_LBL, 1); }
   if (p !== roomHost()) { // a guest: READY's tick (the leader's word is FIND MATCH, so it wears none) and the link to the leader
     const ry = y + h - 14, ready = NET.ready.has(p.id), bx = x + ((w - (ready ? 18 : 8)) >> 1);
     if (ready) drawTick(bx, ry + 2, RM_OK);
@@ -608,12 +636,14 @@ function renderRoom(now, a) {
   const m = state.menu, L = roomLayout();
   const hit = m.roomsT >= 1 ? roomHit() : null;
   ctx.globalAlpha = a;
-  ctx.fillStyle = SC_BG; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+  ctx.fillStyle = 'rgba(13,14,17,' + RM_WASH + ')'; ctx.fillRect(0, 0, VIEW_W, VIEW_H); // the snowy valley soft behind it
   // the mode's name; the leader's lights under the pointer, and a click opens the list of modes
-  const headHot = hit ? hit.kind === 'mode' : (m.rkeys && m.rseat === RS_HEAD && modeSwapOk()) || m.modeOpen;
-  drawPixelTextShadow(ctx, partyName(), L.x, 16, m.modeFx > 0 ? SC_GOLD : headHot ? '#ffd95c' : SC_LIT, SC_INK, 2);
-  const clock = seekClock(); // looking for a party: a gold clock after the name, on every screen
-  if (clock != null) drawPixelText(ctx, seekText(clock), L.x + pixelTextWidth(partyName(), 2) + 10, 19, SC_GOLD, 1);
+  const headHot = hit ? hit.kind === 'mode' : (m.rkeys && m.rseat === RS_HEAD && modeSwapOk()) || m.modeOpen, mr = modeRect(L);
+  ctx.fillStyle = headHot ? SC_LBL : SC_EDGE; ctx.fillRect(mr.x, mr.y, mr.w, mr.h);
+  ctx.fillStyle = headHot ? SC_HOT : SC_PLATE; ctx.fillRect(mr.x + 1, mr.y + 1, mr.w - 2, mr.h - 2);
+  drawPixelText(ctx, partyName(), mr.x + ((mr.w - pixelTextWidth(partyName(), 2)) >> 1), mr.y + 6, m.modeFx > 0 ? SC_GOLD : headHot ? '#ffd95c' : SC_LIT, 2);
+  const clock = seekClock(); // looking for a party: a gold clock after the plate, on every screen
+  if (clock != null) drawPixelText(ctx, seekText(clock), mr.x + mr.w + 8, mr.y + 6, SC_GOLD, 2);
   // alone, JOIN and the slots a friend's code goes in, right of the head; gold while its code is looked for
   if (codeBoxShown() || m.joining) drawCodeBox(L.box, m.joining || m.seek ? Object.assign({}, m, { codeOn: true }) : m, now, hit && hit.kind === 'box');
   ctx.fillStyle = SC_EDGE; ctx.fillRect(L.x, 46, L.w, 1);
@@ -624,19 +654,20 @@ function renderRoom(now, a) {
     if (m.rseat === s.p.id && !hit && isHuman(s.p)) { ctx.fillStyle = SC_GOLD; ctx.fillRect(s.x, s.y, s.w, 2); }
   }
   drawTalk(L.talk, now, hit && hit.kind === 'talk');
+  drawRoomInvite(L, hit ? hit.kind === 'invite' : m.rkeys && m.rseat === -1 && m.rword === 2);
   // FIND MATCH (or START) is dim until every friend is READY; a guest's READY is green once said
   const g = L.go.label, seeking = /^\d+:\d\d$/.test(g);
-  const footHot = hit ? (hit.kind === 'go' || hit.kind === 'leave' ? hit.kind : null) : m.rkeys && m.rseat === -1 ? (m.rword ? 'go' : 'leave') : null;
+  const footHot = hit ? (hit.kind === 'go' || hit.kind === 'leave' ? hit.kind : null) : m.rkeys && m.rseat === -1 ? ['leave', 'go', null][m.rword] : null;
   drawRoomFoot(L, footHot, ((g === 'FIND MATCH' || g === 'START') && !roomAllReady()) || m.joining,
     g === 'READY' && NET.ready.has(localId) ? RM_OK : seeking ? (footHot === 'go' ? RM_BAD : SC_GOLD) : null);
   drawSocial(L, now, hit); // you, your code and your friends down the right edge (js/ui/friends.js)
   if (m.modeOpen) { // the modes' list, over the seats
     const rs = modeListRects(L), keys = Object.keys(PARTY_MODES), last = rs[rs.length - 1];
-    ctx.fillStyle = SC_EDGE; ctx.fillRect(rs[0].x - 1, rs[0].y - 1, RM_LIST_W + 2, last.y + last.h - rs[0].y + 2);
+    ctx.fillStyle = SC_EDGE; ctx.fillRect(rs[0].x, rs[0].y - 1, RM_HEAD_W, last.y + last.h - rs[0].y + 2);
     rs.forEach((r, i) => {
       const hot = hit ? hit.kind === 'modeItem' && hit.k === r.k : m.rkeys && m.modeSel === i;
-      ctx.fillStyle = hot ? SC_HOT : SC_PLATE; ctx.fillRect(r.x, r.y, r.w, r.h);
-      drawPixelText(ctx, PARTY_MODES[keys[i]], r.x + 6, r.y + 4, r.k === NET.mode ? SC_GOLD : hot ? SC_LIT : SC_TXT, 1);
+      ctx.fillStyle = hot ? SC_HOT : SC_PLATE; ctx.fillRect(r.x + 1, r.y, r.w - 2, r.h);
+      drawPixelText(ctx, PARTY_MODES[keys[i]], r.x + ((r.w - pixelTextWidth(PARTY_MODES[keys[i]])) >> 1), r.y + 4, r.k === NET.mode ? SC_GOLD : hot ? SC_LIT : SC_TXT, 1);
     });
   }
   ctx.globalAlpha = 1;

@@ -56,7 +56,7 @@ const FR_ICON = {
   head: ['...###....', '..#####...', '..#####...', '...###....', '..........', '.#######..', '#########.', '#########.'],
   x: ['#...#', '.#.#.', '..#..', '.#.#.', '#...#'],
 };
-const FRIENDS = { on: false, list: [], recent: [], t: 0, busy: false, sent: {}, fold: { off: true }, scroll: 0, card: null, rp: '', played: false, playT: 0 };
+const FRIENDS = { on: false, list: [], recent: [], t: 0, busy: false, sent: {}, invites: [], fold: { off: true }, scroll: 0, card: null, rp: '', played: false, playT: 0 };
 
 function friendsBridge() { const b = window.steamBridge; return netSteam() && b && b.friends ? b : null; }
 function friendsLobby() { const T = NET.transport; return netSteam() && T && T.open && T.lobbyId ? String(T.lobbyId) : ''; }
@@ -122,6 +122,7 @@ function friendDo(f) {
   if (act === 'join') { steamJoinRequested(f.lobby); return; }
   b.inviteFriend(friendsLobby(), f.id, { mode: NET.mode || 'quick', n: partySize(), patch: PATCH_TXT });
   FRIENDS.sent[f.id] = FR_SENT;
+  FRIENDS.invites = FRIENDS.invites.filter((q) => q.id !== f.id).concat({ id: f.id, name: f.name }); // listed over INVITE (drawRoomInvite, rooms.js)
   SFX.place();
 }
 
