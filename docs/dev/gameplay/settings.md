@@ -62,7 +62,7 @@ whose socket drops mid-match shows a red pip blinking top-centre until the trans
 (`drawNetLink`). Joining a party whose seed is not this page's reloads the page onto it
 (`?seed=N&join=CODE`). Under the wrapper with Steam asked for (`netSteam()`, js/net/net.js) the
 party is a Steam lobby (`steamRooms`, js/net/transport-steam.js: the leader writes its name,
-patch, seed, state, seat counts and code into the lobby's data). Which relay:
+patch, seed, state, seat counts, code and `seek` into the lobby's data, and the list hands every key back). Which relay:
 `netRelay()` (js/net/net.js) - `?relay=host:port` once,
 remembered with the settings (`settings.relay`), else the page's own host.
 

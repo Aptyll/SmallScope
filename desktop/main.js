@@ -122,8 +122,14 @@ ipcMain.handle('steam:joinLobby', async (e, id) => {
   return lobbyInfo(l);
 });
 ipcMain.handle('steam:leaveLobby', (e, id) => { const l = lobbies.get(String(id)); if (l) { l.leave(); lobbies.delete(String(id)); } return true; });
+// a page starting (a boot, or a reload onto another seed, a rematch, a crossing)
+// owns no lobby yet: whatever the page before it created or joined is left here,
+// or it would linger on Steam's list with its old data - a party still looking
+// (`seek`), a code a friend's lookup then finds instead of the live one
+ipcMain.handle('steam:fresh', () => { for (const l of lobbies.values()) { try { l.leave(); } catch (err) { } } lobbies.clear(); return true; });
 ipcMain.handle('steam:lobby', (e, id) => { const l = lobbies.get(String(id)); return l ? lobbyInfo(l) : null; });
-ipcMain.handle('steam:lobbies', async () => (await steam.matchmaking.getLobbies()).map(lobbyInfo));
+// the whole world's lobbies, not only this region's (Steam's default): friends far apart still meet
+ipcMain.handle('steam:lobbies', async () => { if (friends) friends.worldwide(); return (await steam.matchmaking.getLobbies()).map(lobbyInfo); });
 ipcMain.handle('steam:setLobbyData', (e, id, data) => { const l = lobbies.get(String(id)); return l ? l.mergeFullData(data) : false; });
 ipcMain.handle('steam:log', (e, line) => { slog(String(line).slice(0, 500)); return true; });
 ipcMain.handle('win:flash', () => { if (win && !win.isDestroyed() && !win.isFocused()) win.flashFrame(true); return true; });

@@ -1,6 +1,7 @@
 // Steam's friends, which steamworks.js (0.4, its latest) does not reach: the
 // friends list, who is in Softfall and in which lobby, an invite straight to
-// one friend, the overlay's add-friend page, and the players met in a match.
+// one friend, the overlay's add-friend page, the players met in a match, and
+// the lobby list's reach (worldwide, not Steam's default of one region).
 // These call steam_api64.dll's flat API through koffi - the same DLL, already
 // loaded and initialised by steamworks.js in this process, so nothing here
 // inits or shuts Steam down. Any failure (koffi missing, the DLL's exports
@@ -14,6 +15,7 @@ const OVERLAY_DIALOGS = ['friendadd', 'steamid', 'chat']; // what the page may o
 const RP_KEYS = ['status', 'connect', 'sf_lobby', 'sf_mode', 'sf_n', 'sf_state', 'sf_patch', 'sf_hero']; // the rich presence the page may set
 const RECENT_KEEP = 12;               // players met kept for the panel
 const COPLAY_KEEP = 40;               // Steam's own recent-players list is read this far
+const LOBBY_WORLDWIDE = 3;            // k_ELobbyDistanceFilterWorldwide
 
 function dllPath() {
   const dist = path.join(path.dirname(require.resolve('steamworks.js')), 'dist');
@@ -50,6 +52,8 @@ function steamFriends(appId) {
     };
     if (!api.friends() || !api.mm()) throw new Error('no ISteamFriends');
     F.ok = true;
+    // the lobby list's reach (main.js's steam:lobbies), on its own so a miss leaves the friends working
+    try { api.distance = lib.func('void SteamAPI_ISteamMatchmaking_AddRequestLobbyListDistanceFilter(void *self, int filter)'); } catch (e) { }
   } catch (e) { F.error = e.message; api = null; }
 
   const S = (v) => String(v);
@@ -92,6 +96,7 @@ function steamFriends(appId) {
   F.isFriend = (id) => F.ok && api.rel(self(), B(id)) === REL_FRIEND;
   F.nameOf = (id) => (F.ok ? api.name(self(), B(id)) || '' : '');
   F.invite = (lobby, id) => F.ok && api.invite(api.mm(), B(lobby), B(id));
+  F.worldwide = () => { if (F.ok && api.distance) api.distance(api.mm(), LOBBY_WORLDWIDE); }; // the next lobby list reaches every region
   F.overlayUser = (dialog, id) => { if (F.ok && OVERLAY_DIALOGS.includes(dialog)) api.overlayUser(self(), dialog, B(id)); return F.ok; };
   F.overlay = () => { if (F.ok) api.overlay(self(), 'friends'); return F.ok; };
   F.presence = (kv) => {

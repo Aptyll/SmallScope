@@ -18,7 +18,8 @@ ten-player `Player` array, the input struct and the bot brain are what keep the 
   HOST LEFT ending, and the wrapper with Steam lobbies listed through the same rooms screen.
 - **Unverified:** nothing on the Steam path (lobby round trip, P2P packets, the unreliable
   channel's frames) has run against a live Steam - only against a fake bridge (Node, and
-  `app/check-join.js`, which joins two headless pages by code and by invite through one) and as a
+  `app/check-join.js`, which joins two headless pages by code and by invite through one, and takes
+  one party of three, and two parties of two, into one draft) and as a
   headless wrapper boot. The first live test should watch `DBG.netStatus()`: `framesLost` on a
   client (the receiver counts a delta it gave up on) and `fulls` on the host.
 - **Owed:** the host clamps nothing in a remote input; the roost alarm's notice plate (`raiseNotice`) and the own-bird alarm cue are raised on the host's screen only; a per-kind field policy if
@@ -485,6 +486,12 @@ The same screens and the same protocol ride either transport; only the list and 
    `MATCH_JOIN` (6 s) of failed tries, or when its host walks out (`partyLost`): its leader hosts
    the party's code again and its guests join it, all on `homeSeed(code)` (`crossHomeUrl`). The
    rival party's people are left out of the host's rematch seats (`pr.cross`).
+   On Steam the list is `steamRooms`, which hands on every key of the lobby's data (`seek`
+   included: a list that dropped it let no two Steam parties meet, each going to its own draft
+   with bots). The wrapper asks Steam for every region's lobbies, not only the caller's
+   (`worldwide`, desktop/steam-friends.js), and every page starts holding no lobby (`steam:fresh`
+   from preload.js), so a page that reloaded mid-seek, to cross, or for a rematch never leaves a
+   lobby behind on the list still saying it looks, or carrying a code a friend's lookup finds.
 
 ### Joins, leaves, reconnects
 
