@@ -226,17 +226,20 @@ and a stray it could sell counts as room when it decides to walk there.
 
 ## The panel
 
-League's shop on the HUD's own graphite plate (`drawHudFrame`, js/ui/strip.js), 500×288
+League's shop on the HUD's own graphite plate (`drawHudFrame`, js/ui/strip.js), 520×288
 (`SHOP_W`/`SHOP_H`) and pinned near the top edge (`SHOP_Y`):
 
-- the **tabs** along the top (`state.shopTab`): **RECOMMENDED**, your class's build cut into START
-  (the potion and the first item's basics), CORE (the first legendary and its epics), BOOTS and
-  THEN, each a row under its headline (`shopRecommended`); and **ALL ITEMS**, the stat filters
-  (`state.shopCat`: ALL, then one a stat in `ITEM_STAT_ORDER`, each the stat panel's own icon,
-  `STAT_ICON`) over the whole catalogue a row a kind (`shopAllRows`: the potion and basics, every
-  pair of boots, the epics, the legendaries; `SHOP_COLS` a row). A filter **dims** every item
-  without that stat rather than hiding it, so nothing on the grid moves; picking it again clears it.
-  The counter opens on RECOMMENDED;
+- the **top tabs** (`state.shopTab`, `SHOP_TABS`) say what the grid shows: **RECOMMENDED**, your
+  class's build cut into START (the potion and the first item's basics), CORE (the first
+  legendary and its epics), BOOTS and THEN, each a row under its headline (`shopRecommended`);
+  **ALL**, the whole catalogue a row a kind (`shopAllRows`: the potion and basics, every pair of
+  boots, the epics, the legendaries; `SHOP_COLS` a row); and one tab a **style**
+  (`ITEM_STYLES`: TANK, BRUISER, MARKSMAN, ASSASSIN, MAGE), the same rows holding only the
+  legendaries and boots whose `styles` name it. A style is what an item is for, not the lane role
+  a hero is drafted into. The counter opens on RECOMMENDED;
+- the **left bar** filters by stat in every tab (`state.shopCat`: ALL, then one a stat in
+  `ITEM_STAT_ORDER`, each the stat panel's own icon, `STAT_ICON`). A filter **dims** every item
+  without that stat rather than hiding it, so nothing on the grid moves; picking it again clears it;
 - each **well** is rimmed by its tier (`itemMetal`: a basic dim green, an epic or a pair of boots
   steel blue, a legendary gold) with what it costs **you** now (`itemCost`) under it, in the
   refusal red when the purse is short (`SHOP_DEAR_INK`). The well keeps its colours: with fifty
@@ -246,11 +249,13 @@ League's shop on the HUD's own graphite plate (`drawHudFrame`, js/ui/strip.js), 
   child centred under its parent, prices under each; a component you hold is rimmed green with a
   tick, `shopTreeOwned`, and so is everything under it), its **card** (icon, name in its tier's
   ink, full price, each stat with its icon in green, the passive in gold over one dim line, ONE
-  PAIR on boots, a drink's heal on the potion) and the **BUY** plate at its foot wearing what the
-  buy costs you now: green when it can go through, red when the purse is short, grey when there is
-  no room or it would be a second pair (`shopBuyState`);
-- along the bottom, **your six slots** (a potion stack wearing its count), the **SELL** plate and,
-  while a slot is picked, what it sells for, and the purse.
+  PAIR on boots, a drink's heal on the potion) and the **BUY** plate at its foot with what the buy
+  costs you now: green when it can go through, red when the purse is short, grey when there is no
+  room or it would be a second pair (`shopBuyState`);
+- in the bottom-left corner, **your six slots three by two**, the bottom bar's own shape (a potion
+  stack wearing its count), the **SELL** plate with what the picked slot sells for, and the purse.
+  **Gold shows once** along the bottom: the purse wears the coin, and both plates print bare
+  numbers (`shopPlate`).
 
 A left click **picks** (an item on the grid, a node of the tree, a BUILDS INTO well, one of your
 slots: `state.shopSel`, `state.shopSlot`); BUY buys the pick and SELL sells the picked slot. A

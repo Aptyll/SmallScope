@@ -91,6 +91,7 @@ const ITEM_PASSIVES = {
 // of six pairs; a body wears one pair (`boots`). An item costs its price minus
 // every component of it already held, however deep (itemCost). `icon` is a
 // SPRITES key: SPRITES['item_' + id] (js/sprites/item-icons.js) unless named.
+// `styles` (ITEM_STYLES) names the shop's style tabs an item is listed on.
 const BUILD_ITEMS = {
   // basic
   flint:  { name: 'FLINT HEAD', price: 400, stats: { dmg: 3 } },
@@ -120,41 +121,48 @@ const BUILD_ITEMS = {
   lantern: { name: 'LANTERN', price: 850, from: ['bead'], stats: { ap: 4, ms: 3 } },
   almanac: { name: 'ALMANAC', price: 900, from: ['bead', 'glass'], stats: { ap: 3, haste: 8 } },
   // boots
-  hobnail: { name: 'HOBNAIL BOOTS', price: 1000, from: ['boots', 'plate'], stats: { ms: 8, armor: 12 }, boots: true },
-  quick:   { name: 'QUICKSTEP BOOTS', price: 1000, from: ['boots', 'string'], stats: { ms: 8, as: 0.22 }, boots: true },
-  shoes:   { name: 'SNOWSHOES', price: 900, from: ['boots'], stats: { ms: 8, haste: 10 }, boots: true },
-  emberb:  { name: 'EMBER BOOTS', price: 1000, from: ['boots', 'bead'], stats: { ms: 8, ap: 3 }, boots: true },
-  mukluk:  { name: 'MUKLUKS', price: 1000, from: ['boots', 'hide'], stats: { ms: 8, hp: 15 }, passive: 'steady', boots: true },
-  skates:  { name: 'SKATES', price: 900, from: ['boots'], stats: { ms: 12 }, passive: 'glide', boots: true },
+  hobnail: { name: 'HOBNAIL BOOTS', price: 1000, from: ['boots', 'plate'], stats: { ms: 8, armor: 12 }, boots: true, styles: ['tank', 'bruiser'] },
+  quick:   { name: 'QUICKSTEP BOOTS', price: 1000, from: ['boots', 'string'], stats: { ms: 8, as: 0.22 }, boots: true, styles: ['marksman'] },
+  shoes:   { name: 'SNOWSHOES', price: 900, from: ['boots'], stats: { ms: 8, haste: 10 }, boots: true, styles: ['mage', 'assassin', 'bruiser'] },
+  emberb:  { name: 'EMBER BOOTS', price: 1000, from: ['boots', 'bead'], stats: { ms: 8, ap: 3 }, boots: true, styles: ['mage'] },
+  mukluk:  { name: 'MUKLUKS', price: 1000, from: ['boots', 'hide'], stats: { ms: 8, hp: 15 }, passive: 'steady', boots: true, styles: ['tank', 'bruiser'] },
+  skates:  { name: 'SKATES', price: 900, from: ['boots'], stats: { ms: 12 }, passive: 'glide', boots: true, styles: ['assassin', 'marksman'] },
   // legendary
-  horn:      { name: "HUNTER'S HORN", price: 2800, from: ['quiver', 'recurve'], stats: { dmg: 9, as: 0.4, ms: 3 }, passive: 'kindling' },
-  feathers:  { name: 'FEATHERS', price: 2600, from: ['recurve', 'sash'], stats: { dmg: 5, as: 0.5, ms: 5 }, passive: 'light' },
-  frostline: { name: 'FROST LINE', price: 2700, from: ['quiver', 'sash'], stats: { dmg: 8, as: 0.45 }, passive: 'chill' },
-  sunstone:  { name: 'SUNSTONE', price: 3000, from: ['axe', 'pick'], stats: { dmg: 18 }, passive: 'ambush' },
-  maul:      { name: 'SPLITTING MAUL', price: 3100, from: ['axe', 'whet'], stats: { dmg: 15, haste: 10 }, passive: 'cull' },
-  beartooth: { name: 'BEAR TOOTH', price: 3000, from: ['tooth', 'axe'], stats: { dmg: 16, hp: 20 }, passive: 'leech' },
-  fang:      { name: 'WOLF FANG', price: 3000, from: ['knife', 'pick'], stats: { dmg: 9, hp: 50, haste: 10 }, passive: 'feast' },
-  brand:     { name: 'IRON BRAND', price: 2900, from: ['whet', 'mail'], stats: { dmg: 8, armor: 20, haste: 10 }, passive: 'chill' },
-  grind:     { name: 'GRINDSTONE', price: 3000, from: ['whet', 'belt'], stats: { dmg: 8, hp: 50, haste: 15 }, passive: 'surge' },
-  collar:    { name: 'IRON COLLAR', price: 3000, from: ['knife', 'mail'], stats: { dmg: 8, hp: 40, armor: 20 }, passive: 'leech' },
-  bearskin:  { name: 'BEARSKIN', price: 2800, from: ['warm', 'belt'], stats: { hp: 110, armor: 10 }, passive: 'den' },
-  brambmail: { name: 'BRAMBLE MAIL', price: 2700, from: ['bramble', 'jacket'], stats: { hp: 40, armor: 40 }, passive: 'thorns' },
-  stonehide: { name: 'STONEHIDE', price: 2800, from: ['mail', 'belt'], stats: { hp: 70, armor: 30 }, passive: 'brace' },
-  hearth:    { name: 'HEARTH PLATE', price: 2800, from: ['ember', 'mail'], stats: { hp: 60, armor: 20, haste: 10 }, passive: 'smolder' },
-  glacier:   { name: 'GLACIER SHIELD', price: 2700, from: ['buckler', 'jacket'], stats: { hp: 30, armor: 25, haste: 15 }, passive: 'steady' },
-  cloak:     { name: 'SNOW CLOAK', price: 2600, from: ['sash', 'belt'], stats: { hp: 70, as: 0.2, ms: 8 }, passive: 'drift' },
-  storm:     { name: 'STORM GLASS', price: 3000, from: ['rod', 'almanac'], stats: { ap: 11, haste: 15 }, passive: 'surge' },
-  deeprod:   { name: 'DEEP ROD', price: 3400, from: ['rod', 'rod'], stats: { ap: 16 }, passive: 'amplify' },
-  marsh:     { name: 'MARSH LIGHT', price: 2800, from: ['lantern', 'almanac'], stats: { ap: 9, haste: 10, ms: 5 }, passive: 'scorch' },
-  slate:     { name: 'ICE SLATE', price: 2700, from: ['rod', 'hide'], stats: { ap: 8, hp: 50 }, passive: 'chill' },
-  clock:     { name: 'STILL CLOCK', price: 3000, from: ['rod', 'mail'], stats: { ap: 9, armor: 18, haste: 8 }, passive: 'brace' },
-  hornet:    { name: 'HORNET NEST', price: 2900, from: ['almanac', 'recurve'], stats: { ap: 8, as: 0.3, haste: 10 }, passive: 'kindling' },
+  horn:      { name: "HUNTER'S HORN", price: 2800, from: ['quiver', 'recurve'], stats: { dmg: 9, as: 0.4, ms: 3 }, passive: 'kindling', styles: ['marksman'] },
+  feathers:  { name: 'FEATHERS', price: 2600, from: ['recurve', 'sash'], stats: { dmg: 5, as: 0.5, ms: 5 }, passive: 'light', styles: ['marksman', 'assassin'] },
+  frostline: { name: 'FROST LINE', price: 2700, from: ['quiver', 'sash'], stats: { dmg: 8, as: 0.45 }, passive: 'chill', styles: ['marksman'] },
+  sunstone:  { name: 'SUNSTONE', price: 3000, from: ['axe', 'pick'], stats: { dmg: 18 }, passive: 'ambush', styles: ['assassin', 'marksman'] },
+  maul:      { name: 'SPLITTING MAUL', price: 3100, from: ['axe', 'whet'], stats: { dmg: 15, haste: 10 }, passive: 'cull', styles: ['bruiser', 'assassin'] },
+  beartooth: { name: 'BEAR TOOTH', price: 3000, from: ['tooth', 'axe'], stats: { dmg: 16, hp: 20 }, passive: 'leech', styles: ['bruiser', 'assassin'] },
+  fang:      { name: 'WOLF FANG', price: 3000, from: ['knife', 'pick'], stats: { dmg: 9, hp: 50, haste: 10 }, passive: 'feast', styles: ['bruiser'] },
+  brand:     { name: 'IRON BRAND', price: 2900, from: ['whet', 'mail'], stats: { dmg: 8, armor: 20, haste: 10 }, passive: 'chill', styles: ['bruiser', 'tank'] },
+  grind:     { name: 'GRINDSTONE', price: 3000, from: ['whet', 'belt'], stats: { dmg: 8, hp: 50, haste: 15 }, passive: 'surge', styles: ['bruiser'] },
+  collar:    { name: 'IRON COLLAR', price: 3000, from: ['knife', 'mail'], stats: { dmg: 8, hp: 40, armor: 20 }, passive: 'leech', styles: ['bruiser'] },
+  bearskin:  { name: 'BEARSKIN', price: 2800, from: ['warm', 'belt'], stats: { hp: 110, armor: 10 }, passive: 'den', styles: ['tank'] },
+  brambmail: { name: 'BRAMBLE MAIL', price: 2700, from: ['bramble', 'jacket'], stats: { hp: 40, armor: 40 }, passive: 'thorns', styles: ['tank'] },
+  stonehide: { name: 'STONEHIDE', price: 2800, from: ['mail', 'belt'], stats: { hp: 70, armor: 30 }, passive: 'brace', styles: ['tank', 'bruiser'] },
+  hearth:    { name: 'HEARTH PLATE', price: 2800, from: ['ember', 'mail'], stats: { hp: 60, armor: 20, haste: 10 }, passive: 'smolder', styles: ['tank'] },
+  glacier:   { name: 'GLACIER SHIELD', price: 2700, from: ['buckler', 'jacket'], stats: { hp: 30, armor: 25, haste: 15 }, passive: 'steady', styles: ['tank'] },
+  cloak:     { name: 'SNOW CLOAK', price: 2600, from: ['sash', 'belt'], stats: { hp: 70, as: 0.2, ms: 8 }, passive: 'drift', styles: ['assassin', 'marksman'] },
+  storm:     { name: 'STORM GLASS', price: 3000, from: ['rod', 'almanac'], stats: { ap: 11, haste: 15 }, passive: 'surge', styles: ['mage'] },
+  deeprod:   { name: 'DEEP ROD', price: 3400, from: ['rod', 'rod'], stats: { ap: 16 }, passive: 'amplify', styles: ['mage'] },
+  marsh:     { name: 'MARSH LIGHT', price: 2800, from: ['lantern', 'almanac'], stats: { ap: 9, haste: 10, ms: 5 }, passive: 'scorch', styles: ['mage'] },
+  slate:     { name: 'ICE SLATE', price: 2700, from: ['rod', 'hide'], stats: { ap: 8, hp: 50 }, passive: 'chill', styles: ['mage', 'bruiser'] },
+  clock:     { name: 'STILL CLOCK', price: 3000, from: ['rod', 'mail'], stats: { ap: 9, armor: 18, haste: 8 }, passive: 'brace', styles: ['mage', 'tank'] },
+  hornet:    { name: 'HORNET NEST', price: 2900, from: ['almanac', 'recurve'], stats: { ap: 8, as: 0.3, haste: 10 }, passive: 'kindling', styles: ['mage', 'marksman'] },
 
   // THE CONSUMABLE: a stack of up to `stack` in ONE slot (League's potions),
   // drunk off that slot's key (the `potion` banner below). No stats, no passive,
   // never a part of anything.
   potion: { name: 'HEALTH POTION', price: 50, stack: 5, stats: {}, icon: 'itemPotion' },
 };
+// THE STYLES a legendary or a pair of boots suits (its `styles`), League's
+// item classes: the shop's top tabs (js/ui/shop.js) list each one's items.
+// (Not the lane ROLES a hero is drafted for: a style is what an item is for.)
+const ITEM_STYLES = [
+  { id: 'tank', label: 'TANK' }, { id: 'bruiser', label: 'BRUISER' }, { id: 'marksman', label: 'MARKSMAN' },
+  { id: 'assassin', label: 'ASSASSIN' }, { id: 'mage', label: 'MAGE' },
+];
 // an item's tier, off its record: 'potion', 'basic' (built from nothing),
 // 'boots' (an upgraded pair), 'legend' (built from at least one epic, or
 // dear) and 'epic' (built from basics)
