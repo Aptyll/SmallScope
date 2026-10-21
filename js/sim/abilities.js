@@ -360,6 +360,7 @@ function updateAbilities(p, dt) {
       heroAbNow = ab.id; // a blow the key lands says which key (passiveDeal, js/sim/heroes.js)
       ab.use(p);
       heroAbNow = '';
+      itemsOnCast(p); // SURGE arms the next basic attack (js/sim/items.js)
       passiveCast(p); // a hero's passive that answers a key landing (HERO_PASSIVE, js/sim/heroes.js)
     }
   }

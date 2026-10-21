@@ -4,18 +4,20 @@
 // counter (js/ui/shop.js). Every item is always on sale - nothing rotates,
 // nothing sells out, so a player can save up for the one they want.
 //
-// Two kinds share one table. A PART is cheap and carries one stat. A FINISHED
-// item is built FROM parts: it carries a bigger version of their stats and one
-// PASSIVE, and it costs its own price minus the parts already in your slots,
+// League's four tiers share one table (the CATALOGUE below). A BASIC item is
+// cheap and carries one stat; an EPIC is built FROM basics, a LEGENDARY from
+// epics and basics and adds a PASSIVE; BOOTS upgrade from one pair. An item
+// costs its own price minus every component of it already in your slots,
 // which the buy uses up (itemCost, buyItem). So a part bought early is never
-// wasted gold, and saving toward a finished item can start one part at a time.
+// wasted gold, and saving toward a legendary can start one part at a time.
 //
 // What an item does is all in this file: its stats and its passive both write
 // into the kit through refreshKit (js/sim/player.js), so every kit-reading site (damage, movement, dodge,
-// stealth, the bots) picks an item up without knowing items exist. The two
-// passives that are not a kit number - a hit that does something, a heal out
-// of a fight - hang off hurtUnit (itemsOnHit) and the player's clock
-// (itemsTick), the shared functions every hit and every body goes through.
+// stealth, the bots) picks an item up without knowing items exist. The
+// passives that are not a kit number hang off the shared functions every blow
+// and every body goes through: hurtUnit (itemsDeal, itemsOnHit, itemsOnHurt),
+// a key landing (itemsOnCast), the player's clock (itemsTick), statOf
+// (itemStat) and ccMul (itemTen).
 //
 // A passive counts ONCE however many items carry it (League's unique
 // passives): two Wolf Fangs add their stats twice and FEAST once.
@@ -28,25 +30,40 @@ const ITEM_FIGHT_T = 5;     // s after a hit given or taken before DEN's heal st
 const KINDLE_EVERY = 3;     // KINDLING: every this-many-th hit lights the target...
 const KINDLE_BURN = 2;      // ...for this many seconds at the ordinary burn
 const CHILL_T = 1, CHILL_MUL = 0.7; // CHILL: a hit slows the target this long, to this share of its speed
+const LEECH_SHARE = 0.1;    // LEECH: a blow heals its striker this share of itself
+const THORN_SHARE = 0.2;    // THORNS: a blow taken hands this share back to whoever struck it
+const CULL_BELOW = 0.35, CULL_MUL = 1.2; // CULL: a blow on a body under this share of its health lands this much harder
+const STEADY_MUL = 0.7;     // STEADY: every stun, root and slow lasts this share of its length (ccMul, js/sim/actions.js)
+const SURGE_T = 4, SURGE_MUL = 1.5; // SURGE: for this long after a key, the next basic attack lands this much harder
+const BRACE_BELOW = 0.4, BRACE_ARMOR = 15; // BRACE: under this share of health, this much more armor (itemStat)
+const SMOLDER_R = 30, SMOLDER_EVERY = 1, SMOLDER_BURN = 1.2; // SMOLDER: rivals this close catch a short burn, once a second
+const SCORCH_BURN = 2;      // SCORCH: an ability's blow burns this long
+const AMPLIFY_MUL = 1.25;   // AMPLIFY: the ability power from items, times this
 
-// What each stat line IS: the label the shop prints, how its number reads,
-// and what it writes into the kit. Every line is one of the hero stats
-// (js/sim/stats.js) and adds to the kit's stat bag, `kit.add`, so statOf reads an item without knowing items
-// exist. ARMOR is League's (each point a share off every hit), ATTACK SPEED a
-// share added to the hero's attack speed, MOVE SPEED flat (the hero's walk is
-// PLAYER_SPEED).
+// What each stat line IS: the label the shop prints, the short one a narrow
+// column prints, how its number reads, and what it writes into the kit. Every
+// line is one of the seven hero stats (js/sim/stats.js) and adds to the kit's
+// stat bag, `kit.add`, so statOf reads an item without knowing items exist.
+// ARMOR is League's (each point a share off every hit), ATTACK SPEED a share
+// added to the hero's attack speed, the rest flat.
+const statAdd = (key) => (k, v) => { k.add[key] += v; };
 const ITEM_STATS = {
-  dmg:   { label: 'DAMAGE', fmt: (v) => '+' + v, mod: (k, v) => { k.add.dmg += v; } },
-  hp:    { label: 'HEALTH', fmt: (v) => '+' + v, mod: (k, v) => { k.add.hp += v; } },
-  armor: { label: 'ARMOR', fmt: (v) => '+' + v, mod: (k, v) => { k.add.armor += v; } },
-  as:    { label: 'ATTACK SPEED', fmt: (v) => '+' + Math.round(v * 100) + '%', mod: (k, v) => { k.add.as += v; } },
-  ms:    { label: 'MOVE SPEED', fmt: (v) => '+' + v, mod: (k, v) => { k.add.ms += v; } },
+  dmg:   { label: 'DAMAGE', short: 'DMG', fmt: (v) => '+' + v, mod: statAdd('dmg') },
+  as:    { label: 'ATTACK SPEED', short: 'AS', fmt: (v) => '+' + Math.round(v * 100) + '%', mod: statAdd('as') },
+  hp:    { label: 'HEALTH', short: 'HP', fmt: (v) => '+' + v, mod: statAdd('hp') },
+  armor: { label: 'ARMOR', short: 'ARM', fmt: (v) => '+' + v, mod: statAdd('armor') },
+  ap:    { label: 'ABILITY POWER', short: 'AP', fmt: (v) => '+' + v, mod: statAdd('ap') },
+  haste: { label: 'COOLDOWN SPEED', short: 'CS', fmt: (v) => '+' + v, mod: statAdd('haste') },
+  ms:    { label: 'MOVE SPEED', short: 'MS', fmt: (v) => '+' + v, mod: statAdd('ms') },
 };
-const ITEM_STAT_ORDER = ['dmg', 'hp', 'armor', 'as', 'ms']; // the shop's category filters, in this order
+const ITEM_STAT_ORDER = ['dmg', 'as', 'hp', 'armor', 'ap', 'haste', 'ms']; // the shop's stat filters, in this order
 
 // The passives, each a name, one short line and what it writes into the kit.
-// kindle / chill / restHeal are read by itemsOnHit and itemsTick below; the
-// rest are kit fields the sim already reads.
+// The kit numbers (feast, glide, drift, light, ambush, amplify) are read where
+// the sim already reads them; the flags are read by the hooks below:
+// itemsDeal and itemsOnHit (every blow a player lands, hurtUnit), itemsOnHurt
+// (every blow a player takes), itemsTick (the player's clock), itemStat (the
+// stat sheet) and itemTen (crowd control's length).
 const ITEM_PASSIVES = {
   kindling: { name: 'KINDLING', line: 'EVERY 3RD HIT BURNS', mod: (k) => { k.kindle = true; } },
   den:      { name: 'DEN', line: 'HEALS OUT OF A FIGHT', mod: (k) => { k.restHeal += 3; } },
@@ -55,74 +72,166 @@ const ITEM_PASSIVES = {
   glide:    { name: 'GLIDE', line: 'FASTER ON ICE', mod: (k) => { k.iceMax *= 1.15; k.iceSteer += 0.3; } },
   drift:    { name: 'DRIFT', line: 'SEEN FROM CLOSER', mod: (k) => { k.stealth -= 0.15; } },
   light:    { name: 'LIGHT', line: 'ROLL COMES BACK SOONER', mod: (k) => { k.dodgeCd -= 0.8; } },
-  ambush:   { name: 'AMBUSH', line: 'AMBUSH SHOTS HIT HARDER', mod: (k) => { k.ambushMul += 0.4; } },
+  ambush:   { name: 'AMBUSH', line: 'AMBUSH HITS LAND HARDER', mod: (k) => { k.ambushMul += 0.4; } },
+  leech:    { name: 'LEECH', line: 'HITS HEAL 10% OF THEMSELVES', mod: (k) => { k.leech = true; } },
+  thorns:   { name: 'THORNS', line: 'HITTERS TAKE 20% BACK', mod: (k) => { k.thorns = true; } },
+  cull:     { name: 'CULL', line: '+20% ON THE BADLY HURT', mod: (k) => { k.cull = true; } },
+  steady:   { name: 'STEADY', line: 'STUNS AND SLOWS 30% SHORTER', mod: (k) => { k.steady = true; } },
+  surge:    { name: 'SURGE', line: 'AFTER A KEY, NEXT HIT +50%', mod: (k) => { k.surge = true; } },
+  brace:    { name: 'BRACE', line: 'UNDER 40% HEALTH: +15 ARMOR', mod: (k) => { k.brace = true; } },
+  smolder:  { name: 'SMOLDER', line: 'BURNS RIVALS CLOSE BY', mod: (k) => { k.smolder = true; } },
+  scorch:   { name: 'SCORCH', line: 'ABILITIES BURN', mod: (k) => { k.scorch = true; } },
+  amplify:  { name: 'AMPLIFY', line: 'ABILITY POWER +25%', mod: (k) => { k.add.ap *= AMPLIFY_MUL; } },
 };
 
-// THE CATALOGUE. `from` lists the parts a finished item is built out of (a
-// part named twice is needed twice). `icon` is a SPRITES key, or
-// ['gear', slot, variant, material] for one of SPRITES.gearIcons. The icons are
-// borrowed from today's art until the items get their own.
+// THE CATALOGUE, League's four tiers. A BASIC item carries one stat and is
+// built from nothing. An EPIC is built FROM basics (a part named twice is
+// needed twice) and carries a bigger mix. A LEGENDARY is built from epics and
+// basics and adds one PASSIVE. BOOTS start as FUR BOOTS and upgrade into one
+// of six pairs; a body wears one pair (`boots`). An item costs its price minus
+// every component of it already held, however deep (itemCost). `icon` is a
+// SPRITES key: SPRITES['item_' + id] (js/sprites/item-icons.js) unless named.
+// `styles` (ITEM_STYLES) names the shop's style tabs an item is listed on.
 const BUILD_ITEMS = {
-  flint:  { name: 'FLINT HEAD', price: 30, stats: { dmg: 2 }, icon: 'itemArt_flint' },
-  hide:   { name: 'WOLF HIDE', price: 25, stats: { hp: 15 }, icon: ['gear', 1, 0, 0] },
-  string: { name: 'GUT STRING', price: 30, stats: { as: 0.08 }, icon: ['gear', 0, 1, 0] },
-  plate:  { name: 'IRON PLATE', price: 30, stats: { armor: 7 }, icon: ['gear', 1, 1, 1] },
-  boots:  { name: 'FUR BOOTS', price: 25, stats: { ms: 4 }, icon: ['gear', 3, 0, 0] },
-
-  horn:     { name: "HUNTER'S HORN", price: 150, from: ['flint', 'string'], stats: { dmg: 4, as: 0.15 }, passive: 'kindling', icon: 'itemArt_horn' },
-  bearskin: { name: 'BEARSKIN', price: 140, from: ['hide', 'plate'], stats: { hp: 35, armor: 14 }, passive: 'den', icon: ['gear', 1, 2, 3] },
-  fang:     { name: 'WOLF FANG', price: 130, from: ['flint', 'hide'], stats: { dmg: 3, hp: 20 }, passive: 'feast', icon: ['gear', 0, 2, 3] },
-  brand:    { name: 'IRON BRAND', price: 140, from: ['flint', 'plate'], stats: { dmg: 3, armor: 14 }, passive: 'chill', icon: 'itemArt_brand' },
-  skates:   { name: 'SKATES', price: 80, from: ['boots'], stats: { ms: 6 }, passive: 'glide', icon: ['gear', 3, 0, 3] },
-  cloak:    { name: 'SNOW CLOAK', price: 120, from: ['boots', 'hide'], stats: { hp: 20, ms: 4 }, passive: 'drift', icon: ['gear', 3, 2, 3] },
-  feathers: { name: 'FEATHERS', price: 130, from: ['string', 'boots'], stats: { as: 0.18, ms: 4 }, passive: 'light', icon: ['gear', 3, 1, 3] },
-  sunstone: { name: 'SUNSTONE', price: 200, from: ['flint', 'flint'], stats: { dmg: 7 }, passive: 'ambush', icon: 'itemArt_sunstone' },
+  // basic
+  flint:  { name: 'FLINT HEAD', price: 400, stats: { dmg: 3 } },
+  string: { name: 'GUT STRING', price: 300, stats: { as: 0.12 } },
+  hide:   { name: 'WOLF HIDE', price: 400, stats: { hp: 25 } },
+  plate:  { name: 'IRON PLATE', price: 300, stats: { armor: 8 } },
+  bead:   { name: 'AMBER BEAD', price: 350, stats: { ap: 2 } },
+  glass:  { name: 'HOURGLASS', price: 300, stats: { haste: 6 } },
+  boots:  { name: 'FUR BOOTS', price: 300, stats: { ms: 5 }, boots: true },
+  pick:   { name: 'PICKAXE', price: 850, stats: { dmg: 6 } },
+  axe:    { name: 'FELLING AXE', price: 1300, stats: { dmg: 10 } },
+  belt:   { name: 'BEAR BELT', price: 900, stats: { hp: 55 } },
+  mail:   { name: 'CHAIN SHIRT', price: 800, stats: { armor: 20 } },
+  rod:    { name: 'DOWSING ROD', price: 1200, stats: { ap: 7 } },
+  // epic
+  whet:    { name: 'WHETSTONE', price: 1100, from: ['flint', 'flint'], stats: { dmg: 5, haste: 8 } },
+  quiver:  { name: 'QUIVER', price: 1000, from: ['flint', 'string'], stats: { dmg: 4, as: 0.18 } },
+  recurve: { name: 'RECURVE LIMB', price: 900, from: ['string', 'string'], stats: { as: 0.35 } },
+  sash:    { name: 'WIND SASH', price: 850, from: ['string'], stats: { as: 0.18, ms: 6 } },
+  ember:   { name: 'EMBER CORE', price: 850, from: ['hide'], stats: { hp: 30, haste: 8 } },
+  knife:   { name: 'BONE KNIFE', price: 1100, from: ['flint', 'hide'], stats: { dmg: 4, hp: 35 } },
+  tooth:   { name: 'TOOTHED KNIFE', price: 900, from: ['flint'], stats: { dmg: 4 }, passive: 'leech' },
+  bramble: { name: 'BRAMBLE COAT', price: 800, from: ['plate', 'plate'], stats: { armor: 15 }, passive: 'thorns' },
+  buckler: { name: 'FROST BUCKLER', price: 800, from: ['plate', 'glass'], stats: { armor: 10, haste: 8 } },
+  jacket:  { name: 'PADDED JACKET', price: 800, from: ['hide', 'plate'], stats: { hp: 25, armor: 10 } },
+  warm:    { name: 'WARM STONE', price: 900, from: ['hide', 'hide'], stats: { hp: 40 }, passive: 'den' },
+  lantern: { name: 'LANTERN', price: 850, from: ['bead'], stats: { ap: 4, ms: 3 } },
+  almanac: { name: 'ALMANAC', price: 900, from: ['bead', 'glass'], stats: { ap: 3, haste: 8 } },
+  // boots
+  hobnail: { name: 'HOBNAIL BOOTS', price: 1000, from: ['boots', 'plate'], stats: { ms: 8, armor: 12 }, boots: true, styles: ['tank', 'bruiser'] },
+  quick:   { name: 'QUICKSTEP BOOTS', price: 1000, from: ['boots', 'string'], stats: { ms: 8, as: 0.22 }, boots: true, styles: ['marksman'] },
+  shoes:   { name: 'SNOWSHOES', price: 900, from: ['boots'], stats: { ms: 8, haste: 10 }, boots: true, styles: ['mage', 'assassin', 'bruiser'] },
+  emberb:  { name: 'EMBER BOOTS', price: 1000, from: ['boots', 'bead'], stats: { ms: 8, ap: 3 }, boots: true, styles: ['mage'] },
+  mukluk:  { name: 'MUKLUKS', price: 1000, from: ['boots', 'hide'], stats: { ms: 8, hp: 15 }, passive: 'steady', boots: true, styles: ['tank', 'bruiser'] },
+  skates:  { name: 'SKATES', price: 900, from: ['boots'], stats: { ms: 12 }, passive: 'glide', boots: true, styles: ['assassin', 'marksman'] },
+  // legendary
+  horn:      { name: "HUNTER'S HORN", price: 2800, from: ['quiver', 'recurve'], stats: { dmg: 9, as: 0.4, ms: 3 }, passive: 'kindling', styles: ['marksman'] },
+  feathers:  { name: 'FEATHERS', price: 2600, from: ['recurve', 'sash'], stats: { dmg: 5, as: 0.5, ms: 5 }, passive: 'light', styles: ['marksman', 'assassin'] },
+  frostline: { name: 'FROST LINE', price: 2700, from: ['quiver', 'sash'], stats: { dmg: 8, as: 0.45 }, passive: 'chill', styles: ['marksman'] },
+  sunstone:  { name: 'SUNSTONE', price: 3000, from: ['axe', 'pick'], stats: { dmg: 18 }, passive: 'ambush', styles: ['assassin', 'marksman'] },
+  maul:      { name: 'SPLITTING MAUL', price: 3100, from: ['axe', 'whet'], stats: { dmg: 15, haste: 10 }, passive: 'cull', styles: ['bruiser', 'assassin'] },
+  beartooth: { name: 'BEAR TOOTH', price: 3000, from: ['tooth', 'axe'], stats: { dmg: 16, hp: 20 }, passive: 'leech', styles: ['bruiser', 'assassin'] },
+  fang:      { name: 'WOLF FANG', price: 3000, from: ['knife', 'pick'], stats: { dmg: 9, hp: 50, haste: 10 }, passive: 'feast', styles: ['bruiser'] },
+  brand:     { name: 'IRON BRAND', price: 2900, from: ['whet', 'mail'], stats: { dmg: 8, armor: 20, haste: 10 }, passive: 'chill', styles: ['bruiser', 'tank'] },
+  grind:     { name: 'GRINDSTONE', price: 3000, from: ['whet', 'belt'], stats: { dmg: 8, hp: 50, haste: 15 }, passive: 'surge', styles: ['bruiser'] },
+  collar:    { name: 'IRON COLLAR', price: 3000, from: ['knife', 'mail'], stats: { dmg: 8, hp: 40, armor: 20 }, passive: 'leech', styles: ['bruiser'] },
+  bearskin:  { name: 'BEARSKIN', price: 2800, from: ['warm', 'belt'], stats: { hp: 110, armor: 10 }, passive: 'den', styles: ['tank'] },
+  brambmail: { name: 'BRAMBLE MAIL', price: 2700, from: ['bramble', 'jacket'], stats: { hp: 40, armor: 40 }, passive: 'thorns', styles: ['tank'] },
+  stonehide: { name: 'STONEHIDE', price: 2800, from: ['mail', 'belt'], stats: { hp: 70, armor: 30 }, passive: 'brace', styles: ['tank', 'bruiser'] },
+  hearth:    { name: 'HEARTH PLATE', price: 2800, from: ['ember', 'mail'], stats: { hp: 60, armor: 20, haste: 10 }, passive: 'smolder', styles: ['tank'] },
+  glacier:   { name: 'GLACIER SHIELD', price: 2700, from: ['buckler', 'jacket'], stats: { hp: 30, armor: 25, haste: 15 }, passive: 'steady', styles: ['tank'] },
+  cloak:     { name: 'SNOW CLOAK', price: 2600, from: ['sash', 'belt'], stats: { hp: 70, as: 0.2, ms: 8 }, passive: 'drift', styles: ['assassin', 'marksman'] },
+  storm:     { name: 'STORM GLASS', price: 3000, from: ['rod', 'almanac'], stats: { ap: 11, haste: 15 }, passive: 'surge', styles: ['mage'] },
+  deeprod:   { name: 'DEEP ROD', price: 3400, from: ['rod', 'rod'], stats: { ap: 16 }, passive: 'amplify', styles: ['mage'] },
+  marsh:     { name: 'MARSH LIGHT', price: 2800, from: ['lantern', 'almanac'], stats: { ap: 9, haste: 10, ms: 5 }, passive: 'scorch', styles: ['mage'] },
+  slate:     { name: 'ICE SLATE', price: 2700, from: ['rod', 'hide'], stats: { ap: 8, hp: 50 }, passive: 'chill', styles: ['mage', 'bruiser'] },
+  clock:     { name: 'STILL CLOCK', price: 3000, from: ['rod', 'mail'], stats: { ap: 9, armor: 18, haste: 8 }, passive: 'brace', styles: ['mage', 'tank'] },
+  hornet:    { name: 'HORNET NEST', price: 2900, from: ['almanac', 'recurve'], stats: { ap: 8, as: 0.3, haste: 10 }, passive: 'kindling', styles: ['mage', 'marksman'] },
 
   // THE CONSUMABLE: a stack of up to `stack` in ONE slot (League's potions),
   // drunk off that slot's key (the `potion` banner below). No stats, no passive,
   // never a part of anything.
   potion: { name: 'HEALTH POTION', price: 50, stack: 5, stats: {}, icon: 'itemPotion' },
 };
-const ITEM_PARTS = Object.keys(BUILD_ITEMS).filter((id) => !BUILD_ITEMS[id].from && !BUILD_ITEMS[id].stack);
-const ITEM_DONE = Object.keys(BUILD_ITEMS).filter((id) => BUILD_ITEMS[id].from);
-
-function itemIcon(id) {
-  const ic = BUILD_ITEMS[id].icon;
-  return Array.isArray(ic) ? SPRITES.gearIcons[ic[1]][ic[2]][ic[3]] : SPRITES[ic];
+// THE STYLES a legendary or a pair of boots suits (its `styles`), League's
+// item classes: the shop's top tabs (js/ui/shop.js) list each one's items.
+// (Not the lane ROLES a hero is drafted for: a style is what an item is for.)
+const ITEM_STYLES = [
+  { id: 'tank', label: 'TANK' }, { id: 'bruiser', label: 'BRUISER' }, { id: 'marksman', label: 'MARKSMAN' },
+  { id: 'assassin', label: 'ASSASSIN' }, { id: 'mage', label: 'MAGE' },
+];
+// an item's tier, off its record: 'potion', 'basic' (built from nothing),
+// 'boots' (an upgraded pair), 'legend' (built from at least one epic, or
+// dear) and 'epic' (built from basics)
+const ITEM_LEGEND_PRICE = 2000; // a built item this dear or dearer is legendary
+function itemTier(id) {
+  const it = BUILD_ITEMS[id];
+  if (it.stack) return 'potion';
+  if (!it.from) return 'basic';
+  if (it.boots) return 'boots';
+  return it.price >= ITEM_LEGEND_PRICE ? 'legend' : 'epic';
 }
+// the whole catalogue in the order the grid shows it: tier, then price
+const ITEM_TIER_ORDER = ['potion', 'basic', 'boots', 'epic', 'legend'];
+const ITEM_ALL = Object.keys(BUILD_ITEMS).sort((a, b) =>
+  ITEM_TIER_ORDER.indexOf(itemTier(a)) - ITEM_TIER_ORDER.indexOf(itemTier(b)) || BUILD_ITEMS[a].price - BUILD_ITEMS[b].price);
+const ITEM_PARTS = ITEM_ALL.filter((id) => !BUILD_ITEMS[id].from && !BUILD_ITEMS[id].stack);
+const ITEM_DONE = ITEM_ALL.filter((id) => itemTier(id) === 'legend');
+// what an item goes INTO: every item that names it in its recipe (the shop's BUILDS INTO row)
+function itemInto(id) { return ITEM_ALL.filter((k) => (BUILD_ITEMS[k].from || []).includes(id)); }
+
+function itemIcon(id) { return SPRITES[BUILD_ITEMS[id].icon || 'item_' + id]; }
 function isPart(id) { return !BUILD_ITEMS[id].from && !BUILD_ITEMS[id].stack; }
 function isStack(id) { return !!BUILD_ITEMS[id].stack; }
-// the metal an item is drawn in, everywhere it shows: a part in dim green, a
-// finished item in gold (its well's rim, and the ink its name is printed in)
-// (the potion wears the part's green: cheap, and spent)
-const ITEM_METAL = { part: { rim: '#3f6e44', ink: '#7fb87f' }, done: { rim: '#ffcf33', ink: '#fff6c8' } };
-function itemMetal(id) { return BUILD_ITEMS[id].from ? ITEM_METAL.done : ITEM_METAL.part; }
+function isBoots(id) { return !!BUILD_ITEMS[id].boots; }
+// the metal an item is drawn in, everywhere it shows (its well's rim, and the
+// ink its name is printed in): a basic in dim green, an epic or a pair of
+// boots in steel blue, a legendary in gold (the potion wears the basic's green)
+const ITEM_METAL = {
+  part: { rim: '#3f6e44', ink: '#7fb87f' },
+  epic: { rim: '#4f78a8', ink: '#b4d0f0' },
+  done: { rim: '#ffcf33', ink: '#fff6c8' },
+};
+function itemMetal(id) {
+  const t = itemTier(id);
+  return t === 'legend' ? ITEM_METAL.done : t === 'epic' || t === 'boots' ? ITEM_METAL.epic : ITEM_METAL.part;
+}
 
-// THE PRICE STILL TO PAY for an item: its own price minus every part of it
-// already in a slot, each slot counted once - so a Sunstone with one Flint
-// Head held costs 170, and with two, 140. Returns the gold and the slot
-// indices the buy will use up.
+// THE PRICE STILL TO PAY for an item, League's way: its own price minus every
+// component of it already in a slot, each slot counted once, and a component
+// not held is looked into in turn - so a QUIVER held takes 1000 off HUNTER'S
+// HORN, and a GUT STRING held takes 300 off it through the RECURVE LIMB.
+// Returns the gold and the slot indices the buy will use up.
 function itemCost(p, id) {
-  const it = BUILD_ITEMS[id], used = [];
-  let gold = it.price;
-  for (const part of it.from || []) {
-    const i = p.items.findIndex((x, j) => x === part && !used.includes(j));
-    if (i >= 0) { used.push(i); gold -= BUILD_ITEMS[part].price; }
-  }
-  return { gold, used };
+  const used = [];
+  const walk = (k) => {
+    let gold = BUILD_ITEMS[k].price;
+    for (const part of BUILD_ITEMS[k].from || []) {
+      const i = p.items.findIndex((x, j) => x === part && !used.includes(j));
+      if (i >= 0) { used.push(i); gold -= BUILD_ITEMS[part].price; }
+      else gold -= BUILD_ITEMS[part].price - walk(part);
+    }
+    return gold;
+  };
+  return { gold: walk(id), used };
 }
 // the slots free once the buy has spent its parts
 function itemRoom(p, used) { return p.items.filter((x, j) => x === null || used.includes(j)).length; }
+// ONE PAIR OF BOOTS: a buy of boots is refused while another pair is held
+// that the buy does not use up
+function bootsClash(p, id, used) {
+  return isBoots(id) && p.items.some((x, j) => x && isBoots(x) && !used.includes(j));
+}
 
 // fold the slots into a kit: every item's stats, then each passive once
+// (after all the stats, so AMPLIFY multiplies the whole of them)
 function itemMods(k, p) {
-  const seen = new Set();
-  for (const id of p.items || []) {
-    if (!id) continue;
-    const it = BUILD_ITEMS[id];
-    for (const s in it.stats) ITEM_STATS[s].mod(k, it.stats[s]);
-    if (it.passive && !seen.has(it.passive)) { seen.add(it.passive); ITEM_PASSIVES[it.passive].mod(k); }
-  }
+  const held = (p.items || []).filter(Boolean);
+  for (const id of held) { const st = BUILD_ITEMS[id].stats; for (const s in st) ITEM_STATS[s].mod(k, st[s]); }
+  for (const pv of new Set(held.map((id) => BUILD_ITEMS[id].passive).filter(Boolean))) ITEM_PASSIVES[pv].mod(k);
 }
 // rebuild the kit after the slots changed; new max health arrives filled, the
 // way a hero level does, and lost max health clamps
@@ -141,7 +250,7 @@ function buyItem(p, id) {
   if (!Object.hasOwn(BUILD_ITEMS, id) || !merchNear(p)) { shopDeny(p); return false; }
   if (id === 'potion') return buyPotion(p);
   const c = itemCost(p, id);
-  if (p.inv.gold < c.gold || itemRoom(p, c.used) < 1) { shopDeny(p); return false; }
+  if (p.inv.gold < c.gold || itemRoom(p, c.used) < 1 || bootsClash(p, id, c.used)) { shopDeny(p); return false; }
   pay({ gold: c.gold }, p);
   for (const j of c.used) p.items[j] = null;
   p.items[p.items.indexOf(null)] = id;
@@ -166,23 +275,59 @@ function sellItem(p, slot) {
 }
 function itemSellValue(id) { return Math.floor(BUILD_ITEMS[id].price * ITEM_SELL); }
 
-// Called from hurtUnit (js/sim/actions.js) for every blow a player lands. A
-// burn's own ticks are not hits, so they never feed KINDLING or CHILL.
-function itemsOnHit(src, e, o) {
+// THE BLOW ITSELF, before it lands (hurtUnit, js/sim/actions.js): CULL on a
+// body badly hurt, and SURGE's next basic attack after a key.
+function itemsDeal(src, e, dmg, o) {
+  if (!(src instanceof Player)) return dmg;
+  const k = kitOf(src);
+  if (k.cull && e.maxHp > 0 && e.hp < e.maxHp * CULL_BELOW) dmg *= CULL_MUL;
+  if (k.surge && o.basic && src.surgeT > 0) { src.surgeT = 0; dmg *= SURGE_MUL; }
+  return Math.round(dmg);
+}
+// a key is pressed (useAbility, js/sim/abilities.js): SURGE arms the next basic attack
+function itemsOnCast(p) { if (kitOf(p).surge) p.surgeT = SURGE_T; }
+// Called from hurtUnit for every blow a player lands. A burn's own ticks are
+// not hits, so they never feed KINDLING, CHILL, LEECH or SCORCH.
+function itemsOnHit(src, e, o, dmg) {
   src.fightT = ITEM_FIGHT_T;
-  if (o.type === 'burn') return;
+  if (o.type === 'burn' || o.thorns) return;
   const k = kitOf(src);
   if (k.kindle) {
     src.kindleN = (src.kindleN || 0) + 1;
     if (src.kindleN >= KINDLE_EVERY) { src.kindleN = 0; igniteUnit(e, KINDLE_BURN, BURN_DPS, src); }
   }
   if (k.chill) slowUnit(e, CHILL_T, CHILL_MUL);
+  if (k.scorch && o.ab) igniteUnit(e, SCORCH_BURN, BURN_DPS, src);
+  if (k.leech && dmg > 0) healPlayer(src, dmg * LEECH_SHARE);
 }
-// the player's own clock, once a step (js/sim/sim.js): the fight timer, and
-// DEN's heal once it has run out
+// ...and every blow a player TAKES from a body (hurtUnit): THORNS hands a
+// share back to a player, a beast or a bot that struck it - never to a tower,
+// and never a thorn for a thorn
+function itemsOnHurt(e, src, dmg, o) {
+  if (!kitOf(e).thorns || o.thorns || o.type === 'burn' || !(dmg > 0) || e.invuln > 0) return;
+  if (!(src instanceof Player || robots.includes(src) || animals.includes(src)) || !unitFoe(e, src)) return;
+  const d = Math.hypot(src.x - e.x, src.y - e.y) || 1;
+  hurtUnit(src, Math.max(1, Math.round(dmg * THORN_SHARE)), (src.x - e.x) / d, (src.y - e.y) / d, e, { thorns: true, kb: 0 });
+}
+// BRACE on the stat sheet (statOf, js/sim/stats.js): armor while badly hurt
+function itemStat(p, key) {
+  return key === 'armor' && p.kit && p.kit.brace && p.hp < p.maxHp * BRACE_BELOW ? BRACE_ARMOR : 0;
+}
+// STEADY on crowd control's length (ccMul, js/sim/actions.js)
+function itemTen(e) { return e instanceof Player && e.kit && e.kit.steady ? STEADY_MUL : 1; }
+// the player's own clock, once a step (js/sim/sim.js): the fight timer, DEN's
+// heal once it has run out, SURGE's window, SMOLDER's pulse and the potion
 function itemsTick(p, dt) {
   if (p.fightT > 0) p.fightT = Math.max(0, p.fightT - dt);
   else if (p.kit.restHeal > 0 && p.hp < p.maxHp) healPlayer(p, p.kit.restHeal * dt);
+  if (p.surgeT > 0) p.surgeT = Math.max(0, p.surgeT - dt);
+  if (p.kit.smolder && !p.dead) {
+    p.smolderT = (p.smolderT || 0) - dt;
+    if (p.smolderT <= 0) {
+      p.smolderT = SMOLDER_EVERY;
+      for (const e of unitsNear(p, p.x, p.y, SMOLDER_R)) if ((e instanceof Player || e.bot) && unitTeam(e) !== p.team) igniteUnit(e, SMOLDER_BURN, BURN_DPS, p);
+    }
+  }
   potionTick(p, dt);
 }
 
@@ -252,39 +397,47 @@ function potionTick(p, dt) {
 }
 
 // ---- bots ------------------------------------------------------------------
-// Each class's build, in the order a bot finishes it. A bot saves for the next
-// finished item on its list, and at a counter it buys that item if the purse
-// covers it, else the first of its parts it does not hold yet.
+// Each class's build, League-style: the first legendary, then boots, then the
+// rest, in the order a bot finishes them. A bot saves for the next item on
+// its list, and at a counter buys it whole if the purse covers it, else the
+// first component of it (however deep) it can afford and has room for. The
+// same lists are the shop's RECOMMENDED tab (shopRecommended, js/ui/shop.js),
+// so what a bot buys is what the counter suggests to you.
 const BOT_BUILDS = {
-  HUNTER: ['horn', 'feathers', 'fang', 'sunstone', 'skates', 'bearskin'],
-  WARRIOR: ['bearskin', 'brand', 'fang', 'skates', 'cloak', 'sunstone'],
-  ARMATOS: ['bearskin', 'cloak', 'brand', 'skates', 'fang', 'sunstone'], // the wall first: health and armor, then the walk to the fight
-  FORTIVA: ['brand', 'bearskin', 'skates', 'fang', 'cloak', 'sunstone'], // the hit first, the health to stay in the fight, then the legs to reach it
-  IGNIA: ['sunstone', 'skates', 'cloak', 'bearskin', 'brand', 'fang'], // the power first, then the legs and the life a fragile mage needs
-  BELLA: ['brand', 'fang', 'skates', 'sunstone', 'cloak', 'bearskin'], // the blade first: damage and its cut, then the speed to chain it
+  HUNTER: ['horn', 'quick', 'feathers', 'frostline', 'sunstone', 'cloak'],
+  WARRIOR: ['grind', 'hobnail', 'maul', 'stonehide', 'beartooth', 'brambmail'],
+  ARMATOS: ['bearskin', 'hobnail', 'brambmail', 'glacier', 'hearth', 'stonehide'], // the wall first: health and armor, then the walk to the fight
+  FORTIVA: ['brand', 'mukluk', 'fang', 'stonehide', 'maul', 'collar'], // the hit first, the health to stay in the fight, then the legs to reach it
+  IGNIA: ['marsh', 'emberb', 'storm', 'deeprod', 'slate', 'clock'], // the fire first: power, haste and the scorch, then the boots and more power
+  BELLA: ['beartooth', 'quick', 'maul', 'feathers', 'sunstone', 'collar'], // the blade first: damage and its cut, then the speed to chain it
 };
-// the next finished item on p's list it does not have yet, or null when done
+function botBuild(p) { return BOT_BUILDS[CLASSES[p.cls].name] || BOT_BUILDS.HUNTER; }
+// the next item on p's list it does not have yet, or null when done
 function botNextItem(p) {
-  const list = BOT_BUILDS[CLASSES[p.cls].name] || BOT_BUILDS.HUNTER;
   const have = p.items.slice();
-  for (const id of list) {
+  for (const id of botBuild(p)) {
     const i = have.indexOf(id);
     if (i >= 0) { have[i] = null; continue; }
     return id;
   }
   return null;
 }
-// a held part no item still left on p's list is built from (bought off an
+// every component an item is built from, however deep, each once
+function itemParts(id, out) {
+  out = out || new Set();
+  for (const q of BUILD_ITEMS[id].from || []) { out.add(q); itemParts(q, out); }
+  return out;
+}
+// a held item nothing still left on p's list is built from (bought off an
 // old list): the slot index of the first one, or -1. Sold at a counter once
 // the slots are full, so a stray part never blocks the build - and so are the
 // potions, last, once the build still wants their slot.
 function botStrayPart(p) {
-  const list = BOT_BUILDS[CLASSES[p.cls].name] || BOT_BUILDS.HUNTER;
   const want = new Set();
-  for (const id of list) if (!p.items.includes(id)) for (const q of BUILD_ITEMS[id].from || []) want.add(q);
+  for (const id of botBuild(p)) if (!p.items.includes(id)) itemParts(id, want);
   for (let i = 0; i < p.items.length; i++) {
     const id = p.items[i];
-    if (id && isPart(id) && !want.has(id)) return i;
+    if (id && !isStack(id) && !want.has(id) && !botBuild(p).includes(id)) return i;
   }
   return botNextItem(p) ? potionSlot(p) : -1;
 }
@@ -297,18 +450,23 @@ function botWantsPotion(p, first) {
   if (n >= (first ? 1 : BOT_POTIONS) || p.inv.gold < BUILD_ITEMS.potion.price || !potionRoom(p)) return false;
   return n > 0 || p.items.filter((x) => x === null).length > 1 || !botNextItem(p);
 }
-// what a bot would buy RIGHT NOW with its purse: the next item whole, or a part
-// of it. null when nothing on its list is affordable.
+// what a bot would buy RIGHT NOW with its purse: the next item whole, or the
+// first component of it (depth first, the recipe's own order) it can buy -
+// an epic whole before its basics. null when nothing on the way is affordable.
 function botItemBuy(p) {
   const id = botNextItem(p);
   if (!id) return null;
-  const c = itemCost(p, id);
-  if (p.inv.gold >= c.gold && itemRoom(p, c.used) >= 1) return id;
   const held = p.items.slice();
-  for (const part of BUILD_ITEMS[id].from) {
-    const i = held.indexOf(part);
-    if (i >= 0) { held[i] = null; continue; }
-    if (p.inv.gold >= BUILD_ITEMS[part].price && p.items.includes(null)) return part;
-  }
-  return null;
+  const can = (k) => { const c = itemCost(p, k); return p.inv.gold >= c.gold && itemRoom(p, c.used) >= 1 && !bootsClash(p, k, c.used); };
+  const walk = (k) => {
+    if (can(k)) return k;
+    for (const q of BUILD_ITEMS[k].from || []) {
+      const i = held.indexOf(q);
+      if (i >= 0) { held[i] = null; continue; }
+      const r = walk(q);
+      if (r) return r;
+    }
+    return null;
+  };
+  return walk(id);
 }

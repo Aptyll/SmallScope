@@ -80,12 +80,12 @@ to draw and released to land, and nothing on the map drops another: what grows o
 hero's level and the six item slots. The **bottom bar** shows those six slots beside the
 abilities at all times. [The basic attack](gameplay/the-basic-attack.md).
 
-**Gold buys items, League's way.** Either team's **merchant's counter** sells five cheap parts and
-eight finished items built out of them into six item slots, every one always on sale at one
-fixed price, so you can save for the one you want. A finished item costs less by every part of it
-you already hold, carries damage, health, armor, attack speed or move speed, and one passive
-(a third hit that burns, a heal out of a fight, a slow on every hit). Bots buy their class's
-build the same way. [The counter](gameplay/the-merchants-counter.md).
+**Gold buys items, League's way.** Either team's **merchant's counter** sells over fifty items in
+four tiers (basic, epic, boots, legendary) built out of each other into six item slots, every one
+always on sale at one fixed price, so you can save for the one you want. An item costs less by
+every component of it you already hold, carries the hero stats, and a legendary adds one passive
+(a third hit that burns, a heal out of a fight, a slow on every hit). One pair of boots at a time.
+The counter's RECOMMENDED tab is your class's build, and bots buy that same build. [The counter](gameplay/the-merchants-counter.md).
 
 **Keys 1-4 are your class.** Each class carries four active abilities — the HUNTER's piercing
 shot, net, grapple and snow cover; the WARRIOR's shield (and its slam), rush, stomp and execute — each with a

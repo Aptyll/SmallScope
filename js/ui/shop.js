@@ -17,9 +17,9 @@
 //     the panel open.
 //   - BUYING AND SELLING: items through buyItem/sellItem (the health potion
 //     stacks in one slot).
-//   - the PANEL, layout A: category filters down the left, the parts and the
-//     finished items in a grid, the picked item read out on the right with its
-//     build tree, and along the bottom your six slots and the potion.
+//   - the PANEL, League's: RECOMMENDED and ALL ITEMS on the left, the picked
+//     item on the right with BUILDS INTO, its tree and BUY, and along the
+//     bottom your six slots with SELL.
 //
 // The counter does not stop the sim, and standing at one does not protect you:
 // it is HUD like the character sheet, and walking out of
@@ -109,33 +109,48 @@ function shopCmd(p, c) {
 }
 
 // ------------------------------------------------------------ the shop panel
-// LAYOUT A, on the HUD's own graphite plate (drawHudFrame, js/ui/strip.js):
+// League's shop on the HUD's own graphite plate (drawHudFrame, js/ui/strip.js):
 //
-//   SHOP                                              purse  X
-//   [cats] PARTS  five cheap parts          | the picked item: icon, name,
-//          ITEMS  the finished items, 4 a row| price, BUY or SELL, its stats,
-//                                           | its passive, and its build tree
-//   your six slots                                    potion n  50  BUY
+//   RECOMMENDED ALL TANK BRUISER MARKSMAN ...   X | BUILDS INTO  [] [] []
+//   s | the grid: a row a tier - potion and       |       the picked item
+//   t | basics, boots, epics, then the            |      /      |      \
+//   a | legendaries - each well with its price    |   its components, and
+//   t | under it                                  |   theirs, owned ones ticked
+//   s |                                           | icon NAME  price
+//   [3 slots]                                     | stats, passive
+//   [3 slots]  [SELL n]                    purse  | [ BUY  n ]
 //
-// A click PICKS (an item in the grid, a node of the tree, one of your slots)
-// and the plate on the read-out acts on the pick: BUY for an item on sale,
-// SELL for one in your slots. The category plates down the left dim every
-// item without that stat rather than hiding it, so nothing on the grid moves.
+// The TOP tabs say WHAT to show: RECOMMENDED (your class's own build, the one
+// a bot of it buys: BOT_BUILDS, js/sim/items.js), ALL, and one tab a style
+// (ITEM_STYLES: TANK, BRUISER...) listing the legendaries and boots that suit
+// it. The LEFT bar filters by stat in any tab: it dims every item without
+// that stat rather than hiding it, so nothing on the grid moves.
+// A click PICKS (an item on the grid, a node of the tree, a BUILDS INTO well,
+// one of your slots); BUY on the right buys the pick, SELL along the bottom
+// sells the picked slot. A right click is the shortcut: on the grid it buys,
+// on a slot it sells. Your slots sit 3 by 2, the bottom bar's own shape. Gold
+// shows once along the bottom (the purse, with its coin); the two plates
+// print bare numbers, gold or red.
 //
 // It is centred near the top edge, clear of the bottom-left corner the
 // tooltip grows up out of.
-const SHOP_W = 344, SHOP_H = 206, SHOP_Y = 4;
-const SHOP_PART = 22, SHOP_ITEM = 26, SHOP_CAT = 16, SHOP_SLOT = 22;
-const SHOP_PITCH = 25, SHOP_ITEM_PITCH = 31, SHOP_ITEM_ROW = 39, SHOP_COLS = 4;
-const SHOP_PANE_X = 160;   // the read-out's left edge, from the slab's
-const SHOP_POT_W = 82;     // the potion plate along the bottom
+const SHOP_W = 520, SHOP_H = 288, SHOP_Y = 4;
+const SHOP_WELL = 20, SHOP_PITCH = 23, SHOP_ROW = 29, SHOP_COLS = 13; // a grid well, its pitch, a row with its price
+const SHOP_CAT = 14, SHOP_CAT_PITCH = 16;  // a stat filter, down the left bar
+const SHOP_GRID_X = 26;    // the grid's left edge, from the slab's: past the stat bar
+const SHOP_PANE_X = 330;   // the right pane's left edge, from the slab's
+const SHOP_SELL_W = 52, SHOP_BTN_H = 16;   // the SELL plate, and both plates' height
+const SHOP_TREE_PITCH = 24, SHOP_TREE_ROW = 34; // the build tree: a leaf's pitch, a level's
+const SHOP_INTO_MAX = 7;   // BUILDS INTO wells shown (empty ones keep the row's shape)
 const SHOP_RIM = '#3c4048', SHOP_HOT = '#9ca1aa', SHOP_PICK = '#fff6c8';
-const SHOP_INK = '#e8eaee', SHOP_DIM = '#8a8f99', SHOP_STAT = '#7fd88a';
+const SHOP_INK = '#e8eaee', SHOP_DIM = '#8a8f99', SHOP_STAT = '#7fd88a', SHOP_FAINT = '#24272d';
 const SHOP_PANE_BG = '#111216', SHOP_PLATE = '#2a2d33', SHOP_PLATE_HOT = '#3a3e46';
+const SHOP_BUY = '#2c5a3a', SHOP_BUY_HOT = '#3a7048'; // the BUY plate: the one green action on the slab
 // A price you cannot pay: the refusal red every other "not enough gold" in the
 // game already speaks, on the rim and the price, with the goods greyed back.
-const SHOP_DEAR_RIM = '#6b2230', SHOP_DEAR_BAND = '#3a1420', SHOP_DEAR_INK = '#e0637a';
+const SHOP_DEAR_BAND = '#3a1420', SHOP_DEAR_INK = '#e0637a';
 const SHOP_DEAR_WASH = 'rgba(8,9,12,0.62)';
+const SHOP_TABS = [{ id: 'rec', label: 'RECOMMENDED' }, { id: 'all', label: 'ALL' }].concat(ITEM_STYLES);
 
 // the counter is up: the panel is drawn and eats its own clicks
 function shopOpen() {
@@ -151,6 +166,7 @@ function openShop(b) {
   if (!b) return false;
   state.shop = b;
   state.charOpen = false; // one slab at a time - they would sit on each other
+  if (!SHOP_TABS.some((t) => t.id === state.shopTab)) state.shopTab = 'rec';
   if (!state.shopSel) state.shopSel = botNextItem(player) || ITEM_DONE[0]; // open on what a bot of your class would save for next
   SFX.place();
   SFX.music.hold('village', { in: 0.6, out: 0.5 });
@@ -163,91 +179,165 @@ function closeShop() {
   SFX.music.release({ in: 0.8, out: 0.5 });
 }
 
-// the item the read-out shows: the slot picked, else the item picked
+// the item the pane shows: the slot picked, else the item picked
 function shopPicked() {
   const s = state.shopSlot;
   if (s >= 0 && player.items[s]) return { id: player.items[s], slot: s };
   return { id: Object.hasOwn(BUILD_ITEMS, state.shopSel) ? state.shopSel : ITEM_DONE[0], slot: -1 };
 }
-// the category filter: an item without the picked stat is dimmed
+// the stat filter: an item without the picked stat is dimmed
 function shopFiltered(id) {
   const c = state.shopCat;
   return c >= 0 && !(ITEM_STAT_ORDER[c] in BUILD_ITEMS[id].stats);
+}
+// THE RECOMMENDED TAB: your class's build cut League's way - a start (the
+// potion and the first item's basics), the core (its first legendary and its
+// boots), and the rest of the list - each a row under its headline.
+function shopRecommended() {
+  const list = botBuild(player);
+  const boots = list.filter(isBoots), legends = list.filter((id) => !isBoots(id));
+  const first = legends[0];
+  const start = ['potion'].concat([...itemParts(first)].filter(isPart).sort((a, b) => BUILD_ITEMS[a].price - BUILD_ITEMS[b].price));
+  return [
+    { label: 'START', ids: start },
+    { label: 'CORE', ids: [first, ...[...itemParts(first)].filter((k) => !isPart(k))] },
+    { label: 'BOOTS', ids: ['boots', ...boots] },
+    { label: 'THEN', ids: legends.slice(1) },
+  ];
+}
+// THE ALL ITEMS GRID: a row a kind - the potion and the basics, every pair of
+// boots, the epics, the legendaries - cheapest first, a kind too long for one
+// row running on into the next
+const SHOP_ROW_KINDS = ['basic', 'boots', 'epic', 'legend'];
+function shopRowKind(id) { return isBoots(id) ? 'boots' : itemTier(id) === 'potion' ? 'basic' : itemTier(id); }
+// (a style tab: the same rows, holding only what suits the style)
+function shopAllRows(style) {
+  const rows = [];
+  for (const kind of SHOP_ROW_KINDS) {
+    const ids = ITEM_ALL.filter((id) => shopRowKind(id) === kind && (!style || (BUILD_ITEMS[id].styles || []).includes(style)));
+    for (let i = 0; i < ids.length; i += SHOP_COLS) rows.push(ids.slice(i, i + SHOP_COLS));
+  }
+  return rows;
 }
 
 // The whole geometry in one place: the slab centred across the view, SHOP_Y
 // down from its top.
 function shopLayout() {
   const x = Math.max(2, Math.round((VIEW_W - SHOP_W) / 2)), y = SHOP_Y;
-  const gx = x + 28, by = y + SHOP_H - 30;
-  const cats = [], parts = [], items = [], slots = [];
-  for (let i = 0; i <= ITEM_STAT_ORDER.length; i++) cats.push({ c: i - 1, x: x + 6, y: y + 26 + i * 18, w: SHOP_CAT, h: SHOP_CAT });
-  ITEM_PARTS.forEach((id, i) => parts.push({ id, x: gx + i * SHOP_PITCH, y: y + 33, w: SHOP_PART, h: SHOP_PART }));
-  ITEM_DONE.forEach((id, i) => items.push({ id, x: gx + (i % SHOP_COLS) * SHOP_ITEM_PITCH,
-    y: y + 77 + ((i / SHOP_COLS) | 0) * SHOP_ITEM_ROW, w: SHOP_ITEM, h: SHOP_ITEM }));
-  for (let i = 0; i < ITEM_SLOTS; i++) slots.push({ i, x: x + 7 + i * SHOP_PITCH, y: by, w: SHOP_SLOT, h: SHOP_SLOT });
-  const px = x + SHOP_W - 7 - SHOP_POT_W;
-  const pot = { x: px, y: by, w: SHOP_POT_W, h: SHOP_SLOT, buy: { x: px + SHOP_POT_W - 26, y: by + 4, w: 22, h: 14 } };
-  const pane = { x: x + SHOP_PANE_X, y: y + 25, w: SHOP_W - SHOP_PANE_X - 6, h: by - 9 - (y + 25) };
+  const gx = x + SHOP_GRID_X, by = y + SHOP_H - 51; // the grid's left edge, the slots' top row
+  const tabs = [], cats = [], grid = [], heads = [], slots = [];
+  let tx = x + 8;
+  for (const t of SHOP_TABS) { const w = pixelTextWidth(t.label) + 8; tabs.push({ id: t.id, x: tx - 4, y: y + 4, w, h: 14 }); tx += w + 4; }
+  for (let i = 0; i <= ITEM_STAT_ORDER.length; i++) cats.push({ c: i - 1, x: x + 6, y: y + 25 + i * SHOP_CAT_PITCH, w: SHOP_CAT, h: SHOP_CAT });
+  const well = (id, wx, wy) => grid.push({ id, x: wx, y: wy, w: SHOP_WELL, h: SHOP_WELL });
+  if (state.shopTab === 'rec') {
+    shopRecommended().forEach((sec, r) => {
+      const sy = y + 25 + r * (SHOP_ROW + 14);
+      heads.push({ label: sec.label, x: gx, y: sy });
+      sec.ids.forEach((id, i) => well(id, gx + i * SHOP_PITCH, sy + 9));
+    });
+  } else {
+    shopAllRows(state.shopTab === 'all' ? null : state.shopTab)
+      .forEach((row, r) => row.forEach((id, i) => well(id, gx + i * SHOP_PITCH, y + 25 + r * SHOP_ROW)));
+  }
+  for (let i = 0; i < ITEM_SLOTS; i++) {
+    slots.push({ i, x: x + 6 + (i % ITEM_COLS) * SHOP_PITCH, y: by + ((i / ITEM_COLS) | 0) * SHOP_PITCH, w: SHOP_WELL, h: SHOP_WELL });
+  }
+  const sell = { x: x + 6 + ITEM_COLS * SHOP_PITCH + 4, y: by + 13, w: SHOP_SELL_W, h: SHOP_BTN_H };
+  const pane = { x: x + SHOP_PANE_X, y: y + 6, w: SHOP_W - SHOP_PANE_X - 6, h: SHOP_H - 12 };
+  const into = [];
+  for (let i = 0; i < SHOP_INTO_MAX; i++) into.push({ i, x: pane.x + 6 + i * SHOP_PITCH, y: pane.y + 15, w: SHOP_WELL, h: SHOP_WELL });
   return {
     panel: { x, y, w: SHOP_W, h: SHOP_H },
-    xr: { x: x + SHOP_W - 16, y: y + 6, w: 11, h: 11 },
-    labels: { parts: { x: gx, y: y + 26 }, items: { x: gx, y: y + 70 } },
-    cats, parts, items, slots, pot, pane, by,
-    act: { x: pane.x + pane.w - 65, y: pane.y + 7, w: 60, h: 14 }, // BUY / SELL
+    xr: { x: pane.x - 17, y: y + 6, w: 11, h: 11 },
+    tabs, cats, grid, heads, slots, sell, pane, into, by,
+    purse: { x: pane.x - 10, y: by + 18 },
+    buy: { x: pane.x + 6, y: pane.y + pane.h - SHOP_BTN_H - 6, w: pane.w - 12, h: SHOP_BTN_H + 2 },
     tree: shopTree(pane, shopPicked().id),
   };
 }
-// The picked item's tree, as wells in the read-out: a finished item over its
-// parts, or a part under the finished items it goes into.
+// The picked item's tree, as wells in the pane: the item on top, its
+// components under it, and theirs under them, each child centred under its
+// own parent. A node is { id, x, y, w, h, up } where `up` is its parent node.
 function shopTree(pane, id) {
-  const it = BUILD_ITEMS[id], cx = pane.x + (pane.w >> 1), n = [];
-  if (it.stack) return n; // the potion is built from nothing and into nothing
-  const top = pane.y + 72, low = top + 32;
-  const row = (ids, y, w, span) => {
-    const x0 = cx - ((ids.length - 1) * span) / 2;
-    ids.forEach((k, i) => n.push({ id: k, x: Math.round(x0 + i * span) - (w >> 1), y, w, h: w }));
+  const n = [], cx = pane.x + (pane.w >> 1), top = pane.y + 46;
+  if (isStack(id)) return n; // the potion is built from nothing and into nothing
+  const leaves = (k) => { const f = BUILD_ITEMS[k].from; return f ? f.reduce((s, q) => s + leaves(q), 0) : 1; };
+  const place = (k, x0, depth, up) => {
+    const span = leaves(k) * SHOP_TREE_PITCH;
+    const node = { id: k, x: Math.round(x0 + span / 2) - (SHOP_WELL >> 1), y: top + depth * SHOP_TREE_ROW, w: SHOP_WELL, h: SHOP_WELL, up };
+    n.push(node);
+    let cx0 = x0;
+    if (depth < 2) for (const q of BUILD_ITEMS[k].from || []) { place(q, cx0, depth + 1, node); cx0 += leaves(q) * SHOP_TREE_PITCH; }
+    return node;
   };
-  if (it.from) { row([id], top, 22, 0); row(it.from, low, 18, 44); }
-  else { row(ITEM_DONE.filter((k) => BUILD_ITEMS[k].from.includes(id)), top, 18, 24); row([id], low, 22, 0); }
+  place(id, cx - leaves(id) * SHOP_TREE_PITCH / 2, 0, null);
   return n;
 }
+// which tree nodes you already hold, the way itemCost spends them: a held
+// component covers everything under it
+function shopTreeOwned(tree) {
+  const used = [], own = new Set();
+  const walk = (node) => {
+    for (const c of tree.filter((m) => m.up === node)) {
+      const i = player.items.findIndex((x, j) => x === c.id && !used.includes(j));
+      if (i >= 0) { used.push(i); own.add(c); } else walk(c);
+    }
+  };
+  if (tree.length) walk(tree[0]);
+  return own;
+}
 
-// 'x' | 'panel' | {kind:'cat', c} | {kind:'pick', id} | {kind:'slot', i} |
-// {kind:'act'} | {kind:'potBuy'} | null (the potion plate's well is a pick).
-// Shared by the click, the cursor and the tooltip, so the three can never
-// disagree about what the pointer is on.
+// 'x' | 'panel' | {kind:'tab', id} | {kind:'cat', c} | {kind:'pick', id} |
+// {kind:'slot', i} | {kind:'buy'} | {kind:'sell'} | null. Shared by the
+// click, the cursor and the tooltip, so the three can never disagree about
+// what the pointer is on.
 function shopHit(mx, my) {
   if (!shopOpen()) return null;
   const L = shopLayout(), P = L.panel;
   if (!hitR(P, mx, my)) return null;
   if (hitR(L.xr, mx, my)) return 'x';
+  for (const r of L.tabs) if (hitR(r, mx, my)) return { kind: 'tab', id: r.id };
   for (const r of L.cats) if (hitR(r, mx, my)) return { kind: 'cat', c: r.c };
-  for (const r of L.parts.concat(L.items, L.tree)) if (hitR(r, mx, my)) return { kind: 'pick', id: r.id };
+  for (const r of L.grid.concat(L.tree)) if (hitR(r, mx, my)) return { kind: 'pick', id: r.id };
+  const into = itemInto(shopPicked().id);
+  for (const r of L.into) if (into[r.i] && hitR(r, mx, my)) return { kind: 'pick', id: into[r.i] };
   for (const r of L.slots) if (hitR(r, mx, my)) return { kind: 'slot', i: r.i };
-  if (hitR(L.act, mx, my)) return { kind: 'act' };
-  if (hitR(L.pot.buy, mx, my)) return { kind: 'potBuy' };
-  if (hitR(L.pot, mx, my)) return { kind: 'pick', id: 'potion' };
+  if (hitR(L.buy, mx, my)) return { kind: 'buy' };
+  if (hitR(L.sell, mx, my)) return { kind: 'sell' };
   return 'panel';
 }
 function hitR(r, mx, my) { return mx >= r.x && mx < r.x + r.w && my >= r.y && my < r.y + r.h; }
 
+// the two orders the slab sends, through the player's input like every other act
+function shopBuy(id) { SFX.unlock(); player.input.cmd = { kind: 'shop', act: 'item', id }; }
+function shopSell(slot) {
+  const id = player.items[slot];
+  if (!id) return;
+  SFX.unlock();
+  player.input.cmd = { kind: 'shop', act: 'sellItem', slot };
+  if (!(id === 'potion' && player.potions > 1)) { state.shopSlot = -1; state.shopSel = id; } // the stack's last one leaves the slot
+}
 // one left press inside the panel; returns whether it was swallowed
 function shopClick(h) {
   if (!h) return false;
   if (h === 'x') { closeShop(); return true; }
+  if (h.kind === 'tab') { if (state.shopTab !== h.id) { state.shopTab = h.id; SFX.place(); } return true; }
   if (h.kind === 'cat') { state.shopCat = state.shopCat === h.c ? -1 : h.c; SFX.place(); return true; }
   if (h.kind === 'pick') { state.shopSel = h.id; state.shopSlot = -1; SFX.place(); return true; }
   if (h.kind === 'slot') { if (player.items[h.i]) { state.shopSlot = h.i; SFX.place(); } return true; }
-  if (h.kind === 'act') {
-    const pk = shopPicked();
-    SFX.unlock();
-    player.input.cmd = pk.slot >= 0 ? { kind: 'shop', act: 'sellItem', slot: pk.slot } : { kind: 'shop', act: 'item', id: pk.id };
-    if (pk.slot >= 0) { state.shopSlot = -1; state.shopSel = pk.id; }
-    return true;
-  }
-  if (h.kind === 'potBuy') { SFX.unlock(); player.input.cmd = { kind: 'shop', act: 'item', id: 'potion' }; return true; }
+  if (h.kind === 'buy') { shopBuy(shopPicked().id); return true; }
+  if (h.kind === 'sell') { if (state.shopSlot >= 0) shopSell(state.shopSlot); return true; }
   return true; // the slab eats the rest; the world never sees it
+}
+// one right press: the shortcut - buy what is under it on the grid or the
+// tree, sell what is under it in your slots; anywhere else on the slab it is
+// only swallowed, so no ping wheel opens through the counter
+function shopRightClick(h) {
+  if (!h) return false;
+  if (h.kind === 'pick') { state.shopSel = h.id; state.shopSlot = -1; shopBuy(h.id); }
+  else if (h.kind === 'slot') shopSell(h.i);
+  return true;
 }
 
 // ---- drawing -------------------------------------------------------------
@@ -279,135 +369,173 @@ function shopPrice(n, x, y, dear) {
   ctx.drawImage(SPRITES.itemGold, x, y - 2);
   drawPixelText(ctx, String(n), x + 10, y, dear ? SHOP_DEAR_INK : RES_COLORS.gold);
 }
-// one item's well: its rim says part or finished (the tier rims), hover,
-// pick, or can't-afford; a filtered-out or unaffordable item greys back
-function shopItemWell(r, id, h, price) {
-  const dear = price !== undefined && price > player.inv.gold;
+// a bare number centred under a well: the grid's price, gold or red
+function shopTag(n, r, dear) {
+  const t = String(n);
+  drawPixelText(ctx, t, r.x + ((r.w - pixelTextWidth(t) + 1) >> 1), r.y + r.h + 2, dear ? SHOP_DEAR_INK : RES_COLORS.gold);
+}
+// one item's well: its rim says its tier, hover or pick; a filtered-out item
+// greys back. What you cannot afford keeps its colours and says so in its red
+// price (shopTag): with fifty items on the grid, most are dear most of a match.
+function shopItemWell(r, id, h) {
   const hot = !!h && h.kind === 'pick' && h.id === id;
   const pick = shopPicked().slot < 0 && shopPicked().id === id;
-  const rim = pick ? SHOP_PICK : hot ? SHOP_HOT : dear ? SHOP_DEAR_RIM : itemMetal(id).rim;
-  shopWell(r, rim);
+  shopWell(r, pick ? SHOP_PICK : hot ? SHOP_HOT : itemMetal(id).rim);
   shopIcon(itemIcon(id), r);
-  if (dear || shopFiltered(id)) { ctx.fillStyle = SHOP_DEAR_WASH; ctx.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2); }
+  if (shopFiltered(id)) { ctx.fillStyle = SHOP_DEAR_WASH; ctx.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2); }
+}
+// a flat plate with a word on it, and the gold it moves after the word as a
+// bare number (the purse is the one coin on the slab): gold, red when the
+// purse is short, dim when the plate is dim
+function shopPlate(r, word, n, bg, ink) {
+  ctx.fillStyle = bg; ctx.fillRect(r.x, r.y, r.w, r.h);
+  const tw = pixelTextWidth(word) + (n === undefined ? 0 : 5 + pixelTextWidth(String(n)));
+  const x0 = r.x + ((r.w - tw) >> 1), ty = r.y + ((r.h - 5) >> 1);
+  drawPixelText(ctx, word, x0, ty, ink);
+  if (n !== undefined) drawPixelText(ctx, String(n), x0 + pixelTextWidth(word) + 5, ty, ink === SHOP_INK ? RES_COLORS.gold : ink);
+}
+// what buying the pick needs: its price now, and whether it can go through
+function shopBuyState(id) {
+  if (id === 'potion') { const n = BUILD_ITEMS.potion.price; return { n, gold: n <= player.inv.gold, ok: n <= player.inv.gold && potionRoom(player) }; }
+  const c = itemCost(player, id);
+  const gold = c.gold <= player.inv.gold;
+  return { n: c.gold, gold, ok: gold && itemRoom(player, c.used) >= 1 && !bootsClash(player, id, c.used) };
 }
 
 function drawShopPanel(now) {
   const L = shopLayout(), P = L.panel;
   const h = mouse.inside ? shopHit(mouse.x, mouse.y) : null;
   drawHudFrame(P.x, P.y, P.w, P.h, { corners: { tl: true, tr: true, bl: true, br: true } });
-  // the head: the name, the purse, the way out
-  drawPixelText(ctx, 'SHOP', P.x + 7, P.y + 6, SHOP_INK, 2);
-  const gold = String(player.inv.gold);
-  shopPrice(gold, L.xr.x - 16 - pixelTextWidth(gold), P.y + 9);
+  drawShopTabs(L, h);
   const xh = h === 'x';
   ctx.fillStyle = xh ? SHOP_INK : SHOP_DIM;
   for (let k = 0; k < 5; k++) { ctx.fillRect(L.xr.x + 3 + k, L.xr.y + 3 + k, 1, 1); ctx.fillRect(L.xr.x + 7 - k, L.xr.y + 3 + k, 1, 1); }
   ctx.fillStyle = HUD_EDGE;
-  ctx.fillRect(P.x + 3, P.y + 21, P.w - 6, 1);
-  ctx.fillRect(P.x + 3, L.by - 5, P.w - 6, 1);
-
+  ctx.fillRect(P.x + 3, P.y + 20, SHOP_PANE_X - 6, 1);
+  ctx.fillRect(P.x + 3, L.by - 6, SHOP_PANE_X - 6, 1);
+  ctx.fillRect(P.x + SHOP_GRID_X - 4, P.y + 23, 1, L.by - 9 - P.y - 23); // the stat bar's edge
   drawShopCats(L, h);
-  drawPixelText(ctx, 'PARTS', L.labels.parts.x, L.labels.parts.y, SHOP_DIM);
-  drawPixelText(ctx, 'ITEMS', L.labels.items.x, L.labels.items.y, SHOP_DIM);
-  for (const r of L.parts) {
-    const n = itemCost(player, r.id).gold;
-    shopItemWell(r, r.id, h, n);
-    shopPrice(n, r.x + 1, r.y + r.h + 4, n > player.inv.gold);
+  for (const hd of L.heads) drawPixelText(ctx, hd.label, hd.x, hd.y, SHOP_DIM);
+  for (const r of L.grid) {
+    const n = r.id === 'potion' ? BUILD_ITEMS.potion.price : itemCost(player, r.id).gold;
+    shopItemWell(r, r.id, h);
+    shopTag(n, r, n > player.inv.gold);
+    if (r.id === 'potion' && player.potions > 0) { const t = String(player.potions); drawPixelText(ctx, t, r.x + r.w - 2 - pixelTextWidth(t), r.y + 2, SHOP_INK); }
   }
-  for (const r of L.items) {
-    const n = itemCost(player, r.id).gold;
-    shopItemWell(r, r.id, h, n);
-    shopPrice(n, r.x + 1, r.y + r.h + 4, n > player.inv.gold);
-  }
-  drawShopPane(L, h);
   drawShopSlots(L, h);
-  drawShopPotion(L.pot, h);
+  const gold = String(player.inv.gold);
+  shopPrice(gold, L.purse.x - 10 - pixelTextWidth(gold), L.purse.y);
+  drawShopPane(L, h);
 }
 
-// The category plates: ALL, then one a stat, each that stat's own picture.
-// The picked one is rimmed lit; picking it again clears the filter.
+// RECOMMENDED and ALL ITEMS: the open one lit with a line under it
+function drawShopTabs(L, h) {
+  for (const t of L.tabs) {
+    const on = state.shopTab === t.id, hot = !!h && h.kind === 'tab' && h.id === t.id;
+    drawPixelText(ctx, SHOP_TABS.find((s) => s.id === t.id).label, t.x + 4, t.y + 4, on ? SHOP_INK : hot ? SHOP_HOT : SHOP_DIM);
+    if (on) { ctx.fillStyle = SHOP_PICK; ctx.fillRect(t.x + 4, t.y + 12, t.w - 8, 1); }
+  }
+}
+// The stat filters (ALL ITEMS only): ALL, then one a stat, each the stat
+// panel's own icon (STAT_ICON, js/ui/statpanel.js). The picked one is rimmed
+// lit; picking it again clears the filter.
 function drawShopCats(L, h) {
-  const icons = { dmg: SPRITES.itemArt_flint, hp: SPRITES.heartFull, armor: SPRITES.gearIcons[1][1][1],
-    as: SPRITES.weaponArt.bow, ms: SPRITES.gearIcons[3][0][1] };
   for (const r of L.cats) {
     const on = (state.shopCat === undefined ? -1 : state.shopCat) === r.c;
     const hot = !!h && h.kind === 'cat' && h.c === r.c;
     shopWell(r, on ? SHOP_PICK : hot ? SHOP_HOT : SHOP_RIM);
     if (r.c < 0) { // ALL: four squares, the grid itself
       ctx.fillStyle = on ? SHOP_INK : SHOP_DIM;
-      for (const [a, b] of [[4, 4], [9, 4], [4, 9], [9, 9]]) ctx.fillRect(r.x + a, r.y + b, 3, 3);
+      for (const [a, b] of [[3, 3], [8, 3], [3, 8], [8, 8]]) ctx.fillRect(r.x + a, r.y + b, 3, 3);
     } else {
-      const im = icons[ITEM_STAT_ORDER[r.c]];
+      const im = STAT_ICON[ITEM_STAT_ORDER[r.c]];
       ctx.drawImage(im, r.x + ((r.w - im.width) >> 1), r.y + ((r.h - im.height) >> 1));
     }
   }
 }
 
-// THE READ-OUT: the picked item big, its name and full price, the plate that
-// acts on it, its stats in green, its passive in gold over one dim line, and
-// its build tree under all of that.
+// THE PANE: BUILDS INTO along the top, the picked item's tree, its card (icon,
+// name, price, stats with their icons, the passive) and BUY at the foot.
 function drawShopPane(L, h) {
   const R = L.pane, pk = shopPicked(), it = BUILD_ITEMS[pk.id];
   shopWell(R, HUD_EDGE, SHOP_PANE_BG);
-  const big = { x: R.x + 5, y: R.y + 5, w: 28, h: 28 };
+  drawPixelText(ctx, 'BUILDS INTO', R.x + 6, R.y + 6, SHOP_DIM);
+  const into = itemInto(pk.id);
+  for (const r of L.into) {
+    if (into[r.i]) shopItemWell(r, into[r.i], h);
+    else shopWell(r, SHOP_FAINT, SHOP_PANE_BG);
+  }
+  ctx.fillStyle = HUD_EDGE;
+  ctx.fillRect(R.x + 4, R.y + 41, R.w - 8, 1);
+  drawShopTree(L, h);
+  // the card
+  const cy = R.y + 152;
+  ctx.fillStyle = HUD_EDGE;
+  ctx.fillRect(R.x + 4, cy - 4, R.w - 8, 1);
+  const big = { x: R.x + 6, y: cy, w: SHOP_WELL, h: SHOP_WELL };
   shopWell(big, itemMetal(pk.id).rim);
   shopIcon(itemIcon(pk.id), big);
-  drawPixelText(ctx, it.name, R.x + 38, R.y + 7, SHOP_INK);
-  shopPrice(it.price, R.x + 38, R.y + 19);
-  // BUY what is picked on the grid, SELL what is picked in your slots
-  const A = L.act, hot = !!h && h.kind === 'act';
-  let word, n, ok;
-  if (pk.slot >= 0) { word = 'SELL'; n = itemSellValue(pk.id); ok = true; }
-  else { const c = itemCost(player, pk.id); word = 'BUY'; n = c.gold; ok = n <= player.inv.gold && potionOrRoom(pk.id, c.used); }
-  ctx.fillStyle = !ok ? SHOP_DEAR_BAND : hot ? SHOP_PLATE_HOT : SHOP_PLATE;
-  ctx.fillRect(A.x, A.y, A.w, A.h);
-  drawPixelText(ctx, word, A.x + 6, A.y + 5, ok ? SHOP_INK : SHOP_DEAR_INK);
-  shopPrice(n, A.x + 9 + pixelTextWidth(word), A.y + 5, !ok);
-  // the stats, then the passive
-  let y = R.y + 39;
+  drawPixelText(ctx, it.name, R.x + 32, cy + 2, itemMetal(pk.id).ink);
+  shopPrice(it.price, R.x + 32, cy + 13);
+  let y = cy + 28;
   for (const s of ITEM_STAT_ORDER) {
     if (!(s in it.stats)) continue;
     const S = ITEM_STATS[s];
-    drawPixelText(ctx, S.fmt(it.stats[s]) + ' ' + S.label, R.x + 6, y, SHOP_STAT);
-    y += 8;
+    ctx.drawImage(STAT_ICON[s], R.x + 5, y - 2);
+    drawPixelText(ctx, S.fmt(it.stats[s]) + ' ' + S.label, R.x + 17, y, SHOP_STAT);
+    y += 10;
   }
   if (it.passive) {
     const pv = ITEM_PASSIVES[it.passive];
     drawPixelText(ctx, pv.name, R.x + 6, y + 3, RES_COLORS.gold);
     drawPixelText(ctx, pv.line, R.x + 6, y + 11, SHOP_DIM);
   }
+  if (isBoots(pk.id)) drawPixelText(ctx, 'ONE PAIR', R.x + R.w - 6 - pixelTextWidth('ONE PAIR'), cy + 13, SHOP_DIM);
   // the potion: what one drink gives and over how long, and the stack you carry
   if (pk.id === 'potion') {
-    drawPixelText(ctx, '+' + POTION_HEAL + ' HEALTH', R.x + 6, y, SHOP_STAT);
-    drawPixelText(ctx, 'OVER ' + POTION_T + ' S', R.x + 6, y + 8, SHOP_INK);
-    drawPixelText(ctx, (player.potions || 0) + ' / ' + it.stack, R.x + 6, y + 19, SHOP_DIM);
+    ctx.drawImage(STAT_ICON.hp, R.x + 5, y - 2);
+    drawPixelText(ctx, '+' + POTION_HEAL + ' HEALTH OVER ' + POTION_T + ' S', R.x + 17, y, SHOP_STAT);
+    drawPixelText(ctx, (player.potions || 0) + ' / ' + it.stack, R.x + 6, y + 13, SHOP_DIM);
   }
-  if (!L.tree.length) return;
-  // the tree: lines between the two rows, then the wells; a part already in
-  // your slots is rimmed green with a tick and wears no price
-  const tree = L.tree, up = tree.filter((r) => r.y === tree[0].y), low = tree.filter((r) => r.y !== tree[0].y);
-  if (low.length) {
-    const cy = up[0].y + up[0].h + 4;
-    ctx.fillStyle = SHOP_DIM;
-    const xs = up.concat(low).map((r) => r.x + (r.w >> 1));
+  // BUY: the pick's price now; red when the purse is short, dim when it has no room
+  const b = shopBuyState(pk.id), hot = !!h && h.kind === 'buy';
+  shopPlate(L.buy, 'BUY', b.n, !b.gold ? SHOP_DEAR_BAND : !b.ok ? SHOP_PLATE : hot ? SHOP_BUY_HOT : SHOP_BUY,
+    !b.gold ? SHOP_DEAR_INK : b.ok ? SHOP_INK : SHOP_DIM);
+}
+// the tree: a line down from each parent and across to its children, then the
+// wells; a component you hold is rimmed green with a tick and wears no price
+function drawShopTree(L, h) {
+  const tree = L.tree;
+  if (!tree.length) return;
+  const own = shopTreeOwned(tree);
+  ctx.fillStyle = SHOP_DIM;
+  for (const p of tree) {
+    const kids = tree.filter((m) => m.up === p);
+    if (!kids.length) continue;
+    const px = p.x + (p.w >> 1), cy = p.y + p.h + 10; // under the parent's price
+    const xs = kids.map((k) => k.x + (k.w >> 1)).concat(px);
+    ctx.fillRect(px, p.y + p.h + 8, 1, cy - p.y - p.h - 8);
     ctx.fillRect(Math.min(...xs), cy, Math.max(...xs) - Math.min(...xs) + 1, 1);
-    for (const r of up) ctx.fillRect(r.x + (r.w >> 1), r.y + r.h, 1, cy - r.y - r.h);
-    for (const r of low) ctx.fillRect(r.x + (r.w >> 1), cy, 1, r.y - cy);
+    for (const k of kids) ctx.fillRect(k.x + (k.w >> 1), cy, 1, k.y - cy);
   }
-  const held = player.items.slice();
+  const covered = (n) => { for (let u = n.up; u; u = u.up) if (own.has(u)) return true; return false; };
   for (const r of tree) {
-    const i = r.id !== pk.id && isPart(r.id) ? held.indexOf(r.id) : -1;
-    if (i >= 0) held[i] = null;
-    const hot2 = !!h && h.kind === 'pick' && h.id === r.id;
-    shopWell(r, i >= 0 ? SHOP_STAT : hot2 ? SHOP_HOT : itemMetal(r.id).rim);
+    const mine = own.has(r) || covered(r);
+    const hot = !!h && h.kind === 'pick' && h.id === r.id;
+    const pick = r === tree[0];
+    shopWell(r, mine ? SHOP_STAT : hot ? SHOP_HOT : pick ? SHOP_PICK : itemMetal(r.id).rim);
     shopIcon(itemIcon(r.id), r);
-    if (i >= 0) { ctx.fillStyle = SHOP_STAT; ctx.fillRect(r.x + r.w - 4, r.y + 1, 3, 3); }
-    else if (r.id !== pk.id) shopPrice(BUILD_ITEMS[r.id].price, r.x, r.y + r.h + 4, BUILD_ITEMS[r.id].price > player.inv.gold);
+    if (mine) { ctx.fillStyle = SHOP_STAT; ctx.fillRect(r.x + r.w - 5, r.y + 2, 3, 3); }
+    else {
+      const n = r === tree[0] ? itemCost(player, r.id).gold : BUILD_ITEMS[r.id].price;
+      ctx.fillStyle = SHOP_PANE_BG; // the price sits on the pane, under the line
+      shopTag(n, r, n > player.inv.gold);
+    }
   }
 }
 
-// your six slots, along the bottom: a held item in its tier rim, the picked
-// one lit; an empty slot is a dark well
+// your six slots, three by two (the bottom bar's shape) in the bottom-left corner: a held item in its tier rim, the picked
+// one lit; an empty slot is a dark well. SELL beside them sells the pick.
 function drawShopSlots(L, h) {
   for (const r of L.slots) {
     const id = player.items[r.i];
@@ -416,22 +544,8 @@ function drawShopSlots(L, h) {
     if (id) shopIcon(itemIcon(id), r);
     if (id === 'potion') { const t = String(player.potions || 0); drawPixelText(ctx, t, r.x + r.w - 2 - pixelTextWidth(t), r.y + 2, SHOP_INK); }
   }
-}
-
-// room for one more: the potion stacks in its own slot, anything else needs a free one
-function potionOrRoom(id, used) { return id === 'potion' ? potionRoom(player) : itemRoom(player, used) >= 1; }
-// the potion plate: the flask and how many you carry, its price, and BUY
-function drawShopPotion(f, h) {
-  const pick = shopPicked().slot < 0 && shopPicked().id === 'potion';
-  const hotW = !!h && h.kind === 'pick' && h.id === 'potion';
-  shopWell(f, pick ? SHOP_PICK : hotW ? SHOP_HOT : SHOP_RIM);
-  const im = itemIcon('potion'), price = BUILD_ITEMS.potion.price;
-  ctx.drawImage(im, f.x + 4, f.y + ((f.h - im.height) >> 1));
-  drawPixelText(ctx, String(player.potions || 0), f.x + 4 + im.width, f.y + 15, SHOP_DIM);
-  shopPrice(price, f.x + 22, f.y + 9, price > player.inv.gold);
-  const r = f.buy, live = price <= player.inv.gold && potionRoom(player);
-  if (!!h && h.kind === 'potBuy' && live) { ctx.fillStyle = SHOP_PLATE_HOT; ctx.fillRect(r.x, r.y, r.w, r.h); }
-  drawPixelText(ctx, 'BUY', r.x + ((r.w - pixelTextWidth('BUY')) >> 1), r.y + 5, live ? SHOP_INK : SHOP_DIM);
+  const pk = shopPicked(), live = pk.slot >= 0, hot = live && !!h && h.kind === 'sell';
+  shopPlate(L.sell, 'SELL', live ? itemSellValue(pk.id) : undefined, hot ? SHOP_PLATE_HOT : SHOP_PLATE, live ? SHOP_INK : SHOP_DIM);
 }
 
 // ---- tooltips ------------------------------------------------------------
@@ -439,7 +553,7 @@ function drawShopPotion(f, h) {
 // (js/ui/tooltip.js).
 function tipShop(h) {
   if (!h || typeof h === 'string') return null;
-  if (h.kind === 'pick') return tipItem(h.id, itemCost(player, h.id).gold);
+  if (h.kind === 'pick') return tipItem(h.id, shopBuyState(h.id).n);
   if (h.kind === 'slot') {
     const id = player.items[h.i];
     if (!id) return null;
@@ -447,13 +561,13 @@ function tipShop(h) {
     d.rows.push(['SELLS FOR', itemSellValue(id) + ' GOLD', RES_COLORS.gold]);
     return d;
   }
-  if (h.kind === 'potBuy') return tipItem('potion', BUILD_ITEMS.potion.price);
   return null;
 }
 // one item: its stats, its passive, and what it costs you now
+const SHOP_TIER_WORD = { potion: 'POTION', basic: 'BASIC', epic: 'EPIC', boots: 'BOOTS', legend: 'LEGENDARY' };
 function tipItem(id, cost) {
   const it = BUILD_ITEMS[id];
-  const d = { title: it.name, tcol: itemMetal(id).ink, kind: isPart(id) ? 'PART' : 'ITEM',
+  const d = { title: it.name, tcol: itemMetal(id).ink, kind: SHOP_TIER_WORD[itemTier(id)],
     rows: [], notes: [], icon: itemIcon(id), plate: BAG_WELL, rim: itemMetal(id).rim };
   if (cost !== undefined) d.rows.push(['PRICE', cost + ' GOLD', cost <= player.inv.gold ? RES_COLORS.gold : SHOP_DEAR_INK]);
   for (const s of ITEM_STAT_ORDER) if (s in it.stats) d.rows.push([ITEM_STATS[s].label, ITEM_STATS[s].fmt(it.stats[s]), SHOP_STAT]);
