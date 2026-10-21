@@ -35,8 +35,8 @@ bot is not a downed player, so it never touches the kill count; what it pays is
 
 ## Soldiers: the waves
 
-The `soldiers` banner (js/sim/robots.js). Every `STRUCTS.barracks.waveT` seconds each merchant's
-[barracks](buildings.md) rolls out a column of **soldiers** — a tread-bot chassis under its
+The `soldiers` banner (js/sim/robots.js). On the match's wave beat (`barracksBeat`: `STRUCTS.barracks`
+`first`, 60 s of match clock, then every `waveT`, 30 s) each merchant's [barracks](buildings.md) rolls out a column of **soldiers** — a tread-bot chassis under its
 side's pennant (`drawRobot` stamps `drawPennant` on a `kind: 'soldier'` body, the one thing
 that says this bot is not here to chop) — that marches **its bay's lane** (`b.lane`, from the
 bay's `o.lane`: 0 top, 1 mid, 2 bot) to the rival bird. `makeSoldier(o)` is `makeRobot` with
@@ -160,14 +160,14 @@ pick (without it the pick flips forever between two walled-in trees).
 
 The **bays** (the barracks, [base building](buildings.md)) jump that queue whenever one is due:
 **one per lane**, each just inside that lane's mouth of the hollow (`baseBaySpot`,
-js/sim/base.js), whose waves walk that lane. The first is due `MERCH_BAY_T` (30 s) after the
-landing; `merchNextBay` takes the lanes in `MERCH_BAY_ORDER` (mid, top, bot) and the first with no
+js/sim/base.js), whose waves walk that lane. They are due the moment its stall stands; `merchNextBay` takes the lanes in `MERCH_BAY_ORDER` (mid, top, bot) and the first with no
 bay standing, and `merchBaySite` the nearest 3×2 placement to its spot whose footprint is dry land
 off the road holding nothing the axe cannot take. Each lane's **first** bay is free
-(`b.bayGift`), so all three go up one after another, about 1:00 to 1:40 of match time on seed 42.
+(`b.bayGift`), so all three go up one after another, about 0:28 to 0:46 of match time on seed 42 and risen by
+0:52, before the first wave at 1:00. The merchant walks at `MERCH_SPD` (64 px/s), a step under a hero.
 `merchBayBlocker` hands it every pine and snag on the
 footprint and a `MERCH_BAY_RING` (1) ring round it, and the stumps on the footprint alone, felled
-at `MERCH_BAY_SWING` (0.34 s) through `merchFell` (the axe always leaves a stump everywhere but
+at `MERCH_BAY_SWING` (0.17 s) through `merchFell` (the axe always leaves a stump everywhere but
 the footprint itself). Then `MERCH_BAY_HAMMER` (2.6 s) of hammering from the tile below the door,
 with the merchant wholly off the footprint so the bay never goes up round it, sets the site
 (`createStruct`, nobody pays gold) and stamps its `lane`. A wrecked bay drops out of `b.bays` and

@@ -352,20 +352,31 @@
       }
     }
   };
-  // portrait(cls, look, team): the 48 x 48 model of one hero in one team's
-  // paint, composed on first ask and kept (emptied past PORTRAIT_KEEP, so a
-  // ladder card's look or a repaint never grows it without bound).
+  // portrait(cls, look, team, skinId): the 48 x 48 model of one hero in one
+  // team's paint, composed on first ask and kept (emptied past PORTRAIT_KEEP,
+  // so a ladder card's look or a repaint never grows it without bound). A
+  // named hero with looks of its own (`skins` on its CLASSES row) has no layered
+  // model yet: its portrait is its own standing front in that look (`skinId`,
+  // the free first look when null) at 3x, the body the world draws.
   const PORTRAIT_KEEP = 512;
   const cache = new Map();
   SPR.onTeams(() => cache.clear()); // a repaint (setTeamPal) rebakes every model on its next ask
-  function portrait(cls, look, team) {
-    const key = cls + '|' + team + '|' + [look.sex, look.tone, look.hair, look.hairCol, look.beard, look.face].join(',');
+  function portrait(cls, look, team, skinId) {
+    const own = CLASSES[cls] && CLASSES[cls].skins;
+    const key = cls + '|' + team + '|' + (own ? 'skin:' + (skinId || '') : [look.sex, look.tone, look.hair, look.hairCol, look.beard, look.face].join(','));
     let c = cache.get(key);
     if (c) return c;
     c = document.createElement('canvas');
     c.width = 48; c.height = 48;
     const g = c.getContext('2d');
-    const pal = Object.assign(modelPal(look, team), CLASSES[cls] && CLASSES[cls].paint48);
+    if (own) {
+      g.imageSmoothingEnabled = false;
+      g.drawImage(SPRITES.champLook(cls, look, team, skinId || null).down[0], 0, 0, 48, 48);
+      if (cache.size >= PORTRAIT_KEEP) cache.clear();
+      cache.set(key, c);
+      return c;
+    }
+    const pal = modelPal(look, team);
     stamp(g, BODY[look.sex] || BODY[0], pal);
     stamp(g, HEAD[look.face] || HEAD[0], pal);
     stamp(g, BEARD[look.beard], pal);

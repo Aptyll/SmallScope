@@ -332,6 +332,47 @@ function heroWalk(b) {
     side: [b.side, sideA(b.side), sideB(b.side)],
   };
 }
+// The run and the held run seen side-on, off the hero's own standing side frame
+// rather than the doll's (app/bake-player): the doll's side run is a head and a
+// coat narrower than the hand-drawn body, so a hero shrank the moment it ran left
+// or right. Here the body above the legs is the standing frame itself, bobbed in
+// whole pixels by `bob` (SPR.motion's RUN_BOB / HOLD_BOB: up, the feet leave the snow
+// with it; down, the hips sink over the legs), and the legs - the
+// bottom rows that stand as two apart - scissor fore and aft, the near one over
+// the far one. Frames come out in SPR.motion's box (the 16 px cell at BOX.x, BOX.y).
+const HERO_STRIDE = [2, 1, 0, -1, -2, -1, 0, 1]; // px the near foot is ahead, a frame at a time (the far one behind by as much)
+function heroRunSide(side, bob) {
+  const B = SPR.motion.BOX;
+  const runs = (row) => { const out = []; let x0 = -1; for (let x = 0; x <= 16; x++) { const on = x < 16 && row[x] !== '.'; if (on && x0 < 0) x0 = x; if (!on && x0 >= 0) { out.push([x0, x]); x0 = -1; } } return out; };
+  let legTop = 16;
+  while (legTop > 0 && runs(side[legTop - 1]).length >= 2) legTop--; // the rows that stand as two legs
+  return HERO_STRIDE.map((step, f) => {
+    const g = Array.from({ length: B.h }, () => Array(B.w).fill('.'));
+    const put = (x, y, c) => { if (c !== '.' && y >= 0 && y < B.h && x >= 0 && x < B.w) g[y][x] = c; };
+    for (let y = legTop; y < 16; y++) { // the legs: the far (first) one, then the near over it
+      const r = runs(side[y]), deep = y === legTop && 16 - legTop > 2 ? 0.5 : 1;
+      const legs = [[r[0], -1], [r[r.length - 1], 1]];
+      for (const [[x0, x1], sgn] of legs) for (let x = x0; x < x1; x++) put(B.x + x + Math.round(sgn * step * deep), B.y + y + Math.min(0, bob[f]), side[y][x]); // up: the whole body leaves the snow
+    }
+    for (let y = 0; y < legTop; y++) for (let x = 0; x < 16; x++) put(B.x + x, B.y + y + bob[f], side[y][x]); // the body, over the hips
+    return g.map((r) => r.join(''));
+  });
+}
+// ...and head-on or from behind, for a look whose doll does not match its drawn
+// body (a skin row's `run: 'drawn'`): the standing frame bobbed the same way, one
+// foot lifted and then the other (heroWalk's step) while the stride is out
+function heroRunFront(grid, bob) {
+  const B = SPR.motion.BOX, w = heroWalk({ down: grid, up: grid, side: grid }).down;
+  return HERO_STRIDE.map((step, f) => {
+    const src = step > 0 ? w[1] : step < 0 ? w[2] : w[0];
+    const g = Array.from({ length: B.h }, () => Array(B.w).fill('.'));
+    for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) {
+      const c = src[y][x], yy = B.y + y + (y < 13 ? bob[f] : Math.min(0, bob[f]));
+      if (c !== '.' && yy >= 0 && yy < B.h) g[yy][B.x + x] = c;
+    }
+    return g.map((r) => r.join(''));
+  });
+}
 
 // ------------------------------------------------------------ armatos greatsword
 // The OATH GREATSWORD as he holds it (drawArmSword, js/draw/armatos.js): laid

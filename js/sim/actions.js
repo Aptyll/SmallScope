@@ -805,6 +805,8 @@ function hurtUnit(e, dmg, nx, ny, src, o) {
   if (e instanceof Player && src && src !== e) itemsOnHurt(e, src, dmg, o); // ...and the ones a blow taken answers (THORNS)
   // fire outlives its own blow: whatever the damage type is worth on its own
   if (ty.ignite > 0) igniteUnit(e, ty.ignite, BURN_DPS, src);
+  // ...and a blow that carries its own fire, `burn: [s, hp a second]`, lights it once it lands
+  if (o.burn) igniteUnit(e, o.burn[0], o.burn[1], src);
 }
 
 // ---- the states a unit can be under --------------------------------------
@@ -925,7 +927,8 @@ function markUnit(e, t) {
 // ignition REFRESHES that clock (capped at BURN_MAX) and takes the hotter of
 // the two rates rather than lighting a second fire, so repeated lights set you
 // properly alight instead of banking half a minute of it. Today the one
-// light is the KINDLING item passive (itemsOnHit, js/sim/items.js). Credit rides along
+// light is the KINDLING item passive (itemsOnHit, js/sim/items.js), and a blow
+// that carries `burn` (hurtUnit; IGNIA's keys, js/sim/ignia.js). Credit rides along
 // in `burnBy`, so burning to death is a kill for whoever struck the light.
 // Every kind of unit burns, and every kind wears the flames (drawUnitStates).
 function igniteUnit(e, t, dps, src) {

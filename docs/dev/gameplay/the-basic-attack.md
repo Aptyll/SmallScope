@@ -13,13 +13,13 @@ and items and levels grow it through the hero's stats ([hero stats](hero-stats.m
 | `art` | the weapon's picture: `SPRITES.weaponArt[art]` (its 12 px icon) and `SPRITES.weaponHeld[art]` (a blade at its real length), js/sprites/weapons.js |
 | `cycle` | seconds of renock after a press, before the next draw may start. `attackCycle(p)` scales it by `kit.nock / BOW_NOCK` (anything that shortens `kit.nock` quickens it) and divides by ATTACK SPEED (`asMul`) |
 | `kb` | [knockback](#knockback): the multiplier the blow shoves with |
-| `shot` | a ranged attack: `{ speed, life, col }`, one arrow's full-draw flight and its collar colour |
+| `shot` | a ranged attack: `{ speed, life, col, look }`, one arrow's full-draw flight, its collar colour, and optionally the `look` it is drawn with in flight in place of an arrow (`HERO_SHOTS`, js/draw/heroes.js) |
 | `cut` | a melee attack: `{ reach, half }`, the blade's px at full draw and the radians of sweep either side of the aim ([the cut](#the-cut)) |
 
 Today's rows: the HUNTER's SHORTBOW (a shot, 320 px/s for 0.85 s, `cycle` 55/60 s), the WARRIOR's
 LONGSWORD, ARMATOS's OATH GREATSWORD and FORTIVA's CHAIN GREATSWORD (a cut, 28 px and 1.05 rad,
 `cycle` 30/60 s, `kb` 1.2), and BELLA's EAGLE SPATHA (a quicker, shorter cut: 26 px, 0.95 rad, `cycle` 26/60 s, `kb` 1; each named hero's blade is drawn as its own through `heroBlade`,
-js/draw/heroes.js). A new hero is a new
+js/draw/heroes.js), and IGNIA's CROOK AND LANTERN (a slower ember shot: 260 px/s for 0.85 s, `cycle` 60/60 s, `kb` 0.6, drawn as `look: 'ember'`; her staff is carried, not swung: `staff` on the row, `HERO_STAVES`). A new hero is a new
 `attack` row and nothing else. The ATTACK SPEED stat is read off the same row: `classAs(cls)` is
 one over the full draw plus the renock (js/sim/stats.js).
 

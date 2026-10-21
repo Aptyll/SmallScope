@@ -6,6 +6,6 @@
 | a position's 11 px emblem (the map's square with its lane lit, a pine, a shield) | `POS11`, `posIcon` | `positions` (the positions themselves: `POSITIONS`, player.js) |
 | the headline, the timer bar, the seconds, each side's bans in its corner | `selHeadline`, `selClock`, `selActing`, `drawSelectTop` | `top band` |
 | a seat row: the portrait disc, the position or PICKING..., the hero, the name; your trade mark; both columns and the seconds pointing at your row | `selDiscMask`, `drawSelDisc`, `selSwapRect`, `drawSelSwap`, `drawSeatRow`, `drawSeats` | `seat rows` |
-| your locked hero big: the splash art (or its stand-in), the look's name | `heroSplash`, `selSkinRows`, `selSkinWorn`, `drawSplash` | `splash` |
+| your locked hero big: the splash art (or its stand-in), the look's name | `SPLASH_PICS`, `splashPic`, `heroSplash`, `heroThumb`, `selSkinRows`, `selSkinWorn`, `drawSplash` | `splash` |
 | the skins under the splash, the chevrons | `selSkinCells`, `drawSkinStrip`, `drawSelChevron` | `skin strip` |
 | the match's size and mode bottom right, the confirm plate | `selModeName`, `drawSelMode`, `drawSelPlay` | `foot` |

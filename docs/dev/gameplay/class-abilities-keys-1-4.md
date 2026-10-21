@@ -161,6 +161,26 @@ dashes pass through the small bodies a roll passes (`through` on the `HERO_DASH`
 | 3 | **OUTMANEUVER** | 9/8.5/8/7.5/7 s | refused without a rival body within `OUT_PICK` of the aim and `OUT_RANGE` of her (`slipTarget`, the row's `ok`); she slips through it (`p.dash = 'slip'`) to `OUT_PAST` beyond, dealing `dmg` and marking it for `mark`: her next basic attack on it deals `markDmg` (12/18/24/30/36) + `OUT_BONUS_AD` of her damage more |
 | 4 | **THE FINAL GAMBIT** | 70/60/50 s | calls out a rival hero within `DUEL_RANGE` (`duelTarget`) for `t`: she walks ×`DUEL_MS` toward them. The key again (`recast`, refused past `FLURRY_REACH`) closes in and strikes `FLURRY_N` times `FLURRY_GAP` apart (`bellaStrike`): `FLURRY_DMG`, then a finisher of `dmg` (18/30/42) + `missing` of the life they are missing |
 
+IGNIA, THE FIREMAGE — the first mage: she burns a fight down, slowly, and the snow and the creek
+put her out. Her rules live in **[js/sim/ignia.js](../../../js/sim/ignia.js)** (`IGNIA_AB`, its
+`ignia` banner), her pixels in [js/draw/ignia.js](../../../js/draw/ignia.js), her icons and looks in
+[js/sprites/ignia.js](../../../js/sprites/ignia.js). She is fragile (84 hp, 10 armor) and shoots
+from her CROOK AND LANTERN (her `attack` row: a slow ember, `look: 'ember'`), carried upright
+(`HERO_STAVES`, [hero looks](../sprites.md#hero-looks)). Every fire her keys light is the shared
+burn (`igniteUnit`, through `igniaLight` or a blow's `burn: [s, dps]` in `hurtUnit`) at a rate of
+the rank's `burn` + `IGNIA_BURN_AP` of her ABILITY POWER + `IGNIA_BURN_AD` of her DAMAGE
+(`igniaBurnRate`), and marks the body as hers (`kindleBy`). Burns are slow by design: her blows
+are small, the fire does the work. BRUSHFIRE's line and melted strip are a `HERO_GROUND` row, the
+sparks of WARM HANDS a `HERO_BODY_FX` row; `brushfires` is sim state (`SAVE_ROOTS`, the snapshot):
+
+| key | name | cd | what it does |
+| --- | --- | --- | --- |
+| P | **KINDLING** | — | every `SPREAD_EVERY` steps (`updateKindling`, a `HERO_TICK` row) a body burning on her fire lights each rival within `SPREAD_R` that is not already burning, at its own rate and time left. Water puts it out where it stands, and so does deep snow unless a brushfire has melted it there (`igniaDoused`, then `douseUnit`). Soldiers and beasts burn and spread too. `HERO_PASSIVE.kindling`: `deal`, `tick`, `out` |
+| 1 | **FIREBRAND** | 7/6.5/6/5.5/5 s | a burning stick thrown down a line (`igniaBrand`: a shot with `look: 'brand'`), `BRAND_RANGE` at `BRAND_SPD`; the first rival it hits takes `dmg` and burns `burn` (5/7/9/11/13) a second for `BRAND_BURN_T` |
+| 2 | **BRUSHFIRE** | 12/11.5/11/10.5/10 s | a line of fire `BRUSH_LEN` long, across the aim at most `BRUSH_RANGE` away, for `t`; a rival on it (`brushTouch`) burns `burn` (6/8/10/12/14) a second, refreshed for `BRUSH_BURN_T` while they stand there. The strip it melts lingers `BRUSH_MELT` after (drawn; it also lets her fire burn in deep snow beside it) |
+| 3 | **WARM HANDS** | 14/13/12/11/10 s | for `WARM_T` (`p.warmT`) the next key she casts burns ×`WARM_HOT` (`igniaHeat`, spent by that key), and she walks `walk` (15-35%) faster (`igniaMoveMul`, a `HERO_MOVE` row) |
+| 4 | **WILDFIRE** | 90/75/60 s | a ring `WILD_R` around the aim (at most `WILD_RANGE`): every rival inside not across water (`waterBetween`) takes `dmg` (20/35/50) and burns `burn` (16/24/32) a second for `WILD_BURN_T`; for `t` its flames jump `WILD_JUMP_R` between rivals and ignore the snow (`wildT`), but never across the creek |
+
 Bots play the named heroes through each row's `bot(p, foe, d, clear)` (`abBotKey`, asked by the ladder's
 ability block in js/ai/ai-ladder.js); a hero whose rows carry no `bot` keeps the ladder's old range rules.
 

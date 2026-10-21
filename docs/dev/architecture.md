@@ -53,11 +53,13 @@ order, so the script tags still interleave them:
 | [js/sprites/armatos.js](../../js/sprites/armatos.js) | ~180 | shared scope, no `window.*` export | ARMATOS's 32 px ability and passive icons (`ARM_ICON32`), his looks' 16 px grids and skins table (`ARM_BODY`, `ARM_SKINS`), and his greatsword (`ARM_SWORD`) |
 | [js/sprites/fortiva.js](../../js/sprites/fortiva.js) | ~370 | shared scope, no `window.*` export | FORTIVA's 32 px ability and passive icons (`FORT_ICON32`), her looks' 16 px grids and skins table (`FORT_BODY`, `FORT_SKINS`), and her greatsword (`FORT_SWORD`) |
 | [js/sprites/bella.js](../../js/sprites/bella.js) | ~340 | shared scope, no `window.*` export | BELLA's 32 px ability and passive icons (`BELLA_ICON32`), her looks' 16 px grids and skins table (`BELLA_BODY`, `BELLA_SKINS`), and her spatha (`BELLA_SPATHA`) |
+| [js/sprites/ignia.js](../../js/sprites/ignia.js) | ~310 | shared scope, no `window.*` export | IGNIA's 32 px ability and passive icons (`IGNIA_ICON32`), her looks' 16 px grids and skins table (`IGNIA_BODY`, `IGNIA_SKINS`) |
 | [js/sprites/landmarks.js](../../js/sprites/landmarks.js) | ~55 | → `SPRITES` | the story landmarks: the frozen boat |
 | [js/baked/sfxdata.js](../../js/baked/sfxdata.js) | ~60 | `SFXDATA` | **generated** — the sfx bank as base64 |
 | [js/app/audio.js](../../js/app/audio.js) | ~780 | `SFX` | synth, samples and music under one master dial |
 | [js/baked/logodata.js](../../js/baked/logodata.js) | ~6 | `LOGO_PNG` | **generated** — the title logo as a PNG data URL |
 | [js/baked/notesart.js](../../js/baked/notesart.js) | ~5 | `NOTES_ART` (on `window`) | **generated** — the patch notes' pictures as PNG data URLs |
+| [js/baked/splash.js](../../js/baked/splash.js) | ~12 | `SPLASH_ART` (on `window`) | **generated** — the champ select's splash art and skin thumbnails as PNG data URLs |
 | [js/sim/core.js](../../js/sim/core.js) | ~520 | shared scope, no `window.*` export | the base layer: the numbers with no one owner (grid, view, day cycle, `YIELD`), the seeded rng, `state`/`settings`, the fx/economy helpers |
 | [js/app/director.js](../../js/app/director.js) | ~210 | shared scope, no `window.*` export | director mode for filming: the free camera, the hidden HUD, the 9:16 frame `fitCanvas` asks for, and the canvas recorder; loaded before canvas.js because `fitCanvas()` runs at load |
 | [js/app/canvas.js](../../js/app/canvas.js) | ~270 | shared scope, no `window.*` export | screen + world + light buffers, `fitCanvas`, pixel-exact zoom, the panel layout anchors |
@@ -89,6 +91,7 @@ order, so the script tags still interleave them:
 | [js/sim/armatos.js](../../js/sim/armatos.js) | ~320 | shared scope, no `window.*` export | ARMATOS, the first hero with a passive: his tuning, his four keys (`ARM_AB`, joined into `CLASS_AB`), his passive, the planted standard and how a bot picks his keys |
 | [js/sim/fortiva.js](../../js/sim/fortiva.js) | ~270 | shared scope, no `window.*` export | FORTIVA, the juggernaut: her tuning, her four keys (`FORT_AB`, joined into `CLASS_AB`), her passive UNBROKEN, the lunge and the leap as hero dashes |
 | [js/sim/bella.js](../../js/sim/bella.js) | ~340 | shared scope, no `window.*` export | BELLA, the duelist: her tuning, her four keys (`BELLA_AB`, joined into `CLASS_AB`), her passive CALCULATED STRIKES, the lunge and the slip as hero dashes, the duel and its flurry |
+| [js/sim/ignia.js](../../js/sim/ignia.js) | ~260 | shared scope, no `window.*` export | IGNIA, the firemage: her tuning, her four keys (`IGNIA_AB`, joined into `CLASS_AB`), her passive KINDLING (her fire spreading and doused), the brand, the lines of fire (`brushfires`), the warmth and the wildfire |
 | [js/sim/abilities.js](../../js/sim/abilities.js) | ~1310 | shared scope, no `window.*` export | the class abilities on keys 1-4: the `CLASS_AB` table, casting, the pierce/net/grapple/snow-cover/shield-and-slam/rush/crater/execute sim, the telegraph and landing shapes every side sees, and their draw passes |
 | [js/sim/fog.js](../../js/sim/fog.js) | ~130 | shared scope, no `window.*` export | the fog of war's rule: each side's eyes, sight lines stopped by stone, the woods as brush, and `inSight` (what a side sees, which its bots ask) |
 | [js/ai/ai-skill.js](../../js/ai/ai-skill.js) | ~250 | shared scope, no `window.*` export | how well a bot plays: the difficulty levels and the skill layer, the hands between the ladder's decision and the input it writes |
@@ -121,10 +124,11 @@ order, so the script tags still interleave them:
 | [js/draw/towers.js](../../js/draw/towers.js) | ~110 | shared scope, no `window.*` export | the road tower's pixels: the gun and parapet over the body, the aim line, the bolt and the spent bolt (the thing itself: js/sim/towers.js) |
 | [js/draw/canopy.js](../../js/draw/canopy.js) | ~160 | shared scope, no `window.*` export | the canopy window: the viewed hero's model drawn through a layer (`heroLayerOpen`/`heroLayerClose`, from `drawPlayer`) so a pine or snag covering it opens round it (`canopyOver`, `drawWindowed`, from `render()`) |
 | [js/draw/bodies.js](../../js/draw/bodies.js) | ~710 | shared scope, no `window.*` export | every walking thing's sprite pass: a beast on its clip, a robot, the merchant, and `drawPlayer` with its buff ring, snow cover, burial, ghost and held tool |
-| [js/draw/heroes.js](../../js/draw/heroes.js) | ~30 | shared scope, no `window.*` export | a hero's own blade in its hands (`HERO_BLADES`, `heroBlade`, `heroCarry`) and what it wears on its body (`HERO_BODY_FX`) |
+| [js/draw/heroes.js](../../js/draw/heroes.js) | ~60 | shared scope, no `window.*` export | a hero's own blade in its hands (`HERO_BLADES`, `heroBlade`, `heroCarry`), a staff carried upright (`HERO_STAVES`, `heroStaff`), a shot drawn with its own `look` (`HERO_SHOTS`), and what it wears on its body (`HERO_BODY_FX`) |
 | [js/draw/armatos.js](../../js/draw/armatos.js) | ~120 | shared scope, no `window.*` export | ARMATOS's pixels: his greatsword in his hands, the standard on his back and planted, and his keys' shapes on the snow |
 | [js/draw/fortiva.js](../../js/draw/fortiva.js) | ~90 | shared scope, no `window.*` export | FORTIVA's pixels: her greatsword in her hands, her state on her body, and her keys' shapes on the snow |
 | [js/draw/bella.js](../../js/draw/bella.js) | ~70 | shared scope, no `window.*` export | BELLA's pixels: her precision pips, the parry's blade, the marks and the duel's ring, and her spatha in her hands |
+| [js/draw/ignia.js](../../js/draw/ignia.js) | ~140 | shared scope, no `window.*` export | IGNIA's pixels: the brand and the ember in flight, the lines of fire and their melted strip, the warm hands' sparks, and her crook and lantern |
 | [js/draw/marks.js](../../js/draw/marks.js) | ~200 | shared scope, no `window.*` export | the glyph grammar both maps share: a camp's icon and clock, a soldier's pennant, what a body looks like as a dot |
 | [js/draw/pops.js](../../js/draw/pops.js) | ~70 | shared scope, no `window.*` export | the numbers and coins that pop over a body: the floaters, and the spinning coin a soldier's last hit (gold) or its miss (grey, its own side only) throws up |
 | [js/draw/callouts.js](../../js/draw/callouts.js) | ~110 | shared scope, no `window.*` export | what a callout looks like: the plate over the caller, the ground ping, the minimap pulse |
@@ -414,7 +418,7 @@ bytes both ways ([docs/pvp-architecture.md](../pvp-architecture.md)).
 ## app/
 
 None of the scripts is part of the game, and nothing in `js/` may depend on one having run — except
-`sfxdata.js`, `logodata.js` and `notesart.js`, which three of them write.
+`sfxdata.js`, `logodata.js`, `notesart.js` and `splash.js`, which four of them write.
 
 - **`app/server.js`** — a static server on `http://localhost:8471` with a `POST /shot` sink that
   writes the canvas to `shot.png`, and the **match relay** at `/ws` (`role=host` is given a
@@ -451,6 +455,8 @@ None of the scripts is part of the game, and nothing in `js/` may depend on one 
   (`--probe` prints the key's box without writing).
 - **`app/bake-notes-art.js`** — reads `docs/media/notes/*.png`, writes `js/baked/notesart.js`: the pictures
   a patch note names in its third field, as PNG data URLs (rerun after adding one).
+- **`app/bake-splash.js`** — reads `docs/media/splash/<slot>-<id>.png` (288x160) and `<slot>-<id>-thumb.png` (48x28), writes
+  `js/baked/splash.js`: each hero look's champ select splash and strip thumbnail (rerun after adding one; a wrong size fails).
 - **`app/check-globals.js`** — the shared scope's lint, run before every push (exit 1 on a
   problem; `--list` prints every name it found as JSON). It reads the scripts in `index.html`'s
   order and takes each file's depth-0 declarations (`const`/`let`/`var` with destructuring,
