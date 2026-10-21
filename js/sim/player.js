@@ -213,7 +213,8 @@ const CLASSES = [
     // slower than anyone; slow, telegraphed strikes, one blink, and nothing else
     name: 'AURA', role: 'THE NORTHERN LIGHT', body: 1, passive: 'starlight', // HERO_PASSIVE, js/sim/aura.js
     look: { sex: 1, tone: 0, hair: 2, hairCol: 5, beard: 0, face: 2 },
-    blurb: ['THE LIGHTS HERE SAY DIFFERENT THINGS.', 'STRIKE FROM FURTHER THAN ANYONE. NOTHING HIDES FROM YOUR LIGHT.', 'CAUGHT UP CLOSE, YOU HAVE ONE STEP.'],
+    blurb: ['THE NIGHT IS ON YOUR SIDE.', 'STRIKE FROM FURTHER THAN ANYONE. NOTHING HIDES FROM YOUR LIGHT.', 'CAUGHT UP CLOSE, YOU HAVE ONE STEP.'],
+    story: "SHE READ THE NIGHT SKY FOR THE EMPIRE'S NAVY, AND READ IN IT THAT THE FLEET WOULD SINK. IT DID. THEY DECIDED SHE MUST HAVE ARRANGED IT. THE VALLEY'S NIGHTS ARE CLEAR AND BLUE, AND SHE SAYS THE LIGHTS HERE SAY DIFFERENT THINGS.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
     // a staff's star bolt: a little shorter and slower than the shortbow
     attack: { name: 'STAR RING', art: 'starstaff', cycle: 66 / 60, kb: 0.5, shot: { speed: 270, life: 0.95, col: '#e6f8ff', look: 'starbolt' } },
     base: { hp: 78, dmg: 13, armor: 9, ap: 0, haste: 0, ms: PLAYER_SPEED - 4 },
