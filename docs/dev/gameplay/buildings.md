@@ -35,8 +35,9 @@ and the road tower (3x2). Each has one tier: a gold `cost`, `hp`,
   so nothing can hurt it.
 - **Barracks** (`barracks`): the wave bay. It wears the bay's 3×2 grid under its own overlay
   (`drawBarracksOverlay`: the shutter, the next soldier sliding down the door, the wave clock on
-  the flank in the side's paint, the beacon amber while a column is leaving). Every `waveT` (30 s)
-  it queues a **wave**: `wave` (3) soldiers, one more per `grow` (180 s) it has stood, never more
+  the flank in the side's paint, the beacon amber while a column is leaving). On the match's beat
+  (`barracksBeat`: `first`, 60 s of match clock, then every `waveT`, 30 s, so every lane rolls out
+  together and a rebuilt bay falls into step) it queues a **wave**: `wave` (3) soldiers, one more per `grow` (180 s) it has stood, never more
   than `cap` (8) of its side's soldiers on its **lane** at once, every bay's queue and column on
   that lane counted (`barracksLaneLoad`). The queue leaves the door one every `BARRACKS_ROLL`
   (0.5 s), so a wave reads as a column. Breaking one stalls the waves until the merchant rebuilds
