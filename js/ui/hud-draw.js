@@ -350,12 +350,14 @@ function drawItemCell(i, now, on) {
 // THE PURSE after the items: the coin over the gold, centred, inked '#f5c542'
 // because the one number on the HUD that is money must never read as a count
 // of something carried. A readout, not a button - an item well's rim, but no
-// key, no hover and no refusal.
+// key, no hover and no refusal. Every digit up to 9999 (League's purse): an
+// item is priced in the thousands (BUILD_ITEMS, js/sim/items.js), so 2.6K
+// could not say whether a 2700 buy is there yet.
 function drawGoldCell() {
   const r = goldCellRect();
   ctx.fillStyle = '#3c4048'; ctx.fillRect(r.x, r.y, r.w, r.h);
   ctx.fillStyle = BAG_WELL; ctx.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
-  const t = shortNum(inv.gold), coin = SPRITES.itemGold, k = 2;
+  const t = inv.gold < 10000 ? String(Math.floor(inv.gold)) : shortNum(inv.gold), coin = SPRITES.itemGold, k = 2;
   const cw = coin.width * k, ch = coin.height * k, gap = 4, h = ch + gap + 5;
   const y = r.y + ((r.h - h) >> 1);
   ctx.drawImage(coin, r.x + ((r.w - cw) >> 1), y, cw, ch);

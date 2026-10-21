@@ -363,6 +363,9 @@ const PLAYER_RECORD = {
   feed: 0,                       // deaths since this body's last kill or assist: past FEED_FROM it is worth less (killWorth)
   earned: 0,                     // gold earned this match, spent or not (gainGold): the scoreboard's rank
 };
+// gold every player lands with, League's start: a first part and a potion at the
+// counter before the walk out. Never `earned` (gainGold): nothing paid it.
+const START_GOLD = 500;
 class Player {
   constructor(id, control, team) {
     this.id = id;
@@ -377,7 +380,7 @@ class Player {
     this.look = Object.assign({}, CLASSES[0].look); // the hero's face, set again by every setClass
     this.skins = {};                   // hero slot -> the look worn on that hero (heroSkinOf); a person's, from their profile
     this.spawn = { tx: WORLD >> 1, ty: WORLD >> 1 }; // landing tile once the eagle drops this player (the bot brain's "home")
-    this.inv = { gold: 0 };             // the wallet is currency only
+    this.inv = { gold: START_GOLD };    // the wallet is currency only; a start that buys a first part and a potion
     this.cls = 0;                       // CLASSES index; the lobby sets the local one
     this.skillPts = 1;                  // unspent; level 1 starts with one, each levelUp adds one - spent on ability levels (buyAbilityLv, js/sim/abilities.js)
     this.abLv = [0, 0, 0, 0];           // ability ranks, 0 (LOCKED) ..abLvMax (5, the ultimate 3), a skill point each - like items, NOT cleared by reset(): a death keeps what was bought

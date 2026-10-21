@@ -520,8 +520,8 @@ function tickObjTimers(dt) {
 // the clock. Silent on purpose: no floater,
 // no blip - the strip's purse is the tell. The practice
 // arena has no clock and gets none; the dead and the airborne earn nothing.
-const TRICKLE_GOLD = 1;
-const TRICKLE_T = 4;      // s per coin: 15 gold a minute, ~225 over a fifteen-minute match
+const TRICKLE_GOLD = 8;
+const TRICKLE_T = 4;      // s per pay: 120 gold a minute, League's 2 a second
 function trickle(p, dt) {
   if (p.dead || PRACTICE) return;
   p.trickleT += dt;

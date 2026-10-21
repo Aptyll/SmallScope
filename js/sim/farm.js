@@ -15,8 +15,8 @@
 // a cosmetic of the step, so it is recorded for the screens that do not run
 // it (evPush, js/net/events.js), and it is aged by the sim's tick, the way a
 // damage total is, so a client fades it exactly as the host does.
-const SOLDIER_BOUNTY = 16;     // gold the last hit on a rival soldier pays at the start
-const SOLDIER_BOUNTY_GROW = 1; // ...and the more it pays for every barracks `grow` (the clock that adds a soldier to the wave)
+const SOLDIER_BOUNTY = 160;    // gold the last hit on a rival soldier pays at the start: lanes are the main farm (the `economy` scale, YIELD in js/sim/core.js)
+const SOLDIER_BOUNTY_GROW = 10; // ...and the more it pays for every barracks `grow` (the clock that adds a soldier to the wave)
 const COIN_POP_T = 0.8;        // s a coin pop lives
 const coinPops = [];           // { x, y, miss, team, tick }: miss pops are for `team`'s screens only
 
