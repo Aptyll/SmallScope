@@ -141,7 +141,7 @@ const IGNIA_ICON32 = {
     '................................',
     '................................',
   ],
-  kindling: [ // KINDLING: one flame passing its sparks to two small ones
+  spreadflame: [ // SPREADING FLAME: one flame passing its sparks to two small ones
     '................................',
     '................................',
     '................................',

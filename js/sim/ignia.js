@@ -9,7 +9,7 @@
 // ------------------------------------------------------------ ignia
 
 // ---- tuning --------------------------------------------------------------
-// KINDLING (the passive): a rival burning on her fire passes it to the rival
+// SPREADING FLAME (the passive): a rival burning on her fire passes it to the rival
 // bodies around it, for what is left of its own clock (so a crowd burns as
 // long as the first light, never longer); deep snow and water put her fire out
 const SPREAD_R = 22;            // px from a burning body that the flame reaches
@@ -90,7 +90,7 @@ const IGNIA_AB = [
 
 // ---- the fire she lights -------------------------------------------------------
 // The one way her keys set a body burning: the shared burn, at the key's rate
-// (and her ABILITY POWER's share), marked as hers so KINDLING carries it on.
+// (and her ABILITY POWER's share), marked as hers so SPREADING FLAME carries it on.
 // `wild`: the wildfire's flame, which jumps further and ignores the snow.
 function igniaBurnRate(p, base, hot) { return (base + statOf(p, 'ap') * IGNIA_BURN_AP + statOf(p, 'dmg') * IGNIA_BURN_AD) * (hot || 1); }
 function igniaLight(p, e, t, dps, wild) {
@@ -131,7 +131,7 @@ function igniaDoused(e) {
   return !brushfires.some((b) => brushTouch(b, e.x, e.y, BRUSH_HALF + 4));
 }
 
-// ---- KINDLING ------------------------------------------------------------------
+// ---- SPREADING FLAME ----------------------------------------------------------
 // Every burning body on her fire, every few steps: put out where it stands in
 // the wet, else passing the flame to the rivals it stands by. Called once a
 // step (HERO_TICK), for every body in the world: soldiers and beasts burn too.
@@ -143,7 +143,7 @@ function updateKindling(dt) {
     if (!(e.burnT > 0) || e.kindleBy == null || e.kindleBy < 0 || e.burnBy !== e.kindleBy || !unitAlive(e)) continue;
     if (igniaDoused(e)) { douseUnit(e); e.kindleBy = -1; e.wildT = 0; burst(e.x, unitMidY(e), '#eef4fb', 6, 35, 0.4, true); sfxAt('splash', e.x, e.y); continue; }
     const p = players[e.kindleBy];
-    if (!p || CLASSES[p.cls].passive !== 'kindling') { e.kindleBy = -1; continue; }
+    if (!p || CLASSES[p.cls].passive !== 'spreadflame') { e.kindleBy = -1; continue; }
     const wild = e.wildT > 0;
     for (const q of unitsNear(p, e.x, e.y, wild ? WILD_JUMP_R : SPREAD_R)) {
       if (q === e || unitTeam(q) === p.team || q.burnT > 0) continue; // a body already alight is not lit twice
@@ -223,7 +223,7 @@ function igniaWarm(p) {
   sfxAt('pickup', p.x, p.y);
 }
 // her walk while the warmth waits (HERO_MOVE)
-function igniaMoveMul(p) { return p.warmT > 0 && CLASSES[p.cls].passive === 'kindling' ? abRk(p, 'warm', 'walk') : 1; }
+function igniaMoveMul(p) { return p.warmT > 0 && CLASSES[p.cls].passive === 'spreadflame' ? abRk(p, 'warm', 'walk') : 1; }
 
 // ---- R WILDFIRE -------------------------------------------------------------------
 function wildAt(p) {
@@ -256,7 +256,7 @@ function igniaOut(p) { p.warmT = 0; }
 function igniaWorld(dt) { updateBrushfires(dt); updateKindling(dt); }
 
 // ---- the hooks she registers (js/sim/heroes.js) ------------------------------------
-HERO_PASSIVE.kindling = { deal: igniaDeal, tick: igniaTick, out: igniaOut,
-  name: 'KINDLING', blurb: 'YOUR ABILITIES SET RIVALS BURNING. A BURNING RIVAL PASSES THE FLAME TO RIVALS NEAR THEM. DEEP SNOW AND WATER PUT IT OUT.', icon: IGNIA_ICON32.kindling };
+HERO_PASSIVE.spreadflame = { deal: igniaDeal, tick: igniaTick, out: igniaOut,
+  name: 'SPREADING FLAME', blurb: 'YOUR ABILITIES SET RIVALS BURNING. A BURNING RIVAL PASSES THE FLAME TO RIVALS NEAR THEM. DEEP SNOW AND WATER PUT IT OUT.', icon: IGNIA_ICON32.spreadflame };
 HERO_MOVE.push(igniaMoveMul);
 HERO_TICK.push(igniaWorld);

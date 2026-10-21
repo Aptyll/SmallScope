@@ -191,7 +191,7 @@ const CLASSES = [
     // the fourth named hero and the first mage (js/sim/ignia.js): fire that
     // spreads through a crowd and zones a lane, at the hunter's range or a
     // little short of it; slow damage, not burst, and the least life of anyone
-    name: 'IGNIA', role: 'THE FIREMAGE', body: 1, passive: 'kindling', // HERO_PASSIVE, js/sim/ignia.js
+    name: 'IGNIA', role: 'THE FIREMAGE', body: 1, passive: 'spreadflame', // HERO_PASSIVE, js/sim/ignia.js
     look: { sex: 1, tone: 1, hair: 3, hairCol: 3, beard: 0, face: 2 },
     blurb: ['THE ONLY FIRE FOR MILES.', 'ONE BURNING RIVAL SETS THE NEXT ALIGHT.', 'SNOW AND WATER PUT YOUR FIRE OUT.'],
     story: "SHE KEPT THE ETERNAL FLAME IN THE EMPIRE'S HIGH TEMPLE, AND LET IT GO OUT ONE WINTER SO A VILLAGE COULD KEEP WARM. THEY DID NOT TAKE IT WELL. IN THE VALLEY SHE IS THE ONLY FIRE FOR MILES, AND EVERYONE WANTS TO SIT NEAR HER.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
@@ -584,7 +584,7 @@ class Player {
     this.parryT = 0; this.riposteId = -1;
     this.duelId = -1; this.duelT = 0; this.flurryN = 0; this.flurryT = 0; this.flurryId = -1; this.flurryArm = false;
     // IGNIA (js/sim/ignia.js): WARM HANDS waiting; and on any body, whose fire it is
-    // burning with (KINDLING carries it on) and how long a wildfire's flame lets it jump
+    // burning with (SPREADING FLAME carries it on) and how long a wildfire's flame lets it jump
     this.warmT = 0; this.kindleBy = -1; this.wildT = 0;
     this.hopT = 0;                                 // the net shot's recoil hop, on the body
     this.grapT = 0; this.grapX = 0; this.grapY = 0; // the grapple: reel time left, and the anchor it hauls toward

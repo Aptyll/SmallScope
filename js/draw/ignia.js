@@ -91,7 +91,7 @@ HERO_GROUND.push(drawBrushfires);
 // ---- on her ---------------------------------------------------------------------
 // WARM HANDS waiting: sparks rising off her hands, over the body
 function drawIgniaHands(p, ax, ay, now, front) {
-  if (!front || !(p.warmT > 0) || CLASSES[p.cls].passive !== 'kindling') return;
+  if (!front || !(p.warmT > 0) || CLASSES[p.cls].passive !== 'spreadflame') return;
   for (let k = 0; k < 3; k++) {
     const t = (now * 1.6 + k / 3) % 1;
     const x = ax + (k === 1 ? 3 : 13) + Math.round(Math.sin(now * 5 + k) * 1);
