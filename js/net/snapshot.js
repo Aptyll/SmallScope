@@ -43,7 +43,8 @@ const SNAP_SKIP = new Set(['input', 'ai', 'nav', '_fx', '_fy', '_tx', '_ty', '_t
   'faceT', 'trickleT', 'footT', 'footSide', 'puffT', 'dodgeDustT', 'slideDustT', 'burnTick', 'swingCd',
   'idleT', 'wary', 'thinkT', 'moveT', 'turnT', 'emT', 'spook', 'biteCd', 'alertT', 'dashT', 'dashX', 'dashY', 'fleeT', 'fleeGoal', 'goal',
   'avoidT', 'baySite', 'zipLast', 'pingLog',
-  'hurtLog']); // the blows a body is taking (recapNote): only a death's copy, deathLog, is ever drawn
+  'hurtLog', // the blows a body is taking (recapNote): only a death's copy, deathLog, is ever drawn
+  'position']); // a seat's drafted position (POSITIONS, player.js): the host's bots read it, and the rivals' stay hidden as in the draft
 // the match's own state keys: the clock, the result, the birds. Everything
 // else on `state` is one screen's UI (overlays, the menu, the death view)
 const SNAP_STATE = ['time', 'elapsed', 'day', 'tick', 'darkness', 'wind', 'windDir', 'windT', 'fishT', 'creekGone', 'over', 'end', 'eagleCine', 'story', 'votes', 'voteCd', 'surrendered'];

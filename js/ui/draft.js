@@ -77,24 +77,17 @@ function draftTeamBans(team) {
 }
 
 // ------------------------------------------------------------ draft roles
-// League's five POSITIONS, one per seat on each side, handed out as the
-// draft opens (draftSeatRoles): the people first, each on the one their
-// profile asks for (PROFILE.pos; a guest's rides its hello, NET.pos) when
-// nobody earlier on the side took it, then any free one, the bots last. A
-// seat may move to another position all through the draft (draftSwapRole):
-// a bot holding it trades, a person keeps theirs. A hero's positions are its
-// CLASSES entry's `pos`; the grid filters by them and a bot picks for its
-// own. Your side's positions are yours to see, the rivals' never.
-const POSITIONS = [
-  { id: 'top', name: 'TOP' },
-  { id: 'jungle', name: 'JUNGLE' },
-  { id: 'mid', name: 'MID' },
-  { id: 'bot', name: 'BOT' },
-  { id: 'support', name: 'SUPPORT' },
-];
+// League's five POSITIONS (js/sim/player.js), one per seat on each side,
+// handed out as the draft opens (draftSeatRoles): the people first, each on
+// the one their profile asks for (PROFILE.pos; a guest's rides its hello,
+// NET.pos) when nobody earlier on the side took it, then any free one, the
+// bots last. A seat may move to another position all through the draft
+// (draftSwapRole): a bot holding it trades, a person keeps theirs. A hero
+// has no position of its own: any hero plays any of them, and the seat's
+// goes into the match (draftReveal: p.position), where a bot plays it
+// (js/ai/ai-farm.js). Your side's positions are yours to see, the rivals' never.
 const DRAFT_ACTS = ['hover', 'lock', 'role', 'skin']; // what a guest's `draft` press may be
 function posAsk(p) { const r = p === player ? PROFILE.pos() : NET.pos[p.id]; return r >= 0 ? r : -1; }
-function heroPlays(h, r) { return r < 0 || !!(CLASSES[h] && CLASSES[h].pos.includes(POSITIONS[r].id)); }
 function draftSeatRoles() {
   const role = players.map(() => -1);
   for (const team of [0, 1]) {
@@ -106,16 +99,13 @@ function draftSeatRoles() {
   return role;
 }
 // the host's: slot moves to position r, trading with a bot of its side that
-// holds it (which picks again for its new one, if it has picked)
+// holds it (which keeps its hero: any hero plays any position)
 function draftSwapRole(slot, r) {
   const D = DRAFT, p = players[slot];
   if (!p || !(r >= 0 && r < POSITIONS.length) || D.role[slot] === r) return false;
   const q = players.find((o) => o.team === p.team && o !== p && D.role[o.id] === r);
   if (q && isHuman(q)) return false;
-  if (q) {
-    D.role[q.id] = D.role[slot];
-    if (D.phase === 'pick') { D.lock[q.id] = D.hover[q.id] = -1; D.lock[q.id] = D.hover[q.id] = draftBotPick(q); }
-  }
+  if (q) D.role[q.id] = D.role[slot];
   D.role[slot] = r;
   draftSend();
   return true;
@@ -135,8 +125,7 @@ function draftBotBan(p) {
   return best.length ? best[Math.floor(Math.random() * best.length)] : -1;
 }
 // A bot picks a hero its side does not hold yet - a person's point counts as
-// theirs - that plays its position, leaning to the shape the side lacks
-// (about DRAFT_RANGED at range)
+// theirs - leaning to the shape the side lacks (about DRAFT_RANGED at range)
 function draftBotPick(p) {
   const mates = draftMates(p);
   const held = (q) => DRAFT.lock[q.id] >= 0 ? DRAFT.lock[q.id] : isHuman(q) ? DRAFT.hover[q.id] : -1;
@@ -145,7 +134,7 @@ function draftBotPick(p) {
   let best = [], low = Infinity;
   for (let h = 0; h < CLASSES.length; h++) {
     if (DRAFT.banned.includes(h)) continue;
-    const s = mates.filter((q) => held(q) === h).length * 4 + (heroPlays(h, DRAFT.role[p.id]) ? 0 : 2) + (heroRanged(h) === want ? 0 : 1);
+    const s = mates.filter((q) => held(q) === h).length * 4 + (heroRanged(h) === want ? 0 : 1);
     if (s < low) { low = s; best = [h]; } else if (s === low) best.push(h);
   }
   return best.length ? best[Math.floor(Math.random() * best.length)] : 0;
@@ -203,7 +192,7 @@ function draftReveal() {
     if (own) draftYield(p, h);
   }
   D.phase = 'done';
-  for (const p of players) setClass(p, D.lock[p.id]);
+  for (const p of players) { setClass(p, D.lock[p.id]); p.position = D.role[p.id]; } // the position goes into the match: a bot plays it (aiPosJob, js/ai/ai-farm.js)
   draftSend();
   netHostRoster();
   draftCount();
