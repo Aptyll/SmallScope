@@ -21,7 +21,7 @@ const STRUCTS = {
   // side is paid `pay` every `period` s; its stroke runs off o.payT against
   // `period` (pumpFrame). Nothing hurts it, so its hp and cost go unread.
   generator: { name: 'GOLD PUMP', w: 4, h: 2, mm: mmPump, map: chPump, tiers: [
-    { cost: { gold: 60 },  hp: 160, buildT: 20, pay: 30, period: 10 },
+    { cost: { gold: 60 },  hp: 160, buildT: 20, pay: 20, period: 10 },
   ]},
   // THE BARRACKS: the wave bays each merchant raises in the back woods
   // inside the lane mouths, all three straight after its stall and a rebuild

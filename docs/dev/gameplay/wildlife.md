@@ -46,8 +46,8 @@ the early game is as tough as the table when someone finally pulls it. What grow
 +2; a level-6 pack is 45 hp a wolf), and a camp monster's bite (`MONSTER.lvBite`) — the wolves' numbers are in
 [their table](#camp-monsters-neutral-until-hit).
 **The kill pays for it**: `animalDies` grows the `YIELD` payout by `ANIMAL_LV_GOLD` (a tenth)
-a level, rounded, before the HUNTSMAN bonus is taken off it — a level-6 rabbit is 150 gold, a
-level-6 wolf 240, and a level-12 beast a little over twice its level-1 self, about what its hp
+a level, rounded, before the HUNTSMAN bonus is taken off it — a level-6 rabbit is 105 gold, a
+level-6 wolf 165, and a level-12 beast a little over twice its level-1 self, about what its hp
 grew by. A kind with an `xp` in `YIELD` (deer, wolf, both bears) is also worth that much XP,
 grown `ANIMAL_LV_XP` (the same tenth) a level and shared by the hunter's side standing near
 (`shareXp`, [Hero levels](../multiplayer.md#hero-levels)); a rabbit is worth no XP.
@@ -268,9 +268,9 @@ still load. All three run
 
 | Kind | hp (+ a level) | bite (+ a level) | reach / cd / spd | body | kill |
 | --- | --- | --- | --- | --- | --- |
-| wolf | 30 (+3) | 9 (+1) | 13 px / 1 s / 96 | r 4.5, mass 2, a roll passes through | `YIELD.wolf` 160, a FARM |
-| alpha (black bear) | 640 (+50) | 22 (+3) | 44 px / 1.4 s / 100 | r 18, mass 5, a big body a roll **tackles** | `YIELD.alpha` 900, `EPIC_TEAM_GOLD` (400) to every teammate on the ground, the BLACK BUFF for the whole team, a feed line |
-| dire (brown bear) | 640 (+50) | 22 (+3) | 44 px / 1.4 s / 100 | r 18, mass 5, a big body a roll **tackles** | `YIELD.dire` 900, `EPIC_TEAM_GOLD` (400) to every teammate on the ground, the BROWN BUFF for the whole team, a feed line |
+| wolf | 30 (+3) | 9 (+1) | 13 px / 1 s / 96 | r 4.5, mass 2, a roll passes through | `YIELD.wolf` 110, a FARM |
+| alpha (black bear) | 640 (+50) | 22 (+3) | 44 px / 1.4 s / 100 | r 18, mass 5, a big body a roll **tackles** | `YIELD.alpha` 630, `EPIC_TEAM_GOLD` (280) to every teammate on the ground, the BLACK BUFF for the whole team, a feed line |
+| dire (brown bear) | 640 (+50) | 22 (+3) | 44 px / 1.4 s / 100 | r 18, mass 5, a big body a roll **tackles** | `YIELD.dire` 630, `EPIC_TEAM_GOLD` (280) to every teammate on the ground, the BROWN BUFF for the whole team, a feed line |
 
 The two bears are the two midline camps' kinds (`teamPay` in their `MONSTER` rows), and
 [the creek](../world.md#the-creek) bends so each side owns one: they are one fight in two coats,

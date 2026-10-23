@@ -37,7 +37,7 @@ const FISH_SPAWN_T = 11;   // seconds between new fish while the shoal is health
 // START_GOLD (js/sim/player.js), a soldier's last hit (SOLDIER_BOUNTY,
 // js/sim/farm.js), a takedown (KILL_SOLDIERS soldiers' worth) and a held pump.
 // The scale is League's: a finished item is ~2600-3400 (BUILD_ITEMS,
-// js/sim/items.js), and a laner who lands two in three last hits holds one at about 4:05.
+// js/sim/items.js), and a laner who lands two in three last hits holds one at about 5:00.
 // A beast's `xp` is the one thing here that is not gold: what its death is worth
 // to the hunter's side standing near it (animalDies, js/sim/wildlife.js). The works pay no XP. The per-swing rows are 0 -
 // a swing is work, the fell is the pay - because a per-swing coin on a one-second
@@ -47,14 +47,14 @@ const YIELD = {
   // (the `rare` roll, TREE_RARE_CHANCE in js/sim/world.js) holds a little gold, so
   // chaining pines nonstop earns about a third of one lane's soldier last hits.
   treeHit: 0,   treeFall: 0,            // 3 hp tree (TREE_HP, js/sim/world.js): the fell itself pays nothing...
-  treeRare: 20,                         // ...and a gold pine pays this on the fell
-  deadTreeHit: 0, deadTreeFall: 10,     // 3 hp snag  -> 10 gold, the rookery's cover; leaves a stump
-  rabbit: { coins: 2, each: 50 },       // 100 gold, but it bolts
-  deer:   { coins: 3, each: 60, xp: 40 }, // 180 gold, the big mobile target
-  wolf:   { coins: 2, each: 80, xp: 15 }, // 160 gold, a den's four (640): the jungle's farm, a soldier's last hit apiece, and it bites back once woken
-  alpha:  { coins: 6, each: 150, xp: 150 }, // the black bear's pay, the brown bear's match (the two are one side's each and pay the same)
-  dire:   { coins: 6, each: 150, xp: 150 }, // 900 gold to the killer, a midline camp's one - and EPIC_TEAM_GOLD to every teammate besides
-  bird:   { coins: 2, each: 40 },       // 80 gold, and the hardest shot in the game (dormant: nothing spawns a bird now)
+  treeRare: 14,                         // ...and a gold pine pays this on the fell
+  deadTreeHit: 0, deadTreeFall: 7,      // 3 hp snag  -> 7 gold, the rookery's cover; leaves a stump
+  rabbit: { coins: 2, each: 35 },       // 70 gold, but it bolts
+  deer:   { coins: 3, each: 40, xp: 40 }, // 120 gold, the big mobile target
+  wolf:   { coins: 2, each: 55, xp: 15 }, // 110 gold, a den's four (440): the jungle's farm, a soldier's last hit apiece, and it bites back once woken
+  alpha:  { coins: 6, each: 105, xp: 150 }, // the black bear's pay, the brown bear's match (the two are one side's each and pay the same)
+  dire:   { coins: 6, each: 105, xp: 150 }, // 630 gold to the killer, a midline camp's one - and EPIC_TEAM_GOLD to every teammate besides
+  bird:   { coins: 2, each: 28 },       // 56 gold, and the hardest shot in the game (dormant: nothing spawns a bird now)
 };
 
 // ------------------------------------------------------------ rng

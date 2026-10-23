@@ -896,7 +896,7 @@ const CAMP_SWITCH = TILE;  // px closer another player must be before an awake m
 const CAMP_BUFF_EPIC_T = 120;
 const CAMP_BUFF_DMG = 1.25;
 const CAMP_BUFF_SPD = 1.15;
-const EPIC_TEAM_GOLD = 400;
+const EPIC_TEAM_GOLD = 280;
 // a fresh grant only extends what is left, and the latest bear is the one worn
 function campBuff(p, t, kind) { if (p && p.active) { p.buffT = Math.max(p.buffT || 0, t); p.buffKind = kind || p.buffKind || 'dire'; } }
 const BIRD_FLUSH = 34;     // px: a player this close puts the whole rookery up
