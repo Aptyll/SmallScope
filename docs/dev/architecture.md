@@ -397,7 +397,8 @@ to a Release; `npm run steam:stage` is steam-stage.js: that build unzipped into 
 SDK's `tools/ContentBuilder/content/` with `Softfall.exe` at the root and no steam_appid.txt,
 for the SteamPipe upload Noah runs by hand). `main.js` opens one `BrowserWindow` on the same
 `index.html` a browser opens - `backgroundThrottling` off, so a host keeps stepping behind another
-window - initialises Steam on the App ID it resolves in this order: the `SteamAppId`/`SteamGameId`
+window - fullscreen from launch (F11 or Alt+Enter toggles a 1280x720 window; `--windowed`
+starts in it), initialises Steam on the App ID it resolves in this order: the `SteamAppId`/`SteamGameId`
 environment variable (a build Steam launched), else `steam_appid.txt` beside main.js (Softfall's
 own, 5244550, committed; the build copies it beside the exe), else Valve's Spacewar (480) - and
 answers the bridge's IPC: lobbies (create / join / leave / list / data / invite), packets

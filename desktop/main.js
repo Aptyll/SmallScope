@@ -9,6 +9,7 @@
 //   npm start -- --join=LOBBYID    join one (the seed comes from the lobby)
 //   npm start -- --seed=N          pin the world, as ?seed=N does
 //   npm start -- --transport=relay the relay's rooms instead of Steam's lobbies (the default while Steam is up)
+//   npm start -- --windowed        a 1280x720 window instead of fullscreen
 //
 // APP_ID: the SteamAppId Steam puts in the environment of a build it launches,
 // else steam_appid.txt beside this file (Softfall's own, 5244550, committed -
@@ -56,7 +57,9 @@ const emit = (ev) => { if (win && !win.isDestroyed()) win.webContents.send('stea
 
 function createWindow() {
   win = new BrowserWindow({
-    width: 1280, height: 720, backgroundColor: '#0f1632', title: 'Softfall',
+    // a game opens fullscreen, as a click on PLAY in Steam expects; F11 or
+    // Alt+Enter toggles it, and leaving it gives the 1280x720 window
+    width: 1280, height: 720, fullscreen: !args.windowed, backgroundColor: '#0f1632', title: 'Softfall',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true, nodeIntegration: false,
@@ -64,6 +67,10 @@ function createWindow() {
     },
   });
   win.setMenuBarVisibility(false);
+  win.webContents.on('before-input-event', (e, input) => {
+    if (input.type !== 'keyDown' || input.isAutoRepeat) return;
+    if (input.key === 'F11' || (input.key === 'Enter' && input.alt)) { e.preventDefault(); win.setFullScreen(!win.isFullScreen()); }
+  });
   // a window the page opens (F6, the Bot Lab) is this one's child, and the
   // app goes with this one: closing the game quits it (and Steam's "playing")
   // whatever else is still open. A web page (the title's KITCHEN tab) opens
