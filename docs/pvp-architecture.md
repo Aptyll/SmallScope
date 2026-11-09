@@ -488,9 +488,10 @@ The same screens and the same protocol ride either transport; only the list and 
    a page on the wrong one is refused. The
    leader's LEAVE is a rematch back to the party (`rematch`, which a guest on the field follows at once).
 10. **Matchmaking** (js/ui/matchmaking.js). QUICKPLAY and RANKED's FIND MATCH sets `NET.seek`,
-   lists the room with `seek: mode` and reads the list. Of the parties looking in one mode, the
-   lowest code hosts: it waits `MATCH_WAIT` (8 s, plus `MATCH_HOLD` while a higher one is still
-   listed); every other party crosses to the lowest it sees (`seekCross`): the leader saves its
+   lists the room with `seek: mode` and `hs`, how well its leader's machine hosts (`seekPower`: a
+   fixed load through `snapEncode`, timed once a page at the press, ~19% per step), and reads the list.
+   Of the parties looking in one mode, the one with the highest `hs` hosts, the lowest code among equals: it waits `MATCH_WAIT` (8 s, plus `MATCH_HOLD` while one it hosts over is still
+   listed); every other party crosses to the one it sees hosting over all (`seekHosts`, `seekCross`): the leader saves its
    party (`sessionStorage` `softfall.home`: code, mode, guests' slots), sends `cross`, and every
    page of it reloads as `?seed=S&join=ROOM&back=1&party=CODE&pn=N` (`CROSS`). The host
    seats the first crossing party's hellos on its rival side (`crossAdmit`) and refuses any other
