@@ -46,7 +46,6 @@ const PING_CALLS = {
   danger: { word: () => 'DANGER',    icon: 'danger', ink: '#ff9a4d', ping: true, t: PING_T },
   defend: { word: () => 'DEFEND',    icon: 'defend', ink: '#b9a3ff', ping: true, t: PING_T },
 };
-const PING_KINDS = Object.keys(PING_CALLS);
 
 // may p ping now? Two rules against spam: PING_GAP between two, and no more
 // than PING_BURST inside PING_WINDOW. p.pingLog holds its recent ping times.

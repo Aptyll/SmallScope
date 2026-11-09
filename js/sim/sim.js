@@ -249,7 +249,6 @@ function update(dt) {
   }
 
   state.shake = Math.max(0, state.shake - dt * 12);
-  state.msgT = Math.max(0, state.msgT - dt);
 
   updateFx(dt);
 }

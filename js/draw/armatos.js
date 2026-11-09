@@ -5,7 +5,7 @@
 // standard planted as THE OLD GUARD with its rally ring, and the shapes his
 // keys put on the snow while they wind up and where they land.
 
-const STD_POLE = '#a8794a', STD_POLE_D = '#6e4a28', STD_GOLD = '#f2cc6a', STD_GOLD_D = '#b98a2e';
+const STD_POLE = '#a8794a', STD_GOLD = '#f2cc6a', STD_GOLD_D = '#b98a2e';
 const STD_INK = '#141a2c';
 
 // the cloth: 4 x 5 off the pole's head, torn up the bottom, `dir` +1 flying

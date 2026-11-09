@@ -911,7 +911,7 @@ function pkIceTile(i) {
   ground[i] = 1;
 }
 
-// the boot carve: plan and apply in the same breath (repaint is renderGround's
+// the boot carve: plan and apply in the same breath (repaint is the ground bake's
 // job at boot, so none here)
 function pkCarve(path, rad) {
   pkTiles = pkPlanCarve(path, rad);
