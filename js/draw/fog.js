@@ -85,7 +85,7 @@ function fogShown(u, now) {
   if (u.fogHid) return false; // a client: the host said this body is out of the side's sight, and what is held of it is stale
   if (fogTeam < 0 || u.team === fogTeam || u.markT > 0) return true;
   let v = fogShownMap.get(u);
-  if (v === undefined) { v = fogMargin(u.x, u.y) >= 0 && !coverHide(fogEyesDraw, u.x, u.y); fogShownMap.set(u, v); }
+  if (v === undefined) { v = fogMargin(u.x, u.y) >= 0 && !coverHide(fogEyesDraw, u.x, u.y, u); fogShownMap.set(u, v); }
   return v;
 }
 

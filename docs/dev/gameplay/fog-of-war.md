@@ -25,7 +25,8 @@ js/draw/fog.js (the picture).
   until one of that side's heroes or soldiers stands within `FOG_BRUSH` px (`woodsHide`).
 - **Deep snow is brush too**: a body in a patch (`brushOf`) is hidden from a side until one of
   its heroes or soldiers stands in that patch or within `FOG_BRUSH_RIM` tiles of its rim
-  (`brushHide`). `coverHide` asks both; `sightAt` and `fogShown` ask it
+  (`brushHide`). `coverHide` asks both, and for a body also the cover a hero's kit makes
+  (`HERO_COVER`: NIX in her snow cloud, `nixCover`); `sightAt` and `fogShown` ask it
   ([deep snow](deep-snow.md)).
 - **The falcon's mark sees through it**, as it sees through cover.
 - **Where it is up** (`fogUp`): a match on the ground. Never the practice arena, the drop's flight

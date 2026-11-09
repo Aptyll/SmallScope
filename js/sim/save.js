@@ -55,6 +55,7 @@ const SAVE_ROOTS = [
   ['lucernaHooks', ...saveArr(lucernaHooks)], ['lucernaLanterns', ...saveArr(lucernaLanterns)], ['lucernaCircles', ...saveArr(lucernaCircles)], // LUCERNA's crooks flying, lanterns lying, rings of light (js/sim/lucerna.js)
   ['bucinaEchoes', ...saveArr(bucinaEchoes)], ['bucinaCalls', ...saveArr(bucinaCalls)], // BUCINA's echoes in flight and horn calls (js/sim/bucina.js)
   ['hiemsGlazes', ...saveArr(hiemsGlazes)], ['hiemsStorms', ...saveArr(hiemsStorms)], // HIEMS's ice and blizzards (js/sim/hiems.js)
+  ['nixShards', ...saveArr(nixShards)], ['nixClouds', ...saveArr(nixClouds)], // NIX's shards in flight and clouds on the ground (js/sim/nix.js)
   ['wordPops', ...saveArr(wordPops)], ['coinPops', ...saveArr(coinPops)], ['ptargets', ...saveArr(ptargets)], ['slashes', ...saveArr(slashes)],
   ['shed', () => [shedWait, shedLive], (v) => { saveArr(shedWait)[1](v[0]); shedLive = v[1]; }],
   ['iceBreaks', ...saveArr(iceBreaks)], // the breaks in their own shape (js/sim/icebreak.js); their pixels rebuild off them
