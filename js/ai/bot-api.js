@@ -17,7 +17,7 @@
 // realm of its own, sealed (BOT_SEAL): no game globals, no way out.
 // A bot can never do what a hand cannot: the act IS the input struct, the sim
 // re-validates every order, and the hands are the ladder's (skillHands).
-const BOT_API = 4;          // the message shape's version; a rename bumps it (4: food -> potions, eatBerry/eatFish -> useItem)
+const BOT_API = 5;          // the message shape's version; a rename bumps it (4: food -> potions, eatBerry/eatFish -> useItem; 5: a gold pump's struct type 'generator' -> 'pump')
 const BOT_THINK = 6;        // ticks between thinks: 10 a second at TICK_DT
 const BOT_OBS_R = 24 * TILE; // px: how far round its side a bot sees (the minimap's default reach, MM_R tiles)
 const BOT_SAY_MAX = 256;    // bytes of JSON a `say` may carry to the side

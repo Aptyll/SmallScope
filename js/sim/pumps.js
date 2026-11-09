@@ -38,8 +38,8 @@ function pumpRingPx() { return PUMP_R * TILE; }
 // road or a camp), holding nothing the lane would not fell; its centre keeps
 // PUMP_ROAD off every road; and `stand` of its ring is ground a hero can stand on
 function pumpSpotOk(ax, ay, stand) {
-  const w = structW('generator'), h = structH('generator');
-  for (const [x, y] of footprint('generator', ax, ay)) {
+  const w = structW('pump'), h = structH('pump');
+  for (const [x, y] of footprint('pump', ax, ay)) {
     if (!inWorld(x, y) || waterAt(x, y) || cisternTouches(x, y)) return false;
     if (ground[idx(x, y)] !== 0 || roadDist(x, y, true) < 1) return false;
     const o = objects[idx(x, y)];
@@ -62,11 +62,11 @@ function pumpSpotOk(ax, ay, stand) {
 }
 // the anchor whose footprint is the point mirror of (ax, ay)'s: the map is
 // laid point-symmetric about its middle, tile (x, y) to (W-1-x, W-1-y)
-function pumpMirror(ax, ay) { return [WORLD - structW('generator') - ax, WORLD - structH('generator') - ay]; }
+function pumpMirror(ax, ay) { return [WORLD - structW('pump') - ax, WORLD - structH('pump') - ay]; }
 // the anchors within `reach` tiles of a lane's middle, nearest first (ties broken by a
 // fixed order, so a seed always picks the same spot)
 function pumpSeek(lane, reach) {
-  const m = pumpLaneMid(lane), w = structW('generator'), h = structH('generator'), offs = [];
+  const m = pumpLaneMid(lane), w = structW('pump'), h = structH('pump'), offs = [];
   for (let dy = -reach; dy <= reach; dy++) for (let dx = -reach; dx <= reach; dx++) if (dx * dx + dy * dy <= reach * reach) offs.push([dx, dy]);
   offs.sort((a, b) => a[0] * a[0] + a[1] * a[1] - b[0] * b[0] - b[1] * b[1] || a[1] - b[1] || a[0] - b[0]);
   return offs.map(([dx, dy]) => [Math.round(m.tx - w / 2) + dx, Math.round(m.ty - h / 2) + dy]);
@@ -89,7 +89,7 @@ function placePumps() {
   spots.forEach((s, i) => { if (s) pumpStand(s[0], s[1], i === 0 ? 0 : 2); });
 }
 function pumpStand(ax, ay, lane) {
-  const w = structW('generator'), h = structH('generator');
+  const w = structW('pump'), h = structH('pump');
   // the footprint and its edge, and every tile of the ring, give way
   for (let y = ay - PUMP_CLEAR; y < ay + h + PUMP_CLEAR + 1; y++) for (let x = ax - PUMP_CLEAR; x < ax + w + PUMP_CLEAR; x++) {
     if (inWorld(x, y) && objects[idx(x, y)] && laneFells(objects[idx(x, y)])) objects[idx(x, y)] = null;
@@ -98,7 +98,7 @@ function pumpStand(ax, ay, lane) {
   for (let y = Math.floor(cy) - r; y <= Math.floor(cy) + r; y++) for (let x = Math.floor(cx) - r; x <= Math.floor(cx) + r; x++) {
     if (inWorld(x, y) && Math.hypot(x + 0.5 - cx, y + 0.5 - cy) <= PUMP_R && objects[idx(x, y)] && laneFells(objects[idx(x, y)])) objects[idx(x, y)] = null;
   }
-  const o = createStruct(ax, ay, 'generator', 0, { id: -1, team: undefined }, false);
+  const o = createStruct(ax, ay, 'pump', { id: -1, team: undefined }, false);
   o.lane = lane;
   return o;
 }
@@ -115,7 +115,7 @@ function pumpCount(o) {
 
 // one step of a pump (updateStructures): the ring, then the pay
 function updatePump(o, dt) {
-  const t = STRUCTS.generator.tiers[o.tier];
+  const t = STRUCTS.pump;
   const n = pumpCount(o);
   const side = n[0] && !n[1] ? 0 : n[1] && !n[0] ? 1 : -1;
   const step = dt / PUMP_CAP_T;

@@ -187,7 +187,7 @@ function isSolidTile(tx, ty, e, swept) {
   if (heroSolid(tx, ty, e)) return true; // a wall a hero's kit lays for a while (HERO_SOLID, js/sim/heroes.js)
   const o = objects[idx(tx, ty)];
   if (!o) return false;
-  // Two tables, no list: any STRUCTS entry (tower/barracks/generator/...)
+  // Two tables, no list: any STRUCTS entry (tower/barracks/pump)
   // is solid for free, and everything else answers from its OBJECTS
   // entry - so neither a new building nor a new kind of scenery ever needs
   // this function touched.

@@ -9,9 +9,13 @@ building (the T build list, walls, gates, turrets, bot bays and worker bots, and
 wheel) was cut in 0.525, and the fish net with food in 0.538.
 
 All the data lives in the `STRUCTS` table ([structures.js](../../../js/sim/structures.js)): the
-gold pump (`generator`, 4x2), the barracks (3x2, wearing the bay's grid through `art: 'spawner'`)
-and the road tower (3x2). Each has one tier: a gold `cost`, `hp`,
-`buildT` and its per-type stats. The cost is only what a wrecker is paid half of (`wreckPay`).
+gold pump (`pump`, 4x2), the barracks (3x2, wearing the bay's grid through `art: 'spawner'`)
+and the road tower (3x2). Each entry is flat: a gold `cost` (none on the pump), `hp`, `buildT`
+and its own stats. The cost is only what a wrecker is paid half of (`wreckPay`). What a type
+does is its entry's hooks, so the building sim never asks a type's name: `init(o)` (its state,
+from `createStruct`), `built(o)` (a site finished), `tick(o, dt)` (each tick it stands,
+`updateStructures`), and for its draw `sprite(o)`, `frame(o)` and `over(o, x, y, now)`
+(`structSprite`, `drawStructObj`).
 
 - **One constructor.** `createStruct(tx, ty, type, tier, p, building)` drops the anchor object
   through `placeObj`, stamped with `owner`/`team`, lays the `part` fillers over the rest of the
@@ -31,7 +35,7 @@ and the road tower (3x2). Each has one tier: a gold `cost`, `hp`,
   along the roofline and shakes. A yellow progress bar renders over the roof of every site
   (`drawBuildBars`). A big building y-sorts by the bottom of its footprint and sits its snow skirt
   on that edge.
-- **Gold pump** (`generator`): the map's objective, [below](#the-gold-pumps). It is nobody's,
+- **Gold pump** (`pump`): the map's objective, [below](#the-gold-pumps). It is nobody's,
   so nothing can hurt it.
 - **Barracks** (`barracks`): the wave bay. It wears the bay's 3×2 grid under its own overlay
   (`drawBarracksOverlay`: the shutter, the next soldier sliding down the door, the wave clock on
@@ -98,7 +102,7 @@ nothing hurts it, and `ownsStruct` is true, so E never swings at it.
   ring loses a part-fill over `PUMP_FADE_T` (10 s). A full fill flips the pump (`pumpFlip`: the
   jolt, a `place` cue, a ring of sparks in the side's mark). Holding needs nobody in the ring.
 - **The pay.** While a side holds it, every `period` (10 s) each active hero on that side, alive
-  or not, wherever they are, gets `tiers[0].pay` (20) through `gainGold` and a coin cue; one plain
+  or not, wherever they are, gets `pay` (20) through `gainGold` and a coin cue; one plain
   20 rises over the barrel as the drawn coin hops out (`drawPumpCoin`, only after a pay). It
   strokes only while held: the frame runs off `o.payT` (`pumpFrame`).
 - **The colour is the whole read** (no text). The pump wears its holder's team paint, or a grey

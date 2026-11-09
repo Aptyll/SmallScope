@@ -107,7 +107,7 @@ function towerStand(team, at) {
     for (let y = ay - TOWER_CLEAR; y < ay + h + TOWER_CLEAR + 1; y++) for (let x = ax - TOWER_CLEAR; x < ax + w + TOWER_CLEAR; x++) {
       if (inWorld(x, y) && objects[idx(x, y)] && laneFells(objects[idx(x, y)])) objects[idx(x, y)] = null;
     }
-    return createStruct(ax, ay, 'tower', 0, { id: -1, team }, false);
+    return createStruct(ax, ay, 'tower', { id: -1, team }, false);
   }
   return null;
 }
