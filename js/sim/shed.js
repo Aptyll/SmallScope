@@ -36,8 +36,9 @@ function shedPuff(o, n) {
   burst(x, y, SHED_COL, n, SHED_SPD, SHED_LIFE, 24, state.windDir * (4 + 14 * state.wind));
 }
 
-// A blow to a standing pine: the axe (chopTree, js/sim/actions.js) or a shot that
-// stops in it (the arrow loop's wall branch, js/sim/sim.js). Always sheds, a
+// A blow to a standing pine: the axe (chopTree, js/sim/actions.js), a shot that
+// stops in it (the arrow loop's wall branch, js/sim/sim.js) or BUCINA's horn call
+// (bucinaPines, js/sim/bucina.js). Always sheds, a
 // little more than a gust does, and resets the tree's rest.
 function shedHit(o) {
   if (!o || o.type !== 'tree') return;

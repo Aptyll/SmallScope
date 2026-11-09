@@ -816,7 +816,7 @@
     const key = cls + '|' + team + '|skin:' + row.id;
     let set = lookCache.get(key);
     if (set) return set;
-    const pal = Object.assign({}, teamPlayerPal(TEAM_SKINS[team]), CLASSES[cls].skinPal);
+    const pal = Object.assign({}, teamPlayerPal(TEAM_SKINS[team]), CLASSES[cls].skinPal, row.pal); // a look may repaint the hero's letters (`pal`: NIX's MOONLESS)
     const sp = Object.assign({}, SKPAL_EXTRA, pal), w = heroWalk(row.grids);
     const side = w.side.map((g) => bake(g, sp));
     set = Object.assign(skaterSet(sp, null), {

@@ -177,7 +177,6 @@ function snapSingles() {
   for (const c of camps) s.camps.push({ repopT: c.repopT, seen: (c.seen || [0, 0]).slice() }); // the rest of a camp is written down by worldgen
   s.dropMeta = state.drop ? { firstFlight: state.drop.firstFlight } : null;
   s.pads = pack(pads, 0); // the road registry: each side's crash pad
-  s.holes = holes.slice();
   s.iceBreaks = iceBreaks.slice(); // plain numbers and tile lists: every screen rebuilds the pixels (js/sim/icebreak.js)
   s.orca = pack(orca, 0); // the orca's few numbers (js/sim/orca.js); a client eases its x/y like a body's
   s.nets = pack(nets, 0);
@@ -186,8 +185,10 @@ function snapSingles() {
   s.aura = [pack(auraStars, 0), pack(auraOrbs, 0), pack(auraCurtains, 0)]; // AURA's stars, orbs and curtains (js/sim/aura.js)
   s.salvia = [pack(salviaBundles, 0), pack(salviaDrops, 0), pack(salviaThaws, 0)]; // SALVIA's poultices, snowdrops and warm rings (js/sim/salvia.js)
   s.lucerna = [pack(lucernaHooks, 0), pack(lucernaLanterns, 0), pack(lucernaCircles, 0)]; // LUCERNA's crooks, lanterns and rings of light (js/sim/lucerna.js)
+  s.bucina = [pack(bucinaEchoes, 0), pack(bucinaCalls, 0)]; // BUCINA's echoes and horn calls (js/sim/bucina.js)
   s.hiems = [pack(hiemsGlazes, 0), pack(hiemsStorms, 0)]; // HIEMS's ice and blizzards (js/sim/hiems.js)
   s.velox = [pack(veloxStones, 0), pack(veloxLanes, 0)]; // VELOX's skipping stones and ice lanes (js/sim/velox.js)
+  s.nix = [pack(nixShards, 0), pack(nixClouds, 0)]; // NIX's shards and clouds (js/sim/nix.js)
   return s;
 }
 // `team` (0 or 1): only what that side sees (the `fog` banner); left out, everything
@@ -234,7 +235,6 @@ function snapApplySingles(s) {
     }
     pads.length = 0; for (const sp of keep) pads.push(sp);
   }
-  if (s.holes) { holes.length = 0; for (const h of s.holes) holes.push(h); }
   if (s.iceBreaks) { iceBreaks.length = 0; for (const b of s.iceBreaks) iceBreaks.push(Object.assign({}, b)); }
   if (s.orca) Object.assign(orca, unpack(s.orca));
   if (s.nets) { nets.length = 0; for (const n of unpack(s.nets)) nets.push(n); }
@@ -243,8 +243,10 @@ function snapApplySingles(s) {
   if (s.aura) [auraStars, auraOrbs, auraCurtains].forEach((L, i) => { L.length = 0; for (const w of unpack(s.aura[i])) L.push(w); });
   if (s.salvia) [salviaBundles, salviaDrops, salviaThaws].forEach((L, i) => { L.length = 0; for (const w of unpack(s.salvia[i])) L.push(w); });
   if (s.lucerna) [lucernaHooks, lucernaLanterns, lucernaCircles].forEach((L, i) => { L.length = 0; for (const w of unpack(s.lucerna[i])) L.push(w); });
+  if (s.bucina) [bucinaEchoes, bucinaCalls].forEach((L, i) => { L.length = 0; for (const w of unpack(s.bucina[i])) L.push(w); });
   if (s.hiems) [hiemsGlazes, hiemsStorms].forEach((L, i) => { L.length = 0; for (const w of unpack(s.hiems[i])) L.push(w); });
   if (s.velox) [veloxStones, veloxLanes].forEach((L, i) => { L.length = 0; for (const w of unpack(s.velox[i])) L.push(w); });
+  if (s.nix) [nixShards, nixClouds].forEach((L, i) => { L.length = 0; for (const w of unpack(s.nix[i])) L.push(w); });
 }
 // a field onto an entity the game holds by identity: a nested plain object
 // is merged into the one already there (a player's `inv` is aliased by the
@@ -866,9 +868,11 @@ function snapBlank() {
   nets.length = 0; guards.length = 0; brushfires.length = 0; auraStars.length = 0; auraOrbs.length = 0; auraCurtains.length = 0;
   salviaBundles.length = 0; salviaDrops.length = 0; salviaThaws.length = 0;
   lucernaHooks.length = 0; lucernaLanterns.length = 0; lucernaCircles.length = 0;
+  bucinaEchoes.length = 0; bucinaCalls.length = 0;
   hiemsGlazes.length = 0; hiemsStorms.length = 0;
   veloxStones.length = 0; veloxLanes.length = 0;
-  holes.length = 0; iceBreaks.length = 0; pads.length = 0;
+  iceBreaks.length = 0; pads.length = 0;
+  nixShards.length = 0; nixClouds.length = 0;
   Object.assign(orca, ORCA_FRESH());
   for (const c of camps) { c.repopT = 0; c.seen = [0, 0]; }
   if (state.drop) for (const e of state.drop.eagles) for (const k of Object.keys(e)) if (!SNAP_SKIP.has(k) && k !== 'team') e[k] = typeof e[k] === 'number' ? 0 : null;
@@ -937,7 +941,7 @@ function snapQuantize() {
   };
   walk(players); for (const k in SNAP_KINDS) walk(SNAP_KINDS[k]());
   if (state.drop) walk(state.drop.eagles);
-  walk(objects); walk(nets); walk(guards); walk(brushfires); walk(auraStars); walk(auraOrbs); walk(auraCurtains); walk(salviaBundles); walk(salviaDrops); walk(salviaThaws); walk(lucernaHooks); walk(lucernaLanterns); walk(lucernaCircles); walk(hiemsGlazes); walk(hiemsStorms); walk(veloxStones); walk(veloxLanes); walk(pads); walk(state.end); walk(state.eagleCine);
+  walk(objects); walk(nets); walk(guards); walk(brushfires); walk(auraStars); walk(auraOrbs); walk(auraCurtains); walk(salviaBundles); walk(salviaDrops); walk(salviaThaws); walk(lucernaHooks); walk(lucernaLanterns); walk(lucernaCircles); walk(bucinaEchoes); walk(bucinaCalls); walk(hiemsGlazes); walk(hiemsStorms); walk(nixShards); walk(nixClouds); walk(veloxStones); walk(veloxLanes); walk(pads); walk(state.end); walk(state.eagleCine);
 }
 // One echo: quantize, frame, snapshot, blank, apply, frame; the pixels that differ,
 // the frame's own noise (two renders of the same state, for anything that

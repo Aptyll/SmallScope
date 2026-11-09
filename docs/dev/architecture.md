@@ -59,6 +59,8 @@ order, so the script tags still interleave them:
 | [js/sprites/hiems.js](../../js/sprites/hiems.js) | ~320 | shared scope, no `window.*` export | HIEMS's 32 px ability and passive icons (`HIEMS_ICON32`), her looks' 16 px grids and skins table (`HIEMS_BODY`, `HIEMS_SKINS`) and her SNOWFLAKE STAFF's weapon art |
 | [js/sprites/rupes.js](../../js/sprites/rupes.js) | ~260 | shared scope, no `window.*` export | RUPES's 32 px ability and passive icons (`RUPES_ICON32`), his two looks (`RUPES_BODY`, `RUPES_PAL`, `RUPES_SKINS`) and his ICE MAUL's grids |
 | [js/sprites/varro.js](../../js/sprites/varro.js) | ~370 | shared scope, no `window.*` export | VARRO's 32 px icons (`VARRO_ICON32`), his two looks (`VARRO_BODY`, `VARRO_SKINS`) and his HUNTING SPEAR's grids and weapon art |
+| [js/sprites/bucina.js](../../js/sprites/bucina.js) | ~320 | shared scope, no `window.*` export | BUCINA's 32 px ability and passive icons (`BUCINA_ICON32`), her two looks and her HORN's weapon art |
+| [js/sprites/nix.js](../../js/sprites/nix.js) | ~280 | shared scope, no `window.*` export | NIX's 32 px ability and passive icons (`NIX_ICON32`), her look (`NIX_BODY`, `NIX_PAL`, `NIX_SKINS`) and her ICE DIRK (`NIX_DIRK`) |
 | [js/sprites/bella.js](../../js/sprites/bella.js) | ~340 | shared scope, no `window.*` export | BELLA's 32 px ability and passive icons (`BELLA_ICON32`), her looks' 16 px grids and skins table (`BELLA_BODY`, `BELLA_SKINS`), and her spatha (`BELLA_SPATHA`) |
 | [js/sprites/ignia.js](../../js/sprites/ignia.js) | ~310 | shared scope, no `window.*` export | IGNIA's 32 px ability and passive icons (`IGNIA_ICON32`), her looks' 16 px grids and skins table (`IGNIA_BODY`, `IGNIA_SKINS`) |
 | [js/sprites/landmarks.js](../../js/sprites/landmarks.js) | ~55 | → `SPRITES` | the story landmarks: the frozen boat |
@@ -84,7 +86,7 @@ order, so the script tags still interleave them:
 | [js/sim/depth.js](../../js/sim/depth.js) | ~280 | shared scope, no `window.*` export | the snow's depth: the seed's prevailing wind, the hand-placed brush patches (`layBrush`) and the lee pads (`layDrifts`, at boot after worldgen), `snowDepth`/`deepAt`/`brushOf` - the detail: [world](world.md#snow-depth) |
 | [js/sim/landmarks.js](../../js/sim/landmarks.js) | ~130 | shared scope, no `window.*` export | the story landmarks: the `LANDMARKS` table (each entry becomes an `OBJECTS` row), and their seeded placement |
 | [js/sim/nav.js](../../js/sim/nav.js) | ~320 | shared scope, no `window.*` export | `moveEntity`, `separateUnits`, and A* routing (`findPath`/`navTo`/`navStep`) |
-| [js/sim/wildlife.js](../../js/sim/wildlife.js) | ~910 | shared scope, no `window.*` export | prey, the fish shoal, the camps' monsters (and the dormant flock) |
+| [js/sim/wildlife.js](../../js/sim/wildlife.js) | ~910 | shared scope, no `window.*` export | prey, the fish shoal, the camps' monsters |
 | [js/sim/structures.js](../../js/sim/structures.js) | ~270 | shared scope, no `window.*` export | the `STRUCTS` table, making and wrecking a building, and the per-type building sim |
 | [js/sim/robots.js](../../js/sim/robots.js) | ~750 | shared scope, no `window.*` export | the bots' shared body, the eagle's merchant and the barracks it raises, and the soldiers a barracks marches down the road |
 | [js/sim/pings.js](../../js/sim/pings.js) | ~90 | shared scope, no `window.*` export | a player's pings: the kinds (`PING_CALLS`), the wheel's wedges, the spam guard, `pingCmd`, and which bots a human's ping steers (`pingSteer`) |
@@ -102,6 +104,8 @@ order, so the script tags still interleave them:
 | [js/sim/hiems.js](../../js/sim/hiems.js) | ~240 | shared scope, no `window.*` export | HIEMS, the control mage: her tuning, her four keys (`HIEMS_AB`, joined into `CLASS_AB`), her passive DEEP CHILL, the clear ice and blizzards she leaves (`hiemsGlazes`, `hiemsStorms`) |
 | [js/sim/rupes.js](../../js/sim/rupes.js) | ~270 | shared scope, no `window.*` export | RUPES, the engage tank: his tuning, his four keys (`RUPES_AB`, joined into `CLASS_AB`), his passive SNOWPACK, the shoulder and the avalanche as hero dashes |
 | [js/sim/varro.js](../../js/sim/varro.js) | ~330 | shared scope, no `window.*` export | VARRO, the jungler: his tuning, his four keys (`VARRO_AB`, joined into `CLASS_AB`), his passive THE PACK, the leap as a hero dash, and the wolves he calls (`HERO_SUMMON.pack`) |
+| [js/sim/bucina.js](../../js/sim/bucina.js) | ~210 | shared scope, no `window.*` export | BUCINA, the tempo support: her tuning, her four keys (`BUCINA_AB`, joined into `CLASS_AB`), her passive HEARD, and what she leaves in the world (echoes, horn calls) |
+| [js/sim/nix.js](../../js/sim/nix.js) | ~310 | shared scope, no `window.*` export | NIX, the night scout: her tuning, her four keys (`NIX_AB`, joined into `CLASS_AB`), NIGHT WATCH, the snow cloud's cover (`HERO_COVER`), what she leaves in the world (`nixShards`, `nixClouds`) |
 | [js/sim/bella.js](../../js/sim/bella.js) | ~340 | shared scope, no `window.*` export | BELLA, the duelist: her tuning, her four keys (`BELLA_AB`, joined into `CLASS_AB`), her passive CALCULATED STRIKES, the lunge and the slip as hero dashes, the duel and its flurry |
 | [js/sim/ignia.js](../../js/sim/ignia.js) | ~260 | shared scope, no `window.*` export | IGNIA, the hearthkeeper: her tuning, her four keys (`IGNIA_AB`, joined into `CLASS_AB`), her passive KINDLING (her fire spreading and doused), the brand, the lines of fire (`brushfires`), the warmth and the wildfire |
 | [js/sim/abilities.js](../../js/sim/abilities.js) | ~820 | shared scope, no `window.*` export | the class abilities on keys 1-4: the `CLASS_AB` table, casting, the pierce/net/grapple/snow-cover/shield-and-slam/rush/crater/execute sim |
@@ -123,7 +127,7 @@ order, so the script tags still interleave them:
 | [js/net/snapshot.js](../../js/net/snapshot.js) | ~810 | shared scope, no `window.*` export | the match's authoritative state as one plain object (`snapBuild`/`snapApply`, refs packed to kind+id tokens by `pack`), its wire form (`snapBuildDelta`/`snapApplyDelta` against a shadow of the last send, `snapEncode`/`snapDecode` binary with a shared key dictionary) and the proofs (`netEcho`, `netEchoRun`, `netDeltaRun`: render, send through the bytes, render again, count differing pixels) |
 | [js/net/transport-ws.js](../../js/net/transport-ws.js) | ~90 | shared scope, no `window.*` export | the transport for tabs on one machine: the dev server's relay over a WebSocket, JSON frames, a client redialing every `WS_RETRY` s with the same uid |
 | [js/net/transport-steam.js](../../js/net/transport-steam.js) | ~190 | shared scope, no `window.*` export | the transport for the wrapper: a Steam lobby is the room and its owner the host, packets peer to peer through `window.steamBridge` - text reliable in parts over `STEAM_CHUNK`, a lossy delta as binary frames on the unreliable channel under its 1200-byte cap, dropped whole when a part never comes - a joiner reloading onto the lobby's seed |
-| [js/draw/ground.js](../../js/draw/ground.js) | ~330 | shared scope, no `window.*` export | `hash2`/`vnoise`, the prerendered ground and its runtime repaints, the road's pixels, the scenery bakes (the pine's wind frame, the cairn) - first of the draw files, every other one calls `hash2` |
+| [js/draw/ground.js](../../js/draw/ground.js) | ~330 | shared scope, no `window.*` export | `hash2`/`vnoise`, the prerendered ground and its runtime repaints, the road's pixels, the scenery bakes (the pine's wind frame, the practice dummy) - first of the draw files, every other one calls `hash2` |
 | [js/draw/landmarks.js](../../js/draw/landmarks.js) | ~25 | shared scope, no `window.*` export | a landmark's pixels and cast shade |
 | [js/draw/lakes.js](../../js/draw/lakes.js) | ~510 | shared scope, no `window.*` export | the wind's leavings, laid at the ground bake: drifts in the lee of what stands, the lakes' dust, downwind banks and long cracks, and the weather's per-frame pass over the ice (`drawLakeSky`), and the lake's fish drawn under it (`drawIceFish`) - the detail: [world](world.md#the-winds-leavings) |
 | [js/draw/trample.js](../../js/draw/trample.js) | ~290 | shared scope, no `window.*` export | the trampled snow: the packed/churned grid every body stamps, its refill, and the chunk canvases that draw it under the footprints |
@@ -147,6 +151,8 @@ order, so the script tags still interleave them:
 | [js/draw/hiems.js](../../js/draw/hiems.js) | ~150 | shared scope, no `window.*` export | HIEMS's pixels: her frost bolt and icicle, the clear ice and the blizzard on the snow, the chill pips and the freeze's ice on a body, her snowflake staff |
 | [js/draw/rupes.js](../../js/draw/rupes.js) | ~80 | shared scope, no `window.*` export | RUPES's pixels: his maul, the heave's block, the snowpack's crust and the avalanche's snowball |
 | [js/draw/varro.js](../../js/draw/varro.js) | ~35 | shared scope, no `window.*` export | VARRO's pixels: LUNGE's paw mark and the spear in his hands |
+| [js/draw/bucina.js](../../js/draw/bucina.js) | ~90 | shared scope, no `window.*` export | BUCINA's pixels: her note, the echo and the horn call on the snow, the rallied notch; her HORN carried |
+| [js/draw/nix.js](../../js/draw/nix.js) | ~90 | shared scope, no `window.*` export | NIX's pixels: the snow cloud and the shard in the air (`HERO_AIR`), the cloud's shadow (`HERO_GROUND`), her see-through body while hidden (`HERO_FADE`), her dirk (`HERO_BLADES.dirk`) |
 | [js/draw/bella.js](../../js/draw/bella.js) | ~70 | shared scope, no `window.*` export | BELLA's pixels: her precision pips, the parry's blade, the marks and the duel's ring, and her spatha in her hands |
 | [js/draw/ignia.js](../../js/draw/ignia.js) | ~140 | shared scope, no `window.*` export | IGNIA's pixels: the brand and the ember in flight, the lines of fire and their melted strip, the warm hands' sparks, and her crook and lantern |
 | [js/draw/marks.js](../../js/draw/marks.js) | ~200 | shared scope, no `window.*` export | the glyph grammar both maps share: a camp's icon and clock, a soldier's pennant, what a body looks like as a dot |
@@ -250,6 +256,9 @@ file is a save file.
   stats are added together, so no win on any slot is lost). Boot calls it **before
   `loadSettings()`**, which reads `PROFILE.settings()`. **A fresh install is pre-named** from
   `NAME_POOL` — winter words, every one clean under the validator — and lands on the title.
+  **On Steam a name nobody chose is the Steam name**: boot.js hands `steamBridge.info()`'s name to
+  `steamName(raw)`, which cuts it to `A-Z0-9` and `NAME_MAX` and takes it while `named` is false
+  (`setName` sets it on a change; an older save counts as named unless its name is a pool word).
 - **Who you are**: `name()`, `setName(raw)` (validate()'s result; nothing written on a
   refusal), `rollName()`, `hero()`, `setHero(i)`. `HERO_N` is exported so js/sprites/looks.js
   can assert its outfits against it at load.

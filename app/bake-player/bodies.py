@@ -1,6 +1,6 @@
 # The two class bodies on the doll (doll.py): the HUNTER (pom beanie) and the WARRIOR
 # (fur hood with goggles, a trailing scarf, skate blades), and each named hero's looks
-# (ARMATOS: standard, oath; FORTIVA: unbroken, coif; BELLA: general, traitor; IGNIA: hearth, wanderer; AURA: light; SALVIA: hood, tent; LUCERNA: lamp, dusk; HIEMS: scholar, frost; RUPES: quarry, cellar; VARRO: wolfkept, whitepack; VELOX: canal, night). Their sizes are measured off the
+# (ARMATOS: standard, oath; FORTIVA: unbroken, coif; BELLA: general, traitor; IGNIA: hearth, wanderer; AURA: light; SALVIA: hood, tent; LUCERNA: lamp, dusk; HIEMS: scholar, frost; RUPES: quarry, cellar; NIX: snowblind; VARRO: wolfkept, whitepack; VELOX: canal, night). Their sizes are measured off the
 # hand-drawn 16 px frames in js/sprites/characters.js, so the doll's idle lands on those
 # frames pixel for pixel and the run and the roll it paints wear the same body.
 #
@@ -519,6 +519,30 @@ class Hood(Wanderer):
 
     def head(self, cv, cam, hc, Rh, pose, snap):
         cv.blob(cam, hc, Rh, self.HEAD_R, 'head', 'cloak', p=self.HEAD_P, region=self.face_region)
+        self.face_marks(cv, cam, hc, Rh)
+
+    def coat(self, cv, cam, U, R):
+        cv.blob(cam, U(v3(0, 0, Z(6.1))), R, (2.75, 3.05, Z(2.05)), 'coat', 'coat', p=2.2)
+        cv.blob(cam, U(v3(0, 0, Z(4.0))), R, (2.6, 3.1, Z(0.6)), 'hem', 'coat', bias=-0.3)
+        cv.blob(cam, U(v3(1.2, 0, Z(5.6))), R, (1.4, 1.6, Z(1.8)), 'apron', 'beard', bias=0.2)
+        cv.blob(cam, U(v3(0.1, 0, Z(8.0))), R, (2.6, 3.3, Z(0.7)), 'scarf', 'cloak', bias=0.3)
+
+    def ball_head(self, cv, cam, hc, Rh):
+        cv.blob(cam, hc, Rh, (2.6, 2.85, 2.5), 'head', 'cloak', p=self.HEAD_P)
+
+
+class Tent(Hearth):
+    """SALVIA as FIELD TENT (the first skin): dark hair under a linen headscarf, a canvas
+    tabard over her side's dress; the same frame, robe and boots"""
+
+    def coat(self, cv, cam, U, R):
+        cv.blob(cam, U(v3(0, 0, Z(6.1))), R, (2.75, 3.05, Z(2.05)), 'coat', 'coat', p=2.2)
+        cv.blob(cam, U(v3(0, 0, Z(4.0))), R, (2.6, 3.1, Z(0.6)), 'hem', 'coat', bias=-0.3)
+        cv.blob(cam, U(v3(0.3, 0, Z(6.0))), R, (2.5, 2.7, Z(1.9)), 'apron', 'beard', bias=0.25)
+
+    def extras(self, cv, cam, U, R, pose):
+        pass
+
 
 class Quarry(Standard):
     """RUPES as QUARRYMAN (his default look): a fur cap with ear flaps (his fur in the hat's
@@ -546,25 +570,6 @@ class Cellar(Quarry):
 
     def coat(self, cv, cam, U, R):
         cv.blob(cam, U(v3(0, 0, Z(6.1))), R, (2.75, 3.05, Z(2.05)), 'coat', 'coat', p=2.2)
-        cv.blob(cam, U(v3(0, 0, Z(4.0))), R, (2.6, 3.1, Z(0.6)), 'hem', 'coat', bias=-0.3)
-        cv.blob(cam, U(v3(1.2, 0, Z(5.6))), R, (1.4, 1.6, Z(1.8)), 'apron', 'beard', bias=0.2)
-        cv.blob(cam, U(v3(0.1, 0, Z(8.0))), R, (2.6, 3.3, Z(0.7)), 'scarf', 'cloak', bias=0.3)
-
-    def ball_head(self, cv, cam, hc, Rh):
-        cv.blob(cam, hc, Rh, (2.6, 2.85, 2.5), 'head', 'cloak', p=self.HEAD_P)
-
-
-class Tent(Hearth):
-    """SALVIA as FIELD TENT (the first skin): dark hair under a linen headscarf, a canvas
-    tabard over her side's dress; the same frame, robe and boots"""
-
-    def coat(self, cv, cam, U, R):
-        cv.blob(cam, U(v3(0, 0, Z(6.1))), R, (2.75, 3.05, Z(2.05)), 'coat', 'coat', p=2.2)
-        cv.blob(cam, U(v3(0, 0, Z(4.0))), R, (2.6, 3.1, Z(0.6)), 'hem', 'coat', bias=-0.3)
-        cv.blob(cam, U(v3(0.3, 0, Z(6.0))), R, (2.5, 2.7, Z(1.9)), 'apron', 'beard', bias=0.25)
-
-    def extras(self, cv, cam, U, R, pose):
-        pass
         cv.blob(cam, U(v3(0, 0, Z(4.0))), R, (2.6, 3.1, Z(0.6)), 'hem', 'hem', bias=-0.3)
         cv.blob(cam, U(v3(0.0, 0, Z(8.2))), R, (2.7, 3.4, Z(0.8)), 'scarf', 'trim', bias=0.3)
 
@@ -718,6 +723,58 @@ class Night(Canal):
     HAIR, CAP = 'nighthair', 'nightcap'
 
 
+class Horn(Lamp):
+    """BUCINA as HORN-BLOWER (her default look): bare-headed, auburn hair, a slate wool cape
+    with a cream fur collar over her side's coat; Armatos's frame, boots"""
+
+    @staticmethod
+    def face_region(n, q):
+        """the face, the hair all round it and over the crown"""
+        return np.where((q[0] > 0.2) & (np.abs(q[1]) < 0.75) & (q[2] < 0.3) & (q[2] > -0.95), 'skin', 'hair')
+
+    def coat(self, cv, cam, U, R):
+        super().coat(cv, cam, U, R)
+        cv.blob(cam, U(v3(0.1, 0, Z(8.0))), R, (2.7, 3.3, Z(0.7)), 'collar', 'beard', bias=0.3)
+
+    def ball_head(self, cv, cam, hc, Rh):
+        cv.blob(cam, hc, Rh, (2.6, 2.85, 2.5), 'head', 'hair', p=self.HEAD_P)
+
+
+class Column(Horn):
+    """BUCINA as COLUMN CALL (the first skin): an iron cap with a brass brim, a brass gorget in
+    place of the fur, the same cape"""
+
+    @staticmethod
+    def face_region(n, q):
+        """the cap over the crown, the hair below it round the face"""
+        return np.where(q[2] > 0.35, 'helm', np.where((q[0] > 0.2) & (np.abs(q[1]) < 0.75) & (q[2] > -0.95), 'skin', 'hair'))
+
+    def coat(self, cv, cam, U, R):
+        Lamp.coat(self, cv, cam, U, R)
+        cv.blob(cam, U(v3(0.1, 0, Z(8.0))), R, (2.6, 3.2, Z(0.6)), 'collar', 'gold', bias=0.3)
+
+
+class Snowblind(Standard):
+    """NIX as SNOWBLIND (her default look; MOONLESS is the same cut in another paint): a
+    close night hood framing the face, bone snow goggles across the eyes with two slits, a
+    scarf at the throat, the hood's cape over the arms. Armatos's frame, legs and boots."""
+    ARM_MAT, MITT_MAT = 'cloak', 'skin'
+    # the goggles' band across the eyes, the slits at the eyes
+    MARKS = [(-1.5, 0.9, 'e'), (-0.5, 0.9, 'w'), (0.5, 0.9, 'w'), (1.5, 0.9, 'e')]
+
+    @staticmethod
+    def face_region(n, q):
+        """the hood leaves only the face bare: narrower than his helm's opening"""
+        return np.where((q[0] > 0.25) & (np.abs(q[1]) < 0.7) & (q[2] < 0.25) & (q[2] > -0.95), 'skin', 'cloak')
+
+    def head(self, cv, cam, hc, Rh, pose, snap):
+        cv.blob(cam, hc, Rh, self.HEAD_R, 'head', 'cloak', p=self.HEAD_P, region=self.face_region)
+        self.face_marks(cv, cam, hc, Rh)
+
+    def ball_head(self, cv, cam, hc, Rh):
+        cv.blob(cam, hc, Rh, (2.6, 2.85, 2.5), 'head', 'cloak', p=self.HEAD_P)
+
+
 BODIES = {'hunter': Hunter(), 'warrior': Warrior(), 'standard': Standard(), 'oath': Oath(),
           'unbroken': Unbroken(), 'coif': Coif(), 'general': General(), 'traitor': Traitor(),
           'hearth': Hearth(), 'wanderer': Wanderer(), 'light': Light(),
@@ -725,4 +782,6 @@ BODIES = {'hunter': Hunter(), 'warrior': Warrior(), 'standard': Standard(), 'oat
           'scholar': Scholar(), 'frost': Frost(),
           'quarry': Quarry(), 'cellar': Cellar(),
           'wolfkept': Wolfkept(), 'whitepack': Whitepack(),
+          'horn': Horn(), 'column': Column(),
+          'snowblind': Snowblind(),
           'canal': Canal(), 'night': Night()}

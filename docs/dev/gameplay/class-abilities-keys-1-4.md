@@ -67,7 +67,7 @@ the held one lit gold
 js/ai/ai.js, first thing `aiThink` asks): the ultimate whenever it can rank, then each basic key
 unlocked once, then the basics maxed in the hero's `rankOrder` (its `CLASSES` row: HUNTER
 shot, net, grapple; WARRIOR stomp, rush, shield; ARMATOS verdict, march, brace; FORTIVA sever,
-yoke, heart; AURA star, orb, step; SALVIA poultice, cloak, snowdrops; LUCERNA crook, shoo, lantern; RUPES heave, shed, shoulder; VARRO lunge, snap, howl). The cd column in the tables below is every rank's; the numbers in the text are rank
+yoke, heart; AURA star, orb, step; SALVIA poultice, cloak, snowdrops; LUCERNA crook, shoo, lantern; RUPES heave, shed, shoulder; NIX shard, drift step, cloud; VARRO lunge, snap, howl; BUCINA note, blast, echo). The cd column in the tables below is every rank's; the numbers in the text are rank
 1's, and each row's `rank` table has the rest.
 
 **Every ability lands on every kind of body.** A player, a rabbit, a deer, a bird, a wolf and a
@@ -267,6 +267,24 @@ and a rival is held (`stunUnit`) while it travels. What she leaves in the world 
 | 2 | **LANTERN** | 18/17/16/15/14 s | her lantern lands at the aim, at most `LANTERN_RANGE` from her, one at a time (`lucernaThrow`). An ally player who walks within `LANTERN_R` of it takes it and is pulled to her side, not held; rivals within `LANTERN_SEE` of it are shown. Untaken, it comes back after `t` (4/4.5/5/5.5/6 s) (`updateLanterns`). A bot throws it at an ally hero who is hurt with a rival close (`lucernaInDanger`, the row's `botAim`) |
 | 3 | **SHOO** | 10/9.5/9/8.5/8 s | a swing of the crook `SHOO_REACH` in front of her, `SHOO_HALF` either side of the aim: every rival body in it takes `dmg` (15/25/35/45/55) and is shoved `SHOO_KB` (`hurtUnit`'s `kb`); buildings in it take the blow |
 | 4 | **CIRCLE OF LIGHT** | 100/85/70 s | a ring `CIRCLE_R` (92 px) round where she stands, for `CIRCLE_T`: every rival inside is shown, and one within `CIRCLE_EDGE` of the rim walks ×`slow` (0.45/0.35/0.25) for `CIRCLE_SLOW_T` (`updateCircles`) |
+
+BUCINA, THE HORN — the tempo support. Her rules live in
+**[js/sim/bucina.js](../../../js/sim/bucina.js)** (`BUCINA_AB`, its `bucina` banner), her pixels in
+[js/draw/bucina.js](../../../js/draw/bucina.js), her icons, looks and horn art in
+[js/sprites/bucina.js](../../../js/sprites/bucina.js). 92 hp, 14 armor, no heals and no shields: a
+note off her HORN (her `attack` row, drawn as `look: 'hornnote'`; the horn is carried upright,
+`HERO_STAVES`). What she leaves in the world (`bucinaEchoes`, `bucinaCalls`) and the clocks she
+lends (`p.heardT`, `p.rallyT`) are stepped by `bucinaWorld` (`HERO_TICK`):
+
+| key | name | cd | what it does |
+| --- | --- | --- | --- |
+| P | **HEARD** | — | whenever one of her keys strikes a rival body, every ally player within `HEARD_R` (150 px) of her, her too, walks ×`HEARD_WALK` for `HEARD_T` (`bucinaHeard`, `p.heardT`, a `HERO_MOVE` row). `HERO_PASSIVE.heard` |
+| 1 | **HORN BLAST** | 10/9.5/9/8.5/8 s | a cone `BLAST_REACH` (78 px) in front of her, `BLAST_HALF` either side of the aim: every rival body in it takes `dmg` (15/25/35/45/55), is shoved `BLAST_KB` and walks ×`BLAST_SLOW` for `BLAST_SLOW_T`; buildings in it take the blow |
+| 2 | **RALLYING NOTE** | 16/15/14/13/12 s | every ally player within `RALLY_R` (110 px), her too, for `RALLY_T`: attack speed +`as` (20/25/30/35/40%, a `HERO_STAT` 'as' row: a share on `asMul`, like an item's) and `RALLY_TEN` tenacity (`bucinaTen`, a `HERO_TEN` row) |
+| 3 | **ECHO** | 13/12.5/12/11.5/11 s | a wave down the aim `ECHO_RANGE` (210 px) at `ECHO_SPD` (`updateEchoes`). A wall or a tree turns it round once, to run back as far as it came. Each pass strikes each rival body once for `dmg` (20/32/44/56/68); one struck going and coming is stunned `ECHO_STUN` |
+| 4 | **SHAKE THE PINES** | 100/85/70 s | every pine within `PINES_R` (190 px) sheds its snow (`shedHit`, js/sim/shed.js; at most `PINES_PUFFS` seen to puff). Every rival body standing within `PINES_UNDER` of a pine's foot inside is stunned `stun` (0.75/1/1.25 s) (`bucinaUnderPine`); every rival in the woods inside (`inWoods`) is shown for `PINES_SEE_T` |
+
+A bot rallies with two allies near and a rival hero close, and keeps SHAKE THE PINES for a rival hero under a pine or in the woods.
 VARRO, THE WOLF-KEPT — the jungler: a diver who picks one rival and closes the ring on them. His
 rules live in **[js/sim/varro.js](../../../js/sim/varro.js)** (`VARRO_AB`, its `varro` banner), his
 pixels in [js/draw/varro.js](../../../js/draw/varro.js), his icons, looks and spear in
@@ -284,6 +302,23 @@ nobody when it falls (`animalDies`).
 | 2 | **HOWL** | 14/13/12/11/10 s | every rival body within `HOWL_R` is shoved out (`HOWL_KB`) and slowed ×`slow` for `slowT` (1/1.25/1.5/1.75/2 s); his called wolves run ×`HOWL_PACK_MUL` for `HOWL_PACK_T`. No damage |
 | 3 | **SNAP** | 9/8.5/8/7.5/7 s | needs a rival in `SNAP_REACH` (`ok`): two strikes `SNAP_GAP` apart, each `dmg` (10/14/18/22/26), on his mark if it stands in reach, else the rival nearest the aim; the second slows ×`slow` for `slowT` |
 | 4 | **CALL THE PACK** | 90/75/60 s | needs a rival hero within `CALL_PICK` of the aim and `CALL_RANGE` (220 px) of him (`ok`): `CALL_N` wolves come out beside the pine nearest that hero (within `CALL_WOODS` tiles; at his heels in the open, `callSpots`) and hunt only it at `CALL_SPD`, biting `dmg` (5/7/9) every `CALL_BITE_CD` as his blows (`ab: 'call'`). Each has `wolfHp` (40/60/80) health; after `t` (5/5.5/6 s), or when the hero falls, they run off (`CALL_LEAVE_T`) |
+
+NIX, THE SNOWBLIND — the night scout: an assassin of skill and weather, never magic. Her rules
+live in **[js/sim/nix.js](../../../js/sim/nix.js)** (`NIX_AB`, its `nix` banner), her pixels in
+[js/draw/nix.js](../../../js/draw/nix.js), her icons, looks and dirk in
+[js/sprites/nix.js](../../../js/sprites/nix.js). Light (98 hp, 14 armor) and a step faster, with the
+quickest, shortest cut (the ICE DIRK). Her shards and clouds are things she leaves in the world
+(`nixShards`, `nixClouds`), stepped by `HERO_TICK`. Hidden means hidden from the other side's fog
+(`HERO_COVER`, asked by `coverHide`): the rival's bots and screen both
+lose her; a mark (`markUnit`: AURA's light, the falcon) still shows her.
+
+| key | name | cd | what it does |
+| --- | --- | --- | --- |
+| P | **NIGHT WATCH** | — | she walks ×(1 + `WATCH_MS` × `state.darkness`) (`nixMoveMul`, a `HERO_MOVE` row). Once she has been hidden (her cloud, SQUALL, or out of the other side's sight: `nixHidden`), her next blow on a rival hero adds `WATCH_DMG` + `WATCH_AD` of her DAMAGE, ×(1 + `WATCH_NIGHT` × darkness) (`watchDeal`, the passive's `deal`). Any rival she strikes is one DRIFT STEP can reach for `DRIFT_STEP_MEM` |
+| 1 | **ICE SHARD** | 7/6.5/6/5.5/5 s | a shard down the aim, `SHARD_LEN` out: the first rival body (or building) takes `dmg` (18/27/36/45/54); then it flies home to her hand, and caught (`SHARD_CATCH`) gives back `SHARD_REFUND` of the wait (`updateNixShards`) |
+| 2 | **SNOW CLOUD** | 18/17/16/15/14 s | a cloud `CLOUD_R` round her feet for `t` (3.5-5.5 s), one at a time. Inside it she is hidden from a side none of whose heroes or soldiers stands in it (`nixCover`); a blow she strikes from it shows her for `CLOUD_OUT`. Both sides see the cloud; her own side sees her in it faintly (`HERO_FADE`) |
+| 3 | **DRIFT STEP** | 12/11/10/9/8 s | needs a rival she struck in the last `DRIFT_STEP_MEM` near the aim (`ok`): a cut for `dmg` (10/16/22/28/34), then a quick step (`HERO_DASH.drift`) to `DRIFT_STEP_PAST` behind them, turned to face them (`nixDrift`, `driftEnd`) |
+| 4 | **SQUALL** | 80/65/50 s | she vanishes for `WHITEOUT_T`: untouchable (`invuln`) and hidden from both sides' rivals, then comes out beside the nearest rival hero within `WHITE_REACH` and strikes for `dmg` (60/95/130) + `WHITE_AD` of her DAMAGE (`nixWhiteStrike`). If that hero falls within `WHITE_RESET`, the key is ready again once; the cast it gives back cannot give itself back |
 
 Bots play the named heroes through each row's `bot(p, foe, d, clear)` (`abBotKey`, asked by the ladder's
 ability block in js/ai/ai-ladder.js); a row's `botAim(p, foe)` turns the aim to a point of its own for that cast, held through the wind-up until it lands (AURA's step away, SALVIA's heals, LUCERNA's lantern). A hero whose rows carry no `bot` keeps the ladder's old range rules.

@@ -21,7 +21,7 @@
   const OLD_SETTINGS = 'softfall.settings'; // pre-profile saves; migrated once
   const NAME_MAX = 16;
   const POS_N = 5;                 // POSITIONS.length (js/sim/player.js)
-  const HERO_N = 13;              // CLASSES.length (js/sim/player.js) - a hero index past this is repaired to 0
+  const HERO_N = 15;              // CLASSES.length (js/sim/player.js) - a hero index past this is repaired to 0
   // the coins a profile starts with: the cosmetics' purse, kept outside every
   // match (a match's gold never reaches it). What a coin buys is the skins
   // screen's table (js/ui/skins.js); this file only keeps the count and ids.
@@ -79,6 +79,7 @@
     return {
       v: 3,
       name: randomName(),
+      named: false,    // the player chose the name; until then it follows the Steam name (steamName)
       stats: blankStats(),
       hero: 0,         // the hero last locked in (a CLASSES index): where the pick opens next time
       pos: -1,         // the position this profile asks for in the draft (a POSITIONS index, js/sim/player.js), -1 any
@@ -184,6 +185,8 @@
           for (const c of s.chars) if (c && typeof c === 'object') addStats(profile.stats, c.stats);
         } else addStats(profile.stats, s.stats);
         if (typeof name === 'string' && validate(name).ok) profile.name = validate(name).name;
+        // a profile from before the flag: a name out of the winter pool was dealt, not chosen
+        profile.named = typeof s.named === 'boolean' ? s.named : NAME_POOL.indexOf(profile.name) < 0;
         if (typeof hero === 'number' && isFinite(hero) && hero >= 0 && hero < HERO_N) profile.hero = Math.floor(hero);
         if (typeof s.pos === 'number' && s.pos >= 0 && s.pos < POS_N) profile.pos = Math.floor(s.pos);
         if (s.settings && typeof s.settings === 'object') profile.settings = s.settings;
@@ -227,8 +230,17 @@
     setName(raw) {
       const r = validate(raw);
       if (!r.ok) return r;
-      if (profile.name !== r.name) { profile.name = r.name; saveNow(); }
+      if (profile.name !== r.name) { profile.name = r.name; profile.named = true; saveNow(); }
       return r;
+    },
+    // On Steam a name nobody chose is the Steam one, cut to what a name may
+    // hold (letters and digits, NAME_MAX); true when it changed
+    steamName(raw) {
+      if (profile.named) return false;
+      const r = validate(String(raw || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, NAME_MAX));
+      if (!r.ok || r.name === profile.name) return false;
+      profile.name = r.name; saveNow();
+      return true;
     },
     // a fresh winter word, unsaved: the profile card's die offers it
     rollName() { return randomName(); },

@@ -119,7 +119,7 @@ function trampleStep(dt) {
     trBody(p, 5, p.prone ? PLAYER_R + 2 : PLAYER_R, pack);
   }
   for (const a of animals) {
-    if (a.kind === 'bird' || !fogShown(a)) continue;
+    if (!fogShown(a)) continue;
     const r = unitRadius(a), big = a.kind === 'deer' || (MONSTER[a.kind] && MONSTER[a.kind].big);
     trBody(a, 0, r, big ? TR_WALK * 1.4 : r < 3 ? TR_WALK * 0.35 : TR_WALK);
   }

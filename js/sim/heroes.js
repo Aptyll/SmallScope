@@ -33,6 +33,11 @@
 // - HERO_SUMMON[id]: { step(a, dt) } the brain of an animal a hero called onto its
 //   side (a.summon = id, with team and owner): VARRO's wolves. It walks in `animals`
 //   like any beast (hit, drawn, pushed apart, fogged) and pays nothing when it falls.
+// - HERO_AIR: fn(ex, ey, now) drawn over the bodies with the arrows
+//   (drawAbilityAir): what a kit leaves in the air (NIX's shard and her cloud's powder).
+// - HERO_COVER: fn(srcs, x, y, u) -> true when body u at (x, y) is hidden from
+//   the side whose eyes are `srcs`, beside the woods and the brush (coverHide,
+//   js/sim/fog.js): cover a hero's kit makes (NIX's snow cloud).
 // An ability row may also carry recast(p) (true: the key pressed again is
 // its second half, castSlam) and ok(p) (false: the press is refused).
 const HERO_PASSIVE = {};
@@ -47,6 +52,8 @@ const HERO_GROUND = [];
 const HERO_MARK = [];
 const HERO_ICE = [];
 const HERO_SUMMON = {};
+const HERO_COVER = [];
+const HERO_AIR = [];
 
 // the ability whose use() is running right now, so a blow it lands says so
 // (o.ab, stamped by hurtUnit, js/sim/actions.js); '' between casts. Never state: set and cleared
@@ -77,3 +84,5 @@ function heroGround(ex, ey, now) { for (const f of HERO_GROUND) f(ex, ey, now); 
 function heroMarks(e, px, py, w, h, now) { for (const f of HERO_MARK) f(e, px, py, w, h, now); }
 function heroIce(p) { for (const f of HERO_ICE) if (f(p)) return true; return false; }
 function heroSummonStep(a, dt) { const s = HERO_SUMMON[a.summon]; if (s) s.step(a, dt); else a.dead = true; }
+function heroCover(srcs, x, y, u) { for (const f of HERO_COVER) if (f(srcs, x, y, u)) return true; return false; }
+function heroAir(ex, ey, now) { for (const f of HERO_AIR) f(ex, ey, now); }

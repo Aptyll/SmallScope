@@ -231,14 +231,6 @@ function drawSceneryObj(d, ox, oy, now, wkO, hovO) {
     };
     const open = canopyOver(A, cx, cy, fw, fh, artX, artY);
     if (open > 0) drawWindowed(open, artX, artY, fw, fh, drawTree); else drawTree();
-  } else if (o.type === 'deadTree') {
-    const spr = SPRITES.deadTree[o.variant], x = px + sh, y = py - 8;
-    const drawSnag = () => {
-      if (o === wkO) drawTargetRim(spr, 0, 0, spr.width, spr.height, x, y, now);
-      drawSpriteFlash(spr, x, y, o.flash);
-    };
-    const open = canopyOver(spr, 0, 0, spr.width, spr.height, x, y);
-    if (open > 0) drawWindowed(open, x, y, spr.width, spr.height, drawSnag); else drawSnag();
   } else if (o.type === 'den') {
     drawSpriteFlash(SPRITES.den, px + sh, py - 4, o.flash);
     drawCampClock(o.site, px + 16, py - 3); // a cleared camp's respawn clock (js/draw/marks.js)
@@ -276,8 +268,6 @@ function drawSceneryObj(d, ox, oy, now, wkO, hovO) {
     if (o.hp < o.maxHp) drawHealthBar(px + 8 + sh, dy - 6, o.hp, o.maxHp, 20, undefined, undefined, o);
     // the combo readout, above the bar's slot so neither ever covers the other
     drawDummyMeter(o, px + 8, dy - 10);
-  } else if (o.type === 'cairn') {
-    drawSpriteFlash(CAIRN_SPR, px + sh + 1, py + TILE - CAIRN_SPR.height + 1, o.flash);
   } else if (o.type === 'pylon') {
     drawPylon(o, px + sh, py); // a zipline's post (js/draw/zipline.js); the cable itself is drawZips, below
   } else if (o.type === 'banner') {

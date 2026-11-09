@@ -88,7 +88,7 @@ more: the frames live on as the CATCH emote's (`EMOTES`, js/ui/screens.js). The 
 **The run, the held run and the dodge roll are the one set of player frames not typed by hand.**
 [app/bake-player/](../../app/bake-player/) paints them off a jointed doll of each class body (and of
 each named hero's looks: ARMATOS's `standard` and `oath`, FORTIVA's `unbroken` and `coif`, BELLA's `general` and `traitor`,
-IGNIA's `hearth` and `wanderer`, AURA's `light`, SALVIA's `hood` and `tent`, LUCERNA's `lamp` and `dusk`, HIEMS's `scholar` and `frost`, RUPES's `quarry` and `cellar`, VARRO's `wolfkept` and `whitepack`, [hero looks](#hero-looks)) and
+IGNIA's `hearth` and `wanderer`, AURA's `light`, SALVIA's `hood` and `tent`, LUCERNA's `lamp` and `dusk`, HIEMS's `scholar` and `frost`, NIX's `snowblind`, RUPES's `quarry` and `cellar`, VARRO's `wolfkept` and `whitepack`, BUCINA's `horn` and `column`, [hero looks](#hero-looks)) and
 writes them to js/baked/motion.js as char grids in characters.js's own letters, so `motionSet`
 bakes them through the same team and look palettes as every hand-drawn pose: `run[dir]`,
 `hold[dir]` and `roll[dir]` sit beside the walking directions, `left` the mirror of `right`.
@@ -185,7 +185,7 @@ frame, not the doll**: `heroRunSide` (armatos.js) finds the leg rows, scissors t
 `HERO_STRIDE` and bobs the body over them, so the head and coat keep the standing width (the doll's
 side run was a pixel or two narrower and read as the hero shrinking when turning left or right).
 The run facing down and up is still the doll's, unless the look's row says `run: 'drawn'`: then
-`heroRunFront` lifts the drawn front and back the same way (IGNIA's two looks, AURA's, SALVIA's and LUCERNA's two, whose shawl, mantle, coat and hair
+`heroRunFront` lifts the drawn front and back the same way (IGNIA's two looks, AURA's, SALVIA's, LUCERNA's and BUCINA's two, whose shawl, mantle, coat, cape and hair
 the doll does not match). The class bodies (HUNTER, WARRIOR) keep the doll's run. The fish and the burrow frames are still the borrowed skater's in
 that paint. Which look a player wears is `heroSkinOf(p)` (player.js): the id in `p.skins` under the
 hero's `skinSlot`, or the free first row. LAST STANDARD (nasal helm, white beard, tabard) is his
@@ -266,6 +266,17 @@ the body is two pixels narrower. Her dolls (`Lamp` and `Dusk` in app/bake-player
 the coat in the doll's `cloak` material; only the roll is used. Her 48 px model is her own front frame at 3x (`portrait`). Her LANTERN is carried like a staff but hangs: `staff: 'lantern'` names
 `HERO_STAVES.lantern` (`LUCERNA_LANTERN`, js/draw/lucerna.js), a brass lamplighter's lantern held by
 its ring (`LUCERNA_LANTERN_GRIP`), its flame breathing between two baked frames.
+
+BUCINA has two looks (`BUCINA_SKINS`, js/sprites/bucina.js): HORN-BLOWER (free: bare-headed, an
+auburn braid, a slate wool cape with a cream fur collar over the side's coat, a brass baldric) and
+COLUMN CALL (rare, 200 coins: an iron cap with a brass brim and a brass gorget in place of the fur),
+both on ARMATOS's frame (`BUCINA_PAL` is `ARM_PAL` with her hair `a`/`A`, the cape `q`/`Q` and the
+fur `w`/`W`). They are A and B off bucina-round1.png in the project files; side-on the head keeps the
+front's width and the body is two pixels narrower. Her dolls (`Horn` and `Column` in
+app/bake-player/bodies.py) paint the cape in the doll's `cloak` material and the collar in `beard`
+(`gold` for the gorget); only the roll is used. Her 48 px model is the warrior's in her paint. Her
+HORN is a staff: `staff: 'horn'` names `HERO_STAVES.horn` (`BUCINA_HORN`, js/draw/bucina.js), a brass
+signal horn held upright with the bell at the top, glinting between two baked frames.
 VARRO has two looks (`VARRO_SKINS`, js/sprites/varro.js): WOLF-KEPT (free) and WHITE PACK (rare,
 200 coins), both on ARMATOS's frame (`VARRO_PAL` is `ARM_PAL` with the grey pelt `f`/`F`/`j`, the
 white pelt `u`/`U`/`v` shaded blue so it holds on snow, and his dark hair `a`). The pelt is worn as
@@ -285,6 +296,14 @@ white hair and the mantle in two materials added for her (`frost`, `ice`, doll.p
 is used. Her SNOWFLAKE STAFF is a staff like IGNIA's: `staff: 'flake'` names `HERO_STAVES.flake`
 (`HIEMS_FLAKE`, js/draw/hiems.js), a six-pointed flake of ice on a pale birch shaft whose heart
 glints between two baked frames.
+
+NIX has two looks (`NIX_SKINS`, js/sprites/nix.js) on one set of grids and one doll: SNOWBLIND
+(free) and MOONLESS (rare, 200). `NIX_PAL` is `ARM_PAL` with her night hood `q`/`Q` (the doll's
+`cloak`), bone goggles `w`/`W` and frost scarf `m`/`M` (the doll's `trim`); MOONLESS is the same
+cut repainted by its row's `pal` (moonless black, gold goggles, a violet scarf), which
+`heroSkinSet` lays over the hero's palette. It is A off nix-round1.png in the project files. Her
+doll is `Snowblind` in app/bake-player/bodies.py. Her ICE DIRK is a `HERO_BLADES` row (`dirk`,
+js/draw/nix.js), half a sword's length.
 
 The **48 px model** ([looks.js](../../js/sprites/looks.js), `SPRITES.portrait(cls, look,
 team)`) is where the whole look reads — the champ select's stage, grid and seat discs. Each hero wears one
@@ -573,7 +592,7 @@ body while upright (`scoutBody`, js/ui/skins.js), and grows the held tool and an
 2× about the feet to fit him. Lying down and the fish catch still show the class body.
 
 The three camp props are
-`deadTree` (two 16×24 snags on `DTPAL`) and `den` (A ROCK MAW of [den-concepts-1.png](../media/concepts/den-concepts-1.png): a 32×21 snow-capped boulder cave with icicle fangs over its mouth, on `DNPAL`, drawn at `py - 4` over its two tiles — the concept's trampled-snow rows were left off, because a decal must not cast a shade) and `hogHut` (eight 35×35 frames of the HOG HUT's chimney smoke on `HHPAL`, converted 1:1 from docs/media/new_media5/hog-hut-chimney-moving.png and drawn centred over the front row of its 2×2 footprint). The berry bush is
+`deadTree` (two 16×24 snags on `DTPAL`, now only the wiki's THE WORKS figure) and `den` (A ROCK MAW of [den-concepts-1.png](../media/concepts/den-concepts-1.png): a 32×21 snow-capped boulder cave with icicle fangs over its mouth, on `DNPAL`, drawn at `py - 4` over its two tiles — the concept's trampled-snow rows were left off, because a decal must not cast a shade) and `hogHut` (eight 35×35 frames of the HOG HUT's chimney smoke on `HHPAL`, converted 1:1 from docs/media/new_media5/hog-hut-chimney-moving.png and drawn centred over the front row of its 2×2 footprint). The berry bush is
 four frames on `BPAL` — `bush`, `bushEmpty`, `bushBud`, `bushRipen` — one silhouette in which only
 the four berry pixels change (ripe, gone, pale `b` buds, dull `d` berries), because the frames are
 a clock the player reads at a glance and a bush that seemed to move would read as a different
@@ -582,8 +601,8 @@ plant ([the regrow stages](world.md#the-tile-world)).
 Anything drawn through `drawSpriteFlash()` must stay within **64×64**: it recolours through a
 shared 64×64 scratch canvas and a larger sprite clips ([rendering.md](rendering/render-pass-order.md)).
 
-**New sprites bake beside the code that draws them, not here.** The cairn (`CAIRN_SPR`,
-js/draw/ground.js) and the practice dummy (`DUMMY_SPR`, js/draw/practice.js)
+**New sprites bake beside the code that draws them, not here.** The zipline pylon (js/draw/zipline.js)
+and the practice dummy (`DUMMY_SPR`, js/draw/practice.js)
 paint their char grids onto their own canvases and assign into `SPRITES`, which works because it
 is a plain object - exactly what each js/sprites/ file does for its own keys (the paragraph
 below), so a sprite that belongs to a drawer can live beside it. The detailed 32×32 ability icons (`AB32`/`AB32_PAL`,

@@ -1,7 +1,6 @@
 // ------------------------------------------------------------ saved matches
 // A SAVE is a match frozen at one sim step, whole: every body, arrow in
-// flight, building, drop, camp, the counters' stock and prices, the clock and
-// the three random streams' positions - so a match put back does not merely
+// flight, building, camp, the clock and the random streams' positions - so a match put back does not merely
 // look like the captured one, it PLAYS OUT exactly as that one would have
 // from that step on. Players never save; this stays as the determinism
 // proof: DBG.saveHash after stepping a
@@ -26,15 +25,13 @@
 // the saved valley and not the fresh one.
 
 // ---- tuning ---------------------------------------------------------------
-const SAVE_V = 3;           // the body's shape; a body of another shape is refused, never half-read
-                            // (2: the generator grew to the 4x2 gold pump - a 1x1 one would load without its footprint;
-                            //  3: player building cut - a save holding a wall or a turret has no STRUCTS entry to load it by)
+const SAVE_V = 4;           // the body's shape; a body of another shape is refused, never half-read, so
+                            // nothing below fills in a field an older save lacked (4: the survival leftovers cut)
 
 // ---- what is saved ----------------------------------------------------------
 // [name, get, put]: get() hands the live value in, put(v) takes the decoded
 // one back. A const container is refilled in place (every file holds the same
 // array); a `let` is reassigned (this file shares the one global scope).
-// (a save from before the array joined SAVE_ROOTS carries none of it: it loads empty)
 function saveArr(a) { return [() => a, (v) => { a.length = 0; if (v) for (const x of v) a.push(x); }]; }
 // state's own UI keys are this screen's and never the match's: a load opens
 // with every panel shut
@@ -49,29 +46,25 @@ const SAVE_ROOTS = [
   ['animals', ...saveArr(animals)], ['structures', ...saveArr(structures)], ['robots', ...saveArr(robots)],
   ['arrows', ...saveArr(arrows)],
   ['particles', ...saveArr(particles)], ['floaters', ...saveArr(floaters)], ['footprints', ...saveArr(footprints)],
-  ['fish', ...saveArr(fish)], ['holes', ...saveArr(holes)], ['camps', ...saveArr(camps)],
+  ['fish', ...saveArr(fish)], ['camps', ...saveArr(camps)],
   ['craters', ...saveArr(craters)], ['nets', ...saveArr(nets)], ['abFx', ...saveArr(abFx)],
   ['guards', () => [guards, guardN], (v) => { saveArr(guards)[1](v && v[0]); guardN = v ? v[1] : 0; }], // ARMATOS's standards (js/sim/armatos.js)
   ['brushfires', ...saveArr(brushfires)], // IGNIA's lines of fire (js/sim/ignia.js)
   ['auraStars', ...saveArr(auraStars)], ['auraOrbs', ...saveArr(auraOrbs)], ['auraCurtains', ...saveArr(auraCurtains)], // AURA's strikes waiting and lights drifting (js/sim/aura.js)
   ['salviaBundles', ...saveArr(salviaBundles)], ['salviaDrops', ...saveArr(salviaDrops)], ['salviaThaws', ...saveArr(salviaThaws)], // SALVIA's poultices flying, snowdrops planted, warm rings (js/sim/salvia.js)
   ['lucernaHooks', ...saveArr(lucernaHooks)], ['lucernaLanterns', ...saveArr(lucernaLanterns)], ['lucernaCircles', ...saveArr(lucernaCircles)], // LUCERNA's crooks flying, lanterns lying, rings of light (js/sim/lucerna.js)
+  ['bucinaEchoes', ...saveArr(bucinaEchoes)], ['bucinaCalls', ...saveArr(bucinaCalls)], // BUCINA's echoes in flight and horn calls (js/sim/bucina.js)
   ['hiemsGlazes', ...saveArr(hiemsGlazes)], ['hiemsStorms', ...saveArr(hiemsStorms)], // HIEMS's ice and blizzards (js/sim/hiems.js)
   ['veloxStones', ...saveArr(veloxStones)], ['veloxLanes', ...saveArr(veloxLanes)], // VELOX's skipping stones and ice lanes (js/sim/velox.js)
+  ['nixShards', ...saveArr(nixShards)], ['nixClouds', ...saveArr(nixClouds)], // NIX's shards in flight and clouds on the ground (js/sim/nix.js)
   ['wordPops', ...saveArr(wordPops)], ['coinPops', ...saveArr(coinPops)], ['ptargets', ...saveArr(ptargets)], ['slashes', ...saveArr(slashes)],
   ['shed', () => [shedWait, shedLive], (v) => { saveArr(shedWait)[1](v[0]); shedLive = v[1]; }],
   ['iceBreaks', ...saveArr(iceBreaks)], // the breaks in their own shape (js/sim/icebreak.js); their pixels rebuild off them
-  // the orca (js/sim/orca.js); a save from before it carries none, and it stays where boot put it
-  ['orca', () => orca, (v) => { if (v) Object.assign(orca, ORCA_FRESH(), v); }],
-  // the bot callouts (js/ai/ai-callouts.js); a save from before they existed
-  // carries none of these, and loads with every side silent
-  ['callouts', ...saveArr(callouts)],
-  ['callSaid', () => callSaid, (v) => { callSaid[0] = v ? v[0] : {}; callSaid[1] = v ? v[1] : {}; }],
-  ['rng', () => [rng.s, fxRng.s], (v) => { rng.s = v[0]; fxRng.s = v[1]; }], // (an old save's third, the market's, is ignored)
-  // (a save from before the deer lines carries one number there: both sides start their clock fresh)
-  // (a save from before one map carries the shoal's cap and floor between them: skipped)
-  ['wild', () => [deerBackT, emergeSites],
-    (v) => { deerBackT = Array.isArray(v[0]) ? v[0] : [DEER_BACK, DEER_BACK]; emergeSites = v.length > 2 ? v[3] : v[1]; }],
+  ['orca', () => orca, (v) => { Object.assign(orca, ORCA_FRESH(), v); }], // the orca (js/sim/orca.js)
+  ['callouts', ...saveArr(callouts)], // the bot callouts (js/ai/ai-callouts.js)
+  ['callSaid', () => callSaid, (v) => { callSaid[0] = v[0]; callSaid[1] = v[1]; }],
+  ['rng', () => [rng.s, fxRng.s], (v) => { rng.s = v[0]; fxRng.s = v[1]; }],
+  ['wild', () => [deerBackT, emergeSites], (v) => { deerBackT = v[0]; emergeSites = v[1]; }],
   ['ai', () => [aiSitTick, aiSit], (v) => { aiSitTick = v[0]; aiSit = v[1]; }],
   ['aiTeams', ...saveArr(aiTeams)], // the sides' shared minds (js/ai/ai-team.js)
   ['stats', () => [statT, matchStats], (v) => { statT = v[0]; matchStats = v[1]; }],
@@ -99,7 +92,7 @@ function saveSum(o) {
   return (h >>> 0) || 1;
 }
 // A tile object that points at anything but another tile object or a static
-// row (a den, a hut or a cairn at its camp's `site`) is LIVE: always written,
+// row (a den or a hut at its camp's `site`) is LIVE: always written,
 // never taken as untouched, because the fresh valley's copy points at the
 // fresh page's camp and not at the loaded one. So is anything pointing at a
 // live one (the parts of its footprint). A dozen objects on any seed.
@@ -298,10 +291,6 @@ function saveApply(rec) {
   for (const [i, o] of r.tiles) objects[i] = o;
   for (let j = 0; j < r.ground.length; j += 2) ground[r.ground[j]] = r.ground[j + 1];
   for (const [n, , put] of SAVE_ROOTS) put(r[n]);
-  // a save from before a record field existed: the field starts at nothing
-  for (const p of players) for (const k in PLAYER_RECORD) if (p[k] === undefined) p[k] = PLAYER_RECORD[k];
-  for (const p of players) if (!p.items) p.items = new Array(ITEM_SLOTS).fill(null); // ...and from before items (js/sim/items.js)
-  for (const p of players) { if (!(p.potions >= 0)) p.potions = 0; if (!(p.potT >= 0)) p.potT = 0; } // ...and from before potions
   objTimersRescan(); // the objects with a clock running are an index of the tiles, rebuilt rather than saved (js/sim/sim.js)
 }
 
@@ -313,7 +302,7 @@ function saveApply(rec) {
 // the one draw that stream lends the sim (actions.js).
 function saveHash() {
   const b = saveCapture().body;
-  b.rng = [b.rng[0], b.rng[2]];
+  b.rng = [b.rng[0]]; // the sim's stream only: fxRng tops up the snowfall, which is never saved
   delete b.view; // the camera is this screen's, and a load eases it in
   b.particles = b.particles.map((q) => { const o = Object.assign({}, q); delete o.color; return o; });
   const s = JSON.stringify(b);

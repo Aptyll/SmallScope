@@ -163,6 +163,8 @@ const CLASS_AB = [
   HIEMS_AB, // HIEMS - the icicle, the clear ice, the cold snap, the whiteout (js/sim/hiems.js)
   RUPES_AB, // RUPES - the heave, the shed, the shoulder, the avalanche (js/sim/rupes.js)
   VARRO_AB, // VARRO - the lunge, the howl, the snap, the pack (js/sim/varro.js)
+  BUCINA_AB, // BUCINA - the blast, the note, the echo, the pines (js/sim/bucina.js)
+  NIX_AB, // NIX - the shard, the cloud, the drift step, the squall (js/sim/nix.js)
   VELOX_AB, // VELOX - the skip stone, the ice lane, the quick step, the long run (js/sim/velox.js)
 ];
 
@@ -472,7 +474,7 @@ function abGrapple(p) {
       const tx = ctx2 + ox, ty = cty + oy;
       if (!inWorld(tx, ty)) continue;
       const o = objects[idx(tx, ty)];
-      if (!o || (o.type !== 'tree' && o.type !== 'deadTree')) continue;
+      if (!o || o.type !== 'tree') continue;
       const cx2 = tx * TILE + 8, cy2 = ty * TILE + 8;
       // the assist: perpendicular distance of the trunk to the aim ray
       const along = (cx2 - p.x) * nx + (cy2 - p.y) * ny;

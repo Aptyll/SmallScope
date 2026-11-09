@@ -322,14 +322,12 @@ function drawHitboxes(ox, oy, ex, ey) {
     hbMid(p.x - ex, p.y - 32 - ey, p.y + 4 - ey); // up past the name tag, down past the feet
   }
 
-  // animals: birds are the one unit nothing collides with, so they get no
-  // body circle - only the (smaller) circle an arrow tests
   for (const a of animals) {
     if (a.dead) continue;
-    if (a.kind !== 'bird') hbRing(a.x - ex, a.y - ey, unitRadius(a), HB_BODY);
+    hbRing(a.x - ex, a.y - ey, unitRadius(a), HB_BODY);
     hbRing(a.x - ex, animalHitY(a) - ey, animalHitR(a), HB_HURT);
     hbDot(a.x - ex, a.y - ey, HB_BODY);
-    hbMid(a.x - ex, a.y - (a.alt || 0) - 26 - ey, a.y + 4 - ey);
+    hbMid(a.x - ex, a.y - 26 - ey, a.y + 4 - ey);
   }
 
   for (const b of robots) {
@@ -388,23 +386,12 @@ function drawNavPaths(ox, oy, ex, ey) {
     hbBox(nav.gtx * TILE - ox, nav.gty * TILE - oy, TILE, TILE, col);
     return true;
   };
-  // A bird in the air is not on the ground route grid - it flies over
-  // everything - but it does have a decided place to be: the perch it is
-  // coming down on. Straight line and the same goal box, dotted the whole
-  // way because the circuit it flies to get there is not surveyed.
-  const perchLine = (a, col) => {
-    if (a.flyT <= 0 || !a.perch) return;
-    const gx = Math.round(a.perch.tx * TILE + 8 - ex), gy = Math.round(a.perch.ty * TILE + 8 - ey);
-    hbLine(Math.round(a.x - ex), Math.round(a.y - a.alt - ey), gx, gy, col, 2);
-    hbBox(a.perch.tx * TILE - ox, a.perch.ty * TILE - oy, TILE, TILE, col);
-  };
   // one colour per kind of walker, as they read on the minimap: the players
   // gold, a wolf red, the rest of the wildlife green, a bot blue
   for (const p of players) if (p.active && !p.dead && !inAir(p)) one(p, '#ffe27a');
   for (const a of animals) {
     if (a.dead) continue;
-    if (a.kind === 'bird') perchLine(a, '#8ef0a0');
-    else one(a, isCampKind(a.kind) ? '#ff6a6a' : '#8ef0a0');
+    one(a, isCampKind(a.kind) ? '#ff6a6a' : '#8ef0a0');
   }
   for (const b of robots) if (!b.dead) one(b, '#7fc8ff');
   // fish steer and never route - there is no goal tile under a fish to box -

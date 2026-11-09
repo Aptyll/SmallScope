@@ -48,6 +48,8 @@ if (ARENA) {
 }
 layDrifts();         // the snow's depth, in the lee of everything worldgen stood up (js/sim/depth.js)
 initPlayers();
+// on Steam, a name the player never chose becomes their Steam name (PROFILE.steamName)
+if (window.steamBridge && steamBridge.info) steamBridge.info().then((i) => { if (i && i.ready && PROFILE.steamName(i.name)) player.name = PROFILE.name(); }).catch(() => {});
 // the match's role for this screen (js/net/net.js): ?net=host&room=R hosts a
 // room on the dev server's relay, ?net=client&room=R joins it; nothing else
 // (and any file:// page) is solo. A lobby hands the role in instead, later.
@@ -115,14 +117,14 @@ window.DBG = {
   botThought, botGuess, BOTLOG, botLogExport, openBotLab, botViewStep,
   get botView() { return botView; }, set botView(v) { botView = v | 0; },
   SEED, state, animals, objects, ground, mouse, keys, footprints, flakes,
-  fish, holes, addFish, spawnEmerger,
+  fish, addFish, spawnEmerger,
   // the ice breaking in its own shape (js/sim/icebreak.js): DBG.iceBreak(x, y, 'breach', 0, { warn: 0.9 })
   iceBreaks, iceBreak, iceBreakAge, iceBreakCovers, iceBreakHolds, iceBreakWet, ICE_BREAK_SHAPES,
   // the orca and its lake (js/sim/orca.js, js/sim/world.js): its state, the line over a head, the disc
   orca, orcaLine, orcaAge, orcaShore, orcaLakeAt, orcaLakeEdge, ORCA_LINE,
   // the camps: the live registry, the table behind it, where each site is,
   // what is where, restock by hand, and give a player a bear buff by hand (campBuff(p, t, 'alpha' | 'dire'))
-  camps, CAMPS, CAMP_SITES, campSites, campTile, campAt, stockCamps, campBuff, flushBirds,
+  camps, CAMPS, CAMP_SITES, campSites, campTile, campAt, stockCamps, campBuff,
   // the top and bot lanes (js/sim/lanes.js): a centreline, its distance, a march down one, and the hollows' gates and bay spots
   laneLine, sideLaneDist, laneWaypoints, baseGate, baseBaySpot,
   // the snow's depth (js/sim/depth.js): the map, the deep band, the drifts and the wind that laid them

@@ -328,7 +328,45 @@ const CLASSES = [
       bowCharge: 0.75, nock: 0.5, spdDmg: 5, dodgeSpeed: 235 },
   },
   {
-    // the eleventh named hero (js/sim/velox.js): the kiting marksman. She throws her
+    // the tenth named hero (js/sim/bucina.js): the tempo support, her side's speed and
+    // nerve: a horn that shoves, rallies, echoes off the walls and calls the snow down off
+    // the pines; no heals, no shields, and little damage of her own
+    name: 'BUCINA', role: 'THE HORN', body: 1, passive: 'heard', // HERO_PASSIVE, js/sim/bucina.js
+    look: { sex: 1, tone: 1, hair: 3, hairCol: 3, beard: 0, face: 2 },
+    blurb: ['ONE NOTE AT THE RIGHT TIME WINS THE FIGHT.', 'YOUR SIDE RUNS FASTER, HITS FASTER AND DOES NOT STOP.', 'NO HEALS, NO SHIELDS: YOUR SIDE HAS TO FOLLOW.'],
+    story: "SHE BLEW THE HORN FOR THE EMPIRE'S RETREATS, AND ONCE BLEW IT WITHOUT AN ORDER AND BROUGHT A WHOLE COLUMN HOME. THEY TOOK THE HORN AWAY FOR IT. NOW SHE CARRIES HER OWN, IT CALLS A COMPANY FORWARD, AND THE SNOW COMES OFF THE PINES WHEN IT DOES.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
+    // a note off her horn: the staff mages' reach, a little short of it
+    staff: 'horn', // her HORN, carried upright (HERO_STAVES, js/draw/bucina.js)
+    attack: { name: 'HORN', art: 'horn', cycle: 62 / 60, kb: 0.6, shot: { speed: 255, life: 0.8, col: '#cfe0f2', look: 'hornnote' } },
+    base: { hp: 92, dmg: 14, armor: 14, ap: 0, haste: 0, ms: PLAYER_SPEED },
+    grow: { hp: 6.5, dmg: 1.1, as: 0.01, armor: 2.2 },
+    rankOrder: [1, 0, 2], // the note, the blast, the echo
+    // her own body in each of her looks (BUCINA_SKINS, js/sprites/bucina.js), worn per
+    // player (heroSkinOf) over the side's coat
+    skins: BUCINA_SKINS, skinPal: BUCINA_PAL, skinSlot: 'bucina',
+    paint48: { t: '#7d8699', T: '#b4bdcc', g: '#1c2232', G: '#9aa3b8', m: '#5c6478', M: '#454c5e' }, // the 48 px model's (js/sprites/looks.js): its K is skin
+    kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1, chargeMul: 0.55,
+      bowCharge: BOW_CHARGE, nock: 0.4, spdDmg: 0, dodgeSpeed: DODGE_SPEED },
+  },
+  {
+    // the twelfth named hero (js/sim/nix.js): the night scout, an assassin of
+    // skill and weather. Quick and light, her damage in one hidden blow; she
+    // has the least armor of any blade and little to fall back on once seen
+    name: 'NIX', role: 'THE SNOWBLIND', body: 1, passive: 'nightwatch', // HERO_PASSIVE, js/sim/nix.js
+    look: { sex: 1, tone: 1, hair: 3, hairCol: 0, beard: 0, face: 2 },
+    blurb: ['THE NIGHT IS HERS TO KEEP.', 'THE SNOW HIDES HER. THE FIRST BLOW FROM IT HITS HARDEST.', 'SEEN IN THE OPEN, SHE IS EASY TO CATCH.'],
+    story: "SHE WAS THE EMPIRE'S BEST SCOUT UNTIL SHE CAME HOME WITH A TRUE REPORT NOBODY WANTED TO READ. IN THE VALLEY SHE KEEPS WATCH THROUGH THE LONG NIGHTS SO THE DIGGERS CAN SLEEP. SHE DOES NOT GIVE HER NAME, SO THE COMPANY GAVE HER ONE.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
+    attack: { name: 'ICE DIRK', art: 'sword', cycle: 24 / 60, kb: 0.8, cut: { reach: 22, half: 0.9 } }, // quicker and shorter than the spatha
+    skins: NIX_SKINS, skinPal: NIX_PAL, skinSlot: 'nix',
+    blade: 'dirk', // her ICE DIRK in her hands (HERO_BLADES, js/draw/nix.js)
+    base: { hp: 98, dmg: 19, armor: 14, ap: 0, haste: 0, ms: PLAYER_SPEED + 6 },
+    grow: { hp: 6.5, dmg: 1.8, as: 0.013, armor: 2 },
+    rankOrder: [0, 2, 1], // the shard, the drift step, the cloud
+    kit: { iceMax: 1.15, iceSteer: 3.4, slideMin: 70, fatigue: 0.75, chargeMul: 0.7,
+      bowCharge: 0.75, nock: 0.5, spdDmg: 5, dodgeSpeed: 240 },
+  },
+  {
+    // the thirteenth named hero (js/sim/velox.js): the kiting marksman. She throws her
     // sling while she skates, a shorter reach than the hunter's and less damage; quick,
     // steady on ice and very hard to catch, and caught, she has nothing to stop a rival
     name: 'VELOX', role: 'THE SKATER', body: 1, passive: 'keepmoving', // HERO_PASSIVE, js/sim/velox.js
@@ -724,6 +762,8 @@ class Player {
     this.brothT = 0; this.cloakT = 0;
     // LUCERNA (js/sim/lucerna.js), on any body she pulls: the spot it is drawn to and the clock
     this.pullT = 0; this.pullX = 0; this.pullY = 0;
+    // BUCINA (js/sim/bucina.js), on any player who heard her: HEARD's run, and the note's hold and its attack speed
+    this.heardT = 0; this.rallyT = 0; this.rallyAs = 0;
     // RUPES (js/sim/rupes.js): his snowpack (0..1, PACK_LAYERS layers) and the seconds since a
     // hit fed it; the px his avalanche has rolled (its size)
     this.pack = 0; this.packIdle = 0; this.avaD = 0;
@@ -733,6 +773,11 @@ class Player {
     // VELOX (js/sim/velox.js): KEEP MOVING's stacks and their clock, QUICK STEP's readied
     // throw, LONG RUN's clock
     this.keepN = 0; this.keepT = 0; this.quickT = 0; this.runT = 0;
+    // NIX (js/sim/nix.js): a moment shown after striking from her cloud; WHITEOUT's
+    // vanish and the hero it struck (the reset's clock, and whether this cast may reset);
+    // NIGHT WATCH's hidden blow waiting
+    this.nixOutT = 0; this.nixWhiteT = 0; this.nixStrikeId = -1; this.nixResetT = 0; this.nixRecast = false; this.nixStrikeOnce = false;
+    this.nixAmbush = false; this.nixDriftId = -1; this.nixDriftX = 0; this.nixDriftY = 0;
     this.hopT = 0;                                 // the net shot's recoil hop, on the body
     this.grapT = 0; this.grapX = 0; this.grapY = 0; // the grapple: reel time left, and the anchor it hauls toward
     this.zip = -1; this.zipD = 0; this.zipDir = 1;  // the zipline (js/sim/zipline.js): the line ridden (its index in zips, or -1), px along it, and which way
@@ -890,7 +935,6 @@ const particles = []; // {x,y,vx,vy,life,color,size,grav} + optional `alpha` fad
 const floaters = [];
 const footprints = [];
 const fish = []; // swimmers under the ice: {x,y,a,spd,t,turnT,spook}
-const holes = []; // tile idx of open water holes; they refreeze each dawn
 const camps = []; // the jungle camps, stood up at fixed sites by worldgen (see the camps banner, js/sim/camps.js)
 
 // ------------------------------------------------------------ damage & death

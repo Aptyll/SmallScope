@@ -3,7 +3,7 @@
 // itself): a pylon's sprite in each side's colour, the cable pass that
 // hangs the line between the pylons over everything but the night, and the
 // rider's handle and rope. The pylon bakes here, beside its draw pass, the
-// way the cairn does (js/draw/ground.js) - never under
+// way the practice dummy does (js/draw/ground.js) - never under
 // js/sprites/. Two bakes, one per team skin, looked up by skin(o.team) like
 // every other team-coloured thing on the map.
 const PYLON_H = 40;
@@ -63,7 +63,7 @@ const PYLON_SPRS = (() => {
   });
 })();
 // a pylon in render()'s y-sorted object pass: bottom-aligned on its tile
-// like the cairn, its foot's shadow first
+// like a den, its foot's shadow first
 function drawPylon(o, px, py) {
   ctx.fillStyle = 'rgba(40,60,100,0.25)'; ctx.fillRect(px + 2, py + TILE - 2, 12, 2);
   drawSpriteFlash(PYLON_SPRS[skin(o.team)], px + 3, py + TILE - PYLON_H, o.flash);

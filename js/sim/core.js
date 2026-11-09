@@ -54,7 +54,6 @@ const YIELD = {
   // chaining pines nonstop earns about a third of one lane's soldier last hits.
   treeHit: 0,   treeFall: 0,            // 3 hp tree (TREE_HP, js/sim/world.js): the fell itself pays nothing...
   treeRare: 14,                         // ...and a gold pine pays this on the fell
-  deadTreeHit: 0, deadTreeFall: 7,      // 3 hp snag  -> 7 gold, the rookery's cover; leaves a stump
   rabbit: { coins: 2, each: 35 },       // 70 gold, but it bolts
   deer:   { coins: 3, each: 40, xp: 40 }, // 120 gold, the big mobile target
   wolf:   { coins: 2, each: 55, xp: 15 }, // 110 gold, a den's four (440): the jungle's farm, a soldier's last hit apiece, and it bites back once woken

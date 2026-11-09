@@ -19,7 +19,6 @@ rather than a different resource (the League model: one number, many ways to ear
 | the start | `START_GOLD` (500, js/sim/player.js), in the wallet from the landing | League's start: a first part and a potion; never `earned` |
 | the clock | `TRICKLE_GOLD` (8) every `TRICKLE_T` (4 s) — the `passive income` banner, js/sim/sim.js | 120 a minute to every player on the ground, silently (no floater, no blip); the floor under everyone's purse |
 | tree (`TREE_HP` 3, js/sim/world.js) | `treeFall` 0: a plain pine pays nothing (`treeHit` is 0 too) | side income, never the farm — a pine a second chained, and only a gold pine pays; leaves a stump |
-| dead tree (3 hp) | `deadTreeFall` 7 | a tree; none stand since 4.82 (the brown bear's ring went with its den) |
 | gold pine (25%) | `treeRare` 14 on the fell | the `rare` roll, `treeRare()`: one pine in four, unmarked, so a chain of pines pays about 196 a minute |
 | rabbit | `rabbit` 2 coins × 35 → 70 | bolts when approached; jinks one shot per 10 s |
 | deer | `deer` 3 coins × 40 → 120 | the big mobile target: two of them, each running its side's line |
