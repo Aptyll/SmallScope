@@ -14,7 +14,8 @@
 //     replaces the earlier everywhere, which is how one agent's helper
 //     quietly rewires another's feature.
 // It also reports a js file index.html never loads, and one it loads twice.
-// It runs app/check-size.js too, so a file or function grown too big fails here.
+// It runs app/check-size.js too, so a file or function grown too big fails here,
+// and app/check-dead.js, so a top-level name nothing uses fails here.
 //
 // It reads each file with a small tokenizer (strings, template literals,
 // comments and regex literals skipped, brackets tracked) and takes the
@@ -267,15 +268,19 @@ function main() {
   // no file or function may grow too big to read whole (app/check-size.js says how it counts)
   const sizes = require('./check-size.js').check();
   problems.push(...sizes);
+  // nor may a name sit there unused (app/check-dead.js)
+  const dead = require('./check-dead.js').check();
+  problems.push(...dead);
   if (!problems.length) {
-    console.log(`globals ok: ${byName.size} top-level names across ${order.length} scripts, no collisions; sizes ok`);
+    console.log(`globals ok: ${byName.size} top-level names across ${order.length} scripts, no collisions; sizes ok; no dead code`);
     return 0;
   }
   for (const p of problems) console.log(p);
   console.log(`\n${problems.length} problem(s)` + (fatal ? ` - ${fatal} would throw when the page loads` : '') +
     (silent ? ` - ${silent} silently replace an earlier definition` : '') +
-    (sizes.length ? ` - ${sizes.length} too big: split the file along its sections, or the function into named steps` : ''));
+    (sizes.length ? ` - ${sizes.length} too big: split the file along its sections, or the function into named steps` : '') +
+    (dead.length ? ` - ${dead.length} never used: delete them` : ''));
   return 1;
 }
-module.exports = { tokenize, loadOrder };
+module.exports = { tokenize, loadOrder, declarations };
 if (require.main === module) process.exit(main());
