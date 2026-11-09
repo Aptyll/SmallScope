@@ -106,7 +106,7 @@ const AI_LADDER_HANDS = { name: 'LADDER', hands: true, hand: AI_LEVELS[2].hand, 
 function aiProfile(p) {
   if (p.ai.prof) return p.ai.prof;
   const lv = Math.max(0, Math.min(AI_LEVELS.length - 1, NET.botLv != null ? NET.botLv : settings.aiLevel | 0)); // RANKED pins it (rankLevel, js/ui/rooms.js)
-  return player && p.team === player.team ? AI_ALLIES[lv] : AI_LEVELS[lv];
+  return aiSideHuman(p.team) ? AI_ALLIES[lv] : AI_LEVELS[lv]; // a side with a person on it plays as allies: online, both sides alike
 }
 
 // ------------------------------------------------------------ skill

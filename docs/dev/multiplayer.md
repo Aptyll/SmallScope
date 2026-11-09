@@ -599,7 +599,9 @@ well each rung is played** (the `difficulty` banner, js/ai/ai-skill.js): the **r
 `AI_LEVELS[settings.aiLevel]` — EASY / NORMAL / HARD / IMPOSSIBLE, the lobby's plates, remembered
 with the profile — and **your allies** run `AI_ALLIES[level]`, the next notch up (capped at the
 top) plus the support fields, so your side is always the more competent one and the difficulty
-is how good the *other* side is. `aiProfile(p)` is the one place that choice is made
+is how good the *other* side is. "Your side" is any side with a person on it (`aiSideHuman`,
+js/ai/ai.js: the host or any guest, never the screen's own `player`), so online two sides with people both
+get allies. `aiProfile(p)` is the one place that choice is made
 (`p.ai.prof` overrides it for a staged bot — `DBG`, the calibration harness). Every field is a
 worse or better use of the same input struct (numbers EASY / NORMAL / HARD / IMPOSSIBLE; the
 banner has the whole table): `sight` (120 / 147 / 200 / 267 px — sized to the share of a 640×360 screen a hand sees — through `seenAt` so
@@ -870,7 +872,7 @@ The ladder:
    bird and a push that turns to meet each one never lands a swing. A roost it cannot route to is left for `ai.pushCd`
    (10 s).
 9. **escort** (allies only) — the two lowest allied bots (`aiEscorts`) keep within
-   `AI_ESCORT` (120 px) of the human while they are on the ground and inside `AI_ESCORT_R`
+   `AI_ESCORT` (120 px) of the nearest person on their side (`aiWard`; any human seat) while they are on the ground and inside `AI_ESCORT_R`
    (400 px), going on down the ladder while they are close. An escort's harvest and hunt
    stay inside that leash, and work the human walks away from is dropped.
 9a. **help** — a teammate's call this bot answers (`aiHelpCall`; never a pusher, a guard, a
