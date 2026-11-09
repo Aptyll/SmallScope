@@ -182,6 +182,7 @@ function beginDrop() {
   PROFILE.addMatch(); // ...and the profile's matches: one per takeoff
   // a profile's first ride sits through the drop brief before its hop
   state.drop = { eagles: makeEagles(), firstFlight: !PROFILE.hasDropped() };
+  onevoneBegin(); // a 1V1 party's rules into the match (js/sim/onevone.js)
   const seats = [0, 0]; // next free wing seat per team, dealt in slot order - the first slot of each side sits at seat 0
   for (const p of players) {
     if (!p.active) continue;

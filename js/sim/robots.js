@@ -271,8 +271,10 @@ function pitchStall(b, s) {
 const MERCH_BAY_ORDER = [1, 0, 2];
 // where the next bay goes: the first lane in MERCH_BAY_ORDER with no bay
 // standing that has a site, or null (the site carries its lane)
+// the lanes this match plays: all three, or the mid road alone in a 1V1 (js/sim/onevone.js)
+function merchLanes() { return state.onevone ? [1] : MERCH_BAY_ORDER; }
 function merchNextBay(b) {
-  for (const lane of MERCH_BAY_ORDER) {
+  for (const lane of merchLanes()) {
     if (b.bays.some((o) => o.lane === lane)) continue;
     const s = merchBaySite(b.team, lane);
     if (s) return s;
@@ -440,8 +442,9 @@ function updateMerchant(b, dt) {
   // the next one MERCH_BAY_REBUILD.
   const standing = b.bays.filter((o) => structOf(objAt(o.tx, o.ty)) === o);
   if (standing.length < b.bays.length) { b.bays = standing; b.bayT = Math.max(b.bayT, MERCH_BAY_REBUILD); }
-  if (b.bays.length < MERCH_BAYS) b.bayT -= dt;
-  if (b.bays.length < MERCH_BAYS && b.bayT <= 0) {
+  const want = Math.min(MERCH_BAYS, merchLanes().length);
+  if (b.bays.length < want) b.bayT -= dt;
+  if (b.bays.length < want && b.bayT <= 0) {
     if (!b.baySite) b.baySite = merchNextBay(b);
     const s = b.baySite;
     const free = s && (b.bayGift[s.lane] || !b.bays.length); // a lane's first, or an empty yard's

@@ -109,9 +109,9 @@ function friendAct(f) {
   if (FRIENDS.sent[f.id]) return 'sent';
   const mine = friendsLobby();
   if (f.game && f.lobby && f.lobby === mine) return null; // already in your party
-  if (f.game && f.lobby && f.state === 'room' && f.patch === PATCH_TXT && f.n < FR_PARTY_MAX) return 'join';
+  if (f.game && f.lobby && f.state === 'room' && f.patch === PATCH_TXT && f.n < Math.min(FR_PARTY_MAX, partyCap(f.mode))) return 'join';
   if (f.game && (f.state === 'match' || (f.patch && f.patch !== PATCH_TXT))) return null; // busy, or a patch that could not join
-  if (f.st && mine && seatsOpen() && partySize() < FR_PARTY_MAX) return 'invite';
+  if (f.st && mine && seatsOpen() && partySize() < Math.min(FR_PARTY_MAX, partyCap(NET.mode))) return 'invite';
   return null;
 }
 function friendDo(f) {

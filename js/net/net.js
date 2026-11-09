@@ -222,6 +222,7 @@ function netHostHello(peer, msg) {
     // whom to bring - never once the hero select or the match has begun
     // (a party on the practice field takes friends at any time)
     if (NET.mode !== 'practice' && (state.mode !== 'title' || NET.phase !== 'room')) return refuse('BUSY');
+    if (partySize() >= partyCap(NET.mode)) return refuse('FULL'); // a 1V1 is a party of one (js/ui/rooms.js)
     const seat = players.find((p) => p.team === player.team && !isHuman(p));
     if (!seat) return refuse('FULL');
     slot = seat.id;
