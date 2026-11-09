@@ -35,11 +35,11 @@ function drawGroundPass(ox, oy, ex, ey, now) {
   drawTrample(ox, oy);
 }
 
-// a mark reaches FOOT_REACH px from its point at most (a crawl furrow's lip
-// and elbow dimple), so one further off the frame paints nothing: skipped
-// before its colour string is built. The list holds every mark in the world
-// (a few hundred) and only a handful are ever on screen
-const FOOT_REACH = 6;
+// a mark reaches FOOT_REACH px from its point at most, so one further off
+// the frame paints nothing: skipped before its colour string is built. The
+// list holds every mark in the world (a few hundred) and only a handful are
+// ever on screen
+const FOOT_REACH = 2;
 function drawFootprints(ox, oy) {
   // footprints + slide trails
   for (const f of footprints) {
@@ -61,30 +61,6 @@ function drawFootprints(ox, oy) {
       const a = Math.max(0, 1 - f.t / 9);
       ctx.fillStyle = 'rgba(238,250,255,' + (a * 0.75).toFixed(3) + ')';
       ctx.fillRect(Math.round(f.x - ox), Math.round(f.y - oy), 1, 1);
-    } else if (f.k === 3) {
-      // belly-crawl furrow: a 5px trough laid ACROSS the path (f.nx/ny is the
-      // perpendicular the mark was pushed with, so it stays square to the
-      // crawl whichever way it went), pressed dark in the middle with the snow
-      // it shoved up pale at both lips, plus one elbow dimple to the side.
-      // Lives the full 9 s of a footprint - a trail worth following needs to
-      // outlast the crawl that made it.
-      const a = Math.max(0, 1 - f.t / 9);
-      const px = Math.round(f.x - ox), py = Math.round(f.y - oy);
-      const dark = 'rgba(118,144,186,' + (a * 0.45).toFixed(3) + ')';
-      const lip = 'rgba(200,216,238,' + (a * 0.4).toFixed(3) + ')';
-      // two deep along the direction of travel (f.ny, -f.nx), so consecutive
-      // marks butt up against each other into one trough instead of a ladder
-      for (let k = 0; k < 2; k++) {
-        const ox2 = Math.round(f.ny * k), oy2 = Math.round(-f.nx * k);
-        for (let t = -2; t <= 2; t++) {
-          ctx.fillStyle = t === -2 || t === 2 ? lip : dark;
-          ctx.fillRect(px + ox2 + Math.round(f.nx * t), py + oy2 + Math.round(f.ny * t), 1, 1);
-        }
-      }
-      if (f.s) {
-        ctx.fillStyle = dark;
-        ctx.fillRect(px + Math.round(f.nx * 3 * f.s), py + Math.round(f.ny * 3 * f.s), 1, 1);
-      }
     } else {
       // walking footprints
       const a = Math.max(0, 1 - f.t / 9);
@@ -124,8 +100,8 @@ function drawFlatPass(ox, oy, ex, ey, tx0, ty0, tx1, ty1, now) {
   // ability would cover
   drawCastPreview(ex, ey, now);
 
-  // what the abilities left flat on the snow - craters, and the piercing
-  // shot's telegraph line (all under entities)
+  // what the abilities left flat on the snow - a kneeling shot's telegraph
+  // line (all under entities)
   drawAbilityGround(ex, ey, now);
 }
 

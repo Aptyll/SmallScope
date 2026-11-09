@@ -283,15 +283,6 @@ function abHitDummies(x, y, r, dmg) {
 // Everything the abilities left lying in the world, stepped once per sim
 // step from updatePlay: the flashes age, and each hero's own (HERO_TICK).
 // (A piercing shot rides the arrows array, js/sim/sim.js.)
-
-// Each of them is asked about through `sideOf` (js/sim/actions.js), which hands
-// unitsNear/unitsHit the side a thing in the world is on rather than a living
-// caster. Everything those two return is fair game: players, wildlife AND
-// bots, none of them a special case.
-// This is the other half: who to credit a kill to - the caster, if they are
-// still standing. A trap that outlives its hunter kills for nobody.
-function abCredit(w) { const o = players[w.owner]; return o && !o.dead ? o : null; }
-
 function updateAbilityWorld(dt) {
   for (let i = abFx.length - 1; i >= 0; i--) {
     abFx[i].t += dt;

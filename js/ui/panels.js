@@ -356,7 +356,6 @@ function renderWorldMap(now) {
   }
   for (const p of players) {
     if (p === vp || !p.active || p.dead || inAir(p) || !fogShown(p, now)) continue;
-    if (p.team !== vp.team && p.markT <= 0 && concealOf(p) >= PRONE_MAP) continue; // buried: off the map, same as the minimap - unless falcon-marked
     drawMapUnit(ctx, mx(p.x), my(p.y), TEAMS[skin(p.team)].mark, CHART_DARK, 2, false, foeCue(p.team));
   }
   // the eagles as bird diamonds in team colour: the two roosted objectives,

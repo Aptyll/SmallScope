@@ -2,8 +2,8 @@
 // ------------------------------------------------------------ hero grid
 // The HERO GRID on the lobby (menu.js `lobby`): a cell per hero in the
 // middle column under the search field, League's champion grid at Softfall's size. A cell is the hero's
-// own 48 px model (js/sprites/looks.js) cropped to the head at 2x - each hero
-// wears ONE fixed look (CLASSES, js/sim/player.js), so the face IS the hero.
+// head off its own standing front at 2x (heroHead, js/ui/draft.js), in its free
+// look, so the face IS the hero.
 // What you point at is gold (red while it is a ban), a hovered cell lightens,
 // and each hero's name prints under its cell.
 // A banned hero is dimmed and struck through in red; one a person on your
@@ -20,15 +20,16 @@
 const HERO_CELL = 42;                  // a cell's side: a 20 px head crop at 2x, and its rim
 const HERO_GAP = 6;
 const HERO_PITCH = HERO_CELL + 12;     // a grid row and the names under it
-const HERO_CROP = { x: 14, y: 2, s: 20 }; // the head inside the 48 px model
+const HERO_FACE = 20;                  // a face cell's side at 1x (heroHead, js/ui/draft.js)
 const HERO_SOON_INK = '#26305a';       // a coming hero's silhouette
 const HERO_SEARCH_W = 96;              // the search field, right of the filters
 const HERO_SEARCH_MAX = 12;
 
-// every cell the grid has, playable first: { name, cls, look, soon }
+// every cell the grid has, playable first: { name, cls, soon } (a coming hero's
+// cls is the hero whose shape its silhouette borrows, HEROES_SOON's `like`)
 function heroList() {
-  return CLASSES.map((c, i) => ({ name: c.name, cls: i, look: c.look, soon: false }))
-    .concat(HEROES_SOON.map((h) => ({ name: h.name, cls: h.cls, look: h.look, soon: true })));
+  return CLASSES.map((c, i) => ({ name: c.name, cls: i, soon: false }))
+    .concat(HEROES_SOON.map((h) => ({ name: h.name, cls: heroIndex(h.like), soon: true })));
 }
 // the heroes the search lets through: the typed name's (menu.search,
 // anywhere in the name); a coming hero only while nothing is typed
@@ -99,13 +100,13 @@ function drawHeroFilters(L, a, hot, now) {
 // it up, draftYield); a rival's pick is never shown - the pick is blind. The
 // heroes still to come (HEROES_SOON) stand at the end as dark silhouettes.
 const heroSil = document.createElement('canvas');
-heroSil.width = heroSil.height = HERO_CROP.s;
+heroSil.width = heroSil.height = HERO_FACE;
 const heroSilG = heroSil.getContext('2d');
 function drawHeroRow(cells, a) {
   const m = state.menu, D = DRAFT;
   const live = m.screenT >= 1 && m.popT <= 0 && draftOpen() && D.lock[localId] < 0;
   const hv = live ? heroCellAt(cells) : -1;
-  const team = skin(player.team), S = HERO_CROP.s, mark = TEAMS[team].mark;
+  const team = skin(player.team), S = HERO_FACE, mark = TEAMS[team].mark;
   const mine = D.hover[localId], banning = D.phase === 'ban';
   for (const c of cells) {
     const h = c.hero, i = c.i;
@@ -119,11 +120,12 @@ function drawHeroRow(cells, a) {
     ctx.fillStyle = picked ? (banning ? SEL_RED : SEL_GOLD) : over ? SC_LBL : SC_EDGE;
     ctx.fillRect(c.x, c.y, c.w, c.h);
     ctx.fillStyle = SC_INK; ctx.fillRect(c.x + 1, c.y + 1, c.w - 2, c.h - 2);
-    const src = SPRITES.portrait(h.cls, h.look, team);
-    if (h.soon) { // the model's head as one flat shade: who is coming, not yet who they are
+    if (h.soon) { // a hero's head as one flat shade: who is coming, not yet who they are
+      const f = heroHead(h.cls, team, null);
       heroSilG.globalCompositeOperation = 'source-over';
+      heroSilG.imageSmoothingEnabled = false;
       heroSilG.clearRect(0, 0, S, S);
-      heroSilG.drawImage(src, HERO_CROP.x, HERO_CROP.y, S, S, 0, 0, S, S);
+      heroSilG.drawImage(f.img, f.x, f.y, f.w, f.w, 0, 0, S, S);
       heroSilG.globalCompositeOperation = 'source-in';
       heroSilG.fillStyle = HERO_SOON_INK; heroSilG.fillRect(0, 0, S, S);
       ctx.drawImage(heroSil, 0, 0, S, S, c.x + 1, c.y + 1, S * 2, S * 2);

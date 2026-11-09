@@ -30,7 +30,7 @@
 // - HERO_MARK: fn(e, px, py, w, h, now) drawn over any body with the states
 //   every unit wears (drawUnitStates): a mark a hero left on it, a hero's own stacks.
 // - HERO_OVER: { w(e) -> px wide (0: not showing), draw(e, x, y, now) } a mark a
-//   hero puts OVER a body (a chill count, a hunter's paw): never on the sprite's
+//   hero puts OVER a body (a chill count, VARRO's paw): never on the sprite's
 //   own top, where the health frame sits, but in one row every body's drawer
 //   stands over its whole overhead stack (heroOver), side by side, x the
 //   mark's left column and y the row's middle.
@@ -40,7 +40,7 @@
 //   side (a.summon = id, with team and owner): VARRO's wolves. It walks in `animals`
 //   like any beast (hit, drawn, pushed apart, fogged) and pays nothing when it falls.
 // - HERO_AIR: fn(ex, ey, now) drawn over the bodies with the arrows
-//   (drawAbilityAir): what a kit leaves in the air (NIX's shard and her cloud's powder).
+//   (render, js/draw/render.js): what a kit leaves in the air (NIX's shard and her cloud's powder).
 // - HERO_COVER: fn(srcs, x, y, u) -> true when body u at (x, y) is hidden from
 //   the side whose eyes are `srcs`, beside the woods and the brush (coverHide,
 //   js/sim/fog.js): cover a hero's kit makes (NIX's snow cloud).

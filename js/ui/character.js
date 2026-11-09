@@ -103,7 +103,7 @@ function drawCharPanel(now) {
   const sx = pr.x + 12, sy = pr.y + 7;
   ctx.fillStyle = 'rgba(4,6,18,0.6)';
   ctx.beginPath(); ctx.ellipse(sx + 32, pr.y + pr.h - 6, 22, 4, 0, 0, Math.PI * 2); ctx.fill();
-  const spr = SPRITES.champLook(player.cls, player.look, skin(0)).down[1 + (Math.floor(now * 3) % 2)];
+  const spr = SPRITES.champLook(player.cls, skin(0), heroSkinOf(player)).down[1 + (Math.floor(now * 3) % 2)];
   ctx.drawImage(spr, sx, sy, 64, 64);
   const im = SPRITES.weaponArt[attackOf(player).art]; // the hero's own weapon beside it
   ctx.drawImage(im, pr.x + pr.w - 31, pr.y + pr.h - 33 + Math.round(Math.sin(now * 2.2) * 1.5), 24, 24);

@@ -531,7 +531,7 @@ function netClientStats() {
   NET.was = { p: me, earned: me.earned, kills: me.kills, dead: me.dead, aboard: me.aboard };
 }
 function netClientHello() {
-  NET.transport.send('host', { t: 'hello', uid: NET.uid, patch: PATCH_TXT, seed: SEED, name: PROFILE.name(), cls: PROFILE.hero(), skins: profileHeroSkins(), rank: PROFILE.rank(), pos: PROFILE.pos(),
+  NET.transport.send('host', { t: 'hello', uid: NET.uid, patch: PATCH_TXT, seed: SEED, name: PROFILE.name(), cls: profileHero(), skins: profileHeroSkins(), rank: PROFILE.rank(), pos: PROFILE.pos(),
     party: CROSS ? CROSS.party : undefined, pn: CROSS ? CROSS.n : undefined }); // a party crossing in (js/ui/matchmaking.js)
 }
 // the roster the host dealt: our slot is the human here, the host's is a

@@ -16,7 +16,6 @@ const TR_NCH = Math.ceil(TR_W / TR_CH);     // chunks per side
 const TR_STEP = 4;                          // px a body travels between stamps
 const TR_WALK = 0.05;                       // pack per stamp: one pass ~0.1, twenty make a hard path
 const TR_SLIDE = 0.04;                      // a slide's two runners press less than a stride
-const TR_CRAWL = 0.07;                      // a belly drags a broad trough
 const TR_ROLL = 0.05;                       // churn per stamp of a roll
 const TR_SHOVE = 0.04;                      // churn per stamp while knocked back
 const TR_SHOVE_V = 40;                      // knockback speed (px/s) that throws snow about
@@ -114,9 +113,9 @@ function trampleStep(dt) {
   for (const p of players) {
     if (!p.active || inAir(p) || p.zip >= 0 || p.mount || !fogShown(p)) continue; // a rider's deer leaves the tracks; one in the fog leaves none you see
     // the same reads the footprint emitter makes (updatePlayer, sim.js): a
-    // crawl drags wide, a slide rides two runners, a walk presses a stride
-    const pack = p.prone ? TR_CRAWL : p.sliding ? TR_SLIDE : TR_WALK;
-    trBody(p, 5, p.prone ? PLAYER_R + 2 : PLAYER_R, pack);
+    // slide rides two runners, a walk presses a stride
+    const pack = p.sliding ? TR_SLIDE : TR_WALK;
+    trBody(p, 5, PLAYER_R, pack);
   }
   for (const a of animals) {
     if (!fogShown(a)) continue;

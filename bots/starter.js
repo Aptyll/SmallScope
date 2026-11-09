@@ -49,7 +49,7 @@ defineBot({
       return act;
     }
 
-    const melee = me.cls === 'WARRIOR';
+    const melee = me.attack === 'cut';
     if (foe && fd < (melee ? 160 : 220)) {
       // lead a moving target a little: where it will be in a fifth of a second
       const tx = foe.x + (foe.vx || 0) * 0.2, ty = foe.y + (foe.vy || 0) * 0.2;

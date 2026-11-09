@@ -90,7 +90,7 @@ function friendsPresence(b) {
   const lobby = friendsLobby(), inMatch = state.mode !== 'title' && !PRACTICE;
   const room = !inMatch && NET.mode && state.menu.screen === 'room';
   const st = inMatch ? 'match' : PRACTICE ? 'practice' : room ? 'room' : 'menu', n = room ? partySize() : 0;
-  const hero = String(PROFILE.hero()), key = [st, lobby, NET.mode || '', n, hero].join('|');
+  const hero = PROFILE.hero(), key = [st, lobby, NET.mode || '', n, hero].join('|');
   if (key === FRIENDS.rp) return;
   FRIENDS.rp = key;
   const mode = PARTY_MODES[NET.mode] || PARTY_MODES.quick, word = mode.charAt(0) + mode.slice(1).toLowerCase();

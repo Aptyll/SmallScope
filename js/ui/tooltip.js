@@ -47,7 +47,7 @@ const AB_RANK_STAT = {
   mark: ['MARKED FOR', tipNum, 'S'], shieldHp: ['SHIELD % MAX HEALTH', tipCent, '%'],
   missing: ['OF HP ALREADY LOST', tipCent, '%'], bonus: ['MOST EXTRA', tipNum, ''],
   burn: ['BURN A SECOND', tipNum, ''], walk: ['WALKS FASTER', (v) => tipCent(v - 1), '%'],
-  markDmg: ['MARKED HIT DAMAGE', tipNum, ''], hp: ['HEALS', tipNum, ''], wolfHp: ['WOLF HEALTH', tipNum, ''], hps: ['HEALS A SECOND', tipNum, ''], shield: ['SHIELD', tipNum, ''], as: ['ATTACK SPEED', tipCent, '%'], shot: ['DAMAGE x', tipNum, ''], ambush: ['AMBUSH SHOT x', tipNum, ''],
+  markDmg: ['MARKED HIT DAMAGE', tipNum, ''], hp: ['HEALS', tipNum, ''], wolfHp: ['WOLF HEALTH', tipNum, ''], hps: ['HEALS A SECOND', tipNum, ''], shield: ['SHIELD', tipNum, ''], as: ['ATTACK SPEED', tipCent, '%'], shot: ['DAMAGE x', tipNum, ''],
 };
 const TIP_RANK_ON = '#f2cc6a';
 // one ranked value as a row's value: plain text when it never changes, else
@@ -96,17 +96,14 @@ function tipGold() {
   return { title: 'GOLD', tcol: '#f5c542', kind: 'PURSE', icon: SPRITES.itemGold, plate: BAG_WELL, rim: '#3c4048',
     rows: [['CARRIED', String(player.gold), '#f5c542']], notes: [] };
 }
-// a class ability well - the strip's in play (cls omitted: the local player's
-// class, live cooldown, the cast hint), or the lobby's stage (cls given:
-// the previewed class, before it is ever locked, with nothing castable yet)
-// (i, cls, k): the card for key i's option k on class cls - in play (cls null)
-// the option the local player carries there
-function tipClassAb(i, cls, k) {
+// an ability well - the strip's in play (cls omitted: the local player's
+// hero, live cooldown, the cast hint), or the lobby's stage (cls given:
+// the previewed hero, before it is ever locked, with nothing castable yet)
+function tipClassAb(i, cls) {
   const c = cls == null ? player.cls : cls;
-  const opt = cls == null ? (player.abPick[i] | 0) : (k | 0);
-  const ab = abOptions(c, i)[opt] || CLASS_AB[c][i];
+  const ab = CLASS_AB[c][i];
   const d = { title: ab.name, tcol: '#f4f7ff', kind: CLASSES[c].name + ' ABILITY',
-    rows: [], notes: [], icon: classAbIcon(c, i, opt), plate: BAG_WELL, rim: '#3c4048' };
+    rows: [], notes: [], icon: classAbIcon(c, i), plate: BAG_WELL, rim: '#3c4048' };
   // Read mid-fight, so the short card says only what decides a press: the
   // cooldown and the number a rank raises (a `rank` key given as a list), at
   // the rank you hold (rank 1 on a dark key or the lobby), and the row's one
@@ -144,10 +141,10 @@ function tipAt(mx, my) {
       const h = wikiHit(mx, my);
       // an ITEMS row is the shop's own item card; a CLASSES row is the lobby's
       // own ability card, read at the base cooldown since nobody has levelled
-      return !h ? null : h.kind === 'row' ? tipItem(h.id) : h.kind === 'ab' ? tipClassAb(h.i, h.cls, h.k) : null;
+      return !h ? null : h.kind === 'row' ? tipItem(h.id) : h.kind === 'ab' ? tipClassAb(h.i, h.cls) : null;
     }
     // the hero pop-up's four ability wells raise the same card
-    if (m.screen === 'hero' && m.popT >= 1) { const h = heroScreenHit(); return h && h.ab != null ? tipClassAb(h.ab, player.cls, player.abPick[h.ab]) : null; }
+    if (m.screen === 'hero' && m.popT >= 1) { const h = heroScreenHit(); return h && h.ab != null ? tipClassAb(h.ab, player.cls) : null; }
     return null;
   }
   if (state.mode !== 'play') return null;

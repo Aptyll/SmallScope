@@ -697,7 +697,7 @@ function updateSoldier(b, dt) {
   const roost = rival && rival.state === 'down' ? rival : null;
   let busy = false;
   // 1. a rival unit in reach: close and swing (players through seenAt, so a
-  //    buried hunter lets a column walk past)
+  //    hidden hero lets a column walk past)
   const foe = robotFoeUnit(b, SOLDIER_AGGRO);
   if (foe) {
     const pt = foePoint(foe, b.x, b.y - 1);

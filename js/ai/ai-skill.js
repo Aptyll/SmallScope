@@ -49,7 +49,6 @@
 //   team    0..1 how reliably it follows the side's plan over its own whim
 //   think   s between its re-reads of a plan (the fight rung itself runs every tick)
 //   memory  s it keeps a rival it lost sight of in mind (p.ai.sk.lost)
-//   flee    hp fraction under which it hides (hunter) / gives ground
 //   pick    'near' the closest rival, 'weak' the one with the least hp
 //   push    { t, n } - after t s, the side's first n bots go for the rival
 //           eagle (the objective rung), one more every AI_ESCALATE s after
@@ -60,7 +59,7 @@
 //   relentless  IMPOSSIBLE's rivals only: never give ground - a bow closes
 //           in instead of backing off when crowded, a blocked line is walked
 //           in through the open at any range, a camp on it is fought where it
-//           stands - which with push {0, 99}, guard 0 and flee 0 is a side
+//           stands - which with push {0, 99} and guard 0 is a side
 //           that rushes your bird from the first second, everyone, and never
 //           stops fighting; the only thing that turns one home is its own
 //           bird under half nerve while it is LOSING the race (the pusher
@@ -72,16 +71,16 @@
 // whether they come.
 const AI_LEVELS = [
   { name: 'EASY', sight: 120, react: 1.1, cone: 60, rear: 0.25, perceive: 0.3, hand: 250, aim: 20, fresh: 2.2, lead: 0, draw: 0.6, drawVar: 0.25, slip: 6,
-    dodge: 0.25, abil: 0.2, flee: 0.55, work: 0.4, strafe: 0.3,
+    dodge: 0.25, abil: 0.2, work: 0.4, strafe: 0.3,
     judge: 0.1, focus: 0, team: 0.5, think: 1.2, memory: 2, pick: 'near', push: { t: 420, n: 2 }, guard: 1 },
   { name: 'NORMAL', sight: 147, react: 0.7, cone: 80, rear: 0.4, perceive: 0.15, hand: 400, aim: 14, fresh: 1.8, lead: 0, draw: 0.7, drawVar: 0.15, slip: 3,
-    dodge: 0.5, abil: 0.35, flee: 0.5, work: 0.5, strafe: 0.45,
+    dodge: 0.5, abil: 0.35, work: 0.5, strafe: 0.45,
     judge: 0.4, focus: 0.3, team: 0.75, think: 0.8, memory: 4, pick: 'near', push: { t: 360, n: 2 }, guard: 1 },
   { name: 'HARD', sight: 200, react: 0.3, cone: 120, rear: 0.6, perceive: 0.06, hand: 700, aim: 5, fresh: 1.5, lead: 0.5, draw: 0.9, drawVar: 0.06, slip: 1,
-    dodge: 1, abil: 0.8, flee: 0.35, work: 0.8, strafe: 0.8,
+    dodge: 1, abil: 0.8, work: 0.8, strafe: 0.8,
     judge: 0.75, focus: 0.7, team: 0.95, think: 0.5, memory: 7, pick: 'near', push: { t: 360, n: 3 }, guard: 2 },
   { name: 'IMPOSSIBLE', sight: 267, react: 0, cone: 180, rear: 1, perceive: 0, hand: 0, aim: 0, fresh: 1, lead: 1, draw: 0.95, drawVar: 0, slip: 0,
-    dodge: 2, abil: 1, flee: 0, work: 1, strafe: 1,
+    dodge: 2, abil: 1, work: 1, strafe: 1,
     judge: 0.95, focus: 1, team: 1, think: 0.3, memory: 10, pick: 'weak', push: { t: 300, n: 99 }, guard: 0, relentless: true },
 ];
 // your allies at each rival level: the next notch up, supportive, one of
@@ -93,10 +92,10 @@ const AI_LEVELS = [
 // to three minutes to drive a bird off, so NORMAL's leaves at twelve
 const AI_ALLY_PUSH = [{ t: 720, n: 2 }, { t: 720, n: 2 }, { t: 480, n: 3 }, { t: 420, n: 3 }];
 // (an ally borrows the notch's hands, never IMPOSSIBLE's recklessness: it
-// keeps a guard, a clock and a flee point of its own, so the human's side
+// keeps a guard and a clock of its own, so the human's side
 // is still the one that holds its bird)
 const AI_ALLIES = AI_LEVELS.map((_, i) => Object.assign({}, AI_LEVELS[Math.min(AI_LEVELS.length - 1, i + 1)],
-  { name: 'ALLY', support: true, push: AI_ALLY_PUSH[i], guard: 1, relentless: false, flee: Math.max(0.2, AI_LEVELS[Math.min(AI_LEVELS.length - 1, i + 1)].flee) }));
+  { name: 'ALLY', support: true, push: AI_ALLY_PUSH[i], guard: 1, relentless: false }));
 // the one pair of hands every bot FILE's seat plays with (the bot API,
 // js/ai/bot-api.js, and the bot ladder that rates the files): HARD's, and
 // never a level's choices - so the bot ladder ranks what a bot decides, not

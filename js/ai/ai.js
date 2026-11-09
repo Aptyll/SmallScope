@@ -6,8 +6,8 @@
 // movement axis, aim point, fire / work / slide / dodge and the odd one-shot
 // order - so it can never do anything a player couldn't. The brain is a small
 // priority ladder (aiThink, js/ai/ai-ladder.js), re-picked a few times a
-// second: spend, off the orca's ice, the potion, the burrow, a DANGER ping,
-// fight, a camp on it, lie low, heal, a ping, defend the bird, the guard's
+// second: spend, off the orca's ice, the potion, a DANGER ping,
+// fight, a camp on it, heal, a ping, defend the bird, the guard's
 // patrol and post, push the rival bird, a call for help, a gold pump, the
 // bear party / stalker / position's walk, the road, hunt, harvest, roam -
 // then the recall home (aiRecall) - and a PROFILE (the difficulty banner
@@ -24,7 +24,7 @@ function aiPushers(prof) { return state.elapsed < prof.push.t ? 0 : prof.push.n 
 const AI_ABIL_T = 0.5;    // s between ability rolls
 const AI_ANCHOR_R = 260;  // px round an anchor (its bird, the human) a rival is noticed from
 const AI_ANCHOR_D = 420;  // ...but never from farther than this
-const AI_HOLD = 96;       // px a hunter holds off the rival bird at (outside its gust)
+const AI_HOLD = 96;       // px a ranged hero holds off the rival bird at (outside its gust)
 const AI_GATE = 128;      // px up the road from a base's junction where a walk to a roost stages
 const AI_PATROL_T = 40;   // s of a guard's cycle...
 const AI_PATROL_OUT = 14; // ...the first of which it spends on patrol up the road
@@ -163,7 +163,7 @@ function aiLaneFort(p, e) {
   const t = towerNear(p.team, p.x, p.y, TOWER_RANGE + 24);
   return t && towerTanked(t, p.team) ? nearestObj(p.x, p.y, 9, (o) => structOf(o) === t) : null;
 }
-// the eagle hitbox tile nearest p (a warrior's E target on a push)
+// the eagle hitbox tile nearest p (a blade's E target on a push)
 function aiEagleTile(e, p) {
   let best = null, bd = 1e9;
   const cx0 = Math.floor(e.x / TILE), cy0 = Math.floor(e.y / TILE);

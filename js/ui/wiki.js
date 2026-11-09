@@ -93,18 +93,19 @@ const WIKI_STATS = ['hp', 'dmg', 'as', 'armor', 'ms']; // the class card's rows:
 const WIKI_FIG_W = 44;   // the figure column...
 const WIKI_TEXT_X = 52;  // ...and where an entry's words start, off the content's left margin
 const WIKI_BEAST_W = 52; // a beast card's figure column, at least: a wider beast widens its own
-// a hero standing in the snow as the world draws it, in your side's coat
-function wikiHero(cls, dir) { return SPRITES.champLook(cls, CLASSES[cls].look, skin(player.team))[dir][0]; }
+// a hero, by name, standing in the snow as the world draws it, in your side's
+// coat (or the other side's, `rival`)
+function wikiHero(name, dir, rival) { return SPRITES.champLook(heroIndex(name), skin(rival ? 1 - player.team : player.team))[dir][0]; }
 const WIKI_WORLD = [
   { name: 'SOFTFALL', fig: () => [SPRITES.tree[0]],
     text: 'THE SNOW CAME DOWN SOFT AND DID NOT STOP, AND THE VALLEY\'S OLD WORKS WENT UNDER WHOLE. IT STILL FALLS EVERY WINTER, AND THE VALLEY COMES OUT FROM UNDER IT A DIFFERENT SHAPE EACH TIME. NO MAP OF SOFTFALL IS GOOD FOR TWO WINTERS.' },
-  { name: 'THE EMPIRE', fig: () => [wikiHero(2, 'down'), wikiHero(4, 'down')],
+  { name: 'THE EMPIRE', fig: () => [wikiHero('ARMATOS', 'down'), wikiHero('BELLA', 'down')],
     text: 'OVER THE PASS IS AN EMPIRE BIG ENOUGH THAT IT HAS NEVER NEEDED A NAME. IT KEEPS WHAT IT CAN USE. THE REST IT WALKS UP TO THE LAST PASS, A GENERAL OR A LAMPLIGHTER ALIKE, AND SHUTS THE GATE BEHIND THEM. NOBODY IS LET BACK.' },
-  { name: 'THE EXILES', fig: () => [SPRITES.champ[0][skin(player.team)].down[0], SPRITES.champ[1][skin(player.team)].down[0]],
+  { name: 'THE EXILES', fig: () => [wikiHero('FORTIVA', 'down'), wikiHero('LUCERNA', 'down')],
     text: 'NOBODY IN SOFTFALL WAS BORN HERE. A SOLDIER WHO WALKED HOME, A SMITH WHO WOULD NOT KNEEL, A GENERAL WHO WON THE WRONG WAR: THE VALLEY TAKES ANYONE WHO CAN DIG. ONE WHO GOES DOWN IS CARRIED BACK TO THE ROOST AND SENT OUT AGAIN, AND THE BETTER THE EXILE, THE LONGER THE COMPANY MAKES THEM SIT FIRST.' },
   { name: 'THE WORKS', fig: () => [SPRITES.deadTree[0]],
     text: 'NOBODY ALIVE SAW THE WORKS RUNNING. THE PINES GREW UP THROUGH THEM, SO THERE IS GOLD IN THE WOOD. THE ROAD, ITS TOWERS AND THE MACHINES ARE WHAT STILL STANDS ABOVE THE SNOW.' },
-  { name: 'THE CLAIM', fig: () => [SPRITES.champ[0][skin(player.team)].right[0], SPRITES.champ[1][skin(1 - player.team)].left[0]],
+  { name: 'THE CLAIM', fig: () => [wikiHero('SAGITTA', 'right'), wikiHero('LIGNUM', 'left', true)],
     text: 'TWO COMPANIES HIRE EXILES TO DIG THE WORKS OUT, AND NEITHER ASKS WHERE THEY CAME FROM. VALLEY LAW IS ONE LINE LONG: A CLAIM STANDS WHILE ITS BIRD HOLDS ITS ROOST. SO NOBODY COMES TO SOFTFALL TO KILL ANYBODY. SCARE THE OTHER BIRD OFF ITS GROUND AND THE VALLEY IS YOURS UNTIL THE NEXT SNOW.' },
   { name: 'THE EAGLES', air: true, fig: () => [SPRITES.perch.figure(BIRD_SKINS[0].id, skin(player.team))],
     text: 'BIG ENOUGH TO CARRY FIVE EXILES AND A MERCHANT, ARMOURED IN COMPANY COLOUR, AND BRAVE ONLY UP TO A POINT. IT BEATS ITS WINGS AT WHATEVER CROWDS IT. HIT IT ENOUGH AND ITS NERVE GOES. IT LEAVES, AND ITS COMPANY LEAVES WITH IT.' },
@@ -135,7 +136,7 @@ const WIKI_PAGES = [
       if (c.story) { const lines = wrapText(c.story, cw - WIKI_CLS_TEXT_X); b.push({ kind: 'story', h: lines.length * 8 + 8, lines }); }
       b.push({ kind: 'head', h: 12, text: 'ABILITIES', cols: WIKI_AB_COLS });
       if (c.passive) b.push({ kind: 'ab', h: wikiAbH(HERO_PASSIVE[c.passive].blurb, cw), cls, i: -1, cols: [] }); // a named hero's passive heads its keys (HERO_PASSIVE, js/sim/heroes.js)
-      CLASS_AB[cls].forEach((ab, i) => abOptions(cls, i).forEach((o, k) => b.push({ kind: 'ab', h: wikiAbH(o.blurb, cw), cls, i, k, cols: WIKI_AB_COLS })));
+      CLASS_AB[cls].forEach((ab, i) => b.push({ kind: 'ab', h: wikiAbH(ab.blurb, cw), cls, i, cols: WIKI_AB_COLS }));
     });
     return b;
   } },
@@ -402,11 +403,11 @@ function renderWiki(now, a) {
       ctx.fillRect(L.left, y + 10, L.right - L.left, 1);
     } else if (bl.kind === 'row') drawWikiRow(r, L, hit && hit.kind === 'row' && hit.id === bl.id);
     else if (bl.kind === 'cls') {
-      // a class card: the body at 3x on the left (the side you play in), its
+      // a hero card: the body at 3x on the left (the side you play in), its
       // name and role, the three lines of its pitch, and on the right its
       // stats at level 1
       const c = CLASSES[bl.cls];
-      const spr = SPRITES.champLook(bl.cls, c.look, skin(player.team)).down[0];
+      const spr = SPRITES.champLook(bl.cls, skin(player.team)).down[0];
       ctx.drawImage(spr, L.left, y + 2, 48, 48);
       const tx = L.left + WIKI_CLS_TEXT_X;
       drawPixelTextShadow(ctx, c.name, tx, y + 4, '#ffd95c', '#0a0e23');
@@ -427,15 +428,15 @@ function renderWiki(now, a) {
       // an ability: its key on a plate, its icon in a well (the strip's
       // own), its name, the two numbers in the columns, and what it does
       // (key -1 is the hero's passive: no key, no numbers, its own icon)
-      const ab = bl.i < 0 ? HERO_PASSIVE[CLASSES[bl.cls].passive] : abOptions(bl.cls, bl.i)[bl.k | 0];
-      const hot = hit && hit.kind === 'ab' && hit.cls === bl.cls && hit.i === bl.i && (hit.k | 0) === (bl.k | 0);
+      const ab = bl.i < 0 ? HERO_PASSIVE[CLASSES[bl.cls].passive] : CLASS_AB[bl.cls][bl.i];
+      const hot = hit && hit.kind === 'ab' && hit.cls === bl.cls && hit.i === bl.i;
       const iy = y + 1, wx = L.left + 10;
       ctx.fillStyle = '#0a0e23'; ctx.fillRect(L.left, iy + 12, 7, 8);
       ctx.fillStyle = '#1c2750'; ctx.fillRect(L.left + 1, iy + 13, 5, 6);
       drawPixelText(ctx, bl.i < 0 ? 'P' : keyCapShort('ab' + (bl.i + 1)).slice(0, 1), L.left + 2, iy + 14, '#ffd95c');
       ctx.fillStyle = hot ? '#7a8bb8' : '#0a0e23'; ctx.fillRect(wx - 1, iy - 1, 34, 34);
       ctx.fillStyle = BAG_WELL; ctx.fillRect(wx, iy, 32, 32);
-      ctx.drawImage(bl.i < 0 ? passiveIcon(bl.cls) : classAbIcon(bl.cls, bl.i, bl.k), wx, iy);
+      ctx.drawImage(bl.i < 0 ? passiveIcon(bl.cls) : classAbIcon(bl.cls, bl.i), wx, iy);
       const tx = wx + 37;
       drawPixelTextShadow(ctx, ab.name, tx, y + 4, hot ? '#ffd95c' : '#f4f7ff', '#0a0e23');
       let rx = L.right, firstX = rx;

@@ -374,8 +374,8 @@ function navStep(e, gx, gy, r, spd, dt, reach) {
   const n = navTo(e, gx, gy, r, reach, dt);
   if (!n.ok) return n;
   e.mvx = n.dx; e.mvy = n.dy;
-  // The one place a self-mover's speed is spent, so it is the one place the
-  // net, the crater and the snare's jaws have to be folded in: unitMoveMul
+  // The one place a self-mover's speed is spent, so it is the one place a
+  // slow or a root has to be folded in: unitMoveMul
   // (js/sim/actions.js) is abilityMoveMul's twin for everything that is not a
   // player, and a rooted animal or bot comes out of it at zero.
   spd *= unitMoveMul(e);

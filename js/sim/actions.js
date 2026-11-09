@@ -904,7 +904,7 @@ function igniteUnit(e, t, dps, src) {
     e.burnTick = BURN_TICK;
     e.burnFxT = 0;
     burst(e.x, unitMidY(e), '#ff9440', 7, 50, 0.5);
-    sfxAt('hidden', e.x, e.y);
+    sfxAt('kindle', e.x, e.y);
   }
 }
 // The burn's own clock, run once per sim step for every kind of unit that has

@@ -17,7 +17,7 @@
 // realm of its own, sealed (BOT_SEAL): no game globals, no way out.
 // A bot can never do what a hand cannot: the act IS the input struct, the sim
 // re-validates every order, and the hands are the ladder's (skillHands).
-const BOT_API = 5;          // the message shape's version; a rename bumps it (4: food -> potions, eatBerry/eatFish -> useItem; 5: a gold pump's struct type 'generator' -> 'pump')
+const BOT_API = 6;          // the message shape's version; a rename bumps it (4: food -> potions, eatBerry/eatFish -> useItem; 5: a gold pump's struct type 'generator' -> 'pump'; 6: HUNTER and WARRIOR gone, `prone`, `hide` and the `grapple` act dropped, allies and foes carry `attack`)
 const BOT_THINK = 6;        // ticks between thinks: 10 a second at TICK_DT
 const BOT_OBS_R = 24 * TILE; // px: how far round its side a bot sees (the minimap's default reach, MM_R tiles)
 const BOT_SAY_MAX = 256;    // bytes of JSON a `say` may carry to the side
@@ -28,7 +28,7 @@ const BOT_CMDS = new Set(['ability', 'ping', 'shop', 'recall']);
 const BOT_NODES_N = 64;     // workable tiles an observation lists, nearest first
 const BOT_NODES = new Set(['tree', 'bush']);
 const BOT_CALLS = new Set(['bird', 'help', 'low', 'push', 'here']); // CALLS' kinds a bot may say
-const BOT_CALL_LOW = new Set(['HUNTER', 'WARRIOR', 'ARMATOS', 'FORTIVA', 'BELLA', 'IGNIA', 'AURA', 'SALVIA', 'LUCERNA', 'HIEMS', 'FABER', 'RUPES', 'NIX', 'VARRO', 'BUCINA', 'FALCO', 'VELOX', 'MARIS', 'LIGNUM', 'SAGITTA', 'BEAR']);       // what a 'low' call may name
+const BOT_CALL_LOW = new Set(CLASSES.map((c) => c.name).concat('BEAR')); // what a 'low' call may name: a hero, or the bear
 
 // ---- the library --------------------------------------------------------------
 // Every program a seat can run, by id: { id, name, src, run } - `run` names
@@ -63,8 +63,7 @@ function botIdPrune() {
 const botR = (v) => Math.round(v * 10) / 10;
 function botSeen(p, q) {
   // what the side's minimap would show (the loop in renderMinimap): near any
-  // of the side, and not buried past PRONE_MAP unless a falcon marked it
-  if (q.markT <= 0 && concealOf(q) >= PRONE_MAP) return false;
+  // of the side
   for (const a of players) {
     if (a.team !== p.team || !a.active || a.dead || inAir(a)) continue;
     if (Math.hypot(q.x - a.x, q.y - a.y) < seenAt(q, BOT_OBS_R, p.team)) return true;
@@ -88,7 +87,7 @@ function botObserve(p) {
     hp: botR(p.hp), maxHp: p.maxHp, dead: p.dead, respawnT: botR(p.respawnT), eliminated: p.eliminated,
     level: p.level, xp: p.xp, gold: p.gold, skillPts: p.skillPts,
     stats: botStats(p), // the seven hero stats, the numbers the HUD's panel prints (js/sim/stats.js)
-    prone: !!p.prone, hide: botR(p.hide || 0), aboard: !!p.aboard, falling: p.dropT > 0, zip: p.zip,
+    aboard: !!p.aboard, falling: p.dropT > 0, zip: p.zip,
     abilities: p.abLv.map((lv, i) => botAbility(p, i, lv)),
     attack: attackOf(p).cut ? 'cut' : 'shot', // the basic attack: a blade's wedge or a bow's shot (js/sim/attack.js)
     charging: !!p.charging, chargeT: botR(p.chargeT),
@@ -103,11 +102,11 @@ function botObserve(p) {
   for (const q of players) {
     if (q === p || !q.active) continue;
     if (q.team === p.team) {
-      allies.push({ id: q.id, x: botR(q.x), y: botR(q.y), hp: botR(q.hp), maxHp: q.maxHp, cls: CLASSES[q.cls].name,
+      allies.push({ id: q.id, x: botR(q.x), y: botR(q.y), hp: botR(q.hp), maxHp: q.maxHp, cls: CLASSES[q.cls].name, attack: attackOf(q).cut ? 'cut' : 'shot',
         dead: q.dead, respawnT: botR(q.respawnT), aboard: inAir(q), bot: q.control === 'ai' });
     } else if (!q.dead && !inAir(q) && botSeen(p, q)) {
       enemies.push({ id: q.id, x: botR(q.x), y: botR(q.y), vx: botR(q.vx), vy: botR(q.vy), hp: botR(q.hp), maxHp: q.maxHp,
-        cls: CLASSES[q.cls].name, prone: !!q.prone });
+        cls: CLASSES[q.cls].name, attack: attackOf(q).cut ? 'cut' : 'shot' });
     }
   }
   const soldiers = [];
@@ -175,7 +174,7 @@ function botObserve(p) {
   return { tick: state.tick, time: botR(state.elapsed), me, allies, enemies, soldiers, animals: animalsSeen, eagles, structs, nodes, shots, pings,
     merchants, shop, kills, team };
 }
-// one key: what it is on this body (abOf: a warrior may carry an alternate),
+// one key: what it is on this body (abOf),
 // its level and cooldown, and how far its aim reaches (px, null for none)
 function botAbility(p, i, lv) {
   const ab = abOf(p, i), aim = ab.aim || {};
@@ -212,7 +211,7 @@ function botHello(p) {
 const botNum = (v, lo, hi, d) => (typeof v === 'number' && isFinite(v) ? Math.max(lo, Math.min(hi, v)) : d);
 function botAct(a) {
   if (!a || typeof a !== 'object') return null;
-  const W = WORLD * TILE, out = { mx: 0, my: 0, aimX: NaN, aimY: NaN, fire: !!a.fire, work: !!a.work, slide: !!a.slide, grapple: !!a.grapple,
+  const W = WORLD * TILE, out = { mx: 0, my: 0, aimX: NaN, aimY: NaN, fire: !!a.fire, work: !!a.work, slide: !!a.slide,
     goTo: null, dodge: !!a.dodge, jump: !!a.jump,
     ability: -1, useItem: -1, cmd: null, call: null, say: undefined, think: null };
   if (Array.isArray(a.move)) { out.mx = botNum(a.move[0], -1, 1, 0); out.my = botNum(a.move[1], -1, 1, 0); }
@@ -349,7 +348,7 @@ function botStep(p, dt) {
     }
   }
   const inp = p.input, a = r.act;
-  if (!a) { inp.mx = inp.my = 0; inp.fire = inp.work = inp.slide = inp.grapple = false; return; }
+  if (!a) { inp.mx = inp.my = 0; inp.fire = inp.work = inp.slide = false; return; }
   inp.mx = a.mx; inp.my = a.my;
   if (a.goTo && !p.dead) {
     const n = navTo(p, a.goTo.x, a.goTo.y, PLAYER_R, a.goTo.reach, dt);
@@ -363,7 +362,7 @@ function botStep(p, dt) {
     else { inp.mx = n.dx; inp.my = n.dy; r.nav = n.d < TILE ? 'arrived' : 'ok'; }
   }
   if (a.aimX === a.aimX) { inp.aimX = a.aimX; inp.aimY = a.aimY; }
-  inp.fire = a.fire; inp.work = a.work; inp.slide = a.slide; inp.grapple = a.grapple;
+  inp.fire = a.fire; inp.work = a.work; inp.slide = a.slide;
   if (r.edge) {
     r.edge = false;
     inp.dodge = inp.dodge || a.dodge; inp.jump = inp.jump || a.jump;

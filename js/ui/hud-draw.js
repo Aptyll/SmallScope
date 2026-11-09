@@ -22,12 +22,9 @@ function xpFrac(p) {
   if (p.level >= LEVEL_MAX) return 1;
   return Math.max(0, Math.min(1, (p.xp - LEVEL_XP[p.level - 1]) / (LEVEL_XP[p.level] - LEVEL_XP[p.level - 1])));
 }
-// the face: the worn body's standing frame if one is worn, the class body's
-// otherwise - the same model drawPlayer puts in the world
-function portraitSprite(p) {
-  const rb = scoutBody(p);
-  return rb ? rb.down.idle[0] : classSet(p).down[0];
-}
+// the face: the hero's standing front in its look - the same model drawPlayer
+// puts in the world
+function portraitSprite(p) { return classSet(p).down[0]; }
 // a player's FACE in an fs-square window: the dusk behind, the model's head
 // and shoulders at 2x, clipped to the window - the small faces, where the
 // strip's is 3x: the announcer's plate and feed, and the team rail (sc:

@@ -77,7 +77,7 @@ const NOTE_TAILS = {
 // prices a pick from and the character panel spells a body out with, so the
 // three can never disagree about what a stat is, how it prints, or which way
 // is up. It is the seven hero stats and nothing else, so a bonus to anything
-// outside them (ice, dodge, stealth, hunts, fells, killHeal, ambushMul,
+// outside them (ice, dodge, stealth, hunts, fells, killHeal,
 // an item's passive) lights nothing.
 const STAT_PAD = 4;      // the plate's margin inside its frame
 const STAT_TOP = 4;      // ...and above the first row

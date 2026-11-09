@@ -59,7 +59,6 @@ function botGuess(p) {
   if (p.dead) return g('DEAD', '');
   if (p.potT > 0) return g('HEAL', 'POTION');
   if (p.recallT > 0) return g('RECALL', 'LOW HP');
-  if (p.prone && ai.hideT > 0) return g('HIDE', 'OUTMATCHED');
   // a shot at game is the hunt it belongs to, not a fight: the same goal
   // and why as between shots, so a hunt reads as one steady HUNT
   const shot = (q) => q.kind === 'ANIMAL' ? g('HUNT', 'FOOD', q.e.x, q.e.y, q.e, 'ANIMAL') : g(q.isWolf ? 'WOLF' : 'FIGHT', q.kind, q.e.x, q.e.y, q.e, q.kind);

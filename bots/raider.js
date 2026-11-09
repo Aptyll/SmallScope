@@ -1,7 +1,7 @@
 // RAIDER: the rusher. The moment the rival bird lands, every seat runs the
-// road at it and never stops. Hunters stand off outside the wing gust and
+// road at it and never stops. Shooters stand off outside the wing gust and
 // loose quick shots (a bird takes the same chip from any arrow, drawn or
-// not); warriors swing E at it and take the buffets. It only turns to fight
+// not); blades swing E at it and take the buffets. It only turns to fight
 // what gets in its face, and it does not wait for anyone after a respawn:
 // the pressure is the plan (it waits for one partner at most). Beats sides that farm; loses to a side that
 // holds its roost.
@@ -20,20 +20,20 @@ defineBot({
     const dist = (o) => Math.hypot(o.x - me.x, o.y - me.y);
 
     // points: the rush and the net first (they open a path), then the rest
-    if (me.skillPts > 0) { const k = pickKey(me, me.cls === 'WARRIOR' ? [1, 2, 3, 0] : [1, 0, 3, 2]); if (k >= 0) act.cmd = { kind: 'ability', i: k }; }
+    if (me.skillPts > 0) { const k = pickKey(me, me.attack === 'cut' ? [1, 2, 3, 0] : [1, 0, 3, 2]); if (k >= 0) act.cmd = { kind: 'ability', i: k }; }
 
     const bird = obs.eagles.find((e) => e.team !== me.team && e.state === 'down');
     const foes = obs.enemies.concat(obs.soldiers.filter((s) => s.team !== me.team));
     // only what is close enough to stop the raid gets an answer
-    // soldiers pour out of the barracks behind the bird all match long: a hunter
-    // shoots past them, a warrior cuts only the ones on top of it
+    // soldiers pour out of the barracks behind the bird all match long: a shooter
+    // shoots past them, a blade cuts only the ones on top of it
     let foe = null;
     for (const f of foes) {
-      const r = f.cls ? (me.cls === 'WARRIOR' ? 90 : 110) : (me.cls === 'WARRIOR' ? 36 : 0);
+      const r = f.cls ? (me.attack === 'cut' ? 90 : 110) : (me.attack === 'cut' ? 36 : 0);
       if (dist(f) < r && (!foe || dist(f) < dist(foe))) foe = f;
     }
-    // at the bird, a warrior keeps rival players off its hunters
-    if (!foe && me.cls === 'WARRIOR' && bird && dist(bird) < 220) {
+    // at the bird, a blade keeps rival players off its shooters
+    if (!foe && me.attack === 'cut' && bird && dist(bird) < 220) {
       for (const f of obs.enemies) if (Math.hypot(f.x - bird.x, f.y - bird.y) < 220 && (!foe || dist(f) < dist(foe))) foe = f;
     }
     if (foe && !act.cmd) {
@@ -80,12 +80,12 @@ function pickKey(me, order) {
   return -1;
 }
 
-// strike the rival bird: a hunter stands off past the wing gust (it reaches
-// 76 px) and taps shots; a warrior walks in and swings E
+// strike the rival bird: a shooter stands off past the wing gust (it reaches
+// 76 px) and taps shots; a blade walks in and swings E
 function siege(bot, me, bird, act) {
   const d = Math.hypot(bird.x - me.x, bird.y - me.y);
   act.aim = [bird.x, bird.y];
-  if (me.cls === 'HUNTER') {
+  if (me.attack === 'shot') {
     if (d > 115) act.goTo = { x: bird.x, y: bird.y, reach: 1 };
     else if (d < 84) act.move = [(me.x - bird.x) / d, (me.y - bird.y) / d];
     if (d < 135) { bot.drawT++; act.fire = bot.drawT % 2 === 1; } // further out, the woods eat the shots
@@ -98,10 +98,10 @@ function siege(bot, me, bird, act) {
 // one exchange with a rival body, by class, with the four keys
 function fight(bot, me, foe, act) {
   const d = Math.max(1, Math.hypot(foe.x - me.x, foe.y - me.y));
-  const lead = me.cls === 'HUNTER' ? d / 320 : 0.1;
+  const lead = me.attack === 'shot' ? d / 320 : 0.1;
   act.aim = [foe.x + (foe.vx || 0) * lead, foe.y + (foe.vy || 0) * lead];
   const ab = me.abilities;
-  if (me.cls === 'WARRIOR') {
+  if (me.attack === 'cut') {
     act.goTo = { x: foe.x, y: foe.y };
     if (ab[1].ready && d > 48 && d < 110) act.ability = 1;                         // rush in
     else if (ab[2].ready && d < 34) act.ability = 2;                               // stomp

@@ -44,7 +44,7 @@ const HIT_PUFF = { rabbit: '#9a6a45', deer: '#8f582f', wolf: '#6f778c', alpha: '
 // Prey: how close a player gets before it bolts, how long it runs, and the two
 // speeds. A deer keeps the wider watch and the longer run; a rabbit sits tight
 // and then goes off like a spring. Both resolve the ring through seenAt, so
-// crawling in under the snow is what gets a hunter inside it.
+// a hero's stealth is what gets inside it.
 const FLEE_SIGHT = { rabbit: 36, deer: 46 };
 const FLEE_TIME = { rabbit: [1.6, 2.6], deer: [1.1, 1.9] };
 const PREY_SPD = { rabbit: 42, deer: 26 };   // px/s grazing
@@ -83,7 +83,7 @@ const RABBIT_DODGE_CD = 6;     // s for the charge to come back
 // The beat a rabbit sits up for before it goes: it hears you, rocks back onto
 // its haunches (the `rise` clip) and only then bolts. It is what the meadow's
 // oldest line - "a rabbit sits tight and then goes off like a spring" - looks
-// like, and it is the one still shot a hunter is ever offered at one. A hit
+// like, and it is the one still shot anyone is ever offered at one. A hit
 // skips it (hurtAnimal), so a rabbit already running never stops to pose.
 const RABBIT_ALERT = 0.3;
 // A warren's rabbit never runs out of its snow: every leg of a flight and
@@ -643,8 +643,8 @@ function updatePrey(a, dt) {
   }
 
   // both prey bolt from a player who gets close - the deer from further out
-  // than the rabbit. The ring is what the player is SEEN at, so stealth
-  // and lying buried in the snow are how a hunter closes on a deer at all.
+  // than the rabbit. The ring is what the player is SEEN at, so stealth is
+  // how a hero closes on a deer at all.
   let scare = null, sd = 1e9;
   for (const p of players) {
     if (!p.active || p.dead || inAir(p)) continue;

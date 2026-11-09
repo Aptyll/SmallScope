@@ -1,5 +1,5 @@
-// BULWARK: the turtle. Holds the spur in front of its own bird: warriors
-// stand at its head, hunters a step behind. Everyone else chops the woods by the roost
+// BULWARK: the turtle. Holds the spur in front of its own bird: blades
+// stand at its head, shooters a step behind. Everyone else chops the woods by the roost
 // for items. It only leaves when it has just wiped an attack, or the snow has
 // been quiet a long while, and the side is up: then the first seat calls a sally, everyone goes at the
 // rival bird together, and the first blow on its own bird calls them home.
@@ -22,7 +22,7 @@ defineBot({
     if (me.dead || me.aboard || me.falling) return { think: { goal: 'IDLE', why: me.dead ? 'DOWN' : 'RIDING' } };
     const act = {};
     const dist = (o) => Math.hypot(o.x - me.x, o.y - me.y);
-    if (me.skillPts > 0) { const k = pickKey(me, me.cls === 'WARRIOR' ? [0, 2, 3, 1] : [1, 0, 2, 3]); if (k >= 0) act.cmd = { kind: 'ability', i: k }; }
+    if (me.skillPts > 0) { const k = pickKey(me, me.attack === 'cut' ? [0, 2, 3, 1] : [1, 0, 2, 3]); if (k >= 0) act.cmd = { kind: 'ability', i: k }; }
 
     for (const m of obs.team) if (m.say) {
       if (m.say.sally) this.sally = this.sally || obs.time;
@@ -60,13 +60,13 @@ defineBot({
     for (const f of this.sally ? foes : near) if (!foe || dist(f) < dist(foe)) foe = f;
     if (foe && (!this.sally || dist(foe) < 200)) {
       fight(this, me, foe, act);
-      // a hunter fights from the post, never past it
-      if (me.cls === 'HUNTER' && !this.sally && Math.hypot(me.x - post.x, me.y - post.y) > 140) act.goTo = { x: post.x, y: post.y };
+      // a shooter fights from the post, never past it
+      if (me.attack === 'shot' && !this.sally && Math.hypot(me.x - post.x, me.y - post.y) > 140) act.goTo = { x: post.x, y: post.y };
       act.think = { goal: 'DEFEND', why: struck ? 'BIRD HIT' : 'AT THE SPUR', plan: this.sally ? 'SALLY' : 'HOLD', mood: 'STEADY', target: { kind: foe.cls ? 'player' : 'soldier', id: foe.id, x: foe.x, y: foe.y } };
       return act;
     }
     if (struck) {
-      // hit by something nobody can see (a buried hunter): sweep round the bird
+      // hit by something nobody can see (out of the fog): sweep round the bird
       const a = obs.time * 1.3 + me.id;
       act.goTo = { x: own.x + Math.cos(a) * 70, y: own.y + Math.sin(a) * 70 };
       act.aim = [own.x + Math.cos(a) * 120, own.y + Math.sin(a) * 120];
@@ -84,8 +84,8 @@ defineBot({
 
     buyItem(obs.shop, me, act, this.lead ? 40 : 0);
 
-    // the rest of the time: warriors at the post, hunters chop close by
-    if (me.cls === 'WARRIOR' && obs.allies.some((a) => a.cls === 'HUNTER' && !a.dead)) {
+    // the rest of the time: blades at the post, shooters chop close by
+    if (me.attack === 'cut' && obs.allies.some((a) => a.attack === 'shot' && !a.dead)) {
       act.goTo = { x: post.x, y: post.y };
       act.aim = [mouth.x, mouth.y];
       act.think = { goal: 'GUARD', why: 'HOLD THE SPUR', plan: 'HOLD', mood: 'STEADY', target: { kind: 'point', x: post.x, y: post.y } };
@@ -107,12 +107,12 @@ function pickKey(me, order) {
   return -1;
 }
 
-// strike the rival bird: a hunter stands off past the wing gust (it reaches
-// 76 px) and taps shots; a warrior walks in and swings E
+// strike the rival bird: a shooter stands off past the wing gust (it reaches
+// 76 px) and taps shots; a blade walks in and swings E
 function siege(bot, me, bird, act) {
   const d = Math.hypot(bird.x - me.x, bird.y - me.y);
   act.aim = [bird.x, bird.y];
-  if (me.cls === 'HUNTER') {
+  if (me.attack === 'shot') {
     if (d > 115) act.goTo = { x: bird.x, y: bird.y, reach: 1 };
     else if (d < 84) act.move = [(me.x - bird.x) / d, (me.y - bird.y) / d];
     if (d < 135) { bot.drawT++; act.fire = bot.drawT % 2 === 1; } // further out, the woods eat the shots
@@ -125,10 +125,10 @@ function siege(bot, me, bird, act) {
 // one exchange with a rival body, by class, with the four keys
 function fight(bot, me, foe, act) {
   const d = Math.max(1, Math.hypot(foe.x - me.x, foe.y - me.y));
-  const lead = me.cls === 'HUNTER' ? d / 320 : 0.1;
+  const lead = me.attack === 'shot' ? d / 320 : 0.1;
   act.aim = [foe.x + (foe.vx || 0) * lead, foe.y + (foe.vy || 0) * lead];
   const ab = me.abilities;
-  if (me.cls === 'WARRIOR') {
+  if (me.attack === 'cut') {
     act.goTo = { x: foe.x, y: foe.y };
     if (ab[1].ready && d > 48 && d < 110) act.ability = 1;                         // rush in
     else if (ab[2].ready && d < 34) act.ability = 2;                               // stomp

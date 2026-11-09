@@ -1,6 +1,6 @@
 'use strict';
-// ARMATOS, THE LAST STANDARD - the first named hero (CLASSES, js/sim/player.js):
-// the warrior's body and sword, his own five pieces. A defensive initiator:
+// ARMATOS, THE LAST STANDARD - the first hero (CLASSES, js/sim/player.js): a
+// greatsword and his own five pieces. A defensive initiator:
 // he takes the hit for his side, answers it, and turns a lost fight into a
 // last stand. Loaded before abilities.js, whose CLASS_AB takes ARM_AB as his
 // row of keys; everything here is called at runtime and draws no rng().

@@ -32,7 +32,7 @@ defineBot({
       for (const e of obs.enemies) if (dist(e) < 260 && (!foe || dist(e) < dist(foe))) foe = e;
       if (foe) act.say = { focus: foe.id }; // call it for the side
     }
-    const melee = me.cls === 'WARRIOR';
+    const melee = me.attack === 'cut';
     if (foe) {
       const d = dist(foe);
       act.aim = [foe.x + foe.vx * 0.2, foe.y + foe.vy * 0.2];
@@ -69,7 +69,7 @@ defineBot({
       }
     }
 
-    // the push: to the rival bird, strike it (warrior) or shoot it (hunter)
+    // the push: to the rival bird, strike it (blade) or shoot it (shooter)
     const d = Math.hypot(bird.x - me.x, bird.y - me.y);
     act.aim = [bird.x, bird.y];
     act.think = { goal: 'PUSH', why: 'PACK IS GO', plan: 'PACK', target: { kind: 'bird', id: bird.team, x: bird.x, y: bird.y } };

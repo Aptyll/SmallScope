@@ -800,12 +800,10 @@ function drawWorldText(text, x, y, color, scale, alpha) {
     ctx.globalAlpha = was;
     return;
   }
-  // The queue carries the caller's OWN fade with it. Everything above a
-  // buried head - the tag included - fades with the cover (`concealOf`, the
-  // stack in drawPlayer sets ctx.globalAlpha and trusts it), and stamping a
-  // tag later at full opacity would hand a rival the one tell burial exists
-  // to take away. So the alpha standing at queue time is folded in here; an
-  // explicit one (a floater's own fade) multiplies it.
+  // The queue carries the caller's OWN fade with it: the alpha standing at
+  // queue time (a hero's fade, HERO_FADE) is folded in here, so a tag stamped
+  // later never shows what its body hid; an explicit one (a floater's own
+  // fade) multiplies it.
   worldInk.push(text, x, y, color, scale || 1,
     (alpha === undefined ? 1 : alpha) * ctx.globalAlpha, false);
 }

@@ -31,7 +31,6 @@
 
 // ---- moods ------------------------------------------------------------------
 // What a mood IS lives in its row:
-//   flee   added to the profile's flee (a hunter's burrow point)
 //   judge  added to the profile's judge: how readily it backs off a fight the
 //          numbers say it is losing (low: takes every fight it sees)
 //   help   x the reach it answers a teammate's call from (0 never goes)
@@ -40,11 +39,11 @@
 //   roam   x how wide it wanders with nothing to do
 //   fit    how well it suits each role (the plan hands jobs out by this)
 const AI_MOODS = {
-  brave:    { name: 'BRAVE',    flee: -0.15, judge: -0.25, help: 1.3, stalk: true,  greed: 0.9, roam: 1.1, fit: { pusher: 4, stalker: 3, guard: 0, slayer: 3 } },
-  cautious: { name: 'CAUTIOUS', flee: 0.15,  judge: 0.25,  help: 0.8, stalk: false, greed: 1,   roam: 0.8, fit: { pusher: 0, stalker: 0, guard: 4, slayer: 1 } },
-  greedy:   { name: 'GREEDY',   flee: 0.05,  judge: 0.1,   help: 0.5, stalk: false, greed: 1.5, roam: 0.9, fit: { pusher: 1, stalker: 0, guard: 1, slayer: 3 } },
-  loyal:    { name: 'LOYAL',    flee: 0,     judge: 0.1,   help: 1.8, stalk: true,  greed: 1,   roam: 1,   fit: { pusher: 3, stalker: 1, guard: 3, slayer: 2 } },
-  wild:     { name: 'WILD',     flee: -0.05, judge: -0.1,  help: 1,   stalk: true,  greed: 1,   roam: 1.6, fit: { pusher: 2, stalker: 4, guard: 0, slayer: 2 } },
+  brave:    { name: 'BRAVE',    judge: -0.25, help: 1.3, stalk: true,  greed: 0.9, roam: 1.1, fit: { pusher: 4, stalker: 3, guard: 0, slayer: 3 } },
+  cautious: { name: 'CAUTIOUS', judge: 0.25,  help: 0.8, stalk: false, greed: 1,   roam: 0.8, fit: { pusher: 0, stalker: 0, guard: 4, slayer: 1 } },
+  greedy:   { name: 'GREEDY',   judge: 0.1,   help: 0.5, stalk: false, greed: 1.5, roam: 0.9, fit: { pusher: 1, stalker: 0, guard: 1, slayer: 3 } },
+  loyal:    { name: 'LOYAL',    judge: 0.1,   help: 1.8, stalk: true,  greed: 1,   roam: 1,   fit: { pusher: 3, stalker: 1, guard: 3, slayer: 2 } },
+  wild:     { name: 'WILD',     judge: -0.1,  help: 1,   stalk: true,  greed: 1,   roam: 1.6, fit: { pusher: 2, stalker: 4, guard: 0, slayer: 2 } },
 };
 const AI_MOOD_KEYS = Object.keys(AI_MOODS);
 // A bot's mood is for life, not for a match: a body with a roster name of
@@ -75,7 +74,6 @@ const AI_KNOB_DEFAULT = { judge: 0.5, focus: 0.5, team: 0.8, memory: 5, obey: 1 
 function aiKnob(prof, k) { return prof[k] !== undefined ? prof[k] : AI_KNOB_DEFAULT[k]; }
 // the knob with p's mood on it, kept inside 0..1
 function aiJudge(p, prof) { return Math.max(0, Math.min(1, aiKnob(prof, 'judge') + aiMood(p).judge)); }
-function aiFlee(p, prof) { return Math.max(0, Math.min(0.9, prof.flee + aiMood(p).flee)); }
 
 // ---- roles ------------------------------------------------------------------
 // The jobs a side hands out, in the order it fills them. `name` is the word
@@ -526,7 +524,7 @@ const AI_GOAL_KINDS = {
 // rally is REGROUP. A word not here shows plain.
 const AI_GOALS = {
   PUSH: 'PUSH', REGROUP: 'PUSH', RALLY: 'PUSH',
-  FLEE: 'RETREAT', HIDE: 'RETREAT', RECALL: 'RETREAT', HEAL: 'RETREAT',
+  FLEE: 'RETREAT', RECALL: 'RETREAT', HEAL: 'RETREAT',
   DEFEND: 'DEFEND', GUARD: 'DEFEND', HELP: 'DEFEND', ESCORT: 'DEFEND',
   FIGHT: 'FIGHT', WOLF: 'FIGHT', STALK: 'FIGHT', ROAD: 'FIGHT',
   FARM: 'FARM', JUNGLE: 'FARM', SUPPORT: 'FARM', GATHER: 'FARM', HUNT: 'FARM', PUMP: 'FARM', SHOP: 'FARM',

@@ -10,9 +10,11 @@
 // and its lifetime stats, the hero last picked (so the pick opens on it),
 // plus the flags, records and settings the player carries (moved here in v1;
 // the old key is migrated once and removed). Heroes are picked per match and
-// wear a fixed look (CLASSES, js/sim/player.js), so nothing here stores a
-// body. v2's three character slots fold into v3's one profile on load: the
-// active slot's name and hero, every slot's stats added together.
+// wear their looks (the skins screen's picks, under `worn`), so nothing here
+// stores a body. v2's three character slots fold into one profile on load: the
+// active slot's name and hero, every slot's stats added together. v4 keeps the
+// hero by NAME, not by its place in CLASSES, so a hero added or taken away
+// never moves anyone's pick; an older save's index is read through V3_HEROES.
 (function () {
   const KEY = 'softfall.profile';
   // the saved matches a profile kept before saves were removed: an index key
@@ -21,7 +23,12 @@
   const OLD_SETTINGS = 'softfall.settings'; // pre-profile saves; migrated once
   const NAME_MAX = 16;
   const POS_N = 5;                 // POSITIONS.length (js/sim/player.js)
-  const HERO_N = 20;              // CLASSES.length (js/sim/player.js) - a hero index past this is repaired to 0
+  // the hero order v3 and older saved an index into (CLASSES as it stood then,
+  // frozen: never edit it). The first two were not heroes and are gone, so a
+  // pick of either opens on the default hero ('').
+  const V3_HEROES = ['', '', 'ARMATOS', 'FORTIVA', 'BELLA', 'IGNIA', 'AURA', 'SALVIA', 'LUCERNA', 'HIEMS',
+    'RUPES', 'VARRO', 'BUCINA', 'NIX', 'FABER', 'VELOX', 'FALCO', 'MARIS', 'LIGNUM', 'SAGITTA'];
+  const HERO_NAME = /^[A-Z]{1,16}$/;
   // the coins a profile starts with: the cosmetics' purse, kept outside every
   // match (a match's gold never reaches it). What a coin buys is the skins
   // screen's table (js/ui/skins.js); this file only keeps the count and ids.
@@ -77,11 +84,11 @@
   // against, so every field below is guaranteed present to every reader
   function blank() {
     return {
-      v: 3,
+      v: 4,
       name: randomName(),
       named: false,    // the player chose the name; until then it follows the Steam name (steamName)
       stats: blankStats(),
-      hero: 0,         // the hero last locked in (a CLASSES index): where the pick opens next time
+      hero: '',        // the hero last locked in, by name ('' none): where the pick opens next time
       pos: -1,         // the position this profile asks for in the draft (a POSITIONS index, js/sim/player.js), -1 any
       dropped: false,  // has this profile ever jumped off the eagle - gates the first-flight countdown
       bestLap: 0,      // the ice parkour's all-time best lap in seconds (0 = never lapped)
@@ -187,7 +194,8 @@
         if (typeof name === 'string' && validate(name).ok) profile.name = validate(name).name;
         // a profile from before the flag: a name out of the winter pool was dealt, not chosen
         profile.named = typeof s.named === 'boolean' ? s.named : NAME_POOL.indexOf(profile.name) < 0;
-        if (typeof hero === 'number' && isFinite(hero) && hero >= 0 && hero < HERO_N) profile.hero = Math.floor(hero);
+        if (typeof hero === 'string' && HERO_NAME.test(hero)) profile.hero = hero; // a name the game no longer has opens on the default (profileHero, js/sim/player.js)
+        else if (typeof hero === 'number' && isFinite(hero)) profile.hero = V3_HEROES[Math.floor(hero)] || '';
         if (typeof s.pos === 'number' && s.pos >= 0 && s.pos < POS_N) profile.pos = Math.floor(s.pos);
         if (s.settings && typeof s.settings === 'object') profile.settings = s.settings;
         // a profile from before the purse arrives without it and keeps the
@@ -214,7 +222,7 @@
         } catch (e) { }
         saveNow();
       }
-      if (s && s.v !== 3) saveNow(); // a migrated save is written back in its new shape at once
+      if (s && s.v !== 4) saveNow(); // a migrated save is written back in its new shape at once
       clearOldSaves();
       return profile;
     },
@@ -224,7 +232,6 @@
 
     // ---- who you are --------------------------------------------------------
     // The one name every other player sees, and the hero the pick opens on.
-    HERO_N,
     name() { return profile.name; },
     // Returns validate()'s result; on a refusal nothing is written.
     setName(raw) {
@@ -244,10 +251,11 @@
     },
     // a fresh winter word, unsaved: the profile card's die offers it
     rollName() { return randomName(); },
+    // the hero by name ('' for none yet); the sim turns it into a CLASSES index (profileHero)
     hero() { return profile.hero; },
-    setHero(i) {
-      if (!(i >= 0 && i < HERO_N) || profile.hero === i) return;
-      profile.hero = i | 0;
+    setHero(name) {
+      if (typeof name !== 'string' || !HERO_NAME.test(name) || profile.hero === name) return;
+      profile.hero = name;
       saveNow();
     },
 

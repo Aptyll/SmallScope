@@ -62,7 +62,7 @@ function drawLignumGround(ex, ey) { for (const g of lignumLogs) drawLignumLog(g,
 // ---- on his body ----------------------------------------------------------------------------
 // bark plates over his shoulders and chest while he hardens; brighter beside a pine
 function drawLignumFx(p, ax, ay, now, front) {
-  if (!front || CLASSES[p.cls].passive !== 'treeline' || p.prone || !(p.barkT > 0)) return;
+  if (!front || CLASSES[p.cls].passive !== 'treeline' || !(p.barkT > 0)) return;
   ctx.globalAlpha = Math.min(1, p.barkT * 3) * 0.85;
   ctx.fillStyle = LG_BARK; ctx.fillRect(ax + 3, ay + 8, 2, 3); ctx.fillRect(ax + 11, ay + 8, 2, 3);
   ctx.fillStyle = LG_BARK_L; ctx.fillRect(ax + 3, ay + 8, 1, 2); ctx.fillRect(ax + 11, ay + 8, 1, 2);

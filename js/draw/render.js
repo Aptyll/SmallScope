@@ -147,9 +147,9 @@ function render() {
   drawArrows(ex, ey, now);
 
 
-  // airborne ability bodies: the spinning net, and the grapple's rope
-  // between a reeling body and its anchor - with the arrows, over the entities
-  drawAbilityAir(ex, ey, now);
+  // what a hero's kit has in the air - with the arrows, over the entities
+  // (HERO_AIR, js/sim/heroes.js)
+  heroAir(ex, ey, now);
 
   drawTowerFx(ex, ey, now); // the road towers' aim lines and bolts (js/draw/towers.js)
 
@@ -450,10 +450,8 @@ function cursorInfo() {
   // (1 = ready). drawCursor turns it into the ring's own behaviour, so the
   // crosshair the eye is already on is where the cooldown is read.
   const nockF = player.nockT > 0 ? 1 - player.nockT / Math.max(0.01, attackCycle(player)) : 1;
-  // `amb` rides along the same way: buried, settled, and the next arrow off
-  // this string is the one worth AMBUSH_MUL
   const ret = (mode, dim, extra) =>
-    Object.assign({ kind: 'reticle', mode, dim, nock: nockF, amb: ambushReady(player) }, extra);
+    Object.assign({ kind: 'reticle', mode, dim, nock: nockF }, extra);
 
   const wx = mouseWX(), wy = mouseWY();
   const busy = player.fallT > 0 || player.dodgeT > 0; // tools locked out
@@ -561,21 +559,6 @@ function drawCursor(info, now) {
       [mx - g, my + g, 2, 1], [mx - g, my + g - 1, 1, 2],
       [mx + g - 1, my + g, 2, 1], [mx + g, my + g - 1, 1, 2],
     ], '#ffd95c', base * (0.35 + 0.55 * nock));
-  }
-  // Loosing from full cover: the crosshair grows a second segment out along
-  // each of its own axes and the centre pixel warms to gold. Deliberately on
-  // the cross, where the renock's marks are on the diagonals, so a bow that is
-  // both reloading and buried says two separate things at once.
-  if (info.amb) {
-    const g2 = gap + L + 2;
-    drawOutlinedRects([
-      [mx - g2 - 1, my, 2, 1], [mx + g2, my, 2, 1],
-      [mx, my - g2 - 1, 1, 2], [mx, my + g2, 1, 2],
-    ], '#ffd95c', base);
-    ctx.globalAlpha = base;
-    ctx.fillStyle = '#ffd95c';
-    ctx.fillRect(mx, my, 1, 1);
-    ctx.globalAlpha = 1;
   }
 }
 

@@ -544,12 +544,15 @@ function cleanHeroSkins(m) {
   for (const c of CLASSES) if (c.skinSlot && typeof m[c.skinSlot] === 'string' && c.skins.some((r) => r.id === m[c.skinSlot])) out[c.skinSlot] = m[c.skinSlot];
   return out;
 }
+// the CLASSES index of the hero the profile last locked in (kept by name,
+// js/app/profile.js): the first hero for none, or for a name no hero has now
+function profileHero() { return Math.max(0, heroIndex(PROFILE.hero())); }
 // The local player wears the PROFILE: its name, and the hero it last locked
-// in (js/app/profile.js), whose look and kit come with it. Called from
-// initPlayers; the hero row (js/ui/chars.js) re-picks through setClass.
+// in, whose look and kit come with it. Called from initPlayers; the draft
+// (js/ui/draft.js) re-picks through setClass.
 function applyProfile() {
   player.name = PROFILE.name();
-  setClass(player, PROFILE.hero());
+  setClass(player, profileHero());
   player.skins = profileHeroSkins(); // the looks worn on each hero (js/ui/skins.js)
 }
 // Five players share each team colour, so text that names one player (the
@@ -681,7 +684,6 @@ class Player {
     this.ai = {
       tgt: null, avoid: null, avoidT: 0, thinkT: 0,
       huntTgt: null, huntT: 0, huntAvoid: null, huntAvoidT: 0,
-      hideT: 0, hideCd: 0,
       wx: 0, wy: 0, roam: 0,
       // the difficulty profile's clocks (ai-skill.js): prof overrides the
       // side's profile (DBG / the harness), seeT is how long a rival has been
@@ -1268,11 +1270,11 @@ function endSnapshot() {
     gold: player.earned, kills: player.kills, level: player.level, time: state.elapsed,
     team: player.team, cls: player.cls,
     // the whole side, the local player first: every body either ending stands
-    // on its stage, with the name TAB gives it (boardName: a bot goes by its hero), the class and kit it finished in (a mate who
+    // on its stage, with the name TAB gives it (boardName: a bot goes by its hero), the hero and look it finished in (a mate who
     // is down at the whistle still shares the result)
     roster: players.filter((q) => q.active && q.team === player.team)
       .sort((a, b) => (a === player ? -1 : b === player ? 1 : a.id - b.id))
-      .map((q) => ({ name: boardName(q), cls: q.cls, team: q.team })),
+      .map((q) => ({ name: boardName(q), cls: q.cls, skin: heroSkinOf(q), team: q.team })),
   };
 }
 

@@ -168,7 +168,7 @@ window.DBG = {
   // the renock it waits, the press itself, and its damage at a draw - so a
   // driver can land one without holding the button.
   attackOf: (p) => attackOf(p || player), attackCycle: (p) => attackCycle(p || player),
-  basicAttack: (p) => basicAttack(p || player), attackDmg: (pw, p) => attackDmg(p || player, pw == null ? 1 : pw, false),
+  basicAttack: (p) => basicAttack(p || player), attackDmg: (pw, p) => attackDmg(p || player, pw == null ? 1 : pw),
   drawTime,
   // a drop on the snow, so a driver can stage a pickup
   // death keeps everything (die): the one number a kill is worth
@@ -176,10 +176,8 @@ window.DBG = {
   // the draw curve: 0..1 off a player's chargeT, and the flight and damage it buys a shot
   drawPow, shotFlight, drawDmgMul, DRAW_RANGE_MIN, DRAW_SPEED_MIN, DRAW_DMG_MIN,
   cellPlate, chopTree,
-  // the class abilities: the table, a keypress by hand, and the entity lists
-  // an ability leaves in the world - so a driver can stage a crater or a net
-  // without walking a bot into one
-  CLASS_AB, abCraters: craters, abNets: nets,
+  // the heroes' abilities: the table and a keypress by hand
+  CLASS_AB,
   tryAbility: (i, p) => tryAbility(p || player, i),
   setAbilityCd: (i, t, p) => { (p || player).abCd[i] = t; },
   // ability ranks: a buy ladder on the four keys (js/sim/abilities.js)
@@ -310,7 +308,6 @@ window.DBG = {
   hurtUnit, unitsNear, unitsHit, unitMoveMul, unitFoe, unitAlive, sideOf, clearUnitStatus,
   rootUnit: (t, e) => rootUnit(e || player, t),
   slowUnit: (t, mul, e) => slowUnit(e || player, t, mul),
-  netUnit: (t, mul, e) => netUnit(e || player, t, mul),
   markUnit: (t, e) => markUnit(e || player, t),
   // fire: light a body, put it out, and the numbers a burn runs on
   igniteUnit: (t, dps, e, src) => igniteUnit(e || player, t, dps, src === undefined ? player : src),
@@ -322,23 +319,11 @@ window.DBG = {
   rollDmg: (sp, p) => rollDmg(p || player, sp),
   rollSweep: (p) => rollSweep(p || player),
   ROLL_HIT_R, ROLL_FAST, ROLL_DMG, ROLL_STUN, TACKLE_STUN, TACKLE_SELF, TACKLE_MIN,
-  // prone: the burrow toggle, how buried a player reads to anything hunting it,
-  // and a way to stage a fully covered body without lying in the snow for 1.5s
-  tryProne: (p) => tryProne(p || player),
-  risePlayer: (p) => risePlayer(p || player),
-  concealOf: (p) => concealOf(p || player),
+  // how far a player is noticed from by a watcher with this plain range
   seenAt: (range, p) => seenAt(p || player, range),
   // the fog of war (js/sim/fog.js): fog = false lifts it for a debug look;
   // inSight(team, u) is what that side sees, fogShown(u) what this screen draws
   fog: true, inSight, fogShown: (u) => fogShown(u),
-  ambushReady: (p) => ambushReady(p || player),
-  setHide: (h, p) => {
-    const q = p || player;
-    q.hide = Math.max(0, Math.min(1, h));
-    q.prone = q.hide > 0 || q.prone;
-    return q.hide;
-  },
-  PRONE_BURY, PRONE_SPEED, PRONE_SNIFF, PRONE_CUT, PRONE_MOVE, PRONE_MAP, AMBUSH_MUL,
   spawnAnimal: (kind, x, y) => { const a = makeAnimal(kind, x, y); animals.push(a); return a; },
   // the level a spawn is dealt (the table's average), the two deer's lines
   // and their restock (which a driver can call by hand to run one now)

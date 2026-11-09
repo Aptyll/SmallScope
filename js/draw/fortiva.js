@@ -51,7 +51,7 @@ HERO_BLADES.chain = { art: fortSwords, hilt: [19, 11], hip: { down: [13, 12], up
 
 // ---- on her body ------------------------------------------------------------------
 function drawFortBody(p, ax, ay, now, front) {
-  if (CLASSES[p.cls].passive !== 'unbroken' || p.prone) return;
+  if (CLASSES[p.cls].passive !== 'unbroken') return;
   const cx = ax + 8, cy = ay + 10;
   // resolve high: two glints circling her waist, the near one drawn over her, the far behind
   if (p.resolve >= UNB_HIGH) {
