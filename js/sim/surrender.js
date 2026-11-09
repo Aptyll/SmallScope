@@ -7,7 +7,8 @@
 // straight on the post-game stats (endMatch, js/player.js). A vote that
 // fails holds the side off a fresh one for VOTE_CD.
 // Bots vote with the people on their side: they never start a vote and never
-// block one, they just side with however most of the people who voted went.
+// block one, they just side with however most of the people went, once every
+// person has voted (or the clock ran out).
 // Every order rides p.input.cmd ({ kind: 'vote', yes }), so online the host
 // counts the votes and a client only draws what the snapshot says.
 // ------------------------------------------------------------ surrender vote
@@ -27,13 +28,17 @@ function voteSeats(team) {
 // 4 of 5 yes, as League; a smaller side needs every seat
 function voteNeed(n) { return n >= 5 ? n - 1 : n; }
 // where a vote stands: the people's yes and no, the people yet to vote, whether
-// the bots are with the yes side (more people yes than no), and what that adds up to
+// the bots are with the yes side, and what that adds up to. The bots take a
+// side only once the people have spoken - every person voted, or the clock
+// ran out and the silent count as no - and then go with the yes if it beat
+// the no. Counting them sooner let a party's first yes end the match before
+// a friend could answer (1 yes + 3 bots = 4 of 5).
 function voteTally(v, team) {
   const seats = voteSeats(team), people = seats.filter(isHuman);
   const yes = people.filter((q) => v.yes.includes(q.id)).length;
   const no = people.filter((q) => v.no.includes(q.id)).length;
   const bots = seats.length - people.length, open = people.length - yes - no;
-  const botsYes = yes > no;
+  const botsYes = (open === 0 || v.t <= 0) && yes > no + open;
   // the most yes this vote can still reach: every open seat says yes
   const best = yes + open + (yes + open > no ? bots : 0);
   return { seats, botsYes, yesSeats: yes + (botsYes ? bots : 0), best, need: voteNeed(seats.length) };
