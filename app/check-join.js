@@ -99,7 +99,7 @@ async function runPath(browser, kind) {
   const mk = async (tag, uid) => {
     const c = await browser.newContext({ viewport: { width: 1280, height: 720 } });
     // one build record of its own (js/app/builds.js), so the join's swap can be seen to carry it both ways
-    await c.addInitScript((m) => { try { if (!localStorage.getItem('softfall.builds')) localStorage.setItem('softfall.builds', JSON.stringify([{ m, s: 1, v: '0.1', h: 'HUNTER', w: 1, q: 1, b: ['horn'] }])); } catch (e) { } }, uid.slice(-8));
+    await c.addInitScript((m) => { try { if (!localStorage.getItem('softfall.builds')) localStorage.setItem('softfall.builds', JSON.stringify([{ m, s: 1, v: '0.100', h: 'HUNTER', w: 1, q: 1, t: 20, b: ['horn'] }])); } catch (e) { } }, uid.slice(-8));
     const pg = await c.newPage();
     if (steam) await S.attach(pg, uid, tag);
     pg.on('pageerror', (e) => errs.push(tag + ': ' + e.message));

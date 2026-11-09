@@ -29,19 +29,30 @@ const BUILDS_HERO = 400;   // the newest this many of a hero's records make its 
 const BUILDS_MIN = 10;     // a hero's games before its numbers replace the curated build
 const BUILDS_PATH_MIN = 4; // games a path needs before its win rate can rank it
 const BUILDS_ITEMS = 8;    // finished items a record keeps (six slots, and what was sold on the way)
+const BUILDS_TAKE = 200;   // new records one join may bring in: a forger has to sit in a lobby per 200
+const BUILDS_T_MAX = 90;   // a match's minutes a record may claim
+const BUILDS_GOLD = 600, BUILDS_GOLD_MIN = 1500; // the most gold a build can have cost: the start, then this much a minute (a laner earns about half of it)
 
 // one record, as kept and as sent: { m: match, s: seat, v: patch, h: hero,
-// w: won 1/0, q: both sides had a person 1/0, b: [item ids] }
+// w: won 1/0, q: both sides had a person 1/0, t: the match's whole minutes,
+// b: [item ids] }
 function buildsKey(r) { return r.m + ':' + r.s; }
 // a record off the wire or out of storage, checked field by field: anything
-// malformed is dropped whole, never half-read
+// malformed or impossible is dropped whole, never half-read. Impossible: a
+// build dearer than the match's minutes could have paid for, more than two
+// pairs of boots, an item three times over. It cannot stop a careful liar
+// (there is no server to ask), but it keeps a hand-edited record from being
+// anything a real match could not have been.
 function buildsClean(r) {
   if (!r || typeof r !== 'object' || typeof r.m !== 'string' || !/^[0-9a-f]{8}$/.test(r.m)) return null;
   if (!(r.s >= 0 && r.s < MAX_PLAYERS && (r.s | 0) === r.s) || typeof r.v !== 'string' || r.v.length > 8) return null;
   if (!CLASSES.some((c) => c.name === r.h) || (r.w !== 0 && r.w !== 1) || (r.q !== 0 && r.q !== 1)) return null;
   if (!Array.isArray(r.b) || !r.b.length || r.b.length > BUILDS_ITEMS) return null;
   if (!r.b.every((id) => typeof id === 'string' && Object.hasOwn(BUILD_ITEMS, id) && itemFinished(id))) return null;
-  return { m: r.m, s: r.s, v: r.v, h: r.h, w: r.w, q: r.q, b: r.b.slice() };
+  if (!/^\d\.\d{3}$/.test(r.v) || !(r.t >= 1 && r.t <= BUILDS_T_MAX && (r.t | 0) === r.t)) return null;
+  if (r.b.filter(isBoots).length > 2 || r.b.some((id) => r.b.filter((q) => q === id).length > 2)) return null;
+  if (r.b.reduce((g, id) => g + BUILD_ITEMS[id].price, 0) > BUILDS_GOLD + BUILDS_GOLD_MIN * r.t) return null;
+  return { m: r.m, s: r.s, v: r.v, h: r.h, w: r.w, q: r.q, t: r.t, b: r.b.slice() };
 }
 // FNV-1a over a string: a match's id, from what every screen of it agrees on
 function buildsHash(str) {
@@ -63,12 +74,13 @@ function buildsNote(won) {
   const both = [0, 1].every((t) => players.some((p) => p.active && isHuman(p) && p.team === t)) ? 1 : 0;
   // (a bot's name is left out: each screen calls the bots by its own side's colours)
   const m = buildsHash(SEED + '|' + players.map((p) => p.active ? p.id + (isHuman(p) ? p.name : '') + CLASSES[p.cls].name + p.team + (p.buys || []).join(',') : '').join('|'));
-  const v = PATCH_TXT.replace(/^PATCH /, '');
-  return buildsMerge(seats.map((p) => ({ m, s: p.id, v, h: CLASSES[p.cls].name, w: p.team === winner ? 1 : 0, q: both, b: p.buys.slice(0, BUILDS_ITEMS) })));
+  const v = PATCH_TXT.replace(/^PATCH /, ''), t = Math.max(1, Math.min(BUILDS_T_MAX, Math.ceil(state.elapsed / 60)));
+  return buildsMerge(seats.map((p) => ({ m, s: p.id, v, h: CLASSES[p.cls].name, w: p.team === winner ? 1 : 0, q: both, t, b: p.buys.slice(0, BUILDS_ITEMS) })));
 }
 // records in (a match's own, or a peer's), each kept once; the newest
-// BUILDS_KEEP stay. Returns how many were new.
-function buildsMerge(list) {
+// BUILDS_KEEP stay. A peer's (`take`) bring at most that many new ones.
+// Returns how many were new.
+function buildsMerge(list, take) {
   if (!Array.isArray(list)) return 0;
   const have = PROFILE.builds(), keys = new Set(have.map(buildsKey));
   let n = 0;
@@ -76,6 +88,7 @@ function buildsMerge(list) {
     const r = buildsClean(raw);
     if (!r || keys.has(buildsKey(r))) continue;
     keys.add(buildsKey(r)); have.push(r); n++;
+    if (take && n >= take) break;
   }
   if (!n) return 0;
   PROFILE.putBuilds(have.slice(-BUILDS_KEEP));

@@ -322,6 +322,10 @@ stretches every third source pixel and frays 1 px linework.
   **ALSO BUILT**, the other items finished most. Below `BUILDS_MIN` (10) games on a hero it shows
   the curated list instead (`BOT_BUILDS`: CORE, BOOTS, THEN, no numbers). The tooltip's PICK RATE
   and WIN RATE come from the same numbers (`buildsItem`).
-- **What it trusts.** A record from another screen is believed if it is well formed: a player who
-  edits their own storage can add made-up games to every lobby they join. It is a community
-  number, not a ranked ladder.
+- **What it trusts.** There is no server to ask, so a record is checked for being possible
+  (`buildsClean`): a real hero and real finished items, a patch number, the match's minutes (`t`,
+  1 to `BUILDS_T_MAX`), no more than two pairs of boots or two of one item, and a build no dearer
+  than `BUILDS_GOLD` plus `BUILDS_GOLD_MIN` a minute could have paid for. One join brings at most
+  `BUILDS_TAKE` (200) new records, once a connection each way (`pr.metaIn`, `NET.metaIn`), and
+  each match and seat counts once, so flooding the numbers takes a forger a lobby per 200 games.
+  A careful liar can still add believable games: it is a community number, not a ranked ladder.
