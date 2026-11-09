@@ -107,6 +107,6 @@ LOOKS (optional): default look name, first buyable skin name
 
 ## Known gaps to carry, not hide
 
-- The 48px portrait (hero row, HUD) still draws the borrowed body's model for Armatos; say so if
-  the new hero has the same gap.
+- The 48px portrait (`portrait`, js/sprites/looks.js) is a hero's own 16px front frame at 3x, not
+  48px art of its own; no hero has native portrait art yet.
 - No hero has been tested in a 10-human online match.
