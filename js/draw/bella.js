@@ -26,7 +26,7 @@ function drawBellaMarks(e, px, py, w, h, now) {
     const full = e.prec >= PREC_MAX;
     for (let k = 0; k < e.prec; k++) bellaPip(px + w + 1, py + h - 6 - k * 4, full && Math.floor(now * 6) % 2 ? '#ffffff' : BELLA_GOLD);
     if (e.parryT > 0) {
-      const a = Math.atan2(e.input.aimY - (e.y - BOW_Y), e.input.aimX - e.x);
+      const a = aimAngle(e);
       const cx = px + 8 + Math.round(Math.cos(a) * 6), cy = py + 8 + Math.round(Math.sin(a) * 4);
       const nx = -Math.sin(a), ny = Math.cos(a); // the blade lies across the aim
       for (let s = -5; s <= 5; s++) {

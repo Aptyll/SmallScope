@@ -742,6 +742,11 @@ function drawGhost(p, ex, ey) {
   ctx.globalAlpha = 1;
 }
 
+// where a drawn weapon points: the local body off its own live pointer, any
+// other off the aim its step held (aimHold, js/sim/player.js) - a client is
+// never sent another body's input
+function aimAngle(p) { return p === player ? Math.atan2(p.input.aimY - (p.y - BOW_Y), p.input.aimX - p.x) : p.aimA; }
+
 // the hero's weapon, drawn on a player: carried at the hand while idle or
 // walking, swept along the arc during a melee swing, aimed at that player's
 // aim point while the bow is drawn. px/py are the sprite's top-left on screen.
@@ -814,7 +819,7 @@ function drawHeldTool(p, px, py) {
   if (drawing) {
     const spr = cut ? wHeld : wIcon;
     const half = spr.width >> 1;
-    const a = Math.atan2(p.input.aimY - (p.y - BOW_Y), p.input.aimX - p.x);
+    const a = aimAngle(p);
     const t = cut ? a - cut.half * (0.4 + 0.6 * drawPow(p)) : a;
     ctx.save();
     ctx.translate(Math.round(cxp + Math.cos(t) * (cut ? 4 : 8)), Math.round(cyp - 2 + Math.sin(t) * (cut ? 3 : 8)));
