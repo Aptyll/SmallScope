@@ -35,9 +35,16 @@ function drawGroundPass(ox, oy, ex, ey, now) {
   drawTrample(ox, oy);
 }
 
+// a mark reaches FOOT_REACH px from its point at most (a crawl furrow's lip
+// and elbow dimple), so one further off the frame paints nothing: skipped
+// before its colour string is built. The list holds every mark in the world
+// (a few hundred) and only a handful are ever on screen
+const FOOT_REACH = 6;
 function drawFootprints(ox, oy) {
   // footprints + slide trails
   for (const f of footprints) {
+    const fx = f.x - ox, fy = f.y - oy;
+    if (fx < -FOOT_REACH || fy < -FOOT_REACH || fx > WV_W + FOOT_REACH || fy > WV_H + FOOT_REACH) continue;
     if (f.k === 1) {
       // carved snow groove, lit from the top-left like the rest of the art:
       // shadowed trench wall on top, lit pressed floor below. Holds crisp for
@@ -407,12 +414,15 @@ function drawBuildBars(ox, oy) {
 function drawParticles(ex, ey) {
   // particles
   for (const p of particles) {
+    // every particle in the world is in the list; one off the frame paints nothing
+    const x = Math.round(p.x - ex), y = Math.round(p.y - ey);
+    if (x + p.size <= 0 || y + p.size <= 0 || x >= WV_W || y >= WV_H) continue;
     // `maxLife` is the seconds a particle spends fading out (bursts hold full
     // opacity until their last 0.4 s); `alpha` caps how opaque it ever gets,
     // which is what keeps arrow trail motes a hint of colour rather than sparks
     ctx.globalAlpha = Math.max(0, Math.min(1, p.life / p.maxLife)) * (p.alpha || 1);
     ctx.fillStyle = p.color;
-    ctx.fillRect(Math.round(p.x - ex), Math.round(p.y - ey), p.size, p.size);
+    ctx.fillRect(x, y, p.size, p.size);
   }
   ctx.globalAlpha = 1;
 }

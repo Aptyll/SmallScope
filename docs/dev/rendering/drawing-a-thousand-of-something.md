@@ -43,7 +43,10 @@ Quantising a twinkle to tenths is invisible on a 2 px speck.
 
 Every one of these effects is **screen-bounded and reads nothing the sim writes** — the cloud and
 ray passes fill the view and no more, `drawIceStars` walks only the visible tiles and the sky cells
-over them, and every mote and star is culled against `WV_W`/`WV_H` before it is drawn. None of them
+over them, and every mote and star is culled against `WV_W`/`WV_H` before it is drawn. The same
+goes for the two lists that hold the whole world's worth: `drawFootprints` skips a mark more than
+`FOOT_REACH` px off the frame and `drawParticles` a particle wholly off it, since a few hundred
+of each exist and only a handful are on screen. None of them
 feed anything back: they are safe to cheapen, skip or reorder without touching a match — which is
 exactly what the ESC panel's **VIDEO page** does: `settings.vidClouds`/`vidRays` gate their calls
 in `renderLighting`, `vidStars` gates `drawIceStars` in `render()`, `vidSnow` gates
