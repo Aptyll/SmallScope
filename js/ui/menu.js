@@ -39,7 +39,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.649';
+const PATCH_TXT = 'PATCH 0.652';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -55,6 +55,9 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.652', 'CHAMP SELECT SHOWS YOUR LOCKED HERO AS THE VALLEY DRAWS THEM: THEIR OWN MODEL, WEAPON IN HAND, TURNING AND STRIDING ON THE GOLD RING IN THE LOOK YOU WEAR. THE SPLASH PICTURES ARE GONE.'],
+  ['0.651', 'UNDER THE HOOD: THE BUILDERS\' RULEBOOK IS REWRITTEN FOR HEROES AND THREE LANES, LAID OUT FOLDER BY FOLDER; NOTHING YOU SEE OR PLAY CHANGES.'],
+  ['0.650', 'THE PARTY SCREEN AND CHAMP SELECT NOW FIT 4:3 AND 16:10 SCREENS.'],
   ['0.649', 'SAGITTA\'S PAVISE NOW STOPS SHOTS ONLY FROM THE FRONT: GET BEHIND IT OR AROUND ITS EDGE AND YOUR SHOTS GO PAST.'],
   ['0.648', 'THE PARTY SCREEN\'S SETTINGS STAND CENTRED OVER THE ROOM, AND VICTORY\'S LINES NAME BOTS BY THEIR HERO.'],
   ['0.647', 'A HERO\'S MARKS ON A BODY (HIEMS\'S CHILLS, VELOX\'S KEEP MOVING, VARRO\'S PAW, BELLA\'S MARK, FALCO\'S TALON) STAND IN THEIR OWN ROW ABOVE THE NAME, NO LONGER HIDDEN UNDER THE HEALTH BAR.'],
@@ -781,7 +784,7 @@ function overGear() { return !state.menu.panel && gearShown() && overRect(gearRe
 function drawGear() { if (gearShown()) { const r = gearRect(); frBmp(r.x, r.y, SET_GEAR, overGear() ? '#ffd95c' : '#9fb6d8'); } }
 // the slab stands centred on what it covers: the party screen's room left of
 // the social column, else the view (relayout's place, put back as it goes)
-function slabCentre(room) { placeSlab(room ? VIEW_W - SOCIAL_W : VIEW_W); }
+function slabCentre(room) { placeSlab(room ? VIEW_W - socialW() : VIEW_W); }
 function openMenuPanel(k) { const m = state.menu; slabCentre(m.screen === 'room'); m.panel = k; m.panelT = 0; m.closing = false; SFX.ui(true); }
 function closeMenuPanel() {
   const m = state.menu;
@@ -1189,7 +1192,7 @@ function drawMenuSlab(x, y, w, h, a) {
 // shapes carry it.
 const LOBBY_PANEL_W = 148;               // a side's column of seat rows at its widest, glued to its screen edge
 const LOBBY_PANEL_MIN = 104;             // ...and its narrowest: a narrow view drops grid columns before going under it
-const LOBBY_GUTTER = 24;                 // between a column and the grid: the seconds that point at your row
+const LOBBY_GUTTER = 30;                 // between a column and the grid: the seconds that point at your row (drawSeats: arrow and two 2x digits, 28 px)
 const LOBBY_ROW_MAX = 44;                // a seat row's tallest; a short view shrinks it...
 const LOBBY_ROW_MIN = 34;                // ...to this: the portrait disc and the three lines
 const LOBBY_HEAD = 44;                   // the band over the columns and the grid: the headline, the clock, the bans
@@ -1237,17 +1240,17 @@ function lobbyLayout() {
   L.body = { x: cx - (bs >> 1), y: feet - 46 * S, w: bs, h: bs };
   L.stage = feet - 44 * S >= last + 4;
   L.figure = L.stage ? { x: L.body.x + 14 * S, y: L.body.y + 4 * S, w: 20 * S, h: 42 * S } : { x: 0, y: 0, w: 0, h: 0 };
-  // the splash and its skin strip take the middle once your pick is in
-  const sh = Math.min(SPLASH_H, play.y - LOBBY_HEAD - 20 - SKIN_THUMB_H - 8);
-  const sw = Math.min(SPLASH_W, VIEW_W - 2 * pw - 16);
-  L.splash = { x: cx - (sw >> 1), y: LOBBY_HEAD, w: sw, h: sh };
-  L.skins = { y: L.splash.y + sh + 20 };
+  // the showcase and its skin strip take the middle once your pick is in
+  const sh = Math.min(SHOW_H, play.y - LOBBY_HEAD - 20 - SKIN_THUMB_H - 8);
+  const sw = Math.min(SHOW_W, VIEW_W - 2 * pw - 16);
+  L.show = { x: cx - (sw >> 1), y: LOBBY_HEAD, w: sw, h: sh };
+  L.skins = { y: L.show.y + sh + 20 };
   // bottom right, under the rivals: the match's size and mode
   L.mode = { y: VIEW_H - pad - 18 };
   return L;
 }
-// the splash stands in the middle: this screen's pick is locked, or the count runs
-function lobbySplash() { return (DRAFT.phase === 'pick' && DRAFT.lock[localId] >= 0) || DRAFT.phase === 'done'; }
+// the showcase stands in the middle: this screen's pick is locked, or the count runs
+function lobbyShowcase() { return (DRAFT.phase === 'pick' && DRAFT.lock[localId] >= 0) || DRAFT.phase === 'done'; }
 
 // The screen's own painted night, fully opaque at rest so the live ambient
 // world is never the backdrop here: a starfield under two aurora ribbons, a
@@ -1406,8 +1409,8 @@ function heroClick() {
 // what the pointer is on: 'play' (BAN / LOCK IN), 'hero' (the stage figure:
 // the hero pop-up), 'swap' (the trade mark on your row: the
 // next position), 'search' (the row over the grid), 'skin'N /
-// 'skinPrev' / 'skinNext' (the strip under the splash), 'book' (the story's
-// book on the splash, or the open story itself), 'talk' (the chat's
+// 'skinPrev' / 'skinNext' (the strip under the showcase), 'book' (the story's
+// book on the showcase, or the open story itself), 'talk' (the chat's
 // plate), 'pickN' (hero N's cell) or null.
 function lobbyHit() {
   const L = lobbyLayout();
@@ -1415,8 +1418,8 @@ function lobbyHit() {
   const mineR = L.cards[1].find((r) => r.p === player);
   if (mineR && draftOpen() && over(selSwapRect(mineR), 1, 1)) return 'swap';
   if (inTalk(L.chat)) return 'talk';
-  if (lobbySplash()) {
-    if (CLASSES[player.cls].story && (over(selBookRect(L), 2, 2) || (selLoreOn() && over(L.splash, 0, 0)))) return 'book'; // the story (js/ui/select.js)
+  if (lobbyShowcase()) {
+    if (CLASSES[player.cls].story && (over(selBookRect(L), 2, 2) || (selLoreOn() && over(L.show, 0, 0)))) return 'book'; // the story (js/ui/select.js)
     const S = selSkinCells(L);
     for (const c of S.cells) if (over(c, 1, 1)) return 'skin' + c.k;
     if (S.more && over(S.prev, 2, 2)) return 'skinPrev';
@@ -1453,6 +1456,7 @@ function beginLobby() {
   m.countT = 0; m.countN = -1; // every rival frame face-down again
   m.loreOn = false;            // the story starts shut
   m.lockFx = 0;
+  m.showKey = null;            // the showcase starts its turn again (drawShowcase)
   closeMenuPanel(); // a party member's settings slide away: the draft's clock is running
   draftStart(); // the bans, then everyone's pick (js/ui/draft.js)
   SFX.place();
@@ -1863,6 +1867,23 @@ function drawLobbyStage(now, a, sw) {
   const { cx, body, S } = L;
   if (!lobbyStageUp(L)) return;
   const feet = body.y + 46 * S;
+  drawStageLight(cx, feet, S, a, sw, now);
+  // the body; a swap pops it up through the light, and it lifts under the
+  // hand - it is the way into the hero pop-up
+  const hover = m.screenT >= 1 && m.popT <= 0 ? lobbyHit() : null;
+  const rise = Math.round((1 - sw) * 8) - (hover === 'hero' ? 2 : 0);
+  const bob = Math.round(Math.sin(now * 1.6));
+  ctx.globalAlpha = a;
+  ctx.drawImage(SPRITES.portrait(player.cls, player.look, skin(player.team), heroSkinOf(player)), body.x, body.y + rise + bob, body.w, body.h);
+}
+
+// The pick's light on the snow: a shadow, a warm pool, the gold ring turning
+// round the feet (bright through the count and the lock), and the lock-in's
+// ring bursting out across the snow - for a model at S px a pixel whose soles
+// stand on feet. The pick stage's (drawLobbyStage) and the showcase's
+// (drawShowcase, js/ui/select.js).
+function drawStageLight(cx, feet, S, a, sw, now) {
+  const m = state.menu;
   const lit = m.countT > 0 || m.lockT > 0 ? 1.7 : 1;
   ctx.globalAlpha = a * 0.4;
   ctx.fillStyle = '#04060f';
@@ -1892,13 +1913,6 @@ function drawLobbyStage(now, a, sw) {
       ctx.fillRect(cx + Math.round(Math.cos(an) * rx), feet + Math.round(Math.sin(an) * ry), 2, 1);
     }
   }
-  // the body; a swap pops it up through the light, and it lifts under the
-  // hand - it is the way into the hero pop-up
-  const hover = m.screenT >= 1 && m.popT <= 0 ? lobbyHit() : null;
-  const rise = Math.round((1 - sw) * 8) - (hover === 'hero' ? 2 : 0);
-  const bob = Math.round(Math.sin(now * 1.6));
-  ctx.globalAlpha = a;
-  ctx.drawImage(SPRITES.portrait(player.cls, player.look, skin(player.team), heroSkinOf(player)), body.x, body.y + rise + bob, body.w, body.h);
 }
 
 // a filled pixel disc, scanline by scanline
@@ -1919,8 +1933,8 @@ function renderLobby(now, a) {
   const hot = m.screenT >= 1 && m.popT <= 0 ? lobbyHit() : null;
   drawSelectTop(L, a);                 // the headline, the clock, the bans (js/ui/select.js)
   drawSeats(L, a, hot);                // both sides' seat rows
-  if (lobbySplash()) {                 // your pick is in: the splash and the skins
-    drawSplash(L, now, a);
+  if (lobbyShowcase()) {               // your pick is in: the showcase and the skins
+    drawShowcase(L, now, a);
     drawSelLore(L, a, hot);            // the book, and the story when it is open
     drawSkinStrip(L, a, hot);
   } else {

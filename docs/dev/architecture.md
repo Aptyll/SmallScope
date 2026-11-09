@@ -75,7 +75,6 @@ order, so the script tags still interleave them:
 | [js/app/audio.js](../../js/app/audio.js) | ~780 | `SFX` | synth, samples and music under one master dial |
 | [js/baked/logodata.js](../../js/baked/logodata.js) | ~6 | `LOGO_PNG` | **generated** — the title logo as a PNG data URL |
 | [js/baked/notesart.js](../../js/baked/notesart.js) | ~5 | `NOTES_ART` (on `window`) | **generated** — the patch notes' pictures as PNG data URLs |
-| [js/baked/splash.js](../../js/baked/splash.js) | ~12 | `SPLASH_ART` (on `window`) | **generated** — the champ select's splash art and skin thumbnails as PNG data URLs |
 | [js/sim/core.js](../../js/sim/core.js) | ~520 | shared scope, no `window.*` export | the base layer: the numbers with no one owner (grid, view, day cycle, `YIELD`), the seeded rng, `state`/`settings`, the fx/economy helpers |
 | [js/app/director.js](../../js/app/director.js) | ~210 | shared scope, no `window.*` export | director mode for filming: the free camera, the hidden HUD, the 9:16 frame `fitCanvas` asks for, and the canvas recorder; loaded before canvas.js because `fitCanvas()` runs at load |
 | [js/app/canvas.js](../../js/app/canvas.js) | ~270 | shared scope, no `window.*` export | screen + world + light buffers, `fitCanvas`, pixel-exact zoom, the panel layout anchors |
@@ -203,7 +202,7 @@ order, so the script tags still interleave them:
 | [js/ui/profile-card.js](../../js/ui/profile-card.js) | ~190 | shared scope, no `window.*` export | the title's name tag and the profile card: the name, renaming it, the lifetime ledger; `drawWell`, the plate grammar other screens share |
 | [js/ui/heroes.js](../../js/ui/heroes.js) | ~170 | shared scope, no `window.*` export | the champ select's hero grid: a head per hero, the coming heroes as silhouettes, banned and taken cells, the position filters and the search field |
 | [js/ui/draft.js](../../js/ui/draft.js) | ~380 | shared scope, no `window.*` export | the lobby's draft: the positions, bans, everyone's blind pick, the bots' choices, the host's copy per side |
-| [js/ui/select.js](../../js/ui/select.js) | ~350 | shared scope, no `window.*` export | the champ select's look: the headline and clock, the seat rows, the splash and the skin strip, the mode |
+| [js/ui/select.js](../../js/ui/select.js) | ~350 | shared scope, no `window.*` export | the champ select's look: the headline and clock, the seat rows, the showcase and the skin strip, the mode |
 | [js/ui/skins.js](../../js/ui/skins.js) | ~250 | shared scope, no `window.*` export | the skins screen the coins buy from, the title's coin tag, and `birdSkinFor`, which skin a bird wears |
 | [js/ui/screens.js](../../js/ui/screens.js) | ~800 | shared scope, no `window.*` export | the replay window, the death overlay and spectating, the emotes |
 | [js/ui/endscreens.js](../../js/ui/endscreens.js) | ~920 | shared scope, no `window.*` export | the victory and defeat ceremonies |
@@ -506,8 +505,6 @@ None of the scripts is part of the game, and nothing in `js/` may depend on one 
   (`--probe` prints the key's box without writing).
 - **`app/bake-notes-art.js`** — reads `docs/media/notes/*.png`, writes `js/baked/notesart.js`: the pictures
   a patch note names in its third field, as PNG data URLs (rerun after adding one).
-- **`app/bake-splash.js`** — reads `docs/media/splash/<slot>-<id>.png` (288x160) and `<slot>-<id>-thumb.png` (48x28), writes
-  `js/baked/splash.js`: each hero look's champ select splash and strip thumbnail (rerun after adding one; a wrong size fails).
 - **`app/check-globals.js`** — the shared scope's lint, run before every push (exit 1 on a
   problem; `--list` prints every name it found as JSON). It reads the scripts in `index.html`'s
   order and takes each file's depth-0 declarations (`const`/`let`/`var` with destructuring,
