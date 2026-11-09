@@ -85,7 +85,7 @@ more: the frames live on as the CATCH emote's (`EMOTES`, js/ui/screens.js). The 
 **The run, the held run and the dodge roll are the one set of player frames not typed by hand.**
 [app/bake-player/](../../app/bake-player/) paints them off a jointed doll of each class body (and of
 each named hero's looks: ARMATOS's `standard` and `oath`, FORTIVA's `unbroken` and `coif`, BELLA's `general` and `traitor`,
-IGNIA's `hearth` and `wanderer`, AURA's `light`, [hero looks](#hero-looks)) and
+IGNIA's `hearth` and `wanderer`, AURA's `light`, SALVIA's `hood` and `tent`, [hero looks](#hero-looks)) and
 writes them to js/baked/motion.js as char grids in characters.js's own letters, so `motionSet`
 bakes them through the same team and look palettes as every hand-drawn pose: `run[dir]`,
 `hold[dir]` and `roll[dir]` sit beside the walking directions, `left` the mirror of `right`.
@@ -182,7 +182,7 @@ frame, not the doll**: `heroRunSide` (armatos.js) finds the leg rows, scissors t
 `HERO_STRIDE` and bobs the body over them, so the head and coat keep the standing width (the doll's
 side run was a pixel or two narrower and read as the hero shrinking when turning left or right).
 The run facing down and up is still the doll's, unless the look's row says `run: 'drawn'`: then
-`heroRunFront` lifts the drawn front and back the same way (IGNIA's two looks and AURA's, whose shawl, mantle and hair
+`heroRunFront` lifts the drawn front and back the same way (IGNIA's two looks, AURA's and SALVIA's two, whose shawl, mantle and hair
 the doll does not match). The class bodies (HUNTER, WARRIOR) keep the doll's run. The fish and the burrow frames are still the borrowed skater's in
 that paint. Which look a player wears is `heroSkinOf(p)` (player.js): the id in `p.skins` under the
 hero's `skinSlot`, or the free first row. LAST STANDARD (nasal helm, white beard, tabard) is his
@@ -234,6 +234,17 @@ app/bake-player/bodies.py) paints the mantle in the doll's `cloak` material and 
 used. Her 48 px model is the warrior's in her paint. Her STAR SHARD is a staff like IGNIA's:
 `staff: 'shard'` names `HERO_STAVES.shard` (`AURA_SHARD`, js/draw/aura.js), a fallen star's
 splinter on a dark shaft whose tip glints between two baked frames.
+
+SALVIA has two looks (`SALVIA_SKINS`, js/sprites/salvia.js): MENDER (free: a sage hood and
+shawl, a linen apron over the side's dress) and FIELD TENT (rare, 200 coins: a linen headscarf
+and a canvas tabard with a satchel strap), both on ARMATOS's frame (`SALVIA_PAL` is `ARM_PAL` with
+her dark hair `a`/`A` and the sage `q`/`Q`; his linen `w`/`W` is her apron). They are A and B off
+salvia-round1.png in the project files; side-on the head keeps the front's width and the body is
+two pixels narrower. Her dolls (`Hood` and `Tent` in app/bake-player/bodies.py) paint the sage in
+the doll's `cloak` material and the linen in `beard`; only the roll is used. Her 48 px model is the
+warrior's in her paint. Her SNOWDROP STAFF is a staff: `staff: 'snowdrop'` names `HERO_STAVES.snowdrop`
+(`SALVIA_STAFF`, js/draw/salvia.js), a snowdrop's white bell nodding off the top of a pale alder shaft,
+swaying between two baked frames.
 
 The **48 px model** ([looks.js](../../js/sprites/looks.js), `SPRITES.portrait(cls, look,
 team)`) is where the whole look reads — the champ select's stage, grid and seat discs. Each hero wears one

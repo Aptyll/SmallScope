@@ -156,6 +156,7 @@ const CLASS_AB = [
   BELLA_AB, // BELLA - the lunge, the parry, the slip, the duel (js/sim/bella.js)
   IGNIA_AB, // IGNIA - the brand, the brushfire, the warm hands, the wildfire (js/sim/ignia.js)
   AURA_AB, // AURA - the falling star, the drifting light, the step, the curtain (js/sim/aura.js)
+  SALVIA_AB, // SALVIA - the poultice, the snowdrops, the warm cloak, the thaw (js/sim/salvia.js)
 ];
 
 // the world the abilities put things into
@@ -1186,6 +1187,7 @@ const AB32_PAL = {
   r: '#e05a4a', R: '#a03428', p: '#f2937f',
   H: '#d9ad72', h: '#8a6d50', n: '#5c4a38',
   E: '#cfd8e8', e: '#8b93a8',
+  v: '#4f8a46', V: '#9cc87a', // SALVIA's sage (js/sprites/salvia.js)
 };
 const AB32 = [
   [ // HUNTER
