@@ -8,17 +8,21 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
 `BORDER_MAX + 6` tiles clear of the forest. Everything lives in the `main menu` banner and on
 `state.menu`:
 
-- **Items** `MENU_ITEMS` (QUICKPLAY / RANKED / PRACTICE TOOL, and QUIT under them in the desktop build only —
-  live from the first boot, and nothing else; `menuActivate` dispatches on the word. QUIT closes the app
+- **Items** `menuItems()` (FIRST MATCH on top while `PROFILE.guided()` is false - a profile that has
+  never seen a match to its result nor the coach through - then QUICKPLAY / RANKED / PRACTICE TOOL, and QUIT under them in the desktop build only —
+  and nothing else; `menuActivate` dispatches on the word. RANKED stands grey with a lock before it and
+  one pip per match after it (`drawRankedLock`/`drawRankedPips`, js/ui/guide.js) until `rankedOpen()`
+  (js/ui/rooms.js); a press on it then is a refusal that shakes the lock (`menu.shutFx`). FIRST MATCH opens
+  the party in its `guide` mode ([the coach](../gameplay/settings.md)). QUIT closes the app
   (`steamBridge.quit`, `win:quit` in desktop/main.js): the build opens fullscreen, and a browser tab has its own X. The first three open the
   [party lobby](../gameplay/settings.md) in that mode (`beginParty`): QUICKPLAY's and RANKED's FIND
   MATCH leads to the [lobby](../rendering.md#lobby)'s hero select, PRACTICE TOOL's START to the
-  [practice arena](../world.md#the-practice-arena);
+  [practice tool](../world.md#the-practice-tool) on the match's map;
   there is no WIKI or SETTINGS item: the [wiki](the-hud-corners/the-wiki-screen.md) opens from a word in the corner of
   the patch notes, settings are the ESC panel's in play, and the seed lives on
   [lobby](../rendering.md#lobby) under the map), stacked `MENU_TXT_PITCH` apart, climbing from `MENU_BOTTOM`
   above the view's foot. **`menu.hover` has one cell per item** and its length is
-  a literal in core.js, a file that loads before `MENU_ITEMS`
+  a literal in core.js, a file that loads before `menuItems`
   exists; the ease tops a missing cell up with `|| 0`, because a short array goes NaN and silently
   deletes a row - add an item, add a cell. `menuLayout()` is the single source of rects for hit-testing
   (`menuHit()`) and drawing. `menu.sel` is the keyboard selection; the mouse only steals it

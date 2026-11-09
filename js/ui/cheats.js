@@ -3,8 +3,11 @@
 // the PRACTICE TOOL only. Icons on one hud plate, a name on hover (the
 // tooltip), a press sends the command (cheatCmd, js/sim/practice.js).
 // ------------------------------------------------------------ the practice bar
-// Two groups on one plate, split by a gap: YOU (hero, level, gold, the two
-// standing toggles, reset) and THE FIELD (teleport, a dummy, clear the dummies).
+// Groups on one plate, split by a gap: YOU (hero, level, gold, the two
+// standing toggles, reset), THE FIELD (teleport, a dummy, clear the
+// dummies), on the map THE MAP (waves on/off, a wave now, towers on/off,
+// camps back) and last the way across: ARENA on the map, MAP in the arena
+// (a page reload, the party with it: practiceCross, js/ui/rooms.js).
 // CHANGE HERO opens a row of every hero's face beside the bar (`pick`); a
 // press on a face swaps to that hero where you stand (cheatCmd 'hero'). A
 // toggle that is on wears the frost rim; a press flashes its well white.
@@ -19,7 +22,9 @@ const CB_GAP = 2;            // between two wells
 const CB_SPLIT = 7;          // between the two groups
 const CB_TAB_W = 7, CB_TAB_H = 14; // the fold tab on the plate's right edge
 const CB_FLASH_T = 0.18;     // s a pressed well stays white
-// the buttons, top to bottom; `aim` arms a ghost, `auto` names a standing toggle
+// the buttons, top to bottom; `aim` arms a ghost, `auto` names a hero's
+// standing toggle (p.cheatOn) and `world` the field's (state.prac); `on`
+// keeps a button to the map or to the arena; `go` crosses between the two
 const CHEATS = [
   { id: 'hero', name: 'CHANGE HERO', pick: true },
   { id: 'level', name: 'LEVEL UP' },
@@ -30,7 +35,15 @@ const CHEATS = [
   { id: 'tp', name: 'TELEPORT', aim: true, split: true },
   { id: 'dummy', name: 'SPAWN DUMMY', aim: true },
   { id: 'clear', name: 'CLEAR DUMMIES' },
-];
+  { id: 'waves', name: 'WAVES', world: true, on: 'map', split: true },
+  { id: 'wave', name: 'SPAWN WAVE', on: 'map' },
+  { id: 'towers', name: 'TOWERS', world: true, on: 'map' },
+  { id: 'camps', name: 'RESPAWN CAMPS', on: 'map' },
+  { id: 'arena', name: 'ARENA', go: true, on: 'map', split: true },
+  { id: 'map', name: 'MAP', go: true, on: 'arena', split: true },
+].filter((c) => !c.on || c.on === (ARENA ? 'arena' : 'map'));
+// whether a standing toggle is lit, a hero's or the field's
+function cheatLit(c) { return c.world ? !!state.prac[c.id] : c.auto ? !!player.cheatOn[c.id] : false; }
 // the icons: 12x12 grids, baked once (SPR.bake, js/sprites/core.js)
 const CB_PAL = { '.': null, o: '#0a0e1c', w: '#ddf1f8', s: '#b4b8bf', g: '#f2cc6a', h: '#ffedb0', d: '#b8912f',
   r: '#e0505a', R: '#f2909a', b: '#e0c890', n: '#8a6a4a', c: '#9fc4dd' };
@@ -161,7 +174,91 @@ const CB_ICONS = {
     '.oo......oo.',
     '............',
   ],
-};
+
+  waves: [
+    '............',
+    '..o...o...o.',
+    '.oso.oso.oso',
+    '.oso.oso.oso',
+    '.owo.owo.owo',
+    '.ooo.ooo.ooo',
+    '.oso.oso.oso',
+    '.oso.oso.oso',
+    '.oso.oso.oso',
+    '.ooo.ooo.ooo',
+    '.o.o.o.o.o.o',
+    '............',
+  ],
+  wave: [
+    '.........o..',
+    '...oo...ogo.',
+    '..osso.ogggo',
+    '..osso..ogo.',
+    '..owwo...o..',
+    '..oooo......',
+    '.osssso.....',
+    '..osso......',
+    '..osso......',
+    '..oooo......',
+    '..o..o......',
+    '............',
+  ],
+  towers: [
+    '.o.oo.oo.o..',
+    '.oso.oso.so.',
+    '.osssssssso.',
+    '..osssssso..',
+    '..osooooso..',
+    '..osowwoso..',
+    '..osooooso..',
+    '..osssssso..',
+    '..osssssso..',
+    '.osssssssso.',
+    '.oooooooooo.',
+    '............',
+  ],
+  camps: [
+    '............',
+    '..oo....oo..',
+    '.onno..onno.',
+    '.onno..onno.',
+    '..oo.oo.oo..',
+    '....onno....',
+    '...onnnno...',
+    '..onnnnnno..',
+    '..onnnnnno..',
+    '...oonnoo...',
+    '.....oo.....',
+    '............',
+  ],
+  arena: [
+    '.....oo.....',
+    '....ogho....',
+    '...oggggo...',
+    '..ogghgggo..',
+    '..ogghgggo..',
+    '..ogghgggo..',
+    '.oggghggggo.',
+    '.oggggggggo.',
+    'oddddddddddo',
+    '.oooooooooo.',
+    '.....odo....',
+    '......o.....',
+  ],
+  map: [
+    'oooooooooooo',
+    'owwwwwwwwwco',
+    'owwwwwwwccwo',
+    'owwwwwwccwwo',
+    'owwwwwccwwwo',
+    'owwwwccwwwwo',
+    'owwwccwwwwwo',
+    'owwccwwwwwwo',
+    'owccwwwwwwwo',
+    'occwwwwwwwwo',
+    'occwwwwwwwwo',
+    'oooooooooooo',
+  ],};
 let cbIcons = null;
 function cbIcon(id) {
   if (!cbIcons) { cbIcons = {}; for (const k in CB_ICONS) cbIcons[k] = SPR.bake(CB_ICONS[k], CB_PAL); }
@@ -257,6 +354,7 @@ function cheatClick(mx, my) {
   if (c.pick) { cheatUi.pick = !cheatUi.pick; cheatUi.aim = null; SFX.ui(cheatUi.pick); return true; }
   cheatUi.pick = false;
   if (c.aim) { cheatUi.aim = cheatUi.aim === c.id ? null : c.id; SFX.ui(!!cheatUi.aim); return true; }
+  if (c.go) { if (!practiceCross(!ARENA)) SFX.deny(); return true; } // a guest goes where its leader goes
   player.input.cmd = { kind: 'cheat', id: c.id };
   return true;
 }
@@ -286,7 +384,7 @@ function tipCheat(i) {
   const c = CHEATS[i];
   const d = { title: c.name, tcol: '#f4f7ff', kind: 'PRACTICE', icon: cbIcon(c.id), plate: BAG_WELL, rim: '#3c4048', rows: [], notes: [] };
   if (c.note) d.notes.push([c.note, '#f2cc6a']);
-  if (c.auto) d.notes.push(player.cheatOn[c.id] ? ['ON', HUD_FROST] : ['OFF', TIP_DIM]);
+  if (c.auto || c.world) d.notes.push(cheatLit(c) ? ['ON', HUD_FROST] : ['OFF', TIP_DIM]);
   if (c.id === 'clear') d.notes.push([cheatDummies.length + ' STANDING', TIP_DIM]);
   return d;
 }
@@ -317,14 +415,17 @@ function drawCheatBar1() {
     drawHudFrame(pl.x, pl.y, pl.w, pl.h, { corners: { tl: false, tr: true, bl: false, br: true } });
     for (let i = 0; i < CHEATS.length; i++) {
       const c = CHEATS[i], r = cheatCellRect(i);
-      const on = (c.auto && player.cheatOn[c.id]) || (c.aim && cheatUi.aim === c.id) || (c.pick && cheatUi.pick);
+      const on = cheatLit(c) || (c.aim && cheatUi.aim === c.id) || (c.pick && cheatUi.pick);
+      const dim = c.go && !practiceCrossOk(); // only the party's leader takes it across
       const hot = hov && hov.kind === 'cell' && hov.i === i;
       const flash = cheatUi.flashId === c.id && cheatUi.flashT > 0;
       ctx.fillStyle = flash ? '#ffffff' : on ? HUD_FROST : hot ? '#9ca1aa' : '#33363d';
       ctx.fillRect(r.x, r.y, r.w, r.h);
       ctx.fillStyle = on ? '#1c2a4e' : BAG_WELL;
       ctx.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
-      ctx.drawImage(cbIcon(c.id), r.x + 2, r.y + 2 - (hot ? 1 : 0));
+      if (dim) ctx.globalAlpha = 0.4;
+      ctx.drawImage(cbIcon(c.id), r.x + 2, r.y + 2 - (hot && !dim ? 1 : 0));
+      ctx.globalAlpha = 1;
     }
     // the gap between the groups carries one quiet steel tick
     for (let i = 1; i < CHEATS.length; i++) if (CHEATS[i].split) {

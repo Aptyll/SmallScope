@@ -285,6 +285,7 @@ read through `statOf(p, key)` (js/sim/stats.js), never off the kit. `setClass(p,
 | 5 | **IGNIA** — THE HEARTHKEEPER, the burn-and-zone mage (passive SPREADING FLAME) | burn a fight down: one rival's fire spreads through the crowd, the snow and the creek put it out | her own body (HEARTHKEEPER, or WANDERER bought on the skins screen) and the hunter's kit, 84 hp, 10 armor | the CROOK AND LANTERN: an ember shot (260 px/s for 0.85 s, `cycle` 60/60 s), the staff carried upright |
 | 7 | **SALVIA** — THE MENDER, the healer (passive WARM BROTH) | keep your side on its feet: heals, speed, the slows taken off | her own body (MENDER, or FIELD TENT bought on the skins screen) and the warrior's frames (`heroBody`), 80 hp, 10 armor | the SNOWDROP STAFF: a sprig, 250 px/s for 0.85 s, `cycle` 62/60 s, drawn as her own shot (`look`, `HERO_SHOTS`) |
 | 8 | **LUCERNA** — THE LANTERN, the catch-and-save support (passive LAMPLIGHT) | pull a rival in, bring an ally home, light what hides near her | her own body (LAMPLIGHTER, or DUSK ROAD bought on the skins screen) and the warrior's frames (`heroBody`), 88 hp, 12 armor | the LANTERN: a spark, 260 px/s for 0.8 s, `cycle` 62/60 s, drawn as her own shot (`look`, `HERO_SHOTS`) |
+| 9 | **HIEMS** — THE LONG WINTER, the control mage (passive DEEP CHILL) | freeze a fight slowly: every hit chills, the third freezes; hold a choke with ice and a blizzard | her own body (WEATHER SCHOLAR, or FIRST FROST bought on the skins screen) and the warrior's frames, 82 hp, 10 armor, a step slower | the SNOWFLAKE STAFF: a frost bolt, 270 px/s for 0.85 s, `cycle` 62/60 s, drawn as her own shot; every hit of it chills |
 
 The **weapon is part of the hero**: each `CLASSES` entry carries its own `attack` row, so the
 hunter and the swordsmen do not attack the same way and every bot arrives armed, with nothing to
@@ -1000,7 +1001,7 @@ what the rest of the code needs to know is this:
 - **A joiner takes an open seat.** `netHostHello` refuses a different patch or seed. In a party
   (`NET.mode`, js/ui/rooms.js) it seats the joiner on the leader's side, only while the party is
   on its seats (BUSY once the hero select or the match has begun; FULL past five), or any time on
-  the practice field (`practiceSeat`, onto the spawn). A host with no
+  the practice tool (`practiceSeat`, onto the side's roost, or the arena's spawn). A host with no
   mode (a harness's `?net=host`) deals the first
   empty seat, then the first bot slot, of the side with fewer people - a bot's slot first on a
   side already at the room's size (its fullest side's seats, TEAMS) - (a match under way offers

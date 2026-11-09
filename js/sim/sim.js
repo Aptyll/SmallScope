@@ -80,8 +80,9 @@ function update(dt) {
   // time (the clock starts with the eagle - the match is live while you ride).
   // The practice arena has no clock at all: state.time stays pinned at the
   // boot's early morning, so it is always crisp daylight, no dusk, no dawn
-  // refreeze - a training room, not a day
-  if ((state.mode === 'play' || state.mode === 'drop') && !PRACTICE) {
+  // refreeze - a training room, not a day. The practice tool's map keeps a
+  // match's clock: its waves march on the match's beat (barracksBeat)
+  if ((state.mode === 'play' || state.mode === 'drop') && !ARENA) {
     state.time += dt;
     state.elapsed += dt;
     if (state.time >= CYCLE) {
@@ -522,7 +523,7 @@ function tickObjTimers(dt) {
 const TRICKLE_GOLD = 8;
 const TRICKLE_T = 4;      // s per pay: 120 gold a minute, League's 2 a second
 function trickle(p, dt) {
-  if (p.dead || PRACTICE) return;
+  if (p.dead || ARENA) return;
   p.trickleT += dt;
   if (p.trickleT >= TRICKLE_T) { p.trickleT -= TRICKLE_T; gainGold(p, TRICKLE_GOLD); }
 }
@@ -548,7 +549,7 @@ function updatePlay(dt) {
   botLogStep(dt);    // the bot dev view's recorder: reads what the bots just decided (js/ui/botview.js)
   resolveContests(); // this step's work swings, creek fish and bush claims
   if (!PRACTICE) sampleStats(dt); // the post-game lobby's two graphs (js/ui/lobby.js)
-  if (!PRACTICE) updateShop(); // the counter shuts when you walk off (js/ui/shop.js)
+  updateShop(); // the counter shuts when you walk off (js/ui/shop.js)
   updateAbilityWorld(dt); // craters and nets in flight
   if (state.drop) updateDrop(dt);
   shedStep(dt); // the gusts knocking snow off the pines (js/sim/shed.js)
@@ -691,7 +692,7 @@ function updateWildlife(dt) {
   updateOrca(dt); // the orca under its lake's ice: the cruise, the hunt and the breach (js/sim/orca.js)
   updateCamps(dt); // a cleared camp counts down and comes back whole
   updateCampSight(); // and each side learns the clocks it can see
-  if (!PRACTICE) updatePreyStock(dt); // and the meadow keeps its rabbits and deer
+  if (!ARENA) updatePreyStock(dt); // and the meadow keeps its rabbits and deer
 }
 
 const WADE_SHOVE = 40; // px/s of knockback that carries a bot into open water it would never walk into
@@ -714,7 +715,7 @@ function kbDecay(p, dt) {
 }
 function iceUnder(p) {
   const ftx = Math.floor(p.x / TILE), fty = Math.floor((p.y + 4) / TILE);
-  return inWorld(ftx, fty) && ground[idx(ftx, fty)] === 1;
+  return (inWorld(ftx, fty) && ground[idx(ftx, fty)] === 1) || heroIce(p); // ...or a rival hero's ice (HERO_ICE, js/sim/heroes.js)
 }
 function clampWorld(p) {
   p.x = Math.max(8, Math.min(WORLD * TILE - 8, p.x));

@@ -465,8 +465,8 @@ function updateFish(dt) {
   // while it is under FISH_MIN, nothing at all at the cap.
   // The practice arena has NO fishable water - its only ice is the parkour
   // track, and a fish emerging into a race line would be absurd - so under
-  // PRACTICE the trickle is off entirely.
-  if (PRACTICE) return;
+  // ARENA the trickle is off entirely.
+  if (ARENA) return;
   state.fishT -= dt;
   if (state.fishT <= 0) {
     state.fishT = fish.length < FISH_MIN ? FISH_SPAWN_FAST : FISH_SPAWN_T;

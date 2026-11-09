@@ -55,6 +55,7 @@ order, so the script tags still interleave them:
 | [js/sprites/aura.js](../../js/sprites/aura.js) | ~190 | shared scope, no `window.*` export | AURA's 32 px ability and passive icons (`AURA_ICON32`) and her STAR SHARD staff's weapon art |
 | [js/sprites/salvia.js](../../js/sprites/salvia.js) | ~200 | shared scope, no `window.*` export | SALVIA's 32 px ability and passive icons (`SALVIA_ICON32`) and her SNOWDROP STAFF staff's weapon art |
 | [js/sprites/lucerna.js](../../js/sprites/lucerna.js) | ~330 | shared scope, no `window.*` export | LUCERNA's 32 px ability and passive icons (`LUCERNA_ICON32`), her two looks and her LANTERN's weapon art |
+| [js/sprites/hiems.js](../../js/sprites/hiems.js) | ~320 | shared scope, no `window.*` export | HIEMS's 32 px ability and passive icons (`HIEMS_ICON32`), her looks' 16 px grids and skins table (`HIEMS_BODY`, `HIEMS_SKINS`) and her SNOWFLAKE STAFF's weapon art |
 | [js/sprites/bella.js](../../js/sprites/bella.js) | ~340 | shared scope, no `window.*` export | BELLA's 32 px ability and passive icons (`BELLA_ICON32`), her looks' 16 px grids and skins table (`BELLA_BODY`, `BELLA_SKINS`), and her spatha (`BELLA_SPATHA`) |
 | [js/sprites/ignia.js](../../js/sprites/ignia.js) | ~310 | shared scope, no `window.*` export | IGNIA's 32 px ability and passive icons (`IGNIA_ICON32`), her looks' 16 px grids and skins table (`IGNIA_BODY`, `IGNIA_SKINS`) |
 | [js/sprites/landmarks.js](../../js/sprites/landmarks.js) | ~55 | → `SPRITES` | the story landmarks: the frozen boat |
@@ -76,7 +77,7 @@ order, so the script tags still interleave them:
 | [js/sim/towers.js](../../js/sim/towers.js) | ~220 | shared scope, no `window.*` export | the road towers: three on every cable, the cut to the furthest standing, and the crossbow's mark, wind, loose and bolt |
 | [js/sim/pumps.js](../../js/sim/pumps.js) | ~170 | shared scope, no `window.*` export | the two neutral gold pumps: standing the mirrored pair at boot, the ring's capture and the pay to the holding side |
 | [js/sim/camps.js](../../js/sim/camps.js) | ~360 | shared scope, no `window.*` export | the camps at their fixed mirrored sites: standing them up, stocking them, the respawn clock |
-| [js/sim/practice.js](../../js/sim/practice.js) | ~1410 | shared scope, no `window.*` export | the practice training grounds: their world, the dummies, the archery track and bell, the parkour, the practice bar, the deer ride |
+| [js/sim/practice.js](../../js/sim/practice.js) | ~1470 | shared scope, no `window.*` export | the practice tool: its map opening (both birds down), and its arena's training grounds: their world, the dummies, the archery track and bell, the parkour, the practice bar, the deer ride |
 | [js/sim/depth.js](../../js/sim/depth.js) | ~280 | shared scope, no `window.*` export | the snow's depth: the seed's prevailing wind, the hand-placed brush patches (`layBrush`) and the lee pads (`layDrifts`, at boot after worldgen), `snowDepth`/`deepAt`/`brushOf` - the detail: [world](world.md#snow-depth) |
 | [js/sim/landmarks.js](../../js/sim/landmarks.js) | ~130 | shared scope, no `window.*` export | the story landmarks: the `LANDMARKS` table (each entry becomes an `OBJECTS` row), and their seeded placement |
 | [js/sim/nav.js](../../js/sim/nav.js) | ~320 | shared scope, no `window.*` export | `moveEntity`, `separateUnits`, and A* routing (`findPath`/`navTo`/`navStep`) |
@@ -89,12 +90,13 @@ order, so the script tags still interleave them:
 | [js/sim/attack.js](../../js/sim/attack.js) | ~140 | shared scope, no `window.*` export | each hero's basic attack: the press, the draw curve and the damage it lands, a shot and a cut, a shot's steering |
 | [js/sim/icebreak.js](../../js/sim/icebreak.js) | ~280 | shared scope, no `window.*` export | the ice breaking in its own shape, the hole the orca comes up through: its footprints, the hole and its freeze, the tiles it opens and closes, the water read by the pixel |
 | [js/sim/orca.js](../../js/sim/orca.js) | ~210 | shared scope, no `window.*` export | the orca under its lake's ice: the cruise, the lock-on and its countdown, the stalk, the strike through an ice break, the bite, and the way off its ice a bot runs |
-| [js/sim/heroes.js](../../js/sim/heroes.js) | ~60 | shared scope, no `window.*` export | the hero hooks: the lists and tables (`HERO_PASSIVE`, `HERO_TAKEN`, `HERO_STAT`, `HERO_TEN`, `HERO_MOVE`, `HERO_DASH`, `HERO_TICK`, `HERO_GROUND`) each hero file registers into, so shared code never names a hero |
+| [js/sim/heroes.js](../../js/sim/heroes.js) | ~60 | shared scope, no `window.*` export | the hero hooks: the lists and tables (`HERO_PASSIVE`, `HERO_TAKEN`, `HERO_STAT`, `HERO_TEN`, `HERO_MOVE`, `HERO_SIGHT`, `HERO_DASH`, `HERO_TICK`, `HERO_GROUND`, `HERO_MARK`, `HERO_ICE`) each hero file registers into, so shared code never names a hero |
 | [js/sim/armatos.js](../../js/sim/armatos.js) | ~320 | shared scope, no `window.*` export | ARMATOS, the first hero with a passive: his tuning, his four keys (`ARM_AB`, joined into `CLASS_AB`), his passive, the planted standard and how a bot picks his keys |
 | [js/sim/fortiva.js](../../js/sim/fortiva.js) | ~270 | shared scope, no `window.*` export | FORTIVA, the juggernaut: her tuning, her four keys (`FORT_AB`, joined into `CLASS_AB`), her passive UNBROKEN, the lunge and the leap as hero dashes |
 | [js/sim/aura.js](../../js/sim/aura.js) | ~260 | shared scope, no `window.*` export | AURA, the artillery mage: her tuning, her four keys (`AURA_AB`, joined into `CLASS_AB`), her passive STARLIGHT, the stars, orbs and curtains she leaves in the world, the blink as a hero dash |
 | [js/sim/salvia.js](../../js/sim/salvia.js) | ~260 | shared scope, no `window.*` export | SALVIA, the healer: her tuning, her four keys (`SALVIA_AB`, joined into `CLASS_AB`), her passive WARM BROTH, and what she leaves in the world (poultices, snowdrops, warm rings) |
 | [js/sim/lucerna.js](../../js/sim/lucerna.js) | ~240 | shared scope, no `window.*` export | LUCERNA, the catch-and-save support: her tuning, her four keys (`LUCERNA_AB`, joined into `CLASS_AB`), her passive LAMPLIGHT, the pull, and what she leaves in the world (crooks, lanterns, rings of light) |
+| [js/sim/hiems.js](../../js/sim/hiems.js) | ~240 | shared scope, no `window.*` export | HIEMS, the control mage: her tuning, her four keys (`HIEMS_AB`, joined into `CLASS_AB`), her passive DEEP CHILL, the clear ice and blizzards she leaves (`hiemsGlazes`, `hiemsStorms`) |
 | [js/sim/bella.js](../../js/sim/bella.js) | ~340 | shared scope, no `window.*` export | BELLA, the duelist: her tuning, her four keys (`BELLA_AB`, joined into `CLASS_AB`), her passive CALCULATED STRIKES, the lunge and the slip as hero dashes, the duel and its flurry |
 | [js/sim/ignia.js](../../js/sim/ignia.js) | ~260 | shared scope, no `window.*` export | IGNIA, the hearthkeeper: her tuning, her four keys (`IGNIA_AB`, joined into `CLASS_AB`), her passive KINDLING (her fire spreading and doused), the brand, the lines of fire (`brushfires`), the warmth and the wildfire |
 | [js/sim/abilities.js](../../js/sim/abilities.js) | ~820 | shared scope, no `window.*` export | the class abilities on keys 1-4: the `CLASS_AB` table, casting, the pierce/net/grapple/snow-cover/shield-and-slam/rush/crater/execute sim |
@@ -136,6 +138,7 @@ order, so the script tags still interleave them:
 | [js/draw/aura.js](../../js/draw/aura.js) | ~100 | shared scope, no `window.*` export | AURA's pixels: her star bolt, and the star's ring, the orb and the curtain's band on the snow |
 | [js/draw/salvia.js](../../js/draw/salvia.js) | ~110 | shared scope, no `window.*` export | SALVIA's pixels: her sprig, and the poultice, the snowdrops and the warm ring on the snow; her SNOWDROP STAFF carried |
 | [js/draw/lucerna.js](../../js/draw/lucerna.js) | ~110 | shared scope, no `window.*` export | LUCERNA's pixels: her spark, and her lamplight, the crook, the lantern and the ring of light on the snow; her LANTERN carried |
+| [js/draw/hiems.js](../../js/draw/hiems.js) | ~150 | shared scope, no `window.*` export | HIEMS's pixels: her frost bolt and icicle, the clear ice and the blizzard on the snow, the chill pips and the freeze's ice on a body, her snowflake staff |
 | [js/draw/bella.js](../../js/draw/bella.js) | ~70 | shared scope, no `window.*` export | BELLA's pixels: her precision pips, the parry's blade, the marks and the duel's ring, and her spatha in her hands |
 | [js/draw/ignia.js](../../js/draw/ignia.js) | ~140 | shared scope, no `window.*` export | IGNIA's pixels: the brand and the ember in flight, the lines of fire and their melted strip, the warm hands' sparks, and her crook and lantern |
 | [js/draw/marks.js](../../js/draw/marks.js) | ~200 | shared scope, no `window.*` export | the glyph grammar both maps share: a camp's icon and clock, a soldier's pennant, what a body looks like as a dot |
@@ -153,8 +156,9 @@ order, so the script tags still interleave them:
 | [js/ui/statpanel.js](../../js/ui/statpanel.js) | ~95 | shared scope, no `window.*` export | the stat panel left of the portrait: its cells and icons, its hit test, the hover breakdown (`tipStat`) |
 | [js/ui/rail.js](../../js/ui/rail.js) | ~220 | shared scope, no `window.*` export | the team rail along the top edge, and the anchors the screens hang under it |
 | [js/ui/vote.js](../../js/ui/vote.js) | ~70 | shared scope, no `window.*` export | the surrender vote's panel top centre under the clock and its YES / NO click |
-| [js/ui/cheats.js](../../js/ui/cheats.js) | ~320 | shared scope, no `window.*` export | the practice bar down the left edge (PRACTICE TOOL only): its buttons, aim ghost and tooltip card |
+| [js/ui/cheats.js](../../js/ui/cheats.js) | ~480 | shared scope, no `window.*` export | the practice bar down the left edge (PRACTICE TOOL only): its buttons, the map's group, the way to the arena and back, aim ghost and tooltip card |
 | [js/ui/tooltip.js](../../js/ui/tooltip.js) | ~350 | shared scope, no `window.*` export | the hover tooltip: `tipAt`, `tipPos` and `drawTooltip` |
+| [js/ui/guide.js](../../js/ui/guide.js) | ~250 | shared scope, no `window.*` export | the FIRST MATCH's coach (`GUIDE_STEPS`, `renderGuide`, `guideClick`) and RANKED's lock glyph |
 | [js/ui/compose.js](../../js/ui/compose.js) | ~150 | shared scope, no `window.*` export | `renderUI`, the frame's UI pass in order |
 | [js/ui/notices.js](../../js/ui/notices.js) | ~410 | shared scope, no `window.*` export | the notice lane top-right under the minimap (the roost-under-attack plate) and the stat ledger that flies your sheet into it when a number moves |
 | [js/ui/announcer.js](../../js/ui/announcer.js) | ~180 | shared scope, no `window.*` export | the announcer: a queued call (FIRST BLOOD, multi-kills, SHUTDOWN, ACE, TOWER DESTROYED, bears) on a plate under the team rail with both faces and a sting, and the kill feed under the notice lane |
@@ -221,7 +225,7 @@ one-shot `dropped` flag (`hasDropped()`/`markDropped()`: has this profile ever j
 eagle, gating the scripted first flight that rides the landing), `bestLap`
 (`bestLap()`/`setBestLap()`: the ice parkour's all-time record) and `bestRange`
 (`bestRange()`/`setBestRange()`: the archery round's best score) — the only two things the
-practice arena writes ([world.md](world.md#the-practice-arena)) — the
+practice arena writes ([world.md](world.md#the-practice-tool)) — the
 old arsenal's `tech.seen` (which kinds this profile has held; nothing reads it now, and `tech.done` rides along unread) and the
 `settings` object — as one JSON blob under
 `softfall.profile`. It is the only file that touches `localStorage` (the CLAUDE.md rule):

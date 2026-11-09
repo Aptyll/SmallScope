@@ -12,8 +12,8 @@ nine other people are on it.
 
 Ten players in `players` — **people and AI: every seat nobody takes is a bot's**, alone or in an
 online lobby ([online play](multiplayer.md#online-play)) — across **two teams of five, RED vs
-BLUE** (players alternate). Everyone plays one of **nine heroes** (the ranged HUNTER, the melee
-WARRIOR, ARMATOS the defensive initiator, FORTIVA the juggernaut, BELLA the duelist, IGNIA the hearthkeeper, AURA the artillery mage, SALVIA the healer and LUCERNA the catch-and-save support — a human's is the one picked on the champ select's hero grid) and is **dropped in by their team's armoured eagle**, which flies in over its own corner and lands
+BLUE** (players alternate). Everyone plays one of **ten heroes** (the ranged HUNTER, the melee
+WARRIOR, ARMATOS the defensive initiator, FORTIVA the juggernaut, BELLA the duelist, IGNIA the hearthkeeper, AURA the artillery mage, SALVIA the healer, LUCERNA the catch-and-save support and HIEMS the control mage — a human's is the one picked on the champ select's hero grid) and is **dropped in by their team's armoured eagle**, which flies in over its own corner and lands
 the whole side at home; nobody starts at a spawn camp. Each side's **base** is a fixed hollow cut
 into its **corner's** woods, RED always bottom-left, BLUE always top-right
 ([the bases](world.md#the-bases)); the bird roosts on its perch at the back and becomes its team's
@@ -62,16 +62,16 @@ The world is 232 tiles of 16 px — a 3712×3712 px snowfield with a forest bord
 threaded by frozen lakes and rivers. Every match plays this one map.
 See [world.md](world.md#the-tile-world) and [one map](world.md#one-map).
 
-Outside the match sits one room: the **practice tool** — a small, fixed, seedless training field
-cut to pure combat (a mending dummy, a perimeter target track with a bell-rung scored archery
-round, and a timed ice-parkour loop through
-the surrounding forest), found by breaking the ice off its menu plank. Nothing in it counts and
-nothing in it is at stake. See [the practice arena](world.md#the-practice-arena).
+The **practice tool** plays this same map with no rival players and a bar of cheats (League's
+practice tool): lanes, waves, towers and camps as in a match, toggled or spawned from the bar.
+Its side room, the **arena**, is a small fixed training field cut to pure combat (a mending
+dummy, a target track with three bell-rung medal rounds, a timed ice-parkour loop and a deer
+ride). Nothing in either counts and nothing is at stake. See [the practice tool](world.md#the-practice-tool).
 
 ## The pillars
 
 **Your weapon is your hero's.** The left button is one plain MOBA basic attack that belongs to
-the hero's kit (the HUNTER's SHORTBOW, the WARRIOR's LONGSWORD, ARMATOS's OATH GREATSWORD, FORTIVA's CHAIN GREATSWORD, BELLA's EAGLE SPATHA, IGNIA's CROOK AND LANTERN, AURA's STAR SHARD, SALVIA's SNOWDROP STAFF, LUCERNA's LANTERN), held
+the hero's kit (the HUNTER's SHORTBOW, the WARRIOR's LONGSWORD, ARMATOS's OATH GREATSWORD, FORTIVA's CHAIN GREATSWORD, BELLA's EAGLE SPATHA, IGNIA's CROOK AND LANTERN, AURA's STAR SHARD, SALVIA's SNOWDROP STAFF, LUCERNA's LANTERN, HIEMS's SNOWFLAKE STAFF), held
 to draw and released to land, and nothing on the map drops another: what grows over a match is the
 hero's level and the six item slots. The **bottom bar** shows those six slots beside the
 abilities at all times. [The basic attack](gameplay/the-basic-attack.md).
@@ -167,7 +167,7 @@ and the build list) was cut in 0.525. [Buildings](gameplay/buildings.md).
 
 **Two gold pumps are the map's objectives**, one beside the middle of the top lane and one beside
 the bot lane's, off the road. Heroes take one by standing in its ring with no rival hero inside
-(5 s; a rival inside pauses it), and while a side holds it every hero on that side gets 3 gold
+(5 s; a rival inside pauses it), and while a side holds it every hero on that side gets 20 gold
 every 10 s. The ring and the pump wear the holder's colour, grey when nobody holds it; no text.
 Bots take and contest them. [The gold pumps](gameplay/buildings.md#the-gold-pumps).
 

@@ -49,6 +49,8 @@ function renderUI(now) {
   // bottom-centre; it rides the intro slide up from below, at whatever HUD
   // SIZE the settings dial holds (drawHudScaled).
   if (!out) drawHudScaled(now, Math.round(slide * HUD_SLIDE));
+  // the FIRST MATCH's coach, over the strip (js/ui/guide.js): under the counter's wash
+  if (!out) renderGuide(now);
 
   // the merchant's counter (js/ui/shop.js): over the HUD like the character
   // sheet, and lit out of the wash it stands in
