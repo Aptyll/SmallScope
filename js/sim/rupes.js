@@ -66,9 +66,9 @@ const RUPES_AB = [
   },
   {
     id: 'shoulder', name: 'SHOULDER', cd: [13, 12, 11, 10, 9], ap: 0.4, cast: 0.15, aim: { line: SHOULDER_SPD * SHOULDER_T },
-    rank: { dmg: [12, 18, 24, 30, 36], stun: 1 }, // stun: thrown into a tree, a rock or a wall
-    tip: 'CHARGE. INTO A TREE OR ROCK, STUNS',
-    blurb: 'A SHORT CHARGE. THE FIRST RIVAL IN THE WAY IS THROWN BACK THE WAY YOU RAN. THROWN INTO A TREE, A ROCK OR A WALL, THEY ARE STUNNED.',
+    rank: { dmg: [12, 18, 24, 30, 36], stun: 1 }, // stun: thrown into a tree or a wall (isSolidTile: trees, the map's edge, buildings)
+    tip: 'CHARGE. INTO A TREE OR WALL, STUNS',
+    blurb: 'A SHORT CHARGE. THE FIRST RIVAL IN THE WAY IS THROWN BACK THE WAY YOU RAN. THROWN INTO A TREE OR A WALL, THEY ARE STUNNED.',
     use: (p) => rupesShoulder(p),
     tele: (p, px, py, a, col, closing, now, ex, ey) => drawTeleLine(p.x, p.y, Math.cos(a), Math.sin(a), teleLen(p.x, p.y, Math.cos(a), Math.sin(a), SHOULDER_SPD * SHOULDER_T), col, 0.5 + 0.45 * closing, now, ex, ey),
     pose: (p, prog) => ({ dx: 0, dy: 1, rot: 0.12 * (p.dir === 'left' ? -1 : 1) }), // the shoulder dropped
@@ -179,7 +179,7 @@ function shoulderStep(p, mv) {
   if (q) { shoulderEnd(p, q); return; }
   if (mv.blockedX || mv.blockedY || p.rushT <= 0) shoulderEnd(p, null);
 }
-// is there a tree, a rock or a wall within `r` px of (x, y) along (nx, ny)
+// is there a tree or a wall within `r` px of (x, y) along (nx, ny)
 function solidBehind(x, y, nx, ny, r) {
   for (let s = 6; s <= r; s += 4) if (isSolidTile(Math.floor((x + nx * s) / TILE), Math.floor((y + ny * s) / TILE))) return true;
   return false;

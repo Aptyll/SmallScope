@@ -1285,11 +1285,11 @@ function endSnapshot() {
     gold: player.earned, kills: player.kills, level: player.level, time: state.elapsed,
     team: player.team, cls: player.cls,
     // the whole side, the local player first: every body either ending stands
-    // on its stage, with the name, class and kit it finished in (a mate who
+    // on its stage, with the name TAB gives it (boardName: a bot goes by its hero), the class and kit it finished in (a mate who
     // is down at the whistle still shares the result)
     roster: players.filter((q) => q.active && q.team === player.team)
       .sort((a, b) => (a === player ? -1 : b === player ? 1 : a.id - b.id))
-      .map((q) => ({ name: q.name, cls: q.cls, look: q.look, team: q.team })),
+      .map((q) => ({ name: boardName(q), cls: q.cls, look: q.look, team: q.team })),
   };
 }
 
