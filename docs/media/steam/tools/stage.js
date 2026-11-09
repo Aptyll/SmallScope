@@ -134,7 +134,7 @@ module.exports = `
 
     // ---- driving the local body ------------------------------------------
     // the aim is the POINTER: put it on a world point through the one bridge
-    look: function(wx, wy){ mouse.inside = true; mouse.src = 'mouse'; mouse.x = wToSX(wx); mouse.y = wToSY(wy); },
+    look: function(wx, wy){ mouse.inside = true; mouse.x = wToSX(wx); mouse.y = wToSY(wy); },
     fire: function(v){ if (v) clickAction(player); else player.input.fire = false; },
     hour: function(t){ state.time = t; },
 
@@ -151,8 +151,6 @@ module.exports = `
       state.wheel = null; state.build = null; state.mapOpen = false; state.shop = null;
       state.settingsOpen = false; state.paused = false; state.charOpen = false;
       state.bagOpen = false; state.drag = null; state.dragPend = null;
-      actHeld.work = false; actHeld.slide = false;
-      pad.mx = 0; pad.my = 0;
       player.input.fire = false; player.input.dodge = false; player.input.ability = -1;
       player.firePrev = false; player.fireArmed = false;
     },

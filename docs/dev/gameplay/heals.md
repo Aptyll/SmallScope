@@ -18,7 +18,7 @@ while `p.potions` is how many. `isStack(id)` says so; `isPart` and `ITEM_PARTS` 
 - **Selling** goes through `sellItem` on the slot like any item, one potion at a time, at the usual
   `ITEM_SELL` (half: 25). The last one sold frees the slot (`takePotion`).
 - **Drinking** is the slot's key (`ITEM_KEYS`, js/app/input.js: 5-0 on WASD, 1-6 under CLICK and
-  MOUSE), a click on its well, the gamepad's d-pad left, or the MOUSE scheme's wheel wedge. Each
+  MOUSE), a click on its well, or the MOUSE scheme's wheel wedge. Each
   sets the input's `useItem` to a slot index; the sim calls `useItem(p, slot)`, which drinks a
   potion and refuses anything else with the well's red (`itemDenied`). `drinkPotion` refuses while
   a drink is running (`p.potT > 0`), at full health, dead or in the air. A drink heals
