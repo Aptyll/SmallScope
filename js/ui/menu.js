@@ -30,7 +30,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.582';
+const PATCH_TXT = 'PATCH 0.583';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -46,6 +46,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.583', 'UNDER THE HOOD: THE EAGLE\'S LANDING REPAINTS THE GROUND THROUGH THE SAME SHARED STEP AS EVERY OTHER GROUND CHANGE.'],
   ['0.582', 'A SURRENDER VOTE NOW WAITS FOR EVERY PERSON ON YOUR SIDE: THE BOTS ONLY JOIN THE YES ONCE ALL OF YOU HAVE VOTED OR THE CLOCK RUNS OUT, SO ONE FRIEND CAN NO LONGER END THE MATCH ALONE.'],
   ['0.581', 'THE JUNGLE HAS WALLS: PINE WALLS IN EVERY QUARTER SPLIT THE CAMPS FROM THE MID ROAD AND THE RIVER, WITH A BLOCK AT EACH LANE CORNER AND GAPS TO SLIP THROUGH, THE SAME FOR BOTH SIDES.'],
   ['0.580', 'ONLINE, OTHER PLAYERS\' DRAWN BOWS, WOUND-UP BLADES AND BELLA\'S PARRY NOW POINT WHERE THEY ARE AIMING ON YOUR SCREEN, NOT OFF TO THE TOP LEFT.'],
