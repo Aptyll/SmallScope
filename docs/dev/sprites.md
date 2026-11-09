@@ -231,7 +231,8 @@ and held through a cast; the lantern's heart flickers between two baked frames.
 AURA has one look (`AURA_SKINS`, js/sprites/aura.js): NORTHERN LIGHT, drawn on ARMATOS's frame
 (`AURA_PAL` is `ARM_PAL` with her silver hair `a`/`A`, the night-blue mantle `q`/`Q` and the
 star-gold `s` of her circlet). It is A off aura-round1.png in the project files; its side frame
-keeps the head at the front's width, the face flush with it. Her doll (`Light` in
+keeps the head at the front's width, the face flush with it. From behind her dress shows
+under the hair and the mantle in the side's colour, so her side reads in every facing. Her doll (`Light` in
 app/bake-player/bodies.py) paints the mantle in the doll's `cloak` material and only the roll is
 used. Her 48 px model is her own front frame at 3x (`portrait`). Her STAR SHARD is a staff like IGNIA's:
 `staff: 'shard'` names `HERO_STAVES.shard` (`AURA_SHARD`, js/draw/aura.js), a fallen star's
@@ -283,7 +284,8 @@ dark hair, a warm brown greatcoat open on the side's waistcoat, brass buttons) a
 200 coins: the same coat with a mustard scarf and a wide hat), both on ARMATOS's frame
 (`LUCERNA_PAL` is `ARM_PAL` with her hair `a`/`A`, the coat `q`/`Q` and the brass `u`/`f`). They are
 A and B off lucerna-round1.png in the project files; side-on the head keeps the front's width and
-the body is two pixels narrower. Her dolls (`Lamp` and `Dusk` in app/bake-player/bodies.py) paint
+the body is two pixels narrower. The waistcoat is four pixels wide head-on and, from behind, the
+coat's skirt under a brass belt is the side's colour (`r`/`R`/`d`), so her side reads in every facing. Her dolls (`Lamp` and `Dusk` in app/bake-player/bodies.py) paint
 the coat in the doll's `cloak` material; only the roll is used. Her 48 px model is her own front frame at 3x (`portrait`). Her LANTERN is carried like a staff but hangs: `staff: 'lantern'` names
 `HERO_STAVES.lantern` (`LUCERNA_LANTERN`, js/draw/lucerna.js), a brass lamplighter's lantern held by
 its ring (`LUCERNA_LANTERN_GRIP`), its flame breathing between two baked frames.
