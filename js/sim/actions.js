@@ -468,7 +468,7 @@ function chopTree(o, p) {
   burst(ox, oy - 10, '#eef4fb', dead ? 5 : 6, 40, 0.5, true);
   burst(ox, oy - 12, dead ? '#6b5a48' : '#3f7a5c', 3, 30, 0.4, true);
   if (o.hp > 0) { shedHit(o); return; } // the blow shakes the crown (js/sim/shed.js); a fell has its own snow
-  objects[idx(o.tx, o.ty)] = { type: 'stump', tx: o.tx, ty: o.ty, flash: 0, shake: 0 };
+  setTile(idx(o.tx, o.ty), { type: 'stump', tx: o.tx, ty: o.ty, flash: 0, shake: 0 });
   sfxAt('treeFall', ox, oy);
   shakeFor(p, dead ? 2 : 2.5);
   // the fell's one payout, a gold pine's included; FORAGER fattens it
@@ -596,7 +596,7 @@ function hurtStruct(o, dmg, p, bot) {
 // rubble is just rubble.
 function destroyStructure(o, p) {
   if (STRUCTS[o.type]) removeStruct(o);
-  else objects[idx(o.tx, o.ty)] = null;
+  else setTile(idx(o.tx, o.ty), null);
   const c = structCenter(o), ox = c.x, oy = c.y;
   sfxAt('break_', ox, oy);
   burst(ox, oy, '#8a6142', 10, 50, 0.5, true);

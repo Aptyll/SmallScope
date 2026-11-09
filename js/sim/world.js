@@ -237,9 +237,11 @@ function structMouth(o) {
 }
 function placeObj(tx, ty, type, extra) {
   const o = Object.assign({ type, tx, ty, hp: 1, flash: 0, shake: 0 }, extra || {});
-  objects[idx(tx, ty)] = o;
-  return o;
+  return setTile(idx(tx, ty), o);
 }
+// a tile written during a match: the host's wire looks at it on its next flush
+// (snapTouch, js/net/snapshot.js) instead of finding it on its slow sweep
+function setTile(i, o) { objects[i] = o; snapTouch(i); return o; }
 
 const cx = WORLD / 2, cy = WORLD / 2;
 

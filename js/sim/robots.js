@@ -261,7 +261,7 @@ function pitchStall(b, s) {
   for (let j = 0; j < 2; j++) for (let k = 0; k < 3; k++) {
     if (!j && !k) continue;
     const x = s.tx + k, y = s.ty + 1 - j;
-    objects[idx(x, y)] = { type: 'part', tx: x, ty: y, of: o, flash: 0, shake: 0 };
+    setTile(idx(x, y), { type: 'part', tx: x, ty: y, of: o, flash: 0, shake: 0 });
   }
   for (let y = s.ty - 1; y <= s.ty + 4; y++) for (let x = s.tx - 1; x <= s.tx + 7; x += 2) if (inWorld(x, y)) repaintGround(x, y);
   return o;
@@ -395,8 +395,8 @@ function updateMerchant(b, dt) {
         b.workT += dt;
         if (b.workT >= MERCH_BAY_SWING) {
           b.workT = 0;
-          if (o.type === 'stump') { objects[idx(o.tx, o.ty)] = null; burst(px, py, '#eef4fb', 6, 40, 0.4, true); b.tgt = null; }
-          else if (merchFell(b, o) && !merchOnBay(s, o.tx, o.ty)) objects[idx(o.tx, o.ty)] = { type: 'stump', tx: o.tx, ty: o.ty, flash: 0, shake: 0 };
+          if (o.type === 'stump') { setTile(idx(o.tx, o.ty), null); burst(px, py, '#eef4fb', 6, 40, 0.4, true); b.tgt = null; }
+          else if (merchFell(b, o) && !merchOnBay(s, o.tx, o.ty)) setTile(idx(o.tx, o.ty), { type: 'stump', tx: o.tx, ty: o.ty, flash: 0, shake: 0 });
         }
       }
       return;
@@ -475,7 +475,7 @@ function updateMerchant(b, dt) {
       b.workT += dt;
       if (b.workT >= MERCH_SWING_T) {
         b.workT = 0;
-        if (merchFell(b, t)) objects[idx(t.tx, t.ty)] = { type: 'stump', tx: t.tx, ty: t.ty, flash: 0, shake: 0 }; // the clearing leaves build sites
+        if (merchFell(b, t)) setTile(idx(t.tx, t.ty), { type: 'stump', tx: t.tx, ty: t.ty, flash: 0, shake: 0 }); // the clearing leaves build sites
       }
     }
     return finish();

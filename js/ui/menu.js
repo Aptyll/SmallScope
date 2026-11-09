@@ -39,7 +39,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.594';
+const PATCH_TXT = 'PATCH 0.595';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -55,6 +55,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.595', 'THE PLAYER WHO HOSTS AN ONLINE MATCH SPENDS ABOUT A THIRD AS LONG SENDING THE WORLD TO EVERYONE ELSE, SO A HOST ON A SLOWER PC KEEPS ITS FRAME RATE.'],
   ['0.594', 'NEW PLAYERS GET A FIRST MATCH ON THE TITLE: A REAL 5V5 AGAINST EASY BOTS WITH A SMALL CARD TEACHING MOVE, SHOP, ABILITIES, LAST HITS, RECALL AND TOWERS (HOLD SHIFT FOR DETAIL, X TO TURN IT OFF), AND RANKED UNLOCKS AFTER 3 FINISHED MATCHES.'],
   ['0.593', 'UNDER THE HOOD: THE DESIGN NOTES NOW SAY WHAT A GOLD PUMP REALLY PAYS, 20 GOLD EVERY 10 SECONDS; NOTHING IN THE GAME CHANGES.'],
   ['0.592', 'THE PRACTICE TOOL NOW PLAYS ON THE REAL MAP WITH LANES, WAVES, TOWERS AND CAMPS, THE BAR CAN TOGGLE WAVES AND TOWERS, SPAWN A WAVE AND RESPAWN CAMPS, AND ITS ARENA BUTTON TAKES YOUR PARTY TO THE OLD TRAINING FIELD WITH THE BELL ROUNDS AND BACK.'],

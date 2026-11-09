@@ -397,11 +397,11 @@ function netHostFlush() {
   if (NET.role !== 'host') return;
   evRecord = NET.peers.size > 0;
   if (!NET.peers.size) { evRing.length = 0; return; }
-  // the steps between two flushes each scan their share of the tiles, so the
-  // flush step does not carry the whole world alone (snapTileScan)
-  if (state.tick % SNAP_EVERY) { snapTileScan(Math.ceil(objects.length * (state.tick % SNAP_EVERY) / SNAP_EVERY)); return; }
+  // the steps between two flushes each sweep their share of the tiles, and
+  // the flush step checks only the ones that can be changing (snapTileHot)
+  if (state.tick % SNAP_EVERY) { snapTileSweep(); return; }
   const check = NET.verify && state.tick % VERIFY_EVERY === 0;
-  if (check) snapShadow.scanAt = 0; // the proof's tick sees every tile now, not a slice ago
+  if (check) snapShadow.swept = false; // the proof's tick scans every tile now, not only the hot ones
   const h = snapHistoryPush();
   const ev = evDrain();
   const cuts = new Map(), fulls = new Map(), evs = new Map(); // per side (and ack tick): the delta, the full form the client checks itself against, the cosmetics

@@ -153,8 +153,9 @@ netHostStep(dt):  drain the transport - hello -> a slot, gone -> a bot, resync -
 evInStep = true;  updatePlay(dt);  evInStep = false     (the step, unchanged)
 netHostFlush():   every SNAP_EVERY ticks: push the ring, cut each peer's delta from its ack,
                   attach the drained cosmetics and `ia` (the newest of that peer's inputs stepped),
-                  send lossy; a peer whose ack aged out gets a full sync. The ticks between scan
-                  their share of the tiles (snapTileScan), so the flush tick does not scan them all
+                  send lossy; a peer whose ack aged out gets a full sync. The flush tick looks only
+                  at the tiles that can be changing (snapTileHot); the ticks between sweep the
+                  whole map behind it, a share each (snapTileSweep)
 ```
 
 At the title a host runs `netHostStep` alone, so a peer can knock before the match starts.
@@ -280,11 +281,17 @@ touched - per entity the names that changed or left (whole for one new that tick
 gone, whether the order moved, the same for the eagles and the singletons, each tile's touched
 names (whole for one made or unmade), the ground cells, the structures' key - while the tile
 shadow keeps only the newest form of every tile, so the ring holds no world per tick, only what
-moved. The tiles are ~50k, so a host does not scan them on the flush tick alone: each tick between
-two flushes scans its share (`snapTileScan`, from `netHostFlush`) into a pending set the next entry
-takes, and the push scans whatever is left. A tile a slice has already passed waits one more
-interval; the cut is a union of entries, so it is late, never lost (a `DBG.netVerify` tick rescans
-all of them, so the proof compares like with like). The host's clock does not tick at the title, so
+moved. The tiles are ~54k and only a few hundred change in a match, so the host does not compare
+them all: the flush tick checks the HOT tiles (`snapTileHot`): every structure, every tile with a
+clock running (`objTimed`, the sim's own list), every tile written through `setTile`/`placeObj`
+(js/sim/world.js marks it, `snapTouch`) and every tile seen changing in the last `SNAP_HOT_KEEP`
+steps. The ticks between two flushes sweep the whole map behind that, a share each, once round in
+`SNAP_SWEEP` sweeping steps (about 1 s; `snapTileSweep`, from `netHostFlush`). A change only the
+sweep found reached the clients up to a sweep late and is counted (`netStatus().tileLate`, by type
+in `tileLateBy`): a writer that changes a tile in a match without a clock, a structure or
+`setTile` should be given one. The cut is a union of entries, so a late tile is late, never lost.
+A push with no sweep before it (the first, a proof calling it straight, a `DBG.netVerify` tick)
+scans every tile, so the proof compares like with like. The host's clock does not tick at the title, so
 every guest who joins there shares one ring entry: the world behind the menu therefore stands still
 once the room is shared (`updateTitle`), or a deer turned and turned back between two joins would
 never reach the second guest. A client acks the newest tick it applied on every input it sends; the host keeps that
@@ -533,7 +540,7 @@ Every step shipped as its own PR and kept solo play identical.
 8. After the plan: the binary wire form, deltas and interpolation - 3.49; quantized positions -
    3.50; the ack-keyed ring - 3.51; Steam's unreliable channel and raw bytes over the bridge - 3.54;
    the client's own walk predicted, one input per host step, the ease sized from arrivals and the
-   tile scan spread over the steps - 0.467.
+   tile scan spread over the steps - 0.467; hot tiles on the flush tick and a slow sweep - 0.595.
 
 Releases: every `v*` tag builds the portable zip (desktop/build.js - the page, `js/`, the
 mp3s of `audio/music/` and the wrapper with steamworks.js and koffi (win32_x64's binary only), nothing else; `npm run steam:stage`
