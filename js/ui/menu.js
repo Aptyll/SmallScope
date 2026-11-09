@@ -39,7 +39,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.637';
+const PATCH_TXT = 'PATCH 0.638';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -55,6 +55,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.638', 'A BOT\'S NAME TAG, ITS SEAT ON THE EAGLE AND THE DEATH RECAP NAME IT BY ITS HERO, AS TAB AND THE PODIUM DO.'],
   ['0.637', 'UNDER THE HOOD: A PLAYER\'S GOLD IS ONE NUMBER INSTEAD OF A ONE-ITEM BAG, SO ONLINE MATCHES SEND A LITTLE LESS FOR EVERY PLAYER.'],
   ['0.636', 'A NEW HERO, FALCO THE KESTREL: HIS HAWK FLIES OUT AND MARKS A RIVAL, HIS THROWN KNIVES BITE HARDER ON THE MARK, HE GLIDES OVER ANYONE IN HIS WAY, AND HE DROPS OUT OF THE SKY ON A MARKED HERO.'],
   ['0.635', 'THE VICTORY AND DEFEAT PODIUM AND THE MATCH SCORES NAME BOTS BY THEIR HERO, AS TAB DOES; RUPES\'S SHOULDER STUNS AGAINST A TREE OR A WALL (THE MAP HAS NO ROCKS).'],
