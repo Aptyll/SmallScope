@@ -84,7 +84,7 @@ function statParts(p, key) {
 // ARMOR at the hit: what a blow of `dmg` leaves after this body's armor, never
 // under 1 (damagePlayer, js/sim/player.js) - and its inverse, the blow it
 // takes to land `n` (orcaLethal, js/sim/orca.js)
-function armorTaken(p, dmg) { return Math.max(1, Math.round(dmg * 100 / (100 + Math.max(0, statOf(p, 'armor'))))); }
+function armorTaken(p, dmg, src) { return Math.max(1, Math.round(dmg * 100 / (100 + Math.max(0, statOf(p, 'armor')) * (1 - itemPierce(src))))); }
 function armorRaw(p, n) { return Math.max(1, Math.ceil((n - 0.5) * (100 + Math.max(0, statOf(p, 'armor'))) / 100)); }
 // COOLDOWN SPEED on a cooldown: the share of it that is left to wait (abCdOf)
 function hasteMul(p) { return 100 / (100 + Math.max(0, statOf(p, 'haste'))); }

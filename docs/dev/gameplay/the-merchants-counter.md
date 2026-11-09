@@ -3,7 +3,7 @@
 **Each eagle's merchant keeps a shop, and both shops serve everybody.** Walk up to either team's
 **stall** (the stall its [merchant](robots.md#the-merchant) pitches beside the road's head) or to the
 merchant itself, press **E**, and the counter opens: the **SHOP**, an items shop in League's
-mould. It sells 53 items in League's four tiers (**basic**, **epic**, **boots** and
+mould. It sells 64 items in League's four tiers (**basic**, **epic**, **boots** and
 **legendary**, built out of each other) into [six item slots](#the-items), and the **health potion** (50, stacked up to 5 in one slot,
 [Heals](heals.md)). **Every item is on sale all the time, at one fixed price, and nothing sells
 out**, so a player can save up for the one they want. The items themselves are
@@ -109,6 +109,9 @@ minutes ([economy](economy-one-currency.md)).
 | RECURVE LIMB | 900 | GUT STRING, GUT STRING | +35% ATTACK SPEED |  |
 | TOOTHED KNIFE | 900 | FLINT HEAD | +4 DAMAGE | LEECH |
 | WARM STONE | 900 | WOLF HIDE, WOLF HIDE | +40 HEALTH | DEN |
+| RIME KNIFE | 800 | FLINT HEAD | +4 DAMAGE | FROSTBITE |
+| RIME CHARM | 800 | AMBER BEAD | +12 ABILITY POWER | FROSTBITE |
+| YARROW BUNDLE | 800 | HOURGLASS | +15 HEALTH, +8 COOLDOWN SPEED | MEND |
 | ALMANAC | 900 | AMBER BEAD, HOURGLASS | +3 ABILITY POWER, +8 COOLDOWN SPEED |  |
 | QUIVER | 1000 | FLINT HEAD, GUT STRING | +4 DAMAGE, +18% ATTACK SPEED |  |
 | WHETSTONE | 1100 | FLINT HEAD, FLINT HEAD | +5 DAMAGE, +8 COOLDOWN SPEED |  |
@@ -122,6 +125,8 @@ minutes ([economy](economy-one-currency.md)).
 | BRAMBLE MAIL | 2700 | BRAMBLE COAT, PADDED JACKET | +40 HEALTH, +40 ARMOR | THORNS |
 | GLACIER SHIELD | 2700 | FROST BUCKLER, PADDED JACKET | +30 HEALTH, +25 ARMOR, +15 COOLDOWN SPEED | STEADY |
 | ICE SLATE | 2700 | DOWSING ROD, WOLF HIDE | +50 HEALTH, +8 ABILITY POWER | CHILL |
+| SHEPHERD'S STAFF | 2700 | YARROW BUNDLE, ALMANAC | +30 HEALTH, +24 ABILITY POWER, +15 COOLDOWN SPEED | MEND |
+| PACK BANNER | 2700 | FROST BUCKLER, BEAR BELT | +50 HEALTH, +15 ARMOR, +10 COOLDOWN SPEED | RALLY |
 | HUNTER'S HORN | 2800 | QUIVER, RECURVE LIMB | +9 DAMAGE, +40% ATTACK SPEED, +3 MOVE SPEED | KINDLING |
 | BEARSKIN | 2800 | WARM STONE, BEAR BELT | +110 HEALTH, +10 ARMOR | DEN |
 | STONEHIDE | 2800 | CHAIN SHIRT, BEAR BELT | +70 HEALTH, +30 ARMOR | BRACE |
@@ -129,6 +134,8 @@ minutes ([economy](economy-one-currency.md)).
 | MARSH LIGHT | 2800 | LANTERN, ALMANAC | +9 ABILITY POWER, +10 COOLDOWN SPEED, +5 MOVE SPEED | SCORCH |
 | IRON BRAND | 2900 | WHETSTONE, CHAIN SHIRT | +8 DAMAGE, +20 ARMOR, +10 COOLDOWN SPEED | CHILL |
 | HORNET NEST | 2900 | ALMANAC, RECURVE LIMB | +30% ATTACK SPEED, +8 ABILITY POWER, +10 COOLDOWN SPEED | KINDLING |
+| HOARFROST STAFF | 2900 | RIME CHARM, DOWSING ROD | +30 HEALTH, +30 ABILITY POWER | FROSTBITE |
+| QUILTED MANTLE | 2900 | DOWSING ROD, PADDED JACKET | +25 HEALTH, +12 ARMOR, +24 ABILITY POWER | LIFELINE |
 | SUNSTONE | 3000 | FELLING AXE, PICKAXE | +18 DAMAGE | AMBUSH |
 | BEAR TOOTH | 3000 | TOOTHED KNIFE, FELLING AXE | +16 DAMAGE, +20 HEALTH | LEECH |
 | WOLF FANG | 3000 | BONE KNIFE, PICKAXE | +9 DAMAGE, +50 HEALTH, +10 COOLDOWN SPEED | FEAST |
@@ -136,6 +143,10 @@ minutes ([economy](economy-one-currency.md)).
 | IRON COLLAR | 3000 | BONE KNIFE, CHAIN SHIRT | +8 DAMAGE, +40 HEALTH, +20 ARMOR | LEECH |
 | STORM GLASS | 3000 | DOWSING ROD, ALMANAC | +11 ABILITY POWER, +15 COOLDOWN SPEED | SURGE |
 | STILL CLOCK | 3000 | DOWSING ROD, CHAIN SHIRT | +18 ARMOR, +9 ABILITY POWER, +8 COOLDOWN SPEED | BRACE |
+| WINTER'S BITE | 3000 | RIME KNIFE, FELLING AXE | +15 DAMAGE, +8 COOLDOWN SPEED | FROSTBITE |
+| ICE AUGER | 3000 | WHETSTONE, PICKAXE | +14 DAMAGE, +15% ATTACK SPEED | PIERCE |
+| BURNING GLASS | 3000 | DOWSING ROD, LANTERN | +36 ABILITY POWER, +3 MOVE SPEED | PIERCE |
+| OAK HEART | 3000 | BONE KNIFE, BEAR BELT | +8 DAMAGE, +60 HEALTH | LIFELINE |
 | SPLITTING MAUL | 3100 | FELLING AXE, WHETSTONE | +15 DAMAGE, +10 COOLDOWN SPEED | CULL |
 | DEEP ROD | 3400 | DOWSING ROD, DOWSING ROD | +16 ABILITY POWER | AMPLIFY |
 
@@ -168,6 +179,11 @@ twice, but **a passive counts once** however many items carry it (League's uniqu
 | SMOLDER | once a second, rival players and bots within `SMOLDER_R` (30 px) catch a 1.2 s burn (`itemsTick`); beasts are left alone, so walking past a camp never wakes it |
 | SCORCH | an ability's blow burns for `SCORCH_BURN` (2 s) (`itemsOnHit`, off the blow's `ab`) |
 | AMPLIFY | the ability power from items ×`AMPLIFY_MUL` (1.25): `itemMods` folds every stat first, then the passives |
+| FROSTBITE | a hit cuts the target's healing by `FROST_CUT` (40%) for `FROST_T` (3 s): League's anti-heal (`itemsOnHit` through `cutHeal`, js/sim/actions.js; `healPlayer` reads `healCutT`/`healCut`) |
+| PIERCE | a blow sees `PIERCE_SHARE` (30%) less of the target's armor (`itemPierce`, read by `armorTaken`, js/sim/stats.js) |
+| LIFELINE | damage that takes you under `LIFE_BELOW` (30%) health raises a `lifeline` shield of `LIFE_SHIELD` (25%) of your health for `LIFE_T` (3 s), once every `LIFE_CD` (60 s, `p.lifeT`) (`itemsLifeline`, from `damagePlayer`) |
+| MEND | your heals and shields on another hero ×`MEND_MUL` (1.2) (`itemMend`, read by `salviaHeal` and SALVIA's cloak, js/sim/salvia.js) |
+| RALLY | allies within `BANNER_R` (80 px) of you have +`BANNER_ARMOR` (10) armor; one banner counts once (`itemStat`) |
 
 The passives that are not a kit number hang off shared functions: `itemsDeal` and `itemsOnHit` are
 called from `hurtUnit` (js/sim/actions.js) for every blow a player lands, before and after it
@@ -212,8 +228,9 @@ room themselves, so a stale order is harmless. Nothing is [contested](../multipl
 the stock is endless, so two buyers never want the same thing.
 
 **Bots buy class builds** (`BOT_BUILDS`, js/sim/items.js), League's order: the first legendary,
-then boots, then four more legendaries. The same lists are the panel's RECOMMENDED tab, so a bot
-buys what the counter suggests to you. `botNextItem` is the next one it does not have, and
+then boots, then four more legendaries. The same lists are the panel's RECOMMENDED tab while a
+hero has too few games for numbers ([recommended builds](#recommended-builds)); a bot never reads
+the numbers, so what it buys never depends on what one machine has heard. `botNextItem` is the next one it does not have, and
 `botItemBuy` what it would buy now: that item whole if the purse covers it, else the first
 component on the way to it (depth first, in the recipe's order, so an epic whole before its
 basics) it can afford and has room for.
@@ -230,11 +247,13 @@ League's shop on the HUD's own graphite plate (`drawHudFrame`, js/ui/strip.js), 
 (`SHOP_W`/`SHOP_H`) and pinned near the top edge (`SHOP_Y`):
 
 - the **top tabs** (`state.shopTab`, `SHOP_TABS`) say what the grid shows: **RECOMMENDED**, your
-  class's build cut into START (the potion and the first item's basics), CORE (the first
-  legendary and its epics), BOOTS and THEN, each a row under its headline (`shopRecommended`);
+  hero's build ([recommended builds](#recommended-builds)): START (the potion and the first
+  item's basics), the path or two of three legendaries with their pick and win rates, BOOTS and
+  ALSO BUILT, each a row under its headline, and the hero's games top right (`shopRecommended`,
+  `drawShopRates`);
   **ALL**, the whole catalogue a row a kind (`shopAllRows`: the potion and basics, every pair of
   boots, the epics, the legendaries; `SHOP_COLS` a row); and one tab a **style**
-  (`ITEM_STYLES`: TANK, BRUISER, MARKSMAN, ASSASSIN, MAGE), the same rows holding only the
+  (`ITEM_STYLES`: TANK, BRUISER, MARKSMAN, ASSASSIN, MAGE, SUPPORT), the same rows holding only the
   legendaries and boots whose `styles` name it. A style is what an item is for, not the lane role
   a hero is drafted into. The counter opens on RECOMMENDED;
 - the **left bar** filters by stat in every tab (`state.shopCat`: ALL, then one a stat in
@@ -242,8 +261,9 @@ League's shop on the HUD's own graphite plate (`drawHudFrame`, js/ui/strip.js), 
   without that stat rather than hiding it, so nothing on the grid moves; picking it again clears it;
 - each **well** is rimmed by its tier (`itemMetal`: a basic dim green, an epic or a pair of boots
   steel blue, a legendary gold) with what it costs **you** now (`itemCost`) under it, in the
-  refusal red when the purse is short (`SHOP_DEAR_INK`). The well keeps its colours: with fifty
-  items on the grid, most are dear most of a match;
+  refusal red when the purse is short (`SHOP_DEAR_INK`). The well keeps its colours: with sixty
+  items on the grid, most are dear most of a match. Outside RECOMMENDED, an item your hero's build
+  names wears a lit pip in its top-left corner (`shopRecSet`, `shopPip`);
 - the **pane** on the right: **BUILDS INTO** (`itemInto`, empty wells keeping the row's shape),
   the picked item's **tree** (`shopTree`: the item over its components, each over its own, every
   child centred under its parent, prices under each; a component you hold is rimmed green with a
@@ -263,12 +283,49 @@ slots: `state.shopSel`, `state.shopSlot`); BUY buys the pick and SELL sells the 
 `pointerPress`, js/app/input.js): on the grid or the tree it buys, on a slot it sells, and anywhere
 else on the slab it is only swallowed, so no ping wheel opens through the counter. The tab, the
 pick and the filter are this screen's own and stay out of a save (`SAVE_STATE_SKIP`). The counter
-picks what a bot of your class would save for next (`botNextItem`) the first time it opens.
+picks the next item of your hero's top path you do not hold yet (`shopRecNext`) the first time it opens.
 `shopHit` is shared by the click, the cursor and the tooltip, so the three can never disagree
 about what the pointer is on; hovering an item describes it in the ordinary tooltip (`tipShop`,
-`tipItem`: its tier, PRICE, its stats, its passive), and a slot adds what it SELLS FOR. The words
+`tipItem`: its tier, PRICE, its PICK RATE and WIN RATE on your hero once the hero has the games,
+its stats, its passive), and a slot adds what it SELLS FOR. The words
 on it (the tabs, the row headlines, BUILDS INTO, BUY, SELL) are names, headlines and plates in
 plain words like the menus; everything else is icons, rims and numbers.
 
 **It is centred across the view**, `SHOP_Y` (4) from the top (`shopLayout`). Every icon (16 px, js/sprites/item-icons.js) is drawn at the largest **whole-number** scale that fits its well (`shopIcon`; a 20 px well shows it at 1x): a fractional one
 stretches every third source pixel and frays 1 px linework.
+
+## Recommended builds
+
+**The RECOMMENDED tab is built from real matches**, League's way, and there is no stats server:
+[js/app/builds.js](../../../js/app/builds.js) (the `builds` banner).
+
+- **What is recorded.** Every finished item and upgraded pair of boots a player buys is noted on
+  `p.buys` in the order bought (`buyItem`, `itemFinished`). When a match ends (`endMatch`, on the
+  first win or loss) `buildsNote` files one record per **human** seat: the hero, those items, whether
+  its side won, the patch, and whether both sides had a person. Bots, practice and 1V1 are left
+  out. The match's id is a hash of what every screen of it shares at the whistle (the seed, the
+  seats, their heroes and builds), so the host and each guest file the same record under the
+  same key (`buildsKey`: match and seat). The records live in `PROFILE.builds` (their own
+  storage key, js/app/profile.js), the newest `BUILDS_KEEP` (3000).
+- **How it spreads.** Every join swaps them: a guest sends its newest `BUILDS_SEND` on its
+  welcome, and the host merges them and answers with its own (`'meta'`, `netMetaIn`,
+  js/net/net.js). `buildsMerge` checks each record field by field (`buildsClean`: a real hero,
+  real finished items) and keeps each key once, so a match heard from nine screens counts once and
+  the numbers grow with every lobby a player ever sits in. Hosts only seat their own patch, so a
+  record always names items that exist.
+- **What the tab shows.** `buildsStats(hero)` reads the hero's newest `BUILDS_HERO` (400) records:
+  its games, and for every item, first pair of boots and **path** (the first three legendaries in
+  the order bought) how many games had it and how many of those won. `buildsRec` cuts the tab
+  from that: **MOST PICKED**, the most built path, and beside it **MOST WINS**, a path of at least
+  `BUILDS_PATH_MIN` (4) games whose win rate beats it (ranked with a win and a loss added, so three
+  of three never outranks thirty of forty), each with PICK and WIN; the top three boots; and
+  **ALSO BUILT**, the other items finished most. Below `BUILDS_MIN` (10) games on a hero it shows
+  the curated list instead (`BOT_BUILDS`: CORE, BOOTS, THEN, no numbers). The tooltip's PICK RATE
+  and WIN RATE come from the same numbers (`buildsItem`).
+- **What it trusts.** There is no server to ask, so a record is checked for being possible
+  (`buildsClean`): a real hero and real finished items, a patch number, the match's minutes (`t`,
+  1 to `BUILDS_T_MAX`), no more than two pairs of boots or two of one item, and a build no dearer
+  than `BUILDS_GOLD` plus `BUILDS_GOLD_MIN` a minute could have paid for. One join brings at most
+  `BUILDS_TAKE` (200) new records, once a connection each way (`pr.metaIn`, `NET.metaIn`), and
+  each match and seat counts once, so flooding the numbers takes a forger a lobby per 200 games.
+  A careful liar can still add believable games: it is a community number, not a ranked ladder.

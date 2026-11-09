@@ -81,7 +81,7 @@ four tiers (basic, epic, boots, legendary) built out of each other into six item
 always on sale at one fixed price, so you can save for the one you want. An item costs less by
 every component of it you already hold, carries the hero stats, and a legendary adds one passive
 (a third hit that burns, a heal out of a fight, a slow on every hit). One pair of boots at a time.
-The counter's RECOMMENDED tab is your class's build, and bots buy that same build. [The counter](gameplay/the-merchants-counter.md).
+The counter's RECOMMENDED tab is your hero's build as players build it: the most picked and the best-winning paths with their pick and win rates, from every match each screen has seen or heard of through a join, and the curated build (the one bots buy) until a hero has the games. [The counter](gameplay/the-merchants-counter.md).
 
 **Keys 1-4 are your class.** Each class carries four active abilities — the HUNTER's piercing
 shot, net, grapple and snow cover; the WARRIOR's shield (and its slam), rush, stomp and execute — each with a
