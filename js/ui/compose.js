@@ -71,15 +71,6 @@ function renderUI(now) {
   // while you are down - a spectator is exactly who wants the calls
   renderAnnouncer();
 
-  // message
-  if (state.msgT > 0 && state.msg) {
-    const a = Math.min(1, state.msgT * 2);
-    ctx.globalAlpha = a;
-    const w = pixelTextWidth(state.msg);
-    drawPixelTextOutline(ctx, state.msg, (VIEW_W - w) / 2, VIEW_H - AB_H - 14, '#fff4d8', '#0f1632');
-    ctx.globalAlpha = 1;
-  }
-
   if (state.paused) {
     ctx.fillStyle = 'rgba(10,14,35,0.6)';
     ctx.fillRect(0, 0, VIEW_W, VIEW_H);

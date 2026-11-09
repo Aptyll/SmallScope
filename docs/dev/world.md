@@ -98,8 +98,7 @@ stable per tile.
   `render()` bakes every `GROUND_CHUNK` (16-tile) square the view reaches before its blit
   (`groundView` → `bakeGroundChunk`), and idle time bakes the rest nearest the camera first
   (`groundIdle`, a `requestIdleCallback` whose timeout keeps it moving through a busy match) —
-  the whole map at once kept the first frame waiting a second and a half. `renderGround()` bakes
-  everything now, for a test. Every tile paints only inside its own 16 px, from the world as it
+  the whole map at once kept the first frame waiting a second and a half. Every tile paints only inside its own 16 px, from the world as it
   stands, so `paintGroundTile` skips a tile whose chunk is not baked yet (`groundBaked`): that
   chunk's bake paints it as it is by then, and a chunk bake lays exactly what per-tile repaints
   would. A painter that colours single pixels dots them through the pixel pen (`penDot`, flushed

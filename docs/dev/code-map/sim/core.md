@@ -11,7 +11,7 @@
 | settings persistence, the team palette, and the minimap-size helpers | `saveSettings`, `loadSettings`, `applyTeamPal`, `mmScale`, `applyMinimapSize` | `state` |
 | `relayout()` — the resize pair's second half | `relayout` | `state` (`fitCanvas`: `canvas`, canvas.js — still the resize pair) |
 | page events held until boot: a listener registers here and boot.js attaches them all | `pageListen`, `pageListenStart`, `PAGE_LISTENERS` | `helpers` |
-| floaters, particles, cost math, and the HUD's four-character count (`999` › `1.2K` › `340K` › `1.2M`) | `addFloater`, `burst`, `streamTo` (motes from one point to another), `canAfford`, `NUM_SUFFIX`/`shortNum` | `helpers` |
+| floaters, particles, cost math, and the HUD's four-character count (`999` › `1.2K` › `340K` › `1.2M`) | `addFloater`, `burst`, `streamTo` (motes from one point to another), `NUM_SUFFIX`/`shortNum` | `helpers` |
 | the gold flare and crack an ambush arrow lands with | `ambushFx` | `helpers` |
 | a body's running damage total: adding a hit, and the quiet that starts a new one | `tallyHit`, `TALLY_HOLD` (where it is drawn: `queueTally`, js/draw/overhead.js) | `helpers` |
 | the gold word a staged archery target says when it breaks: the list, its life and rise | `wordPops`, `wordPop`, `WORD_POP_T`/`WORD_POP_RISE` (aged in `updateFx`, js/sim/sim.js; drawn by `drawTallies`, js/draw/overhead.js) | `helpers` |

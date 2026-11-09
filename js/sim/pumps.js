@@ -31,7 +31,6 @@ function pumpLaneMid(lane) {
   const c = baseTile(0, (WORLD - 1) / 2, lane === 0 ? -56 : 56);
   return { tx: c.tx, ty: c.ty };
 }
-function pumpAll() { return structures.filter((o) => o.type === 'generator'); }
 function pumpRingPx() { return PUMP_R * TILE; }
 
 // could a pump stand with its footprint's top-left at (ax, ay)? Every tile is

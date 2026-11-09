@@ -559,8 +559,6 @@ function practiceBootJoin(code) {
 // ------------------------------------------------------------ the pixels
 function drawXMark(x, y, col) { ctx.fillStyle = col; for (let i = 0; i < 5; i++) { ctx.fillRect(x + i, y + i, 1, 1); ctx.fillRect(x + 4 - i, y + i, 1, 1); } }
 function drawPlusMark(x, y, col) { ctx.fillStyle = col; ctx.fillRect(x, y + 2, 5, 1); ctx.fillRect(x + 2, y, 1, 5); }
-// a right-pointing step, 6x10: the head's 2x grain
-function drawNextMark(x, y, col) { ctx.fillStyle = col; for (let i = 0; i < 3; i++) ctx.fillRect(x + 2 * i, y + 2 * i, 2, 10 - 4 * i); }
 function drawCrown(x, y) { ctx.fillStyle = SC_GOLD; ctx.fillRect(x, y, 1, 1); ctx.fillRect(x + 2, y, 1, 1); ctx.fillRect(x + 4, y, 1, 1); ctx.fillRect(x, y + 1, 5, 1); }
 // a word at the foot: white, gold under the pointer or the keys, lifted a px
 // The foot, League's: one button that says what the party does next (FIND

@@ -448,10 +448,6 @@ function groundView(x0, y0, x1, y1) {
   const r0 = Math.max(0, Math.floor(y0 / S)), r1 = Math.min(GROUND_CN - 1, Math.floor((y1 - 1) / S));
   for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) bakeGroundChunk(r * GROUND_CN + c);
 }
-// the whole map now (a test's full bake; boot never needs it)
-function renderGround() {
-  for (let c = 0; c < GROUND_CN * GROUND_CN; c++) bakeGroundChunk(c);
-}
 // the unbaked chunk nearest the middle of the view, -1 once all are baked
 function groundNext() {
   const S = GROUND_CHUNK * TILE, mx = (camX + WV_W / 2) / S - 0.5, my = (camY + WV_H / 2) / S - 0.5;

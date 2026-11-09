@@ -142,7 +142,7 @@ module.exports = `
     clearFx: function(){
       SA.still = {};
       floaters.length = 0;
-      state.msg = null; state.msgT = 0; events.length = 0;
+      events.length = 0;
       animals.length = 0;
       for (var r = robots.length - 1; r >= 0; r--) if (!robots[r].merchant) robots.splice(r, 1);
       arrows.length = 0; tracers.length = 0; warps.length = 0; swaps.length = 0;
