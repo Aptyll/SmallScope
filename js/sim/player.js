@@ -247,7 +247,28 @@ const CLASSES = [
     paint48: { t: '#7d8699', T: '#b4bdcc', g: '#1c2232', G: '#9aa3b8', m: '#5c6478', M: '#454c5e' }, // the 48 px model's (js/sprites/looks.js): its K is skin
     kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1, chargeMul: 0.55,
       bowCharge: BOW_CHARGE, nock: 0.4, spdDmg: 0, dodgeSpeed: DODGE_SPEED },
+  },  {
+    // the seventh named hero (js/sim/lucerna.js): the catch-and-save support, the only
+    // pull of a rival in the game, a lantern that brings an ally home, a light that shows
+    // what hides near her; little damage, and a missed crook leaves her open
+    name: 'LUCERNA', role: 'THE LANTERN', body: 1, passive: 'lamplight', // HERO_PASSIVE, js/sim/lucerna.js
+    look: { sex: 1, tone: 2, hair: 3, hairCol: 1, beard: 0, face: 2 },
+    blurb: ['SOMEBODY HAS TO CARRY A LIGHT.', 'HOOK A RIVAL IN. THROW YOUR LANTERN TO BRING AN ALLY HOME.', 'MISS THE CROOK AND YOU ARE OPEN.'],
+    story: "SHE LIT THE EMPIRE'S ROAD LAMPS AT DUSK, AND WAS SENT AWAY FOR LIGHTING THE WAY OUT FOR PEOPLE WHO WERE NOT SUPPOSED TO LEAVE. THE VALLEY GOES BLUE AT NIGHT AND THE CLAIM DOES NOT STOP FOR IT. SOMEBODY HAS TO CARRY A LIGHT.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
+    // a spark off her lantern: the staff mages' reach, a little stronger than SALVIA's sprig
+    staff: 'lantern', // her LANTERN, hung from her hand (HERO_STAVES, js/draw/lucerna.js)
+    attack: { name: 'LANTERN', art: 'lantern', cycle: 62 / 60, kb: 0.6, shot: { speed: 260, life: 0.8, col: '#f2cc6a', look: 'lampspark' } },
+    base: { hp: 88, dmg: 13, armor: 12, ap: 0, haste: 0, ms: PLAYER_SPEED },
+    grow: { hp: 6.2, dmg: 1, as: 0.01, armor: 2 },
+    rankOrder: [0, 2, 1], // the crook, the shoo, the lantern
+    // her own body in each of her looks (LUCERNA_SKINS, js/sprites/lucerna.js), worn per
+    // player (heroSkinOf) over the side's coat
+    skins: LUCERNA_SKINS, skinPal: LUCERNA_PAL, skinSlot: 'lucerna',
+    paint48: { t: '#7d8699', T: '#b4bdcc', g: '#1c2232', G: '#9aa3b8', m: '#5c6478', M: '#454c5e' }, // the 48 px model's (js/sprites/looks.js): its K is skin
+    kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1, chargeMul: 0.55,
+      bowCharge: BOW_CHARGE, nock: 0.4, spdDmg: 0, dodgeSpeed: DODGE_SPEED },
   },
+
 ];
 // the body a hero wears - its sprites and its 48 px model: a hero that names
 // none is its own (HUNTER 0, WARRIOR 1), a named hero borrows one
@@ -617,6 +638,8 @@ class Player {
     this.warmT = 0; this.kindleBy = -1; this.wildT = 0;
     // SALVIA (js/sim/salvia.js), on any player she helped: WARM BROTH's speed and the cloak's run
     this.brothT = 0; this.cloakT = 0;
+    // LUCERNA (js/sim/lucerna.js), on any body she pulls: the spot it is drawn to and the clock
+    this.pullT = 0; this.pullX = 0; this.pullY = 0;
     this.hopT = 0;                                 // the net shot's recoil hop, on the body
     this.grapT = 0; this.grapX = 0; this.grapY = 0; // the grapple: reel time left, and the anchor it hauls toward
     this.zip = -1; this.zipD = 0; this.zipDir = 1;  // the zipline (js/sim/zipline.js): the line ridden (its index in zips, or -1), px along it, and which way

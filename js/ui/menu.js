@@ -30,7 +30,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.578';
+const PATCH_TXT = 'PATCH 0.584';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -46,6 +46,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.584', 'A NEW HERO, LUCERNA THE LANTERN: HER CROOK PULLS A RIVAL IN, HER THROWN LANTERN BRINGS AN ALLY HOME, AND HER LIGHT SHOWS WHO HIDES NEAR HER.'],
   ['0.578', 'UNDER THE HOOD: THE ABILITY AND EAGLE DRAWING MOVED OUT OF THE GAME RULES INTO THE DRAWING CODE; NOTHING LOOKS OR PLAYS DIFFERENT.'],
   ['0.577', 'RANKED ON YOUR OWN NOW READS YOUR RATING: YOUR CARD SHOWS IT AND THE BOTS GET EASIER OR HARDER WITH IT, INSTEAD OF ALWAYS 1000 AND NORMAL.'],
   ['0.576', 'THE MAP IS SQUARE LIKE THE RIFT: THE TOP AND BOT LANES RUN STRAIGHT UP THE EDGES AND MEET AT ONE HARD CORNER BY THE CREEK, EACH LANE HAS THREE TOWERS A SIDE, AND THE WARRENS AND BRUSH MOVED TO FIT.'],
@@ -1592,6 +1593,20 @@ const CLASS12 = [
     '.oovo.......',
     '..ovo.......',
     '...o........',
+  ],
+  [ // LUCERNA: her lantern, lit, on its ring
+    '....oooo....',
+    '....o..o....',
+    '...oooooo...',
+    '...oggggo...',
+    '..ogWWWWgo..',
+    '..ogWWWWgo..',
+    '..ogWbbWgo..',
+    '..ogWWWWgo..',
+    '...oggggo...',
+    '....oooo....',
+    '............',
+    '............',
   ],
 ];
 const class12Cache = new Map();

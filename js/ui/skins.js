@@ -96,6 +96,7 @@ const SKIN_TABS = [
   { id: 'fortiva', name: 'FORTIVA', slot: 'fortiva', rows: FORT_SKINS, hero: 3, glyph: ['..ww....', '.w..w...', '.w..w...', '..w.....', '.....w..', '...w..w.', '...w..w.', '....ww..'] },
   { id: 'bella', name: 'BELLA', slot: 'bella', rows: BELLA_SKINS, hero: 4, glyph: ['..www...', '.wwwwww.', '.w...w.w', '.w...w.w', '..www..w', '...w....', '.wwwww..', '.wwwww..'] },
   { id: 'ignia', name: 'IGNIA', slot: 'ignia', rows: IGNIA_SKINS, hero: 5, glyph: ['...w....', '..ww....', '..www.w.', '.wwww.w.', '.wwwwww.', 'ww..www.', 'ww..www.', '.wwwww..'] },
+  { id: 'lucerna', name: 'LUCERNA', slot: 'lucerna', rows: LUCERNA_SKINS, hero: 8, glyph: ['...ww...', '..w..w..', '.wwwwww.', '.w.ww.w.', '.wwwwww.', '.w.ww.w.', '.wwwwww.', '..wwww..'] },
   { id: 'salvia', name: 'SALVIA', slot: 'salvia', rows: SALVIA_SKINS, hero: 7, glyph: ['..www...', '.w...ww.', '.w..w..w', '.w..w.ww', '.w...ww.', '.w......', '.ww.....', '..w.....'] },
 ];
 const SK_TAB_BIRD = 1; // SKIN_TABS' eagle and scout, the two tabs a match reads
