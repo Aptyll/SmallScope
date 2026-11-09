@@ -1,11 +1,11 @@
 'use strict';
-// The road towers: two stone towers on each zipline, stood by the map at
+// The road towers: three stone towers on each zipline, stood by the map at
 // boot, each with a great crossbow on its deck; and each cable cut back to
 // its furthest standing tower (drawn by js/draw/towers.js).
 // ------------------------------------------------------------ road towers
-// THE ROAD TOWERS (STRUCTS.tower, structures.js): placeTowers stands two on
-// every cable at boot (a side with a cable per lane gets two a lane) - the OUTER one on the cable's front end, the
-// INNER one on the pylon halfway home - after placeZips and before
+// THE ROAD TOWERS (STRUCTS.tower, structures.js): placeTowers stands three on
+// every cable at boot (a side with a cable per lane gets three a lane) - the OUTER one on the cable's front end, the
+// MIDDLE and INNER ones on the pylons two thirds and a third of the way out (TOWER_AT) - after placeZips and before
 // anything else claims the shoulder, on pure reads like the cable's own
 // pylons, so genWorld and every seed's ground are untouched. A tower is the
 // map's, not a wallet's: `fixed` (nobody upgrades, repairs or pulls it
@@ -30,13 +30,13 @@
 // into the same scout hits harder (TOWER_HEAT).
 //
 // THE CABLE: each line runs from its bird only as far as its furthest
-// standing tower (o.zl is the line, o.zi its point) - the outer one while it stands, then the inner one, then
+// standing tower (o.zl is the line, o.zi its point) - the outer one while it stands, then the middle, then the inner one, then
 // no cable at all (towersSync). Losing a tower shortens your ride and
 // lengthens your walk to the fight. zips[line] is cut IN PLACE from the
 // whole line placeZips laid (zipWhole), so every reader of the cable -
 // the ride, the hover, the bots' worth, the soldiers' boarding, both maps,
 // the draw - reads the cut one and nothing else has to know.
-const TOWER_AT = [0.5, 1];      // share of a side's cable, base -> front, the inner and the outer tower stand at
+const TOWER_AT = [0.36, 0.68, 1]; // share of a side's cable, base -> front, the inner, middle and outer tower stand at
 const TOWER_RANGE = 112;        // px from the tower's foot a mark is taken and held inside
 const TOWER_TRAVERSE = 3.2;     // rad/s the gun turns
 const TOWER_LOCK = 0.2;         // rad: inside this of the mark's bearing, it winds
@@ -57,7 +57,7 @@ function towerFoot(o) { return { x: (o.tx + structW(o) / 2) * TILE, y: (o.ty + s
 
 function placeTowers() {
   zipWhole.length = 0;
-  // every cable gets its own two: a side with a cable per lane gets two a lane
+  // every cable gets its own three: a side with a cable per lane gets three a lane
   zips.forEach((z, L) => {
     if (!z) return;
     const w = zipWhole[L] = Object.assign({}, z, { pts: z.pts.slice(), cum: z.cum.slice() }); // every field the line carries (team, lane)

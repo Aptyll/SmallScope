@@ -30,7 +30,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.572';
+const PATCH_TXT = 'PATCH 0.574';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -46,6 +46,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.574', 'THE MAP IS SQUARE LIKE THE RIFT: THE TOP AND BOT LANES RUN STRAIGHT UP THE EDGES AND MEET AT ONE HARD CORNER BY THE CREEK, EACH LANE HAS THREE TOWERS A SIDE, AND THE WARRENS AND BRUSH MOVED TO FIT.'],
   ['0.572', 'UNDER THE HOOD: THE VICTORY AND DEFEAT SCREENS MOVED TO THEIR OWN FILE; THEY LOOK AND PLAY THE SAME.'],
   ['0.571', 'A LITTLE LESS WORK EACH FRAME FOR SLOWER PCS: FOOTPRINTS AND SPARKS OFF SCREEN ARE NO LONGER DRAWN; THE PICTURE IS PIXEL FOR PIXEL THE SAME.'],
   ['0.570', 'A NEW HERO, SALVIA THE MENDER, THE FIRST HEALER: SHE THROWS A POULTICE THAT HEALS AN ALLY OR SLOWS A RIVAL, PLANTS SNOWDROPS HER SIDE PICKS FOR LIFE, WRAPS AN ALLY IN A WARM CLOAK, AND HER THAW HEALS EVERYONE INSIDE IT; HER HEALS ALSO SPEED ALLIES UP AND TAKE OFF THEIR SLOWS.'],

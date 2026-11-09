@@ -1,10 +1,11 @@
 'use strict';
 // ------------------------------------------------------------ lanes
 // THE SIDE LANES: besides the mid road down the diagonal, two more lanes
-// join the bases - the TOP lane round the top-left side of the valley and
-// the BOT lane round the bottom-right - each out of its own mouth in either
-// hollow (baseGate, js/sim/base.js), along the inside of the treeline, to a
-// ford over the creek at the map's middle. They are fixed cuts, the same on
+// join the bases - the TOP lane up the left edge and along the top, the BOT
+// lane along the bottom and up the right edge, like the Rift's - each out of
+// its own mouth in either hollow (baseGate, js/sim/base.js), straight through
+// the border woods to one hard corner, where it fords the creek: the map's
+// middle. They are fixed cuts, the same on
 // every seed: control points in the road's frame (baseTile), smoothed, so
 // RED's half and BLUE's mirror along the road and the bot lane mirrors the
 // top across it.
@@ -26,7 +27,8 @@ const LANE_HOLD = 0.6;     // share of the way from a side's mouth to a lane's m
 const LANE_ZIP_S = 7;      // tiles off the road beside the perch its base pylon stands, on the lane's side: past the crash pad and the mid road's own pylon
 // RED's half of the TOP lane, [u, s]: out of the hollow's centre, through the
 // top mouth, bending along the treeline, to the creek at the middle
-const LANE_HALF = [[BASE_U, 0], [BASE_SIDE_U, -BASE_SIDE_S], [40, -21], [50, -26], [62, -30], [78, -37], [91.5, -41], [104, -49], [(WORLD - 1) / 2, -56]];
+const LANE_HALF = [[BASE_U, 0], [BASE_SIDE_U, -BASE_SIDE_S], [40.5, -20.5], [52.5, -26.2], [65, -36.8], [78.5, -53], [91.5, -70], [104, -83.4], [(WORLD - 1) / 2, -92.6]];
+const LANE_MID_S = -LANE_HALF[LANE_HALF.length - 1][1]; // tiles off the road a side lane crosses the middle at
 
 // a side lane's centreline, RED's hollow to BLUE's, a point about every
 // tile (tile-index space) with `at`, the tiles along it to each. Pure

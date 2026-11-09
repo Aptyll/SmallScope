@@ -106,7 +106,8 @@ function brushOf(x, y) {
 //   jungle: one each side of the road between the mid road and the dens
 //   river:  one each side short of the creek, toward the bears
 const BRUSH_PATCHES = [
-  [66, -25, 4, 1.7, -62], [66, 25, 4, 1.7, -28],   // lane
+  [60, -25.5, 4, 1.7, -70], [60, 25.5, 4, 1.7, -20], // lane, inside the first tower
+  [86, -55, 4, 1.7, -85], [86, 55, 4, 1.7, -5],     // lane, out by the second tower
   [90, -8.5, 3.5, 1.5, -45], [90, 8.5, 3.5, 1.5, -45], // mid
   [76, -13, 3, 2, 45], [76, 13, 3, 2, 45],         // jungle
   [103, -28, 3.5, 2, 45], [103, 30, 3.5, 2, 45],   // river

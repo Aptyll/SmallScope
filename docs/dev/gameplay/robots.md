@@ -106,7 +106,7 @@ Bots farm through two roles, the LANER and the JUNGLER ([multiplayer.md](../mult
 
 ## Road towers
 
-The `road towers` banner (js/sim/towers.js). Every zipline has two `STRUCTS.tower` (ROAD TOWER: 3x2,
+The `road towers` banner (js/sim/towers.js). Every zipline has three `STRUCTS.tower` (`TOWER_AT`) (ROAD TOWER: 3x2,
 700 hp, `fixed`, so nobody upgrades, repairs or wrecks one for a refund) beside it, placed at boot
 ([the zipline](../world.md#the-zipline)); the cable runs only to the furthest one standing.
 `updateTower` (called from `updateStructures`) is one gun on a turntable:

@@ -56,7 +56,7 @@ guild sells — not from a new faction or a new magic.
 | the counter's items and potions have one fixed price, the same for both sides | the prices are the guild's, not the companies', and the guild does not haggle |
 | robots, road towers, gold pumps and a barracks beside bows and swords | the works' machines, woken with gold; nobody knows who built them |
 | three lanes, the road straight down the middle | the works' haul road, older than everything but the machines, and a track round each side by the trees |
-| two road towers on every zipline, and a company's zipline runs no further than its last one standing | the works raised them to hold the haul road and gold woke their crossbows; each company strings its cable out to its own |
+| three road towers on every zipline, and a company's zipline runs no further than its last one standing | the works raised them to hold the haul road and gold woke their crossbows; each company strings its cable out to its own |
 | a creek down the other diagonal that never freezes, but for a frozen pool where the road crosses it | the works' old outfall, still running warm under the snow; at the crossing it slows to a pool, and the pool freezes |
 | a ring of cut stone round that pool, two gates on the road, its wall down in four places | THE CISTERN: the works walled the pool in and ran the haul road through it; the stone has been coming down ever since |
 | an orca under that pool's ice: stand on it too long and you go down | it was there before either company, and it takes whoever is on its ice, any side |
