@@ -165,6 +165,7 @@ function netHostStep(dt) {
     if (msg.t === 'in') {
       NET.bytesIn += JSON.stringify(msg).length;
       if (msg.ack > pr.ack) pr.ack = msg.ack; // the newest snapshot it applied: its next delta is cut from there
+      msg.in = netInClean(msg.in); // a peer's hands are only ever its own input struct, in range
       pr.q.push(msg);
     }
   }
@@ -198,6 +199,19 @@ function netHostStep(dt) {
   }
 }
 // a press in `m` latched into `i` until the sim consumes it
+// a remote input as the sim may take it: axes in -1..1, a finite aim near the
+// world, held flags as flags, a slot or key index in range or none. The rest
+// of what a peer can ask (cmd) is checked where it is run (cmdOk, js/ui/wheel.js).
+// Only these fields cross: one added to netClientStep's `in` joins here too
+function netInClean(m) {
+  m = m && typeof m === 'object' ? m : {};
+  const num = (v, lo, hi, d) => (typeof v === 'number' && Number.isFinite(v) ? Math.max(lo, Math.min(hi, v)) : d);
+  const idx = (v, n) => (Number.isInteger(v) && v >= 0 && v < n ? v : -1);
+  const W = WORLD * TILE;
+  return { mx: num(m.mx, -1, 1, 0), my: num(m.my, -1, 1, 0), aimX: num(m.aimX, -W, 2 * W, 0), aimY: num(m.aimY, -W, 2 * W, 0), // a cursor past the map's edge still aims
+    fire: !!m.fire, work: !!m.work, slide: !!m.slide, grapple: !!m.grapple, dodge: !!m.dodge, jump: !!m.jump,
+    ability: idx(m.ability, AB_KEYS), useItem: idx(m.useItem, ITEM_SLOTS), cmd: m.cmd && typeof m.cmd === 'object' ? m.cmd : null };
+}
 function netInEdges(i, m) {
   i.dodge = i.dodge || m.dodge; i.jump = i.jump || m.jump;
   if (m.ability >= 0) i.ability = m.ability;

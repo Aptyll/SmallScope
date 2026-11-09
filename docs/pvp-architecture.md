@@ -22,7 +22,7 @@ ten-player `Player` array, the input struct and the bot brain are what keep the 
   one party of three, and two parties of two, into one draft) and as a
   headless wrapper boot. The first live test should watch `DBG.netStatus()`: `framesLost` on a
   client (the receiver counts a delta it gave up on) and `fulls` on the host.
-- **Owed:** the host clamps nothing in a remote input; the roost alarm's notice plate (`raiseNotice`) and the own-bird alarm cue are raised on the host's screen only; a per-kind field policy if
+- **Owed:** the roost alarm's notice plate (`raiseNotice`) and the own-bird alarm cue are raised on the host's screen only; a per-kind field policy if
   ~65 KB/s per client (about 0.6 MB/s for nine, measured by `app/check-load.js`) is too much on a home upload.
 - **Steam's host-left notice is code-read only**: a client turns the owner's leaving
   `LobbyChatUpdate` into `hostGone` (`wire`, js/net/transport-steam.js), never run against a live
@@ -576,7 +576,8 @@ its line.
    channel on both transports, so none is lost today; moving inputs to an unreliable channel
    would need the edges resent until acked.
 5. **Host advantage and trust.** The host sees zero latency and can edit anything; accepted for a
-   friends game. The host clamps nothing in a remote input today (`mx`/`my` are copied as sent).
+   friends game. The host takes a remote input only in range (`netInClean`: axes in -1..1, a finite
+   aim, flags as flags, a key or slot index or none); `cmd` is shape-checked where it runs (`cmdOk`).
 6. **Latency is real.** The walk is predicted, so it answers at once; everything else a client
    does (a shot, a roll, a potion, an ability) lands a round trip later, on the relay (two hops
    through Noah's server) more than on Steam, and other bodies are drawn about half a round trip
