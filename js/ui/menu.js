@@ -1777,6 +1777,20 @@ const CLASS12 = [
     '............',
     '............',
   ],
+  [ // LIGNUM: his felling axe's broad bit on its haft
+    '..oooo......',
+    '.oWWWWo.....',
+    '.oWWWWoo....',
+    '..oWWowo....',
+    '...ooowo....',
+    '.....owo....',
+    '.....owo....',
+    '.....owo....',
+    '.....owo....',
+    '.....owo....',
+    '.....ooo....',
+    '............',
+  ],
 ];
 const class12Cache = new Map();
 function classIcon12(i, you) {

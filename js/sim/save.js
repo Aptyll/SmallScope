@@ -59,6 +59,7 @@ const SAVE_ROOTS = [
   ['nixShards', ...saveArr(nixShards)], ['nixClouds', ...saveArr(nixClouds)], // NIX's shards in flight and clouds on the ground (js/sim/nix.js)
   ['faberParts', ...saveArr(faberParts)], ['faberArcs', ...saveArr(faberArcs)], ['faberBolts', ...saveArr(faberBolts)], ['faberSprings', ...saveArr(faberSprings)], // FABER's spare parts, sparks' jumps, bolts and clocksprings (js/sim/faber.js; his machines ride `robots`)
   ['falcoHawks', ...saveArr(falcoHawks)], ['falcoKnives', ...saveArr(falcoKnives)], // FALCO's hawk out and his knives in flight (js/sim/falco.js)
+  ['lignumAxes', ...saveArr(lignumAxes)], ['lignumLogs', ...saveArr(lignumLogs)], // LIGNUM's thrown axes and felled trunks (js/sim/lignum.js)
   ['wordPops', ...saveArr(wordPops)], ['coinPops', ...saveArr(coinPops)], ['ptargets', ...saveArr(ptargets)], ['slashes', ...saveArr(slashes)],
   ['shed', () => [shedWait, shedLive], (v) => { saveArr(shedWait)[1](v[0]); shedLive = v[1]; }],
   ['iceBreaks', ...saveArr(iceBreaks)], // the breaks in their own shape (js/sim/icebreak.js); their pixels rebuild off them

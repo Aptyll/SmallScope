@@ -184,6 +184,7 @@ const MM_UNKNOWN = [188, 200, 218];
 function isSolidTile(tx, ty, e, swept) {
   if (!inWorld(tx, ty)) return true;
   if (!swept && cisternTile(tx, ty)) return true;
+  if (heroSolid(tx, ty, e)) return true; // a wall a hero's kit lays for a while (HERO_SOLID, js/sim/heroes.js)
   const o = objects[idx(tx, ty)];
   if (!o) return false;
   // Two tables, no list: any STRUCTS entry (tower/barracks/generator/...)

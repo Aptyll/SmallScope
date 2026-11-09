@@ -373,6 +373,7 @@ const AB32_PAL = {
   E: '#cfd8e8', e: '#8b93a8',
   v: '#4f8a46', V: '#9cc87a', // SALVIA's sage (js/sprites/salvia.js)
   q: '#2c5478', Q: '#5f9cc8', // MARIS's water (js/sprites/maris.js)
+  j: '#2f5c4b', // LIGNUM's pine dark (js/sprites/lignum.js)
 };
 const AB32 = [
   [ // HUNTER

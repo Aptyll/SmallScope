@@ -41,7 +41,8 @@ const AB_RANK_STAT = {
   dmg: ['DAMAGE', tipNum, ''], shove: ['SHOVE DAMAGE', tipNum, ''], cut: ['FRONT DAMAGE CUT', tipCent, '%'],
   slow: ['SLOW', (v) => tipCent(1 - v), '%'], slowT: ['SLOW FOR', tipNum, 'S'], stun: ['STUN', tipNum, 'S'],
   root: ['ROOT', tipNum, 'S'], up: ['KNOCK UP', tipNum, 'S'], t: ['LASTS', tipNum, 'S'],
-  ward: ['DAMAGE CUT', tipCent, '%'], // MARIS's BRACE FOR COLD (js/sim/maris.js)
+  ward: ['DAMAGE CUT', tipCent, '%'], // MARIS's BRACE FOR COLD, LIGNUM's BARK SKIN
+  chop: ['CHOP DAMAGE', tipNum, ''], // LIGNUM's CHOP, its second blow (js/sim/lignum.js)
   armor: ['ARMOR', tipNum, ''], ten: ['TENACITY', tipCent, '%'], heal: ['HEALS % MAX HEALTH', tipCent, '%'],
   mark: ['MARKED FOR', tipNum, 'S'], shieldHp: ['SHIELD % MAX HEALTH', tipCent, '%'],
   missing: ['OF HP ALREADY LOST', tipCent, '%'], bonus: ['MOST EXTRA', tipNum, ''],
