@@ -1273,7 +1273,7 @@ const TREE_NUDGE_X = 2, TREE_NUDGE_Y = 1;
 function treeNudgeX(tx, ty) { return Math.floor(hash2(tx * 11 + 5, ty * 13 + 9) * (TREE_NUDGE_X * 2 + 1)) - TREE_NUDGE_X; }
 function treeNudgeY(tx, ty) { return Math.floor(hash2(tx * 17 + 2, ty * 19 + 4) * (TREE_NUDGE_Y * 2 + 1)) - TREE_NUDGE_Y; }
 
-// The cairn (the BLACK BEAR STONE camp's old anchor: no camp stamps one now,
+// The cairn (the black bear camp's old anchor: no camp stamps one now,
 // OBJECTS.cairn in world.js), baked beside its draw: a heap of river
 // stones under snow.
 const CAIRN_SPR = (() => {

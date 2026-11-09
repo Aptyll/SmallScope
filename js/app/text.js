@@ -92,3 +92,16 @@ function tr(key, vars) {
   if (s === undefined) return key.toUpperCase();
   return vars ? s.replace(/\{(\w+)\}/g, (m, k) => (vars[k] === undefined ? m : String(vars[k]))) : s;
 }
+
+// a line of words broken into lines no wider than maxW px at scale 1, at the
+// spaces: the one word-wrap, so a longer line (or a translation) still fits its box
+function wrapText(text, maxW) {
+  const lines = [];
+  let line = '';
+  for (const word of text.split(' ')) {
+    const next = line ? line + ' ' + word : word;
+    if (pixelTextWidth(next) > maxW && line) { lines.push(line); line = word; } else line = next;
+  }
+  if (line) lines.push(line);
+  return lines;
+}

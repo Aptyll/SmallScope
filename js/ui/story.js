@@ -71,7 +71,7 @@ function storyLines(ws) {
       if (a > hn) { hn = a; hunter = q; }
       if (b > pn) { pn = b; prey = q; }
     }
-    if (hunter) add(hunter, ' HUNTED YOU ' + times(hn));
+    if (hunter) add(hunter, ' DOWNED YOU ' + times(hn));
     if (prey) add(prey, ' WENT DOWN TO YOU ' + times(pn));
     // the mate who stood by the bird at its worst, if it is still standing
     const low = s.low[me.team], own = state.drop && state.drop.eagles[me.team];
@@ -84,7 +84,7 @@ function storyLines(ws) {
   // the mate who hit their bird hardest
   let br = null, bn = 0;
   for (const q of allies) if (q.dmgBird > bn) { bn = q.dmgBird; br = q; }
-  if (br && bn >= 20) add(br, ' HIT THEIR BIRD FOR ' + bn);
+  if (br && bn >= 20) add(br, ' HIT THE RIVAL BIRD FOR ' + bn);
   // the mate who downed the most, and the one nobody could
   let top = null, tn = 2;
   for (const q of allies) if (q.kills > tn) { tn = q.kills; top = q; }

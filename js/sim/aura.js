@@ -48,7 +48,7 @@ const AURA_AB = [
   {
     id: 'star', name: 'FALLING STAR', cd: [9, 8.5, 8, 7.5, 7], ap: 0.7, cast: 0.3, aim: { line: STAR_RANGE },
     rank: { dmg: [16, 24, 32, 40, 48] }, // the ring's blow; its centre takes STAR_CORE_MUL of it
-    tip: 'A SPOT FAR OFF IS STRUCK. CENTRE HURTS MORE',
+    tip: 'STRIKE A SPOT FAR OFF. CENTRE HITS HARDER',
     blurb: 'A SPOT FAR AWAY IS STRUCK AFTER A SHORT DELAY, ITS RING SHOWN ON THE SNOW. RIVALS INSIDE ARE HURT, MORE IN THE VERY CENTRE.',
     use: (p) => auraStar(p),
     tele: (p, px, py, a, col, closing, now, ex, ey) => { const c = auraSpot(p, STAR_RANGE); drawStarRing(Math.round(c.x - ex), Math.round(c.y - ey), col, 0.45 + 0.45 * closing, closing * 0.4); },

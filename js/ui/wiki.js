@@ -49,9 +49,9 @@ const WIKI_BEASTS = [
   { kind: 'wolf', name: 'WOLF',
     line: () => 'A DEN OF ' + CAMPS.resource.pop + '. NEUTRAL UNTIL HIT. BITES ' + MONSTER.wolf.bite + ' +' + MONSTER.wolf.lvBite + ' A LEVEL. BACK IN ' + CAMPS.resource.repop + ' S.' },
   { kind: 'alpha', name: 'BLACK BEAR',
-    line: () => 'ONE A STONE, NEVER UNDER LV ' + MONSTER.alpha.lv + '. SWIPES ' + MONSTER.alpha.bite + ' +' + MONSTER.alpha.lvBite + '. THE TEAM GETS ' + EPIC_TEAM_GOLD + ' EACH AND ' + CAMP_BUFF_EPIC_T + ' S OF THE ' + MONSTER.alpha.buff + '.' },
+    line: () => 'ONE ON A BEND OF THE CREEK, NEVER UNDER LV ' + MONSTER.alpha.lv + '. SWIPES ' + MONSTER.alpha.bite + ' +' + MONSTER.alpha.lvBite + '. THE TEAM GETS ' + EPIC_TEAM_GOLD + ' EACH AND ' + CAMP_BUFF_EPIC_T + ' S OF THE ' + MONSTER.alpha.buff + '.' },
   { kind: 'dire', name: 'BROWN BEAR',
-    line: () => 'ONE A DEN, NEVER UNDER LV ' + MONSTER.dire.lv + '. SWIPES ' + MONSTER.dire.bite + ' +' + MONSTER.dire.lvBite + '. THE TEAM GETS ' + EPIC_TEAM_GOLD + ' EACH AND ' + CAMP_BUFF_EPIC_T + ' S OF THE ' + MONSTER.dire.buff + '.' },
+    line: () => 'ONE ON A BEND OF THE CREEK, NEVER UNDER LV ' + MONSTER.dire.lv + '. SWIPES ' + MONSTER.dire.bite + ' +' + MONSTER.dire.lvBite + '. THE TEAM GETS ' + EPIC_TEAM_GOLD + ' EACH AND ' + CAMP_BUFF_EPIC_T + ' S OF THE ' + MONSTER.dire.buff + '.' },
 ];
 // what a beast is at a level: the sim's own arithmetic (makeAnimal, animalDies)
 function wikiBeastHp(kind, lv) { return animalHpAt(kind, lv); }
@@ -76,20 +76,12 @@ const WIKI_AB_COLS = [
   { label: 'COOLDOWN', w: 40, get: (ab) => tipSec(rankAt(ab.cd, 1)) }, // rank 1's: the card says every rank's
   { label: 'CAST', w: 32, get: (ab) => tipSec(ab.cast) },
 ];
+// an ability row's height: its name line, then every line of its blurb in the
+// width right of the icon (37 px past the 10 px key column), never under the icon's 36
+function wikiAbH(blurb, cw) { return Math.max(36, 14 + wrapText(blurb, cw - 47).length * 8 + 6); }
 const WIKI_CLS_TEXT_X = 56; // where a class card's words start, right of its 48 px model
 const WIKI_STORY_INK = '#a8b4d6'; // a hero's story: quieter than the pitch, warmer than the rules
 const WIKI_STATS = ['hp', 'dmg', 'as', 'armor', 'ms']; // the class card's rows: its level 1 numbers (STATS, js/sim/stats.js)
-// a sentence broken into lines no wider than maxW, on word boundaries
-function wikiWrap(text, maxW) {
-  const lines = [];
-  let line = '';
-  for (const word of text.split(' ')) {
-    const next = line ? line + ' ' + word : word;
-    if (pixelTextWidth(next) > maxW && line) { lines.push(line); line = word; } else line = next;
-  }
-  if (line) lines.push(line);
-  return lines;
-}
 
 // the world page: the setting, in the order an exile meets it. An entry is a
 // name, a paragraph (wrapped to the column when the page is built) and `fig` -
@@ -119,31 +111,31 @@ const WIKI_WORLD = [
   { name: 'THE COUNTER', fig: () => [SPRITES.merchant[skin(player.team)].down[0]],
     text: 'THE MERCHANTS ARE A GUILD OF THEIR OWN. ONE RIDES IN WITH EACH BIRD, BUILDS ITS BARRACKS AND SELLS TO ANY PURSE THAT WALKS UP, YOURS OR THEIRS. THEY ARE NOT ON A SIDE. THEY ARE ON THE PRICE OF FISH. NOBODY LAYS A HAND ON ONE.' },
   { name: 'THE MACHINES', fig: () => [SPRITES.robotTeam[skin(player.team)][0], SPRITES.robotRanged[skin(player.team)][0], SPRITES.robotSiege[skin(player.team)][0]],
-    text: 'OLDER THAN THE ROAD. THEY SLEEP UNDER THE SNOW UNTIL GOLD WAKES ONE, AND THEN THEY DO THE ONE THING THEY REMEMBER: GATHER, GUARD, OR MARCH. WHO BUILT THEM IS THE VALLEY\'S FAVOURITE ARGUMENT.' },
+    text: 'OLDER THAN THE ROAD. THEY SLEEP UNDER THE SNOW UNTIL GOLD WAKES ONE, AND THEN THEY DO THE ONE THING THEY REMEMBER: MARCH. WHO BUILT THEM IS THE VALLEY\'S FAVOURITE ARGUMENT.' },
   { name: 'THE ROAD', road: true, fig: () => [SPRITES.robotTeam[skin(player.team)][0], SPRITES.robotTeam[skin(1 - player.team)][0]],
     text: 'THE WORKS\' HAUL ROAD RUNS STRAIGHT FROM ROOST TO ROOST, PACKED HARD BY WHATEVER THEY HAULED ALONG IT, AND A TRACK RUNS ROUND EACH SIDE OF THE VALLEY BY THE TREES. BOTH COLUMNS MARCH DOWN ALL THREE, SO EVERYTHING IN SOFTFALL ENDS UP ON A ROAD. MOST OF IT MEETS IN THE MIDDLE.' },
   { name: 'THE TOWERS', road: true, fig: () => [towerFigure(skin(player.team))],
     text: 'THE WORKS RAISED THEM IN CUT STONE TO HOLD THE ROADS, THREE TO EVERY CABLE, AND GOLD WOKE THE CROSSBOWS ON TOP. A COMPANY\'S CABLE RUNS NO FURTHER THAN ITS LAST TOWER STANDING. A TOWER SHOOTS THE MARCHING COLUMN, UNTIL AN EXILE HURTS ONE OF ITS OWN UNDER IT.' },
   { name: 'THE WOLVES', fig: () => [SPRITES.wolf.right.idle[0], SPRITES.wolf.left.idle[0]],
-    text: 'THE WOLVES WERE HERE FIRST AND HAVE NO OPINION ABOUT CLAIMS. LEAVE A DEN ALONE AND IT LEAVES YOU ALONE. THE BLACK BEAR KEEPS TO ITS STONE AND THE BROWN BEAR TO ITS DEN, AND A COMPANY THAT BRINGS ONE DOWN WALKS TALLER FOR A WHILE.' },
+    text: 'THE WOLVES WERE HERE FIRST AND HAVE NO OPINION ABOUT CLAIMS. LEAVE A DEN ALONE AND IT LEAVES YOU ALONE. THE BEARS WALK THE BENDS OF THE CREEK, AND A COMPANY THAT BRINGS ONE DOWN WALKS TALLER FOR A WHILE.' },
   { name: 'GOLD', fig: () => [SPRITES.goldSack[SPRITES.goldSack.length - 1]],
     text: 'THE ONLY THING THE VALLEY PAYS IN. THE WORKS WILL MAKE AN EXILE RICH, BUT A PINE NEVER TAUGHT ANYBODY ANYTHING. AN EXILE LEARNS ON THE ROAD, STANDING CLOSE WHEN THINGS FALL, AND THAT IS ALL A LEVEL IS.' },
 ];
 
 const WIKI_PAGES = [
-  { id: 'classes', label: 'CLASSES', build(cw) {
+  { id: 'classes', label: 'HEROES', build(cw) {
     const b = [];
-    b.push({ kind: 'line', h: 9, text: 'THE HEROES, ONE PICKED ON THE WAY IN. KEYS 1-4 ARE THE HERO, EACH ON ITS OWN COOLDOWN.', col: '#cfe0ff' });
-    b.push({ kind: 'line', h: 9, text: 'A SKILL POINT UNLOCKS A KEY OR RANKS IT UP: ' + AB_RANK_LV.length + ' RANKS ON KEYS 1-3, ' + AB_ULT_LV.length + ' ON 4 AT LEVELS ' + AB_ULT_LV.join(', ') + '.', col: TIP_DIM });
+    b.push({ kind: 'line', h: 9, text: 'THE HEROES. EACH ABILITY HAS ITS OWN COOLDOWN.', col: '#cfe0ff' });
+    b.push({ kind: 'line', h: 9, text: 'A SKILL POINT UNLOCKS AN ABILITY OR RANKS IT UP: ' + AB_RANK_LV.length + ' RANKS ON THE FIRST THREE, ' + AB_ULT_LV.length + ' ON THE ULTIMATE AT LEVELS ' + AB_ULT_LV.join(', ') + '.', col: TIP_DIM });
     CLASSES.forEach((c, cls) => {
       b.push({ kind: cls ? 'rule' : 'gap', h: cls ? 10 : 4 });
       b.push({ kind: 'cls', h: 52, cls });
       // who the hero was before the pass, under the card the way League's
       // champion page puts the bio over the abilities (CLASSES `story`)
-      if (c.story) { const lines = wikiWrap(c.story, cw - WIKI_CLS_TEXT_X); b.push({ kind: 'story', h: lines.length * 8 + 8, lines }); }
-      b.push({ kind: 'head', h: 12, text: 'KEYS 1-4', cols: WIKI_AB_COLS });
-      if (c.passive) b.push({ kind: 'ab', h: 36, cls, i: -1, cols: [] }); // a named hero's passive heads its keys (HERO_PASSIVE, js/sim/heroes.js)
-      CLASS_AB[cls].forEach((ab, i) => abOptions(cls, i).forEach((o, k) => b.push({ kind: 'ab', h: 36, cls, i, k, cols: WIKI_AB_COLS })));
+      if (c.story) { const lines = wrapText(c.story, cw - WIKI_CLS_TEXT_X); b.push({ kind: 'story', h: lines.length * 8 + 8, lines }); }
+      b.push({ kind: 'head', h: 12, text: 'ABILITIES', cols: WIKI_AB_COLS });
+      if (c.passive) b.push({ kind: 'ab', h: wikiAbH(HERO_PASSIVE[c.passive].blurb, cw), cls, i: -1, cols: [] }); // a named hero's passive heads its keys (HERO_PASSIVE, js/sim/heroes.js)
+      CLASS_AB[cls].forEach((ab, i) => abOptions(cls, i).forEach((o, k) => b.push({ kind: 'ab', h: wikiAbH(o.blurb, cw), cls, i, k, cols: WIKI_AB_COLS })));
     });
     return b;
   } },
@@ -157,7 +149,7 @@ const WIKI_PAGES = [
     // (a bear is a 112 px frame), and its line wraps to what is left
     for (const bs of WIKI_BEASTS) {
       const spr = SPRITES[bs.kind].right.idle[0];
-      const figW = Math.max(WIKI_BEAST_W, spr.width), lines = wikiWrap(bs.line(), cw - figW - 8);
+      const figW = Math.max(WIKI_BEAST_W, spr.width), lines = wrapText(bs.line(), cw - figW - 8);
       const h = Math.max(46 + (wikiBeastXp(bs.kind, 1) ? 9 : 0) + (lines.length - 1) * 8, spr.height - (spr.crown || 0) + 18 * beastFrame(bs.kind).s + 8); // a KILL XP row is a row more
       b.push({ kind: 'beast', h, beast: bs, figW, lines });
     }
@@ -179,12 +171,12 @@ const WIKI_PAGES = [
     // broken to the content width it is built for (cw), and an entry is as
     // tall as the taller of its figure and its paragraph
     const b = [];
-    const para = (text, col) => { for (const t of wikiWrap(text, cw)) b.push({ kind: 'line', h: 9, text: t, col }); };
+    const para = (text, col) => { for (const t of wrapText(text, cw)) b.push({ kind: 'line', h: 9, text: t, col }); };
     para('SOFTFALL IS A VALLEY OVER THE EMPIRE\'S LAST PASS, AND THE SNOW THAT BURIED IT.', '#cfe0ff');
     para('THE EMPIRE THROWS PEOPLE OUT. THE VALLEY TAKES ANYONE WHO CAN DIG.', TIP_DIM);
     b.push({ kind: 'rule', h: 10 });
     for (const e of WIKI_WORLD) {
-      const lines = wikiWrap(e.text, cw - WIKI_TEXT_X);
+      const lines = wrapText(e.text, cw - WIKI_TEXT_X);
       const fh = Math.max(...e.fig().map((s) => s.height));
       b.push({ kind: 'lore', h: Math.max(Math.max(fh, 18) + 12, 14 + lines.length * 8 + 8), entry: e, lines, fh });
     }
@@ -440,7 +432,7 @@ function renderWiki(now, a) {
       const iy = y + 1, wx = L.left + 10;
       ctx.fillStyle = '#0a0e23'; ctx.fillRect(L.left, iy + 12, 7, 8);
       ctx.fillStyle = '#1c2750'; ctx.fillRect(L.left + 1, iy + 13, 5, 6);
-      drawPixelText(ctx, bl.i < 0 ? 'P' : String(bl.i + 1), L.left + 2, iy + 14, '#ffd95c');
+      drawPixelText(ctx, bl.i < 0 ? 'P' : keyCapShort('ab' + (bl.i + 1)).slice(0, 1), L.left + 2, iy + 14, '#ffd95c');
       ctx.fillStyle = hot ? '#7a8bb8' : '#0a0e23'; ctx.fillRect(wx - 1, iy - 1, 34, 34);
       ctx.fillStyle = BAG_WELL; ctx.fillRect(wx, iy, 32, 32);
       ctx.drawImage(bl.i < 0 ? passiveIcon(bl.cls) : classAbIcon(bl.cls, bl.i, bl.k), wx, iy);
@@ -455,7 +447,7 @@ function renderWiki(now, a) {
       }
       ctx.fillStyle = '#2c3560';
       for (let px = tx + pixelTextWidth(ab.name) + 3; px < firstX - 3; px += 2) ctx.fillRect(px, y + 8, 1, 1);
-      wikiWrap(ab.blurb, L.right - tx).slice(0, 2).forEach((t, k) => drawPixelTextShadow(ctx, t, tx, y + 14 + k * 8, TIP_DIM, '#0a0e23'));
+      wrapText(ab.blurb, L.right - tx).forEach((t, k) => drawPixelTextShadow(ctx, t, tx, y + 14 + k * 8, TIP_DIM, '#0a0e23'));
     } else if (bl.kind === 'legend') {
       // the frame, labelled: one deer, and a leader from each part of the
       // frame to what it is. Every beast on the page wears this same frame.
