@@ -695,7 +695,7 @@ class Canal(Standard):
     her back, a gold scarf at the neck over her side's coat; Armatos's frame and boots"""
     ARM_MAT, MITT_MAT = 'coat', 'skin'
     MARKS = [(-1.5, 0.9, 'e'), (1.5, 0.9, 'e')]
-    HAIR, CAP = 'hair', 'cap'
+    HAIR, CAP, SCARF = 'hair', 'cap', 'gold'
 
     def head(self, cv, cam, hc, Rh, pose, snap):
         def region(n, q):
@@ -707,7 +707,7 @@ class Canal(Standard):
     def coat(self, cv, cam, U, R):
         cv.blob(cam, U(v3(0, 0, Z(6.1))), R, (2.75, 3.05, Z(2.05)), 'coat', 'coat', p=2.2)
         cv.blob(cam, U(v3(0, 0, Z(4.0))), R, (2.6, 3.1, Z(0.6)), 'hem', 'coat', bias=-0.3)
-        cv.blob(cam, U(v3(0.1, 0, Z(8.0))), R, (2.6, 3.2, Z(0.6)), 'scarf', 'gold', bias=0.3)
+        cv.blob(cam, U(v3(0.1, 0, Z(8.0))), R, (2.6, 3.2, Z(0.6)), 'scarf', self.SCARF, bias=0.3)
 
     def extras(self, cv, cam, U, R, pose):
         # the braid down her back, lifted behind her in the run's wind
@@ -719,8 +719,9 @@ class Canal(Standard):
 
 
 class Night(Canal):
-    """VELOX as NIGHT POST (the first skin): the same runner, dark hair under a dark cap"""
-    HAIR, CAP = 'nighthair', 'nightcap'
+    """VELOX as NIGHT POST (the first skin): the same runner, dark hair under a dark cap,
+    a pale blue scarf"""
+    HAIR, CAP, SCARF = 'nighthair', 'nightcap', 'nightscarf'
 
 
 class Horn(Lamp):

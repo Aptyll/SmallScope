@@ -60,7 +60,7 @@ function drawVeloxMarks(e, px, py, w, h, now) {
     const sp = Math.hypot(e.vx, e.vy);
     if (sp > 20) {
       const nx = e.vx / sp, ny = e.vy / sp, cx = px + (w >> 1), cy = py + (h >> 1);
-      ctx.globalAlpha = 0.8; ctx.fillStyle = VX_WHITE;
+      ctx.globalAlpha = 0.9; ctx.fillStyle = '#7f98bc';
       for (let k = 0; k < 3; k++) {
         const o = (k - 1) * 4, back = 8 + ((Math.floor(now * 20) + k * 3) % 6);
         for (let s = 0; s < 4; s++) ctx.fillRect(Math.round(cx - nx * (back + s) - ny * o), Math.round(cy - ny * (back + s) + nx * o), 1, 1);
@@ -71,10 +71,11 @@ function drawVeloxMarks(e, px, py, w, h, now) {
   if (!(e.keepN > 0)) return;
   const right = e.dir !== 'left', my = py - 5, mx = px + (w >> 1) - (e.keepN - 1) * 2;
   for (let k = 0; k < e.keepN; k++) {
-    const x = mx + k * 4;
-    ctx.fillStyle = VX_INK; ctx.fillRect(x - 1, my - 2, 3, 5);
-    ctx.fillStyle = VX_GOLD;
-    ctx.fillRect(x + (right ? -1 : 1), my - 1, 1, 1); ctx.fillRect(x, my, 1, 1); ctx.fillRect(x + (right ? -1 : 1), my + 1, 1, 1);
+    const x = mx + k * 4, f = right ? -1 : 1;
+    for (const [dy, col] of [[1, VX_INK], [0, VX_GOLD]]) {
+      ctx.fillStyle = col;
+      ctx.fillRect(x + f, my - 1 + dy, 1, 1); ctx.fillRect(x, my + dy, 1, 1); ctx.fillRect(x + f, my + 1 + dy, 1, 1);
+    }
   }
 }
 HERO_MARK.push(drawVeloxMarks);

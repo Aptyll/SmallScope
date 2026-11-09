@@ -236,7 +236,7 @@ const VELOX_BODY = {
       '.....GGG.GGG....',
     ],
   },
-  night: { // NIGHT POST: the same runner in night colours, dark hair under a dark cap
+  night: { // NIGHT POST: the same runner in night colours, dark hair under a dark cap, a pale blue scarf
     down: [
       '................',
       '.....oooooo.....',
@@ -245,12 +245,12 @@ const VELOX_BODY = {
       '....ojJJJJjo....',
       '....ojekkejo....',
       '....ojkkkkjo....',
-      '...ojyyyyyyjo...',
+      '...ojvvvvvvjo...',
       '...orsrrRrrro...',
       '...orrsrRrrro...',
       '...okrrsRrrko...',
       '....orrRRsqo....',
-      '....oddyyddo....',
+      '....oddvvddo....',
       '.....MM..MM.....',
       '.....bb..bb.....',
       '.....GG..GG.....',
@@ -263,12 +263,12 @@ const VELOX_BODY = {
       '....ojJJJJjo....',
       '....ojjJJjjo....',
       '....ojjJJjjo....',
-      '...oyyyjJyyyo...',
+      '...ovvvjJvvvo...',
       '...orrrjJrrro...',
       '...orrrjJrrro...',
       '...okrrrjrrko...',
       '....oqsRRrro....',
-      '....oddyyddo....',
+      '....oddvvddo....',
       '.....MM..MM.....',
       '.....bb..bb.....',
       '.....GG..GG.....',
@@ -281,21 +281,21 @@ const VELOX_BODY = {
       '....ojJJJJJo....',
       '....ojjJkeko....',
       '....ojjjkkko....',
-      '..ojoyyyyyyo....',
+      '..ojovvvvvvo....',
       '..ojorrrRrro....',
       '..ojorrrRrro....',
       '...oorrkRrro....',
       '....orrrRrro....',
-      '....oddyyddo....',
+      '....oddvvddo....',
       '......MM.MM.....',
       '......bb.bb.....',
       '.....GGG.GGG....',
     ],
   },
 };
-// her hair, cap, scarf and satchel over ARMATOS's iron; the night look's dark hair and cap
+// her hair, cap, scarf and satchel over ARMATOS's iron; the night look's dark hair, cap and pale blue scarf
 const VELOX_PAL = Object.assign({}, ARM_PAL, { a: '#6e3a22', A: '#a85a32', c: '#2f3a5a', C: '#4d5e88',
-  j: '#262434', J: '#4a4660', n: '#1c2138', N: '#33406a', M: '#454c5e', s: '#5e4128', q: '#8a6440' });
+  j: '#262434', J: '#4a4660', n: '#1c2138', N: '#33406a', v: '#8fb4dc', V: '#5f84b0', M: '#454c5e', s: '#5e4128', q: '#8a6440' });
 // The looks she can wear: the first is her own and free, the rest are bought with coins on
 // the skins screen (js/ui/skins.js, the VELOX tab). `run: 'drawn'`: her braid and skates are
 // not the doll's run (app/bake-player: canal, night), so her run is her drawn body in every
