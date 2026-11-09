@@ -294,7 +294,7 @@ function tackleObject(o, dmg, p) {
   tallyHit(o, dmg);
   if (o.hp <= 0) {
     destroyStructure(o, p);
-    logEvent(p.name + ' WRECKED A ' + STRUCTS[o.type].name, p);
+    logEvent(boardName(p) + ' WRECKED A ' + STRUCTS[o.type].name, p);
   }
 }
 
@@ -505,7 +505,7 @@ function hurtStruct(o, dmg, p, bot) {
     const name = STRUCTS[o.type].name;
     // the wreck pays out half its price, straight to whoever broke it
     destroyStructure(o, p);
-    if (p) logEvent(p.name + ' WRECKED A ' + name, p);
+    if (p) logEvent(boardName(p) + ' WRECKED A ' + name, p);
     if (STRUCTS[o.type].call) callStruct(o, p); // the announcer's TOWER DESTROYED (the `calls` banner, js/sim/player.js)
   }
 }
