@@ -49,6 +49,7 @@ const SAVE_ROOTS = [
   ['fish', ...saveArr(fish)], ['camps', ...saveArr(camps)],
   ['craters', ...saveArr(craters)], ['nets', ...saveArr(nets)], ['abFx', ...saveArr(abFx)],
   ['guards', () => [guards, guardN], (v) => { saveArr(guards)[1](v && v[0]); guardN = v ? v[1] : 0; }], // ARMATOS's standards (js/sim/armatos.js)
+  ['orcaSpouts', ...saveArr(orcaSpouts)], // the up orca's throws in the air (js/sim/orca.js)
   ['brushfires', ...saveArr(brushfires)], // IGNIA's lines of fire (js/sim/ignia.js)
   ['auraStars', ...saveArr(auraStars)], ['auraOrbs', ...saveArr(auraOrbs)], ['auraCurtains', ...saveArr(auraCurtains)], // AURA's strikes waiting and lights drifting (js/sim/aura.js)
   ['salviaBundles', ...saveArr(salviaBundles)], ['salviaDrops', ...saveArr(salviaDrops)], ['salviaThaws', ...saveArr(salviaThaws)], // SALVIA's poultices flying, snowdrops planted, warm rings (js/sim/salvia.js)

@@ -24,6 +24,7 @@ rather than a different resource (the League model: one number, many ways to ear
 | deer | `deer` 3 coins × 40 → 120 | the big mobile target: two of them, each running its side's line |
 | wolf | `wolf` 2 coins × 55 → 110 | a den's four (440), each a FARM ([Farming](robots.md#farming)); neutral until hit, and then the pack bites back |
 | black bear | `alpha` 6 coins × 105 → 630 | BLUE's river camp's one; `EPIC_TEAM_GOLD` (280) to every teammate besides, and the BLACK BUFF for the whole team |
+| orca | `orca` 8 coins × 110 → 880 | the orca up in its pool from 20:00; `EPIC_TEAM_GOLD` (280) to every teammate besides, and the ORCA BUFF (the push) for the whole team |
 | bird | `bird` 2 coins × 28 → 56 | dormant: nothing spawns one |
 | gold pump (`pump`) | `pay` (20) every `period` (10 s) to every hero of the side holding it — 120 a minute each | one of the map's two neutral objectives, taken by standing in its ring ([The gold pumps](buildings.md#the-gold-pumps)); both held is 240 a minute each, twice the trickle |
 | a sale at [the counter](the-merchants-counter.md) | half an item's price (a potion one at a time) | the one payout that does not count as earned (`tradeGold`) — a trade is an exchange, not a source |
