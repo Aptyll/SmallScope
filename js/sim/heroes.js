@@ -40,11 +40,11 @@
 //   js/sim/fog.js): cover a hero's kit makes (NIX's snow cloud).
 // - HERO_MACHINE[kind]: { step(b, dt), draw(b, ex, ey, now), r, hitR, mass, sight,
 //   pay: { gold, xp } } a machine a hero built (b.kind = kind, with team and owner):
-//   FABER's. It is a body in `robots` like a soldier (hit, drawn, pushed apart,
-//   shot at by towers and soldiers); `pay` is a rival's for breaking it.
+//   FABER's, and FALCO's hawk out. It is a body in `robots` like a soldier (hit, drawn,
+//   pushed apart, shot at by towers and soldiers); `pay` is a rival's for breaking it.
+//   Optional: `fly` (nothing pushes it apart, separateUnits), `puff` [two colours] its
+//   hit puff (hurtRobot), `fall(b, src)` its own end in place of a wreck (robotDies).
 // - HERO_WRECK: fn(b, src) when a body in `robots` is broken (robotDies): FABER's spare parts.
-// - HERO_EYES: fn(team, out) pushing sightEye()s for that side (sightSources,
-//   js/sim/fog.js): eyes a kit puts in the world (FALCO's hawk while it is out).
 // - HERO_SWIM: fn(p) -> true for a hero open water never takes (playerPlunge,
 //   js/sim/sim.js): MARIS swims the creek and a broken hole.
 // - HERO_SOLID: fn(tx, ty, e) -> true for a tile a kit has walled for now (isSolidTile,
@@ -67,7 +67,6 @@ const HERO_COVER = [];
 const HERO_AIR = [];
 const HERO_MACHINE = {};
 const HERO_WRECK = [];
-const HERO_EYES = [];
 const HERO_SWIM = [];
 const HERO_SOLID = [];
 
@@ -104,6 +103,5 @@ function heroCover(srcs, x, y, u) { for (const f of HERO_COVER) if (f(srcs, x, y
 function heroAir(ex, ey, now) { for (const f of HERO_AIR) f(ex, ey, now); }
 function heroMachine(b) { return (b.kind && HERO_MACHINE[b.kind]) || null; }
 function heroWreck(b, src) { for (const f of HERO_WRECK) f(b, src); }
-function heroEyes(team, out) { for (const f of HERO_EYES) f(team, out); }
 function heroSolid(tx, ty, e) { for (const f of HERO_SOLID) if (f(tx, ty, e)) return true; return false; }
 function heroSwim(p) { for (const f of HERO_SWIM) if (f(p)) return true; return false; }

@@ -61,8 +61,9 @@ function hurtRobot(b, dmg, nx, ny, src) {
   b.kbx = nx * ROBOT_KB; b.kby = ny * ROBOT_KB;
   tallyHit(b, dmg);
   aiFarmLearn(src, dmg); // a bot remembers its blow for the next last hit (js/ai/ai-farm.js)
-  burst(b.x, b.y - 2, '#c3c9d3', 6, 45, 0.35, true);
-  burst(b.x, b.y - 2, '#ffb347', 3, 40, 0.3, true); // sparks off the plating
+  const puff = (heroMachine(b) && heroMachine(b).puff) || ['#c3c9d3', '#ffb347']; // sparks off the plating, or a hero body's own (HERO_MACHINE `puff`)
+  burst(b.x, b.y - 2, puff[0], 6, 45, 0.35, true);
+  burst(b.x, b.y - 2, puff[1], 3, 40, 0.3, true);
   sfxAt('hit', b.x, b.y);
   if (b.hp <= 0) robotDies(b, src);
 }
@@ -73,11 +74,14 @@ function hurtRobot(b, dmg, nx, ny, src) {
 function robotDies(b, src) {
   b.dead = true;
   b.shot = null; // a snowball still in its hand or the air goes with it
-  sfxAt('break_', b.x, b.y);
-  burst(b.x, b.y - 4, '#98a1b0', 10, 50, 0.5, true);
-  burst(b.x, b.y - 4, '#3b4150', 4, 35, 0.4);
-  heroWreck(b, src); // what a hero makes of a wreck near them (HERO_WRECK: FABER's spare parts)
   const M = heroMachine(b);
+  if (M && M.fall) M.fall(b, src); // a hero's body that is no machine (FALCO's hawk) ends its own way and leaves no wreck
+  else {
+    sfxAt('break_', b.x, b.y);
+    burst(b.x, b.y - 4, '#98a1b0', 10, 50, 0.5, true);
+    burst(b.x, b.y - 4, '#3b4150', 4, 35, 0.4);
+    heroWreck(b, src); // what a hero makes of a wreck near them (HERO_WRECK: FABER's spare parts)
+  }
   if (M) {
     if (src instanceof Player && src.team !== b.team) awardGold(src, M.pay.gold, b.x, b.y);
     shareXp(b, M.pay.xp, 1 - b.team, src);
@@ -85,7 +89,7 @@ function robotDies(b, src) {
   }
   // a soldier carries a bounty: the rival who lands the
   // LAST HIT is paid it on the spot (soldierBounty, the `farm` banner of
-  // js/sim/farm.js) and counts a farm, and every rival scout standing near
+  // js/sim/farm.js) and counts a farm, and every rival hero standing near
   // shares its SOLDIER_XP whoever scrapped it (shareXp, js/sim/player.js) -
   // the road pays, which is what makes walking out to meet a wave worth the walk. One the waves, a tower or a
   // beast finish pays nobody, and its rivals near it see the coin go grey.
@@ -567,7 +571,7 @@ const SOLDIER_SPD = 44;        // px/s, a step slower than a walking player
 const SOLDIER_AGGRO = 96;      // px it turns on a rival unit inside
 const SOLDIER_SIEGE = 40;      // px it turns on a rival building inside - what is in its way, not the whole ring round a roost
 const SOLDIER_TOWER_R = 160;   // px it turns on a rival road tower inside: the road's own stretch of it, so no column marches past one
-const SOLDIER_XP = 20;         // XP a melee soldier is worth to the rival scouts standing near (shareXp); a kind's `xp` scales it
+const SOLDIER_XP = 20;         // XP a melee soldier is worth to the rival heroes standing near (shareXp); a kind's `xp` scales it
 const SOLDIER_WP_R = 28;       // px from a waypoint that counts as reached
 const SOLDIER_ZIP_GAIN = 96;   // px nearer the rival bird a ride's end must be than the soldier stands before it clips on: six tiles, so never a hop on and straight off
 const SOLDIER_ZIP_REACH = 96;  // px off a cable's track a marching soldier turns aside to it: the road's own width and the verge, so a column on the lane finds the line beside it

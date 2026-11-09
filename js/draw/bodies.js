@@ -594,7 +594,7 @@ function drawPlayer(p, ex, ey, now) {
     // gold filling = drawing (a shot is coming), pale gold = it peaked, slate
     // filling = reloading (it is not), pale gold again for the instant it came
     // back (the bow's own ready colour; white is the stamina bar's), and the
-    // recall's channel in the side's own glow (js/sim/recall.js: a scout
+    // recall's channel in the side's own glow (js/sim/recall.js: a hero
     // leaving, and a hit keeps them there).
     // All of them use the identical geometry, so the bar never jumps when one
     // hands over to the next.

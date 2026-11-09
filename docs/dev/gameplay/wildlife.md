@@ -22,7 +22,7 @@ off the woods and off every camp's ground (`campNear` past `CAMP_GROUND`). Pure 
 `rng()`. One deer stands on the middle of each line (`spawnDeer`; `a.route` is its side).
 
 It **walks its line end to end and back** (`deerRouteGoal`: `a.leg` the point it heads for,
-`a.way` which way, turning at either end) at `DEER_ROAM` (a scout's walk, so a walk keeps up but
+`a.way` which way, turning at either end) at `DEER_ROAM` (a hero's walk, so a walk keeps up but
 never closes), grazing at `DEER_GRAZE_P` (a quarter) of its points for `DEER_GRAZE_T` (1.5–3.5 s).
 It bolts as any deer does from a player it sees, and **from any wolf or bear inside
 `DEER_BEAST_SIGHT`** (96 px), hunting or not (`updatePrey`). A flight remembers what it ran from
@@ -160,19 +160,19 @@ included, which is what keeps the `.` overlay honest ([rendering.md](../renderin
   to `PRONE_SNIFF` (22), and inside *that* it bolts no matter what you are lying under. A hit
   also sends either species running from the nearest player (`fleeT`).
 - **The flight** is a chain of routed legs at `PREY_RUN` (a rabbit's 104 px/s, half again a
-  walking scout's): `fleeGoal(a, from)` picks a tile ~6 tiles off, as straight away from the
+  walking hero's): `fleeGoal(a, from)` picks a tile ~6 tiles off, as straight away from the
   threat as the ground allows (fanning out, then sideways, then past it), the first it can route
   to; a leg that arrives or fails hands over to the next, and an animal with nowhere to run stops
   fleeing. With no threat on the ground (every hero dead or aloft, no beast in sight) it runs out
   the leg under way and stops there. A warren's rabbit runs `RABBIT_LEG` (3.5) tile legs that must end on its warren's deep
-  snow (`warrenHolds`), so it circles a scout wading after it instead of leaving the circle.
+  snow (`warrenHolds`), so it circles a hero wading after it instead of leaving the circle.
 - **A deer's sprint.** A deer always wears a second bar under its health — stamina white
   (`STAM_COL`), stacked the way a player's is (`drawAnimal`) — and spends it on the first stretch
   of every flight: while `a.sprint` (0..1) is above zero the legs run at `DEER_SPRINT` and the bar
   drains over `DEER_SPRINT_T` (2.5 s of running); empty, the flight drops to `PREY_RUN.deer`, its
   walk. Both paces are multiples of a player's walk, tuned in one place — `DEER_RUN_MUL` (1.4,
   101 px/s) and `DEER_WALK_MUL` (1.15, 83 px/s), the px/s consts derived from them — so a deer
-  outpaces a walking scout either way and the empty bar is when a roll, a slide or an arrow closes
+  outpaces a walking hero either way and the empty bar is when a roll, a slide or an arrow closes
   the gap. It refills over `DEER_SPRINT_REGEN` (10 s) whenever the deer is not fleeing, so the bar
   is the hunt's read: a full one means the deer will simply leave, a low one means run it again now.
 - **A deer never jumps pace.** `a.spd` is the speed it is at, and `deerPace(a, want, dt)` closes

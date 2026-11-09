@@ -55,8 +55,7 @@ pines) low in the view under the bird (`VIEW_H * BRIEF_Y`): `ATTACK THEIR EAGLE`
 the rival's paint at `BRIEF_TEXT` (**four**) times the drop HUD's text scale, verb first and nothing under it
 — the once the win condition is ever written down, the headline carve-out; **`ours-go`**/**`ours`** glide home and finish on your own roost for
 `BRIEF_HOLD_OURS` (4 s) under `PROTECT YOUR EAGLE`, then clear through
-`endBrief()`, which also pops the `DAY 1` headline the landing owes (the camera banner in sim.js
-holds it back while the brief has the top of the screen) — and from there the E - HOP OFF
+`endBrief()`, and from there the E - HOP OFF
 indicator (above) is the way down. While it runs
 `sampleHumanInput`
 zeroes the controls exactly as the ceremony does, the M toggle is refused, `player.invuln` is

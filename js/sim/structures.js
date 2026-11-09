@@ -102,7 +102,7 @@ function createStruct(tx, ty, type, tier, p, building) {
     if (x !== tx || y !== ty) setTile(idx(x, y), { type: 'part', tx: x, ty: y, of: o, flash: 0, shake: 0 });
   }
   // ang: the gun's bearing; tgt/chg: its mark and how far it has wound; cd: the
-  // reload; heat/heatId: bolts in a row into one scout; bolt/pin: the one in the
+  // reload; heat/heatId: bolts in a row into one hero; bolt/pin: the one in the
   // air and the spent one in the snow (updateTower, js/sim/towers.js)
   if (type === 'tower') { o.zl = -1; o.zi = -1; o.ang = p.team === 0 ? -Math.PI / 4 : Math.PI * 3 / 4; o.tgt = null; o.chg = 0; o.cd = 0; o.heat = 0; o.heatId = -1; o.bolt = null; o.pin = null; o.loose = -9; }
   if (type === 'generator') { o.hold = -1; o.cap = 0; o.capBy = -1; o.payT = t.period; o.paid = false; } // the ring's state (updatePump, js/sim/pumps.js)

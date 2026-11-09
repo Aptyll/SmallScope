@@ -19,7 +19,10 @@ const TALON_SPD = 320;          // px/s out
 const TALON_BACK = 380;         // px/s home
 const TALON_R = 36;             // px round the spot it finds a rival
 const TALON_PATH = 14;          // px round itself it takes a rival on the way out
-const TALON_SIGHT = 70;         // px the hawk sees round itself while it is out (HERO_EYES)
+const TALON_SIGHT = 70;         // px the hawk sees round itself while it is out (HERO_MACHINE sight)
+const TALON_HP = 30;            // the hawk out is a body a rival can cut down (HERO_MACHINE.falcoHawk)...
+const TALON_HP_LV = 6;          // ...with this more for each of his levels
+const HAWK_DOWN_T = 10;         // s a hawk cut down is gone: no TALONS and none over his shoulder
 const TALON_HOME = 10;          // px from him it is home
 // W KNIFE FAN: three knives in a narrow fan
 const FAN_LEN = 150;            // px each flies
@@ -38,7 +41,6 @@ const STOOP_UP = 0.7;           // s in the sky: untouchable, unseen, still
 const STOOP_UP_AD = 0.9;        // the drop adds this share of his DAMAGE
 const STOOP_KNOCK = 0.75;       // s the hero struck is knocked up
 
-const falcoHawks = [];  // {x, y, tx, ty, back, team, owner, dmg} - Q's hawk out and coming home
 const falcoKnives = []; // {x, y, nx, ny, d, len, team, owner, dmg, cast} - W's knives in flight, (x, y) on the snow under them
 
 // ---- the keys ---------------------------------------------------------------
@@ -48,9 +50,9 @@ const FALCO_AB = [
     id: 'talons', name: 'TALONS', cd: [12, 11, 10, 9, 8], ap: 0.3, cast: 0.12, aim: { line: TALON_RANGE },
     rank: { dmg: [20, 35, 50, 65, 80] },
     tip: 'SEND THE HAWK. IT MARKS A RIVAL',
-    blurb: 'SEND YOUR HAWK TO A SPOT. IT STRIKES THE FIRST RIVAL THERE AND MARKS THEM, THEN FLIES BACK TO YOU. WHILE IT IS OUT IT SEES FOR YOUR SIDE.',
+    blurb: 'SEND YOUR HAWK TO A SPOT. IT STRIKES THE FIRST RIVAL THERE AND MARKS THEM, THEN FLIES BACK TO YOU. WHILE IT IS OUT IT SEES FOR YOUR SIDE, AND RIVALS CAN CUT IT DOWN: THEN IT IS GONE A WHILE.',
     use: (p) => falcoTalons(p),
-    ok: (p) => !falcoHawkOf(p),
+    ok: (p) => !falcoHawkOf(p) && !(p.falcoDownT > 0),
     tele: (p, px, py, a, col, closing, now, ex, ey) => { const c = falcoSpot(p, TALON_RANGE); drawRing(Math.round(c.x - ex), Math.round(c.y - ey), TALON_R, col, 0.5 + 0.45 * closing, 0); },
     pose: (p, prog) => ({ dx: 0, dy: prog < 0.6 ? -1 : 0, rot: 0 }), // the glove up, the hawk off it
     icon: FALCO_ICON32.talons,
@@ -100,7 +102,7 @@ function falcoMark(p, q) {
   markUnit(q, HAWK_SEE_T);
 }
 function falcoSrc(w) { const o = players[w.owner]; return o && o.team === w.team && unitAlive(o) ? o : null; }
-function falcoHawkOf(p) { for (const h of falcoHawks) if (h.owner === p.id && h.team === p.team) return h; return null; }
+function falcoHawkOf(p) { for (const b of robots) if (b.kind === 'falcoHawk' && b.owner === p.id && b.team === p.team && !b.dead) return b; return null; }
 function falcoSpot(p, range) {
   const dx = p.input.aimX - p.x, dy = p.input.aimY - p.y, d = Math.hypot(dx, dy) || 1;
   const r = Math.min(d, range);
@@ -116,53 +118,64 @@ function hawkDeal(p, q, dmg, o) {
 }
 // his clocks, one sim step: up in the sky, then the drop
 function falcoTick(p, dt) {
+  if (p.falcoDownT > 0) p.falcoDownT = Math.max(0, p.falcoDownT - dt);
   if (p.falcoSkyT > 0 && (p.falcoSkyT -= dt) <= 0) { p.falcoSkyT = 0; falcoDrop(p); }
 }
 // still in the sky: he does not walk
 function falcoMoveMul(p) { return p.falcoSkyT > 0 ? 0 : 1; }
 function falcoOut(p) {
-  p.falcoSkyT = 0; p.falcoStoopId = -1;
-  for (let i = falcoHawks.length - 1; i >= 0; i--) if (falcoHawks[i].owner === p.id) falcoHawks.splice(i, 1);
+  p.falcoSkyT = 0; p.falcoStoopId = -1; p.falcoDownT = 0;
+  for (const b of robots) if (b.kind === 'falcoHawk' && b.owner === p.id) b.dead = true;
 }
 // up in the sky he is hidden from every side (HERO_COVER, js/sim/heroes.js)
 function falcoCover(srcs, x, y, u) { return u instanceof Player && u.falcoSkyT > 0; }
-// the hawk out sees for its side (HERO_EYES, js/sim/heroes.js)
-function falcoEyes(team, out) {
-  for (const h of falcoHawks) if (h.team === team) out.push(sightEye(h.x, h.y, TALON_SIGHT, false));
-}
 
 // ---- Q TALONS ----------------------------------------------------------------------
 function falcoTalons(p) {
   const c = falcoSpot(p, TALON_RANGE);
-  falcoHawks.push({ x: p.x, y: p.y, tx: c.x, ty: c.y, back: false, team: p.team, owner: p.id,
+  const b = robotBody(p.x, p.y, TALON_HP + TALON_HP_LV * p.level, p.team, p.id, 0);
+  Object.assign(b, { kind: 'falcoHawk', tx: c.x, ty: c.y, back: false, face: c.x < p.x ? -1 : 1,
     dmg: abDmg(p, 'talons', abRk(p, 'talons', 'dmg')) });
+  robots.push(b);
   burst(p.x + 5, p.y - 12, '#a8794a', 6, 40, 0.35, true);
   sfxAt('dodge', p.x, p.y);
 }
-// out to the spot; the first rival it passes close over, or the first round the
-// spot (a hero before anything else), it strikes and marks, and turns for home
-function updateFalcoHawks(dt) {
-  for (let i = falcoHawks.length - 1; i >= 0; i--) {
-    const h = falcoHawks[i], o = falcoSrc(h);
-    if (!o) { burst(h.x, h.y - 10, '#a8794a', 4, 30, 0.3, true); falcoHawks.splice(i, 1); continue; }
-    const tx = h.back ? o.x : h.tx, ty = h.back ? o.y : h.ty;
-    const dx = tx - h.x, dy = ty - h.y, d = Math.hypot(dx, dy) || 1;
-    const step = Math.min((h.back ? TALON_BACK : TALON_SPD) * dt, d);
-    h.x += dx / d * step; h.y += dy / d * step;
-    if (h.back) { if (d - step <= TALON_HOME) falcoHawks.splice(i, 1); continue; }
-    const there = d - step <= 0.5;
-    const near = unitsHit(sideOf(h), h.x, h.y, (there ? TALON_R : TALON_PATH) + PLAYER_R);
-    if (!there && !near.length) continue;
-    const q = near.find((e) => e instanceof Player) || near[0];
-    if (q) {
-      const nx = (q.x - o.x) / (Math.hypot(q.x - o.x, q.y - o.y) || 1), ny = (q.y - o.y) / (Math.hypot(q.x - o.x, q.y - o.y) || 1);
-      hurtUnit(q, h.dmg, nx, ny, o, { kb: 10, ab: 'talons' });
-      falcoMark(o, q);
-      burst(q.x, unitMidY(q), '#f2cc6a', 8, 45, 0.4, true);
-      sfxAt('hit', q.x, q.y);
-    } else if (PRACTICE) abHitDummies(h.x, h.y, TALON_R, h.dmg);
-    h.back = true;
-  }
+// The hawk out is a body in `robots` (HERO_MACHINE.falcoHawk), so every blow,
+// shot, tower and soldier can cut it down; its step flies straight over walls.
+// Out to the spot; the first rival hero it passes close over (a wave in the way
+// does not stop it), or the first rival round the spot (a hero before anything
+// else), it strikes and marks, and turns for home
+function stepHawk(h, dt) {
+  h.kbx = 0; h.kby = 0; h.moving = true;
+  h.animT += dt;
+  const o = falcoSrc(h);
+  if (!o) { h.dead = true; burst(h.x, h.y - 10, '#a8794a', 4, 30, 0.3, true); return; }
+  const tx = h.back ? o.x : h.tx, ty = h.back ? o.y : h.ty;
+  const dx = tx - h.x, dy = ty - h.y, d = Math.hypot(dx, dy) || 1;
+  const step = Math.min((h.back ? TALON_BACK : TALON_SPD) * dt, d);
+  h.x += dx / d * step; h.y += dy / d * step;
+  if (Math.abs(dx) > 0.5) h.face = dx < 0 ? -1 : 1;
+  if (h.back) { if (d - step <= TALON_HOME) h.dead = true; return; } // home: back over his shoulder, no pay
+  const there = d - step <= 0.5;
+  const near = unitsHit(sideOf(h), h.x, h.y, (there ? TALON_R : TALON_PATH) + PLAYER_R).filter((e) => there || e instanceof Player);
+  if (!there && !near.length) return;
+  const q = near.find((e) => e instanceof Player) || near[0];
+  if (q) {
+    const nx = (q.x - o.x) / (Math.hypot(q.x - o.x, q.y - o.y) || 1), ny = (q.y - o.y) / (Math.hypot(q.x - o.x, q.y - o.y) || 1);
+    hurtUnit(q, h.dmg, nx, ny, o, { kb: 10, ab: 'talons' });
+    falcoMark(o, q);
+    burst(q.x, unitMidY(q), '#f2cc6a', 8, 45, 0.4, true);
+    sfxAt('hit', q.x, q.y);
+  } else if (PRACTICE) abHitDummies(h.x, h.y, TALON_R, h.dmg);
+  h.back = true;
+}
+// cut down (HERO_MACHINE `fall`, robotDies): feathers, and he is without it a while
+function hawkFall(h) {
+  burst(h.x, h.y - 6, '#a8794a', 10, 45, 0.5, true);
+  burst(h.x, h.y - 6, '#efe8d6', 5, 35, 0.4, true);
+  sfxAt('hit', h.x, h.y);
+  const o = players[h.owner];
+  if (o && o.team === h.team) o.falcoDownT = HAWK_DOWN_T;
 }
 
 // ---- W KNIFE FAN --------------------------------------------------------------------
@@ -265,8 +278,11 @@ HERO_PASSIVE.hawk = { deal: hawkDeal, tick: falcoTick, out: falcoOut,
   name: 'THE HAWK', blurb: 'RIVALS YOUR HAWK MARKS TAKE MORE FROM YOUR THROWN KNIVES AND ARE SHOWN THROUGH THE FOG FOR A MOMENT.', icon: FALCO_ICON32.hawk };
 HERO_MOVE.push(falcoMoveMul);
 HERO_COVER.push(falcoCover);
-HERO_EYES.push(falcoEyes);
-HERO_TICK.push((dt) => { updateFalcoHawks(dt); updateFalcoKnives(dt); });
+HERO_TICK.push(updateFalcoKnives);
+// the hawk out: r its room, hitR the disc a shot lands in, sight its eye; `fly` - nothing
+// pushes it and it pushes nothing; `puff` its hit colours; `fall` its own end, no wreck
+HERO_MACHINE.falcoHawk = { step: stepHawk, draw: (b, ex, ey, now) => drawHawkOut(b, ex, ey, now), r: 3, hitR: 7, mass: 1, sight: TALON_SIGHT,
+  pay: { gold: 25, xp: 15 }, fly: true, puff: ['#a8794a', '#efe8d6'], fall: hawkFall };
 HERO_DASH.glide = { spd: GLIDE_SPD, t: GLIDE_LEN / GLIDE_SPD, ramp: 0.01, through: true,
   pose: (p) => ({ dx: 0, dy: -glideLift(p), rot: 0 }),
   step: (p, mv) => { if (mv.blockedX || mv.blockedY || p.rushT <= 0) glideEnd(p); } };

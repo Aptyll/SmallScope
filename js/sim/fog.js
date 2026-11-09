@@ -60,7 +60,6 @@ function sightSources(team, out) {
   const e = state.drop && state.drop.eagles[team];
   if (e && e.state === 'down') out.push(sightEye(e.x, e.y, FOG_PERCH, false));
   for (const z of zips) if (z && z.team === team) for (const q of zipEyes(z)) out.push(sightEye(q.x, q.y, FOG_ZIP, false));
-  heroEyes(team, out); // what a hero's kit sees for its side (HERO_EYES, js/sim/heroes.js: FALCO's hawk)
   return out;
 }
 // how far a hero sees: FOG_HERO, times any hero's own (HERO_SIGHT, js/sim/heroes.js: LUCERNA's

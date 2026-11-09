@@ -115,7 +115,7 @@ order, so the script tags still interleave them:
 | [js/sim/nix.js](../../js/sim/nix.js) | ~310 | shared scope, no `window.*` export | NIX, the night scout: her tuning, her four keys (`NIX_AB`, joined into `CLASS_AB`), NIGHT WATCH, the snow cloud's cover (`HERO_COVER`), what she leaves in the world (`nixShards`, `nixClouds`) |
 | [js/sim/velox.js](../../js/sim/velox.js) | ~270 | shared scope, no `window.*` export | VELOX, the kiting marksman: her tuning, her four keys (`VELOX_AB`, joined into `CLASS_AB`), her passive KEEP MOVING, the quick step as a hero dash, and what she leaves in the world (`veloxStones`, `veloxLanes`) |
 | [js/sim/faber.js](../../js/sim/faber.js) | ~350 | shared scope, no `window.*` export | FABER, the zone mage: his tuning, his four keys (`FABER_AB`, joined into `CLASS_AB`), his passive SPARE PARTS, his two machines' brains (`HERO_MACHINE`: bodies in `robots`), the parts, jumps, bolts and clocksprings he leaves (`faberParts`, `faberArcs`, `faberBolts`, `faberSprings`) |
-| [js/sim/falco.js](../../js/sim/falco.js) | ~260 | shared scope, no `window.*` export | FALCO, the diving assassin: his tuning, his four keys (`FALCO_AB`, joined into `CLASS_AB`), THE HAWK's mark, the hawk's eye for his side (`HERO_EYES`), hidden in the sky (`HERO_COVER`), what he leaves in the world (`falcoHawks`, `falcoKnives`) |
+| [js/sim/falco.js](../../js/sim/falco.js) | ~260 | shared scope, no `window.*` export | FALCO, the diving assassin: his tuning, his four keys (`FALCO_AB`, joined into `CLASS_AB`), THE HAWK's mark, the hawk out as a body rivals can cut down (`HERO_MACHINE.falcoHawk`), hidden in the sky (`HERO_COVER`), his knives in the world (`falcoKnives`) |
 | [js/sim/bella.js](../../js/sim/bella.js) | ~340 | shared scope, no `window.*` export | BELLA, the duelist: her tuning, her four keys (`BELLA_AB`, joined into `CLASS_AB`), her passive CALCULATED STRIKES, the lunge and the slip as hero dashes, the duel and its flurry |
 | [js/sim/ignia.js](../../js/sim/ignia.js) | ~260 | shared scope, no `window.*` export | IGNIA, the hearthkeeper: her tuning, her four keys (`IGNIA_AB`, joined into `CLASS_AB`), her passive KINDLING (her fire spreading and doused), the brand, the lines of fire (`brushfires`), the warmth and the wildfire |
 | [js/sim/abilities.js](../../js/sim/abilities.js) | ~820 | shared scope, no `window.*` export | the class abilities on keys 1-4: the `CLASS_AB` table, casting, the pierce/net/grapple/snow-cover/shield-and-slam/rush/crater/execute sim |
@@ -533,7 +533,7 @@ None of the scripts is part of the game, and nothing in `js/` may depend on one 
   few names kept on purpose with no caller, each with its reason. It also fails a key registered
   on `SPRITES` (baked files included) that nothing reads; a dynamic `SPRITES[expr]` read must sit
   in its `DYNAMIC` table, which reads the keys it can take off the table that feeds it (`ANIMAL_HP`,
-  `SWING_TOOLS`, `STRUCTS`, ...), and a stale entry fails too. And it fails an `SFX` method with no
+  `STRUCTS`, ...), and a stale entry fails too. And it fails an `SFX` method with no
   caller (`SFX.name`, or `'name'` as a string outside js/app/audio.js; `SFX_TOOLS` lists the
   console ones), a `SAMPLES` key audio.js never plays, a file in audio/sfx/ no `SAMPLES` list
   names (and the reverse), and a js/baked/sfxdata.js out of step with audio/sfx/.
@@ -541,3 +541,8 @@ None of the scripts is part of the game, and nothing in `js/` may depend on one 
   counts the words still outside the table, by file). It fails a `tr('key')` with no key in
   `TEXT`, a key no game file names, a value with a character the font lacks, and a loose word in a
   file on its `MOVED` list ([the text table](rendering/the-text-table.md)).
+- **`app/check-docs.js`** — the docs check, run by `check-globals.js` (or alone). It fails a
+  camelCase name or an upper-case constant name in backticks in docs/ that no code has (js/, app/ with its
+  Python bakers, desktop/, bots/, .claude/, the root pages); a name written `prefix*` needs some
+  code word to start with it. `SKIP_FILES` lists the docs that name old code on purpose (the parked
+  cards) and `ALLOW` the few backticked words that are not code, each with its reason.

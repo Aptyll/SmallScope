@@ -104,7 +104,10 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
     count, `lobbySplash`) the grid gives way to the **splash** (`drawSplash`: `heroSplash(h, id)`
     art `SPLASH_W`×`SPLASH_H` at 1×, centred and cut on a narrow view, baked by
     `app/bake-splash.js` from `docs/media/splash/<slot>-<id>.png`; a look with none painted shows the
-    model at 3× on a slice of the night) with the look's name under it and the **skin strip**
+    stand-in, `drawSplashStandIn`: the painted splashes' own night baked once on their 2 px art grid
+    by `splashNightArt` (`SPLASH_NIGHT` sky bands, halo behind the head, two pine lines, the snow
+    floor), the look's 16 px standing front at `SPLASH_FIG` px a pixel on `SPLASH_FEET`, snow falling
+    on the same grid) with the look's name under it and the **skin strip**
     (`drawSkinStrip`/`selSkinCells`: up to `SKIN_SHOW` `SKIN_THUMB_W`×`SKIN_THUMB_H` thumbnails,
     each `heroThumb(h, id)` or, with none, the look's body at 2×,
     chevrons when there are more; the worn one gold, one the profile does not own dimmed with a
