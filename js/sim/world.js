@@ -47,8 +47,6 @@ const OBJECTS = {
   // py - 21), and the prompt clears it by the same 12 px everything else gets
   tree:     { solid: true,  tool: 'axe',  needs: 'axe',  verb: 'CHOP', lift: 33, auto: true,
               mm: [52, 100, 82],   map: CH_FOREST },
-  deadTree: { solid: true,  tool: 'axe',  needs: 'axe',  verb: 'CHOP', lift: 20, auto: true,
-              mm: [138, 128, 116], map: CH_FOREST },
   // genWorld's placeholder (liftRocks): its rock passes still stand one so
   // the seed's rolls stay put, and every one is lifted before the match. Never
   // drawn, never seen; solid and two wide as it always was, so the worldgen
@@ -99,11 +97,6 @@ const OBJECTS = {
   banner:   { solid: true,
               mm: (o) => o.team === undefined ? MM_BANNER : skin(o.team) ? MM_EAGLE_BLUE : MM_EAGLE_RED,
               map: (o) => o.team === undefined ? null : chEagle(o) },
-  // the black bear camp's old anchor: a heap of stones, solid. No
-  // camp stamps one since the bears moved to the river (CAMPS' `river`);
-  // kept so a save from before still loads what stood in it. Inert to E (no `tool`); its pixels are CAIRN_SPR in
-  // render()'s object pass (js/draw/render.js).
-  cairn:    { solid: true,  mm: [150, 156, 170] },
   // the felled trunk across each forest road's far end (placeRoad): one
   // piece per tile along the cross-diagonal, `seg` 0/1/2 the up-left end,
   // the trunk, the down-right end. Solid and inert to E; its pixels are baked

@@ -581,17 +581,11 @@ Kept on purpose — do not "clean up", and a verbatim code move carries it along
   chevrons) and mark's `seenAt` bypass all stay, because they are part of the
   [universal status set](gameplay/status-effects-one-set-for-every-unit.md) a future ability or
   attack lands on for free.
-- **The bird kind is dormant** (3.20, when the camps replaced the landmarks and the rookery went
-  with them): `updateBird`/`flushBirds`/`rookeryPerch`/`drawBird`, the `BIRD_*` constants,
-  `YIELD.bird`, `ANIMAL_HP.bird` and every `kind === 'bird'` branch stay, and nothing spawns
-  one — a camp that wants a flock stands it up again with `deadTree` props and a perching spawn
-  beside `spawnCampMonster` (js/sim/camps.js) ([Birds](gameplay/wildlife.md#birds-the-flock-dormant)). The
-  `flushBirds(campAt(...))` calls on a felled snag are the live hooks it would wake through.
 - A tree's `variant` (rolled by `randi(0, 1)` in `genWorld`) picks no art any more: there is one
   pine in twenty-four bend frames, `treeFrame` reads the wind for the lean it wears, and the tile's
   own `hash2` mirrors it, gives it a standing lean, a palette row and a nudge.
   **The roll has to stay** — removing an `rng()` call inside `genWorld` reshuffles every
-  existing seed. `deadTree` still uses its `variant` for real.
+  existing seed.
 - The `<` glyph in [js/app/font.js](../../js/app/font.js) was added for the removed resolution cycle
   control and is currently unreferenced — kept as generic font coverage. (`>` is live again: it
   marks your own row on the scoreboard.)

@@ -962,7 +962,7 @@ function pkPlanCarve(path, rad) {
         if (wx && tx > PK_LINE.x1) continue; // the walk stays snow past the line
         if (tx >= PR_X0 && tx < PR_X0 + PR_W && ty >= PR_Y0 && ty < PR_Y0 + PR_H) continue;
         const o = objects[idx(tx, ty)];
-        if (o && o.type !== 'tree' && o.type !== 'deadTree') continue;
+        if (o && o.type !== 'tree') continue;
         plan.add(idx(tx, ty));
       }
     }
@@ -972,7 +972,7 @@ function pkPlanCarve(path, rad) {
   // the lap test and the flags capping its ends never move and never gap
   for (let tx = PK_LINE.x0; tx <= PK_LINE.x1; tx++) {
     const o = objects[idx(tx, PK_LINE.y)];
-    if (!o || o.type === 'tree' || o.type === 'deadTree') plan.add(idx(tx, PK_LINE.y));
+    if (!o || o.type === 'tree') plan.add(idx(tx, PK_LINE.y));
   }
   return plan;
 }
@@ -982,7 +982,7 @@ function pkPlanCarve(path, rad) {
 // animation go through.
 function pkIceTile(i) {
   const o = objects[i];
-  if (o && (o.type === 'tree' || o.type === 'deadTree')) setTile(i, null);
+  if (o && o.type === 'tree') setTile(i, null);
   ground[i] = 1;
 }
 
@@ -1081,12 +1081,6 @@ function pkRoll(diff) {
   const old = pkTiles;
   const gen = pkGenPath(spec);
   pkTiles = pkPlanCarve(gen.path, spec.rad);
-  // the old track takes its scars with it: any hole the player put
-  // in it is unregistered before the forest grows back over the tile
-  for (const i of old) {
-    const hi = holes.indexOf(i);
-    if (hi >= 0) holes.splice(hi, 1);
-  }
   const ev = [];
   for (const i of old) if (!pkTiles.has(i)) ev.push({ k: 0, i, a: pkAngKey(i) });
   // a tile in BOTH tracks normally needs no event - unless the player broke

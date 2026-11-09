@@ -584,7 +584,7 @@ body while upright (`scoutBody`, js/ui/skins.js), and grows the held tool and an
 2× about the feet to fit him. Lying down and the fish catch still show the class body.
 
 The three camp props are
-`deadTree` (two 16×24 snags on `DTPAL`) and `den` (A ROCK MAW of [den-concepts-1.png](../media/concepts/den-concepts-1.png): a 32×21 snow-capped boulder cave with icicle fangs over its mouth, on `DNPAL`, drawn at `py - 4` over its two tiles — the concept's trampled-snow rows were left off, because a decal must not cast a shade) and `hogHut` (eight 35×35 frames of the HOG HUT's chimney smoke on `HHPAL`, converted 1:1 from docs/media/new_media5/hog-hut-chimney-moving.png and drawn centred over the front row of its 2×2 footprint). The berry bush is
+`deadTree` (two 16×24 snags on `DTPAL`, now only the wiki's THE WORKS figure) and `den` (A ROCK MAW of [den-concepts-1.png](../media/concepts/den-concepts-1.png): a 32×21 snow-capped boulder cave with icicle fangs over its mouth, on `DNPAL`, drawn at `py - 4` over its two tiles — the concept's trampled-snow rows were left off, because a decal must not cast a shade) and `hogHut` (eight 35×35 frames of the HOG HUT's chimney smoke on `HHPAL`, converted 1:1 from docs/media/new_media5/hog-hut-chimney-moving.png and drawn centred over the front row of its 2×2 footprint). The berry bush is
 four frames on `BPAL` — `bush`, `bushEmpty`, `bushBud`, `bushRipen` — one silhouette in which only
 the four berry pixels change (ripe, gone, pale `b` buds, dull `d` berries), because the frames are
 a clock the player reads at a glance and a bush that seemed to move would read as a different
@@ -593,8 +593,8 @@ plant ([the regrow stages](world.md#the-tile-world)).
 Anything drawn through `drawSpriteFlash()` must stay within **64×64**: it recolours through a
 shared 64×64 scratch canvas and a larger sprite clips ([rendering.md](rendering/render-pass-order.md)).
 
-**New sprites bake beside the code that draws them, not here.** The cairn (`CAIRN_SPR`,
-js/draw/ground.js) and the practice dummy (`DUMMY_SPR`, js/draw/practice.js)
+**New sprites bake beside the code that draws them, not here.** The zipline pylon (js/draw/zipline.js)
+and the practice dummy (`DUMMY_SPR`, js/draw/practice.js)
 paint their char grids onto their own canvases and assign into `SPRITES`, which works because it
 is a plain object - exactly what each js/sprites/ file does for its own keys (the paragraph
 below), so a sprite that belongs to a drawer can live beside it. The detailed 32×32 ability icons (`AB32`/`AB32_PAL`,

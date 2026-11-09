@@ -3,7 +3,7 @@
 // reads), the prerendered ground canvas and its runtime repaints, the road,
 // the lakes' shores, the cast shadows (baked for the scenery, drawn per
 // frame for bodies), and the scenery bakes that ride on it (the pine's wind
-// frame, the cairn). First of the js/draw/ files: everything
+// frame, the practice dummy). First of the js/draw/ files: everything
 // after it calls hash2.
 // ------------------------------------------------------------ ground prerender
 const groundCv = document.createElement('canvas');
@@ -1062,11 +1062,9 @@ const CASTERS = {
                 const nx = Math.floor(n / (TREE_NUDGE_Y * 2 + 1)) - TREE_NUDGE_X, ny = n % (TREE_NUDGE_Y * 2 + 1) - TREE_NUDGE_Y;
                 return [A, f * A.fw, A.fw, A.fh, -5 + nx, -21 + ny];
               } },
-  deadTree: { code: (o) => 100 + o.variant, art: (c) => whole(SPRITES.deadTree[c - 100], 0, -8) },
   bush:     { code: () => 120, art: () => whole(SPRITES.bush, 0, 4) },
   stump:    { code: () => 121, art: () => whole(SPRITES.stump, 0, 4) },
   den:      { code: () => 122, art: () => whole(SPRITES.den, 0, -4) },
-  cairn:    { code: () => 124, art: () => whole(CAIRN_SPR, 1, TILE - CAIRN_SPR.height + 1) },
   hut:      { code: () => 125, art: () => { const s = SPRITES.hogHut[0]; return whole(s, TILE - (s.width >> 1), TILE - s.height); } },
   stall:    { code: () => 126, art: () => { const s = SPRITES.teamBuild[0].stall; return whole(s, 0, TILE - s.height); } }, // one silhouette for both sides
 };
@@ -1251,7 +1249,7 @@ const TREE_TONES = 3;
 function woody(tx, ty) {
   if (!inWorld(tx, ty)) return true;
   const o = objects[idx(tx, ty)];
-  return !!o && (o.type === 'tree' || o.type === 'deadTree');
+  return !!o && o.type === 'tree';
 }
 function treeTone(tx, ty) {
   for (let y = ty - 1; y <= ty + 1; y++) for (let x = tx - 1; x <= tx + 1; x++) if (!woody(x, y)) return 0;
@@ -1273,35 +1271,8 @@ const TREE_NUDGE_X = 2, TREE_NUDGE_Y = 1;
 function treeNudgeX(tx, ty) { return Math.floor(hash2(tx * 11 + 5, ty * 13 + 9) * (TREE_NUDGE_X * 2 + 1)) - TREE_NUDGE_X; }
 function treeNudgeY(tx, ty) { return Math.floor(hash2(tx * 17 + 2, ty * 19 + 4) * (TREE_NUDGE_Y * 2 + 1)) - TREE_NUDGE_Y; }
 
-// The cairn (the black bear camp's old anchor: no camp stamps one now,
-// OBJECTS.cairn in world.js), baked beside its draw: a heap of river
-// stones under snow.
-const CAIRN_SPR = (() => {
-  const pal = { o: '#2a2e3a', G: '#9aa2b2', g: '#737b8c', d: '#596072', s: '#f4f7ff', S: '#d8e4f2' };
-  const rows = [
-    '.....sssss....',
-    '....oGGGGSo...',
-    '...oGggggGdo..',
-    '...oGgggggdo..',
-    '..ossoooooosss',
-    '..oGGGGGGGGgo.',
-    '.oGggggGGgggdo',
-    '.oGgggggggggdo',
-    '.oggggGGGggddo',
-    'oooooooooooooo',
-    'oGGgggGGgggGdo',
-    '.oooooooooooo.',
-  ];
-  const c = document.createElement('canvas');
-  c.width = 14; c.height = rows.length;
-  const g = c.getContext('2d');
-  rows.forEach((r, y) => {
-    for (let x = 0; x < 14; x++) if (pal[r[x]]) { g.fillStyle = pal[r[x]]; g.fillRect(x, y, 1, 1); }
-  });
-  return c;
-})();
 // The practice dummy (the `practice arena` banner, js/sim/practice.js), baked here
-// for the same reason the cairn is. A big target you read across the arena:
+// beside its draw rather than under js/sprites/. A big target you read across the arena:
 // a burlap sack head with stitched eyes under a snow cap, arms lashed to a
 // crossbar with rope, a sack torso wearing a painted red ring, straw leaking
 // out of the cinch, and a post into crossed skids in the drift. 26x42 - a

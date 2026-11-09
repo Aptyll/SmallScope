@@ -378,9 +378,8 @@ function aiNearestWolf(p, ward) {
 function aiNearestAnimal(p) {
   let best = null, bd = AI_HUNT;
   for (const a of animals) {
-    // birds fly: no route on the ground catches a flushed flock. The two
-    // midline camps' kinds are never a hunt: a lone bot pulling one dies to it
-    if (a.dead || a.kind === 'bird' || a === p.ai.huntAvoid || a.rider || !inSight(p.team, a)) continue; // a ridden deer is its rider's; one in the fog is not there
+    // The two midline camps' kinds are never a hunt: a lone bot pulling one dies to it
+    if (a.dead || a === p.ai.huntAvoid || a.rider || !inSight(p.team, a)) continue; // a ridden deer is its rider's; one in the fog is not there
     if (MONSTER[a.kind] && MONSTER[a.kind].teamPay) continue;
     const d = Math.hypot(a.x - p.x, a.y - p.y);
     if (d < bd) { bd = d; best = a; }

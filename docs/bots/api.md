@@ -103,7 +103,7 @@ obs = {
   animals:  [{ id, kind, level, x, y, hp, maxHp }],   // near you: rabbit, deer, wolf, alpha, dire, bird
   eagles:   [{ team, x, y, state, hp, maxHp, hitT, mouth }],  // both birds, always
   structs:  [{ id, type, team, tx, ty, hp, maxHp, building }],  // buildings near you
-  nodes:    [{ kind, tx, ty }],    // tree, deadTree, ripe bush near you; nearest 64, nearest first
+  nodes:    [{ kind, tx, ty }],    // tree or ripe bush near you; nearest 64, nearest first
   shots:    [{ x, y, vx, vy, team }],  // shots in flight near you
   pings:    [{ owner, k, x, y, t }],   // your side's pings up now: k is go, attack, omw, danger or defend; t the seconds left
   merchants: [{ team, x, y, stall }],  // both merchants, always; stall: { tx, ty } | null

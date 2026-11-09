@@ -70,7 +70,7 @@ const DUMMY_SPR = (() => {
 // concentric rings want true circles, and the hand-made feel comes back in
 // through hash dithering on every band edge, a top-left light direction on
 // every band, straw ticks around the batt, four iron pins and a dusting of
-// snow on the wooden rim. Same bake-beside-the-draw rule as the cairn. One
+// snow on the wooden rim. Same bake-beside-the-draw rule as the pylon. One
 // bake, two sizes: every ring threshold scales with the face, so the small
 // face is its own crisp sprite instead of a runtime downscale of the big one.
 // bare leaves the snow off the rim (the lobby's copy, js/ui/menu.js, which

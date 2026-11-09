@@ -13,7 +13,6 @@ function clipFrame(set, a) {
 }
 
 function drawAnimal(a, ex, ey, now) {
-  if (a.kind === 'bird') { drawBird(a, ex, ey, now); return; }
   const spr = clipFrame(SPRITES[a.kind][a.dir], a);
   const px = Math.round(a.x - spr.width / 2 - ex);
   const gy = Math.round(a.y + 4 - spr.height - ey);
@@ -67,21 +66,6 @@ function drawBeastFrame(kind, cx, mid, fy, e, two, u) {
   drawLevelBadge(bx - k, fy - 9 * k, e.level, k);
   if (e.stunT > 0) drawStunStars(mid, fy - 13 * k, e, 4, undefined, k);
   else if (e.senseT > 0) drawSenseMark(mid, fy - 16 * k, e, camp ? THREAT_COL : STAM_COL, k);
-}
-
-// The only thing in the world that leaves the ground: the sprite lifts off
-// its own shadow by a.alt, which is the whole read on how high a bird is.
-// No health bar - three hp means every hit is a kill, and a bar over
-// something this small is all bar.
-function drawBird(a, ex, ey, now) {
-  const flying = a.flyT > 0;
-  const spr = clipFrame(SPRITES.bird[a.dir], a);
-  const px = Math.round(a.x - spr.width / 2 - ex);
-  const py = Math.round(a.y - a.alt - spr.height - ey);
-  ctx.fillStyle = flying ? 'rgba(110,130,170,0.22)' : 'rgba(110,130,170,0.3)';
-  ctx.fillRect(Math.round(a.x - ex) - 2, Math.round(a.y + 1 - ey), 4, 1);
-  drawSpriteFlash(spr, px, py, a.flash);
-  drawUnitStates(a, px, py, spr.width, spr.height, now); // a burning bird still reads as one
 }
 
 // A bot (a wave's soldier): one sprite, two tread frames. The whole thing

@@ -529,7 +529,7 @@ function eagleCrash(e) {
       burst(ox, oy - 6, '#88b090', 6, 50, 0.45, true);
       continue;
     }
-    if (o.type !== 'tree' && o.type !== 'deadTree') continue;
+    if (o.type !== 'tree') continue;
     setTile(idx(tx, ty), Math.hypot(dx, dy) <= BOOM_R ? null : { type: 'stump', tx, ty, flash: 0, shake: 0 });
     burst(ox, oy - 8, '#eef4fb', 8, 70, 0.6, true);
     burst(ox, oy - 8, o.type === 'tree' ? '#2f5c4b' : '#6b5a48', 5, 60, 0.55, true);
@@ -574,7 +574,7 @@ function eagleCrash(e) {
 
 // what the road's furniture and the cables may stand on in place of: a pine,
 // a snag or one of genWorld's placeholder rocks gives way (liftRocks, world.js)
-function laneFells(o) { o = structOf(o); return !!o && (o.type === 'tree' || o.type === 'deadTree' || o.type === 'rock'); }
+function laneFells(o) { o = structOf(o); return !!o && (o.type === 'tree' || o.type === 'rock'); }
 
 // the impact language, shared by the landing and the loss (k scales it up):
 // snow thrown high, the team's colours in it, feathers left hanging, and a
