@@ -162,6 +162,7 @@ const CLASS_AB = [
   LUCERNA_AB, // LUCERNA - the crook, the lantern, the shoo, the circle of light (js/sim/lucerna.js)
   HIEMS_AB, // HIEMS - the icicle, the clear ice, the cold snap, the whiteout (js/sim/hiems.js)
   RUPES_AB, // RUPES - the heave, the shed, the shoulder, the avalanche (js/sim/rupes.js)
+  VARRO_AB, // VARRO - the lunge, the howl, the snap, the pack (js/sim/varro.js)
 ];
 
 // the world the abilities put things into

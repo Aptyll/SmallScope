@@ -654,7 +654,7 @@ function unitAlive(e) {
 }
 // Whose side a unit is on. Wildlife has none (-1): neutral to everyone and
 // therefore fair game to everyone, which is exactly how the world already
-// treats a deer. For the sides that do have one this mirrors enemyOf's rule.
+// treats a deer - all but a hero's own beast (HERO_SUMMON), which wears its side. For the sides that do have one this mirrors enemyOf's rule.
 function unitTeam(e) { return e.team === undefined ? -1 : e.team; }
 // A thing left lying in the world - a trap, a net, a crater, a shot in flight -
 // carries `owner` and `team` rather than being a body itself. This is the
