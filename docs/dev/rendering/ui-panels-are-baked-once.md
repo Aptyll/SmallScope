@@ -1,7 +1,7 @@
 # UI panels are baked once
 
 `buildMapPanel()`, `buildSettingsPanel()` and `buildHelpPanel()` draw the static chrome (parchment,
-labels — the map slab's header is live, since the day changes) into offscreen canvases (the map slab is the HUD's graphite plate, `drawHudFrame`; the help slab is a frost slab, `bakeFrostSlab()`; the settings slab and the SAVES slab in its place are flat, `bakeFlatSlab()`, both js/ui/panels.js); per-frame code blits them and draws only the live parts on top.
+labels — the map slab's header is live, since the clock runs) into offscreen canvases (the map slab is the HUD's graphite plate, `drawHudFrame`; the help slab is a frost slab, `bakeFrostSlab()`; the settings slab and the SAVES slab in its place are flat, `bakeFlatSlab()`, both js/ui/panels.js); per-frame code blits them and draws only the live parts on top.
 Their layout variables (`PANEL_*`, `MAP_*`, `SET_*`, `SL_X`) are shared between the bake
 function and the per-frame code, so both sides move together — but a bake-side change only appears
 after the panel is rebuilt. They are declared in js/app/canvas.js and reassigned by `relayout()`
@@ -50,7 +50,7 @@ px a tile, so a monitor charts at 1:1) with `MAP_SIDE`/`MAP_HEAD`/`MAP_FOOT` of 
 (a window at the 240-row floor gets a 200 chart), and `mapAlloc()` (js/ui/panels.js) remakes the chart's
 buffers and re-bakes the slab whenever `MAP_W` changes. The slab is the HUD's **graphite plate**
 (`drawHudFrame`, its four corners cut), the chart in a one-pixel dark frame. In the header
-(`MAP_HEAD_Y`) is the day at 2× in pale ink, and **no close button**: M or Escape closes the chart,
+(`MAP_HEAD_Y`) is the match clock at 2× in pale ink, and **no close button**: M or Escape closes the chart,
 and so does a press anywhere off the slab (`mapCloseHit` in `pointerPress`, play and drop alike).
 There is no compass (the chart is north-up, as the world is), no key (the marks are the minimap's
 own), no clock (the rail or the disc wears it), no title, and **no camp names until asked**: each

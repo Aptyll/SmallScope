@@ -44,7 +44,7 @@ const SB_COL = [96, 128, 176, 208]; // right edges of LVL / GOLD / K/D/A / FARM,
 function scoreboardOpen() { return keyHeld('board') && state.mode !== 'title' && !window.DBG.hideUI; }
 
 // "winning" is the match's gold earned (gainGold), not the purse: gold spent
-// on a building is progress, not a step back
+// on an item is progress, not a step back
 function scoreOf(p) { return p.earned; }
 
 // players grouped by team, teams ordered by their total, players by their own
@@ -77,13 +77,13 @@ function renderScoreboard() {
   ctx.fillRect(x, y, 1, h); ctx.fillRect(x + SB_W - 1, y, 1, h);
   ctx.fillStyle = '#3d4f85'; ctx.fillRect(x + 1, y + 1, SB_W - 2, 1); // lit top edge
 
-  drawPixelTextShadow(ctx, 'SCOREBOARD', x + 6, y + 6, '#cfe0ff', shadow);
-  const day = 'DAY ' + state.day;
-  drawPixelTextShadow(ctx, day, x + SB_W - 6 - pixelTextWidth(day), y + 6, '#7a8bb8', shadow);
+  drawPixelTextShadow(ctx, tr('board.title'), x + 6, y + 6, '#cfe0ff', shadow);
+  const clock = clockTxt(state.elapsed); // the match clock, the one the top bar shows
+  drawPixelTextShadow(ctx, clock, x + SB_W - 6 - pixelTextWidth(clock), y + 6, '#7a8bb8', shadow);
   ctx.fillStyle = '#222c55'; ctx.fillRect(x + 4, y + 15, SB_W - 8, 1);
 
-  const head = ['LVL', 'GOLD', 'K/D/A', 'FARM']; // FARM: last hits on soldiers and camp monsters (js/sim/farm.js)
-  drawPixelTextShadow(ctx, 'PLAYER', x + 14, y + 19, '#7a8bb8', shadow);
+  const head = ['board.lvl', 'board.gold', 'board.kda', 'board.farm'].map((k) => tr(k)); // FARM: last hits on soldiers and camp monsters (js/sim/farm.js)
+  drawPixelTextShadow(ctx, tr('board.player'), x + 14, y + 19, '#7a8bb8', shadow);
   for (let i = 0; i < head.length; i++) {
     drawPixelTextShadow(ctx, head[i], x + SB_COL[i] - pixelTextWidth(head[i]), y + 19, '#7a8bb8', shadow);
   }
@@ -104,7 +104,7 @@ function renderScoreboard() {
       if (p.dead) {
         // eliminated reads OUT; a respawn-pending player shows the countdown
         // instead, since "OUT" on someone back in 3s is actively wrong
-        const tag = p.eliminated ? 'OUT' : Math.ceil(p.respawnT) + 's';
+        const tag = p.eliminated ? tr('board.out') : tr('board.wait', { s: Math.ceil(p.respawnT) });
         drawPixelTextShadow(ctx, tag, x + 18 + pixelTextWidth(p.name), ry + 1, '#8f9cc4', shadow);
       }
       const vals = [String(p.level), String(p.inv.gold), p.kills + '/' + p.deaths + '/' + (p.assists || 0), String(p.farm)];
@@ -161,7 +161,7 @@ function mapTileAt(sx, sy) {
   return inWorld(tx, ty) ? { tx, ty } : null;
 }
 // whether a press would close the chart: the pointer off the slab
-const MAP_HEAD_Y = 6; // the header row inside the slab: where the day sits
+const MAP_HEAD_Y = 6; // the header row inside the slab: where the match clock sits
 function mapCloseHit() {
   const mx = mouse.x, my = mouse.y;
   return mouse.inside && !(mx >= PANEL_X && mx < PANEL_X + PANEL_W && my >= PANEL_Y && my < PANEL_Y + PANEL_H);
@@ -311,9 +311,9 @@ function renderWorldMap(now) {
   ctx.fillRect(0, 0, VIEW_W, VIEW_H);
   ctx.drawImage(panelCv, PANEL_X, PANEL_Y);
 
-  // the header: the day
-  const dayT = 'DAY ' + state.day;
-  drawPixelText(ctx, dayT, PANEL_X + MAP_SIDE, PANEL_Y + MAP_HEAD_Y + 2, CHART_INK_TXT, 2);
+  // the header: the match clock, the one the top bar shows
+  const clock = clockTxt(state.elapsed);
+  drawPixelText(ctx, clock, PANEL_X + MAP_SIDE, PANEL_Y + MAP_HEAD_Y + 2, CHART_INK_TXT, 2);
 
   // terrain
   buildWorldMapImg();

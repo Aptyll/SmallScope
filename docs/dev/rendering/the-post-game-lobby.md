@@ -15,7 +15,7 @@ side is BLUE here too), then a gap and the rivals. Each column wears its player'
 and its name printed whole under the face: the columns take turns between two lines, so each name
 has two columns' width (`scoreName` cuts one only on a view narrowed below full width). Down the left are four **folding groups**,
 `SCORE_GROUPS`: COMBAT (K/D/A, level, best streak, best multi-kill, crowd control), DAMAGE DEALT (to
-players, the bird, buildings, beasts, and the total), TAKEN AND HEALED, and GOLD (earned, spent,
+heroes, the eagle, structures, beasts, and the total), TAKEN AND HEALED, and GOLD (earned, spent,
 beasts hunted). A click on a group's heading folds it, a short view scrolls the groups (the wheel
 or up/down), and a number past 99999 prints its magnitude (`scoreFmt` → `shortNum`: 154K, 1.2M).
 This is the [instrument carve-out](show-dont-label.md); everything that is not a number still reads
