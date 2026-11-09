@@ -96,8 +96,8 @@ const SKIN_TABS = [
   { id: 'fortiva', name: 'FORTIVA', slot: 'fortiva', rows: FORT_SKINS, hero: 3, glyph: ['..ww....', '.w..w...', '.w..w...', '..w.....', '.....w..', '...w..w.', '...w..w.', '....ww..'] },
   { id: 'bella', name: 'BELLA', slot: 'bella', rows: BELLA_SKINS, hero: 4, glyph: ['..www...', '.wwwwww.', '.w...w.w', '.w...w.w', '..www..w', '...w....', '.wwwww..', '.wwwww..'] },
   { id: 'ignia', name: 'IGNIA', slot: 'ignia', rows: IGNIA_SKINS, hero: 5, glyph: ['...w....', '..ww....', '..www.w.', '.wwww.w.', '.wwwwww.', 'ww..www.', 'ww..www.', '.wwwww..'] },
-  { id: 'lucerna', name: 'LUCERNA', slot: 'lucerna', rows: LUCERNA_SKINS, hero: 8, glyph: ['...ww...', '..w..w..', '.wwwwww.', '.w.ww.w.', '.wwwwww.', '.w.ww.w.', '.wwwwww.', '..wwww..'] },
   { id: 'salvia', name: 'SALVIA', slot: 'salvia', rows: SALVIA_SKINS, hero: 7, glyph: ['..www...', '.w...ww.', '.w..w..w', '.w..w.ww', '.w...ww.', '.w......', '.ww.....', '..w.....'] },
+  { id: 'lucerna', name: 'LUCERNA', slot: 'lucerna', rows: LUCERNA_SKINS, hero: 8, glyph: ['...ww...', '..w..w..', '.wwwwww.', '.w.ww.w.', '.wwwwww.', '.w.ww.w.', '.wwwwww.', '..wwww..'] },
 ];
 const SK_TAB_BIRD = 1; // SKIN_TABS' eagle and scout, the two tabs a match reads
 const SK_TAB_SCOUT = 0;
@@ -265,7 +265,7 @@ function beginSkins() {
   const tab = SKIN_TABS[m.skTab];
   m.skSel = Math.max(0, tab.rows.indexOf(skinWorn(tab)));
   m.skPick = -1;
-  m.skNav = false;
+  m.skNav = false; m.skKeyed = false;
   m.skHover = {};
   SFX.place();
   SFX.music.play('lobby');
@@ -305,9 +305,11 @@ function skinPress(i) {
   SFX.coin();
 }
 // Q/E turn the tabs; the arrows walk the grid, and up off its top row lands
-// on the navbar (skNav), where left/right turn the tabs and down goes back
+// on the navbar (skNav), where left/right turn the tabs and down goes back.
+// A key press shows the selection (skKeyed) until the next click.
 function skinsKey(k) {
   const m = state.menu;
+  m.skKeyed = true;
   const n = SKIN_TABS[m.skTab].rows.length;
   if (k === 'escape' || k === 'backspace') { if (m.skPick >= 0) { m.skPick = -1; SFX.pickup(); } else leaveSkins(); return; }
   if (k === 'q') { skinsTab(m.skTab - 1); return; }
@@ -332,6 +334,7 @@ function skinsClick() {
   if (m.skinT < 1) return;
   const h = skinsHit();
   m.skNav = false;
+  m.skKeyed = false;
   if (h && h.kind === 'tab') { skinsTab(h.i); return; }
   if (!h) { if (m.skPick >= 0) { m.skPick = -1; SFX.pickup(); } return; }
   skinPress(h.i);
@@ -339,7 +342,7 @@ function skinsClick() {
 function updateSkins(dt) {
   const m = state.menu;
   const h = m.skinT >= 1 && mouse.inside ? skinsHit() : null;
-  const want = h ? h.kind + h.i : padActive() ? (m.skNav ? 'tab' + m.skTab : 'card' + m.skSel) : '';
+  const want = h ? h.kind + h.i : m.skKeyed ? (m.skNav ? 'tab' + m.skTab : 'card' + m.skSel) : '';
   for (const k of Object.keys(m.skHover)) m.skHover[k] += ((want === k ? 1 : 0) - m.skHover[k]) * Math.min(1, dt * 14);
   if (want && m.skHover[want] === undefined) m.skHover[want] = 0;
   if (m.skDeny > 0) m.skDeny = Math.max(0, m.skDeny - dt);
@@ -420,7 +423,7 @@ function drawSkinCard(c, now, a) {
     ctx.fillRect(c.x + 1, y + 1, c.w - 2, c.h - 2);
     ctx.globalAlpha = a;
   }
-  if (padActive() && !m.skNav && m.skSel === c.i) { ctx.fillStyle = '#cfe0ff'; ctx.fillRect(c.x, y + c.h + 2, c.w, 1); }
+  if (m.skKeyed && !m.skNav && m.skSel === c.i) { ctx.fillStyle = '#cfe0ff'; ctx.fillRect(c.x, y + c.h + 2, c.w, 1); }
 }
 // a navbar tab: the glyph and the word, dim slate at rest, pale under the
 // hand, white on the open tab with a 1 px line as wide as the word under it

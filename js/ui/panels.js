@@ -543,7 +543,7 @@ const SET_TABS = [
     { id: 'music', label: 'MUSIC', kind: 'slider' },
     { id: 'sfx', label: 'SOUNDS', kind: 'slider' },
   ] },
-  { id: 'controls', label: 'CONTROLS', rows: [] }, // the listings below: the keyboard's live, the pad's baked
+  { id: 'controls', label: 'CONTROLS', rows: [] }, // the live listing below (drawKeyRows)
 ];
 // The QUALITY row is a macro over the video toggles, one click for a weak
 // machine: LOW turns the whole weather-and-light dressing off, MEDIUM keeps
@@ -571,24 +571,17 @@ const setScroll = { game: 0, video: 0, audio: 0, controls: 0 }; // px scrolled p
 const SET_TAB_Y = 24;      // navbar baseline, panel-local (the head's big title sits above)
 const SET_CONTENT_Y = 40;  // content window top
 const SET_CONTENT_B = SET_H - 24; // ... and bottom (the foot's buttons sit below)
-// The foot: a CLOSE button (the one way out that is a button - ESC and the
-// pad's B still close it), and in a match or practice LEAVE
+// The foot: a CLOSE button (the one way out that is a button - ESC still
+// closes it), and in a match or practice LEAVE
 // beside it; the title's slide-in has nothing to leave, so it hangs CLOSE alone
 const SET_FOOT_Y = SET_H - 19, SET_PLANK_W = 72, SET_PLANK_H = 13, SET_PLANK_GAP = 8;
 
-// The CONTROLS page is itself tabbed - one listing per controller, since a
-// pad puts the same verbs somewhere else, and the keyboard's
-// listing is one cell per SCHEME (WASD / CLICK / MOUSE), so picking the scheme IS
-// picking the listing: the cell in force wears the navbar's gold. Its navbar
-// sits pinned at the top of the content window and only the listing scrolls.
-// The tab opens on the controller in hand (ctrlTabNow) until a click picks one.
-const CTRL_TABS = [{ id: 'wasd', ctrl: 'keys', label: 'WASD' }, { id: 'click', ctrl: 'keys', label: 'CLICK' },
-  { id: 'mouse', ctrl: 'keys', label: 'MOUSE' }, { id: 'pad', ctrl: 'pad', label: 'GAMEPAD' }];
+// The CONTROLS page is itself tabbed, one cell per SCHEME (WASD / CLICK /
+// MOUSE), so picking the scheme IS picking the listing: the cell in force
+// wears the navbar's gold. Its navbar sits pinned at the top of the content
+// window and only the listing scrolls.
+const CTRL_TABS = [{ id: 'wasd', label: 'WASD' }, { id: 'click', label: 'CLICK' }, { id: 'mouse', label: 'MOUSE' }];
 const CTRL_TAB_H = 13; // the band the sub-navbar takes off the content window
-let ctrlTab = null;
-function ctrlTabNow() { return ctrlTab || (padActive() ? 'pad' : 'keys'); }
-// the navbar cell that is lit: the listing open, and for the keyboard the scheme in force
-function ctrlCellNow() { const c = ctrlTabNow(); return c === 'keys' ? settings.scheme : c; }
 
 // Everything positioned inside the panel comes from here: the navbar cells,
 // the open page's rows (each carrying its y in view space, pre-scroll), the
@@ -618,12 +611,12 @@ function settingsLayout() {
   }
   // the controls page: its own navbar's cells, and the open listing under them
   const cn = CTRL_TABS.length, ccw = Math.floor((SET_W - 24) / cn);
-  const ctabs = CTRL_TABS.map((t, i) => ({ id: t.id, ctrl: t.ctrl, label: t.label, x: SET_X + 12 + i * ccw, y: clipY0 + 2, w: ccw, h: 9 }));
-  const ctrl = ctrlTabNow(), cell = ctrlCellNow();
-  const contentH = setTab === 'controls' ? ctrlCvs[ctrl].height + CTRL_TAB_H : (y + 2 - clipY0);
+  const ctabs = CTRL_TABS.map((t, i) => ({ id: t.id, label: t.label, x: SET_X + 12 + i * ccw, y: clipY0 + 2, w: ccw, h: 9 }));
+  const cell = settings.scheme; // the lit cell: the scheme in force
+  const contentH = setTab === 'controls' ? KEYS_LIST_H + CTRL_TAB_H : (y + 2 - clipY0);
   const maxScroll = Math.max(0, contentH - (clipY1 - clipY0));
   setScroll[setTab] = Math.max(0, Math.min(setScroll[setTab] || 0, maxScroll));
-  return { tabs, rows, clipY0, clipY1, scroll: setScroll[setTab], maxScroll, ctabs, ctrl, cell };
+  return { tabs, rows, clipY0, clipY1, scroll: setScroll[setTab], maxScroll, ctabs, cell };
 }
 
 // the wheel over the open panel walks the open page (input.js, both the
@@ -633,7 +626,7 @@ function settingsScrollBy(d) {
   setScroll[setTab] = Math.max(0, Math.min(L.maxScroll, setScroll[setTab] + d));
 }
 // the navbar walked by key: left/right steps the page, the way a click on a
-// tab does - what a pad's bumpers and dpad reach the tabs through
+// tab does
 function settingsTabBy(d) {
   const i = SET_TABS.findIndex(t => t.id === setTab);
   setTab = SET_TABS[(i + d + SET_TABS.length) % SET_TABS.length].id;
@@ -660,20 +653,14 @@ function buildSettingsPanel() {
   // the head and the foot's buttons are drawn live (renderSettings)
 }
 
-// The CONTROLS page: three listings, one per controller, blitted into the
-// content window at the page's scroll like any other page. The pad's and
-// the touch listing bake once (neither changes); the keyboard's is LIVE
-// (drawKeyRows, below) over a blank bake that only sizes the scroll.
+// The CONTROLS page: the live scheme's listing, drawn into the content
+// window at the page's scroll like any other page (drawKeyRows, below).
 // Every listing is THREE COLUMNS at CTRL_COL_X: the verbs grouped by what they
 // are for - moving and fighting, the kit and its panels, the match's own keys -
 // so the whole listing sits in the window without a scroll
 const CTRL_COL_X = [10, 110, 210];
-const PAD_READ_Y = 104, PAD_READ_H = 44; // the pad listing's live readout: where it starts, and the band it takes (drawPadReadout)
-const ctrlCvs = { keys: document.createElement('canvas'), pad: document.createElement('canvas') };
-ctrlCvs.keys.width = SET_W; // its height is the listing's (KEYS_LIST_H); the listing itself draws live
-ctrlCvs.pad.width = SET_W; ctrlCvs.pad.height = PAD_READ_Y + PAD_READ_H;
 
-// THE KEYBOARD LISTING IS LIVE, NOT BAKED: every rebindable verb sits beside
+// THE LISTING IS LIVE: every rebindable verb sits beside
 // its key drawn as a cap - the same cap the work prompt wears in the world
 // (drawKeyCap, ui.js), so what is learned here is recognised there - and a
 // cap is a button: it lifts on hover, a click sets it LISTENING (the face
@@ -749,113 +736,6 @@ function drawKeyRows(ox, oy, hit, now) {
   for (const c of K.caps) drawKeyCap(ctx, ox + c.x, oy + c.y, c.lab, false, state.rebind === c.act ? 2 : hit === 'key:' + c.act ? 1 : 0, now);
   drawPixelText(ctx, 'RESET', ox + K.reset.x, oy + K.reset.y, bindsDefault() ? '#2c3a68' : hit === 'keyreset' ? '#cfe0ff' : '#7a8bb8');
 }
-ctrlCvs.keys.height = KEYS_LIST_H; // blank: the live listing draws over it, this only sizes the scroll
-
-// A pad button as a picture, ~9px, at x, y (its top-left): a face button is a
-// disc with its letter, a bumper a flat pill, a trigger a tall one, a stick
-// a ring with a knob, the dpad a cross with the pressed arm lit, and START /
-// BACK the two small pills. Gold, like the key names beside the keyboard list.
-function drawPadGlyph(g, x, y, kind, label) {
-  const gold = '#ffd95c', ink = '#141c3c';
-  g.fillStyle = gold;
-  if (kind === 'face') {
-    pixDisc(g, x + 4, y + 4, 4, gold);
-    drawPixelText(g, label, x + 3, y + 2, ink);
-  } else if (kind === 'bump') {
-    g.fillRect(x, y + 2, 13, 5); g.fillRect(x + 1, y + 1, 11, 7);
-    drawPixelText(g, label, x + 3, y + 2, ink);
-  } else if (kind === 'trig') {
-    g.fillRect(x + 2, y, 9, 9); g.fillRect(x + 1, y + 1, 11, 7);
-    drawPixelText(g, label, x + 3, y + 2, ink);
-  } else if (kind === 'stick') {
-    pixRing(g, x + 4, y + 4, 4, gold);
-    pixDisc(g, x + 4, y + 4, 2, gold);
-    drawPixelText(g, label, x + 11, y + 2, gold);
-  } else if (kind === 'dpad') {
-    g.fillStyle = '#7a8bb8';
-    g.fillRect(x + 3, y, 3, 9); g.fillRect(x, y + 3, 9, 3);
-    g.fillStyle = gold;
-    if (label === 'U') g.fillRect(x + 3, y, 3, 3);
-    else if (label === 'D') g.fillRect(x + 3, y + 6, 3, 3);
-    else if (label === 'L') g.fillRect(x, y + 3, 3, 3);
-    else if (label === 'R') g.fillRect(x + 6, y + 3, 3, 3);
-  } else if (kind === 'pill') {
-    g.fillRect(x + 1, y + 2, 9, 5); g.fillRect(x, y + 3, 11, 3);
-    g.fillStyle = ink;
-    if (label === 'START') { g.fillRect(x + 3, y + 3, 5, 1); g.fillRect(x + 3, y + 5, 5, 1); }
-    else { g.fillRect(x + 3, y + 3, 2, 3); g.fillRect(x + 6, y + 3, 2, 3); }
-  }
-}
-// The pad READOUT under the GAMEPAD listing: the name the browser gives the
-// pad in hand (none: the row stays dim - the browser sees no pad, whatever is
-// plugged in), then the two sticks as rings with a knob riding the live tilt,
-// the triggers as bars, and the sixteen buttons as pips that light while
-// held. An instrument, drawn live over the baked listing (renderSettings):
-// what it moves is what the game reads, so a stick that walks the knob but
-// not the player, or a pad that moves the mouse but not the knob, says where
-// the fault is without a word. A pad the browser could not lay out wears an
-// UNMAPPED tag (padCalibrate, gamepad.js, is reading it by its rest values).
-function drawPadReadout(x0, y0) {
-  const gold = '#ffd95c', dim = '#4a5480', ink = '#7a8bb8';
-  ctx.fillStyle = '#2c3a68'; ctx.fillRect(x0 + 14, y0, SET_W - 28, 1);
-  const y = y0 + 6;
-  drawPixelText(ctx, 'GAMEPAD', x0 + 14, y, '#cfe0ff');
-  let name = pad.id ? pad.id.replace(/\s*\(.*$/, '').toUpperCase() : '-';
-  const maxW = SET_W - 14 - 60 - 8 - (pad.std ? 0 : pixelTextWidth('UNMAPPED') + 6);
-  while (name.length > 1 && pixelTextWidth(name) > maxW) name = name.slice(0, -1);
-  drawPixelText(ctx, name, x0 + 60, y, pad.id ? gold : dim);
-  if (!pad.std && pad.id) drawPixelText(ctx, 'UNMAPPED', x0 + SET_W - 14 - pixelTextWidth('UNMAPPED'), y, '#ff9a8a');
-  // the sticks: a ring each, the knob at the live tilt
-  const sy = y + 20, live = !!pad.id;
-  const stick = (cx, tx, ty, lbl) => {
-    pixRing(ctx, cx, sy, 8, live ? ink : dim);
-    pixDisc(ctx, cx + Math.round(tx * 5), sy + Math.round(ty * 5), 2, live ? gold : dim);
-    drawPixelText(ctx, lbl, cx - 2, sy + 11, ink);
-  };
-  stick(x0 + 30, pad.raw.lx, pad.raw.ly, 'L');
-  stick(x0 + 58, pad.raw.rx, pad.raw.ry, 'R');
-  // the triggers: two bars filling with the squeeze
-  const bar = (bx, v, lbl) => {
-    ctx.fillStyle = '#0a0e23'; ctx.fillRect(bx, sy - 8, 6, 16);
-    ctx.fillStyle = live ? gold : dim; const h = Math.round(v * 14); ctx.fillRect(bx + 1, sy + 7 - h, 4, h);
-    drawPixelText(ctx, lbl, bx - 2, sy + 11, ink);
-  };
-  bar(x0 + 80, pad.raw.lt, 'LT'); bar(x0 + 96, pad.raw.rt, 'RT');
-  // the sixteen buttons, in the standard order, lit while held
-  for (let i = 0; i < 16; i++) {
-    const bx = x0 + 118 + (i % 8) * 8, by = sy - 6 + Math.floor(i / 8) * 8;
-    ctx.fillStyle = pad.down[i] || (i === 6 && pad.lt) || (i === 7 && pad.rt) ? gold : live ? '#2c3a68' : '#1a2245';
-    ctx.fillRect(bx, by, 5, 5);
-  }
-}
-(function bakeCtrlPad() {
-  const g = ctrlCvs.pad.getContext('2d');
-  // moving and fighting on the left, the abilities and the kit in the middle,
-  // the match's own buttons and the menu set (under a rule) on the right;
-  // every row is [glyph kind, its label, the verb]
-  const cols = [
-    [['stick', 'L', 'MOVE'], ['stick', 'R', 'AIM'], ['trig', 'RT', 'FIRE'], ['trig', 'LT', 'SLIDE'], ['face', 'A', 'DODGE - HOP OFF'], ['face', 'X', 'HARVEST'],
-      ['stick', 'R3', 'PING']],
-    [['face', 'Y', 'ABILITY 1'], ['face', 'B', 'ABILITY 2'], ['bump', 'LB', 'ABILITY 3'], ['bump', 'RB', 'ABILITY 4'], ['dpad', 'L', 'POTION'],
-      ['dpad', 'U', 'CHARACTER']],
-    [['pill', 'BACK', 'WORLD MAP'], ['pill', 'BACK', 'HOLD: STANDINGS'], ['pill', 'START', 'SETTINGS'], null,
-      ['face', 'A', 'TAKE'], ['face', 'B', 'BACK'], ['bump', 'LB', 'PAGE TABS'], ['dpad', 'L', 'SELECT'], ['stick', 'L', 'POINTER'], ['stick', 'R', 'SCROLL']],
-  ];
-  for (let c = 0; c < cols.length; c++) {
-    let y = 4;
-    const x0 = CTRL_COL_X[c];
-    for (const row of cols[c]) {
-      if (row) {
-        drawPadGlyph(g, x0, y, row[0], row[1]);
-        drawPixelText(g, row[2], x0 + (row[0] === 'stick' ? 22 : 16), y + 2, '#7a8bb8');
-      } else { // the rule between the match's buttons and the menu set
-        g.fillStyle = '#2c3a68'; g.fillRect(x0, y + 4, 90, 1);
-      }
-      y += 10;
-    }
-  }
-})();
-
 function applySliderDrag() {
   const t = Math.max(0, Math.min(1, (mouse.x - SL_X) / SL_W));
   if (dragSlider === 'vol') {
@@ -948,10 +828,9 @@ function settingsHit() {
   for (const l of footPlanks())
     if (mx >= l.x - 2 && mx < l.x + l.w + 2 && my >= l.y - 3 && my < l.y + l.h + 3) return l.id;
   if (my < L.clipY0 || my >= L.clipY1) return null; // the content window scrolls; nothing outside it is live
-  // the CONTROLS page: the keyboard listing's caps and its RESET are live,
-  // the other two listings are pictures
+  // the CONTROLS page: the listing's caps and its RESET are live
   if (setTab === 'controls') {
-    if (L.ctrl !== 'keys' || my < L.clipY0 + CTRL_TAB_H) return null;
+    if (my < L.clipY0 + CTRL_TAB_H) return null;
     const K = keyRowsLayout(), ox = SET_X, oy = L.clipY0 + CTRL_TAB_H - L.scroll;
     for (const c of K.caps) if (mx >= ox + c.x - 1 && mx < ox + c.x + c.w + 1 && my >= oy + c.y - 1 && my < oy + c.y + c.h + 1) return 'key:' + c.act;
     const r = K.reset;
@@ -994,13 +873,12 @@ function settingsMouseDown() {
   if (hit === 'keyreset') { resetBinds(); SFX.place(); return; }
   if (hit.startsWith('tab:')) { setTab = hit.slice(4); SFX.pickup(); return; }
   if (hit.startsWith('drop:')) { setDrop = hit.slice(5); SFX.pickup(); return; }
-  // a controls cell opens its listing; a scheme cell (WASD / CLICK) also
-  // makes that scheme the one in force, and every order the click scheme
-  // held is dropped with it (its binds are its own and stay)
+  // a scheme cell makes that scheme the one in force (and its listing the
+  // one shown), and every order the click scheme held is dropped with it
+  // (its binds are its own and stay)
   if (hit.startsWith('ctab:')) {
-    const t = CTRL_TABS.find((c) => c.id === hit.slice(5));
-    ctrlTab = t.ctrl;
-    if (t.ctrl === 'keys' && settings.scheme !== t.id) { settings.scheme = t.id; ckClear(); for (const n in keys) keys[n] = false; SFX.place(); saveSettings(); }
+    const id = hit.slice(5);
+    if (settings.scheme !== id) { settings.scheme = id; ckClear(); for (const n in keys) keys[n] = false; SFX.place(); saveSettings(); }
     else SFX.pickup();
     return;
   }
@@ -1156,17 +1034,11 @@ function renderSettings(now, opts) {
     // the listing, under a second clip so it scrolls beneath the pinned navbar
     ctx.save();
     ctx.beginPath(); ctx.rect(SET_X + 2, L.clipY0 + CTRL_TAB_H, SET_W - 4, L.clipY1 - L.clipY0 - CTRL_TAB_H); ctx.clip();
-    ctx.drawImage(ctrlCvs[L.ctrl], SET_X, L.clipY0 + CTRL_TAB_H - L.scroll);
-    if (L.ctrl === 'keys') drawKeyRows(SET_X, L.clipY0 + CTRL_TAB_H - L.scroll, hit, now);
-    if (L.ctrl === 'pad') drawPadReadout(SET_X, L.clipY0 + CTRL_TAB_H - L.scroll + PAD_READ_Y);
+    drawKeyRows(SET_X, L.clipY0 + CTRL_TAB_H - L.scroll, hit, now);
     ctx.restore();
-    // the navbar: the open listing's name in gold over a gold underline (for
-    // the keyboard, the scheme in force), the rest dim until hovered; a green
-    // pip on GAMEPAD while one is in hand
-    for (const t of L.ctabs) {
-      const end = drawNavCell(t, t.id === L.cell, hit === 'ctab:' + t.id);
-      if (t.id === 'pad' && padActive()) { ctx.fillStyle = '#8fe08a'; ctx.fillRect(end + 3, t.y + 1, 2, 2); }
-    }
+    // the navbar: the scheme in force in gold over a gold underline, the
+    // rest dim until hovered
+    for (const t of L.ctabs) drawNavCell(t, t.id === L.cell, hit === 'ctab:' + t.id);
   } else {
     for (const r of L.rows) {
       const y = r.y - L.scroll;

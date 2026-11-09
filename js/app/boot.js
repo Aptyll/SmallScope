@@ -141,8 +141,6 @@ window.DBG = {
   // drop a player (default the local one) on a tile - how to stage a camp
   warp: (tx, ty, p) => { const q = p || player; q.x = (tx + 0.5) * TILE; q.y = (ty + 0.5) * TILE; q.vx = q.vy = 0; return q; },
   settings, perf, treeRare, cursorInfo,
-  // the other controller (js/app/gamepad.js): its live state
-  pad, padActive,
   // the local profile: the store itself, the profile card (js/ui/profile-card.js)
   // and the hero row (js/ui/heroes.js), so a driver can rename, pick and read back
   PROFILE, beginProfile, leaveProfile, profileCommit, profileKey, profileHit, profileLayout, profileTagRect, overProfileTag,
@@ -366,14 +364,10 @@ window.DBG = {
   // the ESC panel: what the pointer is over, the speaker's plate, the open
   // page's row anchors (already scrolled - a row's y is where it is on
   // screen) and the navbar cells - so a driver can click a dial without
-  // guessing at the pitch. setSettingsTab flips the page directly, and
-  // ctrlCvs holds the CONTROLS page's three bakes (keys / pad / touch) -
-  // blit one scaled to read its pixels without squinting at a 240px page;
-  // setCtrlTab picks which listing the page shows.
-  settingsHit, muteBtnRect, settingsScrollBy, ctrlCvs,
+  // guessing at the pitch. setSettingsTab flips the page directly.
+  settingsHit, muteBtnRect, settingsScrollBy,
   setSettingsTab: (id) => { setTab = id; },
   get settingsTab() { return setTab; }, // the open page (a let, so a getter)
-  setCtrlTab: (id) => { ctrlTab = id; },
   // the key binds: the action table, the live map, the rebind by hand
   // (setBind swaps exactly as a listening cap would), and keyName - which
   // reads a KeyboardEvent, or a bare {code, key}, the way the listener does,
@@ -386,8 +380,8 @@ window.DBG = {
   // the MOUSE scheme (input.js, the `mouse only` banner): its state and presses
   ms, msOn, msWell, msWheelPress, msWheelRelease, pointerPress, pointerRelease,
   ckAcquire: (p) => ckAcquire(p || player), ckSees: (t, p) => ckSees(p || player, t), unitUnder, mmWorldAt,
-  // the entry points a pad presses through, and their held state
-  keyPress, keyRelease, actHeld, settingsLayout,
+  // the key entry points a driver presses through
+  keyPress, keyRelease, settingsLayout,
   keyRows: () => keyRowsLayout(),
   get settingsRows() {
     const L = settingsLayout();
@@ -561,7 +555,6 @@ function loop1(nowMs) {
   last = nowMs;
   perfFrame(rawDt);
   if (!window.DBG.freeze) {
-    padPoll(dt);   // the sticks have no events: read them once a frame, before the steps
     tickAcc += dt;
     let n = 0;
     const t0 = performance.now();

@@ -16,7 +16,7 @@ The folders under js/ sort the files by job; a folder is only a place, never a s
 order, so the script tags still interleave them:
 
 - **js/app/** the machine around the match: the profile, the font, the sound, the canvas, the
-  keyboard, mouse and pad, director mode, and boot
+  keyboard and mouse, director mode, and boot
 - **js/sim/** the match itself: the world, every body in it and the rules they live by
 - **js/ai/** the bots: their brain, skill, team mind and callouts, and the API bot files run on
 - **js/net/** what a match shares between screens
@@ -69,8 +69,7 @@ order, so the script tags still interleave them:
 | [js/sim/player.js](../../js/sim/player.js) | ~1010 | shared scope, no `window.*` export | the `Player` class and the ten of them, classes/kits, the wallet, the entity arrays, damage & death |
 | [js/sim/stats.js](../../js/sim/stats.js) | ~95 | shared scope, no `window.*` export | the seven hero stats: what each is, `statOf` (the one reader), armor and cooldown speed at their sites, the ledgers' rows |
 | [js/sim/items.js](../../js/sim/items.js) | ~460 | shared scope, no `window.*` export | the items the counter sells: `BUILD_ITEMS` (League's four tiers: basic, epic, boots, legendary, built out of each other), their stats and passives, the six slots, what an item costs you (recursive), one pair of boots, folding them into the kit (`itemMods`, from `refreshKit`), the passives' hooks on a blow dealt and taken, on a key, on the clock and on the stat sheet, and each class's bot build and the stray parts it sells |
-| [js/app/input.js](../../js/app/input.js) | ~1000 | shared scope, no `window.*` export | the physical-key translation and the binds (`keyName`, `KEY_ACTIONS`, `binds()` over the two schemes' maps, `keyIs`/`keyHeld`/`keyCap`, the rebind), `keys`/`mouse`, the listeners, and the four entry points every controller shares (`keyPress`/`keyRelease`, `pointerPress`/`pointerRelease`) plus the bare gestures (`fireDown`/`fireUp`, `openPingWheel`, `panelScrollBy`); `sampleHumanInput` folds keys, mouse and both sticks into the input struct |
-| [js/app/gamepad.js](../../js/app/gamepad.js) | ~320 | shared scope, no `window.*` export | a pad as the keyboard and mouse it stands in for: the standard-mapping tables, `padPoll` (once per frame from `loop()`), the play set and the menu set |
+| [js/app/input.js](../../js/app/input.js) | ~1000 | shared scope, no `window.*` export | the physical-key translation and the binds (`keyName`, `KEY_ACTIONS`, `binds()` over the two schemes' maps, `keyIs`/`keyHeld`/`keyCap`, the rebind), `keys`/`mouse`, the listeners, and the entry points every press goes through (`keyPress`/`keyRelease`, `pointerPress`/`pointerRelease`) plus the shared ping wheel (`openPingWheel`); `sampleHumanInput` folds keys and mouse into the input struct |
 | [js/sim/cistern.js](../../js/sim/cistern.js) | ~200 | shared scope, no `window.*` export | the cistern at the middle: its measures off the bake, the footprint's distance field and the swept step that holds every body to it, the tile flags and cuts routes and placements read, laying its ground and the fords outside its culverts, and the waves' way round by one |
 | [js/sim/world.js](../../js/sim/world.js) | ~1570 | shared scope, no `window.*` export | the tile grid, the `OBJECTS` table every kind of scenery is an entry in, worldgen, the road down the diagonal, the paths and the creek |
 | [js/sim/zipline.js](../../js/sim/zipline.js) | ~320 | shared scope, no `window.*` export | each side's zipline: laying the cable at boot and the ride every body takes on it |
@@ -146,7 +145,7 @@ order, so the script tags still interleave them:
 | [js/draw/light.js](../../js/draw/light.js) | ~680 | shared scope, no `window.*` export | light and weather over the finished frame: specks, cloud shadows, god rays, the reflected sky, and the pass that grades day into night |
 | [js/draw/passes.js](../../js/draw/passes.js) | ~600 | shared scope, no `window.*` export | the named steps `render()` runs in order: the ground, the flat pass, the y-sorted pass and each scenery object, shots, the air layer, the blit and the screen |
 | [js/draw/render.js](../../js/draw/render.js) | ~730 | shared scope, no `window.*` export | `render()` runs the frame's steps in order; the `.` debug overlays; cursor, reticle and aim line |
-| [js/ui/wheel.js](../../js/ui/wheel.js) | ~600 | shared scope, no `window.*` export | the HUD in world space: the radial wheel and `runCmd`, the selection brackets, key and pad prompts, the work/die/bell/shop hints |
+| [js/ui/wheel.js](../../js/ui/wheel.js) | ~600 | shared scope, no `window.*` export | the HUD in world space: the radial wheel and `runCmd`, the selection brackets, key prompts, the work/die/bell/shop hints |
 | [js/ui/minimap.js](../../js/ui/minimap.js) | ~230 | shared scope, no `window.*` export | the minimap: its rebuilt disc, masks, chrome and view arc, `renderMinimap` |
 | [js/ui/character.js](../../js/ui/character.js) | ~150 | shared scope, no `window.*` export | the HUD's shared well tones, `overHud` and the character panel (G) |
 | [js/ui/strip.js](../../js/ui/strip.js) | ~310 | shared scope, no `window.*` export | the hud strip's bones: its constants, the hud frame, the HUD size dials, every cell rect (the six item slots among them) and refusal flash, and a press on the HUD |
@@ -353,10 +352,9 @@ organized only by `// ------ name` banners; find any function by its banner in
 [code-map.md](code-map.md).
 
 **A file that decides things does not also draw them.** Every one of the sim files - core,
-player, input, gamepad, world, zipline, towers, camps, practice, nav, wildlife, structures, robots, actions, ai, sim, weather -
+player, input, world, zipline, towers, camps, practice, nav, wildlife, structures, robots, actions, ai, sim, weather -
 contains zero canvas calls; the pixels for what they own live under **js/draw/** (the world) and
-**js/ui/** (the HUD and the screens; the pad
-glyphs: `drawPadGlyph`, js/ui/panels.js), so the folder is the boundary. canvas.js is the
+**js/ui/** (the HUD and the screens), so the folder is the boundary. canvas.js is the
 exception that proves it: it owns the buffers themselves.
 
 **A feature's tuning constants live in the file that owns the feature** (the CLAUDE.md rule) —

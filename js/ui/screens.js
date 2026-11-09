@@ -6,8 +6,8 @@
 // A rolling four seconds of the world, kept as pixels rather than as state,
 // played back while you are dead or paused. A DEATH gets the RECAP:
 // the whole frame, the way a goal replays - the ally view (a respawn wait)
-// or the elimination's planks wait underneath until its close box, ESC or a
-// pad's B puts it away, and the RESPAWNING IN Ns
+// or the elimination's planks wait underneath until its close box or ESC
+// puts it away, and the RESPAWNING IN Ns
 // line and the ESC BACK prompt draw over it. PAUSE gets the WINDOW: the
 // bottom-left corner at RP_W x RP_H, under the pause planks.
 //
@@ -241,8 +241,7 @@ function renderReplay() {
     ctx.fillStyle = hot ? '#ffd95c' : '#cfe0ff';
     for (let k = 0; k < 6; k++) { ctx.fillRect(c.x + 3 + k, c.y + 3 + k, 1, 1); ctx.fillRect(c.x + 8 - k, c.y + 3 + k, 1, 1); }
     drawRecap(); // why: who hit you, with what, how much (js/ui/recap.js)
-    // the way back to the allies: the key cap (or the pad's button) with its
-    // verb, over the world, so it wears the outline the world demands
+    // the way back to the allies: the key cap with its verb, over the world, so it wears the outline the world demands
     const verb = 'BACK';
     drawKeyPrompt(Math.round((w - promptW(verb, 'esc')) / 2), h - 18, verb, false, 'esc');
     return;
@@ -441,8 +440,7 @@ function toLobby() {
 function deadKey(k) {
   if (state.fade) return;
   if (state.deadView === 'scores') { scoresKey(k); return; } // the post-game record owns its own controls
-  // the recap takes every back key (a pad's B arrives
-  // as escape) and puts itself away: the allies are underneath
+  // the recap takes every back key and puts itself away: the allies are underneath
   if (replayFull()) {
     if (k === 'escape' || k === 'backspace' || k === 'enter' || k === ' ') replayClose();
     return;
@@ -573,9 +571,8 @@ function drawEndPlanks(now, dy) {
 // The ceremony ends and the side is just standing there - the moment a
 // scored goal hands back to the players, with nothing left to win and
 // everything left to mess about with. Four of them, on a bar of four picture
-// plates under the planks: a digit plays one, and so does the pad's dpad,
-// read clockwise from up, which is why a plate wears the direction in its
-// corner the way a slot wears its number rather than a word of hint.
+// plates under the planks: a digit plays one, which is why a plate wears its
+// digit in its corner the way a slot wears its number rather than a word of hint.
 //
 // An emote is a POSE PICKER over the set every body on the stage is already
 // drawn from (champLook, js/sprites/characters.js): it hands back a frame,
@@ -592,8 +589,6 @@ function drawEndPlanks(now, dy) {
 // all: that side is down.
 const EM_T = 1.5;                        // one performance, whichever it is
 const EM_KEYS = ['1', '2', '3', '4'];
-const EM_PAD = { 12: '1', 15: '2', 13: '3', 14: '4' }; // the dpad, clockwise from up
-const EM_PAD_CAP = ['U', 'R', 'D', 'L'];
 const EM_TURN = ['down', 'left', 'up', 'right']; // a turn on the spot, one facing a beat
 
 // the local player's: which plate, and the FRAME clock it started on - not
@@ -722,9 +717,6 @@ function emoteHit() {
 function emotePlay(i) { emo.i = i; emo.t0 = performance.now() / 1000; SFX.place(); }
 function emoteKey(k) { const i = EM_KEYS.indexOf(k); if (i < 0 || !emoteLive()) return false; emotePlay(i); return true; }
 function emoteClick() { const h = emoteHit(); if (h < 0) return false; emotePlay(h); return true; }
-// the pad's dpad IS the bar over an end screen (padPress/padRelease,
-// js/app/gamepad.js); its planks keep the stick and the bumpers
-function emotePad(i) { return emoteScreen() ? EM_PAD[i] || null : null; }
 
 // what the local player's body is doing this frame, or null for standing there
 function emoteNow(now) {
@@ -769,14 +761,13 @@ function drawSnowPuff(cx, y, f, a) {
 
 // the bar itself: the glyph is the whole explanation, the plate lifts under
 // the pointer and stays lit while its emote runs, and the corner carries
-// whatever plays it - the digit, or the pad's direction with one in hand. dy
+// the digit that plays it. dy
 // slides it on with the planks without moving the rects emoteHit() tests.
 function drawEmoteBar(now, ac, dy) {
   const rs = emoteLayout();
   const hot = emoteHit();
   const live = emoteNow(now);
   const dt = Math.min(0.05, now - (drawEmoteBar.last || now)); drawEmoteBar.last = now;
-  const padOn = padActive();
   for (let i = 0; i < rs.length; i++) {
     const r = rs[i];
     const want = hot === i || (live && emo.i === i) ? 1 : 0;
@@ -789,7 +780,6 @@ function drawEmoteBar(now, ac, dy) {
     ctx.fillStyle = lit ? ac.rule : '#35426e';
     ctx.fillRect(r.x + 2, y + 1, r.w - 4, 1); ctx.fillRect(r.x + 2, y + r.h - 2, r.w - 4, 1);
     stampGrid(EM_GLYPHS[EMOTES[i].glyph], lit ? EM_GLYPH_HOT : ac.icon, r.x + 3, y + 2, 2);
-    if (padOn) drawPadGlyph(ctx, r.x + r.w - 11, y + r.h - 11, 'dpad', EM_PAD_CAP[i]);
-    else drawPixelTextShadow(ctx, EMOTES[i].cap, r.x + r.w - 6, y + r.h - 7, lit ? ac.txt : '#8f9cc4', '#0a0e23');
+    drawPixelTextShadow(ctx, EMOTES[i].cap, r.x + r.w - 6, y + r.h - 7, lit ? ac.txt : '#8f9cc4', '#0a0e23');
   }
 }

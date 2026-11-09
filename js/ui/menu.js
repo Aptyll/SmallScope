@@ -30,7 +30,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.585';
+const PATCH_TXT = 'PATCH 0.586';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -46,7 +46,8 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
-  ['0.585', 'A NEW HERO, LUCERNA THE LANTERN: HER CROOK PULLS A RIVAL IN, HER THROWN LANTERN BRINGS AN ALLY HOME, AND HER LIGHT SHOWS WHO HIDES NEAR HER.'],
+  ['0.586', 'A NEW HERO, LUCERNA THE LANTERN: HER CROOK PULLS A RIVAL IN, HER THROWN LANTERN BRINGS AN ALLY HOME, AND HER LIGHT SHOWS WHO HIDES NEAR HER.'],
+  ['0.585', 'SOFTFALL IS PLAYED ON KEYBOARD AND MOUSE ONLY: GAMEPAD SUPPORT AND ITS SETTINGS PAGE ARE GONE, AND THE ARROW KEYS NOW SHOW WHICH CARD THEY PICK ON THE SKINS SCREEN.'],
   ['0.584', 'WHEN THE HOST LEAVES AN ONLINE MATCH, YOU SEE THE HOST LEFT AND THE LOBBY BUTTON AT ONCE, NOT A REPLAY OF YOUR LAST FOUR SECONDS.'],
   ['0.583', 'UNDER THE HOOD: THE EAGLE\'S LANDING REPAINTS THE GROUND THROUGH THE SAME SHARED STEP AS EVERY OTHER GROUND CHANGE.'],
   ['0.582', 'A SURRENDER VOTE NOW WAITS FOR EVERY PERSON ON YOUR SIDE: THE BOTS ONLY JOIN THE YES ONCE ALL OF YOU HAVE VOTED OR THE CLOCK RUNS OUT, SO ONE FRIEND CAN NO LONGER END THE MATCH ALONE.'],
@@ -650,7 +651,7 @@ function menuHit() {
   return -1;
 }
 
-// the keys' (or the pad's) pick: it lights the word, and stays lit until the
+// the keys' pick: it lights the word, and stays lit until the
 // pointer moves again (keyNav) - at rest, and under a pointer that is off
 // every word, nothing is lit
 function menuSelect(i) {
@@ -1443,8 +1444,7 @@ function setAiLevel(k) {
 }
 
 // the keys: a chat line or the search field being typed takes every key;
-// otherwise Enter starts a chat line (League's), Space - and a pad's A -
-// confirms (BAN / LOCK IN), the arrows walk the heroes, ESC leaves (never
+// otherwise Enter starts a chat line (League's), Space confirms (BAN / LOCK IN), the arrows walk the heroes, ESC leaves (never
 // Backspace: a slip off the search field or the chat would walk out)
 function lobbyKey(k, e) {
   const m = state.menu;
@@ -1454,8 +1454,8 @@ function lobbyKey(k, e) {
   if (k === 'escape') { if (m.countT > 0) return; if (NET.role === 'host') { draftStop(); netPhase('room'); beginRoom(); } else leaveLobby(); } // a host's ESC takes the room back to its seats; the count runs out
   else if (moveDir(k) === 'left' || moveDir(k) === 'up') lobbyStep(-1);   // the hero grid (js/ui/heroes.js)
   else if (moveDir(k) === 'right' || moveDir(k) === 'down') lobbyStep(1);
-  else if (k === 'enter' && !(e && e.pad)) talkOpen();
-  else if (k === 'enter' || k === ' ') pressPlay();
+  else if (k === 'enter') talkOpen();
+  else if (k === ' ') pressPlay();
 }
 
 function lobbyClick() {
