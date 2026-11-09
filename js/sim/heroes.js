@@ -44,7 +44,9 @@
 //   FABER's, and FALCO's hawk out. It is a body in `robots` like a soldier (hit, drawn,
 //   pushed apart, shot at by towers and soldiers); `pay` is a rival's for breaking it.
 //   Optional: `fly` (nothing pushes it apart, separateUnits), `puff` [two colours] its
-//   hit puff (hurtRobot), `fall(b, src)` its own end in place of a wreck (robotDies).
+//   hit puff (hurtRobot), `fall(b, src)` its own end in place of a wreck (robotDies),
+//   `passes(b, nx, ny)` -> true for a shot flying along (nx, ny) that goes by it untouched
+//   (shotContacts, js/sim/sim.js): SAGITTA's pavise stops shots only from its front.
 // - HERO_WRECK: fn(b, src) when a body in `robots` is broken (robotDies): FABER's spare parts.
 // - HERO_SWIM: fn(p) -> true for a hero open water never takes (playerPlunge,
 //   js/sim/sim.js): MARIS swims the creek and a broken hole.
