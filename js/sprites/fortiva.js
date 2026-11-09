@@ -2,7 +2,7 @@
 // ------------------------------------------------------------ fortiva icons
 // FORTIVA's five 32x32 icons (js/sim/fortiva.js): her four keys' wells on the
 // strip and the tooltip, and the passive's, in the ability icons' own letters
-// (AB32_PAL, js/sim/abilities.js; baked by classAbIcon from each row's `icon`).
+// (AB32_PAL, js/draw/abilities.js; baked by classAbIcon from each row's `icon`).
 // Laid out by a script (arcs, rings, lines, then an outline) and edited by
 // hand from here.
 const FORT_ICON32 = {

@@ -2,7 +2,7 @@
 // ------------------------------------------------------------ bella icons
 // BELLA's five 32x32 icons (js/sim/bella.js): her four keys' wells on the strip
 // and the tooltip, and the passive's, in the ability icons' own letters
-// (AB32_PAL, js/sim/abilities.js; baked by classAbIcon from each row's `icon`).
+// (AB32_PAL, js/draw/abilities.js; baked by classAbIcon from each row's `icon`).
 // Laid by a script (blades, marks, arcs, then the outline); the grids are the source now.
 const BELLA_ICON32 = {
   firstcut: [ // FIRST CUT: the lunge, the speed behind it and the white cut ahead

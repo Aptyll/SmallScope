@@ -2,7 +2,7 @@
 // ------------------------------------------------------------ salvia icons
 // SALVIA's five 32x32 icons (js/sim/salvia.js): her four keys' wells on the strip
 // and the tooltip, and the passive's, in the ability icons' own letters
-// (AB32_PAL, js/sim/abilities.js, her greens v/V among them; baked by classAbIcon from each row's `icon`).
+// (AB32_PAL, js/draw/abilities.js, her greens v/V among them; baked by classAbIcon from each row's `icon`).
 // Laid by a script (/mnt/project-files/salvia/icons/icons.py); the grids are the source now.
 const SALVIA_ICON32 = {
   poultice: [

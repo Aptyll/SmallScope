@@ -47,7 +47,7 @@ because this one bar is always yours and the overhead bars keep the sides. The *
 draining as `STAM_GHOST`), notched between charges: the seat a mana bar takes when heroes come.
 
 An **ability well** (`drawClassAbCell`) is the same grammar pointed at `CLASS_AB[p.cls][i]`: its
-detailed 32px icon (`classAbIcon`, baked from `AB32` in js/sim/abilities.js) is the ability, a
+detailed 32px icon (`classAbIcon`, baked from `AB32` in js/draw/abilities.js) is the ability, a
 **sweep** round the well is its cooldown (against the level-cut `abCdOf`, not the table base —
 see below), and the key
 digit sits big at 2× in the bottom-left corner (the keybind-indicator carve-out). Along the top

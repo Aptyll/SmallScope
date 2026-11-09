@@ -2,7 +2,7 @@
 // ------------------------------------------------------------ armatos icons
 // ARMATOS's five 32x32 icons (js/sim/armatos.js): his four keys' wells on the
 // strip and the tooltip, and the passive's, in the ability icons' own letters
-// (AB32_PAL, js/sim/abilities.js; baked by classAbIcon from each row's `icon`).
+// (AB32_PAL, js/draw/abilities.js; baked by classAbIcon from each row's `icon`).
 // Made by a script that lays shapes on the 32 grid (pole, cloth, blade, rim)
 // and outlines them; the grids are the source now, edited by hand.
 const ARM_ICON32 = {

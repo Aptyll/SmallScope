@@ -21,7 +21,7 @@ function drawAnimal(a, ex, ey, now) {
   const py = gy - rideLift(a); // a ridden deer's leap lifts it off its shade (js/sim/wildlife.js)
   drawSpriteFlash(spr, px, py, a.flash);
   // netted, snared, alight, marked: the same four tells a player wears, at
-  // this body's size (drawUnitStates, js/sim/abilities.js). `top` (a bear's
+  // this body's size (drawUnitStates, js/draw/abilities.js). `top` (a bear's
   // frames) is the headroom its rear-up needs over the standing head: the
   // tells sit on the standing body, not on the box
   const ty = py + (spr.top || 0);

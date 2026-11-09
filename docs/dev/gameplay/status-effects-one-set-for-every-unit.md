@@ -60,7 +60,7 @@ The six states, and what each does to a body:
 | **fire** | `burnT`/`burnDps`/`burnBy` | see below | flame tongues off the crown, and lit snow under the feet |
 
 Every one of them is **drawn on the body, for both sides**, at whatever size that body is —
-`drawUnitStates(e, px, py, w, h, now)` (js/sim/abilities.js) takes the sprite's own box and is called by
+`drawUnitStates(e, px, py, w, h, now)` (js/draw/abilities.js) takes the sprite's own box and is called by
 `drawAbilityOnPlayer`, `drawAnimal`, `drawBird` and `drawRobot` alike. A state you cannot see is a
 rule you cannot play around, and that is as true of a deer as of a rival. The player keeps one tell
 of its own on top (a raised shield, `drawAbilityOnPlayer`), and the stun badge is the one visual that

@@ -112,7 +112,7 @@ function updateRobot(b, dt) {
 
 // ------------------------------------------------------------ merchant
 // Each eagle is DRIVEN by its team's merchant - the figure on the bird's neck
-// in flight (drawEagle, js/sim/eagle.js) - who climbs down the moment it roosts
+// in flight (drawEagle, js/draw/eagle.js) - who climbs down the moment it roosts
 // and works HOME for its side, never toward the fight: it pitches its
 // market STALL beside the road's head (the shop players walk to), then fells the back
 // woods (the half of the roost facing away from the road) from
