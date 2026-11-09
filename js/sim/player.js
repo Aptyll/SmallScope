@@ -976,13 +976,15 @@ function updateRespawns(dt) {
 // else walked out on.
 const RESPAWN_OUT = 40;
 // the tile a body is set down on at its own roost: RESPAWN_OUT up the road
-// from the bird, the nearest dry one - null while the bird is not down. The
+// from the bird, that tile itself when it stands (r0 0: the ring-out search
+// alone took the tile above, which on a lane pointing up carried the body
+// past the roost ring, BOOM_R) - null while the bird is not down. The
 // carried-back scout and the recall (js/sim/recall.js) both land here.
 function roostTile(p) {
   const e = state.drop && state.drop.eagles[p.team];
   if (!e || e.state !== 'down') return null;
   const d = e.laneDir || { x: 0, y: 1 };
-  return nearestDryTile(e.x + d.x * RESPAWN_OUT, e.y + d.y * RESPAWN_OUT, p);
+  return nearestDryTile(e.x + d.x * RESPAWN_OUT, e.y + d.y * RESPAWN_OUT, p, 0);
 }
 function respawnPlayer(p) {
   const t = roostTile(p);
