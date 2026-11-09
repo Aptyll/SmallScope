@@ -563,7 +563,7 @@ centre under the clock (`drawVotePanel`, `voteY`/`noteY` js/ui/rail.js): SURREND
 seat (you first; green yes, red no, the track while undecided), plain YES and NO words a click
 casts (`voteClick`, from `pointerPress`; the panel is js/ui/vote.js), and the time left as a line draining to the centre.
 **Bots vote with the people**: they never start or cast a vote (`voteCmd` drops a non-person's
-order), and their dashes count as yes while more people voted yes than no (`voteTally`). The vote
+order), and once every person has voted (or the clock ran out, the silent counting as no) their dashes count as yes if more people said yes than no (`voteTally`), so a party's first yes cannot end the match before a friend answers. The vote
 passes at `voteNeed` seats yes: 4 of 5, every seat on a smaller side; it fails as soon as that can
 no longer be reached or when `VOTE_T` runs out (an unvoted seat is a no), holds its dashes for
 `VOTE_HOLD`, and the side waits `VOTE_CD` before another. A gamepad casts its yes through the same

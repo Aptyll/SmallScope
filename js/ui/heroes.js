@@ -70,6 +70,9 @@ function heroSearchKey(k, e) {
   else return k !== 'tab';
   return true;
 }
+// a new draft, and the turn from bans to picks: the search starts empty, so
+// the name typed to ban a hero never hides the pick grid behind it
+function heroSearchClear() { const m = state.menu; m.search = ''; m.searchOn = false; }
 // point at hero i (the draft keeps it: js/ui/draft.js), and the keys' step
 function lobbyPick(i) { draftPoint(i); }
 function lobbyStep(d) { draftStep(d); }

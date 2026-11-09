@@ -178,6 +178,8 @@ minimap and on the chart, with a short cue, for your own side only. It is a hint
 the two bots nearest an ATTACK, ON MY WAY, DEFEND or GO HERE say ON IT and go there, and the
 bots near a DANGER back off. [Pings](gameplay/pings.md), [Bots](multiplayer.md#bots).
 
+**Pine walls make the field a jungle** (js/sim/jungle.js): in each quarter a wall off the mid road, one
+off the river, one between the den and the warren and a block at the lane's corner, mirrored to all four, with gaps to walk in.
 **The camps are the jungle, and the jungle is symmetric.** Six fixed sites, three on each side of the
 road, mirrored so both teams walk the same distance: four **WOLF DENS** that pay gold, and one
 **BLACK BEAR STONE** and one **BROWN BEAR DEN**, each a bear patrolling one side's bank of the creek, whose kill pays and

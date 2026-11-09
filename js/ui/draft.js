@@ -159,6 +159,7 @@ function draftStart() {
   D.lead = [[], []]; D.banned = []; D.fx = 0;
   D.nBan = draftBansPerTeam();
   D.role = players.map(() => -1);
+  heroSearchClear();
   if (NET.isClient) { D.phase = 'wait'; return; }
   D.role = draftSeatRoles();
   if (D.nBan > 0) {
@@ -174,6 +175,7 @@ function draftPickPhase() {
   const D = DRAFT;
   if (D.phase === 'ban') { draftLeads(); D.banned = [...new Set(D.lead[0].concat(D.lead[1]))]; }
   D.phase = 'pick'; D.t = DRAFT_PICK_T; D.fx = 0.5;
+  heroSearchClear();
   D.lock = players.map(() => -1);
   D.hover = players.map((p) => isHuman(p) && !D.banned.includes(D.cls0[p.id]) ? D.cls0[p.id] : -1); // a person starts on their own
   for (const p of players) if (!isHuman(p)) { const k = draftBotPick(p); D.lock[p.id] = D.hover[p.id] = k; }
@@ -266,7 +268,7 @@ function draftIn(msg) {
   D.phase = String(msg.ph); D.t = +msg.tl || 0; D.nBan = msg.n | 0;
   D.banned = msg.banned || []; D.hover = msg.hover || []; D.lock = msg.lock || []; D.lead = msg.lead || [[], []]; D.role = msg.role || [];
   if (D.phase === was) return;
-  if (D.phase === 'pick') { D.fx = 0.5; SFX.place(); draftShow(D.hover[localId]); }
+  if (D.phase === 'pick') { D.fx = 0.5; SFX.place(); heroSearchClear(); draftShow(D.hover[localId]); }
   if (D.phase === 'done') { setClass(player, D.lock[localId]); draftCount(); }
 }
 // what this screen's own player points at, on the stage (its body, the hero pop-up) - picks only

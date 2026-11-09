@@ -137,7 +137,7 @@ function bellaTick(p, dt) {
   if (p.prec > 0 && (p.precIdle += dt) > PREC_IDLE) p.prec = 0;
   if (p.edgeT > 0) p.edgeT = Math.max(0, p.edgeT - dt);
   if (p.edgeMsT > 0) p.edgeMsT = Math.max(0, p.edgeMsT - dt);
-  if (p.parryT > 0) p.parryT = Math.max(0, p.parryT - dt);
+  if (p.parryT > 0) { p.parryT = Math.max(0, p.parryT - dt); aimHold(p); } // the parry's blade lies across the aim
   if (p.riposteId >= 0) bellaRiposte(p);
   if (p.duelT > 0) {
     const q = players[p.duelId];
