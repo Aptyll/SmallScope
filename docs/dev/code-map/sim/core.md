@@ -9,7 +9,7 @@
 | determinism: the seeded stream every world draw comes from | `mulberry32`, `SEED`, `rng` | `rng` (`hash2`/`vnoise`: `ground prerender`, js/draw/ground.js; `treeRare`: `world`, world.js) |
 | the singletons | `state`, `settings`, `perf` | `state` (`players`/`player` + the entity arrays: `players`, player.js) |
 | settings persistence, the team palette, and the minimap-size helpers | `saveSettings`, `loadSettings`, `applyTeamPal`, `mmScale`, `applyMinimapSize` | `state` |
-| `relayout()` — the resize pair's second half | `relayout` | `state` (`fitCanvas`: `canvas`, canvas.js — still the resize pair) |
+| `relayout()` — the resize pair's second half | `relayout`, `placeSlab` (the settings slab's x, its sliders and mute) | `state` (`fitCanvas`: `canvas`, canvas.js — still the resize pair) |
 | page events held until boot: a listener registers here and boot.js attaches them all | `pageListen`, `pageListenStart`, `PAGE_LISTENERS` | `helpers` |
 | floaters, particles, cost math, and the HUD's four-character count (`999` › `1.2K` › `340K` › `1.2M`) | `addFloater`, `burst`, `streamTo` (motes from one point to another), `NUM_SUFFIX`/`shortNum` | `helpers` |
 | the gold flare and crack an ambush arrow lands with | `ambushFx` | `helpers` |

@@ -106,7 +106,7 @@ function drawStoryLines(ws, t, y, T, ac) {
     const s0 = t0 + i * 0.18;
     if (t < s0) return;
     const pop = easeOut(Math.min(1, (t - s0) / 0.3));
-    const L = lines[i], name = L.who && L.who !== player ? L.who.name : '';
+    const L = lines[i], name = L.who && L.who !== player ? boardName(L.who) : '';
     const w = pixelTextWidth(name + L.txt, 1);
     const x = Math.round((VIEW_W - w) / 2), ly = y + i * STORY_PITCH + Math.round((1 - pop) * 4);
     ctx.globalAlpha = pop;

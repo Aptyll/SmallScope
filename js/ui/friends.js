@@ -34,6 +34,8 @@
 // Steam's own invite.
 const FR_POLL = 3;          // s between reads of the list while the title is up
 const SOCIAL_W = 156;         // the social column down the right edge (drawSocial); the party's seats centre in what is left
+const SOCIAL_W_N = 120;       // ...on a view under 600 wide (a 5:4 screen), so the row of seats still fits beside it
+function socialW() { return VIEW_W >= 600 ? SOCIAL_W : SOCIAL_W_N; }
 const SOCIAL_PAD = 8;         // px inside the column's edges
 const SOCIAL_HEAD = 46;       // the column's head (you and the code) ends on the page's head line
 const FR_ROW = 20, FR_GROUP_H = 13; // a friend's row (face, name, what they are doing), a group's head
@@ -132,17 +134,17 @@ function friendDo(f) {
 // click copies it; dim, with a red dot blinking after it, while the link is
 // down), and your friends down the rest of it. Without Steam the friends
 // are not there and the column is your head alone.
-function socialRect() { return { x: VIEW_W - SOCIAL_W, y: 0, w: SOCIAL_W, h: VIEW_H }; }
+function socialRect() { const w = socialW(); return { x: VIEW_W - w, y: 0, w, h: VIEW_H }; }
 function socialCodeRect() {
   const R = socialRect(), code = roomCode();
   return code ? { x: R.x + SOCIAL_PAD + 34, y: 24, w: pixelTextWidth(code, 2), h: 10 } : null;
 }
 // Steam's friends list: the person-plus at the head's far end, level with your name
-function socialAddRect() { const R = socialRect(); return { x: R.x + SOCIAL_W - SOCIAL_PAD - 8, y: 12, w: 8, h: 7 }; }
+function socialAddRect() { const R = socialRect(); return { x: R.x + R.w - SOCIAL_PAD - 8, y: 12, w: 8, h: 7 }; }
 // the rows under the head, FRIENDS.scroll rows down
 function friendsLayout(L) {
   if (!FRIENDS.on || !L.seats.length || state.menu.joining) return null;
-  const R = socialRect(), x = R.x + SOCIAL_PAD, w = SOCIAL_W - 2 * SOCIAL_PAD, y = SOCIAL_HEAD;
+  const R = socialRect(), x = R.x + SOCIAL_PAD, w = R.w - 2 * SOCIAL_PAD, y = SOCIAL_HEAD;
   const bottom = VIEW_H - 10;
   const on = FRIENDS.list.filter((f) => frGroup(f) < 3), off = FRIENDS.list.filter((f) => frGroup(f) === 3);
   const rows = [];
@@ -159,7 +161,7 @@ function friendsLayout(L) {
   for (let i = FRIENDS.scroll; i < rows.length; i++) {
     const h = H(rows[i]);
     if (yy + h > bottom) break;
-    out.push({ x: R.x, y: yy, w: SOCIAL_W, h, f: rows[i] });
+    out.push({ x: R.x, y: yy, w: R.w, h, f: rows[i] });
     yy += h;
   }
   return { x, y, w, bottom, rows: out, more: FRIENDS.scroll + out.length < rows.length, add: socialAddRect() };
@@ -220,7 +222,7 @@ function drawFriendFace(x, y, f) {
   ctx.fillStyle = frColor(f); ctx.fillRect(x + s - 4, y + s - 4, 4, 4);
 }
 function drawSocial(L, now, hit) {
-  const m = state.menu, R = socialRect(), x = R.x + SOCIAL_PAD, w = SOCIAL_W - 2 * SOCIAL_PAD;
+  const m = state.menu, R = socialRect(), x = R.x + SOCIAL_PAD, w = R.w - 2 * SOCIAL_PAD;
   ctx.fillStyle = SC_ROW_B; ctx.fillRect(R.x, R.y, R.w, R.h);
   ctx.fillStyle = SC_EDGE; ctx.fillRect(R.x, R.y, 1, R.h);
   // the head: you, and the party's code behind the link's pip

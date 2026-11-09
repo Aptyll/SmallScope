@@ -16,11 +16,11 @@ function varroPaw(x, y, col) {
 // over a body (HERO_MARK, js/sim/heroes.js), in its own box at (px, py), w x h:
 // a paw over the head of a body he marked (his called wolves wear their side's
 // bar instead: drawBeastFrame, js/draw/bodies.js)
-function drawVarroMarks(e, px, py, w, h, now) {
-  if (!(e.packBy >= 0) || !(state.elapsed < e.packUntil)) return;
-  varroPaw(px + (w >> 1), py - 6 - (Math.floor(now * 3) % 2), VARRO_FUR);
-}
-HERO_MARK.push(drawVarroMarks);
+// (HERO_OVER: in the row over its stack, never on the head under the frame)
+HERO_OVER.push({
+  w: (e) => (e.packBy >= 0 && state.elapsed < e.packUntil ? 7 : 0),
+  draw: (e, x, y, now) => varroPaw(x + 3, y - (Math.floor(now * 3) % 2), VARRO_FUR),
+});
 
 // ---- the spear in his hands -----------------------------------------------------
 // HERO_BLADES.spear (js/draw/heroes.js): flat for the side, the swing and the

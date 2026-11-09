@@ -67,7 +67,7 @@ the held one lit gold
 js/ai/ai.js, first thing `aiThink` asks): the ultimate whenever it can rank, then each basic key
 unlocked once, then the basics maxed in the hero's `rankOrder` (its `CLASSES` row: HUNTER
 shot, net, grapple; WARRIOR stomp, rush, shield; ARMATOS verdict, march, brace; FORTIVA sever,
-yoke, heart; AURA star, orb, step; SALVIA poultice, cloak, snowdrops; LUCERNA crook, shoo, lantern; RUPES heave, shed, shoulder; NIX shard, drift step, cloud; FALCO knife fan, talons, glide; VARRO lunge, snap, howl; BUCINA note, blast, echo; MARIS harpoon, undertow, brace; LIGNUM chop, thrown axe, bark skin; VELOX skip stone, quick step, ice lane). The cd column in the tables below is every rank's; the numbers in the text are rank
+yoke, heart; AURA star, orb, step; SALVIA poultice, cloak, snowdrops; LUCERNA crook, shoo, lantern; RUPES heave, shed, shoulder; NIX shard, drift step, cloud; FALCO knife fan, talons, glide; VARRO lunge, snap, howl; BUCINA note, blast, echo; MARIS harpoon, undertow, brace; LIGNUM chop, thrown axe, bark skin; VELOX skip stone, quick step, ice lane; SAGITTA pin, crank back, pavise). The cd column in the tables below is every rank's; the numbers in the text are rank
 1's, and each row's `rank` table has the rest.
 
 **Every ability lands on every kind of body.** A player, a rabbit, a deer, a bird, a wolf and a
@@ -148,8 +148,8 @@ with a passive. Her rules live in **[js/sim/bella.js](../../../js/sim/bella.js)*
 blade in [js/sprites/bella.js](../../../js/sprites/bella.js). She is quick and light (104 hp, 16
 armor, a step faster than the warrior) with a quicker, shorter cut (her `attack` row, the EAGLE
 SPATHA), drawn as her own blade, in a body of her own ([hero looks](../sprites.md#hero-looks)).
-What her state puts on a body (her pips, the parry's blade, the marks) is `drawBellaMarks`, a
-`HERO_MARK` row; the duel's ring under the hero she called out is a `HERO_GROUND` row. Her two
+What her state puts on a body (her pips, the parry's blade) is `drawBellaMarks`, a
+`HERO_MARK` row, and the E mark and the duel's diamond go in the row over the body's stack (`HERO_OVER`); the duel's ring under the hero she called out is a `HERO_GROUND` row. Her two
 dashes pass through the small bodies a roll passes (`through` on the `HERO_DASH` row,
 `heroDashThrough` in `separateUnits`):
 
@@ -402,6 +402,23 @@ is a body in `robots` (`HERO_MACHINE.falcoHawk`) and his knives are things he le
 | 2 | **KNIFE FAN** | 9/8.5/8/7.5/7 s | three knives `FAN_SPREAD` apart down the aim, `FAN_LEN` each: the first body each meets takes `dmg` (16/24/32/40/48), no shove; a rival marked and struck by all three of one throw walks ×`FAN_SLOW` for `FAN_SLOW_T` |
 | 3 | **GLIDE** | 16/15/14/13/12 s | a leap `GLIDE_LEN` down the aim (`HERO_DASH.glide`, `through`: over soldiers and rivals); a rank is the leap back sooner |
 | 4 | **STOOP** | 90/75/60 s | needs a marked rival hero within `STOOP_REACH` (`ok`, `stoopTarget`): up into the sky for `STOOP_UP`, untouchable (`invuln`), unseen by every side (`HERO_COVER`) and still (`HERO_MOVE`), then down beside the hero wherever it went, for `dmg` (120/180/240) + `STOOP_UP_AD` of his DAMAGE, knocked up for `STOOP_KNOCK` (`falcoDrop`) |
+
+SAGITTA, THE BOLT-THROWER — the siege marksman: a heavy crossbow with the longest reach of any
+marksman (a full-draw bolt flies about 350 px, the hunter's arrow 270) and a slow loose. Her rules
+live in **[js/sim/sagitta.js](../../../js/sim/sagitta.js)** (`SAGITTA_AB`, its `sagitta` banner), her
+pixels in [js/draw/sagitta.js](../../../js/draw/sagitta.js), her icons and looks in
+[js/sprites/sagitta.js](../../../js/sprites/sagitta.js). 78 hp, 9 armor, a step slower than a walk,
+and her draw all but plants her feet (`chargeMul` 0.45). Her bolts are shots in `arrows` like any
+other; her pavise is a body in `robots` (`HERO_MACHINE.sagPavise`), so neither adds a list of its own.
+PIN and THE LONG BOLT hold the crossbow on the aim through their wind-up (the row's `aimHeld`).
+
+| key | name | cd | what it does |
+| --- | --- | --- | --- |
+| P | **HEAVY BOLTS** | — | every `HEAVY_EVERY`th basic bolt she looses is heavy: ×`HEAVY_DMG` damage, ×`HEAVY_KB` shove, and a building takes ×`HEAVY_SIEGE` more (the shot's `siege`). Counted at the loose (`HERO_PASSIVE.heavybolts` `shot`), shown as marks at her feet, brass once the next is heavy |
+| 1 | **PIN** | 11/10.5/10/9.5/9 s | a bolt down the aim at `PIN_SPD` for `PIN_RANGE`: the first body takes `dmg` (50/80/110/140/170) and a shove ×`PIN_KB`; a tree, rock or wall within `PIN_WALL` behind it pins it, stunned for `stun` (1.2 s) (`HERO_SHOT_HIT.pin`, `solidBehind`) |
+| 2 | **PAVISE** | 16/15/14/13/12 s | a tall shield `PAV_D` in front of her for `PAV_T`, one at a time: a body of her side (`robotBody`) with `shield` health (120/170/220/270/320). A rival's shot that meets its face (flying at least `PAV_FRONT` against its facing) ends on it; from behind or along its edge a shot goes by (`pavPasses`, the machine's `passes`); her side's shots pass; rivals break it and are paid for it |
+| 3 | **CRANK BACK** | 14/13/12/11/10 s | every rival body within `CRANK_R` of her feet takes `CRANK_DMG` and walks ×`CRANK_SLOW` for `slowT` (1-2 s); she is thrown `CRANK_D` away from her aim (`p.dash = 'crank'`), still facing it |
+| 4 | **THE LONG BOLT** | 110/95/80 s | she kneels for `LONG_WIND` (no walk: `HERO_MOVE`) with the towers' crawling line down her aim, then looses a bolt at `LONG_SPD` for `LONG_RANGE`: it goes through soldiers and beasts (`pierce`) and ends on the first hero (`HERO_SHOT_HIT.longbolt`), who takes `dmg` (180/280/380) and a shove ×`LONG_KB` |
 
 Bots play the named heroes through each row's `bot(p, foe, d, clear)` (`abBotKey`, asked by the ladder's
 ability block in js/ai/ai-ladder.js); a row's `botAim(p, foe)` turns the aim to a point of its own for that cast, held through the wind-up until it lands (AURA's step away, SALVIA's heals, LUCERNA's lantern). A hero whose rows carry no `bot` keeps the ladder's old range rules.

@@ -439,9 +439,14 @@ function shotContacts(a, x0, y0, dx, dy) {
     const s = sweepDisc(x0, y0, dx, dy, t.x, cy, r);
     if (s >= 0 && s < stop) { shotHits.push({ s, k: 'player', t }); if (!a.pierce) stop = s; }
   }
-  // bots take the same shot: they are units in the open, on a team
+  // bots take the same shot: they are units in the open, on a team. A hero's
+  // machine a shot goes by from this side is never met, so the body past it
+  // still is (HERO_MACHINE `passes`: SAGITTA's pavise, shot from behind)
+  const sd = Math.hypot(dx, dy) || 1;
   for (const t of robots) {
     if (a.team === t.team) continue;
+    const M = heroMachine(t);
+    if (M && M.passes && M.passes(t, dx / sd, dy / sd)) continue;
     const r = robotHitR(t), cy = robotHitY(t);
     if (t.x + r < lx || t.x - r > hx || cy + r < ly || cy - r > hy) continue;
     if (!unitAlive(t) || (a.pierce && a.pierceHit.includes(t))) continue;
@@ -571,6 +576,7 @@ function updatePlay(dt) {
       });
       if (a.ambush) ambushFx(hx, hy);
       a.struck = true;
+      heroShotHit(a, t, nx, ny); // what a hero's shot does once it lands (HERO_SHOT_HIT, js/sim/heroes.js)
     };
     let dead = a.t > a.life;
     // how much of the step the shot really flew: one that ends ON something
@@ -601,9 +607,10 @@ function updatePlay(dt) {
       } else if (h.k === 'wall') {
         dead = true;
         // ...and when the wall that stopped it is a RIVAL'S BUILDING, the shot
-        // SIEGES it, at STRUCT_DR off (hurtStruct, js/sim/actions.js).
+        // SIEGES it, at STRUCT_DR off (hurtStruct, js/sim/actions.js), x the shot's own
+        // `siege` where it has one (SAGITTA's heavy bolt, js/sim/sagitta.js).
         const st = structOf(objAt(h.tx, h.ty));
-        if (structFoe(sideOf(a), st)) hurtStruct(st, a.dmg, players[a.owner]);
+        if (structFoe(sideOf(a), st)) hurtStruct(st, Math.round(a.dmg * (a.siege || 1)), players[a.owner]);
         else shedHit(objAt(h.tx, h.ty)); // a shot into a pine knocks its crown's snow loose (js/sim/shed.js)
         burst(hx, hy, '#cfd8e8', 3, 25, 0.25, true);
       } else if (h.k === 'player' && abShieldBlocks(t, nx, ny)) {

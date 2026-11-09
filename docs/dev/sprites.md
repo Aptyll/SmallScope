@@ -87,7 +87,7 @@ more: the frames live on as the CATCH emote's (`EMOTES`, js/ui/screens.js). The 
 **The run, the held run and the dodge roll are the one set of player frames not typed by hand.**
 [app/bake-player/](../../app/bake-player/) paints them off a jointed doll of each class body (and of
 each named hero's looks: ARMATOS's `standard` and `oath`, FORTIVA's `unbroken` and `coif`, BELLA's `general` and `traitor`,
-IGNIA's `hearth` and `wanderer`, AURA's `light`, SALVIA's `hood` and `tent`, LUCERNA's `lamp` and `dusk`, HIEMS's `scholar` and `frost`, FABER's `clockmaker` and `foreman`, NIX's `snowblind`, FALCO's `falconer`, RUPES's `quarry` and `cellar`, VARRO's `wolfkept` and `whitepack`, VELOX's `canal` and `night`, BUCINA's `horn` and `column`, MARIS's `diver` and `orca`, LIGNUM's `feller` and `forest`, [hero looks](#hero-looks)) and
+IGNIA's `hearth` and `wanderer`, AURA's `light`, SALVIA's `hood` and `tent`, LUCERNA's `lamp` and `dusk`, HIEMS's `scholar` and `frost`, FABER's `clockmaker` and `foreman`, NIX's `snowblind`, FALCO's `falconer`, RUPES's `quarry` and `cellar`, VARRO's `wolfkept` and `whitepack`, VELOX's `canal` and `night`, BUCINA's `horn` and `column`, MARIS's `diver` and `orca`, SAGITTA's `siege` and `tower`, LIGNUM's `feller` and `forest`, [hero looks](#hero-looks)) and
 writes them to js/baked/motion.js as char grids in characters.js's own letters, so `motionSet`
 bakes them through the same team and look palettes as every hand-drawn pose: `run[dir]`,
 `hold[dir]` and `roll[dir]` sit beside the walking directions, `left` the mirror of `right`.
@@ -333,6 +333,14 @@ are A and C off velox-round1.png in the project files. Her dolls are `Canal` and
 app/bake-player/bodies.py; she runs on her drawn frames (`run: 'drawn'`). Her STAFF SLING is a
 `HERO_STAVES` row (`sling`, js/draw/velox.js): a hooked staff with the sling hanging off its hook,
 carried upright.
+
+SAGITTA has two looks (`SAGITTA_SKINS`, js/sprites/sagitta.js): SIEGEWRIGHT (free: a leather cap
+with a brass goggle band over dark hair, a work apron over the side's coat) and TOWER BUILDER (rare,
+200 coins: the same cut in slate and steel), both on ARMATOS's frame. They are A and C off
+sagitta-round1.png in the project files. Her dolls are `Siege` and `Tower` in
+app/bake-player/bodies.py; she runs on her drawn frames (`run: 'drawn'`). Her HEAVY ARBALEST is her
+basic attack's `art` (`SPRITES.weaponArt.arbalest`, prod left): held level facing a side and on the
+aim while drawn, shouldered prod-up facing down or up (`HERO_CARRY`, js/draw/sagitta.js).
 
 FABER has two looks (`FABER_SKINS`, js/sprites/faber.js): CLOCKMAKER (free) and WORKS FOREMAN
 (rare, 200 coins), both on ARMATOS's frame. `FABER_PAL` is `ARM_PAL` with the leather cap and apron

@@ -86,6 +86,7 @@ RAMP = {
     'frost': ('l', 'l', 'L'), 'ice': ('z', 'z', 'Z'),
     'pelt': ('j', 'f', 'F'), 'snowpelt': ('v', 'u', 'U'),
     'cap': ('c', 'c', 'C'), 'nightcap': ('n', 'n', 'N'), 'nighthair': ('j', 'j', 'J'), 'nightscarf': ('V', 'v', 'v'),
+    'slatecap': ('T', 't', 't'),
 }
 CUTS = {
     'hem': (9, 9), 'coat': (0.3, 0.9), 'hat': (0.0, 0.86), 'trim': (0.30, 2), 'skin': (0.12, 2),
@@ -96,6 +97,7 @@ CUTS = {
     'frost': (0.0, 0.75), 'ice': (0.0, 0.8),
     'pelt': (0.3, 0.85), 'snowpelt': (0.3, 0.85),
     'cap': (0.0, 0.75), 'nightcap': (0.0, 0.75), 'nighthair': (0.0, 0.75), 'nightscarf': (0.3, 2),
+    'slatecap': (0.0, 0.75),
 }
 MATS = list(RAMP)
 # a limb on the far side of a side-on body wears the next tone down (its pants stay pants:
