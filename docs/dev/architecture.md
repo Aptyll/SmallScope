@@ -175,6 +175,7 @@ order, so the script tags still interleave them:
 | [js/sim/eagle.js](../../js/sim/eagle.js) | ~710 | shared scope, no `window.*` export | the eagle drop: each bird's flight in over its own corner, the ride, the hop off, the crash on the perch, the drop brief, the bird each side guards |
 | [js/draw/eagle.js](../../js/draw/eagle.js) | ~460 | shared scope, no `window.*` export | the drop's pixels: the birds, the riders, the trail, the roost's bar, the ride's HUD, the brief's headline; loaded right after js/sim/eagle.js |
 | [js/sim/base.js](../../js/sim/base.js) | ~80 | shared scope, no `window.*` export | the bases: each side's fixed hollow, perch and three lane mouths in its roost corner, where each lane's bay stands, the road's two ends, `placeBase` |
+| [js/sim/jungle.js](../../js/sim/jungle.js) | ~60 | shared scope, no `window.*` export | the jungle's pine walls: one quarter's capsules mirrored to all four, planted at boot with no `rng()` |
 | [js/sim/lanes.js](../../js/sim/lanes.js) | ~140 | shared scope, no `window.*` export | the top and bot lanes: their fixed centrelines, the registry `roadDist` mins over, `layLanes` and its creek fords, a wave's march down one, a side's cable down one |
 | [js/app/boot.js](../../js/app/boot.js) | ~700 | `DBG` + shared scope | the last file to load: the boot order, `window.DBG`, the rAF loop and the fixed 1/60 s step it feeds the sim |
 
