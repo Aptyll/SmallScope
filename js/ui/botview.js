@@ -49,8 +49,7 @@ function botThought(p) {
 // A bot with no thought yet (the native brain writes one every think, so
 // this is a bot FILE that sends none, or a bot before its first think)
 // still leaves marks: a potion or a recall under way, the push or defence
-// the ladder chose (`want`), a shot, a rival noticed, its hide clock, its
-// roam point. Read in the ladder's order, top rung first; every word is an
+// the ladder chose (`want`), a shot, a rival noticed, its roam point. Read in the ladder's order, top rung first; every word is an
 // AI_GOALS one, or DEAD.
 function botGuess(p) {
   const ai = p.ai, inp = p.input;

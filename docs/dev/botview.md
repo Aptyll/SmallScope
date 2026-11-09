@@ -41,14 +41,14 @@ the aim wobble in px right now, how far the crosshair trails the wish (px), the 
 its `x, y`, else a tile's centre). The native brain writes a thought every think, so a guess is
 for a bot file that sends none, or a bot before its first think: `botGuess` reads the goal off the
 seat's marks (a body down, a potion or a recall under way, `want`, a shot in flight, a rival
-noticed past the level's reaction time (`seeT`, the ladder's engage rule), `hideT`, `roam`) and
+noticed past the level's reaction time (`seeT`, the ladder's engage rule), `roam`) and
 marks it `guess`; every surface draws a guessed goal with a trailing `?`, so a guess never passes
 for the brain's word. A shot at game is the hunt it belongs to (HUNT), at a wolf WOLF, at a rival,
 a soldier or a bear FIGHT.
 
 A goal is coloured by what it is for, six kinds, filed in the one goal table (`AI_GOALS`, word to
 kind, and `AI_GOAL_KINDS`, kind to colour, js/ai/ai-team.js): PUSH (push, regroup, rally), RETREAT
-(flee, hide, recall, heal), DEFEND (defend, guard, help, escort) and FIGHT (fight, wolf, stalk,
+(flee, recall, heal), DEFEND (defend, guard, help, escort) and FIGHT (fight, wolf, stalk,
 road) are loud; FARM (farm, jungle, support, gather, hunt, pump, shop) and ROAM (roam, idle, order)
 are quiet, because they are most of any match and a fight or a push is what the eye should find.
 RALLY and ESCORT are the bot files' words (bots/*.js); the ladder's own rally is REGROUP. The six

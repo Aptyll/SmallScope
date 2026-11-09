@@ -12,8 +12,7 @@ along them — movement runs on `vx/vy`). While rolling, movement input, frictio
 walk animation, and the held tool are suppressed (still collides with solids; a wall zeroes
 that axis), and `drawPlayer` plays the roll's frames over `DODGE_T` - a crouch, a dive, the
 tucked ball turning over once, a squat ([the run and the roll](../sprites.md#the-run-and-the-roll))
-- with two afterimages of the frames just shown trailing the velocity, plus dust bursts. A
-worn IRON HERO has no tuck yet and spins its standing frame instead. The roll's exit speed is spent by the surface — see
+- with two afterimages of the frames just shown trailing the velocity, plus dust bursts. The roll's exit speed is spent by the surface — see
 [Momentum movement](momentum-movement-players-only.md). The charge meter is a single unsegmented **white** stamina
 bar (`STAM_COL`, js/draw/overhead.js — white on every side, since stamina has no side) on a plate
 directly beneath the overhead health bar — charges stay discrete in the sim,
@@ -22,8 +21,7 @@ pale ghost of the lost chunk (`player.stamGhost`/`stamGhostT`): it holds ~0.3 s,
 into the live fill souls-style. Death cancels the roll, respawn refills
 charges; pause, the settings panel and the wheel block the local player's roll (the
 [map](the-m-map-does-not-pause.md) does not). The bar is drawn for
-**every player** — a rival out of rolls is a tell, and the level badge spans both bars. A roll out of
-[prone](prone-under-the-snow.md) is legal: `tryDodge` stands the player up first.
+**every player** — a rival out of rolls is a tell, and the level badge spans both bars.
 
 ## The roll is a hit
 

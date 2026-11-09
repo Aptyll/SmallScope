@@ -368,6 +368,18 @@
       saveNow();
       return true;
     },
+    // cosmetics the game no longer sells (`retired`: key -> what it cost) and
+    // the wardrobe slots it no longer has: each one owned is taken off the
+    // list and its coins handed back, and a gone slot's pick is forgotten
+    // (SKIN_RETIRED, js/ui/skins.js). Once: after it nothing is left to find.
+    refundRetired(retired, slots) {
+      let back = 0, changed = false;
+      profile.owned = profile.owned.filter((id) => { if (!(id in retired)) return true; back += retired[id]; changed = true; return false; });
+      for (const k of slots) if (k in profile.worn) { delete profile.worn[k]; changed = true; }
+      profile.coins += back;
+      if (changed) saveNow();
+      return back;
+    },
     // a finished match's pay (payMatchCoins, js/ui/skins.js): a moment, so it saves through
     addCoins(n) { n = Math.floor(n) || 0; if (n > 0) { profile.coins += n; saveNow(); } },
     // ---- ranked -------------------------------------------------------------

@@ -34,7 +34,7 @@
 const ZIP_MID_GAP = 20;    // u short of the road's centre the front terminus stands
 const ZIP_OUT = 0.6;       // tiles past the ragged road edge the cable runs - the shoulder, never the lane
 const ZIP_SPAN = 10;       // u between pylons along the road (about 226 px)
-const ZIP_SPD = 220;       // px/s - 3x walk, under GRAP_REEL (260) so the hook stays the fastest thing in the game
+const ZIP_SPD = 220;       // px/s - 3x walk
 const ZIP_GRAB = 32;       // px off the cable's ground track a body may clip on from: two tiles, so the press works from the lane and the body hops the rest
 const ZIP_HOVER = 6;       // px the pointer may sit off the DRAWN cable (the track lifted by zipLift) and still be on it: the hover highlight and the click scheme's press-on-the-cable read this
 const ZIP_ALT = 8;         // px the riding body hangs above its own shadow (the draw)

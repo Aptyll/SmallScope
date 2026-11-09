@@ -35,8 +35,7 @@ declare victory. The affordances:
     drops a player on a tile.
   - `setControl(id, mode)` hands a player to an AI, a human or nobody; `setLocal(id)` reseats
     this screen's player in slot `id` (title only; `?local=N` does it at load).
-  - `setHide(h, p?)` stages a buried body without lying in the snow for `PRONE_BURY`, and
-    `concealOf` / `seenAt(range, p?)` / `ambushReady` read back what the world makes of it.
+  - `seenAt(range, p?)` reads back how far a watcher with that plain range notices a player.
   - **Staging traps.** `warp` moves a player but **not the camera**, which lerps after it over
     about a second of stepped frames — step ~120 frames of `1/60` after warping before cropping
     anything, or the crop lands on empty world. A live bot parked beside the staged player will
@@ -277,48 +276,50 @@ the bots' `BOT_BUILDS` if a class should buy it. A **stack** item (`stack: n`, t
 built from nothing and into nothing, sits in one slot with its count in `p.potions`, and needs its
 own buy, sell and use branches (`buyPotion`, `takePotion`, `useItem`).
 
-**Adding a class** — a named hero goes through the `new-hero` skill
+**Adding a class** — a hero goes through the `new-hero` skill
 ([.claude/skills/new-hero/](../../.claude/skills/new-hero/SKILL.md)), which runs this list in order
 with Noah's picks around it. The tables make most of it mechanical, and every screen picks the new
 entry up with no edit: the champ select's grid grows a cell (give the entry its `pos` list, so the position filters and the bots' pick know it), the strip, the hero
-pop-up's preview/ledger and the bot class hash
-(`initPlayers`, already `floor(hash × CLASSES.length)`) are all generic over the tables. What a
-new class needs written:
+pop-up's preview/ledger, the wiki's hero page, the bot class hash
+(`initPlayers`, already `floor(hash × CLASSES.length)`) and the names a bot's `low` call may say
+(`BOT_CALL_LOW`, built off `CLASSES`) are all generic over the tables. Code that needs one
+particular hero names it with `heroIndex('NAME')`, never a number: an index moves whenever the
+table does. What a new hero needs written:
 
-1. a `CLASSES` entry ([js/sim/player.js](../../js/sim/player.js)) — `name`, its one fixed `look`
-   and the `kit` numbers are the load-bearing parts (a hero announced in `HEROES_SOON` moves
-   over, keeping its look);
-2. the full sprite set in the byte-fragile [js/sprites/characters.js](../../js/sprites/characters.js)
-   (a beast goes in beasts.js, the bears in bears.js by rebaking, a building in buildings.js, an item in items.js, terrain in
-   terrain.js, HUD art in icons.js), registered by adding its key to that file's
-   `Object.assign(SPRITES, {...})` at the bottom —
-   4 directions × 3 frames plus the 5-pose prone set, baked into `SPRITES.champ[c]` per team
-   via the `TEAM_SKINS` bakes ([sprites.md](sprites.md)) — **this is the expensive part**; and
-   its run, held run and roll: a body for the doll in `app/bake-player/bodies.py` (`BODIES`),
-   measured off the new idle frames, rebaked into js/baked/motion.js, with its name in
-   characters.js's `MOTION_CLS` ([the run and the roll](sprites.md#the-run-and-the-roll));
-   a named hero may instead carry its own looks (`skins`, `skinPal`, `skinSlot` on its `CLASSES` row:
-   each look's standing grids and a doll named in its row, [hero looks](sprites.md#hero-looks))
-   and a skins tab with `hero` in js/ui/skins.js;
-3. a `CLASS_AB` row of four actives ([js/sim/abilities.js](../../js/sim/abilities.js)): each ability's
+1. a `CLASSES` entry ([js/sim/player.js](../../js/sim/player.js)) — `name`, `pos`, `passive`, the
+   `base`/`grow` stats, the `kit` numbers and `rankOrder` (a hero announced in `HEROES_SOON` moves
+   over; until then it is drawn as the hero it is `like`);
+2. its looks, in its own js/sprites/ file (the shape of [js/sprites/armatos.js](../../js/sprites/armatos.js)): each look's standing grids
+   (`<HERO>_BODY`, walked by `heroWalk`) and its paint (`<HERO>_PAL`), and its **skins table**
+   (`<HERO>_SKINS`: the free first row, then the buyable ones), named on the `CLASSES` row as
+   `skins`, `skinPal` and `skinSlot`; its held run and roll: a doll for each look in
+   `app/bake-player/bodies.py`, measured off the new standing frames and rebaked into
+   js/baked/motion.js, named in its skins row's `motion` (the side run comes off the drawn side
+   frame, `heroRunSide`; [the run and the roll](sprites.md#the-run-and-the-roll),
+   [hero looks](sprites.md#hero-looks)) — **this is the expensive part**. `SPRITES.champLook`
+   bakes it per team and look with no edit;
+3. a **`SKIN_TABS` row** in [js/ui/skins.js](../../js/ui/skins.js) (`slot` its `skinSlot`, `rows`
+   its skins table, `hero: heroIndex('NAME')`, an 8×8 glyph). A load check there throws for a hero
+   with no tab;
+4. its four actives, `<HERO>_AB` in its own js/sim/ file (the `ARM_AB` shape,
+   [js/sim/armatos.js](../../js/sim/armatos.js)), joined into `CLASS_AB`
+   ([js/sim/abilities.js](../../js/sim/abilities.js)) in `CLASSES` order: each ability's
    `cd`/`cast`/`blurb`/`use(p)` and its per-rank numbers (`rank`, read by `abRk`; `cd` a list when it
-   shrinks by rank; [ranks](gameplay/class-abilities-keys-1-4.md)) (plus `acol`/`activeF` if a state runs on the body), its
-   `abilityPose` case, any world entities it leaves and their tick/draw, and its on-body draw
-   in `drawAbilityOnPlayer` if it leaves a visible state;
-4. four detailed 32×32 icons in `AB32` (on `AB32_PAL` — one palette across every big icon);
-5. a 12×12 class **emblem** in `CLASS12` ([js/ui/menu.js](../../js/ui/menu.js), same palette),
-   drawn by hand (never a shrink), which the [team rail](rendering/the-hud-corners/the-team-rail.md), the rooms
-   and the tooltips wear;
-5b. an `OUTFIT` layer for the 48 px model ([js/sprites/looks.js](../../js/sprites/looks.js) —
-   the hat stopping at row 8 so the hair shows under it) and `HERO_N` bumped in
-   [js/app/profile.js](../../js/app/profile.js), which looks.js asserts against at load; a `champLook`
-   branch in characters.js saying where the new body's fringe sits
-   ([sprites.md](sprites.md#looks-a-character-on-the-class-body));
-6. an `attack` row on its `CLASSES` entry ([the basic attack](gameplay/the-basic-attack.md));
-7. a fight rung in `updateAI` ([js/ai/ai.js](../../js/ai/ai.js)) that spends the four keys at the
-   ranges the kit is good at — the class branch there is per-class content and the one `if`
-   that must grow. Ask **`abReady(p, i)`**, never a bare `p.abCd[i] <= 0`: a key starts locked
-   at level 0 and a bot that skips the check tries to cast something it has not bought.
+   shrinks by rank; [ranks](gameplay/class-abilities-keys-1-4.md)), its `tele`, its detailed 32×32
+   `icon` (on `AB32_PAL`, one palette across every big icon), any world entities it leaves and
+   their tick and draw through the `HERO_*` tables, and **a `bot` row on all four** saying when a
+   bot presses it. `abBotKey` asks it only for a key that is bought and ready (`abUnlocked`,
+   `abReady`), so a key still locked at level 0 is never tried;
+5. a 12×12 hero **emblem** in `CLASS12` ([js/ui/menu.js](../../js/ui/menu.js), same palette),
+   keyed by the hero's name and drawn by hand (never a shrink), which the
+   [team rail](rendering/the-hud-corners/the-team-rail.md), the rooms and the tooltips wear. A load
+   check there throws for a hero with none;
+6. an `attack` row on its `CLASSES` entry ([the basic attack](gameplay/the-basic-attack.md)), a new
+   `art` in js/sprites/weapons.js or its own sprite file;
+7. a **`BOT_BUILDS` row** in [js/sim/items.js](../../js/sim/items.js): its item build, which is also
+   the shop's RECOMMENDED tab while the hero has few games. A load check there throws for a hero
+   with none;
+8. its script tags in `index.html`, in load order.
 
 **Adding a stored profile field** — the field goes in `blank()` in
 [js/app/profile.js](../../js/app/profile.js) *and* in the repair loop `PROFILE.load()` runs over an
@@ -338,18 +339,17 @@ tap that toggles, and drop `e.repeat` — a held modifier auto-repeats.
 
 **Adding something that hunts a player** — a new enemy, a new building, anything that decides it
 can see a player — asks `seenAt(p, range)`, never a bare distance against a bare range. That one
-function is where GHOSTSTEP and lying buried in the snow both live, and a hunter that skips it
-stares straight through the cover with nothing in the code to say why. If it also *marks* the
-player somewhere the player can read (a map dot, an icon), gate that on
-`concealOf(p) >= PRONE_MAP` the way both maps do. A bot or anything else that plays for a side
-passes that side: `seenAt(p, range, team)`, and `inSight(team, u)` for a body that is not a player,
-or it sees through the [fog of war](gameplay/fog-of-war.md). **Drawing a body, its dot or anything
-pinned to it** asks `fogShown(u, now)` first (js/draw/fog.js), or it shows in the fog. See
-[gameplay.md](gameplay/prone-under-the-snow.md).
+function is where the kit's stealth (the DRIFT passive) and a mark's bypass live, and a watcher
+that skips it sees a stealthy body as far off as any other with nothing in the code to say why. A
+bot or anything else that plays for a side passes that side: `seenAt(p, range, team)`, and
+`inSight(team, u)` for a body that is not a player, or it sees through the
+[fog of war](gameplay/fog-of-war.md) (where a hero's own cover, `HERO_COVER`, lives).
+**Drawing a body, its dot or anything pinned to it** asks `fogShown(u, now)` first
+(js/draw/fog.js), or it shows in the fog.
 
 **Adding a way to hurt anything** — call `hurtUnit(e, dmg, nx, ny, src, o)`, never `damagePlayer` /
 `hurtAnimal` / `hurtRobot` directly, and put a state on a body with its setter (`stunUnit`,
-`rootUnit`, `slowUnit`, `netUnit`, `markUnit`, `igniteUnit`). One call, and a player, a deer and a
+`rootUnit`, `slowUnit`, `markUnit`, `igniteUnit`). One call, and a player, a deer and a
 soldier all take it; the three per-kind functions under `hurtUnit` exist for what is genuinely
 per-kind and are not the entry point. For an **area** effect sweep `unitsHit(src, x, y, r)` (a blow:
 a player mid-roll or fresh off a respawn is dropped) or `unitsNear` (a lasting ground condition,
@@ -436,8 +436,8 @@ special-cased — [the road](world.md#the-road), `3`, is the live example of one
 snow and is not snow), and
 if it is **open water** make `waterAt()` (world.js) say so — every walker, route, spawn and
 climb-out asks that and nothing else ([the creek](world.md#the-creek), `4`, is the live example);
-remember `genWorld()`'s `free()` helper treats "ground must be 0" as the placement rule — as do
-`tryProne` (snow to dig into) and the footprint emitter. Check `fishWater()` too: it names the
+remember `genWorld()`'s `free()` helper treats "ground must be 0" as the placement rule — as does
+the footprint emitter. Check `fishWater()` too: it names the
 swimmable grounds outright.
 
 **Adding a sound** — drop the file in `audio/sfx/`, **run `node app/bake-sfx.js`** (this is not
@@ -489,7 +489,7 @@ already current, so it is safe to call from a state change that repeats.
 | js/sim/pumps.js | the gold pumps: the ring's size and speed (`PUMP_R`, `PUMP_CAP_T`, `PUMP_FADE_T`) and where they stand (`PUMP_SEEK`/`PUMP_SEEK_FAR`, `PUMP_ROAD`, `PUMP_STAND`/`PUMP_STAND_LONE`, `PUMP_CLEAR`); the bots' `AI_PUMP_*` sit with `aiPumpRung` in js/ai/ai-ladder.js |
 | js/sim/robots.js | `SOLDIER_*` (speed, aggro, siege reach; `SOLDIER_TYPES`: each kind's health, growth, blow, range, bounty and XP share); `MERCH_BAYS`/`MERCH_BAY_*` (how many bays, the logs a rebuild costs, when the first is due, the order the lanes get theirs, the rebuild wait); `MERCH_BACK_R`/`MERCH_BACK_ARC` (how far and how wide the back woods reach) |
 | js/sim/farm.js | `SOLDIER_BOUNTY`/`SOLDIER_BOUNTY_GROW` (a melee soldier's last hit; a kind pays its `bounty` share), `COIN_POP_T`; the bots' farm knobs `AI_FARM_*`/`AI_DEN_EARLY` sit in js/ai/ai-farm.js |
-| js/sim/actions.js | `WORK_REACH` and the roll/prone blocks |
+| js/sim/actions.js | `WORK_REACH` and the roll block |
 | js/sim/player.js, js/sim/attack.js | each hero's basic attack (`CLASSES[c].attack`: cycle, knockback, a shot's speed and life or a cut's reach and sweep); the draw curve (`DRAW_*_MIN`) and the damage roll in `attackDmg()` |
 | js/sim/items.js | `BUILD_ITEMS` (every item's price, recipe, stats and passive), `ITEM_PASSIVES`, `ITEM_SELL`, `ITEM_LEGEND_PRICE`, `ITEM_FIGHT_T`, every passive's numbers (`KINDLE_*`, `CHILL_*`, `LEECH_SHARE`, `THORN_SHARE`, `CULL_*`, `STEADY_MUL`, `SURGE_*`, `BRACE_*`, `SMOLDER_*`, `SCORCH_BURN`, `AMPLIFY_MUL`), the bots' `BOT_BUILDS` |
 | js/ui/shop.js | `SHOP_REACH` |
@@ -549,8 +549,8 @@ Code that is dead **on purpose** is the next section.
   (`hurtEagle`) are not units: a flaming shot does its impact damage and neither burns. Deliberate,
   but it is the obvious next place fire could go — it would need a burn clock and a draw pass on
   each.
-- **The AI does not play around the new states.** `updateAI` reads no `burnT`, `netT` or `rootT`,
-  so a bot on fire does not break off and a netted one does not change its mind. Everything lands
+- **The AI does not play around the new states.** `updateAI` reads no `burnT` or `rootT`,
+  so a bot on fire does not break off and a rooted one does not change its mind. Everything lands
   on them correctly; nothing reacts to it yet.
 - **bots never ping.** A ping is a human's hint to the bots (`pingSteer`); the ladder makes no
   ping of its own, so a bot's plan is read off its callouts and the F4 table, not off the map.
@@ -582,11 +582,6 @@ function or constant no code has. What is left here is what that check cannot
 see as dead and is kept for a stated reason; a verbatim code move carries it along, and a new
 entry needs a reason that outweighs keeping it working.
 
-- **`rootUnit`/`markUnit` have no caster** (since the hunter's 2.47 rework retired the snare
-  trap and the falcon): the two setters, their `drawUnitStates` tells (the sprung jaws, the gold
-  chevrons) and mark's `seenAt` bypass all stay, because they are part of the
-  [universal status set](gameplay/status-effects-one-set-for-every-unit.md) a future ability or
-  attack lands on for free.
 - A tree's `variant` (rolled by `randi(0, 1)` in `genWorld`) picks no art any more: there is one
   pine in twenty-four bend frames, `treeFrame` reads the wind for the lean it wears, and the tile's
   own `hash2` mirrors it, gives it a standing lean, a palette row and a nudge.

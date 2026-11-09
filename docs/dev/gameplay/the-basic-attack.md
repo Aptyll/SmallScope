@@ -9,17 +9,16 @@ and items and levels grow it through the hero's stats ([hero stats](hero-stats.m
 
 | field | means |
 | --- | --- |
-| `name` | what the tooltip calls it (SHORTBOW, LONGSWORD, OATH GREATSWORD) |
+| `name` | what the tooltip calls it (OATH GREATSWORD, STAR SHARD, HEAVY ARBALEST) |
 | `art` | the weapon's picture: `SPRITES.weaponArt[art]` (its 12 px icon) and `SPRITES.weaponHeld[art]` (a blade at its real length), js/sprites/weapons.js |
 | `cycle` | seconds of renock after a press, before the next draw may start. `attackCycle(p)` scales it by `kit.nock / BOW_NOCK` (anything that shortens `kit.nock` quickens it) and divides by ATTACK SPEED (`asMul`) |
 | `kb` | [knockback](#knockback): the multiplier the blow shoves with |
 | `shot` | a ranged attack: `{ speed, life, col, look }`, one arrow's full-draw flight, its collar colour, and optionally the `look` it is drawn with in flight in place of an arrow (`HERO_SHOTS`, js/draw/heroes.js) |
 | `cut` | a melee attack: `{ reach, half }`, the blade's px at full draw and the radians of sweep either side of the aim ([the cut](#the-cut)) |
 
-Today's rows: the HUNTER's SHORTBOW (a shot, 320 px/s for 0.85 s, `cycle` 55/60 s), the WARRIOR's
-LONGSWORD, ARMATOS's OATH GREATSWORD and FORTIVA's CHAIN GREATSWORD (a cut, 28 px and 1.05 rad,
+Today's rows include ARMATOS's OATH GREATSWORD and FORTIVA's CHAIN GREATSWORD (a cut, 28 px and 1.05 rad,
 `cycle` 30/60 s, `kb` 1.2), and BELLA's EAGLE SPATHA (a quicker, shorter cut: 26 px, 0.95 rad, `cycle` 26/60 s, `kb` 1; each named hero's blade is drawn as its own through `heroBlade`,
-js/draw/heroes.js), and IGNIA's CROOK AND LANTERN (a slower ember shot: 260 px/s for 0.85 s, `cycle` 60/60 s, `kb` 0.6, drawn as `look: 'ember'`; her staff is carried, not swung: `staff` on the row, `HERO_STAVES`), and AURA's STAR SHARD (a star bolt, 270 px/s for 0.95 s, `cycle` 66/60 s, `kb` 0.5, drawn as `look: 'starbolt'`; carried upright like IGNIA's staff, `staff: 'shard'`), and SALVIA's SNOWDROP STAFF (a sprig, 250 px/s for 0.85 s, `cycle` 62/60 s, `kb` 0.5, drawn as `look: 'sprig'`; carried upright, `staff: 'snowdrop'`), and LUCERNA's LANTERN (a spark, 260 px/s for 0.8 s, `cycle` 62/60 s, `kb` 0.6, drawn as `look: 'lampspark'`; the lantern hangs from her hand, `staff: 'lantern'`), and BUCINA's HORN (a note, 255 px/s for 0.8 s, `cycle` 62/60 s, `kb` 0.6, drawn as `look: 'hornnote'`; carried upright, `staff: 'horn'`), and VARRO's HUNTING SPEAR (a thrust a touch longer and narrower than the longsword's cut: 30 px, 0.8 rad, `cycle` 28/60 s, drawn as his own blade, `HERO_BLADES.spear`), and VELOX's STAFF SLING (a sling stone, 300 px/s for 0.6 s, `cycle` 50/60 s, `kb` 0.6, drawn as `look: 'slingstone'`; carried upright, `staff: 'sling'`), and SAGITTA's HEAVY ARBALEST (a bolt, 430 px/s for 0.82 s, `cycle` 80/60 s, `kb` 1.3, drawn as `look: 'bolt'`; every third is a heavy bolt, `HERO_PASSIVE` `shot`). A new hero is a new
+js/draw/heroes.js), and IGNIA's CROOK AND LANTERN (a slower ember shot: 260 px/s for 0.85 s, `cycle` 60/60 s, `kb` 0.6, drawn as `look: 'ember'`; her staff is carried, not swung: `staff` on the row, `HERO_STAVES`), and AURA's STAR SHARD (a star bolt, 270 px/s for 0.95 s, `cycle` 66/60 s, `kb` 0.5, drawn as `look: 'starbolt'`; carried upright like IGNIA's staff, `staff: 'shard'`), and SALVIA's SNOWDROP STAFF (a sprig, 250 px/s for 0.85 s, `cycle` 62/60 s, `kb` 0.5, drawn as `look: 'sprig'`; carried upright, `staff: 'snowdrop'`), and LUCERNA's LANTERN (a spark, 260 px/s for 0.8 s, `cycle` 62/60 s, `kb` 0.6, drawn as `look: 'lampspark'`; the lantern hangs from her hand, `staff: 'lantern'`), and BUCINA's HORN (a note, 255 px/s for 0.8 s, `cycle` 62/60 s, `kb` 0.6, drawn as `look: 'hornnote'`; carried upright, `staff: 'horn'`), and VARRO's HUNTING SPEAR (a thrust a touch longer and narrower than the greatsword's cut: 30 px, 0.8 rad, `cycle` 28/60 s, drawn as his own blade, `HERO_BLADES.spear`), and VELOX's STAFF SLING (a sling stone, 300 px/s for 0.6 s, `cycle` 50/60 s, `kb` 0.6, drawn as `look: 'slingstone'`; carried upright, `staff: 'sling'`), and SAGITTA's HEAVY ARBALEST (a bolt, 430 px/s for 0.82 s, `cycle` 80/60 s, `kb` 1.3, drawn as `look: 'bolt'`; every third is a heavy bolt, `HERO_PASSIVE` `shot`). A new hero is a new
 `attack` row and nothing else. The ATTACK SPEED stat is read off the same row: `classAs(cls)` is
 one over the full draw plus the renock (js/sim/stats.js).
 
@@ -28,22 +27,20 @@ one over the full draw plus the renock (js/sim/stats.js).
 `basicAttack(p)` is the one entry point, the falling edge of `input.fire`, for every player alike
 (`playerAttack`, js/sim/sim.js):
 
-1. The cover is read (`ambushReady`) before anything below can break it.
-2. A `cut` runs `cutAttack`, a `shot` runs `shootAttack` plus one `sfxAt('arrow', …)`.
-3. `p.nockT = attackCycle(p)` ([the cycle](the-swing-tools-e.md#the-cycle)), and `risePlayer` (the attack is what
-   breaks cover).
+1. A `cut` runs `cutAttack`, a `shot` runs `shootAttack` plus one `sfxAt('arrow', …)`.
+2. `p.nockT = attackCycle(p)` ([the cycle](the-swing-tools-e.md#the-cycle)).
 
-What it lands for is `attackDmg(p, pw, amb)`: the hero's DAMAGE stat (`statOf`) plus the kit's
+What it lands for is `attackDmg(p, pw)`: the hero's DAMAGE stat (`statOf`) plus the kit's
 speed bonus (`spdDmg`, on a body that is moving), **the draw scales the whole sum**
-(`drawDmgMul`, [the draw](the-swing-tools-e.md#the-draw)), and an ambush multiplies that by `kit.ambushMul`. Every
+(`drawDmgMul`, [the draw](the-swing-tools-e.md#the-draw)). Every
 blow it lands carries `basic: true` to `hurtUnit`, which is how a hero's on-basic-attack passive
 (`passiveDeal`, js/sim/heroes.js) tells it from an ability.
 
 **A shot** is one arrow down the aim from `BOW_Y` above the feet, its speed and life from
 `shotFlight(A.shot, pw)`: the same envelope the aim line measures. It goes into the `arrows`
-array with `solid: true`, the row's `kb` and `col`, and `basic: true`. **The PIERCE** (HUNTER's
-first ability, js/sim/abilities.js) is a heavier arrow through the same `shotFlight`, flagged
-`pierce` so it cuts every body in its line.
+array with `solid: true`, the row's `kb` and `col`, and `basic: true`. A shot flagged `pierce`
+(SAGITTA's THE LONG BOLT, js/sim/sagitta.js) cuts every body in its line, each once
+(`a.pierceHit`), until a hero's own hook clears the flag.
 
 ### Knockback
 

@@ -10,6 +10,7 @@ function startGame() {
 }
 
 PROFILE.load();   // the profile carries the settings, so it is read first
+PROFILE.refundRetired(SKIN_RETIRED, SKIN_RETIRED_SLOTS); // coins back for cosmetics no longer sold (js/ui/skins.js)
 loadSettings();
 mendBinds(); // the profile's key binds made whole (input.js)
 fitCanvas(); relayout(); // the window may have changed size while the scripts loaded (no resize listener yet); this places the UI for the fitted view

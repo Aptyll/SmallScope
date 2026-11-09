@@ -40,8 +40,8 @@ value whatever it is drawn in. So world text is **held back** instead — `drawW
 the glyphs (`worldInk`) and `flushWorldInk` stamps them at the **end of `renderLighting`**, above
 the tint, the depth wash and the rim. It is the same carve-out the two debug overlays get, for
 the same reason. **The frames over a body are held back the same way**: `overheadPlate(fn)` queues
-one closure per body (`worldPlates`, with the `globalAlpha` and transform standing at the call -
-a buried body's fade), and `flushPlates`, first thing in `flushWorldInk`, runs
+one closure per body (`worldPlates`, with the `globalAlpha` and transform standing at the call),
+and `flushPlates`, first thing in `flushWorldInk`, runs
 them in draw order. A player's whole frame (bars, level plate, stun plate, meter and name), a
 beast's, every `drawHealthBar` (robots, buildings, the regrow clocks) and the roost's PERCH bar
 go through it, so a bar is the same pixels in any light and nothing standing in front of a body
@@ -212,7 +212,7 @@ does not follow the day clock: the shade lies where it lies at night too, under 
   changed, each dirty tile once. A pine felled by an axe, a crater or a snapshot takes
   its shade with it, and a new kind of scenery only needs a `CASTERS` entry.
 - **Bodies draw their own each frame** (`drawCastShade(spr, x, y)` before the sprite, a
-  `WeakMap` of shades per frame): players (the standing frame through a roll; none lying prone or
-  in a hole), animals, soldiers, merchants (on the snow through a hop) and
+  `WeakMap` of shades per frame): players (the frame on show, a roll's own frame through a roll; none
+  in a hole or on a deer), animals, soldiers, merchants (on the snow through a hop) and
   finished buildings. It is flat `SHADE_BODY` at `SHADE_BODY_A`, which reads the same on the snow
   as the multiply. Birds, pylons and the practice furniture keep their small flat marks.

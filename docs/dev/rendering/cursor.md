@@ -28,12 +28,9 @@ both the pixel cursor and the browser-cursor fallback read from it. It returns
   are blocked right now: floundering in a hole, or mid-roll.
 - Every reticle in play also carries the **attack's own state**, whatever the pointer is
   over, since the crosshair is where the eye already is: `nock` (0→1 over `attackCycle`) draws
-  four gold corner marks falling inward onto the ring. `amb` (buried, settled: the next shot is worth
-  `AMBUSH_MUL`) grows a second segment out along each of the crosshair's **own axes** and warms the
-  centre pixel to gold — deliberately on the cross, where the renock's marks are on the diagonals,
-  so a bow that is both reloading and buried says two separate things at once. Both come from
-  the one `ret()` helper inside `cursorInfo`, so no return site can forget them. See
-  [the cycle](../gameplay/the-swing-tools-e.md#the-cycle) and [Prone](../gameplay/prone-under-the-snow.md).
+  four gold corner marks falling inward onto the ring. It comes from the one `ret()` helper inside
+  `cursorInfo`, so no return site can forget it. See
+  [the cycle](../gameplay/the-swing-tools-e.md#the-cycle).
 - Sprites live in `SPRITES.cursor.{arrow,hand,grab}` (`CUPAL`, lit top-left, icy
   bevel) with one-colour `SPRITES.cursorShadow` twins drawn 1 px offset beneath; hotspots are
   in `CUR_HOT`. Reticles are procedural via `drawOutlinedRects()` (dark rim pass, then fill),

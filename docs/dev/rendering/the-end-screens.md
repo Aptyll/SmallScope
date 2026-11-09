@@ -104,12 +104,13 @@ live exactly when the planks are (`emoteLive`): before that a press is a skip (`
 
 An emote is a **pose picker** over the set every body on the stage is already drawn from
 (`champLook`) — it hands back a frame, an offset off that body's own feet and sometimes a puff —
-so the whole feature costs no art. The cheer is the catch's hoist frame, the one pose in the set
-with both arms over the head; the twirl is the four facings in order, which is the whole trick of
-it; the flop drops onto the prone frames and gets back up, and the crown comes off with it and
-lies on the block until the body is up again. `drawEndBody` bottom-aligns whatever frame comes
-back on the line the feet stand on, so the hoist's extra rows keep their feet, and the name and
-the crown ride clear of a pose that reaches over the head.
+so the whole feature costs no art. The cheer is three hops head-on, the feet kicking on the way
+up and a puff where each lands; the twirl is the four facings in order, which is the whole trick of
+it; the flop goes down on its side (`prone.down[0]`), lies flat on the lying-down frames
+([sprites](../sprites.md), derived off the standing ones) and gets back up, and the crown comes off
+with it and lies on the block until the body is up again. `drawEndBody` bottom-aligns whatever
+frame comes back on the line the feet stand on, so the name and the crown ride clear of the
+pose.
 
 Every emote has a **second performance for a body already down**, and the loss's screen plays that
 one: the side lies in the drift and emotes without getting up, so nothing on that screen ever

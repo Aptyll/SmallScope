@@ -43,9 +43,6 @@ back on the next frame. A draw and a shield still turn it every step.
   their own short hold-then-fade life (`SNOW_TRAIL_LIFE` 3.5 s, fading only over the last
   `SNOW_TRAIL_FADE` 1.4 s), so a trail stays crisp and then wipes away tail-first behind the
   player; ice scratches and walking footprints keep the original 9 s linear fade.
-- **Prone** short-circuits all of it: a belly crawl takes the plain direct-approach branch on any
-  surface at a flat `PRONE_SPEED`, and sliding is refused outright. See
-  [Prone](prone-under-the-snow.md).
 - **Walls kill the blocked axis** (`blockedX` → `vx = 0`, same for y) in both the roll and
   normal movement, so you never grind along a treeline at full speed. A wall taken **head-on
   mid-roll** costs more than the axis: past `TACKLE_MIN` of speed driven into it, that is a
@@ -63,10 +60,10 @@ cable (each side has one down each lane) ([the zipline](../world.md#the-zipline)
 `keyPress`/`pointerPress`/`ckRightPress` set `input.jump`, the edge-triggered hop intent the
 eagle already reads, and `updatePlay` consumes it for every player alike as `zipToggle(p)`
 (js/sim/zipline.js): riding, it lets go; under a cable, `zipStart`. The ride is its own branch of
-`updatePlayer`'s movement ladder, after the grapple's and before the surface model
-(`zipStep`): the cable sets `p.x/p.y` **outright** — no `moveEntity`, so a wall, a pine or a body
+`playerMove`'s movement ladder (js/sim/sim.js), after a hero's dash and the deer's leap and before
+the surface model (`zipStep`): the cable sets `p.x/p.y` **outright** — no `moveEntity`, so a wall, a pine or a body
 under the line never stops a rider — and `p.vx/vy` to the tangent × `ZIP_SPD` (220 px/s, three
-times a walk, under `GRAP_REEL`), which is what the walk-animation gate, the trails and the exit
+times a walk), which is what the walk-animation gate, the trails and the exit
 read. Holding the stick along the cable past a dead zone picks the direction (`p.zipDir`, ±1),
 across it does nothing, and either end lets go. **The clip-on reads the way you were last
 walking**, not the stick at the press: `p.lastMx/lastMy` (the stick's last held direction, kept
@@ -75,7 +72,7 @@ across a stop — set in `updatePlayer` whenever it is held) dotted with the cab
 and stood still for the press goes home, and a walk in across the cable from the lane takes the
 default. At either end the cable has one way to go and the clip-on takes it, whatever the walk
 said. State on the body: `p.zip` (the line's index in `zips`, −1 for none), `p.zipD` (px along),
-`p.zipDir`, `p.lastMx/lastMy` — declared in `reset()` beside the grapple's, so a respawn never
+`p.zipDir`, `p.lastMx/lastMy` — declared in `reset()`, so a respawn never
 comes back clipped on; `die` lets go too.
 
 **The cable under the pointer.** `hoverZip()` (actions.js) is either
@@ -99,21 +96,21 @@ same point), re-read every step and never a straight line at it, hands the ladde
 hold, then `zipStart`s the moment it is inside `ZIP_GRAB`.
 It is a channel because the player is not holding the stick: **any movement input ends it**, the
 legs are theirs again — and so does anything that takes the body (a dodge, a draw, a cast, a
-rush, a shield, the grapple, a slide, prone, a stun, a root, a net, a hole, the air, a death),
+dash, a shield, a slide, a stun, a root, a hole, the air, a death),
 a route that fails or pins (`navTo`'s `ok`), and E again (`zipToggle` calls the walk off ahead
 of everything). No timer. The walk leaves `p.lastMx/lastMy` alone, so the clip-on at its end still
 rides the way you were walking before the press. While it runs, the cable stays lit and the guide
 line stays, pointer or no pointer (`zipLitLine`, js/draw/zipline.js).
 
 **Hands on the handle.** `p.zip >= 0` joins the inline gates of `tryWork`, `autoWork`,
-`tryAbility`, the bow draw (updatePlayer) and `tryProne`; `zipStart` itself refuses
-a stunned, floundering, rolling, rushing, casting or shielded body and ends a grapple, a draw, a
+`tryAbility` and the bow draw (updatePlayer); `zipStart` itself refuses
+a stunned, floundering, rolling, dashing, casting or shielded body and ends a draw, a
 recall and a slide. A potion is the one thing a rider may still use. `tryDodge`
-rolls off the cable the way it rolls off the rope (`zipEnd` first, then the dash). **A rider is
+rolls off the cable (`zipEnd` first, then the dash). **A rider is
 still a body to every weapon** — arrows, the roll's sweep, a tower, a wolf, `seenAt` — and plain
 damage never dismounts (its knockback decays unspent, since the ride branch never applies
-`kbx/kby`); a **stun, a root or a net** does, through `zipEnd(p, true)` inside `stunUnit`,
-`rootUnit` and `netUnit` (any body's, a soldier's too): dropped at rest on the snow under the
+`kbx/kby`); a **stun or a root** does, through `zipEnd(p, true)` inside `stunUnit` and
+`rootUnit` (any body's, a soldier's too): dropped at rest on the snow under the
 cable. Another body never shoves a rider (`separateUnits` skips `zip >= 0` the way it skips
 `inAir(p)`), but **two rivals on one cable crash**: `zipCrash` (js/sim/zipline.js, called in `updatePlay`
 once the robots have stepped) finds every pair of riders of different sides on the same line
@@ -122,7 +119,7 @@ within `ZIP_CRASH_R` (8 px) along it, or past each other since the last step (`z
 met. A side's own riders pass through each other. Players (any seat) and soldiers crash alike.
 
 **Letting go keeps the cable's speed** — `zipEnd(p, false)` leaves `vx/vy` at 220 px/s for the
-surface model to spend exactly as `grapEnd` leaves the reel's, so a hop-off is a dash (snow kills
+surface model to spend, so a hop-off is a dash (snow kills
 it in under a second) and shift on landing carves a slide; a body coming down over a solid tile
 (the odd pine on the shoulder) is set beside it (`nearestDryTile`). Riders draw lifted
 `ZIP_ALT` px with their shadow on the ground, the handle over the head and a rope up to the cable

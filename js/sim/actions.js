@@ -650,8 +650,8 @@ function structsNear(src, x, y, r) {
   return out;
 }
 // The WEDGE: a blow swung from (x, y) along bearing `a`, reaching `r` px and
-// `half` rad to either side. The longsword's cut, the shield's slam and the
-// execute all sweep exactly this shape and draw exactly this shape (the
+// `half` rad to either side. A blade's cut and every swung ability
+// sweep exactly this shape and draw exactly this shape (the
 // `wedge` fx, js/sim/abilities.js), so what the snow shows is what the blade
 // reaches. A body counts by its centre plus its own radius, so a big deer
 // standing just off the rim is still under the edge.
@@ -889,14 +889,14 @@ function cutHeal(e, t, cut) {
   e.healCut = Math.max(e.healCut || 0, cut);
 }
 // Marked: revealed. On a player seenAt() returns its full range and both maps
-// keep drawing them; an animal or a bot has no cover to strip, so it is the
-// gold chevrons alone - the falcon still says "I have found this".
+// keep drawing them; an animal or a bot has no stealth to strip, so it is the
+// gold chevrons alone - the mark still says "I have found this".
 function markUnit(e, t) {
   if (t <= 0 || !unitAlive(e)) return;
   // being FOUND is the one status a player has to hear: the chevrons are over
   // your own head where you cannot see them, and what has changed is that
-  // your cover has stopped working - the whole reason to be lying in the snow
-  // at all. Fresh marks only, or a falcon circling re-rings it every second.
+  // your stealth has stopped working. Fresh marks only, or a mark refreshed
+  // every second re-rings it every second.
   if (!(e.markT > 0)) sfxFor(e, 'marked');
   e.markT = Math.max(e.markT || 0, t);
 }

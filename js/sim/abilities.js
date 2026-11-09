@@ -70,6 +70,11 @@ const CLASS_AB = [
   LIGNUM_AB, // LIGNUM - the chop, the thrown axe, the bark skin, the timber (js/sim/lignum.js)
   SAGITTA_AB, // SAGITTA - the pin, the pavise, the crank back, the long bolt (js/sim/sagitta.js)
 ];
+// every hero has a row of keys, and a bot knows how to use each one (its `bot`)
+for (const c of CLASSES) {
+  const row = CLASS_AB[heroIndex(c.name)];
+  if (!row || row.length !== AB_KEYS || row.some((ab) => !ab.bot)) throw new Error('abilities.js: ' + c.name + ' needs ' + AB_KEYS + ' keys, each with a bot row');
+}
 
 // the shapes the abilities flash on the snow
 const abFx = [];     // {kind: 'wedge'|'ring', x, y, a, r, half, t, col} - where a blow landed, flashed for AB_FX_T

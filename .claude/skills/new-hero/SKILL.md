@@ -42,10 +42,12 @@ LOOKS (optional): default look name, first buyable skin name
    detail (a range, a ring size, which body it borrows), pick a default,
    write it in the PR, and ask at most 3 one-letter questions with the pick marked. Keep going on
    the picks; never park on a question.
-2. **Build the kit on a borrowed body.** One file per side, named for the hero:
+2. **Build the kit on a borrowed look.** One file per side, named for the hero:
    - `js/sim/<hero>.js`: its ability rows (the `ARM_AB` shape: `cd`, `cast`, `blurb`, `use`,
      `tele`, a `bot` hint saying when a bot should press it, its own `icon`; `recast`/`ok` if
-     needed), its passive in `HERO_PASSIVE`,
+     needed), its passive in `HERO_PASSIVE`. All four rows carry a `bot`, and the table joins
+     `CLASS_AB` (js/sim/abilities.js) at the hero's own index; a load check refuses a hero
+     without four keys that each have one.
      - **Rank numbers on every key**, League-style ([class abilities](../../../docs/dev/gameplay/class-abilities-keys-1-4.md)):
        keys 1-3 hold 5 ranks (hero levels 1/3/5/7/9), key 4 is the ultimate with 3 (6/11/16), no
        `lvReq`. Each row's `rank: { dmg: [5 numbers], stun: 1, ... }` holds its numbers (a list
@@ -62,14 +64,19 @@ LOOKS (optional): default look name, first buyable skin name
    - `js/draw/<hero>.js`: tells, rings, entities, the held weapon.
    - `js/sprites/<hero>.js`: ability icons, then bodies and weapon once picked (step 4).
    - Its `CLASSES` row in js/sim/player.js with `pos:` (the draft positions it plays, best first:
-     `POSITIONS` ids, js/ui/draft.js), `body:` (the hero whose outfit it borrows
-     through `heroBody`), `passive`, `base`/`grow` stats, and its own **basic attack**: an
+     `POSITIONS` ids, js/ui/draft.js), `passive`, `base`/`grow` stats, its looks (`skins`,
+     `skinPal`, `skinSlot`: a hero is drawn only in its own `skins` table, so until step 4 point
+     `skins` and `skinPal` at the closest hero's, e.g. `ARM_SKINS` and `ARM_PAL`), and its own
+     **basic attack**: an
      `attack` row (`name`, `art`, `cycle`, `kb`, and a `shot` `{ speed, life, col, look }` or a `cut`
      `{ reach, half }`; [the basic attack](../../../docs/dev/gameplay/the-basic-attack.md)). Copy the
      closest hero's row and say in the PR what you changed; a new `art` goes in
-     js/sprites/weapons.js. `HERO_N` in js/app/profile.js; the 12px emblem in js/ui/menu.js; a
-     build in `BOT_BUILDS` (js/sim/items.js); its name in `BOT_CALL_LOW` (js/ai/bot-api.js); the
-     scripts in `index.html` in load order.
+     js/sprites/weapons.js. Code that needs the hero names it with `heroIndex('NAME')`, never a
+     bare index. Each of these is a load check that refuses to boot without it: a `SKIN_TABS`
+     row in js/ui/skins.js (`hero: heroIndex('NAME')`, `rows` the same table as the row's
+     `skins`), the 12px emblem in `CLASS12` (js/ui/menu.js, keyed by the hero's name), and a
+     `BOT_BUILDS` row (js/sim/items.js, keyed by name). Then the scripts in `index.html` in load
+     order.
    - **Register, don't stack.** The shared sim reaches a hero only through the lists and tables
      in js/sim/heroes.js (`HERO_PASSIVE` with hurt/deal/cast/tick, `HERO_TAKEN`, `HERO_STAT`,
      `HERO_TEN`, `HERO_MOVE`, `HERO_DASH`, `HERO_TICK`, `HERO_GROUND`, `HERO_MARK`, `HERO_COVER`,
@@ -83,7 +90,7 @@ LOOKS (optional): default look name, first buyable skin name
    (default look `price: 0`, first buyable skin `rarity: 'rare'`, 200 coins, as Armatos), a doll
    per look in `app/bake-player/bodies.py`, then `python app/bake-player/bake.py`. The rebake
    must only add lines to js/baked/motion.js: every other hero's frames stay byte-identical.
-   Add the hero's tab in js/ui/skins.js (`hero:` its index). The weapon is held naturally in all
+   Point the `CLASSES` row's `skins`/`skinPal` and its `SKIN_TABS` row at them. The weapon is held naturally in all
    four facings (a `HERO_BLADES` row: flat and slanted art, the `hilt` on the flat art and the grip on the slanted, the hip by facing; a mage's
    staff is a `HERO_STAVES` row named by `staff:` on the `CLASSES` row, IGNIA's crook). The side run
    comes off the drawn side frame (`heroRunSide`): keep the head as wide as the front and the body
@@ -107,6 +114,6 @@ LOOKS (optional): default look name, first buyable skin name
 
 ## Known gaps to carry, not hide
 
-- The 48px portrait (`portrait`, js/sprites/looks.js) is a hero's own 16px front frame at 3x, not
-  48px art of its own; no hero has native portrait art yet.
+- The 48px portrait (`SPRITES.portrait`, js/sprites/characters.js) is a hero's own 16px front
+  frame at 3x, not 48px art of its own; no hero has native portrait art yet.
 - No hero has been tested in a 10-human online match.

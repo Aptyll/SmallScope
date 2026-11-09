@@ -143,7 +143,7 @@ const CLASSES = [
     name: 'BELLA', role: 'THE IMPERIAL GENERAL', passive: 'calculated', // HERO_PASSIVE, js/sim/heroes.js
     blurb: ['FIND THE WEAKNESS. SPEND IT FIRST.', 'THE LUNGE, THE SLIP AND THE PARRY CHAIN INTO EACH OTHER.', 'CALL OUT ONE HERO AND FINISH THEM.'],
     story: 'SHE WON THE EMPIRE A WAR ITS COURT HAD ALREADY CALLED LOST, AND THE COURT NEVER FORGAVE HER. TRAITOR WAS THE KINDEST WORD THEY HAD. SHE KEPT THE SPATHA WITH THE EAGLE ON IT. SHE SAYS IT IS HERS NOW.', // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
-    attack: { name: 'EAGLE SPATHA', art: 'sword', cycle: 26 / 60, kb: 1, cut: { reach: 26, half: 0.95 } }, // quicker and a little shorter than the longsword
+    attack: { name: 'EAGLE SPATHA', art: 'sword', cycle: 26 / 60, kb: 1, cut: { reach: 26, half: 0.95 } }, // quicker and a little shorter than ARMATOS's greatsword
     // her own body in each of her looks (BELLA_SKINS, js/sprites/bella.js),
     // worn per player (heroSkinOf) over the side's coat
     skins: BELLA_SKINS, skinPal: BELLA_PAL, skinSlot: 'bella',
@@ -253,7 +253,7 @@ const CLASSES = [
     name: 'RUPES', role: 'THE AVALANCHE', passive: 'snowpack', // HERO_PASSIVE, js/sim/rupes.js
     blurb: ['BE THE SLOPE.', 'THE HITS YOU TAKE PACK SNOW ONTO YOU. SHED IT IN ONE BURST.', 'ROLL FROM FAR OFF: THE FURTHER YOU ROLL, THE BIGGER THE BURST.'],
     story: "HE CUT ICE FOR THE EMPIRE'S CELLARS UNTIL THE QUARRY FACE CAME DOWN, AND HE HELD THE WAY OUT OPEN WITH HIS BACK UNTIL THE LAST CUTTER WAS CLEAR. THE EMPIRE BILLED HIM FOR THE ICE. IN THE VALLEY HE DIGS WHERE THE SNOW IS DEEPEST, BECAUSE IT NEVER SURPRISES HIM.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
-    attack: { name: 'ICE MAUL', art: 'sword', cycle: 34 / 60, kb: 1.4, cut: { reach: 27, half: 1.05 } }, // a little slower than the longsword, a harder shove
+    attack: { name: 'ICE MAUL', art: 'sword', cycle: 34 / 60, kb: 1.4, cut: { reach: 27, half: 1.05 } }, // a little slower than ARMATOS's greatsword, a harder shove
     base: { hp: 134, dmg: 15, armor: 24, ap: 0, haste: 0, ms: PLAYER_SPEED - 2 },
     grow: { hp: 10.5, dmg: 1.3, as: 0.008, armor: 2.9 },
     rankOrder: [0, 1, 2], // the heave, the shed, the shoulder
@@ -271,7 +271,7 @@ const CLASSES = [
     name: 'VARRO', role: 'THE WOLF-KEPT', passive: 'pack', // HERO_PASSIVE, js/sim/varro.js
     blurb: ['RUN WITH THE PACK.', 'LEAP IN, MARK THEM, AND STAY ON THEM.', 'CALL THE WOLVES: ONE RIVAL CANNOT OUTRUN THEM.'],
     story: 'THE EMPIRE LEFT HIM ON THE MOUNTAIN AS A CHILD. THE WOLVES FOUND HIM FIRST AND KEPT HIM WARM THROUGH THE WINTER. HE GREW UP RUNNING WITH THEM, AND HE STILL SHARES EVERY CATCH WITH THE PACK.', // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
-    // a spear's thrust: a touch longer and narrower than the longsword's cut
+    // a spear's thrust: a touch longer and narrower than ARMATOS's greatsword's cut
     attack: { name: 'HUNTING SPEAR', art: 'spear', cycle: 28 / 60, kb: 1, cut: { reach: 30, half: 0.8 } },
     base: { hp: 112, dmg: 17, armor: 18, ap: 0, haste: 0, ms: PLAYER_SPEED + 2 },
     grow: { hp: 8.5, dmg: 1.6, as: 0.012, armor: 2.4 },
@@ -379,7 +379,7 @@ const CLASSES = [
     name: 'MARIS', role: 'THE ICE DIVER', passive: 'coldwater', // HERO_PASSIVE, js/sim/maris.js
     blurb: ['THE THING UNDER THE ICE.', 'ON ICE AND BY THE WATER YOU ARE QUICK, AND YOUR STRIKES CHILL.', 'ONCE YOU SURFACE YOU HAVE NO WAY OUT.'],
     story: "SHE DOVE FOR THE EMPIRE'S SUNKEN GRAIN BARGES IN WATER NOBODY ELSE WOULD TOUCH, AND WAS SENT AWAY WHEN SHE WOULD NOT DIVE FOR A SUNKEN TAX CHEST. SHE SAYS THE ORCA IN THE CISTERN POOL IS THE ONLY HONEST THING IN THE VALLEY. SHE GIVES IT THE FIRST FISH OF EVERY CATCH.", // the wiki's hero page (docs/dev/lore.md)
-    attack: { name: 'HARPOON', art: 'sword', cycle: 32 / 60, kb: 1.1, cut: { reach: 28, half: 0.8 } }, // a thrust: a little longer and narrower than the longsword
+    attack: { name: 'HARPOON', art: 'sword', cycle: 32 / 60, kb: 1.1, cut: { reach: 28, half: 0.8 } }, // a thrust: ARMATOS's greatsword's reach, narrower
     skins: MARIS_SKINS, skinPal: MARIS_PAL, skinSlot: 'maris',
     blade: 'harpoon', // her HARPOON in her hands (HERO_BLADES, js/draw/maris.js)
     base: { hp: 126, dmg: 14, armor: 22, ap: 0, haste: 0, ms: PLAYER_SPEED - 2 },
@@ -395,7 +395,7 @@ const CLASSES = [
     name: 'LIGNUM', role: 'THE FELLER', passive: 'treeline', // HERO_PASSIVE, js/sim/lignum.js
     blurb: ['OWN THE TREELINE.', 'WAIT IN THE WOODS, STEP OUT, CHOP HARD, STEP BACK.', 'FELL A PINE ACROSS THE FIGHT.'],
     story: "HE FELLED TIMBER FOR THE EMPIRE'S SHIPS UNTIL THERE WAS NO FOREST LEFT TO FELL, THEN REFUSED TO BURN THE LAST ONE. THE VALLEY'S PINES GREW UP THROUGH THE WORKS AND NOBODY OWNS THEM. HE LIKES THAT.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
-    // an axe's blow: the longsword's reach, a little wider and slower
+    // an axe's blow: ARMATOS's greatsword's reach, a little wider and slower
     attack: { name: 'FELLING AXE', art: 'sword', cycle: 34 / 60, kb: 1.2, cut: { reach: 26, half: 1 } },
     skins: LIGNUM_SKINS, skinPal: LIGNUM_PAL, skinSlot: 'lignum',
     blade: 'felling', // his FELLING AXE in his hands (HERO_BLADES, js/draw/lignum.js)
@@ -446,8 +446,8 @@ function kitOf(p) { return p.kit || CLASSES[p.cls].kit; }
 function setClass(p, c) { p.cls = c; refreshKit(p); p.hp = p.maxHp; }
 // the hero's HEALTH stat: its base, its levels and its bonuses (statOf, js/sim/stats.js)
 function levelMaxHp(p) { return statOf(p, 'hp'); }
-// THE ONE WAY HEALTH COMES BACK to a player: a potion, a creek fish, a berry bush, the daylight, a second
-// wind, a kill's heal. Capped at the most, and what it actually gave back is
+// THE ONE WAY HEALTH COMES BACK to a player: a potion, a creek fish, a berry bush, the daylight, a hero's
+// heal, a kill's heal. Capped at the most, and what it actually gave back is
 // counted for the post-game record (js/ui/lobby.js) and returned.
 function healPlayer(p, n) {
   if (p.healCutT > 0) n *= 1 - p.healCut; // FROSTBITE (cutHeal, js/sim/actions.js)
@@ -619,7 +619,7 @@ const PLAYER_RECORD = {
   farm: 0,                       // last hits on rival soldiers and camp monsters (farmHit, js/sim/farm.js)
   streak: 0, bestStreak: 0,      // rivals downed since this body last went down, and the most of it
   multiN: 0, multiT: -1e9, bestMulti: 0, // the run of kills MULTI_T apart, when the last one was, the most of it
-  ccOut: 0,                      // s of stun, root and net put on RIVAL players (ccCredit, js/sim/actions.js)
+  ccOut: 0,                      // s of stun and root put on RIVAL players (ccCredit, js/sim/actions.js)
   assists: 0,                    // rivals this body helped down without the last blow (payTakedown)
   feed: 0,                       // deaths since this body's last kill or assist: past FEED_FROM it is worth less (killWorth)
   earned: 0,                     // gold earned this match, spent or not (gainGold): the scoreboard's rank

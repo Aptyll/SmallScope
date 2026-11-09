@@ -152,7 +152,7 @@ function makeAnimal(kind, x, y, fix) {
     target: null, biteCd: 0, threat: 0, // camp monster: its quarry, its bite rhythm, and the leash bar (0..1) that ends the hunt
     dead: false,
   };
-  // stun, root, slow, the net drape, the falcon's mark, fire: an animal wears
+  // stun, root, slow, a mark, fire: an animal wears
   // the identical set a player does, written by the same setters
   // (`status effects`, js/sim/actions.js) - a rabbit is not a different rulebook
   clearUnitStatus(a);

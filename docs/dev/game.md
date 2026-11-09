@@ -12,8 +12,7 @@ nine other people are on it.
 
 Ten players in `players` — **people and bots: every seat nobody takes is a bot's**, alone or in an
 online lobby ([online play](multiplayer.md#online-play)) — across **two teams of five, RED vs
-BLUE** (players alternate). Everyone plays one of **twenty heroes** (the ranged HUNTER, the melee
-WARRIOR, ARMATOS the defensive initiator, FORTIVA the juggernaut, BELLA the duelist, IGNIA the hearthkeeper, AURA the artillery mage, SALVIA the healer, LUCERNA the catch-and-save support, HIEMS the control mage, RUPES the engage tank, VARRO the jungler who calls wolves, BUCINA the tempo support, NIX the night scout, FABER the zone mage, VELOX the skating marksman, FALCO the diving assassin, MARIS the catch tank and LIGNUM the treeline skirmisher — a human's is the one picked on the champ select's hero grid) and is **dropped in by their team's armoured eagle**, which flies in over its own corner and lands
+BLUE** (players alternate). Everyone plays one of **eighteen heroes** (ARMATOS the defensive initiator, FORTIVA the juggernaut, BELLA the duelist, IGNIA the hearthkeeper, AURA the artillery mage, SALVIA the healer, LUCERNA the catch-and-save support, HIEMS the control mage, RUPES the engage tank, VARRO the jungler who calls wolves, BUCINA the tempo support, NIX the night scout, FABER the zone mage, VELOX the skating marksman, FALCO the diving assassin, MARIS the catch tank, LIGNUM the treeline skirmisher and SAGITTA the siege marksman — a human's is the one picked on the champ select's hero grid) and is **dropped in by their team's armoured eagle**, which flies in over its own corner and lands
 the whole side at home; nobody starts at a spawn camp. Each side's **base** is a fixed hollow cut
 into its **corner's** woods, RED always bottom-left, BLUE always top-right
 ([the bases](world.md#the-bases)); the bird roosts on its perch at the back and becomes its team's
@@ -71,7 +70,7 @@ ride). Nothing in either counts and nothing is at stake. See [the practice tool]
 ## The pillars
 
 **Your weapon is your hero's.** The left button is one plain MOBA basic attack that belongs to
-the hero's kit (the HUNTER's SHORTBOW, the WARRIOR's LONGSWORD, ARMATOS's OATH GREATSWORD, FORTIVA's CHAIN GREATSWORD, BELLA's EAGLE SPATHA, IGNIA's CROOK AND LANTERN, NIX's ICE DIRK, FALCO's THROWING KNIFE, AURA's STAR SHARD, SALVIA's SNOWDROP STAFF, LUCERNA's LANTERN, HIEMS's SNOWFLAKE STAFF, FABER's CLOCK STAFF, VARRO's HUNTING SPEAR, BUCINA's HORN, RUPES's ICE MAUL, MARIS's HARPOON, LIGNUM's FELLING AXE, VELOX's STAFF SLING, SAGITTA's HEAVY ARBALEST), held
+the hero's kit (ARMATOS's OATH GREATSWORD, FORTIVA's CHAIN GREATSWORD, BELLA's EAGLE SPATHA, IGNIA's CROOK AND LANTERN, NIX's ICE DIRK, FALCO's THROWING KNIFE, AURA's STAR SHARD, SALVIA's SNOWDROP STAFF, LUCERNA's LANTERN, HIEMS's SNOWFLAKE STAFF, FABER's CLOCK STAFF, VARRO's HUNTING SPEAR, BUCINA's HORN, RUPES's ICE MAUL, MARIS's HARPOON, LIGNUM's FELLING AXE, VELOX's STAFF SLING, SAGITTA's HEAVY ARBALEST), held
 to draw and released to land, and nothing on the map drops another: what grows over a match is the
 hero's level and the six item slots. The **bottom bar** shows those six slots beside the
 abilities at all times. [The basic attack](gameplay/the-basic-attack.md).
@@ -88,10 +87,9 @@ League's keystone rune) and two TRICKS (two actives on long cooldowns, League's 
 a bandage, a torch, bolas, a shield, a sprint, shaking off a hold, a cleaver for the jungle.
 No flash: the roll is everybody's. [The loadout](gameplay/loadout.md).
 
-**Keys 1-4 are your class.** Each class carries four active abilities — the HUNTER's piercing
-shot, net, grapple and snow cover; the WARRIOR's shield (and its slam), rush, stomp and execute — each with a
-cooldown, a
-cast the body visibly performs, and effects drawn plainly for both sides: the game is readable
+**Keys 1-4 are your hero.** Each hero carries four active abilities of its own (ARMATOS's line
+slam, brace, march and planted standard; SAGITTA's pin, pavise, crank back and long bolt) and a
+passive beside them, each key with a cooldown, a cast the body visibly performs, and effects drawn plainly for both sides: the game is readable
 first, sneaky second. [Class abilities](gameplay/class-abilities-keys-1-4.md),
 [Classes](multiplayer.md#classes).
 
@@ -113,12 +111,6 @@ by a counter, so what the meter shows is exactly what you get.
 the dodge is an attack, which is why a player mid-roll passes through small units instead of
 colliding with them. [Momentum movement](gameplay/momentum-movement-players-only.md),
 [the roll is a hit](gameplay/dodge-roll.md#the-roll-is-a-hit).
-
-**Snow cover goes prone and the snow covers you — and it is the hunter's.** Concealment is a real
-state the world reads, not a
-visual effect: everything that decides it can see a player goes through one function, and burial
-lives inside it. It is a class ability (the hunter's key 4); a warrior never hides.
-[Prone](gameplay/prone-under-the-snow.md).
 
 **E is the one verb for the world.** The same key harvests a tree, breaks an
 enemy building, and strikes a rival's grounded eagle — and the axe it swings is never
@@ -200,7 +192,7 @@ something to walk *out* of. A raid that wrecks a barracks thins a side's waves u
 merchant rebuilds it. **The walk out is not the fight, so a zipline compresses it**: each side
 has a cable down each lane, from beside its bird along the lane's verge to short of the middle, and any body
 under one clips on with E, rides either way at three times a walk, and lets go
-anywhere — hands on the handle, still a target, dropped by a stun or a net, and the last stretch
+anywhere — hands on the handle, still a target, dropped by a stun or a root, and the last stretch
 into the fight always walked. **Three road towers hold each cable**: a stone tower with a
 great crossbow on its deck stands beside the lane a third and two thirds of the way out and at the end of every cable,
 so nine a side, and the cable runs only to the furthest one still standing, so breaking a tower takes ground back
@@ -228,8 +220,8 @@ each bolt in a row into the same hero hits harder. [Road towers](gameplay/robots
 - **Not an account.** The player profile is **one name and its lifetime numbers** — plus the
   hero last locked in and a record of which kinds you have held, in the browser. No passwords,
   no sign-in, nothing to log into. **Heroes are picked at the start of each match**, League
-  style, and every hero wears one fixed look; looks come back later as hero skins, never body
-  sliders. A fresh install arrives pre-named on the title, so play is one press away and nobody
+  style, and a hero is drawn only in its own looks, picked as hero skins on the skins screen, never
+  body sliders. A fresh install arrives pre-named on the title, so play is one press away and nobody
   is stopped at a form. **A profile is never power**: a match reads its name and the hero picked
   and nothing else — everything about a match is decided inside that match, and every item is
   on sale to everybody alike. See [architecture.md](architecture.md#profilejs),

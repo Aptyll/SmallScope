@@ -60,7 +60,7 @@ state; `DBG.directorKey('F9')` presses a key headless.
 | `sheet.py` | a concept pick sheet: letters and names, 8x/1x/2x, pasted into a real frame beside a player at each size asked |
 | `scenes/bear-wakes.js` | the example scene and template; `bear-wakes.cut.json` its cut |
 | `scenes/deer-ride.js` | the practice field's deer ride at a gallop: the three posts say JOIN, THE, DISCORD, then the log leap; `deer-ride.cut.json` its cut |
-| `scenes/deer-gap.js` | a hunter on a deer breaks three word targets (WISHLIST, ON, STEAM), the last through a cut in the pines mid-leap, slowing to a freeze |
+| `scenes/deer-gap.js` | a hero on a deer breaks three word targets (WISHLIST, ON, STEAM), the last through a cut in the pines mid-leap, slowing to a freeze |
 
 ```
 node app/media/rec.js app/media/scenes/bear-wakes.js W/take --dry      # clean? then:
@@ -126,8 +126,7 @@ many frames before it goes.
   on ice nobody brakes. Dry-run until the log shows every hit landing.
 - Runs are not deterministic between page loads (the title loop runs on wall time): never trust a
   dry run's frame numbers; cut from the recorded take's own marks.
-- An ambush hit on an unaware camp stuns it and skips the roar. A hit wakes the camp and starts the
-  roar on the same frame; cut into the roar a few frames later, after the flash.
+- A hit wakes the camp and starts the roar on the same frame; cut into the roar a few frames later, after the flash.
 - Bodies vanish on death: freeze on the blow, 2 frames before the down.
 - `waterAt` / `isSolidTile` take tile coordinates. `sfxAt`/`sfxFor` play only near the local
   player; `stage.js` logs what is heard near the camera instead.

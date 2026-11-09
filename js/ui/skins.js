@@ -93,6 +93,16 @@ const SK_TAB_BIRD = 0; // SKIN_TABS' eagle, the one non-hero tab a match reads
 // every hero has its tab, named for it: a new hero without one is caught at load
 for (const c of CLASSES) if (!SKIN_TABS.some((t) => t.hero === heroIndex(c.name) && t.rows === c.skins)) throw new Error('skins.js: ' + c.name + ' has no SKIN_TABS row');
 
+// The wardrobe slots the game no longer has - the HERO coat tints and the
+// WEAPON tints (the old HUNTER's coat and bow) - and what each of their skins
+// cost: a profile that bought one gets the coins back on its next boot
+// (PROFILE.refundRetired, called from boot.js). Frozen: never edit.
+const SKIN_RETIRED_SLOTS = ['scout', 'weapon'];
+const SKIN_RETIRED = {
+  'scout:pine': 100, 'scout:frost': 200, 'scout:ember': 200, 'scout:aurora': 400, 'scout:robot': 800,
+  'weapon:birch': 100, 'weapon:frost': 200, 'weapon:ember': 200, 'weapon:night': 400, 'weapon:sun': 800,
+};
+
 // the row an id names in a table, the free one for anything it does not have
 function skinRow(rows, id) {
   for (const r of rows) if (r.id === id) return r;

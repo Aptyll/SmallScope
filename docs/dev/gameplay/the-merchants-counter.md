@@ -136,7 +136,7 @@ minutes ([economy](economy-one-currency.md)).
 | HORNET NEST | 2900 | ALMANAC, RECURVE LIMB | +30% ATTACK SPEED, +8 ABILITY POWER, +10 COOLDOWN SPEED | KINDLING |
 | HOARFROST STAFF | 2900 | RIME CHARM, DOWSING ROD | +30 HEALTH, +30 ABILITY POWER | FROSTBITE |
 | QUILTED MANTLE | 2900 | DOWSING ROD, PADDED JACKET | +25 HEALTH, +12 ARMOR, +24 ABILITY POWER | LIFELINE |
-| SUNSTONE | 3000 | FELLING AXE, PICKAXE | +18 DAMAGE | AMBUSH |
+| SUNSTONE | 3000 | FELLING AXE, PICKAXE | +18 DAMAGE | CULL |
 | BEAR TOOTH | 3000 | TOOTHED KNIFE, FELLING AXE | +16 DAMAGE, +20 HEALTH | LEECH |
 | WOLF FANG | 3000 | BONE KNIFE, PICKAXE | +9 DAMAGE, +50 HEALTH, +10 COOLDOWN SPEED | FEAST |
 | GRINDSTONE | 3000 | WHETSTONE, BEAR BELT | +8 DAMAGE, +50 HEALTH, +15 COOLDOWN SPEED | SURGE |
@@ -169,7 +169,6 @@ twice, but **a passive counts once** however many items carry it (League's uniqu
 | GLIDE | ice top speed ×1.15 and +0.3 ice steer |
 | DRIFT | stealth −0.15: seen from closer |
 | LIGHT | the roll comes back 0.8 s sooner (`dodgeCd`) |
-| AMBUSH | +0.4 on the ambush shot's multiplier (`ambushMul`) |
 | LEECH | a blow heals its striker `LEECH_SHARE` (10%) of itself (`itemsOnHit`, through `healPlayer`) |
 | THORNS | a blow taken from a player, a beast or a bot hands `THORN_SHARE` (20%) back to the striker, never to a tower and never a thorn for a thorn (`itemsOnHurt`) |
 | CULL | a blow on a body under `CULL_BELOW` (35%) of its health lands ×`CULL_MUL` (1.2) (`itemsDeal`) |
@@ -227,8 +226,9 @@ bot buy the same way. `buyItem` and `sellItem` re-check the reach, the gold and 
 room themselves, so a stale order is harmless. Nothing is [contested](../multiplayer.md#contested-orders):
 the stock is endless, so two buyers never want the same thing.
 
-**Bots buy class builds** (`BOT_BUILDS`, js/sim/items.js), League's order: the first legendary,
-then boots, then four more legendaries. The same lists are the panel's RECOMMENDED tab while a
+**Bots buy hero builds** (`BOT_BUILDS`, js/sim/items.js, one row per hero by name; a hero with no
+row stops the game at load), League's order: the first legendary, then boots, then four more
+legendaries. The same lists are the panel's RECOMMENDED tab while a
 hero has too few games for numbers ([recommended builds](#recommended-builds)); a bot never reads
 the numbers, so what it buys never depends on what one machine has heard. `botNextItem` is the next one it does not have, and
 `botItemBuy` what it would buy now: that item whole if the purse covers it, else the first

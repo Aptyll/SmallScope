@@ -356,7 +356,7 @@ function drawPlayer(p, ex, ey, now, stage) {
   } else if (heroBodyDraw(p, px, py, now)) {
     // a hero drawn as something else for a while: RUPES's snowball (HERO_BODY_DRAW, js/draw/heroes.js)
   } else {
-    // a cast, the net shot's recoil hop or the rush lean is performed BY the
+    // a cast or a dash's lean is performed BY the
     // body: the pose shifts / tilts the sprite itself (abilityPose,
     // js/sim/abilities.js), so an ability visibly happens to the model
     const pose = state.mode !== 'title' ? abilityPose(p) : null;

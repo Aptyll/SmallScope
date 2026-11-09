@@ -1,7 +1,7 @@
 # Each hero's looks on the doll (doll.py), all built on HeroBase (fur hood with goggles,
 # a trailing scarf, skate blades)
 # (ARMATOS: standard, oath; FORTIVA: unbroken, coif; BELLA: general, traitor; IGNIA: hearth, wanderer; AURA: light; SALVIA: hood, tent; LUCERNA: lamp, dusk; HIEMS: scholar, frost; RUPES: quarry, cellar; NIX: snowblind; VARRO: wolfkept, whitepack; FABER: clockmaker, foreman; MARIS: diver, orca; VELOX: canal, night; SAGITTA: siege, tower; LIGNUM: feller, forest). Their sizes are measured off the
-# hand-drawn 16 px frames in js/sprites/characters.js, so the doll's idle lands on those
+# hand-drawn 16 px frames in each hero's js/sprites/<hero>.js, so the doll's idle lands on those
 # frames pixel for pixel and the run and the roll it paints wear the same body.
 #
 # A pose (anim.py) is a dict: bob (body up, true px), lean (torso pitch), roll, head (yaw,

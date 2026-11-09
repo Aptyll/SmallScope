@@ -23,7 +23,7 @@ Dota's top bar read plainly:
 - **out**: `eliminated`, or dead with no countdown (its bird already driven off) — the face under
   the darker `RAIL_OUT_DIM`, the bar bare.
 
-A rival's face, hp and state read fields the fog leaves on a hidden rival's stub (`cls`, `look`,
+A rival's face, hp and state read fields the fog leaves on a hidden rival's stub (`cls`,
 `skins`, `hp`, `dead`, `respawnT`...: `SNAP_FOG_KEEP`, js/net/snapshot.js), so a client draws the
 same rail as the host. No names on the plate: under the pointer a chip's rim turns `RAIL_HOV` and the
 [tooltip](the-hover-tooltip.md) carries the words (`tipRail`, through `railHit` in `tipAt`): the

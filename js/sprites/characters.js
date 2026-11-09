@@ -129,9 +129,8 @@
     return c;
   }
 
-
   // the MERCHANT who drives each team's eagle and works its roost (the
-  // `merchant` banner, js/sim/robots.js): the player body plan in a trader's tan
+  // `merchant` banner, js/sim/robots.js): a trader in a tan
   // coat, with the hat and the trim in the team's colour so the side reads
   // Not another player: its own grids, 16 x 18 - two rows taller than a slot
   // - picked off a concept sheet (docs/media/concepts/merchant-concepts-2,

@@ -182,7 +182,7 @@ netClientStep(dt): send {t:'in'} - this tick's input and the ack - step our own 
 | every own field of every player (position, hp, gold, items, potions, cooldowns, status timers, aboard/drop...) except `SNAP_SKIP` | host | snapshot fields, by reflection; every client gets every player's fields |
 | arrows, drops, robots, animals (camp monsters among them), fish, the two eagles | host | snapshot lists keyed by network id (players by slot, eagles by team) |
 | `objects` tiles (a building raised or wrecked, a felled tree), `ground`, the `structures` registry | host | whole in the full sync; in a delta only the tiles, tile fields and ground cells touched since the peer's ack (`objDiff`, `objWholeAt`, `groundDiff`, `structs`) - state, not events, and no hash check |
-| the nets, ARMATOS's planted standards (`guards`), IGNIA's lines of fire (`brushfires`), the holes and ice cracks, the ice breaks, the orca (eased like a body: `netClientLerp`), the road registry (`pads`), the camps' `repopT` and `seen` (a side's cut: its own `seen` only, `snapFogCamps`) | host | snapshot singletons, sent when touched |
+| ARMATOS's planted standards (`guards`), IGNIA's lines of fire (`brushfires`), the ice breaks (`iceBreaks`), the orca (eased like a body: `netClientLerp`), the road registry (`pads`), the camps' `repopT` and `seen` (a side's cut: its own `seen` only, `snapFogCamps`) | host | snapshot singletons, sent when touched |
 | `state`: `SNAP_STATE` (`time`, `elapsed`, `day`, `tick`, `darkness`, the wind's three, `fishT`, `creekGone`, `over`, `end`, `eagleCine`) | host | snapshot singleton, by the names touched; a client keeps its own `over`/`end` and holds the host's as `NET.hostOver` |
 | deaths, respawns, the end of the match | host | snapshot state - `netClientMode` reads the local body (`aboard`, `dropT`, `dead`, `eliminated`) and the host's verdict turned to its own side |
 | a hit's puff and number, a cue, a shake | host | the cosmetic ring (`ev` on a `snap`), replayed by `evPlay` |
@@ -224,7 +224,7 @@ from this snapshot, not written beside it:
   singleton field by field (the ack-keyed base, below). A client updates its
   entities **in place** under those ids, so a reference resolved a tick ago still points at the
   thing - which is also why a tile changes in place, and why a player's aliased plain objects
-  (`SNAP_MERGE`: `kit`, `spawn`, `look`) are merged rather than replaced
+  (`SNAP_MERGE`: `kit`, `spawn`) are merged rather than replaced
   - an allow-list, because a token merged into the live object it names guts that object.
 - **Bytes with a dictionary.** The whole message is binary: every object key an index into a
   dictionary both ends grow in step (a message leads with the names it is the first to use, the
@@ -344,7 +344,7 @@ wire: the handshake is `PATCH_TXT` and the seed in the `hello` (a snapshot carri
 
 | `t` | Dir | Form | Body |
 | --- | --- | --- | --- |
-| `hello` | c→h | JSON | `uid` (the client's identity across a reconnect, kept per tab in `sessionStorage`), `patch` (`PATCH_TXT`), `seed`, `name`, `cls` (the profile's hero), `rank` (its RANKED rating), `pos` (the draft position it asks for, `PROFILE.pos`; -1 any), and from a page crossing to meet another party `party` (its own party's code) and `pn` (how many people it brings) |
+| `hello` | c→h | JSON | `uid` (the client's identity across a reconnect, kept per tab in `sessionStorage`), `patch` (`PATCH_TXT`), `seed`, `name`, `cls` (the profile's hero as a `CLASSES` index, `profileHero()`), `rank` (its RANKED rating), `pos` (the draft position it asks for, `PROFILE.pos`; -1 any), and from a page crossing to meet another party `party` (its own party's code) and `pn` (how many people it brings) |
 | `welcome` | h→c | JSON | `slot`, `hostSlot`, `seed`, `tick`, `roster`, `phase` (the waiting room's page: `room` or `pick`), `ready`, `lvl` (as on a `roster`) |
 | `refuse` | h→c | JSON | `why`: `VERSION` / `SEED` / `LATE` / `FULL` / `KICKED` / `BUSY` / `MATCHED` (a crossing party the host did not seat) from the host; `NOROOM` / `FULL` from the relay. A client also sets `NET.refused` itself to `BYTES` (a frame it could not decode) and `HOSTGONE` |
 | `roster` | h→c (`*`) | JSON | `roster`: ten `{control, team, name, cls}`, on every join and leave. A client turns the host's `human` into `remote` and keeps its own slot `human`. With it `ready` (the slots whose person said READY), `lvl` (the host's bot level), `mode`, `code`, `ranks` (each person's rating) and `seek` (seconds since FIND MATCH while the party is looking, else -1), `roomInfo` |
@@ -363,7 +363,7 @@ wire: the handshake is `PATCH_TXT` and the seed in the `hello` (a snapshot carri
 | `phase` | h→c (`*`) | JSON | `phase`: the host turned the waiting room's page, `room` (the seats) or `pick` (the hero select's draft) |
 | `full` | h→c | bytes, reliable | `tick`, `ia` (as on a `snap`), `snap`: the whole `snapBuild()` - players, `objects` as a sparse map by tile index, `structs`, the five kinds, `eagles`, `ground` (base64 of the byte array), the singletons. The dictionary from index 0. Sent after the welcome, on a `resync`, and to a peer whose ack aged out of the ring |
 | `snap` | h→c | bytes, lossy | `tick`, `d` (the delta, below), `ev` (the cosmetics drained this flush), `ia` (the newest of THIS peer's inputs the host has stepped: where its prediction replays from), and `full` when `NET.verify` is on and the tick is a `VERIFY_EVERY` one |
-| `in` | c→h | JSON | `tick` (the client's own send counter), `ack` (the newest snapshot tick applied), `in`: `{mx, my, aimX, aimY, fire, work, slide, grapple, dodge, jump, ability, useItem, cmd}`. One struct per client tick, sent once; the host queues them and steps one per tick (`netHostStep`); the client clears its edges after sending and the host latches them until the sim consumes them. A `cmd` rides inside it - there is no separate command message |
+| `in` | c→h | JSON | `tick` (the client's own send counter), `ack` (the newest snapshot tick applied), `in`: `{mx, my, aimX, aimY, fire, work, slide, dodge, jump, ability, useItem, trick, cmd}`. One struct per client tick, sent once; the host queues them and steps one per tick (`netHostStep`); the client clears its edges after sending and the host latches them until the sim consumes them. A `cmd` rides inside it - there is no separate command message |
 | `resync` | c→h | JSON | no body: the client could not take a delta; the host answers with a `full` |
 | `peer` / `gone` | transport→h | - | someone joined or left the room or lobby (`gone` hands the body to a bot and parks the slot, below) |
 | `closed` / `hostGone` | transport→c | - | the client's own socket dropped (relay; it redials) / the host is gone: its socket closed on the relay, or the lobby's owner left on Steam |
@@ -383,7 +383,7 @@ for "from nothing"), then only what was touched since the base:
 | `P`, `R`, `A`, `W`, `D`, `F` | per kind: `ch` - `[id, fields]` pairs, the fields touched as they stand now (whole for an entity new since the base), names that left as `$del`; `del` - ids gone; `order` - the array's ids in order, when it moved. An id a client has not seen is made; an `order` naming an id it lacks returns null and earns a `resync` |
 | `eagles` | `[team, fields]` pairs |
 | `state`, `orca`, `dropMeta` | a plain-object singleton, by the names touched |
-| `camps`, `pads`, `holes`, `nets` | an array singleton, whole when touched |
+| `camps`, `pads`, `iceBreaks` | an array singleton, whole when touched |
 | `objDiff`, `objWholeAt`, `objWhole` | tiles by index: touched fields (with `$del`), `null` for a tile gone, the whole tile for one made or unmade since the base (its index listed in `objWholeAt`; `objWhole` when there was no base). A tile still there changes in place |
 | `groundDiff` | a flat `[index, type, ...]`; each cell is `repaintGround`ed |
 | `structs` | the registry as tile indices, when it moved |

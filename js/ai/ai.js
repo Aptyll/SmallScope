@@ -36,8 +36,8 @@ function aiOwnEagle(p) { const e = state.drop && state.drop.eagles[p.team]; retu
 // ---- the two birds --------------------------------------------------------
 // What every bot knows about the objective - both birds, all match: where
 // each roosts, how its nerve stands, when it was last hit, and who is AT it:
-// the rivals standing off it (each through seenAt, so a buried archer is
-// buried for the whole side) and the friends already there. Read once per
+// the rivals standing off it (each through seenAt, so a hidden rival is
+// hidden from the whole side) and the friends already there. Read once per
 // sim step and shared by all ten players, so a hit on a roost is news on the
 // far side of the map the same tick - a bird under attack is answered from
 // anywhere, and a bird that is winning the race is not abandoned for one

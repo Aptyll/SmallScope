@@ -25,7 +25,7 @@ window.SCENE = {
     }
     // the archer: a teammate of the local player, the rest of the world parked away
     const p = M.p = players.find((q) => q.team === player.team && q !== player);
-    setClass(p, 0);
+    setClass(p, heroIndex('ARMATOS'));
     p.x = a.x + L[0] * 110; p.y = a.y + L[1] * 110; p.vx = p.vy = 0; p.hp = p.maxHp;
     M.park(players.filter((q) => q !== p));
     M.park(animals.filter((q) => q !== a && Math.hypot(q.x - a.x, q.y - a.y) < 500));

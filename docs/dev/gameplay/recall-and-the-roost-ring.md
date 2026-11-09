@@ -12,8 +12,8 @@ banner of [js/sim/recall.js](../../../js/sim/recall.js).
 **The recall** is the **H** key (`recall`, KEY_ACTIONS; on every scheme, and a CLICK order is
 dropped on the press). It arrives as a cmd (`{ kind: 'recall' }` through `runCmd` to
 `startRecall`), so it holds online and the bots' API can send it. `recallBlocked` refuses it while
-the bird is not down, in the air or under the snow, stunned, falling, rolling, casting, rushing,
-on the rope, the cable or a deer, drawing, or prone. When the channel runs out the body is set
+the bird is not down, or while the body is dead, in the air, stunned, falling, rolling, casting,
+dashing, on the cable or walking to it, on a deer, or drawing. When the channel runs out the body is set
 down on `roostTile` (js/sim/player.js), the tile a carried-back hero lands on, inside the ring.
 The play camera cuts to a body that moved more than `CAM_CUT` in one frame instead of sweeping
 the map (js/sim/sim.js).

@@ -1,47 +1,38 @@
 # Class abilities (keys 1-4)
 
-Everything in this section lives in **[js/sim/abilities.js](../../../js/sim/abilities.js)**, under the
-`class abilities` banner. Keys 1-4 cast the four actives of the player's
-[class](../multiplayer.md#classes) — `CLASS_AB[p.cls]`, one row per key, where **what an ability IS
-lives in its table entry** (`cd`, `cast`, `use(p)`), never in an `if` elsewhere. **A key can
-carry more than one option**: `CLASS_AB[cls][i]` is its first and `CLASS_AB_ALT[cls][i]` the
-others (`abOptions(cls, i)` lists them), and which one a body carries is `p.abPick[i]`, picked
-before the eagle in the [hero pop-up](../rendering.md#the-hero-pop-up)'s ability column and carried
-through the lock-in page; **every reader asks `abOf(p, i)`** for what a key is on
-this body, and `abKeyOf(p, id)` for the key an ability id stands on (−1 when it is not picked).
-A bot keeps the first option on every key — the one its hands know, since `aiCombat` reaches
-for keys by index. The hunter's keys carry one option each; the warrior's carry two:
+The machinery lives in **[js/sim/abilities.js](../../../js/sim/abilities.js)**, under the
+`class abilities` banner; each hero's rows and effects live in that hero's own file (below). Keys
+1-4 cast the four actives of the player's hero ([classes](../multiplayer.md#classes)):
+`CLASS_AB[p.cls]`, one list of four rows per hero in `CLASSES` order (`ARM_AB`, `FORT_AB` and the
+rest), where **what an ability IS lives in its table entry** (`cd`, `cast`, `use(p)`, and the
+optional fields listed over `ARM_AB`, js/sim/armatos.js), never in an `if` elsewhere. **Every
+reader asks `abOf(p, i)`** for what key `i` is on this body, and `abKeyOf(p, id)` for the key an
+ability id stands on (−1 when this hero has none). A hero reaches the shared sim only through the
+`HERO_*` hook tables (js/sim/heroes.js).
 
-| key | first | other |
-| --- | --- | --- |
-| 1 | SHIELD WALL | **WAR CRY** — every rival unit within `CRY_R` slowed (`rank` `slow` for `slowT`) and marked (`mark`) for both maps; nothing hurt (`abWarCry`) |
-| 2 | BULL RUSH | **WHIRLWIND** — everything alive within `WHIRL_R` cut for its `rank` `dmg` and thrown `WHIRL_KB`, buildings cut too (`abWhirlwind`) |
-| 3 | STOMP | **LEG SWEEP** — the wedge ahead (`HAM_R`/`HAM_HALF`) cut for `dmg` and rooted `root` (its `rank`) (`abSweep`) |
-| 4 | FINISHING BLOW | **SECOND WIND** — `rank` `heal` (30/40/50%) of max hp back over `t` (4 s), paid out each tick by `updateAbilities` (`p.windT`/`p.windRate`, `abSecondWind`); the strip's active tell |
-
-The press goes
-through `input.ability` (edge-triggered, like the dodge) into `tryAbility(p, i)`, so a bot casts
-through exactly the key a human presses; `updateAbilities(p, dt)` runs the cooldowns, lands the
-cast, and ages every state an ability leaves on a body; `updateAbilityWorld(dt)` (called from
-`updatePlay`) steps what they leave in the world.
+The press goes through `input.ability` (edge-triggered, like the dodge) into `tryAbility(p, i)`, so
+a bot casts through exactly the key a human presses; `updateAbilities(p, dt)` runs the cooldowns,
+lands the cast, and ages every state an ability leaves on a body; `updateAbilityWorld(dt)` (called
+from `updatePlay`) ages the landing flashes and steps what the heroes leave in the world
+(`heroTick`, the `HERO_TICK` rows).
 
 **Abilities are bought with skill points, never gold — and a key you have not bought does
-nothing.** Ranks work like League's. Each key starts **LOCKED at rank 0**: the class hands you the
+nothing.** Ranks work like League's. Each key starts **LOCKED at rank 0**: the hero hands you the
 four actives, not the use of them. Every rank costs **one skill point** — the only thing a point
 buys, one per [hero level](../multiplayer.md#hero-levels). The **first** point on a key unlocks it
 (`abUnlocked(p, i)`, the one gate: `tryAbility` refuses a rank-0 key outright and every bot
 reaches for keys through `abReady(p, i)` = bought and off cooldown), and **every rank after is a
 clear step in what the key does**: its row's `rank` table holds each number per rank (`rank: {
-dmg: [14, 19, 24, 29, 34], stun: 1 }` — a list scales, a plain number stays flat; rank 1 is the
-old flat number), and a `cd` given as a list shrinks by rank. `abRk(p, id, key)` is the one
-reader: every `use()` asks it for its numbers at the rank the caster holds, and what a cast leaves
-in the world (a net in flight, a planted standard) copies its numbers when it is cast. Keys 1-3
-hold **5 ranks**, rank n waiting for hero level `AB_RANK_LV[n-1]` (1, 3, 5, 7, 9); key 4 is the
-**ultimate** (`AB_ULT`) with **3 ranks** at `AB_ULT_LV` (6, 11, 16) — `abReqOf(ab, i)` reads
-either (or a row's own `lvReq`) and `abLvMax(p, i)` is its length. 5 + 5 + 5 + 3 is **18 points
-against the 18 a capped hero earns**, so the ladder ends exactly where the hero does: every point
-has a home and nothing is stranded. The choice is the ORDER — you land with one point and four
-dark keys, so the first thing a match asks is which ability you want to be.
+dmg: [14, 19, 24, 29, 34], stun: 1 }` — a list scales, a plain number stays flat), and a `cd`
+given as a list shrinks by rank. `abRk(p, id, key)` is the one reader: every `use()` asks it for
+its numbers at the rank the caster holds, and what a cast leaves in the world (a planted standard,
+a shot in flight) copies its numbers when it is cast. `abAp`/`abDmg` add the ABILITY POWER share a
+row's `ap` ratio names. Keys 1-3 hold **5 ranks**, rank n waiting for hero level `AB_RANK_LV[n-1]`
+(1, 3, 5, 7, 9); key 4 is the **ultimate** (`AB_ULT`) with **3 ranks** at `AB_ULT_LV` (6, 11, 16)
+— `abReqOf(ab, i)` reads either (or a row's own `lvReq`) and `abLvMax(p, i)` is its length. 5 + 5
++ 5 + 3 is **18 points against the 18 a capped hero earns**, so the ladder ends exactly where the
+hero does: every point has a home and nothing is stranded. The choice is the ORDER — you land with
+one point and four dark keys, so the first thing a match asks is which ability you want to be.
 The rest of the set: `abLvCanBuy(p, i)` (a point in hand, room on the key, the hero level reached),
 `buyAbilityLv(p, i)` (the single entry point, reached through `input.cmd {kind:'ability', i}` →
 `runCmd` by HUD plate click and bots alike — the unlock floats `NAME UNLOCKED` and a fatter
@@ -65,52 +56,54 @@ the held one lit gold
 ([the hover tooltip](../rendering/the-hud-corners/the-hover-tooltip.md); `LOCKED` and
 `UNLOCK 1 SKILL PT` on a dark key). Bots spend each free point in rung 0 of the ladder (`aiSpend`,
 js/ai/ai.js, first thing `aiThink` asks): the ultimate whenever it can rank, then each basic key
-unlocked once, then the basics maxed in the hero's `rankOrder` (its `CLASSES` row: HUNTER
-shot, net, grapple; WARRIOR stomp, rush, shield; ARMATOS verdict, march, brace; FORTIVA sever,
-yoke, heart; AURA star, orb, step; SALVIA poultice, cloak, snowdrops; LUCERNA crook, shoo, lantern; RUPES heave, shed, shoulder; NIX shard, drift step, cloud; FALCO knife fan, talons, glide; VARRO lunge, snap, howl; BUCINA note, blast, echo; MARIS harpoon, undertow, brace; LIGNUM chop, thrown axe, bark skin; VELOX skip stone, quick step, ice lane; SAGITTA pin, crank back, pavise). The cd column in the tables below is every rank's; the numbers in the text are rank
-1's, and each row's `rank` table has the rest.
+unlocked once, then the basics maxed in the hero's `rankOrder` (its `CLASSES` row, keys 0-2 in
+order: ARMATOS verdict, march, brace; SAGITTA pin, crank back, pavise). The cd column in the
+tables below is every rank's; the numbers in the text are rank 1's, and each row's `rank` table
+has the rest.
 
 **Every ability lands on every kind of body.** A player, a rabbit, a deer, a bird, a wolf and a
 [soldier](robots.md) take the same damage and the same states from every key — the
 tables below say "rival" because that is who you are usually casting at, not because anything else
-is exempt. That is not written into each ability: they sweep `unitsNear`/`unitsHit` and land through
-`hurtUnit` and the state setters ([status effects](status-effects-one-set-for-every-unit.md)), so the
-next kind of neutral fauna pushed into `animals` is in range of every key on the day it is added,
-with no edit here. A **structure** is not a unit, so it takes no state — but a rival's building
-takes the *damage* of every blow with an area, through `hurtStruct` (`STRUCT_DR` off): the SLAM and
-the FINISHING BLOW sweep `structsInCone`, the STOMP `structsNear`, the BULL RUSH's wall slam and the NET
-SHOT's line check `structFoe` on what stopped them. The roosting eagle is an objective with its
-own damage path, and takes none of it.
+is exempt. That is not written into each ability: they sweep `unitsNear`/`unitsHit` (or the cone
+and line versions, `unitsInCone`/`unitsInLine`) and land through `hurtUnit` and the state setters
+([status effects](status-effects-one-set-for-every-unit.md)), so the next kind of neutral fauna
+pushed into `animals` is in range of every key on the day it is added, with no edit here. A
+**structure** is not a unit, so it takes no state — but a rival's building takes the *damage* of a
+key with an area that names buildings, through `hurtStruct` (`STRUCT_DR` off): ARMATOS's bash and
+FORTIVA's SEVER THE CHAINS sweep `structsInCone`, IRON VERDICT and FORTIVA's rings
+`structsNear`. The roosting eagle is an objective with its own damage path, and takes none of it.
 
-**A cast is a performance**: `p.castT` runs the ability's `cast` seconds, the body visibly does
-it (`abilityPose` shifts/tilts the sprite — the pierce's locked lean-back, a hop into the stomp,
-the recoil hop off the net shot), movement halves (the pierce windup all but plants the feet —
-`PIERCE_SLOW`), and the effect fires at the aim held at the END
-of the cast. Casting breaks prone cover like a shot, is refused mid-roll / mid-stun / in a hole,
-and a stun knocks a cast (and the shield, the rush, and the grapple's rope) out of the hands.
-Everything an ability
-does to a body is **drawn on that body for both sides** (`drawAbilityOnPlayer`) — a netted player
-wears the net — and every wind-up with an area is telegraphed on the snow (below the tables).
+**A cast is a performance**: `startCast` sets `p.castT` to the row's `cast` seconds (and
+`p.castMax`, what `castProg` measures the wind-up against), drops a draw, and turns the body to the
+aim; the body visibly does it (`abilityPose`, js/draw/abilities.js, shifts or tilts the sprite: a
+knock-up's lift, a hero dash's own `pose`, the coil and drive of a `wall` row's second half, or the
+row's own `pose(p, prog)`), movement halves (`abilityMoveMul`), and the effect fires at the aim held
+at the END of the cast (`heroAbNow` names the key while its `use` runs, so every blow inside it is
+that key's; then `itemsOnCast` and `passiveCast`). `tryAbility` refuses a press while the body is
+dead, stunned, falling, rolling, mid-cast, in the air or on a zipline's handle; a key still on its
+cooldown, or whose row's `ok(p)` says no (a target it needs), plays the deny cue; and every other
+key waits out a running dash. A stun knocks a cast, the shield and a dash out of the hands
+(`stunUnit`, js/sim/actions.js). Everything an ability does to a body is **drawn on that body for
+both sides** (`drawAbilityOnPlayer`, `drawUnitStates`), and every wind-up with an area is
+telegraphed on the snow (below the tables).
 
-HUNTER — bow, distance control, the ground between:
+**The second half of a key.** A row whose `recast(p)` says so takes the key again as its second
+half (`abRecast`): ARMATOS's bash while the brace is up, LIGNUM's CHOP inside `CHOP_WAIT`. It is
+already paid for, so it waits on no cooldown (a row's `ok` may still refuse it); a running dash
+stops on the spot (`dashStop`), `p.castSlam` is set for the row's `use` to branch on, and the
+wind-up is `RECAST_T` (0.16 s). A fresh press clears `castSlam`.
 
-| key | name | cd | what it does |
-| --- | --- | --- | --- |
-| 1 | **PIERCING SHOT** | 12/11/10/9/8 s | locks a full draw for `PIERCE_WIND` (0.7 s) — the body plants (`PIERCE_SLOW` ×0.15 walk), the pose leans back and holds, and a thin dashed **telegraph line** is drawn on the ground along the live aim for BOTH sides, gold-flaring as the loose nears. Then the shot fires itself: one enhanced arrow (a full-draw plain arrow × its `rank` `shot`, 1.5/1.7/1.9/2.1/2.3, `PIERCE_SPD` 380, `PIERCE_RANGE` 520) that **goes through every body on the line** (`a.pierce`/`a.pierceHit`, the arrow loop in js/sim/sim.js) — only a raised shield or the world stops it. Its flight is `pierceFlight` (`shotFlight` at full draw) and its damage is the hero's DAMAGE times the rank's `shot`, plus its ABILITY POWER share (`abPierce`). The telegraph draws that flight to where the world stops it (`teleLen`). The loose is the unmissable cue: `SFX.nock` snap + a white flash on the arrowhead |
-| 2 | **NET SHOT** | 15/14/13/12/11 s | a weighted net down a line (`nets`, each carrying the rank it was thrown at): first rival hit takes 4/8/12/16/20 and is **slowed** (`p.slowT`/`slowMul` ×0.4, 2 s, the drape drawn on them); the recoil kicks the hunter backward with an animated hop (`p.hopT`) |
-| 3 | **GRAPPLE** | 8/7/6/5/4 s | throws a hook down the aim ray: the first **tree or dead tree** within `GRAP_RANGE` (170 px) and `GRAP_ASSIST` of the line (the aim assist) anchors it, and the body is reeled straight at it at `GRAP_REEL` (260 px/s — over `SLIDE_MIN`, so shift on release carves a slide). The reel runs **while key 3 is held** (`input.grapple`, the one held ability input); releasing, arriving, a wall or a stun lets go through `grapEnd`, which KEEPS the momentum and starts the cooldown — a long ride and an instant release cost the same. A hook that catches nothing costs `GRAP_MISS_CD` (1 s) |
-| 4 | **SNOW COVER** | 60/50/40 s | the burrow ([Prone](prone-under-the-snow.md), which only this key opens): the cast kneels and calls `tryProne`, the 60 s clock is paid **on the way under**, and the key again — like every other way back up — rises free. A kneel the snow refuses (still moving, sliding, no snow underfoot) refunds the clock. The well's active tell drains with `p.hide` as the cover builds |
+**Two states a key can leave on its caster.** THE SHIELD: `p.shieldT` is a raised shield's seconds
+left and `p.shieldA` where it faces; `updateAbilities` turns it with the aim, keeps the draw down,
+and lowers it on the timer through `abShieldDown`, which starts the key's cooldown when it comes
+DOWN (so holding it the full stretch and spending it at once cost the same). A raised shield walks
+at 40 %, and a hit from inside its front arc (`SHIELD_ARC`) is what ARMATOS's brace cuts
+(`holdTaken`). THE DASH: `p.rushT` and its line (`p.rushNX/rushNY`) at the pace its `HERO_DASH` row
+gives (`p.dash` names the row: `spd`, `t`, `ramp`, `step`, an optional `pose`, and `through` to pass
+the small bodies a roll passes), its own branch of `playerMove` (js/sim/sim.js) with no i-frames. `dashStop` ends one where it stands with a little of
+its way still in the feet.
 
-WARRIOR — close pressure, blocking, momentum:
-
-| key | name | cd | what it does |
-| --- | --- | --- | --- |
-| 1 | **SHIELD WALL** | 9/8.5/8/7.5/7 s | raises a tower shield toward the aim for up to its `rank` `t`, 2.2 s (the cooldown starts when it comes DOWN). Any shot flying into the front arc dies on it (`abShieldBlocks`, checked in the arrow loop before the body); walking drops to 40 % and the weapon is out of hand. **The key again while the wall is up is the SLAM** (`tryAbility` sets `p.castSlam`, the row's `use` branches on it): a `SLAM_CAST` (0.16 s) wind-up with the wedge on the snow, then `abSlam` — `dmg` (8/12/16/20/24), `stun` (1.1 s) and `SLAM_KB` down the face on everything in `SLAM_R`/`SLAM_HALF` (30 px, ±0.85 rad, `unitsInCone`/`structsInCone`, js/sim/actions.js) — and the wall is spent (`abShieldDown`, the cooldown starts). **Mid-charge the same key slams too**: the rush ends on the spot (`rushEnd`, the carried body slammed where it stands) and the wind-up begins there; with no wall up it waits on the shield's cooldown like the raise would. A rush may be cast with the wall up — only the charge itself refuses the other keys |
-| 2 | **BULL RUSH** | 12/11.5/11/10.5/10 s | a 0.3 s wind-up with **the line on the snow** for both sides (`RUSH_SPD × RUSH_T` long, stopped at solids, a bar at its end where the slam will be — the body faces the live aim the whole wind-up), then charges the aim line at 300 px/s for 0.42 s (its own movement branch in `updatePlayer`, no i-frames, ramping to speed over `RUSH_RAMP`): the **first rival hit is carried** on the shoulder and **slammed** at the end (a bear is never picked up: the charge stops against it and slams it where it stands) — 10/15/20/25/30 damage + 0.6 s stun, ×1.6 driven into a wall (`rushStep`/`rushEnd`) |
-| 3 | **STOMP** | 14/13/12/11/10 s | a leap-stomp at the feet — the ring of `STOMP_R` on the snow through the wind-up, filling in as it nears, and flashed white where it lands (`abFx`): 12/17/22/27/32 damage + radial knockback + a beat of stun in `STOMP_R`, and the **crater** (`craters`) is deep snow that slows rivals crossing it for 4 s |
-| 4 | **FINISHING BLOW** | 18/15/12 s | a 0.55 s overhead wind-up with the wedge on the snow (`EXEC_R`/`EXEC_HALF`, 30 px, ±0.75 rad — narrower than the sword), then `abFinish`: every unit in it takes `execDmg` — its `rank` `dmg` (10/20/30) plus `missing` (half) of the life it has already lost, capped at `bonus` (40) extra — so a body the other three keys have worked over is finished, and a full one takes the base. `EXEC_KB` shove; a cut over twice the base is a crit |
-
-ARMATOS, THE LAST STANDARD — the defensive initiator, the first hero with a passive. His rules
+ARMATOS, THE LAST STANDARD — the defensive initiator. His rules
 live in **[js/sim/armatos.js](../../../js/sim/armatos.js)** (`ARM_AB`, its `armatos` banner), his
 pixels in [js/draw/armatos.js](../../../js/draw/armatos.js), his icons in
 [js/sprites/armatos.js](../../../js/sprites/armatos.js). He fights with a cut of his own (his `attack` row, the
@@ -121,16 +114,16 @@ standard on his back (`drawHeroBack`, a `HERO_BODY_FX` row):
 | --- | --- | --- | --- |
 | P | **LEGION'S RESOLVE** | — | damage taken fills `p.resolve` (`RESOLVE_FULL`, 30% of max hp, for a full bar; it drains after `RESOLVE_IDLE_T` without a hit). Full, the next key cast gives a shield of `RESOLVE_SHIELD` (14%) of max hp for `RESOLVE_SHIELD_T` (4 s), `shieldUnit` (a `ward` in `p.shields`, spent after the dawn shield). The standard's cloth fills gold with it. `HERO_PASSIVE`, reached through `passiveHurt`/`passiveCast`/`passiveTick` |
 | 1 | **IRON VERDICT** | 8/7.5/7/6.5/6 s | a line slam `VERDICT_LEN` long, ±`VERDICT_HALF` (`unitsInLine`), the box on the snow through the wind-up with its middle hashed gold: `dmg` (14/19/24/29/34) + `slow` for `slowT` on all in it, and those in the middle stretch (`VERDICT_MID`) are knocked up `up` instead (`knockUp`) |
-| 2 | **HOLD THE LINE** | 12/11.5/11/10.5/10 s | a brace for `t` (the shield-wall state, `wall: true`): blows from the front take `cut` less (`holdTaken`, a `HERO_TAKEN` fold in `damagePlayer`). A rival hero's hit primes the bash (`p.holdHit`, the trim goes gold); the key again bashes the wedge ahead (`armBash`): `dmg` (10/14/18/22/26), shoved `BASH_KB`, and stunned `stun` only when primed |
+| 2 | **HOLD THE LINE** | 12/11.5/11/10.5/10 s | a brace for `t` (the shield state, `shieldT`, with `wall: true`): blows from the front take `cut` less (`holdTaken`, a `HERO_TAKEN` fold in `damagePlayer`). A rival hero's hit primes the bash (`p.holdHit`, the trim goes gold); the key again bashes the wedge ahead (`armBash`): `dmg` (10/14/18/22/26), shoved `BASH_KB`, and stunned `stun` only when primed |
 | 3 | **VETERAN'S MARCH** | 14/13/12/11/10 s | a charge (the rush state with `p.dash = 'march'`, `HERO_DASH`) at `MARCH_SPD` for `MARCH_T`: lesser bodies are shoved aside once each for `shove` (5; `marchStep`, `MARCH_SHOVE`), and the first rival hero (or an anchored body) stops it: `dmg` (12/16/20/24/28) and `stun` (`marchEnd`) |
 | 4 | **THE OLD GUARD** | 80/70/60 s | plants the standard (`guards`, one per owner, carrying the rank's numbers) for `t`: allies inside `GUARD_R` gain `armor` (40/60/80; `guardStat`, a `HERO_STAT` row read by `statOf`) and `ten` tenacity (`guardTen`); a rival who was inside and steps out (caught up to `GUARD_EDGE` past the rim, so a roll out still counts) is slowed `slow` for `slowT` (`updateGuards`) |
 
-FORTIVA, THE UNBROKEN — the juggernaut who wins the long fight, the second hero with a passive.
+FORTIVA, THE UNBROKEN — the juggernaut who wins the long fight.
 Her rules live in **[js/sim/fortiva.js](../../../js/sim/fortiva.js)** (`FORT_AB`, its `fortiva`
 banner), her pixels in [js/draw/fortiva.js](../../../js/draw/fortiva.js), her icons, looks and
 blade in [js/sprites/fortiva.js](../../../js/sprites/fortiva.js). She has the most health of anyone
-and a step less speed than the warrior, so a hero who keeps away can beat her. Her cut is the
-warrior's (her `attack` row, the CHAIN GREATSWORD), drawn as her own blade, in a body of her own
+and a step less speed than ARMATOS, so a hero who keeps away can beat her. Her cut is his
+greatsword's (her `attack` row, the CHAIN GREATSWORD), drawn as her own blade, in a body of her own
 ([hero looks](../sprites.md#hero-looks)); what her state wears on her body (high-resolve
 glints, the shield's shell, the after's embers) is `drawFortBody`, a `HERO_BODY_FX` row:
 
@@ -146,7 +139,7 @@ BELLA, THE IMPERIAL GENERAL — the duelist who finds one weakness and spends it
 with a passive. Her rules live in **[js/sim/bella.js](../../../js/sim/bella.js)** (`BELLA_AB`, its
 `bella` banner), her pixels in [js/draw/bella.js](../../../js/draw/bella.js), her icons, looks and
 blade in [js/sprites/bella.js](../../../js/sprites/bella.js). She is quick and light (104 hp, 16
-armor, a step faster than the warrior) with a quicker, shorter cut (her `attack` row, the EAGLE
+armor, a step faster than a plain walk) with a quicker, shorter cut (her `attack` row, the EAGLE
 SPATHA), drawn as her own blade, in a body of her own ([hero looks](../sprites.md#hero-looks)).
 What her state puts on a body (her pips, the parry's blade) is `drawBellaMarks`, a
 `HERO_MARK` row, and the E mark and the duel's diamond go in the row over the body's stack (`HERO_OVER`); the duel's ring under the hero she called out is a `HERO_GROUND` row. Her two
@@ -211,7 +204,7 @@ cast with) is stepped by `salviaWorld` (`HERO_TICK`):
 
 | key | name | cd | what it does |
 | --- | --- | --- | --- |
-| P | **WARM BROTH** | — | every heal of hers also lends the healed `BROTH_WALK` (+15%) walk for `BROTH_T` (`p.brothT`, a `HERO_MOVE` row) and takes their slows off (`salviaUnslow`: the slow and the net's drape). `HERO_PASSIVE.warmbroth` |
+| P | **WARM BROTH** | — | every heal of hers also lends the healed `BROTH_WALK` (+15%) walk for `BROTH_T` (`p.brothT`, a `HERO_MOVE` row) and takes their slows off (`salviaUnslow`). `HERO_PASSIVE.warmbroth` |
 | 1 | **POULTICE** | 9/8.5/8/7.5/7 s | a bundle flies down the aim `POULTICE_RANGE` (210 px) at `POULTICE_SPD` (`updateBundles`); a wall or a tree ends it. The first ally player it meets (not her) is healed `hp` (45/65/85/105/125); the first rival body (a hero, a soldier, a beast) is slowed ×`POULTICE_SLOW` for `POULTICE_SLOW_T`, no damage |
 | 2 | **SNOWDROPS** | 14/13/12/11/10 s | `DROP_N` snowdrops planted round the aim, at most `DROP_RANGE` from her (the warren's clump art); an ally player (her too) who walks over one while hurt picks it and is healed `hp` (30/40/50/60/70). Unpicked, they wilt after `DROP_LIFE`; past `DROP_MAX` of hers the oldest go first |
 | 3 | **WARM CLOAK** | 16/15/14/13/12 s | the ally player nearest the aim (within `CLOAK_PICK` of it and `CLOAK_RANGE` of her), else herself, gets a `shield` (40/60/80/100/120) for `CLOAK_T` (`shieldUnit`) and walks ×`CLOAK_WALK` for `CLOAK_RUN_T` (`p.cloakT`) |
@@ -239,7 +232,7 @@ RUPES, THE AVALANCHE — the engage tank. His rules live in
 **[js/sim/rupes.js](../../../js/sim/rupes.js)** (`RUPES_AB`, its `rupes` banner), his pixels in
 [js/draw/rupes.js](../../../js/draw/rupes.js), his icons, looks and maul in
 [js/sprites/rupes.js](../../../js/sprites/rupes.js). 134 hp and 24 armor, two steps slower than
-the hunter, and little damage: his ICE MAUL is the longsword's cut a little slower (`cycle` 34/60 s)
+a plain walk, and little damage: his ICE MAUL is ARMATOS's greatsword cut a little slower (`cycle` 34/60 s)
 with a harder shove. Everything he does rides `p.pack`, his snowpack (0..1, `PACK_LAYERS` layers):
 
 | key | name | cd | what it does |
@@ -271,8 +264,8 @@ breaks one is paid its `pay`. What else he leaves in the world (`faberParts`, `f
 MARIS, THE ICE DIVER — the catch tank. Her rules live in
 **[js/sim/maris.js](../../../js/sim/maris.js)** (`MARIS_AB`, its `maris` banner), her pixels in
 [js/draw/maris.js](../../../js/draw/maris.js), her icons, looks and harpoon in
-[js/sprites/maris.js](../../../js/sprites/maris.js). 126 hp and 22 armor, a step slower than the
-hunter; her HARPOON's basic thrust reaches a little further and narrower than the longsword
+[js/sprites/maris.js](../../../js/sprites/maris.js). 126 hp and 22 armor, a step slower than a
+plain walk; her HARPOON's basic thrust reaches a little further and narrower than ARMATOS's greatsword
 (`reach` 28, `half` 0.8). She is strong by water and weak far from it:
 
 | key | name | cd | what it does |
@@ -286,8 +279,8 @@ hunter; her HARPOON's basic thrust reaches a little further and narrower than th
 LIGNUM, THE FELLER — the skirmisher of the treeline. His rules live in
 **[js/sim/lignum.js](../../../js/sim/lignum.js)** (`LIGNUM_AB`, its `lignum` banner), his pixels in
 [js/draw/lignum.js](../../../js/draw/lignum.js), his icons, looks and felling axe in
-[js/sprites/lignum.js](../../../js/sprites/lignum.js). 114 hp and 18 armor at the hunter's pace;
-his FELLING AXE's basic blow has the longsword's reach a little wider and slower (`reach` 26,
+[js/sprites/lignum.js](../../../js/sprites/lignum.js). 114 hp and 18 armor at a plain walk;
+his FELLING AXE's basic blow has the greatsword's reach a little wider and slower (`reach` 26,
 `half` 1). Strong in short trades and by the woods, weak in an open lane and on ice (a low cap and
 a slow turn there), and with nothing to hold a rival until his ultimate. What he leaves in the
 world (`lignumAxes`, `lignumLogs`) is stepped by `HERO_TICK`:
@@ -339,7 +332,7 @@ VARRO, THE WOLF-KEPT — the jungler: a diver who picks one rival and closes the
 rules live in **[js/sim/varro.js](../../../js/sim/varro.js)** (`VARRO_AB`, its `varro` banner), his
 pixels in [js/draw/varro.js](../../../js/draw/varro.js), his icons, looks and spear in
 [js/sprites/varro.js](../../../js/sprites/varro.js). 112 hp, 18 armor, a step faster than a walk; his
-HUNTING SPEAR is a cut a touch longer and narrower than the longsword's. His wolves are real wolves:
+HUNTING SPEAR is a cut a touch longer and narrower than ARMATOS's greatsword. His wolves are real wolves:
 `animals` of kind `wolf` with his `team` and `owner` and `summon: 'pack'`, walked by
 `HERO_SUMMON.pack` (`wolfStep`), so every blow, area and shot that finds a beast finds them, his
 own side's do not, and their bars are in his side's colour (`drawBeastFrame`). A summon pays
@@ -360,7 +353,7 @@ live in **[js/sim/nix.js](../../../js/sim/nix.js)** (`NIX_AB`, its `nix` banner)
 quickest, shortest cut (the ICE DIRK). Her shards and clouds are things she leaves in the world
 (`nixShards`, `nixClouds`), stepped by `HERO_TICK`. Hidden means hidden from the other side's fog
 (`HERO_COVER`, asked by `coverHide`): the rival's bots and screen both
-lose her; a mark (`markUnit`: AURA's light, the falcon) still shows her.
+lose her; a mark (`markUnit`: AURA's light, FALCO's hawk) still shows her.
 
 | key | name | cd | what it does |
 | --- | --- | --- | --- |
@@ -374,7 +367,7 @@ VELOX, THE SKATER — the kiting marksman: she throws her sling while she skates
 still. Her rules live in **[js/sim/velox.js](../../../js/sim/velox.js)** (`VELOX_AB`, its `velox`
 banner), her pixels in [js/draw/velox.js](../../../js/draw/velox.js), her icons and looks in
 [js/sprites/velox.js](../../../js/sprites/velox.js). 82 hp, 10 armor, a step faster than a walk. Her
-STAFF SLING throws a shorter, quicker stone than the hunter's arrow, and her kit barely slows her
+STAFF SLING throws a shorter, quicker stone than IGNIA's ember, and her kit barely slows her
 while she draws (`chargeMul` 0.9) and turns sharply on ice (`iceSteer` 9, `iceMax` 1.25). Her
 stones in flight and her lanes are things she leaves in the world (`veloxStones`, `veloxLanes`),
 saved and sent like HIEMS's ice.
@@ -404,7 +397,7 @@ is a body in `robots` (`HERO_MACHINE.falcoHawk`) and his knives are things he le
 | 4 | **STOOP** | 90/75/60 s | needs a marked rival hero within `STOOP_REACH` (`ok`, `stoopTarget`): up into the sky for `STOOP_UP`, untouchable (`invuln`), unseen by every side (`HERO_COVER`) and still (`HERO_MOVE`), then down beside the hero wherever it went, for `dmg` (120/180/240) + `STOOP_UP_AD` of his DAMAGE, knocked up for `STOOP_KNOCK` (`falcoDrop`) |
 
 SAGITTA, THE BOLT-THROWER — the siege marksman: a heavy crossbow with the longest reach of any
-marksman (a full-draw bolt flies about 350 px, the hunter's arrow 270) and a slow loose. Her rules
+marksman (a full-draw bolt flies about 350 px, IGNIA's ember 220) and a slow loose. Her rules
 live in **[js/sim/sagitta.js](../../../js/sim/sagitta.js)** (`SAGITTA_AB`, its `sagitta` banner), her
 pixels in [js/draw/sagitta.js](../../../js/draw/sagitta.js), her icons and looks in
 [js/sprites/sagitta.js](../../../js/sprites/sagitta.js). 78 hp, 9 armor, a step slower than a walk,
@@ -420,25 +413,25 @@ PIN and THE LONG BOLT hold the crossbow on the aim through their wind-up (the ro
 | 3 | **CRANK BACK** | 14/13/12/11/10 s | every rival body within `CRANK_R` of her feet takes `CRANK_DMG` and walks ×`CRANK_SLOW` for `slowT` (1-2 s); she is thrown `CRANK_D` away from her aim (`p.dash = 'crank'`), still facing it |
 | 4 | **THE LONG BOLT** | 110/95/80 s | she kneels for `LONG_WIND` (no walk: `HERO_MOVE`) with the towers' crawling line down her aim, then looses a bolt at `LONG_SPD` for `LONG_RANGE`: it goes through soldiers and beasts (`pierce`) and ends on the first hero (`HERO_SHOT_HIT.longbolt`), who takes `dmg` (180/280/380) and a shove ×`LONG_KB` |
 
-Bots play the named heroes through each row's `bot(p, foe, d, clear)` (`abBotKey`, asked by the ladder's
-ability block in js/ai/ai-ladder.js); a row's `botAim(p, foe)` turns the aim to a point of its own for that cast, held through the wind-up until it lands (AURA's step away, SALVIA's heals, LUCERNA's lantern). A hero whose rows carry no `bot` keeps the ladder's old range rules.
+Bots play every hero through each row's `bot(p, foe, d, clear)` (`abBotKey`, asked by the ladder's
+ability block in js/ai/ai-ladder.js); a row's `botAim(p, foe)` turns the aim to a point of its own for that cast, held through the wind-up until it lands (AURA's step away, SALVIA's heals, LUCERNA's lantern). Every hero's four rows carry one: a load check under `CLASS_AB` throws for a hero without four
+keys that each have a `bot`.
 
-Every wind-up with an area is **telegraphed on the snow for both sides** (`drawAbilityGround`): the
-pierce's and the charge's marching line, the stomp's ring, the slam's and the execute's wedge — in
+Every wind-up with an area is **telegraphed on the snow for both sides** (`drawAbilityGround`): each row's own `tele` draws its shape (a dash's marching line, a ring, a
+wedge, a line box) — in
 `TELE_COL` red, `TELE_HOT` gold for the last quarter, the inside hashing in as the landing nears
 (`castProg`, off `p.castMax`) — and every landing flashes the same shape in the blow's own colour
 for `AB_FX_T` (`abFx`, ticked in `updateAbilityWorld`). The shapes are `drawWedge`/`drawRing`/
-`drawTeleLine`, and the sword's sweep (`drawSlashes`, called from js/draw/render.js beside the E swing
+`drawTeleLine`/`drawLineBox`, and the sword's sweep (`drawSlashes`, called from js/draw/render.js beside the E swing
 arcs) is the same wedge. A telegraphed cast keeps the body facing the live aim the whole wind-up
 (`updateAbilities`), so the shape and the body agree about where it is going.
 
-A player's movement caps fold through one function — `abilityMoveMul(p)`: root pins, cast/shield/net/
-crater drag (the pierce windup's own harder drag included) — applied to the walk
-cap **and** the ice cap in `updatePlayer`; the grapple's reel is its own movement branch there,
-beside the rush's. An
+A player's movement caps fold through one function — `abilityMoveMul(p)`: a root pins, a cast
+halves, a raised shield drags to 40 %, a slow multiplies, then a bear buff (`statBuffMul`) and a
+hero's own (`heroMove`, the `HERO_MOVE` rows) — applied to the walk cap **and** the ice cap in
+`updatePlayer`; a dash is its own movement branch in `playerMove`. An
 animal or a bot folds the same root and slow through `unitMoveMul(e)`, spent inside `navStep`.
-All damage passes its `src`, so an ability kill credits like an arrow — a net whose
-caster has since gone down credits nobody (`abCredit`) rather than a corpse. Bots spend abilities in
-the ladder's fight rung (`aiThink`), off cooldown at ranges each is good at (the grapple is the one they skip —
-a held key and a terrain read the ladder does not try to fake). The strip's ability wells (icons,
+All damage passes its `src`, so an ability kill credits like an arrow; a thing a key leaves in the
+world carries `owner` and `team` and resolves its side through `sideOf` (js/sim/actions.js), which
+falls back to the team alone once its caster is gone. The strip's ability wells (icons,
 cooldown wipes) are the HUD's half and live with it in [rendering.md](../rendering.md).

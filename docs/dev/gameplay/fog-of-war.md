@@ -30,7 +30,7 @@ js/draw/fog.js (the picture).
   (`brushHide`). `coverHide` asks both, and for a body also the cover a hero's kit makes
   (`HERO_COVER`: NIX in her snow cloud, `nixCover`; FALCO up in the sky on STOOP, `falcoCover`); `sightAt` and `fogShown` ask it
   ([deep snow](deep-snow.md)).
-- **The falcon's mark sees through it**, as it sees through cover.
+- **A mark sees through it** (`markUnit`: FALCO's hawk, AURA's STARLIGHT, LUCERNA's LAMPLIGHT): `seenAt` and both maps show a marked body anywhere.
 - **Where it is up** (`fogUp`): a match on the ground. Never the practice arena, the drop's flight
   or the title tour; `DBG.fog = false` lifts it for a debug look, and the media
   kit films without it unless a scene asks (`MEDIA.boot({ fog: true })`).

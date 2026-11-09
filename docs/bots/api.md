@@ -1,4 +1,4 @@
-# Bot API reference (api 4)
+# Bot API reference (api 6)
 
 Everything a bot file reads and writes. Units: world pixels (y grows downward), seconds, ticks
 of 1/60 s. A tile is 16 px; the world is `hello.map.world` tiles square. Teams are `0` and `1`,
@@ -79,12 +79,11 @@ Trees fall and buildings rise after that: `obs.nodes` and `obs.structs` are the 
 obs = {
   tick, time,              // sim tick; match seconds
   me: {
-    id, team, cls,         // cls: the hero's name ('HUNTER', 'WARRIOR', 'ARMATOS', ...)
+    id, team, cls,         // cls: the hero's name ('ARMATOS', 'IGNIA', 'SAGITTA', ...)
     x, y, vx, vy,
     hp, maxHp, dead, respawnT, eliminated,
     level, xp, gold, skillPts,
     stats: { hp, dmg, as, armor, ap, haste, ms },  // the seven hero stats, buffs on: the HUD panel's numbers
-    prone, hide,           // hide 0..1: how buried under the snow
     aboard, falling, zip,  // on the eagle; in the drop; -1 or the cable ridden
     abilities: [{ key, id, lv, cd, ready, range }],  // keys 0..3; lv 0 = locked; range px or null
     attack,                // your basic attack: 'shot' (a bow) or 'cut' (a blade)
@@ -97,8 +96,8 @@ obs = {
     atShop,                // standing at a merchant's counter
     orca,                  // s left on the orca's countdown over your head; -1 when it is not after you
   },
-  allies:   [{ id, x, y, hp, maxHp, cls, dead, respawnT, aboard, bot }],  // your whole side, always
-  enemies:  [{ id, x, y, vx, vy, hp, maxHp, cls, prone }],                // rivals your side can see
+  allies:   [{ id, x, y, hp, maxHp, cls, attack, dead, respawnT, aboard, bot }],  // your whole side, always
+  enemies:  [{ id, x, y, vx, vy, hp, maxHp, cls, attack }],                // rivals your side can see; attack as me.attack
   soldiers: [{ id, team, x, y, hp, maxHp }],      // wave soldiers near your side, both teams
   animals:  [{ id, kind, level, x, y, hp, maxHp }],   // near you: rabbit, deer, wolf, alpha, dire, bird
   eagles:   [{ team, x, y, state, hp, maxHp, hitT, mouth }],  // both birds, always
@@ -115,9 +114,9 @@ obs = {
 
 - **"Near"** is `rules.obsR` px (384, 24 tiles: the minimap's reach). `enemies` and `soldiers`
   are near *anyone on your side*; the rest is near *you*.
-- **Hidden rivals.** A rival buried past the point where it drops off the minimap is not listed,
-  unless a falcon mark is on it. The game's own sight rule decides, the one every road tower and wolf
-  uses.
+- **Hidden rivals.** A rival is listed only while it is near one of your side by the game's own
+  sight rule, the one every road tower and wolf uses: stealth shortens how far it is seen from, and
+  a mark on it shows it anyway.
 - **The fog of war.** A rival player, a rival soldier or an animal outside your side's sight (a
   circle round each of your heroes, soldiers and road towers, cut by stone; the woods hide a body
   until one of you stands close) is not listed either - the same fog a human plays under.
@@ -127,8 +126,8 @@ obs = {
 - **Ids.** A player's id is its seat. Every other id is stable for the match on this machine;
   use it to name a target in `think` or to remember a thing across thinks.
 - **Tiles to pixels:** the centre of tile `(tx, ty)` is `(tx * 16 + 8, ty * 16 + 8)`.
-- **Abilities.** `id` is what the key is on your body: hunter `pierce`, `net`, `grap`, `snow`;
-  warrior `shield`, `rush`, `stomp`, `exec`, or an alternate (`cry`, `whirl`, `ham`, `wind`).
+- **Abilities.** `id` is what the key is on your body, your hero's own: ARMATOS `verdict`,
+  `hold`, `march`, `guard`; SAGITTA `pin`, `pavise`, `crank`, `longbolt`.
   `range` is how far its aim reaches in px, `null` when it has none.
 - **`lastCmd`.** `ok` is true when the order went through. When it did not, `why` names the
   reason where the game has one: `'gold'`, `'max'`, `'far'`, `'points'`, `'busy'`, `'bad'`, or
@@ -161,7 +160,7 @@ act = {
   aim: [x, y],             // the world point you want the crosshair on
   fire,                    // held: a bow draws while held and looses on release; a blade swings
   work,                    // E held: chop, strike a rival building or bird under the aim
-  slide, grapple,          // shift held; the grapple reels while held
+  slide,                   // shift held
   // edge (once)
   dodge, jump,             // roll; hop on/off a zipline, leap off the eagle
   useItem,                 // 0..5: use that item slot - drinks a health potion (me.items[i] === 'potion')
@@ -202,7 +201,7 @@ every scripted teammate's next `obs.team` as `{ from: seat, say }`. Rivals never
 | `'bird'` | BIRD! | |
 | `'help'` | HELP! | |
 | `'push'` | PUSH! | |
-| `'low'` | HUNTER LOW! | `'HUNTER'`, `'WARRIOR'` or `'BEAR'` (required) |
+| `'low'` | ARMATOS LOW! | a hero's name (`cls`) or `'BEAR'` (required) |
 | `'here'` | 3 HERE! | how many rivals, 1 to 5 |
 
 `x, y` is the spot in px. A call goes through the same rules as the game's own bots: your side
@@ -242,5 +241,5 @@ where you *want* to aim; lead a moving target yourself.
 
 ## Versioning
 
-`hello.api` is 5 (2 swapped the side's `flags` for `pings`, and the `flag` order for `ping`; 3 dropped `me.bag`, the `useCard` edge and the shop's `sell` act, with the backpack and cards; 4 dropped `me.food`, `drops`, the `eatBerry`/`eatFish` edges and the shop's `trade` act, and added `me.potions`/`me.potionT` and the `useItem` edge; 5 renamed a gold pump's `structs` type from `generator` to `pump`). A new field may appear at any time; a field is never renamed or removed without
+`hello.api` is 6 (2 swapped the side's `flags` for `pings`, and the `flag` order for `ping`; 3 dropped `me.bag`, the `useCard` edge and the shop's `sell` act, with the backpack and cards; 4 dropped `me.food`, `drops`, the `eatBerry`/`eatFish` edges and the shop's `trade` act, and added `me.potions`/`me.potionT` and the `useItem` edge; 5 renamed a gold pump's `structs` type from `generator` to `pump`; 6 dropped the HUNTER and the WARRIOR, `me.prone`, `me.hide`, `enemies[].prone` and the `grapple` act, and added `attack` to `allies` and `enemies`). A new field may appear at any time; a field is never renamed or removed without
 the number going up.

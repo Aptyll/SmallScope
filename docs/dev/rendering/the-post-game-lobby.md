@@ -48,7 +48,7 @@ however long the match runs. The rest is counted where it happens, each at the s
 every case goes through: damage dealt and taken (split into rival players' and a beast's bite,
 `BEAST_CAUSES`) in `damagePlayer`, beasts' damage in `hurtUnit`, healing in `healPlayer` (the one
 way health comes back), gold spent in `spendGold`, beasts hunted in `animalDies`, streaks and multi-kills
-(kills `MULTI_T` apart) in `die`, and crowd control in `ccCredit`, which the stun, root and net
+(kills `MULTI_T` apart) in `die`, and crowd control in `ccCredit`, which the stun and root
 setters call with the `src` a caller names - the seconds a rival PLAYER is newly held. The table itself is frozen by `statFreeze()` from `endMatch` on every
 real ending (a respawn wait is not one), because a won match runs on underneath its own ceremony
 and the bots still farming must not move the numbers while they are being read.

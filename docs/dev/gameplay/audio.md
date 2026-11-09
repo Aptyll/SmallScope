@@ -197,11 +197,8 @@ seek in it.
 The bow's rhythm has one of its own: `SFX.nock()` (a dry wooden tick when the renock clears —
 deliberately near-silent, since it fires after every shot). See [the cycle](the-swing-tools-e.md#the-cycle).
 
-[Prone](prone-under-the-snow.md) has four: `SFX.bury()` (a body dropping into deep snow — low crunch,
-no pitch), `SFX.hidden()` (the cover finishing, barely there on purpose: it is the sound of *not*
-being heard, and it plays with a rival somewhere close by), `SFX.rise()` (the snow shed in one
-shove) and `SFX.ambush()` (the shot out of the snow landing — deeper and harder than `hit()`, with
-a crack over the top, so an ambush never sounds like an ordinary arrow).
+A body catching fire has `SFX.kindle()` (`igniteUnit`, js/sim/actions.js): a soft breath and a thin
+high note, barely there on purpose, since the flames on the body say the rest.
 
 `SFX.victory()` (a four-note fanfare over a held low fifth) is the one *synth* cue longer than a
 second; `endMatch` fires it the moment the match is won, as the sting the `victory` song comes up

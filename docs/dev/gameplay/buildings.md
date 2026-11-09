@@ -57,9 +57,9 @@ from `createStruct`), `built(o)` (a site finished), `tick(o, dt)` (each tick it 
   - **every arrow**, in the arrow update's solid-tile branch (js/sim/sim.js): a shot that dies on
     a building sieges it first, anywhere on the building's drawn shape
     ([the sweep](the-basic-attack.md#a-shot-in-flight), `structShotBox`);
-  - the **abilities**: the stomp's ring, the shield's slam and the execute (their wedge, through
-    `structsInCone`), the charge's slam into whatever it was driven into, the net, and the
-    piercing shot, which rides the arrows array like any arrow;
+  - the **abilities**: every key with an area that names buildings (its wedge or ring, through
+    `structsInCone`/`structsNear`), and every ability shot, which rides the arrows array like any
+    arrow;
   - a **soldier's axe** (`robotStrike`).
 
   **`STRUCT_DR` (0.6) damps a player's blow, and only a player's.** Every player number was tuned

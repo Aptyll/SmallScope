@@ -29,7 +29,7 @@ path), the bird through `hurtEagle`, and any **body** through `hurtUnit` with `c
 credited to nobody. The ball's pixels are `drawSoldierShot` (js/draw/bodies.js), a siege one on a
 `SOLDIER_LOB` arc. Targets come from
 `robotFoeUnit(b, range)` (nearest rival player or bot; players are noticed through `seenAt`, so a
-buried body is as invisible to a soldier as to a wolf) and `enemyStructNear(team, x, y, r)`.
+hidden body is as invisible to a soldier as to a wolf) and `enemyStructNear(team, x, y, r)`.
 `foePoint(e, fx, fy)` is where the axe lands: a body a little above its feet, or **the nearest
 point on a building's footprint** — a body measuring to a 3×2 building's centre could never reach
 past the wall it is standing against. `drawRobot()` draws the swing off `b.atkAim` and `b.atkCd`.
@@ -60,7 +60,7 @@ culverts, the far bank, the road just past the rival gate. Every other soldier o
 (`o.queue`'s parity) takes the other ford, so a column forks round the ring and the two sides'
 waves meet on the stones, never on the orca's ice. `updateSoldier` is four rungs, first hit wins:
 
-1. a rival **unit** inside `SOLDIER_AGGRO` (96 px — `robotFoeUnit`, so a buried hunter lets a
+1. a rival **unit** inside `SOLDIER_AGGRO` (96 px — `robotFoeUnit`, so a hero hidden from it lets a
    column walk past): close to its kind's `reach` and strike (`robotStrike`, its kind's blow,
    `cause: 'soldier'` — `DEATH_CAUSE.soldier` is the feed line), marking it in `b.hitFoe` for the
    bots' last hit (`aiFarmHold`);

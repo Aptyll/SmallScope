@@ -1,4 +1,4 @@
-// "I added deer riding to my game": a hunter gallops a deer up the road to the felled
+// "I added deer riding to my game": a hero gallops a deer up the road to the felled
 // log, shoots two targets on the way, and on the leap over the log looses one arrow
 // through a narrow cut in the pines at a third target. Each target says a gold word
 // (WISHLIST, ON, STEAM). The leap slows to a freeze (snow still falling), holds, then
@@ -45,9 +45,9 @@ window.SCENE = {
     const t1p = along(430, -34), t2p = along(260, 34);
     const stand = (p, word) => { const t = addPTarget('still', 0, { word }); t.x = p[0]; t.y = p[1]; return t; };
     M.t1 = stand(t1p, 'WISHLIST'); M.t2 = stand(t2p, 'ON'); M.t3 = stand(tgt3, 'STEAM');
-    // the hunter, the deer, everyone else away
+    // the hero, the deer, everyone else away
     const p = M.p = player;
-    setClass(p, 0); p.zip = -1; p.invuln = 0;
+    setClass(p, heroIndex('SAGITTA')); // a shot hero: the scene looses bolts p.zip = -1; p.invuln = 0;
     const a = M.a = animals.find((q) => q.kind === 'deer' && !q.dead);
     M.park(players.filter((q) => q !== p), 400, 400);
     M.park(animals.filter((q) => q !== a), 400, 600);
