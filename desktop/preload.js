@@ -17,6 +17,7 @@ contextBridge.exposeInMainWorld('steamBridge', {
   setLobbyData: (id, data) => ipcRenderer.invoke('steam:setLobbyData', String(id), data),
   invite: (id) => ipcRenderer.invoke('steam:invite', String(id)),
   log: (line) => ipcRenderer.invoke('steam:log', String(line)), // a line into softfall-steam.log beside the exe
+  quit: () => ipcRenderer.invoke('win:quit'), // the title's QUIT: the app closes, Steam's "playing" with it (js/ui/menu.js)
   flash: () => ipcRenderer.invoke('win:flash'), // the taskbar button blinks until the window is looked at (js/ui/roomtalk.js)
   send: (to, data, reliable) => ipcRenderer.invoke('steam:send', String(to), data, reliable), // data: a string, or a Uint8Array sent as bytes
   accept: (id) => ipcRenderer.invoke('steam:accept', String(id)),
