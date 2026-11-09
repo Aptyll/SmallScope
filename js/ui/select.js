@@ -15,7 +15,7 @@ const SEL_TIMER_W = 200;       // the timer bar's full width
 const SEL_RED = '#e04848';     // a ban
 const SEL_GOLD = '#f2cc6a';    // you, and what you must do
 const SKIN_THUMB_W = 48, SKIN_THUMB_H = 28, SKIN_THUMB_G = 6, SKIN_SHOW = 5; // a skin's thumbnail, and how many the strip shows
-const SPLASH_W = 288, SPLASH_H = 160; // the splash art's size (a hero's skin, painted at 1x)
+const SHOW_W = 288, SHOW_H = 160; // the showcase's room, before a small view cuts it
 
 // ------------------------------------------------------------ positions
 // A position's 11 px emblem: the map's square with its own lane lit (top,
@@ -237,70 +237,49 @@ function drawSeats(L, a, hot) {
   }
 }
 
-// ------------------------------------------------------------ splash
-// Your locked hero, big, in the middle once the grid has done its work: the
-// skin's splash art (heroSplash) or, for a look with none painted, the
-// stand-in (drawSplashStandIn) - and its look's name under it. A hero's splash is SPLASH_W x SPLASH_H at 1x, its strip
-// thumbnail SKIN_THUMB_W x SKIN_THUMB_H (heroThumb), both baked by
-// app/bake-splash.js from docs/media/splash/<slot>-<id>(-thumb).png.
-const SPLASH_PICS = {}; // '<slot>-<id>' and '<slot>-<id>-thumb' -> Image, decoded at load
-for (const [k, src] of Object.entries(window.SPLASH_ART || {})) { const img = new Image(); img.src = src; SPLASH_PICS[k] = img; }
-function splashPic(h, id, tail) {
-  const slot = CLASSES[h] && CLASSES[h].skinSlot, img = slot && id ? SPLASH_PICS[slot + '-' + id + tail] : null;
-  return img && img.complete && img.naturalWidth ? img : null;
+// ------------------------------------------------------------ showcase
+// Your locked hero, big, in the middle once the grid has done its work: its
+// own in-game model, drawn by the world's drawPlayer (js/draw/bodies.js) as a
+// stage piece (the tool in hand, no overhead tells) at showScale px a pixel, in
+// the look worn on the strip, under the pick stage's light and ring
+// (drawStageLight, js/ui/menu.js). It turns through SHOW_BEATS, standing and
+// striding each way, from the lock or the last look worn (state.menu.showKey,
+// showT0);
+// its look's name sits under it. Every hero and look shows itself with no art
+// of its own, exactly as the valley will draw it.
+const SHOW_SCALE = 6; // px a model pixel, room allowing
+const SHOW_FOOT = 28; // px: the soles over the showcase's floor (room for a blade held low)
+const SHOW_BEATS = [['down', false, 2.4], ['left', true, 1.6], ['down', false, 1.0], ['right', true, 1.6], ['up', false, 1.2]]; // facing, striding, seconds
+const SHOW_STRIDE = 9; // animT a second while it strides: a walk's (RUN_STEP, js/draw/bodies.js)
+const showBody = {};  // the showcase's model: the local player's copy, posed each frame
+function showScale(S) { return Math.max(2, Math.min(SHOW_SCALE, Math.floor((S.h - SHOW_FOOT - 8) / 20))); }
+function showBeat(t) {
+  const loop = SHOW_BEATS.reduce((n, b) => n + b[2], 0);
+  let u = ((t % loop) + loop) % loop;
+  for (const b of SHOW_BEATS) { if (u < b[2]) return b; u -= b[2]; }
+  return SHOW_BEATS[0];
 }
-function heroSplash(h, id) { return splashPic(h, id, ''); }
-function heroThumb(h, id) { return splashPic(h, id, '-thumb'); }
-// The stand-in for a look with no splash painted: the painted splashes' own
-// night (their sky bands, the halo behind the head, two pine lines, the snow
-// floor), baked once on their 2 px art grid, the hero's standing front at
-// SPLASH_FIG px a pixel planted on it, and snow falling on the same grid.
-const SPLASH_GRID = 2;  // px: one art pixel of the painted splashes
-const SPLASH_FIG = 6;   // px: one sprite pixel of the stand-in hero (3 art px)
-const SPLASH_FEET = 77; // art px: the stand-in's sole line
-const SPLASH_NIGHT = {
-  sky: ['#121829', '#1c2440', '#28345a'], // top band down
-  halo: ['#28345a', '#3a4a74', '#56648e', '#8a7e8e', '#c8a070'], halo_r: [40, 31, 24, 17, 10], // outside in
-  far: '#3a4a74', near: '#26304c', snow: '#bccbea', drift: '#d6e1f6', shade: '#9aa8cc', star: '#dfe8f4', flake: '#eef3fb',
-};
-let splashNight = null;
-function splashNightArt() {
-  if (splashNight) return splashNight;
-  const N = SPLASH_NIGHT, q = SPLASH_GRID, W = SPLASH_W / q, H = SPLASH_H / q, cx = W >> 1;
-  const c = document.createElement('canvas'); c.width = SPLASH_W; c.height = SPLASH_H;
-  const g = c.getContext('2d'), px = (x, y, w, h, col) => { g.fillStyle = col; g.fillRect(x * q, y * q, w * q, h * q); };
-  px(0, 0, W, 10, N.sky[0]); px(0, 10, W, 19, N.sky[1]); px(0, 29, W, H - 29, N.sky[2]);
-  for (let i = 0; i < 26; i++) px(Math.floor(hash2(i, 51) * W), Math.floor(hash2(i, 53) * 27), 1, 1, N.star);
-  const hy = SPLASH_FEET - 34; // behind the head
-  N.halo.forEach((col, k) => {
-    const r = N.halo_r[k];
-    for (let y = -r; y <= r; y++) { const w = Math.floor(Math.sqrt(r * r - y * y)); px(cx - w, hy + y, 2 * w + 1, 1, col); }
+function drawShowcase(L, now, a) {
+  const S = L.show, h = player.cls, k = selSkinWorn(h), row = selSkinRows(h)[k].r, m = state.menu;
+  const sc = showScale(S), feet = S.y + S.h - SHOW_FOOT;
+  const key = h + '|' + row.id;
+  if (m.showKey !== key) { m.showKey = key; m.showT0 = now; } // a new pick or look starts facing you
+  const [dir, stride] = showBeat(now - m.showT0);
+  ctx.globalAlpha = a;
+  drawStageLight(L.cx, feet, sc / 3, a, 1, now); // its S is the 48 px model's, three sprite pixels to one
+  // a still body: no hurt, no roll, no cast, no ride - only its look, its facing and its stride
+  Object.assign(showBody, player, {
+    x: 0, y: 0, dir, moving: stride, vx: stride ? (dir === 'left' ? -60 : 60) : 0, vy: 0, animT: stride ? now * SHOW_STRIDE : 0,
+    prone: false, zip: -1, mount: null, sliding: false, fallT: 0, dodgeT: 0, hurtT: 0, invuln: 0, castT: 0, shieldT: 0, rushT: 0, buffT: 0, charging: false, hide: 0,
   });
-  const ground = 67;
-  const pine = (x, top, col) => { // a stepped fir: a notch every fourth row
-    for (let y = top; y < ground; y++) { const i = y - top, w = Math.floor(i / 2.2) - (i > 3 && (i & 3) === 0 ? 1 : 0); px(x - w, y, 2 * w + 1, 1, col); }
-  };
-  for (let x = -4, i = 0; x < W + 8; i++) { pine(x, 42 + Math.floor(hash2(i, 71) * 9), N.far); x += 7 + Math.floor(hash2(i, 73) * 6); }
-  for (let x = 2, i = 0; x < W + 8; i++) { pine(x, 51 + Math.floor(hash2(i, 77) * 7), N.near); x += 9 + Math.floor(hash2(i, 79) * 8); }
-  px(0, ground, W, H - ground, N.snow);
-  for (let i = 0; i < 9; i++) px(Math.floor(hash2(i, 83) * W), ground + 2 + Math.floor(hash2(i, 85) * 10), 4 + Math.floor(hash2(i, 87) * 8), 1, N.drift);
-  px(cx - 8, SPLASH_FEET - 1, 17, 1, N.shade); px(cx - 11, SPLASH_FEET, 23, 1, N.shade); px(cx - 8, SPLASH_FEET + 1, 17, 1, N.shade);
-  return (splashNight = c);
-}
-function drawSplashStandIn(S, h, id, now) {
-  const q = SPLASH_GRID, ox = S.x - ((SPLASH_W - S.w) >> 1), oy = S.y - ((SPLASH_H - S.h) >> 1); // a narrow view keeps the middle
-  ctx.save(); ctx.beginPath(); ctx.rect(S.x, S.y, S.w, S.h); ctx.clip();
-  ctx.drawImage(splashNightArt(), ox, oy);
-  const fig = SPRITES.champLook(h, player.look, skin(player.team), id).down[0], fw = fig.width * SPLASH_FIG;
-  ctx.drawImage(fig, ox + ((SPLASH_W - fw) >> 1), oy + SPLASH_FEET * q + q - fig.height * SPLASH_FIG, fw, fig.height * SPLASH_FIG); // the look picked on the strip, on its sole line
-  ctx.fillStyle = SPLASH_NIGHT.flake;
-  const W = SPLASH_W / q, H = SPLASH_H / q;
-  for (let i = 0; i < 28; i++) {
-    const y = Math.floor((hash2(i, 61) * H + now * (5 + hash2(i, 63) * 7)) % H);
-    const x = Math.floor((hash2(i, 65) * W + 2 * Math.sin(now * 0.7 + i) + W) % W);
-    ctx.fillRect(ox + x * q, oy + y * q, q, q);
-  }
+  ctx.save();
+  ctx.beginPath(); ctx.rect(S.x, S.y, S.w, S.h); ctx.clip();
+  ctx.translate(L.cx, feet - 4 * sc); ctx.scale(sc, sc); // a model's soles sit 4 px under its (x, y)
+  drawPlayer(showBody, 0, 0, now, true);
   ctx.restore();
+  ctx.globalAlpha = a;
+  const nm = k > 0 ? row.name + ' ' + CLASSES[h].name : CLASSES[h].name;
+  drawPixelTextOutline(ctx, nm, L.cx - (pixelTextWidth(nm, 2) >> 1), S.y + S.h + 6, '#f4f7ff', SC_INK, 2);
 }
 function selSkinRows(h) {
   const c = CLASSES[h], tab = c && c.skinSlot ? SKIN_TABS.find((t) => t.hero === h) : null;
@@ -311,29 +290,18 @@ function selSkinWorn(h) {
   const rows = selSkinRows(h), k = rows.findIndex((s) => s.r.id === id);
   return k > 0 ? k : 0;
 }
-function drawSplash(L, now, a) {
-  const S = L.splash, h = player.cls, k = selSkinWorn(h), rows = selSkinRows(h), row = rows[k].r;
-  ctx.globalAlpha = a;
-  ctx.fillStyle = SC_EDGE; ctx.fillRect(S.x - 1, S.y - 1, S.w + 2, S.h + 2);
-  const art = heroSplash(h, row.id);
-  if (art) ctx.drawImage(art, (art.width - S.w) >> 1, (art.height - S.h) >> 1, S.w, S.h, S.x, S.y, S.w, S.h); // a narrow view keeps the middle
-  else drawSplashStandIn(S, h, row.id, now); // no art painted for this look yet
-  const nm = k > 0 ? row.name + ' ' + CLASSES[h].name : CLASSES[h].name;
-  drawPixelTextOutline(ctx, nm, L.cx - (pixelTextWidth(nm, 2) >> 1), S.y + S.h + 6, '#f4f7ff', SC_INK, 2);
-}
-
 // ------------------------------------------------------------ lore book
-// A see-through book in the splash's top-right corner, the way League's champion page
+// A see-through book in the showcase's top-right corner, the way League's champion page
 // keeps the bio a click away: a press lays the hero's story (CLASSES `story`,
-// the rules it is written to: docs/dev/lore.md) over the splash under its
-// name and title, and a second press anywhere on the splash puts it away.
+// the rules it is written to: docs/dev/lore.md) over the showcase under its
+// name and title, and a second press anywhere on the showcase puts it away.
 // Nothing about it is sent: it is this screen's own (state.menu.loreOn,
 // shut again by beginLobby).
 const SEL_BOOK = ['.wwww.wwww.', 'w....w....w', 'w.ww.w.ww.w', 'w....w....w', 'w.ww.w.ww.w', 'w....w....w', '.wwwwwwwww.'];
-const SEL_BOOK_ALPHA = 0.55; // the book at rest: see-through over the splash
-const SEL_STORY_PAD = 10;  // px: the story's margin inside the splash
+const SEL_BOOK_ALPHA = 0.55; // the book at rest: see-through over the showcase
+const SEL_STORY_PAD = 10;  // px: the story's margin inside the showcase
 const SEL_STORY_PITCH = 9; // px between two of its lines
-function selBookRect(L) { return { x: L.splash.x + L.splash.w - 17, y: L.splash.y + 5, w: SEL_BOOK[0].length + 2, h: SEL_BOOK.length + 2 }; }
+function selBookRect(L) { return { x: L.show.x + L.show.w - 17, y: L.show.y + 5, w: SEL_BOOK[0].length + 2, h: SEL_BOOK.length + 2 }; }
 // the story wrapped to w, narrowed a little at a time while its last line is one lone word
 function selStoryLines(text, w) {
   for (let ww = w; ww > w - 48; ww -= 6) { const l = wrapText(text, ww); if (l.length < 2 || l[l.length - 1].includes(' ')) return l; }
@@ -343,7 +311,7 @@ function selLoreOn() { return !!state.menu.loreOn && !!CLASSES[player.cls].story
 function drawSelLore(L, a, hot) {
   const c = CLASSES[player.cls];
   if (!c.story) return;
-  const S = L.splash, on = selLoreOn();
+  const S = L.show, on = selLoreOn();
   ctx.globalAlpha = a;
   if (on) {
     ctx.fillStyle = 'rgba(7,8,10,0.86)'; ctx.fillRect(S.x, S.y, S.w, S.h);
@@ -353,7 +321,7 @@ function drawSelLore(L, a, hot) {
     drawPixelTextShadow(ctx, c.role, x + pixelTextWidth(c.name) + 7, top, SC_LBL, SC_INK);
     lines.forEach((t, k) => drawPixelTextShadow(ctx, t, x, top + 12 + k * SEL_STORY_PITCH, SC_TXT, SC_INK));
   }
-  // no plate: the glyph sits on the art, see-through until the hand or the open story lights it
+  // no plate: the glyph sits on the night, see-through until the hand or the open story lights it
   const r = selBookRect(L), lit = on || hot === 'book';
   const ink = (dx, dy) => SEL_BOOK.forEach((row, y) => { for (let x = 0; x < row.length; x++) if (row[x] === 'w') ctx.fillRect(r.x + 1 + x + dx, r.y + 1 + y + dy, 1, 1); });
   ctx.globalAlpha = a * (lit ? 0.7 : 0.35); ctx.fillStyle = SC_INK; ink(1, 1); // its shadow keeps it read on snow
@@ -362,13 +330,13 @@ function drawSelLore(L, a, hot) {
 }
 
 // ------------------------------------------------------------ skin strip
-// Under the splash: the hero's looks, SKIN_SHOW at a time, the worn one in
+// Under the showcase: the hero's looks, SKIN_SHOW at a time, the worn one in
 // gold, one this profile does not own dimmed with a lock; the chevrons walk
-// the window when there are more. A thumbnail is its splash's own
-// SKIN_THUMB_W x SKIN_THUMB_H (heroThumb; a look with none: its body at 2x).
+// the window when there are more. A thumbnail is SKIN_THUMB_W x SKIN_THUMB_H:
+// the look's standing front at 2x, cut at the chest.
 function selSkinCells(L) {
   const h = player.cls, rows = selSkinRows(h);
-  const fit = Math.max(1, Math.floor((L.splash.w + SKIN_THUMB_G) / (SKIN_THUMB_W + SKIN_THUMB_G)));
+  const fit = Math.max(1, Math.floor((L.show.w + SKIN_THUMB_G) / (SKIN_THUMB_W + SKIN_THUMB_G)));
   const n = Math.min(SKIN_SHOW, fit, rows.length), w = n * SKIN_THUMB_W + (n - 1) * SKIN_THUMB_G;
   const off = Math.max(0, Math.min(state.menu.skinOff | 0, rows.length - n));
   const x0 = L.cx - (w >> 1), y = L.skins.y;
@@ -387,9 +355,7 @@ function drawSkinStrip(L, a, hot) {
     ctx.save(); ctx.beginPath(); ctx.rect(c.x, c.y, c.w, c.h); ctx.clip();
     ctx.fillStyle = SKIN_RARITY[c.s.r.rarity] || SC_EDGE; ctx.globalAlpha = a * 0.18; ctx.fillRect(c.x, c.y, c.w, c.h);
     ctx.globalAlpha = a * (c.s.own ? 1 : 0.35);
-    const thumb = heroThumb(h, c.s.r.id);
-    if (thumb) ctx.drawImage(thumb, c.x, c.y);
-    else ctx.drawImage(SPRITES.champLook(h, CLASSES[h].look, skin(player.team), c.k > 0 ? c.s.r.id : null).down[0], c.x + (c.w >> 1) - 16, c.y - 1, 32, 32);
+    ctx.drawImage(SPRITES.champLook(h, CLASSES[h].look, skin(player.team), c.k > 0 ? c.s.r.id : null).down[0], c.x + (c.w >> 1) - 16, c.y - 1, 32, 32);
     ctx.restore();
     ctx.globalAlpha = a;
     ctx.fillStyle = SKIN_RARITY[c.s.r.rarity] || SC_EDGE; ctx.fillRect(c.x, c.y + c.h - 1, c.w, 1);
@@ -426,7 +392,7 @@ function drawSelMode(L, a) {
 }
 // LOCK IN (BAN in the ban phase) on its plate under the grid: white and
 // live while there is a confirm to make, gold under the hand, red for a
-// ban, slate once made; gone with the splash
+// ban, slate once made; gone with the showcase
 function drawSelPlay(L, a, hot) {
   const dw = draftWord(), r = L.play;
   if (!dw) return;

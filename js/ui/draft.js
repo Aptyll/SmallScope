@@ -319,7 +319,7 @@ function draftNextRole() {
   return -1;
 }
 // the look this screen's player wears on hero h (null: the hero's own), from
-// the skin strip under the splash; the host takes a seat's the same way
+// the skin strip under the showcase; the host takes a seat's the same way
 function draftWearSkin(p, h, id) {
   const c = CLASSES[h];
   if (!c || !c.skinSlot) return false;

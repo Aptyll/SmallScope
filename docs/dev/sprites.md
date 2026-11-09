@@ -388,8 +388,8 @@ without bound.
 stage and the hero pop-up never show a borrowed face. The small faces (champ select's grid, its
 seat discs and ban icons) take `heroHead` (js/ui/draft.js): the 48 px model's `HERO_CROP` for a
 class, or ten 16 px columns and rows around a named hero's head (`HERO_HEAD16`), drawn at twice the
-scale so both fill the same cell. A hand-drawn 48 px model per hero, or its splash art
-(`heroSplash`, js/ui/select.js), is what would replace it.
+scale so both fill the same cell. A hand-drawn 48 px model per hero is what would replace it. The
+champ select's showcase (`drawShowcase`, js/ui/select.js) draws the in-game model itself, not this.
 
 `docs/media/concepts/model-concepts-1.png` (A BUNDLED, B LANKY, C STOUT) is a **rejected**
 concept round for this model, kept as the record of what not to draw again.
