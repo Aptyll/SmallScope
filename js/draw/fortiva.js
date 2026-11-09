@@ -64,7 +64,7 @@ function drawFortBody(p, ax, ay, now, front) {
   }
   if (!front) return;
   // DEFIANT HEART: the shell, thinning as its clock runs out
-  if (p.defyT > 0 && p.wardHp > 0) {
+  if (p.defyT > 0 && shieldOf(p, 'ward') > 0) {
     ctx.globalAlpha = 0.35 + 0.5 * Math.min(1, p.defyT / DEFY_T);
     ctx.fillStyle = '#f2cc6a';
     for (let i = 0; i < 20; i++) {
