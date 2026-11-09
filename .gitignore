@@ -108,24 +108,6 @@ arena-out/
 # Headless screenshot sink (app/server.js POST /shot)
 shot.png
 
-# Staged YouTube-short frames (the finished mp4 is kept)
-docs/media/shorts/frames/
-docs/media/shorts/_raw/
-docs/media/shorts/verify/
-
-# The montage clips and their webm originals (each folder's tools/ rebuilds
-# them from the seed; the index and the harness are kept)
-docs/media/montage/*.mp4
-docs/media/montage/_raw/
-docs/media/montage/_report.json
-docs/media/montage2/*.mp4
-docs/media/montage2/_raw/
-docs/media/montage2/_report.json
-docs/media/montage3/*.mp4
-docs/media/montage3/_raw/
-docs/media/montage3/_report.json
-docs/media/montage*/tools/shots/
-
 # The store art is kept (Steamworks wants the files); what makes it is not
 docs/media/steam/tools/raw/
 docs/media/steam/tools/shots/

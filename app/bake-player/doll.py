@@ -83,6 +83,7 @@ RAMP = {
     'beard': ('w', 'w', 'W'), 'helm': ('n', 'n', 't'), 'gold': ('Y', 'y', 'y'),
     'hair': ('a', 'a', 'A'), 'cloak': ('q', 'q', 'Q'),
     'ember': ('u', 'u', 'f'),
+    'frost': ('l', 'l', 'L'), 'ice': ('z', 'z', 'Z'),
     'pelt': ('j', 'f', 'F'), 'snowpelt': ('v', 'u', 'U'),
 }
 CUTS = {
@@ -91,6 +92,7 @@ CUTS = {
     'beard': (0.0, 0.8), 'helm': (0.0, 0.8), 'gold': (0.3, 2),
     'hair': (0.0, 0.75), 'cloak': (0.0, 0.8),
     'ember': (0.0, 0.8),
+    'frost': (0.0, 0.75), 'ice': (0.0, 0.8),
     'pelt': (0.3, 0.85), 'snowpelt': (0.3, 0.85),
 }
 MATS = list(RAMP)

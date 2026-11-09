@@ -18,7 +18,8 @@
 // - HERO_TEN: fn(e) -> tenacity 0..1; every stun, root and slow lasts the
 //   product of (1 - t) of its length (ccMul, js/sim/actions.js).
 // - HERO_MOVE: fn(p) -> a multiplier on the walk (abilityMoveMul).
-// - HERO_SIGHT: fn(p) -> a multiplier on how far a hero sees (FOG_HERO, sightSources).
+// - HERO_SIGHT: fn(p) -> a multiplier on how far a hero sees (FOG_HERO, sightSources):
+//   LUCERNA's lamplight stretches it, HIEMS's whiteout cuts it.
 // - HERO_DASH[id]: a charge riding the rush's state (rushT, rushNX/NY) at its
 //   own pace: { spd, t, ramp, step(p, mv, dt), pose(p)? }, picked by p.dash = id
 //   (`pose` is the body's while it runs: abilityPose; else the rush's lean); with
@@ -27,6 +28,8 @@
 // - HERO_GROUND: fn(ex, ey, now) drawn on the snow under the wind-ups.
 // - HERO_MARK: fn(e, px, py, w, h, now) drawn over any body with the states
 //   every unit wears (drawUnitStates): a mark a hero left on it, a hero's own stacks.
+// - HERO_ICE: fn(p) -> true where a hero's ground skates like the creek's ice
+//   (iceUnder, js/sim/sim.js): a rival's glaze.
 // - HERO_SUMMON[id]: { step(a, dt) } the brain of an animal a hero called onto its
 //   side (a.summon = id, with team and owner): VARRO's wolves. It walks in `animals`
 //   like any beast (hit, drawn, pushed apart, fogged) and pays nothing when it falls.
@@ -42,6 +45,7 @@ const HERO_DASH = {};
 const HERO_TICK = [];
 const HERO_GROUND = [];
 const HERO_MARK = [];
+const HERO_ICE = [];
 const HERO_SUMMON = {};
 
 // the ability whose use() is running right now, so a blow it lands says so
@@ -71,4 +75,5 @@ function heroDashThrough(p) { const d = p.rushT > 0 && heroDash(p); return !!(d 
 function heroTick(dt) { for (const f of HERO_TICK) f(dt); }
 function heroGround(ex, ey, now) { for (const f of HERO_GROUND) f(ex, ey, now); }
 function heroMarks(e, px, py, w, h, now) { for (const f of HERO_MARK) f(e, px, py, w, h, now); }
+function heroIce(p) { for (const f of HERO_ICE) if (f(p)) return true; return false; }
 function heroSummonStep(a, dt) { const s = HERO_SUMMON[a.summon]; if (s) s.step(a, dt); else a.dead = true; }
