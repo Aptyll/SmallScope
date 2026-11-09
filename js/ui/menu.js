@@ -12,7 +12,9 @@
 const INTRO_T = 1.6;    // title -> play: tint dissolves, camera settles, HUD slides in
 const HUD_IN_T = 0.7;   // the HUD slide occupies the last part of the intro
 const PANEL_SLIDE_T = 0.32;
-const MENU_ITEMS = ['QUICKPLAY', 'RANKED', 'PRACTICE TOOL'];
+// QUIT only in the desktop build (the bridge, desktop/preload.js): it opens
+// fullscreen, so the app needs its own way out; a browser tab has its X
+const MENU_ITEMS = ['QUICKPLAY', 'RANKED', 'PRACTICE TOOL'].concat(window.steamBridge && steamBridge.quit ? ['QUIT'] : []);
 // SETTINGS has no plank: it is the ESC panel's in play (js/ui/panels.js),
 // and the WIKI is a tab beside the patch notes (js/ui/notes.js).
 // The items are plain words at MENU_TXT_SCALE - white, the picked one gold -
@@ -28,7 +30,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.566';
+const PATCH_TXT = 'PATCH 0.567';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -44,6 +46,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.567', 'THE STEAM BUILD HAS A QUIT BUTTON ON THE TITLE SCREEN, UNDER PRACTICE TOOL.'],
   ['0.566', 'THE PRACTICE TOOL FIELD HAS A SHOP NOW: A STALL AND ITS MERCHANT JUST EAST OF WHERE YOU START, SO ADD GOLD CAN BE SPENT ON ITEMS.'],
   ['0.565', 'BOTH SIDES NOW COME BACK INSIDE THEIR ROOST RING AFTER A DEATH OR A RECALL, SO IT HEALS YOU THE MOMENT YOU LAND; ONE SIDE USED TO LAND JUST OUTSIDE IT.'],
   ['0.564', 'IN A PRACTICE TOOL PARTY, REFRESH COOLDOWNS AND REFRESH HEALTH NOW TURN ON FOR THE PLAYER WHO PRESSED THEM, NOT FOR THE PARTY LEADER.'],
@@ -649,6 +652,7 @@ function menuActivate(i) {
   if (it === 'QUICKPLAY') beginParty('quick'); // the party lobby (js/ui/rooms.js)
   else if (it === 'RANKED') beginParty('ranked');
   else if (it === 'PRACTICE TOOL') beginParty('practice'); // the field with friends or alone: the party first (js/ui/rooms.js)
+  else if (it === 'QUIT') steamBridge.quit(); // the app closes (desktop/main.js, win:quit)
 }
 
 // Out of the training arena, for a page with no party to go back to (a
