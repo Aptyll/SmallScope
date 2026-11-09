@@ -298,7 +298,10 @@ function backRow(spr, col) {
   }
   return spr[k];
 }
-function drawPlayer(p, ex, ey, now) {
+// stage: a model on show off the map (the champ select's showcase, drawShowcase,
+// js/ui/select.js) - the tool in hand, no sun shade (its stage lights it), none of
+// the overhead tells, on any mode.
+function drawPlayer(p, ex, ey, now, stage) {
   const local = p === player;
   const lying = p.prone;
   const set = lying ? classSet(p).prone[p.dir] : classSet(p)[p.dir];
@@ -346,7 +349,7 @@ function drawPlayer(p, ex, ey, now) {
   // shadow (not while swimming in a hole, and not while lying down - a body
   // flat on the snow has nothing to cast one over, and the cover's own dark
   // lower rim is what grounds it instead)
-  if (p.fallT <= 0 && !lying && !p.mount) {
+  if (!stage && p.fallT <= 0 && !lying && !p.mount) {
     // the sun's shade, cut from the frame on show (ground.js), feet on the
     // foot row: a roll's own frame, so the ball goes over its own shadow - but
     // a worn body's standing frame through its spin, which would smear it
@@ -426,7 +429,7 @@ function drawPlayer(p, ex, ey, now) {
     // mid-cast (or holding the shield, or charging) has no hand free for it -
     // but a mage casts with the staff in hand (heroStaffOf, js/draw/heroes.js), and a
     // key that is a shot holds the weapon on the aim through its wind-up (castAims).
-    const held = state.mode !== 'title' && (!lying || p.charging) &&
+    const held = (state.mode !== 'title' || stage) && (!lying || p.charging) &&
       (p.castT <= 0 || heroStaffOf(p) || castAims(p)) && p.shieldT <= 0 && p.rushT <= 0 && p.zip < 0; // ...or holding a zipline's handle
     // what points up the screen or is carried facing away goes behind (THE CARRY RULE, drawHeldTool)
     if (held) atFeet(fx0, fy0, wsc, () => drawHeldTool(p, px, py + bob, true));
@@ -472,7 +475,7 @@ function drawPlayer(p, ex, ey, now) {
   // AT rather than a match somebody is reading, and a name plate with a
   // health bar under it floating through the ceremony is the HUD showing up
   // to a party it was not invited to (endScreen, js/ui/screens.js)
-  if (state.mode === 'title' || endScreen()) return;
+  if (stage || state.mode === 'title' || endScreen()) return;
 
   // Everything above the head is a tell, and a buried player gives none of
   // them away: name tag, both bars, the level badge and - the one that

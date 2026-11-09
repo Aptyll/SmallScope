@@ -148,7 +148,7 @@ from the hero, a page for the world, and art that tells most of it. Nothing is i
 playing.
 
 **It goes in:** the WORLD page; each hero's story under its wiki card and behind the book on the
-champ select splash; a hero's name and title;
+champ select showcase; a hero's name and title;
 names; event-log lines and headlines; patch notes; the README and store copy; a trailer's cards.
 
 **It never goes in:** the HUD, a hint, a tooltip's body (that carve-out is for numbers —

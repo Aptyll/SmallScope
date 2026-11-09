@@ -101,20 +101,19 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
     it opens the [hero pop-up](../rendering.md#the-hero-pop-up). Then the **confirm plate**
     (`drawSelPlay`, `draftWord`): BAN (red) or LOCK IN, white and live while you have a confirm
     to make, gold under the hand, slate once made. **Once your pick is locked** (and through the
-    count, `lobbySplash`) the grid gives way to the **splash** (`drawSplash`: `heroSplash(h, id)`
-    art `SPLASH_W`×`SPLASH_H` at 1×, centred and cut on a narrow view, baked by
-    `app/bake-splash.js` from `docs/media/splash/<slot>-<id>.png`; a look with none painted shows the
-    stand-in, `drawSplashStandIn`: the painted splashes' own night baked once on their 2 px art grid
-    by `splashNightArt` (`SPLASH_NIGHT` sky bands, halo behind the head, two pine lines, the snow
-    floor), the look's 16 px standing front at `SPLASH_FIG` px a pixel on `SPLASH_FEET`, snow falling
-    on the same grid) with the look's name under it and the **skin strip**
+    count, `lobbyShowcase`) the grid gives way to the **showcase** (`drawShowcase` in `L.show`,
+    `SHOW_W`×`SHOW_H` cut on a small view): the hero's own in-game model, drawn by the world's
+    `drawPlayer` with its `stage` flag (the tool in hand, no sun shade, no overhead tells) at
+    `showScale` px a pixel (up to `SHOW_SCALE`) in the look worn, under the pick stage's light and
+    ring (`drawStageLight`), turning through `SHOW_BEATS` (standing and striding each way, from the
+    lock or the last look worn); no art of its own, so every hero and look shows as the valley draws it) with the look's name under it and the **skin strip**
     (`drawSkinStrip`/`selSkinCells`: up to `SKIN_SHOW` `SKIN_THUMB_W`×`SKIN_THUMB_H` thumbnails,
-    each `heroThumb(h, id)` or, with none, the look's body at 2×,
+    each the look's standing front at 2×, cut at the chest,
     chevrons when there are more; the worn one gold, one the profile does not own dimmed with a
-    lock; a click wears an owned one, `draftSkin`). A **book** in the splash's top-right corner
-    (`drawSelLore`, `selBookRect`; no plate, see-through at `SEL_BOOK_ALPHA` over the art, gold under the hand or while open) lays the hero's story
+    lock; a click wears an owned one, `draftSkin`). A **book** in the showcase's top-right corner
+    (`drawSelLore`, `selBookRect`; no plate, see-through at `SEL_BOOK_ALPHA` over the night, gold under the hand or while open) lays the hero's story
     (`CLASSES` `story`, wrapped by `selStoryLines` so no last word stands alone) over the dimmed
-    splash under its name and title; a press anywhere on the splash puts it away (`menu.loreOn`,
+    showcase under its name and title; a press anywhere on the showcase puts it away (`menu.loreOn`,
     local only, shut by `beginLobby`).
   - **The foot**: the **chat** bottom left (`drawTalk` at `L.chat`, js/ui/roomtalk.js: up to
     `LOBBY_CHAT_LINES` lines over its plate, your side's only while the draft is on) and the
@@ -172,7 +171,7 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
 
   When the pick ends every seat's hero is set (`setClass`) and the **countdown** starts
   (`draftCount`): `menu.countT` runs `COUNT_T` (5) seconds; a gold ring bursts out from the figure's feet across
-  the snow (`menu.lockFx` over `LOCK_FX_T`), the splash takes the middle, and the top band's
+  the snow (`menu.lockFx` over `LOCK_FX_T`), the showcase takes the middle, and the top band's
   seconds count it down in gold,
   `SFX.countTick` ticking each one (a low bell), and **one rival frame turning face-up per
   tick** (`lobbyRevealed()`: the first at the start, the last on ONE, all of them once it has
