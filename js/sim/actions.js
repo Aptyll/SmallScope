@@ -504,7 +504,7 @@ function pickSnowdrop(o, p) {
   o.readyAt = state.elapsed + SNOWDROP_CD;
   for (const q of players) {
     if (!q.active || q.dead || inAir(q) || q.team !== p.team) continue;
-    q.dawnShield = Math.min(DAWN_SHIELD_MAX, q.dawnShield + DAWN_SHIELD);
+    shieldUnit(q, DAWN_SHIELD, 0, 'dawn');
     sfxFor(q, 'shieldUp');
     burst(q.x, q.y - 8, '#ffd84a', 5, 26, 0.45);
   }
@@ -881,14 +881,65 @@ function knockUp(e, t, src) {
   burst(e.x, e.y + 3, '#eef4fb', 6, 40, 0.35, true);
 }
 function upLift(e) { return e.upT > 0 ? Math.round(7 * Math.sin(Math.PI * (1 - e.upT / (e.upMax || 1)))) : 0; }
-// SHIELDED: hp that a hit spends before health, for a while (damagePlayer,
-// js/sim/player.js, spends it after the dawn's). A fresh one never stacks on
-// one still up: the bigger hp, the longer clock. Players only, today.
-function shieldUnit(p, hp, t) {
+// SHIELDS: hp a hit spends before health. A unit's `shields` is ONE list, a
+// shield of each kind at most, kept in SHIELD_KINDS order, which is the order
+// a hit spends them (shieldSpend, from damagePlayer, js/sim/player.js). What
+// a kind is lives in its row: `stack` adds a fresh one onto one still up, to
+// its `cap`, where any other keeps the bigger hp and the longer clock;
+// `lasting` never wears off (else `t` counts down, shieldTick); `ink` is the
+// spark a hit on it throws and `breakInk` the burst when it breaks. A new
+// shield is a row here and a shieldUnit call. Players only, today.
+const SHIELD_KINDS = {
+  // the DAWN SHIELD (pickSnowdrop): segments of DAWN_SHIELD to DAWN_SHIELD_MAX, spent first
+  dawn: { stack: true, cap: DAWN_SHIELD_MAX, lasting: true, ink: '#ffd84a', breakInk: '#fff4b8' },
+  // a timed shield from a hero's kit (SALVIA's cloak, ARMATOS's resolve, FORTIVA's heart)
+  ward: { ink: '#f2cc6a' },
+};
+const SHIELD_ORDER = Object.keys(SHIELD_KINDS);
+function shieldUnit(p, hp, t, kind) {
   if (!(p instanceof Player) || !unitAlive(p) || hp <= 0) return;
-  p.wardHp = Math.max(p.wardHp, hp);
-  p.wardT = Math.max(p.wardT, t);
+  kind = kind || 'ward';
+  const K = SHIELD_KINDS[kind];
+  let s = p.shields.find((q) => q.kind === kind);
+  if (!s) {
+    s = { kind, hp: 0, t: 0 };
+    const at = p.shields.findIndex((q) => SHIELD_ORDER.indexOf(q.kind) > SHIELD_ORDER.indexOf(kind));
+    p.shields.splice(at < 0 ? p.shields.length : at, 0, s);
+  }
+  s.hp = K.stack ? Math.min(K.cap, s.hp + hp) : Math.max(s.hp, hp);
+  if (!K.lasting) s.t = Math.max(s.t, t);
 }
+// the shield hp a unit holds: of one kind, or all of it
+function shieldOf(e, kind) {
+  let n = 0;
+  if (e.shields) for (const s of e.shields) if (!kind || s.kind === kind) n += s.hp;
+  return n;
+}
+// a hit's share the shields take, in order; a spent one breaks and leaves the list
+function shieldSpend(p, dmg) {
+  let left = dmg;
+  for (let i = 0; i < p.shields.length && left > 0;) {
+    const s = p.shields[i], K = SHIELD_KINDS[s.kind], took = Math.min(s.hp, left);
+    s.hp -= took; left -= took;
+    burst(p.x, p.y - 10, K.ink, 4, 36, 0.35);
+    if (s.hp > 0) { i++; continue; }
+    sfxAt('shieldBreak', p.x, p.y);
+    if (K.breakInk) burst(p.x, p.y - 10, K.breakInk, 10, 60, 0.5);
+    p.shields.splice(i, 1);
+  }
+  return dmg - left;
+}
+// the clocks running down; a shield whose clock runs out is gone
+function shieldTick(p, dt) {
+  for (let i = p.shields.length - 1; i >= 0; i--) {
+    const s = p.shields[i];
+    if (SHIELD_KINDS[s.kind].lasting) continue;
+    s.t = Math.max(0, s.t - dt);
+    if (s.t <= 0) p.shields.splice(i, 1);
+  }
+}
+// a kind's shield taken off whole (FORTIVA's heart spending what is left of its own)
+function shieldClear(p, kind) { p.shields = p.shields.filter((s) => s.kind !== kind); }
 // Marked: revealed. On a player seenAt() returns its full range and both maps
 // keep drawing them; an animal or a bot has no cover to strip, so it is the
 // gold chevrons alone - the falcon still says "I have found this".

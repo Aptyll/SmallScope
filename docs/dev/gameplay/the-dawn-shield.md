@@ -12,7 +12,8 @@ each. Then that clump alone rests `SNOWDROP_CD` (90 s; `o.readyAt`, the match se
 read by `snowdropLeft`): a snapped stem, a shut bud for its last `SNOWDROP_BUD_T` (25 s), open
 again at zero, and the neutral bar a bush wears under the pointer while it rests.
 
-The shield (`p.dawnShield`) holds until hits break it or its hero goes down — it never wears off.
-`damagePlayer` spends it **after** the damage reduction and **before** health, with a gold burst,
+The shield (the `dawn` kind in `p.shields`, `SHIELD_KINDS`) holds until hits break it or its hero
+goes down — it never wears off. `damagePlayer` spends it **after** the damage reduction and
+**before** health and before any timed shield (`shieldSpend`), with a gold burst,
 and a shatter (`shieldBreak`) the hit that empties it. It is drawn as its own gold bar over the
 health bar ([rendering.md](../rendering/overhead-health-bars.md)), and nowhere else.

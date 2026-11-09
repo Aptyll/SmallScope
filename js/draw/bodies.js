@@ -491,7 +491,7 @@ function drawPlayer(p, ex, ey, now) {
   // above the hp bar, and everything that sat above the bar - the draw meter,
   // the name, a callout - stands SHIELD_LIFT rows higher while it holds; the
   // orca's count (js/sim/orca.js) stands over the frame the same way, over the shield's
-  const shL = p.dawnShield > 0 ? SHIELD_LIFT : 0, line = orcaLine(p);
+  const dawn = shieldOf(p, 'dawn'), shL = dawn > 0 ? SHIELD_LIFT : 0, line = orcaLine(p);
   const lift = shL + (line > 0 ? ORCA_COUNT_LIFT : 0);
   const bounty = bountyOf(p);
   callTag(p, Math.round(p.x - ex), hy - 18 - lift - (bounty > 0 ? BOUNTY_LIFT : 0)); // a bot's callout hangs over the name, and over a bounty (js/draw/callouts.js)
@@ -500,7 +500,7 @@ function drawPlayer(p, ex, ey, now) {
   // nothing standing in front of the body cuts into it
   overheadPlate(() => {
     drawHealthBar(p.x - ex + FRAME_DX, hy - 7, p.hp, p.maxHp, 14, p.team);
-    if (shL) drawShieldBar(fx - 7, hy - 10, p.dawnShield);
+    if (shL) drawShieldBar(fx - 7, hy - 10, dawn);
     if (line > 0) drawOrcaCount(fx, hy - 10 - shL, line);
     // the running damage total, past the frame's right edge: the bar backing,
     // the colour-blind cap or the stun plate, whichever stands furthest out,
