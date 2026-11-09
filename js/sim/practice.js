@@ -726,13 +726,13 @@ let pkAnim = null;
 // The column of buttons down the left edge (js/ui/cheats.js) sends each press
 // through input.cmd {kind:'cheat', id, tx?, ty?} -> runCmd -> cheatCmd, so a
 // cheat is a command like any wheel pick and never a UI write into the sim.
-// Two are standing toggles (CHEAT_AUTO: cooldowns and health refill every
-// tick while on - updatePractice reads them); the rest act once. Teleport
+// Two are standing toggles (p.cheatOn, each player's own: cooldowns and
+// health refill every tick while on - updatePractice reads them), so a
+// party's guest flips its own hero and never the host's; the rest act once. Teleport
 // and the dummy carry the tile the pointer picked. PRACTICE-gated: the bar
 // never draws in a match, and a forged command there does nothing.
 const CHEAT_GOLD = 500;      // what one ADD GOLD press pays
 const CHEAT_DUMMIES = 12;    // the most spawned dummies standing at once
-const CHEAT_AUTO = { cd: false, hp: false };
 const cheatDummies = [];     // the dummies the bar spawned, oldest first (the field's own is not one)
 function cheatCmd(p, c) {
   if (!PRACTICE) return false;
@@ -752,9 +752,9 @@ function cheatCmd(p, c) {
     return true;
   }
   if (c.id === 'cd' || c.id === 'hp') {
-    CHEAT_AUTO[c.id] = !CHEAT_AUTO[c.id];
+    p.cheatOn[c.id] = !p.cheatOn[c.id];
     cheatAuto(p);
-    sfxFor(p, CHEAT_AUTO[c.id] ? 'levelUp' : 'deny');
+    sfxFor(p, p.cheatOn[c.id] ? 'levelUp' : 'deny');
     return true;
   }
   if (c.id === 'reset') {
@@ -788,11 +788,11 @@ function cheatCmd(p, c) {
 // the standing toggles, applied: every tick from updatePractice, and once on
 // the press so a toggle answers the moment it lights
 function cheatAuto(p) {
-  if (CHEAT_AUTO.cd) {
+  if (p.cheatOn.cd) {
     for (let i = 0; i < p.abCd.length; i++) p.abCd[i] = 0;
     p.dodgeCharges = DODGE_CHARGES; p.dodgeRegenT = 0;
   }
-  if (CHEAT_AUTO.hp && !p.dead) p.hp = p.maxHp;
+  if (p.cheatOn.hp && !p.dead) p.hp = p.maxHp;
 }
 // a dummy where the pointer picked: the field's own dummy's numbers and
 // meter, on any open tile. Never mid-round (the round has the field), and the
@@ -1262,7 +1262,7 @@ function updatePractice(dt) {
   pkAnimStep(dt); // the roll's carving front, while one is out
   prDeerStep(dt); // the deer ride's tame deer, back on its stand
   agUpdate(dt);   // the archery round's clock, sink, countdown and spawner
-  cheatAuto(player); // the practice bar's standing toggles
+  for (const p of players) if (!inAir(p)) cheatAuto(p); // the practice bar's standing toggles, each player's own
   if (pkDieObj && pkDieObj.rollT > 0) pkDieObj.rollT = Math.max(0, pkDieObj.rollT - dt); // the die's tumble
   for (const o of practiceDummies) {
     o.hitT += dt;
