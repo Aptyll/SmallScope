@@ -1,6 +1,7 @@
 # Fog of war
 
-A side sees a circle round each of its heroes (`FOG_HERO`, 10 tiles) and wave soldiers
+A side sees a circle round each of its heroes (`FOG_HERO`, 10 tiles, times any hero's own
+`HERO_SIGHT` in whole `FOG_EYE_STEP`s: `heroEyeR`, so far only LUCERNA's lamplight at night) and wave soldiers
 (`FOG_SOLDIER`, 7), and its base and lanes see on their own (`sightSources`):
 
 - every standing building with a `sight` in its entry: road towers from their foot

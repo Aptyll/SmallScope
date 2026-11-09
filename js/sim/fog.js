@@ -16,6 +16,7 @@
 // `fog` banner in js/net/snapshot.js), and a client takes its word (`fogHid`).
 // ------------------------------------------------------------ fog of war
 const FOG_HERO = 160;    // px a hero sees
+const FOG_EYE_STEP = 8;  // px a hero's sight grows or shrinks by at a time (heroEyeR)
 const FOG_SOLDIER = 112; // px a wave soldier sees (past its SOLDIER_AGGRO, so it sees what it turns on)
 const FOG_PERCH = 224;   // px the side's bird sees while it roosts on the perch
 const FOG_MERCH = 128;   // px the side's merchant sees, wherever it works
@@ -39,7 +40,7 @@ function fogUp() {
 // field - those cost nothing to trace)
 function sightSources(team, out) {
   out.length = 0;
-  for (const p of players) if (p.team === team && p.active && !p.dead && !inAir(p)) out.push(sightEye(p.x, p.y, FOG_HERO, true));
+  for (const p of players) if (p.team === team && p.active && !p.dead && !inAir(p)) out.push(sightEye(p.x, p.y, heroEyeR(p), true));
   for (const b of robots) {
     if (b.team !== team) continue;
     if (b.kind === 'soldier' && unitAlive(b)) out.push(sightEye(b.x, b.y, FOG_SOLDIER, true));
@@ -59,6 +60,9 @@ function sightSources(team, out) {
   for (const z of zips) if (z && z.team === team) for (const q of zipEyes(z)) out.push(sightEye(q.x, q.y, FOG_ZIP, false));
   return out;
 }
+// how far a hero sees: FOG_HERO, times any hero's own (HERO_SIGHT, js/sim/heroes.js: LUCERNA's
+// lamplight at night), in whole steps of FOG_EYE_STEP so the drawn fog's cache (js/draw/fog.js) holds
+function heroEyeR(p) { return Math.round(FOG_HERO * heroSight(p) / FOG_EYE_STEP) * FOG_EYE_STEP; }
 // a building's middle: a STRUCTS footprint runs east and south of its anchor
 function structCentre(o) { return { x: (o.tx + structW(o) / 2) * TILE, y: (o.ty + structH(o) / 2) * TILE }; }
 // a scenery object's middle (the stall): its footprint runs east and north of its anchor
