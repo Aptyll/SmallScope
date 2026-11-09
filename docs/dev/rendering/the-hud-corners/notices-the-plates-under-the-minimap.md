@@ -20,7 +20,7 @@ drawn, which on a short view drops the **oldest** news and keeps the newest.
 
 The mark sits in a sunken well at the plate's left. It is **stamped**, not blitted: `NOTE_KIND[k].glyph` into
 `NOTE_MARKS`, one pixel grid per glyph (16 wide, in the tails' own grid language) so the draw
-never grows an `if` per kind. `renderNotices` stamps it with `stampGrid` (js/ui/screens.js),
+never grows an `if` per kind. `renderNotices` stamps it with `stampGrid` (js/ui/endscreens.js),
 filling `h` with your side's ink through `skin(player.team)` over a dark rim — the reason to
 stamp rather than bake, since a baked sprite cannot be recoloured per team. The `roost` plate's
 is `bird`: a soaring raptor from below (head, swept wings, tail), **not** the maps' objective

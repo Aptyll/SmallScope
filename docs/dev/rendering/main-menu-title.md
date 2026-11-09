@@ -34,7 +34,7 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   `js/baked/logodata.js` by `app/bake-logo.js`), drawn 1:1 with its top `LOGO_Y` below the view's top edge under a cold pulsing glow,
   still at rest, with no rule and no subtitle, the pixel-font word standing in only until it
   decodes. Nothing on the title burns and nothing is ruled: `drawEmbers` and `drawGoldRule` live
-  here for the wiki's header and the end screens (js/ui/screens.js). `PATCH_TXT` prints bottom-right and the
+  here for the wiki's header and the end screens (js/ui/endscreens.js). `PATCH_TXT` prints bottom-right and the
   profile's name bottom-left (`drawProfileTag`, js/ui/profile-card.js); both are click targets, and both ride the footer's
   fade so a panel hides them.
 - **Items** are plain words in the pixel font at `MENU_TXT_SCALE` with a dark rim (`drawPixelTextOutline`): white,
