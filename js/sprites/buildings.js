@@ -1,6 +1,6 @@
 'use strict';
 // The map's own buildings and what they roll out: the barracks bay and its
-// soldiers, the merchant's stall, spikes, fire and the torch. The
+// soldiers, the merchant's stall and fire. The
 // generator is the gold pump and the road tower is its own file, both baked
 // after this one (js/baked/pump.js, js/baked/tower.js) into the same
 // teamBuild sets.
@@ -111,34 +111,6 @@
     'oooooooooooo',
   ]);
 
-  // ---------------------------------------------------------------- spikes
-  const SPAL = {
-    '.': null,
-    'o': '#3c2a1e',
-    'u': '#8a6142',
-    'U': '#a3794f',
-    'v': '#6b4a30',
-    's': '#c9dcee',
-  };
-  const spikes = [
-    '................',
-    '..o....o....o...',
-    '.oUo..oUo..oUo..',
-    '.oUv..oUv..oUv..',
-    '.oUv..oUv..oUv..',
-    '.sos..sos..sos..',
-    '................',
-    '....o.....o.....',
-    '...oUo...oUo....',
-    '...oUv...oUv....',
-    '...oUv...oUv....',
-    '...sos...sos....',
-    '................',
-    '................',
-    '................',
-    '................',
-  ];
-
   // ---------------------------------------------------------------- fire
   const FPAL = {
     '.': null,
@@ -210,53 +182,6 @@
     '................',
   ];
 
-  // fire embers only (for burnt-out look during day it still burns; unused for now)
-
-  // ---------------------------------------------------------------- torch
-  const TOPAL = {
-    '.': null,
-    'o': '#3c2a1e',
-    'u': '#8a6142',
-    'U': '#a3794f',
-    'f': '#f2a63c',
-    'F': '#f6d35c',
-    'h': '#e2622e',
-    'W': '#fff7d9',
-    's': '#c9dcee',
-  };
-  const torch1 = [
-    '........',
-    '...ff...',
-    '..hfFf..',
-    '..fFWf..',
-    '..hfFh..',
-    '...oo...',
-    '..ouUo..',
-    '...oUo..',
-    '...ouo..',
-    '...oUo..',
-    '...ouo..',
-    '...oUo..',
-    '..s..s..',
-    '........',
-  ];
-  const torch2 = [
-    '........',
-    '...f....',
-    '..fFfh..',
-    '..fWFf..',
-    '..hfFh..',
-    '...oo...',
-    '..ouUo..',
-    '...oUo..',
-    '...ouo..',
-    '...oUo..',
-    '...ouo..',
-    '...oUo..',
-    '..s..s..',
-    '........',
-  ];
-
   // The merchant's STALL (OBJECTS.stall, world.js; pitched by updateMerchant,
   // robots.js): D "STALL AND SHELVES" of docs/media/concepts/tent-concepts-2.png,
   // Noah's pick - a snowy awning in the side's stripes (the one team piece)
@@ -323,8 +248,6 @@
     teamBuild: teamBuild,
     robotTeam: teamRobots,
     robot: teamRobots[0],
-    spikes: bake(spikes, SPAL),
     fire: [bake(fire1, FPAL), bake(fire2, FPAL), bake(fire3, FPAL)],
-    torch: [bake(torch1, TOPAL), bake(torch2, TOPAL)],
   });
 })();

@@ -468,7 +468,7 @@ function chopTree(o, p) {
   burst(ox, oy - 10, '#eef4fb', dead ? 5 : 6, 40, 0.5, true);
   burst(ox, oy - 12, dead ? '#6b5a48' : '#3f7a5c', 3, 30, 0.4, true);
   if (o.hp > 0) { shedHit(o); return; } // the blow shakes the crown (js/sim/shed.js); a fell has its own snow
-  objects[idx(o.tx, o.ty)] = { type: 'stump', tx: o.tx, ty: o.ty, flash: 0, shake: 0 };
+  setTile(idx(o.tx, o.ty), { type: 'stump', tx: o.tx, ty: o.ty, flash: 0, shake: 0 });
   sfxAt('treeFall', ox, oy);
   shakeFor(p, dead ? 2 : 2.5);
   // the fell's one payout, a gold pine's included; FORAGER fattens it
@@ -562,7 +562,7 @@ function hitDummy(o, dmg, hx, hy) {
 // So the damping is charged ONCE, here, on the one path, rather than as a
 // building-sized number written out per weapon: raise a shot's damage and the
 // siege scales with it, and nothing new ever has to remember the rule. It is
-// a player's blow that is damped, never a soldier's axe (ROBOT_DMG is already
+// a player's blow that is damped, never a soldier's blow (SOLDIER_TYPES' dmg is already
 // a building number), which is what the fourth argument says.
 const STRUCT_DR = 0.6;
 // One blow against a building on another team. Everything that can land one -
@@ -596,7 +596,7 @@ function hurtStruct(o, dmg, p, bot) {
 // rubble is just rubble.
 function destroyStructure(o, p) {
   if (STRUCTS[o.type]) removeStruct(o);
-  else objects[idx(o.tx, o.ty)] = null;
+  else setTile(idx(o.tx, o.ty), null);
   const c = structCenter(o), ox = c.x, oy = c.y;
   sfxAt('break_', ox, oy);
   burst(ox, oy, '#8a6142', 10, 50, 0.5, true);
@@ -760,7 +760,7 @@ function structsInCone(src, x, y, a, r, half) {
 // the world. `o` carries the rest: `type` (a DMG_TYPES key), `kb` px/s of shove
 // for an animal or a bot (a player's shove is damagePlayer's own, so the callers
 // that want a particular one add it themselves), `cause` for the feed line,
-// `ambush`, `crit`, `basic` (a hero's basic attack, for passiveDeal and the
+// `ambush`, `crit`, `burn`, `slow`, `basic` (a hero's basic attack, for passiveDeal and the
 // item passives) and `ab`, the id of the ability that landed it (its CLASS_AB
 // row's, or a move with no key: 'roll'; a blow inside a key's use()
 // gets it stamped) - what the death recap
@@ -809,6 +809,8 @@ function hurtUnit(e, dmg, nx, ny, src, o) {
   if (ty.ignite > 0) igniteUnit(e, ty.ignite, BURN_DPS, src);
   // ...and a blow that carries its own fire, `burn: [s, hp a second]`, lights it once it lands
   if (o.burn) igniteUnit(e, o.burn[0], o.burn[1], src);
+  // ...and a blow that carries its own slow, `slow: [s, walk x]`, puts it on once it lands (RUPES's HEAVE)
+  if (o.slow) slowUnit(e, o.slow[0], o.slow[1]);
 }
 
 // ---- the states a unit can be under --------------------------------------

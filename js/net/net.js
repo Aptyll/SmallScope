@@ -135,7 +135,7 @@ function netHostRoom() {
   if (NET.role !== 'host' || !NET.transport.roomData) return;
   let humans = 0; const sides = [0, 0];
   for (const p of players) if (isHuman(p)) { humans++; sides[p.team]++; }
-  NET.transport.roomData({ name: player ? player.name : '', patch: PATCH_TXT, seed: SEED, practice: PRACTICE ? 1 : 0, state: state.drop ? 'live' : 'open', humans, sides,
+  NET.transport.roomData({ name: player ? player.name : '', patch: PATCH_TXT, seed: SEED, practice: ARENA ? 2 : PRACTICE ? 1 : 0, state: state.drop ? 'live' : 'open', humans, sides,
     seek: NET.seek && !NET.seek.rival && !NET.seek.crossing ? NET.mode : '' }); // a party looking for another (js/ui/matchmaking.js)
 }
 // the roster to every peer, on every change of it: a client's waiting room
@@ -222,6 +222,7 @@ function netHostHello(peer, msg) {
     // whom to bring - never once the hero select or the match has begun
     // (a party on the practice field takes friends at any time)
     if (NET.mode !== 'practice' && (state.mode !== 'title' || NET.phase !== 'room')) return refuse('BUSY');
+    if (partySize() >= partyCap(NET.mode)) return refuse('FULL'); // a 1V1 is a party of one (js/ui/rooms.js)
     const seat = players.find((p) => p.team === player.team && !isHuman(p));
     if (!seat) return refuse('FULL');
     slot = seat.id;
@@ -397,11 +398,11 @@ function netHostFlush() {
   if (NET.role !== 'host') return;
   evRecord = NET.peers.size > 0;
   if (!NET.peers.size) { evRing.length = 0; return; }
-  // the steps between two flushes each scan their share of the tiles, so the
-  // flush step does not carry the whole world alone (snapTileScan)
-  if (state.tick % SNAP_EVERY) { snapTileScan(Math.ceil(objects.length * (state.tick % SNAP_EVERY) / SNAP_EVERY)); return; }
+  // the steps between two flushes each sweep their share of the tiles, and
+  // the flush step checks only the ones that can be changing (snapTileHot)
+  if (state.tick % SNAP_EVERY) { snapTileSweep(); return; }
   const check = NET.verify && state.tick % VERIFY_EVERY === 0;
-  if (check) snapShadow.scanAt = 0; // the proof's tick sees every tile now, not a slice ago
+  if (check) snapShadow.swept = false; // the proof's tick scans every tile now, not only the hot ones
   const h = snapHistoryPush();
   const ev = evDrain();
   const cuts = new Map(), fulls = new Map(), evs = new Map(); // per side (and ack tick): the delta, the full form the client checks itself against, the cosmetics
@@ -477,7 +478,7 @@ function netClientStep(dt) {
     // host says to the whole room: none of it is ours until the welcome
     if (!NET.welcomed && msg.t !== 'welcome') continue;
     if (msg.t === 'rematch') { rematchHeard(msg); continue; }
-    if (msg.t === 'practice') { practiceHeard(); continue; } // the leader's START: onto the practice field after it (js/ui/rooms.js)
+    if (msg.t === 'practice') { practiceHeard(msg); continue; } // the leader's START, or its cross to the arena and back: after it (js/ui/rooms.js)
     if (msg.t === 'cross') { crossHeard(msg); continue; }    // the leader's party crossing to meet another (js/ui/matchmaking.js)
     if (msg.t === 'welcome') { netClientWelcome(msg); continue; }
     // the waiting room: the host's ten and its count, drawn here as there

@@ -81,9 +81,8 @@ before it clears the streak, and `payTakedown` pays:
   (half) of the worth, at least 1 each.
 - gold goes only to the living, as a kill always has; a dead killer still takes the credit.
 
-**Worth** is `killBounty()`: `KILL_SOLDIERS` (3) scrapped soldiers' `SOLDIER_BOUNTY`
-(js/sim/farm.js, read at the kill, so retuning a last hit moves the kill with it; 330 gold at a
-110-gold soldier, the base pay, not the one that grows with the clock), shrunk by `FEED_STEP` (20%) per death past `FEED_FROM` (2) the victim has died
+**Worth** is `killBounty()`: `KILL_SOLDIERS` (3) shares of `TAKEDOWN_GOLD` (110, js/sim/player.js;
+330 gold, fixed since the waves' gold was spread over three kinds of soldier in 0.579), shrunk by `FEED_STEP` (20%) per death past `FEED_FROM` (2) the victim has died
 without a kill or assist (`p.feed`, reset by either), to a floor of `FEED_FLOOR` (a third): so feeding
 never funds the other side. **Bounty** grows from a streak of `BOUNTY_FROM` (2) by `BOUNTY_STEP`
 (1 soldier) a kill to `BOUNTY_MAX` (5 soldiers); the killer cashes it as a **SHUTDOWN** (the log says SHUT DOWN,

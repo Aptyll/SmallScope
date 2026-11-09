@@ -3,8 +3,9 @@
 // A named hero's own blade in place of its sword's held art (drawHeldTool,
 // js/draw/bodies.js), by the name its CLASSES row gives (`blade`). Each hero's
 // draw file registers HERO_BLADES[name] = { art() -> { flat, diag } canvases,
-// hip: { down, up } where the grip sits on the 16 px cell by facing, grip:
-// where the hands close on the slanted grid }.
+// hilt: [x, y] where the hands close on the flat art (the blade turns about it,
+// WEAPON_GRIP's rule), hip: { down, up } where the grip sits on the 16 px cell
+// by facing, grip: where the hands close on the slanted grid }.
 const HERO_BLADES = {};
 // a grid of palette letters baked to a canvas, once
 function bakeBladeArt(rows, pal) {
@@ -49,9 +50,16 @@ function heroStaff(p, px, py) {
   return true;
 }
 function heroBodyFx(p, ax, ay, now, front) { for (const f of HERO_BODY_FX) f(p, ax, ay, now, front); }
+// A hero that is, for a while, not its body at all: fn(p, px, py, now) -> true
+// when it drew what stands there in its place (the held tool and the body's
+// sprite are skipped; the marks over the body still draw). (px, py) is the
+// 16 px cell's top-left. RUPES's AVALANCHE rolls as a snowball here.
+const HERO_BODY_DRAW = [];
+function heroBodyDraw(p, px, py, now) { for (const f of HERO_BODY_DRAW) if (f(p, px, py, now)) return true; return false; }
 function heroBladeOf(p) { const c = CLASSES[p.cls]; return c && c.blade ? HERO_BLADES[c.blade] : null; }
-// the blade a hero's hands hold in place of its sword's own art, or null
-function heroBlade(p) { const b = attackOf(p).cut ? heroBladeOf(p) : null; return b ? b.art().flat : null; }
+// the blade a hero's hands hold in place of its sword's own art and where the
+// hands close on it ({ img, grip }), or null
+function heroBlade(p) { const b = attackOf(p).cut ? heroBladeOf(p) : null; return b ? { img: b.art().flat, grip: b.hilt } : null; }
 // the carried blade facing down or up; false where the side's level carry stands
 function heroCarry(p, px, py) {
   const b = heroBladeOf(p), at = b && b.hip[p.dir];

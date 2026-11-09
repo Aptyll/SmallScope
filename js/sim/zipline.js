@@ -51,7 +51,7 @@ const zips = [];           // [team] the mid road's, then the side lanes' -> { t
 function zipTile(u, s) { return { x: u + s / Math.SQRT2, y: WORLD - 1 - u + s / Math.SQRT2 }; }
 function placeZips() {
   zips.length = 0;
-  if (PRACTICE) return;
+  if (ARENA) return;
   const sp = roadSpan(), um = (sp.u0 + sp.u1) / 2;
   for (const team of [0, 1]) {
     const side = roadNest(team).side, dirF = team === 0 ? 1 : -1; // dirF: u toward the centre

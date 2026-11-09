@@ -285,7 +285,9 @@ read through `statOf(p, key)` (js/sim/stats.js), never off the kit. `setClass(p,
 | 5 | **IGNIA** — THE HEARTHKEEPER, the burn-and-zone mage (passive SPREADING FLAME) | burn a fight down: one rival's fire spreads through the crowd, the snow and the creek put it out | her own body (HEARTHKEEPER, or WANDERER bought on the skins screen) and the hunter's kit, 84 hp, 10 armor | the CROOK AND LANTERN: an ember shot (260 px/s for 0.85 s, `cycle` 60/60 s), the staff carried upright |
 | 7 | **SALVIA** — THE MENDER, the healer (passive WARM BROTH) | keep your side on its feet: heals, speed, the slows taken off | her own body (MENDER, or FIELD TENT bought on the skins screen) and the warrior's frames (`heroBody`), 80 hp, 10 armor | the SNOWDROP STAFF: a sprig, 250 px/s for 0.85 s, `cycle` 62/60 s, drawn as her own shot (`look`, `HERO_SHOTS`) |
 | 8 | **LUCERNA** — THE LANTERN, the catch-and-save support (passive LAMPLIGHT) | pull a rival in, bring an ally home, light what hides near her | her own body (LAMPLIGHTER, or DUSK ROAD bought on the skins screen) and the warrior's frames (`heroBody`), 88 hp, 12 armor | the LANTERN: a spark, 260 px/s for 0.8 s, `cycle` 62/60 s, drawn as her own shot (`look`, `HERO_SHOTS`) |
-| 9 | **BUCINA** — THE HORN, the tempo support (passive HEARD) | speed and nerve for her side: a shove, a rally, an echo that stuns, the pines' snow | her own body (HORN-BLOWER, or COLUMN CALL bought on the skins screen) and the warrior's frames (`heroBody`), 92 hp, 14 armor | the HORN: a note, 255 px/s for 0.8 s, `cycle` 62/60 s, drawn as her own shot (`look`, `HERO_SHOTS`) |
+| 9 | **HIEMS** — THE LONG WINTER, the control mage (passive DEEP CHILL) | freeze a fight slowly: every hit chills, the third freezes; hold a choke with ice and a blizzard | her own body (WEATHER SCHOLAR, or FIRST FROST bought on the skins screen) and the warrior's frames, 82 hp, 10 armor, a step slower | the SNOWFLAKE STAFF: a frost bolt, 270 px/s for 0.85 s, `cycle` 62/60 s, drawn as her own shot; every hit of it chills |
+| 10 | **RUPES** — THE AVALANCHE, the engage tank (passive SNOWPACK) | roll in from far off and flatten a fight; very hard to kill while packed with snow | his own body (QUARRYMAN, or ICE CELLAR bought on the skins screen) and the warrior's frames (`heroBody`), 134 hp, 24 armor, two steps slower | the ICE MAUL: the LONGSWORD's cut a little slower (`cycle` 34/60 s) with a harder shove, drawn as his own blade |
+| 11 | **BUCINA** — THE HORN, the tempo support (passive HEARD) | speed and nerve for her side: a shove, a rally, an echo that stuns, the pines' snow | her own body (HORN-BLOWER, or COLUMN CALL bought on the skins screen) and the warrior's frames (`heroBody`), 92 hp, 14 armor | the HORN: a note, 255 px/s for 0.8 s, `cycle` 62/60 s, drawn as her own shot (`look`, `HERO_SHOTS`) |
 
 The **weapon is part of the hero**: each `CLASSES` entry carries its own `attack` row, so the
 hunter and the swordsmen do not attack the same way and every bot arrives armed, with nothing to
@@ -307,8 +309,7 @@ the grid files under js/sprites/ are never rewritten) — same
 character's tone and fringe ([sprites.md](sprites.md#looks-a-character-on-the-class-body)), or a hero's
 own look ([hero looks](sprites.md#hero-looks)). A person's looks ride the hello (`skins`,
 `profileHeroSkins`, kept by the host through `cleanHeroSkins`) onto `p.skins`, which the snapshot
-carries, so every screen draws the look they bought;
-`SPRITES.playerTeam` is class 0 in the default look.
+carries, so every screen draws the look they bought.
 
 ## Hero levels
 
@@ -325,7 +326,7 @@ wave get 65% each and five get 46% each. What a death is worth:
 
 | Death | XP | Shared by |
 | --- | --- | --- |
-| a soldier (`robotDies`) | `SOLDIER_XP` 20 | its rival side |
+| a soldier (`robotDies`) | `SOLDIER_XP` 20 times its kind's `xp` (ranged 14, siege 40) | its rival side |
 | a scout (`die`) | `KILL_XP` 40 + `KILL_XP_LV` 15 × its level | its rival side, whatever downed it |
 | a beast with an `xp` in `YIELD` (`animalDies`): deer 40, wolf 15, black and brown bear 150 | grown `ANIMAL_LV_XP` (a tenth) a level | the side of whoever landed the last blow |
 
@@ -401,8 +402,8 @@ cap on its right end (`drawHealthBar`), so the sides part in greyscale. The name
 
 A team colour drives both **characters** and **buildings**:
 
-- `SPRITES.playerTeam[team][dir][frame]` — the player grids baked with the coat/hat/trim swapped.
-  `SPRITES.player` is literally `playerTeam[0]`, so team 0 is the pre-existing art.
+- `teamPlayers[team]` (js/sprites/characters.js, private) — the player grids baked with the
+  coat/hat/trim swapped; a hero's body comes from `classSet(p)`.
 - `SPRITES.teamBuild[team][type][tier]` — the tier material (wood → stone → gold) with the iron
   fittings and glow repainted in team colour, so tier still reads as tier. `structSprite(o)` is the
   lookup; it falls back to team 0 for an object with no `team`.
@@ -598,7 +599,9 @@ well each rung is played** (the `difficulty` banner, js/ai/ai-skill.js): the **r
 `AI_LEVELS[settings.aiLevel]` — EASY / NORMAL / HARD / IMPOSSIBLE, the lobby's plates, remembered
 with the profile — and **your allies** run `AI_ALLIES[level]`, the next notch up (capped at the
 top) plus the support fields, so your side is always the more competent one and the difficulty
-is how good the *other* side is. `aiProfile(p)` is the one place that choice is made
+is how good the *other* side is. "Your side" is any side with a person on it (`aiSideHuman`,
+js/ai/ai.js: the host or any guest, never the screen's own `player`), so online two sides with people both
+get allies. `aiProfile(p)` is the one place that choice is made
 (`p.ai.prof` overrides it for a staged bot — `DBG`, the calibration harness). Every field is a
 worse or better use of the same input struct (numbers EASY / NORMAL / HARD / IMPOSSIBLE; the
 banner has the whole table): `sight` (120 / 147 / 200 / 267 px — sized to the share of a 640×360 screen a hand sees — through `seenAt` so
@@ -869,7 +872,7 @@ The ladder:
    bird and a push that turns to meet each one never lands a swing. A roost it cannot route to is left for `ai.pushCd`
    (10 s).
 9. **escort** (allies only) — the two lowest allied bots (`aiEscorts`) keep within
-   `AI_ESCORT` (120 px) of the human while they are on the ground and inside `AI_ESCORT_R`
+   `AI_ESCORT` (120 px) of the nearest person on their side (`aiWard`; any human seat) while they are on the ground and inside `AI_ESCORT_R`
    (400 px), going on down the ladder while they are close. An escort's harvest and hunt
    stay inside that leash, and work the human walks away from is dropped.
 9a. **help** — a teammate's call this bot answers (`aiHelpCall`; never a pusher, a guard, a
@@ -1001,7 +1004,7 @@ what the rest of the code needs to know is this:
 - **A joiner takes an open seat.** `netHostHello` refuses a different patch or seed. In a party
   (`NET.mode`, js/ui/rooms.js) it seats the joiner on the leader's side, only while the party is
   on its seats (BUSY once the hero select or the match has begun; FULL past five), or any time on
-  the practice field (`practiceSeat`, onto the spawn). A host with no
+  the practice tool (`practiceSeat`, onto the side's roost, or the arena's spawn). A host with no
   mode (a harness's `?net=host`) deals the first
   empty seat, then the first bot slot, of the side with fewer people - a bot's slot first on a
   side already at the room's size (its fullest side's seats, TEAMS) - (a match under way offers

@@ -153,8 +153,9 @@ netHostStep(dt):  drain the transport - hello -> a slot, gone -> a bot, resync -
 evInStep = true;  updatePlay(dt);  evInStep = false     (the step, unchanged)
 netHostFlush():   every SNAP_EVERY ticks: push the ring, cut each peer's delta from its ack,
                   attach the drained cosmetics and `ia` (the newest of that peer's inputs stepped),
-                  send lossy; a peer whose ack aged out gets a full sync. The ticks between scan
-                  their share of the tiles (snapTileScan), so the flush tick does not scan them all
+                  send lossy; a peer whose ack aged out gets a full sync. The flush tick looks only
+                  at the tiles that can be changing (snapTileHot); the ticks between sweep the
+                  whole map behind it, a share each (snapTileSweep)
 ```
 
 At the title a host runs `netHostStep` alone, so a peer can knock before the match starts.
@@ -280,11 +281,17 @@ touched - per entity the names that changed or left (whole for one new that tick
 gone, whether the order moved, the same for the eagles and the singletons, each tile's touched
 names (whole for one made or unmade), the ground cells, the structures' key - while the tile
 shadow keeps only the newest form of every tile, so the ring holds no world per tick, only what
-moved. The tiles are ~50k, so a host does not scan them on the flush tick alone: each tick between
-two flushes scans its share (`snapTileScan`, from `netHostFlush`) into a pending set the next entry
-takes, and the push scans whatever is left. A tile a slice has already passed waits one more
-interval; the cut is a union of entries, so it is late, never lost (a `DBG.netVerify` tick rescans
-all of them, so the proof compares like with like). The host's clock does not tick at the title, so
+moved. The tiles are ~54k and only a few hundred change in a match, so the host does not compare
+them all: the flush tick checks the HOT tiles (`snapTileHot`): every structure, every tile with a
+clock running (`objTimed`, the sim's own list), every tile written through `setTile`/`placeObj`
+(js/sim/world.js marks it, `snapTouch`) and every tile seen changing in the last `SNAP_HOT_KEEP`
+steps. The ticks between two flushes sweep the whole map behind that, a share each, once round in
+`SNAP_SWEEP` sweeping steps (about 1 s; `snapTileSweep`, from `netHostFlush`). A change only the
+sweep found reached the clients up to a sweep late and is counted (`netStatus().tileLate`, by type
+in `tileLateBy`): a writer that changes a tile in a match without a clock, a structure or
+`setTile` should be given one. The cut is a union of entries, so a late tile is late, never lost.
+A push with no sweep before it (the first, a proof calling it straight, a `DBG.netVerify` tick)
+scans every tile, so the proof compares like with like. The host's clock does not tick at the title, so
 every guest who joins there shares one ring entry: the world behind the menu therefore stands still
 once the room is shared (`updateTitle`), or a deer turned and turned back between two joins would
 never reach the second guest. A client acks the newest tick it applied on every input it sends; the host keeps that
@@ -409,7 +416,7 @@ are close to half the ring and the first thing to derive locally instead of ship
 The same screens and the same protocol ride either transport; only the list and the room differ
 (a relay room with a four-letter code, or a public Steam lobby of `STEAM_LOBBY_MAX` 10).
 
-1. **A party.** QUICKPLAY or RANKED on the title hosts the page's own party at once
+1. **A party.** FIRST MATCH, QUICKPLAY or RANKED on the title hosts the page's own party at once
    (`beginParty`, js/ui/rooms.js -> `netHost()` -> the transport's `listen()`), its mode in
    `NET.mode`: the relay deals a four-letter code; the Steam transport calls the bridge's
    `createLobby('public', 10)`, makes a code of the same shape (`steamCode`) and writes `patch`,
@@ -443,9 +450,9 @@ The same screens and the same protocol ride either transport; only the list and 
    tick on its seat, and the leader's FIND MATCH does nothing but flash the seats it waits on
    until every person has said it (`roomAllReady`). Every person's seat carries ping bars
    (`ping`/`pong`/`pings`) and, in RANKED, its rating. The party has a chat (`say`/`said`).
-   FIND MATCH (`partyFind`) first looks for another party (**matchmaking**, below), then
+   FIND MATCH (`partyFind`) first looks for another party (**matchmaking**, below; never in FIRST MATCH), then
    (`partyStart`) fills every empty seat on both sides with a bot, pins the bots' level
-   in RANKED (`NET.botLv` from the people's average rating) and turns the page to the HERO SELECT
+   in RANKED (`NET.botLv` from the people's average rating) and in FIRST MATCH (EASY) and turns the page to the HERO SELECT
    (`pick`, the lobby), which runs the DRAFT (js/ui/draft.js): bans, then everyone's blind pick,
    the host keeping it and each guest pressing through `draft` messages; the leader's ESC turns back to the seats. Seats are
    locked once the drop is under way (`seatsOpen`). The client builds its bodies from the
@@ -467,11 +474,14 @@ The same screens and the same protocol ride either transport; only the list and 
    party (`rematchBootHost`); a guest's LOBBY reloads as `?join=CODE&back=1` and keeps trying the
    code for `REMATCH_WAIT` while the leader's page comes back, and the leader deals it the slot
    it held (`rematchSeat`). Leaving (`netLeave`) closes a leader's party; a guest walks out of one.
-9. **The practice field.** PRACTICE TOOL's START sends guests `practice` and reloads the leader as
+9. **The practice tool.** PRACTICE TOOL's START sends guests `practice` and reloads the leader as
    `?practice=1&net=host&back=1` on the party's code; a guest reloads as `?practice=1&join=CODE&back=1`
-   and keeps trying the code like a rematch. The field's host takes friends at any time (no
-   `BUSY`), seats them on the spawn and parks a leaver's empty body in the corner; the list
-   entry carries `practice: 1`, so a code typed on a title page reloads onto the field. The
+   and keeps trying the code like a rematch. The bar's ARENA / MAP well (`practiceCross`) does the
+   same with `arena` on the message and `&arena=1` on both URLs; a guest's well is dim. The field's
+   host takes friends at any time (no `BUSY`), seats them on their roost (the arena: its spawn) and
+   parks a leaver's empty body in the corner; the list entry carries `practice: 1` (2 on the arena),
+   so a code typed on a title page reloads onto the right one, and the two worlds' seeds differ, so
+   a page on the wrong one is refused. The
    leader's LEAVE is a rematch back to the party (`rematch`, which a guest on the field follows at once).
 10. **Matchmaking** (js/ui/matchmaking.js). QUICKPLAY and RANKED's FIND MATCH sets `NET.seek`,
    lists the room with `seek: mode` and reads the list. Of the parties looking in one mode, the
@@ -530,7 +540,7 @@ Every step shipped as its own PR and kept solo play identical.
 8. After the plan: the binary wire form, deltas and interpolation - 3.49; quantized positions -
    3.50; the ack-keyed ring - 3.51; Steam's unreliable channel and raw bytes over the bridge - 3.54;
    the client's own walk predicted, one input per host step, the ease sized from arrivals and the
-   tile scan spread over the steps - 0.467.
+   tile scan spread over the steps - 0.467; hot tiles on the flush tick and a slow sweep - 0.595.
 
 Releases: every `v*` tag builds the portable zip (desktop/build.js - the page, `js/`, the
 mp3s of `audio/music/` and the wrapper with steamworks.js and koffi (win32_x64's binary only), nothing else; `npm run steam:stage`

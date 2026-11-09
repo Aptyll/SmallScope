@@ -43,7 +43,7 @@ function playMatch(opts) {
     player.control = 'ai';
   `);
   const levels = L.AI_LEVELS;
-  if (o.kind === 'level') g.run(`player.ai.prof = AI_LEVELS[${o.proxy | 0}];`);
+  if (o.kind === 'level') g.run(`player.ai.prof = AI_LEVELS[${o.proxy | 0}]; player.standIn = true;`); // its side's bots mind it as the human (aiPerson, js/ai/ai.js)
   else for (const p of L.players) p.ai.prof = levels[p.team === 0 ? o.a : o.b];
   // bot files (js/ai/bot-api.js, docs/bots/): `bots` adds programs to the
   // library ({ id: source text }) beside the baked examples, `seats` says who

@@ -65,7 +65,7 @@ function bellaSpathas() {
   const flat = bakeBladeArt(BELLA_SPATHA, BELLA_SPATHA_PAL);
   return (bellaSpathaArt = { flat, diag: flat });
 }
-HERO_BLADES.spatha = { art: bellaSpathas, hip: {}, grip: [0, 0] };
+HERO_BLADES.spatha = { art: bellaSpathas, hilt: [18, 11], hip: {}, grip: [0, 0] };
 
 HERO_MARK.push(drawBellaMarks);
 HERO_GROUND.push(drawBellaDuels);

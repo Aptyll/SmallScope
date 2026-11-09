@@ -14,7 +14,16 @@ const HUD_IN_T = 0.7;   // the HUD slide occupies the last part of the intro
 const PANEL_SLIDE_T = 0.32;
 // QUIT only in the desktop build (the bridge, desktop/preload.js): it opens
 // fullscreen, so the app needs its own way out; a browser tab has its X
-const MENU_ITEMS = ['QUICKPLAY', 'RANKED', 'PRACTICE TOOL'].concat(window.steamBridge && steamBridge.quit ? ['QUIT'] : []);
+// FIRST MATCH leads the words for a profile that has never finished a match
+// nor seen the coach through (PROFILE.guided, js/app/profile.js): offered
+// until then, and always a mode in the party's list. RANKED stands dim with
+// a lock and its pips until RANKED_AT matches are played (rankedOpen,
+// js/ui/rooms.js).
+function menuItems() {
+  return (PROFILE.guided() ? [] : ['FIRST MATCH']).concat(['QUICKPLAY', 'RANKED', '1V1', 'PRACTICE TOOL'],
+    window.steamBridge && steamBridge.quit ? ['QUIT'] : []);
+}
+function menuShut(label) { return label === 'RANKED' && !rankedOpen(); }
 // SETTINGS has no plank: it is the ESC panel's in play (js/ui/panels.js),
 // and the WIKI is a tab beside the patch notes (js/ui/notes.js).
 // The items are plain words at MENU_TXT_SCALE - white, the picked one gold -
@@ -30,7 +39,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.591';
+const PATCH_TXT = 'PATCH 0.608';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -46,6 +55,23 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.608', 'ONLINE, BOTS ON ANY SIDE WITH A PLAYER ON IT NOW PLAY AS ALLIES: THEY ESCORT AND BACK UP THE NEAREST PERSON ON THEIR SIDE, GUESTS TOO, AND BOTH SIDES GET THE SAME BOTS.'],
+  ['0.607', 'RUPES HOLDS HIS ICE MAUL BY THE END OF THE HAFT, SO ITS HEAD SWINGS OUT AND NEVER COVERS HIS FACE.'],
+  ['0.606', 'HEROES NO LONGER HIDE THEIR FACES BEHIND THEIR WEAPONS: BLADES ARE HELD BY THE HILT, AND ANYTHING RAISED GOES BEHIND THE HEAD.'],
+  ['0.605', 'WAVES ARE LIKE LEAGUE NOW: THREE MELEE SOLDIERS, THEN THREE RANGED ONES THAT THROW SNOWBALLS, AND A SIEGE CATAPULT EVERY THIRD WAVE THAT HITS TOWERS HARD. A RANGED LAST HIT PAYS LESS AND A SIEGE ONE MORE, SO A 2800 ITEM STILL COMES AT ABOUT 5:00.', 'wave-soldiers'],
+  ['0.604', 'A PARTY WITH FRIENDS IN IT CAN NO LONGER SWITCH TO 1V1, WHICH IS A QUEUE FOR ONE PLAYER.'],
+  ['0.603', 'UNDER THE HOOD: OLD SPRITES AND SOUNDS NOTHING USED ANY MORE ARE GONE, SO THE GAME LOADS A LITTLE LESS.'],
+  ['0.602', 'A LOST MATCH NOW SAYS YOUR EAGLE WAS DRIVEN OFF, THE TAB SCOREBOARD AND THE MAP SHOW THE MATCH CLOCK INSTEAD OF A DAY, AND THE POST-GAME STATS COUNT DAMAGE TO HEROES AND STRUCTURES.'],
+  ['0.601', 'A 1V1 QUEUE ON THE TITLE SCREEN: YOU AGAINST ONE RIVAL, OR A BOT IF NOBODY IS LOOKING, ON THE MID LANE ALONE, AND THE FIRST TO DRAW FIRST BLOOD, LAST HIT 100 SOLDIERS OR TAKE A TOWER WINS.'],
+  ['0.600', 'ONLINE, EVERY PLAYER NOW HEARS THE ALARM AND SEES THE PLATE WHEN THEIR OWN EAGLE IS STRUCK OUT OF SIGHT, NOT ONLY THE HOST.'],
+  ['0.599', 'A NEW HERO, RUPES THE AVALANCHE: THE HITS HE TAKES PACK SNOW ONTO HIM, HE SHEDS IT IN ONE BURST, AND HIS ROLL GROWS INTO A SNOWBALL THAT FLATTENS A FIGHT.'],
+  ['0.598', 'UNDER THE HOOD: THE ART NOTES NO LONGER SAY THE NEWER HEROES WEAR THE WARRIOR IN THEIR PORTRAIT; THEY WEAR THEIR OWN.'],
+  ['0.597', 'UNDER THE HOOD: ABOUT 130 MB OF OLD ART, CLIPS AND SOUNDS FROM CUT SYSTEMS LEFT THE PROJECT; NOTHING IN THE GAME LOOKS OR SOUNDS DIFFERENT.'],
+  ['0.596', 'A NEW HERO, HIEMS THE LONG WINTER: EVERY HIT SHE LANDS CHILLS, THE THIRD CHILL FREEZES A RIVAL IN PLACE, AND SHE LAYS CLEAR ICE, SNAPS THE CHILLED INTO ROOTS AND WALKS IN A WHITEOUT THAT BLINDS WHOEVER IS CAUGHT IN IT. HER FIRST FROST SKIN IS ON THE SKINS SCREEN.'],
+  ['0.595', 'THE PLAYER WHO HOSTS AN ONLINE MATCH SPENDS ABOUT A THIRD AS LONG SENDING THE WORLD TO EVERYONE ELSE, SO A HOST ON A SLOWER PC KEEPS ITS FRAME RATE.'],
+  ['0.594', 'NEW PLAYERS GET A FIRST MATCH ON THE TITLE: A REAL 5V5 AGAINST EASY BOTS WITH A SMALL CARD TEACHING MOVE, SHOP, ABILITIES, LAST HITS, RECALL AND TOWERS (HOLD SHIFT FOR DETAIL, X TO TURN IT OFF), AND RANKED UNLOCKS AFTER 3 FINISHED MATCHES.'],
+  ['0.593', 'UNDER THE HOOD: THE DESIGN NOTES NOW SAY WHAT A GOLD PUMP REALLY PAYS, 20 GOLD EVERY 10 SECONDS; NOTHING IN THE GAME CHANGES.'],
+  ['0.592', 'THE PRACTICE TOOL NOW PLAYS ON THE REAL MAP WITH LANES, WAVES, TOWERS AND CAMPS, THE BAR CAN TOGGLE WAVES AND TOWERS, SPAWN A WAVE AND RESPAWN CAMPS, AND ITS ARENA BUTTON TAKES YOUR PARTY TO THE OLD TRAINING FIELD WITH THE BELL ROUNDS AND BACK.'],
   ['0.591', 'LUCERNA\'S LAMPLIGHT NOW ALSO LETS ALLIES STANDING IN IT SEE FURTHER AT NIGHT, UP TO A THIRD FURTHER IN FULL DARK.'],
   ['0.590', 'THE HUNTER\'S GRAPPLE TOOLTIP NOW SAYS IT HOOKS A TREE; IT NEVER CAUGHT ON ROCKS.'],
   ['0.589', 'WHEN A TOWER FALLS AND ITS ZIPLINE GETS SHORTER, ANYONE RIDING PAST THE NEW END NOW DROPS DOWN WHERE THEY ARE INSTEAD OF JUMPING BACK ALONG THE CABLE.'],
@@ -638,8 +664,8 @@ function easeInOut(t) { t = Math.max(0, Math.min(1, t)); return t < 0.5 ? 4 * t 
 // is the authored frame's top for the logo (frameTop, core.js)
 function menuLayout() {
   const toy = frameTop();
-  const n = MENU_ITEMS.length;
-  const rects = MENU_ITEMS.map((label, i) => {
+  const items = menuItems(), n = items.length;
+  const rects = items.map((label, i) => {
     const w = pixelTextWidth(label, MENU_TXT_SCALE) + 8, h = 7 * MENU_TXT_SCALE + 4;
     return { x: Math.round((VIEW_W - w) / 2), y: VIEW_H - MENU_BOTTOM - (n - i) * MENU_TXT_PITCH, w, h };
   });
@@ -661,7 +687,7 @@ function menuHit() {
 // every word, nothing is lit
 function menuSelect(i) {
   const m = state.menu;
-  const N = MENU_ITEMS.length;
+  const N = menuItems().length;
   const n = ((i % N) + N) % N;
   m.keyNav = true;
   if (n === m.sel) return;
@@ -672,9 +698,12 @@ function menuSelect(i) {
 // by the word, not the place
 function menuActivate(i) {
   SFX.unlock();
-  const it = MENU_ITEMS[i];
-  if (it === 'QUICKPLAY') beginParty('quick'); // the party lobby (js/ui/rooms.js)
+  const it = menuItems()[i];
+  if (menuShut(it)) { SFX.deny(); state.menu.shutFx = 0.3; return; } // RANKED, still locked: the lock shakes
+  if (it === 'FIRST MATCH') beginParty('guide'); // QUICKPLAY against EASY bots with the coach (js/ui/guide.js)
+  else if (it === 'QUICKPLAY') beginParty('quick'); // the party lobby (js/ui/rooms.js)
   else if (it === 'RANKED') beginParty('ranked');
+  else if (it === '1V1') beginParty('onevone'); // you alone, one hero a side on the mid road (js/sim/onevone.js)
   else if (it === 'PRACTICE TOOL') beginParty('practice'); // the field with friends or alone: the party first (js/ui/rooms.js)
   else if (it === 'QUIT') steamBridge.quit(); // the app closes (desktop/main.js, win:quit)
 }
@@ -823,7 +852,8 @@ function updateTitle(dt) {
   updateRooms(dt);
   // a word lights under the pointer, or as the keys' pick until the pointer moves
   const hit = !m.panel && m.screen === 'menu' && mouse.inside ? menuHit() : -1;
-  for (let i = 0; i < MENU_ITEMS.length; i++) {
+  if (m.shutFx > 0) m.shutFx -= dt;
+  for (let i = 0; i < menuItems().length; i++) {
     const target = hit === i || (m.keyNav && m.sel === i) ? 1 : 0;
     // `|| 0` because the array's length is a literal in core.js: a missing
     // cell would go NaN here and take its whole row off the screen
@@ -1161,17 +1191,17 @@ function lobbyLayout() {
   const gw = gridW(cols), pw = Math.min(LOBBY_PANEL_W, Math.floor((VIEW_W - gw - 2 * LOBBY_GUTTER) / 2));
   // the chat bottom left: its plate on the foot, its lines over it
   const chat = { x: pad, w: pw - pad - 4, ty: VIEW_H - pad - TALK_H, lines: LOBBY_CHAT_LINES };
-  // the seat rows: five a side under the head, down to the chat (which
-  // keeps two lines at the least); yours in position order (TOP first), the
-  // rivals' in seat order
+  // the seat rows: five a side under the head (a 1V1's one), down to the
+  // chat (which keeps two lines at the least); yours in position order (TOP
+  // first), the rivals' in seat order; an empty seat is out of the match
   const room = chat.ty - 6 - 2 * TALK_PITCH - LOBBY_HEAD;
   const fh = Math.max(LOBBY_ROW_MIN, Math.min(LOBBY_ROW_MAX, Math.floor(room / (MAX_PLAYERS / 2))));
   chat.lines = Math.max(1, Math.min(LOBBY_CHAT_LINES, Math.floor((chat.ty - 6 - LOBBY_HEAD - fh * (MAX_PLAYERS / 2)) / TALK_PITCH)));
   const cards = [[], []];
   const mineTeam = player ? player.team : 0;
   const role = (p) => DRAFT.role[p.id] >= 0 ? DRAFT.role[p.id] : 9;
-  const ours = players.filter((p) => p.team === mineTeam).sort((p, q) => role(p) - role(q) || p.id - q.id);
-  for (const p of ours.concat(players.filter((p) => p.team !== mineTeam))) {
+  const ours = players.filter((p) => p.active && p.team === mineTeam).sort((p, q) => role(p) - role(q) || p.id - q.id);
+  for (const p of ours.concat(players.filter((p) => p.active && p.team !== mineTeam))) {
     const mine = p.team === mineTeam ? 1 : 0;
     const y = LOBBY_HEAD + cards[mine].length * fh;
     cards[mine].push({ x: mine ? 0 : VIEW_W - pw, y, w: pw, h: fh, p });
@@ -1617,6 +1647,33 @@ const CLASS12 = [
     '...oggggo...',
     '....oooo....',
     '............',
+  ],
+  [ // HIEMS: a six-armed snowflake
+    '.....o......',
+    '..o.oWo.o...',
+    '.oWooWooWo..',
+    '..oWoWoWo...',
+    '.ooooWoooo..',
+    'oWWWWWWWWWo.',
+    '.ooooWoooo..',
+    '..oWoWoWo...',
+    '.oWooWooWo..',
+    '..o.oWo.o...',
+    '.....o......',
+    '............',
+  ],
+  [ // RUPES: the snowball, its trail behind it
+    '....oooo....',
+    '..ooWWWWoo..',
+    '.oWWWWWWWbo.',
+    '.oWWWWWWbbo.',
+    'oWWWWWWWbbbo',
+    'oWWWWWWbbbbo',
+    'oWWWWWbbbbbo',
+    '.oWWbbbbbbo.',
+    '.obbbbbbbbo.',
+    '..oobbbboo..',
+    '....oooo....',
     '............',
   ],  [ // BUCINA: her horn, the bell to the right
     '............',
@@ -1906,7 +1963,14 @@ function renderTitle(now) {
     const pressed = m.sel === i && (m.pressT > 0 || (mouse.down && menuHit() === i));
     const y = r.y + 2 + Math.round((1 - inT) * 8) + Math.round(out * 25) - Math.round(hv) + (pressed ? 1 : 0);
     ctx.globalAlpha = a;
-    drawPixelTextOutline(ctx, MENU_ITEMS[i], r.x + 4, y, hv > 0.5 ? '#ffd95c' : '#f4f7ff', 'rgba(8,12,28,0.9)', MENU_TXT_SCALE);
+    const label = menuItems()[i];
+    if (menuShut(label)) { // RANKED, locked: grey, its lock before it and the matches it waits for after
+      const sh = m.shutFx > 0 ? Math.round(Math.sin(m.shutFx * 60) * 2) : 0;
+      drawPixelTextOutline(ctx, label, r.x + 4, y, '#7d849a', 'rgba(8,12,28,0.9)', MENU_TXT_SCALE);
+      drawRankedLock(r.x - 10 + sh, y, 'rgba(8,12,28,0.9)', 2); // its shadow
+      drawRankedLock(r.x - 11 + sh, y - 1, hv > 0.5 ? '#ffd95c' : '#7d849a', 2);
+      drawRankedPips(r.x + r.w + 2, y + 3, 2);
+    } else drawPixelTextOutline(ctx, label, r.x + 4, y, hv > 0.5 ? '#ffd95c' : '#f4f7ff', 'rgba(8,12,28,0.9)', MENU_TXT_SCALE);
     ctx.globalAlpha = 1;
   }
 

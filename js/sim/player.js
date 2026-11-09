@@ -269,7 +269,46 @@ const CLASSES = [
       bowCharge: BOW_CHARGE, nock: 0.4, spdDmg: 0, dodgeSpeed: DODGE_SPEED },
   },
   {
-    // the eighth named hero (js/sim/bucina.js): the tempo support, her side's speed and
+    // the eighth named hero (js/sim/hiems.js): the control mage. She freezes a
+    // fight slowly - every hit chills, the third freezes - and holds a choke
+    // with ice and a blizzard; low burst, and a step slower than most
+    name: 'HIEMS', role: 'THE LONG WINTER', body: 1, passive: 'deepchill', // HERO_PASSIVE, js/sim/hiems.js
+    look: { sex: 1, tone: 0, hair: 2, hairCol: 5, beard: 0, face: 2 },
+    blurb: ['THE COLD IS ON YOUR SIDE.', 'EVERY HIT CHILLS. THE THIRD CHILL FREEZES THEM IN PLACE.', 'LITTLE BURST: FREEZE THEM, THEN LET YOUR SIDE FINISH.'],
+    story: "SHE KEPT THE WEATHER RECORDS FOR THE EMPIRE'S COURT, AND TOLD THEM THE COLD YEARS WERE COMING AND WOULD NOT STOP. THEY SENT HER AWAY FOR SPOILING THE HARVEST FEAST. SHE CAME UP THE PASS TO SEE WHETHER SHE WAS RIGHT. THE SNOW HAS NOT STOPPED.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
+    // a staff's frost bolt: AURA's star bolt, a little shorter
+    staff: 'flake', // her SNOWFLAKE STAFF, carried upright (HERO_STAVES, js/draw/hiems.js)
+    attack: { name: 'SNOWFLAKE STAFF', art: 'flakestaff', cycle: 62 / 60, kb: 0.5, shot: { speed: 270, life: 0.85, col: '#e6f8ff', look: 'frostbolt' } },
+    base: { hp: 82, dmg: 13, armor: 10, ap: 0, haste: 0, ms: PLAYER_SPEED - 4 },
+    grow: { hp: 5.8, dmg: 1, as: 0.01, armor: 1.8 },
+    rankOrder: [0, 2, 1], // the icicle, the cold snap, the clear ice
+    // her own body (HIEMS_SKINS, js/sprites/hiems.js), worn over the side's coat
+    skins: HIEMS_SKINS, skinPal: HIEMS_PAL, skinSlot: 'hiems',
+    paint48: { t: '#7d8699', T: '#b4bdcc', g: '#1c2232', G: '#9aa3b8', m: '#5c6478', M: '#454c5e' }, // the 48 px model's (js/sprites/looks.js): its K is skin
+    kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1, chargeMul: 0.55,
+      bowCharge: BOW_CHARGE, nock: 0.4, spdDmg: 0, dodgeSpeed: DODGE_SPEED },
+  },
+  {
+    // the ninth named hero (js/sim/rupes.js): a tank who engages. Slow to start and
+    // impossible to stop once he is rolling; little damage of his own, very hard to
+    // kill while he is packed with snow, and worn down by a rival who keeps away
+    name: 'RUPES', role: 'THE AVALANCHE', body: 1, passive: 'snowpack', // HERO_PASSIVE, js/sim/rupes.js
+    look: { sex: 0, tone: 3, hair: 0, hairCol: 1, beard: 2, face: 0 },
+    blurb: ['BE THE SLOPE.', 'THE HITS YOU TAKE PACK SNOW ONTO YOU. SHED IT IN ONE BURST.', 'ROLL FROM FAR OFF: THE FURTHER YOU ROLL, THE BIGGER THE BURST.'],
+    story: "HE CUT ICE FOR THE EMPIRE'S CELLARS UNTIL THE QUARRY FACE CAME DOWN, AND HE HELD THE WAY OUT OPEN WITH HIS BACK UNTIL THE LAST CUTTER WAS CLEAR. THE EMPIRE BILLED HIM FOR THE ICE. IN THE VALLEY HE DIGS WHERE THE SNOW IS DEEPEST, BECAUSE IT NEVER SURPRISES HIM.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
+    attack: { name: 'ICE MAUL', art: 'sword', cycle: 34 / 60, kb: 1.4, cut: { reach: 27, half: 1.05 } }, // a little slower than the longsword, a harder shove
+    base: { hp: 134, dmg: 15, armor: 24, ap: 0, haste: 0, ms: PLAYER_SPEED - 2 },
+    grow: { hp: 10.5, dmg: 1.3, as: 0.008, armor: 2.9 },
+    rankOrder: [0, 1, 2], // the heave, the shed, the shoulder
+    // his own body in each of his looks (RUPES_SKINS, js/sprites/rupes.js), worn per
+    // player (heroSkinOf) over the side's coat
+    skins: RUPES_SKINS, skinPal: RUPES_PAL, skinSlot: 'rupes',
+    blade: 'maul', // his ICE MAUL in his hands (HERO_BLADES, js/draw/rupes.js)
+    kit: { iceMax: 1.1, iceSteer: 3.2, slideMin: 70, fatigue: 0.7, chargeMul: 0.7,
+      bowCharge: 0.75, nock: 0.5, spdDmg: 5, dodgeSpeed: 220 },
+  },
+  {
+    // the tenth named hero (js/sim/bucina.js): the tempo support, her side's speed and
     // nerve: a horn that shoves, rallies, echoes off the walls and calls the snow down off
     // the pines; no heals, no shields, and little damage of her own
     name: 'BUCINA', role: 'THE HORN', body: 1, passive: 'heard', // HERO_PASSIVE, js/sim/bucina.js
@@ -289,7 +328,6 @@ const CLASSES = [
     kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1, chargeMul: 0.55,
       bowCharge: BOW_CHARGE, nock: 0.4, spdDmg: 0, dodgeSpeed: DODGE_SPEED },
   },
-
 ];
 // the body a hero wears - its sprites and its 48 px model: a hero that names
 // none is its own (HUNTER 0, WARRIOR 1), a named hero borrows one
@@ -658,12 +696,18 @@ class Player {
     // IGNIA (js/sim/ignia.js): WARM HANDS waiting; and on any body, whose fire it is
     // burning with (SPREADING FLAME carries it on) and how long a wildfire's flame lets it jump
     this.warmT = 0; this.kindleBy = -1; this.wildT = 0;
+    // HIEMS (js/sim/hiems.js), on any body: DEEP CHILL's stacks and their window, the
+    // wait before it can be frozen again, and the freeze's ice (drawn while it holds)
+    this.chillN = 0; this.chillT = 0; this.chillImm = 0; this.frozeT = 0;
     // SALVIA (js/sim/salvia.js), on any player she helped: WARM BROTH's speed and the cloak's run
     this.brothT = 0; this.cloakT = 0;
     // LUCERNA (js/sim/lucerna.js), on any body she pulls: the spot it is drawn to and the clock
     this.pullT = 0; this.pullX = 0; this.pullY = 0;
     // BUCINA (js/sim/bucina.js), on any player who heard her: HEARD's run, and the note's hold and its attack speed
     this.heardT = 0; this.rallyT = 0; this.rallyAs = 0;
+    // RUPES (js/sim/rupes.js): his snowpack (0..1, PACK_LAYERS layers) and the seconds since a
+    // hit fed it; the px his avalanche has rolled (its size)
+    this.pack = 0; this.packIdle = 0; this.avaD = 0;
     this.hopT = 0;                                 // the net shot's recoil hop, on the body
     this.grapT = 0; this.grapX = 0; this.grapY = 0; // the grapple: reel time left, and the anchor it hauls toward
     this.zip = -1; this.zipD = 0; this.zipDir = 1;  // the zipline (js/sim/zipline.js): the line ridden (its index in zips, or -1), px along it, and which way
@@ -974,8 +1018,9 @@ function bodyOut(p) {
 // (see endMatch/DEAD_ITEMS/renderDead).
 function die(p, src, cause) {
   // practice: nothing is at stake and nobody is ever out - a death is undone
-  // on the spot, back at the spawn tile with the build and the bag untouched
-  if (PRACTICE && p === player) { practiceRevive(p); return; }
+  // on the spot, back at the spawn tile (on the map its side's roost) with
+  // the build and the bag untouched; a party's guests the same as its leader
+  if (PRACTICE) { practiceRevive(p); return; }
   // what this body is worth is read before the death clears the streak it wears
   const worth = killWorth(p), bounty = bountyOf(p);
   p.deathLog = p.hurtLog; p.hurtLog = []; // the blows that did it, for the death recap (js/ui/recap.js)
@@ -1228,13 +1273,12 @@ function endMatch(how) {
 // coin over its name, drawBountyTag js/draw/overhead.js) that its killer
 // cashes as a SHUTDOWN on top. A body that keeps going down without a kill or
 // an assist (p.feed) is worth less, down to FEED_FLOOR, so feeding one side
-// never funds the other. Every amount is counted in SCRAPPED SOLDIERS
-// (SOLDIER_BOUNTY, js/sim/farm.js, read at the kill), so the kill keeps its
-// place in the farm whatever a last hit is retuned to: a plain kill is three
-// of them, the biggest shutdown eight, so ending a streak pays without
-// erasing the lead the streak built. Gold only goes to the living, as a kill
-// always has.
-const KILL_SOLDIERS = 3;    // soldiers a downed rival is worth to its killer, before feed and bounty
+// never funds the other. Every amount is counted in TAKEDOWN_GOLD shares: a
+// plain kill is three of them, the biggest shutdown eight, so ending a streak
+// pays without erasing the lead the streak built. Gold only goes to the
+// living, as a kill always has.
+const TAKEDOWN_GOLD = 110;  // one share: a takedown's unit of gold (League's scale, the `economy` note in js/sim/core.js)
+const KILL_SOLDIERS = 3;    // shares a downed rival is worth to its killer, before feed and bounty
 const ASSIST_T = 10;        // s a rival's blow or crowd control stays on a body's record
 const ASSIST_SHARE = 0.5;   // of the worth, split evenly among the assists (each at least 1)
 const BOUNTY_FROM = 2;      // the streak at which a body starts wearing a bounty
@@ -1290,8 +1334,8 @@ function recentFoes(p) {
   return out.sort((a, b) => h[b.id] - h[a.id] || a.id - b.id);
 }
 // the plain kill in gold, and a body's bounty and worth
-function killBounty() { return KILL_SOLDIERS * SOLDIER_BOUNTY; }
-function bountyOf(p) { return p.streak < BOUNTY_FROM ? 0 : SOLDIER_BOUNTY * Math.min(BOUNTY_MAX, BOUNTY_STEP * (p.streak - BOUNTY_FROM + 1)); }
+function killBounty() { return KILL_SOLDIERS * TAKEDOWN_GOLD; }
+function bountyOf(p) { return p.streak < BOUNTY_FROM ? 0 : TAKEDOWN_GOLD * Math.min(BOUNTY_MAX, BOUNTY_STEP * (p.streak - BOUNTY_FROM + 1)); }
 function killWorth(p) { return Math.round(killBounty() * Math.max(FEED_FLOOR, 1 - FEED_STEP * Math.max(0, p.feed - FEED_FROM + 1))); }
 
 // p is down: the killer and the assists are paid, and every one of them has

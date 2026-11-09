@@ -31,14 +31,19 @@ const STRUCTS = {
   // `soldiers` banner, robots.js) at `first` seconds of match clock and every
   // `waveT` after (barracksBeat), so the lanes roll out together and a rebuilt
   // bay falls into step. Each wave marches its lane to the rival bird:
-  // `wave` of them at first, one more for every `grow` seconds it has stood.
+  // its `mix` of soldier kinds (SOLDIER_TYPES, js/sim/robots.js) out of the
+  // door in that order - melee in front, ranged behind - one more melee for
+  // every `grow` seconds the bay has stood, and a SIEGE soldier last on every
+  // n-th wave of the match, n read off `siege` ([from s of match clock, n]:
+  // every 3rd early, every 2nd from 15:00, every wave from 25:00, League's).
   // Its cost is what a wrecker is paid half of - breaking one stalls the
   // waves until the merchant walks back and raises it again. `cap` is the
   // most of a SIDE's soldiers alive at once, every bay counted: a side
   // nobody fights back against does not fill the map, it waits for its
   // column to spend itself.
   barracks: { name: 'BARRACKS', w: 3, h: 2, art: 'spawner', sight: 176, mm: mmTeam, map: chTeam, tiers: [
-    { cost: { gold: 400 }, hp: 320, buildT: 6, wave: 3, first: 60, waveT: 30, grow: 180, botHp: 60, cap: 8 }, // cap: soldiers a LANE holds, queued or out; botHp: a soldier's health at the start, grown by SOLDIER_HP_GROW (js/sim/robots.js)
+    { cost: { gold: 400 }, hp: 320, buildT: 6, mix: ['melee', 'melee', 'melee', 'ranged', 'ranged', 'ranged'],
+      siege: [[0, 3], [900, 2], [1500, 1]], first: 60, waveT: 30, grow: 180, cap: 16 }, // cap: soldiers a LANE holds, queued or out (two whole waves and change)
   ]},
   // THE ROAD TOWER: the map's, never a wallet's - two stand on each side's
   // cable at boot (placeTowers, js/sim/towers.js), each with a crossbow on
@@ -57,6 +62,30 @@ function barracksBeat(t) {
   const past = state.elapsed - t.first;
   return past < 0 ? -past : t.waveT - (past % t.waveT);
 }
+// the kinds of the wave a bay queues now, in door order: the `mix`, a melee
+// more per `grow` the bay has stood, and the siege soldier when this beat's
+// wave number (1 the first, on the match clock, so every lane agrees) is its
+// turn - cut from the back to what its lane's `cap` leaves room for
+function barracksWave(o) {
+  const t = STRUCTS.barracks.tiers[o.tier];
+  const n = Math.round((state.elapsed - t.first) / t.waveT) + 1;
+  let every = 0;
+  for (const [from, k] of t.siege) if (state.elapsed >= from) every = k;
+  const extra = Math.floor((state.elapsed - o.born) / t.grow);
+  const at = t.mix.lastIndexOf('melee') + 1; // the grown melee join the front rank
+  const kinds = t.mix.slice(0, at).concat(Array(extra).fill('melee'), t.mix.slice(at));
+  if (every && n % every === 0) kinds.push('siege');
+  return kinds.slice(0, Math.max(0, t.cap - barracksLaneLoad(o)));
+}
+// a bay queues its wave (the beat, and the practice bar's SPAWN WAVE,
+// cheatCmd js/sim/practice.js): `o.kinds` leave the door in order, `o.queue`
+// is how many are left. Returns how many it queued
+function barracksQueue(o) {
+  const k = barracksWave(o);
+  o.kinds = (o.kinds || []).concat(k);
+  o.queue = o.kinds.length;
+  return k.length;
+}
 
 // The one place a building object is made (the merchant's barracks, the road
 // towers and DBG.buildStruct): the anchor object, its footprint fillers, the
@@ -70,7 +99,7 @@ function createStruct(tx, ty, type, tier, p, building) {
     owner: p.id, team: p.team, // paints the sprite
   });
   for (const [x, y] of footprint(type, tx, ty)) {
-    if (x !== tx || y !== ty) objects[idx(x, y)] = { type: 'part', tx: x, ty: y, of: o, flash: 0, shake: 0 };
+    if (x !== tx || y !== ty) setTile(idx(x, y), { type: 'part', tx: x, ty: y, of: o, flash: 0, shake: 0 });
   }
   // ang: the gun's bearing; tgt/chg: its mark and how far it has wound; cd: the
   // reload; heat/heatId: bolts in a row into one scout; bolt/pin: the one in the
@@ -79,7 +108,7 @@ function createStruct(tx, ty, type, tier, p, building) {
   if (type === 'generator') { o.hold = -1; o.cap = 0; o.capBy = -1; o.payT = t.period; o.paid = false; } // the ring's state (updatePump, js/sim/pumps.js)
   // waveT: the clock to the next wave. queue/rollT: soldiers still to leave
   // the door, and the gap to the next. born: when it stood, for the growth.
-  if (type === 'barracks') { o.waveT = barracksBeat(t); o.queue = 0; o.rollT = 0; o.born = state.elapsed; o.door = 0; }
+  if (type === 'barracks') { o.waveT = barracksBeat(t); o.queue = 0; o.kinds = []; o.rollT = 0; o.born = state.elapsed; o.door = 0; }
   o.sparkT = 0;
   structures.push(o);
   return o;
@@ -93,7 +122,7 @@ function ownsStruct(o, p) { return o.team === undefined || o.team === p.team; }
 function wreckPay(o) { return Math.floor((STRUCTS[o.type].tiers[o.tier].cost.gold || 0) / 2); }
 
 function removeStruct(o) {
-  for (const [x, y] of footprint(o.type, o.tx, o.ty)) objects[idx(x, y)] = null;
+  for (const [x, y] of footprint(o.type, o.tx, o.ty)) setTile(idx(x, y), null);
   const i = structures.indexOf(o);
   if (i >= 0) structures.splice(i, 1);
 }
@@ -167,23 +196,26 @@ function updateStructures(dt) {
       continue;
     }
     const t = STRUCTS[o.type].tiers[o.tier];
-    if (o.type === 'tower') updateTower(o, dt);
+    if (o.type === 'tower') { if (!PRACTICE || state.prac.towers) updateTower(o, dt); else towerRest(o, dt); } // the practice bar's TOWERS off: the gun stands down
     else if (o.type === 'generator') updatePump(o, dt); // the ring and the pay (js/sim/pumps.js)
     else if (o.type === 'barracks') {
       // the wave clock: on every beat (barracksBeat) a wave is queued -
-      // `wave` soldiers, one more per `grow` seconds stood - and the queue
+      // its kinds in door order (barracksQueue), as many as the lane's cap
+      // leaves room for, the front of the column first - and the queue
       // leaves the door one soldier every BARRACKS_ROLL, so a wave reads as
       // a column, not a heap. `+=` keeps the beat: no tick's overshoot drifts it
+      // (the practice bar's WAVES off keeps the beat and queues nothing)
       o.waveT -= dt;
       if (o.waveT <= 0) {
         o.waveT += t.waveT;
-        o.queue += Math.max(0, Math.min(t.cap - barracksLaneLoad(o), t.wave + Math.floor((state.elapsed - o.born) / t.grow)));
+        if (!PRACTICE || state.prac.waves) barracksQueue(o);
       }
       o.rollT -= dt;
       if (o.queue > 0 && o.rollT <= 0) {
         o.rollT = BARRACKS_ROLL;
-        o.queue--;
-        const b = makeSoldier(o);
+        const kind = o.kinds.shift();
+        o.queue = o.kinds.length;
+        const b = makeSoldier(o, kind);
         robots.push(b);
         burst(b.x, b.y - 4, '#c3c9d3', 6, 35, 0.4, true);
         burst(b.x, b.y + 2, '#e4e8ee', 5, 30, 0.45, true);

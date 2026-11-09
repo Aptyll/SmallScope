@@ -248,10 +248,10 @@ must not become one: it is a wallet number with no ceiling.
 (`speed`, `life`, `col`) or a `cut` (`reach`, `half`). The press, the draw, the aim line, the held
 weapon, the tooltip, the bots (`aiMelee` reads `cut`) and the ATTACK SPEED stat (`classAs`) all
 read the row, so nothing else is edited. A new `art` is a 12×12 grid in `SPRITES.weaponArt`
-(js/sprites/weapons.js), a blade's real-length grid in `SPRITES.weaponHeld`, and its heading in
-`WEAPON_FWD`; draw a bow the way it is held (string toward the archer, arrowhead at +x). A hero
+(js/sprites/weapons.js), a blade's real-length grid in `SPRITES.weaponHeld`, its heading in
+`WEAPON_FWD` and where the hand closes on each grid in `WEAPON_GRIP` (a blade at its hilt, a bow at its middle); draw a bow the way it is held (string toward the archer, arrowhead at +x). A hero
 with a blade of its own sets `blade` on its `CLASSES` row and draws it through `heroBlade`
-(js/draw/heroes.js). **Run the feel numbers after any change** (a shot's speed and life and a
+(js/draw/heroes.js), its `HERO_BLADES` row naming the `hilt` on the flat art. **Run the feel numbers after any change** (a shot's speed and life and a
 cut's reach and damage at a tap, half and full draw, and the cycle): nothing else says when an
 edit has changed how an attack plays.
 
@@ -479,15 +479,15 @@ already current, so it is safe to call from a state change that repeats.
 | File | The numbers |
 | --- | --- |
 | js/sim/core.js | the `YIELD` table (every gold payout, the one table still in core.js) |
-| js/sim/player.js | `RESPAWN_WAIT` (the wait for the bird, beside `die()`) and the takedown gold (`KILL_SOLDIERS`, `ASSIST_*`, `BOUNTY_*`, `FEED_*`, the `takedowns` banner); the hero-level table (`LEVEL_XP` — sized against the road's XP, see [multiplayer.md](multiplayer.md#hero-levels)) and what a downed scout is worth (`KILL_XP`/`KILL_XP_LV`); each hero's stats and growth (`CLASSES[c].base`/`.grow`, read through js/sim/stats.js); `BOW_CHARGE` and the momentum constants (`ICE_MAX`, `SLIDE_MIN`/`SLIDE_EXIT`, `TRAIL_MIN`) above `CLASSES`; the player count (`MAX_PLAYERS`) |
+| js/sim/player.js | `RESPAWN_WAIT` (the wait for the bird, beside `die()`) and the takedown gold (`TAKEDOWN_GOLD`, `KILL_SOLDIERS`, `ASSIST_*`, `BOUNTY_*`, `FEED_*`, the `takedowns` banner); the hero-level table (`LEVEL_XP` — sized against the road's XP, see [multiplayer.md](multiplayer.md#hero-levels)) and what a downed scout is worth (`KILL_XP`/`KILL_XP_LV`); each hero's stats and growth (`CLASSES[c].base`/`.grow`, read through js/sim/stats.js); `BOW_CHARGE` and the momentum constants (`ICE_MAX`, `SLIDE_MIN`/`SLIDE_EXIT`, `TRAIL_MIN`) above `CLASSES`; the player count (`MAX_PLAYERS`) |
 | js/sim/world.js | `TREE_HP`; `TREE_RARE_CHANCE` in `treeRare()`; the road (`ROAD_HW`/`ROAD_RAG`/`ROAD_ICE_KEEP`/`ROAD_ICE_TAPER`/`ROAD_STEP`/`ROAD_HW_WOOD`/`ROAD_NEST_IN`/`ROAD_NEST_OFF`/`ROAD_LOG_IN`/`SPUR_HW`), which reshapes the map |
 | js/sim/base.js | the bases (`BASE_U`/`BASE_R`/`BASE_RAG`/`PERCH_U`/`BASE_KEEP`, the side mouths `BASE_SIDE_U`/`BASE_SIDE_S`, the bay spots `BASE_BAYS`), which reshape both roost corners |
 | js/sim/jungle.js | the jungle's pine walls (`JUNGLE_WALLS` capsules for one quarter, mirrored; `JUNGLE_RAG`, `JUNGLE_ROAD_KEEP`) |
 | js/sim/lanes.js | the top and bot lanes (`LANE_HALF`, their fixed control points, `LANE_HW`/`LANE_RAG`, the ford's `LANE_FORD_HW`) and their cables (`LANE_ZIP_*`) |
-| js/sim/structures.js | `STRUCTS` costs/HP/build times (plus the gold pump's pay/period and each type's `w`/`h` footprint); the waves (`STRUCTS.barracks`'s `wave`/`first`/`waveT`/`grow`/`cap`/`botHp`/`hp`, `BARRACKS_ROLL`) |
+| js/sim/structures.js | `STRUCTS` costs/HP/build times (plus the gold pump's pay/period and each type's `w`/`h` footprint); the waves (`STRUCTS.barracks`'s `mix`/`siege`/`first`/`waveT`/`grow`/`cap`/`hp`, `BARRACKS_ROLL`) |
 | js/sim/pumps.js | the gold pumps: the ring's size and speed (`PUMP_R`, `PUMP_CAP_T`, `PUMP_FADE_T`) and where they stand (`PUMP_SEEK`/`PUMP_SEEK_FAR`, `PUMP_ROAD`, `PUMP_STAND`/`PUMP_STAND_LONE`, `PUMP_CLEAR`); the bots' `AI_PUMP_*` sit with `aiPumpRung` in js/ai/ai-ladder.js |
-| js/sim/robots.js | `SOLDIER_*` (speed, aggro, siege reach, the bird damage, `SOLDIER_HP_GROW`); `MERCH_BAYS`/`MERCH_BAY_*` (how many bays, the logs a rebuild costs, when the first is due, the order the lanes get theirs, the rebuild wait); `MERCH_BACK_R`/`MERCH_BACK_ARC` (how far and how wide the back woods reach) |
-| js/sim/farm.js | `SOLDIER_BOUNTY`/`SOLDIER_BOUNTY_GROW` (a soldier's last hit), `COIN_POP_T`; the bots' farm knobs `AI_FARM_*`/`AI_DEN_EARLY`/`AI_LANE_N`/`AI_JUNGLE_N` sit in js/ai/ai-farm.js |
+| js/sim/robots.js | `SOLDIER_*` (speed, aggro, siege reach; `SOLDIER_TYPES`: each kind's health, growth, blow, range, bounty and XP share); `MERCH_BAYS`/`MERCH_BAY_*` (how many bays, the logs a rebuild costs, when the first is due, the order the lanes get theirs, the rebuild wait); `MERCH_BACK_R`/`MERCH_BACK_ARC` (how far and how wide the back woods reach) |
+| js/sim/farm.js | `SOLDIER_BOUNTY`/`SOLDIER_BOUNTY_GROW` (a melee soldier's last hit; a kind pays its `bounty` share), `COIN_POP_T`; the bots' farm knobs `AI_FARM_*`/`AI_DEN_EARLY`/`AI_LANE_N`/`AI_JUNGLE_N` sit in js/ai/ai-farm.js |
 | js/sim/actions.js | `WORK_REACH` and the roll/prone blocks |
 | js/sim/player.js, js/sim/attack.js | each hero's basic attack (`CLASSES[c].attack`: cycle, knockback, a shot's speed and life or a cut's reach and sweep); the draw curve (`DRAW_*_MIN`) and the damage roll in `attackDmg()` |
 | js/sim/items.js | `BUILD_ITEMS` (every item's price, recipe, stats and passive), `ITEM_PASSIVES`, `ITEM_SELL`, `ITEM_LEGEND_PRICE`, `ITEM_FIGHT_T`, every passive's numbers (`KINDLE_*`, `CHILL_*`, `LEECH_SHARE`, `THORN_SHARE`, `CULL_*`, `STEADY_MUL`, `SURGE_*`, `BRACE_*`, `SMOLDER_*`, `SCORCH_BURN`, `AMPLIFY_MUL`), the bots' `BOT_BUILDS` |
@@ -555,8 +555,7 @@ Code that is dead **on purpose** is the next section.
   ping of its own, so a bot's plan is read off its callouts and the F4 table, not off the map.
 - **[README.md](../../README.md) is bare on purpose**: the main menu still
   (`docs/media/github-title.png`), the Steam, Discord, YouTube and X links and the license line; the store
-  copy lives on Steam. The other `github-*` stills, the capsule set and the gallery pngs stay in
-  the tree unreferenced. The repo's **Social
+  copy lives on Steam. The repo's **Social
   preview** is set by hand in GitHub settings to `github-preview.png` (1280×640, under 1 MB). A
   still is staged through `DBG`: `PROFILE.markDropped()`, `beginDrop()`, `hideUI`, `step` to
   `e.t ≈ dur/2` for the pass, `freeze`, `POST /shot?f=`.
@@ -588,30 +587,19 @@ Kept on purpose — do not "clean up", and a verbatim code move carries it along
   one — a camp that wants a flock stands it up again with `deadTree` props and a perching spawn
   beside `spawnCampMonster` (js/sim/camps.js) ([Birds](gameplay/wildlife.md#birds-the-flock-dormant)). The
   `flushBirds(campAt(...))` calls on a felled snag are the live hooks it would wake through.
-- `SPRITES.imp` (the `imp1`/`imp2` grids, `IPAL`) is baked but unreferenced since the bots
-  got their own grids — kept in case the imp returns.
 - A tree's `variant` (rolled by `randi(0, 1)` in `genWorld`) picks no art any more: there is one
   pine in twenty-four bend frames, `treeFrame` reads the wind for the lean it wears, and the tile's
   own `hash2` mirrors it, gives it a standing lean, a palette row and a nudge.
   **The roll has to stay** — removing an `rng()` call inside `genWorld` reshuffles every
   existing seed. `deadTree` still uses its `variant` for real.
-- `SPRITES.spikes`, `SPRITES.fire`, `SPRITES.torch`, and the three heart sprites are baked but
-  unreferenced since the buildables/HUD removal — kept in case those features return (the heart
-  grids also carry the file's mangled-byte repair).
 - The `<` glyph in [js/app/font.js](../../js/app/font.js) was added for the removed resolution cycle
   control and is currently unreferenced — kept as generic font coverage. (`>` is live again: it
   marks your own row on the scoreboard.)
-- `SPRITES.raider` (+ `RDPAL`) is still baked but unreferenced since the
-  raider removal — kept in case a threat returns; the raider set shares the player grids
-  (as do the four `playerTeam` sets, which are the live ones).
-- `SPRITES.itemWood` is baked but unreferenced since the single-currency change (no wood drops
-  or HUD counters).
 - `SWING_TOOLS[SWING_BOW].icon` (`'itemBow'`) is unread —
   `drawHeldTool` puts the hero's own weapon in the hands at rest, and only the axe row's
   icon is still resolved through the table. The row is kept so `SWING_TOOLS` stays one entry per
   `p.swing` value, and `SPRITES.itemBow` itself is live on the end screen's kills plate.
-- `audio/music/` holds the nine mp3s `TRACKS` names, plus two tracked images nothing loads
-  (`AlbumArtSmall.jpg`, `Folder.jpg`). The alternate takes (34 MB) were deleted in `PATCH 1.53`;
+- `audio/music/` holds only the nine mp3s `TRACKS` names. The alternate takes (34 MB) were deleted in `PATCH 1.53`;
   recover one with `git show ee284a0:"audio/music/<name>"` if a cue ever wants it. A track is
   live only once it is in `TRACKS`. `app/server.js`'s `.ogg`/`.wav` MIME rows are forward-looking — every asset in the repo
   is an mp3.

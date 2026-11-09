@@ -206,6 +206,13 @@ function updateTower(o, dt) {
   sfxAt('turretFire', foot.x, foot.y - TOWER_GUN_Z);
   burst(foot.x + Math.cos(o.ang) * 12, foot.y - TOWER_GUN_Z + Math.sin(o.ang) * 6, '#eef4fb', 5, 45, 0.3, true);
 }
+// a gun stood down (the practice bar's TOWERS off, updateStructures): no
+// mark, no wind-up, and a bolt already loosed still lands
+function towerRest(o, dt) {
+  if (o.pin && (o.pin.t -= dt) <= 0) o.pin = null;
+  if (o.bolt) towerBolt(o, towerFoot(o), dt);
+  o.tgt = null; o.chg = 0;
+}
 // the bolt in the air: it strikes its mark when its time is up, through the
 // one blow every body takes, and stands in the snow at its feet
 function towerBolt(o, foot, dt) {

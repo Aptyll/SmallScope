@@ -52,6 +52,23 @@ const AI_SIEGE_R = 48;    // px: a rival closer than this pulls a besieging push
 // that empties the whole map for one arrow is a side that never pushes -
 // until the nerve is under AI_ALARM_HP, when the number is everyone.
 function aiDefendersWanted(s) { return s.hp < AI_ALARM_HP ? 99 : Math.max(2, s.attackers + 1); }
+// the people a side's bots mind: ANY human seat on it - the host's own or a
+// guest's - never the local `player`, which is just whoever this screen is
+// (a guest's bots escorted and supported only the host). Solo it is the one
+// player, so nothing there changes. (`standIn`: the arena's seat 0, a bot
+// sat in the human's chair for the 'level' setup, app/arena/match.js)
+function aiPerson(q) { return isHuman(q) || !!q.standIn; }
+function aiSideHuman(team) { for (const q of players) if (q.team === team && aiPerson(q)) return true; return false; }
+// the human a support bot keeps close: the nearest one on its side, up and on the ground
+function aiWard(p) {
+  let best = null, bd = Infinity;
+  for (const q of players) {
+    if (q === p || q.team !== p.team || !aiPerson(q) || q.dead || inAir(q)) continue;
+    const d = Math.hypot(q.x - p.x, q.y - p.y);
+    if (d < bd) { bd = d; best = q; }
+  }
+  return best;
+}
 let aiSitTick = -1, aiSit = null;
 function aiSituation() {
   if (aiSit && aiSitTick === state.tick) return aiSit;
@@ -65,7 +82,7 @@ function aiSituation() {
       const d = Math.hypot(q.x - e.x, q.y - e.y);
       if (d >= AI_ROOST_R) continue;
       if (q.team === team) s.defenders++;
-      else if (d < seenAt(q, AI_ROOST_R, team)) { s.attackers++; if (q === player) s.human = true; }
+      else if (d < seenAt(q, AI_ROOST_R, team)) { s.attackers++; if (aiPerson(q)) s.human = true; }
     }
     // a rival WAVE at the roost is an attack too (the `soldiers` banner,
     // robots.js) - counted at half strength, so a five-column calls three
@@ -93,7 +110,7 @@ function aiRank(p) { return aiPlanRank(p); }
 function aiWantsPush(p, prof, theirs, mine) {
   if (!theirs) return null;
   const e = theirs.e;
-  if (prof.support && theirs.human && player !== p) return e;
+  if (prof.support && theirs.human) return e; // (theirs.human: a person of p's side is on the rival bird; p is a bot)
   if (theirs.attackers > 0 && theirs.hp < AI_JOIN_HP && !(mine && mine.threat)) return e;
   return aiRank(p) < aiPlan(p.team).nPush ? e : null;
 }
@@ -169,11 +186,12 @@ function aiStructTile(o, p) {
   return best;
 }
 
-// the side's escorts: the two lowest bots on the human's team
+// the side's escorts: the two lowest bots on a side with a human on it
 function aiEscorts(p) {
+  if (!aiSideHuman(p.team)) return false;
   let n = 0;
   for (const q of players) {
-    if (!q.active || q.control !== 'ai' || q.team !== player.team || q === player) continue;
+    if (!q.active || q.control !== 'ai' || q.team !== p.team || aiPerson(q)) continue;
     if (q === p) return n < 2;
     n++;
   }

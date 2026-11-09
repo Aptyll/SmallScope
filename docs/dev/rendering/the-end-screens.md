@@ -118,8 +118,8 @@ stands back up. The mates on a **win** celebrate on their own (`emoteAmbient`) �
 own slot off the hash every `EM_AMB` seconds, about half of them play, and nothing is kept between
 frames, the same no-array idiom as the motes. A loss has no ambient at all.
 
-**The death dim** underneath is the third state, and it is not a ceremony: a wash, **YOU COLLAPSED
-IN THE SNOW** at 3× (2× on a view too narrow to hold it) in the upper band — it is the first thing
+**The death dim** underneath is the third state, and it is not a ceremony: a wash, **YOUR EAGLE
+WAS DRIVEN OFF** at 3× (2× on a view too narrow to hold it) in the upper band — it is the first thing
 to read and the match is still playing behind it, so it goes where an eye lands rather than over
 the body that fell — a second line saying the match is over for you, and two planks (SPECTATE /
 LOBBY). That is the **elimination**; a guest whose host left mid-match (`state.over =

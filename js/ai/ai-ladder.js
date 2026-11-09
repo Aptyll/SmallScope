@@ -124,7 +124,7 @@ function aiRead(p, dt) {
     else defend = mine.defenders < aiDefendersWanted(mine) ? own : null;
   }
   let guardE = aiOnGuard(p, prof);
-  let ward = prof.support && !player.dead && !inAir(player) && player !== p ? player : null;
+  let ward = prof.support ? aiWard(p) : null;
   return { p, dt, inp, ai, prof, T, role, walkTo, steerTo, aimAt, mine, theirs, own, alarm, pushE, defend, guardE, ward };
 }
 

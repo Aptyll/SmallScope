@@ -29,7 +29,7 @@ function drawGroundPass(ox, oy, ex, ey, now) {
 
   // the archery track's rails, flat under everything that walks, then the
   // parkour's start/finish line, painted flat on the carved ice
-  if (PRACTICE) { drawAgTrack(ox, oy); drawParkourLine(ox, oy); drawDfHold(ox, oy); }
+  if (ARENA) { drawAgTrack(ox, oy); drawParkourLine(ox, oy); drawDfHold(ox, oy); }
 
   // the trampled snow: the match's slow record, under the crisp prints (js/draw/trample.js)
   drawTrample(ox, oy);
@@ -263,7 +263,7 @@ function drawSceneryObj(d, ox, oy, now, wkO, hovO) {
     // the archery round's sink runs (agSinkU, js/sim/practice.js) the sprite
     // drops and the snow line crops it - the bottom is already under the
     // field - and at full depth the object leaves the grid entirely.
-    const su = PRACTICE ? agSinkU() : 0;
+    const su = ARENA ? agSinkU() : 0;
     if (su > 0) {
       const vis = Math.round(DUMMY_SPR.height * (1 - su));
       if (vis > 0) ctx.drawImage(DUMMY_SPR, 0, 0, DUMMY_SPR.width, vis,
@@ -288,7 +288,7 @@ function drawSceneryObj(d, ox, oy, now, wkO, hovO) {
     // mid-sink for the archery round, like the dummy and rack: the bell is
     // drawn procedurally, so it slides down and a clip at its ground line
     // crops what is already under the field
-    const su = PRACTICE ? agSinkU() : 0;
+    const su = ARENA ? agSinkU() : 0;
     if (su > 0) {
       ctx.save();
       ctx.beginPath();
@@ -526,7 +526,7 @@ function renderScreen(ox, oy, shx, shy, now) {
   renderUI(now);
   // the archery round's live layer: countdown, GO, the TIME/SCORE/HITS
   // plate, the final score (drawAgameUI, js/draw-world.js)
-  if (PRACTICE && state.mode === 'play') drawAgameUI(now);
+  if (ARENA && state.mode === 'play') drawAgameUI(now);
   if (state.mode === 'drop') renderDropUI(now);
   // the drop brief's roost headlines (updateDrop's tour, js/sim/eagle.js)
   if (state.mode === 'play' && state.dropBrief) drawDropBrief();

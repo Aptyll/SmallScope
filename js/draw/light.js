@@ -540,7 +540,7 @@ const todRGB = [0, 0, 0, 0, 0, 0];
 function todGrade() {
   // the practice arena keeps one fixed, neutral hour: its instruments
   // compare laps, and a rose cast on one of them is a change in the room
-  if (PRACTICE) return;
+  if (ARENA) return;
   const g = todMix(Math.min(CYCLE - 1e-6, Math.max(0, state.time)), todRGB);
   if (g[0] + g[1] + g[2] < 762) {
     ctx.globalCompositeOperation = 'multiply';
@@ -867,7 +867,7 @@ function renderLighting(ox, oy, now) {
     // are a quality of the light, but a cloud shadow drifting over the
     // dummy's meter or the parkour's ice would change what the instruments
     // are measuring between one lap and the next.
-    if (!PRACTICE && settings.vidClouds) cloudShade(ox, oy, day * (1 - FROST_CLEAR * state.wx.frost));
+    if (!ARENA && settings.vidClouds) cloudShade(ox, oy, day * (1 - FROST_CLEAR * state.wx.frost));
   }
 
   // the hour: rose dawn, crisp midday, gold dusk (the hour banner above)

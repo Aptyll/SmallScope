@@ -20,11 +20,12 @@ SFX.setMuted(settings.muted);
 // the title track. Browsers refuse audio before a gesture, so SFX.music holds
 // this as pending and the first click or keypress starts it (see js/app/audio.js).
 SFX.music.play('intro', { in: 1.5 });
-if (PRACTICE) {
-  // the training field (the `practice arena` banner, js/sim/practice.js): a fixed
-  // room instead of a match world - one dummy, open targets, the ice parkour,
-  // and nothing that spawns or restocks: no camps, wildlife or
-  // eagles at all
+if (ARENA) {
+  // the practice tool's side room, the training field (the `practice arena`
+  // banner, js/sim/practice.js): a fixed room instead of a match world - one
+  // dummy, open targets, the ice parkour, and nothing that spawns or
+  // restocks: no camps, wildlife or eagles at all. The practice tool itself
+  // grows the match's own map below, like any match
   genPracticeWorld();
 } else {
   genWorld();
@@ -72,17 +73,21 @@ buildSettingsPanel();
 buildHelpPanel();
 camX = player.x - WV_W / 2;
 camY = player.y - WV_H / 2;
-// practice boots straight onto the snow: no title, no eagle. The other nine
-// players empty out (control 'none' - `active` is derived from it) and stand
-// parked in the corner forest (practiceVacate, js/sim/practice.js); the local
-// player takes the arena's spawn tile and the HUD slides in the way a landing's
-// does. A party's friends take seats as they join (netHostHello).
+// practice boots straight onto the snow: no title, no ride. On the map both
+// birds are already down on their perches, their merchants climbing off to
+// raise the bays (practiceLand, js/sim/practice.js). The other nine players
+// empty out (control 'none' - `active` is derived from it) and stand parked
+// in the corner forest (practiceVacate); the local player takes the spawn
+// (its side's roost, or the arena's tile) and the HUD slides in the way a
+// landing's does. A party's friends take seats as they join (netHostHello).
 if (PRACTICE) {
+  if (!ARENA) practiceLand();
   for (const p of players) if (p !== player) practiceVacate(p);
   practiceSeat(player);
-  // early morning, forever: sim.js never advances state.time under PRACTICE,
-  // so this is the arena's one fixed hour - crisp daylight, shadowless dawn
-  state.time = 0;
+  // the arena: early morning, forever - sim.js never advances state.time
+  // under ARENA, so this is its one fixed hour, crisp daylight, shadowless
+  // dawn. The map keeps a match's mid-morning start, and its day runs on
+  if (ARENA) state.time = 0;
   state.mode = 'play';
   camX = Math.max(0, Math.min(WORLD * TILE - WV_W, player.x - WV_W / 2));
   camY = Math.max(0, Math.min(WORLD * TILE - WV_H, player.y - WV_H / 2));
@@ -122,10 +127,10 @@ window.DBG = {
   laneLine, sideLaneDist, laneWaypoints, baseGate, baseBaySpot,
   // the snow's depth (js/sim/depth.js): the map, the deep band, the drifts and the wind that laid them
   snowDepth, deepAt, drifts, driftWind,
-  // the practice arena: whether this boot is one, the dummy's live record,
+  // the practice tool: whether this boot is one and whether it is the arena, the dummy's live record,
   // the spawn tile, the shared hit paths, the archery targets, the parkour
   // clock and the ESC slab's exit plank
-  PRACTICE, practiceDummies, PR_SPAWN, hitDummy, leavePlankRect,
+  PRACTICE, ARENA, practiceDummies, PR_SPAWN, hitDummy, leavePlankRect,
   ptargets, ptFace, ptLive, ptHitR, hitPTarget, parkour,
   // the archery round: the live state, the difficulty tables, the bell's
   // resolver, ring a round in by hand at a difficulty (warp beside AG_BELL
@@ -245,7 +250,7 @@ window.DBG = {
   // the schema is missing; netEchoRun(ticks, every) does it along a run
   netEcho, netEchoRun, snapBuild, snapApply, snapSize, NET, netSetup,
   // the two-tab match: role, peers, bytes each way, the newest snapshot tick
-  netStatus: () => ({ role: NET.role, peers: [...NET.peers.values()].map((q) => q.slot), parked: NET.parked.size, synced: NET.synced, lastTick: NET.lastTick, bytesIn: NET.bytesIn, bytesOut: NET.bytesOut, bpsIn: NET.bpsIn, bpsOut: NET.bpsOut, hostOver: NET.hostOver, refused: NET.refused || null, open: !!(NET.transport && NET.transport.open), lobby: NET.transport && NET.transport.lobbyId || null, room: NET.transport && NET.transport.room || null, transportError: NET.transport && NET.transport.error || null, verify: NET.verify, verifyFail: NET.verifyFail, acks: [...NET.peers.values()].map((q) => q.ack), hist: snapShadow.hist.length, lossOut: NET.lossOut, dropped: NET.dropped, fulls: NET.fulls, framesLost: NET.transport && NET.transport.lost || 0 }),
+  netStatus: () => ({ role: NET.role, peers: [...NET.peers.values()].map((q) => q.slot), parked: NET.parked.size, synced: NET.synced, lastTick: NET.lastTick, bytesIn: NET.bytesIn, bytesOut: NET.bytesOut, bpsIn: NET.bpsIn, bpsOut: NET.bpsOut, hostOver: NET.hostOver, refused: NET.refused || null, open: !!(NET.transport && NET.transport.open), lobby: NET.transport && NET.transport.lobbyId || null, room: NET.transport && NET.transport.room || null, transportError: NET.transport && NET.transport.error || null, verify: NET.verify, verifyFail: NET.verifyFail, acks: [...NET.peers.values()].map((q) => q.ack), hist: snapShadow.hist.length, lossOut: NET.lossOut, dropped: NET.dropped, fulls: NET.fulls, framesLost: NET.transport && NET.transport.lost || 0, tileLate: snapShadow.late, tileLateBy: snapShadow.lateBy, tileHot: snapHot.size }),
   // the wire form's own proofs: netDeltaRun(ticks, every) sends `ticks` of this
   // page's sim as binary deltas and applies them back, comparing against the
   // full form after each; netVerify(on) makes a host ride its full form along

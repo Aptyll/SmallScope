@@ -9,7 +9,6 @@ const R = require('./rig.js');
 const PAINT = require('./paint.js');
 
 const RAW = path.join(R.HERE, 'raw');
-// the finished capsules land in the repo, beside the montage's clips
 // the finished capsules land one level up, beside this tools folder
 const OUT = process.env.STORE_OUT || path.join(R.HERE, '..');
 const LOGO = path.join(R.HERE, 'logo-full.png');

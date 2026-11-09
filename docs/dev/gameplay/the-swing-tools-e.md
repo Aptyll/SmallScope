@@ -192,6 +192,12 @@ rest the hands hold the hero's own weapon (`SPRITES.weaponArt[attackOf(p).art]`,
 its length), so what someone fights with reads off their sprite from across the snow. It is carried
 at the leading hand while idle/walking (turned to the facing, drawn *before* the body sprite for
 `up` so it's occluded, riding the run's bob - `runBob`), and rotated toward the mouse while drawn.
+**The carry rule** (top of `drawHeldTool`) keeps it off the face: every art is turned about where
+the hand closes on it (`WEAPON_GRIP`, js/sprites/weapons.js, or a hero blade's `hilt`), never about
+its own middle, so a blade reaches out of the fist; a blade's hand rides an ellipse about the hips
+(`BLADE_HAND`), a carry sits at `CARRY_HAND_Y` by facing; and anything pointing up the screen
+(`heldBehind`, past `HELD_RISE`) is drawn behind the body, as is a carried staff. `drawPlayer`
+calls it twice, behind the body and over it.
 Every art says which way its business end points as drawn (`WEAPON_FWD`, js/sprites/weapons.js)
 and the hand turns it by the facing or the aim minus that: a bow's arrowhead is at +x, drawn the
 way a bow is held — string toward the archer, belly toward the target — and the sword's point at
