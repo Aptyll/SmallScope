@@ -245,7 +245,7 @@ const cx = WORLD / 2, cy = WORLD / 2;
 // their terrain. Nobody starts here any more - every player lands from the eagle.
 // RING_N is frozen at six ON PURPOSE: it stopped tracking the player count when
 // the roster grew to ten, because player count must never reshape the terrain.
-const SPAWN_D = WORLD / 2 - 55;
+const SPAWN_D = WORLD / 2 - 55 * MAP_K;
 const RING_N = 6;
 const ringPts = [];
 for (let i = 0; i < RING_N; i++) {
@@ -256,7 +256,7 @@ for (let i = 0; i < RING_N; i++) {
   });
 }
 
-const BORDER_MIN = 30, BORDER_MAX = 70; // forest boundary depth range (avg ~50)
+const BORDER_MIN = 30 * MAP_K, BORDER_MAX = 70 * MAP_K; // forest boundary depth range (avg ~50 at the old scale)
 // The two ROOST corners - bottom-left and top-right, where the eagles always
 // come down (makeEagles, eagle.js) - are forested to ROOST_R outright: a
 // quarter-disc of woods UNIONED with the noise border, so whatever the seed
@@ -266,7 +266,7 @@ const BORDER_MIN = 30, BORDER_MAX = 70; // forest boundary depth range (avg ~50)
 // trees: past the disc the border keeps every seed's own noise, and the arc
 // itself wobbles ROOST_WOBBLE on the fine noise so it never reads as a compass
 // stroke. Not under ARENA - the training field is its own collar.
-const ROOST_R = 68;      // tiles from the corner
+const ROOST_R = 68 * MAP_K; // tiles from the corner
 const ROOST_WOBBLE = 3;  // +- tiles the arc wanders
 
 // depth of the forest boundary at a given tile: smooth irregular inner edge,
@@ -277,7 +277,8 @@ const ROOST_WOBBLE = 3;  // +- tiles the arc wanders
 // only under borderNoise (the disc's extra pines roll nothing), so a seed's
 // interior is exactly what it was before the corners were guaranteed.
 function borderNoise(tx, ty) {
-  let n = vnoise(tx / 22, ty / 22) * 0.65 + vnoise(tx / 9 + 40, ty / 9 + 40) * 0.35;
+  const K = MAP_K; // the noise stretches with the layout, so a bigger valley keeps the treeline's shapes
+  let n = vnoise(tx / (22 * K), ty / (22 * K)) * 0.65 + vnoise(tx / (9 * K) + 40, ty / (9 * K) + 40) * 0.35;
   n = Math.max(0, Math.min(1, (n - 0.5) * 1.6 + 0.5)); // stretch toward full range
   return BORDER_MIN + (BORDER_MAX - BORDER_MIN) * n;
 }
@@ -983,7 +984,7 @@ function creekFishCatch(p) {
 const BUSH_DEN_N = 2, BUSH_DEN_OUT = 3;  // bushes round a wolf den, and tiles past its ground they stand
 const BUSH_DEN_ARC = 0.9;                // radians either side of the den's way to the middle
 const BUSH_BANK = 1.6;                   // tiles of dry snow between a river bush and the water's bank
-const BUSH_RIVER_W = [26, 48, 70];       // tiles along the creek either way from its middle a river pair stands at
+const BUSH_RIVER_W = [26, 48, 70].map((w) => w * MAP_K); // tiles along the creek either way from its middle a river pair stands at
 const BUSH_NUDGE = 4, BUSH_SPACING = 3;  // the search for open snow, and the least gap between two bushes
 function placeBushes() {
   for (let i = 0; i < objects.length; i++) if (objects[i] && objects[i].type === 'bush') objects[i] = null;

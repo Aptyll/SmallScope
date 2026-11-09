@@ -22,12 +22,14 @@ const LANE_RAG = 0.5;     // tiles its edge wanders either way on the position n
 const LANE_SEG = 3;       // tiles of centreline per registered segment
 const LANE_FORD_HW = 1.5; // tiles either side of the centreline the creek is forded where a lane crosses it: a three-stone ford
 const LANE_ZIP_SPAN = 14;  // tiles along the lane between a side cable's pylons: the mid road's ZIP_SPAN
-const LANE_ZIP_MID = 28;   // tiles short of the lane's middle its front terminus stands: the mid road's ZIP_MID_GAP
+const LANE_ZIP_MID = 28 * MAP_K; // tiles short of the lane's middle its front terminus stands: the mid road's ZIP_MID_GAP
 const LANE_HOLD = 0.6;     // share of the way from a side's mouth to a lane's middle its laner waits at with no column on the lane (laneHold)
 const LANE_ZIP_S = 7;      // tiles off the road beside the perch its base pylon stands, on the lane's side: past the crash pad and the mid road's own pylon
 // RED's half of the TOP lane, [u, s]: out of the hollow's centre, through the
 // top mouth, bending along the treeline, to the creek at the middle
-const LANE_HALF = [[BASE_U, 0], [BASE_SIDE_U, -BASE_SIDE_S], [40.5, -20.5], [52.5, -26.2], [65, -36.8], [78.5, -53], [91.5, -70], [104, -83.4], [(WORLD - 1) / 2, -92.6]];
+const LANE_HALF = [[BASE_U, 0], [BASE_SIDE_U, -BASE_SIDE_S],
+  ...[[40.5, -20.5], [52.5, -26.2], [65, -36.8], [78.5, -53], [91.5, -70], [104, -83.4]].map(([u, s]) => [u * MAP_K, s * MAP_K]),
+  [(WORLD - 1) / 2, -92.6 * MAP_K]];
 const LANE_MID_S = -LANE_HALF[LANE_HALF.length - 1][1]; // tiles off the road a side lane crosses the middle at
 
 // a side lane's centreline, RED's hollow to BLUE's, a point about every

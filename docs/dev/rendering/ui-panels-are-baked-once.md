@@ -23,7 +23,7 @@ is a drawn map, not a photograph of the tiles**: `buildWorldMapImg()` files ever
 tile of forest or ice is ground again, a snow pinhole with three sides of one mass is that mass
 (`CHART_NEED`) — resamples it into the slot by priority (`chartSpan`: each chart pixel takes the
 highest class among the tiles it covers, so a one-tile wall never drops out of its run when a
-small window folds the 232 tiles into fewer px), and paints one flat ink per class (`CHART_INK`) — **a flat chart** in quiet greys:
+chart folds the match's `WORLD` tiles into fewer px), and paints one flat ink per class (`CHART_INK`) — **a flat chart** in quiet greys:
 pale snow for the open ground, deep slate for the woods, cold blue for the ice and the creek, a
 tan track for the road. Nothing is painted over the inks — no lit or inked rims, no grain — since
 the marks and the team inks are the read, and shading fought them. No grid: a single
@@ -45,8 +45,8 @@ of its side's ink, never a colour of its own that would read as a third team; th
 is an objective, roosted or flying. Each sits on a 1 px rim in the map's own dark. Under a
 colour-blind palette a rival's square is a cross instead (`foeCue`, [teams and colours](../multiplayer.md#teams-and-colours)). **The slab is
 the chart and a header, nothing else**, and it **fits the view**: `fitMapSlab()` (canvas.js, from
-`relayout`) gives the chart every row the view has up to `CHART_MAX` (232 — the match world at one
-px a tile, so a monitor charts at 1:1) with `MAP_SIDE`/`MAP_HEAD`/`MAP_FOOT` of parchment round it
+`relayout`) gives the chart every row the view has up to `CHART_MAX` (232, what a monitor's
+rows seat; the match world folds into it) with `MAP_SIDE`/`MAP_HEAD`/`MAP_FOOT` of parchment round it
 (a window at the 240-row floor gets a 200 chart), and `mapAlloc()` (js/ui/panels.js) remakes the chart's
 buffers and re-bakes the slab whenever `MAP_W` changes. The slab is the HUD's **graphite plate**
 (`drawHudFrame`, its four corners cut), the chart in a one-pixel dark frame. In the header

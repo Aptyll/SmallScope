@@ -136,7 +136,7 @@ const CAMPS = {
 // other way round: its whole clearing (r + 2) must sit inside BORDER_MIN,
 // the shallowest treeline any seed grows, so it is buried in pines on every
 // seed and reached with an axe.
-const CAMP_EDGE = 72;
+const CAMP_EDGE = 72 * MAP_K;
 const CAMP_SITES = [
   { key: 'resource', u: 90, s: -25 },  // one den each side of the road, out from the lane mouth
   { key: 'resource', u: 90, s: 25 },
@@ -151,7 +151,7 @@ const CAMP_SITES = [
   { key: 'hut', u: 63, s: -61 },       // halfway up the left edge
   // the warrens, halfway out from each roost along the left-hand treeline
   { key: 'meadow', u: 99.5, s: -44.5 },
-];
+].map((c) => ({ key: c.key, u: c.u === (WORLD - 1) / 2 ? c.u : c.u * MAP_K, s: c.s * MAP_K })); // MAP_K spreads every site but the middle's
 function campTile(u, s) {
   return { tx: Math.round(u + s / Math.SQRT2), ty: Math.round(WORLD - 1 - u + s / Math.SQRT2) };
 }

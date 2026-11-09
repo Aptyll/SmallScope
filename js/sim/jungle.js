@@ -16,7 +16,7 @@ const JUNGLE_WALLS = [ // [u0, s0, u1, s1, r]: a capsule from (u0, s0) to (u1, s
   [55, -14, 64, -18, 1.8],   // the base wall: the near camp's door off the mid road
   [82, -36, 92, -36, 1.5],   // between the den and the warren, joining the warren's ring
   [105, -68, 112, -76, 3],   // the corner block: the lane's corner gank paths round it
-];
+].map(([u0, s0, u1, s1, r]) => [u0 * MAP_K, s0 * MAP_K, u1 * MAP_K, s1 * MAP_K, r]); // MAP_K spreads where they stand, never their thickness
 const JUNGLE_RAG = 0.8;       // tiles a wall's edge wanders either way, on the position hash
 const JUNGLE_ROAD_KEEP = 4;   // tiles off any road's edge a wall keeps: the lanes, their shoulders and the cables stay clear
 

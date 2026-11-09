@@ -58,7 +58,7 @@ midline camps in a half-loop each, so each side owns one on its own bank: the br
 the black bear BLUE's, each walking its bank up and down and stopping to fish. Anyone who steps in plunges as through the ice, and a bot shoved off the
 bank goes in like anybody. [The creek](world.md#the-creek), [the cistern](world.md#the-cistern).
 
-The world is 232 tiles of 16 px — a 3712×3712 px snowfield with a forest border and an interior
+The world is 278 tiles of 16 px — a 4448×4448 px snowfield with a forest border and an interior
 threaded by frozen lakes and rivers. Every match plays this one map.
 See [world.md](world.md#the-tile-world) and [one map](world.md#one-map).
 

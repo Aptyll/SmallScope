@@ -7,13 +7,17 @@ stable per tile.
 
 ## The tile world
 
-- `WORLD = 232` tiles of `TILE = 16` px → a 3712×3712 px world (under `ARENA`, the practice
-  tool's side room, the const is 112 instead — see [the practice tool](#the-practice-tool)). The forest border is
-  `BORDER_MIN`/`BORDER_MAX` (30–70, avg ~50) tiles deep round an interior ~132 tiles
+- `WORLD = 278` tiles of `TILE = 16` px → a 4448×4448 px world (under `ARENA`, the practice
+  tool's side room, the const is 112 instead — see [the practice tool](#the-practice-tool)).
+  **`MAP_K` (1.2, core.js) spreads the layout**: every place in the match (the bases, lanes,
+  camps, brush, jungle walls, the treeline's depth and its noise) is written at the old 232-tile
+  scale and multiplied by `MAP_K` where its table is declared; bodies, road widths, camp
+  clearings and the cistern keep their size. The forest border is
+  `BORDER_MIN`/`BORDER_MAX` (30–70 times `MAP_K`) tiles deep round an interior ~158 tiles
   across, open snow. The two **roost corners** —
   bottom-left and top-right, where the eagles always come down
-  ([eagle drop](rendering/eagle-drop-mode-drop.md)) — are forested to `ROOST_R` (68 tiles from the
-  corner, ~48 along the diagonal) outright: `borderDepth` is the seed's own `borderNoise` **or**
+  ([eagle drop](rendering/eagle-drop-mode-drop.md)) — are forested to `ROOST_R` (68 times `MAP_K` tiles from the
+  corner, ~58 along the diagonal) outright: `borderDepth` is the seed's own `borderNoise` **or**
   a quarter-disc whose arc wobbles ±`ROOST_WOBBLE` (3) on the fine noise, so whatever the seed grew
   there the corner holds one solid block of woods round its [base](#the-bases)'s hollow, and
   the road's gate is at least the arc out. The union only adds pines, and `genWorld` rolls its per-tree `rng()` only under
@@ -380,7 +384,7 @@ tail at a fraction of 0.4. An emerger that has not made it in
 `born` first.
 
 **The emerge sites are found once and cached** (`emergeSites`/`buildEmergeSites`, a lazy one-time
-scan costing ~1.4 ms) — never rejection-sample random tiles for one: on a 232² world a tile
+scan costing ~1.4 ms) — never rejection-sample random tiles for one: on a 278² world a tile
 that is ice with swimming room *and* has snow exactly two tiles off is rare enough that the
 tries come up empty and the trickle silently stops. The
 shoreline never moves, and a hole only flips ice↔water which `fishClear` counts as swimmable
