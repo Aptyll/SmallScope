@@ -660,6 +660,7 @@ function makeInput() {
                          // hunter's SNOW COVER cast, key 4, not an input)
     useItem: -1,         // edge-triggered: use what is in this item slot (0-5) - drink a potion (useItem, js/sim/items.js)
     ability: -1,         // edge-triggered: cast the class ability on this key (1-4), js/sim/abilities.js
+    trick: -1,           // edge-triggered: use the loadout's trick on this key (0-1), js/sim/loadout.js
     cmd: null,           // one-shot: {kind:'shop'|'ping'|..., ...} or {kind:'ability', i} (cmdOk, js/ui/wheel.js)
   };
 }
@@ -705,6 +706,12 @@ class Player {
     this.abLv = [0, 0, 0, 0];           // ability ranks, 0 (LOCKED) ..abLvMax (5, the ultimate 3), a skill point each - like items, NOT cleared by reset(): a death keeps what was bought
     this.cheatOn = { cd: false, hp: false }; // the practice bar's standing toggles, this player's own (cheatCmd/cheatAuto, js/sim/practice.js)
     this.abPick = [0, 0, 0, 0];         // which option each key carries (abOf, js/sim/abilities.js), picked pre-match in the hero pop-up; a bot keeps the first
+    // the pre-game picks (js/sim/loadout.js): two tricks and a calling, set
+    // whole as the match starts (loadoutStart); the tricks' cooldowns and the
+    // calling's own clocks, which a death does not reset (League's own)
+    this.loadout = { tricks: [null, null], calling: null };
+    this.trickCd = [0, 0];
+    this.ks = { foe: -1, n: 0, t: 0, tick: -1, on: 0, mark: -1, cd: 4 };
     // the times of this player's recent pings, the spam guard's memory
     // (pingReady, js/sim/pings.js)
     this.pingLog = [];
@@ -814,6 +821,7 @@ class Player {
     // slowed under a net or a crater, mid-reel on the grapple, shielded,
     // or mid-rush
     this.abCd = [0, 0, 0, 0];                      // (abLv, the ranks bought, lives in the constructor: a death keeps them)
+    this.sprintT = 0; this.runT = 0; this.shakeT = 0; // a trick's running effect: SPRINT, BANDAGE's quick step, SHAKE OFF's grace (js/sim/loadout.js)
     this.windT = 0; this.windRate = 0;             // SECOND WIND's breath: s left, hp a second (abSecondWind)
     this.castAb = -1; this.castT = 0; this.castMax = 0; // castMax is the wind-up's full length, so a telegraph can read how far along it is (castProg)
     // Every state ANY unit can be under - stun, root, slow and its net

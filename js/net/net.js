@@ -212,12 +212,13 @@ function netInClean(m) {
   const W = WORLD * TILE;
   return { mx: num(m.mx, -1, 1, 0), my: num(m.my, -1, 1, 0), aimX: num(m.aimX, -W, 2 * W, 0), aimY: num(m.aimY, -W, 2 * W, 0), // a cursor past the map's edge still aims
     fire: !!m.fire, work: !!m.work, slide: !!m.slide, grapple: !!m.grapple, dodge: !!m.dodge, jump: !!m.jump,
-    ability: idx(m.ability, AB_KEYS), useItem: idx(m.useItem, ITEM_SLOTS), cmd: m.cmd && typeof m.cmd === 'object' ? m.cmd : null };
+    ability: idx(m.ability, AB_KEYS), useItem: idx(m.useItem, ITEM_SLOTS), trick: idx(m.trick, TRICK_N), cmd: m.cmd && typeof m.cmd === 'object' ? m.cmd : null };
 }
 function netInEdges(i, m) {
   i.dodge = i.dodge || m.dodge; i.jump = i.jump || m.jump;
   if (m.ability >= 0) i.ability = m.ability;
   if (m.useItem >= 0) i.useItem = m.useItem;
+  if (m.trick >= 0) i.trick = m.trick;
   if (m.cmd) i.cmd = m.cmd;
 }
 function netHostHello(peer, msg) {
@@ -263,6 +264,8 @@ function netHostHello(peer, msg) {
   if (msg.name) p.name = msg.name;
   if (msg.cls !== undefined && msg.cls !== null) setClass(p, msg.cls);
   p.skins = cleanHeroSkins(msg.skins); // the looks they wear, drawn on every screen (heroSkinOf, player.js)
+  p.loadout = loadoutParse(msg.load); // their pre-game picks for that hero, made whole as they land (loadoutStart, js/sim/loadout.js)
+  if (state.drop) loadoutStart(p); // a seat taken in a match under way (or on the practice field) flies with them now
   NET.ranks[slot] = msg.rank | 0 || null;
   NET.pos[slot] = msg.pos >= 0 && msg.pos < POSITIONS.length ? msg.pos | 0 : -1;
   const pr = { slot, uid: msg.uid, name: msg.name, cross: !!msg.party, lastTick: 0, ack: -1, dictAt: new Map(), q: [], qMin: Infinity, qN: 0 };
@@ -459,11 +462,11 @@ function netClientStep(dt) {
   const T = NET.transport;
   if (NET.synced && player) {
     const i = player.input;
-    const msg = { t: 'in', tick: ++NET.inTick, ack: NET.lastTick, in: { mx: i.mx, my: i.my, aimX: i.aimX, aimY: i.aimY, fire: i.fire, work: i.work, slide: i.slide, grapple: i.grapple, dodge: i.dodge, jump: i.jump, ability: i.ability, useItem: i.useItem, cmd: i.cmd } };
+    const msg = { t: 'in', tick: ++NET.inTick, ack: NET.lastTick, in: { mx: i.mx, my: i.my, aimX: i.aimX, aimY: i.aimY, fire: i.fire, work: i.work, slide: i.slide, grapple: i.grapple, dodge: i.dodge, jump: i.jump, ability: i.ability, useItem: i.useItem, trick: i.trick, cmd: i.cmd } };
     if (T.send('host', msg)) NET.bytesOut += JSON.stringify(msg).length;
     netPredictStep(msg.tick, i, dt); // our own walk goes ahead of the host's word
     // the edges are the host's now: a press is sent once
-    i.dodge = false; i.jump = false; i.ability = -1; i.useItem = -1; i.cmd = null;
+    i.dodge = false; i.jump = false; i.ability = -1; i.useItem = -1; i.trick = -1; i.cmd = null;
   }
   netClientLerp();
   netClientStats();
@@ -534,7 +537,7 @@ function netClientStats() {
   NET.was = { p: me, earned: me.earned, kills: me.kills, dead: me.dead, aboard: me.aboard };
 }
 function netClientHello() {
-  NET.transport.send('host', { t: 'hello', uid: NET.uid, patch: PATCH_TXT, seed: SEED, name: PROFILE.name(), cls: PROFILE.hero(), skins: profileHeroSkins(), rank: PROFILE.rank(), pos: PROFILE.pos(),
+  NET.transport.send('host', { t: 'hello', uid: NET.uid, patch: PATCH_TXT, seed: SEED, name: PROFILE.name(), cls: PROFILE.hero(), skins: profileHeroSkins(), load: loadoutStr(loadoutClean(PROFILE.loadout(CLASSES[PROFILE.hero()].name), PROFILE.hero(), PROFILE.pos())), rank: PROFILE.rank(), pos: PROFILE.pos(),
     party: CROSS ? CROSS.party : undefined, pn: CROSS ? CROSS.n : undefined }); // a party crossing in (js/ui/matchmaking.js)
 }
 // the roster the host dealt: our slot is the human here, the host's is a

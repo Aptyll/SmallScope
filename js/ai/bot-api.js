@@ -96,6 +96,7 @@ function botObserve(p) {
     lastCmd: p.lastCmd ? Object.assign({}, p.lastCmd) : null,
     items: p.items.slice(), // ITEM_SLOTS slots, an item id or null each (js/sim/items.js)
     potions: p.potions || 0, potionT: botR(p.potT || 0), // potions in the 'potion' slot, and s left of the one being drunk
+    tricks: [0, 1].map((i) => ({ key: i, id: trickOf(p, i), cd: botR(p.trickCd ? p.trickCd[i] : 0) })), calling: callingOf(p), // the loadout (js/sim/loadout.js)
     atShop: !!merchNear(p),
     orca: botR(orcaLine(p)), // the line over the head (js/sim/orca.js): s left, -1 when it is not after you
   };
@@ -214,7 +215,7 @@ function botAct(a) {
   if (!a || typeof a !== 'object') return null;
   const W = WORLD * TILE, out = { mx: 0, my: 0, aimX: NaN, aimY: NaN, fire: !!a.fire, work: !!a.work, slide: !!a.slide, grapple: !!a.grapple,
     goTo: null, dodge: !!a.dodge, jump: !!a.jump,
-    ability: -1, useItem: -1, cmd: null, call: null, say: undefined, think: null };
+    ability: -1, useItem: -1, trick: -1, cmd: null, call: null, say: undefined, think: null };
   if (Array.isArray(a.move)) { out.mx = botNum(a.move[0], -1, 1, 0); out.my = botNum(a.move[1], -1, 1, 0); }
   if (Array.isArray(a.aim)) { out.aimX = botNum(a.aim[0], -W, 2 * W, NaN); out.aimY = botNum(a.aim[1], -W, 2 * W, NaN); }
   if (a.goTo && typeof a.goTo === 'object') {
@@ -223,6 +224,7 @@ function botAct(a) {
   }
   if (typeof a.ability === 'number') out.ability = botNum(a.ability | 0, -1, AB_KEYS - 1, -1);
   if (typeof a.useItem === 'number') out.useItem = botNum(a.useItem | 0, -1, ITEM_SLOTS - 1, -1); // an item slot's key: a potion drunk
+  if (typeof a.trick === 'number') out.trick = botNum(a.trick | 0, -1, TRICK_N - 1, -1); // a loadout trick's key (js/sim/loadout.js)
   if (a.cmd && typeof a.cmd === 'object' && BOT_CMDS.has(a.cmd.kind)) {
     const c = {};
     for (const k in a.cmd) {
@@ -369,6 +371,7 @@ function botStep(p, dt) {
     inp.dodge = inp.dodge || a.dodge; inp.jump = inp.jump || a.jump;
     if (a.ability >= 0) inp.ability = a.ability;
     if (a.useItem >= 0) inp.useItem = a.useItem;
+    if (a.trick >= 0) inp.trick = a.trick;
     if (a.cmd) inp.cmd = a.cmd;
     // through the side's own anti-spam, on the same cooldown as a native bot's calls
     const c = a.call;

@@ -148,6 +148,7 @@ function tipAt(mx, my) {
     }
     // the hero pop-up's four ability wells raise the same card
     if (m.screen === 'hero' && m.popT >= 1) { const h = heroScreenHit(); return h && h.ab != null ? tipClassAb(h.ab, player.cls, player.abPick[h.ab]) : null; }
+    if (m.screen === 'lobby' && m.screenT >= 1) return loadoutTip(lobbyLayout()); // the picks' wells and picker (js/ui/loadout.js)
     return null;
   }
   if (state.mode !== 'play') return null;
@@ -166,6 +167,7 @@ function tipAt(mx, my) {
   if (abb >= 0) return tipClassAb(abb); // the buy plate describes the ability it upgrades
   const sh = stripHit(mx, my);
   if (sh && sh.kind === 'ab') return tipClassAb(sh.i);
+  if (sh && sh.kind === 'trick') return tipTrick(trickOf(player, sh.i)); // a loadout trick (js/ui/loadout.js)
   if (sh && sh.kind === 'item') return player.items[sh.i] ? tipItem(player.items[sh.i]) : null; // an empty slot says nothing
   if (sh && sh.kind === 'port') return tipAttack(player); // the hero's face names the hero's own basic attack
   if (sh && sh.kind === 'stat') return tipStat(sh.key); // the stat panel's breakdown (js/ui/statpanel.js)
