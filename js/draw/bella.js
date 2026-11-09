@@ -22,7 +22,7 @@ function bellaPip(x, y, col) {
 // - on a body she marked with OUTMANEUVER: a gold diamond over its head;
 // - on the hero she called out: the same diamond, ringed and pulsing.
 function drawBellaMarks(e, px, py, w, h, now) {
-  if (e instanceof Player && CLASSES[e.cls].passive === 'calculated' && !e.prone) {
+  if (e instanceof Player && CLASSES[e.cls].passive === 'calculated') {
     const full = e.prec >= PREC_MAX;
     for (let k = 0; k < e.prec; k++) bellaPip(px + w + 1, py + h - 6 - k * 4, full && Math.floor(now * 6) % 2 ? '#ffffff' : BELLA_GOLD);
     if (e.parryT > 0) {

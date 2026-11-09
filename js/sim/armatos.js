@@ -1,6 +1,6 @@
 'use strict';
-// ARMATOS, THE LAST STANDARD - the first named hero (CLASSES, js/sim/player.js):
-// the warrior's body and sword, his own five pieces. A defensive initiator:
+// ARMATOS, THE LAST STANDARD - the first hero (CLASSES, js/sim/player.js): a
+// greatsword and his own five pieces. A defensive initiator:
 // he takes the hit for his side, answers it, and turns a lost fight into a
 // last stand. Loaded before abilities.js, whose CLASS_AB takes ARM_AB as his
 // row of keys; everything here is called at runtime and draws no rng().
@@ -40,7 +40,9 @@ let guardN = 0;    // a standard's number, so a rival remembers WHICH ring it st
 // carries what its key IS: `tip` (the tooltip's one line, read mid-fight),
 // `rank` (its numbers at each rank, read by abRk -
 // the per-rank tuning; a `cd` list is its cooldown at each rank), `wall` (the
-// key raises the shieldT state, and the key again is its second half), `tele` (the wind-up's shape on the snow), `pose` (the body's), `icon`
+// key raises the shieldT state, and its second half is a shield's bash: the pose and
+// the facing), `recast(p)` (true while the key again is its second half, castSlam;
+// tryAbility), `ok(p)` (false refuses the press), `tele` (the wind-up's shape on the snow), `pose` (the body's), `icon`
 // (its 32x32 grid, js/sprites/armatos.js) and `bot` (when a bot reaches for it,
 // js/ai/ai-ladder.js).
 const ARM_AB = [
@@ -153,8 +155,10 @@ function armVerdict(p) {
 
 // ---- W HOLD THE LINE ----------------------------------------------------------
 function armBrace(p) {
-  abShieldUp(p);
   p.shieldT = abRk(p, 'hold', 't');
+  p.shieldA = Math.atan2(p.input.aimY - (p.y - BOW_Y), p.input.aimX - p.x);
+  burst(p.x, p.y - 4, '#9aa3ad', 6, 35, 0.35, true);
+  sfxAt('place', p.x, p.y);
   p.hold = true;
   p.holdHit = false;
 }
@@ -204,7 +208,6 @@ function armMarch(p) {
   const d = Math.hypot(dx, dy) || 1;
   p.rushNX = dx / d; p.rushNY = dy / d;
   p.rushT = MARCH_T;
-  p.rushVictim = null;
   p.dash = 'march';
   p.marchHit.length = 0;
   p.sliding = false;

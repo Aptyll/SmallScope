@@ -40,8 +40,8 @@ The profile is only ever applied to this screen's player (`applyProfile()`).
 dodge charges, slide state, swing state, held tool, i-frames, footprint cadence — plus `id`,
 `team`, `control`, `name` (`TEAMS[team].name + '-' + (id + 1)` for an AI fill; the local player
 wears the **profile's** name and last hero — `applyProfile()`, called by `initPlayers` — see
-[architecture.md](architecture.md#profilejs)), `look` (the hero's fixed face, a copy of
-`CLASSES[cls].look` that every `setClass` writes, so every copy of a hero looks the same), `spawn` (the tile it landed
+[architecture.md](architecture.md#profilejs)), `skins` (the look its person wears on each hero,
+[Classes](#classes)), `spawn` (the tile it landed
 on from the eagle), `aboard`/`dropT`
 (the eagle ride, see [Eagle drop](rendering/eagle-drop-mode-drop.md)), its own `gold` wallet and
 `potions`/`potT` (the stack and the running drink, [Heals](gameplay/heals.md)),
@@ -73,14 +73,13 @@ jump          edge-triggered: the hop off the roosted bird (hopOff,
               let go while riding, or - out of reach with the aim on a
               cable as drawn - the walk there that clips on (zipToggle,
               js/sim/world.js; E sets it there)
-grapple       held (key 3): the hunter's grapple reels only while this is down -
-              the one held ability input (playerMove's grapple branch reads it;
-              the burrow is the SNOW COVER cast on `ability`, not a field here)
 useItem       edge-triggered, -1 or an item slot (0-5): that slot's key or a click
               on its well - drinks a health potion (useItem, js/sim/items.js;
               see Heals in gameplay.md)
 ability       edge-triggered (keys 1-4): cast that class ability, -1 = none
               (tryAbility, js/sim/abilities.js - see Classes below)
+trick         edge-triggered: use the loadout's trick on this key (0-1), -1 = none
+              (tryTrick, js/sim/loadout.js)
 cmd           one-shot order, run by runCmd (js/ui/wheel.js):
               {kind:'ability', i} - an ability level: no tile, no reach, no
               contest, paid with a skill point
@@ -244,8 +243,6 @@ what CLICK leaves on the keyboard moves onto the mouse. The keys still work; not
   casts there, and a right press (the walk), Escape or the well again puts it down. The scroll
   wheel walks the readied ability along the wells while one is up (the zoom waits). Only a row whose `aim` is a line or a cone readies (`msAims`); the rest
   cast at once, and a skill point in hand buys, as the key does.
-- **A grapple cast off the mouse reels to its end** (`ms.reel` stands in for the held key;
-  any right press lets go).
 - **What the eye gets:** `drawCastPreview` (js/draw/marks.js) draws the ground the lit wedge or
   the readied ability covers, from the body toward its cast point, off the row's own `aim`
   (`CLASS_AB`, js/sim/abilities.js: a `line`, a `cone` with its `half`, or a `ring` round the body),
@@ -255,9 +252,9 @@ what CLICK leaves on the keyboard moves onto the mouse. The keys still work; not
 ## Classes
 
 Every player also carries a class (`p.cls`, an index into `CLASSES` in the `players` banner).
-A class is a look, a kit, and **four active abilities on keys 1-4** (`CLASS_AB`, a key carrying
-one option or several — `CLASS_AB_ALT`, picked pre-match, [class abilities](gameplay/class-abilities-keys-1-4.md);
+A class is a hero: its looks, a kit, and **four active abilities on keys 1-4** (`CLASS_AB`,
 [js/sim/abilities.js](../../js/sim/abilities.js) — see [Class abilities](gameplay/class-abilities-keys-1-4.md)).
+Every `CLASSES` row is a named hero; code that needs one names it with `heroIndex('NAME')`, never a bare index.
 The kit is the handful of numbers the sim reads through `kitOf(p)`
 instead of the bare constants. **`kitOf(p)` returns the *effective* kit**: the class's numbers
 with the player's items folded in by `refreshKit(p)` ([the effective kit](gameplay/the-effective-kit.md); cached on `p.kit`, rebuilt
@@ -276,46 +273,42 @@ read through `statOf(p, key)` (js/sim/stats.js), never off the kit. `setClass(p,
 
 | # | Name | Fantasy | Kit | Basic attack |
 | --- | --- | --- | --- | --- |
-| 0 | **HUNTER** — bow, distance control, the one class that hides | keep the gap and own the ground between | the ranged numbers: quick nock (0.4 s), full draw power, 92 hp | the SHORTBOW: one arrow, 320 px/s for 0.85 s at full draw |
-| 1 | **WARRIOR** — close pressure, blocking, momentum | get to arm's length and stay there | 120 hp, faster on ice (×1.15), +5 speed damage, dash 230, softer bow numbers | the LONGSWORD: a 28 px cut, 1.05 rad either side of the aim |
-| 2 | **ARMATOS** — THE LAST STANDARD, the defensive initiator (a passive, `CLASSES[c].passive`) | make the whole team stand its ground | his own body (LAST STANDARD, or a look bought on the skins screen) and the warrior's kit (`heroBody`), 130 hp, 24 armor | the OATH GREATSWORD: the LONGSWORD's cut, drawn as his own blade |
-| 3 | **FORTIVA** — THE UNBROKEN, the juggernaut (passive UNBROKEN) | win the long fight: harder to stop the longer she trades | her own body (UNBROKEN, or CHAINBREAKER bought on the skins screen) and the warrior's frames (`heroBody`), 132 hp, 20 armor, a step slower | the CHAIN GREATSWORD: the LONGSWORD's cut, drawn as her own blade |
-| 6 | **AURA** — THE NORTHERN LIGHT, the artillery mage (passive STARLIGHT) | hit from further than anyone, light up the night; caught up close is the danger | the warrior's body for now (`heroBody`), 78 hp, 9 armor, a step slower than anyone | the STAR SHARD: a star bolt, 270 px/s for 0.95 s, `cycle` 66/60 s, drawn as her own shot (`look`, `HERO_SHOTS`) |
-| 4 | **BELLA** — THE IMPERIAL GENERAL, the duelist (passive CALCULATED STRIKES) | find one weakness and spend it before the rival can react | her own body (IMPERIAL GENERAL, or TRAITOR'S BLADE bought on the skins screen) and the warrior's frames (`heroBody`), 104 hp, 16 armor, a step faster | the EAGLE SPATHA: a quicker, shorter cut (26 px, 0.95 rad, `cycle` 26/60 s), drawn as her own blade |
-| 5 | **IGNIA** — THE HEARTHKEEPER, the burn-and-zone mage (passive SPREADING FLAME) | burn a fight down: one rival's fire spreads through the crowd, the snow and the creek put it out | her own body (HEARTHKEEPER, or WANDERER bought on the skins screen) and the hunter's kit, 84 hp, 10 armor | the CROOK AND LANTERN: an ember shot (260 px/s for 0.85 s, `cycle` 60/60 s), the staff carried upright |
-| 7 | **SALVIA** — THE MENDER, the healer (passive WARM BROTH) | keep your side on its feet: heals, speed, the slows taken off | her own body (MENDER, or FIELD TENT bought on the skins screen) and the warrior's frames (`heroBody`), 80 hp, 10 armor | the SNOWDROP STAFF: a sprig, 250 px/s for 0.85 s, `cycle` 62/60 s, drawn as her own shot (`look`, `HERO_SHOTS`) |
-| 8 | **LUCERNA** — THE LANTERN, the catch-and-save support (passive LAMPLIGHT) | pull a rival in, bring an ally home, light what hides near her | her own body (LAMPLIGHTER, or DUSK ROAD bought on the skins screen) and the warrior's frames (`heroBody`), 88 hp, 12 armor | the LANTERN: a spark, 260 px/s for 0.8 s, `cycle` 62/60 s, drawn as her own shot (`look`, `HERO_SHOTS`) |
-| 9 | **HIEMS** — THE LONG WINTER, the control mage (passive DEEP CHILL) | freeze a fight slowly: every hit chills, the third freezes; hold a choke with ice and a blizzard | her own body (WEATHER SCHOLAR, or FIRST FROST bought on the skins screen) and the warrior's frames, 82 hp, 10 armor, a step slower | the SNOWFLAKE STAFF: a frost bolt, 270 px/s for 0.85 s, `cycle` 62/60 s, drawn as her own shot; every hit of it chills |
-| 10 | **RUPES** — THE AVALANCHE, the engage tank (passive SNOWPACK) | roll in from far off and flatten a fight; very hard to kill while packed with snow | his own body (QUARRYMAN, or ICE CELLAR bought on the skins screen) and the warrior's frames (`heroBody`), 134 hp, 24 armor, two steps slower | the ICE MAUL: the LONGSWORD's cut a little slower (`cycle` 34/60 s) with a harder shove, drawn as his own blade |
-| 11 | **VARRO** — THE WOLF-KEPT, the jungler (passive THE PACK) | pick one rival and run them down, with wolves at his side | his own body (WOLF-KEPT, or WHITE PACK bought on the skins screen) and the warrior's frames (`heroBody`), 112 hp, 18 armor, a step faster | the HUNTING SPEAR: a thrust a touch longer and narrower than the LONGSWORD's cut (30 px, 0.8 rad, `cycle` 28/60 s), drawn as his own blade |
-| 12 | **BUCINA** — THE HORN, the tempo support (passive HEARD) | speed and nerve for her side: a shove, a rally, an echo that stuns, the pines' snow | her own body (HORN-BLOWER, or COLUMN CALL bought on the skins screen) and the warrior's frames (`heroBody`), 92 hp, 14 armor | the HORN: a note, 255 px/s for 0.8 s, `cycle` 62/60 s, drawn as her own shot (`look`, `HERO_SHOTS`) |
-| 13 | **NIX** — THE SNOWBLIND, the night scout (passive NIGHT WATCH) | strike one rival from her snow cloud, faster at night; seen in the open she is easy to catch | her own body (SNOWBLIND, or MOONLESS bought on the skins screen) and the warrior's frames (`heroBody`), 98 hp, 14 armor, a step faster | the ICE DIRK: the quickest, shortest cut (22 px, 0.9 rad, `cycle` 24/60 s), drawn as her own blade |
-| 14 | **FABER** — THE TINKER, the zone mage (passive SPARE PARTS) | hold a spot with machines he winds: small guns, a clockspring trap, the old engine; strong defending, slow to chase | his own body (CLOCKMAKER, or WORKS FOREMAN bought on the skins screen) and the warrior's frames, 80 hp, 10 armor, slower than most | the CLOCK STAFF: a brass cog, 270 px/s for 0.85 s, `cycle` 62/60 s, drawn as his own shot. His machines are bodies in `robots`, so they cross the wire with every other bot |
-| 15 | **VELOX** — THE SKATER, the kiting marksman (passive KEEP MOVING) | never stand still: throw while you skate, lay your own ice and fly along it | her own body (CANAL RUNNER, or NIGHT POST bought on the skins screen) and the warrior's frames (`heroBody`), 82 hp, 10 armor, a step faster | the STAFF SLING: a sling stone, 300 px/s for 0.6 s, `cycle` 50/60 s, drawn as her own shot (`look`, `HERO_SHOTS`) |
-| 16 | **FALCO** — THE KESTREL, the diving assassin (passive THE HAWK) | his hawk marks a lone rival, his knives bite harder on it, and he drops on it from the sky; without a mark he is weak | his own body (FALCONER, or LAST HAWK bought on the skins screen) and the warrior's frames (`heroBody`), 96 hp, 13 armor, a step faster | the THROWING KNIFE: a short throw (330 px/s for 0.42 s, `cycle` 40/60 s), drawn as his own knife (`look`, `HERO_SHOTS`) |
-| 17 | **MARIS** — THE ICE DIVER, the catch tank (passive COLD WATER) | harpoon one rival and reel in, burst up under a fight from the snow, break the ice under them | her own body (BARGE DIVER, or ORCA SKIN bought on the skins screen) and her HARPOON |
-| 18 | **LIGNUM** — THE FELLER, the treeline skirmisher (passive TREELINE) | wait in the woods, step out, chop hard, step back; fell a pine across a fight | his own body (FELLER, or LAST FOREST bought on the skins screen) and his FELLING AXE |
-| 19 | **SAGITTA** — THE BOLT-THROWER, the siege marksman (passive HEAVY BOLTS) | set up, then strike from far away: pin rivals to trees, shoot from behind your pavise | her own body (SIEGEWRIGHT, or TOWER BUILDER bought on the skins screen) and the warrior's frames (`heroBody`), 78 hp, 9 armor, a step slower | the HEAVY ARBALEST: a bolt, 430 px/s for 0.82 s, `cycle` 80/60 s, `kb` 1.3, drawn as her own shot (`look: 'bolt'`, `HERO_SHOTS`) |
+| 0 | **ARMATOS** — THE LAST STANDARD, the defensive initiator (a passive, `CLASSES[c].passive`) | make the whole team stand its ground | his own body (LAST STANDARD, or a look bought on the skins screen) and his own kit, 130 hp, 24 armor | the OATH GREATSWORD: a 28 px cut, 1.05 rad either side of the aim, drawn as his own blade |
+| 1 | **FORTIVA** — THE UNBROKEN, the juggernaut (passive UNBROKEN) | win the long fight: harder to stop the longer she trades | her own body (UNBROKEN, or CHAINBREAKER bought on the skins screen), 132 hp, 20 armor, a step slower | the CHAIN GREATSWORD: the same cut as his, drawn as her own blade |
+| 2 | **BELLA** — THE IMPERIAL GENERAL, the duelist (passive CALCULATED STRIKES) | find one weakness and spend it before the rival can react | her own body (IMPERIAL GENERAL, or TRAITOR'S BLADE bought on the skins screen), 104 hp, 16 armor, a step faster | the EAGLE SPATHA: a quicker, shorter cut (26 px, 0.95 rad, `cycle` 26/60 s), drawn as her own blade |
+| 3 | **IGNIA** — THE HEARTHKEEPER, the burn-and-zone mage (passive SPREADING FLAME) | burn a fight down: one rival's fire spreads through the crowd, the snow and the creek put it out | her own body (HEARTHKEEPER, or WANDERER bought on the skins screen), 84 hp, 10 armor | the CROOK AND LANTERN: an ember shot (260 px/s for 0.85 s, `cycle` 60/60 s), the staff carried upright |
+| 4 | **AURA** — THE NORTHERN LIGHT, the artillery mage (passive STARLIGHT) | hit from further than anyone, light up the night; caught up close is the danger | her own body (NORTHERN LIGHT), 78 hp, 9 armor, a step slower than anyone | the STAR SHARD: a star bolt, 270 px/s for 0.95 s, `cycle` 66/60 s, drawn as her own shot (`look`, `HERO_SHOTS`) |
+| 5 | **SALVIA** — THE MENDER, the healer (passive WARM BROTH) | keep your side on its feet: heals, speed, the slows taken off | her own body (MENDER, or FIELD TENT bought on the skins screen), 80 hp, 10 armor | the SNOWDROP STAFF: a sprig, 250 px/s for 0.85 s, `cycle` 62/60 s, drawn as her own shot (`look`, `HERO_SHOTS`) |
+| 6 | **LUCERNA** — THE LANTERN, the catch-and-save support (passive LAMPLIGHT) | pull a rival in, bring an ally home, light what hides near her | her own body (LAMPLIGHTER, or DUSK ROAD bought on the skins screen), 88 hp, 12 armor | the LANTERN: a spark, 260 px/s for 0.8 s, `cycle` 62/60 s, drawn as her own shot (`look`, `HERO_SHOTS`) |
+| 7 | **HIEMS** — THE LONG WINTER, the control mage (passive DEEP CHILL) | freeze a fight slowly: every hit chills, the third freezes; hold a choke with ice and a blizzard | her own body (WEATHER SCHOLAR, or FIRST FROST bought on the skins screen), 82 hp, 10 armor, a step slower | the SNOWFLAKE STAFF: a frost bolt, 270 px/s for 0.85 s, `cycle` 62/60 s, drawn as her own shot; every hit of it chills |
+| 8 | **RUPES** — THE AVALANCHE, the engage tank (passive SNOWPACK) | roll in from far off and flatten a fight; very hard to kill while packed with snow | his own body (QUARRYMAN, or ICE CELLAR bought on the skins screen), 134 hp, 24 armor, two steps slower | the ICE MAUL: a 27 px cut a little slower (`cycle` 34/60 s) with a harder shove, drawn as his own blade |
+| 9 | **VARRO** — THE WOLF-KEPT, the jungler (passive THE PACK) | pick one rival and run them down, with wolves at his side | his own body (WOLF-KEPT, or WHITE PACK bought on the skins screen), 112 hp, 18 armor, a step faster | the HUNTING SPEAR: a thrust a touch longer and narrower than the greatswords' cut (30 px, 0.8 rad, `cycle` 28/60 s), drawn as his own blade |
+| 10 | **BUCINA** — THE HORN, the tempo support (passive HEARD) | speed and nerve for her side: a shove, a rally, an echo that stuns, the pines' snow | her own body (HORN-BLOWER, or COLUMN CALL bought on the skins screen), 92 hp, 14 armor | the HORN: a note, 255 px/s for 0.8 s, `cycle` 62/60 s, drawn as her own shot (`look`, `HERO_SHOTS`) |
+| 11 | **NIX** — THE SNOWBLIND, the night scout (passive NIGHT WATCH) | strike one rival from her snow cloud, faster at night; seen in the open she is easy to catch | her own body (SNOWBLIND, or MOONLESS bought on the skins screen), 98 hp, 14 armor, a step faster | the ICE DIRK: the quickest, shortest cut (22 px, 0.9 rad, `cycle` 24/60 s), drawn as her own blade |
+| 12 | **FABER** — THE TINKER, the zone mage (passive SPARE PARTS) | hold a spot with machines he winds: small guns, a clockspring trap, the old engine; strong defending, slow to chase | his own body (CLOCKMAKER, or WORKS FOREMAN bought on the skins screen), 80 hp, 10 armor, slower than most | the CLOCK STAFF: a brass cog, 270 px/s for 0.85 s, `cycle` 62/60 s, drawn as his own shot. His machines are bodies in `robots`, so they cross the wire with every other bot |
+| 13 | **VELOX** — THE SKATER, the kiting marksman (passive KEEP MOVING) | never stand still: throw while you skate, lay your own ice and fly along it | her own body (CANAL RUNNER, or NIGHT POST bought on the skins screen), 82 hp, 10 armor, a step faster | the STAFF SLING: a sling stone, 300 px/s for 0.6 s, `cycle` 50/60 s, drawn as her own shot (`look`, `HERO_SHOTS`) |
+| 14 | **FALCO** — THE KESTREL, the diving assassin (passive THE HAWK) | his hawk marks a lone rival, his knives bite harder on it, and he drops on it from the sky; without a mark he is weak | his own body (FALCONER, or LAST HAWK bought on the skins screen), 96 hp, 13 armor, a step faster | the THROWING KNIFE: a short throw (330 px/s for 0.42 s, `cycle` 40/60 s), drawn as his own knife (`look`, `HERO_SHOTS`) |
+| 15 | **MARIS** — THE ICE DIVER, the catch tank (passive COLD WATER) | harpoon one rival and reel in, burst up under a fight from the snow, break the ice under them | her own body (BARGE DIVER, or ORCA SKIN bought on the skins screen) and her HARPOON |
+| 16 | **LIGNUM** — THE FELLER, the treeline skirmisher (passive TREELINE) | wait in the woods, step out, chop hard, step back; fell a pine across a fight | his own body (FELLER, or LAST FOREST bought on the skins screen) and his FELLING AXE |
+| 17 | **SAGITTA** — THE BOLT-THROWER, the siege marksman (passive HEAVY BOLTS) | set up, then strike from far away: pin rivals to trees, shoot from behind your pavise | her own body (SIEGEWRIGHT, or TOWER BUILDER bought on the skins screen), 78 hp, 9 armor, a step slower | the HEAVY ARBALEST: a bolt, 430 px/s for 0.82 s, `cycle` 80/60 s, `kb` 1.3, drawn as her own shot (`look: 'bolt'`, `HERO_SHOTS`) |
 
 The **weapon is part of the hero**: each `CLASSES` entry carries its own `attack` row, so the
-hunter and the swordsmen do not attack the same way and every bot arrives armed, with nothing to
+swordsmen and the throwers do not attack the same way and every bot arrives armed, with nothing to
 hand over or lose. See [the basic attack](gameplay/the-basic-attack.md). The four ABILITIES beside the weapon — what each
 one does, its cooldown, cast, and the states it leaves on a body — are
 [Class abilities](gameplay/class-abilities-keys-1-4.md) in gameplay.md.
 
 The local player's class is its **hero, picked each match** in the lobby's draft
 ([lobby](rendering.md#lobby), js/ui/draft.js: a ban phase, then everyone's blind pick); the one
-it flies out with is kept as the profile's hero (js/app/profile.js), the one the next pick starts on. Bots hash theirs (hero, and with it its look) from the seed in `initPlayers()`, and in the draft
+it flies out with is kept as the profile's hero (js/app/profile.js), the one the next pick starts on. Bots hash their hero from the seed in `initPlayers()`, and in the draft
 take what it gives them (`draftBotPick`). Lobby shows that roster as two team panels on the screen's edges — your side left, the
 rivals right, their picks face-down until the draft's countdown turns them. The party's leader sets
 the rivals' level on the party screen's head (`botsSet`, js/ui/rooms.js): `settings.aiLevel` (`AI_LEVELS`, js/ai/ai-skill.js: EASY / NORMAL / HARD /
 IMPOSSIBLE, remembered with the profile), the profile the rivals play by
-(`aiProfile`, [Bots](#bots)). Sprites live in `SPRITES.champ[c][team]` (the sprite key keeps its legacy name;
-the grid files under js/sprites/ are never rewritten) — same
-16×16 body plan and frame set as the player, so `drawPlayer`/`drawGhost` just swap the set via
-`classSet(p)`, which asks `SPRITES.champLook(cls, look, skin(team), heroSkinOf(p))` for the class body in the
-character's tone and fringe ([sprites.md](sprites.md#looks-a-character-on-the-class-body)), or a hero's
-own look ([hero looks](sprites.md#hero-looks)). A person's looks ride the hello (`skins`,
+(`aiProfile`, [Bots](#bots)). Every hero is drawn only in its own looks: `drawPlayer`/`drawGhost`
+take the set from `classSet(p)`, which asks `SPRITES.champLook(cls, skin(team), heroSkinOf(p))` for
+the hero's pose set in that team's paint and the look the player wears
+([hero looks](sprites.md#hero-looks)). A person's looks ride the hello (`skins`,
 `profileHeroSkins`, kept by the host through `cleanHeroSkins`) onto `p.skins`, which the snapshot
 carries, so every screen draws the look they bought.
 
@@ -351,8 +344,8 @@ It no longer levels anyone. A sale at the counter pays through `tradeGold`, whic
 neither.
 
 Growth is the hero's own: each level past 1 adds its `CLASSES[c].grow` to the
-[hero stats](gameplay/hero-stats.md) (HUNTER +7 hp, +1.7 damage, +1.3% attack speed, +2 armor;
-WARRIOR +9, +1.6, +1%, +2.6 — sized when the cap went to 18 so 17 levels grow about what 11 did), the health healed on the spot in `levelUp`. A level-up pushes a 2× gold `LEVEL n` floater over the slot (skipped while `inAir`) and
+[hero stats](gameplay/hero-stats.md) (ARMATOS +10 hp, +1.4 damage, +0.8% attack speed, +2.9 armor;
+each row sized when the cap went to 18 so 17 levels grow about what 11 did), the health healed on the spot in `levelUp`. A level-up pushes a 2× gold `LEVEL n` floater over the slot (skipped while `inAir`) and
 raises its cue through `sfxOwn(p, 'levelUp', 'pickup')` — the level's own ring on the screen that
 is that player, a pickup to bystanders in earshot. What the level BOUGHT flies into the notice
 lane as the [stat sheet](rendering/the-hud-corners/the-stat-ledger-your-sheet-as-a-notice.md), the rows it grew
@@ -410,8 +403,8 @@ cap on its right end (`drawHealthBar`), so the sides part in greyscale. The name
 
 A team colour drives both **characters** and **buildings**:
 
-- `teamPlayers[team]` (js/sprites/characters.js, private) — the player grids baked with the
-  coat/hat/trim swapped; a hero's body comes from `classSet(p)`.
+- every hero's pose set (`SPRITES.champLook`, js/sprites/characters.js): its look baked with the
+  coat/hat/trim swapped; a player's body comes from `classSet(p)`.
 - `SPRITES.teamBuild[team][type][tier]` — the tier material (wood → stone → gold) with the iron
   fittings and glow repainted in team colour, so tier still reads as tier. `structSprite(o)` is the
   lookup; it falls back to team 0 for an object with no `team`.
@@ -438,17 +431,15 @@ collides with, because a walking target crosses its own width twice in the quart
 full-draw arrow takes to fly 80 px, and the same disc on every side keeps it a fact of arrows
 rather than a hidden handicap; a hit calls `damagePlayer(target, dmg, dx, dy, src, cause)` for knockback, flash,
 floater and possibly `die(p, src, cause)`. Friendly fire is off, and an arrow can never hit its
-shooter. `damagePlayer` takes a seventh argument, `crit`, which the arrow loop passes from
-`a.ambush`: it runs the damage floater hotter and at double scale and doubles the local shake. Any
-hit also calls `risePlayer` before anything else, so nobody stays buried through one. A hunter's
-PIERCING SHOT (`a.pierce`, every arm of it) is the one shot that takes a body and keeps flying — everyone on the
+shooter. `damagePlayer` takes a seventh argument, `crit` (a blow's `crit` through `hurtUnit`, e.g.
+FALCO's STOOP or NIX's WHITEOUT): it runs the damage floater hotter and at double scale and doubles
+the local shake. SAGITTA's piercing bolt (`a.pierce`) is the one shot that takes a body and keeps flying — everyone on the
 line is hit once each (`a.pierceHit`), and only a raised shield or the world stops it. A player
 riding a zipline is a target like any other, and cannot shoot back ([the ride](gameplay/momentum-movement-players-only.md#the-zipline)).
 
 **Whether a rival can be seen at all is a separate question from whether they can be shot.**
 `enemyOf` answers the second; `seenAt(p, range)` answers the first, and every watcher in the
-game — the bot brain (naming its side, so the [fog of war](gameplay/fog-of-war.md) holds), the road towers — resolves through it (a camp monster has no sight: a hit is its only trigger). See
-[Prone](gameplay/prone-under-the-snow.md).
+game — the bot brain (naming its side, so the [fog of war](gameplay/fog-of-war.md) holds), the road towers — resolves through it (a camp monster has no sight: a hit is its only trigger).
 
 **A rival's soldiers are targets too** — they are tested straight after the players, on the same
 team rule, through `hurtRobot` (see [Robots](gameplay/robots.md)). The last hit on one pays its
@@ -461,7 +452,7 @@ its `EAGLE_HP` (2000) pool — a flat chip, whatever the arrow would do to a bod
 standing off it take minutes and the side has time to answer — the
 tiles are the one hit test walkers, arrows and E all share, so there is no corner an arrow can
 strike without damage — a rival **E swing** chips `EAGLE_WORK_DMG` (20: a hundred swings, about a
-minute for a lone warrior under the gust) through `hitObject`'s eagle
+minute for a lone hero under the gust) through `hitObject`'s eagle
 branch (the roost tiles are `eagle` objects, a rival-only work target — `workTarget` reads the
 `team` they carry), and at zero the bird is **driven off**: `eagleFlee` lifts it away over the
 treeline while every camera pans to watch (`state.eagleCine`, the driven-off ceremony), and
@@ -613,12 +604,12 @@ get allies. `aiProfile(p)` is the one place that choice is made
 (`p.ai.prof` overrides it for a staged bot — `DBG`, the calibration harness). Every field is a
 worse or better use of the same input struct (numbers EASY / NORMAL / HARD / IMPOSSIBLE; the
 banner has the whole table): `sight` (120 / 147 / 200 / 267 px — sized to the share of a 640×360 screen a hand sees — through `seenAt` so
-cover still works), `react` (1.1 / 0.7 / 0.3 / 0 s a rival stays noticed before the bot turns on it),
+stealth and the fog still hold), `react` (1.1 / 0.7 / 0.3 / 0 s a rival stays noticed before the bot turns on it),
 the **skill layer's** hand fields (below: `cone`, `rear`, `perceive`, `hand`, `aim`, `fresh`,
 `drawVar`, `slip`), `lead` (0 / 0 / 0.5 / 1 of the
 target's read motion), `draw` (0.6 / 0.7 / 0.9 / 0.95 of `bowCharge` it looses at — a short draw is a
 weak shot), `dodge` (×0.25 / 0.5 / 1 / 2), `abil` (0.2 / 0.35 / 0.8 / 1 chance per `AI_ABIL_T` that a
-ready ability is spent), `flee` (0.55 / 0.5 / 0.35 / 0 hp it hides at), `work` (0.4 / 0.5 / 0.8 / 1 duty
+ready ability is spent), `work` (0.4 / 0.5 / 0.8 / 1 duty
 cycle of the E key while harvesting — its gold pace), the **choice** knobs the team brain reads
 (`judge`, `focus`, `team`, `think`, `memory` — what each means is in the banner), `strafe` (0.3 / 0.45 / 0.8 / 1 of each 2 s it
 keeps moving in a fight; the rest it PLANTS — stands, draws and shoots, the only time a slow side
@@ -626,10 +617,10 @@ fires, so stopping is the tell and the moment a new player hits it — and under
 much less, walking in straighter), `pick`
 (`'near'`, or IMPOSSIBLE's `'weak'` — the rival with the least hp), `push` and `guard` (the
 objective, below), `support` (allies only), and `relentless` — **IMPOSSIBLE's rivals alone**
-(an ally borrows the top notch's hands, never this: `AI_ALLIES` strips it and keeps a flee point,
-a guard and its own clock). A relentless side **never gives ground**: a bow crowded under 50 px
+(an ally borrows the top notch's hands, never this: `AI_ALLIES` strips it and keeps a guard and
+its own clock). A relentless side **never gives ground**: a bow crowded under 50 px
 circles in instead of backing off, a blocked line is routed in through the open at any range, a
-camp on it is fought where it stands, it never burrows (`flee` 0) and keeps no guard; after its
+camp on it is fought where it stands, and it keeps no guard; after its
 `push.t` **everyone** goes (`push.n` 99) — and goes as a **pack**: off the rival's lane the
 pushers rally at their own zipline's end, the last fast ground before the fight, until `AI_PACK`
 (5) of the side's living bots are within `AI_PACK_R` (200 px) of it, then each is committed
@@ -677,7 +668,7 @@ Three small rules, and the teamwork is what they add up to:
   WILD), for life rather than for a match (`aiMood`): a body with a roster name of its own is the
   mood its name hashes to (`aiMoodOf`), and a seat bot is the mood of its place on its side, the
   five dealt in one fixed order so each side fields all five. No seed and no rng. A mood moves choices, never
-  hands: its `flee` and `judge` shift the profile's, `help` scales how far it answers a call,
+  hands: its `judge` shifts the profile's, `help` scales how far it answers a call,
   `greed` how far it looks for loot and work, `roam` how wide it wanders, `fit` which jobs suit it.
 - **Role.** Every `AI_PLAN_T` (2 s) the side re-plans (`aiPlan`): the profile still says how
   many push and guard (`aiPushers`, `prof.guard`), and the plan may change it (the window, the
@@ -767,21 +758,11 @@ other fields; `p.ai` never rides the wire.
 The ladder:
 
 1. **drink** — a potion under 60% hp (`aiDrink`), read beside the foe pick; it never costs the step.
-2. **burrow** — a hunter bot only, and decided up front, because two rungs below read the answer.
-   A bot that has come off
-   worse (under the profile's `flee`) with no rival and no camp monster on it goes [prone](gameplay/prone-under-the-snow.md)
-   and waits the fight out for `ai.hideT` (7–12 s); it only ever tries where a player could — on
-   snow, on its own feet, and with SNOW COVER's 60 s cooldown in hand. It gets
-   straight back up for a monster hunting it, for a rival inside 48 px, or when the spell runs out, and rising
-   starts an 18 s lockout so no bot spends the match flopping up and down. `hideT` doubles as the
-   give-up: a spot that will not take burns it four times as fast and ends in the lockout.
-   Both directions go through `inp.ability = 3`, exactly the cast key a human presses (rising is
-   free — tryAbility's snow toggle).
 2b. **back off** — a human's DANGER ping near it (`ai.backOff`, `pingSteer`): for `PING_BACK_T`
    it walks home, or straight out of the danger, fighting nothing, until it is
    `PING_DANGER_R` x 1.6 clear (`aiBackOffRung`).
 3. **fight** — a rival within the profile's `sight` (`aiNearestEnemy`, filtered through `seenAt()`
-   so a buried one is simply not there — plus anyone within `AI_ANCHOR_R` of an **anchor** the bot
+   — plus anyone within `AI_ANCHOR_R` of an **anchor** the bot
    is minding, noticed from up to `AI_ANCHOR_D`: its own bird under attack, the rival bird it is
    pushing, the human (an ally's `ward`) — so a defender finds the archer standing off its roost and an
    ally joins the fight you are in; and a rival **wave's soldiers** in the same sight, with no cover
@@ -798,13 +779,9 @@ The ladder:
    fight nobody fires a shot in). **Class abilities are spent here, off
    cooldown at the foe** — on the profile's ability roll (`ai.abilOk`), through the same edge
    field a human's key
-   sets (`inp.ability`), each gated by the range it is good at (a warrior rushes the mid-gap,
-   stomps at arm's length; a hunter locks the piercing draw on an open lane and nets the gap —
-   the grapple alone is skipped, a held key and a terrain read the ladder does not try to fake).
-   **Already prone, it holds perfectly still
-   and shoots from where it lies** — which earns it the ambush multiplier off the same
-   `ambushReady()` check a human gets, since `concealOf` discounts a moving mound and
-   `ambushReady` refuses a moving shot outright.
+   sets (`inp.ability`): `abBotKey` (js/sim/armatos.js) takes the first unlocked, ready key whose
+   ability row's `bot` says now (every hero carries one on each of its four rows), and a row's
+   `botAim` says where when it is not at the foe (AURA's step away, SALVIA's heals).
 4. **a camp on it** — the nearest camp monster already hunting this bot, inside `AI_SIGHT`: shoot it and give
    ground under 64 px, dodge under 30. A camp is neutral until hit, so a bot wakes one itself only
    through the hunt rung, which takes a den's wolves like any animal but never a
@@ -814,8 +791,6 @@ The ladder:
    blade to arm's length, a bow to 90 px with the line open - since that monster is not coming
    to it. The camp goes for whoever is nearest, so the helpers keep on whichever of
    the side it is chasing.
-5. **lie low** — prone with nothing in sight: hold still and let the snow finish. Everything below
-   this rung walks somewhere, and a bot crawling to a berry bush at 20 px/s has stopped playing.
 5'. **heal** — hurt, out of its roost ring and no rival within `AI_HEAL_SAFE`: roll over a showing
    creek fish from the dry bank, else walk into a ripe bush near by (`aiHealRung`, [Heals](gameplay/heals.md#bots)).
 5a. **the ping** — a human teammate's [ping](gameplay/pings.md) this bot took up (`ai.ping`,
@@ -870,10 +845,10 @@ The ladder:
    way in, a rival
    [road tower](gameplay/robots.md#road-towers) comes down first while the bot's own wave stands under it to take the
    bolts (`aiLaneFort`, `towerTanked`; a bot never walks in under a tower alone) (E, `STRUCT_HIT_DMG` a swing, 10 of it once
-   `STRUCT_DR` has taken its cut), then a hunter takes its
+   `STRUCT_DR` has taken its cut), then a ranged hero takes its
    station `AI_HOLD` (96 px) out **on the road's axis**, where the road keeps the line to
    the roost open and outside the gust, and looses at the
-   profile's draw; a warrior walks up to the nearest roost tile (`aiEagleTile`) and swings E on
+   profile's draw; a blade (`aiMelee`) walks up to the nearest roost tile (`aiEagleTile`) and swings E on
    it, gust and all, exactly as a hand does. Defenders in sight are rung 3's business — until
    the pusher is at the bird: inside `AI_ROOST_R` of it (the `siege` read, above rung 3) it keeps
    hitting the bird and leaves the fight to its friends, however many defenders there are,
@@ -912,8 +887,8 @@ The ladder:
 about the objective, both sides of it, all match — read once per sim step (cached on
 `state.tick`) and shared by all ten players: for each roosting bird its position, its nerve as a
 fraction of `EAGLE_HP`, how long since it was last hit, and who is **at** it inside `AI_ROOST_R`
-(240 px) — `defenders` (its own side) and `attackers` (rivals, each resolved through `seenAt`, so
-a buried archer is buried for the whole side — plus a rival **wave** at the roost counted at half
+(240 px) — `defenders` (its own side) and `attackers` (rivals, each resolved through `seenAt` —
+plus a rival **wave** at the roost counted at half
 strength, so a five-column calls three defenders home rather than the whole side) — with `human`
 set when the local player is among the attackers. `threat` is the one word the ladder asks — hit inside `AI_DEFEND_T` (8 s) or an
 attacker seen — and `aiDefendersWanted` is how many it calls home (one more than the attackers,
@@ -974,7 +949,7 @@ js/ai/ai-callouts.js, from `updatePlay`): a short word on a plate over its name 
 spot it is about, both on the minimap disc too (js/draw/callouts.js). A call never decides
 anything; it reports something already true, most urgent first (`callLook`): its own bird just
 hit (BIRD!), itself losing a fight (HELP!), a rival or a bear nearly down in front of it
-(HUNTER LOW!, BEAR LOW!), the rival bird wavering with it there (PUSH!), and rivals walking onto
+(NIX LOW!, BEAR LOW!), the rival bird wavering with it there (PUSH!), and rivals walking onto
 its roost (2 HERE!). It is said only with a friend near enough to act (`callFriend`), at most one
 call per bot every `CALL_BOT_CD`, one per side every `CALL_SIDE_GAP`, never the same call near
 the same spot inside `CALL_SAME_T`, and never more than `CALL_SIDE_MAX` up for a side. A look
@@ -1013,8 +988,8 @@ what the rest of the code needs to know is this:
   empty seat, then the first bot slot, of the side with fewer people - a bot's slot first on a
   side already at the room's size (its fullest side's seats, TEAMS) - (a match under way offers
   bots' bodies only; none left: FULL; past `LATE_JOIN_T`, 300 s into a
-  match: LATE), flips it to `'remote'` and dresses it with the joiner's name, look and class. The
-  `welcome` carries the roster (`netRoster`: control, team, name, cls, look per slot), which the
+  match: LATE), flips it to `'remote'` and dresses it with the joiner's name, class, looks (`skins`) and loadout. The
+  `welcome` carries the roster (`netRoster`: control, team, name, cls per slot), which the
   client hands to `initPlayers(roster, slot)` with its own seat as the `'human'`. A peer that
   drops gives its body back to a bot, and its seat waits `RECONNECT_GRACE` (60 s) for it.
 - **A side is a field, not a slot.** Anything that wants "which side" reads `p.team`, never the

@@ -1,6 +1,6 @@
 'use strict';
 // What a player does: click/E/space resolved - the swing tools and what they
-// harvest, the empty-press tell, the roll as a hit, prone, and one
+// harvest, the empty-press tell, the roll as a hit, and one
 // blow against anything built, each with its own tuning above it. What the
 // LEFT button fires is the hero's basic attack: js/sim/attack.js.
 // ------------------------------------------------------------ actions
@@ -69,23 +69,6 @@ const TACKLE_SELF = 0.55;  // share of a tackle's damage the roller eats
 const TACKLE_MIN = 120;    // px/s driven into the blocked axis before a wall is a tackle, not a graze
 const ROLL_KB = 90;        // px/s shove out of a roll hit
 
-// Prone: lie down in the snow, pull it over yourself, and be almost - not
-// quite - invisible. The hunter's alone now: SNOW COVER (key 4,
-// js/sim/abilities.js) is the one door in and pays the cooldown, while every way
-// back up is free. Once under, the state is paid for entirely in speed: the
-// burrow only builds while you are lying perfectly still, and the crawl that
-// carries you anywhere is under a third of a walk. `p.hide` (0..1) is the
-// whole state, and every watcher in the game reads it through seenAt().
-const PRONE_SPEED = 20;   // px/s belly crawl (a walk is PLAYER_SPEED, 72)
-const PRONE_BURY = 1.5;   // s of lying still to go from flat on the snow to under it
-const PRONE_RISE = 0.34;  // s of getting back up: 45% walk speed, and no cover left
-const PRONE_ENTER = 14;   // px/s: above this you are still moving, and cannot drop
-const PRONE_CUT = 0.86;   // fraction full cover takes off every sight range
-const PRONE_MOVE = 0.5;   // ...of which a crawling mound keeps. Hold still to vanish
-const PRONE_SNIFF = 22;   // px: nothing hides at arm's length, whatever it is under
-const PRONE_MAP = 0.55;   // cover past this drops a rival off both maps (a crawler never reaches it)
-const AMBUSH_MUL = 2.5;   // damage on the shot loosed out of full cover
-
 // left click is the hero's basic attack: the press only records the intent
 function clickAction(p) {
   SFX.unlock();
@@ -146,7 +129,6 @@ function hoverZip() {
 function tryWork(p) {
   if (p.swingCd > 0 || p.fallT > 0 || p.dodgeT > 0 || p.stunT > 0 ||
     p.castT > 0 || p.rushT > 0 || p.shieldT > 0 || p.zip >= 0) return; // both hands are on the ability or on the zipline's handle
-  if (p.prone) { risePlayer(p); return; } // no swinging an axe on your belly: E stands you up
   const t = workTarget(p);
   if (!t || !t.near) return;
   if (p.charging) { p.charging = false; p.chargeT = 0; } // work drops the draw
@@ -208,12 +190,12 @@ function autoTarget(p) {
 }
 // An auto swing never takes anything away from the player: it does not drop
 // a draw or a held button (updatePlayer lets the draw begin under it,
-// p.autoSwing), does not stand a crawler up, and does not touch the aim.
+// p.autoSwing), and does not touch the aim.
 // The same gates as tryWork otherwise: a swing on cooldown, or a body busy
 // with a fall, a roll, a stun or an ability, waits.
 function autoWork(p) {
   if (p.swingCd > 0 || p.fallT > 0 || p.dodgeT > 0 || p.stunT > 0 ||
-    p.castT > 0 || p.rushT > 0 || p.shieldT > 0 || p.prone || inAir(p) || p.zip >= 0) return;
+    p.castT > 0 || p.rushT > 0 || p.shieldT > 0 || inAir(p) || p.zip >= 0) return;
   const t = autoTarget(p);
   if (!t) return;
   p.autoSwing = true;
@@ -226,10 +208,8 @@ function tryDodge(p) {
   if (p.mount) { rideLeap(p); return; } // on deer-back the key is the leap (js/sim/wildlife.js)
   if (p.dodgeT > 0 || p.dodgeCharges <= 0 || p.fallT > 0 || p.dead || p.stunT > 0 ||
     p.rootT > 0 || p.rushT > 0) return; // a trap pins the roll too, and a charge is already a dash
-  risePlayer(p); // a roll is the fast way out of the snow, and it costs a charge
-  breakRecall(p); // ...and out of the recall: the roll is the one way YOU end your own channel
-  if (p.grapT > 0) grapEnd(p); // rolling off the rope: the reel's speed feeds the dash below
-  if (p.zip >= 0) zipEnd(p, false); // ...and off the zipline's handle the same way
+  breakRecall(p); // the roll is the one way YOU end your own recall channel
+  if (p.zip >= 0) zipEnd(p, false); // ...and the way off the zipline's handle
   let dx = p.input.mx, dy = p.input.my;
   if (!dx && !dy) {
     dx = p.dir === 'left' ? -1 : p.dir === 'right' ? 1 : 0;
@@ -358,45 +338,6 @@ function rollSweep(p) {
     if (q.invuln > 0) continue; // a rival mid-roll of their own is untouchable: rolls cancel rolls
     hurtUnit(q, dmg, nx, ny, p, { ab: 'roll' });
     if (!q.dead) stunUnit(q, stun, p);
-  }
-}
-
-// ---- prone ---------------------------------------------------------------
-// Go to ground, or get back up. The way in is the hunter's SNOW COVER cast
-// (abSnowCover, js/sim/abilities.js); dropping needs both feet still and snow
-// underfoot - you cannot dive at speed, and a river has nothing to dig into.
-// Everything else about the state is one number, `p.hide`, which updatePlayer
-// ramps and every watcher reads back through seenAt().
-function tryProne(p) {
-  if (p.dead || p.fallT > 0 || inAir(p) || p.zip >= 0 || p.mount) return;
-  if (p.prone) { risePlayer(p); return; }
-  const tx = Math.floor(p.x / TILE), ty = Math.floor((p.y + 4) / TILE);
-  if (p.dodgeT > 0 || p.sliding || Math.hypot(p.vx, p.vy) > PRONE_ENTER ||
-    !inWorld(tx, ty) || ground[idx(tx, ty)] !== 0) {
-    sfxFor(p, 'deny');
-    return;
-  }
-  p.prone = true;
-  p.hide = 0; p.riseT = 0; p.crawlT = 0; p.puffT = rand(0.7, 1.5);
-  p.vx = p.vy = 0;
-  p.sliding = false; p.slideT = 0;
-  burst(p.x, p.y + 4, '#eef4fb', 7, 34, 0.4, true);
-  sfxAt('bury', p.x, p.y);
-}
-
-// Back on your feet, whatever put you there - the ambush shot, a hit, an E
-// swing, a roll, or the snow cover key again. The cover goes with the body and is not
-// allowed to linger: a player that is visibly standing must be visibly findable,
-// so `hide` is zeroed here and the snow it stood for is spent as particles.
-function risePlayer(p) {
-  if (!p.prone) return;
-  const h = p.hide;
-  p.prone = false;
-  p.hide = 0;
-  p.riseT = PRONE_RISE;
-  if (h > 0.2) {
-    burst(p.x, p.y + 2, '#eef4fb', 4 + Math.round(h * 7), 44, 0.45, true);
-    sfxAt('rise', p.x, p.y);
   }
 }
 
@@ -633,11 +574,11 @@ function unitAlive(e) {
 // therefore fair game to everyone, which is exactly how the world already
 // treats a deer - all but a hero's own beast (HERO_SUMMON), which wears its side. For the sides that do have one this mirrors enemyOf's rule.
 function unitTeam(e) { return e.team === undefined ? -1 : e.team; }
-// A thing left lying in the world - a trap, a net, a crater, a shot in flight -
+// A thing left lying in the world - a planted standard, a fire, a shot in flight -
 // carries `owner` and `team` rather than being a body itself. This is the
 // `src` to ask the two lists below about on its behalf: the owner while they
-// still stand on that side, otherwise the team alone, since a trap outlives
-// the hunter who set it and still has to know whose it was.
+// still stand on that side, otherwise the team alone, since a thing left
+// behind outlives the hero who left it and still has to know whose it was.
 function sideOf(w) {
   const o = players[w.owner];
   return o && o.team === w.team ? o : { team: w.team, id: -1 };
@@ -650,8 +591,8 @@ function unitFoe(src, e) {
 }
 // Every living thing inside a circle that `src` is allowed to touch, in ONE
 // list: players, animals and bots together. An area effect walks this
-// rather than a loop per kind - which is the whole reason a stomp can no
-// longer quietly forget the wildlife.
+// rather than a loop per kind, so no area blow can quietly forget the
+// wildlife.
 function unitsNear(src, x, y, r) {
   const out = [];
   for (const q of players) if (unitFoe(src, q) && Math.hypot(q.x - x, q.y - y) <= r) out.push(q);
@@ -660,8 +601,8 @@ function unitsNear(src, x, y, r) {
   return out;
 }
 // The same list minus anyone whose i-frames are up: the one a BLOW sweeps,
-// since a rival mid-roll is untouchable. A lasting ground CONDITION (the
-// crater's deep snow, the falcon's eye) wants unitsNear - neither is a hit,
+// since a rival mid-roll is untouchable. A lasting ground CONDITION (a
+// standard's ring, the falcon's eye) wants unitsNear - neither is a hit,
 // and a roll should not shrug one off. Taking a hit grants nothing here: only
 // the roll, a respawn and the landing ever set invuln (damagePlayer).
 function unitsHit(src, x, y, r) {
@@ -709,8 +650,8 @@ function structsNear(src, x, y, r) {
   return out;
 }
 // The WEDGE: a blow swung from (x, y) along bearing `a`, reaching `r` px and
-// `half` rad to either side. The longsword's cut, the shield's slam and the
-// execute all sweep exactly this shape and draw exactly this shape (the
+// `half` rad to either side. A blade's cut and every swung ability
+// sweep exactly this shape and draw exactly this shape (the
 // `wedge` fx, js/sim/abilities.js), so what the snow shows is what the blade
 // reaches. A body counts by its centre plus its own radius, so a big deer
 // standing just off the rim is still under the edge.
@@ -737,7 +678,7 @@ function structsInCone(src, x, y, a, r, half) {
 // the world. `o` carries the rest: `type` (a DMG_TYPES key), `kb` px/s of shove
 // for an animal or a bot (a player's shove is damagePlayer's own, so the callers
 // that want a particular one add it themselves), `cause` for the feed line,
-// `ambush`, `crit`, `burn`, `slow`, `basic` (a hero's basic attack, for passiveDeal and the
+// `crit`, `burn`, `slow`, `basic` (a hero's basic attack, for passiveDeal and the
 // item passives) and `ab`, the id of the ability that landed it (its CLASS_AB
 // row's, or a move with no key: 'roll'; a blow inside a key's use()
 // gets it stamped) - what the death recap
@@ -756,10 +697,10 @@ function hurtUnit(e, dmg, nx, ny, src, o) {
   if (!unitAlive(e)) return;
   o = o || {};
   // a blow inside a key's use() is that key's (heroAbNow, js/sim/heroes.js); one
-  // that lands later (a charge, a net in flight, a shot) names its own `ab`
+  // that lands later (a dash, a thing left in the world, a shot) names its own `ab`
   if (heroAbNow && o.ab === undefined && src instanceof Player) o.ab = heroAbNow;
   // a bear buff (campBuff, wildlife.js): every blow a player wearing it lands
-  // is worth more, whatever landed it - a shot, a roll, a stomp alike
+  // is worth more, whatever landed it - a shot, a roll, a key alike
   if (src instanceof Player) { const m = statBuffMul(src, 'dmg'); if (m !== 1) dmg = Math.round(dmg * m); } // ...and the black bears the side has slain
   dmg = passiveDeal(src, e, dmg, o); // ...and a hero's passive may make more of it (HERO_PASSIVE deal, js/sim/heroes.js)
   dmg = itemsDeal(src, e, dmg, o); // ...and so may an item's (CULL, SURGE: js/sim/items.js)
@@ -770,7 +711,7 @@ function hurtUnit(e, dmg, nx, ny, src, o) {
     damagePlayer(e, dmg, nx, ny, src, o.cause || null, o.crit, km, o);
   } else if (isAnimalUnit(e)) {
     if (src instanceof Player) src.dmgBeast += Math.min(dmg, Math.max(0, e.hp)); // the post-game record (js/ui/lobby.js)
-    hurtAnimal(e, dmg, nx, ny, (o.kb === undefined ? 30 : o.kb) * km, src ? src.id : undefined, o.ambush);
+    hurtAnimal(e, dmg, nx, ny, (o.kb === undefined ? 30 : o.kb) * km, src ? src.id : undefined);
   } else {
     hurtRobot(e, dmg, nx, ny, src);
     // the chassis takes its own shove inside hurtRobot; anything that names
@@ -828,8 +769,7 @@ function stunUnit(e, t, src, firm) {
     e.castT = 0; e.castAb = -1;                    // the cast is knocked out of the hands
     breakRecall(e);                                // ...and so is the recall (js/sim/recall.js)
     if (e.shieldT > 0) abShieldDown(e, false);     // ...and the shield, at its full cooldown
-    if (e.rushT > 0) { e.rushT = 0; e.rushVictim = null; e.dash = ''; } // (a hero's dash too: HERO_DASH, js/sim/heroes.js)
-    if (e.grapT > 0) grapEnd(e);                   // the rope is knocked loose too, at its cooldown
+    if (e.rushT > 0) { e.rushT = 0; e.dash = ''; } // (a hero's dash too: HERO_DASH, js/sim/heroes.js)
     if (e.mount) rideEnd(e, true);                 // ...and the deer's back (js/sim/wildlife.js)
     // ...and if it is YOUR hands the swing, the cast and the shield
     // were just knocked out of, you are told. Only the local player, only a
@@ -857,21 +797,12 @@ function rootUnit(e, t, src) {
 }
 // Slowed: a multiplier on everything that moves the body, for a window.
 // Always the WORSE of what is already on you and what has just landed, which
-// is how the net and the crater have stacked on a player from the start.
+// is how two slows stack.
 function slowUnit(e, t, mul) {
   t *= ccMul(e);
   if (t <= 0 || !unitAlive(e)) return;
   e.slowT = Math.max(e.slowT || 0, t);
   e.slowMul = Math.min(e.slowMul === undefined ? 1 : e.slowMul, mul);
-}
-// Netted: the slow, plus the drape drawn over the body that says why it is slow.
-function netUnit(e, t, mul, src) {
-  if (!unitAlive(e)) return;
-  t *= ccMul(e); // (slowUnit cuts the slow's own length again: the drape is what is cut here)
-  ccCredit(e, e.netT || 0, t, src);
-  slowUnit(e, t, mul);
-  e.netT = Math.max(e.netT || 0, t);
-  if (e.zip >= 0) zipEnd(e, true); // the drape brings a rider down
 }
 // KNOCKED UP: thrown into the air - a stun no tenacity shortens, with the body
 // lifted off the snow for it (upT/upMax: abilityPose, js/draw/abilities.js, for
@@ -958,14 +889,14 @@ function cutHeal(e, t, cut) {
   e.healCut = Math.max(e.healCut || 0, cut);
 }
 // Marked: revealed. On a player seenAt() returns its full range and both maps
-// keep drawing them; an animal or a bot has no cover to strip, so it is the
-// gold chevrons alone - the falcon still says "I have found this".
+// keep drawing them; an animal or a bot has no stealth to strip, so it is the
+// gold chevrons alone - the mark still says "I have found this".
 function markUnit(e, t) {
   if (t <= 0 || !unitAlive(e)) return;
   // being FOUND is the one status a player has to hear: the chevrons are over
   // your own head where you cannot see them, and what has changed is that
-  // your cover has stopped working - the whole reason to be lying in the snow
-  // at all. Fresh marks only, or a falcon circling re-rings it every second.
+  // your stealth has stopped working. Fresh marks only, or a mark refreshed
+  // every second re-rings it every second.
   if (!(e.markT > 0)) sfxFor(e, 'marked');
   e.markT = Math.max(e.markT || 0, t);
 }
@@ -990,7 +921,7 @@ function igniteUnit(e, t, dps, src) {
     e.burnTick = BURN_TICK;
     e.burnFxT = 0;
     burst(e.x, unitMidY(e), '#ff9440', 7, 50, 0.5);
-    sfxAt('hidden', e.x, e.y);
+    sfxAt('kindle', e.x, e.y);
   }
 }
 // The burn's own clock, run once per sim step for every kind of unit that has
@@ -1031,11 +962,10 @@ function douseUnit(e) { e.burnT = 0; e.burnDps = 0; e.burnTick = 0; e.burnBy = -
 // ---- the clock every non-player unit runs --------------------------------
 // A player ages these inside updateAbilities, which owns most of them; an animal
 // and a bot call this from their own update, so the two halves of the
-// world can never drift on how long a net holds.
+// world can never drift on how long a root holds.
 function updateUnitStatus(e, dt) {
   if (e.rootT > 0) e.rootT = Math.max(0, e.rootT - dt);
   if (e.markT > 0) e.markT = Math.max(0, e.markT - dt);
-  if (e.netT > 0) e.netT = Math.max(0, e.netT - dt);
   if (e.slowT > 0) e.slowT = Math.max(0, e.slowT - dt);
   else e.slowMul = 1;
   if (e.upT > 0) e.upT = Math.max(0, e.upT - dt);
@@ -1056,7 +986,7 @@ function unitMoveMul(e) {
 // every timed state a fresh body starts with none of, on any kind of unit
 function clearUnitStatus(e) {
   e.stunT = 0; e.stunMax = 0;
-  e.rootT = 0; e.slowT = 0; e.slowMul = 1; e.netT = 0; e.markT = 0; e.upT = 0; e.healCutT = 0; e.healCut = 0;
+  e.rootT = 0; e.slowT = 0; e.slowMul = 1; e.markT = 0; e.upT = 0; e.healCutT = 0; e.healCut = 0;
   e.weakT = 0;
   douseUnit(e);
 }

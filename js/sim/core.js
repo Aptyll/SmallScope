@@ -184,7 +184,7 @@ const state = {
     // skNav the keyboard up on the navbar, skPick the card for sale picked for
     // a second press to buy, skHover the tabs' and cards' hover eases, skDeny
     // the short purse's shake, skFlash the buy's flash over card skFlashI
-    skinT: 0, skTab: 1, skSel: 0, skNav: false, skKeyed: false, skPick: -1, skHover: {}, skDeny: 0, skFlash: 0, skFlashI: -1,
+    skinT: 0, skTab: 0, skSel: 0, skNav: false, skKeyed: false, skPick: -1, skHover: {}, skDeny: 0, skFlash: 0, skFlashI: -1,
     charT: 0, nameBuf: '', nameSel: false, nameEdit: false, nameShake: 0, khover: {},
     moved: false, keyNav: false, camT: 0, pressT: 0, // keyNav: the keys made the pick (it lights until the pointer moves)
     // a sealed plank's knock (drawMenuButton's frozen glaze cracks from
@@ -421,14 +421,6 @@ function tallyHit(u, amount) {
 const WORD_POP_T = 1.6, WORD_POP_RISE = 14; // s it floats, and how far up
 const wordPops = []; // { x, y, txt, t }
 function wordPop(x, y, txt) { wordPops.push({ x, y, txt, t: 0 }); }
-
-// an ambush arrow landing, on whatever it lands on: a gold flare over the
-// ordinary hit puff and a crack that never sounds like a normal shot
-function ambushFx(x, y) {
-  burst(x, y, '#fff4d0', 10, 90, 0.4);
-  burst(x, y, '#ffd95c', 7, 55, 0.5);
-  sfxAt('ambush', x, y);
-}
 
 // `grav` true is the usual toss (a kick up, then a 90 px/s/s fall); a NUMBER
 // is a fall that strength with no kick, for things that drift down rather

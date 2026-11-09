@@ -9,7 +9,7 @@ it at once - each screen's draws, each side's bots, and what the host sends each
 whose position is in a patch (`brushOf`) is unseen by the other side unless one of that side's
 heroes or wave soldiers stands in the same patch or within `FOG_BRUSH_RIM` (1.5 tiles) of its rim
 (`brushHide`, js/sim/fog.js, measured with `brushIn`). Seeing out of a patch is nothing special,
-and your own side always sees you. Towers never see into one. The falcon's mark still
+and your own side always sees you. Towers never see into one. A mark (`markUnit`) still
 shows a marked body anywhere.
 
 **The look** ([js/draw/depth.js](../../../js/draw/depth.js)): the patch is baked into the ground as
@@ -25,5 +25,3 @@ at the widest zoom cost ~2 ms a frame headless (SwiftShader); not yet measured o
 them until one walks up to it. A laner with no column on its lane waits in the nearest patch within
 `AI_BRUSH_R` of its hold point that is no further out from its own base than the hold point
 (`aiBrushWait`, js/ai/ai-farm.js) instead of standing in the open.
-
-The hunter's snow cover ([prone](prone-under-the-snow.md)) is separate and works anywhere.

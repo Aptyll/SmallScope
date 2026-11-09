@@ -11,7 +11,7 @@ passes never overlap on the target. Which call reaches it depends on the pass:
 - **In a world pass** (anything drawn while `ctx` is `wctx`) **call
   `drawWorldText(text, x, y, color, scale, alpha)`** (the `ink over the world` banner,
   js/draw/light.js), never the outline directly. It **queues** the glyphs, carrying the
-  `globalAlpha` standing at the call (a buried head's fade) times its own `alpha` (a floater's),
+  `globalAlpha` standing at the call times its own `alpha` (a floater's),
   and `renderLighting` stamps the queue after the night grade — draw the outline in place and
   the tint sinks a team colour into blue snow. The queue itself:
   [Light and weather](light-and-weather.md). Sites: floaters (damage numbers, gold, `LEVEL n`),

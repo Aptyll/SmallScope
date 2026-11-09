@@ -93,8 +93,8 @@ const CALLING_IDS = Object.keys(CALLINGS);
 const TRICKS_BY_POS = [['sprint', 'torch'], ['cleaver', 'sprint'], ['torch', 'bulwark'], ['bandage', 'bulwark'], ['bandage', 'bolas']];
 const TRICKS_ANY = ['sprint', 'bandage'];
 const CALLING_OF = {
-  HUNTER: 'quickhand', VELOX: 'quickhand', SAGITTA: 'quickhand',
-  WARRIOR: 'duelist', FORTIVA: 'duelist', BELLA: 'duelist',
+  VELOX: 'quickhand', SAGITTA: 'quickhand',
+  FORTIVA: 'duelist', BELLA: 'duelist',
   ARMATOS: 'stalwart', RUPES: 'stalwart', MARIS: 'stalwart',
   IGNIA: 'warden', SALVIA: 'warden', LUCERNA: 'warden', BUCINA: 'warden',
   AURA: 'ambusher', HIEMS: 'ambusher', FABER: 'ambusher', NIX: 'ambusher', FALCO: 'ambusher',
@@ -229,7 +229,7 @@ function trickSprint(p) {
   return true;
 }
 function trickShake(p) {
-  p.stunT = 0; p.stunMax = 0; p.rootT = 0; p.netT = 0; p.slowT = 0; p.slowMul = 1;
+  p.stunT = 0; p.stunMax = 0; p.rootT = 0; p.slowT = 0; p.slowMul = 1;
   p.weakT = 0;
   douseUnit(p);
   p.shakeT = SHAKE_T;

@@ -50,7 +50,7 @@ HERO_SHOTS.harpoon = drawHarpoonShot;
 // the line while she reels herself in; the water round her shins while she swims;
 // frost flickering on her while she braces. (ax, ay) is the 16 px cell's top-left.
 function drawMarisFx(p, ax, ay, now, front) {
-  if (CLASSES[p.cls].passive !== 'coldwater' || p.prone) return;
+  if (CLASSES[p.cls].passive !== 'coldwater') return;
   const ex = p.x - 8 - ax, ey = p.y - 12 - ay;
   if (!front && p.rushT > 0 && p.dash === 'reel') drawMarisLine(ax + 8, ay + 8, Math.round(p.reelX - ex), Math.round(p.reelY - 6 - ey));
   if (!front) return;

@@ -2,7 +2,7 @@
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| a bot's temperament and what it moves; the decision knobs read off the profile with their defaults | `AI_MOODS`, `aiMood`, `aiMoodOf`, `aiKnob`/`AI_KNOB_DEFAULT`, `aiJudge`, `aiFlee` | `team brain` |
+| a bot's temperament and what it moves; the decision knobs read off the profile with their defaults | `AI_MOODS`, `aiMood`, `aiMoodOf`, `aiKnob`/`AI_KNOB_DEFAULT`, `aiJudge` | `team brain` |
 | the side's plan: who pushes, guards, lanes, jungles, supports, stalks or hunts the bear (a seat it handed nothing: `aiRole` null), the stance, the window, the focus, the plan's order (`aiRank`, ai.js) | `AI_ROLES`, `AI_POS_FIT`, `aiTeams`, `aiTeamNew`, `aiPlan`, `aiRole`, `aiPlanRank`, `AI_PLAN_T`, `AI_WINDOW_*` | `team brain` |
 | what the side has seen and who is calling: sightings, calls for help, the stalker's pick, the odds and the fall-back | `aiLook`/`aiSaw`, `aiCall`, `aiHumanCall`, `aiHelpCall`, `aiStalkTarget`, `aiOdds`, `aiFallBack`/`aiFallBackTo`, `aiForget` | `team brain` |
 | the bear party | `aiSideBear`, `aiBearJob`, `AI_BEAR_*` | `team brain` |

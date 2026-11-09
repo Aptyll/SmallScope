@@ -30,15 +30,14 @@ const SCENE = `
   // three bodies, no more: the crater floor is six tiles of open ground, a
   // fourth only ever ends up behind a wing or under the wordmark, and the two
   // turrets the merchant raised on 25,184 and 25,192 swallow anything on them
-  var me = SA.cast(0, 23, 190, 0);          // the hunter, low and left of the beak
-  SA.arm(me, 'longbow', ['fan', 'flame', 'arrow']);
-  var ally = SA.cast(2, 22, 187, 1, 'down');   // a warrior, sword out, up the strip
-  var foe  = SA.cast(1, 24, 191, 1, 'left');   // the rival they are both between
+  var me = SA.cast(0, 23, 190, heroIndex('SAGITTA'));          // SAGITTA, the arbalest drawn, low and left of the beak
+  var ally = SA.cast(2, 22, 187, heroIndex('ARMATOS'), 'down');   // ARMATOS, sword out, up the strip
+  var foe  = SA.cast(1, 24, 191, heroIndex('FORTIVA'), 'left');   // the rival they are both between
 `;
 
-// The string is DRAWN and never let go. A loosed fan crosses the crater and
-// half of it lands in the bird, which flashes white and stops looking like a
-// bird at all - and the pose that sells a bow is the draw anyway.
+// The arbalest is DRAWN and never let go. A loosed bolt crosses the crater and
+// lands in the bird, which flashes white and stops looking like a bird at
+// all - and the pose that sells a ranged hero is the draw anyway.
 const PER = `
   SA.look(players[1].x, players[1].y - 3);
   if (i === 4) SA.fire(true);

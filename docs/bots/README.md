@@ -31,8 +31,8 @@ defineBot({
 });
 ```
 
-`think(obs)` returns an **act**: held keys (`move`, `goTo`, `aim`, `fire`, `work`, `slide`,
-`grapple`) stay held until your next act; one-shot keys (`dodge`, `jump`, `ability`, `useItem`,
+`think(obs)` returns an **act**: held keys (`move`, `goTo`, `aim`, `fire`, `work`, `slide`)
+stay held until your next act; one-shot keys (`dodge`, `jump`, `ability`, `useItem`,
 `cmd`) fire once. Return `null` to keep holding what you held. Keep memory
 on `this` (the object you passed to `defineBot`).
 
@@ -63,7 +63,7 @@ Today bots run offline, on your own computer, two ways:
 - **One seat, one file.** Five copies of your file playing one team do not share memory; they
   share only what they `say` (see [the team channel](api.md#the-team-channel)).
 - **What a player sees, nothing more.** Rivals show up near any of your side, the way the minimap
-  shows them, and a rival buried in the snow drops off it. Both birds are always known.
+  shows them, under the same fog of war a human plays. Both birds are always known.
 - **The same hands for everyone.** On the ladder every seat's crosshair turns at the same speed
   and wobbles the same (the HARD bots' hands), so the ladder ranks decisions, not aim.
 - **Ten thinks a second.** An answer that is late is not waited for in a live game; the seat

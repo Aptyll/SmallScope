@@ -171,7 +171,6 @@ function bellaLunge(p) {
 function bellaDash(p, kind, nx, ny, t) {
   p.rushNX = nx; p.rushNY = ny;
   p.rushT = t;
-  p.rushVictim = null;
   p.dash = kind;
   p.lungeHit.length = 0;
   p.sliding = false;

@@ -25,15 +25,11 @@ function aiThink(p, dt) {
   //    below, since it never stops the hands (js/sim/items.js)
   aiFoe(k);
   aiDrink(p);
-  // 2. the burrow, decided before the ladder (rungs 3 and 5 read it)
-  if (aiBurrow(k)) return;
+  // 2. the wild things it may turn on, read by the rungs below
+  aiWildFoes(k);
   if (aiBackOffRung(k)) return; // 2b. a human's DANGER ping
   if (aiFight(k)) return;      // 3. a rival in sight
   if (aiCampFight(k)) return;  // 4. a camp it woke
-  // 5. lying low with nothing in sight: hold still and let the snow finish.
-  //    Everything below this rung walks somewhere, and a bot crawling to a
-  //    bush at PRONE_SPEED is a bot that has stopped playing.
-  if (p.prone) { inp.fire = false; aiNote(p, 'HIDE', 'LYING LOW', null); return; }
   if (aiHealRung(k)) return;   // 5'. hurt and alone: a ripe bush, a creek fish
   if (aiPingRung(k)) return;   // 5a. a human's ping
   if (aiDefendRung(k)) return; // 5b. its bird
@@ -95,7 +91,6 @@ function aiRead(p, dt) {
   const aimAt = (x, y) => { inp.aimX = x; inp.aimY = y; };
 
   ai.thinkT -= dt;
-  if (ai.hideCd > 0) ai.hideCd -= dt;
   if (ai.pushCd > 0) ai.pushCd -= dt;
   // the profile's clocks: the skill layer's (ai-skill.js), the ability roll
   skillTick(p, prof, dt);
@@ -217,48 +212,15 @@ function aiFoe(k) {
 }
 
 
-// true while it is going to ground (it stands still for it)
-function aiBurrow(k) {
-  const { p, dt, inp, ai, prof, pushE, defend, ward, order, foe } = k;
-  // 2. the burrow - a hunter's alone now, cast as SNOW COVER (key 4) with its
-  //    own 60 s clock on the way under. Decided before the ladder because two
-  //    rungs below read the answer: a bot that has come off worse and has
-  //    nobody looking at it goes to ground and waits the fight out, and one
-  //    that is already down shoots from where it lies - which earns it the
-  //    same ambush multiplier a human gets, off the same ambushReady() check.
-  //    It gets straight back up for a wolf, for a rival close enough to find
-  //    it anyway, or when the spell runs out - rising is free, the cast key
-  //    again. It only ever tries where a player could: on snow, on its own
-  //    feet, with the cooldown in hand. `hideT` doubles as the give-up: a
-  //    plant that will not take burns it four times as fast and ends in the
-  //    lockout.
+// the wild things it may turn on before the ladder (rungs 3 and on read them):
+// a bear party's bear (the team brain) and the nearest wolf at its ward
+function aiWildFoes(k) {
+  const { p, dt, pushE, defend, ward, order, foe } = k;
   // (its own bird under threat comes before the human's camp fight)
   // (and a bear party's bear, once the party has formed - the team brain)
   const bj = !foe && !defend && !pushE && !order ? aiBearJob(p, dt) : null;
   const wolf = foe ? null : aiNearestWolf(p, defend ? null : ward) || (bj && bj.fight) || null;
   k.bj = bj; k.wolf = wolf;
-  if (p.prone) ai.hideT -= dt;
-  const btx = Math.floor(p.x / TILE), bty = Math.floor((p.y + 4) / TILE);
-  const canBury = p.cls === 0 && abReady(p, 3) && !p.sliding && p.dodgeT <= 0 &&
-    inWorld(btx, bty) && ground[idx(btx, bty)] === 0;
-  let down = p.prone;
-  if (wolf) down = false;
-  else if (foe) down = p.prone && Math.hypot(foe.x - p.x, foe.y - p.y) > 48;
-  else if (p.prone) down = ai.hideT > 0 && p.hp < p.maxHp * 0.9;
-  else if (p.hp < p.maxHp * aiFlee(p, prof) && ai.hideCd <= 0 && canBury) down = true; // (the mood moves the point)
-  if (down !== p.prone) {
-    inp.ability = 3;                                  // snow cover: the burrow's one door, in and out
-    if (p.prone) ai.hideCd = 18;                      // back up: no re-burrowing for a while
-    else if (ai.hideT <= 0) ai.hideT = rand(7, 12);   // going down: how long it means to stay
-  }
-  if (down && !p.prone) {
-    // stop dead and let the momentum bleed off; tryProne refuses a body that
-    // is still moving. Somewhere that never takes gives up and locks out.
-    ai.hideT -= dt * 4;
-    if (ai.hideT > 0) { inp.fire = false; aiNote(p, 'HIDE', 'LOW HP', null); return true; }
-    ai.hideCd = 12;
-  }
-  return false;
 }
 
 function aiFight(k) {
@@ -282,15 +244,6 @@ function aiFight(k) {
     if (winding && winding.botAim) { const to = winding.botAim(p, foe); aimAt(to.x, to.y); }
     // hold ~70px: close in when far, back off when crowded, strafe in between
     const clear = aiLineClear(p, foe.x, foe.y - 6);
-    if (p.prone) {
-      // no strafing on your belly: concealOf discounts a mound that is moving,
-      // and ambushReady refuses a moving shot outright. Hold still, let them
-      // walk in, and spend the arrow at full draw.
-      inp.fire = clear && p.chargeT < drawTime(p) * 0.95;
-      aiNote(p, 'HIDE', 'AMBUSH', foe);
-      ai.tgt = null;
-      return true;
-    }
     // the numbers (the team brain): hurt or outnumbered, it calls the side;
     // losing by the judge's reading, it gives ground toward a friend and
     // keeps shooting over its shoulder - which pulls the chase into its side.
@@ -308,27 +261,13 @@ function aiFight(k) {
       ai.tgt = null;
       return true;
     }
-    // the class abilities, spent off cooldown at the foe - through the same
-    // edge key a human presses, so a bot can never cast what a hand couldn't
-    if (ai.abilOk && p.castT <= 0 && p.grapT <= 0 && inp.ability < 0) {
-      if (CLASS_AB[p.cls].some((ab) => ab.bot)) { // a hero whose rows say when (ARM_AB's `bot`, js/sim/armatos.js)
-        inp.ability = abBotKey(p, foe, d, clear);
-        const ab = inp.ability >= 0 && abOf(p, inp.ability);
-        if (ab && ab.botAim) { const to = ab.botAim(p, foe); aimAt(to.x, to.y); } // ...and where, when it is not at them (AURA's step away)
-      }
-      else if (p.cls === 0) { // hunter: skewer the open lane, tangle the gap
-        // (the grapple is a held key and a terrain read - a hand skill the
-        // ladder does not try to fake; snow cover is spent at rung 2)
-        if (abReady(p, 0) && d > 55 && d < 230 && clear) inp.ability = 0; // lock the piercing draw on them
-        else if (abReady(p, 1) && d < 110 && clear) inp.ability = 1;      // net the gap
-      } else if (p.shieldT > 0 || p.rushT > 0) { // warrior, wall up or mid-charge: the SLAM, the moment they are under it
-        if (abUnlocked(p, 0) && d < SLAM_R - 4) inp.ability = 0;
-      } else { // warrior: get there, and finish what the arrival started
-        if (abReady(p, 3) && d < EXEC_R - 4 && foe.hp < foe.maxHp * 0.55) inp.ability = 3; // the execute on a body already bleeding
-        else if (abReady(p, 1) && d > 36 && d < 120 && clear) inp.ability = 1; // rush the line
-        else if (abReady(p, 2) && d < 42) inp.ability = 2;           // stomp at arm's length
-        else if (abReady(p, 0) && d < 150 && p.hp < p.maxHp * 0.75) inp.ability = 0; // shield the arrows
-      }
+    // the hero's abilities, spent off cooldown at the foe - through the same
+    // edge key a human presses, so a bot can never cast what a hand couldn't.
+    // Every row says when (its `bot`, ARM_AB, js/sim/armatos.js)
+    if (ai.abilOk && p.castT <= 0 && inp.ability < 0) {
+      inp.ability = abBotKey(p, foe, d, clear);
+      const ab = inp.ability >= 0 && abOf(p, inp.ability);
+      if (ab && ab.botAim) { const to = ab.botAim(p, foe); aimAt(to.x, to.y); } // ...and where, when it is not at them (AURA's step away)
     }
     const side = p.id % 2 ? 1 : -1;
     const a = Math.atan2(foe.y - p.y, foe.x - p.x);
@@ -504,8 +443,8 @@ function aiGuardRung(k) {
 
 function aiPushRung(k) {
   const { p, dt, inp, ai, prof, T, steerTo, aimAt, theirs, pushE } = k;
-  // 5c. the objective: drive off the rival bird. A hunter holds AI_HOLD off
-  //     it - outside the gust - and looses at the roost; a warrior walks up
+  // 5c. the objective: drive off the rival bird. A ranged hero holds AI_HOLD
+  //     off it - outside the gust - and looses at the roost; a blade walks up
   //     to a roost tile and swings E on it, gust and all, exactly as a hand
   //     does. Defenders in sight are rung 3's business (the bird anchors
   //     them). A roost it cannot route to is left for a while (pushCd).

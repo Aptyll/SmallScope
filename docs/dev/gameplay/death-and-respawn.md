@@ -65,7 +65,7 @@ the ambient half runs (`updateTitle`: animals and fish), and not even that once 
 ## Takedowns: assists, bounties and shutdowns
 
 League's kill economy, in the `takedowns` banner at the end of js/sim/player.js. Every rival
-player's blow on a player (`damagePlayer`) and every stun, root or net it puts on one
+player's blow on a player (`damagePlayer`) and every stun or root it puts on one
 (`ccCredit`, js/sim/actions.js) stamps `p.foeHits[src.id] = state.elapsed` through `noteFoe`;
 `recentFoes` reads back the rivals inside `ASSIST_T` (10 s), latest first, and `die` clears the
 record. On a death, `die` reads the victim's **worth** (`killWorth`) and **bounty** (`bountyOf`)

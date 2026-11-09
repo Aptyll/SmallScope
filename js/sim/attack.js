@@ -5,7 +5,7 @@
 // js/sim/player.js); this file is how any attack is pressed, drawn, timed and
 // landed.
 // Loads after js/sim/actions.js: a shot rides the arrow pipeline and reads its
-// tuning (BOW_Y, AMBUSH_MUL) at runtime.
+// tuning (BOW_Y) at runtime.
 // ------------------------------------------------------------ basic attack
 // An `attack` row:
 //   name    what the wiki and the tooltip call the weapon
@@ -55,37 +55,28 @@ function shotFlight(s, pw) {
   const sm = drawSpeedMul(pw);
   return { spd: s.speed * sm, life: s.life * drawRangeMul(pw) / sm };
 }
-// what the attack lands for at draw `pw`: the hero's DAMAGE, the kit's speed
-// bonus on a body that is moving, the draw over the whole sum, the ambush
-// what SNOW COVER's rank adds to the shot out of full cover: its row's
-// `ambush` over the kit's base AMBUSH_MUL, nothing on a body without the key
-function ambushRank(p) { const v = abRk(p, 'snow', 'ambush'); return v === v ? v - AMBUSH_MUL : 0; }
-function attackDmg(p, pw, amb) {
+// what the attack lands for at draw `pw`: the hero's DAMAGE and the kit's speed
+// bonus on a body that is moving, the draw over the whole sum
+function attackDmg(p, pw) {
   const kit = kitOf(p);
   const spdBonus = kit.spdDmg * Math.min(1, Math.hypot(p.vx, p.vy) / 200);
-  let dmg = Math.round((statOf(p, 'dmg') + spdBonus) * drawDmgMul(pw));
-  if (amb) dmg = Math.round(dmg * (kit.ambushMul + ambushRank(p)));
-  return dmg;
+  return Math.round((statOf(p, 'dmg') + spdBonus) * drawDmgMul(pw));
 }
 
 // ---- the press -----------------------------------------------------------
 // The falling edge of `input.fire`, for every player alike (updatePlayer,
-// js/sim/sim.js): the cover is read before anything can break it, the attack
-// lands, the cycle starts, and the loose is what stands a crawler up - one
-// ambush per burrow.
+// js/sim/sim.js): the attack lands and the cycle starts.
 function basicAttack(p) {
-  const amb = ambushReady(p);
   const A = attackOf(p);
-  if (A.cut) cutAttack(p, A, amb);
-  else { shootAttack(p, A, amb); sfxAt('arrow', p.x, p.y); }
+  if (A.cut) cutAttack(p, A);
+  else { shootAttack(p, A); sfxAt('arrow', p.x, p.y); }
   p.nockT = attackCycle(p);
-  risePlayer(p);
 }
 
 // ---- the shot ------------------------------------------------------------
 // One shaft down the aim, from the spawn point (BOW_Y above the feet, not the
 // feet, or the flight runs parallel to the aim line and never meets it).
-function shootAttack(p, A, amb) {
+function shootAttack(p, A) {
   const pw = drawPow(p);
   const dx = p.input.aimX - p.x, dy = p.input.aimY - (p.y - BOW_Y);
   const a = Math.atan2(dy, dx);
@@ -93,8 +84,8 @@ function shootAttack(p, A, amb) {
   arrows.push({
     x: p.x, y: p.y - BOW_Y,
     vx: Math.cos(a) * spd, vy: Math.sin(a) * spd,
-    t: 0, life, dmg: attackDmg(p, pw, amb), pow: pw,
-    owner: p.id, team: p.team, ambush: amb, trailD: 0,
+    t: 0, life, dmg: attackDmg(p, pw), pow: pw,
+    owner: p.id, team: p.team, trailD: 0,
     solid: true, kb: A.kb, col: A.shot.col, basic: true, look: A.shot.look, // `look`: drawn as a hero's own shot (HERO_SHOTS, js/draw/heroes.js)
     ang: a, spd, ox: p.x, oy: p.y - BOW_Y,
   });
@@ -113,17 +104,17 @@ const SLASH_T = 0.28;        // s the sweep lives on the snow - and the hand swi
 const SLASH_REACH_MIN = 0.6; // a tap reaches this fraction of the blade
 const slashes = [];          // {x, y, a, r, half, t, hit}
 function slashReach(cut, pw) { return cut.reach * (SLASH_REACH_MIN + (1 - SLASH_REACH_MIN) * pw); }
-function cutAttack(p, A, amb) {
+function cutAttack(p, A) {
   const pw = drawPow(p), cut = A.cut;
   const dx = p.input.aimX - p.x, dy = p.input.aimY - (p.y - BOW_Y);
   const a = Math.atan2(dy, dx);
   const r = slashReach(cut, pw);
-  const dmg = attackDmg(p, pw, amb);
+  const dmg = attackDmg(p, pw);
   const targets = unitsInCone(p, p.x, p.y, a, r, cut.half);
   for (const q of targets) {
     const d = Math.hypot(q.x - p.x, q.y - p.y) || 1;
     hurtUnit(q, dmg, (q.x - p.x) / d, (q.y - p.y) / d, p, {
-      ambush: amb, kb: 30, kbMul: A.kb, basic: true, // a basic attack (passiveDeal, js/sim/heroes.js)
+      kb: 30, kbMul: A.kb, basic: true, // a basic attack (passiveDeal, js/sim/heroes.js)
     });
     burst(q.x, unitMidY(q), '#eef4fb', 4, 40, 0.3, true);
   }

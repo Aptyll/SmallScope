@@ -14,7 +14,7 @@ works is their `OBJECTS` entry's `work` flag. Two verbs, two inputs:
   the player — a rival's building or eagle first (`AUTO_PRIO_FOE`), then scenery, and by tile centre to body within a rank (`autoPrio`) — and `startSwing` runs the same swing E's would. What makes it
   automatic and not a cancel: it never drops a draw or the held button (`p.autoSwing` lets the
   draw begin under it, and the release fires on the frame the button lifts, swing or no swing),
-  never stands a crawler up (`p.prone` waits, unlike E), and never touches the aim (`startSwing`
+  and never touches the aim (`startSwing`
   leaves the facing alone while a draw is running, so the aim never flicks toward the tile) — you
   keep shooting, walking or drawing through it, and the tree comes down beside you, with
   **both tools on the sprite**: the axe sweeping in one hand, the drawn weapon on the aim
@@ -62,11 +62,10 @@ thing: the hero's basic attack is the only weapon aimed at one.
 
 Every basic attack is **hold-to-charge**: holding the button arms it (`p.fireArmed`), the draw
 starts as soon as the cycle has run and runs `p.charging`/`p.chargeT` (movement targets
-scale by the kit's `chargeMul`, 55% for the hunter — walk speed and the ice cap both — facing
+scale by the kit's `chargeMul`, between 45% and 90% by hero — walk speed and the ice cap both — facing
 tracks the mouse, a draw meter renders
 above the player's health bar), and the release edge fires via `basicAttack(p)`. What the hold buys
-is [The draw](#the-draw); a shot loosed out of full snow
-cover multiplies the damage by `AMBUSH_MUL` (see [Prone](prone-under-the-snow.md)). Shots carry
+is [The draw](#the-draw). Shots carry
 their shooter's `owner`/`team`, live in the `arrows` array, and are updated in `updatePlay()`:
 they die on solid tiles (and a rival's **building** that stops one is sieged), on a **rival player** (see [PvP](../multiplayer.md#pvp)), on an **enemy worker
 bot** (`hurtRobot`) or on any animal hit (knockback scales with power) — whichever the step met
@@ -125,8 +124,7 @@ js/sim/attack.js):
 `shotFlight(s, pw)` turns that into the `spd` and `life` a shot (`{ speed, life }`) leaves with,
 the range curve applied through the life, so a tap also *stops short* rather than only arriving
 late. It is the one envelope: `shootAttack` fires through it and `drawAimLine` measures it, which
-is what lets the line on the ground grow out of the bow as the string comes back. The SHORTBOW: 60
-px and 5 damage at a tap, 272 px and 16 at full, at level 1.
+is what lets the line on the ground grow out of the bow as the string comes back.
 
 `drawTime(p)` is the kit's `bowCharge` over ATTACK SPEED (`asMul`). The overhead bar, the aim line
 and the bots all read `drawTime`, never `bowCharge`. **That curve is the whole punishment for

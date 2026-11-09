@@ -64,7 +64,7 @@ const ITEM_STATS = {
 const ITEM_STAT_ORDER = ['dmg', 'as', 'hp', 'armor', 'ap', 'haste', 'ms']; // the shop's stat filters, in this order
 
 // The passives, each a name, one short line and what it writes into the kit.
-// The kit numbers (feast, glide, drift, light, ambush, amplify) are read where
+// The kit numbers (feast, glide, drift, light, amplify) are read where
 // the sim already reads them; the flags are read by the hooks below:
 // itemsDeal and itemsOnHit (every blow a player lands, hurtUnit), itemsOnHurt
 // (every blow a player takes), itemsTick (the player's clock), itemStat (the
@@ -77,7 +77,6 @@ const ITEM_PASSIVES = {
   glide:    { name: 'GLIDE', line: 'FASTER ON ICE', mod: (k) => { k.iceMax *= 1.15; k.iceSteer += 0.3; } },
   drift:    { name: 'DRIFT', line: 'SEEN FROM CLOSER', mod: (k) => { k.stealth -= 0.15; } },
   light:    { name: 'LIGHT', line: 'DODGE COMES BACK SOONER', mod: (k) => { k.dodgeCd -= 0.8; } },
-  ambush:   { name: 'AMBUSH', line: 'SHOTS FROM SNOW COVER HIT HARDER', mod: (k) => { k.ambushMul += 0.4; } },
   leech:    { name: 'LEECH', line: 'HEAL 10% OF YOUR HIT DAMAGE', mod: (k) => { k.leech = true; } },
   thorns:   { name: 'THORNS', line: 'HITTERS TAKE 20% BACK', mod: (k) => { k.thorns = true; } },
   cull:     { name: 'CULL', line: '+20% ON THE BADLY HURT', mod: (k) => { k.cull = true; } },
@@ -144,7 +143,7 @@ const BUILD_ITEMS = {
   horn:      { name: "HUNTER'S HORN", price: 2800, from: ['quiver', 'recurve'], stats: { dmg: 9, as: 0.4, ms: 3 }, passive: 'kindling', styles: ['marksman'] },
   feathers:  { name: 'FEATHERS', price: 2600, from: ['recurve', 'sash'], stats: { dmg: 5, as: 0.5, ms: 5 }, passive: 'light', styles: ['marksman', 'assassin'] },
   frostline: { name: 'FROST LINE', price: 2700, from: ['quiver', 'sash'], stats: { dmg: 8, as: 0.45 }, passive: 'chill', styles: ['marksman'] },
-  sunstone:  { name: 'SUNSTONE', price: 3000, from: ['axe', 'pick'], stats: { dmg: 18 }, passive: 'ambush', styles: ['assassin', 'marksman'] },
+  sunstone:  { name: 'SUNSTONE', price: 3000, from: ['axe', 'pick'], stats: { dmg: 18 }, passive: 'cull', styles: ['assassin', 'marksman'] },
   maul:      { name: 'SPLITTING MAUL', price: 3100, from: ['axe', 'whet'], stats: { dmg: 15, haste: 10 }, passive: 'cull', styles: ['bruiser', 'assassin'] },
   beartooth: { name: 'BEAR TOOTH', price: 3000, from: ['tooth', 'axe'], stats: { dmg: 16, hp: 20 }, passive: 'leech', styles: ['bruiser', 'assassin'] },
   fang:      { name: 'WOLF FANG', price: 3000, from: ['knife', 'pick'], stats: { dmg: 9, hp: 50, haste: 10 }, passive: 'feast', styles: ['bruiser'] },
@@ -442,21 +441,19 @@ function potionTick(p, dt) {
     p.potFxT = POTION_FX_T;
     particles.push({
       x: p.x + rand(-4, 4), y: p.y - 3, vx: rand(-4, 4), vy: rand(-22, -12),
-      life: rand(0.4, 0.6), maxLife: 0.5, color: '#8fe08a', size: 1, grav: 0, alpha: 1 - concealOf(p),
+      life: rand(0.4, 0.6), maxLife: 0.5, color: '#8fe08a', size: 1, grav: 0, alpha: 1,
     });
   }
 }
 
 // ---- bots ------------------------------------------------------------------
-// Each class's build, League-style: the first legendary, then boots, then the
+// Each hero's build, League-style: the first legendary, then boots, then the
 // rest, in the order a bot finishes them. A bot saves for the next item on
 // its list, and at a counter buys it whole if the purse covers it, else the
 // first component of it (however deep) it can afford and has room for. The
 // same lists are the shop's RECOMMENDED tab (shopRecommended, js/ui/shop.js),
 // so what a bot buys is what the counter suggests to you.
 const BOT_BUILDS = {
-  HUNTER: ['horn', 'quick', 'feathers', 'frostline', 'auger', 'sunstone'],
-  WARRIOR: ['grind', 'hobnail', 'maul', 'oakheart', 'stonehide', 'beartooth'],
   ARMATOS: ['bearskin', 'hobnail', 'brambmail', 'banner', 'glacier', 'stonehide'], // the wall first: health and armor, then the walk to the fight
   FORTIVA: ['brand', 'mukluk', 'fang', 'oakheart', 'stonehide', 'maul'], // the hit first, the health to stay in the fight, then the legs to reach it
   IGNIA: ['marsh', 'emberb', 'storm', 'lens', 'deeprod', 'mantle'], // the fire first: power, haste and the scorch, then the boots and more power
@@ -473,10 +470,11 @@ const BOT_BUILDS = {
   MARIS: ['glacier', 'hobnail', 'stonehide', 'bearskin', 'brambmail', 'hearth'], // a tank's: armor and health, the boots for reaching the water
   AURA: ['storm', 'emberb', 'deeprod', 'lens', 'marsh', 'mantle'], // the reach first: power and haste for more stars, then the boots, then the armor a mage caught close needs
   VARRO: ['beartooth', 'hobnail', 'fang', 'bite', 'stonehide', 'collar'], // the bite first, the legs to stay on the mark, then the health a diver needs
-  VELOX: ['quick', 'horn', 'feathers', 'frostline', 'bite', 'sunstone'], // the HUNTER's build with attack speed first: more throws, more KEEP MOVING stacks
+  VELOX: ['quick', 'horn', 'feathers', 'frostline', 'bite', 'sunstone'], // a marksman's, attack speed first: more throws, more KEEP MOVING stacks
   SAGITTA: ['beartooth', 'horn', 'feathers', 'auger', 'maul', 'sunstone'], // damage first: every bolt is slow, so each one has to land like a hammer
 };
-function botBuild(p) { return BOT_BUILDS[CLASSES[p.cls].name] || BOT_BUILDS.HUNTER; }
+for (const c of CLASSES) if (!BOT_BUILDS[c.name]) throw new Error('items.js: ' + c.name + ' has no BOT_BUILDS row');
+function botBuild(p) { return BOT_BUILDS[CLASSES[p.cls].name]; }
 // the next item on p's list it does not have yet, or null when done
 function botNextItem(p) {
   const have = p.items.slice();

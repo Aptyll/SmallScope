@@ -44,7 +44,7 @@ const HIT_PUFF = { rabbit: '#9a6a45', deer: '#8f582f', wolf: '#6f778c', alpha: '
 // Prey: how close a player gets before it bolts, how long it runs, and the two
 // speeds. A deer keeps the wider watch and the longer run; a rabbit sits tight
 // and then goes off like a spring. Both resolve the ring through seenAt, so
-// crawling in under the snow is what gets a hunter inside it.
+// a hero's stealth is what gets inside it.
 const FLEE_SIGHT = { rabbit: 36, deer: 46 };
 const FLEE_TIME = { rabbit: [1.6, 2.6], deer: [1.1, 1.9] };
 const PREY_SPD = { rabbit: 42, deer: 26 };   // px/s grazing
@@ -83,7 +83,7 @@ const RABBIT_DODGE_CD = 6;     // s for the charge to come back
 // The beat a rabbit sits up for before it goes: it hears you, rocks back onto
 // its haunches (the `rise` clip) and only then bolts. It is what the meadow's
 // oldest line - "a rabbit sits tight and then goes off like a spring" - looks
-// like, and it is the one still shot a hunter is ever offered at one. A hit
+// like, and it is the one still shot anyone is ever offered at one. A hit
 // skips it (hurtAnimal), so a rabbit already running never stops to pose.
 const RABBIT_ALERT = 0.3;
 // A warren's rabbit never runs out of its snow: every leg of a flight and
@@ -152,7 +152,7 @@ function makeAnimal(kind, x, y, fix) {
     target: null, biteCd: 0, threat: 0, // camp monster: its quarry, its bite rhythm, and the leash bar (0..1) that ends the hunt
     dead: false,
   };
-  // stun, root, slow, the net drape, the falcon's mark, fire: an animal wears
+  // stun, root, slow, a mark, fire: an animal wears
   // the identical set a player does, written by the same setters
   // (`status effects`, js/sim/actions.js) - a rabbit is not a different rulebook
   clearUnitStatus(a);
@@ -172,7 +172,7 @@ function animalHit(a, x, y) { return Math.hypot(a.x - x, animalHitY(a) - y) < an
 // come through here so a swipe reacts exactly like a shot does - the den
 // wakes, prey bolts, the flock scatters - and `lastHit` (the player whose
 // wallet the kill pays, see animalDies) is stamped in one place.
-function hurtAnimal(a, dmg, nx, ny, kb, owner, ambush) {
+function hurtAnimal(a, dmg, nx, ny, kb, owner) {
   a.hp -= dmg;
   a.flash = 0.12;
   a.lastHit = owner;
@@ -180,10 +180,9 @@ function hurtAnimal(a, dmg, nx, ny, kb, owner, ambush) {
   // and a hit is the ONLY thing that wakes one
   if (isCampKind(a.kind)) wakeCamp(a, players[owner]);
   else { a.fleeT = a.kind === 'rabbit' ? 1.4 : 2.2; a.alertT = 0; } // a hit rabbit goes NOW; it does not stop to sit up
-  tallyHit(a, dmg); // an ambush still lands with its own flare and crack (ambushFx, below)
+  tallyHit(a, dmg);
   a.kbx = nx * kb; a.kby = ny * kb;
   burst(a.x, a.y - 4, HIT_PUFF[a.kind] || '#8f582f', 6, 40, 0.4);
-  if (ambush) ambushFx(a.x, a.y - 4);
   sfxAt('hit', a.x, a.y); if (a.hp > 0) sfxAt('yelp', a.x, a.y);
 }
 
@@ -644,8 +643,8 @@ function updatePrey(a, dt) {
   }
 
   // both prey bolt from a player who gets close - the deer from further out
-  // than the rabbit. The ring is what the player is SEEN at, so stealth
-  // and lying buried in the snow are how a hunter closes on a deer at all.
+  // than the rabbit. The ring is what the player is SEEN at, so stealth is
+  // how a hero closes on a deer at all.
   let scare = null, sd = 1e9;
   for (const p of players) {
     if (!p.active || p.dead || inAir(p)) continue;
@@ -842,7 +841,7 @@ function animalDies(a) {
 // walks a 5 px one. `anchor`: nothing a
 // player does moves it - no body pushes it (separateUnits gives it right of way),
 // no hit shoves it (updateAnimal drops its knockback), a roll into it is a tackle
-// that stuns only the roller, and a charge stops against it (rushStep) - so a bear
+// that stuns only the roller, and a dash stops against it (each HERO_DASH step) - so a bear
 // always walks where it means to, roar and attacks included.
 // `lv`: the least level it spawns at, over the table's average (makeAnimal) -
 // a bear is never a level-1 kill. `frame`: its frame over the body (drawBeastFrame,
@@ -932,8 +931,7 @@ function campBuff(p, t, kind) { if (p && p.active) { p.buffT = Math.max(p.buffT 
 // the LEAP (rideLeap): a short hop that owns the velocity, as a roll does,
 // and clears anything whose OBJECTS entry says `leap` (the felled trunk
 // across the road, isSolidTile). E again hops off (rideEnd) and the deer
-// bolts, wild again; a stun on either body, a fall through the ice, going
-// prone, the zipline, the air, or either one dying throws the rider
+// bolts, wild again; a stun on either body, a fall through the ice, the zipline, the air, or either one dying throws the rider
 // (rideCheck, stunUnit, die, animalDies).
 // What can be ridden, per kind: its gallop as a multiple of a player's walk
 // (RIDE_GALLOP_MUL: a ridden deer outruns its own wild sprint) and where on its back the rider sits
@@ -974,7 +972,7 @@ function hopToggle(p) {
 }
 function rideStart(p, a) {
   if (!a || p.mount || a.rider || p.dead || p.stunT > 0 || p.fallT > 0 || p.dodgeT > 0 || p.rushT > 0 ||
-    p.grapT > 0 || p.zip >= 0 || p.prone || inAir(p)) return;
+    p.zip >= 0 || inAir(p)) return;
   if (p.zipWalk) zipWalkEnd(p);
   p.sliding = false; p.slideT = 0;
   p.mount = a; a.rider = p; a.team = p.team;
@@ -1016,7 +1014,7 @@ function rideEnd(p, thrown) {
 function rideCheck(p) {
   const a = p.mount;
   if (!a) return;
-  if (!p.active || p.dead || a.dead || a.rider !== p || p.stunT > 0 || p.fallT > 0 || p.prone ||
+  if (!p.active || p.dead || a.dead || a.rider !== p || p.stunT > 0 || p.fallT > 0 ||
     p.zip >= 0 || inAir(p)) rideEnd(p, true);
 }
 // the ridden deer's step (updateAnimal, in place of its brain): it stands

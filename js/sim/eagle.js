@@ -63,12 +63,12 @@ const EAGLE_BEAT_HZ = 1;      // wingbeats a second in level flight (one stroke 
 const EAGLE_DIVE_T = 1.4;   // seconds from the end of the line to the impact on the perch
 const EAGLE_SETTLE_T = 0.6; // seconds of wing-fold after the impact, into the resting pose
 // The grounded objective's NERVE: hits spook it, at zero it flees. Sized as a
-// siege now that bots go for it (the ai's objective rung): a lone warrior's
+// siege now that bots go for it (the ai's objective rung): a lone blade's
 // E swings (three a second, so EAGLE_WORK_DMG is a hundred of them) take a
 // minute or more under the gust, a pair half that, and an arrow only ever
 // spooks it EAGLE_ARROW_DMG whatever the draw, so archers standing off it
 // outside the gust take minutes - long enough either way for the side to
-// answer the hit (the two birds, ai.js). At 60 a swing two warriors emptied the
+// answer the hit (the two birds, ai.js). At 60 a swing two blades emptied the
 // nerve in the fifty seconds between two harness marks, before anyone came
 const EAGLE_HP = 2000;
 const PERCH_BAR_W = 95;   // px: the roost's hp bar, the match's win/lose bar...
@@ -453,7 +453,6 @@ function eagleGust(e) {
     const nx = d > 0 ? dx / d : 1, ny = d > 0 ? dy / d : 0;
     q.kbx = nx * GUST_KB; q.kby = ny * GUST_KB;
     stunUnit(q, GUST_STUN);
-    risePlayer(q); // wind strips the snow off a buried body
     burst(q.x, q.y - 6, '#eef4fb', 6, 50, 0.4, true);
   }
   // a wave's soldiers at its feet take the same buffet (the `soldiers`

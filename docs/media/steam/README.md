@@ -18,8 +18,8 @@ wordmark laid over it. `tools/` rebuilds the whole set from the seed.
 
 ## The shot
 
-The armoured eagle on its roost, the wall ring and the guns its merchant raised, a hunter at
-full draw and a warrior between a rival and the bird, pines closing both edges. One scene framed
+The armoured eagle on its roost, the wall ring and the guns its merchant raised, SAGITTA at
+full draw and ARMATOS between a rival and the bird, pines closing both edges. One scene framed
 nine ways, so every capsule is plainly the same game at the same second — and the one thing the
 whole game is about is in all of them: **the bird is the objective**.
 
@@ -64,7 +64,7 @@ another gun.
   source. See `tools/stage.js`.
 - **The cast is held still.** The rivals are live bodies with their brains held, placed by hand:
   a live AI wanders into the bird's wing, casts a telegraph ring over the crater, and looses
-  arrows that flash the bird white. The local hunter holds a full draw and never lets go for the
+  shots that flash the bird white. The local SAGITTA holds a full draw and never lets go for the
   same reason.
 - **The wordmark is the title screen's own.** `keylogo.js` runs the key `app/bake-logo.js` runs —
   a flood from the corners over everything that is not the letters' dark outline — over

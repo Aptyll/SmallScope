@@ -184,7 +184,7 @@ const ARM_ICON32 = {
 // iron, y/Y gold, w/W the beard), the walk's two frames lifted off it
 // (heroWalk), and the run, held run and roll baked off a doll of the same body
 // (app/bake-player/, `standard` and `oath` in js/baked/motion.js).
-// characters.js bakes a look in any team's paint (heroSkinSet); the coat
+// characters.js bakes a look in any team's paint (champLook); the coat
 // letters r/R/d stay the side's.
 const ARM_BODY = {
   standard: {

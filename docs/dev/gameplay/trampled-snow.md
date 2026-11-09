@@ -3,8 +3,8 @@
 Visual only (js/draw/trample.js). A grid of 4 px cells over the world holds how **packed** and how
 **churned** each patch is. `trampleStep` looks at every body on the snow each frame the world moves
 (players off the eagle and off a zipline, every animal but a bird, every robot off a zipline) and stamps a disc
-the size of the body every `TR_STEP` px it travels: a walk packs `TR_WALK`, a slide and a crawl
-their own amounts (read off `p.sliding`/`p.prone`, the same state the footprint emitter reads), a
+the size of the body every `TR_STEP` px it travels: a walk packs `TR_WALK`, a slide its own
+`TR_SLIDE` (read off `p.sliding`, the same state the footprint emitter reads), a
 roll or a knockback past `TR_SHOVE_V` churns, and a drop in hp or a body going down churns a wider
 disc. It reads only what a client already draws (positions, hp, `kbx`/`kby`), so it runs on every
 peer and nothing goes over the wire; a jump of over 40 px (a landing, a respawn) stamps nothing

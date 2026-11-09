@@ -269,7 +269,7 @@ function cbIcon(id) {
 // last pressed (the flash), the armed aim ('tp' | 'dummy' | null), and
 // whether the hero row is out
 const cheatUi = { open: true, flashId: null, flashT: 0, aim: null, pick: false };
-const CB_FACE = 22;          // a hero well in the row: the 20px face (HERO_CROP), 1px rim
+const CB_FACE = 22;          // a hero well in the row: the 20px face (HERO_FACE), 1px rim
 
 function cheatBarUp() { return PRACTICE && state.mode === 'play' && hudInT() >= 1 && !shopOpen(); }
 // 1x layout, in the bar's own space (its top-left at the view's cheatTop):
@@ -345,7 +345,7 @@ function cheatClick(mx, my) {
     cheatUi.pick = false;
     if (h.h === player.cls) { SFX.ui(false); return true; }
     player.input.cmd = { kind: 'cheat', id: 'hero', h: h.h };
-    PROFILE.setHero(h.h); // the next field and the next draft open on it
+    PROFILE.setHero(CLASSES[h.h].name); // the next field and the next draft open on it
     return true;
   }
   if (h.kind !== 'cell') return true;

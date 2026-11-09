@@ -37,7 +37,7 @@ const PACK_CRUST = [
   [[5, 2, 6], [4, 9, 1], [11, 9, 1]],               // layer 3: the crown, and the shoulders thicker
 ];
 function drawPackCrust(p, ax, ay, now, front) {
-  if (!front || CLASSES[p.cls].passive !== 'snowpack' || p.prone || !(p.pack > 0)) return;
+  if (!front || CLASSES[p.cls].passive !== 'snowpack' || !(p.pack > 0)) return;
   const n = packLayers(p);
   for (let k = 0; k < n; k++) for (const [x, y, w] of PACK_CRUST[k]) {
     ctx.fillStyle = RU_SNOW; ctx.fillRect(ax + x, ay + y, w, 1);

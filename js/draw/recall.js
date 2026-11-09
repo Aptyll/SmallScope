@@ -65,15 +65,14 @@ function drawRecallGround(ex, ey) {
     const t = TEAMS[skin(p.team)], q = 1 - p.recallT / RECALL_T;
     const cx = Math.round(p.x - ex), cy = Math.round(p.y - ey) + 6;
     if (cx < -RECALL_R || cy < -RECALL_R || cx > WV_W + RECALL_R || cy > WV_H + RECALL_R) continue;
-    const a = 1 - concealOf(p);
     ctx.fillStyle = t.coatD;
-    ctx.globalAlpha = 0.7 * a;
+    ctx.globalAlpha = 0.7;
     for (const [x, y] of circlePts(RECALL_R)) if (((x + y) & 1) === 0) ctx.fillRect(cx + x, cy + Math.round(y * RECALL_SQ), 1, 1);
     const rr = Math.max(RECALL_R_MIN, Math.round(RECALL_R - (RECALL_R - RECALL_R_MIN) * q));
     for (const [x, y] of circlePts(rr)) {
       const yy = cy + Math.round(y * RECALL_SQ);
-      ctx.globalAlpha = a; ctx.fillStyle = t.mark; ctx.fillRect(cx + x, yy, 1, 1);
-      ctx.globalAlpha = 0.8 * a; ctx.fillStyle = t.coatD; ctx.fillRect(cx + x, yy + 1, 1, 1);
+      ctx.globalAlpha = 1; ctx.fillStyle = t.mark; ctx.fillRect(cx + x, yy, 1, 1);
+      ctx.globalAlpha = 0.8; ctx.fillStyle = t.coatD; ctx.fillRect(cx + x, yy + 1, 1, 1);
     }
   }
   ctx.globalAlpha = 1;

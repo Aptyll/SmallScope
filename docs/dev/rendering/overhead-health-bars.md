@@ -1,9 +1,9 @@
 # Overhead health bars
 
 Beside the bar sits the other thing drawn on every body alike: **`drawUnitStates(e, px, py, w, h,
-now)`** ([js/sim/abilities.js](../../../js/sim/abilities.js)) paints the net drape, the root's sprung jaws,
+now)`** ([js/draw/abilities.js](../../../js/draw/abilities.js)) paints the root's sprung jaws,
 the fire and the mark's gold chevrons over whatever sprite is wearing them, taking the sprite's own box so
-a rabbit, a soldier and a player get the same four tells at their own size. `drawPlayer`
+a rabbit, a soldier and a player get the same tells at their own size. `drawPlayer`
 reaches it through `drawAbilityOnPlayer` (which adds the one a player alone can show — a raised
 shield); `drawAnimal` and `drawRobot` call it directly. **The
 fire never washes over the body** — tongues off the crown and a lit row under the feet — because a
@@ -124,13 +124,5 @@ than holding still over a wall that is rocking. Bar widths are kept even for the
 sprites are.
 
 **The whole stack hangs off one `hy`**, not off `py` directly (`drawPlayer`, js/draw/bodies.js).
-It drops 6 rows for a [prone](../gameplay/prone-under-the-snow.md) pose, which starts that much
-lower in the same 16×16 cell — bars floating over a head that is not there look broken; it lifts
-4 rows while a caught fish is hoisted (the hoist holds the fish where the plate would sit), and
-by the lift + 5 for a zipline rider, so the frame rises with the body and clears the handle; a
-worn skin body (the IRON HERO) lifts it to its own head, `top` rows under its frame's top. And
-its alpha fades with
-`concealOf(p)`: name tag, both bars, the level badge and the draw meter that says a shot is coming
-all go with the cover, weighted so you keep a readable copy of your own (×0.55), your side keeps
-most of theirs (×0.7) and a rival keeps none (×1, skipped entirely below 3%). A buried rival whose
-draw meter still showed would make the whole thing pointless.
+It lifts by the lift + 5 for a zipline rider, so the frame rises with the body and clears the
+handle, and by `MOUNT_BAR_ROWS` for a deer's rider, to hang the deer's bar under the stamina.

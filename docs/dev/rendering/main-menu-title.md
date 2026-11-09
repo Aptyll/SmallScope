@@ -120,14 +120,14 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
     here: the leader sets it on the party screen ([settings](../gameplay/settings.md)), and the
     hero's abilities show only in the hero pop-up off the stage figure.
 
-  Each hero wears **one fixed look** (`CLASSES[i].look`), so the face is the hero. What you point at
+  Each hero is drawn only in its own looks (`CLASSES[i].skins`), so the face is the hero. What you point at
   is gold (red-rimmed while it is a ban). A banned hero is dimmed and struck through in red (flashing white
   as the bans land); one a person on your side locked is dimmed with your side's bar under it;
   one only a bot of yours holds keeps the bar but stays bright. A click (`'pickN'`) or the arrows (`lobbyStep(±1)`, past the banned ones) is
-  `lobbyPick(i)` → `draftPoint`: in the pick, `setClass` puts the hero, its look and kit on the
+  `lobbyPick(i)` → `draftPoint`: in the pick, `setClass` puts the hero and its kit on the
   stage at once and `menu.cswapT` pops it. The grid dims and refuses outside the draft's two phases
   and once you have confirmed. The hero you fly out with is kept as the profile's hero
-  (`draftCount` → `PROFILE.setHero`), which is the one a person starts the next pick pointing at.
+  (`draftCount` → `PROFILE.setHero`, stored by name), which is the one a person starts the next pick pointing at.
   **Keys**: Enter starts a chat line (League's), Space confirms, the arrows walk the heroes, Esc leaves; a chat line or the search field
   takes every key while it is open, and Backspace never leaves the screen.
 
@@ -213,15 +213,12 @@ tag). The store behind it is [profile.js](../architecture.md#profilejs): one nam
   with the class weapon at hand, and under it the **stat ledger**: the seven
   [hero stats](../gameplay/hero-stats.md) at level 1 (`STAT_ROWS`, handed no player here), real
   values off the same `baseKit` (js/sim/player.js) the sim's `refreshKit` starts from, so the page
-  can never lie. RIGHT is the **ability column**, four wells, each a button that turns it: one
-  well a key wearing the picked option's `classAbIcon` with the key in the corner (the
-  keybind-indicator carve-out), a click turning it to the key's next option (`pickAbility` →
-  `player.abPick`; [the options on a key](../gameplay/class-abilities-keys-1-4.md): the warrior's
-  carry two, the hunter's one, which a click leaves as it is), and a hover raising the option's
-  card (`tipClassAb`, hooked in `tipAt`); their growth is the match's own skill points, never
-  bought here. The hovered well's name prints once under the panel: what a click would turn it
-  to. The keyboard walks `menu.grow` down the four ability wells: on a well (corner ticks) Enter,
-  Space or Right turns it and Left turns it back. ESC, Backspace, the **X** in the corner, or a
+  can never lie. RIGHT is the **ability column**, four wells: one well a key wearing its
+  ability's `classAbIcon` with the key in the corner (the keybind-indicator carve-out), and a
+  hover raising its card (`tipClassAb`, hooked in `tipAt`); their growth is the match's own skill
+  points, never bought here. The hovered well's name prints once under the panel, else the
+  focused one's. The keyboard walks `menu.grow` down the four ability wells (corner ticks), and a
+  click on a well takes that focus. ESC, Backspace, the **X** in the corner, or a
   click anywhere off the panel close it back to the lobby (`leaveHero`); LOCK IN (and a running
   count) stays on the lobby behind it. The ledger's labelled rows are the PLAYER-panel text
   carve-out: comparing numbers is this panel's whole job.
@@ -248,8 +245,9 @@ On the lobby's painted night, in [js/ui/skins.js](../../../js/ui/skins.js)
 (`menu.screen = 'skins'`, `beginSkins`/`leaveSkins`, its own ease `menu.skinT`). `skinsLayout()`
 is the one rect source for the draw, the hit test (`skinsHit`) and the cursor.
 
-- **The navbar** over the grid's left edge is one tab per `SKIN_TABS` category (HERO, EAGLE,
-  WEAPON, TRAIL, then a tab per named hero, ARMATOS, FORTIVA, BELLA and IGNIA; `drawSkinTab`): an 8x8 glyph and the word, slate at rest, pale under the hand,
+- **The navbar** over the grid's left edge is one tab per `SKIN_TABS` category (EAGLE, TRAIL,
+  then a tab per hero, ARMATOS first; a load check in js/ui/skins.js throws for a hero without
+  one; `drawSkinTab`): an 8x8 glyph and the word, slate at rest, pale under the hand,
   white on the open tab (`menu.skTab`, the eagle at boot) with a 1 px line as wide as the word.
   A click, Q/E, or up off the grid's top row then left/right (`menu.skNav`) turns it. The purse
   (coin + number) sits over the grid's right edge.
@@ -259,11 +257,10 @@ is the one rect source for the draw, the hit test (`skinsHit`) and the cursor.
   worn card and on a picked one; under a hairline the name and, opposite it, the price (coin +
   number, red when the purse is short) or a tick on the skin worn; a 2 px bar of the rarity's
   colour along the foot. Rims are slate, lighter under the hand, bright steel on the worn and the
-  picked card. The weapon and trail tables and every tinted scout row are placeholders: today's
-  portrait or bow washed in the row's tint, or a streak in its two colours, and nothing in a match
-  wears them. The IRON HERO row is real: its card is the robot's own 64 px `icon`, and a match
-  wears it (below). So is a hero's tab (`hero` on the tab, ARMATOS's `ARM_SKINS`, FORTIVA's `FORT_SKINS`, BELLA's `BELLA_SKINS`, IGNIA's `IGNIA_SKINS`): its card is the
-  hero standing in that look.
+  picked card. The trail table is a placeholder: a streak in the row's two colours, and nothing
+  in a match wears it. A hero's tab is real (`hero` on the tab, its `rows` the hero's own
+  `skins`: ARMATOS's `ARM_SKINS`, FORTIVA's `FORT_SKINS` and so on): its card is the hero standing
+  in that look.
 - **A press** (`skinPress`) on an owned card wears it; on a card for sale it picks it
   (`menu.skPick`) and its price plate lights and pulses; a second press on the same card buys it
   and wears it (`PROFILE.buy`, the card flashes white, the purse flashes, `SFX.coin`). A short
@@ -273,7 +270,5 @@ is the one rect source for the draw, the hit test (`skinsHit`) and the cursor.
 - **A skin is paint on this screen only.** `birdSkinFor(team)` is the drawer's one question: the
   local player's company wears the skin worn, the other company the free first row (skins are
   not sent over the wire). `drawEagle` asks it at draw time; it is paint, never read by the sim.
-  `scoutBody(p)` is the same for a player: only the local player wears the scout skin worn, as a
-  body of its own (the IRON HERO, [sprites](../sprites.md)), and every other player the class body.
   A hero's look is the exception: it is sent (`p.skins`, [classes](../multiplayer.md#classes)), so
   everyone sees the look a person wears; bots wear the hero's own.

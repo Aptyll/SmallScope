@@ -154,9 +154,7 @@ function renderMinimap(now) {
   }, HUD_INK, 1);
   // every body inside the view in the grammar both maps share (drawMap*,
   // draw-world.js), in its side's ink: the robots first - every
-  // soldier and merchant standing, none of them hides - then the players. A
-  // rival buried past PRONE_MAP drops off it entirely - a dot that survived
-  // the cover would make the whole thing pointless. Your own side never does.
+  // soldier and merchant standing - then the players.
   for (const r of robots) {
     if (r.dead || !fogShown(r, now)) continue;
     const dx = (r.x / TILE - ptx) * s, dy = (r.y / TILE - pty) * s;
@@ -165,7 +163,6 @@ function renderMinimap(now) {
   }
   for (const p of players) {
     if (p === vp || !p.active || p.dead || inAir(p) || !fogShown(p, now)) continue;
-    if (p.team !== vp.team && p.markT <= 0 && concealOf(p) >= PRONE_MAP) continue; // a falcon-marked rival stays on it
     const dx = (p.x / TILE - ptx) * s, dy = (p.y / TILE - pty) * s;
     if (Math.hypot(dx, dy) > MM_R - 1) continue;
     drawMapUnit(ctx, MM_CX + dx, MM_CY + dy, TEAMS[skin(p.team)].mark, HUD_INK, 1, false, foeCue(p.team));

@@ -47,34 +47,14 @@ const SK_TICK = ['......ww', '.....ww.', 'w...ww..', 'ww.ww...', '.www....', '..
 const SK_TICK_PAL = { w: '#cfe0ff' };
 
 // ---- the catalogue ----------------------------------------------------------
-// PLACEHOLDERS: the weapon and trail skins below, and every scout skin with a
-// `tint`, have no art of their own yet and are not worn in a match - a card
-// shows today's picture washed in the skin's `tint` (a trail, a streak in its
-// two `cols`). A scout row with a `body` is real: it names a whole body in
-// SPRITES (the robot: SPRITES.robotSkin, js/baked/robot.js) that the local
-// player wears in a match (scoutBody). The bird's table is real and lives with
-// its art (BIRD_SKINS, js/sprites/eagle.js), and so is a hero's (a tab with
-// `hero`: each named hero's looks, e.g. ARM_SKINS, js/sprites/armatos.js), which every
-// screen in the match sees.
+// PLACEHOLDERS: the trail skins below have no art of their own yet and are not
+// worn in a match - a card shows the streak in its two `cols`. The bird's table
+// is real and lives with its art (BIRD_SKINS, js/sprites/eagle.js), and so is a
+// hero's (a tab with `hero`: each hero's looks, e.g. ARM_SKINS,
+// js/sprites/armatos.js), which every screen in the match sees.
 // Every table's first row is free and is the slot's default; an id is what
 // a profile keeps, so it never changes.
-const SCOUT_SKINS = [
-  { id: 'plain', name: 'TRAIL COAT', rarity: 'common', price: 0 },
-  { id: 'pine', name: 'PINE WARDEN', rarity: 'common', price: 100, tint: '#3f8a5a' },
-  { id: 'frost', name: 'FROSTBITE', rarity: 'rare', price: 200, tint: '#8fd4ff' },
-  { id: 'ember', name: 'EMBERWALK', rarity: 'rare', price: 200, tint: '#e0603a' },
-  { id: 'aurora', name: 'AURORA', rarity: 'epic', price: 400, tint: '#6ae0c0' },
-  { id: 'robot', name: 'IRON HERO', rarity: 'legend', price: 800, body: 'robotSkin' },
-];
-const WEAPON_SKINS = [
-  { id: 'plain', name: 'BARE WOOD', rarity: 'common', price: 0 },
-  { id: 'birch', name: 'BIRCH', rarity: 'common', price: 100, tint: '#e8e0cc' },
-  { id: 'frost', name: 'RIME', rarity: 'rare', price: 200, tint: '#8fd4ff' },
-  { id: 'ember', name: 'CINDER', rarity: 'rare', price: 200, tint: '#e0603a' },
-  { id: 'night', name: 'MIDNIGHT', rarity: 'epic', price: 400, tint: '#5a4ab8' },
-  { id: 'sun', name: 'SUNFIRE', rarity: 'legend', price: 800, tint: '#ffc84a' },
-];
-// the streak a scout leaves dropping off the eagle: two colours, head and tail
+// the streak a hero leaves dropping off the eagle: two colours, head and tail
 const TRAIL_SKINS = [
   { id: 'plain', name: 'SNOWFALL', rarity: 'common', price: 0, cols: ['#f4f7ff', '#8fa0c8'] },
   { id: 'smoke', name: 'WOODSMOKE', rarity: 'common', price: 100, cols: ['#b8b0a8', '#5a5660'] },
@@ -87,31 +67,41 @@ const TRAIL_SKINS = [
 // the profile keeps its pick under, and its table. What a skin looks like on
 // a card is skinArt below.
 const SKIN_TABS = [
-  { id: 'scout', name: 'HERO', slot: 'scout', rows: SCOUT_SKINS, glyph: ['..ww....', '..ww....', '.wwww...', 'w.ww.w..', 'w.ww.w..', '..ww....', '.w..w...', '.w..w...'] },
   { id: 'bird', name: 'EAGLE', slot: 'bird', rows: BIRD_SKINS, glyph: ['........', 'w......w', 'ww....ww', '.ww..ww.', '..wwww..', '...ww...', '...ww...', '..w..w..'] },
-  { id: 'weapon', name: 'WEAPON', slot: 'weapon', rows: WEAPON_SKINS, glyph: ['...wwww.', '..w..ww.', '.w..w.w.', 'w..w..w.', 'w.w...w.', 'ww....w.', 'wwwwww..', '........'] },
   { id: 'trail', name: 'TRAIL', slot: 'trail', rows: TRAIL_SKINS, glyph: ['...w....', '..www.w.', '...w....', '......w.', '.w...www', 'www...w.', '.w......', '........'] },
   // a hero's looks (CLASSES[c].skins): real, worn in a match and seen on every screen (heroSkinOf, player.js)
-  { id: 'armatos', name: 'ARMATOS', slot: 'armatos', rows: ARM_SKINS, hero: 2, glyph: ['.wwww...', '.w..ww..', '.wwww...', '.w......', '.w......', '.w......', '.w......', 'www.....'] },
-  { id: 'fortiva', name: 'FORTIVA', slot: 'fortiva', rows: FORT_SKINS, hero: 3, glyph: ['..ww....', '.w..w...', '.w..w...', '..w.....', '.....w..', '...w..w.', '...w..w.', '....ww..'] },
-  { id: 'bella', name: 'BELLA', slot: 'bella', rows: BELLA_SKINS, hero: 4, glyph: ['..www...', '.wwwwww.', '.w...w.w', '.w...w.w', '..www..w', '...w....', '.wwwww..', '.wwwww..'] },
-  { id: 'ignia', name: 'IGNIA', slot: 'ignia', rows: IGNIA_SKINS, hero: 5, glyph: ['...w....', '..ww....', '..www.w.', '.wwww.w.', '.wwwwww.', 'ww..www.', 'ww..www.', '.wwwww..'] },
-  { id: 'salvia', name: 'SALVIA', slot: 'salvia', rows: SALVIA_SKINS, hero: 7, glyph: ['..www...', '.w...ww.', '.w..w..w', '.w..w.ww', '.w...ww.', '.w......', '.ww.....', '..w.....'] },
-  { id: 'lucerna', name: 'LUCERNA', slot: 'lucerna', rows: LUCERNA_SKINS, hero: 8, glyph: ['...ww...', '..w..w..', '.wwwwww.', '.w.ww.w.', '.wwwwww.', '.w.ww.w.', '.wwwwww.', '..wwww..'] },
-  { id: 'hiems', name: 'HIEMS', slot: 'hiems', rows: HIEMS_SKINS, hero: CLASSES.findIndex((c) => c.name === 'HIEMS'), glyph: ['...w....', '.w.w.w..', '..www...', 'wwwwwww.', '..www...', '.w.w.w..', '...w....', '........'] },
-  { id: 'rupes', name: 'RUPES', slot: 'rupes', rows: RUPES_SKINS, hero: CLASSES.findIndex((c) => c.name === 'RUPES'), glyph: ['..wwww..', '.wwwwww.', 'ww..wwww', 'w....www', 'w....www', 'ww..wwww', '.wwwwww.', '..wwww..'] },
-  { id: 'varro', name: 'VARRO', slot: 'varro', rows: VARRO_SKINS, hero: CLASSES.findIndex((c) => c.name === 'VARRO'), glyph: ['w....w..', 'ww..ww..', 'wwwwww..', 'w.ww.w..', 'wwwwww..', '.wwww...', '..ww....', '........'] },
-  { id: 'velox', name: 'VELOX', slot: 'velox', rows: VELOX_SKINS, hero: CLASSES.findIndex((c) => c.name === 'VELOX'), glyph: ['........', 'ww......', 'w.......', 'wwwwww..', 'wwwwwww.', 'ww......', 'wwwwwwww', '.w...w..'] },
-  { id: 'bucina', name: 'BUCINA', slot: 'bucina', rows: BUCINA_SKINS, hero: CLASSES.findIndex((c) => c.name === 'BUCINA'), glyph: ['......ww', '.....w.w', 'w...w..w', 'ww.w...w', '.ww....w', '..ww...w', '...ww.w.', '....ww..'] },
-  { id: 'nix', name: 'NIX', slot: 'nix', rows: NIX_SKINS, hero: CLASSES.findIndex((c) => c.name === 'NIX'), glyph: ['...w....', '.w.w.w..', '..www...', 'wwwwwww.', '..www...', '.w.w.w..', '...w....', '........'] },
-  { id: 'sagitta', name: 'SAGITTA', slot: 'sagitta', rows: SAGITTA_SKINS, hero: CLASSES.findIndex((c) => c.name === 'SAGITTA'), glyph: ['wwwwwwww', 'w..ww..w', '...ww...', '...ww...', '..wwww..', '..wwww..', '...ww...', '........'] },
-  { id: 'faber', name: 'FABER', slot: 'faber', rows: FABER_SKINS, hero: CLASSES.findIndex((c) => c.name === 'FABER'), glyph: ['..ww....', '.w..w...', 'w.w..w..', 'w.ww.w..', '.w..w...', '..ww....', '..w.....', '..w.....'] },
-  { id: 'falco', name: 'FALCO', slot: 'falco', rows: FALCO_SKINS, hero: CLASSES.findIndex((c) => c.name === 'FALCO'), glyph: ['........', '.w....w.', '.ww..ww.', '..wwww..', '...ww...', '...ww...', '..w..w..', '........'] },
-  { id: 'maris', name: 'MARIS', slot: 'maris', rows: MARIS_SKINS, hero: CLASSES.findIndex((c) => c.name === 'MARIS'), glyph: ['.....ww.', '....wwww', '...w.ww.', '..w..w..', '.w......', 'w.......', 'ww......', '.w......'] },
-  { id: 'lignum', name: 'LIGNUM', slot: 'lignum', rows: LIGNUM_SKINS, hero: CLASSES.findIndex((c) => c.name === 'LIGNUM'), glyph: ['.www....', 'wwwww...', 'wwww....', '.w.w....', '....w...', '.....w..', '......w.', '.......w'] },
+  { id: 'armatos', name: 'ARMATOS', slot: 'armatos', rows: ARM_SKINS, hero: heroIndex('ARMATOS'), glyph: ['.wwww...', '.w..ww..', '.wwww...', '.w......', '.w......', '.w......', '.w......', 'www.....'] },
+  { id: 'fortiva', name: 'FORTIVA', slot: 'fortiva', rows: FORT_SKINS, hero: heroIndex('FORTIVA'), glyph: ['..ww....', '.w..w...', '.w..w...', '..w.....', '.....w..', '...w..w.', '...w..w.', '....ww..'] },
+  { id: 'bella', name: 'BELLA', slot: 'bella', rows: BELLA_SKINS, hero: heroIndex('BELLA'), glyph: ['..www...', '.wwwwww.', '.w...w.w', '.w...w.w', '..www..w', '...w....', '.wwwww..', '.wwwww..'] },
+  { id: 'ignia', name: 'IGNIA', slot: 'ignia', rows: IGNIA_SKINS, hero: heroIndex('IGNIA'), glyph: ['...w....', '..ww....', '..www.w.', '.wwww.w.', '.wwwwww.', 'ww..www.', 'ww..www.', '.wwwww..'] },
+  { id: 'aura', name: 'AURA', slot: 'aura', rows: AURA_SKINS, hero: heroIndex('AURA'), glyph: ['...w....', '...w....', '..www...', 'wwwwwww.', '..www...', '.w...w..', 'w.....w.', '........'] },
+  { id: 'salvia', name: 'SALVIA', slot: 'salvia', rows: SALVIA_SKINS, hero: heroIndex('SALVIA'), glyph: ['..www...', '.w...ww.', '.w..w..w', '.w..w.ww', '.w...ww.', '.w......', '.ww.....', '..w.....'] },
+  { id: 'lucerna', name: 'LUCERNA', slot: 'lucerna', rows: LUCERNA_SKINS, hero: heroIndex('LUCERNA'), glyph: ['...ww...', '..w..w..', '.wwwwww.', '.w.ww.w.', '.wwwwww.', '.w.ww.w.', '.wwwwww.', '..wwww..'] },
+  { id: 'hiems', name: 'HIEMS', slot: 'hiems', rows: HIEMS_SKINS, hero: heroIndex('HIEMS'), glyph: ['...w....', '.w.w.w..', '..www...', 'wwwwwww.', '..www...', '.w.w.w..', '...w....', '........'] },
+  { id: 'rupes', name: 'RUPES', slot: 'rupes', rows: RUPES_SKINS, hero: heroIndex('RUPES'), glyph: ['..wwww..', '.wwwwww.', 'ww..wwww', 'w....www', 'w....www', 'ww..wwww', '.wwwwww.', '..wwww..'] },
+  { id: 'varro', name: 'VARRO', slot: 'varro', rows: VARRO_SKINS, hero: heroIndex('VARRO'), glyph: ['w....w..', 'ww..ww..', 'wwwwww..', 'w.ww.w..', 'wwwwww..', '.wwww...', '..ww....', '........'] },
+  { id: 'velox', name: 'VELOX', slot: 'velox', rows: VELOX_SKINS, hero: heroIndex('VELOX'), glyph: ['........', 'ww......', 'w.......', 'wwwwww..', 'wwwwwww.', 'ww......', 'wwwwwwww', '.w...w..'] },
+  { id: 'bucina', name: 'BUCINA', slot: 'bucina', rows: BUCINA_SKINS, hero: heroIndex('BUCINA'), glyph: ['......ww', '.....w.w', 'w...w..w', 'ww.w...w', '.ww....w', '..ww...w', '...ww.w.', '....ww..'] },
+  { id: 'nix', name: 'NIX', slot: 'nix', rows: NIX_SKINS, hero: heroIndex('NIX'), glyph: ['...w....', '.w.w.w..', '..www...', 'wwwwwww.', '..www...', '.w.w.w..', '...w....', '........'] },
+  { id: 'sagitta', name: 'SAGITTA', slot: 'sagitta', rows: SAGITTA_SKINS, hero: heroIndex('SAGITTA'), glyph: ['wwwwwwww', 'w..ww..w', '...ww...', '...ww...', '..wwww..', '..wwww..', '...ww...', '........'] },
+  { id: 'faber', name: 'FABER', slot: 'faber', rows: FABER_SKINS, hero: heroIndex('FABER'), glyph: ['..ww....', '.w..w...', 'w.w..w..', 'w.ww.w..', '.w..w...', '..ww....', '..w.....', '..w.....'] },
+  { id: 'falco', name: 'FALCO', slot: 'falco', rows: FALCO_SKINS, hero: heroIndex('FALCO'), glyph: ['........', '.w....w.', '.ww..ww.', '..wwww..', '...ww...', '...ww...', '..w..w..', '........'] },
+  { id: 'maris', name: 'MARIS', slot: 'maris', rows: MARIS_SKINS, hero: heroIndex('MARIS'), glyph: ['.....ww.', '....wwww', '...w.ww.', '..w..w..', '.w......', 'w.......', 'ww......', '.w......'] },
+  { id: 'lignum', name: 'LIGNUM', slot: 'lignum', rows: LIGNUM_SKINS, hero: heroIndex('LIGNUM'), glyph: ['.www....', 'wwwww...', 'wwww....', '.w.w....', '....w...', '.....w..', '......w.', '.......w'] },
 ];
-const SK_TAB_BIRD = 1; // SKIN_TABS' eagle and scout, the two tabs a match reads
-const SK_TAB_SCOUT = 0;
+const SK_TAB_BIRD = 0; // SKIN_TABS' eagle, the one non-hero tab a match reads
+// every hero has its tab, named for it: a new hero without one is caught at load
+for (const c of CLASSES) if (!SKIN_TABS.some((t) => t.hero === heroIndex(c.name) && t.rows === c.skins)) throw new Error('skins.js: ' + c.name + ' has no SKIN_TABS row');
+
+// The wardrobe slots the game no longer has - the HERO coat tints and the
+// WEAPON tints (the old HUNTER's coat and bow) - and what each of their skins
+// cost: a profile that bought one gets the coins back on its next boot
+// (PROFILE.refundRetired, called from boot.js). Frozen: never edit.
+const SKIN_RETIRED_SLOTS = ['scout', 'weapon'];
+const SKIN_RETIRED = {
+  'scout:pine': 100, 'scout:frost': 200, 'scout:ember': 200, 'scout:aurora': 400, 'scout:robot': 800,
+  'weapon:birch': 100, 'weapon:frost': 200, 'weapon:ember': 200, 'weapon:night': 400, 'weapon:sun': 800,
+};
 
 // the row an id names in a table, the free one for anything it does not have
 function skinRow(rows, id) {
@@ -142,15 +132,6 @@ function profileHeroSkins() {
 function birdSkinFor(team) {
   return player && team === player.team ? skinWorn(SKIN_TABS[SK_TAB_BIRD]).id : BIRD_SKINS[0].id;
 }
-// The body a player wears on this screen: the local player's worn scout
-// skin, when it has a body of its own (SPRITES[body][skin(team)]), else null
-// and the class body. A skin is not sent to the other screens yet, so every
-// other player wears the class body here.
-function scoutBody(p) {
-  if (p !== player) return null;
-  const r = skinWorn(SKIN_TABS[SK_TAB_SCOUT]);
-  return r.body && SPRITES[r.body] ? SPRITES[r.body][skin(p.team)] : null;
-}
 // what a finished match pays (endMatch, js/sim/player.js, on its first ending
 // only); practice pays nothing
 function payMatchCoins(won) {
@@ -163,19 +144,6 @@ function payMatchCoins(won) {
 // it is today's eagle, which flies along +x and is turned nose-up. f is the
 // beat (0..3) while the card is lit. Cached; nothing is smoothed.
 const skinArtCache = new Map();
-function washed(src, tint) {
-  const cv = document.createElement('canvas');
-  cv.width = src.width; cv.height = src.height;
-  const g = cv.getContext('2d');
-  g.drawImage(src, 0, 0);
-  if (tint) {
-    g.globalCompositeOperation = 'source-atop';
-    g.globalAlpha = 0.5;
-    g.fillStyle = tint;
-    g.fillRect(0, 0, cv.width, cv.height);
-  }
-  return cv;
-}
 // the streak: a bright head, the tail in the second colour and breaking up;
 // f slides the specks
 function trailArt(cols, f) {
@@ -201,13 +169,9 @@ function skinArt(tab, r, t, f) {
   }
   let key = tab.id + ':' + r.id + ':' + t;
   if (tab.id === 'trail') key += ':' + f;
-  if (tab.id === 'scout') key += ':' + player.cls + ':' + JSON.stringify(player.look); // the scout you are
   let cv = skinArtCache.get(key);
   if (!cv) {
-    if (tab.hero != null) cv = SPRITES.champLook(tab.hero, null, t, r.id).down[0]; // the hero standing in that look
-    else if (tab.id === 'scout' && r.body) cv = SPRITES[r.body][t].icon;
-    else if (tab.id === 'scout') cv = washed(SPRITES.portrait(player.cls, player.look, t), r.tint);
-    else if (tab.id === 'weapon') cv = washed(SPRITES.itemBow, r.tint);
+    if (tab.hero != null) cv = SPRITES.champLook(tab.hero, t, r.id).down[0]; // the hero standing in that look
     else cv = trailArt(r.cols, f);
     skinArtCache.set(key, cv);
   }

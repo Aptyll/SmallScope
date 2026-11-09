@@ -7,22 +7,22 @@ Everything in this section lives under the **`status effects`** banner at the fo
 
 | Reach for | When |
 | --- | --- |
-| `hurtUnit(e, dmg, nx, ny, src, o)` | **any** blow. `o` = `{ type, kb, kbMul, cause, ambush, crit, basic }` — `kb` the absolute px/s of shove an ability picks, `kbMul` the multiplier on whatever shove that kind takes anyway ([knockback](the-basic-attack.md#knockback)). Routes to `damagePlayer` / `hurtAnimal` / `hurtRobot`, which stay for what is genuinely per-kind (a den waking, a worker turning on whoever hit it) |
+| `hurtUnit(e, dmg, nx, ny, src, o)` | **any** blow. `o` = `{ type, kb, kbMul, cause, crit, burn, slow, basic, ab }` — `kb` the absolute px/s of shove an ability picks, `kbMul` the multiplier on whatever shove that kind takes anyway ([knockback](the-basic-attack.md#knockback)). Routes to `damagePlayer` / `hurtAnimal` / `hurtRobot`, which stay for what is genuinely per-kind (a den waking, a worker turning on whoever hit it) |
 | `unitsNear(src, x, y, r)` | every living thing in a circle that `src` may touch — players, wildlife **and** bots in one list |
-| `unitsHit(src, x, y, r)` | the same, minus anyone whose i-frames are up: the list a **blow** sweeps, so a rival mid-roll is untouchable. A lasting ground *condition* (a crater) wants `unitsNear` — a condition is not a hit, and a roll should not shrug one off |
-| `stunUnit` `rootUnit` `slowUnit` `netUnit` `markUnit` `igniteUnit` `cutHeal` `weakenUnit` | the one place each state is written. Each takes the worse/longer of what is already on the body |
+| `unitsHit(src, x, y, r)` | the same, minus anyone whose i-frames are up: the list a **blow** sweeps, so a rival mid-roll is untouchable. A lasting ground *condition* (a standard's ring) wants `unitsNear` — a condition is not a hit, and a roll should not shrug one off |
+| `stunUnit` `rootUnit` `slowUnit` `markUnit` `igniteUnit` `cutHeal` `weakenUnit` | the one place each state is written. Each takes the worse/longer of what is already on the body |
 | `unitMoveMul(e)` | what is left of a non-player's speed — `abilityMoveMul`'s twin. Spent inside `navStep`, so one edit slows every walker; the two movers that steer themselves rather than route (a loitering bot, a bird in flight) fold it in by hand |
 | `knockUp(e, t, src)` / `upLift(e)` | a knock-up: a stun that lifts the body (`e.upT`), drawn by `abilityPose` |
 | `shieldUnit(p, hp, t, kind)` | a shield of `hp` for `t` s (kind `'ward'` unless named), one entry of `p.shields`: every shield a unit holds is that one list, spent in `SHIELD_KINDS` order by `shieldSpend` (from `damagePlayer`) before health, its clock run down by `shieldTick`, read by `shieldOf(e, kind?)`, taken off by `shieldClear`. A kind's row says whether it stacks (to a `cap`) or keeps the bigger, and whether it lasts |
-| `ccMul(e)` | **tenacity**: what is left of a stun, root, slow or net on this body (the product of 1 − t over `HERO_TEN`, js/sim/heroes.js: `guardTen` today, times the STEADY passive's share, `itemTen`, js/sim/items.js); `stunUnit` with `firm` skips it |
+| `ccMul(e)` | **tenacity**: what is left of a stun, root or slow on this body (the product of 1 − t over `HERO_TEN`, js/sim/heroes.js: `guardTen` today, times the STEADY passive's share, `itemTen`, js/sim/items.js); `stunUnit` with `firm` skips it |
 | `clearUnitStatus(e)` / `douseUnit(e)` | a fresh body, and a fire put out. Called by `Player.reset`, `die`, `makeAnimal`, `makeRobot` |
 
 `unitFoe(src, e)` is the side rule they all share, and it is where **wildlife being neutral** is
 written down once: an animal has no `team` (`unitTeam` → −1), so it is nobody's friend and
 everybody's fair game — exactly how the world already treated a deer. `sideOf(w)` hands one of these
-lists the side of a **thing in the world** — a net, a shot in flight — rather than a living
-caster, so a net outlives the hunter who threw it and still knows whose it was; `abCredit(w)`
-(js/sim/abilities.js) is its other half, and pays a kill to nobody once that caster is down.
+lists the side of a **thing in the world** (a planted standard, a fire, a shot in flight) rather
+than a living caster, so a thing left behind outlives the hero who left it and still knows whose it
+was.
 
 ## I-frames: only something deliberate grants them
 
@@ -48,15 +48,14 @@ a body can take several hits in one frame — `SFX.hurt()`’s 0.03 s `gap` coll
 one so they do not phase, while the damage total (each hit adds to it), the red flash, the shove and the shake are
 per hit. Knockback does not accumulate: the last blow of a step writes `kbx`/`kby` outright.
 
-The eight states, and what each does to a body:
+The seven states, and what each does to a body:
 
 | state | field | what it does | the tell on the body |
 | --- | --- | --- | --- |
 | **stun** | `stunT`/`stunMax` | a player has every intent dropped out of `p.input` at the top of `updatePlayer` (movement, fire, work, slide, the edge-triggered lot) rather than each action refusing separately, so a human and an AI fill are pinned by the identical window — the draw, the swing in flight and any roll are cancelled outright; an animal or a bot skips its brain for the window in `updateAnimal`/`updateRobot`. Never touches velocity: whatever hit you still slides you | three sparks orbiting (`drawStunStars`) |
-| **root** | `rootT` | move multiplier 0 — no walk, no roll, no slide; attacks still work. Currently no ability sets it — the state and its tell stay with the universal set ([Intentional dead code](../checklists.md#intentional-dead-code)) | sprung iron jaws at the feet |
-| **slow** | `slowT`/`slowMul` | the multiplier on every speed cap | — (the net's drape says it, when a net is why) |
-| **net** | `netT` | the slow, plus the reason for it | a mesh drape over the sprite |
-| **mark** | `markT` | on a player, `seenAt()` returns full range and both maps keep drawing them (its one legal bypass); an animal or a bot has no cover to strip, so it is the reveal alone. Like root, currently sourceless — kept with the set | gold chevrons falling toward the head |
+| **root** | `rootT` | move multiplier 0 — no walk, no roll, no slide; attacks still work (MARIS's HARPOON, among others) | sprung iron jaws at the feet |
+| **slow** | `slowT`/`slowMul` | the multiplier on every speed cap | — |
+| **mark** | `markT` | on a player, `seenAt()` returns full range and both maps keep drawing them (its one legal bypass); an animal or a bot has no cover to strip, so it is the reveal alone (AURA's STARLIGHT, LUCERNA's LAMPLIGHT) | gold chevrons falling toward the head |
 | **fire** | `burnT`/`burnDps`/`burnBy` | see below | flame tongues off the crown, and lit snow under the feet |
 | **healing cut** | `healCutT`/`healCut` | every heal `healPlayer` gives the body is `healCut` smaller (FROSTBITE: 40% for 3 s, the item passive; the TORCH trick: `TORCH_CUT` for `TORCH_T`, [the loadout](loadout.md)); only players heal, so the other kinds carry it harmlessly | the health bar's fill frosted, every other pixel of its lower row ice white (`drawHealCut`) |
 | **weak** | `weakT` | every blow the body lands is worth `WEAK_MUL` (`loadoutDeal`, from `hurtUnit`; the BOLAS trick) | a cord round the shins |
@@ -90,8 +89,7 @@ Two rules make the burn behave like fire rather than like a stream of small arro
 
 - **`DOT_CAUSE`** (js/sim/player.js) — a bite of fire is *not a blow*. It goes **through** the i-frames
   a body does have — a roll does not put a fire out, and neither does a respawn — and never shoves:
-  a burn is a condition on the body, not a blow landing on it. It still breaks cover:
-  you cannot lie hidden while you are alight.
+  a burn is a condition on the body, not a blow landing on it.
 - **The tick's own damage type is `burn`, not `fire`** — otherwise the bite would relight the fire
   dealing it and nothing would ever go out.
 

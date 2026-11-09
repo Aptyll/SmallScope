@@ -63,7 +63,9 @@ Every `mod(k)` writes the kit's own vocabulary (`k.add` is the hero stat bag, js
 | gold | VAMPIRE | HEAL ON KILL, HITS HARDER | `killHeal += 25; add.dmg += 1` |
 | gold | WINTER'S CHILD | MUCH FASTER, SHARPER ON ICE | `iceMax *= 1.3; iceSteer += 0.35; add.ms += 4` |
 
-The numbers are pre-MOBA; the hunter-only words (RENOCK, ARROWS) want a pass for the melee heroes.
+The numbers are pre-MOBA; the bow words (RENOCK, ARROWS) want a pass for the melee heroes, and
+AMBUSHER'S EDGE and PHANTOM's `ambushMul` half have nothing to land on: the ambush shot left the
+game with the hunter.
 
 ## Building them back
 

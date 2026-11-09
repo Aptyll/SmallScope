@@ -129,7 +129,7 @@ function rupesHeave(p) {
     x: p.x, y: p.y - BOW_Y,
     vx: Math.cos(a) * HEAVE_SPD, vy: Math.sin(a) * HEAVE_SPD,
     t: 0, life: HEAVE_RANGE / HEAVE_SPD, dmg: abDmg(p, 'heave', abRk(p, 'heave', 'dmg')), pow: 1,
-    owner: p.id, team: p.team, ambush: false, trailD: 0,
+    owner: p.id, team: p.team, trailD: 0,
     solid: true, kb: 0.8, col: '#f4f7ff', ab: 'heave',
     slow: [abRk(p, 'heave', 'slowT'), abRk(p, 'heave', 'slow')], // [s, walk x]: put on as the blow lands
     look: 'snowblock', // drawn as the block (HERO_SHOTS, js/draw/rupes.js)
@@ -166,7 +166,6 @@ function rupesShoulder(p) {
   const dx = p.input.aimX - p.x, dy = p.input.aimY - p.y, d = Math.hypot(dx, dy) || 1;
   p.rushNX = dx / d; p.rushNY = dy / d;
   p.rushT = SHOULDER_T;
-  p.rushVictim = null;
   p.dash = 'shoulder';
   p.sliding = false;
   faceToward(p, dx, dy, true);
@@ -214,7 +213,6 @@ function rupesAvalanche(p) {
   const dx = p.input.aimX - p.x, dy = p.input.aimY - p.y, d = Math.hypot(dx, dy) || 1;
   p.rushNX = dx / d; p.rushNY = dy / d;
   p.rushT = AVA_T;
-  p.rushVictim = null;
   p.dash = 'avalanche';
   p.marchHit.length = 0;
   p.avaD = 0;

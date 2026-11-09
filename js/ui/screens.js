@@ -590,11 +590,10 @@ const EM_TURN = ['down', 'left', 'up', 'right']; // a turn on the spot, one faci
 const emo = { i: -1, t0: -1e9, hover: [0, 0, 0, 0] };
 
 const EMOTES = [
-  // hoisted: the catch's hold frame is the one pose in the set with both
-  // arms over the head, and what those arms are holding is a fish, which is
-  // the correct thing to be holding at the end of a match in this valley
+  // jumping for joy: three hops head-on, the feet kicking on the way up and
+  // a puff where each lands
   { cap: '1', glyph: 'cheer',
-    up: (s, f) => { if (f < 0.08) return { spr: s.catch[0] }; if (f < 0.16) return { spr: s.catch[1] }; const q = ((f - 0.16) * 3) % 1; return { spr: s.catch[2], dy: Math.round(Math.sin(q * Math.PI) * 8), puff: q < 0.3 ? q / 0.3 : 0 }; },
+    up: (s, f) => { const q = (f * 3) % 1; return { spr: s.down[q < 0.5 ? 1 + (Math.floor(f * 12) & 1) : 0], dy: Math.round(Math.sin(q * Math.PI) * 8), puff: q < 0.3 ? q / 0.3 : 0 }; },
     down: (s, f) => { const q = (f * 3) % 1; return { spr: s.prone.down[1 + (Math.floor(f * 16) & 1)], dy: Math.round(Math.sin(q * Math.PI) * 10), puff: q < 0.3 ? q / 0.3 : 0 }; } },
   // the shuffle: the two side frames on alternate beats, swaying across its
   // own feet
@@ -612,7 +611,7 @@ const EMOTES = [
   { cap: '4', glyph: 'flop',
     up: (s, f) => {
       if (f < 0.08 || f > 0.92) return { spr: s.down[0] };
-      if (f < 0.16 || f > 0.84) return { spr: s.catch[0] }; // the stoop, going down and getting up
+      if (f < 0.16 || f > 0.84) return { spr: s.prone.down[0], low: true }; // on its side, going down and getting up
       const b = Math.floor((f - 0.16) * 20);
       return { spr: s.prone.right[b < 1 ? 0 : 1 + (b & 1)], puff: f < 0.4 ? (f - 0.16) / 0.24 : 0, low: true };
     },

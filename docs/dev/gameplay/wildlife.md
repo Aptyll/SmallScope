@@ -49,14 +49,14 @@ the early game is as tough as the table when someone finally pulls it. What grow
 a level, rounded, before the HUNTSMAN bonus is taken off it — a level-6 rabbit is 105 gold, a
 level-6 wolf 165, and a level-12 beast a little over twice its level-1 self, about what its hp
 grew by. A kind with an `xp` in `YIELD` (deer, wolf, the bear) is also worth that much XP,
-grown `ANIMAL_LV_XP` (the same tenth) a level and shared by the hunter's side standing near
+grown `ANIMAL_LV_XP` (the same tenth) a level and shared by the killer's side standing near
 (`shareXp`, [Hero levels](../multiplayer.md#hero-levels)); a rabbit is worth no XP.
 
 **The noticed mark.** An animal that has a player in sight wears a `!` over its head — the
 `drawSenseMark` glyph in [rendering.md](../rendering/overhead-health-bars.md), stamina white on
 prey and threat red on a wolf — for as long as it does: `a.senseT` counts the seconds since it
 first did and is 0 whenever it does not. For prey, "in sight" is a player inside the
-`FLEE_SIGHT` ring (through `seenAt`, so cover keeps it down) **or a flight already under way**,
+`FLEE_SIGHT` ring (through `seenAt`, so stealth keeps it down) **or a flight already under way**,
 so a deer running wears the reason it is running and a deer that grazes on has not seen you; for
 a camp monster it is a hunt in progress and nothing else — a leash bar still draining is still
 a hunt — and the mark going out is the monster giving you up. The **body** says the same thing
@@ -83,8 +83,7 @@ owning the velocity the way a roll does (`rideLeapStep`), clearing any tile whos
 says `leap` (a felled trunk, the practice field's `log`, `isSolidTile`). A leap never lands on a trunk: it holds up to
 `RIDE_LEAP_HOLD` longer to come down clear. E again hops off (`rideEnd`) and the deer bolts, wild
 again. A stun on either body, a fall through the ice, the zipline, the air, or either one dying
-throws the rider at rest (`rideCheck`, `stunUnit`, `die`, `animalDies`); nobody goes prone from
-deer-back. Bots never mount. The `riding` banner in
+throws the rider at rest (`rideCheck`, `stunUnit`, `die`, `animalDies`). Bots never mount. The `riding` banner in
 js/sim/wildlife.js holds all of it.
 
 ## What a beast is doing: the clips
@@ -108,7 +107,7 @@ a wander is the same gallop run slower, not a second animation; and `clipFrame`
 rabbit is low over its paws; standing still and *wary*, the deer's head is up and turning and
 the rabbit is rocked back on its haunches. So **a grazing deer is a deer that has not seen
 you** — the fact the `!` carries, said by the body, at a range where the mark is a speck. It is
-what makes closing on one under GHOSTSTEP or buried in the snow visibly worth doing.
+what makes closing on one in a SNOW CLOAK (the DRIFT passive) visibly worth doing.
 
 Wary is `a.wary`, held at `PREY_WARY_T` (3 s) whenever a player is in sight or a flight is
 under way and decaying otherwise. It is deliberately softer than `a.senseT`, which snaps to 0:
@@ -118,13 +117,13 @@ no speed, no sight, no bolt of its own.
 
 **A rabbit sits up before it goes.** `RABBIT_ALERT` (0.3 s): the first time a rabbit notices a
 player it rocks onto its haunches and **holds** — no walk, no flight — and only then bolts. It
-is the one still shot a hunter is ever offered at one. A **hit** skips it
+is the one still shot anyone is ever offered at one. A **hit** skips it
 (`hurtAnimal` clears `alertT`), so a rabbit already running never stops to pose; a stun clears
 it with everything else; and the jink still fires out of it, because `arrowAtRabbit` is read
 before the beat is.
 
 `updateAnimal()` is the shared shell: it ages the flash and knockback, runs
-`updateUnitStatus` (the shared clock — root, slow, net, mark, fire), dispatches to
+`updateUnitStatus` (the shared clock — root, slow, mark, fire), dispatches to
 `updatePrey` / `updateCampMonster`, clamps to the world, and calls `animalDies(a)` — the
 one place a kill pays out, straight from the `YIELD` table. Everything in `animals` is a target
 for arrows (the disc `animalHitR` about `animalHitY`: the arrow update sweeps it, the aim line asks
@@ -155,9 +154,8 @@ included, which is what keeps the `.` overlay honest ([rendering.md](../renderin
   the end of it is where a settled deer's head actually goes down.
 - **Bolting.** Both species flee, on `FLEE_SIGHT` / `FLEE_TIME`: a rabbit sits tight and goes
   at 36 px and runs 1.6–2.6 s, a deer watches wider at 46 px. The trigger asks
-  **`seenAt(p, FLEE_SIGHT[kind])`**, not raw distance, so GHOSTSTEP and lying buried in the snow
-  are how a hunter closes on a deer at all — measured, full cover collapses a deer's ring from 46
-  to `PRONE_SNIFF` (22), and inside *that* it bolts no matter what you are lying under. A hit
+  **`seenAt(p, FLEE_SIGHT[kind])`**, not raw distance, so a hero's stealth (DRIFT, −0.15 on
+  `kit.stealth`) is how one closes on a deer at all: it shrinks the ring by that share. A hit
   also sends either species running from the nearest player (`fleeT`).
 - **The flight** is a chain of routed legs at `PREY_RUN` (a rabbit's 104 px/s, half again a
   walking hero's): `fleeGoal(a, from)` picks a tile ~6 tiles off, as straight away from the
@@ -190,7 +188,7 @@ included, which is what keeps the `.` overlay honest ([rendering.md](../renderin
   `RABBIT_DODGE_T` (0.11 s, ~29 px, clear of the 8 px disc `animalHit` tests) — and then an ordinary
   bolt (`fleeT`) away from the shooter: the zig, then the zag. The charge comes back over
   `RABBIT_DODGE_CD` (6 s) whatever the rabbit is doing, so an empty bar is the read that the
-  next arrow lands; a rooted or netted rabbit never spends it. A shot already past or flying
+  next arrow lands; a rooted rabbit never spends it. A shot already past or flying
   wide is nothing to it, and a stun drops a dash mid-jink like any other move.
 
 A kill pays its `YIELD` gold, grown a tenth a level for the animal's level (`ANIMAL_LV_GOLD`,
@@ -214,7 +212,7 @@ still load. All three run
 
 - **Neutral.** There is no sight and no threat bar filling on a linger: a player can stand at
   the mouth of a den, or beside a fishing bear, and nothing happens. **A hit is the whole trigger** — an arrow, a roll, a
-  stomp, anything through `hurtUnit` — and it wakes the *camp*: `wakeCamp(w, hitter)` hands the
+  key, anything through `hurtUnit` — and it wakes the *camp*: `wakeCamp(w, hitter)` hands the
   hitter to every monster of the same camp at a full leash bar. A bear that was not already
   hunting plays its `roar` clip, planted, for `BEAR_ROAR_FRAMES`, and the camp gives `SFX.roar()`
   (the `roar` sample, a low bear roar about as long as the clip); a pack that wakes gives
@@ -282,12 +280,12 @@ blow its heroes land per bear, up to `BLACK_STACK_MAX` (4) (`statStackMul`, stat
 kill ([Wildlife](wildlife.md)). The teammate share goes through `awardGold` at each teammate's own feet (so a bot's purchase can
 eat it the same tick), to every active teammate who is not dead
 or in the air; the buff goes to every active teammate regardless. The bear's 150 XP is the
-hunter's side's, shared by whoever of it stands near ([Hero levels](../multiplayer.md#hero-levels)).
+killer's side's, shared by whoever of it stands near ([Hero levels](../multiplayer.md#hero-levels)).
 
 **The bear buff**: the **BLACK BUFF** (`MONSTER`'s `buff`, named in the wiki; `campBuff(p, t, kind)`,
 the constants above the `camp monsters` banner; `p.buffKind` says whose): `p.buffT`
 seconds during which every blow the player lands is `CAMP_BUFF_DMG` (×1.25, applied in
-`hurtUnit` — a shot, a roll and a stomp alike) and the walk is `CAMP_BUFF_SPD` (×1.15, in
+`hurtUnit` — a shot, a roll and a key alike) and the walk is `CAMP_BUFF_SPD` (×1.15, in
 `abilityMoveMul`). The kill gives the killer's whole team the buff for `CAMP_BUFF_EPIC_T`
 (120 s); a fresh grant only ever extends what is left, and the latest bear is the one worn. It is worn as a
 **ring of twelve pips around the feet in the bear's colour** (`buffCol`: violet) (`drawBuffRing`, js/draw/bodies.js) that loses a pip

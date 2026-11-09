@@ -2,8 +2,8 @@
 // ------------------------------------------------------------ hero grid
 // The HERO GRID on the lobby (menu.js `lobby`): a cell per hero in the
 // middle column under the search field, League's champion grid at Softfall's size. A cell is the hero's
-// own 48 px model (js/sprites/looks.js) cropped to the head at 2x - each hero
-// wears ONE fixed look (CLASSES, js/sim/player.js), so the face IS the hero.
+// head off its own standing front at 2x (heroHead, js/ui/draft.js), in its free
+// look, so the face IS the hero.
 // What you point at is gold (red while it is a ban), a hovered cell lightens,
 // and each hero's name prints under its cell.
 // A banned hero is dimmed and struck through in red; one a person on your
@@ -18,13 +18,13 @@
 const HERO_CELL = 42;                  // a cell's side: a 20 px head crop at 2x, and its rim
 const HERO_GAP = 6;
 const HERO_PITCH = HERO_CELL + 12;     // a grid row and the names under it
-const HERO_CROP = { x: 14, y: 2, s: 20 }; // the head inside the 48 px model
+const HERO_FACE = 20;                  // a face cell's side at 1x (heroHead, js/ui/draft.js)
 const HERO_SEARCH_W = 96;              // the search field, right of the filters
 const HERO_SEARCH_MAX = 12;
 
-// every cell the grid has: { name, cls, look }
+// every cell the grid has: { name, cls }
 function heroList() {
-  return CLASSES.map((c, i) => ({ name: c.name, cls: i, look: c.look }));
+  return CLASSES.map((c, i) => ({ name: c.name, cls: i }));
 }
 // the heroes the search lets through: the typed name's (menu.search,
 // anywhere in the name)
@@ -97,7 +97,7 @@ function drawHeroRow(cells, a) {
   const m = state.menu, D = DRAFT;
   const live = m.screenT >= 1 && m.popT <= 0 && draftOpen() && D.lock[localId] < 0;
   const hv = live ? heroCellAt(cells) : -1;
-  const team = skin(player.team), S = HERO_CROP.s, mark = TEAMS[team].mark;
+  const team = skin(player.team), S = HERO_FACE, mark = TEAMS[team].mark;
   const mine = D.hover[localId], banning = D.phase === 'ban';
   for (const c of cells) {
     const h = c.hero, i = c.i;

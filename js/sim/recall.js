@@ -39,8 +39,8 @@ function roostRing(p) {
 function recallBlocked(p) {
   if (p.dead || inAir(p)) return 'busy';
   if (!roostTile(p)) return 'nobird';
-  if (p.stunT > 0 || p.fallT > 0 || p.dodgeT > 0 || p.castT > 0 || p.rushT > 0 || p.grapT > 0 ||
-    p.zip >= 0 || p.zipWalk || p.mount || p.charging || p.prone) return 'busy';
+  if (p.stunT > 0 || p.fallT > 0 || p.dodgeT > 0 || p.castT > 0 || p.rushT > 0 ||
+    p.zip >= 0 || p.zipWalk || p.mount || p.charging) return 'busy';
   return null;
 }
 // the cmd: start the channel, or say why not (me.lastCmd for a bot)
@@ -96,6 +96,6 @@ function updateRecall(p, dt) {
   if (p.ringFxT <= 0) {
     p.ringFxT = RING_FX_T;
     particles.push({ x: p.x + rand(-5, 5), y: p.y - 4, vx: 0, vy: rand(-26, -16),
-      life: rand(0.5, 0.8), maxLife: 0.6, color: '#8fe08a', size: 1, grav: 0, alpha: 1 - concealOf(p) });
+      life: rand(0.5, 0.8), maxLife: 0.6, color: '#8fe08a', size: 1, grav: 0, alpha: 1 });
   }
 }

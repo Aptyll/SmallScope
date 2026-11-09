@@ -21,24 +21,6 @@ window.SPR = (() => {
     return c;
   }
 
-  // Per-row [firstX, lastX] of the painted pixels, taken straight off the grid.
-  // The game's snow cover needs to know how wide a prone body is on every row;
-  // reading that back off the baked canvas would mean a getImageData per pose,
-  // and the char grid already knows. Attached to the canvas as `.spans`.
-  function spansOf(rows, pal) {
-    return rows.map((r) => {
-      let lo = 99, hi = -1;
-      for (let x = 0; x < r.length; x++) if (pal[r[x]]) { if (x < lo) lo = x; hi = x; }
-      return hi < 0 ? null : [lo, hi];
-    });
-  }
-  function bakeSpan(rows, pal) {
-    const c = bake(rows, pal);
-    c.spans = spansOf(rows, pal);
-    return c;
-  }
-
-
   function flipH(src) {
     const c = document.createElement('canvas');
     c.width = src.width; c.height = src.height;
@@ -46,8 +28,6 @@ window.SPR = (() => {
     g.translate(src.width, 0);
     g.scale(-1, 1);
     g.drawImage(src, 0, 0);
-    // a mirrored pose's spans mirror with it
-    if (src.spans) c.spans = src.spans.map((s) => (s ? [src.width - 1 - s[1], src.width - 1 - s[0]] : null));
     return c;
   }
 
@@ -149,5 +129,5 @@ window.SPR = (() => {
     TEAM_SKINS.forEach((t, i) => Object.assign(t, TEAM_PALETTES[id][i]));
     for (const fn of teamBakes) fn();
   };
-  return { bake, spansOf, bakeSpan, flipH, bakeClips, mapClips, liveIcon, TEAM_SKINS, teamBuildPal, onTeams };
+  return { bake, flipH, bakeClips, mapClips, liveIcon, TEAM_SKINS, teamBuildPal, onTeams };
 })();

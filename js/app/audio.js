@@ -644,19 +644,9 @@
     // the shot rhythm: a dry wooden tick the moment the next arrow is nocked and
     // the bow can be drawn again. Quiet on purpose - it plays after every shot.
     nock() { tone(880, 0.03, 'square', 0.035); tone(1240, 0.03, 'square', 0.025, 0, 0.03); },
-    // going to ground: a body dropping into deep snow, all low crunch and no pitch
-    bury() { noise(0.22, 0.2, 380); tone(96, 0.16, 'triangle', 0.06, -26); },
-    // the cover finishes settling. Barely there on purpose - it is the sound of
-    // NOT being heard, and it plays with a rival somewhere close by
-    hidden() { noise(0.14, 0.05, 260); tone(1320, 0.1, 'sine', 0.022, 180, 0.03); },
-    // getting back up: the snow sheds off in one shove
-    rise() { noise(0.16, 0.16, 1000, 0); tone(150, 0.11, 'triangle', 0.05, 70); },
-    // the shot out of the snow lands: the bow sample dropped a third under the
-    // synth crack and thump, so an ambush never sounds like an ordinary arrow
-    ambush() {
-      if (!smp('bow', { vol: 0.79, rate: 0.8, jitter: 0.04, dur: 0.7 })) tone(720, 0.05, 'square', 0.1, -520);
-      noise(0.12, 0.32, 1700); tone(104, 0.2, 'sawtooth', 0.13, -34, 0.02);
-    },
+    // a body catching fire (igniteUnit, js/sim/actions.js): a soft breath and a
+    // thin high note, barely there on purpose - the flames say the rest
+    kindle() { noise(0.14, 0.05, 260); tone(1320, 0.1, 'sine', 0.022, 180, 0.03); },
     // a road tower's crossbow letting go: the cords whipping through the fork and the timber
     // kicking under them. All wood and air - nothing electric, because the thing
     // is a sling, and nothing twangy, because it must not read as a bow either.

@@ -6,12 +6,10 @@ file holds what, is at the end.
 
 Sprites are literal ASCII grids paired with a palette object mapping character → hex (or `null`
 for transparent), baked by `bake()` at load. Left-facing variants are `flipH()` of the right ones.
-Character sprites are 16×16 in the world — detail goes into the 48 px model
-([Looks](#looks-a-character-on-the-class-body)); the run and the roll are wider frames holding that
-same cell, and the one set not typed by hand ([the run and the roll](#the-run-and-the-roll)). The
-one exception is the IRON HERO skin (below),
-the first step of Noah's move to a 32 px base: a body twice a player's height, drawn for the
-local player only and over an unchanged sim body.
+Character sprites are 16×16 in the world, each hero drawn only in its own looks
+([hero looks](#hero-looks)); its 48 px face is that same standing front at 3x. The run and the roll
+are wider frames holding that same cell, and the one set not typed by hand
+([the run and the roll](#the-run-and-the-roll)).
 
 **The buildings' team paint** rides the shared `k`/`K` (iron fitting) and `e` (glow) chars,
 which `teamBuildPal` swaps for a side's own (see below).
@@ -54,47 +52,26 @@ parts painted over it by app/bake-soldiers/bake.py (looks B SNOWBALL ARM and C S
 six columns wider carrying a throwing arm. Each has four frames, two tread notches with the ball
 in hand and the same two thrown; `SPRITES.robotAx` says where in each frame the body's x stands.
 
-**Prone is a fifth pose direction**, a `prone` key sitting beside `down`/`up`/`right`/`left` in
-each class's set (`champ[c][team].prone[dir][frame]`, three frames a direction: settled and two
-of the crawl). The body lies **across** the 16×16 cell rather than standing up through it, so a
-player's ground contact stays where the standing feet were and the y-sort never jumps when they
-drop — foreshortened, not shrunk: twelve rows head-on to the standing sixteen, eight deep and
-fifteen long side-on. Everything about the read is segmentation (boots, split calves, thighs
-widening into the coat hem, elbows out past the shoulders to the full width of the cell, a small
-head at the front), because pants sit a shade off the outline colour and an unsegmented lower body
-just reads as a dark brick. The crawl frames alternate the reaching arm **and** the drawn-up knee,
-since a belly crawl hauls with one arm and pushes off the opposite leg; the 1 px inch forward
-between them is applied by `drawPlayer`, not baked into a second set of grids. The skater's set
-swaps the pom hat for her hood, the eye for the goggle band, adds the trailing scarf and shows the
-blade as a plate under each boot.
-
-These are the one place `bakeSpan()` is used instead of `bake()`: it attaches `spans`, the per-row
-`[firstX, lastX]` of painted pixels computed straight off the char grid, and `flipH` mirrors that
-array with the canvas. The game's snow cover reads it to size the mound to the pose
-([rendering.md](rendering/render-pass-order.md#snow)) — which means editing a prone grid updates the
-cover for free, and there is no canvas readback anywhere in the feature.
-
-**The fish catch is three more DOWN frames** in every class set - `catch: [stoop, haul, hoist]` beside
-the four directions and `prone`, baked by `catchSet` from `catchStoop`/`catchHaul`/`catchHold` (the
-skater's `skCatch*` on her body plan) through the class palette plus `CATCHPAL_EXTRA`, the frost
-pike's own letters, so the catch keeps its colour under either team's paint. Nothing fishes any
-more: the frames live on as the CATCH emote's (`EMOTES`, js/ui/screens.js). The hoist is
-**16x20**: four rows of fish above the hat on the same feet. Look A off
-`docs/media/concepts/fish-catch-concepts-1.png`.
+**Lying down is derived, not drawn.** A hero's set carries `prone[dir]` beside
+`down`/`up`/`right`/`left`, and no grid of its own: `lie` (the `lying down` banner in
+characters.js) turns each standing frame a quarter clockwise, exactly, so pixels stay pixels, and
+drops it to the cell's floor where the standing feet were. The side frame turned lies belly-down
+with the head toward `right`, the front frame on its side facing out, the back frame facing in.
+Only the end screens read it: the emotes (`EMOTES`, js/ui/screens.js; the flop goes down through
+`prone.down[0]`) and the loss's stage (js/ui/endscreens.js).
 
 ## The run and the roll
 
 **The run, the held run and the dodge roll are the one set of player frames not typed by hand.**
-[app/bake-player/](../../app/bake-player/) paints them off a jointed doll of each class body (and of
-each named hero's looks: ARMATOS's `standard` and `oath`, FORTIVA's `unbroken` and `coif`, BELLA's `general` and `traitor`,
-IGNIA's `hearth` and `wanderer`, AURA's `light`, SALVIA's `hood` and `tent`, LUCERNA's `lamp` and `dusk`, HIEMS's `scholar` and `frost`, FABER's `clockmaker` and `foreman`, NIX's `snowblind`, FALCO's `falconer`, RUPES's `quarry` and `cellar`, VARRO's `wolfkept` and `whitepack`, VELOX's `canal` and `night`, BUCINA's `horn` and `column`, MARIS's `diver` and `orca`, SAGITTA's `siege` and `tower`, LIGNUM's `feller` and `forest`, [hero looks](#hero-looks)) and
+[app/bake-player/](../../app/bake-player/) paints them off a jointed doll of each hero look (ARMATOS's `standard` and `oath`, FORTIVA's `unbroken` and `coif`, BELLA's `general` and `traitor`,
+IGNIA's `hearth` and `wanderer`, AURA's `light`, SALVIA's `hood` and `tent`, LUCERNA's `lamp` and `dusk`, HIEMS's `scholar` and `frost`, FABER's `clockmaker` and `foreman`, NIX's `snowblind`, FALCO's `falconer`, RUPES's `quarry` and `cellar`, VARRO's `wolfkept` and `whitepack`, VELOX's `canal` and `night`, BUCINA's `horn` and `column`, MARIS's `diver` and `orca`, SAGITTA's `siege` and `tower`, LIGNUM's `feller` and `forest`; [hero looks](#hero-looks)) and
 writes them to js/baked/motion.js as char grids in characters.js's own letters, so `motionSet`
-bakes them through the same team and look palettes as every hand-drawn pose: `run[dir]`,
+bakes them through the same team and hero palettes as every hand-drawn pose: `run[dir]`,
 `hold[dir]` and `roll[dir]` sit beside the walking directions, `left` the mirror of `right`.
 They are look A, TUCK TUMBLE, and C, SPRINT, off
 [run-roll-concepts-1.png](../media/concepts/run-roll-concepts-1.png) (B CANNONBALL curled up first
 and held it a beat; D JOG was the calmer run). The idle and every other pose stay the hand-drawn
-grids above. The doll's own idle lands on them pixel for pixel head-on, which is why a stand turns
+grids in each hero's js/sprites/ file. The doll's own idle lands on them pixel for pixel head-on, which is why a stand turns
 into a run without a jump.
 
 **The doll** (doll.py) is soft parts posed in 3D and seen through a 20° camera. Each part is a
@@ -102,15 +79,14 @@ superellipsoid: exponent 2 is an ellipsoid, a higher one is boxier, which is how
 head keeps its rounded square. It is rasterised at 8× and shrunk to the game's pixel: the nearest
 part holding a fair share of a cell wins it, banded by its mean light into its material's
 letters. Then it is inked the hand art's way: an outline beside the silhouette on the left and
-right only (all four sides for the compact roll shapes, across the top too for the warrior's
-hood), and an inner line where one part passes in front of another. The light comes mostly from
+right only (all four sides for the compact roll shapes, across the top too for a hood), and an inner line where one part passes in front of another. The light comes mostly from
 the viewer, so a highlight runs down a part's middle like the hand-drawn `RR` stripe. A region of
 a part's surface can wear another material (the face is the front of the head below the brim).
-The marks that must land on one exact pixel (eyes, blush, the mouth's shade, the warrior's goggle
-lenses) are stickers, placed where they sit on today's front frame and carried by the head
-(`decal`). bodies.py measures each class body off its idle grids: the hunter's pom beanie; the
-warrior's hood and goggles, two scarf ends, a tail that streams out on the run, and the skate
-blades that stand her a row taller. anim.py poses them.
+The marks that must land on one exact pixel (eyes, the mouth's shade, a helm's band) are stickers, placed where they sit on today's front frame and carried by the head
+(`decal`). bodies.py builds every look on one base frame, measured off the hand-drawn 16 px
+frames: a fur-lined hood and goggles, two scarf ends, a tail that streams out on the run, and
+skate blades that stand it a row taller; each look overrides what it changes (its hat, hair,
+cloak, boots). anim.py poses them.
 
 **Pixel discipline is what keeps it from looking generated.** The body bobs only in whole screen
 pixels (`RUN_BOB`, `HOLD_BOB`), so the coat and the face are the same pixels in every frame,
@@ -119,22 +95,21 @@ two-pixel column. The views differ where a 16 px body cannot show one stride bot
 the legs scissor out past the coat on a narrow track (the far boot a shade darker, an inner line
 where the legs cross); head-on they mostly lift, because a long stride toward the camera would
 step the near boot below the ground line. Side-on the head also turns toward the viewer, so the
-near eye shows as it does on the hand-drawn side frame, and the pom trails behind the hat.
+near eye shows as it does on the hand-drawn side frame, and the scarf's tail streams behind.
 
 **What each set holds.** `run` is eight frames, two steps: contact, down, pass and float off the
-right foot, then the left. The arms pump against the legs and the pom lags the bob by a frame.
+right foot, then the left. The arms pump against the legs.
 `hold` is the same legs with the arms at the sides, for a body whose hands are busy (`handsBusy`,
-js/draw/bodies.js: a drawn weapon, a swing, a cast, the shield up, the grapple's rope), so
-nothing pumps under a drawn bow; it only dips onto each strike. `roll` is a crouch, a dive, the
+js/draw/bodies.js: a drawn weapon, a swing or slash, a cast, the shield up), so
+nothing pumps under a drawn weapon; it only dips onto each strike. `roll` is a crouch, a dive, the
 tucked ball turning over once in 30° steps from the dive's end to sitting curled again, a deep
 squat and a rise. The ball is a body of its own (`paint_ball`: the back of the coat is the ball,
-the beanie or hood tucked in at the front, the knees, boots and mittens wrapped round the other
+the hood tucked in at the front, the knees, boots and mittens wrapped round the other
 side), turned about its centre, so its colours go round the rim while the light stays where the
 sun is; every roll frame is set down on the ground row. `ROLL_AT` is the share of `DODGE_T` at
 which each frame starts (the crouch and the dive get the first fifth, the ball most of the rest,
 the squat and the rise the last sixth), and `rollFrame` picks off `1 - dodgeT / DODGE_T`, the two
-afterimages wearing the frames from 0.07 and 0.14 of the roll earlier. A worn IRON HERO has no
-tuck yet and still spins its standing frame.
+afterimages wearing the frames from 0.07 and 0.14 of the roll earlier.
 
 **A frame is wider than the cell.** Every frame is the one box `SPRITES.motionBox` names, centred
 on the body's column so a mirrored left frame keeps its feet where they were, with the 16×16 cell
@@ -143,53 +118,34 @@ at its (`x`, `y`); `drawPlayer` draws a frame at the cell's top-left less that. 
 speed, so a creep strides slower and an ice run quicker. What rides the body follows it: the held
 tool moves with the frame's bob (`runBob`).
 
-**A character's fringe** goes on at the first face row of each upright frame (the run, the held
-run, the crouch and the squats), which the bake writes beside the grids (`FRINGE`: the row, the
-first column, the first slot of the six-slot hair mask, the count): head-on centred in the
-mask's slots, side-on against its front end, the way `fringed` lays the walking frames, so the
-hair holds from a stand into a run (`fringeAt`).
-
 **A facing bakes the first time it is drawn** (`motionSet`'s getters), not with the set: a set is
-a hundred-odd canvases, every character and team paint carries one, and baked up front they
+a hundred-odd canvases, every hero look and team paint carries one, and baked up front they
 stalled the drop's start and a palette repaint.
 
 Edit the doll and rebake (`python app/bake-player/bake.py`, after `preview.py out.png` has laid
-every frame of every body out on one sheet to judge, or `preview.py out.png 4 standard,oath` for
+every frame of every look out on one sheet to judge, or `preview.py out.png 4 standard,oath` for
 some); never edit the grids.
 
-## Looks: a character on the class body
+## Hero looks
 
-A **character** ([profile.js](architecture.md#profilejs)) is a look — `sex`, `tone`, `hair`,
-`hairCol`, `beard`, `face`, each an index — on a class body, and it is drawn at two sizes from one
-set of tables. `SPRITES.LOOK` (characters.js, the `looks` section) is the one list: six skin
-tones (`k`/`K`/`x`), eight hair colours (`h`/`H`), and per hair style a **fringe** — two
-six-wide masks over the first face row and the row under it. **At 16 px only the tone and the
-fringe read**: `champLook(cls, look, team)` rebuilds the class set through `lookPal` (the tone
-and hair letters swapped in) with the fringe cut into the front and side walking frames by
-`fringed` (mask chars replace *skin* pixels only, so a hat or hood is never painted on; the
-pom-hat body shows six pixels under its brim, the hood four) and into the run's and the roll's
-upright frames by `fringeAt` ([the run and the roll](#the-run-and-the-roll)), and caches the set per
-(class, team, tone, hair, colour) — ten players and a menu is all that ever asks. Every reader
-of a body goes through `classSet(p)` (player.js), which asks it. Body type, beard and face
-never touch the in-world body: it stays 16×16 permanently, and they read on the 48 px model only.
-
-### Hero looks
-
-A hero with `skins` on its `CLASSES` row does not wear a class body: `champLook(cls, look, team,
-skinId)` hands it to `heroSkinSet`, which bakes the look's own grids (`ARM_SKINS`, js/sprites/armatos.js:
-its standing frame per facing, the walk lifted off it by `heroWalk`, the roll from its doll by name
-through `motionSet`) in the hero's paint (`skinPal`, `ARM_PAL`) over the team's coat,
-cached per (hero, team, look). **A hero's side run and held run come off its own drawn side
+Every hero is drawn only in its own looks. Its `CLASSES` row carries `skins` (`ARM_SKINS`,
+js/sprites/armatos.js, and one table per hero), and `champLook(cls, team, skinId)` (characters.js,
+the `heroes` banner) bakes the chosen row's own grids (its standing frame per facing, the walk
+lifted off it by `heroWalk`, the roll from its doll by name through `motionSet`, lying down by
+`lie`) in the hero's paint (`skinPal`, e.g. `ARM_PAL`, then the row's own `pal` if it has one)
+over the team's coat (`teamPlayerPal` over `PPAL`). A `skinId` that names no row, or none, wears
+the free first row. The set is cached per (hero, team, look): ten players and a menu or two is
+all that ever asks. Every reader of a player's body goes through `classSet(p)` (player.js), which
+asks it. **A hero's side run and held run come off its own drawn side
 frame, not the doll**: `heroRunSide` (armatos.js) finds the leg rows, scissors them by
 `HERO_STRIDE` and bobs the body over them, so the head and coat keep the standing width (the doll's
 side run was a pixel or two narrower and read as the hero shrinking when turning left or right).
 The run facing down and up is still the doll's, unless the look's row says `run: 'drawn'`: then
 `heroRunFront` lifts the drawn front and back the same way (IGNIA's two looks, AURA's, SALVIA's, LUCERNA's and BUCINA's two, whose shawl, mantle, coat, cape and hair
-the doll does not match). The class bodies (HUNTER, WARRIOR) keep the doll's run. The fish and the burrow frames are still the borrowed skater's in
-that paint. Which look a player wears is `heroSkinOf(p)` (player.js): the id in `p.skins` under the
+the doll does not match). Which look a player wears is `heroSkinOf(p)` (player.js): the id in `p.skins` under the
 hero's `skinSlot`, or the free first row. LAST STANDARD (nasal helm, white beard, tabard) is his
 own; IRON OATH (closed helm with a gold cross, pauldrons, a cape) is bought on the skins screen.
-They are F and G off armatos-round4.png in the project files. His 48 px model is his own standing
+They are F and G off armatos-round4.png in the project files. His 48 px face is his own standing
 front at 3x (below).
 
 His OATH GREATSWORD (`ARM_SWORD`, `ARM_SWORD_DIAG`) replaces the sword's held art in his hands
@@ -215,7 +171,7 @@ bella-round4.png in the project files and its skin; their dolls (`General`, `Tra
 app/bake-player/bodies.py) stream the ponytail behind her in the run (the doll's `hair` and `cloak`
 materials). Her 48 px model is her own standing front too. Her EAGLE SPATHA (`BELLA_SPATHA`,
 `HERO_BLADES.spatha`) has no slanted carry (an empty `hip`): facing down or up she holds it upright
-in the leading hand like the warrior's sword.
+in the leading hand.
 
 IGNIA's looks (`IGNIA_SKINS`, js/sprites/ignia.js) are drawn on ARMATOS's frame too (`IGNIA_PAL` is
 `ARM_PAL` with her copper hair `a`/`A` and the ember letters `u`/`f`/`F`). HEARTHKEEPER (loose
@@ -264,7 +220,7 @@ files. Both are drawn on ARMATOS's frame with the broadest shoulders of anyone (
 app/bake-player/bodies.py) are used only for the roll. `RUPES_PAL` is `ARM_PAL` with the fur
 `t`/`T`, beard `w`/`W`, leather `m`/`M` and scarf `i`/`I`. His ICE MAUL is a `HERO_BLADES` row
 (`blade: 'maul'`, js/draw/rupes.js). While he rolls (AVALANCHE) a `HERO_BODY_DRAW` row draws the
-snowball in his place (js/draw/heroes.js); his 48 px model is the warrior's in his look's paint.
+snowball in his place (js/draw/heroes.js).
 
 MARIS has two looks (`MARIS_SKINS`, js/sprites/maris.js): BARGE DIVER (free; a close sealskin hood,
 the brass-rimmed diving glass pushed up on the brow, a coil of line across the side's coat, a
@@ -306,7 +262,7 @@ both on ARMATOS's frame (`BUCINA_PAL` is `ARM_PAL` with her hair `a`/`A`, the ca
 fur `w`/`W`). They are A and B off bucina-round1.png in the project files; side-on the head keeps the
 front's width and the body is two pixels narrower. Her dolls (`Horn` and `Column` in
 app/bake-player/bodies.py) paint the cape in the doll's `cloak` material and the collar in `beard`
-(`gold` for the gorget); only the roll is used. Her 48 px model is the warrior's in her paint. Her
+(`gold` for the gorget); only the roll is used. Her
 HORN is a staff: `staff: 'horn'` names `HERO_STAVES.horn` (`BUCINA_HORN`, js/draw/bucina.js), a brass
 signal horn held upright with the bell at the top, glinting between two baked frames.
 VARRO has two looks (`VARRO_SKINS`, js/sprites/varro.js): WOLF-KEPT (free) and WHITE PACK (rare,
@@ -315,7 +271,7 @@ white pelt `u`/`U`/`v` shaded blue so it holds on snow, and his dark hair `a`). 
 a hood, the wolf's ears standing up off the crown: his one signature shape. It is A off
 varro-round1.png in the project files. His dolls (`Wolfkept` and `Whitepack` in
 app/bake-player/bodies.py) paint the pelt in the doll's `pelt` and `snowpelt` materials and only the
-roll is used (`run: 'drawn'`). His 48 px model is the warrior's. His HUNTING SPEAR is a blade row
+roll is used (`run: 'drawn'`). His HUNTING SPEAR is a blade row
 (`HERO_BLADES.spear`, js/draw/varro.js): 18 px painted, flat for the side and the swing, slanted
 facing down or up with the grip at `VARRO_GRIP`.
 
@@ -333,7 +289,7 @@ NIX has two looks (`NIX_SKINS`, js/sprites/nix.js) on one set of grids and one d
 (free) and MOONLESS (rare, 200). `NIX_PAL` is `ARM_PAL` with her night hood `q`/`Q` (the doll's
 `cloak`), bone goggles `w`/`W` and frost scarf `m`/`M` (the doll's `trim`); MOONLESS is the same
 cut repainted by its row's `pal` (moonless black, gold goggles, a violet scarf), which
-`heroSkinSet` lays over the hero's palette. It is A off nix-round1.png in the project files. Her
+`champLook` lays over the hero's palette. It is A off nix-round1.png in the project files. Her
 doll is `Snowblind` in app/bake-player/bodies.py. Her ICE DIRK is a `HERO_BLADES` row (`dirk`,
 js/draw/nix.js), half a sword's length.
 
@@ -369,40 +325,22 @@ FALCONER (free) and LAST HAWK (rare, 200). `FALCO_PAL` is `ARM_PAL` with his lea
 and a cream feather `W`; LAST HAWK is the same cut repainted by its row's `pal` (black leather,
 silver hair, gold at the collar). It is A off falco-round1.png in the project files. His doll is
 `Falconer` in app/bake-player/bodies.py. His THROWING KNIFE is weapon art
-(`SPRITES.weaponArt.knife`, point right, `WEAPON_GRIP.icon.knife`), carried and aimed like the
-bow, and thrown as a shot drawn by `HERO_SHOTS.knife`.
+(`SPRITES.weaponArt.knife`, point right, `WEAPON_GRIP.icon.knife`), carried in the leading hand and held on
+the aim while drawn, and thrown as a shot drawn by `HERO_SHOTS.knife`.
 
-The **48 px model** ([looks.js](../../js/sprites/looks.js), `SPRITES.portrait(cls, look,
-team)`) is where the whole look reads — the champ select's stage, grid and seat discs. Each hero wears one
-fixed `look` (`CLASSES[i].look`, js/sim/player.js). It is **layers stamped in order** onto one 48×48 canvas: `BODY[sex]` (24 wide at x 12:
-neck, shoulders, arms, undershirt `u`, pants, boots), `HEAD[face]` (16 wide at x 16: round,
-square-jawed, narrow — eyes `W`/`e`, nose shade, blush, mouth), `BEARD[beard]` (none, stubble,
-short, full — `h` only inside the face, rimmed only where it hangs past the chin),
-`HAIR[hair]` (20 wide from row 4: a shared crown, then the style — crop, side part, long to the
-shoulders, bangs, spiked, bald is `null`; hair rows over the face carry no inner outline, so the
-head's own rim stays), then `OUTFIT[cls]` over everything (the hunter's pom hat and trimmed
-coat, the warrior's fur-lined hood with goggles pushed up and a scarf collar; the same
-`r`/`R`/`d`/`t`/`T`/`m`/`M` letters as the 16 px body, so one team palette paints both
-sizes). The hats stop at row 8 and the hair's fringe rows sit at 9–10, so hair shows under a
-brim; long hair runs down beside the neck to where the coat begins. The file asserts every
-table's length against its own axes table `N` (and the outfits against `PROFILE.HERO_N`) at
-load, so a table that drifts from its axis refuses to boot. The model is front view only (the
-in-world body, which turns, stays the 16×16 set). A new class needs an `OUTFIT` layer
-here ([checklists](checklists.md#common-changes)). `portrait` keeps what it composes in a cache,
-emptied past `PORTRAIT_KEEP` (512) so a ladder card's look or a team repaint never grows it
-without bound.
-
-**A named hero has no layered model.** A `CLASSES` row with `skins` gets, from
-`portrait(cls, look, team, skinId)`, its own 16 px standing front in that look (the free one when
-`skinId` is null) at 3x, the same body the world and the HUD strip draw, so champ select, the lobby
-stage and the hero pop-up never show a borrowed face. The small faces (champ select's grid, its
-seat discs and ban icons) take `heroHead` (js/ui/draft.js): the 48 px model's `HERO_CROP` for a
-class, or ten 16 px columns and rows around a named hero's head (`HERO_HEAD16`), drawn at twice the
-scale so both fill the same cell. A hand-drawn 48 px model per hero is what would replace it. The
-champ select's showcase (`drawShowcase`, js/ui/select.js) draws the in-game model itself, not this.
+**The 48 px face** (`SPRITES.portrait(cls, team, skinId)`, characters.js) is a hero's own 16 px
+standing front in that look (the free one when `skinId` is null) at 3x on a 48×48 canvas, the
+same body the world and the HUD strip draw; the lobby stage shows it (`drawLobbyStage`,
+js/ui/menu.js). There is no layered model under it. `portrait` keeps what it composes in a cache,
+emptied past `PORTRAIT_KEEP` so a ladder card's look or a team repaint never grows it without
+bound. The small faces (champ select's grid, its seat discs and ban icons) take `heroHead`
+(js/ui/draft.js): ten 16 px columns and rows around the hero's head (`HERO_HEAD16`), drawn at
+twice the scale into a `HERO_FACE` cell. A hand-drawn 48 px model
+per hero is what would replace it. The champ select's showcase (`drawShowcase`, js/ui/select.js)
+draws the in-game body itself, not this.
 
 `docs/media/concepts/model-concepts-1.png` (A BUNDLED, B LANKY, C STOUT) is a **rejected**
-concept round for this model, kept as the record of what not to draw again.
+concept round for a layered 48 px model, kept as the record of what not to draw again.
 
 **Team colours are palette swaps of those same grids.** `TEAM_SKINS` (two presets, RED and BLUE,
 also exported as `SPRITES.teams` so the game code can read the names and marker colours) drives
@@ -417,7 +355,8 @@ look and portrait caches are cleared, so every reader of `SPRITES.*`/`TEAMS` see
 on its next frame. A new team-painted set must bake inside an `onTeams` callback, or it keeps the
 colours it was born with.
 
-- `teamPlayers[team]` (private to js/sprites/characters.js) — coat/hat/trim swapped.
+- every hero's pose set (`champLook`'s cache in js/sprites/characters.js): coat/hat/trim swapped
+  under the hero's own paint; the cache is emptied and rebakes on its next ask.
 - `teamBuild[team][type][tier]` — the tier material with the `k`/`K`/`e` accents repainted, so
   tier still reads as tier.
 - `robotTeam[team]`, `robotRanged[team]`, `robotSiege[team]` (js/baked/soldiers.js).
@@ -642,18 +581,6 @@ one-off wake-up passes behind the frame instead. The
 paw's claw trail and the bite's snap are baked into their frames (`SM`/`SD`, white slashes with an ink edge one game pixel wide), and so is the
 `fish` clip's catch (`FISH_PX` in bear.py, `FL`/`FM` silver inked in `SD`). Change the rig and rebake; never edit the grids.
 
-The **IRON HERO** hero skin (`SPRITES.robotSkin`, js/baked/robot.js) is generated the same
-way by `app/bake-robot/bake.py` (Python with numpy and pillow): rig.py paints a lean robot as
-flat-shaded facets (one tone per plane) on a 3D-jointed puppet, projects him through the game's
-35° camera and bands him into his palette, the chest and scarf in team paint (`L`/`T`/`t`/`x`,
-baked in `SPR.onTeams`). Per facing an `idle` (breathing, one blink) and a `run`; `right` is seen
-a little from the front so the lamp eyes stay on screen, and `left` is its mirror. Every frame
-shares one 22×38 box centred on the body, with `top` (rows over the head) and `foot` (the soles'
-row); `icon` is the rig at its full 64 px for the skins screen's card. He stands about 32 px
-tall, twice a player, but his hitbox is the player's: `drawPlayer` swaps him in for the class
-body while upright (`scoutBody`, js/ui/skins.js), and grows the held tool and an ability's marks
-2× about the feet to fit him. Lying down and the fish catch still show the class body.
-
 The three camp props are
 `deadTree` (two 16×24 snags on `DTPAL`, now only the wiki's THE WORKS figure) and `den` (A ROCK MAW of [den-concepts-1.png](../media/concepts/den-concepts-1.png): a 32×21 snow-capped boulder cave with icicle fangs over its mouth, on `DNPAL`, drawn at `py - 4` over its two tiles — the concept's trampled-snow rows were left off, because a decal must not cast a shade) and `hogHut` (eight 35×35 frames of the HOG HUT's chimney smoke on `HHPAL`, converted 1:1 from docs/media/new_media5/hog-hut-chimney-moving.png and drawn centred over the front row of its 2×2 footprint). The berry bush is
 four frames on `BPAL` — `bush`, `bushEmpty`, `bushBud`, `bushRipen` — one silhouette in which only
@@ -680,7 +607,7 @@ candidates (C, the ice-fishing shack, stood in the game until 4.12; A, the slat 
 ## The shape of a sprite file
 
 `js/sprites/core.js` loads first and makes two globals: the empty `SPRITES` registry and `SPR`,
-the helpers every art file shares — `bake`, `spansOf`, `bakeSpan`, `flipH`, `bakeClips`, `mapClips`,
+the helpers every art file shares — `bake`, `flipH`, `bakeClips`, `mapClips`,
 `liveIcon`, the `TEAM_SKINS` table and `teamBuildPal`. Each art file
 is a private IIFE with the same skeleton: destructure what it needs off `SPR`, its palettes and
 grids under `// ---- name` banners, the set builders, and at the bottom one
@@ -698,9 +625,9 @@ with it.
 
 | File | Banners | Registers |
 | --- | --- | --- |
-| `motion.js` | none: generated by app/bake-player/bake.py | `SPR.motion` (not `SPRITES`: the run, held run and roll grids, their fringe rows, the bobs and the roll's timing, for characters.js) |
-| `characters.js` | player, the fish catch, skater, prone, run and roll, looks, the merchant | `champ` (with each set's `run`/`hold`/`roll`), `LOOK`, `champLook`, `merchant`, `motionBox`/`runBob`/`holdBob`/`rollAt` |
-| `looks.js` | bodies, heads, beards, hair, outfits | `portrait` |
+| `motion.js` | none: generated by app/bake-player/bake.py | `SPR.motion` (not `SPRITES`: the run, held run and roll grids of every hero look, the bobs and the roll's timing, for characters.js) |
+| `characters.js` | paint, run and roll, lying down, heroes (then the merchant) | `champLook` (a hero's set, with its `run`/`hold`/`roll` and `prone`), `portrait`, `merchant`, `motionBox`/`runBob`/`holdBob`/`rollAt` |
+| `armatos.js` and one file per hero | none: top-level globals | the hero's `*_SKINS` rows, palette and held art, which its `CLASSES` row names (armatos.js also holds `heroWalk`, `heroRunSide` and `heroRunFront` for every hero) |
 | `terrain.js` | trees, bush, the dead snags, the den, the hog hut | `tree`, `treeAtlas`, `stump`, `bush*`, `deadTree`, `den`, `hogHut` |
 | `beasts.js` | rabbit, deer, wolf | `rabbit`, `wolf`, `deer` |
 | `bears.js` | none: generated by app/bake-bears/bake.py | `alpha` (black bear) |
@@ -708,7 +635,6 @@ with it.
 | `orca.js` | none: generated by app/bake-orca/paint.py | `orca` (`breach`: `open`/`shut` side-on, head up and left, `openR`/`shutR` their mirrors, `jaw` the pixel between the jaws in the `bcell`; `shade(heading, step)`, 64 headings from east clockwise, 8 steps of the flukes' up-and-down beat, in `cell` squares, packed run-length and baked on first use); look D BOLD off `docs/media/concepts/orca-concepts-2.png` |
 | `cistern.js` | none: generated by app/bake-cistern/paint.py | `cistern` (`geo`, the ring's measures in tiles the sim reads; `flat`, the sills and every shadow, one canvas; `segs`, the standing stone cut into pieces two ground rows deep, each with its y-sort key `k`; `solid`, the footprint as on/off runs per ground row; all in px of a box `rb` round the crossing); a heightfield painted per world px in the 3/4 view, look H CUT BLOCKS off `docs/media/concepts/cistern-concepts-4.png` |
 | `snowdrops.js` | none: generated by app/bake-snowdrops/bake.js | `snowdrop[variant]` (`closed`/`open` at three leans, `picked`, `glow[lean][phase]`) |
-| `robot.js` | none: generated by app/bake-robot/bake.py | `robotSkin` (the IRON HERO skin, per team) |
 | `soldiers.js` | none: generated by app/bake-soldiers/bake.py | `robotRanged`, `robotSiege` (per team: 2 in hand, 2 thrown), `robotAx` |
 | `eagle.js` | none: only `BIRD_SKINS`, the skins' table | none |
 | `perch.js` | palettes, shapes, the bird, poses, painter, cache | `perch` (no grids: painted in code, below) |

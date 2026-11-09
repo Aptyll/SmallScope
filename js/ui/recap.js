@@ -58,7 +58,7 @@ function recapRead(log) {
     const fk = e.by >= 0 ? 'p' + e.by : e.s === 0 ? '?' : 'w' + e.c;
     let f = faces.get(fk);
     if (!f) faces.set(fk, (f = { key: fk, e, d: 0, kinds: { atk: 0, ab: 0, other: 0 }, hits: new Map() }));
-    const hk = e.k + ':' + (e.i !== undefined ? e.i + '.' + e.o : e.m || '');
+    const hk = e.k + ':' + (e.i !== undefined ? e.i : e.m || '');
     let h = f.hits.get(hk);
     if (!h) f.hits.set(hk, (h = { key: hk, e, d: 0, kind }));
     h.d += e.d; f.d += e.d; f.kinds[kind] += e.d; split[kind] += e.d; total += e.d;
@@ -107,7 +107,7 @@ function rcFace(x, y, f, gold, team) {
 // nothing (the world, and anyone you did not see)
 function rcIcon(e) {
   if (e.by < 0) return null;
-  if (e.k === 'ab' && e.i !== undefined) return classAbIcon(e.c, e.i, e.o);
+  if (e.k === 'ab' && e.i !== undefined) return classAbIcon(e.c, e.i);
   if (e.k === 'atk') { const C = CLASSES[e.c]; return C && SPRITES.weaponArt[C.attack.art]; }
   if (e.k === 'burn') return SPRITES.fire[0];
   return null;
@@ -123,7 +123,7 @@ function rcWho(e) {
   return e.s === 0 || !RC_WORLD[e.c] ? '?' : tr(RC_WORLD[e.c]);
 }
 function rcWhat(e) {
-  if (e.k === 'ab' && e.i !== undefined) { const o = abOptions(e.c, e.i)[e.o]; return o ? o.name : '?'; }
+  if (e.k === 'ab' && e.i !== undefined) { const o = CLASS_AB[e.c] && CLASS_AB[e.c][e.i]; return o ? o.name : '?'; }
   if (e.k === 'atk') { const C = CLASSES[e.c]; return C ? C.attack.name : '?'; }
   if (e.k === 'burn') return tr('recap.burn');
   return RC_MOVE[e.m] ? tr(RC_MOVE[e.m]) : '?';

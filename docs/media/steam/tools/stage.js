@@ -92,10 +92,10 @@ module.exports = `
       refreshKit(p); p.hp = p.maxHp;
       clearUnitStatus(p);
       p.charging = false; p.chargeT = 0; p.nockT = 0; p.castT = 0; p.castMax = 0; p.castAb = -1;
-      p.dodgeT = 0; p.sliding = false; p.swingT = 0; p.swingCd = 0; p.riseT = 0; p.fallT = 0;
-      p.eatT = 0; p.eatType = null; p.prone = false; p.hide = 0; p.aboard = false; p.dropT = 0;
+      p.dodgeT = 0; p.sliding = false; p.swingT = 0; p.swingCd = 0; p.fallT = 0;
+      p.eatT = 0; p.eatType = null; p.aboard = false; p.dropT = 0;
       p.abCd = [0,0,0,0]; p.shieldT = 0; p.rushT = 0; p.rushVictim = null; p.castSlam = false;
-      p.grapT = 0; p.hopT = 0; p.buffT = 0;
+      p.hopT = 0; p.buffT = 0;
       p.vx = p.vy = 0; p.kbx = 0; p.kby = 0; p.flash = 0;
       return p;
     },
@@ -146,7 +146,6 @@ module.exports = `
       animals.length = 0;
       for (var r = robots.length - 1; r >= 0; r--) if (!robots[r].merchant) robots.splice(r, 1);
       arrows.length = 0; tracers.length = 0; warps.length = 0; swaps.length = 0;
-      DBG.abNets.length = 0; DBG.abCraters.length = 0;
       slashes.length = 0; drops.length = 0;
       state.wheel = null; state.build = null; state.mapOpen = false; state.shop = null;
       state.settingsOpen = false; state.paused = false; state.charOpen = false;

@@ -16,7 +16,7 @@ defineBot({
     if (me.dead || me.aboard || me.falling) return { think: { goal: 'IDLE', why: me.dead ? 'DOWN' : 'RIDING' } };
     const act = {};
     const dist = (o) => Math.hypot(o.x - me.x, o.y - me.y);
-    if (me.skillPts > 0) { const k = pickKey(me, me.cls === 'WARRIOR' ? [2, 1, 3, 0] : [0, 1, 3, 2]); if (k >= 0) act.cmd = { kind: 'ability', i: k }; }
+    if (me.skillPts > 0) { const k = pickKey(me, me.attack === 'cut' ? [2, 1, 3, 0] : [0, 1, 3, 2]); if (k >= 0) act.cmd = { kind: 'ability', i: k }; }
 
     const own = obs.eagles.find((e) => e.team === me.team && e.state === 'down');
     const bird = obs.eagles.find((e) => e.team !== me.team && e.state === 'down');
@@ -89,12 +89,12 @@ function pickKey(me, order) {
   return -1;
 }
 
-// strike the rival bird: a hunter stands off past the wing gust (it reaches
-// 76 px) and taps shots; a warrior walks in and swings E
+// strike the rival bird: a shooter stands off past the wing gust (it reaches
+// 76 px) and taps shots; a blade walks in and swings E
 function siege(bot, me, bird, act) {
   const d = Math.hypot(bird.x - me.x, bird.y - me.y);
   act.aim = [bird.x, bird.y];
-  if (me.cls === 'HUNTER') {
+  if (me.attack === 'shot') {
     if (d > 115) act.goTo = { x: bird.x, y: bird.y, reach: 1 };
     else if (d < 84) act.move = [(me.x - bird.x) / d, (me.y - bird.y) / d];
     if (d < 135) { bot.drawT++; act.fire = bot.drawT % 2 === 1; } // further out, the woods eat the shots
@@ -107,10 +107,10 @@ function siege(bot, me, bird, act) {
 // one exchange with a rival body, by class, with the four keys
 function fight(bot, me, foe, act) {
   const d = Math.max(1, Math.hypot(foe.x - me.x, foe.y - me.y));
-  const lead = me.cls === 'HUNTER' ? d / 320 : 0.1;
+  const lead = me.attack === 'shot' ? d / 320 : 0.1;
   act.aim = [foe.x + (foe.vx || 0) * lead, foe.y + (foe.vy || 0) * lead];
   const ab = me.abilities;
-  if (me.cls === 'WARRIOR') {
+  if (me.attack === 'cut') {
     act.goTo = { x: foe.x, y: foe.y };
     if (ab[1].ready && d > 48 && d < 110) act.ability = 1;                         // rush in
     else if (ab[2].ready && d < 34) act.ability = 2;                               // stomp

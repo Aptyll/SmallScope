@@ -146,14 +146,14 @@ const selDiscMask = (() => { // the disc's inside, cut once: a face is trimmed t
   for (let dy = -R; dy <= R; dy++) { const hw = Math.floor(Math.sqrt(R * R - dy * dy)); g.fillRect(SEL_DISC - hw, SEL_DISC + dy, hw * 2 + 1, 1); }
   return cv;
 })();
-function drawSelDisc(cx, cy, ring, h, look, team, alpha, pos, skinId) {
+function drawSelDisc(cx, cy, ring, h, team, alpha, pos, skinId) {
   ctx.fillStyle = ring; pxDisc(cx, cy, SEL_DISC);
   ctx.fillStyle = SC_INK; pxDisc(cx, cy, SEL_DISC - 1);
   if (h >= 0) {
-    const g = selDiscG, S = HERO_CROP.s, n = SEL_DISC * 2 + 1;
+    const g = selDiscG, S = HERO_FACE, n = SEL_DISC * 2 + 1;
     g.globalCompositeOperation = 'source-over';
     g.clearRect(0, 0, n, n);
-    const f = heroHead(h, look, team, skinId);
+    const f = heroHead(h, team, skinId);
     g.drawImage(f.img, f.x, f.y, f.w, f.w, SEL_DISC - S, SEL_DISC - S + 2, S * 2, S * 2);
     g.globalCompositeOperation = 'destination-in';
     g.drawImage(selDiscMask, 0, 0);
@@ -188,9 +188,8 @@ function drawSeatRow(r, mine, hidden, flash, hot) {
   ctx.fillStyle = SC_EDGE; ctx.fillRect(r.x + 8, r.y + r.h - 1, r.w - 16, 1);
   const dx = mine ? r.x + 26 : r.x + r.w - 26, dy = r.y + (r.h >> 1);
   const ring = h >= 0 && banning ? SEL_RED : h >= 0 && firm ? mark : me ? SEL_GOLD : SC_EDGE;
-  const look = h >= 0 ? CLASSES[h].look : p.look;
   const worn = h >= 0 && CLASSES[h].skinSlot && p.skins ? p.skins[CLASSES[h].skinSlot] || null : null; // the look this seat wears
-  drawSelDisc(dx, dy, ring, h, look, team, firm ? 1 : 0.45, role, worn);
+  drawSelDisc(dx, dy, ring, h, team, firm ? 1 : 0.45, role, worn);
   if (h >= 0 && banning && D.lock[p.id] >= 0) draftSlash(dx - 10, dy - 10, 21);
   if (me && draftOpen()) drawSelSwap(r, hot === 'swap');
   // the three lines
@@ -270,7 +269,7 @@ function drawShowcase(L, now, a) {
   // a still body: no hurt, no roll, no cast, no ride - only its look, its facing and its stride
   Object.assign(showBody, player, {
     x: 0, y: 0, dir, moving: stride, vx: stride ? (dir === 'left' ? -60 : 60) : 0, vy: 0, animT: stride ? now * SHOW_STRIDE : 0,
-    prone: false, zip: -1, mount: null, sliding: false, fallT: 0, dodgeT: 0, hurtT: 0, invuln: 0, castT: 0, shieldT: 0, rushT: 0, buffT: 0, pushT: 0, charging: false, hide: 0,
+    zip: -1, mount: null, sliding: false, fallT: 0, dodgeT: 0, hurtT: 0, invuln: 0, castT: 0, shieldT: 0, rushT: 0, buffT: 0, pushT: 0, charging: false,
   });
   ctx.save();
   ctx.beginPath(); ctx.rect(S.x, S.y, S.w, S.h); ctx.clip();
@@ -355,7 +354,7 @@ function drawSkinStrip(L, a, hot) {
     ctx.save(); ctx.beginPath(); ctx.rect(c.x, c.y, c.w, c.h); ctx.clip();
     ctx.fillStyle = SKIN_RARITY[c.s.r.rarity] || SC_EDGE; ctx.globalAlpha = a * 0.18; ctx.fillRect(c.x, c.y, c.w, c.h);
     ctx.globalAlpha = a * (c.s.own ? 1 : 0.35);
-    ctx.drawImage(SPRITES.champLook(h, CLASSES[h].look, skin(player.team), c.k > 0 ? c.s.r.id : null).down[0], c.x + (c.w >> 1) - 16, c.y - 1, 32, 32);
+    ctx.drawImage(SPRITES.champLook(h, skin(player.team), c.k > 0 ? c.s.r.id : null).down[0], c.x + (c.w >> 1) - 16, c.y - 1, 32, 32);
     ctx.restore();
     ctx.globalAlpha = a;
     ctx.fillStyle = SKIN_RARITY[c.s.r.rarity] || SC_EDGE; ctx.fillRect(c.x, c.y + c.h - 1, c.w, 1);

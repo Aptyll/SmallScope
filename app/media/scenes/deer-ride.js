@@ -1,5 +1,5 @@
 // "I added deer riding to my game", take two: the practice field's deer ride.
-// The hunter gallops the trail through the forest wing on the tame deer, breaks
+// A hero gallops the trail through the forest wing on the tame deer, breaks
 // the three posts along it at full gallop (they say JOIN, THE, DISCORD) and
 // leaps the felled log on the climb out. Nothing is cleared or stood by hand:
 // the trail, the posts, the log and the deer are the practice field's own.
@@ -24,7 +24,7 @@ window.SCENE = {
     const s0 = along[near(posts[0].x, posts[0].y)] - 330;
     let i0 = 0; while (along[i0] < s0) i0++;
     const p = M.p = player, a = M.a = prDeer;
-    setClass(p, 0); p.invuln = 0;
+    setClass(p, heroIndex('SAGITTA')); // a shot hero: the scene looses bolts p.invuln = 0;
     a.x = curve[i0][0]; a.y = curve[i0][1]; a.vx = a.vy = 0;
     p.x = a.x - 6; p.y = a.y; p.vx = p.vy = 0;
     p.input.jump = true;

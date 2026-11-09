@@ -161,7 +161,7 @@ function faberSpark(p) {
     x: p.x, y: p.y - BOW_Y,
     vx: Math.cos(a) * SPARK_SPD, vy: Math.sin(a) * SPARK_SPD,
     t: 0, life: SPARK_RANGE / SPARK_SPD, dmg: abDmg(p, 'spark', abRk(p, 'spark', 'dmg')), pow: 1,
-    owner: p.id, team: p.team, ambush: false, trailD: 0,
+    owner: p.id, team: p.team, trailD: 0,
     solid: true, kb: 0.4, col: '#ffe08a', ab: 'spark',
     look: 'spark', // drawn as the spark (HERO_SHOTS, js/draw/faber.js)
     ang: a, spd: SPARK_SPD, ox: p.x, oy: p.y - BOW_Y,

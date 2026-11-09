@@ -18,7 +18,7 @@
 3. **the trampled snow** (`drawTrample`, js/draw/trample.js: the match's slow record of where
    bodies walked and fought, drawn from pooled 128 px chunk canvases repainted only when their
    grid moved - see [trampled snow](../gameplay/trampled-snow.md)) → footprints (walking prints, slide
-   grooves, skate scratches and belly-crawl furrows share the one `footprints` array, branching on
+   grooves and skate scratches share the one `footprints` array, branching on
    `f.k` - the crisp, short-lived detail over the trample);
 4. **the stars reflected in the ice** (`drawIceStars`, `settings.vidStars` — on the surface, so
    it covers the fish and the cracks, and under everything that walks) → `drawDrift` (a
@@ -27,8 +27,8 @@
    and cracks, fresh dust while it snows - [the wind's leavings](../world.md#the-winds-leavings));
 5. flat objects (stumps);
 6. `drawRecallGround` (the roost rings and the recall's) → `drawClickMarks` (the CLICK scheme's order and lock rings) → `drawCastPreview` (the MOUSE
-   scheme's range preview) → `drawAbilityGround` (craters,
-   the piercing shot's telegraph);
+   scheme's range preview) → `drawAbilityGround` (the heroes'
+   ground marks, `HERO_GROUND`, and every wind-up's telegraph);
 7. the **y-sorted `draws` array** (tall objects, every player, animals, robots, the practice
    targets, sorted by feet Y; empty player slots draw as team-tinted
    silhouettes via `drawGhost`; `pushMiddleDraws` adds the cistern's stone, piece by piece at
@@ -40,7 +40,7 @@
    `drawAgRings`;
 10. construction progress bars → particles → `drawAimLine` (the bow's) → `drawZipGuide` (the
     dotted walk to the hovered zipline, js/draw/zipline.js) → arrows (`drawShaft`);
-11. `drawAbilityAir` (the spinning net, the grapple's rope)
+11. `heroAir` (what a hero's kit has in the air, `HERO_AIR`)
     → `drawTowerFx` (each road tower's dashed aim line and ring, js/draw/towers.js);
 12. `drawSlashes` (the sword's sweeps) → swing arcs (one per swinging player) → `drawPops`
     (js/draw/pops.js): the floaters (queued through `drawWorldText`, see
@@ -100,7 +100,7 @@ from a clock of its own, and it is blitted out of **one atlas texture** rather t
 canvas — see [Drawing a thousand of something](drawing-a-thousand-of-something.md), which is the
 largest performance fact in this file. A pine (or a dead snag) drawn **over the viewed hero's
 model** opens the **canopy window** ([js/draw/canopy.js](../../../js/draw/canopy.js)): `drawPlayer`
-draws that hero's model (body in any pose, held tool, ability marks, snow cover; never its shade
+draws that hero's model (body in any pose, held tool, ability marks; never its shade
 or foot rings) through a small layer as well as onto the world (`heroLayerOpen`/`heroLayerClose`),
 and each canopy drawn after the hero in the y-sort counts
 the model pixels its own ink covers (`canopyOver`). A covering one composes off-batch with the

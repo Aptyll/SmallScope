@@ -187,7 +187,6 @@ function fortYoke(p) {
   const dx = p.input.aimX - p.x, dy = p.input.aimY - p.y, d = Math.hypot(dx, dy) || 1;
   p.rushNX = dx / d; p.rushNY = dy / d;
   p.rushT = YOKE_T;
-  p.rushVictim = null;
   p.dash = 'yoke';
   p.sliding = false;
   faceToward(p, dx, dy, true);
@@ -238,7 +237,6 @@ function fortNoKneel(p) {
   p.rushNX = (tx - p.x) / n; p.rushNY = (ty - p.y) / n;
   p.rushT = Math.max(TICK_DT, d / NOKNEEL_SPD);
   p.vaultMax = p.rushT;
-  p.rushVictim = null;
   p.dash = 'vault';
   p.sliding = false;
   faceToward(p, tx - p.x, ty - p.y, true);

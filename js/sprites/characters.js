@@ -1,10 +1,12 @@
 'use strict';
-// The people: the player body plan in every team paint, the skater, the prone
-// poses, the fish catch, and the merchant who drives the eagle.
+// The people: every hero's pose set in every team paint (its looks' grids, the
+// baked run and roll, the lying-down frames), and the merchant who drives the eagle.
 (() => {
-  const { bake, bakeSpan, flipH, TEAM_SKINS } = SPR;
+  const { bake, flipH, TEAM_SKINS } = SPR;
 
-  // ---------------------------------------------------------------- player
+  // ---------------------------------------------------------------- paint
+  // the letters every body starts from; a team's coat goes over r/R/d, t/T, m/M
+  // (teamPlayerPal) and a hero's own paint over that
   const PPAL = {
     '.': null,
     'o': '#2e2440', // outline
@@ -24,663 +26,22 @@
     'B': '#4a3324', // boots dark
   };
 
-  const downBody = [
-    '................',
-    '.......mm.......',
-    '.......mM.......',
-    '.....otttto.....',
-    '....otTTTTto....',
-    '....otttttto....',
-    '....okkkkkko....',
-    '....okekkeko....',
-    '....oxkKKkxo....',
-    '....ommmmmmo....',
-    '...orrrRRrrro...',
-    '...orrrRRrrro...',
-    '...omorrrromo...',
-    '....oddddddo....',
-  ];
-  const playerDownIdle = downBody.concat([
-    '.....pp..pp.....',
-    '.....bb..bb.....',
-  ]);
-  const playerDownA = downBody.concat([
-    '.....pp..bb.....',
-    '.....bb.........',
-  ]);
-  const playerDownB = downBody.concat([
-    '.....bb..pp.....',
-    '.........bb.....',
-  ]);
-
-  const upBody = [
-    '................',
-    '.......mm.......',
-    '.......mM.......',
-    '.....otttto.....',
-    '....otTTTTto....',
-    '....otttttto....',
-    '....otttttto....',
-    '....otttttto....',
-    '....otttttto....',
-    '....ommmmmmo....',
-    '...orrrrrrrro...',
-    '...orrrrrrrro...',
-    '...omorrrromo...',
-    '....oddddddo....',
-  ];
-  const playerUpIdle = upBody.concat([
-    '.....pp..pp.....',
-    '.....bb..bb.....',
-  ]);
-  const playerUpA = upBody.concat([
-    '.....pp..bb.....',
-    '.....bb.........',
-  ]);
-  const playerUpB = upBody.concat([
-    '.....bb..pp.....',
-    '.........bb.....',
-  ]);
-
-  // side = facing right
-  const sideBody = [
-    '................',
-    '.....mm.........',
-    '.....mM.........',
-    '.....otttto.....',
-    '....otTTTtto....',
-    '....otttttto....',
-    '....ottkkkko....',
-    '....ottkkeko....',
-    '....otkKKKko....',
-    '....ommmmmmo....',
-    '....orrrRRro....',
-    '....orrrRRro....',
-    '....orrommro....',
-    '....odddddo.....',
-  ];
-  const playerSideIdle = sideBody.concat([
-    '......pp.pp.....',
-    '......bb.bb.....',
-  ]);
-  const playerSideA = sideBody.concat([
-    '.....pp...pp....',
-    '.....bb...bb....',
-  ]);
-  const playerSideB = sideBody.concat([
-    '.......pp.......',
-    '.......bb.......',
-  ]);
-
-  // ---------------------------------------------------------------- the fish catch
-  // Three DOWN-facing frames, the end-of-match cheer emote's (EMOTES,
-  // js/ui/screens.js; the ice catch they were drawn for is gone): a STOOP to the hole,
-  // the fish HAULED up tail-first with the water flying off it, and the trophy
-  // HOIST - both arms straight up, the fish flat above the hat - which is why
-  // the hold frame is 16x20 and draws four rows higher on the same feet. Look
-  // A off docs/media/concepts/fish-catch-concepts-1.png. The fish letters
-  // (CATCHPAL_EXTRA): n outline, f/F body, w belly, i eye, c a flying drop -
-  // a FROST PIKE's colours.
-  const CATCHPAL_EXTRA = { 'n': '#2e4a5e', 'f': '#7ab0cc', 'F': '#b4dcec', 'w': '#eaf8ff', 'i': '#101d2c', 'c': '#9fd6f2' };
-  const catchStoop = [
-    '................',
-    '................',
-    '................',
-    '.......mm.......',
-    '.......mM.......',
-    '.....otttto.....',
-    '....otTTTTto....',
-    '....otttttto....',
-    '....okkkkkko....',
-    '....okekkeko....',
-    '....oxkKKkxo....',
-    '....ommmmmmo....',
-    '...orrrRRrrro...',
-    '..morrrRRrrrom..',
-    '....oddddddo....',
-    '.....bb..bb.....',
-  ];
-  const catchHaul = [
-    '................',
-    '.......mm.......',
-    '.......mM.......',
-    '.....otttto.....',
-    '....otTTTTto....',
-    '....otttttto....',
-    '....okkkkkko....',
-    '....okekkeko....',
-    '....oxkKKkxo....',
-    '..c.ommnnmmo.c..',
-    '...orrnFFnrro...',
-    '..c.omnFfFnmo.c.',
-    '...orrnFwFnro...',
-    '....odnFiFndo...',
-    '.....pnnnnpp....',
-    '.....bb..bb.....',
-  ];
-  const catchHold = [
-    '.......nnnn.....',
-    '..n..nFFFFFn....',
-    '..nnnFfFFiFFn...',
-    '..n..nFwwFFn....',
-    '..mm...nnnn.mm..',
-    '..or...mm...ro..',
-    '..or...mM...ro..',
-    '..or.otttto.ro..',
-    '..orotTTTTtoro..',
-    '..orottttttoro..',
-    '..orokkkkkkoro..',
-    '..orokekkekoro..',
-    '..oroxkKKkxoro..',
-    '..orommmmmmoro..',
-    '..orrrrRRrrrro..',
-    '...orrrRRrrro...',
-    '...orrrrrrrro...',
-    '....oddddddo....',
-    '.....pp..pp.....',
-    '.....bb..bb.....',
-  ];
-
-  // ---------------------------------------------------------------- skater (champion 2)
-  // Same 16x16 body plan as the player so every pose/frame lines up, but a
-  // hood instead of the pom hat, goggles, a long trailing scarf and skate
-  // blades under the boots. Extra palette chars: S blade, g/G goggles.
-  const SKPAL_EXTRA = { 'S': '#c8d8e8', 'g': '#203a52', 'G': '#8fd8ff' };
-  const skDownBody = [
-    '................',
-    '.....oooooo.....',
-    '....otttttto....',
-    '....otTTTTto....',
-    '....otkkkkto....',
-    '....oGgGgGto....',
-    '....otkKKkto....',
-    '....ommmmmmo....',
-    '...ommrrRRrro...',
-    '...orrrRRrrro...',
-    '...orrrRRrmmo...',
-    '...omorrrromo...',
-    '....oddddddo....',
-    '.....pp..pp.....',
-  ];
-  const skDownIdle = skDownBody.concat(['.....bb..bb.....', '.....SS..SS.....']);
-  const skDownA = skDownBody.concat(['.....bb..SS.....', '.....SS.........']);
-  const skDownB = skDownBody.concat(['.....SS..bb.....', '.........SS.....']);
-  // the skater's catch: the same three beats on her body plan (hood, goggles,
-  // the scarf's trailing ends, blades under the boots)
-  const skCatchStoop = [
-    '................',
-    '................',
-    '................',
-    '.....oooooo.....',
-    '....otttttto....',
-    '....otTTTTto....',
-    '....otkkkkto....',
-    '....oGgGgGto....',
-    '....otkKKkto....',
-    '....ommmmmmo....',
-    '...ommrrRRrro...',
-    '...orrrRRrrro...',
-    '..morrrRRrmmom..',
-    '....oddddddo....',
-    '.....bb..bb.....',
-    '.....SS..SS.....',
-  ];
-  const skCatchHaul = [
-    '................',
-    '.....oooooo.....',
-    '....otttttto....',
-    '....otTTTTto....',
-    '....otkkkkto....',
-    '....oGgGgGto....',
-    '....otkKKkto....',
-    '..c.ommnnmmo.c..',
-    '...ommnFFnrro...',
-    '..c.omnFfFnmo.c.',
-    '...orrnFwFnmo...',
-    '...omonFiFnomo..',
-    '....odnnnndo....',
-    '.....pp..pp.....',
-    '.....bb..bb.....',
-    '.....SS..SS.....',
-  ];
-  const skCatchHold = [
-    '.......nnnn.....',
-    '..n..nFFFFFn....',
-    '..nnnFfFFiFFn...',
-    '..n..nFwwFFn....',
-    '..mm...nnnn.mm..',
-    '..or.oooooo.ro..',
-    '..orottttttoro..',
-    '..orotTTTTtoro..',
-    '..orotkkkktoro..',
-    '..oroGgGgGtoro..',
-    '..orotkKKktoro..',
-    '..orommmmmmoro..',
-    '..ormmrrRRrrro..',
-    '...orrrRRrrro...',
-    '...orrrRRrmmo...',
-    '...orrrrrrrro...',
-    '....oddddddo....',
-    '.....pp..pp.....',
-    '.....bb..bb.....',
-    '.....SS..SS.....',
-  ];
-  const skUpBody = [
-    '................',
-    '.....oooooo.....',
-    '....otttttto....',
-    '....otTTTTto....',
-    '....otttttto....',
-    '....otttttto....',
-    '....otttttto....',
-    '....ommmmmmo....',
-    '...orrrmmrrro...',
-    '...orrrmmrrro...',
-    '...orrrmmrrro...',
-    '...omorrmromo...',
-    '....oddddddo....',
-    '.....pp..pp.....',
-  ];
-  const skUpIdle = skUpBody.concat(['.....bb..bb.....', '.....SS..SS.....']);
-  const skUpA = skUpBody.concat(['.....bb..SS.....', '.....SS.........']);
-  const skUpB = skUpBody.concat(['.....SS..bb.....', '.........SS.....']);
-  const skSideBody = [
-    '................',
-    '.....oooooo.....',
-    '....otttttto....',
-    '....otTTTtto....',
-    '....ottttkko....',
-    '....otttGgGo....',
-    '....otttkKko....',
-    '..mmommmmmmo....',
-    '.mmmorrrRRro....',
-    '....orrrRRro....',
-    '....orrommro....',
-    '....odddddo.....',
-    '....odddddo.....',
-    '......pp.pp.....',
-  ];
-  const skSideIdle = skSideBody.concat(['......bb.bb.....', '......SS.SS.....']);
-  const skSideA = skSideBody.concat(['.....bb...bb....', '.....SS...SS....']);
-  const skSideB = skSideBody.concat(['.......bb.......', '.......SS.......']);
-
-  // ---------------------------------------------------------------- prone
-  // Belly-down in the snow. The same 16x16 cell as every other pose, but the
-  // body lies ACROSS it rather than standing up through it, so a player's
-  // ground contact stays where the standing feet were and the y-sort never
-  // jumps when they drop. Foreshortened, not shrunk - head-on the figure is
-  // twelve rows to the standing sixteen - and the whole read comes from
-  // segmenting it: boots at the trailing end, a split pair of calves, thighs
-  // that widen into the coat hem, elbows out to the full width of the cell, and a
-  // small head at the front. Side-on the same body is eight rows deep and fifteen
-  // long, with the head propped up and looking where it is going.
-  //
-  // Three frames a direction - settled, and two of the crawl, which alternates
-  // the reaching arm AND the drawn-up knee, because a belly crawl hauls with
-  // one arm and pushes off the opposite leg. The 1px inch forward between
-  // frames is applied by the renderer, not baked into a second set of grids.
-  const pnSideIdle = [
-    '................',
-    '................',
-    '................',
-    '................',
-    '................',
-    '................',
-    '................',
-    '........ommoooo.',
-    '.....oooooottTo.',
-    '..oooodrrrttTkKo',
-    '.oBbbprrrRrtkeko',
-    '.oBbbprrrRrtkKko',
-    '..obbpdrrrrokKo.',
-    '...oooodrroommmo',
-    '......oooooooo..',
-    '................',
-  ];
-  const pnSideA = [
-    '................',
-    '................',
-    '................',
-    '................',
-    '................',
-    '................',
-    '................',
-    '........ommoooo.',
-    '...oppooooottTo.',
-    '..oooodrrrttTkKo',
-    '.oBbbprrrRrtkeko',
-    '.oBbbprrrRrtkKko',
-    '..obbpdrrrrokKo.',
-    '...oooodrrommmmo',
-    '......oooooooo..',
-    '................',
-  ];
-  const pnSideB = [
-    '................',
-    '................',
-    '................',
-    '................',
-    '................',
-    '................',
-    '................',
-    '........ommoooo.',
-    '.....oooooottTo.',
-    '..oooodrrrttTkKo',
-    '.oBbbprrrRrtkeko',
-    '.oBbbprrrRrtkKko',
-    '..obbpdrrrrokKo.',
-    '...oooodrrooommo',
-    '...oppoooooooo..',
-    '................',
-  ];
-  const pnDownIdle = [
-    '................',
-    '................',
-    '................',
-    '................',
-    '................',
-    '....oooooooo....',
-    '....obboobbo....',
-    '....oppooppo....',
-    '...oppppppppo...',
-    '...oddddddddo...',
-    'ommorrrrrrrrommo',
-    'ommorrrrrrrrommo',
-    '...orrrrrrrro...',
-    '....otttttto....',
-    '....otTTTTto....',
-    '....okekkeko....',
-  ];
-  const pnDownA = [
-    '................',
-    '................',
-    '................',
-    '................',
-    '................',
-    '....oooooooo....',
-    '....obboobbo....',
-    '....oppooppo....',
-    '...oppppppppo...',
-    '...oddddddddommo',
-    '...orrrrrrrrommo',
-    'ommorrrrrrrro...',
-    'ommorrrrrrrro...',
-    '....otttttto....',
-    '....otTTTTto....',
-    '....okekkeko....',
-  ];
-  const pnDownB = [
-    '................',
-    '................',
-    '................',
-    '................',
-    '................',
-    '....oooooooo....',
-    '....obboobbo....',
-    '....oppooppo....',
-    '...oppppppppo...',
-    'ommoddddddddo...',
-    'ommorrrrrrrro...',
-    '...orrrrrrrrommo',
-    '...orrrrrrrrommo',
-    '....otttttto....',
-    '....otTTTTto....',
-    '....okekkeko....',
-  ];
-  const pnUpIdle = [
-    '................',
-    '................',
-    '................',
-    '................',
-    '......ommo......',
-    '....oooooooo....',
-    '....otttttto....',
-    '....otTTTTto....',
-    '...ommmmmmmmo...',
-    'ommorrrrrrrrommo',
-    'ommorrrrrrrrommo',
-    '...orrrrrrrro...',
-    '...oddddddddo...',
-    '...oppppppppo...',
-    '....oppooppo....',
-    '....obboobbo....',
-  ];
-  const pnUpA = [
-    '................',
-    '................',
-    '................',
-    '................',
-    '......ommo......',
-    '....oooooooo....',
-    '....otttttto....',
-    '....otTTTTto....',
-    'ommommmmmmmmo...',
-    'ommorrrrrrrro...',
-    '...orrrrrrrrommo',
-    '...orrrrrrrrommo',
-    '...oddddddddo...',
-    '...oppppppppo...',
-    '....oppooppo....',
-    '....obboobbo....',
-  ];
-  const pnUpB = [
-    '................',
-    '................',
-    '................',
-    '................',
-    '......ommo......',
-    '....oooooooo....',
-    '....otttttto....',
-    '....otTTTTto....',
-    '...ommmmmmmmommo',
-    '...orrrrrrrrommo',
-    'ommorrrrrrrro...',
-    'ommorrrrrrrro...',
-    '...oddddddddo...',
-    '...oppppppppo...',
-    '....oppooppo....',
-    '....obboobbo....',
-  ];
-
-  // The skater lies down the same way: hood instead of the pom hat, the goggle
-  // band where the eye is, the scarf flicked out behind her, and the blade
-  // showing as a bright plate under each boot.
-  const pnSkSideIdle = [
-    '................',
-    '................',
-    '................',
-    '................',
-    '................',
-    '................',
-    '................',
-    '.....ommmo.oooo.',
-    '.....oooooottTo.',
-    '..oooodrrrttTkKo',
-    '.oBbbprrrRrtGgko',
-    '.oBbbprrrRrtkKko',
-    '..obbpdrrrrokKo.',
-    '...SSSodrroommmo',
-    '......oooooooo..',
-    '................',
-  ];
-  const pnSkSideA = [
-    '................',
-    '................',
-    '................',
-    '................',
-    '................',
-    '................',
-    '................',
-    '.....ommmo.oooo.',
-    '...oppooooottTo.',
-    '..oooodrrrttTkKo',
-    '.oBbbprrrRrtGgko',
-    '.oBbbprrrRrtkKko',
-    '..obbpdrrrrokKo.',
-    '...SSSodrrommmmo',
-    '......oooooooo..',
-    '................',
-  ];
-  const pnSkSideB = [
-    '................',
-    '................',
-    '................',
-    '................',
-    '................',
-    '................',
-    '................',
-    '.....ommmo.oooo.',
-    '.....oooooottTo.',
-    '..oooodrrrttTkKo',
-    '.oBbbprrrRrtGgko',
-    '.oBbbprrrRrtkKko',
-    '..obbpdrrrrokKo.',
-    '...SSSodrrooommo',
-    '...oppoooooooo..',
-    '................',
-  ];
-  const pnSkDownIdle = [
-    '................',
-    '................',
-    '................',
-    '................',
-    '................',
-    '....oooooooo....',
-    '....oSSooSSo....',
-    '....obboobbo....',
-    '...oppppppppo...',
-    '...oddddddddo...',
-    'ommorrrrrrrrommo',
-    'ommorrrrrrrrommo',
-    '...orrrrrrrro...',
-    '....otttttto....',
-    '....otTTTTto....',
-    '....oGgGgGgo....',
-  ];
-  const pnSkDownA = [
-    '................',
-    '................',
-    '................',
-    '................',
-    '................',
-    '....oooooooo....',
-    '....oSSooSSo....',
-    '....obboobbo....',
-    '...oppppppppo...',
-    '...oddddddddommo',
-    '...orrrrrrrrommo',
-    'ommorrrrrrrro...',
-    'ommorrrrrrrro...',
-    '....otttttto....',
-    '....otTTTTto....',
-    '....oGgGgGgo....',
-  ];
-  const pnSkDownB = [
-    '................',
-    '................',
-    '................',
-    '................',
-    '................',
-    '....oooooooo....',
-    '....oSSooSSo....',
-    '....obboobbo....',
-    '...oppppppppo...',
-    'ommoddddddddo...',
-    'ommorrrrrrrro...',
-    '...orrrrrrrrommo',
-    '...orrrrrrrrommo',
-    '....otttttto....',
-    '....otTTTTto....',
-    '....oGgGgGgo....',
-  ];
-  const pnSkUpIdle = [
-    '................',
-    '................',
-    '................',
-    '................',
-    '................',
-    '....oooooooo....',
-    '....otttttto....',
-    '..mmotTTTTto....',
-    '...ommmmmmmmo...',
-    'ommorrrrrrrrommo',
-    'ommorrrrrrrrommo',
-    '...orrrrrrrro...',
-    '...oddddddddo...',
-    '...oppppppppo...',
-    '....obboobbo....',
-    '....oSSooSSo....',
-  ];
-  const pnSkUpA = [
-    '................',
-    '................',
-    '................',
-    '................',
-    '................',
-    '....oooooooo....',
-    '....otttttto....',
-    '..mmotTTTTto....',
-    'ommommmmmmmmo...',
-    'ommorrrrrrrro...',
-    '...orrrrrrrrommo',
-    '...orrrrrrrrommo',
-    '...oddddddddo...',
-    '...oppppppppo...',
-    '....obboobbo....',
-    '....oSSooSSo....',
-  ];
-  const pnSkUpB = [
-    '................',
-    '................',
-    '................',
-    '................',
-    '................',
-    '....oooooooo....',
-    '....otttttto....',
-    '..mmotTTTTto....',
-    '...ommmmmmmmommo',
-    '...orrrrrrrrommo',
-    'ommorrrrrrrro...',
-    'ommorrrrrrrro...',
-    '...oddddddddo...',
-    '...oppppppppo...',
-    '....obboobbo....',
-    '....oSSooSSo....',
-  ];
-
   // ---------------------------------------------------------------- run and roll
   // The run cycle and the dodge roll are not drawn here: js/baked/motion.js carries them as
-  // grids painted off a doll of each class body (app/bake-player/), in this file's letters,
-  // so they bake through the same team and look palettes as the hand-drawn poses. Each is a
+  // grids painted off a doll of each hero look (app/bake-player/), in the hero's letters,
+  // so they bake through the same team palettes as the hand-drawn poses. Each is a
   // sibling of the walking directions - `run[dir]`, `hold[dir]` (the run with the hands at
   // the sides, for a body whose hands are busy) and `roll[dir]` - frames in order; a frame
   // is wider than the 16 x 16 cell (SPRITES.motionBox says where the cell sits inside it).
-  // A character's fringe goes on at the first face row each frame names, slot for slot as
-  // fringed() lays it on the walking frames, so the hair holds from a stand into a run.
-  const MOTION_CLS = ['hunter', 'warrior'];
-  const fringeAt = (rows, at, mask) => {
-    const [y, x0, s0, n, two] = at;
-    return rows.map((row, r) => {
-      const m = r === y ? mask[0] : two && r === y + 1 ? mask[1] : null;
-      if (!m) return row;
-      let out = row;
-      for (let i = 0; i < n; i++) {
-        const x = x0 + i;
-        if (m[s0 + i] === 'h' && out[x] === 'k') out = out.slice(0, x) + 'h' + out.slice(x + 1);
-      }
-      return out;
-    });
-  };
-  // cls: the class index; mask: a look's fringe (LOOK.hairs), or none for the bare class body.
   // A facing's frames bake the first time they are asked for, not with the set: a set is a
-  // hundred-odd canvases, every character and team paint has one, and few bodies ever show
+  // hundred-odd canvases, every hero look and team paint has one, and few bodies ever show
   // all of them - baked up front they made the drop's start and a palette repaint stall.
-  const motionSet = (cls, pal, mask) => {
-    const M = SPR.motion, name = typeof cls === 'string' ? cls : MOTION_CLS[cls], out = {}; // a class index, or a hero look's doll by name
+  const motionSet = (name, pal) => {
+    const M = SPR.motion, out = {};
     const once = (fn) => { let v = null; return () => v || (v = fn()); };
     for (const kind of ['run', 'hold', 'roll']) {
-      const grids = M.GRIDS[name][kind], fr = M.FRINGE[name][kind];
-      const one = (d) => once(() => grids[d].map((g, i) => bake(mask && fr[d] && fr[d][i] ? fringeAt(g, fr[d][i], mask) : g, pal)));
+      const grids = M.GRIDS[name][kind];
+      const one = (d) => once(() => grids[d].map((g) => bake(g, pal)));
       const right = one('right');
       const dirs = { down: one('down'), up: one('up'), right, left: once(() => right().map(flipH)) };
       out[kind] = Object.defineProperties({}, Object.fromEntries(Object.entries(dirs).map(([d, get]) => [d, { get, enumerable: true }])));
@@ -691,137 +52,43 @@
   const teamPlayerPal = (t) => Object.assign({}, PPAL, {
     r: t.coat, R: t.coatL, d: t.coatD, t: t.hat, T: t.hatL, m: t.trim, M: t.trimD,
   });
-  // the three catch frames in a class's team paint (the fish keeps its own colours)
-  const catchSet = (pal, stoop, haul, hold) => {
-    const cp = Object.assign({}, pal, CATCHPAL_EXTRA);
-    return [bake(stoop, cp), bake(haul, cp), bake(hold, cp)];
-  };
-  const playerSet = (pal, mask) => Object.assign({
-    down: [bake(playerDownIdle, pal), bake(playerDownA, pal), bake(playerDownB, pal)],
-    up: [bake(playerUpIdle, pal), bake(playerUpA, pal), bake(playerUpB, pal)],
-    right: [bake(playerSideIdle, pal), bake(playerSideA, pal), bake(playerSideB, pal)],
-    left: [flipH(bake(playerSideIdle, pal)), flipH(bake(playerSideA, pal)), flipH(bake(playerSideB, pal))],
-    catch: catchSet(pal, catchStoop, catchHaul, catchHold),
-    // belly-down: a sibling of the four walking directions, same frame order
-    prone: {
-      down: [bakeSpan(pnDownIdle, pal), bakeSpan(pnDownA, pal), bakeSpan(pnDownB, pal)],
-      up: [bakeSpan(pnUpIdle, pal), bakeSpan(pnUpA, pal), bakeSpan(pnUpB, pal)],
-      right: [bakeSpan(pnSideIdle, pal), bakeSpan(pnSideA, pal), bakeSpan(pnSideB, pal)],
-      left: [flipH(bakeSpan(pnSideIdle, pal)), flipH(bakeSpan(pnSideA, pal)), flipH(bakeSpan(pnSideB, pal))],
-    },
-  }, motionSet(0, pal, mask));                 // run and roll (the `run and roll` banner)
-  const teamPlayers = [];
-  const skaterSet = (pal, mask) => {
-    const sp = Object.assign({}, SKPAL_EXTRA, pal);
-    return Object.assign({
-      down: [bake(skDownIdle, sp), bake(skDownA, sp), bake(skDownB, sp)],
-      up: [bake(skUpIdle, sp), bake(skUpA, sp), bake(skUpB, sp)],
-      right: [bake(skSideIdle, sp), bake(skSideA, sp), bake(skSideB, sp)],
-      left: [flipH(bake(skSideIdle, sp)), flipH(bake(skSideA, sp)), flipH(bake(skSideB, sp))],
-      catch: catchSet(sp, skCatchStoop, skCatchHaul, skCatchHold),
-      prone: {
-        down: [bakeSpan(pnSkDownIdle, sp), bakeSpan(pnSkDownA, sp), bakeSpan(pnSkDownB, sp)],
-        up: [bakeSpan(pnSkUpIdle, sp), bakeSpan(pnSkUpA, sp), bakeSpan(pnSkUpB, sp)],
-        right: [bakeSpan(pnSkSideIdle, sp), bakeSpan(pnSkSideA, sp), bakeSpan(pnSkSideB, sp)],
-        left: [flipH(bakeSpan(pnSkSideIdle, sp)), flipH(bakeSpan(pnSkSideA, sp)), flipH(bakeSpan(pnSkSideB, sp))],
-      },
-    }, motionSet(1, sp, mask));
-  };
-  // champ[c][team] - one full pose set per champion per team colour
-  const champPlayers = [teamPlayers, []];
 
-  // ---------------------------------------------------------------- looks
-  // A CHARACTER's paint on the class body: its skin tone (k/K/x) and, on the
-  // front and side walking frames, a FRINGE of its hair colour (h/H) under the
-  // hat's brim - the first face row is the one place at 16 px where hair
-  // reads, so a style is a mask over that row (and the next, for long hair)
-  // and everything else the style says is the 48 px model's business
-  // (js/sprites/looks.js). Body type, beard and face shape do not touch the
-  // 16 px body at all until the 32 px rework. The tables are the ONE list of
-  // looks: profile.js stores an index into each and asserts the counts.
-  const LOOK = {
-    // [k skin, K shade, x blush]
-    tones: [
-      ['#f2c69b', '#d69f72', '#e8967f'], ['#fbe0c4', '#e2b898', '#f0a89a'], ['#e0a97a', '#bd8354', '#d88a70'],
-      ['#b97a4e', '#94582f', '#c2764f'], ['#8a5533', '#663a1f', '#9a5a3a'], ['#5a3a26', '#3f2718', '#6a4230'],
-    ],
-    // [h hair, H hair light]
-    hairCols: [
-      ['#2a2118', '#3d3226'], ['#5c3b20', '#7a5230'], ['#a8702f', '#c48b43'], ['#d9a441', '#f0c766'],
-      ['#c8452a', '#e0653f'], ['#b8bcc4', '#dfe3ea'], ['#f4f0e8', '#ffffff'], ['#4a6fb8', '#6f93d8'],
-    ],
-    // the six styles' fringes: [the face's first row, the row under it], six
-    // wide across the front face; the side and the hooded body take a slice
-    hairs: [
-      ['hhhhhh', '......'], // CROP
-      ['hhhh..', '......'], // PART
-      ['hhhhhh', 'h....h'], // LONG - it hangs beside the eyes
-      ['.hhhh.', '......'], // TAIL
-      ['h.hh.h', '......'], // SPIKE
-      ['......', '......'], // BALD
-    ],
-    beardN: 4, faceN: 3, sexN: 2,
+  // ---------------------------------------------------------------- lying down
+  // `prone[dir]`: a hero flat in the snow, for the emotes and the loss's stage
+  // (js/ui/screens.js, js/ui/endscreens.js). No grid of its own: a standing frame
+  // turned a quarter clockwise (exact, so pixels stay pixels) and dropped to the
+  // cell's floor, where the standing feet were. The side frame turned so lies
+  // belly-down with the head toward `right`, the front frame on its side facing
+  // out, the back frame facing in: four bodies for a turn on the ground.
+  const lie = (g) => {
+    const h = g.length, w = g[0].length, r = [];
+    for (let y = 0; y < w; y++) { let row = ''; for (let x = 0; x < h; x++) row += g[h - 1 - x][y]; r.push(row); }
+    let floor = r.length - 1;
+    while (floor > 0 && !/[^.]/.test(r[floor])) floor--;
+    const drop = r.length - 1 - floor, blank = '.'.repeat(h);
+    return Array(drop).fill(blank).concat(r.slice(0, r.length - drop));
   };
-  // mask chars over skin only, so a hood or a hat never gets hair painted on
-  const fringed = (rows, r, x0, mask) => rows.map((row, i) => {
-    const m = i === r ? mask[0] : i === r + 1 ? mask[1] : null;
-    if (!m) return row;
-    let out = row;
-    for (let j = 0; j < m.length; j++) {
-      if (m[j] === 'h' && out[x0 + j] === 'k') out = out.slice(0, x0 + j) + 'h' + out.slice(x0 + j + 1);
-    }
-    return out;
-  });
-  const lookPal = (pal, look) => {
-    const t = LOOK.tones[look.tone] || LOOK.tones[0], h = LOOK.hairCols[look.hairCol] || LOOK.hairCols[0];
-    return Object.assign({}, pal, { k: t[0], K: t[1], x: t[2], h: h[0], H: h[1] });
-  };
-  // the same builders as the class sets, with the fringe cut into the front
-  // and side walking frames (the site differs per body: the pom-hat body
-  // shows six skin pixels under its brim, the hood four)
-  const lookSet = (cls, pal, look) => {
-    const f = LOOK.hairs[look.hair] || LOOK.hairs[0];
-    if (cls === 1) {
-      const sp = Object.assign({}, SKPAL_EXTRA, pal); // (a hero's paint, in pal, wins over the skater's extras)
-      const dn = (g) => fringed(g, 4, 6, [f[0].slice(1, 5), f[1].slice(1, 5)]);
-      const sd = (g) => fringed(g, 4, 9, [f[0].slice(4), '..']);
-      return Object.assign(skaterSet(sp, f), {
-        down: [bake(dn(skDownIdle), sp), bake(dn(skDownA), sp), bake(dn(skDownB), sp)],
-        right: [bake(sd(skSideIdle), sp), bake(sd(skSideA), sp), bake(sd(skSideB), sp)],
-        left: [flipH(bake(sd(skSideIdle), sp)), flipH(bake(sd(skSideA), sp)), flipH(bake(sd(skSideB), sp))],
-      });
-    }
-    const dn = (g) => fringed(g, 6, 5, f);
-    const sd = (g) => fringed(g, 6, 7, [f[0].slice(2), '....']);
-    return Object.assign(playerSet(pal, f), {
-      down: [bake(dn(playerDownIdle), pal), bake(dn(playerDownA), pal), bake(dn(playerDownB), pal)],
-      right: [bake(sd(playerSideIdle), pal), bake(sd(playerSideA), pal), bake(sd(playerSideB), pal)],
-      left: [flipH(bake(sd(playerSideIdle), pal)), flipH(bake(sd(playerSideA), pal)), flipH(bake(sd(playerSideB), pal))],
-    });
-  };
-  // champLook(cls, look, team): the full pose set for one character in one
-  // team's paint, baked on first ask and kept - ten players and a menu or two
-  // is all that ever asks, so the cache stays small. Every reader of a
-  // player's body goes through classSet(p) (js/sim/player.js), which asks here.
+
+  // ---------------------------------------------------------------- heroes
+  // champLook(cls, team, skinId): the full pose set for one hero in one team's
+  // paint, in one of its looks (CLASSES[cls].skins, e.g. ARM_SKINS: `skinId`,
+  // the free first one for none), baked on first ask and kept - ten players and
+  // a menu or two is all that ever asks, so the cache stays small. Every reader
+  // of a player's body goes through classSet(p) (js/sim/player.js), which asks
+  // here. The look's own grids and doll, in its own paint over the team's coat.
   const lookCache = new Map();
-  // A named hero wears a class body (heroBody, js/sim/player.js) in its own
-  // paint (CLASSES[cls].paint: letters laid over the team's), so `cls` is the
-  // hero and `body` the grids it is baked from.
-  // A hero with looks of its own (CLASSES[cls].skins, e.g. ARM_SKINS) wears
-  // one of those, `skinId` (the free first one for none): its own grids and
-  // doll, in its own paint over the team's coat. The fish and the burrow keep
-  // the borrowed body's frames in that paint.
-  function heroSkinSet(cls, team, skinId) {
+  function champLook(cls, team, skinId) {
     const rows = CLASSES[cls].skins, row = rows.find((r) => r.id === skinId) || rows[0];
-    const key = cls + '|' + team + '|skin:' + row.id;
+    const key = cls + '|' + team + '|' + row.id;
     let set = lookCache.get(key);
     if (set) return set;
-    const pal = Object.assign({}, teamPlayerPal(TEAM_SKINS[team]), CLASSES[cls].skinPal, row.pal); // a look may repaint the hero's letters (`pal`: NIX's MOONLESS)
-    const sp = Object.assign({}, SKPAL_EXTRA, pal), w = heroWalk(row.grids);
-    const side = w.side.map((g) => bake(g, sp));
-    set = Object.assign(skaterSet(sp, null), {
+    const sp = Object.assign({}, teamPlayerPal(TEAM_SKINS[team]), CLASSES[cls].skinPal, row.pal); // a look may repaint the hero's letters (`pal`: NIX's MOONLESS)
+    const w = heroWalk(row.grids);
+    const side = w.side.map((g) => bake(g, sp)), flat = (gs) => gs.map((g) => bake(lie(g), sp)), pside = flat(w.side);
+    set = Object.assign({
       down: w.down.map((g) => bake(g, sp)), up: w.up.map((g) => bake(g, sp)), right: side, left: side.map(flipH),
-    }, motionSet(row.motion, sp, null));
+      prone: { right: pside, left: pside.map(flipH), down: flat(w.down), up: flat(w.up) },
+    }, motionSet(row.motion, sp));
     // side-on the run and the held run are the hero's own standing frame, legs stepping
     // (heroRunSide, js/sprites/armatos.js): the doll's are narrower than the hand-drawn body
     for (const kind of ['run', 'hold']) {
@@ -840,22 +107,30 @@
     lookCache.set(key, set);
     return set;
   }
-  function champLook(cls, look, team, skinId) {
-    if (CLASSES[cls] && CLASSES[cls].skins) return heroSkinSet(cls, team, skinId);
-    const body = heroBody(cls), paint = CLASSES[cls] && CLASSES[cls].paint;
-    if (!look && !paint) return champPlayers[body][team];
-    look = look || CLASSES[cls].look;
-    const key = cls + '|' + team + '|' + look.tone + '|' + look.hair + '|' + look.hairCol;
-    let set = lookCache.get(key);
-    if (!set) {
-      set = lookSet(body, Object.assign(lookPal(teamPlayerPal(TEAM_SKINS[team]), look), paint), look);
-      lookCache.set(key, set);
-    }
-    return set;
+
+  // portrait(cls, team, skinId): the 48 x 48 face of one hero in one look and
+  // team's paint, for the lobby, the hero grid and the cards - its own standing
+  // front at 3x, the body the world draws, composed on first ask and kept
+  // (emptied past PORTRAIT_KEEP, so a ladder card's look or a repaint never
+  // grows it without bound).
+  const PORTRAIT_KEEP = 512;
+  const faces = new Map();
+  function portrait(cls, team, skinId) {
+    const key = cls + '|' + team + '|' + (skinId || '');
+    let c = faces.get(key);
+    if (c) return c;
+    c = document.createElement('canvas');
+    c.width = 48; c.height = 48;
+    const g = c.getContext('2d');
+    g.imageSmoothingEnabled = false;
+    g.drawImage(champLook(cls, team, skinId || null).down[0], 0, 0, 48, 48);
+    if (faces.size >= PORTRAIT_KEEP) faces.clear();
+    faces.set(key, c);
+    return c;
   }
 
   // the MERCHANT who drives each team's eagle and works its roost (the
-  // `merchant` banner, js/sim/robots.js): the player body plan in a trader's tan
+  // `merchant` banner, js/sim/robots.js): a trader in a tan
   // coat, with the hat and the trim in the team's colour so the side reads
   // Not another player: its own grids, 16 x 18 - two rows taller than a slot
   // - picked off a concept sheet (docs/media/concepts/merchant-concepts-2,
@@ -943,17 +218,13 @@
   // (setTeamPal, js/sprites/core.js) reaches every holder; a cached look is
   // thrown away and rebakes on its next ask
   SPR.onTeams(() => {
-    TEAM_SKINS.forEach((t, i) => {
-      teamPlayers[i] = playerSet(teamPlayerPal(t));
-      champPlayers[1][i] = skaterSet(teamPlayerPal(t));
-      teamMerchants[i] = merchantSet(merchantPal(t));
-    });
+    TEAM_SKINS.forEach((t, i) => { teamMerchants[i] = merchantSet(merchantPal(t)); });
     lookCache.clear();
+    faces.clear();
   });
 
   Object.assign(SPRITES, {
-    champ: champPlayers,
-    LOOK, champLook, // a character's paint on a class body (the `looks` section above)
+    champLook, portrait, // a hero's pose set and its 48 px face in a team's paint and one of its looks (the `heroes` section above)
     // the run and roll frames' size and where the 16 x 16 cell sits in one, the body's bob per
     // frame of the run and the held run (whole px up) and the share of the roll at which each
     // roll frame starts

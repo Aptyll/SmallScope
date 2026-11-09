@@ -12,16 +12,14 @@
 // second. ANY body standing under ANY cable clips on with E (input.jump -
 // the same hop intent the eagle reads), rides at ZIP_SPD
 // (three times walk) in whichever direction it holds along the cable, and
-// lets go anywhere with E again; a dodge rolls off it the way it rolls off
-// the grapple. Riding is hands-on-the-handle: no swing, shot, cast, fish or
-// prone (every gate lists `p.zip >= 0` beside fallT and dodgeT), but a
+// lets go anywhere with E again; a dodge rolls off it. Riding is
+// hands-on-the-handle: no swing, shot, cast or fish (every gate lists `p.zip >= 0` beside fallT and dodgeT), but a
 // rider is still a body to every weapon - arrows, the roll's sweep, a
-// tower, a wolf - and plain damage never dismounts. A stun, a root or a
-// net does (zipEnd with `fell`: dropped at rest on the snow under the
+// tower, a wolf - and plain damage never dismounts. A stun or a root
+// does (zipEnd with `fell`: dropped at rest on the snow under the
 // cable). Two RIVALS meeting on one cable crash (zipCrash): both stunned
 // ZIP_CRASH_STUN and dropped where they met; a side's own riders pass
-// through each other. The exit KEEPS the cable's velocity the way grapEnd keeps the
-// reel's, so a hop-off is a dash and shift on landing carves a slide.
+// through each other. The exit KEEPS the cable's velocity, so a hop-off is a dash and shift on landing carves a slide.
 // Riders leave the unit-contact list (separateUnits: the body is above the
 // ground) and move by the cable alone - no moveEntity, so a wall or a pine
 // under the line never stops one. The lines are laid at boot by placeZips,
@@ -36,7 +34,7 @@
 const ZIP_MID_GAP = 20 * MAP_K; // u short of the road's centre the front terminus stands
 const ZIP_OUT = 0.6;       // tiles past the ragged road edge the cable runs - the shoulder, never the lane
 const ZIP_SPAN = 10;       // u between pylons along the road (about 226 px)
-const ZIP_SPD = 220;       // px/s - 3x walk, under GRAP_REEL (260) so the hook stays the fastest thing in the game
+const ZIP_SPD = 220;       // px/s - 3x walk
 const ZIP_GRAB = 32;       // px off the cable's ground track a body may clip on from: two tiles, so the press works from the lane and the body hops the rest
 const ZIP_HOVER = 6;       // px the pointer may sit off the DRAWN cable (the track lifted by zipLift) and still be on it: the hover highlight and the click scheme's press-on-the-cable read this
 const ZIP_ALT = 8;         // px the riding body hangs above its own shadow (the draw)
@@ -191,15 +189,14 @@ function zipToggle(p) {
 // cable is the whole gesture from anywhere the pointer can see it. It is
 // a channel because the player is not holding the stick: ANY held movement
 // takes the legs back and ends it, and so does anything that takes the body
-// - a dodge, a draw, a cast, a rush, a shield, the grapple, a slide, going
-// prone, a stun, a root, a net, a hole, the air, a death - and a route that
+// - a dodge, a draw, a cast, a dash, a shield, a slide, a stun, a root, a
+// hole, the air, a death - and a route that
 // fails or pins (navTo's ok). No timer. State on the body: p.zipWalk (a
 // flag; the goal is re-read every step, since the nearest point moves with
 // the body) and p.zipWalkL (the line's index in zips: which cable). The walk does not write p.lastMx/lastMy (updatePlayer), so the
 // clip-on at the end still reads the way you were walking BEFORE the press.
 function zipWalkStart(p, z) {
-  if (p.dead || p.stunT > 0 || p.fallT > 0 || p.dodgeT > 0 || p.rushT > 0 || p.castT > 0 || p.shieldT > 0 || p.grapT > 0 || p.charging || inAir(p)) return;
-  risePlayer(p);
+  if (p.dead || p.stunT > 0 || p.fallT > 0 || p.dodgeT > 0 || p.rushT > 0 || p.castT > 0 || p.shieldT > 0 || p.charging || inAir(p)) return;
   p.zipWalk = true; p.zipWalkL = zips.indexOf(z);
   navClear(p);
 }
@@ -215,7 +212,7 @@ function zipWalkStep(p, dt) {
   if (!p.zipWalk) return null;
   const z = zips[p.zipWalkL];
   const busy = p.dead || p.stunT > 0 || p.rootT > 0 || p.fallT > 0 || p.dodgeT > 0 || p.rushT > 0 || p.castT > 0 ||
-    p.shieldT > 0 || p.grapT > 0 || p.charging || p.sliding || p.prone || inAir(p);
+    p.shieldT > 0 || p.charging || p.sliding || inAir(p);
   if (!z || busy || p.input.mx || p.input.my) { zipWalkEnd(p); return null; }
   const n = zipNearest(z, p.x, p.y);
   if (n.dist <= ZIP_GRAB) { zipWalkEnd(p); zipStart(p, { z, d: n.d }); return null; }
@@ -227,8 +224,6 @@ function zipWalkStep(p, dt) {
 }
 function zipStart(p, near) {
   if (p.dead || p.stunT > 0 || p.fallT > 0 || p.dodgeT > 0 || p.rushT > 0 || p.castT > 0 || p.shieldT > 0 || inAir(p)) return;
-  if (p.grapT > 0) grapEnd(p);      // off the rope and onto the handle
-  risePlayer(p);                    // up out of the snow first
   breakRecall(p);                   // the recall is over: both hands are on the handle
   if (p.charging) { p.charging = false; p.chargeT = 0; }
   p.fireArmed = false;

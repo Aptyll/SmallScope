@@ -1,7 +1,7 @@
-# The two motions the doll paints for every class: the run (C SPRINT off
+# The two motions the doll paints for every hero look: the run (C SPRINT off
 # docs/media/concepts/run-roll-concepts-1.png) and the dodge roll (A TUCK TUMBLE). Poses are
 # bodies.py dicts; hands are offsets from the body's own resting hand, so one set of poses
-# drives both bodies although the warrior stands a row taller on her blades.
+# drives every look, whatever height it stands at.
 import math
 from doll import v3, Z, CE
 from bodies import TURNED

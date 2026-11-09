@@ -775,7 +775,6 @@ function ckStep(p, dt) {
     if (inp.ability >= 0 || p.castT > 0) { r.aimX = ms.castAt.x; r.aimY = ms.castAt.y; if (r.fire !== null) r.fire = p.charging; }
     else ms.castAt = null;
   }
-  if (ms.reel && inp.ability < 0 && p.castT <= 0 && p.grapT <= 0) ms.reel = false; // the reel it held is over
   // the roll goes where the pointer is - one rule, with no walk keys to read
   if (inp.dodge) { const dx = mouseWX() - p.x, dy = mouseWY() - p.y, l = Math.hypot(dx, dy); if (l > 1) { r.mx = dx / l; r.my = dy / l; } }
   return r;
@@ -807,11 +806,10 @@ function ckStep(p, dt) {
 // Nothing here reaches the sim but the input struct, as for CLICK.
 const MS_WHEEL = ['ab1', 'ab2', 'ab3', 'ab4', 'potion', 'ping'];
 // ready: the readied well, -1 none; castAt: the world point a mouse cast
-// aims at until it lands; reel: a grapple cast off the mouse, reeling to its
-// end with no key to hold (inp.grapple, sampleHumanInput)
-const ms = { ready: -1, castAt: null, reel: false };
+// aims at until it lands
+const ms = { ready: -1, castAt: null };
 function msOn() { return settings.scheme === 'mouse'; }
-function msClear() { ms.ready = -1; ms.castAt = null; ms.reel = false; }
+function msClear() { ms.ready = -1; ms.castAt = null; }
 // does ability i want a direction - a line or a cone off the body? Only
 // those are worth readying; the rest cast the moment they are asked for
 function msAims(i) { const a = abOf(player, i).aim; return !!(a && (a.line || a.cone)); }
@@ -819,7 +817,6 @@ function msCast(i, wx, wy) {
   SFX.unlock();
   player.input.ability = i;
   ms.castAt = { x: wx, y: wy };
-  ms.reel = abOf(player, i).id === 'grap';
   ms.ready = -1;
 }
 // a click on ability well i (hudPress, js/ui/strip.js)
@@ -949,7 +946,6 @@ function sampleHumanInput(p, dt) {
   if (state.mode === 'play' && state.mapOpen && !state.paused && !state.settingsOpen) {
     inp.mx = mx; inp.my = my;
     inp.slide = keyHeld('slide');
-    inp.grapple = keyHeld('ab3') || ms.reel; // a reel in progress keeps answering the held key (or the mouse's cast)
     inp.fire = inp.work = false;
     inp.useItem = -1;
     inp.ability = -1;
@@ -964,7 +960,7 @@ function sampleHumanInput(p, dt) {
   // the controls until it hands back, exactly as pause zeroes them
   if (!live) {
     inp.mx = inp.my = 0;
-    inp.fire = inp.work = inp.slide = inp.grapple = false;
+    inp.fire = inp.work = inp.slide = false;
     inp.dodge = false;
     inp.useItem = -1;
     inp.ability = -1;
@@ -985,10 +981,6 @@ function sampleHumanInput(p, dt) {
   }
   inp.mx = mx; inp.my = my;
   inp.slide = keyHeld('slide');
-  // the grapple reels only while its own key - ability 3's - is held: the one
-  // HELD ability input, read by playerMove's grapple branch; releasing it
-  // lets go early
-  inp.grapple = keyHeld('ab3') || ms.reel; // ...or, cast off the mouse, reels to its end (msCast)
   inp.work = (keyHeld('work') || !!(c && c.work)) && !state.wheel && !state.shop; // the counter swallows the work key the way a wheel does
   if (c && c.fire !== null) inp.fire = c.fire; // the auto-attack's own edges, with the hand off the button
   if (state.wheel) { inp.fire = false; inp.dodge = false; inp.ability = -1; } // the wheel swallows the shot

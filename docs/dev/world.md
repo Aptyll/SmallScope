@@ -355,8 +355,7 @@ round a world point and returns the break (null where no bare ice lies under it)
   tile a break holds is painted as ice (`paintGroundTile` asks `iceBreakHolds`) and the break
   draws its own water over it, so nothing square ever shows. A player's feet read the pixels
   (`iceBreakWet`): the plunge in `playerPlunge` and the climb out (`nearestDryTile`) go by the
-  water as drawn, and a strict move (`moveEntity`) stops at its edge. A net built on a break's
-  water keeps it open and joins `holes`, so the dawn refreeze has it from there.
+  water as drawn, and a strict move (`moveEntity`) stops at its edge.
 - **The pixels** (`drawIceBreaks`, flat in `render()`): one small canvas a
   break, repainted each frame it is on screen, clipped to where the ice is drawn (`iceAtPx`).
 

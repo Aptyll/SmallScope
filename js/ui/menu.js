@@ -39,7 +39,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.664';
+const PATCH_TXT = 'PATCH 0.665';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -55,6 +55,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.665', 'THE HUNTER AND THE WARRIOR ARE GONE: EVERY PICK IS A NAMED HERO, AURA HAS HER OWN SKINS TAB, AND COINS SPENT ON THE OLD HERO AND WEAPON SKINS ARE PAID BACK.'],
   ['0.664', 'AT 20:00 THE ORCA COMES UP IN ITS POOL TO BE FOUGHT: IT LUNGES ACROSS THE ICE AND SPOUTS AT RANGE, AND THE SIDE THAT FELLS IT GETS THE ORCA BUFF, ITS SOLDIERS NEAR YOU HITTING BUILDINGS TWICE AS HARD FOR 3 MINUTES.'],
   ['0.663', 'NOTHING NEW TO PLAY: A NEW WAY OF DRAWING THE VALLEY\'S BEASTS AND HEROES, SO THE NEXT ONES LOOK BETTER.'],
   ['0.662', 'THE ORCA HAS ITS OWN FROZEN POOL ON THE CREEK, TOP LEFT OF THE MIDDLE, AND THE MIDDLE IS PLAIN ICE; THE BROWN BEAR IS GONE, AND THE BLACK BEAR COMES OUT AT 5:00, EACH ONE YOUR SIDE SLAYS GIVING YOUR TEAM 5% MORE DAMAGE FOR GOOD, UP TO FOUR.'],
@@ -1345,18 +1346,14 @@ function drawLobbyBackdrop(now, a) {
 // the class weapon at hand, and under it the STAT LEDGER: every number the
 // kit flies out with, real values from the same code the sim reads (baseKit,
 // js/sim/player.js). RIGHT: the ABILITIES column, one well a key (1-4)
-// wearing the picked option's icon with the key in the corner; a click turns
-// it to the key's next option (abOptions, js/sim/abilities.js - the
-// warrior's keys carry two each, the hunter's one, which a click leaves as it
-// is; the pick is player.abPick, read by abOf), and a hover raises the
-// option's card (tipClassAb, js/ui/tooltip.js): what the key will do, read
+// wearing its ability's icon with the key in the corner, and a hover raises
+// its card (tipClassAb, js/ui/tooltip.js): what the key will do, read
 // before the eagle - its growth is the match's own (skill points), never
 // bought here. The ledger is the hero's seven stats at level 1 (STAT_ROWS,
 // js/sim/stats.js), the PLAYER-panel text carve-out: comparing numbers is
 // this panel's whole job. ESC, Backspace, the X, or a click outside the panel
 // closes it; LOCK IN stays on the lobby behind it. The keyboard walks
-// menu.grow down the ability column; on a well Enter, Space or Right turns
-// it, Left turns it back.
+// menu.grow down the ability column, naming the well it is on.
 const HERO_WELL = 38, HERO_WELL_G = 4;               // an ability well, and the gap between wells
 function heroLayout() {
   const cx = Math.round(VIEW_W / 2);
@@ -1384,15 +1381,6 @@ function heroScreenHit() {
   for (const w of abils) if (over(w, 0, 1)) return { ab: w.i };
   return popFrameHit(panel, xr);
 }
-// key i's option turned by d: the next (or the last) of what the key
-// carries; a key with one option has nowhere to turn
-function pickAbility(i, d) {
-  const n = abOptions(player.cls, i).length;
-  if (n < 2) { SFX.deny(); return; }
-  player.abPick[i] = (((player.abPick[i] | 0) + d) % n + n) % n;
-  SFX.pickup();
-}
-
 function beginHero() {
   state.menu.grow = 0;
   openPop('hero');
@@ -1405,8 +1393,6 @@ function heroKey(k) {
   if (k === 'escape' || k === 'backspace') leaveHero();
   else if (moveDir(k) === 'up') { m.grow = (m.grow + N - 1) % N; SFX.pickup(); }
   else if (moveDir(k) === 'down') { m.grow = (m.grow + 1) % N; SFX.pickup(); }
-  else if (moveDir(k) === 'left') pickAbility(m.grow, -1);
-  else if (moveDir(k) === 'right' || k === 'enter' || k === ' ') pickAbility(m.grow, 1);
 }
 
 function heroClick() {
@@ -1415,7 +1401,7 @@ function heroClick() {
   const h = heroScreenHit();
   if (!h || h === 'x') { leaveHero(); return; } // the X, or anywhere off the panel
   if (h === 'panel') return;                    // the slab swallows it
-  if (h.ab != null) { m.grow = h.ab; pickAbility(h.ab, 1); } // the well turns to the next option
+  if (h.ab != null) m.grow = h.ab; // the well takes the keyboard's focus
 }
 
 // what the pointer is on: 'play' (BAN / LOCK IN), 'hero' (the stage figure:
@@ -1554,41 +1540,14 @@ function lobbySkin(k) {
   draftSkin(h, k > 0 ? row.r.id : null);
 }
 
-// The class EMBLEMS at 12px - the hunter's bow, the warrior's gauntlet - for
+// The heroes' EMBLEMS at 12px - ARMATOS's broken standard, and one each - for
 // the team rail's chips (drawRailChip), the rooms and tooltips, on the
 // shared big-icon palette (AB32_PAL, js/sim/abilities.js): drawn by hand at
-// that size. The local player's own chip is baked with every colour but the
-// outline pushed to white, the maps' "you". A new hero brings a CLASS12 grid.
-const CLASS12 = [
-  [ // HUNTER: the bow, the string and the arrow across
-    '............',
-    '.oo.........',
-    '.oto........',
-    '.otwo.......',
-    '.ot.wo......',
-    '.ot..wo.....',
-    'rrttttwWWWo.',
-    '.ot..wo.....',
-    '.ot.wo......',
-    '.otwo.......',
-    '.oto........',
-    '.oo.........',
-  ],
-  [ // WARRIOR: the gauntlet, knuckles first
-    '............',
-    '.oo.oo.oo.oo',
-    '.Cs.Cs.Cs.Cs',
-    '.Cs.Cs.Cs.Cs',
-    '.Cs.Cs.Cs.Cs',
-    '.ooooooooooo',
-    '.oCsCsCsCsso',
-    '.ossssssssso',
-    '.oSSSSSSSSSo',
-    '..ooooooooo.',
-    '..oggggggggo',
-    '..ooooooooo.',
-  ],
-  [ // ARMATOS: the broken standard - the pole, the torn cloth off its head
+// that size, keyed by hero name. The local player's own chip is baked with
+// every colour but the outline pushed to white, the maps' "you". A new hero
+// brings a CLASS12 grid (checked at load below).
+const CLASS12 = {
+  ARMATOS: [ // the broken standard - the pole, the torn cloth off its head
     '..o.........',
     '.ogooooo....',
     '.oGrrrrro...',
@@ -1602,7 +1561,7 @@ const CLASS12 = [
     '.owo........',
     '..o.........',
   ],
-  [ // FORTIVA: the broken chain - a link snapped, its two ends apart
+  FORTIVA: [ // the broken chain - a link snapped, its two ends apart
     '............',
     '..oooo......',
     '.oCCCso.....',
@@ -1616,7 +1575,7 @@ const CLASS12 = [
     '.....g.oCsso',
     '........ooo.',
   ],
-  [ // BELLA: the saber, its edge curving up to the point, the gold guard
+  BELLA: [ // the saber, its edge curving up to the point, the gold guard
     '.........oo.',
     '........oWo.',
     '.......oCo..',
@@ -1630,7 +1589,7 @@ const CLASS12 = [
     'owo..o......',
     '.o..........',
   ],
-  [ // IGNIA: one flame, white at its heart
+  IGNIA: [ // one flame, white at its heart
     '.....o......',
     '....oro.....',
     '....oro.o...',
@@ -1644,7 +1603,7 @@ const CLASS12 = [
     '...orrro....',
     '....ooo.....',
   ],
-  [ // AURA: a four-pointed star, the light that falls
+  AURA: [ // a four-pointed star, the light that falls
     '.....o......',
     '....oWo.....',
     '....oWo.....',
@@ -1658,7 +1617,7 @@ const CLASS12 = [
     '.....o......',
     '............',
   ],
-  [ // SALVIA: a snowdrop, its white bell nodding off the stem
+  SALVIA: [ // a snowdrop, its white bell nodding off the stem
     '...ooo......',
     '..ovvvoo....',
     '..ovooovo...',
@@ -1672,7 +1631,7 @@ const CLASS12 = [
     '..ovo.......',
     '...o........',
   ],
-  [ // LUCERNA: her lantern, lit, on its ring
+  LUCERNA: [ // her lantern, lit, on its ring
     '....oooo....',
     '....o..o....',
     '...oooooo...',
@@ -1685,7 +1644,7 @@ const CLASS12 = [
     '....oooo....',
     '............',
   ],
-  [ // HIEMS: a six-armed snowflake
+  HIEMS: [ // a six-armed snowflake
     '.....o......',
     '..o.oWo.o...',
     '.oWooWooWo..',
@@ -1699,7 +1658,7 @@ const CLASS12 = [
     '.....o......',
     '............',
   ],
-  [ // RUPES: the snowball, its trail behind it
+  RUPES: [ // the snowball, its trail behind it
     '....oooo....',
     '..ooWWWWoo..',
     '.oWWWWWWWbo.',
@@ -1713,7 +1672,7 @@ const CLASS12 = [
     '....oooo....',
     '............',
   ],
-  [ // VARRO: a wolf's paw print
+  VARRO: [ // a wolf's paw print
     '...oo.oo....',
     '..oWWoWWo...',
     '.ooWWoWWoo..',
@@ -1727,7 +1686,7 @@ const CLASS12 = [
     '...oo.oo....',
     '............',
   ],
-  [ // BUCINA: her horn, the bell to the right
+  BUCINA: [ // her horn, the bell to the right
     '............',
     '.........oo.',
     '........ogWo',
@@ -1741,7 +1700,7 @@ const CLASS12 = [
     '............',
     '............',
   ],
-  [ // NIX: the snowblind's goggles, two slits in a bone band
+  NIX: [ // the snowblind's goggles, two slits in a bone band
     '............',
     '............',
     '............',
@@ -1755,7 +1714,7 @@ const CLASS12 = [
     '............',
     '............',
   ],
-  [ // FABER: a gear
+  FABER: [ // a gear
     '....ooo.....',
     '.oo.oWo.oo..',
     '.oWooWooWo..',
@@ -1769,7 +1728,7 @@ const CLASS12 = [
     '....ooo.....',
     '............',
   ],
-  [ // VELOX: a skate, its blade under it
+  VELOX: [ // a skate, its blade under it
     '............',
     '.oooo.......',
     '.oWWo.......',
@@ -1783,7 +1742,7 @@ const CLASS12 = [
     '.oooooooooo.',
     '............',
   ],
-  [ // FALCO: a hawk stooping, wings folded back
+  FALCO: [ // a hawk stooping, wings folded back
     '............',
     '.o........o.',
     '.oWo....oWo.',
@@ -1796,7 +1755,7 @@ const CLASS12 = [
     '....o..o....',
     '............',
   ],
-  [ // MARIS: her harpoon's barbed head
+  MARIS: [ // her harpoon's barbed head
     '........ooo.',
     '.......oWWo.',
     '......oWWWo.',
@@ -1810,7 +1769,7 @@ const CLASS12 = [
     '............',
     '............',
   ],
-  [ // LIGNUM: his felling axe's broad bit on its haft
+  LIGNUM: [ // his felling axe's broad bit on its haft
     '..oooo......',
     '.oWWWWo.....',
     '.oWWWWoo....',
@@ -1824,7 +1783,7 @@ const CLASS12 = [
     '.....ooo....',
     '............',
   ],
-  [ // SAGITTA: a crossbow, prod up, the stock down
+  SAGITTA: [ // a crossbow, prod up, the stock down
     '............',
     '.oooooooooo.',
     'oWWWWWWWWWWo',
@@ -1838,7 +1797,8 @@ const CLASS12 = [
     '....oooo....',
     '............',
   ],
-];
+};
+for (const c of CLASSES) if (!CLASS12[c.name]) throw new Error('menu.js: ' + c.name + ' has no CLASS12 emblem');
 const class12Cache = new Map();
 function classIcon12(i, you) {
   const key = i * 2 + (you ? 1 : 0);
@@ -1847,7 +1807,7 @@ function classIcon12(i, you) {
     cv = document.createElement('canvas');
     cv.width = cv.height = 12;
     const g = cv.getContext('2d');
-    const rows = CLASS12[i];
+    const rows = CLASS12[CLASSES[i].name];
     for (let r = 0; r < rows.length; r++) {
       const row = rows[r];
       for (let c = 0; c < row.length; c++) {
@@ -1890,7 +1850,7 @@ function drawLobbyStage(now, a, sw) {
   const rise = Math.round((1 - sw) * 8) - (hover === 'hero' ? 2 : 0);
   const bob = Math.round(Math.sin(now * 1.6));
   ctx.globalAlpha = a;
-  ctx.drawImage(SPRITES.portrait(player.cls, player.look, skin(player.team), heroSkinOf(player)), body.x, body.y + rise + bob, body.w, body.h);
+  ctx.drawImage(SPRITES.portrait(player.cls, skin(player.team), heroSkinOf(player)), body.x, body.y + rise + bob, body.w, body.h);
 }
 
 // The pick's light on the snow: a shadow, a warm pool, the gold ring turning
@@ -1980,7 +1940,7 @@ function drawHeroPreview(r, now) {
   ctx.beginPath(); ctx.ellipse(sx + 32, r.y + r.h - 6, 22, 4, 0, 0, Math.PI * 2); ctx.fill();
   ctx.drawImage(classSet(player).down[1 + (Math.floor(now * 3) % 2)], sx, sy, 64, 64);
   // the hero's own weapon rides along - its basic attack (CLASSES[c].attack)
-  const im = SPRITES.weaponArt[(CLASSES[m.csel] || CLASSES[0]).attack.art];
+  const im = SPRITES.weaponArt[(CLASSES[m.csel] || CLASSES[player.cls]).attack.art];
   ctx.drawImage(im, r.x + r.w - 31, r.y + r.h - 33 + Math.round(Math.sin(now * 2.2) * 1.5), 24, 24);
 }
 
@@ -2005,16 +1965,15 @@ function renderHero(now, a) {
     drawPixelTextShadow(ctx, vTxt, led.x + led.w - pixelTextWidth(vTxt), y, '#f4f7ff', '#0a0e23');
   }
   ctx.globalAlpha = a;
-  // the column: a well a key wearing its option, each a button that turns
-  // it; the keyboard's well breathing its corner ticks
+  // the column: a well a key wearing its ability; the keyboard's well
+  // breathing its corner ticks
   const keyed = !mouse.inside;
   for (const w of abils) {
-    const k = player.abPick[w.i] | 0;
     const hot = onAb && gh.ab === w.i, y = w.y + rise - (hot ? 1 : 0);
     ctx.fillStyle = 'rgba(4,6,18,0.55)'; ctx.fillRect(w.x + 2, w.y + rise + 2, w.w, w.h);
     ctx.fillStyle = hot ? '#8fa0c8' : '#c89a3c'; ctx.fillRect(w.x, y, w.w, w.h);
     ctx.fillStyle = '#1a2142'; ctx.fillRect(w.x + 1, y + 1, w.w - 2, w.h - 2);
-    ctx.drawImage(classAbIcon(player.cls, w.i, k), w.x + 3, y + 3);
+    ctx.drawImage(classAbIcon(player.cls, w.i), w.x + 3, y + 3);
     drawPixelTextShadow(ctx, keyCapShort('ab' + (w.i + 1)), w.x + 3, y + w.h - 9, '#ffd95c', '#0a0e23'); // the key, a keybind indicator
     if (keyed && m.grow === w.i) { // keyboard cursor: four corner ticks, breathing
       ctx.globalAlpha = a * (0.7 + 0.3 * Math.sin(now * 6));
@@ -2026,14 +1985,9 @@ function renderHero(now, a) {
       ctx.globalAlpha = a;
     }
   }
-  // the hovered well's name - what a click would turn it to - else the
-  // focused well's pick; nothing while the hand is on the ledger, which is
-  // labelled
-  const nOpt = onAb ? abOptions(player.cls, gh.ab).length : 0;
-  const nm = onAb ? abOptions(player.cls, gh.ab)[((player.abPick[gh.ab] | 0) + 1) % nOpt].name
-    : abOf(player, m.grow).name;
-  if (nm) drawPixelTextShadow(ctx, nm, name.x - Math.round(pixelTextWidth(nm) / 2), name.y + rise,
-    onAb && nOpt > 1 ? '#f4f7ff' : '#ffd95c', '#0a0e23');
+  // the hovered well's name, else the focused well's
+  const nm = abOf(player, onAb ? gh.ab : m.grow).name;
+  drawPixelTextShadow(ctx, nm, name.x - Math.round(pixelTextWidth(nm) / 2), name.y + rise, '#ffd95c', '#0a0e23');
   drawPopX(xr, rise, gh === 'x');
   ctx.globalAlpha = 1;
 }

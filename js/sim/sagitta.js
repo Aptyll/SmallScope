@@ -100,7 +100,7 @@ function sagittaBolt(p, spd, range, o) {
   const dx = p.input.aimX - p.x, dy = p.input.aimY - (p.y - BOW_Y), a = Math.atan2(dy, dx);
   const b = Object.assign({
     x: p.x, y: p.y - BOW_Y, vx: Math.cos(a) * spd, vy: Math.sin(a) * spd,
-    t: 0, life: range / spd, pow: 1, owner: p.id, team: p.team, ambush: false, trailD: 0,
+    t: 0, life: range / spd, pow: 1, owner: p.id, team: p.team, trailD: 0,
     solid: true, kb: 1, col: '#c3ccd8', ang: a, spd, ox: p.x, oy: p.y - BOW_Y,
   }, o);
   arrows.push(b);
@@ -189,7 +189,6 @@ function sagittaCrank(p) {
   if (PRACTICE) abHitDummies(p.x, p.y, CRANK_R, CRANK_DMG);
   p.rushNX = -dx / d; p.rushNY = -dy / d;
   p.rushT = CRANK_D / CRANK_SPD;
-  p.rushVictim = null;
   p.dash = 'crank';
   p.sliding = false;
   faceToward(p, dx, dy, true); // she lands still facing what she shot at

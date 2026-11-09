@@ -559,7 +559,7 @@ function renderVictory(now) {
       const s = stands[k];
       const sr = easeOut(Math.max(0, Math.min(1, (t - WIN_T.stage - s.rank * WIN_T.stand) / 0.55)));
       if (sr <= 0) continue;
-      const set = SPRITES.champLook(s.m.cls, s.m.look, ti);
+      const set = SPRITES.champLook(s.m.cls, ti, s.m.skin);
       const ph = now * 2.2 + k * 1.3;
       const bob = Math.round(Math.sin(ph) * 1.5);
       // the local player performs what the player asked for; the mates
@@ -821,13 +821,13 @@ function renderDefeat(now) {
     // mirrored the way it stood, each sunk a row or two off the hash so it
     // is a field of them rather than a rank of dominoes. Outer ranks
     // first, each settling a beat after the last; the name sits over the
-    // body's top row (row 7 of the prone grid).
+    // body lying in the snow (the `lying down` banner, js/sprites/characters.js).
     const DEAD_INK = mixHex(tm.mark, '#141c3c', 0.42); // a colder plate than the win's
     for (let k = stands.length - 1; k >= 0; k--) {
       const s = stands[k];
       const sr = easeOut(Math.max(0, Math.min(1, (t - DEF_T.stage - s.rank * DEF_T.stand) / 0.6)));
       if (sr <= 0) continue;
-      const set = SPRITES.champLook(s.m.cls, s.m.look, ti);
+      const set = SPRITES.champLook(s.m.cls, ti, s.m.skin);
       // side-on with the head toward the middle, or face down head-on, off
       // the hash: one row of identical silhouettes reads as cordwood
       const hf = hash2(k * 17 + 5, 97);

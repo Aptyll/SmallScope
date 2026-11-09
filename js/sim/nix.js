@@ -244,7 +244,6 @@ function nixDrift(p) {
   p.rushT = (d + DRIFT_STEP_PAST) / DRIFT_STEP_SPD;
   p.nixDriftId = q instanceof Player ? q.id : -1; // a hero may move: she comes out behind where it is then
   p.nixDriftX = q.x + nx * DRIFT_STEP_PAST; p.nixDriftY = q.y + ny * DRIFT_STEP_PAST;
-  p.rushVictim = null;
   p.dash = 'drift';
   p.sliding = false;
   faceToward(p, nx, ny, true);
