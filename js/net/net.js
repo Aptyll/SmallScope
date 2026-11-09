@@ -136,7 +136,8 @@ function netHostRoom() {
   let humans = 0; const sides = [0, 0];
   for (const p of players) if (isHuman(p)) { humans++; sides[p.team]++; }
   NET.transport.roomData({ name: player ? player.name : '', patch: PATCH_TXT, seed: SEED, practice: ARENA ? 2 : PRACTICE ? 1 : 0, state: state.drop ? 'live' : 'open', humans, sides,
-    seek: NET.seek && !NET.seek.rival && !NET.seek.crossing ? NET.mode : '' }); // a party looking for another (js/ui/matchmaking.js)
+    seek: NET.seek && !NET.seek.rival && !NET.seek.crossing ? NET.mode : '', // a party looking for another (js/ui/matchmaking.js)
+    hs: NET.seek ? seekPower() : 0 }); // ...and how well its leader's machine hosts (seekPower): the best one hosts
 }
 // the roster to every peer, on every change of it: a client's waiting room
 // draws the same ten this one does

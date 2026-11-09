@@ -3,8 +3,10 @@
 // MATCH (partyFind, js/ui/rooms.js) puts the party on the list as looking
 // (`seek` in the room's data, netHostRoom, js/net/net.js) and reads the
 // list (the relay's rooms, or Steam's lobbies) for another party looking in
-// the same mode. Of every party looking, the one with the lowest code hosts
-// the match: it waits, and the others cross over to it (seekCross). A
+// the same mode. Of every party looking, the one whose leader's machine is
+// fastest hosts the match (`hs`, seekPower: the host runs the whole match for
+// ten), the lowest code among equals: it waits, and the others cross over to
+// it (seekCross). A
 // crossing party's leader tells its guests (`cross`) and every page of it
 // reloads onto the host's valley and joins its room with the party's code
 // in the hello (CROSS); the host seats the first party that knocks on its
@@ -21,6 +23,8 @@ const MATCH_HOLD = 6;     // s more it waits after seeing a party that may be cr
 const MATCH_GATHER = 20;  // s a crossing party's people have to arrive before their empty seats go to bots
 const MATCH_JOIN = 6;     // s a crossing page keeps trying the room it crossed to before it goes home
 const HOME_KEY = 'softfall.home';
+const POWER_ROUNDS = 4;   // rounds of seekPower's fixed load (10 encodes each); the fastest counts
+const POWER_STEP = 4;     // steps per doubling of speed: machines within ~19% of each other tie, and the code decides
 // a page that reloaded to cross into another party's room: that party's
 // code and how many people it brings (the hello carries both)
 const CROSS = (function () {
@@ -32,6 +36,22 @@ let homeParty = null;
 if (CROSS) { try { homeParty = JSON.parse(sessionStorage.getItem(HOME_KEY) || 'null'); } catch (e) { } }
 
 function seekKey(r) { return String((r.data && r.data.code) || r.room || '').toUpperCase(); }
+// how well this machine can host, as a small whole number every party reads
+// the same way off the list: a fixed load (a match-sized delta of made-up
+// bodies) through the host's own encoder, timed once a page. Higher hosts
+let seekPowerMemo = null;
+function seekPower() {
+  if (seekPowerMemo !== null) return seekPowerMemo;
+  const ents = [];
+  for (let i = 0; i < 120; i++) ents.push([i, { x: i * 3.25, y: 900 - i * 1.5, vx: 0.5, vy: -1.25, hp: 40 + i, dir: 'down', animT: i / 7, moving: true, team: i & 1, kit: { a: i, b: [1, 2, 3] } }]);
+  const msg = { t: 'snap', d: { v: 2, tick: 1, base: 0, R: { ch: ents } } };
+  let best = Infinity;
+  for (let k = 0; k < POWER_ROUNDS; k++) { const t = performance.now(); for (let j = 0; j < 10; j++) snapEncode(msg, encDict(), 0); best = Math.min(best, performance.now() - t); }
+  seekPowerMemo = Math.max(0, Math.round(Math.log2(500 / Math.max(best, 0.01)) * POWER_STEP));
+  return seekPowerMemo;
+}
+// which of two looking parties hosts: the faster machine, then the lower code
+function seekHosts(power, code, r) { const p = +(r.data && r.data.hs) || 0; return power !== p ? power > p : code < seekKey(r); }
 // the parties on the list looking in our mode right now, ours left out
 function seekRivals() {
   const mine = roomCode();
@@ -42,6 +62,7 @@ function seekRivals() {
 // cannot (no relay, no Steam): bots at once, as before
 function seekStart() {
   if (NET.role !== 'host' || NET.mode === 'practice' || NET.mode === 'guide' || !roomCode() || !(NET.transport && NET.transport.open)) return false; // FIRST MATCH goes straight to bots
+  seekPower(); // timed now, at the press, not mid-look
   NET.seek = { t: 0, hold: MATCH_WAIT, rival: null, crossing: false };
   roomsFeedOpen();
   netHostRoster(); netHostRoom();
@@ -68,10 +89,10 @@ function updateSeek(dt) {
     return;
   }
   const mine = roomCode(), rivals = seekRivals();
-  let low = null;
-  for (const r of rivals) if (!low || seekKey(r) < seekKey(low)) low = r;
-  if (low && seekKey(low) < mine) { seekCross(low); return; }
-  if (low) s.hold = Math.max(s.hold, s.t + MATCH_HOLD); // a higher party may be on its way here
+  let top = null; // the rival that would host over every other rival
+  for (const r of rivals) if (!top || seekHosts(+r.data.hs || 0, seekKey(r), top)) top = r;
+  if (top && !seekHosts(seekPower(), mine, top)) { seekCross(top); return; }
+  if (top) s.hold = Math.max(s.hold, s.t + MATCH_HOLD); // a party we host over may be on its way here
   if (s.t >= s.hold) seekGo();
 }
 function seekGo() {
