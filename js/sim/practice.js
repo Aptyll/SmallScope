@@ -829,10 +829,10 @@ function cheatCmd(p, c) {
   }
   if (c.id === 'wave') {
     // every bay standing queues its wave now, the size the beat would roll
-    // (barracksWave, js/sim/structures.js) - waves off or on
+    // (barracksQueue, js/sim/structures.js) - waves off or on
     if (ARENA) return false;
     let n = 0;
-    for (const o of structures) if (o.type === 'barracks' && !o.building) { o.queue += barracksWave(o); n++; }
+    for (const o of structures) if (o.type === 'barracks' && !o.building) { barracksQueue(o); n++; }
     if (!n) return 'none'; // the merchants have not raised a bay yet
     sfxFor(p, 'place');
     return true;

@@ -1250,13 +1250,12 @@ function endMatch(how) {
 // coin over its name, drawBountyTag js/draw/overhead.js) that its killer
 // cashes as a SHUTDOWN on top. A body that keeps going down without a kill or
 // an assist (p.feed) is worth less, down to FEED_FLOOR, so feeding one side
-// never funds the other. Every amount is counted in SCRAPPED SOLDIERS
-// (SOLDIER_BOUNTY, js/sim/farm.js, read at the kill), so the kill keeps its
-// place in the farm whatever a last hit is retuned to: a plain kill is three
-// of them, the biggest shutdown eight, so ending a streak pays without
-// erasing the lead the streak built. Gold only goes to the living, as a kill
-// always has.
-const KILL_SOLDIERS = 3;    // soldiers a downed rival is worth to its killer, before feed and bounty
+// never funds the other. Every amount is counted in TAKEDOWN_GOLD shares: a
+// plain kill is three of them, the biggest shutdown eight, so ending a streak
+// pays without erasing the lead the streak built. Gold only goes to the
+// living, as a kill always has.
+const TAKEDOWN_GOLD = 110;  // one share: a takedown's unit of gold (League's scale, the `economy` note in js/sim/core.js)
+const KILL_SOLDIERS = 3;    // shares a downed rival is worth to its killer, before feed and bounty
 const ASSIST_T = 10;        // s a rival's blow or crowd control stays on a body's record
 const ASSIST_SHARE = 0.5;   // of the worth, split evenly among the assists (each at least 1)
 const BOUNTY_FROM = 2;      // the streak at which a body starts wearing a bounty
@@ -1312,8 +1311,8 @@ function recentFoes(p) {
   return out.sort((a, b) => h[b.id] - h[a.id] || a.id - b.id);
 }
 // the plain kill in gold, and a body's bounty and worth
-function killBounty() { return KILL_SOLDIERS * SOLDIER_BOUNTY; }
-function bountyOf(p) { return p.streak < BOUNTY_FROM ? 0 : SOLDIER_BOUNTY * Math.min(BOUNTY_MAX, BOUNTY_STEP * (p.streak - BOUNTY_FROM + 1)); }
+function killBounty() { return KILL_SOLDIERS * TAKEDOWN_GOLD; }
+function bountyOf(p) { return p.streak < BOUNTY_FROM ? 0 : TAKEDOWN_GOLD * Math.min(BOUNTY_MAX, BOUNTY_STEP * (p.streak - BOUNTY_FROM + 1)); }
 function killWorth(p) { return Math.round(killBounty() * Math.max(FEED_FLOOR, 1 - FEED_STEP * Math.max(0, p.feed - FEED_FROM + 1))); }
 
 // p is down: the killer and the assists are paid, and every one of them has
