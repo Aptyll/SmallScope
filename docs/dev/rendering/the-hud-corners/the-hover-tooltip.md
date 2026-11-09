@@ -36,10 +36,11 @@ plate, rim }` and `drawTooltip` is the only thing that knows how to paint one: t
 plate, the name in its ink, the kind under it, then label/value rows with a dotted
 leader between them — the PLAYER panel's ledger, which is where that pattern already lives — and
 free lines under those. The panel sizes itself to its widest line (capped at `TIP_MAXW`), so a
-short tooltip is a short panel.
+short tooltip is a short panel; a free line wider than the cap breaks onto more lines (`tipFit`,
+`wrapText`), so no ability, item or translation runs out of the frame.
 
 The builders, one per kind: `tipAttack` (the hero's basic attack: its full-draw damage, the
-full draw, the renock and the reach, read off the sim's own functions),
+full draw (FULL CHARGE), the renock (BETWEEN HITS) and the reach, read off the sim's own functions),
 `tipGold`, `tipRail` (a rail
 chip), `tipShop` (the counter's wells, js/ui/shop.js), `tipClassAb` (a strip
 ability well in play, or the lobby's stage wells with `cls` passed: kept to a mid-fight glance.

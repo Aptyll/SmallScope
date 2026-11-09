@@ -92,7 +92,7 @@ const FORT_AB = [
 ];
 
 HERO_PASSIVE.unbroken = { hurt: unbHurt, deal: unbDeal, tick: unbTick, out: unbOut,
-  name: 'UNBROKEN', blurb: 'BLOWS TRADED WITH HEROES BUILD RESOLVE. HIGH, YOU SHRUG OFF CONTROL AND YOUR ATTACKS HEAL YOU.', icon: FORT_ICON32.unbroken };
+  name: 'UNBROKEN', blurb: 'BLOWS TRADED WITH HEROES BUILD RESOLVE. HIGH, CONTROL ON YOU IS SHORTER AND YOUR ATTACKS HEAL YOU.', icon: FORT_ICON32.unbroken };
 
 // ---- UNBROKEN -----------------------------------------------------------------
 function isFort(p) { return p instanceof Player && CLASSES[p.cls].passive === 'unbroken'; }

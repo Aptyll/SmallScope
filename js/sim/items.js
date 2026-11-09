@@ -71,13 +71,13 @@ const ITEM_PASSIVES = {
   chill:    { name: 'CHILL', line: 'HITS SLOW FOR 1 S', mod: (k) => { k.chill = true; } },
   glide:    { name: 'GLIDE', line: 'FASTER ON ICE', mod: (k) => { k.iceMax *= 1.15; k.iceSteer += 0.3; } },
   drift:    { name: 'DRIFT', line: 'SEEN FROM CLOSER', mod: (k) => { k.stealth -= 0.15; } },
-  light:    { name: 'LIGHT', line: 'ROLL COMES BACK SOONER', mod: (k) => { k.dodgeCd -= 0.8; } },
-  ambush:   { name: 'AMBUSH', line: 'AMBUSH HITS LAND HARDER', mod: (k) => { k.ambushMul += 0.4; } },
-  leech:    { name: 'LEECH', line: 'HITS HEAL 10% OF THEMSELVES', mod: (k) => { k.leech = true; } },
+  light:    { name: 'LIGHT', line: 'DODGE COMES BACK SOONER', mod: (k) => { k.dodgeCd -= 0.8; } },
+  ambush:   { name: 'AMBUSH', line: 'SHOTS FROM SNOW COVER HIT HARDER', mod: (k) => { k.ambushMul += 0.4; } },
+  leech:    { name: 'LEECH', line: 'HEAL 10% OF YOUR HIT DAMAGE', mod: (k) => { k.leech = true; } },
   thorns:   { name: 'THORNS', line: 'HITTERS TAKE 20% BACK', mod: (k) => { k.thorns = true; } },
   cull:     { name: 'CULL', line: '+20% ON THE BADLY HURT', mod: (k) => { k.cull = true; } },
   steady:   { name: 'STEADY', line: 'STUNS AND SLOWS 30% SHORTER', mod: (k) => { k.steady = true; } },
-  surge:    { name: 'SURGE', line: 'AFTER A KEY, NEXT HIT +50%', mod: (k) => { k.surge = true; } },
+  surge:    { name: 'SURGE', line: 'AFTER AN ABILITY, NEXT HIT +50%', mod: (k) => { k.surge = true; } },
   brace:    { name: 'BRACE', line: 'UNDER 40% HEALTH: +15 ARMOR', mod: (k) => { k.brace = true; } },
   smolder:  { name: 'SMOLDER', line: 'BURNS RIVALS CLOSE BY', mod: (k) => { k.smolder = true; } },
   scorch:   { name: 'SCORCH', line: 'ABILITIES BURN', mod: (k) => { k.scorch = true; } },
@@ -416,6 +416,7 @@ const BOT_BUILDS = {
   HIEMS: ['storm', 'marsh', 'emberb', 'slate', 'deeprod', 'clock'], // power and haste for more chills, then the armor a control mage standing in the fight needs
   RUPES: ['glacier', 'hobnail', 'bearskin', 'stonehide', 'brambmail', 'hearth'], // armor and health first, the snow takes the rest; the boots to reach the fight
   AURA: ['storm', 'emberb', 'deeprod', 'marsh', 'clock', 'slate'], // the reach first: power and haste for more stars, then the boots, then the armor a mage caught close needs
+  VARRO: ['beartooth', 'hobnail', 'fang', 'quick', 'stonehide', 'collar'], // the bite first, the legs to stay on the mark, then the health a diver needs
 };
 function botBuild(p) { return BOT_BUILDS[CLASSES[p.cls].name] || BOT_BUILDS.HUNTER; }
 // the next item on p's list it does not have yet, or null when done

@@ -12,8 +12,8 @@ nine other people are on it.
 
 Ten players in `players` — **people and AI: every seat nobody takes is a bot's**, alone or in an
 online lobby ([online play](multiplayer.md#online-play)) — across **two teams of five, RED vs
-BLUE** (players alternate). Everyone plays one of **twelve heroes** (the ranged HUNTER, the melee
-WARRIOR, ARMATOS the defensive initiator, FORTIVA the juggernaut, BELLA the duelist, IGNIA the hearthkeeper, AURA the artillery mage, SALVIA the healer, LUCERNA the catch-and-save support, HIEMS the control mage, RUPES the engage tank and BUCINA the tempo support — a human's is the one picked on the champ select's hero grid) and is **dropped in by their team's armoured eagle**, which flies in over its own corner and lands
+BLUE** (players alternate). Everyone plays one of **thirteen heroes** (the ranged HUNTER, the melee
+WARRIOR, ARMATOS the defensive initiator, FORTIVA the juggernaut, BELLA the duelist, IGNIA the hearthkeeper, AURA the artillery mage, SALVIA the healer, LUCERNA the catch-and-save support, HIEMS the control mage, RUPES the engage tank, VARRO the jungler who calls wolves and BUCINA the tempo support — a human's is the one picked on the champ select's hero grid) and is **dropped in by their team's armoured eagle**, which flies in over its own corner and lands
 the whole side at home; nobody starts at a spawn camp. Each side's **base** is a fixed hollow cut
 into its **corner's** woods, RED always bottom-left, BLUE always top-right
 ([the bases](world.md#the-bases)); the bird roosts on its perch at the back and becomes its team's
@@ -71,7 +71,7 @@ ride). Nothing in either counts and nothing is at stake. See [the practice tool]
 ## The pillars
 
 **Your weapon is your hero's.** The left button is one plain MOBA basic attack that belongs to
-the hero's kit (the HUNTER's SHORTBOW, the WARRIOR's LONGSWORD, ARMATOS's OATH GREATSWORD, FORTIVA's CHAIN GREATSWORD, BELLA's EAGLE SPATHA, IGNIA's CROOK AND LANTERN, AURA's STAR SHARD, SALVIA's SNOWDROP STAFF, LUCERNA's LANTERN, HIEMS's SNOWFLAKE STAFF, BUCINA's HORN), held
+the hero's kit (the HUNTER's SHORTBOW, the WARRIOR's LONGSWORD, ARMATOS's OATH GREATSWORD, FORTIVA's CHAIN GREATSWORD, BELLA's EAGLE SPATHA, IGNIA's CROOK AND LANTERN, AURA's STAR SHARD, SALVIA's SNOWDROP STAFF, LUCERNA's LANTERN, HIEMS's SNOWFLAKE STAFF, VARRO's HUNTING SPEAR, BUCINA's HORN), held
 to draw and released to land, and nothing on the map drops another: what grows over a match is the
 hero's level and the six item slots. The **bottom bar** shows those six slots beside the
 abilities at all times. [The basic attack](gameplay/the-basic-attack.md).
@@ -182,7 +182,7 @@ bots near a DANGER back off. [Pings](gameplay/pings.md), [Bots](multiplayer.md#b
 off the river, one between the den and the warren and a block at the lane's corner, mirrored to all four, with gaps to walk in.
 **The camps are the jungle, and the jungle is symmetric.** Six fixed sites, three on each side of the
 road, mirrored so both teams walk the same distance: four **WOLF DENS** that pay gold, and one
-**BLACK BEAR STONE** and one **BROWN BEAR DEN**, each a bear patrolling one side's bank of the creek, whose kill pays and
+**BLACK BEAR BEND** and one **BROWN BEAR BEND**, each a bear patrolling one side's bank of the creek, whose kill pays and
 gives the whole team that bear's own buff (the BLACK BUFF or the BROWN BUFF, which do the same thing).
 Every camp is **neutral until hit** — then the whole camp comes for the hitter, leashes when
 they leave its ground and heals — and every site sits well off the road, so the lane is never a

@@ -93,7 +93,7 @@ const CLASS_AB = [
       id: 'pierce', name: 'PIERCING SHOT', cd: [12, 11, 10, 9, 8], ap: 0.6, cast: PIERCE_WIND, aim: { line: PIERCE_RANGE },
       rank: { shot: [1.5, 1.7, 1.9, 2.1, 2.3] }, // times a fully drawn plain arrow's damage
       tip: 'A SHOT THROUGH EVERYONE IN A LINE',
-      blurb: 'LOCK A FULL DRAW, THEN LOOSE. THE SHOT GOES THROUGH EVERYONE ON THE LINE. EVERY MODIFIER ON YOUR TOOL RIDES IT.',
+      blurb: 'LOCK A FULL DRAW, THEN LOOSE. THE SHOT GOES THROUGH EVERYONE ON THE LINE.',
       use: (p) => abPierce(p),
     },
     {
@@ -162,6 +162,7 @@ const CLASS_AB = [
   LUCERNA_AB, // LUCERNA - the crook, the lantern, the shoo, the circle of light (js/sim/lucerna.js)
   HIEMS_AB, // HIEMS - the icicle, the clear ice, the cold snap, the whiteout (js/sim/hiems.js)
   RUPES_AB, // RUPES - the heave, the shed, the shoulder, the avalanche (js/sim/rupes.js)
+  VARRO_AB, // VARRO - the lunge, the howl, the snap, the pack (js/sim/varro.js)
   BUCINA_AB, // BUCINA - the blast, the note, the echo, the pines (js/sim/bucina.js)
 ];
 
@@ -214,7 +215,7 @@ const CLASS_AB_ALT = [
       id: 'wind', name: 'SECOND WIND', cd: [40, 35, 30], cast: 0.4,
       rank: { heal: [0.3, 0.4, 0.5], t: 4 }, // that share of max hp back over t s
       tip: 'HEAL OVER FOUR SECONDS',
-      blurb: 'A BREATH TAKEN MID-FIGHT. A THIRD OF YOUR LIFE COMES BACK OVER FOUR SECONDS.',
+      blurb: 'A BREATH TAKEN MID-FIGHT. PART OF YOUR HEALTH COMES BACK OVER FOUR SECONDS.',
       use: (p) => abSecondWind(p),
       acol: '#f2937f', activeF: (p) => (p.windT > 0 ? p.windT / abRk(p, 'wind', 't') : 0),
     }],

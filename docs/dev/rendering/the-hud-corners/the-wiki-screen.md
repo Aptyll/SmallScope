@@ -16,10 +16,10 @@ the columns, `WIKI_ITEM_COLS` naming each column's label, width and getter; hove
 `tipItem`), `legend` (the deer wearing the overhead frame, a leader from each part of it
 to its name), `beast` (a kind standing on its snow beside its growth table, `WIKI_BEASTS`),
 `cls` (a class card: the body at 3x, pitch, health and the stat pips, `WIKI_STATS`), `story`
-(the hero's story under its card, `CLASSES` `story` wrapped by `wikiWrap` from
+(the hero's story under its card, `CLASSES` `story` wrapped by `wrapText` from
 `WIKI_CLS_TEXT_X` in `WIKI_STORY_INK`, hung off a thin rule), `ab`
-(an ability: key plate, the strip's icon in a well, name, the `WIKI_AB_COLS` numbers, the blurb
-wrapped by `wikiWrap`; hoverable, answering `tipClassAb`) and `lore` (a WORLD entry,
+(an ability: key plate wearing its bound key's face, the strip's icon in a well, name, the `WIKI_AB_COLS` numbers, every line of the blurb
+wrapped by `wrapText`, the row as tall as it needs (`wikiAbH`); hoverable, answering `tipClassAb`) and `lore` (a WORLD entry,
 `WIKI_WORLD`: its figures in a `WIKI_FIG_W` column, its name in gold and its paragraph from
 `WIKI_TEXT_X`, as tall as the taller of the two) —
 each with a fixed height, built once per content width (`wikiBlocks(pageId, cw)`: a page whose

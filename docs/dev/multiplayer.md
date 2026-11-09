@@ -135,7 +135,7 @@ font cannot draw (the arrows, the modifiers, punctuation with no glyph) is a wor
 SPACE, SHIFT, UP, SEMI …).
 
 **What a key does is an action, and an action has a key.** `KEY_ACTIONS` is every rebindable
-verb — the four walk keys, the four abilities, dodge, slide, harvest, the six item keys, recall, the sheet, the map, the standings, mute,
+verb — the four walk keys, the four abilities, dodge, slide, use (E), the six item keys, recall, the sheet, the map, the scoreboard, mute,
 pause, and the CLICK
 scheme's three of its own (attack-move, stop, the ping) — with the key each starts on
 per scheme (`key` on WASD, `ck` on CLICK, `ms` on MOUSE where it differs from `ck`; an action
@@ -152,7 +152,7 @@ binds and the arrows, which every key-driven menu steps on — the title's plank
 planks, the wiki, the hero pop-up, the lobby, the settings slab; under CLICK the arrows alone) and
 `keyBound(k)` ask the live binds, and every keybind indicator names an action and prints
 `keyCap(action)` (`keyCapShort` for a well's corner, where SPACE is SPC; an action the live scheme
-has no key for prints RMB, because under CLICK the walk and the harvest are the right button's). What is *not* an action is fixed: Escape backs out of everything,
+has no key for prints RMB, because under CLICK the walk and the use key are the right button's). What is *not* an action is fixed: Escape backs out of everything,
 Enter and the arrows walk the menus (the arrows always walk the body too), F3 and `.` are the
 debug flips, the three main mouse buttons are the mouse's, and `keyReserved` refuses those and the
 browser's F row to a bind.
@@ -287,7 +287,8 @@ read through `statOf(p, key)` (js/sim/stats.js), never off the kit. `setClass(p,
 | 8 | **LUCERNA** — THE LANTERN, the catch-and-save support (passive LAMPLIGHT) | pull a rival in, bring an ally home, light what hides near her | her own body (LAMPLIGHTER, or DUSK ROAD bought on the skins screen) and the warrior's frames (`heroBody`), 88 hp, 12 armor | the LANTERN: a spark, 260 px/s for 0.8 s, `cycle` 62/60 s, drawn as her own shot (`look`, `HERO_SHOTS`) |
 | 9 | **HIEMS** — THE LONG WINTER, the control mage (passive DEEP CHILL) | freeze a fight slowly: every hit chills, the third freezes; hold a choke with ice and a blizzard | her own body (WEATHER SCHOLAR, or FIRST FROST bought on the skins screen) and the warrior's frames, 82 hp, 10 armor, a step slower | the SNOWFLAKE STAFF: a frost bolt, 270 px/s for 0.85 s, `cycle` 62/60 s, drawn as her own shot; every hit of it chills |
 | 10 | **RUPES** — THE AVALANCHE, the engage tank (passive SNOWPACK) | roll in from far off and flatten a fight; very hard to kill while packed with snow | his own body (QUARRYMAN, or ICE CELLAR bought on the skins screen) and the warrior's frames (`heroBody`), 134 hp, 24 armor, two steps slower | the ICE MAUL: the LONGSWORD's cut a little slower (`cycle` 34/60 s) with a harder shove, drawn as his own blade |
-| 11 | **BUCINA** — THE HORN, the tempo support (passive HEARD) | speed and nerve for her side: a shove, a rally, an echo that stuns, the pines' snow | her own body (HORN-BLOWER, or COLUMN CALL bought on the skins screen) and the warrior's frames (`heroBody`), 92 hp, 14 armor | the HORN: a note, 255 px/s for 0.8 s, `cycle` 62/60 s, drawn as her own shot (`look`, `HERO_SHOTS`) |
+| 11 | **VARRO** — THE WOLF-KEPT, the jungler (passive THE PACK) | pick one rival and run them down, with wolves at his side | his own body (WOLF-KEPT, or WHITE PACK bought on the skins screen) and the warrior's frames (`heroBody`), 112 hp, 18 armor, a step faster | the HUNTING SPEAR: a thrust a touch longer and narrower than the LONGSWORD's cut (30 px, 0.8 rad, `cycle` 28/60 s), drawn as his own blade |
+| 12 | **BUCINA** — THE HORN, the tempo support (passive HEARD) | speed and nerve for her side: a shove, a rally, an echo that stuns, the pines' snow | her own body (HORN-BLOWER, or COLUMN CALL bought on the skins screen) and the warrior's frames (`heroBody`), 92 hp, 14 armor | the HORN: a note, 255 px/s for 0.8 s, `cycle` 62/60 s, drawn as her own shot (`look`, `HERO_SHOTS`) |
 
 The **weapon is part of the hero**: each `CLASSES` entry carries its own `attack` row, so the
 hunter and the swordsmen do not attack the same way and every bot arrives armed, with nothing to

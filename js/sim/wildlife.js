@@ -134,14 +134,16 @@ function stepClip(a, dt, rate) {
   a.animT += dt * ((ANIM_CLIPS[a.kind] || {})[a.clip] || 0) * (rate === undefined ? 1 : rate);
 }
 
-function makeAnimal(kind, x, y) {
+// `fix` (a hero's summon, js/sim/varro.js) gives the facing and draws no rng();
+// without it the draws are the world's, in the world's order
+function makeAnimal(kind, x, y, fix) {
   const level = animalLevelOf(kind), hp = animalHpAt(kind, level);
   const a = {
     kind, x, y, hp, maxHp: hp, level,
     senseT: 0,                           // s it has had a player in sight (0: it has not) - the mark over its head (drawAnimal)
-    dir: rng() < 0.5 ? 'left' : 'right',
-    goal: null, idleT: rand(0.5, 2.5), mvx: 0, mvy: 0,
-    clip: 'idle', animT: rng() * 2, flash: 0, kbx: 0, kby: 0, // the clip it plays, and how far into it (ANIM_CLIPS)
+    dir: fix ? fix.dir : rng() < 0.5 ? 'left' : 'right',
+    goal: null, idleT: fix ? 0 : rand(0.5, 2.5), mvx: 0, mvy: 0,
+    clip: 'idle', animT: fix ? 0 : rng() * 2, flash: 0, kbx: 0, kby: 0, // the clip it plays, and how far into it (ANIM_CLIPS)
     alertT: 0, wary: 0,                  // rabbit: the sit-up before the bolt (RABBIT_ALERT); both: the head-up window after one (PREY_WARY_T)
     fleeT: 0, fleeGoal: null, nav: null,  // prey: its flight; any walker: its route (see pathfinding)
     sprint: 1,                           // deer: the stamina bar its sprint runs off (0..1)
@@ -522,7 +524,8 @@ function updateAnimal(a, dt) {
     a.spd = 0;          // ...and a deer comes out of it from a standstill (deerPace)
     if (Math.abs(a.kbx) + Math.abs(a.kby) > 1) moveEntity(a, a.kbx * dt, a.kby * dt, unitRadius(a));
     if (a.stunT <= 0) { a.goal = null; a.fleeGoal = null; a.dashT = 0; a.alertT = 0; navClear(a); a.idleT = 0.3; }
-  } else if (isCampKind(a.kind)) updateCampMonster(a, dt);
+  } else if (a.summon) heroSummonStep(a, dt); // a hero's own beast (HERO_SUMMON, js/sim/heroes.js)
+  else if (isCampKind(a.kind)) updateCampMonster(a, dt);
   else if (a.kind === 'bird') updateBird(a, dt);
   else updatePrey(a, dt);
   a.x = Math.max(8, Math.min(WORLD * TILE - 8, a.x));
@@ -778,7 +781,8 @@ function animalDies(a) {
   a.dead = true;
   if (a.rider) rideEnd(a.rider, true); // the rider goes down in the snow beside it
   sfxAt('monsterDie', a.x, a.y, 0, a.kind);
-  const hunter = a.lastHit !== undefined ? players[a.lastHit] : null;
+  // a hero's summon (HERO_SUMMON) is no quarry: it pays nobody and counts for nothing
+  const hunter = a.lastHit !== undefined && !a.summon ? players[a.lastHit] : null;
   if (hunter) hunter.beasts++; // the post-game record (js/ui/lobby.js)
   if (hunter && a.home) farmHit(hunter, a.x, a.y - (a.alt || 0) - 8); // a camp monster is farm (the `farm` banner, js/sim/farm.js)
   const y = YIELD[a.kind];

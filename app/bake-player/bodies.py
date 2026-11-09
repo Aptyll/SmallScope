@@ -1,6 +1,6 @@
 # The two class bodies on the doll (doll.py): the HUNTER (pom beanie) and the WARRIOR
 # (fur hood with goggles, a trailing scarf, skate blades), and each named hero's looks
-# (ARMATOS: standard, oath; FORTIVA: unbroken, coif; BELLA: general, traitor; IGNIA: hearth, wanderer; AURA: light; SALVIA: hood, tent; LUCERNA: lamp, dusk; HIEMS: scholar, frost; RUPES: quarry, cellar). Their sizes are measured off the
+# (ARMATOS: standard, oath; FORTIVA: unbroken, coif; BELLA: general, traitor; IGNIA: hearth, wanderer; AURA: light; SALVIA: hood, tent; LUCERNA: lamp, dusk; HIEMS: scholar, frost; RUPES: quarry, cellar; VARRO: wolfkept, whitepack). Their sizes are measured off the
 # hand-drawn 16 px frames in js/sprites/characters.js, so the doll's idle lands on those
 # frames pixel for pixel and the run and the roll it paints wear the same body.
 #
@@ -607,6 +607,48 @@ class Dusk(Lamp):
         super().coat(cv, cam, U, R)
         cv.blob(cam, U(v3(0.1, 0, Z(8.0))), R, (2.6, 3.2, Z(0.6)), 'scarf', 'ember', bias=0.3)
 
+class Wolfkept(Standard):
+    """VARRO as WOLF-KEPT (his default look): a wolf's pelt worn as a hood, its ears up off
+    the crown, the pelt over both shoulders and down his back, his side's tunic under it,
+    bare hands. Armatos's frame and boots."""
+    ARM_MAT, MITT_MAT = 'coat', 'skin'
+    PELT = 'pelt'
+    MARKS = [(-1.5, 0.9, 'e'), (1.5, 0.9, 'e')]
+
+    def __init__(self):
+        super().__init__()
+        self.SOFT |= {frozenset(('head', 'earL')), frozenset(('head', 'earR')), frozenset(('head', 'mane'))}
+
+    @staticmethod
+    def face_region(n, q):
+        """the hood leaves the face bare under the wolf's brow"""
+        return np.where((q[0] > 0.2) & (np.abs(q[1]) < 0.75) & (q[2] < -0.1) & (q[2] > -0.95), 'skin', 'hat')
+
+    def head(self, cv, cam, hc, Rh, pose, snap):
+        cv.blob(cam, hc, Rh, self.HEAD_R, 'head', self.PELT, p=self.HEAD_P,
+                region=lambda n, q: np.where(self.face_region(n, q) == 'skin', 'skin', self.PELT))
+        self.face_marks(cv, cam, hc, Rh)
+        for s, nm in ((1, 'earL'), (-1, 'earR')):    # the wolf's ears, up off the crown
+            cv.blob(cam, hc + Rh @ v3(-0.2, 1.5 * s, 2.3), Rh, (0.5, 0.55, 0.8), nm, self.PELT, bias=0.3)
+
+    def coat(self, cv, cam, U, R):
+        cv.blob(cam, U(v3(0, 0, Z(6.1))), R, (2.75, 3.05, Z(2.05)), 'coat', 'coat', p=2.2)
+        cv.blob(cam, U(v3(0, 0, Z(4.0))), R, (2.6, 3.1, Z(0.6)), 'hem', 'coat', bias=-0.3)
+        cv.blob(cam, U(v3(0.0, 0, Z(8.2))), R, (2.6, 3.2, Z(0.9)), 'scarf', self.PELT, bias=0.3)
+
+    def extras(self, cv, cam, U, R, pose):
+        # the pelt down his back, lifted behind him in the run's wind
+        blow = pose.get('tail', 0.0)
+        cv.blob(cam, U(v3(-1.9 - 0.8 * blow, 0, Z(7.6) + 0.4 * blow)), R @ rot('y', -0.3 * blow), (0.8, 2.4, Z(1.8)), 'mane', self.PELT, bias=-0.2)
+
+    def ball_head(self, cv, cam, hc, Rh):
+        cv.blob(cam, hc, Rh, (2.6, 2.85, 2.5), 'head', self.PELT, p=self.HEAD_P)
+
+
+class Whitepack(Wolfkept):
+    """VARRO as WHITE PACK (the first skin): the same hood in a white wolf's pelt"""
+    PELT = 'snowpelt'
+
 
 class Scholar(Wanderer):
     """HIEMS as WEATHER SCHOLAR (her default look): a deep blue hood up (the hair ramp, blue in
@@ -680,4 +722,5 @@ BODIES = {'hunter': Hunter(), 'warrior': Warrior(), 'standard': Standard(), 'oat
           'hood': Hood(), 'tent': Tent(), 'lamp': Lamp(), 'dusk': Dusk(),
           'scholar': Scholar(), 'frost': Frost(),
           'quarry': Quarry(), 'cellar': Cellar(),
+          'wolfkept': Wolfkept(), 'whitepack': Whitepack(),
           'horn': Horn(), 'column': Column()}

@@ -191,7 +191,7 @@ tag). The store behind it is [profile.js](../architecture.md#profilejs): one nam
 `'card'` or off it) and the cursor.
 
 - **The card** (`renderProfileCard`, `PC_W`×`PC_H`, a gold-rimmed well) has the **name field**
-  across its head and the **ledger** under a rule — WINS / MATCHES / KILLS / DEATHS / DAYS /
+  across its head and the **ledger** under a rule — WINS / MATCHES / KILLS / DEATHS /
   GOLD as icon, label, dotted leader, number (the character-panel text carve-out;
   `drawLedger`), `ESC BACK` under it. At rest the name stands in gold at 2× with its quill;
   under the hand the field's well shows. A click on it selects the name on a gold band

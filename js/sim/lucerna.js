@@ -57,7 +57,7 @@ const LUCERNA_AB = [
   {
     id: 'lantern', name: 'LANTERN', cd: [18, 17, 16, 15, 14], cast: 0.2, aim: { line: LANTERN_RANGE },
     rank: { t: [4, 4.5, 5, 5.5, 6] }, // s it lies there waiting for an ally
-    tip: 'THROW IT. AN ALLY WHO TAKES IT COMES TO YOU',
+    tip: 'AN ALLY WHO TAKES IT COMES TO YOU',
     blurb: 'SHE THROWS HER LANTERN TO A SPOT. AN ALLY WHO WALKS ONTO IT IS DRAWN TO HER SIDE. IT COMES BACK AFTER A FEW SECONDS.',
     use: (p) => lucernaThrow(p),
     tele: (p, px, py, a, col, closing, now, ex, ey) => { const c = lucernaSpot(p, LANTERN_RANGE); drawRing(Math.round(c.x - ex), Math.round(c.y - ey), LANTERN_R, col, 0.5 + 0.45 * closing, 0); },
@@ -78,7 +78,7 @@ const LUCERNA_AB = [
   {
     id: 'circle', name: 'CIRCLE OF LIGHT', cd: [100, 85, 70], cast: 0.3,
     rank: { slow: [0.45, 0.35, 0.25] }, // walk x this for a rival crossing its edge
-    tip: 'A RING OF LIGHT. RIVALS CROSSING IT ARE SLOWED',
+    tip: 'A RING OF LIGHT: RIVALS CROSSING SLOW',
     blurb: 'A WIDE RING OF LAMPLIGHT AROUND HER FOR A FEW SECONDS. RIVALS WHO CROSS ITS EDGE ARE SLOWED HARD AND SHOWN.',
     use: (p) => lucernaCircle(p),
     tele: (p, px, py, a, col, closing) => drawRing(px, py, CIRCLE_R, col, 0.35 + 0.45 * closing, 0),

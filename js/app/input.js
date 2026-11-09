@@ -87,7 +87,7 @@ const KEY_ACTIONS = [
   { id: 'ab1', verb: 'ABILITY 1', key: '1', ck: 'q' }, { id: 'ab2', verb: 'ABILITY 2', key: '2', ck: 'w' },
   { id: 'ab3', verb: 'ABILITY 3', key: '3', ck: 'e' }, { id: 'ab4', verb: 'ABILITY 4', key: '4', ck: 'r' },
   { id: 'amove', verb: 'ATTACK MOVE', ck: 'a' }, { id: 'stop', verb: 'STOP', ck: 's' },
-  { id: 'dodge', verb: 'DODGE', key: ' ', ck: ' ', ms: 'Mouse4' }, { id: 'slide', verb: 'SLIDE', key: 'Shift', ck: 'Shift', ms: 'Mouse5' }, { id: 'work', verb: 'HARVEST', key: 'e' },
+  { id: 'dodge', verb: 'DODGE', key: ' ', ck: ' ', ms: 'Mouse4' }, { id: 'slide', verb: 'SLIDE', key: 'Shift', ck: 'Shift', ms: 'Mouse5' }, { id: 'work', verb: 'USE', key: 'e' },
   // the six item slots' keys (useItem, js/sim/items.js): what a slot holds is
   // used off its key - a potion drunk. On WASD they run on past the abilities'
   // 1-4; under CLICK, where QWER are the abilities, they are 1-6
@@ -97,7 +97,7 @@ const KEY_ACTIONS = [
   { id: 'recall', verb: 'RECALL', key: 'h', ck: 'h' },
   { id: 'ping', verb: 'PING', ck: 'g', was: 'flag' }, // `was`: the id a saved bind of it went by
   { id: 'char', verb: 'CHARACTER', key: 'g', ck: 'c' },
-  { id: 'map', verb: 'WORLD MAP', key: 'm', ck: 'm' }, { id: 'board', verb: 'STANDINGS', key: 'Tab', ck: 'Tab' },
+  { id: 'map', verb: 'WORLD MAP', key: 'm', ck: 'm' }, { id: 'board', verb: 'SCOREBOARD', key: 'Tab', ck: 'Tab' },
   { id: 'mute', verb: 'MUTE', key: 'n', ck: 'n' }, { id: 'pause', verb: 'PAUSE', key: 'p', ck: 'p' },
 ];
 const KEY_ACT = {};
@@ -160,7 +160,7 @@ function keyCap(a) {
   if (a === 'enter') return 'ENTER';
   if (a === 'click') return 'CLICK';
   // an action the live scheme has no key for is the right button's there
-  // (the walk and the harvest, under CLICK)
+  // (the walk and the use key, under CLICK)
   if (a === 'move') {
     if (!binds().up) return 'RMB';
     const l = ['up', 'left', 'down', 'right'].map((d) => keyLabel(binds()[d]));
