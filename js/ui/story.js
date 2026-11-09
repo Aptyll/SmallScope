@@ -84,7 +84,8 @@ function storyLines(ws) {
   // the mate who hit their bird hardest
   let br = null, bn = 0;
   for (const q of allies) if (q.dmgBird > bn) { bn = q.dmgBird; br = q; }
-  if (br && bn >= 20) add(br, ' HIT THE RIVAL BIRD FOR ' + bn);
+  // the numbers print as the scoreboard prints them (scoreFmt, lobby.js): damage and gold accrue in fractions
+  if (br && bn >= 20) add(br, ' HIT THE RIVAL BIRD FOR ' + scoreFmt(bn));
   // the mate who downed the most, and the one nobody could
   let top = null, tn = 2;
   for (const q of allies) if (q.kills > tn) { tn = q.kills; top = q; }
@@ -93,7 +94,7 @@ function storyLines(ws) {
   // the richest mate, when the match was too quiet for anything better
   let rich = null, rn = 0;
   for (const q of allies) if (q.earned > rn) { rn = q.earned; rich = q; }
-  if (rich) add(rich, ' EARNED ' + rn + ' GOLD');
+  if (rich) add(rich, ' EARNED ' + scoreFmt(rn) + ' GOLD');
   return (ws.story = out);
 }
 
