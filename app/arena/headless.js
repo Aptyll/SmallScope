@@ -60,7 +60,7 @@ function alphaOf(cv, make) {
 }
 const NOOP = () => {};
 // an object that answers anything: every property is itself, every call and
-// `new` returns itself, and it reads as 0 - the audio graph, a gamepad
+// `new` returns itself, and it reads as 0 - the audio graph
 const INERT = new Proxy(function () {}, {
   get: (o, k) => (k === 'then' ? undefined : k === Symbol.toPrimitive ? () => 0 : k === 'length' ? 0 : INERT),
   set: () => true, apply: () => INERT, construct: () => INERT, has: () => true,
@@ -167,7 +167,7 @@ function makeWindow(seed, extra) {
   const w = {
     document, localStorage: storage, sessionStorage: storage,
     location: { search: '?seed=' + seed + (extra || ''), pathname: '/index.html', href: 'file:///index.html', protocol: 'file:', host: '', hostname: '' },
-    navigator: { userAgent: 'node', getGamepads: () => [], language: 'en', languages: ['en'], platform: 'node' },
+    navigator: { userAgent: 'node', language: 'en', languages: ['en'], platform: 'node' },
     innerWidth: 1280, innerHeight: 720, devicePixelRatio: 1, screen: { width: 1280, height: 720 },
     addEventListener: listeners, removeEventListener: listeners, dispatchEvent: NOOP,
     requestAnimationFrame: () => 0, cancelAnimationFrame: NOOP,

@@ -1,6 +1,6 @@
 'use strict';
 // The HUD that lives in world space: the radial wheel and runCmd, the tile
-// brackets and selection, the key and pad prompts, and the work/die/bell/shop
+// brackets and selection, the key prompts, and the work/die/bell/shop
 // hints.
 // ------------------------------------------------------------ radial wheel
 // One geometry, any number of options: n wedges of exactly 2*PI/n, the first
@@ -223,73 +223,13 @@ function drawWorkHint(ox, oy) {
 
 // Every keybind indicator - a cap beside a verb, a number in a well's
 // corner, the ESC hint under a slab - names an ACTION (KEY_ACTIONS,
-// input.js), never a key: on the keyboard it prints whatever key the action
-// is bound to (keyCap), and with a pad in hand (padActive, js/app/gamepad.js)
-// the same indicator wears the pad's button instead, so what the player is
-// holding is what the screen points at. This table is the action -> pad
-// glyph map, one row per action the HUD ever prints, and it mirrors
-// PAD_PLAY / PAD_MENU (js/app/gamepad.js) - a change there is a row here; esc,
-// enter, click and move are the fixed few. The glyph kinds are
-// drawPadGlyph's (panels.js), the same pictures the CONTROLS page lists.
-const PAD_BIND = {
-  work: ['face', 'X'], dodge: ['face', 'A'], slide: ['trig', 'LT'], click: ['trig', 'RT'],
-  ab1: ['face', 'Y'], ab2: ['face', 'B'], ab3: ['bump', 'LB'], ab4: ['bump', 'RB'],
-  potion: ['dpad', 'L'], char: ['dpad', 'U'], map: ['pill', 'BACK'], board: ['pill', 'BACK'],
-  esc: ['face', 'B'], enter: ['face', 'A'], move: ['stick', 'L'],
-  recap: ['face', 'Y'], // the death recap's views (recapCycle, js/ui/recap.js)
-};
-// a filled disc and a 1px ring, in scanlines, so they are pixel art and not
-// an anti-aliased arc (a pad's face buttons and sticks, here and on the
-// CONTROLS page's GAMEPAD listing, panels.js)
-function pixDisc(g, cx, cy, r, col) {
-  g.fillStyle = col;
-  for (let dy = -r; dy <= r; dy++) {
-    const w = Math.floor(Math.sqrt(r * r - dy * dy));
-    g.fillRect(cx - w, cy + dy, w * 2 + 1, 1);
-  }
-}
-function pixRing(g, cx, cy, r, col) {
-  g.fillStyle = col;
-  const ri = r - 1;
-  for (let dy = -r; dy <= r; dy++) {
-    const wo = Math.floor(Math.sqrt(r * r - dy * dy));
-    const wi = Math.abs(dy) > ri ? -1 : Math.floor(Math.sqrt(ri * ri - dy * dy));
-    if (wi < 0) g.fillRect(cx - wo, cy + dy, wo * 2 + 1, 1);
-    else { g.fillRect(cx - wo, cy + dy, wo - wi, 1); g.fillRect(cx + wi + 1, cy + dy, wo - wi, 1); }
-  }
-}
-// the glyph's footprint, so a caller can lay a verb beside it
-function padBindW(key) { const b = PAD_BIND[key]; return !b ? 0 : b[0] === 'bump' || b[0] === 'trig' ? 13 : b[0] === 'pill' ? 11 : b[0] === 'stick' ? 17 : 9; }
-// the pad's button for an action, drawn at x, y (top-left) at `s` px per px;
-// `pressed` dims it the way a held cap drops its face
-function drawPadBind(g, x, y, key, s, pressed) {
-  const b = PAD_BIND[key];
-  if (!b) return;
-  s = s || 1;
-  g.save();
-  g.translate(x, y);
-  if (s !== 1) g.scale(s, s);
-  if (pressed) g.globalAlpha *= 0.55;
-  // a dark rim under the disc so it reads on snow as the cap's navy did
-  const w = padBindW(key);
-  g.fillStyle = '#191b1f';
-  if (b[0] === 'face' || b[0] === 'stick') { pixDisc(g, 4, 4, 5, '#191b1f'); }
-  else g.fillRect(-1, -1, w + 2, 11);
-  drawPadGlyph(g, 0, 0, b[0], b[1]);
-  g.restore();
-}
-// the ESC BACK / ESC CLOSE line under a slab, centred on cx: the keyboard's
-// word, or the pad's B disc beside the verb
+// input.js), never a key: it prints whatever key the action is bound to
+// (keyCap), so a rebind moves every indicator with it; esc, enter, click
+// and move are the fixed few.
+// the ESC BACK / ESC CLOSE line under a slab, centred on cx
 function drawBackHint(g, cx, y, verb) {
-  verb = verb || 'BACK';
-  if (padActive()) {
-    const w = 9 + 3 + pixelTextWidth(verb), x = Math.round(cx - w / 2);
-    drawPadBind(g, x, y - 2, 'esc');
-    drawPixelText(g, verb, x + 12, y, '#60656e');
-  } else {
-    const t = 'ESC ' + verb;
-    drawPixelText(g, t, Math.round(cx - pixelTextWidth(t) / 2), y, '#60656e');
-  }
+  const t = 'ESC ' + (verb || 'BACK');
+  drawPixelText(g, t, Math.round(cx - pixelTextWidth(t) / 2), y, '#60656e');
 }
 
 // The key cap alone, on any context: navy rim, icy face, top highlight, the
@@ -316,23 +256,15 @@ function drawKeyCap(g, x, y, label, pressed, hot, now) {
 // plate: pressed = the face drops a pixel and the verb goes
 // gold. `action` is what the cap is FOR (the work key unless said otherwise),
 // and the cap prints whatever key that action is bound to (keyCap,
-// input.js). With a pad in hand the cap is the pad's button (PAD_BIND) and
-// the verb sits beside that instead. promptW is its footprint, for a caller
-// centring it.
+// input.js). promptW is its footprint, for a caller centring it.
 function drawKeyPrompt(x, y, verb, pressed, action) {
   action = action || 'work';
-  if (padActive() && PAD_BIND[action]) {
-    const gw = padBindW(action);
-    drawPadBind(ctx, x, y, action, 1, pressed);
-    drawPixelTextOutline(ctx, verb, x + gw + 3, y + 3, pressed ? '#ffd95c' : '#f4f7ff', '#191b1f');
-    return;
-  }
   const capW = drawKeyCap(ctx, x, y, keyCap(action), pressed, 0);
   drawPixelTextOutline(ctx, verb, x + capW + 3, y + 3, pressed ? '#ffd95c' : '#f4f7ff', '#191b1f');
 }
 function promptW(verb, action) {
   action = action || 'work';
-  return (padActive() && PAD_BIND[action] ? padBindW(action) : pixelTextWidth(keyCap(action)) + 6) + 3 + pixelTextWidth(verb);
+  return pixelTextWidth(keyCap(action)) + 6 + 3 + pixelTextWidth(verb);
 }
 
 // The zipline's prompt: a bare cap, no verb, over the cable at the body's own

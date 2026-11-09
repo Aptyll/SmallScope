@@ -62,9 +62,7 @@ function keyLabel(k) {
 // the arrows walk the menus (and the body too, unless a director's camera has
 // them), F3 and '.' are the two debug flips, F2 and F7-F9 are director mode's
 // (js/app/director.js), the mouse buttons are the mouse's. Nothing
-// compares a key event against a literal: keyIs / keyHeld ask the binds, and
-// a pad button names an ACTION (PAD_PLAY) and presses whatever key it
-// holds, so a rebind moves both controllers.
+// compares a key event against a literal: keyIs / keyHeld ask the binds.
 //
 // TWO SCHEMES, TWO MAPS. `key` is the action's key on the WASD scheme and
 // `ck` its key on the CLICK scheme (settings.scheme; the scheme itself is
@@ -139,17 +137,9 @@ function mendBinds() {
   settings.bindsMouse = mend(settings.bindsMouse, 'mouse');
   if (!SCHEMES.includes(settings.scheme)) settings.scheme = 'wasd';
 }
-// an action's key ('work' -> 'e'), or the bare name of a key that is no
-// action's (Escape) - what a pad button resolves through
-function actKey(a) { return binds()[a] || settings.binds[a] || a; }
-// A pad button names an ACTION, and the event it builds carries it (e.act):
-// a button is not a key on either scheme's map, so a map never gets between
-// a pad and its verb. Its held state lives in actHeld
-// beside the keyboard's `keys`. The keyboard's own events carry only a key,
-// read against the live map.
-const actHeld = {};
-function keyIs(e, a) { return e.act !== undefined ? e.act === a : e.key === binds()[a]; }              // is this key event the action's?
-function keyHeld(a) { const k = binds()[a]; return !!actHeld[a] || (!!k && !!keys[k.toLowerCase()]); } // is the action down right now?
+// a key event carries only a key, read against the live map
+function keyIs(e, a) { return e.key === binds()[a]; }                                // is this key event the action's?
+function keyHeld(a) { const k = binds()[a]; return !!k && !!keys[k.toLowerCase()]; } // is the action down right now?
 function keyBound(k) { const b = binds(); for (const a in b) if (b[a] === k) return true; return false; }
 // a lowercase key as a menu direction: the four walk binds and the arrows,
 // which every key-driven menu steps on (menuKey, deadKey, settingsKey ...) -
@@ -218,21 +208,15 @@ function rebindLive() {
 }
 
 // ------------------------------------------------------------ input
-const keys = {}; // key name (lowercase) -> held; written by the listeners and a pad alike
-// inside: pointer over the canvas. src: who moved it last - 'mouse' or 'pad'
-// (js/app/gamepad.js); in play the pad keeps writing the aim through it every
-// frame, and stops the moment the mouse itself moves, so the two never fight
-// over one reticle
-const mouse = { x: VIEW_W / 2, y: VIEW_H / 2, down: false, inside: false, src: 'mouse' };
+const keys = {}; // key name (lowercase) -> held; written by the listeners
+// inside: pointer over the canvas
+const mouse = { x: VIEW_W / 2, y: VIEW_H / 2, down: false, inside: false };
 
-// EVERY CONTROLLER IS A KEYBOARD AND A MOUSE IN DISGUISE. The listeners here
-// only translate the browser's events; what a key does lives in keyPress /
+// THE LISTENERS ONLY TRANSLATE. What a key does lives in keyPress /
 // keyRelease and what a button does in pointerPress / pointerRelease, so a
-// gamepad presses the same keys and the same buttons instead of
-// keeping a copy of this file - a key handled in a listener alone is
-// dead on a pad. `e` is {key, repeat, char}: key the game's NAME for the key
-// (keyName above), char what it typed (the name editor's letters) - a real
-// KeyboardEvent translated, or the object a pad builds.
+// driver (DBG, a headless check) presses exactly what a hand does. `e` is
+// {key, repeat, char}: key the game's NAME for the key (keyName above), char
+// what it typed (the name editor's letters) - a real KeyboardEvent translated.
 const KEY_PREVENT = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' ', 'Tab', 'F2', 'F3', 'F4', 'F6', 'F7', 'F8', 'F9']);
 pageListen(window, 'keydown', (e) => {
   const k = keyName(e);
@@ -276,13 +260,13 @@ function keyPress(e) {
   if (state.mode === 'dead') { deadKey(e.key.toLowerCase()); return; }
   if (state.mode !== 'play') return;
   // the ESC slab has the arrows while it is up: they page and scroll it
-  // (settingsKey, js/panels.js) - what a pad's bumpers and dpad reach it by
+  // (settingsKey, js/panels.js)
   if (state.settingsOpen && settingsKey(e.key.toLowerCase())) return;
   // the CLICK scheme's own keys (the `click to move` banner): S drops every
   // order and the lock, A arms the pointer for an attack-move - the next
   // left press lays it, A again or Escape disarms - and G is the ping: a
-  // tap pings GO HERE at the pointer, a hold opens the ping wheel there, the
-  // pad's R3 grammar; its release pings (keyRelease)
+  // tap pings GO HERE at the pointer, a hold opens the ping wheel there; its
+  // release pings (keyRelease)
   if (ckOn() && !e.repeat) {
     if (keyIs(e, 'stop')) { ckClear(); SFX.unlock(); }
     if (keyIs(e, 'amove') && !player.dead && !state.settingsOpen) { ck.arm = !ck.arm; SFX.unlock(); }
@@ -291,11 +275,9 @@ function keyPress(e) {
   // edge-triggered intents go into the local player's input struct; the sim
   // reads and clears them, exactly as it does for an bot
   if (keyIs(e, 'dodge')) player.input.dodge = true;
-  // an item slot's key uses what is in it (js/sim/items.js); a pad's dpad left
-  // is the potion's, wherever it stands
+  // an item slot's key uses what is in it (js/sim/items.js)
   const it = e.repeat ? -1 : ITEM_KEYS.findIndex((a) => keyIs(e, a));
   if (it >= 0) player.input.useItem = it;
-  if (keyIs(e, 'potion') && !e.repeat) player.input.useItem = Math.max(0, potionSlot(player));
   // the walk home (js/sim/recall.js): a CLICK order would walk out of it, so the press drops the order
   if (keyIs(e, 'recall') && !e.repeat) { player.input.cmd = { kind: 'recall' }; if (ckOn()) ckClear(); }
   // The work key at a practice prop (the parkour die, the range bell): the
@@ -399,7 +381,7 @@ pageListen(window, 'keyup', (e) => {
 });
 function keyRelease(e) {
   // letting go of the ping key pings the pick (GO HERE on a tap), exactly
-  // as the pad's R3 and the right button do
+  // as the right button does
   if (keyIs(e, 'ping') && state.wheel && state.wheel.kind === 'ping' && !state.wheel.stand) { resolveWheel(); state.wheel = null; return; }
   // letting go of the work key with a wheel it held up (roll die or range
   // bell) takes what the pointer is on (or cancels from the hub),
@@ -425,18 +407,16 @@ pageListen(window, 'blur', () => {
 
 pageListen(canvas, 'mousemove', (e) => {
   const r = canvas.getBoundingClientRect();
-  pointerMove((e.clientX - r.left) / scale, (e.clientY - r.top) / scale, 'mouse');
+  pointerMove((e.clientX - r.left) / scale, (e.clientY - r.top) / scale);
 });
-// the pointer is at x, y (game px), moved by `src` (see `mouse`)
-function pointerMove(x, y, src) {
+// the pointer is at x, y (game px)
+function pointerMove(x, y) {
   mouse.x = x;
   mouse.y = y;
   mouse.inside = true;
-  mouse.src = src || 'mouse';
   state.menu.moved = true; // the menu only lets the mouse steal the selection when it actually moves
   // a radial wheel is a stepped control like the zoom's rungs: one notch per
-  // wedge the travel crosses. Every controller moves the pointer through
-  // here, so a pad's stick steps it exactly as a mouse does.
+  // wedge the travel crosses.
   if (state.wheel) {
     const seg = wheelLayout().seg;
     if (seg !== state.wheel.seg) { state.wheel.seg = seg; if (seg >= 0) SFX.notch(); }
@@ -452,7 +432,6 @@ pageListen(canvas, 'mousedown', (e) => {
   mouse.x = (e.clientX - r.left) / scale;
   mouse.y = (e.clientY - r.top) / scale;
   mouse.inside = true;
-  mouse.src = 'mouse';
   // Middle click is also the browser's autoscroll, which only a
   // preventDefault on the PRESS suppresses; the two side buttons are its
   // back and forward, suppressed on the press and the release both
@@ -527,28 +506,13 @@ function pointerRelease(button) {
   dragSlider = null;
 }
 
-// The tool's own press and release, BARE: what a pad's trigger sends.
-// The mouse arrives through pointerPress instead because a
-// press has the HUD to get past first; a trigger is never over a well.
-function fireDown() {
-  if (state.mode !== 'play' || state.wheel || state.settingsOpen || state.mapOpen ||
-      state.shop || player.dead) return false;
-  mouse.down = true;
-  clickAction(player);
-  return true;
-}
-function fireUp() {
-  player.input.fire = false;
-  mouse.down = false;
-}
-
 // The ping button (the `pings` banner, js/sim/pings.js): the ping wheel's
 // four pings (PING_WHEEL) round the point under the pointer - the world's,
 // or the chart's or the minimap disc's, where the wheel is pinned to the
 // press (sx/sy), the way to ping a spot off-screen. Nothing shows until the
 // hold has lasted PING_HOLD or the pointer has left the hub
 // (pingWheelShown, js/ui/wheel.js): a tap is GO HERE, a flick is its
-// wedge. The right button, G and R3 on a pad all hold it; the caller
+// wedge. The right button and G both hold it; the caller
 // resolves it on its own release. False when nothing opened.
 function openPingWheel() {
   if (state.mode !== 'play' || state.settingsOpen || state.wheel || player.dead) return false;
@@ -578,9 +542,7 @@ function openPingWheel() {
 // the pointer, the skillshot grammar. A arms the pointer and the next left
 // press is an ATTACK-MOVE: walk there, lock the first foe seen within
 // CK_ACQ_R on the way, chase it, and walk on when it is down. S drops the
-// lot. A tilted stick (a pad) is a walk of its own and drops the
-// order too, but keeps the lock: WoW's grammar, the target stays while you
-// strafe.
+// lot.
 //
 // What balances the assist: a locked shot goes where the target IS, never
 // led, so a strafing rival at range is missed where a hand would lead it;
@@ -730,12 +692,11 @@ function ckUse(p, o, walk, r) {
   if (walk(shopPt ? shopPt.x : cx, shopPt ? shopPt.y : cy, shopPt ? 0 : WORK_REACH) < 0) ck.order = null;
 }
 // one step of the scheme, for sampleHumanInput: what the orders and the
-// lock make of the walk, the aim, the fire and the work this step. smx/smy
-// is a stick's tilt, which the walk keeps (the order it fought is already
-// dropped). fire null leaves the button's own edges alone.
-function ckStep(p, dt, smx, smy) {
+// lock make of the walk, the aim, the fire and the work this step. fire
+// null leaves the button's own edges alone.
+function ckStep(p, dt) {
   const inp = p.input;
-  const r = { mx: smx, my: smy, aimX: mouseWX(), aimY: mouseWY(), fire: null, work: false };
+  const r = { mx: 0, my: 0, aimX: mouseWX(), aimY: mouseWY(), fire: null, work: false };
   // seated on the roost: the right press was the hop (updateDrop reads the work intent)
   if (p.aboard) { r.work = ck.hop; return r; }
   ck.hop = false;
@@ -777,12 +738,11 @@ function ckStep(p, dt, smx, smy) {
   }
   if (t) {
     // the chase: into the tool's reach by route, then stand and let it work.
-    // A tilted stick keeps the feet - the target stays while you strafe.
     const ty = t.y - (t instanceof Player ? 6 : (t.alt || 0) + 4);
     const d = Math.hypot(t.x - p.x, t.y - p.y);
     const reach = ckReach(p), hold = ckHoldR(p, reach);
     r.aimX = t.x; r.aimY = ty;
-    if (d > hold && !smx && !smy && !ck.stand) walk(t.x, t.y, 0); // a left press's lock never walks
+    if (d > hold && !ck.stand) walk(t.x, t.y, 0); // a left press's lock never walks
     // the auto-attack: the hand off the button, a clear flight, the target
     // inside the tool's reach - draw to the auto-draw and loose (the same
     // held-then-dropped intent a bot fires by)
@@ -889,20 +849,6 @@ function msKitPick(w, seg) {
   else msCast(+id.slice(2) - 1, w.wx, w.wy);
 }
 
-// whichever scrolling page is up walks by d px - the wheel listener below
-// and a pad's right stick both arrive here. False when
-// nothing on screen scrolls.
-function panelScrollBy(d) {
-  if (state.mode === 'title') {
-    if (state.menu.screen === 'notes' && state.menu.notesT >= 1) notesScrollBy(d);
-    else if (state.menu.panel === 'settings') settingsScrollBy(d);
-    else if (state.menu.screen === 'wiki' && state.menu.wikiT >= 1) wikiScrollBy(d);
-    else return false;
-    return true;
-  }
-  if (state.mode === 'play' && state.settingsOpen) { settingsScrollBy(d); return true; }
-  return false;
-}
 pageListen(canvas, 'contextmenu', (e) => e.preventDefault());
 // the middle button and the side buttons are the game's, and nothing of them should reach the page
 pageListen(canvas, 'auxclick', (e) => { if (e.button === 1 || e.button === 3 || e.button === 4) e.preventDefault(); });
@@ -975,14 +921,8 @@ function sampleHumanInput(p, dt) {
     if (keyHeld('left') || (ar && keys['arrowleft'])) mx -= 1;
     if (keyHeld('right') || (ar && keys['arrowright'])) mx += 1;
   }
-  // ...and a pad's left stick, at its tilt (gamepad.js loads after this
-  // file; this is a run-time read)
-  mx = Math.max(-1, Math.min(1, mx + pad.mx));
-  my = Math.max(-1, Math.min(1, my + pad.my));
-  // a tilted stick is a walk of its own, and drops the order it would fight
-  if (ckOn() && (mx || my)) { ck.order = null; ck.follow = false; }
   const live = state.mode === 'play' && !state.paused && !state.settingsOpen && !state.eagleCine && !state.dropBrief;
-  const c = ckOn() && live ? ckStep(p, dt, mx, my) : null;
+  const c = ckOn() && live ? ckStep(p, dt) : null;
   if (c) { mx = c.mx; my = c.my; inp.aimX = c.aimX; inp.aimY = c.aimY; }
   // The chart does not stop the world, so it does not stop the player: you
   // keep walking, sliding, rolling and burrowing with it up, and watch your

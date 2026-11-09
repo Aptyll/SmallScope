@@ -287,8 +287,7 @@ function drawClassAbCell(i, now, on) {
   }
   const abAct = 'ab' + (i + 1), key = keyCapShort(abAct); // the corner prints the key the ability is bound to
   const dimKey = lock || (cd > 0 && !casting && act <= 0);
-  if (padActive()) drawPadBind(ctx, r.x + 3, r.y + r.h - 13 - 2 * 3, abAct, 2, dimKey); // the pad's button, at the number's size
-  else drawPixelTextOutline(ctx, key, r.x + 3, r.y + r.h - 13, dimKey ? '#8c919a' : '#f4f7ff', '#191b1f', 2);
+  drawPixelTextOutline(ctx, key, r.x + 3, r.y + r.h - 13, dimKey ? '#8c919a' : '#f4f7ff', '#191b1f', 2);
   if (red) ctx.restore();
 }
 // The floating buy plate over ability i - a bobbing chevron made a real
@@ -315,8 +314,7 @@ function drawAbBuyPlate(i, now, hot) {
 // item's gold (itemMetal), so a glance tells how far the build has come - and
 // an empty slot's key, dim, so the six read as six before the first buy. The
 // hover lights the rim and names it (tipItem). A POTION slot is pressed like
-// an ability: its key in the bottom-left corner (the pad's glyph while one is
-// in hand), the stack in the top-right, the drink running as the cooldown
+// an ability: its key in the bottom-left corner, the stack in the top-right, the drink running as the cooldown
 // sweep (drawSweepCover) - the next one waits on it - and a refusal's red and
 // shake (itemDenied).
 function drawItemCell(i, now, on) {
@@ -341,8 +339,7 @@ function drawItemCell(i, now, on) {
     if (id === 'potion') {
       if (p.potT > 0) drawSweepCover(r.x + 1, r.y + 1, r.w - 2, r.h - 2, Math.min(1, p.potT / POTION_T), CD_SWEEP, CD_EDGE);
       const live = !(p.potT > 0) && p.hp < p.maxHp;
-      if (padActive()) drawPadBind(ctx, r.x + 2, r.y + r.h - 11, 'potion', 1, !live);
-      else drawPixelTextOutline(ctx, keyCapShort(act), r.x + 2, r.y + r.h - 7, live ? '#f4f7ff' : '#8c919a', '#191b1f');
+      drawPixelTextOutline(ctx, keyCapShort(act), r.x + 2, r.y + r.h - 7, live ? '#f4f7ff' : '#8c919a', '#191b1f');
       const t = String(p.potions);
       drawPixelTextOutline(ctx, t, r.x + r.w - 2 - pixelTextWidth(t), r.y + 2, '#f4f7ff', '#191b1f');
     }

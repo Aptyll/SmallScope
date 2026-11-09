@@ -73,9 +73,9 @@ remembered with the settings (`settings.relay`), else the page's own host.
 left ([the hover tooltip](../rendering/the-hud-corners/the-hover-tooltip.md)) —
 `tipFull` — the ABILITY DETAILS row: HOLD SHIFT (the default: an ability's hover is the short card, Shift opens every rank's numbers) or ALWAYS (`tipClassAb`) —
 `aiLevel` — the rival bots' level, picked by the leader on the party screen's head, an index into `AI_LEVELS` (js/ai/ai-skill.js), NORMAL until moved (a settings save from before EASY is moved up one, `loadSettings`) —
-`scheme` — the keyboard scheme, `'wasd'` or `'click'` — with `binds` / `bindsClick`, the key
-each action is bound to under each
-([the two controllers](../multiplayer.md#the-two-controllers)) —
+`scheme` — the keyboard scheme, `'wasd'`, `'click'` or `'mouse'` — with `binds` / `bindsClick` /
+`bindsMouse`, the key each action is bound to under each
+([the two controllers](../multiplayer.md#keyboard-and-mouse)) —
 `relay` (above) —
 `fpsCap` — the FPS CAP row, frames the loop may present a second, 0 = every frame the screen
 offers ([the fixed step](../code-map/app/boot.md)) —
@@ -146,7 +146,7 @@ PROTANOPIA / DEUTERANOPIA, TRITANOPIA, ACHROMATOPSIA, each entry beside its pale
 
 **The foot is buttons, not a hint.** Under the content window (`SET_FOOT_Y`, `footPlanks`) sit
 flat buttons (`drawFlatButton`, their line and word gold under the pointer): **CLOSE** — the one way out that is a
-button; ESC and the pad's B still fold the slab — and, in a match only, the way out beside it,
+button; ESC still folds the slab — and, in a match only, the way out beside it,
 LEAVE, out of the match or out of [practice](../world.md#the-practice-arena) (the ESC
 slab is the one menu either has, so its exit lives there; the title's slide-in has nothing to
 leave, so it centres CLOSE alone). SURRENDER stands before LEAVE while your side may vote
@@ -164,35 +164,25 @@ red × when it is off. While muted all three sound dials draw grey rather than g
 (`drawSliderRow`'s `dim`), so what the speaker silences reads off the page without a word of
 text. **N** still toggles the same flag from anywhere.
 
-**The CONTROLS page is itself tabbed** — WASD, CLICK, MOUSE, GAMEPAD (`CTRL_TABS`, each cell
-naming its listing in `ctrl`), one listing per controller, since a pad puts the
-same verbs somewhere else — and the keyboard's listing is **three cells, one per scheme**: the
-cell in gold is the scheme in force (`ctrlCellNow`), and a click on the other makes it the
-live scheme (`settings.scheme`, dropping every order the click scheme held) as well as opening
-its listing, so there is no SCHEME row and no words to switch. Its sub-navbar is
-pinned at the top of the content window (`CTRL_TAB_H`) and only the listing under it scrolls;
-it opens on the controller in hand (`ctrlTabNow`: GAMEPAD while a pad is
-active — a green pip beside that word says one is — the keyboard otherwise) until a click picks
-one. Every listing is **three columns** (`CTRL_COL_X`) grouped by what the verbs are for —
-moving and fighting, the kit and its panels, the match's own keys — so it fits the window
-without a scroll. The pad's listing is baked once (`bakeCtrlPad` into
-`ctrlCvs`, js/ui/panels.js); **the keyboard's is live**: each rebindable verb beside
-its key drawn as a **cap** — the same cap the work prompt wears in the world (`drawKeyCap`,
-js/ui/wheel.js), printing whatever key the action is bound to — and the fixed ones (the mouse's
-buttons, ESC, SCROLL, F3, `.`, where the scheme has room for them) as plain gold text, since nothing about them can be pressed. A
-cap is a button: it lifts white on hover, a click sets it **listening** (the face pulses gold)
-and the next key down is its key; a key another cap holds swaps the two, a reserved key is
-refused, Escape or a click elsewhere calls it off
-([rebinding](../multiplayer.md#the-two-controllers)). RESET, a row under the listing at its right
-edge, puts the defaults back and sits dim while they already are. `KEY_ROWS` is the three
-columns per scheme (an action id, a run of caps on one verb — MOVE, ABILITIES — or a fixed pair), `keyRowsLayout`
-places every cap and word listing-local, and the draw (`drawKeyRows`), `settingsHit`
-(`'key:<action>'`, `'keyreset'`) and `DBG.keyRows` all read it. Its bake (`ctrlCvs.keys`) is
-blank, `KEYS_LIST_H` tall (the listing and its RESET row), and only sizes the scroll.
-GAMEPAD draws each button as a picture (`drawPadGlyph`: a face button is a disc with its
-letter, a bumper a flat pill, a trigger a tall one, a stick a ring, the dpad a cross with its
-pressed arm lit) beside its verb — moving and fighting, the abilities and the kit, then the
-match's buttons with the menu set under a rule — and its live readout under them. The bindings themselves: [the two controllers](../multiplayer.md#the-two-controllers).
+**The CONTROLS page is itself tabbed** — WASD, CLICK, MOUSE (`CTRL_TABS`), **one cell per
+scheme**: the cell in gold is the scheme in force (`settings.scheme`), and a click on another
+makes it the live scheme (dropping every order the click scheme held) as well as showing its
+listing, so there is no SCHEME row and no words to switch. Its sub-navbar is pinned at the top
+of the content window (`CTRL_TAB_H`) and only the listing under it scrolls. The listing is
+**three columns** (`CTRL_COL_X`) grouped by what the verbs are for — moving and fighting, the kit
+and its panels, the match's own keys — so it fits the window without a scroll, and it is
+**live**: each rebindable verb beside its key drawn as a **cap** — the same cap the work prompt
+wears in the world (`drawKeyCap`, js/ui/wheel.js), printing whatever key the action is bound to —
+and the fixed ones (the mouse's buttons, ESC, SCROLL, F3, `.`, where the scheme has room for
+them) as plain gold text, since nothing about them can be pressed. A cap is a button: it lifts
+white on hover, a click sets it **listening** (the face pulses gold) and the next key down is its
+key; a key another cap holds swaps the two, a reserved key is refused, Escape or a click
+elsewhere calls it off ([rebinding](../multiplayer.md#keyboard-and-mouse)). RESET, a row under
+the listing at its right edge, puts the defaults back and sits dim while they already are.
+`KEY_ROWS` is the three columns per scheme (an action id, a run of caps on one verb — MOVE,
+ABILITIES — or a fixed pair), `keyRowsLayout` places every cap and word listing-local, and the
+draw (`drawKeyRows`), `settingsHit` (`'key:<action>'`, `'keyreset'`) and `DBG.keyRows` all read
+it; `KEYS_LIST_H` (the listing and its RESET row) sizes the scroll.
 
 The title screen's TUTORIAL panel carries
 the same keys under `1-4 CLASS ABILITIES`.

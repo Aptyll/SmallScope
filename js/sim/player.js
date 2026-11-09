@@ -1173,7 +1173,7 @@ function endMatch(how) {
   state.wheel = null;
   state.deadTimer = 0;
   state.defeatT = 0;
-  state.rpClosed = false; // every death opens the replay again
+  state.rpClosed = how === 'hostleft'; // every death opens the replay again; a host walking out is no death, and its door (LOBBY) shows at once
   // an ENDING freezes its numbers here, not in the render pass: the match
   // runs on underneath (a generator can still pay out, a rival can still
   // fall) and a total that climbs behind a tally which already counted it

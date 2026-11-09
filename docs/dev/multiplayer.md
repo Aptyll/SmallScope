@@ -9,7 +9,7 @@ to the world.
 
 `MAX_PLAYERS` (10) players are created once at boot by `initPlayers()`. Each player is one of:
 
-- `control: 'human'` — driven by this screen's keyboard/mouse or pad. Exactly one per screen: **this
+- `control: 'human'` — driven by this screen's keyboard and mouse. Exactly one per screen: **this
   session's player**, in slot `localId` (0 unless `?local=N` or `DBG.setLocal(N)` seats it
   elsewhere — nothing about slot 0 makes it the local one, and anything that means "me" reads
   `player` or tests `p === player`, never an id). `player` and `inv` point at it (and only at
@@ -98,8 +98,7 @@ cmd           one-shot order, run by runCmd (js/ui/wheel.js):
               a bot file or a remote client can send anything.
 ```
 
-`sampleHumanInput(player, dt)` (input banner) folds `keys`/`mouse` — and the pad's stick, `pad.mx/my`,
-clamped in beside WASD — into the local player's struct once per step (under the
+`sampleHumanInput(player, dt)` (input banner) folds `keys`/`mouse` into the local player's struct once per step (under the
 [CLICK scheme](#the-click-scheme) the walk keys are gone and `ckStep` writes the walk, the aim and
 the auto-attack's fire edges into the same struct from its orders), and zeroes it — dropping any draw — while pause or the settings panel is up. The wheel and the
 [map](gameplay/the-m-map-does-not-pause.md) don't stop the sim and so don't zero the whole struct:
@@ -113,16 +112,14 @@ remote humans can't use it.
 `workTarget(p)` reads `p.input.aimX/aimY`, not the mouse, which is why the cursor's lock ring and a
 bot's chop resolve through exactly the same function.
 
-## The two controllers
+## Keyboard and mouse
 
-The local human has two: keyboard and mouse (js/app/input.js) and a gamepad (js/app/gamepad.js) — the
-Steam Deck's hands. **The pad is the keyboard in disguise.** The browser listeners in
-input.js only translate events; what a key *does* lives in `keyPress(e)`/`keyRelease(e)` (`e` is
-`{key, repeat, char}` — a real KeyboardEvent translated, or an object a pad builds) and what a
-button does in `pointerPress(button)`/`pointerRelease(button)`, with `pointerMove(x, y, src)`
-carrying the pointer. A pad button presses a *key* through those, so it cannot
-drift from the keyboard and a new key handled in a listener alone is dead on a pad (the rule in
-[CLAUDE.md](../../CLAUDE.md#hard-rules)).
+The local human plays on keyboard and mouse only (js/app/input.js; there is no gamepad support).
+The browser listeners in input.js only translate events; what a key *does* lives in
+`keyPress(e)`/`keyRelease(e)` (`e` is `{key, repeat, char}` — a real KeyboardEvent translated)
+and what a button does in `pointerPress(button)`/`pointerRelease(button)`, with
+`pointerMove(x, y)` carrying the pointer, so a driver (`DBG`, a headless check) presses exactly
+what a hand does.
 
 **The keyboard is read by where a key sits, not by what it prints** (the `keys and binds`
 banner, input.js; issue #43). The listeners translate `e.code` — the physical key — into the
@@ -158,11 +155,7 @@ planks, the wiki, the hero pop-up, the lobby, the settings slab; under CLICK the
 has no key for prints RMB, because under CLICK the walk and the harvest are the right button's). What is *not* an action is fixed: Escape backs out of everything,
 Enter and the arrows walk the menus (the arrows always walk the body too), F3 and `.` are the
 debug flips, the three main mouse buttons are the mouse's, and `keyReserved` refuses those and the
-browser's F row to a bind. A pad button names an *action* (`PAD_PLAY`):
-the key event it builds carries it (`e.act`, which `keyIs` reads
-before the key) and its held state is `actHeld`'s (which `keyHeld` reads beside `keys`), so a
-rebind moves both controllers at once and neither scheme's map ever sits between a button
-and its verb — a pad on the CLICK scheme still works with X, because X names `work`, not E.
+browser's F row to a bind.
 
 **Rebinding** is a cap on the CONTROLS page's KEYBOARD listing
 ([the panel](gameplay/settings.md); the listing is the live scheme's, and the CONTROLS navbar's
@@ -171,20 +164,16 @@ WASD / CLICK / MOUSE cells are the scheme switch, `CTRL_TABS`/`KEY_ROWS`, panels
 it off, a reserved key is refused with the deny cue, and a key another action holds **swaps** —
 that action takes the old key (`setBind`) — so every action always has one key of its own and no
 two share one. Every held key lets go on a rebind, the listen dies with the slab (`rebindLive`),
-on blur and on any press but its own cap, and `resetBinds` puts the defaults back. Four gestures have no key and are exposed bare for a
-pad's trigger or button: `fireDown`/`fireUp` (the draw — the mouse goes through `pointerPress`
-because a press has the HUD to get past first, a trigger is never over a well),
-`openPingWheel()` (the ping wheel on the point under the pointer — the chart's or the minimap
-disc's point when the pointer is on one) and `panelScrollBy(d)` (whichever page is up). `mouse.src` is who moved the pointer
-last — `'mouse'` or `'pad'` — and in play the pad keeps rewriting the aim
-through it every frame so the reticle rides the body, until the mouse itself moves.
+on blur and on any press but its own cap, and `resetBinds` puts the defaults back. Several
+presses share `openPingWheel()`: the ping wheel on the point under the pointer (the chart's or
+the minimap disc's point when the pointer is on one); the right button, G and the middle button
+open it.
 
 ### The CLICK scheme
 
 The keyboard's second scheme (`settings.scheme = 'click'`; the `click to move` banner, input.js),
 the League / StarCraft / Age of Empires grammar, built to stand alone: **the right button is the
-hand and no key walks the body** (WASD and the arrows are off the feet; a pad's
-stick still walks, and a tilted stick drops the order it would fight but keeps the lock). Every
+hand and no key walks the body** (WASD and the arrows are off the feet). Every
 gesture is an *order* on `ck.order` and the sim never learns which scheme is in hand — `ckStep`
 turns the order into the walk, the aim, the work and the fire edges of the same input struct a
 bot fills, once per step from `sampleHumanInput`.
@@ -218,8 +207,8 @@ bot fills, once per step from `sampleHumanInput`.
   a rival player through `seenAt`, a rival robot, a camp's monster, never a deer — chase it,
   and walk on when it is down. On a body, that body. **S (`stop`) drops the lot**, and so does a
   new order, a death and the scheme switch; Escape disarms A. **G (`ping`) pings**: a tap is GO
-  HERE at the pointer, a hold opens the ping wheel there and its release pings, the pad's R3
-  grammar ([Pings](gameplay/pings.md)).
+  HERE at the pointer, a hold opens the ping wheel there and its release pings
+  ([Pings](gameplay/pings.md)).
 - **The balance of the assist:** a locked shot goes where the target *is*, never led, so a
   strafing rival at range is missed where a hand would lead it; the lock holds only to
   `CK_LOCK_R` (240 px) and through `seenAt`, so cover and GHOSTSTEP break it (`ckSees`); the
@@ -262,57 +251,6 @@ what CLICK leaves on the keyboard moves onto the mouse. The keys still work; not
   (`CLASS_AB`, js/sim/abilities.js: a `line`, a `cone` with its `half`, or a `ring` round the body),
   gold when it will cast and grey while it cannot. The wheel's wedges wear the strip's icons,
   dark while locked, waiting or out of stock (`drawKitWedge`, js/ui/wheel.js).
-
-**The gamepad** (`padPoll`, once per frame from `loop()` — the API has no stick events. Which
-pad, out of everything the browser lists, is `padFind`: one with a button down or its left stick
-tilted beats an idle one — Steam and the driver shims park a silent virtual "Xbox 360" pad in
-slot 0 beside the real controller, and Chrome lists a pad only once a button on it is pressed, so
-the first pad by index is often the wrong one — then the one already held, then the slot the last
-`gamepadconnected` event named, then a standard layout; switching pads releases whatever the
-last one held. A pad the browser could not lay out — `mapping ''`, Firefox on Linux — is read by
-where its axes rest the first frame its left stick does, `padCalibrate`: an axis parked near ±1
-is a trigger, the rest are the sticks in index order). The CONTROLS page's GAMEPAD
-listing ends in a live **readout** (`drawPadReadout`, js/ui/panels.js: the pad's name, the sticks'
-knobs, the triggers' bars, the sixteen buttons as pips off `pad.raw`/`pad.down`) — a stick that
-walks the knob but not the player, or a pad that moves the mouse but leaves the knob still, says
-where the fault is. The one thing it cannot fix: a driver that turns the pad into a mouse and a
-scroll wheel (Steam Input's desktop layout, DS4Windows and the like) reaches the page as pointer
-motion, clicks and wheel ticks — aim, shots and zoom — while the Gamepad API may see nothing;
-the readout shows exactly that (the name row stays dim), and the cure is the driver's setting,
-not the game's. In play every button is a key (`PAD_PLAY`): A rolls (and hops
-off a landed eagle: `updateDrop` reads the roll intent beside E's work, so the jump button is the
-way off the roost), X works,
-Y / B / LB / RB are abilities 1-4 in strip order (LB held is the grapple), START the ESC slab,
-dpad up the sheet, dpad left a potion. Four are gestures: RT is the draw
-(held, released fires — the same falling edge as the button), LT the slide, R3 pings at the aim
-(a tap is GO HERE, a hold opens the ping wheel; the right stick picks the wedge by its tilt from the
-wheel's own hub, `PAD_WHEEL_R` off `wheelLayout` — the same over a wheel X holds open: the
-roll die, the range bell), and dpad down is unbound in play; BACK is the standings while held and the map on a
-tap under `PAD_TAP`. The
-left stick is the walk; the right stick is the aim, a bearing off the body at
-`PAD_AIM_R0`..`PAD_AIM_R1` world px by tilt, remembered while the stick rests. Over a menu or a
-panel (`padMenuMode`: any mode but play and the drop, or play with a panel up) the set flips
-(`PAD_MENU`): A *takes* — the thing under the pointer if the hand cursor is showing over a
-pointer surface, and always Enter over a key-driven menu (the idle mouse may be resting on
-another plank than the dpad picked), which every such menu answers (`padTake`) — B / BACK /
-START are Escape, the dpad and bumpers the arrow keys (which also page the settings slab's tabs:
-`settingsKey`, js/ui/panels.js, reached from both the title's slide-in and the in-match slab) —
-with one exception, an [end screen](rendering/the-end-screens.md#the-emote-bar), where the dpad is the emote bar
-read clockwise from up (`emotePad`, js/ui/screens.js) and the bumpers keep the planks — the
-right stick scrolls the page, and the left stick is a pointer
-over pointer-only surfaces (a panel, the wiki, the lobby) and the arrow
-keys on a repeat clock over the title's plank column and the death planks (`padPointerMode`,
-`padRepeat`). The panels that keep the world running under them — the chart, the counter, the
-sheet (`padPanelMode`) — keep the feet too: WASD walks under them
-(`sampleHumanInput`), so there the left stick walks and the right stick is the hand. A mode flip under held buttons releases them in the mode they were pressed in and
-keeps them marked down, so the START that opened the slab does not close it (`padReleaseAll`).
-While the pad owns the pointer `mouse.inside` is held true, so a mouse parked off the window
-never hides the pad's hand. `padActive()` — plugged in and touched within `PAD_IDLE` — is what
-the CONTROLS page reads, and what every **keybind indicator** reads: while it is true the HOP
-OFF cap, the work prompts, the strip's 1-4 and Q/F, the flight HUD's two and
-the ESC BACK / CLOSE line under a slab all wear the pad's button instead of the key
-(`PAD_BIND`, keyed by action → `drawPadBind` / `drawBackHint`, js/ui/wheel.js; `drawDropBind`, eagle.js) —
-a change in `PAD_PLAY` is a row there.
 
 ## Classes
 
@@ -566,8 +504,7 @@ casts (`voteClick`, from `pointerPress`; the panel is js/ui/vote.js), and the ti
 order), and once every person has voted (or the clock ran out, the silent counting as no) their dashes count as yes if more people said yes than no (`voteTally`), so a party's first yes cannot end the match before a friend answers. The vote
 passes at `voteNeed` seats yes: 4 of 5, every seat on a smaller side; it fails as soon as that can
 no longer be reached or when `VOTE_T` runs out (an unvoted seat is a no), holds its dashes for
-`VOTE_HOLD`, and the side waits `VOTE_CD` before another. A gamepad casts its yes through the same
-SURRENDER plank; a no from a pad is letting the clock run out.
+`VOTE_HOLD`, and the side waits `VOTE_CD` before another.
 
 **The host counts.** The orders are read in `updateVotes`, first thing in `updatePlay` and before
 any body runs, since `updatePlayer` drops every order of a body that is down or stunned; a client

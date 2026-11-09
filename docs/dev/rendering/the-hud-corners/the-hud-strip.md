@@ -14,8 +14,7 @@ left to right and top row first as the shop fills them: the item's icon (`shopIc
 a part's green or a finished item's gold (`itemMetal`), so a glance tells how far the build has
 come, and an empty slot shows its key (`ITEM_KEYS`), dim. `stripHit` answers `{kind:'item', i}`,
 the hover lights the rim and raises the shop's own card (`tipItem`). Never dragged. A **potion**
-slot ([Heals](../../gameplay/heals.md)) is the one that is pressed: its key bottom-left (the pad's
-glyph while one is in hand), white while a drink would land and grey while it would not, the stack's
+slot ([Heals](../../gameplay/heals.md)) is the one that is pressed: its key bottom-left, white while a drink would land and grey while it would not, the stack's
 count top-right, and while a drink runs the cooldown sweep over the time left of it. A press or its
 key sets `input.useItem`, the same intent online and for a bot; a refusal (any other item, a
 drink already running, full health) takes the red band and 1px shake for `itemFlash` seconds

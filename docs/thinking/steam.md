@@ -71,7 +71,7 @@ API and ladder are the long tail that keeps a small community busy, not the pitc
 | Demo and Next Fest | High | Softfall's demo is a complete game because of the bots: no empty-server demo problem. A Next Fest slot with a bots-fill-seats demo is the single best wishlist event. |
 | Workshop (bot files) | High later | Perfect item shape, but needs Steamworks in the Electron shell, a sandbox for untrusted code, and a moderation story. Post-launch. |
 | Leaderboards | Medium | One board for the bot ladder (per author), one for solo ranked vs HARD. Only once the ladder is online. |
-| Steam Deck | Medium | Gamepad already supported. A Deck-verified badge sells well and has nothing to do with bots, but bots make solo Deck play viable. |
+| Steam Deck | Medium | Gamepad support was cut (keyboard and mouse only), so the Deck would need it back. A Deck-verified badge sells well and has nothing to do with bots, but bots make solo Deck play viable. |
 | Remote Play Together | Low | One canvas, keyboard and mouse. Skip. |
 | Trading cards, cloud | Low | Cloud saves for solo profiles maybe. Not a selling point. |
 
