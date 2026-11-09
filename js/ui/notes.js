@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['Party screen and champ select fit 4:3 and 16:10 screens', '0.650'],
     ['MARKS LIKE CHILLS AND KEEP MOVING SHOW ABOVE THE NAME, NOT UNDER THE HEALTH BAR', '0.647'],
     ['THE ORCA\'S BITE GOES THROUGH EVERY SHIELD', '0.645'],
     ['BOTS GO BY THEIR HERO\'S NAME OVER THEIR HEADS AND IN THE DEATH RECAP', '0.638'],
