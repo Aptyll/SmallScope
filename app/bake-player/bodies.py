@@ -519,6 +519,30 @@ class Hood(Wanderer):
 
     def head(self, cv, cam, hc, Rh, pose, snap):
         cv.blob(cam, hc, Rh, self.HEAD_R, 'head', 'cloak', p=self.HEAD_P, region=self.face_region)
+        self.face_marks(cv, cam, hc, Rh)
+
+    def coat(self, cv, cam, U, R):
+        cv.blob(cam, U(v3(0, 0, Z(6.1))), R, (2.75, 3.05, Z(2.05)), 'coat', 'coat', p=2.2)
+        cv.blob(cam, U(v3(0, 0, Z(4.0))), R, (2.6, 3.1, Z(0.6)), 'hem', 'coat', bias=-0.3)
+        cv.blob(cam, U(v3(1.2, 0, Z(5.6))), R, (1.4, 1.6, Z(1.8)), 'apron', 'beard', bias=0.2)
+        cv.blob(cam, U(v3(0.1, 0, Z(8.0))), R, (2.6, 3.3, Z(0.7)), 'scarf', 'cloak', bias=0.3)
+
+    def ball_head(self, cv, cam, hc, Rh):
+        cv.blob(cam, hc, Rh, (2.6, 2.85, 2.5), 'head', 'cloak', p=self.HEAD_P)
+
+
+class Tent(Hearth):
+    """SALVIA as FIELD TENT (the first skin): dark hair under a linen headscarf, a canvas
+    tabard over her side's dress; the same frame, robe and boots"""
+
+    def coat(self, cv, cam, U, R):
+        cv.blob(cam, U(v3(0, 0, Z(6.1))), R, (2.75, 3.05, Z(2.05)), 'coat', 'coat', p=2.2)
+        cv.blob(cam, U(v3(0, 0, Z(4.0))), R, (2.6, 3.1, Z(0.6)), 'hem', 'coat', bias=-0.3)
+        cv.blob(cam, U(v3(0.3, 0, Z(6.0))), R, (2.5, 2.7, Z(1.9)), 'apron', 'beard', bias=0.25)
+
+    def extras(self, cv, cam, U, R, pose):
+        pass
+
 
 class Quarry(Standard):
     """RUPES as QUARRYMAN (his default look): a fur cap with ear flaps (his fur in the hat's
@@ -546,25 +570,6 @@ class Cellar(Quarry):
 
     def coat(self, cv, cam, U, R):
         cv.blob(cam, U(v3(0, 0, Z(6.1))), R, (2.75, 3.05, Z(2.05)), 'coat', 'coat', p=2.2)
-        cv.blob(cam, U(v3(0, 0, Z(4.0))), R, (2.6, 3.1, Z(0.6)), 'hem', 'coat', bias=-0.3)
-        cv.blob(cam, U(v3(1.2, 0, Z(5.6))), R, (1.4, 1.6, Z(1.8)), 'apron', 'beard', bias=0.2)
-        cv.blob(cam, U(v3(0.1, 0, Z(8.0))), R, (2.6, 3.3, Z(0.7)), 'scarf', 'cloak', bias=0.3)
-
-    def ball_head(self, cv, cam, hc, Rh):
-        cv.blob(cam, hc, Rh, (2.6, 2.85, 2.5), 'head', 'cloak', p=self.HEAD_P)
-
-
-class Tent(Hearth):
-    """SALVIA as FIELD TENT (the first skin): dark hair under a linen headscarf, a canvas
-    tabard over her side's dress; the same frame, robe and boots"""
-
-    def coat(self, cv, cam, U, R):
-        cv.blob(cam, U(v3(0, 0, Z(6.1))), R, (2.75, 3.05, Z(2.05)), 'coat', 'coat', p=2.2)
-        cv.blob(cam, U(v3(0, 0, Z(4.0))), R, (2.6, 3.1, Z(0.6)), 'hem', 'coat', bias=-0.3)
-        cv.blob(cam, U(v3(0.3, 0, Z(6.0))), R, (2.5, 2.7, Z(1.9)), 'apron', 'beard', bias=0.25)
-
-    def extras(self, cv, cam, U, R, pose):
-        pass
         cv.blob(cam, U(v3(0, 0, Z(4.0))), R, (2.6, 3.1, Z(0.6)), 'hem', 'hem', bias=-0.3)
         cv.blob(cam, U(v3(0.0, 0, Z(8.2))), R, (2.7, 3.4, Z(0.8)), 'scarf', 'trim', bias=0.3)
 
