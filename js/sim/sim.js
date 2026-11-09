@@ -578,6 +578,7 @@ function updatePlay(dt) {
         basic: !!a.basic, // a press of the bow, not the pierce: a basic attack (passiveDeal, js/sim/heroes.js)
         ab: a.ab,         // ...or the key that loosed it (the death recap)
         burn: a.burn,     // ...and the fire it carries (IGNIA's FIREBRAND, js/sim/ignia.js)
+        slow: a.slow,     // ...and the slow (RUPES's HEAVE, js/sim/rupes.js)
       });
       if (a.ambush) ambushFx(hx, hy);
       a.struck = true;
