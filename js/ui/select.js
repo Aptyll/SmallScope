@@ -302,8 +302,8 @@ const SEL_STORY_PITCH = 9; // px between two of its lines
 function selBookRect(L) { return { x: L.splash.x + L.splash.w - 17, y: L.splash.y + 5, w: SEL_BOOK[0].length + 2, h: SEL_BOOK.length + 2 }; }
 // the story wrapped to w, narrowed a little at a time while its last line is one lone word
 function selStoryLines(text, w) {
-  for (let ww = w; ww > w - 48; ww -= 6) { const l = wikiWrap(text, ww); if (l.length < 2 || l[l.length - 1].includes(' ')) return l; }
-  return wikiWrap(text, w);
+  for (let ww = w; ww > w - 48; ww -= 6) { const l = wrapText(text, ww); if (l.length < 2 || l[l.length - 1].includes(' ')) return l; }
+  return wrapText(text, w);
 }
 function selLoreOn() { return !!state.menu.loreOn && !!CLASSES[player.cls].story; }
 function drawSelLore(L, a, hot) {

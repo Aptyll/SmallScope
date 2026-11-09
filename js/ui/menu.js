@@ -39,7 +39,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.609';
+const PATCH_TXT = 'PATCH 0.610';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -55,6 +55,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.610', 'THE E KEY IS CALLED USE, A TOOLTIP LINE TOO LONG FOR ITS PANEL WRAPS INSTEAD OF RUNNING OFF IT, THE WIKI\'S HERO PAGE IS CALLED HEROES AND SHOWS EVERY LINE OF AN ABILITY, AND SEVERAL ABILITY AND ITEM LINES NOW SAY EXACTLY WHAT THEY DO.'],
   ['0.609', 'A NEW HERO, VARRO THE WOLF-KEPT: HE LEAPS IN AND MARKS ONE RIVAL, HOWLS THE CROWD BACK, AND CALLS THREE WOLVES OUT OF THE PINES TO HUNT THEM DOWN.'],
   ['0.608', 'ONLINE, BOTS ON ANY SIDE WITH A PLAYER ON IT NOW PLAY AS ALLIES: THEY ESCORT AND BACK UP THE NEAREST PERSON ON THEIR SIDE, GUESTS TOO, AND BOTH SIDES GET THE SAME BOTS.'],
   ['0.607', 'RUPES HOLDS HIS ICE MAUL BY THE END OF THE HAFT, SO ITS HEAD SWINGS OUT AND NEVER COVERS HIS FACE.'],
@@ -1857,7 +1858,7 @@ function renderHero(now, a) {
     ctx.fillStyle = hot ? '#8fa0c8' : '#c89a3c'; ctx.fillRect(w.x, y, w.w, w.h);
     ctx.fillStyle = '#1a2142'; ctx.fillRect(w.x + 1, y + 1, w.w - 2, w.h - 2);
     ctx.drawImage(classAbIcon(player.cls, w.i, k), w.x + 3, y + 3);
-    drawPixelTextShadow(ctx, String(w.i + 1), w.x + 3, y + w.h - 9, '#ffd95c', '#0a0e23'); // the key, a keybind indicator
+    drawPixelTextShadow(ctx, keyCapShort('ab' + (w.i + 1)), w.x + 3, y + w.h - 9, '#ffd95c', '#0a0e23'); // the key, a keybind indicator
     if (keyed && m.grow === w.i) { // keyboard cursor: four corner ticks, breathing
       ctx.globalAlpha = a * (0.7 + 0.3 * Math.sin(now * 6));
       ctx.fillStyle = '#f4f7ff';

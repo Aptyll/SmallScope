@@ -68,7 +68,7 @@ const IGNIA_AB = [
   {
     id: 'warm', name: 'WARM HANDS', cd: [14, 13, 12, 11, 10], cast: 0.05,
     rank: { walk: [1.15, 1.2, 1.25, 1.3, 1.35], hot: WARM_HOT, t: WARM_T }, // walk: her walk while it waits; hot: the next key's burn
-    tip: 'NEXT KEY BURNS TWICE AS HOT',
+    tip: 'NEXT ABILITY BURNS TWICE AS HOT',
     blurb: 'YOUR NEXT ABILITY IS CAST TWICE AS HOT. WHILE IT IS READY, YOU WALK FASTER.',
     use: (p) => igniaWarm(p),
     acol: '#ff9a3a', activeF: (p) => (p.warmT > 0 ? p.warmT / WARM_T : 0),

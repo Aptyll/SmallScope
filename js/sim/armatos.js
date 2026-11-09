@@ -83,7 +83,7 @@ const ARM_AB = [
     id: 'guard', name: 'THE OLD GUARD', cd: [80, 70, 60], cast: 0.45, aim: { ring: GUARD_R },
     rank: { armor: [40, 60, 80], ten: 0.5, slow: 0.5, slowT: 2, t: 6 }, // allies inside: armor, tenacity; a rival leaving: slowed; t: s it stands
     tip: 'ALLIES INSIDE GAIN ARMOR',
-    blurb: 'PLANT THE STANDARD. YOUR SIDE INSIDE TAKES LESS AND SHRUGS OFF STUNS. RIVALS WHO RUN FROM IT ARE SLOWED.',
+    blurb: 'PLANT THE STANDARD. YOUR SIDE INSIDE TAKES LESS AND IS STUNNED FOR LESS. RIVALS WHO RUN FROM IT ARE SLOWED.',
     use: (p) => armGuard(p),
     tele: (p, px, py, a, col, closing) => drawRing(px, py + 2, GUARD_R, col, 0.45 + 0.4 * closing, closing * 0.5),
     pose: () => ({ dx: 0, dy: 1, rot: 0 }), // the standard driven down
@@ -94,7 +94,7 @@ const ARM_AB = [
 
 // the passive, by the name his CLASSES entry gives (`passive`; HERO_PASSIVE, js/sim/heroes.js)
 HERO_PASSIVE.resolve = { hurt: resolveHurt, cast: resolveCast, tick: resolveTick,
-  name: "LEGION'S RESOLVE", blurb: 'THE HITS YOU TAKE BUILD RESOLVE. FULL, YOUR NEXT KEY GIVES YOU A SHIELD.', icon: ARM_ICON32.resolve };
+  name: "LEGION'S RESOLVE", blurb: 'THE HITS YOU TAKE BUILD RESOLVE. FULL, YOUR NEXT ABILITY GIVES YOU A SHIELD.', icon: ARM_ICON32.resolve };
 
 // ---- LEGION'S RESOLVE -------------------------------------------------------
 function resolveHurt(p, dmg) {

@@ -135,7 +135,7 @@ const CLASSES = [
     // his own on keys 1-4
     name: 'ARMATOS', role: 'THE LAST STANDARD', body: 1, passive: 'resolve', // HERO_PASSIVE, js/sim/heroes.js
     look: { sex: 0, tone: 1, hair: 2, hairCol: 6, beard: 3, face: 0 },
-    blurb: ['NO SOLDIER LEFT BEHIND.', 'THE SHIELD TAKES THE HIT. THE BASH ANSWERS IT.', 'PLANT THE STANDARD: YOUR SIDE HOLDS, THEIRS CANNOT LEAVE.'],
+    blurb: ['NO SOLDIER LEFT BEHIND.', 'THE SHIELD TAKES THE HIT. THE BASH ANSWERS IT.', 'PLANT THE STANDARD: YOUR SIDE HOLDS, THEIRS IS SLOWED LEAVING.'],
     story: 'HE CARRIED THE STANDARD OF A LEGION THE EMPIRE MARCHED INTO THE SNOW AND FORGOT. HE BROUGHT EVERY ONE OF THEM HOME, AND THE EMPIRE CALLED IT A RETREAT. THE STANDARD IS BROKEN NOW. HE STILL PLANTS IT.', // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
     base: { hp: 130, dmg: 16, armor: 24, ap: 0, haste: 0, ms: PLAYER_SPEED },
     grow: { hp: 10, dmg: 1.4, as: 0.008, armor: 2.9 },
@@ -213,7 +213,7 @@ const CLASSES = [
     // slower than anyone; slow, telegraphed strikes, one blink, and nothing else
     name: 'AURA', role: 'THE NORTHERN LIGHT', body: 1, passive: 'starlight', // HERO_PASSIVE, js/sim/aura.js
     look: { sex: 1, tone: 0, hair: 2, hairCol: 5, beard: 0, face: 2 },
-    blurb: ['THE NIGHT IS ON YOUR SIDE.', 'STRIKE FROM FURTHER THAN ANYONE. NOTHING HIDES FROM YOUR LIGHT.', 'CAUGHT UP CLOSE, YOU HAVE ONE STEP.'],
+    blurb: ['THE NIGHT IS ON YOUR SIDE.', 'OUTREACH ANYONE. NOTHING HIDES FROM YOUR LIGHT.', 'CAUGHT UP CLOSE, YOU HAVE ONE STEP.'],
     story: "SHE STEERED THE EMPIRE'S FLEET BY THE STARS, AND WARNED THE ADMIRALS A STORM WAS COMING. THEY SAILED ANYWAY, AND SHE BROUGHT HER ONE SHIP HOME. THE VALLEY'S NIGHTS ARE CLEAR AND BLUE, AND SHE STILL KNOWS EVERY STAR BY NAME.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
     // a staff's star bolt: a little shorter and slower than the shortbow
     staff: 'shard', // her STAR SHARD, carried upright (HERO_STAVES, js/draw/aura.js)

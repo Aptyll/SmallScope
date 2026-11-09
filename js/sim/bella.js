@@ -328,7 +328,7 @@ function bellaOut(p) {
 
 // ---- the hooks she registers (js/sim/heroes.js) ------------------------------------
 HERO_PASSIVE.calculated = { deal: precisionDeal, tick: bellaTick, out: bellaOut,
-  name: 'CALCULATED STRIKES', blurb: 'YOUR ATTACKS ON HEROES BUILD PRECISION. FULL, YOUR NEXT KEY HITS HARDER AND YOU RUN FASTER FOR A MOMENT.', icon: BELLA_ICON32.precision };
+  name: 'CALCULATED STRIKES', blurb: 'YOUR ATTACKS ON HEROES BUILD PRECISION. FULL, YOUR NEXT ABILITY HITS HARDER AND YOU RUN FASTER FOR A MOMENT.', icon: BELLA_ICON32.precision };
 HERO_TAKEN.push(parryTaken);
 HERO_MOVE.push(bellaMoveMul);
 HERO_DASH.lunge = { spd: LUNGE_SPD, t: LUNGE_LEN / LUNGE_SPD, ramp: 0.03, step: lungeStep, through: true };

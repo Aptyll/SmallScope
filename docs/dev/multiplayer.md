@@ -135,7 +135,7 @@ font cannot draw (the arrows, the modifiers, punctuation with no glyph) is a wor
 SPACE, SHIFT, UP, SEMI …).
 
 **What a key does is an action, and an action has a key.** `KEY_ACTIONS` is every rebindable
-verb — the four walk keys, the four abilities, dodge, slide, harvest, the six item keys, recall, the sheet, the map, the standings, mute,
+verb — the four walk keys, the four abilities, dodge, slide, use (E), the six item keys, recall, the sheet, the map, the scoreboard, mute,
 pause, and the CLICK
 scheme's three of its own (attack-move, stop, the ping) — with the key each starts on
 per scheme (`key` on WASD, `ck` on CLICK, `ms` on MOUSE where it differs from `ck`; an action
@@ -152,7 +152,7 @@ binds and the arrows, which every key-driven menu steps on — the title's plank
 planks, the wiki, the hero pop-up, the lobby, the settings slab; under CLICK the arrows alone) and
 `keyBound(k)` ask the live binds, and every keybind indicator names an action and prints
 `keyCap(action)` (`keyCapShort` for a well's corner, where SPACE is SPC; an action the live scheme
-has no key for prints RMB, because under CLICK the walk and the harvest are the right button's). What is *not* an action is fixed: Escape backs out of everything,
+has no key for prints RMB, because under CLICK the walk and the use key are the right button's). What is *not* an action is fixed: Escape backs out of everything,
 Enter and the arrows walk the menus (the arrows always walk the body too), F3 and `.` are the
 debug flips, the three main mouse buttons are the mouse's, and `keyReserved` refuses those and the
 browser's F row to a bind.

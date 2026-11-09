@@ -138,7 +138,7 @@ function drawDummyMeter(o, cxp, botY) {
   if (a <= 0) return;
   const dps = Math.round(o.mTotal / Math.max(1, o.mT1 - o.mT0));
   const rows = [
-    ['LAST HIT', String(Math.round(o.mLast)), '#ffd95c'],
+    ['LAST', String(Math.round(o.mLast)), '#ffd95c'],
     ['DPS',      String(dps),                 '#f4f7ff'],
     ['TOTAL',    String(Math.round(o.mTotal)), '#e0c890'],
   ];

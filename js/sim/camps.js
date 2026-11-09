@@ -68,7 +68,7 @@ const CAMPS = {
     spots: [[-2, -1], [2, -1], [-2, 2], [2, 2]],
   },
   buff: {
-    name: 'BLACK BEAR STONE',
+    name: 'BLACK BEAR BEND',
     r: 4, mark: '#c2a6ff', river: 9,
     icon: [[3, 1, 1, 1], [2, 2, 3, 1], [1, 3, 5, 1], [2, 4, 3, 1], [3, 5, 1, 1]], // a cut stone
     kind: 'alpha', pop: 1, repop: 300,
@@ -76,7 +76,7 @@ const CAMPS = {
     spots: [],
   },
   epic: {
-    name: 'BROWN BEAR DEN',
+    name: 'BROWN BEAR BEND',
     r: 6, mark: '#ffb04a', river: 9,
     icon: [[0, 0, 2, 2], [5, 0, 2, 2], [0, 1, 7, 2], [1, 3, 1, 1], [3, 3, 1, 1], [5, 3, 1, 1], [1, 4, 5, 1], [2, 5, 3, 1]], // a bear's head, the eyes left dark
     kind: 'dire', pop: 1, repop: 300,

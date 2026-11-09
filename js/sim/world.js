@@ -99,7 +99,7 @@ const OBJECTS = {
   banner:   { solid: true,
               mm: (o) => o.team === undefined ? MM_BANNER : skin(o.team) ? MM_EAGLE_BLUE : MM_EAGLE_RED,
               map: (o) => o.team === undefined ? null : chEagle(o) },
-  // the BLACK BEAR STONE camp's old anchor: a heap of stones, solid. No
+  // the black bear camp's old anchor: a heap of stones, solid. No
   // camp stamps one since the bears moved to the river (CAMPS' `river`);
   // kept so a save from before still loads what stood in it. Inert to E (no `tool`); its pixels are CAIRN_SPR in
   // render()'s object pass (js/draw/render.js).
@@ -727,8 +727,8 @@ function indexSegs(segs, R) {
 // the water, so it is always four-connected and nobody's feet cut a corner
 // through the current.
 //
-// The BENDS: the two camps on the mirror line (the BROWN BEAR DEN and the
-// BLACK BEAR STONE, whose bears walk the bend's bank: riverPath) each have the creek swing round them in a half-loop, so
+// The BENDS: the two camps on the mirror line (the BROWN BEAR BEND and the
+// BLACK BEAR BEND, whose bears walk the bend's bank: riverPath) each have the creek swing round them in a half-loop, so
 // each falls on one side's bank: the upstream one (the brown bear) to RED,
 // the downstream one (the black bear) to BLUE. The line is point-symmetric
 // about the crossing, as the roosts are. The other side reaches its rival's
