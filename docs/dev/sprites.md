@@ -87,7 +87,7 @@ more: the frames live on as the CATCH emote's (`EMOTES`, js/ui/screens.js). The 
 **The run, the held run and the dodge roll are the one set of player frames not typed by hand.**
 [app/bake-player/](../../app/bake-player/) paints them off a jointed doll of each class body (and of
 each named hero's looks: ARMATOS's `standard` and `oath`, FORTIVA's `unbroken` and `coif`, BELLA's `general` and `traitor`,
-IGNIA's `hearth` and `wanderer`, AURA's `light`, SALVIA's `hood` and `tent`, LUCERNA's `lamp` and `dusk`, HIEMS's `scholar` and `frost`, FABER's `clockmaker` and `foreman`, NIX's `snowblind`, FALCO's `falconer`, RUPES's `quarry` and `cellar`, VARRO's `wolfkept` and `whitepack`, VELOX's `canal` and `night`, BUCINA's `horn` and `column`, MARIS's `diver` and `orca`, SAGITTA's `siege` and `tower`, [hero looks](#hero-looks)) and
+IGNIA's `hearth` and `wanderer`, AURA's `light`, SALVIA's `hood` and `tent`, LUCERNA's `lamp` and `dusk`, HIEMS's `scholar` and `frost`, FABER's `clockmaker` and `foreman`, NIX's `snowblind`, FALCO's `falconer`, RUPES's `quarry` and `cellar`, VARRO's `wolfkept` and `whitepack`, VELOX's `canal` and `night`, BUCINA's `horn` and `column`, MARIS's `diver` and `orca`, SAGITTA's `siege` and `tower`, LIGNUM's `feller` and `forest`, [hero looks](#hero-looks)) and
 writes them to js/baked/motion.js as char grids in characters.js's own letters, so `motionSet`
 bakes them through the same team and look palettes as every hand-drawn pose: `run[dir]`,
 `hold[dir]` and `roll[dir]` sit beside the walking directions, `left` the mirror of `right`.
@@ -266,6 +266,17 @@ roll. `MARIS_PAL` is `ARM_PAL` with the sealskin `q`/`Q`, brass `y`/`Y`, glass `
 leather `a`. Her HARPOON is a `HERO_BLADES` row (`blade: 'harpoon'`, js/draw/maris.js). Swimming,
 the water is drawn over her legs (`HERO_BODY_FX`); under the snow (BREACH) a `HERO_BODY_DRAW` row
 draws the heaving snow in her place.
+
+LIGNUM has two looks (`LIGNUM_SKINS`, js/sprites/lignum.js): FELLER (free; a fur cap with ear
+flaps, a full beard spilling over the side's coat, the axe strap and a belt) and LAST FOREST (200
+coins; a pine-green hood and shoulders over a bark-brown mantle, the side's colour down the
+front), A and B off heroes-lignum/round1 in the project files. Both are drawn on ARMATOS's frame
+and run as their drawn bodies (`run: 'drawn'`); their dolls (`Feller`, `Forest` in
+app/bake-player/bodies.py: the cap in `pelt`, the hood in `cloak`, the mantle and belt in `hair`)
+are used only for the roll. `LIGNUM_PAL` is `ARM_PAL` with the fur `j`/`f`/`F`, the beard `w`/`W`,
+the leather `a`/`A`, the hood `q`/`Q` and the buckle `y`/`Y`. His FELLING AXE is a `HERO_BLADES`
+row (`blade: 'felling'`, js/draw/lignum.js). BARK SKIN lays bark plates on his shoulders
+(`HERO_BODY_FX`); TIMBER's trunk is drawn on the snow (`HERO_GROUND`).
 
 LUCERNA has two looks (`LUCERNA_SKINS`, js/sprites/lucerna.js): LAMPLIGHTER (free: a flat cap over
 dark hair, a warm brown greatcoat open on the side's waistcoat, brass buttons) and DUSK ROAD (rare,

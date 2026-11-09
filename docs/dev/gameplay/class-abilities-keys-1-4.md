@@ -67,7 +67,7 @@ the held one lit gold
 js/ai/ai.js, first thing `aiThink` asks): the ultimate whenever it can rank, then each basic key
 unlocked once, then the basics maxed in the hero's `rankOrder` (its `CLASSES` row: HUNTER
 shot, net, grapple; WARRIOR stomp, rush, shield; ARMATOS verdict, march, brace; FORTIVA sever,
-yoke, heart; AURA star, orb, step; SALVIA poultice, cloak, snowdrops; LUCERNA crook, shoo, lantern; RUPES heave, shed, shoulder; NIX shard, drift step, cloud; FALCO knife fan, talons, glide; VARRO lunge, snap, howl; BUCINA note, blast, echo; MARIS harpoon, undertow, brace; VELOX skip stone, quick step, ice lane; SAGITTA pin, crank back, pavise). The cd column in the tables below is every rank's; the numbers in the text are rank
+yoke, heart; AURA star, orb, step; SALVIA poultice, cloak, snowdrops; LUCERNA crook, shoo, lantern; RUPES heave, shed, shoulder; NIX shard, drift step, cloud; FALCO knife fan, talons, glide; VARRO lunge, snap, howl; BUCINA note, blast, echo; MARIS harpoon, undertow, brace; LIGNUM chop, thrown axe, bark skin; VELOX skip stone, quick step, ice lane; SAGITTA pin, crank back, pavise). The cd column in the tables below is every rank's; the numbers in the text are rank
 1's, and each row's `rank` table has the rest.
 
 **Every ability lands on every kind of body.** A player, a rabbit, a deer, a bird, a wolf and a
@@ -282,6 +282,23 @@ hunter; her HARPOON's basic thrust reaches a little further and narrower than th
 | 2 | **BRACE FOR COLD** | 16/15/14/13/12 s | for `BRACE_T` every hit she takes is cut by `ward` (15/18/21/24/27%) plus `BRACE_PER` for each rival hero within `BRACE_NEAR`, at most `BRACE_CAP` (`braceTaken`, a `HERO_TAKEN` row) |
 | 3 | **UNDERTOW** | 11/10.5/10/9.5/9 s | a ring `UNDERTOW_R` round her: every rival body and building in it takes `dmg` (20/32/44/56/68), is drawn in a little and slowed for `UNDERTOW_T`: ×`slow` (0.7), ×`ice` (0.45) for one standing on ice |
 | 4 | **BREACH** | 110/95/80 s | she dives under the snow to the aim (at most `BREACH_RANGE`, `p.dash = 'breach'` at `BREACH_SPD`), untouchable (`invuln`) and drawn as the snow heaving over her (`HERO_BODY_DRAW`); a wall brings her up early. Up (`breachUp`): every rival body and building in `BREACH_R` takes `dmg` (60/100/140) and is knocked up `up` (0.8/1/1.2 s); on bare ice it breaks in the orca's `breach` shape (`iceBreak`, open `BREACH_HOLD`), and whoever stands on it goes in. She swims |
+
+LIGNUM, THE FELLER — the skirmisher of the treeline. His rules live in
+**[js/sim/lignum.js](../../../js/sim/lignum.js)** (`LIGNUM_AB`, its `lignum` banner), his pixels in
+[js/draw/lignum.js](../../../js/draw/lignum.js), his icons, looks and felling axe in
+[js/sprites/lignum.js](../../../js/sprites/lignum.js). 114 hp and 18 armor at the hunter's pace;
+his FELLING AXE's basic blow has the longsword's reach a little wider and slower (`reach` 26,
+`half` 1). Strong in short trades and by the woods, weak in an open lane and on ice (a low cap and
+a slow turn there), and with nothing to hold a rival until his ultimate. What he leaves in the
+world (`lignumAxes`, `lignumLogs`) is stepped by `HERO_TICK`:
+
+| key | name | cd | what it does |
+| --- | --- | --- | --- |
+| P | **TREELINE** | — | the step he leaves the woods (`inWoods`, js/sim/fog.js) readies his next basic strike for `TREELINE_T` (3 s): it lands ×(1 + `TREELINE_DMG`) (1.5) and he walks ×`TREELINE_RUN` for `TREELINE_RUN_T` (`lignumTick`, `lignumDeal`, `HERO_MOVE`). Going back in drops it until the next step out. `HERO_PASSIVE.treeline` |
+| 1 | **CHOP** | 9/8.5/8/7.5/7 s | a cut through the wedge ahead (`CHOP_R`, `CHOP_HALF`): every rival body and building in it takes `dmg` (18/26/34/42/50). For `CHOP_WAIT` the key again (`recast`) is the chop: `chop` (30/42/54/66/78) and a slow ×`slow` (0.65) for `CHOP_SLOW_T`. The wait restarts from the second blow |
+| 2 | **THROWN AXE** | 13/12/11/10/9 s | a hand axe down the aim (`AXE_SPD` for `AXE_RANGE`, 200 px): the first rival body or building takes `dmg` (40/60/80/100/120). It sticks in a rival hero (riding them) or in the first tree it meets for `AXE_STUCK`; the key again pulls him to it (`p.dash = 'axepull'` at `AXE_PULL_SPD`, stopping `AXE_PULL_STOP` short) |
+| 3 | **BARK SKIN** | 15/14/13/12/11 s | for `BARK_T` every hit he takes is cut by `ward` (15/17/19/21/23%), twice that with a pine within `BARK_NEAR` tile of his feet (`barkTaken`, a `HERO_TAKEN` row) |
+| 4 | **TIMBER** | 100/85/70 s | after a 0.6 s wind-up showing its line, the nearest pine within `TIMBER_PICK` falls down the aim (a stump where it stood); with none, the trunk is laid from his feet. Every rival body and building along `TIMBER_LEN` (104 px), `TIMBER_W` either side, takes `dmg` (90/140/190) and is knocked up `up` (0.9/1/1.15 s), thrown off the side it stood on. The trunk then lies there `TIMBER_T` (3 s): each open tile under it is a wall to every walker and shot (`HERO_SOLID`, read by `isSolidTile`) |
 
 LUCERNA, THE LANTERN — the catch-and-save support. Her rules live in
 **[js/sim/lucerna.js](../../../js/sim/lucerna.js)** (`LUCERNA_AB`, its `lucerna` banner), her pixels in

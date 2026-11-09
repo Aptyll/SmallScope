@@ -48,6 +48,8 @@
 // - HERO_WRECK: fn(b, src) when a body in `robots` is broken (robotDies): FABER's spare parts.
 // - HERO_SWIM: fn(p) -> true for a hero open water never takes (playerPlunge,
 //   js/sim/sim.js): MARIS swims the creek and a broken hole.
+// - HERO_SOLID: fn(tx, ty, e) -> true for a tile a kit has walled for now (isSolidTile,
+//   js/sim/world.js): LIGNUM's felled trunk.
 // - HERO_SHOT_HIT[id]: fn(a, t, nx, ny) once a shot with `a.hit = id` has landed its
 //   blow on body t (the arrow loop, js/sim/sim.js): SAGITTA's pin against a tree.
 //   Clearing a.pierce there ends a piercing shot on that body.
@@ -71,6 +73,7 @@ const HERO_AIR = [];
 const HERO_MACHINE = {};
 const HERO_WRECK = [];
 const HERO_SWIM = [];
+const HERO_SOLID = [];
 const HERO_SHOT_HIT = {};
 
 // the ability whose use() is running right now, so a blow it lands says so
@@ -107,5 +110,6 @@ function heroCover(srcs, x, y, u) { for (const f of HERO_COVER) if (f(srcs, x, y
 function heroAir(ex, ey, now) { for (const f of HERO_AIR) f(ex, ey, now); }
 function heroMachine(b) { return (b.kind && HERO_MACHINE[b.kind]) || null; }
 function heroWreck(b, src) { for (const f of HERO_WRECK) f(b, src); }
+function heroSolid(tx, ty, e) { for (const f of HERO_SOLID) if (f(tx, ty, e)) return true; return false; }
 function heroSwim(p) { for (const f of HERO_SWIM) if (f(p)) return true; return false; }
 function heroShotHit(a, t, nx, ny) { const f = a.hit && HERO_SHOT_HIT[a.hit]; if (f) f(a, t, nx, ny); }

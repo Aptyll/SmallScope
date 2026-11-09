@@ -1,6 +1,6 @@
 # The two class bodies on the doll (doll.py): the HUNTER (pom beanie) and the WARRIOR
 # (fur hood with goggles, a trailing scarf, skate blades), and each named hero's looks
-# (ARMATOS: standard, oath; FORTIVA: unbroken, coif; BELLA: general, traitor; IGNIA: hearth, wanderer; AURA: light; SALVIA: hood, tent; LUCERNA: lamp, dusk; HIEMS: scholar, frost; RUPES: quarry, cellar; NIX: snowblind; VARRO: wolfkept, whitepack; FABER: clockmaker, foreman; MARIS: diver, orca; VELOX: canal, night; SAGITTA: siege, tower). Their sizes are measured off the
+# (ARMATOS: standard, oath; FORTIVA: unbroken, coif; BELLA: general, traitor; IGNIA: hearth, wanderer; AURA: light; SALVIA: hood, tent; LUCERNA: lamp, dusk; HIEMS: scholar, frost; RUPES: quarry, cellar; NIX: snowblind; VARRO: wolfkept, whitepack; FABER: clockmaker, foreman; MARIS: diver, orca; VELOX: canal, night; SAGITTA: siege, tower; LIGNUM: feller, forest). Their sizes are measured off the
 # hand-drawn 16 px frames in js/sprites/characters.js, so the doll's idle lands on those
 # frames pixel for pixel and the run and the roll it paints wear the same body.
 #
@@ -877,6 +877,55 @@ class Orca(Diver):
         cv.blob(cam, U(v3(0, 0, Z(4.0))), R, (2.6, 3.1, Z(0.6)), 'hem', 'cloak', bias=-0.3)
 
 
+class Feller(Standard):
+    """LIGNUM as FELLER (his default look): a fur cap with ear flaps round his face, a full
+    beard over his side's coat, a leather belt; Armatos's frame, boots"""
+    ARM_MAT, MITT_MAT = 'coat', 'skin'
+    MARKS = [(-1.5, 0.9, 'e'), (1.5, 0.9, 'e')]
+
+    @staticmethod
+    def face_region(n, q):
+        """under the cap's brim: the face, the fur all round it"""
+        return np.where((q[0] > 0.2) & (np.abs(q[1]) < 0.7) & (q[2] < 0.2) & (q[2] > -0.95), 'skin', 'pelt')
+
+    def head(self, cv, cam, hc, Rh, pose, snap):
+        cv.blob(cam, hc, Rh, self.HEAD_R, 'head', 'pelt', p=self.HEAD_P, region=self.face_region)
+        self.face_marks(cv, cam, hc, Rh)
+        cv.blob(cam, hc + Rh @ v3(1.6, 0, -3.5), Rh, (1.3, 2.6, 2.2), 'beard', 'beard', bias=0.6)
+
+    def coat(self, cv, cam, U, R):
+        cv.blob(cam, U(v3(0, 0, Z(6.1))), R, (2.75, 3.05, Z(2.05)), 'coat', 'coat', p=2.2)
+        cv.blob(cam, U(v3(0, 0, Z(4.0))), R, (2.6, 3.1, Z(0.6)), 'hem', 'hair', bias=-0.3)
+
+    def ball_head(self, cv, cam, hc, Rh):
+        cv.blob(cam, hc, Rh, (2.6, 2.85, 2.5), 'head', 'pelt', p=self.HEAD_P)
+        cv.blob(cam, hc + Rh @ v3(1.4, 0, -2.0), Rh, (1.2, 2.0, 1.7), 'beard', 'beard', bias=0.6)
+
+
+class Forest(Feller):
+    """LIGNUM as LAST FOREST (the first skin): a pine-green hood and shoulders over a
+    bark-brown mantle, his side's colour down the front"""
+
+    @staticmethod
+    def face_region(n, q):
+        """the hood's opening: the face, the green all round it"""
+        return np.where((q[0] > 0.2) & (np.abs(q[1]) < 0.7) & (q[2] < 0.2) & (q[2] > -0.95), 'skin', 'cloak')
+
+    def head(self, cv, cam, hc, Rh, pose, snap):
+        cv.blob(cam, hc, Rh, self.HEAD_R, 'head', 'cloak', p=self.HEAD_P, region=self.face_region)
+        self.face_marks(cv, cam, hc, Rh)
+        cv.blob(cam, hc + Rh @ v3(1.6, 0, -3.5), Rh, (1.3, 2.6, 2.2), 'beard', 'beard', bias=0.6)
+
+    def coat(self, cv, cam, U, R):
+        cv.blob(cam, U(v3(0, 0, Z(6.1))), R, (2.75, 3.05, Z(2.05)), 'coat', 'hair', p=2.2)
+        cv.blob(cam, U(v3(1.2, 0, Z(6.0))), R, (1.6, 2.0, Z(1.8)), 'vest', 'coat', bias=0.3)
+        cv.blob(cam, U(v3(0, 0, Z(4.0))), R, (2.6, 3.1, Z(0.6)), 'hem', 'hair', bias=-0.3)
+
+    def ball_head(self, cv, cam, hc, Rh):
+        cv.blob(cam, hc, Rh, (2.6, 2.85, 2.5), 'head', 'cloak', p=self.HEAD_P)
+        cv.blob(cam, hc + Rh @ v3(1.4, 0, -2.0), Rh, (1.2, 2.0, 1.7), 'beard', 'beard', bias=0.6)
+
+
 BODIES = {'hunter': Hunter(), 'warrior': Warrior(), 'standard': Standard(), 'oath': Oath(),
           'unbroken': Unbroken(), 'coif': Coif(), 'general': General(), 'traitor': Traitor(),
           'hearth': Hearth(), 'wanderer': Wanderer(), 'light': Light(),
@@ -889,4 +938,5 @@ BODIES = {'hunter': Hunter(), 'warrior': Warrior(), 'standard': Standard(), 'oat
           'clockmaker': Clockmaker(), 'foreman': Foreman(),
           'canal': Canal(), 'night': Night(),
           'diver': Diver(), 'orca': Orca(),
+          'feller': Feller(), 'forest': Forest(),
           'siege': Siege(), 'tower': Tower()}
