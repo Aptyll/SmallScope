@@ -30,7 +30,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.586';
+const PATCH_TXT = 'PATCH 0.587';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -46,6 +46,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.587', 'A NEW HERO, LUCERNA THE LANTERN: HER CROOK PULLS A RIVAL IN, HER THROWN LANTERN BRINGS AN ALLY HOME, AND HER LIGHT SHOWS WHO HIDES NEAR HER.'],
   ['0.586', 'IN CHAMP SELECT, IF YOUR LAST HERO WAS BANNED, THE STAGE UNDER THE GRID STAYS EMPTY UNTIL YOU POINT AT A HERO INSTEAD OF SHOWING THE BANNED ONE.'],
   ['0.585', 'SOFTFALL IS PLAYED ON KEYBOARD AND MOUSE ONLY: GAMEPAD SUPPORT AND ITS SETTINGS PAGE ARE GONE, AND THE ARROW KEYS NOW SHOW WHICH CARD THEY PICK ON THE SKINS SCREEN.'],
   ['0.584', 'WHEN THE HOST LEAVES AN ONLINE MATCH, YOU SEE THE HOST LEFT AND THE LOBBY BUTTON AT ONCE, NOT A REPLAY OF YOUR LAST FOUR SECONDS.'],
@@ -1599,6 +1600,20 @@ const CLASS12 = [
     '.oovo.......',
     '..ovo.......',
     '...o........',
+  ],
+  [ // LUCERNA: her lantern, lit, on its ring
+    '....oooo....',
+    '....o..o....',
+    '...oooooo...',
+    '...oggggo...',
+    '..ogWWWWgo..',
+    '..ogWWWWgo..',
+    '..ogWbbWgo..',
+    '..ogWWWWgo..',
+    '...oggggo...',
+    '....oooo....',
+    '............',
+    '............',
   ],
 ];
 const class12Cache = new Map();

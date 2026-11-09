@@ -67,7 +67,7 @@ the held one lit gold
 js/ai/ai.js, first thing `aiThink` asks): the ultimate whenever it can rank, then each basic key
 unlocked once, then the basics maxed in the hero's `rankOrder` (its `CLASSES` row: HUNTER
 shot, net, grapple; WARRIOR stomp, rush, shield; ARMATOS verdict, march, brace; FORTIVA sever,
-yoke, heart; AURA star, orb, step; SALVIA poultice, cloak, snowdrops). The cd column in the tables below is every rank's; the numbers in the text are rank
+yoke, heart; AURA star, orb, step; SALVIA poultice, cloak, snowdrops; LUCERNA crook, shoo, lantern). The cd column in the tables below is every rank's; the numbers in the text are rank
 1's, and each row's `rank` table has the rest.
 
 **Every ability lands on every kind of body.** A player, a rabbit, a deer, a bird, a wolf and a
@@ -220,8 +220,26 @@ cast with) is stepped by `salviaWorld` (`HERO_TICK`):
 Her rows' `botAim` point a bot's heals at the most hurt ally in reach (`salviaNeedy`); a bot throws the
 poultice at a rival when nobody needs it, and keeps THAW for one ally nearly down or two hurt.
 
+LUCERNA, THE LANTERN — the catch-and-save support. Her rules live in
+**[js/sim/lucerna.js](../../../js/sim/lucerna.js)** (`LUCERNA_AB`, its `lucerna` banner), her pixels in
+[js/draw/lucerna.js](../../../js/draw/lucerna.js), her icons, looks and lantern art in
+[js/sprites/lucerna.js](../../../js/sprites/lucerna.js). 88 hp, 12 armor, little damage: a spark off
+her LANTERN (her `attack` row, drawn as `look: 'lampspark'`; the lantern hangs from her hand,
+`HERO_STAVES`). She has the game's only pull: `lucernaPull` draws a body along the snow at
+`PULL_SPD` to a spot (`p.pullT`, stepped by `stepPulls` through `moveEntity`, so a wall stops it),
+and a rival is held (`stunUnit`) while it travels. What she leaves in the world (`lucernaHooks`,
+`lucernaLanterns`, `lucernaCircles`) is stepped by `lucernaWorld` (`HERO_TICK`):
+
+| key | name | cd | what it does |
+| --- | --- | --- | --- |
+| P | **LAMPLIGHT** | — | every rival body within `LAMP_R` (56 px) of her is shown (`markUnit`: through the fog, the woods and the brush) and stays shown `LAMP_SEE_T` after leaving it (`lucernaTick`). `HERO_PASSIVE.lamplight` |
+| 1 | **SHEPHERD'S CROOK** | 14/13/12/11/10 s | a hook flies down the aim `CROOK_RANGE` (170 px) at `CROOK_SPD`, past allies (`updateHooks`); a wall or a tree ends it. The first rival body it meets (a hero, a soldier, a beast) takes `dmg` (20/35/50/65/80) and is pulled to `CROOK_STOP` from her, then walks ×`CROOK_SLOW` for `CROOK_SLOW_T` |
+| 2 | **LANTERN** | 18/17/16/15/14 s | her lantern lands at the aim, at most `LANTERN_RANGE` from her, one at a time (`lucernaThrow`). An ally player who walks within `LANTERN_R` of it takes it and is pulled to her side, not held; rivals within `LANTERN_SEE` of it are shown. Untaken, it comes back after `t` (4/4.5/5/5.5/6 s) (`updateLanterns`). A bot throws it at an ally hero who is hurt with a rival close (`lucernaInDanger`, the row's `botAim`) |
+| 3 | **SHOO** | 10/9.5/9/8.5/8 s | a swing of the crook `SHOO_REACH` in front of her, `SHOO_HALF` either side of the aim: every rival body in it takes `dmg` (15/25/35/45/55) and is shoved `SHOO_KB` (`hurtUnit`'s `kb`); buildings in it take the blow |
+| 4 | **CIRCLE OF LIGHT** | 100/85/70 s | a ring `CIRCLE_R` (92 px) round where she stands, for `CIRCLE_T`: every rival inside is shown, and one within `CIRCLE_EDGE` of the rim walks ×`slow` (0.45/0.35/0.25) for `CIRCLE_SLOW_T` (`updateCircles`) |
+
 Bots play the named heroes through each row's `bot(p, foe, d, clear)` (`abBotKey`, asked by the ladder's
-ability block in js/ai/ai-ladder.js); a row's `botAim(p, foe)` turns the aim to a point of its own for that cast, held through the wind-up until it lands (AURA's step away, SALVIA's heals). A hero whose rows carry no `bot` keeps the ladder's old range rules.
+ability block in js/ai/ai-ladder.js); a row's `botAim(p, foe)` turns the aim to a point of its own for that cast, held through the wind-up until it lands (AURA's step away, SALVIA's heals, LUCERNA's lantern). A hero whose rows carry no `bot` keeps the ladder's old range rules.
 
 Every wind-up with an area is **telegraphed on the snow for both sides** (`drawAbilityGround`): the
 pierce's and the charge's marching line, the stomp's ring, the slam's and the execute's wedge — in
