@@ -111,7 +111,7 @@ const CLASSES = [
     // the seven stats at level 1, and what each level adds (js/sim/stats.js);
     // attack speed's base is the bow's own cycle (classAs), its growth a fraction
     base: { hp: 92, dmg: 16, armor: 12, ap: 0, haste: 0, ms: PLAYER_SPEED },
-    grow: { hp: 7, dmg: 1.3, as: 0.013, armor: 2 }, // sized so 17 levels grow what 11 did when the cap was 12
+    grow: { hp: 7, dmg: 1.7, as: 0.013, armor: 2 }, // sized so 17 levels grow what 11 did when the cap was 12
     kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1, chargeMul: 0.55,
       bowCharge: BOW_CHARGE, nock: 0.4, spdDmg: 0, dodgeSpeed: DODGE_SPEED },
     rankOrder: [0, 1, 2], // the basic keys a bot ranks up first to last (aiSpend, js/ai/ai.js): the shot, the net, the grapple

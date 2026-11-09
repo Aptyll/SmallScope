@@ -53,7 +53,7 @@ const hiemsStorms = []; // {x, y, team, owner, t, life, tick, dmg} - R's blizzar
 const HIEMS_AB = [
   {
     id: 'icicle', name: 'ICICLE', cd: [8, 7.5, 7, 6.5, 6], ap: 0.55, cast: 0.2, aim: { line: ICICLE_RANGE },
-    rank: { dmg: [14, 20, 26, 32, 38] },
+    rank: { dmg: [20, 25, 30, 35, 40] },
     tip: 'AN ICE SHARD. SLOWS AND CHILLS',
     blurb: 'A SHARD OF ICE FLIES DOWN A LINE. THE FIRST RIVAL IT HITS IS HURT, SLOWED AND CHILLED.',
     use: (p) => hiemsIcicle(p),
@@ -75,7 +75,7 @@ const HIEMS_AB = [
   },
   {
     id: 'snap', name: 'COLD SNAP', cd: [12, 11.5, 11, 10.5, 10], ap: 0.45, cast: 0.3, aim: { ring: SNAP_RANGE },
-    rank: { dmg: [12, 18, 24, 30, 36], root: SNAP_ROOT },
+    rank: { dmg: [18, 24, 30, 36, 42], root: SNAP_ROOT },
     tip: 'A BURST. ROOTS EVERY CHILLED RIVAL',
     blurb: 'A BURST OF COLD AROUND A SPOT. EVERY CHILLED RIVAL INSIDE IS ROOTED, AND EVERY RIVAL INSIDE IS HURT AND CHILLED.',
     use: (p) => hiemsSnap(p),

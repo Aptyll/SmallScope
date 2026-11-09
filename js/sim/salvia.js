@@ -46,7 +46,7 @@ const salviaThaws = [];   // {x, y, team, owner, t, next, heal} - R's rings of w
 // `heal` rides abDmg (the base and its ability power share), like a blow.
 const SALVIA_AB = [
   {
-    id: 'poultice', name: 'POULTICE', cd: [9, 8.5, 8, 7.5, 7], ap: 0.4, cast: 0.2, aim: { line: POULTICE_RANGE },
+    id: 'poultice', name: 'POULTICE', cd: [9, 8.5, 8, 7.5, 7], ap: 0.2, cast: 0.2, aim: { line: POULTICE_RANGE },
     rank: { hp: [45, 65, 85, 105, 125] }, // the first ally it meets is healed this much
     tip: 'HEALS THE FIRST ALLY. SLOWS A RIVAL',
     blurb: 'A TOSSED BUNDLE OF HERBS FLIES IN A LINE. THE FIRST ALLY IT MEETS IS HEALED; THE FIRST RIVAL IT MEETS IS SLOWED.',
@@ -57,7 +57,7 @@ const SALVIA_AB = [
     botAim: (p, foe) => salviaAimAt(salviaNeedy(p, POULTICE_RANGE * 0.85, 0.75, false) || foe),
   },
   {
-    id: 'drops', name: 'SNOWDROPS', cd: [14, 13, 12, 11, 10], ap: 0.25, cast: 0.25, aim: { line: DROP_RANGE },
+    id: 'drops', name: 'SNOWDROPS', cd: [14, 13, 12, 11, 10], ap: 0.12, cast: 0.25, aim: { line: DROP_RANGE },
     rank: { hp: [30, 40, 50, 60, 70] }, // each flower heals the ally who picks it this much
     tip: 'PLANT SNOWDROPS. ALLIES PICK THEM FOR LIFE',
     blurb: 'PLANT A FEW SNOWDROPS NEAR YOU. AN ALLY WHO WALKS OVER ONE PICKS IT AND IS HEALED. THEY WILT AFTER A WHILE.',
@@ -68,7 +68,7 @@ const SALVIA_AB = [
     botAim: (p, foe) => salviaAimAt(salviaNeedy(p, DROP_RANGE, 0.8, true) || p),
   },
   {
-    id: 'cloak', name: 'WARM CLOAK', cd: [16, 15, 14, 13, 12], ap: 0.35, cast: 0.1, aim: { line: CLOAK_RANGE },
+    id: 'cloak', name: 'WARM CLOAK', cd: [16, 15, 14, 13, 12], ap: 0.18, cast: 0.1, aim: { line: CLOAK_RANGE },
     rank: { shield: [40, 60, 80, 100, 120] }, // the shield round the ally wrapped
     tip: 'SHIELD AN ALLY AND SPEED THEM UP',
     blurb: 'WRAP THE ALLY NEAREST THE AIM, OR YOURSELF, IN A WARM CLOAK: A SHIELD FOR A FEW SECONDS AND A BURST OF SPEED.',
@@ -79,7 +79,7 @@ const SALVIA_AB = [
     botAim: (p, foe) => salviaAimAt(salviaNeedy(p, CLOAK_RANGE, 0.5, true) || p),
   },
   {
-    id: 'thaw', name: 'THAW', cd: [100, 85, 70], ap: 0.2, cast: 0.3,
+    id: 'thaw', name: 'THAW', cd: [100, 85, 70], ap: 0.1, cast: 0.3,
     rank: { hps: [30, 45, 60] }, // what each second inside the ring heals
     tip: 'A WARM RING. ALLIES HEAL, CANNOT BE SLOWED',
     blurb: 'A LARGE RING OF WARM AIR WHERE YOU STAND, FOR A FEW SECONDS. ALLIES INSIDE HEAL EVERY SECOND AND CANNOT BE SLOWED.',

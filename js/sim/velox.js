@@ -52,7 +52,7 @@ const veloxLanes = [];  // {x0, y0, x1, y1, team, owner, t, life} - W's strips o
 const VELOX_AB = [
   {
     id: 'skip', name: 'SKIP STONE', cd: [7, 6.5, 6, 5.5, 5], ap: 0.5, cast: 0.12, aim: { line: SKIP_GAP * SKIP_N },
-    rank: { dmg: [14, 21, 28, 35, 42] }, // dmg: each landing
+    rank: { dmg: [18, 26, 34, 42, 50] }, // dmg: each landing
     tip: 'A STONE THAT SKIPS. HITS AT EACH LANDING',
     blurb: 'A SLING STONE SKIPS ALONG THE GROUND, HITTING EVERY RIVAL WHERE IT LANDS, UP TO THREE TIMES. ON ICE IT SKIPS FURTHER.',
     use: (p) => veloxSkip(p),
