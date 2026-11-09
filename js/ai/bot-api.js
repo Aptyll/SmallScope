@@ -377,8 +377,8 @@ function botStep(p, dt) {
       p.ai.callCd = CALL_BOT_CD;
     }
   }
-  // the ladder's hands, the one set every scripted seat shares (js/ai/ai-skill.js)
-  if (typeof skillHands === 'function' && typeof AI_LADDER_HANDS !== 'undefined') skillHands(p, AI_LADDER_HANDS, dt);
+  // the one pair of hands every scripted seat shares (js/ai/ai-skill.js)
+  skillHands(p, BOT_FILE_HANDS, dt);
 }
 // a think the bot did not answer in time. A file that stopped answering (a
 // hang, a crash) must not hold its keys forever: after BOT_LATE_MAX in a row

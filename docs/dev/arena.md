@@ -93,7 +93,8 @@ a header (seed, shape, patch, setup, seats), `result` (`winner`, `reason`
 `'eagle' | 'timeout' | 'error'`, `time`, `ticks`), a sample every `sampleEvery` s (both birds'
 nerve and state, and per player position, hp, level, gold, damage, siege, kills, deaths, what
 it was doing and its brain's goal), sparse `events` (kills, each 10% of a bird's nerve lost, a
-bird driven off), per-player finals and `fun`.
+bird driven off), per-player finals, `goals` (the game's goal table, `AI_GOALS` in
+js/ai/ai-team.js: every goal word to its kind, which the Bot Lab files a log's goals by) and `fun`.
 
 `act`, what a body did over a sample window, is read off the sim so it means the same for every
 brain: `dead`, `fight` (dealt or took damage), `siege` (hurt the bird or a building), `work`

@@ -38,23 +38,28 @@ the aim wobble in px right now, how far the crosshair trails the wish (px), the 
 (under 1: a rival outside its cone) and the lapse in play, if any.
 
 `botThought(p)` is the one reader; a target counts only where it is a finite point (`botPoint`:
-its `x, y`, else a tile's centre). Until a bot has a thought, `botGuess` reads the goal off the
-ladder's own marks (a shot in flight, `want`, a rival noticed past the level's reaction time
-(`seeT`, the ladder's engage rule), `huntTgt`, `tgt`, `hideT`, `roam`) and marks it `guess`; every
-surface draws a guessed goal with a trailing `?`, so a guess never passes for the brain's word. A
-shot at game is the hunt it belongs to (HUNT), at a wolf WOLF, at a rival, a soldier or a bear
-FIGHT.
+its `x, y`, else a tile's centre). The native brain writes a thought every think, so a guess is
+for a bot file that sends none, or a bot before its first think: `botGuess` reads the goal off the
+seat's marks (a body down, a potion or a recall under way, `want`, a shot in flight, a rival
+noticed past the level's reaction time (`seeT`, the ladder's engage rule), `hideT`, `roam`) and
+marks it `guess`; every surface draws a guessed goal with a trailing `?`, so a guess never passes
+for the brain's word. A shot at game is the hunt it belongs to (HUNT), at a wolf WOLF, at a rival,
+a soldier or a bear FIGHT.
 
-A goal is coloured by what it is for, six kinds: PUSH (push, rally, regroup, siege), RETREAT (flee,
-hide), DEFEND (defend, guard, escort, follow, help) and FIGHT (fight, wolf, stalk) are loud; FARM
-(gather, hunt, eat, loot, build, spend, shop) and ROAM (roam, idle, scout, order) are
-quiet, because they are most of any
-match and a fight or a push is what the eye should find. The six were checked as a set on the page's
-panel for colour-blind separation in their stacking order, and none is a side's red or blue.
-`BOT_GOALS` files each goal word in the game; the page's `KINDS` files the same words (and the
-match log's activities), so a new word goes in both. A word nobody filed shows grey in the game and
-counts as ROAM on the page. In the game ROAM is a lighter grey than on the page, since there it is
-a word on a dark plate.
+A goal is coloured by what it is for, six kinds, filed in the one goal table (`AI_GOALS`, word to
+kind, and `AI_GOAL_KINDS`, kind to colour, js/ai/ai-team.js): PUSH (push, regroup, rally), RETREAT
+(flee, hide, recall, heal), DEFEND (defend, guard, help, escort) and FIGHT (fight, wolf, stalk,
+road) are loud; FARM (farm, jungle, support, gather, hunt, pump, shop) and ROAM (roam, idle, order)
+are quiet, because they are most of any match and a fight or a push is what the eye should find.
+RALLY and ESCORT are the bot files' words (bots/*.js); the ladder's own rally is REGROUP. The six
+were checked as a set on the page's panel for colour-blind separation in their stacking order, and
+none is a side's red or blue. A new word goes in `AI_GOALS` alone: the F4 view paints by it, and
+the recorder's export and the arena's match log carry it (`goals`), so the page files a log's words
+by the log's own table (`fileGoals`). The page's `KINDS` lists stay the fallback for a log from
+before it carried one, and also file the match log's activities (SIEGE, WORK, MOVE). A word nobody
+filed shows grey in the game and counts as ROAM on the page. In the game ROAM is a lighter grey
+than on the page, since there it is a word on a dark plate; DEAD is the view's own word for a body
+down, never a bot's goal.
 
 ## The recorder
 
@@ -68,8 +73,9 @@ and a sample a second of both birds (`{ t, e: [[hp, maxHp, state]] }` by team). 
 the old one's summary joins `BOTLOG.matches` (the session's last 50). None of it is sim state: it is in no save and on no wire.
 
 `botLogExport()` is what the page saves: `{ kind: 'softfall-botlog', v: 1, seed, len, world, map,
-sides, bots, people, events, samples, kills, birds, matches }`, where `map` is the minimap's
-terrain as a PNG data URL (one pixel a tile), `world` the map's width in world pixels, `sides` each
+goals, sides, bots, people, events, samples, kills, birds, matches }`, where `map` is the minimap's
+terrain as a PNG data URL (one pixel a tile), `world` the map's width in world pixels, `goals` the
+goal table (`AI_GOALS`: word to kind), `sides` each
 team's paint on this screen (`{ name, col }` by team index) and `people` the seats no brain drives.
 
 ## The page

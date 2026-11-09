@@ -10,21 +10,14 @@
 // skill, src, t }: the bot contract, docs/dev/botview.md); until a bot has one, the goal
 // is GUESSED from the ladder's own state and marked `guess` (drawn with a
 // trailing '?'), so the view is honest about which of the two it is showing.
-// A goal is painted by what it is FOR, six kinds (the Bot Lab's KINDS, in
-// botlab.html, where the set is checked for colour-blind separation): push
-// the rival bird, fall back, defend, fight, farm, roam. The word says the rest.
-// ROAM is a lighter grey here than on the page, where it is a quiet fill: in
-// the game it is a word on a dark plate and has to read.
-const BOT_PUSH = '#d55181', BOT_RETREAT = '#c98500', BOT_DEFEND = '#9085e9', BOT_FIGHT = '#d95926', BOT_FARM = '#3b8f72', BOT_ROAM = '#5d6578';
-const BOT_GOALS = {
-  PUSH: BOT_PUSH, RALLY: BOT_PUSH, REGROUP: BOT_PUSH, SIEGE: BOT_PUSH, FLEE: BOT_RETREAT, HIDE: BOT_RETREAT, RECALL: BOT_RETREAT,
-  DEFEND: BOT_DEFEND, GUARD: BOT_DEFEND, ESCORT: BOT_DEFEND, FOLLOW: BOT_DEFEND, HELP: BOT_DEFEND, FIGHT: BOT_FIGHT, WOLF: BOT_FIGHT, STALK: BOT_FIGHT, ROAD: BOT_FIGHT,
-  GATHER: BOT_FARM, FARM: BOT_FARM, JUNGLE: BOT_FARM, HUNT: BOT_FARM, EAT: BOT_FARM, LOOT: BOT_FARM, BUILD: BOT_FARM, SPEND: BOT_FARM, SHOP: BOT_FARM,
-  ROAM: BOT_ROAM, IDLE: BOT_ROAM, SCOUT: BOT_ROAM, ORDER: BOT_ROAM, DEAD: '#454b5a',
-};
-const BOT_GOAL_ANY = '#c8d0e0'; // a goal word the table above does not know yet
+// A goal is painted by what it is FOR, its kind in the one goal table
+// (AI_GOALS and AI_GOAL_KINDS, js/ai/ai-team.js): push the rival bird, fall
+// back, defend, fight, farm, roam. The word says the rest. DEAD is the
+// view's own word for a body down (botGuess), never a bot's goal.
+const BOT_DEAD = '#454b5a';
+const BOT_GOAL_ANY = '#c8d0e0'; // a goal word the table does not know
 const BOT_AIM_NEAR = 28;        // px round a firing bot's aim point its target is looked for in
-function botGoalCol(g) { return BOT_GOALS[g] || BOT_GOAL_ANY; }
+function botGoalCol(g) { return g === 'DEAD' ? BOT_DEAD : AI_GOALS[g] ? AI_GOAL_KINDS[AI_GOALS[g]].col : BOT_GOAL_ANY; }
 function botIsBot(p) { return p.active && p.control === 'ai'; }
 // the level a bot plays at, by name (AI_LEVELS / AI_ALLIES, ai-skill.js)
 function botLevel(p) { return aiProfile(p).name; }
@@ -53,15 +46,18 @@ function botThought(p) {
     options: th.options || null, skill: th.skill || null, src: th.src || '',
   };
 }
-// Today's brain keeps no goal of its own, but its rungs leave marks: the
-// push or defence it chose (`want`), the work it holds (`tgt`), its prey, its hide
-// clock, its roam point. Read in the ladder's order, top rung first.
+// A bot with no thought yet (the native brain writes one every think, so
+// this is a bot FILE that sends none, or a bot before its first think)
+// still leaves marks: a potion or a recall under way, the push or defence
+// the ladder chose (`want`), a shot, a rival noticed, its hide clock, its
+// roam point. Read in the ladder's order, top rung first; every word is an
+// AI_GOALS one, or DEAD.
 function botGuess(p) {
   const ai = p.ai, inp = p.input;
   const g = (goal, why, x, y, ref, kind) => ({ goal, why, x: x === undefined ? null : x, y: y === undefined ? null : y,
     ref: ref || null, kind: kind || '', guess: true, role: '', mood: '', plan: '', options: null, skill: null, src: '' });
   if (p.dead) return g('DEAD', '');
-  if (p.potT > 0) return g('POTION', 'HURT');
+  if (p.potT > 0) return g('HEAL', 'POTION');
   if (p.recallT > 0) return g('RECALL', 'LOW HP');
   if (p.prone && ai.hideT > 0) return g('HIDE', 'OUTMATCHED');
   // a shot at game is the hunt it belongs to, not a fight: the same goal
@@ -80,11 +76,6 @@ function botGuess(p) {
   if (ai.seeT > 0 && ai.seeT >= aiProfile(p).react) {
     const q = botAimed(p);
     return q ? shot(q) : g('FIGHT', 'RIVAL SEEN');
-  }
-  if (ai.huntTgt && !ai.huntTgt.dead) return g('HUNT', 'FOOD', ai.huntTgt.x, ai.huntTgt.y, ai.huntTgt, 'ANIMAL');
-  if (ai.tgt) {
-    const x = ai.tgt.tx * TILE + TILE / 2, y = ai.tgt.ty * TILE + TILE / 2, what = String(ai.tgt.type || '').toUpperCase();
-    return g('GATHER', what, x, y, null, what);
   }
   if (ai.roam > 0) return g('ROAM', 'NOTHING NEAR', ai.wx, ai.wy, null, 'POINT');
   return g('IDLE', '');
@@ -204,10 +195,11 @@ function botMatchSummary() {
   return { seed: BOTLOG.seed, len: Math.round(BOTLOG.t), bots: players.filter(botIsBot).map(botRow) };
 }
 // everything recorded so far, as the page saves and loads it, with the
-// minimap's terrain (1 px a tile) to draw it on (docs/dev/botview.md)
+// minimap's terrain (1 px a tile) to draw it on and the goal table its words
+// are filed by (AI_GOALS: word to kind) (docs/dev/botview.md)
 function botLogExport() {
   return { kind: 'softfall-botlog', v: 1, seed: BOTLOG.seed, len: Math.round(BOTLOG.t), world: WORLD * TILE, map: mmCv.toDataURL(),
-    sides: botSides(), bots: players.filter(botIsBot).map(botRow), people: botPeople(), events: BOTLOG.events, samples: BOTLOG.samples,
+    goals: AI_GOALS, sides: botSides(), bots: players.filter(botIsBot).map(botRow), people: botPeople(), events: BOTLOG.events, samples: BOTLOG.samples,
     kills: BOTLOG.kills, birds: BOTLOG.birds, matches: BOTLOG.matches };
 }
 
@@ -290,7 +282,7 @@ function botBar(tm, x, y, w) {
   ctx.fillStyle = '#1c2230'; ctx.fillRect(x, y, w, 5);
   if (sum <= 0) return;
   let cx = x;
-  const keys = Object.keys(BOT_GOALS).concat(Object.keys(tm).filter((k) => !BOT_GOALS[k]));
+  const keys = Object.keys(AI_GOALS).concat(Object.keys(tm).filter((k) => !AI_GOALS[k]));
   for (const k of keys) {
     if (!tm[k]) continue;
     const seg = Math.round((tm[k] / sum) * w);
