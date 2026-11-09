@@ -7,12 +7,12 @@ should not "clean up".
 ## Concepting a new look
 
 A new sprite (a character, an NPC, a creature, a building, a plant) is **picked off a concept sheet
-before anything goes into `js/sprites/`**: two to four candidate looks painted in code with
-`app/media/paint.py`, shown big and pasted into a real game frame beside a player at each size in
-question, lettered, and handed to Noah to choose from. The procedure is the `concept-art` skill in
-[.claude/skills/concept-art/](../../.claude/skills/concept-art/SKILL.md); the kit is
-[media.md](media.md). Older sheets typed as ASCII grids (`merchant-concepts-1`/`-2`) are history:
-that method was retired.
+before anything goes into `js/sprites/`**: two to four candidate looks drawn with the `pixel-art`
+skill ([art.md](art.md): flat shapes on the game's own pixel grid, `app/art/`), shown big and in a
+real game frame beside a player at each size in question, lettered, and handed to Noah to choose
+from. The procedure is the `concept-art` skill in
+[.claude/skills/concept-art/](../../.claude/skills/concept-art/SKILL.md); the sheet kit is
+[media.md](media.md). Machines and buildings may still use `app/media/paint.py`.
 
 ## Verifying a change
 

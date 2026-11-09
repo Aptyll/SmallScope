@@ -39,7 +39,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.662';
+const PATCH_TXT = 'PATCH 0.663';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -55,6 +55,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.663', 'NOTHING NEW TO PLAY: A NEW WAY OF DRAWING THE VALLEY\'S BEASTS AND HEROES, SO THE NEXT ONES LOOK BETTER.'],
   ['0.662', 'THE ORCA HAS ITS OWN FROZEN POOL ON THE CREEK, TOP LEFT OF THE MIDDLE, AND THE MIDDLE IS PLAIN ICE; THE BROWN BEAR IS GONE, AND THE BLACK BEAR COMES OUT AT 5:00, EACH ONE YOUR SIDE SLAYS GIVING YOUR TEAM 5% MORE DAMAGE FOR GOOD, UP TO FOUR.'],
   ['0.661', 'THE VALLEY IS A FIFTH BIGGER: THE LANES, THE BASES, THE CAMPS, THE BRUSH AND THE JUNGLE WALLS ALL SPREAD OUT, WHILE EVERY HERO, SOLDIER AND BEAST STAYS THE SAME SIZE.'],
   ['0.660', 'STAFF HEROES EACH CARRY THEIR STAFF THEIR OWN WAY, SO YOU CAN TELL THEM APART BY SHAPE, AND VARRO, BUCINA, FABER AND SAGITTA SHOW MORE OF THEIR SIDE\'S COLOUR.'],
