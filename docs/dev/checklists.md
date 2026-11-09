@@ -528,8 +528,6 @@ re-wrap or re-indent one, and keep them pure ASCII (there is no BOM any more).
 Open gaps between what the game does and what it is meant to: prune an entry once it is fixed.
 Code that is dead **on purpose** is the next section.
 
-- **The eagle's crash paints the ground itself**: `eagleCrash` (js/sim/eagle.js) draws on
-  `groundCv` directly instead of going through `repaintGround` ([CLAUDE.md](../../CLAUDE.md) rule 1).
 - **No bot walks to a camp on purpose** (3.20): a bot pulls a den only through the hunt rung when
   one is within `AI_HUNT`, never a bear, and nothing in
   `aiSituation` weighs a camp against the road — so the two bear camps are the

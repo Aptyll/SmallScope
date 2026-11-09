@@ -34,9 +34,10 @@ Each rule spans folders; its names are listed under the folder that owns them.
 
 ## Folder by folder
 
-**js/app/: the machine around the match** (input, pad, canvas, sound, profile, boot)
-- A key does its work in `keyPress`/`keyRelease`, asked by action with `keyIs`; the pad presses
-  keys through them, so a key handled in a listener alone is dead on a pad.
+**js/app/: the machine around the match** (input, canvas, sound, profile, boot)
+- A key does its work in `keyPress`/`keyRelease`, asked by action with `keyIs`, and a mouse
+  button in `pointerPress`/`pointerRelease`, never in a listener, so a headless check presses
+  exactly what a hand does.
 - Only `js/app/profile.js` touches `localStorage`. `window.DBG` (boot.js) is the one export.
 
 **js/sim/: the match** ([world](docs/dev/world.md), [gameplay](docs/dev/gameplay.md))
@@ -82,7 +83,7 @@ Each rule spans folders; its names are listed under the folder that owns them.
   case: `window.DBG`, `?seed=N`, `POST /shot`, `.` for hitboxes ([how](docs/dev/checklists.md#verifying-a-change)).
   A refactor proves itself against main: same seed, same `DBG.saveHash`, same pixels. A bot match
   never judges a feature.
-- Keyboard, mouse and gamepad only. Never add touch or mobile support.
+- Keyboard and mouse only. Never add gamepad, touch or mobile support.
 
 ## Shipping
 
