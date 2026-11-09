@@ -611,6 +611,7 @@ class Player {
     this.prec = 0; this.precIdle = 0; this.edgeT = 0; this.edgeMsT = 0;
     this.lungeHit = []; this.lungeKey = -1;
     this.parryT = 0; this.riposteId = -1;
+    this.aimA = 0;                                 // the held aim as an angle (aimHold), what every screen draws a drawn weapon along
     this.duelId = -1; this.duelT = 0; this.flurryN = 0; this.flurryT = 0; this.flurryId = -1; this.flurryArm = false;
     // IGNIA (js/sim/ignia.js): WARM HANDS waiting; and on any body, whose fire it is
     // burning with (SPREADING FLAME carries it on) and how long a wildfire's flame lets it jump
@@ -689,6 +690,12 @@ function initPlayers(roster, local) {
 // one place the FFA/friendly-fire rule lives)
 function enemyOf(p, q) { return q !== p && q.active && !q.dead && !inAir(q) && (!PVP || q.team !== p.team); }
 // riding the eagle or falling from it: not in the world, nothing can touch it
+// The aim a drawn bow, a wound-up blade or a parry points along, as an angle
+// from the bow's height. Input never crosses the wire, so a client knows
+// another body's aim only from this, written by the step while a draw is
+// held; the local body draws off its own live pointer (aimAngle,
+// js/draw/bodies.js).
+function aimHold(p) { p.aimA = Math.atan2(p.input.aimY - (p.y - BOW_Y), p.input.aimX - p.x); }
 function inAir(p) { return p.aboard || p.dropT > 0; }
 
 // ---- facing --------------------------------------------------------------

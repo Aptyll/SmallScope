@@ -1181,6 +1181,7 @@ function playerAttack(p, dt) {
   if (p.charging) {
     p.chargeT += dt;
     faceToward(p, inp.aimX - p.x, inp.aimY - p.y);
+    aimHold(p);
   }
 }
 
