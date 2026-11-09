@@ -27,7 +27,7 @@
 //            carry on its feet it holds the bot lane as a laner would.
 // Neither job reads anything a hand could not: the soldiers' health bars,
 // the den clocks every screen wears, and the damage its own last blow did.
-const AI_FARM_NEAR = 40; // px an own soldier must be from a rival one for the rival to count as being worn down
+const AI_FARM_NEAR = 40; // px an own soldier with no mark yet must be from a rival one for the rival to count as being worn down
 const AI_FARM_HIT = 8;   // damage a bot reckons on before its own first blow on a soldier tells it better
 const AI_FARM_FORGET = 0.95; // share of its hardest remembered blow a bot keeps at each new one (a new weapon is learned in a few)
 const AI_FARM_ARROW = 300; // px/s a bot reckons its shot flies (the plain arrow's 320, a little under)
@@ -43,18 +43,21 @@ const AI_SUP_SIDE = 18;  // ...and px to the side of it, so the two do not stack
 const AI_SUP_NEAR = 260; // px from its carry inside which a support leaves the wave's soldiers to it
 
 // is foe a rival soldier p should leave alone until one blow finishes it?
-// It reads ahead by the blow's travel: the swings its own soldiers on it
-// will land before an arrow gets there (half of them - a swing that does not
-// come leaves the soldier a sliver over, and the wave takes it)
+// It reads ahead by the blow's travel: the blows its own soldiers aimed at
+// it (b.hitFoe, updateSoldier) will land before an arrow gets there, each at its
+// kind's damage and pace (SOLDIER_TYPES, js/sim/robots.js) - half of them,
+// since a blow that does not come leaves the soldier a sliver over, and the
+// wave takes it
 function aiFarmHold(p, foe) {
   if (!foe || foe.kind !== 'soldier' || foe.team === p.team) return false;
-  let worn = 0;
+  let dps = 0;
   for (const b of robots) {
-    if (b.kind === 'soldier' && b.team === p.team && unitAlive(b) && Math.hypot(b.x - foe.x, b.y - foe.y) < AI_FARM_NEAR) worn++;
+    if (b.kind !== 'soldier' || b.team !== p.team || !unitAlive(b)) continue;
+    if (b.hitFoe === foe || (!b.hitFoe && Math.hypot(b.x - foe.x, b.y - foe.y) < AI_FARM_NEAR)) { const T = soldierType(b); dps += T.dmg / T.cd; }
   }
-  if (!worn) return false;
+  if (!dps) return false;
   const travel = aiMelee(p) ? AI_FARM_SWING : Math.hypot(foe.x - p.x, foe.y - p.y) / AI_FARM_ARROW;
-  return foe.hp - worn * ROBOT_DMG * travel / ROBOT_ATK_CD * 0.5 > (p.ai.farmHit || AI_FARM_HIT);
+  return foe.hp - dps * travel * 0.5 > (p.ai.farmHit || AI_FARM_HIT);
 }
 // rung 3's trigger on a soldier: while it is not yet one blow from down,
 // the draw is held (a held press never looses); once it is, the ordinary

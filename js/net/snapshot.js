@@ -43,6 +43,7 @@ const SNAP_SKIP = new Set(['input', 'ai', 'nav', '_fx', '_fy', '_tx', '_ty', '_t
   'faceT', 'trickleT', 'footT', 'footSide', 'puffT', 'dodgeDustT', 'slideDustT', 'burnTick', 'swingCd',
   'idleT', 'wary', 'thinkT', 'moveT', 'turnT', 'emT', 'spook', 'biteCd', 'alertT', 'dashT', 'dashX', 'dashY', 'fleeGoal', 'goal',
   'avoidT', 'baySite', 'zipLast', 'pingLog',
+  'hitFoe', // a soldier's mark this step, read only by the host's bots (aiFarmHold)
   'shedT', // a pine's rest between two sheds (js/sim/shed.js): the puff itself crosses as a burst
   'hurtLog', // the blows a body is taking (recapNote): only a death's copy, deathLog, is ever drawn
   'position']); // a seat's drafted position (POSITIONS, player.js): the host's bots read it, and the rivals' stay hidden as in the draft

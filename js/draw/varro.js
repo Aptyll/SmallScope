@@ -30,4 +30,4 @@ let varroSpearArt = null;
 function varroSpears() {
   return varroSpearArt || (varroSpearArt = { flat: bakeBladeArt(VARRO_SPEAR, VARRO_SPEAR_PAL), diag: bakeBladeArt(VARRO_SPEAR_DIAG, VARRO_SPEAR_PAL) });
 }
-HERO_BLADES.spear = { art: varroSpears, hip: { down: [13, 12], up: [11, 10] }, grip: VARRO_GRIP };
+HERO_BLADES.spear = { art: varroSpears, hilt: [18, 11], hip: { down: [13, 12], up: [11, 10] }, grip: VARRO_GRIP };

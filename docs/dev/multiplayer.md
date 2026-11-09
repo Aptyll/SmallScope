@@ -326,7 +326,7 @@ wave get 65% each and five get 46% each. What a death is worth:
 
 | Death | XP | Shared by |
 | --- | --- | --- |
-| a soldier (`robotDies`) | `SOLDIER_XP` 20 | its rival side |
+| a soldier (`robotDies`) | `SOLDIER_XP` 20 times its kind's `xp` (ranged 14, siege 40) | its rival side |
 | a scout (`die`) | `KILL_XP` 40 + `KILL_XP_LV` 15 × its level | its rival side, whatever downed it |
 | a beast with an `xp` in `YIELD` (`animalDies`): deer 40, wolf 15, black and brown bear 150 | grown `ANIMAL_LV_XP` (a tenth) a level | the side of whoever landed the last blow |
 

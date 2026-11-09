@@ -37,8 +37,10 @@ and the road tower (3x2). Each has one tier: a gold `cost`, `hp`,
   (`drawBarracksOverlay`: the shutter, the next soldier sliding down the door, the wave clock on
   the flank in the side's paint, the beacon amber while a column is leaving). On the match's beat
   (`barracksBeat`: `first`, 60 s of match clock, then every `waveT`, 30 s, so every lane rolls out
-  together and a rebuilt bay falls into step) it queues a **wave**: `wave` (3) soldiers, one more per `grow` (180 s) it has stood, never more
-  than `cap` (8) of its side's soldiers on its **lane** at once, every bay's queue and column on
+  together and a rebuilt bay falls into step) it queues a **wave** (`barracksWave`, into `barracksQueue`): its `mix` of kinds in door order (3 melee, then 3 ranged),
+  one more melee per `grow` (180 s) it has stood, and a **siege** soldier last on every n-th wave of
+  the match clock, n from `siege` (every 3rd, every 2nd from 15:00, every wave from 25:00), never more
+  than `cap` (16) of its side's soldiers on its **lane** at once, every bay's queue and column on
   that lane counted (`barracksLaneLoad`). The queue leaves the door one every `BARRACKS_ROLL`
   (0.5 s), so a wave reads as a column. Breaking one stalls the waves until the merchant rebuilds
   it ([Soldiers](robots.md#soldiers-the-waves)).
@@ -59,7 +61,7 @@ and the road tower (3x2). Each has one tier: a gold `cost`, `hp`,
   **`STRUCT_DR` (0.6) damps a player's blow, and only a player's.** Every player number was tuned
   against a 40–160 hp *body*, so the damping is charged once, inside `hurtStruct`, rather than
   written out as a second building-sized number per weapon. A bot names itself in the fourth
-  argument and keeps its full `ROBOT_DMG`, which is already a building number. `STRUCT_HIT_DMG` is
+  argument and keeps its kind's full blow (`SOLDIER_TYPES`), which is already a building number. `STRUCT_HIT_DMG` is
   the **raw** E swing (25) and lands 10 after the damping. At 0 hp it calls
   `destroyStructure(o, p)`, and the wreck pays the wrecker `wreckPay` (half the cost) on the spot
   through `awardGold`. Wildlife damages nothing.
