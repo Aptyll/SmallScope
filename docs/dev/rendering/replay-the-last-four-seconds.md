@@ -11,7 +11,8 @@ are **dead** or **paused**, in one of two shapes (`rpFull()`/`rpRect()`):
   gold under the pointer), an **ESC BACK** prompt at its foot (`drawKeyPrompt` with the `esc`
   action, so a pad wears its B), and `deadKey` takes ESC, BACKSPACE, ENTER and SPACE as
   `replayClose()` — a pad's B arrives as escape. `state.rpClosed`
-  remembers, reset by every `endMatch`, so it opens once per death.
+  remembers, reset by every `endMatch`, so it opens once per death; a `'hostleft'` ending starts
+  it closed (the host walking out is no death), so the guest sees THE HOST LEFT and LOBBY at once.
   In the frame's top-left corner sits **the death recap** (`drawRecap`, js/ui/recap.js): a ring
   of all the damage split by kind (`RC_KIND`: basic attacks, abilities, the rest) with the total in
   it, then up to `RC_ROWS` hitters, biggest first, each a face (the hitter's portrait, the world's
