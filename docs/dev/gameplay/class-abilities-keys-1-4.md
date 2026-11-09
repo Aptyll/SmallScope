@@ -199,6 +199,22 @@ and reach it was cast with), stepped by `updateAuraWorld` (`HERO_TICK`):
 | 3 | **STEP OF LIGHT** | 18/17/16/15/14 s | a blink down the aim, `STEP_LEN` (a hero dash so fast it lasts a few frames, `p.dash = 'step'`: a wall or the water's edge stops it short). Every rival body within `STEP_R` of where she stood is slowed ×`STEP_SLOW` for `slowT` (1/1.25/1.5/1.75/2 s). A bot spends it when a hero reaches her, aimed away (the row's `botAim`) |
 | 4 | **THE CURTAIN** | 110/95/80 s | a band `CURTAIN_LEN` (900 px) long down the aim from where she stands falls `CURTAIN_DELAY` after the cast (`auraCurtain`, `curtainFall`), its edges on the snow brightening until then: every rival body within `CURTAIN_SEE` of it is revealed, struck or not, and those within `CURTAIN_HALF` take `dmg` (70/110/150); buildings under it too |
 
+HIEMS, THE LONG WINTER — the control mage. Her rules live in
+**[js/sim/hiems.js](../../../js/sim/hiems.js)** (`HIEMS_AB`, its `hiems` banner), her pixels in
+[js/draw/hiems.js](../../../js/draw/hiems.js), her icons, looks and staff art in
+[js/sprites/hiems.js](../../../js/sprites/hiems.js). 82 hp, 10 armor, a step slower than most; a
+frost bolt from her SNOWFLAKE STAFF (her `attack` row, drawn through its `look`). Little burst:
+she freezes a fight and lets her side finish it. What she leaves in the world (`hiemsGlazes`,
+`hiemsStorms`, each carrying its rank) is stepped by `updateHiemsWorld` (`HERO_TICK`):
+
+| key | name | cd | what it does |
+| --- | --- | --- | --- |
+| P | **DEEP CHILL** | — | every blow of hers (her keys and her staff, `hiemsDeal` on `HERO_PASSIVE.deepchill`'s `deal`) chills the rival body: a stack held `CHILL_WINDOW`, slowing ×0.85 at one and ×0.7 at two (`hiemsChill`). The third freezes it in place for `FREEZE_T` (a stun, so tenacity cuts it; the ice is drawn round it, `frozeT`), and for `FREEZE_IMMUNE` after its chills stop at two. Soldiers and beasts chill too |
+| 1 | **ICICLE** | 8/7.5/7/6.5/6 s | a shard down the aim (`ICICLE_SPD` for `ICICLE_RANGE`, riding `arrows`): the first rival takes `dmg` (14/20/26/32/38), is slowed ×`ICICLE_SLOW` for `ICICLE_SLOW_T` and chilled |
+| 2 | **CLEAR ICE** | 15/14/13/12/11 s | a disc `GLAZE_R` at the aim (at most `GLAZE_RANGE`) turns to ice for `t` (3/3.5/4/4.5/5 s): a rival hero on it skates as on the creek's ice (`HERO_ICE`, read by `iceUnder`), and every rival body on it walks ×`GLAZE_SLOW`. Her own side walks it as snow. No damage |
+| 3 | **COLD SNAP** | 12/11.5/11/10.5/10 s | a burst `SNAP_R` at the aim (at most `SNAP_RANGE`): every rival already chilled is rooted `root` (1 s), then every rival inside takes `dmg` (12/18/24/30/36) and is chilled; buildings take it too |
+| 4 | **WHITEOUT** | 100/85/70 s | a blizzard `WHITE_R` round her for `WHITE_T`, riding her: rivals inside walk ×`WHITE_SLOW`, and once a second take `dmg` (10/16/22) and a chill. A rival hero inside sees only `WHITE_SEE` round themselves (`HERO_SIGHT`, folded into `sightSources`): their side's other eyes still see |
+
 Bots play the named heroes through each row's `bot(p, foe, d, clear)` (`abBotKey`, asked by the ladder's
 ability block in js/ai/ai-ladder.js); a row's `botAim(p, foe)` turns the aim to a point of its own for that cast (AURA's step away). A hero whose rows carry no `bot` keeps the ladder's old range rules.
 

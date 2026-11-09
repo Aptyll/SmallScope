@@ -1,6 +1,6 @@
 # The two class bodies on the doll (doll.py): the HUNTER (pom beanie) and the WARRIOR
 # (fur hood with goggles, a trailing scarf, skate blades), and each named hero's looks
-# (ARMATOS: standard, oath; FORTIVA: unbroken, coif; BELLA: general, traitor; IGNIA: hearth, wanderer; AURA: light). Their sizes are measured off the
+# (ARMATOS: standard, oath; FORTIVA: unbroken, coif; BELLA: general, traitor; IGNIA: hearth, wanderer; AURA: light; HIEMS: scholar, frost). Their sizes are measured off the
 # hand-drawn 16 px frames in js/sprites/characters.js, so the doll's idle lands on those
 # frames pixel for pixel and the run and the roll it paints wear the same body.
 #
@@ -438,6 +438,7 @@ class Hearth(Standard):
     Armatos's frame, a robe to the knee and boots under it."""
     ARM_MAT, MITT_MAT = 'coat', 'skin'
     MARKS = [(-1.5, 0.9, 'e'), (1.5, 0.9, 'e')]
+    HAIR = 'hair'    # the hair's material (HIEMS's FIRST FROST paints it 'frost')
 
     def __init__(self):
         super().__init__()
@@ -449,7 +450,7 @@ class Hearth(Standard):
         return np.where((q[0] > 0.2) & (np.abs(q[1]) < 0.75) & (q[2] < -0.15) & (q[2] > -0.95), 'skin', 'hair')
 
     def head(self, cv, cam, hc, Rh, pose, snap):
-        cv.blob(cam, hc, Rh, self.HEAD_R, 'head', 'hair', p=self.HEAD_P, region=self.face_region)
+        cv.blob(cam, hc, Rh, self.HEAD_R, 'head', self.HAIR, p=self.HEAD_P, region=self.face_region)
         self.face_marks(cv, cam, hc, Rh)
 
     def coat(self, cv, cam, U, R):
@@ -457,15 +458,15 @@ class Hearth(Standard):
         cv.blob(cam, U(v3(0, 0, Z(4.0))), R, (2.6, 3.1, Z(0.6)), 'hem', 'coat', bias=-0.3)
         cv.blob(cam, U(v3(0.2, 0, Z(7.7))), R, (2.5, 2.9, Z(0.7)), 'scarf', 'ember', bias=0.3)
         for s in (1, -1):    # the locks over each shoulder, in front of the shawl's ends
-            cv.blob(cam, U(v3(0.0, 2.9 * s, Z(8.6))), R, (0.8, 0.75, Z(0.9)), 'locks' + ('L' if s > 0 else 'R'), 'hair', bias=0.4)
+            cv.blob(cam, U(v3(0.0, 2.9 * s, Z(8.6))), R, (0.8, 0.75, Z(0.9)), 'locks' + ('L' if s > 0 else 'R'), self.HAIR, bias=0.4)
 
     def extras(self, cv, cam, U, R, pose):
         # the hair down her back, lifted behind her in the run's wind
         blow = pose.get('tail', 0.0)
-        cv.blob(cam, U(v3(-1.9 - 0.8 * blow, 0, Z(9.4) + 0.4 * blow)), R @ rot('y', -0.3 * blow), (0.9, 2.6, Z(1.6)), 'mane', 'hair', bias=-0.2)
+        cv.blob(cam, U(v3(-1.9 - 0.8 * blow, 0, Z(9.4) + 0.4 * blow)), R @ rot('y', -0.3 * blow), (0.9, 2.6, Z(1.6)), 'mane', self.HAIR, bias=-0.2)
 
     def ball_head(self, cv, cam, hc, Rh):
-        cv.blob(cam, hc, Rh, (2.6, 2.85, 2.5), 'head', 'hair', p=self.HEAD_P)
+        cv.blob(cam, hc, Rh, (2.6, 2.85, 2.5), 'head', self.HAIR, p=self.HEAD_P)
 
 
 class Wanderer(Standard):
@@ -507,6 +508,42 @@ class Light(Hearth):
             cv.blob(cam, U(v3(0.0, 2.9 * s, Z(8.6))), R, (0.8, 0.75, Z(0.9)), 'locks' + ('L' if s > 0 else 'R'), 'hair', bias=0.4)
 
 
+class Scholar(Wanderer):
+    """HIEMS as WEATHER SCHOLAR (her default look): a deep blue hood up (the hair ramp, blue in
+    her paint) over her side's robe, an ice clasp at the throat; Wanderer's frame, robe and boots"""
+
+    @staticmethod
+    def face_region(n, q):
+        """the hood's opening: the face under the ice band"""
+        return np.where((q[0] > 0.2) & (np.abs(q[1]) < 0.75) & (q[2] < 0.25) & (q[2] > -0.95), 'skin', 'hair')
+
+    def head(self, cv, cam, hc, Rh, pose, snap):
+        cv.blob(cam, hc, Rh, self.HEAD_R, 'head', 'hair', p=self.HEAD_P, region=self.face_region)
+        self.face_marks(cv, cam, hc, Rh)
+
+    def coat(self, cv, cam, U, R):
+        cv.blob(cam, U(v3(0, 0, Z(6.1))), R, (2.75, 3.05, Z(2.05)), 'coat', 'coat', p=2.2)
+        cv.blob(cam, U(v3(0, 0, Z(4.0))), R, (2.6, 3.1, Z(0.6)), 'hem', 'coat', bias=-0.3)
+        cv.blob(cam, U(v3(0.1, 0, Z(8.0))), R, (2.6, 3.3, Z(0.6)), 'scarf', 'hair', bias=0.3)
+
+    def ball_head(self, cv, cam, hc, Rh):
+        cv.blob(cam, hc, Rh, (2.6, 2.85, 2.5), 'head', 'hair', p=self.HEAD_P)
+
+
+class Frost(Light):
+    """HIEMS as FIRST FROST (the first skin): Light's long hair, snow white ('frost'), over an
+    ice-blue mantle ('ice') on her side's robe"""
+    HAIR = 'frost'
+
+    def coat(self, cv, cam, U, R):
+        cv.blob(cam, U(v3(0, 0, Z(6.1))), R, (2.75, 3.05, Z(2.05)), 'coat', 'coat', p=2.2)
+        cv.blob(cam, U(v3(0, 0, Z(4.0))), R, (2.6, 3.1, Z(0.6)), 'hem', 'coat', bias=-0.3)
+        cv.blob(cam, U(v3(-0.3, 0, Z(7.2))), R, (2.6, 3.2, Z(1.2)), 'scarf', 'ice', bias=0.3)
+        for s in (1, -1):
+            cv.blob(cam, U(v3(0.0, 2.9 * s, Z(8.6))), R, (0.8, 0.75, Z(0.9)), 'locks' + ('L' if s > 0 else 'R'), self.HAIR, bias=0.4)
+
+
 BODIES = {'hunter': Hunter(), 'warrior': Warrior(), 'standard': Standard(), 'oath': Oath(),
           'unbroken': Unbroken(), 'coif': Coif(), 'general': General(), 'traitor': Traitor(),
-          'hearth': Hearth(), 'wanderer': Wanderer(), 'light': Light()}
+          'hearth': Hearth(), 'wanderer': Wanderer(), 'light': Light(),
+          'scholar': Scholar(), 'frost': Frost()}

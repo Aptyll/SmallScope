@@ -39,7 +39,7 @@ function fogUp() {
 // field - those cost nothing to trace)
 function sightSources(team, out) {
   out.length = 0;
-  for (const p of players) if (p.team === team && p.active && !p.dead && !inAir(p)) out.push(sightEye(p.x, p.y, FOG_HERO, true));
+  for (const p of players) if (p.team === team && p.active && !p.dead && !inAir(p)) out.push(sightEye(p.x, p.y, heroSight(p, FOG_HERO), true)); // a storm may blind a hero (HERO_SIGHT, js/sim/heroes.js)
   for (const b of robots) {
     if (b.team !== team) continue;
     if (b.kind === 'soldier' && unitAlive(b)) out.push(sightEye(b.x, b.y, FOG_SOLDIER, true));

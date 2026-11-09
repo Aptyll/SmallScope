@@ -156,6 +156,7 @@ const CLASS_AB = [
   BELLA_AB, // BELLA - the lunge, the parry, the slip, the duel (js/sim/bella.js)
   IGNIA_AB, // IGNIA - the brand, the brushfire, the warm hands, the wildfire (js/sim/ignia.js)
   AURA_AB, // AURA - the falling star, the drifting light, the step, the curtain (js/sim/aura.js)
+  HIEMS_AB, // HIEMS - the icicle, the clear ice, the cold snap, the whiteout (js/sim/hiems.js)
 ];
 
 // the world the abilities put things into
