@@ -163,19 +163,17 @@ function paintGroundTile(g, tx, ty) {
 // ---- the road's pixels ----------------------------------------------------
 // The road (placeRoad, world.js) is not a kind of tile but a BAND laid over
 // the snow at pixel precision: every pixel of a tile near it asks roadDist
-// for its distance to the ragged edge and is painted by that - inside, packed
-// earth in two tones by 8 px quad, the two ruts (broken, wandering a little
-// along the lane), the odd stone, a hoof-dark spot, and snow melting in over
-// the last half tile of the verge; outside, ROAD_SHOULDER tiles of dirtied
-// snow, mud dithered in at the edge and thinning to grey and then to the
-// field. So the edge is one wandering line and never a tile staircase, and
+// for its distance to the ragged edge and is painted by that - inside, CLEAN
+// packed earth in two tones by 8 px quad and nothing else (no ruts, stones or
+// specks: a lane is the pitch, and the bodies on it are the only detail), a
+// full value step under the snow so it reads without colour and at night,
+// with snow lying in clumps over the last half tile of the verge; outside,
+// ROAD_EDGE tiles of earth breaking up into the snow in clumps. So the edge is one wandering line and never a tile staircase, and
 // a 16 px tile can be half road and half snow. On an ICE tile - which only
 // a PATH ever crosses, never the diagonal - `onIce` paints the earth and its
 // snowy verge the same way but leaves the water alone outside it, under a
 // pale rim a pixel or two wide that follows the same ragged edge: a lake has
-// a shoreline, not a muddy shoulder. The per-u noise (the edge, the ruts'
-// wander) is cached by quarter-tile, since a tile's 256 pixels share a
-// handful of u values.
+// a shoreline, not a muddy shoulder. 
 const ROAD_COL_A = '#b5a182', ROAD_COL_B = '#ad997a'; // the two tones of packed earth
 const ROAD_COL_DEEP = '#8a7556';                       // the earth in shade (the wiki mound's rim)
 const ROAD_EDGE = 0.45;                                // tiles past the edge the earth breaks up over
