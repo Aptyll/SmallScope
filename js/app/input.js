@@ -95,6 +95,10 @@ const KEY_ACTIONS = [
   { id: 'item3', verb: 'ITEM 3', key: '7', ck: '3' }, { id: 'item4', verb: 'ITEM 4', key: '8', ck: '4' },
   { id: 'item5', verb: 'ITEM 5', key: '9', ck: '5' }, { id: 'item6', verb: 'ITEM 6', key: '0', ck: '6' },
   { id: 'recall', verb: 'RECALL', key: 'h', ck: 'h' },
+  // held, an ability's hover card opens every rank's numbers (tipFull,
+  // js/ui/tooltip.js). Its own key, never the slide's Shift: holding it to
+  // read a card must not move the hero
+  { id: 'details', verb: 'DETAILS', key: 'Alt', ck: 'Alt' },
   { id: 'ping', verb: 'PING', ck: 'g', was: 'flag' }, // `was`: the id a saved bind of it went by
   { id: 'char', verb: 'CHARACTER', key: 'g', ck: 'c' },
   { id: 'map', verb: 'WORLD MAP', key: 'm', ck: 'm' }, { id: 'board', verb: 'SCOREBOARD', key: 'Tab', ck: 'Tab' },
@@ -223,9 +227,10 @@ pageListen(window, 'keydown', (e) => {
   // Tab is held to read the scoreboard (scoreboardOpen()), so it must never
   // reach the browser's focus traversal - nor may a bound key in a match, or
   // any key while a cap is listening. A chord on ctrl / alt / meta is the
-  // browser's own (reload, find) and passes.
-  if (!e.ctrlKey && !e.altKey && !e.metaKey &&
-      (state.rebind || KEY_PREVENT.has(k) || (state.mode !== 'title' && keyBound(k)))) e.preventDefault();
+  // browser's own (reload, find) and passes (keyChord) - but a bound modifier
+  // pressed alone is the game's: a lone Alt would otherwise park the
+  // browser's focus on its own menu, and the next keys would go there.
+  if (!keyChord(e, k) && (state.rebind || KEY_PREVENT.has(k) || (state.mode !== 'title' && keyBound(k)))) e.preventDefault();
   keys[k.toLowerCase()] = true;
   keyPress({ key: k, repeat: e.repeat, char: e.key });
 });
@@ -374,8 +379,11 @@ function keyPress(e) {
   if (keyIs(e, 'mute')) { settings.muted = SFX.toggleMute(); saveSettings(); }
   if (keyIs(e, 'pause') && (state.paused || !netShared())) { state.paused = !state.paused; SFX.ui(state.paused); } // the PAUSED plate is a surface like any other
 }
+// is this key event a browser chord: ctrl / alt / meta held under another key
+function keyChord(e, k) { return (e.ctrlKey && k !== 'Control') || (e.altKey && k !== 'Alt') || (e.metaKey && k !== 'Meta'); }
 pageListen(window, 'keyup', (e) => {
   const k = keyName(e);
+  if (!keyChord(e, k) && state.mode !== 'title' && keyBound(k)) e.preventDefault(); // (a lone Alt's release, above)
   keys[k.toLowerCase()] = false;
   keyRelease({ key: k, char: e.key });
 });

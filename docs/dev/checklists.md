@@ -75,6 +75,13 @@ declare victory. The affordances:
     parties of two on Steam and on the relay, must each end in ONE draft with a friend's point
     reaching the leader (`steam-party`, `steam-match`, `relay-match`). It serves the game itself on its own port and needs
     Playwright (`PLAYWRIGHT=<its folder>` if it is not on the require path).
+  - **`node app/check-load.js`** — run it after touching `js/net/`, `SNAP_SKIP` or anything that adds
+    bodies to a match: a host and nine headless players (`N=4` for fewer) on the relay, every seat a
+    bot, the match STAGED (run fast to the first wave, then an extra wave queued at every bay), then
+    three windows - a clean wire, 5% of the host's sends thrown away, and `netVerify` on. It fails on
+    a delta past Steam's unreliable limit, any full resync, a player falling behind or disagreeing
+    with the host, and any `tileLate`, and prints the host's sim and net time per step, the delta
+    sizes and the upload. About two minutes; same Playwright note as above.
   - **Under the wrapper — Noah runs this by hand; a session never starts Electron or makes a
     Steam lobby.** `cd desktop && npm start -- --net=host` on one machine and `--join=LOBBYID`
     on another (Steam running on both) ride the same match over a Steam lobby; with Steam up
@@ -198,11 +205,10 @@ that preserve the described structure.
 ## Common changes
 
 **Adding an object type** — one `OBJECTS` entry in [js/sim/world.js](../../js/sim/world.js) is most of
-it: `solid` (does it block a walker), `tool` (what E reaches for) and `ready` (whether it is worth
+it: `solid` (does it block a walker), `work` (whether E reaches for it) and `ready` (whether it is worth
 reaching *right now* — a rock's regrowth, a snowdrop's rest), `auto` (the hands go to it on their own the moment it
 is in reach — `autoWork`; without it the thing waits for E, as only bare ice and the dummy do; a
-rival building needs no flag — `autoToolFor` asks `STRUCTS` and `ownsStruct`), `needs` (the tool a swing must already be holding,
-null = any), `verb` and `lift` (the E key prompt, which an `auto` type never shows), and `mm`/`map` (what each of the two maps
+rival building needs no flag — `autoWorks` asks `STRUCTS` and `ownsStruct`), `verb` and `lift` (the E key prompt, which an `auto` type never shows), and `mm`/`map` (what each of the two maps
 paints it — `mm` an `[r, g, b]` for the minimap disc, `map` a `CH_*` class the chart files it
 under, each a constant or a function of the object, as a roosting eagle's side is; leave `map`
 out for anything that stands alone on its tile — a bush, a stump — since at the chart's
@@ -320,12 +326,6 @@ existing save, or an old profile reaches its readers without it. Give it an acce
 `PROFILE` object rather than letting callers reach into `PROFILE.get()`, and pick a write policy:
 `saveNow()` for something the player just chose, `scheduleSave()` for anything the sim writes
 mid-match. Nothing outside that file may name a storage key.
-
-**Adding a swing tool** (the axe's family that E brings out — *not* a weapon, which is the
-entry above) — append to `SWING_TOOLS` with a `SWING_*` index constant, add an 8×8 icon sprite and
-name it in the entry's `icon` field, map the object types it works in `workTarget()` (that is the
-only selection logic — there are no keys or bar slots), and give its `key` behavior in
-`hitObject()`'s gating.
 
 **Adding an ability or input** — it belongs to *every* player, not to the local player. Add the
 field to `makeInput()`, fill it for the human in `sampleHumanInput()` (edge-triggered flags are
@@ -492,7 +492,7 @@ already current, so it is safe to call from a state change that repeats.
 | js/sim/player.js, js/sim/attack.js | each hero's basic attack (`CLASSES[c].attack`: cycle, knockback, a shot's speed and life or a cut's reach and sweep); the draw curve (`DRAW_*_MIN`) and the damage roll in `attackDmg()` |
 | js/sim/items.js | `BUILD_ITEMS` (every item's price, recipe, stats and passive), `ITEM_PASSIVES`, `ITEM_SELL`, `ITEM_LEGEND_PRICE`, `ITEM_FIGHT_T`, every passive's numbers (`KINDLE_*`, `CHILL_*`, `LEECH_SHARE`, `THORN_SHARE`, `CULL_*`, `STEADY_MUL`, `SURGE_*`, `BRACE_*`, `SMOLDER_*`, `SCORCH_BURN`, `AMPLIFY_MUL`), the bots' `BOT_BUILDS` |
 | js/ui/shop.js | `SHOP_REACH` |
-| js/ai/ai-skill.js | every level's numbers (`AI_LEVELS`: the hand fields, the choice knobs, `push`/`guard`), the ally clocks (`AI_ALLY_PUSH`), the ladder's hands (`AI_LADDER_HANDS`), the skill layer's clocks (`AI_SETTLE`, `AI_WOBBLE_T`, `AI_ALERT_T`, `AI_AIM_ON`, `AI_BLADE_CLOSE`, `AI_BLADE_HOLD`) |
+| js/ai/ai-skill.js | every level's numbers (`AI_LEVELS`: the hand fields, the choice knobs, `push`/`guard`), the ally clocks (`AI_ALLY_PUSH`), the bot files' hands (`BOT_FILE_HANDS`), the skill layer's clocks (`AI_SETTLE`, `AI_WOBBLE_T`, `AI_ALERT_T`, `AI_AIM_ON`, `AI_BLADE_CLOSE`, `AI_BLADE_HOLD`) |
 | js/ai/ai.js | the bot ranges (`AI_SIGHT`, `AI_HUNT`, `AI_FORAGE`); the objective clocks (`AI_ESCALATE`, `AI_JOIN_HP`, `AI_ALARM_HP`, `AI_ROOST_R`); the waves as a bot reads them (`AI_WAVE_R`/`AI_WAVE_D`); how far a bot walks to its counter to buy (`AI_SHOP_DETOUR`) |
 | js/sim/sim.js | the trickle (`TRICKLE_GOLD`/`TRICKLE_T`); the per-surface steer/decay rates inline in `updatePlayer()`'s movement block; the darkness ramp in `update()`; `FLAKE_BASE`/`FLAKE_MIN`/`FLAKE_MAX` beside the flake block |
 | js/sim/weather.js | the `WIND_*` block (the three ripples, the bend that meanders them, the gust envelope's floor and peak, and how fast it all dies at dusk) |
@@ -574,7 +574,11 @@ Code that is dead **on purpose** is the next section.
 
 ## Intentional dead code
 
-Kept on purpose — do not "clean up", and a verbatim code move carries it along.
+Dead code is deleted, not kept in case a feature returns: git keeps it. `app/check-dead.js`
+fails an unused top-level name, a sprite nothing reads, a sound cue nothing calls, a `SAMPLES` key
+never played and a sound file in no `SAMPLES` list. What is left here is what that check cannot
+see as dead and is kept for a stated reason; a verbatim code move carries it along, and a new
+entry needs a reason that outweighs keeping it working.
 
 - **`rootUnit`/`markUnit` have no caster** (since the hunter's 2.47 rework retired the snare
   trap and the falcon): the two setters, their `drawUnitStates` tells (the sprung jaws, the gold
@@ -589,10 +593,6 @@ Kept on purpose — do not "clean up", and a verbatim code move carries it along
 - The `<` glyph in [js/app/font.js](../../js/app/font.js) was added for the removed resolution cycle
   control and is currently unreferenced — kept as generic font coverage. (`>` is live again: it
   marks your own row on the scoreboard.)
-- `SWING_TOOLS[SWING_BOW].icon` (`'itemBow'`) is unread —
-  `drawHeldTool` puts the hero's own weapon in the hands at rest, and only the axe row's
-  icon is still resolved through the table. The row is kept so `SWING_TOOLS` stays one entry per
-  `p.swing` value, and `SPRITES.itemBow` itself is live on the end screen's kills plate.
 - `audio/music/` holds only the nine mp3s `TRACKS` names. The alternate takes (34 MB) were deleted in `PATCH 1.53`;
   recover one with `git show ee284a0:"audio/music/<name>"` if a cue ever wants it. A track is
   live only once it is in `TRACKS`. `app/server.js`'s `.ogg`/`.wav` MIME rows are forward-looking — every asset in the repo

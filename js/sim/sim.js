@@ -448,7 +448,7 @@ function shotContacts(a, x0, y0, dx, dy) {
   // bots take the same shot: they are units in the open, on a team
   for (const t of robots) {
     if (a.team === t.team) continue;
-    const r = ROBOT_HIT_R, cy = robotHitY(t);
+    const r = robotHitR(t), cy = robotHitY(t);
     if (t.x + r < lx || t.x - r > hx || cy + r < ly || cy - r > hy) continue;
     if (!unitAlive(t) || (a.pierce && a.pierceHit.includes(t))) continue;
     const s = sweepDisc(x0, y0, dx, dy, t.x, cy, r);
@@ -1131,10 +1131,8 @@ function playerSwing(p, dt) {
       swingHit(p);
     }
   }
-  // the work tool goes away with the swing cooldown; held E brings it right
-  // back, and with no E the hands find their own work (autoWork, js/sim/actions.js:
-  // a tree in reach)
-  if (p.swingT <= 0 && p.swingCd <= 0) p.swing = SWING_BOW;
+  // held E swings again once the cooldown is out, and with no E the hands find
+  // their own work (autoWork, js/sim/actions.js: a tree in reach)
   if (inp.work) tryWork(p); else autoWork(p);
 }
 
@@ -1240,8 +1238,8 @@ function updatePlayer(p, dt) {
   p.faceT = Math.max(0, p.faceT - dt);
   p.invuln = Math.max(0, p.invuln - dt);
 
-  // gentle regen in daylight (a kit's nightHeal keeps it on after dark)
-  if (p.hp < p.maxHp && (state.darkness < 0.3 || kit.nightHeal)) {
+  // gentle regen in daylight
+  if (p.hp < p.maxHp && state.darkness < 0.3) {
     healPlayer(p, dt * 0.6);
   }
 }

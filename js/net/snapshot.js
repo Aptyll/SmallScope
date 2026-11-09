@@ -45,6 +45,7 @@ const SNAP_SKIP = new Set(['input', 'ai', 'nav', '_fx', '_fy', '_tx', '_ty', '_t
   'avoidT', 'baySite', 'zipLast', 'pingLog',
   'hitFoe', // a soldier's mark this step, read only by the host's bots (aiFarmHold)
   'shedT', // a pine's rest between two sheds (js/sim/shed.js): the puff itself crosses as a burst
+  'mvx', 'mvy', 'lastMx', 'lastMy', // a walker's heading (nav, walkHeading): only the sim steers by it, `dir` is what is drawn
   'hurtLog', // the blows a body is taking (recapNote): only a death's copy, deathLog, is ever drawn
   'position']); // a seat's drafted position (POSITIONS, player.js): the host's bots read it, and the rivals' stay hidden as in the draft
 // (a name here is skipped on EVERY kind that carries it: `fleeT` is not one,
@@ -189,6 +190,7 @@ function snapSingles() {
   s.hiems = [pack(hiemsGlazes, 0), pack(hiemsStorms, 0)]; // HIEMS's ice and blizzards (js/sim/hiems.js)
   s.velox = [pack(veloxStones, 0), pack(veloxLanes, 0)]; // VELOX's skipping stones and ice lanes (js/sim/velox.js)
   s.nix = [pack(nixShards, 0), pack(nixClouds, 0)]; // NIX's shards and clouds (js/sim/nix.js)
+  s.faber = [pack(faberParts, 0), pack(faberArcs, 0), pack(faberBolts, 0), pack(faberSprings, 0)]; // FABER's parts, jumps, bolts and traps (js/sim/faber.js; his machines ride `robots`)
   return s;
 }
 // `team` (0 or 1): only what that side sees (the `fog` banner); left out, everything
@@ -247,6 +249,7 @@ function snapApplySingles(s) {
   if (s.hiems) [hiemsGlazes, hiemsStorms].forEach((L, i) => { L.length = 0; for (const w of unpack(s.hiems[i])) L.push(w); });
   if (s.velox) [veloxStones, veloxLanes].forEach((L, i) => { L.length = 0; for (const w of unpack(s.velox[i])) L.push(w); });
   if (s.nix) [nixShards, nixClouds].forEach((L, i) => { L.length = 0; for (const w of unpack(s.nix[i])) L.push(w); });
+  if (s.faber) [faberParts, faberArcs, faberBolts, faberSprings].forEach((L, i) => { L.length = 0; for (const w of unpack(s.faber[i])) L.push(w); });
 }
 // a field onto an entity the game holds by identity: a nested plain object
 // is merged into the one already there (a player's `inv` is aliased by the
@@ -873,6 +876,7 @@ function snapBlank() {
   veloxStones.length = 0; veloxLanes.length = 0;
   iceBreaks.length = 0; pads.length = 0;
   nixShards.length = 0; nixClouds.length = 0;
+  faberParts.length = 0; faberArcs.length = 0; faberBolts.length = 0; faberSprings.length = 0;
   Object.assign(orca, ORCA_FRESH());
   for (const c of camps) { c.repopT = 0; c.seen = [0, 0]; }
   if (state.drop) for (const e of state.drop.eagles) for (const k of Object.keys(e)) if (!SNAP_SKIP.has(k) && k !== 'team') e[k] = typeof e[k] === 'number' ? 0 : null;
@@ -941,7 +945,7 @@ function snapQuantize() {
   };
   walk(players); for (const k in SNAP_KINDS) walk(SNAP_KINDS[k]());
   if (state.drop) walk(state.drop.eagles);
-  walk(objects); walk(nets); walk(guards); walk(brushfires); walk(auraStars); walk(auraOrbs); walk(auraCurtains); walk(salviaBundles); walk(salviaDrops); walk(salviaThaws); walk(lucernaHooks); walk(lucernaLanterns); walk(lucernaCircles); walk(bucinaEchoes); walk(bucinaCalls); walk(hiemsGlazes); walk(hiemsStorms); walk(nixShards); walk(nixClouds); walk(veloxStones); walk(veloxLanes); walk(pads); walk(state.end); walk(state.eagleCine);
+  walk(objects); walk(nets); walk(guards); walk(brushfires); walk(auraStars); walk(auraOrbs); walk(auraCurtains); walk(salviaBundles); walk(salviaDrops); walk(salviaThaws); walk(lucernaHooks); walk(lucernaLanterns); walk(lucernaCircles); walk(bucinaEchoes); walk(bucinaCalls); walk(hiemsGlazes); walk(hiemsStorms); walk(faberParts); walk(faberArcs); walk(faberBolts); walk(faberSprings); walk(nixShards); walk(nixClouds); walk(veloxStones); walk(veloxLanes); walk(pads); walk(state.end); walk(state.eagleCine);
 }
 // One echo: quantize, frame, snapshot, blank, apply, frame; the pixels that differ,
 // the frame's own noise (two renders of the same state, for anything that
@@ -949,6 +953,18 @@ function snapQuantize() {
 // state IS the applied state afterwards, so a run can go on and echo again.
 // The snapshot crosses through the binary encoder on its way, so the echo
 // proves the bytes as well as the fields.
+// the SNAP_SKIP fields of every body, by slot or network id, so the echo can
+// hand them back to the bodies its apply rebuilt without them
+function snapKeepSkipped() {
+  const grab = (e) => { const o = {}; for (const k of Object.keys(e)) if (SNAP_SKIP.has(k)) o[k] = e[k]; return o; };
+  const kept = { P: players.map(grab) };
+  for (const k in SNAP_KINDS) kept[k] = SNAP_KINDS[k]().map((e) => [snapNid(e), grab(e)]);
+  return kept;
+}
+function snapRestoreSkipped(kept) {
+  kept.P.forEach((o, i) => { if (players[i]) Object.assign(players[i], o); });
+  for (const k in SNAP_KINDS) for (const [n, o] of kept[k]) { const e = snapMaps[k].get(n); if (e) Object.assign(e, o); }
+}
 function netEcho() {
   snapQuantize();
   const a1 = snapFrame(), a2 = snapFrame();
@@ -957,6 +973,7 @@ function netEcho() {
   const json = JSON.stringify(s);
   const size = snapSize(s);
   const dict = encDict(), bytes = snapEncode(s, dict);
+  const kept = snapKeepSkipped();
   snapBlank();
   const blanked = snapFrame();
   snapApply(snapDecode(bytes, encDict()));
@@ -965,6 +982,7 @@ function netEcho() {
   // after the apply, against the first)
   const mismatch = [];
   snapCompare(JSON.parse(json), snapBuild(), '', mismatch, 20);
+  snapRestoreSkipped(kept); // the page goes on stepping this world: its bookkeeping back (a heading lost is a NaN walk)
   return { diff: snapDiff(a2, b), noise, blankDiff: snapDiff(a2, blanked), bytes: json.length, binBytes: bytes.length, size, mismatch };
 }
 // echo every `every` ticks over `ticks` of stepping; the worst diff and when

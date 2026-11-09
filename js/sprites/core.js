@@ -141,7 +141,6 @@ window.SPR = (() => {
   const teamBakes = [];
   let teamPal = 'def';
   function onTeams(fn) { teamBakes.push(fn); fn(); }
-  SPRITES.teamPal = () => teamPal;
   SPRITES.teamPalettes = TEAM_PALETTES;
   SPRITES.setTeamPal = (id) => {
     if (!TEAM_PALETTES[id]) id = 'def';

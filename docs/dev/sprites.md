@@ -88,7 +88,7 @@ more: the frames live on as the CATCH emote's (`EMOTES`, js/ui/screens.js). The 
 **The run, the held run and the dodge roll are the one set of player frames not typed by hand.**
 [app/bake-player/](../../app/bake-player/) paints them off a jointed doll of each class body (and of
 each named hero's looks: ARMATOS's `standard` and `oath`, FORTIVA's `unbroken` and `coif`, BELLA's `general` and `traitor`,
-IGNIA's `hearth` and `wanderer`, AURA's `light`, SALVIA's `hood` and `tent`, LUCERNA's `lamp` and `dusk`, HIEMS's `scholar` and `frost`, NIX's `snowblind`, RUPES's `quarry` and `cellar`, VARRO's `wolfkept` and `whitepack`, VELOX's `canal` and `night`, BUCINA's `horn` and `column`, [hero looks](#hero-looks)) and
+IGNIA's `hearth` and `wanderer`, AURA's `light`, SALVIA's `hood` and `tent`, LUCERNA's `lamp` and `dusk`, HIEMS's `scholar` and `frost`, FABER's `clockmaker` and `foreman`, NIX's `snowblind`, RUPES's `quarry` and `cellar`, VARRO's `wolfkept` and `whitepack`, VELOX's `canal` and `night`, BUCINA's `horn` and `column`, [hero looks](#hero-looks)) and
 writes them to js/baked/motion.js as char grids in characters.js's own letters, so `motionSet`
 bakes them through the same team and look palettes as every hand-drawn pose: `run[dir]`,
 `hold[dir]` and `roll[dir]` sit beside the walking directions, `left` the mirror of `right`.
@@ -313,6 +313,16 @@ app/bake-player/bodies.py; she runs on her drawn frames (`run: 'drawn'`). Her ST
 `HERO_STAVES` row (`sling`, js/draw/velox.js): a hooked staff with the sling hanging off its hook,
 carried upright.
 
+FABER has two looks (`FABER_SKINS`, js/sprites/faber.js): CLOCKMAKER (free) and WORKS FOREMAN
+(rare, 200 coins), both on ARMATOS's frame. `FABER_PAL` is `ARM_PAL` with the leather cap and apron
+`a`/`A`, the goggle lenses `C`, the moustache `U` and the hard hat's lamp `S`. They are A and B off
+faber-round1.png in the project files. Their dolls (`Clockmaker` and `Foreman` in
+app/bake-player/bodies.py) paint the cap in the doll's `hair` material and the hard hat in `hat`;
+only the roll is used. His CLOCK STAFF is a staff like IGNIA's: `staff: 'clock'` names
+`HERO_STAVES.clock` (`FABER_CLOCK`, js/draw/faber.js), a brass clock face on a walnut shaft whose
+hand ticks between two baked frames. His two machines draw themselves from small grids baked per
+side (`faberArt`, js/draw/faber.js), the side's colour in a band across each.
+
 The **48 px model** ([looks.js](../../js/sprites/looks.js), `SPRITES.portrait(cls, look,
 team)`) is where the whole look reads — the champ select's stage, grid and seat discs. Each hero wears one
 fixed `look` (`CLASSES[i].look`, js/sim/player.js; the heroes still to come in `HEROES_SOON`
@@ -416,10 +426,9 @@ lantern, a scale and a planked counter. It is look **D** off
 `docs/media/concepts/tent-concepts-2.png` (round 1, `tent-concepts-1.png`, picked the stall
 shape; round 2 grew it).
 
-**The swing tool icons** (`itemBow`/`itemAxe`) are 8×8 grids sharing `AXPAL`, drawn at **1×** by
-`drawHeldTool()` (inside a translate/rotate, resolved through `SPRITES[t.icon]` from the
-`SWING_TOOLS` table) and by `drawRobot()` for a bot's swing — E picks the tool, there is no tool
-bar. At rest `drawHeldTool()` draws the **hero's own weapon** instead, a 12×12
+**The axe and bow icons** (`itemAxe`/`itemBow`) are 8×8 grids sharing `AXPAL`. The axe is drawn at
+**1×** by `drawHeldTool()` (inside a translate/rotate, while a swing runs) and by `drawRobot()` for a
+bot's swing; the bow is the end screen's kills plate. At rest `drawHeldTool()` draws the **hero's own weapon** instead, a 12×12
 `SPRITES.weaponArt` canvas baked in [js/sprites/weapons.js](../../js/sprites/weapons.js) (a blade at
 its real length in `SPRITES.weaponHeld`); both sizes go
 through the same code because each is turned about where the hand closes on it (`WEAPON_GRIP`, a
@@ -537,7 +546,6 @@ snapped onto `RBPAL` (eleven colours) and `DEPAL` (thirteen), source order the a
 | `rabbit` | `idle` 10 `bunny…gently_look_around`, `hop` 6 `…hopping_right`, `rise` 8 `…stand_up_and_wiggle` | 28×30 | **11×12** |
 | `deer` | `idle` 10 `deer…gently_look_around`, `graze` 12 `…grazing_loop`, `run` 12 `…galloping` | 38×38 | **38×38** (its own cell, snapped onto `DEPAL` 1:1) |
 | `wolf` | `idle` 1, `run` 2 | — | 16×13 |
-| `bird` | `idle` 1 (perched), `fly` 2 | — | 9×6 / 9×5 |
 | `dire` / `alpha` (the bears) | `idle` 6, `walk` 8, `run` 6, `bite` 10, `paw` 10, `roar` 8, `fish` 12 | a painted rig | 112×76 |
 
 The rabbit is [resampled offline](#the-offline-resample) — at its own cell size the bunny stands taller
@@ -549,9 +557,8 @@ crop would jump against the one it replaced. The deer keeps its whole 38×38 cel
 reaches column 0, the graze column 37); the rabbit is trimmed to 28×30, which still holds the ear
 tips the hop throws up.
 
-The wolf and the bird keep their hand-drawn grids (a shared `wolfBody` plus three leg rows per
-frame; `birdPerch` plus two wing frames): an idle and a two-frame gait. Left variants are `flipH`
-of the right-facing frames.
+The wolf keeps its hand-drawn grids (a shared `wolfBody` plus three leg rows per frame): an idle
+and a two-frame gait. Left variants are `flipH` of the right-facing frames.
 
 The warrens' **snowdrops** ([world.md](world.md#camps)) are painted by
 `app/bake-snowdrops/paint.py` (Python with numpy and Pillow): distance-field shapes at 8×
@@ -636,8 +643,10 @@ key onto that file's `Object.assign`. A file an `app/bake-*` script writes sits 
 run and roll grids on `SPR.motion`, loaded right before characters.js, which bakes them
 ([the run and the roll](#the-run-and-the-roll)).
 
-Keys marked **(dead)** are still baked but read by nothing outside js/sprites/ and js/baked/
-([Intentional dead code](checklists.md#intentional-dead-code)).
+Every key here is read: `app/check-dead.js` fails a key registered on `SPRITES` that nothing
+reads, and a dynamic `SPRITES[expr]` read must be listed in its `DYNAMIC` table with the table
+that feeds it ([app/](architecture.md#app)), so a sprite whose feature goes is deleted
+with it.
 
 | File | Banners | Registers |
 | --- | --- | --- |
@@ -645,7 +654,7 @@ Keys marked **(dead)** are still baked but read by nothing outside js/sprites/ a
 | `characters.js` | player, the fish catch, skater, prone, run and roll, looks, the merchant | `champ` (with each set's `run`/`hold`/`roll`), `LOOK`, `champLook`, `merchant`, `motionBox`/`runBob`/`holdBob`/`rollAt` |
 | `looks.js` | bodies, heads, beards, hair, outfits | `portrait` |
 | `terrain.js` | trees, bush, the dead snags, the den, the hog hut | `tree`, `treeAtlas`, `stump`, `bush*`, `deadTree`, `den`, `hogHut` |
-| `beasts.js` | rabbit, deer, wolf, the bird | `rabbit`, `wolf`, `bird`, `deer` |
+| `beasts.js` | rabbit, deer, wolf | `rabbit`, `wolf`, `deer` |
 | `bears.js` | none: generated by app/bake-bears/bake.py | `dire` (brown bear), `alpha` (black bear) |
 | `fish.js` | none: generated by app/bake-fish/paint.py | `creekFish.whitefish` (`swim[heading][frame]`, 16 headings, 2 tail frames, rimmed in the water's shade), `iceFish[kind]` (`fish` the frost pike, `sunfish` the gold sunfish: `swim` and the cold `shadow` under the ice, same headings and frames); looks E/F, I/K and shadow N off `docs/media/concepts/winter-fish-concepts-2/3/4.png` |
 | `orca.js` | none: generated by app/bake-orca/paint.py | `orca` (`breach`: `open`/`shut` side-on, head up and left, `openR`/`shutR` their mirrors, `jaw` the pixel between the jaws in the `bcell`; `shade(heading, step)`, 64 headings from east clockwise, 8 steps of the flukes' up-and-down beat, in `cell` squares, packed run-length and baked on first use); look D BOLD off `docs/media/concepts/orca-concepts-2.png` |

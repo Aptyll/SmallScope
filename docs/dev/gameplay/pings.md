@@ -66,7 +66,7 @@ order that moves the whole side**. Only a human's ping steers (`pingSteer`); a b
   ATTACK 10, DEFEND 15); rivals in sight are still rung 3's, the spot an anchor that finds them.
   An ATTACK breaks the rival buildings within `PING_R` (192 px) with E; an ATTACK covering the
   rival bird is the **push** and a DEFEND covering its own bird the **defence**, played by those
-  rungs with everything they know. A ping overrides the guard, push and escort reads, but never
+  rungs with everything they know. A ping overrides the guard and push reads and the human as an anchor, but never
   the alarm (its bird under half nerve).
 - **DANGER**: every bot of the side within `PING_DANGER_R` x 1.5 of the spot backs off for
   `PING_BACK_T` (6 s) - rung 2b walks it home, or straight out, fighting nothing, until it is

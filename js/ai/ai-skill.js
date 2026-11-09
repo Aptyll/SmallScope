@@ -1,6 +1,6 @@
 'use strict';
 // The bot's eyes and hands: how well a bot plays (the levels) and the skill
-// layer between what the ladder (js/ai/ai.js) decides and the input it writes.
+// layer between what the ladder (js/ai/ai-ladder.js) decides and the input it writes.
 // ------------------------------------------------------------ difficulty
 // Every bot plays the same ladder; a PROFILE says how well. The RIVALS run
 // AI_LEVELS[settings.aiLevel] (the lobby's plates, remembered with the
@@ -55,7 +55,8 @@
 //           eagle (the objective rung), one more every AI_ESCALATE s after
 //           that, so a stalemate always breaks
 //   guard   how many of the next bots stand by their own bird from 0.6 t on
-//   support allies only: escort the human and join their fights and pushes
+//   support allies only: the human is an anchor (its fights, its camp fights)
+//           and a push it starts is one the side joins
 //   relentless  IMPOSSIBLE's rivals only: never give ground - a bow closes
 //           in instead of backing off when crowded, a blocked line is walked
 //           in through the open at any range, a camp on it is fought where it
@@ -96,12 +97,13 @@ const AI_ALLY_PUSH = [{ t: 720, n: 2 }, { t: 720, n: 2 }, { t: 480, n: 3 }, { t:
 // is still the one that holds its bird)
 const AI_ALLIES = AI_LEVELS.map((_, i) => Object.assign({}, AI_LEVELS[Math.min(AI_LEVELS.length - 1, i + 1)],
   { name: 'ALLY', support: true, push: AI_ALLY_PUSH[i], guard: 1, relentless: false, flee: Math.max(0.2, AI_LEVELS[Math.min(AI_LEVELS.length - 1, i + 1)].flee) }));
-// the one pair of hands every scripted seat plays with (the bot API, the
-// ladder): HARD's, and never a level's choices - so a ladder ranks what a bot
-// decides, not how well it aims. The writer runs skillHands(p, this, dt)
-// after each act; `hands` marks it as a whole-body wrap (the wobble and the
-// held draw apply to every aim, not just a fight the ladder named)
-const AI_LADDER_HANDS = { name: 'LADDER', hands: true, hand: AI_LEVELS[2].hand, aim: AI_LEVELS[2].aim };
+// the one pair of hands every bot FILE's seat plays with (the bot API,
+// js/ai/bot-api.js, and the bot ladder that rates the files): HARD's, and
+// never a level's choices - so the bot ladder ranks what a bot decides, not
+// how well it aims. botStep runs skillHands(p, this, dt) after each act;
+// `hands` marks it as a whole-body wrap (the wobble and the held draw apply
+// to every aim, not just a fight the brain named)
+const BOT_FILE_HANDS = { name: 'BOT FILE', hands: true, hand: AI_LEVELS[2].hand, aim: AI_LEVELS[2].aim };
 // which profile p plays by: a staged override (DBG, the harness), else by side
 function aiProfile(p) {
   if (p.ai.prof) return p.ai.prof;

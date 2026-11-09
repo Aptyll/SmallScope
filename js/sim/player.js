@@ -366,7 +366,27 @@ const CLASSES = [
       bowCharge: 0.75, nock: 0.5, spdDmg: 5, dodgeSpeed: 240 },
   },
   {
-    // the thirteenth named hero (js/sim/velox.js): the kiting marksman. She throws her
+    // the ninth named hero (js/sim/faber.js): the zone mage. He holds a spot with
+    // machines he winds himself - small guns, a clockspring trap, the old engine -
+    // and is strong defending it; slow on his feet and poor at a chase
+    name: 'FABER', role: 'THE TINKER', body: 1, passive: 'spareparts', // HERO_PASSIVE, js/sim/faber.js
+    look: { sex: 0, tone: 2, hair: 1, hairCol: 2, beard: 0, face: 0 },
+    blurb: ['SET UP A SPOT AND DARE THEM TO WALK IN.', 'SMALL MACHINES SHOOT FOR YOU. A TRAP HOLDS A HERO. THE OLD ENGINE SLAMS.', 'STRONG HOLDING GROUND, SLOW TO CHASE.'],
+    story: "HE KEPT THE EMPIRE'S WATER CLOCKS RUNNING, AND ONE WINTER HE BUILT A CLOCK THAT RAN THE WHOLE CITY'S FOUNTAINS AT ONCE. IT FLOODED THE PALACE. THEY THANKED HIM AND SENT HIM UP THE PASS. THE WORKS HERE ARE FULL OF OLD MACHINES SOMEBODY BUILT WITH CARE, AND HE MEANS TO MEND EVERY ONE.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
+    // a staff's brass bolt: HIEMS's frost bolt's pace
+    staff: 'clock', // his CLOCK STAFF, carried upright (HERO_STAVES, js/draw/faber.js)
+    attack: { name: 'CLOCK STAFF', art: 'clockstaff', cycle: 62 / 60, kb: 0.5, shot: { speed: 270, life: 0.85, col: '#f2cc6a', look: 'cog' } },
+    base: { hp: 80, dmg: 12, armor: 10, ap: 0, haste: 0, ms: PLAYER_SPEED - 6 },
+    grow: { hp: 5.6, dmg: 1, as: 0.01, armor: 1.8 },
+    rankOrder: [0, 1, 2], // the spark, the small machine, the clockspring
+    // his own body (FABER_SKINS, js/sprites/faber.js), worn over the side's coat
+    skins: FABER_SKINS, skinPal: FABER_PAL, skinSlot: 'faber',
+    paint48: { t: '#7d8699', T: '#b4bdcc', g: '#1c2232', G: '#9aa3b8', m: '#5c6478', M: '#454c5e' }, // the 48 px model's (js/sprites/looks.js): its K is skin
+    kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1, chargeMul: 0.55,
+      bowCharge: BOW_CHARGE, nock: 0.4, spdDmg: 0, dodgeSpeed: DODGE_SPEED },
+  },
+  {
+    // the fourteenth named hero (js/sim/velox.js): the kiting marksman. She throws her
     // sling while she skates, a shorter reach than the hunter's and less damage; quick,
     // steady on ice and very hard to catch, and caught, she has nothing to stop a rival
     name: 'VELOX', role: 'THE SKATER', body: 1, passive: 'keepmoving', // HERO_PASSIVE, js/sim/velox.js
@@ -536,8 +556,7 @@ function playerTint(p) {
 function baseKit(cls) {
   return Object.assign({}, CLASSES[cls].kit, {
     cls, add: statBag(), // whose kit, and the stat bonuses items write (js/sim/stats.js)
-    huntMul: 1, nightHeal: false,
-    harvestMul: 1, dodgeCd: DODGE_CD, stealth: 1,
+    dodgeCd: DODGE_CD, stealth: 1,
     ambushMul: AMBUSH_MUL, bury: PRONE_BURY,
     killHeal: 0, kindle: false, chill: false, restHeal: 0, // the item passives (js/sim/items.js)
     leech: false, thorns: false, cull: false, steady: false, surge: false, brace: false, smolder: false, scorch: false,
@@ -672,10 +691,9 @@ class Player {
       // downs/grudge who it has downed
       // and the mark it holds a grudge on, answerAt/answerKind/answerKey the
       // human ping it last answered and when its ON IT is due (aiAnswer), band its range band
-      // in a fight (aiRangeBand), packT how long it has waited at the rally, scout/scoutN
-      // the scout's point and step along its beat, thought what it is doing
-      // and why (the dashboard's record)
-      mood: null, helping: -1, foeId: -1, focusT: 0, focusOk: false, packT: 0, scout: null, scoutN: 0, thought: null, lastFoe: null, lastFoeT: -1e9, fleeT: -1e9, downs: {}, grudge: null, scoutCd: 0, answerAt: 0, answerKind: null, answerKey: "", band: null,
+      // in a fight (aiRangeBand), packT how long it has waited at the rally,
+      // thought what it is doing and why (the dashboard's record)
+      mood: null, helping: -1, foeId: -1, focusT: 0, focusOk: false, packT: 0, thought: null, lastFoe: null, lastFoeT: -1e9, fleeT: -1e9, downs: {}, grudge: null, answerAt: 0, answerKind: null, answerKey: "", band: null,
     };
     this.reset(true);
   }
@@ -712,7 +730,6 @@ class Player {
     this.prone = false; this.hide = 0; this.riseT = 0;
     this.crawlT = 0; this.puffT = 0; this.hideFlash = 0;
     this.swingT = 0; this.swingCd = 0; this.swingDir = 0; this.swingHitDone = false;
-    this.swing = SWING_BOW;                        // held SWING_TOOLS index (bow at rest)
     this.autoSwing = false;                        // the swing in flight was the hands' own (autoWork), so a draw may begin under it
     // the class abilities (keys 1-4, js/sim/abilities.js): per-key cooldowns, the
     // cast in progress, and every timed state one can leave on a body -

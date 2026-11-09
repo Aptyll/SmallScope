@@ -333,7 +333,7 @@ function drawHitboxes(ox, oy, ex, ey) {
   for (const b of robots) {
     if (b.dead) continue;
     hbRing(b.x - ex, b.y - ey, unitRadius(b), HB_BODY);
-    hbRing(b.x - ex, robotHitY(b) - ey, ROBOT_HIT_R, HB_HURT);
+    hbRing(b.x - ex, robotHitY(b) - ey, robotHitR(b), HB_HURT);
     hbDot(b.x - ex, b.y - ey, HB_BODY);
     hbMid(b.x - ex, b.y - 24 - ey, b.y + 4 - ey);
   }
@@ -420,6 +420,7 @@ function cursorInfo() {
     if (m.screen === 'lobby') return { kind: m.screenT >= 1 && m.popT <= 0 && lobbyHit() ? 'hand' : 'arrow' };
     if (m.screen === 'profile') return { kind: m.charT >= 1 && profileHit() === 'name' ? 'hand' : 'arrow' };
     if (m.screen === 'skins') return { kind: m.skinT >= 1 && skinsHit() >= 0 ? 'hand' : 'arrow' };
+    if (overGear()) return { kind: 'hand' }; // the settings (js/ui/menu.js)
     if (m.screen === 'room') return { kind: m.roomsT >= 1 && roomHit() ? 'hand' : 'arrow' };
     if (!m.panel && (overProfileTag() || overPatchTag() || overCoinTag())) return { kind: 'hand' }; // the three corner tags
     if (!m.panel && menuHit() >= 0) return { kind: 'hand' };

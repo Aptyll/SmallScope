@@ -51,7 +51,7 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   sized `MENU_BW`×`MENU_BH` at `MENU_Y0` where those stand it.
 - **Panels** slide up from the bottom edge over the still-visible world (`menu.panel`,
   `menu.panelT` over `PANEL_SLIDE_T`, `menu.closing` on the way out); the menu chrome ducks to
-  zero alpha underneath. The `'settings'` kind is the existing panel via `renderSettings(now, { bare, slide })` (nothing on the title opens it since the SETTINGS plank went; the code stays for the ESC panel's sake)
+  zero alpha underneath. The `'settings'` kind is the ESC slab via `renderSettings(now, { bare, slide })`, opened by the **gear** (`SET_GEAR`, `gearRect` / `overGear` / `drawGear` / `openMenuPanel`, js/ui/menu.js: left of the coin tag on the title, under the add-friend on the party screen's social column; gold under the hand). While a panel is up it takes every key and click before the screen under it, the party screen too
   (no dim, no minimap preview, translated by `slide`) — its widgets only take input once
   `menuPanelReady()`, so a click can never land on a half-slid row, and clicking outside the
   slab closes it. The help panel (`helpPanelCv`, controls + the rules of the frostlands) is

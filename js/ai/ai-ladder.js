@@ -37,13 +37,12 @@ function aiThink(p, dt) {
   if (aiHealRung(k)) return;   // 5'. hurt and alone: a ripe bush, a creek fish
   if (aiPingRung(k)) return;   // 5a. a human's ping
   if (aiDefendRung(k)) return; // 5b. its bird
-  if (aiHomeRung(k)) return;   // 5b''. the guard's scouting walk
+  if (aiHomeRung(k)) return;   // 5b''. the guard's patrol
   if (aiGuardRung(k)) return;  // 5b'. on guard
   if (aiPushRung(k)) return;   // 5c. the rival bird
-  if (aiEscortRung(k)) return; // 5d. the human
   if (aiHelpRung(k)) return;   // 5e. a call for help
   if (aiPumpRung(k)) return;   // 5e'. a gold pump to take or hold
-  if (aiRoamJobs(k)) return;   // 5f. the bear party, the stalker, the scout
+  if (aiRoamJobs(k)) return;   // 5f. the bear party, the stalker, the position's walk
   if (aiRoadRung(k)) return;   // 5g. the road
   if (aiHuntRung(k)) return;   // 6. meat
   if (aiHarvestRung(k)) return; // 8. harvest
@@ -110,7 +109,7 @@ function aiRead(p, dt) {
   // its station, and once the nerve is under AI_ALARM_HP by everyone, the
   // one exception a pusher whose side is WINNING the race (the rival bird
   // lower still), who presses on - the rival bird it is due to push, and
-  // (an ally) the human it escorts
+  // (an ally) the human it backs (an anchor for its fights, aiFoe)
   const sit = aiSituation();
   const mine = sit[p.team], theirs = sit[1 - p.team];
   const own = mine ? mine.e : null;
@@ -142,7 +141,7 @@ function aiOrders(k) {
   // THE PING: a human teammate's it took up (pingSteer, js/sim/pings.js),
   // walked for PING_FOLLOW at most and then held PING_STAY on the spot. While
   // it stands it is the bot's plan over its own: the defend, guard, push and
-  // escort reads give way to it, the one exception the alarm (its bird under
+  // human-anchor reads give way to it, the one exception the alarm (its bird under
   // half nerve), which no ping overrides. An ATTACK covering the rival bird
   // and a DEFEND covering its own are folded straight into pushE/defend, so
   // the push and defend rungs play them with everything they know (the lane,
@@ -301,7 +300,6 @@ function aiFight(k) {
     const atHome = defend && Math.hypot(defend.x - p.x, defend.y - p.y) < AI_ROOST_R;
     if (!atHome && !siege && !charge && (state.elapsed < ai.fleeT || aiFallBack(p, prof, foe, odds))) {
       if (state.elapsed >= ai.fleeT) ai.fleeT = state.elapsed + AI_FLEE_HOLD; // once it turns, it means it for a moment
-      if (role === 'scout') ai.scoutCd = state.elapsed + 8; // (a scout chased off its beat works a while before it walks back into them)
       const to = aiFallBackTo(p, foe);
       aiNote(p, 'FLEE', odds.them > odds.us ? odds.them + 'V' + odds.us : 'LOW HP', to);
       if (steerTo(to.x, to.y, 3) < 0) { inp.mx = -Math.cos(Math.atan2(foe.y - p.y, foe.x - p.x)); inp.my = -Math.sin(Math.atan2(foe.y - p.y, foe.x - p.x)); }
@@ -485,7 +483,7 @@ function aiHomeRung(k) {
   if (guardE && (state.elapsed + p.id * 9) % AI_PATROL_T < AI_PATROL_OUT && guardE.mouth) {
     const u = roadNest(guardE.team).u + (guardE.team === 0 ? 1 : -1) * AI_PATROL_D / (TILE * Math.SQRT2);
     const pt = roadPoint(u);
-    aiNote(p, 'GUARD', 'SCOUTING', pt);
+    aiNote(p, 'GUARD', 'PATROL', pt);
     if (steerTo(pt.x, pt.y, 3, AI_ROOST_BUDGET) >= 0) { aimAt(pt.x, pt.y); inp.fire = false; ai.tgt = null; return true; }
   }
   return false;
@@ -612,26 +610,6 @@ function aiPushRung(k) {
   return false;
 }
 
-function aiEscortRung(k) {
-  const { p, inp, ai, role, steerTo, aimAt, ward } = k;
-  // 5d. an ally's escort: with the human on the ground and within reach, it
-  //     keeps AI_ESCORT of them - the two lowest allied players, so the rest
-  //     of the side still farms and builds. Inside that it goes on down the
-  //     ladder, working what is near, and comes back when they walk off.
-  // (an escort is a gatherer's job: a scout, stalker or slayer of the team
-  // brain has its own walk, and a bot with two flipped between them)
-  const escort = ward && aiEscorts(p) && role === 'gatherer' && Math.hypot(ward.x - p.x, ward.y - p.y) < AI_ESCORT_R;
-  k.escort = escort;
-  if (escort) {
-    const d = Math.hypot(ward.x - p.x, ward.y - p.y);
-    if (d > AI_ESCORT && d < AI_ESCORT_R) {
-      aiNote(p, 'ESCORT', 'STAY CLOSE', ward);
-      if (steerTo(ward.x, ward.y, 4) >= 0) { aimAt(ward.x, ward.y); inp.fire = false; ai.tgt = null; return true; }
-    }
-  }
-  return false;
-}
-
 function aiHelpRung(k) {
   const { p, inp, ai, steerTo, aimAt, caller } = k;
   // 5e. a teammate's call for help (the team brain): go to them. The caller
@@ -649,7 +627,7 @@ function aiHelpRung(k) {
 // 5e'. THE GOLD PUMPS (js/sim/pumps.js): a pump its side does not hold, or
 //      holds with a rival hero in the ring, is walked to and stood in until
 //      it is the side's. Its lane's laner goes from anywhere; anyone else
-//      free (not pushing, defending, on guard, escorting or under a ping)
+//      free (not pushing, defending, on guard or under a ping)
 //      only from within AI_PUMP_NEAR, and no more than AI_PUMP_N of a side
 //      at one pump. A rival in the ring is rung 3's the moment it is seen,
 //      so taking a held pump is a fight at it. No rng(): the stream is as it was.
@@ -657,9 +635,9 @@ const AI_PUMP_NEAR = 30 * TILE; // px from a pump a bot that is not its lane's l
 const AI_PUMP_N = 2;            // bots of a side going for one pump at once
 const AI_PUMP_IN = 0.6;         // share of the ring's radius out from the pump a bot stands
 function aiPumpRung(k) {
-  const { p, inp, ai, role, steerTo, aimAt, pushE, defend, guardE, escort, order } = k;
+  const { p, inp, ai, role, steerTo, aimAt, pushE, defend, guardE, order } = k;
   ai.pump = -1; // the pump it is going for, by its tile, for its side's count
-  if (pushE || defend || guardE || escort || order || role === 'pusher') return false;
+  if (pushE || defend || guardE || order || role === 'pusher') return false;
   const lane = role === 'laner' ? aiLane(p) : -1;
   let best = null, bd = Infinity;
   for (const o of structures) {
@@ -689,12 +667,12 @@ function aiPumpRung(k) {
 
 function aiRoamJobs(k) {
   const { p, inp, ai, prof, role, steerTo, aimAt, pushE, defend, guardE, order, bj } = k;
-  // 5f. the side's two roaming jobs (the plan, js/ai/ai-team.js), for a bot
-  //     nothing above has claimed. The STALKER walks to where the side last
-  //     saw a rival alone - on arrival they are rung 3's, and a spot found
-  //     empty is struck off; with nobody alone it works like anybody else.
-  //     The SCOUT walks its beat - the middle, the far road short of the
-  //     rival lane - and everything it sees goes on the side's board.
+  // 5f. the side's walking jobs (the plan, js/ai/ai-team.js), for a bot
+  //     nothing above has claimed. The bear party forms off its bear. The
+  //     STALKER walks to where the side last saw a rival alone - on arrival
+  //     they are rung 3's, and a spot found empty is struck off; with nobody
+  //     alone it works like anybody else. Every other bot walks its
+  //     position (aiFarmWalk, js/ai/ai-farm.js).
   if (bj && bj.meet) { // the bear party forming, off the bear's reach
     aiNote(p, 'REGROUP', 'BEAR PARTY ' + bj.here + '/' + AI_BEAR_N, bj.meet);
     if (steerTo(bj.meet.x, bj.meet.y, 2) >= 0) { aimAt(bj.meet.x, bj.meet.y); inp.fire = false; ai.tgt = null; return true; }
@@ -709,34 +687,26 @@ function aiRoamJobs(k) {
         if (d >= 0 && d > 28) { aimAt(s.x, s.y); inp.fire = false; ai.tgt = null; return true; }
         s.t = -1e9; // there and nobody: the side forgets the spot
       }
-    } else if (role === 'scout' && state.elapsed >= ai.scoutCd) {
-      if (!ai.scout) ai.scout = aiScoutPoint(p);
-      aiNote(p, 'SCOUT', 'WATCHING', ai.scout);
-      const d = steerTo(ai.scout.x, ai.scout.y);
-      if (d >= 0 && d > 24) { aimAt(p.x + inp.mx * 40, p.y + inp.my * 40); inp.fire = false; ai.tgt = null; return true; }
-      ai.scoutN = (ai.scoutN || 0) + 1; ai.scout = null; // there, or no way there: the next point on the beat
-      if (d < 0) ai.scoutCd = state.elapsed + 3;          // (no way there: work a while before trying the next)
     } else if (aiFarmWalk(p, role, steerTo, aimAt)) return true; // a laner's wave, a jungler's den (js/ai/ai-farm.js)
   }
   return false;
 }
 
 function aiRoadRung(k) {
-  const { p, dt, inp, ai, steerTo, aimAt, guardE, escort } = k;
+  const { p, dt, inp, ai, steerTo, aimAt, guardE } = k;
   // 5g. the road (aiRoad): a road stretch walks to the nearest rival wave,
-  //     where the XP falls - free of an escort and a post
-  const road = !escort && !guardE ? aiRoad(p, dt) : null;
+  //     where the XP falls - free of a post
+  const road = !guardE ? aiRoad(p, dt) : null;
   if (road) { aiNote(p, 'ROAD', 'THE WAVE', road); if (steerTo(road.x, road.y, 2) >= 0) { aimAt(road.x, road.y); inp.fire = false; ai.tgt = null; return true; } }
   return false;
 }
 
 function aiHuntRung(k) {
-  const { p, dt, inp, ai, steerTo, aimAt, ward, escort } = k;
+  const { p, dt, inp, ai, steerTo, aimAt } = k;
   // 6. meat is gold: chase and shoot the nearest animal, but give up on one
   //    it cannot catch in 6 s (prey outruns a walk) or cannot route to at all
   if (ai.huntAvoidT > 0) { ai.huntAvoidT -= dt; if (ai.huntAvoidT <= 0) ai.huntAvoid = null; }
-  let prey = aiNearestAnimal(p);
-  if (prey && escort && Math.hypot(prey.x - ward.x, prey.y - ward.y) > AI_ESCORT) prey = null; // (the escort's leash bounds the hunt as it does the work)
+  const prey = aiNearestAnimal(p);
   if (prey) {
     aiNote(p, 'HUNT', 'MEAT IS GOLD', prey);
     if (prey !== ai.huntTgt) { ai.huntTgt = prey; ai.huntT = 0; }
@@ -762,18 +732,16 @@ function aiHuntRung(k) {
 }
 
 function aiHarvestRung(k) {
-  const { p, dt, inp, ai, prof, steerTo, aimAt, guardE, ward, escort } = k;
+  const { p, dt, inp, ai, prof, steerTo, aimAt, guardE } = k;
   // 8. harvest: walk to a tree and hold E on it
   if (ai.tgt && objects[idx(ai.tgt.tx, ai.tgt.ty)] !== ai.tgt) { ai.tgt = null; ai.thinkT = 0; } // (finished: look for the next at once)
   ai.avoidT -= dt;
   if (ai.avoidT <= 0) ai.avoid = null;
-  if (ai.tgt && escort && Math.hypot(ai.tgt.tx * TILE + 8 - ward.x, ai.tgt.ty * TILE + 8 - ward.y) > AI_ESCORT * 0.9) ai.tgt = null; // (the human walked on: the work goes with them)
   if (!ai.tgt && ai.thinkT <= 0) {
     ai.thinkT = 0.6;
     ai.tgt = nearestObj(p.x, p.y, Math.round(AI_FORAGE * aiMood(p).greed), (o) => o !== ai.avoid &&
       o.type === 'tree' &&
       aiOpenSides(o.tx, o.ty) >= 1 &&
-      (!escort || Math.hypot(o.tx * TILE + 8 - ward.x, o.ty * TILE + 8 - ward.y) < AI_ESCORT * 0.7) && // (an escort works inside its leash)
       (!guardE || Math.hypot(o.tx * TILE + 8 - guardE.x, o.ty * TILE + 8 - guardE.y) < AI_GUARD_R * 0.85)); // (a guard works inside its leash)
   }
   if (ai.tgt) {
@@ -799,16 +767,16 @@ function aiHarvestRung(k) {
 }
 
 function aiRoam(k) {
-  const { p, dt, inp, ai, steerTo, aimAt, guardE, ward, escort } = k;
+  const { p, dt, inp, ai, steerTo, aimAt, guardE } = k;
   // 9. nothing to do: roam between its camp and the middle of the map
-  // a guard or an escort with nothing to do walks its rounds inside its leash
-  // (roaming off the edge of the leash had it flipping between its rung and
-  // this every few ticks)
-  const leash = guardE ? { e: guardE, r: AI_GUARD_R * 0.5 } : escort ? { e: ward, r: AI_ESCORT * 0.5 } : null;
-  if (leash) aiNote(p, guardE ? 'GUARD' : 'ESCORT', guardE ? 'ON ROUNDS' : 'BY THEIR SIDE', leash.e);
+  // a guard with nothing to do walks its rounds inside its leash (roaming
+  // off the edge of the leash had it flipping between its rung and this
+  // every few ticks)
+  const leash = guardE ? { e: guardE, r: AI_GUARD_R * 0.5 } : null;
+  if (leash) aiNote(p, 'GUARD', 'ON ROUNDS', leash.e);
   else aiNote(p, 'ROAM', 'NOTHING NEAR', { x: ai.wx, y: ai.wy });
   ai.roam -= dt;
-  if (leash && Math.hypot(ai.wx - leash.e.x, ai.wy - leash.e.y) > leash.r * 1.5) ai.roam = 0; // the leash moved (the human walked on)
+  if (leash && Math.hypot(ai.wx - leash.e.x, ai.wy - leash.e.y) > leash.r * 1.5) ai.roam = 0; // the roam point is off the leash: pick another
   if (ai.roam <= 0) { ai.roam = rand(3, 7); aiRoamPick(p, leash); }
   const rd = steerTo(ai.wx, ai.wy);
   if (rd < 20) ai.roam = 0; // arrived, or no route (a point in the treeline): pick another

@@ -39,7 +39,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.619';
+const PATCH_TXT = 'PATCH 0.629';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -55,6 +55,16 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.629', 'SETTINGS OPEN ON THE PARTY SCREEN CLOSE WHEN CHAMP SELECT STARTS.'],
+  ['0.628', 'WHEN MATCHMAKING PUTS TWO PARTIES TOGETHER, THE LEADER WITH THE FASTEST PC NOW HOSTS THE MATCH, SO A SLOW LAPTOP NO LONGER CARRIES ALL TEN PLAYERS.'],
+  ['0.627', 'UNDER THE HOOD: BOTS LOSE TWO OLD JOBS THEY NEVER TOOK IN A 5V5, AND THE BOT VIEW COLOURS EVERY GOAL THEY CAN HAVE.'],
+  ['0.626', 'A FLEEING DEER OR RABBIT WITH NO HERO ON THE GROUND FINISHES ITS RUN INSTEAD OF STEERING AWAY FROM THE HOST\'S HERO.'],
+  ['0.625', 'A GEAR ON THE TITLE AND PARTY SCREENS OPENS THE SETTINGS BEFORE A MATCH.'],
+  ['0.624', 'UNDER THE HOOD: THE CHECK EVERY CHANGE RUNS NOW CATCHES SPRITES AND SOUNDS NOTHING USES, SO THE GAME STAYS LEAN.'],
+  ['0.623', 'ONLINE MATCHES SEND ABOUT A FIFTH LESS DATA TO EACH PLAYER, AND A TEN-PLAYER ONLINE TEST NOW RUNS ON EVERY NETWORK CHANGE.'],
+  ['0.622', 'A NEW HERO, FABER THE TINKER: HE SETS DOWN SMALL CLOCKWORK MACHINES THAT SHOOT NEARBY RIVALS, A SPARK THAT JUMPS TO A SECOND RIVAL, A CLOCKSPRING TRAP THAT HOLDS A HERO, AND THE OLD ENGINE, A BIG MACHINE THAT WALKS WHERE HE POINTS AND SLAMS THE GROUND. MACHINES BROKEN NEAR HIM DROP SPARE PARTS. HIS WORKS FOREMAN SKIN IS ON THE SKINS SCREEN.'],
+  ['0.621', 'ABILITY DETAILS HAVE THEIR OWN KEY, ALT, SO READING A CARD NO LONGER SLIDES YOUR HERO; REBIND IT ON THE CONTROLS PAGE.'],
+  ['0.620', 'UNDER THE HOOD: THE OLD SURVIVAL TOOL TABLE IS GONE. THE AXE STILL COMES OUT FOR A TREE OR A RIVAL BUILDING, EXACTLY AS BEFORE.'],
   ['0.619', 'UNDER THE HOOD: THE BODY BAKE REPRODUCES THE GAME\'S FRAMES AGAIN; RUPES\'S ICE CELLAR ROLL NOW WEARS HIS OWN COAT.'],
   ['0.618', 'ON STEAM YOUR NAME STARTS AS YOUR STEAM NAME, UNTIL YOU PICK ONE.'],
   ['0.617', 'THE JOIN CHECK OPENS PARTIES FROM QUICKPLAY BY NAME, SO A FRESH PROFILE WITH FIRST MATCH ON TOP NO LONGER BREAKS IT.'],
@@ -737,6 +747,19 @@ function leavePractice() {
   };
 }
 
+// ---- the gear: the ESC slab's pages before a match
+// a gear top right of the title (left of the purse) and of the party screen
+// (on the social column's head, under the add-friend), opening the settings
+// bare, slid up from the foot as in a match
+const SET_GEAR = ['...###...', '.#.###.#.', '.#######.', '###...###', '###...###', '###...###', '.#######.', '.#.###.#.', '...###...'];
+function gearShown() { const m = state.menu; return m.screen === 'menu' || (m.screen === 'room' && m.roomsT >= 1); }
+function gearRect() {
+  if (state.menu.screen === 'room') { const R = socialRect(); return { x: R.x + R.w - SOCIAL_PAD - 9, y: 26, w: 9, h: 9 }; }
+  const c = coinTagRect(); return { x: c.x - 17, y: 4, w: 9, h: 9 };
+}
+function overGear() { return !state.menu.panel && gearShown() && overRect(gearRect(), 3, 3); }
+function drawGear() { if (gearShown()) { const r = gearRect(); frBmp(r.x, r.y, SET_GEAR, overGear() ? '#ffd95c' : '#9fb6d8'); } }
+function openMenuPanel(k) { const m = state.menu; m.panel = k; m.panelT = 0; m.closing = false; SFX.ui(true); }
 function closeMenuPanel() {
   const m = state.menu;
   if (!m.panel || m.closing) return;
@@ -758,6 +781,11 @@ function menuKey(e) {
   const m = state.menu;
   const k = e.key.toLowerCase();
   if (state.fade) return; // a reroll is already leaving
+  if (m.panel) { // over the title or the party screen (the gear)
+    if (k === 'escape' || k === 'backspace' || (m.panel !== 'settings' && (k === 'enter' || k === ' '))) closeMenuPanel();
+    else if (m.panel === 'settings') settingsKey(k); // the arrows page and scroll it (js/panels.js)
+    return;
+  }
   if (m.screen === 'wiki') { if (m.wikiT >= 1) wikiKey(k); return; }
   if (m.screen === 'notes') { if (m.notesT >= 1) notesKey(k); return; }
   if (m.screen === 'hero') { if (m.popT >= 1) heroKey(k); return; }
@@ -765,11 +793,6 @@ function menuKey(e) {
   if (m.screen === 'skins') { if (m.skinT >= 1) skinsKey(k); return; }
   if (m.screen === 'room') { if (m.roomsT >= 1) roomKey(k, e); return; } // the party lobby (js/ui/rooms.js)
   if (m.screen === 'profile') return; // its keys arrive through profileKey (input.js), never here
-  if (m.panel) {
-    if (k === 'escape' || k === 'backspace' || (m.panel !== 'settings' && (k === 'enter' || k === ' '))) closeMenuPanel();
-    else if (m.panel === 'settings') settingsKey(k); // the arrows page and scroll it (js/panels.js)
-    return;
-  }
   if (moveDir(k) === 'up') menuSelect(m.sel - 1);
   else if (moveDir(k) === 'down') menuSelect(m.sel + 1);
   else if (k === 'enter' || k === ' ') { m.pressT = 0.12; menuActivate(m.sel); }
@@ -780,6 +803,13 @@ function menuClick() {
   SFX.unlock();
   if (state.fade) return;
   if (friendCardClick()) return; // a Steam friend's invite card (js/ui/friends.js)
+  if (m.panel) {
+    if (!menuPanelReady()) return;
+    if (m.panel === 'settings' && overMenuPanel()) { mouse.down = true; settingsMouseDown(); return; }
+    if (!overMenuPanel()) closeMenuPanel();
+    return;
+  }
+  if (overGear()) { openMenuPanel('settings'); return; }
   if (m.screen === 'wiki') { wikiClick(); return; }
   if (m.screen === 'notes') { notesClick(); return; }
   if (m.screen === 'hero') { heroClick(); return; }
@@ -787,12 +817,6 @@ function menuClick() {
   if (m.screen === 'skins') { skinsClick(); return; }
   if (m.screen === 'room') { roomClick(); return; }
   if (m.screen === 'profile') { profileClick(); return; }
-  if (m.panel) {
-    if (!menuPanelReady()) return;
-    if (m.panel === 'settings' && overMenuPanel()) { mouse.down = true; settingsMouseDown(); return; }
-    if (!overMenuPanel()) closeMenuPanel();
-    return;
-  }
   if (overProfileTag()) { beginProfile(); return; }
   if (overCoinTag()) { beginSkins(); return; }
   if (overPatchTag()) { beginNotes(); return; }
@@ -1448,6 +1472,7 @@ function beginLobby() {
   m.countT = 0; m.countN = -1; // every rival frame face-down again
   m.loreOn = false;            // the story starts shut
   m.lockFx = 0;
+  closeMenuPanel(); // a party member's settings slide away: the draft's clock is running
   draftStart(); // the bans, then everyone's pick (js/ui/draft.js)
   SFX.place();
   SFX.music.play('lobby');
@@ -1727,6 +1752,20 @@ const CLASS12 = [
     '............',
     '............',
     '............',
+    '............',
+  ],
+  [ // FABER: a gear
+    '....ooo.....',
+    '.oo.oWo.oo..',
+    '.oWooWooWo..',
+    '..oWWWWWo...',
+    'ooWWoooWWoo.',
+    'oWWWo.oWWWo.',
+    'ooWWoooWWoo.',
+    '..oWWWWWo...',
+    '.oWooWooWo..',
+    '.oo.oWo.oo..',
+    '....ooo.....',
     '............',
   ],
   [ // VELOX: a skate, its blade under it
@@ -2038,6 +2077,7 @@ function renderTitle(now) {
     if (phot) { ctx.fillStyle = '#c89a3c'; ctx.fillRect(pr.x, pr.y + 7, pr.w, 1); }
     drawProfileTag(); // your name and its quill, opposite corner: the way to the profile card
     drawCoinTag();    // the purse, top-right: the way into the skins screen
+    drawGear();       // ...and the settings beside it
     ctx.globalAlpha = 1;
   }
 

@@ -28,7 +28,7 @@ const BOT_CMDS = new Set(['ability', 'ping', 'shop', 'recall']);
 const BOT_NODES_N = 64;     // workable tiles an observation lists, nearest first
 const BOT_NODES = new Set(['tree', 'bush']);
 const BOT_CALLS = new Set(['bird', 'help', 'low', 'push', 'here']); // CALLS' kinds a bot may say
-const BOT_CALL_LOW = new Set(['HUNTER', 'WARRIOR', 'ARMATOS', 'FORTIVA', 'BELLA', 'IGNIA', 'AURA', 'SALVIA', 'LUCERNA', 'HIEMS', 'RUPES', 'NIX', 'VARRO', 'BUCINA', 'VELOX', 'BEAR']);       // what a 'low' call may name
+const BOT_CALL_LOW = new Set(['HUNTER', 'WARRIOR', 'ARMATOS', 'FORTIVA', 'BELLA', 'IGNIA', 'AURA', 'SALVIA', 'LUCERNA', 'HIEMS', 'FABER', 'RUPES', 'NIX', 'VARRO', 'BUCINA', 'VELOX', 'BEAR']);       // what a 'low' call may name
 
 // ---- the library --------------------------------------------------------------
 // Every program a seat can run, by id: { id, name, src, run } - `run` names
@@ -377,8 +377,8 @@ function botStep(p, dt) {
       p.ai.callCd = CALL_BOT_CD;
     }
   }
-  // the ladder's hands, the one set every scripted seat shares (js/ai/ai-skill.js)
-  if (typeof skillHands === 'function' && typeof AI_LADDER_HANDS !== 'undefined') skillHands(p, AI_LADDER_HANDS, dt);
+  // the one pair of hands every scripted seat shares (js/ai/ai-skill.js)
+  skillHands(p, BOT_FILE_HANDS, dt);
 }
 // a think the bot did not answer in time. A file that stopped answering (a
 // hang, a crash) must not hold its keys forever: after BOT_LATE_MAX in a row

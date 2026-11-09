@@ -222,13 +222,15 @@ think: {
 ```
 
 The game shows every bot's thought in the bot view (F4) and records it in match logs. Goals the
-bot view colours: `DEFEND PUSH GUARD FIGHT FLEE HIDE EAT HUNT GATHER LOOT BUILD ESCORT RALLY
-ROAM WOLF`; any other word shows plain. Target kinds: `player`, `soldier`, `bird` (id = team),
+bot view colours, the game's own words (`AI_GOALS`, js/ai/ai-team.js), by what they are for:
+push `PUSH REGROUP RALLY`, fall back `FLEE HIDE RECALL HEAL`, defend `DEFEND GUARD HELP ESCORT`,
+fight `FIGHT WOLF STALK ROAD`, farm `FARM JUNGLE SUPPORT GATHER HUNT PUMP SHOP`, roam
+`ROAM IDLE ORDER`; any other word shows plain. Target kinds: `player`, `soldier`, `bird` (id = team),
 `animal`, `object`, `point`.
 
 ## Hands
 
-Every scripted seat aims with the same hands, the game's HARD bots' (`AI_LADDER_HANDS`,
+Every scripted seat aims with the same hands, the game's HARD bots' (`BOT_FILE_HANDS`,
 js/ai/ai-skill.js):
 
 | crosshair speed | wobble | a drawn shot |

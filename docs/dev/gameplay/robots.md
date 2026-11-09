@@ -35,7 +35,7 @@ point on a building's footprint** — a body measuring to a 3×2 building's cent
 past the wall it is standing against. `drawRobot()` draws the swing off `b.atkAim` and `b.atkCd`.
 
 A bot is **shootable**: its hitbox is `ROBOT_HIT_R` (7) about `robotHitY(b)` (`b.y - 1`, the
-middle of a body whose treads sit at `b.y + 4`), and `hurtRobot(b, dmg, nx, ny, src)` is the single entry
+middle of a body whose treads sit at `b.y + 4`; a hero's machine is its own size, `robotHitR`), and `hurtRobot(b, dmg, nx, ny, src)` is the single entry
 point for damage — flash, knockback, the damage total, a scrap-and-sparks burst, `SFX.hit`, and
 `robotDies` at zero. Shots reach it (only from another team — friendly fire is off, as it is for
 players), and so does every class ability and the roll, all of them through `hurtUnit`. A downed
@@ -189,6 +189,13 @@ With nothing due and the back woods felled, it keeps to its post on the road jus
 two either way. **Wherever it is, it keeps shop** too: its own body is a
 [counter](the-merchants-counter.md) as well as its stall, open to either team, and it stands still
 and faces a customer served at its body for as long as the sale takes.
+
+A hero can set bodies of its own in `robots` too: FABER's small guns and old engine
+(js/sim/faber.js) are a `robotBody` with his side, his id and a `kind` that `HERO_MACHINE`
+(js/sim/heroes.js) answers. `updateRobot` runs that row's brain after the shared status/stun
+handling, `drawRobot` its draw, and `robotDies` pays a rival the row's `pay` (no farm, no
+bounty). Towers, soldiers and every weapon meet one as they meet a soldier, and a hero bot
+targets one as it targets a soldier. Every wreck also runs `HERO_WRECK` (FABER's spare parts).
 
 It is a unit in `robots` with `merchant: true` and `kind: 'merchant'`: the same
 `separateUnits` (player radius and mass — `unitRadius`/`UNIT_MASS.merchant`) and y-sorted draw a
