@@ -807,7 +807,7 @@ function animalDies(a) {
         else campBuff(q, CAMP_BUFF_EPIC_T, a.kind);
       }
       if (MONSTER[a.kind].stack && (hunter.team === 0 || hunter.team === 1)) state.bearStacks[hunter.team] = Math.min(BLACK_STACK_MAX, state.bearStacks[hunter.team] + 1);
-      logEvent(hunter.name + ' SLEW THE ' + MONSTER[a.kind].feed, hunter);
+      logEvent(boardName(hunter) + ' SLEW THE ' + MONSTER[a.kind].feed, hunter);
       callBeast(a, hunter); // ...and the announcer calls it (the `calls` banner, js/sim/player.js)
     }
   }

@@ -517,7 +517,7 @@ function levelUp(p) {
   p.maxHp = levelMaxHp(p);
   p.hp = Math.min(p.maxHp, p.hp + (CLASSES[p.cls].grow.hp || 0));
   // the early levels come too fast to be news; the late ones say who is ahead
-  if (p.level >= LOG_LEVEL) logEvent(p.name + ' REACHED LEVEL ' + p.level, p);
+  if (p.level >= LOG_LEVEL) logEvent(boardName(p) + ' REACHED LEVEL ' + p.level, p);
   if (!inAir(p)) floaters.push({ x: p.x, y: p.y - 22, txt: 'LEVEL ' + p.level, color: '#f2cc6a', t: 0, vx: 0, scale: 2, rise: 20 });
   sfxFor(p, 'levelUp');
 }
@@ -1141,8 +1141,8 @@ function die(p, src, cause) {
   storyDown(killer, p); // the match story (js/ui/story.js): who keeps downing whom
   // a killer the world stood in for keeps the world's line, in the killer's colours
   const shot = killer && killer === src;
-  logEvent(shot ? killer.name + ' ' + (bounty ? 'SHUT DOWN' : KILL_VERB[cause] || 'SHOT') + ' ' + p.name
-    : p.name + ' ' + (DEATH_CAUSE[cause] || 'WENT DOWN'), killer || p);
+  logEvent(shot ? boardName(killer) + ' ' + (bounty ? 'SHUT DOWN' : KILL_VERB[cause] || 'SHOT') + ' ' + boardName(p)
+    : boardName(p) + ' ' + (DEATH_CAUSE[cause] || 'WENT DOWN'), killer || p);
   // the bird is the way back - a side whose objective has fallen is out,
   // however its players go down after that
   if (!teamEagleDown(p.team)) p.respawnT = respawnTime(p);
