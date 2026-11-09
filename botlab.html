@@ -231,24 +231,40 @@
 <script>
 'use strict';
 // what a goal is FOR: six kinds, one colour each. The words (GATHER,
-// MINE...) say the rest, so colour stays a small mark and the text plain ink.
+// PUMP...) say the rest, so colour stays a small mark and the text plain ink.
 // The four that change a match are loud; FARM and ROAM, most of any match,
 // are quiet, so a fight or a push is what the eye finds. Checked as a set on
 // the panel for colour-blind separation in exactly this stacking order
 // (bottom of a stack first); none is the red or the blue the two sides wear.
-// The game's own F4 view paints the same (BOT_GOALS, js/ui/botview.js),
-// ROAM aside; a match log's activities (match-log.md `act`) sit in the kind
-// they belong to.
+// The game's one goal table (AI_GOALS / AI_GOAL_KINDS, js/ai/ai-team.js) files
+// the words into these same six, and the F4 view paints them the same, ROAM
+// aside. A log carries that table (`goals`: word to kind) and fileGoals files
+// its words over these lists, which stay the fallback for a log from before
+// it did: they are the table as it stood, plus a match log's activities
+// (match-log.md `act`: SIEGE, WORK, MOVE) in the kind they belong to.
 const KINDS = [
-  { k: 'PUSH', col: '#d55181', word: 'PUSHING', goals: ['PUSH', 'RALLY', 'REGROUP', 'SIEGE'] },
-  { k: 'RETREAT', col: '#c98500', word: 'FALLING BACK', goals: ['FLEE', 'HIDE'] },
-  { k: 'DEFEND', col: '#9085e9', word: 'DEFENDING', goals: ['DEFEND', 'GUARD', 'ESCORT', 'FOLLOW', 'HELP'] },
-  { k: 'FIGHT', col: '#d95926', word: 'FIGHTING', goals: ['FIGHT', 'WOLF', 'STALK'] },
-  { k: 'FARM', col: '#3b8f72', word: 'FARMING', goals: ['GATHER', 'MINE', 'HUNT', 'EAT', 'LOOT', 'BUILD', 'SPEND', 'SHOP', 'FORGE', 'WORK'] },
-  { k: 'ROAM', col: '#3a4150', word: 'ROAMING', goals: ['ROAM', 'IDLE', 'MOVE', 'SCOUT', 'ORDER'] },
+  { k: 'PUSH', col: '#d55181', word: 'PUSHING', goals: ['PUSH', 'REGROUP', 'RALLY', 'SIEGE'] },
+  { k: 'RETREAT', col: '#c98500', word: 'FALLING BACK', goals: ['FLEE', 'HIDE', 'RECALL', 'HEAL'] },
+  { k: 'DEFEND', col: '#9085e9', word: 'DEFENDING', goals: ['DEFEND', 'GUARD', 'HELP', 'ESCORT'] },
+  { k: 'FIGHT', col: '#d95926', word: 'FIGHTING', goals: ['FIGHT', 'WOLF', 'STALK', 'ROAD'] },
+  { k: 'FARM', col: '#3b8f72', word: 'FARMING', goals: ['FARM', 'JUNGLE', 'SUPPORT', 'GATHER', 'HUNT', 'PUMP', 'SHOP', 'WORK'] },
+  { k: 'ROAM', col: '#3a4150', word: 'ROAMING', goals: ['ROAM', 'IDLE', 'ORDER', 'MOVE'] },
 ];
 const KIND_OF = {};
 for (const K of KINDS) { KIND_OF[K.k] = K; for (const g of K.goals) KIND_OF[g] = K; }
+// a log's own goal table over the lists above: each word it files under one
+// of the six kinds moves there (a word that is not a short upper-case word,
+// or a kind the page does not know, is left alone)
+function fileGoals(goals) {
+  if (!goals || typeof goals !== 'object') return;
+  for (const w of Object.keys(goals)) {
+    const K = KINDS.find((x) => x.k === goals[w]);
+    if (!K || !/^[A-Z]{1,12}$/.test(w) || KIND_OF[w] === K || KINDS.some((x) => x.k === w)) continue;
+    const was = KIND_OF[w];
+    if (was) was.goals.splice(was.goals.indexOf(w), 1);
+    K.goals.push(w); KIND_OF[w] = K;
+  }
+}
 const DEAD_COL = '#232a37';
 // a goal (or a kind) to its kind's key; a word nobody filed yet counts as ROAM
 const kindKey = (g) => g === 'DEAD' ? 'DEAD' : KIND_OF[g] ? KIND_OF[g].k : 'ROAM';
@@ -310,6 +326,7 @@ window.addEventListener('message', (e) => {
   const m = e.data;
   if (!m || !game || e.source !== game) return;
   if (m.kind === 'botlab-log') {
+    fileGoals(m.log.goals);
     S.liveLog = m.log; S.world = m.log.world || S.world;
     S.liveBirds = (m.log.birds || []).slice(); S.liveKills = (m.log.kills || []).slice();
     if (m.log.map) loadImg(m.log.map, (im) => { S.liveMap = im; render(); });
@@ -439,6 +456,7 @@ function sidesFrom(bots) {
 // their why and target, a sample a second, kills, the birds' nerve, and the
 // session's finished matches
 function fromBotlog(l, file) {
+  fileGoals(l.goals);
   const bots = l.bots.map(statsBot), sides = l.sides || sidesFrom(l.bots);
   const birdsT = l.birds || [];
   const m = { id: 'botlog-' + l.seed, from: file, seed: l.seed, len: l.len, world: l.world || WORLD_PX, winner: null, fun: null, sides,
@@ -509,6 +527,7 @@ function lanesFromEvents(events, bots, end) {
 // the fun-tests runner's match file (match-log.md v1). Its per-seat time is
 // the brain's goals once a brain writes them, else the sim's activities.
 function fromMatchLog(o, file) {
+  fileGoals(o.goals);
   const fin = new Map((o.players || []).map((p) => [p.id, p]));
   const seats = o.seats.filter((s) => s.ctrl !== 'none');
   const hasGoals = [...fin.values()].some((p) => p.goals && Object.keys(p.goals).length);

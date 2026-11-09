@@ -27,7 +27,7 @@ function playMatch(opts) {
   // top-level const/let live in the scripts' shared scope, so the few this
   // file reads are fetched once (each is a stable object or a constant)
   const G = globalThis;
-  const L = g.run('({ players, state, CLASSES, AI_LEVELS, TICK_DT, WORLD, TILE, PATCH_TXT })');
+  const L = g.run('({ players, state, CLASSES, AI_LEVELS, AI_GOALS, TICK_DT, WORLD, TILE, PATCH_TXT })');
 
   // ---- the seats ------------------------------------------------------------
   // 'level': the game's own sides at settings.aiLevel - seat 0's side are the
@@ -43,7 +43,7 @@ function playMatch(opts) {
     player.control = 'ai';
   `);
   const levels = L.AI_LEVELS;
-  if (o.kind === 'level') g.run(`player.ai.prof = AI_LEVELS[${o.proxy | 0}];`);
+  if (o.kind === 'level') g.run(`player.ai.prof = AI_LEVELS[${o.proxy | 0}]; player.standIn = true;`); // its side's bots mind it as the human (aiPerson, js/ai/ai.js)
   else for (const p of L.players) p.ai.prof = levels[p.team === 0 ? o.a : o.b];
   // bot files (js/ai/bot-api.js, docs/bots/): `bots` adds programs to the
   // library ({ id: source text }) beside the baked examples, `seats` says who
@@ -220,6 +220,7 @@ function playMatch(opts) {
     result: { winner, reason, time: round1(clock()), ticks, error },
     sampleEvery: o.sampleEvery,
     pKeys, samples, events, players,
+    goals: L.AI_GOALS, // every goal word to its kind (js/ai/ai-team.js), for the Bot Lab to file `goal` by
     cells: { size: CELL, open: cellOpen.reduce((a, b) => a + b, 0), seen: cellSeen.reduce((a, b, i) => a + (b && cellOpen[i] ? 1 : 0), 0) },
   };
   if (o.seats) log.setup.seats = o.seats;

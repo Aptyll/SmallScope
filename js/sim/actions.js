@@ -7,20 +7,10 @@
 // Every action takes the player performing it, so the local human, an AI fill
 // and a future network peer all reach the world through the same calls.
 
-// The SWING tools - what E has in hand, never what the button fires: the
-// axe, the one tool left. Not player-selectable: E brings it out for whatever is
-// under the cursor, and the hero's weapon comes back the moment the swing ends.
-// The weapon the button fires is the hero's basic attack (CLASSES[c].attack,
-// js/sim/attack.js).
-const SWING_TOOLS = [
-  // the 'bow' row is the AT REST state, not a thing that draws: drawHeldTool
-  // puts the hero's own weapon (attackOf) in the hands instead, so this entry's
-  // `icon` is unread (SPRITES.itemBow is still live on the end screen's kills
-  // plate). Kept so the table stays one row per p.swing value.
-  { key: 'bow',  name: 'BOW',     icon: 'itemBow' },
-  { key: 'axe',  name: 'AXE',     icon: 'itemAxe' },
-];
-const SWING_BOW = 0, SWING_AXE = 1;
+// E's swing: whatever is under the cursor, the axe comes out for it, and the
+// hero's weapon (its basic attack, CLASSES[c].attack, js/sim/attack.js) is back
+// in the hands the moment the swing ends. Which objects E works is their
+// OBJECTS entry's `work`.
 const BOW_Y = 6;          // arrows spawn (and are aimed from) this far above the player's feet
 const ARROW_TRAIL_STEP = 4;    // px of flight between trail motes (distance, not time, so a
 const ARROW_TRAIL_LIFE = 0.22; // slow arrow streaks as evenly as a fast one); motes fade over
@@ -111,23 +101,23 @@ function workTarget(p) { return workTargetAt(p, Math.floor(p.input.aimX / TILE),
 function workTargetAt(p, tx, ty) {
   if (!inWorld(tx, ty)) return null;
   const o = objects[idx(tx, ty)];
-  let t = -1;
+  let ok = false;
   if (o) {
     // a building (any tile of its footprint - `part` resolves to the anchor) is a
     // target only for the other team
     const st = structOf(o);
-    if (STRUCTS[st.type]) { if (!ownsStruct(st, p)) t = SWING_AXE; }
+    if (STRUCTS[st.type]) ok = !ownsStruct(st, p);
     else {
-      // scenery answers from its OBJECTS entry: `tool` is what E reaches for,
-      // and `ready`, where an entry has one, is what decides it is worth
+      // scenery answers from its OBJECTS entry: `work` is whether E reaches for
+      // it, and `ready`, where an entry has one, is what decides it is worth
       // reaching. An object carrying a `team` (a roosting eagle's hitbox
       // tiles) is a rival-only target, the same rule a building answers above.
       const d = OBJECTS[st.type];
-      if (d && d.tool && (!d.ready || d.ready(st)) &&
-        (st.team === undefined || st.team !== p.team)) t = SWING_AXE;
+      ok = !!(d && d.work && (!d.ready || d.ready(st)) &&
+        (st.team === undefined || st.team !== p.team));
     }
   }
-  if (t < 0) return null;
+  if (!ok) return null;
   // tile-based, not a radius: only the ring of tiles around the one you stand on
   const ptx = Math.floor(p.x / TILE), pty = Math.floor(p.y / TILE);
   const near = Math.max(Math.abs(tx - ptx), Math.abs(ty - pty)) <= WORK_REACH;
@@ -136,9 +126,9 @@ function workTargetAt(p, tx, ty) {
   const so = o && structOf(o), w = so && !STRUCTS[so.type] && OBJECTS[so.type] && OBJECTS[so.type].w;
   if (w) {
     const dx = ptx < so.tx ? so.tx - ptx : Math.max(0, ptx - (so.tx + w - 1));
-    return { o: so, tx: so.tx, ty: so.ty, tool: t, near: Math.max(dx, Math.abs(pty - so.ty)) <= WORK_REACH };
+    return { o: so, tx: so.tx, ty: so.ty, near: Math.max(dx, Math.abs(pty - so.ty)) <= WORK_REACH };
   }
-  return { o, tx, ty, tool: t, near };
+  return { o, tx, ty, near };
 }
 
 // the cable under the local player's pointer (zipUnder, js/sim/zipline.js), while
@@ -151,8 +141,8 @@ function hoverZip() {
   return zipUnder(mouseWX(), mouseWY());
 }
 
-// E: swing the right tool at the cursor's tile. Held E repeats every swing
-// cooldown; the bow comes back on its own once the cooldown runs out.
+// E: swing the axe at the cursor's tile. Held E repeats every swing
+// cooldown; the weapon comes back on its own once the cooldown runs out.
 function tryWork(p) {
   if (p.swingCd > 0 || p.fallT > 0 || p.dodgeT > 0 || p.stunT > 0 ||
     p.castT > 0 || p.rushT > 0 || p.shieldT > 0 || p.zip >= 0) return; // both hands are on the ability or on the zipline's handle
@@ -168,7 +158,6 @@ function tryWork(p) {
 // the swing itself, once a target is picked: the tool comes up, the body
 // faces the tile, and swingHit lands on it SWING_HIT_AT into the arc
 function startSwing(p, t) {
-  p.swing = t.tool;
   p.workTx = t.tx; p.workTy = t.ty;
   const dx = t.tx * TILE + 8 - p.x, dy = t.ty * TILE + 8 - p.y;
   p.swingDir = Math.atan2(dy, dx);
@@ -183,23 +172,22 @@ function startSwing(p, t) {
 }
 
 // The hands work on their own. Whatever an OBJECTS entry marks `auto` (a
-// tree, a dead tree, a rival's roosting
+// tree, a rival's roosting
 // eagle) and any building on the other team is swung at the moment it is in
 // WORK_REACH, with no key held: the closest such tile in the ring around the
 // player, nearest tile centre first. E keeps its day job for what is left - bare ice and the
 // practice dummy - and a held E always wins the hands.
-// Whether a tile is the hands' business, and with which tool (-1 = not). A
+// Whether a tile is the hands' business. A
 // rival's building or roosting eagle answers with AUTO_PRIO_FOE, scenery with
 // 0: at equal distance the fight beats the pine beside it (autoTarget ranks by
 // prio first, then distance).
 const AUTO_PRIO_FOE = 1;
-function autoToolFor(o, p) {
+function autoWorks(o, p) {
   const st = structOf(o); // a `part` tile answers for the building it belongs to
-  if (STRUCTS[st.type]) return ownsStruct(st, p) ? -1 : SWING_AXE; // your side's is never swung at
+  if (STRUCTS[st.type]) return !ownsStruct(st, p); // your side's is never swung at
   const d = OBJECTS[o.type];
   // an object carrying a team (the eagles' hitbox tiles) is a rival-only target, as in workTarget
-  if (!d || !d.auto || (d.ready && !d.ready(o)) || (o.team !== undefined && o.team === p.team)) return -1;
-  return SWING_AXE;
+  return !!d && !!d.auto && (!d.ready || d.ready(o)) && !(o.team !== undefined && o.team === p.team);
 }
 function autoPrio(o) {
   return STRUCTS[structOf(o).type] || o.team !== undefined ? AUTO_PRIO_FOE : 0;
@@ -212,10 +200,9 @@ function autoTarget(p) {
     if (!inWorld(tx, ty)) continue;
     const o = objects[idx(tx, ty)];
     if (!o) continue;
-    const tool = autoToolFor(o, p);
-    if (tool < 0) continue;
+    if (!autoWorks(o, p)) continue;
     const dist = Math.hypot(tx * TILE + 8 - p.x, ty * TILE + 8 - p.y), pr = autoPrio(o);
-    if (pr > bp || (pr === bp && dist < bd)) { bp = pr; bd = dist; best = { o, tx, ty, tool, near: true }; }
+    if (pr > bp || (pr === bp && dist < bd)) { bp = pr; bd = dist; best = { o, tx, ty, near: true }; }
   }
   return best;
 }
@@ -350,7 +337,7 @@ function rollSweep(p) {
   const dmg = rollDmg(p, sp), stun = rollLerp(ROLL_STUN, rollPow(p, sp));
 
   for (const a of animals) {
-    if (!unitFoe(p, a) || a.kind === 'bird' || p.rollHit.includes(a)) continue; // a deer your side rides is rolled under
+    if (!unitFoe(p, a) || p.rollHit.includes(a)) continue; // a deer your side rides is rolled under
     if (Math.hypot(a.x - p.x, a.y - p.y) > ROLL_HIT_R + unitRadius(a)) continue;
     p.rollHit.push(a);
     hurtUnit(a, dmg, nx, ny, p, { kb: ROLL_KB, ab: 'roll' });
@@ -455,44 +442,34 @@ function nearestDryTile(x, y, p, r0 = 1) {
   return (p || player).spawn;
 }
 
-// ONE chop into a standing tree, live or dead: the gold for the bite, the
+// ONE chop into a standing tree: the gold for the bite, the
 // stump and the fell payout (a gold pine's on top), landed by an E swing
 // through hitObject.
 function chopTree(o, p) {
   const ox = o.tx * TILE + 8, oy = o.ty * TILE + 8;
-  const dead = o.type === 'deadTree'; // the rookery's cover: quicker, same gold
   joltObj(o, 0.1, 0.22);
   o.hp--;
   sfxAt('chop', ox, oy);
-  awardGold(p, dead ? YIELD.deadTreeHit : YIELD.treeHit, ox, oy);
-  burst(ox, oy - 10, '#eef4fb', dead ? 5 : 6, 40, 0.5, true);
-  burst(ox, oy - 12, dead ? '#6b5a48' : '#3f7a5c', 3, 30, 0.4, true);
+  awardGold(p, YIELD.treeHit, ox, oy);
+  burst(ox, oy - 10, '#eef4fb', 6, 40, 0.5, true);
+  burst(ox, oy - 12, '#3f7a5c', 3, 30, 0.4, true);
   if (o.hp > 0) { shedHit(o); return; } // the blow shakes the crown (js/sim/shed.js); a fell has its own snow
-  objects[idx(o.tx, o.ty)] = { type: 'stump', tx: o.tx, ty: o.ty, flash: 0, shake: 0 };
+  setTile(idx(o.tx, o.ty), { type: 'stump', tx: o.tx, ty: o.ty, flash: 0, shake: 0 });
   sfxAt('treeFall', ox, oy);
-  shakeFor(p, dead ? 2 : 2.5);
-  // the fell's one payout, a gold pine's included; FORAGER fattens it
-  const gold = !dead && o.rare;
-  awardGold(p, Math.round(((dead ? YIELD.deadTreeFall : YIELD.treeFall) + (gold ? YIELD.treeRare : 0)) * kitOf(p).harvestMul), ox, oy - 6);
-  burst(ox, oy - 8, '#eef4fb', dead ? 12 : 14, 55, 0.7, true);
-  burst(ox, oy - 8, dead ? '#6b5a48' : '#2f5c4b', dead ? 6 : 8, 45, 0.6, true);
+  shakeFor(p, 2.5);
+  // the fell's one payout, a gold pine's included
+  const gold = o.rare;
+  awardGold(p, YIELD.treeFall + (gold ? YIELD.treeRare : 0), ox, oy - 6);
+  burst(ox, oy - 8, '#eef4fb', 14, 55, 0.7, true);
+  burst(ox, oy - 8, '#2f5c4b', 8, 45, 0.6, true);
   if (gold) burst(ox, oy - 8, '#f2cc6a', 10, 50, 0.6, true);
-  if (dead) flushBirds(campAt(ox, oy), { x: ox, y: oy }); // felling a perch scatters the flock in it (dormant: see the birds banner, wildlife.js)
 }
 
 function hitObject(o, p) {
   p = p || player;
   const ox = o.tx * TILE + 8, oy = o.ty * TILE + 8;
-  // hard tool gating: an object with a `needs` bounces off anything else
-  const k = SWING_TOOLS[p.swing].key;
-  const d = OBJECTS[o.type];
-  if (d && d.needs && k !== d.needs) {
-    sfxAt('deny', ox, oy);
-    addFloater(ox, oy - 14, 'NEEDS AXE', '#9fb6d8');
-    return;
-  }
   joltObj(o, 0.1, 0.22);
-  if (o.type === 'tree' || o.type === 'deadTree') {
+  if (o.type === 'tree') {
     chopTree(o, p);
   } else if (o.type === 'eagle') {
     // the roost: a rival's E swing is the melee siege on the objective. The
@@ -514,11 +491,11 @@ function hitObject(o, p) {
 }
 
 // THE DAWN SHIELD: an open snowdrop picked (OBJECTS.snowdrop, js/sim/world.js)
-// lays DAWN_SHIELD of shield on every scout of the picker's company who is
+// lays DAWN_SHIELD of shield on every hero of the picker's company who is
 // up and on the ground, wherever they are, stacking to DAWN_SHIELD_MAX - so
 // the clumps are worth racing a rival company for, one segment each. It
 // holds until hits break it (damagePlayer spends it before health) or its
-// scout goes down; it never wears off by itself. The gold bar over the
+// hero goes down; it never wears off by itself. The gold bar over the
 // health bar is the whole read (drawShieldBar, js/draw/overhead.js).
 const DAWN_SHIELD = 10;
 const DAWN_SHIELD_MAX = 30;
@@ -527,7 +504,7 @@ function pickSnowdrop(o, p) {
   o.readyAt = state.elapsed + SNOWDROP_CD;
   for (const q of players) {
     if (!q.active || q.dead || inAir(q) || q.team !== p.team) continue;
-    q.dawnShield = Math.min(DAWN_SHIELD_MAX, q.dawnShield + DAWN_SHIELD);
+    shieldUnit(q, DAWN_SHIELD, 0, 'dawn');
     sfxFor(q, 'shieldUp');
     burst(q.x, q.y - 8, '#ffd84a', 5, 26, 0.45);
   }
@@ -562,7 +539,7 @@ function hitDummy(o, dmg, hx, hy) {
 // So the damping is charged ONCE, here, on the one path, rather than as a
 // building-sized number written out per weapon: raise a shot's damage and the
 // siege scales with it, and nothing new ever has to remember the rule. It is
-// a player's blow that is damped, never a soldier's axe (ROBOT_DMG is already
+// a player's blow that is damped, never a soldier's blow (SOLDIER_TYPES' dmg is already
 // a building number), which is what the fourth argument says.
 const STRUCT_DR = 0.6;
 // One blow against a building on another team. Everything that can land one -
@@ -596,7 +573,7 @@ function hurtStruct(o, dmg, p, bot) {
 // rubble is just rubble.
 function destroyStructure(o, p) {
   if (STRUCTS[o.type]) removeStruct(o);
-  else objects[idx(o.tx, o.ty)] = null;
+  else setTile(idx(o.tx, o.ty), null);
   const c = structCenter(o), ox = c.x, oy = c.y;
   sfxAt('break_', ox, oy);
   burst(ox, oy, '#8a6142', 10, 50, 0.5, true);
@@ -654,7 +631,7 @@ function unitAlive(e) {
 }
 // Whose side a unit is on. Wildlife has none (-1): neutral to everyone and
 // therefore fair game to everyone, which is exactly how the world already
-// treats a deer. For the sides that do have one this mirrors enemyOf's rule.
+// treats a deer - all but a hero's own beast (HERO_SUMMON), which wears its side. For the sides that do have one this mirrors enemyOf's rule.
 function unitTeam(e) { return e.team === undefined ? -1 : e.team; }
 // A thing left lying in the world - a trap, a net, a crater, a shot in flight -
 // carries `owner` and `team` rather than being a body itself. This is the
@@ -678,7 +655,7 @@ function unitFoe(src, e) {
 function unitsNear(src, x, y, r) {
   const out = [];
   for (const q of players) if (unitFoe(src, q) && Math.hypot(q.x - x, q.y - y) <= r) out.push(q);
-  for (const a of animals) if (unitFoe(src, a) && Math.hypot(a.x - x, a.y - (a.alt || 0) - y) <= r) out.push(a);
+  for (const a of animals) if (unitFoe(src, a) && Math.hypot(a.x - x, a.y - y) <= r) out.push(a);
   for (const b of robots) if (unitFoe(src, b) && Math.hypot(b.x - x, b.y - y) <= r) out.push(b);
   return out;
 }
@@ -700,9 +677,9 @@ function unitUnder(src, wx, wy) {
   for (const b of robots) if (unitAlive(b) && b.team !== src.team && Math.abs(wx - b.x) <= 7 && wy >= b.y - 7 && wy <= b.y + 4) return b;
   for (const a of animals) {
     if (!unitFoe(src, a)) continue; // a deer your own side rides is no mark
-    const hw = a.kind === 'rabbit' ? 7 : a.kind === 'bird' ? 5 : isBigBeast(a) ? 34 : a.kind === 'wolf' ? 9 : 16;
-    const h = a.kind === 'rabbit' ? 11 : a.kind === 'bird' ? 7 : isBigBeast(a) ? 48 : a.kind === 'wolf' ? 14 : 34;
-    const by = a.y + 4 - (a.alt || 0); // birds ride their alt
+    const hw = a.kind === 'rabbit' ? 7 : isBigBeast(a) ? 34 : a.kind === 'wolf' ? 9 : 16;
+    const h = a.kind === 'rabbit' ? 11 : isBigBeast(a) ? 48 : a.kind === 'wolf' ? 14 : 34;
+    const by = a.y + 4;
     if (Math.abs(wx - a.x) <= hw && wy >= by - h && wy <= by) return a;
   }
   return null;
@@ -760,7 +737,7 @@ function structsInCone(src, x, y, a, r, half) {
 // the world. `o` carries the rest: `type` (a DMG_TYPES key), `kb` px/s of shove
 // for an animal or a bot (a player's shove is damagePlayer's own, so the callers
 // that want a particular one add it themselves), `cause` for the feed line,
-// `ambush`, `crit`, `basic` (a hero's basic attack, for passiveDeal and the
+// `ambush`, `crit`, `burn`, `slow`, `basic` (a hero's basic attack, for passiveDeal and the
 // item passives) and `ab`, the id of the ability that landed it (its CLASS_AB
 // row's, or a move with no key: 'roll'; a blow inside a key's use()
 // gets it stamped) - what the death recap
@@ -809,6 +786,8 @@ function hurtUnit(e, dmg, nx, ny, src, o) {
   if (ty.ignite > 0) igniteUnit(e, ty.ignite, BURN_DPS, src);
   // ...and a blow that carries its own fire, `burn: [s, hp a second]`, lights it once it lands
   if (o.burn) igniteUnit(e, o.burn[0], o.burn[1], src);
+  // ...and a blow that carries its own slow, `slow: [s, walk x]`, puts it on once it lands (RUPES's HEAVE)
+  if (o.slow) slowUnit(e, o.slow[0], o.slow[1]);
 }
 
 // ---- the states a unit can be under --------------------------------------
@@ -902,14 +881,65 @@ function knockUp(e, t, src) {
   burst(e.x, e.y + 3, '#eef4fb', 6, 40, 0.35, true);
 }
 function upLift(e) { return e.upT > 0 ? Math.round(7 * Math.sin(Math.PI * (1 - e.upT / (e.upMax || 1)))) : 0; }
-// SHIELDED: hp that a hit spends before health, for a while (damagePlayer,
-// js/sim/player.js, spends it after the dawn's). A fresh one never stacks on
-// one still up: the bigger hp, the longer clock. Players only, today.
-function shieldUnit(p, hp, t) {
+// SHIELDS: hp a hit spends before health. A unit's `shields` is ONE list, a
+// shield of each kind at most, kept in SHIELD_KINDS order, which is the order
+// a hit spends them (shieldSpend, from damagePlayer, js/sim/player.js). What
+// a kind is lives in its row: `stack` adds a fresh one onto one still up, to
+// its `cap`, where any other keeps the bigger hp and the longer clock;
+// `lasting` never wears off (else `t` counts down, shieldTick); `ink` is the
+// spark a hit on it throws and `breakInk` the burst when it breaks. A new
+// shield is a row here and a shieldUnit call. Players only, today.
+const SHIELD_KINDS = {
+  // the DAWN SHIELD (pickSnowdrop): segments of DAWN_SHIELD to DAWN_SHIELD_MAX, spent first
+  dawn: { stack: true, cap: DAWN_SHIELD_MAX, lasting: true, ink: '#ffd84a', breakInk: '#fff4b8' },
+  // a timed shield from a hero's kit (SALVIA's cloak, ARMATOS's resolve, FORTIVA's heart)
+  ward: { ink: '#f2cc6a' },
+};
+const SHIELD_ORDER = Object.keys(SHIELD_KINDS);
+function shieldUnit(p, hp, t, kind) {
   if (!(p instanceof Player) || !unitAlive(p) || hp <= 0) return;
-  p.wardHp = Math.max(p.wardHp, hp);
-  p.wardT = Math.max(p.wardT, t);
+  kind = kind || 'ward';
+  const K = SHIELD_KINDS[kind];
+  let s = p.shields.find((q) => q.kind === kind);
+  if (!s) {
+    s = { kind, hp: 0, t: 0 };
+    const at = p.shields.findIndex((q) => SHIELD_ORDER.indexOf(q.kind) > SHIELD_ORDER.indexOf(kind));
+    p.shields.splice(at < 0 ? p.shields.length : at, 0, s);
+  }
+  s.hp = K.stack ? Math.min(K.cap, s.hp + hp) : Math.max(s.hp, hp);
+  if (!K.lasting) s.t = Math.max(s.t, t);
 }
+// the shield hp a unit holds: of one kind, or all of it
+function shieldOf(e, kind) {
+  let n = 0;
+  if (e.shields) for (const s of e.shields) if (!kind || s.kind === kind) n += s.hp;
+  return n;
+}
+// a hit's share the shields take, in order; a spent one breaks and leaves the list
+function shieldSpend(p, dmg) {
+  let left = dmg;
+  for (let i = 0; i < p.shields.length && left > 0;) {
+    const s = p.shields[i], K = SHIELD_KINDS[s.kind], took = Math.min(s.hp, left);
+    s.hp -= took; left -= took;
+    burst(p.x, p.y - 10, K.ink, 4, 36, 0.35);
+    if (s.hp > 0) { i++; continue; }
+    sfxAt('shieldBreak', p.x, p.y);
+    if (K.breakInk) burst(p.x, p.y - 10, K.breakInk, 10, 60, 0.5);
+    p.shields.splice(i, 1);
+  }
+  return dmg - left;
+}
+// the clocks running down; a shield whose clock runs out is gone
+function shieldTick(p, dt) {
+  for (let i = p.shields.length - 1; i >= 0; i--) {
+    const s = p.shields[i];
+    if (SHIELD_KINDS[s.kind].lasting) continue;
+    s.t = Math.max(0, s.t - dt);
+    if (s.t <= 0) p.shields.splice(i, 1);
+  }
+}
+// a kind's shield taken off whole (FORTIVA's heart spending what is left of its own)
+function shieldClear(p, kind) { p.shields = p.shields.filter((s) => s.kind !== kind); }
 // Marked: revealed. On a player seenAt() returns its full range and both maps
 // keep drawing them; an animal or a bot has no cover to strip, so it is the
 // gold chevrons alone - the falcon still says "I have found this".

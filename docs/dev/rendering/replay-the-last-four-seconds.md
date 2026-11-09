@@ -9,16 +9,10 @@ are **dead** or **paused**, in one of two shapes (`rpFull()`/`rpRect()`):
   underneath (`renderDead` returns early while `replayFull()`). A close box sits inside the
   frame's top-right corner (`rpCloseRect`/`rpCloseHit`, a 12 px plank with a cross that lights
   gold under the pointer), an **ESC BACK** prompt at its foot (`drawKeyPrompt` with the `esc`
-<<<<<<< HEAD
-  action, so a pad wears its B), and `deadKey` takes ESC, BACKSPACE, ENTER and SPACE as
-  `replayClose()` — a pad's B arrives as escape. `state.rpClosed`
+  action), and `deadKey` takes ESC, BACKSPACE, ENTER and SPACE as
+  `replayClose()`, as `deadClick` takes any click that is not on the recap's fold buttons. `state.rpClosed`
   remembers, reset by every `endMatch`, so it opens once per death; a `'hostleft'` ending starts
   it closed (the host walking out is no death), so the guest sees THE HOST LEFT and LOBBY at once.
-=======
-  action), and `deadKey` takes ESC, BACKSPACE, ENTER and SPACE as
-  `replayClose()`. `state.rpClosed`
-  remembers, reset by every `endMatch`, so it opens once per death.
->>>>>>> c27f40c (PATCH 0.584 — Keyboard and mouse only: gamepad support removed)
   In the frame's top-left corner sits **the death recap** (`drawRecap`, js/ui/recap.js): a ring
   of all the damage split by kind (`RC_KIND`: basic attacks, abilities, the rest) with the total in
   it, then up to `RC_ROWS` hitters, biggest first, each a face (the hitter's portrait, the world's

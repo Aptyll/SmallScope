@@ -92,7 +92,7 @@ const FORT_AB = [
 ];
 
 HERO_PASSIVE.unbroken = { hurt: unbHurt, deal: unbDeal, tick: unbTick, out: unbOut,
-  name: 'UNBROKEN', blurb: 'BLOWS TRADED WITH HEROES BUILD RESOLVE. HIGH, YOU SHRUG OFF CONTROL AND YOUR ATTACKS HEAL YOU.', icon: FORT_ICON32.unbroken };
+  name: 'UNBROKEN', blurb: 'BLOWS TRADED WITH HEROES BUILD RESOLVE. HIGH, CONTROL ON YOU IS SHORTER AND YOUR ATTACKS HEAL YOU.', icon: FORT_ICON32.unbroken };
 
 // ---- UNBROKEN -----------------------------------------------------------------
 function isFort(p) { return p instanceof Player && CLASSES[p.cls].passive === 'unbroken'; }
@@ -118,7 +118,7 @@ function unbTick(p, dt) {
   if (p.nkT > 0) p.nkT = Math.max(0, p.nkT - dt);
   if (p.defyT > 0) {
     p.defyT = Math.max(0, p.defyT - dt);
-    if (p.defyT <= 0 || p.wardHp <= 0) defyRelease(p);
+    if (p.defyT <= 0 || shieldOf(p, 'ward') <= 0) defyRelease(p);
   }
 }
 // a body leaving the world drops all of it (bodyOut, js/sim/player.js)
@@ -154,19 +154,19 @@ function fortSever(p) {
 
 // ---- W DEFIANT HEART ----------------------------------------------------------
 // The shield is the shared timed one (shieldUnit); what it took is what is gone
-// from it when it breaks or runs out (defyHp, its size, less wardHp).
+// from it when it breaks or runs out (defyHp, its size, less what is left).
 function fortDefy(p) {
   const hp = Math.round(p.maxHp * abRk(p, 'defy', 'shieldHp') + abAp(p, 'defy'));
   shieldUnit(p, hp, DEFY_T + 0.25); // (a beat longer than the heart's clock, so what is left of it at the release is read before it fades)
-  p.defyHp = p.wardHp;
+  p.defyHp = shieldOf(p, 'ward');
   p.defyT = DEFY_T;
   burst(p.x, p.y - 8, '#f2cc6a', 10, 45, 0.45, true);
   sfxAt('place', p.x, p.y);
 }
 function defyRelease(p) {
-  const took = Math.max(0, p.defyHp - p.wardHp);
+  const took = Math.max(0, p.defyHp - shieldOf(p, 'ward'));
   p.defyT = 0; p.defyHp = 0;
-  if (p.wardHp > 0) { p.wardHp = 0; p.wardT = 0; } // the wave spends what is left of it
+  shieldClear(p, 'ward'); // the wave spends what is left of it
   const dmg = Math.round(abRk(p, 'defy', 'dmg') + took * DEFY_PAY + abAp(p, 'defy'));
   for (const q of unitsHit(p, p.x, p.y, DEFY_R)) {
     const d = Math.hypot(q.x - p.x, q.y - p.y) || 1;

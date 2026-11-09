@@ -25,7 +25,7 @@ by reference with a hash of its contents, and the ground); `saveCapture` then wr
   a camp's `CAMPS` row) is written as its path;
 - **only the map objects and ground tiles that differ from the grown valley.** A reference to an
   untouched tile object is its tile index, so the 30 000-odd pines are never written. A tile
-  object that points at a live thing (a den, hut or cairn at its camp's `site`, and the parts of
+  object that points at a live thing (a den or hut at its camp's `site`, and the parts of
   its footprint) is always written, because the fresh valley's copy would point at the fresh
   page's camp.
 

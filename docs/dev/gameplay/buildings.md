@@ -9,9 +9,13 @@ building (the T build list, walls, gates, turrets, bot bays and worker bots, and
 wheel) was cut in 0.525, and the fish net with food in 0.538.
 
 All the data lives in the `STRUCTS` table ([structures.js](../../../js/sim/structures.js)): the
-gold pump (`generator`, 4x2), the barracks (3x2, wearing the bay's grid through `art: 'spawner'`)
-and the road tower (3x2). Each has one tier: a gold `cost`, `hp`,
-`buildT` and its per-type stats. The cost is only what a wrecker is paid half of (`wreckPay`).
+gold pump (`pump`, 4x2), the barracks (3x2, wearing the bay's grid through `art: 'spawner'`)
+and the road tower (3x2). Each entry is flat: a gold `cost` (none on the pump), `hp`, `buildT`
+and its own stats. The cost is only what a wrecker is paid half of (`wreckPay`). What a type
+does is its entry's hooks, so the building sim never asks a type's name: `init(o)` (its state,
+from `createStruct`), `built(o)` (a site finished), `tick(o, dt)` (each tick it stands,
+`updateStructures`), and for its draw `sprite(o)`, `frame(o)` and `over(o, x, y, now)`
+(`structSprite`, `drawStructObj`).
 
 - **One constructor.** `createStruct(tx, ty, type, tier, p, building)` drops the anchor object
   through `placeObj`, stamped with `owner`/`team`, lays the `part` fillers over the rest of the
@@ -22,7 +26,7 @@ and the road tower (3x2). Each has one tier: a gold `cost`, `hp`,
   entry as solid, except a `water` one).
 - **Ownership**: a building wears its team's palette (`structSprite`), and `ownsStruct(o, p)` is
   true for its own side (or a building of nobody's), which is what keeps E from swinging at it
-  (`autoToolFor`).
+  (`autoWorks`).
 - **Construction**: `updateStructures()` (called from `updatePlay`, iterating only the
   `structures` registry) advances `buildT`, grows hp toward max and puffs dust. The draw shows a
   staked-out foundation pad over the footprint for the first 12% of the timer, then the sprite
@@ -31,14 +35,16 @@ and the road tower (3x2). Each has one tier: a gold `cost`, `hp`,
   along the roofline and shakes. A yellow progress bar renders over the roof of every site
   (`drawBuildBars`). A big building y-sorts by the bottom of its footprint and sits its snow skirt
   on that edge.
-- **Gold pump** (`generator`): the map's objective, [below](#the-gold-pumps). It is nobody's,
+- **Gold pump** (`pump`): the map's objective, [below](#the-gold-pumps). It is nobody's,
   so nothing can hurt it.
 - **Barracks** (`barracks`): the wave bay. It wears the bay's 3×2 grid under its own overlay
   (`drawBarracksOverlay`: the shutter, the next soldier sliding down the door, the wave clock on
   the flank in the side's paint, the beacon amber while a column is leaving). On the match's beat
   (`barracksBeat`: `first`, 60 s of match clock, then every `waveT`, 30 s, so every lane rolls out
-  together and a rebuilt bay falls into step) it queues a **wave**: `wave` (3) soldiers, one more per `grow` (180 s) it has stood, never more
-  than `cap` (8) of its side's soldiers on its **lane** at once, every bay's queue and column on
+  together and a rebuilt bay falls into step) it queues a **wave** (`barracksWave`, into `barracksQueue`): its `mix` of kinds in door order (3 melee, then 3 ranged),
+  one more melee per `grow` (180 s) it has stood, and a **siege** soldier last on every n-th wave of
+  the match clock, n from `siege` (every 3rd, every 2nd from 15:00, every wave from 25:00), never more
+  than `cap` (16) of its side's soldiers on its **lane** at once, every bay's queue and column on
   that lane counted (`barracksLaneLoad`). The queue leaves the door one every `BARRACKS_ROLL`
   (0.5 s), so a wave reads as a column. Breaking one stalls the waves until the merchant rebuilds
   it ([Soldiers](robots.md#soldiers-the-waves)).
@@ -59,7 +65,7 @@ and the road tower (3x2). Each has one tier: a gold `cost`, `hp`,
   **`STRUCT_DR` (0.6) damps a player's blow, and only a player's.** Every player number was tuned
   against a 40–160 hp *body*, so the damping is charged once, inside `hurtStruct`, rather than
   written out as a second building-sized number per weapon. A bot names itself in the fourth
-  argument and keeps its full `ROBOT_DMG`, which is already a building number. `STRUCT_HIT_DMG` is
+  argument and keeps its kind's full blow (`SOLDIER_TYPES`), which is already a building number. `STRUCT_HIT_DMG` is
   the **raw** E swing (25) and lands 10 after the damping. At 0 hp it calls
   `destroyStructure(o, p)`, and the wreck pays the wrecker `wreckPay` (half the cost) on the spot
   through `awardGold`. Wildlife damages nothing.
@@ -96,7 +102,7 @@ nothing hurts it, and `ownsStruct` is true, so E never swings at it.
   ring loses a part-fill over `PUMP_FADE_T` (10 s). A full fill flips the pump (`pumpFlip`: the
   jolt, a `place` cue, a ring of sparks in the side's mark). Holding needs nobody in the ring.
 - **The pay.** While a side holds it, every `period` (10 s) each active hero on that side, alive
-  or not, wherever they are, gets `tiers[0].pay` (20) through `gainGold` and a coin cue; one plain
+  or not, wherever they are, gets `pay` (20) through `gainGold` and a coin cue; one plain
   20 rises over the barrel as the drawn coin hops out (`drawPumpCoin`, only after a pay). It
   strokes only while held: the frame runs off `o.payT` (`pumpFrame`).
 - **The colour is the whole read** (no text). The pump wears its holder's team paint, or a grey

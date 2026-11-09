@@ -7,8 +7,8 @@ stable per tile.
 
 ## The tile world
 
-- `WORLD = 232` tiles of `TILE = 16` px → a 3712×3712 px world (under `PRACTICE` the const is
-  76 instead — see [the practice arena](#the-practice-arena)). The forest border is
+- `WORLD = 232` tiles of `TILE = 16` px → a 3712×3712 px world (under `ARENA`, the practice
+  tool's side room, the const is 112 instead — see [the practice tool](#the-practice-tool)). The forest border is
   `BORDER_MIN`/`BORDER_MAX` (30–70, avg ~50) tiles deep round an interior ~132 tiles
   across, open snow. The two **roost corners** —
   bottom-left and top-right, where the eagles always come down
@@ -18,7 +18,7 @@ stable per tile.
   there the corner holds one solid block of woods round its [base](#the-bases)'s hollow, and
   the road's gate is at least the arc out. The union only adds pines, and `genWorld` rolls its per-tree `rng()` only under
   `borderNoise`, so the discs cost the shared stream nothing and move no seed's ground hash
-  (the [camps](#camps)' clearings do); not under `PRACTICE`.
+  (the [camps](#camps)' clearings do); not under `ARENA`.
 - `ringPts` is `RING_N` (6) points, evenly spaced on a ring `SPAWN_D` (`WORLD / 2 - 55`) tiles
   from the centre at the treeline. Nobody starts there (players land from the eagles,
   [multiplayer.md](multiplayer.md#where-players-start)) and no pocket is carved; the river
@@ -39,13 +39,13 @@ stable per tile.
   instead of ending in a cut. Neither test rolls anything, so a seed's rng stream is what it was.
 - `objects` — flat `Array(WORLD*WORLD)`, **at most one object per tile**. Every object is
   `{ type, tx, ty, hp, flash, shake, ...extra }`. The `OBJECTS` table's types: `tree`,
-  `deadTree`, `rock` (genWorld's placeholder, [lifted at boot](#rocks)), `bush`, `den`, `dummy`, `banner`, `cairn`, `log`,
+  `rock` (genWorld's placeholder, [lifted at boot](#rocks)), `bush`, `den`, `dummy`, `banner`, `log`,
   `pylon`, `pkdie`, `agbell`, `stump`, `eagle`, `hut`, `part`, and the
-  [story landmarks](#story-landmarks)' `boat` (added from `LANDMARKS`); the `STRUCTS` table's: `generator`,
+  [story landmarks](#story-landmarks)' `boat` (added from `LANDMARKS`); the `STRUCTS` table's: `pump`,
   `barracks`, `tower`. `banner`/`log` are
   [the road](#the-road)'s furniture (`banner` is also the practice gate's flag), `pylon`
   [the zipline](#the-zipline)'s, and `dummy`/`pkdie`/`agbell` exist only in
-  [the practice arena](#the-practice-arena). `den` (solid, inert scenery
+  [the practice tool](#the-practice-tool)'s arena. `den` (solid, inert scenery
   two tiles wide — `OBJECTS.den.w`, so `placeCamps` fills the tile east of it with a `part` — that
   carries its `site`, the camp record, so a hover on either tile can wear the camp's clock)
   exists only inside [camps](#camps) (the wolf dens), and so does `hut` (the HOG
@@ -53,16 +53,17 @@ stable per tile.
   the front row, drawing the whole building). `part` is the filler a multi-tile building (or a prop
   with a `w`/`h` in `OBJECTS`, the den and the hut) leaves on every footprint tile but its anchor (`{ type: 'part', of: <building> }`): solid, coloured like its
   building on both maps, ignored by work swings, and resolved by `structOf()` for every "what building
-  is here" read (right-click, cursor, wheel, orders). `deadTree` (a 3 hp snag, chopped like a
-  tree for `YIELD.deadTreeHit`/`deadTreeFall`, leaves a stump) and `cairn` stand nowhere since the
-  bears moved to the river (4.82): no camp stamps them, and their types and art are kept unused.
-- Index with `idx(tx, ty)`, read safely with `objAt`, create with `placeObj`. Deleting is
-  `objects[idx] = null` (structures should go through `destroyStructure` so the `structures`
-  registry stays in sync — it routes `STRUCTS` types through `removeStruct`).
-- `generator`, `barracks`, `tower` and `net` are the **structures** (see
-  [Buildings](gameplay/buildings.md)); nobody builds by hand. Each carries `{ tier, maxHp, building, buildT,
-  buildTotal, dustT, sparkT }` plus per-type fields (generator `hold`, `cap`, `capBy`, `payT`, `paid`, `lane`: [the gold pumps](gameplay/buildings.md#the-gold-pumps); barracks `waveT`, `queue`,
-  `rollT`, `born`, `door`; tower `ang`, `tgt`, `chg`, `cd`, `bolt`; net `fish`), and every live one is also referenced from the module-scope `structures`
+  is here" read (right-click, cursor, wheel, orders).
+- Index with `idx(tx, ty)`, read safely with `objAt`, create with `placeObj`. A tile written or
+  deleted during a match goes through `setTile(i, o)` (null deletes), which marks it for the host's
+  wire (`snapTouch`, [the ack-keyed base](../pvp-architecture.md#the-wire-form)); a bare
+  `objects[i] = ...` reaches clients only on the wire's slow sweep. Worldgen writes bare.
+  Structures go through `destroyStructure` so the `structures` registry stays in sync — it routes
+  `STRUCTS` types through `removeStruct`.
+- `pump`, `barracks` and `tower` are the **structures** (see
+  [Buildings](gameplay/buildings.md)); nobody builds by hand. Each carries `{ maxHp, building, buildT,
+  buildTotal, dustT, sparkT }` plus the fields its entry's `init` lays (pump `hold`, `cap`, `capBy`, `payT`, `paid`, `lane`: [the gold pumps](gameplay/buildings.md#the-gold-pumps); barracks `waveT`, `queue`,
+  `rollT`, `born`, `door`; tower `ang`, `tgt`, `chg`, `cd`, `bolt`), and every live one is also referenced from the module-scope `structures`
   array so `updateStructures()` never scans the 53,824-tile grid. Nor do the object clocks
   (`flash`/`shake`, bush regrow): `tickObjTimers` (js/sim/sim.js, the
   `object timers` banner) ticks only the objects in `objTimed`, in map order, and drops each one
@@ -113,7 +114,7 @@ stable per tile.
   when what stands on a tile changes, so felling or placing scenery calls nothing.
 - **Open snow wears soft drifts** (the `snow's pixels` banner, js/draw/ground.js): swells laid
   along the wind (`SNOW_ANG`, which `layDrifts` turns onto the seed's prevailing wind, `driftWind`, so
-  the swells and the [drifts](#snow-depth) lean one way; -0.33 under `PRACTICE`), lit on the sun's side and shaded on the lee in four close tones
+  the swells and the [drifts](#snow-depth) lean one way; -0.33 under `ARENA`), lit on the sun's side and shaded on the lee in four close tones
   (`SNOW_PAL`) under a Bayer dither, with a rare white glint on the lit tone. A low noise
   (`SNOW_REGION`, ~22 tiles a step, cut at `SNOW_CUT` into thirds of the map) lays out regions of
   three `SNOW_LOOKS` — fine drifts, broad swells, lee-only — blended across `SNOW_BLEND`. Every
@@ -198,6 +199,22 @@ border's. Two other map shapes (THICKET, all woods with paths cut through; FROZE
 lake with wooded islands) and the path network they needed were removed for now; the PR that
 removed them names the commit to recover them from.
 
+## The practice tool
+
+`?practice=1` (`PRACTICE`, js/sim/core.js) is the **practice tool on this same map**: boot.js grows
+it with `genWorld` and every pass after it, like a match, on `PRACTICE_MAP_SEED`. There is no ride:
+`practiceLand` (js/sim/practice.js) crashes both birds onto their perches at boot (`eagleCrash`, so
+each merchant pitches its stall and raises the bays as in a match), people stand on their side's
+roost (`practiceSeat`, `roostTile`), empty seats are parked with no bots, and the match clock runs,
+so the waves keep the match's beat. Nothing is at stake: a death revives on the roost
+(`practiceRevive`), a bird at zero mends instead of fleeing (`practiceBirdMend`), the profile is never
+written. The practice bar (js/ui/cheats.js) adds the map's group: WAVES and TOWERS (the field's
+standing toggles, `state.prac`), SPAWN WAVE (`barracksQueue` on every bay) and RESPAWN CAMPS.
+Its **ARENA** well reloads the party onto the side room, `?practice=1&arena=1` (`ARENA`): the small
+fixed training field (`genPracticeWorld`, `WORLD` 112, `PRACTICE_SEED`) with the dummy, the bell's
+rounds, the ice parkour and the deer ride, no lanes, bases, creek or camps, and its light pinned to
+early morning; its **MAP** well goes back (`practiceCross`, js/ui/rooms.js).
+
 ## Determinism and noise
 
 Every run picks a fresh `SEED` at boot with `rollSeed()` — always **three digits**, 100..999, so
@@ -205,7 +222,7 @@ it can be said aloud — and **everything
 random derives from it**: there is no other entropy source. `?seed=N` in the URL overrides it with
 any N, which is
 how you replay or diff a specific world (and `?practice=1` overrides *that*: the
-[practice arena](#the-practice-arena) pins `SEED` to `PRACTICE_SEED`). `drawTags()` prints it as a line of the **info
+[practice tool](#the-practice-tool) pins `SEED` to `PRACTICE_MAP_SEED`, its arena to `PRACTICE_SEED`). `drawTags()` prints it as a line of the **info
 stack** on the left edge at the top quarter of the view (drawn after the map, settings, and death
 overlays), so a screenshot carries the world it came from while `settings.info` is on — the INFO
 DISPLAY row in the ESC menu or **F3**, default **off**, so flip it on before comparison captures.
@@ -216,7 +233,7 @@ DISPLAY row in the ESC menu or **F3**, default **off**, so flip it on before com
   adding one after boot reshuffles nothing.
 - `hash2(x, y)` mixes `SEED` in, and `vnoise(x, y)` is built on it. Both are still pure functions
   of position *within a run* — use them for anything that must stay stable per tile no matter when
-  it is asked (ground texture, forest boundary, tree rare-drops, the frost slabs' mottling).
+  it is asked (ground texture, forest boundary, tree rare-drops).
   `borderDepth()` rides on `vnoise`, so the seed reshapes the forest and with it the whole map
   (everywhere but inside the two roost discs, which every seed grows alike).
 - An exception to the single stream — nothing outside worldgen may
@@ -244,8 +261,7 @@ stars reflected in the ice under it, and nothing to carry a lamp for
 in wildlife or the AI reads `state.darkness`. What keys off the cycle:
 
 - The only passive heal, slow HP regen in `updatePlayer()` for every player, runs while
-  `state.darkness < 0.3` — or at any hour under a kit with `nightHeal` (`baseKit`,
-  js/sim/player.js; no card or item sets it now). There is no cold/warmth system.
+  `state.darkness < 0.3`. There is no cold/warmth system.
 - **The wind dies with the light.** `windAmp()` squares `1 - darkness`, so the snow stops blowing
   sideways and every pine goes still over the twelve seconds of dusk and stays still until dawn
   ([the wind field](rendering/drawing-a-thousand-of-something.md#the-wind-field)).
@@ -255,7 +271,7 @@ in wildlife or the AI reads `state.darkness`. What keys off the cycle:
   into a mirror on it with the **reflected stars** coming up inside that
   ([the reflected sky](rendering/light-and-weather.md#the-reflected-sky)) - so a frozen lake reads darker than the
   snow around it after dusk, and an ice hole is a hole in the reflection.
-- Ice holes refreeze at dawn. The shoal is not topped up at dawn; it refills continuously. See
+- The shoal is not topped up at dawn; it refills continuously. See
   [Ice holes and the lake fish](#ice-holes-and-the-lake-fish).
 
 `state.day` drives no difficulty. What damages a player: another player's arrows, a
@@ -266,9 +282,7 @@ plunge through the ice (see [PvP](multiplayer.md#pvp)), and the wolves of a
 
 **Holes are open water in the ice** (`ground = 2`), opened by an [ice break](#ice-breaks), which
 freezes each tile back on its own clock (`breakClose`, js/sim/icebreak.js). Nothing a player
-carries opens one: the pick and its `crackIce` were cut in 0.531. The `holes` list (open tiles that
-outlive their break) has had no writer since the fish net went; the dawn refreeze still empties
-it, so an old save's holes close. Constants live in the `fish` banner of
+carries opens one, and no hole outlives its break. Constants live in the `fish` banner of
 [js/sim/wildlife.js](../../js/sim/wildlife.js) (`HOLE_FALL_DMG`, `HOLE_FALL_T`,
 `FISH_MAX`/`FISH_MIN`; `FISH_SPAWN_T` alone stays in core.js).
 
@@ -284,7 +298,6 @@ it, so an old save's holes close. Constants live in the `fish` banner of
 - **Everyone else avoids water**: `moveEntity` treats hole tiles as solid for every entity
   except the player, so animals and robots never wade in, and `walkable()` refuses
   `ground === 2`, so no bot ever routes over one; arrows still fly over holes.
-- **Refreeze**: at dawn every listed hole reverts to ice (`repaintGround` again).
 - **Fish**: the `fish` array holds up to `FISH_MAX` (30) passive swimmers, that many spawned at
   boot (`spawnFish()`, after `spawnAnimals()`) on **interior** ice only (tile centers passing
   `fishClear` with a 14 px margin, ~a tile off the shore). `updateFish()` wanders them with a

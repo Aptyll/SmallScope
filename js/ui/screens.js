@@ -242,7 +242,7 @@ function renderReplay() {
     for (let k = 0; k < 6; k++) { ctx.fillRect(c.x + 3 + k, c.y + 3 + k, 1, 1); ctx.fillRect(c.x + 8 - k, c.y + 3 + k, 1, 1); }
     drawRecap(); // why: who hit you, with what, how much (js/ui/recap.js)
     // the way back to the allies: the key cap with its verb, over the world, so it wears the outline the world demands
-    const verb = 'BACK';
+    const verb = tr('end.back');
     drawKeyPrompt(Math.round((w - promptW(verb, 'esc')) / 2), h - 18, verb, false, 'esc');
     return;
   }
@@ -282,28 +282,27 @@ function renderReplay() {
 // ('respawning', see die()/updateRespawns) - or its win, once every RIVAL
 // TEAM is gone (teams win together, see checkLastStanding) - puts the game
 // in mode 'dead' with the match running on underneath. 'lost' dims the
-// screen and offers two planks; 'respawning' offers none - it opens straight
+// screen and offers the one plank, LOBBY; 'respawning' offers none - it opens straight
 // onto an ally (endMatch picks one through specNext, which keeps to the side
 // while the wait runs) under one line, RESPAWNING IN Ns, with the replay
 // window large over the view until it is closed, and snaps back to 'play' on
 // its own once the timer clears; a win
-// hands the whole frame to the victory banner (js/ui/endscreens.js) and offers two of its
-// own. LOBBY off an ELIMINATION does not leave: it hands the frame to the
-// defeat banner - the loss's own summary, the mirror of the victory screen -
-// and that screen's single plank is what leaves. A match you lost still ends
-// on its numbers, and it ends when you are done watching rather than the
-// instant you went down. SPECTATE follows a living player through a
-// top-centre control: two pixel arrows around the name, clickable, the arrow
-// keys do the same, ESC comes back (no hint text: the arrows are the
-// explanation). LOBBY fades out and reloads into the title screen on the same seed. viewPlayer() is who the camera and minimap
+// hands the whole frame to the victory banner (js/ui/endscreens.js), LOBBY
+// under it. A won or lost match is decided for everyone, so there is nothing
+// left to watch or play on: LOBBY is the only plank. Off an ELIMINATION it does
+// not leave at once: it hands the frame to the defeat banner - the loss's own
+// summary, the mirror of the victory screen - and that screen's plank is what
+// leaves. A respawn wait follows an ally through a top-centre control: two
+// pixel arrows around the name, clickable, the arrow keys do the same (no hint
+// text: the arrows are the explanation). LOBBY fades out and reloads into the title screen on the same seed. viewPlayer() is who the camera and minimap
 // frame, and the only thing the rest of the file needs to know about any of it.
 const DEAD_BW = 112, DEAD_BH = 20, DEAD_GAP = 12; // the title menu plank, side by side
-const DEAD_ITEMS = { lost: ['SPECTATE', 'LOBBY'], won: ['KEEP PLAYING', 'LOBBY'], respawning: [], hostleft: ['LOBBY'] }; // hostleft: a guest whose host left mid-match - no win, no loss, the door
+const DEAD_ITEMS = { lost: ['end.lobby'], won: ['end.lobby'], respawning: [], hostleft: ['end.lobby'] }; // hostleft: a guest whose host left mid-match - no win, no loss, the door
 
 // the planks on offer: the defeat summary has nothing left to offer but the
 // door, so it is the one view whose items are its own rather than the ending's
 function deadItems() {
-  return state.deadView === 'defeat' ? ['LOBBY'] : (DEAD_ITEMS[state.over] || DEAD_ITEMS.lost);
+  return state.deadView === 'defeat' ? ['end.lobby'] : (DEAD_ITEMS[state.over] || DEAD_ITEMS.lost);
 }
 
 // a full-frame end screen is up: the HUD and the replay window both bow out
@@ -398,16 +397,14 @@ function deadActivate(i) {
   SFX.place();
   // the door out of an elimination goes through the summary once; the
   // summary's own LOBBY (and every other ending's) actually leaves
-  if (label === 'LOBBY' && state.over === 'lost' && state.deadView !== 'defeat') openDefeat();
-  else if (label === 'LOBBY') openScores(state.deadView); // the post-game lobby (js/ui/lobby.js); its own LOBBY leaves
-  else if (label === 'SPECTATE') { state.deadView = 'spec'; state.spec = -1; specNext(1); }
-  else if (label === 'KEEP PLAYING') state.mode = 'play';
+  if (label === 'end.lobby' && state.over === 'lost' && state.deadView !== 'defeat') openDefeat();
+  else if (label === 'end.lobby') openScores(state.deadView); // the post-game lobby (js/ui/lobby.js); its own LOBBY leaves
 }
 
-// who can be watched: any living player after an elimination, only the side's
-// own while a respawn wait runs - the wait is not a scouting window
+// who can be watched while a respawn wait runs: a living ally only - the wait
+// is not a scouting window
 function specOk(q) {
-  return q !== player && q.active && !q.dead && (state.over !== 'respawning' || q.team === player.team);
+  return q !== player && q.active && !q.dead && q.team === player.team;
 }
 // follow the next watchable player in player order (dir -1 for the previous one)
 function specNext(dir) {
@@ -446,11 +443,8 @@ function deadKey(k) {
     return;
   }
   if (state.deadView === 'spec') {
-    if (k === 'escape' || k === 'backspace' || k === 'enter' || k === ' ') {
-      // a respawn wait has no planks to go back to: the key does nothing
-      if (state.over !== 'respawning') { state.deadView = 'menu'; SFX.pickup(); }
-    }
-    else if (moveDir(k) === 'right') { specNext(1); SFX.pickup(); }
+    // a respawn wait has no planks to go back to: a back key does nothing
+    if (moveDir(k) === 'right') { specNext(1); SFX.pickup(); }
     else if (moveDir(k) === 'left') { specNext(-1); SFX.pickup(); }
     return;
   }
@@ -466,7 +460,7 @@ function deadKey(k) {
 function deadClick() {
   if (state.fade) return;
   if (state.deadView === 'scores') { scoresClick(); return; }
-  if (replayFull()) { if (rpCloseHit()) replayClose(); else recapClick(); return; } // the close box, and the recap's fold buttons (js/ui/recap.js)
+  if (replayFull()) { if (!recapClick()) replayClose(); return; } // the recap's fold buttons (js/ui/recap.js); any other press puts it away, as its keys do
   if (state.deadView === 'spec') {
     const d = specHit(); if (d) { specNext(d); SFX.pickup(); }
     return;
@@ -481,7 +475,7 @@ function deadClick() {
 // is the screen, and the number is the only thing to read. 3x in the upper
 // band where an eye lands, 2x on a view too narrow to hold it.
 function drawRespawnLine() {
-  const t = 'RESPAWNING IN ' + Math.max(0, Math.ceil(player.respawnT)) + 'S';
+  const t = tr('end.respawn', { s: Math.max(0, Math.ceil(player.respawnT)) });
   const ts = pixelTextWidth(t, 3) <= VIEW_W - 20 ? 3 : 2;
   drawPixelTextOutline(ctx, t, Math.round((VIEW_W - pixelTextWidth(t, ts)) / 2),
     frameTop() + 30, '#cfe4f2', '#0a0e23', ts);
@@ -539,14 +533,14 @@ function renderDead(now) {
   // The elimination's headline sits in the upper band, not over the middle
   // of the screen: it is the first thing to read and the match is still
   // playing underneath, so it goes where an eye lands rather than where the
-  // body fell. 3x, or 2x on a view too narrow to hold it (the run is 25
-  // glyphs - 297px at 3x).
+  // body fell. 3x, or 2x on a view too narrow to hold it (a 25-glyph line
+  // is 297px at 3x).
   const gone = state.over === 'hostleft'; // the host walked out from under the match
-  const t = gone ? 'THE HOST LEFT' : 'YOU COLLAPSED IN THE SNOW';
+  const t = tr(gone ? 'end.hostLeft' : 'end.lost');
   const ts = pixelTextWidth(t, 3) <= VIEW_W - 20 ? 3 : 2;
   const toy = frameTop();
   drawPixelTextOutline(ctx, t, Math.round((VIEW_W - pixelTextWidth(t, ts)) / 2), toy + 34, '#cfe4f2', '#0a0e23', ts);
-  const t2 = gone ? 'THE MATCH ENDS HERE' : 'YOU ARE OUT OF THE MATCH';
+  const t2 = tr(gone ? 'end.hostLeftSub' : 'end.lostSub');
   drawPixelTextOutline(ctx, t2, Math.round((VIEW_W - pixelTextWidth(t2, 2)) / 2), toy + 34 + ts * 5 + 8, '#8f9cc4', '#0a0e23', 2);
   drawEndPlanks(now, 0);
 }
@@ -563,7 +557,7 @@ function drawEndPlanks(now, dy) {
     const want = (hot >= 0 ? hot === i : state.deadSel === i) ? 1 : 0;
     state.deadHover[i] += (want - state.deadHover[i]) * Math.min(1, dt * 14);
     drawMenuButton({ x: rs[i].x, y: rs[i].y + dy, w: rs[i].w, h: rs[i].h },
-      rs[i].label, state.deadHover[i], now, false); // prints its own 2x label
+      tr(rs[i].label), state.deadHover[i], now, false); // prints its own 2x label
   }
 }
 

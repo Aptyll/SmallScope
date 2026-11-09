@@ -71,7 +71,7 @@ function statFreeze() {
     time: state.elapsed,
     over: state.over,
     rows: players.filter((q) => q.active).map((q) => ({
-      id: q.id, name: q.name, cls: q.cls, team: q.team, you: q === player,
+      id: q.id, name: boardName(q), cls: q.cls, team: q.team, you: q === player,
       level: q.level, kills: q.kills, deaths: q.deaths, assists: q.assists || 0, farm: q.farm,
       streak: q.bestStreak, multi: q.bestMulti, cc: Math.round(q.ccOut),
       dmg: q.dmgOut, bird: q.dmgBird, struct: q.dmgStruct, beast: Math.round(q.dmgBeast),
@@ -92,30 +92,30 @@ function statFreeze() {
 // value in every other row wears (in its side's colour): a K/D has no single
 // best, and the most damage TAKEN is nobody's prize.
 const SCORE_GROUPS = [
-  { head: 'COMBAT', rows: [
-    { label: 'K/D/A', key: 'kills', txt: (r) => r.kills + '/' + r.deaths + '/' + (r.assists || 0), best: false },
-    { label: 'FARM', key: 'farm' }, // last hits on soldiers and camp monsters (js/sim/farm.js)
-    { label: 'LEVEL', key: 'level' },
-    { label: 'BEST STREAK', key: 'streak' },
-    { label: 'BEST MULTI-KILL', key: 'multi' },
-    { label: 'CROWD CONTROL', key: 'cc', txt: (r) => scoreFmt(r.cc) + 'S' },
+  { head: 'score.combat', rows: [
+    { label: 'score.kda', key: 'kills', txt: (r) => r.kills + '/' + r.deaths + '/' + (r.assists || 0), best: false },
+    { label: 'score.farm', key: 'farm' }, // last hits on soldiers and camp monsters (js/sim/farm.js)
+    { label: 'score.level', key: 'level' },
+    { label: 'score.streak', key: 'streak' },
+    { label: 'score.multi', key: 'multi' },
+    { label: 'score.cc', key: 'cc', txt: (r) => scoreFmt(r.cc) + 'S' },
   ] },
-  { head: 'DAMAGE DEALT', rows: [
-    { label: 'TO PLAYERS', key: 'dmg' },
-    { label: 'TO THE BIRD', key: 'bird' },
-    { label: 'TO BUILDINGS', key: 'struct' },
-    { label: 'TO BEASTS', key: 'beast' },
-    { label: 'TOTAL', key: 'dealt' },
+  { head: 'score.dealt', rows: [
+    { label: 'score.toHeroes', key: 'dmg' },
+    { label: 'score.toEagle', key: 'bird' },
+    { label: 'score.toStructs', key: 'struct' },
+    { label: 'score.toBeasts', key: 'beast' },
+    { label: 'score.total', key: 'dealt' },
   ] },
-  { head: 'TAKEN AND HEALED', rows: [
-    { label: 'FROM PLAYERS', key: 'inP', best: false },
-    { label: 'FROM BEASTS', key: 'inB', best: false },
-    { label: 'HEALED', key: 'healed' },
+  { head: 'score.taken', rows: [
+    { label: 'score.fromHeroes', key: 'inP', best: false },
+    { label: 'score.fromBeasts', key: 'inB', best: false },
+    { label: 'score.healed', key: 'healed' },
   ] },
-  { head: 'GOLD', rows: [
-    { label: 'EARNED', key: 'gold' },
-    { label: 'SPENT', key: 'spent' },
-    { label: 'BEASTS HUNTED', key: 'beasts' },
+  { head: 'score.gold', rows: [
+    { label: 'score.earned', key: 'gold' },
+    { label: 'score.spent', key: 'spent' },
+    { label: 'score.hunted', key: 'beasts' },
   ] },
 ];
 const SCORE_LABEL_W = 92; // px of row names down the left
@@ -161,7 +161,7 @@ const scores = {
 };
 
 // the words a key walks: the two pages, then the two ways out
-const SCORE_WORDS = ['STATS', 'GRAPHS', 'BACK', 'LOBBY'];
+const SCORE_WORDS = ['score.stats', 'score.graphs', 'end.back', 'end.lobby'];
 const SCORE_IN = 0.28; // s the screen takes to arrive
 
 // The head is struck in the ending's own accent - gold for a win, frost for
@@ -173,7 +173,7 @@ function scoreAccent() {
 }
 function scoreHead() {
   const o = matchStats && matchStats.over;
-  return o === 'won' ? 'VICTORY' : o === 'hostleft' ? 'NO RESULT' : 'DEFEAT';
+  return tr(o === 'won' ? 'end.victory' : o === 'hostleft' ? 'end.noResult' : 'end.defeat');
 }
 
 // ------------------------------------------------------------ the layout
@@ -228,11 +228,11 @@ function scoresLayout() {
   L.bars = cols.map((r, i) => ({ y: L.chart.y + i * L.barH + (i >= nMine ? gapB : 0) }));
   // the page words, top left
   let tx = x;
-  L.tabs = ['STATS', 'GRAPHS'].map((label) => { const r = { label, x: tx, y: L.tabsY, w: pixelTextWidth(label), h: 7 }; tx += r.w + 14; return r; });
+  L.tabs = ['score.stats', 'score.graphs'].map((label) => { const r = { label, x: tx, y: L.tabsY, w: pixelTextWidth(tr(label)), h: 7 }; tx += r.w + 14; return r; });
   // BACK and LOBBY: 2x words side by side at the foot
-  const ws = ['BACK', 'LOBBY'].map((l) => pixelTextWidth(l, MENU_TXT_SCALE) + 8);
+  const ws = ['end.back', 'end.lobby'].map((l) => pixelTextWidth(tr(l), MENU_TXT_SCALE) + 8);
   const wgap = 24, total = ws[0] + wgap + ws[1];
-  L.words = ['BACK', 'LOBBY'].map((label, i) => ({
+  L.words = ['end.back', 'end.lobby'].map((label, i) => ({
     label, x: Math.round((VIEW_W - total) / 2) + (i ? ws[0] + wgap : 0), y: L.wordY - 2, w: ws[i], h: 7 * MENU_TXT_SCALE + 4,
   }));
   return L;
@@ -300,9 +300,9 @@ function scoresHit() {
 
 function scoresActivate(i) {
   const w = SCORE_WORDS[i];
-  if (w === 'STATS' || w === 'GRAPHS') { const pg = w === 'STATS' ? 0 : 1; if (scores.page !== pg) { scores.page = pg; SFX.pickup(); } return; }
+  if (w === 'score.stats' || w === 'score.graphs') { const pg = w === 'score.stats' ? 0 : 1; if (scores.page !== pg) { scores.page = pg; SFX.pickup(); } return; }
   SFX.place();
-  if (w === 'BACK') scoresBack();
+  if (w === 'end.back') scoresBack();
   else toLobby();
 }
 
@@ -343,7 +343,7 @@ const SC_DIM = '#6c717a', SC_LBL = '#a3a8b0', SC_TXT = '#d4d7dc', SC_LIT = '#f4f
 // a page word: dim, pale under the pointer, white with a gold hairline under
 // the word alone when it is the open page (drawNavCell's grammar, js/ui/panels.js)
 function scoreWord(r, on, hot) {
-  drawPixelText(ctx, r.label, r.x, r.y, on ? SC_LIT : hot ? SC_TXT : SC_DIM, 1);
+  drawPixelText(ctx, tr(r.label), r.x, r.y, on ? SC_LIT : hot ? SC_TXT : SC_DIM, 1);
   if (on) { ctx.fillStyle = SC_GOLD; ctx.fillRect(r.x, r.y + 7, r.w, 1); }
 }
 
@@ -400,7 +400,7 @@ function renderScores(now) {
   for (let i = 0; i < L.words.length; i++) {
     const w = L.words[i];
     const hot = hit && hit.kind === 'word' ? hit.i === i : scores.sel === 2 + i;
-    drawPixelTextOutline(ctx, w.label, w.x + 4, w.y + 2, hot ? '#ffd95c' : SC_LIT, 'rgba(8,12,28,0.9)', MENU_TXT_SCALE);
+    drawPixelTextOutline(ctx, tr(w.label), w.x + 4, w.y + 2, hot ? '#ffd95c' : SC_LIT, 'rgba(8,12,28,0.9)', MENU_TXT_SCALE);
   }
   ctx.globalAlpha = 1;
 }
@@ -438,7 +438,7 @@ function drawScoreStats(L, hit, fade) {
       ctx.fillStyle = hot ? SC_TXT : SC_DIM;
       if (shut) { ctx.fillRect(L.x + 3, y + 3, 1, 5); ctx.fillRect(L.x + 4, y + 4, 1, 3); ctx.fillRect(L.x + 5, y + 5, 1, 1); }
       else { ctx.fillRect(L.x + 2, y + 4, 5, 1); ctx.fillRect(L.x + 3, y + 5, 3, 1); ctx.fillRect(L.x + 4, y + 6, 1, 1); }
-      drawPixelText(ctx, ln.g.head, L.x + 10, y + 3, hot ? SC_LIT : SC_LBL, 1);
+      drawPixelText(ctx, tr(ln.g.head), L.x + 10, y + 3, hot ? SC_LIT : SC_LBL, 1);
       continue;
     }
     const row = ln.row;
@@ -446,7 +446,7 @@ function drawScoreStats(L, hit, fade) {
     ctx.fillStyle = ln.i & 1 ? SC_ROW_B : SC_ROW_A; ctx.fillRect(L.x, y, L.w, SCORE_ROW);
     if (youI >= 0) { ctx.fillStyle = SC_YOU; ctx.fillRect(L.colX[youI], y, L.colW, SCORE_ROW); }
     if (hot) { ctx.fillStyle = SC_HOT; ctx.fillRect(L.x, y, L.w, SCORE_ROW); ctx.fillStyle = SC_GOLD; ctx.fillRect(L.x, y, 1, SCORE_ROW); }
-    drawPixelText(ctx, row.label, L.x + 10, y + 3, hot ? SC_LIT : SC_LBL, 1);
+    drawPixelText(ctx, tr(row.label), L.x + 10, y + 3, hot ? SC_LIT : SC_LBL, 1);
     let best = 0;
     if (row.best !== false) for (const r of cols) best = Math.max(best, scoreVal(r, row));
     for (let i = 0; i < cols.length; i++) {
@@ -494,17 +494,17 @@ function drawScoreBars(L, hit, fade) {
   for (const e of li.rows) {
     const y = li.y + e.y - li.off;
     if (y + SCORE_HEAD < li.y || y > li.y + li.h) continue;
-    if (e.head) { drawPixelText(ctx, e.head, li.x, y + 2, SC_DIM, 1); continue; }
+    if (e.head) { drawPixelText(ctx, tr(e.head), li.x, y + 2, SC_DIM, 1); continue; }
     const on = e.i === scores.stat, hot = hit && hit.kind === 'stat' && hit.i === e.i;
     if (on || hot) { ctx.fillStyle = SC_HOT; ctx.fillRect(li.x, y, li.w, SCORE_LIST_ROW); }
     if (on) { ctx.fillStyle = SC_GOLD; ctx.fillRect(li.x, y, 1, SCORE_LIST_ROW); }
-    drawPixelText(ctx, e.row.label, li.x + 6, y + 2, on ? SC_LIT : hot ? SC_TXT : SC_LBL, 1);
+    drawPixelText(ctx, tr(e.row.label), li.x + 6, y + 2, on ? SC_LIT : hot ? SC_TXT : SC_LBL, 1);
   }
   ctx.restore();
   ctx.fillStyle = SC_EDGE; ctx.fillRect(li.x + li.w + 4, li.y, 1, li.h);
   // --- the chart ---------------------------------------------------------
   const c = L.chart;
-  const title = SCORE_GROUPS.find((g) => g.rows.includes(row)).head + ' - ' + row.label;
+  const title = tr(SCORE_GROUPS.find((g) => g.rows.includes(row)).head) + ' - ' + tr(row.label);
   drawPixelText(ctx, title, c.x + ((c.w - pixelTextWidth(title)) >> 1), c.y - 10, SC_LIT, 1);
   let hi = 0;
   for (const r of cols) hi = Math.max(hi, scoreVal(r, row));

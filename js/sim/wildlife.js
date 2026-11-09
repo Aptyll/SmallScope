@@ -1,15 +1,12 @@
 'use strict';
 // Everything wild: prey and the shared animal lifecycle, the fish under the
-// ice and the holes cut down to them, the camps' monsters and the dormant
-// flock - each with its own tuning above it.
+// ice, and the camps' monsters - each with its own tuning above it.
 // ------------------------------------------------------------ animals
 // Rabbits and deer are the passive half (updatePrey); the three wolves are
 // the camps' monsters (updateCampMonster), and go in this same array so
 // arrows, the draw list, the kill payouts and the cursor all treat them as
-// what they are: things you shoot. (Birds - updateBird - are DORMANT: the
-// rookery went with the landmarks, and nothing spawns one; the kind's code
-// stays for a camp that wants a flock - checklists.md, Known drift.)
-const ANIMAL_HP = { rabbit: 8, deer: 24, wolf: 30, alpha: 640, dire: 640, bird: 3 };
+// what they are: things you shoot.
+const ANIMAL_HP = { rabbit: 8, deer: 24, wolf: 30, alpha: 640, dire: 640 };
 // Every animal wears a hero-style level: the table's average hero level
 // (animalLevel), never under a camp monster's MONSTER.lv. It is dealt at
 // spawn (makeAnimal) and follows the table after (relevelAnimal) while the
@@ -23,7 +20,7 @@ const ANIMAL_HP = { rabbit: 8, deer: 24, wolf: 30, alpha: 640, dire: 640, bird: 
 // a level-12 beast is worth a little over twice a level-1 one - about what
 // its hp grew by. Its XP (YIELD's `xp`, shared by the hunter's side standing
 // near: shareXp, js/sim/player.js) grows the same tenth a level.
-const ANIMAL_LV_HP = { rabbit: 1, deer: 2, wolf: 3, alpha: 50, dire: 50, bird: 0 };
+const ANIMAL_LV_HP = { rabbit: 1, deer: 2, wolf: 3, alpha: 50, dire: 50 };
 const ANIMAL_LV_GOLD = 0.1;
 const ANIMAL_LV_XP = 0.1;
 function animalLevel() {
@@ -43,7 +40,7 @@ function relevelAnimal(a) {
 }
 // what a hit knocks off a body: its own coat, so a puff says which beast
 // took the blow. Both prey are warm brown since the new sheets landed.
-const HIT_PUFF = { rabbit: '#9a6a45', deer: '#8f582f', wolf: '#6f778c', alpha: '#3b3b53', dire: '#6a4326', bird: '#cfd6e4' };
+const HIT_PUFF = { rabbit: '#9a6a45', deer: '#8f582f', wolf: '#6f778c', alpha: '#3b3b53', dire: '#6a4326' };
 // Prey: how close a player gets before it bolts, how long it runs, and the two
 // speeds. A deer keeps the wider watch and the longer run; a rabbit sits tight
 // and then goes off like a spring. Both resolve the ring through seenAt, so
@@ -92,7 +89,7 @@ const RABBIT_ALERT = 0.3;
 // A warren's rabbit never runs out of its snow: every leg of a flight and
 // every graze must end on its warren's deep snow (warrenHolds), and a flight
 // is a chain of RABBIT_LEG-tile legs, each picked away from the threat, so at
-// PREY_RUN it circles a scout rather than leaving the circle.
+// PREY_RUN it circles a hero rather than leaving the circle.
 const RABBIT_LEG = 3.5;
 function warrenHolds(C, x, y) { return campNear(C, x / TILE - 0.5, y / TILE - 0.5, 0) && deepAt(x, y); }
 // The head-up window: seconds either prey keeps WATCHING after the last sign
@@ -119,7 +116,6 @@ const ANIM_CLIPS = {
   wolf: { idle: 0, run: 8 },
   alpha: { idle: 5, walk: 8, run: 12, bite: 14, paw: 14, roar: 10, fish: 8 }, // the bears: patrol at a walk, charge at a gallop
   dire: { idle: 5, walk: 8, run: 12, bite: 14, paw: 14, roar: 10, fish: 8 },
-  bird: { idle: 0, fly: 14 },
 };
 // A clip change restarts the loop, so a sit-up always begins on the frame it
 // was drawn to begin on rather than wherever the last one had got to.
@@ -134,14 +130,16 @@ function stepClip(a, dt, rate) {
   a.animT += dt * ((ANIM_CLIPS[a.kind] || {})[a.clip] || 0) * (rate === undefined ? 1 : rate);
 }
 
-function makeAnimal(kind, x, y) {
+// `fix` (a hero's summon, js/sim/varro.js) gives the facing and draws no rng();
+// without it the draws are the world's, in the world's order
+function makeAnimal(kind, x, y, fix) {
   const level = animalLevelOf(kind), hp = animalHpAt(kind, level);
   const a = {
     kind, x, y, hp, maxHp: hp, level,
     senseT: 0,                           // s it has had a player in sight (0: it has not) - the mark over its head (drawAnimal)
-    dir: rng() < 0.5 ? 'left' : 'right',
-    goal: null, idleT: rand(0.5, 2.5), mvx: 0, mvy: 0,
-    clip: 'idle', animT: rng() * 2, flash: 0, kbx: 0, kby: 0, // the clip it plays, and how far into it (ANIM_CLIPS)
+    dir: fix ? fix.dir : rng() < 0.5 ? 'left' : 'right',
+    goal: null, idleT: fix ? 0 : rand(0.5, 2.5), mvx: 0, mvy: 0,
+    clip: 'idle', animT: fix ? 0 : rng() * 2, flash: 0, kbx: 0, kby: 0, // the clip it plays, and how far into it (ANIM_CLIPS)
     alertT: 0, wary: 0,                  // rabbit: the sit-up before the bolt (RABBIT_ALERT); both: the head-up window after one (PREY_WARY_T)
     fleeT: 0, fleeGoal: null, nav: null,  // prey: its flight; any walker: its route (see pathfinding)
     sprint: 1,                           // deer: the stamina bar its sprint runs off (0..1)
@@ -152,7 +150,6 @@ function makeAnimal(kind, x, y) {
     tame: false,                         // a deer that stands for its rider and never bolts (the practice ride's, prDeerStep)
     route: null, leg: 0, way: 1, lost: null, // a valley deer: its side's line, the point it heads for, which way along it, and what it last ran from (deerRouteGoal)
     target: null, biteCd: 0, threat: 0, // camp monster: its quarry, its bite rhythm, and the leash bar (0..1) that ends the hunt
-    perch: null, flyT: 0, fa: 0, alt: 0, // bird: its tree, its flight, its height
     dead: false,
   };
   // stun, root, slow, the net drape, the falcon's mark, fire: an animal wears
@@ -162,15 +159,13 @@ function makeAnimal(kind, x, y) {
   return a;
 }
 
-// the body an arrow (and the aim line) tests against. Birds ride their alt
-// and are a smaller mark - that is most of what makes them a hard shot.
-// The disc is animalHitR round (a.x, animalHitY): the arrow loop sweeps a
+// the body an arrow (and the aim line) tests against. The disc is animalHitR round (a.x, animalHitY): the arrow loop sweeps a
 // shot's whole step against it (sweepDisc, js/sim/sim.js); the aim line asks animalHit.
 // The stag stands twice a player's height (its 38 px cell, js/sprites/beasts.js),
 // and a bear is wider still (its 112x76 frame, js/baked/bears.js), so their
 // discs are wider and sit up on the flank.
-function animalHitR(a) { return a.kind === 'bird' ? 5 : isBigBeast(a) ? 28 : a.kind === 'deer' ? 12 : 8; }
-function animalHitY(a) { return a.y - (a.alt || 0) - (isBigBeast(a) ? 10 : a.kind === 'deer' ? 8 : 3); }
+function animalHitR(a) { return isBigBeast(a) ? 28 : a.kind === 'deer' ? 12 : 8; }
+function animalHitY(a) { return a.y - (isBigBeast(a) ? 10 : a.kind === 'deer' ? 8 : 3); }
 function animalHit(a, x, y) { return Math.hypot(a.x - x, animalHitY(a) - y) < animalHitR(a); }
 
 // One animal taking a hit, from an arrow or from a body rolled into it. Both
@@ -184,13 +179,12 @@ function hurtAnimal(a, dmg, nx, ny, kb, owner, ambush) {
   // a camp monster does not run from a hit - the whole camp comes for you,
   // and a hit is the ONLY thing that wakes one
   if (isCampKind(a.kind)) wakeCamp(a, players[owner]);
-  else if (a.kind === 'bird') flushBirds(a.home, a);
   else { a.fleeT = a.kind === 'rabbit' ? 1.4 : 2.2; a.alertT = 0; } // a hit rabbit goes NOW; it does not stop to sit up
   tallyHit(a, dmg); // an ambush still lands with its own flare and crack (ambushFx, below)
   a.kbx = nx * kb; a.kby = ny * kb;
-  burst(a.x, a.y - (a.alt || 0) - 4, HIT_PUFF[a.kind] || '#8f582f', 6, 40, 0.4);
-  if (ambush) ambushFx(a.x, a.y - (a.alt || 0) - 4);
-  sfxAt('hit', a.x, a.y); if (a.hp > 0 && a.kind !== 'bird') sfxAt('yelp', a.x, a.y);
+  burst(a.x, a.y - 4, HIT_PUFF[a.kind] || '#8f582f', 6, 40, 0.4);
+  if (ambush) ambushFx(a.x, a.y - 4);
+  sfxAt('hit', a.x, a.y); if (a.hp > 0) sfxAt('yelp', a.x, a.y);
 }
 
 // The deer: TWO in the valley, one each side of the creek, and they never
@@ -465,8 +459,8 @@ function updateFish(dt) {
   // while it is under FISH_MIN, nothing at all at the cap.
   // The practice arena has NO fishable water - its only ice is the parkour
   // track, and a fish emerging into a race line would be absurd - so under
-  // PRACTICE the trickle is off entirely.
-  if (PRACTICE) return;
+  // ARENA the trickle is off entirely.
+  if (ARENA) return;
   state.fishT -= dt;
   if (state.fishT <= 0) {
     state.fishT = fish.length < FISH_MIN ? FISH_SPAWN_FAST : FISH_SPAWN_T;
@@ -522,8 +516,8 @@ function updateAnimal(a, dt) {
     a.spd = 0;          // ...and a deer comes out of it from a standstill (deerPace)
     if (Math.abs(a.kbx) + Math.abs(a.kby) > 1) moveEntity(a, a.kbx * dt, a.kby * dt, unitRadius(a));
     if (a.stunT <= 0) { a.goal = null; a.fleeGoal = null; a.dashT = 0; a.alertT = 0; navClear(a); a.idleT = 0.3; }
-  } else if (isCampKind(a.kind)) updateCampMonster(a, dt);
-  else if (a.kind === 'bird') updateBird(a, dt);
+  } else if (a.summon) heroSummonStep(a, dt); // a hero's own beast (HERO_SUMMON, js/sim/heroes.js)
+  else if (isCampKind(a.kind)) updateCampMonster(a, dt);
   else updatePrey(a, dt);
   a.x = Math.max(8, Math.min(WORLD * TILE - 8, a.x));
   a.y = Math.max(8, Math.min(WORLD * TILE - 8, a.y));
@@ -661,7 +655,7 @@ function updatePrey(a, dt) {
   // a tame deer (the practice ride's, prDeerStep, js/sim/practice.js) never bolts from one
   let seen = !a.tame && !!scare && sd < seenAt(scare, FLEE_SIGHT[a.kind] || 0);
   // ...and a deer bolts from a wolf or a bear too, inside DEER_BEAST_SIGHT
-  // whether it is hunting or not: neutral to a scout is not neutral to a deer
+  // whether it is hunting or not: neutral to a hero is not neutral to a deer
   if (!rabbit && !a.tame) for (const m of animals) {
     if (m.dead || !isCampKind(m.kind)) continue;
     const d = Math.hypot(m.x - a.x, m.y - a.y);
@@ -694,10 +688,11 @@ function updatePrey(a, dt) {
     a.alertT -= dt;
   } else if (a.fleeT > 0) {
     a.fleeT -= dt;
-    const from = scare || player;
     // the flight is a chain of routed legs a few tiles long, each picked
-    // away from the threat; a leg that fails or arrives hands over to the next
-    if (!a.fleeGoal) a.fleeGoal = fleeGoal(a, from);
+    // away from the threat; a leg that fails or arrives hands over to the next.
+    // With no threat on the ground (every hero dead or aloft) the leg under
+    // way is run out and the flight ends there
+    if (!a.fleeGoal && scare) a.fleeGoal = fleeGoal(a, scare);
     if (a.fleeGoal) {
       // a deer with sprint left in the bar spends it here, and runs for it
       sprinting = !rabbit && a.sprint > 0;
@@ -769,8 +764,7 @@ function updatePrey(a, dt) {
 // what a kill pays: one profile per kind out of the YIELD table, grown
 // ANIMAL_LV_GOLD a level for the animal's own level (the top of the banner),
 // straight into the wallet of whoever landed the final blow (a.lastHit,
-// stamped by hurtAnimal) - gold is never a physical drop. A kit's huntMul
-// pays a bonus on top of the same, grown award; a kill nobody is left
+// stamped by hurtAnimal) - gold is never a physical drop. A kill nobody is left
 // alive to credit pays nobody. A camp monster's or a deer's `xp` is the
 // hunter's side's, shared by whoever of it stands near (shareXp), the
 // hunter too if they are still up; a rabbit teaches nobody anything.
@@ -778,14 +772,13 @@ function animalDies(a) {
   a.dead = true;
   if (a.rider) rideEnd(a.rider, true); // the rider goes down in the snow beside it
   sfxAt('monsterDie', a.x, a.y, 0, a.kind);
-  const hunter = a.lastHit !== undefined ? players[a.lastHit] : null;
+  // a hero's summon (HERO_SUMMON) is no quarry: it pays nobody and counts for nothing
+  const hunter = a.lastHit !== undefined && !a.summon ? players[a.lastHit] : null;
   if (hunter) hunter.beasts++; // the post-game record (js/ui/lobby.js)
-  if (hunter && a.home) farmHit(hunter, a.x, a.y - (a.alt || 0) - 8); // a camp monster is farm (the `farm` banner, js/sim/farm.js)
+  if (hunter && a.home) farmHit(hunter, a.x, a.y - 8); // a camp monster is farm (the `farm` banner, js/sim/farm.js)
   const y = YIELD[a.kind];
   if (hunter && !hunter.dead && y && y.coins) {
-    const base = Math.round(y.coins * y.each * (1 + ANIMAL_LV_GOLD * ((a.level || 1) - 1)));
-    const bonus = Math.max(0, Math.ceil(base * (kitOf(hunter).huntMul - 1)));
-    awardGold(hunter, base + bonus, a.x, a.y - (a.alt || 0));
+    awardGold(hunter, Math.round(y.coins * y.each * (1 + ANIMAL_LV_GOLD * ((a.level || 1) - 1))), a.x, a.y);
   }
   if (hunter && y && y.xp) shareXp(a, y.xp * (1 + ANIMAL_LV_XP * ((a.level || 1) - 1)), hunter.team, hunter);
   if (a.kind === 'rabbit') {
@@ -816,10 +809,6 @@ function animalDies(a) {
       logEvent(hunter.name + ' SLEW THE ' + MONSTER[a.kind].feed, hunter);
       callBeast(a, hunter); // ...and the announcer calls it (the `calls` banner, js/sim/player.js)
     }
-  }
-  if (a.kind === 'bird') {
-    burst(a.x, a.y - a.alt, '#cfd6e4', 9, 40, 0.5, true);
-    flushBirds(a.home, a); // the rest of the flock does not stay to watch
   }
 }
 
@@ -899,9 +888,6 @@ const CAMP_BUFF_SPD = 1.15;
 const EPIC_TEAM_GOLD = 280;
 // a fresh grant only extends what is left, and the latest bear is the one worn
 function campBuff(p, t, kind) { if (p && p.active) { p.buffT = Math.max(p.buffT || 0, t); p.buffKind = kind || p.buffKind || 'dire'; } }
-const BIRD_FLUSH = 34;     // px: a player this close puts the whole rookery up
-const BIRD_SPD = 112;      // px/s in flight
-const BIRD_ALT = 15;       // px a perched bird sits above its tile; flight climbs past it
 
 // ------------------------------------------------------------ riding
 // A deer can be ridden. E beside a wild one (rideNear) hops the player on
@@ -1277,88 +1263,5 @@ function monsterBite(a, t, M) {
   sfxAt('bite', a.x, a.y);
 }
 
-// ------------------------------------------------------------ birds
-// DORMANT since the camps replaced the landmarks (nothing spawns a bird;
-// the wildlife header says why the code stays). A flock perched in a
-// stand's snags until a player gets inside BIRD_FLUSH, and then the whole
-// stand goes up at once - the flock is the point, one bird leaving alone
-// would read as a bug. In the air they are the hardest shot in the game:
-// small body, no straight line, and they come down again on their own perch
-// when they have settled. `L` is the home record (a camp, or whatever
-// stands one up again) - its tx/ty/r are all a bird reads off it.
-// one of the stand's snags, for a bird to sit in
-function rookeryPerch(L) {
-  const trees = [];
-  for (let dy = -L.r; dy <= L.r; dy++) for (let dx = -L.r; dx <= L.r; dx++) {
-    const o = objAt(L.tx + dx, L.ty + dy);
-    if (o && o.type === 'deadTree') trees.push(o);
-  }
-  if (!trees.length) return null;
-  const t = trees[randi(0, trees.length - 1)];
-  return { tx: t.tx, ty: t.ty };
-}
-function flushBirds(L, from) {
-  if (!L) return;
-  let woke = false;
-  for (const b of animals) {
-    if (b.dead || b.kind !== 'bird' || b.home !== L) continue;
-    if (b.flyT <= 0) { woke = true; burst(b.x, b.y - b.alt, '#cfd6e4', 4, 30, 0.35); }
-    b.flyT = Math.max(b.flyT, rand(2.4, 4.2));
-    b.fa = Math.atan2(b.y - from.y, b.x - from.x) + rand(-0.7, 0.7);
-    b.perch = rookeryPerch(L) || b.perch;
-  }
-  if (woke) sfxAt('wings', from.x, from.y, 220);
-}
-
-function updateBird(a, dt) {
-  const L = a.home;
-  // anyone this close puts the whole rookery up (only a bird still on its
-  // perch tests for it - once the flock is up there is nothing left to flush)
-  if (a.flyT <= 0) for (const p of players) {
-    if (!p.active || p.dead || inAir(p)) continue;
-    if (Math.hypot(p.x - a.x, p.y - (a.y - a.alt)) < BIRD_FLUSH) { flushBirds(L, p); break; }
-  }
-
-  if (a.flyT > 0) {
-    a.flyT -= dt;
-    a.alt += (26 - a.alt) * Math.min(1, dt * 2.5);
-    // the last beat of the flight is the run back to the perch; before that
-    // it is a wandering circuit that never leaves the stand
-    const home = a.perch ? { x: (a.perch.tx + 0.5) * TILE, y: (a.perch.ty + 0.5) * TILE }
-      : { x: (L ? L.tx + 0.5 : a.x / TILE) * TILE, y: (L ? L.ty + 0.5 : a.y / TILE) * TILE };
-    const out = Math.hypot(a.x - home.x, a.y - home.y);
-    if (a.flyT < 1.1 || out > (L ? L.r + 2 : 6) * TILE) {
-      const want = Math.atan2(home.y - a.y, home.x - a.x);
-      let da = want - a.fa;
-      while (da > Math.PI) da -= Math.PI * 2;
-      while (da < -Math.PI) da += Math.PI * 2;
-      a.fa += Math.max(-4 * dt, Math.min(4 * dt, da));
-    } else {
-      a.fa += Math.sin(a.animT * 1.7) * 2.2 * dt;
-    }
-    // a bird steers itself rather than routing, so the net/crater drag has to
-    // be folded in by hand here - navStep does it for everything that walks
-    const bs = BIRD_SPD * unitMoveMul(a);
-    a.x += Math.cos(a.fa) * bs * dt;
-    a.y += Math.sin(a.fa) * bs * dt;
-    a.mvx = Math.cos(a.fa);
-    // never pop across the stand: stay up until it is actually over the perch
-    if (a.flyT <= 0) {
-      if (out > 8) a.flyT = 0.25;
-      else if (a.perch) { a.x = home.x + rand(-3, 3); a.y = home.y; }
-    }
-  } else {
-    // perched: settle into the branches and shuffle about
-    a.alt += (BIRD_ALT - a.alt) * Math.min(1, dt * 4);
-    a.idleT -= dt;
-    if (a.idleT <= 0) { a.idleT = rand(0.9, 3); a.dir = rng() < 0.5 ? 'left' : 'right'; }
-  }
-
-  if (a.flyT > 0 && Math.abs(a.mvx) > 0.05) a.dir = a.mvx > 0 ? 'right' : 'left';
-  setClip(a, a.flyT > 0 ? 'fly' : 'idle');
-  stepClip(a, dt, a.flyT > 0 ? 1 : 0);
-  a.x = Math.max(8, Math.min(WORLD * TILE - 8, a.x));
-  a.y = Math.max(8, Math.min(WORLD * TILE - 8, a.y));
-}
 
 

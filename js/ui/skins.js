@@ -97,6 +97,18 @@ const SKIN_TABS = [
   { id: 'bella', name: 'BELLA', slot: 'bella', rows: BELLA_SKINS, hero: 4, glyph: ['..www...', '.wwwwww.', '.w...w.w', '.w...w.w', '..www..w', '...w....', '.wwwww..', '.wwwww..'] },
   { id: 'ignia', name: 'IGNIA', slot: 'ignia', rows: IGNIA_SKINS, hero: 5, glyph: ['...w....', '..ww....', '..www.w.', '.wwww.w.', '.wwwwww.', 'ww..www.', 'ww..www.', '.wwwww..'] },
   { id: 'salvia', name: 'SALVIA', slot: 'salvia', rows: SALVIA_SKINS, hero: 7, glyph: ['..www...', '.w...ww.', '.w..w..w', '.w..w.ww', '.w...ww.', '.w......', '.ww.....', '..w.....'] },
+  { id: 'lucerna', name: 'LUCERNA', slot: 'lucerna', rows: LUCERNA_SKINS, hero: 8, glyph: ['...ww...', '..w..w..', '.wwwwww.', '.w.ww.w.', '.wwwwww.', '.w.ww.w.', '.wwwwww.', '..wwww..'] },
+  { id: 'hiems', name: 'HIEMS', slot: 'hiems', rows: HIEMS_SKINS, hero: CLASSES.findIndex((c) => c.name === 'HIEMS'), glyph: ['...w....', '.w.w.w..', '..www...', 'wwwwwww.', '..www...', '.w.w.w..', '...w....', '........'] },
+  { id: 'rupes', name: 'RUPES', slot: 'rupes', rows: RUPES_SKINS, hero: CLASSES.findIndex((c) => c.name === 'RUPES'), glyph: ['..wwww..', '.wwwwww.', 'ww..wwww', 'w....www', 'w....www', 'ww..wwww', '.wwwwww.', '..wwww..'] },
+  { id: 'varro', name: 'VARRO', slot: 'varro', rows: VARRO_SKINS, hero: CLASSES.findIndex((c) => c.name === 'VARRO'), glyph: ['w....w..', 'ww..ww..', 'wwwwww..', 'w.ww.w..', 'wwwwww..', '.wwww...', '..ww....', '........'] },
+  { id: 'velox', name: 'VELOX', slot: 'velox', rows: VELOX_SKINS, hero: CLASSES.findIndex((c) => c.name === 'VELOX'), glyph: ['........', 'ww......', 'w.......', 'wwwwww..', 'wwwwwww.', 'ww......', 'wwwwwwww', '.w...w..'] },
+  { id: 'bucina', name: 'BUCINA', slot: 'bucina', rows: BUCINA_SKINS, hero: CLASSES.findIndex((c) => c.name === 'BUCINA'), glyph: ['......ww', '.....w.w', 'w...w..w', 'ww.w...w', '.ww....w', '..ww...w', '...ww.w.', '....ww..'] },
+  { id: 'nix', name: 'NIX', slot: 'nix', rows: NIX_SKINS, hero: CLASSES.findIndex((c) => c.name === 'NIX'), glyph: ['...w....', '.w.w.w..', '..www...', 'wwwwwww.', '..www...', '.w.w.w..', '...w....', '........'] },
+  { id: 'sagitta', name: 'SAGITTA', slot: 'sagitta', rows: SAGITTA_SKINS, hero: CLASSES.findIndex((c) => c.name === 'SAGITTA'), glyph: ['wwwwwwww', 'w..ww..w', '...ww...', '...ww...', '..wwww..', '..wwww..', '...ww...', '........'] },
+  { id: 'faber', name: 'FABER', slot: 'faber', rows: FABER_SKINS, hero: CLASSES.findIndex((c) => c.name === 'FABER'), glyph: ['..ww....', '.w..w...', 'w.w..w..', 'w.ww.w..', '.w..w...', '..ww....', '..w.....', '..w.....'] },
+  { id: 'falco', name: 'FALCO', slot: 'falco', rows: FALCO_SKINS, hero: CLASSES.findIndex((c) => c.name === 'FALCO'), glyph: ['........', '.w....w.', '.ww..ww.', '..wwww..', '...ww...', '...ww...', '..w..w..', '........'] },
+  { id: 'maris', name: 'MARIS', slot: 'maris', rows: MARIS_SKINS, hero: CLASSES.findIndex((c) => c.name === 'MARIS'), glyph: ['.....ww.', '....wwww', '...w.ww.', '..w..w..', '.w......', 'w.......', 'ww......', '.w......'] },
+  { id: 'lignum', name: 'LIGNUM', slot: 'lignum', rows: LIGNUM_SKINS, hero: CLASSES.findIndex((c) => c.name === 'LIGNUM'), glyph: ['.www....', 'wwwww...', 'wwww....', '.w.w....', '....w...', '.....w..', '......w.', '.......w'] },
 ];
 const SK_TAB_BIRD = 1; // SKIN_TABS' eagle and scout, the two tabs a match reads
 const SK_TAB_SCOUT = 0;

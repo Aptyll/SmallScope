@@ -389,7 +389,7 @@ function bigBuildReveal(o) {
 // clock on the flank's plate filling toward the next roll-out in the side's
 // paint, the beacon amber while a column is leaving, and the hp bar once hurt.
 function drawBarracksOverlay(o, px, sy, now) {
-  const t = STRUCTS.barracks.tiers[o.tier];
+  const t = STRUCTS.barracks;
   if (o.queue > 0 && o.rollT <= 0.4) {
     const set = SPRITES.robotTeam[skin(o.team === undefined ? 0 : o.team)] || SPRITES.robot;
     const spr = set[Math.floor(now * 8) % 2];

@@ -46,7 +46,7 @@ const ANN_TEXT = {
   shut: () => 'SHUTDOWN',
   ace: () => 'ACE',
   tower: () => 'TOWER DESTROYED',
-  beast: (c) => MONSTER[c.bv].feed + ' SLAIN',
+  beast: (c) => MONSTER[c.bv].feed + ' DOWN',
 };
 const annQ = [];   // calls waiting, oldest first; annQ[0] is up once annT starts
 let annT = -1;     // the call up's age in s (-1 = nothing up)

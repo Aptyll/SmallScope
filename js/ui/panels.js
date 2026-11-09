@@ -44,7 +44,7 @@ const SB_COL = [96, 128, 176, 208]; // right edges of LVL / GOLD / K/D/A / FARM,
 function scoreboardOpen() { return keyHeld('board') && state.mode !== 'title' && !window.DBG.hideUI; }
 
 // "winning" is the match's gold earned (gainGold), not the purse: gold spent
-// on a building is progress, not a step back
+// on an item is progress, not a step back
 function scoreOf(p) { return p.earned; }
 
 // players grouped by team, teams ordered by their total, players by their own
@@ -62,6 +62,8 @@ function scoreGroups() {
   return groups;
 }
 
+// a row's name: a person's own, a bot's hero (a seat number tells you nothing)
+function boardName(p) { return isHuman(p) || !CLASSES[p.cls] ? p.name : CLASSES[p.cls].name; }
 function renderScoreboard() {
   const groups = scoreGroups();
   if (!groups.length) return;
@@ -77,13 +79,13 @@ function renderScoreboard() {
   ctx.fillRect(x, y, 1, h); ctx.fillRect(x + SB_W - 1, y, 1, h);
   ctx.fillStyle = '#3d4f85'; ctx.fillRect(x + 1, y + 1, SB_W - 2, 1); // lit top edge
 
-  drawPixelTextShadow(ctx, 'SCOREBOARD', x + 6, y + 6, '#cfe0ff', shadow);
-  const day = 'DAY ' + state.day;
-  drawPixelTextShadow(ctx, day, x + SB_W - 6 - pixelTextWidth(day), y + 6, '#7a8bb8', shadow);
+  drawPixelTextShadow(ctx, tr('board.title'), x + 6, y + 6, '#cfe0ff', shadow);
+  const clock = clockTxt(state.elapsed); // the match clock, the one the top bar shows
+  drawPixelTextShadow(ctx, clock, x + SB_W - 6 - pixelTextWidth(clock), y + 6, '#7a8bb8', shadow);
   ctx.fillStyle = '#222c55'; ctx.fillRect(x + 4, y + 15, SB_W - 8, 1);
 
-  const head = ['LVL', 'GOLD', 'K/D/A', 'FARM']; // FARM: last hits on soldiers and camp monsters (js/sim/farm.js)
-  drawPixelTextShadow(ctx, 'PLAYER', x + 14, y + 19, '#7a8bb8', shadow);
+  const head = ['board.lvl', 'board.gold', 'board.kda', 'board.farm'].map((k) => tr(k)); // FARM: last hits on soldiers and camp monsters (js/sim/farm.js)
+  drawPixelTextShadow(ctx, tr('board.player'), x + 14, y + 19, '#7a8bb8', shadow);
   for (let i = 0; i < head.length; i++) {
     drawPixelTextShadow(ctx, head[i], x + SB_COL[i] - pixelTextWidth(head[i]), y + 19, '#7a8bb8', shadow);
   }
@@ -100,14 +102,15 @@ function renderScoreboard() {
       ctx.fillRect(x + 8, ry, SB_W - 12, SB_ROW - 2);
       ctx.globalAlpha = dim;
       if (p === player) drawPixelTextShadow(ctx, '>', x + 9, ry + 1, '#ffd95c', shadow);
-      drawPixelTextShadow(ctx, p.name, x + 14, ry + 1, playerTint(p), shadow);
+      const nm = boardName(p);
+      drawPixelTextShadow(ctx, nm, x + 14, ry + 1, playerTint(p), shadow);
       if (p.dead) {
         // eliminated reads OUT; a respawn-pending player shows the countdown
         // instead, since "OUT" on someone back in 3s is actively wrong
-        const tag = p.eliminated ? 'OUT' : Math.ceil(p.respawnT) + 's';
-        drawPixelTextShadow(ctx, tag, x + 18 + pixelTextWidth(p.name), ry + 1, '#8f9cc4', shadow);
+        const tag = p.eliminated ? tr('board.out') : tr('board.wait', { s: Math.ceil(p.respawnT) });
+        drawPixelTextShadow(ctx, tag, x + 18 + pixelTextWidth(nm), ry + 1, '#8f9cc4', shadow);
       }
-      const vals = [String(p.level), String(p.inv.gold), p.kills + '/' + p.deaths + '/' + (p.assists || 0), String(p.farm)];
+      const vals = [String(p.level), String(p.gold), p.kills + '/' + p.deaths + '/' + (p.assists || 0), String(p.farm)];
       const cols = ['#cfe0ff', '#f2cc6a', '#ff9a8a', '#cfe0ff'];
       for (let i = 0; i < vals.length; i++) {
         drawPixelTextShadow(ctx, vals[i], x + SB_COL[i] - pixelTextWidth(vals[i]), ry + 1, cols[i], shadow);
@@ -161,7 +164,7 @@ function mapTileAt(sx, sy) {
   return inWorld(tx, ty) ? { tx, ty } : null;
 }
 // whether a press would close the chart: the pointer off the slab
-const MAP_HEAD_Y = 6; // the header row inside the slab: where the day sits
+const MAP_HEAD_Y = 6; // the header row inside the slab: where the match clock sits
 function mapCloseHit() {
   const mx = mouse.x, my = mouse.y;
   return mouse.inside && !(mx >= PANEL_X && mx < PANEL_X + PANEL_W && my >= PANEL_Y && my < PANEL_Y + PANEL_H);
@@ -311,9 +314,9 @@ function renderWorldMap(now) {
   ctx.fillRect(0, 0, VIEW_W, VIEW_H);
   ctx.drawImage(panelCv, PANEL_X, PANEL_Y);
 
-  // the header: the day
-  const dayT = 'DAY ' + state.day;
-  drawPixelText(ctx, dayT, PANEL_X + MAP_SIDE, PANEL_Y + MAP_HEAD_Y + 2, CHART_INK_TXT, 2);
+  // the header: the match clock, the one the top bar shows
+  const clock = clockTxt(state.elapsed);
+  drawPixelText(ctx, clock, PANEL_X + MAP_SIDE, PANEL_Y + MAP_HEAD_Y + 2, CHART_INK_TXT, 2);
 
   // terrain
   buildWorldMapImg();
@@ -403,50 +406,6 @@ let dragSlider = null;
 const setPanelCv = document.createElement('canvas');
 setPanelCv.width = SET_W; setPanelCv.height = SET_H;
 
-// the dark frost slab every baked panel sits on: chamfered, mottled, bevelled,
-// crystal corners, and a gold title between ornament dashes. Shared by the
-// settings panel and the main menu's TUTORIAL panel so they read as a set.
-function bakeFrostSlab(g, w, h, title) {
-  const cham = (x, y, ww, hh) => {
-    g.fillRect(x + 2, y, ww - 4, hh);
-    g.fillRect(x, y + 2, ww, hh - 4);
-    g.fillRect(x + 1, y + 1, ww - 2, hh - 2);
-  };
-  g.fillStyle = '#0a0e23'; cham(0, 0, w, h);
-  g.fillStyle = '#141c3c'; cham(1, 1, w - 2, h - 2);
-  // subtle mottling
-  for (let y = 3; y < h - 3; y += 3) {
-    for (let x = 3; x < w - 3; x += 3) {
-      const hv = hash2(x * 11 + 3, y * 7 + 19);
-      if (hv > 0.86) { g.fillStyle = '#182148'; g.fillRect(x, y, 3, 3); }
-      else if (hv < 0.10) { g.fillStyle = '#111834'; g.fillRect(x, y, 3, 3); }
-    }
-  }
-  // bevel: icy top light, deep bottom shade
-  g.fillStyle = '#35426e';
-  g.fillRect(2, 1, w - 4, 1); g.fillRect(1, 2, 1, h - 4);
-  g.fillStyle = '#080c1c';
-  g.fillRect(2, h - 2, w - 4, 1); g.fillRect(w - 2, 2, 1, h - 4);
-  // ice-crystal corner accents
-  g.fillStyle = '#5a7fb8';
-  for (const [cx2, cy2] of [[7, 7], [w - 8, 7], [7, h - 8], [w - 8, h - 8]]) {
-    g.fillRect(cx2 - 2, cy2, 5, 1); g.fillRect(cx2, cy2 - 2, 1, 5);
-    g.fillRect(cx2 - 1, cy2 - 1, 3, 3);
-  }
-  g.fillStyle = '#a8c8e8';
-  for (const [cx2, cy2] of [[7, 7], [w - 8, 7], [7, h - 8], [w - 8, h - 8]]) {
-    g.fillRect(cx2, cy2, 1, 1);
-  }
-  // title with dashes (none for a slab that heads itself: the M map)
-  if (!title) return;
-  const tw = pixelTextWidth(title);
-  const tx0 = Math.round((w - tw) / 2);
-  drawPixelTextShadow(g, title, tx0, 8, '#ffd95c', 'rgba(8,12,28,0.9)');
-  g.fillStyle = '#4a5480';
-  g.fillRect(tx0 - 26, 11, 18, 1); g.fillRect(tx0 + tw + 8, 11, 18, 1);
-  g.fillRect(tx0 - 30, 10, 2, 3); g.fillRect(tx0 + tw + 28, 10, 2, 3);
-}
-
 // The flat slab the ESC settings panel stands
 // on: solid, never see-through - an ink silhouette, one quiet steel line and a
 // flat night ground, the HUD frame's grammar (drawHudFrame, js/ui/strip.js)
@@ -507,8 +466,8 @@ const SET_TABS = [
     // where the hover tooltip sits (tipPos, js/ui/tooltip.js) - beside the
     // pointer, or parked in the bottom-left corner
     { id: 'tipFollow', label: 'TOOLTIP', kind: 'toggle', on: 'FOLLOWS POINTER', off: 'BOTTOM LEFT' },
-    // an ability's hover: the short card, every rank's numbers on Shift; or every rank's always
-    { id: 'tipFull', label: 'ABILITY DETAILS', kind: 'toggle', on: 'ALWAYS', off: 'HOLD SHIFT' },
+    // an ability's hover: the short card, every rank's numbers while the DETAILS key is held; or every rank's always
+    { id: 'tipFull', label: 'ABILITY DETAILS', kind: 'toggle', on: 'ALWAYS', off: () => 'HOLD ' + keyCap('details') },
     // BLUE always, or the roster's colour (skin, player.js)
     { id: 'teamBlue', label: 'MY TEAM', kind: 'toggle', on: 'ALWAYS BLUE', off: 'AS DEALT' },
   ] },
@@ -596,7 +555,8 @@ function settingsLayout() {
   const rows = [];
   let y = clipY0 + 6;
   for (const r of tab.rows) {
-    const row = { id: r.id, label: r.label, kind: r.kind, y, val: r.val, pick: r.pick, on: r.on, off: r.off };
+    const row = { id: r.id, label: r.label, kind: r.kind, y, val: r.val, pick: r.pick, on: r.on,
+      off: typeof r.off === 'function' ? r.off() : r.off }; // (a label may name a live bind)
     if (r.kind === 'choice') {
       let x = SL_X;
       row.opts = r.opts.map(o => { const w = pixelTextWidth(o.label); const q = { id: o.id, label: o.label, x, w }; x += w + 8; return q; });
@@ -687,19 +647,19 @@ const KEY_ROWS = {
   wasd: [
     [{ acts: ['up', 'left', 'down', 'right'], verb: 'MOVE' }, { acts: ['ab1', 'ab2', 'ab3', 'ab4'], verb: 'ABILITIES' },
       ['CLICK', 'FIRE'], 'dodge', 'slide', 'work', ['RMB', 'PING']],
-    [{ acts: ['item1', 'item2', 'item3'], verb: 'ITEMS' }, { acts: ['item4', 'item5', 'item6'], verb: 'ITEMS' }, 'recall', 'char'],
+    [{ acts: ['item1', 'item2', 'item3'], verb: 'ITEMS' }, { acts: ['item4', 'item5', 'item6'], verb: 'ITEMS' }, 'recall', 'char', 'details'],
     ['map', 'board', 'mute', 'pause', ['ESC', 'SETTINGS'], ['SCROLL', 'ZOOM'], ['F3', 'INFO'], ['.', 'HITBOX']],
   ],
   click: [
     [['RMB', 'MOVE / ACT'], ['HOLD RMB', 'FOLLOW'], { acts: ['ab1', 'ab2', 'ab3', 'ab4'], verb: 'ABILITIES' },
       ['CLICK', 'FIRE'], 'amove', 'stop', 'dodge', 'slide'],
-    [{ acts: ['item1', 'item2', 'item3'], verb: 'ITEMS' }, { acts: ['item4', 'item5', 'item6'], verb: 'ITEMS' }, 'ping', 'char', 'recall'],
+    [{ acts: ['item1', 'item2', 'item3'], verb: 'ITEMS' }, { acts: ['item4', 'item5', 'item6'], verb: 'ITEMS' }, 'ping', 'char', 'recall', 'details'],
     [ 'map', 'board', 'mute', 'pause', ['ESC', 'SETTINGS'], ['SCROLL', 'ZOOM'], ['F3', 'INFO']],
   ],
   mouse: [
     [['RMB', 'MOVE / ACT'], ['HOLD RMB', 'FOLLOW'], ['CLICK', 'FIRE'], ['HOLD MMB', 'ACTION WHEEL'],
       'dodge', 'slide', { acts: ['ab1', 'ab2', 'ab3', 'ab4'], verb: 'ABILITIES' }, 'amove'],
-    ['stop', { acts: ['item1', 'item2', 'item3'], verb: 'ITEMS' }, { acts: ['item4', 'item5', 'item6'], verb: 'ITEMS' }, 'ping', 'char', 'recall'],
+    ['stop', { acts: ['item1', 'item2', 'item3'], verb: 'ITEMS' }, { acts: ['item4', 'item5', 'item6'], verb: 'ITEMS' }, 'ping', 'char', 'recall', 'details'],
     ['map', 'board', 'mute', 'pause', ['ESC', 'SETTINGS'], ['SCROLL', 'ZOOM'], ['F3', 'INFO']],
   ],
 };

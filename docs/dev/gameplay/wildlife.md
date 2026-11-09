@@ -14,7 +14,7 @@ and the camp restocks them, all at once, once it is cleared. (**Birds**, 3 HP, a
 
 ## The deer run the valley
 
-`spawnAnimals()` (boot, after worldgen, never under `PRACTICE`) lays **each side's line**
+`spawnAnimals()` (boot, after worldgen, never under `ARENA`) lays **each side's line**
 (`layDeerRoutes`, `deerRoutes[side]`): points `DEER_ROUTE_STEP` (5) tiles apart on a line parallel
 to the creek, `DEER_ROUTE_U` (100) tiles out along the road from that side's roost (the creek is
 at about 115), from one treeline to the other across the road, kept `DEER_ROUTE_KEEP` (3) tiles
@@ -22,7 +22,7 @@ off the woods and off every camp's ground (`campNear` past `CAMP_GROUND`). Pure 
 `rng()`. One deer stands on the middle of each line (`spawnDeer`; `a.route` is its side).
 
 It **walks its line end to end and back** (`deerRouteGoal`: `a.leg` the point it heads for,
-`a.way` which way, turning at either end) at `DEER_ROAM` (a scout's walk, so a walk keeps up but
+`a.way` which way, turning at either end) at `DEER_ROAM` (a hero's walk, so a walk keeps up but
 never closes), grazing at `DEER_GRAZE_P` (a quarter) of its points for `DEER_GRAZE_T` (1.5–3.5 s).
 It bolts as any deer does from a player it sees, and **from any wolf or bear inside
 `DEER_BEAST_SIGHT`** (96 px), hunting or not (`updatePrey`). A flight remembers what it ran from
@@ -103,7 +103,6 @@ a wander is the same gallop run slower, not a second animation; and `clipFrame`
 | `deer` | `graze` head down in the snow, `idle` head up and turning, `run` the gallop | `updatePrey` |
 | `wolf` | `idle`, `run` | `updateCampMonster` |
 | `alpha` / `dire` (the bears) | `idle`, `walk`, `run`, `bite`, `paw`, `roar`, `fish` | `updateCampMonster` |
-| `bird` | `idle` perched, `fly` | `updateBird` |
 
 **The head is the tell.** Standing still and settled, a deer's head is DOWN in the snow and a
 rabbit is low over its paws; standing still and *wary*, the deer's head is up and turning and
@@ -126,7 +125,7 @@ before the beat is.
 
 `updateAnimal()` is the shared shell: it ages the flash and knockback, runs
 `updateUnitStatus` (the shared clock — root, slow, net, mark, fire), dispatches to
-`updatePrey` / `updateCampMonster` / `updateBird`, clamps to the world, and calls `animalDies(a)` — the
+`updatePrey` / `updateCampMonster`, clamps to the world, and calls `animalDies(a)` — the
 one place a kill pays out, straight from the `YIELD` table. Everything in `animals` is a target
 for arrows (the disc `animalHitR` about `animalHitY`: the arrow update sweeps it, the aim line asks
 `animalHit`), gets the amber
@@ -161,18 +160,19 @@ included, which is what keeps the `.` overlay honest ([rendering.md](../renderin
   to `PRONE_SNIFF` (22), and inside *that* it bolts no matter what you are lying under. A hit
   also sends either species running from the nearest player (`fleeT`).
 - **The flight** is a chain of routed legs at `PREY_RUN` (a rabbit's 104 px/s, half again a
-  walking scout's): `fleeGoal(a, from)` picks a tile ~6 tiles off, as straight away from the
+  walking hero's): `fleeGoal(a, from)` picks a tile ~6 tiles off, as straight away from the
   threat as the ground allows (fanning out, then sideways, then past it), the first it can route
   to; a leg that arrives or fails hands over to the next, and an animal with nowhere to run stops
-  fleeing. A warren's rabbit runs `RABBIT_LEG` (3.5) tile legs that must end on its warren's deep
-  snow (`warrenHolds`), so it circles a scout wading after it instead of leaving the circle.
+  fleeing. With no threat on the ground (every hero dead or aloft, no beast in sight) it runs out
+  the leg under way and stops there. A warren's rabbit runs `RABBIT_LEG` (3.5) tile legs that must end on its warren's deep
+  snow (`warrenHolds`), so it circles a hero wading after it instead of leaving the circle.
 - **A deer's sprint.** A deer always wears a second bar under its health — stamina white
   (`STAM_COL`), stacked the way a player's is (`drawAnimal`) — and spends it on the first stretch
   of every flight: while `a.sprint` (0..1) is above zero the legs run at `DEER_SPRINT` and the bar
   drains over `DEER_SPRINT_T` (2.5 s of running); empty, the flight drops to `PREY_RUN.deer`, its
   walk. Both paces are multiples of a player's walk, tuned in one place — `DEER_RUN_MUL` (1.4,
   101 px/s) and `DEER_WALK_MUL` (1.15, 83 px/s), the px/s consts derived from them — so a deer
-  outpaces a walking scout either way and the empty bar is when a roll, a slide or an arrow closes
+  outpaces a walking hero either way and the empty bar is when a roll, a slide or an arrow closes
   the gap. It refills over `DEER_SPRINT_REGEN` (10 s) whenever the deer is not fleeing, so the bar
   is the hunt's read: a full one means the deer will simply leave, a low one means run it again now.
 - **A deer never jumps pace.** `a.spd` is the speed it is at, and `deerPace(a, want, dt)` closes
@@ -302,17 +302,6 @@ the hunt rung like any other animal, and never a bear (`teamPay`), which a
 lone bot would die to. No bot walks *to* a camp deliberately yet — see
 [checklists.md](../checklists.md#known-drift).
 
-## Birds: the flock (dormant)
-
-The bird kind — `updateBird()`, `flushBirds(L, from)`, `rookeryPerch(L)`, `drawBird`, the
-`BIRD_*` constants, `YIELD.bird` — is intact but **nothing spawns one**
-([Intentional dead code](../checklists.md#intentional-dead-code)). What the code does if one exists: a flock perched in a
-stand's snags is put up all at once by any player inside `BIRD_FLUSH` (34 px), an arrow, or a snag
-being chopped, flies at `BIRD_SPD` (112 px/s) and returns to a perch; `a.alt` (`BIRD_ALT` 15
-perched) is the only height in the game, subtracted by `animalHitY` and the cursor, skipped by
-`separateUnits`. A camp that wants a flock stands one up with
-`props` of `deadTree` and a spawn that perches birds on them (`rookeryPerch`).
-
 ## The orca
 
 **One orca lives under [its lake](../world.md#the-orcas-lake), the cistern's frozen pool**
@@ -350,4 +339,4 @@ that rides the snapshot; the client eases it like a body (`netClientLerp`).
   ([pathfinding](pathfinding.md)), so a bot crosses only where round is much further. A bot file
   reads the line as `me.orca` ([the bot API](../../bots/api.md)).
 
-Not under `PRACTICE`. `DBG` exposes `orca`, `orcaLine`, `orcaAge`, `orcaShore` and `ORCA_LINE`.
+Not under `ARENA`. `DBG` exposes `orca`, `orcaLine`, `orcaAge`, `orcaShore` and `ORCA_LINE`.

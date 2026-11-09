@@ -502,7 +502,7 @@
     }
     return set;
   }
-  const FIGURE_SCALE = 0.42; // the wiki's figure column is a scout's few widths
+  const FIGURE_SCALE = 0.42; // the wiki's figure column is a hero's few widths
   function figure(id, team) {
     const key = id + '|' + team + '|fig';
     if (!stills.has(key)) stills.set(key, cropped([paint(id, team, 0, 's0', FIGURE_SCALE, false)]));

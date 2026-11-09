@@ -3,9 +3,14 @@
 // the archery track and bell, the ice parkour, the roll station, the practice
 // bar's commands and the deer ride (drawn by js/draw/practice.js).
 // ------------------------------------------------------------ practice arena
-// The TRAINING FIELD behind the PRACTICE TOOL plank: one open snowfield, cut
-// to pure combat. The practice world itself is SMALL - WORLD is 76 under
-// PRACTICE (js/sim/core.js) - so the forest is a collar, not a wilderness. In the
+// The PRACTICE TOOL plays on the match's own map (js/app/boot.js grows it
+// like any match; practiceLand puts both birds down), with the practice bar
+// (cheatCmd below) and nothing at stake. Its side room, under ARENA
+// (?practice=1&arena=1, reached from the bar's ARENA well), is everything
+// else in this file:
+// the TRAINING FIELD: one open snowfield, cut
+// to pure combat. The arena's world itself is SMALL - WORLD is 112 under
+// ARENA (js/sim/core.js) - so the forest is a collar, not a wilderness. In the
 // middle of the field: one dummy standing in the open snow, spawn just
 // south of it, the range BELL west of the dummy on its own row, and a
 // shop (stall and keeper, PR_SHOP) east of the spawn.
@@ -25,7 +30,7 @@
 // on a frost plate at the gate (the dummy meter's own language). Leaving the
 // ice for more than PK_OFF_T abandons the run.
 //
-// Boots only under PRACTICE (js/sim/core.js pins the seed to PRACTICE_SEED, so
+// Boots only under ARENA (js/sim/core.js pins the seed to PRACTICE_SEED, so
 // ?seed can never reshape it) and replaces genWorld outright: no camps,
 // no eagles, no other players (js/app/boot.js), and the clock is pinned to early
 // morning forever (sim.js). One player, nothing at stake - die() revives on
@@ -43,12 +48,31 @@ const PR_X0 = PR_OX + ((PR_RING - PR_W) >> 1), PR_Y0 = PR_OY + ((PR_RING - PR_H)
 const PR_SPAWN = { tx: PR_X0 + 20, ty: PR_Y0 + 17 }; // south of the dummy, facing it
 const PR_SHOP = { tx: 25, ty: 14 }; // the stall's top-left, in field tiles: east of the spawn, inside the track
 // who stands on the field: a person on the spawn tile (separateUnits eases
-// a party apart), every empty seat parked deep in the corner forest, far
-// outside the arena, so no ghost silhouette wanders into a capture
+// a party apart) - on the map its side's roost, where a match respawns it
+// (roostTile, js/sim/player.js) - and every empty seat parked deep in the
+// corner forest, far from either base, so no ghost silhouette wanders into
+// a capture
 const PR_PARK = { tx: 4, ty: 4 };
 function practiceSeat(p) {
-  p.spawn = { tx: PR_SPAWN.tx, ty: PR_SPAWN.ty };
-  p.x = (PR_SPAWN.tx + 0.5) * TILE; p.y = (PR_SPAWN.ty + 0.5) * TILE;
+  p.spawn = (!ARENA && roostTile(p)) || { tx: PR_SPAWN.tx, ty: PR_SPAWN.ty };
+  p.x = (p.spawn.tx + 0.5) * TILE; p.y = (p.spawn.ty + 0.5) * TILE;
+}
+// the map's opening: no ride - both birds are down on their perches at boot
+// (eagleCrash, js/sim/eagle.js, the crash a match's dive ends in, so each
+// merchant climbs off to pitch its stall and raise the bays before the first
+// wave, as in a match). Nobody is aboard; practiceSeat puts people on the roosts
+function practiceLand() {
+  state.drop = { eagles: makeEagles(), firstFlight: false };
+  for (const e of state.drop.eagles) { e.crash = findCrashPoint(e); eagleCrash(e); }
+  state.shake = 0; // the boot is not an impact
+}
+// a bird driven to zero in practice is not driven off - nothing ends here -
+// it shakes the scare off and its nerve is whole again (hurtEagle)
+function practiceBirdMend(e) {
+  e.hp = e.maxHp; e.hitT = 99;
+  burst(e.x, e.y - 10, '#f4f7ff', 14, 60, 0.55, true);
+  burst(e.x, e.y - 10, TEAMS[skin(e.team)].mark, 8, 50, 0.5);
+  sfxAt('levelUp', e.x, e.y);
 }
 function practiceVacate(p) {
   p.control = 'none';
@@ -511,10 +535,10 @@ function agBellNear(p) {
 // the ring (the roll die's own grammar) - it arms that round and winds
 // the round up, the stock roster leaving with the furniture. Only an idle
 // range answers: mid-round the bell is under the snow, and the sink and
-// rise phases are mid-ceremony. PRACTICE-gated like pkWheelPick.
+// rise phases are mid-ceremony. ARENA-gated like pkWheelPick.
 function agRing(p, c) {
   const mode = agRoundOf(c.id);
-  if (!PRACTICE || agame.phase !== 'off' || !mode) return;
+  if (!ARENA || agame.phase !== 'off' || !mode) return;
   if (Math.hypot(c.tx * TILE + 8 - p.x, c.ty * TILE + 8 - p.y) > 60) return;
   agame.mode = mode; agame.pid = p.id;
   agame.best = agame.bests[mode] || 0;
@@ -540,7 +564,7 @@ function agEndRound() {
   agame.phase = 'end'; agame.t = 0; agame.dustT = 0;
   for (const t of ptargets) { const f = ptFace(t); burst(f.x, f.y, '#f4f7ff', 5, 40, 0.4, true); }
   ptargets.length = 0;
-  for (const o of agFurniture) objects[idx(o.tx, o.ty)] = o;
+  for (const o of agFurniture) setTile(idx(o.tx, o.ty), o);
   if (agame.record) SFX.record(); else SFX.place();
 }
 
@@ -607,7 +631,7 @@ function agUpdate(dt) {
       // under the snow the furniture leaves the grid entirely: nothing left
       // to block a shot, a runner, or raise a prompt - agEndRound puts the
       // exact objects back (a tool is an instance; so is a dummy's ledger)
-      for (const o of agFurniture) objects[idx(o.tx, o.ty)] = null;
+      for (const o of agFurniture) setTile(idx(o.tx, o.ty), null);
       G.phase = 'count'; G.t = 0; G.tick = AG_COUNT_T + 1;
     }
   } else if (G.phase === 'count') {
@@ -733,6 +757,10 @@ let pkAnim = null;
 // party's guest flips its own hero and never the host's; the rest act once. Teleport
 // and the dummy carry the tile the pointer picked. PRACTICE-gated: the bar
 // never draws in a match, and a forged command there does nothing.
+// The map's own group (never the arena's: it has no lanes, towers or camps)
+// sets the field for everyone on it: two more standing toggles, the
+// world's and not a hero's (state.prac - WAVES march, TOWERS shoot), a wave
+// out of every bay now, and every camp back now.
 const CHEAT_GOLD = 500;      // what one ADD GOLD press pays
 const CHEAT_DUMMIES = 12;    // the most spawned dummies standing at once
 const cheatDummies = [];     // the dummies the bar spawned, oldest first (the field's own is not one)
@@ -761,7 +789,7 @@ function cheatCmd(p, c) {
   }
   if (c.id === 'reset') {
     // back to a fresh level 1: level, xp, purse, skill points and ranks
-    p.level = 1; p.xp = 0; p.inv.gold = 0; p.earned = 0; p.skillPts = 1;
+    p.level = 1; p.xp = 0; p.gold = 0; p.earned = 0; p.skillPts = 1;
     for (let i = 0; i < p.abLv.length; i++) { p.abLv[i] = 0; p.abCd[i] = 0; }
     p.maxHp = levelMaxHp(p); p.hp = p.maxHp;
     fx('#f4f7ff');
@@ -790,6 +818,30 @@ function cheatCmd(p, c) {
     p.spawn = spawn; p.x = x; p.y = y;
     setClass(p, c.h);
     fx('#f4f7ff');
+    sfxFor(p, 'place');
+    return true;
+  }
+  if (c.id === 'waves' || c.id === 'towers') {
+    if (ARENA) return false;
+    state.prac[c.id] = !state.prac[c.id];
+    sfxFor(p, state.prac[c.id] ? 'levelUp' : 'deny');
+    return true;
+  }
+  if (c.id === 'wave') {
+    // every bay standing queues its wave now, the size the beat would roll
+    // (barracksQueue, js/sim/structures.js) - waves off or on
+    if (ARENA) return false;
+    let n = 0;
+    for (const o of structures) if (o.type === 'barracks' && !o.building) { barracksQueue(o); n++; }
+    if (!n) return 'none'; // the merchants have not raised a bay yet
+    sfxFor(p, 'place');
+    return true;
+  }
+  if (c.id === 'camps') {
+    // every camp topped back up to strength, its clock to the top (stockCamps, js/sim/camps.js)
+    if (ARENA) return false;
+    stockCamps();
+    for (const C of camps) C.repopT = C.spec.repop;
     sfxFor(p, 'place');
     return true;
   }
@@ -830,7 +882,7 @@ function cheatDummy(p, tx, ty) {
   return true;
 }
 function cheatDummyGone(o) {
-  if (objects[idx(o.tx, o.ty)] === o) objects[idx(o.tx, o.ty)] = null;
+  if (objects[idx(o.tx, o.ty)] === o) setTile(idx(o.tx, o.ty), null);
   const a = practiceDummies.indexOf(o); if (a >= 0) practiceDummies.splice(a, 1);
   const b = agFurniture.indexOf(o); if (b >= 0) agFurniture.splice(b, 1);
   burst(o.tx * TILE + 8, o.ty * TILE - 4, '#e0c890', 6, 40, 0.4, true);
@@ -910,7 +962,7 @@ function pkPlanCarve(path, rad) {
         if (wx && tx > PK_LINE.x1) continue; // the walk stays snow past the line
         if (tx >= PR_X0 && tx < PR_X0 + PR_W && ty >= PR_Y0 && ty < PR_Y0 + PR_H) continue;
         const o = objects[idx(tx, ty)];
-        if (o && o.type !== 'tree' && o.type !== 'deadTree') continue;
+        if (o && o.type !== 'tree') continue;
         plan.add(idx(tx, ty));
       }
     }
@@ -920,7 +972,7 @@ function pkPlanCarve(path, rad) {
   // the lap test and the flags capping its ends never move and never gap
   for (let tx = PK_LINE.x0; tx <= PK_LINE.x1; tx++) {
     const o = objects[idx(tx, PK_LINE.y)];
-    if (!o || o.type === 'tree' || o.type === 'deadTree') plan.add(idx(tx, PK_LINE.y));
+    if (!o || o.type === 'tree') plan.add(idx(tx, PK_LINE.y));
   }
   return plan;
 }
@@ -930,7 +982,7 @@ function pkPlanCarve(path, rad) {
 // animation go through.
 function pkIceTile(i) {
   const o = objects[i];
-  if (o && (o.type === 'tree' || o.type === 'deadTree')) objects[i] = null;
+  if (o && o.type === 'tree') setTile(i, null);
   ground[i] = 1;
 }
 
@@ -1029,12 +1081,6 @@ function pkRoll(diff) {
   const old = pkTiles;
   const gen = pkGenPath(spec);
   pkTiles = pkPlanCarve(gen.path, spec.rad);
-  // the old track takes its scars with it: any hole the player put
-  // in it is unregistered before the forest grows back over the tile
-  for (const i of old) {
-    const hi = holes.indexOf(i);
-    if (hi >= 0) holes.splice(hi, 1);
-  }
   const ev = [];
   for (const i of old) if (!pkTiles.has(i)) ev.push({ k: 0, i, a: pkAngKey(i) });
   // a tile in BOTH tracks normally needs no event - unless the player broke
@@ -1170,10 +1216,10 @@ function pkDieNear(p) {
 
 // a pick released off the die's wheel, through the same input.cmd -> runCmd
 // path every wheel uses: the wedge IS the roll - picking a difficulty carves
-// a fresh track at it, and the die recolours to match. PRACTICE-gated like
-// cheatCmd, and pkRoll itself refuses a roll while a sweep is out.
+// a fresh track at it, and the die recolours to match. ARENA-gated like
+// agRing, and pkRoll itself refuses a roll while a sweep is out.
 function pkWheelPick(p, c) {
-  if (!PRACTICE || !PK_DIFF[c.id]) return;
+  if (!ARENA || !PK_DIFF[c.id]) return;
   if (Math.hypot(c.tx * TILE + 8 - p.x, c.ty * TILE + 8 - p.y) > 60) return;
   pkRoll(c.id);
 }
@@ -1277,16 +1323,24 @@ function prDeerStep(dt) {
   burst(sx, sy - 6, '#f4f7ff', 8, 40, 0.45, true);
 }
 
-// The grounds' clock, from updatePlay under PRACTICE only: the dummy mends
-// between combos, broken targets spring back, pop-ups run their cycle,
+// The grounds' clock, from updatePlay under PRACTICE only: the bar's
+// standing toggles and the dummies mending between combos, on the map and
+// the arena alike; in the arena also: broken targets spring back, pop-ups run their cycle,
 // sliders patrol their rails, and the parkour lap is timed. The shimmer, the
 // wobble and the bar refilling are the whole announcement - no words.
 function updatePractice(dt) {
+  for (const p of players) if (!inAir(p)) cheatAuto(p); // the practice bar's standing toggles, each player's own
+  updateDummies(dt);
+  if (!ARENA) return; // the map has dummies and the bar, and nothing else below
   pkAnimStep(dt); // the roll's carving front, while one is out
   prDeerStep(dt); // the deer ride's tame deer, back on its stand
   agUpdate(dt);   // the archery round's clock, sink, countdown and spawner
-  for (const p of players) if (!inAir(p)) cheatAuto(p); // the practice bar's standing toggles, each player's own
   if (pkDieObj && pkDieObj.rollT > 0) pkDieObj.rollT = Math.max(0, pkDieObj.rollT - dt); // the die's tumble
+  updateTargets(dt);
+  updateParkour(dt);
+}
+// every dummy standing mends itself once it has gone quiet
+function updateDummies(dt) {
   for (const o of practiceDummies) {
     o.hitT += dt;
     if (o.hp < o.maxHp && o.hitT > DUMMY_RESET_T) {
@@ -1298,6 +1352,9 @@ function updatePractice(dt) {
       sfxAt('place', ox, oy);
     }
   }
+}
+// the archery track's faces: springing back, popping, rolling and hopping lanes
+function updateTargets(dt) {
   for (const t of ptargets) {
     t.t += dt;
     if (t.wob > 0) t.wob = Math.max(0, t.wob - dt);
@@ -1372,6 +1429,8 @@ function updatePractice(dt) {
     agRings[i].t += dt;
     if (agRings[i].t >= AG_RING_T) agRings.splice(i, 1);
   }
+}
+function updateParkour(dt) {
   // ---- the parkour clock -------------------------------------------------
   // plain coordinate tests against the carved ice: stepping onto the line
   // starts a lap, the far checkpoint keeps it honest, recrossing the line

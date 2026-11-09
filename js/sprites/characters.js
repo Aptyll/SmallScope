@@ -1,6 +1,6 @@
 'use strict';
 // The people: the player body plan in every team paint, the skater, the prone
-// poses, the fish catch, the raider, and the merchant who drives the eagle.
+// poses, the fish catch, and the merchant who drives the eagle.
 (() => {
   const { bake, bakeSpan, flipH, TEAM_SKINS } = SPR;
 
@@ -688,27 +688,6 @@
     return out;
   };
 
-  // ---------------------------------------------------------------- raider
-  // Player-like night raider: same body grids, hostile palette.
-  const RDPAL = {
-    '.': null,
-    'o': '#1c1826', // outline
-    't': '#3c3450', // hood dark
-    'T': '#544a70', // hood light
-    'm': '#8f8ba0', // wraps gray
-    'M': '#6e6a80', // wraps shade
-    'k': '#b8c2d2', // pale skin
-    'K': '#8c99b0', // skin shade
-    'e': '#ff5555', // eyes red
-    'x': '#8c99b0', // no blush
-    'r': '#3f3a52', // cloak
-    'R': '#555070', // cloak light
-    'd': '#2c2840', // cloak dark
-    'p': '#242032', // pants
-    'b': '#3a3040', // boots
-    'B': '#241c28', // boots dark
-  };
-
   const teamPlayerPal = (t) => Object.assign({}, PPAL, {
     r: t.coat, R: t.coatL, d: t.coatD, t: t.hat, T: t.hatL, m: t.trim, M: t.trimD,
   });
@@ -837,7 +816,7 @@
     const key = cls + '|' + team + '|skin:' + row.id;
     let set = lookCache.get(key);
     if (set) return set;
-    const pal = Object.assign({}, teamPlayerPal(TEAM_SKINS[team]), CLASSES[cls].skinPal);
+    const pal = Object.assign({}, teamPlayerPal(TEAM_SKINS[team]), CLASSES[cls].skinPal, row.pal); // a look may repaint the hero's letters (`pal`: NIX's MOONLESS)
     const sp = Object.assign({}, SKPAL_EXTRA, pal), w = heroWalk(row.grids);
     const side = w.side.map((g) => bake(g, sp));
     set = Object.assign(skaterSet(sp, null), {
@@ -969,12 +948,10 @@
       champPlayers[1][i] = skaterSet(teamPlayerPal(t));
       teamMerchants[i] = merchantSet(merchantPal(t));
     });
-    SPRITES.player = teamPlayers[0];
     lookCache.clear();
   });
 
   Object.assign(SPRITES, {
-    playerTeam: teamPlayers,
     champ: champPlayers,
     LOOK, champLook, // a character's paint on a class body (the `looks` section above)
     // the run and roll frames' size and where the 16 x 16 cell sits in one, the body's bob per
@@ -982,12 +959,5 @@
     // roll frame starts
     motionBox: SPR.motion.BOX, runBob: SPR.motion.RUN_BOB, holdBob: SPR.motion.HOLD_BOB, rollAt: SPR.motion.ROLL_AT,
     merchant: teamMerchants, // merchant[team] - the eagle's driver, a full walking pose set per team colour
-    player: teamPlayers[0],
-    raider: {
-      down: [bake(playerDownIdle, RDPAL), bake(playerDownA, RDPAL), bake(playerDownB, RDPAL)],
-      up: [bake(playerUpIdle, RDPAL), bake(playerUpA, RDPAL), bake(playerUpB, RDPAL)],
-      right: [bake(playerSideIdle, RDPAL), bake(playerSideA, RDPAL), bake(playerSideB, RDPAL)],
-      left: [flipH(bake(playerSideIdle, RDPAL)), flipH(bake(playerSideA, RDPAL)), flipH(bake(playerSideB, RDPAL))],
-    },
   });
 })();

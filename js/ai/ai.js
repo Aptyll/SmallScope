@@ -5,10 +5,13 @@
 // Bots. A bot only ever writes the same input struct a human fills in -
 // movement axis, aim point, fire / work / slide / dodge and the odd one-shot
 // order - so it can never do anything a player couldn't. The brain is a small
-// priority ladder, re-picked a few times a second: eat, fight, wolves, defend
-// the bird, push the rival bird, escort, hunt, loot, spend, harvest, roam -
-// and a PROFILE (the difficulty banner below) says how well each rung is
-// played. Every walk goes through steerTo(), which routes
+// priority ladder (aiThink, js/ai/ai-ladder.js), re-picked a few times a
+// second: spend, off the orca's ice, the potion, the burrow, a DANGER ping,
+// fight, a camp on it, lie low, heal, a ping, defend the bird, the guard's
+// patrol and post, push the rival bird, a call for help, a gold pump, the
+// bear party / stalker / position's walk, the road, hunt, harvest, roam -
+// then the recall home (aiRecall) - and a PROFILE (the difficulty banner
+// below) says how well each rung is played. Every walk goes through steerTo(), which routes
 // around obstacles (see pathfinding) and reports an unreachable goal as -1 -
 // that, not a timer, is what makes a bot drop a target.
 const AI_SIGHT = 200;   // px: how far a wolf on a bot is still tracked (a rival's reach is the profile's sight)
@@ -24,11 +27,9 @@ const AI_ANCHOR_D = 420;  // ...but never from farther than this
 const AI_HOLD = 96;       // px a hunter holds off the rival bird at (outside its gust)
 const AI_GATE = 128;      // px up the road from a base's junction where a walk to a roost stages
 const AI_PATROL_T = 40;   // s of a guard's cycle...
-const AI_PATROL_OUT = 14; // ...the first of which it spends scouting out up the road
-const AI_PATROL_D = 360;  // px up the road from the base's junction the scouting walk reaches
+const AI_PATROL_OUT = 14; // ...the first of which it spends on patrol up the road
+const AI_PATROL_D = 360;  // px up the road from the base's junction the patrol reaches
 const AI_ROOST_BUDGET = NAV_BUDGET * 4; // A* expansions a walk into a roost's forest may spend
-const AI_ESCORT = 120;    // px an escort lets the human get away before it follows
-const AI_ESCORT_R = 400;  // px past which the human is too far to escort
 // the two objectives as a bot sees them: a roosting bird, or null
 function aiRivalEagle(p) { const e = state.drop && state.drop.eagles[1 - p.team]; return e && e.state === 'down' ? e : null; }
 function aiOwnEagle(p) { const e = state.drop && state.drop.eagles[p.team]; return e && e.state === 'down' ? e : null; }
@@ -52,6 +53,24 @@ const AI_SIEGE_R = 48;    // px: a rival closer than this pulls a besieging push
 // that empties the whole map for one arrow is a side that never pushes -
 // until the nerve is under AI_ALARM_HP, when the number is everyone.
 function aiDefendersWanted(s) { return s.hp < AI_ALARM_HP ? 99 : Math.max(2, s.attackers + 1); }
+// the people a side's bots mind: ANY human seat on it - the host's own or a
+// guest's - never the local `player`, which is just whoever this screen is
+// (a guest's bots once backed only the host). Solo it is the one
+// player, so nothing there changes. (`standIn`: the arena's seat 0, a bot
+// sat in the human's chair for the 'level' setup, app/arena/match.js)
+function aiPerson(q) { return isHuman(q) || !!q.standIn; }
+function aiSideHuman(team) { for (const q of players) if (q.team === team && aiPerson(q)) return true; return false; }
+// the human a support bot backs: the nearest one on its side, up and on the
+// ground - the anchor its fights and camp fights read (`ward`, aiRead)
+function aiWard(p) {
+  let best = null, bd = Infinity;
+  for (const q of players) {
+    if (q === p || q.team !== p.team || !aiPerson(q) || q.dead || inAir(q)) continue;
+    const d = Math.hypot(q.x - p.x, q.y - p.y);
+    if (d < bd) { bd = d; best = q; }
+  }
+  return best;
+}
 let aiSitTick = -1, aiSit = null;
 function aiSituation() {
   if (aiSit && aiSitTick === state.tick) return aiSit;
@@ -65,7 +84,7 @@ function aiSituation() {
       const d = Math.hypot(q.x - e.x, q.y - e.y);
       if (d >= AI_ROOST_R) continue;
       if (q.team === team) s.defenders++;
-      else if (d < seenAt(q, AI_ROOST_R, team)) { s.attackers++; if (q === player) s.human = true; }
+      else if (d < seenAt(q, AI_ROOST_R, team)) { s.attackers++; if (aiPerson(q)) s.human = true; }
     }
     // a rival WAVE at the roost is an attack too (the `soldiers` banner,
     // robots.js) - counted at half strength, so a five-column calls three
@@ -80,7 +99,7 @@ function aiSituation() {
 }
 // p's place among its side's living bots (the human is never counted):
 // the profile's push.n first go for the rival bird, the guard next stand by
-// their own, and the rest farm, build and (allies) escort. The order is the
+// their own, and the rest play their positions. The order is the
 // side's plan (aiPlanRank, js/ai/ai-team.js): the jobs go by mood, not by seat
 function aiRank(p) { return aiPlanRank(p); }
 // the objective rung's gate: the plan's pushers (T.nPush: push.n after
@@ -93,7 +112,7 @@ function aiRank(p) { return aiPlanRank(p); }
 function aiWantsPush(p, prof, theirs, mine) {
   if (!theirs) return null;
   const e = theirs.e;
-  if (prof.support && theirs.human && player !== p) return e;
+  if (prof.support && theirs.human) return e; // (theirs.human: a person of p's side is on the rival bird; p is a bot)
   if (theirs.attackers > 0 && theirs.hp < AI_JOIN_HP && !(mine && mine.threat)) return e;
   return aiRank(p) < aiPlan(p.team).nPush ? e : null;
 }
@@ -169,19 +188,8 @@ function aiStructTile(o, p) {
   return best;
 }
 
-// the side's escorts: the two lowest bots on the human's team
-function aiEscorts(p) {
-  let n = 0;
-  for (const q of players) {
-    if (!q.active || q.control !== 'ai' || q.team !== player.team || q === player) continue;
-    if (q === p) return n < 2;
-    n++;
-  }
-  return false;
-}
-
 // The rival p goes for: within its profile's sight, plus anyone near an
-// ANCHOR it is minding - its own bird under attack, the human it escorts,
+// ANCHOR it is minding - its own bird under attack, the human it backs (an ally),
 // the rival bird it is pushing - so a defender finds the archer standing off
 // its roost and an ally joins the fight the human is in. Every candidate
 // still resolves through seenAt: a buried rival is buried for everyone.
@@ -214,12 +222,13 @@ function aiNearestEnemy(p, prof, anchors) {
     const s = prof.pick === 'weak' ? q.hp + d * 0.05 : d;
     if (s < bs) { bs = s; best = q; }
   }
-  // a rival wave's soldiers are rivals too (the `soldiers` banner, robots.js):
+  // a rival wave's soldiers are rivals too (the `soldiers` banner, robots.js),
+  // and so is a hero's machine (HERO_MACHINE, js/sim/heroes.js):
   // the same sight and the same anchors, with no cover to see through
   const leave = aiLeavesWave(p); // a support beside its carry leaves the last hits to it (js/ai/ai-farm.js)
   for (const b of robots) {
     if (leave) break;
-    if (b.kind !== 'soldier' || !unitAlive(b) || b.team === p.team || !inSight(p.team, b)) continue;
+    if ((b.kind !== 'soldier' && !heroMachine(b)) || !unitAlive(b) || b.team === p.team || !inSight(p.team, b)) continue;
     const d = Math.hypot(b.x - p.x, b.y - p.y);
     let range = prof.sight;
     for (const an of anchors) {
@@ -360,9 +369,8 @@ function aiNearestWolf(p, ward) {
 function aiNearestAnimal(p) {
   let best = null, bd = AI_HUNT;
   for (const a of animals) {
-    // birds fly: no route on the ground catches a flushed flock. The two
-    // midline camps' kinds are never a hunt: a lone bot pulling one dies to it
-    if (a.dead || a.kind === 'bird' || a === p.ai.huntAvoid || a.rider || !inSight(p.team, a)) continue; // a ridden deer is its rider's; one in the fog is not there
+    // The two midline camps' kinds are never a hunt: a lone bot pulling one dies to it
+    if (a.dead || a === p.ai.huntAvoid || a.rider || !inSight(p.team, a)) continue; // a ridden deer is its rider's; one in the fog is not there
     if (MONSTER[a.kind] && MONSTER[a.kind].teamPay) continue;
     const d = Math.hypot(a.x - p.x, a.y - p.y);
     if (d < bd) { bd = d; best = a; }
@@ -424,7 +432,7 @@ function aiSpend(p, inp, steerTo) {
     // (ITEM_FIGHT_T)
     const nc = next && itemCost(p, next);
     const fits = nc && (itemRoom(p, nc.used) >= 1 || botStrayPart(p) >= 0);
-    if (next && fits && !merchNear(p) && p.inv.gold >= nc.gold && p.fightT <= 0) {
+    if (next && fits && !merchNear(p) && p.gold >= nc.gold && p.fightT <= 0) {
       const m = robots.find((b) => b.merchant && !b.dead && b.team === p.team);
       const c = m && (stallUp(m.stall) ? m.stall : m.hopT > 0 ? null : m);
       const pt = c && counterPt(c);
@@ -526,7 +534,7 @@ function aiRecall(p) {
   if (unitsNear(p, p.x, p.y, AI_RECALL_SAFE).some((q) => (q instanceof Player || robots.includes(q)) && inSight(p.team, q))) return; // what its side sees, as a player would
   const inp = p.input, low = p.hp < p.maxHp * AI_RECALL_HP;
   const next = p.items && botNextItem(p), nc = next && itemCost(p, next);
-  const rich = !!nc && p.fightT <= 0 && p.inv.gold >= nc.gold && (itemRoom(p, nc.used) >= 1 || botStrayPart(p) >= 0);
+  const rich = !!nc && p.fightT <= 0 && p.gold >= nc.gold && (itemRoom(p, nc.used) >= 1 || botStrayPart(p) >= 0);
   const go = p.recallT <= 0 && (low || rich) && !recallBlocked(p) && Math.hypot(e.x - p.x, e.y - p.y) > AI_RECALL_FAR;
   const wait = roostRing(p) && p.fightT <= 0 && p.hp < p.maxHp * AI_RING_FULL; // a body still in a fight is the ladder's
   if (!go && !(p.recallT > 0) && !wait) return;

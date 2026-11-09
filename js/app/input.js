@@ -87,7 +87,7 @@ const KEY_ACTIONS = [
   { id: 'ab1', verb: 'ABILITY 1', key: '1', ck: 'q' }, { id: 'ab2', verb: 'ABILITY 2', key: '2', ck: 'w' },
   { id: 'ab3', verb: 'ABILITY 3', key: '3', ck: 'e' }, { id: 'ab4', verb: 'ABILITY 4', key: '4', ck: 'r' },
   { id: 'amove', verb: 'ATTACK MOVE', ck: 'a' }, { id: 'stop', verb: 'STOP', ck: 's' },
-  { id: 'dodge', verb: 'DODGE', key: ' ', ck: ' ', ms: 'Mouse4' }, { id: 'slide', verb: 'SLIDE', key: 'Shift', ck: 'Shift', ms: 'Mouse5' }, { id: 'work', verb: 'HARVEST', key: 'e' },
+  { id: 'dodge', verb: 'DODGE', key: ' ', ck: ' ', ms: 'Mouse4' }, { id: 'slide', verb: 'SLIDE', key: 'Shift', ck: 'Shift', ms: 'Mouse5' }, { id: 'work', verb: 'USE', key: 'e' },
   // the six item slots' keys (useItem, js/sim/items.js): what a slot holds is
   // used off its key - a potion drunk. On WASD they run on past the abilities'
   // 1-4; under CLICK, where QWER are the abilities, they are 1-6
@@ -95,9 +95,13 @@ const KEY_ACTIONS = [
   { id: 'item3', verb: 'ITEM 3', key: '7', ck: '3' }, { id: 'item4', verb: 'ITEM 4', key: '8', ck: '4' },
   { id: 'item5', verb: 'ITEM 5', key: '9', ck: '5' }, { id: 'item6', verb: 'ITEM 6', key: '0', ck: '6' },
   { id: 'recall', verb: 'RECALL', key: 'h', ck: 'h' },
+  // held, an ability's hover card opens every rank's numbers (tipFull,
+  // js/ui/tooltip.js). Its own key, never the slide's Shift: holding it to
+  // read a card must not move the hero
+  { id: 'details', verb: 'DETAILS', key: 'Alt', ck: 'Alt' },
   { id: 'ping', verb: 'PING', ck: 'g', was: 'flag' }, // `was`: the id a saved bind of it went by
   { id: 'char', verb: 'CHARACTER', key: 'g', ck: 'c' },
-  { id: 'map', verb: 'WORLD MAP', key: 'm', ck: 'm' }, { id: 'board', verb: 'STANDINGS', key: 'Tab', ck: 'Tab' },
+  { id: 'map', verb: 'WORLD MAP', key: 'm', ck: 'm' }, { id: 'board', verb: 'SCOREBOARD', key: 'Tab', ck: 'Tab' },
   { id: 'mute', verb: 'MUTE', key: 'n', ck: 'n' }, { id: 'pause', verb: 'PAUSE', key: 'p', ck: 'p' },
 ];
 const KEY_ACT = {};
@@ -160,7 +164,7 @@ function keyCap(a) {
   if (a === 'enter') return 'ENTER';
   if (a === 'click') return 'CLICK';
   // an action the live scheme has no key for is the right button's there
-  // (the walk and the harvest, under CLICK)
+  // (the walk and the use key, under CLICK)
   if (a === 'move') {
     if (!binds().up) return 'RMB';
     const l = ['up', 'left', 'down', 'right'].map((d) => keyLabel(binds()[d]));
@@ -223,9 +227,10 @@ pageListen(window, 'keydown', (e) => {
   // Tab is held to read the scoreboard (scoreboardOpen()), so it must never
   // reach the browser's focus traversal - nor may a bound key in a match, or
   // any key while a cap is listening. A chord on ctrl / alt / meta is the
-  // browser's own (reload, find) and passes.
-  if (!e.ctrlKey && !e.altKey && !e.metaKey &&
-      (state.rebind || KEY_PREVENT.has(k) || (state.mode !== 'title' && keyBound(k)))) e.preventDefault();
+  // browser's own (reload, find) and passes (keyChord) - but a bound modifier
+  // pressed alone is the game's: a lone Alt would otherwise park the
+  // browser's focus on its own menu, and the next keys would go there.
+  if (!keyChord(e, k) && (state.rebind || KEY_PREVENT.has(k) || (state.mode !== 'title' && keyBound(k)))) e.preventDefault();
   keys[k.toLowerCase()] = true;
   keyPress({ key: k, repeat: e.repeat, char: e.key });
 });
@@ -374,8 +379,11 @@ function keyPress(e) {
   if (keyIs(e, 'mute')) { settings.muted = SFX.toggleMute(); saveSettings(); }
   if (keyIs(e, 'pause') && (state.paused || !netShared())) { state.paused = !state.paused; SFX.ui(state.paused); } // the PAUSED plate is a surface like any other
 }
+// is this key event a browser chord: ctrl / alt / meta held under another key
+function keyChord(e, k) { return (e.ctrlKey && k !== 'Control') || (e.altKey && k !== 'Alt') || (e.metaKey && k !== 'Meta'); }
 pageListen(window, 'keyup', (e) => {
   const k = keyName(e);
+  if (!keyChord(e, k) && state.mode !== 'title' && keyBound(k)) e.preventDefault(); // (a lone Alt's release, above)
   keys[k.toLowerCase()] = false;
   keyRelease({ key: k, char: e.key });
 });
@@ -467,6 +475,7 @@ function pointerPress(button) {
   if (state.settingsOpen) { mouse.down = true; settingsMouseDown(); return; }
   if (state.mapOpen) { if (mapCloseHit()) { SFX.unlock(); state.mapOpen = false; } return; } // a press off the slab closes the chart; on it, the press is swallowed
   if (voteClick()) return; // the surrender vote's YES / NO (js/ui/vote.js)
+  if (guideClick(mouse.x, mouse.y)) return; // the FIRST MATCH's coach: its X (js/ui/guide.js)
   // the practice bar (js/ui/cheats.js): a press on it, then its armed aim on the world
   if (cheatClick(mouse.x, mouse.y)) return;
   if (cheatAimLive() && !overHud(mouse.x, mouse.y)) { cheatAimPress(); return; }
@@ -860,7 +869,7 @@ pageListen(canvas, 'wheel', (e) => {
     else if (state.menu.screen === 'room' && friendsOver()) { e.preventDefault(); friendsScrollBy(e.deltaY > 0 ? 1 : -1); } // the friends' column (js/ui/friends.js)
     return;
   }
-  // dead and watching somebody (a respawn wait, or SPECTATE after the end):
+  // dead and watching an ally through a respawn wait:
   // the wheel zooms the camera on them, as it does in play. Not over the
   // recap, the planks or either end screen - there is no camera to move
   if (state.mode === 'dead') {

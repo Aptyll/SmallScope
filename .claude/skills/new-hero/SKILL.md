@@ -72,8 +72,8 @@ LOOKS (optional): default look name, first buyable skin name
      scripts in `index.html` in load order.
    - **Register, don't stack.** The shared sim reaches a hero only through the lists and tables
      in js/sim/heroes.js (`HERO_PASSIVE` with hurt/deal/cast/tick, `HERO_TAKEN`, `HERO_STAT`,
-     `HERO_TEN`, `HERO_MOVE`, `HERO_DASH`, `HERO_TICK`, `HERO_GROUND`) and js/draw/heroes.js
-     (`HERO_BLADES`, `HERO_STAVES`, `HERO_SHOTS`, `HERO_BODY_FX`). A hero file pushes into them at load. When a kit needs a kind of hook none
+     `HERO_TEN`, `HERO_MOVE`, `HERO_DASH`, `HERO_TICK`, `HERO_GROUND`, `HERO_MARK`, `HERO_COVER`,
+     `HERO_AIR`) and js/draw/heroes.js (`HERO_BLADES`, `HERO_STAVES`, `HERO_SHOTS`, `HERO_BODY_FX`, `HERO_FADE`). A hero file pushes into them at load. When a kit needs a kind of hook none
      of them is, add a new list there rather than a hero-named call in shared code.
 3. **Concept sheet of in-game visuals.** Through the `concept-art` skill: 3 bodies and 3 weapons
    as real 16px grids, staged live in a real game frame beside players (Armatos round 4,
@@ -84,7 +84,7 @@ LOOKS (optional): default look name, first buyable skin name
    per look in `app/bake-player/bodies.py`, then `python app/bake-player/bake.py`. The rebake
    must only add lines to js/baked/motion.js: every other hero's frames stay byte-identical.
    Add the hero's tab in js/ui/skins.js (`hero:` its index). The weapon is held naturally in all
-   four facings (a `HERO_BLADES` row: flat and slanted art, the grip, the hip by facing; a mage's
+   four facings (a `HERO_BLADES` row: flat and slanted art, the `hilt` on the flat art and the grip on the slanted, the hip by facing; a mage's
    staff is a `HERO_STAVES` row named by `staff:` on the `CLASSES` row, IGNIA's crook). The side run
    comes off the drawn side frame (`heroRunSide`): keep the head as wide as the front and the body
    about 2px narrower (ARMATOS: front body 10, side 8), or the run reads fat;
@@ -107,6 +107,6 @@ LOOKS (optional): default look name, first buyable skin name
 
 ## Known gaps to carry, not hide
 
-- The 48px portrait (hero row, HUD) still draws the borrowed body's model for Armatos; say so if
-  the new hero has the same gap.
+- The 48px portrait (`portrait`, js/sprites/looks.js) is a hero's own 16px front frame at 3x, not
+  48px art of its own; no hero has native portrait art yet.
 - No hero has been tested in a 10-human online match.

@@ -8,17 +8,21 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
 `BORDER_MAX + 6` tiles clear of the forest. Everything lives in the `main menu` banner and on
 `state.menu`:
 
-- **Items** `MENU_ITEMS` (QUICKPLAY / RANKED / PRACTICE TOOL, and QUIT under them in the desktop build only —
-  live from the first boot, and nothing else; `menuActivate` dispatches on the word. QUIT closes the app
+- **Items** `menuItems()` (FIRST MATCH on top while `PROFILE.guided()` is false - a profile that has
+  never seen a match to its result nor the coach through - then QUICKPLAY / RANKED / PRACTICE TOOL, and QUIT under them in the desktop build only —
+  and nothing else; `menuActivate` dispatches on the word. RANKED stands grey with a lock before it and
+  one pip per match after it (`drawRankedLock`/`drawRankedPips`, js/ui/guide.js) until `rankedOpen()`
+  (js/ui/rooms.js); a press on it then is a refusal that shakes the lock (`menu.shutFx`). FIRST MATCH opens
+  the party in its `guide` mode ([the coach](../gameplay/settings.md)). QUIT closes the app
   (`steamBridge.quit`, `win:quit` in desktop/main.js): the build opens fullscreen, and a browser tab has its own X. The first three open the
   [party lobby](../gameplay/settings.md) in that mode (`beginParty`): QUICKPLAY's and RANKED's FIND
   MATCH leads to the [lobby](../rendering.md#lobby)'s hero select, PRACTICE TOOL's START to the
-  [practice arena](../world.md#the-practice-arena);
+  [practice tool](../world.md#the-practice-tool) on the match's map;
   there is no WIKI or SETTINGS item: the [wiki](the-hud-corners/the-wiki-screen.md) opens from a word in the corner of
   the patch notes, settings are the ESC panel's in play, and the seed lives on
   [lobby](../rendering.md#lobby) under the map), stacked `MENU_TXT_PITCH` apart, climbing from `MENU_BOTTOM`
   above the view's foot. **`menu.hover` has one cell per item** and its length is
-  a literal in core.js, a file that loads before `MENU_ITEMS`
+  a literal in core.js, a file that loads before `menuItems`
   exists; the ease tops a missing cell up with `|| 0`, because a short array goes NaN and silently
   deletes a row - add an item, add a cell. `menuLayout()` is the single source of rects for hit-testing
   (`menuHit()`) and drawing. `menu.sel` is the keyboard selection; the mouse only steals it
@@ -47,11 +51,10 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   sized `MENU_BW`×`MENU_BH` at `MENU_Y0` where those stand it.
 - **Panels** slide up from the bottom edge over the still-visible world (`menu.panel`,
   `menu.panelT` over `PANEL_SLIDE_T`, `menu.closing` on the way out); the menu chrome ducks to
-  zero alpha underneath. The `'settings'` kind is the existing panel via `renderSettings(now, { bare, slide })` (nothing on the title opens it since the SETTINGS plank went; the code stays for the ESC panel's sake)
+  zero alpha underneath. The `'settings'` kind is the ESC slab via `renderSettings(now, { bare, slide })`, opened by the **gear** (`SET_GEAR`, `gearRect` / `overGear` / `drawGear` / `openMenuPanel`, js/ui/menu.js: left of the coin tag on the title, under the add-friend on the party screen's social column; gold under the hand). While a panel is up it takes every key and click before the screen under it, the party screen too; there it stands centred over the room left of the social column (`slabCentre`, through `placeSlab`, js/sim/core.js, which relayout also uses), back to the view's centre once it has slid away
   (no dim, no minimap preview, translated by `slide`) — its widgets only take input once
   `menuPanelReady()`, so a click can never land on a half-slid row, and clicking outside the
-  slab closes it. The help panel (`helpPanelCv`, controls + the rules of the frostlands) is
-  baked at boot (`buildHelpPanel`) but nothing on the title opens it. The `PATCH_TXT` tag
+  slab closes it. The `PATCH_TXT` tag
   bottom-right (`patchTagRect` / `overPatchTag`; gold with an underline on hover) opens the
   [patch notes screen](the-hud-corners/the-patch-notes-screen.md).
   The **name tag** bottom-left (`profileTagRect` / `overProfileTag` / `drawProfileTag`,
@@ -101,7 +104,10 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
     count, `lobbySplash`) the grid gives way to the **splash** (`drawSplash`: `heroSplash(h, id)`
     art `SPLASH_W`×`SPLASH_H` at 1×, centred and cut on a narrow view, baked by
     `app/bake-splash.js` from `docs/media/splash/<slot>-<id>.png`; a look with none painted shows the
-    model at 3× on a slice of the night) with the look's name under it and the **skin strip**
+    stand-in, `drawSplashStandIn`: the painted splashes' own night baked once on their 2 px art grid
+    by `splashNightArt` (`SPLASH_NIGHT` sky bands, halo behind the head, two pine lines, the snow
+    floor), the look's 16 px standing front at `SPLASH_FIG` px a pixel on `SPLASH_FEET`, snow falling
+    on the same grid) with the look's name under it and the **skin strip**
     (`drawSkinStrip`/`selSkinCells`: up to `SKIN_SHOW` `SKIN_THUMB_W`×`SKIN_THUMB_H` thumbnails,
     each `heroThumb(h, id)` or, with none, the look's body at 2×,
     chevrons when there are more; the worn one gold, one the profile does not own dimmed with a
@@ -187,7 +193,7 @@ tag). The store behind it is [profile.js](../architecture.md#profilejs): one nam
 `'card'` or off it) and the cursor.
 
 - **The card** (`renderProfileCard`, `PC_W`×`PC_H`, a gold-rimmed well) has the **name field**
-  across its head and the **ledger** under a rule — WINS / MATCHES / KILLS / DEATHS / DAYS /
+  across its head and the **ledger** under a rule — WINS / MATCHES / KILLS / DEATHS /
   GOLD as icon, label, dotted leader, number (the character-panel text carve-out;
   `drawLedger`), `ESC BACK` under it. At rest the name stands in gold at 2× with its quill;
   under the hand the field's well shows. A click on it selects the name on a gold band

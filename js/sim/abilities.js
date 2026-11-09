@@ -93,7 +93,7 @@ const CLASS_AB = [
       id: 'pierce', name: 'PIERCING SHOT', cd: [12, 11, 10, 9, 8], ap: 0.6, cast: PIERCE_WIND, aim: { line: PIERCE_RANGE },
       rank: { shot: [1.5, 1.7, 1.9, 2.1, 2.3] }, // times a fully drawn plain arrow's damage
       tip: 'A SHOT THROUGH EVERYONE IN A LINE',
-      blurb: 'LOCK A FULL DRAW, THEN LOOSE. THE SHOT GOES THROUGH EVERYONE ON THE LINE. EVERY MODIFIER ON YOUR TOOL RIDES IT.',
+      blurb: 'LOCK A FULL DRAW, THEN LOOSE. THE SHOT GOES THROUGH EVERYONE ON THE LINE.',
       use: (p) => abPierce(p),
     },
     {
@@ -105,8 +105,8 @@ const CLASS_AB = [
     },
     {
       id: 'grap', name: 'GRAPPLE', cd: [8, 7, 6, 5, 4], cast: 0.12, aim: { line: GRAP_RANGE }, // a rank is a hook back sooner
-      tip: 'HOOK A TREE OR ROCK. HOLD TO REEL',
-      blurb: 'HOOK A TREE OR A ROCK. HOLD TO REEL IN, LET GO TO KEEP THE SPEED.',
+      tip: 'HOOK A TREE. HOLD TO REEL',
+      blurb: 'HOOK A TREE. HOLD TO REEL IN, LET GO TO KEEP THE SPEED.',
       use: (p) => abGrapple(p),
     },
     {
@@ -159,6 +159,18 @@ const CLASS_AB = [
   IGNIA_AB, // IGNIA - the brand, the brushfire, the warm hands, the wildfire (js/sim/ignia.js)
   AURA_AB, // AURA - the falling star, the drifting light, the step, the curtain (js/sim/aura.js)
   SALVIA_AB, // SALVIA - the poultice, the snowdrops, the warm cloak, the thaw (js/sim/salvia.js)
+  LUCERNA_AB, // LUCERNA - the crook, the lantern, the shoo, the circle of light (js/sim/lucerna.js)
+  HIEMS_AB, // HIEMS - the icicle, the clear ice, the cold snap, the whiteout (js/sim/hiems.js)
+  RUPES_AB, // RUPES - the heave, the shed, the shoulder, the avalanche (js/sim/rupes.js)
+  VARRO_AB, // VARRO - the lunge, the howl, the snap, the pack (js/sim/varro.js)
+  BUCINA_AB, // BUCINA - the blast, the note, the echo, the pines (js/sim/bucina.js)
+  NIX_AB, // NIX - the shard, the cloud, the drift step, the squall (js/sim/nix.js)
+  FABER_AB, // FABER - the spark, the small machine, the clockspring, the old engine (js/sim/faber.js)
+  VELOX_AB, // VELOX - the skip stone, the ice lane, the quick step, the long run (js/sim/velox.js)
+  FALCO_AB, // FALCO - the talons, the knife fan, the glide, the stoop (js/sim/falco.js)
+  MARIS_AB, // MARIS - the harpoon, the brace, the undertow, the breach (js/sim/maris.js)
+  LIGNUM_AB, // LIGNUM - the chop, the thrown axe, the bark skin, the timber (js/sim/lignum.js)
+  SAGITTA_AB, // SAGITTA - the pin, the pavise, the crank back, the long bolt (js/sim/sagitta.js)
 ];
 
 // the world the abilities put things into
@@ -210,7 +222,7 @@ const CLASS_AB_ALT = [
       id: 'wind', name: 'SECOND WIND', cd: [40, 35, 30], cast: 0.4,
       rank: { heal: [0.3, 0.4, 0.5], t: 4 }, // that share of max hp back over t s
       tip: 'HEAL OVER FOUR SECONDS',
-      blurb: 'A BREATH TAKEN MID-FIGHT. A THIRD OF YOUR LIFE COMES BACK OVER FOUR SECONDS.',
+      blurb: 'A BREATH TAKEN MID-FIGHT. PART OF YOUR HEALTH COMES BACK OVER FOUR SECONDS.',
       use: (p) => abSecondWind(p),
       acol: '#f2937f', activeF: (p) => (p.windT > 0 ? p.windT / abRk(p, 'wind', 't') : 0),
     }],
@@ -347,6 +359,7 @@ function updateAbilities(p, dt) {
   // caster is holding NOW - a bot tracking its target casts like a hand does
   if (p.castT > 0) {
     p.castT -= dt;
+    aimHold(p); // the telegraph on every screen points where the hand does (aimAngle, js/draw/bodies.js)
     const ab = abOf(p, p.castAb);
     // a cast with a telegraph on the snow keeps facing the aim the whole
     // wind-up - the locked draw, the charge's line, the slam's and the
@@ -369,8 +382,8 @@ function updateAbilities(p, dt) {
     }
   }
   passiveTick(p, dt);
-  // a timed shield running out (shieldUnit), a knock-up coming down (knockUp, js/sim/actions.js)
-  if (p.wardT > 0) { p.wardT = Math.max(0, p.wardT - dt); if (p.wardT <= 0) p.wardHp = 0; }
+  // a timed shield running out (shieldTick, js/sim/actions.js)
+  shieldTick(p, dt);
   // SECOND WIND: the breath, a share of the life back each tick until the clock runs out
   if (p.windT > 0) {
     const step = Math.min(dt, p.windT);
@@ -466,7 +479,7 @@ function abGrapple(p) {
       const tx = ctx2 + ox, ty = cty + oy;
       if (!inWorld(tx, ty)) continue;
       const o = objects[idx(tx, ty)];
-      if (!o || (o.type !== 'tree' && o.type !== 'deadTree')) continue;
+      if (!o || o.type !== 'tree') continue;
       const cx2 = tx * TILE + 8, cy2 = ty * TILE + 8;
       // the assist: perpendicular distance of the trunk to the aim ray
       const along = (cx2 - p.x) * nx + (cy2 - p.y) * ny;

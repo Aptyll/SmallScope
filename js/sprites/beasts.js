@@ -1,54 +1,8 @@
 'use strict';
-// Everything with four legs or wings: the imp, the rabbit, the deer, the wolf,
-// the bird. The camps' two bears are js/baked/bears.js.
+// Everything with four legs: the rabbit, the deer and the wolf. The camps'
+// two bears are js/baked/bears.js.
 (() => {
-  const { bake, flipH, bakeClips, mapClips } = SPR;
-
-  // ---------------------------------------------------------------- imp
-  const IPAL = {
-    '.': null,
-    'o': '#141f3d', // outline
-    'i': '#5f8fc0', // ice body mid
-    'I': '#8fc2dd', // ice light (top)
-    'j': '#41628f', // ice shade
-    'e': '#101a33', // eye socket
-    'E': '#54f0e6', // eye glow
-    'h': '#c6ecf4', // horn
-    'H': '#8fc2dd', // horn shade
-  };
-
-  const imp1 = [
-    '..............',
-    '...oo....oo...',
-    '..ohho..ohho..',
-    '..oHho..oHho..',
-    '...oiIIIIio...',
-    '..oiIIIIIIio..',
-    '.oiIeeIIeeIio.',
-    '.oiIeEIIeEIio.',
-    '.oiIIIIIIIijo.',
-    '.oijIIooIIjjo.',
-    '..oijjjjjjjo..',
-    '...oooooooo...',
-    '..ojjo..ojjo..',
-    '...oo....oo...',
-  ];
-  const imp2 = [
-    '..............',
-    '..............',
-    '...oo....oo...',
-    '..ohho..ohho..',
-    '..oHhooooHho..',
-    '..oiIIIIIIio..',
-    '.oiIeeIIeeIio.',
-    '.oiIeEIIeEIio.',
-    '.oiIIIIIIIijo.',
-    '.oijIIooIIjjo.',
-    '..oijjjjjjjo..',
-    '.ojjoooooojjo.',
-    '..oo......oo..',
-    '..............',
-  ];
+  const { flipH, bakeClips, mapClips } = SPR;
 
   // ---------------------------------------------------------------- rabbit
   // The meadow's bunny, side view facing right: a chunky brown hare with a
@@ -1873,49 +1827,13 @@
     '....ooo..ooo....',
   ]);
 
-  // Birds: the rookery's flock. Tiny, so a perched frame plus two wing frames
-  // is the whole set; the game draws them above the ground on their own alt.
-  const BIPAL = {
-    '.': null,
-    'o': '#232734', // outline
-    'y': '#4d5566', // feather mid
-    'Y': '#77809a', // feather light
-    'c': '#cfd6e4', // pale breast
-    'n': '#e0a63c', // beak
-  };
-  const birdPerch = [
-    '..oo.....',
-    '.oYYo....',
-    'oyYYyon..',
-    'oyyyyco..',
-    '.oyyco...',
-    '..o.o....',
-  ];
-  const birdFlyA = [
-    'oo.....oo',
-    '.oy...yo.',
-    '.oyYYYyon',
-    '..oyccyo.',
-    '...ooo...',
-  ];
-  const birdFlyB = [
-    '.........',
-    '..oo.oo..',
-    '.oyYYYyon',
-    'oyyyccyo.',
-    '.oo...oo.',
-  ];
-
   const rabbitSet = bakeClips({ idle: rabbitIdle, hop: rabbitHop, rise: rabbitRise }, RBPAL);
   const deerSet = bakeClips({ idle: deerIdle, graze: deerGraze, run: deerRun }, DEPAL);
   const wolfSet = bakeClips({ idle: [wolfStand], run: [wolfRunA, wolfRunB] }, WOPAL);
-  const birdSet = bakeClips({ idle: [birdPerch], fly: [birdFlyA, birdFlyB] }, BIPAL);
 
   Object.assign(SPRITES, {
     rabbit: { right: rabbitSet, left: mapClips(rabbitSet, flipH) },
     wolf: { right: wolfSet, left: mapClips(wolfSet, flipH) },
-    bird: { right: birdSet, left: mapClips(birdSet, flipH) },
     deer: { right: deerSet, left: mapClips(deerSet, flipH) },
-    imp: [bake(imp1, IPAL), bake(imp2, IPAL)],
   });
 })();

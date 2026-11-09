@@ -48,12 +48,12 @@ const SNOW_TRAIL_LIFE = 3.5; // snow groove lifetime (ice scratches keep the 9s 
 const SNOW_TRAIL_FADE = 1.4; // fade window at the end of that life: hold crisp, then wipe tail-first
 
 // Hero levels (League-style, max 18). XP is its own number, apart from gold:
-// it comes from being NEAR when a rival body dies - a soldier, a scout, a
+// it comes from being NEAR when a rival body dies - a soldier, a hero, a
 // camp monster - shared among the allies standing there (shareXp, below), so
 // the last hit is gold and the being-there is XP. Felling
 // and the clock pay gold and never XP: the road is where you level.
 // LEVEL_XP[n-1] is the total needed to reach level n, the gap growing by 30 a
-// level. It is sized against a scout who keeps to the road and the camps
+// level. It is sized against a hero who keeps to the road and the camps
 // (waves every 30 s growing a soldier every 3 min, a share of the kills, a
 // den now and then): about level 6 at ten minutes and 12 near 25, the cap of
 // 18 later still, so a lead in levels is still news late. XP is never spent or lost on death. What a level grows is the hero's
@@ -135,7 +135,7 @@ const CLASSES = [
     // his own on keys 1-4
     name: 'ARMATOS', role: 'THE LAST STANDARD', body: 1, passive: 'resolve', // HERO_PASSIVE, js/sim/heroes.js
     look: { sex: 0, tone: 1, hair: 2, hairCol: 6, beard: 3, face: 0 },
-    blurb: ['NO SOLDIER LEFT BEHIND.', 'THE SHIELD TAKES THE HIT. THE BASH ANSWERS IT.', 'PLANT THE STANDARD: YOUR SIDE HOLDS, THEIRS CANNOT LEAVE.'],
+    blurb: ['NO SOLDIER LEFT BEHIND.', 'THE SHIELD TAKES THE HIT. THE BASH ANSWERS IT.', 'PLANT THE STANDARD: YOUR SIDE HOLDS, THEIRS IS SLOWED LEAVING.'],
     story: 'HE CARRIED THE STANDARD OF A LEGION THE EMPIRE MARCHED INTO THE SNOW AND FORGOT. HE BROUGHT EVERY ONE OF THEM HOME, AND THE EMPIRE CALLED IT A RETREAT. THE STANDARD IS BROKEN NOW. HE STILL PLANTS IT.', // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
     base: { hp: 130, dmg: 16, armor: 24, ap: 0, haste: 0, ms: PLAYER_SPEED },
     grow: { hp: 10, dmg: 1.4, as: 0.008, armor: 2.9 },
@@ -213,7 +213,7 @@ const CLASSES = [
     // slower than anyone; slow, telegraphed strikes, one blink, and nothing else
     name: 'AURA', role: 'THE NORTHERN LIGHT', body: 1, passive: 'starlight', // HERO_PASSIVE, js/sim/aura.js
     look: { sex: 1, tone: 0, hair: 2, hairCol: 5, beard: 0, face: 2 },
-    blurb: ['THE NIGHT IS ON YOUR SIDE.', 'STRIKE FROM FURTHER THAN ANYONE. NOTHING HIDES FROM YOUR LIGHT.', 'CAUGHT UP CLOSE, YOU HAVE ONE STEP.'],
+    blurb: ['THE NIGHT IS ON YOUR SIDE.', 'OUTREACH ANYONE. NOTHING HIDES FROM YOUR LIGHT.', 'CAUGHT UP CLOSE, YOU HAVE ONE STEP.'],
     story: "SHE STEERED THE EMPIRE'S FLEET BY THE STARS, AND WARNED THE ADMIRALS A STORM WAS COMING. THEY SAILED ANYWAY, AND SHE BROUGHT HER ONE SHIP HOME. THE VALLEY'S NIGHTS ARE CLEAR AND BLUE, AND SHE STILL KNOWS EVERY STAR BY NAME.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
     // a staff's star bolt: a little shorter and slower than the shortbow
     staff: 'shard', // her STAR SHARD, carried upright (HERO_STAVES, js/draw/aura.js)
@@ -247,6 +247,239 @@ const CLASSES = [
     paint48: { t: '#7d8699', T: '#b4bdcc', g: '#1c2232', G: '#9aa3b8', m: '#5c6478', M: '#454c5e' }, // the 48 px model's (js/sprites/looks.js): its K is skin
     kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1, chargeMul: 0.55,
       bowCharge: BOW_CHARGE, nock: 0.4, spdDmg: 0, dodgeSpeed: DODGE_SPEED },
+  },  {
+    // the seventh named hero (js/sim/lucerna.js): the catch-and-save support, the only
+    // pull of a rival in the game, a lantern that brings an ally home, a light that shows
+    // what hides near her; little damage, and a missed crook leaves her open
+    name: 'LUCERNA', role: 'THE LANTERN', body: 1, passive: 'lamplight', // HERO_PASSIVE, js/sim/lucerna.js
+    look: { sex: 1, tone: 2, hair: 3, hairCol: 1, beard: 0, face: 2 },
+    blurb: ['SOMEBODY HAS TO CARRY A LIGHT.', 'HOOK A RIVAL IN. THROW YOUR LANTERN TO BRING AN ALLY HOME.', 'MISS THE CROOK AND YOU ARE OPEN.'],
+    story: "SHE LIT THE EMPIRE'S ROAD LAMPS AT DUSK, AND WAS SENT AWAY FOR LIGHTING THE WAY OUT FOR PEOPLE WHO WERE NOT SUPPOSED TO LEAVE. THE VALLEY GOES BLUE AT NIGHT AND THE CLAIM DOES NOT STOP FOR IT. SOMEBODY HAS TO CARRY A LIGHT.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
+    // a spark off her lantern: the staff mages' reach, a little stronger than SALVIA's sprig
+    staff: 'lantern', // her LANTERN, hung from her hand (HERO_STAVES, js/draw/lucerna.js)
+    attack: { name: 'LANTERN', art: 'lantern', cycle: 62 / 60, kb: 0.6, shot: { speed: 260, life: 0.8, col: '#f2cc6a', look: 'lampspark' } },
+    base: { hp: 88, dmg: 13, armor: 12, ap: 0, haste: 0, ms: PLAYER_SPEED },
+    grow: { hp: 6.2, dmg: 1, as: 0.01, armor: 2 },
+    rankOrder: [0, 2, 1], // the crook, the shoo, the lantern
+    // her own body in each of her looks (LUCERNA_SKINS, js/sprites/lucerna.js), worn per
+    // player (heroSkinOf) over the side's coat
+    skins: LUCERNA_SKINS, skinPal: LUCERNA_PAL, skinSlot: 'lucerna',
+    paint48: { t: '#7d8699', T: '#b4bdcc', g: '#1c2232', G: '#9aa3b8', m: '#5c6478', M: '#454c5e' }, // the 48 px model's (js/sprites/looks.js): its K is skin
+    kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1, chargeMul: 0.55,
+      bowCharge: BOW_CHARGE, nock: 0.4, spdDmg: 0, dodgeSpeed: DODGE_SPEED },
+  },
+  {
+    // the eighth named hero (js/sim/hiems.js): the control mage. She freezes a
+    // fight slowly - every hit chills, the third freezes - and holds a choke
+    // with ice and a blizzard; low burst, and a step slower than most
+    name: 'HIEMS', role: 'THE LONG WINTER', body: 1, passive: 'deepchill', // HERO_PASSIVE, js/sim/hiems.js
+    look: { sex: 1, tone: 0, hair: 2, hairCol: 5, beard: 0, face: 2 },
+    blurb: ['THE COLD IS ON YOUR SIDE.', 'EVERY HIT CHILLS. THE THIRD CHILL FREEZES THEM IN PLACE.', 'LITTLE BURST: FREEZE THEM, THEN LET YOUR SIDE FINISH.'],
+    story: "SHE KEPT THE WEATHER RECORDS FOR THE EMPIRE'S COURT, AND TOLD THEM THE COLD YEARS WERE COMING AND WOULD NOT STOP. THEY SENT HER AWAY FOR SPOILING THE HARVEST FEAST. SHE CAME UP THE PASS TO SEE WHETHER SHE WAS RIGHT. THE SNOW HAS NOT STOPPED.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
+    // a staff's frost bolt: AURA's star bolt, a little shorter
+    staff: 'flake', // her SNOWFLAKE STAFF, carried upright (HERO_STAVES, js/draw/hiems.js)
+    attack: { name: 'SNOWFLAKE STAFF', art: 'flakestaff', cycle: 62 / 60, kb: 0.5, shot: { speed: 270, life: 0.85, col: '#e6f8ff', look: 'frostbolt' } },
+    base: { hp: 82, dmg: 13, armor: 10, ap: 0, haste: 0, ms: PLAYER_SPEED - 4 },
+    grow: { hp: 5.8, dmg: 1, as: 0.01, armor: 1.8 },
+    rankOrder: [0, 2, 1], // the icicle, the cold snap, the clear ice
+    // her own body (HIEMS_SKINS, js/sprites/hiems.js), worn over the side's coat
+    skins: HIEMS_SKINS, skinPal: HIEMS_PAL, skinSlot: 'hiems',
+    paint48: { t: '#7d8699', T: '#b4bdcc', g: '#1c2232', G: '#9aa3b8', m: '#5c6478', M: '#454c5e' }, // the 48 px model's (js/sprites/looks.js): its K is skin
+    kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1, chargeMul: 0.55,
+      bowCharge: BOW_CHARGE, nock: 0.4, spdDmg: 0, dodgeSpeed: DODGE_SPEED },
+  },
+  {
+    // the ninth named hero (js/sim/rupes.js): a tank who engages. Slow to start and
+    // impossible to stop once he is rolling; little damage of his own, very hard to
+    // kill while he is packed with snow, and worn down by a rival who keeps away
+    name: 'RUPES', role: 'THE AVALANCHE', body: 1, passive: 'snowpack', // HERO_PASSIVE, js/sim/rupes.js
+    look: { sex: 0, tone: 3, hair: 0, hairCol: 1, beard: 2, face: 0 },
+    blurb: ['BE THE SLOPE.', 'THE HITS YOU TAKE PACK SNOW ONTO YOU. SHED IT IN ONE BURST.', 'ROLL FROM FAR OFF: THE FURTHER YOU ROLL, THE BIGGER THE BURST.'],
+    story: "HE CUT ICE FOR THE EMPIRE'S CELLARS UNTIL THE QUARRY FACE CAME DOWN, AND HE HELD THE WAY OUT OPEN WITH HIS BACK UNTIL THE LAST CUTTER WAS CLEAR. THE EMPIRE BILLED HIM FOR THE ICE. IN THE VALLEY HE DIGS WHERE THE SNOW IS DEEPEST, BECAUSE IT NEVER SURPRISES HIM.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
+    attack: { name: 'ICE MAUL', art: 'sword', cycle: 34 / 60, kb: 1.4, cut: { reach: 27, half: 1.05 } }, // a little slower than the longsword, a harder shove
+    base: { hp: 134, dmg: 15, armor: 24, ap: 0, haste: 0, ms: PLAYER_SPEED - 2 },
+    grow: { hp: 10.5, dmg: 1.3, as: 0.008, armor: 2.9 },
+    rankOrder: [0, 1, 2], // the heave, the shed, the shoulder
+    // his own body in each of his looks (RUPES_SKINS, js/sprites/rupes.js), worn per
+    // player (heroSkinOf) over the side's coat
+    skins: RUPES_SKINS, skinPal: RUPES_PAL, skinSlot: 'rupes',
+    blade: 'maul', // his ICE MAUL in his hands (HERO_BLADES, js/draw/rupes.js)
+    kit: { iceMax: 1.1, iceSteer: 3.2, slideMin: 70, fatigue: 0.7, chargeMul: 0.7,
+      bowCharge: 0.75, nock: 0.5, spdDmg: 5, dodgeSpeed: 220 },
+  },
+  {
+    // the tenth named hero and the first jungler (js/sim/varro.js): a diver on the
+    // WARRIOR's frames who picks one rival and runs them down; quick and a little
+    // light, strongest in the woods with wolves near him, thin when caught alone
+    name: 'VARRO', role: 'THE WOLF-KEPT', body: 1, passive: 'pack', // HERO_PASSIVE, js/sim/varro.js
+    look: { sex: 0, tone: 2, hair: 2, hairCol: 0, beard: 0, face: 0 },
+    blurb: ['RUN WITH THE PACK.', 'LEAP IN, MARK THEM, AND STAY ON THEM.', 'CALL THE WOLVES: ONE RIVAL CANNOT OUTRUN THEM.'],
+    story: 'THE EMPIRE LEFT HIM ON THE MOUNTAIN AS A CHILD. THE WOLVES FOUND HIM FIRST AND KEPT HIM WARM THROUGH THE WINTER. HE GREW UP RUNNING WITH THEM, AND HE STILL SHARES EVERY CATCH WITH THE PACK.', // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
+    // a spear's thrust: a touch longer and narrower than the longsword's cut
+    attack: { name: 'HUNTING SPEAR', art: 'spear', cycle: 28 / 60, kb: 1, cut: { reach: 30, half: 0.8 } },
+    base: { hp: 112, dmg: 17, armor: 18, ap: 0, haste: 0, ms: PLAYER_SPEED + 2 },
+    grow: { hp: 8.5, dmg: 1.6, as: 0.012, armor: 2.4 },
+    rankOrder: [0, 2, 1], // the lunge, the snap, the howl
+    // his own body in each of his looks (VARRO_SKINS, js/sprites/varro.js), worn per
+    // player (heroSkinOf) over the side's coat
+    skins: VARRO_SKINS, skinPal: VARRO_PAL, skinSlot: 'varro',
+    blade: 'spear', // his HUNTING SPEAR in his hands (HERO_BLADES, js/draw/varro.js)
+    kit: { iceMax: 1.15, iceSteer: 3.4, slideMin: 70, fatigue: 0.75, chargeMul: 0.7,
+      bowCharge: 0.75, nock: 0.5, spdDmg: 5, dodgeSpeed: 235 },
+  },
+  {
+    // the tenth named hero (js/sim/bucina.js): the tempo support, her side's speed and
+    // nerve: a horn that shoves, rallies, echoes off the walls and calls the snow down off
+    // the pines; no heals, no shields, and little damage of her own
+    name: 'BUCINA', role: 'THE HORN', body: 1, passive: 'heard', // HERO_PASSIVE, js/sim/bucina.js
+    look: { sex: 1, tone: 1, hair: 3, hairCol: 3, beard: 0, face: 2 },
+    blurb: ['ONE NOTE AT THE RIGHT TIME WINS THE FIGHT.', 'YOUR SIDE RUNS FASTER, HITS FASTER AND DOES NOT STOP.', 'NO HEALS, NO SHIELDS: YOUR SIDE HAS TO FOLLOW.'],
+    story: "SHE BLEW THE HORN FOR THE EMPIRE'S RETREATS, AND ONCE BLEW IT WITHOUT AN ORDER AND BROUGHT A WHOLE COLUMN HOME. THEY TOOK THE HORN AWAY FOR IT. NOW SHE CARRIES HER OWN, IT CALLS A COMPANY FORWARD, AND THE SNOW COMES OFF THE PINES WHEN IT DOES.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
+    // a note off her horn: the staff mages' reach, a little short of it
+    staff: 'horn', // her HORN, carried upright (HERO_STAVES, js/draw/bucina.js)
+    attack: { name: 'HORN', art: 'horn', cycle: 62 / 60, kb: 0.6, shot: { speed: 255, life: 0.8, col: '#cfe0f2', look: 'hornnote' } },
+    base: { hp: 92, dmg: 14, armor: 14, ap: 0, haste: 0, ms: PLAYER_SPEED },
+    grow: { hp: 6.5, dmg: 1.1, as: 0.01, armor: 2.2 },
+    rankOrder: [1, 0, 2], // the note, the blast, the echo
+    // her own body in each of her looks (BUCINA_SKINS, js/sprites/bucina.js), worn per
+    // player (heroSkinOf) over the side's coat
+    skins: BUCINA_SKINS, skinPal: BUCINA_PAL, skinSlot: 'bucina',
+    paint48: { t: '#7d8699', T: '#b4bdcc', g: '#1c2232', G: '#9aa3b8', m: '#5c6478', M: '#454c5e' }, // the 48 px model's (js/sprites/looks.js): its K is skin
+    kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1, chargeMul: 0.55,
+      bowCharge: BOW_CHARGE, nock: 0.4, spdDmg: 0, dodgeSpeed: DODGE_SPEED },
+  },
+  {
+    // the twelfth named hero (js/sim/nix.js): the night scout, an assassin of
+    // skill and weather. Quick and light, her damage in one hidden blow; she
+    // has the least armor of any blade and little to fall back on once seen
+    name: 'NIX', role: 'THE SNOWBLIND', body: 1, passive: 'nightwatch', // HERO_PASSIVE, js/sim/nix.js
+    look: { sex: 1, tone: 1, hair: 3, hairCol: 0, beard: 0, face: 2 },
+    blurb: ['THE NIGHT IS HERS TO KEEP.', 'THE SNOW HIDES HER. THE FIRST BLOW FROM IT HITS HARDEST.', 'SEEN IN THE OPEN, SHE IS EASY TO CATCH.'],
+    story: "SHE WAS THE EMPIRE'S BEST SCOUT UNTIL SHE CAME HOME WITH A TRUE REPORT NOBODY WANTED TO READ. IN THE VALLEY SHE KEEPS WATCH THROUGH THE LONG NIGHTS SO THE DIGGERS CAN SLEEP. SHE DOES NOT GIVE HER NAME, SO THE COMPANY GAVE HER ONE.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
+    attack: { name: 'ICE DIRK', art: 'sword', cycle: 24 / 60, kb: 0.8, cut: { reach: 22, half: 0.9 } }, // quicker and shorter than the spatha
+    skins: NIX_SKINS, skinPal: NIX_PAL, skinSlot: 'nix',
+    blade: 'dirk', // her ICE DIRK in her hands (HERO_BLADES, js/draw/nix.js)
+    base: { hp: 98, dmg: 19, armor: 14, ap: 0, haste: 0, ms: PLAYER_SPEED + 6 },
+    grow: { hp: 6.5, dmg: 1.8, as: 0.013, armor: 2 },
+    rankOrder: [0, 2, 1], // the shard, the drift step, the cloud
+    kit: { iceMax: 1.15, iceSteer: 3.4, slideMin: 70, fatigue: 0.75, chargeMul: 0.7,
+      bowCharge: 0.75, nock: 0.5, spdDmg: 5, dodgeSpeed: 240 },
+  },
+  {
+    // the ninth named hero (js/sim/faber.js): the zone mage. He holds a spot with
+    // machines he winds himself - small guns, a clockspring trap, the old engine -
+    // and is strong defending it; slow on his feet and poor at a chase
+    name: 'FABER', role: 'THE TINKER', body: 1, passive: 'spareparts', // HERO_PASSIVE, js/sim/faber.js
+    look: { sex: 0, tone: 2, hair: 1, hairCol: 2, beard: 0, face: 0 },
+    blurb: ['SET UP A SPOT AND DARE THEM TO WALK IN.', 'SMALL MACHINES SHOOT FOR YOU. A TRAP HOLDS A HERO. THE OLD ENGINE SLAMS.', 'STRONG HOLDING GROUND, SLOW TO CHASE.'],
+    story: "HE KEPT THE EMPIRE'S WATER CLOCKS RUNNING, AND ONE WINTER HE BUILT A CLOCK THAT RAN THE WHOLE CITY'S FOUNTAINS AT ONCE. IT FLOODED THE PALACE. THEY THANKED HIM AND SENT HIM UP THE PASS. THE WORKS HERE ARE FULL OF OLD MACHINES SOMEBODY BUILT WITH CARE, AND HE MEANS TO MEND EVERY ONE.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
+    // a staff's brass bolt: HIEMS's frost bolt's pace
+    staff: 'clock', // his CLOCK STAFF, carried upright (HERO_STAVES, js/draw/faber.js)
+    attack: { name: 'CLOCK STAFF', art: 'clockstaff', cycle: 62 / 60, kb: 0.5, shot: { speed: 270, life: 0.85, col: '#f2cc6a', look: 'cog' } },
+    base: { hp: 80, dmg: 12, armor: 10, ap: 0, haste: 0, ms: PLAYER_SPEED - 6 },
+    grow: { hp: 5.6, dmg: 1, as: 0.01, armor: 1.8 },
+    rankOrder: [0, 1, 2], // the spark, the small machine, the clockspring
+    // his own body (FABER_SKINS, js/sprites/faber.js), worn over the side's coat
+    skins: FABER_SKINS, skinPal: FABER_PAL, skinSlot: 'faber',
+    paint48: { t: '#7d8699', T: '#b4bdcc', g: '#1c2232', G: '#9aa3b8', m: '#5c6478', M: '#454c5e' }, // the 48 px model's (js/sprites/looks.js): its K is skin
+    kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1, chargeMul: 0.55,
+      bowCharge: BOW_CHARGE, nock: 0.4, spdDmg: 0, dodgeSpeed: DODGE_SPEED },
+  },
+  {
+    // the fourteenth named hero (js/sim/velox.js): the kiting marksman. She throws her
+    // sling while she skates, a shorter reach than the hunter's and less damage; quick,
+    // steady on ice and very hard to catch, and caught, she has nothing to stop a rival
+    name: 'VELOX', role: 'THE SKATER', body: 1, passive: 'keepmoving', // HERO_PASSIVE, js/sim/velox.js
+    look: { sex: 1, tone: 1, hair: 2, hairCol: 2, beard: 0, face: 2 },
+    blurb: ['NEVER STAND STILL.', 'THROW WHILE YOU SKATE: EVERY HIT QUICKENS YOU.', 'LAY YOUR OWN ICE AND FLY ALONG IT.'],
+    story: "SHE CARRIED THE EMPIRE'S MESSAGES DOWN ITS FROZEN CANALS, FASTER THAN ANY HORSE. ONE NIGHT SHE READ THE ORDER SHE CARRIED: BURN A VILLAGE THAT WOULD NOT PAY. SHE SKATED THERE FIRST AND WARNED THEM. NOW SHE CARRIES WORD FOR ANYONE WHO NEEDS IT CARRIED FAST.",
+    // a sling stone: a shorter, quicker throw than the hunter's arrow, barely slowed by her skating
+    staff: 'sling', // her STAFF SLING, carried upright (HERO_STAVES, js/draw/velox.js)
+    attack: { name: 'STAFF SLING', art: 'sling', cycle: 50 / 60, kb: 0.6, shot: { speed: 300, life: 0.6, col: '#9aa3b8', look: 'slingstone' } },
+    base: { hp: 82, dmg: 14, armor: 10, ap: 0, haste: 0, ms: PLAYER_SPEED + 3 },
+    grow: { hp: 6, dmg: 1.2, as: 0.016, armor: 1.7 },
+    rankOrder: [0, 2, 1], // the skip stone, the quick step, the ice lane
+    // her own body in each of her looks (VELOX_SKINS, js/sprites/velox.js), worn per
+    // player (heroSkinOf) over the side's coat
+    skins: VELOX_SKINS, skinPal: VELOX_PAL, skinSlot: 'velox',
+    paint48: { t: '#7d8699', T: '#b4bdcc', g: '#1c2232', G: '#9aa3b8', m: '#5c6478', M: '#454c5e' }, // the 48 px model's (js/sprites/looks.js): its K is skin
+    // ice is her ground: a higher cap and a sharp turn on it; a drawn sling barely slows her
+    kit: { iceMax: 1.25, iceSteer: 9, slideMin: SLIDE_MIN, fatigue: 0.8, chargeMul: 0.9,
+      bowCharge: 0.6, nock: 0.4, spdDmg: 3, dodgeSpeed: 240 },
+  },
+  {
+    // the fifteenth named hero (js/sim/falco.js): the falconer, an assassin who dives.
+    // His hawk finds a rival and marks it, his thrown knives bite harder on the mark,
+    // and he falls out of the sky on it; without a mark he is weak, and clumsy in a crowd
+    name: 'FALCO', role: 'THE KESTREL', body: 1, passive: 'hawk', // HERO_PASSIVE, js/sim/falco.js
+    look: { sex: 0, tone: 1, hair: 1, hairCol: 1, beard: 1, face: 1 },
+    blurb: ['PATIENT, THEN SUDDEN.', 'YOUR HAWK FINDS THEM. YOUR KNIVES BITE HARDER ON WHAT IT MARKS.', 'WITHOUT A MARK YOU ARE WEAK. PICK THE LONE RIVAL.'],
+    story: "HE KEPT THE HAWKS FOR AN IMPERIAL HUNT AND LET THEM ALL FLY THE DAY THE EMPIRE BURNED THE HUNTING PARK FOR A PARADE GROUND. ONE CAME BACK. IT IS THE ONLY ONE HE WILL SPEAK TO.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
+    // a thrown knife: short, quick, a little further than a blade
+    attack: { name: 'THROWING KNIFE', art: 'knife', cycle: 40 / 60, kb: 0.5, shot: { speed: 330, life: 0.42, col: '#c8d2e4', look: 'knife' } },
+    skins: FALCO_SKINS, skinPal: FALCO_PAL, skinSlot: 'falco',
+    base: { hp: 96, dmg: 17, armor: 13, ap: 0, haste: 0, ms: PLAYER_SPEED + 4 },
+    grow: { hp: 6.2, dmg: 1.7, as: 0.014, armor: 1.9 },
+    rankOrder: [1, 0, 2], // the knife fan, the talons, the glide
+    kit: { iceMax: 1.1, iceSteer: 3.2, slideMin: 70, fatigue: 0.85, chargeMul: 0.65,
+      bowCharge: 0.75, nock: 0.45, spdDmg: 3, dodgeSpeed: 230 },
+  },
+  {
+    // the sixteenth named hero (js/sim/maris.js): a tank who catches one rival. Quick and chilling on
+    // ice and by open water, she swims where others go in; much weaker on dry ground far
+    // from it, and once she has surfaced she has no way out
+    name: 'MARIS', role: 'THE ICE DIVER', body: 1, passive: 'coldwater', // HERO_PASSIVE, js/sim/maris.js
+    look: { sex: 1, tone: 2, hair: 1, hairCol: 0, beard: 0, face: 1 },
+    blurb: ['THE THING UNDER THE ICE.', 'ON ICE AND BY THE WATER YOU ARE QUICK, AND YOUR STRIKES CHILL.', 'ONCE YOU SURFACE YOU HAVE NO WAY OUT.'],
+    story: "SHE DOVE FOR THE EMPIRE'S SUNKEN GRAIN BARGES IN WATER NOBODY ELSE WOULD TOUCH, AND WAS SENT AWAY WHEN SHE WOULD NOT DIVE FOR A SUNKEN TAX CHEST. SHE SAYS THE ORCA IN THE CISTERN POOL IS THE ONLY HONEST THING IN THE VALLEY. SHE GIVES IT THE FIRST FISH OF EVERY CATCH.", // the wiki's hero page (docs/dev/lore.md)
+    attack: { name: 'HARPOON', art: 'sword', cycle: 32 / 60, kb: 1.1, cut: { reach: 28, half: 0.8 } }, // a thrust: a little longer and narrower than the longsword
+    skins: MARIS_SKINS, skinPal: MARIS_PAL, skinSlot: 'maris',
+    blade: 'harpoon', // her HARPOON in her hands (HERO_BLADES, js/draw/maris.js)
+    base: { hp: 126, dmg: 14, armor: 22, ap: 0, haste: 0, ms: PLAYER_SPEED - 2 },
+    grow: { hp: 10, dmg: 1.2, as: 0.009, armor: 2.7 },
+    rankOrder: [0, 2, 1], // the harpoon, the undertow, the brace
+    kit: { iceMax: 1.2, iceSteer: 3.6, slideMin: 70, fatigue: 0.7, chargeMul: 0.7,
+      bowCharge: 0.75, nock: 0.5, spdDmg: 5, dodgeSpeed: 220 },
+  },
+  {
+    // the seventeenth named hero (js/sim/lignum.js): a skirmisher who owns the treeline.
+    // Strong short trades and great near the woods; short reach, and in an open lane or on
+    // the ice he has nothing to hold a rival with until his ultimate
+    name: 'LIGNUM', role: 'THE FELLER', body: 1, passive: 'treeline', // HERO_PASSIVE, js/sim/lignum.js
+    look: { sex: 0, tone: 1, hair: 2, hairCol: 1, beard: 2, face: 0 },
+    blurb: ['OWN THE TREELINE.', 'WAIT IN THE WOODS, STEP OUT, CHOP HARD, STEP BACK.', 'FELL A PINE ACROSS THE FIGHT.'],
+    story: "HE FELLED TIMBER FOR THE EMPIRE'S SHIPS UNTIL THERE WAS NO FOREST LEFT TO FELL, THEN REFUSED TO BURN THE LAST ONE. THE VALLEY'S PINES GREW UP THROUGH THE WORKS AND NOBODY OWNS THEM. HE LIKES THAT.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
+    // an axe's blow: the longsword's reach, a little wider and slower
+    attack: { name: 'FELLING AXE', art: 'sword', cycle: 34 / 60, kb: 1.2, cut: { reach: 26, half: 1 } },
+    skins: LIGNUM_SKINS, skinPal: LIGNUM_PAL, skinSlot: 'lignum',
+    blade: 'felling', // his FELLING AXE in his hands (HERO_BLADES, js/draw/lignum.js)
+    base: { hp: 114, dmg: 18, armor: 18, ap: 0, haste: 0, ms: PLAYER_SPEED },
+    grow: { hp: 9, dmg: 1.7, as: 0.011, armor: 2.4 },
+    rankOrder: [0, 1, 2], // the chop, the thrown axe, the bark skin
+    // a woodsman off the ice: a low cap and a slow turn on it
+    kit: { iceMax: 1, iceSteer: 2.8, slideMin: 70, fatigue: 0.75, chargeMul: 0.7,
+      bowCharge: 0.75, nock: 0.5, spdDmg: 5, dodgeSpeed: 225 },
+  },
+  {
+    // the eighteenth named hero (js/sim/sagitta.js): the siege marksman. Her heavy crossbow
+    // reaches further than any bow and hits like a hammer, but it is slow to wind and
+    // slower to carry; she is safe behind her pavise and easy prey once it is down
+    name: 'SAGITTA', role: 'THE BOLT-THROWER', body: 1, passive: 'heavybolts', // HERO_PASSIVE, js/sim/sagitta.js
+    look: { sex: 1, tone: 2, hair: 2, hairCol: 1, beard: 0, face: 2 },
+    blurb: ['SET UP, THEN STRIKE FROM FAR AWAY.', 'EVERY THIRD BOLT HITS LIKE A HAMMER.', 'PIN RIVALS TO THE TREES.'],
+    story: "SHE BUILT THE EMPIRE'S SIEGE ENGINES. WHEN ONE OF THEM WAS TURNED ON THE CITY THAT PAID FOR IT, SHE SAID SO, AND WAS SENT OVER THE PASS FOR IT. THE ROAD TOWERS IN THE VALLEY CARRY CROSSBOWS SHE COULD HAVE DRAWN. SHE STUDIES THEM MORE THAN SHE LETS ON.",
+    // a crossbow bolt: further and harder than the hunter's arrow, and a long wind between
+    attack: { name: 'HEAVY ARBALEST', art: 'arbalest', cycle: 80 / 60, kb: 1.3, shot: { speed: 430, life: 0.82, col: '#c3ccd8', look: 'bolt' } },
+    base: { hp: 78, dmg: 20, armor: 9, ap: 0, haste: 0, ms: PLAYER_SPEED - 5 },
+    grow: { hp: 5.6, dmg: 1.7, as: 0.01, armor: 1.6 },
+    rankOrder: [0, 2, 1], // the pin, the crank back, the pavise
+    // her own body in each of her looks (SAGITTA_SKINS, js/sprites/sagitta.js), worn per
+    // player (heroSkinOf) over the side's coat
+    skins: SAGITTA_SKINS, skinPal: SAGITTA_PAL, skinSlot: 'sagitta',
+    paint48: { t: '#7d8699', T: '#b4bdcc', g: '#1c2232', G: '#9aa3b8', m: '#5c6478', M: '#454c5e' }, // the 48 px model's (js/sprites/looks.js): its K is skin
+    // a heavy draw that all but plants her feet while she winds it
+    kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1, chargeMul: 0.45,
+      bowCharge: 0.75, nock: 0.4, spdDmg: 0, dodgeSpeed: DODGE_SPEED },
   },
 ];
 // the body a hero wears - its sprites and its 48 px model: a hero that names
@@ -283,7 +516,7 @@ function healPlayer(p, n) {
 // lifetime gold (the scoreboard's rank and the post-game GOLD). Gold buys;
 // it no longer teaches - XP is gainXp's alone.
 function gainGold(p, n) {
-  p.inv.gold += n;
+  p.gold += n;
   p.earned += n;
   // lifetime total, coalesced - see profile.js. Practice gold is play money:
   // a free room must never farm the tech tree's points.
@@ -294,12 +527,12 @@ function gainGold(p, n) {
 // player already spent, so counting it would turn a buy and a sell into a
 // scoreboard farm rather than into a trade. Everything that
 // EARNS gold - a fell, a kill, the clock - still goes through gainGold.
-function tradeGold(p, n) { if (p && n > 0) p.inv.gold += n; }
+function tradeGold(p, n) { if (p && n > 0) p.gold += n; }
 // Gold leaving a wallet: the shop's one way to take it, so the post-game
 // record (goldSpent, js/ui/lobby.js) never misses a purchase. The caller has
 // already checked the purse holds n.
 function spendGold(p, n) {
-  p.inv.gold -= n;
+  p.gold -= n;
   if (n > 0) p.goldSpent += n;
 }
 // Gold is never a physical drop: every source pays the earner on the spot
@@ -326,13 +559,13 @@ function gainXp(p, n) {
   p.xpTick = state.tick;
   while (p.level < LEVEL_MAX && p.xp >= LEVEL_XP[p.level]) levelUp(p);
 }
-// A death's XP, League style: every scout of `team` standing (alive, on the
+// A death's XP, League style: every hero of `team` standing (alive, on the
 // ground) within XP_R of the body shares it, and the one who landed the blow
 // (`src`) always does, wherever they stood - a long shot still teaches. The
 // pot grows XP_SHARE of the whole for each sharer past the first, so two
-// scouts on a wave each get 65%, five get 46%: company pays, but less each.
+// heroes on a wave each get 65%, five get 46%: company pays, but less each.
 // `team` is the side the death was good for - the rival of a soldier or a
-// scout, the hunter's side for a beast (which has none).
+// hero, the hunter's side for a beast (which has none).
 const XP_R = 160;      // px round a death that shares its XP: about half the view at the default zoom
 const XP_SHARE = 0.3;  // of the whole added to the pot for each sharer past the first
 function shareXp(dead, xp, team, src) {
@@ -397,8 +630,7 @@ function playerTint(p) {
 function baseKit(cls) {
   return Object.assign({}, CLASSES[cls].kit, {
     cls, add: statBag(), // whose kit, and the stat bonuses items write (js/sim/stats.js)
-    huntMul: 1, nightHeal: false,
-    harvestMul: 1, dodgeCd: DODGE_CD, stealth: 1,
+    dodgeCd: DODGE_CD, stealth: 1,
     ambushMul: AMBUSH_MUL, bury: PRONE_BURY,
     killHeal: 0, kindle: false, chill: false, restHeal: 0, // the item passives (js/sim/items.js)
     leech: false, thorns: false, cull: false, steady: false, surge: false, brace: false, smolder: false, scorch: false,
@@ -465,7 +697,7 @@ class Player {
     this.look = Object.assign({}, CLASSES[0].look); // the hero's face, set again by every setClass
     this.skins = {};                   // hero slot -> the look worn on that hero (heroSkinOf); a person's, from their profile
     this.spawn = { tx: WORLD >> 1, ty: WORLD >> 1 }; // landing tile once the eagle drops this player (the bot brain's "home")
-    this.inv = { gold: START_GOLD };    // the wallet is currency only; a start that buys a first part and a potion
+    this.gold = START_GOLD;             // the wallet: currency only, no ceiling; a start that buys a first part and a potion
     this.cls = 0;                       // CLASSES index; the lobby sets the local one
     this.position = -1;                 // POSITIONS index the draft gave this seat, -1 none (draftReveal, js/ui/draft.js); the host's alone, never on the wire
     this.skillPts = 1;                  // unspent; level 1 starts with one, each levelUp adds one - spent on ability levels (buyAbilityLv, js/sim/abilities.js)
@@ -533,10 +765,9 @@ class Player {
       // downs/grudge who it has downed
       // and the mark it holds a grudge on, answerAt/answerKind/answerKey the
       // human ping it last answered and when its ON IT is due (aiAnswer), band its range band
-      // in a fight (aiRangeBand), packT how long it has waited at the rally, scout/scoutN
-      // the scout's point and step along its beat, thought what it is doing
-      // and why (the dashboard's record)
-      mood: null, helping: -1, foeId: -1, focusT: 0, focusOk: false, packT: 0, scout: null, scoutN: 0, thought: null, lastFoe: null, lastFoeT: -1e9, fleeT: -1e9, downs: {}, grudge: null, scoutCd: 0, answerAt: 0, answerKind: null, answerKey: "", band: null,
+      // in a fight (aiRangeBand), packT how long it has waited at the rally,
+      // thought what it is doing and why (the dashboard's record)
+      mood: null, helping: -1, foeId: -1, focusT: 0, focusOk: false, packT: 0, thought: null, lastFoe: null, lastFoeT: -1e9, fleeT: -1e9, downs: {}, grudge: null, answerAt: 0, answerKind: null, answerKey: "", band: null,
     };
     this.reset(true);
   }
@@ -573,7 +804,6 @@ class Player {
     this.prone = false; this.hide = 0; this.riseT = 0;
     this.crawlT = 0; this.puffT = 0; this.hideFlash = 0;
     this.swingT = 0; this.swingCd = 0; this.swingDir = 0; this.swingHitDone = false;
-    this.swing = SWING_BOW;                        // held SWING_TOOLS index (bow at rest)
     this.autoSwing = false;                        // the swing in flight was the hands' own (autoWork), so a draw may begin under it
     // the class abilities (keys 1-4, js/sim/abilities.js): per-key cooldowns, the
     // cast in progress, and every timed state one can leave on a body -
@@ -592,8 +822,7 @@ class Player {
     this.castSlam = false;                         // the shield key pressed mid-wall or mid-rush: the cast in flight is the SLAM, not a raise (js/sim/abilities.js)
     this.buffT = 0;                                // s of a bear buff left (campBuff, wildlife.js): harder blows, a quicker walk
     this.buffKind = null;                          // ...and which bear's ('alpha' or 'dire'): its name and its ring's colour
-    this.dawnShield = 0;                           // hp of the DAWN SHIELD left (pickSnowdrop, js/sim/actions.js): spent before health
-    this.wardHp = 0; this.wardT = 0;               // a timed shield (shieldUnit, js/sim/actions.js): spent after the dawn's, gone when its clock runs out
+    this.shields = [];                             // { kind, hp, t }: every shield up, in the order a hit spends them (SHIELD_KINDS, js/sim/actions.js)
     // ARMATOS (js/sim/armatos.js): his resolve (0..1, full = the next key shields him) and
     // the seconds since a hit last fed it; the brace (`hold`, on the shieldT state) and
     // whether a hero has struck it (the bash primed); a hero's dash (`dash`, a HERO_DASH id
@@ -616,8 +845,40 @@ class Player {
     // IGNIA (js/sim/ignia.js): WARM HANDS waiting; and on any body, whose fire it is
     // burning with (SPREADING FLAME carries it on) and how long a wildfire's flame lets it jump
     this.warmT = 0; this.kindleBy = -1; this.wildT = 0;
+    // HIEMS (js/sim/hiems.js), on any body: DEEP CHILL's stacks and their window, the
+    // wait before it can be frozen again, and the freeze's ice (drawn while it holds)
+    this.chillN = 0; this.chillT = 0; this.chillImm = 0; this.frozeT = 0;
     // SALVIA (js/sim/salvia.js), on any player she helped: WARM BROTH's speed and the cloak's run
     this.brothT = 0; this.cloakT = 0;
+    // LUCERNA (js/sim/lucerna.js), on any body she pulls: the spot it is drawn to and the clock
+    this.pullT = 0; this.pullX = 0; this.pullY = 0;
+    // BUCINA (js/sim/bucina.js), on any player who heard her: HEARD's run, and the note's hold and its attack speed
+    this.heardT = 0; this.rallyT = 0; this.rallyAs = 0;
+    // RUPES (js/sim/rupes.js): his snowpack (0..1, PACK_LAYERS layers) and the seconds since a
+    // hit fed it; the px his avalanche has rolled (its size)
+    this.pack = 0; this.packIdle = 0; this.avaD = 0;
+    // MARIS (js/sim/maris.js): COLD WATER's clock, her brace (its clock and the share it cuts),
+    // the s left under the snow, and the spot her reel or her dive is headed to
+    this.coldT = 0; this.braceT = 0; this.braceCut = 0; this.underT = 0; this.reelX = 0; this.reelY = 0;
+    // LIGNUM (js/sim/lignum.js): in the woods last step, TREELINE's ready blow and its run, CHOP's wait for the second blow, BARK SKIN's clock and its share
+    this.lgWoods = false; this.lgEdgeT = 0; this.lgRunT = 0; this.chopT = 0; this.barkT = 0; this.barkCut = 0;
+    // VARRO (js/sim/varro.js): the body LUNGE is leaping at, SNAP's strikes still to land and
+    // their clock; and on any body, whose mark it wears (LUNGE) and until when
+    this.leapQ = null; this.snapN = 0; this.snapT = 0; this.packBy = -1; this.packUntil = 0;
+    // VELOX (js/sim/velox.js): KEEP MOVING's stacks and their clock, QUICK STEP's readied
+    // throw, LONG RUN's clock
+    this.keepN = 0; this.keepT = 0; this.quickT = 0; this.runT = 0;
+    // SAGITTA (js/sim/sagitta.js): the bolts loosed since her last heavy one (HEAVY BOLTS)
+    this.boltN = 0;
+    // NIX (js/sim/nix.js): a moment shown after striking from her cloud; WHITEOUT's
+    // vanish and the hero it struck (the reset's clock, and whether this cast may reset);
+    // NIGHT WATCH's hidden blow waiting
+    this.nixOutT = 0; this.nixWhiteT = 0; this.nixStrikeId = -1; this.nixResetT = 0; this.nixRecast = false; this.nixStrikeOnce = false;
+    this.nixAmbush = false; this.nixDriftId = -1; this.nixDriftX = 0; this.nixDriftY = 0;
+    // FALCO (js/sim/falco.js): STOOP's climb and the hero it falls on, KNIFE FAN's throw count;
+    // on any body his hawk marked or his fan struck: who marked it and until when, which throw and how many knives
+    this.falcoSkyT = 0; this.falcoStoopId = -1; this.falcoFanN = 0; this.falcoDownT = 0;
+    this.falcoBy = -1; this.falcoUntil = 0; this.falcoFanId = -1; this.falcoFanHits = 0;
     this.hopT = 0;                                 // the net shot's recoil hop, on the body
     this.grapT = 0; this.grapX = 0; this.grapY = 0; // the grapple: reel time left, and the anchor it hauls toward
     this.zip = -1; this.zipD = 0; this.zipDir = 1;  // the zipline (js/sim/zipline.js): the line ridden (its index in zips, or -1), px along it, and which way
@@ -639,7 +900,6 @@ class Player {
 
 const players = [];  // every player; filled by initPlayers() at boot
 let player = null;   // the local player - camera, HUD, cursor and audio follow this one
-let inv = null;      // === player.inv, the counters the HUD draws
 // which slot THIS screen's player sits in. Nothing about a slot makes it the
 // local one - slot 0 is only the default - so anything that means "me" reads
 // `player` (or `p === player`), never an id: an online match seats this screen
@@ -682,7 +942,6 @@ function initPlayers(roster, local) {
   }
   localId = local;
   player = players[local];
-  inv = player.inv;
   applyProfile(); // the local player is the profile: its name and its last hero
 }
 
@@ -690,7 +949,7 @@ function initPlayers(roster, local) {
 // one place the FFA/friendly-fire rule lives)
 function enemyOf(p, q) { return q !== p && q.active && !q.dead && !inAir(q) && (!PVP || q.team !== p.team); }
 // riding the eagle or falling from it: not in the world, nothing can touch it
-// The aim a drawn bow, a wound-up blade or a parry points along, as an angle
+// The aim a drawn bow, a wound-up blade, a parry or a cast's telegraph points along, as an angle
 // from the bow's height. Input never crosses the wire, so a client knows
 // another body's aim only from this, written by the step while a draw is
 // held; the local body draws off its own live pointer (aimAngle,
@@ -775,7 +1034,6 @@ const particles = []; // {x,y,vx,vy,life,color,size,grav} + optional `alpha` fad
 const floaters = [];
 const footprints = [];
 const fish = []; // swimmers under the ice: {x,y,a,spd,t,turnT,spook}
-const holes = []; // tile idx of open water holes; they refreeze each dawn
 const camps = []; // the jungle camps, stood up at fixed sites by worldgen (see the camps banner, js/sim/camps.js)
 
 // ------------------------------------------------------------ damage & death
@@ -809,22 +1067,9 @@ function damagePlayer(p, dmg, dx, dy, src, cause, crit, kb, o) {
   dmg = armorTaken(p, dmg); // ARMOR cuts every hit by its share, never to zero (js/sim/stats.js)
   dmg = heroTaken(p, dmg, dx, dy, src); // ...and a hero's own cut: ARMATOS's brace (HERO_TAKEN, js/sim/heroes.js)
   passiveHurt(p, dmg, src); // a hero's passive fed by the hits it takes (LEGION'S RESOLVE)
-  // the dawn shield (pickSnowdrop, js/sim/actions.js) takes the hit first, a burn
-  // included; what is left of the blow goes on to health
-  const shielded = Math.min(p.dawnShield, dmg);
-  if (shielded > 0) {
-    p.dawnShield -= shielded;
-    burst(p.x, p.y - 10, '#ffd84a', 4, 36, 0.35);
-    if (p.dawnShield <= 0) { sfxAt('shieldBreak', p.x, p.y); burst(p.x, p.y - 10, '#fff4b8', 10, 60, 0.5); }
-  }
-  // ...then a timed shield (shieldUnit), the same way
-  const warded = Math.min(p.wardHp, dmg - shielded);
-  if (warded > 0) {
-    p.wardHp -= warded;
-    burst(p.x, p.y - 10, '#f2cc6a', 4, 36, 0.35);
-    if (p.wardHp <= 0) { p.wardT = 0; sfxAt('shieldBreak', p.x, p.y); }
-  }
-  p.hp -= dmg - shielded - warded;
+  // the shields take the hit first, in their order (shieldSpend, js/sim/actions.js),
+  // a burn included; what is left of the blow goes on to health
+  p.hp -= dmg - shieldSpend(p, dmg);
   // the match record both ends of the blow keep (the post-game lobby, js/ui/lobby.js).
   // What is counted is what LANDED, DR already off it - the overkill on the
   // last hit of a kill included, because that is what the swing was worth.
@@ -867,7 +1112,7 @@ const KILL_VERB = { fire: 'BURNED' };
 // victim's level's worth (KILL_XP + KILL_XP_LV a level) shared by every
 // rival standing near (shareXp), so a kill teaches the fight, not the blow.
 // The one stake left on a death is the wait below and the walk back.
-const KILL_XP = 40, KILL_XP_LV = 15; // XP a downed scout is worth: 55 at level 1, 310 at 18
+const KILL_XP = 40, KILL_XP_LV = 15; // XP a downed hero is worth: 55 at level 1, 310 at 18
 const MULTI_T = 10;       // s a kill may follow the one before and still count toward a multi-kill (the post-game record)
 
 // The wait for the bird to set a downed player back down: a read of the
@@ -908,8 +1153,7 @@ function bodyOut(p) {
   p.shieldT = 0; p.rushT = 0; p.rushVictim = null;
   p.castSlam = false; p.hopT = 0; p.grapT = 0;
   p.buffT = 0; // the bear buff goes with the body too
-  p.dawnShield = 0; // ...and the dawn's shield
-  p.wardHp = 0; p.wardT = 0; p.resolve = 0; // ...and any other shield, and ARMATOS's resolve
+  p.shields = []; p.resolve = 0; // ...and every shield, and ARMATOS's resolve
   p.hold = false; p.holdHit = false; p.dash = ''; p.marchHit.length = 0;
   passiveOut(p); // ...and whatever a hero's passive keeps on the body (HERO_PASSIVE out, js/sim/heroes.js)
   clearUnitStatus(p); // root, slow, net, mark and the fire go out with the body
@@ -928,8 +1172,9 @@ function bodyOut(p) {
 // (see endMatch/DEAD_ITEMS/renderDead).
 function die(p, src, cause) {
   // practice: nothing is at stake and nobody is ever out - a death is undone
-  // on the spot, back at the spawn tile with the build and the bag untouched
-  if (PRACTICE && p === player) { practiceRevive(p); return; }
+  // on the spot, back at the spawn tile (on the map its side's roost) with
+  // the build and the bag untouched; a party's guests the same as its leader
+  if (PRACTICE) { practiceRevive(p); return; }
   // what this body is worth is read before the death clears the streak it wears
   const worth = killWorth(p), bounty = bountyOf(p);
   p.deathLog = p.hurtLog; p.hurtLog = []; // the blows that did it, for the death recap (js/ui/recap.js)
@@ -966,7 +1211,7 @@ function die(p, src, cause) {
     }
   }
   callKill(p, killer, bounty); // the announcer's call and the kill feed's row (the `calls` banner below)
-  // the XP is the rival side's whoever landed it - a scout the bear or the
+  // the XP is the rival side's whoever landed it - a hero the bear or the
   // orca took still teaches the rivals who stood by
   shareXp(p, KILL_XP + KILL_XP_LV * p.level, 1 - p.team, killer);
   storyDown(killer, p); // the match story (js/ui/story.js): who keeps downing whom
@@ -1016,7 +1261,7 @@ const RESPAWN_OUT = 40;
 // from the bird, that tile itself when it stands (r0 0: the ring-out search
 // alone took the tile above, which on a lane pointing up carried the body
 // past the roost ring, BOOM_R) - null while the bird is not down. The
-// carried-back scout and the recall (js/sim/recall.js) both land here.
+// carried-back hero and the recall (js/sim/recall.js) both land here.
 function roostTile(p) {
   const e = state.drop && state.drop.eagles[p.team];
   if (!e || e.state !== 'down') return null;
@@ -1102,23 +1347,17 @@ function practiceRevive(p) {
 
 // Both end screens print the same object, so there is one of these rather
 // than one per ending: the four tally numbers, the class it was played in,
-// the whole side both stages stand, and the one fact only the loss prints
-// (its placing).
+// and the whole side both stages stand.
 function endSnapshot() {
-  // where the local player finished: every player still in the match outlasted
-  // it, so place is one past that count. A win is 1st by definition (the
-  // screen that prints place never sees a win, but the object shouldn't lie).
-  const left = players.filter((q) => q !== player && q.active && !q.eliminated).length;
   return {
     gold: player.earned, kills: player.kills, level: player.level, time: state.elapsed,
     team: player.team, cls: player.cls,
     // the whole side, the local player first: every body either ending stands
-    // on its stage, with the name, class and kit it finished in (a mate who
+    // on its stage, with the name TAB gives it (boardName: a bot goes by its hero), the class and kit it finished in (a mate who
     // is down at the whistle still shares the result)
     roster: players.filter((q) => q.active && q.team === player.team)
       .sort((a, b) => (a === player ? -1 : b === player ? 1 : a.id - b.id))
-      .map((q) => ({ name: q.name, cls: q.cls, look: q.look, team: q.team })),
-    place: player.eliminated ? left + 1 : 1, of: players.filter((q) => q.active).length,
+      .map((q) => ({ name: boardName(q), cls: q.cls, look: q.look, team: q.team })),
   };
 }
 
@@ -1152,7 +1391,7 @@ function endMatch(how) {
   state.defeatT = 0;
   state.rpClosed = how === 'hostleft'; // every death opens the replay again; a host walking out is no death, and its door (LOBBY) shows at once
   // an ENDING freezes its numbers here, not in the render pass: the match
-  // runs on underneath (a generator can still pay out, a rival can still
+  // runs on underneath (a gold pump can still pay out, a rival can still
   // fall) and a total that climbs behind a tally which already counted it
   // reads as a bug. A loss's summary is opened minutes later, off the LOBBY
   // plank, so this is the only moment its numbers are still true.
@@ -1182,13 +1421,12 @@ function endMatch(how) {
 // coin over its name, drawBountyTag js/draw/overhead.js) that its killer
 // cashes as a SHUTDOWN on top. A body that keeps going down without a kill or
 // an assist (p.feed) is worth less, down to FEED_FLOOR, so feeding one side
-// never funds the other. Every amount is counted in SCRAPPED SOLDIERS
-// (SOLDIER_BOUNTY, js/sim/farm.js, read at the kill), so the kill keeps its
-// place in the farm whatever a last hit is retuned to: a plain kill is three
-// of them, the biggest shutdown eight, so ending a streak pays without
-// erasing the lead the streak built. Gold only goes to the living, as a kill
-// always has.
-const KILL_SOLDIERS = 3;    // soldiers a downed rival is worth to its killer, before feed and bounty
+// never funds the other. Every amount is counted in TAKEDOWN_GOLD shares: a
+// plain kill is three of them, the biggest shutdown eight, so ending a streak
+// pays without erasing the lead the streak built. Gold only goes to the
+// living, as a kill always has.
+const TAKEDOWN_GOLD = 110;  // one share: a takedown's unit of gold (League's scale, the `economy` note in js/sim/core.js)
+const KILL_SOLDIERS = 3;    // shares a downed rival is worth to its killer, before feed and bounty
 const ASSIST_T = 10;        // s a rival's blow or crowd control stays on a body's record
 const ASSIST_SHARE = 0.5;   // of the worth, split evenly among the assists (each at least 1)
 const BOUNTY_FROM = 2;      // the streak at which a body starts wearing a bounty
@@ -1244,8 +1482,8 @@ function recentFoes(p) {
   return out.sort((a, b) => h[b.id] - h[a.id] || a.id - b.id);
 }
 // the plain kill in gold, and a body's bounty and worth
-function killBounty() { return KILL_SOLDIERS * SOLDIER_BOUNTY; }
-function bountyOf(p) { return p.streak < BOUNTY_FROM ? 0 : SOLDIER_BOUNTY * Math.min(BOUNTY_MAX, BOUNTY_STEP * (p.streak - BOUNTY_FROM + 1)); }
+function killBounty() { return KILL_SOLDIERS * TAKEDOWN_GOLD; }
+function bountyOf(p) { return p.streak < BOUNTY_FROM ? 0 : TAKEDOWN_GOLD * Math.min(BOUNTY_MAX, BOUNTY_STEP * (p.streak - BOUNTY_FROM + 1)); }
 function killWorth(p) { return Math.round(killBounty() * Math.max(FEED_FLOOR, 1 - FEED_STEP * Math.max(0, p.feed - FEED_FROM + 1))); }
 
 // p is down: the killer and the assists are paid, and every one of them has

@@ -55,8 +55,7 @@ pines) low in the view under the bird (`VIEW_H * BRIEF_Y`): `ATTACK THEIR EAGLE`
 the rival's paint at `BRIEF_TEXT` (**four**) times the drop HUD's text scale, verb first and nothing under it
 — the once the win condition is ever written down, the headline carve-out; **`ours-go`**/**`ours`** glide home and finish on your own roost for
 `BRIEF_HOLD_OURS` (4 s) under `PROTECT YOUR EAGLE`, then clear through
-`endBrief()`, which also pops the `DAY 1` headline the landing owes (the camera banner in sim.js
-holds it back while the brief has the top of the screen) — and from there the E - HOP OFF
+`endBrief()`, and from there the E - HOP OFF
 indicator (above) is the way down. While it runs
 `sampleHumanInput`
 zeroes the controls exactly as the ceremony does, the M toggle is refused, `player.invuln` is
@@ -98,7 +97,8 @@ the gust (a hundred swings, twelve gusts, 53 s), a pair in half that, but arrows
 minutes. **Every blow is audible, and one of the two cues carries off screen**: within earshot it
 is the bird's own `SFX.bigHurt`, and out of earshot,
 for your OWN bird only, `SFX.alarm` instead, at most one per `EAGLE_WARN_GAP` (9 s) — a siege is a
-hundred blows and one piece of news. It is not helpless: a rival inside `GUST_R` (64 — wide enough to cover a swing from the
+hundred blows and one piece of news. Each screen answers that for itself (`roostWarnHere`, its own
+`roostWarnT` clock): the host records every blow as a `roost` event, so a guest is warned for its own side's bird too. It is not helpless: a rival inside `GUST_R` (64 — wide enough to cover a swing from the
 next tile out past the roost's 3×3; resolved through `seenAt`, like every
 watcher) makes it rear — wings thrown open for
 `GUST_WIND_T`, the whole telegraph — then `eagleGust` throws every rival in `GUST_BLAST_R` back at
@@ -115,7 +115,7 @@ controls exactly as pause does, `hurtEagle` refuses a second flee, and `checkLas
 owning side down permanently (`die(p, null, 'eagle')` / `teamEagleDown`, which `die`,
 `updateRespawns` and `teamInMatch` all gate on — see [multiplayer.md](../multiplayer.md#pvp)) and the
 victory or defeat screen rises **over the escape still flying underneath** — the camera stays on
-the bird through mode `dead` and only KEEP PLAYING (back to mode `play`) takes it back early. The
+the bird through mode `dead`. The
 takeoff itself: over `FLEE_LIFT_T` the bird turns from wherever the dive left it pointing to
 `fleeTo` (away from the world's centre, shortest arc) while climbing; then it flies at `FLEE_SPD`
 until `FLEE_T`, when it is `gone` and draws nothing ever again.
@@ -168,7 +168,7 @@ its frame) — and folds its wings over `EAGLE_SETTLE_T` (the three
 frames as a settle animation), then **rests**, breathing a ±1 px bob with a wing-shuffle idle
 every 3.5–7 s (`RUFFLE_T`, mid frame only with a puff of settling snow — the full spread stays
 the gust's telegraph, so the idle can never cry wolf), flashing all white when hit (`SPRITES.perch.flash` of the frame drawn: it is taller than the 128×128 `drawSpriteFlash` scratch),
-with its team-colour hp bar (`drawPerchBar`: `PERCH_BAR_W` x `PERCH_BAR_H` in a `PERCH_BAR_RIM` ink frame, in `PERCH_BAR_SEGS` even segments, the biggest bar in the world since the match is won and lost on it; the chunk a hit takes holds pale `PERCH_LAG_HOLD` then drains at `PERCH_LAG_RATE`, a render-side `perchLag`; the pool's number sits inside) up **from the moment it roosts** — the bar is the objective's
+with its team-colour hp bar (`drawPerchBar`: `PERCH_BAR_W` x `PERCH_BAR_H` in a `PERCH_BAR_RIM` ink frame, in `PERCH_BAR_SEGS` even segments, the biggest bar in the world since the match is won and lost on it; the chunk a hit takes holds pale `PERCH_LAG_HOLD` then drains at `PERCH_LAG_RATE`, a render-side `perchLag`; the pool's number sits inside; never on an end screen, `endScreen()`, like every other tell) up **from the moment it roosts** — the bar is the objective's
 introduction, anchored to the bird's rotated extent; no nameplate over it, the bar alone names the objective. A gust windup draws wings thrown open
 (frame 0) lifted 2 px: the spread IS the telegraph, no text. Perch roosts landed with its
 wings half open and the crew's saddle on its back (`'r' + beat`, at the roost's size, the three

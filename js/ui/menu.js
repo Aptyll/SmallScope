@@ -14,7 +14,16 @@ const HUD_IN_T = 0.7;   // the HUD slide occupies the last part of the intro
 const PANEL_SLIDE_T = 0.32;
 // QUIT only in the desktop build (the bridge, desktop/preload.js): it opens
 // fullscreen, so the app needs its own way out; a browser tab has its X
-const MENU_ITEMS = ['QUICKPLAY', 'RANKED', 'PRACTICE TOOL'].concat(window.steamBridge && steamBridge.quit ? ['QUIT'] : []);
+// FIRST MATCH leads the words for a profile that has never finished a match
+// nor seen the coach through (PROFILE.guided, js/app/profile.js): offered
+// until then, and always a mode in the party's list. RANKED stands dim with
+// a lock and its pips until RANKED_AT matches are played (rankedOpen,
+// js/ui/rooms.js).
+function menuItems() {
+  return (PROFILE.guided() ? [] : ['FIRST MATCH']).concat(['QUICKPLAY', 'RANKED', '1V1', 'PRACTICE TOOL'],
+    window.steamBridge && steamBridge.quit ? ['QUIT'] : []);
+}
+function menuShut(label) { return label === 'RANKED' && !rankedOpen(); }
 // SETTINGS has no plank: it is the ESC panel's in play (js/ui/panels.js),
 // and the WIKI is a tab beside the patch notes (js/ui/notes.js).
 // The items are plain words at MENU_TXT_SCALE - white, the picked one gold -
@@ -30,7 +39,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.586';
+const PATCH_TXT = 'PATCH 0.650';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -46,6 +55,70 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.650', 'THE PARTY SCREEN AND CHAMP SELECT NOW FIT 4:3 AND 16:10 SCREENS.'],
+  ['0.649', 'SAGITTA\'S PAVISE NOW STOPS SHOTS ONLY FROM THE FRONT: GET BEHIND IT OR AROUND ITS EDGE AND YOUR SHOTS GO PAST.'],
+  ['0.648', 'THE PARTY SCREEN\'S SETTINGS STAND CENTRED OVER THE ROOM, AND VICTORY\'S LINES NAME BOTS BY THEIR HERO.'],
+  ['0.647', 'A HERO\'S MARKS ON A BODY (HIEMS\'S CHILLS, VELOX\'S KEEP MOVING, VARRO\'S PAW, BELLA\'S MARK, FALCO\'S TALON) STAND IN THEIR OWN ROW ABOVE THE NAME, NO LONGER HIDDEN UNDER THE HEALTH BAR.'],
+  ['0.646', 'A NEW HERO, SAGITTA THE BOLT-THROWER: HER HEAVY CROSSBOW OUTREACHES EVERY BOW, EVERY THIRD BOLT HITS LIKE A HAMMER, SHE PINS RIVALS TO THE TREES AND SHOOTS FROM BEHIND HER OWN SHIELD.'],
+  ['0.645', 'THE ORCA\'S BITE NOW TAKES A HERO\'S TIMED SHIELD TOO, NOT ONLY THE DAWN SHIELD. UNDER THE HOOD: EVERY SHIELD IS ONE LIST, SO A NEW HERO\'S SHIELD IS ONE LINE.'],
+  ['0.644', 'A NEW HERO, LIGNUM THE FELLER: STEPPING OUT OF THE WOODS, HIS NEXT STRIKE HITS HARDER AND QUICKENS HIM. HE CHOPS TWICE, THROWS A HAND AXE AND PULLS HIMSELF TO IT, HARDENS HIS SKIN LIKE BARK (TWICE AS WELL BESIDE A PINE), AND FELLS A PINE ACROSS A FIGHT: THE TRUNK KNOCKS UP WHOEVER IT LANDS ON AND LIES THERE A FEW SECONDS AS A WALL. HIS LAST FOREST SKIN IS ON THE SKINS SCREEN.'],
+  ['0.643', 'UNDER THE HOOD: EVERY BUILDING IS ONE PLAIN ENTRY THAT SAYS WHAT IT DOES, AND THE GOLD PUMP SHEDS TWO UPGRADES NOBODY COULD BUY, SO THE GAME LOADS A LITTLE LESS ART.'],
+  ['0.642', 'A HERO WITH NO SPLASH ART YET STANDS IN CHAMP SELECT ON A PAINTED SNOWY NIGHT, PINES AND A GLOW BEHIND THEM, INSTEAD OF A BLOWN UP SPRITE.'],
+  ['0.641', 'FALCO\'S HAWK CAN BE CUT DOWN WHILE IT IS OUT: THE RIVAL WHO DOES IT IS PAID, AND HE IS WITHOUT IT FOR TEN SECONDS. ON ITS WAY OUT IT NOW FLIES PAST SOLDIERS TO THE HERO.'],
+  ['0.640', 'UNDER THE HOOD: THE CHECK EVERY CHANGE RUNS NOW CATCHES A DEVELOPER GUIDE THAT NAMES CODE WHICH IS GONE, AND THE GUIDES CALL A PLAYER A HERO.'],
+  ['0.639', 'A NEW HERO, MARIS THE ICE DIVER: SHE THROWS A HARPOON THAT ROOTS A RIVAL AND REELS HERSELF IN, BRACES TO TAKE LESS DAMAGE WITH RIVALS CLOSE, PULLS A COLD UNDERTOW THAT SLOWS HARDER ON ICE, AND DIVES UNDER THE SNOW TO BURST UP UNDER RIVALS AND BREAK THE ICE. SHE SWIMS OPEN WATER AND MOVES FASTER COLD. HER ORCA SKIN IS ON THE SKINS SCREEN.'],
+  ['0.638', 'A BOT\'S NAME TAG, ITS SEAT ON THE EAGLE AND THE DEATH RECAP NAME IT BY ITS HERO, AS TAB AND THE PODIUM DO.'],
+  ['0.637', 'UNDER THE HOOD: A PLAYER\'S GOLD IS ONE NUMBER INSTEAD OF A ONE-ITEM BAG, SO ONLINE MATCHES SEND A LITTLE LESS FOR EVERY PLAYER.'],
+  ['0.636', 'A NEW HERO, FALCO THE KESTREL: HIS HAWK FLIES OUT AND MARKS A RIVAL, HIS THROWN KNIVES BITE HARDER ON THE MARK, HE GLIDES OVER ANYONE IN HIS WAY, AND HE DROPS OUT OF THE SKY ON A MARKED HERO.'],
+  ['0.635', 'THE VICTORY AND DEFEAT PODIUM AND THE MATCH SCORES NAME BOTS BY THEIR HERO, AS TAB DOES; RUPES\'S SHOULDER STUNS AGAINST A TREE OR A WALL (THE MAP HAS NO ROCKS).'],
+  ['0.634', 'IN ONLINE MATCHES THE HOST NOW IGNORES BROKEN OR TAMPERED CONTROLS FROM ANOTHER PLAYER, SO A BAD CONNECTION OR A CHEAT CANNOT FREEZE THE MATCH.'],
+  ['0.633', 'THE EAGLE\'S BAR NO LONGER SHOWS BEHIND THE VICTORY PODIUM.'],
+  ['0.632', 'A NEW HERO, VELOX THE SKATER: SHE THROWS HER SLING WHILE SHE SKATES, EVERY HIT QUICKENS HER, SHE LAYS HER OWN STRIP OF ICE TO FLY ALONG, AND HER STONES SKIP TO HIT AGAIN.'],
+  ['0.631', 'THE END SCREENS OFFER ONE BUTTON, LOBBY: A DECIDED MATCH HAS NOTHING LEFT TO WATCH OR PLAY ON. THE OLD TUTORIAL PANEL AND THE UNUSED DAYS STAT ARE GONE.'],
+  ['0.630', 'ONLINE, OTHER PLAYERS KEEP THEIR AXE IN HAND THROUGH THE WHOLE SWING, AS THEY DO ON THE HOST\'S SCREEN.'],
+  ['0.629', 'SETTINGS OPEN ON THE PARTY SCREEN CLOSE WHEN CHAMP SELECT STARTS.'],
+  ['0.628', 'WHEN MATCHMAKING PUTS TWO PARTIES TOGETHER, THE LEADER WITH THE FASTEST PC NOW HOSTS THE MATCH, SO A SLOW LAPTOP NO LONGER CARRIES ALL TEN PLAYERS.'],
+  ['0.627', 'UNDER THE HOOD: BOTS LOSE TWO OLD JOBS THEY NEVER TOOK IN A 5V5, AND THE BOT VIEW COLOURS EVERY GOAL THEY CAN HAVE.'],
+  ['0.626', 'A FLEEING DEER OR RABBIT WITH NO HERO ON THE GROUND FINISHES ITS RUN INSTEAD OF STEERING AWAY FROM THE HOST\'S HERO.'],
+  ['0.625', 'A GEAR ON THE TITLE AND PARTY SCREENS OPENS THE SETTINGS BEFORE A MATCH.'],
+  ['0.624', 'UNDER THE HOOD: THE CHECK EVERY CHANGE RUNS NOW CATCHES SPRITES AND SOUNDS NOTHING USES, SO THE GAME STAYS LEAN.'],
+  ['0.623', 'ONLINE MATCHES SEND ABOUT A FIFTH LESS DATA TO EACH PLAYER, AND A TEN-PLAYER ONLINE TEST NOW RUNS ON EVERY NETWORK CHANGE.'],
+  ['0.622', 'A NEW HERO, FABER THE TINKER: HE SETS DOWN SMALL CLOCKWORK MACHINES THAT SHOOT NEARBY RIVALS, A SPARK THAT JUMPS TO A SECOND RIVAL, A CLOCKSPRING TRAP THAT HOLDS A HERO, AND THE OLD ENGINE, A BIG MACHINE THAT WALKS WHERE HE POINTS AND SLAMS THE GROUND. MACHINES BROKEN NEAR HIM DROP SPARE PARTS. HIS WORKS FOREMAN SKIN IS ON THE SKINS SCREEN.'],
+  ['0.621', 'ABILITY DETAILS HAVE THEIR OWN KEY, ALT, SO READING A CARD NO LONGER SLIDES YOUR HERO; REBIND IT ON THE CONTROLS PAGE.'],
+  ['0.620', 'UNDER THE HOOD: THE OLD SURVIVAL TOOL TABLE IS GONE. THE AXE STILL COMES OUT FOR A TREE OR A RIVAL BUILDING, EXACTLY AS BEFORE.'],
+  ['0.619', 'UNDER THE HOOD: THE BODY BAKE REPRODUCES THE GAME\'S FRAMES AGAIN; RUPES\'S ICE CELLAR ROLL NOW WEARS HIS OWN COAT.'],
+  ['0.618', 'ON STEAM YOUR NAME STARTS AS YOUR STEAM NAME, UNTIL YOU PICK ONE.'],
+  ['0.617', 'THE JOIN CHECK OPENS PARTIES FROM QUICKPLAY BY NAME, SO A FRESH PROFILE WITH FIRST MATCH ON TOP NO LONGER BREAKS IT.'],
+  ['0.616', 'A NEW HERO, NIX THE SNOWBLIND: THE VALLEY\'S NIGHT SCOUT THROWS AN ICE SHARD THAT FLIES BACK TO HER HAND, HIDES IN HER OWN SNOW CLOUD, STEPS BEHIND A RIVAL SHE HIT, AND VANISHES IN A SQUALL TO STRIKE THE NEAREST HERO. SHE IS FASTER AT NIGHT.'],
+  ['0.615', 'A NEW HERO, BUCINA THE HORN: HER HORN SHOVES RIVALS BACK, RALLIES HER SIDE TO ATTACK FASTER AND STAND FIRM, ECHOES OFF WALLS TO STUN, AND SHAKES THE SNOW OFF THE PINES ONTO RIVALS UNDER THEM.'],
+  ['0.614', 'UNDER THE HOOD: THE LAST PIECES OF THE OLD SURVIVAL GAME THAT NOTHING REACHED ANY MORE (THE FLOCK OF BIRDS, DEAD TREES, ICE HOLES THAT REFROZE AT DAWN, THE STONE CAIRN) ARE GONE.'],
+  ['0.613', 'THE ROADMAP NO LONGER LISTS THREE THINGS THAT ALREADY SHIPPED: JOIN GAME ON A STEAM FRIEND, PARTIES MATCHED AGAINST PARTIES, AND PARTIES IN THE PRACTICE TOOL.'],
+  ['0.612', 'ONLINE, THE WARNING LINES AND SHAPES OTHER PLAYERS\' ABILITIES DRAW BEFORE THEY FIRE NOW POINT WHERE THEY ARE AIMING, SO YOU CAN DODGE THEM.'],
+  ['0.611', 'A CLICK PUTS THE DEATH RECAP AWAY, AND BOTS GO BY THEIR HERO\'S NAME ON THE TAB BOARD.'],
+  ['0.610', 'THE E KEY IS CALLED USE, A TOOLTIP LINE TOO LONG FOR ITS PANEL WRAPS INSTEAD OF RUNNING OFF IT, THE WIKI\'S HERO PAGE IS CALLED HEROES AND SHOWS EVERY LINE OF AN ABILITY, AND SEVERAL ABILITY AND ITEM LINES NOW SAY EXACTLY WHAT THEY DO.'],
+  ['0.609', 'A NEW HERO, VARRO THE WOLF-KEPT: HE LEAPS IN AND MARKS ONE RIVAL, HOWLS THE CROWD BACK, AND CALLS THREE WOLVES OUT OF THE PINES TO HUNT THEM DOWN.'],
+  ['0.608', 'ONLINE, BOTS ON ANY SIDE WITH A PLAYER ON IT NOW PLAY AS ALLIES: THEY ESCORT AND BACK UP THE NEAREST PERSON ON THEIR SIDE, GUESTS TOO, AND BOTH SIDES GET THE SAME BOTS.'],
+  ['0.607', 'RUPES HOLDS HIS ICE MAUL BY THE END OF THE HAFT, SO ITS HEAD SWINGS OUT AND NEVER COVERS HIS FACE.'],
+  ['0.606', 'HEROES NO LONGER HIDE THEIR FACES BEHIND THEIR WEAPONS: BLADES ARE HELD BY THE HILT, AND ANYTHING RAISED GOES BEHIND THE HEAD.'],
+  ['0.605', 'WAVES ARE LIKE LEAGUE NOW: THREE MELEE SOLDIERS, THEN THREE RANGED ONES THAT THROW SNOWBALLS, AND A SIEGE CATAPULT EVERY THIRD WAVE THAT HITS TOWERS HARD. A RANGED LAST HIT PAYS LESS AND A SIEGE ONE MORE, SO A 2800 ITEM STILL COMES AT ABOUT 5:00.', 'wave-soldiers'],
+  ['0.604', 'A PARTY WITH FRIENDS IN IT CAN NO LONGER SWITCH TO 1V1, WHICH IS A QUEUE FOR ONE PLAYER.'],
+  ['0.603', 'UNDER THE HOOD: OLD SPRITES AND SOUNDS NOTHING USED ANY MORE ARE GONE, SO THE GAME LOADS A LITTLE LESS.'],
+  ['0.602', 'A LOST MATCH NOW SAYS YOUR EAGLE WAS DRIVEN OFF, THE TAB SCOREBOARD AND THE MAP SHOW THE MATCH CLOCK INSTEAD OF A DAY, AND THE POST-GAME STATS COUNT DAMAGE TO HEROES AND STRUCTURES.'],
+  ['0.601', 'A 1V1 QUEUE ON THE TITLE SCREEN: YOU AGAINST ONE RIVAL, OR A BOT IF NOBODY IS LOOKING, ON THE MID LANE ALONE, AND THE FIRST TO DRAW FIRST BLOOD, LAST HIT 100 SOLDIERS OR TAKE A TOWER WINS.'],
+  ['0.600', 'ONLINE, EVERY PLAYER NOW HEARS THE ALARM AND SEES THE PLATE WHEN THEIR OWN EAGLE IS STRUCK OUT OF SIGHT, NOT ONLY THE HOST.'],
+  ['0.599', 'A NEW HERO, RUPES THE AVALANCHE: THE HITS HE TAKES PACK SNOW ONTO HIM, HE SHEDS IT IN ONE BURST, AND HIS ROLL GROWS INTO A SNOWBALL THAT FLATTENS A FIGHT.'],
+  ['0.598', 'UNDER THE HOOD: THE ART NOTES NO LONGER SAY THE NEWER HEROES WEAR THE WARRIOR IN THEIR PORTRAIT; THEY WEAR THEIR OWN.'],
+  ['0.597', 'UNDER THE HOOD: ABOUT 130 MB OF OLD ART, CLIPS AND SOUNDS FROM CUT SYSTEMS LEFT THE PROJECT; NOTHING IN THE GAME LOOKS OR SOUNDS DIFFERENT.'],
+  ['0.596', 'A NEW HERO, HIEMS THE LONG WINTER: EVERY HIT SHE LANDS CHILLS, THE THIRD CHILL FREEZES A RIVAL IN PLACE, AND SHE LAYS CLEAR ICE, SNAPS THE CHILLED INTO ROOTS AND WALKS IN A WHITEOUT THAT BLINDS WHOEVER IS CAUGHT IN IT. HER FIRST FROST SKIN IS ON THE SKINS SCREEN.'],
+  ['0.595', 'THE PLAYER WHO HOSTS AN ONLINE MATCH SPENDS ABOUT A THIRD AS LONG SENDING THE WORLD TO EVERYONE ELSE, SO A HOST ON A SLOWER PC KEEPS ITS FRAME RATE.'],
+  ['0.594', 'NEW PLAYERS GET A FIRST MATCH ON THE TITLE: A REAL 5V5 AGAINST EASY BOTS WITH A SMALL CARD TEACHING MOVE, SHOP, ABILITIES, LAST HITS, RECALL AND TOWERS (HOLD SHIFT FOR DETAIL, X TO TURN IT OFF), AND RANKED UNLOCKS AFTER 3 FINISHED MATCHES.'],
+  ['0.593', 'UNDER THE HOOD: THE DESIGN NOTES NOW SAY WHAT A GOLD PUMP REALLY PAYS, 20 GOLD EVERY 10 SECONDS; NOTHING IN THE GAME CHANGES.'],
+  ['0.592', 'THE PRACTICE TOOL NOW PLAYS ON THE REAL MAP WITH LANES, WAVES, TOWERS AND CAMPS, THE BAR CAN TOGGLE WAVES AND TOWERS, SPAWN A WAVE AND RESPAWN CAMPS, AND ITS ARENA BUTTON TAKES YOUR PARTY TO THE OLD TRAINING FIELD WITH THE BELL ROUNDS AND BACK.'],
+  ['0.591', 'LUCERNA\'S LAMPLIGHT NOW ALSO LETS ALLIES STANDING IN IT SEE FURTHER AT NIGHT, UP TO A THIRD FURTHER IN FULL DARK.'],
+  ['0.590', 'THE HUNTER\'S GRAPPLE TOOLTIP NOW SAYS IT HOOKS A TREE; IT NEVER CAUGHT ON ROCKS.'],
+  ['0.589', 'WHEN A TOWER FALLS AND ITS ZIPLINE GETS SHORTER, ANYONE RIDING PAST THE NEW END NOW DROPS DOWN WHERE THEY ARE INSTEAD OF JUMPING BACK ALONG THE CABLE.'],
+  ['0.588', 'A PLAYER WHO WAS SHOWN OUT OF A PARTY AND TYPES ITS CODE AGAIN NOW LANDS BACK IN THEIR OWN PARTY, SEATS AND FIND MATCH READY, NOT ON AN EMPTY SCREEN.'],
+  ['0.587', 'A NEW HERO, LUCERNA THE LANTERN: HER CROOK PULLS A RIVAL IN, HER THROWN LANTERN BRINGS AN ALLY HOME, AND HER LIGHT SHOWS WHO HIDES NEAR HER.'],
   ['0.586', 'IN CHAMP SELECT, IF YOUR LAST HERO WAS BANNED, THE STAGE UNDER THE GRID STAYS EMPTY UNTIL YOU POINT AT A HERO INSTEAD OF SHOWING THE BANNED ONE.'],
   ['0.585', 'SOFTFALL IS PLAYED ON KEYBOARD AND MOUSE ONLY: GAMEPAD SUPPORT AND ITS SETTINGS PAGE ARE GONE, AND THE ARROW KEYS NOW SHOW WHICH CARD THEY PICK ON THE SKINS SCREEN.'],
   ['0.584', 'WHEN THE HOST LEAVES AN ONLINE MATCH, YOU SEE THE HOST LEFT AND THE LOBBY BUTTON AT ONCE, NOT A REPLAY OF YOUR LAST FOUR SECONDS.'],
@@ -633,8 +706,8 @@ function easeInOut(t) { t = Math.max(0, Math.min(1, t)); return t < 0.5 ? 4 * t 
 // is the authored frame's top for the logo (frameTop, core.js)
 function menuLayout() {
   const toy = frameTop();
-  const n = MENU_ITEMS.length;
-  const rects = MENU_ITEMS.map((label, i) => {
+  const items = menuItems(), n = items.length;
+  const rects = items.map((label, i) => {
     const w = pixelTextWidth(label, MENU_TXT_SCALE) + 8, h = 7 * MENU_TXT_SCALE + 4;
     return { x: Math.round((VIEW_W - w) / 2), y: VIEW_H - MENU_BOTTOM - (n - i) * MENU_TXT_PITCH, w, h };
   });
@@ -656,7 +729,7 @@ function menuHit() {
 // every word, nothing is lit
 function menuSelect(i) {
   const m = state.menu;
-  const N = MENU_ITEMS.length;
+  const N = menuItems().length;
   const n = ((i % N) + N) % N;
   m.keyNav = true;
   if (n === m.sel) return;
@@ -667,9 +740,12 @@ function menuSelect(i) {
 // by the word, not the place
 function menuActivate(i) {
   SFX.unlock();
-  const it = MENU_ITEMS[i];
-  if (it === 'QUICKPLAY') beginParty('quick'); // the party lobby (js/ui/rooms.js)
+  const it = menuItems()[i];
+  if (menuShut(it)) { SFX.deny(); state.menu.shutFx = 0.3; return; } // RANKED, still locked: the lock shakes
+  if (it === 'FIRST MATCH') beginParty('guide'); // QUICKPLAY against EASY bots with the coach (js/ui/guide.js)
+  else if (it === 'QUICKPLAY') beginParty('quick'); // the party lobby (js/ui/rooms.js)
   else if (it === 'RANKED') beginParty('ranked');
+  else if (it === '1V1') beginParty('onevone'); // you alone, one hero a side on the mid road (js/sim/onevone.js)
   else if (it === 'PRACTICE TOOL') beginParty('practice'); // the field with friends or alone: the party first (js/ui/rooms.js)
   else if (it === 'QUIT') steamBridge.quit(); // the app closes (desktop/main.js, win:quit)
 }
@@ -692,6 +768,22 @@ function leavePractice() {
   };
 }
 
+// ---- the gear: the ESC slab's pages before a match
+// a gear top right of the title (left of the purse) and of the party screen
+// (on the social column's head, under the add-friend), opening the settings
+// bare, slid up from the foot as in a match
+const SET_GEAR = ['...###...', '.#.###.#.', '.#######.', '###...###', '###...###', '###...###', '.#######.', '.#.###.#.', '...###...'];
+function gearShown() { const m = state.menu; return m.screen === 'menu' || (m.screen === 'room' && m.roomsT >= 1); }
+function gearRect() {
+  if (state.menu.screen === 'room') { const R = socialRect(); return { x: R.x + R.w - SOCIAL_PAD - 9, y: 26, w: 9, h: 9 }; }
+  const c = coinTagRect(); return { x: c.x - 17, y: 4, w: 9, h: 9 };
+}
+function overGear() { return !state.menu.panel && gearShown() && overRect(gearRect(), 3, 3); }
+function drawGear() { if (gearShown()) { const r = gearRect(); frBmp(r.x, r.y, SET_GEAR, overGear() ? '#ffd95c' : '#9fb6d8'); } }
+// the slab stands centred on what it covers: the party screen's room left of
+// the social column, else the view (relayout's place, put back as it goes)
+function slabCentre(room) { placeSlab(room ? VIEW_W - socialW() : VIEW_W); }
+function openMenuPanel(k) { const m = state.menu; slabCentre(m.screen === 'room'); m.panel = k; m.panelT = 0; m.closing = false; SFX.ui(true); }
 function closeMenuPanel() {
   const m = state.menu;
   if (!m.panel || m.closing) return;
@@ -713,6 +805,11 @@ function menuKey(e) {
   const m = state.menu;
   const k = e.key.toLowerCase();
   if (state.fade) return; // a reroll is already leaving
+  if (m.panel) { // over the title or the party screen (the gear)
+    if (k === 'escape' || k === 'backspace' || (m.panel !== 'settings' && (k === 'enter' || k === ' '))) closeMenuPanel();
+    else if (m.panel === 'settings') settingsKey(k); // the arrows page and scroll it (js/panels.js)
+    return;
+  }
   if (m.screen === 'wiki') { if (m.wikiT >= 1) wikiKey(k); return; }
   if (m.screen === 'notes') { if (m.notesT >= 1) notesKey(k); return; }
   if (m.screen === 'hero') { if (m.popT >= 1) heroKey(k); return; }
@@ -720,11 +817,6 @@ function menuKey(e) {
   if (m.screen === 'skins') { if (m.skinT >= 1) skinsKey(k); return; }
   if (m.screen === 'room') { if (m.roomsT >= 1) roomKey(k, e); return; } // the party lobby (js/ui/rooms.js)
   if (m.screen === 'profile') return; // its keys arrive through profileKey (input.js), never here
-  if (m.panel) {
-    if (k === 'escape' || k === 'backspace' || (m.panel !== 'settings' && (k === 'enter' || k === ' '))) closeMenuPanel();
-    else if (m.panel === 'settings') settingsKey(k); // the arrows page and scroll it (js/panels.js)
-    return;
-  }
   if (moveDir(k) === 'up') menuSelect(m.sel - 1);
   else if (moveDir(k) === 'down') menuSelect(m.sel + 1);
   else if (k === 'enter' || k === ' ') { m.pressT = 0.12; menuActivate(m.sel); }
@@ -735,6 +827,13 @@ function menuClick() {
   SFX.unlock();
   if (state.fade) return;
   if (friendCardClick()) return; // a Steam friend's invite card (js/ui/friends.js)
+  if (m.panel) {
+    if (!menuPanelReady()) return;
+    if (m.panel === 'settings' && overMenuPanel()) { mouse.down = true; settingsMouseDown(); return; }
+    if (!overMenuPanel()) closeMenuPanel();
+    return;
+  }
+  if (overGear()) { openMenuPanel('settings'); return; }
   if (m.screen === 'wiki') { wikiClick(); return; }
   if (m.screen === 'notes') { notesClick(); return; }
   if (m.screen === 'hero') { heroClick(); return; }
@@ -742,12 +841,6 @@ function menuClick() {
   if (m.screen === 'skins') { skinsClick(); return; }
   if (m.screen === 'room') { roomClick(); return; }
   if (m.screen === 'profile') { profileClick(); return; }
-  if (m.panel) {
-    if (!menuPanelReady()) return;
-    if (m.panel === 'settings' && overMenuPanel()) { mouse.down = true; settingsMouseDown(); return; }
-    if (!overMenuPanel()) closeMenuPanel();
-    return;
-  }
   if (overProfileTag()) { beginProfile(); return; }
   if (overCoinTag()) { beginSkins(); return; }
   if (overPatchTag()) { beginNotes(); return; }
@@ -818,7 +911,8 @@ function updateTitle(dt) {
   updateRooms(dt);
   // a word lights under the pointer, or as the keys' pick until the pointer moves
   const hit = !m.panel && m.screen === 'menu' && mouse.inside ? menuHit() : -1;
-  for (let i = 0; i < MENU_ITEMS.length; i++) {
+  if (m.shutFx > 0) m.shutFx -= dt;
+  for (let i = 0; i < menuItems().length; i++) {
     const target = hit === i || (m.keyNav && m.sel === i) ? 1 : 0;
     // `|| 0` because the array's length is a literal in core.js: a missing
     // cell would go NaN here and take its whole row off the screen
@@ -853,7 +947,7 @@ function updateTitle(dt) {
   if (m.panel) {
     if (m.closing) {
       m.panelT -= dt / PANEL_SLIDE_T;
-      if (m.panelT <= 0) { m.panelT = 0; m.panel = null; m.closing = false; }
+      if (m.panelT <= 0) { m.panelT = 0; m.panel = null; m.closing = false; slabCentre(false); }
     } else m.panelT = Math.min(1, m.panelT + dt / PANEL_SLIDE_T);
   }
   titleWild(dt); // the ambient world: wildlife and the shoal keep living behind the menu (js/sim/wildlife.js)
@@ -1072,48 +1166,6 @@ function drawMenuSlab(x, y, w, h, a) {
   }
 }
 
-const helpPanelCv = document.createElement('canvas');
-helpPanelCv.width = SET_W; helpPanelCv.height = SET_H;
-function buildHelpPanel() {
-  const g = helpPanelCv.getContext('2d');
-  bakeFrostSlab(g, SET_W, SET_H, 'TUTORIAL');
-  const cols = [
-    [['WASD', 'MOVE'], ['SPACE', 'DODGE ROLL'], ['SHIFT', 'SLIDE'], ['1-4', 'CLASS ABILITIES'], ['CLICK', 'DRAW THE BOW'], ['E', 'CHOP MINE PICK'], ['RCLICK', 'PING']],
-    [['Q', 'EAT BERRY'], ['F', 'EAT FISH'], ['M', 'WORLD MAP'], ['TAB', 'SCOREBOARD'], ['SCROLL', 'ZOOM'], ['N', 'MUTE'], ['P', 'PAUSE']],
-  ];
-  for (let c = 0; c < 2; c++) {
-    let y = 24;
-    const x0 = c === 0 ? 14 : 134;
-    for (const [k, desc] of cols[c]) {
-      drawPixelText(g, k, x0, y, '#ffd95c');
-      drawPixelText(g, desc, x0 + 32, y, '#9fb6d8');
-      y += 10;
-    }
-  }
-  // divider + the rules of the frostlands
-  const ct = 'THE FROSTLANDS';
-  const cw = pixelTextWidth(ct);
-  const cx0 = Math.round((SET_W - cw) / 2);
-  drawPixelText(g, ct, cx0, 92, '#7a8bb8');
-  g.fillStyle = '#2c3a68';
-  g.fillRect(14, 95, cx0 - 22, 1); g.fillRect(cx0 + cw + 8, 95, SET_W - cx0 - cw - 22, 1);
-  const lines = [
-    ['GOLD IS THE ONLY CURRENCY', '#cfe0ff'],
-    ['TREES ROCKS AND GAME ALL PAY IT', '#9fb6d8'],
-    ['WALK THE ICE AND THE FISH COME UP', '#9fb6d8'],
-    ['RIVERS ARE FAST - CHAIN DODGES TO FLY', '#9fb6d8'],
-    ['NAMED PLACES ARE ON THE MAP - WOLVES DEN UP', '#ff9a8a'],
-    ['RIVALS SHARE THE MAP - ARROWS HURT THEM', '#ff9a8a'],
-  ];
-  let y = 106;
-  for (const [l, col] of lines) {
-    drawPixelText(g, l, Math.round((SET_W - pixelTextWidth(l)) / 2), y, col);
-    y += 11;
-  }
-  const hint = 'ESC BACK';
-  drawPixelText(g, hint, Math.round((SET_W - pixelTextWidth(hint)) / 2), 190, '#5a6690');
-}
-
 // ---- lobby --------------------------------------------------------
 // The HERO SELECT (menu.screen = 'lobby'), where a party's FIND MATCH lands
 // (js/ui/rooms.js) and every member follows (netPhase 'pick'): League's champ
@@ -1138,7 +1190,7 @@ function buildHelpPanel() {
 // shapes carry it.
 const LOBBY_PANEL_W = 148;               // a side's column of seat rows at its widest, glued to its screen edge
 const LOBBY_PANEL_MIN = 104;             // ...and its narrowest: a narrow view drops grid columns before going under it
-const LOBBY_GUTTER = 24;                 // between a column and the grid: the seconds that point at your row
+const LOBBY_GUTTER = 30;                 // between a column and the grid: the seconds that point at your row (drawSeats: arrow and two 2x digits, 28 px)
 const LOBBY_ROW_MAX = 44;                // a seat row's tallest; a short view shrinks it...
 const LOBBY_ROW_MIN = 34;                // ...to this: the portrait disc and the three lines
 const LOBBY_HEAD = 44;                   // the band over the columns and the grid: the headline, the clock, the bans
@@ -1156,17 +1208,17 @@ function lobbyLayout() {
   const gw = gridW(cols), pw = Math.min(LOBBY_PANEL_W, Math.floor((VIEW_W - gw - 2 * LOBBY_GUTTER) / 2));
   // the chat bottom left: its plate on the foot, its lines over it
   const chat = { x: pad, w: pw - pad - 4, ty: VIEW_H - pad - TALK_H, lines: LOBBY_CHAT_LINES };
-  // the seat rows: five a side under the head, down to the chat (which
-  // keeps two lines at the least); yours in position order (TOP first), the
-  // rivals' in seat order
+  // the seat rows: five a side under the head (a 1V1's one), down to the
+  // chat (which keeps two lines at the least); yours in position order (TOP
+  // first), the rivals' in seat order; an empty seat is out of the match
   const room = chat.ty - 6 - 2 * TALK_PITCH - LOBBY_HEAD;
   const fh = Math.max(LOBBY_ROW_MIN, Math.min(LOBBY_ROW_MAX, Math.floor(room / (MAX_PLAYERS / 2))));
   chat.lines = Math.max(1, Math.min(LOBBY_CHAT_LINES, Math.floor((chat.ty - 6 - LOBBY_HEAD - fh * (MAX_PLAYERS / 2)) / TALK_PITCH)));
   const cards = [[], []];
   const mineTeam = player ? player.team : 0;
   const role = (p) => DRAFT.role[p.id] >= 0 ? DRAFT.role[p.id] : 9;
-  const ours = players.filter((p) => p.team === mineTeam).sort((p, q) => role(p) - role(q) || p.id - q.id);
-  for (const p of ours.concat(players.filter((p) => p.team !== mineTeam))) {
+  const ours = players.filter((p) => p.active && p.team === mineTeam).sort((p, q) => role(p) - role(q) || p.id - q.id);
+  for (const p of ours.concat(players.filter((p) => p.active && p.team !== mineTeam))) {
     const mine = p.team === mineTeam ? 1 : 0;
     const y = LOBBY_HEAD + cards[mine].length * fh;
     cards[mine].push({ x: mine ? 0 : VIEW_W - pw, y, w: pw, h: fh, p });
@@ -1402,6 +1454,7 @@ function beginLobby() {
   m.countT = 0; m.countN = -1; // every rival frame face-down again
   m.loreOn = false;            // the story starts shut
   m.lockFx = 0;
+  closeMenuPanel(); // a party member's settings slide away: the draft's clock is running
   draftStart(); // the bans, then everyone's pick (js/ui/draft.js)
   SFX.place();
   SFX.music.play('lobby');
@@ -1600,6 +1653,172 @@ const CLASS12 = [
     '..ovo.......',
     '...o........',
   ],
+  [ // LUCERNA: her lantern, lit, on its ring
+    '....oooo....',
+    '....o..o....',
+    '...oooooo...',
+    '...oggggo...',
+    '..ogWWWWgo..',
+    '..ogWWWWgo..',
+    '..ogWbbWgo..',
+    '..ogWWWWgo..',
+    '...oggggo...',
+    '....oooo....',
+    '............',
+  ],
+  [ // HIEMS: a six-armed snowflake
+    '.....o......',
+    '..o.oWo.o...',
+    '.oWooWooWo..',
+    '..oWoWoWo...',
+    '.ooooWoooo..',
+    'oWWWWWWWWWo.',
+    '.ooooWoooo..',
+    '..oWoWoWo...',
+    '.oWooWooWo..',
+    '..o.oWo.o...',
+    '.....o......',
+    '............',
+  ],
+  [ // RUPES: the snowball, its trail behind it
+    '....oooo....',
+    '..ooWWWWoo..',
+    '.oWWWWWWWbo.',
+    '.oWWWWWWbbo.',
+    'oWWWWWWWbbbo',
+    'oWWWWWWbbbbo',
+    'oWWWWWbbbbbo',
+    '.oWWbbbbbbo.',
+    '.obbbbbbbbo.',
+    '..oobbbboo..',
+    '....oooo....',
+    '............',
+  ],
+  [ // VARRO: a wolf's paw print
+    '...oo.oo....',
+    '..oWWoWWo...',
+    '.ooWWoWWoo..',
+    'oWWoo.ooWWo.',
+    'oWWoooooWWo.',
+    '.oooWWWooo..',
+    '..oWWWWWo...',
+    '.oWWWWWWWo..',
+    '.oWWWWWWWo..',
+    '..oWWoWWo...',
+    '...oo.oo....',
+    '............',
+  ],
+  [ // BUCINA: her horn, the bell to the right
+    '............',
+    '.........oo.',
+    '........ogWo',
+    '.......ogggo',
+    '..ooo.ogggGo',
+    '.ogggogggGo.',
+    'ogGoggggGo..',
+    'ogo.oGGGoo..',
+    '.o...ooo....',
+    '............',
+    '............',
+    '............',
+  ],
+  [ // NIX: the snowblind's goggles, two slits in a bone band
+    '............',
+    '............',
+    '............',
+    '.oooooooooo.',
+    'oWWWWWWWWWWo',
+    'oWooWWWWooWo',
+    'oWWWWooWWWWo',
+    '.oooo..oooo.',
+    '............',
+    '............',
+    '............',
+    '............',
+  ],
+  [ // FABER: a gear
+    '....ooo.....',
+    '.oo.oWo.oo..',
+    '.oWooWooWo..',
+    '..oWWWWWo...',
+    'ooWWoooWWoo.',
+    'oWWWo.oWWWo.',
+    'ooWWoooWWoo.',
+    '..oWWWWWo...',
+    '.oWooWooWo..',
+    '.oo.oWo.oo..',
+    '....ooo.....',
+    '............',
+  ],
+  [ // VELOX: a skate, its blade under it
+    '............',
+    '.oooo.......',
+    '.oWWo.......',
+    '.oWWo.......',
+    '.oWWooooo...',
+    '.oWWWWWWWo..',
+    '.oWWWWWWWWo.',
+    '.ooooooooo..',
+    '..o.....o...',
+    'oWWWWWWWWWWo',
+    '.oooooooooo.',
+    '............',
+  ],
+  [ // FALCO: a hawk stooping, wings folded back
+    '............',
+    '.o........o.',
+    '.oWo....oWo.',
+    '..oWo..oWo..',
+    '...oWooWo...',
+    '....oWWo....',
+    '....oWWo....',
+    '....oWWo....',
+    '...oWooWo...',
+    '....o..o....',
+    '............',
+  ],
+  [ // MARIS: her harpoon's barbed head
+    '........ooo.',
+    '.......oWWo.',
+    '......oWWWo.',
+    '.....oWWWo..',
+    '....oooWo...',
+    '...owo.o....',
+    '..owo.......',
+    '.owo........',
+    'owo.........',
+    'oo..........',
+    '............',
+    '............',
+  ],
+  [ // LIGNUM: his felling axe's broad bit on its haft
+    '..oooo......',
+    '.oWWWWo.....',
+    '.oWWWWoo....',
+    '..oWWowo....',
+    '...ooowo....',
+    '.....owo....',
+    '.....owo....',
+    '.....owo....',
+    '.....owo....',
+    '.....owo....',
+    '.....ooo....',
+    '............',
+  ],
+  [ // SAGITTA: a crossbow, prod up, the stock down
+    '............',
+    '.oooooooooo.',
+    'oWWWWWWWWWWo',
+    'oWooooooooWo',
+    'oWo.oWWo.oWo',
+    '.o..oWWo..o.',
+    '....oWWo....',
+    '...ooWWoo...',
+    '...oWWWWo...',
+    '...oWWWWo...',
+    '....oooo....',
+    '............',
+  ],
 ];
 const class12Cache = new Map();
 function classIcon12(i, you) {
@@ -1766,7 +1985,7 @@ function renderHero(now, a) {
     ctx.fillStyle = hot ? '#8fa0c8' : '#c89a3c'; ctx.fillRect(w.x, y, w.w, w.h);
     ctx.fillStyle = '#1a2142'; ctx.fillRect(w.x + 1, y + 1, w.w - 2, w.h - 2);
     ctx.drawImage(classAbIcon(player.cls, w.i, k), w.x + 3, y + 3);
-    drawPixelTextShadow(ctx, String(w.i + 1), w.x + 3, y + w.h - 9, '#ffd95c', '#0a0e23'); // the key, a keybind indicator
+    drawPixelTextShadow(ctx, keyCapShort('ab' + (w.i + 1)), w.x + 3, y + w.h - 9, '#ffd95c', '#0a0e23'); // the key, a keybind indicator
     if (keyed && m.grow === w.i) { // keyboard cursor: four corner ticks, breathing
       ctx.globalAlpha = a * (0.7 + 0.3 * Math.sin(now * 6));
       ctx.fillStyle = '#f4f7ff';
@@ -1874,7 +2093,14 @@ function renderTitle(now) {
     const pressed = m.sel === i && (m.pressT > 0 || (mouse.down && menuHit() === i));
     const y = r.y + 2 + Math.round((1 - inT) * 8) + Math.round(out * 25) - Math.round(hv) + (pressed ? 1 : 0);
     ctx.globalAlpha = a;
-    drawPixelTextOutline(ctx, MENU_ITEMS[i], r.x + 4, y, hv > 0.5 ? '#ffd95c' : '#f4f7ff', 'rgba(8,12,28,0.9)', MENU_TXT_SCALE);
+    const label = menuItems()[i];
+    if (menuShut(label)) { // RANKED, locked: grey, its lock before it and the matches it waits for after
+      const sh = m.shutFx > 0 ? Math.round(Math.sin(m.shutFx * 60) * 2) : 0;
+      drawPixelTextOutline(ctx, label, r.x + 4, y, '#7d849a', 'rgba(8,12,28,0.9)', MENU_TXT_SCALE);
+      drawRankedLock(r.x - 10 + sh, y, 'rgba(8,12,28,0.9)', 2); // its shadow
+      drawRankedLock(r.x - 11 + sh, y - 1, hv > 0.5 ? '#ffd95c' : '#7d849a', 2);
+      drawRankedPips(r.x + r.w + 2, y + 3, 2);
+    } else drawPixelTextOutline(ctx, label, r.x + 4, y, hv > 0.5 ? '#ffd95c' : '#f4f7ff', 'rgba(8,12,28,0.9)', MENU_TXT_SCALE);
     ctx.globalAlpha = 1;
   }
 
@@ -1888,6 +2114,7 @@ function renderTitle(now) {
     if (phot) { ctx.fillStyle = '#c89a3c'; ctx.fillRect(pr.x, pr.y + 7, pr.w, 1); }
     drawProfileTag(); // your name and its quill, opposite corner: the way to the profile card
     drawCoinTag();    // the purse, top-right: the way into the skins screen
+    drawGear();       // ...and the settings beside it
     ctx.globalAlpha = 1;
   }
 
@@ -1910,7 +2137,6 @@ function renderTitle(now) {
   // sub-panels slide up from the bottom edge over the still-visible world
   if (m.panel) {
     const slide = Math.round((1 - easeOut(m.panelT)) * (VIEW_H - SET_Y + 6));
-    if (m.panel === 'settings') renderSettings(now, { bare: true, slide });
-    else ctx.drawImage(helpPanelCv, SET_X, SET_Y + slide);
+    renderSettings(now, { bare: true, slide }); // the one sub-panel: the gear's settings
   }
 }

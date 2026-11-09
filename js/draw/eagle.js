@@ -302,7 +302,7 @@ function drawEagle(e, ex, ey, now) {
         if (!p.active || !p.aboard || p.team !== e.team) continue;
         const [dx, dy] = seatAt(EAGLE_SEATS[p.seat % EAGLE_SEATS.length]);
         drawSeated(classSet(p), rd, sx + dx, sy + breath + dy, 1);
-        seatedName(classSet(p), rd, sx + dx, sy + breath + dy, 1, p.name, p.team);
+        seatedName(classSet(p), rd, sx + dx, sy + breath + dy, 1, boardName(p), p.team);
       }
       if (player.aboard && player.team === e.team && state.mode === 'play' && !state.dropBrief) {
         const ph = (now * 1.2) % 1;
@@ -320,8 +320,10 @@ function drawEagle(e, ex, ey, now) {
       // in even health segments like every hp bar, but big and few: the
       // objective's bar reads from across the clearing, so PERCH_BAR_SEGS
       // is set here rather than asked of hpSegCount (which would split
-      // EAGLE_HP into a comb of 2 px blocks)
-      drawPerchBar(e, sx, sy - Math.round(vh) - 6, now);
+      // EAGLE_HP into a comb of 2 px blocks). An end screen's frozen world
+      // wears no tells (endScreen; the bodies skip theirs the same way), so
+      // the bar never runs behind the podium
+      if (!endScreen()) drawPerchBar(e, sx, sy - Math.round(vh) - 6, now);
     }
   }
   // the impact shockwave: two rings racing out over the crater, then gone -

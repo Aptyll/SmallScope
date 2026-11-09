@@ -23,7 +23,7 @@
 // what a click would do can never be two different things.
 const TIP_PAD = 4;      // frame edge to content
 const TIP_ROW = 8;      // pitch of a stat row
-const TIP_MAXW = 168;   // wraps nothing; long lines are authored to fit
+const TIP_MAXW = 168;   // a note past it wraps (tipFit); a row never does
 const TIP_LABEL = '#8c919a';
 const TIP_DIM = '#b4b8bf';
 let tipNow = null;      // this frame's descriptor, resolved once in render()
@@ -41,11 +41,13 @@ const AB_RANK_STAT = {
   dmg: ['DAMAGE', tipNum, ''], shove: ['SHOVE DAMAGE', tipNum, ''], cut: ['FRONT DAMAGE CUT', tipCent, '%'],
   slow: ['SLOW', (v) => tipCent(1 - v), '%'], slowT: ['SLOW FOR', tipNum, 'S'], stun: ['STUN', tipNum, 'S'],
   root: ['ROOT', tipNum, 'S'], up: ['KNOCK UP', tipNum, 'S'], t: ['LASTS', tipNum, 'S'],
-  armor: ['ARMOR', tipNum, ''], ten: ['TENACITY', tipCent, '%'], heal: ['HEALS OF MOST HP', tipCent, '%'],
-  mark: ['MARKED FOR', tipNum, 'S'], shieldHp: ['SHIELD OF MOST HP', tipCent, '%'],
+  ward: ['DAMAGE CUT', tipCent, '%'], // MARIS's BRACE FOR COLD, LIGNUM's BARK SKIN
+  chop: ['CHOP DAMAGE', tipNum, ''], // LIGNUM's CHOP, its second blow (js/sim/lignum.js)
+  armor: ['ARMOR', tipNum, ''], ten: ['TENACITY', tipCent, '%'], heal: ['HEALS % MAX HEALTH', tipCent, '%'],
+  mark: ['MARKED FOR', tipNum, 'S'], shieldHp: ['SHIELD % MAX HEALTH', tipCent, '%'],
   missing: ['OF HP ALREADY LOST', tipCent, '%'], bonus: ['MOST EXTRA', tipNum, ''],
   burn: ['BURN A SECOND', tipNum, ''], walk: ['WALKS FASTER', (v) => tipCent(v - 1), '%'],
-  markDmg: ['MARKED HIT DAMAGE', tipNum, ''], hp: ['HEALS', tipNum, ''], hps: ['HEALS A SECOND', tipNum, ''], shield: ['SHIELD', tipNum, ''], shot: ['DAMAGE x', tipNum, ''], ambush: ['AMBUSH SHOT x', tipNum, ''],
+  markDmg: ['MARKED HIT DAMAGE', tipNum, ''], hp: ['HEALS', tipNum, ''], wolfHp: ['WOLF HEALTH', tipNum, ''], hps: ['HEALS A SECOND', tipNum, ''], shield: ['SHIELD', tipNum, ''], as: ['ATTACK SPEED', tipCent, '%'], shot: ['DAMAGE x', tipNum, ''], ambush: ['AMBUSH SHOT x', tipNum, ''],
 };
 const TIP_RANK_ON = '#f2cc6a';
 // one ranked value as a row's value: plain text when it never changes, else
@@ -73,8 +75,8 @@ function tipAttack(p) {
   const d = { title: A.name, tcol: '#f4f7ff', kind: 'BASIC ATTACK', rows: [], notes: [],
     icon: SPRITES.weaponArt[A.art], plate: tp.plate, rim: tp.rim };
   d.rows.push(['DAMAGE', String(attackDmg(p, 1, false)), '#e0637a']);
-  d.rows.push(['FULL DRAW', tipSec(drawTime(p)), '#f4f7ff']);
-  d.rows.push(['RENOCK', tipSec(attackCycle(p)), '#f4f7ff']);
+  d.rows.push(['FULL CHARGE', tipSec(drawTime(p)), '#f4f7ff']);
+  d.rows.push(['BETWEEN HITS', tipSec(attackCycle(p)), '#f4f7ff']);
   const reach = A.cut ? A.cut.reach : (() => { const f = shotFlight(A.shot, 1); return Math.round(f.spd * f.life); })();
   d.rows.push(['REACH', String(reach), '#f4f7ff']);
   return d;
@@ -92,7 +94,7 @@ function tipRail(c) {
 }
 function tipGold() {
   return { title: 'GOLD', tcol: '#f5c542', kind: 'PURSE', icon: SPRITES.itemGold, plate: BAG_WELL, rim: '#3c4048',
-    rows: [['CARRIED', String(inv.gold), '#f5c542']], notes: [] };
+    rows: [['CARRIED', String(player.gold), '#f5c542']], notes: [] };
 }
 // a class ability well - the strip's in play (cls omitted: the local player's
 // class, live cooldown, the cast hint), or the lobby's stage (cls given:
@@ -108,11 +110,11 @@ function tipClassAb(i, cls, k) {
   // Read mid-fight, so the short card says only what decides a press: the
   // cooldown and the number a rank raises (a `rank` key given as a list), at
   // the rank you hold (rank 1 on a dark key or the lobby), and the row's one
-  // line (`tip`). Shift held - or ABILITY DETAILS on ALWAYS (settings.tipFull)
+  // line (`tip`). The DETAILS key held - or ABILITY DETAILS on ALWAYS (settings.tipFull)
   // - opens every rank's numbers on each row, the held rank lit gold, and the
   // hero level the next rank waits for. The pips on the well say the rank,
   // its sweep the wait.
-  const full = settings.tipFull || !!keys.shift;
+  const full = settings.tipFull || keyHeld('details');
   const lv = cls == null ? player.abLv[i] : 0;
   const hm = cls == null ? hasteMul(player) : 1;
   const val = (v, fmt, unit) => (full ? tipRanks(v, lv, fmt, unit) : fmt(rankAt(v, lv)) + unit);
@@ -174,7 +176,13 @@ function tipAt(mx, my) {
   return null;
 }
 // resolved once a frame, before anything that has to lay out around it
-function tipResolve() { tipNow = tipAt(mouse.x, mouse.y); }
+function tipResolve() { tipNow = tipFit(tipAt(mouse.x, mouse.y)); }
+// a note wider than the panel breaks onto more lines (wrapText), so no
+// ability, item or translation runs out of the frame
+function tipFit(d) {
+  if (d && d.notes) d.notes = d.notes.flatMap(([t, col]) => (pixelTextWidth(t) > TIP_MAXW ? wrapText(t, TIP_MAXW).map((l) => [l, col]) : [[t, col]]));
+  return d;
+}
 function tipSize(d) {
   const iw = d.icon ? d.icon.width + 3 : 0;
   let w = iw + pixelTextWidth(d.title);

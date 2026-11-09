@@ -151,8 +151,7 @@ const WIN_CROWN = [
 ];
 const WIN_CROWN_PAL = { '.': null, w: '#ffffff', g: '#f2cc6a', h: '#ffedb0', j: '#7ad4ff', d: '#b8912f' };
 // the stat glyphs with no sprite of their own: stacked chevrons for the hero
-// level, a clock face for the match time, a podium for where a loss placed
-// (gold and the bow are sprites). 'g' is the accent, 'o' the cold outline.
+// level and a clock face for the match time (gold and the bow are sprites). 'g' is the accent, 'o' the cold outline.
 const WIN_ICONS = {
   level: [
     '........', '...gg...', '..g..g..', '.g....g.',
@@ -161,10 +160,6 @@ const WIN_ICONS = {
   time: [
     '..oooo..', '.o....o.', 'o..h...o', 'o..h...o',
     'o..hhh.o', 'o......o', '.o....o.', '..oooo..',
-  ],
-  place: [
-    '........', '...gg...', '...oo...', '.oo.oo..',
-    '.oo.oo.o', '.oo.oo.o', '.oo.oo.o', 'oooooooo',
   ],
 };
 const WIN_ICON_PAL = { '.': null, g: '#f2cc6a', o: '#cfe0ff', h: '#ffd95c' };
@@ -616,7 +611,7 @@ function renderVictory(now) {
   if (t > WIN_T.crownLand) drawWinConfetti(now, t - WIN_T.crownLand, dim, tm);
 
   // --- the headline: VICTORY, one letter at a time ------------------------
-  const TXT = 'VICTORY', S = 4;
+  const TXT = tr('end.victory'), S = 4;
   const tw = pixelTextWidth(TXT, S);
   const tx0 = Math.round((VIEW_W - tw) / 2);
   for (let i = 0; i < TXT.length; i++) {
@@ -684,18 +679,10 @@ const DEF_T = {
 };
 const DEF_SLIDE = 0.32; // the plank's slide, finishing exactly on DEF_T.menu
 
-// Where the local player finished, and what it earned getting there: the four
-// columns the win prints, with the placing in front of them. That number is
-// the one thing a loss has to say that a win does not - "4/6" and not a word
-// of it, because the podium glyph beside it is the label. Who put the local
-// player down is the death headline's, not this screen's: the side lost.
-const DEF_STATS = [
-  { icon: 'place', roll: false, val: (w) => w.place + '/' + w.of },
-  { icon: 'gold', roll: true, val: (w) => String(w.gold) },
-  { icon: 'kills', roll: true, val: (w) => String(w.kills) },
-  { icon: 'level', roll: true, val: (w) => String(w.level) },
-  { icon: 'time', roll: false, val: (w) => clockTxt(w.time) },
-];
+// What the local player earned in the match: the four columns the win prints.
+// A side wins or loses together, so a loss has no placing of its own to add.
+// Who put the local player down is the death headline's, not this screen's.
+const DEF_STATS = WIN_STATS;
 
 function defCues(t0, t1) {
   if (!state.end) return;
@@ -876,7 +863,7 @@ function renderDefeat(now) {
   }
 
   // --- the headline: DEFEAT, one letter at a time, falling ----------------
-  const TXT = 'DEFEAT', S = 4;
+  const TXT = tr('end.defeat'), S = 4;
   const tw = pixelTextWidth(TXT, S);
   const tx0 = Math.round((VIEW_W - tw) / 2);
   for (let i = 0; i < TXT.length; i++) {

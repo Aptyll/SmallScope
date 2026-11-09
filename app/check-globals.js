@@ -15,7 +15,9 @@
 //     quietly rewires another's feature.
 // It also reports a js file index.html never loads, and one it loads twice.
 // It runs app/check-size.js too, so a file or function grown too big fails here,
-// and app/check-dead.js, so a top-level name nothing uses fails here.
+// app/check-dead.js, so a top-level name, a sprite, a sound cue or a sound
+// file nothing uses fails here, and
+// app/check-text.js, so a word missing from the text table fails here.
 //
 // It reads each file with a small tokenizer (strings, template literals,
 // comments and regex literals skipped, brackets tracked) and takes the
@@ -51,7 +53,8 @@ function jsFiles(dir, rel) {
 }
 
 // ---- the tokenizer ---------------------------------------------------------
-// Yields { t: 'id' | 'num' | 'str' | 'p', v, line } with comments dropped.
+// Yields { t: 'id' | 'num' | 'str' | 'p', v, line } with comments dropped. A
+// quoted string's v is its text; a template's or a regex's is ''.
 // A '/' starts a regex where an operand is expected: after a punctuator other
 // than ) ] }, after a keyword that takes an expression, or at the start.
 const REGEX_AFTER_KW = new Set(['return', 'typeof', 'instanceof', 'in', 'of', 'new', 'delete', 'void', 'throw', 'case', 'do', 'else', 'yield', 'await']);
@@ -90,9 +93,10 @@ function tokenize(src) {
       i = stop; continue;
     }
     if (c === '"' || c === "'") {
-      const at = line; i++;
+      const at = line, from = ++i;
       while (i < n && src[i] !== c) { if (src[i] === '\\') i++; else if (src[i] === '\n') line++; i++; }
-      i++; toks.push({ t: 'str', v: '', line: at }); continue;
+      // v: the quoted text as written (escapes left in), for app/check-text.js
+      toks.push({ t: 'str', v: src.slice(from, i), line: at }); i++; continue;
     }
     if (c === '`') { toks.push({ t: 'str', v: '', line }); i++; readTemplate(); continue; }
     if (c === '/' && regexOk()) {
@@ -271,15 +275,23 @@ function main() {
   // nor may a name sit there unused (app/check-dead.js)
   const dead = require('./check-dead.js').check();
   problems.push(...dead);
+  // and every word in the text table is real, drawable and used (app/check-text.js)
+  const text = require('./check-text.js').check();
+  problems.push(...text);
+  // and the docs name only code that exists (app/check-docs.js)
+  const docs = require('./check-docs.js').check();
+  problems.push(...docs);
   if (!problems.length) {
-    console.log(`globals ok: ${byName.size} top-level names across ${order.length} scripts, no collisions; sizes ok; no dead code`);
+    console.log(`globals ok: ${byName.size} top-level names across ${order.length} scripts, no collisions; sizes ok; no dead code; text ok; docs ok`);
     return 0;
   }
   for (const p of problems) console.log(p);
   console.log(`\n${problems.length} problem(s)` + (fatal ? ` - ${fatal} would throw when the page loads` : '') +
     (silent ? ` - ${silent} silently replace an earlier definition` : '') +
     (sizes.length ? ` - ${sizes.length} too big: split the file along its sections, or the function into named steps` : '') +
-    (dead.length ? ` - ${dead.length} never used: delete them` : ''));
+    (dead.length ? ` - ${dead.length} never used: delete them` : '') +
+    (text.length ? ` - ${text.length} in the text table (app/check-text.js)` : '') +
+    (docs.length ? ` - ${docs.length} doc line(s) name code that is gone: fix the doc (app/check-docs.js)` : ''));
   return 1;
 }
 module.exports = { tokenize, loadOrder, declarations };

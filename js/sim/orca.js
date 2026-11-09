@@ -77,7 +77,7 @@ function orcaPrey(p) { return !!p && p.active && !p.dead && !inAir(p) && !(p.zip
 function spawnOrca() {
   orcaWater = new Uint8Array(WORLD * WORLD);
   orcaHome = [];
-  if (PRACTICE) return;
+  if (ARENA) return;
   const c = Math.round((WORLD - 1) / 2), r = Math.ceil(ORCA_LAKE_R + 2);
   for (let ty = c - r; ty <= c + r; ty++) for (let tx = c - r; tx <= c + r; tx++) {
     if (!inWorld(tx, ty) || !orcaLakeAt(tx, ty)) continue;
@@ -221,7 +221,7 @@ function orcaBite() {
 // a blow that takes the whole of a body, its shield and its hide included,
 // and not a point more (the post-game record counts what landed)
 function orcaLethal(e) {
-  return e instanceof Player ? armorRaw(e, Math.ceil(e.hp + (e.dawnShield || 0))) : Math.ceil(e.hp);
+  return e instanceof Player ? armorRaw(e, Math.ceil(e.hp + shieldOf(e))) : Math.ceil(e.hp);
 }
 
 // the countdown over a player's head, in s left; -1 while the orca is not after them

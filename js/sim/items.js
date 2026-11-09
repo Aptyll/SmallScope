@@ -71,13 +71,13 @@ const ITEM_PASSIVES = {
   chill:    { name: 'CHILL', line: 'HITS SLOW FOR 1 S', mod: (k) => { k.chill = true; } },
   glide:    { name: 'GLIDE', line: 'FASTER ON ICE', mod: (k) => { k.iceMax *= 1.15; k.iceSteer += 0.3; } },
   drift:    { name: 'DRIFT', line: 'SEEN FROM CLOSER', mod: (k) => { k.stealth -= 0.15; } },
-  light:    { name: 'LIGHT', line: 'ROLL COMES BACK SOONER', mod: (k) => { k.dodgeCd -= 0.8; } },
-  ambush:   { name: 'AMBUSH', line: 'AMBUSH HITS LAND HARDER', mod: (k) => { k.ambushMul += 0.4; } },
-  leech:    { name: 'LEECH', line: 'HITS HEAL 10% OF THEMSELVES', mod: (k) => { k.leech = true; } },
+  light:    { name: 'LIGHT', line: 'DODGE COMES BACK SOONER', mod: (k) => { k.dodgeCd -= 0.8; } },
+  ambush:   { name: 'AMBUSH', line: 'SHOTS FROM SNOW COVER HIT HARDER', mod: (k) => { k.ambushMul += 0.4; } },
+  leech:    { name: 'LEECH', line: 'HEAL 10% OF YOUR HIT DAMAGE', mod: (k) => { k.leech = true; } },
   thorns:   { name: 'THORNS', line: 'HITTERS TAKE 20% BACK', mod: (k) => { k.thorns = true; } },
   cull:     { name: 'CULL', line: '+20% ON THE BADLY HURT', mod: (k) => { k.cull = true; } },
   steady:   { name: 'STEADY', line: 'STUNS AND SLOWS 30% SHORTER', mod: (k) => { k.steady = true; } },
-  surge:    { name: 'SURGE', line: 'AFTER A KEY, NEXT HIT +50%', mod: (k) => { k.surge = true; } },
+  surge:    { name: 'SURGE', line: 'AFTER AN ABILITY, NEXT HIT +50%', mod: (k) => { k.surge = true; } },
   brace:    { name: 'BRACE', line: 'UNDER 40% HEALTH: +15 ARMOR', mod: (k) => { k.brace = true; } },
   smolder:  { name: 'SMOLDER', line: 'BURNS RIVALS CLOSE BY', mod: (k) => { k.smolder = true; } },
   scorch:   { name: 'SCORCH', line: 'ABILITIES BURN', mod: (k) => { k.scorch = true; } },
@@ -250,7 +250,7 @@ function buyItem(p, id) {
   if (!Object.hasOwn(BUILD_ITEMS, id) || !merchNear(p)) { shopDeny(p); return false; }
   if (id === 'potion') return buyPotion(p);
   const c = itemCost(p, id);
-  if (p.inv.gold < c.gold || itemRoom(p, c.used) < 1 || bootsClash(p, id, c.used)) { shopDeny(p); return false; }
+  if (p.gold < c.gold || itemRoom(p, c.used) < 1 || bootsClash(p, id, c.used)) { shopDeny(p); return false; }
   spendGold(p, c.gold);
   for (const j of c.used) p.items[j] = null;
   p.items[p.items.indexOf(null)] = id;
@@ -350,7 +350,7 @@ function potionRoom(p) {
 }
 function buyPotion(p) {
   const price = BUILD_ITEMS.potion.price;
-  if (p.inv.gold < price || !potionRoom(p)) { shopDeny(p); return false; }
+  if (p.gold < price || !potionRoom(p)) { shopDeny(p); return false; }
   spendGold(p, price);
   if (potionSlot(p) < 0) { p.items[p.items.indexOf(null)] = 'potion'; p.potions = 0; }
   p.potions++;
@@ -410,8 +410,20 @@ const BOT_BUILDS = {
   FORTIVA: ['brand', 'mukluk', 'fang', 'stonehide', 'maul', 'collar'], // the hit first, the health to stay in the fight, then the legs to reach it
   IGNIA: ['marsh', 'emberb', 'storm', 'deeprod', 'slate', 'clock'], // the fire first: power, haste and the scorch, then the boots and more power
   BELLA: ['beartooth', 'quick', 'maul', 'feathers', 'sunstone', 'collar'], // the blade first: damage and its cut, then the speed to chain it
+  BUCINA: ['emberb', 'marsh', 'clock', 'slate', 'deeprod', 'storm'], // the keys' wait first, then the boots to lead the charge, then the armor up front
+  LUCERNA: ['emberb', 'clock', 'marsh', 'slate', 'deeprod', 'storm'], // the crook's wait first: haste, then the boots, then the armor she needs up front
   SALVIA: ['emberb', 'marsh', 'clock', 'deeprod', 'slate', 'storm'], // the heals first: haste and power for more of them, then the boots, then the armor a healer under focus needs
+  FABER: ['emberb', 'storm', 'marsh', 'slate', 'clock', 'deeprod'], // haste first for more machines and traps, then power, the boots and the armor a mage holding a spot needs
+  HIEMS: ['storm', 'marsh', 'emberb', 'slate', 'deeprod', 'clock'], // power and haste for more chills, then the armor a control mage standing in the fight needs
+  RUPES: ['glacier', 'hobnail', 'bearskin', 'stonehide', 'brambmail', 'hearth'], // armor and health first, the snow takes the rest; the boots to reach the fight
+  NIX: ['beartooth', 'quick', 'feathers', 'maul', 'sunstone', 'collar'], // the blade first, the speed to reach a lone rival, then more blade
+  FALCO: ['beartooth', 'quick', 'feathers', 'maul', 'sunstone', 'collar'], // the knives first, the speed to reach a lone rival, then more blade
+  LIGNUM: ['beartooth', 'hobnail', 'fang', 'stonehide', 'quick', 'bearskin'], // a skirmisher's: the bite first, the legs to step out and back, then health for the trades
+  MARIS: ['glacier', 'hobnail', 'stonehide', 'bearskin', 'brambmail', 'hearth'], // a tank's: armor and health, the boots for reaching the water
   AURA: ['storm', 'emberb', 'deeprod', 'marsh', 'clock', 'slate'], // the reach first: power and haste for more stars, then the boots, then the armor a mage caught close needs
+  VARRO: ['beartooth', 'hobnail', 'fang', 'quick', 'stonehide', 'collar'], // the bite first, the legs to stay on the mark, then the health a diver needs
+  VELOX: ['quick', 'horn', 'feathers', 'frostline', 'sunstone', 'cloak'], // the HUNTER's build with attack speed first: more throws, more KEEP MOVING stacks
+  SAGITTA: ['beartooth', 'horn', 'feathers', 'maul', 'sunstone', 'cloak'], // damage first: every bolt is slow, so each one has to land like a hammer
 };
 function botBuild(p) { return BOT_BUILDS[CLASSES[p.cls].name] || BOT_BUILDS.HUNTER; }
 // the next item on p's list it does not have yet, or null when done
@@ -449,7 +461,7 @@ function botStrayPart(p) {
 const BOT_POTIONS = 2;
 function botWantsPotion(p, first) {
   const n = potionSlot(p) >= 0 ? p.potions : 0;
-  if (n >= (first ? 1 : BOT_POTIONS) || p.inv.gold < BUILD_ITEMS.potion.price || !potionRoom(p)) return false;
+  if (n >= (first ? 1 : BOT_POTIONS) || p.gold < BUILD_ITEMS.potion.price || !potionRoom(p)) return false;
   return n > 0 || p.items.filter((x) => x === null).length > 1 || !botNextItem(p);
 }
 // what a bot would buy RIGHT NOW with its purse: the next item whole, or the
@@ -459,7 +471,7 @@ function botItemBuy(p) {
   const id = botNextItem(p);
   if (!id) return null;
   const held = p.items.slice();
-  const can = (k) => { const c = itemCost(p, k); return p.inv.gold >= c.gold && itemRoom(p, c.used) >= 1 && !bootsClash(p, k, c.used); };
+  const can = (k) => { const c = itemCost(p, k); return p.gold >= c.gold && itemRoom(p, c.used) >= 1 && !bootsClash(p, k, c.used); };
   const walk = (k) => {
     if (can(k)) return k;
     for (const q of BUILD_ITEMS[k].from || []) {

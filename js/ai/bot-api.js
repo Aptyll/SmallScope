@@ -17,7 +17,7 @@
 // realm of its own, sealed (BOT_SEAL): no game globals, no way out.
 // A bot can never do what a hand cannot: the act IS the input struct, the sim
 // re-validates every order, and the hands are the ladder's (skillHands).
-const BOT_API = 4;          // the message shape's version; a rename bumps it (4: food -> potions, eatBerry/eatFish -> useItem)
+const BOT_API = 5;          // the message shape's version; a rename bumps it (4: food -> potions, eatBerry/eatFish -> useItem; 5: a gold pump's struct type 'generator' -> 'pump')
 const BOT_THINK = 6;        // ticks between thinks: 10 a second at TICK_DT
 const BOT_OBS_R = 24 * TILE; // px: how far round its side a bot sees (the minimap's default reach, MM_R tiles)
 const BOT_SAY_MAX = 256;    // bytes of JSON a `say` may carry to the side
@@ -26,9 +26,9 @@ const BOT_ERR_MAX = 8;      // errors kept per seat for the ladder page
 const BOT_LATE_MAX = 10;    // thinks in a row a bot may miss (1 s) before its seat lets go of every key
 const BOT_CMDS = new Set(['ability', 'ping', 'shop', 'recall']);
 const BOT_NODES_N = 64;     // workable tiles an observation lists, nearest first
-const BOT_NODES = new Set(['tree', 'deadTree', 'bush']);
+const BOT_NODES = new Set(['tree', 'bush']);
 const BOT_CALLS = new Set(['bird', 'help', 'low', 'push', 'here']); // CALLS' kinds a bot may say
-const BOT_CALL_LOW = new Set(['HUNTER', 'WARRIOR', 'ARMATOS', 'FORTIVA', 'BELLA', 'IGNIA', 'AURA', 'SALVIA', 'BEAR']);       // what a 'low' call may name
+const BOT_CALL_LOW = new Set(['HUNTER', 'WARRIOR', 'ARMATOS', 'FORTIVA', 'BELLA', 'IGNIA', 'AURA', 'SALVIA', 'LUCERNA', 'HIEMS', 'FABER', 'RUPES', 'NIX', 'VARRO', 'BUCINA', 'FALCO', 'VELOX', 'MARIS', 'LIGNUM', 'SAGITTA', 'BEAR']);       // what a 'low' call may name
 
 // ---- the library --------------------------------------------------------------
 // Every program a seat can run, by id: { id, name, src, run } - `run` names
@@ -86,7 +86,7 @@ function botObserve(p) {
     id: p.id, team: p.team, cls: CLASSES[p.cls].name,
     x: botR(p.x), y: botR(p.y), vx: botR(p.vx), vy: botR(p.vy),
     hp: botR(p.hp), maxHp: p.maxHp, dead: p.dead, respawnT: botR(p.respawnT), eliminated: p.eliminated,
-    level: p.level, xp: p.xp, gold: p.inv.gold, skillPts: p.skillPts,
+    level: p.level, xp: p.xp, gold: p.gold, skillPts: p.skillPts,
     stats: botStats(p), // the seven hero stats, the numbers the HUD's panel prints (js/sim/stats.js)
     prone: !!p.prone, hide: botR(p.hide || 0), aboard: !!p.aboard, falling: p.dropT > 0, zip: p.zip,
     abilities: p.abLv.map((lv, i) => botAbility(p, i, lv)),
@@ -377,8 +377,8 @@ function botStep(p, dt) {
       p.ai.callCd = CALL_BOT_CD;
     }
   }
-  // the ladder's hands, the one set every scripted seat shares (js/ai/ai-skill.js)
-  if (typeof skillHands === 'function' && typeof AI_LADDER_HANDS !== 'undefined') skillHands(p, AI_LADDER_HANDS, dt);
+  // the one pair of hands every scripted seat shares (js/ai/ai-skill.js)
+  skillHands(p, BOT_FILE_HANDS, dt);
 }
 // a think the bot did not answer in time. A file that stopped answering (a
 // hang, a crash) must not hold its keys forever: after BOT_LATE_MAX in a row

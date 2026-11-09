@@ -11,7 +11,7 @@ level and xp all stay on the body, and `reset(false)` brings the same player bac
 spills, nothing is looted, and the snow around a corpse is as clean as it was. **What a kill is worth
 is gold from nowhere**, paid by `payTakedown` to the killer and the assists (see
 [Takedowns](#takedowns-assists-bounties-and-shutdowns) below). The XP is separate and never needs
-the credit: `KILL_XP` (40) + `KILL_XP_LV` (15) × the downed scout's level, shared by every rival
+the credit: `KILL_XP` (40) + `KILL_XP_LV` (15) × the downed hero's level, shared by every rival
 standing near, the killer too wherever it stood ([Hero levels](../multiplayer.md#hero-levels)). `die` also credits the kill (and
 heals the killer if their kit carries `killHeal`, off the FEAST passive) and writes the log line — see
 [Kills and the event log](../multiplayer.md#kills-and-the-event-log) — then asks
@@ -25,12 +25,11 @@ roosts ([PvP](../multiplayer.md#pvp)).
 Either way the local player's overlay goes up through `endMatch('lost' | 'won' | 'respawning')`
 (js/sim/player.js, the `damage & death` banner; the screens it raises are the `death & spectate`
 banner, js/ui/screens.js): `state.mode = 'dead'`, every local overlay closed, and the screen goes
-to a dim with two planks — **SPECTATE** and **LOBBY** — for `'lost'` (permanent), to
-[the victory screen](../rendering/the-end-screens.md), whose planks are **KEEP PLAYING** and
-**LOBBY**, for `'won'`, or, for `'respawning'` (temporary), to **the wait**: no dim and no planks
+to a dim with one plank, **LOBBY**, for `'lost'` (the match is decided for everyone), to
+[the victory screen](../rendering/the-end-screens.md), whose one plank is **LOBBY**, for `'won'`, or, for `'respawning'` (temporary), to **the wait**: no dim and no planks
 at all — `endMatch` puts the view on an ally (`viewPlayer` holds it on the body until its
 [fall](../rendering/going-down.md) is over) (`state.deadView = 'spec'`, `specNext` keeping to
-the side's own through `specOk`), one line — **RESPAWNING IN Ns** at 3× in the upper band — reads
+the side's own through `specOk`, the only spectating there is), one line — **RESPAWNING IN Ns** at 3× in the upper band — reads
 the live countdown, and [the replay window](../rendering/replay-the-last-four-seconds.md) opens large
 over the view with a close box on its corner (or ESC), so the death is watched first and the ally
 after, the player choosing when. **LOBBY** on a `'lost'` dim does not leave: it opens
@@ -39,11 +38,10 @@ you stop watching it, not the instant you go down. LOBBY on **either** ceremony 
 [the post-game lobby](../rendering/the-post-game-lobby.md), the whole match's record, and that
 screen's LOBBY is the door out.
 `'respawning'` needs no state of its own beyond `state.rpClosed` (reset by every `endMatch`):
-once `p.respawnT` hits 0, `respawnPlayer(p)` snaps `state.mode` back to `'play'` the same
-one-line way `'KEEP PLAYING'` already does, lands the local player at its bird, and replays the HUD
+once `p.respawnT` hits 0, `respawnPlayer(p)` snaps `state.mode` back to `'play'`, lands the local player at its bird, and replays the HUD
 slide-in a fresh eagle landing gets. A win *or* an elimination also freezes what its screen will
 print (`endSnapshot()` on `state.end`: gold, kills, level, clock, team, class, the kit, and the
-placing and killer only the loss prints) because the match keeps running underneath and a total
+killer only the loss prints) because the match keeps running underneath and a total
 that climbs behind a tally which already counted it reads as a bug — and because a loss's summary
 is opened off a plank minutes later, by which time none of those numbers are still true. Spectating
 sets `state.spec` to a living player's id and `viewPlayer()` — the one place the camera and minimap
@@ -81,9 +79,8 @@ before it clears the streak, and `payTakedown` pays:
   (half) of the worth, at least 1 each.
 - gold goes only to the living, as a kill always has; a dead killer still takes the credit.
 
-**Worth** is `killBounty()`: `KILL_SOLDIERS` (3) scrapped soldiers' `SOLDIER_BOUNTY`
-(js/sim/farm.js, read at the kill, so retuning a last hit moves the kill with it; 330 gold at a
-110-gold soldier, the base pay, not the one that grows with the clock), shrunk by `FEED_STEP` (20%) per death past `FEED_FROM` (2) the victim has died
+**Worth** is `killBounty()`: `KILL_SOLDIERS` (3) shares of `TAKEDOWN_GOLD` (110, js/sim/player.js;
+330 gold, fixed since the waves' gold was spread over three kinds of soldier in 0.579), shrunk by `FEED_STEP` (20%) per death past `FEED_FROM` (2) the victim has died
 without a kill or assist (`p.feed`, reset by either), to a floor of `FEED_FLOOR` (a third): so feeding
 never funds the other side. **Bounty** grows from a streak of `BOUNTY_FROM` (2) by `BOUNTY_STEP`
 (1 soldier) a kill to `BOUNTY_MAX` (5 soldiers); the killer cashes it as a **SHUTDOWN** (the log says SHUT DOWN,

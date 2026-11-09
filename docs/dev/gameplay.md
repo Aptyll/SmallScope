@@ -34,5 +34,5 @@ page linked here; a page past about 30 KB splits into a folder of parts.
 - [Death and respawn](gameplay/death-and-respawn.md) (8 KB): Death is a walk back, never the end
 - [The M map does not pause](gameplay/the-m-map-does-not-pause.md) (2 KB): **M** opens the world chart with the sim still stepping (M, Escape or a click off the slab put it away),...
 - [Saved matches](gameplay/saved-matches.md) (4 KB): Players never save a match (Noah, 2026-10-19
-- [Settings](gameplay/settings.md) (20 KB): **The party lobby** (js/ui/rooms.js, `menu.screen = 'room'`) is where QUICKPLAY, RANKED and PRACTICE TOOL...
+- [Settings](gameplay/settings.md) (20 KB): **The party lobby** (js/ui/rooms.js, `menu.screen = 'room'`) is where FIRST MATCH, QUICKPLAY, RANKED and PRACTICE TOOL... (also the FIRST MATCH coach and RANKED's lock)
 - [Audio](gameplay/audio.md) (17 KB): js/app/audio.js is three layers under one master dial, and `SFX` is all of them

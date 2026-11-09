@@ -60,7 +60,7 @@ const SALVIA_AB = [
     id: 'drops', name: 'SNOWDROPS', cd: [14, 13, 12, 11, 10], ap: 0.25, cast: 0.25, aim: { line: DROP_RANGE },
     rank: { hp: [30, 40, 50, 60, 70] }, // each flower heals the ally who picks it this much
     tip: 'PLANT SNOWDROPS. ALLIES PICK THEM FOR LIFE',
-    blurb: 'SHE PLANTS A FEW SNOWDROPS NEAR HER. AN ALLY WHO WALKS OVER ONE PICKS IT AND IS HEALED. THEY WILT AFTER A WHILE.',
+    blurb: 'PLANT A FEW SNOWDROPS NEAR YOU. AN ALLY WHO WALKS OVER ONE PICKS IT AND IS HEALED. THEY WILT AFTER A WHILE.',
     use: (p) => salviaPlant(p),
     tele: (p, px, py, a, col, closing, now, ex, ey) => { const c = salviaSpot(p, DROP_RANGE); drawRing(Math.round(c.x - ex), Math.round(c.y - ey), DROP_SPREAD + DROP_R, col, 0.45 + 0.45 * closing, 0); },
     icon: SALVIA_ICON32.drops,
@@ -71,7 +71,7 @@ const SALVIA_AB = [
     id: 'cloak', name: 'WARM CLOAK', cd: [16, 15, 14, 13, 12], ap: 0.35, cast: 0.1, aim: { line: CLOAK_RANGE },
     rank: { shield: [40, 60, 80, 100, 120] }, // the shield round the ally wrapped
     tip: 'SHIELD AN ALLY AND SPEED THEM UP',
-    blurb: 'SHE WRAPS THE ALLY NEAREST THE AIM, OR HERSELF, IN A WARM CLOAK: A SHIELD FOR A FEW SECONDS AND A BURST OF SPEED.',
+    blurb: 'WRAP THE ALLY NEAREST THE AIM, OR YOURSELF, IN A WARM CLOAK: A SHIELD FOR A FEW SECONDS AND A BURST OF SPEED.',
     use: (p) => salviaCloak(p),
     tele: (p, px, py, a, col, closing, now, ex, ey) => { const q = cloakTarget(p); drawRing(Math.round(q.x - ex), Math.round(q.y - ey), 10, col, 0.5 + 0.45 * closing, 0); },
     icon: SALVIA_ICON32.cloak,
@@ -81,8 +81,8 @@ const SALVIA_AB = [
   {
     id: 'thaw', name: 'THAW', cd: [100, 85, 70], ap: 0.2, cast: 0.3,
     rank: { hps: [30, 45, 60] }, // what each second inside the ring heals
-    tip: 'A WARM RING. ALLIES HEAL AND CANNOT BE SLOWED',
-    blurb: 'A LARGE RING OF WARM AIR WHERE SHE STANDS, FOR A FEW SECONDS. ALLIES INSIDE HEAL EVERY SECOND AND CANNOT BE SLOWED.',
+    tip: 'A WARM RING. ALLIES HEAL, CANNOT BE SLOWED',
+    blurb: 'A LARGE RING OF WARM AIR WHERE YOU STAND, FOR A FEW SECONDS. ALLIES INSIDE HEAL EVERY SECOND AND CANNOT BE SLOWED.',
     use: (p) => salviaThaw(p),
     tele: (p, px, py, a, col, closing) => drawRing(px, py, THAW_R, col, 0.35 + 0.45 * closing, closing * 0.3),
     icon: SALVIA_ICON32.thaw,

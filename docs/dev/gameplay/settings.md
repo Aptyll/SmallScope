@@ -1,6 +1,6 @@
 # Settings
 
-**The party lobby** (js/ui/rooms.js, `menu.screen = 'room'`) is where QUICKPLAY, RANKED and
+**The party lobby** (js/ui/rooms.js, `menu.screen = 'room'`) is where FIRST MATCH, QUICKPLAY, RANKED and
 PRACTICE TOOL on the title land: the page hosts its own party at once (`beginParty`: a room on the relay, or a
 Steam lobby) and NET.mode names the mode. League's party lobby in Graphite, over the title's
 snowy valley behind a dark wash (`RM_WASH`): two mirrored plates at the head, the mode's name on
@@ -31,7 +31,8 @@ bottom-right is INVITE (Steam's invite overlay, or the code copied, while a seat
 the friends invited from the column listed over it, a green tick once they are in. Between them
 one button, League's, with an X attached before it that leaves: a
 guest's READY or the leader's FIND MATCH, dim and flashing the seats it waits on until every
-guest is ready (`partyFind`). In QUICKPLAY and RANKED the party then looks for another party doing the
+guest is ready (`partyFind`). FIRST MATCH goes straight to bots, pinned EASY (`NET.botLv` 0), and its
+rematch comes back as QUICKPLAY. In QUICKPLAY and RANKED the party then looks for another party doing the
 same (js/ui/matchmaking.js): the word becomes a gold clock (a press stops looking) and the clock
 also shows after the mode's name on every member's screen. Two parties that find each other play each
 other, the one with the higher code reloading onto the other's valley as its rival side; with
@@ -45,7 +46,7 @@ rating per profile (`PROFILE.rank`, starts at 1000): a win adds RANK_STEP, a los
 (`rankResult`), and the bots' level is read off the party's average rating (`rankLevel`), so
 it cannot be picked there. PRACTICE TOOL's leader has START in place of FIND MATCH
 (`partyPractice`): once every friend is READY the leader's page reloads onto the
-[practice arena](../world.md#the-practice-arena) hosting the party's code, each guest is told
+[practice arena](../world.md#the-practice-tool) hosting the party's code, each guest is told
 (`practice`) and follows, joining while the leader's page comes up (`practiceBootHost`,
 `practiceBootJoin`). A friend can also type the code from their own party while the party is on
 the field, and lands straight on it (`joinRoom` reads the list's `practice` flag). The leader's
@@ -71,7 +72,7 @@ remembered with the settings (`settings.relay`), else the page's own host.
 `teamPal` — the VIDEO page's COLOUR BLIND dropdown: `def` (OFF) or a colour-blind palette (`rg`, `by`, `hc`), same section —
 `tipFollow` — the TOOLTIP row, the hover panel beside the pointer (the default) or parked bottom
 left ([the hover tooltip](../rendering/the-hud-corners/the-hover-tooltip.md)) —
-`tipFull` — the ABILITY DETAILS row: HOLD SHIFT (the default: an ability's hover is the short card, Shift opens every rank's numbers) or ALWAYS (`tipClassAb`) —
+`tipFull` — the ABILITY DETAILS row: HOLD ALT (the default: an ability's hover is the short card, the DETAILS key, Alt unless rebound, opens every rank's numbers; the row prints the live bind, an `off` given as a function) or ALWAYS (`tipClassAb`) —
 `aiLevel` — the rival bots' level, picked by the leader on the party screen's head, an index into `AI_LEVELS` (js/ai/ai-skill.js), NORMAL until moved (a settings save from before EASY is moved up one, `loadSettings`) —
 `scheme` — the keyboard scheme, `'wasd'`, `'click'` or `'mouse'` — with `binds` / `bindsClick` /
 `bindsMouse`, the key each action is bound to under each
@@ -114,7 +115,7 @@ never land on two rows. It answers a row id, `'mute'`, `'close'`, `'leave'`, `'t
 `'d:<row>:<opt>'` (an entry of the open list). A **choice row** carries its
 own `val()` and `pick(id)` in `SET_TABS` — QUALITY's are the preset macro — so the draw (the word in force wears gold), the hit and
 the click all read one table. A **toggle row** whose two states have names of their own carries
-them there too, as `on`/`off` (CURSOR's PIXEL / BROWSER, TOOLTIP's FOLLOWS POINTER / BOTTOM LEFT, ABILITY DETAILS' ALWAYS / HOLD SHIFT,
+them there too, as `on`/`off` (CURSOR's PIXEL / BROWSER, TOOLTIP's FOLLOWS POINTER / BOTTOM LEFT, ABILITY DETAILS' ALWAYS / HOLD ALT,
 MY TEAM's ALWAYS BLUE / AS DEALT); a row without them reads ON / OFF, and a plain toggle's row id
 **is** its `settings` key, which is the whole of what its click does. A **dropdown row** (`kind: 'drop'`)
 carries `val`/`pick` like a choice row; its box shows the entry in force and a click hangs the
@@ -147,7 +148,7 @@ PROTANOPIA / DEUTERANOPIA, TRITANOPIA, ACHROMATOPSIA, each entry beside its pale
 **The foot is buttons, not a hint.** Under the content window (`SET_FOOT_Y`, `footPlanks`) sit
 flat buttons (`drawFlatButton`, their line and word gold under the pointer): **CLOSE** — the one way out that is a
 button; ESC still folds the slab — and, in a match only, the way out beside it,
-LEAVE, out of the match or out of [practice](../world.md#the-practice-arena) (the ESC
+LEAVE, out of the match or out of [practice](../world.md#the-practice-tool) (the ESC
 slab is the one menu either has, so its exit lives there; the title's slide-in has nothing to
 leave, so it centres CLOSE alone). SURRENDER stands before LEAVE while your side may vote
 (js/sim/surrender.js). `settingsHit()` answers `'close'` (→ `settingsClose`: the
@@ -184,9 +185,6 @@ ABILITIES — or a fixed pair), `keyRowsLayout` places every cap and word listin
 draw (`drawKeyRows`), `settingsHit` (`'key:<action>'`, `'keyreset'`) and `DBG.keyRows` all read
 it; `KEYS_LIST_H` (the listing and its RESET row) sizes the scroll.
 
-The title screen's TUTORIAL panel carries
-the same keys under `1-4 CLASS ABILITIES`.
-
 `settings.info` (one INFO DISPLAY toggle row in the ESC menu, **or F3**, minecraft-style — the
 keydown handler flips it in any mode and suppresses the browser's find bar; default off) shows
 the **info stack** — `drawTags()`, a vertical list on the left edge at the top quarter of the
@@ -220,3 +218,23 @@ is no alive count: a match does not end on bodies (`aliveCount()`, js/sim/player
 but `DBG`). Under the disc runs the notice lane, and the **stat sheet** flies into it whenever a
 number on yours moves - every row of your sheet, the moved ones lit and blinking, gone again in
 eight seconds: [rendering.md](../rendering/the-hud-corners/the-stat-ledger-your-sheet-as-a-notice.md).
+
+## The FIRST MATCH and RANKED's lock
+
+**The FIRST MATCH** (`PARTY_MODES.guide`) is a real 5v5 against EASY bots with the coach on (js/ui/guide.js).
+The coach is this screen's UI only: it reads the local player and never writes the sim, so every screen
+in a FIRST MATCH party coaches its own player. One flat graphite card stands centred over the hud strip's
+buy plates: the key caps of the live scheme (`keyCap`) and one word, a gold count where a lesson has one, a
+dim X that turns the coach off for good (`guideClick`, which also sets `PROFILE.setGuided`), and a row of
+pips over it, one per lesson. The DETAILS key (or ABILITY DETAILS on ALWAYS) opens one line of detail under it. A
+lesson's whole meaning is its `GUIDE_STEPS` row: MOVE (walk `GUIDE_MOVE_PX` off the landing), SHOP (any
+buy; a gold arrow over your side's stall or merchant), ABILITIES (two casts; a key a point would learn
+pulses gold), LAST HIT (three), RECALL (shown once the purse holds `GUIDE_RECALL_GOLD` or health is
+under half; done standing in the roost ring), TOWER (a rival tower falls; the arrow over the nearest)
+and THEIR EAGLE, which stays to the end. An arrow off screen is a 2x chevron on the view's edge. A
+finished lesson holds its card gold for `GUIDE_FLASH`. The title stops offering FIRST MATCH once the
+TOWER lesson is done, the X is pressed, or any match reaches its result.
+
+**RANKED's lock**: a profile counts the matches it saw to their result (`PROFILE.finished`, one per
+ending in `rankResult`; a profile from before the count starts from its takeoffs). Under `RANKED_AT`
+the title shows RANKED locked and the leader's list of modes greys it, and `modeSet` refuses it.

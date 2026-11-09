@@ -5,7 +5,7 @@ now)`** ([js/sim/abilities.js](../../../js/sim/abilities.js)) paints the net dra
 the fire and the mark's gold chevrons over whatever sprite is wearing them, taking the sprite's own box so
 a rabbit, a soldier and a player get the same four tells at their own size. `drawPlayer`
 reaches it through `drawAbilityOnPlayer` (which adds the one a player alone can show — a raised
-shield); `drawAnimal`, `drawBird` and `drawRobot` call it directly. **The
+shield); `drawAnimal` and `drawRobot` call it directly. **The
 fire never washes over the body** — tongues off the crown and a lit row under the feet — because a
 burning rival still has to read as the rival it is; the embers themselves are particles, thrown by
 `updateBurn` rather than drawn here. What each state *does* is
@@ -43,9 +43,7 @@ where the stun stars turn, an animal that has a player in sight wears the **noti
 rising out of the head over its first tenth of a second and gone the frame the sight is
 ([gameplay.md](../gameplay/wildlife.md)); the stars win while a stun runs. How full a bar is carries the
 health — never its colour: a bar that drained toward red would spend the rival's colour on
-"hurt", and a hurt ally would read as an enemy at a glance. **Birds are the one exception** — 3 hp means every hit is a kill, and
-a bar over something that small is all bar; `drawBird` draws the sprite lifted off its own shadow
-by `a.alt` instead, which is the only read on how high one is.
+"hurt", and a hurt ally would read as an enemy at a glance.
 The overhead bar is the **only** player health display (the heart sprites in
 js/sprites/icons.js are baked but unreferenced). Above it sits one
 more small meter — **the slot the hands report to**, and it carries three states that can never
@@ -62,7 +60,7 @@ floats clear of the sprite: stamina plate at `py - 4` (white, `STAM_COL`, on eve
 bar with no side to it; every player, since the level badge spans both
 bars), health at `py - 7`, that meter at
 `py - 10` (inside the same frame, directly above the hp bar, the mirror of
-the stamina bar; every gap row between two bars is frame ink, as on a beast), and the player's name tag in team colour at `py - 18`, a clear row above the meter's
+the stamina bar; every gap row between two bars is frame ink, as on a beast), and the player's name tag in team colour at `py - 18` (`boardName`: a person's own name, a bot's hero, the name TAB, the podium, the scores and the death recap give it), a clear row above the meter's
 frame. A **dawn shield** ([gameplay.md](../gameplay/the-dawn-shield.md)) adds its own row straight
 above the health bar, built the way the meter is (`drawShieldBar`: two-tone dawn gold, light over
 deep, cut into one segment per snowdrop with a pale glint on its first pixel — gold is the dawn's
@@ -105,6 +103,15 @@ for any text centred over a model; free-floating text (damage floaters, wheel la
 centred on anything and keeps its own maths. A player with a bounty wears it centred over the tag,
 `BOUNTY_LIFT` rows up with a clear row between (`drawBountyTag`, js/draw/overhead.js): a 5 px gold
 coin on a 1 px ink rim and the gold in the purse's ink; a bot's callout stands over it.
+
+**A hero's marks on a body are a row of their own over the whole stack** (`HERO_OVER`, `heroOver`,
+js/sim/heroes.js): HIEMS's chills, VELOX's KEEP MOVING chevrons, VARRO's paw, BELLA's E mark and
+duel diamond, FALCO's talon, side by side (`OVER_GAP`) and centred on the body. Over a hero it
+sits above the name and a bounty; over a beast above the '!' and the stars; over a soldier, a
+merchant or a hero's machine above its bar, stars or name. It is never drawn off the sprite's own
+top, where the health frame sits, so no mark hides under a plate at any zoom; a callout over a
+hero stands `OVER_ROW` higher while the row shows. What a hero leaves ON the body (a freeze's ice,
+BELLA's pips, SAGITTA's bolts at her feet) stays a `HERO_MARK`.
 
 **Every other bar in the game is centred on its model directly** — an animal's frame carries the
 level badge too, but its bars stay on the body's own centre and the badge simply overhangs to the

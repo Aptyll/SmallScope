@@ -47,7 +47,7 @@ function fortSwords() {
   if (fortSwordArt) return fortSwordArt;
   return (fortSwordArt = { flat: bakeBladeArt(FORT_SWORD, FORT_SWORD_PAL), diag: bakeBladeArt(FORT_SWORD_DIAG, FORT_SWORD_PAL) });
 }
-HERO_BLADES.chain = { art: fortSwords, hip: { down: [13, 12], up: [11, 10] }, grip: FORT_GRIP };
+HERO_BLADES.chain = { art: fortSwords, hilt: [19, 11], hip: { down: [13, 12], up: [11, 10] }, grip: FORT_GRIP };
 
 // ---- on her body ------------------------------------------------------------------
 function drawFortBody(p, ax, ay, now, front) {
@@ -64,7 +64,7 @@ function drawFortBody(p, ax, ay, now, front) {
   }
   if (!front) return;
   // DEFIANT HEART: the shell, thinning as its clock runs out
-  if (p.defyT > 0 && p.wardHp > 0) {
+  if (p.defyT > 0 && shieldOf(p, 'ward') > 0) {
     ctx.globalAlpha = 0.35 + 0.5 * Math.min(1, p.defyT / DEFY_T);
     ctx.fillStyle = '#f2cc6a';
     for (let i = 0; i < 20; i++) {

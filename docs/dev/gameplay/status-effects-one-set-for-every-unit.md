@@ -13,7 +13,7 @@ Everything in this section lives under the **`status effects`** banner at the fo
 | `stunUnit` `rootUnit` `slowUnit` `netUnit` `markUnit` `igniteUnit` | the one place each state is written. Each takes the worse/longer of what is already on the body |
 | `unitMoveMul(e)` | what is left of a non-player's speed — `abilityMoveMul`'s twin. Spent inside `navStep`, so one edit slows every walker; the two movers that steer themselves rather than route (a loitering bot, a bird in flight) fold it in by hand |
 | `knockUp(e, t, src)` / `upLift(e)` | a knock-up: a stun that lifts the body (`e.upT`), drawn by `abilityPose` |
-| `shieldUnit(p, hp, t)` | a ward of `hp` for `t` s (`p.wardHp`/`p.wardT`), spent by `damagePlayer` before health |
+| `shieldUnit(p, hp, t, kind)` | a shield of `hp` for `t` s (kind `'ward'` unless named), one entry of `p.shields`: every shield a unit holds is that one list, spent in `SHIELD_KINDS` order by `shieldSpend` (from `damagePlayer`) before health, its clock run down by `shieldTick`, read by `shieldOf(e, kind?)`, taken off by `shieldClear`. A kind's row says whether it stacks (to a `cap`) or keeps the bigger, and whether it lasts |
 | `ccMul(e)` | **tenacity**: what is left of a stun, root, slow or net on this body (the product of 1 − t over `HERO_TEN`, js/sim/heroes.js: `guardTen` today, times the STEADY passive's share, `itemTen`, js/sim/items.js); `stunUnit` with `firm` skips it |
 | `clearUnitStatus(e)` / `douseUnit(e)` | a fresh body, and a fire put out. Called by `Player.reset`, `die`, `makeAnimal`, `makeRobot` |
 
@@ -61,7 +61,7 @@ The six states, and what each does to a body:
 
 Every one of them is **drawn on the body, for both sides**, at whatever size that body is —
 `drawUnitStates(e, px, py, w, h, now)` (js/draw/abilities.js) takes the sprite's own box and is called by
-`drawAbilityOnPlayer`, `drawAnimal`, `drawBird` and `drawRobot` alike. A state you cannot see is a
+`drawAbilityOnPlayer`, `drawAnimal` and `drawRobot` alike. A state you cannot see is a
 rule you cannot play around, and that is as true of a deer as of a rival. The player keeps one tell
 of its own on top (a raised shield, `drawAbilityOnPlayer`), and the stun badge is the one visual that
 differs by kind: over an animal or a robot the sparks sit above the health bar, while on a player

@@ -107,14 +107,14 @@ async function runPath(browser, kind) {
   const q = steam ? '&transport=steam' : '';
   const open = async (pg, seed) => { await pg.goto(base + '?seed=' + seed + q); await pg.waitForFunction(() => window.DBG && typeof menuActivate === 'function'); await pg.waitForTimeout(800); };
   await open(A, 7);
-  await A.evaluate(() => menuActivate(0)); // QUICKPLAY: a party, hosted
+  await A.evaluate(() => menuActivate(menuItems().indexOf('QUICKPLAY'))); // QUICKPLAY: a party, hosted
   await A.waitForFunction(() => NET.role === 'host' && NET.transport.open && roomCode(), null, { timeout: 10000 });
   let why0 = '';
   const host = await A.evaluate(() => ({ code: roomCode(), lobby: NET.transport.lobbyId || null }));
   if (kind === 'steam-invite') await B.goto(base + '?join=' + host.lobby + q); // what a Steam invite opens (steamJoinRequested / +connect_lobby)
   else if (kind.startsWith('friend')) { // the guest in a party of its own, the host in its friends' column
     await open(B, 9);
-    await B.evaluate(() => menuActivate(0));
+    await B.evaluate(() => menuActivate(menuItems().indexOf('QUICKPLAY')));
     await B.waitForFunction((l) => NET.role === 'host' && NET.transport.open && FRIENDS.on && FRIENDS.list.some((f) => f.lobby === l), host.lobby, { timeout: 10000 });
     if (kind === 'friend-join') {
       const act = await B.evaluate((l) => { const f = FRIENDS.list.find((q) => q.lobby === l); const a = friendAct(f); if (a === 'join') friendDo(f); return a; }, host.lobby);
@@ -127,7 +127,7 @@ async function runPath(browser, kind) {
     }
   } else { // a code typed into the guest's own party, on another seed: the page reloads onto the host's
     await open(B, 9);
-    await B.evaluate(() => menuActivate(0));
+    await B.evaluate(() => menuActivate(menuItems().indexOf('QUICKPLAY')));
     await B.waitForFunction(() => NET.role === 'host' && NET.transport.open, null, { timeout: 10000 });
     await B.evaluate((c) => { state.menu.codeOn = true; state.menu.code = ''; for (const ch of c) codeType(ch); }, host.code);
   }
@@ -178,12 +178,12 @@ async function runParty(browser, kind) {
     }
     const A = mine[0]; leads.push(A);
     await open(A, 7 + pi * 100);
-    await A.evaluate(() => menuActivate(0)); // QUICKPLAY: a party, hosted
+    await A.evaluate(() => menuActivate(menuItems().indexOf('QUICKPLAY'))); // QUICKPLAY: a party, hosted
     await hosted(A);
     const host = await A.evaluate(() => ({ code: roomCode(), seed: SEED }));
     for (const B of mine.slice(1)) {
       await open(B, 9 + pi * 100);
-      await B.evaluate(() => menuActivate(0));
+      await B.evaluate(() => menuActivate(menuItems().indexOf('QUICKPLAY')));
       await hosted(B);
       await B.evaluate((c) => { state.menu.codeOn = true; state.menu.code = ''; for (const ch of c) codeType(ch); }, host.code);
       const t0 = Date.now(); let ok = false;

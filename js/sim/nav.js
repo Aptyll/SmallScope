@@ -85,7 +85,7 @@ const UNIT_SPACE = 1.6;     // a body's room: this x its hard radius (players 7.
 const UNIT_SPACE_TALL = 4 / 3; // ...and that much farther apart one above the other (19.2 px for two players)
 const UNIT_ROOM_RATE = 8;   // share of the room overlap closed per second (at most 43 px/s between two players; a walk is ~73)
 // the merchant (robots.js) is a player-sized body in the robots list, so it takes a player's radius
-function unitRadius(e) { return e instanceof Player ? PLAYER_R : e.kind === 'rabbit' ? 2.5 : e.kind === 'deer' ? 8 : MONSTER[e.kind] ? MONSTER[e.kind].r : e.kind === 'merchant' ? PLAYER_R : 3; }
+function unitRadius(e) { return e instanceof Player ? PLAYER_R : e.kind === 'rabbit' ? 2.5 : e.kind === 'deer' ? 8 : MONSTER[e.kind] ? MONSTER[e.kind].r : e.kind === 'merchant' ? PLAYER_R : heroMachine(e) ? heroMachine(e).r : 3; }
 function unitSpace(e) { return unitRadius(e) * UNIT_SPACE; }
 // a's share of a contact with b: none when it outranks b, all when b outranks it,
 // else split by mass (the lighter moves more)
@@ -98,8 +98,8 @@ function separateUnits(dt) {
   // birds fly: they are the one unit nothing collides with
   // ...and a roll passes through everything but a deer and a bear (MONSTER.big)
   // ...and a ridden deer is carried by its rider, who stands for both (js/sim/wildlife.js)
-  for (const a of animals) if (!a.dead && a.kind !== 'bird' && !a.rider) us.push({ e: a, r: unitRadius(a), s: unitSpace(a), m: unitMass(a), pri: isAnchored(a) ? 1 : 0, hunt: isCampKind(a.kind), vel: false, small: a.kind !== 'deer' && !(MONSTER[a.kind] && MONSTER[a.kind].big) });
-  for (const b of robots) if (!b.dead && !(b.zip >= 0)) us.push({ e: b, r: unitRadius(b), s: unitSpace(b), m: UNIT_MASS[b.kind] || UNIT_MASS.robot, pri: 0, vel: false, small: true });
+  for (const a of animals) if (!a.dead && !a.rider) us.push({ e: a, r: unitRadius(a), s: unitSpace(a), m: unitMass(a), pri: isAnchored(a) ? 1 : 0, hunt: isCampKind(a.kind), vel: false, small: a.kind !== 'deer' && !(MONSTER[a.kind] && MONSTER[a.kind].big) });
+  for (const b of robots) if (!b.dead && !(b.zip >= 0) && !(heroMachine(b) && heroMachine(b).fly)) us.push({ e: b, r: unitRadius(b), s: unitSpace(b), m: heroMachine(b) ? heroMachine(b).mass : UNIT_MASS[b.kind] || UNIT_MASS.robot, pri: 0, vel: false, small: true });
   // velocity a unit carries into a contact: players their momentum, the
   // rest their knockback (their walk is direction-only and re-chosen each tick)
   const vx = (u) => u.vel ? u.e.vx + u.e.kbx : u.e.kbx;

@@ -40,9 +40,12 @@ const SNAP_SKIP = new Set(['input', 'ai', 'nav', '_fx', '_fy', '_tx', '_ty', '_t
   // pass reads: a client neither steps nor shows these, and each is a few
   // bytes per body per snapshot. The echo harness runs WITHOUT them, so
   // adding a name here is proven harmless or caught as pixels
-  'faceT', 'trickleT', 'footT', 'footSide', 'puffT', 'dodgeDustT', 'slideDustT', 'burnTick', 'swingCd',
+  'faceT', 'trickleT', 'footT', 'footSide', 'puffT', 'dodgeDustT', 'slideDustT', 'burnTick', // (not swingCd: the axe is drawn out until it runs down, drawHeldTool)
   'idleT', 'wary', 'thinkT', 'moveT', 'turnT', 'emT', 'spook', 'biteCd', 'alertT', 'dashT', 'dashX', 'dashY', 'fleeGoal', 'goal',
   'avoidT', 'baySite', 'zipLast', 'pingLog',
+  'hitFoe', // a soldier's mark this step, read only by the host's bots (aiFarmHold)
+  'shedT', // a pine's rest between two sheds (js/sim/shed.js): the puff itself crosses as a burst
+  'mvx', 'mvy', 'lastMx', 'lastMy', // a walker's heading (nav, walkHeading): only the sim steers by it, `dir` is what is drawn
   'hurtLog', // the blows a body is taking (recapNote): only a death's copy, deathLog, is ever drawn
   'position']); // a seat's drafted position (POSITIONS, player.js): the host's bots read it, and the rivals' stay hidden as in the draft
 // (a name here is skipped on EVERY kind that carries it: `fleeT` is not one,
@@ -50,7 +53,7 @@ const SNAP_SKIP = new Set(['input', 'ai', 'nav', '_fx', '_fy', '_tx', '_ty', '_t
 // client without it drew pose 'lundefined' and threw)
 // the match's own state keys: the clock, the result, the birds. Everything
 // else on `state` is one screen's UI (overlays, the menu, the death view)
-const SNAP_STATE = ['time', 'elapsed', 'day', 'tick', 'darkness', 'wind', 'windDir', 'windT', 'fishT', 'creekGone', 'over', 'end', 'eagleCine', 'story', 'votes', 'voteCd', 'surrendered'];
+const SNAP_STATE = ['time', 'elapsed', 'day', 'tick', 'darkness', 'wind', 'windDir', 'windT', 'fishT', 'creekGone', 'over', 'end', 'eagleCine', 'story', 'votes', 'voteCd', 'surrendered', 'prac'];
 const SNAP_DEPTH = 8; // how deep pack() follows plain objects before giving up (a cycle guard)
 // the moving kinds, their arrays and their token letters
 const SNAP_KINDS = { R: () => robots, A: () => animals, W: () => arrows, F: () => fish };
@@ -175,7 +178,6 @@ function snapSingles() {
   for (const c of camps) s.camps.push({ repopT: c.repopT, seen: (c.seen || [0, 0]).slice() }); // the rest of a camp is written down by worldgen
   s.dropMeta = state.drop ? { firstFlight: state.drop.firstFlight } : null;
   s.pads = pack(pads, 0); // the road registry: each side's crash pad
-  s.holes = holes.slice();
   s.iceBreaks = iceBreaks.slice(); // plain numbers and tile lists: every screen rebuilds the pixels (js/sim/icebreak.js)
   s.orca = pack(orca, 0); // the orca's few numbers (js/sim/orca.js); a client eases its x/y like a body's
   s.nets = pack(nets, 0);
@@ -183,6 +185,14 @@ function snapSingles() {
   s.brushfires = pack(brushfires, 0); // IGNIA's lines of fire (js/sim/ignia.js)
   s.aura = [pack(auraStars, 0), pack(auraOrbs, 0), pack(auraCurtains, 0)]; // AURA's stars, orbs and curtains (js/sim/aura.js)
   s.salvia = [pack(salviaBundles, 0), pack(salviaDrops, 0), pack(salviaThaws, 0)]; // SALVIA's poultices, snowdrops and warm rings (js/sim/salvia.js)
+  s.lucerna = [pack(lucernaHooks, 0), pack(lucernaLanterns, 0), pack(lucernaCircles, 0)]; // LUCERNA's crooks, lanterns and rings of light (js/sim/lucerna.js)
+  s.bucina = [pack(bucinaEchoes, 0), pack(bucinaCalls, 0)]; // BUCINA's echoes and horn calls (js/sim/bucina.js)
+  s.hiems = [pack(hiemsGlazes, 0), pack(hiemsStorms, 0)]; // HIEMS's ice and blizzards (js/sim/hiems.js)
+  s.velox = [pack(veloxStones, 0), pack(veloxLanes, 0)]; // VELOX's skipping stones and ice lanes (js/sim/velox.js)
+  s.nix = [pack(nixShards, 0), pack(nixClouds, 0)]; // NIX's shards and clouds (js/sim/nix.js)
+  s.faber = [pack(faberParts, 0), pack(faberArcs, 0), pack(faberBolts, 0), pack(faberSprings, 0)]; // FABER's parts, jumps, bolts and traps (js/sim/faber.js; his machines ride `robots`)
+  s.falco = [pack(falcoKnives, 0)]; // FALCO's knives (js/sim/falco.js; his hawk out rides `robots`)
+  s.lignum = [pack(lignumAxes, 0), pack(lignumLogs, 0)]; // LIGNUM's thrown axes and felled trunks (js/sim/lignum.js)
   return s;
 }
 // `team` (0 or 1): only what that side sees (the `fog` banner); left out, everything
@@ -229,7 +239,6 @@ function snapApplySingles(s) {
     }
     pads.length = 0; for (const sp of keep) pads.push(sp);
   }
-  if (s.holes) { holes.length = 0; for (const h of s.holes) holes.push(h); }
   if (s.iceBreaks) { iceBreaks.length = 0; for (const b of s.iceBreaks) iceBreaks.push(Object.assign({}, b)); }
   if (s.orca) Object.assign(orca, unpack(s.orca));
   if (s.nets) { nets.length = 0; for (const n of unpack(s.nets)) nets.push(n); }
@@ -237,12 +246,20 @@ function snapApplySingles(s) {
   if (s.brushfires) { brushfires.length = 0; for (const b of unpack(s.brushfires)) brushfires.push(b); }
   if (s.aura) [auraStars, auraOrbs, auraCurtains].forEach((L, i) => { L.length = 0; for (const w of unpack(s.aura[i])) L.push(w); });
   if (s.salvia) [salviaBundles, salviaDrops, salviaThaws].forEach((L, i) => { L.length = 0; for (const w of unpack(s.salvia[i])) L.push(w); });
+  if (s.lucerna) [lucernaHooks, lucernaLanterns, lucernaCircles].forEach((L, i) => { L.length = 0; for (const w of unpack(s.lucerna[i])) L.push(w); });
+  if (s.bucina) [bucinaEchoes, bucinaCalls].forEach((L, i) => { L.length = 0; for (const w of unpack(s.bucina[i])) L.push(w); });
+  if (s.hiems) [hiemsGlazes, hiemsStorms].forEach((L, i) => { L.length = 0; for (const w of unpack(s.hiems[i])) L.push(w); });
+  if (s.velox) [veloxStones, veloxLanes].forEach((L, i) => { L.length = 0; for (const w of unpack(s.velox[i])) L.push(w); });
+  if (s.nix) [nixShards, nixClouds].forEach((L, i) => { L.length = 0; for (const w of unpack(s.nix[i])) L.push(w); });
+  if (s.faber) [faberParts, faberArcs, faberBolts, faberSprings].forEach((L, i) => { L.length = 0; for (const w of unpack(s.faber[i])) L.push(w); });
+  if (s.falco) [falcoKnives].forEach((L, i) => { L.length = 0; for (const w of unpack(s.falco[i])) L.push(w); });
+  if (s.lignum) [lignumAxes, lignumLogs].forEach((L, i) => { L.length = 0; for (const w of unpack(s.lignum[i])) L.push(w); });
 }
 // a field onto an entity the game holds by identity: a nested plain object
-// is merged into the one already there (a player's `inv` is aliased by the
-// HUD, its `kit` and `look` are read through the body), the
+// is merged into the one already there (a player's `kit` and `look` are
+// read through the body), the
 // rest is set
-const SNAP_MERGE = new Set(['inv', 'kit', 'spawn', 'look']); // the only fields merged in place: plain data the game holds by handle
+const SNAP_MERGE = new Set(['kit', 'spawn', 'look']); // the only fields merged in place: plain data the game holds by handle
 function snapAssign(e, k, v) {
   const old = e[k];
   // never a token (it names another entity; merging its two keys into the
@@ -297,7 +314,7 @@ function snapApplyTiles(s) {
   return tiles;
 }
 // Writes a FULL snapshot into the singletons. Existing Player and eagle
-// objects are kept and overwritten field by field - `player`, `inv` and the
+// objects are kept and overwritten field by field - `player` and the
 // drop point at them - every other array is rebuilt, and each entity is
 // registered under the id the host dealt it. Tokens are resolved last, once
 // everything they can name exists again.
@@ -351,11 +368,25 @@ function snapApply(s) {
 // any base in the ring can be reconstructed tile by tile without a shadow
 // of the whole world per tick.
 const HIST_KEEP = 75; // flush ticks kept in the ring: 5 s at 15 Hz. An ack older than this is a full sync
-const snapShadow = { objs: null, objN: null, ground: null, hist: [], byTick: new Map(), scanAt: 0, tiles: null };
+const snapShadow = { objs: null, objN: null, ground: null, hist: [], byTick: new Map(), sweepAt: 0, swept: false, tiles: null, late: 0, lateBy: {} };
+// The tiles a host looks at on a flush step (snapTileHot): of ~54k tiles, a
+// few hundred ever change in a match (pines hit, bushes regrowing, the
+// buildings' clocks), so the flush step checks only the tiles that can be
+// changing now - every structure, every tile with a clock running (objTimed,
+// js/sim/sim.js), every tile placeObj wrote and every tile seen changing in
+// the last SNAP_HOT_KEEP steps - and the steps between flushes sweep the
+// whole map behind them (snapTileSweep), SNAP_SWEEP steps to go round once.
+// A change only the sweep found is counted (late, netStatus().tileLate):
+// it reached the clients up to a sweep late, and its writer should mark it
+const SNAP_SWEEP = 45;      // sweeping steps per round of the map: about 1 s at 60 Hz with every SNAP_EVERY-th step a flush
+const SNAP_HOT_KEEP = 120;  // steps a tile stays on the hot list after it last changed or was marked
+const snapHot = new Map();  // tile index -> the tick it was last marked or seen changing
+function snapTouch(i) { if (snapShadow.objs) snapHot.set(i, state.tick); } // placeObj's mark (js/sim/world.js); nothing until the host's first scan
 function snapShadowReset() {
   snapShadow.objs = null; snapShadow.objN = null; snapShadow.ground = null;
   snapShadow.hist = []; snapShadow.byTick = new Map();
-  snapShadow.scanAt = 0; snapShadow.tiles = null;
+  snapShadow.sweepAt = 0; snapShadow.swept = false; snapShadow.tiles = null;
+  snapShadow.late = 0; snapShadow.lateBy = {}; snapHot.clear();
 }
 snapShadowReset();
 function snapSame(va, vb) {
@@ -423,43 +454,63 @@ function snapHistoryPush() {
   }
   h.structs = structures.map((o) => idx(o.tx, o.ty)).join(',');
   h.structsMoved = !p || p.structs !== h.structs;
-  // the tiles the steps since the last entry have not scanned yet (all of
-  // them when nothing ran snapTileScan between two pushes)
-  snapTileScan(objects.length);
-  h.tiles = sh.tiles; sh.tiles = null; sh.scanAt = 0;
+  // the tiles that can be changing now, when the steps since the last entry
+  // swept their share of the map; every tile when none did (a proof calling
+  // this straight, the first push, a DBG.netVerify tick)
+  if (sh.swept) snapTileHot(); else snapTileScan(0, objects.length, false);
+  h.tiles = sh.tiles; sh.tiles = null; sh.swept = false;
   if (!sh.ground) { sh.ground = new Uint8Array(ground); }
   else for (let i = 0; i < ground.length; i++) if (ground[i] !== sh.ground[i]) { (h.groundCh = h.groundCh || new Set()).add(i); sh.ground[i] = ground[i]; }
   sh.hist.push(h); sh.byTick.set(tick, h);
   while (sh.hist.length > HIST_KEEP) sh.byTick.delete(sh.hist.shift().tick);
   return h;
 }
-// Tiles against the newest shadow, up to tile `end` from where the last scan
-// stopped: a tile whose primitive fields all match is skipped without packing
-// (most of the world). A host calls this a slice at a time on the steps
-// between two flushes (netHostFlush), so the world's ~50k tiles cost a
-// quarter each step instead of all at once on the flush step - which was a
-// hitch on every fourth frame. A change lands in the next entry, the same as
-// one made on a later step; the cut is the union of entries, so nothing is
-// lost, only a tile a slice already passed waits one more interval.
-function snapTileScan(end) {
-  const sh = snapShadow;
-  if (!sh.objs) { sh.objs = new Array(objects.length).fill(null); sh.objN = new Uint8Array(objects.length); }
-  const stop = Math.min(end, objects.length);
-  for (let i = sh.scanAt; i < stop; i++) {
-    const o = objects[i], prev = sh.objs[i];
-    if (!o && !prev) continue;
-    if (o && prev && snapTileSame(o, prev, sh.objN[i])) continue;
-    const packed = o ? pack(o, 0, true) : null;
-    sh.objN[i] = packed ? Math.min(255, Object.keys(packed).length) : 0;
-    const f = packed && prev ? snapFieldDiff(packed, prev) : null;
-    sh.objs[i] = packed;
-    if (packed && prev && !f) continue;
-    let ns = null; // null: made or unmade - whole
-    if (f) { ns = new Set(Object.keys(f)); if (f.$del) { ns.delete('$del'); for (const k of f.$del) ns.add(k); } }
-    const t = sh.tiles = sh.tiles || new Map(), cur = t.get(i);
-    if (ns === null || cur === null) t.set(i, null); else if (!cur) t.set(i, ns); else for (const k of ns) cur.add(k);
+// Tiles `from` to `to` against the newest shadow: a tile whose primitive
+// fields all match is skipped without packing (most of the world). A change
+// is recorded for the next ring entry and keeps the tile hot; `sweep` counts
+// one that nothing had marked (snapShadow.late)
+function snapTileScan(from, to, sweep) {
+  const sh = snapShadow, first = !sh.objs; // the first scan meets every tile as new: none of them is hot for it
+  if (first) { sh.objs = new Array(objects.length).fill(null); sh.objN = new Uint8Array(objects.length); }
+  const stop = Math.min(to, objects.length);
+  for (let i = from; i < stop; i++) {
+    if (!snapTileAt(i) || first) continue;
+    if (sweep && !snapHotHas(i)) { sh.late++; const o = objects[i], k = o ? o.type : '-'; sh.lateBy[k] = (sh.lateBy[k] || 0) + 1; }
+    snapHot.set(i, state.tick);
   }
-  if (stop > sh.scanAt) sh.scanAt = stop;
+}
+// one tile against its shadow: true when it changed (and the change is recorded)
+function snapTileAt(i) {
+  const sh = snapShadow, o = objects[i], prev = sh.objs[i];
+  if (!o && !prev) return false;
+  if (o && prev && snapTileSame(o, prev, sh.objN[i])) return false;
+  const packed = o ? pack(o, 0, true) : null;
+  sh.objN[i] = packed ? Math.min(255, Object.keys(packed).length) : 0;
+  const f = packed && prev ? snapFieldDiff(packed, prev) : null;
+  sh.objs[i] = packed;
+  if (packed && prev && !f) return false;
+  let ns = null; // null: made or unmade - whole
+  if (f) { ns = new Set(Object.keys(f)); if (f.$del) { ns.delete('$del'); for (const k of f.$del) ns.add(k); } }
+  const t = sh.tiles = sh.tiles || new Map(), cur = t.get(i);
+  if (ns === null || cur === null) t.set(i, null); else if (!cur) t.set(i, ns); else for (const k of ns) cur.add(k);
+  return true;
+}
+// would the flush step have looked at tile i (snapTileHot)? Only asked of a tile that changed
+function snapHotHas(i) { const o = objects[i]; return snapHot.has(i) || !!o && (objTimed.has(o) || structures.indexOf(o) >= 0); }
+// one sweeping step's share of the map, going round (netHostFlush)
+function snapTileSweep() {
+  const sh = snapShadow, n = objects.length;
+  if (!sh.objs) return; // the first push scans everything
+  const len = Math.ceil(n / SNAP_SWEEP), from = sh.sweepAt, to = Math.min(n, from + len);
+  snapTileScan(from, to, true);
+  sh.sweepAt = to >= n ? 0 : to; sh.swept = true;
+}
+// the flush step's tiles: every one that can be changing now (snapHot, above)
+function snapTileHot() {
+  const tick = state.tick;
+  for (const [i, t] of snapHot) { if (tick - t > SNAP_HOT_KEEP) snapHot.delete(i); else if (snapTileAt(i)) snapHot.set(i, tick); }
+  for (const o of structures) { const i = idx(o.tx, o.ty); if (snapTileAt(i)) snapHot.set(i, tick); }
+  for (const o of objTimed) { const i = idx(o.tx, o.ty); if (objects[i] === o && snapTileAt(i)) snapHot.set(i, tick); }
 }
 // the ring entry at a tick, or null when it has aged out (or was never pushed)
 function snapHistoryAt(tick) { return snapShadow.byTick.get(tick) || null; }
@@ -823,7 +874,15 @@ function snapBlank() {
   for (const k in SNAP_KINDS) SNAP_KINDS[k]().length = 0;
   nets.length = 0; guards.length = 0; brushfires.length = 0; auraStars.length = 0; auraOrbs.length = 0; auraCurtains.length = 0;
   salviaBundles.length = 0; salviaDrops.length = 0; salviaThaws.length = 0;
-  holes.length = 0; iceBreaks.length = 0; pads.length = 0;
+  lucernaHooks.length = 0; lucernaLanterns.length = 0; lucernaCircles.length = 0;
+  bucinaEchoes.length = 0; bucinaCalls.length = 0;
+  hiemsGlazes.length = 0; hiemsStorms.length = 0;
+  veloxStones.length = 0; veloxLanes.length = 0;
+  iceBreaks.length = 0; pads.length = 0;
+  nixShards.length = 0; nixClouds.length = 0;
+  faberParts.length = 0; faberArcs.length = 0; faberBolts.length = 0; faberSprings.length = 0;
+  falcoKnives.length = 0;
+  lignumAxes.length = 0; lignumLogs.length = 0;
   Object.assign(orca, ORCA_FRESH());
   for (const c of camps) { c.repopT = 0; c.seen = [0, 0]; }
   if (state.drop) for (const e of state.drop.eagles) for (const k of Object.keys(e)) if (!SNAP_SKIP.has(k) && k !== 'team') e[k] = typeof e[k] === 'number' ? 0 : null;
@@ -892,7 +951,7 @@ function snapQuantize() {
   };
   walk(players); for (const k in SNAP_KINDS) walk(SNAP_KINDS[k]());
   if (state.drop) walk(state.drop.eagles);
-  walk(objects); walk(nets); walk(guards); walk(brushfires); walk(auraStars); walk(auraOrbs); walk(auraCurtains); walk(salviaBundles); walk(salviaDrops); walk(salviaThaws); walk(pads); walk(state.end); walk(state.eagleCine);
+  walk(objects); walk(nets); walk(guards); walk(brushfires); walk(auraStars); walk(auraOrbs); walk(auraCurtains); walk(salviaBundles); walk(salviaDrops); walk(salviaThaws); walk(lucernaHooks); walk(lucernaLanterns); walk(lucernaCircles); walk(bucinaEchoes); walk(bucinaCalls); walk(hiemsGlazes); walk(hiemsStorms); walk(faberParts); walk(faberArcs); walk(faberBolts); walk(faberSprings); walk(nixShards); walk(nixClouds); walk(falcoKnives); walk(lignumAxes); walk(lignumLogs); walk(veloxStones); walk(veloxLanes); walk(pads); walk(state.end); walk(state.eagleCine);
 }
 // One echo: quantize, frame, snapshot, blank, apply, frame; the pixels that differ,
 // the frame's own noise (two renders of the same state, for anything that
@@ -900,6 +959,18 @@ function snapQuantize() {
 // state IS the applied state afterwards, so a run can go on and echo again.
 // The snapshot crosses through the binary encoder on its way, so the echo
 // proves the bytes as well as the fields.
+// the SNAP_SKIP fields of every body, by slot or network id, so the echo can
+// hand them back to the bodies its apply rebuilt without them
+function snapKeepSkipped() {
+  const grab = (e) => { const o = {}; for (const k of Object.keys(e)) if (SNAP_SKIP.has(k)) o[k] = e[k]; return o; };
+  const kept = { P: players.map(grab) };
+  for (const k in SNAP_KINDS) kept[k] = SNAP_KINDS[k]().map((e) => [snapNid(e), grab(e)]);
+  return kept;
+}
+function snapRestoreSkipped(kept) {
+  kept.P.forEach((o, i) => { if (players[i]) Object.assign(players[i], o); });
+  for (const k in SNAP_KINDS) for (const [n, o] of kept[k]) { const e = snapMaps[k].get(n); if (e) Object.assign(e, o); }
+}
 function netEcho() {
   snapQuantize();
   const a1 = snapFrame(), a2 = snapFrame();
@@ -908,6 +979,7 @@ function netEcho() {
   const json = JSON.stringify(s);
   const size = snapSize(s);
   const dict = encDict(), bytes = snapEncode(s, dict);
+  const kept = snapKeepSkipped();
   snapBlank();
   const blanked = snapFrame();
   snapApply(snapDecode(bytes, encDict()));
@@ -916,6 +988,7 @@ function netEcho() {
   // after the apply, against the first)
   const mismatch = [];
   snapCompare(JSON.parse(json), snapBuild(), '', mismatch, 20);
+  snapRestoreSkipped(kept); // the page goes on stepping this world: its bookkeeping back (a heading lost is a NaN walk)
   return { diff: snapDiff(a2, b), noise, blankDiff: snapDiff(a2, blanked), bytes: json.length, binBytes: bytes.length, size, mismatch };
 }
 // echo every `every` ticks over `ticks` of stepping; the worst diff and when

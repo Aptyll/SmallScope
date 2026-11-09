@@ -16,6 +16,7 @@
 // `fog` banner in js/net/snapshot.js), and a client takes its word (`fogHid`).
 // ------------------------------------------------------------ fog of war
 const FOG_HERO = 160;    // px a hero sees
+const FOG_EYE_STEP = 8;  // px a hero's sight grows or shrinks by at a time (heroEyeR)
 const FOG_SOLDIER = 112; // px a wave soldier sees (past its SOLDIER_AGGRO, so it sees what it turns on)
 const FOG_PERCH = 224;   // px the side's bird sees while it roosts on the perch
 const FOG_MERCH = 128;   // px the side's merchant sees, wherever it works
@@ -29,7 +30,7 @@ const FOG_FACE = 6;      // px past where a sight line meets stone still lit, so
 // whether the fog is up: a match on the ground, never the practice field or
 // the title tour. DBG.fog = false lifts it for a debug look
 function fogUp() {
-  return !PRACTICE && state.mode === 'play' && window.DBG.fog !== false;
+  return !ARENA && state.mode === 'play' && window.DBG.fog !== false;
 }
 
 // Every eye a side has, as { x, y, r, near, stone, open }: near for a body (a
@@ -39,10 +40,12 @@ function fogUp() {
 // field - those cost nothing to trace)
 function sightSources(team, out) {
   out.length = 0;
-  for (const p of players) if (p.team === team && p.active && !p.dead && !inAir(p)) out.push(sightEye(p.x, p.y, FOG_HERO, true));
+  for (const p of players) if (p.team === team && p.active && !p.dead && !inAir(p)) out.push(sightEye(p.x, p.y, heroEyeR(p), true));
   for (const b of robots) {
     if (b.team !== team) continue;
     if (b.kind === 'soldier' && unitAlive(b)) out.push(sightEye(b.x, b.y, FOG_SOLDIER, true));
+    const M = heroMachine(b);
+    if (M && unitAlive(b)) out.push(sightEye(b.x, b.y, M.sight, true)); // a hero's machine (HERO_MACHINE)
     if (b.merchant && !b.dead) {
       out.push(sightEye(b.x, b.y, FOG_MERCH, false));
       if (stallUp(b.stall)) { const c = objCentre(b.stall); out.push(sightEye(c.x, c.y, OBJECTS.stall.sight, false)); }
@@ -59,6 +62,9 @@ function sightSources(team, out) {
   for (const z of zips) if (z && z.team === team) for (const q of zipEyes(z)) out.push(sightEye(q.x, q.y, FOG_ZIP, false));
   return out;
 }
+// how far a hero sees: FOG_HERO, times any hero's own (HERO_SIGHT, js/sim/heroes.js: LUCERNA's
+// lamplight at night), in whole steps of FOG_EYE_STEP so the drawn fog's cache (js/draw/fog.js) holds
+function heroEyeR(p) { return Math.round(FOG_HERO * heroSight(p) / FOG_EYE_STEP) * FOG_EYE_STEP; }
 // a building's middle: a STRUCTS footprint runs east and south of its anchor
 function structCentre(o) { return { x: (o.tx + structW(o) / 2) * TILE, y: (o.ty + structH(o) / 2) * TILE }; }
 // a scenery object's middle (the stall): its footprint runs east and north of its anchor
@@ -124,8 +130,10 @@ function brushHide(srcs, x, y) {
   for (const s of srcs) if (s.near && brushIn(D, s.x / TILE, s.y / TILE) > -FOG_BRUSH_RIM) return false;
   return true;
 }
-// every cover a body can be in that the side's eyes reach: the woods, the brush
-function coverHide(srcs, x, y) { return woodsHide(srcs, x, y) || brushHide(srcs, x, y); }
+// every cover a body can be in that the side's eyes reach: the woods, the brush,
+// and, for body `u` when one is named, the cover a hero's own kit gives it
+// (HERO_COVER, js/sim/heroes.js: NIX's snow cloud)
+function coverHide(srcs, x, y, u) { return woodsHide(srcs, x, y) || brushHide(srcs, x, y) || (!!u && heroCover(srcs, x, y, u)); }
 
 // Whether `team` can see unit u right now. Its own side always; a rival the
 // falcon marked always (the mark's one bypass, js/sim/abilities.js); on a
@@ -140,7 +148,7 @@ function inSight(team, u) {
   fogEyesOf(team);
   const kept = fogSeen[team].get(u);
   if (kept !== undefined) return kept;
-  const seen = sightAt(team, u.x, u.y);
+  const seen = sightAt(team, u.x, u.y, u);
   fogSeen[team].set(u, seen);
   return seen;
 }
@@ -152,8 +160,8 @@ function fogEyesOf(team) {
 // whether `team` sees the point (x, y): inside an eye's reach with no stone
 // between, and not in the woods or the brush out of a near eye's reach
 // (coverHide). What a body is asked through inSight; a puff or a number on
-// the wire, bare
-function sightAt(team, x, y) {
+// the wire, bare (`u` the body standing there, when it is one)
+function sightAt(team, x, y, u) {
   if (!fogUp() || (team !== 0 && team !== 1)) return true;
   const srcs = fogEyesOf(team);
   let seen = false;
@@ -162,5 +170,5 @@ function sightAt(team, x, y) {
     if (d > s.r) continue;
     if (s.open || d < 1 || sightReach(s.x, s.y, dx / d, dy / d, d, s.stone) >= d) { seen = true; break; }
   }
-  return seen && !coverHide(srcs, x, y);
+  return seen && !coverHide(srcs, x, y, u);
 }

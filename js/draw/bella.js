@@ -36,13 +36,17 @@ function drawBellaMarks(e, px, py, w, h, now) {
       }
     }
   }
-  const out = e.outBy >= 0 && state.elapsed < e.outUntil;
-  const duel = e instanceof Player && players.some((b) => b.duelT > 0 && b.duelId === e.id);
-  if (!out && !duel) return;
-  const mx = px + (w >> 1), my = py - 5 - (Math.floor(now * 3) % 2);
-  bellaPip(mx, my, duel ? BELLA_GOLD : BELLA_GOLD_D);
-  if (duel) { ctx.fillStyle = BELLA_GOLD; ctx.fillRect(mx - 4, my, 2, 1); ctx.fillRect(mx + 3, my, 2, 1); }
 }
+// over the stack (HERO_OVER): the pip of a body she marked OUT, flanked when it is her duel's
+const bellaDuelOn = (e) => e instanceof Player && players.some((b) => b.duelT > 0 && b.duelId === e.id);
+HERO_OVER.push({
+  w: (e) => (bellaDuelOn(e) ? 9 : e.outBy >= 0 && state.elapsed < e.outUntil ? 5 : 0),
+  draw: (e, x, y, now) => {
+    const duel = bellaDuelOn(e), mx = x + (duel ? 4 : 2), my = y - (Math.floor(now * 3) % 2);
+    bellaPip(mx, my, duel ? BELLA_GOLD : BELLA_GOLD_D);
+    if (duel) { ctx.fillStyle = BELLA_GOLD; ctx.fillRect(mx - 4, my, 2, 1); ctx.fillRect(mx + 3, my, 2, 1); }
+  },
+});
 // the duel's ring on the snow under the hero called out, in the caller's
 // side's colour, closing in as the duel runs out (HERO_GROUND)
 function drawBellaDuels(ex, ey, now) {
@@ -65,7 +69,7 @@ function bellaSpathas() {
   const flat = bakeBladeArt(BELLA_SPATHA, BELLA_SPATHA_PAL);
   return (bellaSpathaArt = { flat, diag: flat });
 }
-HERO_BLADES.spatha = { art: bellaSpathas, hip: {}, grip: [0, 0] };
+HERO_BLADES.spatha = { art: bellaSpathas, hilt: [18, 11], hip: {}, grip: [0, 0] };
 
 HERO_MARK.push(drawBellaMarks);
 HERO_GROUND.push(drawBellaDuels);

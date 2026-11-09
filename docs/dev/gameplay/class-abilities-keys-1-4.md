@@ -67,7 +67,7 @@ the held one lit gold
 js/ai/ai.js, first thing `aiThink` asks): the ultimate whenever it can rank, then each basic key
 unlocked once, then the basics maxed in the hero's `rankOrder` (its `CLASSES` row: HUNTER
 shot, net, grapple; WARRIOR stomp, rush, shield; ARMATOS verdict, march, brace; FORTIVA sever,
-yoke, heart; AURA star, orb, step; SALVIA poultice, cloak, snowdrops). The cd column in the tables below is every rank's; the numbers in the text are rank
+yoke, heart; AURA star, orb, step; SALVIA poultice, cloak, snowdrops; LUCERNA crook, shoo, lantern; RUPES heave, shed, shoulder; NIX shard, drift step, cloud; FALCO knife fan, talons, glide; VARRO lunge, snap, howl; BUCINA note, blast, echo; MARIS harpoon, undertow, brace; LIGNUM chop, thrown axe, bark skin; VELOX skip stone, quick step, ice lane; SAGITTA pin, crank back, pavise). The cd column in the tables below is every rank's; the numbers in the text are rank
 1's, and each row's `rank` table has the rest.
 
 **Every ability lands on every kind of body.** A player, a rabbit, a deer, a bird, a wolf and a
@@ -96,7 +96,7 @@ HUNTER — bow, distance control, the ground between:
 
 | key | name | cd | what it does |
 | --- | --- | --- | --- |
-| 1 | **PIERCING SHOT** | 12/11/10/9/8 s | locks a full draw for `PIERCE_WIND` (0.7 s) — the body plants (`PIERCE_SLOW` ×0.15 walk), the pose leans back and holds, and a thin dashed **telegraph line** is drawn on the ground along the live aim for BOTH sides, gold-flaring as the loose nears. Then the shot fires itself: one enhanced arrow (a full-draw plain arrow × its `rank` `shot`, 1.5/1.7/1.9/2.1/2.3, `PIERCE_SPD` 380, `PIERCE_RANGE` 520) that **goes through every body on the line** (`a.pierce`/`a.pierceHit`, the arrow loop in js/sim/sim.js) — only a raised shield or the world stops it. **It wears every modifier on the tool in hand** (`pierceMods`) — folded into one envelope and spent as a press spends one: `pierceFlight` is `shotFlight` at full draw, so SPEEDUP and LONGSHOT stretch the reach as well as the speed; HEFT and SPLITTER scale the damage after the multiplier; the fire and CINDER BURST ride it; SPLITTER fans it and DUPLICATE repeats it (`armOff`), every arm a pierce of its own. The telegraph draws that flight, one line per fan arm, each to where the world stops it (`teleLen`). The loose is the unmissable cue: `SFX.nock` snap + a white flash on the arrowhead |
+| 1 | **PIERCING SHOT** | 12/11/10/9/8 s | locks a full draw for `PIERCE_WIND` (0.7 s) — the body plants (`PIERCE_SLOW` ×0.15 walk), the pose leans back and holds, and a thin dashed **telegraph line** is drawn on the ground along the live aim for BOTH sides, gold-flaring as the loose nears. Then the shot fires itself: one enhanced arrow (a full-draw plain arrow × its `rank` `shot`, 1.5/1.7/1.9/2.1/2.3, `PIERCE_SPD` 380, `PIERCE_RANGE` 520) that **goes through every body on the line** (`a.pierce`/`a.pierceHit`, the arrow loop in js/sim/sim.js) — only a raised shield or the world stops it. Its flight is `pierceFlight` (`shotFlight` at full draw) and its damage is the hero's DAMAGE times the rank's `shot`, plus its ABILITY POWER share (`abPierce`). The telegraph draws that flight to where the world stops it (`teleLen`). The loose is the unmissable cue: `SFX.nock` snap + a white flash on the arrowhead |
 | 2 | **NET SHOT** | 15/14/13/12/11 s | a weighted net down a line (`nets`, each carrying the rank it was thrown at): first rival hit takes 4/8/12/16/20 and is **slowed** (`p.slowT`/`slowMul` ×0.4, 2 s, the drape drawn on them); the recoil kicks the hunter backward with an animated hop (`p.hopT`) |
 | 3 | **GRAPPLE** | 8/7/6/5/4 s | throws a hook down the aim ray: the first **tree or dead tree** within `GRAP_RANGE` (170 px) and `GRAP_ASSIST` of the line (the aim assist) anchors it, and the body is reeled straight at it at `GRAP_REEL` (260 px/s — over `SLIDE_MIN`, so shift on release carves a slide). The reel runs **while key 3 is held** (`input.grapple`, the one held ability input); releasing, arriving, a wall or a stun lets go through `grapEnd`, which KEEPS the momentum and starts the cooldown — a long ride and an instant release cost the same. A hook that catches nothing costs `GRAP_MISS_CD` (1 s) |
 | 4 | **SNOW COVER** | 60/50/40 s | the burrow ([Prone](prone-under-the-snow.md), which only this key opens): the cast kneels and calls `tryProne`, the 60 s clock is paid **on the way under**, and the key again — like every other way back up — rises free. A kneel the snow refuses (still moving, sliding, no snow underfoot) refunds the clock. The well's active tell drains with `p.hide` as the cover builds |
@@ -119,7 +119,7 @@ standard on his back (`drawHeroBack`, a `HERO_BODY_FX` row):
 
 | key | name | cd | what it does |
 | --- | --- | --- | --- |
-| P | **LEGION'S RESOLVE** | — | damage taken fills `p.resolve` (`RESOLVE_FULL`, 30% of max hp, for a full bar; it drains after `RESOLVE_IDLE_T` without a hit). Full, the next key cast gives a shield of `RESOLVE_SHIELD` (14%) of max hp for `RESOLVE_SHIELD_T` (4 s), `shieldUnit` (`p.wardHp`, spent in `damagePlayer` after the dawn shield). The standard's cloth fills gold with it. `HERO_PASSIVE`, reached through `passiveHurt`/`passiveCast`/`passiveTick` |
+| P | **LEGION'S RESOLVE** | — | damage taken fills `p.resolve` (`RESOLVE_FULL`, 30% of max hp, for a full bar; it drains after `RESOLVE_IDLE_T` without a hit). Full, the next key cast gives a shield of `RESOLVE_SHIELD` (14%) of max hp for `RESOLVE_SHIELD_T` (4 s), `shieldUnit` (a `ward` in `p.shields`, spent after the dawn shield). The standard's cloth fills gold with it. `HERO_PASSIVE`, reached through `passiveHurt`/`passiveCast`/`passiveTick` |
 | 1 | **IRON VERDICT** | 8/7.5/7/6.5/6 s | a line slam `VERDICT_LEN` long, ±`VERDICT_HALF` (`unitsInLine`), the box on the snow through the wind-up with its middle hashed gold: `dmg` (14/19/24/29/34) + `slow` for `slowT` on all in it, and those in the middle stretch (`VERDICT_MID`) are knocked up `up` instead (`knockUp`) |
 | 2 | **HOLD THE LINE** | 12/11.5/11/10.5/10 s | a brace for `t` (the shield-wall state, `wall: true`): blows from the front take `cut` less (`holdTaken`, a `HERO_TAKEN` fold in `damagePlayer`). A rival hero's hit primes the bash (`p.holdHit`, the trim goes gold); the key again bashes the wedge ahead (`armBash`): `dmg` (10/14/18/22/26), shoved `BASH_KB`, and stunned `stun` only when primed |
 | 3 | **VETERAN'S MARCH** | 14/13/12/11/10 s | a charge (the rush state with `p.dash = 'march'`, `HERO_DASH`) at `MARCH_SPD` for `MARCH_T`: lesser bodies are shoved aside once each for `shove` (5; `marchStep`, `MARCH_SHOVE`), and the first rival hero (or an anchored body) stops it: `dmg` (12/16/20/24/28) and `stun` (`marchEnd`) |
@@ -148,8 +148,8 @@ with a passive. Her rules live in **[js/sim/bella.js](../../../js/sim/bella.js)*
 blade in [js/sprites/bella.js](../../../js/sprites/bella.js). She is quick and light (104 hp, 16
 armor, a step faster than the warrior) with a quicker, shorter cut (her `attack` row, the EAGLE
 SPATHA), drawn as her own blade, in a body of her own ([hero looks](../sprites.md#hero-looks)).
-What her state puts on a body (her pips, the parry's blade, the marks) is `drawBellaMarks`, a
-`HERO_MARK` row; the duel's ring under the hero she called out is a `HERO_GROUND` row. Her two
+What her state puts on a body (her pips, the parry's blade) is `drawBellaMarks`, a
+`HERO_MARK` row, and the E mark and the duel's diamond go in the row over the body's stack (`HERO_OVER`); the duel's ring under the hero she called out is a `HERO_GROUND` row. Her two
 dashes pass through the small bodies a roll passes (`through` on the `HERO_DASH` row,
 `heroDashThrough` in `separateUnits`):
 
@@ -167,7 +167,7 @@ put her out. Her rules live in **[js/sim/ignia.js](../../../js/sim/ignia.js)** (
 [js/sprites/ignia.js](../../../js/sprites/ignia.js). She is fragile (84 hp, 10 armor) and shoots
 from her CROOK AND LANTERN (her `attack` row: a slow ember, `look: 'ember'`), carried upright
 (`HERO_STAVES`, [hero looks](../sprites.md#hero-looks)). Every fire her keys light is the shared
-burn (`igniteUnit`, through `igniaLight` or a blow's `burn: [s, dps]` in `hurtUnit`) at a rate of
+burn (`igniteUnit`, through `igniaLight` or a blow's `burn: [s, dps]` in `hurtUnit`; a blow's `slow: [s, mul]` is put on the same way, RUPES's HEAVE) at a rate of
 the rank's `burn` + `IGNIA_BURN_AP` of her ABILITY POWER + `IGNIA_BURN_AD` of her DAMAGE
 (`igniaBurnRate`), and marks the body as hers (`kindleBy`). Burns are slow by design: her blows
 are small, the fire does the work. BRUSHFIRE's line and melted strip are a `HERO_GROUND` row, the
@@ -219,9 +219,209 @@ cast with) is stepped by `salviaWorld` (`HERO_TICK`):
 
 Her rows' `botAim` point a bot's heals at the most hurt ally in reach (`salviaNeedy`); a bot throws the
 poultice at a rival when nobody needs it, and keeps THAW for one ally nearly down or two hurt.
+HIEMS, THE LONG WINTER — the control mage. Her rules live in
+**[js/sim/hiems.js](../../../js/sim/hiems.js)** (`HIEMS_AB`, its `hiems` banner), her pixels in
+[js/draw/hiems.js](../../../js/draw/hiems.js), her icons, looks and staff art in
+[js/sprites/hiems.js](../../../js/sprites/hiems.js). 82 hp, 10 armor, a step slower than most; a
+frost bolt from her SNOWFLAKE STAFF (her `attack` row, drawn through its `look`). Little burst:
+she freezes a fight and lets her side finish it. What she leaves in the world (`hiemsGlazes`,
+`hiemsStorms`, each carrying its rank) is stepped by `updateHiemsWorld` (`HERO_TICK`):
+
+| key | name | cd | what it does |
+| --- | --- | --- | --- |
+| P | **DEEP CHILL** | — | every blow of hers (her keys and her staff, `hiemsDeal` on `HERO_PASSIVE.deepchill`'s `deal`) chills the rival body: a stack held `CHILL_WINDOW`, slowing ×0.85 at one and ×0.7 at two (`hiemsChill`). The third freezes it in place for `FREEZE_T` (a stun, so tenacity cuts it; the ice is drawn round it, `frozeT`), and for `FREEZE_IMMUNE` after its chills stop at two. Soldiers and beasts chill too |
+| 1 | **ICICLE** | 8/7.5/7/6.5/6 s | a shard down the aim (`ICICLE_SPD` for `ICICLE_RANGE`, riding `arrows`): the first rival takes `dmg` (14/20/26/32/38), is slowed ×`ICICLE_SLOW` for `ICICLE_SLOW_T` and chilled |
+| 2 | **CLEAR ICE** | 15/14/13/12/11 s | a disc `GLAZE_R` at the aim (at most `GLAZE_RANGE`) turns to ice for `t` (3/3.5/4/4.5/5 s): a rival hero on it skates as on the creek's ice (`HERO_ICE`, read by `iceUnder`), and every rival body on it walks ×`GLAZE_SLOW`. Her own side walks it as snow. No damage |
+| 3 | **COLD SNAP** | 12/11.5/11/10.5/10 s | a burst `SNAP_R` at the aim (at most `SNAP_RANGE`): every rival already chilled is rooted `root` (1 s), then every rival inside takes `dmg` (12/18/24/30/36) and is chilled; buildings take it too |
+| 4 | **WHITEOUT** | 100/85/70 s | a blizzard `WHITE_R` round her for `WHITE_T`, riding her: rivals inside walk ×`WHITE_SLOW`, and once a second take `dmg` (10/16/22) and a chill. A rival hero inside sees only `WHITE_SEE` (a fifth) of their reach (`HERO_SIGHT`, read by `heroEyeR`): their side's other eyes still see |
+
+RUPES, THE AVALANCHE — the engage tank. His rules live in
+**[js/sim/rupes.js](../../../js/sim/rupes.js)** (`RUPES_AB`, its `rupes` banner), his pixels in
+[js/draw/rupes.js](../../../js/draw/rupes.js), his icons, looks and maul in
+[js/sprites/rupes.js](../../../js/sprites/rupes.js). 134 hp and 24 armor, two steps slower than
+the hunter, and little damage: his ICE MAUL is the longsword's cut a little slower (`cycle` 34/60 s)
+with a harder shove. Everything he does rides `p.pack`, his snowpack (0..1, `PACK_LAYERS` layers):
+
+| key | name | cd | what it does |
+| --- | --- | --- | --- |
+| P | **SNOWPACK** | — | a hit he takes from anyone packs it (`dmg / (maxHp × PACK_FILL)`, `packHurt`); walking through deep snow packs `PACK_DEEP` a second (`packTick`); after `PACK_IDLE_T` without either it melts at `PACK_MELT` a second. Full, every hit he takes is cut by `PACK_CUT` (15%, `packTaken`, a `HERO_TAKEN` row). Each layer shows as white crust on his shoulders, arms and crown (`drawPackCrust`). `HERO_PASSIVE.snowpack` |
+| 1 | **HEAVE** | 8/7.5/7/6.5/6 s | a block of snow thrown down the aim (a shot, `look: 'snowblock'`, `HEAVE_RANGE` 150 px): the first rival body takes `dmg` (14/20/26/32/38) and is slowed ×`slow` for `slowT` (the shot's `slow`, put on by `hurtUnit`). A hero hit packs him `HEAVE_PACK` (a layer, `packDeal`) |
+| 2 | **SHED** | 10/9.5/9/8.5/8 s | the pack shaken off (`rupesShed`, `p.pack` to 0): every rival body and building in `SHED_R` takes `dmg` (10/14/18/22/26) plus `layer` (8/11/14/17/20) for each layer shed, and is slowed ×`slow` for `slowT` × (1 + half a layer) |
+| 3 | **SHOULDER** | 13/12/11/10/9 s | a short charge (`p.dash = 'shoulder'`, `SHOULDER_SPD` for `SHOULDER_T`): the first rival body met takes `dmg` (12/18/24/30/36) and is thrown `SHOULDER_KB` the way he ran; a tree or a wall (any `isSolidTile`) within `SHOULDER_PIN` behind it (`solidBehind`) stuns it `stun` (1 s). A bear nothing shoves is struck, not thrown |
+| 4 | **AVALANCHE** | 100/85/70 s | he rolls as a snowball (`p.dash = 'avalanche'`, up to `AVA_T`), from `AVA_SPD0` to `AVA_SPD1` as it grows, bending toward the aim at `AVA_STEER`; `p.avaD` is how far it has rolled (`avaGrow`). Soldiers and beasts are thrown aside; on the first hero (or a bear), a wall, or the clock it bursts (`avaBurst`): every rival body and building in a ring from `AVA_R0` to `AVA_R1` (by the roll) takes `dmg` (50/85/120) and is knocked up `up` (0.6/0.75/0.9 s) × (1 + `AVA_UP_GROW` × the growth). He comes out of it fully packed. Drawn as the ball in his place (`HERO_BODY_DRAW`) |
+
+FABER, THE TINKER — the zone mage. His rules live in
+**[js/sim/faber.js](../../../js/sim/faber.js)** (`FABER_AB`, its `faber` banner), his pixels in
+[js/draw/faber.js](../../../js/draw/faber.js), his icons, looks and staff art in
+[js/sprites/faber.js](../../../js/sprites/faber.js). 80 hp, 10 armor, slower than most; a brass cog
+from his CLOCK STAFF (his `attack` row, drawn through its `look`). He holds a spot: his damage is
+spread over machines he winds, and he is poor at a chase. His machines are bodies in `robots`
+(`HERO_MACHINE`, js/sim/heroes.js), so towers, soldiers and every weapon hit them, and a rival who
+breaks one is paid its `pay`. What else he leaves in the world (`faberParts`, `faberArcs`,
+`faberBolts`, `faberSprings`) is stepped by `updateFaberWorld` (`HERO_TICK`):
+
+| key | name | cd | what it does |
+| --- | --- | --- | --- |
+| P | **SPARE PARTS** | — | a body in `robots` broken within `PART_NEAR` (180 px) of him (a soldier of either side, or a machine) leaves a part on the snow for `PART_LIFE` (`HERO_WRECK`, `faberWreck`); walking over it takes `PART_CUT` (1 s) off each of keys 1-3's waits. At most `PART_MAX` of his lie at once. `HERO_PASSIVE.spareparts` |
+| 1 | **SPARK** | 7/6.5/6/5.5/5 s | a spark down the aim (`SPARK_SPD` for `SPARK_RANGE`, riding `arrows`): the first rival takes `dmg` (16/24/32/40/48), and the step after it jumps to the nearest other rival within `ARC_R` for `ARC_SHARE` (60%) of the blow (`faberDeal` queues it, `updateArcs` lands it) |
+| 2 | **WIND A MACHINE** | 14/13/12/11/10 s | a small gun set at the aim (at most `WINDER_PLACE`), `WINDER_HP` + `WINDER_HP_LV` a level, running `WINDER_LIFE`: every `WINDER_CD` it shoots the nearest rival within `WINDER_RANGE` (`robotFoeUnit`) with a bolt that follows its mark for `dmg` (9/12/15/18/21). Two at once; a third winds down the oldest. A rival who breaks one gets 20 gold |
+| 3 | **CLOCKSPRING** | 16/15/14/13/12 s | a trap at the aim (at most `SPRING_RANGE`), wound after `SPRING_ARM`, waiting `SPRING_LIFE`: the first rival hero within `SPRING_R` is rooted `root` (1/1.15/1.3/1.45/1.6 s) and takes `dmg` (20). Soldiers and beasts walk over it. Three at once; a rival sees one only where their side sees |
+| 4 | **THE OLD ENGINE** | 110/95/80 s | a big machine wound up at his side for `ENGINE_LIFE`, `ENGINE_HP` + `ENGINE_HP_LV` a level: it walks (`navStep`) to his aim, no further than `ENGINE_LEASH` from him, and every `ENGINE_SLAM_EVERY` (the first after `ENGINE_SLAM_FIRST`) with a rival within `ENGINE_SLAM_R` it slams: each is stunned `stun` (0.75 s) and takes `dmg` (50/85/120); buildings take it too. While it runs his small guns shoot `ENGINE_HASTE` (twice) as fast. A rival who breaks it gets 50 gold |
+
+MARIS, THE ICE DIVER — the catch tank. Her rules live in
+**[js/sim/maris.js](../../../js/sim/maris.js)** (`MARIS_AB`, its `maris` banner), her pixels in
+[js/draw/maris.js](../../../js/draw/maris.js), her icons, looks and harpoon in
+[js/sprites/maris.js](../../../js/sprites/maris.js). 126 hp and 22 armor, a step slower than the
+hunter; her HARPOON's basic thrust reaches a little further and narrower than the longsword
+(`reach` 28, `half` 0.8). She is strong by water and weak far from it:
+
+| key | name | cd | what it does |
+| --- | --- | --- | --- |
+| P | **COLD WATER** | — | on ice (`iceUnder`, a rival HIEMS's glaze too) or within `COLD_NEAR` tile of open water she is cold (`p.coldT`, held `COLD_KEEP` s after she leaves, `coldTick`): she walks ×`COLD_WALK` (`HERO_MOVE`) and each basic strike slows ×`COLD_SLOW` for `COLD_SLOW_T` (`coldDeal`). Open water never takes her: she swims the creek and a broken hole (`HERO_SWIM`, read by `playerPlunge`). `HERO_PASSIVE.coldwater` |
+| 1 | **HARPOON** | 12/11.5/11/10.5/10 s | a harpoon down the aim (a shot, `look: 'harpoon'`, `HARPOON_RANGE` 230 px) on a line: the first rival body takes `dmg` (30/45/60/75/90), is rooted `root` (0.6 s) and she is reeled to it (`harpoonCatch`, `p.dash = 'reel'` at `REEL_SPD`, stopping `REEL_STOP` short) |
+| 2 | **BRACE FOR COLD** | 16/15/14/13/12 s | for `BRACE_T` every hit she takes is cut by `ward` (15/18/21/24/27%) plus `BRACE_PER` for each rival hero within `BRACE_NEAR`, at most `BRACE_CAP` (`braceTaken`, a `HERO_TAKEN` row) |
+| 3 | **UNDERTOW** | 11/10.5/10/9.5/9 s | a ring `UNDERTOW_R` round her: every rival body and building in it takes `dmg` (20/32/44/56/68), is drawn in a little and slowed for `UNDERTOW_T`: ×`slow` (0.7), ×`ice` (0.45) for one standing on ice |
+| 4 | **BREACH** | 110/95/80 s | she dives under the snow to the aim (at most `BREACH_RANGE`, `p.dash = 'breach'` at `BREACH_SPD`), untouchable (`invuln`) and drawn as the snow heaving over her (`HERO_BODY_DRAW`); a wall brings her up early. Up (`breachUp`): every rival body and building in `BREACH_R` takes `dmg` (60/100/140) and is knocked up `up` (0.8/1/1.2 s); on bare ice it breaks in the orca's `breach` shape (`iceBreak`, open `BREACH_HOLD`), and whoever stands on it goes in. She swims |
+
+LIGNUM, THE FELLER — the skirmisher of the treeline. His rules live in
+**[js/sim/lignum.js](../../../js/sim/lignum.js)** (`LIGNUM_AB`, its `lignum` banner), his pixels in
+[js/draw/lignum.js](../../../js/draw/lignum.js), his icons, looks and felling axe in
+[js/sprites/lignum.js](../../../js/sprites/lignum.js). 114 hp and 18 armor at the hunter's pace;
+his FELLING AXE's basic blow has the longsword's reach a little wider and slower (`reach` 26,
+`half` 1). Strong in short trades and by the woods, weak in an open lane and on ice (a low cap and
+a slow turn there), and with nothing to hold a rival until his ultimate. What he leaves in the
+world (`lignumAxes`, `lignumLogs`) is stepped by `HERO_TICK`:
+
+| key | name | cd | what it does |
+| --- | --- | --- | --- |
+| P | **TREELINE** | — | the step he leaves the woods (`inWoods`, js/sim/fog.js) readies his next basic strike for `TREELINE_T` (3 s): it lands ×(1 + `TREELINE_DMG`) (1.5) and he walks ×`TREELINE_RUN` for `TREELINE_RUN_T` (`lignumTick`, `lignumDeal`, `HERO_MOVE`). Going back in drops it until the next step out. `HERO_PASSIVE.treeline` |
+| 1 | **CHOP** | 9/8.5/8/7.5/7 s | a cut through the wedge ahead (`CHOP_R`, `CHOP_HALF`): every rival body and building in it takes `dmg` (18/26/34/42/50). For `CHOP_WAIT` the key again (`recast`) is the chop: `chop` (30/42/54/66/78) and a slow ×`slow` (0.65) for `CHOP_SLOW_T`. The wait restarts from the second blow |
+| 2 | **THROWN AXE** | 13/12/11/10/9 s | a hand axe down the aim (`AXE_SPD` for `AXE_RANGE`, 200 px): the first rival body or building takes `dmg` (40/60/80/100/120). It sticks in a rival hero (riding them) or in the first tree it meets for `AXE_STUCK`; the key again pulls him to it (`p.dash = 'axepull'` at `AXE_PULL_SPD`, stopping `AXE_PULL_STOP` short) |
+| 3 | **BARK SKIN** | 15/14/13/12/11 s | for `BARK_T` every hit he takes is cut by `ward` (15/17/19/21/23%), twice that with a pine within `BARK_NEAR` tile of his feet (`barkTaken`, a `HERO_TAKEN` row) |
+| 4 | **TIMBER** | 100/85/70 s | after a 0.6 s wind-up showing its line, the nearest pine within `TIMBER_PICK` falls down the aim (a stump where it stood); with none, the trunk is laid from his feet. Every rival body and building along `TIMBER_LEN` (104 px), `TIMBER_W` either side, takes `dmg` (90/140/190) and is knocked up `up` (0.9/1/1.15 s), thrown off the side it stood on. The trunk then lies there `TIMBER_T` (3 s): each open tile under it is a wall to every walker and shot (`HERO_SOLID`, read by `isSolidTile`) |
+
+LUCERNA, THE LANTERN — the catch-and-save support. Her rules live in
+**[js/sim/lucerna.js](../../../js/sim/lucerna.js)** (`LUCERNA_AB`, its `lucerna` banner), her pixels in
+[js/draw/lucerna.js](../../../js/draw/lucerna.js), her icons, looks and lantern art in
+[js/sprites/lucerna.js](../../../js/sprites/lucerna.js). 88 hp, 12 armor, little damage: a spark off
+her LANTERN (her `attack` row, drawn as `look: 'lampspark'`; the lantern hangs from her hand,
+`HERO_STAVES`). She has the game's only pull: `lucernaPull` draws a body along the snow at
+`PULL_SPD` to a spot (`p.pullT`, stepped by `stepPulls` through `moveEntity`, so a wall stops it),
+and a rival is held (`stunUnit`) while it travels. What she leaves in the world (`lucernaHooks`,
+`lucernaLanterns`, `lucernaCircles`) is stepped by `lucernaWorld` (`HERO_TICK`):
+
+| key | name | cd | what it does |
+| --- | --- | --- | --- |
+| P | **LAMPLIGHT** | — | every rival body within `LAMP_R` (56 px) of her is shown (`markUnit`: through the fog, the woods and the brush) and stays shown `LAMP_SEE_T` after leaving it (`lucernaTick`); an ally player inside (her too) sees ×(1 + `LAMP_NIGHT` × `state.darkness`) further, a third more at full night (`lucernaSight`, a `HERO_SIGHT` row). `HERO_PASSIVE.lamplight` |
+| 1 | **SHEPHERD'S CROOK** | 14/13/12/11/10 s | a hook flies down the aim `CROOK_RANGE` (170 px) at `CROOK_SPD`, past allies (`updateHooks`); a wall or a tree ends it. The first rival body it meets (a hero, a soldier, a beast) takes `dmg` (20/35/50/65/80) and is pulled to `CROOK_STOP` from her, then walks ×`CROOK_SLOW` for `CROOK_SLOW_T` |
+| 2 | **LANTERN** | 18/17/16/15/14 s | her lantern lands at the aim, at most `LANTERN_RANGE` from her, one at a time (`lucernaThrow`). An ally player who walks within `LANTERN_R` of it takes it and is pulled to her side, not held; rivals within `LANTERN_SEE` of it are shown. Untaken, it comes back after `t` (4/4.5/5/5.5/6 s) (`updateLanterns`). A bot throws it at an ally hero who is hurt with a rival close (`lucernaInDanger`, the row's `botAim`) |
+| 3 | **SHOO** | 10/9.5/9/8.5/8 s | a swing of the crook `SHOO_REACH` in front of her, `SHOO_HALF` either side of the aim: every rival body in it takes `dmg` (15/25/35/45/55) and is shoved `SHOO_KB` (`hurtUnit`'s `kb`); buildings in it take the blow |
+| 4 | **CIRCLE OF LIGHT** | 100/85/70 s | a ring `CIRCLE_R` (92 px) round where she stands, for `CIRCLE_T`: every rival inside is shown, and one within `CIRCLE_EDGE` of the rim walks ×`slow` (0.45/0.35/0.25) for `CIRCLE_SLOW_T` (`updateCircles`) |
+
+BUCINA, THE HORN — the tempo support. Her rules live in
+**[js/sim/bucina.js](../../../js/sim/bucina.js)** (`BUCINA_AB`, its `bucina` banner), her pixels in
+[js/draw/bucina.js](../../../js/draw/bucina.js), her icons, looks and horn art in
+[js/sprites/bucina.js](../../../js/sprites/bucina.js). 92 hp, 14 armor, no heals and no shields: a
+note off her HORN (her `attack` row, drawn as `look: 'hornnote'`; the horn is carried upright,
+`HERO_STAVES`). What she leaves in the world (`bucinaEchoes`, `bucinaCalls`) and the clocks she
+lends (`p.heardT`, `p.rallyT`) are stepped by `bucinaWorld` (`HERO_TICK`):
+
+| key | name | cd | what it does |
+| --- | --- | --- | --- |
+| P | **HEARD** | — | whenever one of her keys strikes a rival body, every ally player within `HEARD_R` (150 px) of her, her too, walks ×`HEARD_WALK` for `HEARD_T` (`bucinaHeard`, `p.heardT`, a `HERO_MOVE` row). `HERO_PASSIVE.heard` |
+| 1 | **HORN BLAST** | 10/9.5/9/8.5/8 s | a cone `BLAST_REACH` (78 px) in front of her, `BLAST_HALF` either side of the aim: every rival body in it takes `dmg` (15/25/35/45/55), is shoved `BLAST_KB` and walks ×`BLAST_SLOW` for `BLAST_SLOW_T`; buildings in it take the blow |
+| 2 | **RALLYING NOTE** | 16/15/14/13/12 s | every ally player within `RALLY_R` (110 px), her too, for `RALLY_T`: attack speed +`as` (20/25/30/35/40%, a `HERO_STAT` 'as' row: a share on `asMul`, like an item's) and `RALLY_TEN` tenacity (`bucinaTen`, a `HERO_TEN` row) |
+| 3 | **ECHO** | 13/12.5/12/11.5/11 s | a wave down the aim `ECHO_RANGE` (210 px) at `ECHO_SPD` (`updateEchoes`). A wall or a tree turns it round once, to run back as far as it came. Each pass strikes each rival body once for `dmg` (20/32/44/56/68); one struck going and coming is stunned `ECHO_STUN` |
+| 4 | **SHAKE THE PINES** | 100/85/70 s | every pine within `PINES_R` (190 px) sheds its snow (`shedHit`, js/sim/shed.js; at most `PINES_PUFFS` seen to puff). Every rival body standing within `PINES_UNDER` of a pine's foot inside is stunned `stun` (0.75/1/1.25 s) (`bucinaUnderPine`); every rival in the woods inside (`inWoods`) is shown for `PINES_SEE_T` |
+
+A bot rallies with two allies near and a rival hero close, and keeps SHAKE THE PINES for a rival hero under a pine or in the woods.
+VARRO, THE WOLF-KEPT — the jungler: a diver who picks one rival and closes the ring on them. His
+rules live in **[js/sim/varro.js](../../../js/sim/varro.js)** (`VARRO_AB`, its `varro` banner), his
+pixels in [js/draw/varro.js](../../../js/draw/varro.js), his icons, looks and spear in
+[js/sprites/varro.js](../../../js/sprites/varro.js). 112 hp, 18 armor, a step faster than a walk; his
+HUNTING SPEAR is a cut a touch longer and narrower than the longsword's. His wolves are real wolves:
+`animals` of kind `wolf` with his `team` and `owner` and `summon: 'pack'`, walked by
+`HERO_SUMMON.pack` (`wolfStep`), so every blow, area and shot that finds a beast finds them, his
+own side's do not, and their bars are in his side's colour (`drawBeastFrame`). A summon pays
+nobody when it falls (`animalDies`).
+
+| key | name | cd | what it does |
+| --- | --- | --- | --- |
+| P | **THE PACK** | — | every wolf within `WOLVES_R` of him, his or a den's (never a rival's), adds `WOLVES_AS` attack speed, `WOLVES_MAX` at most (`HERO_STAT` 'as', a share folded into `asMul`); his blows on a beast (not a summon) land ×`WOLVES_BEAST`, which is his way through the woods. `HERO_PASSIVE.pack` |
+| 1 | **LUNGE** | 8/7.5/7/6.5/6 s | needs a rival body within `LEAP_PICK` of the aim and `LEAP_RANGE` (80 px) of him (`ok`): he leaps at it (`p.dash = 'vleap'`, steering for it), lands `dmg` (14/19/24/29/34) and marks it for `LEAP_MARK_T` (`packBy`, `packUntil`; a paw over its head for both sides). His basic attacks on the mark add `markDmg` (5/7/9/11/13) + `LEAP_BONUS_AD` of his DAMAGE |
+| 2 | **HOWL** | 14/13/12/11/10 s | every rival body within `HOWL_R` is shoved out (`HOWL_KB`) and slowed ×`slow` for `slowT` (1/1.25/1.5/1.75/2 s); his called wolves run ×`HOWL_PACK_MUL` for `HOWL_PACK_T`. No damage |
+| 3 | **SNAP** | 9/8.5/8/7.5/7 s | needs a rival in `SNAP_REACH` (`ok`): two strikes `SNAP_GAP` apart, each `dmg` (10/14/18/22/26), on his mark if it stands in reach, else the rival nearest the aim; the second slows ×`slow` for `slowT` |
+| 4 | **CALL THE PACK** | 90/75/60 s | needs a rival hero within `CALL_PICK` of the aim and `CALL_RANGE` (220 px) of him (`ok`): `CALL_N` wolves come out beside the pine nearest that hero (within `CALL_WOODS` tiles; at his heels in the open, `callSpots`) and hunt only it at `CALL_SPD`, biting `dmg` (5/7/9) every `CALL_BITE_CD` as his blows (`ab: 'call'`). Each has `wolfHp` (40/60/80) health; after `t` (5/5.5/6 s), or when the hero falls, they run off (`CALL_LEAVE_T`) |
+
+NIX, THE SNOWBLIND — the night scout: an assassin of skill and weather, never magic. Her rules
+live in **[js/sim/nix.js](../../../js/sim/nix.js)** (`NIX_AB`, its `nix` banner), her pixels in
+[js/draw/nix.js](../../../js/draw/nix.js), her icons, looks and dirk in
+[js/sprites/nix.js](../../../js/sprites/nix.js). Light (98 hp, 14 armor) and a step faster, with the
+quickest, shortest cut (the ICE DIRK). Her shards and clouds are things she leaves in the world
+(`nixShards`, `nixClouds`), stepped by `HERO_TICK`. Hidden means hidden from the other side's fog
+(`HERO_COVER`, asked by `coverHide`): the rival's bots and screen both
+lose her; a mark (`markUnit`: AURA's light, the falcon) still shows her.
+
+| key | name | cd | what it does |
+| --- | --- | --- | --- |
+| P | **NIGHT WATCH** | — | she walks ×(1 + `WATCH_MS` × `state.darkness`) (`nixMoveMul`, a `HERO_MOVE` row). Once she has been hidden (her cloud, SQUALL, or out of the other side's sight: `nixHidden`), her next blow on a rival hero adds `WATCH_DMG` + `WATCH_AD` of her DAMAGE, ×(1 + `WATCH_NIGHT` × darkness) (`watchDeal`, the passive's `deal`). Any rival she strikes is one DRIFT STEP can reach for `DRIFT_STEP_MEM` |
+| 1 | **ICE SHARD** | 7/6.5/6/5.5/5 s | a shard down the aim, `SHARD_LEN` out: the first rival body (or building) takes `dmg` (18/27/36/45/54); then it flies home to her hand, and caught (`SHARD_CATCH`) gives back `SHARD_REFUND` of the wait (`updateNixShards`) |
+| 2 | **SNOW CLOUD** | 18/17/16/15/14 s | a cloud `CLOUD_R` round her feet for `t` (3.5-5.5 s), one at a time. Inside it she is hidden from a side none of whose heroes or soldiers stands in it (`nixCover`); a blow she strikes from it shows her for `CLOUD_OUT`. Both sides see the cloud; her own side sees her in it faintly (`HERO_FADE`) |
+| 3 | **DRIFT STEP** | 12/11/10/9/8 s | needs a rival she struck in the last `DRIFT_STEP_MEM` near the aim (`ok`): a cut for `dmg` (10/16/22/28/34), then a quick step (`HERO_DASH.drift`) to `DRIFT_STEP_PAST` behind them, turned to face them (`nixDrift`, `driftEnd`) |
+| 4 | **SQUALL** | 80/65/50 s | she vanishes for `WHITEOUT_T`: untouchable (`invuln`) and hidden from both sides' rivals, then comes out beside the nearest rival hero within `WHITE_REACH` and strikes for `dmg` (60/95/130) + `WHITE_AD` of her DAMAGE (`nixWhiteStrike`). If that hero falls within `WHITE_RESET`, the key is ready again once; the cast it gives back cannot give itself back |
+
+VELOX, THE SKATER — the kiting marksman: she throws her sling while she skates and never stands
+still. Her rules live in **[js/sim/velox.js](../../../js/sim/velox.js)** (`VELOX_AB`, its `velox`
+banner), her pixels in [js/draw/velox.js](../../../js/draw/velox.js), her icons and looks in
+[js/sprites/velox.js](../../../js/sprites/velox.js). 82 hp, 10 armor, a step faster than a walk. Her
+STAFF SLING throws a shorter, quicker stone than the hunter's arrow, and her kit barely slows her
+while she draws (`chargeMul` 0.9) and turns sharply on ice (`iceSteer` 9, `iceMax` 1.25). Her
+stones in flight and her lanes are things she leaves in the world (`veloxStones`, `veloxLanes`),
+saved and sent like HIEMS's ice.
+
+| key | name | cd | what it does |
+| --- | --- | --- | --- |
+| P | **KEEP MOVING** | — | each of her basic hits adds a stack, `KEEP_MAX` at most, each walking ×(1 + `KEEP_MS`) (`HERO_MOVE`); the stacks hold `KEEP_T`, or `KEEP_ICE_T` when she stands on ice. `HERO_PASSIVE.keepmoving` |
+| 1 | **SKIP STONE** | 7/6.5/6/5.5/5 s | a stone down the aim at `SKIP_SPD`: it lands every `SKIP_GAP` (`SKIP_ICE_GAP` after a landing on ice: the creek's, or a lane), `SKIP_N` times, and each landing hits every rival body within `SKIP_R` for `dmg` (14/21/28/35/42). A tree or a wall stops it |
+| 2 | **ICE LANE** | 16/15/14/13/12 s | a strip `LANE_LEN` long and `LANE_W` wide from her feet down the aim, for `t` (3/3.5/4/4.5/5 s). On her own lane she skates (`HERO_ICE`) ×`LANE_FAST`; a rival body on it skates like the creek's ice; her own side walks it as snow |
+| 3 | **QUICK STEP** | 9/8.5/8/7.5/7 s | a dash `QSTEP_D` down the aim (`p.dash = 'vstep'`), out of which she glides; her attack cycle is reset, and for `QSTEP_READY_T` her next draw is full at once and her next basic hit adds `dmg` (6/10/14/18/22) |
+| 4 | **LONG RUN** | 100/85/70 s | for `t` (4/5/6 s) she walks ×(1 + `RUN_MS`) and slows, roots and stuns on her last `RUN_TEN` less (`HERO_TEN`); each basic hit throws a second stone (`ab: 'run'`, `dmg` 14/22/30) at the rival body nearest the one hit within `RUN_ECHO_R` |
+
+FALCO, THE KESTREL — the diving assassin. His rules live in **[js/sim/falco.js](../../../js/sim/falco.js)**
+(`FALCO_AB`, its `falco` banner), his pixels in [js/draw/falco.js](../../../js/draw/falco.js), his
+icons, looks and knife in [js/sprites/falco.js](../../../js/sprites/falco.js). 96 hp, 13 armor, a
+step faster; his basic attack is a short throw (the THROWING KNIFE). A mark is `falcoBy`/`falcoUntil`
+on the body (`falcoMarked`), set by his hawk (`falcoMark`, which also `markUnit`s it). His hawk out
+is a body in `robots` (`HERO_MACHINE.falcoHawk`) and his knives are things he leaves in the world
+(`falcoKnives`, stepped by `HERO_TICK`).
+
+| key | name | cd | what it does |
+| --- | --- | --- | --- |
+| P | **THE HAWK** | — | his thrown knives (the basic attack and KNIFE FAN) deal ×(1 + `HAWK_BONUS`) to a rival his hawk marked, for `HAWK_MARK_T` (`hawkDeal`); a fresh mark shows the rival through the fog for `HAWK_SEE_T` |
+| 1 | **TALONS** | 12/11/10/9/8 s | the hawk flies to the aim, at most `TALON_RANGE` (`falcoSpot`), one out at a time (`ok`): the first rival hero it passes within `TALON_PATH` of (a wave in the way does not stop it), or the first rival within `TALON_R` of the spot (a hero first), takes `dmg` (20/35/50/65/80) and is marked; then it flies home. While out it sees `TALON_SIGHT` round itself for his side, and it is a body with `TALON_HP` + `TALON_HP_LV` a level that any rival blow, tower or soldier can cut down: the rival is paid its `pay`, and he is without a hawk for `HAWK_DOWN_T` (no TALONS, none over his shoulder) |
+| 2 | **KNIFE FAN** | 9/8.5/8/7.5/7 s | three knives `FAN_SPREAD` apart down the aim, `FAN_LEN` each: the first body each meets takes `dmg` (16/24/32/40/48), no shove; a rival marked and struck by all three of one throw walks ×`FAN_SLOW` for `FAN_SLOW_T` |
+| 3 | **GLIDE** | 16/15/14/13/12 s | a leap `GLIDE_LEN` down the aim (`HERO_DASH.glide`, `through`: over soldiers and rivals); a rank is the leap back sooner |
+| 4 | **STOOP** | 90/75/60 s | needs a marked rival hero within `STOOP_REACH` (`ok`, `stoopTarget`): up into the sky for `STOOP_UP`, untouchable (`invuln`), unseen by every side (`HERO_COVER`) and still (`HERO_MOVE`), then down beside the hero wherever it went, for `dmg` (120/180/240) + `STOOP_UP_AD` of his DAMAGE, knocked up for `STOOP_KNOCK` (`falcoDrop`) |
+
+SAGITTA, THE BOLT-THROWER — the siege marksman: a heavy crossbow with the longest reach of any
+marksman (a full-draw bolt flies about 350 px, the hunter's arrow 270) and a slow loose. Her rules
+live in **[js/sim/sagitta.js](../../../js/sim/sagitta.js)** (`SAGITTA_AB`, its `sagitta` banner), her
+pixels in [js/draw/sagitta.js](../../../js/draw/sagitta.js), her icons and looks in
+[js/sprites/sagitta.js](../../../js/sprites/sagitta.js). 78 hp, 9 armor, a step slower than a walk,
+and her draw all but plants her feet (`chargeMul` 0.45). Her bolts are shots in `arrows` like any
+other; her pavise is a body in `robots` (`HERO_MACHINE.sagPavise`), so neither adds a list of its own.
+PIN and THE LONG BOLT hold the crossbow on the aim through their wind-up (the row's `aimHeld`).
+
+| key | name | cd | what it does |
+| --- | --- | --- | --- |
+| P | **HEAVY BOLTS** | — | every `HEAVY_EVERY`th basic bolt she looses is heavy: ×`HEAVY_DMG` damage, ×`HEAVY_KB` shove, and a building takes ×`HEAVY_SIEGE` more (the shot's `siege`). Counted at the loose (`HERO_PASSIVE.heavybolts` `shot`), shown as marks at her feet, brass once the next is heavy |
+| 1 | **PIN** | 11/10.5/10/9.5/9 s | a bolt down the aim at `PIN_SPD` for `PIN_RANGE`: the first body takes `dmg` (50/80/110/140/170) and a shove ×`PIN_KB`; a tree, rock or wall within `PIN_WALL` behind it pins it, stunned for `stun` (1.2 s) (`HERO_SHOT_HIT.pin`, `solidBehind`) |
+| 2 | **PAVISE** | 16/15/14/13/12 s | a tall shield `PAV_D` in front of her for `PAV_T`, one at a time: a body of her side (`robotBody`) with `shield` health (120/170/220/270/320). A rival's shot that meets its face (flying at least `PAV_FRONT` against its facing) ends on it; from behind or along its edge a shot goes by (`pavPasses`, the machine's `passes`); her side's shots pass; rivals break it and are paid for it |
+| 3 | **CRANK BACK** | 14/13/12/11/10 s | every rival body within `CRANK_R` of her feet takes `CRANK_DMG` and walks ×`CRANK_SLOW` for `slowT` (1-2 s); she is thrown `CRANK_D` away from her aim (`p.dash = 'crank'`), still facing it |
+| 4 | **THE LONG BOLT** | 110/95/80 s | she kneels for `LONG_WIND` (no walk: `HERO_MOVE`) with the towers' crawling line down her aim, then looses a bolt at `LONG_SPD` for `LONG_RANGE`: it goes through soldiers and beasts (`pierce`) and ends on the first hero (`HERO_SHOT_HIT.longbolt`), who takes `dmg` (180/280/380) and a shove ×`LONG_KB` |
 
 Bots play the named heroes through each row's `bot(p, foe, d, clear)` (`abBotKey`, asked by the ladder's
-ability block in js/ai/ai-ladder.js); a row's `botAim(p, foe)` turns the aim to a point of its own for that cast, held through the wind-up until it lands (AURA's step away, SALVIA's heals). A hero whose rows carry no `bot` keeps the ladder's old range rules.
+ability block in js/ai/ai-ladder.js); a row's `botAim(p, foe)` turns the aim to a point of its own for that cast, held through the wind-up until it lands (AURA's step away, SALVIA's heals, LUCERNA's lantern). A hero whose rows carry no `bot` keeps the ladder's old range rules.
 
 Every wind-up with an area is **telegraphed on the snow for both sides** (`drawAbilityGround`): the
 pierce's and the charge's marching line, the stomp's ring, the slam's and the execute's wedge — in

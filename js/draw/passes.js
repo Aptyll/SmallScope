@@ -29,7 +29,7 @@ function drawGroundPass(ox, oy, ex, ey, now) {
 
   // the archery track's rails, flat under everything that walks, then the
   // parkour's start/finish line, painted flat on the carved ice
-  if (PRACTICE) { drawAgTrack(ox, oy); drawParkourLine(ox, oy); drawDfHold(ox, oy); }
+  if (ARENA) { drawAgTrack(ox, oy); drawParkourLine(ox, oy); drawDfHold(ox, oy); }
 
   // the trampled snow: the match's slow record, under the crisp prints (js/draw/trample.js)
   drawTrample(ox, oy);
@@ -231,14 +231,6 @@ function drawSceneryObj(d, ox, oy, now, wkO, hovO) {
     };
     const open = canopyOver(A, cx, cy, fw, fh, artX, artY);
     if (open > 0) drawWindowed(open, artX, artY, fw, fh, drawTree); else drawTree();
-  } else if (o.type === 'deadTree') {
-    const spr = SPRITES.deadTree[o.variant], x = px + sh, y = py - 8;
-    const drawSnag = () => {
-      if (o === wkO) drawTargetRim(spr, 0, 0, spr.width, spr.height, x, y, now);
-      drawSpriteFlash(spr, x, y, o.flash);
-    };
-    const open = canopyOver(spr, 0, 0, spr.width, spr.height, x, y);
-    if (open > 0) drawWindowed(open, x, y, spr.width, spr.height, drawSnag); else drawSnag();
   } else if (o.type === 'den') {
     drawSpriteFlash(SPRITES.den, px + sh, py - 4, o.flash);
     drawCampClock(o.site, px + 16, py - 3); // a cleared camp's respawn clock (js/draw/marks.js)
@@ -263,7 +255,7 @@ function drawSceneryObj(d, ox, oy, now, wkO, hovO) {
     // the archery round's sink runs (agSinkU, js/sim/practice.js) the sprite
     // drops and the snow line crops it - the bottom is already under the
     // field - and at full depth the object leaves the grid entirely.
-    const su = PRACTICE ? agSinkU() : 0;
+    const su = ARENA ? agSinkU() : 0;
     if (su > 0) {
       const vis = Math.round(DUMMY_SPR.height * (1 - su));
       if (vis > 0) ctx.drawImage(DUMMY_SPR, 0, 0, DUMMY_SPR.width, vis,
@@ -276,8 +268,6 @@ function drawSceneryObj(d, ox, oy, now, wkO, hovO) {
     if (o.hp < o.maxHp) drawHealthBar(px + 8 + sh, dy - 6, o.hp, o.maxHp, 20, undefined, undefined, o);
     // the combo readout, above the bar's slot so neither ever covers the other
     drawDummyMeter(o, px + 8, dy - 10);
-  } else if (o.type === 'cairn') {
-    drawSpriteFlash(CAIRN_SPR, px + sh + 1, py + TILE - CAIRN_SPR.height + 1, o.flash);
   } else if (o.type === 'pylon') {
     drawPylon(o, px + sh, py); // a zipline's post (js/draw/zipline.js); the cable itself is drawZips, below
   } else if (o.type === 'banner') {
@@ -288,7 +278,7 @@ function drawSceneryObj(d, ox, oy, now, wkO, hovO) {
     // mid-sink for the archery round, like the dummy and rack: the bell is
     // drawn procedurally, so it slides down and a clip at its ground line
     // crops what is already under the field
-    const su = PRACTICE ? agSinkU() : 0;
+    const su = ARENA ? agSinkU() : 0;
     if (su > 0) {
       ctx.save();
       ctx.beginPath();
@@ -369,13 +359,12 @@ function drawStructObj(o, px, py, sh, now) {
       }
     }
   } else {
-    // the gold pump strokes: the frame off its payout clock (pumpFrame)
-    const art = o.type === 'generator' ? pumpFrame(o) : spr;
+    // its type's own frame when it moves (the gold pump's stroke, off its
+    // payout clock) and its type's own pass over the sprite (STRUCTS `over`)
+    const S = STRUCTS[o.type], art = S.frame ? S.frame(o) : spr;
     drawCastShade(art, sx, sy); // a standing building throws the sun's shade like a body (ground.js)
     drawSpriteFlash(art, sx + sh, sy, o.flash);
-    if (o.type === 'generator') drawPumpCoin(o, sx + sh, sy);
-    if (o.type === 'barracks') drawBarracksOverlay(o, sx + sh, sy, now);
-    if (o.type === 'tower') drawTowerTop(o, sx + sh, sy); // a tower's gun in its deck, and its bar (js/draw/towers.js)
+    if (S.over) S.over(o, sx + sh, sy, now);
     if (o.hp < o.maxHp * 0.6) {
       // four crack marks, placed as fractions of the sprite so they fit any size
       const w = spr.width, h = spr.height;
@@ -526,7 +515,7 @@ function renderScreen(ox, oy, shx, shy, now) {
   renderUI(now);
   // the archery round's live layer: countdown, GO, the TIME/SCORE/HITS
   // plate, the final score (drawAgameUI, js/draw-world.js)
-  if (PRACTICE && state.mode === 'play') drawAgameUI(now);
+  if (ARENA && state.mode === 'play') drawAgameUI(now);
   if (state.mode === 'drop') renderDropUI(now);
   // the drop brief's roost headlines (updateDrop's tour, js/sim/eagle.js)
   if (state.mode === 'play' && state.dropBrief) drawDropBrief();

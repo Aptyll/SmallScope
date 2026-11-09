@@ -46,7 +46,7 @@ const CALLS = {
   // the answer to a human's ping: said by the team brain, which decides
   // who answers and when (aiAnswer/aiAnswerStep, js/ai/ai-team.js)
   onit:     { word: () => 'ON IT', icon: 'order', ink: '#e8eeff', pin: true, t: 1.6, map: false },
-  // a rival who has downed the same scout twice, on seeing them again:
+  // a rival who has downed the same hero twice, on seeing them again:
   // said to the MARK's side (callGrudge)
   grudge: { word: () => 'YOU AGAIN', icon: 'grudge', ink: '#ff4d5e', pin: true, map: false },
   // a player's pings (the `pings` banner, js/sim/pings.js)
@@ -167,9 +167,9 @@ function callFriend(p) {
 // downed its mark twice) that has just seen its mark for the first time
 // (`seenT`, stamped by aiGrudgeFoe) says YOU AGAIN. Said once per grudge - a
 // repeat for the same pair waits CALL_GRUDGE_T - and shown to the MARK's
-// side, over p's head, so the scout being hunted knows it. It ignores CALL_SIDE_GAP (the hunter's
+// side, over p's head, so the hero being hunted knows it. It ignores CALL_SIDE_GAP (the hunter's
 // side never sees it) but not the mark's side's CALL_SIDE_MAX.
-const CALL_GRUDGE_T = 90;   // s before the same rival may say it to the same scout again
+const CALL_GRUDGE_T = 90;   // s before the same rival may say it to the same hero again
 const CALL_GRUDGE_SEEN = 1; // s after first sight it may still be said (the side's screen may be full at the instant)
 function callGrudge(p, mark) {
   if (PRACTICE || !unitAlive(p) || !mark || mark.team === p.team) return false;

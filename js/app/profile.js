@@ -21,7 +21,7 @@
   const OLD_SETTINGS = 'softfall.settings'; // pre-profile saves; migrated once
   const NAME_MAX = 16;
   const POS_N = 5;                 // POSITIONS.length (js/sim/player.js)
-  const HERO_N = 8;                // CLASSES.length (js/sim/player.js) - a hero index past this is repaired to 0
+  const HERO_N = 20;              // CLASSES.length (js/sim/player.js) - a hero index past this is repaired to 0
   // the coins a profile starts with: the cosmetics' purse, kept outside every
   // match (a match's gold never reaches it). What a coin buys is the skins
   // screen's table (js/ui/skins.js); this file only keeps the count and ids.
@@ -45,7 +45,7 @@
     return NAME_POOL[Math.floor(Math.random() * NAME_POOL.length)];
   }
   function blankStats() {
-    return { wins: 0, matches: 0, gold: 0, days: 0, kills: 0, deaths: 0 };
+    return { wins: 0, matches: 0, gold: 0, kills: 0, deaths: 0 };
   }
   // stats repaired onto `into`: whole, non-negative numbers ADDED to what is
   // there (so v2's slots sum into one ledger); anything else is skipped
@@ -79,6 +79,7 @@
     return {
       v: 3,
       name: randomName(),
+      named: false,    // the player chose the name; until then it follows the Steam name (steamName)
       stats: blankStats(),
       hero: 0,         // the hero last locked in (a CLASSES index): where the pick opens next time
       pos: -1,         // the position this profile asks for in the draft (a POSITIONS index, js/sim/player.js), -1 any
@@ -92,6 +93,12 @@
       // (birdSkinFor, js/ui/skins.js, falls back to the free one).
       coins: START_COINS,
       rank: RANK_START,
+      // matches this profile saw to their result, won or lost (a match left
+      // early is not one): RANKED opens on it (rankedOpen, js/ui/rooms.js)
+      finished: 0,
+      // the FIRST MATCH's coach was seen through or turned off: the title
+      // stops offering it (js/ui/guide.js)
+      guided: false,
       owned: [],
       worn: {},
       // null, not {} - game.js reads a null here as "nothing was ever saved"
@@ -178,6 +185,8 @@
           for (const c of s.chars) if (c && typeof c === 'object') addStats(profile.stats, c.stats);
         } else addStats(profile.stats, s.stats);
         if (typeof name === 'string' && validate(name).ok) profile.name = validate(name).name;
+        // a profile from before the flag: a name out of the winter pool was dealt, not chosen
+        profile.named = typeof s.named === 'boolean' ? s.named : NAME_POOL.indexOf(profile.name) < 0;
         if (typeof hero === 'number' && isFinite(hero) && hero >= 0 && hero < HERO_N) profile.hero = Math.floor(hero);
         if (typeof s.pos === 'number' && s.pos >= 0 && s.pos < POS_N) profile.pos = Math.floor(s.pos);
         if (s.settings && typeof s.settings === 'object') profile.settings = s.settings;
@@ -185,6 +194,11 @@
         // START_COINS blank() gave it, like a fresh one
         if (typeof s.coins === 'number' && isFinite(s.coins)) profile.coins = Math.max(0, Math.floor(s.coins));
         if (typeof s.rank === 'number' && isFinite(s.rank)) profile.rank = Math.max(RANK_MIN, Math.floor(s.rank));
+        // a profile from before the count keeps the matches it took off in, so
+        // nobody who already plays finds RANKED shut or the coach offered
+        if (typeof s.finished === 'number' && isFinite(s.finished)) profile.finished = Math.max(0, Math.floor(s.finished));
+        else profile.finished = profile.stats.matches;
+        profile.guided = typeof s.guided === 'boolean' ? s.guided : profile.finished > 0;
         if (Array.isArray(s.owned)) {
           for (const id of s.owned) if (typeof id === 'string' && id.length <= ID_MAX && profile.owned.indexOf(id) < 0) profile.owned.push(id);
         }
@@ -216,8 +230,17 @@
     setName(raw) {
       const r = validate(raw);
       if (!r.ok) return r;
-      if (profile.name !== r.name) { profile.name = r.name; saveNow(); }
+      if (profile.name !== r.name) { profile.name = r.name; profile.named = true; saveNow(); }
       return r;
+    },
+    // On Steam a name nobody chose is the Steam one, cut to what a name may
+    // hold (letters and digits, NAME_MAX); true when it changed
+    steamName(raw) {
+      if (profile.named) return false;
+      const r = validate(String(raw || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, NAME_MAX));
+      if (!r.ok || r.name === profile.name) return false;
+      profile.name = r.name; saveNow();
+      return true;
     },
     // a fresh winter word, unsaved: the profile card's die offers it
     rollName() { return randomName(); },
@@ -290,10 +313,6 @@
     stats() { return profile.stats; },
     addWin() { this.stats().wins++; scheduleSave(); },
     addGold(n) { if (n > 0) { this.stats().gold += n; scheduleSave(); } },
-    // one call per day the player sets foot in: day 1 as the eagles take off
-    // (js/sim/eagle.js beginDrop), every later day at its dawn (js/sim/sim.js) - counted
-    // at the START of the day, so quitting mid-match keeps the days begun
-    addDay() { this.stats().days++; scheduleSave(); },
     addMatch() { this.stats().matches++; scheduleSave(); }, // one per eagle takeoff (beginDrop)
     addKill() { this.stats().kills++; scheduleSave(); },    // a rival the local player downed (die, js/sim/player.js)
     addDeath() { this.stats().deaths++; scheduleSave(); },  // the local player downed
@@ -327,6 +346,13 @@
     // ---- ranked -------------------------------------------------------------
     rank() { return profile.rank; },
     addRank(d) { profile.rank = Math.max(RANK_MIN, profile.rank + (Math.round(d) || 0)); saveNow(); },
+    // ---- new players ----------------------------------------------------------
+    finished() { return profile.finished; },
+    addFinished() { profile.finished++; saveNow(); }, // once per match ending (endMatch, js/sim/player.js)
+    guided() { return profile.guided; },
+    setGuided(on) { on = on !== false; if (profile.guided !== on) { profile.guided = on; saveNow(); } },
+    // DBG only: a fresh player's count (a staged screenshot, a test of the lock)
+    setFinished(n) { profile.finished = Math.max(0, Math.floor(n) || 0); saveNow(); },
     // DBG only: set the purse (a staged screenshot, a test of the short purse)
     setCoins(n) { profile.coins = Math.max(0, Math.floor(n) || 0); saveNow(); },
 

@@ -24,10 +24,17 @@
 // to the drop. The rival side is never shown here: it is another party met
 // by matchmaking (js/ui/matchmaking.js), or bots. After the match, LOBBY brings the party back to
 // this screen on a fresh valley (the rematch, below).
-const PARTY_MODES = { quick: 'QUICKPLAY', ranked: 'RANKED', practice: 'PRACTICE TOOL' };
+// FIRST MATCH is QUICKPLAY against EASY bots with the coach on every
+// screen in the party (js/ui/guide.js): straight to bots, no matchmaking
+const PARTY_MODES = { quick: 'QUICKPLAY', ranked: 'RANKED', onevone: '1V1', practice: 'PRACTICE TOOL', guide: 'FIRST MATCH' };
+// a mode's party at most, people on your side (five where unnamed): 1V1 is
+// you alone, one hero a side on the mid road (js/sim/onevone.js)
+const PARTY_CAP = { onevone: 1 };
+function partyCap(mode) { return PARTY_CAP[mode] || MAX_PLAYERS / 2; }
 const RM_CODE_N = 4;                   // letters in a code (makeCode, app/server.js; steamCode, js/net/transport-steam.js)
 const RS_TOP = 76, RS_H = 150, RS_GAP = 6, RS_W = 80; // the seats, League's row of five: top, a seat's height, between seats, a seat's width
 const RS_FACE = 72;                    // a seat's portrait, the hero at 3x
+const RS_W_N = 54, RS_GAP_N = 4, RS_FACE_N = 48; // a narrow view's seats (under 16:9: 4:3, 5:4, a 16:10 at 3x), the hero at 2x, when the row of five does not fit
 const RM_HEAD_Y = 12, RM_HEAD_W = 176, RM_HEAD_H = 22; // the head's two plates, mirrored: the mode (left) and JOIN with its four slots (right)
 const RM_BTN_W = 140, RM_BTN_H = 22, RM_X_W = 22, RM_FOOT = 34; // the foot: FIND MATCH's button, the X attached before it, its top above the screen's foot
 const RM_SIDE_W = 128;                 // the foot's two end plates, mirrored and as tall as the button: the chat (left) and INVITE (right)
@@ -42,6 +49,10 @@ const SEEK_T = 6;                      // s a typed code is looked for on the li
 // up for a win and down for a loss, and the bots' level read off the party's
 // average rating, one AI_LEVELS step per RANK_BAND around the start
 const RANK_STEP = 25, RANK_BAND = 200;
+// RANKED opens once a profile has seen this many matches to their result
+// (League waits for level 30; a few matches is enough to know the map)
+const RANKED_AT = 3;
+function rankedOpen() { return PROFILE.finished() >= RANKED_AT; }
 
 let roomsFeed = null; // the relay's list socket (or Steam's lobby poll) while a code is being looked for
 function roomsFeedClose() { if (roomsFeed) { roomsFeed.close(); roomsFeed = null; } }
@@ -89,7 +100,7 @@ function modeSwapOk() { return NET.role === 'host' && seatsOpen() && !state.menu
 function modeSet(mode) {
   const m = state.menu;
   m.modeOpen = false;
-  if (!modeSwapOk() || !PARTY_MODES[mode]) { SFX.deny(); return; }
+  if (!modeSwapOk() || !PARTY_MODES[mode] || (mode === 'ranked' && !rankedOpen()) || partySize() > partyCap(mode)) { SFX.deny(); return; }
   if (mode !== NET.mode) {
     NET.mode = mode;
     NET.ready.clear();
@@ -98,9 +109,9 @@ function modeSet(mode) {
   }
   SFX.pickup();
 }
-function modeRect(L) { return { x: L.x, y: RM_HEAD_Y, w: RM_HEAD_W, h: RM_HEAD_H }; }
+function modeRect(L) { return { x: L.x, y: RM_HEAD_Y, w: L.headW, h: RM_HEAD_H }; }
 // the list under the head: every mode, the party's in gold
-function modeListRects(L) { return Object.keys(PARTY_MODES).map((k, i) => ({ k, x: L.x, y: RM_HEAD_Y + RM_HEAD_H + 1 + i * RM_LIST_H, w: RM_HEAD_W, h: RM_LIST_H })); }
+function modeListRects(L) { return Object.keys(PARTY_MODES).map((k, i) => ({ k, x: L.x, y: RM_HEAD_Y + RM_HEAD_H + 1 + i * RM_LIST_H, w: L.headW, h: RM_LIST_H })); }
 // The bots' level, the head's middle plate between the mode and JOIN: its
 // grade as rising bars in its colour (drawBotBars) and its name
 // (AI_LEVELS, js/ai/ai-skill.js). The leader's click opens the levels under
@@ -109,9 +120,9 @@ function modeListRects(L) { return Object.keys(PARTY_MODES).map((k, i) => ({ k, 
 // it only shows; the practice field has no bots, and while the party looks
 // for a match the clock stands there instead.
 function botsShown() { return NET.mode !== 'practice' && seekClock() == null; }
-function botsOk() { return modeSwapOk() && NET.mode !== 'ranked'; }
+function botsOk() { return modeSwapOk() && NET.mode !== 'ranked' && NET.mode !== 'guide'; }
 function botsRect(L) {
-  const l = L.x + RM_HEAD_W, r = L.x + L.w - RM_HEAD_W, w = Math.max(RM_HEAD_H, Math.min(RM_BOTS_W, r - l - 8));
+  const l = L.x + L.headW, r = L.x + L.w - L.headW, w = Math.max(RM_HEAD_H, Math.min(RM_BOTS_W, r - l - 8));
   return { x: l + ((r - l - w) >> 1), y: RM_HEAD_Y, w, h: RM_HEAD_H };
 }
 function botsListRects(L) { const b = botsRect(L); return AI_LEVELS.map((_, k) => ({ k, x: b.x, y: b.y + b.h + 1 + k * RM_LIST_H, w: b.w, h: RM_LIST_H })); }
@@ -134,8 +145,15 @@ function rankLevel() {
   const avg = rs.reduce((s, r) => s + r, 0) / Math.max(1, rs.length);
   return Math.max(0, Math.min(AI_LEVELS.length - 1, 1 + Math.floor((avg - PROFILE.RANK_START) / RANK_BAND + 0.5)));
 }
-// a ranked match's ending on this screen: the profile's rating moves (endMatch, js/sim/player.js)
-function rankResult(won) { if (NET.mode === 'ranked') PROFILE.addRank(won ? RANK_STEP : -RANK_STEP); }
+// a match's ending, once (endMatch, js/sim/player.js): a ranked one moves the
+// profile's rating, every one counts toward RANKED, and a FIRST MATCH seen
+// through stops the title offering it
+function rankResult(won) {
+  if (NET.mode === 'ranked') PROFILE.addRank(won ? RANK_STEP : -RANK_STEP);
+  if (PRACTICE) return;
+  PROFILE.addFinished();
+  if (NET.mode === 'guide') PROFILE.setGuided();
+}
 
 // FIND MATCH: every friend READY, then the party looks for another
 // (seekStart, js/ui/matchmaking.js; a second press stops it), and then bots
@@ -157,10 +175,20 @@ function partyFind() {
 // the match is on: every empty seat a bot, the party on to the hero select
 function partyStart() {
   for (const p of players) if (!isHuman(p)) p.control = 'ai';
-  NET.botLv = NET.mode === 'ranked' ? rankLevel() : null;
+  if (NET.mode === 'onevone') partyOnevone();
+  NET.botLv = NET.mode === 'ranked' ? rankLevel() : NET.mode === 'guide' ? 0 : null; // FIRST MATCH: EASY
   netHostRoster(); netHostRoom();
   netPhase('pick');
   beginLobby();
+}
+
+// a 1V1's seats: you, and across the one person who crossed in or else one
+// bot; every other seat stands empty, out of the match (p.active)
+function partyOnevone() {
+  for (const t of [0, 1]) {
+    const side = roomSide(t), keep = side.find(isHuman) || side[0];
+    for (const p of side) if (p !== keep && !isHuman(p)) p.control = 'none';
+  }
 }
 
 // ---- joining a friend's party by its code -------------------------------
@@ -180,7 +208,8 @@ function joinRoom(r) {
   roomsFeedClose();
   const seed = r.data && +r.data.seed;
   // a party already on the practice field: this page follows it there
-  if (r.data && +r.data.practice && !PRACTICE) { location.search = '?practice=1&join=' + r.room + '&back=1' + (netSteam() ? '&transport=steam' : ''); return; }
+  // (`practice` 2 is the arena: netHostRoom)
+  if (r.data && +r.data.practice && (!PRACTICE || (+r.data.practice === 2) !== ARENA)) { location.search = '?practice=1' + (+r.data.practice === 2 ? '&arena=1' : '') + '&join=' + r.room + '&back=1' + (netSteam() ? '&transport=steam' : ''); return; }
   if (seed && seed !== SEED) { location.search = '?seed=' + seed + '&join=' + r.room + (netSteam() ? '&transport=steam' : ''); return; }
   netJoin(r.room);
   m.joining = true;
@@ -270,6 +299,8 @@ function beginRoom() {
 function roomHost() { return players[NET.isClient ? NET.hostSlot : localId]; }
 // the five seats of side t, in slot order: the same five, the same order, on every screen
 function roomSide(t) { return players.filter((p) => p.team === t); }
+// your side's seats on the party screen: all five, or a 1V1's one (you)
+function partySide() { const s = roomSide(player.team); return partyCap(NET.mode) < s.length ? s.filter((p) => p === player) : s; }
 // the screen laid out, League's party lobby: two plates at the head, the
 // mode's (left) and, while you are a party of one, JOIN's (right); your
 // side's five seats in a row with you in the middle and the others filling
@@ -277,22 +308,30 @@ function roomSide(t) { return players.filter((p) => p.team === t); }
 // attached before it, the chat in the bottom-left corner and INVITE in the
 // bottom-right, both as tall as the button. The social column takes the
 // right edge (js/ui/friends.js).
+// The layout is drawn for a 640-wide view; a narrower one (VIEW_W is capped
+// at 16:9, so a 4:3 or 5:4 screen or a 16:10 at 3x sees less width) keeps
+// every plate inside it: thinner margins, the head's and foot's end plates
+// cut to the room left (the bots' level shows its bars alone when it has
+// to), and the row of five on smaller seats with the hero at 2x.
 function roomLayout() {
-  const mw = VIEW_W - SOCIAL_W, x = 24, w = mw - 48;
-  const side = roomSide(player ? player.team : 0), n = side.length, mid = n >> 1;
+  const mw = VIEW_W - socialW(), pad = mw >= 484 ? 24 : 8, x = pad, w = mw - 2 * pad;
+  const headW = Math.min(RM_HEAD_W, (w - 56) >> 1), sideW = Math.min(RM_SIDE_W, (w - RM_X_W - RM_BTN_W - 8) >> 1);
+  const side = player ? partySide() : roomSide(0), n = side.length, mid = n >> 1;
   const at = [mid]; // the positions, nearest the middle first
   for (let d = 1; at.length < n; d++) { if (mid - d >= 0) at.push(mid - d); if (mid + d < n && at.length < n) at.push(mid + d); }
   const order = side.filter((p) => p === player).concat(side.filter((p) => p !== player));
-  const sx = Math.round((mw - n * RS_W - (n - 1) * RS_GAP) / 2);
-  const seats = order.map((p, i) => ({ x: sx + at[i] * (RS_W + RS_GAP), y: RS_TOP, w: RS_W, h: RS_H, p, k: side.indexOf(p) })).sort((a, b) => a.x - b.x);
+  const full = n * RS_W + (n - 1) * RS_GAP <= mw - 16;
+  const sw = full ? RS_W : RS_W_N, gap = full ? RS_GAP : RS_GAP_N, fs = full ? RS_FACE : RS_FACE_N;
+  const sx = Math.round((mw - n * sw - (n - 1) * gap) / 2);
+  const seats = order.map((p, i) => ({ x: sx + at[i] * (sw + gap), y: RS_TOP, w: sw, h: RS_H, fs, p, k: side.indexOf(p) })).sort((a, b) => a.x - b.x);
   const clock = seekClock(), find = clock != null ? seekText(clock) : 'FIND MATCH'; // looking: the word is the clock, and a press stops it
   const label = NET.isClient ? 'READY' : NET.mode === 'practice' ? 'START' : find;
   const gx = Math.round((mw - RM_X_W - RM_BTN_W + 1) / 2), by = VIEW_H - RM_FOOT;
   const leave = { x: gx, y: by, w: RM_X_W, h: RM_BTN_H }, go = { x: gx + RM_X_W - 1, y: by, w: RM_BTN_W, h: RM_BTN_H, label };
-  const talk = { x, w: RM_SIDE_W, ty: by, th: RM_BTN_H, cw: (w >> 1) - 8 };
-  const invite = { x: x + w - RM_SIDE_W, y: by, w: RM_SIDE_W, h: RM_BTN_H };
-  const box = { x: x + w - RM_HEAD_W, y: RM_HEAD_Y, w: RM_HEAD_W, h: RM_HEAD_H };
-  return { x, w, seats, leave, go, talk, invite, box };
+  const talk = { x, w: sideW, ty: by, th: RM_BTN_H, cw: (w >> 1) - 8 };
+  const invite = { x: x + w - sideW, y: by, w: sideW, h: RM_BTN_H };
+  const box = { x: x + w - headW, y: RM_HEAD_Y, w: headW, h: RM_HEAD_H };
+  return { x, w, headW, seats, leave, go, talk, invite, box };
 }
 function inRect(r, pad) {
   pad = pad || 0;
@@ -346,7 +385,7 @@ function roomCopy() {
 // an empty seat's +: Steam's friends overlay where there is one, the code otherwise
 function seatInvite() { if (netSteam() && NET.transport && NET.transport.lobbyId) roomInvite(); else roomCopy(); }
 // INVITE (the foot's right plate, an empty seat's +): while a seat stands empty
-function roomInviteOk() { return seatsOpen() && roomSide(player.team).some((p) => p.control === 'none'); }
+function roomInviteOk() { return seatsOpen() && partySize() < partyCap(NET.mode) && roomSide(player.team).some((p) => p.control === 'none'); }
 function roomGo(label) {
   if (label === 'READY') { netReady(!NET.ready.has(localId)); SFX.place(); }
   else if (label === 'START') partyPractice();
@@ -438,7 +477,7 @@ function roomKey(k, e) {
 }
 function roomAllReady() { return players.every((p) => p.control !== 'remote' || NET.ready.has(p.id)); }
 // the bots' level the room plays: RANKED's pinned one, the leader's own setting, a guest's copy of it
-function roomLevel() { return NET.isClient ? NET.aiLevel : NET.botLv != null ? NET.botLv : NET.mode === 'ranked' ? rankLevel() : settings.aiLevel | 0; }
+function roomLevel() { return NET.isClient ? NET.aiLevel : NET.botLv != null ? NET.botLv : NET.mode === 'ranked' ? rankLevel() : NET.mode === 'guide' ? 0 : settings.aiLevel | 0; }
 
 // ------------------------------------------------------------ the rematch
 // League's "play again". A world is grown at load, so a match's valley
@@ -495,7 +534,7 @@ function rematchBootHost() {
   if (NET.role !== 'host' || !/[?&]back=1/.test(location.search)) return;
   let c = null;
   try { c = JSON.parse(sessionStorage.getItem(REMATCH_KEY) || 'null'); sessionStorage.removeItem(REMATCH_KEY); } catch (e) { }
-  NET.mode = (c && PARTY_MODES[c.mode]) ? c.mode : 'quick';
+  NET.mode = (c && PARTY_MODES[c.mode]) && c.mode !== 'guide' ? c.mode : 'quick'; // after the FIRST MATCH the party plays for real
   rematchCarry = { seats: (c && c.seats) || {} };
   beginRoom();
 }
@@ -512,10 +551,27 @@ function rematchBootJoin() {
 // the field friends join at any time and stand on the spawn (practiceSeat,
 // js/sim/practice.js). The leader's LEAVE takes everyone back to the party on
 // the title (rematchUrl, rematchHeard); a guest's LEAVE takes only them to the title.
-function practiceUrl(host) {
-  const code = roomCode(), steam = netSteam() ? '&transport=steam' : '';
-  if (host) return location.pathname + '?practice=1&net=host&back=1' + steam + (code ? (steam ? '&code=' : '&room=') + code : '');
-  return location.pathname + '?practice=1&join=' + code + '&back=1' + steam;
+// The field is the match's map; the bar's ARENA / MAP well (practiceCross)
+// takes the leader's page across to the arena side room and back the same
+// way START did, every guest told (`practice`, with `arena`) and following.
+function practiceUrl(host, arena) {
+  const code = roomCode() || JOIN_AT_BOOT || '', steam = netSteam() ? '&transport=steam' : '', a = arena ? '&arena=1' : '';
+  if (host) return location.pathname + '?practice=1' + a + '&net=host&back=1' + steam + (code ? (steam ? '&code=' : '&room=') + code : '');
+  return location.pathname + '?practice=1' + a + '&join=' + code + '&back=1' + steam;
+}
+// whether this page may take the field across: the party's leader (or a
+// page alone), never a guest - a guest goes where its leader goes
+function practiceCrossOk() { return PRACTICE && NET.role !== 'client' && !state.fade; }
+function practiceCross(arena) {
+  if (!practiceCrossOk()) return false;
+  if (NET.role === 'host') {
+    const seats = {};
+    for (const pr of NET.peers.values()) seats[pr.uid] = pr.slot;
+    try { sessionStorage.setItem(REMATCH_KEY, JSON.stringify({ mode: 'practice', seats })); } catch (e) { }
+    if (NET.peers.size) NET.transport.send('*', { t: 'practice', arena: arena ? 1 : 0 });
+    practiceGo(practiceUrl(true, arena));
+  } else practiceGo(location.pathname + '?practice=1' + (arena ? '&arena=1' : ''));
+  return true;
 }
 function practiceGo(url) {
   if (state.fade) return;
@@ -541,8 +597,11 @@ function partyPractice() {
   if (NET.peers.size) NET.transport.send('*', { t: 'practice' });
   practiceGo(practiceUrl(true));
 }
-// a guest told the party is going: after it
-function practiceHeard() { if (!PRACTICE && roomCode()) practiceGo(practiceUrl(false)); }
+// a guest told the party is going (onto the map, or across to the arena or back): after it
+function practiceHeard(msg) {
+  const arena = !!(msg && msg.arena);
+  if (roomCode() && (!PRACTICE || arena !== ARENA)) practiceGo(practiceUrl(false, arena));
+}
 // the field's two boots (js/app/boot.js): the leader's page hosting the party
 // again, a guest's page joining it
 function practiceBootHost() {
@@ -644,7 +703,7 @@ function drawCodeBox(r, m, now, hot) {
 // shows the X in its corner.
 function drawRoomSeat(s, act, flash) {
   const p = s.p, me = p === player, x = s.x, y = s.y, w = s.w, h = s.h;
-  const fs = RS_FACE, fx = x + ((w - fs) >> 1), fy = y + 20;
+  const fs = s.fs, fx = x + ((w - fs) >> 1), fy = y + 20;
   if (!isHuman(p)) { // an empty seat: no card, a dotted well where the portrait would be, the invite's + in it
     if (act || flash) { ctx.fillStyle = flash ? '#3a3e46' : SC_HOT; ctx.fillRect(fx, fy, fs, fs); }
     ctx.fillStyle = act ? SC_LBL : SC_EDGE;
@@ -655,7 +714,7 @@ function drawRoomSeat(s, act, flash) {
   ctx.fillStyle = flash ? '#3a3e46' : act ? SC_HOT : me ? SC_YOU : SC_PLATE; ctx.fillRect(x, y, w, h);
   ctx.fillStyle = TEAMS[skin(p.team)].mark; ctx.fillRect(x, y, w, 2);
   if (me) { ctx.fillStyle = '#c89a3c'; ctx.fillRect(x, y + 2, 1, h - 2); ctx.fillRect(x + w - 1, y + 2, 1, h - 2); ctx.fillRect(x, y + h - 1, w, 1); }
-  drawScoreFace(fx, fy, fs, { id: p.id, you: me, team: p.team, level: p.level || 1, sc: 3 });
+  drawScoreFace(fx, fy, fs, { id: p.id, you: me, team: p.team, level: p.level || 1, sc: fs / 24 });
   if (p === roomHost()) drawCrown(fx + (fs >> 1) - 2, fy - 5);
   let nm = p.name;
   while (nm.length > 1 && pixelTextWidth(nm) > w - 6) nm = nm.slice(0, -1);
@@ -701,13 +760,16 @@ function renderRoom(now, a) {
   drawRoomFoot(L, footHot, ((g === 'FIND MATCH' || g === 'START') && !roomAllReady()) || m.joining,
     g === 'READY' && NET.ready.has(localId) ? RM_OK : seeking ? (footHot === 'go' ? RM_BAD : SC_GOLD) : null);
   drawSocial(L, now, hit); // you, your code and your friends down the right edge (js/ui/friends.js)
+  drawGear(); // the settings, on the column's head (js/ui/menu.js)
   if (m.modeOpen) { // the modes' list, over the seats
     const rs = modeListRects(L), keys = Object.keys(PARTY_MODES), last = rs[rs.length - 1];
-    ctx.fillStyle = SC_EDGE; ctx.fillRect(rs[0].x, rs[0].y - 1, RM_HEAD_W, last.y + last.h - rs[0].y + 2);
+    ctx.fillStyle = SC_EDGE; ctx.fillRect(rs[0].x, rs[0].y - 1, rs[0].w, last.y + last.h - rs[0].y + 2);
     rs.forEach((r, i) => {
       const hot = hit ? hit.kind === 'modeItem' && hit.k === r.k : m.rkeys && m.modeSel === i;
       ctx.fillStyle = hot ? SC_HOT : SC_PLATE; ctx.fillRect(r.x + 1, r.y, r.w - 2, r.h);
-      drawPixelText(ctx, PARTY_MODES[keys[i]], r.x + ((r.w - pixelTextWidth(PARTY_MODES[keys[i]])) >> 1), r.y + 4, r.k === NET.mode ? SC_GOLD : hot ? SC_LIT : SC_TXT, 1);
+      const shut = r.k === 'ranked' && !rankedOpen(), tw = pixelTextWidth(PARTY_MODES[keys[i]]), tx = r.x + ((r.w - tw) >> 1);
+      drawPixelText(ctx, PARTY_MODES[keys[i]], tx, r.y + 4, shut ? SC_DIM : r.k === NET.mode ? SC_GOLD : hot ? SC_LIT : SC_TXT, 1);
+      if (shut) drawRankedLock(tx - 10, r.y + 3, SC_DIM); // shut until RANKED_AT matches are seen through (js/ui/guide.js)
     });
   }
   if (m.botsOpen) { // the levels' list, over the seats

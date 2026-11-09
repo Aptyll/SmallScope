@@ -53,7 +53,7 @@ robots' gold).
 - **Pixels the sim reads.** The one pixel read in the sim is a building's shot box off its
   sprite's opaque pixels (`artBox`, js/sim/sim.js). The bounding box and pixel count of nearly every
   sprite canvas match Chromium exactly, every building among them; the few that do not are
-  item icons and the three `rockFill` overlays, which only the draw reads.
+  item icons, which only the draw reads.
 - **Replays.** One seed is one exact match: two runs give byte-identical samples and events.
 
 What differs from a real match, on purpose:
@@ -93,7 +93,8 @@ a header (seed, shape, patch, setup, seats), `result` (`winner`, `reason`
 `'eagle' | 'timeout' | 'error'`, `time`, `ticks`), a sample every `sampleEvery` s (both birds'
 nerve and state, and per player position, hp, level, gold, damage, siege, kills, deaths, what
 it was doing and its brain's goal), sparse `events` (kills, each 10% of a bird's nerve lost, a
-bird driven off), per-player finals and `fun`.
+bird driven off), per-player finals, `goals` (the game's goal table, `AI_GOALS` in
+js/ai/ai-team.js: every goal word to its kind, which the Bot Lab files a log's goals by) and `fun`.
 
 `act`, what a body did over a sample window, is read off the sim so it means the same for every
 brain: `dead`, `fight` (dealt or took damage), `siege` (hurt the bird or a building), `work`

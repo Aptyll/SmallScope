@@ -135,8 +135,9 @@ function netHostRoom() {
   if (NET.role !== 'host' || !NET.transport.roomData) return;
   let humans = 0; const sides = [0, 0];
   for (const p of players) if (isHuman(p)) { humans++; sides[p.team]++; }
-  NET.transport.roomData({ name: player ? player.name : '', patch: PATCH_TXT, seed: SEED, practice: PRACTICE ? 1 : 0, state: state.drop ? 'live' : 'open', humans, sides,
-    seek: NET.seek && !NET.seek.rival && !NET.seek.crossing ? NET.mode : '' }); // a party looking for another (js/ui/matchmaking.js)
+  NET.transport.roomData({ name: player ? player.name : '', patch: PATCH_TXT, seed: SEED, practice: ARENA ? 2 : PRACTICE ? 1 : 0, state: state.drop ? 'live' : 'open', humans, sides,
+    seek: NET.seek && !NET.seek.rival && !NET.seek.crossing ? NET.mode : '', // a party looking for another (js/ui/matchmaking.js)
+    hs: NET.seek ? seekPower() : 0 }); // ...and how well its leader's machine hosts (seekPower): the best one hosts
 }
 // the roster to every peer, on every change of it: a client's waiting room
 // draws the same ten this one does
@@ -164,6 +165,7 @@ function netHostStep(dt) {
     if (msg.t === 'in') {
       NET.bytesIn += JSON.stringify(msg).length;
       if (msg.ack > pr.ack) pr.ack = msg.ack; // the newest snapshot it applied: its next delta is cut from there
+      msg.in = netInClean(msg.in); // a peer's hands are only ever its own input struct, in range
       pr.q.push(msg);
     }
   }
@@ -197,6 +199,19 @@ function netHostStep(dt) {
   }
 }
 // a press in `m` latched into `i` until the sim consumes it
+// a remote input as the sim may take it: axes in -1..1, a finite aim near the
+// world, held flags as flags, a slot or key index in range or none. The rest
+// of what a peer can ask (cmd) is checked where it is run (cmdOk, js/ui/wheel.js).
+// Only these fields cross: one added to netClientStep's `in` joins here too
+function netInClean(m) {
+  m = m && typeof m === 'object' ? m : {};
+  const num = (v, lo, hi, d) => (typeof v === 'number' && Number.isFinite(v) ? Math.max(lo, Math.min(hi, v)) : d);
+  const idx = (v, n) => (Number.isInteger(v) && v >= 0 && v < n ? v : -1);
+  const W = WORLD * TILE;
+  return { mx: num(m.mx, -1, 1, 0), my: num(m.my, -1, 1, 0), aimX: num(m.aimX, -W, 2 * W, 0), aimY: num(m.aimY, -W, 2 * W, 0), // a cursor past the map's edge still aims
+    fire: !!m.fire, work: !!m.work, slide: !!m.slide, grapple: !!m.grapple, dodge: !!m.dodge, jump: !!m.jump,
+    ability: idx(m.ability, AB_KEYS), useItem: idx(m.useItem, ITEM_SLOTS), cmd: m.cmd && typeof m.cmd === 'object' ? m.cmd : null };
+}
 function netInEdges(i, m) {
   i.dodge = i.dodge || m.dodge; i.jump = i.jump || m.jump;
   if (m.ability >= 0) i.ability = m.ability;
@@ -222,6 +237,7 @@ function netHostHello(peer, msg) {
     // whom to bring - never once the hero select or the match has begun
     // (a party on the practice field takes friends at any time)
     if (NET.mode !== 'practice' && (state.mode !== 'title' || NET.phase !== 'room')) return refuse('BUSY');
+    if (partySize() >= partyCap(NET.mode)) return refuse('FULL'); // a 1V1 is a party of one (js/ui/rooms.js)
     const seat = players.find((p) => p.team === player.team && !isHuman(p));
     if (!seat) return refuse('FULL');
     slot = seat.id;
@@ -397,11 +413,11 @@ function netHostFlush() {
   if (NET.role !== 'host') return;
   evRecord = NET.peers.size > 0;
   if (!NET.peers.size) { evRing.length = 0; return; }
-  // the steps between two flushes each scan their share of the tiles, so the
-  // flush step does not carry the whole world alone (snapTileScan)
-  if (state.tick % SNAP_EVERY) { snapTileScan(Math.ceil(objects.length * (state.tick % SNAP_EVERY) / SNAP_EVERY)); return; }
+  // the steps between two flushes each sweep their share of the tiles, and
+  // the flush step checks only the ones that can be changing (snapTileHot)
+  if (state.tick % SNAP_EVERY) { snapTileSweep(); return; }
   const check = NET.verify && state.tick % VERIFY_EVERY === 0;
-  if (check) snapShadow.scanAt = 0; // the proof's tick sees every tile now, not a slice ago
+  if (check) snapShadow.swept = false; // the proof's tick scans every tile now, not only the hot ones
   const h = snapHistoryPush();
   const ev = evDrain();
   const cuts = new Map(), fulls = new Map(), evs = new Map(); // per side (and ack tick): the delta, the full form the client checks itself against, the cosmetics
@@ -477,7 +493,7 @@ function netClientStep(dt) {
     // host says to the whole room: none of it is ours until the welcome
     if (!NET.welcomed && msg.t !== 'welcome') continue;
     if (msg.t === 'rematch') { rematchHeard(msg); continue; }
-    if (msg.t === 'practice') { practiceHeard(); continue; } // the leader's START: onto the practice field after it (js/ui/rooms.js)
+    if (msg.t === 'practice') { practiceHeard(msg); continue; } // the leader's START, or its cross to the arena and back: after it (js/ui/rooms.js)
     if (msg.t === 'cross') { crossHeard(msg); continue; }    // the leader's party crossing to meet another (js/ui/matchmaking.js)
     if (msg.t === 'welcome') { netClientWelcome(msg); continue; }
     // the waiting room: the host's ten and its count, drawn here as there
@@ -496,7 +512,7 @@ function netClientStep(dt) {
 // is gated on `p === player` INSIDE the step, which only the host's screen
 // runs, so a client reads the same facts off its own body as the snapshots
 // move it: earned is the match's gold earned (gainGold), kills only climbs, a
-// death is dead's rising edge, the match and its first day start at takeoff
+// death is dead's rising edge, the match starts at takeoff
 // (beginDrop's two, which a client never calls) and the hop off the bird is
 // aboard's falling edge (hopOff's markDropped - the hop's cue itself
 // arrives as sfxFor's event). A redial
@@ -505,7 +521,7 @@ function netClientStats() {
   const me = player;
   if (!NET.synced || !me || state.mode === 'title') return;
   const w = NET.was;
-  if (!w || w.p !== me) { PROFILE.addMatch(); PROFILE.addDay(); }
+  if (!w || w.p !== me) { PROFILE.addMatch(); }
   else {
     if (me.earned > w.earned) PROFILE.addGold(me.earned - w.earned);
     for (let k = w.kills; k < me.kills; k++) PROFILE.addKill();
@@ -590,7 +606,11 @@ function netClientApplyDelta(msg) {
     for (const [e] of shown) if (e._t0) { eased.push([e, e.x, e.y]); if (!movedX.has(e)) e.x = e._tx; if (!movedY.has(e)) e.y = e._ty; }
     const out = []; snapCompareLoose(msg.full, snapBuildSeen(msg.full), '', out, 8);
     for (const [e, x, y] of eased) { e.x = x; e.y = y; }
-    if (out.length) NET.verifyFail = { tick: msg.tick, out };
+    // a client's own: its verdict and death view (state.over/end, kept below)
+    // and the fire edge its own hands write on its own body (input.js)
+    const own = ['.state.over:', '.state.end:', '.players.' + localId + '.firePrev:'];
+    const real = out.filter((l) => !own.some((k) => l.startsWith(k)));
+    if (real.length) NET.verifyFail = { tick: msg.tick, out: real };
   }
   NET.hostOver = state.over;
   state.over = over; state.end = end;

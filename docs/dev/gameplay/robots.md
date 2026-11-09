@@ -11,14 +11,23 @@ switches the brain off, a bot on a zipline rides it, and otherwise the merchant 
 were cut in 0.525.
 Robots drive on `navStep` ([Pathfinding](pathfinding.md)) and are solid to players and animals
 (see [Unit collisions](unit-collisions.md)). They join the y-sorted draws via `drawRobot()` in
-team colours (the whole sprite bobs while driving, the axe swings at a target) and show a health
-bar. Their SFX are positional (`sfxAt`) so a remote base doesn't spam audio.
+team colours, each kind its own sprite set (the whole sprite bobs while driving, the axe swings
+at a target, a thrower's ball leaves its hand) and show a health bar. Their SFX are positional (`sfxAt`) so a remote base doesn't spam audio.
 
-**A soldier swings an axe.** One swing, `ROBOT_DMG` (5) every `ROBOT_ATK_CD` (1.1 s) at anything
-inside `ROBOT_REACH` (15 px) — flat, with nothing scaling it. `robotStrike(b, e, pt)` is the
-single blow: a building goes through `hurtStruct` (the same path a player's E swing takes, so the
-wreck, the payout and the `WRECKED A` line are one code path), and any **body** through
-`hurtUnit` with `cause: 'soldier'`, credited to nobody. Targets come from
+**Three kinds of soldier, League's.** What a kind is lives in `SOLDIER_TYPES` (js/sim/robots.js,
+read through `soldierType(b)` off `b.type`): its health and its growth, its blow (`dmg` every `cd`
+s from `reach` px; a building takes `struct` times it, the bird `eagle`), the shot that carries a
+blow from range (`shot`, s in the air), its bounty share and its XP share, and its sprite set.
+**Melee** swings an axe (5 every 1.1 s, 15 px, 60 hp), **ranged** throws a packed snowball (6 every
+1.5 s from 72 px, 34 hp) and **siege**, the sled catapult, lobs a big one (10 every 2.4 s from 96 px,
+three times that on a building, 150 hp). `robotStrike(b, e, pt)` is the single blow: an axe lands
+now through `soldierLand`, a thrower's ball is held in `b.shot` and lands when its time is up
+(`soldierShot`) on what it was thrown at, a body where it then stands (a lob, not a dodgeable
+shot; a wreck's ball is lost with it). `soldierLand` sends a building through `hurtStruct` (the
+same path a player's E swing takes, so the wreck, the payout and the `WRECKED A` line are one code
+path), the bird through `hurtEagle`, and any **body** through `hurtUnit` with `cause: 'soldier'`,
+credited to nobody. The ball's pixels are `drawSoldierShot` (js/draw/bodies.js), a siege one on a
+`SOLDIER_LOB` arc. Targets come from
 `robotFoeUnit(b, range)` (nearest rival player or bot; players are noticed through `seenAt`, so a
 buried body is as invisible to a soldier as to a wolf) and `enemyStructNear(team, x, y, r)`.
 `foePoint(e, fx, fy)` is where the axe lands: a body a little above its feet, or **the nearest
@@ -26,7 +35,7 @@ point on a building's footprint** — a body measuring to a 3×2 building's cent
 past the wall it is standing against. `drawRobot()` draws the swing off `b.atkAim` and `b.atkCd`.
 
 A bot is **shootable**: its hitbox is `ROBOT_HIT_R` (7) about `robotHitY(b)` (`b.y - 1`, the
-middle of a body whose treads sit at `b.y + 4`), and `hurtRobot(b, dmg, nx, ny, src)` is the single entry
+middle of a body whose treads sit at `b.y + 4`; a hero's machine is its own size, `robotHitR`), and `hurtRobot(b, dmg, nx, ny, src)` is the single entry
 point for damage — flash, knockback, the damage total, a scrap-and-sparks burst, `SFX.hit`, and
 `robotDies` at zero. Shots reach it (only from another team — friendly fire is off, as it is for
 players), and so does every class ability and the roll, all of them through `hurtUnit`. A downed
@@ -52,10 +61,11 @@ culverts, the far bank, the road just past the rival gate. Every other soldier o
 waves meet on the stones, never on the orca's ice. `updateSoldier` is four rungs, first hit wins:
 
 1. a rival **unit** inside `SOLDIER_AGGRO` (96 px — `robotFoeUnit`, so a buried hunter lets a
-   column walk past): close and swing (`robotStrike`, `ROBOT_DMG` every
-   `ROBOT_ATK_CD`, `cause: 'soldier'` — `DEATH_CAUSE.soldier` is the feed line);
+   column walk past): close to its kind's `reach` and strike (`robotStrike`, its kind's blow,
+   `cause: 'soldier'` — `DEATH_CAUSE.soldier` is the feed line), marking it in `b.hitFoe` for the
+   bots' last hit (`aiFarmHold`);
 2. the rival **bird** inside six tiles: the nearest roost tile (`aiEagleTile`), and
-   `SOLDIER_EAGLE_DMG` (8, against a hand's 20) a swing through `hurtEagle` — ahead of any
+   its kind's `eagle` (a melee 8, against a hand's 20) a blow through `hurtEagle` — ahead of any
    building, since whatever a side builds round its bird stands within a step of it;
 3. a rival **building** inside `SOLDIER_SIEGE` (40 px — what is in its way: a rival
    barracks), or a rival [road tower](#road-towers) inside
@@ -80,19 +90,19 @@ other body (`bot: true` is what `isAnimalUnit` reads to send a blow down the rob
 than the animal one — a soldier carries a `kind` too), the roosting bird's **gust** rears at it
 and buffets it like a player (`updateEagle`/`eagleGust`), a road tower marks it, and it dies through
 `robotDies` paying its bounty to the rival who lands the **last hit** ([Farming](#farming)) and
-`SOLDIER_XP` (20) shared by every rival scout standing near, whoever scrapped it
-([Hero levels](../multiplayer.md#hero-levels)) — no feed line, three a wave. Its health is `STRUCTS.barracks` `botHp` (60) plus `SOLDIER_HP_GROW`
-(10) for every `grow` the match has run (`makeSoldier`), so a hero's grown blow never makes every
+`SOLDIER_XP` (20) times its kind's `xp` shared by every rival hero standing near, whoever scrapped it
+([Hero levels](../multiplayer.md#hero-levels)) — no feed line, six or seven a wave. Its health is its kind's `hp` plus its `grow`
+for every barracks `grow` the match has run (`makeSoldier`), so a hero's grown blow never makes every
 hit a last hit. The cap on a barracks' live soldiers is
-`STRUCTS.barracks.tiers[0].cap`. Bots read them as attackers at their bird and as targets in
+`STRUCTS.barracks.cap`. Bots read them as attackers at their bird and as targets in
 sight, and a pusher walks with its own column ([multiplayer.md](../multiplayer.md#bots)).
 
 
 ## Farming
 
 js/sim/farm.js. League's last hit: a rival soldier pays **only** the rival who lands its final
-blow — `soldierBounty()`, `SOLDIER_BOUNTY` (110) plus `SOLDIER_BOUNTY_GROW` (7) for every barracks
-`grow` (180 s) the match has run, paid by `robotDies` through `awardGold` — and a camp monster
+blow — `soldierBounty(b)`, its kind's `bounty` share (melee 1, ranged 0.65, siege 3.2) of `SOLDIER_BOUNTY`
+(57) plus `SOLDIER_BOUNTY_GROW` (4) for every barracks `grow` (180 s) the match has run, paid by `robotDies` through `awardGold` — and a camp monster
 (`a.home`: the wolves and the bears) pays its killer as ever (`animalDies`). Each is one **farm**
 (`farmHit`: `p.farm`, in `PLAYER_RECORD`), which the scoreboard's FARM column and the post-game
 COMBAT group's FARM row print. A soldier the waves, a tower or a beast finish pays nobody: the
@@ -111,17 +121,17 @@ The `road towers` banner (js/sim/towers.js). Every zipline has three `STRUCTS.to
 ([the zipline](../world.md#the-zipline)); the cable runs only to the furthest one standing.
 `updateTower` (called from `updateStructures`) is one gun on a turntable:
 
-- **What it shoots** (`towerMark`): a rival scout inside `TOWER_RANGE` (112 px from the foot)
-  who hit one of its side's scouts in the ring within `TOWER_CALL_T` (the latest such, read off
+- **What it shoots** (`towerMark`): a rival hero inside `TOWER_RANGE` (112 px from the foot)
+  who hit one of its side's heroes in the ring within `TOWER_CALL_T` (the latest such, read off
   `foeHits`); else the mark it already holds; else the nearest rival bot; else the nearest rival
-  scout. A scout is only a mark while `seenAt` says the side sees them.
+  hero. A hero is only a mark while `seenAt` says the side sees them.
 - **The turn and the wind**: the gun turns at `TOWER_TRAVERSE`, and once inside `TOWER_LOCK` of
   the mark it winds for `TOWER_WIND` (0.7 s) before it looses; then `TOWER_RELOAD` (1.6 s).
-  While it winds on a scout, `drawTowerFx` (js/draw/towers.js) runs a dashed line on the snow
+  While it winds on a hero, `drawTowerFx` (js/draw/towers.js) runs a dashed line on the snow
   from the foot to them and a ring at their feet, brightening as the string comes back.
 - **The bolt**: `TOWER_BOLT_T` in the air, then `hurtUnit` (`cause: 'tower'`, a short knockback).
-  A bot takes `TOWER_DMG_BOT` (15). A scout takes `TOWER_DMG` (24), and each bolt in a row into
-  the same scout adds `TOWER_HEAT` of that, up to three times the first. The spent bolt stands in
+  A bot takes `TOWER_DMG_BOT` (15). A hero takes `TOWER_DMG` (24), and each bolt in a row into
+  the same hero adds `TOWER_HEAT` of that, up to three times the first. The spent bolt stands in
   the snow at the mark's feet for `TOWER_PIN_T`.
 
 A wave turns on a tower inside `SOLDIER_TOWER_R` ([the waves](#soldiers-the-waves)), and a
@@ -179,6 +189,13 @@ With nothing due and the back woods felled, it keeps to its post on the road jus
 two either way. **Wherever it is, it keeps shop** too: its own body is a
 [counter](the-merchants-counter.md) as well as its stall, open to either team, and it stands still
 and faces a customer served at its body for as long as the sale takes.
+
+A hero can set bodies of its own in `robots` too: FABER's small guns and old engine
+(js/sim/faber.js) are a `robotBody` with his side, his id and a `kind` that `HERO_MACHINE`
+(js/sim/heroes.js) answers. `updateRobot` runs that row's brain after the shared status/stun
+handling, `drawRobot` its draw, and `robotDies` pays a rival the row's `pay` (no farm, no
+bounty). Towers, soldiers and every weapon meet one as they meet a soldier, and a hero bot
+targets one as it targets a soldier. Every wreck also runs `HERO_WRECK` (FABER's spare parts).
 
 It is a unit in `robots` with `merchant: true` and `kind: 'merchant'`: the same
 `separateUnits` (player radius and mass — `unitRadius`/`UNIT_MASS.merchant`) and y-sorted draw a

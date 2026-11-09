@@ -60,8 +60,7 @@ beat calls `endSkip()`, which jumps the relevant clock to the end.
 `endMatch` because the match keeps running underneath and a total that climbs behind a tally which
 already counted it reads as a bug. Its `roster` is the whole side, the local player first — name,
 class and kit per player, a mate who is down at the whistle included — and is what both stages
-stand. The four shared columns are gold / kills / level / clock; the loss puts its **placing**
-(`4/6`, off `place`/`of`) in front of them. `drawEndTally` / `drawEndStatPlate` / `drawEndPlanks`
+stand. The four shared columns are gold / kills / level / clock, the same on both. `drawEndTally` / `drawEndStatPlate` / `drawEndPlanks`
 are the shared passes: each takes the ending's timeline and its accent pair (`WIN_ACCENT` gold,
 `DEF_ACCENT` frost), so one plate tallies both. A plate is icon-and-number and nothing else — the
 icon at 2× (the coin and the bow blitted at 16 px, the stamped glyphs at 2 px cells) beside the
@@ -118,11 +117,10 @@ stands back up. The mates on a **win** celebrate on their own (`emoteAmbient`) �
 own slot off the hash every `EM_AMB` seconds, about half of them play, and nothing is kept between
 frames, the same no-array idiom as the motes. A loss has no ambient at all.
 
-**The death dim** underneath is the third state, and it is not a ceremony: a wash, **YOU COLLAPSED
-IN THE SNOW** at 3× (2× on a view too narrow to hold it) in the upper band — it is the first thing
+**The death dim** underneath is the third state, and it is not a ceremony: a wash, **YOUR EAGLE
+WAS DRIVEN OFF** at 3× (2× on a view too narrow to hold it) in the upper band — it is the first thing
 to read and the match is still playing behind it, so it goes where an eye lands rather than over
-the body that fell — a second line saying the match is over for you, and two planks (SPECTATE /
-LOBBY). That is the **elimination**; a guest whose host left mid-match (`state.over =
+the body that fell — a second line saying the match is over, and one plank, LOBBY. That is the **elimination**; a guest whose host left mid-match (`state.over =
 'hostleft'`) gets the same dim under **THE HOST LEFT** / **THE MATCH ENDS HERE** and one LOBBY
 plank. **The respawn wait** is the fourth state and the lightest: no wash, no
 planks, the camera already on an ally through the spectate strip, one line — **RESPAWNING IN Ns**

@@ -4,7 +4,7 @@
 //
 // THE RECALL is a channel: RECALL_T seconds
 // standing still, then the body is set down at its own roost on the tile a
-// carried-back scout lands on (roostTile, js/sim/player.js). It arrives as a
+// carried-back hero lands on (roostTile, js/sim/player.js). It arrives as a
 // cmd ({ kind: 'recall' }: the H key, a bot, the bots' API) so it rides the one
 // input path online. Anything the body DOES ends it - a step, the bow, an
 // ability, E, the roll, the slide - and so does every way a channel is knocked

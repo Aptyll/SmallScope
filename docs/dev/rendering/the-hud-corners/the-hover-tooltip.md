@@ -22,7 +22,7 @@ panel is painted at this frame, which is how the two modes are read without eyeb
 
 **`tipAt(mx, my)` is the only source**, and it asks the same hit-testers the press handler
 does, so what the panel describes and what a click would do can never be two different things.
-In `play`, in order: the merchant's counter (`shopHit` → `tipShop`, first), the build list's rows (`buildListHit`), the character panel's item slots (`charItemHit`, answering `tipItem`), a rail chip
+In `play`, in order: the merchant's counter (`shopHit` → `tipShop`, first), the character panel's item slots (`charItemHit`, answering `tipItem`), a rail chip
 (`railHit`), a
 floating buy plate (`abBuyHit`), the strip (`stripHit`: an ability well, an item slot answering
 `tipItem`, the purse, and the portrait answering `tipAttack`). In `title` it answers the wiki's rows and
@@ -36,16 +36,17 @@ plate, rim }` and `drawTooltip` is the only thing that knows how to paint one: t
 plate, the name in its ink, the kind under it, then label/value rows with a dotted
 leader between them — the PLAYER panel's ledger, which is where that pattern already lives — and
 free lines under those. The panel sizes itself to its widest line (capped at `TIP_MAXW`), so a
-short tooltip is a short panel.
+short tooltip is a short panel; a free line wider than the cap breaks onto more lines (`tipFit`,
+`wrapText`), so no ability, item or translation runs out of the frame.
 
 The builders, one per kind: `tipAttack` (the hero's basic attack: its full-draw damage, the
-full draw, the renock and the reach, read off the sim's own functions),
+full draw (FULL CHARGE), the renock (BETWEEN HITS) and the reach, read off the sim's own functions),
 `tipGold`, `tipRail` (a rail
 chip), `tipShop` (the counter's wells, js/ui/shop.js), `tipClassAb` (a strip
 ability well in play, or the lobby's stage wells with `cls` passed: kept to a mid-fight glance.
 The short card is the name with its cooldown under it, the number its rank raises (each key of
 the row's `rank` table given as a list) at the rank held, and the row's one-line `tip`; the full
-`blurb` stays on the wiki. **Shift held**, or ABILITY DETAILS on ALWAYS (`settings.tipFull`),
+`blurb` stays on the wiki. **The DETAILS key held** (Alt unless rebound; never Shift, the slide), or ABILITY DETAILS on ALWAYS (`settings.tipFull`),
 opens the long card, League's way: every rank's numbers slashed together on each row with the
 rank held lit gold (`tipRanks`, labels in `AB_RANK_STAT`; a row value may be such a list of
 coloured segments), and the hero level the next rank waits for), and the shop's `tipItem` (an item slot on the strip or the character panel, a

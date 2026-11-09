@@ -41,6 +41,9 @@
      localStorage: it has no dependencies, so it goes first. -->
 <script defer src="js/app/profile.js"></script>
 <script defer src="js/app/font.js"></script>
+<!-- every word the game prints for its own screens, by key (TEXT, tr): no dependencies, so
+     it loads before any file that draws a word. -->
+<script defer src="js/app/text.js"></script>
 <!-- js/sprites/: every hand-drawn sprite as a char grid + palette, baked at load. core.js
      first (it makes SPRITES and the SPR helpers); each file after it registers the keys it
      owns. js/baked/ files are written by app/bake-*, never by hand: motion.js is the run
@@ -57,6 +60,7 @@
 <script defer src="js/sprites/eagle.js"></script>
 <script defer src="js/sprites/perch.js"></script>
 <script defer src="js/sprites/buildings.js"></script>
+<script defer src="js/baked/soldiers.js"></script>
 <script defer src="js/baked/pump.js"></script>
 <script defer src="js/baked/tower.js"></script>
 <script defer src="js/sprites/items.js"></script>
@@ -72,6 +76,18 @@
 <script defer src="js/sprites/ignia.js"></script>
 <script defer src="js/sprites/aura.js"></script>
 <script defer src="js/sprites/salvia.js"></script>
+<script defer src="js/sprites/lucerna.js"></script>
+<script defer src="js/sprites/hiems.js"></script>
+<script defer src="js/sprites/rupes.js"></script>
+<script defer src="js/sprites/varro.js"></script>
+<script defer src="js/sprites/velox.js"></script>
+<script defer src="js/sprites/sagitta.js"></script>
+<script defer src="js/sprites/bucina.js"></script>
+<script defer src="js/sprites/nix.js"></script>
+<script defer src="js/sprites/faber.js"></script>
+<script defer src="js/sprites/falco.js"></script>
+<script defer src="js/sprites/maris.js"></script>
+<script defer src="js/sprites/lignum.js"></script>
 <script defer src="js/sprites/landmarks.js"></script>
 <!-- audio/sfx/*.mp3 baked to base64 by app/bake-sfx.js: a file:// page cannot fetch
      its own folder, so this is what lets the sound effects work when index.html
@@ -123,6 +139,18 @@
 <script defer src="js/sim/ignia.js"></script>
 <script defer src="js/sim/aura.js"></script>
 <script defer src="js/sim/salvia.js"></script>
+<script defer src="js/sim/lucerna.js"></script>
+<script defer src="js/sim/hiems.js"></script>
+<script defer src="js/sim/rupes.js"></script>
+<script defer src="js/sim/varro.js"></script>
+<script defer src="js/sim/velox.js"></script>
+<script defer src="js/sim/sagitta.js"></script>
+<script defer src="js/sim/bucina.js"></script>
+<script defer src="js/sim/nix.js"></script>
+<script defer src="js/sim/faber.js"></script>
+<script defer src="js/sim/falco.js"></script>
+<script defer src="js/sim/maris.js"></script>
+<script defer src="js/sim/lignum.js"></script>
 <script defer src="js/sim/abilities.js"></script>
 <script defer src="js/draw/abilities.js"></script>
 <script defer src="js/sim/fog.js"></script>
@@ -135,6 +163,7 @@
 <script defer src="js/baked/bot-lib.js"></script>
 <script defer src="js/sim/sim.js"></script>
 <script defer src="js/sim/surrender.js"></script>
+<script defer src="js/sim/onevone.js"></script>
 <script defer src="js/sim/weather.js"></script>
 <script defer src="js/sim/shed.js"></script>
 <script defer src="js/ai/ai-callouts.js"></script>
@@ -170,6 +199,18 @@
 <script defer src="js/draw/ignia.js"></script>
 <script defer src="js/draw/aura.js"></script>
 <script defer src="js/draw/salvia.js"></script>
+<script defer src="js/draw/lucerna.js"></script>
+<script defer src="js/draw/hiems.js"></script>
+<script defer src="js/draw/rupes.js"></script>
+<script defer src="js/draw/varro.js"></script>
+<script defer src="js/draw/velox.js"></script>
+<script defer src="js/draw/sagitta.js"></script>
+<script defer src="js/draw/bucina.js"></script>
+<script defer src="js/draw/nix.js"></script>
+<script defer src="js/draw/faber.js"></script>
+<script defer src="js/draw/falco.js"></script>
+<script defer src="js/draw/maris.js"></script>
+<script defer src="js/draw/lignum.js"></script>
 <script defer src="js/draw/marks.js"></script>
 <script defer src="js/draw/pops.js"></script>
 <script defer src="js/draw/callouts.js"></script>
@@ -190,6 +231,7 @@
 <script defer src="js/ui/vote.js"></script>
 <script defer src="js/ui/cheats.js"></script>
 <script defer src="js/ui/tooltip.js"></script>
+<script defer src="js/ui/guide.js"></script>
 <script defer src="js/ui/compose.js"></script>
 <script defer src="js/ui/notices.js"></script>
 <script defer src="js/ui/announcer.js"></script>

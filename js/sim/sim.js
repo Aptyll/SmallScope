@@ -80,25 +80,15 @@ function update(dt) {
   // time (the clock starts with the eagle - the match is live while you ride).
   // The practice arena has no clock at all: state.time stays pinned at the
   // boot's early morning, so it is always crisp daylight, no dusk, no dawn
-  // refreeze - a training room, not a day
-  if ((state.mode === 'play' || state.mode === 'drop') && !PRACTICE) {
+  // refreeze - a training room, not a day. The practice tool's map keeps a
+  // match's clock: its waves march on the match's beat (barracksBeat)
+  if ((state.mode === 'play' || state.mode === 'drop') && !ARENA) {
     state.time += dt;
     state.elapsed += dt;
     if (state.time >= CYCLE) {
       state.time -= CYCLE;
       state.day++;
-      // the profile's days played: each dawn the player is still in the match
-      // counts the day it opens (day 1 counted itself at takeoff), so quitting
-      // to the lobby mid-match still keeps the days begun. Practice is not a
-      // match: its dawns count nothing, like the rest of its stats.
-      if (!player.eliminated && !PRACTICE) PROFILE.addDay();
       SFX.dawnChime();
-      // open ice holes freeze back over during the night
-      for (const i of holes) {
-        ground[i] = 1;
-        repaintGround(i % WORLD, (i / WORLD) | 0);
-      }
-      holes.length = 0;
       // the shoal is not reset here: it is a live population, refilled a fish
       // at a time by updateFish's trickle
     }
@@ -188,8 +178,7 @@ function update(dt) {
     // the match is decided: every eye goes to the bird that broke. The camera
     // glides over and holds it centred while the takeoff plays out - the end
     // screens wait for it (eagleFleeResolve, js/sim/eagle.js), then rise over the
-    // escape still flying underneath. League-style. Only KEEP PLAYING (mode
-    // back to 'play' with no ceremony) hands the camera back early.
+    // escape still flying underneath. League-style.
     const ec = state.eagleCine ? state.drop.eagles[state.eagleCine.team]
       : state.drop.eagles.find((q) => q.state === 'flee');
     camX += (ec.x - WV_W / 2 - camX) * Math.min(1, dt * 3.5);
@@ -450,10 +439,15 @@ function shotContacts(a, x0, y0, dx, dy) {
     const s = sweepDisc(x0, y0, dx, dy, t.x, cy, r);
     if (s >= 0 && s < stop) { shotHits.push({ s, k: 'player', t }); if (!a.pierce) stop = s; }
   }
-  // bots take the same shot: they are units in the open, on a team
+  // bots take the same shot: they are units in the open, on a team. A hero's
+  // machine a shot goes by from this side is never met, so the body past it
+  // still is (HERO_MACHINE `passes`: SAGITTA's pavise, shot from behind)
+  const sd = Math.hypot(dx, dy) || 1;
   for (const t of robots) {
     if (a.team === t.team) continue;
-    const r = ROBOT_HIT_R, cy = robotHitY(t);
+    const M = heroMachine(t);
+    if (M && M.passes && M.passes(t, dx / sd, dy / sd)) continue;
+    const r = robotHitR(t), cy = robotHitY(t);
     if (t.x + r < lx || t.x - r > hx || cy + r < ly || cy - r > hy) continue;
     if (!unitAlive(t) || (a.pierce && a.pierceHit.includes(t))) continue;
     const s = sweepDisc(x0, y0, dx, dy, t.x, cy, r);
@@ -522,7 +516,7 @@ function tickObjTimers(dt) {
 const TRICKLE_GOLD = 8;
 const TRICKLE_T = 4;      // s per pay: 120 gold a minute, League's 2 a second
 function trickle(p, dt) {
-  if (p.dead || PRACTICE) return;
+  if (p.dead || ARENA) return;
   p.trickleT += dt;
   if (p.trickleT >= TRICKLE_T) { p.trickleT -= TRICKLE_T; gainGold(p, TRICKLE_GOLD); }
 }
@@ -531,6 +525,7 @@ function updatePlay(dt) {
   // the surrender votes read their orders before any body runs, since a body
   // that is down or stunned drops every order it is given (js/sim/surrender.js)
   updateVotes(dt);
+  updateOnevone(); // a 1V1's end: first blood, the soldiers, the first tower (js/sim/onevone.js)
 
   // every player steps through the same code, each off its own input struct
   // (players still on or under the eagle are moved by updateDrop instead)
@@ -548,7 +543,7 @@ function updatePlay(dt) {
   botLogStep(dt);    // the bot dev view's recorder: reads what the bots just decided (js/ui/botview.js)
   resolveContests(); // this step's work swings, creek fish and bush claims
   if (!PRACTICE) sampleStats(dt); // the post-game lobby's two graphs (js/ui/lobby.js)
-  if (!PRACTICE) updateShop(); // the counter shuts when you walk off (js/ui/shop.js)
+  updateShop(); // the counter shuts when you walk off (js/ui/shop.js)
   updateAbilityWorld(dt); // craters and nets in flight
   if (state.drop) updateDrop(dt);
   shedStep(dt); // the gusts knocking snow off the pines (js/sim/shed.js)
@@ -577,9 +572,11 @@ function updatePlay(dt) {
         basic: !!a.basic, // a press of the bow, not the pierce: a basic attack (passiveDeal, js/sim/heroes.js)
         ab: a.ab,         // ...or the key that loosed it (the death recap)
         burn: a.burn,     // ...and the fire it carries (IGNIA's FIREBRAND, js/sim/ignia.js)
+        slow: a.slow,     // ...and the slow (RUPES's HEAVE, js/sim/rupes.js)
       });
       if (a.ambush) ambushFx(hx, hy);
       a.struck = true;
+      heroShotHit(a, t, nx, ny); // what a hero's shot does once it lands (HERO_SHOT_HIT, js/sim/heroes.js)
     };
     let dead = a.t > a.life;
     // how much of the step the shot really flew: one that ends ON something
@@ -610,9 +607,10 @@ function updatePlay(dt) {
       } else if (h.k === 'wall') {
         dead = true;
         // ...and when the wall that stopped it is a RIVAL'S BUILDING, the shot
-        // SIEGES it, at STRUCT_DR off (hurtStruct, js/sim/actions.js).
+        // SIEGES it, at STRUCT_DR off (hurtStruct, js/sim/actions.js), x the shot's own
+        // `siege` where it has one (SAGITTA's heavy bolt, js/sim/sagitta.js).
         const st = structOf(objAt(h.tx, h.ty));
-        if (structFoe(sideOf(a), st)) hurtStruct(st, a.dmg, players[a.owner]);
+        if (structFoe(sideOf(a), st)) hurtStruct(st, Math.round(a.dmg * (a.siege || 1)), players[a.owner]);
         else shedHit(objAt(h.tx, h.ty)); // a shot into a pine knocks its crown's snow loose (js/sim/shed.js)
         burst(hx, hy, '#cfd8e8', 3, 25, 0.25, true);
       } else if (h.k === 'player' && abShieldBlocks(t, nx, ny)) {
@@ -691,7 +689,7 @@ function updateWildlife(dt) {
   updateOrca(dt); // the orca under its lake's ice: the cruise, the hunt and the breach (js/sim/orca.js)
   updateCamps(dt); // a cleared camp counts down and comes back whole
   updateCampSight(); // and each side learns the clocks it can see
-  if (!PRACTICE) updatePreyStock(dt); // and the meadow keeps its rabbits and deer
+  if (!ARENA) updatePreyStock(dt); // and the meadow keeps its rabbits and deer
 }
 
 const WADE_SHOVE = 40; // px/s of knockback that carries a bot into open water it would never walk into
@@ -714,7 +712,7 @@ function kbDecay(p, dt) {
 }
 function iceUnder(p) {
   const ftx = Math.floor(p.x / TILE), fty = Math.floor((p.y + 4) / TILE);
-  return inWorld(ftx, fty) && ground[idx(ftx, fty)] === 1;
+  return (inWorld(ftx, fty) && ground[idx(ftx, fty)] === 1) || heroIce(p); // ...or a rival hero's ice (HERO_ICE, js/sim/heroes.js)
 }
 function clampWorld(p) {
   p.x = Math.max(8, Math.min(WORLD * TILE - 8, p.x));
@@ -955,7 +953,7 @@ function playerPlunge(p) {
   // easily, the creek's three only from its bank, so a roll that runs out over
   // the current goes in. The creek asks the feet against its banks as drawn
   // (creekWet), so nobody goes in off a pixel of snow or the frozen stretch.
-  if (p.fallT <= 0) {
+  if (p.fallT <= 0 && !heroSwim(p)) { // ...unless the hero swims (HERO_SWIM, js/sim/heroes.js)
     const htx = Math.floor(p.x / TILE), hty = Math.floor((p.y + 4) / TILE);
     const g = inWorld(htx, hty) ? ground[idx(htx, hty)] : 0;
     // a tile an ice break holds open is wet only where its pixels are: the
@@ -1134,10 +1132,8 @@ function playerSwing(p, dt) {
       swingHit(p);
     }
   }
-  // the work tool goes away with the swing cooldown; held E brings it right
-  // back, and with no E the hands find their own work (autoWork, js/sim/actions.js:
-  // a tree in reach)
-  if (p.swingT <= 0 && p.swingCd <= 0) p.swing = SWING_BOW;
+  // held E swings again once the cooldown is out, and with no E the hands find
+  // their own work (autoWork, js/sim/actions.js: a tree in reach)
   if (inp.work) tryWork(p); else autoWork(p);
 }
 
@@ -1243,8 +1239,8 @@ function updatePlayer(p, dt) {
   p.faceT = Math.max(0, p.faceT - dt);
   p.invuln = Math.max(0, p.invuln - dt);
 
-  // gentle regen in daylight (a kit's nightHeal keeps it on after dark)
-  if (p.hp < p.maxHp && (state.darkness < 0.3 || kit.nightHeal)) {
+  // gentle regen in daylight
+  if (p.hp < p.maxHp && state.darkness < 0.3) {
     healPlayer(p, dt * 0.6);
   }
 }

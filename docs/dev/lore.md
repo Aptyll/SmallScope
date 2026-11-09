@@ -9,7 +9,7 @@ valley* is not obvious.
 **The player-facing canon is the wiki's WORLD page** (`WIKI_WORLD`, [js/ui/wiki.js](../../js/ui/wiki.js);
 what the page is: [gameplay.md](gameplay/the-wiki.md)) **and each hero's story** (`story` on its
 `CLASSES` entry, [js/sim/player.js](../../js/sim/player.js), printed under the hero's card on the
-wiki's CLASSES page). The sentences live there and only there. This file is the rules they answer
+wiki's HEROES page). The sentences live there and only there. This file is the rules they answer
 to, and it never restates them.
 
 ## The premise: the exiles and the claim
@@ -121,7 +121,7 @@ The game already has a voice; new lines match it. `THE BOW IS THE ARGUMENT: KEEP
   ampersand, no brackets — and a character it lacks prints as `?`, so a sentence is built
   without them.
 - **A WORLD entry or a hero's story is three or four lines** at the slab's full width, about 70
-  characters a line beside its figure. `wikiWrap` makes any length safe; no orphaned last word is
+  characters a line beside its figure. `wrapText` makes any length safe; no orphaned last word is
   the tuning.
 
 ## Naming
@@ -131,7 +131,7 @@ The game already has a voice; new lines match it. `THE BOW IS THE ARGUMENT: KEEP
 - **A kind is named for what it is or does** (THROWING LOG, HOOKSHOT); **a perk for the
   person it makes you** (SPRINTER, FORAGER, WINTER'S CHILD: the parked cards, gameplay/roguelike-cards.md).
 - **A place is THE and a plain noun** — THE ROAD, THE ROOST, THE WORKS, THE COUNTER — and a camp
-  is what is in it: WOLF DEN, BLACK BEAR STONE, BROWN BEAR DEN.
+  is what is in it and where: WOLF DEN, BLACK BEAR BEND, BROWN BEAR BEND (both bears walk a bend of the creek).
 - **A person is a winter word**: a tree, a weather, a small animal, a bird (`NAME_POOL`,
   [js/app/profile.js](../../js/app/profile.js)).
 - **A hero is one Latin-sounding word and a title**: ARMATOS, THE LAST STANDARD; FORTIVA, THE

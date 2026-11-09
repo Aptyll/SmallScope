@@ -126,10 +126,9 @@ function drawAbilityGround(ex, ey, now) {
     // the screen from a caster well off it - the cull reaches as far as the
     // line does
     const pfl = ab.id === 'pierce' ? pierceFlight() : null;
-    const cull = pfl ? pfl.spd * pfl.life : 80;
+    const cull = pfl ? pfl.spd * pfl.life : Math.max(80, (ab.aim && ab.aim.line) || 0); // a long line reaches in from off the screen
     if (px < -cull || py < -cull || px > WV_W + cull || py > WV_H + cull) continue;
-    const dx = p.input.aimX - p.x, dy = p.input.aimY - (p.y - BOW_Y);
-    const a = Math.atan2(dy, dx), nx = Math.cos(a), ny = Math.sin(a);
+    const a = aimAngle(p), nx = Math.cos(a), ny = Math.sin(a); // never p.input: a client is sent no other body's
     if (ab.id === 'pierce') {
       drawTeleLine(p.x, p.y - BOW_Y, nx, ny, teleLen(p.x, p.y - BOW_Y, nx, ny, cull), col, 0.5 + 0.45 * closing, now, ex, ey);
     } else if (ab.id === 'rush') {
@@ -228,6 +227,7 @@ function drawAbilityAir(ex, ey, now) {
     ctx.fillRect(-4, 3, 2, 2); ctx.fillRect(3, 3, 2, 2);
     ctx.restore();
   }
+  heroAir(ex, ey, now); // what a hero's kit has in the air over the bodies (HERO_AIR, js/sim/heroes.js)
 }
 
 // ---- drawing: on the body ------------------------------------------------
@@ -275,7 +275,7 @@ function abilityPose(p) {
 // and a player wear the same four tells at their own size - a state you
 // cannot see is a rule you cannot play around, and that is as true of a deer
 // as of a rival. Called by drawAbilityOnPlayer below and by drawAnimal /
-// drawBird / drawRobot (js/draw-world.js).
+// drawRobot (js/draw/bodies.js).
 function drawUnitStates(e, px, py, w, h, now) {
   if (e.netT > 0) {
     ctx.globalAlpha = Math.min(1, e.netT / 0.4);
@@ -372,6 +372,8 @@ const AB32_PAL = {
   H: '#d9ad72', h: '#8a6d50', n: '#5c4a38',
   E: '#cfd8e8', e: '#8b93a8',
   v: '#4f8a46', V: '#9cc87a', // SALVIA's sage (js/sprites/salvia.js)
+  q: '#2c5478', Q: '#5f9cc8', // MARIS's water (js/sprites/maris.js)
+  j: '#2f5c4b', // LIGNUM's pine dark (js/sprites/lignum.js)
 };
 const AB32 = [
   [ // HUNTER
