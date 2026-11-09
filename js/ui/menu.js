@@ -30,7 +30,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.568';
+const PATCH_TXT = 'PATCH 0.569';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -46,6 +46,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.569', 'UNDER THE HOOD: THE BUILD CHECK NOW CATCHES CODE NOTHING USES, SO OLD LEFTOVERS CANNOT PILE UP AGAIN.'],
   ['0.568', 'IN THE PRACTICE TOOL THE TOP BUTTON OF THE BAR CHANGES YOUR HERO: PICK ANY HERO\'S FACE AND YOU SWAP ON THE SPOT, KEEPING YOUR LEVEL, ITEMS AND GOLD.'],
   ['0.567', 'THE STEAM BUILD HAS A QUIT BUTTON ON THE TITLE SCREEN, UNDER PRACTICE TOOL.'],
   ['0.566', 'THE PRACTICE TOOL FIELD HAS A SHOP NOW: A STALL AND ITS MERCHANT JUST EAST OF WHERE YOU START, SO ADD GOLD CAN BE SPENT ON ITEMS.'],
