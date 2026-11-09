@@ -688,10 +688,11 @@ function updatePrey(a, dt) {
     a.alertT -= dt;
   } else if (a.fleeT > 0) {
     a.fleeT -= dt;
-    const from = scare || player;
     // the flight is a chain of routed legs a few tiles long, each picked
-    // away from the threat; a leg that fails or arrives hands over to the next
-    if (!a.fleeGoal) a.fleeGoal = fleeGoal(a, from);
+    // away from the threat; a leg that fails or arrives hands over to the next.
+    // With no threat on the ground (every hero dead or aloft) the leg under
+    // way is run out and the flight ends there
+    if (!a.fleeGoal && scare) a.fleeGoal = fleeGoal(a, scare);
     if (a.fleeGoal) {
       // a deer with sprint left in the bar spends it here, and runs for it
       sprinting = !rabbit && a.sprint > 0;

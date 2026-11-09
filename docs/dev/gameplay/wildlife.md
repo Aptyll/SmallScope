@@ -163,7 +163,8 @@ included, which is what keeps the `.` overlay honest ([rendering.md](../renderin
   walking scout's): `fleeGoal(a, from)` picks a tile ~6 tiles off, as straight away from the
   threat as the ground allows (fanning out, then sideways, then past it), the first it can route
   to; a leg that arrives or fails hands over to the next, and an animal with nowhere to run stops
-  fleeing. A warren's rabbit runs `RABBIT_LEG` (3.5) tile legs that must end on its warren's deep
+  fleeing. With no threat on the ground (every hero dead or aloft, no beast in sight) it runs out
+  the leg under way and stops there. A warren's rabbit runs `RABBIT_LEG` (3.5) tile legs that must end on its warren's deep
   snow (`warrenHolds`), so it circles a scout wading after it instead of leaving the circle.
 - **A deer's sprint.** A deer always wears a second bar under its health — stamina white
   (`STAM_COL`), stacked the way a player's is (`drawAnimal`) — and spends it on the first stretch
