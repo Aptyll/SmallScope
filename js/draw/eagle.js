@@ -374,35 +374,20 @@ function drawYouArrow(now, e) {
   for (let r = 0; r < 4; r++) ctx.fillRect(cx - 4 + r, cy + r, 9 - 2 * r, 1);
 }
 // an action's key cap - the shared one (drawKeyCap, js/ui/wheel.js), its
-// face lit white when `lit`; the pad's glyph while a pad is in hand - with
-// its one word beside it in `col`, the pair centred on x with its top at y.
+// face lit white when `lit` - with its one word beside it in `col`, the pair centred on x with its top at y.
 // The roost's HOP OFF wears it.
 function drawCapBind(act, verb, x, y, col, lit) {
   const vw = pixelTextWidth(verb);
-  if (padActive() && PAD_BIND[act]) {
-    const gw = padBindW(act), x0 = Math.round(x - (gw + 3 + vw) / 2);
-    drawPadBind(ctx, x0, y, act, 1);
-    drawPixelTextOutline(ctx, verb, x0 + gw + 3, y + 3, col, '#0f1632');
-    return;
-  }
   const lab = keyCap(act), x0 = Math.round(x - (pixelTextWidth(lab) + 6 + 3 + vw) / 2);
   const cw = drawKeyCap(ctx, x0, y, lab, false, lit ? 1 : 0);
   drawPixelTextOutline(ctx, verb, x0 + cw + 3, y + 3, col, '#0f1632');
 }
 // one of the flight HUD's two keybind indicators: `KEY - VERB` as text for
-// the keyboard - the key the action is bound to (keyCap, input.js) - the
-// pad's glyph beside the verb while a pad is in hand (PAD_BIND, ui.js).
+// the keyboard - the key the action is bound to (keyCap, input.js).
 // Centred on x, or ending at x when `centre` is false.
 function drawDropBind(act, verb, x, y, col, ts, centre) {
-  if (padActive()) {
-    const gw = padBindW(act) * ts, w = gw + 3 * ts + pixelTextWidth(verb, ts);
-    const x0 = Math.round(centre ? x - w / 2 : x - w);
-    drawPadBind(ctx, x0, y - 2 * ts, act, ts);
-    drawPixelTextOutline(ctx, verb, x0 + gw + 3 * ts, y, col, '#0f1632', ts);
-  } else {
-    const t = keyCap(act) + ' - ' + verb, w = pixelTextWidth(t, ts);
-    drawPixelTextOutline(ctx, t, Math.round(centre ? x - w / 2 : x - w), y, col, '#0f1632', ts);
-  }
+  const t = keyCap(act) + ' - ' + verb, w = pixelTextWidth(t, ts);
+  drawPixelTextOutline(ctx, t, Math.round(centre ? x - w / 2 : x - w), y, col, '#0f1632', ts);
 }
 
 // The way off the roost, for a rider still seated after the brief: a keybind
@@ -421,8 +406,7 @@ function drawHopPrompt(now) {
   const set = classSet(player), dir = riderDir(e);
   const tagTop = Math.round(wToSY(player.y - (set[dir][0].height - 5) - 8));
   const y = tagTop - HOP_GAP - 10 + bob, cx = Math.round(wToSX(player.x));
-  // the work key on a keyboard (E); a pad's A disc (the jump; X, the work button, hops too)
-  drawCapBind(padActive() ? 'dodge' : 'work', 'HOP OFF', cx, y, FLIGHT_OPEN, true);
+  drawCapBind('work', 'HOP OFF', cx, y, FLIGHT_OPEN, true);
 }
 
 

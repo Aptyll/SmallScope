@@ -161,7 +161,7 @@ const state = {
     // skNav the keyboard up on the navbar, skPick the card for sale picked for
     // a second press to buy, skHover the tabs' and cards' hover eases, skDeny
     // the short purse's shake, skFlash the buy's flash over card skFlashI
-    skinT: 0, skTab: 1, skSel: 0, skNav: false, skPick: -1, skHover: {}, skDeny: 0, skFlash: 0, skFlashI: -1,
+    skinT: 0, skTab: 1, skSel: 0, skNav: false, skKeyed: false, skPick: -1, skHover: {}, skDeny: 0, skFlash: 0, skFlashI: -1,
     charT: 0, nameBuf: '', nameSel: false, nameEdit: false, nameShake: 0, khover: {},
     moved: false, keyNav: false, camT: 0, pressT: 0, // keyNav: the keys made the pick (it lights until the pointer moves)
     // a sealed plank's knock (drawMenuButton's frozen glaze cracks from

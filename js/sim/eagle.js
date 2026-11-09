@@ -11,9 +11,8 @@
 // bases, js/sim/base.js). Everybody rides the landing: the bird dives with
 // the whole side on its back, the crash hands the mode over (landAboard), and
 // each rider hops off at the perch - a bot on its own beat after the wings
-// fold, a human with E (or the roll button - a pad's A, or simply walking:
-// hopOff, under the HOP OFF indicator drawHopPrompt raises, which wears the
-// button of the controller in hand). A profile's first ride sits through the
+// fold, a human with E (or the roll button, or simply walking:
+// hopOff, under the HOP OFF indicator drawHopPrompt raises). A profile's first ride sits through the
 // drop brief before the hop - both roosts toured with you still seated - and
 // never again once it has hopped off.
 // state.drop outlives mode 'drop' - and the whole match: the bird blows a
@@ -321,7 +320,7 @@ function updateDrop(dt) {
       p.x = sp.x; p.y = sp.y;
       if (e.state !== 'down') { /* still riding in */ }
       else if (!isHuman(p)) { if (e.restT >= BOT_HOP_T + p.seat * BOT_HOP_GAP) hopOff(p); } // the bots step off one by one once the wings fold
-      else if ((p !== player || state.mode === 'play') && (p.input.work || p.input.dodge || p.input.mx || p.input.my)) hopOff(p); // E, the roll button (a pad's A) or simply walking: off the roost
+      else if ((p !== player || state.mode === 'play') && (p.input.work || p.input.dodge || p.input.mx || p.input.my)) hopOff(p); // E, the roll button or simply walking: off the roost
       p.input.dodge = false; // a seated roll is spent here, never carried into the landing
     } else if (p.dropT > 0) {
       p.dropT -= dt;
@@ -555,18 +554,17 @@ function eagleCrash(e) {
   e.laneDir = ml > TILE ? { x: mx / ml, y: my / ml } : { x: -Math.cos(e.heading), y: -Math.sin(e.heading) };
   // the pad: the blown disc is packed earth from this frame - one ground
   // with the road it lands on - so its tiles turn to 3 at
-  // once and the ground repaints out to the verge (a one-time cost, under
-  // the shake and the boom)
+  // once and the ground repaints out to the verge through repaintGround,
+  // which also tells the trample the snow there is gone (a one-time cost,
+  // under the shake and the boom)
   e.pad = addPad(e.team, e.x / TILE - 0.5, e.y / TILE - 0.5, BOOM_R);
-  {
-    const g = groundCv.getContext('2d'), PR = Math.ceil(BOOM_R) + 3;
-    g.imageSmoothingEnabled = false;
-    for (let dy = -PR; dy <= PR; dy++) for (let dx = -PR; dx <= PR; dx++) {
-      const tx = ctx0 + dx, ty = cty0 + dy;
-      if (!inWorld(tx, ty)) continue;
-      if (ground[idx(tx, ty)] === 0 && laneDist(tx, ty) < 0) ground[idx(tx, ty)] = 3;
-      paintGroundTile(g, tx, ty);
-    }
+  const PR = Math.ceil(BOOM_R) + 3;
+  for (let dy = -PR; dy <= PR; dy++) for (let dx = -PR; dx <= PR; dx++) {
+    const tx = ctx0 + dx, ty = cty0 + dy;
+    if (inWorld(tx, ty) && ground[idx(tx, ty)] === 0 && laneDist(tx, ty) < 0) ground[idx(tx, ty)] = 3;
+  }
+  for (let dy = -PR; dy <= PR; dy++) for (let dx = -PR; dx <= PR; dx++) {
+    if (inWorld(ctx0 + dx, cty0 + dy)) repaintGround(ctx0 + dx, cty0 + dy);
   }
   spawnMerchant(e);
   for (const p of players) if (p.active && p.aboard && p.team === e.team && p === player) landAboard(p);

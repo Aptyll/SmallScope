@@ -28,10 +28,9 @@ song is interrupted by the impact, and on a profile's first flight the
 snapshot when its own bird is `down` (`netClientMode`, js/net/net.js), without the brief.
 Once the bird is down, the **bots hop off one by one**: a bot's seat goes at `e.restT` ≥
 `BOT_HOP_T` (0.8 s) + `p.seat` × `BOT_HOP_GAP` (0.3 s). For you, `drawHopPrompt` raises the
-**HOP OFF** keybind indicator (the shared key cap, `drawKeyCap` via `drawCapBind`: E, or the pad's
-A disc while one is in hand, with HOP OFF in gold beside it, centred over your head and bobbing
-`HOP_GAP` px clear of your name tag); `p.input.work`, `p.input.dodge` (E, or the roll button: a
-pad's A), `p.input.jump` or any walk (`p.input.mx`/`my`) while seated on a `down` bird calls
+**HOP OFF** keybind indicator (the shared key cap, `drawKeyCap` via `drawCapBind`: E, with HOP OFF in gold beside it, centred over your head and bobbing
+`HOP_GAP` px clear of your name tag); `p.input.work`, `p.input.dodge` (E, or the roll button),
+`p.input.jump` or any walk (`p.input.mx`/`my`) while seated on a `down` bird calls
 `hopOff` (while seated, E is only that: the merchant standing beside the roost never opens its
 counter over the hop, `keyPress`'s aboard guard in input.js). The hop is a short low step off the
 wing (`HOP_FALL_T`, `HOP_ALT`; every faller's arc reads `p.dropAlt`), steerable at `DRIFT_SPD`
@@ -178,7 +177,7 @@ scale and `alt` walk from the roost's numbers to the flight's over `FLEE_LIFT_T`
 returning and diverging as the ground falls away, wingbeats at full panic (`perchLiftBeat`, counted
 from the takeoff's first downstroke, so the roost can warm the whole climb: Perch's `'l'` poses) — and fades over the
 last 1.4 s of `FLEE_T`; `gone` draws nothing. `renderDropUI` (mode `drop` only) draws your gold arrow while you ride,
-`WASD - DRIFT` while falling; and an `M - MAP` keybind indicator bottom right (`drawDropBind`: both wear the pad's left stick and BACK pill while a pad is in hand) —
+`WASD - DRIFT` while falling; and an `M - MAP` keybind indicator bottom right (`drawDropBind`) —
 the ride's wider read is the **M map** (`renderWorldMap` also runs in mode `drop`, where it
 draws each flying bird's line dashed in team colour with the bird diamond riding it; M/Esc are
 handled in input.js's drop branch, a click only closes the map, and the sim keeps running

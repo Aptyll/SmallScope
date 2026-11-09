@@ -129,8 +129,7 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   stage at once and `menu.cswapT` pops it. The grid dims and refuses outside the draft's two phases
   and once you have confirmed. The hero you fly out with is kept as the profile's hero
   (`draftCount` → `PROFILE.setHero`), which is the one a person starts the next pick pointing at.
-  **Keys**: Enter starts a chat line (League's; a pad's A is still the confirm, `pad` on its
-  key), Space confirms, the arrows walk the heroes, Esc leaves; a chat line or the search field
+  **Keys**: Enter starts a chat line (League's), Space confirms, the arrows walk the heroes, Esc leaves; a chat line or the search field
   takes every key while it is open, and Backspace never leaves the screen.
 
   **The hero pop-up** opens over the still-lit lobby off the stage figure, on its own ease
@@ -156,7 +155,7 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   `draftBotPick`: a hero their side does not hold yet that plays their position, leaning to about `DRAFT_RANGED` at range)
   and give a hero up when a person of theirs locks it (`draftYield`). A phase ends early once
   every seat that must act has (`draftCheck`); the clock running out confirms what each seat
-  points at, or picks for it the way a bot would (`draftReveal`). Space, a pad's A or the
+  points at, or picks for it the way a bot would (`draftReveal`). Space or the
   confirm plate call `pressPlay()` → `draftConfirm`.
 
   **Positions** (`POSITIONS`, the `draft roles` banner: TOP, JUNGLE, MID, BOT, SUPPORT): as the
@@ -270,7 +269,8 @@ is the one rect source for the draw, the hit test (`skinsHit`) and the cursor.
   (`menu.skPick`) and its price plate lights and pulses; a second press on the same card buys it
   and wears it (`PROFILE.buy`, the card flashes white, the purse flashes, `SFX.coin`). A short
   purse shakes the plate (`SFX.deny`). A click off the cards or Esc drops the pick; Esc with
-  nothing picked leaves. The arrows walk `menu.skSel` over the grid, Enter presses.
+  nothing picked leaves. The arrows walk `menu.skSel` over the grid, Enter presses; after a key press the
+  selected card lifts and wears a 1 px line under it (`menu.skKeyed`) until the next click.
 - **A skin is paint on this screen only.** `birdSkinFor(team)` is the drawer's one question: the
   local player's company wears the skin worn, the other company the free first row (skins are
   not sent over the wire). `drawEagle` asks it at draw time; it is paint, never read by the sim.

@@ -99,10 +99,8 @@ canvas** whose frame `stepItemIcons()` stamps in each frame, like every item ico
 
 Once the planks are up there is nothing left to win, which is the moment a scored goal hands back
 to the players. Four emotes — a cheer, a shuffle, a twirl, a flop — sit on a bar of four picture
-plates under the planks (`emoteLayout`, the `emotes` banner): a digit plays one, and so does the
-pad's dpad read clockwise from up, which is why a plate wears its direction in the corner the way
-an item slot wears its number rather than a word of hint. `emotePad` is what `padPress` asks, so the
-dpad *is* the bar over an end screen and the planks keep the stick and the bumpers. The bar is
+plates under the planks (`emoteLayout`, the `emotes` banner): a digit plays one, which is why a plate wears its digit in the corner the way
+an item slot wears its number rather than a word of hint. The bar is
 live exactly when the planks are (`emoteLive`): before that a press is a skip (`endSkip`).
 
 An emote is a **pose picker** over the set every body on the stage is already drawn from

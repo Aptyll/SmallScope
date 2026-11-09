@@ -26,7 +26,7 @@ Consequences a new pass has to respect:
 - `worldCv` is allocated at the most zoomed-out size (`ZOOM_FLOOR`) once per
   canvas size, and each frame uses the `WV_W`×`WV_H` corner — never resize it per frame.
 - Anything **UI-layer but anchored to a world point** (the radial wheel, the HOP OFF key cap over the
-  roost, the archery round's off-screen markers, the gamepad's aim pointer) converts through `wToSX`/`wToSY`, and
+  roost, the archery round's off-screen markers) converts through `wToSX`/`wToSY`, and
   keeps its own pixel size.
 - **A pointer position becomes a world position only through `mouseWX()`/`mouseWY()`**
   (`mouse / zoomCur + cam`). Aim, hover, the work target and the right-click tile all read them,
