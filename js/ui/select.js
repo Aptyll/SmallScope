@@ -240,8 +240,7 @@ function drawSeats(L, a, hot) {
 // ------------------------------------------------------------ splash
 // Your locked hero, big, in the middle once the grid has done its work: the
 // skin's splash art (heroSplash) or, for a look with none painted, the
-// hero's model at 3x on a slice of the valley's night - and its look's name
-// under it. A hero's splash is SPLASH_W x SPLASH_H at 1x, its strip
+// stand-in (drawSplashStandIn) - and its look's name under it. A hero's splash is SPLASH_W x SPLASH_H at 1x, its strip
 // thumbnail SKIN_THUMB_W x SKIN_THUMB_H (heroThumb), both baked by
 // app/bake-splash.js from docs/media/splash/<slot>-<id>(-thumb).png.
 const SPLASH_PICS = {}; // '<slot>-<id>' and '<slot>-<id>-thumb' -> Image, decoded at load
@@ -252,6 +251,57 @@ function splashPic(h, id, tail) {
 }
 function heroSplash(h, id) { return splashPic(h, id, ''); }
 function heroThumb(h, id) { return splashPic(h, id, '-thumb'); }
+// The stand-in for a look with no splash painted: the painted splashes' own
+// night (their sky bands, the halo behind the head, two pine lines, the snow
+// floor), baked once on their 2 px art grid, the hero's standing front at
+// SPLASH_FIG px a pixel planted on it, and snow falling on the same grid.
+const SPLASH_GRID = 2;  // px: one art pixel of the painted splashes
+const SPLASH_FIG = 6;   // px: one sprite pixel of the stand-in hero (3 art px)
+const SPLASH_FEET = 77; // art px: the stand-in's sole line
+const SPLASH_NIGHT = {
+  sky: ['#121829', '#1c2440', '#28345a'], // top band down
+  halo: ['#28345a', '#3a4a74', '#56648e', '#8a7e8e', '#c8a070'], halo_r: [40, 31, 24, 17, 10], // outside in
+  far: '#3a4a74', near: '#26304c', snow: '#bccbea', drift: '#d6e1f6', shade: '#9aa8cc', star: '#dfe8f4', flake: '#eef3fb',
+};
+let splashNight = null;
+function splashNightArt() {
+  if (splashNight) return splashNight;
+  const N = SPLASH_NIGHT, q = SPLASH_GRID, W = SPLASH_W / q, H = SPLASH_H / q, cx = W >> 1;
+  const c = document.createElement('canvas'); c.width = SPLASH_W; c.height = SPLASH_H;
+  const g = c.getContext('2d'), px = (x, y, w, h, col) => { g.fillStyle = col; g.fillRect(x * q, y * q, w * q, h * q); };
+  px(0, 0, W, 10, N.sky[0]); px(0, 10, W, 19, N.sky[1]); px(0, 29, W, H - 29, N.sky[2]);
+  for (let i = 0; i < 26; i++) px(Math.floor(hash2(i, 51) * W), Math.floor(hash2(i, 53) * 27), 1, 1, N.star);
+  const hy = SPLASH_FEET - 34; // behind the head
+  N.halo.forEach((col, k) => {
+    const r = N.halo_r[k];
+    for (let y = -r; y <= r; y++) { const w = Math.floor(Math.sqrt(r * r - y * y)); px(cx - w, hy + y, 2 * w + 1, 1, col); }
+  });
+  const ground = 67;
+  const pine = (x, top, col) => { // a stepped fir: a notch every fourth row
+    for (let y = top; y < ground; y++) { const i = y - top, w = Math.floor(i / 2.2) - (i > 3 && (i & 3) === 0 ? 1 : 0); px(x - w, y, 2 * w + 1, 1, col); }
+  };
+  for (let x = -4, i = 0; x < W + 8; i++) { pine(x, 42 + Math.floor(hash2(i, 71) * 9), N.far); x += 7 + Math.floor(hash2(i, 73) * 6); }
+  for (let x = 2, i = 0; x < W + 8; i++) { pine(x, 51 + Math.floor(hash2(i, 77) * 7), N.near); x += 9 + Math.floor(hash2(i, 79) * 8); }
+  px(0, ground, W, H - ground, N.snow);
+  for (let i = 0; i < 9; i++) px(Math.floor(hash2(i, 83) * W), ground + 2 + Math.floor(hash2(i, 85) * 10), 4 + Math.floor(hash2(i, 87) * 8), 1, N.drift);
+  px(cx - 8, SPLASH_FEET - 1, 17, 1, N.shade); px(cx - 11, SPLASH_FEET, 23, 1, N.shade); px(cx - 8, SPLASH_FEET + 1, 17, 1, N.shade);
+  return (splashNight = c);
+}
+function drawSplashStandIn(S, h, id, now) {
+  const q = SPLASH_GRID, ox = S.x - ((SPLASH_W - S.w) >> 1), oy = S.y - ((SPLASH_H - S.h) >> 1); // a narrow view keeps the middle
+  ctx.save(); ctx.beginPath(); ctx.rect(S.x, S.y, S.w, S.h); ctx.clip();
+  ctx.drawImage(splashNightArt(), ox, oy);
+  const fig = SPRITES.champLook(h, player.look, skin(player.team), id).down[0], fw = fig.width * SPLASH_FIG;
+  ctx.drawImage(fig, ox + ((SPLASH_W - fw) >> 1), oy + SPLASH_FEET * q + q - fig.height * SPLASH_FIG, fw, fig.height * SPLASH_FIG); // the look picked on the strip, on its sole line
+  ctx.fillStyle = SPLASH_NIGHT.flake;
+  const W = SPLASH_W / q, H = SPLASH_H / q;
+  for (let i = 0; i < 28; i++) {
+    const y = Math.floor((hash2(i, 61) * H + now * (5 + hash2(i, 63) * 7)) % H);
+    const x = Math.floor((hash2(i, 65) * W + 2 * Math.sin(now * 0.7 + i) + W) % W);
+    ctx.fillRect(ox + x * q, oy + y * q, q, q);
+  }
+  ctx.restore();
+}
 function selSkinRows(h) {
   const c = CLASSES[h], tab = c && c.skinSlot ? SKIN_TABS.find((t) => t.hero === h) : null;
   return tab ? tab.rows.map((r) => ({ r, tab, own: skinHas(tab, r) })) : [{ r: { id: null, name: c.name, rarity: 'common' }, tab: null, own: true }];
@@ -267,23 +317,7 @@ function drawSplash(L, now, a) {
   ctx.fillStyle = SC_EDGE; ctx.fillRect(S.x - 1, S.y - 1, S.w + 2, S.h + 2);
   const art = heroSplash(h, row.id);
   if (art) ctx.drawImage(art, (art.width - S.w) >> 1, (art.height - S.h) >> 1, S.w, S.h, S.x, S.y, S.w, S.h); // a narrow view keeps the middle
-  else { // the stand-in: the model on the night, under its light
-    ctx.save(); ctx.beginPath(); ctx.rect(S.x, S.y, S.w, S.h); ctx.clip();
-    const sky = ctx.createLinearGradient(0, S.y, 0, S.y + S.h);
-    sky.addColorStop(0, '#05070f'); sky.addColorStop(0.62, '#141c3c'); sky.addColorStop(0.63, '#1b2650'); sky.addColorStop(1, '#0a0f26');
-    ctx.fillStyle = sky; ctx.fillRect(S.x, S.y, S.w, S.h);
-    for (let i = 0; i < 40; i++) {
-      ctx.globalAlpha = a * (0.4 + 0.6 * Math.abs(Math.sin(now * (0.6 + hash2(i, 7)) + i)));
-      ctx.fillStyle = '#dfe8f4';
-      ctx.fillRect(S.x + Math.floor(hash2(i, 41) * S.w), S.y + Math.floor(hash2(i, 43) * S.h * 0.55), 1, 1);
-    }
-    ctx.globalAlpha = a;
-    const feet = S.y + S.h - 12, sc = 3, bw = 48 * sc;
-    ctx.fillStyle = 'rgba(4,6,18,0.5)';
-    ctx.beginPath(); ctx.ellipse(L.cx, feet, 36, 5, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.drawImage(SPRITES.portrait(h, player.look, skin(player.team), row.id), L.cx - (bw >> 1), feet - 46 * sc + Math.round(Math.sin(now * 1.6)), bw, bw); // a named hero in the look picked on the strip
-    ctx.restore();
-  }
+  else drawSplashStandIn(S, h, row.id, now); // no art painted for this look yet
   const nm = k > 0 ? row.name + ' ' + CLASSES[h].name : CLASSES[h].name;
   drawPixelTextOutline(ctx, nm, L.cx - (pixelTextWidth(nm, 2) >> 1), S.y + S.h + 6, '#f4f7ff', SC_INK, 2);
 }
