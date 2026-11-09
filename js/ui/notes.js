@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['Settings gear on the title and party screens', '0.625'],
     ['ALT OPENS ABILITY DETAILS; SHIFT ONLY SLIDES', '0.621'],
     ['On Steam your name starts as your Steam name', '0.618'],
     ['THE ROADMAP LISTS ONLY WHAT IS STILL TO COME', '0.613'],

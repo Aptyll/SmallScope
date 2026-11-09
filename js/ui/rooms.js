@@ -751,6 +751,7 @@ function renderRoom(now, a) {
   drawRoomFoot(L, footHot, ((g === 'FIND MATCH' || g === 'START') && !roomAllReady()) || m.joining,
     g === 'READY' && NET.ready.has(localId) ? RM_OK : seeking ? (footHot === 'go' ? RM_BAD : SC_GOLD) : null);
   drawSocial(L, now, hit); // you, your code and your friends down the right edge (js/ui/friends.js)
+  drawGear(); // the settings, on the column's head (js/ui/menu.js)
   if (m.modeOpen) { // the modes' list, over the seats
     const rs = modeListRects(L), keys = Object.keys(PARTY_MODES), last = rs[rs.length - 1];
     ctx.fillStyle = SC_EDGE; ctx.fillRect(rs[0].x, rs[0].y - 1, RM_HEAD_W, last.y + last.h - rs[0].y + 2);
