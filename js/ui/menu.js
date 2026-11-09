@@ -39,7 +39,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.654';
+const PATCH_TXT = 'PATCH 0.655';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -55,6 +55,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.655', 'THE SHOP FITS 4:3, 16:10 AND 5:4 SCREENS: ITS GRID LOSES A FEW COLUMNS AND SCROLLS ON THE WHEEL.'],
   ['0.654', 'PICK A CALLING AND TWO TRICKS BESIDE LOCK IN: A PASSIVE FOR HOW YOU FIGHT, AND TWO KEYS FOR A BANDAGE, A TORCH OR A SPRINT.'],
   ['0.653', 'ELEVEN NEW ITEMS (HEAL CUTS, ARMOR PIERCE, A LAST-STAND SHIELD, BIGGER HEALS AND A TEAM ARMOR BANNER), A SUPPORT TAB, AND RECOMMENDED BUILDS MADE FROM WHAT PLAYERS BUILD, WITH PICK AND WIN RATES.'],
   ['0.652', 'CHAMP SELECT SHOWS YOUR LOCKED HERO AS THE VALLEY DRAWS THEM: THEIR OWN MODEL, WEAPON IN HAND, TURNING AND STRIDING ON THE GOLD RING IN THE LOOK YOU WEAR. THE SPLASH PICTURES ARE GONE.'],

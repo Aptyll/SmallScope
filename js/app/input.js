@@ -890,6 +890,7 @@ pageListen(canvas, 'wheel', (e) => {
   // over the open ESC panel the wheel walks the open settings page
   if (state.settingsOpen) { settingsScrollBy(e.deltaY > 0 ? 14 : -14); return; }
   if (state.mapOpen || state.wheel) return;
+  if (shopScrollBy(e.deltaY > 0 ? 1 : -1)) return; // the shop's grid, when its rows run past it (js/ui/shop.js)
   // a readied ability (the MOUSE scheme): the wheel walks it along the four
   // wells - the camera's zoom waits
   if (ms.ready >= 0) {
