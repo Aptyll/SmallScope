@@ -1635,6 +1635,20 @@ const CLASS12 = [
     '............',
     '............',
   ],
+  [ // VARRO: a wolf's paw print
+    '...oo.oo....',
+    '..oWWoWWo...',
+    '.ooWWoWWoo..',
+    'oWWoo.ooWWo.',
+    'oWWoooooWWo.',
+    '.oooWWWooo..',
+    '..oWWWWWo...',
+    '.oWWWWWWWo..',
+    '.oWWWWWWWo..',
+    '..oWWoWWo...',
+    '...oo.oo....',
+    '............',
+  ],
 ];
 const class12Cache = new Map();
 function classIcon12(i, you) {

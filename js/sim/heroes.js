@@ -27,6 +27,9 @@
 // - HERO_GROUND: fn(ex, ey, now) drawn on the snow under the wind-ups.
 // - HERO_MARK: fn(e, px, py, w, h, now) drawn over any body with the states
 //   every unit wears (drawUnitStates): a mark a hero left on it, a hero's own stacks.
+// - HERO_SUMMON[id]: { step(a, dt) } the brain of an animal a hero called onto its
+//   side (a.summon = id, with team and owner): VARRO's wolves. It walks in `animals`
+//   like any beast (hit, drawn, pushed apart, fogged) and pays nothing when it falls.
 // An ability row may also carry recast(p) (true: the key pressed again is
 // its second half, castSlam) and ok(p) (false: the press is refused).
 const HERO_PASSIVE = {};
@@ -39,6 +42,7 @@ const HERO_DASH = {};
 const HERO_TICK = [];
 const HERO_GROUND = [];
 const HERO_MARK = [];
+const HERO_SUMMON = {};
 
 // the ability whose use() is running right now, so a blow it lands says so
 // (o.ab, stamped by hurtUnit, js/sim/actions.js); '' between casts. Never state: set and cleared
@@ -67,3 +71,4 @@ function heroDashThrough(p) { const d = p.rushT > 0 && heroDash(p); return !!(d 
 function heroTick(dt) { for (const f of HERO_TICK) f(dt); }
 function heroGround(ex, ey, now) { for (const f of HERO_GROUND) f(ex, ey, now); }
 function heroMarks(e, px, py, w, h, now) { for (const f of HERO_MARK) f(e, px, py, w, h, now); }
+function heroSummonStep(a, dt) { const s = HERO_SUMMON[a.summon]; if (s) s.step(a, dt); else a.dead = true; }

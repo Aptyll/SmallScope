@@ -85,7 +85,7 @@ more: the frames live on as the CATCH emote's (`EMOTES`, js/ui/screens.js). The 
 **The run, the held run and the dodge roll are the one set of player frames not typed by hand.**
 [app/bake-player/](../../app/bake-player/) paints them off a jointed doll of each class body (and of
 each named hero's looks: ARMATOS's `standard` and `oath`, FORTIVA's `unbroken` and `coif`, BELLA's `general` and `traitor`,
-IGNIA's `hearth` and `wanderer`, AURA's `light`, SALVIA's `hood` and `tent`, LUCERNA's `lamp` and `dusk`, [hero looks](#hero-looks)) and
+IGNIA's `hearth` and `wanderer`, AURA's `light`, SALVIA's `hood` and `tent`, LUCERNA's `lamp` and `dusk`, VARRO's `wolfkept` and `whitepack`, [hero looks](#hero-looks)) and
 writes them to js/baked/motion.js as char grids in characters.js's own letters, so `motionSet`
 bakes them through the same team and look palettes as every hand-drawn pose: `run[dir]`,
 `hold[dir]` and `roll[dir]` sit beside the walking directions, `left` the mirror of `right`.
@@ -256,6 +256,15 @@ the coat in the doll's `cloak` material; only the roll is used. Her 48 px model 
 her paint. Her LANTERN is carried like a staff but hangs: `staff: 'lantern'` names
 `HERO_STAVES.lantern` (`LUCERNA_LANTERN`, js/draw/lucerna.js), a brass lamplighter's lantern held by
 its ring (`LUCERNA_LANTERN_GRIP`), its flame breathing between two baked frames.
+VARRO has two looks (`VARRO_SKINS`, js/sprites/varro.js): WOLF-KEPT (free) and WHITE PACK (rare,
+200 coins), both on ARMATOS's frame (`VARRO_PAL` is `ARM_PAL` with the grey pelt `f`/`F`/`j`, the
+white pelt `u`/`U`/`v` shaded blue so it holds on snow, and his dark hair `a`). The pelt is worn as
+a hood, the wolf's ears standing up off the crown: his one signature shape. It is A off
+varro-round1.png in the project files. His dolls (`Wolfkept` and `Whitepack` in
+app/bake-player/bodies.py) paint the pelt in the doll's `pelt` and `snowpelt` materials and only the
+roll is used (`run: 'drawn'`). His 48 px model is the warrior's. His HUNTING SPEAR is a blade row
+(`HERO_BLADES.spear`, js/draw/varro.js): 18 px painted, flat for the side and the swing, slanted
+facing down or up with the grip at `VARRO_GRIP`.
 
 The **48 px model** ([looks.js](../../js/sprites/looks.js), `SPRITES.portrait(cls, look,
 team)`) is where the whole look reads — the champ select's stage, grid and seat discs. Each hero wears one

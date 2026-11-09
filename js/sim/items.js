@@ -413,6 +413,7 @@ const BOT_BUILDS = {
   LUCERNA: ['emberb', 'clock', 'marsh', 'slate', 'deeprod', 'storm'], // the crook's wait first: haste, then the boots, then the armor she needs up front
   SALVIA: ['emberb', 'marsh', 'clock', 'deeprod', 'slate', 'storm'], // the heals first: haste and power for more of them, then the boots, then the armor a healer under focus needs
   AURA: ['storm', 'emberb', 'deeprod', 'marsh', 'clock', 'slate'], // the reach first: power and haste for more stars, then the boots, then the armor a mage caught close needs
+  VARRO: ['beartooth', 'hobnail', 'fang', 'quick', 'stonehide', 'collar'], // the bite first, the legs to stay on the mark, then the health a diver needs
 };
 function botBuild(p) { return BOT_BUILDS[CLASSES[p.cls].name] || BOT_BUILDS.HUNTER; }
 // the next item on p's list it does not have yet, or null when done

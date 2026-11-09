@@ -268,7 +268,26 @@ const CLASSES = [
     kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1, chargeMul: 0.55,
       bowCharge: BOW_CHARGE, nock: 0.4, spdDmg: 0, dodgeSpeed: DODGE_SPEED },
   },
-
+  {
+    // the eighth named hero and the first jungler (js/sim/varro.js): a diver on the
+    // WARRIOR's frames who picks one rival and runs them down; quick and a little
+    // light, strongest in the woods with wolves near him, thin when caught alone
+    name: 'VARRO', role: 'THE WOLF-KEPT', body: 1, passive: 'pack', // HERO_PASSIVE, js/sim/varro.js
+    look: { sex: 0, tone: 2, hair: 2, hairCol: 0, beard: 0, face: 0 },
+    blurb: ['RUN WITH THE PACK.', 'LEAP IN, MARK THEM, AND STAY ON THEM.', 'CALL THE WOLVES: ONE RIVAL CANNOT OUTRUN THEM.'],
+    story: 'THE EMPIRE LEFT HIM ON THE MOUNTAIN AS A CHILD. THE WOLVES FOUND HIM FIRST AND KEPT HIM WARM THROUGH THE WINTER. HE GREW UP RUNNING WITH THEM, AND HE STILL SHARES EVERY CATCH WITH THE PACK.', // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
+    // a spear's thrust: a touch longer and narrower than the longsword's cut
+    attack: { name: 'HUNTING SPEAR', art: 'spear', cycle: 28 / 60, kb: 1, cut: { reach: 30, half: 0.8 } },
+    base: { hp: 112, dmg: 17, armor: 18, ap: 0, haste: 0, ms: PLAYER_SPEED + 2 },
+    grow: { hp: 8.5, dmg: 1.6, as: 0.012, armor: 2.4 },
+    rankOrder: [0, 2, 1], // the lunge, the snap, the howl
+    // his own body in each of his looks (VARRO_SKINS, js/sprites/varro.js), worn per
+    // player (heroSkinOf) over the side's coat
+    skins: VARRO_SKINS, skinPal: VARRO_PAL, skinSlot: 'varro',
+    blade: 'spear', // his HUNTING SPEAR in his hands (HERO_BLADES, js/draw/varro.js)
+    kit: { iceMax: 1.15, iceSteer: 3.4, slideMin: 70, fatigue: 0.75, chargeMul: 0.7,
+      bowCharge: 0.75, nock: 0.5, spdDmg: 5, dodgeSpeed: 235 },
+  },
 ];
 // the body a hero wears - its sprites and its 48 px model: a hero that names
 // none is its own (HUNTER 0, WARRIOR 1), a named hero borrows one
@@ -641,6 +660,9 @@ class Player {
     this.brothT = 0; this.cloakT = 0;
     // LUCERNA (js/sim/lucerna.js), on any body she pulls: the spot it is drawn to and the clock
     this.pullT = 0; this.pullX = 0; this.pullY = 0;
+    // VARRO (js/sim/varro.js): the body LUNGE is leaping at, SNAP's strikes still to land and
+    // their clock; and on any body, whose mark it wears (LUNGE) and until when
+    this.leapQ = null; this.snapN = 0; this.snapT = 0; this.packBy = -1; this.packUntil = 0;
     this.hopT = 0;                                 // the net shot's recoil hop, on the body
     this.grapT = 0; this.grapX = 0; this.grapY = 0; // the grapple: reel time left, and the anchor it hauls toward
     this.zip = -1; this.zipD = 0; this.zipDir = 1;  // the zipline (js/sim/zipline.js): the line ridden (its index in zips, or -1), px along it, and which way

@@ -36,7 +36,7 @@ function drawAnimal(a, ex, ey, now) {
   // a ridden deer's bar is its rider's: one row under theirs, in their
   // side's colour (drawPlayer), so the two read as one frame
   if (a.rider) return;
-  const two = isCampKind(a.kind) ? a.threat : a.kind === 'rabbit' ? a.dodge : a.sprint;
+  const two = a.summon ? a.life / a.lifeMax : isCampKind(a.kind) ? a.threat : a.kind === 'rabbit' ? a.dodge : a.sprint; // a summon's: the hunt's time left
   overheadPlate(() => drawBeastFrame(a.kind, px + spr.width / 2, px + (spr.width >> 1), fy, a, two, a));
 }
 
@@ -61,7 +61,8 @@ function drawBeastFrame(kind, cx, mid, fy, e, two, u) {
   const F = beastFrame(kind), k = F.s, camp = isCampKind(kind);
   const bc = F.centre ? mid + levelBadgeW(e.level) * k / 2 : cx; // the bar's centre: the plate's half off a centred frame's
   const bx = Math.round(bc - F.w * k / 2);                       // the bar's own left column (drawHealthBar's x)
-  drawHealthBar(bc, fy - 8 * k, e.hp, e.maxHp, F.w, undefined, undefined, u, k, F.segs);
+  // a hero's summon (HERO_SUMMON) wears its side's bar, so it is never taken for a den's
+  drawHealthBar(bc, fy - 8 * k, e.hp, e.maxHp, F.w, e.summon ? e.team : undefined, undefined, u, k, F.segs);
   drawHealthBar(bc, fy - 5 * k, two, 1, F.w, undefined, camp ? THREAT_COL : STAM_COL, undefined, k);
   drawLevelBadge(bx - k, fy - 9 * k, e.level, k);
   if (e.stunT > 0) drawStunStars(mid, fy - 13 * k, e, 4, undefined, k);
