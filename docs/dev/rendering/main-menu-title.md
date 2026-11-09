@@ -54,8 +54,7 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   zero alpha underneath. The `'settings'` kind is the ESC slab via `renderSettings(now, { bare, slide })`, opened by the **gear** (`SET_GEAR`, `gearRect` / `overGear` / `drawGear` / `openMenuPanel`, js/ui/menu.js: left of the coin tag on the title, under the add-friend on the party screen's social column; gold under the hand). While a panel is up it takes every key and click before the screen under it, the party screen too
   (no dim, no minimap preview, translated by `slide`) — its widgets only take input once
   `menuPanelReady()`, so a click can never land on a half-slid row, and clicking outside the
-  slab closes it. The help panel (`helpPanelCv`, controls + the rules of the frostlands) is
-  baked at boot (`buildHelpPanel`) but nothing on the title opens it. The `PATCH_TXT` tag
+  slab closes it. The `PATCH_TXT` tag
   bottom-right (`patchTagRect` / `overPatchTag`; gold with an underline on hover) opens the
   [patch notes screen](the-hud-corners/the-patch-notes-screen.md).
   The **name tag** bottom-left (`profileTagRect` / `overProfileTag` / `drawProfileTag`,

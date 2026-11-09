@@ -25,12 +25,11 @@ roosts ([PvP](../multiplayer.md#pvp)).
 Either way the local player's overlay goes up through `endMatch('lost' | 'won' | 'respawning')`
 (js/sim/player.js, the `damage & death` banner; the screens it raises are the `death & spectate`
 banner, js/ui/screens.js): `state.mode = 'dead'`, every local overlay closed, and the screen goes
-to a dim with two planks — **SPECTATE** and **LOBBY** — for `'lost'` (permanent), to
-[the victory screen](../rendering/the-end-screens.md), whose planks are **KEEP PLAYING** and
-**LOBBY**, for `'won'`, or, for `'respawning'` (temporary), to **the wait**: no dim and no planks
+to a dim with one plank, **LOBBY**, for `'lost'` (the match is decided for everyone), to
+[the victory screen](../rendering/the-end-screens.md), whose one plank is **LOBBY**, for `'won'`, or, for `'respawning'` (temporary), to **the wait**: no dim and no planks
 at all — `endMatch` puts the view on an ally (`viewPlayer` holds it on the body until its
 [fall](../rendering/going-down.md) is over) (`state.deadView = 'spec'`, `specNext` keeping to
-the side's own through `specOk`), one line — **RESPAWNING IN Ns** at 3× in the upper band — reads
+the side's own through `specOk`, the only spectating there is), one line — **RESPAWNING IN Ns** at 3× in the upper band — reads
 the live countdown, and [the replay window](../rendering/replay-the-last-four-seconds.md) opens large
 over the view with a close box on its corner (or ESC), so the death is watched first and the ally
 after, the player choosing when. **LOBBY** on a `'lost'` dim does not leave: it opens
@@ -39,11 +38,10 @@ you stop watching it, not the instant you go down. LOBBY on **either** ceremony 
 [the post-game lobby](../rendering/the-post-game-lobby.md), the whole match's record, and that
 screen's LOBBY is the door out.
 `'respawning'` needs no state of its own beyond `state.rpClosed` (reset by every `endMatch`):
-once `p.respawnT` hits 0, `respawnPlayer(p)` snaps `state.mode` back to `'play'` the same
-one-line way `'KEEP PLAYING'` already does, lands the local player at its bird, and replays the HUD
+once `p.respawnT` hits 0, `respawnPlayer(p)` snaps `state.mode` back to `'play'`, lands the local player at its bird, and replays the HUD
 slide-in a fresh eagle landing gets. A win *or* an elimination also freezes what its screen will
 print (`endSnapshot()` on `state.end`: gold, kills, level, clock, team, class, the kit, and the
-placing and killer only the loss prints) because the match keeps running underneath and a total
+killer only the loss prints) because the match keeps running underneath and a total
 that climbs behind a tally which already counted it reads as a bug — and because a loss's summary
 is opened off a plank minutes later, by which time none of those numbers are still true. Spectating
 sets `state.spec` to a living player's id and `viewPlayer()` — the one place the camera and minimap

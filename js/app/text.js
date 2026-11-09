@@ -26,8 +26,6 @@ const TEXT = {
   'end.victory': 'VICTORY',
   'end.defeat': 'DEFEAT',
   'end.noResult': 'NO RESULT',
-  'end.spectate': 'SPECTATE',
-  'end.keepPlaying': 'KEEP PLAYING',
   'end.lobby': 'LOBBY',
   'end.back': 'BACK',
 

@@ -178,8 +178,7 @@ function seatPos(e, si) {
 }
 
 function beginDrop() {
-  PROFILE.addDay(); // day 1 of the days-played stat: the clock starts with the eagle
-  PROFILE.addMatch(); // ...and the profile's matches: one per takeoff
+  PROFILE.addMatch(); // the profile's matches: one per takeoff
   // a profile's first ride sits through the drop brief before its hop
   state.drop = { eagles: makeEagles(), firstFlight: !PROFILE.hasDropped() };
   onevoneBegin(); // a 1V1 party's rules into the match (js/sim/onevone.js)

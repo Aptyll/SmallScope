@@ -1,7 +1,7 @@
 # UI panels are baked once
 
-`buildMapPanel()`, `buildSettingsPanel()` and `buildHelpPanel()` draw the static chrome (parchment,
-labels — the map slab's header is live, since the clock runs) into offscreen canvases (the map slab is the HUD's graphite plate, `drawHudFrame`; the help slab is a frost slab, `bakeFrostSlab()`; the settings slab and the SAVES slab in its place are flat, `bakeFlatSlab()`, both js/ui/panels.js); per-frame code blits them and draws only the live parts on top.
+`buildMapPanel()` and `buildSettingsPanel()` draw the static chrome (parchment,
+labels — the map slab's header is live, since the clock runs) into offscreen canvases (the map slab is the HUD's graphite plate, `drawHudFrame`; the settings slab and the SAVES slab in its place are flat, `bakeFlatSlab()`, both js/ui/panels.js); per-frame code blits them and draws only the live parts on top.
 Their layout variables (`PANEL_*`, `MAP_*`, `SET_*`, `SL_X`) are shared between the bake
 function and the per-frame code, so both sides move together — but a bake-side change only appears
 after the panel is rebuilt. They are declared in js/app/canvas.js and reassigned by `relayout()`

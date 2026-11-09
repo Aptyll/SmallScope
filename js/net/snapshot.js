@@ -40,7 +40,7 @@ const SNAP_SKIP = new Set(['input', 'ai', 'nav', '_fx', '_fy', '_tx', '_ty', '_t
   // pass reads: a client neither steps nor shows these, and each is a few
   // bytes per body per snapshot. The echo harness runs WITHOUT them, so
   // adding a name here is proven harmless or caught as pixels
-  'faceT', 'trickleT', 'footT', 'footSide', 'puffT', 'dodgeDustT', 'slideDustT', 'burnTick', 'swingCd',
+  'faceT', 'trickleT', 'footT', 'footSide', 'puffT', 'dodgeDustT', 'slideDustT', 'burnTick', // (not swingCd: the axe is drawn out until it runs down, drawHeldTool)
   'idleT', 'wary', 'thinkT', 'moveT', 'turnT', 'emT', 'spook', 'biteCd', 'alertT', 'dashT', 'dashX', 'dashY', 'fleeGoal', 'goal',
   'avoidT', 'baySite', 'zipLast', 'pingLog',
   'hitFoe', // a soldier's mark this step, read only by the host's bots (aiFarmHold)

@@ -1279,13 +1279,8 @@ function practiceRevive(p) {
 
 // Both end screens print the same object, so there is one of these rather
 // than one per ending: the four tally numbers, the class it was played in,
-// the whole side both stages stand, and the one fact only the loss prints
-// (its placing).
+// and the whole side both stages stand.
 function endSnapshot() {
-  // where the local player finished: every player still in the match outlasted
-  // it, so place is one past that count. A win is 1st by definition (the
-  // screen that prints place never sees a win, but the object shouldn't lie).
-  const left = players.filter((q) => q !== player && q.active && !q.eliminated).length;
   return {
     gold: player.earned, kills: player.kills, level: player.level, time: state.elapsed,
     team: player.team, cls: player.cls,
@@ -1295,7 +1290,6 @@ function endSnapshot() {
     roster: players.filter((q) => q.active && q.team === player.team)
       .sort((a, b) => (a === player ? -1 : b === player ? 1 : a.id - b.id))
       .map((q) => ({ name: q.name, cls: q.cls, look: q.look, team: q.team })),
-    place: player.eliminated ? left + 1 : 1, of: players.filter((q) => q.active).length,
   };
 }
 

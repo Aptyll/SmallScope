@@ -282,23 +282,22 @@ function renderReplay() {
 // ('respawning', see die()/updateRespawns) - or its win, once every RIVAL
 // TEAM is gone (teams win together, see checkLastStanding) - puts the game
 // in mode 'dead' with the match running on underneath. 'lost' dims the
-// screen and offers two planks; 'respawning' offers none - it opens straight
+// screen and offers the one plank, LOBBY; 'respawning' offers none - it opens straight
 // onto an ally (endMatch picks one through specNext, which keeps to the side
 // while the wait runs) under one line, RESPAWNING IN Ns, with the replay
 // window large over the view until it is closed, and snaps back to 'play' on
 // its own once the timer clears; a win
-// hands the whole frame to the victory banner (js/ui/endscreens.js) and offers two of its
-// own. LOBBY off an ELIMINATION does not leave: it hands the frame to the
-// defeat banner - the loss's own summary, the mirror of the victory screen -
-// and that screen's single plank is what leaves. A match you lost still ends
-// on its numbers, and it ends when you are done watching rather than the
-// instant you went down. SPECTATE follows a living player through a
-// top-centre control: two pixel arrows around the name, clickable, the arrow
-// keys do the same, ESC comes back (no hint text: the arrows are the
-// explanation). LOBBY fades out and reloads into the title screen on the same seed. viewPlayer() is who the camera and minimap
+// hands the whole frame to the victory banner (js/ui/endscreens.js), LOBBY
+// under it. A won or lost match is decided for everyone, so there is nothing
+// left to watch or play on: LOBBY is the only plank. Off an ELIMINATION it does
+// not leave at once: it hands the frame to the defeat banner - the loss's own
+// summary, the mirror of the victory screen - and that screen's plank is what
+// leaves. A respawn wait follows an ally through a top-centre control: two
+// pixel arrows around the name, clickable, the arrow keys do the same (no hint
+// text: the arrows are the explanation). LOBBY fades out and reloads into the title screen on the same seed. viewPlayer() is who the camera and minimap
 // frame, and the only thing the rest of the file needs to know about any of it.
 const DEAD_BW = 112, DEAD_BH = 20, DEAD_GAP = 12; // the title menu plank, side by side
-const DEAD_ITEMS = { lost: ['end.spectate', 'end.lobby'], won: ['end.keepPlaying', 'end.lobby'], respawning: [], hostleft: ['end.lobby'] }; // hostleft: a guest whose host left mid-match - no win, no loss, the door
+const DEAD_ITEMS = { lost: ['end.lobby'], won: ['end.lobby'], respawning: [], hostleft: ['end.lobby'] }; // hostleft: a guest whose host left mid-match - no win, no loss, the door
 
 // the planks on offer: the defeat summary has nothing left to offer but the
 // door, so it is the one view whose items are its own rather than the ending's
@@ -400,14 +399,12 @@ function deadActivate(i) {
   // summary's own LOBBY (and every other ending's) actually leaves
   if (label === 'end.lobby' && state.over === 'lost' && state.deadView !== 'defeat') openDefeat();
   else if (label === 'end.lobby') openScores(state.deadView); // the post-game lobby (js/ui/lobby.js); its own LOBBY leaves
-  else if (label === 'end.spectate') { state.deadView = 'spec'; state.spec = -1; specNext(1); }
-  else if (label === 'end.keepPlaying') state.mode = 'play';
 }
 
-// who can be watched: any living player after an elimination, only the side's
-// own while a respawn wait runs - the wait is not a scouting window
+// who can be watched while a respawn wait runs: a living ally only - the wait
+// is not a scouting window
 function specOk(q) {
-  return q !== player && q.active && !q.dead && (state.over !== 'respawning' || q.team === player.team);
+  return q !== player && q.active && !q.dead && q.team === player.team;
 }
 // follow the next watchable player in player order (dir -1 for the previous one)
 function specNext(dir) {
@@ -446,11 +443,8 @@ function deadKey(k) {
     return;
   }
   if (state.deadView === 'spec') {
-    if (k === 'escape' || k === 'backspace' || k === 'enter' || k === ' ') {
-      // a respawn wait has no planks to go back to: the key does nothing
-      if (state.over !== 'respawning') { state.deadView = 'menu'; SFX.pickup(); }
-    }
-    else if (moveDir(k) === 'right') { specNext(1); SFX.pickup(); }
+    // a respawn wait has no planks to go back to: a back key does nothing
+    if (moveDir(k) === 'right') { specNext(1); SFX.pickup(); }
     else if (moveDir(k) === 'left') { specNext(-1); SFX.pickup(); }
     return;
   }
