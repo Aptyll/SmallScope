@@ -777,6 +777,22 @@ function cheatCmd(p, c) {
     sfxFor(p, 'place');
     return true;
   }
+  if (c.id === 'hero') {
+    // a different hero where you stand: the body is cleared the way a death
+    // clears it (bodyOut, then the respawn's reset) without the death, so no
+    // cast, passive or state of the old hero rides over; level, ranks, items
+    // and gold stay
+    if (!Number.isInteger(c.h) || !CLASSES[c.h] || c.h === p.cls || p.dead || inAir(p)) return false;
+    const x = p.x, y = p.y, spawn = p.spawn;
+    bodyOut(p);
+    p.spawn = { tx: Math.floor(x / TILE), ty: Math.floor(y / TILE) };
+    p.reset(false);
+    p.spawn = spawn; p.x = x; p.y = y;
+    setClass(p, c.h);
+    fx('#f4f7ff');
+    sfxFor(p, 'place');
+    return true;
+  }
   if (c.id === 'dummy') return cheatDummy(p, c.tx, c.ty);
   if (c.id === 'clear') {
     if (!cheatDummies.length) return false;
