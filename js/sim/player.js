@@ -534,8 +534,7 @@ function playerTint(p) {
 function baseKit(cls) {
   return Object.assign({}, CLASSES[cls].kit, {
     cls, add: statBag(), // whose kit, and the stat bonuses items write (js/sim/stats.js)
-    huntMul: 1, nightHeal: false,
-    harvestMul: 1, dodgeCd: DODGE_CD, stealth: 1,
+    dodgeCd: DODGE_CD, stealth: 1,
     ambushMul: AMBUSH_MUL, bury: PRONE_BURY,
     killHeal: 0, kindle: false, chill: false, restHeal: 0, // the item passives (js/sim/items.js)
     leech: false, thorns: false, cull: false, steady: false, surge: false, brace: false, smolder: false, scorch: false,
@@ -710,7 +709,6 @@ class Player {
     this.prone = false; this.hide = 0; this.riseT = 0;
     this.crawlT = 0; this.puffT = 0; this.hideFlash = 0;
     this.swingT = 0; this.swingCd = 0; this.swingDir = 0; this.swingHitDone = false;
-    this.swing = SWING_BOW;                        // held SWING_TOOLS index (bow at rest)
     this.autoSwing = false;                        // the swing in flight was the hands' own (autoWork), so a draw may begin under it
     // the class abilities (keys 1-4, js/sim/abilities.js): per-key cooldowns, the
     // cast in progress, and every timed state one can leave on a body -

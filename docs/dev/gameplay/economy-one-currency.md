@@ -38,8 +38,7 @@ stay the better farm: a lane's last hits pay about 690 a minute at the start (3 
 3 ranged at 37 a wave every 30 s, and a siege soldier at 182 every third wave) and grow with the wave and the bounty, while a player chaining pines nonstop
 earns about 196 a minute (56 fells a minute), under a third of it and about one and a half times
 the trickle. The animals, camps, pumps and kills are where the rest comes from; a takedown is three
-`TAKEDOWN_GOLD` shares (330, League's 300), so a kill lead is gold lead. The kit's `harvestMul` multiplies the fell (the payout
-rounds); nothing raises it from 1 while the cards are parked.
+`TAKEDOWN_GOLD` shares (330, League's 300), so a kill lead is gold lead.
 
 **Gold is never a physical drop.** Every source pays the earner on the spot through
 `awardGold(p, n, x, y)` (`players` banner, js/sim/player.js, beside `gainGold` — which it wraps,

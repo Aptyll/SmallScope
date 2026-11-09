@@ -135,7 +135,7 @@ font cannot draw (the arrows, the modifiers, punctuation with no glyph) is a wor
 SPACE, SHIFT, UP, SEMI …).
 
 **What a key does is an action, and an action has a key.** `KEY_ACTIONS` is every rebindable
-verb — the four walk keys, the four abilities, dodge, slide, use (E), the six item keys, recall, the sheet, the map, the scoreboard, mute,
+verb — the four walk keys, the four abilities, dodge, slide, use (E), the six item keys, recall, the sheet, DETAILS (Alt: held, an ability's hover opens every rank's numbers), the map, the scoreboard, mute,
 pause, and the CLICK
 scheme's three of its own (attack-move, stop, the ping) — with the key each starts on
 per scheme (`key` on WASD, `ck` on CLICK, `ms` on MOUSE where it differs from `ck`; an action

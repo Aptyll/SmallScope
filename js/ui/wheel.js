@@ -183,9 +183,9 @@ function drawWorkHint(ox, oy) {
   // ...then a deer in reach (keyPress again)
   if (drawRideHint(ox, oy)) return;
   let t = workTarget(player);
-  // what the hands take on their own (autoToolFor: a tree, a bush, a
+  // what the hands take on their own (autoWorks: a tree, a bush, a
   // rival's building or eagle) asks for no key - the swing itself is the whole signal
-  if (t && t.o && autoToolFor(t.o, player) >= 0) t = null;
+  if (t && t.o && autoWorks(t.o, player)) t = null;
   
   // no work target: the roll station or the range bell may still be in
   // reach (the merchant answered above)

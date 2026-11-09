@@ -1,16 +1,14 @@
-# The swing tools (E)
+# The swing (E)
 
-The axe is **not selectable and is not a weapon**. `SWING_TOOLS` (`bow`, `axe`, indices
-`SWING_BOW/AXE`) is an internal table for icons and names; `p.swing` is what
-that player is *holding for work*, and it returns to `SWING_BOW` — which draws the hero's own
-weapon — the moment a swing ends. Two verbs, two inputs:
+The axe is **not selectable and is not a weapon**. It is in the hands from a swing's start to the end of its cooldown
+(`p.swingT > 0 || p.swingCd > 0`); the rest of the time the hands hold the hero's own weapon. Which objects a swing
+works is their `OBJECTS` entry's `work` flag. Two verbs, two inputs:
 
 - **Left click = the hero's basic attack** ([the basic attack](the-basic-attack.md)). The press only records intent (`clickAction` sets
   `input.fire`); `updatePlayer` starts the draw on the rising edge and fires on the falling one.
 - **The hands work on their own** (`autoWork(p)`, js/sim/actions.js — `updatePlayer` calls it every
-  step `p.input.work` is *not* set). Whatever an `OBJECTS` entry marks `auto` — a tree, a dead
-  tree, a snowdrop clump, a rival's roosting eagle — and **any building on the
-  other team** (`autoToolFor`, resolving a footprint tile through `structOf` and refusing your
+  step `p.input.work` is *not* set). Whatever an `OBJECTS` entry marks `auto` — a tree, a snowdrop clump, a rival's roosting eagle — and **any building on the
+  other team** (`autoWorks`, resolving a footprint tile through `structOf` and refusing your
   own via `ownsStruct`, exactly as `workTarget` does) is swung at the moment it is inside
   `WORK_REACH`, no key held: `autoTarget(p)` takes the nearest such tile in the ring around
   the player — a rival's building or eagle first (`AUTO_PRIO_FOE`), then scenery, and by tile centre to body within a rank (`autoPrio`) — and `startSwing` runs the same swing E's would. What makes it
@@ -28,26 +26,25 @@ weapon — the moment a swing ends. Two verbs, two inputs:
   calls it whenever `p.input.work` is set, and a held E always beats the hands' own choice).
   It is what reaches **the practice dummy** — the one thing not marked `auto` — and it still
   works anything else if you insist. It resolves `workTarget(p)`: the tile that player is
-  aiming at, if it holds a tree or a dead tree or a rival's building (all → axe;
-  bare ice is nothing since the pick went in 0.531); and `near` = the tile is
+  aiming at, if it holds an object marked `work` or a rival's building
+  (bare ice is nothing); and `near` = the tile is
   within `WORK_REACH` (1) tiles, Chebyshev, of the tile the player stands on — i.e. the 3×3
   ring around you, never a second row, regardless of where in your tile you stand. Out of reach or nothing workable, E
   does nothing — and **standing at a merchant's counter, E is the counter's** and swings at nothing
-  at all ([opening it](the-merchants-counter.md#opening-it)). A valid target swaps `p.swing` to the right one, drops any draw, faces the
+  at all ([opening it](the-merchants-counter.md#opening-it)). A valid target brings the axe out, drops any draw, faces the
   tile, and starts the swing; `swingHit(p)` **contests** the locked tile (`p.workTx/Ty`) so only
   one player's swing lands on it in a step, then hits whatever is there via
-  `hitObject(o, p)`. Once `swingT` and `swingCd`
-  both reach 0, `updatePlayer` puts the weapon back (`p.swing = SWING_BOW`), so the axe only
-  exists visually for the duration of the work. `workTarget()` is shared with the cursor, so the
+  `hitObject(o, p)`. The axe is drawn only until
+  `swingT` and `swingCd` both run out, so it exists visually for the duration of the work. `workTarget()` is shared with the cursor, so the
   lock ring is exactly "E will do something here".
 
 Whenever `workTarget()` is non-null, `near`, **and not something the hands take on their own**
-(`autoToolFor(t.o, player) >= 0` nulls it — and tools aren't blocked, the bow drawn or a cable
+(`autoWorks(t.o, player)` nulls it — and tools aren't blocked, the bow drawn or a cable
 ridden), `drawWorkHint()` — called right after `drawSelection` in the overlay pass — floats a
 key prompt over the target: a pixel key-cap wearing the work key (**E** until rebound) plus the
 verb. Since every tree, bush and rival building is `auto`, the only prompt that shows in play
 is **HIT** over the practice dummy; the verb and the lift are still read off the `OBJECTS` entry
-(`verb`, `lift`: 33 for a pine, 20 for a dead tree, 28 for the dummy, 10–12 for the short ones),
+(`verb`, `lift`: 33 for a pine, 28 for the dummy, 10–12 for the short ones),
 scenery wider than a tile takes it on its middle (`w`), and the building branch — BREAK,
 clearing the sprite and centred on the footprint — stays for a building that is ever not `auto`.
 A merchant and a zipline in reach claim the cap first (`drawShopHint`, `drawZipHint`). The cap
@@ -55,11 +52,6 @@ visibly presses (face drops a pixel, highlight gone, label goes gold) while the 
 `input.work` is set.
 If the prompt would overlap the player sprite (an adjacent target) it flips under the tile
 instead. Since it only appears in reach, it doubles as the "you're close enough" signal.
-
-`hitObject()` keeps its hard tool gating (trees need the axe, with
-`SFX.deny` + a `NEEDS AXE` floater) as a safety net: `tryWork` and `autoWork`
-always pick the right tool, so normal play never reaches it; buildings are not gated
-at all, since the axe is the only tool E ever brings out for one.
 
 **Stumps and open ice holes** are not E targets. **Buildings on another
 team are**: `workTarget()` resolves the tile through `structOf()` (so any tile of a 3×2 footprint

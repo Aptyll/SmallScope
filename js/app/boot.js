@@ -155,7 +155,7 @@ window.DBG = {
   // the radial wheel: open one by hand (state.wheel) and read back the
   // geometry the hover test and the pixels both use
   wheelLayout, wheelSpan, wheelAng, WHEEL_HUB, WHEEL_R, WHEEL_RING,
-  structures, robots, arrows, STRUCTS, SWING_TOOLS,
+  structures, robots, arrows, STRUCTS,
   // pings: make one without a mouse (any player, through its order, as the
   // wheel does), open the wheel by hand, and read back the table
   PING_CALLS, PING_WHEEL, PING_R, mapTileAt, mapCloseHit, openPingWheel, pingWheelShown,
@@ -359,8 +359,6 @@ window.DBG = {
   getZoom: () => ({ want: zoomWantOf(), applied: zoomCur, k: kWant, devScale, exact: Math.abs(zoomCur * devScale - Math.round(zoomCur * devScale)) < 1e-6,
     rungs: (() => { const r = []; for (let k = kMin(); k <= kMax(); k++) r.push(+(k / devScale).toFixed(4)); return r; })(),
     wv: [WV_W, WV_H], mm: mmScale() }),
-  setSwing: (i, p) => { (p || player).swing = i; },
-  getSwing: (p) => (p || player).swing,
   cam: () => ({ x: camX, y: camY }),
   // the day's weather: weather('blizzard') pins one (fading to it like a dawn
   // would; weather() lets the day decide again), wx the dials in force now,

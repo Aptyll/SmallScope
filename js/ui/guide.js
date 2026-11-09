@@ -3,7 +3,7 @@
 // The FIRST MATCH (PARTY_MODES.guide, js/ui/rooms.js) is a real 5v5 against
 // EASY bots with one small card above the hud strip teaching the next thing
 // to do: move, shop, abilities, last hits, recall, a tower, their eagle. The
-// card is the key caps and one word, readable in a second; Shift (or ABILITY
+// card is the key caps and one word, readable in a second; the DETAILS key (or ABILITY
 // DETAILS on ALWAYS) opens one line of detail under it. A gold arrow stands
 // over what a step is about (your merchant, their tower, their eagle). The
 // dim X turns the coach off for good.
@@ -41,7 +41,7 @@ function guideNearTower() {
 }
 
 // One row per lesson, in order. caps: the key faces shown; word: the one
-// word; tip: the Shift line; need/count: a number to reach; ready: the step
+// word; tip: the DETAILS line; need/count: a number to reach; ready: the step
 // waits (no card) until it is true; begin: noted as the step opens; done:
 // it is learned; at: the world point its arrow stands over.
 const GUIDE_STEPS = [
@@ -130,7 +130,7 @@ function guideRect(s) {
   const x = Math.round((VIEW_W - w) / 2);
   return { x, y: top, w, h, xx: x + w - 9, xy: top + 5 };
 }
-function guideTipOn() { return settings.tipFull || !!keys.shift; }
+function guideTipOn() { return settings.tipFull || keyHeld('details'); }
 function guideWord(s) { return s.need ? s.word + ' ' + Math.min(s.need, Math.max(0, s.count(guide))) + '/' + s.need : s.word; }
 function guideShown() {
   if (!guideOn() || player.dead || guide.step < 0) return null;

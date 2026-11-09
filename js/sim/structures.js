@@ -115,7 +115,7 @@ function createStruct(tx, ty, type, tier, p, building) {
 }
 
 // is o p's side's (or nobody's)? Nobody swings at their own side's building
-// (autoToolFor, js/sim/actions.js)
+// (autoWorks, js/sim/actions.js)
 function ownsStruct(o, p) { return o.team === undefined || o.team === p.team; }
 
 // WHAT A WRECK PAYS whoever brought it down: half the building's price

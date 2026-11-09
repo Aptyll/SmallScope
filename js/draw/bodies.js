@@ -786,7 +786,6 @@ function drawGripped(img, grip, hx, hy, rot) {
   ctx.restore();
 }
 function drawHeldTool(p, px, py, back) {
-  const t = SWING_TOOLS[p.swing];
   // At rest the hands hold the hero's WEAPON (its basic attack's `art`,
   // SPRITES.weaponArt, js/sprites/weapons.js), so what somebody fights with
   // reads off their sprite from across the snow. Mid-swing the
@@ -796,13 +795,14 @@ function drawHeldTool(p, px, py, back) {
   const A = attackOf(p), cut = A.cut;
   const wIcon = SPRITES.weaponArt[A.art];
   const drawing = p.charging;
-  const swinging = t.key !== 'bow' && p.swingT > 0;
+  // the axe is out from a swing's start (startSwing, js/sim/actions.js) to the end of its cooldown
+  const axeOut = p.swingT > 0 || p.swingCd > 0, swinging = p.swingT > 0;
   const cxp = px + 8, cyp = py + 10; // roughly the hands
 
   // melee swing: sweep with the same arc the swing effect uses; the icons
   // point up, so + PI/2 aligns the head with the sweep direction
   if (swinging) {
-    const icon = SPRITES[t.icon], half = icon.width >> 1;
+    const icon = SPRITES.itemAxe, half = icon.width >> 1;
     const prog = 1 - p.swingT / 0.18;
     const a = p.swingDir - 1.1 + prog * 2.2;
     if (heldBehind(a) === back) drawGripped(icon, [half, half], cxp + Math.cos(a) * 9, cyp - 2 + Math.sin(a) * 9, a + Math.PI / 2);
@@ -864,13 +864,13 @@ function drawHeldTool(p, px, py, back) {
   // tool's icon points up and is left as drawn, the way it always was. Facing
   // up it is behind the body. A worn body keeps the old one-pixel step.
   if ((p.dir === 'up') !== back) return;
-  const icon = t.key === 'bow' ? wHeld : SPRITES[t.icon];
+  const icon = axeOut ? SPRITES.itemAxe : wHeld;
   if (!icon) return;
   const half = icon.width >> 1;
   const bob = !p.moving || p.prone ? 0 : scoutBody(p) ? Math.floor(p.animT) % 2 : -runBob(p);
   const hx = p.dir === 'left' || p.dir === 'up' ? px + 2 : px + 14; // the leading hand (up: the far one, occluded by the body)
   const hy = cyp + CARRY_HAND_Y[p.dir] + bob;
-  if (t.key !== 'bow') { ctx.drawImage(icon, hx - half, hy - half); return; }
+  if (axeOut) { ctx.drawImage(icon, hx - half, hy - half); return; }
   if (heroCarry(p, px, py + bob)) return; // a hero's own way of holding it facing down or up (js/draw/heroes.js)
   const face = p.dir === 'right' ? 0 : p.dir === 'down' ? Math.PI / 2 : p.dir === 'left' ? Math.PI : -Math.PI / 2;
   drawGripped(icon, hGrip, hx, hy, face - fwd);

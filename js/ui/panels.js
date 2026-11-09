@@ -510,8 +510,8 @@ const SET_TABS = [
     // where the hover tooltip sits (tipPos, js/ui/tooltip.js) - beside the
     // pointer, or parked in the bottom-left corner
     { id: 'tipFollow', label: 'TOOLTIP', kind: 'toggle', on: 'FOLLOWS POINTER', off: 'BOTTOM LEFT' },
-    // an ability's hover: the short card, every rank's numbers on Shift; or every rank's always
-    { id: 'tipFull', label: 'ABILITY DETAILS', kind: 'toggle', on: 'ALWAYS', off: 'HOLD SHIFT' },
+    // an ability's hover: the short card, every rank's numbers while the DETAILS key is held; or every rank's always
+    { id: 'tipFull', label: 'ABILITY DETAILS', kind: 'toggle', on: 'ALWAYS', off: () => 'HOLD ' + keyCap('details') },
     // BLUE always, or the roster's colour (skin, player.js)
     { id: 'teamBlue', label: 'MY TEAM', kind: 'toggle', on: 'ALWAYS BLUE', off: 'AS DEALT' },
   ] },
@@ -599,7 +599,8 @@ function settingsLayout() {
   const rows = [];
   let y = clipY0 + 6;
   for (const r of tab.rows) {
-    const row = { id: r.id, label: r.label, kind: r.kind, y, val: r.val, pick: r.pick, on: r.on, off: r.off };
+    const row = { id: r.id, label: r.label, kind: r.kind, y, val: r.val, pick: r.pick, on: r.on,
+      off: typeof r.off === 'function' ? r.off() : r.off }; // (a label may name a live bind)
     if (r.kind === 'choice') {
       let x = SL_X;
       row.opts = r.opts.map(o => { const w = pixelTextWidth(o.label); const q = { id: o.id, label: o.label, x, w }; x += w + 8; return q; });
@@ -690,19 +691,19 @@ const KEY_ROWS = {
   wasd: [
     [{ acts: ['up', 'left', 'down', 'right'], verb: 'MOVE' }, { acts: ['ab1', 'ab2', 'ab3', 'ab4'], verb: 'ABILITIES' },
       ['CLICK', 'FIRE'], 'dodge', 'slide', 'work', ['RMB', 'PING']],
-    [{ acts: ['item1', 'item2', 'item3'], verb: 'ITEMS' }, { acts: ['item4', 'item5', 'item6'], verb: 'ITEMS' }, 'recall', 'char'],
+    [{ acts: ['item1', 'item2', 'item3'], verb: 'ITEMS' }, { acts: ['item4', 'item5', 'item6'], verb: 'ITEMS' }, 'recall', 'char', 'details'],
     ['map', 'board', 'mute', 'pause', ['ESC', 'SETTINGS'], ['SCROLL', 'ZOOM'], ['F3', 'INFO'], ['.', 'HITBOX']],
   ],
   click: [
     [['RMB', 'MOVE / ACT'], ['HOLD RMB', 'FOLLOW'], { acts: ['ab1', 'ab2', 'ab3', 'ab4'], verb: 'ABILITIES' },
       ['CLICK', 'FIRE'], 'amove', 'stop', 'dodge', 'slide'],
-    [{ acts: ['item1', 'item2', 'item3'], verb: 'ITEMS' }, { acts: ['item4', 'item5', 'item6'], verb: 'ITEMS' }, 'ping', 'char', 'recall'],
+    [{ acts: ['item1', 'item2', 'item3'], verb: 'ITEMS' }, { acts: ['item4', 'item5', 'item6'], verb: 'ITEMS' }, 'ping', 'char', 'recall', 'details'],
     [ 'map', 'board', 'mute', 'pause', ['ESC', 'SETTINGS'], ['SCROLL', 'ZOOM'], ['F3', 'INFO']],
   ],
   mouse: [
     [['RMB', 'MOVE / ACT'], ['HOLD RMB', 'FOLLOW'], ['CLICK', 'FIRE'], ['HOLD MMB', 'ACTION WHEEL'],
       'dodge', 'slide', { acts: ['ab1', 'ab2', 'ab3', 'ab4'], verb: 'ABILITIES' }, 'amove'],
-    ['stop', { acts: ['item1', 'item2', 'item3'], verb: 'ITEMS' }, { acts: ['item4', 'item5', 'item6'], verb: 'ITEMS' }, 'ping', 'char', 'recall'],
+    ['stop', { acts: ['item1', 'item2', 'item3'], verb: 'ITEMS' }, { acts: ['item4', 'item5', 'item6'], verb: 'ITEMS' }, 'ping', 'char', 'recall', 'details'],
     ['map', 'board', 'mute', 'pause', ['ESC', 'SETTINGS'], ['SCROLL', 'ZOOM'], ['F3', 'INFO']],
   ],
 };

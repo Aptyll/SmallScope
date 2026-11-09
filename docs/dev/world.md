@@ -261,8 +261,7 @@ stars reflected in the ice under it, and nothing to carry a lamp for
 in wildlife or the AI reads `state.darkness`. What keys off the cycle:
 
 - The only passive heal, slow HP regen in `updatePlayer()` for every player, runs while
-  `state.darkness < 0.3` — or at any hour under a kit with `nightHeal` (`baseKit`,
-  js/sim/player.js; no card or item sets it now). There is no cold/warmth system.
+  `state.darkness < 0.3`. There is no cold/warmth system.
 - **The wind dies with the light.** `windAmp()` squares `1 - darkness`, so the snow stops blowing
   sideways and every pine goes still over the twelve seconds of dusk and stays still until dawn
   ([the wind field](rendering/drawing-a-thousand-of-something.md#the-wind-field)).
