@@ -119,4 +119,4 @@ function veloxSling() {
   veloxSlingArt = [bakeBladeArt(VELOX_SLING, VELOX_SLING_PAL), bakeBladeArt(glint, VELOX_SLING_PAL)];
   return veloxSlingArt;
 }
-HERO_STAVES.sling = { art: veloxSling, grip: VELOX_SLING_GRIP, hold: 'hip' };
+HERO_STAVES.sling = { art: veloxSling, grip: VELOX_SLING_GRIP };

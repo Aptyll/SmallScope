@@ -228,8 +228,8 @@ Her 48 px model is her own standing front too. Her CROOK AND LANTERN is not a bl
 the leading hand in every facing (`heroStaff`, asked by `drawHeldTool`, mirrored facing left or up)
 and held through a cast; the lantern's heart flickers between two baked frames. **Each staff hero
 carries it its own way** so two of them are two shapes on the snow: a `HERO_STAVES` row's `hold`
-names a `STAFF_HOLDS` entry (none is the leading hand; `far` the other hand, SALVIA and HIEMS;
-`yoke` level behind the shoulders, FABER; `hip` level at the hip, VELOX). The level holds are the
+names a `STAFF_HOLDS` entry (none is the leading hand; `far` the other hand, SALVIA;
+`yoke` level behind the shoulders, HIEMS; `hip` level at the hip, FABER). The level holds are the
 upright art a quarter turn over, baked once (`staffTurn`). A draw or a cast brings any hold upright
 into the leading hand. A new staff hero takes a hold no other staff hero has, or a new one.
 

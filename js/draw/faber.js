@@ -198,7 +198,7 @@ function faberClock() {
   faberClockArt = [bakeBladeArt(FABER_CLOCK, FABER_CLOCK_PAL), bakeBladeArt(tick, FABER_CLOCK_PAL)];
   return faberClockArt;
 }
-HERO_STAVES.clock = { art: faberClock, grip: FABER_CLOCK_GRIP, hold: 'yoke' };
+HERO_STAVES.clock = { art: faberClock, grip: FABER_CLOCK_GRIP, hold: 'hip' };
 
 // his staff's basic bolt: a small brass cog, turning (the CLASSES row's shot `look`)
 function drawCogBolt(a, sx, sy, now) {
