@@ -67,7 +67,7 @@ the held one lit gold
 js/ai/ai.js, first thing `aiThink` asks): the ultimate whenever it can rank, then each basic key
 unlocked once, then the basics maxed in the hero's `rankOrder` (its `CLASSES` row: HUNTER
 shot, net, grapple; WARRIOR stomp, rush, shield; ARMATOS verdict, march, brace; FORTIVA sever,
-yoke, heart; AURA star, orb, step). The cd column in the tables below is every rank's; the numbers in the text are rank
+yoke, heart; AURA star, orb, step; SALVIA poultice, cloak, snowdrops). The cd column in the tables below is every rank's; the numbers in the text are rank
 1's, and each row's `rank` table has the rest.
 
 **Every ability lands on every kind of body.** A player, a rabbit, a deer, a bird, a wolf and a
@@ -199,8 +199,29 @@ and reach it was cast with), stepped by `updateAuraWorld` (`HERO_TICK`):
 | 3 | **STEP OF LIGHT** | 18/17/16/15/14 s | a blink down the aim, `STEP_LEN` (a hero dash so fast it lasts a few frames, `p.dash = 'step'`: a wall or the water's edge stops it short). Every rival body within `STEP_R` of where she stood is slowed ×`STEP_SLOW` for `slowT` (1/1.25/1.5/1.75/2 s). A bot spends it when a hero reaches her, aimed away (the row's `botAim`) |
 | 4 | **THE CURTAIN** | 110/95/80 s | a band `CURTAIN_LEN` (900 px) long down the aim from where she stands falls `CURTAIN_DELAY` after the cast (`auraCurtain`, `curtainFall`), its edges on the snow brightening until then: every rival body within `CURTAIN_SEE` of it is revealed, struck or not, and those within `CURTAIN_HALF` take `dmg` (70/110/150); buildings under it too |
 
+SALVIA, THE HERB-WOMAN — the healer. Her rules live in
+**[js/sim/salvia.js](../../../js/sim/salvia.js)** (`SALVIA_AB`, its `salvia` banner), her pixels in
+[js/draw/salvia.js](../../../js/draw/salvia.js), her icons and staff art in
+[js/sprites/salvia.js](../../../js/sprites/salvia.js). 80 hp, 10 armor, almost no damage of her own: a
+green sprig off her HERB BUNDLE (her `attack` row, drawn as `look: 'sprig'`; the staff is carried upright,
+`HERO_STAVES`). Every heal she gives goes through `salviaHeal` (`healPlayer`, the green number), on
+ally players only; a heal's size is its `hp` plus her ability power × the row's `ap` (`abDmg`). What
+she leaves in the world (`salviaBundles`, `salviaDrops`, `salviaThaws`, each carrying the heal it was
+cast with) is stepped by `salviaWorld` (`HERO_TICK`):
+
+| key | name | cd | what it does |
+| --- | --- | --- | --- |
+| P | **WARM BROTH** | — | every heal of hers also lends the healed `BROTH_WALK` (+15%) walk for `BROTH_T` (`p.brothT`, a `HERO_MOVE` row) and takes their slows off (`salviaUnslow`: the slow and the net's drape). `HERO_PASSIVE.warmbroth` |
+| 1 | **POULTICE** | 9/8.5/8/7.5/7 s | a bundle flies down the aim `POULTICE_RANGE` (210 px) at `POULTICE_SPD` (`updateBundles`); a wall or a tree ends it. The first ally player it meets (not her) is healed `hp` (45/65/85/105/125); the first rival body (a hero, a soldier, a beast) is slowed ×`POULTICE_SLOW` for `POULTICE_SLOW_T`, no damage |
+| 2 | **SNOWDROPS** | 14/13/12/11/10 s | `DROP_N` snowdrops planted round the aim, at most `DROP_RANGE` from her (the warren's clump art); an ally player (her too) who walks over one while hurt picks it and is healed `hp` (30/40/50/60/70). Unpicked, they wilt after `DROP_LIFE`; past `DROP_MAX` of hers the oldest go first |
+| 3 | **WARM CLOAK** | 16/15/14/13/12 s | the ally player nearest the aim (within `CLOAK_PICK` of it and `CLOAK_RANGE` of her), else herself, gets a `shield` (40/60/80/100/120) for `CLOAK_T` (`shieldUnit`) and walks ×`CLOAK_WALK` for `CLOAK_RUN_T` (`p.cloakT`) |
+| 4 | **THAW** | 100/85/70 s | a ring `THAW_R` (80 px) round where she stands, for `THAW_T`: every ally player inside sheds every slow each step, and is healed `hps` (30/45/60) at once and every `THAW_EVERY` after |
+
+Her rows' `botAim` point a bot's heals at the most hurt ally in reach (`salviaNeedy`); a bot throws the
+poultice at a rival when nobody needs it, and keeps THAW for one ally nearly down or two hurt.
+
 Bots play the named heroes through each row's `bot(p, foe, d, clear)` (`abBotKey`, asked by the ladder's
-ability block in js/ai/ai-ladder.js); a row's `botAim(p, foe)` turns the aim to a point of its own for that cast (AURA's step away). A hero whose rows carry no `bot` keeps the ladder's old range rules.
+ability block in js/ai/ai-ladder.js); a row's `botAim(p, foe)` turns the aim to a point of its own for that cast, held through the wind-up until it lands (AURA's step away, SALVIA's heals). A hero whose rows carry no `bot` keeps the ladder's old range rules.
 
 Every wind-up with an area is **telegraphed on the snow for both sides** (`drawAbilityGround`): the
 pierce's and the charge's marching line, the stomp's ring, the slam's and the execute's wedge — in
