@@ -178,21 +178,30 @@ function spawnMerchant(e) {
   const lx = e.laneDir.x, ly = e.laneDir.y; // the road's direction out: from the roost to its junction (eagleCrash)
   const wx = e.x + lx * (EAGLE_TILE_R + 1.4) * TILE, wy = e.y + ly * (EAGLE_TILE_R + 1.4) * TILE;
   const at = freeTileNear(Math.floor(wx / TILE), Math.floor(wy / TILE), 6) || { tx: Math.floor(e.x / TILE), ty: Math.floor(e.y / TILE) };
+  const b = makeMerchant(e.team, at, e);
+  e.merchant = b;
+  burst(b.x, b.y - 4, '#f4f7ff', 10, 50, 0.5, true);
+  burst(b.x, b.y - 2, TEAMS[skin(e.team)].mark, 5, 40, 0.45);
+  return b;
+}
+// the one place a merchant body is made: the eagle's driver (spawnMerchant,
+// roost = its bird) or the training field's keeper (genPracticeWorld,
+// js/sim/practice.js; roost = null), who only minds its counter and keeps
+// to `post`
+function makeMerchant(team, at, roost) {
   const b = {
-    merchant: true, bot: true, kind: 'merchant', team: e.team, owner: -1, home: null,
+    merchant: true, bot: true, kind: 'merchant', team, owner: -1, home: null,
     x: (at.tx + 0.5) * TILE, y: (at.ty + 0.5) * TILE, // no hp: nothing can hurt it (unitAlive)
-    roost: e, tgt: null, workT: 0, thinkT: 0, avoids: [], avoid: null, avoidT: 0, nav: null,
+    post: { x: (at.tx + 0.5) * TILE, y: (at.ty + 0.5) * TILE },
+    roost, tgt: null, workT: 0, thinkT: 0, avoids: [], avoid: null, avoidT: 0, nav: null,
     bays: [], bayT: 0, baySite: null, wood: 0, // the bot bays standing, the clock to the next, where it goes; the logs in stock
     bayGift: [true, true, true], // per lane: its first bay is still the eagle's gift
     stall: null, stallT: 0, stallSite: null, // the shop it pitches first (OBJECTS.stall), the clock to asking again for a site, where
-    hopT: MERCH_HOP_T, dir: 'down', moving: false, animT: 0, mvx: 0, mvy: 0, moveT: 0, idleT: 1,
+    hopT: roost ? MERCH_HOP_T : 0, dir: 'down', moving: false, animT: 0, mvx: 0, mvy: 0, moveT: 0, idleT: 1,
     atkAim: null, atkCd: 0, carry: 0, flash: 0, kbx: 0, kby: 0, dead: false,
   };
   clearUnitStatus(b);
-  e.merchant = b;
   robots.push(b);
-  burst(b.x, b.y - 4, '#f4f7ff', 10, 50, 0.5, true);
-  burst(b.x, b.y - 2, TEAMS[skin(e.team)].mark, 5, 40, 0.45);
   return b;
 }
 
@@ -364,6 +373,8 @@ function updateMerchant(b, dt) {
     for (const r of robots) if (!r.dead && r !== b && Math.abs(r.x - cx) < 8 + PLAYER_R && Math.abs(r.y - cy) < 8 + PLAYER_R) return true;
     return false;
   };
+  // the training field's keeper (makeMerchant): no bird, no bays, no woods
+  if (!e) return keep(b.post.x, b.post.y);
   for (let i = b.avoids.length - 1; i >= 0; i--) if ((b.avoids[i].t -= dt) <= 0) b.avoids.splice(i, 1);
   // ---- raising a 3x2 site: fell what stands on it, then hammer it up ----
   // Shared by the stall and the bays. The woods on the footprint and a
@@ -470,24 +481,29 @@ function updateMerchant(b, dt) {
     return finish();
   }
   // ---- done: keep to the mouth of the lane, a step or two either way ----
-  const postX = e.x + e.laneDir.x * (EAGLE_TILE_R + 1.6) * TILE, postY = e.y + e.laneDir.y * (EAGLE_TILE_R + 1.6) * TILE;
-  if (b.moveT > 0) {
-    b.moveT -= dt;
-    moving = true;
-    const drag = unitMoveMul(b);
-    const mv = moveEntity(b, (b.mvx * 24 * drag + b.kbx) * dt, (b.mvy * 24 * drag + b.kby) * dt, PLAYER_R);
-    if (mv.blockedX || mv.blockedY) b.moveT = 0;
-  } else {
-    b.idleT -= dt;
-    if (Math.abs(b.kbx) + Math.abs(b.kby) > 1) moveEntity(b, b.kbx * dt, b.kby * dt, PLAYER_R);
-    if (b.idleT <= 0) {
-      let ang = rng() * Math.PI * 2;
-      if (Math.hypot(postX - b.x, postY - b.y) > 2 * TILE) ang = Math.atan2(postY - b.y, postX - b.x) + rand(-0.5, 0.5);
-      b.mvx = Math.cos(ang); b.mvy = Math.sin(ang);
-      b.moveT = rand(0.4, 1); b.idleT = rand(1.5, 3.5);
+  return keep(e.x + e.laneDir.x * (EAGLE_TILE_R + 1.6) * TILE, e.y + e.laneDir.y * (EAGLE_TILE_R + 1.6) * TILE);
+
+  // idle near (postX, postY): a short stroll now and then, back toward it
+  // once it has drifted two tiles off
+  function keep(postX, postY) {
+    if (b.moveT > 0) {
+      b.moveT -= dt;
+      moving = true;
+      const drag = unitMoveMul(b);
+      const mv = moveEntity(b, (b.mvx * 24 * drag + b.kbx) * dt, (b.mvy * 24 * drag + b.kby) * dt, PLAYER_R);
+      if (mv.blockedX || mv.blockedY) b.moveT = 0;
+    } else {
+      b.idleT -= dt;
+      if (Math.abs(b.kbx) + Math.abs(b.kby) > 1) moveEntity(b, b.kbx * dt, b.kby * dt, PLAYER_R);
+      if (b.idleT <= 0) {
+        let ang = rng() * Math.PI * 2;
+        if (Math.hypot(postX - b.x, postY - b.y) > 2 * TILE) ang = Math.atan2(postY - b.y, postX - b.x) + rand(-0.5, 0.5);
+        b.mvx = Math.cos(ang); b.mvy = Math.sin(ang);
+        b.moveT = rand(0.4, 1); b.idleT = rand(1.5, 3.5);
+      }
     }
+    return finish();
   }
-  return finish();
 
   function finish() {
     mvx = b.x - from.x; mvy = b.y - from.y;

@@ -139,6 +139,7 @@ ipcMain.handle('steam:lobby', (e, id) => { const l = lobbies.get(String(id)); re
 ipcMain.handle('steam:lobbies', async () => { if (friends) friends.worldwide(); return (await steam.matchmaking.getLobbies()).map(lobbyInfo); });
 ipcMain.handle('steam:setLobbyData', (e, id, data) => { const l = lobbies.get(String(id)); return l ? l.mergeFullData(data) : false; });
 ipcMain.handle('steam:log', (e, line) => { slog(String(line).slice(0, 500)); return true; });
+ipcMain.handle('win:quit', () => { app.quit(); return true; });
 ipcMain.handle('win:flash', () => { if (win && !win.isDestroyed() && !win.isFocused()) win.flashFrame(true); return true; });
 ipcMain.handle('steam:invite', (e, id) => { const l = lobbies.get(String(id)); if (l) l.openInviteDialog(); return !!l; });
 // THE FRIENDS PANEL (js/ui/friends.js). friends() is the list; inviteFriend

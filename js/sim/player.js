@@ -442,6 +442,7 @@ class Player {
     this.position = -1;                 // POSITIONS index the draft gave this seat, -1 none (draftReveal, js/ui/draft.js); the host's alone, never on the wire
     this.skillPts = 1;                  // unspent; level 1 starts with one, each levelUp adds one - spent on ability levels (buyAbilityLv, js/sim/abilities.js)
     this.abLv = [0, 0, 0, 0];           // ability ranks, 0 (LOCKED) ..abLvMax (5, the ultimate 3), a skill point each - like items, NOT cleared by reset(): a death keeps what was bought
+    this.cheatOn = { cd: false, hp: false }; // the practice bar's standing toggles, this player's own (cheatCmd/cheatAuto, js/sim/practice.js)
     this.abPick = [0, 0, 0, 0];         // which option each key carries (abOf, js/sim/abilities.js), picked pre-match in the hero pop-up; a bot keeps the first
     // the times of this player's recent pings, the spam guard's memory
     // (pingReady, js/sim/pings.js)
@@ -975,13 +976,15 @@ function updateRespawns(dt) {
 // else walked out on.
 const RESPAWN_OUT = 40;
 // the tile a body is set down on at its own roost: RESPAWN_OUT up the road
-// from the bird, the nearest dry one - null while the bird is not down. The
+// from the bird, that tile itself when it stands (r0 0: the ring-out search
+// alone took the tile above, which on a lane pointing up carried the body
+// past the roost ring, BOOM_R) - null while the bird is not down. The
 // carried-back scout and the recall (js/sim/recall.js) both land here.
 function roostTile(p) {
   const e = state.drop && state.drop.eagles[p.team];
   if (!e || e.state !== 'down') return null;
   const d = e.laneDir || { x: 0, y: 1 };
-  return nearestDryTile(e.x + d.x * RESPAWN_OUT, e.y + d.y * RESPAWN_OUT, p);
+  return nearestDryTile(e.x + d.x * RESPAWN_OUT, e.y + d.y * RESPAWN_OUT, p, 0);
 }
 function respawnPlayer(p) {
   const t = roostTile(p);

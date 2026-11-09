@@ -136,7 +136,8 @@ team-cloth crown and the white beard, seated on the bird's neck in flight (`SPRI
 with a `MERCH` nameplate and a bar in its side's paint over it, `drawMerchant`; the bird wears only its hp bar) — who climbs
 down the moment it roosts (`spawnMerchant`, called
 from `eagleCrash`, the `merchant` banner in js/sim/robots.js) and works **home** for its side, never
-toward the fight. It raises no walls and no guns. Its
+toward the fight. It raises no walls and no guns. (The practice field has one more: a keeper with no
+bird, `makeMerchant` with `roost` null, standing by a stall east of the spawn so the field has a shop.) Its
 first job is its **stall**, and after that **home production**: it raises the **barracks** at its
 base's three lane mouths and fells the **back woods** for logs to rebuild them.
 

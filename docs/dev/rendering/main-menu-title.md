@@ -8,8 +8,9 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
 `BORDER_MAX + 6` tiles clear of the forest. Everything lives in the `main menu` banner and on
 `state.menu`:
 
-- **Items** `MENU_ITEMS` (QUICKPLAY / RANKED / PRACTICE TOOL —
-  all three live from the first boot, and nothing else; `menuActivate` dispatches on the word. All three open the
+- **Items** `MENU_ITEMS` (QUICKPLAY / RANKED / PRACTICE TOOL, and QUIT under them in the desktop build only —
+  live from the first boot, and nothing else; `menuActivate` dispatches on the word. QUIT closes the app
+  (`steamBridge.quit`, `win:quit` in desktop/main.js): the build opens fullscreen, and a browser tab has its own X. The first three open the
   [party lobby](../gameplay/settings.md) in that mode (`beginParty`): QUICKPLAY's and RANKED's FIND
   MATCH leads to the [lobby](../rendering.md#lobby)'s hero select, PRACTICE TOOL's START to the
   [practice arena](../world.md#the-practice-arena);
