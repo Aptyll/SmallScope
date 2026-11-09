@@ -375,12 +375,13 @@ FALCO, THE KESTREL — the diving assassin. His rules live in **[js/sim/falco.js
 icons, looks and knife in [js/sprites/falco.js](../../../js/sprites/falco.js). 96 hp, 13 armor, a
 step faster; his basic attack is a short throw (the THROWING KNIFE). A mark is `falcoBy`/`falcoUntil`
 on the body (`falcoMarked`), set by his hawk (`falcoMark`, which also `markUnit`s it). His hawk out
-and his knives are things he leaves in the world (`falcoHawks`, `falcoKnives`), stepped by `HERO_TICK`.
+is a body in `robots` (`HERO_MACHINE.falcoHawk`) and his knives are things he leaves in the world
+(`falcoKnives`, stepped by `HERO_TICK`).
 
 | key | name | cd | what it does |
 | --- | --- | --- | --- |
 | P | **THE HAWK** | — | his thrown knives (the basic attack and KNIFE FAN) deal ×(1 + `HAWK_BONUS`) to a rival his hawk marked, for `HAWK_MARK_T` (`hawkDeal`); a fresh mark shows the rival through the fog for `HAWK_SEE_T` |
-| 1 | **TALONS** | 12/11/10/9/8 s | the hawk flies to the aim, at most `TALON_RANGE` (`falcoSpot`), one out at a time (`ok`): the first rival it passes within `TALON_PATH` of, or the first within `TALON_R` of the spot (a hero first), takes `dmg` (20/35/50/65/80) and is marked; then it flies home. While out it sees `TALON_SIGHT` round itself for his side (`HERO_EYES`) |
+| 1 | **TALONS** | 12/11/10/9/8 s | the hawk flies to the aim, at most `TALON_RANGE` (`falcoSpot`), one out at a time (`ok`): the first rival hero it passes within `TALON_PATH` of (a wave in the way does not stop it), or the first rival within `TALON_R` of the spot (a hero first), takes `dmg` (20/35/50/65/80) and is marked; then it flies home. While out it sees `TALON_SIGHT` round itself for his side, and it is a body with `TALON_HP` + `TALON_HP_LV` a level that any rival blow, tower or soldier can cut down: the rival is paid its `pay`, and he is without a hawk for `HAWK_DOWN_T` (no TALONS, none over his shoulder) |
 | 2 | **KNIFE FAN** | 9/8.5/8/7.5/7 s | three knives `FAN_SPREAD` apart down the aim, `FAN_LEN` each: the first body each meets takes `dmg` (16/24/32/40/48), no shove; a rival marked and struck by all three of one throw walks ×`FAN_SLOW` for `FAN_SLOW_T` |
 | 3 | **GLIDE** | 16/15/14/13/12 s | a leap `GLIDE_LEN` down the aim (`HERO_DASH.glide`, `through`: over soldiers and rivals); a rank is the leap back sooner |
 | 4 | **STOOP** | 90/75/60 s | needs a marked rival hero within `STOOP_REACH` (`ok`, `stoopTarget`): up into the sky for `STOOP_UP`, untouchable (`invuln`), unseen by every side (`HERO_COVER`) and still (`HERO_MOVE`), then down beside the hero wherever it went, for `dmg` (120/180/240) + `STOOP_UP_AD` of his DAMAGE, knocked up for `STOOP_KNOCK` (`falcoDrop`) |

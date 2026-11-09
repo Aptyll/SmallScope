@@ -61,8 +61,9 @@ function hurtRobot(b, dmg, nx, ny, src) {
   b.kbx = nx * ROBOT_KB; b.kby = ny * ROBOT_KB;
   tallyHit(b, dmg);
   aiFarmLearn(src, dmg); // a bot remembers its blow for the next last hit (js/ai/ai-farm.js)
-  burst(b.x, b.y - 2, '#c3c9d3', 6, 45, 0.35, true);
-  burst(b.x, b.y - 2, '#ffb347', 3, 40, 0.3, true); // sparks off the plating
+  const puff = (heroMachine(b) && heroMachine(b).puff) || ['#c3c9d3', '#ffb347']; // sparks off the plating, or a hero body's own (HERO_MACHINE `puff`)
+  burst(b.x, b.y - 2, puff[0], 6, 45, 0.35, true);
+  burst(b.x, b.y - 2, puff[1], 3, 40, 0.3, true);
   sfxAt('hit', b.x, b.y);
   if (b.hp <= 0) robotDies(b, src);
 }
@@ -73,11 +74,14 @@ function hurtRobot(b, dmg, nx, ny, src) {
 function robotDies(b, src) {
   b.dead = true;
   b.shot = null; // a snowball still in its hand or the air goes with it
-  sfxAt('break_', b.x, b.y);
-  burst(b.x, b.y - 4, '#98a1b0', 10, 50, 0.5, true);
-  burst(b.x, b.y - 4, '#3b4150', 4, 35, 0.4);
-  heroWreck(b, src); // what a hero makes of a wreck near them (HERO_WRECK: FABER's spare parts)
   const M = heroMachine(b);
+  if (M && M.fall) M.fall(b, src); // a hero's body that is no machine (FALCO's hawk) ends its own way and leaves no wreck
+  else {
+    sfxAt('break_', b.x, b.y);
+    burst(b.x, b.y - 4, '#98a1b0', 10, 50, 0.5, true);
+    burst(b.x, b.y - 4, '#3b4150', 4, 35, 0.4);
+    heroWreck(b, src); // what a hero makes of a wreck near them (HERO_WRECK: FABER's spare parts)
+  }
   if (M) {
     if (src instanceof Player && src.team !== b.team) awardGold(src, M.pay.gold, b.x, b.y);
     shareXp(b, M.pay.xp, 1 - b.team, src);

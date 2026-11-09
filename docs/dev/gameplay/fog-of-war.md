@@ -11,8 +11,8 @@ A side sees a circle round each of its heroes (`FOG_HERO`, 10 tiles, times any h
 - each of the side's own cables: a row of small eyes (`FOG_ZIP` every `FOG_ZIP_STEP` px, `zipEyes`),
   a band about 2.5 tiles either side. A cable runs only to its furthest standing tower
   (`towersSync`), so the band shrinks as towers fall.
-- whatever a hero's kit gives its side (`HERO_EYES`): FALCO's hawk while it is out on TALONS
-  sees `TALON_SIGHT` round itself (`falcoEyes`).
+- a hero's machine (`HERO_MACHINE` `sight`): FABER's machines, and FALCO's hawk while it is out
+  on TALONS, which sees `TALON_SIGHT` round itself.
 
 None of these is a body (`near` false): they never see into the woods or the brush.
 Everything else is dimmed, never black: terrain, buildings and both eagles stay, but a rival
