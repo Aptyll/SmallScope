@@ -780,7 +780,7 @@ function initPlayers(roster, local) {
 // one place the FFA/friendly-fire rule lives)
 function enemyOf(p, q) { return q !== p && q.active && !q.dead && !inAir(q) && (!PVP || q.team !== p.team); }
 // riding the eagle or falling from it: not in the world, nothing can touch it
-// The aim a drawn bow, a wound-up blade or a parry points along, as an angle
+// The aim a drawn bow, a wound-up blade, a parry or a cast's telegraph points along, as an angle
 // from the bow's height. Input never crosses the wire, so a client knows
 // another body's aim only from this, written by the step while a draw is
 // held; the local body draws off its own live pointer (aimAngle,

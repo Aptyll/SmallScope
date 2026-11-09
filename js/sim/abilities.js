@@ -351,6 +351,7 @@ function updateAbilities(p, dt) {
   // caster is holding NOW - a bot tracking its target casts like a hand does
   if (p.castT > 0) {
     p.castT -= dt;
+    aimHold(p); // the telegraph on every screen points where the hand does (aimAngle, js/draw/bodies.js)
     const ab = abOf(p, p.castAb);
     // a cast with a telegraph on the snow keeps facing the aim the whole
     // wind-up - the locked draw, the charge's line, the slam's and the

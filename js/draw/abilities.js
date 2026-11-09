@@ -128,8 +128,7 @@ function drawAbilityGround(ex, ey, now) {
     const pfl = ab.id === 'pierce' ? pierceFlight() : null;
     const cull = pfl ? pfl.spd * pfl.life : 80;
     if (px < -cull || py < -cull || px > WV_W + cull || py > WV_H + cull) continue;
-    const dx = p.input.aimX - p.x, dy = p.input.aimY - (p.y - BOW_Y);
-    const a = Math.atan2(dy, dx), nx = Math.cos(a), ny = Math.sin(a);
+    const a = aimAngle(p), nx = Math.cos(a), ny = Math.sin(a); // never p.input: a client is sent no other body's
     if (ab.id === 'pierce') {
       drawTeleLine(p.x, p.y - BOW_Y, nx, ny, teleLen(p.x, p.y - BOW_Y, nx, ny, cull), col, 0.5 + 0.45 * closing, now, ex, ey);
     } else if (ab.id === 'rush') {
