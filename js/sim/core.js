@@ -10,14 +10,20 @@ const TILE = 16;
 // stake. ?practice=1&arena=1 boots its side room, the training ARENA (the
 // bell's rounds, the parkour, the deer ride) - parsed HERE, above WORLD,
 // because the arena is a small world: the training field plus a forest
-// collar for the ice parkour, against the match's 232. Everything downstream
+// collar for the ice parkour, against the match's 278. Everything downstream
 // sizes itself off WORLD (the ground arrays, the ground bake, both maps, the
 // camera clamps), so the match world is untouched. PRACTICE asks "is nothing
 // at stake" (the bar, no profile, no ending); ARENA asks "is this the small
 // field instead of the map" (no lanes, bases, creek or camps).
 const PRACTICE = /[?&]practice=1/.test(location.search);
 const ARENA = PRACTICE && /[?&]arena=1/.test(location.search);
-const WORLD = ARENA ? 112 : 232; // tiles per side (match: ~132-tile open interior, 2x the old 92's area; treeline depth unchanged); practice: the field and its ice-loop collar (PR_RING) up top, the deer ride's forest wing under them
+// MAP_K spreads the match's layout: every place in it (the bases, the lanes,
+// the camps, the brush, the jungle walls, the treeline's depth) is written at
+// the old 232-tile map's scale and multiplied by MAP_K where it is declared,
+// so the valley grows or shrinks on this one number while the bodies, the
+// roads' widths and the camps' clearings keep their size.
+const MAP_K = ARENA ? 1 : 1.2;
+const WORLD = ARENA ? 112 : 278; // tiles per side (match: 232 * MAP_K, about a 158-tile open interior); practice: the field and its ice-loop collar (PR_RING) up top, the deer ride's forest wing under them
 let VIEW_W = 640, VIEW_H = 360; // internal resolution; fitCanvas() sizes it to the window
 let FULL_W = 640; // window width in game px BEFORE the 16:9 cap (bars canvas span)
 // The frame the menus, the panels and the end screens were authored in: 270

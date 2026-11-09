@@ -292,8 +292,8 @@ let MM_CY = 35;
 // into a TDZ, safe only while nothing called it before boot finished. The
 // offsets *within* each baked panel stay in their own sections.
 // The map slab FITS THE VIEW: the chart takes every row the view gives it,
-// up to CHART_MAX (the match world at one px a tile - the crispest rung),
-// so a monitor's 360 rows chart at 1:1 while a window at fitCanvas()'s
+// up to CHART_MAX (what a monitor's 360 rows seat under the header; the
+// match's WORLD tiles fold into it by priority, chartSpan), while a window at fitCanvas()'s
 // 240-row floor still seats the whole slab with a 200 chart.
 // fitMapSlab() sizes it (relayout, core.js); the chart's buffers and the
 // slab's bake follow the size (mapAlloc, panels.js).

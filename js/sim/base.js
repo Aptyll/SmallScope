@@ -10,10 +10,10 @@
 // bottom-left corner, BLUE the top-right, mirrored across the creek like the
 // camps (u -> WORLD - 1 - u). placeBase clears the hollow once the road is
 // laid: pure position noise, no rng(), so no seed moves.
-const BASE_U = 30;    // u from the corner along the diagonal the hollow's centre sits
-const BASE_R = 15;    // tiles: the hollow's radius
+const BASE_U = 30 * MAP_K; // u from the corner along the diagonal the hollow's centre sits
+const BASE_R = 15 * MAP_K; // tiles: the hollow's radius
 const BASE_RAG = 1.2; // tiles its wall wanders either way: a clearing, not a circle
-const PERCH_U = 21;   // u from the corner the bird roosts: the back of the hollow, deepest in the woods
+const PERCH_U = 21 * MAP_K; // u from the corner the bird roosts: the back of the hollow, deepest in the woods
 const BASE_KEEP = 3;  // tiles past the wall the later worldgen passes keep off
 // a RED-side u for either team: BLUE's base is RED's mirrored along the road
 function baseU(team, u) { return team === 0 ? u : WORLD - 1 - u; }
@@ -24,9 +24,9 @@ function baseU(team, u) { return team === 0 ? u : WORLD - 1 - u; }
 // that lane (updateMerchant, js/sim/robots.js). Spots are in the road's
 // frame: u along it from the side's own corner, s tiles across it (- the
 // top side, + the bot side), the same for both teams.
-const BASE_SIDE_U = 34;  // u of the top and bot mouths...
-const BASE_SIDE_S = 15;  // ...and the tiles across the road they open: on the wall
-const BASE_BAYS = [[27, -10], [40, 6], [27, 10]]; // [u, s] per lane where its bay's centre stands: inside the mouth, beside the lane in, clear of the stall
+const BASE_SIDE_U = 34 * MAP_K; // u of the top and bot mouths...
+const BASE_SIDE_S = 15 * MAP_K; // ...and the tiles across the road they open: on the wall
+const BASE_BAYS = [[27, -10], [40, 6], [27, 10]].map(([u, s]) => [u * MAP_K, s * MAP_K]); // [u, s] per lane where its bay's centre stands: inside the mouth, beside the lane in, clear of the stall
 // a point of a side's frame in tile-index space (continuous)
 function baseTile(team, u, s) {
   const v = baseU(team, u);

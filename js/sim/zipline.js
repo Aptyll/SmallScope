@@ -31,7 +31,7 @@
 // steerTo (aiZipWorth, js/ai/ai.js), and the waves' soldiers ride any cable that
 // carries them toward the rival bird (soldierBoard, robots.js): a robot rides
 // through the same zipBoard/zipRide/zipEnd as a player, minus the hands.
-const ZIP_MID_GAP = 20;    // u short of the road's centre the front terminus stands
+const ZIP_MID_GAP = 20 * MAP_K; // u short of the road's centre the front terminus stands
 const ZIP_OUT = 0.6;       // tiles past the ragged road edge the cable runs - the shoulder, never the lane
 const ZIP_SPAN = 10;       // u between pylons along the road (about 226 px)
 const ZIP_SPD = 220;       // px/s - 3x walk
