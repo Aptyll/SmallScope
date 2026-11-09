@@ -291,7 +291,7 @@ const CREEK_SUN_X = 0.88, CREEK_SUN_Y = 0.48; // the way the light runs (SUN_DX/
 // does this tile hold any of the creek's pixels (water, bank)? Not deep in
 // the cistern's pool, where it runs under the ice: those are the lake's
 function creekNear(tx, ty) {
-  if (PRACTICE || creekAt(tx, ty) >= 1.25) return false;
+  if (ARENA || creekAt(tx, ty) >= 1.25) return false;
   return cisternR(tx, ty) > CIST_ICE - 1.5;
 }
 function paintCreek(g, tx, ty, px, py) {
@@ -367,7 +367,7 @@ const FLOW_SPD = 16;  // px/s the current carries a glint
 const FLOW_RUN = 20;  // px a glint drifts from appearing to gone
 const FLOW_A = 0.7;   // its alpha at the middle of its run
 function drawCreekFlow(ox, oy, tx0, ty0, tx1, ty1) {
-  if (PRACTICE) return;
+  if (ARENA) return;
   const T = FLOW_RUN / FLOW_SPD, now = state.windT; // the field's own clock, so DBG.step and the wire's echo reproduce it
   ctx.fillStyle = CREEK_COL.glint2;
   for (let ty = Math.max(0, ty0); ty <= Math.min(WORLD - 1, ty1); ty++) for (let tx = Math.max(0, tx0); tx <= Math.min(WORLD - 1, tx1); tx++) {

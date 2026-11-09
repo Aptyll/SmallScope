@@ -136,7 +136,7 @@ function render() {
   // on the frost plate at the gate (drawParkour, js/draw-world.js) - and the
   // archery range's own BEST / LAST plate over the bell (drawAgame), with
   // the hit-ring flash snapping over whatever face just broke (drawAgRings)
-  if (PRACTICE) { drawParkour(ex, ey, now); drawAgame(ex, ey, now); drawAgRings(ex, ey); }
+  if (ARENA) { drawParkour(ex, ey, now); drawAgame(ex, ey, now); drawAgRings(ex, ey); }
 
   drawBuildBars(ox, oy); // construction progress bars
   drawParticles(ex, ey);

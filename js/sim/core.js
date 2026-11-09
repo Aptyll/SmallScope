@@ -5,14 +5,19 @@
 // Tuning for one feature lives with that feature; see docs/dev/architecture.md.
 // ------------------------------------------------------------ constants
 const TILE = 16;
-// ?practice=1 boots the training arena instead of a match (the full story on
-// the `Practice mode` comment below) - parsed HERE, above WORLD, because the
-// practice world is a small one: the training field plus a forest collar for
-// the ice parkour, against the match's 232. Everything downstream sizes
-// itself off WORLD (the ground arrays, the ground bake, both maps, the
-// camera clamps), so the match world is untouched.
+// ?practice=1 boots the PRACTICE TOOL (the full story on the `Practice mode`
+// comment below): the match's own map, with the practice bar and nothing at
+// stake. ?practice=1&arena=1 boots its side room, the training ARENA (the
+// bell's rounds, the parkour, the deer ride) - parsed HERE, above WORLD,
+// because the arena is a small world: the training field plus a forest
+// collar for the ice parkour, against the match's 232. Everything downstream
+// sizes itself off WORLD (the ground arrays, the ground bake, both maps, the
+// camera clamps), so the match world is untouched. PRACTICE asks "is nothing
+// at stake" (the bar, no profile, no ending); ARENA asks "is this the small
+// field instead of the map" (no lanes, bases, creek or camps).
 const PRACTICE = /[?&]practice=1/.test(location.search);
-const WORLD = PRACTICE ? 112 : 232; // tiles per side (match: ~132-tile open interior, 2x the old 92's area; treeline depth unchanged); practice: the field and its ice-loop collar (PR_RING) up top, the deer ride's forest wing under them
+const ARENA = PRACTICE && /[?&]arena=1/.test(location.search);
+const WORLD = ARENA ? 112 : 232; // tiles per side (match: ~132-tile open interior, 2x the old 92's area; treeline depth unchanged); practice: the field and its ice-loop collar (PR_RING) up top, the deer ride's forest wing under them
 let VIEW_W = 640, VIEW_H = 360; // internal resolution; fitCanvas() sizes it to the window
 let FULL_W = 640; // window width in game px BEFORE the 16:9 cap (bars canvas span)
 // The frame the menus, the panels and the end screens were authored in: 270
@@ -72,22 +77,29 @@ function mulberry32(a) {
   return r;
 }
 // Practice mode: ?practice=1 (the PRACTICE const above WORLD) boots the
-// training arena (the `practice arena` banner, js/sim/practice.js) instead of a
-// match - no title menu, no eagles, no bots, and the clock pinned to
-// early morning (sim.js never advances state.time under PRACTICE). It pins
-// SEED to a constant BELOW ?seed on purpose, so the arena is the same ground
-// on every machine every time: a practice room the seed can never reshuffle.
+// PRACTICE TOOL on the match's own map (genWorld and the passes after it,
+// js/app/boot.js): both birds already down on their perches (practiceLand,
+// js/sim/practice.js), no title menu and no bots, the clock running as in a
+// match so the waves keep their beat. Its side room, the training ARENA
+// (the `practice arena` banner, js/sim/practice.js), has no eagles and its
+// clock pinned to early morning (sim.js never advances state.time under
+// ARENA). Each pins SEED to its own constant BELOW ?seed on purpose, so
+// both are the same ground on every machine every time - and a page on one
+// is refused by a host on the other (netHostHello's seed test).
 // Entered from the party's START (partyPractice, js/ui/rooms.js), left from
-// the ESC panel's LEAVE - both are page reloads, like the reroll. A party
-// plays it together: the leader's page hosts, friends join on the spawn.
-const PRACTICE_SEED = 0x50524143; // 'PRAC'
+// the ESC panel's LEAVE, crossed between with the bar's ARENA / MAP well -
+// all page reloads, like the reroll. A party plays it together: the
+// leader's page hosts, friends join on the spawn.
+const PRACTICE_SEED = 0x50524143; // 'PRAC': the arena
+const PRACTICE_MAP_SEED = 471;    // the map's: a three-digit seed like any match's (rollSeed)
 
 // one run seed drives every deterministic value: worldgen, per-tile hashes, fx.
 // A rolled seed is always three digits (100..999) - short enough to read off
 // the lobby and say aloud. ?seed=N in the URL replays a world exactly, any N.
 function rollSeed() { return 100 + Math.floor(Math.random() * 900); }
 const SEED = (function () {
-  if (PRACTICE) return PRACTICE_SEED;
+  if (ARENA) return PRACTICE_SEED;
+  if (PRACTICE) return PRACTICE_MAP_SEED;
   const q = /[?&]seed=([0-9]+)/.exec(location.search);
   if (q) return (parseInt(q[1], 10) >>> 0) || 1;
   return rollSeed();
@@ -129,6 +141,9 @@ const state = {
   end: null, defeatT: 0,
   fishT: FISH_SPAWN_T, // countdown to the next fish swimming in (see updateFish)
   creekGone: {}, // the creek's caught fish: index -> the windT it swims back at (creekFishAt, js/sim/world.js)
+  // the practice tool's world toggles (the practice bar's map group,
+  // cheatCmd js/sim/practice.js): the bays' waves march, the road towers shoot
+  prac: { waves: true, towers: true },
   firstBlood: false, // the match's first player kill has been called (callKill, the `calls` banner, js/sim/player.js)
   paused: false,
   mapOpen: false,
@@ -146,7 +161,7 @@ const state = {
   wheel: null,
   // main menu (mode === 'title'): keyboard selection, per-item hover eases,
   // the open sub-panel ('settings' | 'help' | null) and its slide progress
-  // one hover ease per MENU_ITEMS entry. That length is a coupling to a
+  // one hover ease per menuItems() entry (js/ui/menu.js). That length is a coupling to a
   // table in a file that loads later, so the ease loop tops up a missing
   // cell rather than trusting it - a short array turned into NaN and
   // silently deleted a row when a fifth plank arrived.

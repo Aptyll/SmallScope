@@ -528,7 +528,7 @@ function eagleCrash(e) {
       continue;
     }
     if (o.type !== 'tree' && o.type !== 'deadTree') continue;
-    objects[idx(tx, ty)] = Math.hypot(dx, dy) <= BOOM_R ? null : { type: 'stump', tx, ty, flash: 0, shake: 0 };
+    setTile(idx(tx, ty), Math.hypot(dx, dy) <= BOOM_R ? null : { type: 'stump', tx, ty, flash: 0, shake: 0 });
     burst(ox, oy - 8, '#eef4fb', 8, 70, 0.6, true);
     burst(ox, oy - 8, o.type === 'tree' ? '#2f5c4b' : '#6b5a48', 5, 60, 0.55, true);
     burst(ox, oy - 6, '#6b5a48', 4, 55, 0.5, true);
@@ -629,7 +629,7 @@ function hurtEagle(e, dmg, src, hx, hy) {
     raiseNotice('roost', Math.round(Math.max(0, e.hp) / e.maxHp * 100) + '%');
     SFX.alarm();
   }
-  if (e.hp <= 0) eagleFlee(e, src);
+  if (e.hp <= 0) { if (PRACTICE) practiceBirdMend(e); else eagleFlee(e, src); } // nothing ends in practice (js/sim/practice.js)
 }
 
 // the objective's nerve breaks: the bird is DRIVEN OFF, not killed. It blasts
@@ -655,7 +655,7 @@ function eagleFlee(e, src, line) {
     const tx = ctx0 + dx, ty = cty0 + dy;
     if (!inWorld(tx, ty)) continue;
     const o = objAt(tx, ty);
-    if (o && o.type === 'eagle' && o.team === e.team) objects[idx(tx, ty)] = null;
+    if (o && o.type === 'eagle' && o.team === e.team) setTile(idx(tx, ty), null);
   }
   eagleGustFx(e, 2); // the takeoff downdraft: the gust's language writ large
   shakeAt(e.x, e.y, 4, EV_ANYWHERE); shakeAt(e.x, e.y, 7, 500);
