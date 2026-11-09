@@ -528,6 +528,9 @@ re-wrap or re-indent one, and keep them pure ASCII (there is no BOM any more).
 Open gaps between what the game does and what it is meant to: prune an entry once it is fixed.
 Code that is dead **on purpose** is the next section.
 
+- **Two sim files still draw**: the ability wedges (`drawWedge` and the drawing block under it in
+  js/sim/abilities.js) and the seated riders and dive line in js/sim/eagle.js. The sim decides and
+  never draws ([CLAUDE.md](../../CLAUDE.md)); move them under js/draw/ when either is next touched.
 - **No bot walks to a camp on purpose** (3.20): a bot pulls a den only through the hunt rung when
   one is within `AI_HUNT`, never a bear, and nothing in
   `aiSituation` weighs a camp against the road — so the two bear camps are the

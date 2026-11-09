@@ -2,74 +2,85 @@
 
 Softfall: a League-style 5v5 MOBA in the snow, top-down pixel art in a browser canvas, wrapped in
 Electron for Steam. Ten players (bots fill empty seats) pick heroes and push three lanes to drive
-off the rival eagle. This file holds only the rules that break silently; everything else lives in
-a doc or a skill, linked below.
+off the rival eagle. This file holds only the rules that break silently, laid out the way the code
+is. Everything else lives in a doc or a skill, linked where it applies.
 
-## Read first
+Before you propose a feature, read [game](docs/dev/game.md). Before you write a word a player
+reads, read [lore](docs/dev/lore.md). To find code, start at [code-map](docs/dev/code-map.md)
+(which file and banner owns a thing). Docs with a Pages index: read only the pages you need.
+A change that spans many files has a list in [checklists](docs/dev/checklists.md). Procedures are
+skills: `new-hero`, `concept-art` (any new look), `shorts` and `media`, `kitchen`.
 
-Read the doc for your area before you start. Docs with a Pages index: read only the pages you need.
+## How the code is built
 
-| Before you | Read |
-| --- | --- |
-| propose a feature | [game](docs/dev/game.md) |
-| write a word a player reads | [lore](docs/dev/lore.md) |
-| look for code | [code-map](docs/dev/code-map.md): which file and banner owns a thing |
-| add a file, move a global | [architecture](docs/dev/architecture.md) |
-| touch drawing, the HUD, the camera | [rendering](docs/dev/rendering.md) |
-| touch the map or worldgen | [world](docs/dev/world.md) |
-| touch combat, abilities, items, economy | [gameplay](docs/dev/gameplay.md) |
-| touch players, teams, input, bots | [multiplayer](docs/dev/multiplayer.md) |
-| touch online play | [pvp-architecture](docs/pvp-architecture.md) |
-| touch sprites | [sprites](docs/dev/sprites.md) |
-| make a change that spans many files | [checklists](docs/dev/checklists.md) |
+No bundler, no modules: classic scripts sharing one global scope, loaded in `index.html`'s order,
+so a global must exist before a file that reads it at load ([architecture](docs/dev/architecture.md)).
+A folder is a job, never a scope. A match flows one way:
 
-Procedures are skills in `.claude/skills/`: `new-hero`, `concept-art` (any new look), `shorts` and
-`media` (clips, GIFs, stills), `kitchen`. `/sync` rebases and lints.
+**hands and bots fill `p.input` → the sim steps the match → net carries it → draw and ui paint it**
+
+Only the host runs the sim. A client sends its input and paints what the host sends.
+
+## Hard rules
+
+Each rule spans folders; its names are listed under the folder that owns them.
+
+1. **Go through the shared function, never around it.** Each one is where every case is handled,
+   so a copy silently skips wildlife, bots, stealth, heroes or the other team.
+2. **The sim never reads the local machine.** Anything it reads off this screen is dead online.
+3. **Never shift the seed.** Never add or remove an `rng()` call inside `genWorld()`.
+4. **Pixels stay exact.** Zoom scales the world, never the UI, and rests on a whole `kWant`.
+
+## Folder by folder
+
+**js/app/: the machine around the match** (input, pad, canvas, sound, profile, boot)
+- A key does its work in `keyPress`/`keyRelease`, asked by action with `keyIs`; the pad presses
+  keys through them, so a key handled in a listener alone is dead on a pad.
+- Only `js/app/profile.js` touches `localStorage`. `window.DBG` (boot.js) is the one export.
+
+**js/sim/: the match** ([world](docs/dev/world.md), [gameplay](docs/dev/gameplay.md))
+- It decides and never draws: pixels for what it owns go in js/draw/ or js/ui/.
+- Rule 2: player actions read `p.input`, never `keys`/`mouse`; single-winner actions go through
+  `contest()`; sounds and shakes go through `sfxAt`/`sfxFor`/`shakeFor`.
+- Rule 1: hits `hurtUnit` (a blow sweeps with `unitsHit`) and `hurtStruct`; states `stunUnit` and
+  the other `*Unit` setters; areas `unitsNear`/`structsNear`; targets `unitAlive`; sight `seenAt`;
+  gold `gainGold`; XP `shareXp` on a death, `gainXp` under it; water `waterAt`; tiles `placeObj`
+  and `createStruct`; walking `navTo`/`navStep`, dropping the goal on `ok = false`, and a new
+  walker joins `separateUnits`. Loops over `players` skip `inAir(p)`.
+- What a thing *is* lives in its table entry (`OBJECTS`, `STRUCTS`, `CLASSES`, `BUILD_ITEMS`),
+  never in an `if`. A hero reaches the shared sim only through the `HERO_*` hook tables.
+- A feature's tuning constants sit in the file that owns it. New mutable state joins `SAVE_ROOTS`.
+
+**js/ai/: the bots** ([bots](docs/dev/multiplayer.md#bots), [bot API](docs/bots/api.md))
+- A bot only writes the input struct a human fills, so it can never do what a player cannot.
+
+**js/net/: what screens share** ([online play](docs/pvp-architecture.md))
+- Entity fields ride the snapshot on their own; a new `state` key a client shows joins `SNAP_STATE`.
+  `DBG.netEcho()` proves the snapshot complete: zero pixels differ.
+
+**js/draw/ and js/ui/: the pixels** ([rendering](docs/dev/rendering.md), [sprites](docs/dev/sprites.md))
+- Rule 4: screen position is `round(world - camera)`, rounded once. Layout reads `VIEW_W`/`VIEW_H`,
+  never 640/360.
+- Rule 1: team colour `skin(team)`, world text `drawWorldText`, ground edits `repaintGround`.
+- New team-painted sprites bake inside `SPR.onTeams`.
+- UI shows, doesn't label: icons, colour and hover state, not hint sentences. Text is for names,
+  numbers, headlines and the carve-outs in [show, don't label](docs/dev/rendering/show-dont-label.md).
+
+**js/baked/, app/, desktop/: outside the game code**
+- `js/baked/` is written by `app/bake-*`: change the source and rebake, never hand-edit.
+- `app/` holds tools; nothing in `js/` may need one to have run, except reading what a bake wrote.
+- Only `desktop/` (Electron and Steam) has packages.
 
 ## Run and verify
 
 - `node app/server.js` serves the game on :8471. `node app/check-globals.js` is the one lint (it
   runs the size check too). `node app/check-join.js` drives every way a friend joins a party.
-- Double-clicking `index.html` must work: nothing may `fetch` or need a server. Data the game loads
-  is baked inline by `app/bake-*` into `js/baked/`; change the source and rebake, never hand-edit.
+- Double-clicking `index.html` must work: nothing may `fetch` or need a server.
 - There are no tests. Verify in headless Chromium with a small staged scene of exactly the changed
   case: `window.DBG`, `?seed=N`, `POST /shot`, `.` for hitboxes ([how](docs/dev/checklists.md#verifying-a-change)).
   A refactor proves itself against main: same seed, same `DBG.saveHash`, same pixels. A bot match
   never judges a feature.
 - Keyboard, mouse and gamepad only. Never add touch or mobile support.
-
-## Hard rules
-
-1. **Go through the shared function, never around it.** Each one is where every case is handled,
-   so a copy silently skips wildlife, bots, stealth, heroes or the other team.
-   - Hits: `hurtUnit` (a blow sweeps with `unitsHit`), `hurtStruct`. States: `stunUnit` and the
-     other `*Unit` setters. Areas: `unitsNear`/`structsNear`. Targets: `unitAlive`. Sight: `seenAt`.
-   - Gold: `gainGold`. XP: `shareXp` on a death, `gainXp` under it.
-   - World: `waterAt`, `placeObj`, `createStruct`, `repaintGround`. Walking: `navTo`/`navStep`,
-     dropping the goal on `ok = false`; a new walker joins `separateUnits`.
-   - Team colour: `skin(team)`. World text: `drawWorldText`. Keys: `keyPress`/`keyRelease`, asked
-     by action with `keyIs`. Loops over `players` skip `inAir(p)`.
-2. **The sim never reads the local machine.** Player actions read `p.input`, never `keys`/`mouse`;
-   single-winner actions go through `contest()`; sim sounds and shakes use `sfxAt`/`sfxFor`/`shakeFor`.
-   A client never runs the sim, so anything else is dead online.
-3. **Never shift the seed.** Never add or remove an `rng()` call inside `genWorld()`.
-4. **Pixels stay exact.** Zoom scales the world, never the UI, and rests on a whole `kWant`. Screen
-   position is `round(world - camera)`, rounded once. Layout reads `VIEW_W`/`VIEW_H`, never 640/360.
-
-## Code shape
-
-- Classic scripts sharing one global scope, loaded in `index.html`'s order: a global must exist
-  before the file that reads it loads. A feature's tuning constants sit in the file that owns it.
-- Keep every `// ------ name` banner honest; find code through code-map before grepping.
-- What a thing *is* lives in its table entry (`OBJECTS`, `STRUCTS`, `CLASSES`, `BUILD_ITEMS`),
-  never in an `if`. A hero reaches the shared sim only through the `HERO_*` hook tables.
-- New mutable sim state joins `SAVE_ROOTS`. New team-painted sprites bake inside `SPR.onTeams`.
-- Only `js/app/profile.js` touches `localStorage`.
-
-## UI: show, don't label
-
-Speak through icons, colour and hover state, not hint sentences. Text is for names, numbers,
-headlines and the carve-outs in [show, don't label](docs/dev/rendering/show-dont-label.md).
 
 ## Shipping
 
@@ -83,5 +94,5 @@ headlines and the carve-outs in [show, don't label](docs/dev/rendering/show-dont
 ## Keeping this file
 
 A rule belongs here only if breaking it fails silently. Name functions, never counts, sizes or file
-lists; those go stale here and live in `docs/dev/`. A new shared function joins rule 1's list
-instead of becoming a new rule. Edits to this file are shown to Noah before they merge.
+lists; those go stale here and live in `docs/dev/`. A new shared function joins its folder's rule 1
+line instead of becoming a new rule. Edits to this file are shown to Noah before they merge.
