@@ -78,7 +78,7 @@ function pumpSeek(lane, reach) {
 // pair stands (the frozen isles' lake) takes the nearest spot on each lane
 // alone, further out, and a lane with none has no pump.
 function placePumps() {
-  if (PRACTICE) return;
+  if (ARENA) return;
   let pair = null;
   for (const [ax, ay] of pumpSeek(0, PUMP_SEEK)) {
     if (!pumpSpotOk(ax, ay, PUMP_STAND)) continue;

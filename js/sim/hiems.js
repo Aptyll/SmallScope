@@ -37,13 +37,13 @@ const SNAP_RANGE = 130;         // px from her the burst's middle may be set
 const SNAP_R = 34;              // px of burst
 const SNAP_ROOT = 1;            // s a chilled rival is rooted
 // R WHITEOUT: a blizzard that follows her: rivals inside are slowed, chilled
-// and stung once a second, and a rival hero inside sees only WHITE_SEE round
-// themselves (their side's other eyes still see; HERO_SIGHT, js/sim/heroes.js)
+// and stung once a second, and a rival hero inside sees only WHITE_SEE of their reach
+// round themselves (their side's other eyes still see; HERO_SIGHT, js/sim/heroes.js)
 const WHITE_R = 72;             // px of storm round her
 const WHITE_T = 5;              // s it lasts
 const WHITE_EVERY = 1;          // s between its stings
 const WHITE_SLOW = 0.75;        // walk x this inside
-const WHITE_SEE = 28;           // px a blinded hero sees
+const WHITE_SEE = 0.2;          // a blinded hero sees this share of their reach (32 px)
 
 const hiemsGlazes = []; // {x, y, team, owner, t, life} - W's discs of ice
 const hiemsStorms = []; // {x, y, team, owner, t, life, tick, dmg} - R's blizzards, each riding its caster (each carries its rank from the cast)
@@ -222,8 +222,8 @@ function inRivalStorm(e) {
   for (const s of hiemsStorms) if (s.team !== t && Math.hypot(e.x - s.x, e.y - s.y) <= WHITE_R) return true;
   return false;
 }
-// what a hero sees inside a rival's whiteout (HERO_SIGHT, js/sim/heroes.js)
-function hiemsSight(p, r) { return hiemsStorms.length > 0 && inRivalStorm(p) ? Math.min(r, WHITE_SEE) : r; }
+// how far a hero sees inside a rival's whiteout, as a share (HERO_SIGHT, js/sim/heroes.js)
+function hiemsSight(p) { return hiemsStorms.length > 0 && inRivalStorm(p) ? WHITE_SEE : 1; }
 function updateStorms(dt) {
   for (let i = hiemsStorms.length - 1; i >= 0; i--) {
     const s = hiemsStorms[i], src = hiemsSrc(s);

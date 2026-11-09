@@ -233,7 +233,7 @@ she freezes a fight and lets her side finish it. What she leaves in the world (`
 | 1 | **ICICLE** | 8/7.5/7/6.5/6 s | a shard down the aim (`ICICLE_SPD` for `ICICLE_RANGE`, riding `arrows`): the first rival takes `dmg` (14/20/26/32/38), is slowed ×`ICICLE_SLOW` for `ICICLE_SLOW_T` and chilled |
 | 2 | **CLEAR ICE** | 15/14/13/12/11 s | a disc `GLAZE_R` at the aim (at most `GLAZE_RANGE`) turns to ice for `t` (3/3.5/4/4.5/5 s): a rival hero on it skates as on the creek's ice (`HERO_ICE`, read by `iceUnder`), and every rival body on it walks ×`GLAZE_SLOW`. Her own side walks it as snow. No damage |
 | 3 | **COLD SNAP** | 12/11.5/11/10.5/10 s | a burst `SNAP_R` at the aim (at most `SNAP_RANGE`): every rival already chilled is rooted `root` (1 s), then every rival inside takes `dmg` (12/18/24/30/36) and is chilled; buildings take it too |
-| 4 | **WHITEOUT** | 100/85/70 s | a blizzard `WHITE_R` round her for `WHITE_T`, riding her: rivals inside walk ×`WHITE_SLOW`, and once a second take `dmg` (10/16/22) and a chill. A rival hero inside sees only `WHITE_SEE` round themselves (`HERO_SIGHT`, folded into `sightSources`): their side's other eyes still see |
+| 4 | **WHITEOUT** | 100/85/70 s | a blizzard `WHITE_R` round her for `WHITE_T`, riding her: rivals inside walk ×`WHITE_SLOW`, and once a second take `dmg` (10/16/22) and a chill. A rival hero inside sees only `WHITE_SEE` (a fifth) of their reach (`HERO_SIGHT`, read by `heroEyeR`): their side's other eyes still see |
 
 LUCERNA, THE LANTERN — the catch-and-save support. Her rules live in
 **[js/sim/lucerna.js](../../../js/sim/lucerna.js)** (`LUCERNA_AB`, its `lucerna` banner), her pixels in
@@ -247,7 +247,7 @@ and a rival is held (`stunUnit`) while it travels. What she leaves in the world 
 
 | key | name | cd | what it does |
 | --- | --- | --- | --- |
-| P | **LAMPLIGHT** | — | every rival body within `LAMP_R` (56 px) of her is shown (`markUnit`: through the fog, the woods and the brush) and stays shown `LAMP_SEE_T` after leaving it (`lucernaTick`). `HERO_PASSIVE.lamplight` |
+| P | **LAMPLIGHT** | — | every rival body within `LAMP_R` (56 px) of her is shown (`markUnit`: through the fog, the woods and the brush) and stays shown `LAMP_SEE_T` after leaving it (`lucernaTick`); an ally player inside (her too) sees ×(1 + `LAMP_NIGHT` × `state.darkness`) further, a third more at full night (`lucernaSight`, a `HERO_SIGHT` row). `HERO_PASSIVE.lamplight` |
 | 1 | **SHEPHERD'S CROOK** | 14/13/12/11/10 s | a hook flies down the aim `CROOK_RANGE` (170 px) at `CROOK_SPD`, past allies (`updateHooks`); a wall or a tree ends it. The first rival body it meets (a hero, a soldier, a beast) takes `dmg` (20/35/50/65/80) and is pulled to `CROOK_STOP` from her, then walks ×`CROOK_SLOW` for `CROOK_SLOW_T` |
 | 2 | **LANTERN** | 18/17/16/15/14 s | her lantern lands at the aim, at most `LANTERN_RANGE` from her, one at a time (`lucernaThrow`). An ally player who walks within `LANTERN_R` of it takes it and is pulled to her side, not held; rivals within `LANTERN_SEE` of it are shown. Untaken, it comes back after `t` (4/4.5/5/5.5/6 s) (`updateLanterns`). A bot throws it at an ally hero who is hurt with a rival close (`lucernaInDanger`, the row's `botAim`) |
 | 3 | **SHOO** | 10/9.5/9/8.5/8 s | a swing of the crook `SHOO_REACH` in front of her, `SHOO_HALF` either side of the aim: every rival body in it takes `dmg` (15/25/35/45/55) and is shoved `SHOO_KB` (`hurtUnit`'s `kb`); buildings in it take the blow |

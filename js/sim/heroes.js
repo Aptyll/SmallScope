@@ -18,6 +18,8 @@
 // - HERO_TEN: fn(e) -> tenacity 0..1; every stun, root and slow lasts the
 //   product of (1 - t) of its length (ccMul, js/sim/actions.js).
 // - HERO_MOVE: fn(p) -> a multiplier on the walk (abilityMoveMul).
+// - HERO_SIGHT: fn(p) -> a multiplier on how far a hero sees (FOG_HERO, sightSources):
+//   LUCERNA's lamplight stretches it, HIEMS's whiteout cuts it.
 // - HERO_DASH[id]: a charge riding the rush's state (rushT, rushNX/NY) at its
 //   own pace: { spd, t, ramp, step(p, mv, dt), pose(p)? }, picked by p.dash = id
 //   (`pose` is the body's while it runs: abilityPose; else the rush's lean); with
@@ -28,8 +30,6 @@
 //   every unit wears (drawUnitStates): a mark a hero left on it, a hero's own stacks.
 // - HERO_ICE: fn(p) -> true where a hero's ground skates like the creek's ice
 //   (iceUnder, js/sim/sim.js): a rival's glaze.
-// - HERO_SIGHT: fn(p, r) -> r, folded over the px a hero sees (sightSources,
-//   js/sim/fog.js): a storm that blinds.
 // An ability row may also carry recast(p) (true: the key pressed again is
 // its second half, castSlam) and ok(p) (false: the press is refused).
 const HERO_PASSIVE = {};
@@ -37,12 +37,12 @@ const HERO_TAKEN = [];
 const HERO_STAT = [];
 const HERO_TEN = [];
 const HERO_MOVE = [];
+const HERO_SIGHT = [];
 const HERO_DASH = {};
 const HERO_TICK = [];
 const HERO_GROUND = [];
 const HERO_MARK = [];
 const HERO_ICE = [];
-const HERO_SIGHT = [];
 
 // the ability whose use() is running right now, so a blow it lands says so
 // (o.ab, stamped by hurtUnit, js/sim/actions.js); '' between casts. Never state: set and cleared
@@ -63,6 +63,7 @@ function passiveDeal(src, e, dmg, o) {
 }
 function heroTaken(p, dmg, dx, dy, src) { for (const f of HERO_TAKEN) dmg = f(p, dmg, dx, dy, src); return dmg; }
 function heroStat(p, key) { let n = 0; for (const s of HERO_STAT) n += s.add(p, key); return n; }
+function heroSight(p) { let m = 1; for (const f of HERO_SIGHT) m *= f(p); return m; }
 function heroTen(e) { let m = 1; for (const f of HERO_TEN) m *= 1 - Math.min(1, Math.max(0, f(e))); return m; }
 function heroMove(p) { let m = 1; for (const f of HERO_MOVE) m *= f(p); return m; }
 function heroDash(p) { return p.dash ? HERO_DASH[p.dash] : null; }
@@ -71,4 +72,3 @@ function heroTick(dt) { for (const f of HERO_TICK) f(dt); }
 function heroGround(ex, ey, now) { for (const f of HERO_GROUND) f(ex, ey, now); }
 function heroMarks(e, px, py, w, h, now) { for (const f of HERO_MARK) f(e, px, py, w, h, now); }
 function heroIce(p) { for (const f of HERO_ICE) if (f(p)) return true; return false; }
-function heroSight(p, r) { for (const f of HERO_SIGHT) r = f(p, r); return r; }

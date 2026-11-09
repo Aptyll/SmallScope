@@ -62,11 +62,11 @@ The world is 232 tiles of 16 px — a 3712×3712 px snowfield with a forest bord
 threaded by frozen lakes and rivers. Every match plays this one map.
 See [world.md](world.md#the-tile-world) and [one map](world.md#one-map).
 
-Outside the match sits one room: the **practice tool** — a small, fixed, seedless training field
-cut to pure combat (a mending dummy, a perimeter target track with a bell-rung scored archery
-round, and a timed ice-parkour loop through
-the surrounding forest), found by breaking the ice off its menu plank. Nothing in it counts and
-nothing in it is at stake. See [the practice arena](world.md#the-practice-arena).
+The **practice tool** plays this same map with no rival players and a bar of cheats (League's
+practice tool): lanes, waves, towers and camps as in a match, toggled or spawned from the bar.
+Its side room, the **arena**, is a small fixed training field cut to pure combat (a mending
+dummy, a target track with three bell-rung medal rounds, a timed ice-parkour loop and a deer
+ride). Nothing in either counts and nothing is at stake. See [the practice tool](world.md#the-practice-tool).
 
 ## The pillars
 

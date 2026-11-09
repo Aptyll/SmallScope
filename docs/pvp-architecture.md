@@ -467,11 +467,14 @@ The same screens and the same protocol ride either transport; only the list and 
    party (`rematchBootHost`); a guest's LOBBY reloads as `?join=CODE&back=1` and keeps trying the
    code for `REMATCH_WAIT` while the leader's page comes back, and the leader deals it the slot
    it held (`rematchSeat`). Leaving (`netLeave`) closes a leader's party; a guest walks out of one.
-9. **The practice field.** PRACTICE TOOL's START sends guests `practice` and reloads the leader as
+9. **The practice tool.** PRACTICE TOOL's START sends guests `practice` and reloads the leader as
    `?practice=1&net=host&back=1` on the party's code; a guest reloads as `?practice=1&join=CODE&back=1`
-   and keeps trying the code like a rematch. The field's host takes friends at any time (no
-   `BUSY`), seats them on the spawn and parks a leaver's empty body in the corner; the list
-   entry carries `practice: 1`, so a code typed on a title page reloads onto the field. The
+   and keeps trying the code like a rematch. The bar's ARENA / MAP well (`practiceCross`) does the
+   same with `arena` on the message and `&arena=1` on both URLs; a guest's well is dim. The field's
+   host takes friends at any time (no `BUSY`), seats them on their roost (the arena: its spawn) and
+   parks a leaver's empty body in the corner; the list entry carries `practice: 1` (2 on the arena),
+   so a code typed on a title page reloads onto the right one, and the two worlds' seeds differ, so
+   a page on the wrong one is refused. The
    leader's LEAVE is a rematch back to the party (`rematch`, which a guest on the field follows at once).
 10. **Matchmaking** (js/ui/matchmaking.js). QUICKPLAY and RANKED's FIND MATCH sets `NET.seek`,
    lists the room with `seek: mode` and reads the list. Of the parties looking in one mode, the

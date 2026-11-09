@@ -48,7 +48,7 @@ function baseWall(team, a) {
 // the side whose hollow holds (tx, ty), `pad` tiles past its wall counted in,
 // or -1 (always on the practice field, which has no bases)
 function baseAt(tx, ty, pad) {
-  if (PRACTICE) return -1;
+  if (ARENA) return -1;
   for (const team of [0, 1]) {
     const c = baseCentre(team), dx = tx - c.tx, dy = ty - c.ty;
     if (Math.hypot(dx, dy) <= baseWall(team, Math.atan2(dy, dx)) + pad) return team;
@@ -65,7 +65,7 @@ function baseRoadEnd(fx, fy) {
 // its tiles), and any ice is snow. Runs after placeRoad, before the cables
 // and the camps (js/app/boot.js).
 function placeBase() {
-  if (PRACTICE) return;
+  if (ARENA) return;
   const R = Math.ceil(BASE_R + BASE_RAG);
   for (const team of [0, 1]) {
     const c = baseCentre(team);

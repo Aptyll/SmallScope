@@ -114,18 +114,28 @@ function towerStand(team, at) {
 // THE CUT: each cable, from its bird to the furthest standing tower on it,
 // or none. Asked every step by the sim (updateStructures) and every
 // frame by the draw (drawZips), since a client never steps the sim - the
-// towers it reads come over the wire with the tiles. A rider past the new
-// end lets go on its next step (zipRide).
-function towersSync() {
+// towers it reads come over the wire with the tiles. In the sim's call
+// (`sim`), a rider past the new end comes down where it hangs (towersDrop).
+function towersSync(sim) {
   zipWhole.forEach((w, L) => {
     if (!w) return;
     let far = -1;
     for (const o of structures) if (o.type === 'tower' && o.zl === L && o.zi > far) far = o.zi;
     const z = zips[L];
-    if (far < 0) { zips[L] = null; return; }
+    if (far < 0) { zips[L] = null; if (sim) towersDrop(L, -1); return; }
     if (z && z.cut === far) return;
     zips[L] = Object.assign({}, w, { pts: w.pts.slice(0, far + 1), cum: w.cum.slice(0, far + 1), len: w.cum[far], cut: far });
+    if (sim) towersDrop(L, w.cum[far]);
   });
+}
+// a cable cut back under its riders: whoever hangs past the new end (all of
+// them when the cable is gone, len -1) comes down where they are, at rest,
+// instead of being carried back to the new end on the next step
+function towersDrop(L, len) {
+  for (const e of [...players, ...robots]) {
+    if (e.zip !== L || e.dead || inAir(e)) continue;
+    if (len < 0 || e.zipD > len) zipEnd(e, true);
+  }
 }
 
 // ---- the gun ----------------------------------------------------------------
@@ -195,6 +205,13 @@ function updateTower(o, dt) {
   o.chg = 0; o.cd = TOWER_RELOAD; o.loose = state.elapsed;
   sfxAt('turretFire', foot.x, foot.y - TOWER_GUN_Z);
   burst(foot.x + Math.cos(o.ang) * 12, foot.y - TOWER_GUN_Z + Math.sin(o.ang) * 6, '#eef4fb', 5, 45, 0.3, true);
+}
+// a gun stood down (the practice bar's TOWERS off, updateStructures): no
+// mark, no wind-up, and a bolt already loosed still lands
+function towerRest(o, dt) {
+  if (o.pin && (o.pin.t -= dt) <= 0) o.pin = null;
+  if (o.bolt) towerBolt(o, towerFoot(o), dt);
+  o.tgt = null; o.chg = 0;
 }
 // the bolt in the air: it strikes its mark when its time is up, through the
 // one blow every body takes, and stands in the snow at its feet

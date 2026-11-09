@@ -1001,7 +1001,7 @@ what the rest of the code needs to know is this:
 - **A joiner takes an open seat.** `netHostHello` refuses a different patch or seed. In a party
   (`NET.mode`, js/ui/rooms.js) it seats the joiner on the leader's side, only while the party is
   on its seats (BUSY once the hero select or the match has begun; FULL past five), or any time on
-  the practice field (`practiceSeat`, onto the spawn). A host with no
+  the practice tool (`practiceSeat`, onto the side's roost, or the arena's spawn). A host with no
   mode (a harness's `?net=host`) deals the first
   empty seat, then the first bot slot, of the side with fewer people - a bot's slot first on a
   side already at the room's size (its fullest side's seats, TEAMS) - (a match under way offers
