@@ -40,7 +40,8 @@ const FISH_SPAWN_T = 11;   // seconds between new fish while the shoal is health
 // others beside their own systems: the clock, which pays every player on the
 // ground TRICKLE_GOLD every TRICKLE_T s (the passive income banner, js/sim/sim.js),
 // START_GOLD (js/sim/player.js), a soldier's last hit (SOLDIER_BOUNTY,
-// js/sim/farm.js), a takedown (KILL_SOLDIERS soldiers' worth) and a held pump.
+// js/sim/farm.js, shared by kind: SOLDIER_TYPES), a takedown (KILL_SOLDIERS
+// TAKEDOWN_GOLD shares, js/sim/player.js) and a held pump.
 // The scale is League's: a finished item is ~2600-3400 (BUILD_ITEMS,
 // js/sim/items.js), and a laner who lands two in three last hits holds one at about 5:00.
 // A beast's `xp` is the one thing here that is not gold: what its death is worth

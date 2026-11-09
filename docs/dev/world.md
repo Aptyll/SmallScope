@@ -211,7 +211,7 @@ roost (`practiceSeat`, `roostTile`), empty seats are parked with no bots, and th
 so the waves keep the match's beat. Nothing is at stake: a death revives on the roost
 (`practiceRevive`), a bird at zero mends instead of fleeing (`practiceBirdMend`), the profile is never
 written. The practice bar (js/ui/cheats.js) adds the map's group: WAVES and TOWERS (the field's
-standing toggles, `state.prac`), SPAWN WAVE (`barracksWave` from every bay) and RESPAWN CAMPS.
+standing toggles, `state.prac`), SPAWN WAVE (`barracksQueue` on every bay) and RESPAWN CAMPS.
 Its **ARENA** well reloads the party onto the side room, `?practice=1&arena=1` (`ARENA`): the small
 fixed training field (`genPracticeWorld`, `WORLD` 112, `PRACTICE_SEED`) with the dummy, the bell's
 rounds, the ice parkour and the deer ride, no lanes, bases, creek or camps, and its light pinned to

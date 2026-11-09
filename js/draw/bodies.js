@@ -86,33 +86,38 @@ function drawBird(a, ex, ey, now) {
 // A bot (a wave's soldier): one sprite, two tread frames. The whole thing
 // bobs 1px while driving so body and tread never part. No face - the states
 // are the tread rolling and the axe swinging at a foe.
+// where each soldier sprite set flies its pennant: [px right of the body's
+// x, px up from the tread's foot] - the roof's corner, two rows down
+const PENNANT_AT = { robotTeam: [4, 8], robotRanged: [-5, 8], robotSiege: [7, 9] };
 function drawRobot(b, ex, ey, now) {
   if (b.merchant) { drawMerchant(b, ex, ey, now); return; }
-  const set = SPRITES.robotTeam[skin(b.team === undefined ? 0 : b.team)] || SPRITES.robot;
-  const spr = set[b.moving ? Math.floor(b.animT) % 2 : 0];
+  // its kind's sprite set (SOLDIER_TYPES' `spr`): frames 0-1 roll, and a
+  // thrower's 2-3 are the same roll with its snowball gone - shown from the
+  // throw until the ball is back in hand (half its cooldown)
+  const T = soldierType(b), team = skin(b.team === undefined ? 0 : b.team);
+  const set = (SPRITES[T.spr] || SPRITES.robotTeam)[team] || SPRITES.robot;
+  const thrown = T.shot && (b.shot || b.atkCd > T.cd * 0.5) ? 2 : 0;
+  const spr = set[thrown + (b.moving ? Math.floor(b.animT) % 2 : 0)];
   const bob = b.moving ? Math.floor(b.animT / 2) % 2 : 0;
-  const bx = Math.round(b.x - 6 - ex);
+  const bx = Math.round(b.x - ex) - (SPRITES.robotAx[T.spr] || 6);
   const zl = b.zip >= 0 ? ZIP_ALT : 0; // a soldier on a zipline hangs ZIP_ALT rows up, its shadow on the snow
   const by = Math.round(b.y + 4 - ey) - spr.height - bob - zl; // tread bottom sits at b.y + 4
 
   drawCastShade(spr, bx, by + bob + zl); // on the ground under the bob
 
-  // a soldier's blow: the axe aimed at whatever b.atkAim points to (`soldiers`, robots.js)
-  let tdx = 0, tdy = 0, working = false, prog = 0;
-  if (b.atkAim) {
-    tdx = b.atkAim.x - b.x; tdy = b.atkAim.y - b.y;
-    working = true;
-    prog = 1 - b.atkCd / ROBOT_ATK_CD;
-  }
-
   if (zl) drawZipHandle(b, Math.round(b.x - ex), by, ey); // the handle over the chassis and the rope up to the cable (js/draw/zipline.js)
   drawSpriteFlash(spr, bx, by, b.flash);
-  // a soldier (the `soldiers` banner, robots.js) flies its side's pennant off the chassis
-  drawPennant(ctx, bx + 10, by + 2, TEAMS[skin(b.team)].mark);
+  // a soldier (the `soldiers` banner, robots.js) flies its side's pennant off a back corner of the
+  // chassis' roof (a thrower's left, its arm is on the right), two rows down
+  const pd = PENNANT_AT[T.spr] || PENNANT_AT.robotTeam;
+  drawPennant(ctx, Math.round(b.x - ex) + pd[0], by + spr.height - pd[1], TEAMS[skin(b.team)].mark);
 
-  // swinging: raised away from the target through a slow wind-up, then a
-  // fast chop that lands pointing at it
-  if (working) {
+  // a melee soldier's blow: the axe aimed at whatever b.atkAim points to,
+  // raised away from the target through a slow wind-up, then a fast chop
+  // that lands pointing at it
+  if (b.atkAim && !T.shot) {
+    const prog = 1 - b.atkCd / T.cd;
+    const tdx = b.atkAim.x - b.x, tdy = b.atkAim.y - b.y;
     const e = prog < 0.7 ? prog / 0.7 * 0.3 : 0.3 + (prog - 0.7) / 0.3 * 0.7;
     const a = Math.atan2(tdy, tdx) - 1.6 * (1 - e);
     ctx.save();
@@ -121,11 +126,29 @@ function drawRobot(b, ex, ey, now) {
     ctx.drawImage(SPRITES.itemAxe, -4, -4);
     ctx.restore();
   }
+  if (b.shot) drawSoldierShot(b, T, ex, ey);
 
   // the four shared tells, same as any other body (js/sim/abilities.js)
   drawUnitStates(b, bx, by, spr.width, spr.height, now);
-  drawHealthBar(b.x - ex, by - 4, b.hp, b.maxHp, 8, b.team, undefined, b);
+  drawHealthBar(b.x - ex, by - 4, b.hp, b.maxHp, T.spr === 'robotSiege' ? 12 : 8, b.team, undefined, b);
   if (b.stunT > 0) drawStunStars(Math.round(b.x - ex), by - 9, b, 4);
+}
+// a thrown snowball in the air (soldierShot, js/sim/robots.js): from the
+// thrower's hand to where it lands, a siege ball on a SOLDIER_LOB arc, with
+// its shadow on the snow under it. 2 px, a siege ball 3, with an ink rim
+function drawSoldierShot(b, T, ex, ey) {
+  const s = b.shot, f = Math.min(1, s.t / T.shot);
+  const big = T.struct > 1, lift = big ? Math.sin(f * Math.PI) * SOLDIER_LOB : Math.sin(f * Math.PI) * 3;
+  const gx = s.x0 + (s.x - s.x0) * f, gy = s.y0 + 6 + (s.y + 4 - s.y0 - 6) * f; // the ground under it
+  const x = Math.round(gx - ex), y = Math.round(gy - 6 - lift - ey), r = big ? 3 : 2;
+  ctx.fillStyle = 'rgba(40,52,90,0.25)';
+  ctx.fillRect(Math.round(gx - ex) - 1, Math.round(gy - ey), r + 1, 1);
+  ctx.fillStyle = '#1c2130';
+  ctx.fillRect(x - 1, y, r + 2, r); ctx.fillRect(x, y - 1, r, r + 2);
+  ctx.fillStyle = '#eef4fb';
+  ctx.fillRect(x, y, r, r);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(x, y, 1, 1);
 }
 
 // The merchant (the `merchant` banner, robots.js): its own 16x18 hooded-robe

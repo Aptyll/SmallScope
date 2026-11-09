@@ -4,9 +4,8 @@
 // is sim.
 // ------------------------------------------------------------ bots
 // A bot's body, rolled out of building sp's mouth: the barracks' soldier
-// (makeSoldier) - its tier carries botHp
+// (makeSoldier, which gives it its kind's health)
 function makeRobot(sp) {
-  const t = STRUCTS[sp.type].tiers[sp.tier];
   const m = structMouth(sp);
   let sx = m.x, sy = m.y;
   if (isSolidTile(Math.floor(sx / TILE), Math.floor(sy / TILE))) {
@@ -21,7 +20,7 @@ function makeRobot(sp) {
   }
   const b = {
     bot: true, // a machine, not wildlife: what isAnimalUnit (js/sim/actions.js) reads
-    x: sx, y: sy, hp: t.botHp, maxHp: t.botHp, vx: 0, vy: 0, // vx/vy: a bot never drifts, but a rival's aim leads by them (updateAI)
+    x: sx, y: sy, hp: 1, maxHp: 1, vx: 0, vy: 0, // vx/vy: a bot never drifts, but a rival's aim leads by them (updateAI)
     team: sp.team === undefined ? 0 : sp.team, owner: sp.owner === undefined ? 0 : sp.owner,
     tgt: null, atkCd: 0, nav: null,
     atkAim: null, // what a soldier is swinging at right now (drawRobot reads it)
@@ -66,6 +65,7 @@ function hurtRobot(b, dmg, nx, ny, src) {
 // nothing reaches here but a soldier.
 function robotDies(b, src) {
   b.dead = true;
+  b.shot = null; // a snowball still in its hand or the air goes with it
   sfxAt('break_', b.x, b.y);
   burst(b.x, b.y - 4, '#98a1b0', 10, 50, 0.5, true);
   burst(b.x, b.y - 4, '#3b4150', 4, 35, 0.4);
@@ -75,10 +75,10 @@ function robotDies(b, src) {
   // shares its SOLDIER_XP whoever scrapped it (shareXp, js/sim/player.js) -
   // the road pays, which is what makes walking out to meet a wave worth the walk. One the waves, a tower or a
   // beast finish pays nobody, and its rivals near it see the coin go grey.
-  // Three a wave, so no feed line: the fight is the news, not each wreck.
-  if (src && src.inv && src.team !== b.team) { awardGold(src, soldierBounty(), b.x, b.y); farmHit(src, b.x, b.y - 6); }
+  // Six or seven a wave, so no feed line: the fight is the news, not each wreck.
+  if (src && src.inv && src.team !== b.team) { awardGold(src, soldierBounty(b), b.x, b.y); farmHit(src, b.x, b.y - 6); }
   else coinPop(b.x, b.y - 6, true, 1 - b.team);
-  shareXp(b, SOLDIER_XP, 1 - b.team, src);
+  shareXp(b, Math.round(SOLDIER_XP * soldierType(b).xp), 1 - b.team, src);
 }
 
 function updateRobot(b, dt) {
@@ -529,10 +529,10 @@ function updateMerchant(b, dt) {
 // chassis under its side's pennant (drawRobot) - that marches the ROAD
 // (placeRoad, world.js) to the rival bird and strikes it. A soldier is
 // allowed to FIGHT and nothing else: nobody owns it (owner -1), no tree
-// tempts it, and it swings its axe (robotStrike) at any rival unit inside
-// SOLDIER_AGGRO, any rival building inside SOLDIER_SIEGE (their barracks in
-// its way), and then the bird itself,
-// SOLDIER_EAGLE_DMG a swing through hurtEagle - which is why two waves
+// tempts it, and it lands its kind's blow (robotStrike; SOLDIER_TYPES) on any
+// rival unit inside SOLDIER_AGGRO, any rival building inside SOLDIER_SIEGE
+// (their barracks in its way), and then the bird itself, its kind's `eagle`
+// a blow through hurtEagle - which is why two waves
 // meeting on the road grind each other down until somebody breaks the tie.
 // It carries a bounty paid to the rival who lands its last hit (robotDies,
 // soldierBounty in js/sim/farm.js), and it takes every hit, state and gust
@@ -551,20 +551,42 @@ function updateMerchant(b, dt) {
 const SOLDIER_SPD = 44;        // px/s, a step slower than a walking player
 const SOLDIER_AGGRO = 96;      // px it turns on a rival unit inside
 const SOLDIER_SIEGE = 40;      // px it turns on a rival building inside - what is in its way, not the whole ring round a roost
-const SOLDIER_HP_GROW = 10;    // health a soldier gains for every barracks `grow` the match has run
 const SOLDIER_TOWER_R = 160;   // px it turns on a rival road tower inside: the road's own stretch of it, so no column marches past one
-const SOLDIER_EAGLE_DMG = 8;   // nerve one swing takes off the rival bird (a hand's E swing is EAGLE_WORK_DMG, 20)
-const SOLDIER_XP = 20;         // XP it is worth to the rival scouts standing near (shareXp)
+const SOLDIER_XP = 20;         // XP a melee soldier is worth to the rival scouts standing near (shareXp); a kind's `xp` scales it
 const SOLDIER_WP_R = 28;       // px from a waypoint that counts as reached
 const SOLDIER_ZIP_GAIN = 96;   // px nearer the rival bird a ride's end must be than the soldier stands before it clips on: six tiles, so never a hop on and straight off
 const SOLDIER_ZIP_REACH = 96;  // px off a cable's track a marching soldier turns aside to it: the road's own width and the verge, so a column on the lane finds the line beside it
 
-function makeSoldier(o) {
-  const b = makeRobot(o); // the barracks' roll-out geometry and botHp
+// THE KINDS of soldier a wave is made of, League's three (the barracks' `mix`
+// and `siege`, STRUCTS.barracks, js/sim/structures.js, say how many of each).
+// What a kind IS lives here, never in an `if`: its health at the start (`hp`,
+// and `grow` more for every barracks `grow` of the match), its blow (`dmg`
+// every `cd` s from `reach` px away; a building takes `struct` times it, the
+// rival bird `eagle` nerve), the shot that carries a blow from range (`shot`:
+// s in the air, null for an axe), its bounty as a share of SOLDIER_BOUNTY
+// (soldierBounty, js/sim/farm.js) and its share of SOLDIER_XP, and its
+// sprite set (`spr`, SPRITES). MELEE walks in front, tanky and slow-hitting;
+// RANGED stands back and throws a packed snowball, about half a melee's
+// health; SIEGE is the sled catapult that walks last, lobs a big snowball
+// far, takes several tower bolts and hits buildings hard: it is what lets a
+// wave push a tower.
+const SOLDIER_TYPES = {
+  melee:  { hp: 60,  grow: 10, dmg: 5,  cd: 1.1, reach: 15, struct: 1, eagle: 8,  shot: 0,    bounty: 1,    xp: 1,   spr: 'robotTeam' },
+  ranged: { hp: 34,  grow: 6,  dmg: 6,  cd: 1.5, reach: 72, struct: 1, eagle: 6,  shot: 0.35, bounty: 0.65, xp: 0.7, spr: 'robotRanged' },
+  siege:  { hp: 150, grow: 25, dmg: 10, cd: 2.4, reach: 96, struct: 3, eagle: 20, shot: 0.7,  bounty: 3.2,  xp: 2,   spr: 'robotSiege' },
+};
+function soldierType(b) { return SOLDIER_TYPES[b.type] || SOLDIER_TYPES.melee; }
+
+
+function makeSoldier(o, type) {
+  const b = makeRobot(o); // the barracks' roll-out geometry
   b.kind = 'soldier';
-  // tougher every `grow`, like its bounty (soldierBounty, js/sim/farm.js), so a
-  // hero's grown blow never makes every hit on one a last hit
-  b.hp = b.maxHp = b.maxHp + SOLDIER_HP_GROW * Math.floor(state.elapsed / STRUCTS.barracks.tiers[0].grow);
+  b.type = SOLDIER_TYPES[type] ? type : 'melee';
+  // its kind's health, tougher every `grow`, like its bounty (soldierBounty,
+  // js/sim/farm.js), so a hero's grown blow never makes every hit on one a last hit
+  const T = soldierType(b);
+  b.hp = b.maxHp = T.hp + T.grow * Math.floor(state.elapsed / STRUCTS.barracks.tiers[0].grow);
+  b.shot = null; // a blow in the air from range: { tg, t, dmg, x, y } (soldierShot)
   b.owner = -1; // nobody's: no cargo, no payout but the bounty
   b.lane = o.lane === undefined ? 1 : o.lane; // the bay's lane (updateMerchant): 0 top, 1 mid, 2 bot
   b.wayI = 0;
@@ -648,8 +670,10 @@ function updateSoldier(b, dt) {
     moving = true;
     return n.d;
   };
-  b.atkAim = null;
-  const swing = (pt, hit) => { b.atkAim = pt; if (b.atkCd <= 0) { b.atkCd = ROBOT_ATK_CD; hit(); } };
+  b.atkAim = null; b.hitFoe = null;
+  const T = soldierType(b);
+  if (b.shot) soldierShot(b, dt);
+  const swing = (pt, hit) => { b.atkAim = pt; if (b.atkCd <= 0) { b.atkCd = T.cd; hit(); } };
   const rival = state.drop && state.drop.eagles[1 - b.team];
   const roost = rival && rival.state === 'down' ? rival : null;
   let busy = false;
@@ -658,8 +682,8 @@ function updateSoldier(b, dt) {
   const foe = robotFoeUnit(b, SOLDIER_AGGRO);
   if (foe) {
     const pt = foePoint(foe, b.x, b.y - 1);
-    if (Math.hypot(pt.x - b.x, pt.y - (b.y - 1)) > ROBOT_REACH) busy = walkToward(pt.x, pt.y, 0) >= 0;
-    else { swing(pt, () => robotStrike(b, foe, pt)); busy = true; }
+    if (Math.hypot(pt.x - b.x, pt.y - (b.y - 1)) > T.reach) busy = walkToward(pt.x, pt.y, 0) >= 0;
+    else { b.hitFoe = foe; swing(pt, () => robotStrike(b, foe, pt)); busy = true; }
   }
   // 2. the rival bird, once the road has brought it close: a swing on the
   //    nearest roost tile (hurtEagle) - ahead of any building, since what
@@ -668,9 +692,9 @@ function updateSoldier(b, dt) {
     const t = aiEagleTile(roost, b);
     if (t) {
       const pt = { x: t.tx * TILE + 8, y: t.ty * TILE + 8 };
-      if (Math.hypot(pt.x - b.x, pt.y - (b.y - 1)) > ROBOT_REACH + 6) busy = walkToward(pt.x, pt.y, 1) >= 0;
+      if (Math.hypot(pt.x - b.x, pt.y - (b.y - 1)) > T.reach + 6) busy = walkToward(pt.x, pt.y, 1) >= 0;
       else {
-        swing(pt, () => { sfxAt('swing', b.x, b.y); hurtEagle(roost, SOLDIER_EAGLE_DMG, null, pt.x, pt.y); });
+        swing(pt, () => robotStrike(b, roost, pt));
         busy = true;
       }
     }
@@ -682,7 +706,7 @@ function updateSoldier(b, dt) {
     const st = enemyStructNear(b.team, b.x, b.y - 1, SOLDIER_SIEGE) || towerNear(b.team, b.x, b.y - 1, SOLDIER_TOWER_R);
     if (st) {
       const pt = foePoint(st, b.x, b.y - 1);
-      if (Math.hypot(pt.x - b.x, pt.y - (b.y - 1)) > ROBOT_REACH) busy = walkToward(pt.x, pt.y, 1) >= 0;
+      if (Math.hypot(pt.x - b.x, pt.y - (b.y - 1)) > T.reach) busy = walkToward(pt.x, pt.y, 1) >= 0;
       else { swing(pt, () => robotStrike(b, st, pt)); busy = true; }
     }
   }
@@ -706,10 +730,9 @@ function updateSoldier(b, dt) {
 }
 
 // ------------------------------------------------------------ soldier blows
-// What a wave's soldier swings (the `soldiers` banner above): an axe.
-const ROBOT_DMG = 5;       // one swing, against a unit or a building
-const ROBOT_ATK_CD = 1.1;  // seconds between those swings
-const ROBOT_REACH = 15;    // px from the body to what its axe can reach
+// What a wave's soldier lands (the `soldiers` banner above): a melee one's axe,
+// a ranged or siege one's snowball. The numbers are its kind's (SOLDIER_TYPES).
+const SOLDIER_LOB = 14;    // px a siege snowball's arc rises at its middle (drawn: drawSoldierShot, js/draw/bodies.js)
 
 // nearest building belonging to any other team, within r px of (x, y)
 function enemyStructNear(team, x, y, r) {
@@ -723,7 +746,7 @@ function enemyStructNear(team, x, y, r) {
   return best;
 }
 // ---- a soldier's simple attack ------------------------------------------
-// One axe swing on a flat cooldown. Nothing here scales with anything yet;
+// One blow on its kind's flat cooldown. Nothing here scales with anything yet;
 // that is the balance pass.
 // Where a soldier aims. A body is a point a little above its feet; a building
 // is the nearest point on its FOOTPRINT, not its centre - the barracks is
@@ -754,14 +777,42 @@ function robotFoeUnit(b, range) {
   }
   return best;
 }
-// the blow itself: a building goes through hurtStruct (the same path an E
-// swing takes), any BODY through the one blow every unit takes (hurtUnit,
-// js/sim/actions.js), credited to the bot's owner (a soldier's is nobody)
+// the blow itself, its kind's: an axe lands now, a snowball is thrown and
+// lands when its time in the air is up (soldierShot) on whatever it was
+// thrown at, even if that has stepped away - a lob, not a dodgeable shot
 function robotStrike(b, e, pt) {
-  const src = players[b.owner] || null;
+  const T = soldierType(b);
+  if (T.shot) {
+    sfxAt('swing', b.x, b.y);
+    // `live`: a body is hit where it stands when the ball lands; a building or the bird where it was aimed
+    b.shot = { tg: e, t: 0, x: pt.x, y: pt.y, x0: b.x, y0: b.y - 6, live: e.tx === undefined && !(state.drop && state.drop.eagles.indexOf(e) >= 0) };
+    return;
+  }
+  sfxAt('swing', b.x, b.y);
+  soldierLand(b, e, pt);
+}
+// where a soldier's blow lands: a building goes through hurtStruct (the same
+// path an E swing takes), the rival bird through hurtEagle, any BODY through
+// the one blow every unit takes (hurtUnit, js/sim/actions.js), credited to
+// the bot's owner (a soldier's is nobody)
+function soldierLand(b, e, pt) {
+  const T = soldierType(b), src = players[b.owner] || null;
   const d = Math.hypot(pt.x - b.x, pt.y - (b.y - 1)) || 1;
   const nx = (pt.x - b.x) / d, ny = (pt.y - (b.y - 1)) / d;
-  sfxAt('swing', b.x, b.y);
-  if (e.tx !== undefined) hurtStruct(e, ROBOT_DMG, src, b); // `b` swung it, so STRUCT_DR stays off: ROBOT_DMG is already a building number
-  else hurtUnit(e, ROBOT_DMG, nx, ny, src, { cause: 'soldier' });
+  if (state.drop && state.drop.eagles.indexOf(e) >= 0) { if (e.state === 'down') hurtEagle(e, T.eagle, null, pt.x, pt.y); }
+  else if (e.tx !== undefined) { if (structures.indexOf(e) >= 0) hurtStruct(e, T.dmg * T.struct, src, b); } // `b` swung it, so STRUCT_DR stays off: a kind's dmg is already a building number
+  else if (unitAlive(e)) hurtUnit(e, T.dmg, nx, ny, src, { cause: 'soldier' });
+}
+// a snowball in the air: when its time is up it lands on its mark (soldierLand)
+// and bursts into snow where it hit. A wreck's throw is lost with it (robotDies)
+function soldierShot(b, dt) {
+  const s = b.shot, T = soldierType(b);
+  s.t += dt;
+  if (s.live) { s.x = s.tg.x; s.y = s.tg.y - 4; } // the ball follows a body (drawn to where it is)
+  if (s.t < T.shot) return;
+  b.shot = null;
+  const e = s.tg, pt = { x: s.x, y: s.y };
+  soldierLand(b, e, pt);
+  burst(pt.x, pt.y, '#eef4fb', T.struct > 1 ? 10 : 5, 45, 0.4, true);
+  sfxAt('rockLand', pt.x, pt.y);
 }
