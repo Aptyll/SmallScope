@@ -120,7 +120,7 @@ const CLASSES = [
   {
     name: 'WARRIOR', role: 'PRESSURE, BLOCKING, MOMENTUM',
     look: { sex: 0, tone: 4, hair: 0, hairCol: 1, beard: 2, face: 0 },
-    blurb: ['THE FIGHT IS AT ARM\'S LENGTH: GET THERE.', 'THE SHIELD EATS ARROWS. THE RUSH CARRIES BODIES.', 'THE SWORD REACHES A BODY LENGTH. THE EXECUTE FINISHES IT.'],
+    blurb: ['THE FIGHT IS AT ARM\'S LENGTH: GET THERE.', 'THE SHIELD EATS ARROWS. THE RUSH CARRIES BODIES.', 'THE SWORD REACHES A BODY LENGTH. THE FINISHING BLOW ENDS IT.'],
     story: 'THE EMPIRE SENDS ITS SOLDIERS HOME WHEN THE WAR ENDS, AND ITS WARS DO NOT END. A WARRIOR IS ONE WHO WALKED HOME ANYWAY. THE ONLY GATE STILL OPEN TO THEM WAS THE ONE AT THE PASS.', // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
     base: { hp: 120, dmg: 18, armor: 20, ap: 0, haste: 0, ms: PLAYER_SPEED },
     grow: { hp: 9, dmg: 1.6, as: 0.01, armor: 2.6 },
@@ -191,10 +191,10 @@ const CLASSES = [
     // the fourth named hero and the first mage (js/sim/ignia.js): fire that
     // spreads through a crowd and zones a lane, at the hunter's range or a
     // little short of it; slow damage, not burst, and the least life of anyone
-    name: 'IGNIA', role: 'THE FIREMAGE', body: 1, passive: 'spreadflame', // HERO_PASSIVE, js/sim/ignia.js
+    name: 'IGNIA', role: 'THE HEARTHKEEPER', body: 1, passive: 'spreadflame', // HERO_PASSIVE, js/sim/ignia.js
     look: { sex: 1, tone: 1, hair: 3, hairCol: 3, beard: 0, face: 2 },
     blurb: ['THE ONLY FIRE FOR MILES.', 'ONE BURNING RIVAL SETS THE NEXT ALIGHT.', 'SNOW AND WATER PUT YOUR FIRE OUT.'],
-    story: "SHE KEPT THE ETERNAL FLAME IN THE EMPIRE'S HIGH TEMPLE, AND LET IT GO OUT ONE WINTER SO A VILLAGE COULD KEEP WARM. THEY DID NOT TAKE IT WELL. IN THE VALLEY SHE IS THE ONLY FIRE FOR MILES, AND EVERYONE WANTS TO SIT NEAR HER.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
+    story: "SHE KEPT THE GREAT HEARTH IN THE EMPEROR'S HALL, AND ONE HARD WINTER SHE CARRIED ITS COALS TO A VILLAGE THAT HAD NONE. THE HALL WENT COLD AND THE COURT DID NOT FORGIVE IT. IN THE VALLEY SHE IS THE ONLY FIRE FOR MILES, AND EVERYONE WANTS TO SIT NEAR HER.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
     // a staff's ember, not an arrow: a little shorter and slower than the shortbow
     staff: 'crook', // her CROOK AND LANTERN, carried upright (HERO_STAVES, js/draw/ignia.js)
     attack: { name: 'CROOK AND LANTERN', art: 'staff', cycle: 60 / 60, kb: 0.6, shot: { speed: 260, life: 0.85, col: '#ff9a3a', look: 'ember' } },
@@ -214,7 +214,7 @@ const CLASSES = [
     name: 'AURA', role: 'THE NORTHERN LIGHT', body: 1, passive: 'starlight', // HERO_PASSIVE, js/sim/aura.js
     look: { sex: 1, tone: 0, hair: 2, hairCol: 5, beard: 0, face: 2 },
     blurb: ['THE NIGHT IS ON YOUR SIDE.', 'STRIKE FROM FURTHER THAN ANYONE. NOTHING HIDES FROM YOUR LIGHT.', 'CAUGHT UP CLOSE, YOU HAVE ONE STEP.'],
-    story: "SHE READ THE NIGHT SKY FOR THE EMPIRE'S NAVY, AND READ IN IT THAT THE FLEET WOULD SINK. IT DID. THEY DECIDED SHE MUST HAVE ARRANGED IT. THE VALLEY'S NIGHTS ARE CLEAR AND BLUE, AND SHE SAYS THE LIGHTS HERE SAY DIFFERENT THINGS.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
+    story: "SHE STEERED THE EMPIRE'S FLEET BY THE STARS, AND WARNED THE ADMIRALS A STORM WAS COMING. THEY SAILED ANYWAY, AND SHE BROUGHT HER ONE SHIP HOME. THE VALLEY'S NIGHTS ARE CLEAR AND BLUE, AND SHE STILL KNOWS EVERY STAR BY NAME.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
     // a staff's star bolt: a little shorter and slower than the shortbow
     staff: 'shard', // her STAR SHARD, carried upright (HERO_STAVES, js/draw/aura.js)
     attack: { name: 'STAR SHARD', art: 'starstaff', cycle: 66 / 60, kb: 0.5, shot: { speed: 270, life: 0.95, col: '#e6f8ff', look: 'starbolt' } },

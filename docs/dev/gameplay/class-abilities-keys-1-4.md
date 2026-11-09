@@ -16,8 +16,8 @@ for keys by index. The hunter's keys carry one option each; the warrior's carry 
 | --- | --- | --- |
 | 1 | SHIELD WALL | **WAR CRY** — every rival unit within `CRY_R` slowed (`rank` `slow` for `slowT`) and marked (`mark`) for both maps; nothing hurt (`abWarCry`) |
 | 2 | BULL RUSH | **WHIRLWIND** — everything alive within `WHIRL_R` cut for its `rank` `dmg` and thrown `WHIRL_KB`, buildings cut too (`abWhirlwind`) |
-| 3 | STOMP | **HAMSTRING** — the wedge ahead (`HAM_R`/`HAM_HALF`) cut for `dmg` and rooted `root` (its `rank`) (`abHamstring`) |
-| 4 | EXECUTE | **SECOND WIND** — `rank` `heal` (30/40/50%) of max hp back over `t` (4 s), paid out each tick by `updateAbilities` (`p.windT`/`p.windRate`, `abSecondWind`); the strip's active tell |
+| 3 | STOMP | **LEG SWEEP** — the wedge ahead (`HAM_R`/`HAM_HALF`) cut for `dmg` and rooted `root` (its `rank`) (`abSweep`) |
+| 4 | FINISHING BLOW | **SECOND WIND** — `rank` `heal` (30/40/50%) of max hp back over `t` (4 s), paid out each tick by `updateAbilities` (`p.windT`/`p.windRate`, `abSecondWind`); the strip's active tell |
 
 The press goes
 through `input.ability` (edge-triggered, like the dodge) into `tryAbility(p, i)`, so a bot casts
@@ -78,7 +78,7 @@ is exempt. That is not written into each ability: they sweep `unitsNear`/`unitsH
 next kind of neutral fauna pushed into `animals` is in range of every key on the day it is added,
 with no edit here. A **structure** is not a unit, so it takes no state — but a rival's building
 takes the *damage* of every blow with an area, through `hurtStruct` (`STRUCT_DR` off): the SLAM and
-the EXECUTE sweep `structsInCone`, the STOMP `structsNear`, the BULL RUSH's wall slam and the NET
+the FINISHING BLOW sweep `structsInCone`, the STOMP `structsNear`, the BULL RUSH's wall slam and the NET
 SHOT's line check `structFoe` on what stopped them. The roosting eagle is an objective with its
 own damage path, and takes none of it.
 
@@ -108,7 +108,7 @@ WARRIOR — close pressure, blocking, momentum:
 | 1 | **SHIELD WALL** | 9/8.5/8/7.5/7 s | raises a tower shield toward the aim for up to its `rank` `t`, 2.2 s (the cooldown starts when it comes DOWN). Any shot flying into the front arc dies on it (`abShieldBlocks`, checked in the arrow loop before the body); walking drops to 40 % and the weapon is out of hand. **The key again while the wall is up is the SLAM** (`tryAbility` sets `p.castSlam`, the row's `use` branches on it): a `SLAM_CAST` (0.16 s) wind-up with the wedge on the snow, then `abSlam` — `dmg` (8/12/16/20/24), `stun` (1.1 s) and `SLAM_KB` down the face on everything in `SLAM_R`/`SLAM_HALF` (30 px, ±0.85 rad, `unitsInCone`/`structsInCone`, js/sim/actions.js) — and the wall is spent (`abShieldDown`, the cooldown starts). **Mid-charge the same key slams too**: the rush ends on the spot (`rushEnd`, the carried body slammed where it stands) and the wind-up begins there; with no wall up it waits on the shield's cooldown like the raise would. A rush may be cast with the wall up — only the charge itself refuses the other keys |
 | 2 | **BULL RUSH** | 12/11.5/11/10.5/10 s | a 0.3 s wind-up with **the line on the snow** for both sides (`RUSH_SPD × RUSH_T` long, stopped at solids, a bar at its end where the slam will be — the body faces the live aim the whole wind-up), then charges the aim line at 300 px/s for 0.42 s (its own movement branch in `updatePlayer`, no i-frames, ramping to speed over `RUSH_RAMP`): the **first rival hit is carried** on the shoulder and **slammed** at the end (a bear is never picked up: the charge stops against it and slams it where it stands) — 10/15/20/25/30 damage + 0.6 s stun, ×1.6 driven into a wall (`rushStep`/`rushEnd`) |
 | 3 | **STOMP** | 14/13/12/11/10 s | a leap-stomp at the feet — the ring of `STOMP_R` on the snow through the wind-up, filling in as it nears, and flashed white where it lands (`abFx`): 12/17/22/27/32 damage + radial knockback + a beat of stun in `STOMP_R`, and the **crater** (`craters`) is deep snow that slows rivals crossing it for 4 s |
-| 4 | **EXECUTE** | 18/15/12 s | a 0.55 s overhead wind-up with the wedge on the snow (`EXEC_R`/`EXEC_HALF`, 30 px, ±0.75 rad — narrower than the sword), then `abExecute`: every unit in it takes `execDmg` — its `rank` `dmg` (10/20/30) plus `missing` (half) of the life it has already lost, capped at `bonus` (40) extra — so a body the other three keys have worked over is finished, and a full one takes the base. `EXEC_KB` shove; a cut over twice the base is a crit |
+| 4 | **FINISHING BLOW** | 18/15/12 s | a 0.55 s overhead wind-up with the wedge on the snow (`EXEC_R`/`EXEC_HALF`, 30 px, ±0.75 rad — narrower than the sword), then `abFinish`: every unit in it takes `execDmg` — its `rank` `dmg` (10/20/30) plus `missing` (half) of the life it has already lost, capped at `bonus` (40) extra — so a body the other three keys have worked over is finished, and a full one takes the base. `EXEC_KB` shove; a cut over twice the base is a crit |
 
 ARMATOS, THE LAST STANDARD — the defensive initiator, the first hero with a passive. His rules
 live in **[js/sim/armatos.js](../../../js/sim/armatos.js)** (`ARM_AB`, its `armatos` banner), his
@@ -161,7 +161,7 @@ dashes pass through the small bodies a roll passes (`through` on the `HERO_DASH`
 | 3 | **OUTMANEUVER** | 9/8.5/8/7.5/7 s | refused without a rival body within `OUT_PICK` of the aim and `OUT_RANGE` of her (`slipTarget`, the row's `ok`); she slips through it (`p.dash = 'slip'`) to `OUT_PAST` beyond, dealing `dmg` and marking it for `mark`: her next basic attack on it deals `markDmg` (12/18/24/30/36) + `OUT_BONUS_AD` of her damage more |
 | 4 | **THE FINAL GAMBIT** | 70/60/50 s | calls out a rival hero within `DUEL_RANGE` (`duelTarget`) for `t`: she walks ×`DUEL_MS` toward them. The key again (`recast`, refused past `FLURRY_REACH`) closes in and strikes `FLURRY_N` times `FLURRY_GAP` apart (`bellaStrike`): `FLURRY_DMG`, then a finisher of `dmg` (18/30/42) + `missing` of the life they are missing |
 
-IGNIA, THE FIREMAGE — the first mage: she burns a fight down, slowly, and the snow and the creek
+IGNIA, THE HEARTHKEEPER — the first mage: she burns a fight down, slowly, and the snow and the creek
 put her out. Her rules live in **[js/sim/ignia.js](../../../js/sim/ignia.js)** (`IGNIA_AB`, its
 `ignia` banner), her pixels in [js/draw/ignia.js](../../../js/draw/ignia.js), her icons and looks in
 [js/sprites/ignia.js](../../../js/sprites/ignia.js). She is fragile (84 hp, 10 armor) and shoots
