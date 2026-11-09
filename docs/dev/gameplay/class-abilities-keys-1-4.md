@@ -67,7 +67,7 @@ the held one lit gold
 js/ai/ai.js, first thing `aiThink` asks): the ultimate whenever it can rank, then each basic key
 unlocked once, then the basics maxed in the hero's `rankOrder` (its `CLASSES` row: HUNTER
 shot, net, grapple; WARRIOR stomp, rush, shield; ARMATOS verdict, march, brace; FORTIVA sever,
-yoke, heart; AURA star, orb, step; SALVIA poultice, cloak, snowdrops; LUCERNA crook, shoo, lantern; RUPES heave, shed, shoulder; VARRO lunge, snap, howl; BUCINA note, blast, echo). The cd column in the tables below is every rank's; the numbers in the text are rank
+yoke, heart; AURA star, orb, step; SALVIA poultice, cloak, snowdrops; LUCERNA crook, shoo, lantern; RUPES heave, shed, shoulder; NIX shard, drift step, cloud; VARRO lunge, snap, howl; BUCINA note, blast, echo). The cd column in the tables below is every rank's; the numbers in the text are rank
 1's, and each row's `rank` table has the rest.
 
 **Every ability lands on every kind of body.** A player, a rabbit, a deer, a bird, a wolf and a
@@ -302,6 +302,23 @@ nobody when it falls (`animalDies`).
 | 2 | **HOWL** | 14/13/12/11/10 s | every rival body within `HOWL_R` is shoved out (`HOWL_KB`) and slowed ×`slow` for `slowT` (1/1.25/1.5/1.75/2 s); his called wolves run ×`HOWL_PACK_MUL` for `HOWL_PACK_T`. No damage |
 | 3 | **SNAP** | 9/8.5/8/7.5/7 s | needs a rival in `SNAP_REACH` (`ok`): two strikes `SNAP_GAP` apart, each `dmg` (10/14/18/22/26), on his mark if it stands in reach, else the rival nearest the aim; the second slows ×`slow` for `slowT` |
 | 4 | **CALL THE PACK** | 90/75/60 s | needs a rival hero within `CALL_PICK` of the aim and `CALL_RANGE` (220 px) of him (`ok`): `CALL_N` wolves come out beside the pine nearest that hero (within `CALL_WOODS` tiles; at his heels in the open, `callSpots`) and hunt only it at `CALL_SPD`, biting `dmg` (5/7/9) every `CALL_BITE_CD` as his blows (`ab: 'call'`). Each has `wolfHp` (40/60/80) health; after `t` (5/5.5/6 s), or when the hero falls, they run off (`CALL_LEAVE_T`) |
+
+NIX, THE SNOWBLIND — the night scout: an assassin of skill and weather, never magic. Her rules
+live in **[js/sim/nix.js](../../../js/sim/nix.js)** (`NIX_AB`, its `nix` banner), her pixels in
+[js/draw/nix.js](../../../js/draw/nix.js), her icons, looks and dirk in
+[js/sprites/nix.js](../../../js/sprites/nix.js). Light (98 hp, 14 armor) and a step faster, with the
+quickest, shortest cut (the ICE DIRK). Her shards and clouds are things she leaves in the world
+(`nixShards`, `nixClouds`), stepped by `HERO_TICK`. Hidden means hidden from the other side's fog
+(`HERO_COVER`, asked by `coverHide`): the rival's bots and screen both
+lose her; a mark (`markUnit`: AURA's light, the falcon) still shows her.
+
+| key | name | cd | what it does |
+| --- | --- | --- | --- |
+| P | **NIGHT WATCH** | — | she walks ×(1 + `WATCH_MS` × `state.darkness`) (`nixMoveMul`, a `HERO_MOVE` row). Once she has been hidden (her cloud, SQUALL, or out of the other side's sight: `nixHidden`), her next blow on a rival hero adds `WATCH_DMG` + `WATCH_AD` of her DAMAGE, ×(1 + `WATCH_NIGHT` × darkness) (`watchDeal`, the passive's `deal`). Any rival she strikes is one DRIFT STEP can reach for `DRIFT_STEP_MEM` |
+| 1 | **ICE SHARD** | 7/6.5/6/5.5/5 s | a shard down the aim, `SHARD_LEN` out: the first rival body (or building) takes `dmg` (18/27/36/45/54); then it flies home to her hand, and caught (`SHARD_CATCH`) gives back `SHARD_REFUND` of the wait (`updateNixShards`) |
+| 2 | **SNOW CLOUD** | 18/17/16/15/14 s | a cloud `CLOUD_R` round her feet for `t` (3.5-5.5 s), one at a time. Inside it she is hidden from a side none of whose heroes or soldiers stands in it (`nixCover`); a blow she strikes from it shows her for `CLOUD_OUT`. Both sides see the cloud; her own side sees her in it faintly (`HERO_FADE`) |
+| 3 | **DRIFT STEP** | 12/11/10/9/8 s | needs a rival she struck in the last `DRIFT_STEP_MEM` near the aim (`ok`): a cut for `dmg` (10/16/22/28/34), then a quick step (`HERO_DASH.drift`) to `DRIFT_STEP_PAST` behind them, turned to face them (`nixDrift`, `driftEnd`) |
+| 4 | **SQUALL** | 80/65/50 s | she vanishes for `WHITEOUT_T`: untouchable (`invuln`) and hidden from both sides' rivals, then comes out beside the nearest rival hero within `WHITE_REACH` and strikes for `dmg` (60/95/130) + `WHITE_AD` of her DAMAGE (`nixWhiteStrike`). If that hero falls within `WHITE_RESET`, the key is ready again once; the cast it gives back cannot give itself back |
 
 Bots play the named heroes through each row's `bot(p, foe, d, clear)` (`abBotKey`, asked by the ladder's
 ability block in js/ai/ai-ladder.js); a row's `botAim(p, foe)` turns the aim to a point of its own for that cast, held through the wind-up until it lands (AURA's step away, SALVIA's heals, LUCERNA's lantern). A hero whose rows carry no `bot` keeps the ladder's old range rules.

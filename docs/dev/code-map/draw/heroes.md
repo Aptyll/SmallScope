@@ -7,3 +7,4 @@
 | a mage's staff carried upright in the leading hand in every facing, held through a cast, mirrored facing left or up (IGNIA's crook, AURA's star shard, SALVIA's snowdrop staff, LUCERNA's lantern hung from the hand, HIEMS's snowflake, BUCINA's horn) | `HERO_STAVES`, `heroStaffOf`, `heroStaff` (`drawHeldTool`, bodies.js) | `hero blades` |
 | what a hero wears on or around its body beyond its sprite (ARMATOS's standard on his back, FORTIVA's glints and shell), drawn behind and over the body | `HERO_BODY_FX`, `heroBodyFx` (`drawPlayer`, bodies.js) | `hero blades` |
 | a hero drawn as something else for a while, in place of its sprite and held tool (RUPES's snowball while he rolls) | `HERO_BODY_DRAW`, `heroBodyDraw` (`drawPlayer`, bodies.js) | `hero blades` |
+| a hero its own kit hides, drawn see-through for the side that still sees it (NIX in her cloud) | `HERO_FADE`, `heroFade` (`drawPlayer`, bodies.js) | `hero blades` |

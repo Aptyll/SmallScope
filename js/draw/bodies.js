@@ -430,6 +430,7 @@ function drawPlayer(p, ex, ey, now) {
       ctx.beginPath(); ctx.rect(sx - 32, py + bob + seat.hip - 64, spr.width + 64, 64); ctx.clip();
     }
     if (p.invuln > 0 && state.mode !== 'title' && ((now * 12) | 0) % 2 === 0) ctx.globalAlpha = 0.45;
+    const fade = heroFade(p); if (fade < 1) ctx.globalAlpha = Math.min(ctx.globalAlpha, fade); // a hero hidden by its own kit, as its side sees it (HERO_FADE, js/draw/heroes.js)
     heroBodyFx(p, ax, ay, now, false); // a hero's own marks behind the body: ARMATOS's standard (HERO_BODY_FX, js/draw/heroes.js)
     if (pose && pose.rot) {
       ctx.save();

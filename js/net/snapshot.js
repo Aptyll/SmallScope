@@ -187,6 +187,7 @@ function snapSingles() {
   s.lucerna = [pack(lucernaHooks, 0), pack(lucernaLanterns, 0), pack(lucernaCircles, 0)]; // LUCERNA's crooks, lanterns and rings of light (js/sim/lucerna.js)
   s.bucina = [pack(bucinaEchoes, 0), pack(bucinaCalls, 0)]; // BUCINA's echoes and horn calls (js/sim/bucina.js)
   s.hiems = [pack(hiemsGlazes, 0), pack(hiemsStorms, 0)]; // HIEMS's ice and blizzards (js/sim/hiems.js)
+  s.nix = [pack(nixShards, 0), pack(nixClouds, 0)]; // NIX's shards and clouds (js/sim/nix.js)
   return s;
 }
 // `team` (0 or 1): only what that side sees (the `fog` banner); left out, everything
@@ -243,6 +244,7 @@ function snapApplySingles(s) {
   if (s.lucerna) [lucernaHooks, lucernaLanterns, lucernaCircles].forEach((L, i) => { L.length = 0; for (const w of unpack(s.lucerna[i])) L.push(w); });
   if (s.bucina) [bucinaEchoes, bucinaCalls].forEach((L, i) => { L.length = 0; for (const w of unpack(s.bucina[i])) L.push(w); });
   if (s.hiems) [hiemsGlazes, hiemsStorms].forEach((L, i) => { L.length = 0; for (const w of unpack(s.hiems[i])) L.push(w); });
+  if (s.nix) [nixShards, nixClouds].forEach((L, i) => { L.length = 0; for (const w of unpack(s.nix[i])) L.push(w); });
 }
 // a field onto an entity the game holds by identity: a nested plain object
 // is merged into the one already there (a player's `inv` is aliased by the
@@ -867,6 +869,7 @@ function snapBlank() {
   bucinaEchoes.length = 0; bucinaCalls.length = 0;
   hiemsGlazes.length = 0; hiemsStorms.length = 0;
   iceBreaks.length = 0; pads.length = 0;
+  nixShards.length = 0; nixClouds.length = 0;
   Object.assign(orca, ORCA_FRESH());
   for (const c of camps) { c.repopT = 0; c.seen = [0, 0]; }
   if (state.drop) for (const e of state.drop.eagles) for (const k of Object.keys(e)) if (!SNAP_SKIP.has(k) && k !== 'team') e[k] = typeof e[k] === 'number' ? 0 : null;
@@ -935,7 +938,7 @@ function snapQuantize() {
   };
   walk(players); for (const k in SNAP_KINDS) walk(SNAP_KINDS[k]());
   if (state.drop) walk(state.drop.eagles);
-  walk(objects); walk(nets); walk(guards); walk(brushfires); walk(auraStars); walk(auraOrbs); walk(auraCurtains); walk(salviaBundles); walk(salviaDrops); walk(salviaThaws); walk(lucernaHooks); walk(lucernaLanterns); walk(lucernaCircles); walk(bucinaEchoes); walk(bucinaCalls); walk(hiemsGlazes); walk(hiemsStorms); walk(pads); walk(state.end); walk(state.eagleCine);
+  walk(objects); walk(nets); walk(guards); walk(brushfires); walk(auraStars); walk(auraOrbs); walk(auraCurtains); walk(salviaBundles); walk(salviaDrops); walk(salviaThaws); walk(lucernaHooks); walk(lucernaLanterns); walk(lucernaCircles); walk(bucinaEchoes); walk(bucinaCalls); walk(hiemsGlazes); walk(hiemsStorms); walk(nixShards); walk(nixClouds); walk(pads); walk(state.end); walk(state.eagleCine);
 }
 // One echo: quantize, frame, snapshot, blank, apply, frame; the pixels that differ,
 // the frame's own noise (two renders of the same state, for anything that
