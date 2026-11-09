@@ -136,7 +136,12 @@ function crossHome() { if (!state.fade) practiceGo(crossHomeUrl()); }
 function partyLost() {
   if (homeParty) { crossHome(); return; }
   if (popOpen()) leavePop();
-  const mode = NET.mode;
+  const mode = NET.mode, m = state.menu;
+  // a join turned away here (a code typed again after a kick) ends as the
+  // refusal in updateRooms does: the box shakes, and the join is over - left
+  // standing, it hid every seat and held FIND MATCH shut
+  if (m.joining) m.codeShake = NAME_SHAKE_T;
+  m.joining = false; m.joinWait = 0; m.joinRetry = 0;
   netLeave();
   beginParty(mode || 'quick');
   SFX.deny();

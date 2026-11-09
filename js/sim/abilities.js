@@ -159,6 +159,7 @@ const CLASS_AB = [
   IGNIA_AB, // IGNIA - the brand, the brushfire, the warm hands, the wildfire (js/sim/ignia.js)
   AURA_AB, // AURA - the falling star, the drifting light, the step, the curtain (js/sim/aura.js)
   SALVIA_AB, // SALVIA - the poultice, the snowdrops, the warm cloak, the thaw (js/sim/salvia.js)
+  LUCERNA_AB, // LUCERNA - the crook, the lantern, the shoo, the circle of light (js/sim/lucerna.js)
   HIEMS_AB, // HIEMS - the icicle, the clear ice, the cold snap, the whiteout (js/sim/hiems.js)
 ];
 

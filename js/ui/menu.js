@@ -47,6 +47,9 @@ const LOGO_Y = 12;
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
   ['0.589', 'A NEW HERO, HIEMS THE LONG WINTER: EVERY HIT SHE LANDS CHILLS, THE THIRD CHILL FREEZES A RIVAL IN PLACE, AND SHE LAYS CLEAR ICE, SNAPS THE CHILLED INTO ROOTS AND WALKS IN A WHITEOUT THAT BLINDS WHOEVER IS CAUGHT IN IT. HER FIRST FROST SKIN IS ON THE SKINS SCREEN.'],
+  ['0.588', 'A PLAYER WHO WAS SHOWN OUT OF A PARTY AND TYPES ITS CODE AGAIN NOW LANDS BACK IN THEIR OWN PARTY, SEATS AND FIND MATCH READY, NOT ON AN EMPTY SCREEN.'],
+  ['0.587', 'A NEW HERO, LUCERNA THE LANTERN: HER CROOK PULLS A RIVAL IN, HER THROWN LANTERN BRINGS AN ALLY HOME, AND HER LIGHT SHOWS WHO HIDES NEAR HER.'],
+  ['0.586', 'IN CHAMP SELECT, IF YOUR LAST HERO WAS BANNED, THE STAGE UNDER THE GRID STAYS EMPTY UNTIL YOU POINT AT A HERO INSTEAD OF SHOWING THE BANNED ONE.'],
   ['0.585', 'SOFTFALL IS PLAYED ON KEYBOARD AND MOUSE ONLY: GAMEPAD SUPPORT AND ITS SETTINGS PAGE ARE GONE, AND THE ARROW KEYS NOW SHOW WHICH CARD THEY PICK ON THE SKINS SCREEN.'],
   ['0.584', 'WHEN THE HOST LEAVES AN ONLINE MATCH, YOU SEE THE HOST LEFT AND THE LOBBY BUTTON AT ONCE, NOT A REPLAY OF YOUR LAST FOUR SECONDS.'],
   ['0.583', 'UNDER THE HOOD: THE EAGLE\'S LANDING REPAINTS THE GROUND THROUGH THE SAME SHARED STEP AS EVERY OTHER GROUND CHANGE.'],
@@ -1371,7 +1374,7 @@ function lobbyHit() {
     if (S.more && over(S.prev, 2, 2)) return 'skinPrev';
     if (S.more && over(S.next, 2, 2)) return 'skinNext';
   } else {
-    if (over(L.figure, 0, 0)) return 'hero';
+    if (lobbyStageUp(L) && over(L.figure, 0, 0)) return 'hero';
     const f = heroFilterAt(L);
     if (f) return f;
     const hi = heroCellAt(L.heroes);
@@ -1600,6 +1603,19 @@ const CLASS12 = [
     '..ovo.......',
     '...o........',
   ],
+  [ // LUCERNA: her lantern, lit, on its ring
+    '....oooo....',
+    '....o..o....',
+    '...oooooo...',
+    '...oggggo...',
+    '..ogWWWWgo..',
+    '..ogWWWWgo..',
+    '..ogWbbWgo..',
+    '..ogWWWWgo..',
+    '...oggggo...',
+    '....oooo....',
+    '............',
+  ],
   [ // HIEMS: a six-armed snowflake
     '.....o......',
     '..o.oWo.o...',
@@ -1648,10 +1664,16 @@ function classIcon12(i, you) {
 // that frame. sw is the swap-pop ease; a lock-in bursts a second ring out
 // from the feet (lockFx) and the light stays up while the count runs.
 const LOCK_FX_T = 0.7; // s: the lock-in's ring
+// the stage stands only when it has your hero to show: never through the
+// bans, and in the picks only while you point at one (a banned last hero
+// leaves you pointing at none)
+function lobbyStageUp(L) {
+  return L.stage && DRAFT.phase !== 'ban' && !(DRAFT.phase === 'pick' && draftWant(localId) < 0);
+}
 function drawLobbyStage(now, a, sw) {
-  const m = state.menu;
-  const { cx, body, S, stage } = lobbyLayout();
-  if (!stage || DRAFT.phase === 'ban') return;
+  const m = state.menu, L = lobbyLayout();
+  const { cx, body, S } = L;
+  if (!lobbyStageUp(L)) return;
   const feet = body.y + 46 * S;
   const lit = m.countT > 0 || m.lockT > 0 ? 1.7 : 1;
   ctx.globalAlpha = a * 0.4;

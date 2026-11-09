@@ -1,6 +1,6 @@
 # The two class bodies on the doll (doll.py): the HUNTER (pom beanie) and the WARRIOR
 # (fur hood with goggles, a trailing scarf, skate blades), and each named hero's looks
-# (ARMATOS: standard, oath; FORTIVA: unbroken, coif; BELLA: general, traitor; IGNIA: hearth, wanderer; AURA: light; SALVIA: hood, tent; HIEMS: scholar, frost). Their sizes are measured off the
+# (ARMATOS: standard, oath; FORTIVA: unbroken, coif; BELLA: general, traitor; IGNIA: hearth, wanderer; AURA: light; SALVIA: hood, tent; LUCERNA: lamp, dusk; HIEMS: scholar, frost). Their sizes are measured off the
 # hand-drawn 16 px frames in js/sprites/characters.js, so the doll's idle lands on those
 # frames pixel for pixel and the run and the roll it paints wear the same body.
 #
@@ -544,6 +544,42 @@ class Tent(Hearth):
         pass
 
 
+class Lamp(Standard):
+    """LUCERNA as LAMPLIGHTER (her default look): a flat cap over dark hair, a warm brown
+    greatcoat open on her side's waistcoat; Armatos's frame, the coat to the knee, boots"""
+    ARM_MAT, MITT_MAT = 'cloak', 'skin'
+    MARKS = [(-1.5, 0.9, 'e'), (1.5, 0.9, 'e')]
+
+    @staticmethod
+    def face_region(n, q):
+        """the cap's crown above, the hair round the face below it"""
+        return np.where(q[2] > 0.35, 'cloak', np.where((q[0] > 0.2) & (np.abs(q[1]) < 0.75) & (q[2] > -0.95), 'skin', 'hair'))
+
+    def head(self, cv, cam, hc, Rh, pose, snap):
+        cv.blob(cam, hc, Rh, self.HEAD_R, 'head', 'hair', p=self.HEAD_P, region=self.face_region)
+        self.face_marks(cv, cam, hc, Rh)
+
+    def coat(self, cv, cam, U, R):
+        cv.blob(cam, U(v3(0, 0, Z(6.1))), R, (2.75, 3.05, Z(2.05)), 'coat', 'cloak', p=2.2)
+        cv.blob(cam, U(v3(0, 0, Z(4.0))), R, (2.6, 3.1, Z(0.6)), 'hem', 'cloak', bias=-0.3)
+        cv.blob(cam, U(v3(1.4, 0, Z(6.4))), R, (1.2, 0.9, Z(1.6)), 'vest', 'coat', bias=0.3)
+
+    def extras(self, cv, cam, U, R, pose):
+        pass
+
+    def ball_head(self, cv, cam, hc, Rh):
+        cv.blob(cam, hc, Rh, (2.6, 2.85, 2.5), 'head', 'cloak', p=self.HEAD_P)
+
+
+class Dusk(Lamp):
+    """LUCERNA as DUSK ROAD (the first skin): the LAMPLIGHTER's coat with a mustard scarf
+    wound at the neck (a wide hat on the drawn frames)"""
+
+    def coat(self, cv, cam, U, R):
+        super().coat(cv, cam, U, R)
+        cv.blob(cam, U(v3(0.1, 0, Z(8.0))), R, (2.6, 3.2, Z(0.6)), 'scarf', 'ember', bias=0.3)
+
+
 class Scholar(Wanderer):
     """HIEMS as WEATHER SCHOLAR (her default look): a deep blue hood up (the hair ramp, blue in
     her paint) over her side's robe, an ice clasp at the throat; Wanderer's frame, robe and boots"""
@@ -582,4 +618,5 @@ class Frost(Light):
 BODIES = {'hunter': Hunter(), 'warrior': Warrior(), 'standard': Standard(), 'oath': Oath(),
           'unbroken': Unbroken(), 'coif': Coif(), 'general': General(), 'traitor': Traitor(),
           'hearth': Hearth(), 'wanderer': Wanderer(), 'light': Light(),
-          'hood': Hood(), 'tent': Tent(), 'scholar': Scholar(), 'frost': Frost()}
+          'hood': Hood(), 'tent': Tent(), 'lamp': Lamp(), 'dusk': Dusk(),
+          'scholar': Scholar(), 'frost': Frost()}

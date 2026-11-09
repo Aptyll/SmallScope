@@ -85,7 +85,7 @@ more: the frames live on as the CATCH emote's (`EMOTES`, js/ui/screens.js). The 
 **The run, the held run and the dodge roll are the one set of player frames not typed by hand.**
 [app/bake-player/](../../app/bake-player/) paints them off a jointed doll of each class body (and of
 each named hero's looks: ARMATOS's `standard` and `oath`, FORTIVA's `unbroken` and `coif`, BELLA's `general` and `traitor`,
-IGNIA's `hearth` and `wanderer`, AURA's `light`, SALVIA's `hood` and `tent`, HIEMS's `scholar` and `frost`, [hero looks](#hero-looks)) and
+IGNIA's `hearth` and `wanderer`, AURA's `light`, SALVIA's `hood` and `tent`, LUCERNA's `lamp` and `dusk`, HIEMS's `scholar` and `frost`, [hero looks](#hero-looks)) and
 writes them to js/baked/motion.js as char grids in characters.js's own letters, so `motionSet`
 bakes them through the same team and look palettes as every hand-drawn pose: `run[dir]`,
 `hold[dir]` and `roll[dir]` sit beside the walking directions, `left` the mirror of `right`.
@@ -182,7 +182,7 @@ frame, not the doll**: `heroRunSide` (armatos.js) finds the leg rows, scissors t
 `HERO_STRIDE` and bobs the body over them, so the head and coat keep the standing width (the doll's
 side run was a pixel or two narrower and read as the hero shrinking when turning left or right).
 The run facing down and up is still the doll's, unless the look's row says `run: 'drawn'`: then
-`heroRunFront` lifts the drawn front and back the same way (IGNIA's two looks, AURA's and SALVIA's two, whose shawl, mantle and hair
+`heroRunFront` lifts the drawn front and back the same way (IGNIA's two looks, AURA's, SALVIA's and LUCERNA's two, whose shawl, mantle, coat and hair
 the doll does not match). The class bodies (HUNTER, WARRIOR) keep the doll's run. The fish and the burrow frames are still the borrowed skater's in
 that paint. Which look a player wears is `heroSkinOf(p)` (player.js): the id in `p.skins` under the
 hero's `skinSlot`, or the free first row. LAST STANDARD (nasal helm, white beard, tabard) is his
@@ -245,6 +245,17 @@ the doll's `cloak` material and the linen in `beard`; only the roll is used. Her
 warrior's in her paint. Her SNOWDROP STAFF is a staff: `staff: 'snowdrop'` names `HERO_STAVES.snowdrop`
 (`SALVIA_STAFF`, js/draw/salvia.js), a snowdrop's white bell nodding off the top of a pale alder shaft,
 swaying between two baked frames.
+
+LUCERNA has two looks (`LUCERNA_SKINS`, js/sprites/lucerna.js): LAMPLIGHTER (free: a flat cap over
+dark hair, a warm brown greatcoat open on the side's waistcoat, brass buttons) and DUSK ROAD (rare,
+200 coins: the same coat with a mustard scarf and a wide hat), both on ARMATOS's frame
+(`LUCERNA_PAL` is `ARM_PAL` with her hair `a`/`A`, the coat `q`/`Q` and the brass `u`/`f`). They are
+A and B off lucerna-round1.png in the project files; side-on the head keeps the front's width and
+the body is two pixels narrower. Her dolls (`Lamp` and `Dusk` in app/bake-player/bodies.py) paint
+the coat in the doll's `cloak` material; only the roll is used. Her 48 px model is the warrior's in
+her paint. Her LANTERN is carried like a staff but hangs: `staff: 'lantern'` names
+`HERO_STAVES.lantern` (`LUCERNA_LANTERN`, js/draw/lucerna.js), a brass lamplighter's lantern held by
+its ring (`LUCERNA_LANTERN_GRIP`), its flame breathing between two baked frames.
 
 HIEMS has two looks (`HIEMS_SKINS`, js/sprites/hiems.js): WEATHER SCHOLAR (free) and FIRST FROST
 (rare, 200 coins), both on ARMATOS's frame. `HIEMS_PAL` is `ARM_PAL` with the hood `a`/`A`, the
