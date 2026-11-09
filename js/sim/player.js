@@ -834,7 +834,7 @@ class Player {
     this.nixAmbush = false; this.nixDriftId = -1; this.nixDriftX = 0; this.nixDriftY = 0;
     // FALCO (js/sim/falco.js): STOOP's climb and the hero it falls on, KNIFE FAN's throw count;
     // on any body his hawk marked or his fan struck: who marked it and until when, which throw and how many knives
-    this.falcoSkyT = 0; this.falcoStoopId = -1; this.falcoFanN = 0;
+    this.falcoSkyT = 0; this.falcoStoopId = -1; this.falcoFanN = 0; this.falcoDownT = 0;
     this.falcoBy = -1; this.falcoUntil = 0; this.falcoFanId = -1; this.falcoFanHits = 0;
     this.hopT = 0;                                 // the net shot's recoil hop, on the body
     this.grapT = 0; this.grapX = 0; this.grapY = 0; // the grapple: reel time left, and the anchor it hauls toward

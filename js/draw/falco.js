@@ -1,7 +1,8 @@
 'use strict';
 // ------------------------------------------------------------ falco
-// FALCO's pixels (his rules: js/sim/falco.js): his hawk over his shoulder and out on
-// TALONS, its shadow on the snow (HERO_AIR, HERO_GROUND); his thrown knives in flight,
+// FALCO's pixels (his rules: js/sim/falco.js): his hawk over his shoulder, its shadow
+// on the snow (HERO_AIR, HERO_GROUND); the hawk out on TALONS, a body in `robots` with
+// its own small bar (HERO_MACHINE draw: drawHawkOut); his thrown knives in flight,
 // the basic attack's (HERO_SHOTS) and KNIFE FAN's; over a rival his hawk marked, a
 // gold talon notch his own side sees (HERO_MARK); up in the sky on STOOP his body is
 // gone and only its shadow and a falling dart are drawn (HERO_BODY_DRAW).
@@ -23,20 +24,25 @@ function drawHawk(x, y, beat, left) {
 function hawkShadow(x, y) { ctx.globalAlpha = 0.25; ctx.fillStyle = FC_INK; ctx.fillRect(x - 2, y, 5, 1); ctx.globalAlpha = 1; }
 // where the hawk circles over a Falco at home: a slow loop above his shoulder
 function hawkHome(p, now) { const a = now * 2.2 + p.id; return { x: p.x + Math.cos(a) * 9, y: p.y - 26 + Math.sin(a) * 3, left: Math.sin(a) > 0 }; }
-function falcoHasHawk(p) { return CLASSES[p.cls].passive === 'hawk' && unitAlive(p) && !(p.falcoSkyT > 0) && !falcoHawkOf(p) && !inAir(p); }
+function falcoHasHawk(p) { return CLASSES[p.cls].passive === 'hawk' && unitAlive(p) && !(p.falcoSkyT > 0) && !(p.falcoDownT > 0) && !falcoHawkOf(p) && !inAir(p); }
 function drawFalcoGround(ex, ey, now) {
   for (const p of players) if (falcoHasHawk(p) && fogShown(p, now)) { const h = hawkHome(p, now); hawkShadow(Math.round(h.x - ex), Math.round(p.y - ey) + 4); }
-  for (const h of falcoHawks) if (fogShown(h, now)) hawkShadow(Math.round(h.x - ex), Math.round(h.y - ey) + 4);
 }
 function drawFalcoAir(ex, ey, now) {
   const beat = Math.floor(now * 9) % 2;
   for (const p of players) if (falcoHasHawk(p) && fogShown(p, now)) { const h = hawkHome(p, now); drawHawk(Math.round(h.x - ex), Math.round(h.y - ey), beat, h.left); }
-  for (const h of falcoHawks) {
-    if (!fogShown(h, now)) continue;
-    const o = players[h.owner], tx = h.back && o ? o.x : h.tx;
-    drawHawk(Math.round(h.x - ex), Math.round(h.y - ey) - 18, Math.floor(now * 14) % 2, tx < h.x);
-  }
   for (const k of falcoKnives) if (fogShown(k, now)) drawThrownKnife(Math.round(k.x - ex), Math.round(k.y - ey) - BOW_Y, k.nx, k.ny, now);
+}
+
+// the hawk out (HERO_MACHINE.falcoHawk's draw, in the body pass where its side sees it):
+// low over the snow so the disc a blow lands in is where it flies, its shadow under it,
+// a rival-or-ally bar over it, white for a blink when struck
+function drawHawkOut(b, ex, ey, now) {
+  const x = Math.round(b.x - ex), y = Math.round(b.y - ey);
+  hawkShadow(x, y + 4);
+  drawHawk(x, y - 8, Math.floor(now * 14) % 2, b.face < 0);
+  if (b.flash > 0) { ctx.globalAlpha = 0.7; ctx.fillStyle = '#ffffff'; ctx.fillRect(x - 4, y - 10, 9, 5); ctx.globalAlpha = 1; }
+  drawHealthBar(b.x - ex, y - 16, b.hp, b.maxHp, 8, b.team, undefined, b);
 }
 
 // ---- knives -----------------------------------------------------------------------

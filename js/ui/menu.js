@@ -39,7 +39,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.640';
+const PATCH_TXT = 'PATCH 0.641';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -55,6 +55,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.641', 'FALCO\'S HAWK CAN BE CUT DOWN WHILE IT IS OUT: THE RIVAL WHO DOES IT IS PAID, AND HE IS WITHOUT IT FOR TEN SECONDS. ON ITS WAY OUT IT NOW FLIES PAST SOLDIERS TO THE HERO.'],
   ['0.640', 'UNDER THE HOOD: THE CHECK EVERY CHANGE RUNS NOW CATCHES A DEVELOPER GUIDE THAT NAMES CODE WHICH IS GONE, AND THE GUIDES CALL A PLAYER A HERO.'],
   ['0.639', 'A NEW HERO, MARIS THE ICE DIVER: SHE THROWS A HARPOON THAT ROOTS A RIVAL AND REELS HERSELF IN, BRACES TO TAKE LESS DAMAGE WITH RIVALS CLOSE, PULLS A COLD UNDERTOW THAT SLOWS HARDER ON ICE, AND DIVES UNDER THE SNOW TO BURST UP UNDER RIVALS AND BREAK THE ICE. SHE SWIMS OPEN WATER AND MOVES FASTER COLD. HER ORCA SKIN IS ON THE SKINS SCREEN.'],
   ['0.638', 'A BOT\'S NAME TAG, ITS SEAT ON THE EAGLE AND THE DEATH RECAP NAME IT BY ITS HERO, AS TAB AND THE PODIUM DO.'],
