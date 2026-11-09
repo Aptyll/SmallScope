@@ -105,8 +105,8 @@ const CLASS_AB = [
     },
     {
       id: 'grap', name: 'GRAPPLE', cd: [8, 7, 6, 5, 4], cast: 0.12, aim: { line: GRAP_RANGE }, // a rank is a hook back sooner
-      tip: 'HOOK A TREE OR ROCK. HOLD TO REEL',
-      blurb: 'HOOK A TREE OR A ROCK. HOLD TO REEL IN, LET GO TO KEEP THE SPEED.',
+      tip: 'HOOK A TREE. HOLD TO REEL',
+      blurb: 'HOOK A TREE. HOLD TO REEL IN, LET GO TO KEEP THE SPEED.',
       use: (p) => abGrapple(p),
     },
     {
