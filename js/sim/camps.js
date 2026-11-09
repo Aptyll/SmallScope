@@ -42,7 +42,8 @@
 //   pool        the camp is the ORCA'S POOL: its clearing is a round frozen
 //               pond (orcaLakeAt, js/sim/world.js) laid after the clearing
 //               (layOrcaPool), and what lives there is the orca under the ice
-//               (js/sim/orca.js), not a camp monster
+//               (js/sim/orca.js) until its camp monster, the orca up in its
+//               hole, is out (`first`)
 //   river       the camp is a stretch of RIVERBANK, not a den: no props and
 //               no spots - its one monster walks `river` tiles of its own bank
 //               either way along the creek's bend round the site, up and
@@ -85,7 +86,7 @@ const CAMPS = {
     name: "ORCA'S POOL",
     r: ORCA_LAKE_R + 1, mark: '#7fd4ff', pool: true, // the clearing is the pond and a tile of shore
     icon: [[3, 0, 1, 1], [3, 1, 2, 1], [3, 2, 3, 1], [0, 3, 7, 1], [1, 4, 5, 1], [0, 5, 7, 1]], // a fin over the water
-    kind: null, pop: 0, repop: 0,
+    kind: 'orca', pop: 1, repop: 360, first: 1200, // up at 20:00, then 6:00 after each kill; under the ice until then (js/sim/orca.js)
     props: [],
     spots: [],
   },

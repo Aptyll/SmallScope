@@ -63,6 +63,7 @@ const YIELD = {
   rabbit: { coins: 2, each: 35 },       // 70 gold, but it bolts
   deer:   { coins: 3, each: 40, xp: 40 }, // 120 gold, the big mobile target
   wolf:   { coins: 2, each: 55, xp: 15 }, // 110 gold, a den's four (440): the jungle's farm, a soldier's last hit apiece, and it bites back once woken
+  orca:   { coins: 8, each: 110, xp: 300 }, // the orca's pay: 880 gold to the killer, and EPIC_TEAM_GOLD to every teammate besides
   alpha:  { coins: 6, each: 105, xp: 150 }, // the black bear's pay: 630 gold to the killer, and EPIC_TEAM_GOLD to every teammate besides
   bird:   { coins: 2, each: 28 },       // 56 gold, and the hardest shot in the game (dormant: nothing spawns a bird now)
 };

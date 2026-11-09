@@ -27,6 +27,9 @@ function drawGroundPass(ox, oy, ex, ey, now) {
   // the ice breaks: their water, plates and cracks, in their own shape (js/draw/icebreak.js)
   drawIceBreaks(ox, oy);
 
+  // the up orca's hole and its spouts coming down (js/draw/orca.js)
+  if (!ARENA) drawOrcaPool(ex, ey);
+
   // the archery track's rails, flat under everything that walks, then the
   // parkour's start/finish line, painted flat on the carved ice
   if (ARENA) { drawAgTrack(ox, oy); drawParkourLine(ox, oy); drawDfHold(ox, oy); }

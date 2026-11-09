@@ -269,7 +269,7 @@ function drawShowcase(L, now, a) {
   // a still body: no hurt, no roll, no cast, no ride - only its look, its facing and its stride
   Object.assign(showBody, player, {
     x: 0, y: 0, dir, moving: stride, vx: stride ? (dir === 'left' ? -60 : 60) : 0, vy: 0, animT: stride ? now * SHOW_STRIDE : 0,
-    zip: -1, mount: null, sliding: false, fallT: 0, dodgeT: 0, hurtT: 0, invuln: 0, castT: 0, shieldT: 0, rushT: 0, buffT: 0, charging: false,
+    zip: -1, mount: null, sliding: false, fallT: 0, dodgeT: 0, hurtT: 0, invuln: 0, castT: 0, shieldT: 0, rushT: 0, buffT: 0, pushT: 0, charging: false,
   });
   ctx.save();
   ctx.beginPath(); ctx.rect(S.x, S.y, S.w, S.h); ctx.clip();

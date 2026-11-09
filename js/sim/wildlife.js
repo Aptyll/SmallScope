@@ -6,7 +6,7 @@
 // the camps' monsters (updateCampMonster), and go in this same array so
 // arrows, the draw list, the kill payouts and the cursor all treat them as
 // what they are: things you shoot.
-const ANIMAL_HP = { rabbit: 8, deer: 24, wolf: 30, alpha: 640 };
+const ANIMAL_HP = { rabbit: 8, deer: 24, wolf: 30, alpha: 640, orca: 1800 };
 // Every animal wears a hero-style level: the table's average hero level
 // (animalLevel), never under a camp monster's MONSTER.lv. It is dealt at
 // spawn (makeAnimal) and follows the table after (relevelAnimal) while the
@@ -20,7 +20,7 @@ const ANIMAL_HP = { rabbit: 8, deer: 24, wolf: 30, alpha: 640 };
 // a level-12 beast is worth a little over twice a level-1 one - about what
 // its hp grew by. Its XP (YIELD's `xp`, shared by the hunter's side standing
 // near: shareXp, js/sim/player.js) grows the same tenth a level.
-const ANIMAL_LV_HP = { rabbit: 1, deer: 2, wolf: 3, alpha: 50 };
+const ANIMAL_LV_HP = { rabbit: 1, deer: 2, wolf: 3, alpha: 50, orca: 120 };
 const ANIMAL_LV_GOLD = 0.1;
 const ANIMAL_LV_XP = 0.1;
 function animalLevel() {
@@ -40,7 +40,7 @@ function relevelAnimal(a) {
 }
 // what a hit knocks off a body: its own coat, so a puff says which beast
 // took the blow. Both prey are warm brown since the new sheets landed.
-const HIT_PUFF = { rabbit: '#9a6a45', deer: '#8f582f', wolf: '#6f778c', alpha: '#3b3b53' };
+const HIT_PUFF = { rabbit: '#9a6a45', deer: '#8f582f', wolf: '#6f778c', alpha: '#3b3b53', orca: '#2b3550' };
 // Prey: how close a player gets before it bolts, how long it runs, and the two
 // speeds. A deer keeps the wider watch and the longer run; a rabbit sits tight
 // and then goes off like a spring. Both resolve the ring through seenAt, so
@@ -115,6 +115,7 @@ const ANIM_CLIPS = {
   deer: { idle: 4, graze: 5, run: 16 },
   wolf: { idle: 0, run: 8 },
   alpha: { idle: 5, walk: 8, run: 12, bite: 14, paw: 14, roar: 10, fish: 8 }, // the bear: patrols at a walk, charges at a gallop
+  orca: { idle: 0, bite: 12, paw: 12, roar: 10 }, // the orca up in its hole: a lunge either way, and the breach it wakes with
 };
 // A clip change restarts the loop, so a sit-up always begins on the frame it
 // was drawn to begin on rather than wherever the last one had got to.
@@ -794,17 +795,18 @@ function animalDies(a) {
     burst(a.x, a.y - 16, '#ffb04a', 14, 55, 0.6);
     addFloater(a.x, a.y - 68, MONSTER[a.kind].feed + ' DOWN', '#ffb04a');
   }
-  // the bear's kill: the whole team is paid and given its buff, wherever they
-  // are, the side's black bears count one more, and the feed says who did it -
-  // the kills that are news to both sides
+  // a teamPay kill (the bear's, the orca's): the whole team is paid and given
+  // its buff, wherever they are - the bear's counts one more black bear for the
+  // side - and the feed says who did it: the kills that are news to both sides
   if (MONSTER[a.kind] && MONSTER[a.kind].teamPay) {
     if (hunter) {
       for (const q of players) {
         if (!q.active || q.team !== hunter.team) continue;
         if (q !== hunter && !q.dead && !inAir(q)) awardGold(q, EPIC_TEAM_GOLD, q.x, q.y);
-        campBuff(q, CAMP_BUFF_EPIC_T, a.kind);
+        if (MONSTER[a.kind].push) q.pushT = Math.max(q.pushT || 0, ORCA_PUSH_T); // the orca's: the push (orcaPushMul)
+        else campBuff(q, CAMP_BUFF_EPIC_T, a.kind);
       }
-      if (a.kind === 'alpha' && (hunter.team === 0 || hunter.team === 1)) state.bearStacks[hunter.team] = Math.min(BLACK_STACK_MAX, state.bearStacks[hunter.team] + 1);
+      if (MONSTER[a.kind].stack && (hunter.team === 0 || hunter.team === 1)) state.bearStacks[hunter.team] = Math.min(BLACK_STACK_MAX, state.bearStacks[hunter.team] + 1);
       logEvent(hunter.name + ' SLEW THE ' + MONSTER[a.kind].feed, hunter);
       callBeast(a, hunter); // ...and the announcer calls it (the `calls` banner, js/sim/player.js)
     }
@@ -824,7 +826,15 @@ function animalDies(a) {
 // world.js), whose kill pays the killer's whole team, gives it the bear's own
 // `buff` (animalDies, worn in `buffCol`), adds one to the side's black bears
 // (state.bearStacks) and names it as `feed` in the feed and the announcer's
-// call (callBeast). `cause` is the
+// call (callBeast). The ORCA (`orca`, the ORCA'S POOL, first up at 20:00:
+// CAMPS.orca) is the other: `still`, it keeps the hole it broke in the middle
+// of its pool (`hole`, drawn under it) and never walks - its lunge reaches
+// across the ice (`reach`) and past that it SPOUTS at whoever it hunts inside
+// `spout` px (orcaSpout, js/sim/orca.js) - and `push`: its kill gives the side
+// the ORCA BUFF (p.pushT, ORCA_PUSH_T) in place of a bear buff, under which
+// the side's soldiers near a hero wearing it hit buildings ORCA_PUSH_STRUCT
+// times as hard (orcaPushMul). `stack`: the bear's kill counts one more
+// black bear for the side. `cause` is the
 // DEATH_CAUSE a bite writes (player.js). `foot` is the box a bear walks the
 // tiles with, far smaller than its body: a box near a tile wide jams on the
 // first tree beside the lane its route runs down, so the 2x bear (r 18) still
@@ -838,10 +848,13 @@ function animalDies(a) {
 // js/draw/bodies.js) - drawn `s` px to its pixel to match the 2x body, a
 // `w`-pixel bar cut into `segs` (dividing w + 1), and centred whole on the body.
 const BEAR_LV = 6;
+const ORCA_LV = 12;
+const ORCA_SPOUT_R = 15 * TILE; // px the orca spouts at whoever it hunts past its lunge's reach: its pool and the shore round it (orcaSpout, js/sim/orca.js)
 const BEAR_FRAME = { s: 2, w: 24, segs: 5, centre: true };
 const MONSTER = {
   wolf:  { bite: 9,  lvBite: 1, reach: 13, cd: 1,   spd: 96, r: 4.5, mass: 2,   big: false, cause: 'wolf' }, // the pack: faster than a walk, slower than a slide
-  alpha: { bite: 22, lvBite: 3, reach: 44, cd: 1.4, spd: 100, r: 18,  foot: 5, mass: 5,   big: true,  teamPay: true, feed: 'BLACK BEAR', buff: 'BLACK BUFF', buffCol: '#c2a6ff', anchor: true, cause: 'bear', lv: BEAR_LV, frame: BEAR_FRAME }, // a midline camp's: a wall of hp, and a swipe that takes a quarter of you
+  alpha: { bite: 22, lvBite: 3, reach: 44, cd: 1.4, spd: 100, r: 18,  foot: 5, mass: 5,   big: true,  teamPay: true, feed: 'BLACK BEAR', buff: 'BLACK BUFF', buffCol: '#c2a6ff', anchor: true, cause: 'bear', lv: BEAR_LV, frame: BEAR_FRAME, stack: true }, // a midline camp's: a wall of hp, and a swipe that takes a quarter of you
+  orca:  { bite: 34, lvBite: 4, reach: 80, cd: 1.8, spd: 0, r: 20, foot: 5, mass: 9, big: true, teamPay: true, feed: 'ORCA', buff: 'ORCA BUFF', buffCol: '#7fd4ff', anchor: true, cause: 'orca', lv: ORCA_LV, frame: BEAR_FRAME, still: true, hole: true, spout: ORCA_SPOUT_R, push: true }, // the late fight: up in its pool, a lunge across the ice and a spout at range
 };
 // the causes a beast's bite names, which is how damagePlayer (js/sim/player.js)
 // tells a bite apart from the world's other blows for the post-game record
@@ -890,6 +903,18 @@ const BLACK_STACK_MAX = 4;    // ...up to this many
 const CAMP_BUFF_DMG = 1.25;
 const CAMP_BUFF_SPD = 1.15;
 const EPIC_TEAM_GOLD = 280;
+const ORCA_PUSH_T = 180;          // s the orca buff runs: long enough to take a base with
+const ORCA_PUSH_R = 10 * TILE;    // px from a hero wearing it its own side's soldiers hit buildings harder inside
+const ORCA_PUSH_STRUCT = 2;       // ...this many times as hard
+// the orca buff's push: a soldier with a hero of its own side wearing it near
+// hits buildings ORCA_PUSH_STRUCT times as hard (soldierLand, robots.js)
+function orcaPushMul(b) {
+  for (const p of players) {
+    if (p.team !== b.team || !p.active || p.dead || !(p.pushT > 0)) continue;
+    if (Math.hypot(p.x - b.x, p.y - b.y) < ORCA_PUSH_R) return ORCA_PUSH_STRUCT;
+  }
+  return 1;
+}
 // a fresh grant only extends what is left, and the latest bear is the one worn
 function campBuff(p, t, kind) { if (p && p.active) { p.buffT = Math.max(p.buffT || 0, t); p.buffKind = kind || p.buffKind || 'alpha'; } }
 
@@ -1208,7 +1233,7 @@ function updateCampMonster(a, dt) {
     // at the body it is already touching), or with no route (it is out over
     // water, or the camp has it pinned), hold and face it
     const near = Math.hypot(t.x - a.x, t.y - a.y);
-    const n = near < M.reach ? { ok: false, d: near } : navStep(a, t.x, t.y, foot, M.spd, dt);
+    const n = near < M.reach || M.still ? { ok: false, d: near } : navStep(a, t.x, t.y, foot, M.spd, dt);
     const d = n.d || 1;
     if (!n.ok) { a.mvx = (t.x - a.x) / d; a.mvy = (t.y - a.y) / d; }
     moving = n.ok;
@@ -1221,7 +1246,9 @@ function updateCampMonster(a, dt) {
         return;
       }
       monsterBite(a, t, M);
-    }
+    } else if (M.spout && d < M.spout && a.biteCd <= 0) { a.biteCd = M.cd; orcaSpout(a, t, M); } // out of its lunge's reach: it spouts
+  } else if (M.still) {
+    // nobody to hunt: it keeps its hole
   } else if (a.goal) {
     // patrolling its camp, on a route like any other walk
     const n = navStep(a, a.goal.x, a.goal.y, foot, 34, dt);

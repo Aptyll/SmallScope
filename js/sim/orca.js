@@ -88,10 +88,52 @@ function spawnOrca() {
     if (orcaTileIn(tx, ty) && orcaClear((tx + 0.5) * TILE, (ty + 0.5) * TILE)) orcaHome.push(idx(tx, ty));
   }
   if (!orcaHome.length) return;
-  Object.assign(orca, ORCA_FRESH(), { on: 1 });
+  orcaPutIn(null);
+}
+// the orca into the water under the ice: at `at` ({ x, y }, where it went
+// down) or at the home tile the tick hashes to, cruising off to the next
+function orcaPutIn(at) {
+  Object.assign(orca, ORCA_FRESH(), { on: 1, t0: state.tick, cool: at ? ORCA_CALM : 0 });
   orcaGoal();
-  orca.x = orca.gx; orca.y = orca.gy;
+  orca.x = at ? at.x : orca.gx; orca.y = at ? at.y : orca.gy;
   orcaGoal();
+}
+
+// THE ORCA UP: from its camp's `first` (20:00, CAMPS.orca) the orca is out of
+// the water, a camp monster (MONSTER.orca, js/sim/wildlife.js) in a hole in
+// the middle of its pool, and the shadow under the ice is gone - one orca,
+// in one place at a time. Felled, it goes back under (orcaPutIn) until the
+// camp's clock brings it up again. Up, it lunges at whoever it hunts inside
+// its reach and SPOUTS past it: a jet of the pool's water and ice thrown at
+// the spot they stood on, landing ORCA_SPOUT_T later on everyone inside
+// ORCA_SPOUT_HIT - the ring on the ground is the warning, and a step out of
+// it is the answer, so a fight at range is not free. `orcaSpouts` is a
+// SAVE_ROOTS list and rides the snapshot; the pixels are js/draw/orca.js.
+const ORCA_SPOUT_T = 1.1;   // s from the throw to the landing
+const ORCA_CALM = 12;       // s after it goes back under before it locks anyone: the side that felled it walks off the ice
+const ORCA_SPOUT_HIT = 22;  // px round the landing spot it hits
+const orcaSpouts = [];      // { x, y, sx, sy, t, dmg }: where it lands, where it left, its age
+function orcaUp() { for (const a of animals) if (a.kind === 'orca' && !a.dead) return a; return null; }
+// the up orca's throw at its quarry (updateCampMonster's `spout`)
+function orcaSpout(a, t, M) {
+  orcaSpouts.push({ x: t.x, y: t.y, sx: a.x, sy: a.y, t: 0, dmg: M.bite + M.lvBite * (a.level - 1) });
+  a.dir = t.x > a.x ? 'right' : 'left';
+  sfxAt('splash', a.x, a.y);
+}
+function updateOrcaSpouts(dt) {
+  for (let i = orcaSpouts.length - 1; i >= 0; i--) {
+    const s = orcaSpouts[i];
+    s.t += dt;
+    if (s.t < ORCA_SPOUT_T) continue;
+    orcaSpouts.splice(i, 1);
+    for (const p of players) {
+      if (!p.active || p.dead || inAir(p)) continue;
+      const dx = p.x - s.x, dy = p.y - s.y, d = Math.hypot(dx, dy);
+      if (d < ORCA_SPOUT_HIT) damagePlayer(p, s.dmg, d ? dx / d : 0, d ? dy / d : 1, null, 'orca');
+    }
+    burst(s.x, s.y - 2, '#e6f6ff', 12, 50, 0.5);
+    sfxAt('splash', s.x, s.y);
+  }
 }
 // somewhere new to cruise to: a home tile off the tick
 function orcaGoal() {
@@ -118,6 +160,12 @@ function orcaUnder(p) {
 
 // every step, from updatePlay (js/sim/sim.js), after the fish
 function updateOrca(dt) {
+  updateOrcaSpouts(dt);
+  // up in its hole (THE ORCA UP): the shadow goes once it is between hunts;
+  // felled, it goes back under where its hole was
+  const up = orcaUp();
+  if (up && orca.on && (orca.mode === 'swim' || orca.mode === 'hunt')) orca.on = 0;
+  if (!up && !orca.on && orcaHome && orcaHome.length) { const P = orcaPool(); orcaPutIn({ x: (P.tx + 0.5) * TILE, y: (P.ty + 0.5) * TILE }); }
   if (!orca.on) return;
   orca.cool = Math.max(0, orca.cool - dt);
   const age = orcaAge();

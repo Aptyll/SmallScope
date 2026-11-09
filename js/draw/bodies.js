@@ -217,13 +217,21 @@ const FRAME_DX = 3;
 const BUFF_RING = 12;                // pips round the ring
 const BUFF_COL = '#ffb04a';          // a buff with no bear named (a hand grant): amber
 function drawBuffRing(p, cx, cy, now) {
-  const n = Math.ceil(BUFF_RING * Math.min(1, p.buffT / CAMP_BUFF_EPIC_T));
-  const pulse = 7 + ((now * 3) & 1); // breathes a pixel
+  drawPipRing(cx, cy, 7 + ((now * 3) & 1), p.buffT / CAMP_BUFF_EPIC_T, (MONSTER[p.buffKind] && MONSTER[p.buffKind].buffCol) || BUFF_COL);
+}
+// the orca buff (p.pushT), the same ring a size out in the orca's colour, so
+// a hero wearing both shows both
+function drawPushRing(p, cx, cy, now) {
+  drawPipRing(cx, cy, 10 + ((now * 3) & 1), p.pushT / ORCA_PUSH_T, MONSTER.orca.buffCol);
+}
+// `r` px round (squashed to the ground's 3/4 view), `share` of its pips lit
+function drawPipRing(cx, cy, r, share, col) {
+  const n = Math.ceil(BUFF_RING * Math.min(1, share));
   for (let i = 0; i < n; i++) {
     const a = -Math.PI / 2 + (i / BUFF_RING) * Math.PI * 2;
-    const x = Math.round(cx + Math.cos(a) * pulse), y = Math.round(cy + Math.sin(a) * pulse * 0.6);
+    const x = Math.round(cx + Math.cos(a) * r), y = Math.round(cy + Math.sin(a) * r * 0.6);
     ctx.fillStyle = '#0f1632'; ctx.fillRect(x - 1, y - 1, 3, 3);
-    ctx.fillStyle = (MONSTER[p.buffKind] && MONSTER[p.buffKind].buffCol) || BUFF_COL; ctx.fillRect(x, y, 1, 1);
+    ctx.fillStyle = col; ctx.fillRect(x, y, 1, 1);
   }
 }
 
@@ -322,6 +330,7 @@ function drawPlayer(p, ex, ey, now, stage) {
     else drawCastShade(spr, bx, by);
   }
   if (p.buffT > 0 && p.fallT <= 0) drawBuffRing(p, Math.round(p.x - ex), Math.round(p.y - ey) + 3, now);
+  if (p.pushT > 0 && p.fallT <= 0) drawPushRing(p, Math.round(p.x - ex), Math.round(p.y - ey) + 3, now);
 
   // the model itself - never the shade or the rings at its feet - goes
   // through the canopy window's hero layer (js/draw/canopy.js) when it is the

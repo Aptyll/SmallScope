@@ -5,7 +5,7 @@ League's two readouts of a fight, in the HUD's graphite (js/ui/announcer.js).
 **The call.** A big moment raises one call: FIRST BLOOD (the match's first player kill), a
 DOUBLE / TRIPLE / QUADRA / PENTA KILL (die()'s run of kills `MULTI_T` apart), SHUTDOWN (the body
 wore a bounty), ACE (that kill left the whole fallen side down), TOWER DESTROYED (a road tower,
-`STRUCTS.tower.call`) and BLACK BEAR SLAIN (the `teamPay` bear). A kill earns
+`STRUCTS.tower.call`) and BLACK BEAR DOWN / ORCA DOWN (a `teamPay` kill). A kill earns
 one call, the biggest. The plate hangs at `noteY()` under the team rail, top centre: a 16px
 face of who made it, the words at 2x over a 1px rule in that side's colour, and a 16px face of
 what was taken, dimmed (none on an ACE). A player's face is the HUD portrait's frame at 2x on its

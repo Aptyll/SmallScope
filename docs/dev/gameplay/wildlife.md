@@ -268,6 +268,7 @@ still load. All three run
 | --- | --- | --- | --- | --- | --- |
 | wolf | 30 (+3) | 9 (+1) | 13 px / 1 s / 96 | r 4.5, mass 2, a roll passes through | `YIELD.wolf` 110, a FARM |
 | alpha (black bear) | 640 (+50) | 22 (+3) | 44 px / 1.4 s / 100 | r 18, mass 5, a big body a roll **tackles** | `YIELD.alpha` 630, `EPIC_TEAM_GOLD` (280) to every teammate on the ground, the BLACK BUFF for the whole team, a feed line |
+| orca (up in its pool, from 20:00) | 1800 (+120), from lv 12 | 34 (+4) | 80 px / 1.8 s / 0: `still`, it never leaves its hole; past its reach it spouts (`spout`, 240 px) | r 20, mass 9, anchored | `YIELD.orca` 880, `EPIC_TEAM_GOLD` to every teammate on the ground, the ORCA BUFF (`p.pushT`, `ORCA_PUSH_T` 180 s) for the whole team, a feed line |
 
 The bear is the one `teamPay` camp kind, on its bend of [the creek](../world.md#the-creek)
 (BLUE's bank; the orca's pool faces it across the road on RED's). It is first out at 5:00
@@ -306,8 +307,8 @@ lone bot would die to. No bot walks *to* a camp deliberately yet — see
 
 **One orca lives under [its pool](../world.md#camps), the ORCA'S POOL camp's frozen pond on the creek's upstream bend** (`CAMPS.orca`, laid by `layOrcaPool`; the disc is `orcaLakeAt` round `orcaPool()`, `ORCA_LAKE_R` with a rim wandering `ORCA_LAKE_RAG`)
 ([js/sim/orca.js](../../../js/sim/orca.js), the pixels in [js/draw/orca.js](../../../js/draw/orca.js), its
-art `SPRITES.orca`, baked by app/bake-orca/paint.py). It is not an animal: nothing shoots it,
-nothing walks into it, and it never leaves the water. `orca` is one `SAVE_ROOTS` singleton
+art `SPRITES.orca`, baked by app/bake-orca/paint.py). Under the ice it is not an animal: nothing shoots it,
+nothing walks into it, and it never leaves the water (up, from 20:00, it is one: below). `orca` is one `SAVE_ROOTS` singleton
 that rides the snapshot; the client eases it like a body (`netClientLerp`).
 
 - **It cruises** the whole disc (`orcaWater`) as a shadow under the ice at
@@ -323,6 +324,17 @@ that rides the snapshot; the client eases it like a body (`netClientLerp`).
   (`ORCA_ACC`), so the path is arcs, never a pivot; the shadow drops a little deeper at the lock
   and darkens as it rises (js/draw/orca.js). Off its ice and the hunt drops; it locks nobody for
   `ORCA_LET`.
+- **Up, from 20:00** (THE ORCA UP, `CAMPS.orca` `first` 1200, `repop` 360): the orca's camp brings it
+  out of the water as a camp monster (`MONSTER.orca`: `still`, `hole`, `spout`, `push`) in a hole
+  in the middle of the pool, and the shadow is off while it is (`orcaUp`, `updateOrca`). It lunges
+  at whoever it hunts inside its reach (the bear's wind-up and strike, jaws open as the tell) and
+  past that SPOUTS (`orcaSpout`): a lump of the pool's ice thrown at the spot they stood on, landing
+  `ORCA_SPOUT_T` later on everyone inside `ORCA_SPOUT_HIT`, its ring on the ground the warning
+  (`drawOrcaPool`). Felled, it pays like the bear and gives the side the **ORCA BUFF** (`p.pushT`
+  for `ORCA_PUSH_T`, the blue pip ring a size out from the bear's): the side's soldiers within
+  `ORCA_PUSH_R` of a hero wearing it hit buildings `ORCA_PUSH_STRUCT` (2) times as hard
+  (`orcaPushMul`, in `soldierLand`). Then it goes back under (`orcaPutIn`), locking nobody for
+  `ORCA_CALM`, until the clock brings it up again.
 - **The line runs out** (`orcaStrike`): the ice breaks in the orca's own shape
   (`iceBreak(…, 'orca', …)` with `ORCA_CRACK` of warning cracks, [ice breaks](../world.md#ice-breaks))
   beside and below them (`ORCA_LEAN`, the 3/4 view's behind; shorter lunges where the ice for the

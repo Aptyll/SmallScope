@@ -20,6 +20,14 @@
 //                hole, its plates and its cracks are the ice break's
 //                (js/draw/icebreak.js), flat on the ground under it.
 //   the count    over the hunted head (drawOrcaCount, js/draw/overhead.js)
+//   up           THE ORCA UP (js/sim/orca.js) is a camp monster drawn by
+//                drawAnimal like a bear, off SPRITES.orca.left/right: the
+//                breach's cells cut at the waterline (orcaUpFrame), so it
+//                stands in its hole to the chest - shut at rest, open on a
+//                lunge's wind-up and on the wake. Its hole (drawOrcaPool) is
+//                dark water flat on the ground under it, and each spout in
+//                the air is a ring filling at its landing spot under a
+//                lump of the pool's ice arcing onto it.
 const ORCA_SHADE = 0.42;      // the shadow's alpha cruising: the fish's own (render)
 const ORCA_SHADE_DEEP = 0.34; // ...the moment it locks on, a little deeper
 const ORCA_SHADE_UP = 0.78;   // ...and come up under its quarry when the count runs out
@@ -27,6 +35,57 @@ const ORCA_WAG = [4, 1 / 16]; // the tail's beat: rad/s at rest, and more per px
 const ORCA_DEPTH = 46;        // px under the waterline the lunge starts from
 const ORCA_DROP = 70;         // px it slides down going back under
 const ORCA_JAW_AT = [6, -4];  // px from the bitten spot to where the jaws close: its chest, a little to the hole's side
+const ORCA_UP_WL = ORCA_LEAN[1] + 2 - ORCA_JAW_AT[1] + SPRITES.orca.jaw[1]; // the waterline's row in a breach cell: the hole sits ORCA_LEAN[1] under the bite, its waterline 2 under that (drawOrcaBreach)
+const ORCA_HOLE = [22, 7];    // px: the hole's half-width and half-height round the up orca's feet
+const ORCA_HOLE_INK = ['#15263f', '#24406a']; // its water, and the rim's wet edge
+const ORCA_SPOUT_ARC = 40;    // px a spout rises at the middle of its flight
+const ORCA_SPOUT_INK = ['#0f1632', '#cfe8f7', '#ffffff', '#2f6aa8', '#7fd4ff']; // the lump's dark rim, its ice, its glint; the ring's line and its fill
+// a breach cell cut at the waterline: one frame of the orca up
+function orcaUpFrame(img) {
+  const c = document.createElement('canvas');
+  c.width = SPRITES.orca.bcell; c.height = ORCA_UP_WL;
+  c.getContext('2d').drawImage(img, img.ox, img.oy);
+  return c;
+}
+// its clips, the keys ANIM_CLIPS.orca names: the lunge's jaws open through
+// its wind-up (BEAR_STRIKE) and shut on the blow
+(() => {
+  const B = SPRITES.orca.breach;
+  const set = (shut, open) => {
+    const s = orcaUpFrame(shut), o = orcaUpFrame(open), lunge = [];
+    for (let i = 0; i < BEAR_ATTACK_FRAMES; i++) lunge.push(i < BEAR_STRIKE ? o : s);
+    return { idle: [s], bite: lunge, paw: lunge, roar: new Array(BEAR_ROAR_FRAMES).fill(o) };
+  };
+  SPRITES.orca.left = set(B.shut, B.open);
+  SPRITES.orca.right = set(B.shutR, B.openR);
+})();
+// flat on the ground pass: the up orca's hole, and the spouts' rings and lumps
+function drawOrcaPool(ex, ey) {
+  const up = orcaUp();
+  if (up) {
+    const cx = Math.round(up.x - ex), cy = Math.round(up.y + 2 - ey), [w, h] = ORCA_HOLE;
+    if (cx > -w && cy > -h && cx < WV_W + w && cy < WV_H + h) {
+      ctx.fillStyle = ORCA_HOLE_INK[1]; ctx.beginPath(); ctx.ellipse(cx, cy, w + 1, h + 1, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = ORCA_HOLE_INK[0]; ctx.beginPath(); ctx.ellipse(cx, cy, w, h, 0, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+  for (const s of orcaSpouts) {
+    const k = Math.min(1, s.t / ORCA_SPOUT_T), px = Math.round(s.x - ex), py = Math.round(s.y - ey);
+    if (px < -60 || py < -60 || px > WV_W + 60 || py > WV_H + 60) continue;
+    // the ring: the hit's own size, filling as the lump comes down
+    ctx.globalAlpha = 0.55 + 0.4 * k;
+    ctx.strokeStyle = ORCA_SPOUT_INK[3]; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.ellipse(px + 0.5, py + 0.5, ORCA_SPOUT_HIT, ORCA_SPOUT_HIT * 0.6, 0, 0, Math.PI * 2); ctx.stroke();
+    ctx.globalAlpha = 0.35 * k; ctx.fillStyle = ORCA_SPOUT_INK[4];
+    ctx.beginPath(); ctx.ellipse(px, py, ORCA_SPOUT_HIT * k, ORCA_SPOUT_HIT * 0.6 * k, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.globalAlpha = 1;
+    // the lump, on its arc from the hole to the ring
+    const lx = Math.round(s.sx + (s.x - s.sx) * k - ex), ly = Math.round(s.sy + (s.y - s.sy) * k - 18 * (1 - k) - ORCA_SPOUT_ARC * 4 * k * (1 - k) - ey);
+    ctx.fillStyle = ORCA_SPOUT_INK[0]; ctx.fillRect(lx - 2, ly - 2, 5, 5);
+    ctx.fillStyle = ORCA_SPOUT_INK[1]; ctx.fillRect(lx - 1, ly - 1, 3, 3);
+    ctx.fillStyle = ORCA_SPOUT_INK[2]; ctx.fillRect(lx - 1, ly - 1, 1, 1);
+  }
+}
 const orcaSh = document.createElement('canvas'); // one shadow frame, cut to the ice
 const orcaShG = orcaSh.getContext('2d');
 let orcaMask = null; // { cv, x0, y0 }: the disc's ice pixels (opaque) over its box, built once

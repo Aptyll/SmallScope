@@ -758,6 +758,7 @@ class Player {
     this.rushT = 0; this.rushNX = 0; this.rushNY = 0;
     this.castSlam = false;                         // the shield key pressed mid-wall or mid-rush: the cast in flight is the SLAM, not a raise (js/sim/abilities.js)
     this.buffT = 0;                                // s of a bear buff left (campBuff, wildlife.js): harder blows, a quicker walk
+    this.pushT = 0;                                // s of the orca buff left (animalDies, wildlife.js): the side's soldiers near hit buildings harder
     this.buffKind = null;                          // ...and which beast's ('alpha', the bear): its name and its ring's colour
     this.shields = [];                             // { kind, hp, t }: every shield up, in the order a hit spends them (SHIELD_KINDS, js/sim/actions.js)
     // ARMATOS (js/sim/armatos.js): his resolve (0..1, full = the next key shields him) and
@@ -1075,7 +1076,7 @@ function bodyOut(p) {
   p.castT = 0; p.castAb = -1;
   p.shieldT = 0; p.rushT = 0;
   p.castSlam = false;
-  p.buffT = 0; // the bear buff goes with the body too
+  p.buffT = 0; p.pushT = 0; // the bear buff and the orca buff go with the body too
   p.shields = []; p.resolve = 0; // ...and every shield, and ARMATOS's resolve
   p.hold = false; p.holdHit = false; p.dash = ''; p.marchHit.length = 0;
   passiveOut(p); // ...and whatever a hero's passive keeps on the body (HERO_PASSIVE out, js/sim/heroes.js)
