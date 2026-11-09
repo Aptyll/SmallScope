@@ -124,8 +124,6 @@ function profileHeroSkins() {
   for (const tab of SKIN_TABS) if (tab.hero != null) { const r = skinWorn(tab); if (r !== tab.rows[0]) out[tab.slot] = r.id; }
   return out;
 }
-function birdSkinRow(id) { return skinRow(BIRD_SKINS, id); }
-function skinOwned(r) { return skinHas(SKIN_TABS[SK_TAB_BIRD], r); } // a bird row
 // Which skin a bird wears on this screen: your own company's bird wears the
 // one you wear, the other company's the free one (a skin is not sent to the
 // other screens yet). Always a BIRD_SKINS id.

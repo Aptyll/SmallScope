@@ -381,7 +381,7 @@ for the current API — it is deliberately the whole external surface, and
 All game state lives in top-level singletons shared across the game files — `state` and
 `settings` in core.js, `players`/`player`/`inv` and the entity arrays in player.js:
 
-- **`state`** — the match: tick, day/time, darkness, mode, overlays (`state.mapOpen`, `state.msg`).
+- **`state`** — the match: tick, day/time, darkness, mode, overlays (`state.mapOpen`, `state.shop`).
 - **`settings`** — the player's dials, persisted **under the profile** (`PROFILE.putSettings`).
 - **`players`** — the ten players. `player` and `inv` are aliases for **the local player only**
   (slot `localId`, 0 by default) and its gold-only wallet; carried goods are the six item slots

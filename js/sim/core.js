@@ -127,7 +127,6 @@ const state = {
   // (endSnapshot(), the victory banner); defeatT is the loss summary's own
   // clock, started when that view opens rather than when the player went down
   end: null, defeatT: 0,
-  msg: null, msgT: 0,
   fishT: FISH_SPAWN_T, // countdown to the next fish swimming in (see updateFish)
   creekGone: {}, // the creek's caught fish: index -> the windT it swims back at (creekFishAt, js/sim/world.js)
   firstBlood: false, // the match's first player kill has been called (callKill, the `calls` banner, js/sim/player.js)
@@ -151,7 +150,7 @@ const state = {
   // table in a file that loads later, so the ease loop tops up a missing
   // cell rather than trusting it - a short array turned into NaN and
   // silently deleted a row when a fifth plank arrived.
-  menu: { sel: 0, hover: [0, 0, 0], t: 0,
+  menu: { sel: 0, hover: [0, 0, 0, 0], t: 0,
     panel: null, panelT: 0, closing: false,
     // the profile card (screen 'profile', js/ui/profile-card.js): charT its
     // ease, nameBuf the name field's buffer, nameSel whether the next letter
@@ -356,7 +355,6 @@ function pageListenStart() {
   for (const [target, type, fn, opt] of PAGE_LISTENERS) target.addEventListener(type, fn, opt);
   PAGE_LISTENERS.length = 0;
 }
-function showMsg(t, dur) { state.msg = t; state.msgT = dur || 5; }
 
 // seconds as M:SS - the HUD's match clock and the victory tally's, one source
 function clockTxt(sec) {
@@ -430,7 +428,6 @@ function streamTo(x0, y0, x1, y1, color, n, life) {
 }
 
 // wallets are per player: every cost check and payment names whose it is
-function canAfford(cost, p) { const w = (p || player).inv; for (const k in cost) if ((w[k] || 0) < cost[k]) return false; return true; }
 function pay(cost, p) {
   p = p || player;
   for (const k in cost) p.inv[k] -= cost[k];
@@ -454,11 +451,6 @@ function shortNum(n) {
   // it has not reached
   const t = n < 10 ? (Math.floor(n * 10) / 10).toFixed(1).replace('.0', '') : String(Math.floor(n));
   return t + NUM_SUFFIX[i];
-}
-function costText(cost) {
-  const parts = [];
-  for (const k in cost) if (cost[k] > 0) parts.push(cost[k] + ' ' + k.toUpperCase());
-  return parts.join('  ');
 }
 
 

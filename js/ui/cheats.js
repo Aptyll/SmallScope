@@ -242,7 +242,7 @@ function tipCheat(i) {
   const c = CHEATS[i];
   const d = { title: c.name, tcol: '#f4f7ff', kind: 'PRACTICE', icon: cbIcon(c.id), plate: BAG_WELL, rim: '#3c4048', rows: [], notes: [] };
   if (c.note) d.notes.push([c.note, '#f2cc6a']);
-  if (c.auto) d.notes.push(CHEAT_AUTO[c.id] ? ['ON', HUD_FROST] : ['OFF', TIP_DIM]);
+  if (c.auto) d.notes.push(player.cheatOn[c.id] ? ['ON', HUD_FROST] : ['OFF', TIP_DIM]);
   if (c.id === 'clear') d.notes.push([cheatDummies.length + ' STANDING', TIP_DIM]);
   return d;
 }
@@ -269,7 +269,7 @@ function drawCheatBar1() {
     drawHudFrame(pl.x, pl.y, pl.w, pl.h, { corners: { tl: false, tr: true, bl: false, br: true } });
     for (let i = 0; i < CHEATS.length; i++) {
       const c = CHEATS[i], r = cheatCellRect(i);
-      const on = (c.auto && CHEAT_AUTO[c.id]) || (c.aim && cheatUi.aim === c.id);
+      const on = (c.auto && player.cheatOn[c.id]) || (c.aim && cheatUi.aim === c.id);
       const hot = hov && hov.kind === 'cell' && hov.i === i;
       const flash = cheatUi.flashId === c.id && cheatUi.flashT > 0;
       ctx.fillStyle = flash ? '#ffffff' : on ? HUD_FROST : hot ? '#9ca1aa' : '#33363d';

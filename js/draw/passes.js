@@ -511,6 +511,8 @@ function renderScreen(ox, oy, shx, shy, now) {
   // what the pointer is on, resolved ONCE per frame, before the UI draws
   // (see the tooltips banner, ui.js)
   tipResolve();
+  // still seated on the roost: E - HOP OFF, under the panels (the G sheet, the counter) like the rest of the world's tags
+  if (state.mode === 'play') drawHopPrompt(now);
   renderUI(now);
   // the archery round's live layer: countdown, GO, the TIME/SCORE/HITS
   // plate, the final score (drawAgameUI, js/draw-world.js)
@@ -518,7 +520,6 @@ function renderScreen(ox, oy, shx, shy, now) {
   if (state.mode === 'drop') renderDropUI(now);
   // the drop brief's roost headlines (updateDrop's tour, js/sim/eagle.js)
   if (state.mode === 'play' && state.dropBrief) drawDropBrief();
-  else if (state.mode === 'play' && player.aboard) drawHopPrompt(now); // still seated on the roost: E - HOP OFF
   // the M map works mid-flight too: the ride's wider read lives here now
   if ((state.mode === 'play' || state.mode === 'drop') && state.mapOpen) renderWorldMap(now);
   // after the chart: a ping wheel opens over it too (pinned to the press point)

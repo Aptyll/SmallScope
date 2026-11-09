@@ -57,8 +57,6 @@ let cistOn = false;    // a match with the cistern standing (never the practice 
 function cisternR(fx, fy) { return Math.hypot(roadOffS(fx, fy), creekP(fx, fy)); }
 // the crossing in world px: the bake's box is centred on it
 function cisternC() { return ((WORLD - 1) / 2 + 0.5) * TILE; }
-// inside the cistern's whole ground (CIST_CLEAR): where nothing else may be put
-function cisternIn(tx, ty) { return cistOn && cisternR(tx, ty) < CIST_CLEAR; }
 function cisternTile(tx, ty) { return cistOn && inWorld(tx, ty) && (cistTiles[idx(tx, ty)] & CIST_MID) !== 0; }
 function cisternBlocks(tx, ty) { return cistOn && inWorld(tx, ty) && (cistTiles[idx(tx, ty)] & CIST_NOFIT) !== 0; }
 function cisternTouches(tx, ty) { return cistOn && inWorld(tx, ty) && (cistTiles[idx(tx, ty)] & CIST_ANY) !== 0; }

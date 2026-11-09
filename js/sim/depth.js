@@ -78,7 +78,6 @@ function driftsDepth(fx, fy) {
   if (L) for (let k = 0; k < L.length; k++) { const e = driftDepth(L[k], fx, fy); if (e > d) d = e; }
   return d;
 }
-function snowDepthPx(x, y) { return snowDepth(x / TILE, y / TILE); }
 // is this world point in DEEP snow - in the brush? Only open snow holds it:
 // a runtime paving or a hole takes it away with the ground.
 function deepAt(x, y) { return !!brushOf(x, y); }

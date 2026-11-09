@@ -53,7 +53,6 @@ const CALLS = {
   ...PING_CALLS,
 };
 function callLife(c) { return CALLS[c.k].t || CALL_T; }
-const CALL_KINDS = Object.keys(CALLS);
 
 const callouts = []; // live: { k, word, id (caller seat), team, see (the side shown it), x, y, t }
 

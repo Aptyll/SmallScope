@@ -7,7 +7,8 @@
 // to pure combat. The practice world itself is SMALL - WORLD is 76 under
 // PRACTICE (js/sim/core.js) - so the forest is a collar, not a wilderness. In the
 // middle of the field: one dummy standing in the open snow, spawn just
-// south of it, and the range BELL west of the dummy on its own row.
+// south of it, the range BELL west of the dummy on its own row, and a
+// shop (stall and keeper, PR_SHOP) east of the spawn.
 // The archery targets all ride one TWO-RAIL TRACK around the
 // field's perimeter - stills, movers and pop-ups on trolleys, movers hopping
 // lanes around anything in their way - shoot them from anywhere, roll
@@ -40,6 +41,7 @@ const PR_RING = 76;
 const PR_OX = (WORLD - PR_RING) >> 1, PR_OY = 0;
 const PR_X0 = PR_OX + ((PR_RING - PR_W) >> 1), PR_Y0 = PR_OY + ((PR_RING - PR_H) >> 1);
 const PR_SPAWN = { tx: PR_X0 + 20, ty: PR_Y0 + 17 }; // south of the dummy, facing it
+const PR_SHOP = { tx: 25, ty: 14 }; // the stall's top-left, in field tiles: east of the spawn, inside the track
 // who stands on the field: a person on the spawn tile (separateUnits eases
 // a party apart), every empty seat parked deep in the corner forest, far
 // outside the arena, so no ghost silhouette wanders into a capture
@@ -726,13 +728,13 @@ let pkAnim = null;
 // The column of buttons down the left edge (js/ui/cheats.js) sends each press
 // through input.cmd {kind:'cheat', id, tx?, ty?} -> runCmd -> cheatCmd, so a
 // cheat is a command like any wheel pick and never a UI write into the sim.
-// Two are standing toggles (CHEAT_AUTO: cooldowns and health refill every
-// tick while on - updatePractice reads them); the rest act once. Teleport
+// Two are standing toggles (p.cheatOn, each player's own: cooldowns and
+// health refill every tick while on - updatePractice reads them), so a
+// party's guest flips its own hero and never the host's; the rest act once. Teleport
 // and the dummy carry the tile the pointer picked. PRACTICE-gated: the bar
 // never draws in a match, and a forged command there does nothing.
 const CHEAT_GOLD = 500;      // what one ADD GOLD press pays
 const CHEAT_DUMMIES = 12;    // the most spawned dummies standing at once
-const CHEAT_AUTO = { cd: false, hp: false };
 const cheatDummies = [];     // the dummies the bar spawned, oldest first (the field's own is not one)
 function cheatCmd(p, c) {
   if (!PRACTICE) return false;
@@ -752,9 +754,9 @@ function cheatCmd(p, c) {
     return true;
   }
   if (c.id === 'cd' || c.id === 'hp') {
-    CHEAT_AUTO[c.id] = !CHEAT_AUTO[c.id];
+    p.cheatOn[c.id] = !p.cheatOn[c.id];
     cheatAuto(p);
-    sfxFor(p, CHEAT_AUTO[c.id] ? 'levelUp' : 'deny');
+    sfxFor(p, p.cheatOn[c.id] ? 'levelUp' : 'deny');
     return true;
   }
   if (c.id === 'reset') {
@@ -788,11 +790,11 @@ function cheatCmd(p, c) {
 // the standing toggles, applied: every tick from updatePractice, and once on
 // the press so a toggle answers the moment it lights
 function cheatAuto(p) {
-  if (CHEAT_AUTO.cd) {
+  if (p.cheatOn.cd) {
     for (let i = 0; i < p.abCd.length; i++) p.abCd[i] = 0;
     p.dodgeCharges = DODGE_CHARGES; p.dodgeRegenT = 0;
   }
-  if (CHEAT_AUTO.hp && !p.dead) p.hp = p.maxHp;
+  if (p.cheatOn.hp && !p.dead) p.hp = p.maxHp;
 }
 // a dummy where the pointer picked: the field's own dummy's numbers and
 // meter, on any open tile. Never mid-round (the round has the field), and the
@@ -841,6 +843,11 @@ function genPracticeWorld() {
   // included, which is why a running round cannot be rung off - and
   // agEndRound raises the same instances back
   agFurniture = [d, agBellObj].filter(Boolean);
+  // ---- the shop: a stall east of the spawn, its keeper beside it --------
+  // the same counters a match's merchant keeps (makeMerchant, js/sim/robots.js),
+  // so ADD GOLD has somewhere to be spent
+  const k = makeMerchant(0, { tx: ax + PR_SHOP.tx + 3, ty: ay + PR_SHOP.ty + 1 }, null);
+  k.stall = pitchStall(k, { tx: ax + PR_SHOP.tx, ty: ay + PR_SHOP.ty });
   // ---- the targets: the free-practice roster, out on the perimeter track -
   agStock(true);
   // ---- the ice parkour: the gate walk, the carved loop, the flags --------
@@ -911,7 +918,7 @@ function pkIceTile(i) {
   ground[i] = 1;
 }
 
-// the boot carve: plan and apply in the same breath (repaint is renderGround's
+// the boot carve: plan and apply in the same breath (repaint is the ground bake's
 // job at boot, so none here)
 function pkCarve(path, rad) {
   pkTiles = pkPlanCarve(path, rad);
@@ -1262,7 +1269,7 @@ function updatePractice(dt) {
   pkAnimStep(dt); // the roll's carving front, while one is out
   prDeerStep(dt); // the deer ride's tame deer, back on its stand
   agUpdate(dt);   // the archery round's clock, sink, countdown and spawner
-  cheatAuto(player); // the practice bar's standing toggles
+  for (const p of players) if (!inAir(p)) cheatAuto(p); // the practice bar's standing toggles, each player's own
   if (pkDieObj && pkDieObj.rollT > 0) pkDieObj.rollT = Math.max(0, pkDieObj.rollT - dt); // the die's tumble
   for (const o of practiceDummies) {
     o.hitT += dt;

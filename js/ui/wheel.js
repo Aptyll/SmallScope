@@ -106,7 +106,6 @@ function pingWheelShown(w, L) {
 // each handler's call.
 const cmdInt = (v, lo, hi) => Number.isInteger(v) && v >= lo && v < hi;
 const cmdKey = (table, k) => typeof k === 'string' && !!table && Object.hasOwn(table, k);
-const cmdTile = (c) => Number.isInteger(c.tx) && Number.isInteger(c.ty);
 function cmdOk(c) {
   if (!c || typeof c !== 'object') return false;
   if (c.kind === 'recall') return true;

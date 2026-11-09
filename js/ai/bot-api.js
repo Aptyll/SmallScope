@@ -392,11 +392,6 @@ function botPending() {
   for (const r of botRt.values()) if (r.conn.async && (r.waiting || (!r.ready && !r.errN))) return true;
   return false;
 }
-// give up on every late answer: the seat keeps the act it holds
-function botGiveUp() {
-  for (const r of botRt.values()) if (r.conn.async && (r.waiting || !r.ready)) { if (!r.ready && !r.errN) botErr(r, 'no answer to hello'); r.waiting = false; botLate(r); }
-}
-function botEnd(result) { for (const r of botRt.values()) r.conn.send({ t: 'end', result: result[r.p.team] }); }
 
 // ---- transports ------------------------------------------------------------------------
 // A connection is { send(msg), close(), async }: open(src, hear) makes one,
