@@ -1,6 +1,6 @@
 # Settings
 
-**The party lobby** (js/ui/rooms.js, `menu.screen = 'room'`) is where QUICKPLAY, RANKED and
+**The party lobby** (js/ui/rooms.js, `menu.screen = 'room'`) is where FIRST MATCH, QUICKPLAY, RANKED and
 PRACTICE TOOL on the title land: the page hosts its own party at once (`beginParty`: a room on the relay, or a
 Steam lobby) and NET.mode names the mode. League's party lobby in Graphite, over the title's
 snowy valley behind a dark wash (`RM_WASH`): two mirrored plates at the head, the mode's name on
@@ -31,7 +31,8 @@ bottom-right is INVITE (Steam's invite overlay, or the code copied, while a seat
 the friends invited from the column listed over it, a green tick once they are in. Between them
 one button, League's, with an X attached before it that leaves: a
 guest's READY or the leader's FIND MATCH, dim and flashing the seats it waits on until every
-guest is ready (`partyFind`). In QUICKPLAY and RANKED the party then looks for another party doing the
+guest is ready (`partyFind`). FIRST MATCH goes straight to bots, pinned EASY (`NET.botLv` 0), and its
+rematch comes back as QUICKPLAY. In QUICKPLAY and RANKED the party then looks for another party doing the
 same (js/ui/matchmaking.js): the word becomes a gold clock (a press stops looking) and the clock
 also shows after the mode's name on every member's screen. Two parties that find each other play each
 other, the one with the higher code reloading onto the other's valley as its rival side; with
@@ -220,3 +221,23 @@ is no alive count: a match does not end on bodies (`aliveCount()`, js/sim/player
 but `DBG`). Under the disc runs the notice lane, and the **stat sheet** flies into it whenever a
 number on yours moves - every row of your sheet, the moved ones lit and blinking, gone again in
 eight seconds: [rendering.md](../rendering/the-hud-corners/the-stat-ledger-your-sheet-as-a-notice.md).
+
+## The FIRST MATCH and RANKED's lock
+
+**The FIRST MATCH** (`PARTY_MODES.guide`) is a real 5v5 against EASY bots with the coach on (js/ui/guide.js).
+The coach is this screen's UI only: it reads the local player and never writes the sim, so every screen
+in a FIRST MATCH party coaches its own player. One flat graphite card stands centred over the hud strip's
+buy plates: the key caps of the live scheme (`keyCap`) and one word, a gold count where a lesson has one, a
+dim X that turns the coach off for good (`guideClick`, which also sets `PROFILE.setGuided`), and a row of
+pips over it, one per lesson. Shift (or ABILITY DETAILS on ALWAYS) opens one line of detail under it. A
+lesson's whole meaning is its `GUIDE_STEPS` row: MOVE (walk `GUIDE_MOVE_PX` off the landing), SHOP (any
+buy; a gold arrow over your side's stall or merchant), ABILITIES (two casts; a key a point would learn
+pulses gold), LAST HIT (three), RECALL (shown once the purse holds `GUIDE_RECALL_GOLD` or health is
+under half; done standing in the roost ring), TOWER (a rival tower falls; the arrow over the nearest)
+and THEIR EAGLE, which stays to the end. An arrow off screen is a 2x chevron on the view's edge. A
+finished lesson holds its card gold for `GUIDE_FLASH`. The title stops offering FIRST MATCH once the
+TOWER lesson is done, the X is pressed, or any match reaches its result.
+
+**RANKED's lock**: a profile counts the matches it saw to their result (`PROFILE.finished`, one per
+ending in `rankResult`; a profile from before the count starts from its takeoffs). Under `RANKED_AT`
+the title shows RANKED locked and the leader's list of modes greys it, and `modeSet` refuses it.

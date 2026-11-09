@@ -409,7 +409,7 @@ are close to half the ring and the first thing to derive locally instead of ship
 The same screens and the same protocol ride either transport; only the list and the room differ
 (a relay room with a four-letter code, or a public Steam lobby of `STEAM_LOBBY_MAX` 10).
 
-1. **A party.** QUICKPLAY or RANKED on the title hosts the page's own party at once
+1. **A party.** FIRST MATCH, QUICKPLAY or RANKED on the title hosts the page's own party at once
    (`beginParty`, js/ui/rooms.js -> `netHost()` -> the transport's `listen()`), its mode in
    `NET.mode`: the relay deals a four-letter code; the Steam transport calls the bridge's
    `createLobby('public', 10)`, makes a code of the same shape (`steamCode`) and writes `patch`,
@@ -443,9 +443,9 @@ The same screens and the same protocol ride either transport; only the list and 
    tick on its seat, and the leader's FIND MATCH does nothing but flash the seats it waits on
    until every person has said it (`roomAllReady`). Every person's seat carries ping bars
    (`ping`/`pong`/`pings`) and, in RANKED, its rating. The party has a chat (`say`/`said`).
-   FIND MATCH (`partyFind`) first looks for another party (**matchmaking**, below), then
+   FIND MATCH (`partyFind`) first looks for another party (**matchmaking**, below; never in FIRST MATCH), then
    (`partyStart`) fills every empty seat on both sides with a bot, pins the bots' level
-   in RANKED (`NET.botLv` from the people's average rating) and turns the page to the HERO SELECT
+   in RANKED (`NET.botLv` from the people's average rating) and in FIRST MATCH (EASY) and turns the page to the HERO SELECT
    (`pick`, the lobby), which runs the DRAFT (js/ui/draft.js): bans, then everyone's blind pick,
    the host keeping it and each guest pressing through `draft` messages; the leader's ESC turns back to the seats. Seats are
    locked once the drop is under way (`seatsOpen`). The client builds its bodies from the

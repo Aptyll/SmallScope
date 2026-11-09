@@ -92,6 +92,12 @@
       // (birdSkinFor, js/ui/skins.js, falls back to the free one).
       coins: START_COINS,
       rank: RANK_START,
+      // matches this profile saw to their result, won or lost (a match left
+      // early is not one): RANKED opens on it (rankedOpen, js/ui/rooms.js)
+      finished: 0,
+      // the FIRST MATCH's coach was seen through or turned off: the title
+      // stops offering it (js/ui/guide.js)
+      guided: false,
       owned: [],
       worn: {},
       // null, not {} - game.js reads a null here as "nothing was ever saved"
@@ -185,6 +191,11 @@
         // START_COINS blank() gave it, like a fresh one
         if (typeof s.coins === 'number' && isFinite(s.coins)) profile.coins = Math.max(0, Math.floor(s.coins));
         if (typeof s.rank === 'number' && isFinite(s.rank)) profile.rank = Math.max(RANK_MIN, Math.floor(s.rank));
+        // a profile from before the count keeps the matches it took off in, so
+        // nobody who already plays finds RANKED shut or the coach offered
+        if (typeof s.finished === 'number' && isFinite(s.finished)) profile.finished = Math.max(0, Math.floor(s.finished));
+        else profile.finished = profile.stats.matches;
+        profile.guided = typeof s.guided === 'boolean' ? s.guided : profile.finished > 0;
         if (Array.isArray(s.owned)) {
           for (const id of s.owned) if (typeof id === 'string' && id.length <= ID_MAX && profile.owned.indexOf(id) < 0) profile.owned.push(id);
         }
@@ -327,6 +338,13 @@
     // ---- ranked -------------------------------------------------------------
     rank() { return profile.rank; },
     addRank(d) { profile.rank = Math.max(RANK_MIN, profile.rank + (Math.round(d) || 0)); saveNow(); },
+    // ---- new players ----------------------------------------------------------
+    finished() { return profile.finished; },
+    addFinished() { profile.finished++; saveNow(); }, // once per match ending (endMatch, js/sim/player.js)
+    guided() { return profile.guided; },
+    setGuided(on) { on = on !== false; if (profile.guided !== on) { profile.guided = on; saveNow(); } },
+    // DBG only: a fresh player's count (a staged screenshot, a test of the lock)
+    setFinished(n) { profile.finished = Math.max(0, Math.floor(n) || 0); saveNow(); },
     // DBG only: set the purse (a staged screenshot, a test of the short purse)
     setCoins(n) { profile.coins = Math.max(0, Math.floor(n) || 0); saveNow(); },
 
