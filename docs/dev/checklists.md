@@ -574,7 +574,11 @@ Code that is dead **on purpose** is the next section.
 
 ## Intentional dead code
 
-Kept on purpose — do not "clean up", and a verbatim code move carries it along.
+Dead code is deleted, not kept in case a feature returns: git keeps it. `app/check-dead.js`
+fails an unused top-level name, a sprite nothing reads, a sound cue nothing calls, a `SAMPLES` key
+never played and a sound file in no `SAMPLES` list. What is left here is what that check cannot
+see as dead and is kept for a stated reason; a verbatim code move carries it along, and a new
+entry needs a reason that outweighs keeping it working.
 
 - **`rootUnit`/`markUnit` have no caster** (since the hunter's 2.47 rework retired the snare
   trap and the falcon): the two setters, their `drawUnitStates` tells (the sprung jaws, the gold
