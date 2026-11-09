@@ -407,6 +407,23 @@ const CLASSES = [
     kit: { iceMax: 1.25, iceSteer: 9, slideMin: SLIDE_MIN, fatigue: 0.8, chargeMul: 0.9,
       bowCharge: 0.6, nock: 0.4, spdDmg: 3, dodgeSpeed: 240 },
   },
+  {
+    // the fifteenth named hero (js/sim/falco.js): the falconer, an assassin who dives.
+    // His hawk finds a rival and marks it, his thrown knives bite harder on the mark,
+    // and he falls out of the sky on it; without a mark he is weak, and clumsy in a crowd
+    name: 'FALCO', role: 'THE KESTREL', body: 1, passive: 'hawk', // HERO_PASSIVE, js/sim/falco.js
+    look: { sex: 0, tone: 1, hair: 1, hairCol: 1, beard: 1, face: 1 },
+    blurb: ['PATIENT, THEN SUDDEN.', 'YOUR HAWK FINDS THEM. YOUR KNIVES BITE HARDER ON WHAT IT MARKS.', 'WITHOUT A MARK YOU ARE WEAK. PICK THE LONE RIVAL.'],
+    story: "HE KEPT THE HAWKS FOR AN IMPERIAL HUNT AND LET THEM ALL FLY THE DAY THE EMPIRE BURNED THE HUNTING PARK FOR A PARADE GROUND. ONE CAME BACK. IT IS THE ONLY ONE HE WILL SPEAK TO.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
+    // a thrown knife: short, quick, a little further than a blade
+    attack: { name: 'THROWING KNIFE', art: 'knife', cycle: 40 / 60, kb: 0.5, shot: { speed: 330, life: 0.42, col: '#c8d2e4', look: 'knife' } },
+    skins: FALCO_SKINS, skinPal: FALCO_PAL, skinSlot: 'falco',
+    base: { hp: 96, dmg: 17, armor: 13, ap: 0, haste: 0, ms: PLAYER_SPEED + 4 },
+    grow: { hp: 6.2, dmg: 1.7, as: 0.014, armor: 1.9 },
+    rankOrder: [1, 0, 2], // the knife fan, the talons, the glide
+    kit: { iceMax: 1.1, iceSteer: 3.2, slideMin: 70, fatigue: 0.85, chargeMul: 0.65,
+      bowCharge: 0.75, nock: 0.45, spdDmg: 3, dodgeSpeed: 230 },
+  },
 ];
 // the body a hero wears - its sprites and its 48 px model: a hero that names
 // none is its own (HUNTER 0, WARRIOR 1), a named hero borrows one
@@ -795,6 +812,10 @@ class Player {
     // NIGHT WATCH's hidden blow waiting
     this.nixOutT = 0; this.nixWhiteT = 0; this.nixStrikeId = -1; this.nixResetT = 0; this.nixRecast = false; this.nixStrikeOnce = false;
     this.nixAmbush = false; this.nixDriftId = -1; this.nixDriftX = 0; this.nixDriftY = 0;
+    // FALCO (js/sim/falco.js): STOOP's climb and the hero it falls on, KNIFE FAN's throw count;
+    // on any body his hawk marked or his fan struck: who marked it and until when, which throw and how many knives
+    this.falcoSkyT = 0; this.falcoStoopId = -1; this.falcoFanN = 0;
+    this.falcoBy = -1; this.falcoUntil = 0; this.falcoFanId = -1; this.falcoFanHits = 0;
     this.hopT = 0;                                 // the net shot's recoil hop, on the body
     this.grapT = 0; this.grapX = 0; this.grapY = 0; // the grapple: reel time left, and the anchor it hauls toward
     this.zip = -1; this.zipD = 0; this.zipDir = 1;  // the zipline (js/sim/zipline.js): the line ridden (its index in zips, or -1), px along it, and which way
