@@ -126,6 +126,7 @@ function drawFaberWinder(b, ex, ey, now) {
   drawUnitStates(b, bx, by, spr.width, spr.height, now);
   faberBars(b, ex, by - 2);
   if (b.stunT > 0) drawStunStars(Math.round(b.x - ex), by - 9, b, 4);
+  heroOver(b, Math.round(b.x - ex), by - 15, now); // a hero's marks, over the bars (HERO_OVER)
 }
 // the old engine (R): an iron box on two legs, a brass boiler for a chest, two big fists
 const FABER_ENGINE = [
@@ -160,6 +161,7 @@ function drawFaberEngine(b, ex, ey, now) {
   drawUnitStates(b, bx, by, spr.width, spr.height, now);
   faberBars(b, ex, by - 2 - sink);
   if (b.stunT > 0) drawStunStars(Math.round(b.x - ex), by - 9, b, 5);
+  heroOver(b, Math.round(b.x - ex), by - 15 - sink, now); // a hero's marks, over the bars (HERO_OVER)
 }
 
 // ---- the CLOCK STAFF ------------------------------------------------------------

@@ -29,6 +29,11 @@
 // - HERO_GROUND: fn(ex, ey, now) drawn on the snow under the wind-ups.
 // - HERO_MARK: fn(e, px, py, w, h, now) drawn over any body with the states
 //   every unit wears (drawUnitStates): a mark a hero left on it, a hero's own stacks.
+// - HERO_OVER: { w(e) -> px wide (0: not showing), draw(e, x, y, now) } a mark a
+//   hero puts OVER a body (a chill count, a hunter's paw): never on the sprite's
+//   own top, where the health frame sits, but in one row every body's drawer
+//   stands over its whole overhead stack (heroOver), side by side, x the
+//   mark's left column and y the row's middle.
 // - HERO_ICE: fn(p) -> true where a hero's ground skates like the creek's ice
 //   (iceUnder, js/sim/sim.js): a rival's glaze, VELOX's lanes.
 // - HERO_SUMMON[id]: { step(a, dt) } the brain of an animal a hero called onto its
@@ -66,6 +71,9 @@ const HERO_DASH = {};
 const HERO_TICK = [];
 const HERO_GROUND = [];
 const HERO_MARK = [];
+const HERO_OVER = [];
+const OVER_GAP = 2;  // columns between two marks in the row
+const OVER_ROW = 9;  // rows the row takes over a stack: a mark spans y-3 .. y+2, bobs one row, and keeps a gap row
 const HERO_ICE = [];
 const HERO_SUMMON = {};
 const HERO_COVER = [];
@@ -104,6 +112,17 @@ function heroDashThrough(p) { const d = p.rushT > 0 && heroDash(p); return !!(d 
 function heroTick(dt) { for (const f of HERO_TICK) f(dt); }
 function heroGround(ex, ey, now) { for (const f of HERO_GROUND) f(ex, ey, now); }
 function heroMarks(e, px, py, w, h, now) { for (const f of HERO_MARK) f(e, px, py, w, h, now); }
+// the overhead marks' row, centred on column cx with its middle on row y:
+// what it takes (OVER_ROW, or 0 with nothing showing), so a callout over it
+// can stand clear
+function heroOverW(e) { let w = 0, n = 0; for (const m of HERO_OVER) { const k = m.w(e); if (k > 0) { w += k; n++; } } return n ? w + (n - 1) * OVER_GAP : 0; }
+function heroOver(e, cx, y, now) {
+  const W = heroOverW(e);
+  if (!W) return 0;
+  let x = Math.round(cx - W / 2);
+  for (const m of HERO_OVER) { const k = m.w(e); if (k > 0) { m.draw(e, x, y, now); x += k + OVER_GAP; } }
+  return OVER_ROW;
+}
 function heroIce(p) { for (const f of HERO_ICE) if (f(p)) return true; return false; }
 function heroSummonStep(a, dt) { const s = HERO_SUMMON[a.summon]; if (s) s.step(a, dt); else a.dead = true; }
 function heroCover(srcs, x, y, u) { for (const f of HERO_COVER) if (f(srcs, x, y, u)) return true; return false; }

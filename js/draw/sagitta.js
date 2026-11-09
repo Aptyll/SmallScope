@@ -110,6 +110,7 @@ function drawSagittaPavise(b, ex, ey, now) {
   const w = Math.round(8 * Math.max(0, b.life / b.lifeMax)), x = Math.round(b.x - ex) - 4;
   ctx.fillStyle = SG_INK; ctx.fillRect(x - 1, by - 2, 10, 3);
   ctx.fillStyle = SG_BRASS; ctx.fillRect(x, by - 1, w, 1);
+  heroOver(b, Math.round(b.x - ex), by - 10, now); // a hero's marks, over the bar (HERO_OVER)
 }
 
 // ---- on her ------------------------------------------------------------------------

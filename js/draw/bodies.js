@@ -36,7 +36,7 @@ function drawAnimal(a, ex, ey, now) {
   // side's colour (drawPlayer), so the two read as one frame
   if (a.rider) return;
   const two = a.summon ? a.life / a.lifeMax : isCampKind(a.kind) ? a.threat : a.kind === 'rabbit' ? a.dodge : a.sprint; // a summon's: the hunt's time left
-  overheadPlate(() => drawBeastFrame(a.kind, px + spr.width / 2, px + (spr.width >> 1), fy, a, two, a));
+  overheadPlate(() => drawBeastFrame(a.kind, px + spr.width / 2, px + (spr.width >> 1), fy, a, two, a, now));
 }
 
 // The player's frame, on a beast: health on top, always, the second bar
@@ -56,7 +56,7 @@ function drawAnimal(a, ex, ey, now) {
 // world and the wiki's cards (ui/wiki.js) are the same pixels.
 const BEAST_BAR_W = { rabbit: 8, wolf: 11, deer: 23 }; // widths that split into even segments (hpSegCount)
 function beastFrame(kind) { return (MONSTER[kind] && MONSTER[kind].frame) || { s: 1, w: BEAST_BAR_W[kind] || 17 }; }
-function drawBeastFrame(kind, cx, mid, fy, e, two, u) {
+function drawBeastFrame(kind, cx, mid, fy, e, two, u, now) {
   const F = beastFrame(kind), k = F.s, camp = isCampKind(kind);
   const bc = F.centre ? mid + levelBadgeW(e.level) * k / 2 : cx; // the bar's centre: the plate's half off a centred frame's
   const bx = Math.round(bc - F.w * k / 2);                       // the bar's own left column (drawHealthBar's x)
@@ -66,6 +66,8 @@ function drawBeastFrame(kind, cx, mid, fy, e, two, u) {
   drawLevelBadge(bx - k, fy - 9 * k, e.level, k);
   if (e.stunT > 0) drawStunStars(mid, fy - 13 * k, e, 4, undefined, k);
   else if (e.senseT > 0) drawSenseMark(mid, fy - 16 * k, e, camp ? THREAT_COL : STAM_COL, k);
+  // a hero's marks on it (HERO_OVER) stand over all of that: the '!' tops the stack at fy - 16k
+  if (now !== undefined) heroOver(e, mid, fy - 16 * k - 5, now);
 }
 
 // A bot (a wave's soldier): one sprite, two tread frames. The whole thing
@@ -119,6 +121,7 @@ function drawRobot(b, ex, ey, now) {
   drawUnitStates(b, bx, by, spr.width, spr.height, now);
   drawHealthBar(b.x - ex, by - 4, b.hp, b.maxHp, T.spr === 'robotSiege' ? 12 : 8, b.team, undefined, b);
   if (b.stunT > 0) drawStunStars(Math.round(b.x - ex), by - 9, b, 4);
+  heroOver(b, Math.round(b.x - ex), by - 15, now); // a hero's marks, over the bar and the stars (HERO_OVER)
 }
 // a thrown snowball in the air (soldierShot, js/sim/robots.js): from the
 // thrower's hand to where it lands, a siege ball on a SOLDIER_LOB arc, with
@@ -176,6 +179,7 @@ function drawMerchant(b, ex, ey, now) {
   drawUnitStates(b, px, py - lift, spr.width, spr.height, now);
   drawWorldText('MERCH', centreTextX(b.x - ex, 'MERCH'), py - 17 - lift, TEAMS[skin(b.team)].mark);
   if (b.stunT > 0) drawStunStars(Math.round(b.x - ex), py - 10, b, 5);
+  heroOver(b, Math.round(b.x - ex), py - 22 - lift, now); // a hero's marks, over the name (HERO_OVER)
 }
 
 // ---- the player -----------------------------------------------------------
@@ -495,7 +499,10 @@ function drawPlayer(p, ex, ey, now) {
   const dawn = shieldOf(p, 'dawn'), shL = dawn > 0 ? SHIELD_LIFT : 0, line = orcaLine(p);
   const lift = shL + (line > 0 ? ORCA_COUNT_LIFT : 0);
   const bounty = bountyOf(p);
-  callTag(p, Math.round(p.x - ex), hy - 18 - lift - (bounty > 0 ? BOUNTY_LIFT : 0)); // a bot's callout hangs over the name, and over a bounty (js/draw/callouts.js)
+  // the stack's top: the name, a bounty's coin over it; a hero's marks on the
+  // body (HERO_OVER) take the row over that, never a row of the frame below
+  const nameTop = hy - 18 - lift, stackTop = nameTop - (bounty > 0 ? BOUNTY_LIFT + 1 : 0);
+  callTag(p, Math.round(p.x - ex), stackTop - (heroOverW(p) ? OVER_ROW : 0) + (bounty > 0 ? 1 : 0)); // a bot's callout hangs over the name, a bounty and the marks (js/draw/callouts.js)
   // the whole frame, name included, is one plate stamped over the grade
   // (overheadPlate, js/draw/light.js), so it reads the same in any light and
   // nothing standing in front of the body cuts into it
@@ -523,6 +530,7 @@ function drawPlayer(p, ex, ey, now) {
       centreTextX(p.x - ex, tag), hy - 18 - lift, // clear of the draw meter's frame (top row hy-11) with a gap row
       TEAMS[skin(p.team)].mark);
     drawBountyTag(p.x - ex, hy - 18 - lift, bounty); // a streak's price, over the name (js/draw/overhead.js)
+    heroOver(p, Math.round(p.x - ex), stackTop - 5, now); // ...and over it all, a hero's marks on this body
     // dodge stamina: one clean unsegmented WHITE bar under the health bar -
     // white on every side, since stamina has no side, and white is neither the
     // team's paint above it nor the gold of the draw - charges stay discrete

@@ -104,6 +104,15 @@ centred on anything and keeps its own maths. A player with a bounty wears it cen
 `BOUNTY_LIFT` rows up with a clear row between (`drawBountyTag`, js/draw/overhead.js): a 5 px gold
 coin on a 1 px ink rim and the gold in the purse's ink; a bot's callout stands over it.
 
+**A hero's marks on a body are a row of their own over the whole stack** (`HERO_OVER`, `heroOver`,
+js/sim/heroes.js): HIEMS's chills, VELOX's KEEP MOVING chevrons, VARRO's paw, BELLA's E mark and
+duel diamond, FALCO's talon, side by side (`OVER_GAP`) and centred on the body. Over a hero it
+sits above the name and a bounty; over a beast above the '!' and the stars; over a soldier, a
+merchant or a hero's machine above its bar, stars or name. It is never drawn off the sprite's own
+top, where the health frame sits, so no mark hides under a plate at any zoom; a callout over a
+hero stands `OVER_ROW` higher while the row shows. What a hero leaves ON the body (a freeze's ice,
+BELLA's pips, SAGITTA's bolts at her feet) stays a `HERO_MARK`.
+
 **Every other bar in the game is centred on its model directly** — an animal's frame carries the
 level badge too, but its bars stay on the body's own centre and the badge simply overhangs to the
 left, the way a stun plate overhangs right, so nothing but a player needs `FRAME_DX`. `drawHealthBar(cxp, …)` centres an even-width bar on `cxp`, and
