@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['CLEAN LANES THAT READ AT NIGHT; TOWERS ON BOTH MAPS', '0.658'],
     ['BALANCE: AP ITEMS GIVE 3X; FABER DOWN; HUNTER, AURA, HIEMS, WARRIOR, ARMATOS, VELOX UP', '0.657'],
     ['THE HERO GRID SHOWS ONLY HEROES YOU CAN PICK', '0.656'],
     ['The shop fits 4:3 and 5:4 screens', '0.655'],

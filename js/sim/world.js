@@ -491,7 +491,7 @@ function fellScenery(tx, ty) {
 // each roost corner's woods (the GATE - roadSpan, the treeline on the
 // diagonal, two pennant poles in the side's colour) it narrows to
 // ROAD_HW_WOOD, a forest road with the pines closing in. Ground 3, packed
-// earth showing through the snow, two ruts down its length. It walks like
+// earth showing through the snow, clean of ruts and specks. It walks like
 // snow (only ice and holes are special-cased in updatePlayer's momentum
 // block) but it is not snow: nothing digs into it (tryProne, the hunter's
 // burrow), nothing grows on it, and a fish never counts it as water
@@ -515,7 +515,6 @@ const ROAD_HW = 3.5;        // tiles either side of the centreline across the fi
 const ROAD_HW_WOOD = 2.5;   // ...and through each corner's woods: a five-tile forest road
 const ROAD_GATE_BLEND = 2;  // u either side of a gate the width eases from one to the other
 const ROAD_RAG = 0.8;       // tiles the edge wanders either way - the organic verge
-const ROAD_RUT = 1.0;       // tiles off the centreline the two ruts run
 const ROAD_SHOULDER = 1.4;  // tiles of dirty snow past the edge (the bake only)
 const ROAD_ICE_KEEP = 6;    // tiles past the edge no pond or river reaches (genWorld's carve rules)
 const ROAD_ICE_TAPER = 7;   // ...and the tiles over which a river narrows to nothing on its way in
@@ -524,10 +523,9 @@ const ROAD_POLE_OUT = 0.9;  // tiles past the edge a pennant pole stands
 // the diagonal in tile space: tx + ty = WORLD - 1, `u` running 0 at the
 // bottom-left corner to WORLD - 1 at the top-right. All three take a tile
 // index (the tile's centre) or a continuous tile coordinate alike.
-// roadOffS is signed (+ toward the bottom-right side), roadOff its size.
+// roadOffS is signed (+ toward the bottom-right side).
 function roadAlong(fx, fy) { return (fx - fy + WORLD - 1) / 2; }
 function roadOffS(fx, fy) { return (fx + fy - (WORLD - 1)) / Math.SQRT2; }
-function roadOff(fx, fy) { return Math.abs(roadOffS(fx, fy)); }
 function roadPoint(u) { return { x: (u + 0.5) * TILE, y: (WORLD - 1 - u + 0.5) * TILE }; }
 // the nominal half-width at u: ROAD_HW across the field, ROAD_HW_WOOD in
 // the woods, eased between over ROAD_GATE_BLEND either side of a gate

@@ -73,7 +73,7 @@ const STRUCTS = {
   // is the announcer's (`call`, callStruct). Its gun's numbers sit with its
   // sim (TOWER_*, towers.js).
   // It sees from its foot, half again past a hero (TOWER_RANGE is 112).
-  tower: { name: 'ROAD TOWER', w: 3, h: 2, call: true, sight: 240, eye: (o) => towerFoot(o), mm: mmTeam, map: chTeam,
+  tower: { name: 'ROAD TOWER', w: 3, h: 2, call: true, sight: 240, eye: (o) => towerFoot(o), mm: mmTeam, map: chTeam, glyph: 'tower',
     cost: { gold: 1500 }, hp: 700, buildT: 1,
     // ang: the gun's bearing; tgt/chg: its mark and how far it has wound; cd: the
     // reload; heat/heatId: bolts in a row into one hero; bolt/pin: the one in the

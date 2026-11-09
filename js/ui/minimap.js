@@ -147,6 +147,11 @@ function renderMinimap(now) {
   for (const z of zips) {
     if (z) drawMapZip(ctx, z, (x) => MM_CX + (x / TILE - ptx) * s, (y) => MM_CY + (y / TILE - pty) * s, TEAMS[skin(z.team)].mark, mmIn);
   }
+  // the landmarks (the road towers) over their own tiles, under every body
+  drawMapStructs(ctx, (x, y) => {
+    const dx = (x / TILE - ptx) * s, dy = (y / TILE - pty) * s;
+    return Math.hypot(dx, dy) > MM_R - 4 ? null : [MM_CX + dx, MM_CY + dy];
+  }, HUD_INK, 1);
   // every body inside the view in the grammar both maps share (drawMap*,
   // draw-world.js), in its side's ink: the robots first - every
   // soldier and merchant standing, none of them hides - then the players. A
