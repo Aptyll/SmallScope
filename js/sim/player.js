@@ -268,7 +268,25 @@ const CLASSES = [
     kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1, chargeMul: 0.55,
       bowCharge: BOW_CHARGE, nock: 0.4, spdDmg: 0, dodgeSpeed: DODGE_SPEED },
   },
-
+  {
+    // the eighth named hero (js/sim/rupes.js): a tank who engages. Slow to start and
+    // impossible to stop once he is rolling; little damage of his own, very hard to
+    // kill while he is packed with snow, and worn down by a rival who keeps away
+    name: 'RUPES', role: 'THE AVALANCHE', body: 1, passive: 'snowpack', // HERO_PASSIVE, js/sim/rupes.js
+    look: { sex: 0, tone: 3, hair: 0, hairCol: 1, beard: 2, face: 0 },
+    blurb: ['BE THE SLOPE.', 'THE HITS YOU TAKE PACK SNOW ONTO YOU. SHED IT IN ONE BURST.', 'ROLL FROM FAR OFF: THE FURTHER YOU ROLL, THE BIGGER THE BURST.'],
+    story: "HE CUT ICE FOR THE EMPIRE'S CELLARS UNTIL THE QUARRY FACE CAME DOWN, AND HE HELD THE WAY OUT OPEN WITH HIS BACK UNTIL THE LAST CUTTER WAS CLEAR. THE EMPIRE BILLED HIM FOR THE ICE. IN THE VALLEY HE DIGS WHERE THE SNOW IS DEEPEST, BECAUSE IT NEVER SURPRISES HIM.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
+    attack: { name: 'ICE MAUL', art: 'sword', cycle: 34 / 60, kb: 1.4, cut: { reach: 27, half: 1.05 } }, // a little slower than the longsword, a harder shove
+    base: { hp: 134, dmg: 15, armor: 24, ap: 0, haste: 0, ms: PLAYER_SPEED - 2 },
+    grow: { hp: 10.5, dmg: 1.3, as: 0.008, armor: 2.9 },
+    rankOrder: [0, 1, 2], // the heave, the shed, the shoulder
+    // his own body in each of his looks (RUPES_SKINS, js/sprites/rupes.js), worn per
+    // player (heroSkinOf) over the side's coat
+    skins: RUPES_SKINS, skinPal: RUPES_PAL, skinSlot: 'rupes',
+    blade: 'maul', // his ICE MAUL in his hands (HERO_BLADES, js/draw/rupes.js)
+    kit: { iceMax: 1.1, iceSteer: 3.2, slideMin: 70, fatigue: 0.7, chargeMul: 0.7,
+      bowCharge: 0.75, nock: 0.5, spdDmg: 5, dodgeSpeed: 220 },
+  },
 ];
 // the body a hero wears - its sprites and its 48 px model: a hero that names
 // none is its own (HUNTER 0, WARRIOR 1), a named hero borrows one
@@ -641,6 +659,9 @@ class Player {
     this.brothT = 0; this.cloakT = 0;
     // LUCERNA (js/sim/lucerna.js), on any body she pulls: the spot it is drawn to and the clock
     this.pullT = 0; this.pullX = 0; this.pullY = 0;
+    // RUPES (js/sim/rupes.js): his snowpack (0..1, PACK_LAYERS layers) and the seconds since a
+    // hit fed it; the px his avalanche has rolled (its size)
+    this.pack = 0; this.packIdle = 0; this.avaD = 0;
     this.hopT = 0;                                 // the net shot's recoil hop, on the body
     this.grapT = 0; this.grapX = 0; this.grapY = 0; // the grapple: reel time left, and the anchor it hauls toward
     this.zip = -1; this.zipD = 0; this.zipDir = 1;  // the zipline (js/sim/zipline.js): the line ridden (its index in zips, or -1), px along it, and which way

@@ -1,6 +1,6 @@
 # The two class bodies on the doll (doll.py): the HUNTER (pom beanie) and the WARRIOR
 # (fur hood with goggles, a trailing scarf, skate blades), and each named hero's looks
-# (ARMATOS: standard, oath; FORTIVA: unbroken, coif; BELLA: general, traitor; IGNIA: hearth, wanderer; AURA: light; SALVIA: hood, tent; LUCERNA: lamp, dusk). Their sizes are measured off the
+# (ARMATOS: standard, oath; FORTIVA: unbroken, coif; BELLA: general, traitor; IGNIA: hearth, wanderer; AURA: light; SALVIA: hood, tent; LUCERNA: lamp, dusk; RUPES: quarry, cellar). Their sizes are measured off the
 # hand-drawn 16 px frames in js/sprites/characters.js, so the doll's idle lands on those
 # frames pixel for pixel and the run and the roll it paints wear the same body.
 #
@@ -518,6 +518,29 @@ class Hood(Wanderer):
 
     def head(self, cv, cam, hc, Rh, pose, snap):
         cv.blob(cam, hc, Rh, self.HEAD_R, 'head', 'cloak', p=self.HEAD_P, region=self.face_region)
+
+class Quarry(Standard):
+    """RUPES as QUARRYMAN (his default look): a fur cap with ear flaps (his fur in the hat's
+    letters), a full beard over his side's coat, a leather collar and fur mitts"""
+    ARM_MAT, MITT_MAT = 'coat', 'hat'
+    MARKS = [(-1.5, 0.9, 'e'), (1.5, 0.9, 'e')]
+
+    @staticmethod
+    def face_region(n, q):
+        """the cap's brim over the brow, the flaps down either cheek"""
+        return np.where((q[0] > 0.2) & (np.abs(q[1]) < 0.7) & (q[2] < 0.15) & (q[2] > -0.95), 'skin', 'hat')
+
+
+class Cellar(Quarry):
+    """RUPES as ICE CELLAR (the first skin): his side's hood up, a leather mantle over the
+    shoulders, no beard showing over the scarf"""
+
+    @staticmethod
+    def face_region(n, q):
+        return np.where((q[0] > 0.2) & (np.abs(q[1]) < 0.75) & (q[2] < 0.25) & (q[2] > -0.95), 'skin', 'coat')
+
+    def head(self, cv, cam, hc, Rh, pose, snap):
+        cv.blob(cam, hc, Rh, self.HEAD_R, 'head', 'coat', p=self.HEAD_P, region=self.face_region)
         self.face_marks(cv, cam, hc, Rh)
 
     def coat(self, cv, cam, U, R):
@@ -541,6 +564,11 @@ class Tent(Hearth):
 
     def extras(self, cv, cam, U, R, pose):
         pass
+        cv.blob(cam, U(v3(0, 0, Z(4.0))), R, (2.6, 3.1, Z(0.6)), 'hem', 'hem', bias=-0.3)
+        cv.blob(cam, U(v3(0.0, 0, Z(8.2))), R, (2.7, 3.4, Z(0.8)), 'scarf', 'trim', bias=0.3)
+
+    def ball_head(self, cv, cam, hc, Rh):
+        cv.blob(cam, hc, Rh, (2.6, 2.85, 2.5), 'head', 'coat', p=self.HEAD_P)
 
 
 class Lamp(Standard):
@@ -582,4 +610,5 @@ class Dusk(Lamp):
 BODIES = {'hunter': Hunter(), 'warrior': Warrior(), 'standard': Standard(), 'oath': Oath(),
           'unbroken': Unbroken(), 'coif': Coif(), 'general': General(), 'traitor': Traitor(),
           'hearth': Hearth(), 'wanderer': Wanderer(), 'light': Light(),
-          'hood': Hood(), 'tent': Tent(), 'lamp': Lamp(), 'dusk': Dusk()}
+          'hood': Hood(), 'tent': Tent(), 'lamp': Lamp(), 'dusk': Dusk(),
+          'quarry': Quarry(), 'cellar': Cellar()}
