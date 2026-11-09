@@ -2,7 +2,7 @@
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| the TAB standings, the event log (kept, not drawn) | `logEvent`, `events`, `scoreGroups`, `renderScoreboard` | `scoreboard & log` |
+| the TAB standings, the event log (kept, not drawn) | `logEvent`, `events`, `scoreGroups`, `boardName` (a bot reads as its hero), `renderScoreboard` | `scoreboard & log` |
 | the M map: the chart's class map, its flatten and its resample into the slot, the flat inks, the marks, the camps' glyphs and the hovered one's name tag, the header's day, a press off the slab closing it, and the chart point -> world tile inverse a map order needs | `buildMapPanel`, `buildWorldMapImg` (throttled to `MM_REBUILD` ticks), `chartGround`, `chartSpan`, `CHART_INK`/`CHART_NEED`/`CHART_DARK`, `MAP_HEAD_Y`, `mapAlloc` (the buffers and the bake at the slab's current size), `CHART_HOVER_R`, `chartTagRect`/`chartTag`/`drawChartCamps`, `mapCloseHit` (read by `pointerPress`, input.js), `renderWorldMap`, `mapTileAt` | `world map (M)` (the class a tile files under comes from `objChart(o)`: `world`, world.js; the marks: `drawMap*`, js/draw/marks.js) |
 | the ESC menu: its tabbed pages, their rows (a choice or dropdown row's `val`/`pick`), the open dropdown, the scroll, the keys that page and scroll it, the layout every reader shares | `SET_TABS`, `settingsLayout`, `settingsScrollBy`, `settingsTabBy`, `settingsKey`, `setTab`/`setScroll`, `setDrop`, `buildSettingsPanel`, `settingsHit`, `settingsMouseDown`, `renderSettings` | `settings menu (ESC)` |
 | the CONTROLS page's listing in three columns and its pinned sub-navbar of three cells (WASD, CLICK, MOUSE: picking one picks the scheme) | `CTRL_COL_X`, `CTRL_TABS`, `CTRL_TAB_H` (the scroll is sized by `KEYS_LIST_H`) | `settings menu (ESC)` |

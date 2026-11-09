@@ -15,7 +15,7 @@
 // drawn. Nothing here is a sentence: text is the name and the ledger's labels.
 
 // ---- layout -------------------------------------------------------------
-const PC_W = 156, PC_H = 104;   // the card
+const PC_W = 156, PC_H = 94;    // the card
 const PC_FIELD_H = 20;          // the name field, inset across the card's head
 const NAME_SHAKE_T = 0.3;       // the field's refusal: it rattles and flushes red
 function profileLayout() {
@@ -149,7 +149,6 @@ function renderProfileCard(now, a) {
 // ---- pixels -------------------------------------------------------------
 const PC_ICON_PAL = { '.': null, y: '#f2cc6a', w: '#cfe0ff', d: '#7a8bb8' };
 const PC_CROWN = ['........', 'y..yy..y', 'y.yyyy.y', 'yyyyyyyy', '.yyyyyy.', '........', '........', '........'];
-const PC_SUN = ['...yy...', '.y....y.', '..yyyy..', 'y.yyyy.y', 'y.yyyy.y', '..yyyy..', '.y....y.', '...yy...'];
 const PC_SWORDS = ['w.....w.', '.w...w..', '..w.w...', '...w....', '..w.w...', '.w...w..', 'd.....d.', '........'];
 const PC_SKULL = ['..wwww..', '.wwwwww.', '.wdwwdw.', '.wwwwww.', '..wwww..', '..w.w...', '........', '........'];
 const PC_FLAG = ['w.......', 'wyyyy...', 'wyyyyy..', 'wyyyy...', 'w.......', 'w.......', 'w.......', '........'];
@@ -176,7 +175,7 @@ function drawLedger(x, y, w, st) {
   const grand = (n) => String(n).replace(/\B(?=(\d{3})+$)/g, ',');
   const rows = [[PC_CROWN, 'WINS', st.wins, '#cfe0ff'], [PC_FLAG, 'MATCHES', st.matches, '#cfe0ff'],
     [PC_SWORDS, 'KILLS', st.kills, '#cfe0ff'], [PC_SKULL, 'DEATHS', st.deaths, '#cfe0ff'],
-    [PC_SUN, 'DAYS', st.days, '#cfe0ff'], [null, 'GOLD', st.gold, '#f2cc6a']];
+    [null, 'GOLD', st.gold, '#f2cc6a']];
   for (let i = 0; i < rows.length; i++) {
     const ry = y + i * 10;
     if (rows[i][0]) stampGrid(rows[i][0], PC_ICON_PAL, x, ry - 1, 1);

@@ -99,6 +99,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['A click puts the death recap away; bots go by their hero\'s name on TAB', '0.611'],
     ['E IS USE; LONG TOOLTIPS WRAP; THE WIKI\'S HEROES PAGE SHOWS EVERY LINE', '0.610'],
     ['ONLINE, BOTS BACK UP EVERY PLAYER ON THEIR SIDE, NOT ONLY THE HOST', '0.608'],
     ['HEROES HOLD THEIR WEAPONS BY THE HILT, CLEAR OF THEIR FACES', '0.606'],
