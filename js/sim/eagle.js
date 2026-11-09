@@ -555,18 +555,17 @@ function eagleCrash(e) {
   e.laneDir = ml > TILE ? { x: mx / ml, y: my / ml } : { x: -Math.cos(e.heading), y: -Math.sin(e.heading) };
   // the pad: the blown disc is packed earth from this frame - one ground
   // with the road it lands on - so its tiles turn to 3 at
-  // once and the ground repaints out to the verge (a one-time cost, under
-  // the shake and the boom)
+  // once and the ground repaints out to the verge through repaintGround,
+  // which also tells the trample the snow there is gone (a one-time cost,
+  // under the shake and the boom)
   e.pad = addPad(e.team, e.x / TILE - 0.5, e.y / TILE - 0.5, BOOM_R);
-  {
-    const g = groundCv.getContext('2d'), PR = Math.ceil(BOOM_R) + 3;
-    g.imageSmoothingEnabled = false;
-    for (let dy = -PR; dy <= PR; dy++) for (let dx = -PR; dx <= PR; dx++) {
-      const tx = ctx0 + dx, ty = cty0 + dy;
-      if (!inWorld(tx, ty)) continue;
-      if (ground[idx(tx, ty)] === 0 && laneDist(tx, ty) < 0) ground[idx(tx, ty)] = 3;
-      paintGroundTile(g, tx, ty);
-    }
+  const PR = Math.ceil(BOOM_R) + 3;
+  for (let dy = -PR; dy <= PR; dy++) for (let dx = -PR; dx <= PR; dx++) {
+    const tx = ctx0 + dx, ty = cty0 + dy;
+    if (inWorld(tx, ty) && ground[idx(tx, ty)] === 0 && laneDist(tx, ty) < 0) ground[idx(tx, ty)] = 3;
+  }
+  for (let dy = -PR; dy <= PR; dy++) for (let dx = -PR; dx <= PR; dx++) {
+    if (inWorld(ctx0 + dx, cty0 + dy)) repaintGround(ctx0 + dx, cty0 + dy);
   }
   spawnMerchant(e);
   for (const p of players) if (p.active && p.aboard && p.team === e.team && p === player) landAboard(p);
