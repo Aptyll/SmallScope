@@ -248,6 +248,26 @@ const CLASSES = [
     kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1, chargeMul: 0.55,
       bowCharge: BOW_CHARGE, nock: 0.4, spdDmg: 0, dodgeSpeed: DODGE_SPEED },
   },
+  {
+    // the seventh named hero (js/sim/hiems.js): the control mage. She freezes a
+    // fight slowly - every hit chills, the third freezes - and holds a choke
+    // with ice and a blizzard; low burst, and a step slower than most
+    name: 'HIEMS', role: 'THE LONG WINTER', body: 1, passive: 'deepchill', // HERO_PASSIVE, js/sim/hiems.js
+    look: { sex: 1, tone: 0, hair: 2, hairCol: 5, beard: 0, face: 2 },
+    blurb: ['THE COLD IS ON YOUR SIDE.', 'EVERY HIT CHILLS. THE THIRD CHILL FREEZES THEM IN PLACE.', 'LITTLE BURST: FREEZE THEM, THEN LET YOUR SIDE FINISH.'],
+    story: "SHE KEPT THE WEATHER RECORDS FOR THE EMPIRE'S COURT, AND TOLD THEM THE COLD YEARS WERE COMING AND WOULD NOT STOP. THEY SENT HER AWAY FOR SPOILING THE HARVEST FEAST. SHE CAME UP THE PASS TO SEE WHETHER SHE WAS RIGHT. THE SNOW HAS NOT STOPPED.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
+    // a staff's frost bolt: AURA's star bolt, a little shorter
+    staff: 'flake', // her SNOWFLAKE STAFF, carried upright (HERO_STAVES, js/draw/hiems.js)
+    attack: { name: 'SNOWFLAKE STAFF', art: 'flakestaff', cycle: 62 / 60, kb: 0.5, shot: { speed: 270, life: 0.85, col: '#e6f8ff', look: 'frostbolt' } },
+    base: { hp: 82, dmg: 13, armor: 10, ap: 0, haste: 0, ms: PLAYER_SPEED - 4 },
+    grow: { hp: 5.8, dmg: 1, as: 0.01, armor: 1.8 },
+    rankOrder: [0, 2, 1], // the icicle, the cold snap, the clear ice
+    // her own body (HIEMS_SKINS, js/sprites/hiems.js), worn over the side's coat
+    skins: HIEMS_SKINS, skinPal: HIEMS_PAL, skinSlot: 'hiems',
+    paint48: { t: '#7d8699', T: '#b4bdcc', g: '#1c2232', G: '#9aa3b8', m: '#5c6478', M: '#454c5e' }, // the 48 px model's (js/sprites/looks.js): its K is skin
+    kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1, chargeMul: 0.55,
+      bowCharge: BOW_CHARGE, nock: 0.4, spdDmg: 0, dodgeSpeed: DODGE_SPEED },
+  },
 ];
 // the body a hero wears - its sprites and its 48 px model: a hero that names
 // none is its own (HUNTER 0, WARRIOR 1), a named hero borrows one
@@ -616,6 +636,9 @@ class Player {
     // IGNIA (js/sim/ignia.js): WARM HANDS waiting; and on any body, whose fire it is
     // burning with (SPREADING FLAME carries it on) and how long a wildfire's flame lets it jump
     this.warmT = 0; this.kindleBy = -1; this.wildT = 0;
+    // HIEMS (js/sim/hiems.js), on any body: DEEP CHILL's stacks and their window, the
+    // wait before it can be frozen again, and the freeze's ice (drawn while it holds)
+    this.chillN = 0; this.chillT = 0; this.chillImm = 0; this.frozeT = 0;
     // SALVIA (js/sim/salvia.js), on any player she helped: WARM BROTH's speed and the cloak's run
     this.brothT = 0; this.cloakT = 0;
     this.hopT = 0;                                 // the net shot's recoil hop, on the body

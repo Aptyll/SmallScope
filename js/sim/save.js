@@ -55,6 +55,7 @@ const SAVE_ROOTS = [
   ['brushfires', ...saveArr(brushfires)], // IGNIA's lines of fire (js/sim/ignia.js)
   ['auraStars', ...saveArr(auraStars)], ['auraOrbs', ...saveArr(auraOrbs)], ['auraCurtains', ...saveArr(auraCurtains)], // AURA's strikes waiting and lights drifting (js/sim/aura.js)
   ['salviaBundles', ...saveArr(salviaBundles)], ['salviaDrops', ...saveArr(salviaDrops)], ['salviaThaws', ...saveArr(salviaThaws)], // SALVIA's poultices flying, snowdrops planted, warm rings (js/sim/salvia.js)
+  ['hiemsGlazes', ...saveArr(hiemsGlazes)], ['hiemsStorms', ...saveArr(hiemsStorms)], // HIEMS's ice and blizzards (js/sim/hiems.js)
   ['wordPops', ...saveArr(wordPops)], ['coinPops', ...saveArr(coinPops)], ['ptargets', ...saveArr(ptargets)], ['slashes', ...saveArr(slashes)],
   ['shed', () => [shedWait, shedLive], (v) => { saveArr(shedWait)[1](v[0]); shedLive = v[1]; }],
   ['iceBreaks', ...saveArr(iceBreaks)], // the breaks in their own shape (js/sim/icebreak.js); their pixels rebuild off them

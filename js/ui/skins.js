@@ -97,6 +97,7 @@ const SKIN_TABS = [
   { id: 'bella', name: 'BELLA', slot: 'bella', rows: BELLA_SKINS, hero: 4, glyph: ['..www...', '.wwwwww.', '.w...w.w', '.w...w.w', '..www..w', '...w....', '.wwwww..', '.wwwww..'] },
   { id: 'ignia', name: 'IGNIA', slot: 'ignia', rows: IGNIA_SKINS, hero: 5, glyph: ['...w....', '..ww....', '..www.w.', '.wwww.w.', '.wwwwww.', 'ww..www.', 'ww..www.', '.wwwww..'] },
   { id: 'salvia', name: 'SALVIA', slot: 'salvia', rows: SALVIA_SKINS, hero: 7, glyph: ['..www...', '.w...ww.', '.w..w..w', '.w..w.ww', '.w...ww.', '.w......', '.ww.....', '..w.....'] },
+  { id: 'hiems', name: 'HIEMS', slot: 'hiems', rows: HIEMS_SKINS, hero: CLASSES.findIndex((c) => c.name === 'HIEMS'), glyph: ['...w....', '.w.w.w..', '..www...', 'wwwwwww.', '..www...', '.w.w.w..', '...w....', '........'] },
 ];
 const SK_TAB_BIRD = 1; // SKIN_TABS' eagle and scout, the two tabs a match reads
 const SK_TAB_SCOUT = 0;

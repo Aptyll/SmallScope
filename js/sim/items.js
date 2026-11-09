@@ -411,6 +411,7 @@ const BOT_BUILDS = {
   IGNIA: ['marsh', 'emberb', 'storm', 'deeprod', 'slate', 'clock'], // the fire first: power, haste and the scorch, then the boots and more power
   BELLA: ['beartooth', 'quick', 'maul', 'feathers', 'sunstone', 'collar'], // the blade first: damage and its cut, then the speed to chain it
   SALVIA: ['emberb', 'marsh', 'clock', 'deeprod', 'slate', 'storm'], // the heals first: haste and power for more of them, then the boots, then the armor a healer under focus needs
+  HIEMS: ['storm', 'marsh', 'emberb', 'slate', 'deeprod', 'clock'], // power and haste for more chills, then the armor a control mage standing in the fight needs
   AURA: ['storm', 'emberb', 'deeprod', 'marsh', 'clock', 'slate'], // the reach first: power and haste for more stars, then the boots, then the armor a mage caught close needs
 };
 function botBuild(p) { return BOT_BUILDS[CLASSES[p.cls].name] || BOT_BUILDS.HUNTER; }

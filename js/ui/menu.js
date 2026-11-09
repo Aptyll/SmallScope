@@ -1597,6 +1597,20 @@ const CLASS12 = [
     '..ovo.......',
     '...o........',
   ],
+  [ // HIEMS: a six-armed snowflake
+    '.....o......',
+    '..o.oWo.o...',
+    '.oWooWooWo..',
+    '..oWoWoWo...',
+    '.ooooWoooo..',
+    'oWWWWWWWWWo.',
+    '.ooooWoooo..',
+    '..oWoWoWo...',
+    '.oWooWooWo..',
+    '..o.oWo.o...',
+    '.....o......',
+    '............',
+  ],
 ];
 const class12Cache = new Map();
 function classIcon12(i, you) {

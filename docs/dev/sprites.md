@@ -85,7 +85,7 @@ more: the frames live on as the CATCH emote's (`EMOTES`, js/ui/screens.js). The 
 **The run, the held run and the dodge roll are the one set of player frames not typed by hand.**
 [app/bake-player/](../../app/bake-player/) paints them off a jointed doll of each class body (and of
 each named hero's looks: ARMATOS's `standard` and `oath`, FORTIVA's `unbroken` and `coif`, BELLA's `general` and `traitor`,
-IGNIA's `hearth` and `wanderer`, AURA's `light`, SALVIA's `hood` and `tent`, [hero looks](#hero-looks)) and
+IGNIA's `hearth` and `wanderer`, AURA's `light`, SALVIA's `hood` and `tent`, HIEMS's `scholar` and `frost`, [hero looks](#hero-looks)) and
 writes them to js/baked/motion.js as char grids in characters.js's own letters, so `motionSet`
 bakes them through the same team and look palettes as every hand-drawn pose: `run[dir]`,
 `hold[dir]` and `roll[dir]` sit beside the walking directions, `left` the mirror of `right`.
@@ -245,6 +245,16 @@ the doll's `cloak` material and the linen in `beard`; only the roll is used. Her
 warrior's in her paint. Her SNOWDROP STAFF is a staff: `staff: 'snowdrop'` names `HERO_STAVES.snowdrop`
 (`SALVIA_STAFF`, js/draw/salvia.js), a snowdrop's white bell nodding off the top of a pale alder shaft,
 swaying between two baked frames.
+
+HIEMS has two looks (`HIEMS_SKINS`, js/sprites/hiems.js): WEATHER SCHOLAR (free) and FIRST FROST
+(rare, 200 coins), both on ARMATOS's frame. `HIEMS_PAL` is `ARM_PAL` with the hood `a`/`A`, the
+robe's panels `q`, the ice band and clasp `c`/`C`/`i`, FIRST FROST's snow-white hair `l`/`L` and ice
+mantle `z`/`Z`. They are A and B off hiems-round1.png in the project files. Their dolls (`Scholar`
+and `Frost` in app/bake-player/bodies.py) paint the hood in the doll's `hair` material, and the
+white hair and the mantle in two materials added for her (`frost`, `ice`, doll.py); only the roll
+is used. Her SNOWFLAKE STAFF is a staff like IGNIA's: `staff: 'flake'` names `HERO_STAVES.flake`
+(`HIEMS_FLAKE`, js/draw/hiems.js), a six-pointed flake of ice on a pale birch shaft whose heart
+glints between two baked frames.
 
 The **48 px model** ([looks.js](../../js/sprites/looks.js), `SPRITES.portrait(cls, look,
 team)`) is where the whole look reads — the champ select's stage, grid and seat discs. Each hero wears one
