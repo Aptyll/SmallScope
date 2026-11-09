@@ -118,7 +118,7 @@ function barracksLaneLoad(o) {
 }
 
 function updateStructures(dt) {
-  towersSync(); // a side's cable runs to its furthest standing road tower (js/sim/towers.js)
+  towersSync(true); // a side's cable runs to its furthest standing road tower (js/sim/towers.js)
   for (const o of structures) {
     const ox = o.tx * TILE + 8, oy = o.ty * TILE + 8;
     if (o.building) {
