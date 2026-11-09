@@ -295,6 +295,13 @@ function gainGold(p, n) {
 // scoreboard farm rather than into a trade. Everything that
 // EARNS gold - a fell, a kill, the clock - still goes through gainGold.
 function tradeGold(p, n) { if (p && n > 0) p.inv.gold += n; }
+// Gold leaving a wallet: the shop's one way to take it, so the post-game
+// record (goldSpent, js/ui/lobby.js) never misses a purchase. The caller has
+// already checked the purse holds n.
+function spendGold(p, n) {
+  p.inv.gold -= n;
+  if (n > 0) p.goldSpent += n;
+}
 // Gold is never a physical drop: every source pays the earner on the spot
 // through this one wrapper - the wallet (via gainGold), the '+N' popup at
 // the place the action happened, and the coin blip for the local earner.
@@ -431,7 +438,7 @@ const PLAYER_RECORD = {
   dmgInP: 0,                     // ...of dmgIn, what rival players dealt
   dmgInB: 0,                     // ...and what a beast's bite dealt (BEAST_CAUSES, js/sim/wildlife.js)
   healed: 0,                     // health given back to this body, whatever gave it (healPlayer)
-  goldSpent: 0,                  // gold paid out of the purse (pay, js/sim/core.js)
+  goldSpent: 0,                  // gold paid out of the purse (spendGold)
   beasts: 0,                     // animals this body landed the last blow on (animalDies, js/sim/wildlife.js)
   farm: 0,                       // last hits on rival soldiers and camp monsters (farmHit, js/sim/farm.js)
   streak: 0, bestStreak: 0,      // rivals downed since this body last went down, and the most of it

@@ -47,7 +47,7 @@ doubles with it, which keeps the spacing uniform and ten players' history a few 
 however long the match runs. The rest is counted where it happens, each at the shared function
 every case goes through: damage dealt and taken (split into rival players' and a beast's bite,
 `BEAST_CAUSES`) in `damagePlayer`, beasts' damage in `hurtUnit`, healing in `healPlayer` (the one
-way health comes back), gold spent in `pay`, beasts hunted in `animalDies`, streaks and multi-kills
+way health comes back), gold spent in `spendGold`, beasts hunted in `animalDies`, streaks and multi-kills
 (kills `MULTI_T` apart) in `die`, and crowd control in `ccCredit`, which the stun, root and net
 setters call with the `src` a caller names - the seconds a rival PLAYER is newly held. The table itself is frozen by `statFreeze()` from `endMatch` on every
 real ending (a respawn wait is not one), because a won match runs on underneath its own ceremony

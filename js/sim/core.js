@@ -427,12 +427,6 @@ function streamTo(x0, y0, x1, y1, color, n, life) {
   }
 }
 
-// wallets are per player: every cost check and payment names whose it is
-function pay(cost, p) {
-  p = p || player;
-  for (const k in cost) p.inv[k] -= cost[k];
-  if (cost.gold > 0) p.goldSpent += cost.gold; // the post-game record (js/ui/lobby.js)
-}
 // A COUNT ON THE HUD, cut to four characters. Gold has no ceiling any more -
 // a purse climbs all match - so past a
 // thousand the number carries its MAGNITUDE instead of its digits: 999, then
