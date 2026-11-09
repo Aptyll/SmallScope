@@ -99,11 +99,7 @@ function modeSwapOk() { return NET.role === 'host' && seatsOpen() && !state.menu
 function modeSet(mode) {
   const m = state.menu;
   m.modeOpen = false;
-  if (!modeSwapOk() || !PARTY_MODES[mode] || (mode === 'ranked' && !rankedOpen())) { SFX.deny(); return; }
-// a mode's party at most, people on your side (five where unnamed): 1V1 is
-// you alone, one hero a side on the mid road (js/sim/onevone.js)
-const PARTY_CAP = { onevone: 1 };
-function partyCap(mode) { return PARTY_CAP[mode] || MAX_PLAYERS / 2; }
+  if (!modeSwapOk() || !PARTY_MODES[mode] || (mode === 'ranked' && !rankedOpen()) || partySize() > partyCap(mode)) { SFX.deny(); return; }
   if (mode !== NET.mode) {
     NET.mode = mode;
     NET.ready.clear();
