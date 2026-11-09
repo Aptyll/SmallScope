@@ -142,7 +142,6 @@ function varroLeap(p) {
   const dx = q.x - p.x, dy = q.y - p.y, d = Math.hypot(dx, dy) || 1;
   p.rushNX = dx / d; p.rushNY = dy / d;
   p.rushT = (d + 12) / LEAP_SPD;
-  p.rushVictim = null;
   p.dash = 'vleap';
   p.leapQ = q;
   p.sliding = false;

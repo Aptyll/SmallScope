@@ -198,7 +198,6 @@ function lignumPull(p) {
   if (d <= AXE_PULL_STOP + 2) return;
   p.rushNX = dx / d; p.rushNY = dy / d;
   p.rushT = Math.min(0.8, (d - AXE_PULL_STOP) / AXE_PULL_SPD);
-  p.rushVictim = null;
   p.dash = 'axepull';
   p.reelX = Math.round(ax); p.reelY = Math.round(gy);
   p.sliding = false;

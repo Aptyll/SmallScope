@@ -1,5 +1,5 @@
-# The two class bodies on the doll (doll.py): the HUNTER (pom beanie) and the WARRIOR
-# (fur hood with goggles, a trailing scarf, skate blades), and each named hero's looks
+# Each hero's looks on the doll (doll.py), all built on HeroBase (fur hood with goggles,
+# a trailing scarf, skate blades)
 # (ARMATOS: standard, oath; FORTIVA: unbroken, coif; BELLA: general, traitor; IGNIA: hearth, wanderer; AURA: light; SALVIA: hood, tent; LUCERNA: lamp, dusk; HIEMS: scholar, frost; RUPES: quarry, cellar; NIX: snowblind; VARRO: wolfkept, whitepack; FABER: clockmaker, foreman; MARIS: diver, orca; VELOX: canal, night; SAGITTA: siege, tower; LIGNUM: feller, forest). Their sizes are measured off the
 # hand-drawn 16 px frames in js/sprites/characters.js, so the doll's idle lands on those
 # frames pixel for pixel and the run and the roll it paints wear the same body.
@@ -21,7 +21,7 @@ class Body:
     ARM = (Z(0.95), Z(0.9))
     HEAD_R = (2.85, 3.0, 2.7)
     HEAD_P = 3.0
-    lift = 0.0          # how much higher this body stands than the hunter (the blades)
+    lift = 0.0          # how much higher this body stands on its feet (HeroBase's blades)
     ARM_MAT, MITT_MAT = 'coat', 'trim'   # the sleeves and the hands
 
     def __init__(self):
@@ -179,35 +179,10 @@ class Body:
         return g
 
 
-class Hunter(Body):
-    """the pom beanie pulled down over the ears, a round face under it, cream scarf and mittens"""
-    HEAD_C = Z(10.2)
-    JAW_C = v3(0.25, 0, -1.55)          # the hand-drawn head is flat along the bottom
-    JAW_R = (2.45, 2.95, 1.1)
-    # where each mark sits on today's front frame, px from the head's centre on screen; the
-    # eyes go last so they win a pixel they share with the mouth's shade
-    MARKS = [(-0.5, 2.5, 'K'), (0.5, 2.5, 'K'), (-2.3, 2.35, 'x'), (2.3, 2.35, 'x'), (-1.5, 1.4, 'e'), (1.5, 1.4, 'e')]
-
-    @staticmethod
-    def face_region(n, q):
-        """the face is the front of the head below the brim (by where on the head, not which
-        way the surface faces, so a head pitched over never shows skin round its sides)"""
-        return np.where((q[0] > 0.15) & (n[2] < 0.08), 'skin', 'hat')
-
-    def head(self, cv, cam, hc, Rh, pose, snap):
-        cv.blob(cam, hc, Rh, self.HEAD_R, 'head', 'hat', p=self.HEAD_P, region=self.face_region)
-        cv.blob(cam, hc + Rh @ self.JAW_C, Rh, self.JAW_R, 'head', 'hat', p=4.0, region=self.face_region)
-        cv.ball(cam, snap(hc + Rh @ v3(-0.35, 0, Z(3.45)) + pose.get('pom', v3(0, 0, 0))), 1.0, 'pom', 'trim')
-        self.face_marks(cv, cam, hc, Rh)
-
-    def ball_head(self, cv, cam, hc, Rh):
-        super().ball_head(cv, cam, hc, Rh)
-        cv.ball(cam, hc + Rh @ v3(-0.35, 0, Z(3.2)), 1.0, 'pom', 'trim')
-
-
-class Warrior(Body):
-    """a fur-lined hood with the goggles over the eyes, a scarf whose tail streams out behind,
-    and skate blades under the boots that stand her a row taller"""
+class HeroBase(Body):
+    """the frame every hero's look builds on: a fur-lined hood with the goggles over the eyes,
+    a scarf whose tail streams out behind, and skate blades under the boots that stand it a
+    row taller. No hero wears it bare; each look below overrides what it changes."""
     lift = 1.0
     HEAD_C = Z(11.5)
     HEAD_R = (2.7, 3.0, 2.5)
@@ -221,14 +196,14 @@ class Warrior(Body):
         self.SHOULDER = (0.0, 2.6, Z(6.5))
 
     def coat(self, cv, cam, U, R):
-        # a row longer in the body than the hunter's: the scarf two rows up, the hem one
+        # a row longer in the body than Body's: the scarf two rows up, the hem one
         cv.blob(cam, U(v3(0, 0, Z(6.1))), R, (2.75, 3.05, Z(2.05)), 'coat', 'coat', p=2.2)
         cv.blob(cam, U(v3(0, 0, Z(4.0))), R, (2.6, 3.1, Z(0.6)), 'hem', 'hem', bias=-0.3)
         cv.blob(cam, U(v3(0.1, 0, Z(8.75))), R, (2.45, 2.85, Z(0.42)), 'scarf', 'trim', bias=0.2)
 
     @staticmethod
     def face_region(n, q):
-        """an opening in the hood: narrower than the hunter's face, framed by the fur"""
+        """an opening in the hood, framed by the fur"""
         return np.where((q[0] > 0.15) & (np.abs(q[1]) < 0.8) & (q[2] < 0.42) & (q[2] > -0.95), 'skin', 'hat')
 
     def head(self, cv, cam, hc, Rh, pose, snap):
@@ -267,10 +242,10 @@ class Warrior(Body):
             p = q
 
 
-class Standard(Warrior):
+class Standard(HeroBase):
     """ARMATOS as LAST STANDARD (his default look): a nasal helm with a gold brow band, a
     white beard over a mail collar, mail sleeves and steel gauntlets over his side's tabard,
-    and two rows of boot where the warrior has blades. He stands the warrior's height."""
+    and two rows of boot where HeroBase has blades. He stands HeroBase's height."""
     ARM_MAT, MITT_MAT = 'trim', 'hat'
     # the brow band across the helm, the eyes either side of the nasal, the nasal itself
     MARKS = [(-1.5, -0.4, 'y'), (-0.5, -0.4, 'y'), (0.5, -0.4, 'y'), (1.5, -0.4, 'y'),
@@ -926,7 +901,7 @@ class Forest(Feller):
         cv.blob(cam, hc + Rh @ v3(1.4, 0, -2.0), Rh, (1.2, 2.0, 1.7), 'beard', 'beard', bias=0.6)
 
 
-BODIES = {'hunter': Hunter(), 'warrior': Warrior(), 'standard': Standard(), 'oath': Oath(),
+BODIES = {'standard': Standard(), 'oath': Oath(),
           'unbroken': Unbroken(), 'coif': Coif(), 'general': General(), 'traitor': Traitor(),
           'hearth': Hearth(), 'wanderer': Wanderer(), 'light': Light(),
           'hood': Hood(), 'tent': Tent(), 'lamp': Lamp(), 'dusk': Dusk(),

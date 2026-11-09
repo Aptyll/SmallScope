@@ -415,14 +415,6 @@ const WORD_POP_T = 1.6, WORD_POP_RISE = 14; // s it floats, and how far up
 const wordPops = []; // { x, y, txt, t }
 function wordPop(x, y, txt) { wordPops.push({ x, y, txt, t: 0 }); }
 
-// an ambush arrow landing, on whatever it lands on: a gold flare over the
-// ordinary hit puff and a crack that never sounds like a normal shot
-function ambushFx(x, y) {
-  burst(x, y, '#fff4d0', 10, 90, 0.4);
-  burst(x, y, '#ffd95c', 7, 55, 0.5);
-  sfxAt('ambush', x, y);
-}
-
 // `grav` true is the usual toss (a kick up, then a 90 px/s/s fall); a NUMBER
 // is a fall that strength with no kick, for things that drift down rather
 // than fly. `drift` is a steady sideways px/s the damping never takes (the

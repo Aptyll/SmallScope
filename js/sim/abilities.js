@@ -1,7 +1,9 @@
 'use strict';
-// The class abilities: keys 1-4, four unique actives per class, each with a
-// cooldown, a cast the body visibly performs, and world entities of its own
-// (a piercing shot, nets, a grapple line, a shield, a rush, a crater, a fury).
+// The heroes' abilities: keys 1-4, four actives per hero, each with a
+// cooldown and a cast the body visibly performs. The rows and their effects
+// are each hero's own file (ARM_AB, js/sim/armatos.js, and the rest); this is
+// the machinery every row runs through: ranks, casting, the second half of a
+// key (`recast`), and the shield and dash states a key can leave on a body.
 // Everything here runs per player off p.input.ability, so a bot casts through
 // exactly the key a human presses. Loaded after attack.js (it shares the
 // world's fx helpers at runtime and nothing at load time - and it must draw
@@ -26,133 +28,29 @@ const AB_RANK_LV = [1, 3, 5, 7, 9];  // hero level each rank of a basic key wait
 const AB_ULT_LV = [6, 11, 16];       // ...and of the ultimate's
 const AB_ULT = 3;                    // the key that is the ultimate (4, R)
 const AB_LV_MATS = ['#8a6a4a', '#9aa3ad', '#9fc4dd', '#cfe0ff', '#f2cc6a']; // the rank-up floater's ink, by the key's new rank (the last one gold)
-// the warrior's alternate keys (CLASS_AB_ALT below)
-const CRY_R = 96;           // px: the shout's reach
-const WHIRL_R = 36, WHIRL_KB = 120;     // the blade ring
-const HAM_R = 46, HAM_HALF = 1.15;     // the sweep ahead
-// hunter
-const PIERCE_WIND = 0.7;    // s the draw is LOCKED before the shot looses itself
-const PIERCE_SPD = 380;     // px/s (a plain arrow flies 320)
-const PIERCE_RANGE = 520;   // px of flight before the fittings stretch it - the telegraph draws the stretched one
-const PIERCE_SLOW = 0.15;   // walk multiplier while the draw is locked: commitment
-const NET_SPD = 300;
-const NET_RANGE = 130;
-const NET_KICK = 150;       // px/s of recoil the hunter takes backward
-const GRAP_RANGE = 170;     // px a thrown hook can reach
-const GRAP_ASSIST = 12;     // px either side of the aim ray a trunk still catches
-const GRAP_REEL = 260;      // px/s of reel - over SLIDE_MIN, so a release carves
-const GRAP_ARRIVE = 12;     // px from the anchor the line lets itself go
-const GRAP_MAX_T = 1.5;     // s of reel before the hook slips (safety rail)
-const GRAP_MISS_CD = 1;     // s a hook that caught nothing costs
-// (snow cover has no numbers of its own: the burrow it opens is PRONE_*, js/sim/actions.js)
-// warrior
-const SHIELD_ARC = 0.35;    // cos-margin of the front arc that blocks
-// the SLAM: the shield key again while the wall is up (or mid-charge) - a
-// short wind-up, then the shield's face driven into everything in the wedge
-// ahead. It ENDS the wall and starts its cooldown, so a slam is the wall's
-// second half spent all at once.
-const SLAM_CAST = 0.16;     // s of wind-up the wedge is on the snow for
-const SLAM_R = 30;          // px of reach
-const SLAM_HALF = 0.85;     // rad either side of the shield's face
-const SLAM_KB = 150;        // px/s of shove, straight down the face
-const RUSH_SPD = 300;
-const RUSH_T = 0.42;        // s of charge (~4 tiles)
-const RUSH_RAMP = 0.08;     // s the charge takes to reach full speed, so it leaves smooth
-const RUSH_WALL_MUL = 1.6;  // driven into a tree/rock/wall: the slam is worse
-const STOMP_R = 34;
-const STOMP_KB = 170;       // px/s radial shove
-const CRATER_R = 30;        // the deep-snow crater the stomp leaves...
-const CRATER_T = 4;         // ...and how long it slows rivals crossing it
-const CRATER_SLOW = 0.55;
-// the FINISHING BLOW: a slow overhead cut whose worth is the target's MISSING life -
-// the finisher the other three keys set up. Its row's `rank` says the base,
-// the share of the lost life added on top, and the cap on that extra, so a
-// bear at a sliver is not a one-line kill.
-const EXEC_R = 30;
-const EXEC_HALF = 0.75;     // rad either side of the aim: narrower than the sword
-const EXEC_KB = 120;
+// the front arc of a raised shield (shieldT, the state ARMATOS's brace rides): a
+// hit from inside it is braced (holdTaken, js/sim/armatos.js)
+const SHIELD_ARC = 0.35;    // cos-margin of the front arc
+const RECAST_T = 0.16;      // s of wind-up a key's second half (`recast`) takes
 // every readable shape an ability puts on the snow for BOTH sides: the
-// telegraph while a cast winds up (the wedge, the ring, the charge's line),
+// telegraph while a cast winds up (the wedge, the ring, the dash's line),
 // and the flash where it landed. abFx holds the flashes; the telegraphs are
 // read live off the caster.
 const AB_FX_T = 0.28;       // s a landed shape flashes for
 const TELE_COL = '#e0637a'; // the wind-up's colour...
 const TELE_HOT = '#ffd95c'; // ...and the last quarter of it, when it is about to land
 
-// ---- the two kits --------------------------------------------------------
-// One row per key. `use(p)` is the whole effect, fired when the cast lands -
-// what an ability IS lives here, never in an `if` somewhere else. `cast` is
-// the seconds the body spends performing it (the pose is abilityPose below).
-// `aim` is the ground it covers, for the MOUSE scheme's range preview
+// ---- the kits --------------------------------------------------------
+// One list of four rows per hero, in CLASSES order. A row is one key: `use(p)`
+// is the whole effect, fired when the cast lands - what an ability IS lives in
+// its row, never in an `if` somewhere else. `cast` is the seconds the body
+// spends performing it (the pose is abilityPose, js/draw/abilities.js). `aim`
+// is the ground it covers, for the MOUSE scheme's range preview
 // (drawCastPreview, js/draw/marks.js): a `line` of that many px toward the
 // aim, a `cone` of radius r and `half` rad either side of it, or a `ring`
-// of radius r round the body; a row without one aims at nothing.
+// of radius r round the body; a row without one aims at nothing. Every
+// field a row may carry is listed over ARM_AB (js/sim/armatos.js).
 const CLASS_AB = [
-  [ // HUNTER - bow, distance control, the ground between
-    {
-      id: 'pierce', name: 'PIERCING SHOT', cd: [12, 11, 10, 9, 8], ap: 0.6, cast: PIERCE_WIND, aim: { line: PIERCE_RANGE },
-      rank: { shot: [1.5, 1.7, 1.9, 2.1, 2.3] }, // times a fully drawn plain arrow's damage
-      tip: 'A SHOT THROUGH EVERYONE IN A LINE',
-      blurb: 'LOCK A FULL DRAW, THEN LOOSE. THE SHOT GOES THROUGH EVERYONE ON THE LINE.',
-      use: (p) => abPierce(p),
-    },
-    {
-      id: 'net', name: 'NET SHOT', cd: [15, 14, 13, 12, 11], ap: 0.4, cast: 0.18, aim: { line: NET_RANGE },
-      rank: { dmg: [4, 8, 12, 16, 20], slow: 0.4, slowT: 2 }, // slow: walk x0.4 under the net
-      tip: 'A NET THAT SLOWS. KICKS YOU BACK',
-      blurb: 'A WEIGHTED NET THAT TANGLES. THE RECOIL KICKS YOU BACKWARD.',
-      use: (p) => abNetShot(p),
-    },
-    {
-      id: 'grap', name: 'GRAPPLE', cd: [8, 7, 6, 5, 4], cast: 0.12, aim: { line: GRAP_RANGE }, // a rank is a hook back sooner
-      tip: 'HOOK A TREE. HOLD TO REEL',
-      blurb: 'HOOK A TREE. HOLD TO REEL IN, LET GO TO KEEP THE SPEED.',
-      use: (p) => abGrapple(p),
-    },
-    {
-      id: 'snow', name: 'SNOW COVER', cd: [60, 50, 40], cast: 0.22,
-      rank: { ambush: [2.5, 3, 3.5] }, // the shot out of full cover, times its damage (attackDmg, js/sim/attack.js)
-      tip: 'HIDE IN THE SNOW. AMBUSH SHOT HITS HARD',
-      blurb: 'LIE DOWN AND PULL THE SNOW OVER YOU. THE KEY AGAIN STANDS YOU UP.',
-      use: (p) => abSnowCover(p),
-      // the strip's active tell: how deep under the snow the body is
-      acol: '#f4f7ff', activeF: (p) => (p.prone ? Math.max(0.15, p.hide) : 0),
-    },
-  ],
-  [ // WARRIOR - close pressure, blocking, momentum
-    {
-      id: 'shield', name: 'SHIELD WALL', cd: [9, 8.5, 8, 7.5, 7], ap: 0.4, cast: 0.12, wall: true,
-      rank: { t: 2.2, dmg: [8, 12, 16, 20, 24], stun: 1.1 }, // t: the wall held up; dmg/stun: the slam
-      tip: 'BLOCKS SHOTS. AGAIN TO SLAM AND STUN',
-      blurb: 'RAISE THE TOWER SHIELD. PRESS AGAIN TO SLAM: STUNS WHAT IS AHEAD, ENDS THE WALL.',
-      // the one key with two halves: the raise, and - pressed again while the
-      // wall is up or mid-charge (tryAbility sets castSlam) - the slam
-      use: (p) => (p.castSlam ? abSlam(p) : abShieldUp(p)),
-      // the strip's active tell: how much of the wall is left, and its colour
-      acol: '#f2cc6a', activeF: (p) => (p.shieldT > 0 ? p.shieldT / abRk(p, 'shield', 't') : 0),
-    },
-    {
-      id: 'rush', name: 'BULL RUSH', cd: [12, 11.5, 11, 10.5, 10], ap: 0.6, cast: 0.3, aim: { line: RUSH_SPD * RUSH_T },
-      rank: { dmg: [10, 15, 20, 25, 30], stun: 0.6 }, // the slam at the end, x RUSH_WALL_MUL into a wall
-      tip: 'CHARGE. CARRY AND SLAM THE FIRST RIVAL',
-      blurb: 'CHARGE A LINE. THE FIRST RIVAL HIT IS CARRIED AND SLAMMED.',
-      use: (p) => abRush(p),
-    },
-    {
-      id: 'stomp', name: 'STOMP', cd: [14, 13, 12, 11, 10], ap: 0.7, cast: 0.28, aim: { ring: STOMP_R },
-      rank: { dmg: [12, 17, 22, 27, 32], stun: 0.25 },
-      tip: 'LEAP AND STUN ALL AROUND YOU',
-      blurb: 'LEAP AND SLAM THE SNOW. THE CRATER SLOWS WHOEVER CROSSES IT.',
-      use: (p) => abStomp(p),
-    },
-    {
-      id: 'exec', name: 'FINISHING BLOW', cd: [18, 15, 12], ap: 0.5, cast: 0.55, aim: { cone: EXEC_R, half: EXEC_HALF },
-      rank: { dmg: [10, 20, 30], missing: 0.5, bonus: 40 }, // dmg at full life, + `missing` of the life lost, at most `bonus` more
-      tip: 'HITS HARDER THE LESS LIFE THEY HAVE',
-      blurb: 'A HEAVY OVERHEAD CUT. THE LESS LIFE THEY HAVE LEFT, THE HARDER IT LANDS.',
-      use: (p) => abFinish(p),
-    },
-  ],
   ARM_AB, // ARMATOS - the standard, the shield, the march (js/sim/armatos.js)
   FORT_AB, // FORTIVA - the arc, the defiant shield, the lunge, the leap (js/sim/fortiva.js)
   BELLA_AB, // BELLA - the lunge, the parry, the slip, the duel (js/sim/bella.js)
@@ -173,9 +71,7 @@ const CLASS_AB = [
   SAGITTA_AB, // SAGITTA - the pin, the pavise, the crank back, the long bolt (js/sim/sagitta.js)
 ];
 
-// the world the abilities put things into
-const craters = [];  // {x, y, team, t}
-const nets = [];     // {x, y, nx, ny, d, owner, team, spin, dmg, slow, slowT}
+// the shapes the abilities flash on the snow
 const abFx = [];     // {kind: 'wedge'|'ring', x, y, a, r, half, t, col} - where a blow landed, flashed for AB_FX_T
 
 // ---- levelling -----------------------------------------------------------
@@ -187,49 +83,10 @@ const abFx = [];     // {kind: 'wedge'|'ring', x, y, a, r, half, t, col} - where
 // reaches for a key ask it, so a locked ability is dark for a player whoever
 // is driving it.
 function abUnlocked(p, i) { return p.abLv[i] > 0; }
-// ---- the options on a key --------------------------------------------------
-// A key can carry more than one ability: CLASS_AB[cls][i] is its first
-// option and CLASS_AB_ALT[cls][i] the others, picked pre-match in the hero
-// pop-up (p.abPick[i], js/ui/menu.js) - a bot keeps the first, which is the
-// one its hands know (aiCombat, js/ai/ai.js reaches for keys by index). Every
-// reader asks abOf(p, i) for what a key IS on this body; abKeyOf finds the
-// key an ability id is standing on, or -1 when it is not picked at all.
-const CLASS_AB_ALT = [
-  [[], [], [], []], // the hunter's keys carry one option each
-  [ // the warrior's other four
-    [{
-      id: 'cry', name: 'WAR CRY', cd: [16, 15, 14, 13, 12], cast: 0.25, aim: { ring: CRY_R },
-      rank: { slow: 0.6, slowT: [2.5, 2.75, 3, 3.25, 3.5], mark: 4 }, // slowed to 60%, marked for both maps
-      tip: 'SLOWS AND MARKS RIVALS NEAR YOU',
-      blurb: 'A SHOUT THAT CARRIES. EVERY RIVAL IN EARSHOT IS SLOWED AND MARKED FOR YOUR SIDE TO SEE.',
-      use: (p) => abWarCry(p),
-    }],
-    [{
-      id: 'whirl', name: 'WHIRLWIND', cd: [11, 10.5, 10, 9.5, 9], ap: 0.5, cast: 0.3, aim: { ring: WHIRL_R },
-      rank: { dmg: [7, 11, 15, 19, 23] },
-      tip: 'SPIN AND CUT ALL AROUND YOU',
-      blurb: 'SPIN THE BLADE A FULL TURN. EVERYTHING AT ARM\'S LENGTH IS CUT AND THROWN BACK.',
-      use: (p) => abWhirlwind(p),
-    }],
-    [{
-      id: 'ham', name: 'LEG SWEEP', cd: [13, 12.5, 12, 11.5, 11], ap: 0.3, cast: 0.25, aim: { cone: HAM_R, half: HAM_HALF },
-      rank: { dmg: [3, 6, 9, 12, 15], root: 1.4 },
-      tip: 'ROOTS RIVALS IN FRONT OF YOU',
-      blurb: 'A LOW SWEEP ACROSS THE SHINS AHEAD. WHOEVER IT CATCHES IS PINNED WHERE THEY STAND.',
-      use: (p) => abSweep(p),
-    }],
-    [{
-      id: 'wind', name: 'SECOND WIND', cd: [40, 35, 30], cast: 0.4,
-      rank: { heal: [0.3, 0.4, 0.5], t: 4 }, // that share of max hp back over t s
-      tip: 'HEAL OVER FOUR SECONDS',
-      blurb: 'A BREATH TAKEN MID-FIGHT. PART OF YOUR HEALTH COMES BACK OVER FOUR SECONDS.',
-      use: (p) => abSecondWind(p),
-      acol: '#f2937f', activeF: (p) => (p.windT > 0 ? p.windT / abRk(p, 'wind', 't') : 0),
-    }],
-  ],
-];
-function abOptions(cls, i) { return [CLASS_AB[cls][i]].concat(CLASS_AB_ALT[cls] && CLASS_AB_ALT[cls][i] || []); }
-function abOf(p, i) { const o = abOptions(p.cls, i); return o[Math.min(o.length - 1, p.abPick ? p.abPick[i] | 0 : 0)]; }
+// ---- what a key is ---------------------------------------------------------
+// Every reader asks abOf(p, i) for the row on key i of this body; abKeyOf
+// finds the key an ability id is standing on, or -1 when this hero has none.
+function abOf(p, i) { return CLASS_AB[p.cls][i]; }
 function abKeyOf(p, id) { for (let i = 0; i < AB_KEYS; i++) if (abOf(p, i).id === id) return i; return -1; }
 function abReady(p, i) { return p.abLv[i] > 0 && p.abCd[i] <= 0; } // bought AND off cooldown: what a bot reaches for
 // The rank ladder of key `i` carrying row `ab`: the hero level each rank
@@ -277,52 +134,38 @@ function buyAbilityLv(p, i) {
 }
 
 // ---- casting -------------------------------------------------------------
-// The press. Refused flat while the body is otherwise occupied; the shield's
-// own key is the one toggle - pressing it again lowers the shield early - and
-// snow cover's is the other: pressing it again stands the body up, free.
+// The press. Refused flat while the body is otherwise occupied; a row with a
+// second half (`recast`) takes the key again as that half.
 function tryAbility(p, i) {
   if (i < 0 || i >= AB_KEYS || p.dead || p.stunT > 0 || p.fallT > 0 ||
-    p.dodgeT > 0 || p.grapT > 0 || p.castT > 0 || inAir(p) || p.zip >= 0) return; // a zipline's handle occupies the hands the way a cast does
+    p.dodgeT > 0 || p.castT > 0 || inAir(p) || p.zip >= 0) return; // a zipline's handle occupies the hands the way a cast does
   const ab = abOf(p, i);
   if (!ab) return;
   // a key nobody has spent a point on is not yours yet: the dim well already
   // says so, and the press reddens it the way a bit that will not fit reddens
   // the tool well (abDenied, js/ui.js)
   if (!abUnlocked(p, i)) { if (p === player) abDenied(i); return; }
-  // THE SLAM: the shield key while the wall is up, or mid-charge. A charge
-  // stops on the spot (the body it carried is slammed where it stands) and
-  // the wind-up begins from there; without a wall up the slam is the shield's
-  // own cast, so it waits on the shield's cooldown like the raise would
-  // (abRecast: a row's own `recast`, else a shield key's - `wall` - while
-  // the wall is up or a rush, not a hero's dash, is running)
+  // THE SECOND HALF: the key again while its row's `recast` says so (the
+  // brace up, a dash running). It is already paid for, so it waits on no
+  // cooldown; a dash stops on the spot and the wind-up begins from there.
   if (abRecast(p, ab)) {
-    if (!ab.recast && p.shieldT <= 0 && p.abCd[i] > 0) { sfxFor(p, 'deny'); return; } // (a row's own second half is already paid for)
-    if (ab.recast && ab.ok && !ab.ok(p)) { sfxFor(p, 'deny'); return; } // ...and may still need its target
-    if (p.rushT > 0) rushEnd(p, false); // a charge, or a hero's dash, stops where it is
+    if (ab.ok && !ab.ok(p)) { sfxFor(p, 'deny'); return; } // it may still need its target
+    if (p.rushT > 0) dashStop(p);
     p.castSlam = true;
-    startCast(p, i, SLAM_CAST);
+    startCast(p, i, RECAST_T);
     return;
   }
-  if (p.rushT > 0) return; // every other key waits out the charge
-  if (ab.id === 'snow' && p.prone) { risePlayer(p); return; } // rising is free; only going under pays
+  if (p.rushT > 0) return; // every other key waits out the dash
   if (p.abCd[i] > 0) { sfxFor(p, 'deny'); return; }
-  if (ab.id === 'rush' && p.rootT > 0) { sfxFor(p, 'deny'); return; } // pinned: nothing that moves you
-  if (ab.id === 'snow') {
-    // no snow underfoot is a flat no before the kneel even starts - the speed
-    // check waits for the cast to land (tryProne, called by abSnowCover)
-    const tx = Math.floor(p.x / TILE), ty = Math.floor((p.y + 4) / TILE);
-    if (!inWorld(tx, ty) || ground[idx(tx, ty)] !== 0) { sfxFor(p, 'deny'); return; }
-  }
   if (ab.ok && !ab.ok(p)) { sfxFor(p, 'deny'); return; } // a row that needs something the press lacks (a target near the aim)
   p.castSlam = false; // a fresh press is never a second half (one knocked out of the hands mid-cast must not linger)
   startCast(p, i, ab.cast);
 }
 // is the key pressed now its row's second half (castSlam)
-function abRecast(p, ab) { return ab.recast ? !!ab.recast(p) : !!(ab.wall && (p.shieldT > 0 || (p.rushT > 0 && !p.dash))); }
-// the wind-up itself: cover broken, the draw dropped, the body turned to the
-// aim and the clock set. `t` is the cast's length - the table's, or the slam's
+function abRecast(p, ab) { return !!(ab.recast && ab.recast(p)); }
+// the wind-up itself: the draw dropped, the body turned to the aim and the
+// clock set. `t` is the cast's length - the row's, or the second half's
 function startCast(p, i, t) {
-  risePlayer(p); // a cast breaks cover the way the shot does
   if (p.charging) { p.charging = false; p.chargeT = 0; }
   p.fireArmed = false;
   p.castAb = i;
@@ -338,7 +181,6 @@ function castProg(p) { return p.castT > 0 && p.castMax > 0 ? 1 - p.castT / p.cas
 // ability leaves on a body. Called from updatePlayer once the player is alive.
 function updateAbilities(p, dt) {
   for (let i = 0; i < AB_KEYS; i++) if (p.abCd[i] > 0) p.abCd[i] = Math.max(0, p.abCd[i] - dt);
-  if (p.hopT > 0) p.hopT = Math.max(0, p.hopT - dt);
   // root / slow / net / mark / fire: the shared clock every kind of unit runs
   // (updateUnitStatus, js/sim/actions.js) - an animal and a bot age the
   // identical states off the identical timers
@@ -362,10 +204,9 @@ function updateAbilities(p, dt) {
     aimHold(p); // the telegraph on every screen points where the hand does (aimAngle, js/draw/bodies.js)
     const ab = abOf(p, p.castAb);
     // a cast with a telegraph on the snow keeps facing the aim the whole
-    // wind-up - the locked draw, the charge's line, the slam's and the
-    // execute's wedge - so the shape and the body agree about where this is
-    // going, and what lands is what was shown
-    if (ab && (ab.id === 'pierce' || ab.id === 'rush' || ab.id === 'exec' || ab.tele || (ab.wall && p.castSlam))) {
+    // wind-up - a dash's line, a bash's wedge - so the shape and the body
+    // agree about where this is going, and what lands is what was shown
+    if (ab && (ab.tele || (ab.wall && p.castSlam))) {
       faceToward(p, p.input.aimX - p.x, p.input.aimY - p.y);
     }
     if (p.castT <= 0) {
@@ -384,26 +225,15 @@ function updateAbilities(p, dt) {
   passiveTick(p, dt);
   // a timed shield running out (shieldTick, js/sim/actions.js)
   shieldTick(p, dt);
-  // SECOND WIND: the breath, a share of the life back each tick until the clock runs out
-  if (p.windT > 0) {
-    const step = Math.min(dt, p.windT);
-    p.windT -= step;
-    healPlayer(p, p.windRate * step);
-  }
 }
 
 // every movement cap an ability is allowed to touch, in one multiplier: the
-// root pins, a cast and a raised shield slow, a net drags. updatePlayer
+// root pins, a cast and a raised shield slow, a slow drags. updatePlayer
 // applies it to the walk cap and the ice cap alike.
 function abilityMoveMul(p) {
   if (p.rootT > 0) return 0;
   let m = 1;
-  // a cast halves the walk - except the locked draw, which all but plants the
-  // feet: the pierce's cost is standing still where everyone can see the line
-  if (p.castT > 0) {
-    const ab = abOf(p, p.castAb);
-    m *= ab && ab.id === 'pierce' ? PIERCE_SLOW : 0.5;
-  }
+  if (p.castT > 0) m *= 0.5; // a cast halves the walk
   if (p.shieldT > 0) m *= 0.4;
   if (p.slowT > 0) m *= p.slowMul;
   m *= statBuffMul(p, 'ms'); // a bear buff (campBuff, wildlife.js; js/sim/stats.js)
@@ -411,353 +241,28 @@ function abilityMoveMul(p) {
   return m;
 }
 
-// ---- hunter: the four effects --------------------------------------------
-// The windup was the telegraph; the loose is the payoff. One enhanced arrow,
-// already at full draw, that goes THROUGH every body on the line instead of
-// dying on the first - the pierce flag is read by the arrow loop (js/sim/sim.js),
-// which keeps the shot alive past a hit and remembers who it has already cut.
-// The cue that the lock released is hard and unmissable: the nock snap, a
-// white flash on the arrowhead, and the shot itself already gone.
-//
-// The flight: a full-draw shot at the pierce's own speed and reach, through
-// shotFlight (js/sim/attack.js) - the rule every bow's shot flies by.
-const PIERCE_FLIGHT = { speed: PIERCE_SPD, life: PIERCE_RANGE / PIERCE_SPD };
-function pierceFlight() { return shotFlight(PIERCE_FLIGHT, 1); }
-function abPierce(p) {
-  const { spd, life } = pierceFlight();
-  const dx = p.input.aimX - p.x, dy = p.input.aimY - (p.y - BOW_Y);
-  const a = Math.atan2(dy, dx);
-  // the hero's DAMAGE at a full draw (attackDmg, js/sim/attack.js), the
-  // pierce multiplier over it, and its ABILITY POWER share
-  const dmg = Math.round(statOf(p, 'dmg') * abRk(p, 'pierce', 'shot') + abAp(p, 'pierce'));
-  arrows.push({
-    x: p.x, y: p.y - BOW_Y,
-    vx: Math.cos(a) * spd, vy: Math.sin(a) * spd,
-    t: 0, life, dmg, pow: 1,
-    owner: p.id, team: p.team, ambush: false, trailD: 0,
-    solid: true, col: '#f4f7ff',
-    pierce: true, pierceHit: [], ab: 'pierce', // what the death recap names (hurtUnit)
-    ang: a, spd, ox: p.x, oy: p.y - BOW_Y,
-  });
-  // the snap: arrowhead flash at the bow, and the sound of the lock letting go
-  burst(p.x + Math.cos(a) * 7, p.y - BOW_Y + Math.sin(a) * 7, '#f4f7ff', 8, 55, 0.3, true);
-  burst(p.x + Math.cos(a) * 9, p.y - BOW_Y + Math.sin(a) * 9, '#ffd95c', 5, 45, 0.25, true);
-  shakeFor(p, 2);
-  sfxAt('nock', p.x, p.y); sfxAt('arrow', p.x, p.y);
-}
-
-function abNetShot(p) {
-  const dx = p.input.aimX - p.x, dy = p.input.aimY - (p.y - BOW_Y);
-  const d = Math.hypot(dx, dy) || 1;
-  const nx = dx / d, ny = dy / d;
-  nets.push({ x: p.x, y: p.y - BOW_Y, nx, ny, d: 0, owner: p.id, team: p.team, spin: 0, // ...and the rank it was thrown at
-    dmg: abRk(p, 'net', 'dmg'), slow: abRk(p, 'net', 'slow'), slowT: abRk(p, 'net', 'slowT') });
-  // the recoil: a real backward hop, animated on the body (p.hopT)
-  p.vx -= nx * NET_KICK;
-  p.vy -= ny * NET_KICK;
-  p.hopT = 0.3;
-  burst(p.x, p.y + 4, '#eef4fb', 4, 30, 0.3, true);
-  sfxAt('arrow', p.x, p.y);
-}
-
-// The hook: thrown down the aim ray, it catches the first tree or rock near
-// the line (GRAP_ASSIST px either side - the assist, so a trunk half a tile
-// off the cursor still takes it) and starts the reel. The reel itself is a
-// movement branch in playerMove (updatePlayer), held as long as the key is held; grapEnd
-// is every way it lets go, and where the cooldown starts - so a long ride and
-// an instant release cost the same. A hook that catches nothing costs
-// GRAP_MISS_CD instead of the full clock.
-function abGrapple(p) {
-  const dx = p.input.aimX - p.x, dy = p.input.aimY - p.y;
-  const d = Math.hypot(dx, dy) || 1;
-  const nx = dx / d, ny = dy / d;
-  let ax = 0, ay = 0, found = false;
-  for (let s = 12; s < GRAP_RANGE && !found; s += 6) {
-    const sx = p.x + nx * s, sy = p.y + ny * s;
-    const ctx2 = Math.floor(sx / TILE), cty = Math.floor(sy / TILE);
-    for (let oy = -1; oy <= 1 && !found; oy++) for (let ox = -1; ox <= 1 && !found; ox++) {
-      const tx = ctx2 + ox, ty = cty + oy;
-      if (!inWorld(tx, ty)) continue;
-      const o = objects[idx(tx, ty)];
-      if (!o || o.type !== 'tree') continue;
-      const cx2 = tx * TILE + 8, cy2 = ty * TILE + 8;
-      // the assist: perpendicular distance of the trunk to the aim ray
-      const along = (cx2 - p.x) * nx + (cy2 - p.y) * ny;
-      if (along < 10 || along > GRAP_RANGE) continue;
-      const perp = Math.abs((cx2 - p.x) * ny - (cy2 - p.y) * nx);
-      if (perp > GRAP_ASSIST + 8) continue;
-      ax = cx2; ay = cy2; found = true;
-    }
-  }
-  if (!found) {
-    // nothing to bite: the throw whiffs, and only a beat is paid for it
-    const i = abKeyOf(p, 'grap');
-    if (i >= 0) p.abCd[i] = GRAP_MISS_CD;
-    burst(p.x + nx * 14, p.y + ny * 14, '#8b93a8', 3, 25, 0.25, true);
-    sfxFor(p, 'deny');
-    return;
-  }
-  p.grapX = ax; p.grapY = ay;
-  p.grapT = GRAP_MAX_T;
-  p.sliding = false;
-  burst(ax, ay - 4, '#c8d2e4', 6, 40, 0.35, true);
-  sfxAt('place', p.x, p.y);
-}
-// every way the line lets go: the key released, the anchor reached, a wall, a
-// stun, the water, or the hook slipping on the safety timer. The momentum is
-// KEPT - the reel speed rides out over SLIDE_MIN, so releasing into shift
-// carves straight into a slide.
-function grapEnd(p) {
-  if (p.grapT <= 0) return;
-  p.grapT = 0;
-  const i = abKeyOf(p, 'grap');
-  if (i >= 0) p.abCd[i] = abCdOf(p, i);
-  burst(p.x, p.y - 2, '#c8d2e4', 4, 30, 0.3, true);
-  sfxAt('pickup', p.x, p.y);
-}
-
-// Snow cover: the burrow, moved onto the kit. The whole state is still prone
-// (tryProne/risePlayer and PRONE_*, js/sim/actions.js) - this is just the one door
-// in, and the 60 s clock is paid HERE, on the way under; every way back up is
-// free. A kneel that lands somewhere the snow refuses (still moving, sliding)
-// gives the clock back.
-function abSnowCover(p) {
-  tryProne(p);
-  if (!p.prone) {
-    const i = abKeyOf(p, 'snow');
-    if (i >= 0) p.abCd[i] = 0; // the snow refused: nothing is paid
-  }
-}
-
-// ---- warrior: the four effects -------------------------------------------
-function abShieldUp(p) {
-  p.shieldT = abRk(p, 'shield', 't');
-  p.shieldA = Math.atan2(p.input.aimY - (p.y - BOW_Y), p.input.aimX - p.x);
-  burst(p.x, p.y - 4, '#9aa3ad', 6, 35, 0.35, true);
-  sfxAt('place', p.x, p.y);
-}
-// down on the timer, or spent by the slam: the cooldown starts HERE, so
-// holding the wall the full stretch and slamming at once cost the same
+// ---- the shield and the dash ----------------------------------------------
+// THE SHIELD: `shieldT` is a raised shield's seconds left and `shieldA` where
+// it faces (updateAbilities turns it with the aim); ARMATOS's brace rides it
+// (abHold, js/sim/armatos.js). Down on the timer, by its second half, or
+// knocked down by a stun: the cooldown starts HERE, so holding it the full
+// stretch and spending it at once cost the same.
 function abShieldDown(p, early) {
   if (p.shieldT <= 0 && !early) return;
   p.shieldT = 0;
-  const i = abKeyOf(p, p.hold ? 'hold' : 'shield');
+  const i = p.hold ? abKeyOf(p, 'hold') : -1;
   p.hold = false; p.holdHit = false;
   if (i >= 0) p.abCd[i] = abCdOf(p, i);
   sfxAt('pickup', p.x, p.y);
 }
-// THE SLAM lands: the shield's face driven through the wedge ahead. Everything
-// alive in it takes the blow, the shove down the face and a real stun; the
-// wall it was part of is spent, whether it was up or the charge stood in for
-// it. The wedge on the snow is exactly inCone's (js/sim/actions.js).
-function abSlam(p) {
-  p.castSlam = false;
-  const a = Math.atan2(p.input.aimY - (p.y - BOW_Y), p.input.aimX - p.x);
-  const nx = Math.cos(a), ny = Math.sin(a);
-  for (const q of unitsInCone(p, p.x, p.y, a, SLAM_R, SLAM_HALF)) {
-    hurtUnit(q, abDmg(p, 'shield', abRk(p, 'shield', 'dmg')), nx, ny, p, { kb: SLAM_KB });
-    if (!q.dead) { stunUnit(q, abRk(p, 'shield', 'stun'), p); q.kbx += nx * SLAM_KB * 0.5; q.kby += ny * SLAM_KB * 0.5; }
-    burst(q.x, unitMidY(q), '#f2cc6a', 8, 50, 0.45, true);
-    shakeFor(p, 4, q);
-  }
-  for (const s of structsInCone(p, p.x, p.y, a, SLAM_R, SLAM_HALF)) hurtStruct(s, abDmg(p, 'shield', abRk(p, 'shield', 'dmg')), p);
-  if (PRACTICE) abHitDummies(p.x + nx * SLAM_R * 0.5, p.y + ny * SLAM_R * 0.5, SLAM_R * 0.5, abDmg(p, 'shield', abRk(p, 'shield', 'dmg')));
-  abFx.push({ kind: 'wedge', x: p.x, y: p.y - 2, a, r: SLAM_R, half: SLAM_HALF, t: 0, col: '#f2cc6a' });
-  burst(p.x + nx * 8, p.y - 4 + ny * 6, '#9aa3ad', 8, 45, 0.4, true);
-  abShieldDown(p, true);
-  sfxAt('hit', p.x, p.y);
-}
-// an incoming shot dies on a raised shield when it flies INTO the front arc
-// (ARMATOS's brace eats nothing whole: it takes a share off the hit instead, holdTaken)
-function abShieldBlocks(t, nx, ny) {
-  if (t.shieldT <= 0 || t.hold) return false;
-  return nx * Math.cos(t.shieldA) + ny * Math.sin(t.shieldA) < -SHIELD_ARC;
-}
-
-function abRush(p) {
-  const dx = p.input.aimX - p.x, dy = p.input.aimY - p.y;
-  const d = Math.hypot(dx, dy) || 1;
-  p.rushNX = dx / d; p.rushNY = dy / d;
-  p.rushT = RUSH_T;
-  p.rushVictim = null;
-  p.sliding = false;
-  faceToward(p, dx, dy, true);
-  burst(p.x, p.y + 4, '#dfe8f4', 8, 45, 0.4, true);
-  sfxAt('dodge', p.x, p.y);
-}
-// one step of the charge, called from playerMove's movement branch with the
-// wall verdict for this frame. The first rival in the path is grabbed and
-// carried; the end of the line (or a wall) is where the slam happens.
-function rushStep(p, mv, dt) {
-  // plowed snow off the front
-  p.rushFxT = (p.rushFxT || 0) - dt;
-  if (p.rushFxT <= 0) {
-    p.rushFxT = 0.04;
-    burst(p.x + p.rushNX * 5, p.y + 4, '#eef4fb', 2, 30, 0.35, true);
-  }
-  // p.rushVictim is the BODY, whatever kind it is: the charge picks up a deer
-  // or a bot the same way it picks up a rival, and slams it just as hard
-  const v = p.rushVictim;
-  if (!v) {
-    for (const q of unitsHit(p, p.x, p.y, ROLL_HIT_R + PLAYER_R)) {
-      // a bear is not picked up: the charge stops against it and slams it where it stands
-      if (isAnchored(q)) { p.rushVictim = q; rushEnd(p, false); return; }
-      p.rushVictim = q;
-      if (q instanceof Player) risePlayer(q);
-      stunUnit(q, 0.3, p); // manhandled: nothing they hold survives the grab
-      burst(q.x, unitMidY(q), '#eef4fb', 6, 40, 0.4, true);
-      sfxAt('hit', q.x, q.y);
-      break;
-    }
-  } else if (unitAlive(v)) {
-    // carried on the shoulder: held one body ahead, stun refreshed so their
-    // own step stays limp until the slam
-    stunUnit(v, 0.2, p);
-    const wx = p.x + p.rushNX * 9, wy = p.y + p.rushNY * 9;
-    moveEntity(v, wx - v.x, wy - v.y, unitRadius(v));
-  } else {
-    p.rushVictim = null; // it died on the way: the charge runs on empty
-  }
-  const wall = mv.blockedX || mv.blockedY;
-  if (wall || p.rushT <= 0) rushEnd(p, wall);
-}
-function rushEnd(p, wall) {
+// THE DASH: a hero's charge rides `rushT` and its line (rushNX/NY) at the pace
+// its HERO_DASH row gives (playerMove, js/sim/sim.js; js/sim/heroes.js). A key's
+// second half pressed mid-dash stops it where it is, with a little of its way
+// still in the feet.
+function dashStop(p) {
   p.rushT = 0;
-  p.dash = ''; // (a hero's dash cut short by its second key ends here too)
-  const v = p.rushVictim;
-  p.rushVictim = null;
+  p.dash = '';
   p.vx = p.rushNX * 60; p.vy = p.rushNY * 60;
-  // A charge stopped by a rival's BUILDING slams the building: the tile just
-  // past the body is whatever was driven into, and it takes the wall slam's
-  // own number - the same blow a carried body would have taken into it.
-  if (wall) {
-    const bx = p.x + p.rushNX * (PLAYER_R + 6), by = p.y + p.rushNY * (PLAYER_R + 6);
-    const st = structOf(objAt(Math.floor(bx / TILE), Math.floor(by / TILE)));
-    if (structFoe(p, st)) hurtStruct(st, Math.round(abDmg(p, 'rush', abRk(p, 'rush', 'dmg')) * RUSH_WALL_MUL), p);
-  }
-  if (v && unitAlive(v)) {
-    const mul = wall ? RUSH_WALL_MUL : 1;
-    hurtUnit(v, Math.round(abDmg(p, 'rush', abRk(p, 'rush', 'dmg')) * mul), p.rushNX, p.rushNY, p, { kb: 110 * mul, ab: 'rush' });
-    if (!v.dead) stunUnit(v, abRk(p, 'rush', 'stun') * mul, p);
-    burst(v.x, v.y - 5, '#cfd8e8', 8, 50, 0.5);
-    burst(v.x, v.y - 4, '#eef4fb', 10, 55, 0.5, true);
-    shakeFor(p, wall ? 6 : 4, v);
-    sfxAt('hit', v.x, v.y);
-  } else if (wall) {
-    p.vx = -p.rushNX * 40; p.vy = -p.rushNY * 40; // the thud, without a body to spend it on
-    burst(p.x + p.rushNX * 6, p.y - 2, '#eef4fb', 8, 45, 0.45, true);
-    shakeFor(p, 3);
-    sfxAt('hit', p.x, p.y);
-  }
-}
-
-function abStomp(p) {
-  const px = p.x, py = p.y;
-  // one list, every living thing in the ring: players, wildlife and bots
-  // take the same damage, the same shove and the same beat of stun
-  for (const q of unitsHit(p, px, py, STOMP_R)) {
-    const d = Math.hypot(q.x - px, q.y - py) || 1;
-    const nx = (q.x - px) / d, ny = (q.y - py) / d;
-    hurtUnit(q, abDmg(p, 'stomp', abRk(p, 'stomp', 'dmg')), nx, ny, p, { kb: STOMP_KB });
-    if (!q.dead) { stunUnit(q, abRk(p, 'stomp', 'stun'), p); q.kbx += nx * STOMP_KB; q.kby += ny * STOMP_KB; }
-  }
-  // the ring does not stop at bodies: every rival building it touches takes
-  // the same blow, damped once by STRUCT_DR inside hurtStruct (js/sim/actions.js)
-  for (const s of structsNear(p, px, py, STOMP_R)) hurtStruct(s, abDmg(p, 'stomp', abRk(p, 'stomp', 'dmg')), p);
-  if (PRACTICE) abHitDummies(px, py, STOMP_R, abDmg(p, 'stomp', abRk(p, 'stomp', 'dmg')));
-  craters.push({ x: px, y: py + 3, team: p.team, t: 0 });
-  abFx.push({ kind: 'ring', x: px, y: py, r: STOMP_R, t: 0, col: '#f4f7ff' });
-  // the shockwave: one ring of snow thrown outward
-  for (let i = 0; i < 22; i++) {
-    const a = (i / 22) * Math.PI * 2;
-    particles.push({
-      x: px + Math.cos(a) * 6, y: py + 2 + Math.sin(a) * 4,
-      vx: Math.cos(a) * 90, vy: Math.sin(a) * 55 - 15,
-      life: 0.4, maxLife: 0.35, color: i % 3 ? '#eef4fb' : '#cfd8e8', size: i % 2 ? 2 : 1, grav: 60,
-    });
-  }
-  shakeFor(p, 5);
-  sfxAt('break_', px, py);
-}
-
-// THE FINISHING BLOW lands: the overhead cut through the wedge ahead, worth the base
-// plus a share of every point of life the body under it has already lost -
-// the three keys before this one are how that life went missing. The same
-// blow for every kind of unit: a wolf at a sliver is finished like a rival.
-function execDmg(p, q) {
-  const max = q.maxHp || q.hp;
-  return abDmg(p, 'exec', abRk(p, 'exec', 'dmg')) + Math.min(abRk(p, 'exec', 'bonus'), Math.round(Math.max(0, max - q.hp) * abRk(p, 'exec', 'missing')));
-}
-function abFinish(p) {
-  const a = Math.atan2(p.input.aimY - (p.y - BOW_Y), p.input.aimX - p.x);
-  const nx = Math.cos(a), ny = Math.sin(a);
-  for (const q of unitsInCone(p, p.x, p.y, a, EXEC_R, EXEC_HALF)) {
-    const dmg = execDmg(p, q);
-    hurtUnit(q, dmg, nx, ny, p, { kb: EXEC_KB, crit: dmg > abRk(p, 'exec', 'dmg') * 2 });
-    burst(q.x, unitMidY(q), '#cfd8e8', 10, 55, 0.5);
-    burst(q.x, unitMidY(q), '#f4f7ff', 6, 45, 0.4, true);
-    shakeFor(p, 5, q);
-  }
-  for (const s of structsInCone(p, p.x, p.y, a, EXEC_R, EXEC_HALF)) hurtStruct(s, abDmg(p, 'exec', abRk(p, 'exec', 'dmg')), p);
-  if (PRACTICE) abHitDummies(p.x + nx * EXEC_R * 0.5, p.y + ny * EXEC_R * 0.5, EXEC_R * 0.5, abDmg(p, 'exec', abRk(p, 'exec', 'dmg')));
-  abFx.push({ kind: 'wedge', x: p.x, y: p.y - 2, a, r: EXEC_R, half: EXEC_HALF, t: 0, col: '#e05a4a' });
-  burst(p.x + nx * 10, p.y - 2 + ny * 8, '#eef4fb', 8, 45, 0.4, true);
-  sfxAt('break_', p.x, p.y);
-}
-
-// ---- warrior: the other four -----------------------------------------------
-// WAR CRY: every rival unit in earshot slowed and marked - the mark is the
-// one both maps read (markUnit), so the shout is a scouting tool as much as
-// a fight one. Nothing is hurt.
-function abWarCry(p) {
-  for (const q of unitsNear(p, p.x, p.y, CRY_R)) {
-    if (q.team === p.team && q !== p) continue;
-    slowUnit(q, abRk(p, 'cry', 'slowT'), abRk(p, 'cry', 'slow'));
-    markUnit(q, abRk(p, 'cry', 'mark'));
-    burst(q.x, unitMidY(q), '#f2cc6a', 4, 30, 0.3, true);
-  }
-  abFx.push({ kind: 'ring', x: p.x, y: p.y, r: CRY_R, t: 0, col: '#f2cc6a' });
-  shakeFor(p, 3);
-  sfxAt('break_', p.x, p.y);
-}
-// WHIRLWIND: the blade round a full turn. Everything alive at arm's length
-// takes the cut and the throw; the buildings in reach take the cut.
-function abWhirlwind(p) {
-  for (const q of unitsHit(p, p.x, p.y, WHIRL_R)) {
-    const d = Math.hypot(q.x - p.x, q.y - p.y) || 1;
-    const nx = (q.x - p.x) / d, ny = (q.y - p.y) / d;
-    hurtUnit(q, abDmg(p, 'whirl', abRk(p, 'whirl', 'dmg')), nx, ny, p, { kb: WHIRL_KB });
-    burst(q.x, unitMidY(q), '#cfd8e8', 6, 45, 0.4);
-  }
-  for (const s of structsNear(p, p.x, p.y, WHIRL_R)) hurtStruct(s, abDmg(p, 'whirl', abRk(p, 'whirl', 'dmg')), p);
-  if (PRACTICE) abHitDummies(p.x, p.y, WHIRL_R, abDmg(p, 'whirl', abRk(p, 'whirl', 'dmg')));
-  abFx.push({ kind: 'ring', x: p.x, y: p.y, r: WHIRL_R, t: 0, col: '#c8d2e4' });
-  burst(p.x, p.y - 4, '#eef4fb', 10, 60, 0.4, true);
-  shakeFor(p, 4);
-  sfxAt('swing', p.x, p.y);
-}
-// LEG SWEEP: the low sweep through the wedge ahead - a small cut and the root
-// (rootUnit: the same pin a net's edge leaves), so the body it catches stays
-// for whatever comes next.
-function abSweep(p) {
-  const a = Math.atan2(p.input.aimY - (p.y - BOW_Y), p.input.aimX - p.x);
-  const nx = Math.cos(a), ny = Math.sin(a);
-  for (const q of unitsInCone(p, p.x, p.y, a, HAM_R, HAM_HALF)) {
-    hurtUnit(q, abDmg(p, 'ham', abRk(p, 'ham', 'dmg')), nx, ny, p, { kb: 0 });
-    if (!q.dead) rootUnit(q, abRk(p, 'ham', 'root'), p);
-    burst(q.x, q.y, '#cfd8e8', 5, 35, 0.35);
-  }
-  if (PRACTICE) abHitDummies(p.x + nx * HAM_R * 0.5, p.y + ny * HAM_R * 0.5, HAM_R * 0.5, abDmg(p, 'ham', abRk(p, 'ham', 'dmg')));
-  abFx.push({ kind: 'wedge', x: p.x, y: p.y - 2, a, r: HAM_R, half: HAM_HALF, t: 0, col: '#c8d2e4' });
-  sfxAt('swing', p.x, p.y);
-}
-// SECOND WIND: the breath. The heal is paid out over its `t` by updateAbilities,
-// so a hit landed in the meantime still counts - it is a lifeline, not a wall.
-function abSecondWind(p) {
-  p.windT = abRk(p, 'wind', 't');
-  p.windRate = p.maxHp * abRk(p, 'wind', 'heal') / p.windT;
-  burst(p.x, p.y - 8, '#f2937f', 8, 40, 0.5, true);
-  sfxAt('place', p.x, p.y);
 }
 
 // the practice dummy takes area hits like everything else: any dummy tile
@@ -776,9 +281,8 @@ function abHitDummies(x, y, r, dmg) {
 
 // ---- the world tick ------------------------------------------------------
 // Everything the abilities left lying in the world, stepped once per sim
-// step from updatePlay: craters drag, and nets fly their lines. (The piercing
-// shot rides the arrows array, js/sim/sim.js, and the grapple lives on its
-// caster's body - neither leaves a thing behind to tick here.)
+// step from updatePlay: the flashes age, and each hero's own (HERO_TICK).
+// (A piercing shot rides the arrows array, js/sim/sim.js.)
 
 // Each of them is asked about through `sideOf` (js/sim/actions.js), which hands
 // unitsNear/unitsHit the side a thing in the world is on rather than a living
@@ -794,41 +298,6 @@ function updateAbilityWorld(dt) {
     if (abFx[i].t >= AB_FX_T) abFx.splice(i, 1);
   }
   heroTick(dt); // what the heroes leave in the world: ARMATOS's standards (HERO_TICK, js/sim/heroes.js)
-  for (let i = craters.length - 1; i >= 0; i--) {
-    const z = craters[i];
-    z.t += dt;
-    if (z.t > CRATER_T) { craters.splice(i, 1); continue; }
-    // deep snow is deep snow for everything that has to cross it, refreshed
-    // every step spent inside
-    for (const q of unitsNear(sideOf(z), z.x, z.y - 4, CRATER_R)) slowUnit(q, 0.15, CRATER_SLOW);
-  }
-  for (let i = nets.length - 1; i >= 0; i--) {
-    const n = nets[i];
-    n.x += n.nx * NET_SPD * dt;
-    n.y += n.ny * NET_SPD * dt;
-    n.d += NET_SPD * dt;
-    n.spin += dt * 14;
-    let dead = n.d >= NET_RANGE;
-    if (!dead && isSolidTile(Math.floor(n.x / TILE), Math.floor(n.y / TILE))) {
-      // a net that ends on a rival's building lands on it, the way a shot does
-      const st = structOf(objAt(Math.floor(n.x / TILE), Math.floor(n.y / TILE)));
-      if (structFoe(sideOf(n), st)) hurtStruct(st, abDmg(abCredit(n), 'net', n.dmg), abCredit(n));
-      burst(n.x, n.y, '#cfd8e8', 4, 30, 0.3, true);
-      dead = true;
-    }
-    // the first body in the way tangles in it, whatever kind of body it is
-    if (!dead) for (const q of unitsHit(sideOf(n), n.x, n.y + 6, 8)) {
-      if (q instanceof Player && abShieldBlocks(q, n.nx, n.ny)) {
-        burst(n.x, n.y, '#cfd8e8', 6, 40, 0.35, true); dead = true; break;
-      }
-      hurtUnit(q, abDmg(abCredit(n), 'net', n.dmg), n.nx, n.ny, abCredit(n), { kb: 40, ab: 'net' });
-      if (!q.dead) netUnit(q, n.slowT, n.slow, abCredit(n)); // the drape the slow is read off
-      burst(q.x, unitMidY(q), '#cfd8e8', 8, 45, 0.4, true);
-      dead = true;
-      break;
-    }
-    if (dead) nets.splice(i, 1);
-  }
 }
 
 // how far a telegraphed line runs out along (nx, ny) before the world stops it

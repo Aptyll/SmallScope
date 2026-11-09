@@ -1,4 +1,4 @@
-# A contact sheet of what bake.py would write: every run and roll frame of both classes in
+# A contact sheet of what bake.py would write: every run and roll frame of every look in
 # each facing, in both team paints, on snow, big. For judging a rig change before baking.
 #
 #   python app/bake-player/preview.py out.png [scale]

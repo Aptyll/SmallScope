@@ -47,7 +47,7 @@ const SAVE_ROOTS = [
   ['arrows', ...saveArr(arrows)],
   ['particles', ...saveArr(particles)], ['floaters', ...saveArr(floaters)], ['footprints', ...saveArr(footprints)],
   ['fish', ...saveArr(fish)], ['camps', ...saveArr(camps)],
-  ['craters', ...saveArr(craters)], ['nets', ...saveArr(nets)], ['abFx', ...saveArr(abFx)],
+  ['abFx', ...saveArr(abFx)],
   ['guards', () => [guards, guardN], (v) => { saveArr(guards)[1](v && v[0]); guardN = v ? v[1] : 0; }], // ARMATOS's standards (js/sim/armatos.js)
   ['brushfires', ...saveArr(brushfires)], // IGNIA's lines of fire (js/sim/ignia.js)
   ['auraStars', ...saveArr(auraStars)], ['auraOrbs', ...saveArr(auraOrbs)], ['auraCurtains', ...saveArr(auraCurtains)], // AURA's strikes waiting and lights drifting (js/sim/aura.js)

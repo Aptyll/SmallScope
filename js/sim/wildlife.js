@@ -172,7 +172,7 @@ function animalHit(a, x, y) { return Math.hypot(a.x - x, animalHitY(a) - y) < an
 // come through here so a swipe reacts exactly like a shot does - the den
 // wakes, prey bolts, the flock scatters - and `lastHit` (the player whose
 // wallet the kill pays, see animalDies) is stamped in one place.
-function hurtAnimal(a, dmg, nx, ny, kb, owner, ambush) {
+function hurtAnimal(a, dmg, nx, ny, kb, owner) {
   a.hp -= dmg;
   a.flash = 0.12;
   a.lastHit = owner;
@@ -180,10 +180,9 @@ function hurtAnimal(a, dmg, nx, ny, kb, owner, ambush) {
   // and a hit is the ONLY thing that wakes one
   if (isCampKind(a.kind)) wakeCamp(a, players[owner]);
   else { a.fleeT = a.kind === 'rabbit' ? 1.4 : 2.2; a.alertT = 0; } // a hit rabbit goes NOW; it does not stop to sit up
-  tallyHit(a, dmg); // an ambush still lands with its own flare and crack (ambushFx, below)
+  tallyHit(a, dmg);
   a.kbx = nx * kb; a.kby = ny * kb;
   burst(a.x, a.y - 4, HIT_PUFF[a.kind] || '#8f582f', 6, 40, 0.4);
-  if (ambush) ambushFx(a.x, a.y - 4);
   sfxAt('hit', a.x, a.y); if (a.hp > 0) sfxAt('yelp', a.x, a.y);
 }
 
@@ -832,7 +831,7 @@ function animalDies(a) {
 // walks a 5 px one. `anchor`: nothing a
 // player does moves it - no body pushes it (separateUnits gives it right of way),
 // no hit shoves it (updateAnimal drops its knockback), a roll into it is a tackle
-// that stuns only the roller, and a charge stops against it (rushStep) - so a bear
+// that stuns only the roller, and a dash stops against it (each HERO_DASH step) - so a bear
 // always walks where it means to, roar and attacks included.
 // `lv`: the least level it spawns at, over the table's average (makeAnimal) -
 // a bear is never a level-1 kill. `frame`: its frame over the body (drawBeastFrame,
@@ -902,8 +901,7 @@ function campBuff(p, t, kind) { if (p && p.active) { p.buffT = Math.max(p.buffT 
 // the LEAP (rideLeap): a short hop that owns the velocity, as a roll does,
 // and clears anything whose OBJECTS entry says `leap` (the felled trunk
 // across the road, isSolidTile). E again hops off (rideEnd) and the deer
-// bolts, wild again; a stun on either body, a fall through the ice, going
-// prone, the zipline, the air, or either one dying throws the rider
+// bolts, wild again; a stun on either body, a fall through the ice, the zipline, the air, or either one dying throws the rider
 // (rideCheck, stunUnit, die, animalDies).
 // What can be ridden, per kind: its gallop as a multiple of a player's walk
 // (RIDE_GALLOP_MUL: a ridden deer outruns its own wild sprint) and where on its back the rider sits
@@ -944,7 +942,7 @@ function hopToggle(p) {
 }
 function rideStart(p, a) {
   if (!a || p.mount || a.rider || p.dead || p.stunT > 0 || p.fallT > 0 || p.dodgeT > 0 || p.rushT > 0 ||
-    p.grapT > 0 || p.zip >= 0 || p.prone || inAir(p)) return;
+    p.zip >= 0 || inAir(p)) return;
   if (p.zipWalk) zipWalkEnd(p);
   p.sliding = false; p.slideT = 0;
   p.mount = a; a.rider = p; a.team = p.team;
@@ -986,7 +984,7 @@ function rideEnd(p, thrown) {
 function rideCheck(p) {
   const a = p.mount;
   if (!a) return;
-  if (!p.active || p.dead || a.dead || a.rider !== p || p.stunT > 0 || p.fallT > 0 || p.prone ||
+  if (!p.active || p.dead || a.dead || a.rider !== p || p.stunT > 0 || p.fallT > 0 ||
     p.zip >= 0 || inAir(p)) rideEnd(p, true);
 }
 // the ridden deer's step (updateAnimal, in place of its brain): it stands

@@ -172,7 +172,6 @@ function auraStep(p) {
   burst(p.x, p.y - 6, '#e6f8ff', 14, 55, 0.45, true);
   p.rushNX = dx / d; p.rushNY = dy / d;
   p.rushT = Math.max(TICK_DT, len / STEP_SPD);
-  p.rushVictim = null;
   p.dash = 'step';
   p.sliding = false;
   faceToward(p, dx, dy, true);

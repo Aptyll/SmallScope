@@ -217,7 +217,6 @@ function falcoGlide(p) {
   const dx = p.input.aimX - p.x, dy = p.input.aimY - p.y, d = Math.hypot(dx, dy) || 1;
   p.rushNX = dx / d; p.rushNY = dy / d;
   p.rushT = GLIDE_LEN / GLIDE_SPD;
-  p.rushVictim = null;
   p.dash = 'glide';
   p.sliding = false;
   faceToward(p, p.rushNX, p.rushNY, true);

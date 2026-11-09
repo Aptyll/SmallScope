@@ -131,7 +131,7 @@ function salviaHeal(src, q, n) {
   return h;
 }
 // every slow off a body (and the net's drape that says why it was slow)
-function salviaUnslow(q) { q.slowT = 0; q.slowMul = 1; q.netT = 0; }
+function salviaUnslow(q) { q.slowT = 0; q.slowMul = 1; }
 
 // ---- Q POULTICE ---------------------------------------------------------------------
 function salviaPoultice(p) {

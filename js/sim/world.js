@@ -493,8 +493,7 @@ function fellScenery(tx, ty) {
 // ROAD_HW_WOOD, a forest road with the pines closing in. Ground 3, packed
 // earth showing through the snow, two ruts down its length. It walks like
 // snow (only ice and holes are special-cased in updatePlayer's momentum
-// block) but it is not snow: nothing digs into it (tryProne, the hunter's
-// burrow), nothing grows on it, and a fish never counts it as water
+// block) but it is not snow: nothing grows on it, and a fish never counts it as water
 // (fishWater). Laid by placeRoad AFTER genWorld and BEFORE the camps, on pure
 // reads, so it neither moves the shared rng stream nor differs run to run.
 // Its EDGE is ragged, not a tile staircase: roadEdgeAt wanders the half-width

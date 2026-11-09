@@ -154,7 +154,7 @@ function hiemsIcicle(p) {
     x: p.x, y: p.y - BOW_Y,
     vx: Math.cos(a) * ICICLE_SPD, vy: Math.sin(a) * ICICLE_SPD,
     t: 0, life: ICICLE_RANGE / ICICLE_SPD, dmg: abDmg(p, 'icicle', abRk(p, 'icicle', 'dmg')), pow: 1,
-    owner: p.id, team: p.team, ambush: false, trailD: 0,
+    owner: p.id, team: p.team, trailD: 0,
     solid: true, kb: 0.5, col: '#a8dcf0', ab: 'icicle',
     look: 'icicle', // drawn as the shard (HERO_SHOTS, js/draw/hiems.js)
     ang: a, spd: ICICLE_SPD, ox: p.x, oy: p.y - BOW_Y,

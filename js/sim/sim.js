@@ -544,7 +544,7 @@ function updatePlay(dt) {
   resolveContests(); // this step's work swings, creek fish and bush claims
   if (!PRACTICE) sampleStats(dt); // the post-game lobby's two graphs (js/ui/lobby.js)
   updateShop(); // the counter shuts when you walk off (js/ui/shop.js)
-  updateAbilityWorld(dt); // craters and nets in flight
+  updateAbilityWorld(dt); // the ability flashes, and what each hero left in the world
   if (state.drop) updateDrop(dt);
   shedStep(dt); // the gusts knocking snow off the pines (js/sim/shed.js)
   updateCallouts(dt); // the bots' calls to their side (js/ai/ai-callouts.js)
@@ -568,13 +568,12 @@ function updatePlay(dt) {
     // scales a player's HIT_KB too, which is why it travels as a multiplier.
     const blow = (t, base, hx, hy) => {
       hurtUnit(t, a.dmg, nx, ny, players[a.owner], {
-        ambush: a.ambush, kb: base, kbMul: a.kb,
-        basic: !!a.basic, // a press of the bow, not the pierce: a basic attack (passiveDeal, js/sim/heroes.js)
+        kb: base, kbMul: a.kb,
+        basic: !!a.basic, // a press of the bow, not a key's shot: a basic attack (passiveDeal, js/sim/heroes.js)
         ab: a.ab,         // ...or the key that loosed it (the death recap)
         burn: a.burn,     // ...and the fire it carries (IGNIA's FIREBRAND, js/sim/ignia.js)
         slow: a.slow,     // ...and the slow (RUPES's HEAVE, js/sim/rupes.js)
       });
-      if (a.ambush) ambushFx(hx, hy);
       a.struck = true;
       heroShotHit(a, t, nx, ny); // what a hero's shot does once it lands (HERO_SHOT_HIT, js/sim/heroes.js)
     };
@@ -584,26 +583,23 @@ function updatePlay(dt) {
     let end = 1;
     // Every contact in the order the step met it. A PIERCING shot
     // (`a.pierce`, js/sim/abilities.js) takes each body and keeps flying -
-    // a.pierceHit is everyone it has already cut - and only a raised shield
-    // or the world itself stops it; any other shot ends on the first.
+    // a.pierceHit is everyone it has already cut - and only the world itself
+    // stops it; any other shot ends on the first.
     if (!dead) for (const h of shotContacts(a, x0, y0, dx, dy)) {
       const t = h.t, hx = x0 + dx * h.s, hy = y0 + dy * h.s;
       if (h.k === 'eagle') {
         hurtEagle(state.drop.eagles[t.team], EAGLE_ARROW_DMG, players[a.owner], hx, hy); // a flat spook, not the body damage
-        if (a.ambush) ambushFx(hx, hy);
-        dead = true;
+          dead = true;
       } else if (h.k === 'dummy') {
         if (a.pierce && a.pierceHit.includes(t)) continue; // three tiles, one body
         hitDummy(t, a.dmg, hx, hy);
-        if (a.ambush) ambushFx(hx, hy);
-        a.struck = true;
+          a.struck = true;
         if (a.pierce) a.pierceHit.push(t); // the pierce keeps flying
         else dead = true;
       } else if (h.k === 'face') {
         hitPTarget(t); // the face explodes on contact
         a.ptHit = true; // this shot keeps the consecutive-hit run alive
-        if (a.ambush) ambushFx(hx, hy);
-        dead = true;
+          dead = true;
       } else if (h.k === 'wall') {
         dead = true;
         // ...and when the wall that stopped it is a RIVAL'S BUILDING, the shot
@@ -613,13 +609,6 @@ function updatePlay(dt) {
         if (structFoe(sideOf(a), st)) hurtStruct(st, Math.round(a.dmg * (a.siege || 1)), players[a.owner]);
         else shedHit(objAt(h.tx, h.ty)); // a shot into a pine knocks its crown's snow loose (js/sim/shed.js)
         burst(hx, hy, '#cfd8e8', 3, 25, 0.25, true);
-      } else if (h.k === 'player' && abShieldBlocks(t, nx, ny)) {
-        // a raised tower shield eats any shot flying into its front arc -
-        // bolts and pierces included - before the body behind it is ever asked
-        burst(hx, hy, '#c8d2e4', 6, 45, 0.35, true);
-        burst(hx, hy, '#f4f7ff', 3, 30, 0.3, true);
-        sfxAt('hit', hx, hy);
-        dead = true;
       } else {
         blow(t, h.k === 'robot' ? ROBOT_KB : h.k === 'animal' ? 25 + 45 * a.pow : undefined, hx, hy);
         if (h.k === 'player') burst(hx, hy, '#cfd8e8', 6, 45, 0.4);
@@ -733,7 +722,7 @@ function walkHeading(p, mx, my, auto) {
 // shift-slide: only engages above walking speed; keeps momentum, drops the tools
 function walkSlide(p, slide, dt, onIce, kit) {
   const sp = Math.hypot(p.vx, p.vy);
-  const wantSlide = slide && p.dodgeT <= 0 && !p.prone && !p.mount; // nothing glides on its belly, or on deer-back
+  const wantSlide = slide && p.dodgeT <= 0 && !p.mount; // nothing glides on deer-back
   if (!p.sliding && wantSlide && sp > kit.slideMin) {
     p.sliding = true;
   }
@@ -750,19 +739,15 @@ function walkSlide(p, slide, dt, onIce, kit) {
 function walkStep(p, dt, mx, my, len, onIce, kit) {
   let sp = Math.hypot(p.vx, p.vy);
   const chargeMul = p.charging ? kit.chargeMul : 1; // drawn bow slows you
-  // every cap an ability may drag on (root, net, crater, cast, shield),
+  // every cap an ability may drag on (root, slow, cast, shield),
   // folded once - js/sim/abilities.js
   const abMul = abilityMoveMul(p);
-  // a belly crawl is a flat crawl on any surface - no ice cap, no draw
-  // penalty, nothing to stack. Getting back up costs a moment of it too.
   // a rider goes at the deer's gallop (RIDE, js/sim/wildlife.js): not the
   // hero's stride, and a drawn bow does not slow the deer under it
   const walkMax = (p.mount ? PLAYER_SPEED * RIDE[p.mount.kind].mul
-    : p.prone ? PRONE_SPEED
-      : p.riseT > 0 ? statOf(p, 'ms') * 0.45
-        : statOf(p, 'ms') * chargeMul) * abMul; // MOVE SPEED (js/sim/stats.js)
+    : statOf(p, 'ms') * chargeMul) * abMul; // MOVE SPEED (js/sim/stats.js)
 
-  if (p.prone || p.rootT > 0 || (!onIce && !p.sliding && sp <= walkMax + 6)) {
+  if (p.rootT > 0 || (!onIce && !p.sliding && sp <= walkMax + 6)) {
     // plain snow walking: near-instant vector approach, tuned so it feels
     // exactly like the old fixed-speed movement (settles in ~3 frames)
     const f = 1 - Math.exp(-25 * dt);
@@ -901,38 +886,18 @@ function playerMove(p, dt, mx, my, len, onIce, kit) {
     }
     if (p.dodgeT <= 0) { p.rollHit.length = 0; burst(p.x, p.y + 4, '#cfd8e8', 4, 30, 0.3, true); }
   } else if (p.rushT > 0) {
-    // BULL RUSH: the charge owns the velocity the way a roll does - straight
-    // down its line, walls and the first body met resolved by rushStep
-    // (a hero's dash rides the same state at its own pace: p.dash, HERO_DASH, js/sim/heroes.js)
+    // A HERO'S DASH (p.dash, HERO_DASH, js/sim/heroes.js) owns the velocity the
+    // way a roll does - straight down its line at its own pace, walls and the
+    // bodies met resolved by its own step. Its first `ramp` seconds come up to
+    // speed rather than snapping to it, so it leaves the wind-up smooth instead
+    // of teleporting a frame down the line.
     p.rushT -= dt;
-    // the first RUSH_RAMP seconds come up to speed rather than snapping to
-    // it, so the charge leaves the wind-up smooth instead of teleporting a
-    // frame down the line
     const hd = heroDash(p);
-    const [spd, len, rampT] = hd ? [hd.spd, hd.t, hd.ramp] : [RUSH_SPD, RUSH_T, RUSH_RAMP];
-    const ramp = Math.min(1, 0.4 + 0.6 * (len - p.rushT) / rampT);
-    p.vx = p.rushNX * spd * ramp;
-    p.vy = p.rushNY * spd * ramp;
+    const ramp = Math.min(1, 0.4 + 0.6 * (hd.t - p.rushT) / hd.ramp);
+    p.vx = p.rushNX * hd.spd * ramp;
+    p.vy = p.rushNY * hd.spd * ramp;
     const mv = moveEntity(p, p.vx * dt, p.vy * dt, PLAYER_R);
-    if (hd) hd.step(p, mv, dt); else rushStep(p, mv, dt);
-  } else if (p.grapT > 0) {
-    // GRAPPLE: the rope owns the velocity while the key is held - hauled
-    // straight at the anchor at GRAP_REEL. Letting go of the key, arriving,
-    // a wall, or the safety timer all end in grapEnd (js/sim/abilities.js), which
-    // KEEPS the velocity - so the reel's speed rides out into the surface
-    // model, and shift turns it into a slide.
-    p.grapT -= dt;
-    const gdx = p.grapX - p.x, gdy = p.grapY - p.y;
-    const gd = Math.hypot(gdx, gdy) || 1;
-    p.vx = gdx / gd * GRAP_REEL;
-    p.vy = gdy / gd * GRAP_REEL;
-    const mv = moveEntity(p, p.vx * dt, p.vy * dt, PLAYER_R);
-    p.grapDustT = (p.grapDustT || 0) - dt;
-    if (p.grapDustT <= 0) {
-      p.grapDustT = 0.06;
-      burst(p.x, p.y + 5, '#dfe8f4', 1, 20, 0.3, true);
-    }
-    if (!inp.grapple || gd <= GRAP_ARRIVE || mv.blockedX || mv.blockedY || p.grapT <= 0) grapEnd(p);
+    hd.step(p, mv, dt);
   } else if (p.leapT > 0) {
     // THE LEAP on deer-back: it owns the velocity the way a roll does, and
     // clears a felled trunk (rideLeapStep, js/sim/wildlife.js)
@@ -968,11 +933,9 @@ function playerPlunge(p) {
       p.vx = p.vy = 0;
       p.sliding = false;
       p.slideT = 0;
-      if (p.rushT > 0) { p.rushT = 0; p.rushVictim = null; p.dash = ''; } // the charge ends in the water
-      if (p.grapT > 0) grapEnd(p);                          // the rope goes slack with you
+      if (p.rushT > 0) { p.rushT = 0; p.dash = ''; } // the charge ends in the water
       p.castT = 0; p.castAb = -1; p.shieldT = 0;           // and so does whatever was being cast
       breakRecall(p);                                      // the recall goes in the water with you
-      p.prone = false; p.hide = 0; p.riseT = 0; // crawled off the edge: no cover in the water
       if (p.charging) { p.charging = false; p.chargeT = 0; }
       p.fireArmed = false;
       sfxAt('splash', p.x, p.y);
@@ -981,50 +944,6 @@ function playerPlunge(p) {
       damagePlayer(p, HOLE_FALL_DMG, 0, 0, null, g === 4 ? 'creek' : 'ice');
     }
   }
-}
-
-function playerCover(p, dt, ftx, fty, kit) {
-  // ---- the cover -------------------------------------------------------
-  // `hide` is the whole stealth state. Lying still on snow pulls it over you
-  // over PRONE_BURY; crawling holds what you already have (concealOf discounts
-  // a moving mound rather than unpacking it); bare ice hides nothing at all,
-  // so the river strips a crawler without forcing them upright; and anything
-  // that puts you back on your feet sheds it over the rise window.
-  if (p.prone) {
-    const snow = inWorld(ftx, fty) && ground[idx(ftx, fty)] === 0;
-    if (!snow) p.hide = Math.max(0, p.hide - dt * 2.2);
-    else if (!p.moving && p.hide < 1) {
-      p.hide = Math.min(1, p.hide + dt / kit.bury);
-      if (p.hide >= 1) { p.hideFlash = 0.4; sfxFor(p, 'hidden'); }
-    }
-    p.crawlT = p.moving ? p.crawlT + dt * 3.6 : 0;
-    // One timer, two jobs, and which one it is doing says what state the body
-    // is in. While the cover is still building it throws up the snow being
-    // pulled over; once it is finished it becomes breath in cold air - the
-    // fair tell that makes "almost invisible" true rather than a promise, and
-    // the one thing a mound holding perfectly still still does.
-    p.puffT -= dt;
-    if (p.puffT <= 0) {
-      if (p.hide < 1) {
-        p.puffT = rand(0.14, 0.26);
-        if (!p.moving) burst(p.x + rand(-6, 6), p.y + rand(0, 5), '#eef4fb', 1, 15, 0.34, true);
-      } else {
-        p.puffT = rand(1.8, 3.2);
-        const bx2 = p.dir === 'left' ? -5 : p.dir === 'right' ? 5 : 0;
-        const by2 = p.dir === 'up' ? -3 : 2;
-        for (let i = 0; i < 3; i++) {
-          particles.push({
-            x: p.x + bx2 + rand(-1, 1), y: p.y + by2, vx: rand(-4, 4), vy: rand(-12, -6),
-            life: rand(0.5, 0.9), maxLife: 0.7, color: '#dbe8f6', size: 1, grav: -8, alpha: 0.5,
-          });
-        }
-      }
-    }
-  } else if (p.hide > 0) {
-    p.hide = 0; // nothing but tryProne can put cover back on; never let it stick
-  }
-  if (p.riseT > 0) p.riseT = Math.max(0, p.riseT - dt);
-  p.hideFlash = Math.max(0, p.hideFlash - dt);
 }
 
 function playerStamina(p, dt, kit) {
@@ -1046,33 +965,11 @@ function playerStamina(p, dt, kit) {
   }
 }
 
-// the marks the body leaves: the crawl's furrow, the stride's prints (and the
-// walk's clock), the slide's carved double trail
+// the marks the body leaves: the stride's prints (and the walk's clock), the
+// slide's carved double trail
 function playerTrails(p, dt, onIce) {
   const spNow = Math.hypot(p.vx, p.vy);
-  // the crawl leaves a drag furrow instead of footprints: a broad flattened
-  // trough with an elbow dimple alternating either side of it. It is a real
-  // tell - a line like that leads anyone who reads it straight to the mound at
-  // the end - and that is the point. The cover is beatable by someone looking.
-  if (p.prone && spNow > 2) {
-    p.trailD -= spNow * dt;
-    const bx = p.vx / spNow, by = p.vy / spNow;
-    let emit = 0;
-    while (p.trailD <= 0 && emit++ < 4) {
-      const back = -p.trailD;
-      p.footSide = 1 - p.footSide;
-      footprints.push({
-        x: p.x - bx * back, y: p.y + 5 - by * back,
-        nx: -by, ny: bx, t: 0, k: 3,
-        // an elbow scuff off to one side of the trough on every other mark,
-        // swapping sides every few of them, the way a crawl actually alternates
-        s: p.footSide ? (Math.floor(p.crawlT) % 2 ? 1 : -1) : 0,
-      });
-      p.trailD += 2; // marks are two deep, so at this spacing they tile into one trough
-    }
-    while (footprints.length > 800) footprints.shift();
-  }
-  if (spNow > 8 && p.dodgeT <= 0 && !p.sliding && !p.prone && p.zip < 0) { // a rider's feet are off the snow
+  if (spNow > 8 && p.dodgeT <= 0 && !p.sliding && p.zip < 0) { // a rider's feet are off the snow
     // the stride keeps time with the snow going by: a drawn bow's creep
     // steps slower, an ice run a little quicker (nothing but the
     // drawn stride reads it: drawPlayer, js/draw/bodies.js)
@@ -1203,7 +1100,7 @@ function updatePlayer(p, dt) {
   // ...and a ripe berry bush walked into is a heal taken (js/sim/world.js)
   bushTouch(p);
 
-  // a stun, a fall, going prone or the cable takes a rider out of the saddle (js/sim/wildlife.js)
+  // a stun, a fall or the cable takes a rider out of the saddle (js/sim/wildlife.js)
   rideCheck(p);
   if (p.leapCd > 0) p.leapCd = Math.max(0, p.leapCd - dt);
 
@@ -1218,17 +1115,12 @@ function updatePlayer(p, dt) {
   kbDecay(p, dt);
 
   // ---- unified momentum: input accelerates vx/vy, the surface sets friction/caps
-  // (the tile the step starts on, before anything moves the body: the cover
-  // reads the ground the body was lying on), before anything moves the body: the cover
-  // reads the ground the body was lying on
-  const ftx = Math.floor(p.x / TILE), fty = Math.floor((p.y + 4) / TILE);
   const onIce = iceUnder(p);
   const kit = kitOf(p);
   walkSlide(p, inp.slide, dt, onIce, kit);
   playerMove(p, dt, mx, my, len, onIce, kit);
   clampWorld(p);
   playerPlunge(p);
-  playerCover(p, dt, ftx, fty, kit);
   playerStamina(p, dt, kit);
   playerTrails(p, dt, onIce);
   playerSwing(p, dt);

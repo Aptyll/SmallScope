@@ -120,7 +120,7 @@ function marisHarpoon(p) {
     x: p.x, y: p.y - BOW_Y,
     vx: Math.cos(a) * HARPOON_SPD, vy: Math.sin(a) * HARPOON_SPD,
     t: 0, life: HARPOON_RANGE / HARPOON_SPD, dmg: abDmg(p, 'harpoon', abRk(p, 'harpoon', 'dmg')), pow: 1,
-    owner: p.id, team: p.team, ambush: false, trailD: 0,
+    owner: p.id, team: p.team, trailD: 0,
     solid: true, kb: 0, col: '#b4bdcc', ab: 'harpoon',
     look: 'harpoon', // drawn as the harpoon and its line (HERO_SHOTS, js/draw/maris.js)
     ang: a, spd: HARPOON_SPD, ox: p.x, oy: p.y - BOW_Y,
@@ -135,7 +135,6 @@ function harpoonCatch(p, e) {
   if (d <= REEL_STOP + 2) return;
   p.rushNX = dx / d; p.rushNY = dy / d;
   p.rushT = Math.min(0.8, (d - REEL_STOP) / REEL_SPD);
-  p.rushVictim = null;
   p.dash = 'reel';
   p.reelX = Math.round(e.x); p.reelY = Math.round(e.y);
   p.sliding = false;
@@ -210,7 +209,6 @@ function marisBreach(p) {
   p.rushT = Math.max(0.12, d / BREACH_SPD);
   p.underT = p.rushT;
   p.invuln = Math.max(p.invuln, p.rushT + 0.05);
-  p.rushVictim = null;
   p.dash = 'breach';
   p.sliding = false;
   p.reelX = Math.round(s[0]); p.reelY = Math.round(s[1]);

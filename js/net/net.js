@@ -183,7 +183,7 @@ function netHostStep(dt) {
     if (!msg) continue;
     const i = players[pr.slot].input, m = msg.in;
     i.mx = m.mx; i.my = m.my; i.aimX = m.aimX; i.aimY = m.aimY;
-    i.fire = m.fire; i.work = m.work; i.slide = m.slide; i.grapple = m.grapple;
+    i.fire = m.fire; i.work = m.work; i.slide = m.slide;
     netInEdges(i, m);
     pr.lastTick = msg.tick;
   }
@@ -209,7 +209,7 @@ function netInClean(m) {
   const idx = (v, n) => (Number.isInteger(v) && v >= 0 && v < n ? v : -1);
   const W = WORLD * TILE;
   return { mx: num(m.mx, -1, 1, 0), my: num(m.my, -1, 1, 0), aimX: num(m.aimX, -W, 2 * W, 0), aimY: num(m.aimY, -W, 2 * W, 0), // a cursor past the map's edge still aims
-    fire: !!m.fire, work: !!m.work, slide: !!m.slide, grapple: !!m.grapple, dodge: !!m.dodge, jump: !!m.jump,
+    fire: !!m.fire, work: !!m.work, slide: !!m.slide, dodge: !!m.dodge, jump: !!m.jump,
     ability: idx(m.ability, AB_KEYS), useItem: idx(m.useItem, ITEM_SLOTS), cmd: m.cmd && typeof m.cmd === 'object' ? m.cmd : null };
 }
 function netInEdges(i, m) {
@@ -457,7 +457,7 @@ function netClientStep(dt) {
   const T = NET.transport;
   if (NET.synced && player) {
     const i = player.input;
-    const msg = { t: 'in', tick: ++NET.inTick, ack: NET.lastTick, in: { mx: i.mx, my: i.my, aimX: i.aimX, aimY: i.aimY, fire: i.fire, work: i.work, slide: i.slide, grapple: i.grapple, dodge: i.dodge, jump: i.jump, ability: i.ability, useItem: i.useItem, cmd: i.cmd } };
+    const msg = { t: 'in', tick: ++NET.inTick, ack: NET.lastTick, in: { mx: i.mx, my: i.my, aimX: i.aimX, aimY: i.aimY, fire: i.fire, work: i.work, slide: i.slide, dodge: i.dodge, jump: i.jump, ability: i.ability, useItem: i.useItem, cmd: i.cmd } };
     if (T.send('host', msg)) NET.bytesOut += JSON.stringify(msg).length;
     netPredictStep(msg.tick, i, dt); // our own walk goes ahead of the host's word
     // the edges are the host's now: a press is sent once
@@ -720,7 +720,7 @@ const PRED = { on: false, hist: [], srv: null, ox: 0, oy: 0 };
 // moving it. Read off the host's word, never off the prediction
 function netPredictable(p) {
   return state.mode === 'play' && !p.dead && !inAir(p) && !p.mount && !p.zipWalk && p.zip < 0 &&
-    p.stunT <= 0 && p.fallT <= 0 && p.dodgeT <= 0 && p.rushT <= 0 && p.grapT <= 0 && p.leapT <= 0;
+    p.stunT <= 0 && p.fallT <= 0 && p.dodgeT <= 0 && p.rushT <= 0 && p.leapT <= 0;
 }
 // one step of the walk, as updatePlayer takes it, on our own body
 function netPredictWalk(p, inp, dt) {

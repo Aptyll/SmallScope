@@ -59,7 +59,7 @@ const ITEM_STATS = {
 const ITEM_STAT_ORDER = ['dmg', 'as', 'hp', 'armor', 'ap', 'haste', 'ms']; // the shop's stat filters, in this order
 
 // The passives, each a name, one short line and what it writes into the kit.
-// The kit numbers (feast, glide, drift, light, ambush, amplify) are read where
+// The kit numbers (feast, glide, drift, light, amplify) are read where
 // the sim already reads them; the flags are read by the hooks below:
 // itemsDeal and itemsOnHit (every blow a player lands, hurtUnit), itemsOnHurt
 // (every blow a player takes), itemsTick (the player's clock), itemStat (the
@@ -72,7 +72,6 @@ const ITEM_PASSIVES = {
   glide:    { name: 'GLIDE', line: 'FASTER ON ICE', mod: (k) => { k.iceMax *= 1.15; k.iceSteer += 0.3; } },
   drift:    { name: 'DRIFT', line: 'SEEN FROM CLOSER', mod: (k) => { k.stealth -= 0.15; } },
   light:    { name: 'LIGHT', line: 'DODGE COMES BACK SOONER', mod: (k) => { k.dodgeCd -= 0.8; } },
-  ambush:   { name: 'AMBUSH', line: 'SHOTS FROM SNOW COVER HIT HARDER', mod: (k) => { k.ambushMul += 0.4; } },
   leech:    { name: 'LEECH', line: 'HEAL 10% OF YOUR HIT DAMAGE', mod: (k) => { k.leech = true; } },
   thorns:   { name: 'THORNS', line: 'HITTERS TAKE 20% BACK', mod: (k) => { k.thorns = true; } },
   cull:     { name: 'CULL', line: '+20% ON THE BADLY HURT', mod: (k) => { k.cull = true; } },
@@ -131,7 +130,7 @@ const BUILD_ITEMS = {
   horn:      { name: "HUNTER'S HORN", price: 2800, from: ['quiver', 'recurve'], stats: { dmg: 9, as: 0.4, ms: 3 }, passive: 'kindling', styles: ['marksman'] },
   feathers:  { name: 'FEATHERS', price: 2600, from: ['recurve', 'sash'], stats: { dmg: 5, as: 0.5, ms: 5 }, passive: 'light', styles: ['marksman', 'assassin'] },
   frostline: { name: 'FROST LINE', price: 2700, from: ['quiver', 'sash'], stats: { dmg: 8, as: 0.45 }, passive: 'chill', styles: ['marksman'] },
-  sunstone:  { name: 'SUNSTONE', price: 3000, from: ['axe', 'pick'], stats: { dmg: 18 }, passive: 'ambush', styles: ['assassin', 'marksman'] },
+  sunstone:  { name: 'SUNSTONE', price: 3000, from: ['axe', 'pick'], stats: { dmg: 18 }, passive: 'cull', styles: ['assassin', 'marksman'] },
   maul:      { name: 'SPLITTING MAUL', price: 3100, from: ['axe', 'whet'], stats: { dmg: 15, haste: 10 }, passive: 'cull', styles: ['bruiser', 'assassin'] },
   beartooth: { name: 'BEAR TOOTH', price: 3000, from: ['tooth', 'axe'], stats: { dmg: 16, hp: 20 }, passive: 'leech', styles: ['bruiser', 'assassin'] },
   fang:      { name: 'WOLF FANG', price: 3000, from: ['knife', 'pick'], stats: { dmg: 9, hp: 50, haste: 10 }, passive: 'feast', styles: ['bruiser'] },
@@ -391,7 +390,7 @@ function potionTick(p, dt) {
     p.potFxT = POTION_FX_T;
     particles.push({
       x: p.x + rand(-4, 4), y: p.y - 3, vx: rand(-4, 4), vy: rand(-22, -12),
-      life: rand(0.4, 0.6), maxLife: 0.5, color: '#8fe08a', size: 1, grav: 0, alpha: 1 - concealOf(p),
+      life: rand(0.4, 0.6), maxLife: 0.5, color: '#8fe08a', size: 1, grav: 0, alpha: 1,
     });
   }
 }

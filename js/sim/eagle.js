@@ -452,7 +452,6 @@ function eagleGust(e) {
     const nx = d > 0 ? dx / d : 1, ny = d > 0 ? dy / d : 0;
     q.kbx = nx * GUST_KB; q.kby = ny * GUST_KB;
     stunUnit(q, GUST_STUN);
-    risePlayer(q); // wind strips the snow off a buried body
     burst(q.x, q.y - 6, '#eef4fb', 6, 50, 0.4, true);
   }
   // a wave's soldiers at its feet take the same buffet (the `soldiers`

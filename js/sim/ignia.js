@@ -166,7 +166,7 @@ function igniaBrand(p) {
     x: p.x, y: p.y - BOW_Y,
     vx: Math.cos(a) * BRAND_SPD, vy: Math.sin(a) * BRAND_SPD,
     t: 0, life: BRAND_RANGE / BRAND_SPD, dmg: abDmg(p, 'brand', abRk(p, 'brand', 'dmg')), pow: 1,
-    owner: p.id, team: p.team, ambush: false, trailD: 0,
+    owner: p.id, team: p.team, trailD: 0,
     solid: true, kb: 0.6, col: '#ff9a3a', ab: 'brand',
     burn: [abRk(p, 'brand', 't'), igniaBurnRate(p, abRk(p, 'brand', 'burn'), hot), 0], // [s, hp/s, wild s]: lit as the blow lands
     look: 'brand', // drawn as the burning stick (HERO_SHOTS, js/draw/ignia.js)
