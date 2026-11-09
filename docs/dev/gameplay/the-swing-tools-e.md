@@ -1,7 +1,7 @@
 # The swing (E)
 
 The axe is **not selectable and is not a weapon**. It is in the hands from a swing's start to the end of its cooldown
-(`p.swingT > 0 || p.swingCd > 0`); the rest of the time the hands hold the hero's own weapon. Which objects a swing
+(`p.swingT > 0 || p.swingCd > 0`; both ride the online snapshot, so a client draws it the same); the rest of the time the hands hold the hero's own weapon. Which objects a swing
 works is their `OBJECTS` entry's `work` flag. Two verbs, two inputs:
 
 - **Left click = the hero's basic attack** ([the basic attack](the-basic-attack.md)). The press only records intent (`clickAction` sets
