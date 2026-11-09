@@ -552,11 +552,14 @@ function roadMainDist(fx, fy) {
 }
 // THE PADS: the blown disc under each roost, packed earth from the crash
 // (eagleCrash, js/sim/eagle.js) - a pad is road to every reader. Continuous
-// tile-index coordinates (an integer is a tile's centre). A team crashing
-// twice on one page (a rematch) re-registers its pad in place.
+// tile-index coordinates (an integer is a tile's centre), named tx/ty, never
+// x/y: the snapshot quantizes every x and y as px (SNAP_QUANT), which on a
+// tile-unit centre off the grid (a perch at u 25.2) moved the client's pad
+// edge a pixel off the host's. A team crashing twice on one page (a rematch)
+// re-registers its pad in place.
 const pads = [];
 function addPad(team, cx, cy, r) {
-  const sp = { team, x: cx, y: cy, hw: r };
+  const sp = { team, tx: cx, ty: cy, hw: r };
   const i = pads.findIndex((s) => s.team === team);
   if (i >= 0) pads[i] = sp; else pads.push(sp);
   return sp;
@@ -568,7 +571,7 @@ function addPad(team, cx, cy, r) {
 function roadDist(fx, fy, laid) {
   let d = roadMainDist(fx, fy);
   if (laid) d = Math.max(d, baseRoadEnd(fx, fy));
-  for (const sp of pads) { const e = Math.hypot(fx - sp.x, fy - sp.y) - sp.hw; if (e < d) d = e; }
+  for (const sp of pads) { const e = Math.hypot(fx - sp.tx, fy - sp.ty) - sp.hw; if (e < d) d = e; }
   const l = sideLaneDist(fx, fy); // the top and bot lanes (js/sim/lanes.js); 99 until layLanes
   return l < d ? l : d;
 }
