@@ -90,11 +90,11 @@ other body (`bot: true` is what `isAnimalUnit` reads to send a blow down the rob
 than the animal one — a soldier carries a `kind` too), the roosting bird's **gust** rears at it
 and buffets it like a player (`updateEagle`/`eagleGust`), a road tower marks it, and it dies through
 `robotDies` paying its bounty to the rival who lands the **last hit** ([Farming](#farming)) and
-`SOLDIER_XP` (20) times its kind's `xp` shared by every rival scout standing near, whoever scrapped it
+`SOLDIER_XP` (20) times its kind's `xp` shared by every rival hero standing near, whoever scrapped it
 ([Hero levels](../multiplayer.md#hero-levels)) — no feed line, six or seven a wave. Its health is its kind's `hp` plus its `grow`
 for every barracks `grow` the match has run (`makeSoldier`), so a hero's grown blow never makes every
 hit a last hit. The cap on a barracks' live soldiers is
-`STRUCTS.barracks.tiers[0].cap`. Bots read them as attackers at their bird and as targets in
+`STRUCTS.barracks.cap`. Bots read them as attackers at their bird and as targets in
 sight, and a pusher walks with its own column ([multiplayer.md](../multiplayer.md#bots)).
 
 
@@ -121,17 +121,17 @@ The `road towers` banner (js/sim/towers.js). Every zipline has three `STRUCTS.to
 ([the zipline](../world.md#the-zipline)); the cable runs only to the furthest one standing.
 `updateTower` (called from `updateStructures`) is one gun on a turntable:
 
-- **What it shoots** (`towerMark`): a rival scout inside `TOWER_RANGE` (112 px from the foot)
-  who hit one of its side's scouts in the ring within `TOWER_CALL_T` (the latest such, read off
+- **What it shoots** (`towerMark`): a rival hero inside `TOWER_RANGE` (112 px from the foot)
+  who hit one of its side's heroes in the ring within `TOWER_CALL_T` (the latest such, read off
   `foeHits`); else the mark it already holds; else the nearest rival bot; else the nearest rival
-  scout. A scout is only a mark while `seenAt` says the side sees them.
+  hero. A hero is only a mark while `seenAt` says the side sees them.
 - **The turn and the wind**: the gun turns at `TOWER_TRAVERSE`, and once inside `TOWER_LOCK` of
   the mark it winds for `TOWER_WIND` (0.7 s) before it looses; then `TOWER_RELOAD` (1.6 s).
-  While it winds on a scout, `drawTowerFx` (js/draw/towers.js) runs a dashed line on the snow
+  While it winds on a hero, `drawTowerFx` (js/draw/towers.js) runs a dashed line on the snow
   from the foot to them and a ring at their feet, brightening as the string comes back.
 - **The bolt**: `TOWER_BOLT_T` in the air, then `hurtUnit` (`cause: 'tower'`, a short knockback).
-  A bot takes `TOWER_DMG_BOT` (15). A scout takes `TOWER_DMG` (24), and each bolt in a row into
-  the same scout adds `TOWER_HEAT` of that, up to three times the first. The spent bolt stands in
+  A bot takes `TOWER_DMG_BOT` (15). A hero takes `TOWER_DMG` (24), and each bolt in a row into
+  the same hero adds `TOWER_HEAT` of that, up to three times the first. The spent bolt stands in
   the snow at the mark's feet for `TOWER_PIN_T`.
 
 A wave turns on a tower inside `SOLDIER_TOWER_R` ([the waves](#soldiers-the-waves)), and a

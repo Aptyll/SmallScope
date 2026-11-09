@@ -13,16 +13,16 @@ const PUMP_GREY = '#8e97ac'; // the ring of a pump nobody holds
 // the pump's paint: its holder's set, or the grey one held by nobody
 function pumpSet(o) { return o.hold >= 0 ? SPRITES.teamBuild[skin(o.hold)] : SPRITES.pumpNeutral; }
 function pumpFrame(o) {
-  const t = STRUCTS.generator.tiers[o.tier], set = pumpSet(o).pumpAnim[o.tier];
+  const t = STRUCTS.pump, set = pumpSet(o).pumpAnim;
   const n = Math.max(1, Math.round(t.period / PUMP_STROKE));
   const u = Math.min(1, Math.max(0, 1 - (o.payT || 0) / t.period)); // 0 just paid, 1 about to
   return set[Math.floor(((u * n) % 1) * set.length) % set.length];
 }
 function drawPumpCoin(o, sx, sy) {
   if (o.hold < 0 || !o.paid) return; // only a pay hops a coin (a fresh flip has paid nothing yet)
-  const since = STRUCTS.generator.tiers[o.tier].period - (o.payT || 0);
+  const since = STRUCTS.pump.period - (o.payT || 0);
   if (since < 0 || since > PUMP_HOP) return;
-  const k = since / PUMP_HOP, m = SPRITES.pumpMouth[o.tier];
+  const k = since / PUMP_HOP, m = SPRITES.pumpMouth;
   const x = Math.round(sx + m[0] + 7 * k) - 1, y = Math.round(sy + m[1] - 2 - 13 * Math.sin(k * Math.PI)) - 1;
   ctx.fillStyle = '#221c2e'; ctx.fillRect(x - 1, y, 5, 3); ctx.fillRect(x, y - 1, 3, 5);
   ctx.fillStyle = '#d8a850'; ctx.fillRect(x, y, 3, 3);
@@ -47,7 +47,7 @@ function pumpArc(r) {
 function drawPumpRings(ex, ey) {
   const r = Math.round(PUMP_R * TILE);
   for (const o of structures) {
-    if (o.type !== 'generator') continue;
+    if (o.type !== 'pump') continue;
     const c = structCenter(o);
     const cx = Math.round(c.x - ex), cy = Math.round(c.y - ey);
     if (cx + r < 0 || cy + r < 0 || cx - r > WV_W || cy - r > WV_H) continue;
@@ -62,14 +62,13 @@ function drawPumpRings(ex, ey) {
   }
 }
 
-// a building wears its owner's team palette over its tier material
+// a building's still sprite: its own `sprite(o)` when its entry has one (a
+// pump wears its holder's paint, not an owner's), else its owner's team set,
+// under its type's name or the grid it wears (`art`: the barracks)
 function structSprite(o) {
-  if (o.type === 'generator') return pumpSet(o).generator[o.tier]; // a pump wears its holder's paint, not an owner's
-  const set = SPRITES.teamBuild[skin(o.team === undefined ? 0 : o.team)];
   const S = STRUCTS[o.type];
-  // a type wearing another's grid (the barracks, `art`)
-  const art = (S && S.art) || o.type;
-  return set ? set[art][o.tier] : SPRITES[art][o.tier];
+  if (S.sprite) return S.sprite(o);
+  return SPRITES.teamBuild[skin(o.team === undefined ? 0 : o.team)][S.art || o.type];
 }
 // where a building's sprite is laid, in px from its footprint's top-left: the
 // skirt on the footprint's bottom edge, centred over its width (a sprite

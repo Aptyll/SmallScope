@@ -22,7 +22,7 @@ const coinPops = [];           // { x, y, miss, team, tick }: miss pops are for 
 
 // what the last hit on rival soldier b pays right now: its kind's share of a melee one's
 function soldierBounty(b) {
-  return Math.round(soldierType(b).bounty * (SOLDIER_BOUNTY + SOLDIER_BOUNTY_GROW * Math.floor(state.elapsed / STRUCTS.barracks.tiers[0].grow)));
+  return Math.round(soldierType(b).bounty * (SOLDIER_BOUNTY + SOLDIER_BOUNTY_GROW * Math.floor(state.elapsed / STRUCTS.barracks.grow)));
 }
 
 // one coin into the air: the gold one off a last hit, or (miss) the grey one

@@ -41,6 +41,7 @@ const AB_RANK_STAT = {
   dmg: ['DAMAGE', tipNum, ''], shove: ['SHOVE DAMAGE', tipNum, ''], cut: ['FRONT DAMAGE CUT', tipCent, '%'],
   slow: ['SLOW', (v) => tipCent(1 - v), '%'], slowT: ['SLOW FOR', tipNum, 'S'], stun: ['STUN', tipNum, 'S'],
   root: ['ROOT', tipNum, 'S'], up: ['KNOCK UP', tipNum, 'S'], t: ['LASTS', tipNum, 'S'],
+  ward: ['DAMAGE CUT', tipCent, '%'], // MARIS's BRACE FOR COLD (js/sim/maris.js)
   armor: ['ARMOR', tipNum, ''], ten: ['TENACITY', tipCent, '%'], heal: ['HEALS % MAX HEALTH', tipCent, '%'],
   mark: ['MARKED FOR', tipNum, 'S'], shieldHp: ['SHIELD % MAX HEALTH', tipCent, '%'],
   missing: ['OF HP ALREADY LOST', tipCent, '%'], bonus: ['MOST EXTRA', tipNum, ''],
@@ -92,7 +93,7 @@ function tipRail(c) {
 }
 function tipGold() {
   return { title: 'GOLD', tcol: '#f5c542', kind: 'PURSE', icon: SPRITES.itemGold, plate: BAG_WELL, rim: '#3c4048',
-    rows: [['CARRIED', String(inv.gold), '#f5c542']], notes: [] };
+    rows: [['CARRIED', String(player.gold), '#f5c542']], notes: [] };
 }
 // a class ability well - the strip's in play (cls omitted: the local player's
 // class, live cooldown, the cast hint), or the lobby's stage (cls given:

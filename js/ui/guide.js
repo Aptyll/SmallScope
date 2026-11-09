@@ -64,7 +64,7 @@ const GUIDE_STEPS = [
     need: 3, count: (g) => player.farm - g.farm0 },
   { id: 'recall', word: 'RECALL', tip: 'STAND STILL: YOUR EAGLE TAKES YOU HOME AND THE RING HEALS YOU',
     caps: () => [keyCap('recall')],
-    ready: () => player.inv.gold >= GUIDE_RECALL_GOLD || player.hp < player.maxHp / 2,
+    ready: () => player.gold >= GUIDE_RECALL_GOLD || player.hp < player.maxHp / 2,
     done: (g) => g.t > GUIDE_HOME_T && !!roostRing(player) },
   { id: 'tower', word: 'TOWER', tip: 'GO IN BEHIND YOUR SOLDIERS: A TOWER SHOOTS THEM FIRST',
     caps: () => [],

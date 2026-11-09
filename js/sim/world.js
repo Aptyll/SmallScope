@@ -186,7 +186,7 @@ function isSolidTile(tx, ty, e, swept) {
   if (!swept && cisternTile(tx, ty)) return true;
   const o = objects[idx(tx, ty)];
   if (!o) return false;
-  // Two tables, no list: any STRUCTS entry (tower/barracks/generator/...)
+  // Two tables, no list: any STRUCTS entry (tower/barracks/pump)
   // is solid for free, and everything else answers from its OBJECTS
   // entry - so neither a new building nor a new kind of scenery ever needs
   // this function touched.

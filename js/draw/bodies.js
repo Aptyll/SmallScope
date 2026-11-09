@@ -516,9 +516,11 @@ function drawPlayer(p, ex, ey, now) {
     // Every player carries a name tag in its team colour so a fight stays
     // legible - your own included: the profile name is what the rest of the
     // table sees over your head, and hiding it from you alone would make it
-    // the one label in the game you cannot check.
-    drawWorldText(p.name,
-      centreTextX(p.x - ex, p.name), hy - 18 - lift, // clear of the draw meter's frame (top row hy-11) with a gap row
+    // the one label in the game you cannot check. A bot's tag is its hero
+    // (boardName), the name TAB, the podium and the recap give it too
+    const tag = boardName(p);
+    drawWorldText(tag,
+      centreTextX(p.x - ex, tag), hy - 18 - lift, // clear of the draw meter's frame (top row hy-11) with a gap row
       TEAMS[skin(p.team)].mark);
     drawBountyTag(p.x - ex, hy - 18 - lift, bounty); // a streak's price, over the name (js/draw/overhead.js)
     // dodge stamina: one clean unsegmented WHITE bar under the health bar -
@@ -593,7 +595,7 @@ function drawPlayer(p, ex, ey, now) {
     // gold filling = drawing (a shot is coming), pale gold = it peaked, slate
     // filling = reloading (it is not), pale gold again for the instant it came
     // back (the bow's own ready colour; white is the stamina bar's), and the
-    // recall's channel in the side's own glow (js/sim/recall.js: a scout
+    // recall's channel in the side's own glow (js/sim/recall.js: a hero
     // leaving, and a hit keeps them there).
     // All of them use the identical geometry, so the bar never jumps when one
     // hands over to the next.

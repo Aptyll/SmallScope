@@ -72,5 +72,3 @@ order that moves the whole side**. Only a human's ping steers (`pingSteer`); a b
   `PING_BACK_T` (6 s) - rung 2b walks it home, or straight out, fighting nothing, until it is
   `PING_DANGER_R` x 1.6 clear - and any bot walking to a ping inside the danger drops that walk.
 
-Worker bots ignore pings: they cut the trees round their own bay and haul the gold home
-([Robots](robots.md)).

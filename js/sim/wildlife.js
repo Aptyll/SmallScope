@@ -89,7 +89,7 @@ const RABBIT_ALERT = 0.3;
 // A warren's rabbit never runs out of its snow: every leg of a flight and
 // every graze must end on its warren's deep snow (warrenHolds), and a flight
 // is a chain of RABBIT_LEG-tile legs, each picked away from the threat, so at
-// PREY_RUN it circles a scout rather than leaving the circle.
+// PREY_RUN it circles a hero rather than leaving the circle.
 const RABBIT_LEG = 3.5;
 function warrenHolds(C, x, y) { return campNear(C, x / TILE - 0.5, y / TILE - 0.5, 0) && deepAt(x, y); }
 // The head-up window: seconds either prey keeps WATCHING after the last sign
@@ -655,7 +655,7 @@ function updatePrey(a, dt) {
   // a tame deer (the practice ride's, prDeerStep, js/sim/practice.js) never bolts from one
   let seen = !a.tame && !!scare && sd < seenAt(scare, FLEE_SIGHT[a.kind] || 0);
   // ...and a deer bolts from a wolf or a bear too, inside DEER_BEAST_SIGHT
-  // whether it is hunting or not: neutral to a scout is not neutral to a deer
+  // whether it is hunting or not: neutral to a hero is not neutral to a deer
   if (!rabbit && !a.tame) for (const m of animals) {
     if (m.dead || !isCampKind(m.kind)) continue;
     const d = Math.hypot(m.x - a.x, m.y - a.y);

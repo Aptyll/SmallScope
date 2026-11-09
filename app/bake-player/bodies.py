@@ -1,6 +1,6 @@
 # The two class bodies on the doll (doll.py): the HUNTER (pom beanie) and the WARRIOR
 # (fur hood with goggles, a trailing scarf, skate blades), and each named hero's looks
-# (ARMATOS: standard, oath; FORTIVA: unbroken, coif; BELLA: general, traitor; IGNIA: hearth, wanderer; AURA: light; SALVIA: hood, tent; LUCERNA: lamp, dusk; HIEMS: scholar, frost; RUPES: quarry, cellar; NIX: snowblind; VARRO: wolfkept, whitepack; VELOX: canal, night; SAGITTA: siege, tower). Their sizes are measured off the
+# (ARMATOS: standard, oath; FORTIVA: unbroken, coif; BELLA: general, traitor; IGNIA: hearth, wanderer; AURA: light; SALVIA: hood, tent; LUCERNA: lamp, dusk; HIEMS: scholar, frost; RUPES: quarry, cellar; NIX: snowblind; VARRO: wolfkept, whitepack; FABER: clockmaker, foreman; MARIS: diver, orca; VELOX: canal, night; SAGITTA: siege, tower). Their sizes are measured off the
 # hand-drawn 16 px frames in js/sprites/characters.js, so the doll's idle lands on those
 # frames pixel for pixel and the run and the roll it paints wear the same body.
 #
@@ -821,6 +821,62 @@ class Foreman(Coif):
     MARKS = [(-0.5, -0.4, 'y'), (0.5, -0.4, 'S'), (-1.5, 0.9, 'e'), (1.5, 0.9, 'e')]
 
 
+class Falconer(Standard):
+    """FALCO as FALCONER (his default look; LAST HAWK is the same cut in another paint): a
+    close leather cap over brown hair, leather straps over the side's coat, the big glove.
+    Armatos's frame, legs and boots."""
+    ARM_MAT, MITT_MAT = 'cloak', 'cloak'
+    MARKS = [(-1.5, 0.9, 'e'), (1.5, 0.9, 'e')]
+
+    @staticmethod
+    def face_region(n, q):
+        """the cap's crown above, the hair round the face below it"""
+        return np.where(q[2] > 0.4, 'cloak', np.where((q[0] > 0.2) & (np.abs(q[1]) < 0.75) & (q[2] > -0.95), 'skin', 'hair'))
+
+    def head(self, cv, cam, hc, Rh, pose, snap):
+        cv.blob(cam, hc, Rh, self.HEAD_R, 'head', 'hair', p=self.HEAD_P, region=self.face_region)
+        self.face_marks(cv, cam, hc, Rh)
+
+    def ball_head(self, cv, cam, hc, Rh):
+        cv.blob(cam, hc, Rh, (2.6, 2.85, 2.5), 'head', 'cloak', p=self.HEAD_P)
+
+
+class Diver(Standard):
+    """MARIS as BARGE DIVER (her default look): a close sealskin hood (the cloak's dark
+    letters) round her face, her side's coat with a leather belt; Armatos's frame, boots"""
+    ARM_MAT, MITT_MAT = 'coat', 'skin'
+    MARKS = [(-1.5, 0.9, 'e'), (1.5, 0.9, 'e')]
+
+    @staticmethod
+    def face_region(n, q):
+        """the hood's opening: the face, the sealskin all round it"""
+        return np.where((q[0] > 0.2) & (np.abs(q[1]) < 0.7) & (q[2] < 0.2) & (q[2] > -0.95), 'skin', 'cloak')
+
+    def head(self, cv, cam, hc, Rh, pose, snap):
+        cv.blob(cam, hc, Rh, self.HEAD_R, 'head', 'cloak', p=self.HEAD_P, region=self.face_region)
+        self.face_marks(cv, cam, hc, Rh)
+
+    def coat(self, cv, cam, U, R):
+        cv.blob(cam, U(v3(0, 0, Z(6.1))), R, (2.75, 3.05, Z(2.05)), 'coat', 'coat', p=2.2)
+        cv.blob(cam, U(v3(0, 0, Z(4.0))), R, (2.6, 3.1, Z(0.6)), 'hem', 'trim', bias=-0.3)
+
+    def extras(self, cv, cam, U, R, pose):
+        pass
+
+    def ball_head(self, cv, cam, hc, Rh):
+        cv.blob(cam, hc, Rh, (2.6, 2.85, 2.5), 'head', 'cloak', p=self.HEAD_P)
+
+
+class Orca(Diver):
+    """MARIS as ORCA SKIN (the first skin): the hood and the flanks black sealskin, her side's
+    colour a tabard down the front"""
+
+    def coat(self, cv, cam, U, R):
+        cv.blob(cam, U(v3(0, 0, Z(6.1))), R, (2.75, 3.05, Z(2.05)), 'coat', 'cloak', p=2.2)
+        cv.blob(cam, U(v3(1.2, 0, Z(6.0))), R, (1.6, 2.0, Z(1.8)), 'vest', 'coat', bias=0.3)
+        cv.blob(cam, U(v3(0, 0, Z(4.0))), R, (2.6, 3.1, Z(0.6)), 'hem', 'cloak', bias=-0.3)
+
+
 BODIES = {'hunter': Hunter(), 'warrior': Warrior(), 'standard': Standard(), 'oath': Oath(),
           'unbroken': Unbroken(), 'coif': Coif(), 'general': General(), 'traitor': Traitor(),
           'hearth': Hearth(), 'wanderer': Wanderer(), 'light': Light(),
@@ -829,7 +885,8 @@ BODIES = {'hunter': Hunter(), 'warrior': Warrior(), 'standard': Standard(), 'oat
           'quarry': Quarry(), 'cellar': Cellar(),
           'wolfkept': Wolfkept(), 'whitepack': Whitepack(),
           'horn': Horn(), 'column': Column(),
-          'snowblind': Snowblind(),
+          'snowblind': Snowblind(), 'falconer': Falconer(),
           'clockmaker': Clockmaker(), 'foreman': Foreman(),
           'canal': Canal(), 'night': Night(),
+          'diver': Diver(), 'orca': Orca(),
           'siege': Siege(), 'tower': Tower()}

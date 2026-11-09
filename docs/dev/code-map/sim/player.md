@@ -10,7 +10,7 @@
 | which way a player's body faces: the one function every turn goes through, its diagonal bias and the hold an aimed action leaves | `faceToward`, `FACE_BIAS`, `FACE_HOLD`, `p.faceT` | `facing` (player.js) |
 | the numbers a player is made of: the player count and teams, walk/roll/slide speeds, hero levels, and the two bow baselines a kit is written against | `MAX_PLAYERS`, `TEAM_COUNT`, `PVP`, `PLAYER_SPEED`/`PLAYER_R`, `ICE_MAX`/`SLIDE_MIN`/`SLIDE_EXIT`/`TRAIL_MIN`/`SNOW_TRAIL_*`, `LEVEL_*`, `DODGE_*`, `BOW_CHARGE`/`BOW_NOCK` | `players` (above `CLASSES`, which reads some of them at load time) |
 | which preset a team wears on this screen, and whether a rival wears its colour-blind shape cue | `TEAMS`, `skin`, `foeCue` | top of the file |
-| the entity arrays and the local aliases | `animals`…`camps`, `players`, `player`, `inv` | `players` (the banner's tail) |
+| the entity arrays and the local aliases | `animals`…`camps`, `players`, `player` | `players` (the banner's tail) |
 | the effective kit | `baseKit`, `refreshKit` (folds in the item slots: `itemMods`, js/sim/items.js) | `players` › `classes` |
 | skill points (one per hero level, spent on class-ability levels) | `p.skillPts` (spent by `buyAbilityLv`, abilities.js) | `players` (granted in `levelUp`) |
 | how hidden a player is, and how far anything notices it from (`seenAt`'s `team`: the fog of war, js/sim/fog.js) | `concealOf`, `seenAt`, `ambushReady` | `players` › `being seen` |

@@ -1,13 +1,13 @@
 # Economy (one currency)
 
 **Gold is not XP.** Gold buys; XP levels, and it comes only from being near when a rival body
-dies — a soldier, a scout, a deer, a wolf, a bear — shared by the side standing there
+dies — a soldier, a hero, a deer, a wolf, a bear — shared by the side standing there
 ([Hero levels](../multiplayer.md#hero-levels)). Nothing in this section pays XP: the works, the
-clock, a pump and a sale are gold alone, so the road is where a scout levels; the lanes' soldiers
+clock, a pump and a sale are gold alone, so the road is where a hero levels; the lanes' soldiers
 and the dens are where it gets rich, and the woods are pocket money.
 
-Every player owns a wallet. `p.inv` is `{ gold }` — currency only, no ceiling — and the six
-item slots beside it are the build. (`inv` is an alias for the local player's wallet.) **Gold is
+Every player owns a wallet, `p.gold`: currency only, no ceiling. The six item slots beside it
+are the build. **Gold is
 the only currency**; the heals in the world (creek fish, berry bushes) are taken where they stand
 and never carried ([Heals](heals.md)). The whole economy is the
 `YIELD` table in the constants banner of [js/sim/core.js](../../../js/sim/core.js) - the one tuning table
@@ -26,7 +26,7 @@ rather than a different resource (the League model: one number, many ways to ear
 | black bear | `alpha` 6 coins × 105 → 630 | BLUE's river camp's one; `EPIC_TEAM_GOLD` (280) to every teammate besides, and the BLACK BUFF for the whole team |
 | brown bear | `dire` 6 coins × 105 → 630 | RED's river camp's one; `EPIC_TEAM_GOLD` (280) to every teammate besides, and the BROWN BUFF for the whole team |
 | bird | `bird` 2 coins × 28 → 56 | dormant: nothing spawns one |
-| gold pump (`generator`) | `tiers[0].pay` (20) every `period` (10 s) to every hero of the side holding it — 120 a minute each | one of the map's two neutral objectives, taken by standing in its ring ([The gold pumps](buildings.md#the-gold-pumps)); both held is 240 a minute each, twice the trickle |
+| gold pump (`pump`) | `pay` (20) every `period` (10 s) to every hero of the side holding it — 120 a minute each | one of the map's two neutral objectives, taken by standing in its ring ([The gold pumps](buildings.md#the-gold-pumps)); both held is 240 a minute each, twice the trickle |
 | a sale at [the counter](the-merchants-counter.md) | half an item's price (a potion one at a time) | the one payout that does not count as earned (`tradeGold`) — a trade is an exchange, not a source |
 
 The scale is League's: a finished item costs about 2600-3400 ([the items](the-merchants-counter.md#the-items)),

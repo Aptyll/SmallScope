@@ -250,7 +250,7 @@ function buyItem(p, id) {
   if (!Object.hasOwn(BUILD_ITEMS, id) || !merchNear(p)) { shopDeny(p); return false; }
   if (id === 'potion') return buyPotion(p);
   const c = itemCost(p, id);
-  if (p.inv.gold < c.gold || itemRoom(p, c.used) < 1 || bootsClash(p, id, c.used)) { shopDeny(p); return false; }
+  if (p.gold < c.gold || itemRoom(p, c.used) < 1 || bootsClash(p, id, c.used)) { shopDeny(p); return false; }
   spendGold(p, c.gold);
   for (const j of c.used) p.items[j] = null;
   p.items[p.items.indexOf(null)] = id;
@@ -350,7 +350,7 @@ function potionRoom(p) {
 }
 function buyPotion(p) {
   const price = BUILD_ITEMS.potion.price;
-  if (p.inv.gold < price || !potionRoom(p)) { shopDeny(p); return false; }
+  if (p.gold < price || !potionRoom(p)) { shopDeny(p); return false; }
   spendGold(p, price);
   if (potionSlot(p) < 0) { p.items[p.items.indexOf(null)] = 'potion'; p.potions = 0; }
   p.potions++;
@@ -417,6 +417,8 @@ const BOT_BUILDS = {
   HIEMS: ['storm', 'marsh', 'emberb', 'slate', 'deeprod', 'clock'], // power and haste for more chills, then the armor a control mage standing in the fight needs
   RUPES: ['glacier', 'hobnail', 'bearskin', 'stonehide', 'brambmail', 'hearth'], // armor and health first, the snow takes the rest; the boots to reach the fight
   NIX: ['beartooth', 'quick', 'feathers', 'maul', 'sunstone', 'collar'], // the blade first, the speed to reach a lone rival, then more blade
+  FALCO: ['beartooth', 'quick', 'feathers', 'maul', 'sunstone', 'collar'], // the knives first, the speed to reach a lone rival, then more blade
+  MARIS: ['glacier', 'hobnail', 'stonehide', 'bearskin', 'brambmail', 'hearth'], // a tank's: armor and health, the boots for reaching the water
   AURA: ['storm', 'emberb', 'deeprod', 'marsh', 'clock', 'slate'], // the reach first: power and haste for more stars, then the boots, then the armor a mage caught close needs
   VARRO: ['beartooth', 'hobnail', 'fang', 'quick', 'stonehide', 'collar'], // the bite first, the legs to stay on the mark, then the health a diver needs
   VELOX: ['quick', 'horn', 'feathers', 'frostline', 'sunstone', 'cloak'], // the HUNTER's build with attack speed first: more throws, more KEEP MOVING stacks
@@ -458,7 +460,7 @@ function botStrayPart(p) {
 const BOT_POTIONS = 2;
 function botWantsPotion(p, first) {
   const n = potionSlot(p) >= 0 ? p.potions : 0;
-  if (n >= (first ? 1 : BOT_POTIONS) || p.inv.gold < BUILD_ITEMS.potion.price || !potionRoom(p)) return false;
+  if (n >= (first ? 1 : BOT_POTIONS) || p.gold < BUILD_ITEMS.potion.price || !potionRoom(p)) return false;
   return n > 0 || p.items.filter((x) => x === null).length > 1 || !botNextItem(p);
 }
 // what a bot would buy RIGHT NOW with its purse: the next item whole, or the
@@ -468,7 +470,7 @@ function botItemBuy(p) {
   const id = botNextItem(p);
   if (!id) return null;
   const held = p.items.slice();
-  const can = (k) => { const c = itemCost(p, k); return p.inv.gold >= c.gold && itemRoom(p, c.used) >= 1 && !bootsClash(p, k, c.used); };
+  const can = (k) => { const c = itemCost(p, k); return p.gold >= c.gold && itemRoom(p, c.used) >= 1 && !bootsClash(p, k, c.used); };
   const walk = (k) => {
     if (can(k)) return k;
     for (const q of BUILD_ITEMS[k].from || []) {

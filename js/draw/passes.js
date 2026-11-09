@@ -359,13 +359,12 @@ function drawStructObj(o, px, py, sh, now) {
       }
     }
   } else {
-    // the gold pump strokes: the frame off its payout clock (pumpFrame)
-    const art = o.type === 'generator' ? pumpFrame(o) : spr;
+    // its type's own frame when it moves (the gold pump's stroke, off its
+    // payout clock) and its type's own pass over the sprite (STRUCTS `over`)
+    const S = STRUCTS[o.type], art = S.frame ? S.frame(o) : spr;
     drawCastShade(art, sx, sy); // a standing building throws the sun's shade like a body (ground.js)
     drawSpriteFlash(art, sx + sh, sy, o.flash);
-    if (o.type === 'generator') drawPumpCoin(o, sx + sh, sy);
-    if (o.type === 'barracks') drawBarracksOverlay(o, sx + sh, sy, now);
-    if (o.type === 'tower') drawTowerTop(o, sx + sh, sy); // a tower's gun in its deck, and its bar (js/draw/towers.js)
+    if (S.over) S.over(o, sx + sh, sy, now);
     if (o.hp < o.maxHp * 0.6) {
       // four crack marks, placed as fractions of the sprite so they fit any size
       const w = spr.width, h = spr.height;

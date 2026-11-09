@@ -1,7 +1,7 @@
 'use strict';
 // The map's own buildings and what they roll out: the barracks bay and its
 // soldiers, the merchant's stall and fire. The
-// generator is the gold pump and the road tower is its own file, both baked
+// gold pump and the road tower are each their own file, both baked
 // after this one (js/baked/pump.js, js/baked/tower.js) into the same
 // teamBuild sets.
 (() => {
@@ -238,7 +238,7 @@
   const teamBuild = [], teamRobots = [];
   SPR.onTeams(() => TEAM_SKINS.forEach((t, i) => {
     teamBuild[i] = {
-      spawner: [bake(bay, bayTeamPal(t))],
+      spawner: bake(bay, bayTeamPal(t)),
       stall: bake(stall, stallPal(t)), // the merchant's shop (render.js reads SPRITES.teamBuild[skin(team)].stall)
     };
     teamRobots[i] = [bake(botA, teamRobotPal(t)), bake(botB, teamRobotPal(t))];

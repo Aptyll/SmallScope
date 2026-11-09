@@ -167,6 +167,8 @@ const CLASS_AB = [
   NIX_AB, // NIX - the shard, the cloud, the drift step, the squall (js/sim/nix.js)
   FABER_AB, // FABER - the spark, the small machine, the clockspring, the old engine (js/sim/faber.js)
   VELOX_AB, // VELOX - the skip stone, the ice lane, the quick step, the long run (js/sim/velox.js)
+  FALCO_AB, // FALCO - the talons, the knife fan, the glide, the stoop (js/sim/falco.js)
+  MARIS_AB, // MARIS - the harpoon, the brace, the undertow, the breach (js/sim/maris.js)
   SAGITTA_AB, // SAGITTA - the pin, the pavise, the crank back, the long bolt (js/sim/sagitta.js)
 ];
 

@@ -39,7 +39,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.634';
+const PATCH_TXT = 'PATCH 0.644';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -55,6 +55,16 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.644', 'A NEW HERO, SAGITTA THE BOLT-THROWER: HER HEAVY CROSSBOW OUTREACHES EVERY BOW, EVERY THIRD BOLT HITS LIKE A HAMMER, SHE PINS RIVALS TO THE TREES AND SHOOTS FROM BEHIND HER OWN SHIELD.'],
+  ['0.643', 'UNDER THE HOOD: EVERY BUILDING IS ONE PLAIN ENTRY THAT SAYS WHAT IT DOES, AND THE GOLD PUMP SHEDS TWO UPGRADES NOBODY COULD BUY, SO THE GAME LOADS A LITTLE LESS ART.'],
+  ['0.642', 'A HERO WITH NO SPLASH ART YET STANDS IN CHAMP SELECT ON A PAINTED SNOWY NIGHT, PINES AND A GLOW BEHIND THEM, INSTEAD OF A BLOWN UP SPRITE.'],
+  ['0.641', 'FALCO\'S HAWK CAN BE CUT DOWN WHILE IT IS OUT: THE RIVAL WHO DOES IT IS PAID, AND HE IS WITHOUT IT FOR TEN SECONDS. ON ITS WAY OUT IT NOW FLIES PAST SOLDIERS TO THE HERO.'],
+  ['0.640', 'UNDER THE HOOD: THE CHECK EVERY CHANGE RUNS NOW CATCHES A DEVELOPER GUIDE THAT NAMES CODE WHICH IS GONE, AND THE GUIDES CALL A PLAYER A HERO.'],
+  ['0.639', 'A NEW HERO, MARIS THE ICE DIVER: SHE THROWS A HARPOON THAT ROOTS A RIVAL AND REELS HERSELF IN, BRACES TO TAKE LESS DAMAGE WITH RIVALS CLOSE, PULLS A COLD UNDERTOW THAT SLOWS HARDER ON ICE, AND DIVES UNDER THE SNOW TO BURST UP UNDER RIVALS AND BREAK THE ICE. SHE SWIMS OPEN WATER AND MOVES FASTER COLD. HER ORCA SKIN IS ON THE SKINS SCREEN.'],
+  ['0.638', 'A BOT\'S NAME TAG, ITS SEAT ON THE EAGLE AND THE DEATH RECAP NAME IT BY ITS HERO, AS TAB AND THE PODIUM DO.'],
+  ['0.637', 'UNDER THE HOOD: A PLAYER\'S GOLD IS ONE NUMBER INSTEAD OF A ONE-ITEM BAG, SO ONLINE MATCHES SEND A LITTLE LESS FOR EVERY PLAYER.'],
+  ['0.636', 'A NEW HERO, FALCO THE KESTREL: HIS HAWK FLIES OUT AND MARKS A RIVAL, HIS THROWN KNIVES BITE HARDER ON THE MARK, HE GLIDES OVER ANYONE IN HIS WAY, AND HE DROPS OUT OF THE SKY ON A MARKED HERO.'],
+  ['0.635', 'THE VICTORY AND DEFEAT PODIUM AND THE MATCH SCORES NAME BOTS BY THEIR HERO, AS TAB DOES; RUPES\'S SHOULDER STUNS AGAINST A TREE OR A WALL (THE MAP HAS NO ROCKS).'],
   ['0.634', 'IN ONLINE MATCHES THE HOST NOW IGNORES BROKEN OR TAMPERED CONTROLS FROM ANOTHER PLAYER, SO A BAD CONNECTION OR A CHEAT CANNOT FREEZE THE MATCH.'],
   ['0.633', 'THE EAGLE\'S BAR NO LONGER SHOWS BEHIND THE VICTORY PODIUM.'],
   ['0.632', 'A NEW HERO, VELOX THE SKATER: SHE THROWS HER SLING WHILE SHE SKATES, EVERY HIT QUICKENS HER, SHE LAYS HER OWN STRIP OF ICE TO FLY ALONG, AND HER STONES SKIP TO HIT AGAIN.'],
@@ -1743,6 +1753,33 @@ const CLASS12 = [
     '..o.....o...',
     'oWWWWWWWWWWo',
     '.oooooooooo.',
+    '............',
+  ],
+  [ // FALCO: a hawk stooping, wings folded back
+    '............',
+    '.o........o.',
+    '.oWo....oWo.',
+    '..oWo..oWo..',
+    '...oWooWo...',
+    '....oWWo....',
+    '....oWWo....',
+    '....oWWo....',
+    '...oWooWo...',
+    '....o..o....',
+    '............',
+  ],
+  [ // MARIS: her harpoon's barbed head
+    '........ooo.',
+    '.......oWWo.',
+    '......oWWWo.',
+    '.....oWWWo..',
+    '....oooWo...',
+    '...owo.o....',
+    '..owo.......',
+    '.owo........',
+    'owo.........',
+    'oo..........',
+    '............',
     '............',
   ],
   [ // SAGITTA: a crossbow, prod up, the stock down

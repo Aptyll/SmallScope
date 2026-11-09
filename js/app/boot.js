@@ -237,7 +237,6 @@ window.DBG = {
   eagleFlee: (team, src) => eagleFlee(state.drop.eagles[team], src),
   teamEagleDown,
   get player() { return player; },
-  get inv() { return player.inv; },
   // goldCellRect is the always-on gold readout on the hud strip
   goldCellRect, shortNum, hudPress,
   // hand a player to an AI, a human, or nobody (a ghost at its camp)
@@ -345,10 +344,7 @@ window.DBG = {
   // and their restock (which a driver can call by hand to run one now)
   animalLevel, updatePreyStock, spawnDeer, get deerRoutes() { return deerRoutes; },
   // debug staging: place a construction site directly, no cost or validation
-  buildStruct: (tx, ty, type, tier) => {
-    const t = Math.min(STRUCTS[type].tiers.length - 1, tier || 0);
-    return createStruct(tx, ty, type, t, player, true); // anchor = top-left for a big footprint
-  },
+  buildStruct: (tx, ty, type) => createStruct(tx, ty, type, player, true), // anchor = top-left for a big footprint
   structOf, footprint,
   finishBuild: (o) => { if (o && o.building) o.buildT = o.buildTotal; },
   // z is a world scale; it lands on the nearest pixel-exact rung, as the

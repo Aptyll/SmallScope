@@ -12,7 +12,7 @@ to the world.
 - `control: 'human'` — driven by this screen's keyboard and mouse. Exactly one per screen: **this
   session's player**, in slot `localId` (0 unless `?local=N` or `DBG.setLocal(N)` seats it
   elsewhere — nothing about slot 0 makes it the local one, and anything that means "me" reads
-  `player` or tests `p === player`, never an id). `player` and `inv` point at it (and only at
+  `player` or tests `p === player`, never an id). `player` points at it (and only at
   it) for the camera, HUD, cursor, audio gating and the aim line.
 - `control: 'remote'` — a human on another screen, in a match this screen hosts: its `input` is
   written from the wire (`netHostStep`, js/net/net.js) and it steps through `updatePlayer` like
@@ -42,8 +42,8 @@ dodge charges, slide state, swing state, held tool, i-frames, footprint cadence 
 wears the **profile's** name and last hero — `applyProfile()`, called by `initPlayers` — see
 [architecture.md](architecture.md#profilejs)), `look` (the hero's fixed face, a copy of
 `CLASSES[cls].look` that every `setClass` writes, so every copy of a hero looks the same), `spawn` (the tile it landed
-on from the eagle), `aboard`/`dropT`/`dropU`
-(the eagle ride, see [Eagle drop](rendering/eagle-drop-mode-drop.md)), its own `inv` wallet and
+on from the eagle), `aboard`/`dropT`
+(the eagle ride, see [Eagle drop](rendering/eagle-drop-mode-drop.md)), its own `gold` wallet and
 `potions`/`potT` (the stack and the running drink, [Heals](gameplay/heals.md)),
 `level`/`xp` (see [Hero levels](#hero-levels)), `earned` (the match's gold earned), `kills`, an `input` struct and an `ai` brain.
 `reset(first)` places it at `spawn` and clears every transient; it is the single definition of
@@ -292,7 +292,9 @@ read through `statOf(p, key)` (js/sim/stats.js), never off the kit. `setClass(p,
 | 13 | **NIX** — THE SNOWBLIND, the night scout (passive NIGHT WATCH) | strike one rival from her snow cloud, faster at night; seen in the open she is easy to catch | her own body (SNOWBLIND, or MOONLESS bought on the skins screen) and the warrior's frames (`heroBody`), 98 hp, 14 armor, a step faster | the ICE DIRK: the quickest, shortest cut (22 px, 0.9 rad, `cycle` 24/60 s), drawn as her own blade |
 | 14 | **FABER** — THE TINKER, the zone mage (passive SPARE PARTS) | hold a spot with machines he winds: small guns, a clockspring trap, the old engine; strong defending, slow to chase | his own body (CLOCKMAKER, or WORKS FOREMAN bought on the skins screen) and the warrior's frames, 80 hp, 10 armor, slower than most | the CLOCK STAFF: a brass cog, 270 px/s for 0.85 s, `cycle` 62/60 s, drawn as his own shot. His machines are bodies in `robots`, so they cross the wire with every other bot |
 | 15 | **VELOX** — THE SKATER, the kiting marksman (passive KEEP MOVING) | never stand still: throw while you skate, lay your own ice and fly along it | her own body (CANAL RUNNER, or NIGHT POST bought on the skins screen) and the warrior's frames (`heroBody`), 82 hp, 10 armor, a step faster | the STAFF SLING: a sling stone, 300 px/s for 0.6 s, `cycle` 50/60 s, drawn as her own shot (`look`, `HERO_SHOTS`) |
-| 16 | **SAGITTA** — THE BOLT-THROWER, the siege marksman (passive HEAVY BOLTS) | set up, then strike from far away: pin rivals to trees, shoot from behind your pavise | her own body (SIEGEWRIGHT, or TOWER BUILDER bought on the skins screen) and the warrior's frames (`heroBody`), 78 hp, 9 armor, a step slower | the HEAVY ARBALEST: a bolt, 430 px/s for 0.82 s, `cycle` 80/60 s, `kb` 1.3, drawn as her own shot (`look: 'bolt'`, `HERO_SHOTS`) |
+| 16 | **FALCO** — THE KESTREL, the diving assassin (passive THE HAWK) | his hawk marks a lone rival, his knives bite harder on it, and he drops on it from the sky; without a mark he is weak | his own body (FALCONER, or LAST HAWK bought on the skins screen) and the warrior's frames (`heroBody`), 96 hp, 13 armor, a step faster | the THROWING KNIFE: a short throw (330 px/s for 0.42 s, `cycle` 40/60 s), drawn as his own knife (`look`, `HERO_SHOTS`) |
+| 17 | **MARIS** — THE ICE DIVER, the catch tank (passive COLD WATER) | harpoon one rival and reel in, burst up under a fight from the snow, break the ice under them | her own body (BARGE DIVER, or ORCA SKIN bought on the skins screen) and her HARPOON |
+| 18 | **SAGITTA** — THE BOLT-THROWER, the siege marksman (passive HEAVY BOLTS) | set up, then strike from far away: pin rivals to trees, shoot from behind your pavise | her own body (SIEGEWRIGHT, or TOWER BUILDER bought on the skins screen) and the warrior's frames (`heroBody`), 78 hp, 9 armor, a step slower | the HEAVY ARBALEST: a bolt, 430 px/s for 0.82 s, `cycle` 80/60 s, `kb` 1.3, drawn as her own shot (`look: 'bolt'`, `HERO_SHOTS`) |
 
 The **weapon is part of the hero**: each `CLASSES` entry carries its own `attack` row, so the
 hunter and the swordsmen do not attack the same way and every bot arrives armed, with nothing to
@@ -324,7 +326,7 @@ total over the head (`xpN` since `xpTick`, the [purple number](rendering/damage-
 calls `levelUp(p)` while `xp >= LEVEL_XP[level]` (cumulative thresholds 60, 150, 270, 420, 600, 810,
 1050, 1320, 1620, 1950, 2310, 2700, 3120, 3570, 4050, 4560, 5100 — the gap grows by 30 each level). XP comes from being **near when a
 rival body dies**, never from the last hit: `shareXp(dead, xp, team, src)` hands a death's XP to
-every scout of `team` that `unitsNear(dead, …, XP_R)` finds (160 px, about half the view at the
+every hero of `team` that `unitsNear(dead, …, XP_R)` finds (160 px, about half the view at the
 default zoom; alive and on the ground), plus `src` — the one who landed the blow — wherever it
 stood. The pot grows `XP_SHARE` (0.3) of the whole for each sharer past the first, so two on a
 wave get 65% each and five get 46% each. What a death is worth:
@@ -332,11 +334,11 @@ wave get 65% each and five get 46% each. What a death is worth:
 | Death | XP | Shared by |
 | --- | --- | --- |
 | a soldier (`robotDies`) | `SOLDIER_XP` 20 times its kind's `xp` (ranged 14, siege 40) | its rival side |
-| a scout (`die`) | `KILL_XP` 40 + `KILL_XP_LV` 15 × its level | its rival side, whatever downed it |
+| a hero (`die`) | `KILL_XP` 40 + `KILL_XP_LV` 15 × its level | its rival side, whatever downed it |
 | a beast with an `xp` in `YIELD` (`animalDies`): deer 40, wolf 15, black and brown bear 150 | grown `ANIMAL_LV_XP` (a tenth) a level | the side of whoever landed the last blow |
 
 Rabbits, buildings, the works (pines), fish, sales and the clock pay **no
-XP** — the road is where a scout levels. The table is sized against a scout who keeps to the road
+XP** — the road is where a hero levels. The table is sized against a hero who keeps to the road
 and the camps: about level 6 at ten minutes and level 12 near minute 25 (sized when 12 was the
 cap, the arena's 4.37 runs); levels 13-18 continue the same curve and have not been timed. Dying never touches `xp`; level and xp are set in the
 constructor, not `reset()`, so they survive a `reset`.
@@ -894,7 +896,7 @@ The ladder:
    only. No wave out, or a work stretch, and it goes on down the ladder.
 10. **hunt** — an animal within `AI_HUNT` (120 px), with a 6 s catch timer per animal (prey
    outruns a walk; 8 s for a blade). A bow shoots from 55 px; a blade walks in to `AI_MELEE_D`
-   and swings only inside `AI_MELEE_D` + 8 px. Birds are excluded: they fly, and no ground route catches a flushed flock.
+   and swings only inside `AI_MELEE_D` + 8 px.
 11. **spend** — **Items come first, at rung 0** (`aiSpend`, beside the skill point): a bot buys its class's
    build ([`BOT_BUILDS`](gameplay/the-merchants-counter.md#buying-and-selling)) at whichever counter it is standing at, a component or the whole
    item, through the same `input.cmd` a human's click sends, and when its purse covers the next

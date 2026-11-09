@@ -25,8 +25,8 @@
 // the saved valley and not the fresh one.
 
 // ---- tuning ---------------------------------------------------------------
-const SAVE_V = 4;           // the body's shape; a body of another shape is refused, never half-read, so
-                            // nothing below fills in a field an older save lacked (4: the survival leftovers cut)
+const SAVE_V = 6;           // the body's shape; a body of another shape is refused, never half-read, so
+                            // nothing below fills in a field an older save lacked (4: the survival leftovers cut; 5: the wallet is p.gold; 6: buildings lose `tier`, the pump's type is 'pump')
 
 // ---- what is saved ----------------------------------------------------------
 // [name, get, put]: get() hands the live value in, put(v) takes the decoded
@@ -42,7 +42,7 @@ const SAVE_ROOTS = [
   ['state', () => { const o = {}; for (const k of Object.keys(state)) if (!SAVE_STATE_SKIP.has(k)) o[k] = state[k]; return o; },
     (v) => Object.assign(state, v)],
   ['players', ...saveArr(players)],
-  ['localId', () => localId, (v) => { localId = v; player = players[v]; inv = player.inv; }],
+  ['localId', () => localId, (v) => { localId = v; player = players[v]; }],
   ['animals', ...saveArr(animals)], ['structures', ...saveArr(structures)], ['robots', ...saveArr(robots)],
   ['arrows', ...saveArr(arrows)],
   ['particles', ...saveArr(particles)], ['floaters', ...saveArr(floaters)], ['footprints', ...saveArr(footprints)],
@@ -58,6 +58,7 @@ const SAVE_ROOTS = [
   ['veloxStones', ...saveArr(veloxStones)], ['veloxLanes', ...saveArr(veloxLanes)], // VELOX's skipping stones and ice lanes (js/sim/velox.js)
   ['nixShards', ...saveArr(nixShards)], ['nixClouds', ...saveArr(nixClouds)], // NIX's shards in flight and clouds on the ground (js/sim/nix.js)
   ['faberParts', ...saveArr(faberParts)], ['faberArcs', ...saveArr(faberArcs)], ['faberBolts', ...saveArr(faberBolts)], ['faberSprings', ...saveArr(faberSprings)], // FABER's spare parts, sparks' jumps, bolts and clocksprings (js/sim/faber.js; his machines ride `robots`)
+  ['falcoKnives', ...saveArr(falcoKnives)], // FALCO's knives in flight (js/sim/falco.js; his hawk out rides `robots`)
   ['wordPops', ...saveArr(wordPops)], ['coinPops', ...saveArr(coinPops)], ['ptargets', ...saveArr(ptargets)], ['slashes', ...saveArr(slashes)],
   ['shed', () => [shedWait, shedLive], (v) => { saveArr(shedWait)[1](v[0]); shedLive = v[1]; }],
   ['iceBreaks', ...saveArr(iceBreaks)], // the breaks in their own shape (js/sim/icebreak.js); their pixels rebuild off them

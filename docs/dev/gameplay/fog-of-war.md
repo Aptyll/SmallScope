@@ -11,6 +11,8 @@ A side sees a circle round each of its heroes (`FOG_HERO`, 10 tiles, times any h
 - each of the side's own cables: a row of small eyes (`FOG_ZIP` every `FOG_ZIP_STEP` px, `zipEyes`),
   a band about 2.5 tiles either side. A cable runs only to its furthest standing tower
   (`towersSync`), so the band shrinks as towers fall.
+- a hero's machine (`HERO_MACHINE` `sight`): FABER's machines, and FALCO's hawk while it is out
+  on TALONS, which sees `TALON_SIGHT` round itself.
 
 None of these is a body (`near` false): they never see into the woods or the brush.
 Everything else is dimmed, never black: terrain, buildings and both eagles stay, but a rival
@@ -26,7 +28,7 @@ js/draw/fog.js (the picture).
 - **Deep snow is brush too**: a body in a patch (`brushOf`) is hidden from a side until one of
   its heroes or soldiers stands in that patch or within `FOG_BRUSH_RIM` tiles of its rim
   (`brushHide`). `coverHide` asks both, and for a body also the cover a hero's kit makes
-  (`HERO_COVER`: NIX in her snow cloud, `nixCover`); `sightAt` and `fogShown` ask it
+  (`HERO_COVER`: NIX in her snow cloud, `nixCover`; FALCO up in the sky on STOOP, `falcoCover`); `sightAt` and `fogShown` ask it
   ([deep snow](deep-snow.md)).
 - **The falcon's mark sees through it**, as it sees through cover.
 - **Where it is up** (`fogUp`): a match on the ground. Never the practice arena, the drop's flight

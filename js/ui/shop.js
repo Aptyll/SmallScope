@@ -396,9 +396,9 @@ function shopPlate(r, word, n, bg, ink) {
 }
 // what buying the pick needs: its price now, and whether it can go through
 function shopBuyState(id) {
-  if (id === 'potion') { const n = BUILD_ITEMS.potion.price; return { n, gold: n <= player.inv.gold, ok: n <= player.inv.gold && potionRoom(player) }; }
+  if (id === 'potion') { const n = BUILD_ITEMS.potion.price; return { n, gold: n <= player.gold, ok: n <= player.gold && potionRoom(player) }; }
   const c = itemCost(player, id);
-  const gold = c.gold <= player.inv.gold;
+  const gold = c.gold <= player.gold;
   return { n: c.gold, gold, ok: gold && itemRoom(player, c.used) >= 1 && !bootsClash(player, id, c.used) };
 }
 
@@ -419,11 +419,11 @@ function drawShopPanel(now) {
   for (const r of L.grid) {
     const n = r.id === 'potion' ? BUILD_ITEMS.potion.price : itemCost(player, r.id).gold;
     shopItemWell(r, r.id, h);
-    shopTag(n, r, n > player.inv.gold);
+    shopTag(n, r, n > player.gold);
     if (r.id === 'potion' && player.potions > 0) { const t = String(player.potions); drawPixelText(ctx, t, r.x + r.w - 2 - pixelTextWidth(t), r.y + 2, SHOP_INK); }
   }
   drawShopSlots(L, h);
-  const gold = String(player.inv.gold);
+  const gold = String(player.gold);
   shopPrice(gold, L.purse.x - 10 - pixelTextWidth(gold), L.purse.y);
   drawShopPane(L, h);
 }
@@ -529,7 +529,7 @@ function drawShopTree(L, h) {
     else {
       const n = r === tree[0] ? itemCost(player, r.id).gold : BUILD_ITEMS[r.id].price;
       ctx.fillStyle = SHOP_PANE_BG; // the price sits on the pane, under the line
-      shopTag(n, r, n > player.inv.gold);
+      shopTag(n, r, n > player.gold);
     }
   }
 }
@@ -569,7 +569,7 @@ function tipItem(id, cost) {
   const it = BUILD_ITEMS[id];
   const d = { title: it.name, tcol: itemMetal(id).ink, kind: SHOP_TIER_WORD[itemTier(id)],
     rows: [], notes: [], icon: itemIcon(id), plate: BAG_WELL, rim: itemMetal(id).rim };
-  if (cost !== undefined) d.rows.push(['PRICE', cost + ' GOLD', cost <= player.inv.gold ? RES_COLORS.gold : SHOP_DEAR_INK]);
+  if (cost !== undefined) d.rows.push(['PRICE', cost + ' GOLD', cost <= player.gold ? RES_COLORS.gold : SHOP_DEAR_INK]);
   for (const s of ITEM_STAT_ORDER) if (s in it.stats) d.rows.push([ITEM_STATS[s].label, ITEM_STATS[s].fmt(it.stats[s]), SHOP_STAT]);
   if (id === 'potion') {
     // the drink said the way an ability well says it: how much, over how long

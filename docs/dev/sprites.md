@@ -16,18 +16,17 @@ local player only and over an unchanged sim body.
 **The buildings' team paint** rides the shared `k`/`K` (iron fitting) and `e` (glow) chars,
 which `teamBuildPal` swaps for a side's own (see below).
 
-**The gold pump** is the generator, a pump jack on a 4x2 tile pad, painted in code by
+**The gold pump** is a pump jack on a planked 4x2 tile pad, painted in code by
 `app/bake-pump/pump.py` with the cutout painter (app/media/paint.py) and baked by
-`python3 app/bake-pump/bake.py` into `js/baked/pump.js` (never hand-edit it). Each tier is one
+`python3 app/bake-pump/bake.py` into `js/baked/pump.js` (never hand-edit it). It is one
 stroke of 8 frames (the crank turns, the pitman rocks the beam, a glint runs down the pipe, the
-barrel's gold bobs): planks, then stone flags with the team band and a pennant, then a gold beam,
-head and barrel. The team paint is `k`/`K`/`e`, baked inside `SPR.onTeams` into
-`teamBuild[team].pumpAnim[tier]`; frame 0 is `teamBuild[team].generator[tier]`, the still that
+barrel's gold bobs). The team paint is `k`/`K`/`e`, baked inside `SPR.onTeams` into
+`teamBuild[team].pumpAnim`; frame 0 is `teamBuild[team].pump`, the still that
 `structSprite` hands every other reader. A pump nobody holds wears the same grids with the team
-paint in grey, baked once outside `onTeams` into `SPRITES.pumpNeutral` (`pumpAnim`, `generator`);
+paint in grey, baked once outside `onTeams` into `SPRITES.pumpNeutral` (`pumpAnim`, `pump`);
 `pumpSet` (js/draw/structs.js) picks the holder's set or that one. `pumpFrame` picks the frame off
 the pump's `payT`, a whole number of `PUMP_STROKE` strokes to a payout, and `drawPumpCoin` hops a
-coin out of `SPRITES.pumpMouth[tier]` for `PUMP_HOP` s after each pay.
+coin out of `SPRITES.pumpMouth` for `PUMP_HOP` s after each pay.
 
 **The road tower** is a cut-stone tower with a gun deck and a great crossbow on a turntable,
 painted in code by `app/bake-tower/tower.py` with the cutout painter and baked by
@@ -88,7 +87,7 @@ more: the frames live on as the CATCH emote's (`EMOTES`, js/ui/screens.js). The 
 **The run, the held run and the dodge roll are the one set of player frames not typed by hand.**
 [app/bake-player/](../../app/bake-player/) paints them off a jointed doll of each class body (and of
 each named hero's looks: ARMATOS's `standard` and `oath`, FORTIVA's `unbroken` and `coif`, BELLA's `general` and `traitor`,
-IGNIA's `hearth` and `wanderer`, AURA's `light`, SALVIA's `hood` and `tent`, LUCERNA's `lamp` and `dusk`, HIEMS's `scholar` and `frost`, FABER's `clockmaker` and `foreman`, NIX's `snowblind`, RUPES's `quarry` and `cellar`, VARRO's `wolfkept` and `whitepack`, VELOX's `canal` and `night`, SAGITTA's `siege` and `tower`, BUCINA's `horn` and `column`, [hero looks](#hero-looks)) and
+IGNIA's `hearth` and `wanderer`, AURA's `light`, SALVIA's `hood` and `tent`, LUCERNA's `lamp` and `dusk`, HIEMS's `scholar` and `frost`, FABER's `clockmaker` and `foreman`, NIX's `snowblind`, FALCO's `falconer`, RUPES's `quarry` and `cellar`, VARRO's `wolfkept` and `whitepack`, VELOX's `canal` and `night`, BUCINA's `horn` and `column`, MARIS's `diver` and `orca`, SAGITTA's `siege` and `tower`, [hero looks](#hero-looks)) and
 writes them to js/baked/motion.js as char grids in characters.js's own letters, so `motionSet`
 bakes them through the same team and look palettes as every hand-drawn pose: `run[dir]`,
 `hold[dir]` and `roll[dir]` sit beside the walking directions, `left` the mirror of `right`.
@@ -257,6 +256,17 @@ app/bake-player/bodies.py) are used only for the roll. `RUPES_PAL` is `ARM_PAL` 
 (`blade: 'maul'`, js/draw/rupes.js). While he rolls (AVALANCHE) a `HERO_BODY_DRAW` row draws the
 snowball in his place (js/draw/heroes.js); his 48 px model is the warrior's in his look's paint.
 
+MARIS has two looks (`MARIS_SKINS`, js/sprites/maris.js): BARGE DIVER (free; a close sealskin hood,
+the brass-rimmed diving glass pushed up on the brow, a coil of line across the side's coat, a
+leather belt) and ORCA SKIN (200 coins; a black sealskin hood with the orca's white patches on the
+crown and a small fin, the side's colour a tabard over black), A and B off heroes-maris/round1 in
+the project files. Both are drawn on ARMATOS's frame and run as their drawn bodies
+(`run: 'drawn'`); their dolls (`Diver`, `Orca` in app/bake-player/bodies.py) are used only for the
+roll. `MARIS_PAL` is `ARM_PAL` with the sealskin `q`/`Q`, brass `y`/`Y`, glass `I`, line `c` and
+leather `a`. Her HARPOON is a `HERO_BLADES` row (`blade: 'harpoon'`, js/draw/maris.js). Swimming,
+the water is drawn over her legs (`HERO_BODY_FX`); under the snow (BREACH) a `HERO_BODY_DRAW` row
+draws the heaving snow in her place.
+
 LUCERNA has two looks (`LUCERNA_SKINS`, js/sprites/lucerna.js): LAMPLIGHTER (free: a flat cap over
 dark hair, a warm brown greatcoat open on the side's waistcoat, brass buttons) and DUSK ROAD (rare,
 200 coins: the same coat with a mustard scarf and a wide hat), both on ARMATOS's frame
@@ -330,6 +340,15 @@ only the roll is used. His CLOCK STAFF is a staff like IGNIA's: `staff: 'clock'`
 `HERO_STAVES.clock` (`FABER_CLOCK`, js/draw/faber.js), a brass clock face on a walnut shaft whose
 hand ticks between two baked frames. His two machines draw themselves from small grids baked per
 side (`faberArt`, js/draw/faber.js), the side's colour in a band across each.
+
+FALCO has two looks (`FALCO_SKINS`, js/sprites/falco.js) on one set of grids and one doll:
+FALCONER (free) and LAST HAWK (rare, 200). `FALCO_PAL` is `ARM_PAL` with his leather `q`/`Q`
+(the doll's `cloak`), brown hair `a`/`A` (the doll's `hair`), the kestrel-rust collar `x`/`X`
+and a cream feather `W`; LAST HAWK is the same cut repainted by its row's `pal` (black leather,
+silver hair, gold at the collar). It is A off falco-round1.png in the project files. His doll is
+`Falconer` in app/bake-player/bodies.py. His THROWING KNIFE is weapon art
+(`SPRITES.weaponArt.knife`, point right, `WEAPON_GRIP.icon.knife`), carried and aimed like the
+bow, and thrown as a shot drawn by `HERO_SHOTS.knife`.
 
 The **48 px model** ([looks.js](../../js/sprites/looks.js), `SPRITES.portrait(cls, look,
 team)`) is where the whole look reads — the champ select's stage, grid and seat discs. Each hero wears one

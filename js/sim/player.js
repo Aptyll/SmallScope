@@ -48,12 +48,12 @@ const SNOW_TRAIL_LIFE = 3.5; // snow groove lifetime (ice scratches keep the 9s 
 const SNOW_TRAIL_FADE = 1.4; // fade window at the end of that life: hold crisp, then wipe tail-first
 
 // Hero levels (League-style, max 18). XP is its own number, apart from gold:
-// it comes from being NEAR when a rival body dies - a soldier, a scout, a
+// it comes from being NEAR when a rival body dies - a soldier, a hero, a
 // camp monster - shared among the allies standing there (shareXp, below), so
 // the last hit is gold and the being-there is XP. Felling
 // and the clock pay gold and never XP: the road is where you level.
 // LEVEL_XP[n-1] is the total needed to reach level n, the gap growing by 30 a
-// level. It is sized against a scout who keeps to the road and the camps
+// level. It is sized against a hero who keeps to the road and the camps
 // (waves every 30 s growing a soldier every 3 min, a share of the kills, a
 // den now and then): about level 6 at ten minutes and 12 near 25, the cap of
 // 18 later still, so a lead in levels is still news late. XP is never spent or lost on death. What a level grows is the hero's
@@ -408,7 +408,41 @@ const CLASSES = [
       bowCharge: 0.6, nock: 0.4, spdDmg: 3, dodgeSpeed: 240 },
   },
   {
-    // the fifteenth named hero (js/sim/sagitta.js): the siege marksman. Her heavy crossbow
+    // the fifteenth named hero (js/sim/falco.js): the falconer, an assassin who dives.
+    // His hawk finds a rival and marks it, his thrown knives bite harder on the mark,
+    // and he falls out of the sky on it; without a mark he is weak, and clumsy in a crowd
+    name: 'FALCO', role: 'THE KESTREL', body: 1, passive: 'hawk', // HERO_PASSIVE, js/sim/falco.js
+    look: { sex: 0, tone: 1, hair: 1, hairCol: 1, beard: 1, face: 1 },
+    blurb: ['PATIENT, THEN SUDDEN.', 'YOUR HAWK FINDS THEM. YOUR KNIVES BITE HARDER ON WHAT IT MARKS.', 'WITHOUT A MARK YOU ARE WEAK. PICK THE LONE RIVAL.'],
+    story: "HE KEPT THE HAWKS FOR AN IMPERIAL HUNT AND LET THEM ALL FLY THE DAY THE EMPIRE BURNED THE HUNTING PARK FOR A PARADE GROUND. ONE CAME BACK. IT IS THE ONLY ONE HE WILL SPEAK TO.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
+    // a thrown knife: short, quick, a little further than a blade
+    attack: { name: 'THROWING KNIFE', art: 'knife', cycle: 40 / 60, kb: 0.5, shot: { speed: 330, life: 0.42, col: '#c8d2e4', look: 'knife' } },
+    skins: FALCO_SKINS, skinPal: FALCO_PAL, skinSlot: 'falco',
+    base: { hp: 96, dmg: 17, armor: 13, ap: 0, haste: 0, ms: PLAYER_SPEED + 4 },
+    grow: { hp: 6.2, dmg: 1.7, as: 0.014, armor: 1.9 },
+    rankOrder: [1, 0, 2], // the knife fan, the talons, the glide
+    kit: { iceMax: 1.1, iceSteer: 3.2, slideMin: 70, fatigue: 0.85, chargeMul: 0.65,
+      bowCharge: 0.75, nock: 0.45, spdDmg: 3, dodgeSpeed: 230 },
+  },
+  {
+    // the sixteenth named hero (js/sim/maris.js): a tank who catches one rival. Quick and chilling on
+    // ice and by open water, she swims where others go in; much weaker on dry ground far
+    // from it, and once she has surfaced she has no way out
+    name: 'MARIS', role: 'THE ICE DIVER', body: 1, passive: 'coldwater', // HERO_PASSIVE, js/sim/maris.js
+    look: { sex: 1, tone: 2, hair: 1, hairCol: 0, beard: 0, face: 1 },
+    blurb: ['THE THING UNDER THE ICE.', 'ON ICE AND BY THE WATER YOU ARE QUICK, AND YOUR STRIKES CHILL.', 'ONCE YOU SURFACE YOU HAVE NO WAY OUT.'],
+    story: "SHE DOVE FOR THE EMPIRE'S SUNKEN GRAIN BARGES IN WATER NOBODY ELSE WOULD TOUCH, AND WAS SENT AWAY WHEN SHE WOULD NOT DIVE FOR A SUNKEN TAX CHEST. SHE SAYS THE ORCA IN THE CISTERN POOL IS THE ONLY HONEST THING IN THE VALLEY. SHE GIVES IT THE FIRST FISH OF EVERY CATCH.", // the wiki's hero page (docs/dev/lore.md)
+    attack: { name: 'HARPOON', art: 'sword', cycle: 32 / 60, kb: 1.1, cut: { reach: 28, half: 0.8 } }, // a thrust: a little longer and narrower than the longsword
+    skins: MARIS_SKINS, skinPal: MARIS_PAL, skinSlot: 'maris',
+    blade: 'harpoon', // her HARPOON in her hands (HERO_BLADES, js/draw/maris.js)
+    base: { hp: 126, dmg: 14, armor: 22, ap: 0, haste: 0, ms: PLAYER_SPEED - 2 },
+    grow: { hp: 10, dmg: 1.2, as: 0.009, armor: 2.7 },
+    rankOrder: [0, 2, 1], // the harpoon, the undertow, the brace
+    kit: { iceMax: 1.2, iceSteer: 3.6, slideMin: 70, fatigue: 0.7, chargeMul: 0.7,
+      bowCharge: 0.75, nock: 0.5, spdDmg: 5, dodgeSpeed: 220 },
+  },
+  {
+    // the seventeenth named hero (js/sim/sagitta.js): the siege marksman. Her heavy crossbow
     // reaches further than any bow and hits like a hammer, but it is slow to wind and
     // slower to carry; she is safe behind her pavise and easy prey once it is down
     name: 'SAGITTA', role: 'THE BOLT-THROWER', body: 1, passive: 'heavybolts', // HERO_PASSIVE, js/sim/sagitta.js
@@ -463,7 +497,7 @@ function healPlayer(p, n) {
 // lifetime gold (the scoreboard's rank and the post-game GOLD). Gold buys;
 // it no longer teaches - XP is gainXp's alone.
 function gainGold(p, n) {
-  p.inv.gold += n;
+  p.gold += n;
   p.earned += n;
   // lifetime total, coalesced - see profile.js. Practice gold is play money:
   // a free room must never farm the tech tree's points.
@@ -474,12 +508,12 @@ function gainGold(p, n) {
 // player already spent, so counting it would turn a buy and a sell into a
 // scoreboard farm rather than into a trade. Everything that
 // EARNS gold - a fell, a kill, the clock - still goes through gainGold.
-function tradeGold(p, n) { if (p && n > 0) p.inv.gold += n; }
+function tradeGold(p, n) { if (p && n > 0) p.gold += n; }
 // Gold leaving a wallet: the shop's one way to take it, so the post-game
 // record (goldSpent, js/ui/lobby.js) never misses a purchase. The caller has
 // already checked the purse holds n.
 function spendGold(p, n) {
-  p.inv.gold -= n;
+  p.gold -= n;
   if (n > 0) p.goldSpent += n;
 }
 // Gold is never a physical drop: every source pays the earner on the spot
@@ -506,13 +540,13 @@ function gainXp(p, n) {
   p.xpTick = state.tick;
   while (p.level < LEVEL_MAX && p.xp >= LEVEL_XP[p.level]) levelUp(p);
 }
-// A death's XP, League style: every scout of `team` standing (alive, on the
+// A death's XP, League style: every hero of `team` standing (alive, on the
 // ground) within XP_R of the body shares it, and the one who landed the blow
 // (`src`) always does, wherever they stood - a long shot still teaches. The
 // pot grows XP_SHARE of the whole for each sharer past the first, so two
-// scouts on a wave each get 65%, five get 46%: company pays, but less each.
+// heroes on a wave each get 65%, five get 46%: company pays, but less each.
 // `team` is the side the death was good for - the rival of a soldier or a
-// scout, the hunter's side for a beast (which has none).
+// hero, the hunter's side for a beast (which has none).
 const XP_R = 160;      // px round a death that shares its XP: about half the view at the default zoom
 const XP_SHARE = 0.3;  // of the whole added to the pot for each sharer past the first
 function shareXp(dead, xp, team, src) {
@@ -644,7 +678,7 @@ class Player {
     this.look = Object.assign({}, CLASSES[0].look); // the hero's face, set again by every setClass
     this.skins = {};                   // hero slot -> the look worn on that hero (heroSkinOf); a person's, from their profile
     this.spawn = { tx: WORLD >> 1, ty: WORLD >> 1 }; // landing tile once the eagle drops this player (the bot brain's "home")
-    this.inv = { gold: START_GOLD };    // the wallet is currency only; a start that buys a first part and a potion
+    this.gold = START_GOLD;             // the wallet: currency only, no ceiling; a start that buys a first part and a potion
     this.cls = 0;                       // CLASSES index; the lobby sets the local one
     this.position = -1;                 // POSITIONS index the draft gave this seat, -1 none (draftReveal, js/ui/draft.js); the host's alone, never on the wire
     this.skillPts = 1;                  // unspent; level 1 starts with one, each levelUp adds one - spent on ability levels (buyAbilityLv, js/sim/abilities.js)
@@ -805,6 +839,9 @@ class Player {
     // RUPES (js/sim/rupes.js): his snowpack (0..1, PACK_LAYERS layers) and the seconds since a
     // hit fed it; the px his avalanche has rolled (its size)
     this.pack = 0; this.packIdle = 0; this.avaD = 0;
+    // MARIS (js/sim/maris.js): COLD WATER's clock, her brace (its clock and the share it cuts),
+    // the s left under the snow, and the spot her reel or her dive is headed to
+    this.coldT = 0; this.braceT = 0; this.braceCut = 0; this.underT = 0; this.reelX = 0; this.reelY = 0;
     // VARRO (js/sim/varro.js): the body LUNGE is leaping at, SNAP's strikes still to land and
     // their clock; and on any body, whose mark it wears (LUNGE) and until when
     this.leapQ = null; this.snapN = 0; this.snapT = 0; this.packBy = -1; this.packUntil = 0;
@@ -818,6 +855,10 @@ class Player {
     // NIGHT WATCH's hidden blow waiting
     this.nixOutT = 0; this.nixWhiteT = 0; this.nixStrikeId = -1; this.nixResetT = 0; this.nixRecast = false; this.nixStrikeOnce = false;
     this.nixAmbush = false; this.nixDriftId = -1; this.nixDriftX = 0; this.nixDriftY = 0;
+    // FALCO (js/sim/falco.js): STOOP's climb and the hero it falls on, KNIFE FAN's throw count;
+    // on any body his hawk marked or his fan struck: who marked it and until when, which throw and how many knives
+    this.falcoSkyT = 0; this.falcoStoopId = -1; this.falcoFanN = 0; this.falcoDownT = 0;
+    this.falcoBy = -1; this.falcoUntil = 0; this.falcoFanId = -1; this.falcoFanHits = 0;
     this.hopT = 0;                                 // the net shot's recoil hop, on the body
     this.grapT = 0; this.grapX = 0; this.grapY = 0; // the grapple: reel time left, and the anchor it hauls toward
     this.zip = -1; this.zipD = 0; this.zipDir = 1;  // the zipline (js/sim/zipline.js): the line ridden (its index in zips, or -1), px along it, and which way
@@ -839,7 +880,6 @@ class Player {
 
 const players = [];  // every player; filled by initPlayers() at boot
 let player = null;   // the local player - camera, HUD, cursor and audio follow this one
-let inv = null;      // === player.inv, the counters the HUD draws
 // which slot THIS screen's player sits in. Nothing about a slot makes it the
 // local one - slot 0 is only the default - so anything that means "me" reads
 // `player` (or `p === player`), never an id: an online match seats this screen
@@ -882,7 +922,6 @@ function initPlayers(roster, local) {
   }
   localId = local;
   player = players[local];
-  inv = player.inv;
   applyProfile(); // the local player is the profile: its name and its last hero
 }
 
@@ -1066,7 +1105,7 @@ const KILL_VERB = { fire: 'BURNED' };
 // victim's level's worth (KILL_XP + KILL_XP_LV a level) shared by every
 // rival standing near (shareXp), so a kill teaches the fight, not the blow.
 // The one stake left on a death is the wait below and the walk back.
-const KILL_XP = 40, KILL_XP_LV = 15; // XP a downed scout is worth: 55 at level 1, 310 at 18
+const KILL_XP = 40, KILL_XP_LV = 15; // XP a downed hero is worth: 55 at level 1, 310 at 18
 const MULTI_T = 10;       // s a kill may follow the one before and still count toward a multi-kill (the post-game record)
 
 // The wait for the bird to set a downed player back down: a read of the
@@ -1166,7 +1205,7 @@ function die(p, src, cause) {
     }
   }
   callKill(p, killer, bounty); // the announcer's call and the kill feed's row (the `calls` banner below)
-  // the XP is the rival side's whoever landed it - a scout the bear or the
+  // the XP is the rival side's whoever landed it - a hero the bear or the
   // orca took still teaches the rivals who stood by
   shareXp(p, KILL_XP + KILL_XP_LV * p.level, 1 - p.team, killer);
   storyDown(killer, p); // the match story (js/ui/story.js): who keeps downing whom
@@ -1216,7 +1255,7 @@ const RESPAWN_OUT = 40;
 // from the bird, that tile itself when it stands (r0 0: the ring-out search
 // alone took the tile above, which on a lane pointing up carried the body
 // past the roost ring, BOOM_R) - null while the bird is not down. The
-// carried-back scout and the recall (js/sim/recall.js) both land here.
+// carried-back hero and the recall (js/sim/recall.js) both land here.
 function roostTile(p) {
   const e = state.drop && state.drop.eagles[p.team];
   if (!e || e.state !== 'down') return null;
@@ -1308,11 +1347,11 @@ function endSnapshot() {
     gold: player.earned, kills: player.kills, level: player.level, time: state.elapsed,
     team: player.team, cls: player.cls,
     // the whole side, the local player first: every body either ending stands
-    // on its stage, with the name, class and kit it finished in (a mate who
+    // on its stage, with the name TAB gives it (boardName: a bot goes by its hero), the class and kit it finished in (a mate who
     // is down at the whistle still shares the result)
     roster: players.filter((q) => q.active && q.team === player.team)
       .sort((a, b) => (a === player ? -1 : b === player ? 1 : a.id - b.id))
-      .map((q) => ({ name: q.name, cls: q.cls, look: q.look, team: q.team })),
+      .map((q) => ({ name: boardName(q), cls: q.cls, look: q.look, team: q.team })),
   };
 }
 
@@ -1346,7 +1385,7 @@ function endMatch(how) {
   state.defeatT = 0;
   state.rpClosed = how === 'hostleft'; // every death opens the replay again; a host walking out is no death, and its door (LOBBY) shows at once
   // an ENDING freezes its numbers here, not in the render pass: the match
-  // runs on underneath (a generator can still pay out, a rival can still
+  // runs on underneath (a gold pump can still pay out, a rival can still
   // fall) and a total that climbs behind a tally which already counted it
   // reads as a bug. A loss's summary is opened minutes later, off the LOBBY
   // plank, so this is the only moment its numbers are still true.
