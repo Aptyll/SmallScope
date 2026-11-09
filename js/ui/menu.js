@@ -39,7 +39,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.601';
+const PATCH_TXT = 'PATCH 0.602';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -55,6 +55,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.602', 'A LOST MATCH NOW SAYS YOUR EAGLE WAS DRIVEN OFF, THE TAB SCOREBOARD AND THE MAP SHOW THE MATCH CLOCK INSTEAD OF A DAY, AND THE POST-GAME STATS COUNT DAMAGE TO HEROES AND STRUCTURES.'],
   ['0.601', 'A 1V1 QUEUE ON THE TITLE SCREEN: YOU AGAINST ONE RIVAL, OR A BOT IF NOBODY IS LOOKING, ON THE MID LANE ALONE, AND THE FIRST TO DRAW FIRST BLOOD, LAST HIT 100 SOLDIERS OR TAKE A TOWER WINS.'],
   ['0.600', 'ONLINE, EVERY PLAYER NOW HEARS THE ALARM AND SEES THE PLATE WHEN THEIR OWN EAGLE IS STRUCK OUT OF SIGHT, NOT ONLY THE HOST.'],
   ['0.599', 'A NEW HERO, RUPES THE AVALANCHE: THE HITS HE TAKES PACK SNOW ONTO HIM, HE SHEDS IT IN ONE BURST, AND HIS ROLL GROWS INTO A SNOWBALL THAT FLATTENS A FIGHT.'],

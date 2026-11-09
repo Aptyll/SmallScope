@@ -616,7 +616,7 @@ function renderVictory(now) {
   if (t > WIN_T.crownLand) drawWinConfetti(now, t - WIN_T.crownLand, dim, tm);
 
   // --- the headline: VICTORY, one letter at a time ------------------------
-  const TXT = 'VICTORY', S = 4;
+  const TXT = tr('end.victory'), S = 4;
   const tw = pixelTextWidth(TXT, S);
   const tx0 = Math.round((VIEW_W - tw) / 2);
   for (let i = 0; i < TXT.length; i++) {
@@ -876,7 +876,7 @@ function renderDefeat(now) {
   }
 
   // --- the headline: DEFEAT, one letter at a time, falling ----------------
-  const TXT = 'DEFEAT', S = 4;
+  const TXT = tr('end.defeat'), S = 4;
   const tw = pixelTextWidth(TXT, S);
   const tx0 = Math.round((VIEW_W - tw) / 2);
   for (let i = 0; i < TXT.length; i++) {
