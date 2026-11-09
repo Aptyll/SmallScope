@@ -163,6 +163,7 @@ const CLASS_AB = [
   HIEMS_AB, // HIEMS - the icicle, the clear ice, the cold snap, the whiteout (js/sim/hiems.js)
   RUPES_AB, // RUPES - the heave, the shed, the shoulder, the avalanche (js/sim/rupes.js)
   VARRO_AB, // VARRO - the lunge, the howl, the snap, the pack (js/sim/varro.js)
+  VELOX_AB, // VELOX - the skip stone, the ice lane, the quick step, the long run (js/sim/velox.js)
 ];
 
 // the world the abilities put things into

@@ -327,6 +327,28 @@ const CLASSES = [
     kit: { iceMax: 1.15, iceSteer: 3.4, slideMin: 70, fatigue: 0.75, chargeMul: 0.7,
       bowCharge: 0.75, nock: 0.5, spdDmg: 5, dodgeSpeed: 235 },
   },
+  {
+    // the eleventh named hero (js/sim/velox.js): the kiting marksman. She throws her
+    // sling while she skates, a shorter reach than the hunter's and less damage; quick,
+    // steady on ice and very hard to catch, and caught, she has nothing to stop a rival
+    name: 'VELOX', role: 'THE SKATER', body: 1, passive: 'keepmoving', // HERO_PASSIVE, js/sim/velox.js
+    look: { sex: 1, tone: 1, hair: 2, hairCol: 2, beard: 0, face: 2 },
+    blurb: ['NEVER STAND STILL.', 'THROW WHILE YOU SKATE: EVERY HIT QUICKENS YOU.', 'LAY YOUR OWN ICE AND FLY ALONG IT.'],
+    story: "SHE CARRIED THE EMPIRE'S MESSAGES DOWN ITS FROZEN CANALS, FASTER THAN ANY HORSE. ONE NIGHT SHE READ THE ORDER SHE CARRIED: BURN A VILLAGE THAT WOULD NOT PAY. SHE SKATED THERE FIRST AND WARNED THEM. NOW SHE CARRIES WORD FOR ANYONE WHO NEEDS IT CARRIED FAST.",
+    // a sling stone: a shorter, quicker throw than the hunter's arrow, barely slowed by her skating
+    staff: 'sling', // her STAFF SLING, carried upright (HERO_STAVES, js/draw/velox.js)
+    attack: { name: 'STAFF SLING', art: 'sling', cycle: 50 / 60, kb: 0.6, shot: { speed: 300, life: 0.6, col: '#9aa3b8', look: 'slingstone' } },
+    base: { hp: 82, dmg: 14, armor: 10, ap: 0, haste: 0, ms: PLAYER_SPEED + 3 },
+    grow: { hp: 6, dmg: 1.2, as: 0.016, armor: 1.7 },
+    rankOrder: [0, 2, 1], // the skip stone, the quick step, the ice lane
+    // her own body in each of her looks (VELOX_SKINS, js/sprites/velox.js), worn per
+    // player (heroSkinOf) over the side's coat
+    skins: VELOX_SKINS, skinPal: VELOX_PAL, skinSlot: 'velox',
+    paint48: { t: '#7d8699', T: '#b4bdcc', g: '#1c2232', G: '#9aa3b8', m: '#5c6478', M: '#454c5e' }, // the 48 px model's (js/sprites/looks.js): its K is skin
+    // ice is her ground: a higher cap and a sharp turn on it; a drawn sling barely slows her
+    kit: { iceMax: 1.25, iceSteer: 9, slideMin: SLIDE_MIN, fatigue: 0.8, chargeMul: 0.9,
+      bowCharge: 0.6, nock: 0.4, spdDmg: 3, dodgeSpeed: 240 },
+  },
 ];
 // the body a hero wears - its sprites and its 48 px model: a hero that names
 // none is its own (HUNTER 0, WARRIOR 1), a named hero borrows one
@@ -708,6 +730,9 @@ class Player {
     // VARRO (js/sim/varro.js): the body LUNGE is leaping at, SNAP's strikes still to land and
     // their clock; and on any body, whose mark it wears (LUNGE) and until when
     this.leapQ = null; this.snapN = 0; this.snapT = 0; this.packBy = -1; this.packUntil = 0;
+    // VELOX (js/sim/velox.js): KEEP MOVING's stacks and their clock, QUICK STEP's readied
+    // throw, LONG RUN's clock
+    this.keepN = 0; this.keepT = 0; this.quickT = 0; this.runT = 0;
     this.hopT = 0;                                 // the net shot's recoil hop, on the body
     this.grapT = 0; this.grapX = 0; this.grapY = 0; // the grapple: reel time left, and the anchor it hauls toward
     this.zip = -1; this.zipD = 0; this.zipDir = 1;  // the zipline (js/sim/zipline.js): the line ridden (its index in zips, or -1), px along it, and which way

@@ -187,6 +187,7 @@ function snapSingles() {
   s.salvia = [pack(salviaBundles, 0), pack(salviaDrops, 0), pack(salviaThaws, 0)]; // SALVIA's poultices, snowdrops and warm rings (js/sim/salvia.js)
   s.lucerna = [pack(lucernaHooks, 0), pack(lucernaLanterns, 0), pack(lucernaCircles, 0)]; // LUCERNA's crooks, lanterns and rings of light (js/sim/lucerna.js)
   s.hiems = [pack(hiemsGlazes, 0), pack(hiemsStorms, 0)]; // HIEMS's ice and blizzards (js/sim/hiems.js)
+  s.velox = [pack(veloxStones, 0), pack(veloxLanes, 0)]; // VELOX's skipping stones and ice lanes (js/sim/velox.js)
   return s;
 }
 // `team` (0 or 1): only what that side sees (the `fog` banner); left out, everything
@@ -243,6 +244,7 @@ function snapApplySingles(s) {
   if (s.salvia) [salviaBundles, salviaDrops, salviaThaws].forEach((L, i) => { L.length = 0; for (const w of unpack(s.salvia[i])) L.push(w); });
   if (s.lucerna) [lucernaHooks, lucernaLanterns, lucernaCircles].forEach((L, i) => { L.length = 0; for (const w of unpack(s.lucerna[i])) L.push(w); });
   if (s.hiems) [hiemsGlazes, hiemsStorms].forEach((L, i) => { L.length = 0; for (const w of unpack(s.hiems[i])) L.push(w); });
+  if (s.velox) [veloxStones, veloxLanes].forEach((L, i) => { L.length = 0; for (const w of unpack(s.velox[i])) L.push(w); });
 }
 // a field onto an entity the game holds by identity: a nested plain object
 // is merged into the one already there (a player's `inv` is aliased by the
@@ -865,6 +867,7 @@ function snapBlank() {
   salviaBundles.length = 0; salviaDrops.length = 0; salviaThaws.length = 0;
   lucernaHooks.length = 0; lucernaLanterns.length = 0; lucernaCircles.length = 0;
   hiemsGlazes.length = 0; hiemsStorms.length = 0;
+  veloxStones.length = 0; veloxLanes.length = 0;
   holes.length = 0; iceBreaks.length = 0; pads.length = 0;
   Object.assign(orca, ORCA_FRESH());
   for (const c of camps) { c.repopT = 0; c.seen = [0, 0]; }
@@ -934,7 +937,7 @@ function snapQuantize() {
   };
   walk(players); for (const k in SNAP_KINDS) walk(SNAP_KINDS[k]());
   if (state.drop) walk(state.drop.eagles);
-  walk(objects); walk(nets); walk(guards); walk(brushfires); walk(auraStars); walk(auraOrbs); walk(auraCurtains); walk(salviaBundles); walk(salviaDrops); walk(salviaThaws); walk(lucernaHooks); walk(lucernaLanterns); walk(lucernaCircles); walk(hiemsGlazes); walk(hiemsStorms); walk(pads); walk(state.end); walk(state.eagleCine);
+  walk(objects); walk(nets); walk(guards); walk(brushfires); walk(auraStars); walk(auraOrbs); walk(auraCurtains); walk(salviaBundles); walk(salviaDrops); walk(salviaThaws); walk(lucernaHooks); walk(lucernaLanterns); walk(lucernaCircles); walk(hiemsGlazes); walk(hiemsStorms); walk(veloxStones); walk(veloxLanes); walk(pads); walk(state.end); walk(state.eagleCine);
 }
 // One echo: quantize, frame, snapshot, blank, apply, frame; the pixels that differ,
 // the frame's own noise (two renders of the same state, for anything that

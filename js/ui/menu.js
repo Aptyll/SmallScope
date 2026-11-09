@@ -1694,6 +1694,20 @@ const CLASS12 = [
     '...oo.oo....',
     '............',
   ],
+  [ // VELOX: a skate, its blade under it
+    '............',
+    '.oooo.......',
+    '.oWWo.......',
+    '.oWWo.......',
+    '.oWWooooo...',
+    '.oWWWWWWWo..',
+    '.oWWWWWWWWo.',
+    '.ooooooooo..',
+    '..o.....o...',
+    'oWWWWWWWWWWo',
+    '.oooooooooo.',
+    '............',
+  ],
 ];
 const class12Cache = new Map();
 function classIcon12(i, you) {
