@@ -382,8 +382,8 @@ function updateAbilities(p, dt) {
     }
   }
   passiveTick(p, dt);
-  // a timed shield running out (shieldUnit), a knock-up coming down (knockUp, js/sim/actions.js)
-  if (p.wardT > 0) { p.wardT = Math.max(0, p.wardT - dt); if (p.wardT <= 0) p.wardHp = 0; }
+  // a timed shield running out (shieldTick, js/sim/actions.js)
+  shieldTick(p, dt);
   // SECOND WIND: the breath, a share of the life back each tick until the clock runs out
   if (p.windT > 0) {
     const step = Math.min(dt, p.windT);

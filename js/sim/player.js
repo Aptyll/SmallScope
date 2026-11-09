@@ -822,8 +822,7 @@ class Player {
     this.castSlam = false;                         // the shield key pressed mid-wall or mid-rush: the cast in flight is the SLAM, not a raise (js/sim/abilities.js)
     this.buffT = 0;                                // s of a bear buff left (campBuff, wildlife.js): harder blows, a quicker walk
     this.buffKind = null;                          // ...and which bear's ('alpha' or 'dire'): its name and its ring's colour
-    this.dawnShield = 0;                           // hp of the DAWN SHIELD left (pickSnowdrop, js/sim/actions.js): spent before health
-    this.wardHp = 0; this.wardT = 0;               // a timed shield (shieldUnit, js/sim/actions.js): spent after the dawn's, gone when its clock runs out
+    this.shields = [];                             // { kind, hp, t }: every shield up, in the order a hit spends them (SHIELD_KINDS, js/sim/actions.js)
     // ARMATOS (js/sim/armatos.js): his resolve (0..1, full = the next key shields him) and
     // the seconds since a hit last fed it; the brace (`hold`, on the shieldT state) and
     // whether a hero has struck it (the bash primed); a hero's dash (`dash`, a HERO_DASH id
@@ -1068,22 +1067,9 @@ function damagePlayer(p, dmg, dx, dy, src, cause, crit, kb, o) {
   dmg = armorTaken(p, dmg); // ARMOR cuts every hit by its share, never to zero (js/sim/stats.js)
   dmg = heroTaken(p, dmg, dx, dy, src); // ...and a hero's own cut: ARMATOS's brace (HERO_TAKEN, js/sim/heroes.js)
   passiveHurt(p, dmg, src); // a hero's passive fed by the hits it takes (LEGION'S RESOLVE)
-  // the dawn shield (pickSnowdrop, js/sim/actions.js) takes the hit first, a burn
-  // included; what is left of the blow goes on to health
-  const shielded = Math.min(p.dawnShield, dmg);
-  if (shielded > 0) {
-    p.dawnShield -= shielded;
-    burst(p.x, p.y - 10, '#ffd84a', 4, 36, 0.35);
-    if (p.dawnShield <= 0) { sfxAt('shieldBreak', p.x, p.y); burst(p.x, p.y - 10, '#fff4b8', 10, 60, 0.5); }
-  }
-  // ...then a timed shield (shieldUnit), the same way
-  const warded = Math.min(p.wardHp, dmg - shielded);
-  if (warded > 0) {
-    p.wardHp -= warded;
-    burst(p.x, p.y - 10, '#f2cc6a', 4, 36, 0.35);
-    if (p.wardHp <= 0) { p.wardT = 0; sfxAt('shieldBreak', p.x, p.y); }
-  }
-  p.hp -= dmg - shielded - warded;
+  // the shields take the hit first, in their order (shieldSpend, js/sim/actions.js),
+  // a burn included; what is left of the blow goes on to health
+  p.hp -= dmg - shieldSpend(p, dmg);
   // the match record both ends of the blow keep (the post-game lobby, js/ui/lobby.js).
   // What is counted is what LANDED, DR already off it - the overkill on the
   // last hit of a kill included, because that is what the swing was worth.
@@ -1167,8 +1153,7 @@ function bodyOut(p) {
   p.shieldT = 0; p.rushT = 0; p.rushVictim = null;
   p.castSlam = false; p.hopT = 0; p.grapT = 0;
   p.buffT = 0; // the bear buff goes with the body too
-  p.dawnShield = 0; // ...and the dawn's shield
-  p.wardHp = 0; p.wardT = 0; p.resolve = 0; // ...and any other shield, and ARMATOS's resolve
+  p.shields = []; p.resolve = 0; // ...and every shield, and ARMATOS's resolve
   p.hold = false; p.holdHit = false; p.dash = ''; p.marchHit.length = 0;
   passiveOut(p); // ...and whatever a hero's passive keeps on the body (HERO_PASSIVE out, js/sim/heroes.js)
   clearUnitStatus(p); // root, slow, net, mark and the fire go out with the body
