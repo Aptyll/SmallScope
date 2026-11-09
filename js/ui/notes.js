@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['BOTS GO BY THEIR HERO\'S NAME OVER THEIR HEADS AND IN THE DEATH RECAP', '0.638'],
     ['THE END SCREENS GO STRAIGHT BACK TO THE LOBBY', '0.631'],
     ['Settings gear on the title and party screens', '0.625'],
     ['ALT OPENS ABILITY DETAILS; SHIFT ONLY SLIDES', '0.621'],
