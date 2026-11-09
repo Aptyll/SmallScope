@@ -84,6 +84,7 @@ const EAGLE_TILE_R = 1.6;   // tiles around the roost marked solid - the hitbox 
 // siege is a hundred blows and one piece of news, and the news is worth
 // hearing again only about as often as a side can answer it.
 const EAGLE_WARN_GAP = 9;
+const roostWarnT = [-99, -99]; // this screen's last alarm for each side's bird (state.elapsed): a screen's own, never the match's
 // the wing gust: the bird's own defense. A rival inside GUST_R makes it rear
 // up - wings spread for GUST_WIND_T, the whole telegraph - then the buffet
 // throws every rival in GUST_BLAST_R into a tumble. No damage on purpose: the
@@ -614,22 +615,31 @@ function hurtEagle(e, dmg, src, hx, hy) {
   // a warning instead: the roost is the one thing you must defend that you
   // cannot see from where you fight, and the minimap only says so if you
   // happen to be looking at it. One alarm per EAGLE_WARN_GAP, never both cues
-  // at once - standing there, the blow IS the news.
+  // at once - standing there, the blow IS the news. Whether it is news is
+  // each screen's own answer (near, its side, its own clock), so the blow is
+  // recorded for the clients and asked here of this one (roostWarnHere).
   sfxAt('bigHurt', e.x, e.y);
-  if (!nearPlayer(e.x, e.y) && player && e.team === player.team && !player.eliminated
-      && state.elapsed - (e.warnT === undefined ? -99 : e.warnT) >= EAGLE_WARN_GAP) {
-    e.warnT = state.elapsed;
-    // ...and the news arrives where the other things you glance at mid-fight
-    // do: a plate top-right under the minimap, on the market's own grammar
-    // (the `notices` banner, js/ui/shop.js) - your side's bird diamond, the
-    // NERVE it has left as a number, and the falling tail. The cue turns your
-    // head and the plate says what happened, which is the market's split too;
-    // the feed line goes with it, since the log is the match's record.
-    logEvent('YOUR EAGLE IS UNDER ATTACK', null, NOTE_KIND.roost);
-    raiseNotice('roost', Math.round(Math.max(0, e.hp) / e.maxHp * 100) + '%');
-    SFX.alarm();
-  }
+  const pct = Math.round(Math.max(0, e.hp) / e.maxHp * 100);
+  evPush('roost', [e.team, pct, e.x, e.y]);
+  roostWarnHere(e.team, pct, e.x, e.y);
   if (e.hp <= 0) { if (PRACTICE) practiceBirdMend(e); else eagleFlee(e, src); } // nothing ends in practice (js/sim/practice.js)
+}
+
+// a blow on a bird, as THIS screen hears it (from hitEagle, and from evPlay on
+// a client): out of earshot, its own side's, still in the match, and one
+// alarm per EAGLE_WARN_GAP - then the news arrives where the other things you
+// glance at mid-fight do: a plate top-right under the minimap, on the
+// market's own grammar (the `notices` banner) - your side's bird diamond, the
+// NERVE it has left as a number, and the falling tail. The cue turns your
+// head and the plate says what happened, which is the market's split too;
+// the feed line goes with it, since the log is the match's record.
+function roostWarnHere(team, pct, x, y) {
+  if (!player || team !== player.team || player.eliminated || nearPlayer(x, y)) return;
+  if (state.elapsed - roostWarnT[team] < EAGLE_WARN_GAP) return;
+  roostWarnT[team] = state.elapsed;
+  logEvent('YOUR EAGLE IS UNDER ATTACK', null, NOTE_KIND.roost);
+  raiseNotice('roost', pct + '%');
+  SFX.alarm();
 }
 
 // the objective's nerve breaks: the bird is DRIVEN OFF, not killed. It blasts

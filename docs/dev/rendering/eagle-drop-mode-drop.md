@@ -98,7 +98,8 @@ the gust (a hundred swings, twelve gusts, 53 s), a pair in half that, but arrows
 minutes. **Every blow is audible, and one of the two cues carries off screen**: within earshot it
 is the bird's own `SFX.bigHurt`, and out of earshot,
 for your OWN bird only, `SFX.alarm` instead, at most one per `EAGLE_WARN_GAP` (9 s) — a siege is a
-hundred blows and one piece of news. It is not helpless: a rival inside `GUST_R` (64 — wide enough to cover a swing from the
+hundred blows and one piece of news. Each screen answers that for itself (`roostWarnHere`, its own
+`roostWarnT` clock): the host records every blow as a `roost` event, so a guest is warned for its own side's bird too. It is not helpless: a rival inside `GUST_R` (64 — wide enough to cover a swing from the
 next tile out past the roost's 3×3; resolved through `seenAt`, like every
 watcher) makes it rear — wings thrown open for
 `GUST_WIND_T`, the whole telegraph — then `eagleGust` throws every rival in `GUST_BLAST_R` back at
