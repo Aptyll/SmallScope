@@ -39,7 +39,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.648';
+const PATCH_TXT = 'PATCH 0.649';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -55,6 +55,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.649', 'SAGITTA\'S PAVISE NOW STOPS SHOTS ONLY FROM THE FRONT: GET BEHIND IT OR AROUND ITS EDGE AND YOUR SHOTS GO PAST.'],
   ['0.648', 'THE PARTY SCREEN\'S SETTINGS STAND CENTRED OVER THE ROOM, AND VICTORY\'S LINES NAME BOTS BY THEIR HERO.'],
   ['0.647', 'A HERO\'S MARKS ON A BODY (HIEMS\'S CHILLS, VELOX\'S KEEP MOVING, VARRO\'S PAW, BELLA\'S MARK, FALCO\'S TALON) STAND IN THEIR OWN ROW ABOVE THE NAME, NO LONGER HIDDEN UNDER THE HEALTH BAR.'],
   ['0.646', 'A NEW HERO, SAGITTA THE BOLT-THROWER: HER HEAVY CROSSBOW OUTREACHES EVERY BOW, EVERY THIRD BOLT HITS LIKE A HAMMER, SHE PINS RIVALS TO THE TREES AND SHOOTS FROM BEHIND HER OWN SHIELD.'],

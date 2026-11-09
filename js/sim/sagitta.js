@@ -24,9 +24,11 @@ const PIN_RANGE = 230;          // px
 const PIN_KB = 3.5;             // the shove, x a shot's
 const PIN_WALL = 40;            // px behind the body that pins it
 // W PAVISE: a tall shield planted in front of her, facing the aim. It is a body
-// (HERO_MACHINE): a rival's shot that meets it ends on it, and rivals break it
+// (HERO_MACHINE): a rival's shot that meets its face ends on it (from behind it goes by),
+// and rivals break it
 const PAV_D = 14;               // px in front of her feet
 const PAV_T = 4;                // s it stands
+const PAV_FRONT = 0.3;          // a shot it stops flies at least this much against its facing (cos of ~72 deg off head-on)
 // E CRANK BACK: a bolt into the snow at her feet throws her back, away from the
 // aim, and slows whoever is near
 const CRANK_SPD = 330;          // px/s
@@ -60,7 +62,7 @@ const SAGITTA_AB = [
     id: 'pavise', name: 'PAVISE', cd: [16, 15, 14, 13, 12], cast: 0.2, aim: { line: PAV_D + 10 },
     rank: { shield: [120, 170, 220, 270, 320] }, // shield: the pavise's health
     tip: 'PLANT A SHIELD THAT STOPS RIVAL SHOTS',
-    blurb: 'PLANT A TALL SHIELD IN FRONT OF YOU FOR A FEW SECONDS. RIVAL SHOTS THAT MEET IT STOP ON IT. RIVALS CAN BREAK IT.',
+    blurb: 'PLANT A TALL SHIELD IN FRONT OF YOU FOR A FEW SECONDS. RIVAL SHOTS THAT MEET ITS FACE STOP ON IT. RIVALS CAN BREAK IT.',
     use: (p) => sagittaPavise(p),
     tele: (p, px, py, a, col, closing) => drawRing(Math.round(px + Math.cos(a) * PAV_D), Math.round(py + 2 + Math.sin(a) * PAV_D), 9, col, 0.45 + 0.45 * closing, closing * 0.3),
     pose: () => ({ dx: 0, dy: 1, rot: 0 }),
@@ -165,6 +167,9 @@ function pavDown(b) {
   burst(b.x, b.y - 6, '#a3794f', 8, 35, 0.4, true);
   sfxAt('place', b.x, b.y);
 }
+// a shot is stopped only flying into its face; from behind or along its edge it goes by
+// (HERO_MACHINE `passes`, shotContacts in js/sim/sim.js)
+function pavPasses(b, nx, ny) { return nx * Math.cos(b.ang) + ny * Math.sin(b.ang) > -PAV_FRONT; }
 // it stands: no shove moves it, no brain turns it, and its time runs down
 function stepPavise(b, dt) {
   b.kbx = 0; b.kby = 0; b.moving = false;
@@ -221,7 +226,7 @@ HERO_PASSIVE.heavybolts = { shot: sagittaShot, out: sagittaOut,
   name: 'HEAVY BOLTS', blurb: 'EVERY THIRD BOLT YOU LOOSE IS A HEAVY ONE: IT HITS HARDER, SHOVES WHAT IT HITS BACK A STEP, AND TOWERS TAKE EXTRA FROM IT.',
   icon: SAGITTA_ICON32.heavy };
 HERO_DASH.crank = { spd: CRANK_SPD, t: CRANK_D / CRANK_SPD, ramp: 0.02, step: crankStep };
-HERO_MACHINE.sagPavise = { step: stepPavise, draw: (b, ex, ey, now) => drawSagittaPavise(b, ex, ey, now), r: 7, hitR: 10, mass: 400, sight: 40, pay: { gold: 15, xp: 10 } };
+HERO_MACHINE.sagPavise = { step: stepPavise, draw: (b, ex, ey, now) => drawSagittaPavise(b, ex, ey, now), r: 7, hitR: 10, mass: 400, sight: 40, pay: { gold: 15, xp: 10 }, passes: pavPasses };
 HERO_SHOT_HIT.pin = pinHit;
 HERO_SHOT_HIT.longbolt = longHit;
 HERO_MOVE.push(sagittaMoveMul);

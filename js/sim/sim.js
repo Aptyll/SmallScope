@@ -439,9 +439,14 @@ function shotContacts(a, x0, y0, dx, dy) {
     const s = sweepDisc(x0, y0, dx, dy, t.x, cy, r);
     if (s >= 0 && s < stop) { shotHits.push({ s, k: 'player', t }); if (!a.pierce) stop = s; }
   }
-  // bots take the same shot: they are units in the open, on a team
+  // bots take the same shot: they are units in the open, on a team. A hero's
+  // machine a shot goes by from this side is never met, so the body past it
+  // still is (HERO_MACHINE `passes`: SAGITTA's pavise, shot from behind)
+  const sd = Math.hypot(dx, dy) || 1;
   for (const t of robots) {
     if (a.team === t.team) continue;
+    const M = heroMachine(t);
+    if (M && M.passes && M.passes(t, dx / sd, dy / sd)) continue;
     const r = robotHitR(t), cy = robotHitY(t);
     if (t.x + r < lx || t.x - r > hx || cy + r < ly || cy - r > hy) continue;
     if (!unitAlive(t) || (a.pierce && a.pierceHit.includes(t))) continue;
