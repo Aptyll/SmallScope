@@ -176,10 +176,9 @@ function paintGroundTile(g, tx, ty) {
 // a shoreline, not a muddy shoulder. The per-u noise (the edge, the ruts'
 // wander) is cached by quarter-tile, since a tile's 256 pixels share a
 // handful of u values.
-const ROAD_COL_A = '#cdbfa8', ROAD_COL_B = '#c5b7a0'; // the two tones of packed earth
-const ROAD_COL_RUT = '#a08d70';                        // the ruts
-const ROAD_COL_STONE = '#9c8d74', ROAD_COL_DARK = '#b5a68c', ROAD_COL_LIGHT = '#dbcfba';
-const ROAD_COL_MUD = '#ded8cc', ROAD_COL_GREY = '#dde3ec'; // the shoulder's dirty snow, then grey snow
+const ROAD_COL_A = '#b5a182', ROAD_COL_B = '#ad997a'; // the two tones of packed earth
+const ROAD_COL_DEEP = '#8a7556';                       // the earth in shade (the wiki mound's rim)
+const ROAD_EDGE = 0.45;                                // tiles past the edge the earth breaks up over
 const ROAD_COL_RIM = '#d6ecf4';                        // the broken-ice rim where a path crosses a frozen lake
 const ROAD_COL_SNOW = '#e7eff8';                       // snow melting in over the verge
 // The felled trunk across each forest road's far end (placeRoad, world.js):
@@ -226,41 +225,28 @@ function paintLog(g, seg, px, py, ox, oy) {
   }
   penFlush();
 }
-const roadRutCache = new Map();
-function roadRutAt(u) {
-  const k = Math.round(u * 4);
-  let r = roadRutCache.get(k);
-  if (r === undefined) { r = ROAD_RUT + (vnoise(k / 4 * 0.45, 8.8) - 0.5) * 0.35; roadRutCache.set(k, r); }
-  return r;
-}
 function paintRoadOverlay(g, tx, ty, px, py, onIce) {
   for (let j = 0; j < TILE; j++) for (let i = 0; i < TILE; i++) {
     const fx = tx + (i + 0.5) / TILE - 0.5, fy = ty + (j + 0.5) / TILE - 0.5;
     const d = laneDist(fx, fy); // ...which ends on the cistern's gates (js/sim/world.js)
     if (d >= ROAD_SHOULDER) continue;
-    const hp = hash2(px + i, py + j); // this pixel's own roll
     // the drift field: snow lies on the verge and mud spreads off it in
     // CLUMPS, not as per-pixel static - a low-frequency noise read per pixel,
     // so the melt reads as patches of snow and mud rather than sand
     const clump = vnoise((px + i) / 6 + 3.1, (py + j) / 6 + 7.7);
     let c = null;
     if (d < 0) {
+      // clean packed earth: two tones by 8 px quad and nothing else, so a
+      // body, a shot and a ground mark are the only detail on a lane
       c = vnoise(((px + i) >> 3) / 13, ((py + j) >> 3) / 13) > 0.5 ? ROAD_COL_A : ROAD_COL_B;
-      const o = roadOff(fx, fy);
-      if (Math.abs(o - roadRutAt(roadAlong(fx, fy))) < 0.08 && hp > 0.12) c = ROAD_COL_RUT; // a rut: ~2 px, broken
-      else if (hp > 0.992) c = ROAD_COL_STONE;
-      else if (hp > 0.975) c = ROAD_COL_DARK;
-      else if (hp < 0.006) c = ROAD_COL_LIGHT;
-      // the verge: drifts of snow lying over the earth, more of them toward the edge
-      if (d > -0.7 && clump + hp * 0.25 > 1.02 - (d + 0.7) / 0.7 * 0.55) c = ROAD_COL_SNOW;
+      // the verge: snow lying over the last of the earth in clumps
+      if (d > -0.5 && clump > 1.0 - (d + 0.5) / 0.5 * 0.5) c = ROAD_COL_SNOW;
     } else if (onIce) {
       // the bank: broken ice along the crossing's own edge, and open water past it
       if (d < 0.09) c = ROAD_COL_RIM;
     } else {
-      // the shoulder: mud spread off the road in patches, thinning to greyed snow, then the field
-      const k = 1 - d / ROAD_SHOULDER;
-      if (clump - hp * 0.2 < k * k * 0.55 - 0.05) c = d < 0.45 ? ROAD_COL_B : ROAD_COL_MUD;
-      else if (clump < 0.45 + k * 0.3 && hp > 0.35) c = ROAD_COL_GREY;
+      // the shoulder: one thin band of trodden earth breaking up into the snow in clumps
+      if (d < ROAD_EDGE && clump < 0.62 - d / ROAD_EDGE * 0.5) c = ROAD_COL_B;
     }
     if (c) penDot(g, c, px + i, py + j);
   }

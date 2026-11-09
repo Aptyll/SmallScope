@@ -515,7 +515,6 @@ const ROAD_HW = 3.5;        // tiles either side of the centreline across the fi
 const ROAD_HW_WOOD = 2.5;   // ...and through each corner's woods: a five-tile forest road
 const ROAD_GATE_BLEND = 2;  // u either side of a gate the width eases from one to the other
 const ROAD_RAG = 0.8;       // tiles the edge wanders either way - the organic verge
-const ROAD_RUT = 1.0;       // tiles off the centreline the two ruts run
 const ROAD_SHOULDER = 1.4;  // tiles of dirty snow past the edge (the bake only)
 const ROAD_ICE_KEEP = 6;    // tiles past the edge no pond or river reaches (genWorld's carve rules)
 const ROAD_ICE_TAPER = 7;   // ...and the tiles over which a river narrows to nothing on its way in

@@ -287,7 +287,7 @@ function wikiClick() {
 // rim - snow, or the road's packed earth (ROAD_COL_*, js/draw/ground.js)
 function wikiMound(cx, baseY, w, road) {
   const hw = w >> 1;
-  ctx.fillStyle = road ? ROAD_COL_RUT : '#c9dcee'; ctx.fillRect(cx - hw, baseY - 1, w, 3);
+  ctx.fillStyle = road ? ROAD_COL_DEEP : '#c9dcee'; ctx.fillRect(cx - hw, baseY - 1, w, 3);
   ctx.fillStyle = road ? ROAD_COL_A : '#eef4fb'; ctx.fillRect(cx - hw + 2, baseY - 2, w - 4, 3);
 }
 // a WORLD entry's figures on one mound, left to right about cx, each over

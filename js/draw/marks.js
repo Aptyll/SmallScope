@@ -186,6 +186,29 @@ function drawMapYou(g, x, y, col, rim, k) {
   const x0 = Math.round(x) - ((k + 1) >> 1), y0 = Math.round(y) - ((k + 1) >> 1);
   g.fillStyle = '#ffffff'; g.fillRect(x0, y0, k + 1, k + 1);
 }
+// A LANDMARK: a building whose STRUCTS entry names a `glyph` (the road tower)
+// wears it on both maps over its own tiles, in its side's ink on the map's
+// dark rim. A tower is a rook: a merlon either side of a gap over a solid
+// body, 3 x 5 px on the disc (k 1) and 5 x 7 on the chart (k 2), so where a
+// lane is held reads before any body on it does. Standing ones only: a
+// felled tower leaves `structures`, and its glyph goes with it.
+const MAP_GLYPHS = {
+  tower(g, x, y, col, rim, k) {
+    const w = 2 * k + 1, h = 2 * k + 3, x0 = Math.round(x) - k, y0 = Math.round(y) - h + 1 + k;
+    g.fillStyle = rim; g.fillRect(x0 - 1, y0 - 1, w + 2, h + 2);
+    g.fillStyle = col; g.fillRect(x0, y0 + k, w, h - k);
+    g.fillRect(x0, y0, k, k); g.fillRect(x0 + w - k, y0, k, k); // the two merlons
+  },
+};
+// every standing landmark through `put(o, cx, cy)` -> its map px, or null to skip it
+function drawMapStructs(g, put, rim, k) {
+  for (const o of structures) {
+    const fn = MAP_GLYPHS[STRUCTS[o.type] && STRUCTS[o.type].glyph];
+    if (!fn) continue;
+    const at = put((o.tx + structW(o) / 2) * TILE, (o.ty + structH(o) / 2) * TILE);
+    if (at) fn(g, at[0], at[1], TEAMS[skin(o.team)].mark, rim, k);
+  }
+}
 function drawMapBird(g, x, y, col, rim) {
   const gx = Math.round(x), gy = Math.round(y);
   g.fillStyle = rim;
