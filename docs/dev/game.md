@@ -167,7 +167,7 @@ and the build list) was cut in 0.525. [Buildings](gameplay/buildings.md).
 
 **Two gold pumps are the map's objectives**, one beside the middle of the top lane and one beside
 the bot lane's, off the road. Heroes take one by standing in its ring with no rival hero inside
-(5 s; a rival inside pauses it), and while a side holds it every hero on that side gets 3 gold
+(5 s; a rival inside pauses it), and while a side holds it every hero on that side gets 20 gold
 every 10 s. The ring and the pump wear the holder's colour, grey when nobody holds it; no text.
 Bots take and contest them. [The gold pumps](gameplay/buildings.md#the-gold-pumps).
 
