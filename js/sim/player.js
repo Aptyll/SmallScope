@@ -231,13 +231,13 @@ const CLASSES = [
     // the sixth named hero and the first healer (js/sim/salvia.js): heals, speed for
     // her side and the slows taken off them, at a mage's range; almost no damage and
     // little control, and under focus her heals are spent fast
-    name: 'SALVIA', role: 'THE HERB-WOMAN', body: 1, passive: 'warmbroth', // HERO_PASSIVE, js/sim/salvia.js
+    name: 'SALVIA', role: 'THE MENDER', body: 1, passive: 'warmbroth', // HERO_PASSIVE, js/sim/salvia.js
     look: { sex: 1, tone: 1, hair: 3, hairCol: 1, beard: 0, face: 2 },
     blurb: ['THERE ARE NO SIDES IN HER TENT.', 'HEAL YOUR SIDE, SPEED THEM UP, TAKE THEIR SLOWS OFF.', 'ALMOST NO DAMAGE. KEEP BEHIND THEM.'],
     story: "SHE MENDED THE EMPIRE'S SOLDIERS ON BOTH SIDES OF A BORDER, WHICH THE EMPIRE CALLED TREASON. IN THE VALLEY THERE ARE NO SIDES IN HER TENT. SHE CHARGES BOTH COMPANIES THE SAME PRICE, AND NOBODY ARGUES WITH HER.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
     // a staff's sprig: the ember's reach, a little weaker; her keys are the point
-    staff: 'herb', // her HERB BUNDLE, carried upright (HERO_STAVES, js/draw/salvia.js)
-    attack: { name: 'HERB BUNDLE', art: 'herbstaff', cycle: 62 / 60, kb: 0.5, shot: { speed: 250, life: 0.85, col: '#9cc87a', look: 'sprig' } },
+    staff: 'snowdrop', // her SNOWDROP STAFF, carried upright (HERO_STAVES, js/draw/salvia.js)
+    attack: { name: 'SNOWDROP STAFF', art: 'dropstaff', cycle: 62 / 60, kb: 0.5, shot: { speed: 250, life: 0.85, col: '#9cc87a', look: 'sprig' } },
     base: { hp: 80, dmg: 12, armor: 10, ap: 0, haste: 0, ms: PLAYER_SPEED },
     grow: { hp: 5.8, dmg: 0.9, as: 0.01, armor: 1.8 },
     rankOrder: [0, 2, 1], // the poultice, the cloak, the snowdrops

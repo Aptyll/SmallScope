@@ -53,7 +53,7 @@ order, so the script tags still interleave them:
 | [js/sprites/armatos.js](../../js/sprites/armatos.js) | ~180 | shared scope, no `window.*` export | ARMATOS's 32 px ability and passive icons (`ARM_ICON32`), his looks' 16 px grids and skins table (`ARM_BODY`, `ARM_SKINS`), and his greatsword (`ARM_SWORD`) |
 | [js/sprites/fortiva.js](../../js/sprites/fortiva.js) | ~370 | shared scope, no `window.*` export | FORTIVA's 32 px ability and passive icons (`FORT_ICON32`), her looks' 16 px grids and skins table (`FORT_BODY`, `FORT_SKINS`), and her greatsword (`FORT_SWORD`) |
 | [js/sprites/aura.js](../../js/sprites/aura.js) | ~190 | shared scope, no `window.*` export | AURA's 32 px ability and passive icons (`AURA_ICON32`) and her STAR SHARD staff's weapon art |
-| [js/sprites/salvia.js](../../js/sprites/salvia.js) | ~200 | shared scope, no `window.*` export | SALVIA's 32 px ability and passive icons (`SALVIA_ICON32`) and her HERB BUNDLE staff's weapon art |
+| [js/sprites/salvia.js](../../js/sprites/salvia.js) | ~200 | shared scope, no `window.*` export | SALVIA's 32 px ability and passive icons (`SALVIA_ICON32`) and her SNOWDROP STAFF staff's weapon art |
 | [js/sprites/bella.js](../../js/sprites/bella.js) | ~340 | shared scope, no `window.*` export | BELLA's 32 px ability and passive icons (`BELLA_ICON32`), her looks' 16 px grids and skins table (`BELLA_BODY`, `BELLA_SKINS`), and her spatha (`BELLA_SPATHA`) |
 | [js/sprites/ignia.js](../../js/sprites/ignia.js) | ~310 | shared scope, no `window.*` export | IGNIA's 32 px ability and passive icons (`IGNIA_ICON32`), her looks' 16 px grids and skins table (`IGNIA_BODY`, `IGNIA_SKINS`) |
 | [js/sprites/landmarks.js](../../js/sprites/landmarks.js) | ~55 | → `SPRITES` | the story landmarks: the frozen boat |
@@ -132,7 +132,7 @@ order, so the script tags still interleave them:
 | [js/draw/armatos.js](../../js/draw/armatos.js) | ~120 | shared scope, no `window.*` export | ARMATOS's pixels: his greatsword in his hands, the standard on his back and planted, and his keys' shapes on the snow |
 | [js/draw/fortiva.js](../../js/draw/fortiva.js) | ~90 | shared scope, no `window.*` export | FORTIVA's pixels: her greatsword in her hands, her state on her body, and her keys' shapes on the snow |
 | [js/draw/aura.js](../../js/draw/aura.js) | ~100 | shared scope, no `window.*` export | AURA's pixels: her star bolt, and the star's ring, the orb and the curtain's band on the snow |
-| [js/draw/salvia.js](../../js/draw/salvia.js) | ~110 | shared scope, no `window.*` export | SALVIA's pixels: her sprig, and the poultice, the snowdrops and the warm ring on the snow; her HERB BUNDLE carried |
+| [js/draw/salvia.js](../../js/draw/salvia.js) | ~110 | shared scope, no `window.*` export | SALVIA's pixels: her sprig, and the poultice, the snowdrops and the warm ring on the snow; her SNOWDROP STAFF carried |
 | [js/draw/bella.js](../../js/draw/bella.js) | ~70 | shared scope, no `window.*` export | BELLA's pixels: her precision pips, the parry's blade, the marks and the duel's ring, and her spatha in her hands |
 | [js/draw/ignia.js](../../js/draw/ignia.js) | ~140 | shared scope, no `window.*` export | IGNIA's pixels: the brand and the ember in flight, the lines of fire and their melted strip, the warm hands' sparks, and her crook and lantern |
 | [js/draw/marks.js](../../js/draw/marks.js) | ~200 | shared scope, no `window.*` export | the glyph grammar both maps share: a camp's icon and clock, a soldier's pennant, what a body looks like as a dot |

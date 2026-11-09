@@ -1,5 +1,5 @@
 'use strict';
-// SALVIA, THE HERB-WOMAN - a named hero (CLASSES, js/sim/player.js) and the
+// SALVIA, THE MENDER - a named hero (CLASSES, js/sim/player.js) and the
 // first healer: the only real heals in the roster, speed for her side, and the
 // slows taken off them. Almost no damage and little control of her own; under
 // focus her heals are spent fast. Loaded before abilities.js, whose CLASS_AB

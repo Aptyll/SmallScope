@@ -184,7 +184,7 @@ const SALVIA_ICON32 = {
 // and the body two pixels narrower (ARMATOS: 10 and 8), the face flush with the head:
 // no nose past the outline (round 1: /mnt/project-files/salvia/round1).
 const SALVIA_BODY = {
-  hood: { // HERB-WOMAN: a sage hood and shawl, a linen apron over the side's dress
+  hood: { // MENDER: a sage hood and shawl, a linen apron over the side's dress
     down: [
       '................',
       '.....oooooo.....',
@@ -304,17 +304,17 @@ const SALVIA_PAL = Object.assign({}, ARM_PAL, { a: '#5a3a2a', A: '#7a5238', q: '
 // not the doll's (app/bake-player: hood, tent), so her run is her drawn body in every
 // facing (heroRunFront, js/sprites/armatos.js); the doll rolls her.
 const SALVIA_SKINS = [
-  { id: 'hood', name: 'HERB-WOMAN', rarity: 'common', price: 0, grids: SALVIA_BODY.hood, motion: 'hood', run: 'drawn' },
+  { id: 'hood', name: 'MENDER', rarity: 'common', price: 0, grids: SALVIA_BODY.hood, motion: 'hood', run: 'drawn' },
   { id: 'tent', name: 'FIELD TENT', rarity: 'rare', price: 200, grids: SALVIA_BODY.tent, motion: 'tent', run: 'drawn' },
 ];
 
 // ------------------------------------------------------------ salvia staff
-// Her HERB BUNDLE as the weapon art the HUD shows and the hands aim on a draw
-// (SPRITES.weaponArt, js/sprites/weapons.js): dried sage tied in gold on an alder
-// staff, head left like the sword's point. Carried, it is upright (HERO_STAVES.herb, js/draw/salvia.js).
-WEAPON_FWD.herbstaff = Math.PI;
-SPRITES.weaponArt.herbstaff = SPR.bake([
+// Her SNOWDROP STAFF as the weapon art the HUD shows and the hands aim on a draw
+// (SPRITES.weaponArt, js/sprites/weapons.js): a snowdrop's white bell on a pale alder
+// shaft, head left like the sword's point. Carried, it is upright (HERO_STAVES.snowdrop, js/draw/salvia.js).
+WEAPON_FWD.dropstaff = Math.PI;
+SPRITES.weaponArt.dropstaff = SPR.bake([
   '............', '............', '............', '.ooo........',
-  'ozZzoo......', 'oZzZzyoooooo', 'ozZzZyoububo', '.oooyo.ooooo',
+  'oWWWo.o.....', 'oWsWoolooooo', 'oWWWoUouuuuo', '.ooo..oooooo',
   '............', '............', '............', '............',
-], { '.': null, o: '#2e2440', z: '#9a9a52', Z: '#c9c27a', y: '#f2cc6a', u: '#9a7050', b: '#6f4d38' });
+], { '.': null, o: '#2e2440', W: '#f8f8ff', s: '#c8d8e8', l: '#4f8a46', U: '#4f8a46', u: '#b08a62' });

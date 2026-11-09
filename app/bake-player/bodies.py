@@ -508,7 +508,7 @@ class Light(Hearth):
 
 
 class Hood(Wanderer):
-    """SALVIA as HERB-WOMAN (her default look): a sage hood over a dark fringe, a sage shawl
+    """SALVIA as MENDER (her default look): a sage hood over a dark fringe, a sage shawl
     over her shoulders, a linen apron down the front of her side's dress; boots under it"""
 
     @staticmethod

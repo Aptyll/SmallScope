@@ -72,20 +72,21 @@ function drawSalviaGround(ex, ey, now) {
 }
 HERO_GROUND.push(drawSalviaGround);
 
-// ---- the HERB BUNDLE ------------------------------------------------------------------
-// Her staff (CLASSES' `staff: 'herb'`; HERO_STAVES, js/draw/heroes.js): dried sage tied
-// in gold on an alder staff, carried upright; the bundle's tips stir between two frames.
-// The hand closes on the shaft at SALVIA_HERB_GRIP.
-const SALVIA_HERB = [
-  '..o.o..',
-  '.ozoZo.',
-  'ozZozZo',
-  'oZzZzzo',
-  'ozZzZzo',
-  '.ozZzo.',
-  '.oyYyo.',
-  '..ouo..',
-  '..ouo..',
+// ---- the SNOWDROP STAFF ----------------------------------------------------------------
+// Her staff (CLASSES' `staff: 'snowdrop'`; HERO_STAVES, js/draw/heroes.js): a snowdrop's
+// white bell nodding off the top of a pale alder shaft, two leaves under it, carried
+// upright; the bell sways between two frames. The hand closes on the shaft at SALVIA_STAFF_GRIP.
+const SALVIA_STAFF = [
+  '...o...',
+  '..olo..',
+  '.oWWWo.',
+  'oWWWWWo',
+  'oWsWsWo',
+  'oWoWoWo',
+  '.o.o.o.',
+  '..oUo..',
+  'olouolo',
+  '.oouoo.',
   '..ouo..',
   '..ouo..',
   '..ouo..',
@@ -96,13 +97,13 @@ const SALVIA_HERB = [
   '..obo..',
   '...o...',
 ];
-const SALVIA_HERB_GRIP = [3, 10];
-const SALVIA_HERB_PAL = { o: '#2e2440', z: '#9a9a52', Z: '#c9c27a', y: '#f2cc6a', Y: '#b98a2e', u: '#9a7050', b: '#6f4d38' };
-let salviaHerbArt = null;
-function salviaHerb() {
-  if (salviaHerbArt) return salviaHerbArt;
-  const stir = SALVIA_HERB.map((r, y) => (y === 0 ? '...o.o.' : y === 1 ? '..oZoz.' : r));
-  salviaHerbArt = [bakeBladeArt(SALVIA_HERB, SALVIA_HERB_PAL), bakeBladeArt(stir, SALVIA_HERB_PAL)];
-  return salviaHerbArt;
+const SALVIA_STAFF_GRIP = [3, 11];
+const SALVIA_STAFF_PAL = { o: '#2e2440', W: '#f8f8ff', s: '#c8d8e8', l: '#4f8a46', U: '#4f8a46', u: '#b08a62', b: '#7a5a40' };
+let salviaStaffArt = null;
+function salviaStaff() {
+  if (salviaStaffArt) return salviaStaffArt;
+  const sway = SALVIA_STAFF.map((r, y) => (y === 4 ? 'oWWsWWo' : y === 5 ? 'oWWoWWo' : y === 6 ? '.oo.oo.' : r));
+  salviaStaffArt = [bakeBladeArt(SALVIA_STAFF, SALVIA_STAFF_PAL), bakeBladeArt(sway, SALVIA_STAFF_PAL)];
+  return salviaStaffArt;
 }
-HERO_STAVES.herb = { art: salviaHerb, grip: SALVIA_HERB_GRIP };
+HERO_STAVES.snowdrop = { art: salviaStaff, grip: SALVIA_STAFF_GRIP };

@@ -199,11 +199,11 @@ and reach it was cast with), stepped by `updateAuraWorld` (`HERO_TICK`):
 | 3 | **STEP OF LIGHT** | 18/17/16/15/14 s | a blink down the aim, `STEP_LEN` (a hero dash so fast it lasts a few frames, `p.dash = 'step'`: a wall or the water's edge stops it short). Every rival body within `STEP_R` of where she stood is slowed ×`STEP_SLOW` for `slowT` (1/1.25/1.5/1.75/2 s). A bot spends it when a hero reaches her, aimed away (the row's `botAim`) |
 | 4 | **THE CURTAIN** | 110/95/80 s | a band `CURTAIN_LEN` (900 px) long down the aim from where she stands falls `CURTAIN_DELAY` after the cast (`auraCurtain`, `curtainFall`), its edges on the snow brightening until then: every rival body within `CURTAIN_SEE` of it is revealed, struck or not, and those within `CURTAIN_HALF` take `dmg` (70/110/150); buildings under it too |
 
-SALVIA, THE HERB-WOMAN — the healer. Her rules live in
+SALVIA, THE MENDER — the healer. Her rules live in
 **[js/sim/salvia.js](../../../js/sim/salvia.js)** (`SALVIA_AB`, its `salvia` banner), her pixels in
 [js/draw/salvia.js](../../../js/draw/salvia.js), her icons and staff art in
 [js/sprites/salvia.js](../../../js/sprites/salvia.js). 80 hp, 10 armor, almost no damage of her own: a
-green sprig off her HERB BUNDLE (her `attack` row, drawn as `look: 'sprig'`; the staff is carried upright,
+green sprig off her SNOWDROP STAFF (her `attack` row, drawn as `look: 'sprig'`; the staff is carried upright,
 `HERO_STAVES`). Every heal she gives goes through `salviaHeal` (`healPlayer`, the green number), on
 ally players only; a heal's size is its `hp` plus her ability power × the row's `ap` (`abDmg`). What
 she leaves in the world (`salviaBundles`, `salviaDrops`, `salviaThaws`, each carrying the heal it was
