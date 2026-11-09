@@ -29,7 +29,7 @@
 // - HERO_MARK: fn(e, px, py, w, h, now) drawn over any body with the states
 //   every unit wears (drawUnitStates): a mark a hero left on it, a hero's own stacks.
 // - HERO_ICE: fn(p) -> true where a hero's ground skates like the creek's ice
-//   (iceUnder, js/sim/sim.js): a rival's glaze.
+//   (iceUnder, js/sim/sim.js): a rival's glaze, VELOX's lanes.
 // - HERO_SUMMON[id]: { step(a, dt) } the brain of an animal a hero called onto its
 //   side (a.summon = id, with team and owner): VARRO's wolves. It walks in `animals`
 //   like any beast (hit, drawn, pushed apart, fogged) and pays nothing when it falls.
