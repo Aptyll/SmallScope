@@ -41,7 +41,7 @@ stable per tile.
   `{ type, tx, ty, hp, flash, shake, ...extra }`. The `OBJECTS` table's types: `tree`,
   `rock` (genWorld's placeholder, [lifted at boot](#rocks)), `bush`, `den`, `dummy`, `banner`, `log`,
   `pylon`, `pkdie`, `agbell`, `stump`, `eagle`, `hut`, `part`, and the
-  [story landmarks](#story-landmarks)' `boat` (added from `LANDMARKS`); the `STRUCTS` table's: `generator`,
+  [story landmarks](#story-landmarks)' `boat` (added from `LANDMARKS`); the `STRUCTS` table's: `pump`,
   `barracks`, `tower`. `banner`/`log` are
   [the road](#the-road)'s furniture (`banner` is also the practice gate's flag), `pylon`
   [the zipline](#the-zipline)'s, and `dummy`/`pkdie`/`agbell` exist only in
@@ -60,10 +60,10 @@ stable per tile.
   `objects[i] = ...` reaches clients only on the wire's slow sweep. Worldgen writes bare.
   Structures go through `destroyStructure` so the `structures` registry stays in sync — it routes
   `STRUCTS` types through `removeStruct`.
-- `generator`, `barracks`, `tower` and `net` are the **structures** (see
-  [Buildings](gameplay/buildings.md)); nobody builds by hand. Each carries `{ tier, maxHp, building, buildT,
-  buildTotal, dustT, sparkT }` plus per-type fields (generator `hold`, `cap`, `capBy`, `payT`, `paid`, `lane`: [the gold pumps](gameplay/buildings.md#the-gold-pumps); barracks `waveT`, `queue`,
-  `rollT`, `born`, `door`; tower `ang`, `tgt`, `chg`, `cd`, `bolt`; net `fish`), and every live one is also referenced from the module-scope `structures`
+- `pump`, `barracks` and `tower` are the **structures** (see
+  [Buildings](gameplay/buildings.md)); nobody builds by hand. Each carries `{ maxHp, building, buildT,
+  buildTotal, dustT, sparkT }` plus the fields its entry's `init` lays (pump `hold`, `cap`, `capBy`, `payT`, `paid`, `lane`: [the gold pumps](gameplay/buildings.md#the-gold-pumps); barracks `waveT`, `queue`,
+  `rollT`, `born`, `door`; tower `ang`, `tgt`, `chg`, `cd`, `bolt`), and every live one is also referenced from the module-scope `structures`
   array so `updateStructures()` never scans the 53,824-tile grid. Nor do the object clocks
   (`flash`/`shake`, bush regrow): `tickObjTimers` (js/sim/sim.js, the
   `object timers` banner) ticks only the objects in `objTimed`, in map order, and drops each one

@@ -16,18 +16,17 @@ local player only and over an unchanged sim body.
 **The buildings' team paint** rides the shared `k`/`K` (iron fitting) and `e` (glow) chars,
 which `teamBuildPal` swaps for a side's own (see below).
 
-**The gold pump** is the generator, a pump jack on a 4x2 tile pad, painted in code by
+**The gold pump** is a pump jack on a planked 4x2 tile pad, painted in code by
 `app/bake-pump/pump.py` with the cutout painter (app/media/paint.py) and baked by
-`python3 app/bake-pump/bake.py` into `js/baked/pump.js` (never hand-edit it). Each tier is one
+`python3 app/bake-pump/bake.py` into `js/baked/pump.js` (never hand-edit it). It is one
 stroke of 8 frames (the crank turns, the pitman rocks the beam, a glint runs down the pipe, the
-barrel's gold bobs): planks, then stone flags with the team band and a pennant, then a gold beam,
-head and barrel. The team paint is `k`/`K`/`e`, baked inside `SPR.onTeams` into
-`teamBuild[team].pumpAnim[tier]`; frame 0 is `teamBuild[team].generator[tier]`, the still that
+barrel's gold bobs). The team paint is `k`/`K`/`e`, baked inside `SPR.onTeams` into
+`teamBuild[team].pumpAnim`; frame 0 is `teamBuild[team].pump`, the still that
 `structSprite` hands every other reader. A pump nobody holds wears the same grids with the team
-paint in grey, baked once outside `onTeams` into `SPRITES.pumpNeutral` (`pumpAnim`, `generator`);
+paint in grey, baked once outside `onTeams` into `SPRITES.pumpNeutral` (`pumpAnim`, `pump`);
 `pumpSet` (js/draw/structs.js) picks the holder's set or that one. `pumpFrame` picks the frame off
 the pump's `payT`, a whole number of `PUMP_STROKE` strokes to a payout, and `drawPumpCoin` hops a
-coin out of `SPRITES.pumpMouth[tier]` for `PUMP_HOP` s after each pay.
+coin out of `SPRITES.pumpMouth` for `PUMP_HOP` s after each pay.
 
 **The road tower** is a cut-stone tower with a gun deck and a great crossbow on a turntable,
 painted in code by `app/bake-tower/tower.py` with the cutout painter and baked by

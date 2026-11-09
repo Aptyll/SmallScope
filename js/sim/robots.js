@@ -473,7 +473,7 @@ function updateMerchant(b, dt) {
         b.baySite = null;
         if (!free) b.wood -= MERCH_BAY_WOOD;
         b.bayGift[s.lane] = false;
-        const o = createStruct(s.tx, s.ty, 'barracks', 0, owner, true); // the eagle's own: nobody pays gold
+        const o = createStruct(s.tx, s.ty, 'barracks', owner, true); // the eagle's own: nobody pays gold
         o.lane = s.lane; // whose road its waves walk (makeSoldier)
         b.bays.push(o);
       }, (t) => { if (t === 6) b.baySite = null; b.bayT = t; });
@@ -604,7 +604,7 @@ function makeSoldier(o, type) {
   // its kind's health, tougher every `grow`, like its bounty (soldierBounty,
   // js/sim/farm.js), so a hero's grown blow never makes every hit on one a last hit
   const T = soldierType(b);
-  b.hp = b.maxHp = T.hp + T.grow * Math.floor(state.elapsed / STRUCTS.barracks.tiers[0].grow);
+  b.hp = b.maxHp = T.hp + T.grow * Math.floor(state.elapsed / STRUCTS.barracks.grow);
   b.shot = null; // a blow in the air from range: { tg, t, dmg, x, y } (soldierShot)
   b.owner = -1; // nobody's: no cargo, no payout but the bounty
   b.lane = o.lane === undefined ? 1 : o.lane; // the bay's lane (updateMerchant): 0 top, 1 mid, 2 bot

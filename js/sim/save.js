@@ -25,8 +25,8 @@
 // the saved valley and not the fresh one.
 
 // ---- tuning ---------------------------------------------------------------
-const SAVE_V = 5;           // the body's shape; a body of another shape is refused, never half-read, so
-                            // nothing below fills in a field an older save lacked (4: the survival leftovers cut; 5: the wallet is p.gold)
+const SAVE_V = 6;           // the body's shape; a body of another shape is refused, never half-read, so
+                            // nothing below fills in a field an older save lacked (4: the survival leftovers cut; 5: the wallet is p.gold; 6: buildings lose `tier`, the pump's type is 'pump')
 
 // ---- what is saved ----------------------------------------------------------
 // [name, get, put]: get() hands the live value in, put(v) takes the decoded

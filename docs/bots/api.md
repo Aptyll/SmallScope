@@ -102,7 +102,7 @@ obs = {
   soldiers: [{ id, team, x, y, hp, maxHp }],      // wave soldiers near your side, both teams
   animals:  [{ id, kind, level, x, y, hp, maxHp }],   // near you: rabbit, deer, wolf, alpha, dire, bird
   eagles:   [{ team, x, y, state, hp, maxHp, hitT, mouth }],  // both birds, always
-  structs:  [{ id, type, team, tx, ty, hp, maxHp, building }],  // buildings near you
+  structs:  [{ id, type, team, tx, ty, hp, maxHp, building }],  // buildings near you: type 'barracks', 'tower' or 'pump'
   nodes:    [{ kind, tx, ty }],    // tree or ripe bush near you; nearest 64, nearest first
   shots:    [{ x, y, vx, vy, team }],  // shots in flight near you
   pings:    [{ owner, k, x, y, t }],   // your side's pings up now: k is go, attack, omw, danger or defend; t the seconds left
@@ -242,5 +242,5 @@ where you *want* to aim; lead a moving target yourself.
 
 ## Versioning
 
-`hello.api` is 4 (2 swapped the side's `flags` for `pings`, and the `flag` order for `ping`; 3 dropped `me.bag`, the `useCard` edge and the shop's `sell` act, with the backpack and cards; 4 dropped `me.food`, `drops`, the `eatBerry`/`eatFish` edges and the shop's `trade` act, and added `me.potions`/`me.potionT` and the `useItem` edge). A new field may appear at any time; a field is never renamed or removed without
+`hello.api` is 5 (2 swapped the side's `flags` for `pings`, and the `flag` order for `ping`; 3 dropped `me.bag`, the `useCard` edge and the shop's `sell` act, with the backpack and cards; 4 dropped `me.food`, `drops`, the `eatBerry`/`eatFish` edges and the shop's `trade` act, and added `me.potions`/`me.potionT` and the `useItem` edge; 5 renamed a gold pump's `structs` type from `generator` to `pump`). A new field may appear at any time; a field is never renamed or removed without
 the number going up.

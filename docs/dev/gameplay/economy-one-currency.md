@@ -26,7 +26,7 @@ rather than a different resource (the League model: one number, many ways to ear
 | black bear | `alpha` 6 coins × 105 → 630 | BLUE's river camp's one; `EPIC_TEAM_GOLD` (280) to every teammate besides, and the BLACK BUFF for the whole team |
 | brown bear | `dire` 6 coins × 105 → 630 | RED's river camp's one; `EPIC_TEAM_GOLD` (280) to every teammate besides, and the BROWN BUFF for the whole team |
 | bird | `bird` 2 coins × 28 → 56 | dormant: nothing spawns one |
-| gold pump (`generator`) | `tiers[0].pay` (20) every `period` (10 s) to every hero of the side holding it — 120 a minute each | one of the map's two neutral objectives, taken by standing in its ring ([The gold pumps](buildings.md#the-gold-pumps)); both held is 240 a minute each, twice the trickle |
+| gold pump (`pump`) | `pay` (20) every `period` (10 s) to every hero of the side holding it — 120 a minute each | one of the map's two neutral objectives, taken by standing in its ring ([The gold pumps](buildings.md#the-gold-pumps)); both held is 240 a minute each, twice the trickle |
 | a sale at [the counter](the-merchants-counter.md) | half an item's price (a potion one at a time) | the one payout that does not count as earned (`tradeGold`) — a trade is an exchange, not a source |
 
 The scale is League's: a finished item costs about 2600-3400 ([the items](the-merchants-counter.md#the-items)),
