@@ -125,8 +125,12 @@ function botsSet(k) {
 }
 function partySize() { return roomSide(player.team).filter(isHuman).length; }
 // RANKED's bots: a level off the people's average rating (both parties' when two met), a band either side of the start
+// A seat's RANKED rating: your own from your profile (a party of one never
+// builds a roster, so NET.ranks never holds it), anyone else's off the
+// roster or their hello
+function seatRank(p) { return p === player ? PROFILE.rank() : NET.ranks[p.id] || PROFILE.RANK_START; }
 function rankLevel() {
-  const rs = players.filter(isHuman).map((p) => NET.ranks[p.id] || PROFILE.RANK_START);
+  const rs = players.filter(isHuman).map(seatRank);
   const avg = rs.reduce((s, r) => s + r, 0) / Math.max(1, rs.length);
   return Math.max(0, Math.min(AI_LEVELS.length - 1, 1 + Math.floor((avg - PROFILE.RANK_START) / RANK_BAND + 0.5)));
 }
@@ -658,7 +662,7 @@ function drawRoomSeat(s, act, flash) {
   const ny = fy + fs + 9, hero = CLASSES[p.cls] ? CLASSES[p.cls].name : '';
   drawPixelText(ctx, nm, x + ((w - pixelTextWidth(nm)) >> 1), ny, me ? SC_GOLD : SC_LIT, 1);
   if (hero) drawPixelText(ctx, hero, x + ((w - pixelTextWidth(hero)) >> 1), ny + 10, SC_DIM, 1); // the hero they last locked in
-  if (NET.mode === 'ranked') { const r = String(NET.ranks[p.id] || PROFILE.RANK_START); drawPixelText(ctx, r, x + ((w - pixelTextWidth(r)) >> 1), ny + 20, SC_LBL, 1); }
+  if (NET.mode === 'ranked') { const r = String(seatRank(p)); drawPixelText(ctx, r, x + ((w - pixelTextWidth(r)) >> 1), ny + 20, SC_LBL, 1); }
   if (p !== roomHost()) { // a guest: READY's tick (the leader's word is FIND MATCH, so it wears none) and the link to the leader
     const ry = y + h - 14, ready = NET.ready.has(p.id), bx = x + ((w - (ready ? 18 : 8)) >> 1);
     if (ready) drawTick(bx, ry + 2, RM_OK);
