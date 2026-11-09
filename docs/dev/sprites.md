@@ -226,7 +226,16 @@ app/bake-player/bodies.py) paint the shawl in the doll's `ember` material and on
 Her 48 px model is her own standing front too. Her CROOK AND LANTERN is not a blade: the row's
 `staff: 'crook'` names a `HERO_STAVES` entry (`IGNIA_CROOK`, js/draw/ignia.js), carried upright in
 the leading hand in every facing (`heroStaff`, asked by `drawHeldTool`, mirrored facing left or up)
-and held through a cast; the lantern's heart flickers between two baked frames.
+and held through a cast; the lantern's heart flickers between two baked frames. **Each staff hero
+carries it its own way** so two of them are two shapes on the snow: a `HERO_STAVES` row's `hold`
+names a `STAFF_HOLDS` entry (none is the leading hand; `far` the other hand, SALVIA and HIEMS;
+`yoke` level behind the shoulders, FABER; `hip` level at the hip, VELOX). The level holds are the
+upright art a quarter turn over, baked once (`staffTurn`). A draw or a cast brings any hold upright
+into the leading hand. A new staff hero takes a hold no other staff hero has, or a new one.
+
+**Every hero body shows its side from every facing**: the side's coat letters (`r`/`R`/`d`) fill 16 px
+or more of the torso facing down and up and 12 or more side-on, the lower back from behind
+(the rule and the tool that counts it: hero-readability.md in the project's visual-direction files).
 
 AURA has one look (`AURA_SKINS`, js/sprites/aura.js): NORTHERN LIGHT, drawn on ARMATOS's frame
 (`AURA_PAL` is `ARM_PAL` with her silver hair `a`/`A`, the night-blue mantle `q`/`Q` and the
