@@ -1,14 +1,14 @@
 'use strict';
 // The side's shared mind: every bot's personality, the role the side hands
 // it, what the side has seen and who is calling for help - the few simple
-// rules teamwork comes out of. The ladder (js/ai/ai.js) asks it; nothing here
+// rules teamwork comes out of. The ladder (js/ai/ai-ladder.js) asks it; nothing here
 // writes an input.
 // ------------------------------------------------------------ team brain
 // Three ideas, each a small rule, and the teamwork is what they add up to:
 //   MOOD   every bot is one of five temperaments, dealt so each side fields
 //          all five. A mood moves the choices - when to back off, how far it
 //          walks to help, how long it farms - never the hands (aim, draw and
-//          reactions are the profile's, js/ai/ai.js).
+//          reactions are the profile's, js/ai/ai-skill.js).
 //   ROLE   every bot plays its drafted POSITION (laner, jungler, support:
 //          js/ai/ai-farm.js) unless the side's plan needs it for a bigger
 //          job - who pushes, who guards, who goes to the bear - picked by fit
@@ -40,11 +40,11 @@
 //   roam   x how wide it wanders with nothing to do
 //   fit    how well it suits each role (the plan hands jobs out by this)
 const AI_MOODS = {
-  brave:    { name: 'BRAVE',    flee: -0.15, judge: -0.25, help: 1.3, stalk: true,  greed: 0.9, roam: 1.1, fit: { pusher: 4, stalker: 3, guard: 0, scout: 1, slayer: 3 } },
-  cautious: { name: 'CAUTIOUS', flee: 0.15,  judge: 0.25,  help: 0.8, stalk: false, greed: 1,   roam: 0.8, fit: { pusher: 0, stalker: 0, guard: 4, scout: 2, slayer: 1 } },
-  greedy:   { name: 'GREEDY',   flee: 0.05,  judge: 0.1,   help: 0.5, stalk: false, greed: 1.5, roam: 0.9, fit: { pusher: 1, stalker: 0, guard: 1, scout: 0, slayer: 3 } },
-  loyal:    { name: 'LOYAL',    flee: 0,     judge: 0.1,   help: 1.8, stalk: true,  greed: 1,   roam: 1,   fit: { pusher: 3, stalker: 1, guard: 3, scout: 0, slayer: 2 } },
-  wild:     { name: 'WILD',     flee: -0.05, judge: -0.1,  help: 1,   stalk: true,  greed: 1,   roam: 1.6, fit: { pusher: 2, stalker: 4, guard: 0, scout: 4, slayer: 2 } },
+  brave:    { name: 'BRAVE',    flee: -0.15, judge: -0.25, help: 1.3, stalk: true,  greed: 0.9, roam: 1.1, fit: { pusher: 4, stalker: 3, guard: 0, slayer: 3 } },
+  cautious: { name: 'CAUTIOUS', flee: 0.15,  judge: 0.25,  help: 0.8, stalk: false, greed: 1,   roam: 0.8, fit: { pusher: 0, stalker: 0, guard: 4, slayer: 1 } },
+  greedy:   { name: 'GREEDY',   flee: 0.05,  judge: 0.1,   help: 0.5, stalk: false, greed: 1.5, roam: 0.9, fit: { pusher: 1, stalker: 0, guard: 1, slayer: 3 } },
+  loyal:    { name: 'LOYAL',    flee: 0,     judge: 0.1,   help: 1.8, stalk: true,  greed: 1,   roam: 1,   fit: { pusher: 3, stalker: 1, guard: 3, slayer: 2 } },
+  wild:     { name: 'WILD',     flee: -0.05, judge: -0.1,  help: 1,   stalk: true,  greed: 1,   roam: 1.6, fit: { pusher: 2, stalker: 4, guard: 0, slayer: 2 } },
 };
 const AI_MOOD_KEYS = Object.keys(AI_MOODS);
 // A bot's mood is for life, not for a match: a body with a roster name of
@@ -69,7 +69,7 @@ function aiMood(p) {
   }
   return AI_MOODS[p.ai.mood];
 }
-// a decision knob off the difficulty profile (js/ai/ai.js), with the neutral
+// a decision knob off the difficulty profile (js/ai/ai-skill.js), with the neutral
 // value a profile that predates it plays by
 const AI_KNOB_DEFAULT = { judge: 0.5, focus: 0.5, team: 0.8, memory: 5, obey: 1 };
 function aiKnob(prof, k) { return prof[k] !== undefined ? prof[k] : AI_KNOB_DEFAULT[k]; }
@@ -83,16 +83,13 @@ function aiFlee(p, prof) { return Math.max(0, Math.min(0.9, prof.flee + aiMood(p
 const AI_ROLES = {
   pusher:   { name: 'PUSHER' },   // the objective rung: the rival bird
   guard:    { name: 'GUARD' },    // stands by its own bird (the guard rung)
-  scout:    { name: 'SCOUT' },    // walks the middle and the far bank, eyes for the side
   stalker:  { name: 'STALKER' },  // goes after a rival the side saw alone
   slayer:   { name: 'SLAYER' },   // one of the party the side sends to its bear
   jungler:  { name: 'JUNGLER' },  // JUNGLE: walks its side's wolf dens on their clocks (js/ai/ai-farm.js)
   laner:    { name: 'LANER' },    // TOP, MID, BOT: last-hits the rival wave on its lane behind its own (js/ai/ai-farm.js)
   support:  { name: 'SUPPORT' },  // SUPPORT: walks with its side's BOT and leaves it the last hits (js/ai/ai-farm.js)
-  gatherer: { name: 'GATHERER' }, // the ladder as it always was: hunt, harvest
 };
 const AI_PLAN_T = 2;        // s between a side's re-plans
-const AI_SCOUT_AT = 45;     // s into the match the side sends its scout out
 const AI_STALK_AT = 90;     // s into the match the side lets a stalker off the leash
 const AI_KEEP = 2;          // fit a bot's current role is worth over a better-suited teammate's
 // fit a position adds to the side's bigger jobs, on top of the mood's: the
@@ -148,10 +145,11 @@ function aiDownCount(team) {
 // counts are the profile's own (aiPushers, prof.guard - the difficulty),
 // so the plan decides WHO, not how many; the window is the one time it adds
 // pushers of its own. Every bot those and the bear party leave plays its
-// POSITION (aiPosDeal, aiPosJob, js/ai/ai-farm.js); a bot with no position
-// scouts or stalks once the match is under way, and anyone left over is a
-// gatherer. A bot keeps its role while the role is still wanted (AI_KEEP),
-// so the jobs do not reshuffle every re-plan.
+// POSITION (aiPosDeal, aiPosJob, js/ai/ai-farm.js), and a side of five
+// has a position for every seat; a bot with none stalks once the match is
+// under way, and anyone left over has no role (aiRole: null). A bot keeps
+// its role while the role is still wanted (AI_KEEP), so the jobs do not
+// reshuffle every re-plan.
 function aiPlan(team) {
   const T = aiTeams[team];
   if (state.elapsed < T.at) { Object.assign(T, aiTeamNew()); } // a new match on the same page
@@ -231,10 +229,8 @@ function aiPlan(team) {
     const r = aiPosJob(T, q);
     if (r) { free.splice(free.indexOf(q), 1); roles[q.id] = r; order.push(q.id); }
   }
-  // and a bot with none scouts, then stalks, once the match is under way
-  if (state.elapsed >= AI_SCOUT_AT && free.length) { give('scout'); want.push('scout'); }
+  // and a bot with none stalks once the match is under way
   if (state.elapsed >= AI_STALK_AT && free.length && !grudger) { const n = free.length; give('stalker'); if (free.length < n) want.push('stalker'); }
-  for (const q of free) { roles[q.id] = 'gatherer'; order.push(q.id); }
   // the order aiRank reads: pushers, then guards, then everyone else (a
   // grudge's stalker is handed out first, but never ranks ahead of them)
   const pri = (id) => (roles[id] === 'pusher' ? 0 : roles[id] === 'guard' ? 1 : 2);
@@ -348,7 +344,7 @@ function aiSideBear(team) {
 }
 // The bear party (the slayer role): meet AI_BEAR_R off the bear, and once
 // AI_BEAR_N are there (or the first has waited AI_BEAR_WAIT) go in together.
-// Returns the bear to fight (the camp rung plays it, js/ai/ai.js), a point to
+// Returns the bear to fight (the camp rung plays it, js/ai/ai-ladder.js), a point to
 // walk to while the party forms, or null when p is not in one.
 function aiBearJob(p, dt) {
   const T = aiTeams[p.team], b = T.bear;
@@ -361,7 +357,6 @@ function aiBearJob(p, dt) {
   if (here >= AI_BEAR_N || T.bearT > AI_BEAR_WAIT) return { fight: b };
   return { meet: { x: b.x + (p.x - b.x) / (Math.hypot(p.x - b.x, p.y - b.y) || 1) * AI_BEAR_R, y: b.y + (p.y - b.y) / (Math.hypot(p.x - b.x, p.y - b.y) || 1) * AI_BEAR_R }, here };
 }
-// p's job this plan (a bot the plan has not seen yet gathers)
 // how many rivals are pushing into the side's half, deeper than its own
 // pushers are into theirs (0: no brace). The depth is how far along the line
 // between the two birds a body has come, so of two pushes that cross, the
@@ -380,7 +375,10 @@ function aiBrace(T, team, bots) {
   for (const q of bots) if (T.roles[q.id] === 'pusher') ours = Math.max(ours, 1 - Math.hypot(q.x - b.x, q.y - b.y) / D);
   return deep >= ours ? n : 0;
 }
-function aiRole(p) { return aiPlan(p.team).roles[p.id] || 'gatherer'; }
+// p's job this plan (an AI_ROLES key), or null for a seat the plan has not
+// handed one: a bot that landed since the last re-plan, the local seat, a
+// bot FILE's seat. Every reader treats null as no job.
+function aiRole(p) { return aiPlan(p.team).roles[p.id] || null; }
 // p's place in the side's plan: the pushers first, then the guards, then the
 // rest - what aiRank reads, so aiWantsPush and aiOnGuard hand the plan's
 // push and guard counts (T.nPush, T.nGuard) to the bots it picked
@@ -421,7 +419,7 @@ function aiCall(p, foe) {
 // the call p would answer: open, near enough for its mood, not its own, not
 // already answered by AI_CALL_N others (p's own answer is not counted
 // against it). Null for a bot with a job that must not be dropped - that is
-// decided by the caller (the help rung, js/ai/ai.js)
+// decided by the caller (the help rung, js/ai/ai-ladder.js)
 function aiHelpCall(p) {
   const T = aiTeams[p.team], m = aiMood(p);
   const reach = AI_CALL_R * m.help;
@@ -494,17 +492,6 @@ function aiFallBackTo(p, foe) {
   const e = aiOwnEagle(p);
   return e || { x: (p.spawn.tx + 0.5) * TILE, y: (p.spawn.ty + 0.5) * TILE };
 }
-// the scout's beat: the map's middle, the rival half's road short of its
-// lane, and back - one point at a time, re-picked on arrival
-function aiScoutPoint(p) {
-  const e = state.drop && state.drop.eagles[1 - p.team];
-  const pts = [{ x: cx * TILE, y: cy * TILE }];
-  if (e) { const g = aiLaneGate(e); pts.push({ x: (g.x * 2 + cx * TILE) / 3, y: (g.y * 2 + cy * TILE) / 3 }); }
-  const k = (p.ai.scoutN || 0) % pts.length;
-  const b = pts[k];
-  const j = aiMood(p).roam;
-  return { x: b.x + (hash2(p.id * 7 + k, (p.ai.scoutN || 0) + 31) - 0.5) * 12 * TILE * j, y: b.y + (hash2(p.id * 11 + k, (p.ai.scoutN || 0) + 57) - 0.5) * 12 * TILE * j };
-}
 // a human in trouble is a call too: the side hears its hand the way it hears
 // a bot's (the human never presses anything for it - a hit with a rival on
 // them is the call)
@@ -519,15 +506,42 @@ function aiHumanCall(team) {
 }
 
 // ---- the thought --------------------------------------------------------------
+// What a goal is FOR: six kinds, one colour each (the F4 view's, js/ui/botview.js;
+// the Bot Lab, botlab.html, files the same kinds in its own paint, checked as
+// a set for colour-blind separation). The four that change a match are loud;
+// FARM and ROAM, most of any match, are quiet. None is a side's red or blue.
+const AI_GOAL_KINDS = {
+  PUSH:    { col: '#d55181' }, // the rival bird
+  RETREAT: { col: '#c98500' }, // falling back, going home, mending
+  DEFEND:  { col: '#9085e9' }, // its own bird, a post, a friend
+  FIGHT:   { col: '#d95926' }, // a rival, a beast on it, the wave
+  FARM:    { col: '#3b8f72' }, // gold and XP
+  ROAM:    { col: '#5d6578' }, // nothing pressing
+};
+// Every goal word a bot may write (aiNote's here, a bot FILE's `think.goal`,
+// bot-api.js) and the kind it is, grouped by kind in the order the F4 bar
+// stacks them. The one table: the F4 view paints by it, the recorder's export
+// carries it to the Bot Lab (botLogExport), and docs/bots/api.md lists it.
+// RALLY and ESCORT are the bot files' words (bots/*.js); the ladder's own
+// rally is REGROUP. A word not here shows plain.
+const AI_GOALS = {
+  PUSH: 'PUSH', REGROUP: 'PUSH', RALLY: 'PUSH',
+  FLEE: 'RETREAT', HIDE: 'RETREAT', RECALL: 'RETREAT', HEAL: 'RETREAT',
+  DEFEND: 'DEFEND', GUARD: 'DEFEND', HELP: 'DEFEND', ESCORT: 'DEFEND',
+  FIGHT: 'FIGHT', WOLF: 'FIGHT', STALK: 'FIGHT', ROAD: 'FIGHT',
+  FARM: 'FARM', JUNGLE: 'FARM', SUPPORT: 'FARM', GATHER: 'FARM', HUNT: 'FARM', PUMP: 'FARM', SHOP: 'FARM',
+  ROAM: 'ROAM', IDLE: 'ROAM', ORDER: 'ROAM',
+};
 // What a bot is doing and why, for the dashboard (contract.md, the shared
 // folder's ai-behaviors): one record a bot, reused, written by the rung that
 // wins each think - the last write in a think is the one that stands.
-// `t` may be an entity (its kind is read off where it lives) or a point.
+// `goal` is an AI_GOALS word. `t` may be an entity (its kind is read off
+// where it lives) or a point.
 function aiNote(p, goal, why, t) {
-  const ai = p.ai;
+  const ai = p.ai, role = aiRole(p);
   const th = ai.thought || (ai.thought = { goal: '', why: '', target: null, role: '', mood: '', plan: '', src: 'native', t: 0 });
   th.goal = goal; th.why = why; th.t = state.tick;
-  th.role = AI_ROLES[aiRole(p)].name; th.mood = aiMood(p).name; th.plan = aiTeams[p.team].stance;
+  th.role = role ? AI_ROLES[role].name : ''; th.mood = aiMood(p).name; th.plan = aiTeams[p.team].stance;
   if (!t) { th.target = null; return; }
   const g = th.target || (th.target = { x: 0, y: 0, kind: 'point', ref: null });
   let kind = 'point', x = t.x, y = t.y;
@@ -536,7 +550,6 @@ function aiNote(p, goal, why, t) {
   else if (t.kind === 'soldier') kind = 'soldier';
   else if (t.tx !== undefined && t.type) { kind = 'object'; x = t.tx * TILE + 8; y = t.ty * TILE + 8; }
   else if (t.kind && t.hp !== undefined) kind = 'animal';
-  else if (t.type && t.t !== undefined) kind = 'drop';
   g.kind = kind; g.x = x; g.y = y; g.ref = kind === 'point' ? null : t;
   if (t.id !== undefined) g.id = t.id; else delete g.id;
 }
