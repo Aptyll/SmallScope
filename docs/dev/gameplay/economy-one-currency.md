@@ -6,8 +6,8 @@ dies — a soldier, a scout, a deer, a wolf, a bear — shared by the side stand
 clock, a pump and a sale are gold alone, so the road is where a scout levels; the lanes' soldiers
 and the dens are where it gets rich, and the woods are pocket money.
 
-Every player owns a wallet. `p.inv` is `{ gold }` — currency only, no ceiling — and the six
-item slots beside it are the build. (`inv` is an alias for the local player's wallet.) **Gold is
+Every player owns a wallet, `p.gold`: currency only, no ceiling. The six item slots beside it
+are the build. **Gold is
 the only currency**; the heals in the world (creek fish, berry bushes) are taken where they stand
 and never carried ([Heals](heals.md)). The whole economy is the
 `YIELD` table in the constants banner of [js/sim/core.js](../../../js/sim/core.js) - the one tuning table

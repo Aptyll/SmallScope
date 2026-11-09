@@ -789,7 +789,7 @@ function cheatCmd(p, c) {
   }
   if (c.id === 'reset') {
     // back to a fresh level 1: level, xp, purse, skill points and ranks
-    p.level = 1; p.xp = 0; p.inv.gold = 0; p.earned = 0; p.skillPts = 1;
+    p.level = 1; p.xp = 0; p.gold = 0; p.earned = 0; p.skillPts = 1;
     for (let i = 0; i < p.abLv.length; i++) { p.abLv[i] = 0; p.abCd[i] = 0; }
     p.maxHp = levelMaxHp(p); p.hp = p.maxHp;
     fx('#f4f7ff');

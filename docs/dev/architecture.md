@@ -413,12 +413,12 @@ for the current API — it is deliberately the whole external surface, and
 ## State
 
 All game state lives in top-level singletons shared across the game files — `state` and
-`settings` in core.js, `players`/`player`/`inv` and the entity arrays in player.js:
+`settings` in core.js, `players`/`player` and the entity arrays in player.js:
 
 - **`state`** — the match: tick, day/time, darkness, mode, overlays (`state.mapOpen`, `state.shop`).
 - **`settings`** — the player's dials, persisted **under the profile** (`PROFILE.putSettings`).
-- **`players`** — the ten players. `player` and `inv` are aliases for **the local player only**
-  (slot `localId`, 0 by default) and its gold-only wallet; carried goods are the six item slots
+- **`players`** — the ten players. `player` is the alias for **the local player only**
+  (slot `localId`, 0 by default); its wallet is the number `player.gold`, and carried goods are the six item slots
   (`player.items`, a potion stack counted in `player.potions`). See
   [multiplayer.md](multiplayer.md#the-ten-players).
 

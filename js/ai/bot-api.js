@@ -86,7 +86,7 @@ function botObserve(p) {
     id: p.id, team: p.team, cls: CLASSES[p.cls].name,
     x: botR(p.x), y: botR(p.y), vx: botR(p.vx), vy: botR(p.vy),
     hp: botR(p.hp), maxHp: p.maxHp, dead: p.dead, respawnT: botR(p.respawnT), eliminated: p.eliminated,
-    level: p.level, xp: p.xp, gold: p.inv.gold, skillPts: p.skillPts,
+    level: p.level, xp: p.xp, gold: p.gold, skillPts: p.skillPts,
     stats: botStats(p), // the seven hero stats, the numbers the HUD's panel prints (js/sim/stats.js)
     prone: !!p.prone, hide: botR(p.hide || 0), aboard: !!p.aboard, falling: p.dropT > 0, zip: p.zip,
     abilities: p.abLv.map((lv, i) => botAbility(p, i, lv)),

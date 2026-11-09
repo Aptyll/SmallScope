@@ -12,7 +12,7 @@ to the world.
 - `control: 'human'` — driven by this screen's keyboard and mouse. Exactly one per screen: **this
   session's player**, in slot `localId` (0 unless `?local=N` or `DBG.setLocal(N)` seats it
   elsewhere — nothing about slot 0 makes it the local one, and anything that means "me" reads
-  `player` or tests `p === player`, never an id). `player` and `inv` point at it (and only at
+  `player` or tests `p === player`, never an id). `player` points at it (and only at
   it) for the camera, HUD, cursor, audio gating and the aim line.
 - `control: 'remote'` — a human on another screen, in a match this screen hosts: its `input` is
   written from the wire (`netHostStep`, js/net/net.js) and it steps through `updatePlayer` like
@@ -43,7 +43,7 @@ wears the **profile's** name and last hero — `applyProfile()`, called by `init
 [architecture.md](architecture.md#profilejs)), `look` (the hero's fixed face, a copy of
 `CLASSES[cls].look` that every `setClass` writes, so every copy of a hero looks the same), `spawn` (the tile it landed
 on from the eagle), `aboard`/`dropT`/`dropU`
-(the eagle ride, see [Eagle drop](rendering/eagle-drop-mode-drop.md)), its own `inv` wallet and
+(the eagle ride, see [Eagle drop](rendering/eagle-drop-mode-drop.md)), its own `gold` wallet and
 `potions`/`potT` (the stack and the running drink, [Heals](gameplay/heals.md)),
 `level`/`xp` (see [Hero levels](#hero-levels)), `earned` (the match's gold earned), `kills`, an `input` struct and an `ai` brain.
 `reset(first)` places it at `spawn` and clears every transient; it is the single definition of
