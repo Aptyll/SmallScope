@@ -1,6 +1,6 @@
 # The two class bodies on the doll (doll.py): the HUNTER (pom beanie) and the WARRIOR
 # (fur hood with goggles, a trailing scarf, skate blades), and each named hero's looks
-# (ARMATOS: standard, oath; FORTIVA: unbroken, coif; BELLA: general, traitor; IGNIA: hearth, wanderer; AURA: light; SALVIA: hood, tent; LUCERNA: lamp, dusk; HIEMS: scholar, frost; RUPES: quarry, cellar; NIX: snowblind; VARRO: wolfkept, whitepack). Their sizes are measured off the
+# (ARMATOS: standard, oath; FORTIVA: unbroken, coif; BELLA: general, traitor; IGNIA: hearth, wanderer; AURA: light; SALVIA: hood, tent; LUCERNA: lamp, dusk; HIEMS: scholar, frost; RUPES: quarry, cellar; NIX: snowblind; VARRO: wolfkept, whitepack; VELOX: canal, night). Their sizes are measured off the
 # hand-drawn 16 px frames in js/sprites/characters.js, so the doll's idle lands on those
 # frames pixel for pixel and the run and the roll it paints wear the same body.
 #
@@ -690,6 +690,40 @@ class Frost(Light):
             cv.blob(cam, U(v3(0.0, 2.9 * s, Z(8.6))), R, (0.8, 0.75, Z(0.9)), 'locks' + ('L' if s > 0 else 'R'), self.HAIR, bias=0.4)
 
 
+class Canal(Standard):
+    """VELOX as CANAL RUNNER (her default look): a wool cap over auburn hair, a braid down
+    her back, a gold scarf at the neck over her side's coat; Armatos's frame and boots"""
+    ARM_MAT, MITT_MAT = 'coat', 'skin'
+    MARKS = [(-1.5, 0.9, 'e'), (1.5, 0.9, 'e')]
+    HAIR, CAP, SCARF = 'hair', 'cap', 'gold'
+
+    def head(self, cv, cam, hc, Rh, pose, snap):
+        def region(n, q):
+            """the cap's crown above, the face, the hair round it"""
+            return np.where(q[2] > 0.35, self.CAP, np.where((q[0] > 0.2) & (np.abs(q[1]) < 0.75) & (q[2] > -0.95), 'skin', self.HAIR))
+        cv.blob(cam, hc, Rh, self.HEAD_R, 'head', self.HAIR, p=self.HEAD_P, region=region)
+        self.face_marks(cv, cam, hc, Rh)
+
+    def coat(self, cv, cam, U, R):
+        cv.blob(cam, U(v3(0, 0, Z(6.1))), R, (2.75, 3.05, Z(2.05)), 'coat', 'coat', p=2.2)
+        cv.blob(cam, U(v3(0, 0, Z(4.0))), R, (2.6, 3.1, Z(0.6)), 'hem', 'coat', bias=-0.3)
+        cv.blob(cam, U(v3(0.1, 0, Z(8.0))), R, (2.6, 3.2, Z(0.6)), 'scarf', self.SCARF, bias=0.3)
+
+    def extras(self, cv, cam, U, R, pose):
+        # the braid down her back, lifted behind her in the run's wind
+        blow = pose.get('tail', 0.0)
+        cv.blob(cam, U(v3(-1.9 - 0.8 * blow, 0, Z(7.4) + 0.4 * blow)), R @ rot('y', -0.3 * blow), (0.7, 0.7, Z(1.6)), 'braid', self.HAIR, bias=-0.2)
+
+    def ball_head(self, cv, cam, hc, Rh):
+        cv.blob(cam, hc, Rh, (2.6, 2.85, 2.5), 'head', self.CAP, p=self.HEAD_P)
+
+
+class Night(Canal):
+    """VELOX as NIGHT POST (the first skin): the same runner, dark hair under a dark cap,
+    a pale blue scarf"""
+    HAIR, CAP, SCARF = 'nighthair', 'nightcap', 'nightscarf'
+
+
 class Horn(Lamp):
     """BUCINA as HORN-BLOWER (her default look): bare-headed, auburn hair, a slate wool cape
     with a cream fur collar over her side's coat; Armatos's frame, boots"""
@@ -776,4 +810,5 @@ BODIES = {'hunter': Hunter(), 'warrior': Warrior(), 'standard': Standard(), 'oat
           'wolfkept': Wolfkept(), 'whitepack': Whitepack(),
           'horn': Horn(), 'column': Column(),
           'snowblind': Snowblind(),
-          'clockmaker': Clockmaker(), 'foreman': Foreman()}
+          'clockmaker': Clockmaker(), 'foreman': Foreman(),
+          'canal': Canal(), 'night': Night()}

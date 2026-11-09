@@ -166,6 +166,7 @@ const CLASS_AB = [
   BUCINA_AB, // BUCINA - the blast, the note, the echo, the pines (js/sim/bucina.js)
   NIX_AB, // NIX - the shard, the cloud, the drift step, the squall (js/sim/nix.js)
   FABER_AB, // FABER - the spark, the small machine, the clockspring, the old engine (js/sim/faber.js)
+  VELOX_AB, // VELOX - the skip stone, the ice lane, the quick step, the long run (js/sim/velox.js)
 ];
 
 // the world the abilities put things into

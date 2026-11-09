@@ -67,7 +67,7 @@ the held one lit gold
 js/ai/ai.js, first thing `aiThink` asks): the ultimate whenever it can rank, then each basic key
 unlocked once, then the basics maxed in the hero's `rankOrder` (its `CLASSES` row: HUNTER
 shot, net, grapple; WARRIOR stomp, rush, shield; ARMATOS verdict, march, brace; FORTIVA sever,
-yoke, heart; AURA star, orb, step; SALVIA poultice, cloak, snowdrops; LUCERNA crook, shoo, lantern; RUPES heave, shed, shoulder; NIX shard, drift step, cloud; VARRO lunge, snap, howl; BUCINA note, blast, echo). The cd column in the tables below is every rank's; the numbers in the text are rank
+yoke, heart; AURA star, orb, step; SALVIA poultice, cloak, snowdrops; LUCERNA crook, shoo, lantern; RUPES heave, shed, shoulder; NIX shard, drift step, cloud; VARRO lunge, snap, howl; BUCINA note, blast, echo; VELOX skip stone, quick step, ice lane). The cd column in the tables below is every rank's; the numbers in the text are rank
 1's, and each row's `rank` table has the rest.
 
 **Every ability lands on every kind of body.** A player, a rabbit, a deer, a bird, a wolf and a
@@ -337,6 +337,23 @@ lose her; a mark (`markUnit`: AURA's light, the falcon) still shows her.
 | 2 | **SNOW CLOUD** | 18/17/16/15/14 s | a cloud `CLOUD_R` round her feet for `t` (3.5-5.5 s), one at a time. Inside it she is hidden from a side none of whose heroes or soldiers stands in it (`nixCover`); a blow she strikes from it shows her for `CLOUD_OUT`. Both sides see the cloud; her own side sees her in it faintly (`HERO_FADE`) |
 | 3 | **DRIFT STEP** | 12/11/10/9/8 s | needs a rival she struck in the last `DRIFT_STEP_MEM` near the aim (`ok`): a cut for `dmg` (10/16/22/28/34), then a quick step (`HERO_DASH.drift`) to `DRIFT_STEP_PAST` behind them, turned to face them (`nixDrift`, `driftEnd`) |
 | 4 | **SQUALL** | 80/65/50 s | she vanishes for `WHITEOUT_T`: untouchable (`invuln`) and hidden from both sides' rivals, then comes out beside the nearest rival hero within `WHITE_REACH` and strikes for `dmg` (60/95/130) + `WHITE_AD` of her DAMAGE (`nixWhiteStrike`). If that hero falls within `WHITE_RESET`, the key is ready again once; the cast it gives back cannot give itself back |
+
+VELOX, THE SKATER — the kiting marksman: she throws her sling while she skates and never stands
+still. Her rules live in **[js/sim/velox.js](../../../js/sim/velox.js)** (`VELOX_AB`, its `velox`
+banner), her pixels in [js/draw/velox.js](../../../js/draw/velox.js), her icons and looks in
+[js/sprites/velox.js](../../../js/sprites/velox.js). 82 hp, 10 armor, a step faster than a walk. Her
+STAFF SLING throws a shorter, quicker stone than the hunter's arrow, and her kit barely slows her
+while she draws (`chargeMul` 0.9) and turns sharply on ice (`iceSteer` 9, `iceMax` 1.25). Her
+stones in flight and her lanes are things she leaves in the world (`veloxStones`, `veloxLanes`),
+saved and sent like HIEMS's ice.
+
+| key | name | cd | what it does |
+| --- | --- | --- | --- |
+| P | **KEEP MOVING** | — | each of her basic hits adds a stack, `KEEP_MAX` at most, each walking ×(1 + `KEEP_MS`) (`HERO_MOVE`); the stacks hold `KEEP_T`, or `KEEP_ICE_T` when she stands on ice. `HERO_PASSIVE.keepmoving` |
+| 1 | **SKIP STONE** | 7/6.5/6/5.5/5 s | a stone down the aim at `SKIP_SPD`: it lands every `SKIP_GAP` (`SKIP_ICE_GAP` after a landing on ice: the creek's, or a lane), `SKIP_N` times, and each landing hits every rival body within `SKIP_R` for `dmg` (14/21/28/35/42). A tree or a wall stops it |
+| 2 | **ICE LANE** | 16/15/14/13/12 s | a strip `LANE_LEN` long and `LANE_W` wide from her feet down the aim, for `t` (3/3.5/4/4.5/5 s). On her own lane she skates (`HERO_ICE`) ×`LANE_FAST`; a rival body on it skates like the creek's ice; her own side walks it as snow |
+| 3 | **QUICK STEP** | 9/8.5/8/7.5/7 s | a dash `QSTEP_D` down the aim (`p.dash = 'vstep'`), out of which she glides; her attack cycle is reset, and for `QSTEP_READY_T` her next draw is full at once and her next basic hit adds `dmg` (6/10/14/18/22) |
+| 4 | **LONG RUN** | 100/85/70 s | for `t` (4/5/6 s) she walks ×(1 + `RUN_MS`) and slows, roots and stuns on her last `RUN_TEN` less (`HERO_TEN`); each basic hit throws a second stone (`ab: 'run'`, `dmg` 14/22/30) at the rival body nearest the one hit within `RUN_ECHO_R` |
 
 Bots play the named heroes through each row's `bot(p, foe, d, clear)` (`abBotKey`, asked by the ladder's
 ability block in js/ai/ai-ladder.js); a row's `botAim(p, foe)` turns the aim to a point of its own for that cast, held through the wind-up until it lands (AURA's step away, SALVIA's heals, LUCERNA's lantern). A hero whose rows carry no `bot` keeps the ladder's old range rules.
