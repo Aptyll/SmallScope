@@ -148,8 +148,8 @@ with a passive. Her rules live in **[js/sim/bella.js](../../../js/sim/bella.js)*
 blade in [js/sprites/bella.js](../../../js/sprites/bella.js). She is quick and light (104 hp, 16
 armor, a step faster than the warrior) with a quicker, shorter cut (her `attack` row, the EAGLE
 SPATHA), drawn as her own blade, in a body of her own ([hero looks](../sprites.md#hero-looks)).
-What her state puts on a body (her pips, the parry's blade, the marks) is `drawBellaMarks`, a
-`HERO_MARK` row; the duel's ring under the hero she called out is a `HERO_GROUND` row. Her two
+What her state puts on a body (her pips, the parry's blade) is `drawBellaMarks`, a
+`HERO_MARK` row, and the E mark and the duel's diamond go in the row over the body's stack (`HERO_OVER`); the duel's ring under the hero she called out is a `HERO_GROUND` row. Her two
 dashes pass through the small bodies a roll passes (`through` on the `HERO_DASH` row,
 `heroDashThrough` in `separateUnits`):
 

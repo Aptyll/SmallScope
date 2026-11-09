@@ -95,16 +95,19 @@ function drawHiemsMarks(e, px, py, w, h, now) {
     ctx.fillRect(px - 1, py + 1, w + 2, 1); ctx.fillRect(px - 1, py + 1, 1, h - 1); ctx.fillRect(px + w, py + 1, 1, h - 1);
     ctx.fillStyle = HI_WHITE; ctx.fillRect(px + 2, py + 3, 1, 3); ctx.fillRect(px + 3, py + 3, 1, 1);
     ctx.globalAlpha = 1;
-    return;
-  }
-  if (!(e.chillN > 0) || !(e.chillT > 0)) return;
-  const mx = px + (w >> 1), my = py - 4;
-  for (let k = 0; k < e.chillN; k++) {
-    const x = mx - (e.chillN - 1) * 2 + k * 4;
-    ctx.fillStyle = HI_INK; ctx.fillRect(x - 1, my - 1, 3, 3);
-    ctx.fillStyle = e.chillN >= CHILL_FREEZE - 1 && Math.floor(now * 6) % 2 ? HI_WHITE : HI_ICE; ctx.fillRect(x, my, 1, 1);
   }
 }
+// the chill count, over the stack (HERO_OVER): one ice bead a stack, blinking one short of the freeze
+HERO_OVER.push({
+  w: (e) => (!(e.frozeT > 0) && e.chillN > 0 && e.chillT > 0 ? e.chillN * 4 - 1 : 0),
+  draw: (e, x0, y, now) => {
+    for (let k = 0; k < e.chillN; k++) {
+      const x = x0 + 1 + k * 4;
+      ctx.fillStyle = HI_INK; ctx.fillRect(x - 1, y - 1, 3, 3);
+      ctx.fillStyle = e.chillN >= CHILL_FREEZE - 1 && Math.floor(now * 6) % 2 ? HI_WHITE : HI_ICE; ctx.fillRect(x, y, 1, 1);
+    }
+  },
+});
 HERO_MARK.push(drawHiemsMarks);
 
 // ---- the SNOWFLAKE STAFF ------------------------------------------------------------
