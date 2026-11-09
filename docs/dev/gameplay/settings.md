@@ -72,7 +72,7 @@ remembered with the settings (`settings.relay`), else the page's own host.
 `teamPal` — the VIDEO page's COLOUR BLIND dropdown: `def` (OFF) or a colour-blind palette (`rg`, `by`, `hc`), same section —
 `tipFollow` — the TOOLTIP row, the hover panel beside the pointer (the default) or parked bottom
 left ([the hover tooltip](../rendering/the-hud-corners/the-hover-tooltip.md)) —
-`tipFull` — the ABILITY DETAILS row: HOLD SHIFT (the default: an ability's hover is the short card, Shift opens every rank's numbers) or ALWAYS (`tipClassAb`) —
+`tipFull` — the ABILITY DETAILS row: HOLD ALT (the default: an ability's hover is the short card, the DETAILS key, Alt unless rebound, opens every rank's numbers; the row prints the live bind, an `off` given as a function) or ALWAYS (`tipClassAb`) —
 `aiLevel` — the rival bots' level, picked by the leader on the party screen's head, an index into `AI_LEVELS` (js/ai/ai-skill.js), NORMAL until moved (a settings save from before EASY is moved up one, `loadSettings`) —
 `scheme` — the keyboard scheme, `'wasd'`, `'click'` or `'mouse'` — with `binds` / `bindsClick` /
 `bindsMouse`, the key each action is bound to under each
@@ -115,7 +115,7 @@ never land on two rows. It answers a row id, `'mute'`, `'close'`, `'leave'`, `'t
 `'d:<row>:<opt>'` (an entry of the open list). A **choice row** carries its
 own `val()` and `pick(id)` in `SET_TABS` — QUALITY's are the preset macro — so the draw (the word in force wears gold), the hit and
 the click all read one table. A **toggle row** whose two states have names of their own carries
-them there too, as `on`/`off` (CURSOR's PIXEL / BROWSER, TOOLTIP's FOLLOWS POINTER / BOTTOM LEFT, ABILITY DETAILS' ALWAYS / HOLD SHIFT,
+them there too, as `on`/`off` (CURSOR's PIXEL / BROWSER, TOOLTIP's FOLLOWS POINTER / BOTTOM LEFT, ABILITY DETAILS' ALWAYS / HOLD ALT,
 MY TEAM's ALWAYS BLUE / AS DEALT); a row without them reads ON / OFF, and a plain toggle's row id
 **is** its `settings` key, which is the whole of what its click does. A **dropdown row** (`kind: 'drop'`)
 carries `val`/`pick` like a choice row; its box shows the entry in force and a click hangs the
@@ -229,7 +229,7 @@ The coach is this screen's UI only: it reads the local player and never writes t
 in a FIRST MATCH party coaches its own player. One flat graphite card stands centred over the hud strip's
 buy plates: the key caps of the live scheme (`keyCap`) and one word, a gold count where a lesson has one, a
 dim X that turns the coach off for good (`guideClick`, which also sets `PROFILE.setGuided`), and a row of
-pips over it, one per lesson. Shift (or ABILITY DETAILS on ALWAYS) opens one line of detail under it. A
+pips over it, one per lesson. The DETAILS key (or ABILITY DETAILS on ALWAYS) opens one line of detail under it. A
 lesson's whole meaning is its `GUIDE_STEPS` row: MOVE (walk `GUIDE_MOVE_PX` off the landing), SHOP (any
 buy; a gold arrow over your side's stall or merchant), ABILITIES (two casts; a key a point would learn
 pulses gold), LAST HIT (three), RECALL (shown once the purse holds `GUIDE_RECALL_GOLD` or health is

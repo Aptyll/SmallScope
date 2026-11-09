@@ -108,11 +108,11 @@ function tipClassAb(i, cls, k) {
   // Read mid-fight, so the short card says only what decides a press: the
   // cooldown and the number a rank raises (a `rank` key given as a list), at
   // the rank you hold (rank 1 on a dark key or the lobby), and the row's one
-  // line (`tip`). Shift held - or ABILITY DETAILS on ALWAYS (settings.tipFull)
+  // line (`tip`). The DETAILS key held - or ABILITY DETAILS on ALWAYS (settings.tipFull)
   // - opens every rank's numbers on each row, the held rank lit gold, and the
   // hero level the next rank waits for. The pips on the well say the rank,
   // its sweep the wait.
-  const full = settings.tipFull || !!keys.shift;
+  const full = settings.tipFull || keyHeld('details');
   const lv = cls == null ? player.abLv[i] : 0;
   const hm = cls == null ? hasteMul(player) : 1;
   const val = (v, fmt, unit) => (full ? tipRanks(v, lv, fmt, unit) : fmt(rankAt(v, lv)) + unit);
