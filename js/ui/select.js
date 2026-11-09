@@ -382,7 +382,9 @@ function drawSelChevron(r, d, hot) {
 // plate under the grid.
 function selModeName() { return PARTY_MODES[NET.mode] || (PRACTICE ? 'PRACTICE TOOL' : 'QUICKPLAY'); }
 function drawSelMode(L, a) {
-  const mode = selModeName(), size = '5V5';
+  // the size off the seats in the match, unless the mode's name says it (1V1)
+  const n = [0, 1].map((t) => players.filter((p) => p.active && p.team === t).length);
+  const mode = selModeName(), size = n[0] + 'V' + n[1] === mode ? '' : n[0] + 'V' + n[1];
   const rx = VIEW_W - LOBBY_PAD;
   ctx.globalAlpha = a;
   drawPixelText(ctx, size, rx - pixelTextWidth(size), L.mode.y, SC_LBL, 1);

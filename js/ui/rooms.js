@@ -26,7 +26,11 @@
 // this screen on a fresh valley (the rematch, below).
 // FIRST MATCH is QUICKPLAY against EASY bots with the coach on every
 // screen in the party (js/ui/guide.js): straight to bots, no matchmaking
-const PARTY_MODES = { quick: 'QUICKPLAY', ranked: 'RANKED', practice: 'PRACTICE TOOL', guide: 'FIRST MATCH' };
+const PARTY_MODES = { quick: 'QUICKPLAY', ranked: 'RANKED', onevone: '1V1', practice: 'PRACTICE TOOL', guide: 'FIRST MATCH' };
+// a mode's party at most, people on your side (five where unnamed): 1V1 is
+// you alone, one hero a side on the mid road (js/sim/onevone.js)
+const PARTY_CAP = { onevone: 1 };
+function partyCap(mode) { return PARTY_CAP[mode] || MAX_PLAYERS / 2; }
 const RM_CODE_N = 4;                   // letters in a code (makeCode, app/server.js; steamCode, js/net/transport-steam.js)
 const RS_TOP = 76, RS_H = 150, RS_GAP = 6, RS_W = 80; // the seats, League's row of five: top, a seat's height, between seats, a seat's width
 const RS_FACE = 72;                    // a seat's portrait, the hero at 3x
@@ -96,6 +100,10 @@ function modeSet(mode) {
   const m = state.menu;
   m.modeOpen = false;
   if (!modeSwapOk() || !PARTY_MODES[mode] || (mode === 'ranked' && !rankedOpen())) { SFX.deny(); return; }
+// a mode's party at most, people on your side (five where unnamed): 1V1 is
+// you alone, one hero a side on the mid road (js/sim/onevone.js)
+const PARTY_CAP = { onevone: 1 };
+function partyCap(mode) { return PARTY_CAP[mode] || MAX_PLAYERS / 2; }
   if (mode !== NET.mode) {
     NET.mode = mode;
     NET.ready.clear();
@@ -170,10 +178,20 @@ function partyFind() {
 // the match is on: every empty seat a bot, the party on to the hero select
 function partyStart() {
   for (const p of players) if (!isHuman(p)) p.control = 'ai';
+  if (NET.mode === 'onevone') partyOnevone();
   NET.botLv = NET.mode === 'ranked' ? rankLevel() : NET.mode === 'guide' ? 0 : null; // FIRST MATCH: EASY
   netHostRoster(); netHostRoom();
   netPhase('pick');
   beginLobby();
+}
+
+// a 1V1's seats: you, and across the one person who crossed in or else one
+// bot; every other seat stands empty, out of the match (p.active)
+function partyOnevone() {
+  for (const t of [0, 1]) {
+    const side = roomSide(t), keep = side.find(isHuman) || side[0];
+    for (const p of side) if (p !== keep && !isHuman(p)) p.control = 'none';
+  }
 }
 
 // ---- joining a friend's party by its code -------------------------------
@@ -284,6 +302,8 @@ function beginRoom() {
 function roomHost() { return players[NET.isClient ? NET.hostSlot : localId]; }
 // the five seats of side t, in slot order: the same five, the same order, on every screen
 function roomSide(t) { return players.filter((p) => p.team === t); }
+// your side's seats on the party screen: all five, or a 1V1's one (you)
+function partySide() { const s = roomSide(player.team); return partyCap(NET.mode) < s.length ? s.filter((p) => p === player) : s; }
 // the screen laid out, League's party lobby: two plates at the head, the
 // mode's (left) and, while you are a party of one, JOIN's (right); your
 // side's five seats in a row with you in the middle and the others filling
@@ -293,7 +313,7 @@ function roomSide(t) { return players.filter((p) => p.team === t); }
 // right edge (js/ui/friends.js).
 function roomLayout() {
   const mw = VIEW_W - SOCIAL_W, x = 24, w = mw - 48;
-  const side = roomSide(player ? player.team : 0), n = side.length, mid = n >> 1;
+  const side = player ? partySide() : roomSide(0), n = side.length, mid = n >> 1;
   const at = [mid]; // the positions, nearest the middle first
   for (let d = 1; at.length < n; d++) { if (mid - d >= 0) at.push(mid - d); if (mid + d < n && at.length < n) at.push(mid + d); }
   const order = side.filter((p) => p === player).concat(side.filter((p) => p !== player));
@@ -360,7 +380,7 @@ function roomCopy() {
 // an empty seat's +: Steam's friends overlay where there is one, the code otherwise
 function seatInvite() { if (netSteam() && NET.transport && NET.transport.lobbyId) roomInvite(); else roomCopy(); }
 // INVITE (the foot's right plate, an empty seat's +): while a seat stands empty
-function roomInviteOk() { return seatsOpen() && roomSide(player.team).some((p) => p.control === 'none'); }
+function roomInviteOk() { return seatsOpen() && partySize() < partyCap(NET.mode) && roomSide(player.team).some((p) => p.control === 'none'); }
 function roomGo(label) {
   if (label === 'READY') { netReady(!NET.ready.has(localId)); SFX.place(); }
   else if (label === 'START') partyPractice();

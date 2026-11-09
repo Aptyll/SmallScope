@@ -46,7 +46,7 @@ function draftBansPerTeam() {
   while (b > 0 && n - 2 * b < DRAFT_KEEP) b--;
   return b;
 }
-function draftMates(p) { return players.filter((q) => q.team === p.team && q !== p); }
+function draftMates(p) { return players.filter((q) => q.active && q.team === p.team && q !== p); }
 // the hero a seat stands behind: its lock, else what it points at
 function draftWant(i) { return DRAFT.lock[i] >= 0 ? DRAFT.lock[i] : DRAFT.hover[i]; }
 // every hero still in the pick is locked by a person on p's side: repeats are back
@@ -66,7 +66,7 @@ function draftTeamBans(team) {
   const out = [];
   for (const people of [true, false]) {
     const votes = new Map();
-    for (const q of players) if (q.team === team && isHuman(q) === people) {
+    for (const q of players) if (q.active && q.team === team && isHuman(q) === people) {
       const h = draftWant(q.id);
       if (h >= 0 && !out.includes(h)) votes.set(h, (votes.get(h) || 0) + 1);
     }
@@ -91,7 +91,8 @@ function posAsk(p) { const r = p === player ? PROFILE.pos() : NET.pos[p.id]; ret
 function draftSeatRoles() {
   const role = players.map(() => -1);
   for (const team of [0, 1]) {
-    const side = players.filter((q) => q.team === team), free = POSITIONS.map((_, i) => i);
+    const side = players.filter((q) => q.active && q.team === team), free = POSITIONS.map((_, i) => i);
+    if (NET.mode === 'onevone') { for (const q of side) role[q.id] = ONEVONE_POS; continue; } // a 1V1 is mid against mid
     const take = (q, r) => { role[q.id] = r; free.splice(free.indexOf(r), 1); };
     for (const q of side) if (isHuman(q) && free.includes(posAsk(q))) take(q, posAsk(q));
     for (const people of [true, false]) for (const q of side) if (role[q.id] < 0 && isHuman(q) === people && free.length) take(q, free[0]);
@@ -164,7 +165,7 @@ function draftStart() {
   D.role = draftSeatRoles();
   if (D.nBan > 0) {
     D.phase = 'ban'; D.t = DRAFT_BAN_T;
-    for (const p of players) if (!isHuman(p)) D.lock[p.id] = D.hover[p.id] = draftBotBan(p);
+    for (const p of players) if (p.active && !isHuman(p)) D.lock[p.id] = D.hover[p.id] = draftBotBan(p);
     draftLeads();
     draftSend();
   } else draftPickPhase();
@@ -178,7 +179,7 @@ function draftPickPhase() {
   heroSearchClear();
   D.lock = players.map(() => -1);
   D.hover = players.map((p) => isHuman(p) && !D.banned.includes(D.cls0[p.id]) ? D.cls0[p.id] : -1); // a person starts on their own
-  for (const p of players) if (!isHuman(p)) { const k = draftBotPick(p); D.lock[p.id] = D.hover[p.id] = k; }
+  for (const p of players) if (p.active && !isHuman(p)) { const k = draftBotPick(p); D.lock[p.id] = D.hover[p.id] = k; }
   draftShow(D.hover[localId]);
   SFX.place();
   draftSend();
@@ -187,14 +188,14 @@ function draftPickPhase() {
 // points at (a bot of its side giving it up), or a bot's choice; every hero turns on, and the count begins
 function draftReveal() {
   const D = DRAFT;
-  for (const p of players) if (D.lock[p.id] < 0) {
+  for (const p of players) if (p.active && D.lock[p.id] < 0) {
     const h = D.hover[p.id];
     const own = isHuman(p) && draftCanLock(p, h);
     D.lock[p.id] = D.hover[p.id] = own ? h : draftBotPick(p);
     if (own) draftYield(p, h);
   }
   D.phase = 'done';
-  for (const p of players) { setClass(p, D.lock[p.id]); p.position = D.role[p.id]; } // the position goes into the match: a bot plays it (aiPosJob, js/ai/ai-farm.js)
+  for (const p of players) if (p.active) { setClass(p, D.lock[p.id]); p.position = D.role[p.id]; } // the position goes into the match: a bot plays it (aiPosJob, js/ai/ai-farm.js)
   draftSend();
   netHostRoster();
   draftCount();
@@ -220,7 +221,7 @@ function draftUpdate(dt) {
 // every seat that must act has: the phase ends now (a ban: every person confirmed)
 function draftCheck() {
   const D = DRAFT;
-  if (!players.every((p) => D.lock[p.id] >= 0 || (D.phase === 'ban' && !isHuman(p)))) return;
+  if (!players.every((p) => !p.active || D.lock[p.id] >= 0 || (D.phase === 'ban' && !isHuman(p)))) return;
   if (D.phase === 'ban') draftPickPhase(); else draftReveal();
 }
 // the host's hand on a seat's press: 'hover' points, 'lock' confirms (a ban,
