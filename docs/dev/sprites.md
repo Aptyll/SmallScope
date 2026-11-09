@@ -231,7 +231,7 @@ AURA has one look (`AURA_SKINS`, js/sprites/aura.js): NORTHERN LIGHT, drawn on A
 star-gold `s` of her circlet). It is A off aura-round1.png in the project files; its side frame
 keeps the head at the front's width, the face flush with it. Her doll (`Light` in
 app/bake-player/bodies.py) paints the mantle in the doll's `cloak` material and only the roll is
-used. Her 48 px model is the warrior's in her paint. Her STAR SHARD is a staff like IGNIA's:
+used. Her 48 px model is her own front frame at 3x (`portrait`). Her STAR SHARD is a staff like IGNIA's:
 `staff: 'shard'` names `HERO_STAVES.shard` (`AURA_SHARD`, js/draw/aura.js), a fallen star's
 splinter on a dark shaft whose tip glints between two baked frames.
 
@@ -241,8 +241,7 @@ and a canvas tabard with a satchel strap), both on ARMATOS's frame (`SALVIA_PAL`
 her dark hair `a`/`A` and the sage `q`/`Q`; his linen `w`/`W` is her apron). They are A and B off
 salvia-round1.png in the project files; side-on the head keeps the front's width and the body is
 two pixels narrower. Her dolls (`Hood` and `Tent` in app/bake-player/bodies.py) paint the sage in
-the doll's `cloak` material and the linen in `beard`; only the roll is used. Her 48 px model is the
-warrior's in her paint. Her SNOWDROP STAFF is a staff: `staff: 'snowdrop'` names `HERO_STAVES.snowdrop`
+the doll's `cloak` material and the linen in `beard`; only the roll is used. Her 48 px model is her own front frame at 3x (`portrait`). Her SNOWDROP STAFF is a staff: `staff: 'snowdrop'` names `HERO_STAVES.snowdrop`
 (`SALVIA_STAFF`, js/draw/salvia.js), a snowdrop's white bell nodding off the top of a pale alder shaft,
 swaying between two baked frames.
 RUPES has two looks (`RUPES_SKINS`, js/sprites/rupes.js): QUARRYMAN (free; a fur cap with ear
@@ -261,8 +260,7 @@ dark hair, a warm brown greatcoat open on the side's waistcoat, brass buttons) a
 (`LUCERNA_PAL` is `ARM_PAL` with her hair `a`/`A`, the coat `q`/`Q` and the brass `u`/`f`). They are
 A and B off lucerna-round1.png in the project files; side-on the head keeps the front's width and
 the body is two pixels narrower. Her dolls (`Lamp` and `Dusk` in app/bake-player/bodies.py) paint
-the coat in the doll's `cloak` material; only the roll is used. Her 48 px model is the warrior's in
-her paint. Her LANTERN is carried like a staff but hangs: `staff: 'lantern'` names
+the coat in the doll's `cloak` material; only the roll is used. Her 48 px model is her own front frame at 3x (`portrait`). Her LANTERN is carried like a staff but hangs: `staff: 'lantern'` names
 `HERO_STAVES.lantern` (`LUCERNA_LANTERN`, js/draw/lucerna.js), a brass lamplighter's lantern held by
 its ring (`LUCERNA_LANTERN_GRIP`), its flame breathing between two baked frames.
 
