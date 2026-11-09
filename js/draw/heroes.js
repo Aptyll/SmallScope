@@ -64,8 +64,13 @@ function heroBladeOf(p) { const c = CLASSES[p.cls]; return c && c.blade ? HERO_B
 // the blade a hero's hands hold in place of its sword's own art and where the
 // hands close on it ({ img, grip }), or null
 function heroBlade(p) { const b = attackOf(p).cut ? heroBladeOf(p) : null; return b ? { img: b.art().flat, grip: b.hilt } : null; }
+// A hero's own way of carrying its weapon at rest facing down or up, where the
+// level carry would not read: HERO_CARRY fns(p, px, py) -> true once drawn
+// (SAGITTA's crossbow on her shoulder); (px, py) is the 16 px cell's top-left.
+const HERO_CARRY = [];
 // the carried blade facing down or up; false where the side's level carry stands
 function heroCarry(p, px, py) {
+  for (const f of HERO_CARRY) if (f(p, px, py)) return true;
   const b = heroBladeOf(p), at = b && b.hip[p.dir];
   if (!at || !attackOf(p).cut) return false;
   ctx.drawImage(b.art().diag, Math.round(px + at[0] - b.grip[0]), Math.round(py + at[1] - b.grip[1]));

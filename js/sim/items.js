@@ -420,6 +420,7 @@ const BOT_BUILDS = {
   AURA: ['storm', 'emberb', 'deeprod', 'marsh', 'clock', 'slate'], // the reach first: power and haste for more stars, then the boots, then the armor a mage caught close needs
   VARRO: ['beartooth', 'hobnail', 'fang', 'quick', 'stonehide', 'collar'], // the bite first, the legs to stay on the mark, then the health a diver needs
   VELOX: ['quick', 'horn', 'feathers', 'frostline', 'sunstone', 'cloak'], // the HUNTER's build with attack speed first: more throws, more KEEP MOVING stacks
+  SAGITTA: ['beartooth', 'horn', 'feathers', 'maul', 'sunstone', 'cloak'], // damage first: every bolt is slow, so each one has to land like a hammer
 };
 function botBuild(p) { return BOT_BUILDS[CLASSES[p.cls].name] || BOT_BUILDS.HUNTER; }
 // the next item on p's list it does not have yet, or null when done

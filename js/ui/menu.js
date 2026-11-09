@@ -1745,6 +1745,20 @@ const CLASS12 = [
     '.oooooooooo.',
     '............',
   ],
+  [ // SAGITTA: a crossbow, prod up, the stock down
+    '............',
+    '.oooooooooo.',
+    'oWWWWWWWWWWo',
+    'oWooooooooWo',
+    'oWo.oWWo.oWo',
+    '.o..oWWo..o.',
+    '....oWWo....',
+    '...ooWWoo...',
+    '...oWWWWo...',
+    '...oWWWWo...',
+    '....oooo....',
+    '............',
+  ],
 ];
 const class12Cache = new Map();
 function classIcon12(i, you) {

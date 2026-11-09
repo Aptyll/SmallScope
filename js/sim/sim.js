@@ -571,6 +571,7 @@ function updatePlay(dt) {
       });
       if (a.ambush) ambushFx(hx, hy);
       a.struck = true;
+      heroShotHit(a, t, nx, ny); // what a hero's shot does once it lands (HERO_SHOT_HIT, js/sim/heroes.js)
     };
     let dead = a.t > a.life;
     // how much of the step the shot really flew: one that ends ON something
@@ -601,9 +602,10 @@ function updatePlay(dt) {
       } else if (h.k === 'wall') {
         dead = true;
         // ...and when the wall that stopped it is a RIVAL'S BUILDING, the shot
-        // SIEGES it, at STRUCT_DR off (hurtStruct, js/sim/actions.js).
+        // SIEGES it, at STRUCT_DR off (hurtStruct, js/sim/actions.js), x the shot's own
+        // `siege` where it has one (SAGITTA's heavy bolt, js/sim/sagitta.js).
         const st = structOf(objAt(h.tx, h.ty));
-        if (structFoe(sideOf(a), st)) hurtStruct(st, a.dmg, players[a.owner]);
+        if (structFoe(sideOf(a), st)) hurtStruct(st, Math.round(a.dmg * (a.siege || 1)), players[a.owner]);
         else shedHit(objAt(h.tx, h.ty)); // a shot into a pine knocks its crown's snow loose (js/sim/shed.js)
         burst(hx, hy, '#cfd8e8', 3, 25, 0.25, true);
       } else if (h.k === 'player' && abShieldBlocks(t, nx, ny)) {

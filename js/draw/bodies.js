@@ -420,9 +420,10 @@ function drawPlayer(p, ex, ey, now) {
     // lying player shows one only while the bow is actually drawn - a carried
     // axe bobbing over a body on its belly reads as a floating axe. A body
     // mid-cast (or holding the shield, or charging) has no hand free for it -
-    // but a mage casts with the staff in hand (heroStaffOf, js/draw/heroes.js).
+    // but a mage casts with the staff in hand (heroStaffOf, js/draw/heroes.js), and a
+    // key that is a shot holds the weapon on the aim through its wind-up (castAims).
     const held = state.mode !== 'title' && (!lying || p.charging) &&
-      (p.castT <= 0 || heroStaffOf(p)) && p.shieldT <= 0 && p.rushT <= 0 && p.zip < 0; // ...or holding a zipline's handle
+      (p.castT <= 0 || heroStaffOf(p) || castAims(p)) && p.shieldT <= 0 && p.rushT <= 0 && p.zip < 0; // ...or holding a zipline's handle
     // what points up the screen or is carried facing away goes behind (THE CARRY RULE, drawHeldTool)
     if (held) atFeet(fx0, fy0, wsc, () => drawHeldTool(p, px, py + bob, true));
     // a rider's body stops at the deer's back: the rows from its hip down
@@ -785,6 +786,8 @@ function drawGripped(img, grip, hx, hy, rot) {
   ctx.drawImage(img, -grip[0], -grip[1]);
   ctx.restore();
 }
+// is a key mid-wind-up holding the weapon on the aim (its CLASS_AB row's `aimHeld`: SAGITTA's bolts)
+function castAims(p) { if (!(p.castT > 0)) return false; const ab = abOf(p, p.castAb); return !!(ab && ab.aimHeld); }
 function drawHeldTool(p, px, py, back) {
   // At rest the hands hold the hero's WEAPON (its basic attack's `art`,
   // SPRITES.weaponArt, js/sprites/weapons.js), so what somebody fights with
@@ -794,7 +797,7 @@ function drawHeldTool(p, px, py, back) {
   // sweeps the axe, the other holds the drawn weapon on the aim.
   const A = attackOf(p), cut = A.cut;
   const wIcon = SPRITES.weaponArt[A.art];
-  const drawing = p.charging;
+  const drawing = p.charging || castAims(p); // a key's shot winding up aims it too (an ability row's `aimHeld`)
   // the axe is out from a swing's start (startSwing, js/sim/actions.js) to the end of its cooldown
   const axeOut = p.swingT > 0 || p.swingCd > 0, swinging = p.swingT > 0;
   const cxp = px + 8, cyp = py + 10; // roughly the hands

@@ -407,6 +407,27 @@ const CLASSES = [
     kit: { iceMax: 1.25, iceSteer: 9, slideMin: SLIDE_MIN, fatigue: 0.8, chargeMul: 0.9,
       bowCharge: 0.6, nock: 0.4, spdDmg: 3, dodgeSpeed: 240 },
   },
+  {
+    // the fifteenth named hero (js/sim/sagitta.js): the siege marksman. Her heavy crossbow
+    // reaches further than any bow and hits like a hammer, but it is slow to wind and
+    // slower to carry; she is safe behind her pavise and easy prey once it is down
+    name: 'SAGITTA', role: 'THE BOLT-THROWER', body: 1, passive: 'heavybolts', // HERO_PASSIVE, js/sim/sagitta.js
+    look: { sex: 1, tone: 2, hair: 2, hairCol: 1, beard: 0, face: 2 },
+    blurb: ['SET UP, THEN STRIKE FROM FAR AWAY.', 'EVERY THIRD BOLT HITS LIKE A HAMMER.', 'PIN RIVALS TO THE TREES.'],
+    story: "SHE BUILT THE EMPIRE'S SIEGE ENGINES. WHEN ONE OF THEM WAS TURNED ON THE CITY THAT PAID FOR IT, SHE SAID SO, AND WAS SENT OVER THE PASS FOR IT. THE ROAD TOWERS IN THE VALLEY CARRY CROSSBOWS SHE COULD HAVE DRAWN. SHE STUDIES THEM MORE THAN SHE LETS ON.",
+    // a crossbow bolt: further and harder than the hunter's arrow, and a long wind between
+    attack: { name: 'HEAVY ARBALEST', art: 'arbalest', cycle: 80 / 60, kb: 1.3, shot: { speed: 430, life: 0.82, col: '#c3ccd8', look: 'bolt' } },
+    base: { hp: 78, dmg: 20, armor: 9, ap: 0, haste: 0, ms: PLAYER_SPEED - 5 },
+    grow: { hp: 5.6, dmg: 1.7, as: 0.01, armor: 1.6 },
+    rankOrder: [0, 2, 1], // the pin, the crank back, the pavise
+    // her own body in each of her looks (SAGITTA_SKINS, js/sprites/sagitta.js), worn per
+    // player (heroSkinOf) over the side's coat
+    skins: SAGITTA_SKINS, skinPal: SAGITTA_PAL, skinSlot: 'sagitta',
+    paint48: { t: '#7d8699', T: '#b4bdcc', g: '#1c2232', G: '#9aa3b8', m: '#5c6478', M: '#454c5e' }, // the 48 px model's (js/sprites/looks.js): its K is skin
+    // a heavy draw that all but plants her feet while she winds it
+    kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1, chargeMul: 0.45,
+      bowCharge: 0.75, nock: 0.4, spdDmg: 0, dodgeSpeed: DODGE_SPEED },
+  },
 ];
 // the body a hero wears - its sprites and its 48 px model: a hero that names
 // none is its own (HUNTER 0, WARRIOR 1), a named hero borrows one
@@ -790,6 +811,8 @@ class Player {
     // VELOX (js/sim/velox.js): KEEP MOVING's stacks and their clock, QUICK STEP's readied
     // throw, LONG RUN's clock
     this.keepN = 0; this.keepT = 0; this.quickT = 0; this.runT = 0;
+    // SAGITTA (js/sim/sagitta.js): the bolts loosed since her last heavy one (HEAVY BOLTS)
+    this.boltN = 0;
     // NIX (js/sim/nix.js): a moment shown after striking from her cloud; WHITEOUT's
     // vanish and the hero it struck (the reset's clock, and whether this cast may reset);
     // NIGHT WATCH's hidden blow waiting

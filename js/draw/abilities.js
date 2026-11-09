@@ -126,7 +126,7 @@ function drawAbilityGround(ex, ey, now) {
     // the screen from a caster well off it - the cull reaches as far as the
     // line does
     const pfl = ab.id === 'pierce' ? pierceFlight() : null;
-    const cull = pfl ? pfl.spd * pfl.life : 80;
+    const cull = pfl ? pfl.spd * pfl.life : Math.max(80, (ab.aim && ab.aim.line) || 0); // a long line reaches in from off the screen
     if (px < -cull || py < -cull || px > WV_W + cull || py > WV_H + cull) continue;
     const a = aimAngle(p), nx = Math.cos(a), ny = Math.sin(a); // never p.input: a client is sent no other body's
     if (ab.id === 'pierce') {
