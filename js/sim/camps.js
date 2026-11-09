@@ -279,7 +279,7 @@ function placeCamps() {
       }
     }
     for (const [dx, dy, type, variant] of spec.props) {
-      const extra = type === 'deadTree' ? { hp: 3, variant } : type === 'snowdrop' ? { variant, readyAt: 0 } : {};
+      const extra = type === 'snowdrop' ? { variant, readyAt: 0 } : {};
       if (dx === 0 && dy === 0) extra.site = C; // the anchor knows its camp: its clock is drawn off it (drawCampClock)
       const o = placeObj(C.tx + dx, C.ty + dy, type, extra);
       // a prop bigger than a tile (OBJECTS' w, h) fills the rest with parts, as a

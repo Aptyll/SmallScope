@@ -177,7 +177,6 @@ function snapSingles() {
   for (const c of camps) s.camps.push({ repopT: c.repopT, seen: (c.seen || [0, 0]).slice() }); // the rest of a camp is written down by worldgen
   s.dropMeta = state.drop ? { firstFlight: state.drop.firstFlight } : null;
   s.pads = pack(pads, 0); // the road registry: each side's crash pad
-  s.holes = holes.slice();
   s.iceBreaks = iceBreaks.slice(); // plain numbers and tile lists: every screen rebuilds the pixels (js/sim/icebreak.js)
   s.orca = pack(orca, 0); // the orca's few numbers (js/sim/orca.js); a client eases its x/y like a body's
   s.nets = pack(nets, 0);
@@ -233,7 +232,6 @@ function snapApplySingles(s) {
     }
     pads.length = 0; for (const sp of keep) pads.push(sp);
   }
-  if (s.holes) { holes.length = 0; for (const h of s.holes) holes.push(h); }
   if (s.iceBreaks) { iceBreaks.length = 0; for (const b of s.iceBreaks) iceBreaks.push(Object.assign({}, b)); }
   if (s.orca) Object.assign(orca, unpack(s.orca));
   if (s.nets) { nets.length = 0; for (const n of unpack(s.nets)) nets.push(n); }
@@ -865,7 +863,7 @@ function snapBlank() {
   salviaBundles.length = 0; salviaDrops.length = 0; salviaThaws.length = 0;
   lucernaHooks.length = 0; lucernaLanterns.length = 0; lucernaCircles.length = 0;
   hiemsGlazes.length = 0; hiemsStorms.length = 0;
-  holes.length = 0; iceBreaks.length = 0; pads.length = 0;
+  iceBreaks.length = 0; pads.length = 0;
   Object.assign(orca, ORCA_FRESH());
   for (const c of camps) { c.repopT = 0; c.seen = [0, 0]; }
   if (state.drop) for (const e of state.drop.eagles) for (const k of Object.keys(e)) if (!SNAP_SKIP.has(k) && k !== 'team') e[k] = typeof e[k] === 'number' ? 0 : null;

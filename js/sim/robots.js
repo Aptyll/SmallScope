@@ -219,8 +219,7 @@ function merchFell(b, t) {
   burst(px, py - 8, '#eef4fb', 8, 45, 0.5, true);
   burst(px, py - 8, t.type === 'tree' ? '#2f5c4b' : '#6b5a48', 5, 45, 0.5, true);
   sfxAt('treeFall', px, py);
-  if (t.type === 'deadTree') flushBirds(campAt(px, py), { x: px, y: py });
-  if (t.type === 'tree' || t.type === 'deadTree') b.wood++;
+  if (t.type === 'tree') b.wood++;
   b.tgt = null;
   return true;
 }
@@ -326,7 +325,7 @@ function merchBackPine(b) {
   let best = null, bs = Infinity;
   for (let ty = cty0 - R; ty <= cty0 + R; ty++) for (let tx = ctx0 - R; tx <= ctx0 + R; tx++) {
     const o = objAt(tx, ty);
-    if (!o || (o.type !== 'tree' && o.type !== 'deadTree')) continue;
+    if (!o || o.type !== 'tree') continue;
     const px = tx * TILE + 8 - e.x, py = ty * TILE + 8 - e.y, dr = Math.hypot(px, py);
     if (dr > MERCH_BACK_R * TILE) continue;
     if (Math.abs(Math.atan2(px * -ly + py * lx, px * lx + py * ly)) < MERCH_BACK_ARC) continue;

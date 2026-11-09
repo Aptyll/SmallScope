@@ -257,9 +257,9 @@ function breakOpen(b) {
     if (f.born && Math.hypot(f.x - b.x, f.y - b.y) < 60) { f.a = Math.atan2(f.y - b.y, f.x - b.x); f.spook = 1.2; }
   }
 }
-// one tile frozen back: ice again, unless another break holds it or it is a listed hole
+// one tile frozen back: ice again, unless another break holds it
 function breakClose(b, i) {
-  if (ground[i] !== 2 || holes.includes(i) || iceBreakHolds(i)) return; // (b has let go of it: another break still holds it)
+  if (ground[i] !== 2 || iceBreakHolds(i)) return; // (b has let go of it: another break still holds it)
   ground[i] = 1;
   repaintGround(i % WORLD, (i / WORLD) | 0);
 }
