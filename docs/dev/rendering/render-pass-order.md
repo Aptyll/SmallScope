@@ -67,7 +67,7 @@ a radial gradient filled over every device px cost 5 ms a frame on a CPU-drawn c
 sits here, not at the end of `render()`, so the strip holds no HUD, no dim and no picture of
 itself) → `tipResolve` ([the hover tooltip](the-hud-corners/the-hover-tooltip.md)'s one answer for the frame) →
 `drawHopPrompt` (mode `play`, the local player still seated on its roost after the brief: the HOP OFF
-key cap — E, or the pad's A disc while one is in hand — under `renderUI` so the G sheet and the counter cover it) →
+key cap, E, under `renderUI` so the G sheet and the counter cover it) →
 `renderUI` (skipped in `title` and `drop`) → `drawAgameUI` (`PRACTICE`, mode `play`) →
 `renderDropUI` (mode `drop` only: your arrow, keybind indicators) → `drawDropBrief` (mode
 `play`, only while [the drop brief](eagle-drop-mode-drop.md#the-drop-brief) holds a roost) → `renderWorldMap` (the M map, in `play` and `drop`) → `renderWheel` (the radial menu — after

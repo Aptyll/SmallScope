@@ -114,10 +114,7 @@ declare victory. The affordances:
   map, `DBG.setBind(action, key)` swaps as a click-and-press would, `DBG.rebindStart(action)`
   sets a cap listening for a real press, and `DBG.keyRows()` is where every cap sits on the
   CONTROLS page (listing-local; add `SET_X` and the content window's top less the scroll).
-  **A pad without a pad**: replace `navigator.getGamepads` with a function returning one
-  `{ connected: true, mapping: 'standard', axes: [..4], buttons: [{pressed, value}..17] }`,
-  set axes and buttons, and call `padPoll(1/60)` before each `update` — the [two
-  controllers](multiplayer.md#the-two-controllers) list what each does.
+  [Keyboard and mouse](multiplayer.md#keyboard-and-mouse) lists what each key and button does.
 - **`localStorage.removeItem('softfall.profile')`** re-stages a first launch: a fresh profile
   boots on the title with a pre-rolled name, and its `dropped` flag comes back false, so the next
   ride runs the scripted first flight and its [drop brief](rendering/eagle-drop-mode-drop.md).

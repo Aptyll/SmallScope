@@ -11,9 +11,8 @@
 // bases, js/sim/base.js). Everybody rides the landing: the bird dives with
 // the whole side on its back, the crash hands the mode over (landAboard), and
 // each rider hops off at the perch - a bot on its own beat after the wings
-// fold, a human with E (or the roll button - a pad's A, or simply walking:
-// hopOff, under the HOP OFF indicator drawHopPrompt raises, which wears the
-// button of the controller in hand). A profile's first ride sits through the
+// fold, a human with E (or the roll button, or simply walking:
+// hopOff, under the HOP OFF indicator drawHopPrompt raises). A profile's first ride sits through the
 // drop brief before the hop - both roosts toured with you still seated - and
 // never again once it has hopped off.
 // state.drop outlives mode 'drop' - and the whole match: the bird blows a
@@ -321,7 +320,7 @@ function updateDrop(dt) {
       p.x = sp.x; p.y = sp.y;
       if (e.state !== 'down') { /* still riding in */ }
       else if (!isHuman(p)) { if (e.restT >= BOT_HOP_T + p.seat * BOT_HOP_GAP) hopOff(p); } // the bots step off one by one once the wings fold
-      else if ((p !== player || state.mode === 'play') && (p.input.work || p.input.dodge || p.input.mx || p.input.my)) hopOff(p); // E, the roll button (a pad's A) or simply walking: off the roost
+      else if ((p !== player || state.mode === 'play') && (p.input.work || p.input.dodge || p.input.mx || p.input.my)) hopOff(p); // E, the roll button or simply walking: off the roost
       p.input.dodge = false; // a seated roll is spent here, never carried into the landing
     } else if (p.dropT > 0) {
       p.dropT -= dt;

@@ -8,7 +8,7 @@
 //   [face] 35 ===    o     bar split by kind, and the icons of what it hit with
 //
 // The face of the blow that put you down wears the gold rim. [-] folds the
-// lines away (the ring alone), [>] opens them out (a pad's Y walks all three): each icon gets its own
+// lines away (the ring alone), [>] opens them out: each icon gets its own
 // number under it and each hitter its name. Under the pointer, a face says
 // who, an icon says what and how much, and the ring names its kinds - the
 // words a new player needs, only when asked for.
@@ -214,14 +214,6 @@ function recapClick() {
   SFX.pickup();
   return true;
 }
-// a pad's Y (padPress, js/app/gamepad.js): the lines, opened out, the ring
-// alone, and round again
-function recapCycle() {
-  if (!recapLive()) return false;
-  recap.view = recap.view === 1 ? 2 : recap.view === 2 ? 0 : 1;
-  SFX.pickup();
-  return true;
-}
 
 // ---- the drawing ---------------------------------------------------------------
 // a fold button: a flat square with its glyph, lit gold under the pointer
@@ -253,7 +245,6 @@ function drawRecap() {
   drawPixelText(ctx, t, L.ring.x + ((RC_RING - pixelTextWidth(t, 1)) >> 1), L.ring.y + ((RC_RING - 5) >> 1), SC_LIT, 1);
   rcButton(L.fold, v ? '-' : '+', H && H.btn === 'fold');
   rcButton(L.open, v === 2 ? '<' : '>', H && H.btn === 'open');
-  if (padActive()) drawPadBind(ctx, L.open.x - padBindW('recap') - 3, L.open.y + 1, 'recap', 1); // the pad's way through the views
   if (L.rows.length) { ctx.fillStyle = SC_EDGE; ctx.fillRect(L.x + 4, L.y + RC_HEAD, L.w - 8, 1); }
   const top = R.faces.length ? R.faces[0].d : 1;
   for (const row of L.rows) {

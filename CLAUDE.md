@@ -17,7 +17,7 @@ Shorts, GIFs, storyboards and stills use the kit in [media](docs/dev/media.md).
 - Double-clicking `index.html` must work: nothing may `fetch` or depend on being served.
 - There are no tests. Verify in the browser (headless Chromium works) with `window.DBG`, `?seed=N`,
   `POST /shot` and `.` for hitboxes: [how](docs/dev/checklists.md#verifying-a-change).
-- Keyboard, mouse and gamepad only. Never add touch or mobile support.
+- Keyboard and mouse only. Never add gamepad, touch or mobile support.
 
 ## Code shape
 
