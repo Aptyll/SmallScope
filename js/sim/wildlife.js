@@ -6,7 +6,7 @@
 // the camps' monsters (updateCampMonster), and go in this same array so
 // arrows, the draw list, the kill payouts and the cursor all treat them as
 // what they are: things you shoot.
-const ANIMAL_HP = { rabbit: 8, deer: 24, wolf: 30, alpha: 640, dire: 640 };
+const ANIMAL_HP = { rabbit: 8, deer: 24, wolf: 30, alpha: 640 };
 // Every animal wears a hero-style level: the table's average hero level
 // (animalLevel), never under a camp monster's MONSTER.lv. It is dealt at
 // spawn (makeAnimal) and follows the table after (relevelAnimal) while the
@@ -20,7 +20,7 @@ const ANIMAL_HP = { rabbit: 8, deer: 24, wolf: 30, alpha: 640, dire: 640 };
 // a level-12 beast is worth a little over twice a level-1 one - about what
 // its hp grew by. Its XP (YIELD's `xp`, shared by the hunter's side standing
 // near: shareXp, js/sim/player.js) grows the same tenth a level.
-const ANIMAL_LV_HP = { rabbit: 1, deer: 2, wolf: 3, alpha: 50, dire: 50 };
+const ANIMAL_LV_HP = { rabbit: 1, deer: 2, wolf: 3, alpha: 50 };
 const ANIMAL_LV_GOLD = 0.1;
 const ANIMAL_LV_XP = 0.1;
 function animalLevel() {
@@ -40,7 +40,7 @@ function relevelAnimal(a) {
 }
 // what a hit knocks off a body: its own coat, so a puff says which beast
 // took the blow. Both prey are warm brown since the new sheets landed.
-const HIT_PUFF = { rabbit: '#9a6a45', deer: '#8f582f', wolf: '#6f778c', alpha: '#3b3b53', dire: '#6a4326' };
+const HIT_PUFF = { rabbit: '#9a6a45', deer: '#8f582f', wolf: '#6f778c', alpha: '#3b3b53' };
 // Prey: how close a player gets before it bolts, how long it runs, and the two
 // speeds. A deer keeps the wider watch and the longer run; a rabbit sits tight
 // and then goes off like a spring. Both resolve the ring through seenAt, so
@@ -114,8 +114,7 @@ const ANIM_CLIPS = {
   rabbit: { idle: 6, rise: 8, hop: 14 },
   deer: { idle: 4, graze: 5, run: 16 },
   wolf: { idle: 0, run: 8 },
-  alpha: { idle: 5, walk: 8, run: 12, bite: 14, paw: 14, roar: 10, fish: 8 }, // the bears: patrol at a walk, charge at a gallop
-  dire: { idle: 5, walk: 8, run: 12, bite: 14, paw: 14, roar: 10, fish: 8 },
+  alpha: { idle: 5, walk: 8, run: 12, bite: 14, paw: 14, roar: 10, fish: 8 }, // the bear: patrols at a walk, charges at a gallop
 };
 // A clip change restarts the loop, so a sit-up always begins on the frame it
 // was drawn to begin on rather than wherever the last one had got to.
@@ -203,7 +202,7 @@ function hurtAnimal(a, dmg, nx, ny, kb, owner, ambush) {
 // is ever seen to appear. The rabbits are not stock: three live in each
 // WARREN and come back as a camp does, on its clock (CAMPS.meadow,
 // updateCamps, js/sim/camps.js).
-const DEER_ROUTE_U = 100;     // tiles along the road from a roost to its side's line (the creek is at ~115)
+const DEER_ROUTE_U = 100 * MAP_K; // tiles along the road from a roost to its side's line (the creek is at (WORLD - 1) / 2)
 const DEER_ROUTE_STEP = 5;    // tiles between the points of a line
 const DEER_ROUTE_KEEP = 3;    // tiles a point keeps off the woods and off a camp's ground
 const DEER_ROAM = PLAYER_SPEED; // px/s along the line: a walk keeps up, it does not close
@@ -796,9 +795,9 @@ function animalDies(a) {
     burst(a.x, a.y - 16, '#ffb04a', 14, 55, 0.6);
     addFloater(a.x, a.y - 68, MONSTER[a.kind].feed + ' DOWN', '#ffb04a');
   }
-  // a midline camp's kill (the black bear's and the brown bear's, one side's each
-  // and paid the same): the whole team is paid and given that bear's buff, wherever they
-  // are, and the feed says who did it - the kills that are news to both sides
+  // the bear's kill: the whole team is paid and given its buff, wherever they
+  // are, the side's black bears count one more, and the feed says who did it -
+  // the kills that are news to both sides
   if (MONSTER[a.kind] && MONSTER[a.kind].teamPay) {
     if (hunter) {
       for (const q of players) {
@@ -806,6 +805,7 @@ function animalDies(a) {
         if (q !== hunter && !q.dead && !inAir(q)) awardGold(q, EPIC_TEAM_GOLD, q.x, q.y);
         campBuff(q, CAMP_BUFF_EPIC_T, a.kind);
       }
+      if (a.kind === 'alpha' && (hunter.team === 0 || hunter.team === 1)) state.bearStacks[hunter.team] = Math.min(BLACK_STACK_MAX, state.bearStacks[hunter.team] + 1);
       logEvent(hunter.name + ' SLEW THE ' + MONSTER[a.kind].feed, hunter);
       callBeast(a, hunter); // ...and the announcer calls it (the `calls` banner, js/sim/player.js)
     }
@@ -813,7 +813,7 @@ function animalDies(a) {
 }
 
 // The camps' monsters (the places themselves are the CAMPS table in the
-// camps banner, js/sim/camps.js): the den's wolves and the two midline bears, all
+// camps banner, js/sim/camps.js): the den's wolves and the black bear, all
 // of them NEUTRAL - nothing in the world hunts a player who has not hit it.
 // What each is, in one row: the bite and what it grows a level (the level:
 // animalLevel, the animals banner), the reach of a bite, the seconds between
@@ -821,11 +821,11 @@ function animalDies(a) {
 // four wolves on you is four bites a second), the hunting speed, and the
 // body's radius and mass (unitRadius/UNIT_MASS read these, nav.js) - a
 // bear is a big sprite and a body a roll does NOT pass through - and
-// `teamPay` for the two midline camps' ones, whose kill pays the killer's
-// whole team and gives it the bear's own `buff` (animalDies, worn in `buffCol`) and names it as `feed` in the feed and the announcer's call (callBeast). The creek gives one to each side's bank
-// (creekBends, world.js), so the two are one fight in two coats: the brown
-// bear (`dire`, RED's bank) and the black bear (`alpha`, BLUE's) have the
-// same row, the same hp (ANIMAL_HP) and the same pay. `cause` is the
+// `teamPay` for the bear (`alpha`, on its bend of the creek: creekBends,
+// world.js), whose kill pays the killer's whole team, gives it the bear's own
+// `buff` (animalDies, worn in `buffCol`), adds one to the side's black bears
+// (state.bearStacks) and names it as `feed` in the feed and the announcer's
+// call (callBeast). `cause` is the
 // DEATH_CAUSE a bite writes (player.js). `foot` is the box a bear walks the
 // tiles with, far smaller than its body: a box near a tile wide jams on the
 // first tree beside the lane its route runs down, so the 2x bear (r 18) still
@@ -843,7 +843,6 @@ const BEAR_FRAME = { s: 2, w: 24, segs: 5, centre: true };
 const MONSTER = {
   wolf:  { bite: 9,  lvBite: 1, reach: 13, cd: 1,   spd: 96, r: 4.5, mass: 2,   big: false, cause: 'wolf' }, // the pack: faster than a walk, slower than a slide
   alpha: { bite: 22, lvBite: 3, reach: 44, cd: 1.4, spd: 100, r: 18,  foot: 5, mass: 5,   big: true,  teamPay: true, feed: 'BLACK BEAR', buff: 'BLACK BUFF', buffCol: '#c2a6ff', anchor: true, cause: 'bear', lv: BEAR_LV, frame: BEAR_FRAME }, // a midline camp's: a wall of hp, and a swipe that takes a quarter of you
-  dire:  { bite: 22, lvBite: 3, reach: 44, cd: 1.4, spd: 100, r: 18,  foot: 5, mass: 5,   big: true,  teamPay: true, feed: 'BROWN BEAR', buff: 'BROWN BUFF', buffCol: '#ffb04a', anchor: true, cause: 'bear', lv: BEAR_LV, frame: BEAR_FRAME }, // the same bear on the other bank
 };
 // the causes a beast's bite names, which is how damagePlayer (js/sim/player.js)
 // tells a bite apart from the world's other blows for the post-game record
@@ -874,20 +873,26 @@ const CAMP_REGEN_T = 6;    // s for a monster with nobody to hunt to heal from n
 const CAMP_SEE = 9 * TILE; // px an awake monster spots a player across (seenAt shortens it for the hidden)
 const CAMP_SWITCH = TILE;  // px closer another player must be before an awake monster turns to them
 // The kills' rewards past the gold (YIELD, core.js). A bear buff is what a
-// midline camp's kill wears, each bear's its own (MONSTER's `buff` and `buffCol`:
-// the BLACK BUFF and the BROWN BUFF, which do the same thing): CAMP_BUFF_DMG on every blow the player lands
+// midline camp's kill wears (MONSTER's `buff` and `buffCol`: the BLACK
+// BUFF): CAMP_BUFF_DMG on every blow the player lands
 // (hurtUnit, actions.js) and CAMP_BUFF_SPD on the walk (abilityMoveMul,
 // abilities.js), worn as the amber ring under the feet that empties as it
-// runs out, in the bear's colour (drawBuffRing, js/draw/bodies.js). The two bears pay
-// EVERY player on the killer's team EPIC_TEAM_GOLD and give the whole team
-// the buff for CAMP_BUFF_EPIC_T - the kills in the game that pay people who were not
-// there, which is what makes them worth walking to as five.
-const CAMP_BUFF_EPIC_T = 120;
+// runs out, in the bear's colour (drawBuffRing, js/draw/bodies.js). The bear pays
+// EVERY player on the killer's team EPIC_TEAM_GOLD and gives the whole team
+// the buff for CAMP_BUFF_EPIC_T - the kill in the game that pays people who were not
+// there, which is what makes it worth walking to as five. And it keeps
+// counting: each black bear a side slays is BLACK_STACK_DMG more on every
+// blow its heroes land for the rest of the match, up to BLACK_STACK_MAX
+// (state.bearStacks; statStackMul, js/sim/stats.js). It is first out at
+// 5:00 and back 5:00 after each kill (CAMPS.buff `first`, js/sim/camps.js).
+const CAMP_BUFF_EPIC_T = 120; // s the black buff runs
+const BLACK_STACK_DMG = 0.05; // each black bear a side has slain: this much more on every blow, for the rest of the match
+const BLACK_STACK_MAX = 4;    // ...up to this many
 const CAMP_BUFF_DMG = 1.25;
 const CAMP_BUFF_SPD = 1.15;
 const EPIC_TEAM_GOLD = 280;
 // a fresh grant only extends what is left, and the latest bear is the one worn
-function campBuff(p, t, kind) { if (p && p.active) { p.buffT = Math.max(p.buffT || 0, t); p.buffKind = kind || p.buffKind || 'dire'; } }
+function campBuff(p, t, kind) { if (p && p.active) { p.buffT = Math.max(p.buffT || 0, t); p.buffKind = kind || p.buffKind || 'alpha'; } }
 
 // ------------------------------------------------------------ riding
 // A deer can be ridden. E beside a wild one (rideNear) hops the player on

@@ -30,7 +30,7 @@ function paintCisternFlat(g, tx, ty, px, py) {
 
 // what stands at the middle, into render's y-sorted list: every piece of
 // the cistern's stone the view reaches, and the orca while it is up out of
-// its ice (sorted by its hole's waterline, js/draw/orca.js)
+// its pool's ice (sorted by its hole's waterline, js/draw/orca.js)
 function pushMiddleDraws(draws, ox, oy) {
   if (orca.on && orca.mode === 'up') draws.push({ y: orca.hy + 2, fn: drawOrcaUp });
   if (!cistOn) return;

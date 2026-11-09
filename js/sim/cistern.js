@@ -1,8 +1,8 @@
 'use strict';
 // ------------------------------------------------------------ the cistern
 // THE CISTERN at the middle of the map: the works' ring of dressed stone
-// round the creek's pool, whose water froze over and is the orca's lake
-// (orcaLakeAt, js/sim/world.js). The road comes in at two GATES, each paved
+// round the creek's pool, whose water froze over: plain ice, the creek on
+// under it (creekIced, js/sim/world.js). The road comes in at two GATES, each paved
 // with a stone sill, and the wall is down in four BREACHES on the
 // diagonals, the blocks that fell lying round them. The creek runs in and
 // out under it, a culvert each way (in the wall's face: nobody goes
@@ -147,7 +147,7 @@ function cisternField() {
 }
 
 // placeCreek's last step (js/sim/world.js): the ground round the crossing made
-// the cistern's - the pool ice to CIST_ICE (the orca's lake), the creek
+// the cistern's - the pool ice to CIST_ICE, the creek
 // frozen under the wall, the gates' sills road to walk, every other lake
 // and everything standing cleared off CIST_CLEAR - and the tiles' flags
 // and cuts - and last a ford just outside each culvert
@@ -184,7 +184,7 @@ function placeCistern() {
 // cistern's ground dropped, and where the route crosses the creek the road
 // just short of its own gate, ford `side`'s two banks (cistFords) and the
 // road just past the rival's gate spliced in. So a column comes up the road,
-// forks round the ring and over the stones, never across the orca's ice
+// forks round the ring and over the stones, never across the pool's ice
 function cisternWayRound(way, team, side) {
   const f = cistOn && cistFords[side];
   if (!f) return;

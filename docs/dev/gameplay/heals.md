@@ -60,7 +60,7 @@ nothing to a bush.
   places sit by the bears' stretches), `BUSH_BANK` tiles off the water. The creek meanders, so it is
   not its own mirror; a bank pair is the fair split instead.
 
-An open tile is plain snow with no object, off the water and the orca's lake, outside a base's keep
+An open tile is plain snow with no object, off the water and the orca's pool, outside a base's keep
 and a camp's ground, and `BUSH_SPACING` from another bush. The practice field has none.
 
 ## Bots
