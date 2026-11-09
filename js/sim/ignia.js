@@ -56,7 +56,7 @@ const IGNIA_AB = [
   },
   {
     id: 'brushfire', name: 'BRUSHFIRE', cd: [12, 11.5, 11, 10.5, 10], ap: 0, cast: 0.3, aim: { line: BRUSH_RANGE },
-    rank: { burn: [6, 8, 10, 12, 14], t: 4 }, // t: s the line burns
+    rank: { burn: [5, 7, 9, 11, 13], t: 4 }, // t: s the line burns
     tip: 'A LINE OF FIRE. RIVALS WHO CROSS BURN',
     blurb: 'LAY A LINE OF FIRE ACROSS THE GROUND FOR A FEW SECONDS. RIVALS WHO CROSS IT BURN. IT MELTS THE SNOW UNDER IT.',
     use: (p) => igniaBrushfire(p),

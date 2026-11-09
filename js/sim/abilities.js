@@ -91,14 +91,14 @@ const CLASS_AB = [
   [ // HUNTER - bow, distance control, the ground between
     {
       id: 'pierce', name: 'PIERCING SHOT', cd: [12, 11, 10, 9, 8], ap: 0.6, cast: PIERCE_WIND, aim: { line: PIERCE_RANGE },
-      rank: { shot: [1.5, 1.7, 1.9, 2.1, 2.3] }, // times a fully drawn plain arrow's damage
+      rank: { shot: [1.7, 2, 2.3, 2.6, 2.9] }, // times a fully drawn plain arrow's damage
       tip: 'A SHOT THROUGH EVERYONE IN A LINE',
       blurb: 'LOCK A FULL DRAW, THEN LOOSE. THE SHOT GOES THROUGH EVERYONE ON THE LINE.',
       use: (p) => abPierce(p),
     },
     {
       id: 'net', name: 'NET SHOT', cd: [15, 14, 13, 12, 11], ap: 0.4, cast: 0.18, aim: { line: NET_RANGE },
-      rank: { dmg: [4, 8, 12, 16, 20], slow: 0.4, slowT: 2 }, // slow: walk x0.4 under the net
+      rank: { dmg: [10, 15, 20, 25, 30], slow: 0.4, slowT: 2 }, // slow: walk x0.4 under the net
       tip: 'A NET THAT SLOWS. KICKS YOU BACK',
       blurb: 'A WEIGHTED NET THAT TANGLES. THE RECOIL KICKS YOU BACKWARD.',
       use: (p) => abNetShot(p),
@@ -122,7 +122,7 @@ const CLASS_AB = [
   [ // WARRIOR - close pressure, blocking, momentum
     {
       id: 'shield', name: 'SHIELD WALL', cd: [9, 8.5, 8, 7.5, 7], ap: 0.4, cast: 0.12, wall: true,
-      rank: { t: 2.2, dmg: [8, 12, 16, 20, 24], stun: 1.1 }, // t: the wall held up; dmg/stun: the slam
+      rank: { t: 2.2, dmg: [12, 18, 24, 30, 36], stun: 1.1 }, // t: the wall held up; dmg/stun: the slam
       tip: 'BLOCKS SHOTS. AGAIN TO SLAM AND STUN',
       blurb: 'RAISE THE TOWER SHIELD. PRESS AGAIN TO SLAM: STUNS WHAT IS AHEAD, ENDS THE WALL.',
       // the one key with two halves: the raise, and - pressed again while the
@@ -140,7 +140,7 @@ const CLASS_AB = [
     },
     {
       id: 'stomp', name: 'STOMP', cd: [14, 13, 12, 11, 10], ap: 0.7, cast: 0.28, aim: { ring: STOMP_R },
-      rank: { dmg: [12, 17, 22, 27, 32], stun: 0.25 },
+      rank: { dmg: [16, 23, 30, 37, 44], stun: 0.25 },
       tip: 'LEAP AND STUN ALL AROUND YOU',
       blurb: 'LEAP AND SLAM THE SNOW. THE CRATER SLOWS WHOEVER CROSSES IT.',
       use: (p) => abStomp(p),
