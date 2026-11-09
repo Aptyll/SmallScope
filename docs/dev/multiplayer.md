@@ -308,8 +308,7 @@ the grid files under js/sprites/ are never rewritten) — same
 character's tone and fringe ([sprites.md](sprites.md#looks-a-character-on-the-class-body)), or a hero's
 own look ([hero looks](sprites.md#hero-looks)). A person's looks ride the hello (`skins`,
 `profileHeroSkins`, kept by the host through `cleanHeroSkins`) onto `p.skins`, which the snapshot
-carries, so every screen draws the look they bought;
-`SPRITES.playerTeam` is class 0 in the default look.
+carries, so every screen draws the look they bought.
 
 ## Hero levels
 
@@ -402,8 +401,8 @@ cap on its right end (`drawHealthBar`), so the sides part in greyscale. The name
 
 A team colour drives both **characters** and **buildings**:
 
-- `SPRITES.playerTeam[team][dir][frame]` — the player grids baked with the coat/hat/trim swapped.
-  `SPRITES.player` is literally `playerTeam[0]`, so team 0 is the pre-existing art.
+- `teamPlayers[team]` (js/sprites/characters.js, private) — the player grids baked with the
+  coat/hat/trim swapped; a hero's body comes from `classSet(p)`.
 - `SPRITES.teamBuild[team][type][tier]` — the tier material (wood → stone → gold) with the iron
   fittings and glow repainted in team colour, so tier still reads as tier. `structSprite(o)` is the
   lookup; it falls back to team 0 for an object with no `team`.
