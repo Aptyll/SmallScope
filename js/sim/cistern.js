@@ -155,7 +155,7 @@ function placeCistern() {
   cistTiles = new Uint8Array(WORLD * WORLD);
   cistCuts = new Uint8Array(WORLD * WORLD);
   cistFords = [];
-  cistOn = !PRACTICE;
+  cistOn = !ARENA;
   if (!cistOn) return;
   const f = cisternField(), c = (WORLD - 1) / 2, r = Math.ceil(CIST_CLEAR + 1);
   for (let ty = Math.floor(c - r); ty <= Math.ceil(c + r); ty++) for (let tx = Math.floor(c - r); tx <= Math.ceil(c + r); tx++) {

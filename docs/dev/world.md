@@ -7,8 +7,8 @@ stable per tile.
 
 ## The tile world
 
-- `WORLD = 232` tiles of `TILE = 16` px → a 3712×3712 px world (under `PRACTICE` the const is
-  76 instead — see [the practice arena](#the-practice-arena)). The forest border is
+- `WORLD = 232` tiles of `TILE = 16` px → a 3712×3712 px world (under `ARENA`, the practice
+  tool's side room, the const is 112 instead — see [the practice tool](#the-practice-tool)). The forest border is
   `BORDER_MIN`/`BORDER_MAX` (30–70, avg ~50) tiles deep round an interior ~132 tiles
   across, open snow. The two **roost corners** —
   bottom-left and top-right, where the eagles always come down
@@ -18,7 +18,7 @@ stable per tile.
   there the corner holds one solid block of woods round its [base](#the-bases)'s hollow, and
   the road's gate is at least the arc out. The union only adds pines, and `genWorld` rolls its per-tree `rng()` only under
   `borderNoise`, so the discs cost the shared stream nothing and move no seed's ground hash
-  (the [camps](#camps)' clearings do); not under `PRACTICE`.
+  (the [camps](#camps)' clearings do); not under `ARENA`.
 - `ringPts` is `RING_N` (6) points, evenly spaced on a ring `SPAWN_D` (`WORLD / 2 - 55`) tiles
   from the centre at the treeline. Nobody starts there (players land from the eagles,
   [multiplayer.md](multiplayer.md#where-players-start)) and no pocket is carved; the river
@@ -45,7 +45,7 @@ stable per tile.
   `barracks`, `tower`. `banner`/`log` are
   [the road](#the-road)'s furniture (`banner` is also the practice gate's flag), `pylon`
   [the zipline](#the-zipline)'s, and `dummy`/`pkdie`/`agbell` exist only in
-  [the practice arena](#the-practice-arena). `den` (solid, inert scenery
+  [the practice tool](#the-practice-tool)'s arena. `den` (solid, inert scenery
   two tiles wide — `OBJECTS.den.w`, so `placeCamps` fills the tile east of it with a `part` — that
   carries its `site`, the camp record, so a hover on either tile can wear the camp's clock)
   exists only inside [camps](#camps) (the wolf dens), and so does `hut` (the HOG
@@ -113,7 +113,7 @@ stable per tile.
   when what stands on a tile changes, so felling or placing scenery calls nothing.
 - **Open snow wears soft drifts** (the `snow's pixels` banner, js/draw/ground.js): swells laid
   along the wind (`SNOW_ANG`, which `layDrifts` turns onto the seed's prevailing wind, `driftWind`, so
-  the swells and the [drifts](#snow-depth) lean one way; -0.33 under `PRACTICE`), lit on the sun's side and shaded on the lee in four close tones
+  the swells and the [drifts](#snow-depth) lean one way; -0.33 under `ARENA`), lit on the sun's side and shaded on the lee in four close tones
   (`SNOW_PAL`) under a Bayer dither, with a rare white glint on the lit tone. A low noise
   (`SNOW_REGION`, ~22 tiles a step, cut at `SNOW_CUT` into thirds of the map) lays out regions of
   three `SNOW_LOOKS` — fine drifts, broad swells, lee-only — blended across `SNOW_BLEND`. Every
@@ -198,6 +198,22 @@ border's. Two other map shapes (THICKET, all woods with paths cut through; FROZE
 lake with wooded islands) and the path network they needed were removed for now; the PR that
 removed them names the commit to recover them from.
 
+## The practice tool
+
+`?practice=1` (`PRACTICE`, js/sim/core.js) is the **practice tool on this same map**: boot.js grows
+it with `genWorld` and every pass after it, like a match, on `PRACTICE_MAP_SEED`. There is no ride:
+`practiceLand` (js/sim/practice.js) crashes both birds onto their perches at boot (`eagleCrash`, so
+each merchant pitches its stall and raises the bays as in a match), people stand on their side's
+roost (`practiceSeat`, `roostTile`), empty seats are parked with no bots, and the match clock runs,
+so the waves keep the match's beat. Nothing is at stake: a death revives on the roost
+(`practiceRevive`), a bird at zero mends instead of fleeing (`practiceBirdMend`), the profile is never
+written. The practice bar (js/ui/cheats.js) adds the map's group: WAVES and TOWERS (the field's
+standing toggles, `state.prac`), SPAWN WAVE (`barracksWave` from every bay) and RESPAWN CAMPS.
+Its **ARENA** well reloads the party onto the side room, `?practice=1&arena=1` (`ARENA`): the small
+fixed training field (`genPracticeWorld`, `WORLD` 112, `PRACTICE_SEED`) with the dummy, the bell's
+rounds, the ice parkour and the deer ride, no lanes, bases, creek or camps, and its light pinned to
+early morning; its **MAP** well goes back (`practiceCross`, js/ui/rooms.js).
+
 ## Determinism and noise
 
 Every run picks a fresh `SEED` at boot with `rollSeed()` — always **three digits**, 100..999, so
@@ -205,7 +221,7 @@ it can be said aloud — and **everything
 random derives from it**: there is no other entropy source. `?seed=N` in the URL overrides it with
 any N, which is
 how you replay or diff a specific world (and `?practice=1` overrides *that*: the
-[practice arena](#the-practice-arena) pins `SEED` to `PRACTICE_SEED`). `drawTags()` prints it as a line of the **info
+[practice tool](#the-practice-tool) pins `SEED` to `PRACTICE_MAP_SEED`, its arena to `PRACTICE_SEED`). `drawTags()` prints it as a line of the **info
 stack** on the left edge at the top quarter of the view (drawn after the map, settings, and death
 overlays), so a screenshot carries the world it came from while `settings.info` is on — the INFO
 DISPLAY row in the ESC menu or **F3**, default **off**, so flip it on before comparison captures.

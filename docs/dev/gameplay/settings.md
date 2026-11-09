@@ -46,7 +46,7 @@ rating per profile (`PROFILE.rank`, starts at 1000): a win adds RANK_STEP, a los
 (`rankResult`), and the bots' level is read off the party's average rating (`rankLevel`), so
 it cannot be picked there. PRACTICE TOOL's leader has START in place of FIND MATCH
 (`partyPractice`): once every friend is READY the leader's page reloads onto the
-[practice arena](../world.md#the-practice-arena) hosting the party's code, each guest is told
+[practice arena](../world.md#the-practice-tool) hosting the party's code, each guest is told
 (`practice`) and follows, joining while the leader's page comes up (`practiceBootHost`,
 `practiceBootJoin`). A friend can also type the code from their own party while the party is on
 the field, and lands straight on it (`joinRoom` reads the list's `practice` flag). The leader's
@@ -148,7 +148,7 @@ PROTANOPIA / DEUTERANOPIA, TRITANOPIA, ACHROMATOPSIA, each entry beside its pale
 **The foot is buttons, not a hint.** Under the content window (`SET_FOOT_Y`, `footPlanks`) sit
 flat buttons (`drawFlatButton`, their line and word gold under the pointer): **CLOSE** — the one way out that is a
 button; ESC still folds the slab — and, in a match only, the way out beside it,
-LEAVE, out of the match or out of [practice](../world.md#the-practice-arena) (the ESC
+LEAVE, out of the match or out of [practice](../world.md#the-practice-tool) (the ESC
 slab is the one menu either has, so its exit lives there; the title's slide-in has nothing to
 leave, so it centres CLOSE alone). SURRENDER stands before LEAVE while your side may vote
 (js/sim/surrender.js). `settingsHit()` answers `'close'` (→ `settingsClose`: the

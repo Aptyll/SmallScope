@@ -57,6 +57,13 @@ function barracksBeat(t) {
   const past = state.elapsed - t.first;
   return past < 0 ? -past : t.waveT - (past % t.waveT);
 }
+// how many soldiers a bay's wave holds right now: `wave`, one more per
+// `grow` s it has stood, never past its lane's `cap` (the beat, and the
+// practice bar's SPAWN WAVE, cheatCmd js/sim/practice.js)
+function barracksWave(o) {
+  const t = STRUCTS.barracks.tiers[o.tier];
+  return Math.max(0, Math.min(t.cap - barracksLaneLoad(o), t.wave + Math.floor((state.elapsed - o.born) / t.grow)));
+}
 
 // The one place a building object is made (the merchant's barracks, the road
 // towers and DBG.buildStruct): the anchor object, its footprint fillers, the
@@ -167,17 +174,18 @@ function updateStructures(dt) {
       continue;
     }
     const t = STRUCTS[o.type].tiers[o.tier];
-    if (o.type === 'tower') updateTower(o, dt);
+    if (o.type === 'tower') { if (!PRACTICE || state.prac.towers) updateTower(o, dt); else towerRest(o, dt); } // the practice bar's TOWERS off: the gun stands down
     else if (o.type === 'generator') updatePump(o, dt); // the ring and the pay (js/sim/pumps.js)
     else if (o.type === 'barracks') {
       // the wave clock: on every beat (barracksBeat) a wave is queued -
       // `wave` soldiers, one more per `grow` seconds stood - and the queue
       // leaves the door one soldier every BARRACKS_ROLL, so a wave reads as
       // a column, not a heap. `+=` keeps the beat: no tick's overshoot drifts it
+      // (the practice bar's WAVES off keeps the beat and queues nothing)
       o.waveT -= dt;
       if (o.waveT <= 0) {
         o.waveT += t.waveT;
-        o.queue += Math.max(0, Math.min(t.cap - barracksLaneLoad(o), t.wave + Math.floor((state.elapsed - o.born) / t.grow)));
+        if (!PRACTICE || state.prac.waves) o.queue += barracksWave(o);
       }
       o.rollT -= dt;
       if (o.queue > 0 && o.rollT <= 0) {

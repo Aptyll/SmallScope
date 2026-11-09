@@ -201,7 +201,7 @@ function driftTiles(D, pad) {
 function layDrifts() {
   drifts.length = 0; brushes.length = 0;
   driftCell = new Array(WORLD * WORLD).fill(null);
-  if (PRACTICE) return;
+  if (ARENA) return;
   // the prevailing wind: within DRIFT_WIND_ARC of the creek's line, either
   // way along it, so each side's half of the valley wears its lee pads alike
   const a = Math.PI / 4 + (hash2(9011, 373) - 0.5) * 2 * DRIFT_WIND_ARC + (hash2(17, 9901) < 0.5 ? Math.PI : 0);
@@ -263,7 +263,7 @@ function poolIn(D, fx, fy) {
 // canopy covers it anyway, and a pad per pine would cost the bake for nothing.
 function layLees() {
   leeCell = new Array(WORLD * WORLD).fill(null);
-  if (PRACTICE) return;
+  if (ARENA) return;
   const wx = driftWind.dx, wy = driftWind.dy;
   for (let ty = 1; ty < WORLD - 1; ty++) for (let tx = 1; tx < WORLD - 1; tx++) {
     const o = objects[idx(tx, ty)];
