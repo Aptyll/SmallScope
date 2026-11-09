@@ -12,7 +12,7 @@ to the world.
 - `control: 'human'` — driven by this screen's keyboard and mouse. Exactly one per screen: **this
   session's player**, in slot `localId` (0 unless `?local=N` or `DBG.setLocal(N)` seats it
   elsewhere — nothing about slot 0 makes it the local one, and anything that means "me" reads
-  `player` or tests `p === player`, never an id). `player` and `inv` point at it (and only at
+  `player` or tests `p === player`, never an id). `player` points at it (and only at
   it) for the camera, HUD, cursor, audio gating and the aim line.
 - `control: 'remote'` — a human on another screen, in a match this screen hosts: its `input` is
   written from the wire (`netHostStep`, js/net/net.js) and it steps through `updatePlayer` like
@@ -43,7 +43,7 @@ wears the **profile's** name and last hero — `applyProfile()`, called by `init
 [architecture.md](architecture.md#profilejs)), `look` (the hero's fixed face, a copy of
 `CLASSES[cls].look` that every `setClass` writes, so every copy of a hero looks the same), `spawn` (the tile it landed
 on from the eagle), `aboard`/`dropT`/`dropU`
-(the eagle ride, see [Eagle drop](rendering/eagle-drop-mode-drop.md)), its own `inv` wallet and
+(the eagle ride, see [Eagle drop](rendering/eagle-drop-mode-drop.md)), its own `gold` wallet and
 `potions`/`potT` (the stack and the running drink, [Heals](gameplay/heals.md)),
 `level`/`xp` (see [Hero levels](#hero-levels)), `earned` (the match's gold earned), `kills`, an `input` struct and an `ai` brain.
 `reset(first)` places it at `spawn` and clears every transient; it is the single definition of
@@ -292,7 +292,8 @@ read through `statOf(p, key)` (js/sim/stats.js), never off the kit. `setClass(p,
 | 13 | **NIX** — THE SNOWBLIND, the night scout (passive NIGHT WATCH) | strike one rival from her snow cloud, faster at night; seen in the open she is easy to catch | her own body (SNOWBLIND, or MOONLESS bought on the skins screen) and the warrior's frames (`heroBody`), 98 hp, 14 armor, a step faster | the ICE DIRK: the quickest, shortest cut (22 px, 0.9 rad, `cycle` 24/60 s), drawn as her own blade |
 | 14 | **FABER** — THE TINKER, the zone mage (passive SPARE PARTS) | hold a spot with machines he winds: small guns, a clockspring trap, the old engine; strong defending, slow to chase | his own body (CLOCKMAKER, or WORKS FOREMAN bought on the skins screen) and the warrior's frames, 80 hp, 10 armor, slower than most | the CLOCK STAFF: a brass cog, 270 px/s for 0.85 s, `cycle` 62/60 s, drawn as his own shot. His machines are bodies in `robots`, so they cross the wire with every other bot |
 | 15 | **VELOX** — THE SKATER, the kiting marksman (passive KEEP MOVING) | never stand still: throw while you skate, lay your own ice and fly along it | her own body (CANAL RUNNER, or NIGHT POST bought on the skins screen) and the warrior's frames (`heroBody`), 82 hp, 10 armor, a step faster | the STAFF SLING: a sling stone, 300 px/s for 0.6 s, `cycle` 50/60 s, drawn as her own shot (`look`, `HERO_SHOTS`) |
-| 16 | **MARIS** — THE ICE DIVER, the catch tank (passive COLD WATER) | harpoon one rival and reel in, burst up under a fight from the snow, break the ice under them | her own body (BARGE DIVER, or ORCA SKIN bought on the skins screen) and her HARPOON |
+| 16 | **FALCO** — THE KESTREL, the diving assassin (passive THE HAWK) | his hawk marks a lone rival, his knives bite harder on it, and he drops on it from the sky; without a mark he is weak | his own body (FALCONER, or LAST HAWK bought on the skins screen) and the warrior's frames (`heroBody`), 96 hp, 13 armor, a step faster | the THROWING KNIFE: a short throw (330 px/s for 0.42 s, `cycle` 40/60 s), drawn as his own knife (`look`, `HERO_SHOTS`) |
+| 17 | **MARIS** — THE ICE DIVER, the catch tank (passive COLD WATER) | harpoon one rival and reel in, burst up under a fight from the snow, break the ice under them | her own body (BARGE DIVER, or ORCA SKIN bought on the skins screen) and her HARPOON |
 
 The **weapon is part of the hero**: each `CLASSES` entry carries its own `attack` row, so the
 hunter and the swordsmen do not attack the same way and every bot arrives armed, with nothing to

@@ -110,7 +110,7 @@ function renderScoreboard() {
         const tag = p.eliminated ? tr('board.out') : tr('board.wait', { s: Math.ceil(p.respawnT) });
         drawPixelTextShadow(ctx, tag, x + 18 + pixelTextWidth(nm), ry + 1, '#8f9cc4', shadow);
       }
-      const vals = [String(p.level), String(p.inv.gold), p.kills + '/' + p.deaths + '/' + (p.assists || 0), String(p.farm)];
+      const vals = [String(p.level), String(p.gold), p.kills + '/' + p.deaths + '/' + (p.assists || 0), String(p.farm)];
       const cols = ['#cfe0ff', '#f2cc6a', '#ff9a8a', '#cfe0ff'];
       for (let i = 0; i < vals.length; i++) {
         drawPixelTextShadow(ctx, vals[i], x + SB_COL[i] - pixelTextWidth(vals[i]), ry + 1, cols[i], shadow);

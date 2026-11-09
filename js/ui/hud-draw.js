@@ -356,7 +356,7 @@ function drawGoldCell() {
   const r = goldCellRect();
   ctx.fillStyle = '#3c4048'; ctx.fillRect(r.x, r.y, r.w, r.h);
   ctx.fillStyle = BAG_WELL; ctx.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
-  const t = inv.gold < 10000 ? String(Math.floor(inv.gold)) : shortNum(inv.gold), coin = SPRITES.itemGold, k = 2;
+  const t = player.gold < 10000 ? String(Math.floor(player.gold)) : shortNum(player.gold), coin = SPRITES.itemGold, k = 2;
   const cw = coin.width * k, ch = coin.height * k, gap = 4, h = ch + gap + 5;
   const y = r.y + ((r.h - h) >> 1);
   ctx.drawImage(coin, r.x + ((r.w - cw) >> 1), y, cw, ch);

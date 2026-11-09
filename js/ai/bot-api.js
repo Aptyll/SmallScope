@@ -28,7 +28,7 @@ const BOT_CMDS = new Set(['ability', 'ping', 'shop', 'recall']);
 const BOT_NODES_N = 64;     // workable tiles an observation lists, nearest first
 const BOT_NODES = new Set(['tree', 'bush']);
 const BOT_CALLS = new Set(['bird', 'help', 'low', 'push', 'here']); // CALLS' kinds a bot may say
-const BOT_CALL_LOW = new Set(['HUNTER', 'WARRIOR', 'ARMATOS', 'FORTIVA', 'BELLA', 'IGNIA', 'AURA', 'SALVIA', 'LUCERNA', 'HIEMS', 'FABER', 'RUPES', 'NIX', 'VARRO', 'BUCINA', 'VELOX', 'MARIS', 'BEAR']);       // what a 'low' call may name
+const BOT_CALL_LOW = new Set(['HUNTER', 'WARRIOR', 'ARMATOS', 'FORTIVA', 'BELLA', 'IGNIA', 'AURA', 'SALVIA', 'LUCERNA', 'HIEMS', 'FABER', 'RUPES', 'NIX', 'VARRO', 'BUCINA', 'FALCO', 'VELOX', 'MARIS', 'BEAR']);       // what a 'low' call may name
 
 // ---- the library --------------------------------------------------------------
 // Every program a seat can run, by id: { id, name, src, run } - `run` names
@@ -86,7 +86,7 @@ function botObserve(p) {
     id: p.id, team: p.team, cls: CLASSES[p.cls].name,
     x: botR(p.x), y: botR(p.y), vx: botR(p.vx), vy: botR(p.vy),
     hp: botR(p.hp), maxHp: p.maxHp, dead: p.dead, respawnT: botR(p.respawnT), eliminated: p.eliminated,
-    level: p.level, xp: p.xp, gold: p.inv.gold, skillPts: p.skillPts,
+    level: p.level, xp: p.xp, gold: p.gold, skillPts: p.skillPts,
     stats: botStats(p), // the seven hero stats, the numbers the HUD's panel prints (js/sim/stats.js)
     prone: !!p.prone, hide: botR(p.hide || 0), aboard: !!p.aboard, falling: p.dropT > 0, zip: p.zip,
     abilities: p.abLv.map((lv, i) => botAbility(p, i, lv)),

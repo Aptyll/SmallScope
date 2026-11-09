@@ -64,6 +64,7 @@ order, so the script tags still interleave them:
 | [js/sprites/nix.js](../../js/sprites/nix.js) | ~280 | shared scope, no `window.*` export | NIX's 32 px ability and passive icons (`NIX_ICON32`), her look (`NIX_BODY`, `NIX_PAL`, `NIX_SKINS`) and her ICE DIRK (`NIX_DIRK`) |
 | [js/sprites/velox.js](../../js/sprites/velox.js) | ~320 | shared scope, no `window.*` export | VELOX's 32 px ability and passive icons (`VELOX_ICON32`), her two looks (`VELOX_BODY`, `VELOX_PAL`, `VELOX_SKINS`) and her STAFF SLING's weapon art |
 | [js/sprites/faber.js](../../js/sprites/faber.js) | ~320 | shared scope, no `window.*` export | FABER's 32 px ability and passive icons (`FABER_ICON32`), his looks' 16 px grids and skins table (`FABER_BODY`, `FABER_SKINS`) and his CLOCK STAFF's weapon art |
+| [js/sprites/falco.js](../../js/sprites/falco.js) | ~300 | shared scope, no `window.*` export | FALCO's 32 px ability and passive icons (`FALCO_ICON32`), his look (`FALCO_BODY`, `FALCO_PAL`, `FALCO_SKINS`) and his THROWING KNIFE (`SPRITES.weaponArt.knife`) |
 | [js/sprites/bella.js](../../js/sprites/bella.js) | ~340 | shared scope, no `window.*` export | BELLA's 32 px ability and passive icons (`BELLA_ICON32`), her looks' 16 px grids and skins table (`BELLA_BODY`, `BELLA_SKINS`), and her spatha (`BELLA_SPATHA`) |
 | [js/sprites/ignia.js](../../js/sprites/ignia.js) | ~310 | shared scope, no `window.*` export | IGNIA's 32 px ability and passive icons (`IGNIA_ICON32`), her looks' 16 px grids and skins table (`IGNIA_BODY`, `IGNIA_SKINS`) |
 | [js/sprites/landmarks.js](../../js/sprites/landmarks.js) | ~55 | → `SPRITES` | the story landmarks: the frozen boat |
@@ -112,6 +113,7 @@ order, so the script tags still interleave them:
 | [js/sim/nix.js](../../js/sim/nix.js) | ~310 | shared scope, no `window.*` export | NIX, the night scout: her tuning, her four keys (`NIX_AB`, joined into `CLASS_AB`), NIGHT WATCH, the snow cloud's cover (`HERO_COVER`), what she leaves in the world (`nixShards`, `nixClouds`) |
 | [js/sim/velox.js](../../js/sim/velox.js) | ~270 | shared scope, no `window.*` export | VELOX, the kiting marksman: her tuning, her four keys (`VELOX_AB`, joined into `CLASS_AB`), her passive KEEP MOVING, the quick step as a hero dash, and what she leaves in the world (`veloxStones`, `veloxLanes`) |
 | [js/sim/faber.js](../../js/sim/faber.js) | ~350 | shared scope, no `window.*` export | FABER, the zone mage: his tuning, his four keys (`FABER_AB`, joined into `CLASS_AB`), his passive SPARE PARTS, his two machines' brains (`HERO_MACHINE`: bodies in `robots`), the parts, jumps, bolts and clocksprings he leaves (`faberParts`, `faberArcs`, `faberBolts`, `faberSprings`) |
+| [js/sim/falco.js](../../js/sim/falco.js) | ~260 | shared scope, no `window.*` export | FALCO, the diving assassin: his tuning, his four keys (`FALCO_AB`, joined into `CLASS_AB`), THE HAWK's mark, the hawk's eye for his side (`HERO_EYES`), hidden in the sky (`HERO_COVER`), what he leaves in the world (`falcoHawks`, `falcoKnives`) |
 | [js/sim/bella.js](../../js/sim/bella.js) | ~340 | shared scope, no `window.*` export | BELLA, the duelist: her tuning, her four keys (`BELLA_AB`, joined into `CLASS_AB`), her passive CALCULATED STRIKES, the lunge and the slip as hero dashes, the duel and its flurry |
 | [js/sim/ignia.js](../../js/sim/ignia.js) | ~260 | shared scope, no `window.*` export | IGNIA, the hearthkeeper: her tuning, her four keys (`IGNIA_AB`, joined into `CLASS_AB`), her passive KINDLING (her fire spreading and doused), the brand, the lines of fire (`brushfires`), the warmth and the wildfire |
 | [js/sim/abilities.js](../../js/sim/abilities.js) | ~820 | shared scope, no `window.*` export | the class abilities on keys 1-4: the `CLASS_AB` table, casting, the pierce/net/grapple/snow-cover/shield-and-slam/rush/crater/execute sim |
@@ -162,6 +164,7 @@ order, so the script tags still interleave them:
 | [js/draw/nix.js](../../js/draw/nix.js) | ~90 | shared scope, no `window.*` export | NIX's pixels: the snow cloud and the shard in the air (`HERO_AIR`), the cloud's shadow (`HERO_GROUND`), her see-through body while hidden (`HERO_FADE`), her dirk (`HERO_BLADES.dirk`) |
 | [js/draw/velox.js](../../js/draw/velox.js) | ~115 | shared scope, no `window.*` export | VELOX's pixels: her sling stone, the ice lane and the skipping stone on the snow, KEEP MOVING's chevrons and LONG RUN's streaks, her STAFF SLING carried |
 | [js/draw/faber.js](../../js/draw/faber.js) | ~200 | shared scope, no `window.*` export | FABER's pixels: his spark and brass cog in flight, the parts, clocksprings, jumps and bolts on the snow, his two machines' bodies, his clock staff |
+| [js/draw/falco.js](../../js/draw/falco.js) | ~100 | shared scope, no `window.*` export | FALCO's pixels: his hawk over him and out (`HERO_AIR`, `HERO_GROUND`), his thrown knives (`HERO_SHOTS`), a rival marked for his side (`HERO_MARK`), his body gone into the sky (`HERO_BODY_DRAW`) |
 | [js/draw/bella.js](../../js/draw/bella.js) | ~70 | shared scope, no `window.*` export | BELLA's pixels: her precision pips, the parry's blade, the marks and the duel's ring, and her spatha in her hands |
 | [js/draw/ignia.js](../../js/draw/ignia.js) | ~140 | shared scope, no `window.*` export | IGNIA's pixels: the brand and the ember in flight, the lines of fire and their melted strip, the warm hands' sparks, and her crook and lantern |
 | [js/draw/marks.js](../../js/draw/marks.js) | ~200 | shared scope, no `window.*` export | the glyph grammar both maps share: a camp's icon and clock, a soldier's pennant, what a body looks like as a dot |
@@ -413,12 +416,12 @@ for the current API — it is deliberately the whole external surface, and
 ## State
 
 All game state lives in top-level singletons shared across the game files — `state` and
-`settings` in core.js, `players`/`player`/`inv` and the entity arrays in player.js:
+`settings` in core.js, `players`/`player` and the entity arrays in player.js:
 
 - **`state`** — the match: tick, day/time, darkness, mode, overlays (`state.mapOpen`, `state.shop`).
 - **`settings`** — the player's dials, persisted **under the profile** (`PROFILE.putSettings`).
-- **`players`** — the ten players. `player` and `inv` are aliases for **the local player only**
-  (slot `localId`, 0 by default) and its gold-only wallet; carried goods are the six item slots
+- **`players`** — the ten players. `player` is the alias for **the local player only**
+  (slot `localId`, 0 by default); its wallet is the number `player.gold`, and carried goods are the six item slots
   (`player.items`, a potion stack counted in `player.potions`). See
   [multiplayer.md](multiplayer.md#the-ten-players).
 

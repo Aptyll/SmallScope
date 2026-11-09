@@ -67,7 +67,7 @@ the held one lit gold
 js/ai/ai.js, first thing `aiThink` asks): the ultimate whenever it can rank, then each basic key
 unlocked once, then the basics maxed in the hero's `rankOrder` (its `CLASSES` row: HUNTER
 shot, net, grapple; WARRIOR stomp, rush, shield; ARMATOS verdict, march, brace; FORTIVA sever,
-yoke, heart; AURA star, orb, step; SALVIA poultice, cloak, snowdrops; LUCERNA crook, shoo, lantern; RUPES heave, shed, shoulder; NIX shard, drift step, cloud; VARRO lunge, snap, howl; BUCINA note, blast, echo; MARIS harpoon, undertow, brace; VELOX skip stone, quick step, ice lane). The cd column in the tables below is every rank's; the numbers in the text are rank
+yoke, heart; AURA star, orb, step; SALVIA poultice, cloak, snowdrops; LUCERNA crook, shoo, lantern; RUPES heave, shed, shoulder; NIX shard, drift step, cloud; FALCO knife fan, talons, glide; VARRO lunge, snap, howl; BUCINA note, blast, echo; MARIS harpoon, undertow, brace; VELOX skip stone, quick step, ice lane). The cd column in the tables below is every rank's; the numbers in the text are rank
 1's, and each row's `rank` table has the rest.
 
 **Every ability lands on every kind of body.** A player, a rabbit, a deer, a bird, a wolf and a
@@ -369,6 +369,21 @@ saved and sent like HIEMS's ice.
 | 2 | **ICE LANE** | 16/15/14/13/12 s | a strip `LANE_LEN` long and `LANE_W` wide from her feet down the aim, for `t` (3/3.5/4/4.5/5 s). On her own lane she skates (`HERO_ICE`) ×`LANE_FAST`; a rival body on it skates like the creek's ice; her own side walks it as snow |
 | 3 | **QUICK STEP** | 9/8.5/8/7.5/7 s | a dash `QSTEP_D` down the aim (`p.dash = 'vstep'`), out of which she glides; her attack cycle is reset, and for `QSTEP_READY_T` her next draw is full at once and her next basic hit adds `dmg` (6/10/14/18/22) |
 | 4 | **LONG RUN** | 100/85/70 s | for `t` (4/5/6 s) she walks ×(1 + `RUN_MS`) and slows, roots and stuns on her last `RUN_TEN` less (`HERO_TEN`); each basic hit throws a second stone (`ab: 'run'`, `dmg` 14/22/30) at the rival body nearest the one hit within `RUN_ECHO_R` |
+
+FALCO, THE KESTREL — the diving assassin. His rules live in **[js/sim/falco.js](../../../js/sim/falco.js)**
+(`FALCO_AB`, its `falco` banner), his pixels in [js/draw/falco.js](../../../js/draw/falco.js), his
+icons, looks and knife in [js/sprites/falco.js](../../../js/sprites/falco.js). 96 hp, 13 armor, a
+step faster; his basic attack is a short throw (the THROWING KNIFE). A mark is `falcoBy`/`falcoUntil`
+on the body (`falcoMarked`), set by his hawk (`falcoMark`, which also `markUnit`s it). His hawk out
+and his knives are things he leaves in the world (`falcoHawks`, `falcoKnives`), stepped by `HERO_TICK`.
+
+| key | name | cd | what it does |
+| --- | --- | --- | --- |
+| P | **THE HAWK** | — | his thrown knives (the basic attack and KNIFE FAN) deal ×(1 + `HAWK_BONUS`) to a rival his hawk marked, for `HAWK_MARK_T` (`hawkDeal`); a fresh mark shows the rival through the fog for `HAWK_SEE_T` |
+| 1 | **TALONS** | 12/11/10/9/8 s | the hawk flies to the aim, at most `TALON_RANGE` (`falcoSpot`), one out at a time (`ok`): the first rival it passes within `TALON_PATH` of, or the first within `TALON_R` of the spot (a hero first), takes `dmg` (20/35/50/65/80) and is marked; then it flies home. While out it sees `TALON_SIGHT` round itself for his side (`HERO_EYES`) |
+| 2 | **KNIFE FAN** | 9/8.5/8/7.5/7 s | three knives `FAN_SPREAD` apart down the aim, `FAN_LEN` each: the first body each meets takes `dmg` (16/24/32/40/48), no shove; a rival marked and struck by all three of one throw walks ×`FAN_SLOW` for `FAN_SLOW_T` |
+| 3 | **GLIDE** | 16/15/14/13/12 s | a leap `GLIDE_LEN` down the aim (`HERO_DASH.glide`, `through`: over soldiers and rivals); a rank is the leap back sooner |
+| 4 | **STOOP** | 90/75/60 s | needs a marked rival hero within `STOOP_REACH` (`ok`, `stoopTarget`): up into the sky for `STOOP_UP`, untouchable (`invuln`), unseen by every side (`HERO_COVER`) and still (`HERO_MOVE`), then down beside the hero wherever it went, for `dmg` (120/180/240) + `STOOP_UP_AD` of his DAMAGE, knocked up for `STOOP_KNOCK` (`falcoDrop`) |
 
 Bots play the named heroes through each row's `bot(p, foe, d, clear)` (`abBotKey`, asked by the ladder's
 ability block in js/ai/ai-ladder.js); a row's `botAim(p, foe)` turns the aim to a point of its own for that cast, held through the wind-up until it lands (AURA's step away, SALVIA's heals, LUCERNA's lantern). A hero whose rows carry no `bot` keeps the ladder's old range rules.

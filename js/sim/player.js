@@ -408,7 +408,24 @@ const CLASSES = [
       bowCharge: 0.6, nock: 0.4, spdDmg: 3, dodgeSpeed: 240 },
   },
   {
-    // the fifteenth named hero (js/sim/maris.js): a tank who catches one rival. Quick and chilling on
+    // the fifteenth named hero (js/sim/falco.js): the falconer, an assassin who dives.
+    // His hawk finds a rival and marks it, his thrown knives bite harder on the mark,
+    // and he falls out of the sky on it; without a mark he is weak, and clumsy in a crowd
+    name: 'FALCO', role: 'THE KESTREL', body: 1, passive: 'hawk', // HERO_PASSIVE, js/sim/falco.js
+    look: { sex: 0, tone: 1, hair: 1, hairCol: 1, beard: 1, face: 1 },
+    blurb: ['PATIENT, THEN SUDDEN.', 'YOUR HAWK FINDS THEM. YOUR KNIVES BITE HARDER ON WHAT IT MARKS.', 'WITHOUT A MARK YOU ARE WEAK. PICK THE LONE RIVAL.'],
+    story: "HE KEPT THE HAWKS FOR AN IMPERIAL HUNT AND LET THEM ALL FLY THE DAY THE EMPIRE BURNED THE HUNTING PARK FOR A PARADE GROUND. ONE CAME BACK. IT IS THE ONLY ONE HE WILL SPEAK TO.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
+    // a thrown knife: short, quick, a little further than a blade
+    attack: { name: 'THROWING KNIFE', art: 'knife', cycle: 40 / 60, kb: 0.5, shot: { speed: 330, life: 0.42, col: '#c8d2e4', look: 'knife' } },
+    skins: FALCO_SKINS, skinPal: FALCO_PAL, skinSlot: 'falco',
+    base: { hp: 96, dmg: 17, armor: 13, ap: 0, haste: 0, ms: PLAYER_SPEED + 4 },
+    grow: { hp: 6.2, dmg: 1.7, as: 0.014, armor: 1.9 },
+    rankOrder: [1, 0, 2], // the knife fan, the talons, the glide
+    kit: { iceMax: 1.1, iceSteer: 3.2, slideMin: 70, fatigue: 0.85, chargeMul: 0.65,
+      bowCharge: 0.75, nock: 0.45, spdDmg: 3, dodgeSpeed: 230 },
+  },
+  {
+    // the sixteenth named hero (js/sim/maris.js): a tank who catches one rival. Quick and chilling on
     // ice and by open water, she swims where others go in; much weaker on dry ground far
     // from it, and once she has surfaced she has no way out
     name: 'MARIS', role: 'THE ICE DIVER', body: 1, passive: 'coldwater', // HERO_PASSIVE, js/sim/maris.js
@@ -459,7 +476,7 @@ function healPlayer(p, n) {
 // lifetime gold (the scoreboard's rank and the post-game GOLD). Gold buys;
 // it no longer teaches - XP is gainXp's alone.
 function gainGold(p, n) {
-  p.inv.gold += n;
+  p.gold += n;
   p.earned += n;
   // lifetime total, coalesced - see profile.js. Practice gold is play money:
   // a free room must never farm the tech tree's points.
@@ -470,12 +487,12 @@ function gainGold(p, n) {
 // player already spent, so counting it would turn a buy and a sell into a
 // scoreboard farm rather than into a trade. Everything that
 // EARNS gold - a fell, a kill, the clock - still goes through gainGold.
-function tradeGold(p, n) { if (p && n > 0) p.inv.gold += n; }
+function tradeGold(p, n) { if (p && n > 0) p.gold += n; }
 // Gold leaving a wallet: the shop's one way to take it, so the post-game
 // record (goldSpent, js/ui/lobby.js) never misses a purchase. The caller has
 // already checked the purse holds n.
 function spendGold(p, n) {
-  p.inv.gold -= n;
+  p.gold -= n;
   if (n > 0) p.goldSpent += n;
 }
 // Gold is never a physical drop: every source pays the earner on the spot
@@ -640,7 +657,7 @@ class Player {
     this.look = Object.assign({}, CLASSES[0].look); // the hero's face, set again by every setClass
     this.skins = {};                   // hero slot -> the look worn on that hero (heroSkinOf); a person's, from their profile
     this.spawn = { tx: WORLD >> 1, ty: WORLD >> 1 }; // landing tile once the eagle drops this player (the bot brain's "home")
-    this.inv = { gold: START_GOLD };    // the wallet is currency only; a start that buys a first part and a potion
+    this.gold = START_GOLD;             // the wallet: currency only, no ceiling; a start that buys a first part and a potion
     this.cls = 0;                       // CLASSES index; the lobby sets the local one
     this.position = -1;                 // POSITIONS index the draft gave this seat, -1 none (draftReveal, js/ui/draft.js); the host's alone, never on the wire
     this.skillPts = 1;                  // unspent; level 1 starts with one, each levelUp adds one - spent on ability levels (buyAbilityLv, js/sim/abilities.js)
@@ -815,6 +832,10 @@ class Player {
     // NIGHT WATCH's hidden blow waiting
     this.nixOutT = 0; this.nixWhiteT = 0; this.nixStrikeId = -1; this.nixResetT = 0; this.nixRecast = false; this.nixStrikeOnce = false;
     this.nixAmbush = false; this.nixDriftId = -1; this.nixDriftX = 0; this.nixDriftY = 0;
+    // FALCO (js/sim/falco.js): STOOP's climb and the hero it falls on, KNIFE FAN's throw count;
+    // on any body his hawk marked or his fan struck: who marked it and until when, which throw and how many knives
+    this.falcoSkyT = 0; this.falcoStoopId = -1; this.falcoFanN = 0;
+    this.falcoBy = -1; this.falcoUntil = 0; this.falcoFanId = -1; this.falcoFanHits = 0;
     this.hopT = 0;                                 // the net shot's recoil hop, on the body
     this.grapT = 0; this.grapX = 0; this.grapY = 0; // the grapple: reel time left, and the anchor it hauls toward
     this.zip = -1; this.zipD = 0; this.zipDir = 1;  // the zipline (js/sim/zipline.js): the line ridden (its index in zips, or -1), px along it, and which way
@@ -836,7 +857,6 @@ class Player {
 
 const players = [];  // every player; filled by initPlayers() at boot
 let player = null;   // the local player - camera, HUD, cursor and audio follow this one
-let inv = null;      // === player.inv, the counters the HUD draws
 // which slot THIS screen's player sits in. Nothing about a slot makes it the
 // local one - slot 0 is only the default - so anything that means "me" reads
 // `player` (or `p === player`), never an id: an online match seats this screen
@@ -879,7 +899,6 @@ function initPlayers(roster, local) {
   }
   localId = local;
   player = players[local];
-  inv = player.inv;
   applyProfile(); // the local player is the profile: its name and its last hero
 }
 
