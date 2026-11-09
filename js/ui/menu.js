@@ -39,7 +39,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.586';
+const PATCH_TXT = 'PATCH 0.589';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -55,7 +55,10 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
-  ['0.586', 'NEW PLAYERS GET A FIRST MATCH ON THE TITLE: A REAL 5V5 AGAINST EASY BOTS WITH A SMALL CARD TEACHING MOVE, SHOP, ABILITIES, LAST HITS, RECALL AND TOWERS (HOLD SHIFT FOR DETAIL, X TO TURN IT OFF), AND RANKED UNLOCKS AFTER 3 FINISHED MATCHES.'],
+  ['0.589', 'NEW PLAYERS GET A FIRST MATCH ON THE TITLE: A REAL 5V5 AGAINST EASY BOTS WITH A SMALL CARD TEACHING MOVE, SHOP, ABILITIES, LAST HITS, RECALL AND TOWERS (HOLD SHIFT FOR DETAIL, X TO TURN IT OFF), AND RANKED UNLOCKS AFTER 3 FINISHED MATCHES.'],
+  ['0.588', 'A PLAYER WHO WAS SHOWN OUT OF A PARTY AND TYPES ITS CODE AGAIN NOW LANDS BACK IN THEIR OWN PARTY, SEATS AND FIND MATCH READY, NOT ON AN EMPTY SCREEN.'],
+  ['0.587', 'A NEW HERO, LUCERNA THE LANTERN: HER CROOK PULLS A RIVAL IN, HER THROWN LANTERN BRINGS AN ALLY HOME, AND HER LIGHT SHOWS WHO HIDES NEAR HER.'],
+  ['0.586', 'IN CHAMP SELECT, IF YOUR LAST HERO WAS BANNED, THE STAGE UNDER THE GRID STAYS EMPTY UNTIL YOU POINT AT A HERO INSTEAD OF SHOWING THE BANNED ONE.'],
   ['0.585', 'SOFTFALL IS PLAYED ON KEYBOARD AND MOUSE ONLY: GAMEPAD SUPPORT AND ITS SETTINGS PAGE ARE GONE, AND THE ARROW KEYS NOW SHOW WHICH CARD THEY PICK ON THE SKINS SCREEN.'],
   ['0.584', 'WHEN THE HOST LEAVES AN ONLINE MATCH, YOU SEE THE HOST LEFT AND THE LOBBY BUTTON AT ONCE, NOT A REPLAY OF YOUR LAST FOUR SECONDS.'],
   ['0.583', 'UNDER THE HOOD: THE EAGLE\'S LANDING REPAINTS THE GROUND THROUGH THE SAME SHARED STEP AS EVERY OTHER GROUND CHANGE.'],
@@ -1383,7 +1386,7 @@ function lobbyHit() {
     if (S.more && over(S.prev, 2, 2)) return 'skinPrev';
     if (S.more && over(S.next, 2, 2)) return 'skinNext';
   } else {
-    if (over(L.figure, 0, 0)) return 'hero';
+    if (lobbyStageUp(L) && over(L.figure, 0, 0)) return 'hero';
     const f = heroFilterAt(L);
     if (f) return f;
     const hi = heroCellAt(L.heroes);
@@ -1612,6 +1615,20 @@ const CLASS12 = [
     '..ovo.......',
     '...o........',
   ],
+  [ // LUCERNA: her lantern, lit, on its ring
+    '....oooo....',
+    '....o..o....',
+    '...oooooo...',
+    '...oggggo...',
+    '..ogWWWWgo..',
+    '..ogWWWWgo..',
+    '..ogWbbWgo..',
+    '..ogWWWWgo..',
+    '...oggggo...',
+    '....oooo....',
+    '............',
+    '............',
+  ],
 ];
 const class12Cache = new Map();
 function classIcon12(i, you) {
@@ -1646,10 +1663,16 @@ function classIcon12(i, you) {
 // that frame. sw is the swap-pop ease; a lock-in bursts a second ring out
 // from the feet (lockFx) and the light stays up while the count runs.
 const LOCK_FX_T = 0.7; // s: the lock-in's ring
+// the stage stands only when it has your hero to show: never through the
+// bans, and in the picks only while you point at one (a banned last hero
+// leaves you pointing at none)
+function lobbyStageUp(L) {
+  return L.stage && DRAFT.phase !== 'ban' && !(DRAFT.phase === 'pick' && draftWant(localId) < 0);
+}
 function drawLobbyStage(now, a, sw) {
-  const m = state.menu;
-  const { cx, body, S, stage } = lobbyLayout();
-  if (!stage || DRAFT.phase === 'ban') return;
+  const m = state.menu, L = lobbyLayout();
+  const { cx, body, S } = L;
+  if (!lobbyStageUp(L)) return;
   const feet = body.y + 46 * S;
   const lit = m.countT > 0 || m.lockT > 0 ? 1.7 : 1;
   ctx.globalAlpha = a * 0.4;
