@@ -83,6 +83,11 @@ every component of it you already hold, carries the hero stats, and a legendary 
 (a third hit that burns, a heal out of a fight, a slow on every hit). One pair of boots at a time.
 The counter's RECOMMENDED tab is your hero's build as players build it: the most picked and the best-winning paths with their pick and win rates, from every match each screen has seen or heard of through a join, and the curated build (the one bots buy) until a hero has the games. [The counter](gameplay/the-merchants-counter.md).
 
+**Three picks before the drop.** On the champ select each player takes a CALLING (a passive,
+League's keystone rune) and two TRICKS (two actives on long cooldowns, League's summoner spells):
+a bandage, a torch, bolas, a shield, a sprint, shaking off a hold, a cleaver for the jungle.
+No flash: the roll is everybody's. [The loadout](gameplay/loadout.md).
+
 **Keys 1-4 are your class.** Each class carries four active abilities — the HUNTER's piercing
 shot, net, grapple and snow cover; the WARRIOR's shield (and its slam), rush, stomp and execute — each with a
 cooldown, a

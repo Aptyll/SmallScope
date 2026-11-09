@@ -71,10 +71,12 @@ const DYNAMIC = [
   { file: 'js/ui/skins.js', expr: 'r.body', keys: strings('js/ui/skins.js', 'body'), why: 'a scout skin\'s own body (its row\'s body)' },
   { file: 'js/sim/items.js', expr: "BUILD_ITEMS[id].icon||'item_'+id", keys: strings('js/sim/items.js', 'icon'), why: 'an item\'s named icon (BUILD_ITEMS), else item_<id>' },
   { file: 'js/draw/bodies.js', expr: 'T.spr', keys: strings('js/sim/robots.js', 'spr'), why: 'a soldier kind\'s team sets (SOLDIER_TYPES\' spr)' },
+  { file: 'js/ui/loadout.js', expr: "kind+'_'+id", keys: () => [...read('js/sprites/loadout-icons.js').matchAll(/I\.((?:trick|calling)_\w+) =/g)].map((m) => m[1]), why: 'a pre-game pick\'s icon (loIcon)' },
   { file: 'js/draw/render.js', expr: 'key', keys: keysOf('js/sprites/items.js', 'itemAnim:'), why: 'an animated icon\'s live canvas (SPRITES.itemAnim)' },
 ];
 // SPRITES[expr] = ...: keys registered by expression
 const DYNAMIC_PUT = [
+  { file: 'js/sprites/loadout-icons.js', expr: 'id', why: 'a pre-game pick\'s 16 px icon, read by loIcon (js/ui/loadout.js)' },
   { file: 'js/sprites/item-icons.js', expr: "'item_'+id", why: 'an item\'s 16 px icon, read by itemIcon (js/sim/items.js)' },
 ];
 // SFX methods with no caller in the code, for a person at the console

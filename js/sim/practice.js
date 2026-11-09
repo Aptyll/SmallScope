@@ -56,6 +56,7 @@ const PR_PARK = { tx: 4, ty: 4 };
 function practiceSeat(p) {
   p.spawn = (!ARENA && roostTile(p)) || { tx: PR_SPAWN.tx, ty: PR_SPAWN.ty };
   p.x = (p.spawn.tx + 0.5) * TILE; p.y = (p.spawn.ty + 0.5) * TILE;
+  loadoutStart(p); // the field has no draft: the picks come with the body (js/sim/loadout.js)
 }
 // the map's opening: no ride - both birds are down on their perches at boot
 // (eagleCrash, js/sim/eagle.js, the crash a match's dive ends in, so each

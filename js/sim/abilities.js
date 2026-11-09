@@ -338,6 +338,7 @@ function castProg(p) { return p.castT > 0 && p.castMax > 0 ? 1 - p.castT / p.cas
 // ability leaves on a body. Called from updatePlayer once the player is alive.
 function updateAbilities(p, dt) {
   for (let i = 0; i < AB_KEYS; i++) if (p.abCd[i] > 0) p.abCd[i] = Math.max(0, p.abCd[i] - dt);
+  loadoutTick(p, dt); // the tricks' cooldowns and the calling's clocks (js/sim/loadout.js)
   if (p.hopT > 0) p.hopT = Math.max(0, p.hopT - dt);
   // root / slow / net / mark / fire: the shared clock every kind of unit runs
   // (updateUnitStatus, js/sim/actions.js) - an animal and a bot age the

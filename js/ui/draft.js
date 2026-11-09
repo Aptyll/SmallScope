@@ -86,7 +86,7 @@ function draftTeamBans(team) {
 // has no position of its own: any hero plays any of them, and the seat's
 // goes into the match (draftReveal: p.position), where a bot plays it
 // (js/ai/ai-farm.js). Your side's positions are yours to see, the rivals' never.
-const DRAFT_ACTS = ['hover', 'lock', 'role', 'skin']; // what a guest's `draft` press may be
+const DRAFT_ACTS = ['hover', 'lock', 'role', 'skin', 'load']; // what a guest's `draft` press may be
 function posAsk(p) { const r = p === player ? PROFILE.pos() : NET.pos[p.id]; return r >= 0 ? r : -1; }
 function draftSeatRoles() {
   const role = players.map(() => -1);
@@ -225,11 +225,13 @@ function draftCheck() {
   if (D.phase === 'ban') draftPickPhase(); else draftReveal();
 }
 // the host's hand on a seat's press: 'hover' points, 'lock' confirms (a ban,
-// or the pick), 'role' moves the seat to position h, 'skin' wears look id on hero h
+// or the pick), 'role' moves the seat to position h, 'skin' wears look id on hero h,
+// 'load' takes the seat's pre-game picks (id: "trick,trick,calling", js/sim/loadout.js)
 function draftAct(slot, k, h, id) {
   const D = DRAFT, p = players[slot];
   if (NET.isClient || !p) return false;
   if (k === 'skin') return draftWearSkin(p, h, id);
+  if (k === 'load') { p.loadout = loadoutClean(loadoutParse(id), p.cls, D.role[slot]); draftSend(); return true; }
   if (!draftOpen()) return false;
   if (k === 'role') return draftSwapRole(slot, h);
   if (D.lock[slot] >= 0) return false;
@@ -256,6 +258,7 @@ function draftMsg(team) {
   const seen = (i) => open || players[i].team === team;
   return { t: 'draft', ph: D.phase, tl: D.t, n: D.nBan, banned: D.banned,
     role: D.role.map((r, i) => players[i].team === team ? r : -1),
+    load: players.map((p, i) => players[i].team === team && isHuman(p) && p.loadout && p.loadout.calling ? loadoutStr(p.loadout) : ''), // a person's picks, your side's only
     hover: D.hover.map((h, i) => seen(i) ? h : -1),
     lock: D.lock.map((h, i) => seen(i) ? h : h >= 0 ? -2 : -1),
     lead: [0, 1].map((t) => t === team || D.phase !== 'ban' ? D.lead[t] : []) };
@@ -268,9 +271,10 @@ function draftIn(msg) {
   const D = DRAFT, was = D.phase;
   D.phase = String(msg.ph); D.t = +msg.tl || 0; D.nBan = msg.n | 0;
   D.banned = msg.banned || []; D.hover = msg.hover || []; D.lock = msg.lock || []; D.lead = msg.lead || [[], []]; D.role = msg.role || [];
+  if (Array.isArray(msg.load)) msg.load.forEach((s, i) => { const q = players[i]; if (q && q !== player && typeof s === 'string') q.loadout = s ? loadoutParse(s) : { tricks: [null, null], calling: null }; });
   if (D.phase === was) return;
   if (D.phase === 'pick') { D.fx = 0.5; SFX.place(); heroSearchClear(); draftShow(D.hover[localId]); }
-  if (D.phase === 'done') { setClass(player, D.lock[localId]); draftCount(); }
+  if (D.phase === 'done') { setClass(player, D.lock[localId]); draftCount(); draftLoadSend(); }
 }
 // what this screen's own player points at, on the stage (its body, the hero pop-up) - picks only
 function draftShow(h) {
@@ -298,6 +302,7 @@ function draftConfirm() {
   SFX.place();
   if (NET.isClient) { D.lock[localId] = h; NET.transport.send('host', { t: 'draft', k: 'lock', h }); }
   else draftAct(localId, 'lock', h);
+  draftLoadSend(); // the picks for the hero just locked (js/ui/loadout.js)
 }
 // this screen's own position: a bot holding the one asked for trades; the
 // profile keeps it as the one to ask for next draft

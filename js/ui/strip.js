@@ -7,8 +7,8 @@
 // One opaque plate, read left to right the way a MOBA's bottom bar is (0.426),
 // and the one bar the HUD has:
 //
-//   [portrait] [1][2][3][4] [i1][i2][i3] [coin]
-//              [ health bar ] [i4][i5][i6] [gold]
+//   [portrait] [1][2][3][4] [t1] [i1][i2][i3] [coin]
+//              [ health bar ] [t2] [i4][i5][i6] [gold]
 //              [ stamina    ]
 //
 // THE PORTRAIT is a square well holding your hero's face, framed in the
@@ -21,7 +21,11 @@
 // each, the overhead bar's twin (drawOverhead, js/draw/bodies.js). It is the
 // seat a mana bar takes when heroes come.
 //
-// THE SIX ITEMS stand after the abilities in a three-by-two grid of smaller
+// THE TWO TRICKS (the loadout's, js/sim/loadout.js) stand in one column
+// after the abilities, item-sized: each its icon, its key in the corner and
+// its cooldown as the sweep, pressed like an ability (key or click).
+//
+// THE SIX ITEMS stand after the tricks in a three-by-two grid of smaller
 // wells (ITEM_CELL), left to right and top row first as the shop fills them
 // (p.items, js/sim/items.js): the whole of what the HUD says about what you
 // carry into a fight. Each slot has a key (ITEM_KEYS, js/app/input.js) and an
@@ -44,14 +48,15 @@ const AB_ROW_W = AB_N * AB_CELL + (AB_N - 1) * AB_GAP; // the four ability wells
 const ITEM_CELL = 24, ITEM_GAP = 2;       // an item well, and the air between two
 const ITEM_COLS = 3;                      // the six items: three wide, two high
 const ITEM_GRID_W = ITEM_COLS * ITEM_CELL + (ITEM_COLS - 1) * ITEM_GAP;
-const ITEM_X_GAP = 5;                     // abilities to the items
+const ITEM_X_GAP = 5;                     // abilities to the tricks, and the tricks to the items
+const TRICK_COL = ITEM_CELL + ITEM_X_GAP; // the tricks' column, and the air after it
 const PURSE_GAP = 5;                      // items to the purse
 const PURSE_W = ITEM_CELL;                // the purse: one item well wide, the plate's full inner height
 const HP_H = 7, ST_H = 4;                 // the health bar (tall enough for its number) and the stamina bar
 const BAR_TOP = AB_CELL + 3;              // the health bar's outline, under the wells
 const ST_TOP = BAR_TOP + HP_H + 1;        // the stamina bar's outline: shares the health bar's bottom ink
 const XP_TAG = 9;                         // the xp numbers standing over the portrait
-const AB_W = PORT_SQ + PORT_GAP + AB_ROW_W + ITEM_X_GAP + ITEM_GRID_W + PURSE_GAP + PURSE_W; // the content, inside the frame's pads
+const AB_W = PORT_SQ + PORT_GAP + AB_ROW_W + ITEM_X_GAP + TRICK_COL + ITEM_GRID_W + PURSE_GAP + PURSE_W; // the content, inside the frame's pads
 const AB_H = AB_PAD + ST_TOP + ST_H + 2 + AB_PAD; // wells, bars, the stamina bar's outline, the pads
 const AB_BG = '#16181c';
 // ---- the hud frame: the one plate the bottom widgets stand on ----------
@@ -188,8 +193,13 @@ function abCellRect(i) {
 }
 // item slot i's well (0..ITEM_SLOTS-1): the grid after the abilities, top row
 // first; the rows share the plate's full inner height
+// trick i's well (0..TRICK_N-1): the column after the abilities, top first
+function trickCellRect(i) {
+  const R = hudStripRect();
+  return { x: R.x + PORT_SQ + PORT_GAP + AB_ROW_W + ITEM_X_GAP, y: R.y + AB_PAD + i * (ITEM_CELL + ITEM_GAP + 1), w: ITEM_CELL, h: ITEM_CELL };
+}
 function itemCellRect(i) {
-  const R = hudStripRect(), x0 = R.x + PORT_SQ + PORT_GAP + AB_ROW_W + ITEM_X_GAP;
+  const R = hudStripRect(), x0 = R.x + PORT_SQ + PORT_GAP + AB_ROW_W + ITEM_X_GAP + TRICK_COL;
   return {
     x: x0 + (i % ITEM_COLS) * (ITEM_CELL + ITEM_GAP),
     y: R.y + AB_PAD + ((i / ITEM_COLS) | 0) * (ITEM_CELL + ITEM_GAP + 1),
@@ -206,7 +216,7 @@ function hpBarRect() { const r = abCellRect(0); return { x: r.x + 1, y: r.y + BA
 function stBarRect() { const r = abCellRect(0); return { x: r.x + 1, y: r.y + ST_TOP + 1, w: AB_ROW_W - 2, h: ST_H }; }
 // the purse: a readout well after the items, the plate's full inner height
 function goldCellRect() {
-  const R = hudStripRect(), x0 = R.x + PORT_SQ + PORT_GAP + AB_ROW_W + ITEM_X_GAP + ITEM_GRID_W + PURSE_GAP;
+  const R = hudStripRect(), x0 = R.x + PORT_SQ + PORT_GAP + AB_ROW_W + ITEM_X_GAP + TRICK_COL + ITEM_GRID_W + PURSE_GAP;
   return { x: x0, y: R.y + AB_PAD, w: PURSE_W, h: 2 * ITEM_CELL + ITEM_GAP + 1 };
 }
 // The item wells' share of the refusal: a slot's key or click that could not
@@ -229,6 +239,14 @@ function itemDenied(i) {
 // refuse in. tryAbility is the one caller, so key and click speak alike; a
 // cooldown is NOT this refusal - the wipe already says when it comes home.
 let abFlash = 0, abFlashI = 0;
+// ...and a trick well's: on cooldown, stunned, or nobody in reach (tryTrick)
+let trickFlash = 0, trickFlashI = 0;
+function trickDenied(i) {
+  if (trickFlash > 0 && trickFlashI === i) return;
+  trickFlash = 0.6;
+  trickFlashI = i;
+  SFX.deny();
+}
 function abDenied(i) {
   if (abFlash > 0 && abFlashI === i) return;
   abFlash = 0.6;
@@ -282,6 +300,10 @@ function stripHit(mx, my) {
     const s = itemCellRect(i);
     if (mx >= s.x && mx < s.x + s.w && my >= s.y && my < s.y + s.h) return { kind: 'item', i };
   }
+  for (let i = 0; i < TRICK_N; i++) {
+    const s = trickCellRect(i);
+    if (mx >= s.x && mx < s.x + s.w && my >= s.y && my < s.y + s.h) return { kind: 'trick', i };
+  }
   const pr = portraitRect();
   if (mx >= pr.x && mx < pr.x + pr.w && my >= pr.y && my < pr.y + pr.h) return { kind: 'port' };
   return { kind: 'frame' };
@@ -303,6 +325,7 @@ function hudPress(mx, my) {
   if (sh) {
     if (sh.kind === 'ab') { if (msOn()) msWell(sh.i); else player.input.ability = sh.i; } // click-to-cast: the well IS the key (under MOUSE it readies - msWell)
     else if (sh.kind === 'item' && player.items[sh.i] === 'potion') player.input.useItem = sh.i; // the well IS the key, refusals and all (useItem)
+    else if (sh.kind === 'trick') player.input.trick = sh.i; // ...and a trick's (tryTrick, js/sim/loadout.js)
     return true;
   }
   return false;

@@ -83,6 +83,7 @@
       stats: blankStats(),
       hero: 0,         // the hero last locked in (a CLASSES index): where the pick opens next time
       pos: -1,         // the position this profile asks for in the draft (a POSITIONS index, js/sim/player.js), -1 any
+      loadouts: {},    // hero name -> its pre-game picks as "trick,trick,calling" (js/sim/loadout.js); a hero never picked has none
       dropped: false,  // has this profile ever jumped off the eagle - gates the first-flight countdown
       bestLap: 0,      // the ice parkour's all-time best lap in seconds (0 = never lapped)
       bestRange: 0,    // the archery range's all-time best round score (0 = never played)
@@ -189,6 +190,9 @@
         profile.named = typeof s.named === 'boolean' ? s.named : NAME_POOL.indexOf(profile.name) < 0;
         if (typeof hero === 'number' && isFinite(hero) && hero >= 0 && hero < HERO_N) profile.hero = Math.floor(hero);
         if (typeof s.pos === 'number' && s.pos >= 0 && s.pos < POS_N) profile.pos = Math.floor(s.pos);
+        if (s.loadouts && typeof s.loadouts === 'object') {
+          for (const k in s.loadouts) if (/^[A-Z]+$/.test(k) && typeof s.loadouts[k] === 'string' && /^[a-z,]{0,60}$/.test(s.loadouts[k])) profile.loadouts[k] = s.loadouts[k];
+        }
         if (s.settings && typeof s.settings === 'object') profile.settings = s.settings;
         // a profile from before the purse arrives without it and keeps the
         // START_COINS blank() gave it, like a fresh one
@@ -252,6 +256,21 @@
     },
 
     // the position the draft seats this profile in first (draftSeatRoles, js/ui/draft.js), -1 any
+    // the picks last made for a hero, by its name ({ tricks, calling }, ids
+    // only; loadoutClean makes them whole), or null for a hero never picked
+    loadout(hero) {
+      const s = profile.loadouts[hero];
+      if (typeof s !== 'string') return null;
+      const a = s.split(',');
+      return { tricks: [a[0], a[1]], calling: a[2] };
+    },
+    setLoadout(hero, lo) {
+      if (typeof hero !== 'string' || !/^[A-Z]+$/.test(hero) || !lo || !Array.isArray(lo.tricks)) return;
+      const s = [lo.tricks[0], lo.tricks[1], lo.calling].map((x) => String(x || '')).join(',');
+      if (!/^[a-z,]*$/.test(s) || s.length > 60 || profile.loadouts[hero] === s) return;
+      profile.loadouts[hero] = s;
+      saveNow();
+    },
     pos() { return profile.pos; },
     setPos(i) {
       i = i >= 0 && i < POS_N ? i | 0 : -1;

@@ -73,7 +73,7 @@ function keyLabel(k) {
 // settings.bindsClick), so a rebind on one never moves the other, and
 // binds() is whichever is live. CLICK's defaults are the genre's: QWER the
 // abilities (R the big one), A the attack-move, S the stop, 1-6 the item
-// slots, G the ping wheel, C the sheet. (D and F stand free.)
+// slots, G the ping wheel, C the sheet. D and F the two tricks.
 //
 // THE THIRD SCHEME, MOUSE (the `mouse only` banner below), is CLICK for one
 // hand: the same actions and the same keys (`ms` is only where it differs
@@ -95,6 +95,9 @@ const KEY_ACTIONS = [
   { id: 'item3', verb: 'ITEM 3', key: '7', ck: '3' }, { id: 'item4', verb: 'ITEM 4', key: '8', ck: '4' },
   { id: 'item5', verb: 'ITEM 5', key: '9', ck: '5' }, { id: 'item6', verb: 'ITEM 6', key: '0', ck: '6' },
   { id: 'recall', verb: 'RECALL', key: 'h', ck: 'h' },
+  // the loadout's two tricks (tryTrick, js/sim/loadout.js): League's D and F
+  // under CLICK and MOUSE; on WASD, where D walks, Q and F beside the hand
+  { id: 'trick1', verb: 'TRICK 1', key: 'q', ck: 'd' }, { id: 'trick2', verb: 'TRICK 2', key: 'f', ck: 'f' },
   // held, an ability's hover card opens every rank's numbers (tipFull,
   // js/ui/tooltip.js). Its own key, never the slide's Shift: holding it to
   // read a card must not move the hero
@@ -107,6 +110,7 @@ const KEY_ACTIONS = [
 const KEY_ACT = {};
 for (const a of KEY_ACTIONS) KEY_ACT[a.id] = a;
 const ITEM_KEYS = ['item1', 'item2', 'item3', 'item4', 'item5', 'item6']; // slot i's key is ITEM_KEYS[i]
+const TRICK_KEYS = ['trick1', 'trick2']; // trick i's key is TRICK_KEYS[i]
 const SCHEMES = ['wasd', 'click', 'mouse'];
 function schemeKey(a, scheme) { // the action's default on a scheme, or undefined
   const s = scheme || settings.scheme;
@@ -283,6 +287,9 @@ function keyPress(e) {
   // an item slot's key uses what is in it (js/sim/items.js)
   const it = e.repeat ? -1 : ITEM_KEYS.findIndex((a) => keyIs(e, a));
   if (it >= 0) player.input.useItem = it;
+  // ...and a trick's key its trick (js/sim/loadout.js)
+  const tk = e.repeat ? -1 : TRICK_KEYS.findIndex((a) => keyIs(e, a));
+  if (tk >= 0) player.input.trick = tk;
   // the walk home (js/sim/recall.js): a CLICK order would walk out of it, so the press drops the order
   if (keyIs(e, 'recall') && !e.repeat) { player.input.cmd = { kind: 'recall' }; if (ckOn()) ckClear(); }
   // The work key at a practice prop (the parkour die, the range bell): the
@@ -945,6 +952,7 @@ function sampleHumanInput(p, dt) {
     inp.fire = inp.work = false;
     inp.useItem = -1;
     inp.ability = -1;
+    inp.trick = -1;
     inp.cmd = null;
     if (p.charging) { p.charging = false; p.chargeT = 0; }
     p.firePrev = false;
@@ -959,6 +967,7 @@ function sampleHumanInput(p, dt) {
     inp.dodge = false;
     inp.useItem = -1;
     inp.ability = -1;
+    inp.trick = -1;
     inp.cmd = null;
     if (p.charging) { p.charging = false; p.chargeT = 0; }
     p.firePrev = false;
