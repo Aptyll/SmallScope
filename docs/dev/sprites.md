@@ -88,7 +88,7 @@ more: the frames live on as the CATCH emote's (`EMOTES`, js/ui/screens.js). The 
 **The run, the held run and the dodge roll are the one set of player frames not typed by hand.**
 [app/bake-player/](../../app/bake-player/) paints them off a jointed doll of each class body (and of
 each named hero's looks: ARMATOS's `standard` and `oath`, FORTIVA's `unbroken` and `coif`, BELLA's `general` and `traitor`,
-IGNIA's `hearth` and `wanderer`, AURA's `light`, SALVIA's `hood` and `tent`, LUCERNA's `lamp` and `dusk`, HIEMS's `scholar` and `frost`, FABER's `clockmaker` and `foreman`, NIX's `snowblind`, FALCO's `falconer`, RUPES's `quarry` and `cellar`, VARRO's `wolfkept` and `whitepack`, VELOX's `canal` and `night`, BUCINA's `horn` and `column`, [hero looks](#hero-looks)) and
+IGNIA's `hearth` and `wanderer`, AURA's `light`, SALVIA's `hood` and `tent`, LUCERNA's `lamp` and `dusk`, HIEMS's `scholar` and `frost`, FABER's `clockmaker` and `foreman`, NIX's `snowblind`, FALCO's `falconer`, RUPES's `quarry` and `cellar`, VARRO's `wolfkept` and `whitepack`, VELOX's `canal` and `night`, BUCINA's `horn` and `column`, MARIS's `diver` and `orca`, [hero looks](#hero-looks)) and
 writes them to js/baked/motion.js as char grids in characters.js's own letters, so `motionSet`
 bakes them through the same team and look palettes as every hand-drawn pose: `run[dir]`,
 `hold[dir]` and `roll[dir]` sit beside the walking directions, `left` the mirror of `right`.
@@ -256,6 +256,17 @@ app/bake-player/bodies.py) are used only for the roll. `RUPES_PAL` is `ARM_PAL` 
 `t`/`T`, beard `w`/`W`, leather `m`/`M` and scarf `i`/`I`. His ICE MAUL is a `HERO_BLADES` row
 (`blade: 'maul'`, js/draw/rupes.js). While he rolls (AVALANCHE) a `HERO_BODY_DRAW` row draws the
 snowball in his place (js/draw/heroes.js); his 48 px model is the warrior's in his look's paint.
+
+MARIS has two looks (`MARIS_SKINS`, js/sprites/maris.js): BARGE DIVER (free; a close sealskin hood,
+the brass-rimmed diving glass pushed up on the brow, a coil of line across the side's coat, a
+leather belt) and ORCA SKIN (200 coins; a black sealskin hood with the orca's white patches on the
+crown and a small fin, the side's colour a tabard over black), A and B off heroes-maris/round1 in
+the project files. Both are drawn on ARMATOS's frame and run as their drawn bodies
+(`run: 'drawn'`); their dolls (`Diver`, `Orca` in app/bake-player/bodies.py) are used only for the
+roll. `MARIS_PAL` is `ARM_PAL` with the sealskin `q`/`Q`, brass `y`/`Y`, glass `I`, line `c` and
+leather `a`. Her HARPOON is a `HERO_BLADES` row (`blade: 'harpoon'`, js/draw/maris.js). Swimming,
+the water is drawn over her legs (`HERO_BODY_FX`); under the snow (BREACH) a `HERO_BODY_DRAW` row
+draws the heaving snow in her place.
 
 LUCERNA has two looks (`LUCERNA_SKINS`, js/sprites/lucerna.js): LAMPLIGHTER (free: a flat cap over
 dark hair, a warm brown greatcoat open on the side's waistcoat, brass buttons) and DUSK ROAD (rare,

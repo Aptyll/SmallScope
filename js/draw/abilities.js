@@ -372,6 +372,7 @@ const AB32_PAL = {
   H: '#d9ad72', h: '#8a6d50', n: '#5c4a38',
   E: '#cfd8e8', e: '#8b93a8',
   v: '#4f8a46', V: '#9cc87a', // SALVIA's sage (js/sprites/salvia.js)
+  q: '#2c5478', Q: '#5f9cc8', // MARIS's water (js/sprites/maris.js)
 };
 const AB32 = [
   [ // HUNTER

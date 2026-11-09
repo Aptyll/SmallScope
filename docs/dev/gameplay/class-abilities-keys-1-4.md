@@ -67,7 +67,7 @@ the held one lit gold
 js/ai/ai.js, first thing `aiThink` asks): the ultimate whenever it can rank, then each basic key
 unlocked once, then the basics maxed in the hero's `rankOrder` (its `CLASSES` row: HUNTER
 shot, net, grapple; WARRIOR stomp, rush, shield; ARMATOS verdict, march, brace; FORTIVA sever,
-yoke, heart; AURA star, orb, step; SALVIA poultice, cloak, snowdrops; LUCERNA crook, shoo, lantern; RUPES heave, shed, shoulder; NIX shard, drift step, cloud; FALCO knife fan, talons, glide; VARRO lunge, snap, howl; BUCINA note, blast, echo; VELOX skip stone, quick step, ice lane). The cd column in the tables below is every rank's; the numbers in the text are rank
+yoke, heart; AURA star, orb, step; SALVIA poultice, cloak, snowdrops; LUCERNA crook, shoo, lantern; RUPES heave, shed, shoulder; NIX shard, drift step, cloud; FALCO knife fan, talons, glide; VARRO lunge, snap, howl; BUCINA note, blast, echo; MARIS harpoon, undertow, brace; VELOX skip stone, quick step, ice lane). The cd column in the tables below is every rank's; the numbers in the text are rank
 1's, and each row's `rank` table has the rest.
 
 **Every ability lands on every kind of body.** A player, a rabbit, a deer, a bird, a wolf and a
@@ -267,6 +267,21 @@ breaks one is paid its `pay`. What else he leaves in the world (`faberParts`, `f
 | 2 | **WIND A MACHINE** | 14/13/12/11/10 s | a small gun set at the aim (at most `WINDER_PLACE`), `WINDER_HP` + `WINDER_HP_LV` a level, running `WINDER_LIFE`: every `WINDER_CD` it shoots the nearest rival within `WINDER_RANGE` (`robotFoeUnit`) with a bolt that follows its mark for `dmg` (9/12/15/18/21). Two at once; a third winds down the oldest. A rival who breaks one gets 20 gold |
 | 3 | **CLOCKSPRING** | 16/15/14/13/12 s | a trap at the aim (at most `SPRING_RANGE`), wound after `SPRING_ARM`, waiting `SPRING_LIFE`: the first rival hero within `SPRING_R` is rooted `root` (1/1.15/1.3/1.45/1.6 s) and takes `dmg` (20). Soldiers and beasts walk over it. Three at once; a rival sees one only where their side sees |
 | 4 | **THE OLD ENGINE** | 110/95/80 s | a big machine wound up at his side for `ENGINE_LIFE`, `ENGINE_HP` + `ENGINE_HP_LV` a level: it walks (`navStep`) to his aim, no further than `ENGINE_LEASH` from him, and every `ENGINE_SLAM_EVERY` (the first after `ENGINE_SLAM_FIRST`) with a rival within `ENGINE_SLAM_R` it slams: each is stunned `stun` (0.75 s) and takes `dmg` (50/85/120); buildings take it too. While it runs his small guns shoot `ENGINE_HASTE` (twice) as fast. A rival who breaks it gets 50 gold |
+
+MARIS, THE ICE DIVER — the catch tank. Her rules live in
+**[js/sim/maris.js](../../../js/sim/maris.js)** (`MARIS_AB`, its `maris` banner), her pixels in
+[js/draw/maris.js](../../../js/draw/maris.js), her icons, looks and harpoon in
+[js/sprites/maris.js](../../../js/sprites/maris.js). 126 hp and 22 armor, a step slower than the
+hunter; her HARPOON's basic thrust reaches a little further and narrower than the longsword
+(`reach` 28, `half` 0.8). She is strong by water and weak far from it:
+
+| key | name | cd | what it does |
+| --- | --- | --- | --- |
+| P | **COLD WATER** | — | on ice (`iceUnder`, a rival HIEMS's glaze too) or within `COLD_NEAR` tile of open water she is cold (`p.coldT`, held `COLD_KEEP` s after she leaves, `coldTick`): she walks ×`COLD_WALK` (`HERO_MOVE`) and each basic strike slows ×`COLD_SLOW` for `COLD_SLOW_T` (`coldDeal`). Open water never takes her: she swims the creek and a broken hole (`HERO_SWIM`, read by `playerPlunge`). `HERO_PASSIVE.coldwater` |
+| 1 | **HARPOON** | 12/11.5/11/10.5/10 s | a harpoon down the aim (a shot, `look: 'harpoon'`, `HARPOON_RANGE` 230 px) on a line: the first rival body takes `dmg` (30/45/60/75/90), is rooted `root` (0.6 s) and she is reeled to it (`harpoonCatch`, `p.dash = 'reel'` at `REEL_SPD`, stopping `REEL_STOP` short) |
+| 2 | **BRACE FOR COLD** | 16/15/14/13/12 s | for `BRACE_T` every hit she takes is cut by `ward` (15/18/21/24/27%) plus `BRACE_PER` for each rival hero within `BRACE_NEAR`, at most `BRACE_CAP` (`braceTaken`, a `HERO_TAKEN` row) |
+| 3 | **UNDERTOW** | 11/10.5/10/9.5/9 s | a ring `UNDERTOW_R` round her: every rival body and building in it takes `dmg` (20/32/44/56/68), is drawn in a little and slowed for `UNDERTOW_T`: ×`slow` (0.7), ×`ice` (0.45) for one standing on ice |
+| 4 | **BREACH** | 110/95/80 s | she dives under the snow to the aim (at most `BREACH_RANGE`, `p.dash = 'breach'` at `BREACH_SPD`), untouchable (`invuln`) and drawn as the snow heaving over her (`HERO_BODY_DRAW`); a wall brings her up early. Up (`breachUp`): every rival body and building in `BREACH_R` takes `dmg` (60/100/140) and is knocked up `up` (0.8/1/1.2 s); on bare ice it breaks in the orca's `breach` shape (`iceBreak`, open `BREACH_HOLD`), and whoever stands on it goes in. She swims |
 
 LUCERNA, THE LANTERN — the catch-and-save support. Her rules live in
 **[js/sim/lucerna.js](../../../js/sim/lucerna.js)** (`LUCERNA_AB`, its `lucerna` banner), her pixels in
