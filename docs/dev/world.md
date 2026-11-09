@@ -39,7 +39,7 @@ stable per tile.
   instead of ending in a cut. Neither test rolls anything, so a seed's rng stream is what it was.
 - `objects` — flat `Array(WORLD*WORLD)`, **at most one object per tile**. Every object is
   `{ type, tx, ty, hp, flash, shake, ...extra }`. The `OBJECTS` table's types: `tree`,
-  `deadTree`, `rock` (genWorld's placeholder, [lifted at boot](#rocks)), `bush`, `den`, `dummy`, `banner`, `cairn`, `log`,
+  `rock` (genWorld's placeholder, [lifted at boot](#rocks)), `bush`, `den`, `dummy`, `banner`, `log`,
   `pylon`, `pkdie`, `agbell`, `stump`, `eagle`, `hut`, `part`, and the
   [story landmarks](#story-landmarks)' `boat` (added from `LANDMARKS`); the `STRUCTS` table's: `generator`,
   `barracks`, `tower`. `banner`/`log` are
@@ -53,9 +53,7 @@ stable per tile.
   the front row, drawing the whole building). `part` is the filler a multi-tile building (or a prop
   with a `w`/`h` in `OBJECTS`, the den and the hut) leaves on every footprint tile but its anchor (`{ type: 'part', of: <building> }`): solid, coloured like its
   building on both maps, ignored by work swings, and resolved by `structOf()` for every "what building
-  is here" read (right-click, cursor, wheel, orders). `deadTree` (a 3 hp snag, chopped like a
-  tree for `YIELD.deadTreeHit`/`deadTreeFall`, leaves a stump) and `cairn` stand nowhere since the
-  bears moved to the river (4.82): no camp stamps them, and their types and art are kept unused.
+  is here" read (right-click, cursor, wheel, orders).
 - Index with `idx(tx, ty)`, read safely with `objAt`, create with `placeObj`. A tile written or
   deleted during a match goes through `setTile(i, o)` (null deletes), which marks it for the host's
   wire (`snapTouch`, [the ack-keyed base](../pvp-architecture.md#the-wire-form)); a bare
@@ -274,7 +272,7 @@ in wildlife or the AI reads `state.darkness`. What keys off the cycle:
   into a mirror on it with the **reflected stars** coming up inside that
   ([the reflected sky](rendering/light-and-weather.md#the-reflected-sky)) - so a frozen lake reads darker than the
   snow around it after dusk, and an ice hole is a hole in the reflection.
-- Ice holes refreeze at dawn. The shoal is not topped up at dawn; it refills continuously. See
+- The shoal is not topped up at dawn; it refills continuously. See
   [Ice holes and the lake fish](#ice-holes-and-the-lake-fish).
 
 `state.day` drives no difficulty. What damages a player: another player's arrows, a
@@ -285,9 +283,7 @@ plunge through the ice (see [PvP](multiplayer.md#pvp)), and the wolves of a
 
 **Holes are open water in the ice** (`ground = 2`), opened by an [ice break](#ice-breaks), which
 freezes each tile back on its own clock (`breakClose`, js/sim/icebreak.js). Nothing a player
-carries opens one: the pick and its `crackIce` were cut in 0.531. The `holes` list (open tiles that
-outlive their break) has had no writer since the fish net went; the dawn refreeze still empties
-it, so an old save's holes close. Constants live in the `fish` banner of
+carries opens one, and no hole outlives its break. Constants live in the `fish` banner of
 [js/sim/wildlife.js](../../js/sim/wildlife.js) (`HOLE_FALL_DMG`, `HOLE_FALL_T`,
 `FISH_MAX`/`FISH_MIN`; `FISH_SPAWN_T` alone stays in core.js).
 
@@ -303,7 +299,6 @@ it, so an old save's holes close. Constants live in the `fish` banner of
 - **Everyone else avoids water**: `moveEntity` treats hole tiles as solid for every entity
   except the player, so animals and robots never wade in, and `walkable()` refuses
   `ground === 2`, so no bot ever routes over one; arrows still fly over holes.
-- **Refreeze**: at dawn every listed hole reverts to ice (`repaintGround` again).
 - **Fish**: the `fish` array holds up to `FISH_MAX` (30) passive swimmers, that many spawned at
   boot (`spawnFish()`, after `spawnAnimals()`) on **interior** ice only (tile centers passing
   `fishClear` with a 14 px margin, ~a tile off the shore). `updateFish()` wanders them with a

@@ -865,7 +865,6 @@ const particles = []; // {x,y,vx,vy,life,color,size,grav} + optional `alpha` fad
 const floaters = [];
 const footprints = [];
 const fish = []; // swimmers under the ice: {x,y,a,spd,t,turnT,spook}
-const holes = []; // tile idx of open water holes; they refreeze each dawn
 const camps = []; // the jungle camps, stood up at fixed sites by worldgen (see the camps banner, js/sim/camps.js)
 
 // ------------------------------------------------------------ damage & death

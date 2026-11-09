@@ -350,7 +350,7 @@ function rollSweep(p) {
   const dmg = rollDmg(p, sp), stun = rollLerp(ROLL_STUN, rollPow(p, sp));
 
   for (const a of animals) {
-    if (!unitFoe(p, a) || a.kind === 'bird' || p.rollHit.includes(a)) continue; // a deer your side rides is rolled under
+    if (!unitFoe(p, a) || p.rollHit.includes(a)) continue; // a deer your side rides is rolled under
     if (Math.hypot(a.x - p.x, a.y - p.y) > ROLL_HIT_R + unitRadius(a)) continue;
     p.rollHit.push(a);
     hurtUnit(a, dmg, nx, ny, p, { kb: ROLL_KB, ab: 'roll' });
@@ -455,29 +455,27 @@ function nearestDryTile(x, y, p, r0 = 1) {
   return (p || player).spawn;
 }
 
-// ONE chop into a standing tree, live or dead: the gold for the bite, the
+// ONE chop into a standing tree: the gold for the bite, the
 // stump and the fell payout (a gold pine's on top), landed by an E swing
 // through hitObject.
 function chopTree(o, p) {
   const ox = o.tx * TILE + 8, oy = o.ty * TILE + 8;
-  const dead = o.type === 'deadTree'; // the rookery's cover: quicker, same gold
   joltObj(o, 0.1, 0.22);
   o.hp--;
   sfxAt('chop', ox, oy);
-  awardGold(p, dead ? YIELD.deadTreeHit : YIELD.treeHit, ox, oy);
-  burst(ox, oy - 10, '#eef4fb', dead ? 5 : 6, 40, 0.5, true);
-  burst(ox, oy - 12, dead ? '#6b5a48' : '#3f7a5c', 3, 30, 0.4, true);
+  awardGold(p, YIELD.treeHit, ox, oy);
+  burst(ox, oy - 10, '#eef4fb', 6, 40, 0.5, true);
+  burst(ox, oy - 12, '#3f7a5c', 3, 30, 0.4, true);
   if (o.hp > 0) { shedHit(o); return; } // the blow shakes the crown (js/sim/shed.js); a fell has its own snow
   setTile(idx(o.tx, o.ty), { type: 'stump', tx: o.tx, ty: o.ty, flash: 0, shake: 0 });
   sfxAt('treeFall', ox, oy);
-  shakeFor(p, dead ? 2 : 2.5);
+  shakeFor(p, 2.5);
   // the fell's one payout, a gold pine's included; FORAGER fattens it
-  const gold = !dead && o.rare;
-  awardGold(p, Math.round(((dead ? YIELD.deadTreeFall : YIELD.treeFall) + (gold ? YIELD.treeRare : 0)) * kitOf(p).harvestMul), ox, oy - 6);
-  burst(ox, oy - 8, '#eef4fb', dead ? 12 : 14, 55, 0.7, true);
-  burst(ox, oy - 8, dead ? '#6b5a48' : '#2f5c4b', dead ? 6 : 8, 45, 0.6, true);
+  const gold = o.rare;
+  awardGold(p, Math.round((YIELD.treeFall + (gold ? YIELD.treeRare : 0)) * kitOf(p).harvestMul), ox, oy - 6);
+  burst(ox, oy - 8, '#eef4fb', 14, 55, 0.7, true);
+  burst(ox, oy - 8, '#2f5c4b', 8, 45, 0.6, true);
   if (gold) burst(ox, oy - 8, '#f2cc6a', 10, 50, 0.6, true);
-  if (dead) flushBirds(campAt(ox, oy), { x: ox, y: oy }); // felling a perch scatters the flock in it (dormant: see the birds banner, wildlife.js)
 }
 
 function hitObject(o, p) {
@@ -492,7 +490,7 @@ function hitObject(o, p) {
     return;
   }
   joltObj(o, 0.1, 0.22);
-  if (o.type === 'tree' || o.type === 'deadTree') {
+  if (o.type === 'tree') {
     chopTree(o, p);
   } else if (o.type === 'eagle') {
     // the roost: a rival's E swing is the melee siege on the objective. The
@@ -678,7 +676,7 @@ function unitFoe(src, e) {
 function unitsNear(src, x, y, r) {
   const out = [];
   for (const q of players) if (unitFoe(src, q) && Math.hypot(q.x - x, q.y - y) <= r) out.push(q);
-  for (const a of animals) if (unitFoe(src, a) && Math.hypot(a.x - x, a.y - (a.alt || 0) - y) <= r) out.push(a);
+  for (const a of animals) if (unitFoe(src, a) && Math.hypot(a.x - x, a.y - y) <= r) out.push(a);
   for (const b of robots) if (unitFoe(src, b) && Math.hypot(b.x - x, b.y - y) <= r) out.push(b);
   return out;
 }
@@ -700,9 +698,9 @@ function unitUnder(src, wx, wy) {
   for (const b of robots) if (unitAlive(b) && b.team !== src.team && Math.abs(wx - b.x) <= 7 && wy >= b.y - 7 && wy <= b.y + 4) return b;
   for (const a of animals) {
     if (!unitFoe(src, a)) continue; // a deer your own side rides is no mark
-    const hw = a.kind === 'rabbit' ? 7 : a.kind === 'bird' ? 5 : isBigBeast(a) ? 34 : a.kind === 'wolf' ? 9 : 16;
-    const h = a.kind === 'rabbit' ? 11 : a.kind === 'bird' ? 7 : isBigBeast(a) ? 48 : a.kind === 'wolf' ? 14 : 34;
-    const by = a.y + 4 - (a.alt || 0); // birds ride their alt
+    const hw = a.kind === 'rabbit' ? 7 : isBigBeast(a) ? 34 : a.kind === 'wolf' ? 9 : 16;
+    const h = a.kind === 'rabbit' ? 11 : isBigBeast(a) ? 48 : a.kind === 'wolf' ? 14 : 34;
+    const by = a.y + 4;
     if (Math.abs(wx - a.x) <= hw && wy >= by - h && wy <= by) return a;
   }
   return null;

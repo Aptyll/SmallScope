@@ -471,7 +471,7 @@ function abGrapple(p) {
       const tx = ctx2 + ox, ty = cty + oy;
       if (!inWorld(tx, ty)) continue;
       const o = objects[idx(tx, ty)];
-      if (!o || (o.type !== 'tree' && o.type !== 'deadTree')) continue;
+      if (!o || o.type !== 'tree') continue;
       const cx2 = tx * TILE + 8, cy2 = ty * TILE + 8;
       // the assist: perpendicular distance of the trunk to the aim ray
       const along = (cx2 - p.x) * nx + (cy2 - p.y) * ny;

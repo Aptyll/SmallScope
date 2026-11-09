@@ -274,7 +274,7 @@ function abilityPose(p) {
 // and a player wear the same four tells at their own size - a state you
 // cannot see is a rule you cannot play around, and that is as true of a deer
 // as of a rival. Called by drawAbilityOnPlayer below and by drawAnimal /
-// drawBird / drawRobot (js/draw-world.js).
+// drawRobot (js/draw/bodies.js).
 function drawUnitStates(e, px, py, w, h, now) {
   if (e.netT > 0) {
     ctx.globalAlpha = Math.min(1, e.netT / 0.4);

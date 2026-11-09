@@ -26,7 +26,7 @@ const BOT_ERR_MAX = 8;      // errors kept per seat for the ladder page
 const BOT_LATE_MAX = 10;    // thinks in a row a bot may miss (1 s) before its seat lets go of every key
 const BOT_CMDS = new Set(['ability', 'ping', 'shop', 'recall']);
 const BOT_NODES_N = 64;     // workable tiles an observation lists, nearest first
-const BOT_NODES = new Set(['tree', 'deadTree', 'bush']);
+const BOT_NODES = new Set(['tree', 'bush']);
 const BOT_CALLS = new Set(['bird', 'help', 'low', 'push', 'here']); // CALLS' kinds a bot may say
 const BOT_CALL_LOW = new Set(['HUNTER', 'WARRIOR', 'ARMATOS', 'FORTIVA', 'BELLA', 'IGNIA', 'AURA', 'SALVIA', 'LUCERNA', 'HIEMS', 'RUPES', 'VARRO', 'BEAR']);       // what a 'low' call may name
 

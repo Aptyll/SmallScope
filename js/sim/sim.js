@@ -94,12 +94,6 @@ function update(dt) {
       // match: its dawns count nothing, like the rest of its stats.
       if (!player.eliminated && !PRACTICE) PROFILE.addDay();
       SFX.dawnChime();
-      // open ice holes freeze back over during the night
-      for (const i of holes) {
-        ground[i] = 1;
-        repaintGround(i % WORLD, (i / WORLD) | 0);
-      }
-      holes.length = 0;
       // the shoal is not reset here: it is a live population, refilled a fish
       // at a time by updateFish's trickle
     }

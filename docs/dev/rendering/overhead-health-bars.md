@@ -5,7 +5,7 @@ now)`** ([js/sim/abilities.js](../../../js/sim/abilities.js)) paints the net dra
 the fire and the mark's gold chevrons over whatever sprite is wearing them, taking the sprite's own box so
 a rabbit, a soldier and a player get the same four tells at their own size. `drawPlayer`
 reaches it through `drawAbilityOnPlayer` (which adds the one a player alone can show — a raised
-shield); `drawAnimal`, `drawBird` and `drawRobot` call it directly. **The
+shield); `drawAnimal` and `drawRobot` call it directly. **The
 fire never washes over the body** — tongues off the crown and a lit row under the feet — because a
 burning rival still has to read as the rival it is; the embers themselves are particles, thrown by
 `updateBurn` rather than drawn here. What each state *does* is
@@ -43,9 +43,7 @@ where the stun stars turn, an animal that has a player in sight wears the **noti
 rising out of the head over its first tenth of a second and gone the frame the sight is
 ([gameplay.md](../gameplay/wildlife.md)); the stars win while a stun runs. How full a bar is carries the
 health — never its colour: a bar that drained toward red would spend the rival's colour on
-"hurt", and a hurt ally would read as an enemy at a glance. **Birds are the one exception** — 3 hp means every hit is a kill, and
-a bar over something that small is all bar; `drawBird` draws the sprite lifted off its own shadow
-by `a.alt` instead, which is the only read on how high one is.
+"hurt", and a hurt ally would read as an enemy at a glance.
 The overhead bar is the **only** player health display (the heart sprites in
 js/sprites/icons.js are baked but unreferenced). Above it sits one
 more small meter — **the slot the hands report to**, and it carries three states that can never

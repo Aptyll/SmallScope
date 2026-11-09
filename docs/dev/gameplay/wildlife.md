@@ -103,7 +103,6 @@ a wander is the same gallop run slower, not a second animation; and `clipFrame`
 | `deer` | `graze` head down in the snow, `idle` head up and turning, `run` the gallop | `updatePrey` |
 | `wolf` | `idle`, `run` | `updateCampMonster` |
 | `alpha` / `dire` (the bears) | `idle`, `walk`, `run`, `bite`, `paw`, `roar`, `fish` | `updateCampMonster` |
-| `bird` | `idle` perched, `fly` | `updateBird` |
 
 **The head is the tell.** Standing still and settled, a deer's head is DOWN in the snow and a
 rabbit is low over its paws; standing still and *wary*, the deer's head is up and turning and
@@ -126,7 +125,7 @@ before the beat is.
 
 `updateAnimal()` is the shared shell: it ages the flash and knockback, runs
 `updateUnitStatus` (the shared clock — root, slow, net, mark, fire), dispatches to
-`updatePrey` / `updateCampMonster` / `updateBird`, clamps to the world, and calls `animalDies(a)` — the
+`updatePrey` / `updateCampMonster`, clamps to the world, and calls `animalDies(a)` — the
 one place a kill pays out, straight from the `YIELD` table. Everything in `animals` is a target
 for arrows (the disc `animalHitR` about `animalHitY`: the arrow update sweeps it, the aim line asks
 `animalHit`), gets the amber
@@ -301,17 +300,6 @@ helpers must not drop out when one of them walks in and takes it off you. A bot 
 the hunt rung like any other animal, and never a bear (`teamPay`), which a
 lone bot would die to. No bot walks *to* a camp deliberately yet — see
 [checklists.md](../checklists.md#known-drift).
-
-## Birds: the flock (dormant)
-
-The bird kind — `updateBird()`, `flushBirds(L, from)`, `rookeryPerch(L)`, `drawBird`, the
-`BIRD_*` constants, `YIELD.bird` — is intact but **nothing spawns one**
-([Intentional dead code](../checklists.md#intentional-dead-code)). What the code does if one exists: a flock perched in a
-stand's snags is put up all at once by any player inside `BIRD_FLUSH` (34 px), an arrow, or a snag
-being chopped, flies at `BIRD_SPD` (112 px/s) and returns to a perch; `a.alt` (`BIRD_ALT` 15
-perched) is the only height in the game, subtracted by `animalHitY` and the cursor, skipped by
-`separateUnits`. A camp that wants a flock stands one up with
-`props` of `deadTree` and a spawn that perches birds on them (`rookeryPerch`).
 
 ## The orca
 
