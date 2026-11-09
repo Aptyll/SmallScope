@@ -86,7 +86,6 @@ function barracksQueue(o) {
   o.queue = o.kinds.length;
   return k.length;
 }
-}
 
 // The one place a building object is made (the merchant's barracks, the road
 // towers and DBG.buildStruct): the anchor object, its footprint fillers, the
