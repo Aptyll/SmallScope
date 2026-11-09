@@ -1,6 +1,6 @@
 # The two class bodies on the doll (doll.py): the HUNTER (pom beanie) and the WARRIOR
 # (fur hood with goggles, a trailing scarf, skate blades), and each named hero's looks
-# (ARMATOS: standard, oath; FORTIVA: unbroken, coif; BELLA: general, traitor; IGNIA: hearth, wanderer; AURA: light; SALVIA: hood, tent; LUCERNA: lamp, dusk; HIEMS: scholar, frost; RUPES: quarry, cellar; VARRO: wolfkept, whitepack). Their sizes are measured off the
+# (ARMATOS: standard, oath; FORTIVA: unbroken, coif; BELLA: general, traitor; IGNIA: hearth, wanderer; AURA: light; SALVIA: hood, tent; LUCERNA: lamp, dusk; HIEMS: scholar, frost; RUPES: quarry, cellar; NIX: snowblind; VARRO: wolfkept, whitepack). Their sizes are measured off the
 # hand-drawn 16 px frames in js/sprites/characters.js, so the doll's idle lands on those
 # frames pixel for pixel and the run and the roll it paints wear the same body.
 #
@@ -721,6 +721,27 @@ class Column(Horn):
         cv.blob(cam, U(v3(0.1, 0, Z(8.0))), R, (2.6, 3.2, Z(0.6)), 'collar', 'gold', bias=0.3)
 
 
+class Snowblind(Standard):
+    """NIX as SNOWBLIND (her default look; MOONLESS is the same cut in another paint): a
+    close night hood framing the face, bone snow goggles across the eyes with two slits, a
+    scarf at the throat, the hood's cape over the arms. Armatos's frame, legs and boots."""
+    ARM_MAT, MITT_MAT = 'cloak', 'skin'
+    # the goggles' band across the eyes, the slits at the eyes
+    MARKS = [(-1.5, 0.9, 'e'), (-0.5, 0.9, 'w'), (0.5, 0.9, 'w'), (1.5, 0.9, 'e')]
+
+    @staticmethod
+    def face_region(n, q):
+        """the hood leaves only the face bare: narrower than his helm's opening"""
+        return np.where((q[0] > 0.25) & (np.abs(q[1]) < 0.7) & (q[2] < 0.25) & (q[2] > -0.95), 'skin', 'cloak')
+
+    def head(self, cv, cam, hc, Rh, pose, snap):
+        cv.blob(cam, hc, Rh, self.HEAD_R, 'head', 'cloak', p=self.HEAD_P, region=self.face_region)
+        self.face_marks(cv, cam, hc, Rh)
+
+    def ball_head(self, cv, cam, hc, Rh):
+        cv.blob(cam, hc, Rh, (2.6, 2.85, 2.5), 'head', 'cloak', p=self.HEAD_P)
+
+
 BODIES = {'hunter': Hunter(), 'warrior': Warrior(), 'standard': Standard(), 'oath': Oath(),
           'unbroken': Unbroken(), 'coif': Coif(), 'general': General(), 'traitor': Traitor(),
           'hearth': Hearth(), 'wanderer': Wanderer(), 'light': Light(),
@@ -728,4 +749,5 @@ BODIES = {'hunter': Hunter(), 'warrior': Warrior(), 'standard': Standard(), 'oat
           'scholar': Scholar(), 'frost': Frost(),
           'quarry': Quarry(), 'cellar': Cellar(),
           'wolfkept': Wolfkept(), 'whitepack': Whitepack(),
-          'horn': Horn(), 'column': Column()}
+          'horn': Horn(), 'column': Column(),
+          'snowblind': Snowblind()}

@@ -29,6 +29,10 @@ const HERO_SHOTS = {};
 // grip: [x, y] where the hand closes on the art }. Facing left or up it is held in
 // the far hand, mirrored, so whatever hangs off it hangs outward.
 const HERO_STAVES = {};
+// A hero its own kit hides draws see-through for the screens that still see it
+// (its own side): HERO_FADE fns(p) -> alpha 0..1, the lowest wins (NIX in her cloud).
+const HERO_FADE = [];
+function heroFade(p) { let a = 1; for (const f of HERO_FADE) a = Math.min(a, f(p)); return a; }
 function heroStaffOf(p) { const c = CLASSES[p.cls]; return c && c.staff ? HERO_STAVES[c.staff] : null; }
 const staffFlips = new Map();
 function heroStaff(p, px, py) {

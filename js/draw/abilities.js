@@ -227,6 +227,7 @@ function drawAbilityAir(ex, ey, now) {
     ctx.fillRect(-4, 3, 2, 2); ctx.fillRect(3, 3, 2, 2);
     ctx.restore();
   }
+  heroAir(ex, ey, now); // what a hero's kit has in the air over the bodies (HERO_AIR, js/sim/heroes.js)
 }
 
 // ---- drawing: on the body ------------------------------------------------

@@ -128,8 +128,10 @@ function brushHide(srcs, x, y) {
   for (const s of srcs) if (s.near && brushIn(D, s.x / TILE, s.y / TILE) > -FOG_BRUSH_RIM) return false;
   return true;
 }
-// every cover a body can be in that the side's eyes reach: the woods, the brush
-function coverHide(srcs, x, y) { return woodsHide(srcs, x, y) || brushHide(srcs, x, y); }
+// every cover a body can be in that the side's eyes reach: the woods, the brush,
+// and, for body `u` when one is named, the cover a hero's own kit gives it
+// (HERO_COVER, js/sim/heroes.js: NIX's snow cloud)
+function coverHide(srcs, x, y, u) { return woodsHide(srcs, x, y) || brushHide(srcs, x, y) || (!!u && heroCover(srcs, x, y, u)); }
 
 // Whether `team` can see unit u right now. Its own side always; a rival the
 // falcon marked always (the mark's one bypass, js/sim/abilities.js); on a
@@ -144,7 +146,7 @@ function inSight(team, u) {
   fogEyesOf(team);
   const kept = fogSeen[team].get(u);
   if (kept !== undefined) return kept;
-  const seen = sightAt(team, u.x, u.y);
+  const seen = sightAt(team, u.x, u.y, u);
   fogSeen[team].set(u, seen);
   return seen;
 }
@@ -156,8 +158,8 @@ function fogEyesOf(team) {
 // whether `team` sees the point (x, y): inside an eye's reach with no stone
 // between, and not in the woods or the brush out of a near eye's reach
 // (coverHide). What a body is asked through inSight; a puff or a number on
-// the wire, bare
-function sightAt(team, x, y) {
+// the wire, bare (`u` the body standing there, when it is one)
+function sightAt(team, x, y, u) {
   if (!fogUp() || (team !== 0 && team !== 1)) return true;
   const srcs = fogEyesOf(team);
   let seen = false;
@@ -166,5 +168,5 @@ function sightAt(team, x, y) {
     if (d > s.r) continue;
     if (s.open || d < 1 || sightReach(s.x, s.y, dx / d, dy / d, d, s.stone) >= d) { seen = true; break; }
   }
-  return seen && !coverHide(srcs, x, y);
+  return seen && !coverHide(srcs, x, y, u);
 }

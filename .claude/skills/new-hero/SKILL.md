@@ -72,8 +72,8 @@ LOOKS (optional): default look name, first buyable skin name
      scripts in `index.html` in load order.
    - **Register, don't stack.** The shared sim reaches a hero only through the lists and tables
      in js/sim/heroes.js (`HERO_PASSIVE` with hurt/deal/cast/tick, `HERO_TAKEN`, `HERO_STAT`,
-     `HERO_TEN`, `HERO_MOVE`, `HERO_DASH`, `HERO_TICK`, `HERO_GROUND`) and js/draw/heroes.js
-     (`HERO_BLADES`, `HERO_STAVES`, `HERO_SHOTS`, `HERO_BODY_FX`). A hero file pushes into them at load. When a kit needs a kind of hook none
+     `HERO_TEN`, `HERO_MOVE`, `HERO_DASH`, `HERO_TICK`, `HERO_GROUND`, `HERO_MARK`, `HERO_COVER`,
+     `HERO_AIR`) and js/draw/heroes.js (`HERO_BLADES`, `HERO_STAVES`, `HERO_SHOTS`, `HERO_BODY_FX`, `HERO_FADE`). A hero file pushes into them at load. When a kit needs a kind of hook none
      of them is, add a new list there rather than a hero-named call in shared code.
 3. **Concept sheet of in-game visuals.** Through the `concept-art` skill: 3 bodies and 3 weapons
    as real 16px grids, staged live in a real game frame beside players (Armatos round 4,

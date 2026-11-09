@@ -102,6 +102,7 @@ const SKIN_TABS = [
   { id: 'rupes', name: 'RUPES', slot: 'rupes', rows: RUPES_SKINS, hero: CLASSES.findIndex((c) => c.name === 'RUPES'), glyph: ['..wwww..', '.wwwwww.', 'ww..wwww', 'w....www', 'w....www', 'ww..wwww', '.wwwwww.', '..wwww..'] },
   { id: 'varro', name: 'VARRO', slot: 'varro', rows: VARRO_SKINS, hero: CLASSES.findIndex((c) => c.name === 'VARRO'), glyph: ['w....w..', 'ww..ww..', 'wwwwww..', 'w.ww.w..', 'wwwwww..', '.wwww...', '..ww....', '........'] },
   { id: 'bucina', name: 'BUCINA', slot: 'bucina', rows: BUCINA_SKINS, hero: CLASSES.findIndex((c) => c.name === 'BUCINA'), glyph: ['......ww', '.....w.w', 'w...w..w', 'ww.w...w', '.ww....w', '..ww...w', '...ww.w.', '....ww..'] },
+  { id: 'nix', name: 'NIX', slot: 'nix', rows: NIX_SKINS, hero: CLASSES.findIndex((c) => c.name === 'NIX'), glyph: ['...w....', '.w.w.w..', '..www...', 'wwwwwww.', '..www...', '.w.w.w..', '...w....', '........'] },
 ];
 const SK_TAB_BIRD = 1; // SKIN_TABS' eagle and scout, the two tabs a match reads
 const SK_TAB_SCOUT = 0;
