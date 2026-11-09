@@ -408,10 +408,9 @@ lantern, a scale and a planked counter. It is look **D** off
 `docs/media/concepts/tent-concepts-2.png` (round 1, `tent-concepts-1.png`, picked the stall
 shape; round 2 grew it).
 
-**The swing tool icons** (`itemBow`/`itemAxe`) are 8×8 grids sharing `AXPAL`, drawn at **1×** by
-`drawHeldTool()` (inside a translate/rotate, resolved through `SPRITES[t.icon]` from the
-`SWING_TOOLS` table) and by `drawRobot()` for a bot's swing — E picks the tool, there is no tool
-bar. At rest `drawHeldTool()` draws the **hero's own weapon** instead, a 12×12
+**The axe and bow icons** (`itemAxe`/`itemBow`) are 8×8 grids sharing `AXPAL`. The axe is drawn at
+**1×** by `drawHeldTool()` (inside a translate/rotate, while a swing runs) and by `drawRobot()` for a
+bot's swing; the bow is the end screen's kills plate. At rest `drawHeldTool()` draws the **hero's own weapon** instead, a 12×12
 `SPRITES.weaponArt` canvas baked in [js/sprites/weapons.js](../../js/sprites/weapons.js) (a blade at
 its real length in `SPRITES.weaponHeld`); both sizes go
 through the same code because each is turned about where the hand closes on it (`WEAPON_GRIP`, a

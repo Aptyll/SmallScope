@@ -22,7 +22,7 @@ and the road tower (3x2). Each has one tier: a gold `cost`, `hp`,
   entry as solid, except a `water` one).
 - **Ownership**: a building wears its team's palette (`structSprite`), and `ownsStruct(o, p)` is
   true for its own side (or a building of nobody's), which is what keeps E from swinging at it
-  (`autoToolFor`).
+  (`autoWorks`).
 - **Construction**: `updateStructures()` (called from `updatePlay`, iterating only the
   `structures` registry) advances `buildT`, grows hp toward max and puffs dust. The draw shows a
   staked-out foundation pad over the footprint for the first 12% of the timer, then the sprite

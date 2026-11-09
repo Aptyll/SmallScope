@@ -198,11 +198,10 @@ that preserve the described structure.
 ## Common changes
 
 **Adding an object type** — one `OBJECTS` entry in [js/sim/world.js](../../js/sim/world.js) is most of
-it: `solid` (does it block a walker), `tool` (what E reaches for) and `ready` (whether it is worth
+it: `solid` (does it block a walker), `work` (whether E reaches for it) and `ready` (whether it is worth
 reaching *right now* — a rock's regrowth, a snowdrop's rest), `auto` (the hands go to it on their own the moment it
 is in reach — `autoWork`; without it the thing waits for E, as only bare ice and the dummy do; a
-rival building needs no flag — `autoToolFor` asks `STRUCTS` and `ownsStruct`), `needs` (the tool a swing must already be holding,
-null = any), `verb` and `lift` (the E key prompt, which an `auto` type never shows), and `mm`/`map` (what each of the two maps
+rival building needs no flag — `autoWorks` asks `STRUCTS` and `ownsStruct`), `verb` and `lift` (the E key prompt, which an `auto` type never shows), and `mm`/`map` (what each of the two maps
 paints it — `mm` an `[r, g, b]` for the minimap disc, `map` a `CH_*` class the chart files it
 under, each a constant or a function of the object, as a roosting eagle's side is; leave `map`
 out for anything that stands alone on its tile — a bush, a stump — since at the chart's
@@ -320,12 +319,6 @@ existing save, or an old profile reaches its readers without it. Give it an acce
 `PROFILE` object rather than letting callers reach into `PROFILE.get()`, and pick a write policy:
 `saveNow()` for something the player just chose, `scheduleSave()` for anything the sim writes
 mid-match. Nothing outside that file may name a storage key.
-
-**Adding a swing tool** (the axe's family that E brings out — *not* a weapon, which is the
-entry above) — append to `SWING_TOOLS` with a `SWING_*` index constant, add an 8×8 icon sprite and
-name it in the entry's `icon` field, map the object types it works in `workTarget()` (that is the
-only selection logic — there are no keys or bar slots), and give its `key` behavior in
-`hitObject()`'s gating.
 
 **Adding an ability or input** — it belongs to *every* player, not to the local player. Add the
 field to `makeInput()`, fill it for the human in `sampleHumanInput()` (edge-triggered flags are
@@ -589,10 +582,6 @@ Kept on purpose — do not "clean up", and a verbatim code move carries it along
 - The `<` glyph in [js/app/font.js](../../js/app/font.js) was added for the removed resolution cycle
   control and is currently unreferenced — kept as generic font coverage. (`>` is live again: it
   marks your own row on the scoreboard.)
-- `SWING_TOOLS[SWING_BOW].icon` (`'itemBow'`) is unread —
-  `drawHeldTool` puts the hero's own weapon in the hands at rest, and only the axe row's
-  icon is still resolved through the table. The row is kept so `SWING_TOOLS` stays one entry per
-  `p.swing` value, and `SPRITES.itemBow` itself is live on the end screen's kills plate.
 - `audio/music/` holds only the nine mp3s `TRACKS` names. The alternate takes (34 MB) were deleted in `PATCH 1.53`;
   recover one with `git show ee284a0:"audio/music/<name>"` if a cue ever wants it. A track is
   live only once it is in `TRACKS`. `app/server.js`'s `.ogg`/`.wav` MIME rows are forward-looking — every asset in the repo
