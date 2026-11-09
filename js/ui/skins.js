@@ -199,19 +199,76 @@ function drawCoinTag() {
 
 // ---- the screen -------------------------------------------------------------
 // the navbar's tabs left to right from the grid's left edge (glyph, gap,
-// word), the purse over the grid's right edge, the cards under them
+// word), the purse over the grid's right edge, the cards under them. A tab
+// row longer than the room between them scrolls: skTabs.off is the first tab
+// shown, and each end with more past it wears a chevron that pages that way.
+const SK_TAB_GAP = 14;  // px between two tabs
+const SK_TAB_CHEV = 10; // px an end's chevron takes off the strip
+const skTabs = { off: 0 };
+function skinTabW(i) { return 8 + 4 + pixelTextWidth(SKIN_TABS[i].name); }
+// the tabs shown from `off` on a strip from x0 to x1, as [{ x, w, i }]: a tab
+// with more after it leaves the right chevron its room
+function skinTabsFrom(off, x0, x1) {
+  const n = SKIN_TABS.length, out = [];
+  let x = x0 + (off > 0 ? SK_TAB_CHEV : 0);
+  for (let i = off; i < n; i++) {
+    const w = skinTabW(i);
+    if (x + w > x1 - (i < n - 1 ? SK_TAB_CHEV : 0)) break;
+    out.push({ x, w, i });
+    x += w + SK_TAB_GAP;
+  }
+  return out;
+}
+// the strip's ends: the grid's left edge, and the purse's left less a gap
+function skinStrip() {
+  const gw = SK_COLS * SK_CARD_W + (SK_COLS - 1) * SK_GAP;
+  const x0 = Math.round(VIEW_W / 2) - Math.round(gw / 2);
+  return { x0, x1: x0 + gw - (8 + 4 + pixelTextWidth(String(PROFILE.coins()))) - 12 };
+}
+// the last `off` whose strip still reaches the final tab
+function skinTabsMax(st) {
+  const n = SKIN_TABS.length;
+  let off = 0;
+  while (off < n - 1) { const v = skinTabsFrom(off, st.x0, st.x1); if (v.length && v[v.length - 1].i === n - 1) break; off++; }
+  return off;
+}
+// scroll the strip by d tabs (a chevron pages, the wheel steps); true if it moved
+function skinsScrollBy(d) {
+  const st = skinStrip();
+  const off = Math.max(0, Math.min(skinTabsMax(st), skTabs.off + d));
+  if (off === skTabs.off) return false;
+  skTabs.off = off;
+  SFX.notch();
+  return true;
+}
+// the pointer over the strip (the wheel's way to scroll it)
+function skinsTabsOver() {
+  const st = skinStrip(), y = frameTop() + 12;
+  return mouse.x >= st.x0 - 4 && mouse.x < st.x1 + 4 && mouse.y >= y - 4 && mouse.y < y + 13;
+}
+// the open tab brought into the strip
+function skinsTabShow(i) {
+  const st = skinStrip();
+  if (i < skTabs.off) skTabs.off = i;
+  for (let k = 0; k < SKIN_TABS.length; k++) {
+    const v = skinTabsFrom(skTabs.off, st.x0, st.x1);
+    if (v.length && v[v.length - 1].i >= i) break;
+    skTabs.off++;
+  }
+}
 function skinsLayout() {
   const toy = frameTop();
   const cx = Math.round(VIEW_W / 2);
   const gw = SK_COLS * SK_CARD_W + (SK_COLS - 1) * SK_GAP;
   const x0 = cx - Math.round(gw / 2), y0 = toy + 30, head = toy + 12;
-  const tabs = [];
-  let tx = x0;
-  for (let i = 0; i < SKIN_TABS.length; i++) {
-    const w = 8 + 4 + pixelTextWidth(SKIN_TABS[i].name);
-    tabs.push({ x: tx, y: head, w, h: 9, i });
-    tx += w + 14;
-  }
+  const st = skinStrip();
+  skTabs.off = Math.max(0, Math.min(skinTabsMax(st), skTabs.off));
+  const shown = skinTabsFrom(skTabs.off, st.x0, st.x1);
+  const tabs = shown.map((t) => ({ x: t.x, y: head, w: t.w, h: 9, i: t.i }));
+  const chevs = [];
+  if (skTabs.off > 0) chevs.push({ x: st.x0, y: head, w: 5, h: 9, d: -1 });
+  if (shown.length && shown[shown.length - 1].i < SKIN_TABS.length - 1) chevs.push({ x: st.x1 - 5, y: head, w: 5, h: 9, d: 1 });
+  const page = Math.max(1, shown.length - 1);
   const rows = SKIN_TABS[state.menu.skTab].rows;
   const cards = [];
   for (let i = 0; i < rows.length; i++) {
@@ -219,7 +276,7 @@ function skinsLayout() {
     cards.push({ x, y, w: SK_CARD_W, h: SK_CARD_H, i });
   }
   const nrows = Math.max(2, Math.ceil(rows.length / SK_COLS));
-  return { toy, cx, tabs, cards, x0, x1: x0 + gw, head, back: y0 + nrows * (SK_CARD_H + SK_GAP) + 6 };
+  return { toy, cx, tabs, chevs, page, cards, x0, x1: x0 + gw, head, back: y0 + nrows * (SK_CARD_H + SK_GAP) + 6 };
 }
 // open tab i (wrapping), its keyboard card on the skin worn
 function skinsTab(i) {
@@ -228,6 +285,7 @@ function skinsTab(i) {
   i = ((i % n) + n) % n;
   if (i === m.skTab) return;
   m.skTab = i;
+  skinsTabShow(i);
   const tab = SKIN_TABS[i];
   m.skSel = Math.max(0, tab.rows.indexOf(skinWorn(tab)));
   m.skPick = -1;
@@ -237,6 +295,7 @@ function skinsTab(i) {
 function beginSkins() {
   const m = state.menu;
   m.screen = 'skins';
+  skinsTabShow(m.skTab);
   const tab = SKIN_TABS[m.skTab];
   m.skSel = Math.max(0, tab.rows.indexOf(skinWorn(tab)));
   m.skPick = -1;
@@ -253,6 +312,7 @@ function leaveSkins() {
 // what the pointer is on: { kind: 'tab'|'card', i } or null
 function skinsHit() {
   const L = skinsLayout();
+  for (const c of L.chevs) if (overRect(c, 3, 4)) return { kind: 'chev', i: c.d };
   for (const t of L.tabs) if (overRect(t, 4, 4)) return { kind: 'tab', i: t.i };
   for (const c of L.cards) if (overRect(c)) return { kind: 'card', i: c.i };
   return null;
@@ -311,6 +371,7 @@ function skinsClick() {
   m.skNav = false;
   m.skKeyed = false;
   if (h && h.kind === 'tab') { skinsTab(h.i); return; }
+  if (h && h.kind === 'chev') { skinsScrollBy(h.i * skinsLayout().page); return; }
   if (!h) { if (m.skPick >= 0) { m.skPick = -1; SFX.pickup(); } return; }
   skinPress(h.i);
 }
@@ -420,6 +481,14 @@ function renderSkins(now, a) {
   const slide = Math.round((1 - a) * 26);
   for (const t of L.tabs) drawSkinTab({ x: t.x, y: t.y - slide, w: t.w, h: t.h, i: t.i }, a);
   ctx.globalAlpha = a;
+  // the strip's chevrons: an end with more tabs past it, pale under the hand
+  for (const c of L.chevs) {
+    ctx.fillStyle = (m.skHover['chev' + c.d] || 0) > 0.5 ? '#f4f7ff' : '#8fa0c8';
+    for (let k = 0; k < 3; k++) {
+      const x = c.x + (c.d > 0 ? 1 + k : 3 - k), y = c.y - slide + 4;
+      ctx.fillRect(x, y - 2 + k, 1, 1); ctx.fillRect(x, y + 2 - k, 1, 1);
+    }
+  }
   // the purse, over the grid's right edge; it flashes as it pays
   const s = String(PROFILE.coins());
   const pw = 8 + 4 + pixelTextWidth(s);
