@@ -11,9 +11,7 @@ Character sprites are 16×16 in the world — detail goes into the 48 px model
 same cell, and the one set not typed by hand ([the run and the roll](#the-run-and-the-roll)). The
 one exception is the IRON HERO skin (below),
 the first step of Noah's move to a 32 px base: a body twice a player's height, drawn for the
-local player only and over an unchanged sim body. The raider set
-(`SPRITES.raider`, `RDPAL`) is baked from the exact same grids as the player, so a player pose
-edit changes both — but nothing reads it (dead, [Intentional dead code](checklists.md#intentional-dead-code)).
+local player only and over an unchanged sim body.
 
 **The buildings' team paint** rides the shared `k`/`K` (iron fitting) and `e` (glow) chars,
 which `teamBuildPal` swaps for a side's own (see below).
@@ -85,7 +83,7 @@ more: the frames live on as the CATCH emote's (`EMOTES`, js/ui/screens.js). The 
 **The run, the held run and the dodge roll are the one set of player frames not typed by hand.**
 [app/bake-player/](../../app/bake-player/) paints them off a jointed doll of each class body (and of
 each named hero's looks: ARMATOS's `standard` and `oath`, FORTIVA's `unbroken` and `coif`, BELLA's `general` and `traitor`,
-IGNIA's `hearth` and `wanderer`, AURA's `light`, SALVIA's `hood` and `tent`, LUCERNA's `lamp` and `dusk`, HIEMS's `scholar` and `frost`, VARRO's `wolfkept` and `whitepack`, [hero looks](#hero-looks)) and
+IGNIA's `hearth` and `wanderer`, AURA's `light`, SALVIA's `hood` and `tent`, LUCERNA's `lamp` and `dusk`, HIEMS's `scholar` and `frost`, RUPES's `quarry` and `cellar`, VARRO's `wolfkept` and `whitepack`, [hero looks](#hero-looks)) and
 writes them to js/baked/motion.js as char grids in characters.js's own letters, so `motionSet`
 bakes them through the same team and look palettes as every hand-drawn pose: `run[dir]`,
 `hold[dir]` and `roll[dir]` sit beside the walking directions, `left` the mirror of `right`.
@@ -231,7 +229,7 @@ AURA has one look (`AURA_SKINS`, js/sprites/aura.js): NORTHERN LIGHT, drawn on A
 star-gold `s` of her circlet). It is A off aura-round1.png in the project files; its side frame
 keeps the head at the front's width, the face flush with it. Her doll (`Light` in
 app/bake-player/bodies.py) paints the mantle in the doll's `cloak` material and only the roll is
-used. Her 48 px model is the warrior's in her paint. Her STAR SHARD is a staff like IGNIA's:
+used. Her 48 px model is her own front frame at 3x (`portrait`). Her STAR SHARD is a staff like IGNIA's:
 `staff: 'shard'` names `HERO_STAVES.shard` (`AURA_SHARD`, js/draw/aura.js), a fallen star's
 splinter on a dark shaft whose tip glints between two baked frames.
 
@@ -241,10 +239,18 @@ and a canvas tabard with a satchel strap), both on ARMATOS's frame (`SALVIA_PAL`
 her dark hair `a`/`A` and the sage `q`/`Q`; his linen `w`/`W` is her apron). They are A and B off
 salvia-round1.png in the project files; side-on the head keeps the front's width and the body is
 two pixels narrower. Her dolls (`Hood` and `Tent` in app/bake-player/bodies.py) paint the sage in
-the doll's `cloak` material and the linen in `beard`; only the roll is used. Her 48 px model is the
-warrior's in her paint. Her SNOWDROP STAFF is a staff: `staff: 'snowdrop'` names `HERO_STAVES.snowdrop`
+the doll's `cloak` material and the linen in `beard`; only the roll is used. Her 48 px model is her own front frame at 3x (`portrait`). Her SNOWDROP STAFF is a staff: `staff: 'snowdrop'` names `HERO_STAVES.snowdrop`
 (`SALVIA_STAFF`, js/draw/salvia.js), a snowdrop's white bell nodding off the top of a pale alder shaft,
 swaying between two baked frames.
+RUPES has two looks (`RUPES_SKINS`, js/sprites/rupes.js): QUARRYMAN (free; a fur cap with ear
+flaps, a full beard, leather straps over the side's coat, fur mitts) and ICE CELLAR (200 coins; the
+side's hood up, a leather mantle, an ice-blue scarf), A and B off heroes-rupes/round1 in the project
+files. Both are drawn on ARMATOS's frame with the broadest shoulders of anyone (14 px head-on,
+12 side-on) and run as their drawn bodies (`run: 'drawn'`); their dolls (`Quarry`, `Cellar` in
+app/bake-player/bodies.py) are used only for the roll. `RUPES_PAL` is `ARM_PAL` with the fur
+`t`/`T`, beard `w`/`W`, leather `m`/`M` and scarf `i`/`I`. His ICE MAUL is a `HERO_BLADES` row
+(`blade: 'maul'`, js/draw/rupes.js). While he rolls (AVALANCHE) a `HERO_BODY_DRAW` row draws the
+snowball in his place (js/draw/heroes.js); his 48 px model is the warrior's in his look's paint.
 
 LUCERNA has two looks (`LUCERNA_SKINS`, js/sprites/lucerna.js): LAMPLIGHTER (free: a flat cap over
 dark hair, a warm brown greatcoat open on the side's waistcoat, brass buttons) and DUSK ROAD (rare,
@@ -252,8 +258,7 @@ dark hair, a warm brown greatcoat open on the side's waistcoat, brass buttons) a
 (`LUCERNA_PAL` is `ARM_PAL` with her hair `a`/`A`, the coat `q`/`Q` and the brass `u`/`f`). They are
 A and B off lucerna-round1.png in the project files; side-on the head keeps the front's width and
 the body is two pixels narrower. Her dolls (`Lamp` and `Dusk` in app/bake-player/bodies.py) paint
-the coat in the doll's `cloak` material; only the roll is used. Her 48 px model is the warrior's in
-her paint. Her LANTERN is carried like a staff but hangs: `staff: 'lantern'` names
+the coat in the doll's `cloak` material; only the roll is used. Her 48 px model is her own front frame at 3x (`portrait`). Her LANTERN is carried like a staff but hangs: `staff: 'lantern'` names
 `HERO_STAVES.lantern` (`LUCERNA_LANTERN`, js/draw/lucerna.js), a brass lamplighter's lantern held by
 its ring (`LUCERNA_LANTERN_GRIP`), its flame breathing between two baked frames.
 VARRO has two looks (`VARRO_SKINS`, js/sprites/varro.js): WOLF-KEPT (free) and WHITE PACK (rare,
@@ -322,7 +327,7 @@ look and portrait caches are cleared, so every reader of `SPRITES.*`/`TEAMS` see
 on its next frame. A new team-painted set must bake inside an `onTeams` callback, or it keeps the
 colours it was born with.
 
-- `playerTeam[team]` — coat/hat/trim swapped; `SPRITES.player` *is* `playerTeam[0]` (the repaint re-points it).
+- `teamPlayers[team]` (private to js/sprites/characters.js) — coat/hat/trim swapped.
 - `teamBuild[team][type][tier]` — the tier material with the `k`/`K`/`e` accents repainted, so
   tier still reads as tier.
 - `robotTeam[team]`.
@@ -603,20 +608,20 @@ Keys marked **(dead)** are still baked but read by nothing outside js/sprites/ a
 | File | Banners | Registers |
 | --- | --- | --- |
 | `motion.js` | none: generated by app/bake-player/bake.py | `SPR.motion` (not `SPRITES`: the run, held run and roll grids, their fringe rows, the bobs and the roll's timing, for characters.js) |
-| `characters.js` | player, the fish catch, skater, prone, run and roll, raider, looks, the merchant | `playerTeam`, `champ` (with each set's `run`/`hold`/`roll`), `LOOK`, `champLook`, `player`, `raider` **(dead)**, `merchant`, `motionBox`/`runBob`/`holdBob`/`rollAt` |
-| `looks.js` | bodies, heads, beards, hair, outfits | `portrait`, `MODEL_LAYERS` |
+| `characters.js` | player, the fish catch, skater, prone, run and roll, looks, the merchant | `champ` (with each set's `run`/`hold`/`roll`), `LOOK`, `champLook`, `merchant`, `motionBox`/`runBob`/`holdBob`/`rollAt` |
+| `looks.js` | bodies, heads, beards, hair, outfits | `portrait` |
 | `terrain.js` | trees, bush, the dead snags, the den, the hog hut | `tree`, `treeAtlas`, `stump`, `bush*`, `deadTree`, `den`, `hogHut` |
-| `beasts.js` | imp, rabbit, deer, wolf, the bird | `rabbit`, `wolf`, `bird`, `deer`, `imp` **(dead)** |
+| `beasts.js` | rabbit, deer, wolf, the bird | `rabbit`, `wolf`, `bird`, `deer` |
 | `bears.js` | none: generated by app/bake-bears/bake.py | `dire` (brown bear), `alpha` (black bear) |
-| `fish.js` | none: generated by app/bake-fish/paint.py | `creekFish[kind]` (`whitefish`/`snowChar`: `swim[heading][frame]`, 16 headings, 2 tail frames, rimmed in the water's shade; `icon` side-on), `iceFish[kind]` (`fish` the frost pike, `sunfish` the gold sunfish: `swim` and the cold `shadow` under the ice, same headings and frames; `icon`), `itemWhitefish`, `itemSnowChar`, `itemFrostPike`, `itemSunfish` (the icons and the snow char went unused when the pouch's fish did; the creek swims `whitefish` alone); looks E/F, I/K and shadow N off `docs/media/concepts/winter-fish-concepts-2/3/4.png` |
+| `fish.js` | none: generated by app/bake-fish/paint.py | `creekFish.whitefish` (`swim[heading][frame]`, 16 headings, 2 tail frames, rimmed in the water's shade), `iceFish[kind]` (`fish` the frost pike, `sunfish` the gold sunfish: `swim` and the cold `shadow` under the ice, same headings and frames); looks E/F, I/K and shadow N off `docs/media/concepts/winter-fish-concepts-2/3/4.png` |
 | `orca.js` | none: generated by app/bake-orca/paint.py | `orca` (`breach`: `open`/`shut` side-on, head up and left, `openR`/`shutR` their mirrors, `jaw` the pixel between the jaws in the `bcell`; `shade(heading, step)`, 64 headings from east clockwise, 8 steps of the flukes' up-and-down beat, in `cell` squares, packed run-length and baked on first use); look D BOLD off `docs/media/concepts/orca-concepts-2.png` |
 | `cistern.js` | none: generated by app/bake-cistern/paint.py | `cistern` (`geo`, the ring's measures in tiles the sim reads; `flat`, the sills and every shadow, one canvas; `segs`, the standing stone cut into pieces two ground rows deep, each with its y-sort key `k`; `solid`, the footprint as on/off runs per ground row; all in px of a box `rb` round the crossing); a heightfield painted per world px in the 3/4 view, look H CUT BLOCKS off `docs/media/concepts/cistern-concepts-4.png` |
 | `snowdrops.js` | none: generated by app/bake-snowdrops/bake.js | `snowdrop[variant]` (`closed`/`open` at three leans, `picked`, `glow[lean][phase]`) |
 | `robot.js` | none: generated by app/bake-robot/bake.py | `robotSkin` (the IRON HERO skin, per team) |
 | `eagle.js` | none: only `BIRD_SKINS`, the skins' table | none |
 | `perch.js` | palettes, shapes, the bird, poses, painter, cache | `perch` (no grids: painted in code, below) |
-| `items.js` | items, gold nugget, gold sack, axe icon | `itemWood` **(dead)**, `itemPotion` (the health potion's 11×12 flask), `itemAnim` + the gold's live icon, `goldSack`, `itemAxe`/`itemBow` |
-| `buildings.js` | the barracks bay, soldiers, the merchant's stall, spikes, fire, torch | `teamBuild` (`spawner`, `stall`), `robotTeam`, `robot`, `spikes` **(dead)**, `fire`, `torch` **(dead)** |
+| `items.js` | items, gold nugget, gold sack, axe icon | `itemPotion` (the health potion's 11×12 flask), `itemAnim` + the gold's live icon, `goldSack`, `itemAxe`/`itemBow` |
+| `buildings.js` | the barracks bay, soldiers, the merchant's stall, fire | `teamBuild` (`spawner`, `stall`), `robotTeam`, `robot`, `fire` |
 | `landmarks.js` | landmarks | `landmark` (`boat`) |
 | `icons.js` | cursors | `cursor`, `cursorShadow` |
 | `item-icons.js` | item icons | `item_<id>` (one a `BUILD_ITEMS` entry) |

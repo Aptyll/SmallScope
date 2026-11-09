@@ -13,10 +13,10 @@
 // THE PACK (the passive): every wolf near him, his own or a den's, quickens
 // his attacks; his blows on the valley's beasts land harder (he knows where
 // to strike), which is his way through the woods.
-const PACK_R = 96;              // px a wolf counts from
-const PACK_AS = 0.08;           // attack speed each wolf adds...
-const PACK_MAX = 4;             // ...counting this many at most
-const PACK_BEAST = 1.25;        // x his blows on a beast (not a summoned one)
+const WOLVES_R = 96;              // px a wolf counts from
+const WOLVES_AS = 0.08;           // attack speed each wolf adds...
+const WOLVES_MAX = 4;             // ...counting this many at most
+const WOLVES_BEAST = 1.25;        // x his blows on a beast (not a summoned one)
 // Q LUNGE: a short leap at the rival at the aim; it lands a blow and marks
 // them, and his basic attacks on the mark hit harder while it holds
 const LEAP_RANGE = 80;          // px from him to the body he leaps at
@@ -87,26 +87,26 @@ const VARRO_AB = [
     ok: (p) => !!callTarget(p),
     pose: () => ({ dx: 0, dy: -1, rot: 0 }),
     icon: VARRO_ICON32.call,
-    bot: (p, foe, d) => foe instanceof Player && d < CALL_RANGE - 30 && (foe.hp < foe.maxHp * 0.75 || packMarked(p, foe)), // a hurt hero, or the one he just marked
+    bot: (p, foe, d) => foe instanceof Player && d < CALL_RANGE - 30 && (foe.hp < foe.maxHp * 0.75 || lungeMarked(p, foe)), // a hurt hero, or the one he just marked
   },
 ];
 
 // ---- THE PACK -------------------------------------------------------------------
 // the wolves near him that count, his own or a den's (never a rival's pack)
-function packNear(p) {
+function wolvesNear(p) {
   let n = 0;
   for (const a of animals) {
     if (a.dead || a.kind !== 'wolf' || (a.team !== undefined && a.team !== p.team)) continue;
-    if (Math.hypot(a.x - p.x, a.y - p.y) <= PACK_R && ++n >= PACK_MAX) break;
+    if (Math.hypot(a.x - p.x, a.y - p.y) <= WOLVES_R && ++n >= WOLVES_MAX) break;
   }
   return n;
 }
 // attack speed (HERO_STAT 'as', a share like an item's: asMul, js/sim/stats.js)
-function packStat(p, key) { return key === 'as' && CLASSES[p.cls].passive === 'pack' && !p.dead ? packNear(p) * PACK_AS : 0; }
-HERO_STAT.push({ name: 'THE PACK', add: packStat });
+function wolvesStat(p, key) { return key === 'as' && CLASSES[p.cls].passive === 'pack' && !p.dead ? wolvesNear(p) * WOLVES_AS : 0; }
+HERO_STAT.push({ name: 'THE PACK', add: wolvesStat });
 // the blow hook (HERO_PASSIVE `deal`): a beast takes more; a basic attack on his mark more again
-function packDeal(p, q, dmg, o) {
-  if (animals.includes(q) && !q.summon) dmg = Math.round(dmg * PACK_BEAST);
+function wolvesDeal(p, q, dmg, o) {
+  if (animals.includes(q) && !q.summon) dmg = Math.round(dmg * WOLVES_BEAST);
   if (o.basic && q.packBy === p.id && state.elapsed < q.packUntil) {
     dmg += Math.round(abRk(p, 'leap', 'markDmg') + statOf(p, 'dmg') * LEAP_BONUS_AD);
     burst(q.x, unitMidY(q), '#cfd8e8', 5, 40, 0.35, true);
@@ -122,7 +122,7 @@ function varroOut(p) {
   if (p.dash === 'vleap') { p.rushT = 0; p.dash = ''; }
 }
 // is `q` wearing his mark
-function packMarked(p, q) { return q.packBy === p.id && state.elapsed < q.packUntil && unitAlive(q); }
+function lungeMarked(p, q) { return q.packBy === p.id && state.elapsed < q.packUntil && unitAlive(q); }
 
 // ---- Q LUNGE --------------------------------------------------------------------
 // the rival body nearest the aim within LEAP_PICK of it and LEAP_RANGE of him
@@ -200,7 +200,7 @@ function varroHowl(p) {
 function snapTarget(p) {
   let best = null, bd = Infinity;
   for (const q of unitsHit(p, p.x, p.y, SNAP_REACH + PLAYER_R)) {
-    if (packMarked(p, q)) return q;
+    if (lungeMarked(p, q)) return q;
     const d = Math.hypot(q.x - p.input.aimX, q.y - (q.alt || 0) - p.input.aimY);
     if (d < bd) { bd = d; best = q; }
   }
@@ -282,7 +282,7 @@ function varroCall(p) {
 // bite on its own rhythm; when the hero falls, leaves the ground, or the hunt
 // runs out, run off and go. Its bites are his (hurtUnit with him as `src`):
 // they count for his kills and name CALL THE PACK in the recap.
-function packStep(a, dt) {
+function wolfStep(a, dt) {
   const o = players[a.owner], q = a.target;
   a.biteCd = Math.max(0, a.biteCd - dt);
   a.howlT = Math.max(0, (a.howlT || 0) - dt);
@@ -311,9 +311,9 @@ function packStep(a, dt) {
   setClip(a, n.ok ? 'run' : 'idle');
   stepClip(a, dt, n.ok ? 1.5 : 1);
 }
-HERO_SUMMON.pack = { step: packStep };
+HERO_SUMMON.pack = { step: wolfStep };
 
 // ---- the hooks he registers (js/sim/heroes.js) ------------------------------------
-HERO_PASSIVE.pack = { deal: packDeal, tick: varroTick, out: varroOut,
+HERO_PASSIVE.pack = { deal: wolvesDeal, tick: varroTick, out: varroOut,
   name: 'THE PACK', blurb: 'EVERY WOLF NEAR YOU QUICKENS YOUR ATTACKS. YOUR BLOWS LAND HARDER ON THE VALLEY\'S BEASTS.', icon: VARRO_ICON32.pack };
 HERO_DASH.vleap = { spd: LEAP_SPD, t: (LEAP_RANGE + 12) / LEAP_SPD, ramp: 0.03, step: leapStep, through: true };

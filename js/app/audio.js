@@ -122,7 +122,6 @@
     timber: ['tree_falling_down_#1-1787704695709.mp3', 'tree_falling_down_#3-1787704695712.mp3'],
     coin: ['gold_coin_dropping_o_#1-1787704006953.mp3', 'gold_coin_dropping_o_#4-1787704018023.mp3'],
     hammer: ['hammer_on_nails_cons_#1-1787704939116.mp3', 'hammer_on_nails_cons_#4-1787704939119.mp3'],
-    chew: ['Mouthwatering_chewin_#1-1787704822637.mp3', 'Mouthwatering_chewin_#2-1787704817176.mp3'],
     power: ['power_up_gentle_#1-1787704980322.mp3'],
     warm: ['power_up_gentle_#3-1787704976093.mp3'],
     step: ['walking_on_solid_til_#1-1787704564071.mp3', 'Worn_leather_elf_boot.mp3'],
@@ -705,7 +704,6 @@
       if (smp(kind === 'wolf' ? 'yelp' : 'beastDie', { vol: 0.71, jitter: 0.08 })) return;
       tone(500, 0.2, 'triangle', 0.12, -350); noise(0.15, 0.15, 3000);
     },
-    eat() { if (smp('chew', { vol: 0.56, jitter: 0.1 })) return; tone(300, 0.05, 'triangle', 0.1); tone(260, 0.05, 'triangle', 0.1, 0, 0.07); },
     treeFall() { if (smp('timber', { vol: 0.89, jitter: 0.06 })) return; noise(0.35, 0.35, 400); tone(90, 0.3, 'triangle', 0.14, -30); },
     // a wingbeat blast - the eagle's gust and its takeoff: the dodge whoosh
     // slowed into a heavy buffet of air over a low push

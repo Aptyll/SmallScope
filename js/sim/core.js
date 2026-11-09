@@ -132,6 +132,7 @@ const state = {
   // out of the match: the overlay's state. over: 'lost' | 'won' | null; view:
   // 'menu' (the planks) | 'spec' (following a living player); spec: that player's
   // id; sel + hover: the planks' keyboard pick and per-plank hover eases
+  onevone: null, // a 1V1 match's rules and its end (js/sim/onevone.js); null in any other match
   over: null, deadView: 'menu', spec: -1, deadSel: 0, deadHover: [0, 0],
   // the replay window over a respawn wait has been closed (endMatch reopens it)
   rpClosed: false,

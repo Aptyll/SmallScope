@@ -41,6 +41,9 @@
      localStorage: it has no dependencies, so it goes first. -->
 <script defer src="js/app/profile.js"></script>
 <script defer src="js/app/font.js"></script>
+<!-- every word the game prints for its own screens, by key (TEXT, tr): no dependencies, so
+     it loads before any file that draws a word. -->
+<script defer src="js/app/text.js"></script>
 <!-- js/sprites/: every hand-drawn sprite as a char grid + palette, baked at load. core.js
      first (it makes SPRITES and the SPR helpers); each file after it registers the keys it
      owns. js/baked/ files are written by app/bake-*, never by hand: motion.js is the run
@@ -74,6 +77,7 @@
 <script defer src="js/sprites/salvia.js"></script>
 <script defer src="js/sprites/lucerna.js"></script>
 <script defer src="js/sprites/hiems.js"></script>
+<script defer src="js/sprites/rupes.js"></script>
 <script defer src="js/sprites/varro.js"></script>
 <script defer src="js/sprites/landmarks.js"></script>
 <!-- audio/sfx/*.mp3 baked to base64 by app/bake-sfx.js: a file:// page cannot fetch
@@ -128,6 +132,7 @@
 <script defer src="js/sim/salvia.js"></script>
 <script defer src="js/sim/lucerna.js"></script>
 <script defer src="js/sim/hiems.js"></script>
+<script defer src="js/sim/rupes.js"></script>
 <script defer src="js/sim/varro.js"></script>
 <script defer src="js/sim/abilities.js"></script>
 <script defer src="js/draw/abilities.js"></script>
@@ -141,6 +146,7 @@
 <script defer src="js/baked/bot-lib.js"></script>
 <script defer src="js/sim/sim.js"></script>
 <script defer src="js/sim/surrender.js"></script>
+<script defer src="js/sim/onevone.js"></script>
 <script defer src="js/sim/weather.js"></script>
 <script defer src="js/sim/shed.js"></script>
 <script defer src="js/ai/ai-callouts.js"></script>
@@ -178,6 +184,7 @@
 <script defer src="js/draw/salvia.js"></script>
 <script defer src="js/draw/lucerna.js"></script>
 <script defer src="js/draw/hiems.js"></script>
+<script defer src="js/draw/rupes.js"></script>
 <script defer src="js/draw/varro.js"></script>
 <script defer src="js/draw/marks.js"></script>
 <script defer src="js/draw/pops.js"></script>

@@ -532,6 +532,7 @@ function updatePlay(dt) {
   // the surrender votes read their orders before any body runs, since a body
   // that is down or stunned drops every order it is given (js/sim/surrender.js)
   updateVotes(dt);
+  updateOnevone(); // a 1V1's end: first blood, the soldiers, the first tower (js/sim/onevone.js)
 
   // every player steps through the same code, each off its own input struct
   // (players still on or under the eagle are moved by updateDrop instead)
@@ -578,6 +579,7 @@ function updatePlay(dt) {
         basic: !!a.basic, // a press of the bow, not the pierce: a basic attack (passiveDeal, js/sim/heroes.js)
         ab: a.ab,         // ...or the key that loosed it (the death recap)
         burn: a.burn,     // ...and the fire it carries (IGNIA's FIREBRAND, js/sim/ignia.js)
+        slow: a.slow,     // ...and the slow (RUPES's HEAVE, js/sim/rupes.js)
       });
       if (a.ambush) ambushFx(hx, hy);
       a.struck = true;

@@ -760,7 +760,7 @@ function structsInCone(src, x, y, a, r, half) {
 // the world. `o` carries the rest: `type` (a DMG_TYPES key), `kb` px/s of shove
 // for an animal or a bot (a player's shove is damagePlayer's own, so the callers
 // that want a particular one add it themselves), `cause` for the feed line,
-// `ambush`, `crit`, `basic` (a hero's basic attack, for passiveDeal and the
+// `ambush`, `crit`, `burn`, `slow`, `basic` (a hero's basic attack, for passiveDeal and the
 // item passives) and `ab`, the id of the ability that landed it (its CLASS_AB
 // row's, or a move with no key: 'roll'; a blow inside a key's use()
 // gets it stamped) - what the death recap
@@ -809,6 +809,8 @@ function hurtUnit(e, dmg, nx, ny, src, o) {
   if (ty.ignite > 0) igniteUnit(e, ty.ignite, BURN_DPS, src);
   // ...and a blow that carries its own fire, `burn: [s, hp a second]`, lights it once it lands
   if (o.burn) igniteUnit(e, o.burn[0], o.burn[1], src);
+  // ...and a blow that carries its own slow, `slow: [s, walk x]`, puts it on once it lands (RUPES's HEAVE)
+  if (o.slow) slowUnit(e, o.slow[0], o.slow[1]);
 }
 
 // ---- the states a unit can be under --------------------------------------

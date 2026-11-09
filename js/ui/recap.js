@@ -32,15 +32,15 @@ const RC_BAR = 36, RC_BAR_H = 4;      // a hitter's bar
 const RC_ROWS = 5;            // lines at most; the rest still count on the ring
 // a blow's kind: its colour on the ring and the bars, and its word under the pointer
 const RC_KIND = {
-  atk: { col: '#e8dcb4', word: 'ATTACKS' },   // a basic attack: the bone of an arrow's shaft
-  ab: { col: '#7fb2ff', word: 'ABILITIES' },  // a key
-  other: { col: '#ff9440', word: 'OTHER' },   // a burn, a roll, the world's
+  atk: { col: '#e8dcb4', word: 'recap.attacks' },   // a basic attack: the bone of an arrow's shaft
+  ab: { col: '#7fb2ff', word: 'recap.abilities' },  // a key
+  other: { col: '#ff9440', word: 'recap.other' },   // a burn, a roll, the world's
 };
 const RC_KINDS = ['atk', 'ab', 'other'];
 // the world's names, by cause, for the pointer
-const RC_WORLD = { tower: 'TOWER', soldier: 'WAVE', wolf: 'WOLF', bear: 'BEAR', fire: 'FIRE',
-  orca: 'ORCA', ice: 'ICE', creek: 'CREEK', tackle: 'A TACKLE', eagle: 'EAGLE' };
-const RC_MOVE = { roll: 'ROLL' };
+const RC_WORLD = { tower: 'recap.tower', soldier: 'recap.wave', wolf: 'recap.wolf', bear: 'recap.bear', fire: 'recap.fire',
+  orca: 'recap.orca', ice: 'recap.ice', creek: 'recap.creek', tackle: 'recap.tackle', eagle: 'recap.eagle' };
+const RC_MOVE = { roll: 'recap.roll' };
 // 0 the ring alone, 1 the lines, 2 opened out: this screen's, kept across deaths
 const recap = { view: 1 };
 
@@ -120,13 +120,13 @@ function rcDrawIcon(icon, x, y) {
 }
 function rcWho(e) {
   if (e.by >= 0) { const q = players[e.by]; return q ? q.name || CLASSES[q.cls].name : '?'; }
-  return e.s === 0 ? '?' : RC_WORLD[e.c] || '?';
+  return e.s === 0 || !RC_WORLD[e.c] ? '?' : tr(RC_WORLD[e.c]);
 }
 function rcWhat(e) {
   if (e.k === 'ab' && e.i !== undefined) { const o = abOptions(e.c, e.i)[e.o]; return o ? o.name : '?'; }
   if (e.k === 'atk') { const C = CLASSES[e.c]; return C ? C.attack.name : '?'; }
-  if (e.k === 'burn') return 'BURN';
-  return RC_MOVE[e.m] || '?';
+  if (e.k === 'burn') return tr('recap.burn');
+  return RC_MOVE[e.m] ? tr(RC_MOVE[e.m]) : '?';
 }
 function rcWhoCol(e) { const q = e.by >= 0 ? players[e.by] : null; return q ? TEAMS[skin(q.team)].mark : SC_TXT; }
 
@@ -274,7 +274,7 @@ function drawRecap() {
   }
   // the words, only under the pointer
   if (!H) return;
-  if (H.ring) rcTag(RC_KINDS.filter((k) => R.split[k] > 0).map((k) => [RC_KIND[k].word + ' ' + Math.round(R.split[k]), RC_KIND[k].col]), L.ring.y);
+  if (H.ring) rcTag(RC_KINDS.filter((k) => R.split[k] > 0).map((k) => [tr(RC_KIND[k].word) + ' ' + Math.round(R.split[k]), RC_KIND[k].col]), L.ring.y);
   else if (H.face) rcTag([[rcWho(H.face.e), rcWhoCol(H.face.e)]], H.y);
   else if (H.hit) rcTag([[rcWhat(H.hit.e), SC_LIT], [String(Math.round(H.hit.d)), RC_KIND[H.hit.kind].col]], H.y);
 }

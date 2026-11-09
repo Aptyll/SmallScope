@@ -396,6 +396,8 @@ function drawPlayer(p, ex, ey, now) {
       if (prog >= 0.07) { ctx.globalAlpha = 0.28; at(prog - 0.07, 6); }
       ctx.globalAlpha = 1; at(prog, 0);
     }
+  } else if (heroBodyDraw(p, px, py, now)) {
+    // a hero drawn as something else for a while: RUPES's snowball (HERO_BODY_DRAW, js/draw/heroes.js)
   } else {
     // a cast, the net shot's recoil hop or the rush lean is performed BY the
     // body: the pose shifts / tilts the sprite itself (abilityPose,

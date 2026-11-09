@@ -286,7 +286,8 @@ read through `statOf(p, key)` (js/sim/stats.js), never off the kit. `setClass(p,
 | 7 | **SALVIA** — THE MENDER, the healer (passive WARM BROTH) | keep your side on its feet: heals, speed, the slows taken off | her own body (MENDER, or FIELD TENT bought on the skins screen) and the warrior's frames (`heroBody`), 80 hp, 10 armor | the SNOWDROP STAFF: a sprig, 250 px/s for 0.85 s, `cycle` 62/60 s, drawn as her own shot (`look`, `HERO_SHOTS`) |
 | 8 | **LUCERNA** — THE LANTERN, the catch-and-save support (passive LAMPLIGHT) | pull a rival in, bring an ally home, light what hides near her | her own body (LAMPLIGHTER, or DUSK ROAD bought on the skins screen) and the warrior's frames (`heroBody`), 88 hp, 12 armor | the LANTERN: a spark, 260 px/s for 0.8 s, `cycle` 62/60 s, drawn as her own shot (`look`, `HERO_SHOTS`) |
 | 9 | **HIEMS** — THE LONG WINTER, the control mage (passive DEEP CHILL) | freeze a fight slowly: every hit chills, the third freezes; hold a choke with ice and a blizzard | her own body (WEATHER SCHOLAR, or FIRST FROST bought on the skins screen) and the warrior's frames, 82 hp, 10 armor, a step slower | the SNOWFLAKE STAFF: a frost bolt, 270 px/s for 0.85 s, `cycle` 62/60 s, drawn as her own shot; every hit of it chills |
-| 10 | **VARRO** — THE WOLF-KEPT, the jungler (passive THE PACK) | pick one rival and run them down, with wolves at his side | his own body (WOLF-KEPT, or WHITE PACK bought on the skins screen) and the warrior's frames (`heroBody`), 112 hp, 18 armor, a step faster | the HUNTING SPEAR: a thrust a touch longer and narrower than the LONGSWORD's cut (30 px, 0.8 rad, `cycle` 28/60 s), drawn as his own blade |
+| 10 | **RUPES** — THE AVALANCHE, the engage tank (passive SNOWPACK) | roll in from far off and flatten a fight; very hard to kill while packed with snow | his own body (QUARRYMAN, or ICE CELLAR bought on the skins screen) and the warrior's frames (`heroBody`), 134 hp, 24 armor, two steps slower | the ICE MAUL: the LONGSWORD's cut a little slower (`cycle` 34/60 s) with a harder shove, drawn as his own blade |
+| 11 | **VARRO** — THE WOLF-KEPT, the jungler (passive THE PACK) | pick one rival and run them down, with wolves at his side | his own body (WOLF-KEPT, or WHITE PACK bought on the skins screen) and the warrior's frames (`heroBody`), 112 hp, 18 armor, a step faster | the HUNTING SPEAR: a thrust a touch longer and narrower than the LONGSWORD's cut (30 px, 0.8 rad, `cycle` 28/60 s), drawn as his own blade |
 
 The **weapon is part of the hero**: each `CLASSES` entry carries its own `attack` row, so the
 hunter and the swordsmen do not attack the same way and every bot arrives armed, with nothing to
@@ -308,8 +309,7 @@ the grid files under js/sprites/ are never rewritten) — same
 character's tone and fringe ([sprites.md](sprites.md#looks-a-character-on-the-class-body)), or a hero's
 own look ([hero looks](sprites.md#hero-looks)). A person's looks ride the hello (`skins`,
 `profileHeroSkins`, kept by the host through `cleanHeroSkins`) onto `p.skins`, which the snapshot
-carries, so every screen draws the look they bought;
-`SPRITES.playerTeam` is class 0 in the default look.
+carries, so every screen draws the look they bought.
 
 ## Hero levels
 
@@ -402,8 +402,8 @@ cap on its right end (`drawHealthBar`), so the sides part in greyscale. The name
 
 A team colour drives both **characters** and **buildings**:
 
-- `SPRITES.playerTeam[team][dir][frame]` — the player grids baked with the coat/hat/trim swapped.
-  `SPRITES.player` is literally `playerTeam[0]`, so team 0 is the pre-existing art.
+- `teamPlayers[team]` (js/sprites/characters.js, private) — the player grids baked with the
+  coat/hat/trim swapped; a hero's body comes from `classSet(p)`.
 - `SPRITES.teamBuild[team][type][tier]` — the tier material (wood → stone → gold) with the iron
   fittings and glow repainted in team colour, so tier still reads as tier. `structSprite(o)` is the
   lookup; it falls back to team 0 for an object with no `team`.

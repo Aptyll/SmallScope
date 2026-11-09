@@ -387,5 +387,5 @@
     return c;
   }
 
-  Object.assign(SPRITES, { portrait, MODEL_LAYERS: { BODY, HEAD, BEARD, HAIR, OUTFIT } });
+  Object.assign(SPRITES, { portrait });
 })();

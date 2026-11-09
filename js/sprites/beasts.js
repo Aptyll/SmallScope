@@ -1,54 +1,8 @@
 'use strict';
-// Everything with four legs or wings: the imp, the rabbit, the deer, the wolf,
+// Everything with four legs or wings: the rabbit, the deer, the wolf,
 // the bird. The camps' two bears are js/baked/bears.js.
 (() => {
   const { bake, flipH, bakeClips, mapClips } = SPR;
-
-  // ---------------------------------------------------------------- imp
-  const IPAL = {
-    '.': null,
-    'o': '#141f3d', // outline
-    'i': '#5f8fc0', // ice body mid
-    'I': '#8fc2dd', // ice light (top)
-    'j': '#41628f', // ice shade
-    'e': '#101a33', // eye socket
-    'E': '#54f0e6', // eye glow
-    'h': '#c6ecf4', // horn
-    'H': '#8fc2dd', // horn shade
-  };
-
-  const imp1 = [
-    '..............',
-    '...oo....oo...',
-    '..ohho..ohho..',
-    '..oHho..oHho..',
-    '...oiIIIIio...',
-    '..oiIIIIIIio..',
-    '.oiIeeIIeeIio.',
-    '.oiIeEIIeEIio.',
-    '.oiIIIIIIIijo.',
-    '.oijIIooIIjjo.',
-    '..oijjjjjjjo..',
-    '...oooooooo...',
-    '..ojjo..ojjo..',
-    '...oo....oo...',
-  ];
-  const imp2 = [
-    '..............',
-    '..............',
-    '...oo....oo...',
-    '..ohho..ohho..',
-    '..oHhooooHho..',
-    '..oiIIIIIIio..',
-    '.oiIeeIIeeIio.',
-    '.oiIeEIIeEIio.',
-    '.oiIIIIIIIijo.',
-    '.oijIIooIIjjo.',
-    '..oijjjjjjjo..',
-    '.ojjoooooojjo.',
-    '..oo......oo..',
-    '..............',
-  ];
 
   // ---------------------------------------------------------------- rabbit
   // The meadow's bunny, side view facing right: a chunky brown hare with a
@@ -1916,6 +1870,5 @@
     wolf: { right: wolfSet, left: mapClips(wolfSet, flipH) },
     bird: { right: birdSet, left: mapClips(birdSet, flipH) },
     deer: { right: deerSet, left: mapClips(deerSet, flipH) },
-    imp: [bake(imp1, IPAL), bake(imp2, IPAL)],
   });
 })();
