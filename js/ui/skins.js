@@ -107,6 +107,7 @@ const SKIN_TABS = [
   { id: 'faber', name: 'FABER', slot: 'faber', rows: FABER_SKINS, hero: CLASSES.findIndex((c) => c.name === 'FABER'), glyph: ['..ww....', '.w..w...', 'w.w..w..', 'w.ww.w..', '.w..w...', '..ww....', '..w.....', '..w.....'] },
   { id: 'falco', name: 'FALCO', slot: 'falco', rows: FALCO_SKINS, hero: CLASSES.findIndex((c) => c.name === 'FALCO'), glyph: ['........', '.w....w.', '.ww..ww.', '..wwww..', '...ww...', '...ww...', '..w..w..', '........'] },
   { id: 'maris', name: 'MARIS', slot: 'maris', rows: MARIS_SKINS, hero: CLASSES.findIndex((c) => c.name === 'MARIS'), glyph: ['.....ww.', '....wwww', '...w.ww.', '..w..w..', '.w......', 'w.......', 'ww......', '.w......'] },
+  { id: 'lignum', name: 'LIGNUM', slot: 'lignum', rows: LIGNUM_SKINS, hero: CLASSES.findIndex((c) => c.name === 'LIGNUM'), glyph: ['.www....', 'wwwww...', 'wwww....', '.w.w....', '....w...', '.....w..', '......w.', '.......w'] },
 ];
 const SK_TAB_BIRD = 1; // SKIN_TABS' eagle and scout, the two tabs a match reads
 const SK_TAB_SCOUT = 0;

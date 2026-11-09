@@ -441,6 +441,25 @@ const CLASSES = [
     kit: { iceMax: 1.2, iceSteer: 3.6, slideMin: 70, fatigue: 0.7, chargeMul: 0.7,
       bowCharge: 0.75, nock: 0.5, spdDmg: 5, dodgeSpeed: 220 },
   },
+  {
+    // the seventeenth named hero (js/sim/lignum.js): a skirmisher who owns the treeline.
+    // Strong short trades and great near the woods; short reach, and in an open lane or on
+    // the ice he has nothing to hold a rival with until his ultimate
+    name: 'LIGNUM', role: 'THE FELLER', body: 1, passive: 'treeline', // HERO_PASSIVE, js/sim/lignum.js
+    look: { sex: 0, tone: 1, hair: 2, hairCol: 1, beard: 2, face: 0 },
+    blurb: ['OWN THE TREELINE.', 'WAIT IN THE WOODS, STEP OUT, CHOP HARD, STEP BACK.', 'FELL A PINE ACROSS THE FIGHT.'],
+    story: "HE FELLED TIMBER FOR THE EMPIRE'S SHIPS UNTIL THERE WAS NO FOREST LEFT TO FELL, THEN REFUSED TO BURN THE LAST ONE. THE VALLEY'S PINES GREW UP THROUGH THE WORKS AND NOBODY OWNS THEM. HE LIKES THAT.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
+    // an axe's blow: the longsword's reach, a little wider and slower
+    attack: { name: 'FELLING AXE', art: 'sword', cycle: 34 / 60, kb: 1.2, cut: { reach: 26, half: 1 } },
+    skins: LIGNUM_SKINS, skinPal: LIGNUM_PAL, skinSlot: 'lignum',
+    blade: 'felling', // his FELLING AXE in his hands (HERO_BLADES, js/draw/lignum.js)
+    base: { hp: 114, dmg: 18, armor: 18, ap: 0, haste: 0, ms: PLAYER_SPEED },
+    grow: { hp: 9, dmg: 1.7, as: 0.011, armor: 2.4 },
+    rankOrder: [0, 1, 2], // the chop, the thrown axe, the bark skin
+    // a woodsman off the ice: a low cap and a slow turn on it
+    kit: { iceMax: 1, iceSteer: 2.8, slideMin: 70, fatigue: 0.75, chargeMul: 0.7,
+      bowCharge: 0.75, nock: 0.5, spdDmg: 5, dodgeSpeed: 225 },
+  },
 ];
 // the body a hero wears - its sprites and its 48 px model: a hero that names
 // none is its own (HUNTER 0, WARRIOR 1), a named hero borrows one
@@ -821,6 +840,8 @@ class Player {
     // MARIS (js/sim/maris.js): COLD WATER's clock, her brace (its clock and the share it cuts),
     // the s left under the snow, and the spot her reel or her dive is headed to
     this.coldT = 0; this.braceT = 0; this.braceCut = 0; this.underT = 0; this.reelX = 0; this.reelY = 0;
+    // LIGNUM (js/sim/lignum.js): in the woods last step, TREELINE's ready blow and its run, CHOP's wait for the second blow, BARK SKIN's clock and its share
+    this.lgWoods = false; this.lgEdgeT = 0; this.lgRunT = 0; this.chopT = 0; this.barkT = 0; this.barkCut = 0;
     // VARRO (js/sim/varro.js): the body LUNGE is leaping at, SNAP's strikes still to land and
     // their clock; and on any body, whose mark it wears (LUNGE) and until when
     this.leapQ = null; this.snapN = 0; this.snapT = 0; this.packBy = -1; this.packUntil = 0;
