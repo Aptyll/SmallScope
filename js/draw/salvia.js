@@ -106,4 +106,4 @@ function salviaStaff() {
   salviaStaffArt = [bakeBladeArt(SALVIA_STAFF, SALVIA_STAFF_PAL), bakeBladeArt(sway, SALVIA_STAFF_PAL)];
   return salviaStaffArt;
 }
-HERO_STAVES.snowdrop = { art: salviaStaff, grip: SALVIA_STAFF_GRIP };
+HERO_STAVES.snowdrop = { art: salviaStaff, grip: SALVIA_STAFF_GRIP, hold: 'far' };
