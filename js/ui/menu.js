@@ -39,7 +39,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.647';
+const PATCH_TXT = 'PATCH 0.648';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -55,6 +55,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.648', 'THE PARTY SCREEN\'S SETTINGS STAND CENTRED OVER THE ROOM, AND VICTORY\'S LINES NAME BOTS BY THEIR HERO.'],
   ['0.647', 'A HERO\'S MARKS ON A BODY (HIEMS\'S CHILLS, VELOX\'S KEEP MOVING, VARRO\'S PAW, BELLA\'S MARK, FALCO\'S TALON) STAND IN THEIR OWN ROW ABOVE THE NAME, NO LONGER HIDDEN UNDER THE HEALTH BAR.'],
   ['0.646', 'A NEW HERO, SAGITTA THE BOLT-THROWER: HER HEAVY CROSSBOW OUTREACHES EVERY BOW, EVERY THIRD BOLT HITS LIKE A HAMMER, SHE PINS RIVALS TO THE TREES AND SHOOTS FROM BEHIND HER OWN SHIELD.'],
   ['0.645', 'THE ORCA\'S BITE NOW TAKES A HERO\'S TIMED SHIELD TOO, NOT ONLY THE DAWN SHIELD. UNDER THE HOOD: EVERY SHIELD IS ONE LIST, SO A NEW HERO\'S SHIELD IS ONE LINE.'],
@@ -777,7 +778,10 @@ function gearRect() {
 }
 function overGear() { return !state.menu.panel && gearShown() && overRect(gearRect(), 3, 3); }
 function drawGear() { if (gearShown()) { const r = gearRect(); frBmp(r.x, r.y, SET_GEAR, overGear() ? '#ffd95c' : '#9fb6d8'); } }
-function openMenuPanel(k) { const m = state.menu; m.panel = k; m.panelT = 0; m.closing = false; SFX.ui(true); }
+// the slab stands centred on what it covers: the party screen's room left of
+// the social column, else the view (relayout's place, put back as it goes)
+function slabCentre(room) { placeSlab(room ? VIEW_W - SOCIAL_W : VIEW_W); }
+function openMenuPanel(k) { const m = state.menu; slabCentre(m.screen === 'room'); m.panel = k; m.panelT = 0; m.closing = false; SFX.ui(true); }
 function closeMenuPanel() {
   const m = state.menu;
   if (!m.panel || m.closing) return;
@@ -941,7 +945,7 @@ function updateTitle(dt) {
   if (m.panel) {
     if (m.closing) {
       m.panelT -= dt / PANEL_SLIDE_T;
-      if (m.panelT <= 0) { m.panelT = 0; m.panel = null; m.closing = false; }
+      if (m.panelT <= 0) { m.panelT = 0; m.panel = null; m.closing = false; slabCentre(false); }
     } else m.panelT = Math.min(1, m.panelT + dt / PANEL_SLIDE_T);
   }
   titleWild(dt); // the ambient world: wildlife and the shoal keep living behind the menu (js/sim/wildlife.js)
