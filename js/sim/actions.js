@@ -431,13 +431,15 @@ function swingHit(p) {
 
 // nearest tile a player can stand on - used to climb out of a hole. Out of
 // the creek it is the nearest on the SAME side of the water (creekAt's `n`):
-// you went in off that bank, and floundering never carries you over.
-function nearestDryTile(x, y, p) {
+// you went in off that bank, and floundering never carries you over. The
+// search starts one ring out (the tile underfoot is the one being left);
+// r0 = 0 lets a caller that is placing a body take the tile itself first.
+function nearestDryTile(x, y, p, r0 = 1) {
   const ctx0 = Math.floor(x / TILE), cty0 = Math.floor(y / TILE);
   const inCreek = inWorld(ctx0, cty0) && ground[idx(ctx0, cty0)] === 4;
   let side = 0;
   if (inCreek) { creekAt(x / TILE - 0.5, y / TILE - 0.5); side = Math.sign(CQ.n) || 1; }
-  for (let r = 1; r <= 8; r++) {
+  for (let r = r0; r <= 8; r++) {
     let best = null, bd = 1e9;
     for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
       if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;

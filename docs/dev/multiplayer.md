@@ -588,8 +588,9 @@ more a level to 41 at 16, 45 and 50 s at 17 and the `LEVEL_MAX` of 18 — and no
 every wave, so the level *is* the clock. An early death costs a few seconds and a late one costs real match, which is what makes a wiped side late in a game (everyone
 high) a real window on a roost its defenders otherwise come back to from sixty pixels away every
 few seconds. At zero it calls `respawnPlayer(p)`, which puts `p.spawn`
-`RESPAWN_OUT` (40 px) up the road from the bird (`e.laneDir`; the nearest standable tile there
-through `nearestDryTile`, the same spiral a hole is climbed out of) and calls `p.reset(false)`,
+`RESPAWN_OUT` (40 px) up the road from the bird (`e.laneDir`; that tile itself when it stands, else the nearest standable one,
+through `nearestDryTile` from ring 0, the same spiral a hole is climbed out of; so both sides land
+inside the roost ring) and calls `p.reset(false)`,
 the transient-clear a fresh landing gets, i-frames included — so the way back into the match is
 the road everyone walked out on, past the merchant. A bird still in the air (a player
 shot in the seconds between its own landing and the bird's) has nowhere to set anyone down, so
