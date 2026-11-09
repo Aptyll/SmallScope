@@ -1618,6 +1618,19 @@ const CLASS12 = [
     '....oooo....',
     '............',
     '............',
+  ],  [ // BUCINA: her horn, the bell to the right
+    '............',
+    '.........oo.',
+    '........ogWo',
+    '.......ogggo',
+    '..ooo.ogggGo',
+    '.ogggogggGo.',
+    'ogGoggggGo..',
+    'ogo.oGGGoo..',
+    '.o...ooo....',
+    '............',
+    '............',
+    '............',
   ],
 ];
 const class12Cache = new Map();

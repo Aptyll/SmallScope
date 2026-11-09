@@ -160,6 +160,7 @@ const CLASS_AB = [
   AURA_AB, // AURA - the falling star, the drifting light, the step, the curtain (js/sim/aura.js)
   SALVIA_AB, // SALVIA - the poultice, the snowdrops, the warm cloak, the thaw (js/sim/salvia.js)
   LUCERNA_AB, // LUCERNA - the crook, the lantern, the shoo, the circle of light (js/sim/lucerna.js)
+  BUCINA_AB, // BUCINA - the blast, the note, the echo, the pines (js/sim/bucina.js)
 ];
 
 // the world the abilities put things into
