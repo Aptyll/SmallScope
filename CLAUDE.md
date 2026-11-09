@@ -45,9 +45,9 @@ Each rule spans folders; its names are listed under the folder that owns them.
   `contest()`; sounds and shakes go through `sfxAt`/`sfxFor`/`shakeFor`.
 - Rule 1: hits `hurtUnit` (a blow sweeps with `unitsHit`) and `hurtStruct`; states `stunUnit` and
   the other `*Unit` setters; areas `unitsNear`/`structsNear`; targets `unitAlive`; sight `seenAt`;
-  gold `gainGold`; XP `shareXp` on a death, `gainXp` under it; water `waterAt`; tiles `placeObj`
-  and `createStruct`; walking `navTo`/`navStep`, dropping the goal on `ok = false`, and a new
-  walker joins `separateUnits`. Loops over `players` skip `inAir(p)`.
+  gold `gainGold` in, `spendGold` out; XP `shareXp` on a death, `gainXp` under it; water
+  `waterAt`; tiles `placeObj` and `createStruct`; walking `navTo`/`navStep`, dropping the goal on
+  `ok = false`, and a new walker joins `separateUnits`. Loops over `players` skip `inAir(p)`.
 - What a thing *is* lives in its table entry (`OBJECTS`, `STRUCTS`, `CLASSES`, `BUILD_ITEMS`),
   never in an `if`. A hero reaches the shared sim only through the `HERO_*` hook tables.
 - A feature's tuning constants sit in the file that owns it. New mutable state joins `SAVE_ROOTS`.
@@ -75,7 +75,8 @@ Each rule spans folders; its names are listed under the folder that owns them.
 ## Run and verify
 
 - `node app/server.js` serves the game on :8471. `node app/check-globals.js` is the one lint (it
-  runs the size check too). `node app/check-join.js` drives every way a friend joins a party.
+  also fails on oversized files and unused names). `node app/check-join.js` drives every way a
+  friend joins a party.
 - Double-clicking `index.html` must work: nothing may `fetch` or need a server.
 - There are no tests. Verify in headless Chromium with a small staged scene of exactly the changed
   case: `window.DBG`, `?seed=N`, `POST /shot`, `.` for hitboxes ([how](docs/dev/checklists.md#verifying-a-change)).
