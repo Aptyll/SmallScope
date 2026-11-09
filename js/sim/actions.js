@@ -894,6 +894,8 @@ const SHIELD_KINDS = {
   dawn: { stack: true, cap: DAWN_SHIELD_MAX, lasting: true, ink: '#ffd84a', breakInk: '#fff4b8' },
   // a timed shield from a hero's kit (SALVIA's cloak, ARMATOS's resolve, FORTIVA's heart)
   ward: { ink: '#f2cc6a' },
+  // LIFELINE's, raised by a hit that takes its wearer low (itemsLifeline, js/sim/items.js)
+  lifeline: { ink: '#e8eef8', breakInk: '#ffffff' },
 };
 const SHIELD_ORDER = Object.keys(SHIELD_KINDS);
 function shieldUnit(p, hp, t, kind) {
@@ -940,6 +942,15 @@ function shieldTick(p, dt) {
 }
 // a kind's shield taken off whole (FORTIVA's heart spending what is left of its own)
 function shieldClear(p, kind) { p.shields = p.shields.filter((s) => s.kind !== kind); }
+// FROSTBITE: healing cut. Every heal a body takes (healPlayer, js/sim/player.js)
+// is `cut` smaller while the clock runs; the stronger cut and the longer clock win.
+// Players only take heals, so the other kinds carry it harmlessly.
+function cutHeal(e, t, cut) {
+  if (t <= 0 || !unitAlive(e)) return;
+  if (!(e.healCutT > 0)) e.healCut = 0;
+  e.healCutT = Math.max(e.healCutT || 0, t);
+  e.healCut = Math.max(e.healCut || 0, cut);
+}
 // Marked: revealed. On a player seenAt() returns its full range and both maps
 // keep drawing them; an animal or a bot has no cover to strip, so it is the
 // gold chevrons alone - the falcon still says "I have found this".
@@ -1016,6 +1027,7 @@ function updateUnitStatus(e, dt) {
   if (e.slowT > 0) e.slowT = Math.max(0, e.slowT - dt);
   else e.slowMul = 1;
   if (e.upT > 0) e.upT = Math.max(0, e.upT - dt);
+  if (e.healCutT > 0) e.healCutT = Math.max(0, e.healCutT - dt);
   updateBurn(e, dt);
 }
 // What is left of a non-player unit's speed - the same root/slow fold
@@ -1031,7 +1043,7 @@ function unitMoveMul(e) {
 // every timed state a fresh body starts with none of, on any kind of unit
 function clearUnitStatus(e) {
   e.stunT = 0; e.stunMax = 0;
-  e.rootT = 0; e.slowT = 0; e.slowMul = 1; e.netT = 0; e.markT = 0; e.upT = 0;
+  e.rootT = 0; e.slowT = 0; e.slowMul = 1; e.netT = 0; e.markT = 0; e.upT = 0; e.healCutT = 0; e.healCut = 0;
   douseUnit(e);
 }
 

@@ -356,8 +356,24 @@
     // DBG only: set the purse (a staged screenshot, a test of the short purse)
     setCoins(n) { profile.coins = Math.max(0, Math.floor(n) || 0); saveNow(); },
 
+    // ---- build records --------------------------------------------------------
+    // Every human seat's finished build and result from the matches this
+    // screen saw or heard of (js/app/builds.js owns their shape and the
+    // stats read off them). Kept under a key of their own: they are many and
+    // written once a match, and the profile above is written for every coin.
+    builds() {
+      if (!buildRecs) { try { const a = JSON.parse(localStorage.getItem(BUILDS_KEY)); buildRecs = Array.isArray(a) ? a : []; } catch (e) { buildRecs = []; } }
+      return buildRecs;
+    },
+    putBuilds(list) {
+      buildRecs = list;
+      try { localStorage.setItem(BUILDS_KEY, JSON.stringify(list)); } catch (e) { }
+    },
+
     flush,
   };
+  const BUILDS_KEY = 'softfall.builds';
+  let buildRecs = null;
 
   function clearOldSaves() {
     try {

@@ -507,6 +507,7 @@ function levelMaxHp(p) { return statOf(p, 'hp'); }
 // wind, a kill's heal. Capped at the most, and what it actually gave back is
 // counted for the post-game record (js/ui/lobby.js) and returned.
 function healPlayer(p, n) {
+  if (p.healCutT > 0) n *= 1 - p.healCut; // FROSTBITE (cutHeal, js/sim/actions.js)
   const h = Math.max(0, Math.min(n, p.maxHp - p.hp));
   p.hp += h;
   p.healed += h;
@@ -734,6 +735,9 @@ class Player {
     this.potions = 0;                   // how many potions stand in the slot that holds 'potion' (the `potion` banner, js/sim/items.js)
     this.fightT = 0; this.kindleN = 0;  // s since the last hit given or taken, and KINDLING's count (itemsOnHit)
     this.surgeT = 0; this.smolderT = 0; // SURGE's window after a key, SMOLDER's next pulse (itemsTick)
+    this.lifeT = 0;                     // LIFELINE's wait before it can shield again (itemsLifeline)
+    this.healCutT = 0; this.healCut = 0; // FROSTBITE on this body: how long, and the share of a heal it takes (cutHeal, js/sim/actions.js)
+    this.buys = [];                     // every finished item and pair of boots bought this match, in order: the build the match records (buildsNote, js/app/builds.js)
     refreshKit(this);                   // builds this.kit and this.maxHp from class + items
     this.aboard = false;                // riding the eagle (beginDrop sets it, hopOff clears it)
     this.dropT = 0;                     // seconds left of the step down off the roost (0 = on the ground)
@@ -1064,12 +1068,13 @@ const HIT_KB = 110;
 function damagePlayer(p, dmg, dx, dy, src, cause, crit, kb, o) {
   const dot = !!DOT_CAUSE[cause];
   if (p.dead || (p.invuln > 0 && !dot)) return;
-  dmg = armorTaken(p, dmg); // ARMOR cuts every hit by its share, never to zero (js/sim/stats.js)
+  dmg = armorTaken(p, dmg, src); // ARMOR cuts every hit by its share, never to zero (js/sim/stats.js; less of it against PIERCE)
   dmg = heroTaken(p, dmg, dx, dy, src); // ...and a hero's own cut: ARMATOS's brace (HERO_TAKEN, js/sim/heroes.js)
   passiveHurt(p, dmg, src); // a hero's passive fed by the hits it takes (LEGION'S RESOLVE)
   // the shields take the hit first, in their order (shieldSpend, js/sim/actions.js),
   // a burn included; what is left of the blow goes on to health
   p.hp -= dmg - shieldSpend(p, dmg);
+  itemsLifeline(p); // LIFELINE's shield, the moment a hit takes you low (js/sim/items.js)
   // the match record both ends of the blow keep (the post-game lobby, js/ui/lobby.js).
   // What is counted is what LANDED, DR already off it - the overkill on the
   // last hit of a kill included, because that is what the swing was worth.
@@ -1380,6 +1385,7 @@ function endMatch(how) {
   // the coins: once per ending, on the same edges as the win and the loss sting
   if (awardWin || firstLoss) payMatchCoins(awardWin);
   if (awardWin || firstLoss) rankResult(awardWin); // RANKED's rating (js/ui/rooms.js)
+  if (awardWin || firstLoss) buildsNote(awardWin); // every person's build and result, for the shop's RECOMMENDED (js/app/builds.js)
   state.mode = 'dead';
   state.deadView = 'menu';
   state.deadSel = 0;

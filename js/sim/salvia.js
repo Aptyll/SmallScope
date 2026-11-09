@@ -121,7 +121,7 @@ function salviaSrc(w) { const o = players[w.owner]; return o && o.team === w.tea
 // (her passive, while the healer is still hers): a moment of speed and the slows off
 function salviaHeal(src, q, n) {
   if (!(q instanceof Player) || !unitAlive(q)) return 0;
-  const h = healPlayer(q, n);
+  const h = healPlayer(q, itemMend(src, q, n)); // MEND (js/sim/items.js)
   healFx(q, h);
   if (src && CLASSES[src.cls].passive === 'warmbroth') {
     q.brothT = Math.max(q.brothT, BROTH_T);
@@ -216,7 +216,7 @@ function cloakTarget(p) {
 }
 function salviaCloak(p) {
   const q = cloakTarget(p);
-  shieldUnit(q, abDmg(p, 'cloak', abRk(p, 'cloak', 'shield')), CLOAK_T);
+  shieldUnit(q, Math.round(itemMend(p, q, abDmg(p, 'cloak', abRk(p, 'cloak', 'shield')))), CLOAK_T);
   q.cloakT = Math.max(q.cloakT, CLOAK_RUN_T);
   burst(q.x, q.y - 8, '#9cc87a', 10, 40, 0.45, true);
   burst(q.x, q.y - 8, '#f0ead8', 6, 30, 0.4, true);

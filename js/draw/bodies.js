@@ -508,6 +508,7 @@ function drawPlayer(p, ex, ey, now) {
   // nothing standing in front of the body cuts into it
   overheadPlate(() => {
     drawHealthBar(p.x - ex + FRAME_DX, hy - 7, p.hp, p.maxHp, 14, p.team);
+    if (p.healCutT > 0) drawHealCut(p.x - ex + FRAME_DX, hy - 7, p.hp, p.maxHp, 14); // FROSTBITE: its heals are cut
     if (shL) drawShieldBar(fx - 7, hy - 10, dawn);
     if (line > 0) drawOrcaCount(fx, hy - 10 - shL, line);
     // the running damage total, past the frame's right edge: the bar backing,

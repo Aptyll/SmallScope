@@ -98,6 +98,8 @@ async function runPath(browser, kind) {
   const base = 'http://localhost:' + CHECK_PORT + '/';
   const mk = async (tag, uid) => {
     const c = await browser.newContext({ viewport: { width: 1280, height: 720 } });
+    // one build record of its own (js/app/builds.js), so the join's swap can be seen to carry it both ways
+    await c.addInitScript((m) => { try { if (!localStorage.getItem('softfall.builds')) localStorage.setItem('softfall.builds', JSON.stringify([{ m, s: 1, v: '0.1', h: 'HUNTER', w: 1, q: 1, b: ['horn'] }])); } catch (e) { } }, uid.slice(-8));
     const pg = await c.newPage();
     if (steam) await S.attach(pg, uid, tag);
     pg.on('pageerror', (e) => errs.push(tag + ': ' + e.message));
@@ -146,6 +148,13 @@ async function runPath(browser, kind) {
     if (seats !== 1) why = 'host shows ' + seats + ' remote seats';
     else if (!(await alive(A))) why = 'host page stopped drawing';
     else if (!(await alive(B))) why = 'guest page stopped drawing';
+    else {
+      // the builds swap: each end now holds the other's record (netMetaIn, js/net/net.js)
+      await B.waitForTimeout(600);
+      const has = (pg) => pg.evaluate(() => PROFILE.builds().map((r) => r.m).sort().join());
+      const [ha, hb] = [await has(A), await has(B)];
+      if (ha !== hb || ha.split(',').length < 2) why = 'builds not swapped (host ' + ha + ', guest ' + hb + ')';
+    }
   }
   if (errs.length) why = (why ? why + '; ' : '') + errs.slice(0, 3).join(' | ');
   await A.context().close(); await B.context().close();

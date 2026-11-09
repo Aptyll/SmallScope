@@ -162,6 +162,7 @@ function netHostStep(dt) {
     if (msg.t === 'draft') { draftAct(pr.slot, DRAFT_ACTS.includes(msg.k) ? msg.k : 'hover', msg.h | 0, msg.id); continue; } // ...a guest's press in the draft (js/ui/draft.js)
     if (msg.t === 'say') { talkFrom(pr, msg.s); continue; }               // ...a line for the room's chat
     if (msg.t === 'pong') { pongIn(pr, msg); continue; }                   // ...and its answer to a ping
+    if (msg.t === 'meta') { netMetaIn(peer, pr, msg); continue; }         // ...and the builds it has heard of (js/app/builds.js)
     if (msg.t === 'in') {
       NET.bytesIn += JSON.stringify(msg).length;
       if (msg.ack > pr.ack) pr.ack = msg.ack; // the newest snapshot it applied: its next delta is cut from there
@@ -496,6 +497,7 @@ function netClientStep(dt) {
     if (msg.t === 'practice') { practiceHeard(msg); continue; } // the leader's START, or its cross to the arena and back: after it (js/ui/rooms.js)
     if (msg.t === 'cross') { crossHeard(msg); continue; }    // the leader's party crossing to meet another (js/ui/matchmaking.js)
     if (msg.t === 'welcome') { netClientWelcome(msg); continue; }
+    if (msg.t === 'meta') { buildsMerge(msg.recs); continue; } // the host's builds, in answer to ours (js/app/builds.js)
     // the waiting room: the host's ten and its count, drawn here as there
     if (msg.t === 'roster') { netClientRoster(msg.roster); roomInfoIn(msg); continue; }
     if (msg.t === 'ping') { T.send('host', { t: 'pong', at: msg.at }); continue; } // straight back: the host times the trip
@@ -546,6 +548,16 @@ function netClientWelcome(msg) {
   NET.dictIn = encDict(); // the full sync that follows carries the host's whole list
   PRED.hist.length = 0; PRED.on = false;
   NET.welcomed = true; // the title screen moves to the waiting room on this
+  NET.transport.send('host', { t: 'meta', recs: buildsPack() }); // the builds this screen knows, for the shop's numbers (js/app/builds.js)
+}
+// The host's half of the builds swap (js/app/builds.js): a guest's records
+// in, once a seating, and the host's whole pack back to it - so every join
+// leaves both ends knowing what either knew.
+function netMetaIn(peer, pr, msg) {
+  if (pr.metaIn) return;
+  pr.metaIn = true;
+  buildsMerge(msg.recs);
+  NET.transport.send(peer, { t: 'meta', recs: buildsPack() });
 }
 // a later roster (someone came or went while we wait): the bodies stay, their
 // names, heroes and kinds change in place - ours stays the human
