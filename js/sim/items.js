@@ -171,7 +171,7 @@ const BUILD_ITEMS = {
   lens:      { name: 'BURNING GLASS', price: 3000, from: ['rod', 'lantern'], stats: { ap: 36, ms: 3 }, passive: 'pierce', styles: ['mage'] },
   oakheart:  { name: 'OAK HEART', price: 3000, from: ['knife', 'belt'], stats: { dmg: 8, hp: 60 }, passive: 'lifeline', styles: ['bruiser', 'tank'] },
   mantle:    { name: 'QUILTED MANTLE', price: 2900, from: ['rod', 'jacket'], stats: { ap: 24, hp: 25, armor: 12 }, passive: 'lifeline', styles: ['mage'] },
-  shepherd:  { name: "SHEPHERD'S STAFF", price: 2700, from: ['yarrow', 'almanac'], stats: { ap: 24, hp: 30, haste: 15 }, passive: 'mend', styles: ['support'] },
+  shepherd:  { name: "SHEPHERD'S STAFF", price: 2700, from: ['yarrow', 'almanac'], stats: { ap: 21, hp: 30, haste: 10 }, passive: 'mend', styles: ['support'] },
   banner:    { name: 'PACK BANNER', price: 2700, from: ['buckler', 'belt'], stats: { hp: 50, armor: 15, haste: 10 }, passive: 'rally', styles: ['tank', 'support'] },
 
   // THE CONSUMABLE: a stack of up to `stack` in ONE slot (League's potions),
