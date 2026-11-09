@@ -60,7 +60,7 @@ floats clear of the sprite: stamina plate at `py - 4` (white, `STAM_COL`, on eve
 bar with no side to it; every player, since the level badge spans both
 bars), health at `py - 7`, that meter at
 `py - 10` (inside the same frame, directly above the hp bar, the mirror of
-the stamina bar; every gap row between two bars is frame ink, as on a beast), and the player's name tag in team colour at `py - 18`, a clear row above the meter's
+the stamina bar; every gap row between two bars is frame ink, as on a beast), and the player's name tag in team colour at `py - 18` (`boardName`: a person's own name, a bot's hero, the name TAB, the podium, the scores and the death recap give it), a clear row above the meter's
 frame. A **dawn shield** ([gameplay.md](../gameplay/the-dawn-shield.md)) adds its own row straight
 above the health bar, built the way the meter is (`drawShieldBar`: two-tone dawn gold, light over
 deep, cut into one segment per snowdrop with a pale glint on its first pixel — gold is the dawn's

@@ -119,7 +119,7 @@ function rcDrawIcon(icon, x, y) {
   ctx.drawImage(icon, x + ((RC_ICON - iw) >> 1), y + ((RC_ICON - ih) >> 1), iw, ih);
 }
 function rcWho(e) {
-  if (e.by >= 0) { const q = players[e.by]; return q ? q.name || CLASSES[q.cls].name : '?'; }
+  if (e.by >= 0) { const q = players[e.by]; return q ? boardName(q) : '?'; } // a bot by its hero, as TAB names it
   return e.s === 0 || !RC_WORLD[e.c] ? '?' : tr(RC_WORLD[e.c]);
 }
 function rcWhat(e) {

@@ -302,7 +302,7 @@ function drawEagle(e, ex, ey, now) {
         if (!p.active || !p.aboard || p.team !== e.team) continue;
         const [dx, dy] = seatAt(EAGLE_SEATS[p.seat % EAGLE_SEATS.length]);
         drawSeated(classSet(p), rd, sx + dx, sy + breath + dy, 1);
-        seatedName(classSet(p), rd, sx + dx, sy + breath + dy, 1, p.name, p.team);
+        seatedName(classSet(p), rd, sx + dx, sy + breath + dy, 1, boardName(p), p.team);
       }
       if (player.aboard && player.team === e.team && state.mode === 'play' && !state.dropBrief) {
         const ph = (now * 1.2) % 1;
