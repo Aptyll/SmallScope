@@ -406,50 +406,6 @@ let dragSlider = null;
 const setPanelCv = document.createElement('canvas');
 setPanelCv.width = SET_W; setPanelCv.height = SET_H;
 
-// the dark frost slab every baked panel sits on: chamfered, mottled, bevelled,
-// crystal corners, and a gold title between ornament dashes. Shared by the
-// settings panel and the main menu's TUTORIAL panel so they read as a set.
-function bakeFrostSlab(g, w, h, title) {
-  const cham = (x, y, ww, hh) => {
-    g.fillRect(x + 2, y, ww - 4, hh);
-    g.fillRect(x, y + 2, ww, hh - 4);
-    g.fillRect(x + 1, y + 1, ww - 2, hh - 2);
-  };
-  g.fillStyle = '#0a0e23'; cham(0, 0, w, h);
-  g.fillStyle = '#141c3c'; cham(1, 1, w - 2, h - 2);
-  // subtle mottling
-  for (let y = 3; y < h - 3; y += 3) {
-    for (let x = 3; x < w - 3; x += 3) {
-      const hv = hash2(x * 11 + 3, y * 7 + 19);
-      if (hv > 0.86) { g.fillStyle = '#182148'; g.fillRect(x, y, 3, 3); }
-      else if (hv < 0.10) { g.fillStyle = '#111834'; g.fillRect(x, y, 3, 3); }
-    }
-  }
-  // bevel: icy top light, deep bottom shade
-  g.fillStyle = '#35426e';
-  g.fillRect(2, 1, w - 4, 1); g.fillRect(1, 2, 1, h - 4);
-  g.fillStyle = '#080c1c';
-  g.fillRect(2, h - 2, w - 4, 1); g.fillRect(w - 2, 2, 1, h - 4);
-  // ice-crystal corner accents
-  g.fillStyle = '#5a7fb8';
-  for (const [cx2, cy2] of [[7, 7], [w - 8, 7], [7, h - 8], [w - 8, h - 8]]) {
-    g.fillRect(cx2 - 2, cy2, 5, 1); g.fillRect(cx2, cy2 - 2, 1, 5);
-    g.fillRect(cx2 - 1, cy2 - 1, 3, 3);
-  }
-  g.fillStyle = '#a8c8e8';
-  for (const [cx2, cy2] of [[7, 7], [w - 8, 7], [7, h - 8], [w - 8, h - 8]]) {
-    g.fillRect(cx2, cy2, 1, 1);
-  }
-  // title with dashes (none for a slab that heads itself: the M map)
-  if (!title) return;
-  const tw = pixelTextWidth(title);
-  const tx0 = Math.round((w - tw) / 2);
-  drawPixelTextShadow(g, title, tx0, 8, '#ffd95c', 'rgba(8,12,28,0.9)');
-  g.fillStyle = '#4a5480';
-  g.fillRect(tx0 - 26, 11, 18, 1); g.fillRect(tx0 + tw + 8, 11, 18, 1);
-  g.fillRect(tx0 - 30, 10, 2, 3); g.fillRect(tx0 + tw + 28, 10, 2, 3);
-}
-
 // The flat slab the ESC settings panel stands
 // on: solid, never see-through - an ink silhouette, one quiet steel line and a
 // flat night ground, the HUD frame's grammar (drawHudFrame, js/ui/strip.js)

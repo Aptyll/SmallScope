@@ -185,9 +185,6 @@ ABILITIES — or a fixed pair), `keyRowsLayout` places every cap and word listin
 draw (`drawKeyRows`), `settingsHit` (`'key:<action>'`, `'keyreset'`) and `DBG.keyRows` all read
 it; `KEYS_LIST_H` (the listing and its RESET row) sizes the scroll.
 
-The title screen's TUTORIAL panel carries
-the same keys under `1-4 CLASS ABILITIES`.
-
 `settings.info` (one INFO DISPLAY toggle row in the ESC menu, **or F3**, minecraft-style — the
 keydown handler flips it in any mode and suppresses the browser's find bar; default off) shows
 the **info stack** — `drawTags()`, a vertical list on the left edge at the top quarter of the

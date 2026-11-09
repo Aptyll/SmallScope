@@ -116,7 +116,7 @@ controls exactly as pause does, `hurtEagle` refuses a second flee, and `checkLas
 owning side down permanently (`die(p, null, 'eagle')` / `teamEagleDown`, which `die`,
 `updateRespawns` and `teamInMatch` all gate on — see [multiplayer.md](../multiplayer.md#pvp)) and the
 victory or defeat screen rises **over the escape still flying underneath** — the camera stays on
-the bird through mode `dead` and only KEEP PLAYING (back to mode `play`) takes it back early. The
+the bird through mode `dead`. The
 takeoff itself: over `FLEE_LIFT_T` the bird turns from wherever the dive left it pointing to
 `fleeTo` (away from the world's centre, shortest arc) while climbing; then it flies at `FLEE_SPD`
 until `FLEE_T`, when it is `gone` and draws nothing ever again.

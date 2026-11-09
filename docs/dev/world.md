@@ -233,7 +233,7 @@ DISPLAY row in the ESC menu or **F3**, default **off**, so flip it on before com
   adding one after boot reshuffles nothing.
 - `hash2(x, y)` mixes `SEED` in, and `vnoise(x, y)` is built on it. Both are still pure functions
   of position *within a run* — use them for anything that must stay stable per tile no matter when
-  it is asked (ground texture, forest boundary, tree rare-drops, the frost slabs' mottling).
+  it is asked (ground texture, forest boundary, tree rare-drops).
   `borderDepth()` rides on `vnoise`, so the seed reshapes the forest and with it the whole map
   (everywhere but inside the two roost discs, which every seed grows alike).
 - An exception to the single stream — nothing outside worldgen may

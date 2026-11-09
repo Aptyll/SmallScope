@@ -235,7 +235,7 @@ tag `pre-split` keeps the one-file history.
 ### profile.js
 
 The local player profile — **one `name`** (every other player sees it), its lifetime `stats`
-(`wins` / `matches` / `gold` / `days` / `kills` / `deaths`), `hero` (the `CLASSES` index last
+(`wins` / `matches` / `gold` / `kills` / `deaths`), `hero` (the `CLASSES` index last
 locked in, where the champ select's grid opens next time), `pos` (the draft position it asks
 for, a `POSITIONS` index or -1 any: `pos()`/`setPos()`), the
 one-shot `dropped` flag (`hasDropped()`/`markDropped()`: has this profile ever jumped off the
@@ -269,8 +269,7 @@ file is a save file.
   characters, and a basic profanity list matched after the obvious digit-for-letter swaps are
   folded out. It returns `{ ok, name }` or `{ ok: false, why }`.
 - **The stat calls coalesce.** `addGold` fires on every
-  payout, `addWin` once per `endMatch('won')`, `addMatch` and `addDay` at eagle takeoff (and
-  `addDay` at each dawn the local player is still in), `addKill`/`addDeath` from `die()`, so
+  payout, `addWin` once per `endMatch('won')`, `addMatch` at eagle takeoff, `addKill`/`addDeath` from `die()`, so
   writes are batched behind an 800 ms timer and flushed on `pagehide` / `visibilitychange`;
   `setName`, `setHero` and `putSettings` write through immediately.
 - **The purse and the wardrobe are ids and a count.** `coins` starts at `START_COINS` (a

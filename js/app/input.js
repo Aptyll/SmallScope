@@ -869,7 +869,7 @@ pageListen(canvas, 'wheel', (e) => {
     else if (state.menu.screen === 'room' && friendsOver()) { e.preventDefault(); friendsScrollBy(e.deltaY > 0 ? 1 : -1); } // the friends' column (js/ui/friends.js)
     return;
   }
-  // dead and watching somebody (a respawn wait, or SPECTATE after the end):
+  // dead and watching an ally through a respawn wait:
   // the wheel zooms the camera on them, as it does in play. Not over the
   // recap, the planks or either end screen - there is no camera to move
   if (state.mode === 'dead') {

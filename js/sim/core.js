@@ -161,7 +161,7 @@ const state = {
   // screen point it is pinned to (wheelLayout, js/ui/wheel.js)
   wheel: null,
   // main menu (mode === 'title'): keyboard selection, per-item hover eases,
-  // the open sub-panel ('settings' | 'help' | null) and its slide progress
+  // the open sub-panel ('settings' | null) and its slide progress
   // one hover ease per menuItems() entry (js/ui/menu.js). That length is a coupling to a
   // table in a file that loads later, so the ease loop tops up a missing
   // cell rather than trusting it - a short array turned into NaN and

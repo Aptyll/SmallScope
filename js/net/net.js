@@ -498,7 +498,7 @@ function netClientStep(dt) {
 // is gated on `p === player` INSIDE the step, which only the host's screen
 // runs, so a client reads the same facts off its own body as the snapshots
 // move it: earned is the match's gold earned (gainGold), kills only climbs, a
-// death is dead's rising edge, the match and its first day start at takeoff
+// death is dead's rising edge, the match starts at takeoff
 // (beginDrop's two, which a client never calls) and the hop off the bird is
 // aboard's falling edge (hopOff's markDropped - the hop's cue itself
 // arrives as sfxFor's event). A redial
@@ -507,7 +507,7 @@ function netClientStats() {
   const me = player;
   if (!NET.synced || !me || state.mode === 'title') return;
   const w = NET.was;
-  if (!w || w.p !== me) { PROFILE.addMatch(); PROFILE.addDay(); }
+  if (!w || w.p !== me) { PROFILE.addMatch(); }
   else {
     if (me.earned > w.earned) PROFILE.addGold(me.earned - w.earned);
     for (let k = w.kills; k < me.kills; k++) PROFILE.addKill();
