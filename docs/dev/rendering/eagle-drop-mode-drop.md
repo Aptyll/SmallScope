@@ -116,7 +116,7 @@ controls exactly as pause does, `hurtEagle` refuses a second flee, and `checkLas
 owning side down permanently (`die(p, null, 'eagle')` / `teamEagleDown`, which `die`,
 `updateRespawns` and `teamInMatch` all gate on — see [multiplayer.md](../multiplayer.md#pvp)) and the
 victory or defeat screen rises **over the escape still flying underneath** — the camera stays on
-the bird through mode `dead` and only KEEP PLAYING (back to mode `play`) takes it back early. The
+the bird through mode `dead`. The
 takeoff itself: over `FLEE_LIFT_T` the bird turns from wherever the dive left it pointing to
 `fleeTo` (away from the world's centre, shortest arc) while climbing; then it flies at `FLEE_SPD`
 until `FLEE_T`, when it is `gone` and draws nothing ever again.
@@ -169,7 +169,7 @@ its frame) — and folds its wings over `EAGLE_SETTLE_T` (the three
 frames as a settle animation), then **rests**, breathing a ±1 px bob with a wing-shuffle idle
 every 3.5–7 s (`RUFFLE_T`, mid frame only with a puff of settling snow — the full spread stays
 the gust's telegraph, so the idle can never cry wolf), flashing all white when hit (`SPRITES.perch.flash` of the frame drawn: it is taller than the 128×128 `drawSpriteFlash` scratch),
-with its team-colour hp bar (`drawPerchBar`: `PERCH_BAR_W` x `PERCH_BAR_H` in a `PERCH_BAR_RIM` ink frame, in `PERCH_BAR_SEGS` even segments, the biggest bar in the world since the match is won and lost on it; the chunk a hit takes holds pale `PERCH_LAG_HOLD` then drains at `PERCH_LAG_RATE`, a render-side `perchLag`; the pool's number sits inside) up **from the moment it roosts** — the bar is the objective's
+with its team-colour hp bar (`drawPerchBar`: `PERCH_BAR_W` x `PERCH_BAR_H` in a `PERCH_BAR_RIM` ink frame, in `PERCH_BAR_SEGS` even segments, the biggest bar in the world since the match is won and lost on it; the chunk a hit takes holds pale `PERCH_LAG_HOLD` then drains at `PERCH_LAG_RATE`, a render-side `perchLag`; the pool's number sits inside; never on an end screen, `endScreen()`, like every other tell) up **from the moment it roosts** — the bar is the objective's
 introduction, anchored to the bird's rotated extent; no nameplate over it, the bar alone names the objective. A gust windup draws wings thrown open
 (frame 0) lifted 2 px: the spread IS the telegraph, no text. Perch roosts landed with its
 wings half open and the crew's saddle on its back (`'r' + beat`, at the roost's size, the three

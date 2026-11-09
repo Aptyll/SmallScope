@@ -88,11 +88,6 @@ function update(dt) {
     if (state.time >= CYCLE) {
       state.time -= CYCLE;
       state.day++;
-      // the profile's days played: each dawn the player is still in the match
-      // counts the day it opens (day 1 counted itself at takeoff), so quitting
-      // to the lobby mid-match still keeps the days begun. Practice is not a
-      // match: its dawns count nothing, like the rest of its stats.
-      if (!player.eliminated && !PRACTICE) PROFILE.addDay();
       SFX.dawnChime();
       // the shoal is not reset here: it is a live population, refilled a fish
       // at a time by updateFish's trickle
@@ -183,8 +178,7 @@ function update(dt) {
     // the match is decided: every eye goes to the bird that broke. The camera
     // glides over and holds it centred while the takeoff plays out - the end
     // screens wait for it (eagleFleeResolve, js/sim/eagle.js), then rise over the
-    // escape still flying underneath. League-style. Only KEEP PLAYING (mode
-    // back to 'play' with no ceremony) hands the camera back early.
+    // escape still flying underneath. League-style.
     const ec = state.eagleCine ? state.drop.eagles[state.eagleCine.team]
       : state.drop.eagles.find((q) => q.state === 'flee');
     camX += (ec.x - WV_W / 2 - camX) * Math.min(1, dt * 3.5);

@@ -386,7 +386,29 @@ const CLASSES = [
       bowCharge: BOW_CHARGE, nock: 0.4, spdDmg: 0, dodgeSpeed: DODGE_SPEED },
   },
   {
-    // a named hero (js/sim/maris.js): a tank who catches one rival. Quick and chilling on
+    // the fourteenth named hero (js/sim/velox.js): the kiting marksman. She throws her
+    // sling while she skates, a shorter reach than the hunter's and less damage; quick,
+    // steady on ice and very hard to catch, and caught, she has nothing to stop a rival
+    name: 'VELOX', role: 'THE SKATER', body: 1, passive: 'keepmoving', // HERO_PASSIVE, js/sim/velox.js
+    look: { sex: 1, tone: 1, hair: 2, hairCol: 2, beard: 0, face: 2 },
+    blurb: ['NEVER STAND STILL.', 'THROW WHILE YOU SKATE: EVERY HIT QUICKENS YOU.', 'LAY YOUR OWN ICE AND FLY ALONG IT.'],
+    story: "SHE CARRIED THE EMPIRE'S MESSAGES DOWN ITS FROZEN CANALS, FASTER THAN ANY HORSE. ONE NIGHT SHE READ THE ORDER SHE CARRIED: BURN A VILLAGE THAT WOULD NOT PAY. SHE SKATED THERE FIRST AND WARNED THEM. NOW SHE CARRIES WORD FOR ANYONE WHO NEEDS IT CARRIED FAST.",
+    // a sling stone: a shorter, quicker throw than the hunter's arrow, barely slowed by her skating
+    staff: 'sling', // her STAFF SLING, carried upright (HERO_STAVES, js/draw/velox.js)
+    attack: { name: 'STAFF SLING', art: 'sling', cycle: 50 / 60, kb: 0.6, shot: { speed: 300, life: 0.6, col: '#9aa3b8', look: 'slingstone' } },
+    base: { hp: 82, dmg: 14, armor: 10, ap: 0, haste: 0, ms: PLAYER_SPEED + 3 },
+    grow: { hp: 6, dmg: 1.2, as: 0.016, armor: 1.7 },
+    rankOrder: [0, 2, 1], // the skip stone, the quick step, the ice lane
+    // her own body in each of her looks (VELOX_SKINS, js/sprites/velox.js), worn per
+    // player (heroSkinOf) over the side's coat
+    skins: VELOX_SKINS, skinPal: VELOX_PAL, skinSlot: 'velox',
+    paint48: { t: '#7d8699', T: '#b4bdcc', g: '#1c2232', G: '#9aa3b8', m: '#5c6478', M: '#454c5e' }, // the 48 px model's (js/sprites/looks.js): its K is skin
+    // ice is her ground: a higher cap and a sharp turn on it; a drawn sling barely slows her
+    kit: { iceMax: 1.25, iceSteer: 9, slideMin: SLIDE_MIN, fatigue: 0.8, chargeMul: 0.9,
+      bowCharge: 0.6, nock: 0.4, spdDmg: 3, dodgeSpeed: 240 },
+  },
+  {
+    // the fifteenth named hero (js/sim/maris.js): a tank who catches one rival. Quick and chilling on
     // ice and by open water, she swims where others go in; much weaker on dry ground far
     // from it, and once she has surfaced she has no way out
     name: 'MARIS', role: 'THE ICE DIVER', body: 1, passive: 'coldwater', // HERO_PASSIVE, js/sim/maris.js
@@ -785,6 +807,9 @@ class Player {
     // VARRO (js/sim/varro.js): the body LUNGE is leaping at, SNAP's strikes still to land and
     // their clock; and on any body, whose mark it wears (LUNGE) and until when
     this.leapQ = null; this.snapN = 0; this.snapT = 0; this.packBy = -1; this.packUntil = 0;
+    // VELOX (js/sim/velox.js): KEEP MOVING's stacks and their clock, QUICK STEP's readied
+    // throw, LONG RUN's clock
+    this.keepN = 0; this.keepT = 0; this.quickT = 0; this.runT = 0;
     // NIX (js/sim/nix.js): a moment shown after striking from her cloud; WHITEOUT's
     // vanish and the hero it struck (the reset's clock, and whether this cast may reset);
     // NIGHT WATCH's hidden blow waiting
@@ -1274,13 +1299,8 @@ function practiceRevive(p) {
 
 // Both end screens print the same object, so there is one of these rather
 // than one per ending: the four tally numbers, the class it was played in,
-// the whole side both stages stand, and the one fact only the loss prints
-// (its placing).
+// and the whole side both stages stand.
 function endSnapshot() {
-  // where the local player finished: every player still in the match outlasted
-  // it, so place is one past that count. A win is 1st by definition (the
-  // screen that prints place never sees a win, but the object shouldn't lie).
-  const left = players.filter((q) => q !== player && q.active && !q.eliminated).length;
   return {
     gold: player.earned, kills: player.kills, level: player.level, time: state.elapsed,
     team: player.team, cls: player.cls,
@@ -1290,7 +1310,6 @@ function endSnapshot() {
     roster: players.filter((q) => q.active && q.team === player.team)
       .sort((a, b) => (a === player ? -1 : b === player ? 1 : a.id - b.id))
       .map((q) => ({ name: q.name, cls: q.cls, look: q.look, team: q.team })),
-    place: player.eliminated ? left + 1 : 1, of: players.filter((q) => q.active).length,
   };
 }
 

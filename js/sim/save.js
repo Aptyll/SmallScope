@@ -55,6 +55,7 @@ const SAVE_ROOTS = [
   ['lucernaHooks', ...saveArr(lucernaHooks)], ['lucernaLanterns', ...saveArr(lucernaLanterns)], ['lucernaCircles', ...saveArr(lucernaCircles)], // LUCERNA's crooks flying, lanterns lying, rings of light (js/sim/lucerna.js)
   ['bucinaEchoes', ...saveArr(bucinaEchoes)], ['bucinaCalls', ...saveArr(bucinaCalls)], // BUCINA's echoes in flight and horn calls (js/sim/bucina.js)
   ['hiemsGlazes', ...saveArr(hiemsGlazes)], ['hiemsStorms', ...saveArr(hiemsStorms)], // HIEMS's ice and blizzards (js/sim/hiems.js)
+  ['veloxStones', ...saveArr(veloxStones)], ['veloxLanes', ...saveArr(veloxLanes)], // VELOX's skipping stones and ice lanes (js/sim/velox.js)
   ['nixShards', ...saveArr(nixShards)], ['nixClouds', ...saveArr(nixClouds)], // NIX's shards in flight and clouds on the ground (js/sim/nix.js)
   ['faberParts', ...saveArr(faberParts)], ['faberArcs', ...saveArr(faberArcs)], ['faberBolts', ...saveArr(faberBolts)], ['faberSprings', ...saveArr(faberSprings)], // FABER's spare parts, sparks' jumps, bolts and clocksprings (js/sim/faber.js; his machines ride `robots`)
   ['wordPops', ...saveArr(wordPops)], ['coinPops', ...saveArr(coinPops)], ['ptargets', ...saveArr(ptargets)], ['slashes', ...saveArr(slashes)],

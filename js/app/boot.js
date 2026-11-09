@@ -72,7 +72,6 @@ const LOADED_AT_BOOT = !PRACTICE && !NET.isClient && saveBootLoad();
 prepGround(); // the ground bakes lazily from here, view first (js/draw/ground.js)
 mapAlloc(); // the map slab's buffers and bake, at the size relayout() gave it
 buildSettingsPanel();
-buildHelpPanel();
 camX = player.x - WV_W / 2;
 camY = player.y - WV_H / 2;
 // practice boots straight onto the snow: no title, no ride. On the map both

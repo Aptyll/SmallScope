@@ -62,6 +62,7 @@ order, so the script tags still interleave them:
 | [js/sprites/varro.js](../../js/sprites/varro.js) | ~370 | shared scope, no `window.*` export | VARRO's 32 px icons (`VARRO_ICON32`), his two looks (`VARRO_BODY`, `VARRO_SKINS`) and his HUNTING SPEAR's grids and weapon art |
 | [js/sprites/bucina.js](../../js/sprites/bucina.js) | ~320 | shared scope, no `window.*` export | BUCINA's 32 px ability and passive icons (`BUCINA_ICON32`), her two looks and her HORN's weapon art |
 | [js/sprites/nix.js](../../js/sprites/nix.js) | ~280 | shared scope, no `window.*` export | NIX's 32 px ability and passive icons (`NIX_ICON32`), her look (`NIX_BODY`, `NIX_PAL`, `NIX_SKINS`) and her ICE DIRK (`NIX_DIRK`) |
+| [js/sprites/velox.js](../../js/sprites/velox.js) | ~320 | shared scope, no `window.*` export | VELOX's 32 px ability and passive icons (`VELOX_ICON32`), her two looks (`VELOX_BODY`, `VELOX_PAL`, `VELOX_SKINS`) and her STAFF SLING's weapon art |
 | [js/sprites/faber.js](../../js/sprites/faber.js) | ~320 | shared scope, no `window.*` export | FABER's 32 px ability and passive icons (`FABER_ICON32`), his looks' 16 px grids and skins table (`FABER_BODY`, `FABER_SKINS`) and his CLOCK STAFF's weapon art |
 | [js/sprites/bella.js](../../js/sprites/bella.js) | ~340 | shared scope, no `window.*` export | BELLA's 32 px ability and passive icons (`BELLA_ICON32`), her looks' 16 px grids and skins table (`BELLA_BODY`, `BELLA_SKINS`), and her spatha (`BELLA_SPATHA`) |
 | [js/sprites/ignia.js](../../js/sprites/ignia.js) | ~310 | shared scope, no `window.*` export | IGNIA's 32 px ability and passive icons (`IGNIA_ICON32`), her looks' 16 px grids and skins table (`IGNIA_BODY`, `IGNIA_SKINS`) |
@@ -109,6 +110,7 @@ order, so the script tags still interleave them:
 | [js/sim/varro.js](../../js/sim/varro.js) | ~330 | shared scope, no `window.*` export | VARRO, the jungler: his tuning, his four keys (`VARRO_AB`, joined into `CLASS_AB`), his passive THE PACK, the leap as a hero dash, and the wolves he calls (`HERO_SUMMON.pack`) |
 | [js/sim/bucina.js](../../js/sim/bucina.js) | ~210 | shared scope, no `window.*` export | BUCINA, the tempo support: her tuning, her four keys (`BUCINA_AB`, joined into `CLASS_AB`), her passive HEARD, and what she leaves in the world (echoes, horn calls) |
 | [js/sim/nix.js](../../js/sim/nix.js) | ~310 | shared scope, no `window.*` export | NIX, the night scout: her tuning, her four keys (`NIX_AB`, joined into `CLASS_AB`), NIGHT WATCH, the snow cloud's cover (`HERO_COVER`), what she leaves in the world (`nixShards`, `nixClouds`) |
+| [js/sim/velox.js](../../js/sim/velox.js) | ~270 | shared scope, no `window.*` export | VELOX, the kiting marksman: her tuning, her four keys (`VELOX_AB`, joined into `CLASS_AB`), her passive KEEP MOVING, the quick step as a hero dash, and what she leaves in the world (`veloxStones`, `veloxLanes`) |
 | [js/sim/faber.js](../../js/sim/faber.js) | ~350 | shared scope, no `window.*` export | FABER, the zone mage: his tuning, his four keys (`FABER_AB`, joined into `CLASS_AB`), his passive SPARE PARTS, his two machines' brains (`HERO_MACHINE`: bodies in `robots`), the parts, jumps, bolts and clocksprings he leaves (`faberParts`, `faberArcs`, `faberBolts`, `faberSprings`) |
 | [js/sim/bella.js](../../js/sim/bella.js) | ~340 | shared scope, no `window.*` export | BELLA, the duelist: her tuning, her four keys (`BELLA_AB`, joined into `CLASS_AB`), her passive CALCULATED STRIKES, the lunge and the slip as hero dashes, the duel and its flurry |
 | [js/sim/ignia.js](../../js/sim/ignia.js) | ~260 | shared scope, no `window.*` export | IGNIA, the hearthkeeper: her tuning, her four keys (`IGNIA_AB`, joined into `CLASS_AB`), her passive KINDLING (her fire spreading and doused), the brand, the lines of fire (`brushfires`), the warmth and the wildfire |
@@ -158,6 +160,7 @@ order, so the script tags still interleave them:
 | [js/draw/varro.js](../../js/draw/varro.js) | ~35 | shared scope, no `window.*` export | VARRO's pixels: LUNGE's paw mark and the spear in his hands |
 | [js/draw/bucina.js](../../js/draw/bucina.js) | ~90 | shared scope, no `window.*` export | BUCINA's pixels: her note, the echo and the horn call on the snow, the rallied notch; her HORN carried |
 | [js/draw/nix.js](../../js/draw/nix.js) | ~90 | shared scope, no `window.*` export | NIX's pixels: the snow cloud and the shard in the air (`HERO_AIR`), the cloud's shadow (`HERO_GROUND`), her see-through body while hidden (`HERO_FADE`), her dirk (`HERO_BLADES.dirk`) |
+| [js/draw/velox.js](../../js/draw/velox.js) | ~115 | shared scope, no `window.*` export | VELOX's pixels: her sling stone, the ice lane and the skipping stone on the snow, KEEP MOVING's chevrons and LONG RUN's streaks, her STAFF SLING carried |
 | [js/draw/faber.js](../../js/draw/faber.js) | ~200 | shared scope, no `window.*` export | FABER's pixels: his spark and brass cog in flight, the parts, clocksprings, jumps and bolts on the snow, his two machines' bodies, his clock staff |
 | [js/draw/bella.js](../../js/draw/bella.js) | ~70 | shared scope, no `window.*` export | BELLA's pixels: her precision pips, the parry's blade, the marks and the duel's ring, and her spatha in her hands |
 | [js/draw/ignia.js](../../js/draw/ignia.js) | ~140 | shared scope, no `window.*` export | IGNIA's pixels: the brand and the ember in flight, the lines of fire and their melted strip, the warm hands' sparks, and her crook and lantern |
@@ -238,7 +241,7 @@ tag `pre-split` keeps the one-file history.
 ### profile.js
 
 The local player profile — **one `name`** (every other player sees it), its lifetime `stats`
-(`wins` / `matches` / `gold` / `days` / `kills` / `deaths`), `hero` (the `CLASSES` index last
+(`wins` / `matches` / `gold` / `kills` / `deaths`), `hero` (the `CLASSES` index last
 locked in, where the champ select's grid opens next time), `pos` (the draft position it asks
 for, a `POSITIONS` index or -1 any: `pos()`/`setPos()`), the
 one-shot `dropped` flag (`hasDropped()`/`markDropped()`: has this profile ever jumped off the
@@ -272,8 +275,7 @@ file is a save file.
   characters, and a basic profanity list matched after the obvious digit-for-letter swaps are
   folded out. It returns `{ ok, name }` or `{ ok: false, why }`.
 - **The stat calls coalesce.** `addGold` fires on every
-  payout, `addWin` once per `endMatch('won')`, `addMatch` and `addDay` at eagle takeoff (and
-  `addDay` at each dawn the local player is still in), `addKill`/`addDeath` from `die()`, so
+  payout, `addWin` once per `endMatch('won')`, `addMatch` at eagle takeoff, `addKill`/`addDeath` from `die()`, so
   writes are batched behind an 800 ms timer and flushed on `pagehide` / `visibilitychange`;
   `setName`, `setHero` and `putSettings` write through immediately.
 - **The purse and the wardrobe are ids and a count.** `coins` starts at `START_COINS` (a

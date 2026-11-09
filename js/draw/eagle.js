@@ -320,8 +320,10 @@ function drawEagle(e, ex, ey, now) {
       // in even health segments like every hp bar, but big and few: the
       // objective's bar reads from across the clearing, so PERCH_BAR_SEGS
       // is set here rather than asked of hpSegCount (which would split
-      // EAGLE_HP into a comb of 2 px blocks)
-      drawPerchBar(e, sx, sy - Math.round(vh) - 6, now);
+      // EAGLE_HP into a comb of 2 px blocks). An end screen's frozen world
+      // wears no tells (endScreen; the bodies skip theirs the same way), so
+      // the bar never runs behind the podium
+      if (!endScreen()) drawPerchBar(e, sx, sy - Math.round(vh) - 6, now);
     }
   }
   // the impact shockwave: two rings racing out over the crater, then gone -

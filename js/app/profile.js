@@ -21,7 +21,7 @@
   const OLD_SETTINGS = 'softfall.settings'; // pre-profile saves; migrated once
   const NAME_MAX = 16;
   const POS_N = 5;                 // POSITIONS.length (js/sim/player.js)
-  const HERO_N = 16;              // CLASSES.length (js/sim/player.js) - a hero index past this is repaired to 0
+  const HERO_N = 17;              // CLASSES.length (js/sim/player.js) - a hero index past this is repaired to 0
   // the coins a profile starts with: the cosmetics' purse, kept outside every
   // match (a match's gold never reaches it). What a coin buys is the skins
   // screen's table (js/ui/skins.js); this file only keeps the count and ids.
@@ -45,7 +45,7 @@
     return NAME_POOL[Math.floor(Math.random() * NAME_POOL.length)];
   }
   function blankStats() {
-    return { wins: 0, matches: 0, gold: 0, days: 0, kills: 0, deaths: 0 };
+    return { wins: 0, matches: 0, gold: 0, kills: 0, deaths: 0 };
   }
   // stats repaired onto `into`: whole, non-negative numbers ADDED to what is
   // there (so v2's slots sum into one ledger); anything else is skipped
@@ -313,10 +313,6 @@
     stats() { return profile.stats; },
     addWin() { this.stats().wins++; scheduleSave(); },
     addGold(n) { if (n > 0) { this.stats().gold += n; scheduleSave(); } },
-    // one call per day the player sets foot in: day 1 as the eagles take off
-    // (js/sim/eagle.js beginDrop), every later day at its dawn (js/sim/sim.js) - counted
-    // at the START of the day, so quitting mid-match keeps the days begun
-    addDay() { this.stats().days++; scheduleSave(); },
     addMatch() { this.stats().matches++; scheduleSave(); }, // one per eagle takeoff (beginDrop)
     addKill() { this.stats().kills++; scheduleSave(); },    // a rival the local player downed (die, js/sim/player.js)
     addDeath() { this.stats().deaths++; scheduleSave(); },  // the local player downed
