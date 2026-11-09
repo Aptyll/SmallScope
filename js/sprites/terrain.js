@@ -1071,8 +1071,9 @@
     '....ssssss......',
   ];
 
-  // Dead trees: the rookery's bare snags. Same 16x24 footprint as a pine so
-  // they draw at py-8 in the same band, but stripped to grey wood and snow.
+  // Dead trees: bare snags, the wiki's THE WORKS figure (js/ui/wiki.js). Same
+  // 16x24 footprint as a pine, drawn at py-8 in the same band, but stripped to
+  // grey wood and snow.
   const DTPAL = {
     '.': null,
     'o': '#2a2018', // outline

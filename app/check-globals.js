@@ -15,7 +15,8 @@
 //     quietly rewires another's feature.
 // It also reports a js file index.html never loads, and one it loads twice.
 // It runs app/check-size.js too, so a file or function grown too big fails here,
-// app/check-dead.js, so a top-level name nothing uses fails here, and
+// app/check-dead.js, so a top-level name, a sprite, a sound cue or a sound
+// file nothing uses fails here, and
 // app/check-text.js, so a word missing from the text table fails here.
 //
 // It reads each file with a small tokenizer (strings, template literals,

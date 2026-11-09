@@ -565,14 +565,11 @@
       if (master && !muted) master.gain.value = volume;
       applyMusicVol();
     },
-    getVolume() { return volume; },
     setMusicVolume(v) { musicVol = dial(v, musicVol); applyMusicVol(); },
-    getMusicVolume() { return musicVol; },
     setSfxVolume(v) {
       sfxVol = dial(v, sfxVol);
       if (sfxBus) sfxBus.gain.value = sfxVol;
     },
-    getSfxVolume() { return sfxVol; },
     // the songs. play() is a no-op when that track is already the current one,
     // so a caller can shout it every frame; stop() fades the layer to silence.
     music: {
