@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['THE HERO GRID SHOWS ONLY HEROES YOU CAN PICK', '0.656'],
     ['The shop fits 4:3 and 5:4 screens', '0.655'],
     ['PICK A CALLING AND TWO TRICKS IN CHAMP SELECT, EACH TRICK ON ITS OWN KEY', '0.654'],
     ['11 NEW ITEMS; RECOMMENDED BUILDS SHOW WHAT PLAYERS PICK AND WIN WITH', '0.653'],

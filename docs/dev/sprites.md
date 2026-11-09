@@ -363,8 +363,7 @@ bow, and thrown as a shot drawn by `HERO_SHOTS.knife`.
 
 The **48 px model** ([looks.js](../../js/sprites/looks.js), `SPRITES.portrait(cls, look,
 team)`) is where the whole look reads — the champ select's stage, grid and seat discs. Each hero wears one
-fixed `look` (`CLASSES[i].look`, js/sim/player.js; the heroes still to come in `HEROES_SOON`
-are drawn from theirs as silhouettes). It is **layers stamped in order** onto one 48×48 canvas: `BODY[sex]` (24 wide at x 12:
+fixed `look` (`CLASSES[i].look`, js/sim/player.js). It is **layers stamped in order** onto one 48×48 canvas: `BODY[sex]` (24 wide at x 12:
 neck, shoulders, arms, undershirt `u`, pants, boots), `HEAD[face]` (16 wide at x 16: round,
 square-jawed, narrow — eyes `W`/`e`, nose shade, blush, mouth), `BEARD[beard]` (none, stubble,
 short, full — `h` only inside the face, rimmed only where it hangs past the chin),
