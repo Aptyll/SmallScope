@@ -1,6 +1,6 @@
 # The two class bodies on the doll (doll.py): the HUNTER (pom beanie) and the WARRIOR
 # (fur hood with goggles, a trailing scarf, skate blades), and each named hero's looks
-# (ARMATOS: standard, oath; FORTIVA: unbroken, coif; BELLA: general, traitor; IGNIA: hearth, wanderer; AURA: light; SALVIA: hood, tent; LUCERNA: lamp, dusk; HIEMS: scholar, frost; RUPES: quarry, cellar; NIX: snowblind; VARRO: wolfkept, whitepack; FABER: clockmaker, foreman; MARIS: diver, orca; VELOX: canal, night; LIGNUM: feller, forest). Their sizes are measured off the
+# (ARMATOS: standard, oath; FORTIVA: unbroken, coif; BELLA: general, traitor; IGNIA: hearth, wanderer; AURA: light; SALVIA: hood, tent; LUCERNA: lamp, dusk; HIEMS: scholar, frost; RUPES: quarry, cellar; NIX: snowblind; VARRO: wolfkept, whitepack; FABER: clockmaker, foreman; MARIS: diver, orca; VELOX: canal, night; SAGITTA: siege, tower; LIGNUM: feller, forest). Their sizes are measured off the
 # hand-drawn 16 px frames in js/sprites/characters.js, so the doll's idle lands on those
 # frames pixel for pixel and the run and the roll it paints wear the same body.
 #
@@ -724,6 +724,26 @@ class Night(Canal):
     HAIR, CAP, SCARF = 'nighthair', 'nightcap', 'nightscarf'
 
 
+class Siege(Canal):
+    """SAGITTA as SIEGEWRIGHT (her default look): a leather cap (the boot ramp, brown in her
+    paint) with a brass goggle band at the brow over dark hair, a brass-buckled collar over
+    her side's coat; Canal's frame, no braid"""
+    MARKS = [(-1.5, -0.4, 'y'), (-0.5, -0.4, 'Y'), (0.5, -0.4, 'Y'), (1.5, -0.4, 'y'),
+             (-1.5, 0.9, 'e'), (1.5, 0.9, 'e')]
+    HAIR, CAP, SCARF = 'hair', 'boot', 'gold'
+
+    def extras(self, cv, cam, U, R, pose):
+        pass
+
+
+class Tower(Siege):
+    """SAGITTA as TOWER BUILDER (the first skin): the same engineer, a slate cap with a
+    steel band, a steel collar"""
+    MARKS = [(-1.5, -0.4, 'G'), (-0.5, -0.4, 'g'), (0.5, -0.4, 'g'), (1.5, -0.4, 'G'),
+             (-1.5, 0.9, 'e'), (1.5, 0.9, 'e')]
+    HAIR, CAP, SCARF = 'hair', 'slatecap', 'goggle'
+
+
 class Horn(Lamp):
     """BUCINA as HORN-BLOWER (her default look): bare-headed, auburn hair, a slate wool cape
     with a cream fur collar over her side's coat; Armatos's frame, boots"""
@@ -918,4 +938,5 @@ BODIES = {'hunter': Hunter(), 'warrior': Warrior(), 'standard': Standard(), 'oat
           'clockmaker': Clockmaker(), 'foreman': Foreman(),
           'canal': Canal(), 'night': Night(),
           'diver': Diver(), 'orca': Orca(),
-          'feller': Feller(), 'forest': Forest()}
+          'feller': Feller(), 'forest': Forest(),
+          'siege': Siege(), 'tower': Tower()}

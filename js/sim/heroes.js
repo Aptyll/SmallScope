@@ -9,7 +9,8 @@
 // - HERO_PASSIVE[name]: a passive by the name a CLASSES row gives (`passive`),
 //   with any of hurt(p, dmg, src) for a hit taken (after armor, before the
 //   shields), deal(src, e, dmg, o) -> dmg for a blow landed (before it lands),
-//   cast(p) for a key landing, tick(p, dt) every step, out(p) when the body
+//   cast(p) for a key landing, shot(p, a) for a basic shot just loosed (it may
+//   change the shot: SAGITTA's heavy bolt), tick(p, dt) every step, out(p) when the body
 //   leaves the world (bodyOut); plus name/blurb/icon for the strip and the wiki.
 // - HERO_TAKEN: fn(p, dmg, dx, dy, src) -> dmg, folded over every hit a player
 //   takes after armor (a brace, a parry).
@@ -49,8 +50,12 @@
 //   js/sim/sim.js): MARIS swims the creek and a broken hole.
 // - HERO_SOLID: fn(tx, ty, e) -> true for a tile a kit has walled for now (isSolidTile,
 //   js/sim/world.js): LIGNUM's felled trunk.
+// - HERO_SHOT_HIT[id]: fn(a, t, nx, ny) once a shot with `a.hit = id` has landed its
+//   blow on body t (the arrow loop, js/sim/sim.js): SAGITTA's pin against a tree.
+//   Clearing a.pierce there ends a piercing shot on that body.
 // An ability row may also carry recast(p) (true: the key pressed again is
-// its second half, castSlam) and ok(p) (false: the press is refused).
+// its second half, castSlam), ok(p) (false: the press is refused) and aimHeld
+// (its wind-up holds the weapon on the aim: castAims, js/draw/bodies.js).
 const HERO_PASSIVE = {};
 const HERO_TAKEN = [];
 const HERO_STAT = [];
@@ -69,6 +74,7 @@ const HERO_MACHINE = {};
 const HERO_WRECK = [];
 const HERO_SWIM = [];
 const HERO_SOLID = [];
+const HERO_SHOT_HIT = {};
 
 // the ability whose use() is running right now, so a blow it lands says so
 // (o.ab, stamped by hurtUnit, js/sim/actions.js); '' between casts. Never state: set and cleared
@@ -80,6 +86,7 @@ function passiveHurt(p, dmg, src) { const h = heroPassive(p); if (h && h.hurt) h
 function passiveCast(p) { const h = heroPassive(p); if (h && h.cast) h.cast(p); }
 function passiveTick(p, dt) { const h = heroPassive(p); if (h && h.tick) h.tick(p, dt); }
 function passiveOut(p) { const h = heroPassive(p); if (h && h.out) h.out(p); }
+function passiveShot(p, a) { const h = heroPassive(p); if (h && h.shot) h.shot(p, a); }
 // a blow `src` is about to land on `e`: what its passive makes of it
 function passiveDeal(src, e, dmg, o) {
   if (!(src instanceof Player)) return dmg;
@@ -105,3 +112,4 @@ function heroMachine(b) { return (b.kind && HERO_MACHINE[b.kind]) || null; }
 function heroWreck(b, src) { for (const f of HERO_WRECK) f(b, src); }
 function heroSolid(tx, ty, e) { for (const f of HERO_SOLID) if (f(tx, ty, e)) return true; return false; }
 function heroSwim(p) { for (const f of HERO_SWIM) if (f(p)) return true; return false; }
+function heroShotHit(a, t, nx, ny) { const f = a.hit && HERO_SHOT_HIT[a.hit]; if (f) f(a, t, nx, ny); }

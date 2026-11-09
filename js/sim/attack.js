@@ -98,6 +98,7 @@ function shootAttack(p, A, amb) {
     solid: true, kb: A.kb, col: A.shot.col, basic: true, look: A.shot.look, // `look`: drawn as a hero's own shot (HERO_SHOTS, js/draw/heroes.js)
     ang: a, spd, ox: p.x, oy: p.y - BOW_Y,
   });
+  passiveShot(p, arrows[arrows.length - 1]); // a hero's passive may make more of it (HERO_PASSIVE shot, js/sim/heroes.js)
   faceToward(p, dx, dy, true);
 }
 

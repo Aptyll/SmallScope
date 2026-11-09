@@ -170,6 +170,7 @@ const CLASS_AB = [
   FALCO_AB, // FALCO - the talons, the knife fan, the glide, the stoop (js/sim/falco.js)
   MARIS_AB, // MARIS - the harpoon, the brace, the undertow, the breach (js/sim/maris.js)
   LIGNUM_AB, // LIGNUM - the chop, the thrown axe, the bark skin, the timber (js/sim/lignum.js)
+  SAGITTA_AB, // SAGITTA - the pin, the pavise, the crank back, the long bolt (js/sim/sagitta.js)
 ];
 
 // the world the abilities put things into
