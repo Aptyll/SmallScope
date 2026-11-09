@@ -25,7 +25,7 @@ overlay).
 
 ## The running XP total
 
-XP gets the damage total's treatment, on the frame's other side and for **your own scout only**:
+XP gets the damage total's treatment, on the frame's other side and for **your own hero only**:
 `gainXp` (js/sim/player.js) adds each gain to `p.xpN` and stamps `p.xpTick`, a gain after
 `TALLY_HOLD` of quiet starting a new total, and `drawPlayer` queues it for the local player
 (`queueXp`, js/draw/overhead.js) as a plain purple number in the portrait's xp ink (`PORT_XP_LIT`),

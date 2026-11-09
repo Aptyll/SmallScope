@@ -22,7 +22,7 @@ panel is painted at this frame, which is how the two modes are read without eyeb
 
 **`tipAt(mx, my)` is the only source**, and it asks the same hit-testers the press handler
 does, so what the panel describes and what a click would do can never be two different things.
-In `play`, in order: the merchant's counter (`shopHit` → `tipShop`, first), the build list's rows (`buildListHit`), the character panel's item slots (`charItemHit`, answering `tipItem`), a rail chip
+In `play`, in order: the merchant's counter (`shopHit` → `tipShop`, first), the character panel's item slots (`charItemHit`, answering `tipItem`), a rail chip
 (`railHit`), a
 floating buy plate (`abBuyHit`), the strip (`stripHit`: an ability well, an item slot answering
 `tipItem`, the purse, and the portrait answering `tipAttack`). In `title` it answers the wiki's rows and

@@ -530,7 +530,7 @@ None of the scripts is part of the game, and nothing in `js/` may depend on one 
   few names kept on purpose with no caller, each with its reason. It also fails a key registered
   on `SPRITES` (baked files included) that nothing reads; a dynamic `SPRITES[expr]` read must sit
   in its `DYNAMIC` table, which reads the keys it can take off the table that feeds it (`ANIMAL_HP`,
-  `SWING_TOOLS`, `STRUCTS`, ...), and a stale entry fails too. And it fails an `SFX` method with no
+  `STRUCTS`, ...), and a stale entry fails too. And it fails an `SFX` method with no
   caller (`SFX.name`, or `'name'` as a string outside js/app/audio.js; `SFX_TOOLS` lists the
   console ones), a `SAMPLES` key audio.js never plays, a file in audio/sfx/ no `SAMPLES` list
   names (and the reverse), and a js/baked/sfxdata.js out of step with audio/sfx/.
@@ -538,3 +538,8 @@ None of the scripts is part of the game, and nothing in `js/` may depend on one 
   counts the words still outside the table, by file). It fails a `tr('key')` with no key in
   `TEXT`, a key no game file names, a value with a character the font lacks, and a loose word in a
   file on its `MOVED` list ([the text table](rendering/the-text-table.md)).
+- **`app/check-docs.js`** — the docs check, run by `check-globals.js` (or alone). It fails a
+  camelCase name or an upper-case constant name in backticks in docs/ that no code has (js/, app/ with its
+  Python bakers, desktop/, bots/, .claude/, the root pages); a name written `prefix*` needs some
+  code word to start with it. `SKIP_FILES` lists the docs that name old code on purpose (the parked
+  cards) and `ALLOW` the few backticked words that are not code, each with its reason.

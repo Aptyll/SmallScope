@@ -1,9 +1,9 @@
 # Economy (one currency)
 
 **Gold is not XP.** Gold buys; XP levels, and it comes only from being near when a rival body
-dies — a soldier, a scout, a deer, a wolf, a bear — shared by the side standing there
+dies — a soldier, a hero, a deer, a wolf, a bear — shared by the side standing there
 ([Hero levels](../multiplayer.md#hero-levels)). Nothing in this section pays XP: the works, the
-clock, a pump and a sale are gold alone, so the road is where a scout levels; the lanes' soldiers
+clock, a pump and a sale are gold alone, so the road is where a hero levels; the lanes' soldiers
 and the dens are where it gets rich, and the woods are pocket money.
 
 Every player owns a wallet, `p.gold`: currency only, no ceiling. The six item slots beside it

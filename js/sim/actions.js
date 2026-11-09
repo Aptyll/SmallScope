@@ -491,11 +491,11 @@ function hitObject(o, p) {
 }
 
 // THE DAWN SHIELD: an open snowdrop picked (OBJECTS.snowdrop, js/sim/world.js)
-// lays DAWN_SHIELD of shield on every scout of the picker's company who is
+// lays DAWN_SHIELD of shield on every hero of the picker's company who is
 // up and on the ground, wherever they are, stacking to DAWN_SHIELD_MAX - so
 // the clumps are worth racing a rival company for, one segment each. It
 // holds until hits break it (damagePlayer spends it before health) or its
-// scout goes down; it never wears off by itself. The gold bar over the
+// hero goes down; it never wears off by itself. The gold bar over the
 // health bar is the whole read (drawShieldBar, js/draw/overhead.js).
 const DAWN_SHIELD = 10;
 const DAWN_SHIELD_MAX = 30;

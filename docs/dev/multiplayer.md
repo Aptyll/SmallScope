@@ -42,7 +42,7 @@ dodge charges, slide state, swing state, held tool, i-frames, footprint cadence 
 wears the **profile's** name and last hero — `applyProfile()`, called by `initPlayers` — see
 [architecture.md](architecture.md#profilejs)), `look` (the hero's fixed face, a copy of
 `CLASSES[cls].look` that every `setClass` writes, so every copy of a hero looks the same), `spawn` (the tile it landed
-on from the eagle), `aboard`/`dropT`/`dropU`
+on from the eagle), `aboard`/`dropT`
 (the eagle ride, see [Eagle drop](rendering/eagle-drop-mode-drop.md)), its own `gold` wallet and
 `potions`/`potT` (the stack and the running drink, [Heals](gameplay/heals.md)),
 `level`/`xp` (see [Hero levels](#hero-levels)), `earned` (the match's gold earned), `kills`, an `input` struct and an `ai` brain.
@@ -325,7 +325,7 @@ total over the head (`xpN` since `xpTick`, the [purple number](rendering/damage-
 calls `levelUp(p)` while `xp >= LEVEL_XP[level]` (cumulative thresholds 60, 150, 270, 420, 600, 810,
 1050, 1320, 1620, 1950, 2310, 2700, 3120, 3570, 4050, 4560, 5100 — the gap grows by 30 each level). XP comes from being **near when a
 rival body dies**, never from the last hit: `shareXp(dead, xp, team, src)` hands a death's XP to
-every scout of `team` that `unitsNear(dead, …, XP_R)` finds (160 px, about half the view at the
+every hero of `team` that `unitsNear(dead, …, XP_R)` finds (160 px, about half the view at the
 default zoom; alive and on the ground), plus `src` — the one who landed the blow — wherever it
 stood. The pot grows `XP_SHARE` (0.3) of the whole for each sharer past the first, so two on a
 wave get 65% each and five get 46% each. What a death is worth:
@@ -333,11 +333,11 @@ wave get 65% each and five get 46% each. What a death is worth:
 | Death | XP | Shared by |
 | --- | --- | --- |
 | a soldier (`robotDies`) | `SOLDIER_XP` 20 times its kind's `xp` (ranged 14, siege 40) | its rival side |
-| a scout (`die`) | `KILL_XP` 40 + `KILL_XP_LV` 15 × its level | its rival side, whatever downed it |
+| a hero (`die`) | `KILL_XP` 40 + `KILL_XP_LV` 15 × its level | its rival side, whatever downed it |
 | a beast with an `xp` in `YIELD` (`animalDies`): deer 40, wolf 15, black and brown bear 150 | grown `ANIMAL_LV_XP` (a tenth) a level | the side of whoever landed the last blow |
 
 Rabbits, buildings, the works (pines), fish, sales and the clock pay **no
-XP** — the road is where a scout levels. The table is sized against a scout who keeps to the road
+XP** — the road is where a hero levels. The table is sized against a hero who keeps to the road
 and the camps: about level 6 at ten minutes and level 12 near minute 25 (sized when 12 was the
 cap, the arena's 4.37 runs); levels 13-18 continue the same curve and have not been timed. Dying never touches `xp`; level and xp are set in the
 constructor, not `reset()`, so they survive a `reset`.
@@ -895,7 +895,7 @@ The ladder:
    only. No wave out, or a work stretch, and it goes on down the ladder.
 10. **hunt** — an animal within `AI_HUNT` (120 px), with a 6 s catch timer per animal (prey
    outruns a walk; 8 s for a blade). A bow shoots from 55 px; a blade walks in to `AI_MELEE_D`
-   and swings only inside `AI_MELEE_D` + 8 px. Birds are excluded: they fly, and no ground route catches a flushed flock.
+   and swings only inside `AI_MELEE_D` + 8 px.
 11. **spend** — **Items come first, at rung 0** (`aiSpend`, beside the skill point): a bot buys its class's
    build ([`BOT_BUILDS`](gameplay/the-merchants-counter.md#buying-and-selling)) at whichever counter it is standing at, a component or the whole
    item, through the same `input.cmd` a human's click sends, and when its purse covers the next

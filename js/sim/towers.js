@@ -13,21 +13,21 @@
 //
 // THE GUN is a crossbow on a turntable. It turns at TOWER_TRAVERSE onto its
 // mark, WINDS for TOWER_WIND once it is on it - the string coming back is the
-// warning, and a scout under it sees the line it is aimed down (the aim line,
+// warning, and a hero under it sees the line it is aimed down (the aim line,
 // drawTowerFx) - and looses ONE bolt, which strikes its mark TOWER_BOLT_T
 // later wherever it has run to (a bolt is never dodged by a step, only by
 // leaving the ring before the loose), and stands in the snow beside it.
 // Then TOWER_RELOAD of winding before the next.
 //
 // WHAT IT SHOOTS, in this order (towerMark), so it punishes a dive without
-// freezing the lane: (1) a rival scout who has just hurt one of the tower's
-// own side's scouts standing inside its ring (TOWER_CALL_T, read off the
+// freezing the lane: (1) a rival hero who has just hurt one of the tower's
+// own side's heroes standing inside its ring (TOWER_CALL_T, read off the
 // victim's foeHits, player.js) - the dive answered at once, mid-wind or not;
 // (2) the mark it already holds, while it stays in the ring; (3) the nearest
-// rival bot (a wave's soldier); (4) the nearest rival scout.
-// A wave walking in under it soaks the bolts, so the scouts with it may hit
-// the tower freely; a scout alone under it is shot, and every bolt in a row
-// into the same scout hits harder (TOWER_HEAT).
+// rival bot (a wave's soldier); (4) the nearest rival hero.
+// A wave walking in under it soaks the bolts, so the heroes with it may hit
+// the tower freely; a hero alone under it is shot, and every bolt in a row
+// into the same hero hits harder (TOWER_HEAT).
 //
 // THE CABLE: each line runs from its bird only as far as its furthest
 // standing tower (o.zl is the line, o.zi its point) - the outer one while it stands, then the middle, then the inner one, then
@@ -44,10 +44,10 @@ const TOWER_WIND = 0.7;         // s from on the mark to the loose: the warning
 const TOWER_RELOAD = 1.6;       // s after a loose before it can wind again
 const TOWER_BOLT_T = 0.2;       // s a bolt is in the air
 const TOWER_DMG_BOT = 15;       // a bolt into a bot: two scrap a soldier
-const TOWER_DMG = 24;           // the first bolt into a scout...
-const TOWER_HEAT = 0.4;         // ...and this much more for each one before it in a row into the same scout
+const TOWER_DMG = 24;           // the first bolt into a hero...
+const TOWER_HEAT = 0.4;         // ...and this much more for each one before it in a row into the same hero
 const TOWER_HEAT_MAX = 2;       // ...up to three times the first
-const TOWER_CALL_T = 1.2;       // s: a rival who hurt one of the side's scouts in the ring this recently is the mark
+const TOWER_CALL_T = 1.2;       // s: a rival who hurt one of the side's heroes in the ring this recently is the mark
 const TOWER_GUN_Z = 80;         // px above the foot the gun stands: where a bolt leaves, for the spent bolt's lean
 const TOWER_PIN_T = 4;          // s a spent bolt stands in the snow
 const zipWhole = [];            // [line] -> that cable as placeZips laid it, uncut (a line is its index in zips)
@@ -139,13 +139,13 @@ function towersDrop(L, len) {
 }
 
 // ---- the gun ----------------------------------------------------------------
-// a body that may be a tower's mark: alive, a rival's, and (a scout) seen by its side (seenAt)
+// a body that may be a tower's mark: alive, a rival's, and (a hero) seen by its side (seenAt)
 function towerHolds(o, tg, foot) {
   if (!unitAlive(tg) || tg.team === undefined || tg.team === o.team) return false;
   const d = Math.hypot(tg.x - foot.x, tg.y - foot.y);
   return tg instanceof Player ? d <= seenAt(tg, TOWER_RANGE, o.team) : d <= TOWER_RANGE;
 }
-// the dive: a rival scout in the ring who hurt one of this side's scouts in
+// the dive: a rival hero in the ring who hurt one of this side's heroes in
 // the ring inside TOWER_CALL_T - the latest of them
 function towerCall(o, foot) {
   let best = null, bt = -1;
@@ -197,7 +197,7 @@ function updateTower(o, dt) {
   if (Math.abs(da) > TOWER_LOCK || o.cd > 0) return;
   o.chg = Math.min(1, (o.chg || 0) + dt / TOWER_WIND);
   if (o.chg < 1) return;
-  // THE LOOSE: one bolt, worth more for every one before it into the same scout
+  // THE LOOSE: one bolt, worth more for every one before it into the same hero
   const hero = tg instanceof Player;
   o.heat = hero && o.heatId === tg.id ? Math.min(TOWER_HEAT_MAX, (o.heat || 0) + TOWER_HEAT) : 0;
   o.heatId = hero ? tg.id : -1;
@@ -241,7 +241,7 @@ function towerNear(team, x, y, r) {
   return best;
 }
 // is a bot of `team` standing in the tower's ring - the wave it will shoot
-// first (towerMark), so a scout with it can hit the tower
+// first (towerMark), so a hero with it can hit the tower
 function towerTanked(o, team) {
   const f = towerFoot(o);
   for (const b of robots) if (b.team === team && unitAlive(b) && Math.hypot(b.x - f.x, b.y - f.y) <= TOWER_RANGE) return true;

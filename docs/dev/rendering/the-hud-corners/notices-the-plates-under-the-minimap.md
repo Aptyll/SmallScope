@@ -29,10 +29,8 @@ as a medical plus beside the arrow tail on the same plate. Its text is the **ner
 left**, as a percent, under the falling tail — the plate says what happened where the cue
 (`SFX.alarm`) only turned your head: a cue for the ear, a number for the eye.
 
-What it is about is the number, with an item's own icon before it when the notice's `good` names
-one, **sized together**: `runW(s)` measures the pair at a scale and the icon is drawn at the text's
-own, so both drop from 2× to 1× together if a headline is too long for 2×. The roost plate names no
-good, so it is text alone.
+What it is about is the number, text alone (`noteBody`), centred between the mark and the tail at
+2×, dropping to 1× if a headline is too long for 2×.
 
 The plate is a fixed `NOTE_W`×`NOTE_H` (78×22) card — 78 is what the content well needs, the 22 of `60%` at 2× over the 30 the mark's well and the
 tail's gutter take
@@ -51,7 +49,7 @@ plate and the feed line can never disagree.
 under its rim, so the column follows the minimap wherever the size dial and the view put it and
 never lands on the clock. **The newest plate is slot `k = 0`**, hard under the disc, and its
 arrival pushes the stack down: it flies in `NOTE_SLIDE` (30 px) off the right edge over `NOTE_IN`
-(0.55 s) while the plates below ease down a whole `NOTE_PITCH` on that same curve. They are drawn
+(0.55 s) while the plates below ease down a whole `notePitch` on that same curve. They are drawn
 **oldest first** so the newest lands on top of the stack it is shoving.
 
 **The arrival is a beat, not a fade-in.** There is no alpha ramp: the plate is opaque from its
