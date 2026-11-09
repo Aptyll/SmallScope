@@ -25,7 +25,7 @@
    blizzard day's low streaks, [the day's weather](drawing-a-thousand-of-something.md#the-days-weather)) → **the weather on the
    ice** (`drawLakeSky`, js/draw/lakes.js: blown streaks over big lakes, a frosty night's glints
    and cracks, fresh dust while it snows - [the wind's leavings](../world.md#the-winds-leavings));
-5. flat objects (stumps, and a burrow's holes via `drawTunnelHole`);
+5. flat objects (stumps);
 6. `drawRecallGround` (the roost rings and the recall's) → `drawClickMarks` (the CLICK scheme's order and lock rings) → `drawCastPreview` (the MOUSE
    scheme's range preview) → `drawAbilityGround` (craters,
    the piercing shot's telegraph);

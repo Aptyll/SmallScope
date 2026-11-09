@@ -11,7 +11,7 @@ level and xp all stay on the body, and `reset(false)` brings the same player bac
 spills, nothing is looted, and the snow around a corpse is as clean as it was. **What a kill is worth
 is gold from nowhere**, paid by `payTakedown` to the killer and the assists (see
 [Takedowns](#takedowns-assists-bounties-and-shutdowns) below). The XP is separate and never needs
-the credit: `KILL_XP` (40) + `KILL_XP_LV` (15) × the downed scout's level, shared by every rival
+the credit: `KILL_XP` (40) + `KILL_XP_LV` (15) × the downed hero's level, shared by every rival
 standing near, the killer too wherever it stood ([Hero levels](../multiplayer.md#hero-levels)). `die` also credits the kill (and
 heals the killer if their kit carries `killHeal`, off the FEAST passive) and writes the log line — see
 [Kills and the event log](../multiplayer.md#kills-and-the-event-log) — then asks

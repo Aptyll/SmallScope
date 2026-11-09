@@ -4,13 +4,13 @@ The design in one page: the shape of a match and the handful of ideas every syst
 Read this before proposing a feature or judging whether one fits — the *how* of each pillar is in
 the deep doc it links to. Nothing here is an invariant; [CLAUDE.md](../../CLAUDE.md) carries those.
 
-**Softfall is a browser canvas 2D top-down pixel-art cozy survival team battle on a winter map.**
+**Softfall is a browser canvas 2D top-down pixel-art five-versus-five team battle (a MOBA) on a winter map.**
 Cozy and a war at once is the whole tension: the snowfield is quiet, the trees are pretty, and
 nine other people are on it.
 
 ## A match
 
-Ten players in `players` — **people and AI: every seat nobody takes is a bot's**, alone or in an
+Ten players in `players` — **people and bots: every seat nobody takes is a bot's**, alone or in an
 online lobby ([online play](multiplayer.md#online-play)) — across **two teams of five, RED vs
 BLUE** (players alternate). Everyone plays one of **eighteen heroes** (the ranged HUNTER, the melee
 WARRIOR, ARMATOS the defensive initiator, FORTIVA the juggernaut, BELLA the duelist, IGNIA the hearthkeeper, AURA the artillery mage, SALVIA the healer, LUCERNA the catch-and-save support, HIEMS the control mage, RUPES the engage tank, VARRO the jungler who calls wolves, BUCINA the tempo support, NIX the night scout, FABER the zone mage, VELOX the skating marksman, FALCO the diving assassin and MARIS the catch tank — a human's is the one picked on the champ select's hero grid) and is **dropped in by their team's armoured eagle**, which flies in over its own corner and lands
@@ -123,7 +123,7 @@ selected, it comes out on its own for whatever is under the cursor. [The swing t
 currency earned many ways (last hits, kills, camps, the works, holding a gold pump, a slow trickle), each
 source with its own yield profile, and it pays itself: gold is never a pickup on the ground,
 every source pays the earner on the spot. **XP comes from being near when a rival body dies** —
-a soldier, a scout, a camp monster — shared among the allies standing there, so the last hit
+a soldier, a hero, a camp monster — shared among the allies standing there, so the last hit
 is gold and being there is XP. Felling pays gold only: **soldiers are the farm,
 the woods are side income, and the road makes you level**, and the late levels come late.
 [Economy](gameplay/economy-one-currency.md), [the counter](gameplay/the-merchants-counter.md),
@@ -199,10 +199,10 @@ anywhere — hands on the handle, still a target, dropped by a stun or a net, an
 into the fight always walked. **Three road towers hold each cable**: a stone tower with a
 great crossbow on its deck stands beside the lane a third and two thirds of the way out and at the end of every cable,
 so nine a side, and the cable runs only to the furthest one still standing, so breaking a tower takes ground back
-from the rival's ride. A tower shoots the rival wave first, so a scout who walks in under it with
-their own soldiers can bring it down, and a scout who hits one of its side's scouts in its ring, or
+from the rival's ride. A tower shoots the rival wave first, so a hero who walks in under it with
+their own soldiers can bring it down, and a hero who hits one of its side's heroes in its ring, or
 walks in alone, gets the bolt: it winds for a beat with a dashed line on the snow to its mark, and
-each bolt in a row into the same scout hits harder. [Road towers](gameplay/robots.md#road-towers),
+each bolt in a row into the same hero hits harder. [Road towers](gameplay/robots.md#road-towers),
 [the road](world.md#the-road), [the zipline](world.md#the-zipline),
 [the ride](gameplay/momentum-movement-players-only.md#the-zipline), [the waves](gameplay/robots.md#soldiers-the-waves),
 [the barracks](gameplay/buildings.md).

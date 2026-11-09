@@ -7,7 +7,7 @@
 // parapet over it - drawTowerTop lays the last two and the bar, from the
 // building pass. drawTowerFx, over the bodies, is
 // what is in the air: the line the gun is aimed down while it winds on a
-// scout, the bolt in flight, and the spent one standing in the snow.
+// hero, the bolt in flight, and the spent one standing in the snow.
 const TOWER_RIM = '#0d1226';    // the dark shadow pixel under the aim line, so it reads on snow
 const TOWER_HEADS = 16;          // the baked headings (app/bake-tower/bake.py)
 const TOWER_LOOSE_SHOW = 0.15;   // s the loosed frame holds before the winding starts
@@ -52,7 +52,7 @@ function drawTowerFx(ex, ey, now) {
     const gx = Math.round(gun.x - ex), gy = Math.round(gun.y - ey);
     if (gx < -260 || gy < -260 || gx > WV_W + 260 || gy > WV_H + 260) continue;
     const tg = o.tgt;
-    // THE AIM: while it winds on a SCOUT, a dashed line on the snow from the
+    // THE AIM: while it winds on a HERO, a dashed line on the snow from the
     // tower's foot to theirs, crawling toward them and brightening as the
     // string comes back, and a ring at their feet - the loose is coming, and
     // the way out of it is out of the ring. (A bot is never warned.)

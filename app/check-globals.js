@@ -278,8 +278,11 @@ function main() {
   // and every word in the text table is real, drawable and used (app/check-text.js)
   const text = require('./check-text.js').check();
   problems.push(...text);
+  // and the docs name only code that exists (app/check-docs.js)
+  const docs = require('./check-docs.js').check();
+  problems.push(...docs);
   if (!problems.length) {
-    console.log(`globals ok: ${byName.size} top-level names across ${order.length} scripts, no collisions; sizes ok; no dead code; text ok`);
+    console.log(`globals ok: ${byName.size} top-level names across ${order.length} scripts, no collisions; sizes ok; no dead code; text ok; docs ok`);
     return 0;
   }
   for (const p of problems) console.log(p);
@@ -287,7 +290,8 @@ function main() {
     (silent ? ` - ${silent} silently replace an earlier definition` : '') +
     (sizes.length ? ` - ${sizes.length} too big: split the file along its sections, or the function into named steps` : '') +
     (dead.length ? ` - ${dead.length} never used: delete them` : '') +
-    (text.length ? ` - ${text.length} in the text table (app/check-text.js)` : ''));
+    (text.length ? ` - ${text.length} in the text table (app/check-text.js)` : '') +
+    (docs.length ? ` - ${docs.length} doc line(s) name code that is gone: fix the doc (app/check-docs.js)` : ''));
   return 1;
 }
 module.exports = { tokenize, loadOrder, declarations };

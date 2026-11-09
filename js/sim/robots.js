@@ -85,7 +85,7 @@ function robotDies(b, src) {
   }
   // a soldier carries a bounty: the rival who lands the
   // LAST HIT is paid it on the spot (soldierBounty, the `farm` banner of
-  // js/sim/farm.js) and counts a farm, and every rival scout standing near
+  // js/sim/farm.js) and counts a farm, and every rival hero standing near
   // shares its SOLDIER_XP whoever scrapped it (shareXp, js/sim/player.js) -
   // the road pays, which is what makes walking out to meet a wave worth the walk. One the waves, a tower or a
   // beast finish pays nobody, and its rivals near it see the coin go grey.
@@ -567,7 +567,7 @@ const SOLDIER_SPD = 44;        // px/s, a step slower than a walking player
 const SOLDIER_AGGRO = 96;      // px it turns on a rival unit inside
 const SOLDIER_SIEGE = 40;      // px it turns on a rival building inside - what is in its way, not the whole ring round a roost
 const SOLDIER_TOWER_R = 160;   // px it turns on a rival road tower inside: the road's own stretch of it, so no column marches past one
-const SOLDIER_XP = 20;         // XP a melee soldier is worth to the rival scouts standing near (shareXp); a kind's `xp` scales it
+const SOLDIER_XP = 20;         // XP a melee soldier is worth to the rival heroes standing near (shareXp); a kind's `xp` scales it
 const SOLDIER_WP_R = 28;       // px from a waypoint that counts as reached
 const SOLDIER_ZIP_GAIN = 96;   // px nearer the rival bird a ride's end must be than the soldier stands before it clips on: six tiles, so never a hop on and straight off
 const SOLDIER_ZIP_REACH = 96;  // px off a cable's track a marching soldier turns aside to it: the road's own width and the verge, so a column on the lane finds the line beside it

@@ -48,12 +48,12 @@ const SNOW_TRAIL_LIFE = 3.5; // snow groove lifetime (ice scratches keep the 9s 
 const SNOW_TRAIL_FADE = 1.4; // fade window at the end of that life: hold crisp, then wipe tail-first
 
 // Hero levels (League-style, max 18). XP is its own number, apart from gold:
-// it comes from being NEAR when a rival body dies - a soldier, a scout, a
+// it comes from being NEAR when a rival body dies - a soldier, a hero, a
 // camp monster - shared among the allies standing there (shareXp, below), so
 // the last hit is gold and the being-there is XP. Felling
 // and the clock pay gold and never XP: the road is where you level.
 // LEVEL_XP[n-1] is the total needed to reach level n, the gap growing by 30 a
-// level. It is sized against a scout who keeps to the road and the camps
+// level. It is sized against a hero who keeps to the road and the camps
 // (waves every 30 s growing a soldier every 3 min, a share of the kills, a
 // den now and then): about level 6 at ten minutes and 12 near 25, the cap of
 // 18 later still, so a lead in levels is still news late. XP is never spent or lost on death. What a level grows is the hero's
@@ -519,13 +519,13 @@ function gainXp(p, n) {
   p.xpTick = state.tick;
   while (p.level < LEVEL_MAX && p.xp >= LEVEL_XP[p.level]) levelUp(p);
 }
-// A death's XP, League style: every scout of `team` standing (alive, on the
+// A death's XP, League style: every hero of `team` standing (alive, on the
 // ground) within XP_R of the body shares it, and the one who landed the blow
 // (`src`) always does, wherever they stood - a long shot still teaches. The
 // pot grows XP_SHARE of the whole for each sharer past the first, so two
-// scouts on a wave each get 65%, five get 46%: company pays, but less each.
+// heroes on a wave each get 65%, five get 46%: company pays, but less each.
 // `team` is the side the death was good for - the rival of a soldier or a
-// scout, the hunter's side for a beast (which has none).
+// hero, the hunter's side for a beast (which has none).
 const XP_R = 160;      // px round a death that shares its XP: about half the view at the default zoom
 const XP_SHARE = 0.3;  // of the whole added to the pot for each sharer past the first
 function shareXp(dead, xp, team, src) {
@@ -1082,7 +1082,7 @@ const KILL_VERB = { fire: 'BURNED' };
 // victim's level's worth (KILL_XP + KILL_XP_LV a level) shared by every
 // rival standing near (shareXp), so a kill teaches the fight, not the blow.
 // The one stake left on a death is the wait below and the walk back.
-const KILL_XP = 40, KILL_XP_LV = 15; // XP a downed scout is worth: 55 at level 1, 310 at 18
+const KILL_XP = 40, KILL_XP_LV = 15; // XP a downed hero is worth: 55 at level 1, 310 at 18
 const MULTI_T = 10;       // s a kill may follow the one before and still count toward a multi-kill (the post-game record)
 
 // The wait for the bird to set a downed player back down: a read of the
@@ -1182,7 +1182,7 @@ function die(p, src, cause) {
     }
   }
   callKill(p, killer, bounty); // the announcer's call and the kill feed's row (the `calls` banner below)
-  // the XP is the rival side's whoever landed it - a scout the bear or the
+  // the XP is the rival side's whoever landed it - a hero the bear or the
   // orca took still teaches the rivals who stood by
   shareXp(p, KILL_XP + KILL_XP_LV * p.level, 1 - p.team, killer);
   storyDown(killer, p); // the match story (js/ui/story.js): who keeps downing whom
@@ -1232,7 +1232,7 @@ const RESPAWN_OUT = 40;
 // from the bird, that tile itself when it stands (r0 0: the ring-out search
 // alone took the tile above, which on a lane pointing up carried the body
 // past the roost ring, BOOM_R) - null while the bird is not down. The
-// carried-back scout and the recall (js/sim/recall.js) both land here.
+// carried-back hero and the recall (js/sim/recall.js) both land here.
 function roostTile(p) {
   const e = state.drop && state.drop.eagles[p.team];
   if (!e || e.state !== 'down') return null;
