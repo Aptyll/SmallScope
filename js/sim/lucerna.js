@@ -8,9 +8,11 @@
 
 // ---- tuning --------------------------------------------------------------
 // LAMPLIGHT (the passive): her lantern lights a ring round her; a rival inside is shown
-// (markUnit: through the fog, the woods and the brush) a moment after they leave it
+// (markUnit: through the fog, the woods and the brush) a moment after they leave it, and an
+// ally inside (her too) sees further the darker it is (HERO_SIGHT, lucernaSight)
 const LAMP_R = 56;              // px of ring
 const LAMP_SEE_T = 0.5;         // s a rival stays shown after the light last touched them
+const LAMP_NIGHT = 0.35;        // an ally in the ring sees x(1 + this x the dark) further: a third more at full night
 // a pull, hers alone: a body is drawn along the snow to a spot, held (stunned) while it travels
 const PULL_SPD = 360;           // px/s
 // Q SHEPHERD'S CROOK: a hook down the aim; the first rival body it meets is pulled to her
@@ -230,11 +232,22 @@ function updateCircles(dt) {
 
 // ---- her clocks (HERO_PASSIVE tick, HERO_TICK) -------------------------------------------
 function lucernaTick(p, dt) { if (unitAlive(p)) lucernaShow(p, p.x, p.y, LAMP_R); }
+// how much further p sees for standing in an allied LUCERNA's lamplight at night
+function lucernaSight(p) {
+  const dark = state.darkness || 0;
+  if (dark <= 0) return 1;
+  for (const q of players) {
+    if (q.team !== p.team || !unitAlive(q) || CLASSES[q.cls].passive !== 'lamplight') continue;
+    if (Math.hypot(q.x - p.x, q.y - p.y) <= LAMP_R) return 1 + LAMP_NIGHT * dark;
+  }
+  return 1;
+}
 function lucernaWorld(dt) { stepPulls(dt); updateHooks(dt); updateLanterns(dt); updateCircles(dt); }
 
 // ---- the hooks she registers (js/sim/heroes.js) ------------------------------------
 HERO_PASSIVE.lamplight = { tick: lucernaTick,
-  name: 'LAMPLIGHT', blurb: 'YOUR LANTERN LIGHTS A RING AROUND YOU. RIVALS INSIDE IT ARE SHOWN, EVEN IN THE WOODS.',
+  name: 'LAMPLIGHT', blurb: 'YOUR LANTERN LIGHTS A RING AROUND YOU. ALLIES INSIDE IT SEE FURTHER AT NIGHT. RIVALS INSIDE IT ARE SHOWN, EVEN IN THE WOODS.',
   icon: LUCERNA_ICON32.lamp,
 };
 HERO_TICK.push(lucernaWorld);
+HERO_SIGHT.push(lucernaSight);
