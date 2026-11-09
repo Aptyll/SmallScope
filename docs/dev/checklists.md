@@ -285,8 +285,7 @@ pop-up's preview/ledger and the bot class hash
 new class needs written:
 
 1. a `CLASSES` entry ([js/sim/player.js](../../js/sim/player.js)) — `name`, its one fixed `look`
-   and the `kit` numbers are the load-bearing parts (a hero announced in `HEROES_SOON` moves
-   over, keeping its look);
+   and the `kit` numbers are the load-bearing parts;
 2. the full sprite set in the byte-fragile [js/sprites/characters.js](../../js/sprites/characters.js)
    (a beast goes in beasts.js, the bears in bears.js by rebaking, a building in buildings.js, an item in items.js, terrain in
    terrain.js, HUD art in icons.js), registered by adding its key to that file's

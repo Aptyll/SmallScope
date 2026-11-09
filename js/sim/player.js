@@ -485,13 +485,6 @@ const CLASSES = [
 // the body a hero wears - its sprites and its 48 px model: a hero that names
 // none is its own (HUNTER 0, WARRIOR 1), a named hero borrows one
 function heroBody(cls) { const c = CLASSES[cls]; return c && c.body != null ? c.body : cls; }
-// the heroes announced but not yet playable: the hero row shows each as a
-// dark silhouette of this body and look, its name on hover, and no press.
-// One moves into CLASSES (with a kit and abilities) the day it ships.
-const HEROES_SOON = [
-  { name: 'SLEET', cls: 0, look: { sex: 1, tone: 1, hair: 4, hairCol: 6, beard: 0, face: 2 } },
-  { name: 'DURAVO', cls: 1, look: { sex: 0, tone: 3, hair: 2, hairCol: 0, beard: 3, face: 0 } },
-];
 // the kit every sim site reads: the class's numbers with the player's items
 // and items folded in. refreshKit() rebuilds the cache whenever one of them
 // changes; kitOf() itself is called many times a frame and must stay a read.

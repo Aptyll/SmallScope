@@ -10,8 +10,6 @@
 // side has locked is dimmed with your side's bar under it; one only a bot of
 // yours holds keeps the bar but stays bright (the bot gives it up,
 // draftYield); and one a rival may have is never shown - the pick is blind.
-// The heroes still to come (HEROES_SOON) stand at the end as dark
-// silhouettes of their model, their names dim, no press.
 //
 // A press points at the hero (draftPoint: the stage shows it in the pick);
 // BAN / LOCK IN at the foot confirms it (draftConfirm). In a party every
@@ -21,20 +19,18 @@ const HERO_CELL = 42;                  // a cell's side: a 20 px head crop at 2x
 const HERO_GAP = 6;
 const HERO_PITCH = HERO_CELL + 12;     // a grid row and the names under it
 const HERO_CROP = { x: 14, y: 2, s: 20 }; // the head inside the 48 px model
-const HERO_SOON_INK = '#26305a';       // a coming hero's silhouette
 const HERO_SEARCH_W = 96;              // the search field, right of the filters
 const HERO_SEARCH_MAX = 12;
 
-// every cell the grid has, playable first: { name, cls, look, soon }
+// every cell the grid has: { name, cls, look }
 function heroList() {
-  return CLASSES.map((c, i) => ({ name: c.name, cls: i, look: c.look, soon: false }))
-    .concat(HEROES_SOON.map((h) => ({ name: h.name, cls: h.cls, look: h.look, soon: true })));
+  return CLASSES.map((c, i) => ({ name: c.name, cls: i, look: c.look }));
 }
 // the heroes the search lets through: the typed name's (menu.search,
-// anywhere in the name); a coming hero only while nothing is typed
+// anywhere in the name)
 function heroShown() {
   const q = state.menu.search || '';
-  return heroList().map((h, i) => ({ h, i })).filter(({ h }) => (h.soon ? !q : h.name.includes(q)));
+  return heroList().map((h, i) => ({ h, i })).filter(({ h }) => h.name.includes(q));
 }
 function heroCols(L) { return Math.max(1, Math.floor((L.grid.w + HERO_GAP) / (HERO_CELL + HERO_GAP))); }
 // the grid's cells from its top-left, as many to a row as its width takes
@@ -96,11 +92,7 @@ function drawHeroFilters(L, a, hot, now) {
 // while it is a ban); a banned hero is dimmed and struck through; one a
 // person on your side has locked is dimmed with your side's bar under it;
 // one only a bot of yours holds keeps the bar but stays bright (the bot gives
-// it up, draftYield); a rival's pick is never shown - the pick is blind. The
-// heroes still to come (HEROES_SOON) stand at the end as dark silhouettes.
-const heroSil = document.createElement('canvas');
-heroSil.width = heroSil.height = HERO_CROP.s;
-const heroSilG = heroSil.getContext('2d');
+// it up, draftYield); a rival's pick is never shown - the pick is blind.
 function drawHeroRow(cells, a) {
   const m = state.menu, D = DRAFT;
   const live = m.screenT >= 1 && m.popT <= 0 && draftOpen() && D.lock[localId] < 0;
@@ -109,32 +101,22 @@ function drawHeroRow(cells, a) {
   const mine = D.hover[localId], banning = D.phase === 'ban';
   for (const c of cells) {
     const h = c.hero, i = c.i;
-    const banned = !h.soon && D.banned.includes(i);
-    const mates = h.soon ? [] : players.filter((q) => q !== player && q.team === player.team && D.lock[q.id] === i);
+    const banned = D.banned.includes(i);
+    const mates = players.filter((q) => q !== player && q.team === player.team && D.lock[q.id] === i);
     const taken = !banned && D.phase === 'pick' && mates.length > 0;
     const out = banned || (taken && !draftCanLock(player, i));
-    const picked = i === mine && !h.soon && !banned;
-    const over = !h.soon && !out && i === hv;
+    const picked = i === mine && !banned;
+    const over = !out && i === hv;
     ctx.globalAlpha = a * (!draftOpen() && !picked ? 0.45 : 1);
     ctx.fillStyle = picked ? (banning ? SEL_RED : SEL_GOLD) : over ? SC_LBL : SC_EDGE;
     ctx.fillRect(c.x, c.y, c.w, c.h);
     ctx.fillStyle = SC_INK; ctx.fillRect(c.x + 1, c.y + 1, c.w - 2, c.h - 2);
-    const src = SPRITES.portrait(h.cls, h.look, team);
-    if (h.soon) { // the model's head as one flat shade: who is coming, not yet who they are
-      heroSilG.globalCompositeOperation = 'source-over';
-      heroSilG.clearRect(0, 0, S, S);
-      heroSilG.drawImage(src, HERO_CROP.x, HERO_CROP.y, S, S, 0, 0, S, S);
-      heroSilG.globalCompositeOperation = 'source-in';
-      heroSilG.fillStyle = HERO_SOON_INK; heroSilG.fillRect(0, 0, S, S);
-      ctx.drawImage(heroSil, 0, 0, S, S, c.x + 1, c.y + 1, S * 2, S * 2);
-    } else {
-      draftFace(i, c.x + 1, c.y + 1, 2, out ? 0.6 : 0);
-      if (banned) {
-        draftSlash(c.x + 1, c.y + 1, S * 2); draftSlash(c.x + 2, c.y + 1, S * 2);
-        if (D.fx > 0) { ctx.globalAlpha = a * D.fx * 2; ctx.fillStyle = '#f4f7ff'; ctx.fillRect(c.x, c.y, c.w, c.h); }
-      } else if (taken) { ctx.fillStyle = mark; ctx.fillRect(c.x + 1, c.y + c.h - 4, c.w - 2, 3); }
-    }
-    ctx.globalAlpha = a * (h.soon || out ? 0.5 : 1);
+    draftFace(i, c.x + 1, c.y + 1, 2, out ? 0.6 : 0);
+    if (banned) {
+      draftSlash(c.x + 1, c.y + 1, S * 2); draftSlash(c.x + 2, c.y + 1, S * 2);
+      if (D.fx > 0) { ctx.globalAlpha = a * D.fx * 2; ctx.fillStyle = '#f4f7ff'; ctx.fillRect(c.x, c.y, c.w, c.h); }
+    } else if (taken) { ctx.fillStyle = mark; ctx.fillRect(c.x + 1, c.y + c.h - 4, c.w - 2, 3); }
+    ctx.globalAlpha = a * (out ? 0.5 : 1);
     const nm = h.name;
     drawPixelText(ctx, nm, c.x + ((c.w - pixelTextWidth(nm)) >> 1), c.y + c.h + 3, picked ? SEL_GOLD : over ? SC_LIT : SC_LBL, 1);
   }
