@@ -591,7 +591,11 @@ function netClientApplyDelta(msg) {
     for (const [e] of shown) if (e._t0) { eased.push([e, e.x, e.y]); if (!movedX.has(e)) e.x = e._tx; if (!movedY.has(e)) e.y = e._ty; }
     const out = []; snapCompareLoose(msg.full, snapBuildSeen(msg.full), '', out, 8);
     for (const [e, x, y] of eased) { e.x = x; e.y = y; }
-    if (out.length) NET.verifyFail = { tick: msg.tick, out };
+    // a client's own: its verdict and death view (state.over/end, kept below)
+    // and the fire edge its own hands write on its own body (input.js)
+    const own = ['.state.over:', '.state.end:', '.players.' + localId + '.firePrev:'];
+    const real = out.filter((l) => !own.some((k) => l.startsWith(k)));
+    if (real.length) NET.verifyFail = { tick: msg.tick, out: real };
   }
   NET.hostOver = state.over;
   state.over = over; state.end = end;

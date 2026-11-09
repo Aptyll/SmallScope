@@ -23,7 +23,7 @@ ten-player `Player` array, the input struct and the bot brain are what keep the 
   headless wrapper boot. The first live test should watch `DBG.netStatus()`: `framesLost` on a
   client (the receiver counts a delta it gave up on) and `fulls` on the host.
 - **Owed:** the host clamps nothing in a remote input; the roost alarm's notice plate (`raiseNotice`) and the own-bird alarm cue are raised on the host's screen only; a per-kind field policy if
-  ~40-70 KB/s per client is too much for nine clients on a home upload.
+  ~65 KB/s per client (about 0.6 MB/s for nine, measured by `app/check-load.js`) is too much on a home upload.
 - **Steam's host-left notice is code-read only**: a client turns the owner's leaving
   `LobbyChatUpdate` into `hostGone` (`wire`, js/net/transport-steam.js), never run against a live
   lobby - the first live test should have the host quit mid-match and mid-wait.
@@ -251,9 +251,13 @@ pins the wall clock and the shake, which `render()` would otherwise roll, and ca
 trampled snow's chunk repaints up whole, `trCatchUp`, which it would otherwise spread over frames). `netDeltaRun(ticks,
 every, loss)` applies a run of deltas back in the page and compares after each.
 `DBG.netVerify(on)` makes a host ride its full form along every `VERIFY_EVERY` (300) ticks so each
-client checks itself (`netStatus().verifyFail`), and `DBG.netLoss(f)` throws away that share of a
-host's snapshot sends before the transport. The size to expect on seed 42 with ten bodies and
-buildings: a delta of 4-7 KB at 15 Hz, **~70 KB/s per client**, a full sync of ~1.9 MB.
+client checks itself (`netStatus().verifyFail`; a client's own verdict, `state.over`/`end`, and the
+fire edge its own input writes on its own body, `firePrev`, are not counted), and `DBG.netLoss(f)`
+throws away that share of a host's snapshot sends before the transport. The echo hands the bodies
+it rebuilt their `SNAP_SKIP` fields back afterwards (`snapKeepSkipped`), so a run of echoes steps
+the same world. `node app/check-load.js` is the room-sized proof (nine players, [checklists](dev/checklists.md)).
+The size to expect on seed 42 with ten bodies, buildings and a lane of ~40 soldiers: a delta of
+4-6 KB at 15 Hz (8 KB at most), **~65 KB/s per client**, a full sync of ~1.7 MB.
 
 **Quantized positions.** The names in `SNAP_QUANT` (`x`, `y`, `vx`, `vy`, `kbx`, `kby`, `zipD`) cross as an int16 count of
 eighths of a px (`Q16`, 3 bytes against a float32's 5) - by field NAME at encode time, so a
@@ -596,7 +600,7 @@ its line.
     fragmented binary message, Steam as three reliable `STEAM_CHUNK` frames. A mid-match joiner
     sees nothing of the match until it lands, and every peer whose ack ages out of the ring (5 s of
     silence) costs the host another.
-13. **Upload.** ~70 KB/s per client is ~650 KB/s from a host with nine, on a home connection. The
+13. **Upload.** ~65 KB/s per client is ~600 KB/s from a host with nine, on a home connection. The
     mitigation owed is a per-kind field policy (what a client cannot see or use need not cross).
 
 ## Open decisions

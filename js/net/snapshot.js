@@ -45,6 +45,7 @@ const SNAP_SKIP = new Set(['input', 'ai', 'nav', '_fx', '_fy', '_tx', '_ty', '_t
   'avoidT', 'baySite', 'zipLast', 'pingLog',
   'hitFoe', // a soldier's mark this step, read only by the host's bots (aiFarmHold)
   'shedT', // a pine's rest between two sheds (js/sim/shed.js): the puff itself crosses as a burst
+  'mvx', 'mvy', 'lastMx', 'lastMy', // a walker's heading (nav, walkHeading): only the sim steers by it, `dir` is what is drawn
   'hurtLog', // the blows a body is taking (recapNote): only a death's copy, deathLog, is ever drawn
   'position']); // a seat's drafted position (POSITIONS, player.js): the host's bots read it, and the rivals' stay hidden as in the draft
 // (a name here is skipped on EVERY kind that carries it: `fleeT` is not one,
@@ -949,6 +950,18 @@ function snapQuantize() {
 // state IS the applied state afterwards, so a run can go on and echo again.
 // The snapshot crosses through the binary encoder on its way, so the echo
 // proves the bytes as well as the fields.
+// the SNAP_SKIP fields of every body, by slot or network id, so the echo can
+// hand them back to the bodies its apply rebuilt without them
+function snapKeepSkipped() {
+  const grab = (e) => { const o = {}; for (const k of Object.keys(e)) if (SNAP_SKIP.has(k)) o[k] = e[k]; return o; };
+  const kept = { P: players.map(grab) };
+  for (const k in SNAP_KINDS) kept[k] = SNAP_KINDS[k]().map((e) => [snapNid(e), grab(e)]);
+  return kept;
+}
+function snapRestoreSkipped(kept) {
+  kept.P.forEach((o, i) => { if (players[i]) Object.assign(players[i], o); });
+  for (const k in SNAP_KINDS) for (const [n, o] of kept[k]) { const e = snapMaps[k].get(n); if (e) Object.assign(e, o); }
+}
 function netEcho() {
   snapQuantize();
   const a1 = snapFrame(), a2 = snapFrame();
@@ -957,6 +970,7 @@ function netEcho() {
   const json = JSON.stringify(s);
   const size = snapSize(s);
   const dict = encDict(), bytes = snapEncode(s, dict);
+  const kept = snapKeepSkipped();
   snapBlank();
   const blanked = snapFrame();
   snapApply(snapDecode(bytes, encDict()));
@@ -965,6 +979,7 @@ function netEcho() {
   // after the apply, against the first)
   const mismatch = [];
   snapCompare(JSON.parse(json), snapBuild(), '', mismatch, 20);
+  snapRestoreSkipped(kept); // the page goes on stepping this world: its bookkeeping back (a heading lost is a NaN walk)
   return { diff: snapDiff(a2, b), noise, blankDiff: snapDiff(a2, blanked), bytes: json.length, binBytes: bytes.length, size, mismatch };
 }
 // echo every `every` ticks over `ticks` of stepping; the worst diff and when
