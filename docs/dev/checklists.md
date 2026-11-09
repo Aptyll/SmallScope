@@ -561,8 +561,8 @@ Code that is dead **on purpose** is the next section.
   `e.t ≈ dur/2` for the pass, `freeze`, `POST /shot?f=`.
 
 - **A record put back counts its lifetime stats again.** The profile's stats
-  (`PROFILE.addKill`/`addDay`/`addWin`...) are written as they happen, so replaying a stretch
-  with `DBG.saveLoad` adds its kills, days and a win a second time on the dev profile; only the
+  (`PROFILE.addKill`/`addWin`...) are written as they happen, so replaying a stretch
+  with `DBG.saveLoad` adds its kills and a win a second time on the dev profile; only the
   lifetime tally is not rewound ([saved matches](gameplay/saved-matches.md)).
 - **The day clock turns under the ESC panel and the pause plate.** `update` advances
   `state.time`/`state.elapsed` in play and drop whatever `state.paused`/`state.settingsOpen`

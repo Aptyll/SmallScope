@@ -39,7 +39,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.630';
+const PATCH_TXT = 'PATCH 0.631';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -55,6 +55,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.631', 'THE END SCREENS OFFER ONE BUTTON, LOBBY: A DECIDED MATCH HAS NOTHING LEFT TO WATCH OR PLAY ON. THE OLD TUTORIAL PANEL AND THE UNUSED DAYS STAT ARE GONE.'],
   ['0.630', 'ONLINE, OTHER PLAYERS KEEP THEIR AXE IN HAND THROUGH THE WHOLE SWING, AS THEY DO ON THE HOST\'S SCREEN.'],
   ['0.629', 'SETTINGS OPEN ON THE PARTY SCREEN CLOSE WHEN CHAMP SELECT STARTS.'],
   ['0.628', 'WHEN MATCHMAKING PUTS TWO PARTIES TOGETHER, THE LEADER WITH THE FASTEST PC NOW HOSTS THE MATCH, SO A SLOW LAPTOP NO LONGER CARRIES ALL TEN PLAYERS.'],
@@ -1143,48 +1144,6 @@ function drawMenuSlab(x, y, w, h, a) {
   }
 }
 
-const helpPanelCv = document.createElement('canvas');
-helpPanelCv.width = SET_W; helpPanelCv.height = SET_H;
-function buildHelpPanel() {
-  const g = helpPanelCv.getContext('2d');
-  bakeFrostSlab(g, SET_W, SET_H, 'TUTORIAL');
-  const cols = [
-    [['WASD', 'MOVE'], ['SPACE', 'DODGE ROLL'], ['SHIFT', 'SLIDE'], ['1-4', 'CLASS ABILITIES'], ['CLICK', 'DRAW THE BOW'], ['E', 'CHOP MINE PICK'], ['RCLICK', 'PING']],
-    [['Q', 'EAT BERRY'], ['F', 'EAT FISH'], ['M', 'WORLD MAP'], ['TAB', 'SCOREBOARD'], ['SCROLL', 'ZOOM'], ['N', 'MUTE'], ['P', 'PAUSE']],
-  ];
-  for (let c = 0; c < 2; c++) {
-    let y = 24;
-    const x0 = c === 0 ? 14 : 134;
-    for (const [k, desc] of cols[c]) {
-      drawPixelText(g, k, x0, y, '#ffd95c');
-      drawPixelText(g, desc, x0 + 32, y, '#9fb6d8');
-      y += 10;
-    }
-  }
-  // divider + the rules of the frostlands
-  const ct = 'THE FROSTLANDS';
-  const cw = pixelTextWidth(ct);
-  const cx0 = Math.round((SET_W - cw) / 2);
-  drawPixelText(g, ct, cx0, 92, '#7a8bb8');
-  g.fillStyle = '#2c3a68';
-  g.fillRect(14, 95, cx0 - 22, 1); g.fillRect(cx0 + cw + 8, 95, SET_W - cx0 - cw - 22, 1);
-  const lines = [
-    ['GOLD IS THE ONLY CURRENCY', '#cfe0ff'],
-    ['TREES ROCKS AND GAME ALL PAY IT', '#9fb6d8'],
-    ['WALK THE ICE AND THE FISH COME UP', '#9fb6d8'],
-    ['RIVERS ARE FAST - CHAIN DODGES TO FLY', '#9fb6d8'],
-    ['NAMED PLACES ARE ON THE MAP - WOLVES DEN UP', '#ff9a8a'],
-    ['RIVALS SHARE THE MAP - ARROWS HURT THEM', '#ff9a8a'],
-  ];
-  let y = 106;
-  for (const [l, col] of lines) {
-    drawPixelText(g, l, Math.round((SET_W - pixelTextWidth(l)) / 2), y, col);
-    y += 11;
-  }
-  const hint = 'ESC BACK';
-  drawPixelText(g, hint, Math.round((SET_W - pixelTextWidth(hint)) / 2), 190, '#5a6690');
-}
-
 // ---- lobby --------------------------------------------------------
 // The HERO SELECT (menu.screen = 'lobby'), where a party's FIND MATCH lands
 // (js/ui/rooms.js) and every member follows (netPhase 'pick'): League's champ
@@ -2087,7 +2046,6 @@ function renderTitle(now) {
   // sub-panels slide up from the bottom edge over the still-visible world
   if (m.panel) {
     const slide = Math.round((1 - easeOut(m.panelT)) * (VIEW_H - SET_Y + 6));
-    if (m.panel === 'settings') renderSettings(now, { bare: true, slide });
-    else ctx.drawImage(helpPanelCv, SET_X, SET_Y + slide);
+    renderSettings(now, { bare: true, slide }); // the one sub-panel: the gear's settings
   }
 }
