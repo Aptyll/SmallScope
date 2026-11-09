@@ -150,7 +150,7 @@ const CAMP_SITES = [
   { key: 'hut', u: 100.5, s: 114 },    // by the bottom-right corner, on the bottom edge
   { key: 'hut', u: 63, s: -61 },       // halfway up the left edge
   // the warrens, halfway out from each roost along the left-hand treeline
-  { key: 'meadow', u: 91.5, s: -56 },
+  { key: 'meadow', u: 99.5, s: -44.5 },
 ];
 function campTile(u, s) {
   return { tx: Math.round(u + s / Math.SQRT2), ty: Math.round(WORLD - 1 - u + s / Math.SQRT2) };

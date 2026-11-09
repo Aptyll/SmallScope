@@ -79,7 +79,7 @@ and the road tower (3x2). Each has one tier: a gold `cost`, `hp`,
 
 Two **neutral gold pumps** stand at boot (`placePumps`, js/sim/pumps.js, after the landmarks and
 with no `rng()`), one beside the middle of the top lane and one beside the middle of the bot lane
-(`pumpLaneMid`, where each lane crosses the creek), set off the road so a wave walks past. The
+(`pumpLaneMid`, where each lane crosses the creek at its corner, `LANE_MID_S` off the road), set off the road so a wave walks past. The
 spot is the nearest 4x2 footprint of plain snow to the top lane's middle (`pumpSeek`, inside
 `PUMP_SEEK` tiles) whose centre keeps `PUMP_ROAD` tiles off every road, clear of camps and the
 cistern, with no water in its ring, **and whose point mirror on the bot lane passes the same

@@ -22,8 +22,8 @@ into its **corner's** woods, RED always bottom-left, BLUE always top-right
 the road's head, a shop for anybody at all who walks up to it, then raises the bot bays and fells
 the back woods behind the bird for logs to rebuild them; idle, it keeps to the road just up from the bird.
 **Three lanes** join the bases, like a Rift: **the road** (mid) runs the map's diagonal from one
-perch to the other, one straight, dry packed-earth lane, and **the top and bot lanes** curve round
-either side of the valley along the treeline, each crossing the creek on a ford at the middle. All
+perch to the other, one straight, dry packed-earth lane, and **the top and bot lanes** run
+straight up either edge of the valley and turn one hard corner, like the Rift's, crossing the creek on a ford at that corner, the middle. All
 three are there from worldgen, the same on every seed and readable from anywhere, and each leaves a
 base by its own mouth of the hollow ([the road](world.md#the-road),
 [the side lanes](world.md#the-side-lanes)). Half a minute after landing each merchant raises a
@@ -194,9 +194,9 @@ merchant rebuilds it. **The walk out is not the fight, so a zipline compresses i
 has a cable down each lane, from beside its bird along the lane's verge to short of the middle, and any body
 under one clips on with E, rides either way at three times a walk, and lets go
 anywhere — hands on the handle, still a target, dropped by a stun or a net, and the last stretch
-into the fight always walked. **Two road towers hold each cable**: a stone tower with a
-great crossbow on its deck stands beside the lane at the middle and at the end of every cable,
-so six a side, and the cable runs only to the furthest one still standing, so breaking a tower takes ground back
+into the fight always walked. **Three road towers hold each cable**: a stone tower with a
+great crossbow on its deck stands beside the lane a third and two thirds of the way out and at the end of every cable,
+so nine a side, and the cable runs only to the furthest one still standing, so breaking a tower takes ground back
 from the rival's ride. A tower shoots the rival wave first, so a scout who walks in under it with
 their own soldiers can bring it down, and a scout who hits one of its side's scouts in its ring, or
 walks in alone, gets the bolt: it winds for a beat with a dashed line on the snow to its mark, and

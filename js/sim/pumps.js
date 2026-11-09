@@ -28,7 +28,7 @@ const PUMP_CLEAR = 1;     // tiles round the footprint the lane's pines give way
 
 // the two lanes' middles, in tiles: the creek crossing at the bend of each
 function pumpLaneMid(lane) {
-  const c = baseTile(0, (WORLD - 1) / 2, lane === 0 ? -56 : 56);
+  const c = baseTile(0, (WORLD - 1) / 2, lane === 0 ? -LANE_MID_S : LANE_MID_S);
   return { tx: c.tx, ty: c.ty };
 }
 function pumpRingPx() { return PUMP_R * TILE; }
