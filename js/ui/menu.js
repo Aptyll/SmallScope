@@ -39,7 +39,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.632';
+const PATCH_TXT = 'PATCH 0.633';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -55,6 +55,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.633', 'THE EAGLE\'S BAR NO LONGER SHOWS BEHIND THE VICTORY PODIUM.'],
   ['0.632', 'A NEW HERO, VELOX THE SKATER: SHE THROWS HER SLING WHILE SHE SKATES, EVERY HIT QUICKENS HER, SHE LAYS HER OWN STRIP OF ICE TO FLY ALONG, AND HER STONES SKIP TO HIT AGAIN.'],
   ['0.631', 'THE END SCREENS OFFER ONE BUTTON, LOBBY: A DECIDED MATCH HAS NOTHING LEFT TO WATCH OR PLAY ON. THE OLD TUTORIAL PANEL AND THE UNUSED DAYS STAT ARE GONE.'],
   ['0.630', 'ONLINE, OTHER PLAYERS KEEP THEIR AXE IN HAND THROUGH THE WHOLE SWING, AS THEY DO ON THE HOST\'S SCREEN.'],
