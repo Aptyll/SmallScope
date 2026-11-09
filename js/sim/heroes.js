@@ -43,6 +43,8 @@
 //   FABER's. It is a body in `robots` like a soldier (hit, drawn, pushed apart,
 //   shot at by towers and soldiers); `pay` is a rival's for breaking it.
 // - HERO_WRECK: fn(b, src) when a body in `robots` is broken (robotDies): FABER's spare parts.
+// - HERO_EYES: fn(team, out) pushing sightEye()s for that side (sightSources,
+//   js/sim/fog.js): eyes a kit puts in the world (FALCO's hawk while it is out).
 // An ability row may also carry recast(p) (true: the key pressed again is
 // its second half, castSlam) and ok(p) (false: the press is refused).
 const HERO_PASSIVE = {};
@@ -61,6 +63,7 @@ const HERO_COVER = [];
 const HERO_AIR = [];
 const HERO_MACHINE = {};
 const HERO_WRECK = [];
+const HERO_EYES = [];
 
 // the ability whose use() is running right now, so a blow it lands says so
 // (o.ab, stamped by hurtUnit, js/sim/actions.js); '' between casts. Never state: set and cleared
@@ -95,3 +98,4 @@ function heroCover(srcs, x, y, u) { for (const f of HERO_COVER) if (f(srcs, x, y
 function heroAir(ex, ey, now) { for (const f of HERO_AIR) f(ex, ey, now); }
 function heroMachine(b) { return (b.kind && HERO_MACHINE[b.kind]) || null; }
 function heroWreck(b, src) { for (const f of HERO_WRECK) f(b, src); }
+function heroEyes(team, out) { for (const f of HERO_EYES) f(team, out); }

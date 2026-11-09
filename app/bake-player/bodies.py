@@ -801,6 +801,26 @@ class Foreman(Coif):
     MARKS = [(-0.5, -0.4, 'y'), (0.5, -0.4, 'S'), (-1.5, 0.9, 'e'), (1.5, 0.9, 'e')]
 
 
+class Falconer(Standard):
+    """FALCO as FALCONER (his default look; LAST HAWK is the same cut in another paint): a
+    close leather cap over brown hair, leather straps over the side's coat, the big glove.
+    Armatos's frame, legs and boots."""
+    ARM_MAT, MITT_MAT = 'cloak', 'cloak'
+    MARKS = [(-1.5, 0.9, 'e'), (1.5, 0.9, 'e')]
+
+    @staticmethod
+    def face_region(n, q):
+        """the cap's crown above, the hair round the face below it"""
+        return np.where(q[2] > 0.4, 'cloak', np.where((q[0] > 0.2) & (np.abs(q[1]) < 0.75) & (q[2] > -0.95), 'skin', 'hair'))
+
+    def head(self, cv, cam, hc, Rh, pose, snap):
+        cv.blob(cam, hc, Rh, self.HEAD_R, 'head', 'hair', p=self.HEAD_P, region=self.face_region)
+        self.face_marks(cv, cam, hc, Rh)
+
+    def ball_head(self, cv, cam, hc, Rh):
+        cv.blob(cam, hc, Rh, (2.6, 2.85, 2.5), 'head', 'cloak', p=self.HEAD_P)
+
+
 BODIES = {'hunter': Hunter(), 'warrior': Warrior(), 'standard': Standard(), 'oath': Oath(),
           'unbroken': Unbroken(), 'coif': Coif(), 'general': General(), 'traitor': Traitor(),
           'hearth': Hearth(), 'wanderer': Wanderer(), 'light': Light(),
@@ -809,6 +829,6 @@ BODIES = {'hunter': Hunter(), 'warrior': Warrior(), 'standard': Standard(), 'oat
           'quarry': Quarry(), 'cellar': Cellar(),
           'wolfkept': Wolfkept(), 'whitepack': Whitepack(),
           'horn': Horn(), 'column': Column(),
-          'snowblind': Snowblind(),
+          'snowblind': Snowblind(), 'falconer': Falconer(),
           'clockmaker': Clockmaker(), 'foreman': Foreman(),
           'canal': Canal(), 'night': Night()}
