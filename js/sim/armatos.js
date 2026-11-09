@@ -48,7 +48,7 @@ let guardN = 0;    // a standard's number, so a rival remembers WHICH ring it st
 const ARM_AB = [
   {
     id: 'verdict', name: 'IRON VERDICT', cd: [8, 7.5, 7, 6.5, 6], ap: 0.6, cast: 0.32, aim: { line: VERDICT_LEN },
-    rank: { dmg: [14, 19, 24, 29, 34], slow: 0.6, slowT: 1.5, up: 0.6 }, // slow: walk x0.6; up: s in the air (the line's middle)
+    rank: { dmg: [18, 25, 32, 39, 46], slow: 0.6, slowT: 1.5, up: 0.6 }, // slow: walk x0.6; up: s in the air (the line's middle)
     tip: 'LINE SLAM. SLOWS. THE MIDDLE KNOCKS UP',
     blurb: 'THE SWORD COMES DOWN IN A LINE. SLOWS ALL IT HITS. THE MIDDLE OF THE LINE THROWS THEM UP.',
     use: (p) => armVerdict(p),
@@ -72,7 +72,7 @@ const ARM_AB = [
   },
   {
     id: 'march', name: "VETERAN'S MARCH", cd: [14, 13, 12, 11, 10], ap: 0.5, cast: 0.25, aim: { line: MARCH_SPD * MARCH_T },
-    rank: { dmg: [12, 16, 20, 24, 28], stun: 1, shove: 5 }, // dmg/stun: the hero it stops on; shove: each lesser body
+    rank: { dmg: [16, 22, 28, 34, 40], stun: 1, shove: 5 }, // dmg/stun: the hero it stops on; shove: each lesser body
     tip: 'CHARGE. STUNS THE FIRST HERO HIT',
     blurb: 'CHARGE. SOLDIERS AND BEASTS ARE SHOVED ASIDE. THE FIRST HERO IN THE WAY STOPS YOU AND IS STUNNED.',
     use: (p) => armMarch(p),

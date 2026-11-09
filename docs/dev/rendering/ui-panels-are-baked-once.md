@@ -12,8 +12,8 @@ so a recenter never requires a re-bake — keep any new bake-side label and its 
 expressed the same way.
 
 The [counter](../gameplay/the-merchants-counter.md#the-panel) bakes nothing: it draws on the HUD's own graphite plate
-(`drawHudFrame`, js/ui/strip.js) every frame at a constant `SHOP_W` × `SHOP_H`, and only its
-*position* moves on a resize (`shopLayout`).
+(`drawHudFrame`, js/ui/strip.js) every frame at `SHOP_W` × `SHOP_H`, and on a resize its *position* moves (`shopLayout`); a view
+narrower than the slab takes the difference out of its left side (`shopFit`).
 
 The map panel's chart is a `MAP_W`-square slot **fitted to the view** (`fitMapSlab()`, below:
 96 to `CHART_MAX` 232 px), so every tile-space position drawn on the chart (the camera rect,

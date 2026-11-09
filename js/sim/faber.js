@@ -31,7 +31,7 @@ const ARC_SHOW = 0.15;          // s the jump is drawn
 const WINDER_PLACE = 100;       // px from him it may be set
 const WINDER_RANGE = 115;       // px it shoots
 const WINDER_CD = 1.1;          // s between its shots
-const WINDER_LIFE = 25;         // s it runs
+const WINDER_LIFE = 15;         // s it runs
 const WINDER_HP = 70;           // health...
 const WINDER_HP_LV = 9;         // ...and this more for each of his levels
 const WINDER_MAX = 2;           // his at once (a third winds down the oldest)
@@ -76,8 +76,8 @@ const FABER_AB = [
     bot: (p, foe, d, clear) => clear && d < SPARK_RANGE - 10,
   },
   {
-    id: 'winder', name: 'WIND A MACHINE', cd: [14, 13, 12, 11, 10], ap: 0.2, cast: 0.35, aim: { ring: WINDER_PLACE },
-    rank: { dmg: [9, 12, 15, 18, 21] }, // dmg: each of its shots
+    id: 'winder', name: 'WIND A MACHINE', cd: [14, 13, 12, 11, 10], ap: 0.06, cast: 0.35, aim: { ring: WINDER_PLACE },
+    rank: { dmg: [6, 8, 10, 12, 14] }, // dmg: each of its shots
     tip: 'A SMALL GUN THAT SHOOTS NEARBY RIVALS',
     blurb: 'SET DOWN A SMALL CLOCKWORK MACHINE. IT SHOOTS THE NEAREST RIVAL UNTIL IT RUNS DOWN OR IS BROKEN. YOU CAN HAVE TWO AT ONCE.',
     use: (p) => faberWinder(p),
@@ -99,7 +99,7 @@ const FABER_AB = [
   },
   {
     id: 'engine', name: 'THE OLD ENGINE', cd: [110, 95, 80], ap: 0.45, cast: 0.5, aim: { ring: ENGINE_LEASH },
-    rank: { dmg: [50, 85, 120], stun: 0.75 }, // dmg: each slam
+    rank: { dmg: [35, 50, 65], stun: 0.75 }, // dmg: each slam
     tip: 'A BIG MACHINE WALKS WHERE YOU POINT',
     blurb: 'WIND UP THE OLD ENGINE FOR A FEW SECONDS. IT WALKS WHERE YOU POINT AND SLAMS THE GROUND, HURTING AND STUNNING RIVALS NEAR IT. YOUR SMALL MACHINES SHOOT TWICE AS FAST WHILE IT RUNS.',
     use: (p) => faberEngine(p),

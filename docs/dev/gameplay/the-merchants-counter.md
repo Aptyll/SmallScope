@@ -79,13 +79,13 @@ minutes ([economy](economy-one-currency.md)).
 | GUT STRING | 300 |  | +12% ATTACK SPEED |  |
 | IRON PLATE | 300 |  | +8 ARMOR |  |
 | HOURGLASS | 300 |  | +6 COOLDOWN SPEED |  |
-| AMBER BEAD | 350 |  | +2 ABILITY POWER |  |
+| AMBER BEAD | 350 |  | +6 ABILITY POWER |  |
 | FLINT HEAD | 400 |  | +3 DAMAGE |  |
 | WOLF HIDE | 400 |  | +25 HEALTH |  |
 | CHAIN SHIRT | 800 |  | +20 ARMOR |  |
 | PICKAXE | 850 |  | +6 DAMAGE |  |
 | BEAR BELT | 900 |  | +55 HEALTH |  |
-| DOWSING ROD | 1200 |  | +7 ABILITY POWER |  |
+| DOWSING ROD | 1200 |  | +21 ABILITY POWER |  |
 | FELLING AXE | 1300 |  | +10 DAMAGE |  |
 
 | boots | price | from | stats | passive |
@@ -95,7 +95,7 @@ minutes ([economy](economy-one-currency.md)).
 | SKATES | 900 | FUR BOOTS | +12 MOVE SPEED | GLIDE |
 | HOBNAIL BOOTS | 1000 | FUR BOOTS, IRON PLATE | +12 ARMOR, +8 MOVE SPEED |  |
 | QUICKSTEP BOOTS | 1000 | FUR BOOTS, GUT STRING | +22% ATTACK SPEED, +8 MOVE SPEED |  |
-| EMBER BOOTS | 1000 | FUR BOOTS, AMBER BEAD | +3 ABILITY POWER, +8 MOVE SPEED |  |
+| EMBER BOOTS | 1000 | FUR BOOTS, AMBER BEAD | +9 ABILITY POWER, +8 MOVE SPEED |  |
 | MUKLUKS | 1000 | FUR BOOTS, WOLF HIDE | +15 HEALTH, +8 MOVE SPEED | STEADY |
 
 | epic | price | from | stats | passive |
@@ -105,14 +105,14 @@ minutes ([economy](economy-one-currency.md)).
 | PADDED JACKET | 800 | WOLF HIDE, IRON PLATE | +25 HEALTH, +10 ARMOR |  |
 | WIND SASH | 850 | GUT STRING | +18% ATTACK SPEED, +6 MOVE SPEED |  |
 | EMBER CORE | 850 | WOLF HIDE | +30 HEALTH, +8 COOLDOWN SPEED |  |
-| LANTERN | 850 | AMBER BEAD | +4 ABILITY POWER, +3 MOVE SPEED |  |
+| LANTERN | 850 | AMBER BEAD | +12 ABILITY POWER, +3 MOVE SPEED |  |
 | RECURVE LIMB | 900 | GUT STRING, GUT STRING | +35% ATTACK SPEED |  |
 | TOOTHED KNIFE | 900 | FLINT HEAD | +4 DAMAGE | LEECH |
 | WARM STONE | 900 | WOLF HIDE, WOLF HIDE | +40 HEALTH | DEN |
 | RIME KNIFE | 800 | FLINT HEAD | +4 DAMAGE | FROSTBITE |
 | RIME CHARM | 800 | AMBER BEAD | +12 ABILITY POWER | FROSTBITE |
 | YARROW BUNDLE | 800 | HOURGLASS | +15 HEALTH, +8 COOLDOWN SPEED | MEND |
-| ALMANAC | 900 | AMBER BEAD, HOURGLASS | +3 ABILITY POWER, +8 COOLDOWN SPEED |  |
+| ALMANAC | 900 | AMBER BEAD, HOURGLASS | +9 ABILITY POWER, +8 COOLDOWN SPEED |  |
 | QUIVER | 1000 | FLINT HEAD, GUT STRING | +4 DAMAGE, +18% ATTACK SPEED |  |
 | WHETSTONE | 1100 | FLINT HEAD, FLINT HEAD | +5 DAMAGE, +8 COOLDOWN SPEED |  |
 | BONE KNIFE | 1100 | FLINT HEAD, WOLF HIDE | +4 DAMAGE, +35 HEALTH |  |
@@ -124,16 +124,16 @@ minutes ([economy](economy-one-currency.md)).
 | FROST LINE | 2700 | QUIVER, WIND SASH | +8 DAMAGE, +45% ATTACK SPEED | CHILL |
 | BRAMBLE MAIL | 2700 | BRAMBLE COAT, PADDED JACKET | +40 HEALTH, +40 ARMOR | THORNS |
 | GLACIER SHIELD | 2700 | FROST BUCKLER, PADDED JACKET | +30 HEALTH, +25 ARMOR, +15 COOLDOWN SPEED | STEADY |
-| ICE SLATE | 2700 | DOWSING ROD, WOLF HIDE | +50 HEALTH, +8 ABILITY POWER | CHILL |
-| SHEPHERD'S STAFF | 2700 | YARROW BUNDLE, ALMANAC | +30 HEALTH, +24 ABILITY POWER, +15 COOLDOWN SPEED | MEND |
+| ICE SLATE | 2700 | DOWSING ROD, WOLF HIDE | +50 HEALTH, +24 ABILITY POWER | CHILL |
+| SHEPHERD'S STAFF | 2700 | YARROW BUNDLE, ALMANAC | +30 HEALTH, +21 ABILITY POWER, +10 COOLDOWN SPEED | MEND |
 | PACK BANNER | 2700 | FROST BUCKLER, BEAR BELT | +50 HEALTH, +15 ARMOR, +10 COOLDOWN SPEED | RALLY |
 | HUNTER'S HORN | 2800 | QUIVER, RECURVE LIMB | +9 DAMAGE, +40% ATTACK SPEED, +3 MOVE SPEED | KINDLING |
 | BEARSKIN | 2800 | WARM STONE, BEAR BELT | +110 HEALTH, +10 ARMOR | DEN |
 | STONEHIDE | 2800 | CHAIN SHIRT, BEAR BELT | +70 HEALTH, +30 ARMOR | BRACE |
 | HEARTH PLATE | 2800 | EMBER CORE, CHAIN SHIRT | +60 HEALTH, +20 ARMOR, +10 COOLDOWN SPEED | SMOLDER |
-| MARSH LIGHT | 2800 | LANTERN, ALMANAC | +9 ABILITY POWER, +10 COOLDOWN SPEED, +5 MOVE SPEED | SCORCH |
+| MARSH LIGHT | 2800 | LANTERN, ALMANAC | +27 ABILITY POWER, +10 COOLDOWN SPEED, +5 MOVE SPEED | SCORCH |
 | IRON BRAND | 2900 | WHETSTONE, CHAIN SHIRT | +8 DAMAGE, +20 ARMOR, +10 COOLDOWN SPEED | CHILL |
-| HORNET NEST | 2900 | ALMANAC, RECURVE LIMB | +30% ATTACK SPEED, +8 ABILITY POWER, +10 COOLDOWN SPEED | KINDLING |
+| HORNET NEST | 2900 | ALMANAC, RECURVE LIMB | +30% ATTACK SPEED, +24 ABILITY POWER, +10 COOLDOWN SPEED | KINDLING |
 | HOARFROST STAFF | 2900 | RIME CHARM, DOWSING ROD | +30 HEALTH, +30 ABILITY POWER | FROSTBITE |
 | QUILTED MANTLE | 2900 | DOWSING ROD, PADDED JACKET | +25 HEALTH, +12 ARMOR, +24 ABILITY POWER | LIFELINE |
 | SUNSTONE | 3000 | FELLING AXE, PICKAXE | +18 DAMAGE | CULL |
@@ -141,14 +141,14 @@ minutes ([economy](economy-one-currency.md)).
 | WOLF FANG | 3000 | BONE KNIFE, PICKAXE | +9 DAMAGE, +50 HEALTH, +10 COOLDOWN SPEED | FEAST |
 | GRINDSTONE | 3000 | WHETSTONE, BEAR BELT | +8 DAMAGE, +50 HEALTH, +15 COOLDOWN SPEED | SURGE |
 | IRON COLLAR | 3000 | BONE KNIFE, CHAIN SHIRT | +8 DAMAGE, +40 HEALTH, +20 ARMOR | LEECH |
-| STORM GLASS | 3000 | DOWSING ROD, ALMANAC | +11 ABILITY POWER, +15 COOLDOWN SPEED | SURGE |
-| STILL CLOCK | 3000 | DOWSING ROD, CHAIN SHIRT | +18 ARMOR, +9 ABILITY POWER, +8 COOLDOWN SPEED | BRACE |
+| STORM GLASS | 3000 | DOWSING ROD, ALMANAC | +33 ABILITY POWER, +15 COOLDOWN SPEED | SURGE |
+| STILL CLOCK | 3000 | DOWSING ROD, CHAIN SHIRT | +18 ARMOR, +27 ABILITY POWER, +8 COOLDOWN SPEED | BRACE |
 | WINTER'S BITE | 3000 | RIME KNIFE, FELLING AXE | +15 DAMAGE, +8 COOLDOWN SPEED | FROSTBITE |
 | ICE AUGER | 3000 | WHETSTONE, PICKAXE | +14 DAMAGE, +15% ATTACK SPEED | PIERCE |
 | BURNING GLASS | 3000 | DOWSING ROD, LANTERN | +36 ABILITY POWER, +3 MOVE SPEED | PIERCE |
 | OAK HEART | 3000 | BONE KNIFE, BEAR BELT | +8 DAMAGE, +60 HEALTH | LIFELINE |
 | SPLITTING MAUL | 3100 | FELLING AXE, WHETSTONE | +15 DAMAGE, +10 COOLDOWN SPEED | CULL |
-| DEEP ROD | 3400 | DOWSING ROD, DOWSING ROD | +16 ABILITY POWER | AMPLIFY |
+| DEEP ROD | 3400 | DOWSING ROD, DOWSING ROD | +48 ABILITY POWER | AMPLIFY |
 
 **What an item does goes through the kit.** `itemMods` folds every slot into the kit inside
 `refreshKit` (js/sim/player.js), so every site that reads the
@@ -291,7 +291,7 @@ its stats, its passive), and a slot adds what it SELLS FOR. The words
 on it (the tabs, the row headlines, BUILDS INTO, BUY, SELL) are names, headlines and plates in
 plain words like the menus; everything else is icons, rims and numbers.
 
-**It is centred across the view**, `SHOP_Y` (4) from the top (`shopLayout`). Every icon (16 px, js/sprites/item-icons.js) is drawn at the largest **whole-number** scale that fits its well (`shopIcon`; a 20 px well shows it at 1x): a fractional one
+**It is centred across the view**, `SHOP_Y` (4) from the top (`shopLayout`). A view narrower than 524 (4:3, 5:4, 16:10 at 3x) takes the difference out of the left side (`shopFit`): the grid loses whole columns and the pane keeps its width; the tabs close up, and when they still reach the close box the pane steps down under them and the box goes to the slab's corner. When the ALL rows run past the grid, the wheel over the slab walks them (`shopScroll`, `shopScrollBy` from the wheel, input.js), with a chevron at each end that has more; RECOMMENDED shows the paths that fit. Every icon (16 px, js/sprites/item-icons.js) is drawn at the largest **whole-number** scale that fits its well (`shopIcon`; a 20 px well shows it at 1x): a fractional one
 stretches every third source pixel and frays 1 px linework.
 
 ## Recommended builds

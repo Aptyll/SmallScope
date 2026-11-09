@@ -94,8 +94,7 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   - **The middle**: the **search field** (`drawHeroFilters`, js/ui/heroes.js: right-aligned, a
     click giving it the keys, letters only) over the **hero grid**
     (`heroCells`/`drawHeroRow`: six `HERO_CELL` wells a row, fewer on a narrow view, each
-    hero's head at 2× with its name under it; `heroShown` lets through the search's heroes, the
-    coming ones only while nothing is typed). Under the grid, when the view
+    hero's head at 2× with its name under it; `heroShown` lets through the search's heroes). Under the grid, when the view
     has the room, the **stage** (`drawLobbyStage`): the hero you point at, its 48 px model at
     `LOBBY_MODEL` (2×) under a warm pool of light with a gold ring turning on the snow; clicking
     it opens the [hero pop-up](../rendering.md#the-hero-pop-up). Then the **confirm plate**
@@ -124,8 +123,7 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   Each hero is drawn only in its own looks (`CLASSES[i].skins`), so the face is the hero. What you point at
   is gold (red-rimmed while it is a ban). A banned hero is dimmed and struck through in red (flashing white
   as the bans land); one a person on your side locked is dimmed with your side's bar under it;
-  one only a bot of yours holds keeps the bar but stays bright. A coming hero is the head of the shipped hero it is `like` (`HEROES_SOON`) as one flat shade
-  (`HERO_SOON_INK`) and takes no press. A click (`'pickN'`) or the arrows (`lobbyStep(±1)`, past the banned ones) is
+  one only a bot of yours holds keeps the bar but stays bright. A click (`'pickN'`) or the arrows (`lobbyStep(±1)`, past the banned ones) is
   `lobbyPick(i)` → `draftPoint`: in the pick, `setClass` puts the hero and its kit on the
   stage at once and `menu.cswapT` pops it. The grid dims and refuses outside the draft's two phases
   and once you have confirmed. The hero you fly out with is kept as the profile's hero

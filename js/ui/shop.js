@@ -232,31 +232,56 @@ function shopAllRows(style) {
   const rows = [];
   for (const kind of SHOP_ROW_KINDS) {
     const ids = ITEM_ALL.filter((id) => shopRowKind(id) === kind && (!style || (BUILD_ITEMS[id].styles || []).includes(style)));
-    for (let i = 0; i < ids.length; i += SHOP_COLS) rows.push(ids.slice(i, i + SHOP_COLS));
+    const cols = shopFit().cols;
+    for (let i = 0; i < ids.length; i += cols) rows.push(ids.slice(i, i + cols));
   }
   return rows;
 }
 
+// A view narrower than the slab (4:3, 5:4, 16:10 at 3x) takes the
+// difference out of the left side: the grid loses whole columns, the pane
+// keeps its width beside it
+// the ALL grid's first row shown, and how far it can go (shopLayout)
+const shopScroll = { r: 0, max: 0 };
+// the wheel over the slab: true when it walked the grid
+function shopScrollBy(d) {
+  if (!state.shop || state.shopTab === 'rec' || !shopScroll.max) return false;
+  const P = shopLayout().panel;
+  if (mouse.x < P.x || mouse.x >= P.x + P.w || mouse.y < P.y || mouse.y >= P.y + P.h) return false; // off the slab the wheel zooms
+  const r = Math.max(0, Math.min(shopScroll.max, shopScroll.r + d));
+  if (r !== shopScroll.r) { shopScroll.r = r; SFX.notch(); }
+  return true;
+}
+function shopFit() {
+  const d = Math.max(0, SHOP_W - (VIEW_W - 4));
+  return { w: SHOP_W - d, px: SHOP_PANE_X - d, cols: SHOP_COLS - Math.ceil(d / SHOP_PITCH) };
+}
 // The whole geometry in one place: the slab centred across the view, SHOP_Y
-// down from its top.
+// down from its top. The tabs close up when they would run into the close
+// box; still too long, the pane steps down under them and the box goes to
+// the slab's corner.
 function shopLayout() {
-  const x = Math.max(2, Math.round((VIEW_W - SHOP_W) / 2)), y = SHOP_Y;
+  const F = shopFit(), W = F.w, PX = F.px;
+  const x = Math.max(2, Math.round((VIEW_W - W) / 2)), y = SHOP_Y;
   const gx = x + SHOP_GRID_X, by = y + SHOP_H - 51; // the grid's left edge, the slots' top row
+  const gw0 = PX - SHOP_GRID_X - 8; // the grid's width
   const tabs = [], cats = [], grid = [], heads = [], slots = [], rates = [], arrows = [];
+  const span = (g) => SHOP_TABS.reduce((n, t) => n + pixelTextWidth(t.label) + 8, 0) + (SHOP_TABS.length - 1) * g;
+  const gap = span(4) <= PX - 26 ? 4 : 0, low = span(gap) > PX - 26;
   let tx = x + 8;
-  for (const t of SHOP_TABS) { const w = pixelTextWidth(t.label) + 8; tabs.push({ id: t.id, x: tx - 4, y: y + 4, w, h: 14 }); tx += w + 4; }
+  for (const t of SHOP_TABS) { const w = pixelTextWidth(t.label) + 8; tabs.push({ id: t.id, x: tx - 4, y: y + 4, w, h: 14 }); tx += w + gap; }
   for (let i = 0; i <= ITEM_STAT_ORDER.length; i++) cats.push({ c: i - 1, x: x + 6, y: y + 25 + i * SHOP_CAT_PITCH, w: SHOP_CAT, h: SHOP_CAT });
   const well = (id, wx, wy) => grid.push({ id, x: wx, y: wy, w: SHOP_WELL, h: SHOP_WELL });
   if (state.shopTab === 'rec') {
     const { R, start } = shopRecommended();
     const sy = (r) => y + 25 + r * SHOP_REC_ROW;
-    const gw = SHOP_PANE_X - SHOP_GRID_X - 8; // the grid's width, past the stat bar to the pane
+    const gw = PX - SHOP_GRID_X - 8; // the grid's width, past the stat bar to the pane
     heads.push({ label: 'START', x: gx, y: sy(0) });
     heads.push({ label: R.games + ' GAMES', x: gx + gw - pixelTextWidth(R.games + ' GAMES'), y: sy(0), dim: true });
     start.forEach((id, i) => well(id, gx + i * SHOP_PITCH, sy(0) + 9));
     // the paths, side by side: three wells a step apart with a chevron
     // between, and the pick and win rate beside them
-    R.core.forEach((row, k) => {
+    R.core.slice(0, Math.max(1, Math.floor((gw + 8) / SHOP_PATH_W))).forEach((row, k) => { // the paths that fit
       const px = gx + k * SHOP_PATH_W;
       heads.push({ label: !R.data ? 'CORE' : row.best ? 'MOST WINS' : 'MOST PICKED', x: px, y: sy(1) });
       row.ids.forEach((id, i) => well(id, px + i * SHOP_PATH_PITCH, sy(1) + 9));
@@ -268,19 +293,25 @@ function shopLayout() {
     heads.push({ label: R.data ? 'ALSO BUILT' : 'THEN', x: gx, y: sy(3) });
     R.more.forEach((id, i) => well(id, gx + i * SHOP_PITCH, sy(3) + 9));
   } else {
-    shopAllRows(state.shopTab === 'all' ? null : state.shopTab)
-      .forEach((row, r) => row.forEach((id, i) => well(id, gx + i * SHOP_PITCH, y + 25 + r * SHOP_ROW)));
+    // the rows the grid holds; more than that (a narrow view's fewer columns)
+    // and the wheel walks them, an arrow at each end that has more
+    const rows = shopAllRows(state.shopTab === 'all' ? null : state.shopTab), fit = Math.floor((by - 6 - (y + 25)) / SHOP_ROW);
+    shopScroll.max = Math.max(0, rows.length - fit);
+    const top = shopScroll.r = Math.max(0, Math.min(shopScroll.max, shopScroll.r));
+    rows.slice(top, top + fit).forEach((row, r) => row.forEach((id, i) => well(id, gx + i * SHOP_PITCH, y + 25 + r * SHOP_ROW)));
+    if (top > 0) arrows.push({ x: gx + gw0 - 5, y: y + 25, up: true });
+    if (top < shopScroll.max) arrows.push({ x: gx + gw0 - 5, y: by - 12, down: true });
   }
   for (let i = 0; i < ITEM_SLOTS; i++) {
     slots.push({ i, x: x + 6 + (i % ITEM_COLS) * SHOP_PITCH, y: by + ((i / ITEM_COLS) | 0) * SHOP_PITCH, w: SHOP_WELL, h: SHOP_WELL });
   }
   const sell = { x: x + 6 + ITEM_COLS * SHOP_PITCH + 4, y: by + 13, w: SHOP_SELL_W, h: SHOP_BTN_H };
-  const pane = { x: x + SHOP_PANE_X, y: y + 6, w: SHOP_W - SHOP_PANE_X - 6, h: SHOP_H - 12 };
+  const pane = { x: x + PX, y: y + (low ? 22 : 6), w: W - PX - 6, h: SHOP_H - (low ? 28 : 12) };
   const into = [];
   for (let i = 0; i < SHOP_INTO_MAX; i++) into.push({ i, x: pane.x + 6 + i * SHOP_PITCH, y: pane.y + 15, w: SHOP_WELL, h: SHOP_WELL });
   return {
-    panel: { x, y, w: SHOP_W, h: SHOP_H },
-    xr: { x: pane.x - 17, y: y + 6, w: 11, h: 11 },
+    panel: { x, y, w: W, h: SHOP_H }, px: PX, low,
+    xr: { x: low ? x + W - 17 : pane.x - 17, y: y + 6, w: 11, h: 11 },
     tabs, cats, grid, heads, slots, rates, arrows, sell, pane, into, by,
     purse: { x: pane.x - 10, y: by + 18 },
     buy: { x: pane.x + 6, y: pane.y + pane.h - SHOP_BTN_H - 6, w: pane.w - 12, h: SHOP_BTN_H + 2 },
@@ -353,7 +384,7 @@ function shopSell(slot) {
 function shopClick(h) {
   if (!h) return false;
   if (h === 'x') { closeShop(); return true; }
-  if (h.kind === 'tab') { if (state.shopTab !== h.id) { state.shopTab = h.id; SFX.place(); } return true; }
+  if (h.kind === 'tab') { if (state.shopTab !== h.id) { state.shopTab = h.id; shopScroll.r = 0; SFX.place(); } return true; }
   if (h.kind === 'cat') { state.shopCat = state.shopCat === h.c ? -1 : h.c; SFX.place(); return true; }
   if (h.kind === 'pick') { state.shopSel = h.id; state.shopSlot = -1; SFX.place(); return true; }
   if (h.kind === 'slot') { if (player.items[h.i]) { state.shopSlot = h.i; SFX.place(); } return true; }
@@ -448,8 +479,8 @@ function drawShopPanel(now) {
   ctx.fillStyle = xh ? SHOP_INK : SHOP_DIM;
   for (let k = 0; k < 5; k++) { ctx.fillRect(L.xr.x + 3 + k, L.xr.y + 3 + k, 1, 1); ctx.fillRect(L.xr.x + 7 - k, L.xr.y + 3 + k, 1, 1); }
   ctx.fillStyle = HUD_EDGE;
-  ctx.fillRect(P.x + 3, P.y + 20, SHOP_PANE_X - 6, 1);
-  ctx.fillRect(P.x + 3, L.by - 6, SHOP_PANE_X - 6, 1);
+  ctx.fillRect(P.x + 3, P.y + 20, (L.low ? P.w : L.px) - 6, 1);
+  ctx.fillRect(P.x + 3, L.by - 6, L.px - 6, 1);
   ctx.fillRect(P.x + SHOP_GRID_X - 4, P.y + 23, 1, L.by - 9 - P.y - 23); // the stat bar's edge
   drawShopCats(L, h);
   for (const hd of L.heads) drawPixelText(ctx, hd.label, hd.x, hd.y, hd.dim ? SHOP_FAINT_INK : SHOP_DIM);
@@ -478,7 +509,10 @@ function drawShopRates(L) {
     drawPixelText(ctx, r.win + '%', r.x + 22, r.y + 9, r.win > 50 ? SHOP_STAT : SHOP_INK);
   }
   ctx.fillStyle = SHOP_DIM;
-  for (const a of L.arrows) for (let k = 0; k < 3; k++) { ctx.fillRect(a.x + k, a.y - 2 + k, 1, 1); ctx.fillRect(a.x + k, a.y + 2 - k, 1, 1); }
+  for (const a of L.arrows) for (let k = 0; k < 3; k++) {
+    if (a.up || a.down) { const ry = a.up ? a.y + k : a.y + 2 - k; ctx.fillRect(a.x + 2 - k, ry, 1, 1); ctx.fillRect(a.x + 2 + k, ry, 1, 1); } // the grid's more-rows mark
+    else { ctx.fillRect(a.x + k, a.y - 2 + k, 1, 1); ctx.fillRect(a.x + k, a.y + 2 - k, 1, 1); }
+  }
 }
 // RECOMMENDED and ALL ITEMS: the open one lit with a line under it
 function drawShopTabs(L, h) {

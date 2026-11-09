@@ -426,14 +426,6 @@ const CLASSES = [
       bowCharge: 0.75, nock: 0.4, spdDmg: 0, dodgeSpeed: DODGE_SPEED },
   },
 ];
-// the heroes announced but not yet playable: the hero grid shows each as a
-// dark silhouette of the shipped hero it names (`like`), its own name under
-// it, and no press. One moves into CLASSES (with a kit and abilities) the day
-// it ships.
-const HEROES_SOON = [
-  { name: 'SLEET', like: 'NIX' },
-  { name: 'DURAVO', like: 'ARMATOS' },
-];
 // a hero's CLASSES index by name, -1 for none: what a profile or a bot names
 function heroIndex(name) { return CLASSES.findIndex((c) => c.name === name); }
 // the kit every sim site reads: the class's numbers with the player's items

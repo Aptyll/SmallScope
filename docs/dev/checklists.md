@@ -265,8 +265,7 @@ edit has changed how an attack plays.
 item adds `from` (its parts, a part named twice is needed twice) and a `passive`. The grid, the
 build tree, BUILDS INTO, the price that drops by the components held, the tooltip and the save all
 pick it up. It needs an icon: a 16×16 grid `I.<id>` in js/sprites/item-icons.js. The ALL ITEMS
-grid is `SHOP_COLS` (13) a row a kind, so a fourteenth item of one kind runs on into a new row and
-the slab's `SHOP_H` may have to grow with it. A new **stat** is one `ITEM_STATS` row (its label, its
+grid is `SHOP_COLS` (13) a row a kind (fewer on a narrow view: `shopFit`), so a fourteenth item of one kind runs on into a new row; rows past the grid scroll on the wheel (`shopScrollBy`). A new **stat** is one `ITEM_STATS` row (its label, its
 short label, its format and what it writes into the kit) plus its place in `ITEM_STAT_ORDER` and a
 `STAT_ICON` (js/ui/statpanel.js). A new **passive** is one `ITEM_PASSIVES` row: a kit field the sim
 already reads needs nothing else; anything that happens on a blow goes in `itemsDeal`,
@@ -287,8 +286,7 @@ particular hero names it with `heroIndex('NAME')`, never a number: an index move
 table does. What a new hero needs written:
 
 1. a `CLASSES` entry ([js/sim/player.js](../../js/sim/player.js)) — `name`, `pos`, `passive`, the
-   `base`/`grow` stats, the `kit` numbers and `rankOrder` (a hero announced in `HEROES_SOON` moves
-   over; until then it is drawn as the hero it is `like`);
+   `base`/`grow` stats, the `kit` numbers and `rankOrder`;
 2. its looks, in its own js/sprites/ file (the shape of [js/sprites/armatos.js](../../js/sprites/armatos.js)): each look's standing grids
    (`<HERO>_BODY`, walked by `heroWalk`) and its paint (`<HERO>_PAL`), and its **skins table**
    (`<HERO>_SKINS`: the free first row, then the buyable ones), named on the `CLASSES` row as

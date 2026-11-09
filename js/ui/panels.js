@@ -343,6 +343,9 @@ function renderWorldMap(now) {
   // pylon in its ink, the minimap's own line at the chart's scale
   for (const z of zips) if (z) drawMapZip(ctx, z, mx, my, TEAMS[skin(z.team)].mark);
 
+  // the landmarks (the road towers) over their own tiles, under the camps and every body
+  drawMapStructs(ctx, (x, y) => [mx(x), my(y)], CHART_DARK, 2);
+
   // the camps, glyph only; the one under the pointer lights and wears its name
   drawChartCamps();
 

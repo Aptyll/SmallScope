@@ -44,7 +44,7 @@ const lignumLogs = []; // {x0, y0, nx, ny, len, team, owner, t, life, tiles} - R
 const LIGNUM_AB = [
   {
     id: 'chop', name: 'CHOP', cd: [9, 8.5, 8, 7.5, 7], ap: 0.5, cast: 0.12, aim: { cone: CHOP_R, half: CHOP_HALF },
-    rank: { dmg: [18, 26, 34, 42, 50], chop: [30, 42, 54, 66, 78], slow: 0.65 }, // dmg: the cut; chop: the second blow
+    rank: { dmg: [18, 26, 34, 42, 50], chop: [24, 34, 44, 54, 64], slow: 0.65 }, // dmg: the cut; chop: the second blow
     tip: 'CUT, THEN AGAIN TO CHOP AND SLOW',
     blurb: 'SWING YOUR AXE THROUGH THE WEDGE AHEAD. PRESS AGAIN WITHIN A FEW SECONDS TO CHOP: IT HITS HARDER AND SLOWS.',
     use: (p) => (p.castSlam ? lignumChop(p, true) : lignumChop(p, false)),
