@@ -111,7 +111,7 @@ const BRUSH_PATCHES = [
   [90, -8.5, 3.5, 1.5, -45], [90, 8.5, 3.5, 1.5, -45], // mid
   [76, -13, 3, 2, 45], [76, 13, 3, 2, 45],         // jungle
   [103, -28, 3.5, 2, 45], [103, 30, 3.5, 2, 45],   // river
-];
+].map(([u, s, a, b, ang]) => [u * MAP_K, s * MAP_K, a, b, ang]); // MAP_K spreads where they stand, never their size
 const BRUSH_AMP = 0.95;   // the depth in a patch past its rim's slope
 const BRUSH_EDGE = 0.6;   // tiles in from the rim it takes to reach BRUSH_AMP
 const BRUSH_SKIRT = 1;    // tiles out from the rim its skirt (the MID band) runs
