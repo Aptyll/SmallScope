@@ -562,7 +562,7 @@ function hitDummy(o, dmg, hx, hy) {
 // So the damping is charged ONCE, here, on the one path, rather than as a
 // building-sized number written out per weapon: raise a shot's damage and the
 // siege scales with it, and nothing new ever has to remember the rule. It is
-// a player's blow that is damped, never a soldier's axe (ROBOT_DMG is already
+// a player's blow that is damped, never a soldier's blow (SOLDIER_TYPES' dmg is already
 // a building number), which is what the fourth argument says.
 const STRUCT_DR = 0.6;
 // One blow against a building on another team. Everything that can land one -
