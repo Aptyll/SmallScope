@@ -39,7 +39,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.661';
+const PATCH_TXT = 'PATCH 0.662';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -55,6 +55,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.662', 'THE HUNTER AND THE WARRIOR ARE GONE: EVERY PICK IS A NAMED HERO, AURA HAS HER OWN SKINS TAB, AND COINS SPENT ON THE OLD HERO AND WEAPON SKINS ARE PAID BACK.'],
   ['0.661', 'THE VALLEY IS A FIFTH BIGGER: THE LANES, THE BASES, THE CAMPS, THE BRUSH AND THE JUNGLE WALLS ALL SPREAD OUT, WHILE EVERY HERO, SOLDIER AND BEAST STAYS THE SAME SIZE.'],
   ['0.660', 'STAFF HEROES EACH CARRY THEIR STAFF THEIR OWN WAY, SO YOU CAN TELL THEM APART BY SHAPE, AND VARRO, BUCINA, FABER AND SAGITTA SHOW MORE OF THEIR SIDE\'S COLOUR.'],
   ['0.659', 'AURA AND LUCERNA SHOW THEIR SIDE\'S COLOUR FROM BEHIND, SO YOU CAN TELL WHOSE THEY ARE WHEN THEY WALK AWAY.'],
