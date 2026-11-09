@@ -39,7 +39,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.605';
+const PATCH_TXT = 'PATCH 0.606';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -55,6 +55,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.606', 'HEROES NO LONGER HIDE THEIR FACES BEHIND THEIR WEAPONS: BLADES ARE HELD BY THE HILT, AND ANYTHING RAISED GOES BEHIND THE HEAD.'],
   ['0.605', 'WAVES ARE LIKE LEAGUE NOW: THREE MELEE SOLDIERS, THEN THREE RANGED ONES THAT THROW SNOWBALLS, AND A SIEGE CATAPULT EVERY THIRD WAVE THAT HITS TOWERS HARD. A RANGED LAST HIT PAYS LESS AND A SIEGE ONE MORE, SO A 2800 ITEM STILL COMES AT ABOUT 5:00.', 'wave-soldiers'],
   ['0.604', 'A PARTY WITH FRIENDS IN IT CAN NO LONGER SWITCH TO 1V1, WHICH IS A QUEUE FOR ONE PLAYER.'],
   ['0.603', 'UNDER THE HOOD: OLD SPRITES AND SOUNDS NOTHING USED ANY MORE ARE GONE, SO THE GAME LOADS A LITTLE LESS.'],

@@ -194,7 +194,7 @@ They are F and G off armatos-round4.png in the project files. His 48 px model is
 front at 3x (below).
 
 His OATH GREATSWORD (`ARM_SWORD`, `ARM_SWORD_DIAG`) replaces the sword's held art in his hands
-(`HERO_BLADES.oath`, js/draw/heroes.js: `heroBlade`, asked by `drawHeldTool`): flat for the side, the swing and the wind-up, and slanted
+(`HERO_BLADES.oath`, js/draw/heroes.js: `heroBlade`, asked by `drawHeldTool`): flat for the side, the swing and the wind-up (turned about its `hilt`), and slanted
 facing down or up (`heroCarry`), the grip at his right hip (the row's `hip`) and the blade up past the
 shoulder, drawn behind the body facing up.
 
@@ -386,7 +386,9 @@ shape; round 2 grew it).
 bar. At rest `drawHeldTool()` draws the **hero's own weapon** instead, a 12×12
 `SPRITES.weaponArt` canvas baked in [js/sprites/weapons.js](../../js/sprites/weapons.js) (a blade at
 its real length in `SPRITES.weaponHeld`); both sizes go
-through the same code because the icon is centred on its own half-width.
+through the same code because each is turned about where the hand closes on it (`WEAPON_GRIP`, a
+hero blade's `hilt`; a work tool's icon about its middle) - the carry rule in `drawHeldTool` that
+keeps a weapon off the face.
 
 The **item icons** are one 16×16 grid an item in [js/sprites/item-icons.js](../../js/sprites/item-icons.js),
 `SPRITES['item_' + id]` (`itemIcon`, js/sim/items.js; see [the items](gameplay/the-merchants-counter.md#the-items)),

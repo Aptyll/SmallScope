@@ -428,15 +428,16 @@ function drawPlayer(p, ex, ey, now) {
     const bob = seat ? seat.bob : 0; // a rider rises and falls with the gallop, the plate holds still
     const ax = px + (pose ? pose.dx : 0), ay = py + (pose ? pose.dy : 0) - zl + bob;
     const sy = ay + by - py, sx = ax + bx - px; // a taller frame (the hoist) keeps its feet
-    // held tool: behind the body when facing away, in the hand otherwise. A
+    // held tool: behind the body when facing away or pointing up the screen,
+    // in the hand otherwise. A
     // lying player shows one only while the bow is actually drawn - a carried
     // axe bobbing over a body on its belly reads as a floating axe. A body
     // mid-cast (or holding the shield, or charging) has no hand free for it -
     // but a mage casts with the staff in hand (heroStaffOf, js/draw/heroes.js).
     const held = state.mode !== 'title' && (!lying || p.charging) &&
       (p.castT <= 0 || heroStaffOf(p)) && p.shieldT <= 0 && p.rushT <= 0 && p.zip < 0; // ...or holding a zipline's handle
-    const toolBehind = held && p.dir === 'up' && !p.charging && p.swingT <= 0 && p.slashT <= 0; // a blade mid-sweep is always in front
-    if (toolBehind) atFeet(fx0, fy0, wsc, () => drawHeldTool(p, px, py + bob));
+    // what points up the screen or is carried facing away goes behind (THE CARRY RULE, drawHeldTool)
+    if (held) atFeet(fx0, fy0, wsc, () => drawHeldTool(p, px, py + bob, true));
     // a rider's body stops at the deer's back: the rows from its hip down
     // are the deer's (riderSeat); what the hands hold is not cut
     if (seat) {
@@ -461,7 +462,7 @@ function drawPlayer(p, ex, ey, now) {
     heroBodyFx(p, ax, ay, now, true); // ...or over it (his standard facing away)
     if (seat) ctx.restore();
     ctx.globalAlpha = 1;
-    if (held && !toolBehind) atFeet(fx0, fy0, wsc, () => drawHeldTool(p, px, py + bob));
+    if (held) atFeet(fx0, fy0, wsc, () => drawHeldTool(p, px, py + bob, false));
     // what an ability left ON this body - shield, net, jaws, fury, mark -
     // drawn over the sprite for every side alike (js/sim/abilities.js)
     if (state.mode !== 'title') atFeet(fx0, fy0, wsc, () => drawAbilityOnPlayer(p, ax, ay, now));
@@ -775,7 +776,28 @@ function aimAngle(p) { return p === player ? Math.atan2(p.input.aimY - (p.y - BO
 // the hero's weapon, drawn on a player: carried at the hand while idle or
 // walking, swept along the arc during a melee swing, aimed at that player's
 // aim point while the bow is drawn. px/py are the sprite's top-left on screen.
-function drawHeldTool(p, px, py) {
+// THE CARRY RULE. Whatever the hands hold is turned about the hand (its art's
+// grip: WEAPON_GRIP, js/sprites/weapons.js, or a hero blade's `hilt`), so a
+// blade reaches out of the fist and its hilt never crosses the body; and it
+// is drawn behind the body whenever it points up the screen (HELD_RISE), away
+// from the camera, so no aim, wind-up or sweep ever lies over the face.
+// drawPlayer calls this twice, behind the body (back true) and over it.
+const HELD_RISE = 0.3; // sin of the angle above level past which a held thing goes behind the body
+// where the hand is: a blade's hand rides an ellipse about the hips, out past
+// the head's columns (rx, ry px), not up at the chin; a carried weapon sits at
+// the hip or the side by facing, rows from the hands' line (cyp below)
+const BLADE_HAND = [6, 3];
+const CARRY_HAND_Y = { down: 1, up: -1, left: 0, right: 0 };
+function heldBehind(a) { return Math.sin(a) < -HELD_RISE; }
+// one held art at the hand (hx, hy), turned by `rot`, the hand closed on grip
+function drawGripped(img, grip, hx, hy, rot) {
+  ctx.save();
+  ctx.translate(Math.round(hx), Math.round(hy));
+  ctx.rotate(rot);
+  ctx.drawImage(img, -grip[0], -grip[1]);
+  ctx.restore();
+}
+function drawHeldTool(p, px, py, back) {
   const t = SWING_TOOLS[p.swing];
   // At rest the hands hold the hero's WEAPON (its basic attack's `art`,
   // SPRITES.weaponArt, js/sprites/weapons.js), so what somebody fights with
@@ -795,16 +817,14 @@ function drawHeldTool(p, px, py) {
     const icon = SPRITES[t.icon], half = icon.width >> 1;
     const prog = 1 - p.swingT / 0.18;
     const a = p.swingDir - 1.1 + prog * 2.2;
-    ctx.save();
-    ctx.translate(Math.round(cxp + Math.cos(a) * 9), Math.round(cyp - 2 + Math.sin(a) * 9));
-    ctx.rotate(a + Math.PI / 2);
-    ctx.drawImage(icon, -half, -half);
-    ctx.restore();
+    if (heldBehind(a) === back) drawGripped(icon, [half, half], cxp + Math.cos(a) * 9, cyp - 2 + Math.sin(a) * 9, a + Math.PI / 2);
   }
 
-  // a staff is carried upright in every facing, at rest, drawn or cast (HERO_STAVES, js/draw/heroes.js)
+  // a staff is carried upright in every facing, at rest, drawn or cast
+  // (HERO_STAVES, js/draw/heroes.js), standing beside the body and behind it,
+  // so its head stands clear of the face and the body's own edge overlaps it
   if (!swinging && heroStaffOf(p)) {
-    heroStaff(p, px, py + (!p.moving || p.prone ? 0 : scoutBody(p) ? Math.floor(p.animT) % 2 : -runBob(p)));
+    if (back) heroStaff(p, px, py + (!p.moving || p.prone ? 0 : scoutBody(p) ? Math.floor(p.animT) % 2 : -runBob(p)));
     return;
   }
 
@@ -812,27 +832,27 @@ function drawHeldTool(p, px, py) {
   // (js/sprites/weapons.js); rotating by the aim (or the facing) minus that
   // puts the arrowhead or the sword's point toward where its owner is looking
   const fwd = WEAPON_FWD[A.art] || 0;
-  // the blade at its real length, where the art has one (SPRITES.weaponHeld);
-  // a hero's own blade first (js/draw/heroes.js)
-  const wHeld = heroBlade(p) || SPRITES.weaponHeld[A.art] || wIcon;
+  // the blade at its real length, where the art has one (SPRITES.weaponHeld),
+  // and where the hand closes on it; a hero's own blade first (js/draw/heroes.js)
+  const gripOf = (img, g) => g || [img.width >> 1, img.height >> 1];
+  const hb = heroBlade(p), held = SPRITES.weaponHeld[A.art];
+  const wHeld = hb ? hb.img : held || wIcon;
+  const hGrip = gripOf(wHeld, hb ? hb.grip : held ? WEAPON_GRIP.held[A.art] : WEAPON_GRIP.icon[A.art]);
+  const iGrip = gripOf(wIcon, WEAPON_GRIP.icon[A.art]);
 
-  // THE SWING: a blade mid-cut is swung through its whole wedge, pivoting at
-  // the hands - the sword itself at the sweep's edge with two ghosts of it
+  // THE SWING: a blade mid-cut is swung through its whole wedge from the
+  // hands - the sword itself at the sweep's edge with two ghosts of it
   // trailing, so the arc the cut took is read off the weapon and not only off
-  // the snow. Over everything, whichever way the body faces.
+  // the snow. Each sits behind the body while it points up the screen.
   if (p.slashT > 0 && cut) {
-    const half = wHeld.width >> 1;
     const prog = 1 - p.slashT / SLASH_T;
     const sw = Math.min(1, prog / 0.7); // the blade crosses in the first 70%, then hangs at the end of the arc
     const e = p.slashA - p.slashHalf + sw * p.slashHalf * 2;
     for (let k = 2; k >= 0; k--) {
-      const t = e - k * 0.32 * sw;
+      const a = e - k * 0.32 * sw;
+      if (heldBehind(a) !== back) continue;
       ctx.globalAlpha = k ? (k === 1 ? 0.4 : 0.18) * (1 - prog) : 1;
-      ctx.save();
-      ctx.translate(Math.round(cxp + Math.cos(t) * 5), Math.round(cyp - 2 + Math.sin(t) * 4));
-      ctx.rotate(t - fwd);
-      ctx.drawImage(wHeld, -half, -half);
-      ctx.restore();
+      drawGripped(wHeld, hGrip, cxp + Math.cos(a) * BLADE_HAND[0], cyp + Math.sin(a) * BLADE_HAND[1], a - fwd);
     }
     ctx.globalAlpha = 1;
     return;
@@ -842,36 +862,30 @@ function drawHeldTool(p, px, py) {
   // leave is the thing to read. A blade is drawn back to the START of its
   // arc, wound up, so the draw reads as the swing it is about to be.
   if (drawing) {
-    const spr = cut ? wHeld : wIcon;
-    const half = spr.width >> 1;
     const a = aimAngle(p);
-    const t = cut ? a - cut.half * (0.4 + 0.6 * drawPow(p)) : a;
-    ctx.save();
-    ctx.translate(Math.round(cxp + Math.cos(t) * (cut ? 4 : 8)), Math.round(cyp - 2 + Math.sin(t) * (cut ? 3 : 8)));
-    ctx.rotate(t - fwd);
-    ctx.drawImage(spr, -half, -half);
-    ctx.restore();
+    const w = cut ? a - cut.half * (0.4 + 0.6 * drawPow(p)) : a;
+    if (heldBehind(w) === back) {
+      drawGripped(cut ? wHeld : wIcon, cut ? hGrip : iGrip,
+        cxp + Math.cos(w) * (cut ? BLADE_HAND[0] : 8), cyp + (cut ? Math.sin(w) * BLADE_HAND[1] : Math.sin(w) * 8 - 2), w - fwd);
+    }
   }
   if (drawing || swinging) return;
 
   // carried: the weapon (or, through the swing cooldown, the work tool) sits
   // in the leading hand, riding the run's bob, turned to the facing - a work
-  // tool's icon points up and is left as drawn, the way it always was. A worn
-  // body keeps the old one-pixel step.
+  // tool's icon points up and is left as drawn, the way it always was. Facing
+  // up it is behind the body. A worn body keeps the old one-pixel step.
+  if ((p.dir === 'up') !== back) return;
   const icon = t.key === 'bow' ? wHeld : SPRITES[t.icon];
   if (!icon) return;
   const half = icon.width >> 1;
   const bob = !p.moving || p.prone ? 0 : scoutBody(p) ? Math.floor(p.animT) % 2 : -runBob(p);
-  const hx = p.dir === 'left' || p.dir === 'up' ? px + 2 : px + 14; // the leading hand (up: the far one, occluded by the body - the caller draws us first)
-  const hy = cyp - (p.dir === 'left' || p.dir === 'right' ? 2 : 1) + bob;
+  const hx = p.dir === 'left' || p.dir === 'up' ? px + 2 : px + 14; // the leading hand (up: the far one, occluded by the body)
+  const hy = cyp + CARRY_HAND_Y[p.dir] + bob;
   if (t.key !== 'bow') { ctx.drawImage(icon, hx - half, hy - half); return; }
   if (heroCarry(p, px, py + bob)) return; // a hero's own way of holding it facing down or up (js/draw/heroes.js)
   const face = p.dir === 'right' ? 0 : p.dir === 'down' ? Math.PI / 2 : p.dir === 'left' ? Math.PI : -Math.PI / 2;
-  ctx.save();
-  ctx.translate(hx, hy);
-  ctx.rotate(face - fwd);
-  ctx.drawImage(icon, -half, -half);
-  ctx.restore();
+  drawGripped(icon, hGrip, hx, hy, face - fwd);
 }
 
 // ---- going down -----------------------------------------------------------
