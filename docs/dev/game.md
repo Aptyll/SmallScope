@@ -49,12 +49,15 @@ each side lane), or by a dodge roll
 from the bank. The cistern is the works' ring of cut
 stone round the crossing: the road comes in at two gates with stone sills, the wall is down in
 four breaches with the fallen blocks round them, and nothing gets through the stone itself, roll
-or charge. Inside, the creek pools and freezes into **the orca's lake**, both sides' alike: anyone
+or charge. Inside, the creek pools and freezes into plain ice, both sides' alike. The orca lives
+in **its own pool** on the creek's upstream bend, top-left of the middle: anyone
 can walk over it, but the orca
 under the ice locks on a player out on it, stalks them while a 3 2 1 counts down over their head, and then it comes up
 through the ice and they go down. [The orca](gameplay/wildlife.md#the-orca). It swings round the two
-midline camps in a half-loop each, so each side owns one on its own bank: the brown bear is RED's,
-the black bear BLUE's, each walking its bank up and down and stopping to fish. Anyone who steps in plunges as through the ice, and a bot shoved off the
+spots on the mirror line in a half-loop each, so each side is nearer one: the **orca's pool**, its own
+frozen pond where the orca lives, on RED's bank top-left of the middle, and the **black bear** on
+BLUE's bank bottom-right, walking it up and down and stopping to fish. The cistern's pool at the
+middle is plain ice. Anyone who steps in plunges as through the ice, and a bot shoved off the
 bank goes in like anybody. [The creek](world.md#the-creek), [the cistern](world.md#the-cistern).
 
 The world is 278 tiles of 16 px — a 4448×4448 px snowfield with a forest border and an interior
@@ -179,8 +182,10 @@ bots near a DANGER back off. [Pings](gameplay/pings.md), [Bots](multiplayer.md#b
 off the river, one between the den and the warren and a block at the lane's corner, mirrored to all four, with gaps to walk in.
 **The camps are the jungle, and the jungle is symmetric.** Six fixed sites, three on each side of the
 road, mirrored so both teams walk the same distance: four **WOLF DENS** that pay gold, and one
-**BLACK BEAR BEND** and one **BROWN BEAR BEND**, each a bear patrolling one side's bank of the creek, whose kill pays and
-gives the whole team that bear's own buff (the BLACK BUFF or the BROWN BUFF, which do the same thing).
+**BLACK BEAR BEND**, the one bear, patrolling a bank of the creek: first out at 5:00 and back 5:00
+after each kill, which pays the whole team, gives it the BLACK BUFF, and adds a black bear to the
+side's count: +5% on every blow for the rest of the match, up to four. Facing it across the road is
+the **ORCA'S POOL** (no camp monster: [the orca](gameplay/wildlife.md#the-orca) under its ice).
 Every camp is **neutral until hit** — then the whole camp comes for the hitter, leashes when
 they leave its ground and heals — and every site sits well off the road, so the lane is never a
 wolf's. [Camps](world.md#camps), [camp monsters](gameplay/wildlife.md#camp-monsters-neutral-until-hit).

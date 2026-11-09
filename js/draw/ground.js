@@ -279,7 +279,7 @@ function creekNear(tx, ty) {
   return cisternR(tx, ty) > CIST_ICE - 1.5;
 }
 function paintCreek(g, tx, ty, px, py) {
-  const iced = orcaLakeNear(tx, ty); // the cistern may freeze some of this tile's water (creekIced, js/sim/world.js)
+  const iced = cisternIceNear(tx, ty); // the cistern may freeze some of this tile's water (creekIced, js/sim/world.js)
   for (let j = 0; j < TILE; j++) for (let i = 0; i < TILE; i++) {
     const x = px + i, y = py + j;
     const fx = tx + (i + 0.5) / TILE - 0.5, fy = ty + (j + 0.5) / TILE - 0.5;
@@ -287,12 +287,12 @@ function paintCreek(g, tx, ty, px, py) {
     let c = null;
     const d = creekAt(fx, fy);
     if (d > 0.3) continue;
-    // the orca's lake: the creek runs on under its ice, and under the wall.
+    // the cistern's pool: the creek runs on under its ice, and under the wall.
     // The sheet is the lake's own shore (the ice painter's, iceAtPx); water
     // the shore leaves bare is ice too (under the wall's foot)
     if (iced && creekIced(fx, fy)) {
       if (iceAtPx(x, y)) continue;
-      if (d < 0) { penDot(g, dustIce(x, y, iceTone(x, y, ICE_STYLES[ORCA_ICE], hp)).css, x, y); continue; }
+      if (d < 0) { penDot(g, dustIce(x, y, iceTone(x, y, ICE_STYLES[CIST_ICE_STYLE], hp)).css, x, y); continue; }
     }
     const e = -d * TILE, a = CQ.a, n = CQ.n; // px into the water; where along and across it
     // which bank: the slope of the distance points out of the water, and a
@@ -500,7 +500,8 @@ const ICE_STYLES = [
   { id: 'deep',  w: 2, amp: 0.5,  fr: 0.75, amp2: 0.1,  fr2: 0.25, band: 3, deep: true },
 ];
 const ICE_W = ICE_STYLES.reduce((a, s) => a + s.w, 0);
-const ORCA_ICE = ICE_STYLES.findIndex((s) => s.deep); // the orca's lake's style, whatever its roll (bakeLakes)
+const ORCA_ICE = ICE_STYLES.findIndex((s) => s.deep); // the orca's pool's style, whatever its roll (bakeLakes)
+const CIST_ICE_STYLE = ICE_STYLES.findIndex((s) => !s.deep); // ...and the cistern's: plain ice, the frozen creek under it to match
 const rgbOf = (h) => { const a = [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)]; a.css = h; return a; };
 const ICE_TONE = [rgbOf('#b9dcec'), rgbOf('#c4e3f0')];     // the sheet, in two tones by a dithered low noise
 const ICE_SHALLOW = [rgbOf('#c9e7f3'), rgbOf('#d0ebf5')];  // DEEP: the shelf along the shore
@@ -544,16 +545,25 @@ function relabelIce(tx, ty) {
 function bakeLakes() {
   const N = WORLD * WORLD, q = new Int32Array(N), D4 = [1, 0, -1, 0, 0, 1, 0, -1];
   lakeStyle = new Uint8Array(N).fill(255); lakeDepth = new Uint8Array(N);
-  // the orca's lake (js/sim/world.js) is labelled first, and always DEEP: the
-  // dark middle is where it swims. Whatever ice it meets takes its style.
-  const c = Math.round((WORLD - 1) / 2), orcaAt = [];
-  for (let dy = -14; dy <= 14; dy++) for (let dx = -14; dx <= 14; dx++) {
-    if (isLake(c + dx, c + dy) && orcaLakeAt(c + dx, c + dy)) orcaAt.push(idx(c + dx, c + dy));
+  // the orca's pool (js/sim/world.js) is labelled first, and always DEEP: the
+  // dark middle is where it swims; then the cistern's, always plain. Whatever
+  // ice either meets takes its style.
+  const first = [], styleOf = new Map();
+  const seed = (c, r, inside, s) => {
+    for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+      const x = c.tx + dx, y = c.ty + dy;
+      if (isLake(x, y) && inside(x, y)) { first.push(idx(x, y)); styleOf.set(idx(x, y), s); }
+    }
+  };
+  if (!ARENA) {
+    const m = Math.round((WORLD - 1) / 2);
+    seed(orcaPool(), Math.ceil(ORCA_LAKE_R + 2), orcaLakeAt, ORCA_ICE);
+    seed({ tx: m, ty: m }, Math.ceil(CIST_ICE + 1), (x, y) => cisternR(x, y) < CIST_ICE, CIST_ICE_STYLE);
   }
-  for (let o = -orcaAt.length; o < N; o++) {
-    const i = o < 0 ? orcaAt[-o - 1] : o;
+  for (let o = -first.length; o < N; o++) {
+    const i = o < 0 ? first[-o - 1] : o;
     if (lakeStyle[i] !== 255 || !isLake(i % WORLD, (i / WORLD) | 0)) continue;
-    const s = o < 0 ? ORCA_ICE : rollIceStyle(i % WORLD, (i / WORLD) | 0);
+    const s = o < 0 ? styleOf.get(i) : rollIceStyle(i % WORLD, (i / WORLD) | 0);
     let n = 0; q[n++] = i; lakeStyle[i] = s;
     while (n) {
       const j = q[--n], x = j % WORLD, y = (j / WORLD) | 0;

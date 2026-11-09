@@ -48,7 +48,7 @@ the early game is as tough as the table when someone finally pulls it. What grow
 **The kill pays for it**: `animalDies` grows the `YIELD` payout by `ANIMAL_LV_GOLD` (a tenth)
 a level, rounded, before the HUNTSMAN bonus is taken off it — a level-6 rabbit is 105 gold, a
 level-6 wolf 165, and a level-12 beast a little over twice its level-1 self, about what its hp
-grew by. A kind with an `xp` in `YIELD` (deer, wolf, both bears) is also worth that much XP,
+grew by. A kind with an `xp` in `YIELD` (deer, wolf, the bear) is also worth that much XP,
 grown `ANIMAL_LV_XP` (the same tenth) a level and shared by the killer's side standing near
 (`shareXp`, [Hero levels](../multiplayer.md#hero-levels)); a rabbit is worth no XP.
 
@@ -203,7 +203,7 @@ They are not shown on the minimap or world map.
 ## Camp monsters: neutral until hit
 
 The [camps](../world.md#camps) keep three kinds — the **wolf** (a den's 4), the **black bear**
-(`alpha`, BLUE's river camp, 1) and the **brown bear** (`dire`, RED's river camp, 1) — one `MONSTER`
+(`alpha`, BLUE's river camp, 1) — one `MONSTER`
 row each (wildlife.js: the bite and what it grows a level, the reach, the seconds between one
 body's bites, the hunting speed, the body's radius and mass, `big` for a bear's big body, and
 `cause`, the death line a bite writes). The kind keys are the old wolves' and stay so saves
@@ -268,24 +268,26 @@ still load. All three run
 | --- | --- | --- | --- | --- | --- |
 | wolf | 30 (+3) | 9 (+1) | 13 px / 1 s / 96 | r 4.5, mass 2, a roll passes through | `YIELD.wolf` 110, a FARM |
 | alpha (black bear) | 640 (+50) | 22 (+3) | 44 px / 1.4 s / 100 | r 18, mass 5, a big body a roll **tackles** | `YIELD.alpha` 630, `EPIC_TEAM_GOLD` (280) to every teammate on the ground, the BLACK BUFF for the whole team, a feed line |
-| dire (brown bear) | 640 (+50) | 22 (+3) | 44 px / 1.4 s / 100 | r 18, mass 5, a big body a roll **tackles** | `YIELD.dire` 630, `EPIC_TEAM_GOLD` (280) to every teammate on the ground, the BROWN BUFF for the whole team, a feed line |
 
-The two bears are the two midline camps' kinds (`teamPay` in their `MONSTER` rows), and
-[the creek](../world.md#the-creek) bends so each side owns one: they are one fight in two coats,
-the same row, the same hp and the same pay. Every payout grows `ANIMAL_LV_GOLD` a level like any
+The bear is the one `teamPay` camp kind, on its bend of [the creek](../world.md#the-creek)
+(BLUE's bank; the orca's pool faces it across the road on RED's). It is first out at 5:00
+(`CAMPS.buff.first`; `stockCamps` holds it, `updateCamps` runs the clock, `campCleared` reads it
+as cleared until then) and back `repop` (5:00) after each kill. Each kill also counts one more
+black bear for the side, for good: `state.bearStacks[team]`, `BLACK_STACK_DMG` (+5%) on every
+blow its heroes land per bear, up to `BLACK_STACK_MAX` (4) (`statStackMul`, stats.js, inside
+`statBuffMul`; the panel's hover row BLACK BEARS n). Every payout grows `ANIMAL_LV_GOLD` a level like any
 kill ([Wildlife](wildlife.md)). The teammate share goes through `awardGold` at each teammate's own feet (so a bot's purchase can
 eat it the same tick), to every active teammate who is not dead
 or in the air; the buff goes to every active teammate regardless. The bear's 150 XP is the
 killer's side's, shared by whoever of it stands near ([Hero levels](../multiplayer.md#hero-levels)).
 
-**The bear buffs**: each bear gives its own, the **BLACK BUFF** and the **BROWN BUFF** (`MONSTER`'s
-`buff`, named in the wiki), and they do the same thing (`campBuff(p, t, kind)`, the constants above
-the `camp monsters` banner; `p.buffKind` says whose): `p.buffT`
+**The bear buff**: the **BLACK BUFF** (`MONSTER`'s `buff`, named in the wiki; `campBuff(p, t, kind)`,
+the constants above the `camp monsters` banner; `p.buffKind` says whose): `p.buffT`
 seconds during which every blow the player lands is `CAMP_BUFF_DMG` (×1.25, applied in
 `hurtUnit` — a shot, a roll and a key alike) and the walk is `CAMP_BUFF_SPD` (×1.15, in
-`abilityMoveMul`). Either midline kill gives the killer's whole team that bear's buff for `CAMP_BUFF_EPIC_T`
+`abilityMoveMul`). The kill gives the killer's whole team the buff for `CAMP_BUFF_EPIC_T`
 (120 s); a fresh grant only ever extends what is left, and the latest bear is the one worn. It is worn as a
-**ring of twelve pips around the feet in the bear's colour** (`buffCol`: amber the brown, violet the black) (`drawBuffRing`, js/draw/bodies.js) that loses a pip
+**ring of twelve pips around the feet in the bear's colour** (`buffCol`: violet) (`drawBuffRing`, js/draw/bodies.js) that loses a pip
 at a time as it runs out — the ring is the timer, a full ring on a rival is the warning — and it
 goes out with the body on death. There is no HUD element for it: the ring is the read.
 
@@ -302,19 +304,18 @@ lone bot would die to. No bot walks *to* a camp deliberately yet — see
 
 ## The orca
 
-**One orca lives under [its lake](../world.md#the-orcas-lake), the cistern's frozen pool**
+**One orca lives under [its pool](../world.md#camps), the ORCA'S POOL camp's frozen pond on the creek's upstream bend** (`CAMPS.orca`, laid by `layOrcaPool`; the disc is `orcaLakeAt` round `orcaPool()`, `ORCA_LAKE_R` with a rim wandering `ORCA_LAKE_RAG`)
 ([js/sim/orca.js](../../../js/sim/orca.js), the pixels in [js/draw/orca.js](../../../js/draw/orca.js), its
 art `SPRITES.orca`, baked by app/bake-orca/paint.py). It is not an animal: nothing shoots it,
 nothing walks into it, and it never leaves the water. `orca` is one `SAVE_ROOTS` singleton
 that rides the snapshot; the client eases it like a body (`netClientLerp`).
 
-- **It cruises** the whole disc (`orcaWater`, under the sills too) as a shadow under the ice at
+- **It cruises** the whole disc (`orcaWater`) as a shadow under the ice at
   `ORCA_SWIM`, the lake's fish's look at the size of a deer, from one home tile (`orcaHome`: room
   of `ORCA_MARGIN` round it) to the next; every pick is `hash2` off the tick, never `rng()`.
 - **It locks on** (`orcaLook`) the nearest player standing on *its bare ice* (`orcaPrey`: ground
   `1` inside the disc, not in the air, not on a cable; a deer's back is still the ice) within
-  `seenAt(p, ORCA_SIGHT)` of it. A gate's stone sill is safe; everything else inside the ring
-  is its ice. A countdown over their head (`orcaLine`, drawn by `drawOrcaCount`) runs
+  `seenAt(p, ORCA_SIGHT)` of it. Every tile of the pool is its ice. A countdown over their head (`orcaLine`, drawn by `drawOrcaCount`) runs
   `ORCA_LINE` (3) s, 3 2 1, a knock in the ice under them on each number (`iceKnock`), while it
   stalks them (`orcaStalk`): a glide past beside them (`orcaPass` picks the mark, `ORCA_PASS`, on
   the side its heading already sits), a wide turn, then the run in under them as fast as the time

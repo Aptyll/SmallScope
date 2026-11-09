@@ -49,9 +49,7 @@ const WIKI_BEASTS = [
   { kind: 'wolf', name: 'WOLF',
     line: () => 'A DEN OF ' + CAMPS.resource.pop + '. NEUTRAL UNTIL HIT. BITES ' + MONSTER.wolf.bite + ' +' + MONSTER.wolf.lvBite + ' A LEVEL. BACK IN ' + CAMPS.resource.repop + ' S.' },
   { kind: 'alpha', name: 'BLACK BEAR',
-    line: () => 'ONE ON A BEND OF THE CREEK, NEVER UNDER LV ' + MONSTER.alpha.lv + '. SWIPES ' + MONSTER.alpha.bite + ' +' + MONSTER.alpha.lvBite + '. THE TEAM GETS ' + EPIC_TEAM_GOLD + ' EACH AND ' + CAMP_BUFF_EPIC_T + ' S OF THE ' + MONSTER.alpha.buff + '.' },
-  { kind: 'dire', name: 'BROWN BEAR',
-    line: () => 'ONE ON A BEND OF THE CREEK, NEVER UNDER LV ' + MONSTER.dire.lv + '. SWIPES ' + MONSTER.dire.bite + ' +' + MONSTER.dire.lvBite + '. THE TEAM GETS ' + EPIC_TEAM_GOLD + ' EACH AND ' + CAMP_BUFF_EPIC_T + ' S OF THE ' + MONSTER.dire.buff + '.' },
+    line: () => 'ONE ON A BEND OF THE CREEK, OUT AT ' + clockTxt(CAMPS.buff.first) + ', BACK ' + clockTxt(CAMPS.buff.repop) + ' AFTER A KILL. NEVER UNDER LV ' + MONSTER.alpha.lv + '. SWIPES ' + MONSTER.alpha.bite + ' +' + MONSTER.alpha.lvBite + '. THE TEAM GETS ' + EPIC_TEAM_GOLD + ' EACH AND ' + CAMP_BUFF_EPIC_T + ' S OF THE ' + MONSTER.alpha.buff + ', AND +' + Math.round(BLACK_STACK_DMG * 100) + '% ON EVERY BLOW FOR GOOD, UP TO ' + BLACK_STACK_MAX + ' BEARS.' },
 ];
 // what a beast is at a level: the sim's own arithmetic (makeAnimal, animalDies)
 function wikiBeastHp(kind, lv) { return animalHpAt(kind, lv); }

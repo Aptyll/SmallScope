@@ -67,7 +67,7 @@ const OBJECTS = {
   // both maps: a speck on the snow is noise.
   snowdrop: { solid: false, work: true, verb: 'PICK', lift: 14, auto: true,
               ready: (o) => snowdropLeft(o) <= 0 },
-  // a camp's cave (the wolf den and the brown bear den): inert scenery, two
+  // a camp's cave (the wolf den): inert scenery, two
   // tiles wide - `w` stamps a `part` filler per extra tile, east of the
   // anchor (placeCamps), so both tiles are solid and read back as the den
   den:      { solid: true,  w: 2, mm: [92, 86, 100] },
@@ -719,10 +719,11 @@ function indexSegs(segs, R) {
 // the water, so it is always four-connected and nobody's feet cut a corner
 // through the current.
 //
-// The BENDS: the two camps on the mirror line (the BROWN BEAR BEND and the
-// BLACK BEAR BEND, whose bears walk the bend's bank: riverPath) each have the creek swing round them in a half-loop, so
-// each falls on one side's bank: the upstream one (the brown bear) to RED,
-// the downstream one (the black bear) to BLUE. The line is point-symmetric
+// The BENDS: the two spots on the mirror line (the ORCA'S POOL and the
+// BLACK BEAR BEND, whose bear walks the bend's bank: riverPath) each have the
+// creek swing round them in a half-loop, so each falls on one side's bank:
+// the upstream one (the orca's pool) to RED, the downstream one (the bear) to
+// BLUE - each side nearer one objective, as a Rift's river is. The line is point-symmetric
 // about the crossing, as the roosts are. The other side reaches its rival's
 // camp across the cistern's ice or by the outer ford past it.
 //
@@ -816,30 +817,39 @@ function creekFlow(fx, fy) {
 }
 // in the water, as drawn: what the plunge asks of the feet, so nobody goes
 // in off a pixel of bank, or off the ice where the creek runs on under the
-// orca's lake
+// cistern's pool
 function creekWet(fx, fy) { return creekAt(fx, fy) < 0 && !creekIced(fx, fy); }
-// THE ORCA'S LAKE: at the middle the creek pools inside the cistern's ring
-// (js/sim/cistern.js), and the pool is frozen over. The outfall still runs under
-// the ice, and the orca lives in it (the `orca` banner, js/sim/orca.js). A disc
-// ORCA_LAKE_R tiles round the crossing, so each side's half of the valley
-// gets the same ice: every tile in it is ice (ground 1) and the rim lies
-// under the wall's inner face. The creek is frozen a little further, under
-// the wall (CIST_FROZEN), and runs out of a culvert in the wall each way
-// (creekIced: creekWet, paintCreek, creekFishAt). The road stops at the
-// gates' sills (laneDist), so the way across is the orca's ice. Pure
-// position: nothing rolls, laid by placeCistern.
-const ORCA_LAKE_R = CIST_ICE; // tiles from the crossing to the ice's rim
+// THE CISTERN'S POOL: at the middle the creek pools inside the cistern's ring
+// (js/sim/cistern.js), and the pool is frozen over, plain ice with the creek
+// running on under it. The creek is frozen a little further, under the wall
+// (CIST_FROZEN), and runs out of a culvert in the wall each way (creekIced:
+// creekWet, paintCreek, creekFishAt). The road stops at the gates' sills
+// (laneDist), so the way across is the pool's ice. Laid by placeCistern.
+// does this tile hold any of the pool's frozen creek (a tile's whole square, for the painters)
+function cisternIceNear(tx, ty) { return !ARENA && cisternR(tx, ty) < CIST_FROZEN + 2; }
+// the creek frozen here: inside the ring and on in under the wall
+function creekIced(fx, fy) { return !ARENA && cisternR(fx, fy) < CIST_FROZEN; }
+// THE ORCA'S POOL: its own frozen pond on the creek's upstream bend, the top
+// side of the middle (CAMPS.orca, js/sim/camps.js), and the orca lives under
+// it (the `orca` banner, js/sim/orca.js). A disc ORCA_LAKE_R tiles round the
+// site with a rim that wanders ORCA_LAKE_RAG on the position noise, on the
+// mirror line, so both sides walk the same way to it; every tile in it is ice
+// (ground 1, layOrcaPool). Pure position: nothing rolls.
+const ORCA_LAKE_R = 8;      // tiles from the pool's middle to its ice's rim
+const ORCA_LAKE_RAG = 0.7;  // tiles the rim wanders either way
+let orcaPoolC = null;
+function orcaPool() {
+  if (!orcaPoolC) { const s = campSites().find((c) => CAMPS[c.key].pool); orcaPoolC = campTile(s.u, s.s); }
+  return orcaPoolC;
+}
 // signed tiles from the rim (negative inside); 99 well clear of it
 function orcaLakeEdge(fx, fy) {
   if (ARENA) return 99;
-  const d = cisternR(fx, fy) - ORCA_LAKE_R;
+  const P = orcaPool(), dx = fx - P.tx, dy = fy - P.ty, a = Math.atan2(dy, dx);
+  const d = Math.hypot(dx, dy) - ORCA_LAKE_R - (vnoise(Math.cos(a) * 1.8 + 31.7, Math.sin(a) * 1.8 + 5.3) - 0.5) * 2 * ORCA_LAKE_RAG;
   return d > 4 ? 99 : d;
 }
 function orcaLakeAt(fx, fy) { return orcaLakeEdge(fx, fy) < 0; }
-// does this tile hold any of the disc or the frozen creek (a tile's whole square, for the painters)
-function orcaLakeNear(tx, ty) { return !ARENA && cisternR(tx, ty) < CIST_FROZEN + 2; }
-// the creek frozen here: inside the ring and on in under the wall
-function creekIced(fx, fy) { return !ARENA && cisternR(fx, fy) < CIST_FROZEN; }
 // the outer fords: on the diagonal, halfway between a bend's end (or the
 // cistern, on a side with no bend) and where the border woods close over
 // the creek - where the stretch is long enough to want one
@@ -992,7 +1002,7 @@ function placeBushes() {
   const open = (tx, ty) => {
     if (!inWorld(tx, ty)) return false;
     const i = idx(tx, ty);
-    if (objects[i] || ground[i] !== 0 || creekAt(tx, ty) < BUSH_BANK - 0.5 || orcaLakeNear(tx, ty)) return false;
+    if (objects[i] || ground[i] !== 0 || creekAt(tx, ty) < BUSH_BANK - 0.5 || cisternIceNear(tx, ty) || orcaLakeEdge(tx, ty) < 2) return false;
     if (baseAt(tx, ty, BASE_KEEP) >= 0 || camps.some((C) => campNear(C, tx, ty, 0.5))) return false;
     return !placed.some((q) => Math.hypot(q.tx - tx, q.ty - ty) < BUSH_SPACING);
   };

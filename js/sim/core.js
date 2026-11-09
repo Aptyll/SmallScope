@@ -63,8 +63,7 @@ const YIELD = {
   rabbit: { coins: 2, each: 35 },       // 70 gold, but it bolts
   deer:   { coins: 3, each: 40, xp: 40 }, // 120 gold, the big mobile target
   wolf:   { coins: 2, each: 55, xp: 15 }, // 110 gold, a den's four (440): the jungle's farm, a soldier's last hit apiece, and it bites back once woken
-  alpha:  { coins: 6, each: 105, xp: 150 }, // the black bear's pay, the brown bear's match (the two are one side's each and pay the same)
-  dire:   { coins: 6, each: 105, xp: 150 }, // 630 gold to the killer, a midline camp's one - and EPIC_TEAM_GOLD to every teammate besides
+  alpha:  { coins: 6, each: 105, xp: 150 }, // the black bear's pay: 630 gold to the killer, and EPIC_TEAM_GOLD to every teammate besides
   bird:   { coins: 2, each: 28 },       // 56 gold, and the hardest shot in the game (dormant: nothing spawns a bird now)
 };
 
@@ -119,6 +118,7 @@ const state = {
   mode: 'title', // title | drop | play | dead  (drop = riding / falling from the eagle; dead = the local player is out of the match, or it is over)
   time: DAY_LEN * 0.25, // start mid-morning
   elapsed: 0,
+  bearStacks: [0, 0], // black bears each side has slain: a buff that never runs out (BLACK_STACK_*, js/sim/wildlife.js)
   day: 1,
   tick: 0,       // sim steps taken; with SEED + player id it decides contested orders
   darkness: 0,
