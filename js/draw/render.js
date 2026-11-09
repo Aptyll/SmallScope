@@ -333,7 +333,7 @@ function drawHitboxes(ox, oy, ex, ey) {
   for (const b of robots) {
     if (b.dead) continue;
     hbRing(b.x - ex, b.y - ey, unitRadius(b), HB_BODY);
-    hbRing(b.x - ex, robotHitY(b) - ey, ROBOT_HIT_R, HB_HURT);
+    hbRing(b.x - ex, robotHitY(b) - ey, robotHitR(b), HB_HURT);
     hbDot(b.x - ex, b.y - ey, HB_BODY);
     hbMid(b.x - ex, b.y - 24 - ey, b.y + 4 - ey);
   }

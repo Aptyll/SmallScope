@@ -742,6 +742,31 @@ class Snowblind(Standard):
         cv.blob(cam, hc, Rh, (2.6, 2.85, 2.5), 'head', 'cloak', p=self.HEAD_P)
 
 
+class Clockmaker(General):
+    """FABER as CLOCKMAKER (his default look): a leather cap (the hair ramp, brown in his
+    paint) with brass goggles on the brow, a leather apron collar over his side's coat,
+    bare hands; General's frame, legs and boots, no ponytail"""
+    MARKS = [(-1.5, -0.4, 'C'), (-0.5, -0.4, 'y'), (0.5, -0.4, 'y'), (1.5, -0.4, 'C'),
+             (-1.5, 0.9, 'e'), (1.5, 0.9, 'e')]
+
+    def coat(self, cv, cam, U, R):
+        cv.blob(cam, U(v3(0, 0, Z(6.1))), R, (2.75, 3.05, Z(2.05)), 'coat', 'coat', p=2.2)
+        cv.blob(cam, U(v3(0, 0, Z(4.0))), R, (2.6, 3.1, Z(0.6)), 'hem', 'hair', bias=-0.3)
+        cv.blob(cam, U(v3(0.1, 0, Z(8.75))), R, (2.2, 2.5, Z(0.42)), 'scarf', 'hair', bias=0.2)
+
+    def extras(self, cv, cam, U, R, pose):
+        pass
+
+    def ball_head(self, cv, cam, hc, Rh):
+        cv.blob(cam, hc, Rh, (2.6, 2.85, 2.5), 'head', 'hair', p=self.HEAD_P)
+
+
+class Foreman(Coif):
+    """FABER as WORKS FOREMAN (the first skin): an iron hard hat with a lamp at the brow over
+    a bare face, his side's heavy coat; Coif's frame"""
+    MARKS = [(-0.5, -0.4, 'y'), (0.5, -0.4, 'S'), (-1.5, 0.9, 'e'), (1.5, 0.9, 'e')]
+
+
 BODIES = {'hunter': Hunter(), 'warrior': Warrior(), 'standard': Standard(), 'oath': Oath(),
           'unbroken': Unbroken(), 'coif': Coif(), 'general': General(), 'traitor': Traitor(),
           'hearth': Hearth(), 'wanderer': Wanderer(), 'light': Light(),
@@ -750,4 +775,5 @@ BODIES = {'hunter': Hunter(), 'warrior': Warrior(), 'standard': Standard(), 'oat
           'quarry': Quarry(), 'cellar': Cellar(),
           'wolfkept': Wolfkept(), 'whitepack': Whitepack(),
           'horn': Horn(), 'column': Column(),
-          'snowblind': Snowblind()}
+          'snowblind': Snowblind(),
+          'clockmaker': Clockmaker(), 'foreman': Foreman()}

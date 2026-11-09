@@ -448,7 +448,7 @@ function shotContacts(a, x0, y0, dx, dy) {
   // bots take the same shot: they are units in the open, on a team
   for (const t of robots) {
     if (a.team === t.team) continue;
-    const r = ROBOT_HIT_R, cy = robotHitY(t);
+    const r = robotHitR(t), cy = robotHitY(t);
     if (t.x + r < lx || t.x - r > hx || cy + r < ly || cy - r > hy) continue;
     if (!unitAlive(t) || (a.pierce && a.pierceHit.includes(t))) continue;
     const s = sweepDisc(x0, y0, dx, dy, t.x, cy, r);

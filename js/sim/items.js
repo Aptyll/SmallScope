@@ -413,6 +413,7 @@ const BOT_BUILDS = {
   BUCINA: ['emberb', 'marsh', 'clock', 'slate', 'deeprod', 'storm'], // the keys' wait first, then the boots to lead the charge, then the armor up front
   LUCERNA: ['emberb', 'clock', 'marsh', 'slate', 'deeprod', 'storm'], // the crook's wait first: haste, then the boots, then the armor she needs up front
   SALVIA: ['emberb', 'marsh', 'clock', 'deeprod', 'slate', 'storm'], // the heals first: haste and power for more of them, then the boots, then the armor a healer under focus needs
+  FABER: ['emberb', 'storm', 'marsh', 'slate', 'clock', 'deeprod'], // haste first for more machines and traps, then power, the boots and the armor a mage holding a spot needs
   HIEMS: ['storm', 'marsh', 'emberb', 'slate', 'deeprod', 'clock'], // power and haste for more chills, then the armor a control mage standing in the fight needs
   RUPES: ['glacier', 'hobnail', 'bearskin', 'stonehide', 'brambmail', 'hearth'], // armor and health first, the snow takes the rest; the boots to reach the fight
   NIX: ['beartooth', 'quick', 'feathers', 'maul', 'sunstone', 'collar'], // the blade first, the speed to reach a lone rival, then more blade
