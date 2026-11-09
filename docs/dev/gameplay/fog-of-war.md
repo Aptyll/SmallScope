@@ -28,7 +28,7 @@ js/draw/fog.js (the picture).
   (`brushHide`). `coverHide` asks both; `sightAt` and `fogShown` ask it
   ([deep snow](deep-snow.md)).
 - **The falcon's mark sees through it**, as it sees through cover.
-- **Where it is up** (`fogUp`): a match on the ground. Never the practice field, the drop's flight
+- **Where it is up** (`fogUp`): a match on the ground. Never the practice arena, the drop's flight
   or the title tour; `DBG.fog = false` lifts it for a debug look, and the media
   kit films without it unless a scene asks (`MEDIA.boot({ fog: true })`).
 - **Bots play by it.** `inSight(team, u)` is the side's answer, worked out once per unit per tick.

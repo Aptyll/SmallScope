@@ -96,7 +96,7 @@ function bakeDressing() {
   bakeDustLee();
   dustK = -1;
   dressPx = new Map(); crackPx = new Map();
-  if (PRACTICE) return;
+  if (ARENA) return;
   bakeDrifts();
   bakeBanks();
   bakeCracks();
@@ -365,7 +365,7 @@ let lakeDrift = 0, lakeDriftT = 0; // how far the air has carried the streaks, a
 // a tile of ice no shore crosses: where the weather may draw
 const openIce = (tx, ty) => inWorld(tx, ty) && ground[idx(tx, ty)] === 1 && mirrorSlot[idx(tx, ty)] < 0;
 function drawLakeSky(ox, oy, tx0, ty0, tx1, ty1) {
-  if (!lakeId || PRACTICE) return;
+  if (!lakeId || ARENA) return;
   const sky = lakeSky(), t = state.windT;
   const now = performance.now() / 1000, dt = Math.min(0.1, lakeDriftT ? now - lakeDriftT : 0);
   lakeDriftT = now;

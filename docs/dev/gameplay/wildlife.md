@@ -14,7 +14,7 @@ and the camp restocks them, all at once, once it is cleared. (**Birds**, 3 HP, a
 
 ## The deer run the valley
 
-`spawnAnimals()` (boot, after worldgen, never under `PRACTICE`) lays **each side's line**
+`spawnAnimals()` (boot, after worldgen, never under `ARENA`) lays **each side's line**
 (`layDeerRoutes`, `deerRoutes[side]`): points `DEER_ROUTE_STEP` (5) tiles apart on a line parallel
 to the creek, `DEER_ROUTE_U` (100) tiles out along the road from that side's roost (the creek is
 at about 115), from one treeline to the other across the road, kept `DEER_ROUTE_KEEP` (3) tiles
@@ -350,4 +350,4 @@ that rides the snapshot; the client eases it like a body (`netClientLerp`).
   ([pathfinding](pathfinding.md)), so a bot crosses only where round is much further. A bot file
   reads the line as `me.orca` ([the bot API](../../bots/api.md)).
 
-Not under `PRACTICE`. `DBG` exposes `orca`, `orcaLine`, `orcaAge`, `orcaShore` and `ORCA_LINE`.
+Not under `ARENA`. `DBG` exposes `orca`, `orcaLine`, `orcaAge`, `orcaShore` and `ORCA_LINE`.

@@ -135,7 +135,7 @@ function netHostRoom() {
   if (NET.role !== 'host' || !NET.transport.roomData) return;
   let humans = 0; const sides = [0, 0];
   for (const p of players) if (isHuman(p)) { humans++; sides[p.team]++; }
-  NET.transport.roomData({ name: player ? player.name : '', patch: PATCH_TXT, seed: SEED, practice: PRACTICE ? 1 : 0, state: state.drop ? 'live' : 'open', humans, sides,
+  NET.transport.roomData({ name: player ? player.name : '', patch: PATCH_TXT, seed: SEED, practice: ARENA ? 2 : PRACTICE ? 1 : 0, state: state.drop ? 'live' : 'open', humans, sides,
     seek: NET.seek && !NET.seek.rival && !NET.seek.crossing ? NET.mode : '' }); // a party looking for another (js/ui/matchmaking.js)
 }
 // the roster to every peer, on every change of it: a client's waiting room
@@ -477,7 +477,7 @@ function netClientStep(dt) {
     // host says to the whole room: none of it is ours until the welcome
     if (!NET.welcomed && msg.t !== 'welcome') continue;
     if (msg.t === 'rematch') { rematchHeard(msg); continue; }
-    if (msg.t === 'practice') { practiceHeard(); continue; } // the leader's START: onto the practice field after it (js/ui/rooms.js)
+    if (msg.t === 'practice') { practiceHeard(msg); continue; } // the leader's START, or its cross to the arena and back: after it (js/ui/rooms.js)
     if (msg.t === 'cross') { crossHeard(msg); continue; }    // the leader's party crossing to meet another (js/ui/matchmaking.js)
     if (msg.t === 'welcome') { netClientWelcome(msg); continue; }
     // the waiting room: the host's ten and its count, drawn here as there
