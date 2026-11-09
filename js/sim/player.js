@@ -450,6 +450,7 @@ function levelMaxHp(p) { return statOf(p, 'hp'); }
 // wind, a kill's heal. Capped at the most, and what it actually gave back is
 // counted for the post-game record (js/ui/lobby.js) and returned.
 function healPlayer(p, n) {
+  if (p.healCutT > 0) n *= 1 - p.healCut; // FROSTBITE (cutHeal, js/sim/actions.js)
   const h = Math.max(0, Math.min(n, p.maxHp - p.hp));
   p.hp += h;
   p.healed += h;
@@ -601,6 +602,7 @@ function makeInput() {
     jump: false,         // edge-triggered: the hop off the roost (hopOff, js/sim/eagle.js), or on/off a cable or a deer
     useItem: -1,         // edge-triggered: use what is in this item slot (0-5) - drink a potion (useItem, js/sim/items.js)
     ability: -1,         // edge-triggered: cast the class ability on this key (1-4), js/sim/abilities.js
+    trick: -1,           // edge-triggered: use the loadout's trick on this key (0-1), js/sim/loadout.js
     cmd: null,           // one-shot: {kind:'shop'|'ping'|..., ...} or {kind:'ability', i} (cmdOk, js/ui/wheel.js)
   };
 }
@@ -644,6 +646,12 @@ class Player {
     this.skillPts = 1;                  // unspent; level 1 starts with one, each levelUp adds one - spent on ability levels (buyAbilityLv, js/sim/abilities.js)
     this.abLv = [0, 0, 0, 0];           // ability ranks, 0 (LOCKED) ..abLvMax (5, the ultimate 3), a skill point each - like items, NOT cleared by reset(): a death keeps what was bought
     this.cheatOn = { cd: false, hp: false }; // the practice bar's standing toggles, this player's own (cheatCmd/cheatAuto, js/sim/practice.js)
+    // the pre-game picks (js/sim/loadout.js): two tricks and a calling, set
+    // whole as the match starts (loadoutStart); the tricks' cooldowns and the
+    // calling's own clocks, which a death does not reset (League's own)
+    this.loadout = { tricks: [null, null], calling: null };
+    this.trickCd = [0, 0];
+    this.ks = { foe: -1, n: 0, t: 0, tick: -1, on: 0, mark: -1, cd: 4 };
     // the times of this player's recent pings, the spam guard's memory
     // (pingReady, js/sim/pings.js)
     this.pingLog = [];
@@ -674,6 +682,9 @@ class Player {
     this.potions = 0;                   // how many potions stand in the slot that holds 'potion' (the `potion` banner, js/sim/items.js)
     this.fightT = 0; this.kindleN = 0;  // s since the last hit given or taken, and KINDLING's count (itemsOnHit)
     this.surgeT = 0; this.smolderT = 0; // SURGE's window after a key, SMOLDER's next pulse (itemsTick)
+    this.lifeT = 0;                     // LIFELINE's wait before it can shield again (itemsLifeline)
+    this.healCutT = 0; this.healCut = 0; // FROSTBITE on this body: how long, and the share of a heal it takes (cutHeal, js/sim/actions.js)
+    this.buys = [];                     // every finished item and pair of boots bought this match, in order: the build the match records (buildsNote, js/app/builds.js)
     refreshKit(this);                   // builds this.kit and this.maxHp from class + items
     this.aboard = false;                // riding the eagle (beginDrop sets it, hopOff clears it)
     this.dropT = 0;                     // seconds left of the step down off the roost (0 = on the ground)
@@ -744,6 +755,7 @@ class Player {
     // cast in progress, and every timed state one can leave on a body -
     // shielded, or mid-dash
     this.abCd = [0, 0, 0, 0];                      // (abLv, the ranks bought, lives in the constructor: a death keeps them)
+    this.sprintT = 0; this.runT = 0; this.shakeT = 0; // a trick's running effect: SPRINT, BANDAGE's quick step, SHAKE OFF's grace (js/sim/loadout.js)
     this.castAb = -1; this.castT = 0; this.castMax = 0; // castMax is the wind-up's full length, so a telegraph can read how far along it is (castProg)
     // Every state ANY unit can be under - stun, root, slow, the mark,
     // and fire - is written and cleared in one place for
@@ -984,12 +996,13 @@ const HIT_KB = 110;
 function damagePlayer(p, dmg, dx, dy, src, cause, crit, kb, o) {
   const dot = !!DOT_CAUSE[cause];
   if (p.dead || (p.invuln > 0 && !dot)) return;
-  dmg = armorTaken(p, dmg); // ARMOR cuts every hit by its share, never to zero (js/sim/stats.js)
+  dmg = armorTaken(p, dmg, src); // ARMOR cuts every hit by its share, never to zero (js/sim/stats.js; less of it against PIERCE)
   dmg = heroTaken(p, dmg, dx, dy, src); // ...and a hero's own cut: ARMATOS's brace (HERO_TAKEN, js/sim/heroes.js)
   passiveHurt(p, dmg, src); // a hero's passive fed by the hits it takes (LEGION'S RESOLVE)
   // the shields take the hit first, in their order (shieldSpend, js/sim/actions.js),
   // a burn included; what is left of the blow goes on to health
   p.hp -= dmg - shieldSpend(p, dmg);
+  itemsLifeline(p); // LIFELINE's shield, the moment a hit takes you low (js/sim/items.js)
   // the match record both ends of the blow keep (the post-game lobby, js/ui/lobby.js).
   // What is counted is what LANDED, DR already off it - the overkill on the
   // last hit of a kill included, because that is what the swing was worth.
@@ -1297,6 +1310,7 @@ function endMatch(how) {
   // the coins: once per ending, on the same edges as the win and the loss sting
   if (awardWin || firstLoss) payMatchCoins(awardWin);
   if (awardWin || firstLoss) rankResult(awardWin); // RANKED's rating (js/ui/rooms.js)
+  if (awardWin || firstLoss) buildsNote(awardWin); // every person's build and result, for the shop's RECOMMENDED (js/app/builds.js)
   state.mode = 'dead';
   state.deadView = 'menu';
   state.deadSel = 0;

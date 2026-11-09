@@ -343,6 +343,34 @@ function drawItemCell(i, now, on) {
   }
   if (red) ctx.restore();
 }
+// A TRICK WELL (js/sim/loadout.js): its icon on a plain rim, its key in the
+// bottom-left corner lit while it is ready, the cooldown as the sweep with
+// the seconds over it, and a refusal's red and shake (trickDenied).
+function drawTrickCell(i, now, on) {
+  const p = player, r = trickCellRect(i), id = trickOf(p, i);
+  const red = trickFlash > 0 && trickFlashI === i;
+  if (red) {
+    ctx.save();
+    ctx.translate(((now * 40) | 0) % 2 ? -1 : 1, 0);
+    ctx.fillStyle = '#c2465a';
+    ctx.fillRect(r.x - 2, r.y - 2, r.w + 4, r.h + 4);
+  }
+  ctx.fillStyle = red ? '#c2465a' : on ? '#9ca1aa' : '#5a5e66';
+  ctx.fillRect(r.x, r.y, r.w, r.h);
+  ctx.fillStyle = BAG_WELL;
+  ctx.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
+  if (id) {
+    shopIcon(loIcon('trick', id), r);
+    const cd = p.trickCd[i] || 0;
+    if (cd > 0) {
+      drawSweepCover(r.x + 1, r.y + 1, r.w - 2, r.h - 2, Math.min(1, cd / TRICKS[id].cd), CD_SWEEP, CD_EDGE);
+      const t = String(Math.ceil(cd));
+      drawPixelTextOutline(ctx, t, r.x + ((r.w - pixelTextWidth(t)) >> 1), r.y + ((r.h - 5) >> 1), '#f4f7ff', '#191b1f');
+    }
+    drawPixelTextOutline(ctx, keyCapShort(TRICK_KEYS[i]), r.x + 2, r.y + r.h - 7, cd > 0 ? '#8c919a' : '#f4f7ff', '#191b1f');
+  }
+  if (red) ctx.restore();
+}
 // THE PURSE after the items: the coin over the gold, centred, inked '#f5c542'
 // because the one number on the HUD that is money must never read as a count
 // of something carried. A readout, not a button - an item well's rim, but no
@@ -372,6 +400,7 @@ function drawHudStrip(now) {
     drawClassAbCell(i, now, hov && hov.kind === 'ab' && hov.i === i);
     drawAbBuyPlate(i, now, bhov === i);
   }
+  for (let i = 0; i < TRICK_N; i++) drawTrickCell(i, now, hov && hov.kind === 'trick' && hov.i === i);
   for (let i = 0; i < ITEM_SLOTS; i++) drawItemCell(i, now, hov && hov.kind === 'item' && hov.i === i);
   drawHpBar();
   drawStBar();

@@ -90,6 +90,7 @@
       stats: blankStats(),
       hero: '',        // the hero last locked in, by name ('' none): where the pick opens next time
       pos: -1,         // the position this profile asks for in the draft (a POSITIONS index, js/sim/player.js), -1 any
+      loadouts: {},    // hero name -> its pre-game picks as "trick,trick,calling" (js/sim/loadout.js); a hero never picked has none
       dropped: false,  // has this profile ever jumped off the eagle - gates the first-flight countdown
       bestLap: 0,      // the ice parkour's all-time best lap in seconds (0 = never lapped)
       bestRange: 0,    // the archery range's all-time best round score (0 = never played)
@@ -197,6 +198,9 @@
         if (typeof hero === 'string' && HERO_NAME.test(hero)) profile.hero = hero; // a name the game no longer has opens on the default (profileHero, js/sim/player.js)
         else if (typeof hero === 'number' && isFinite(hero)) profile.hero = V3_HEROES[Math.floor(hero)] || '';
         if (typeof s.pos === 'number' && s.pos >= 0 && s.pos < POS_N) profile.pos = Math.floor(s.pos);
+        if (s.loadouts && typeof s.loadouts === 'object') {
+          for (const k in s.loadouts) if (/^[A-Z]+$/.test(k) && typeof s.loadouts[k] === 'string' && /^[a-z,]{0,60}$/.test(s.loadouts[k])) profile.loadouts[k] = s.loadouts[k];
+        }
         if (s.settings && typeof s.settings === 'object') profile.settings = s.settings;
         // a profile from before the purse arrives without it and keeps the
         // START_COINS blank() gave it, like a fresh one
@@ -260,6 +264,21 @@
     },
 
     // the position the draft seats this profile in first (draftSeatRoles, js/ui/draft.js), -1 any
+    // the picks last made for a hero, by its name ({ tricks, calling }, ids
+    // only; loadoutClean makes them whole), or null for a hero never picked
+    loadout(hero) {
+      const s = profile.loadouts[hero];
+      if (typeof s !== 'string') return null;
+      const a = s.split(',');
+      return { tricks: [a[0], a[1]], calling: a[2] };
+    },
+    setLoadout(hero, lo) {
+      if (typeof hero !== 'string' || !/^[A-Z]+$/.test(hero) || !lo || !Array.isArray(lo.tricks)) return;
+      const s = [lo.tricks[0], lo.tricks[1], lo.calling].map((x) => String(x || '')).join(',');
+      if (!/^[a-z,]*$/.test(s) || s.length > 60 || profile.loadouts[hero] === s) return;
+      profile.loadouts[hero] = s;
+      saveNow();
+    },
     pos() { return profile.pos; },
     setPos(i) {
       i = i >= 0 && i < POS_N ? i | 0 : -1;
@@ -364,8 +383,24 @@
     // DBG only: set the purse (a staged screenshot, a test of the short purse)
     setCoins(n) { profile.coins = Math.max(0, Math.floor(n) || 0); saveNow(); },
 
+    // ---- build records --------------------------------------------------------
+    // Every human seat's finished build and result from the matches this
+    // screen saw or heard of (js/app/builds.js owns their shape and the
+    // stats read off them). Kept under a key of their own: they are many and
+    // written once a match, and the profile above is written for every coin.
+    builds() {
+      if (!buildRecs) { try { const a = JSON.parse(localStorage.getItem(BUILDS_KEY)); buildRecs = Array.isArray(a) ? a : []; } catch (e) { buildRecs = []; } }
+      return buildRecs;
+    },
+    putBuilds(list) {
+      buildRecs = list;
+      try { localStorage.setItem(BUILDS_KEY, JSON.stringify(list)); } catch (e) { }
+    },
+
     flush,
   };
+  const BUILDS_KEY = 'softfall.builds';
+  let buildRecs = null;
 
   function clearOldSaves() {
     try {

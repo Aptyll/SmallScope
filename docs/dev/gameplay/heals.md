@@ -3,7 +3,8 @@
 A player heals four ways, League's way: the **roost ring** at home ([Recall and the roost
 ring](recall-and-the-roost-ring.md)), a **health potion** bought at the shop, a **creek fish** rolled
 over, and a **berry bush** walked into. Every heal goes through `healPlayer(p, n)` (js/sim/player.js),
-which caps at max health and returns what it gave. Nothing is carried but potions: there is no
+which caps at max health and returns what it gave. A body under FROSTBITE (`cutHeal`, the item
+passive) takes every heal `healCut` (40%) smaller while `healCutT` runs. Nothing is carried but potions: there is no
 pouch of food, no chew and no fishing.
 
 ## The health potion

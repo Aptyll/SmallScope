@@ -10,7 +10,7 @@ Everything in this section lives under the **`status effects`** banner at the fo
 | `hurtUnit(e, dmg, nx, ny, src, o)` | **any** blow. `o` = `{ type, kb, kbMul, cause, ambush, crit, basic }` — `kb` the absolute px/s of shove an ability picks, `kbMul` the multiplier on whatever shove that kind takes anyway ([knockback](the-basic-attack.md#knockback)). Routes to `damagePlayer` / `hurtAnimal` / `hurtRobot`, which stay for what is genuinely per-kind (a den waking, a worker turning on whoever hit it) |
 | `unitsNear(src, x, y, r)` | every living thing in a circle that `src` may touch — players, wildlife **and** bots in one list |
 | `unitsHit(src, x, y, r)` | the same, minus anyone whose i-frames are up: the list a **blow** sweeps, so a rival mid-roll is untouchable. A lasting ground *condition* (a crater) wants `unitsNear` — a condition is not a hit, and a roll should not shrug one off |
-| `stunUnit` `rootUnit` `slowUnit` `netUnit` `markUnit` `igniteUnit` | the one place each state is written. Each takes the worse/longer of what is already on the body |
+| `stunUnit` `rootUnit` `slowUnit` `netUnit` `markUnit` `igniteUnit` `cutHeal` `weakenUnit` | the one place each state is written. Each takes the worse/longer of what is already on the body |
 | `unitMoveMul(e)` | what is left of a non-player's speed — `abilityMoveMul`'s twin. Spent inside `navStep`, so one edit slows every walker; the two movers that steer themselves rather than route (a loitering bot, a bird in flight) fold it in by hand |
 | `knockUp(e, t, src)` / `upLift(e)` | a knock-up: a stun that lifts the body (`e.upT`), drawn by `abilityPose` |
 | `shieldUnit(p, hp, t, kind)` | a shield of `hp` for `t` s (kind `'ward'` unless named), one entry of `p.shields`: every shield a unit holds is that one list, spent in `SHIELD_KINDS` order by `shieldSpend` (from `damagePlayer`) before health, its clock run down by `shieldTick`, read by `shieldOf(e, kind?)`, taken off by `shieldClear`. A kind's row says whether it stacks (to a `cap`) or keeps the bigger, and whether it lasts |
@@ -48,7 +48,7 @@ a body can take several hits in one frame — `SFX.hurt()`’s 0.03 s `gap` coll
 one so they do not phase, while the damage total (each hit adds to it), the red flash, the shove and the shake are
 per hit. Knockback does not accumulate: the last blow of a step writes `kbx`/`kby` outright.
 
-The six states, and what each does to a body:
+The eight states, and what each does to a body:
 
 | state | field | what it does | the tell on the body |
 | --- | --- | --- | --- |
@@ -58,6 +58,8 @@ The six states, and what each does to a body:
 | **net** | `netT` | the slow, plus the reason for it | a mesh drape over the sprite |
 | **mark** | `markT` | on a player, `seenAt()` returns full range and both maps keep drawing them (its one legal bypass); an animal or a bot has no cover to strip, so it is the reveal alone. Like root, currently sourceless — kept with the set | gold chevrons falling toward the head |
 | **fire** | `burnT`/`burnDps`/`burnBy` | see below | flame tongues off the crown, and lit snow under the feet |
+| **healing cut** | `healCutT`/`healCut` | every heal `healPlayer` gives the body is `healCut` smaller (FROSTBITE: 40% for 3 s, the item passive; the TORCH trick: `TORCH_CUT` for `TORCH_T`, [the loadout](loadout.md)); only players heal, so the other kinds carry it harmlessly | the health bar's fill frosted, every other pixel of its lower row ice white (`drawHealCut`) |
+| **weak** | `weakT` | every blow the body lands is worth `WEAK_MUL` (`loadoutDeal`, from `hurtUnit`; the BOLAS trick) | a cord round the shins |
 
 Every one of them is **drawn on the body, for both sides**, at whatever size that body is —
 `drawUnitStates(e, px, py, w, h, now)` (js/draw/abilities.js) takes the sprite's own box and is called by

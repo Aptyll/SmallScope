@@ -451,6 +451,7 @@ function updateAI(p, dt) {
   ai.zipUsed = false;
   if (p.dead) ai.packGo = false;
   aiThink(p, dt); // the ladder (js/ai/ai-ladder.js)
+  aiTricks(p); // a trick when the moment calls for one (js/sim/loadout.js)
   if (!p.dead) skillHands(p, aiProfile(p), dt); // the crosshair moves to where the ladder aimed (the skill layer, ai-skill.js)
   aiRecall(p); // over the ladder: the walk home when low, and the wait in the roost ring (below)
   // riding with no rung wanting the ride this think: let go (the ride, above)

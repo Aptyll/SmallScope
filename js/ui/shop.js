@@ -142,8 +142,10 @@ const SHOP_PANE_X = 330;   // the right pane's left edge, from the slab's
 const SHOP_SELL_W = 52, SHOP_BTN_H = 16;   // the SELL plate, and both plates' height
 const SHOP_TREE_PITCH = 24, SHOP_TREE_ROW = 34; // the build tree: a leaf's pitch, a level's
 const SHOP_INTO_MAX = 7;   // BUILDS INTO wells shown (empty ones keep the row's shape)
+const SHOP_REC_ROW = 46;   // RECOMMENDED: a section's pitch, its headline, its wells and their prices
+const SHOP_PATH_PITCH = 27, SHOP_PATH_W = 152; // ...a path's wells (a chevron between), and the room one path and its rates take
 const SHOP_RIM = '#3c4048', SHOP_HOT = '#9ca1aa', SHOP_PICK = '#fff6c8';
-const SHOP_INK = '#e8eaee', SHOP_DIM = '#8a8f99', SHOP_STAT = '#7fd88a', SHOP_FAINT = '#24272d';
+const SHOP_INK = '#e8eaee', SHOP_DIM = '#8a8f99', SHOP_FAINT_INK = '#5c616b', SHOP_STAT = '#7fd88a', SHOP_FAINT = '#24272d';
 const SHOP_PANE_BG = '#111216', SHOP_PLATE = '#2a2d33', SHOP_PLATE_HOT = '#3a3e46';
 const SHOP_BUY = '#2c5a3a', SHOP_BUY_HOT = '#3a7048'; // the BUY plate: the one green action on the slab
 // A price you cannot pay: the refusal red every other "not enough gold" in the
@@ -167,7 +169,7 @@ function openShop(b) {
   state.shop = b;
   state.charOpen = false; // one slab at a time - they would sit on each other
   if (!SHOP_TABS.some((t) => t.id === state.shopTab)) state.shopTab = 'rec';
-  if (!state.shopSel) state.shopSel = botNextItem(player) || ITEM_DONE[0]; // open on what a bot of your class would save for next
+  if (!state.shopSel) state.shopSel = shopRecNext(); // open on the next item of your hero's most picked path
   SFX.place();
   SFX.music.hold('village', { in: 0.6, out: 0.5 });
   return true;
@@ -190,20 +192,35 @@ function shopFiltered(id) {
   const c = state.shopCat;
   return c >= 0 && !(ITEM_STAT_ORDER[c] in BUILD_ITEMS[id].stats);
 }
-// THE RECOMMENDED TAB: your class's build cut League's way - a start (the
-// potion and the first item's basics), the core (its first legendary and its
-// boots), and the rest of the list - each a row under its headline.
+// THE RECOMMENDED TAB, League's: your hero's build as the players who play
+// it build it (buildsRec, js/app/builds.js) - the most picked path of three
+// legendaries and, beside it, a path that wins more when one does, each with
+// its pick and win rate; then the boots and the other items people finish.
+// While the hero has too few games for numbers the curated list stands in
+// (BOT_BUILDS, the one a bot of it buys), as CORE with no numbers. Above it
+// all, START: the potion and the first item's basics.
+function shopHero() { return CLASSES[player.cls].name; }
 function shopRecommended() {
-  const list = botBuild(player);
-  const boots = list.filter(isBoots), legends = list.filter((id) => !isBoots(id));
-  const first = legends[0];
-  const start = ['potion'].concat([...itemParts(first)].filter(isPart).sort((a, b) => BUILD_ITEMS[a].price - BUILD_ITEMS[b].price));
-  return [
-    { label: 'START', ids: start },
-    { label: 'CORE', ids: [first, ...[...itemParts(first)].filter((k) => !isPart(k))] },
-    { label: 'BOOTS', ids: ['boots', ...boots] },
-    { label: 'THEN', ids: legends.slice(1) },
-  ];
+  const R = buildsRec(shopHero(), botBuild(player));
+  const first = R.core[0].ids[0];
+  const start = ['potion'].concat([...itemParts(first)].filter(isPart).sort((a, b) => BUILD_ITEMS[a].price - BUILD_ITEMS[b].price).slice(0, 4));
+  return { R, start };
+}
+// every item the tab names, for the gold pip the other tabs wear on them
+function shopRecSet() {
+  const { R } = shopRecommended();
+  return new Set(R.core.flatMap((r) => r.ids).concat(R.boots.flatMap((r) => r.ids)));
+}
+// what the panel opens on: the first item of the top path you do not hold yet
+function shopRecNext() {
+  const { R } = shopRecommended();
+  const have = player.items.slice();
+  for (const id of R.core[0].ids.concat(R.boots.length ? [R.boots[0].ids[0]] : [], R.more)) {
+    const i = have.indexOf(id);
+    if (i >= 0) { have[i] = null; continue; }
+    return id;
+  }
+  return botNextItem(player) || ITEM_DONE[0];
 }
 // THE ALL ITEMS GRID: a row a kind - the potion and the basics, every pair of
 // boots, the epics, the legendaries - cheapest first, a kind too long for one
@@ -225,17 +242,31 @@ function shopAllRows(style) {
 function shopLayout() {
   const x = Math.max(2, Math.round((VIEW_W - SHOP_W) / 2)), y = SHOP_Y;
   const gx = x + SHOP_GRID_X, by = y + SHOP_H - 51; // the grid's left edge, the slots' top row
-  const tabs = [], cats = [], grid = [], heads = [], slots = [];
+  const tabs = [], cats = [], grid = [], heads = [], slots = [], rates = [], arrows = [];
   let tx = x + 8;
   for (const t of SHOP_TABS) { const w = pixelTextWidth(t.label) + 8; tabs.push({ id: t.id, x: tx - 4, y: y + 4, w, h: 14 }); tx += w + 4; }
   for (let i = 0; i <= ITEM_STAT_ORDER.length; i++) cats.push({ c: i - 1, x: x + 6, y: y + 25 + i * SHOP_CAT_PITCH, w: SHOP_CAT, h: SHOP_CAT });
   const well = (id, wx, wy) => grid.push({ id, x: wx, y: wy, w: SHOP_WELL, h: SHOP_WELL });
   if (state.shopTab === 'rec') {
-    shopRecommended().forEach((sec, r) => {
-      const sy = y + 25 + r * (SHOP_ROW + 14);
-      heads.push({ label: sec.label, x: gx, y: sy });
-      sec.ids.forEach((id, i) => well(id, gx + i * SHOP_PITCH, sy + 9));
+    const { R, start } = shopRecommended();
+    const sy = (r) => y + 25 + r * SHOP_REC_ROW;
+    const gw = SHOP_PANE_X - SHOP_GRID_X - 8; // the grid's width, past the stat bar to the pane
+    heads.push({ label: 'START', x: gx, y: sy(0) });
+    heads.push({ label: R.games + ' GAMES', x: gx + gw - pixelTextWidth(R.games + ' GAMES'), y: sy(0), dim: true });
+    start.forEach((id, i) => well(id, gx + i * SHOP_PITCH, sy(0) + 9));
+    // the paths, side by side: three wells a step apart with a chevron
+    // between, and the pick and win rate beside them
+    R.core.forEach((row, k) => {
+      const px = gx + k * SHOP_PATH_W;
+      heads.push({ label: !R.data ? 'CORE' : row.best ? 'MOST WINS' : 'MOST PICKED', x: px, y: sy(1) });
+      row.ids.forEach((id, i) => well(id, px + i * SHOP_PATH_PITCH, sy(1) + 9));
+      if (row.pick !== undefined) rates.push({ x: px + row.ids.length * SHOP_PATH_PITCH + 2, y: sy(1) + 11, pick: row.pick, win: row.win });
+      for (let i = 1; i < row.ids.length; i++) arrows.push({ x: px + i * SHOP_PATH_PITCH - 5, y: sy(1) + 9 + (SHOP_WELL >> 1) });
     });
+    heads.push({ label: 'BOOTS', x: gx, y: sy(2) });
+    R.boots.forEach((row, i) => well(row.ids[0], gx + i * SHOP_PITCH, sy(2) + 9));
+    heads.push({ label: R.data ? 'ALSO BUILT' : 'THEN', x: gx, y: sy(3) });
+    R.more.forEach((id, i) => well(id, gx + i * SHOP_PITCH, sy(3) + 9));
   } else {
     shopAllRows(state.shopTab === 'all' ? null : state.shopTab)
       .forEach((row, r) => row.forEach((id, i) => well(id, gx + i * SHOP_PITCH, y + 25 + r * SHOP_ROW)));
@@ -250,7 +281,7 @@ function shopLayout() {
   return {
     panel: { x, y, w: SHOP_W, h: SHOP_H },
     xr: { x: pane.x - 17, y: y + 6, w: 11, h: 11 },
-    tabs, cats, grid, heads, slots, sell, pane, into, by,
+    tabs, cats, grid, heads, slots, rates, arrows, sell, pane, into, by,
     purse: { x: pane.x - 10, y: by + 18 },
     buy: { x: pane.x + 6, y: pane.y + pane.h - SHOP_BTN_H - 6, w: pane.w - 12, h: SHOP_BTN_H + 2 },
     tree: shopTree(pane, shopPicked().id),
@@ -364,6 +395,12 @@ function shopIcon(im, r) {
   const w = im.width * k, h = im.height * k;
   ctx.drawImage(im, r.x + ((r.w - w) >> 1), r.y + ((r.h - h) >> 1), w, h);
 }
+// the pip on an item your hero's build names (RECOMMENDED): a lit square in
+// a dark socket, top left inside the well, readable on every tier's rim
+function shopPip(r) {
+  ctx.fillStyle = SHOP_PANE_BG; ctx.fillRect(r.x + 1, r.y + 1, 4, 4);
+  ctx.fillStyle = SHOP_PICK; ctx.fillRect(r.x + 2, r.y + 2, 2, 2);
+}
 // a coin and a number: what something costs, red when the purse is short
 function shopPrice(n, x, y, dear) {
   ctx.drawImage(SPRITES.itemGold, x, y - 2);
@@ -415,10 +452,13 @@ function drawShopPanel(now) {
   ctx.fillRect(P.x + 3, L.by - 6, SHOP_PANE_X - 6, 1);
   ctx.fillRect(P.x + SHOP_GRID_X - 4, P.y + 23, 1, L.by - 9 - P.y - 23); // the stat bar's edge
   drawShopCats(L, h);
-  for (const hd of L.heads) drawPixelText(ctx, hd.label, hd.x, hd.y, SHOP_DIM);
+  for (const hd of L.heads) drawPixelText(ctx, hd.label, hd.x, hd.y, hd.dim ? SHOP_FAINT_INK : SHOP_DIM);
+  drawShopRates(L);
+  const rec = state.shopTab === 'rec' ? null : shopRecSet();
   for (const r of L.grid) {
     const n = r.id === 'potion' ? BUILD_ITEMS.potion.price : itemCost(player, r.id).gold;
     shopItemWell(r, r.id, h);
+    if (rec && rec.has(r.id)) shopPip(r); // on your hero's build
     shopTag(n, r, n > player.gold);
     if (r.id === 'potion' && player.potions > 0) { const t = String(player.potions); drawPixelText(ctx, t, r.x + r.w - 2 - pixelTextWidth(t), r.y + 2, SHOP_INK); }
   }
@@ -428,6 +468,18 @@ function drawShopPanel(now) {
   drawShopPane(L, h);
 }
 
+// a path's numbers beside its wells: how many of the hero's games built it,
+// and how many of those it won - a win rate over half in the stat green
+function drawShopRates(L) {
+  for (const r of L.rates) {
+    drawPixelText(ctx, 'PICK', r.x, r.y, SHOP_DIM);
+    drawPixelText(ctx, r.pick + '%', r.x + 22, r.y, SHOP_INK);
+    drawPixelText(ctx, 'WIN', r.x, r.y + 9, SHOP_DIM);
+    drawPixelText(ctx, r.win + '%', r.x + 22, r.y + 9, r.win > 50 ? SHOP_STAT : SHOP_INK);
+  }
+  ctx.fillStyle = SHOP_DIM;
+  for (const a of L.arrows) for (let k = 0; k < 3; k++) { ctx.fillRect(a.x + k, a.y - 2 + k, 1, 1); ctx.fillRect(a.x + k, a.y + 2 - k, 1, 1); }
+}
 // RECOMMENDED and ALL ITEMS: the open one lit with a line under it
 function drawShopTabs(L, h) {
   for (const t of L.tabs) {
@@ -570,6 +622,12 @@ function tipItem(id, cost) {
   const d = { title: it.name, tcol: itemMetal(id).ink, kind: SHOP_TIER_WORD[itemTier(id)],
     rows: [], notes: [], icon: itemIcon(id), plate: BAG_WELL, rim: itemMetal(id).rim };
   if (cost !== undefined) d.rows.push(['PRICE', cost + ' GOLD', cost <= player.gold ? RES_COLORS.gold : SHOP_DEAR_INK]);
+  // how your hero's players build it (js/app/builds.js), once the hero has the games to say
+  const st = itemFinished(id) ? buildsItem(shopHero(), id) : null;
+  if (st) {
+    d.rows.push(['PICK RATE', st.pick + '%', '#f4f7ff']);
+    if (st.win !== null) d.rows.push(['WIN RATE', st.win + '%', st.win > 50 ? SHOP_STAT : '#f4f7ff']);
+  }
   for (const s of ITEM_STAT_ORDER) if (s in it.stats) d.rows.push([ITEM_STATS[s].label, ITEM_STATS[s].fmt(it.stats[s]), SHOP_STAT]);
   if (id === 'potion') {
     // the drink said the way an ability well says it: how much, over how long

@@ -704,6 +704,7 @@ function hurtUnit(e, dmg, nx, ny, src, o) {
   if (src instanceof Player && src.buffT > 0) dmg = Math.round(dmg * statBuffMul(src, 'dmg'));
   dmg = passiveDeal(src, e, dmg, o); // ...and a hero's passive may make more of it (HERO_PASSIVE deal, js/sim/heroes.js)
   dmg = itemsDeal(src, e, dmg, o); // ...and so may an item's (CULL, SURGE: js/sim/items.js)
+  dmg = loadoutDeal(src, e, dmg, o); // ...and a calling's or a tangle's (DUELIST, BOLAS: js/sim/loadout.js)
   const ty = DMG_TYPES[o.type] || DMG_TYPES.blunt;
   const km = o.kbMul === undefined ? 1 : o.kbMul;
   if (e instanceof Player) {
@@ -722,7 +723,9 @@ function hurtUnit(e, dmg, nx, ny, src, o) {
   }
   if (ty.spark) burst(e.x, unitMidY(e), ty.spark, 6, 50, 0.45);
   if (src instanceof Player && src !== e) itemsOnHit(src, e, o, dmg); // the item passives a blow carries (js/sim/items.js)
+  if (src instanceof Player && src !== e) loadoutOnHit(src, e, o, dmg); // ...and its calling (js/sim/loadout.js)
   if (e instanceof Player && src && src !== e) itemsOnHurt(e, src, dmg, o); // ...and the ones a blow taken answers (THORNS)
+  if (e instanceof Player && src && src !== e) loadoutOnHurt(e, src, dmg, o); // ...and a WARDEN near it
   // fire outlives its own blow: whatever the damage type is worth on its own
   if (ty.ignite > 0) igniteUnit(e, ty.ignite, BURN_DPS, src);
   // ...and a blow that carries its own fire, `burn: [s, hp a second]`, lights it once it lands
@@ -825,6 +828,11 @@ const SHIELD_KINDS = {
   dawn: { stack: true, cap: DAWN_SHIELD_MAX, lasting: true, ink: '#ffd84a', breakInk: '#fff4b8' },
   // a timed shield from a hero's kit (SALVIA's cloak, ARMATOS's resolve, FORTIVA's heart)
   ward: { ink: '#f2cc6a' },
+  // LIFELINE's, raised by a hit that takes its wearer low (itemsLifeline, js/sim/items.js)
+  lifeline: { ink: '#e8eef8', breakInk: '#ffffff' },
+  // the loadout's (js/sim/loadout.js): the BULWARK trick, and a WARDEN's shield on an ally and itself
+  bulwark: { ink: '#cfd8e8' },
+  warden: { ink: '#f2cc6a' },
 };
 const SHIELD_ORDER = Object.keys(SHIELD_KINDS);
 function shieldUnit(p, hp, t, kind) {
@@ -871,6 +879,15 @@ function shieldTick(p, dt) {
 }
 // a kind's shield taken off whole (FORTIVA's heart spending what is left of its own)
 function shieldClear(p, kind) { p.shields = p.shields.filter((s) => s.kind !== kind); }
+// FROSTBITE: healing cut. Every heal a body takes (healPlayer, js/sim/player.js)
+// is `cut` smaller while the clock runs; the stronger cut and the longer clock win.
+// Players only take heals, so the other kinds carry it harmlessly.
+function cutHeal(e, t, cut) {
+  if (t <= 0 || !unitAlive(e)) return;
+  if (!(e.healCutT > 0)) e.healCut = 0;
+  e.healCutT = Math.max(e.healCutT || 0, t);
+  e.healCut = Math.max(e.healCut || 0, cut);
+}
 // Marked: revealed. On a player seenAt() returns its full range and both maps
 // keep drawing them; an animal or a bot has no cover to strip, so it is the
 // gold chevrons alone - the falcon still says "I have found this".
@@ -933,6 +950,12 @@ function updateBurn(e, dt) {
   hurtUnit(e, Math.max(1, Math.round(e.burnDps * BURN_TICK)), 0, -1,
     src && !src.dead ? src : null, { type: 'burn', kb: 0, cause: 'fire' });
 }
+// WEAKENED: every blow the body lands is worth WEAK_MUL of itself
+// (loadoutDeal, from hurtUnit), League's exhaust. From the BOLAS trick.
+function weakenUnit(e, t) {
+  if (t <= 0 || !unitAlive(e)) return;
+  e.weakT = Math.max(e.weakT || 0, t * ccMul(e));
+}
 // put a body out - a death, a respawn, a fresh landing
 function douseUnit(e) { e.burnT = 0; e.burnDps = 0; e.burnTick = 0; e.burnBy = -1; e.burnFxT = 0; }
 
@@ -946,6 +969,8 @@ function updateUnitStatus(e, dt) {
   if (e.slowT > 0) e.slowT = Math.max(0, e.slowT - dt);
   else e.slowMul = 1;
   if (e.upT > 0) e.upT = Math.max(0, e.upT - dt);
+  if (e.healCutT > 0) e.healCutT = Math.max(0, e.healCutT - dt);
+  if (e.weakT > 0) e.weakT = Math.max(0, e.weakT - dt);
   updateBurn(e, dt);
 }
 // What is left of a non-player unit's speed - the same root/slow fold
@@ -961,7 +986,8 @@ function unitMoveMul(e) {
 // every timed state a fresh body starts with none of, on any kind of unit
 function clearUnitStatus(e) {
   e.stunT = 0; e.stunMax = 0;
-  e.rootT = 0; e.slowT = 0; e.slowMul = 1; e.markT = 0; e.upT = 0;
+  e.rootT = 0; e.slowT = 0; e.slowMul = 1; e.markT = 0; e.upT = 0; e.healCutT = 0; e.healCut = 0;
+  e.weakT = 0;
   douseUnit(e);
 }
 

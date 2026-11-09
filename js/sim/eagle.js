@@ -185,6 +185,7 @@ function beginDrop() {
   const seats = [0, 0]; // next free wing seat per team, dealt in slot order - the first slot of each side sits at seat 0
   for (const p of players) {
     if (!p.active) continue;
+    loadoutStart(p); // the pre-game picks, made whole (js/sim/loadout.js)
     const e = state.drop.eagles[p.team];
     p.aboard = true; p.dropT = 0;
     p.seat = seats[p.team]++;

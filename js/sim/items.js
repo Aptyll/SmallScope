@@ -39,6 +39,11 @@ const BRACE_BELOW = 0.4, BRACE_ARMOR = 15; // BRACE: under this share of health,
 const SMOLDER_R = 30, SMOLDER_EVERY = 1, SMOLDER_BURN = 1.2; // SMOLDER: rivals this close catch a short burn, once a second
 const SCORCH_BURN = 2;      // SCORCH: an ability's blow burns this long
 const AMPLIFY_MUL = 1.25;   // AMPLIFY: the ability power from items, times this
+const FROST_T = 3, FROST_CUT = 0.4; // FROSTBITE: a hit cuts the target's healing by this share, this long (cutHeal, js/sim/actions.js)
+const PIERCE_SHARE = 0.3;   // PIERCE: a blow sees this share less of the target's armor (armorTaken, js/sim/stats.js)
+const LIFE_BELOW = 0.3, LIFE_SHIELD = 0.25, LIFE_T = 3, LIFE_CD = 60; // LIFELINE: a blow that drops you under this share of health raises a shield of this share of your health for this long, once a minute
+const MEND_MUL = 1.2;       // MEND: your heals and shields on another hero, times this
+const BANNER_R = 80, BANNER_ARMOR = 10; // RALLY: allies this close to you have this much more armor (itemStat)
 
 // What each stat line IS: the label the shop prints, the short one a narrow
 // column prints, how its number reads, and what it writes into the kit. Every
@@ -81,6 +86,11 @@ const ITEM_PASSIVES = {
   smolder:  { name: 'SMOLDER', line: 'BURNS RIVALS CLOSE BY', mod: (k) => { k.smolder = true; } },
   scorch:   { name: 'SCORCH', line: 'ABILITIES BURN', mod: (k) => { k.scorch = true; } },
   amplify:  { name: 'AMPLIFY', line: 'ABILITY POWER +25%', mod: (k) => { k.add.ap *= AMPLIFY_MUL; } },
+  frost:    { name: 'FROSTBITE', line: 'HITS CUT HEALING 40% FOR 3 S', mod: (k) => { k.frost = true; } },
+  pierce:   { name: 'PIERCE', line: 'HITS IGNORE 30% OF ARMOR', mod: (k) => { k.pierce = PIERCE_SHARE; } },
+  lifeline: { name: 'LIFELINE', line: 'UNDER 30% HEALTH: A SHIELD, EVERY 60 S', mod: (k) => { k.lifeline = true; } },
+  mend:     { name: 'MEND', line: 'HEALS AND SHIELDS ON ALLIES +20%', mod: (k) => { k.mend = MEND_MUL; } },
+  rally:    { name: 'RALLY', line: 'ALLIES CLOSE BY: +10 ARMOR', mod: (k) => { k.rally = true; } },
 };
 
 // THE CATALOGUE, League's four tiers. A BASIC item carries one stat and is
@@ -119,6 +129,9 @@ const BUILD_ITEMS = {
   warm:    { name: 'WARM STONE', price: 900, from: ['hide', 'hide'], stats: { hp: 40 }, passive: 'den' },
   lantern: { name: 'LANTERN', price: 850, from: ['bead'], stats: { ap: 4, ms: 3 } },
   almanac: { name: 'ALMANAC', price: 900, from: ['bead', 'glass'], stats: { ap: 3, haste: 8 } },
+  rimeknife: { name: 'RIME KNIFE', price: 800, from: ['flint'], stats: { dmg: 4 }, passive: 'frost' },
+  rimecharm: { name: 'RIME CHARM', price: 800, from: ['bead'], stats: { ap: 12 }, passive: 'frost' },
+  yarrow:  { name: 'YARROW BUNDLE', price: 800, from: ['glass'], stats: { hp: 15, haste: 8 }, passive: 'mend' },
   // boots
   hobnail: { name: 'HOBNAIL BOOTS', price: 1000, from: ['boots', 'plate'], stats: { ms: 8, armor: 12 }, boots: true, styles: ['tank', 'bruiser'] },
   quick:   { name: 'QUICKSTEP BOOTS', price: 1000, from: ['boots', 'string'], stats: { ms: 8, as: 0.22 }, boots: true, styles: ['marksman'] },
@@ -149,6 +162,16 @@ const BUILD_ITEMS = {
   slate:     { name: 'ICE SLATE', price: 2700, from: ['rod', 'hide'], stats: { ap: 8, hp: 50 }, passive: 'chill', styles: ['mage', 'bruiser'] },
   clock:     { name: 'STILL CLOCK', price: 3000, from: ['rod', 'mail'], stats: { ap: 9, armor: 18, haste: 8 }, passive: 'brace', styles: ['mage', 'tank'] },
   hornet:    { name: 'HORNET NEST', price: 2900, from: ['almanac', 'recurve'], stats: { ap: 8, as: 0.3, haste: 10 }, passive: 'kindling', styles: ['mage', 'marksman'] },
+  // the counters (0.650): healing cut, armor pierced, a last shield, and the
+  // support's two - heals that go further and armor for the hero beside you
+  bite:      { name: "WINTER'S BITE", price: 3000, from: ['rimeknife', 'axe'], stats: { dmg: 15, haste: 8 }, passive: 'frost', styles: ['marksman', 'assassin', 'bruiser'] },
+  hoarfrost: { name: 'HOARFROST STAFF', price: 2900, from: ['rimecharm', 'rod'], stats: { ap: 30, hp: 30 }, passive: 'frost', styles: ['mage', 'support'] },
+  auger:     { name: 'ICE AUGER', price: 3000, from: ['whet', 'pick'], stats: { dmg: 14, as: 0.15 }, passive: 'pierce', styles: ['marksman', 'assassin', 'bruiser'] },
+  lens:      { name: 'BURNING GLASS', price: 3000, from: ['rod', 'lantern'], stats: { ap: 36, ms: 3 }, passive: 'pierce', styles: ['mage'] },
+  oakheart:  { name: 'OAK HEART', price: 3000, from: ['knife', 'belt'], stats: { dmg: 8, hp: 60 }, passive: 'lifeline', styles: ['bruiser', 'tank'] },
+  mantle:    { name: 'QUILTED MANTLE', price: 2900, from: ['rod', 'jacket'], stats: { ap: 24, hp: 25, armor: 12 }, passive: 'lifeline', styles: ['mage'] },
+  shepherd:  { name: "SHEPHERD'S STAFF", price: 2700, from: ['yarrow', 'almanac'], stats: { ap: 24, hp: 30, haste: 15 }, passive: 'mend', styles: ['support'] },
+  banner:    { name: 'PACK BANNER', price: 2700, from: ['buckler', 'belt'], stats: { hp: 50, armor: 15, haste: 10 }, passive: 'rally', styles: ['tank', 'support'] },
 
   // THE CONSUMABLE: a stack of up to `stack` in ONE slot (League's potions),
   // drunk off that slot's key (the `potion` banner below). No stats, no passive,
@@ -160,7 +183,7 @@ const BUILD_ITEMS = {
 // (Not the lane ROLES a hero is drafted for: a style is what an item is for.)
 const ITEM_STYLES = [
   { id: 'tank', label: 'TANK' }, { id: 'bruiser', label: 'BRUISER' }, { id: 'marksman', label: 'MARKSMAN' },
-  { id: 'assassin', label: 'ASSASSIN' }, { id: 'mage', label: 'MAGE' },
+  { id: 'assassin', label: 'ASSASSIN' }, { id: 'mage', label: 'MAGE' }, { id: 'support', label: 'SUPPORT' },
 ];
 // an item's tier, off its record: 'potion', 'basic' (built from nothing),
 // 'boots' (an upgraded pair), 'legend' (built from at least one epic, or
@@ -186,6 +209,8 @@ function itemIcon(id) { return SPRITES[BUILD_ITEMS[id].icon || 'item_' + id]; }
 function isPart(id) { return !BUILD_ITEMS[id].from && !BUILD_ITEMS[id].stack; }
 function isStack(id) { return !!BUILD_ITEMS[id].stack; }
 function isBoots(id) { return !!BUILD_ITEMS[id].boots; }
+// an item a build is made OF: a legendary, or a pair of boots past FUR BOOTS
+function itemFinished(id) { const t = itemTier(id); return t === 'legend' || t === 'boots'; }
 // the metal an item is drawn in, everywhere it shows (its well's rim, and the
 // ink its name is printed in): a basic in dim green, an epic or a pair of
 // boots in steel blue, a legendary in gold (the potion wears the basic's green)
@@ -253,6 +278,7 @@ function buyItem(p, id) {
   spendGold(p, c.gold);
   for (const j of c.used) p.items[j] = null;
   p.items[p.items.indexOf(null)] = id;
+  if (itemFinished(id)) p.buys.push(id); // the build this match records (js/app/builds.js)
   itemsChanged(p);
   shopFx(p, '-' + c.gold, RES_COLORS.gold);
   sfxFor(p, isPart(id) ? 'coin' : 'buy');
@@ -297,6 +323,7 @@ function itemsOnHit(src, e, o, dmg) {
   }
   if (k.chill) slowUnit(e, CHILL_T, CHILL_MUL);
   if (k.scorch && o.ab) igniteUnit(e, SCORCH_BURN, BURN_DPS, src);
+  if (k.frost && dmg > 0) cutHeal(e, FROST_T, FROST_CUT);
   if (k.leech && dmg > 0) healPlayer(src, dmg * LEECH_SHARE);
 }
 // ...and every blow a player TAKES from a body (hurtUnit): THORNS hands a
@@ -308,10 +335,33 @@ function itemsOnHurt(e, src, dmg, o) {
   const d = Math.hypot(src.x - e.x, src.y - e.y) || 1;
   hurtUnit(src, Math.max(1, Math.round(dmg * THORN_SHARE)), (src.x - e.x) / d, (src.y - e.y) / d, e, { thorns: true, kb: 0 });
 }
-// BRACE on the stat sheet (statOf, js/sim/stats.js): armor while badly hurt
-function itemStat(p, key) {
-  return key === 'armor' && p.kit && p.kit.brace && p.hp < p.maxHp * BRACE_BELOW ? BRACE_ARMOR : 0;
+// LIFELINE: the damage that takes a body under LIFE_BELOW - a blow, a burn,
+// the world's - raises its shield, once every LIFE_CD (damagePlayer,
+// js/sim/player.js; the clock is itemsTick's)
+function itemsLifeline(e) {
+  if (!(e instanceof Player) || !e.kit || !e.kit.lifeline || e.lifeT > 0 || e.dead || e.hp <= 0 || e.hp >= e.maxHp * LIFE_BELOW) return;
+  e.lifeT = LIFE_CD;
+  shieldUnit(e, Math.round(e.maxHp * LIFE_SHIELD), LIFE_T, 'lifeline');
+  sfxAt('shieldUp', e.x, e.y);
 }
+// BRACE and RALLY on the stat sheet (statOf, js/sim/stats.js): armor while
+// badly hurt, and armor while a living ally carrying RALLY stands close (one
+// banner counts once, however many are near)
+function itemStat(p, key) {
+  if (key !== 'armor' || !p.kit) return 0;
+  let n = p.kit.brace && p.hp < p.maxHp * BRACE_BELOW ? BRACE_ARMOR : 0;
+  for (const q of players) {
+    if (q !== p && q.active && !q.dead && q.team === p.team && q.kit && q.kit.rally && !inAir(q) &&
+      Math.hypot(q.x - p.x, q.y - p.y) <= BANNER_R) { n += BANNER_ARMOR; break; }
+  }
+  return n;
+}
+// PIERCE on armor's cut (armorTaken, js/sim/stats.js): the share of the
+// target's armor the striker's blow does not see
+function itemPierce(src) { return src instanceof Player && src.kit && src.kit.pierce || 0; }
+// MEND on a heal or a shield one hero gives ANOTHER (salviaHeal and her
+// cloak, js/sim/salvia.js): what the healer's items make of it
+function itemMend(src, q, n) { return src instanceof Player && src !== q && src.kit && src.kit.mend ? n * src.kit.mend : n; }
 // STEADY on crowd control's length (ccMul, js/sim/actions.js)
 function itemTen(e) { return e instanceof Player && e.kit && e.kit.steady ? STEADY_MUL : 1; }
 // the player's own clock, once a step (js/sim/sim.js): the fight timer, DEN's
@@ -320,6 +370,7 @@ function itemsTick(p, dt) {
   if (p.fightT > 0) p.fightT = Math.max(0, p.fightT - dt);
   else if (p.kit.restHeal > 0 && p.hp < p.maxHp) healPlayer(p, p.kit.restHeal * dt);
   if (p.surgeT > 0) p.surgeT = Math.max(0, p.surgeT - dt);
+  if (p.lifeT > 0) p.lifeT = Math.max(0, p.lifeT - dt);
   if (p.kit.smolder && !p.dead) {
     p.smolderT = (p.smolderT || 0) - dt;
     if (p.smolderT <= 0) {
@@ -403,24 +454,24 @@ function potionTick(p, dt) {
 // same lists are the shop's RECOMMENDED tab (shopRecommended, js/ui/shop.js),
 // so what a bot buys is what the counter suggests to you.
 const BOT_BUILDS = {
-  ARMATOS: ['bearskin', 'hobnail', 'brambmail', 'glacier', 'hearth', 'stonehide'], // the wall first: health and armor, then the walk to the fight
-  FORTIVA: ['brand', 'mukluk', 'fang', 'stonehide', 'maul', 'collar'], // the hit first, the health to stay in the fight, then the legs to reach it
-  IGNIA: ['marsh', 'emberb', 'storm', 'deeprod', 'slate', 'clock'], // the fire first: power, haste and the scorch, then the boots and more power
-  BELLA: ['beartooth', 'quick', 'maul', 'feathers', 'sunstone', 'collar'], // the blade first: damage and its cut, then the speed to chain it
-  BUCINA: ['emberb', 'marsh', 'clock', 'slate', 'deeprod', 'storm'], // the keys' wait first, then the boots to lead the charge, then the armor up front
-  LUCERNA: ['emberb', 'clock', 'marsh', 'slate', 'deeprod', 'storm'], // the crook's wait first: haste, then the boots, then the armor she needs up front
-  SALVIA: ['emberb', 'marsh', 'clock', 'deeprod', 'slate', 'storm'], // the heals first: haste and power for more of them, then the boots, then the armor a healer under focus needs
-  FABER: ['emberb', 'storm', 'marsh', 'slate', 'clock', 'deeprod'], // haste first for more machines and traps, then power, the boots and the armor a mage holding a spot needs
-  HIEMS: ['storm', 'marsh', 'emberb', 'slate', 'deeprod', 'clock'], // power and haste for more chills, then the armor a control mage standing in the fight needs
+  ARMATOS: ['bearskin', 'hobnail', 'brambmail', 'banner', 'glacier', 'stonehide'], // the wall first: health and armor, then the walk to the fight
+  FORTIVA: ['brand', 'mukluk', 'fang', 'oakheart', 'stonehide', 'maul'], // the hit first, the health to stay in the fight, then the legs to reach it
+  IGNIA: ['marsh', 'emberb', 'storm', 'lens', 'deeprod', 'mantle'], // the fire first: power, haste and the scorch, then the boots and more power
+  BELLA: ['beartooth', 'quick', 'maul', 'auger', 'feathers', 'sunstone'], // the blade first: damage and its cut, then the speed to chain it
+  BUCINA: ['emberb', 'marsh', 'banner', 'clock', 'slate', 'storm'], // the keys' wait first, then the boots to lead the charge, then the armor up front
+  LUCERNA: ['emberb', 'clock', 'banner', 'marsh', 'slate', 'storm'], // the crook's wait first: haste, then the boots, then the armor she needs up front
+  SALVIA: ['shepherd', 'emberb', 'marsh', 'clock', 'hoarfrost', 'storm'], // the shepherd's staff first: heals that go further, then the boots, power, the armor a healer under focus needs, and the cut on the rival healer
+  FABER: ['emberb', 'storm', 'marsh', 'slate', 'mantle', 'deeprod'], // haste first for more machines and traps, then power, the boots and the armor a mage holding a spot needs
+  HIEMS: ['storm', 'marsh', 'emberb', 'hoarfrost', 'slate', 'deeprod'], // power and haste for more chills, then the armor a control mage standing in the fight needs
   RUPES: ['glacier', 'hobnail', 'bearskin', 'stonehide', 'brambmail', 'hearth'], // armor and health first, the snow takes the rest; the boots to reach the fight
-  NIX: ['beartooth', 'quick', 'feathers', 'maul', 'sunstone', 'collar'], // the blade first, the speed to reach a lone rival, then more blade
-  FALCO: ['beartooth', 'quick', 'feathers', 'maul', 'sunstone', 'collar'], // the knives first, the speed to reach a lone rival, then more blade
-  LIGNUM: ['beartooth', 'hobnail', 'fang', 'stonehide', 'quick', 'bearskin'], // a skirmisher's: the bite first, the legs to step out and back, then health for the trades
+  NIX: ['beartooth', 'quick', 'feathers', 'maul', 'bite', 'sunstone'], // the blade first, the speed to reach a lone rival, then more blade
+  FALCO: ['beartooth', 'quick', 'feathers', 'auger', 'maul', 'sunstone'], // the knives first, the speed to reach a lone rival, then more blade
+  LIGNUM: ['beartooth', 'hobnail', 'fang', 'oakheart', 'stonehide', 'bearskin'], // a skirmisher's: the bite first, the legs to step out and back, then health for the trades
   MARIS: ['glacier', 'hobnail', 'stonehide', 'bearskin', 'brambmail', 'hearth'], // a tank's: armor and health, the boots for reaching the water
-  AURA: ['storm', 'emberb', 'deeprod', 'marsh', 'clock', 'slate'], // the reach first: power and haste for more stars, then the boots, then the armor a mage caught close needs
-  VARRO: ['beartooth', 'hobnail', 'fang', 'quick', 'stonehide', 'collar'], // the bite first, the legs to stay on the mark, then the health a diver needs
-  VELOX: ['quick', 'horn', 'feathers', 'frostline', 'sunstone', 'cloak'], // a marksman's, attack speed first: more throws, more KEEP MOVING stacks
-  SAGITTA: ['beartooth', 'horn', 'feathers', 'maul', 'sunstone', 'cloak'], // damage first: every bolt is slow, so each one has to land like a hammer
+  AURA: ['storm', 'emberb', 'deeprod', 'lens', 'marsh', 'mantle'], // the reach first: power and haste for more stars, then the boots, then the armor a mage caught close needs
+  VARRO: ['beartooth', 'hobnail', 'fang', 'bite', 'stonehide', 'collar'], // the bite first, the legs to stay on the mark, then the health a diver needs
+  VELOX: ['quick', 'horn', 'feathers', 'frostline', 'bite', 'sunstone'], // a marksman's, attack speed first: more throws, more KEEP MOVING stacks
+  SAGITTA: ['beartooth', 'horn', 'feathers', 'auger', 'maul', 'sunstone'], // damage first: every bolt is slow, so each one has to land like a hammer
 };
 for (const c of CLASSES) if (!BOT_BUILDS[c.name]) throw new Error('items.js: ' + c.name + ' has no BOT_BUILDS row');
 function botBuild(p) { return BOT_BUILDS[CLASSES[p.cls].name]; }

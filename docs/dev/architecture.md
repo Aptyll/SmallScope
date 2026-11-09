@@ -27,7 +27,8 @@ order, so the script tags still interleave them:
 
 | File | Lines | Exposes | Role |
 | --- | --- | --- | --- |
-| [js/app/profile.js](../../js/app/profile.js) | ~370 | `PROFILE` | the local player profile - up to three characters (name, class, look, stats), which kinds it has held, the settings - and the only file that touches storage |
+| [js/app/builds.js](../../js/app/builds.js) | ~150 | shared scope, no `window.*` export | the meta: each match's human builds and results recorded at the whistle, swapped on every join, and read back as the shop's RECOMMENDED paths with pick and win rates |
+| [js/app/profile.js](../../js/app/profile.js) | ~390 | `PROFILE` | the local player profile - up to three characters (name, class, look, stats), which kinds it has held, the settings - and the only file that touches storage |
 | [js/app/font.js](../../js/app/font.js) | ~100 | `drawPixelText`, `drawPixelTextShadow`, `drawPixelTextOutline`, `pixelTextWidth` | the bitmap font |
 | [js/app/text.js](../../js/app/text.js) | ~90 | `TEXT`, `tr` | the text table: the words the game prints for its own screens, by key ([text table](rendering/the-text-table.md)) |
 | [js/sprites/core.js](../../js/sprites/core.js) | ~175 | `SPRITES`, `SPR` | the empty sprite registry and the bake helpers (`bake`/`bakeSpan`/`flipH`/`bakeClips`/`liveIcon`) plus the `TEAM_SKINS` table; every other sprite file is a private IIFE that bakes its grids and `Object.assign`s the keys it owns into `SPRITES` |
@@ -193,7 +194,7 @@ order, so the script tags still interleave them:
 | [js/ui/compose.js](../../js/ui/compose.js) | ~150 | shared scope, no `window.*` export | `renderUI`, the frame's UI pass in order |
 | [js/ui/notices.js](../../js/ui/notices.js) | ~410 | shared scope, no `window.*` export | the notice lane top-right under the minimap (the roost-under-attack plate) and the stat ledger that flies your sheet into it when a number moves |
 | [js/ui/announcer.js](../../js/ui/announcer.js) | ~180 | shared scope, no `window.*` export | the announcer: a queued call (FIRST BLOOD, multi-kills, SHUTDOWN, ACE, TOWER DESTROYED, bears) on a plate under the team rail with both faces and a sting, and the kill feed under the notice lane |
-| [js/ui/shop.js](../../js/ui/shop.js) | ~570 | shared scope, no `window.*` export | the merchant's counter: which counter a body stands at, buying and selling (items and the health potion through js/sim/items.js), and League's panel (RECOMMENDED and ALL ITEMS with its stat filters, the pane with BUILDS INTO, the build tree, the card and BUY, your six slots and SELL) |
+| [js/ui/shop.js](../../js/ui/shop.js) | ~570 | shared scope, no `window.*` export | the merchant's counter: which counter a body stands at, buying and selling (items and the health potion through js/sim/items.js), and League's panel (RECOMMENDED off js/app/builds.js, ALL ITEMS and the style tabs with its stat filters, the pane with BUILDS INTO, the build tree, the card and BUY, your six slots and SELL) |
 | [js/ui/panels.js](../../js/ui/panels.js) | ~1210 | shared scope, no `window.*` export | the TAB scoreboard + the (undrawn) event log, the M world map, the ESC settings slab |
 | [js/ui/menu.js](../../js/ui/menu.js) | ~1850 | shared scope, no `window.*` export | the title screen: menu planks, tutorial panel, the lobby, the hero pop-up, `PATCH_TXT` and `PATCH_NOTES` |
 | [js/ui/notes.js](../../js/ui/notes.js) | ~420 | shared scope, no `window.*` export | the title's WIKI / PATCH NOTES / ROADMAP tabs and the KITCHEN link, the roadmap, and the patch notes screen |

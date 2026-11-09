@@ -29,6 +29,7 @@ const NET = {
   seek: null,                // a host's: FIND MATCH looking for another party, { t, hold, rival, crossing } (js/ui/matchmaking.js)
   seekAt: null,              // a guest's: when, on its own clock, the party started looking (null while it is not)
   pingT: 0,                  // a host's: s toward the next round of pings
+  metaIn: false,             // a guest took the host's build records this connection (js/app/builds.js)
   chat: [],                  // the waiting room's last lines, { name, team, s } (js/ui/roomtalk.js)
   hostSlot: 0,               // a client's: which slot the host's own player sits in
   phase: 'room',             // the party's page, the host's to turn: 'room' (the seats, js/ui/rooms.js) or 'pick' (the hero select: the lobby's draft, js/ui/draft.js)
@@ -85,7 +86,7 @@ function netSetup(role, transport) {
   NET.transport = transport || loopbackTransport;
   NET.peers.clear(); NET.parked.clear(); NET.kicked.clear(); NET.ready.clear(); NET.pings = []; NET.pingT = 0; NET.chat = []; NET.ranks = []; NET.pos = []; NET.botLv = null; NET.code = ''; NET.seek = null; NET.seekAt = null;
   NET.easeAt = 0; NET.gapAvg = 0; NET.gapDev = 0; NET.easeMs = 0;
-  NET.synced = false; NET.welcomed = false; NET.helloed = false; NET.refused = null; NET.lastTick = -1; NET.hostOver = null; NET.countN = -1; NET.published = false; NET.phase = 'room'; NET.rematch = null; NET.nextSeed = 0; NET.was = null;
+  NET.synced = false; NET.welcomed = false; NET.metaIn = false; NET.helloed = false; NET.refused = null; NET.lastTick = -1; NET.hostOver = null; NET.countN = -1; NET.published = false; NET.phase = 'room'; NET.rematch = null; NET.nextSeed = 0; NET.was = null;
   NET.dictOut = encDict(); NET.dictIn = encDict(); NET.verifyFail = null;
   NET.bytesIn = 0; NET.bytesOut = 0; NET.bIn0 = 0; NET.bOut0 = 0; NET.bpsT = 0; NET.dropped = 0; NET.fulls = 0;
   if (NET.role === 'host') { NET.transport.listen(); snapShadowReset(); }
@@ -162,6 +163,7 @@ function netHostStep(dt) {
     if (msg.t === 'draft') { draftAct(pr.slot, DRAFT_ACTS.includes(msg.k) ? msg.k : 'hover', msg.h | 0, msg.id); continue; } // ...a guest's press in the draft (js/ui/draft.js)
     if (msg.t === 'say') { talkFrom(pr, msg.s); continue; }               // ...a line for the room's chat
     if (msg.t === 'pong') { pongIn(pr, msg); continue; }                   // ...and its answer to a ping
+    if (msg.t === 'meta') { netMetaIn(peer, pr, msg); continue; }         // ...and the builds it has heard of (js/app/builds.js)
     if (msg.t === 'in') {
       NET.bytesIn += JSON.stringify(msg).length;
       if (msg.ack > pr.ack) pr.ack = msg.ack; // the newest snapshot it applied: its next delta is cut from there
@@ -210,12 +212,13 @@ function netInClean(m) {
   const W = WORLD * TILE;
   return { mx: num(m.mx, -1, 1, 0), my: num(m.my, -1, 1, 0), aimX: num(m.aimX, -W, 2 * W, 0), aimY: num(m.aimY, -W, 2 * W, 0), // a cursor past the map's edge still aims
     fire: !!m.fire, work: !!m.work, slide: !!m.slide, dodge: !!m.dodge, jump: !!m.jump,
-    ability: idx(m.ability, AB_KEYS), useItem: idx(m.useItem, ITEM_SLOTS), cmd: m.cmd && typeof m.cmd === 'object' ? m.cmd : null };
+    ability: idx(m.ability, AB_KEYS), useItem: idx(m.useItem, ITEM_SLOTS), trick: idx(m.trick, TRICK_N), cmd: m.cmd && typeof m.cmd === 'object' ? m.cmd : null };
 }
 function netInEdges(i, m) {
   i.dodge = i.dodge || m.dodge; i.jump = i.jump || m.jump;
   if (m.ability >= 0) i.ability = m.ability;
   if (m.useItem >= 0) i.useItem = m.useItem;
+  if (m.trick >= 0) i.trick = m.trick;
   if (m.cmd) i.cmd = m.cmd;
 }
 function netHostHello(peer, msg) {
@@ -261,6 +264,8 @@ function netHostHello(peer, msg) {
   if (msg.name) p.name = msg.name;
   if (msg.cls !== undefined && msg.cls !== null) setClass(p, msg.cls);
   p.skins = cleanHeroSkins(msg.skins); // the looks they wear, drawn on every screen (heroSkinOf, player.js)
+  p.loadout = loadoutParse(msg.load); // their pre-game picks for that hero, made whole as they land (loadoutStart, js/sim/loadout.js)
+  if (state.drop) loadoutStart(p); // a seat taken in a match under way (or on the practice field) flies with them now
   NET.ranks[slot] = msg.rank | 0 || null;
   NET.pos[slot] = msg.pos >= 0 && msg.pos < POSITIONS.length ? msg.pos | 0 : -1;
   const pr = { slot, uid: msg.uid, name: msg.name, cross: !!msg.party, lastTick: 0, ack: -1, dictAt: new Map(), q: [], qMin: Infinity, qN: 0 };
@@ -457,11 +462,11 @@ function netClientStep(dt) {
   const T = NET.transport;
   if (NET.synced && player) {
     const i = player.input;
-    const msg = { t: 'in', tick: ++NET.inTick, ack: NET.lastTick, in: { mx: i.mx, my: i.my, aimX: i.aimX, aimY: i.aimY, fire: i.fire, work: i.work, slide: i.slide, dodge: i.dodge, jump: i.jump, ability: i.ability, useItem: i.useItem, cmd: i.cmd } };
+    const msg = { t: 'in', tick: ++NET.inTick, ack: NET.lastTick, in: { mx: i.mx, my: i.my, aimX: i.aimX, aimY: i.aimY, fire: i.fire, work: i.work, slide: i.slide, dodge: i.dodge, jump: i.jump, ability: i.ability, useItem: i.useItem, trick: i.trick, cmd: i.cmd } };
     if (T.send('host', msg)) NET.bytesOut += JSON.stringify(msg).length;
     netPredictStep(msg.tick, i, dt); // our own walk goes ahead of the host's word
     // the edges are the host's now: a press is sent once
-    i.dodge = false; i.jump = false; i.ability = -1; i.useItem = -1; i.cmd = null;
+    i.dodge = false; i.jump = false; i.ability = -1; i.useItem = -1; i.trick = -1; i.cmd = null;
   }
   netClientLerp();
   netClientStats();
@@ -496,6 +501,7 @@ function netClientStep(dt) {
     if (msg.t === 'practice') { practiceHeard(msg); continue; } // the leader's START, or its cross to the arena and back: after it (js/ui/rooms.js)
     if (msg.t === 'cross') { crossHeard(msg); continue; }    // the leader's party crossing to meet another (js/ui/matchmaking.js)
     if (msg.t === 'welcome') { netClientWelcome(msg); continue; }
+    if (msg.t === 'meta') { if (!NET.metaIn) { NET.metaIn = true; buildsMerge(msg.recs, BUILDS_TAKE); } continue; } // the host's builds, in answer to ours (js/app/builds.js)
     // the waiting room: the host's ten and its count, drawn here as there
     if (msg.t === 'roster') { netClientRoster(msg.roster); roomInfoIn(msg); continue; }
     if (msg.t === 'ping') { T.send('host', { t: 'pong', at: msg.at }); continue; } // straight back: the host times the trip
@@ -531,7 +537,7 @@ function netClientStats() {
   NET.was = { p: me, earned: me.earned, kills: me.kills, dead: me.dead, aboard: me.aboard };
 }
 function netClientHello() {
-  NET.transport.send('host', { t: 'hello', uid: NET.uid, patch: PATCH_TXT, seed: SEED, name: PROFILE.name(), cls: profileHero(), skins: profileHeroSkins(), rank: PROFILE.rank(), pos: PROFILE.pos(),
+  NET.transport.send('host', { t: 'hello', uid: NET.uid, patch: PATCH_TXT, seed: SEED, name: PROFILE.name(), cls: profileHero(), skins: profileHeroSkins(), load: loadoutStr(loadoutClean(PROFILE.loadout(CLASSES[profileHero()].name), profileHero(), PROFILE.pos())), rank: PROFILE.rank(), pos: PROFILE.pos(),
     party: CROSS ? CROSS.party : undefined, pn: CROSS ? CROSS.n : undefined }); // a party crossing in (js/ui/matchmaking.js)
 }
 // the roster the host dealt: our slot is the human here, the host's is a
@@ -546,6 +552,16 @@ function netClientWelcome(msg) {
   NET.dictIn = encDict(); // the full sync that follows carries the host's whole list
   PRED.hist.length = 0; PRED.on = false;
   NET.welcomed = true; // the title screen moves to the waiting room on this
+  NET.transport.send('host', { t: 'meta', recs: buildsPack() }); // the builds this screen knows, for the shop's numbers (js/app/builds.js)
+}
+// The host's half of the builds swap (js/app/builds.js): a guest's records
+// in, once a seating, and the host's whole pack back to it - so every join
+// leaves both ends knowing what either knew.
+function netMetaIn(peer, pr, msg) {
+  if (pr.metaIn) return;
+  pr.metaIn = true;
+  buildsMerge(msg.recs, BUILDS_TAKE);
+  NET.transport.send(peer, { t: 'meta', recs: buildsPack() });
 }
 // a later roster (someone came or went while we wait): the bodies stay, their
 // names, heroes and kinds change in place - ours stays the human

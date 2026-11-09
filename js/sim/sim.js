@@ -806,6 +806,9 @@ function walkStep(p, dt, mx, my, len, onIce, kit) {
 function playerIntents(p, dt) {
   const inp = p.input;
   recallIntents(p); // anything the body does itself ends the walk home (js/sim/recall.js)
+  // a trick first: SHAKE OFF is the one press a stun lets through (tryTrick
+  // refuses the rest while stunned, js/sim/loadout.js)
+  if (inp.trick >= 0) { const i = inp.trick; inp.trick = -1; if (Number.isInteger(i) && i < TRICK_N) tryTrick(p, i); }
 
   // stunned: rolled through, or the wrong end of a tackle. Every intent is
   // dropped where it arrives rather than blocked at each action, so a human
@@ -1084,6 +1087,7 @@ function updatePlayer(p, dt) {
   if (p.dead) { // out of the match: nothing it wants gets through
     inp.dodge = false;
     inp.useItem = -1;
+    inp.trick = -1;
     inp.ability = -1;
     inp.cmd = null;
     return;
@@ -1238,6 +1242,7 @@ function updateFx(dt) {
   }
   updateSlashes(dt); // the sword's sweep on the snow (js/sim/attack.js)
   if (itemFlash > 0) itemFlash -= dt; // ... and an item well's
+  if (trickFlash > 0) trickFlash -= dt; // ... and a trick well's (js/ui/strip.js)
   if (abFlash > 0) abFlash -= dt;     // ... and a locked ability well's
   for (let i = footprints.length - 1; i >= 0; i--) {
     const f = footprints[i];

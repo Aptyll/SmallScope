@@ -261,6 +261,17 @@ function healthBarPx(cxp, topY, hp, maxHp, w, team, col, s, segs) {
   }
 }
 
+// FROSTBITE's tell (cutHeal, js/sim/actions.js): the health bar's fill
+// frosted, every other pixel of its lower row in ice white, while the body's
+// heals are cut. Drawn over the bar healthBarPx laid, on the same columns.
+const HEAL_CUT_INK = '#cfe8ff';
+function drawHealCut(cxp, topY, hp, maxHp, w) {
+  const x = Math.round(cxp - w / 2), y = Math.round(topY);
+  const fw = hp > 0 ? Math.max(1, Math.round(w * Math.max(0, Math.min(1, hp / maxHp)))) : 0;
+  ctx.fillStyle = HEAL_CUT_INK;
+  for (let i = 0; i < fw; i += 2) ctx.fillRect(x + i, y + 1, 1, 1);
+}
+
 // The DAWN SHIELD bar (pickSnowdrop, js/sim/actions.js): its own row in the
 // frame straight above the hp bar, built the way the draw meter is - its
 // backing adds the rows above the hp backing and the hp backing's top row
