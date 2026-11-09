@@ -629,7 +629,7 @@ function hurtEagle(e, dmg, src, hx, hy) {
     raiseNotice('roost', Math.round(Math.max(0, e.hp) / e.maxHp * 100) + '%');
     SFX.alarm();
   }
-  if (e.hp <= 0) eagleFlee(e, src);
+  if (e.hp <= 0) { if (PRACTICE) practiceBirdMend(e); else eagleFlee(e, src); } // nothing ends in practice (js/sim/practice.js)
 }
 
 // the objective's nerve breaks: the bird is DRIVEN OFF, not killed. It blasts

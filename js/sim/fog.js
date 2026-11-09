@@ -30,7 +30,7 @@ const FOG_FACE = 6;      // px past where a sight line meets stone still lit, so
 // whether the fog is up: a match on the ground, never the practice field or
 // the title tour. DBG.fog = false lifts it for a debug look
 function fogUp() {
-  return !PRACTICE && state.mode === 'play' && window.DBG.fog !== false;
+  return !ARENA && state.mode === 'play' && window.DBG.fog !== false;
 }
 
 // Every eye a side has, as { x, y, r, near, stone, open }: near for a body (a

@@ -951,8 +951,9 @@ function bodyOut(p) {
 // (see endMatch/DEAD_ITEMS/renderDead).
 function die(p, src, cause) {
   // practice: nothing is at stake and nobody is ever out - a death is undone
-  // on the spot, back at the spawn tile with the build and the bag untouched
-  if (PRACTICE && p === player) { practiceRevive(p); return; }
+  // on the spot, back at the spawn tile (on the map its side's roost) with
+  // the build and the bag untouched; a party's guests the same as its leader
+  if (PRACTICE) { practiceRevive(p); return; }
   // what this body is worth is read before the death clears the streak it wears
   const worth = killWorth(p), bounty = bountyOf(p);
   p.deathLog = p.hurtLog; p.hurtLog = []; // the blows that did it, for the death recap (js/ui/recap.js)

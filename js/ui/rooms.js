@@ -180,7 +180,8 @@ function joinRoom(r) {
   roomsFeedClose();
   const seed = r.data && +r.data.seed;
   // a party already on the practice field: this page follows it there
-  if (r.data && +r.data.practice && !PRACTICE) { location.search = '?practice=1&join=' + r.room + '&back=1' + (netSteam() ? '&transport=steam' : ''); return; }
+  // (`practice` 2 is the arena: netHostRoom)
+  if (r.data && +r.data.practice && (!PRACTICE || (+r.data.practice === 2) !== ARENA)) { location.search = '?practice=1' + (+r.data.practice === 2 ? '&arena=1' : '') + '&join=' + r.room + '&back=1' + (netSteam() ? '&transport=steam' : ''); return; }
   if (seed && seed !== SEED) { location.search = '?seed=' + seed + '&join=' + r.room + (netSteam() ? '&transport=steam' : ''); return; }
   netJoin(r.room);
   m.joining = true;
@@ -512,10 +513,27 @@ function rematchBootJoin() {
 // the field friends join at any time and stand on the spawn (practiceSeat,
 // js/sim/practice.js). The leader's LEAVE takes everyone back to the party on
 // the title (rematchUrl, rematchHeard); a guest's LEAVE takes only them to the title.
-function practiceUrl(host) {
-  const code = roomCode(), steam = netSteam() ? '&transport=steam' : '';
-  if (host) return location.pathname + '?practice=1&net=host&back=1' + steam + (code ? (steam ? '&code=' : '&room=') + code : '');
-  return location.pathname + '?practice=1&join=' + code + '&back=1' + steam;
+// The field is the match's map; the bar's ARENA / MAP well (practiceCross)
+// takes the leader's page across to the arena side room and back the same
+// way START did, every guest told (`practice`, with `arena`) and following.
+function practiceUrl(host, arena) {
+  const code = roomCode() || JOIN_AT_BOOT || '', steam = netSteam() ? '&transport=steam' : '', a = arena ? '&arena=1' : '';
+  if (host) return location.pathname + '?practice=1' + a + '&net=host&back=1' + steam + (code ? (steam ? '&code=' : '&room=') + code : '');
+  return location.pathname + '?practice=1' + a + '&join=' + code + '&back=1' + steam;
+}
+// whether this page may take the field across: the party's leader (or a
+// page alone), never a guest - a guest goes where its leader goes
+function practiceCrossOk() { return PRACTICE && NET.role !== 'client' && !state.fade; }
+function practiceCross(arena) {
+  if (!practiceCrossOk()) return false;
+  if (NET.role === 'host') {
+    const seats = {};
+    for (const pr of NET.peers.values()) seats[pr.uid] = pr.slot;
+    try { sessionStorage.setItem(REMATCH_KEY, JSON.stringify({ mode: 'practice', seats })); } catch (e) { }
+    if (NET.peers.size) NET.transport.send('*', { t: 'practice', arena: arena ? 1 : 0 });
+    practiceGo(practiceUrl(true, arena));
+  } else practiceGo(location.pathname + '?practice=1' + (arena ? '&arena=1' : ''));
+  return true;
 }
 function practiceGo(url) {
   if (state.fade) return;
@@ -541,8 +559,11 @@ function partyPractice() {
   if (NET.peers.size) NET.transport.send('*', { t: 'practice' });
   practiceGo(practiceUrl(true));
 }
-// a guest told the party is going: after it
-function practiceHeard() { if (!PRACTICE && roomCode()) practiceGo(practiceUrl(false)); }
+// a guest told the party is going (onto the map, or across to the arena or back): after it
+function practiceHeard(msg) {
+  const arena = !!(msg && msg.arena);
+  if (roomCode() && (!PRACTICE || arena !== ARENA)) practiceGo(practiceUrl(false, arena));
+}
 // the field's two boots (js/app/boot.js): the leader's page hosting the party
 // again, a guest's page joining it
 function practiceBootHost() {

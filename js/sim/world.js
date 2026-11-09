@@ -269,7 +269,7 @@ const BORDER_MIN = 30, BORDER_MAX = 70; // forest boundary depth range (avg ~50)
 // the diagonal is ROOST_R / sqrt 2 ~ 48 tiles in). The union only ever ADDS
 // trees: past the disc the border keeps every seed's own noise, and the arc
 // itself wobbles ROOST_WOBBLE on the fine noise so it never reads as a compass
-// stroke. Not under PRACTICE - the training field is its own collar.
+// stroke. Not under ARENA - the training field is its own collar.
 const ROOST_R = 68;      // tiles from the corner
 const ROOST_WOBBLE = 3;  // +- tiles the arc wanders
 
@@ -287,7 +287,7 @@ function borderNoise(tx, ty) {
 }
 function borderDepth(tx, ty) {
   const d = warrenGrove(tx, ty, borderNoise(tx, ty));
-  if (PRACTICE) return d;
+  if (ARENA) return d;
   const c = Math.min(Math.hypot(tx, WORLD - 1 - ty), Math.hypot(WORLD - 1 - tx, ty)); // to the nearer roost corner
   if (c >= ROOST_R + ROOST_WOBBLE) return d;
   const R = ROOST_R + (vnoise(tx / 9 + 40, ty / 9 + 40) - 0.5) * 2 * ROOST_WOBBLE;
@@ -311,7 +311,7 @@ const GROVE_IN = 3;       // tiles past the warren's centre the tongue reaches
 const GROVE_TAPER = 1.4;  // tiles of depth lost per tile either side of the clearing
 let groveSites = null;    // [{ tx, ty, e, side, r }] (e: the site's depth from its nearest edge, `side` which edge), once - CAMP_SITES is further down this file
 function warrenGrove(tx, ty, d) {
-  if (PRACTICE) return d;
+  if (ARENA) return d;
   if (!groveSites) groveSites = campSites().filter((s) => CAMPS[s.key].treeline).map((s) => {
     const t = campTile(s.u, s.s), es = [t.tx, t.ty, WORLD - 1 - t.tx, WORLD - 1 - t.ty], e = Math.min(...es);
     return { tx: t.tx, ty: t.ty, e, side: es.indexOf(e), r: CAMPS[s.key].r };
@@ -552,7 +552,7 @@ function roadEdgeAt(u, side) {
 // inside it. No ends: genWorld reads the line whole (the road as laid ends on
 // the perches - roadDist's `laid`)
 function roadMainDist(fx, fy) {
-  if (PRACTICE) return 99;
+  if (ARENA) return 99;
   const o = roadOffS(fx, fy);
   return Math.abs(o) - roadEdgeAt(roadAlong(fx, fy), o < 0 ? -1 : 1);
 }
@@ -616,7 +616,7 @@ function roadNest(team) {
   return (roadNestC[team] = { u, side: team === 0 ? -1 : 1, jx, jy, nx: n.tx, ny: n.ty, x: (jx + 0.5) * TILE, y: (jy + 0.5) * TILE });
 }
 function placeRoad() {
-  if (PRACTICE) return;
+  if (ARENA) return;
   for (let ty = 0; ty < WORLD; ty++) for (let tx = 0; tx < WORLD; tx++) {
     if (!onRoad(tx, ty)) continue;
     const i = idx(tx, ty);
@@ -803,7 +803,7 @@ const CQ = { d: 99, a: 0, n: 0, fdx: 0, fdy: 0 };
 function creekAt(fx, fy) {
   const q = CQ;
   q.d = 99;
-  if (PRACTICE) return 99;
+  if (ARENA) return 99;
   const p = creekP(fx, fy), w = roadOffS(fx, fy);
   if (Math.abs(p - creekBend(w)) - CREEK_REACH >= q.d) return q.d;
   const n = p - creekMid(w);
@@ -837,15 +837,15 @@ function creekWet(fx, fy) { return creekAt(fx, fy) < 0 && !creekIced(fx, fy); }
 const ORCA_LAKE_R = CIST_ICE; // tiles from the crossing to the ice's rim
 // signed tiles from the rim (negative inside); 99 well clear of it
 function orcaLakeEdge(fx, fy) {
-  if (PRACTICE) return 99;
+  if (ARENA) return 99;
   const d = cisternR(fx, fy) - ORCA_LAKE_R;
   return d > 4 ? 99 : d;
 }
 function orcaLakeAt(fx, fy) { return orcaLakeEdge(fx, fy) < 0; }
 // does this tile hold any of the disc or the frozen creek (a tile's whole square, for the painters)
-function orcaLakeNear(tx, ty) { return !PRACTICE && cisternR(tx, ty) < CIST_FROZEN + 2; }
+function orcaLakeNear(tx, ty) { return !ARENA && cisternR(tx, ty) < CIST_FROZEN + 2; }
 // the creek frozen here: inside the ring and on in under the wall
-function creekIced(fx, fy) { return !PRACTICE && cisternR(fx, fy) < CIST_FROZEN; }
+function creekIced(fx, fy) { return !ARENA && cisternR(fx, fy) < CIST_FROZEN; }
 // the outer fords: on the diagonal, halfway between a bend's end (or the
 // cistern, on a side with no bend) and where the border woods close over
 // the creek - where the stretch is long enough to want one
@@ -894,7 +894,7 @@ function creekFord(fx, fy) {
 // Last, the cistern stands round the middle and its pool freezes over: the
 // orca's lake (placeCistern, js/sim/cistern.js).
 function placeCreek() {
-  if (PRACTICE) { placeCistern(); return; } // ...which stands down in the practice arena
+  if (ARENA) { placeCistern(); return; } // ...which stands down in the practice arena
   creekBendsC = null; creekFordsC = null;
   for (let ty = 0; ty < WORLD; ty++) for (let tx = 0; tx < WORLD; tx++) {
     const i = idx(tx, ty);
@@ -926,7 +926,7 @@ const CREEK_FISH_LANE = CREEK_HW - 0.9; // tiles either side of the water's midd
 const CREEK_FISH_R = 11;         // px from a roller's feet that a fish is caught
 const CREEK_FISH_BACK = 45;      // s before a caught fish's place in the shoal swims back
 const CF = { x: 0, y: 0, w: 0, show: 0, fdx: 1, fdy: 0 };
-function creekFishN() { return PRACTICE ? 0 : Math.ceil((WORLD - 1) * Math.SQRT2 / CREEK_FISH_GAP); }
+function creekFishN() { return ARENA ? 0 : Math.ceil((WORLD - 1) * Math.SQRT2 / CREEK_FISH_GAP); }
 // where fish i is now, into CF: world px, w along the creek, how much of it shows (0 gone or dived, 1 plain to see) and its heading
 function creekFishAt(i) {
   const now = state.windT, span = (WORLD - 1) * Math.SQRT2, half = span / 2;
@@ -954,7 +954,7 @@ function creekFishAt(i) {
 // and leaves it swimming. Two rollers can reach one fish in a step, so it is
 // contested, not first-come.
 function creekFishCatch(p) {
-  if (PRACTICE || p.hp >= p.maxHp || creekAt(p.x / TILE - 0.5, (p.y + 4) / TILE - 0.5) > 0.6) return;
+  if (ARENA || p.hp >= p.maxHp || creekAt(p.x / TILE - 0.5, (p.y + 4) / TILE - 0.5) > 0.6) return;
   const n = creekFishN(), g = state.creekGone;
   for (const k in g) if (state.windT > g[k] + 1) delete g[k]; // swum back in: forgotten
   for (let i = 0; i < n; i++) {
@@ -993,7 +993,7 @@ const BUSH_RIVER_W = [26, 48, 70];       // tiles along the creek either way fro
 const BUSH_NUDGE = 4, BUSH_SPACING = 3;  // the search for open snow, and the least gap between two bushes
 function placeBushes() {
   for (let i = 0; i < objects.length; i++) if (objects[i] && objects[i].type === 'bush') objects[i] = null;
-  if (PRACTICE) return;
+  if (ARENA) return;
   const placed = [];
   const open = (tx, ty) => {
     if (!inWorld(tx, ty)) return false;
