@@ -256,6 +256,9 @@ file is a save file.
   stats are added together, so no win on any slot is lost). Boot calls it **before
   `loadSettings()`**, which reads `PROFILE.settings()`. **A fresh install is pre-named** from
   `NAME_POOL` — winter words, every one clean under the validator — and lands on the title.
+  **On Steam a name nobody chose is the Steam name**: boot.js hands `steamBridge.info()`'s name to
+  `steamName(raw)`, which cuts it to `A-Z0-9` and `NAME_MAX` and takes it while `named` is false
+  (`setName` sets it on a change; an older save counts as named unless its name is a pool word).
 - **Who you are**: `name()`, `setName(raw)` (validate()'s result; nothing written on a
   refusal), `rollName()`, `hero()`, `setHero(i)`. `HERO_N` is exported so js/sprites/looks.js
   can assert its outfits against it at load.

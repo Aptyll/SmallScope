@@ -48,6 +48,8 @@ if (ARENA) {
 }
 layDrifts();         // the snow's depth, in the lee of everything worldgen stood up (js/sim/depth.js)
 initPlayers();
+// on Steam, a name the player never chose becomes their Steam name (PROFILE.steamName)
+if (window.steamBridge && steamBridge.info) steamBridge.info().then((i) => { if (i && i.ready && PROFILE.steamName(i.name)) player.name = PROFILE.name(); }).catch(() => {});
 // the match's role for this screen (js/net/net.js): ?net=host&room=R hosts a
 // room on the dev server's relay, ?net=client&room=R joins it; nothing else
 // (and any file:// page) is solo. A lobby hands the role in instead, later.
