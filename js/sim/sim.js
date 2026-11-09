@@ -952,7 +952,7 @@ function playerPlunge(p) {
   // easily, the creek's three only from its bank, so a roll that runs out over
   // the current goes in. The creek asks the feet against its banks as drawn
   // (creekWet), so nobody goes in off a pixel of snow or the frozen stretch.
-  if (p.fallT <= 0) {
+  if (p.fallT <= 0 && !heroSwim(p)) { // ...unless the hero swims (HERO_SWIM, js/sim/heroes.js)
     const htx = Math.floor(p.x / TILE), hty = Math.floor((p.y + 4) / TILE);
     const g = inWorld(htx, hty) ? ground[idx(htx, hty)] : 0;
     // a tile an ice break holds open is wet only where its pixels are: the

@@ -385,6 +385,23 @@ const CLASSES = [
     kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1, chargeMul: 0.55,
       bowCharge: BOW_CHARGE, nock: 0.4, spdDmg: 0, dodgeSpeed: DODGE_SPEED },
   },
+  {
+    // a named hero (js/sim/maris.js): a tank who catches one rival. Quick and chilling on
+    // ice and by open water, she swims where others go in; much weaker on dry ground far
+    // from it, and once she has surfaced she has no way out
+    name: 'MARIS', role: 'THE ICE DIVER', body: 1, passive: 'coldwater', // HERO_PASSIVE, js/sim/maris.js
+    look: { sex: 1, tone: 2, hair: 1, hairCol: 0, beard: 0, face: 1 },
+    blurb: ['THE THING UNDER THE ICE.', 'ON ICE AND BY THE WATER YOU ARE QUICK, AND YOUR STRIKES CHILL.', 'ONCE YOU SURFACE YOU HAVE NO WAY OUT.'],
+    story: "SHE DOVE FOR THE EMPIRE'S SUNKEN GRAIN BARGES IN WATER NOBODY ELSE WOULD TOUCH, AND WAS SENT AWAY WHEN SHE WOULD NOT DIVE FOR A SUNKEN TAX CHEST. SHE SAYS THE ORCA IN THE CISTERN POOL IS THE ONLY HONEST THING IN THE VALLEY. SHE GIVES IT THE FIRST FISH OF EVERY CATCH.", // the wiki's hero page (docs/dev/lore.md)
+    attack: { name: 'HARPOON', art: 'sword', cycle: 32 / 60, kb: 1.1, cut: { reach: 28, half: 0.8 } }, // a thrust: a little longer and narrower than the longsword
+    skins: MARIS_SKINS, skinPal: MARIS_PAL, skinSlot: 'maris',
+    blade: 'harpoon', // her HARPOON in her hands (HERO_BLADES, js/draw/maris.js)
+    base: { hp: 126, dmg: 14, armor: 22, ap: 0, haste: 0, ms: PLAYER_SPEED - 2 },
+    grow: { hp: 10, dmg: 1.2, as: 0.009, armor: 2.7 },
+    rankOrder: [0, 2, 1], // the harpoon, the undertow, the brace
+    kit: { iceMax: 1.2, iceSteer: 3.6, slideMin: 70, fatigue: 0.7, chargeMul: 0.7,
+      bowCharge: 0.75, nock: 0.5, spdDmg: 5, dodgeSpeed: 220 },
+  },
 ];
 // the body a hero wears - its sprites and its 48 px model: a hero that names
 // none is its own (HUNTER 0, WARRIOR 1), a named hero borrows one
@@ -762,6 +779,9 @@ class Player {
     // RUPES (js/sim/rupes.js): his snowpack (0..1, PACK_LAYERS layers) and the seconds since a
     // hit fed it; the px his avalanche has rolled (its size)
     this.pack = 0; this.packIdle = 0; this.avaD = 0;
+    // MARIS (js/sim/maris.js): COLD WATER's clock, her brace (its clock and the share it cuts),
+    // the s left under the snow, and the spot her reel or her dive is headed to
+    this.coldT = 0; this.braceT = 0; this.braceCut = 0; this.underT = 0; this.reelX = 0; this.reelY = 0;
     // VARRO (js/sim/varro.js): the body LUNGE is leaping at, SNAP's strikes still to land and
     // their clock; and on any body, whose mark it wears (LUNGE) and until when
     this.leapQ = null; this.snapN = 0; this.snapT = 0; this.packBy = -1; this.packUntil = 0;

@@ -417,6 +417,7 @@ const BOT_BUILDS = {
   HIEMS: ['storm', 'marsh', 'emberb', 'slate', 'deeprod', 'clock'], // power and haste for more chills, then the armor a control mage standing in the fight needs
   RUPES: ['glacier', 'hobnail', 'bearskin', 'stonehide', 'brambmail', 'hearth'], // armor and health first, the snow takes the rest; the boots to reach the fight
   NIX: ['beartooth', 'quick', 'feathers', 'maul', 'sunstone', 'collar'], // the blade first, the speed to reach a lone rival, then more blade
+  MARIS: ['glacier', 'hobnail', 'stonehide', 'bearskin', 'brambmail', 'hearth'], // a tank's: armor and health, the boots for reaching the water
   AURA: ['storm', 'emberb', 'deeprod', 'marsh', 'clock', 'slate'], // the reach first: power and haste for more stars, then the boots, then the armor a mage caught close needs
   VARRO: ['beartooth', 'hobnail', 'fang', 'quick', 'stonehide', 'collar'], // the bite first, the legs to stay on the mark, then the health a diver needs
 };
