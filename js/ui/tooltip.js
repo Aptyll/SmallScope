@@ -92,7 +92,7 @@ function tipRail(c) {
 }
 function tipGold() {
   return { title: 'GOLD', tcol: '#f5c542', kind: 'PURSE', icon: SPRITES.itemGold, plate: BAG_WELL, rim: '#3c4048',
-    rows: [['CARRIED', String(inv.gold), '#f5c542']], notes: [] };
+    rows: [['CARRIED', String(player.gold), '#f5c542']], notes: [] };
 }
 // a class ability well - the strip's in play (cls omitted: the local player's
 // class, live cooldown, the cast hint), or the lobby's stage (cls given:

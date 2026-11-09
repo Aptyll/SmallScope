@@ -25,8 +25,8 @@
 // the saved valley and not the fresh one.
 
 // ---- tuning ---------------------------------------------------------------
-const SAVE_V = 4;           // the body's shape; a body of another shape is refused, never half-read, so
-                            // nothing below fills in a field an older save lacked (4: the survival leftovers cut)
+const SAVE_V = 5;           // the body's shape; a body of another shape is refused, never half-read, so
+                            // nothing below fills in a field an older save lacked (4: the survival leftovers cut; 5: the wallet is p.gold)
 
 // ---- what is saved ----------------------------------------------------------
 // [name, get, put]: get() hands the live value in, put(v) takes the decoded
@@ -42,7 +42,7 @@ const SAVE_ROOTS = [
   ['state', () => { const o = {}; for (const k of Object.keys(state)) if (!SAVE_STATE_SKIP.has(k)) o[k] = state[k]; return o; },
     (v) => Object.assign(state, v)],
   ['players', ...saveArr(players)],
-  ['localId', () => localId, (v) => { localId = v; player = players[v]; inv = player.inv; }],
+  ['localId', () => localId, (v) => { localId = v; player = players[v]; }],
   ['animals', ...saveArr(animals)], ['structures', ...saveArr(structures)], ['robots', ...saveArr(robots)],
   ['arrows', ...saveArr(arrows)],
   ['particles', ...saveArr(particles)], ['floaters', ...saveArr(floaters)], ['footprints', ...saveArr(footprints)],

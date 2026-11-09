@@ -129,7 +129,7 @@ the woods are side income, and the road makes you level**, and the late levels c
 [Economy](gameplay/economy-one-currency.md), [the counter](gameplay/the-merchants-counter.md),
 [Hero levels](multiplayer.md#hero-levels).
 
-**You carry gold and items, and nothing else.** The wallet (`p.inv`) is gold, and the six item
+**You carry gold and items, and nothing else.** The wallet (`p.gold`) is gold, and the six item
 slots are the build. There is no backpack and no food pouch.
 
 **Heals are League's.** A **health potion** (50 gold, up to five stacked in one item slot) heals

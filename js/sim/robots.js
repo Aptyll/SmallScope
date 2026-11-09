@@ -79,7 +79,7 @@ function robotDies(b, src) {
   heroWreck(b, src); // what a hero makes of a wreck near them (HERO_WRECK: FABER's spare parts)
   const M = heroMachine(b);
   if (M) {
-    if (src && src.inv && src.team !== b.team) awardGold(src, M.pay.gold, b.x, b.y);
+    if (src instanceof Player && src.team !== b.team) awardGold(src, M.pay.gold, b.x, b.y);
     shareXp(b, M.pay.xp, 1 - b.team, src);
     return;
   }
@@ -90,7 +90,7 @@ function robotDies(b, src) {
   // the road pays, which is what makes walking out to meet a wave worth the walk. One the waves, a tower or a
   // beast finish pays nobody, and its rivals near it see the coin go grey.
   // Six or seven a wave, so no feed line: the fight is the news, not each wreck.
-  if (src && src.inv && src.team !== b.team) { awardGold(src, soldierBounty(b), b.x, b.y); farmHit(src, b.x, b.y - 6); }
+  if (src instanceof Player && src.team !== b.team) { awardGold(src, soldierBounty(b), b.x, b.y); farmHit(src, b.x, b.y - 6); }
   else coinPop(b.x, b.y - 6, true, 1 - b.team);
   shareXp(b, Math.round(SOLDIER_XP * soldierType(b).xp), 1 - b.team, src);
 }

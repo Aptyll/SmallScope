@@ -250,7 +250,7 @@ function buyItem(p, id) {
   if (!Object.hasOwn(BUILD_ITEMS, id) || !merchNear(p)) { shopDeny(p); return false; }
   if (id === 'potion') return buyPotion(p);
   const c = itemCost(p, id);
-  if (p.inv.gold < c.gold || itemRoom(p, c.used) < 1 || bootsClash(p, id, c.used)) { shopDeny(p); return false; }
+  if (p.gold < c.gold || itemRoom(p, c.used) < 1 || bootsClash(p, id, c.used)) { shopDeny(p); return false; }
   spendGold(p, c.gold);
   for (const j of c.used) p.items[j] = null;
   p.items[p.items.indexOf(null)] = id;
@@ -350,7 +350,7 @@ function potionRoom(p) {
 }
 function buyPotion(p) {
   const price = BUILD_ITEMS.potion.price;
-  if (p.inv.gold < price || !potionRoom(p)) { shopDeny(p); return false; }
+  if (p.gold < price || !potionRoom(p)) { shopDeny(p); return false; }
   spendGold(p, price);
   if (potionSlot(p) < 0) { p.items[p.items.indexOf(null)] = 'potion'; p.potions = 0; }
   p.potions++;
@@ -458,7 +458,7 @@ function botStrayPart(p) {
 const BOT_POTIONS = 2;
 function botWantsPotion(p, first) {
   const n = potionSlot(p) >= 0 ? p.potions : 0;
-  if (n >= (first ? 1 : BOT_POTIONS) || p.inv.gold < BUILD_ITEMS.potion.price || !potionRoom(p)) return false;
+  if (n >= (first ? 1 : BOT_POTIONS) || p.gold < BUILD_ITEMS.potion.price || !potionRoom(p)) return false;
   return n > 0 || p.items.filter((x) => x === null).length > 1 || !botNextItem(p);
 }
 // what a bot would buy RIGHT NOW with its purse: the next item whole, or the
@@ -468,7 +468,7 @@ function botItemBuy(p) {
   const id = botNextItem(p);
   if (!id) return null;
   const held = p.items.slice();
-  const can = (k) => { const c = itemCost(p, k); return p.inv.gold >= c.gold && itemRoom(p, c.used) >= 1 && !bootsClash(p, k, c.used); };
+  const can = (k) => { const c = itemCost(p, k); return p.gold >= c.gold && itemRoom(p, c.used) >= 1 && !bootsClash(p, k, c.used); };
   const walk = (k) => {
     if (can(k)) return k;
     for (const q of BUILD_ITEMS[k].from || []) {

@@ -254,10 +254,10 @@ function snapApplySingles(s) {
   if (s.falco) [falcoHawks, falcoKnives].forEach((L, i) => { L.length = 0; for (const w of unpack(s.falco[i])) L.push(w); });
 }
 // a field onto an entity the game holds by identity: a nested plain object
-// is merged into the one already there (a player's `inv` is aliased by the
-// HUD, its `kit` and `look` are read through the body), the
+// is merged into the one already there (a player's `kit` and `look` are
+// read through the body), the
 // rest is set
-const SNAP_MERGE = new Set(['inv', 'kit', 'spawn', 'look']); // the only fields merged in place: plain data the game holds by handle
+const SNAP_MERGE = new Set(['kit', 'spawn', 'look']); // the only fields merged in place: plain data the game holds by handle
 function snapAssign(e, k, v) {
   const old = e[k];
   // never a token (it names another entity; merging its two keys into the
@@ -312,7 +312,7 @@ function snapApplyTiles(s) {
   return tiles;
 }
 // Writes a FULL snapshot into the singletons. Existing Player and eagle
-// objects are kept and overwritten field by field - `player`, `inv` and the
+// objects are kept and overwritten field by field - `player` and the
 // drop point at them - every other array is rebuilt, and each entity is
 // registered under the id the host dealt it. Tokens are resolved last, once
 // everything they can name exists again.

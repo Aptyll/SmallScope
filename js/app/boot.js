@@ -237,7 +237,6 @@ window.DBG = {
   eagleFlee: (team, src) => eagleFlee(state.drop.eagles[team], src),
   teamEagleDown,
   get player() { return player; },
-  get inv() { return player.inv; },
   // goldCellRect is the always-on gold readout on the hud strip
   goldCellRect, shortNum, hudPress,
   // hand a player to an AI, a human, or nobody (a ghost at its camp)

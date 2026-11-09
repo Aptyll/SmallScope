@@ -432,7 +432,7 @@ function aiSpend(p, inp, steerTo) {
     // (ITEM_FIGHT_T)
     const nc = next && itemCost(p, next);
     const fits = nc && (itemRoom(p, nc.used) >= 1 || botStrayPart(p) >= 0);
-    if (next && fits && !merchNear(p) && p.inv.gold >= nc.gold && p.fightT <= 0) {
+    if (next && fits && !merchNear(p) && p.gold >= nc.gold && p.fightT <= 0) {
       const m = robots.find((b) => b.merchant && !b.dead && b.team === p.team);
       const c = m && (stallUp(m.stall) ? m.stall : m.hopT > 0 ? null : m);
       const pt = c && counterPt(c);
@@ -534,7 +534,7 @@ function aiRecall(p) {
   if (unitsNear(p, p.x, p.y, AI_RECALL_SAFE).some((q) => (q instanceof Player || robots.includes(q)) && inSight(p.team, q))) return; // what its side sees, as a player would
   const inp = p.input, low = p.hp < p.maxHp * AI_RECALL_HP;
   const next = p.items && botNextItem(p), nc = next && itemCost(p, next);
-  const rich = !!nc && p.fightT <= 0 && p.inv.gold >= nc.gold && (itemRoom(p, nc.used) >= 1 || botStrayPart(p) >= 0);
+  const rich = !!nc && p.fightT <= 0 && p.gold >= nc.gold && (itemRoom(p, nc.used) >= 1 || botStrayPart(p) >= 0);
   const go = p.recallT <= 0 && (low || rich) && !recallBlocked(p) && Math.hypot(e.x - p.x, e.y - p.y) > AI_RECALL_FAR;
   const wait = roostRing(p) && p.fightT <= 0 && p.hp < p.maxHp * AI_RING_FULL; // a body still in a fight is the ladder's
   if (!go && !(p.recallT > 0) && !wait) return;

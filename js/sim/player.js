@@ -459,7 +459,7 @@ function healPlayer(p, n) {
 // lifetime gold (the scoreboard's rank and the post-game GOLD). Gold buys;
 // it no longer teaches - XP is gainXp's alone.
 function gainGold(p, n) {
-  p.inv.gold += n;
+  p.gold += n;
   p.earned += n;
   // lifetime total, coalesced - see profile.js. Practice gold is play money:
   // a free room must never farm the tech tree's points.
@@ -470,12 +470,12 @@ function gainGold(p, n) {
 // player already spent, so counting it would turn a buy and a sell into a
 // scoreboard farm rather than into a trade. Everything that
 // EARNS gold - a fell, a kill, the clock - still goes through gainGold.
-function tradeGold(p, n) { if (p && n > 0) p.inv.gold += n; }
+function tradeGold(p, n) { if (p && n > 0) p.gold += n; }
 // Gold leaving a wallet: the shop's one way to take it, so the post-game
 // record (goldSpent, js/ui/lobby.js) never misses a purchase. The caller has
 // already checked the purse holds n.
 function spendGold(p, n) {
-  p.inv.gold -= n;
+  p.gold -= n;
   if (n > 0) p.goldSpent += n;
 }
 // Gold is never a physical drop: every source pays the earner on the spot
@@ -640,7 +640,7 @@ class Player {
     this.look = Object.assign({}, CLASSES[0].look); // the hero's face, set again by every setClass
     this.skins = {};                   // hero slot -> the look worn on that hero (heroSkinOf); a person's, from their profile
     this.spawn = { tx: WORLD >> 1, ty: WORLD >> 1 }; // landing tile once the eagle drops this player (the bot brain's "home")
-    this.inv = { gold: START_GOLD };    // the wallet is currency only; a start that buys a first part and a potion
+    this.gold = START_GOLD;             // the wallet: currency only, no ceiling; a start that buys a first part and a potion
     this.cls = 0;                       // CLASSES index; the lobby sets the local one
     this.position = -1;                 // POSITIONS index the draft gave this seat, -1 none (draftReveal, js/ui/draft.js); the host's alone, never on the wire
     this.skillPts = 1;                  // unspent; level 1 starts with one, each levelUp adds one - spent on ability levels (buyAbilityLv, js/sim/abilities.js)
@@ -837,7 +837,6 @@ class Player {
 
 const players = [];  // every player; filled by initPlayers() at boot
 let player = null;   // the local player - camera, HUD, cursor and audio follow this one
-let inv = null;      // === player.inv, the counters the HUD draws
 // which slot THIS screen's player sits in. Nothing about a slot makes it the
 // local one - slot 0 is only the default - so anything that means "me" reads
 // `player` (or `p === player`), never an id: an online match seats this screen
@@ -880,7 +879,6 @@ function initPlayers(roster, local) {
   }
   localId = local;
   player = players[local];
-  inv = player.inv;
   applyProfile(); // the local player is the profile: its name and its last hero
 }
 
