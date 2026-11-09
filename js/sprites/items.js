@@ -1,30 +1,10 @@
 'use strict';
-// Goods and their icons: wood, the health potion, the gold piece and its
+// Goods and their icons: the health potion, the gold piece and its
 // live icon, the merchant's sack, and the axe and bow a drop shows on the snow.
 (() => {
   const { bake, liveIcon } = SPR;
 
   // ---------------------------------------------------------------- items
-  const ITPAL = {
-    '.': null,
-    'o': '#3c2a1e',
-    'u': '#8a6142',
-    'U': '#a3794f',
-    'v': '#6b4a30',
-    'c': '#d9ad72',
-    'C': '#b9884f',
-  };
-
-  const itemWood = [
-    '........',
-    '..oooo..',
-    '.oUUUuo.',
-    'oCcuUuvo',
-    'occuuvo.',
-    '.ovvvo..',
-    '..ooo...',
-    '........',
-  ];
   // THE HEALTH POTION (BUILD_ITEMS.potion, js/sim/items.js): a round red
   // flask on a short neck under a cork, 11 wide so it mirrors on one middle
   // column. Flat planes - the lit red, its shade down the right and along the
@@ -408,7 +388,6 @@
   const goldFrames = nugget.map((f) => bake(f, NUGPAL));
 
   Object.assign(SPRITES, {
-    itemWood: bake(itemWood, ITPAL),
     // THE ANIMATED GOODS. `itemAnim[key]` is the frames; `SPRITES[key]`
     // is one LIVE canvas per icon that stepItemIcons (js/render.js) stamps the
     // current frame into, once a frame, off one clock. That indirection is the

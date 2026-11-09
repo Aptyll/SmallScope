@@ -587,24 +587,14 @@ Kept on purpose — do not "clean up", and a verbatim code move carries it along
   one — a camp that wants a flock stands it up again with `deadTree` props and a perching spawn
   beside `spawnCampMonster` (js/sim/camps.js) ([Birds](gameplay/wildlife.md#birds-the-flock-dormant)). The
   `flushBirds(campAt(...))` calls on a felled snag are the live hooks it would wake through.
-- `SPRITES.imp` (the `imp1`/`imp2` grids, `IPAL`) is baked but unreferenced since the bots
-  got their own grids — kept in case the imp returns.
 - A tree's `variant` (rolled by `randi(0, 1)` in `genWorld`) picks no art any more: there is one
   pine in twenty-four bend frames, `treeFrame` reads the wind for the lean it wears, and the tile's
   own `hash2` mirrors it, gives it a standing lean, a palette row and a nudge.
   **The roll has to stay** — removing an `rng()` call inside `genWorld` reshuffles every
   existing seed. `deadTree` still uses its `variant` for real.
-- `SPRITES.spikes`, `SPRITES.fire`, `SPRITES.torch`, and the three heart sprites are baked but
-  unreferenced since the buildables/HUD removal — kept in case those features return (the heart
-  grids also carry the file's mangled-byte repair).
 - The `<` glyph in [js/app/font.js](../../js/app/font.js) was added for the removed resolution cycle
   control and is currently unreferenced — kept as generic font coverage. (`>` is live again: it
   marks your own row on the scoreboard.)
-- `SPRITES.raider` (+ `RDPAL`) is still baked but unreferenced since the
-  raider removal — kept in case a threat returns; the raider set shares the player grids
-  (as do the four `playerTeam` sets, which are the live ones).
-- `SPRITES.itemWood` is baked but unreferenced since the single-currency change (no wood drops
-  or HUD counters).
 - `SWING_TOOLS[SWING_BOW].icon` (`'itemBow'`) is unread —
   `drawHeldTool` puts the hero's own weapon in the hands at rest, and only the axe row's
   icon is still resolved through the table. The row is kept so `SWING_TOOLS` stays one entry per
