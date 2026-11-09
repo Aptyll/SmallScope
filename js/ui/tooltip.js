@@ -159,6 +159,7 @@ function tipAt(mx, my) {
   if (rc) return tipRail(rc);
   const ch = cheatHit(mx, my);
   if (ch && ch.kind === 'cell') return tipCheat(ch.i);
+  if (ch && ch.kind === 'hero') return tipCheatHero(ch.h);
   const abb = abBuyHit(mx, my);
   if (abb >= 0) return tipClassAb(abb); // the buy plate describes the ability it upgrades
   const sh = stripHit(mx, my);
