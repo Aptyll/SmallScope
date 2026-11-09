@@ -62,6 +62,8 @@ function scoreGroups() {
   return groups;
 }
 
+// a row's name: a person's own, a bot's hero (a seat number tells you nothing)
+function boardName(p) { return isHuman(p) || !CLASSES[p.cls] ? p.name : CLASSES[p.cls].name; }
 function renderScoreboard() {
   const groups = scoreGroups();
   if (!groups.length) return;
@@ -100,12 +102,13 @@ function renderScoreboard() {
       ctx.fillRect(x + 8, ry, SB_W - 12, SB_ROW - 2);
       ctx.globalAlpha = dim;
       if (p === player) drawPixelTextShadow(ctx, '>', x + 9, ry + 1, '#ffd95c', shadow);
-      drawPixelTextShadow(ctx, p.name, x + 14, ry + 1, playerTint(p), shadow);
+      const nm = boardName(p);
+      drawPixelTextShadow(ctx, nm, x + 14, ry + 1, playerTint(p), shadow);
       if (p.dead) {
         // eliminated reads OUT; a respawn-pending player shows the countdown
         // instead, since "OUT" on someone back in 3s is actively wrong
         const tag = p.eliminated ? tr('board.out') : tr('board.wait', { s: Math.ceil(p.respawnT) });
-        drawPixelTextShadow(ctx, tag, x + 18 + pixelTextWidth(p.name), ry + 1, '#8f9cc4', shadow);
+        drawPixelTextShadow(ctx, tag, x + 18 + pixelTextWidth(nm), ry + 1, '#8f9cc4', shadow);
       }
       const vals = [String(p.level), String(p.inv.gold), p.kills + '/' + p.deaths + '/' + (p.assists || 0), String(p.farm)];
       const cols = ['#cfe0ff', '#f2cc6a', '#ff9a8a', '#cfe0ff'];

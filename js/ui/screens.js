@@ -466,7 +466,7 @@ function deadKey(k) {
 function deadClick() {
   if (state.fade) return;
   if (state.deadView === 'scores') { scoresClick(); return; }
-  if (replayFull()) { if (rpCloseHit()) replayClose(); else recapClick(); return; } // the close box, and the recap's fold buttons (js/ui/recap.js)
+  if (replayFull()) { if (!recapClick()) replayClose(); return; } // the recap's fold buttons (js/ui/recap.js); any other press puts it away, as its keys do
   if (state.deadView === 'spec') {
     const d = specHit(); if (d) { specNext(d); SFX.pickup(); }
     return;
