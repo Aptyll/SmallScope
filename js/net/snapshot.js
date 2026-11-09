@@ -43,6 +43,7 @@ const SNAP_SKIP = new Set(['input', 'ai', 'nav', '_fx', '_fy', '_tx', '_ty', '_t
   'faceT', 'trickleT', 'footT', 'footSide', 'puffT', 'dodgeDustT', 'slideDustT', 'burnTick', 'swingCd',
   'idleT', 'wary', 'thinkT', 'moveT', 'turnT', 'emT', 'spook', 'biteCd', 'alertT', 'dashT', 'dashX', 'dashY', 'fleeGoal', 'goal',
   'avoidT', 'baySite', 'zipLast', 'pingLog',
+  'shedT', // a pine's rest between two sheds (js/sim/shed.js): the puff itself crosses as a burst
   'hurtLog', // the blows a body is taking (recapNote): only a death's copy, deathLog, is ever drawn
   'position']); // a seat's drafted position (POSITIONS, player.js): the host's bots read it, and the rivals' stay hidden as in the draft
 // (a name here is skipped on EVERY kind that carries it: `fleeT` is not one,
@@ -353,11 +354,25 @@ function snapApply(s) {
 // any base in the ring can be reconstructed tile by tile without a shadow
 // of the whole world per tick.
 const HIST_KEEP = 75; // flush ticks kept in the ring: 5 s at 15 Hz. An ack older than this is a full sync
-const snapShadow = { objs: null, objN: null, ground: null, hist: [], byTick: new Map(), scanAt: 0, tiles: null };
+const snapShadow = { objs: null, objN: null, ground: null, hist: [], byTick: new Map(), sweepAt: 0, swept: false, tiles: null, late: 0, lateBy: {} };
+// The tiles a host looks at on a flush step (snapTileHot): of ~54k tiles, a
+// few hundred ever change in a match (pines hit, bushes regrowing, the
+// buildings' clocks), so the flush step checks only the tiles that can be
+// changing now - every structure, every tile with a clock running (objTimed,
+// js/sim/sim.js), every tile placeObj wrote and every tile seen changing in
+// the last SNAP_HOT_KEEP steps - and the steps between flushes sweep the
+// whole map behind them (snapTileSweep), SNAP_SWEEP steps to go round once.
+// A change only the sweep found is counted (late, netStatus().tileLate):
+// it reached the clients up to a sweep late, and its writer should mark it
+const SNAP_SWEEP = 45;      // sweeping steps per round of the map: about 1 s at 60 Hz with every SNAP_EVERY-th step a flush
+const SNAP_HOT_KEEP = 120;  // steps a tile stays on the hot list after it last changed or was marked
+const snapHot = new Map();  // tile index -> the tick it was last marked or seen changing
+function snapTouch(i) { if (snapShadow.objs) snapHot.set(i, state.tick); } // placeObj's mark (js/sim/world.js); nothing until the host's first scan
 function snapShadowReset() {
   snapShadow.objs = null; snapShadow.objN = null; snapShadow.ground = null;
   snapShadow.hist = []; snapShadow.byTick = new Map();
-  snapShadow.scanAt = 0; snapShadow.tiles = null;
+  snapShadow.sweepAt = 0; snapShadow.swept = false; snapShadow.tiles = null;
+  snapShadow.late = 0; snapShadow.lateBy = {}; snapHot.clear();
 }
 snapShadowReset();
 function snapSame(va, vb) {
@@ -425,43 +440,63 @@ function snapHistoryPush() {
   }
   h.structs = structures.map((o) => idx(o.tx, o.ty)).join(',');
   h.structsMoved = !p || p.structs !== h.structs;
-  // the tiles the steps since the last entry have not scanned yet (all of
-  // them when nothing ran snapTileScan between two pushes)
-  snapTileScan(objects.length);
-  h.tiles = sh.tiles; sh.tiles = null; sh.scanAt = 0;
+  // the tiles that can be changing now, when the steps since the last entry
+  // swept their share of the map; every tile when none did (a proof calling
+  // this straight, the first push, a DBG.netVerify tick)
+  if (sh.swept) snapTileHot(); else snapTileScan(0, objects.length, false);
+  h.tiles = sh.tiles; sh.tiles = null; sh.swept = false;
   if (!sh.ground) { sh.ground = new Uint8Array(ground); }
   else for (let i = 0; i < ground.length; i++) if (ground[i] !== sh.ground[i]) { (h.groundCh = h.groundCh || new Set()).add(i); sh.ground[i] = ground[i]; }
   sh.hist.push(h); sh.byTick.set(tick, h);
   while (sh.hist.length > HIST_KEEP) sh.byTick.delete(sh.hist.shift().tick);
   return h;
 }
-// Tiles against the newest shadow, up to tile `end` from where the last scan
-// stopped: a tile whose primitive fields all match is skipped without packing
-// (most of the world). A host calls this a slice at a time on the steps
-// between two flushes (netHostFlush), so the world's ~50k tiles cost a
-// quarter each step instead of all at once on the flush step - which was a
-// hitch on every fourth frame. A change lands in the next entry, the same as
-// one made on a later step; the cut is the union of entries, so nothing is
-// lost, only a tile a slice already passed waits one more interval.
-function snapTileScan(end) {
-  const sh = snapShadow;
-  if (!sh.objs) { sh.objs = new Array(objects.length).fill(null); sh.objN = new Uint8Array(objects.length); }
-  const stop = Math.min(end, objects.length);
-  for (let i = sh.scanAt; i < stop; i++) {
-    const o = objects[i], prev = sh.objs[i];
-    if (!o && !prev) continue;
-    if (o && prev && snapTileSame(o, prev, sh.objN[i])) continue;
-    const packed = o ? pack(o, 0, true) : null;
-    sh.objN[i] = packed ? Math.min(255, Object.keys(packed).length) : 0;
-    const f = packed && prev ? snapFieldDiff(packed, prev) : null;
-    sh.objs[i] = packed;
-    if (packed && prev && !f) continue;
-    let ns = null; // null: made or unmade - whole
-    if (f) { ns = new Set(Object.keys(f)); if (f.$del) { ns.delete('$del'); for (const k of f.$del) ns.add(k); } }
-    const t = sh.tiles = sh.tiles || new Map(), cur = t.get(i);
-    if (ns === null || cur === null) t.set(i, null); else if (!cur) t.set(i, ns); else for (const k of ns) cur.add(k);
+// Tiles `from` to `to` against the newest shadow: a tile whose primitive
+// fields all match is skipped without packing (most of the world). A change
+// is recorded for the next ring entry and keeps the tile hot; `sweep` counts
+// one that nothing had marked (snapShadow.late)
+function snapTileScan(from, to, sweep) {
+  const sh = snapShadow, first = !sh.objs; // the first scan meets every tile as new: none of them is hot for it
+  if (first) { sh.objs = new Array(objects.length).fill(null); sh.objN = new Uint8Array(objects.length); }
+  const stop = Math.min(to, objects.length);
+  for (let i = from; i < stop; i++) {
+    if (!snapTileAt(i) || first) continue;
+    if (sweep && !snapHotHas(i)) { sh.late++; const o = objects[i], k = o ? o.type : '-'; sh.lateBy[k] = (sh.lateBy[k] || 0) + 1; }
+    snapHot.set(i, state.tick);
   }
-  if (stop > sh.scanAt) sh.scanAt = stop;
+}
+// one tile against its shadow: true when it changed (and the change is recorded)
+function snapTileAt(i) {
+  const sh = snapShadow, o = objects[i], prev = sh.objs[i];
+  if (!o && !prev) return false;
+  if (o && prev && snapTileSame(o, prev, sh.objN[i])) return false;
+  const packed = o ? pack(o, 0, true) : null;
+  sh.objN[i] = packed ? Math.min(255, Object.keys(packed).length) : 0;
+  const f = packed && prev ? snapFieldDiff(packed, prev) : null;
+  sh.objs[i] = packed;
+  if (packed && prev && !f) return false;
+  let ns = null; // null: made or unmade - whole
+  if (f) { ns = new Set(Object.keys(f)); if (f.$del) { ns.delete('$del'); for (const k of f.$del) ns.add(k); } }
+  const t = sh.tiles = sh.tiles || new Map(), cur = t.get(i);
+  if (ns === null || cur === null) t.set(i, null); else if (!cur) t.set(i, ns); else for (const k of ns) cur.add(k);
+  return true;
+}
+// would the flush step have looked at tile i (snapTileHot)? Only asked of a tile that changed
+function snapHotHas(i) { const o = objects[i]; return snapHot.has(i) || !!o && (objTimed.has(o) || structures.indexOf(o) >= 0); }
+// one sweeping step's share of the map, going round (netHostFlush)
+function snapTileSweep() {
+  const sh = snapShadow, n = objects.length;
+  if (!sh.objs) return; // the first push scans everything
+  const len = Math.ceil(n / SNAP_SWEEP), from = sh.sweepAt, to = Math.min(n, from + len);
+  snapTileScan(from, to, true);
+  sh.sweepAt = to >= n ? 0 : to; sh.swept = true;
+}
+// the flush step's tiles: every one that can be changing now (snapHot, above)
+function snapTileHot() {
+  const tick = state.tick;
+  for (const [i, t] of snapHot) { if (tick - t > SNAP_HOT_KEEP) snapHot.delete(i); else if (snapTileAt(i)) snapHot.set(i, tick); }
+  for (const o of structures) { const i = idx(o.tx, o.ty); if (snapTileAt(i)) snapHot.set(i, tick); }
+  for (const o of objTimed) { const i = idx(o.tx, o.ty); if (objects[i] === o && snapTileAt(i)) snapHot.set(i, tick); }
 }
 // the ring entry at a tick, or null when it has aged out (or was never pushed)
 function snapHistoryAt(tick) { return snapShadow.byTick.get(tick) || null; }

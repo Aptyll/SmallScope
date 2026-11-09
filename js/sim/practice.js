@@ -564,7 +564,7 @@ function agEndRound() {
   agame.phase = 'end'; agame.t = 0; agame.dustT = 0;
   for (const t of ptargets) { const f = ptFace(t); burst(f.x, f.y, '#f4f7ff', 5, 40, 0.4, true); }
   ptargets.length = 0;
-  for (const o of agFurniture) objects[idx(o.tx, o.ty)] = o;
+  for (const o of agFurniture) setTile(idx(o.tx, o.ty), o);
   if (agame.record) SFX.record(); else SFX.place();
 }
 
@@ -631,7 +631,7 @@ function agUpdate(dt) {
       // under the snow the furniture leaves the grid entirely: nothing left
       // to block a shot, a runner, or raise a prompt - agEndRound puts the
       // exact objects back (a tool is an instance; so is a dummy's ledger)
-      for (const o of agFurniture) objects[idx(o.tx, o.ty)] = null;
+      for (const o of agFurniture) setTile(idx(o.tx, o.ty), null);
       G.phase = 'count'; G.t = 0; G.tick = AG_COUNT_T + 1;
     }
   } else if (G.phase === 'count') {
@@ -882,7 +882,7 @@ function cheatDummy(p, tx, ty) {
   return true;
 }
 function cheatDummyGone(o) {
-  if (objects[idx(o.tx, o.ty)] === o) objects[idx(o.tx, o.ty)] = null;
+  if (objects[idx(o.tx, o.ty)] === o) setTile(idx(o.tx, o.ty), null);
   const a = practiceDummies.indexOf(o); if (a >= 0) practiceDummies.splice(a, 1);
   const b = agFurniture.indexOf(o); if (b >= 0) agFurniture.splice(b, 1);
   burst(o.tx * TILE + 8, o.ty * TILE - 4, '#e0c890', 6, 40, 0.4, true);
@@ -982,7 +982,7 @@ function pkPlanCarve(path, rad) {
 // animation go through.
 function pkIceTile(i) {
   const o = objects[i];
-  if (o && (o.type === 'tree' || o.type === 'deadTree')) objects[i] = null;
+  if (o && (o.type === 'tree' || o.type === 'deadTree')) setTile(i, null);
   ground[i] = 1;
 }
 
