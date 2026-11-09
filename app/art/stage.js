@@ -51,6 +51,7 @@ const { openGame, args } = require('../media/browser');
       }
       return null;
     };
+    const BEAR = Object.keys(MONSTER).find((m) => MONSTER[m].big) || 'alpha'; // today's big camp beast
     const rows = [];
     const hero = Math.max(0, CLASSES.findIndex((c) => c.name === o.hero));
     for (const gname of o.grounds) {
@@ -69,7 +70,8 @@ const { openGame, args } = require('../media/browser');
       const place = (w, fn) => { fn(x + w / 2); x += w; };
       o.refs.forEach((r, i) => place(widths[i], (cx) => {
         if (r === 'hero') { setClass(player, hero); player.x = cx; player.y = R.y; player.dir = 'down'; player.vx = player.vy = 0; return; }
-        const a = makeAnimal(r === 'bear' ? 'dire' : r, cx, R.y, { dir: 'left' }); a.idleT = 1e9; a.ref = true; animals.push(a);
+        const kind = r === 'bear' ? BEAR : r; if (!SPRITES[kind]) return; // a beast the game no longer has is skipped
+        const a = makeAnimal(kind, cx, R.y, { dir: 'left' }); a.idleT = 1e9; a.ref = true; animals.push(a);
       }));
       sets.forEach((s, i) => place(widths[o.refs.length + i], (cx) => {
         const a = makeAnimal('wolf', cx, R.y, { dir: 'left' }); a.idleT = 1e9; a.staged = s; a.home = null; animals.push(a);
@@ -85,7 +87,7 @@ const { openGame, args } = require('../media/browser');
     const cut = {};
     if (o.cut) {
       const url = (c) => { const d = document.createElement('canvas'); d.width = c.width; d.height = c.height; d.getContext('2d').drawImage(c, 0, 0); return d.toDataURL(); };
-      for (const [name, kind] of [['wolf', 'wolf'], ['deer', 'deer'], ['bear', 'dire'], ['rabbit', 'rabbit']]) cut[name] = url(SPRITES[kind].left.idle[0]);
+      for (const [name, kind] of [['wolf', 'wolf'], ['deer', 'deer'], ['bear', BEAR], ['rabbit', 'rabbit']]) if (SPRITES[kind]) cut[name] = url(SPRITES[kind].left.idle[0]);
     }
     return { rows: out, k: DBG.getZoom().k, cut, heroName: CLASSES[hero].name };
   }, { art, refs, grounds, k, time: A.time != null ? +A.time : 0.45, hero: String(A.hero || 'ARMATOS').toUpperCase(), face: A.face || 'left', cut: !!A.cut });
