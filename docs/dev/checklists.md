@@ -75,6 +75,13 @@ declare victory. The affordances:
     parties of two on Steam and on the relay, must each end in ONE draft with a friend's point
     reaching the leader (`steam-party`, `steam-match`, `relay-match`). It serves the game itself on its own port and needs
     Playwright (`PLAYWRIGHT=<its folder>` if it is not on the require path).
+  - **`node app/check-load.js`** — run it after touching `js/net/`, `SNAP_SKIP` or anything that adds
+    bodies to a match: a host and nine headless players (`N=4` for fewer) on the relay, every seat a
+    bot, the match STAGED (run fast to the first wave, then an extra wave queued at every bay), then
+    three windows - a clean wire, 5% of the host's sends thrown away, and `netVerify` on. It fails on
+    a delta past Steam's unreliable limit, any full resync, a player falling behind or disagreeing
+    with the host, and any `tileLate`, and prints the host's sim and net time per step, the delta
+    sizes and the upload. About two minutes; same Playwright note as above.
   - **Under the wrapper — Noah runs this by hand; a session never starts Electron or makes a
     Steam lobby.** `cd desktop && npm start -- --net=host` on one machine and `--join=LOBBYID`
     on another (Steam running on both) ride the same match over a Steam lobby; with Steam up
