@@ -365,6 +365,26 @@ const CLASSES = [
     kit: { iceMax: 1.15, iceSteer: 3.4, slideMin: 70, fatigue: 0.75, chargeMul: 0.7,
       bowCharge: 0.75, nock: 0.5, spdDmg: 5, dodgeSpeed: 240 },
   },
+  {
+    // the ninth named hero (js/sim/faber.js): the zone mage. He holds a spot with
+    // machines he winds himself - small guns, a clockspring trap, the old engine -
+    // and is strong defending it; slow on his feet and poor at a chase
+    name: 'FABER', role: 'THE TINKER', body: 1, passive: 'spareparts', // HERO_PASSIVE, js/sim/faber.js
+    look: { sex: 0, tone: 2, hair: 1, hairCol: 2, beard: 0, face: 0 },
+    blurb: ['SET UP A SPOT AND DARE THEM TO WALK IN.', 'SMALL MACHINES SHOOT FOR YOU. A TRAP HOLDS A HERO. THE OLD ENGINE SLAMS.', 'STRONG HOLDING GROUND, SLOW TO CHASE.'],
+    story: "HE KEPT THE EMPIRE'S WATER CLOCKS RUNNING, AND ONE WINTER HE BUILT A CLOCK THAT RAN THE WHOLE CITY'S FOUNTAINS AT ONCE. IT FLOODED THE PALACE. THEY THANKED HIM AND SENT HIM UP THE PASS. THE WORKS HERE ARE FULL OF OLD MACHINES SOMEBODY BUILT WITH CARE, AND HE MEANS TO MEND EVERY ONE.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
+    // a staff's brass bolt: HIEMS's frost bolt's pace
+    staff: 'clock', // his CLOCK STAFF, carried upright (HERO_STAVES, js/draw/faber.js)
+    attack: { name: 'CLOCK STAFF', art: 'clockstaff', cycle: 62 / 60, kb: 0.5, shot: { speed: 270, life: 0.85, col: '#f2cc6a', look: 'cog' } },
+    base: { hp: 80, dmg: 12, armor: 10, ap: 0, haste: 0, ms: PLAYER_SPEED - 6 },
+    grow: { hp: 5.6, dmg: 1, as: 0.01, armor: 1.8 },
+    rankOrder: [0, 1, 2], // the spark, the small machine, the clockspring
+    // his own body (FABER_SKINS, js/sprites/faber.js), worn over the side's coat
+    skins: FABER_SKINS, skinPal: FABER_PAL, skinSlot: 'faber',
+    paint48: { t: '#7d8699', T: '#b4bdcc', g: '#1c2232', G: '#9aa3b8', m: '#5c6478', M: '#454c5e' }, // the 48 px model's (js/sprites/looks.js): its K is skin
+    kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1, chargeMul: 0.55,
+      bowCharge: BOW_CHARGE, nock: 0.4, spdDmg: 0, dodgeSpeed: DODGE_SPEED },
+  },
 ];
 // the body a hero wears - its sprites and its 48 px model: a hero that names
 // none is its own (HUNTER 0, WARRIOR 1), a named hero borrows one

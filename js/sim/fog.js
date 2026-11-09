@@ -44,6 +44,8 @@ function sightSources(team, out) {
   for (const b of robots) {
     if (b.team !== team) continue;
     if (b.kind === 'soldier' && unitAlive(b)) out.push(sightEye(b.x, b.y, FOG_SOLDIER, true));
+    const M = heroMachine(b);
+    if (M && unitAlive(b)) out.push(sightEye(b.x, b.y, M.sight, true)); // a hero's machine (HERO_MACHINE)
     if (b.merchant && !b.dead) {
       out.push(sightEye(b.x, b.y, FOG_MERCH, false));
       if (stallUp(b.stall)) { const c = objCentre(b.stall); out.push(sightEye(c.x, c.y, OBJECTS.stall.sight, false)); }

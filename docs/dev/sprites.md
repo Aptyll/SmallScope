@@ -88,7 +88,7 @@ more: the frames live on as the CATCH emote's (`EMOTES`, js/ui/screens.js). The 
 **The run, the held run and the dodge roll are the one set of player frames not typed by hand.**
 [app/bake-player/](../../app/bake-player/) paints them off a jointed doll of each class body (and of
 each named hero's looks: ARMATOS's `standard` and `oath`, FORTIVA's `unbroken` and `coif`, BELLA's `general` and `traitor`,
-IGNIA's `hearth` and `wanderer`, AURA's `light`, SALVIA's `hood` and `tent`, LUCERNA's `lamp` and `dusk`, HIEMS's `scholar` and `frost`, NIX's `snowblind`, RUPES's `quarry` and `cellar`, VARRO's `wolfkept` and `whitepack`, BUCINA's `horn` and `column`, [hero looks](#hero-looks)) and
+IGNIA's `hearth` and `wanderer`, AURA's `light`, SALVIA's `hood` and `tent`, LUCERNA's `lamp` and `dusk`, HIEMS's `scholar` and `frost`, FABER's `clockmaker` and `foreman`, NIX's `snowblind`, RUPES's `quarry` and `cellar`, VARRO's `wolfkept` and `whitepack`, BUCINA's `horn` and `column`, [hero looks](#hero-looks)) and
 writes them to js/baked/motion.js as char grids in characters.js's own letters, so `motionSet`
 bakes them through the same team and look palettes as every hand-drawn pose: `run[dir]`,
 `hold[dir]` and `roll[dir]` sit beside the walking directions, `left` the mirror of `right`.
@@ -304,6 +304,16 @@ cut repainted by its row's `pal` (moonless black, gold goggles, a violet scarf),
 `heroSkinSet` lays over the hero's palette. It is A off nix-round1.png in the project files. Her
 doll is `Snowblind` in app/bake-player/bodies.py. Her ICE DIRK is a `HERO_BLADES` row (`dirk`,
 js/draw/nix.js), half a sword's length.
+
+FABER has two looks (`FABER_SKINS`, js/sprites/faber.js): CLOCKMAKER (free) and WORKS FOREMAN
+(rare, 200 coins), both on ARMATOS's frame. `FABER_PAL` is `ARM_PAL` with the leather cap and apron
+`a`/`A`, the goggle lenses `C`, the moustache `U` and the hard hat's lamp `S`. They are A and B off
+faber-round1.png in the project files. Their dolls (`Clockmaker` and `Foreman` in
+app/bake-player/bodies.py) paint the cap in the doll's `hair` material and the hard hat in `hat`;
+only the roll is used. His CLOCK STAFF is a staff like IGNIA's: `staff: 'clock'` names
+`HERO_STAVES.clock` (`FABER_CLOCK`, js/draw/faber.js), a brass clock face on a walnut shaft whose
+hand ticks between two baked frames. His two machines draw themselves from small grids baked per
+side (`faberArt`, js/draw/faber.js), the side's colour in a band across each.
 
 The **48 px model** ([looks.js](../../js/sprites/looks.js), `SPRITES.portrait(cls, look,
 team)`) is where the whole look reads — the champ select's stage, grid and seat discs. Each hero wears one

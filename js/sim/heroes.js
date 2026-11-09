@@ -38,6 +38,11 @@
 // - HERO_COVER: fn(srcs, x, y, u) -> true when body u at (x, y) is hidden from
 //   the side whose eyes are `srcs`, beside the woods and the brush (coverHide,
 //   js/sim/fog.js): cover a hero's kit makes (NIX's snow cloud).
+// - HERO_MACHINE[kind]: { step(b, dt), draw(b, ex, ey, now), r, hitR, mass, sight,
+//   pay: { gold, xp } } a machine a hero built (b.kind = kind, with team and owner):
+//   FABER's. It is a body in `robots` like a soldier (hit, drawn, pushed apart,
+//   shot at by towers and soldiers); `pay` is a rival's for breaking it.
+// - HERO_WRECK: fn(b, src) when a body in `robots` is broken (robotDies): FABER's spare parts.
 // An ability row may also carry recast(p) (true: the key pressed again is
 // its second half, castSlam) and ok(p) (false: the press is refused).
 const HERO_PASSIVE = {};
@@ -54,6 +59,8 @@ const HERO_ICE = [];
 const HERO_SUMMON = {};
 const HERO_COVER = [];
 const HERO_AIR = [];
+const HERO_MACHINE = {};
+const HERO_WRECK = [];
 
 // the ability whose use() is running right now, so a blow it lands says so
 // (o.ab, stamped by hurtUnit, js/sim/actions.js); '' between casts. Never state: set and cleared
@@ -86,3 +93,5 @@ function heroIce(p) { for (const f of HERO_ICE) if (f(p)) return true; return fa
 function heroSummonStep(a, dt) { const s = HERO_SUMMON[a.summon]; if (s) s.step(a, dt); else a.dead = true; }
 function heroCover(srcs, x, y, u) { for (const f of HERO_COVER) if (f(srcs, x, y, u)) return true; return false; }
 function heroAir(ex, ey, now) { for (const f of HERO_AIR) f(ex, ey, now); }
+function heroMachine(b) { return (b.kind && HERO_MACHINE[b.kind]) || null; }
+function heroWreck(b, src) { for (const f of HERO_WRECK) f(b, src); }

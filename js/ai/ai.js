@@ -232,12 +232,13 @@ function aiNearestEnemy(p, prof, anchors) {
     const s = prof.pick === 'weak' ? q.hp + d * 0.05 : d;
     if (s < bs) { bs = s; best = q; }
   }
-  // a rival wave's soldiers are rivals too (the `soldiers` banner, robots.js):
+  // a rival wave's soldiers are rivals too (the `soldiers` banner, robots.js),
+  // and so is a hero's machine (HERO_MACHINE, js/sim/heroes.js):
   // the same sight and the same anchors, with no cover to see through
   const leave = aiLeavesWave(p); // a support beside its carry leaves the last hits to it (js/ai/ai-farm.js)
   for (const b of robots) {
     if (leave) break;
-    if (b.kind !== 'soldier' || !unitAlive(b) || b.team === p.team || !inSight(p.team, b)) continue;
+    if ((b.kind !== 'soldier' && !heroMachine(b)) || !unitAlive(b) || b.team === p.team || !inSight(p.team, b)) continue;
     const d = Math.hypot(b.x - p.x, b.y - p.y);
     let range = prof.sight;
     for (const an of anchors) {

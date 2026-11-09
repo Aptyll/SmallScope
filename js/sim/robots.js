@@ -18,13 +18,18 @@ function makeRobot(sp) {
       }
     }
   }
+  return robotBody(sx, sy, 1, sp.team === undefined ? 0 : sp.team, sp.owner === undefined ? 0 : sp.owner, rng() * 2);
+}
+// The body every bot stands in, wherever it came from: a barracks' soldier
+// (makeRobot) or a hero's own machine (faberMachine, js/sim/faber.js)
+function robotBody(sx, sy, hp, team, owner, animT) {
   const b = {
     bot: true, // a machine, not wildlife: what isAnimalUnit (js/sim/actions.js) reads
-    x: sx, y: sy, hp: 1, maxHp: 1, vx: 0, vy: 0, // vx/vy: a bot never drifts, but a rival's aim leads by them (updateAI)
-    team: sp.team === undefined ? 0 : sp.team, owner: sp.owner === undefined ? 0 : sp.owner,
+    x: sx, y: sy, hp, maxHp: hp, vx: 0, vy: 0, // vx/vy: a bot never drifts, but a rival's aim leads by them (updateAI)
+    team, owner,
     tgt: null, atkCd: 0, nav: null,
     atkAim: null, // what a soldier is swinging at right now (drawRobot reads it)
-    animT: rng() * 2, flash: 0, kbx: 0, kby: 0, dead: false, moving: false,
+    animT, flash: 0, kbx: 0, kby: 0, dead: false, moving: false,
     zip: -1, zipD: 0, zipDir: 1, zipLast: 0, // the zipline (js/sim/zipline.js), the player's own fields: a soldier rides it (soldierBoard)
   };
   // a bot takes every state a player can be put under - snared, netted,
@@ -40,6 +45,7 @@ function makeRobot(sp) {
 // shot's step against it (sweepDisc, js/sim/sim.js).
 const ROBOT_HIT_R = 7;
 function robotHitY(b) { return b.y - 1; }
+function robotHitR(b) { const M = heroMachine(b); return M ? M.hitR : ROBOT_HIT_R; } // a hero's machine (HERO_MACHINE) is its own size
 
 // px/s a chassis is shoved by an ordinary blow. hurtUnit writes over it for
 // anything carrying a shove of its own or a KNOCKBACK multiplier.
@@ -62,13 +68,21 @@ function hurtRobot(b, dmg, nx, ny, src) {
 }
 
 // The wreck. A merchant cannot be downed (unitAlive, js/sim/actions.js), so
-// nothing reaches here but a soldier.
+// nothing reaches here but a soldier or a hero's machine (HERO_MACHINE, which
+// pays its own `pay` and counts no farm).
 function robotDies(b, src) {
   b.dead = true;
   b.shot = null; // a snowball still in its hand or the air goes with it
   sfxAt('break_', b.x, b.y);
   burst(b.x, b.y - 4, '#98a1b0', 10, 50, 0.5, true);
   burst(b.x, b.y - 4, '#3b4150', 4, 35, 0.4);
+  heroWreck(b, src); // what a hero makes of a wreck near them (HERO_WRECK: FABER's spare parts)
+  const M = heroMachine(b);
+  if (M) {
+    if (src && src.inv && src.team !== b.team) awardGold(src, M.pay.gold, b.x, b.y);
+    shareXp(b, M.pay.xp, 1 - b.team, src);
+    return;
+  }
   // a soldier carries a bounty: the rival who lands the
   // LAST HIT is paid it on the spot (soldierBounty, the `farm` banner of
   // js/sim/farm.js) and counts a farm, and every rival scout standing near
@@ -107,6 +121,8 @@ function updateRobot(b, dt) {
     return;
   }
   if (b.merchant) { updateMerchant(b, dt); return; } // the eagle's driver: its own brain, the shared body above
+  const M = heroMachine(b);
+  if (M) { M.step(b, dt); return; } // a hero's machine: its kind's brain (HERO_MACHINE, js/sim/heroes.js)
   updateSoldier(b, dt); // a wave's soldier: the march (the `soldiers` banner below)
 }
 

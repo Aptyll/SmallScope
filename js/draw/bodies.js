@@ -83,6 +83,8 @@ function drawRobot(b, ex, ey, now) {
   const set = (SPRITES[T.spr] || SPRITES.robotTeam)[team] || SPRITES.robot;
   const thrown = T.shot && (b.shot || b.atkCd > T.cd * 0.5) ? 2 : 0;
   const spr = set[thrown + (b.moving ? Math.floor(b.animT) % 2 : 0)];
+  const M = heroMachine(b);
+  if (M) { M.draw(b, ex, ey, now); return; } // a hero's machine draws itself (HERO_MACHINE: js/draw/faber.js)
   const bob = b.moving ? Math.floor(b.animT / 2) % 2 : 0;
   const bx = Math.round(b.x - ex) - (SPRITES.robotAx[T.spr] || 6);
   const zl = b.zip >= 0 ? ZIP_ALT : 0; // a soldier on a zipline hangs ZIP_ALT rows up, its shadow on the snow

@@ -250,6 +250,24 @@ with a harder shove. Everything he does rides `p.pack`, his snowpack (0..1, `PAC
 | 3 | **SHOULDER** | 13/12/11/10/9 s | a short charge (`p.dash = 'shoulder'`, `SHOULDER_SPD` for `SHOULDER_T`): the first rival body met takes `dmg` (12/18/24/30/36) and is thrown `SHOULDER_KB` the way he ran; a tree, a rock or a wall within `SHOULDER_PIN` behind it (`solidBehind`) stuns it `stun` (1 s). A bear nothing shoves is struck, not thrown |
 | 4 | **AVALANCHE** | 100/85/70 s | he rolls as a snowball (`p.dash = 'avalanche'`, up to `AVA_T`), from `AVA_SPD0` to `AVA_SPD1` as it grows, bending toward the aim at `AVA_STEER`; `p.avaD` is how far it has rolled (`avaGrow`). Soldiers and beasts are thrown aside; on the first hero (or a bear), a wall, or the clock it bursts (`avaBurst`): every rival body and building in a ring from `AVA_R0` to `AVA_R1` (by the roll) takes `dmg` (50/85/120) and is knocked up `up` (0.6/0.75/0.9 s) × (1 + `AVA_UP_GROW` × the growth). He comes out of it fully packed. Drawn as the ball in his place (`HERO_BODY_DRAW`) |
 
+FABER, THE TINKER — the zone mage. His rules live in
+**[js/sim/faber.js](../../../js/sim/faber.js)** (`FABER_AB`, its `faber` banner), his pixels in
+[js/draw/faber.js](../../../js/draw/faber.js), his icons, looks and staff art in
+[js/sprites/faber.js](../../../js/sprites/faber.js). 80 hp, 10 armor, slower than most; a brass cog
+from his CLOCK STAFF (his `attack` row, drawn through its `look`). He holds a spot: his damage is
+spread over machines he winds, and he is poor at a chase. His machines are bodies in `robots`
+(`HERO_MACHINE`, js/sim/heroes.js), so towers, soldiers and every weapon hit them, and a rival who
+breaks one is paid its `pay`. What else he leaves in the world (`faberParts`, `faberArcs`,
+`faberBolts`, `faberSprings`) is stepped by `updateFaberWorld` (`HERO_TICK`):
+
+| key | name | cd | what it does |
+| --- | --- | --- | --- |
+| P | **SPARE PARTS** | — | a body in `robots` broken within `PART_NEAR` (180 px) of him (a soldier of either side, or a machine) leaves a part on the snow for `PART_LIFE` (`HERO_WRECK`, `faberWreck`); walking over it takes `PART_CUT` (1 s) off each of keys 1-3's waits. At most `PART_MAX` of his lie at once. `HERO_PASSIVE.spareparts` |
+| 1 | **SPARK** | 7/6.5/6/5.5/5 s | a spark down the aim (`SPARK_SPD` for `SPARK_RANGE`, riding `arrows`): the first rival takes `dmg` (16/24/32/40/48), and the step after it jumps to the nearest other rival within `ARC_R` for `ARC_SHARE` (60%) of the blow (`faberDeal` queues it, `updateArcs` lands it) |
+| 2 | **WIND A MACHINE** | 14/13/12/11/10 s | a small gun set at the aim (at most `WINDER_PLACE`), `WINDER_HP` + `WINDER_HP_LV` a level, running `WINDER_LIFE`: every `WINDER_CD` it shoots the nearest rival within `WINDER_RANGE` (`robotFoeUnit`) with a bolt that follows its mark for `dmg` (9/12/15/18/21). Two at once; a third winds down the oldest. A rival who breaks one gets 20 gold |
+| 3 | **CLOCKSPRING** | 16/15/14/13/12 s | a trap at the aim (at most `SPRING_RANGE`), wound after `SPRING_ARM`, waiting `SPRING_LIFE`: the first rival hero within `SPRING_R` is rooted `root` (1/1.15/1.3/1.45/1.6 s) and takes `dmg` (20). Soldiers and beasts walk over it. Three at once; a rival sees one only where their side sees |
+| 4 | **THE OLD ENGINE** | 110/95/80 s | a big machine wound up at his side for `ENGINE_LIFE`, `ENGINE_HP` + `ENGINE_HP_LV` a level: it walks (`navStep`) to his aim, no further than `ENGINE_LEASH` from him, and every `ENGINE_SLAM_EVERY` (the first after `ENGINE_SLAM_FIRST`) with a rival within `ENGINE_SLAM_R` it slams: each is stunned `stun` (0.75 s) and takes `dmg` (50/85/120); buildings take it too. While it runs his small guns shoot `ENGINE_HASTE` (twice) as fast. A rival who breaks it gets 50 gold |
+
 LUCERNA, THE LANTERN — the catch-and-save support. Her rules live in
 **[js/sim/lucerna.js](../../../js/sim/lucerna.js)** (`LUCERNA_AB`, its `lucerna` banner), her pixels in
 [js/draw/lucerna.js](../../../js/draw/lucerna.js), her icons, looks and lantern art in

@@ -1728,6 +1728,20 @@ const CLASS12 = [
     '............',
     '............',
   ],
+  [ // FABER: a gear
+    '....ooo.....',
+    '.oo.oWo.oo..',
+    '.oWooWooWo..',
+    '..oWWWWWo...',
+    'ooWWoooWWoo.',
+    'oWWWo.oWWWo.',
+    'ooWWoooWWoo.',
+    '..oWWWWWo...',
+    '.oWooWooWo..',
+    '.oo.oWo.oo..',
+    '....ooo.....',
+    '............',
+  ],
 ];
 const class12Cache = new Map();
 function classIcon12(i, you) {
