@@ -402,7 +402,7 @@ const scenes = [
       const c = __M.tile(W.arena.tx, W.arena.ty);
       __M.place(c.x, c.y + 26);
       player.dir = 'up';
-      // most of its life already gone, which is the half EXECUTE doubles down on
+      // most of its life already gone, which is the half the FINISHING BLOW doubles down on
       const a = rival(c.x - 4, c.y - 6, { hp: 22, dir: 'down' });
       a.inv.gold = 120;
       bagAdd(a, 'bit:lance', 5);
