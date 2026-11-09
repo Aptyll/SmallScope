@@ -77,7 +77,7 @@ function createStruct(tx, ty, type, tier, p, building) {
     owner: p.id, team: p.team, // paints the sprite
   });
   for (const [x, y] of footprint(type, tx, ty)) {
-    if (x !== tx || y !== ty) objects[idx(x, y)] = { type: 'part', tx: x, ty: y, of: o, flash: 0, shake: 0 };
+    if (x !== tx || y !== ty) setTile(idx(x, y), { type: 'part', tx: x, ty: y, of: o, flash: 0, shake: 0 });
   }
   // ang: the gun's bearing; tgt/chg: its mark and how far it has wound; cd: the
   // reload; heat/heatId: bolts in a row into one scout; bolt/pin: the one in the
@@ -100,7 +100,7 @@ function ownsStruct(o, p) { return o.team === undefined || o.team === p.team; }
 function wreckPay(o) { return Math.floor((STRUCTS[o.type].tiers[o.tier].cost.gold || 0) / 2); }
 
 function removeStruct(o) {
-  for (const [x, y] of footprint(o.type, o.tx, o.ty)) objects[idx(x, y)] = null;
+  for (const [x, y] of footprint(o.type, o.tx, o.ty)) setTile(idx(x, y), null);
   const i = structures.indexOf(o);
   if (i >= 0) structures.splice(i, 1);
 }

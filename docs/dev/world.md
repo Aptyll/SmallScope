@@ -56,9 +56,12 @@ stable per tile.
   is here" read (right-click, cursor, wheel, orders). `deadTree` (a 3 hp snag, chopped like a
   tree for `YIELD.deadTreeHit`/`deadTreeFall`, leaves a stump) and `cairn` stand nowhere since the
   bears moved to the river (4.82): no camp stamps them, and their types and art are kept unused.
-- Index with `idx(tx, ty)`, read safely with `objAt`, create with `placeObj`. Deleting is
-  `objects[idx] = null` (structures should go through `destroyStructure` so the `structures`
-  registry stays in sync — it routes `STRUCTS` types through `removeStruct`).
+- Index with `idx(tx, ty)`, read safely with `objAt`, create with `placeObj`. A tile written or
+  deleted during a match goes through `setTile(i, o)` (null deletes), which marks it for the host's
+  wire (`snapTouch`, [the ack-keyed base](../pvp-architecture.md#the-wire-form)); a bare
+  `objects[i] = ...` reaches clients only on the wire's slow sweep. Worldgen writes bare.
+  Structures go through `destroyStructure` so the `structures` registry stays in sync — it routes
+  `STRUCTS` types through `removeStruct`.
 - `generator`, `barracks`, `tower` and `net` are the **structures** (see
   [Buildings](gameplay/buildings.md)); nobody builds by hand. Each carries `{ tier, maxHp, building, buildT,
   buildTotal, dustT, sparkT }` plus per-type fields (generator `hold`, `cap`, `capBy`, `payT`, `paid`, `lane`: [the gold pumps](gameplay/buildings.md#the-gold-pumps); barracks `waveT`, `queue`,
