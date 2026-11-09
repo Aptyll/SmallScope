@@ -540,11 +540,16 @@ function capSkips(nowMs) {
 
 let last = performance.now();
 function loop(nowMs) {
-  if (capSkips(nowMs)) {
-    if (!document.hidden) requestAnimationFrame(loop);
+  // the next frame is asked for first: a throw in a step or a draw is still
+  // reported, but costs that one frame, never the whole game (a client's
+  // frozen end screen, QA2-004)
+  try { loop1(nowMs); } finally {
+    if (!document.hidden) requestAnimationFrame(loop); // hidden: the worker calls loop() instead
     else watchHidden();
-    return;
   }
+}
+function loop1(nowMs) {
+  if (capSkips(nowMs)) return;
   const rawDt = (nowMs - last) / 1000;
   // clamped at BOTH ends: rAF can hand back a stamp behind the clock `last`
   // was taken off (a headless first frame, a tab restored from the bfcache),
@@ -577,8 +582,6 @@ function loop(nowMs) {
     }
     perf.simAcc += t1 - t0; perf.drawAcc += performance.now() - t1;
   }
-  if (!document.hidden) requestAnimationFrame(loop); // hidden: the worker calls loop() instead
-  else watchHidden();
 }
 pageListenStart(); // keys, mouse and resize reach the game only now that every global stands (js/sim/core.js)
 requestAnimationFrame(loop);
