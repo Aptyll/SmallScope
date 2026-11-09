@@ -30,7 +30,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.569';
+const PATCH_TXT = 'PATCH 0.570';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -46,6 +46,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.570', 'A NEW HERO, SALVIA THE MENDER, THE FIRST HEALER: SHE THROWS A POULTICE THAT HEALS AN ALLY OR SLOWS A RIVAL, PLANTS SNOWDROPS HER SIDE PICKS FOR LIFE, WRAPS AN ALLY IN A WARM CLOAK, AND HER THAW HEALS EVERYONE INSIDE IT; HER HEALS ALSO SPEED ALLIES UP AND TAKE OFF THEIR SLOWS.'],
   ['0.569', 'UNDER THE HOOD: THE BUILD CHECK NOW CATCHES CODE NOTHING USES, SO OLD LEFTOVERS CANNOT PILE UP AGAIN.'],
   ['0.568', 'IN THE PRACTICE TOOL THE TOP BUTTON OF THE BAR CHANGES YOUR HERO: PICK ANY HERO\'S FACE AND YOU SWAP ON THE SPOT, KEEPING YOUR LEVEL, ITEMS AND GOLD.'],
   ['0.567', 'THE STEAM BUILD HAS A QUIT BUTTON ON THE TITLE SCREEN, UNDER PRACTICE TOOL.'],
@@ -1569,6 +1570,20 @@ const CLASS12 = [
     '....oWo.....',
     '.....o......',
     '............',
+  ],
+  [ // SALVIA: a snowdrop, its white bell nodding off the stem
+    '...ooo......',
+    '..ovvvoo....',
+    '..ovooovo...',
+    '..ovo.ovo...',
+    '..ovooWWWo..',
+    '..ovoWWWWWo.',
+    '..ovooWoWo..',
+    '.oVvo.o.o...',
+    'oVVvo.......',
+    '.oovo.......',
+    '..ovo.......',
+    '...o........',
   ],
 ];
 const class12Cache = new Map();
