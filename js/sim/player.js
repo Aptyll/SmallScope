@@ -241,6 +241,10 @@ const CLASSES = [
     base: { hp: 80, dmg: 12, armor: 10, ap: 0, haste: 0, ms: PLAYER_SPEED },
     grow: { hp: 5.8, dmg: 0.9, as: 0.01, armor: 1.8 },
     rankOrder: [0, 2, 1], // the poultice, the cloak, the snowdrops
+    // her own body in each of her looks (SALVIA_SKINS, js/sprites/salvia.js), worn per
+    // player (heroSkinOf) over the side's coat
+    skins: SALVIA_SKINS, skinPal: SALVIA_PAL, skinSlot: 'salvia',
+    paint48: { t: '#7d8699', T: '#b4bdcc', g: '#1c2232', G: '#9aa3b8', m: '#5c6478', M: '#454c5e' }, // the 48 px model's (js/sprites/looks.js): its K is skin
     kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1, chargeMul: 0.55,
       bowCharge: BOW_CHARGE, nock: 0.4, spdDmg: 0, dodgeSpeed: DODGE_SPEED },
   },

@@ -177,6 +177,137 @@ const SALVIA_ICON32 = {
   ],
 };
 
+// ------------------------------------------------------------ salvia bodies
+// Her own 16 px body, on ARMATOS's standing frame (his head box, legs and outline;
+// js/sprites/armatos.js), worn over the side's coat (r/R/d). Her sage is q/Q, her dark
+// hair a/A, the linen w/W, the satchel strap B. Side-on the head is as wide as head-on
+// and the body two pixels narrower (ARMATOS: 10 and 8), the face flush with the head:
+// no nose past the outline (round 1: /mnt/project-files/salvia/round1).
+const SALVIA_BODY = {
+  hood: { // HERB-WOMAN: a sage hood and shawl, a linen apron over the side's dress
+    down: [
+      '................',
+      '.....oooooo.....',
+      '....oqQQQQqo....',
+      '....oQQQQQQo....',
+      '....oQaaaaQo....',
+      '....oqekkeqo....',
+      '....oqkkkkqo....',
+      '...oqqqKKqqqo...',
+      '...oQqqqqqqQo...',
+      '...orqwWWwqro...',
+      '...orRwWWwRro...',
+      '...okrwWWwrko...',
+      '....orwwwwro....',
+      '....odrrrrdo....',
+      '.....bb..bb.....',
+      '.....BB..BB.....',
+    ],
+    up: [
+      '................',
+      '.....oooooo.....',
+      '....oqQQQQqo....',
+      '....oQQQQQQo....',
+      '....oQQQQQQo....',
+      '....oqQQQQqo....',
+      '....oqqQQqqo....',
+      '...oqqqqqqqqo...',
+      '...oQqqQQqqQo...',
+      '...orqqqqqqro...',
+      '...orRqqqqRro...',
+      '...okrrqqrrko...',
+      '....orrrrrro....',
+      '....odrrrrdo....',
+      '.....bb..bb.....',
+      '.....BB..BB.....',
+    ],
+    side: [
+      '................',
+      '.....oooooo.....',
+      '....oqQQQQQo....',
+      '....oQQQQQQo....',
+      '....oqQQaaao....',
+      '....oqQkkeko....',
+      '....oqqkkkko....',
+      '....oqqqKKqo....',
+      '....oQqqqqQo....',
+      '....oqrrwWWo....',
+      '....oqrrwWWo....',
+      '....orrrwWko....',
+      '....orrrwwwo....',
+      '....odrrrrdo....',
+      '......bb.bb.....',
+      '......BB.BB.....',
+    ],
+  },
+  tent: { // FIELD TENT: a linen headscarf and a canvas tabard, the satchel strap across
+    down: [
+      '................',
+      '.....oooooo.....',
+      '....oaaaaaao....',
+      '....oWWWWWWo....',
+      '....owWWWWwo....',
+      '....oaekkeao....',
+      '....oakkkkao....',
+      '...orwwKKwwro...',
+      '...oRwBwwwwRo...',
+      '...orwwBwwwro...',
+      '...orwwwBwwro...',
+      '...okwwwwBwko...',
+      '....orwwwwro....',
+      '....odrrrrdo....',
+      '.....bb..bb.....',
+      '.....BB..BB.....',
+    ],
+    up: [
+      '................',
+      '.....oooooo.....',
+      '....oaaaaaao....',
+      '....oWWWWWWo....',
+      '....oaawwaao....',
+      '....oaaaaaao....',
+      '....oaaaaaao....',
+      '...orwaaaawro...',
+      '...oRwwaawwRo...',
+      '...orwwwwBwro...',
+      '...orwwwBwwro...',
+      '...okwwBwwwko...',
+      '....orwwwwro....',
+      '....odrrrrdo....',
+      '.....bb..bb.....',
+      '.....BB..BB.....',
+    ],
+    side: [
+      '................',
+      '.....oooooo.....',
+      '....oaaaaaao....',
+      '....oWWWWWWo....',
+      '....oawWWWWo....',
+      '....oaakkeko....',
+      '....oaakkkko....',
+      '....oarwKKwo....',
+      '....oRrwwwwo....',
+      '....orrBwwwo....',
+      '....orrwBwwo....',
+      '....orrwwBko....',
+      '....orrwwwwo....',
+      '....odrrrrdo....',
+      '......bb.bb.....',
+      '......BB.BB.....',
+    ],
+  },
+};
+// her sage and her hair over ARMATOS's iron (w/W, his linen, is her apron)
+const SALVIA_PAL = Object.assign({}, ARM_PAL, { a: '#5a3a2a', A: '#7a5238', q: '#5e7f4e', Q: '#8fb06a' });
+// The looks she can wear: the first is her own and free, the rest are bought with coins on
+// the skins screen (js/ui/skins.js, the SALVIA tab). `run: 'drawn'`: her hood and apron are
+// not the doll's (app/bake-player: hood, tent), so her run is her drawn body in every
+// facing (heroRunFront, js/sprites/armatos.js); the doll rolls her.
+const SALVIA_SKINS = [
+  { id: 'hood', name: 'HERB-WOMAN', rarity: 'common', price: 0, grids: SALVIA_BODY.hood, motion: 'hood', run: 'drawn' },
+  { id: 'tent', name: 'FIELD TENT', rarity: 'rare', price: 200, grids: SALVIA_BODY.tent, motion: 'tent', run: 'drawn' },
+];
+
 // ------------------------------------------------------------ salvia staff
 // Her HERB BUNDLE as the weapon art the HUD shows and the hands aim on a draw
 // (SPRITES.weaponArt, js/sprites/weapons.js): dried sage tied in gold on an alder
