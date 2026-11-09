@@ -1,5 +1,5 @@
 'use strict';
-// IGNIA, THE FIREMAGE - a named hero (CLASSES, js/sim/player.js) and the first
+// IGNIA, THE HEARTHKEEPER - a named hero (CLASSES, js/sim/player.js) and the first
 // mage: she burns a fight down. Her keys light rivals; a burning rival who
 // stands by another passes the flame on; deep snow and water put it out.
 // Loaded before abilities.js, whose CLASS_AB takes IGNIA_AB as her row of keys;

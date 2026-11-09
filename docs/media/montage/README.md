@@ -29,7 +29,7 @@ A partial `run.js` re-normalises against only what it recorded — pass `GAIN=1.
 | `07-warrior-stomp-cracks-the-snow` | STOMP: the ring, the knockback, the crater left behind |
 | `08-warrior-bull-rush-carries-a-body` | BULL RUSH: the telegraph line, the charge, a body carried and slammed |
 | `09-warrior-shield-wall-then-slam` | the wall raised, shots dying on it, then the same key as the slam |
-| `10-warrior-execute-finishes-a-body` | EXECUTE on a body already worked over, and the kill |
+| `10-warrior-execute-finishes-a-body` | FINISHING BLOW on a body already worked over |
 | `11-hunter-piercing-shot-up-the-line` | the locked draw, the telegraph, one arrow through three bodies |
 | `12-hunter-net-shot-drops-a-drape` | the net down the line, the drape drawn on the target, the recoil hop |
 | `13-hunter-grapple-reels-into-the-pines` | the hook catching a pine and the reel up the frame |

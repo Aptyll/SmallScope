@@ -62,7 +62,7 @@ const STOMP_KB = 170;       // px/s radial shove
 const CRATER_R = 30;        // the deep-snow crater the stomp leaves...
 const CRATER_T = 4;         // ...and how long it slows rivals crossing it
 const CRATER_SLOW = 0.55;
-// the EXECUTE: a slow overhead cut whose worth is the target's MISSING life -
+// the FINISHING BLOW: a slow overhead cut whose worth is the target's MISSING life -
 // the finisher the other three keys set up. Its row's `rank` says the base,
 // the share of the lost life added on top, and the cap on that extra, so a
 // bear at a sliver is not a one-line kill.
@@ -144,11 +144,11 @@ const CLASS_AB = [
       use: (p) => abStomp(p),
     },
     {
-      id: 'exec', name: 'EXECUTE', cd: [18, 15, 12], ap: 0.5, cast: 0.55, aim: { cone: EXEC_R, half: EXEC_HALF },
+      id: 'exec', name: 'FINISHING BLOW', cd: [18, 15, 12], ap: 0.5, cast: 0.55, aim: { cone: EXEC_R, half: EXEC_HALF },
       rank: { dmg: [10, 20, 30], missing: 0.5, bonus: 40 }, // dmg at full life, + `missing` of the life lost, at most `bonus` more
       tip: 'HITS HARDER THE LESS LIFE THEY HAVE',
       blurb: 'A HEAVY OVERHEAD CUT. THE LESS LIFE THEY HAVE LEFT, THE HARDER IT LANDS.',
-      use: (p) => abExecute(p),
+      use: (p) => abFinish(p),
     },
   ],
   ARM_AB, // ARMATOS - the standard, the shield, the march (js/sim/armatos.js)
@@ -198,11 +198,11 @@ const CLASS_AB_ALT = [
       use: (p) => abWhirlwind(p),
     }],
     [{
-      id: 'ham', name: 'HAMSTRING', cd: [13, 12.5, 12, 11.5, 11], ap: 0.3, cast: 0.25, aim: { cone: HAM_R, half: HAM_HALF },
+      id: 'ham', name: 'LEG SWEEP', cd: [13, 12.5, 12, 11.5, 11], ap: 0.3, cast: 0.25, aim: { cone: HAM_R, half: HAM_HALF },
       rank: { dmg: [3, 6, 9, 12, 15], root: 1.4 },
       tip: 'ROOTS RIVALS IN FRONT OF YOU',
       blurb: 'A LOW SWEEP ACROSS THE SHINS AHEAD. WHOEVER IT CATCHES IS PINNED WHERE THEY STAND.',
-      use: (p) => abHamstring(p),
+      use: (p) => abSweep(p),
     }],
     [{
       id: 'wind', name: 'SECOND WIND', cd: [40, 35, 30], cast: 0.4,
@@ -665,7 +665,7 @@ function abStomp(p) {
   sfxAt('break_', px, py);
 }
 
-// THE EXECUTE lands: the overhead cut through the wedge ahead, worth the base
+// THE FINISHING BLOW lands: the overhead cut through the wedge ahead, worth the base
 // plus a share of every point of life the body under it has already lost -
 // the three keys before this one are how that life went missing. The same
 // blow for every kind of unit: a wolf at a sliver is finished like a rival.
@@ -673,7 +673,7 @@ function execDmg(p, q) {
   const max = q.maxHp || q.hp;
   return abDmg(p, 'exec', abRk(p, 'exec', 'dmg')) + Math.min(abRk(p, 'exec', 'bonus'), Math.round(Math.max(0, max - q.hp) * abRk(p, 'exec', 'missing')));
 }
-function abExecute(p) {
+function abFinish(p) {
   const a = Math.atan2(p.input.aimY - (p.y - BOW_Y), p.input.aimX - p.x);
   const nx = Math.cos(a), ny = Math.sin(a);
   for (const q of unitsInCone(p, p.x, p.y, a, EXEC_R, EXEC_HALF)) {
@@ -721,10 +721,10 @@ function abWhirlwind(p) {
   shakeFor(p, 4);
   sfxAt('swing', p.x, p.y);
 }
-// HAMSTRING: the low sweep through the wedge ahead - a small cut and the root
+// LEG SWEEP: the low sweep through the wedge ahead - a small cut and the root
 // (rootUnit: the same pin a net's edge leaves), so the body it catches stays
 // for whatever comes next.
-function abHamstring(p) {
+function abSweep(p) {
   const a = Math.atan2(p.input.aimY - (p.y - BOW_Y), p.input.aimX - p.x);
   const nx = Math.cos(a), ny = Math.sin(a);
   for (const q of unitsInCone(p, p.x, p.y, a, HAM_R, HAM_HALF)) {
@@ -1438,7 +1438,7 @@ const AB32 = [
       '................................',
       '................................',
     ],
-    [ // EXECUTE: the greatsword coming straight down - gold guard, wrapped
+    [ // FINISHING BLOW: the greatsword coming straight down - gold guard, wrapped
       // grip, a white gleam on the edge
       '................................',
       '................................',
@@ -1549,7 +1549,7 @@ const AB32_ALT = [
       '................................',
       '................................',
     ]],
-    [[ // HAMSTRING: a low blade across two shins, the cut a white arc
+    [[ // LEG SWEEP: a low blade across two shins, the cut a white arc
       '................................',
       '................................',
       '................................',

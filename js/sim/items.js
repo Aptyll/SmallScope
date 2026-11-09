@@ -251,7 +251,7 @@ function buyItem(p, id) {
   if (id === 'potion') return buyPotion(p);
   const c = itemCost(p, id);
   if (p.inv.gold < c.gold || itemRoom(p, c.used) < 1 || bootsClash(p, id, c.used)) { shopDeny(p); return false; }
-  pay({ gold: c.gold }, p);
+  spendGold(p, c.gold);
   for (const j of c.used) p.items[j] = null;
   p.items[p.items.indexOf(null)] = id;
   itemsChanged(p);
@@ -351,7 +351,7 @@ function potionRoom(p) {
 function buyPotion(p) {
   const price = BUILD_ITEMS.potion.price;
   if (p.inv.gold < price || !potionRoom(p)) { shopDeny(p); return false; }
-  pay({ gold: price }, p);
+  spendGold(p, price);
   if (potionSlot(p) < 0) { p.items[p.items.indexOf(null)] = 'potion'; p.potions = 0; }
   p.potions++;
   shopFx(p, '-' + price, RES_COLORS.gold);
