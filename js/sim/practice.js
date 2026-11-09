@@ -7,7 +7,8 @@
 // to pure combat. The practice world itself is SMALL - WORLD is 76 under
 // PRACTICE (js/sim/core.js) - so the forest is a collar, not a wilderness. In the
 // middle of the field: one dummy standing in the open snow, spawn just
-// south of it, and the range BELL west of the dummy on its own row.
+// south of it, the range BELL west of the dummy on its own row, and a
+// shop (stall and keeper, PR_SHOP) east of the spawn.
 // The archery targets all ride one TWO-RAIL TRACK around the
 // field's perimeter - stills, movers and pop-ups on trolleys, movers hopping
 // lanes around anything in their way - shoot them from anywhere, roll
@@ -40,6 +41,7 @@ const PR_RING = 76;
 const PR_OX = (WORLD - PR_RING) >> 1, PR_OY = 0;
 const PR_X0 = PR_OX + ((PR_RING - PR_W) >> 1), PR_Y0 = PR_OY + ((PR_RING - PR_H) >> 1);
 const PR_SPAWN = { tx: PR_X0 + 20, ty: PR_Y0 + 17 }; // south of the dummy, facing it
+const PR_SHOP = { tx: 25, ty: 14 }; // the stall's top-left, in field tiles: east of the spawn, inside the track
 // who stands on the field: a person on the spawn tile (separateUnits eases
 // a party apart), every empty seat parked deep in the corner forest, far
 // outside the arena, so no ghost silhouette wanders into a capture
@@ -841,6 +843,11 @@ function genPracticeWorld() {
   // included, which is why a running round cannot be rung off - and
   // agEndRound raises the same instances back
   agFurniture = [d, agBellObj].filter(Boolean);
+  // ---- the shop: a stall east of the spawn, its keeper beside it --------
+  // the same counters a match's merchant keeps (makeMerchant, js/sim/robots.js),
+  // so ADD GOLD has somewhere to be spent
+  const k = makeMerchant(0, { tx: ax + PR_SHOP.tx + 3, ty: ay + PR_SHOP.ty + 1 }, null);
+  k.stall = pitchStall(k, { tx: ax + PR_SHOP.tx, ty: ay + PR_SHOP.ty });
   // ---- the targets: the free-practice roster, out on the perimeter track -
   agStock(true);
   // ---- the ice parkour: the gate walk, the carved loop, the flags --------
