@@ -67,7 +67,7 @@ the held one lit gold
 js/ai/ai.js, first thing `aiThink` asks): the ultimate whenever it can rank, then each basic key
 unlocked once, then the basics maxed in the hero's `rankOrder` (its `CLASSES` row: HUNTER
 shot, net, grapple; WARRIOR stomp, rush, shield; ARMATOS verdict, march, brace; FORTIVA sever,
-yoke, heart; AURA star, orb, step; SALVIA poultice, cloak, snowdrops; LUCERNA crook, shoo, lantern). The cd column in the tables below is every rank's; the numbers in the text are rank
+yoke, heart; AURA star, orb, step; SALVIA poultice, cloak, snowdrops; LUCERNA crook, shoo, lantern; RUPES heave, shed, shoulder). The cd column in the tables below is every rank's; the numbers in the text are rank
 1's, and each row's `rank` table has the rest.
 
 **Every ability lands on every kind of body.** A player, a rabbit, a deer, a bird, a wolf and a
@@ -167,7 +167,7 @@ put her out. Her rules live in **[js/sim/ignia.js](../../../js/sim/ignia.js)** (
 [js/sprites/ignia.js](../../../js/sprites/ignia.js). She is fragile (84 hp, 10 armor) and shoots
 from her CROOK AND LANTERN (her `attack` row: a slow ember, `look: 'ember'`), carried upright
 (`HERO_STAVES`, [hero looks](../sprites.md#hero-looks)). Every fire her keys light is the shared
-burn (`igniteUnit`, through `igniaLight` or a blow's `burn: [s, dps]` in `hurtUnit`) at a rate of
+burn (`igniteUnit`, through `igniaLight` or a blow's `burn: [s, dps]` in `hurtUnit`; a blow's `slow: [s, mul]` is put on the same way, RUPES's HEAVE) at a rate of
 the rank's `burn` + `IGNIA_BURN_AP` of her ABILITY POWER + `IGNIA_BURN_AD` of her DAMAGE
 (`igniaBurnRate`), and marks the body as hers (`kindleBy`). Burns are slow by design: her blows
 are small, the fire does the work. BRUSHFIRE's line and melted strip are a `HERO_GROUND` row, the
@@ -234,6 +234,21 @@ she freezes a fight and lets her side finish it. What she leaves in the world (`
 | 2 | **CLEAR ICE** | 15/14/13/12/11 s | a disc `GLAZE_R` at the aim (at most `GLAZE_RANGE`) turns to ice for `t` (3/3.5/4/4.5/5 s): a rival hero on it skates as on the creek's ice (`HERO_ICE`, read by `iceUnder`), and every rival body on it walks ×`GLAZE_SLOW`. Her own side walks it as snow. No damage |
 | 3 | **COLD SNAP** | 12/11.5/11/10.5/10 s | a burst `SNAP_R` at the aim (at most `SNAP_RANGE`): every rival already chilled is rooted `root` (1 s), then every rival inside takes `dmg` (12/18/24/30/36) and is chilled; buildings take it too |
 | 4 | **WHITEOUT** | 100/85/70 s | a blizzard `WHITE_R` round her for `WHITE_T`, riding her: rivals inside walk ×`WHITE_SLOW`, and once a second take `dmg` (10/16/22) and a chill. A rival hero inside sees only `WHITE_SEE` (a fifth) of their reach (`HERO_SIGHT`, read by `heroEyeR`): their side's other eyes still see |
+
+RUPES, THE AVALANCHE — the engage tank. His rules live in
+**[js/sim/rupes.js](../../../js/sim/rupes.js)** (`RUPES_AB`, its `rupes` banner), his pixels in
+[js/draw/rupes.js](../../../js/draw/rupes.js), his icons, looks and maul in
+[js/sprites/rupes.js](../../../js/sprites/rupes.js). 134 hp and 24 armor, two steps slower than
+the hunter, and little damage: his ICE MAUL is the longsword's cut a little slower (`cycle` 34/60 s)
+with a harder shove. Everything he does rides `p.pack`, his snowpack (0..1, `PACK_LAYERS` layers):
+
+| key | name | cd | what it does |
+| --- | --- | --- | --- |
+| P | **SNOWPACK** | — | a hit he takes from anyone packs it (`dmg / (maxHp × PACK_FILL)`, `packHurt`); walking through deep snow packs `PACK_DEEP` a second (`packTick`); after `PACK_IDLE_T` without either it melts at `PACK_MELT` a second. Full, every hit he takes is cut by `PACK_CUT` (15%, `packTaken`, a `HERO_TAKEN` row). Each layer shows as white crust on his shoulders, arms and crown (`drawPackCrust`). `HERO_PASSIVE.snowpack` |
+| 1 | **HEAVE** | 8/7.5/7/6.5/6 s | a block of snow thrown down the aim (a shot, `look: 'snowblock'`, `HEAVE_RANGE` 150 px): the first rival body takes `dmg` (14/20/26/32/38) and is slowed ×`slow` for `slowT` (the shot's `slow`, put on by `hurtUnit`). A hero hit packs him `HEAVE_PACK` (a layer, `packDeal`) |
+| 2 | **SHED** | 10/9.5/9/8.5/8 s | the pack shaken off (`rupesShed`, `p.pack` to 0): every rival body and building in `SHED_R` takes `dmg` (10/14/18/22/26) plus `layer` (8/11/14/17/20) for each layer shed, and is slowed ×`slow` for `slowT` × (1 + half a layer) |
+| 3 | **SHOULDER** | 13/12/11/10/9 s | a short charge (`p.dash = 'shoulder'`, `SHOULDER_SPD` for `SHOULDER_T`): the first rival body met takes `dmg` (12/18/24/30/36) and is thrown `SHOULDER_KB` the way he ran; a tree, a rock or a wall within `SHOULDER_PIN` behind it (`solidBehind`) stuns it `stun` (1 s). A bear nothing shoves is struck, not thrown |
+| 4 | **AVALANCHE** | 100/85/70 s | he rolls as a snowball (`p.dash = 'avalanche'`, up to `AVA_T`), from `AVA_SPD0` to `AVA_SPD1` as it grows, bending toward the aim at `AVA_STEER`; `p.avaD` is how far it has rolled (`avaGrow`). Soldiers and beasts are thrown aside; on the first hero (or a bear), a wall, or the clock it bursts (`avaBurst`): every rival body and building in a ring from `AVA_R0` to `AVA_R1` (by the roll) takes `dmg` (50/85/120) and is knocked up `up` (0.6/0.75/0.9 s) × (1 + `AVA_UP_GROW` × the growth). He comes out of it fully packed. Drawn as the ball in his place (`HERO_BODY_DRAW`) |
 
 LUCERNA, THE LANTERN — the catch-and-save support. Her rules live in
 **[js/sim/lucerna.js](../../../js/sim/lucerna.js)** (`LUCERNA_AB`, its `lucerna` banner), her pixels in

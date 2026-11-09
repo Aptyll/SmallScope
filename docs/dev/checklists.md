@@ -555,8 +555,7 @@ Code that is dead **on purpose** is the next section.
   ping of its own, so a bot's plan is read off its callouts and the F4 table, not off the map.
 - **[README.md](../../README.md) is bare on purpose**: the main menu still
   (`docs/media/github-title.png`), the Steam, Discord, YouTube and X links and the license line; the store
-  copy lives on Steam. The other `github-*` stills, the capsule set and the gallery pngs stay in
-  the tree unreferenced. The repo's **Social
+  copy lives on Steam. The repo's **Social
   preview** is set by hand in GitHub settings to `github-preview.png` (1280×640, under 1 MB). A
   still is staged through `DBG`: `PROFILE.markDropped()`, `beginDrop()`, `hideUI`, `step` to
   `e.t ≈ dur/2` for the pass, `freeze`, `POST /shot?f=`.
@@ -610,8 +609,7 @@ Kept on purpose — do not "clean up", and a verbatim code move carries it along
   `drawHeldTool` puts the hero's own weapon in the hands at rest, and only the axe row's
   icon is still resolved through the table. The row is kept so `SWING_TOOLS` stays one entry per
   `p.swing` value, and `SPRITES.itemBow` itself is live on the end screen's kills plate.
-- `audio/music/` holds the nine mp3s `TRACKS` names, plus two tracked images nothing loads
-  (`AlbumArtSmall.jpg`, `Folder.jpg`). The alternate takes (34 MB) were deleted in `PATCH 1.53`;
+- `audio/music/` holds only the nine mp3s `TRACKS` names. The alternate takes (34 MB) were deleted in `PATCH 1.53`;
   recover one with `git show ee284a0:"audio/music/<name>"` if a cue ever wants it. A track is
   live only once it is in `TRACKS`. `app/server.js`'s `.ogg`/`.wav` MIME rows are forward-looking — every asset in the repo
   is an mp3.

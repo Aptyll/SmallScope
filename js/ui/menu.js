@@ -20,7 +20,7 @@ const PANEL_SLIDE_T = 0.32;
 // a lock and its pips until RANKED_AT matches are played (rankedOpen,
 // js/ui/rooms.js).
 function menuItems() {
-  return (PROFILE.guided() ? [] : ['FIRST MATCH']).concat(['QUICKPLAY', 'RANKED', 'PRACTICE TOOL'],
+  return (PROFILE.guided() ? [] : ['FIRST MATCH']).concat(['QUICKPLAY', 'RANKED', '1V1', 'PRACTICE TOOL'],
     window.steamBridge && steamBridge.quit ? ['QUIT'] : []);
 }
 function menuShut(label) { return label === 'RANKED' && !rankedOpen(); }
@@ -39,7 +39,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.597';
+const PATCH_TXT = 'PATCH 0.603';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -55,7 +55,13 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
-  ['0.597', 'HEROES NO LONGER HIDE THEIR FACES BEHIND THEIR WEAPONS: BLADES ARE HELD BY THE HILT, AND ANYTHING RAISED GOES BEHIND THE HEAD.'],
+  ['0.603', 'HEROES NO LONGER HIDE THEIR FACES BEHIND THEIR WEAPONS: BLADES ARE HELD BY THE HILT, AND ANYTHING RAISED GOES BEHIND THE HEAD.'],
+  ['0.602', 'A LOST MATCH NOW SAYS YOUR EAGLE WAS DRIVEN OFF, THE TAB SCOREBOARD AND THE MAP SHOW THE MATCH CLOCK INSTEAD OF A DAY, AND THE POST-GAME STATS COUNT DAMAGE TO HEROES AND STRUCTURES.'],
+  ['0.601', 'A 1V1 QUEUE ON THE TITLE SCREEN: YOU AGAINST ONE RIVAL, OR A BOT IF NOBODY IS LOOKING, ON THE MID LANE ALONE, AND THE FIRST TO DRAW FIRST BLOOD, LAST HIT 100 SOLDIERS OR TAKE A TOWER WINS.'],
+  ['0.600', 'ONLINE, EVERY PLAYER NOW HEARS THE ALARM AND SEES THE PLATE WHEN THEIR OWN EAGLE IS STRUCK OUT OF SIGHT, NOT ONLY THE HOST.'],
+  ['0.599', 'A NEW HERO, RUPES THE AVALANCHE: THE HITS HE TAKES PACK SNOW ONTO HIM, HE SHEDS IT IN ONE BURST, AND HIS ROLL GROWS INTO A SNOWBALL THAT FLATTENS A FIGHT.'],
+  ['0.598', 'UNDER THE HOOD: THE ART NOTES NO LONGER SAY THE NEWER HEROES WEAR THE WARRIOR IN THEIR PORTRAIT; THEY WEAR THEIR OWN.'],
+  ['0.597', 'UNDER THE HOOD: ABOUT 130 MB OF OLD ART, CLIPS AND SOUNDS FROM CUT SYSTEMS LEFT THE PROJECT; NOTHING IN THE GAME LOOKS OR SOUNDS DIFFERENT.'],
   ['0.596', 'A NEW HERO, HIEMS THE LONG WINTER: EVERY HIT SHE LANDS CHILLS, THE THIRD CHILL FREEZES A RIVAL IN PLACE, AND SHE LAYS CLEAR ICE, SNAPS THE CHILLED INTO ROOTS AND WALKS IN A WHITEOUT THAT BLINDS WHOEVER IS CAUGHT IN IT. HER FIRST FROST SKIN IS ON THE SKINS SCREEN.'],
   ['0.595', 'THE PLAYER WHO HOSTS AN ONLINE MATCH SPENDS ABOUT A THIRD AS LONG SENDING THE WORLD TO EVERYONE ELSE, SO A HOST ON A SLOWER PC KEEPS ITS FRAME RATE.'],
   ['0.594', 'NEW PLAYERS GET A FIRST MATCH ON THE TITLE: A REAL 5V5 AGAINST EASY BOTS WITH A SMALL CARD TEACHING MOVE, SHOP, ABILITIES, LAST HITS, RECALL AND TOWERS (HOLD SHIFT FOR DETAIL, X TO TURN IT OFF), AND RANKED UNLOCKS AFTER 3 FINISHED MATCHES.'],
@@ -692,6 +698,7 @@ function menuActivate(i) {
   if (it === 'FIRST MATCH') beginParty('guide'); // QUICKPLAY against EASY bots with the coach (js/ui/guide.js)
   else if (it === 'QUICKPLAY') beginParty('quick'); // the party lobby (js/ui/rooms.js)
   else if (it === 'RANKED') beginParty('ranked');
+  else if (it === '1V1') beginParty('onevone'); // you alone, one hero a side on the mid road (js/sim/onevone.js)
   else if (it === 'PRACTICE TOOL') beginParty('practice'); // the field with friends or alone: the party first (js/ui/rooms.js)
   else if (it === 'QUIT') steamBridge.quit(); // the app closes (desktop/main.js, win:quit)
 }
@@ -1179,17 +1186,17 @@ function lobbyLayout() {
   const gw = gridW(cols), pw = Math.min(LOBBY_PANEL_W, Math.floor((VIEW_W - gw - 2 * LOBBY_GUTTER) / 2));
   // the chat bottom left: its plate on the foot, its lines over it
   const chat = { x: pad, w: pw - pad - 4, ty: VIEW_H - pad - TALK_H, lines: LOBBY_CHAT_LINES };
-  // the seat rows: five a side under the head, down to the chat (which
-  // keeps two lines at the least); yours in position order (TOP first), the
-  // rivals' in seat order
+  // the seat rows: five a side under the head (a 1V1's one), down to the
+  // chat (which keeps two lines at the least); yours in position order (TOP
+  // first), the rivals' in seat order; an empty seat is out of the match
   const room = chat.ty - 6 - 2 * TALK_PITCH - LOBBY_HEAD;
   const fh = Math.max(LOBBY_ROW_MIN, Math.min(LOBBY_ROW_MAX, Math.floor(room / (MAX_PLAYERS / 2))));
   chat.lines = Math.max(1, Math.min(LOBBY_CHAT_LINES, Math.floor((chat.ty - 6 - LOBBY_HEAD - fh * (MAX_PLAYERS / 2)) / TALK_PITCH)));
   const cards = [[], []];
   const mineTeam = player ? player.team : 0;
   const role = (p) => DRAFT.role[p.id] >= 0 ? DRAFT.role[p.id] : 9;
-  const ours = players.filter((p) => p.team === mineTeam).sort((p, q) => role(p) - role(q) || p.id - q.id);
-  for (const p of ours.concat(players.filter((p) => p.team !== mineTeam))) {
+  const ours = players.filter((p) => p.active && p.team === mineTeam).sort((p, q) => role(p) - role(q) || p.id - q.id);
+  for (const p of ours.concat(players.filter((p) => p.active && p.team !== mineTeam))) {
     const mine = p.team === mineTeam ? 1 : 0;
     const y = LOBBY_HEAD + cards[mine].length * fh;
     cards[mine].push({ x: mine ? 0 : VIEW_W - pw, y, w: pw, h: fh, p });
@@ -1648,6 +1655,20 @@ const CLASS12 = [
     '.oWooWooWo..',
     '..o.oWo.o...',
     '.....o......',
+    '............',
+  ],
+  [ // RUPES: the snowball, its trail behind it
+    '....oooo....',
+    '..ooWWWWoo..',
+    '.oWWWWWWWbo.',
+    '.oWWWWWWbbo.',
+    'oWWWWWWWbbbo',
+    'oWWWWWWbbbbo',
+    'oWWWWWbbbbbo',
+    '.oWWbbbbbbo.',
+    '.obbbbbbbbo.',
+    '..oobbbboo..',
+    '....oooo....',
     '............',
   ],
 ];

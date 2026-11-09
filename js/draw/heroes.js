@@ -50,6 +50,12 @@ function heroStaff(p, px, py) {
   return true;
 }
 function heroBodyFx(p, ax, ay, now, front) { for (const f of HERO_BODY_FX) f(p, ax, ay, now, front); }
+// A hero that is, for a while, not its body at all: fn(p, px, py, now) -> true
+// when it drew what stands there in its place (the held tool and the body's
+// sprite are skipped; the marks over the body still draw). (px, py) is the
+// 16 px cell's top-left. RUPES's AVALANCHE rolls as a snowball here.
+const HERO_BODY_DRAW = [];
+function heroBodyDraw(p, px, py, now) { for (const f of HERO_BODY_DRAW) if (f(p, px, py, now)) return true; return false; }
 function heroBladeOf(p) { const c = CLASSES[p.cls]; return c && c.blade ? HERO_BLADES[c.blade] : null; }
 // the blade a hero's hands hold in place of its sword's own art and where the
 // hands close on it ({ img, grip }), or null
