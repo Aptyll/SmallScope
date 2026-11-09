@@ -49,7 +49,7 @@ Each rule spans folders; its names are listed under the folder that owns them.
   gold `gainGold` in, `spendGold` out; XP `shareXp` on a death, `gainXp` under it; water
   `waterAt`; tiles `placeObj` and `createStruct`; walking `navTo`/`navStep`, dropping the goal on
   `ok = false`, and a new walker joins `separateUnits`. Loops over `players` skip `inAir(p)`.
-- What a thing *is* lives in its table entry (`OBJECTS`, `STRUCTS`, `CLASSES`, `BUILD_ITEMS`),
+- What a thing *is* lives in its table entry (`OBJECTS`, `STRUCTS`, `BUILD_ITEMS`),
   never in an `if`. A hero reaches the shared sim only through the `HERO_*` hook tables.
 - A feature's tuning constants sit in the file that owns it. New mutable state joins `SAVE_ROOTS`.
 
@@ -76,8 +76,8 @@ Each rule spans folders; its names are listed under the folder that owns them.
 ## Run and verify
 
 - `node app/server.js` serves the game on :8471. `node app/check-globals.js` is the one lint (it
-  also fails on oversized files and unused names). `node app/check-join.js` drives every way a
-  friend joins a party.
+  also fails on oversized files, unused names, missing text and docs that name gone code).
+  `node app/check-join.js` drives every way a friend joins a party.
 - Double-clicking `index.html` must work: nothing may `fetch` or need a server.
 - There are no tests. Verify in headless Chromium with a small staged scene of exactly the changed
   case: `window.DBG`, `?seed=N`, `POST /shot`, `.` for hitboxes ([how](docs/dev/checklists.md#verifying-a-change)).
