@@ -68,16 +68,21 @@ function drawVeloxMarks(e, px, py, w, h, now) {
       ctx.globalAlpha = 1;
     }
   }
-  if (!(e.keepN > 0)) return;
-  const right = e.dir !== 'left', my = py - 5, mx = px + (w >> 1) - (e.keepN - 1) * 2;
-  for (let k = 0; k < e.keepN; k++) {
-    const x = mx + k * 4, f = right ? -1 : 1;
-    for (const [dy, col] of [[1, VX_INK], [0, VX_GOLD]]) {
-      ctx.fillStyle = col;
-      ctx.fillRect(x + f, my - 1 + dy, 1, 1); ctx.fillRect(x, my + dy, 1, 1); ctx.fillRect(x + f, my + 1 + dy, 1, 1);
-    }
-  }
 }
+// KEEP MOVING's stacks over the stack (HERO_OVER): gold chevrons pointing the way she goes
+HERO_OVER.push({
+  w: (e) => (isVelox(e) && e.keepN > 0 ? e.keepN * 4 - 1 : 0),
+  draw: (e, x0, my) => {
+    const right = e.dir !== 'left', f = right ? -1 : 1;
+    for (let k = 0; k < e.keepN; k++) {
+      const x = x0 + 1 + k * 4;
+      for (const [dy, col] of [[1, VX_INK], [0, VX_GOLD]]) {
+        ctx.fillStyle = col;
+        ctx.fillRect(x + f, my - 1 + dy, 1, 1); ctx.fillRect(x, my + dy, 1, 1); ctx.fillRect(x + f, my + 1 + dy, 1, 1);
+      }
+    }
+  },
+});
 HERO_MARK.push(drawVeloxMarks);
 
 // ---- the STAFF SLING ------------------------------------------------------------

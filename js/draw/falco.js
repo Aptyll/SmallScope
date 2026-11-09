@@ -58,15 +58,21 @@ HERO_SHOTS.knife = (a, sx, sy, now) => drawThrownKnife(Math.round(sx), Math.roun
 
 // ---- over a body -----------------------------------------------------------------------
 // a rival the hawk marked, as his own side sees it: a gold talon notch over the head
-function drawFalcoMarks(e, px, py, w, h, now) {
-  if (!(e.falcoBy >= 0) || !(state.elapsed < e.falcoUntil)) return;
+// (HERO_OVER: in the row over its stack, never on the head under the frame)
+const falcoSees = (e) => {
+  if (!(e.falcoBy >= 0) || !(state.elapsed < e.falcoUntil)) return false;
   const o = players[e.falcoBy];
-  if (!o || !player || o.team !== player.team) return;
-  if (e.falcoUntil - state.elapsed < 1 && Math.floor(now * 8) % 2) return;
-  const x = px + (w >> 1), y = py - 6;
-  ctx.fillStyle = FC_INK; ctx.fillRect(x - 2, y - 1, 5, 4);
-  ctx.fillStyle = FC_GOLD; ctx.fillRect(x - 1, y, 1, 2); ctx.fillRect(x + 1, y, 1, 2); ctx.fillRect(x, y + 1, 1, 1);
-}
+  return !!(o && player && o.team === player.team);
+};
+HERO_OVER.push({
+  w: (e) => (falcoSees(e) ? 5 : 0),
+  draw: (e, x0, y, now) => {
+    if (e.falcoUntil - state.elapsed < 1 && Math.floor(now * 8) % 2) return;
+    const x = x0 + 2;
+    ctx.fillStyle = FC_INK; ctx.fillRect(x - 2, y - 1, 5, 4);
+    ctx.fillStyle = FC_GOLD; ctx.fillRect(x - 1, y, 1, 2); ctx.fillRect(x + 1, y, 1, 2); ctx.fillRect(x, y + 1, 1, 1);
+  },
+});
 
 // ---- STOOP ------------------------------------------------------------------------
 // up in the sky: no body on the snow, only its shadow shrinking as he climbs and
@@ -87,5 +93,4 @@ function drawFalcoSky(p, px, py, now) {
 
 HERO_GROUND.push(drawFalcoGround);
 HERO_AIR.push(drawFalcoAir);
-HERO_MARK.push(drawFalcoMarks);
 HERO_BODY_DRAW.push(drawFalcoSky);
