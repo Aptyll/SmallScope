@@ -41,7 +41,7 @@ function seekRivals() {
 // FIND MATCH in QUICKPLAY or RANKED: the party starts looking. False when it
 // cannot (no relay, no Steam): bots at once, as before
 function seekStart() {
-  if (NET.role !== 'host' || NET.mode === 'practice' || !roomCode() || !(NET.transport && NET.transport.open)) return false;
+  if (NET.role !== 'host' || NET.mode === 'practice' || NET.mode === 'guide' || !roomCode() || !(NET.transport && NET.transport.open)) return false; // FIRST MATCH goes straight to bots
   NET.seek = { t: 0, hold: MATCH_WAIT, rival: null, crossing: false };
   roomsFeedOpen();
   netHostRoster(); netHostRoom();

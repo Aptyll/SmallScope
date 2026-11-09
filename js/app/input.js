@@ -488,6 +488,7 @@ function pointerPress(button) {
   if (state.settingsOpen) { mouse.down = true; settingsMouseDown(); return; }
   if (state.mapOpen) { if (mapCloseHit()) { SFX.unlock(); state.mapOpen = false; } return; } // a press off the slab closes the chart; on it, the press is swallowed
   if (voteClick()) return; // the surrender vote's YES / NO (js/ui/vote.js)
+  if (guideClick(mouse.x, mouse.y)) return; // the FIRST MATCH's coach: its X (js/ui/guide.js)
   // the practice bar (js/ui/cheats.js): a press on it, then its armed aim on the world
   if (cheatClick(mouse.x, mouse.y)) return;
   if (cheatAimLive() && !overHud(mouse.x, mouse.y)) { cheatAimPress(); return; }
