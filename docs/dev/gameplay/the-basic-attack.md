@@ -65,7 +65,7 @@ own radius, a building by any tile of its footprint — and nothing else: a body
 attacker is never cut. In the practice field the wedge's far half also lands on the dummies
 (`abHitDummies`). Each cut leaves its wedge on the snow (`slashes`, `SLASH_T` 0.28 s, ticked by
 `updateSlashes` from `updatePlay`) — the outline in white, gold when it landed, with a bright edge
-sweeping across it — drawn by `drawSlashes` (js/sim/abilities.js), and the local player's draw
+sweeping across it — drawn by `drawSlashes` (js/draw/abilities.js), and the local player's draw
 grows the same wedge in place of the aim line (`drawAimLine`), so the reach the cut is about to
 have is on the ground before it lands. **The hand swings the blade itself**: it is drawn at its
 real 22 px length (`SPRITES.weaponHeld`, or the hero's own blade), a draw winds it back to the

@@ -2,7 +2,7 @@
 // ------------------------------------------------------------ aura icons
 // AURA's five 32x32 icons (js/sim/aura.js): her four keys' wells on the strip
 // and the tooltip, and the passive's, in the ability icons' own letters
-// (AB32_PAL, js/sim/abilities.js; baked by classAbIcon from each row's `icon`).
+// (AB32_PAL, js/draw/abilities.js; baked by classAbIcon from each row's `icon`).
 // Laid by a script (the star, the orb, the bands, then the outline); the grids are the source now.
 const AURA_ICON32 = {
   star: [ // FALLING STAR: the star down its streak onto the ring on the snow

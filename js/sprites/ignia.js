@@ -2,7 +2,7 @@
 // ------------------------------------------------------------ ignia icons
 // IGNIA's five 32x32 icons (js/sim/ignia.js): her four keys' wells on the strip
 // and the tooltip, and the passive's, in the ability icons' own letters
-// (AB32_PAL, js/sim/abilities.js; baked by classAbIcon from each row's `icon`).
+// (AB32_PAL, js/draw/abilities.js; baked by classAbIcon from each row's `icon`).
 // Laid by a script (flames, wood, the snow, then the outline); the grids are the source now.
 const IGNIA_ICON32 = {
   brand: [ // FIREBRAND: the burning stick thrown up the aim, its fire at the head

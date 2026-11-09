@@ -892,7 +892,7 @@ function netUnit(e, t, mul, src) {
   if (e.zip >= 0) zipEnd(e, true); // the drape brings a rider down
 }
 // KNOCKED UP: thrown into the air - a stun no tenacity shortens, with the body
-// lifted off the snow for it (upT/upMax: abilityPose, js/sim/abilities.js, for
+// lifted off the snow for it (upT/upMax: abilityPose, js/draw/abilities.js, for
 // a player; upLift for anything that draws one)
 function knockUp(e, t, src) {
   if (t <= 0 || !unitAlive(e)) return;
