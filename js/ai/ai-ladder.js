@@ -641,7 +641,7 @@ function aiPumpRung(k) {
   const lane = role === 'laner' ? aiLane(p) : -1;
   let best = null, bd = Infinity;
   for (const o of structures) {
-    if (o.type !== 'generator') continue;
+    if (o.type !== 'pump') continue;
     const n = pumpCount(o);
     if (o.hold === p.team && !n[1 - p.team]) continue; // its side's, and nobody taking it
     const c = structCenter(o), d = Math.hypot(c.x - p.x, c.y - p.y);

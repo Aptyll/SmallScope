@@ -4308,11 +4308,10 @@
   ];
   onTeams(() => TEAM_SKINS.forEach((t, i) => {
     const pal = Object.assign({}, BASE, { k: t.fit, K: t.coatD, e: t.coat, E: t.coatL }), set = SPRITES.teamBuild[i];
-    set.tower = [bake(BODY, pal)];
+    set.tower = bake(BODY, pal);
     set.towerFront = bake(FRONT, pal);
     set.towerGun = GUN.map((h) => h.map((g) => bake(g, pal)));
     set.towerBolt = BOLT.map((g) => bake(g, pal));
-    if (i === 0) SPRITES.tower = set.tower;
   }));
   SPRITES.towerAt = { turn: [21, 9], gun: [-26, -41], bolt: [-14, -14] };
 })();

@@ -94,7 +94,7 @@ and buffets it like a player (`updateEagle`/`eagleGust`), a road tower marks it,
 ([Hero levels](../multiplayer.md#hero-levels)) — no feed line, six or seven a wave. Its health is its kind's `hp` plus its `grow`
 for every barracks `grow` the match has run (`makeSoldier`), so a hero's grown blow never makes every
 hit a last hit. The cap on a barracks' live soldiers is
-`STRUCTS.barracks.tiers[0].cap`. Bots read them as attackers at their bird and as targets in
+`STRUCTS.barracks.cap`. Bots read them as attackers at their bird and as targets in
 sight, and a pusher walks with its own column ([multiplayer.md](../multiplayer.md#bots)).
 
 

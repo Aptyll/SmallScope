@@ -64,9 +64,6 @@ const keysOf = (rel, head) => () => {
   return m ? [...m[1].matchAll(/([A-Za-z_$][\w$]*)\s*:/g)].map((k) => k[1]) : [];
 };
 const KINDS = keysOf('js/sim/wildlife.js', 'const ANIMAL_HP =');
-// a building's type (each `type: { name: ...` row of STRUCTS) and the grids a type borrows (`art`)
-const STRUCT_ART = () => [...read('js/sim/structures.js').matchAll(/^  ([A-Za-z_$][\w$]*): \{ name:/gm)].map((m) => m[1])
-  .concat(strings('js/sim/structures.js', 'art')());
 // SPRITES[expr] reads: the file, the expression as written (spaces dropped), the keys it can take
 const DYNAMIC = [
   { file: 'js/draw/bodies.js', expr: 'a.kind', keys: KINDS, why: 'a beast by its kind (ANIMAL_HP, js/sim/wildlife.js)' },
@@ -74,7 +71,6 @@ const DYNAMIC = [
   { file: 'js/ui/skins.js', expr: 'r.body', keys: strings('js/ui/skins.js', 'body'), why: 'a scout skin\'s own body (its row\'s body)' },
   { file: 'js/sim/items.js', expr: "BUILD_ITEMS[id].icon||'item_'+id", keys: strings('js/sim/items.js', 'icon'), why: 'an item\'s named icon (BUILD_ITEMS), else item_<id>' },
   { file: 'js/draw/bodies.js', expr: 'T.spr', keys: strings('js/sim/robots.js', 'spr'), why: 'a soldier kind\'s team sets (SOLDIER_TYPES\' spr)' },
-  { file: 'js/draw/structs.js', expr: 'art', keys: STRUCT_ART, why: 'structSprite\'s fallback when a side has no teamBuild set: SPRITES.tower and SPRITES.generator, the baked aliases' },
   { file: 'js/draw/render.js', expr: 'key', keys: keysOf('js/sprites/items.js', 'itemAnim:'), why: 'an animated icon\'s live canvas (SPRITES.itemAnim)' },
 ];
 // SPRITES[expr] = ...: keys registered by expression

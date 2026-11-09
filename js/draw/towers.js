@@ -113,7 +113,7 @@ function drawTowerFx(ex, ey, now) {
 const towerFigs = [];
 function towerFigure(sk) {
   if (towerFigs[sk]) return towerFigs[sk];
-  const set = SPRITES.teamBuild[sk], body = set.tower[0], t = towerTurn(), g = SPRITES.towerAt.gun;
+  const set = SPRITES.teamBuild[sk], body = set.tower, t = towerTurn(), g = SPRITES.towerAt.gun;
   const gun = set.towerGun[6][0], top = Math.min(0, t[1] + g[1]);
   const c = document.createElement('canvas'); c.width = body.width; c.height = body.height - top;
   const x = c.getContext('2d');

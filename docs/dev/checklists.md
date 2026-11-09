@@ -388,8 +388,8 @@ What it must do to get them:
    never advances; miss `idle` and `clipFrame` has nothing to fall back to
    ([the clips](gameplay/wildlife.md#what-a-beast-is-doing-the-clips)).
 
-**Adding a structure** — add a `STRUCTS` entry (one tier: `cost`, `hp`, `buildT` and the type's
-own numbers) and stand it with `createStruct` from whatever owns it (the map at boot, as
+**Adding a structure** — add a `STRUCTS` entry (`cost`, `hp`, `buildT`, the type's own numbers
+and its `init`/`built`/`tick` hooks) and stand it with `createStruct` from whatever owns it (the map at boot, as
 `placeTowers` does, or the merchant). Nobody builds by hand, so there is no list or wheel to add
 it to. Art of its own needs a grid baked into the per-team `teamBuild` sets (see
 [sprites.md](sprites.md)), and both maps colour it from the entry's `mm`/`map` — every building
@@ -399,8 +399,9 @@ colours the whole building. `isSolidTile()` is generic (`!!STRUCTS[o.type] || ..
 `STRUCTS` entry is solid for free. `hitObject()`, the draws pass (via `structSprite`),
 construction, ownership and the wreck's pay already dispatch on `STRUCTS[o.type]` too, and a shot
 meets the grid's own opaque box (`structShotBox`, js/sim/sim.js), so taller art is a taller target
-for free. There is nothing to add unless the type does something once built (a functional tick
-branch in `updateStructures()`, e.g. the gold pump's ring (`updatePump`, js/sim/pumps.js) or the barracks' waves).
+for free. What the type does is its hooks: `tick` for its step (the gold pump's ring, `updatePump`,
+js/sim/pumps.js, or the barracks' waves, `barracksTick`), and `sprite`/`frame`/`over` for a draw of
+its own; `updateStructures()` and `drawStructObj()` call them and never name a type.
 
 **Adding a camp** — a `CAMPS` entry plus a site in `CAMP_SITES`; that is the whole feature (see
 [world.md](world.md#camps) for the fields). The entry's shape:
