@@ -45,7 +45,7 @@ const chEagle = (o) => skin(o.team === undefined ? 0 : o.team) ? CH_EAGLE_BLUE :
 const OBJECTS = {
   // lift 33: the pine's canopy reaches 21 px above its own tile (drawn at
   // py - 21), and the prompt clears it by the same 12 px everything else gets
-  tree:     { solid: true,  tool: 'axe',  needs: 'axe',  verb: 'CHOP', lift: 33, auto: true,
+  tree:     { solid: true,  work: true, verb: 'CHOP', lift: 33, auto: true,
               mm: [52, 100, 82],   map: CH_FOREST },
   // genWorld's placeholder (liftRocks): its rock passes still stand one so
   // the seed's rolls stay put, and every one is lifted before the match. Never
@@ -65,7 +65,7 @@ const OBJECTS = {
   // (`readyAt`, the match second it opens again: snowdropLeft, below).
   // `ready` is what makes E and the hands reach for an open clump only. Off
   // both maps: a speck on the snow is noise.
-  snowdrop: { solid: false, tool: 'axe', needs: null,   verb: 'PICK', lift: 14, auto: true,
+  snowdrop: { solid: false, work: true, verb: 'PICK', lift: 14, auto: true,
               ready: (o) => snowdropLeft(o) <= 0 },
   // a camp's cave (the wolf den and the brown bear den): inert scenery, two
   // tiles wide - `w` stamps a `part` filler per extra tile, east of the
@@ -87,7 +87,7 @@ const OBJECTS = {
   // the practice arena's target (the `practice arena` banner, js/sim/practice.js): any tool
   // hits it, it never falls, and it mends itself between combos. E swings,
   // every attack and the roll's tackle all land through hitDummy (js/sim/actions.js).
-  dummy:    { solid: true,  tool: 'axe',  needs: null,   verb: 'HIT', lift: 28,
+  dummy:    { solid: true,  work: true, verb: 'HIT', lift: 28,
               mm: [216, 178, 122] },
   // The training field's dressing (practice arena only): inert scenery like
   // the den - no `tool`, so E never offers them - drawn in the y-sorted pass.
@@ -122,7 +122,7 @@ const OBJECTS = {
   // solid to walkers and a work target for RIVAL E swings only - workTarget
   // reads the `team` an object carries. Drawn by drawEagle, never the object
   // pass; the swing itself lands in hitObject's eagle branch (hurtEagle).
-  eagle:    { solid: true,  tool: 'axe',  needs: null,   verb: 'STRIKE', lift: 16, auto: true,
+  eagle:    { solid: true,  work: true, verb: 'STRIKE', lift: 16, auto: true,
               mm: (o) => skin(o.team) ? MM_EAGLE_BLUE : MM_EAGLE_RED, map: chEagle },
   // a multi-tile building's (or a wide prop's) filler tiles: solid, and
   // structOf() has resolved them to their anchor long before either map sees one

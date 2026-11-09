@@ -763,8 +763,7 @@ function updatePrey(a, dt) {
 // what a kill pays: one profile per kind out of the YIELD table, grown
 // ANIMAL_LV_GOLD a level for the animal's own level (the top of the banner),
 // straight into the wallet of whoever landed the final blow (a.lastHit,
-// stamped by hurtAnimal) - gold is never a physical drop. A kit's huntMul
-// pays a bonus on top of the same, grown award; a kill nobody is left
+// stamped by hurtAnimal) - gold is never a physical drop. A kill nobody is left
 // alive to credit pays nobody. A camp monster's or a deer's `xp` is the
 // hunter's side's, shared by whoever of it stands near (shareXp), the
 // hunter too if they are still up; a rabbit teaches nobody anything.
@@ -778,9 +777,7 @@ function animalDies(a) {
   if (hunter && a.home) farmHit(hunter, a.x, a.y - 8); // a camp monster is farm (the `farm` banner, js/sim/farm.js)
   const y = YIELD[a.kind];
   if (hunter && !hunter.dead && y && y.coins) {
-    const base = Math.round(y.coins * y.each * (1 + ANIMAL_LV_GOLD * ((a.level || 1) - 1)));
-    const bonus = Math.max(0, Math.ceil(base * (kitOf(hunter).huntMul - 1)));
-    awardGold(hunter, base + bonus, a.x, a.y);
+    awardGold(hunter, Math.round(y.coins * y.each * (1 + ANIMAL_LV_GOLD * ((a.level || 1) - 1))), a.x, a.y);
   }
   if (hunter && y && y.xp) shareXp(a, y.xp * (1 + ANIMAL_LV_XP * ((a.level || 1) - 1)), hunter.team, hunter);
   if (a.kind === 'rabbit') {
