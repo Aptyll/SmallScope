@@ -20,9 +20,9 @@
 //                within ORCA_JAWS of it goes down, whatever its health
 //   the rest     it slides back under and cruises again; nothing is locked
 //                for ORCA_REST once it is gone
-// One orca, one hunt at a time. Its water is the whole disc, under the
-// cistern's sills too (js/sim/cistern.js), but it locks and breaks only bare
-// ice. It never rolls: every pick comes off hash2 and the tick,
+// One orca, one hunt at a time, in its own pool on the top side of the
+// middle (CAMPS.orca). Its water is the whole disc, but it locks and breaks
+// only bare ice. It never rolls: every pick comes off hash2 and the tick,
 // so the shared rng() is untouched. Sim only - `orca` is a SAVE_ROOTS
 // singleton and rides the snapshot; the pixels are js/draw/orca.js.
 const ORCA_LINE = 3;          // s of countdown before it comes up
@@ -78,13 +78,13 @@ function spawnOrca() {
   orcaWater = new Uint8Array(WORLD * WORLD);
   orcaHome = [];
   if (ARENA) return;
-  const c = Math.round((WORLD - 1) / 2), r = Math.ceil(ORCA_LAKE_R + 2);
-  for (let ty = c - r; ty <= c + r; ty++) for (let tx = c - r; tx <= c + r; tx++) {
+  const P = orcaPool(), r = Math.ceil(ORCA_LAKE_R + ORCA_LAKE_RAG + 2);
+  for (let ty = P.ty - r; ty <= P.ty + r; ty++) for (let tx = P.tx - r; tx <= P.tx + r; tx++) {
     if (!inWorld(tx, ty) || !orcaLakeAt(tx, ty)) continue;
     orcaWater[idx(tx, ty)] = 1;
     navToll[idx(tx, ty)] = ORCA_TOLL;
   }
-  for (let ty = c - r; ty <= c + r; ty++) for (let tx = c - r; tx <= c + r; tx++) {
+  for (let ty = P.ty - r; ty <= P.ty + r; ty++) for (let tx = P.tx - r; tx <= P.tx + r; tx++) {
     if (orcaTileIn(tx, ty) && orcaClear((tx + 0.5) * TILE, (ty + 0.5) * TILE)) orcaHome.push(idx(tx, ty));
   }
   if (!orcaHome.length) return;

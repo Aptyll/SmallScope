@@ -35,7 +35,7 @@ every animal but a deer and a bear (`MONSTER[kind].big`, asked through `isBigBea
 them and [swipes them](dodge-roll.md#the-roll-is-a-hit) instead of shoving them. A deer and a bear keep
 their mass and their contact, which is what makes running into one a tackle rather than a pass.
 
-**Right of way.** A body whose `MONSTER` row says `anchor` (both bears, asked through `isAnchored`)
+**Right of way.** A body whose `MONSTER` row says `anchor` (the bear, asked through `isAnchored`)
 outranks every other one (`pri` in `separateUnits`, `unitShare`). In a contact between ranks the
 lower side takes the whole push in the room pass and the hard passes, loses its closing speed
 (with the lighter side's bounce) and hands the higher side **no** knockback, so a player walking,

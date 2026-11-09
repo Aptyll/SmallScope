@@ -19,6 +19,8 @@
 //   kind/pop    the monster kind (ANIMAL_HP etc., wildlife.js) and how many
 //   repop       seconds after the LAST one dies before the whole camp is
 //               back - a camp is cleared or it is not; nothing trickles
+//   first       match seconds before a camp is out the first time (the river
+//               bears: the timed objectives); none means it stands from the start
 //   props       what stands in it: [dx, dy, type, extra] off the centre
 //   spots       where each monster stands, [dx, dy] off the centre
 //   plan        a camp DRAWN, not scattered (the treeline camps): rows of
@@ -37,6 +39,10 @@
 //               the border is grown out round it (warrenGrove) so its
 //               clearing is cut out of the pines on every seed (no CAMP_EDGE,
 //               see placeCamps)
+//   pool        the camp is the ORCA'S POOL: its clearing is a round frozen
+//               pond (orcaLakeAt, js/sim/world.js) laid after the clearing
+//               (layOrcaPool), and what lives there is the orca under the ice
+//               (js/sim/orca.js), not a camp monster
 //   river       the camp is a stretch of RIVERBANK, not a den: no props and
 //               no spots - its one monster walks `river` tiles of its own bank
 //               either way along the creek's bend round the site, up and
@@ -44,10 +50,10 @@
 //               updateCampMonster, wildlife.js)
 //
 // resource: the pack - gold per head, the jungle's farm (each wolf a FARM, js/sim/farm.js)
-// buff:     the black bear - the brown bear's match, paid as it is (MONSTER's teamPay, wildlife.js);
-//           it walks BLUE's bank of the downstream bend
-// epic:     the brown bear - the whole team is paid and given the BROWN BUFF for the kill;
-//           it walks RED's bank of the upstream bend
+// buff:     the black bear, the one bear: first out at 5:00, the whole team paid and
+//           given the BLACK BUFF for the kill, and the side's black bears count up
+//           (state.bearStacks, wildlife.js); it walks a bank of the downstream bend
+// orca:     the orca's pool on the upstream bend, the top side of the middle
 // hut:      no monster - a hut buried in the treeline, scenery since its
 //           chests went (0.531)
 // meadow:   the WARREN, drawn by hand (its `plan`): a round clearing in a
@@ -71,15 +77,15 @@ const CAMPS = {
     name: 'BLACK BEAR BEND',
     r: 4, mark: '#c2a6ff', river: 9,
     icon: [[3, 1, 1, 1], [2, 2, 3, 1], [1, 3, 5, 1], [2, 4, 3, 1], [3, 5, 1, 1]], // a cut stone
-    kind: 'alpha', pop: 1, repop: 300,
+    kind: 'alpha', pop: 1, repop: 300, first: 300, // first out at 5:00, then 5:00 after each kill
     props: [],
     spots: [],
   },
-  epic: {
-    name: 'BROWN BEAR BEND',
-    r: 6, mark: '#ffb04a', river: 9,
-    icon: [[0, 0, 2, 2], [5, 0, 2, 2], [0, 1, 7, 2], [1, 3, 1, 1], [3, 3, 1, 1], [5, 3, 1, 1], [1, 4, 5, 1], [2, 5, 3, 1]], // a bear's head, the eyes left dark
-    kind: 'dire', pop: 1, repop: 300,
+  orca: {
+    name: "ORCA'S POOL",
+    r: ORCA_LAKE_R + 1, mark: '#7fd4ff', pool: true, // the clearing is the pond and a tile of shore
+    icon: [[3, 0, 1, 1], [3, 1, 2, 1], [3, 2, 3, 1], [0, 3, 7, 1], [1, 4, 5, 1], [0, 5, 7, 1]], // a fin over the water
+    kind: null, pop: 0, repop: 0,
     props: [],
     spots: [],
   },
@@ -129,7 +135,7 @@ const CAMPS = {
 // half. campSites() mirrors each across the map's middle (u -> WORLD-1-u,
 // same s) for BLUE, so both teams walk the same distance to the same camp -
 // and a site ON the middle (u = (WORLD-1)/2) is its own mirror and placed
-// once: the epic is contested at equal reach from either roost. Every site
+// once: a contested spot is reached at equal reach from either roost. Every site
 // sits at least CAMP_EDGE tiles from the world's edge, past the deepest
 // treeline the border noise grows (BORDER_MAX, 70), and clear of the road by
 // more than the pack's ground. A `woods` camp is the exception, and the
@@ -140,11 +146,10 @@ const CAMP_EDGE = 72 * MAP_K;
 const CAMP_SITES = [
   { key: 'resource', u: 90, s: -25 },  // one den each side of the road, out from the lane mouth
   { key: 'resource', u: 90, s: 25 },
-  // THREE CAMPS A SIDE OF THE ROAD, six in all: a mirrored pair of dens on
-  // each side, and one contested camp on the mirror line to finish each side
-  // - the brown bear top-left, the black bear bottom-right, facing it across the road
+  // the two contested spots on the mirror line, facing each other across the
+  // road: the orca's pool top-left, the black bear bottom-right
   { key: 'buff', u: (WORLD - 1) / 2, s: 44 },  // the black bear, bottom-right of the middle, on the mirror line
-  { key: 'epic', u: (WORLD - 1) / 2, s: -40 }, // the brown bear, top-left of the middle, on the mirror line
+  { key: 'orca', u: (WORLD - 1) / 2, s: -40 }, // the orca's pool, top-left of the middle, on the mirror line
   // the hog huts, 20 tiles in from the world's edge, deep in the border woods
   { key: 'hut', u: 100.5, s: -114 },   // by the top-left corner, on the left edge
   { key: 'hut', u: 100.5, s: 114 },    // by the bottom-right corner, on the bottom edge
@@ -271,6 +276,7 @@ function placeCamps() {
     camps.push(C);
     if (spec.plan) layCampPlan(C);
     else clearCamp(C);
+    if (spec.pool) layOrcaPool(C);
     if (spec.river) { // the bank it walks: nothing standing on the line or a tile either side of it
       C.path = riverPath(C);
       for (const q of C.path) for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
@@ -291,6 +297,16 @@ function placeCamps() {
         objects[idx(x, y)] = { type: 'part', tx: x, ty: y, of: o, flash: 0, shake: 0 };
       }
     }
+  }
+}
+
+// the orca's pool: every tile of the disc (orcaLakeAt) inside the cleared
+// ground turned to ice, so the pond is the same on every seed
+function layOrcaPool(C) {
+  const R = Math.ceil(ORCA_LAKE_R + ORCA_LAKE_RAG + 1);
+  for (let dy = -R; dy <= R; dy++) for (let dx = -R; dx <= R; dx++) {
+    const x = C.tx + dx, y = C.ty + dy;
+    if (inWorld(x, y) && orcaLakeAt(x, y)) { objects[idx(x, y)] = null; ground[idx(x, y)] = 1; }
   }
 }
 
@@ -320,7 +336,11 @@ function spawnCampMonster(C, i) {
 // stock every camp, once the world (and the ordinary wildlife) is down -
 // and by hand from DBG: it tops each camp up to strength, never past it
 function stockCamps() {
-  for (const C of camps) for (let i = campPop(C); i < C.spec.pop; i++) spawnCampMonster(C, i);
+  for (const C of camps) {
+    // a timed camp is not out yet: its clock runs to its first appearance (updateCamps)
+    if (C.spec.first && state.elapsed < C.spec.first) { C.repopT = C.spec.first - state.elapsed; continue; }
+    for (let i = campPop(C); i < C.spec.pop; i++) spawnCampMonster(C, i);
+  }
 }
 
 function campPop(C) {
@@ -346,7 +366,7 @@ function campAt(x, y) {
 const CAMP_HOLD = 96;
 function updateCamps(dt) {
   for (const C of camps) {
-    if (campPop(C) > 0) { C.repopT = C.spec.repop; continue; }
+    if (campPop(C) > 0) { C.repopT = C.spec.repop; C.out = true; continue; }
     C.repopT = Math.max(0, C.repopT - dt);
     if (C.repopT > 0) continue;
     const px = (C.tx + 0.5) * TILE, py = (C.ty + 0.5) * TILE;
@@ -359,7 +379,7 @@ function updateCamps(dt) {
 // whether a camp is cleared and counting: the clock is held at the top while
 // anything in it lives (updateCamps), so this reads the clock alone and
 // holds on a client too, which has no say over a body in the fog
-function campCleared(C) { return C.spec.pop > 0 && C.repopT > 0 && C.repopT < C.spec.repop; }
+function campCleared(C) { return C.spec.pop > 0 && C.repopT > 0 && (C.repopT < C.spec.repop || (C.spec.first > 0 && !C.out)); }
 // What each side KNOWS of a camp's clock - League's rule: a side times a
 // camp only from a clear it SAW, the camp in its sight as it fell (sight
 // held from the tick before the clear on). Walking into an empty camp it did

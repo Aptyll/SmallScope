@@ -58,9 +58,15 @@ function asMul(p) { return asMulFrom(p.cls, p.level, kitOf(p).add, heroStat(p, '
 // what a running buff multiplies a stat by right now (1 = nothing). The bear
 // buffs (campBuff, js/sim/wildlife.js) raise every blow landed and the walk;
 // hurtUnit and abilityMoveMul apply these, and the panel shows them.
-function statBuffMul(p, key) {
+function statBuffMul(p, key) { return statBearMul(p, key) * statStackMul(p, key); }
+function statBearMul(p, key) {
   if (!(p.buffT > 0)) return 1;
   return key === 'dmg' ? CAMP_BUFF_DMG : key === 'ms' ? CAMP_BUFF_SPD : 1;
+}
+// the black bears the side has slain (state.bearStacks): more on every blow, for good
+function statStackMul(p, key) {
+  const n = key === 'dmg' && (p.team === 0 || p.team === 1) ? state.bearStacks[p.team] || 0 : 0;
+  return 1 + BLACK_STACK_DMG * n;
 }
 // the number the panel prints: the sheet with its buffs on
 function statShown(p, key) { return statOf(p, key) * statBuffMul(p, key); }
@@ -77,8 +83,10 @@ function statParts(p, key) {
   if (Math.abs(it) > 1e-9) rows.push(['ITEMS', it, kind[1]]);
   for (const h of HERO_STAT) { const v = h.add(p, key); if (v) rows.push([h.name, v, kind[1]]); }
   const iv = itemStat(p, key); if (iv) rows.push([ITEM_PASSIVES.brace.name, iv, 'add']); // BRACE while badly hurt (js/sim/items.js) // a hero's own: a rallying standard underfoot (js/sim/heroes.js)
-  const b = statBuffMul(p, key);
+  const b = statBearMul(p, key);
   if (b !== 1) rows.push([(MONSTER[p.buffKind] && MONSTER[p.buffKind].buff) || 'BUFF', b - 1, 'buff']);
+  const k = statStackMul(p, key);
+  if (k !== 1) rows.push(['BLACK BEARS ' + state.bearStacks[p.team], k - 1, 'buff']);
   return rows;
 }
 // ARMOR at the hit: what a blow of `dmg` leaves after this body's armor, never

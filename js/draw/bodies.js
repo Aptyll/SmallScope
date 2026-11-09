@@ -210,12 +210,12 @@ function centreTextX(sx, txt, scale) { return Math.round(sx) - (pixelTextWidth(t
 const FRAME_DX = 3;
 
 // A bear buff, worn: a ring of pips around the feet in that bear's colour
-// (MONSTER's buffCol: amber the brown, violet the black), rimmed dark
+// (MONSTER's buffCol: violet the black bear's), rimmed dark
 // so it reads on snow, that loses a pip at a time as the buff runs out -
 // the ring IS the timer, and a full ring on a rival is the warning. The
 // longest buff (a bear's) fills every pip.
 const BUFF_RING = 12;                // pips round the ring
-const BUFF_COL = '#ffb04a';          // a buff with no bear named (a hand grant): the brown's amber
+const BUFF_COL = '#ffb04a';          // a buff with no bear named (a hand grant): amber
 function drawBuffRing(p, cx, cy, now) {
   const n = Math.ceil(BUFF_RING * Math.min(1, p.buffT / CAMP_BUFF_EPIC_T));
   const pulse = 7 + ((now * 3) & 1); // breathes a pixel

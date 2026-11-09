@@ -532,8 +532,8 @@ Code that is dead **on purpose** is the next section.
   `aiSituation` weighs a camp against the road — so the two bear camps are the
   human's to start (the allies join a camp fight the human is in, rung 4) until an objective rung
   learns them ([Bots](multiplayer.md#bots)).
-- **The bears keep the old wolves' kind keys** (`alpha`, `dire`) so saves and the net wire still
-  load them; the names a player reads are the bears'.
+- **The bear keeps the old wolves' kind key** (`alpha`) so the net wire still loads it; the name a
+  player reads is the bear's.
 - **The music is the Steam download**: the nine tracks in `audio/music/` are 39 MB of the
   game's 44 MB, encoded at 184–256 kbps. Re-encoding them to 128 kbps (ffmpeg, `-b:a 128k`,
   or `-q:a 5` VBR) would cut the music to roughly 26 MB; the code reads the files by name in

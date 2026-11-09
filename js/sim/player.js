@@ -826,7 +826,7 @@ class Player {
     this.rushT = 0; this.rushNX = 0; this.rushNY = 0; this.rushVictim = null;
     this.castSlam = false;                         // the shield key pressed mid-wall or mid-rush: the cast in flight is the SLAM, not a raise (js/sim/abilities.js)
     this.buffT = 0;                                // s of a bear buff left (campBuff, wildlife.js): harder blows, a quicker walk
-    this.buffKind = null;                          // ...and which bear's ('alpha' or 'dire'): its name and its ring's colour
+    this.buffKind = null;                          // ...and which beast's ('alpha', the bear): its name and its ring's colour
     this.shields = [];                             // { kind, hp, t }: every shield up, in the order a hit spends them (SHIELD_KINDS, js/sim/actions.js)
     // ARMATOS (js/sim/armatos.js): his resolve (0..1, full = the next key shields him) and
     // the seconds since a hit last fed it; the brace (`hold`, on the shieldT state) and

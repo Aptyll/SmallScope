@@ -760,7 +760,7 @@ function hurtUnit(e, dmg, nx, ny, src, o) {
   if (heroAbNow && o.ab === undefined && src instanceof Player) o.ab = heroAbNow;
   // a bear buff (campBuff, wildlife.js): every blow a player wearing it lands
   // is worth more, whatever landed it - a shot, a roll, a stomp alike
-  if (src instanceof Player && src.buffT > 0) dmg = Math.round(dmg * statBuffMul(src, 'dmg'));
+  if (src instanceof Player) { const m = statBuffMul(src, 'dmg'); if (m !== 1) dmg = Math.round(dmg * m); } // ...and the black bears the side has slain
   dmg = passiveDeal(src, e, dmg, o); // ...and a hero's passive may make more of it (HERO_PASSIVE deal, js/sim/heroes.js)
   dmg = itemsDeal(src, e, dmg, o); // ...and so may an item's (CULL, SURGE: js/sim/items.js)
   dmg = loadoutDeal(src, e, dmg, o); // ...and a calling's or a tangle's (DUELIST, BOLAS: js/sim/loadout.js)

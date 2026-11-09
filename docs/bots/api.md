@@ -100,7 +100,7 @@ obs = {
   allies:   [{ id, x, y, hp, maxHp, cls, dead, respawnT, aboard, bot }],  // your whole side, always
   enemies:  [{ id, x, y, vx, vy, hp, maxHp, cls, prone }],                // rivals your side can see
   soldiers: [{ id, team, x, y, hp, maxHp }],      // wave soldiers near your side, both teams
-  animals:  [{ id, kind, level, x, y, hp, maxHp }],   // near you: rabbit, deer, wolf, alpha, dire, bird
+  animals:  [{ id, kind, level, x, y, hp, maxHp }],   // near you: rabbit, deer, wolf, alpha, bird
   eagles:   [{ team, x, y, state, hp, maxHp, hitT, mouth }],  // both birds, always
   structs:  [{ id, type, team, tx, ty, hp, maxHp, building }],  // buildings near you: type 'barracks', 'tower' or 'pump'
   nodes:    [{ kind, tx, ty }],    // tree or ripe bush near you; nearest 64, nearest first
@@ -136,9 +136,9 @@ obs = {
 - **`kills`.** Every death on the map since your last think, as the feed shows it on every
   screen. `by` is the killer's seat, or -1 when no player did it. `out` is true when
   the victim's bird has fallen, so it will not come back.
-- **The orca.** The ice inside the cistern at the middle is the orca's lake. Stand on it near
+- **The orca.** The orca's pool, the frozen pond on the creek top-left of the middle, is its ice. Stand on it near
   the orca and it locks on: `me.orca` counts down from 4, and if it reaches 0 while you are still
-  on that ice (a gate's sill is safe) the orca comes up and you go down, whatever your health.
+  on that ice the orca comes up and you go down, whatever your health.
 - **Shopping.** Walk to a merchant or its stall until `me.atShop`; `shop` then lists every item,
   always on sale. `part` is true for a cheap part; a finished item names the parts it is built
   `from`, and `price` already takes off the parts you hold. Buy with
