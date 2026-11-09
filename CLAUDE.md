@@ -7,7 +7,8 @@ is. Everything else lives in a doc or a skill, linked where it applies.
 
 Before you propose a feature, read [game](docs/dev/game.md). Before you write a word a player
 reads, read [lore](docs/dev/lore.md). To find code, start at [code-map](docs/dev/code-map.md)
-(which file and banner owns a thing). Docs with a Pages index: read only the pages you need.
+(which file and banner owns a thing). Read docs by section, never whole: a doc with a Pages index,
+only the pages you need; any other, its `## ` headings first, then the one section.
 A change that spans many files has a list in [checklists](docs/dev/checklists.md). Procedures are
 skills: `new-hero`, `concept-art` (any new look), `shorts` and `media`, `kitchen`.
 
