@@ -45,7 +45,7 @@ const AB_RANK_STAT = {
   mark: ['MARKED FOR', tipNum, 'S'], shieldHp: ['SHIELD OF MOST HP', tipCent, '%'],
   missing: ['OF HP ALREADY LOST', tipCent, '%'], bonus: ['MOST EXTRA', tipNum, ''],
   burn: ['BURN A SECOND', tipNum, ''], walk: ['WALKS FASTER', (v) => tipCent(v - 1), '%'],
-  markDmg: ['MARKED HIT DAMAGE', tipNum, ''], shot: ['DAMAGE x', tipNum, ''], ambush: ['AMBUSH SHOT x', tipNum, ''],
+  markDmg: ['MARKED HIT DAMAGE', tipNum, ''], hp: ['HEALS', tipNum, ''], hps: ['HEALS A SECOND', tipNum, ''], shield: ['SHIELD', tipNum, ''], shot: ['DAMAGE x', tipNum, ''], ambush: ['AMBUSH SHOT x', tipNum, ''],
 };
 const TIP_RANK_ON = '#f2cc6a';
 // one ranked value as a row's value: plain text when it never changes, else

@@ -1563,6 +1563,20 @@ const CLASS12 = [
     '.....o......',
     '............',
   ],
+  [ // SALVIA: a snowdrop, its white bell nodding off the stem
+    '...ooo......',
+    '..ovvvoo....',
+    '..ovooovo...',
+    '..ovo.ovo...',
+    '..ovooWWWo..',
+    '..ovoWWWWWo.',
+    '..ovooWoWo..',
+    '.oVvo.o.o...',
+    'oVVvo.......',
+    '.oovo.......',
+    '..ovo.......',
+    '...o........',
+  ],
 ];
 const class12Cache = new Map();
 function classIcon12(i, you) {

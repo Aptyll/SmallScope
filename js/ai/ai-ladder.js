@@ -277,6 +277,10 @@ function aiFight(k) {
     if (p.zip >= 0) inp.jump = true; // off the zipline first: nobody fights holding the handle
     const aim = skillAim(p, prof, foe, dt); // its read of them, led, with its wobble
     aimAt(aim.x, aim.y);
+    // a key winding up at somewhere that is not them (a row's `botAim`: AURA's step away,
+    // SALVIA's heals) keeps its aim there until it lands: a cast lands at the aim held then
+    const winding = p.castT > 0 && p.castAb >= 0 && abOf(p, p.castAb);
+    if (winding && winding.botAim) { const to = winding.botAim(p, foe); aimAt(to.x, to.y); }
     // hold ~70px: close in when far, back off when crowded, strafe in between
     const clear = aiLineClear(p, foe.x, foe.y - 6);
     if (p.prone) {
