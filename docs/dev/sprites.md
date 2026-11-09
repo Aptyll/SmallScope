@@ -88,7 +88,7 @@ more: the frames live on as the CATCH emote's (`EMOTES`, js/ui/screens.js). The 
 **The run, the held run and the dodge roll are the one set of player frames not typed by hand.**
 [app/bake-player/](../../app/bake-player/) paints them off a jointed doll of each class body (and of
 each named hero's looks: ARMATOS's `standard` and `oath`, FORTIVA's `unbroken` and `coif`, BELLA's `general` and `traitor`,
-IGNIA's `hearth` and `wanderer`, AURA's `light`, SALVIA's `hood` and `tent`, LUCERNA's `lamp` and `dusk`, HIEMS's `scholar` and `frost`, RUPES's `quarry` and `cellar`, VARRO's `wolfkept` and `whitepack`, [hero looks](#hero-looks)) and
+IGNIA's `hearth` and `wanderer`, AURA's `light`, SALVIA's `hood` and `tent`, LUCERNA's `lamp` and `dusk`, HIEMS's `scholar` and `frost`, RUPES's `quarry` and `cellar`, VARRO's `wolfkept` and `whitepack`, BUCINA's `horn` and `column`, [hero looks](#hero-looks)) and
 writes them to js/baked/motion.js as char grids in characters.js's own letters, so `motionSet`
 bakes them through the same team and look palettes as every hand-drawn pose: `run[dir]`,
 `hold[dir]` and `roll[dir]` sit beside the walking directions, `left` the mirror of `right`.
@@ -185,7 +185,7 @@ frame, not the doll**: `heroRunSide` (armatos.js) finds the leg rows, scissors t
 `HERO_STRIDE` and bobs the body over them, so the head and coat keep the standing width (the doll's
 side run was a pixel or two narrower and read as the hero shrinking when turning left or right).
 The run facing down and up is still the doll's, unless the look's row says `run: 'drawn'`: then
-`heroRunFront` lifts the drawn front and back the same way (IGNIA's two looks, AURA's, SALVIA's and LUCERNA's two, whose shawl, mantle, coat and hair
+`heroRunFront` lifts the drawn front and back the same way (IGNIA's two looks, AURA's, SALVIA's, LUCERNA's and BUCINA's two, whose shawl, mantle, coat, cape and hair
 the doll does not match). The class bodies (HUNTER, WARRIOR) keep the doll's run. The fish and the burrow frames are still the borrowed skater's in
 that paint. Which look a player wears is `heroSkinOf(p)` (player.js): the id in `p.skins` under the
 hero's `skinSlot`, or the free first row. LAST STANDARD (nasal helm, white beard, tabard) is his
@@ -266,6 +266,17 @@ the body is two pixels narrower. Her dolls (`Lamp` and `Dusk` in app/bake-player
 the coat in the doll's `cloak` material; only the roll is used. Her 48 px model is her own front frame at 3x (`portrait`). Her LANTERN is carried like a staff but hangs: `staff: 'lantern'` names
 `HERO_STAVES.lantern` (`LUCERNA_LANTERN`, js/draw/lucerna.js), a brass lamplighter's lantern held by
 its ring (`LUCERNA_LANTERN_GRIP`), its flame breathing between two baked frames.
+
+BUCINA has two looks (`BUCINA_SKINS`, js/sprites/bucina.js): HORN-BLOWER (free: bare-headed, an
+auburn braid, a slate wool cape with a cream fur collar over the side's coat, a brass baldric) and
+COLUMN CALL (rare, 200 coins: an iron cap with a brass brim and a brass gorget in place of the fur),
+both on ARMATOS's frame (`BUCINA_PAL` is `ARM_PAL` with her hair `a`/`A`, the cape `q`/`Q` and the
+fur `w`/`W`). They are A and B off bucina-round1.png in the project files; side-on the head keeps the
+front's width and the body is two pixels narrower. Her dolls (`Horn` and `Column` in
+app/bake-player/bodies.py) paint the cape in the doll's `cloak` material and the collar in `beard`
+(`gold` for the gorget); only the roll is used. Her 48 px model is the warrior's in her paint. Her
+HORN is a staff: `staff: 'horn'` names `HERO_STAVES.horn` (`BUCINA_HORN`, js/draw/bucina.js), a brass
+signal horn held upright with the bell at the top, glinting between two baked frames.
 VARRO has two looks (`VARRO_SKINS`, js/sprites/varro.js): WOLF-KEPT (free) and WHITE PACK (rare,
 200 coins), both on ARMATOS's frame (`VARRO_PAL` is `ARM_PAL` with the grey pelt `f`/`F`/`j`, the
 white pelt `u`/`U`/`v` shaded blue so it holds on snow, and his dark hair `a`). The pelt is worn as

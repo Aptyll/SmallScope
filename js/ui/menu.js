@@ -39,7 +39,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.614';
+const PATCH_TXT = 'PATCH 0.615';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -55,6 +55,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.615', 'A NEW HERO, BUCINA THE HORN: HER HORN SHOVES RIVALS BACK, RALLIES HER SIDE TO ATTACK FASTER AND STAND FIRM, ECHOES OFF WALLS TO STUN, AND SHAKES THE SNOW OFF THE PINES ONTO RIVALS UNDER THEM.'],
   ['0.614', 'UNDER THE HOOD: THE LAST PIECES OF THE OLD SURVIVAL GAME THAT NOTHING REACHED ANY MORE (THE FLOCK OF BIRDS, DEAD TREES, ICE HOLES THAT REFROZE AT DAWN, THE STONE CAIRN) ARE GONE.'],
   ['0.613', 'THE ROADMAP NO LONGER LISTS THREE THINGS THAT ALREADY SHIPPED: JOIN GAME ON A STEAM FRIEND, PARTIES MATCHED AGAINST PARTIES, AND PARTIES IN THE PRACTICE TOOL.'],
   ['0.612', 'ONLINE, THE WARNING LINES AND SHAPES OTHER PLAYERS\' ABILITIES DRAW BEFORE THEY FIRE NOW POINT WHERE THEY ARE AIMING, SO YOU CAN DODGE THEM.'],
@@ -1694,6 +1695,20 @@ const CLASS12 = [
     '.oWWWWWWWo..',
     '..oWWoWWo...',
     '...oo.oo....',
+    '............',
+  ],
+  [ // BUCINA: her horn, the bell to the right
+    '............',
+    '.........oo.',
+    '........ogWo',
+    '.......ogggo',
+    '..ooo.ogggGo',
+    '.ogggogggGo.',
+    'ogGoggggGo..',
+    'ogo.oGGGoo..',
+    '.o...ooo....',
+    '............',
+    '............',
     '............',
   ],
 ];

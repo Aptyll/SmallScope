@@ -67,7 +67,7 @@ the held one lit gold
 js/ai/ai.js, first thing `aiThink` asks): the ultimate whenever it can rank, then each basic key
 unlocked once, then the basics maxed in the hero's `rankOrder` (its `CLASSES` row: HUNTER
 shot, net, grapple; WARRIOR stomp, rush, shield; ARMATOS verdict, march, brace; FORTIVA sever,
-yoke, heart; AURA star, orb, step; SALVIA poultice, cloak, snowdrops; LUCERNA crook, shoo, lantern; RUPES heave, shed, shoulder; VARRO lunge, snap, howl). The cd column in the tables below is every rank's; the numbers in the text are rank
+yoke, heart; AURA star, orb, step; SALVIA poultice, cloak, snowdrops; LUCERNA crook, shoo, lantern; RUPES heave, shed, shoulder; VARRO lunge, snap, howl; BUCINA note, blast, echo). The cd column in the tables below is every rank's; the numbers in the text are rank
 1's, and each row's `rank` table has the rest.
 
 **Every ability lands on every kind of body.** A player, a rabbit, a deer, a bird, a wolf and a
@@ -267,6 +267,24 @@ and a rival is held (`stunUnit`) while it travels. What she leaves in the world 
 | 2 | **LANTERN** | 18/17/16/15/14 s | her lantern lands at the aim, at most `LANTERN_RANGE` from her, one at a time (`lucernaThrow`). An ally player who walks within `LANTERN_R` of it takes it and is pulled to her side, not held; rivals within `LANTERN_SEE` of it are shown. Untaken, it comes back after `t` (4/4.5/5/5.5/6 s) (`updateLanterns`). A bot throws it at an ally hero who is hurt with a rival close (`lucernaInDanger`, the row's `botAim`) |
 | 3 | **SHOO** | 10/9.5/9/8.5/8 s | a swing of the crook `SHOO_REACH` in front of her, `SHOO_HALF` either side of the aim: every rival body in it takes `dmg` (15/25/35/45/55) and is shoved `SHOO_KB` (`hurtUnit`'s `kb`); buildings in it take the blow |
 | 4 | **CIRCLE OF LIGHT** | 100/85/70 s | a ring `CIRCLE_R` (92 px) round where she stands, for `CIRCLE_T`: every rival inside is shown, and one within `CIRCLE_EDGE` of the rim walks ×`slow` (0.45/0.35/0.25) for `CIRCLE_SLOW_T` (`updateCircles`) |
+
+BUCINA, THE HORN — the tempo support. Her rules live in
+**[js/sim/bucina.js](../../../js/sim/bucina.js)** (`BUCINA_AB`, its `bucina` banner), her pixels in
+[js/draw/bucina.js](../../../js/draw/bucina.js), her icons, looks and horn art in
+[js/sprites/bucina.js](../../../js/sprites/bucina.js). 92 hp, 14 armor, no heals and no shields: a
+note off her HORN (her `attack` row, drawn as `look: 'hornnote'`; the horn is carried upright,
+`HERO_STAVES`). What she leaves in the world (`bucinaEchoes`, `bucinaCalls`) and the clocks she
+lends (`p.heardT`, `p.rallyT`) are stepped by `bucinaWorld` (`HERO_TICK`):
+
+| key | name | cd | what it does |
+| --- | --- | --- | --- |
+| P | **HEARD** | — | whenever one of her keys strikes a rival body, every ally player within `HEARD_R` (150 px) of her, her too, walks ×`HEARD_WALK` for `HEARD_T` (`bucinaHeard`, `p.heardT`, a `HERO_MOVE` row). `HERO_PASSIVE.heard` |
+| 1 | **HORN BLAST** | 10/9.5/9/8.5/8 s | a cone `BLAST_REACH` (78 px) in front of her, `BLAST_HALF` either side of the aim: every rival body in it takes `dmg` (15/25/35/45/55), is shoved `BLAST_KB` and walks ×`BLAST_SLOW` for `BLAST_SLOW_T`; buildings in it take the blow |
+| 2 | **RALLYING NOTE** | 16/15/14/13/12 s | every ally player within `RALLY_R` (110 px), her too, for `RALLY_T`: attack speed +`as` (20/25/30/35/40%, a `HERO_STAT` 'as' row: a share on `asMul`, like an item's) and `RALLY_TEN` tenacity (`bucinaTen`, a `HERO_TEN` row) |
+| 3 | **ECHO** | 13/12.5/12/11.5/11 s | a wave down the aim `ECHO_RANGE` (210 px) at `ECHO_SPD` (`updateEchoes`). A wall or a tree turns it round once, to run back as far as it came. Each pass strikes each rival body once for `dmg` (20/32/44/56/68); one struck going and coming is stunned `ECHO_STUN` |
+| 4 | **SHAKE THE PINES** | 100/85/70 s | every pine within `PINES_R` (190 px) sheds its snow (`shedHit`, js/sim/shed.js; at most `PINES_PUFFS` seen to puff). Every rival body standing within `PINES_UNDER` of a pine's foot inside is stunned `stun` (0.75/1/1.25 s) (`bucinaUnderPine`); every rival in the woods inside (`inWoods`) is shown for `PINES_SEE_T` |
+
+A bot rallies with two allies near and a rival hero close, and keeps SHAKE THE PINES for a rival hero under a pine or in the woods.
 VARRO, THE WOLF-KEPT — the jungler: a diver who picks one rival and closes the ring on them. His
 rules live in **[js/sim/varro.js](../../../js/sim/varro.js)** (`VARRO_AB`, its `varro` banner), his
 pixels in [js/draw/varro.js](../../../js/draw/varro.js), his icons, looks and spear in

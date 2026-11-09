@@ -685,10 +685,42 @@ class Frost(Light):
             cv.blob(cam, U(v3(0.0, 2.9 * s, Z(8.6))), R, (0.8, 0.75, Z(0.9)), 'locks' + ('L' if s > 0 else 'R'), self.HAIR, bias=0.4)
 
 
+class Horn(Lamp):
+    """BUCINA as HORN-BLOWER (her default look): bare-headed, auburn hair, a slate wool cape
+    with a cream fur collar over her side's coat; Armatos's frame, boots"""
+
+    @staticmethod
+    def face_region(n, q):
+        """the face, the hair all round it and over the crown"""
+        return np.where((q[0] > 0.2) & (np.abs(q[1]) < 0.75) & (q[2] < 0.3) & (q[2] > -0.95), 'skin', 'hair')
+
+    def coat(self, cv, cam, U, R):
+        super().coat(cv, cam, U, R)
+        cv.blob(cam, U(v3(0.1, 0, Z(8.0))), R, (2.7, 3.3, Z(0.7)), 'collar', 'beard', bias=0.3)
+
+    def ball_head(self, cv, cam, hc, Rh):
+        cv.blob(cam, hc, Rh, (2.6, 2.85, 2.5), 'head', 'hair', p=self.HEAD_P)
+
+
+class Column(Horn):
+    """BUCINA as COLUMN CALL (the first skin): an iron cap with a brass brim, a brass gorget in
+    place of the fur, the same cape"""
+
+    @staticmethod
+    def face_region(n, q):
+        """the cap over the crown, the hair below it round the face"""
+        return np.where(q[2] > 0.35, 'helm', np.where((q[0] > 0.2) & (np.abs(q[1]) < 0.75) & (q[2] > -0.95), 'skin', 'hair'))
+
+    def coat(self, cv, cam, U, R):
+        Lamp.coat(self, cv, cam, U, R)
+        cv.blob(cam, U(v3(0.1, 0, Z(8.0))), R, (2.6, 3.2, Z(0.6)), 'collar', 'gold', bias=0.3)
+
+
 BODIES = {'hunter': Hunter(), 'warrior': Warrior(), 'standard': Standard(), 'oath': Oath(),
           'unbroken': Unbroken(), 'coif': Coif(), 'general': General(), 'traitor': Traitor(),
           'hearth': Hearth(), 'wanderer': Wanderer(), 'light': Light(),
           'hood': Hood(), 'tent': Tent(), 'lamp': Lamp(), 'dusk': Dusk(),
           'scholar': Scholar(), 'frost': Frost(),
           'quarry': Quarry(), 'cellar': Cellar(),
-          'wolfkept': Wolfkept(), 'whitepack': Whitepack()}
+          'wolfkept': Wolfkept(), 'whitepack': Whitepack(),
+          'horn': Horn(), 'column': Column()}

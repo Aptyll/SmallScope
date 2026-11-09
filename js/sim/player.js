@@ -327,6 +327,27 @@ const CLASSES = [
     kit: { iceMax: 1.15, iceSteer: 3.4, slideMin: 70, fatigue: 0.75, chargeMul: 0.7,
       bowCharge: 0.75, nock: 0.5, spdDmg: 5, dodgeSpeed: 235 },
   },
+  {
+    // the tenth named hero (js/sim/bucina.js): the tempo support, her side's speed and
+    // nerve: a horn that shoves, rallies, echoes off the walls and calls the snow down off
+    // the pines; no heals, no shields, and little damage of her own
+    name: 'BUCINA', role: 'THE HORN', body: 1, passive: 'heard', // HERO_PASSIVE, js/sim/bucina.js
+    look: { sex: 1, tone: 1, hair: 3, hairCol: 3, beard: 0, face: 2 },
+    blurb: ['ONE NOTE AT THE RIGHT TIME WINS THE FIGHT.', 'YOUR SIDE RUNS FASTER, HITS FASTER AND DOES NOT STOP.', 'NO HEALS, NO SHIELDS: YOUR SIDE HAS TO FOLLOW.'],
+    story: "SHE BLEW THE HORN FOR THE EMPIRE'S RETREATS, AND ONCE BLEW IT WITHOUT AN ORDER AND BROUGHT A WHOLE COLUMN HOME. THEY TOOK THE HORN AWAY FOR IT. NOW SHE CARRIES HER OWN, IT CALLS A COMPANY FORWARD, AND THE SNOW COMES OFF THE PINES WHEN IT DOES.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
+    // a note off her horn: the staff mages' reach, a little short of it
+    staff: 'horn', // her HORN, carried upright (HERO_STAVES, js/draw/bucina.js)
+    attack: { name: 'HORN', art: 'horn', cycle: 62 / 60, kb: 0.6, shot: { speed: 255, life: 0.8, col: '#cfe0f2', look: 'hornnote' } },
+    base: { hp: 92, dmg: 14, armor: 14, ap: 0, haste: 0, ms: PLAYER_SPEED },
+    grow: { hp: 6.5, dmg: 1.1, as: 0.01, armor: 2.2 },
+    rankOrder: [1, 0, 2], // the note, the blast, the echo
+    // her own body in each of her looks (BUCINA_SKINS, js/sprites/bucina.js), worn per
+    // player (heroSkinOf) over the side's coat
+    skins: BUCINA_SKINS, skinPal: BUCINA_PAL, skinSlot: 'bucina',
+    paint48: { t: '#7d8699', T: '#b4bdcc', g: '#1c2232', G: '#9aa3b8', m: '#5c6478', M: '#454c5e' }, // the 48 px model's (js/sprites/looks.js): its K is skin
+    kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1, chargeMul: 0.55,
+      bowCharge: BOW_CHARGE, nock: 0.4, spdDmg: 0, dodgeSpeed: DODGE_SPEED },
+  },
 ];
 // the body a hero wears - its sprites and its 48 px model: a hero that names
 // none is its own (HUNTER 0, WARRIOR 1), a named hero borrows one
@@ -702,6 +723,8 @@ class Player {
     this.brothT = 0; this.cloakT = 0;
     // LUCERNA (js/sim/lucerna.js), on any body she pulls: the spot it is drawn to and the clock
     this.pullT = 0; this.pullX = 0; this.pullY = 0;
+    // BUCINA (js/sim/bucina.js), on any player who heard her: HEARD's run, and the note's hold and its attack speed
+    this.heardT = 0; this.rallyT = 0; this.rallyAs = 0;
     // RUPES (js/sim/rupes.js): his snowpack (0..1, PACK_LAYERS layers) and the seconds since a
     // hit fed it; the px his avalanche has rolled (its size)
     this.pack = 0; this.packIdle = 0; this.avaD = 0;
