@@ -248,10 +248,10 @@ must not become one: it is a wallet number with no ceiling.
 (`speed`, `life`, `col`) or a `cut` (`reach`, `half`). The press, the draw, the aim line, the held
 weapon, the tooltip, the bots (`aiMelee` reads `cut`) and the ATTACK SPEED stat (`classAs`) all
 read the row, so nothing else is edited. A new `art` is a 12×12 grid in `SPRITES.weaponArt`
-(js/sprites/weapons.js), a blade's real-length grid in `SPRITES.weaponHeld`, and its heading in
-`WEAPON_FWD`; draw a bow the way it is held (string toward the archer, arrowhead at +x). A hero
+(js/sprites/weapons.js), a blade's real-length grid in `SPRITES.weaponHeld`, its heading in
+`WEAPON_FWD` and where the hand closes on each grid in `WEAPON_GRIP` (a blade at its hilt, a bow at its middle); draw a bow the way it is held (string toward the archer, arrowhead at +x). A hero
 with a blade of its own sets `blade` on its `CLASSES` row and draws it through `heroBlade`
-(js/draw/heroes.js). **Run the feel numbers after any change** (a shot's speed and life and a
+(js/draw/heroes.js), its `HERO_BLADES` row naming the `hilt` on the flat art. **Run the feel numbers after any change** (a shot's speed and life and a
 cut's reach and damage at a tap, half and full draw, and the cycle): nothing else says when an
 edit has changed how an attack plays.
 

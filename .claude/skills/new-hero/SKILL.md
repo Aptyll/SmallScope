@@ -84,7 +84,7 @@ LOOKS (optional): default look name, first buyable skin name
    per look in `app/bake-player/bodies.py`, then `python app/bake-player/bake.py`. The rebake
    must only add lines to js/baked/motion.js: every other hero's frames stay byte-identical.
    Add the hero's tab in js/ui/skins.js (`hero:` its index). The weapon is held naturally in all
-   four facings (a `HERO_BLADES` row: flat and slanted art, the grip, the hip by facing; a mage's
+   four facings (a `HERO_BLADES` row: flat and slanted art, the `hilt` on the flat art and the grip on the slanted, the hip by facing; a mage's
    staff is a `HERO_STAVES` row named by `staff:` on the `CLASSES` row, IGNIA's crook). The side run
    comes off the drawn side frame (`heroRunSide`): keep the head as wide as the front and the body
    about 2px narrower (ARMATOS: front body 10, side 8), or the run reads fat;

@@ -9,6 +9,12 @@
 // A bow is drawn the way it is held: string toward the archer, belly and
 // arrowhead toward the target; the sword lies flat, point left.
 const WEAPON_FWD = { bow: 0, sword: Math.PI, staff: Math.PI };
+// WEAPON_GRIP says where the hand closes on each art, [x, y] on its grid: the
+// hand turns the weapon about that point, so a blade reaches OUT of the fist
+// and its hilt never swings back across the body (drawHeldTool,
+// js/draw/bodies.js). `held` is the long art, `icon` the 12 px one; a bow is
+// held at its middle.
+const WEAPON_GRIP = { held: { sword: [20, 11] }, icon: { bow: [6, 6], sword: [10, 5], staff: [2, 6] } };
 (() => {
   // the wood and steel every weapon here is painted in
   const PAL = {
