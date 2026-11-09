@@ -347,6 +347,7 @@ function updateAbilities(p, dt) {
   if (p.dead) return; // a burn can finish a player mid-tick
   if (p.rootT > 0) p.sliding = false;
   if (p.buffT > 0) p.buffT = Math.max(0, p.buffT - dt); // a bear buff running out (campBuff, wildlife.js)
+  if (p.pushT > 0) p.pushT = Math.max(0, p.pushT - dt); // ...and the orca buff (orcaPushMul)
   // the shield tracks the aim while it is up, and lowers itself on the timer
   if (p.shieldT > 0) {
     p.shieldT -= dt;

@@ -819,7 +819,7 @@ function soldierLand(b, e, pt) {
   const d = Math.hypot(pt.x - b.x, pt.y - (b.y - 1)) || 1;
   const nx = (pt.x - b.x) / d, ny = (pt.y - (b.y - 1)) / d;
   if (state.drop && state.drop.eagles.indexOf(e) >= 0) { if (e.state === 'down') hurtEagle(e, T.eagle, null, pt.x, pt.y); }
-  else if (e.tx !== undefined) { if (structures.indexOf(e) >= 0) hurtStruct(e, T.dmg * T.struct, src, b); } // `b` swung it, so STRUCT_DR stays off: a kind's dmg is already a building number
+  else if (e.tx !== undefined) { if (structures.indexOf(e) >= 0) hurtStruct(e, T.dmg * T.struct * orcaPushMul(b), src, b); } // `b` swung it, so STRUCT_DR stays off: a kind's dmg is already a building number
   else if (unitAlive(e)) hurtUnit(e, T.dmg, nx, ny, src, { cause: 'soldier' });
 }
 // a snowball in the air: when its time is up it lands on its mark (soldierLand)

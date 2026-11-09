@@ -193,7 +193,9 @@ road, mirrored so both teams walk the same distance: four **WOLF DENS** that pay
 **BLACK BEAR BEND**, the one bear, patrolling a bank of the creek: first out at 5:00 and back 5:00
 after each kill, which pays the whole team, gives it the BLACK BUFF, and adds a black bear to the
 side's count: +5% on every blow for the rest of the match, up to four. Facing it across the road is
-the **ORCA'S POOL** (no camp monster: [the orca](gameplay/wildlife.md#the-orca) under its ice).
+the **ORCA'S POOL**: [the orca](gameplay/wildlife.md#the-orca) under its ice, and from 20:00 up in a hole
+in the middle to be fought (back 6:00 after each kill). Its kill gives the whole team the ORCA BUFF for
+3 minutes: the side's soldiers near a hero wearing it hit buildings twice as hard.
 Every camp is **neutral until hit** — then the whole camp comes for the hitter, leashes when
 they leave its ground and heals — and every site sits well off the road, so the lane is never a
 wolf's. [Camps](world.md#camps), [camp monsters](gameplay/wildlife.md#camp-monsters-neutral-until-hit).
