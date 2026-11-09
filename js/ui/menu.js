@@ -39,7 +39,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.604';
+const PATCH_TXT = 'PATCH 0.605';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -55,6 +55,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.605', 'THE PARTY SCREEN AND CHAMP SELECT NOW FIT 4:3 AND 16:10 SCREENS.'],
   ['0.604', 'A PARTY WITH FRIENDS IN IT CAN NO LONGER SWITCH TO 1V1, WHICH IS A QUEUE FOR ONE PLAYER.'],
   ['0.603', 'UNDER THE HOOD: OLD SPRITES AND SOUNDS NOTHING USED ANY MORE ARE GONE, SO THE GAME LOADS A LITTLE LESS.'],
   ['0.602', 'A LOST MATCH NOW SAYS YOUR EAGLE WAS DRIVEN OFF, THE TAB SCOREBOARD AND THE MAP SHOW THE MATCH CLOCK INSTEAD OF A DAY, AND THE POST-GAME STATS COUNT DAMAGE TO HEROES AND STRUCTURES.'],
@@ -1169,7 +1170,7 @@ function buildHelpPanel() {
 // shapes carry it.
 const LOBBY_PANEL_W = 148;               // a side's column of seat rows at its widest, glued to its screen edge
 const LOBBY_PANEL_MIN = 104;             // ...and its narrowest: a narrow view drops grid columns before going under it
-const LOBBY_GUTTER = 24;                 // between a column and the grid: the seconds that point at your row
+const LOBBY_GUTTER = 30;                 // between a column and the grid: the seconds that point at your row (drawSeats: arrow and two 2x digits, 28 px)
 const LOBBY_ROW_MAX = 44;                // a seat row's tallest; a short view shrinks it...
 const LOBBY_ROW_MIN = 34;                // ...to this: the portrait disc and the three lines
 const LOBBY_HEAD = 44;                   // the band over the columns and the grid: the headline, the clock, the bans
