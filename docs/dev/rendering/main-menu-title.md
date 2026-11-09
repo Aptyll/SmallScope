@@ -250,7 +250,10 @@ is the one rect source for the draw, the hit test (`skinsHit`) and the cursor.
   one; `drawSkinTab`): an 8x8 glyph and the word, slate at rest, pale under the hand,
   white on the open tab (`menu.skTab`, the eagle at boot) with a 1 px line as wide as the word.
   A click, Q/E, or up off the grid's top row then left/right (`menu.skNav`) turns it. The purse
-  (coin + number) sits over the grid's right edge.
+  (coin + number) sits over the grid's right edge, and the tabs run only up to it: more tabs than
+  that room holds scroll (`skTabs.off`, the first shown; `skinTabsFrom`), each end with more past
+  it wears a chevron that pages that way, the wheel over the row steps it (`skinsScrollBy`), and
+  turning to a tab brings it into the row (`skinsTabShow`).
 - **A card per row of the open tab**, `SK_COLS` across (`drawSkinCard`): the picture (`skinArt`)
   on a low radial glow of its rarity's colour (`SKIN_RARITY`) at the largest whole scale its
   `SK_ART_H` box holds, capped at `SK_ART_MAX`, still at rest and moving under the hand, on the

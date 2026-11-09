@@ -39,7 +39,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.668';
+const PATCH_TXT = 'PATCH 0.669';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -55,6 +55,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.669', 'THE SKINS SCREEN\'S TABS SCROLL: EVERY HERO\'S TAB IS ON SCREEN NOW, WITH A CHEVRON AT EACH END THAT HAS MORE, AND THE MOUSE WHEEL OVER THE ROW STEPS IT.'],
   ['0.668', 'THE KILL FEED NAMES BOTS BY THEIR HERO, LIKE TAB AND THEIR NAME TAGS: NO MORE BLUE-5.'],
   ['0.667', 'THE END SCREEN\'S STORY LINES PRINT WHOLE NUMBERS: NO MORE BIRD DAMAGE WITH TWELVE DECIMALS.'],
   ['0.666', 'ONLINE, A FRIEND\'S SCREEN MATCHES THE HOST\'S PIXEL FOR PIXEL AGAIN: THE CRASH PADS AND THE LAKE ICE\'S CRACKS NO LONGER DRAW A PIXEL OFF.'],
