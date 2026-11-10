@@ -441,10 +441,11 @@ function repaintGround(tx, ty) {
 const ICE_STYLES = [
   { id: 'lip',   w: 1, amp: 0.42, fr: 0.56, amp2: 0.14, fr2: 0.19, band: 2 },
   { id: 'deep',  w: 2, amp: 0.5,  fr: 0.75, amp2: 0.1,  fr2: 0.25, band: 3, deep: true },
+  { id: 'river', w: 0, amp: 0.42, fr: 0.56, amp2: 0.14, fr2: 0.19, band: 2, river: true }, // never rolled: the frozen creek's own (riverTone)
 ];
 const ICE_W = ICE_STYLES.reduce((a, s) => a + s.w, 0);
 const ORCA_ICE = ICE_STYLES.findIndex((s) => s.deep); // the orca's pool's style, whatever its roll (bakeLakes)
-const CREEK_ICE_STYLE = ICE_STYLES.findIndex((s) => !s.deep); // ...and the frozen creek's: plain ice, lane to lane
+const CREEK_ICE_STYLE = ICE_STYLES.findIndex((s) => s.river); // ...and the frozen creek's: river ice, lane to lane
 const rgbOf = (h) => { const a = [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)]; a.css = h; return a; };
 const ICE_TONE = [rgbOf('#b9dcec'), rgbOf('#c4e3f0')];     // the sheet, in two tones by a dithered low noise
 const ICE_SHALLOW = [rgbOf('#c9e7f3'), rgbOf('#d0ebf5')];  // DEEP: the shelf along the shore
@@ -563,6 +564,7 @@ function depthAtPx(x, y) {
 }
 // the sheet's colour at a pixel (hp: the pixel's own roll)
 function iceTone(x, y, s, hp) {
+  if (s.river) return riverTone(x, y);
   const k = vnoise(x / 37 + 3, y / 29 + 5) + (hp - 0.5) * 0.18 > 0.5 ? 0 : 1;
   if (s.deep) {
     const d = depthAtPx(x, y) + (hp - 0.5) * 0.6;
@@ -571,6 +573,41 @@ function iceTone(x, y, s, hp) {
     if (d > 2.4) return ICE_MID[k];
   }
   return ICE_TONE[k];
+}
+
+// THE FROZEN RIVER's own ice, so it never reads as one more pond: a sheet
+// that remembers it flowed. Down its middle runs the clear channel, darker,
+// where the current froze last; wind-laid snow lies on it in long thin
+// streaks along the flow; and now and then a crack runs bank to bank across
+// it, a dark line with its lit lip under. The streaks keep off the channel. Flat tones meeting on clean edges,
+// no dither. Read in the creek's own frame (creekAt: CQ.a along the water,
+// CQ.n across it from its centre), so every streak follows the bends.
+const RIVER_SHEET = rgbOf('#bddeed');      // the sheet
+const RIVER_CHANNEL = rgbOf('#a9d0e4');    // the clear channel down the middle
+const RIVER_CORE = rgbOf('#9cc6de');       // ...its deepest thread
+const RIVER_STREAK = rgbOf('#d4eaf4');     // wind-laid snow along the flow, on the sheet either side of the channel
+const RIVER_CRACK = rgbOf('#86b2cc'), RIVER_CRACK_LIT = rgbOf('#e6f4fa');
+const RIVER_CHANNEL_W = 0.42;              // share of the half-width the channel takes, either side of the middle
+const RIVER_STREAK_ROW = 2.5;              // px across between streak rows
+const RIVER_CRACK_EVERY = 7;               // tiles along the water between cracks, give or take
+function riverTone(x, y) {
+  const fx = (x + 0.5) / TILE - 0.5, fy = (y + 0.5) / TILE - 0.5;
+  creekAt(fx, fy);
+  const a = CQ.a, n = CQ.n, hw = creekHW(a, n < 0 ? -1 : 1) || 1, t = Math.abs(n) / hw;
+  // a crack across: where the along-position, bent a little by a slow noise, crosses a crack's line
+  const ca = a + (vnoise(n * 0.35 + 4.1, a * 0.05) - 0.5) * 1.6, ci = Math.floor(ca / RIVER_CRACK_EVERY);
+  if (hash2(ci * 7 + 3, 91) < 0.7) {
+    const off = (ca - (ci + 0.5) * RIVER_CRACK_EVERY) * TILE; // px from the crack's line
+    if (off >= 0 && off < 1) return RIVER_CRACK;
+    if (off >= 1 && off < 2) return RIVER_CRACK_LIT;
+  }
+  // a streak: 2 px rows across the flow, each with its own runs along it
+  const row = Math.floor((n * TILE) / RIVER_STREAK_ROW);
+  if (t > RIVER_CHANNEL_W + 0.12 && vnoise(a * 0.22 + row * 5.3, row * 1.9) > 0.72) return RIVER_STREAK; // on the sheet only: a streak down the channel reads as a road's paint
+  const wob = (vnoise(a * 0.18, 7.7) - 0.5) * 0.22;
+  if (t < RIVER_CHANNEL_W * 0.45 + wob * 0.5) return RIVER_CORE;
+  if (t < RIVER_CHANNEL_W + wob) return RIVER_CHANNEL;
+  return RIVER_SHEET;
 }
 
 // one tile's edge, and the pixels round it the bank reads: SHORE_M before
