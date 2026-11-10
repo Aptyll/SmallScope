@@ -1040,6 +1040,7 @@ const SHADE_BODY = '#3e59a7', SHADE_BODY_A = 0.3;
 const CAST_REACH = [-1, -1, 4, 2];          // tiles a caster's shade can land on from its own: x0, y0, x1, y1 (shadeFor checks)
 const whole = (cv, x, y) => [cv, 0, cv.width, cv.height, x, y];
 const SHADE_ROW = TILE; // px a pine's shade is drawn down when another stands on the tile below
+const SHADE_ROW_DIP = 0.5; // the share of the shade's reach the fill gives up halfway between two pines: how deep the rim's teeth are cut
 function treeInRow(tx, ty) { const o = inWorld(tx, ty + 1) && objects[idx(tx, ty + 1)]; return !!o && o.type === 'tree'; }
 const CASTERS = {
   // a pine's code is its standing frame AND its nudge (treeNudgeX/Y), so a
@@ -1107,10 +1108,16 @@ function shadeFor(C, c) {
   const [src, sx, sw, sh, ax, ay, sy, down] = C.art(c);
   m = shadeMask(src, sx, sw, sh, SHADE_TINT, 1, sy);
   if (m && down) {
-    // drawn down `down` px: the shade of the same shape standing all the way to the next one below
+    // drawn down `down` px to the next one's shade - but only its trunk-side
+    // share, least halfway between the two, so the crowns' tips stay teeth on
+    // the mass's lit rim and no straight edge is ruled down the snow
     const w = document.createElement('canvas'); w.width = m.width; w.height = m.height + down;
     const wg = w.getContext('2d');
-    for (let d = 0; d <= down; d += 2) wg.drawImage(m, 0, d);
+    wg.drawImage(m, 0, 0);
+    for (let d = 1; d <= down; d++) {
+      const cw = Math.round(m.width * (1 - SHADE_ROW_DIP * Math.sin(Math.PI * d / down)));
+      wg.drawImage(m, 0, 0, cw, m.height, 0, d, cw, m.height);
+    }
     w.oy = m.oy; m = w;
   }
   if (m) {
