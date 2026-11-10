@@ -289,7 +289,8 @@ about what the pointer is on; hovering an item describes it in the ordinary tool
 `tipItem`: its tier, PRICE, its PICK RATE and WIN RATE on your hero once the hero has the games,
 its stats, its passive), and a slot adds what it SELLS FOR. The words
 on it (the tabs, the row headlines, BUILDS INTO, BUY, SELL) are names, headlines and plates in
-plain words like the menus; everything else is icons, rims and numbers.
+plain words like the menus, kept in the text table as `shop.*` keys ([the text table](../rendering/the-text-table.md));
+everything else is icons, rims and numbers.
 
 **It is centred across the view**, `SHOP_Y` (4) from the top (`shopLayout`). A view narrower than 524 (4:3, 5:4, 16:10 at 3x) takes the difference out of the left side (`shopFit`): the grid loses whole columns and the pane keeps its width; the tabs close up, and when they still reach the close box the pane steps down under them and the box goes to the slab's corner. When the ALL rows run past the grid, the wheel over the slab walks them (`shopScroll`, `shopScrollBy` from the wheel, input.js), with a chevron at each end that has more; RECOMMENDED shows the paths that fit. Every icon (16 px, js/sprites/item-icons.js) is drawn at the largest **whole-number** scale that fits its well (`shopIcon`; a 20 px well shows it at 1x): a fractional one
 stretches every third source pixel and frays 1 px linework.

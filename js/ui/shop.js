@@ -152,7 +152,7 @@ const SHOP_BUY = '#2c5a3a', SHOP_BUY_HOT = '#3a7048'; // the BUY plate: the one 
 // game already speaks, on the rim and the price, with the goods greyed back.
 const SHOP_DEAR_BAND = '#3a1420', SHOP_DEAR_INK = '#e0637a';
 const SHOP_DEAR_WASH = 'rgba(8,9,12,0.62)';
-const SHOP_TABS = [{ id: 'rec', label: 'RECOMMENDED' }, { id: 'all', label: 'ALL' }].concat(ITEM_STYLES);
+const SHOP_TABS = [{ id: 'rec', label: tr('shop.rec') }, { id: 'all', label: tr('shop.all') }].concat(ITEM_STYLES);
 
 // the counter is up: the panel is drawn and eats its own clicks
 function shopOpen() {
@@ -276,21 +276,22 @@ function shopLayout() {
     const { R, start } = shopRecommended();
     const sy = (r) => y + 25 + r * SHOP_REC_ROW;
     const gw = PX - SHOP_GRID_X - 8; // the grid's width, past the stat bar to the pane
-    heads.push({ label: 'START', x: gx, y: sy(0) });
-    heads.push({ label: R.games + ' GAMES', x: gx + gw - pixelTextWidth(R.games + ' GAMES'), y: sy(0), dim: true });
+    heads.push({ label: tr('shop.start'), x: gx, y: sy(0) });
+    const games = tr('shop.games', { n: R.games });
+    heads.push({ label: games, x: gx + gw - pixelTextWidth(games), y: sy(0), dim: true });
     start.forEach((id, i) => well(id, gx + i * SHOP_PITCH, sy(0) + 9));
     // the paths, side by side: three wells a step apart with a chevron
     // between, and the pick and win rate beside them
     R.core.slice(0, Math.max(1, Math.floor((gw + 8) / SHOP_PATH_W))).forEach((row, k) => { // the paths that fit
       const px = gx + k * SHOP_PATH_W;
-      heads.push({ label: !R.data ? 'CORE' : row.best ? 'MOST WINS' : 'MOST PICKED', x: px, y: sy(1) });
+      heads.push({ label: tr(!R.data ? 'shop.core' : row.best ? 'shop.mostWins' : 'shop.mostPicked'), x: px, y: sy(1) });
       row.ids.forEach((id, i) => well(id, px + i * SHOP_PATH_PITCH, sy(1) + 9));
       if (row.pick !== undefined) rates.push({ x: px + row.ids.length * SHOP_PATH_PITCH + 2, y: sy(1) + 11, pick: row.pick, win: row.win });
       for (let i = 1; i < row.ids.length; i++) arrows.push({ x: px + i * SHOP_PATH_PITCH - 5, y: sy(1) + 9 + (SHOP_WELL >> 1) });
     });
-    heads.push({ label: 'BOOTS', x: gx, y: sy(2) });
+    heads.push({ label: tr('shop.boots'), x: gx, y: sy(2) });
     R.boots.forEach((row, i) => well(row.ids[0], gx + i * SHOP_PITCH, sy(2) + 9));
-    heads.push({ label: R.data ? 'ALSO BUILT' : 'THEN', x: gx, y: sy(3) });
+    heads.push({ label: tr(R.data ? 'shop.alsoBuilt' : 'shop.then'), x: gx, y: sy(3) });
     R.more.forEach((id, i) => well(id, gx + i * SHOP_PITCH, sy(3) + 9));
   } else {
     // the rows the grid holds; more than that (a narrow view's fewer columns)
@@ -503,9 +504,9 @@ function drawShopPanel(now) {
 // and how many of those it won - a win rate over half in the stat green
 function drawShopRates(L) {
   for (const r of L.rates) {
-    drawPixelText(ctx, 'PICK', r.x, r.y, SHOP_DIM);
+    drawPixelText(ctx, tr('shop.pick'), r.x, r.y, SHOP_DIM);
     drawPixelText(ctx, r.pick + '%', r.x + 22, r.y, SHOP_INK);
-    drawPixelText(ctx, 'WIN', r.x, r.y + 9, SHOP_DIM);
+    drawPixelText(ctx, tr('shop.win'), r.x, r.y + 9, SHOP_DIM);
     drawPixelText(ctx, r.win + '%', r.x + 22, r.y + 9, r.win > 50 ? SHOP_STAT : SHOP_INK);
   }
   ctx.fillStyle = SHOP_DIM;
@@ -545,7 +546,7 @@ function drawShopCats(L, h) {
 function drawShopPane(L, h) {
   const R = L.pane, pk = shopPicked(), it = BUILD_ITEMS[pk.id];
   shopWell(R, HUD_EDGE, SHOP_PANE_BG);
-  drawPixelText(ctx, 'BUILDS INTO', R.x + 6, R.y + 6, SHOP_DIM);
+  drawPixelText(ctx, tr('shop.buildsInto'), R.x + 6, R.y + 6, SHOP_DIM);
   const into = itemInto(pk.id);
   for (const r of L.into) {
     if (into[r.i]) shopItemWell(r, into[r.i], h);
@@ -576,16 +577,16 @@ function drawShopPane(L, h) {
     drawPixelText(ctx, pv.name, R.x + 6, y + 3, RES_COLORS.gold);
     drawPixelText(ctx, pv.line, R.x + 6, y + 11, SHOP_DIM);
   }
-  if (isBoots(pk.id)) drawPixelText(ctx, 'ONE PAIR', R.x + R.w - 6 - pixelTextWidth('ONE PAIR'), cy + 13, SHOP_DIM);
+  if (isBoots(pk.id)) drawPixelText(ctx, tr('shop.onePair'), R.x + R.w - 6 - pixelTextWidth(tr('shop.onePair')), cy + 13, SHOP_DIM);
   // the potion: what one drink gives and over how long, and the stack you carry
   if (pk.id === 'potion') {
     ctx.drawImage(STAT_ICON.hp, R.x + 5, y - 2);
-    drawPixelText(ctx, '+' + POTION_HEAL + ' HEALTH OVER ' + POTION_T + ' S', R.x + 17, y, SHOP_STAT);
+    drawPixelText(ctx, tr('shop.potionHeal', { hp: POTION_HEAL, s: POTION_T }), R.x + 17, y, SHOP_STAT);
     drawPixelText(ctx, (player.potions || 0) + ' / ' + it.stack, R.x + 6, y + 13, SHOP_DIM);
   }
   // BUY: the pick's price now; red when the purse is short, dim when it has no room
   const b = shopBuyState(pk.id), hot = !!h && h.kind === 'buy';
-  shopPlate(L.buy, 'BUY', b.n, !b.gold ? SHOP_DEAR_BAND : !b.ok ? SHOP_PLATE : hot ? SHOP_BUY_HOT : SHOP_BUY,
+  shopPlate(L.buy, tr('shop.buy'), b.n, !b.gold ? SHOP_DEAR_BAND : !b.ok ? SHOP_PLATE : hot ? SHOP_BUY_HOT : SHOP_BUY,
     !b.gold ? SHOP_DEAR_INK : b.ok ? SHOP_INK : SHOP_DIM);
 }
 // the tree: a line down from each parent and across to its children, then the
@@ -631,7 +632,7 @@ function drawShopSlots(L, h) {
     if (id === 'potion') { const t = String(player.potions || 0); drawPixelText(ctx, t, r.x + r.w - 2 - pixelTextWidth(t), r.y + 2, SHOP_INK); }
   }
   const pk = shopPicked(), live = pk.slot >= 0, hot = live && !!h && h.kind === 'sell';
-  shopPlate(L.sell, 'SELL', live ? itemSellValue(pk.id) : undefined, hot ? SHOP_PLATE_HOT : SHOP_PLATE, live ? SHOP_INK : SHOP_DIM);
+  shopPlate(L.sell, tr('shop.sell'), live ? itemSellValue(pk.id) : undefined, hot ? SHOP_PLATE_HOT : SHOP_PLATE, live ? SHOP_INK : SHOP_DIM);
 }
 
 // ---- tooltips ------------------------------------------------------------
@@ -644,29 +645,29 @@ function tipShop(h) {
     const id = player.items[h.i];
     if (!id) return null;
     const d = tipItem(id);
-    d.rows.push(['SELLS FOR', itemSellValue(id) + ' GOLD', RES_COLORS.gold]);
+    d.rows.push([tr('shop.sellsFor'), tr('shop.goldN', { n: itemSellValue(id) }), RES_COLORS.gold]);
     return d;
   }
   return null;
 }
 // one item: its stats, its passive, and what it costs you now
-const SHOP_TIER_WORD = { potion: 'POTION', basic: 'BASIC', epic: 'EPIC', boots: 'BOOTS', legend: 'LEGENDARY' };
+const SHOP_TIER_WORD = { potion: 'shop.potion', basic: 'shop.basic', epic: 'shop.epic', boots: 'shop.boots', legend: 'shop.legend' };
 function tipItem(id, cost) {
   const it = BUILD_ITEMS[id];
-  const d = { title: it.name, tcol: itemMetal(id).ink, kind: SHOP_TIER_WORD[itemTier(id)],
+  const d = { title: it.name, tcol: itemMetal(id).ink, kind: tr(SHOP_TIER_WORD[itemTier(id)]),
     rows: [], notes: [], icon: itemIcon(id), plate: BAG_WELL, rim: itemMetal(id).rim };
-  if (cost !== undefined) d.rows.push(['PRICE', cost + ' GOLD', cost <= player.gold ? RES_COLORS.gold : SHOP_DEAR_INK]);
+  if (cost !== undefined) d.rows.push([tr('shop.price'), tr('shop.goldN', { n: cost }), cost <= player.gold ? RES_COLORS.gold : SHOP_DEAR_INK]);
   // how your hero's players build it (js/app/builds.js), once the hero has the games to say
   const st = itemFinished(id) ? buildsItem(shopHero(), id) : null;
   if (st) {
-    d.rows.push(['PICK RATE', st.pick + '%', '#f4f7ff']);
-    if (st.win !== null) d.rows.push(['WIN RATE', st.win + '%', st.win > 50 ? SHOP_STAT : '#f4f7ff']);
+    d.rows.push([tr('shop.pickRate'), st.pick + '%', '#f4f7ff']);
+    if (st.win !== null) d.rows.push([tr('shop.winRate'), st.win + '%', st.win > 50 ? SHOP_STAT : '#f4f7ff']);
   }
   for (const s of ITEM_STAT_ORDER) if (s in it.stats) d.rows.push([ITEM_STATS[s].label, ITEM_STATS[s].fmt(it.stats[s]), SHOP_STAT]);
   if (id === 'potion') {
     // the drink said the way an ability well says it: how much, over how long
-    d.rows.push(['HEALS', '+' + POTION_HEAL, '#8fe08a'], ['OVER', tipSec(POTION_T), '#f4f7ff']);
-    d.rows.push(['CARRIED', player.potions + ' / ' + it.stack, '#f4f7ff']);
+    d.rows.push([tr('tip.hp'), '+' + POTION_HEAL, '#8fe08a'], [tr('shop.over'), tipSec(POTION_T), '#f4f7ff']);
+    d.rows.push([tr('tip.carried'), player.potions + ' / ' + it.stack, '#f4f7ff']);
   }
   if (it.passive) {
     d.notes.push([ITEM_PASSIVES[it.passive].name, RES_COLORS.gold]);

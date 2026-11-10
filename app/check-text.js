@@ -33,6 +33,7 @@ const MOVED = [
   'js/ui/recap.js',
   'js/ui/lobby.js',
   'js/ui/tooltip.js',
+  'js/ui/shop.js',
 ];
 
 function readText() {
