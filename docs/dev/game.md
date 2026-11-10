@@ -21,7 +21,7 @@ into its **corner's** woods, RED always bottom-left, BLUE always top-right
 the road's head, a shop for anybody at all who walks up to it, then raises the bot bays and fells
 the back woods behind the bird for logs to rebuild them; idle, it keeps to the road just up from the bird.
 **Three lanes** join the bases, like a Rift: **the road** (mid) runs the map's diagonal from one
-perch to the other, one straight, dry packed-earth lane, and **the top and bot lanes** run
+perch to the other, one straight flagstone lane, and **the top and bot lanes** run
 straight up either edge of the valley and turn one hard corner, like the Rift's, crossing the creek on a ford at that corner, the middle. All
 three are there from worldgen, the same every match and readable from anywhere, and each leaves a
 base by its own mouth of the hollow ([the road](world.md#the-road),

@@ -167,19 +167,23 @@ function paintGroundTile(g, tx, ty) {
 // ---- the road's pixels ----------------------------------------------------
 // The road (placeRoad, world.js) is not a kind of tile but a BAND laid over
 // the snow at pixel precision: every pixel of a tile near it asks roadDist
-// for its distance to the ragged edge and is painted by that - inside, CLEAN
-// packed earth in two tones by 8 px quad and nothing else (no ruts, stones or
-// specks: a lane is the pitch, and the bodies on it are the only detail), a
-// full value step under the snow so it reads without colour and at night,
-// with snow lying in clumps over the last half tile of the verge; outside,
-// ROAD_EDGE tiles of earth breaking up into the snow in clumps. So the edge is one wandering line and never a tile staircase, and
+// for its distance to the ragged edge and is painted by that - inside, a
+// FLAGSTONE path (roadStoneAt: big flat greys, a lit rim toward the light and
+// a shaded one away from it, packed earth in the joints), a full value step
+// under the snow so it reads without colour and at night, with snow lying in
+// clumps over the last half tile of the verge; outside, ROAD_EDGE tiles of
+// earth breaking up into the snow in clumps, then snow greyed by the march and dry
+// grass through it. So the edge is one wandering line and never a tile staircase, and
 // a 16 px tile can be half road and half snow. On an ICE tile - which only
 // a PATH ever crosses, never the diagonal - `onIce` paints the earth and its
 // snowy verge the same way but leaves the water alone outside it, under a
 // pale rim a pixel or two wide that follows the same ragged edge: a lake has
 // a shoreline, not a muddy shoulder. 
-const ROAD_COL_A = '#b5a182', ROAD_COL_B = '#ad997a'; // the two tones of packed earth
-const ROAD_COL_DEEP = '#8a7556';                       // the earth in shade (the wiki mound's rim)
+const ROAD_COL_B = '#ad997a';                          // the trodden earth along the shoulder
+const ROAD_COL_DEEP = '#8a7556';                       // the earth in shade (the wiki mound's rim), and in the flagstones' joints
+const ROAD_FLAG = 12;                                  // px a flagstone's cell spans
+const ROAD_COL_GREY = '#d5dce6';                       // the snow beside the lane, greyed by the march
+const ROAD_COL_GRASS = '#a08c58', ROAD_COL_GRASS_D = '#73643c'; // dry grass through the verge snow
 const ROAD_EDGE = 0.45;                                // tiles past the edge the earth breaks up over
 const ROAD_COL_RIM = '#d6ecf4';                        // the broken-ice rim where a path crosses a frozen lake
 const ROAD_COL_SNOW = '#e7eff8';                       // snow melting in over the verge
@@ -227,30 +231,71 @@ function paintLog(g, seg, px, py, ox, oy) {
   }
   penFlush();
 }
+// the flagstone a pixel lies on: a jittered grid of `cell` px,
+// each pixel the nearest point's stone. Returns that stone's roll, the gap
+// to the next stone (px: under 1 is the joint) and which way the pixel lies
+// from the stone's middle (lx + ly < 0 faces the light, up-left)
+function roadStoneAt(wx, wy, cell, jit) {
+  const cx = Math.floor(wx / cell), cy = Math.floor(wy / cell);
+  let d1 = 1e9, d2 = 1e9, id = 0, lx = 0, ly = 0;
+  for (let j = -1; j <= 1; j++) for (let i = -1; i <= 1; i++) {
+    const h = hash2(cx + i + 501, cy + j + 907), h2 = hash2(cx + i + 133, cy + j + 71);
+    const fx = (cx + i + 0.5 + (h - 0.5) * jit) * cell, fy = (cy + j + 0.5 + (h2 - 0.5) * jit) * cell;
+    const d = Math.hypot(wx + 0.5 - fx, wy + 0.5 - fy);
+    if (d < d1) { d2 = d1; d1 = d; id = h; lx = wx + 0.5 - fx; ly = wy + 0.5 - fy; } else if (d < d2) d2 = d;
+  }
+  return { id, gap: d2 - d1, lx, ly };
+}
+// a stone's own pixel: three greys by its roll, a lit rim toward the light
+// and a shaded one away from it, the joint dark
+function roadStonePx(st, joint) {
+  if (st.gap < 1.1) return joint;
+  const base = st.id < 0.33 ? 0 : st.id < 0.66 ? 1 : 2;
+  if (st.gap < 2.1) return st.lx + st.ly < 0 ? ROAD_STONE_LIT[base] : ROAD_STONE_SHD[base];
+  return ROAD_STONE_MID[base];
+}
+const ROAD_STONE_LIT = ['#b9b4aa', '#b2ab9c', '#c0bab0'];
+const ROAD_STONE_MID = ['#9f9a90', '#999283', '#a7a197'];
+const ROAD_STONE_SHD = ['#7f7a71', '#7a7365', '#86817a'];
+// a tuft of dry grass through the snow at the verge: a 4x4 clump of
+// blades in one cell of 8 px in a few, mirrored on half of them, or null
+const ROAD_TUFT = ['.g..', '.g.g', 'gdgd', '.dd.'];
+function roadTuftAt(wx, wy) {
+  const cx = Math.floor(wx / 8), cy = Math.floor(wy / 8), h = hash2(cx * 8 + 11, cy * 8 + 1);
+  if (h > 0.16) return null;
+  const ox = wx - cx * 8 - 1 - ((h * 900) | 0) % 3, oy = wy - cy * 8 - 1 - ((h * 2100) | 0) % 3;
+  const ch = ox >= 0 && ox < 4 && oy >= 0 && oy < 4 ? ROAD_TUFT[oy][h < 0.08 ? ox : 3 - ox] : '.';
+  return ch === 'g' ? ROAD_COL_GRASS : ch === 'd' ? ROAD_COL_GRASS_D : null;
+}
 function paintRoadOverlay(g, tx, ty, px, py, onIce) {
   for (let j = 0; j < TILE; j++) for (let i = 0; i < TILE; i++) {
     const fx = tx + (i + 0.5) / TILE - 0.5, fy = ty + (j + 0.5) / TILE - 0.5;
     const d = laneDist(fx, fy); // ...which ends on the cistern's gates (js/sim/world.js)
     if (d >= ROAD_SHOULDER) continue;
+    const wx = px + i, wy = py + j, hp = hash2(wx, wy); // this pixel's own roll
     // the drift field: snow lies on the verge and mud spreads off it in
     // CLUMPS, not as per-pixel static - a low-frequency noise read per pixel,
     // so the melt reads as patches of snow and mud rather than sand
-    const clump = vnoise((px + i) / 6 + 3.1, (py + j) / 6 + 7.7);
+    const clump = vnoise(wx / 6 + 3.1, wy / 6 + 7.7);
     let c = null;
     if (d < 0) {
-      // clean packed earth: two tones by 8 px quad and nothing else, so a
-      // body, a shot and a ground mark are the only detail on a lane
-      c = vnoise(((px + i) >> 3) / 13, ((py + j) >> 3) / 13) > 0.5 ? ROAD_COL_A : ROAD_COL_B;
+      // the flagstones, earth in their joints
+      c = roadStonePx(roadStoneAt(wx, wy, ROAD_FLAG, 0.8), ROAD_COL_DEEP);
       // the verge: snow lying over the last of the earth in clumps
-      if (d > -0.5 && clump > 1.0 - (d + 0.5) / 0.5 * 0.5) c = ROAD_COL_SNOW;
+      if (d > -0.6 && clump + hp * 0.15 > 1.0 - (d + 0.6) / 0.6 * 0.5) c = ROAD_COL_SNOW;
     } else if (onIce) {
       // the bank: broken ice along the crossing's own edge, and open water past it
       if (d < 0.09) c = ROAD_COL_RIM;
     } else {
-      // the shoulder: one thin band of trodden earth breaking up into the snow in clumps
+      // the shoulder: trodden earth breaking up into the snow in clumps, then
+      // snow greyed by the march in patches thinning to the field, dry grass
+      // poking through it
+      const k = 1 - d / ROAD_SHOULDER;
       if (d < ROAD_EDGE && clump < 0.62 - d / ROAD_EDGE * 0.5) c = ROAD_COL_B;
+      else if (clump < k * k * 0.7 - 0.05) c = ROAD_COL_GREY;
+      if (d < 0.9) c = roadTuftAt(wx, wy) || c;
     }
-    if (c) penDot(g, c, px + i, py + j);
+    if (c) penDot(g, c, wx, wy);
   }
   penFlush();
 }
