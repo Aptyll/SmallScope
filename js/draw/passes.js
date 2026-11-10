@@ -121,7 +121,9 @@ function gatherDraws(ox, oy, tx0, ty0, tx1, ty1, now) {
     }
   }
   trackDowns(now); // a body that just dropped goes down in place (the `going down` banner, js/draw/bodies.js)
-  for (const p of players) {
+  // on the title the match's own players wait unplaced at the map's centre:
+  // the title's cast stands in for them
+  for (const p of state.mode === 'title' ? [] : players) {
     if (goingDown(p)) { if (fogShown(p, now)) draws.push({ y: p.y + 8, down: p }); continue; }
     if (p.dead || inAir(p) || !fogShown(p, now)) continue; // airborne players draw in drawDropAir; one in the fog not at all (js/draw/fog.js)
     draws.push({ y: p.y + 8, p, ghost: !p.active }); // empty slots stand as silhouettes
