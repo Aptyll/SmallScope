@@ -96,6 +96,12 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['The gold pumps stand in a worked yard with a board walk to the lane', '0.829'],
+    ['Each tower stands on a clean kerbed round of paving', '0.828'],
+    ['FIRST MATCH: THE COACH TEACHES ABILITIES AND LAST HITS IN THE LANE AND SHOP WHEN YOU ARE HOME', '0.826'],
+    ['The M map is bigger, and the frozen river shows clear blue on it and on the minimap', '0.824'],
+    ['Smoother frames in the first seconds after landing', '0.823'],
+    ['FALCO is drawn at 32 px (body, roll, knife, hawk, glove), waiting behind the fine-art switch', '0.822'],
     ['Soldiers fighting soldiers no longer show damage numbers; hero blows still do', '0.821'],
     ['Nix swings a dirk the size of the one she carries', '0.819'],
     ['CLIVUS is drawn at 32 px (body, roll, ice axe), waiting behind the fine-art switch', '0.817'],

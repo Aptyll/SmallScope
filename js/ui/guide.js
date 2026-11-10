@@ -17,6 +17,8 @@ const GUIDE_RECALL_GOLD = 400; // gold in the purse (or half health) before RECA
 const GUIDE_FLASH = 0.7;       // s a finished step's card holds, gold, before the next
 const GUIDE_TIP_T = 7;         // s a lesson's line of detail stands open before it folds away
 const GUIDE_HOME_T = 1.5;      // s RECALL's card shows before standing at home counts
+const GUIDE_SHOP_PX = 400;     // px from your counter past which SHOP steps aside: out in the lane the next lesson teaches
+const GUIDE_SHOP_BACK = 300;   // px from it within which SHOP comes back: the give between the two keeps a hero on the line from flipping cards
 const GUIDE_LIFT = 8;          // px between the card's foot and the strip's buy plates
 const GUIDE_H = 16, GUIDE_TIP_H = 10, GUIDE_PAD = 4;
 const GUIDE_RAIL_AIR = 8;      // px of air between the top bar and an edge arrow under it
@@ -32,6 +34,12 @@ function guideCounter() {
   if (!b || b.dead) return null;
   if (stallUp(b.stall)) { const c = counterPt(b.stall); return { x: c.x, y: c.y - 48 }; } // over its awning
   return { x: b.x, y: b.y - 34 }; // over its name
+}
+// SHOP is taught where the shop is: within a short walk of your counter
+function guideShopNear() {
+  const c = guideCounter();
+  const up = guide.step >= 0 && GUIDE_STEPS[guide.step].id === 'shop';
+  return !!c && Math.hypot(c.x - player.x, c.y - player.y) < (up ? GUIDE_SHOP_PX : GUIDE_SHOP_BACK);
 }
 function guideRivalTowers() { return structures.filter((o) => o.type === 'tower' && o.team !== player.team); }
 function guideNearTower() {
@@ -70,8 +78,12 @@ function guideSoldier() {
 
 // One row per lesson, in order. caps: the key faces shown; word: the one
 // word; tip: the DETAILS line; need/count: a number to reach; ready: the step
-// waits (no card) until it is true; begin: noted as the step opens; done:
-// it is learned; at: the world point its arrow stands over.
+// waits (no card) until it is true; here: false while its place is far away,
+// and the next lesson teaches meanwhile; begin: noted as the coach starts, so
+// a lesson done before its turn shows learned the moment its card comes up;
+// done: it is learned; away: it is learned with its card down too (RECALL:
+// SHOP takes the card as you near home, and the ring still counts); at: the
+// world point its arrow stands over.
 const GUIDE_STEPS = [
   { id: 'move', word: 'MOVE', tip: 'CHANGE YOUR KEYS IN SETTINGS: ESC',
     caps: () => [keyCap('move')],
@@ -81,7 +93,7 @@ const GUIDE_STEPS = [
     caps: () => [keyCap('work')],
     begin: (g) => { g.spent = player.goldSpent; },
     done: (g) => player.goldSpent > g.spent,
-    at: guideCounter },
+    here: guideShopNear, at: guideCounter },
   { id: 'ability', word: 'ABILITIES', tip: 'A POINT EACH LEVEL: PRESS ONCE TO LEARN, AGAIN TO CAST',
     caps: () => ['ab1', 'ab2', 'ab3', 'ab4'].map((a) => keyCap(a)),
     begin: (g) => { g.casts = 0; },
@@ -94,7 +106,7 @@ const GUIDE_STEPS = [
   { id: 'recall', word: 'RECALL', tip: 'STAND STILL: YOUR EAGLE TAKES YOU HOME AND THE RING HEALS YOU',
     caps: () => [keyCap('recall')],
     ready: () => player.gold >= GUIDE_RECALL_GOLD || player.hp < player.maxHp / 2,
-    done: (g) => g.t > GUIDE_HOME_T && !!roostRing(player) },
+    done: (g) => (g.up.recall || 0) > GUIDE_HOME_T && !!roostRing(player), away: true },
   { id: 'tower', word: 'TOWER', tip: 'GO IN BEHIND YOUR SOLDIERS: A TOWER SHOOTS THEM FIRST',
     caps: () => [],
     begin: (g) => { g.towers = guideRivalTowers().length; },
@@ -107,7 +119,7 @@ const GUIDE_STEPS = [
 ];
 
 // the coach's own state: this page's, never the sim's (a rematch reloads it)
-const guide = { step: -1, t: 0, flash: 0, off: false, casts: 0, cd: [0, 0, 0, 0], last: 0, hot: false };
+const guide = { step: -1, t: 0, flash: 0, off: false, casts: 0, cd: [0, 0, 0, 0], last: 0, hot: false, learned: [], up: {} }; // up: s each lesson's card has stood, by id
 
 // the landing's headline (drawDropHeadline, js/draw/eagle.js) stands on the card's ground for its first seconds: the coach waits its turn
 function guideHeadlineUp() {
@@ -118,17 +130,22 @@ function guideOn() {
   return NET.mode === 'guide' && !PRACTICE && !guide.off && state.mode === 'play' && !!state.drop &&
     !player.aboard && !inAir(player) && hudHome() && !guideHeadlineUp();
 }
-function guideOpen(i) {
-  guide.step = i; guide.t = 0;
-  const s = GUIDE_STEPS[i];
-  if (s && s.begin) s.begin(guide);
+function guideOpen(i) { guide.step = i; guide.t = 0; }
+function guideDone(s) { return s.need ? s.count(guide) >= s.need : s.done(guide); }
+// the lesson to show: the first one not learned whose place is at hand
+function guideNext() {
+  for (let i = 0; i < GUIDE_STEPS.length; i++) {
+    const s = GUIDE_STEPS[i];
+    if (!guide.learned[i] && (!s.here || s.here())) return i;
+  }
+  return GUIDE_STEPS.length - 1;
 }
 // the card's clock, off the frame's time (it is UI, so it runs on a client too)
 function updateGuide(now) {
   const dt = Math.max(0, Math.min(0.1, now - guide.last));
   guide.last = now;
   if (!guideOn()) return;
-  if (guide.step < 0) guideOpen(0);
+  if (guide.step < 0) { for (const s of GUIDE_STEPS) if (s.begin) s.begin(guide); guideOpen(0); }
   // every cast, by the cooldown starting on a key
   for (let i = 0; i < 4; i++) {
     const c = player.abCd[i] || 0;
@@ -139,15 +156,23 @@ function updateGuide(now) {
     guide.flash -= dt;
     if (guide.flash <= 0) {
       guide.flash = 0;
-      if (guide.step + 1 >= GUIDE_STEPS.length - 1) PROFILE.setGuided(); // every lesson learned: the title stops offering it
-      guideOpen(Math.min(GUIDE_STEPS.length - 1, guide.step + 1));
+      guideOpen(guideNext());
     }
     return;
   }
+  // the shown lesson is judged first, so a recall that lands you by the shop is credited before SHOP takes the card
   const s = GUIDE_STEPS[guide.step];
-  if (s.ready && !s.ready() && guide.t === 0) return; // waits, unshown, for its moment
-  guide.t += dt;
-  if (s.need ? s.count(guide) >= s.need : s.done(guide)) { guide.flash = GUIDE_FLASH; SFX.place(); }
+  if (!(s.ready && !s.ready() && guide.t === 0)) { // else it waits, unshown, for its moment
+    guide.t += dt; guide.up[s.id] = (guide.up[s.id] || 0) + dt;
+    if (guideDone(s)) {
+      guide.learned[guide.step] = true; guide.flash = GUIDE_FLASH; SFX.place();
+      if (GUIDE_STEPS.every((o, i) => guide.learned[i] || i === GUIDE_STEPS.length - 1)) PROFILE.setGuided(); // every lesson learned: the title stops offering it
+      return;
+    }
+  }
+  GUIDE_STEPS.forEach((o, i) => { if (o.away && !guide.learned[i] && guideDone(o)) guide.learned[i] = true; });
+  const next = guideNext();
+  if (next !== guide.step) guideOpen(next); // its place came to hand, or the shown one's fell behind
 }
 
 // the card's rect on the view (x, y, w, h: GUIDE_K view px to each of its own
@@ -262,7 +287,7 @@ function renderGuide(now) {
   const n = GUIDE_STEPS.length, pw = n * 4 - 1, px0 = (w - pw) >> 1;
   for (let i = 0; i < n; i++) {
     ctx.fillStyle = GUIDE_INK; ctx.fillRect(px0 + i * 4 - 1, -6, 4, 4);
-    ctx.fillStyle = i < guide.step || (i === guide.step && lit) ? GUIDE_GOLD : i === guide.step ? GUIDE_TXT : GUIDE_EDGE;
+    ctx.fillStyle = guide.learned[i] ? GUIDE_GOLD : i === guide.step ? GUIDE_TXT : GUIDE_EDGE;
     ctx.fillRect(px0 + i * 4, -5, 2, 2);
   }
   ctx.restore();
