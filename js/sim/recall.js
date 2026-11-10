@@ -54,11 +54,11 @@ function startRecall(p) {
   return true;
 }
 
-// the channel dropped: a puff in the side's colour where the ring was
+// the channel dropped: a puff of snow where the feathers were
 function breakRecall(p) {
   if (!(p.recallT > 0)) return;
   p.recallT = 0;
-  burst(p.x, p.y - 2, TEAMS[skin(p.team)].glow, 6, 30, 0.35, true);
+  burst(p.x, p.y - 2, '#c6d6ee', 6, 30, 0.35, true);
 }
 
 // what the controller asked for that is an action of the body's own: any of
@@ -78,7 +78,7 @@ function updateRecall(p, dt) {
       p.recallT = 0;
       const t = roostTile(p);
       if (t) {
-        burst(p.x, p.y - 4, TEAMS[skin(p.team)].glow, 12, 50, 0.45, true);
+        burst(p.x, p.y - 4, '#c6d6ee', 12, 50, 0.45, true);
         p.x = (t.tx + 0.5) * TILE; p.y = (t.ty + 0.5) * TILE;
         p.vx = p.vy = 0; p.kbx = p.kby = 0;
         navClear(p);

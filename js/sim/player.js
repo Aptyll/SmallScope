@@ -1180,7 +1180,7 @@ function die(p, src, cause) {
   p.feed++;        // ...a run of deaths without a takedown makes it worth less (killWorth)
   p.streak = 0;    // ...and the run of kills ends with the body
   bodyOut(p);
-  burst(p.x, p.y - 6, TEAMS[skin(p.team)].mark, 12, 55, 0.6);
+  burst(p.x, p.y - 6, '#c6d6ee', 12, 55, 0.6); // snow off the body as it goes (drawDown, js/draw/bodies.js), never a spray in a side's red
   // kill credit and the feed line: the killer's colours if there is one,
   // otherwise the victim's, since the victim is who the line is about
   // A death the world dealt (the ice, the orca, the wolves) goes to the rival
