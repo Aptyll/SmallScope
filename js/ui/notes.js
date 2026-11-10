@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['Lignum swings the same single-bit axe he carries', '0.853'],
     ['The jungle\'s pine walls can no longer be chopped open', '0.852'],
     ['Banners no longer draw over the open shop', '0.851'],
     ['The death screen shows the face and name of the hero you are watching', '0.851'],
