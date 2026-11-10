@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['Salvia, Lignum, Maris and Velox each carry something you can tell apart at a glance', '0.766'],
     ['HOG HUTS HAVE A YARD, A PATH AND A WOODPILE', '0.765'],
     ['TITLE HEROES STAND ON OPEN SNOW, CLEAR OF THE WORDS', '0.764'],
     ['A CLEAR STRIP OF SNOW BETWEEN EVERY LANE AND THE WOODS', '0.763'],
