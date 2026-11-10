@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['SURRENDER: no blind presses while the bird flies off', '0.913'],
     ['HURT: the screen edge darkens on a blow, no red wash', '0.912'],
     ['HIEMS\'s WHITEOUT shows wind-driven snow', '0.911'],
     ['RUPES and SALVIA: SHOULDER ploughs a furrow in the snow, POULTICE is a tied linen bundle with sage', '0.910'],
