@@ -517,6 +517,14 @@ None of the scripts is part of the game, and nothing in `js/` may depend on one 
   its invite card, Steam faked with the wrapper's bridge calls) and must end welcomed with both pages still drawing;
   then a party of three, and two parties meeting by matchmaking, must stand in one draft
   ([checklists](checklists.md#verifying-a-change)).
+- **`app/check-same.js`** — the refactor check (Playwright): this tree (uncommitted edits too) and
+  another commit (`origin/main` by default, written out with `git archive`) served side by side
+  and played on the same seeds and the practice map, every seat a bot, the page frozen from its
+  first frame with `Math.random`, `performance.now` and `Date.now` faked. Every 10 s of match it
+  compares `DBG.saveHash` and the canvas in six views; the base plays its first seed twice so a
+  leak outside the seed reads as "cannot judge", not as a pass. On a sim difference it names the
+  first tick, the save sections and the fields that parted. `--scene <file>` runs a staged scene
+  for a path bots rarely take ([checklists](checklists.md#verifying-a-change)).
 - **`app/check-size.js`** — the size check, run by `check-globals.js` (or alone; `--top N` lists
   the biggest files and functions). It counts code lines: blank, comment-only and data-only lines
   (a pixel-grid row, a table of numbers) are free, and a function counts only its own lines, not

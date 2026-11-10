@@ -75,6 +75,15 @@ declare victory. The affordances:
     parties of two on Steam and on the relay, must each end in ONE draft with a friend's point
     reaching the leader (`steam-party`, `steam-match`, `relay-match`). It serves the game itself on its own port and needs
     Playwright (`PLAYWRIGHT=<its folder>` if it is not on the require path).
+  - **`node app/check-same.js`** — run it before merging a refactor, a split or a cleanup that
+    should change nothing: it plays this tree and `origin/main` (or `node app/check-same.js <ref>`)
+    on the same seeds and the practice map for 8 match minutes each (`--min`, `--seeds`) and
+    compares the sim hash and six views of the frame every 10 s. Exit 0 is SAME; 1 names the first
+    tick and the fields that parted (pixels only is a draw change); 2 is cannot judge (a page
+    threw, the base played a seed twice and parted, or a match never moved). A refactor that
+    adds or removes a `state` key passes `--drop key`. Bots rarely take some paths (a rope, a
+    rare item): write a staged scene, a function body given `D`, `step(n)` and `mark(tag)`, and
+    pass `--scene <file>` (the comment at the top of the script). About 4 minutes on four cores.
   - **`node app/check-load.js`** — run it after touching `js/net/`, `SNAP_SKIP` or anything that adds
     bodies to a match: a host and nine headless players (`N=4` for fewer) on the relay, every seat a
     bot, the match STAGED (run fast to the first wave, then an extra wave queued at every bay), then
