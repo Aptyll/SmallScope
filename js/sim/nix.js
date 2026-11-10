@@ -274,6 +274,7 @@ function nixWhiteout(p) {
   p.nixStrikeOnce = !again;
   burst(p.x, p.y - 6, '#ffffff', 26, 80, 0.6, true);
   burst(p.x, p.y, '#dfe8f4', 14, 50, 0.7, true);
+  abFx.push({ kind: 'ring', x: p.x, y: p.y, a: 0, r: 12, half: 0, t: 0, col: '#ffffff', fx: 'squall', life: WHITEOUT_T }); // the whirl of snow she is gone into (drawSquallFx, js/draw/nix.js)
   sfxAt('splash', p.x, p.y);
 }
 // the nearest rival hero she can reach, out of the snow
