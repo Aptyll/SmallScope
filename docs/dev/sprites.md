@@ -178,7 +178,9 @@ standard draws on half px (`drawStandardFine`); a swing's crescent (`drawSwish`)
 doubled (`SPR.fine2x`: Scale2x, the outline back to one px), and a blade row with no `fine()`
 gets its own art doubled the same way (`fineArt`, the ink read as the darkest colour on the art's
 rim). A staff (`HERO_STAVES`) follows the same way: its row's `fine()` frames, else its own
-doubled (`staffArt`). So `fine.grids` alone is a whole kit; a drawn `roll` or `fine()` (ARMATOS's) replaces the
+doubled (`staffArt`). A shot weapon follows too: `WEAPON_FINE[art]` (js/sprites/weapons.js) is its
+drawn 32 px level art and slanted grid (SAGITTA's arbalest), else its own doubled (`shotArt`, read by
+the aim and by her carry). So `fine.grids` alone is a whole kit; a drawn `roll` or `fine()` (ARMATOS's) replaces the
 doubled one where the doubling reads badly (a 45 degree edge comes out in two px steps).
 **The doubling is a stopgap, not 32 px art**: it keeps a fine kit from mixing pixel sizes, and
 reads softer than a drawn part beside it. A hero whose roll or blade is still doubled does not count
