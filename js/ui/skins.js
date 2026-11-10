@@ -88,6 +88,7 @@ const SKIN_TABS = [
   { id: 'falco', name: 'FALCO', slot: 'falco', rows: FALCO_SKINS, hero: heroIndex('FALCO'), glyph: ['........', '.w....w.', '.ww..ww.', '..wwww..', '...ww...', '...ww...', '..w..w..', '........'] },
   { id: 'maris', name: 'MARIS', slot: 'maris', rows: MARIS_SKINS, hero: heroIndex('MARIS'), glyph: ['.....ww.', '....wwww', '...w.ww.', '..w..w..', '.w......', 'w.......', 'ww......', '.w......'] },
   { id: 'lignum', name: 'LIGNUM', slot: 'lignum', rows: LIGNUM_SKINS, hero: heroIndex('LIGNUM'), glyph: ['.www....', 'wwwww...', 'wwww....', '.w.w....', '....w...', '.....w..', '......w.', '.......w'] },
+  { id: 'clivus', name: 'CLIVUS', slot: 'clivus', rows: CLIVUS_SKINS, hero: heroIndex('CLIVUS'), glyph: ['.wwwww..', 'w..w..w.', '...w....', '...w....', '..w.....', '..w.....', '.w......', '.w......'] },
 ];
 const SK_TAB_BIRD = 0; // SKIN_TABS' eagle, the one non-hero tab a match reads
 // every hero has its tab, named for it: a new hero without one is caught at load

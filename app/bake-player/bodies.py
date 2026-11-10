@@ -1,6 +1,6 @@
 # Each hero's looks on the doll (doll.py), all built on HeroBase (fur hood with goggles,
 # a trailing scarf, skate blades)
-# (ARMATOS: standard, oath; FORTIVA: unbroken, coif; BELLA: general, traitor; IGNIA: hearth, wanderer; AURA: light; SALVIA: hood, tent; LUCERNA: lamp, dusk; HIEMS: scholar, frost; RUPES: quarry, cellar; NIX: snowblind; VARRO: wolfkept, whitepack; FABER: clockmaker, foreman; MARIS: diver, orca; VELOX: canal, night; SAGITTA: siege, tower; LIGNUM: feller, forest). Their sizes are measured off the
+# (ARMATOS: standard, oath; FORTIVA: unbroken, coif; BELLA: general, traitor; IGNIA: hearth, wanderer; AURA: light; SALVIA: hood, tent; LUCERNA: lamp, dusk; HIEMS: scholar, frost; RUPES: quarry, cellar; NIX: snowblind; VARRO: wolfkept, whitepack; FABER: clockmaker, foreman; MARIS: diver, orca; VELOX: canal, night; SAGITTA: siege, tower; LIGNUM: feller, forest; CLIVUS: guide, summit). Their sizes are measured off the
 # hand-drawn 16 px frames in each hero's js/sprites/<hero>.js, so the doll's idle lands on those
 # frames pixel for pixel and the run and the roll it paints wear the same body.
 #
@@ -901,6 +901,50 @@ class Forest(Feller):
         cv.blob(cam, hc + Rh @ v3(1.4, 0, -2.0), Rh, (1.2, 2.0, 1.7), 'beard', 'beard', bias=0.6)
 
 
+class Guide(Standard):
+    """CLIVUS as GUIDE (his default look): a knit cap with snow goggles pushed up on the brow,
+    a coil of rope over his side's coat, a belt; Armatos's frame, boots"""
+    ARM_MAT, MITT_MAT = 'coat', 'skin'
+    MARKS = [(-1.5, -0.4, 'S'), (-0.5, -0.4, 'g'), (0.5, -0.4, 'g'), (1.5, -0.4, 'S'),
+             (-1.5, 0.9, 'e'), (1.5, 0.9, 'e')]
+    HOOD = 'cap'
+
+    @classmethod
+    def face_region(cls, n, q):
+        """under the cap's brim and the goggles: the face"""
+        return np.where((q[0] > 0.2) & (np.abs(q[1]) < 0.85) & (q[2] < 0.1) & (q[2] > -0.95), 'skin', cls.HOOD)
+
+    def head(self, cv, cam, hc, Rh, pose, snap):
+        cv.blob(cam, hc, Rh, self.HEAD_R, 'head', self.HOOD, p=self.HEAD_P, region=self.face_region)
+        self.face_marks(cv, cam, hc, Rh)
+
+    def coat(self, cv, cam, U, R):
+        cv.blob(cam, U(v3(0, 0, Z(6.1))), R, (2.75, 3.05, Z(2.05)), 'coat', 'coat', p=2.2)
+        cv.blob(cam, U(v3(1.3, 0.9, Z(6.2))), R, (1.2, 1.5, Z(1.6)), 'rope', 'hair', bias=0.35)
+        cv.blob(cam, U(v3(0, 0, Z(4.0))), R, (2.6, 3.1, Z(0.6)), 'hem', 'trim', bias=-0.3)
+
+    def ball_head(self, cv, cam, hc, Rh):
+        cv.blob(cam, hc, Rh, (2.6, 2.85, 2.5), 'head', self.HOOD, p=self.HEAD_P)
+
+
+class Summit(Guide):
+    """CLIVUS as SUMMIT (the first skin): his side's hood drawn close round his face, the goggles
+    down over his eyes, a slate cape over the shoulders and the rope across it"""
+    MARKS = [(-1.5, 0.9, 'S'), (-0.5, 0.9, 'g'), (0.5, 0.9, 'g'), (1.5, 0.9, 'S')]
+    HOOD = 'coat'
+
+    @classmethod
+    def face_region(cls, n, q):
+        """the hood's opening: the face, the hood all round it"""
+        return np.where((q[0] > 0.2) & (np.abs(q[1]) < 0.7) & (q[2] < 0.2) & (q[2] > -0.95), 'skin', cls.HOOD)
+
+    def coat(self, cv, cam, U, R):
+        cv.blob(cam, U(v3(0, 0, Z(6.1))), R, (2.75, 3.05, Z(2.05)), 'coat', 'cloak', p=2.2)
+        cv.blob(cam, U(v3(1.2, 0, Z(6.0))), R, (1.6, 2.0, Z(1.8)), 'vest', 'coat', bias=0.3)
+        cv.blob(cam, U(v3(1.3, 0.9, Z(6.2))), R, (1.2, 1.5, Z(1.6)), 'rope', 'hair', bias=0.35)
+        cv.blob(cam, U(v3(0, 0, Z(4.0))), R, (2.6, 3.1, Z(0.6)), 'hem', 'trim', bias=-0.3)
+
+
 BODIES = {'standard': Standard(), 'oath': Oath(),
           'unbroken': Unbroken(), 'coif': Coif(), 'general': General(), 'traitor': Traitor(),
           'hearth': Hearth(), 'wanderer': Wanderer(), 'light': Light(),
@@ -914,4 +958,5 @@ BODIES = {'standard': Standard(), 'oath': Oath(),
           'canal': Canal(), 'night': Night(),
           'diver': Diver(), 'orca': Orca(),
           'feller': Feller(), 'forest': Forest(),
+          'guide': Guide(), 'summit': Summit(),
           'siege': Siege(), 'tower': Tower()}

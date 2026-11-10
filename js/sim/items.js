@@ -471,6 +471,7 @@ const BOT_BUILDS = {
   AURA: ['storm', 'emberb', 'deeprod', 'lens', 'marsh', 'mantle'], // the reach first: power and haste for more stars, then the boots, then the armor a mage caught close needs
   VARRO: ['beartooth', 'hobnail', 'fang', 'bite', 'stonehide', 'collar'], // the bite first, the legs to stay on the mark, then the health a diver needs
   VELOX: ['quick', 'horn', 'feathers', 'frostline', 'bite', 'sunstone'], // a marksman's, attack speed first: more throws, more KEEP MOVING stacks
+  CLIVUS: ['fang', 'hobnail', 'beartooth', 'stonehide', 'oakheart', 'bearskin'], // a fighter's: the bite and the legs to reach a rival, then health to stay on them
   SAGITTA: ['beartooth', 'horn', 'feathers', 'auger', 'maul', 'sunstone'], // damage first: every bolt is slow, so each one has to land like a hammer
 };
 for (const c of CLASSES) if (!BOT_BUILDS[c.name]) throw new Error('items.js: ' + c.name + ' has no BOT_BUILDS row');

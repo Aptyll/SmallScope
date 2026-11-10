@@ -184,6 +184,7 @@ const MM_UNKNOWN = [188, 200, 218];
 function isSolidTile(tx, ty, e, swept) {
   if (!inWorld(tx, ty)) return true;
   if (!swept && cisternTile(tx, ty)) return true;
+  if (e && e.dash && heroDashOver(e)) { const o = objects[idx(tx, ty)]; return !!(o && STRUCTS[o.type]); } // a hero's dash over it all but a building (HERO_DASH `over`)
   if (heroSolid(tx, ty, e)) return true; // a wall a hero's kit lays for a while (HERO_SOLID, js/sim/heroes.js)
   const o = objects[idx(tx, ty)];
   if (!o) return false;
