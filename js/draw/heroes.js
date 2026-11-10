@@ -6,7 +6,8 @@
 // hilt: [x, y] where the hands close on the flat art (the blade turns about it,
 // WEAPON_GRIP's rule), hip: { down, up } where the grip sits on the 16 px cell
 // by facing, grip: where the hands close on the slanted grid, and optionally fine() ->
-// the same pair at `dens` px a world px for a body drawn fine (bladeArt) }.
+// the same pair at `dens` px a world px for a body drawn fine (bladeArt), and optionally
+// away(p) -> true while the blade is drawn somewhere else, so it is not also carried }.
 const HERO_BLADES = {};
 // a grid of palette letters baked to a canvas, once
 function bakeBladeArt(rows, pal) { return SPR.bake(rows, pal); } // the shared bake, which keeps the art's pixels (SPR.pixelsOf)
@@ -85,7 +86,8 @@ function heroStaff(p, px, py) {
   const mirror = (p.dir === 'down' ? back : p.dir === 'left' || p.dir === 'up') !== (s.lean ? s.lean === 'left' : heldLeansLeft(img)); // `lean` says it when a thing hung low off the staff would fool the reading
   if (mirror) img = heldFlip(img);
   const gx = mirror ? img.width - 1 - s.grip[0] : s.grip[0];
-  const beat = staffBeat(p), use = beat === 1 ? s.cast || STAFF_CAST : null, rc = heroReach(p) + (use ? use.out : 0), th = beat === 2 ? STAFF_THRUST[p.dir] : [0, 0];
+  const beat = staffBeat(p), kept = beat === 2 && s.cast && s.cast.keep; // a row's `cast.keep` holds its gather through the loosing beat: BUCINA sounds the horn at her lips
+  const use = beat === 1 || kept ? s.cast || STAFF_CAST : null, rc = heroReach(p) + (use ? use.out : 0), th = beat === 2 && !kept ? STAFF_THRUST[p.dir] : [0, 0];
   const hx = (back ? px + 2 - rc : px + 13 + rc) + th[0];
   const hy = py + 10 - (use ? use.up : p.charging ? 1 : 0) + th[1]; // a draw lifts it, a cast gathers it up, then looses it forward
   ctx.drawImage(img, Math.round(hx - gx), Math.round(hy - s.grip[1]));
@@ -242,6 +244,7 @@ function heroCarry(p, px, py, back) {
   const pass = (p.dir === 'up') === back; // a carried thing is behind a body facing away
   const b = heroBladeOf(p);
   if (b && b.hip.down && attackOf(p).cut) {
+    if (b.away && b.away(p)) return true; // the blade is elsewhere and drawn there: BELLA's parry holds it crosswise (drawBellaMarks)
     const hold = BLADE_HOLDS[b.hold || 'slant'], img = bladeArt(p, b).diag, up = p.dir === 'up';
     const rc = heroReach(p);
     const lead = p.dir === 'down' || p.dir === 'right'; // the leading hand is on the right
