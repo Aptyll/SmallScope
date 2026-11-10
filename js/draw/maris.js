@@ -136,41 +136,53 @@ function drawMarisUnder(p, px, py, now) {
 HERO_BODY_DRAW.push(drawMarisUnder);
 
 // ---- UNDERTOW -----------------------------------------------------------------------
-// The water under the snow, never a ring: through the wind-up three dark
-// seams of it spiral out from her feet to the reach; then the water breaks
-// up through them as a whirl whose crests sweep in toward her, foam on the
-// leading edge, which is the pull the blow is.
+// The water under the snow, never a ring and never a dotted line: through the
+// wind-up three wet seams open in the snow from her feet to the reach, wide at
+// her and thinning out, dark water with a pale thread in it; then the water
+// breaks up through them as a whirl of three waves that sweep in toward her,
+// each a full-bodied crest thick at its middle, foam along the lip that leads,
+// which is the pull the blow is.
 const TOW_ARMS = 3;
 function drawUndertowTele(px, py, closing, now) {
   const len = UNDERTOW_R * Math.min(1, closing * 1.2 + 0.1);
-  for (let k = 0; k < TOW_ARMS; k++) {
-    for (let s = 6; s < len; s += 1.5) {
+  ctx.globalAlpha = 0.6 + 0.4 * closing;
+  for (let pass = 0; pass < 2; pass++) for (let k = 0; k < TOW_ARMS; k++) {
+    for (let s = 6; s < len; s += 0.5) {
       const a = k * Math.PI * 2 / TOW_ARMS + s / UNDERTOW_R * 1.6 + now * 0.5;
       const x = Math.round(px + Math.cos(a) * s), y = Math.round(py + 2 + Math.sin(a) * s);
-      ctx.globalAlpha = 0.45 + 0.45 * closing;
-      ctx.fillStyle = (s | 0) % 5 ? MA_WATER : MA_WATER_L;
-      ctx.fillRect(x, y, 1, 1);
+      const w = s > len - 5 ? 1 : s < len * 0.45 ? 3 : 2; // wide at her, a point at its tip
+      if (!pass) { ctx.fillStyle = MA_SNOW_D; ctx.fillRect(x - 1, y - 1, w + 2, w + 2); } // the snow's wet lip, not an ink line
+      else {
+        ctx.fillStyle = MA_WATER; ctx.fillRect(x, y, w, w);
+        if (w > 1 && fxRoll(k, s | 0, 2) < 0.5) { ctx.fillStyle = MA_WATER_L; ctx.fillRect(x, y, 1, 1); }
+      }
     }
   }
   ctx.globalAlpha = 1;
 }
+const TOW_CREST = 5; // px a wave is thick at its middle
 function drawUndertowFx(f, px, py, now) {
   const life = f.life || TOW_FX_LIFE, u = f.t / life;
   const rc = 6 + (UNDERTOW_R - 6) * (1 - u * (2 - u)); // the crests close in, fast then slow
   const spin = u * 3.2;
-  ctx.globalAlpha = Math.min(1, 1.6 * (1 - u));
-  for (let k = 0; k < TOW_ARMS; k++) {
-    const a0 = k * Math.PI * 2 / TOW_ARMS + spin;
-    for (let j = 0; j <= 26; j++) {
-      const da = j / 26 * 1.7, r = rc + da * 10; // each crest trails out into a spiral
-      const a = a0 - da;
-      const x = Math.round(px + Math.cos(a) * r), y = Math.round(py + 2 + Math.sin(a) * r);
-      const thick = j < 18 ? 2 : 1;
-      ctx.fillStyle = MA_INK; ctx.fillRect(x, y + 1, thick, thick);
-      ctx.fillStyle = MA_WATER; ctx.fillRect(x, y, thick, thick);
-      if (j < 20) { // foam on the inner, leading lip
-        const fx = Math.round(px + Math.cos(a) * (r - 2)), fy = Math.round(py + 2 + Math.sin(a) * (r - 2));
-        ctx.fillStyle = j % 3 ? MA_SNOW : MA_WATER_L; ctx.fillRect(fx, fy, 1, 1);
+  ctx.globalAlpha = Math.min(1, 2.2 * (1 - u));
+  for (let pass = 0; pass < 2; pass++) for (let k = 0; k < TOW_ARMS; k++) {
+    const a0 = k * Math.PI * 2 / TOW_ARMS + spin, n = Math.ceil(1.7 * (rc + 10) * 1.5);
+    for (let j = 0; j <= n; j++) {
+      const v = j / n, da = v * 1.7, r = rc + da * 10, a = a0 - da; // each crest trails out into a spiral
+      const th = 1 + Math.round(TOW_CREST * Math.sin(Math.PI * Math.min(1, v * 1.25))); // swelling behind its head, thinning down its tail
+      const ca = Math.cos(a), sa = Math.sin(a);
+      for (let q = 0; q <= th; q++) {
+        const x = Math.round(px + ca * (r - q)), y = Math.round(py + 2 + sa * (r - q));
+        if (!pass) { ctx.fillStyle = MA_INK; ctx.fillRect(x - 1, y - 1, 3, 3); continue; }
+        // from the outside in: the dark back of the wave, its lit face, the foam on the lip that leads
+        ctx.fillStyle = q >= th - 1 && th > 2 ? (fxRoll(k, j >> 1, 5) < 0.75 ? MA_SNOW : MA_WATER_L) : q >= th - 3 && th > 3 ? MA_WATER_L : MA_WATER;
+        ctx.fillRect(x, y, 2, 2);
+      }
+      if (pass && th > 3 && fxRoll(k, j, 8) < 0.07) { // spray torn off the lip, flung on inward, no two alike
+        const d = 2 + fxRoll(k, j, 9) * 8, x = Math.round(px + ca * (r - th - d)), y = Math.round(py + 2 + sa * (r - th - d));
+        ctx.fillStyle = MA_INK; ctx.fillRect(x - 1, y - 1, 4, 3);
+        ctx.fillStyle = MA_SNOW; ctx.fillRect(x, y, 2, 1);
       }
     }
   }
