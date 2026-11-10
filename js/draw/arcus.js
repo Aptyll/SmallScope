@@ -93,7 +93,8 @@ function drawVolleyTele(p, a0, closing, ex, ey) {
   // body, painted as one
   // (every rim first, then every shaft) so each keeps its own rim with snow between
   AC_PX.length = 0;
-  for (let k = -1; k <= 1; k++) {
+  const slant = Math.min(Math.abs(Math.cos(a0)), Math.abs(Math.sin(a0))) > 0.38; // on a diagonal three stepped shafts tangle: only the middle one shows
+  for (let k = slant ? 0 : -1; k <= (slant ? 0 : 1); k++) {
     const a = a0 + k * VOLLEY_HALF, nx = Math.cos(a), ny = Math.sin(a), off = k * 3;
     arrowBodyPx(AC_PX, Math.round(x0 + nx * 18 - Math.sin(a0) * off), Math.round(y0 + ny * 18 + Math.cos(a0) * off), nx, ny, 0, 7, AC_WHITE, AC_SHAFT, AC_SHAFT, 0); // head and fore shaft only: the rest is behind the bow
   }
