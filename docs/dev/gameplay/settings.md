@@ -235,7 +235,7 @@ pulses gold), LAST HIT (three), RECALL (shown once the purse holds `GUIDE_RECALL
 under half; done standing in the roost ring), TOWER (a rival tower falls; the arrow over the nearest)
 and THEIR EAGLE, which stays to the end. The card shows the first lesson not yet learned whose place is at
 hand (`guideNext`): SHOP steps aside past `GUIDE_SHOP_PX` from your counter (`guideShopNear`), so out in the
-lane the next lesson teaches, and comes back when you are home; its pip stays dark until it is learned. Every
+lane the next lesson teaches, and comes back within `GUIDE_SHOP_BACK` of it; its pip stays dark until it is learned. The shown lesson is judged before the card changes, and RECALL (`away`) is learned in the ring even after SHOP has taken the card. Every
 lesson's count starts as the coach does, so one done before its turn shows learned the moment its card comes up.
 An arrow off screen is a 2x chevron on the view's edge. A
 finished lesson holds its card gold for `GUIDE_FLASH`. The title stops offering FIRST MATCH once every
