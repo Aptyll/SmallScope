@@ -38,7 +38,7 @@ down at their own bird.
 **Your side is always blue.** Whatever team index the roster dealt you, your allies are painted
 BLUE and your enemies RED — nameplates, arrows, armour, buildings, map marks, bot names, all of
 it — through one function (`skin`, js/sim/player.js) the paint goes through and the rules never do.
-**You alone are green**: your own health bar and the ring at your feet (`SELF_COL`), so you find your hero among allies in the same coat; every hero stands in a ring of its side's colour, and no soldier or beast does.
+Every hero, you included, stands in a ring of its side's colour under a bar of the same side's colour; no soldier or beast does. Your own hero is told apart by the stamina bar and XP over it and the name's full rim.
 A settings toggle (MY TEAM) shows the roster's real colours instead.
 [Teams and colours](multiplayer.md#teams-and-colours).
 

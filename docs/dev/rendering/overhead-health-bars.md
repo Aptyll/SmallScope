@@ -18,7 +18,7 @@ read the same two golds, so "full draw" is one colour everywhere).
 `drawHealthBar(cxp, topY, hp, maxHp, w, team, col?)` draws a small bar above every unit, always visible
 — every player (in `drawPlayer`), animals (in `drawAnimal`), robots (in `drawRobot`), a hurt
 building — **painted by side** (`barCol`): the team's `mark` through `skin()`, so it is blue over
-your allies and red over rivals on your screen, **green over you alone** (`SELF_COL`, the HUD strip's own health green, through `unitBarCol`: two heroes of one side can wear the same coat, and the bar is the one mark that says which of them the keys move; your running damage total wears it too), and neutral gold (`BAR_NEUTRAL`, the WoW
+your allies and yourself and red over rivals on your screen (your running damage total wears the same), and neutral gold (`BAR_NEUTRAL`, the WoW
 grammar) over wildlife, the practice dummy and anything handed no team (under a colour-blind
 palette a rival's bar wears a raised dark cap on its right end, `foeCue`). Health reads in **even
 segments**: N blocks of one width with a 1 px dark tick between (`hpSegCount`), so a `w`-wide bar
@@ -129,7 +129,7 @@ handle, and by `MOUNT_BAR_ROWS` for a deer's rider, to hang the deer's bar under
 
 **The team ring is the frame's partner on the ground.** `drawHeroRing` (js/draw/bodies.js) lays one
 pixel ring round every hero's feet, after the shade and under the body: the side's `coat` shade
-through `skin()` (a value step under `mark`, so a blue one holds on blue-white snow), `SELF_COL`
-for you, on an ink underline with a faint wash of the same colour. Heroes only, so in a crowd the
+through `skin()` (a value step under `mark`, so a blue one holds on blue-white snow), yours too,
+on an ink underline with a faint wash of the same colour. Heroes only, so in a crowd the
 ringed bodies are the ones that matter. It is ground: it takes the whole night, and it is skipped
 for a body plunged through the ice, riding a cable, or on a stage.
