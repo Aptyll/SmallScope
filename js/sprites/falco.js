@@ -264,6 +264,35 @@ SPRITES.weaponArt.knife = SPR.bake([
   '............', '............', '............', '............',
 ], { '.': null, o: '#241a12', T: '#eef2f8', W: '#ffffff', E: '#8b93a8', g: '#6b4a30', G: '#a3794f' });
 
+// The same knife as his hand holds it on the snow, small and never level at arm's length
+// (falcoCarry and HERO_AIMED.knife, js/draw/falco.js). FALCO_KNIFE.down hangs point down from
+// the fist at rest (`fwd` side-on, its point a pixel forward, drawn for a body facing right);
+// FALCO_KNIFE.up is raised point up for the throw.
+// Each is { img, grip }, the grip where the fist closes.
+const FALCO_KNIFE = (() => {
+  const pal = { '.': null, o: '#241a12', W: '#ffffff', E: '#aab4c8', G: '#a3794f' };
+  const k = (rows, grip) => ({ img: SPR.bake(rows, pal), grip });
+  return {
+    down: k(['.o.', 'oGo', 'oGo', 'oWo', 'oEo', 'oEo', '.o.'], [1, 2]),
+    fwd: k(['.o..', 'oGo.', 'oGo.', 'oWo.', '.oEo', '.oEo', '..o.'], [1, 2]),
+    up: k(['.o.', 'oWo', 'oWo', 'oWo', 'oEo', 'oGo', 'oGo', '.o.'], [1, 5]),
+  };
+})();
+// HIS HAWK ON THE GLOVE (drawFalcoPerch, js/draw/falco.js): the falconer's one shape. A tan
+// gauntlet on the hand that does not hold the knife, raised beside him, and the hawk
+// perched on it while it is home: a small brown head, pale chest, one dark eye, a gold beak,
+// a tapered tail. Drawn
+// looking right; FALCO_HAWK_FOOT is the pixel of its feet, which stand on the glove.
+const FALCO_HAWK = SPR.bake(['.oo..', 'obey.', 'oBWWo', 'oBbWo', '.oBo.', '..o..'],
+  { '.': null, o: '#2e2440', b: '#a8794a', B: '#6e4a28', W: '#efe8d6', e: '#2e2440', y: '#f2cc6a' });
+const FALCO_HAWK_FOOT = [2, 5];
+const FALCO_GLOVE = '#c8a46a';
+// THE THROW (HERO_AIMED.knife): by step, for the knife hand on the right of the body (`x`
+// mirrors for the left). 1 and 2 the knife raised point up beside the head, a pixel higher
+// at the full draw; 0 the closed, empty hand down the throw's line after the knife has left
+// it. `hand` is where the fist is, px from the chest.
+const FALCO_THROW = [{ hand: [5, 2] }, { hand: [5, -1] }, { hand: [5, -2] }];
+
 // ------------------------------------------------------------ falco registry
 // FALCO in the hero art registry (heroArt, js/sprites/hero-art.js): the looks and
 // their paint, the skins tab's 8x8 glyph and the 12x12 emblem

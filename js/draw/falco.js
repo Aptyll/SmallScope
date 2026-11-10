@@ -1,7 +1,7 @@
 'use strict';
 // ------------------------------------------------------------ falco
-// FALCO's pixels (his rules: js/sim/falco.js): his hawk over his shoulder, its shadow
-// on the snow (HERO_AIR, HERO_GROUND); the hawk out on TALONS, a body in `robots` with
+// FALCO's pixels (his rules: js/sim/falco.js): his hawk on his glove (HERO_BODY_FX);
+// the hawk out on TALONS, a body in `robots` with
 // its own small bar (HERO_MACHINE draw: drawHawkOut); his thrown knives in flight,
 // the basic attack's (HERO_SHOTS) and KNIFE FAN's; over a rival his hawk marked, a
 // gold talon notch his own side sees (HERO_MARK); up in the sky on STOOP his body is
@@ -22,15 +22,27 @@ function drawHawk(x, y, beat, left) {
   ctx.fillStyle = FC_GOLD; ctx.fillRect(x + s, y - 1, 1, 1);
 }
 function hawkShadow(x, y) { ctx.globalAlpha = 0.25; ctx.fillStyle = FC_INK; ctx.fillRect(x - 2, y, 5, 1); ctx.globalAlpha = 1; }
-// where the hawk circles over a Falco at home: a slow loop above his shoulder
-function hawkHome(p, now) { const a = now * 2.2 + p.id; return { x: p.x + Math.cos(a) * 9, y: p.y - 26 + Math.sin(a) * 3, left: Math.sin(a) > 0 }; }
 function falcoHasHawk(p) { return CLASSES[p.cls].passive === 'hawk' && unitAlive(p) && !(p.falcoSkyT > 0) && !(p.falcoDownT > 0) && !falcoHawkOf(p) && !inAir(p); }
-function drawFalcoGround(ex, ey, now) {
-  for (const p of players) if (falcoHasHawk(p) && fogShown(p, now)) { const h = hawkHome(p, now); hawkShadow(Math.round(h.x - ex), Math.round(p.y - ey) + 4); }
+// At home the hawk sits on his glove (THE GRIP RULE's other hand): a tan gauntlet raised on
+// the side away from the knife, in every facing, and the hawk on it, outside the body's
+// box, looking the way he looks side-on and outward facing down or up. The glove stays up,
+// empty, while the hawk is out on TALONS or cut down. HERO_BODY_FX, over the body.
+function drawFalcoPerch(p, ax, ay, now, front) {
+  if (!front || CLASSES[p.cls].passive !== 'hawk' || p.zip >= 0 || p.falcoSkyT > 0 || p.dodgeT > 0 || inAir(p)) return;
+  const lead = p.dir === 'down' || p.dir === 'right', side = p.dir === 'left' || p.dir === 'right', rc = heroReach(p);
+  const bob = !p.moving ? 0 : -runBob(p);
+  // the glove: 3 px of tan on the off side, its outline outside and under it
+  const gx = lead ? ax + (side ? 1 : 0) - rc : ax + (side ? 12 : 13) + rc, gy = ay + (heroAimed(p) ? 12 : 10) + bob; // the bird's head at his eye line; down at the hip while the knife arm is up, so only one arm is raised
+  ctx.fillStyle = FC_INK; ctx.fillRect(gx - 1, gy - 1, 5, 4);
+  ctx.fillStyle = FALCO_GLOVE; ctx.fillRect(gx, gy, 3, 2);
+  if (!falcoHasHawk(p)) return;
+  const right = side ? lead : !lead; // which way the hawk looks
+  const img = right ? FALCO_HAWK : heldFlip(FALCO_HAWK);
+  const fx = right ? FALCO_HAWK_FOOT[0] : img.width - 1 - FALCO_HAWK_FOOT[0];
+  ctx.drawImage(img, gx + 1 - fx, gy - 1 - FALCO_HAWK_FOOT[1] - (Math.floor(now * 1.2 + p.id) % 5 === 0 ? 1 : 0)); // now and then it shifts its feet
 }
+HERO_BODY_FX.push(drawFalcoPerch);
 function drawFalcoAir(ex, ey, now) {
-  const beat = Math.floor(now * 9) % 2;
-  for (const p of players) if (falcoHasHawk(p) && fogShown(p, now)) { const h = hawkHome(p, now); drawHawk(Math.round(h.x - ex), Math.round(h.y - ey), beat, h.left); }
   for (const k of falcoKnives) if (fogShown(k, now)) drawThrownKnife(Math.round(k.x - ex), Math.round(k.y - ey) - BOW_Y, k.nx, k.ny, now);
 }
 
@@ -136,6 +148,26 @@ function drawStoopFx(f, px, py, now) {
 }
 AB_FX_LOOK.stoop = drawStoopFx;
 
-HERO_GROUND.push(drawFalcoGround);
 HERO_AIR.push(drawFalcoAir);
 HERO_BODY_DRAW.push(drawFalcoSky);
+
+// ---- the knife in his hand -----------------------------------------------------------
+// At rest it hangs point down from the fist at his side, forward of him side-on
+// (FALCO_KNIFE, js/sprites/falco.js; HERO_CARRY): a short blade, never held out level.
+// Thrown, the hand cocks it back over the shoulder and flings empty (HERO_AIMED).
+function falcoCarry(p, px, py) {
+  if (attackOf(p).art !== 'knife') return false;
+  const lead = p.dir === 'down' || p.dir === 'right', side = p.dir === 'left' || p.dir === 'right', rc = heroReach(p);
+  const k = side ? FALCO_KNIFE.fwd : FALCO_KNIFE.down, img = lead ? k.img : heldFlip(k.img);
+  const hx = lead ? px + (side ? 12 : 13) + rc : px + (side ? 3 : 2) - rc, hy = py + 11;
+  ctx.drawImage(img, hx - (lead ? k.grip[0] : img.width - 1 - k.grip[0]), hy - k.grip[1]);
+  if (p.dir !== 'up') heroFist(p, hx, hy, lead ? 1 : -1);
+  return true;
+}
+HERO_CARRY.push(falcoCarry);
+// the knife hand is the leading one, the side away from the glove, so a raised knife never
+// crosses the hawk; a hand on the left reaches one more (the chest's middle is between two columns)
+HERO_AIMED.knife = (heading, step, p) => {
+  const lead = p.dir === 'down' || p.dir === 'right', t = FALCO_THROW[step];
+  return { img: step ? FALCO_KNIFE.up.img : null, grip: FALCO_KNIFE.up.grip, hand: [lead ? t.hand[0] : -t.hand[0] - 1, t.hand[1]] };
+};
