@@ -1342,18 +1342,23 @@ function practiceRevive(p) {
 }
 
 // Both end screens print the same object, so there is one of these rather
-// than one per ending: the four tally numbers, the class it was played in,
-// and the whole side both stages stand.
+// than one per ending: the match clock, the class it was played in, and the
+// whole side's table, frozen at the whistle.
 function endSnapshot() {
   return {
-    gold: player.earned, kills: player.kills, level: player.level, time: state.elapsed,
+    time: state.elapsed,
     team: player.team, cls: player.cls,
-    // the whole side, the local player first: every body either ending stands
-    // on its stage, with the name TAB gives it (boardName: a bot goes by its hero), the hero and look it finished in (a mate who
+    // the whole side, the local player first: every row either ending's table
+    // prints, with the name TAB gives it (boardName: a bot goes by its hero), the hero and look it finished in (a mate who
     // is down at the whistle still shares the result)
-    roster: players.filter((q) => q.active && q.team === player.team)
+    // (a 1V1's is the duel: your row over your rival's)
+    roster: players.filter((q) => q.active && (q.team === player.team || state.onevone))
       .sort((a, b) => (a === player ? -1 : b === player ? 1 : a.id - b.id))
-      .map((q) => ({ name: boardName(q), cls: q.cls, skin: heroSkinOf(q), team: q.team })),
+      .map((q) => ({
+        id: q.id, name: boardName(q), cls: q.cls, skin: heroSkinOf(q), team: q.team,
+        // the row the end screens' table prints for it (js/ui/endscreens.js)
+        kills: q.kills, deaths: q.deaths, assists: q.assists || 0, dmg: q.dmgOut, farm: q.farm, gold: q.earned,
+      })),
   };
 }
 

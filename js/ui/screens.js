@@ -1,6 +1,6 @@
 'use strict';
 // The screens around a match's end: the rolling replay window, the death
-// overlay and spectating, and the emotes. The victory and defeat ceremonies
+// overlay and spectating. The victory and defeat ceremonies
 // are js/ui/endscreens.js.
 // ------------------------------------------------------------ replay
 // A rolling four seconds of the world, kept as pixels rather than as state,
@@ -449,7 +449,6 @@ function deadKey(k) {
   }
   if (endSkip()) return;
   if (!deadReady()) return;
-  if (emoteKey(k)) return; // the digits are the emote bar (the `emotes` banner)
   const n = deadLayout().length;
   if (moveDir(k) === 'left') { state.deadSel = (state.deadSel + n - 1) % n; SFX.pickup(); }
   else if (moveDir(k) === 'right') { state.deadSel = (state.deadSel + 1) % n; SFX.pickup(); }
@@ -465,7 +464,6 @@ function deadClick() {
     return;
   }
   if (endSkip()) return;
-  if (emoteClick()) return; // a plate under the pointer plays its emote
   const h = deadHit();
   if (h >= 0) { state.deadSel = h; deadActivate(h); }
 }
@@ -545,7 +543,7 @@ function renderDead(now) {
   drawEndPlanks(now, 0);
 }
 
-// the planks both endings share: hovered or keyboard-picked is hot, and the
+// the words both endings share (LOBBY): hovered or keyboard-picked is hot, and the
 // ease runs on the frame delta (it only steps while the overlay is up). dy
 // slides them on screen without moving the rects deadHit() tests, so a plank
 // is only clickable once it has arrived.
@@ -556,223 +554,9 @@ function drawEndPlanks(now, dy) {
   for (let i = 0; i < rs.length; i++) {
     const want = (hot >= 0 ? hot === i : state.deadSel === i) ? 1 : 0;
     state.deadHover[i] += (want - state.deadHover[i]) * Math.min(1, dt * 14);
-    drawMenuButton({ x: rs[i].x, y: rs[i].y + dy, w: rs[i].w, h: rs[i].h },
-      tr(rs[i].label), state.deadHover[i], now, false); // prints its own 2x label
-  }
-}
-
-// ------------------------------------------------------------ emotes
-// The ceremony ends and the side is just standing there - the moment a
-// scored goal hands back to the players, with nothing left to win and
-// everything left to mess about with. Four of them, on a bar of four picture
-// plates under the planks: a digit plays one, which is why a plate wears its
-// digit in its corner the way a slot wears its number rather than a word of hint.
-//
-// An emote is a POSE PICKER over the set every body on the stage is already
-// drawn from (champLook, js/sprites/characters.js): it hands back a frame,
-// an offset off that body's own feet and, now and then, a puff of snow
-// (puff: how far along its 0..1 that snow is, so a pose may throw several). So
-// the whole feature costs no art. Each has a second performance for a body
-// that is already DOWN, and the loss's screen plays that one - the side lies
-// in the drift and emotes without getting up, so nothing on that screen ever
-// stands back up.
-//
-// The local player's is `emo` below; the mates on a WIN celebrate on their
-// own (emoteAmbient), rolled off a hash per slot rather than kept, the same
-// no-array idiom as the motes and the blizzard. A loss has no ambient at
-// all: that side is down.
-const EM_T = 1.5;                        // one performance, whichever it is
-const EM_KEYS = ['1', '2', '3', '4'];
-const EM_TURN = ['down', 'left', 'up', 'right']; // a turn on the spot, one facing a beat
-
-// the local player's: which plate, and the FRAME clock it started on - not
-// either ceremony's, because a skip jumps those and would strand a pose
-const emo = { i: -1, t0: -1e9, hover: [0, 0, 0, 0] };
-
-const EMOTES = [
-  // jumping for joy: three hops head-on, the feet kicking on the way up and
-  // a puff where each lands
-  { cap: '1', glyph: 'cheer',
-    up: (s, f) => { const q = (f * 3) % 1; return { spr: s.down[q < 0.5 ? 1 + (Math.floor(f * 12) & 1) : 0], dy: Math.round(Math.sin(q * Math.PI) * 8), puff: q < 0.3 ? q / 0.3 : 0 }; },
-    down: (s, f) => { const q = (f * 3) % 1; return { spr: s.prone.down[1 + (Math.floor(f * 16) & 1)], dy: Math.round(Math.sin(q * Math.PI) * 10), puff: q < 0.3 ? q / 0.3 : 0 }; } },
-  // the shuffle: the two side frames on alternate beats, swaying across its
-  // own feet
-  { cap: '2', glyph: 'dance',
-    up: (s, f) => { const b = Math.floor(f * 10); return { spr: (b & 1 ? s.left : s.right)[1 + ((b >> 1) & 1)], dx: b & 1 ? -4 : 4, dy: b & 1 ? 0 : 3 }; },
-    down: (s, f) => { const b = Math.floor(f * 10); return { spr: (b & 1 ? s.prone.left : s.prone.right)[1 + ((b >> 1) & 1)], dx: b & 1 ? -6 : 6, dy: b & 1 ? 0 : 3, puff: f < 0.15 ? f / 0.15 : 0 }; } },
-  // the twirl, and the whole trick of it: a body that turns through all four
-  // facings on the spot reads as spinning without a frame of new art
-  { cap: '3', glyph: 'spin',
-    up: (s, f) => ({ spr: s[EM_TURN[Math.floor(f * 10) & 3]][0], dy: Math.round(Math.sin(f * Math.PI) * 10), puff: f > 0.85 ? (f - 0.85) / 0.15 : 0 }),
-    down: (s, f) => ({ spr: s.prone[EM_TURN[Math.floor(f * 9) & 3]][0], dy: Math.round(Math.abs(Math.sin(f * Math.PI * 4)) * 4), puff: f < 0.2 ? f / 0.2 : 0 }) },
-  // down and up again: a beat on its feet, the length of it flat in the
-  // snow, and back up - the one emote that leaves the body plan, so it is
-  // also the one that puffs. Downed, it has nowhere to go but deeper.
-  { cap: '4', glyph: 'flop',
-    up: (s, f) => {
-      if (f < 0.08 || f > 0.92) return { spr: s.down[0] };
-      if (f < 0.16 || f > 0.84) return { spr: s.prone.down[0], low: true }; // on its side, going down and getting up
-      const b = Math.floor((f - 0.16) * 20);
-      return { spr: s.prone.right[b < 1 ? 0 : 1 + (b & 1)], puff: f < 0.4 ? (f - 0.16) / 0.24 : 0, low: true };
-    },
-    down: (s, f) => ({ spr: s.prone.right[f < 0.5 ? 1 + (Math.floor(f * 12) & 1) : 0], dy: -Math.round(Math.sin(f * Math.PI) * 8), puff: f < 0.5 ? f / 0.5 : 0 }) },
-];
-
-// ---- the plates' art -----------------------------------------------------
-// One 10x10 grid an emote, stamped at 2x in the ending's accent (gold on the
-// win, frost on the loss) - a figure with its arms up, a note, a turning
-// arrow and a body flat on the ground with the snow still settling over it.
-const EM_GLYPHS = {
-  cheer: [
-    '.g......g.',
-    '.g..hh..g.',
-    '.g..hh..g.',
-    '..g.gg.g..',
-    '...gggg...',
-    '...gggg...',
-    '...gggg...',
-    '...g..g...',
-    '...g..g...',
-    '..gg..gg..',
-  ],
-  dance: [
-    '...gggggg.',
-    '...gggggg.',
-    '...g....g.',
-    '...g....g.',
-    '...g....g.',
-    '...g....g.',
-    '.ggg..ggg.',
-    'ggggg.gggg',
-    'ggggg.gggg',
-    '.ggg..ggg.',
-  ],
-  spin: [
-    '...gggg...',
-    '..g....g..',
-    '.g......g.',
-    'g.....gggg',
-    'g......ggg',
-    'g.......gg',
-    '.g........',
-    '..g....g..',
-    '...gggg...',
-    '..........',
-  ],
-  flop: [
-    '....gg....',
-    '....gg....',
-    '....gg....',
-    '....gg....',
-    '..gggggg..',
-    '...gggg...',
-    '....gg....',
-    '.h..h..h..',
-    'h...h....h',
-    '..h.....h.',
-  ],
-};
-const EM_GLYPH_HOT = { '.': null, g: '#ffffff', o: '#ffffff', h: '#ffffff' };
-
-// ---- the bar -------------------------------------------------------------
-const EM_PLATE = 26, EM_GAP = 5, EM_BAR_DY = 24; // under the planks, inside the frame
-
-function emoteLayout() {
-  const L = winLayout();
-  const n = EMOTES.length;
-  const w = n * EM_PLATE + (n - 1) * EM_GAP;
-  const x0 = Math.round((VIEW_W - w) / 2);
-  return EMOTES.map((e, i) => ({ x: x0 + i * (EM_PLATE + EM_GAP), y: L.plankY + EM_BAR_DY, w: EM_PLATE, h: EM_PLATE }));
-}
-
-// the bar is live exactly when the planks are: before that a press is a skip
-// (endSkip), and the screen has not finished saying what it is
-function emoteLive() {
-  return emoteScreen() && deadReady() && !state.fade;
-}
-// ...and which screens have the bar at all: the two ceremonies, not the
-// post-game record that answers endScreen() beside them (js/ui/lobby.js)
-function emoteScreen() {
-  return endScreen() && state.deadView !== 'spec' && state.deadView !== 'scores';
-}
-
-// which plate the pointer is on (-1 for none)
-function emoteHit() {
-  if (!emoteLive()) return -1;
-  const rs = emoteLayout();
-  for (let i = 0; i < rs.length; i++) {
-    const r = rs[i];
-    if (mouse.x >= r.x - 2 && mouse.x < r.x + r.w + 2 && mouse.y >= r.y - 2 && mouse.y < r.y + r.h + 2) return i;
-  }
-  return -1;
-}
-
-function emotePlay(i) { emo.i = i; emo.t0 = performance.now() / 1000; SFX.place(); }
-function emoteKey(k) { const i = EM_KEYS.indexOf(k); if (i < 0 || !emoteLive()) return false; emotePlay(i); return true; }
-function emoteClick() { const h = emoteHit(); if (h < 0) return false; emotePlay(h); return true; }
-
-// what the local player's body is doing this frame, or null for standing there
-function emoteNow(now) {
-  if (emo.i < 0) return null;
-  const f = (now - emo.t0) / EM_T;
-  return f >= 0 && f < 1 ? { e: EMOTES[emo.i], f } : null;
-}
-
-// A mate celebrating on its own: every EM_AMB seconds each one rolls its own
-// slot off the hash, about half of them play, and the rest of the slot it
-// stands there. Nothing is kept between frames, so a resize costs it nothing.
-const EM_AMB = 2.6;
-function emoteAmbient(k, now) {
-  const ph = now / EM_AMB + k * 0.37;
-  const slot = Math.floor(ph);
-  const h = hash2(k * 13 + slot, 71);
-  if (h < 0.42) return null;
-  const f = ((ph - slot) * EM_AMB) / EM_T;
-  return f < 1 ? { e: EMOTES[Math.floor(h * 997) % EMOTES.length], f } : null;
-}
-
-// A body on the stage at 3x, bottom-aligned on the line its feet stand on:
-// the cheer's hoist frame is 20 rows on the same feet, which is what reading
-// the height pays for (the deal drawPlayer strikes too, js/draw/bodies.js).
-function drawEndBody(spr, x, footY) {
-  ctx.drawImage(spr, x, footY - spr.height * 3, WIN_BODY, spr.height * 3);
-}
-
-// snow thrown up under a body: a ring of pale specks spreading and settling
-function drawSnowPuff(cx, y, f, a) {
-  if (f < 0 || f > 1) return;
-  for (let i = 0; i < 10; i++) {
-    const h1 = hash2(i * 7 + 1, 43), h2 = hash2(i * 5 + 3, 89);
-    const ang = (i / 10) * Math.PI * 2 + h1;
-    const r = 3 + f * (10 + h2 * 10);
-    ctx.globalAlpha = a * (1 - f) * 0.9;
-    ctx.fillStyle = h1 > 0.6 ? '#ffffff' : '#dfe8f8';
-    ctx.fillRect(Math.round(cx + Math.cos(ang) * r), Math.round(y - 1 - Math.sin(ang) * r * 0.35 - f * 4), 1, 1);
-  }
-  ctx.globalAlpha = 1;
-}
-
-// the bar itself: the glyph is the whole explanation, the plate lifts under
-// the pointer and stays lit while its emote runs, and the corner carries
-// the digit that plays it. dy
-// slides it on with the planks without moving the rects emoteHit() tests.
-function drawEmoteBar(now, ac, dy) {
-  const rs = emoteLayout();
-  const hot = emoteHit();
-  const live = emoteNow(now);
-  const dt = Math.min(0.05, now - (drawEmoteBar.last || now)); drawEmoteBar.last = now;
-  for (let i = 0; i < rs.length; i++) {
-    const r = rs[i];
-    const want = hot === i || (live && emo.i === i) ? 1 : 0;
-    emo.hover[i] += (want - emo.hover[i]) * Math.min(1, dt * 14);
-    const y = r.y + dy - Math.round(emo.hover[i] * 2);
-    const lit = emo.hover[i] > 0.5;
-    ctx.fillStyle = 'rgba(4,6,18,0.55)'; chamRect(r.x + 2, r.y + dy + 2, r.w, r.h);
-    ctx.fillStyle = '#0a0e23'; chamRect(r.x, y, r.w, r.h);
-    ctx.fillStyle = '#141c3c'; chamRect(r.x + 1, y + 1, r.w - 2, r.h - 2);
-    ctx.fillStyle = lit ? ac.rule : '#35426e';
-    ctx.fillRect(r.x + 2, y + 1, r.w - 4, 1); ctx.fillRect(r.x + 2, y + r.h - 2, r.w - 4, 1);
-    stampGrid(EM_GLYPHS[EMOTES[i].glyph], lit ? EM_GLYPH_HOT : ac.icon, r.x + 3, y + 2, 2);
-    drawPixelTextShadow(ctx, EMOTES[i].cap, r.x + r.w - 6, y + r.h - 7, lit ? ac.txt : '#8f9cc4', '#0a0e23');
+    // the title screen's bare words: white, gold while hot
+    const t = tr(rs[i].label);
+    drawPixelTextOutline(ctx, t, Math.round(rs[i].x + (rs[i].w - pixelTextWidth(t, MENU_TXT_SCALE)) / 2),
+      rs[i].y + dy + ((rs[i].h - 7 * MENU_TXT_SCALE) >> 1), state.deadHover[i] > 0.5 ? SC_GOLD : SC_LIT, SC_INK, MENU_TXT_SCALE);
   }
 }

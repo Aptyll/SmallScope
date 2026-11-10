@@ -206,11 +206,6 @@ const state = {
     skinT: 0, skTab: 0, skSel: 0, skNav: false, skKeyed: false, skPick: -1, skHover: {}, skDeny: 0, skFlash: 0, skFlashI: -1,
     charT: 0, nameBuf: '', nameSel: false, nameEdit: false, nameShake: 0, khover: {},
     moved: false, keyNav: false, camT: 0, pressT: 0, // keyNav: the keys made the pick (it lights until the pointer moves)
-    // a sealed plank's knock (drawMenuButton's frozen glaze cracks from
-    // iceX/iceY while iceT runs, on the plank iceI names); nothing sets them
-    // today - the title's items are all live - but a client's lobby still
-    // draws the host's name sealed, and the glaze reads them
-    iceT: 0, iceI: -1, iceSeed: 0, iceX: 0, iceY: 0,
     // lobby: which screen the menu shows, its cross-fade, the chosen hero
     // (csel, the hero row - js/ui/heroes.js), the stage's swap pop, lock-in hold.
     // screen: 'menu' | 'lobby' | 'hero' | 'wiki' | 'notes' | 'profile' | 'skins' | 'room'
