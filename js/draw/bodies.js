@@ -236,12 +236,11 @@ function centreTextX(sx, txt, scale) { return Math.round(sx) - (pixelTextWidth(t
 // something that is usually absent is what made the plate lopsided before.
 const FRAME_DX = 3;
 
-// A bear buff, worn: a ring of pips around the feet in that bear's colour
-// (MONSTER's buffCol: violet the black bear's), rimmed dark
-// so it reads on snow, that loses a pip at a time as the buff runs out -
-// the ring IS the timer, and a full ring on a rival is the warning. The
-// longest buff (a bear's) fills every pip.
-const BUFF_RING = 12;                // pips round the ring
+// A bear buff, worn: motes of that bear's colour (MONSTER's buffCol: violet the black
+// bear's) lifting off the snow round the feet, each on its own darker glow so it reads
+// on snow. They thin out one at a time as the buff runs out - the motes ARE the timer,
+// and a full set on a rival is the warning. The longest buff (a bear's) lifts all of them.
+const BUFF_MOTES = 8;                // motes round the feet at a full buff
 const BUFF_COL = '#ffb04a';          // a buff with no bear named (a hand grant): amber
 // THE TEAM RING: one pixel ring on the snow round every hero's feet, in its
 // side's paint (the coat's own shade, a value step under the mark so a blue
@@ -270,22 +269,31 @@ function drawHeroRing(p, cx, cy) {
   for (const q of heroRingPts || heroRingShape()) { ctx.fillStyle = q[0] + q[1] * 2 < -3 ? T.mark : T.coat; ctx.fillRect(cx + q[0], cy + q[1], 1, 1); } // the lit side a step brighter
 }
 function drawBuffRing(p, cx, cy, now) {
-  drawPipRing(cx, cy, 7 + ((now * 3) & 1), p.buffT / CAMP_BUFF_EPIC_T, (MONSTER[p.buffKind] && MONSTER[p.buffKind].buffCol) || BUFF_COL);
+  drawBuffMotes(cx, cy, 8, p.buffT / CAMP_BUFF_EPIC_T, (MONSTER[p.buffKind] && MONSTER[p.buffKind].buffCol) || BUFF_COL, now, 0);
 }
-// the orca buff (p.pushT), the same ring a size out in the orca's colour, so
+// the orca buff (p.pushT), the same motes a size out in the orca's colour, so
 // a hero wearing both shows both
 function drawPushRing(p, cx, cy, now) {
-  drawPipRing(cx, cy, 10 + ((now * 3) & 1), p.pushT / ORCA_PUSH_T, MONSTER.orca.buffCol);
+  drawBuffMotes(cx, cy, 11, p.pushT / ORCA_PUSH_T, MONSTER.orca.buffCol, now, 0.5);
 }
-// `r` px round (squashed to the ground's 3/4 view), `share` of its pips lit
-function drawPipRing(cx, cy, r, share, col) {
-  const n = Math.ceil(BUFF_RING * Math.min(1, share));
+// `share` of the motes, standing `r` px out round the feet (squashed to the ground's
+// 3/4 view), each rising a dozen px on its own beat and thinning to a fleck before it
+// goes; `off` shifts where they stand so two buffs never share a spot
+function drawBuffMotes(cx, cy, r, share, col, now, off) {
+  const n = Math.ceil(BUFF_MOTES * Math.min(1, share)), dark = buffShade(col);
   for (let i = 0; i < n; i++) {
-    const a = -Math.PI / 2 + (i / BUFF_RING) * Math.PI * 2;
-    const x = Math.round(cx + Math.cos(a) * r), y = Math.round(cy + Math.sin(a) * r * 0.6);
-    ctx.fillStyle = '#0f1632'; ctx.fillRect(x - 1, y - 1, 3, 3);
-    ctx.fillStyle = col; ctx.fillRect(x, y, 1, 1);
+    const a = ((i + off) / BUFF_MOTES) * Math.PI * 2 + 0.4, u = (now * 0.8 + i * 0.37) % 1;
+    const x = Math.round(cx + Math.cos(a) * r), y = Math.round(cy + Math.sin(a) * r * 0.55 - u * 12);
+    if (u > 0.75) { ctx.fillStyle = dark; ctx.fillRect(x, y + 1, 1, 1); ctx.fillStyle = col; ctx.fillRect(x, y, 1, 1); }
+    else fxMote(x, y, col, dark);
   }
+}
+// a buff colour's own darker step, for a mote's glow
+const buffShades = {};
+function buffShade(col) {
+  if (buffShades[col]) return buffShades[col];
+  const v = parseInt(col.slice(1), 16), k = (c) => Math.round(c * 0.55);
+  return (buffShades[col] = 'rgb(' + k(v >> 16) + ',' + k((v >> 8) & 255) + ',' + k(v & 255) + ')');
 }
 
 // The class body's run and dodge roll are the doll's frames (js/baked/motion.js,
