@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['Nix wears a pale ice scarf, so only her side colour stands out on her', '0.875'],
     ['Barracks: a load of snow on the roof', '0.874'],
     ['The stumps round each roost lie scattered where the eagle came down', '0.873'],
     ['CLIVUS ROPE RING is a roped pen of stakes, and MARIS UNDERTOW is three waves closing in', '0.873'],
