@@ -1039,17 +1039,23 @@ const SHADE_A = 0.3, SHADE_TINT = '#465fa5';
 const SHADE_BODY = '#3e59a7', SHADE_BODY_A = 0.3;
 const CAST_REACH = [-1, -1, 4, 2];          // tiles a caster's shade can land on from its own: x0, y0, x1, y1 (shadeFor checks)
 const whole = (cv, x, y) => [cv, 0, cv.width, cv.height, x, y];
+const SHADE_ROW = TILE; // px a pine's shade is drawn down when another stands on the tile below
+const SHADE_ROW_DIP = 0.5; // the share of the shade's reach the fill gives up halfway between two pines: how deep the rim's teeth are cut
+function treeInRow(tx, ty) { const o = inWorld(tx, ty + 1) && objects[idx(tx, ty + 1)]; return !!o && o.type === 'tree'; }
 const CASTERS = {
   // a pine's code is its standing frame AND its nudge (treeNudgeX/Y), so a
   // shade is cut once per pair and lands under the art where it was nudged;
   // every palette row of a height has the same silhouette, so the art is the
   // height's first row (treeSize)
+  // ...and whether a pine stands on the tile below it (treeInRow): then its
+  // shade is drawn down to that pine's (SHADE_ROW), so a stand's edge throws
+  // one mass of shade with a toothed rim, not a wedge a tree with snow between
   tree:     { code: (o, tx, ty) => 1000 + treeRestFrame(tx, ty) + SPRITES.treeAtlas.cols *
-                (((treeNudgeX(tx, ty) + TREE_NUDGE_X) * (TREE_NUDGE_Y * 2 + 1) + treeNudgeY(tx, ty) + TREE_NUDGE_Y) * 3 + treeSize(tx, ty)),
+                ((((treeNudgeX(tx, ty) + TREE_NUDGE_X) * (TREE_NUDGE_Y * 2 + 1) + treeNudgeY(tx, ty) + TREE_NUDGE_Y) * 3 + treeSize(tx, ty)) * 2 + (treeInRow(tx, ty) ? 1 : 0)),
               art: (c) => {
-                const A = SPRITES.treeAtlas, f = (c - 1000) % A.cols, m = Math.floor((c - 1000) / A.cols), size = m % 3, n = (m - size) / 3;
+                const A = SPRITES.treeAtlas, f = (c - 1000) % A.cols, k = Math.floor((c - 1000) / A.cols), row = k % 2, m = (k - row) / 2, size = m % 3, n = (m - size) / 3;
                 const nx = Math.floor(n / (TREE_NUDGE_Y * 2 + 1)) - TREE_NUDGE_X, ny = n % (TREE_NUDGE_Y * 2 + 1) - TREE_NUDGE_Y;
-                return [A, f * A.fw, A.fw, A.fh, -5 + nx, -21 + ny, size * A.pals * A.fh]; // the height's own rows of the atlas
+                return [A, f * A.fw, A.fw, A.fh, -5 + nx, -21 + ny, size * A.pals * A.fh, row ? SHADE_ROW : 0]; // the height's own rows of the atlas
               } },
   // a stump's code is its cut AND where it stands (stumpLook), like a pine's
   stump:    { code: (o, tx, ty) => { const L = stumpLook(tx, ty); return 300 + L.v * 100 + (L.dx + TREE_NUDGE_X) * 10 + L.dy + TREE_NUDGE_Y; },
@@ -1099,8 +1105,21 @@ const shadeByCode = new Map();
 function shadeFor(C, c) {
   let m = shadeByCode.get(c);
   if (m !== undefined) return m;
-  const [src, sx, sw, sh, ax, ay, sy] = C.art(c);
+  const [src, sx, sw, sh, ax, ay, sy, down] = C.art(c);
   m = shadeMask(src, sx, sw, sh, SHADE_TINT, 1, sy);
+  if (m && down) {
+    // drawn down `down` px to the next one's shade - but only its trunk-side
+    // share, least halfway between the two, so the crowns' tips stay teeth on
+    // the mass's lit rim and no straight edge is ruled down the snow
+    const w = document.createElement('canvas'); w.width = m.width; w.height = m.height + down;
+    const wg = w.getContext('2d');
+    wg.drawImage(m, 0, 0);
+    for (let d = 1; d <= down; d++) {
+      const cw = Math.round(m.width * (1 - SHADE_ROW_DIP * Math.sin(Math.PI * d / down)));
+      wg.drawImage(m, 0, 0, cw, m.height, 0, d, cw, m.height);
+    }
+    w.oy = m.oy; m = w;
+  }
   if (m) {
     m.ax = ax; m.ay = ay + m.oy;
     if (Math.floor(ax / TILE) < CAST_REACH[0] || Math.floor(m.ay / TILE) < CAST_REACH[1] ||
