@@ -35,7 +35,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.891';
+const PATCH_TXT = 'PATCH 0.892';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -56,6 +56,7 @@ const LOGO_DAWN = 0.5; // s that fade takes
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.892', 'ARMATOS\'S HOLD THE LINE RAISES A REAL SHIELD IN HIS SIDE\'S COLOUR, ITS RIM GOLD WHEN THE BASH IS PRIMED.'],
   ['0.891', 'EACH BAY STANDS IN ITS OWN CLEARING, NOT HALF HIDDEN IN THE PINES.'],
   ['0.890', 'IGNIA\'S WARM HANDS SHOWS FLAMES IN HER HANDS, AND SALVIA\'S WARM CLOAK SHOWS A CAPE ON THE ALLY SHE WRAPS.'],
   ['0.889', 'THE LOGO STANDS ON THE SCREEN FROM THE FIRST INSTANT THE GAME OPENS, AND THE VALLEY FADES UP UNDER IT.'],
