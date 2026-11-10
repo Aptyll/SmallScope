@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['Aura\'s staff top is a gold star, clearly apart from Hiems\'s blue snowflake', '0.771'],
     ['THE TITLE STANDS BY THE FROZEN RIVER', '0.770'],
     ['Clivus and Arcus have proper side views and Arcus a proper back', '0.769'],
     ['THE FROZEN RIVER HAS ITS OWN ICE: A CHANNEL, STREAKS AND CRACKS', '0.768'],
