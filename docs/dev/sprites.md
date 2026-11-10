@@ -128,11 +128,16 @@ some); never edit the grids.
 
 ## Hero looks
 
-Every hero is drawn only in its own looks. Its `CLASSES` row carries `skins` (`ARM_SKINS`,
-js/sprites/armatos.js, and one table per hero), and `champLook(cls, team, skinId)` (characters.js,
+Every hero is drawn only in its own looks. Its `CLASSES` row carries its `id`, which names its row
+in the **hero art registry** (`HERO_ART`, [js/sprites/hero-art.js](../../js/sprites/hero-art.js)):
+each hero's own sprite file ends with one `heroArt(id, { looks, pal, glyph, emblem })` call (its looks,
+e.g. `ARM_SKINS`, their paint, the skins tab's glyph and the 12 px emblem), every reader asks
+`heroArtOf(cls)` (player.js), and player.js refuses to boot when a row and its art do not pair up.
+`champLook(cls, team, skinId)` (characters.js,
+the `heroes` banner) bakes the chosen row's own grids `champLook(cls, team, skinId)` (characters.js,
 the `heroes` banner) bakes the chosen row's own grids (its standing frame per facing, the walk
 lifted off it by `heroWalk`, the roll from its doll by name through `motionSet`, lying down by
-`lie`) in the hero's paint (`skinPal`, e.g. `ARM_PAL`, then the row's own `pal` if it has one)
+`lie`) in the hero's paint (`pal`, e.g. `ARM_PAL`, then the row's own `pal` if it has one)
 over the team's coat (`teamPlayerPal` over `PPAL`). A `skinId` that names no row, or none, wears
 the free first row. The set is cached per (hero, team, look): ten players and a menu or two is
 all that ever asks. Every reader of a player's body goes through `classSet(p)` (player.js), which
@@ -143,15 +148,23 @@ side run was a pixel or two narrower and read as the hero shrinking when turning
 The run facing down and up is still the doll's, unless the look's row says `run: 'drawn'`: then
 `heroRunFront` lifts the drawn front and back the same way (IGNIA's two looks, AURA's, SALVIA's, LUCERNA's and BUCINA's two, whose shawl, mantle, coat, cape and hair
 the doll does not match). Which look a player wears is `heroSkinOf(p)` (player.js): the id in `p.skins` under the
-hero's `skinSlot`, or the free first row. LAST STANDARD (nasal helm, white beard, tabard) is his
+hero's `id`, or the free first row. LAST STANDARD (nasal helm, white beard, tabard) is his
 own; IRON OATH (closed helm with a gold cross, pauldrons, a cape) is bought on the skins screen.
 They are F and G off armatos-round4.png in the project files. His 48 px face is his own standing
 front at 3x (below).
 
 His OATH GREATSWORD (`ARM_SWORD`, `ARM_SWORD_DIAG`) replaces the sword's held art in his hands
-(`HERO_BLADES.oath`, js/draw/heroes.js: `heroBlade`, asked by `drawHeldTool`): flat for the side, the swing and the wind-up (turned about its `hilt`), and slanted
-facing down or up (`heroCarry`), the grip at his right hip (the row's `hip`) and the blade up past the
-shoulder, drawn behind the body facing up.
+(`HERO_BLADES.oath`, js/draw/heroes.js: `heroBlade`, asked by `drawHeldTool`): flat for the swing and the wind-up (turned about its `hilt`), and slanted
+at rest in every facing (`heroCarry`), the grip at his hip (the row's `hip`) and the blade up past the
+shoulder, mirrored facing left, drawn behind the body facing up. **A blade is held the same way in
+every facing** so a hero keeps one shape as it turns and nothing heavy is held out level: a
+`HERO_BLADES` row with a slanted grid names its `hold` (`BLADE_HOLDS`; none is `slant`, up and out
+from the leading hand: ARMATOS, VARRO, MARIS; `far` the other hand facing down: FORTIVA; `shoulder`
+back over the shoulder behind the head: LIGNUM's axe; `rest` the head down on the snow beside the
+foot: RUPES's maul). Each is the row's own slanted grid mirrored left to right or top to bottom
+(`heldFlip`, `heldDrop`); none rises past the head, where the health frame sits. A row with no
+slanted grid keeps the level carry (BELLA, NIX), and its `lift` raises a short blade hung at the
+side so its tip rests at the feet (NIX).
 
 FORTIVA's looks (`FORT_SKINS`, js/sprites/fortiva.js) are built the same way on ARMATOS's frame and in
 his iron (`FORT_PAL` is `ARM_PAL` with her copper hair `a`/`A` and her chain `c`/`C`). UNBROKEN
@@ -184,10 +197,9 @@ Her 48 px model is her own standing front too. Her CROOK AND LANTERN is not a bl
 the leading hand in every facing (`heroStaff`, asked by `drawHeldTool`, mirrored facing left or up)
 and held through a cast; the lantern's heart flickers between two baked frames. **Each staff hero
 carries it its own way** so two of them are two shapes on the snow: a `HERO_STAVES` row's `hold`
-names a `STAFF_HOLDS` entry (none is the leading hand; `far` the other hand, SALVIA;
-`yoke` level behind the shoulders, HIEMS; `hip` level at the hip, FABER). The level holds are the
-upright art a quarter turn over, baked once (`staffTurn`). A draw or a cast brings any hold upright
-into the leading hand. A new staff hero takes a hold no other staff hero has, or a new one.
+names a `STAFF_HOLDS` entry (none is the leading hand; `far` the other hand, SALVIA and HIEMS).
+A staff is always upright with its foot by the hero's own. A draw or a cast brings it into the
+leading hand.
 
 **Every hero body shows its side from every facing**: the side's coat letters (`r`/`R`/`d`) fill 16 px
 or more of the torso facing down and up and 12 or more side-on, the lower back from behind
@@ -320,11 +332,12 @@ hand ticks between two baked frames. His two machines draw themselves from small
 side (`faberArt`, js/draw/faber.js), the side's colour in a band across each.
 
 FALCO has two looks (`FALCO_SKINS`, js/sprites/falco.js) on one set of grids and one doll:
-FALCONER (free) and LAST HAWK (rare, 200). `FALCO_PAL` is `ARM_PAL` with his leather `q`/`Q`
-(the doll's `cloak`), brown hair `a`/`A` (the doll's `hair`), the kestrel-rust collar `x`/`X`
-and a cream feather `W`; LAST HAWK is the same cut repainted by its row's `pal` (black leather,
-silver hair, gold at the collar). It is A off falco-round1.png in the project files. His doll is
-`Falconer` in app/bake-player/bodies.py. His THROWING KNIFE is weapon art
+HUNTSMAN (free; row id `falconer`) and LAST HAWK (rare, 200). `FALCO_PAL` is `ARM_PAL` with the
+green hat and shoulder cape `q`/`Q`, brown hair `a`/`A`, a leather belt `x` and the hat's long
+cream feather `W`; LAST HAWK is the same cut repainted by its row's `pal` (black hat and cape,
+silver hair, a gold belt). It is C off falco-round1.png in the project files. Both run as their
+drawn bodies (`run: 'drawn'`); his doll (`Falconer` in app/bake-player/bodies.py) is used only for
+the roll. His THROWING KNIFE is weapon art
 (`SPRITES.weaponArt.knife`, point right, `WEAPON_GRIP.icon.knife`), carried in the leading hand and held on
 the aim while drawn, and thrown as a shot drawn by `HERO_SHOTS.knife`.
 

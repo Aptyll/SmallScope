@@ -177,7 +177,6 @@ function drawMerchant(b, ex, ey, now) {
     }
   }
   drawUnitStates(b, px, py - lift, spr.width, spr.height, now);
-  drawWorldText('MERCH', centreTextX(b.x - ex, 'MERCH'), py - 17 - lift, TEAMS[skin(b.team)].mark);
   if (b.stunT > 0) drawStunStars(Math.round(b.x - ex), py - 10, b, 5);
   heroOver(b, Math.round(b.x - ex), py - 22 - lift, now); // a hero's marks, over the name (HERO_OVER)
 }
@@ -688,15 +687,18 @@ function drawHeldTool(p, px, py, back) {
   // in the leading hand, riding the run's bob, turned to the facing - a work
   // tool's icon points up and is left as drawn, the way it always was. Facing
   // up it is behind the body. A worn body keeps the old one-pixel step.
+  const bob = !p.moving ? 0 : -runBob(p);
+  // a hero's own way of holding it, which picks its own pass (heroCarry, js/draw/heroes.js)
+  if (!axeOut && heroCarry(p, px, py + bob, back)) return;
   if ((p.dir === 'up') !== back) return;
   const icon = axeOut ? SPRITES.itemAxe : wHeld;
   if (!icon) return;
   const half = icon.width >> 1;
-  const bob = !p.moving ? 0 : -runBob(p);
   const hx = p.dir === 'left' || p.dir === 'up' ? px + 2 : px + 14; // the leading hand (up: the far one, occluded by the body)
-  const hy = cyp + CARRY_HAND_Y[p.dir] + bob;
+  // a short blade hung at the side rides `lift` px up, so its tip rests at the feet
+  const hb0 = heroBladeOf(p), lift = hb0 && hb0.lift && p.dir === 'down' ? hb0.lift : 0;
+  const hy = cyp + CARRY_HAND_Y[p.dir] + bob - lift;
   if (axeOut) { ctx.drawImage(icon, hx - half, hy - half); return; }
-  if (heroCarry(p, px, py + bob)) return; // a hero's own way of holding it facing down or up (js/draw/heroes.js)
   const face = p.dir === 'right' ? 0 : p.dir === 'down' ? Math.PI / 2 : p.dir === 'left' ? Math.PI : -Math.PI / 2;
   drawGripped(icon, hGrip, hx, hy, face - fwd);
 }

@@ -8,7 +8,7 @@ the champ select's wells are [js/ui/loadout.js](../../../js/ui/loadout.js).
   the person it makes you ([lore](../lore.md#naming)): DUELIST, AMBUSHER, STALWART, QUICKHAND,
   OUTRIDER, WARDEN (`CALLINGS`).
 - **Two TRICKS** (the summoner spells): two actives on their own keys (`TRICK_KEYS`, js/app/input.js:
-  D and F under CLICK and MOUSE, Q and F on WASD), each on its own long cooldown that cooldown speed
+  D and F under CLICK, Q and F on WASD), each on its own long cooldown that cooldown speed
   does not shorten: BANDAGE, TORCH, BOLAS, BULWARK, SPRINT, SHAKE OFF, CLEAVER (`TRICKS`).
   There is no FLASH: the [dodge roll](dodge-roll.md) is everybody's.
 

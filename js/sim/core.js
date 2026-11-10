@@ -276,9 +276,8 @@ const settings = { v: 4, volume: 0.5, musicVol: 0.7, sfxVol: 1, mmR: 24, mmZoom:
   relay: '',          // the match relay (host:port) this screen talks to; empty = the page's own host (netRelay, js/net/net.js)
   // the keyboard scheme: 'wasd' (the keys walk, the mouse aims), 'click'
   // (the right button walks and orders - the `click to move` banner,
-  // js/app/input.js) or 'mouse' (CLICK for one hand - the `mouse only` banner).
-  // The KEYBOARD listing's top row; each scheme keeps its own binds
-  // (settings.binds / bindsClick / bindsMouse, mended by mendBinds).
+  // js/app/input.js). The CONTROLS page's top row; each scheme keeps its own
+  // binds (settings.binds / bindsClick, mended by mendBinds).
   scheme: 'wasd',
   // the GAME page's size dials, one per HUD widget (hudSizes, js/ui/strip.js):
   // hudScale the bottom strip, hudRail the team rail along the top; the

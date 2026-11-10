@@ -17,7 +17,8 @@ from. The procedure is the `concept-art` skill in
 ## Verifying a change
 
 After cloning, run `sh scripts/setup-hooks.sh` once: its pre-push hook refuses a push to main
-or a branch behind origin/main.
+or a branch behind origin/main. Cloud sessions get it on their own: `.claude/hooks/session-start.sh`
+runs it at session start.
 
 The rule is in [CLAUDE.md](../../CLAUDE.md): look at the running game, don't re-read the code and
 declare victory. The affordances:
@@ -285,20 +286,22 @@ pop-up's preview/ledger, the wiki's hero page, the bot class hash
 particular hero names it with `heroIndex('NAME')`, never a number: an index moves whenever the
 table does. What a new hero needs written:
 
-1. a `CLASSES` entry ([js/sim/player.js](../../js/sim/player.js)) — `name`, `pos`, `passive`, the
+1. a `CLASSES` entry ([js/sim/player.js](../../js/sim/player.js)) — `name`, its `id` (lower-case,
+   never changed: the profile's skin slot and the registry's key), `pos`, `passive`, the
    `base`/`grow` stats, the `kit` numbers and `rankOrder`;
 2. its looks, in its own js/sprites/ file (the shape of [js/sprites/armatos.js](../../js/sprites/armatos.js)): each look's standing grids
    (`<HERO>_BODY`, walked by `heroWalk`) and its paint (`<HERO>_PAL`), and its **skins table**
-   (`<HERO>_SKINS`: the free first row, then the buyable ones), named on the `CLASSES` row as
-   `skins`, `skinPal` and `skinSlot`; its held run and roll: a doll for each look in
+   (`<HERO>_SKINS`: the free first row, then the buyable ones), registered at the file's end with
+   `heroArt(id, { looks, pal, glyph, emblem })` ([js/sprites/hero-art.js](../../js/sprites/hero-art.js));
+   its held run and roll: a doll for each look in
    `app/bake-player/bodies.py`, measured off the new standing frames and rebaked into
    js/baked/motion.js, named in its skins row's `motion` (the side run comes off the drawn side
    frame, `heroRunSide`; [the run and the roll](sprites.md#the-run-and-the-roll),
    [hero looks](sprites.md#hero-looks)) — **this is the expensive part**. `SPRITES.champLook`
    bakes it per team and look with no edit;
-3. a **`SKIN_TABS` row** in [js/ui/skins.js](../../js/ui/skins.js) (`slot` its `skinSlot`, `rows`
-   its skins table, `hero: heroIndex('NAME')`, an 8×8 glyph). A load check there throws for a hero
-   with no tab;
+3. in that same `heroArt` row, the **skins tab's 8×8 `glyph`**: `SKIN_TABS`
+   ([js/ui/skins.js](../../js/ui/skins.js)) builds the hero's tab from the registry, and a load
+   check in player.js throws for a `CLASSES` row with no `heroArt` row or a row with no hero;
 4. its four actives, `<HERO>_AB` in its own js/sim/ file (the `ARM_AB` shape,
    [js/sim/armatos.js](../../js/sim/armatos.js)), joined into `CLASS_AB`
    ([js/sim/abilities.js](../../js/sim/abilities.js)) in `CLASSES` order: each ability's
@@ -308,10 +311,9 @@ table does. What a new hero needs written:
    their tick and draw through the `HERO_*` tables, and **a `bot` row on all four** saying when a
    bot presses it. `abBotKey` asks it only for a key that is bought and ready (`abUnlocked`,
    `abReady`), so a key still locked at level 0 is never tried;
-5. a 12×12 hero **emblem** in `CLASS12` ([js/ui/menu.js](../../js/ui/menu.js), same palette),
-   keyed by the hero's name and drawn by hand (never a shrink), which the
-   [team rail](rendering/the-hud-corners/the-team-rail.md), the rooms and the tooltips wear. A load
-   check there throws for a hero with none;
+5. a 12×12 hero **`emblem`** in its `heroArt` row (same palette), drawn by hand (never a
+   shrink), which the [team rail](rendering/the-hud-corners/the-team-rail.md), the rooms and the
+   tooltips wear (`classIcon12`, js/ui/menu.js);
 6. an `attack` row on its `CLASSES` entry ([the basic attack](gameplay/the-basic-attack.md)), a new
    `art` in js/sprites/weapons.js or its own sprite file;
 7. a **`BOT_BUILDS` row** in [js/sim/items.js](../../js/sim/items.js): its item build, which is also

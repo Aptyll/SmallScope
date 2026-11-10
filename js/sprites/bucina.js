@@ -317,3 +317,25 @@ SPRITES.weaponArt.horn = SPR.bake([
   '..ooo..ooyyo', '.oyyyooyyYyo', 'oyYoyyyyYo.o', 'oyo.oYYoo...',
   '.o...oo.....', '............', '............', '............',
 ], { '.': null, o: '#2e2440', y: '#f2cc6a', Y: '#b98a2e', F: '#fff1b8' });
+
+// ------------------------------------------------------------ bucina registry
+// BUCINA in the hero art registry (heroArt, js/sprites/hero-art.js): the looks and
+// their paint, the skins tab's 8x8 glyph and the 12x12 emblem
+heroArt('bucina', {
+  looks: BUCINA_SKINS, pal: BUCINA_PAL,
+  glyph: ['......ww', '.....w.w', 'w...w..w', 'ww.w...w', '.ww....w', '..ww...w', '...ww.w.', '....ww..'],
+  emblem: [ // her horn, the bell to the right
+    '............',
+    '.........oo.',
+    '........ogWo',
+    '.......ogggo',
+    '..ooo.ogggGo',
+    '.ogggogggGo.',
+    'ogGoggggGo..',
+    'ogo.oGGGoo..',
+    '.o...ooo....',
+    '............',
+    '............',
+    '............',
+  ],
+});

@@ -347,3 +347,25 @@ const MARIS_HARPOON_DIAG = [
 ];
 const MARIS_HARPOON_GRIP = [3, 9]; // where the hands close on the slanted grid
 const MARIS_HARPOON_PAL = { o: '#241a12', S: '#c8d2e4', s: '#8b93a8', w: '#a8794a', u: '#6e4a28' };
+
+// ------------------------------------------------------------ maris registry
+// MARIS in the hero art registry (heroArt, js/sprites/hero-art.js): the looks and
+// their paint, the skins tab's 8x8 glyph and the 12x12 emblem
+heroArt('maris', {
+  looks: MARIS_SKINS, pal: MARIS_PAL,
+  glyph: ['.....ww.', '....wwww', '...w.ww.', '..w..w..', '.w......', 'w.......', 'ww......', '.w......'],
+  emblem: [ // her harpoon's barbed head
+    '........ooo.',
+    '.......oWWo.',
+    '......oWWWo.',
+    '.....oWWWo..',
+    '....oooWo...',
+    '...owo.o....',
+    '..owo.......',
+    '.owo........',
+    'owo.........',
+    'oo..........',
+    '............',
+    '............',
+  ],
+});

@@ -10,6 +10,7 @@
 //   npm start -- --seed=N          pin the world, as ?seed=N does
 //   npm start -- --transport=relay the relay's rooms instead of Steam's lobbies (the default while Steam is up)
 //   npm start -- --windowed        a 1280x720 window instead of fullscreen
+//   npm start -- --steamnet=p2p    Steam's older P2P packets instead of its newer messages (steam-messages.js)
 //
 // APP_ID: the SteamAppId Steam puts in the environment of a build it launches,
 // else steam_appid.txt beside this file (Softfall's own, 5244550, committed -
@@ -45,6 +46,12 @@ const myId = () => (steam ? str(steam.localplayer.getSteamId().steamId64) : null
 
 const args = {};
 for (const a of process.argv.slice(1)) { const m = /^--(\w+)(?:=(.*))?$/.exec(a); if (m) args[m[1]] = m[2] === undefined ? '1' : m[2]; }
+// how bytes cross Steam: its newer messages (relay network, real ping;
+// steam-messages.js) unless they fail to load or --steamnet=p2p asks for the
+// older P2P packets. Both PCs must use the same one: they cannot hear each other
+const msgs = steam && args.steamnet !== 'p2p' ? require('./steam-messages.js').steamMessages() : null;
+const useMsgs = !!(msgs && msgs.ok);
+if (steam) slog('steamnet ' + (useMsgs ? 'messages' : 'p2p') + (msgs && !msgs.ok ? ' (messages FAILED: ' + msgs.error + ')' : args.steamnet === 'p2p' ? ' (asked)' : ''));
 // a launch from a friend's Steam invite (or Join Game) names the lobby as `+connect_lobby ID`
 const connectAt = process.argv.indexOf('+connect_lobby');
 const connectLobby = connectAt >= 0 && /^\d+$/.test(process.argv[connectAt + 1] || '') ? process.argv[connectAt + 1] : null;
@@ -162,23 +169,52 @@ ipcMain.handle('steam:overlayUser', (e, dialog, id) => (friends ? friends.overla
 ipcMain.handle('steam:overlayFriends', () => (friends ? friends.overlay() : false));
 ipcMain.handle('steam:presence', (e, kv) => (friends ? friends.presence(kv) : false));
 ipcMain.handle('steam:playedWith', (e, lobby) => { const l = lobbies.get(String(lobby)); return friends && l ? friends.playedWith(l.getMembers().map((m) => str(m.steamId64)), myId()) : []; });
-// text goes as utf8, bytes as they are; steamworks.js exposes Steam's older
-// P2P sockets, whose reliable packet is capped at 1 MB and unreliable at
-// 1200 bytes - the transport (js/net/transport-steam.js) chunks a message to
-// fit whichever channel it asks for
-ipcMain.handle('steam:send', (e, to, data, reliable) => steam.networking.sendP2PPacket(BigInt(to), reliable === false ? 0 : 2, typeof data === 'string' ? Buffer.from(data, 'utf8') : Buffer.from(data)));
-ipcMain.handle('steam:accept', (e, id) => { steam.networking.acceptP2PSession(BigInt(id)); return true; });
+// text goes as utf8, bytes as they are. The newer messages cap one at 512 KB;
+// the older P2P packets cap a reliable one at 1 MB and an unreliable one at
+// 1200 bytes. The transport (js/net/transport-steam.js) chunks a message to fit
+// both. A send Steam refuses is logged (a refused delta is resent by the ring)
+let refusedLogged = 0;
+ipcMain.handle('steam:send', (e, to, data, reliable) => {
+  const buf = typeof data === 'string' ? Buffer.from(data, 'utf8') : Buffer.from(data);
+  const ok = useMsgs ? msgs.send(to, buf, reliable !== false) : steam.networking.sendP2PPacket(BigInt(to), reliable === false ? 0 : 2, buf);
+  if (!ok && refusedLogged < 20) { refusedLogged++; slog('send refused: ' + buf.length + ' bytes ' + (reliable === false ? 'unreliable' : 'reliable') + ' to ' + to); }
+  return ok;
+});
+ipcMain.handle('steam:accept', (e, id) => { steam.networking.acceptP2PSession(BigInt(id)); if (useMsgs) msgs.accept(id); return true; });
 
 // ---- the pump: packets and lobby events to the page ---------------------
+// a binary frame (the transport's magic first byte) goes to the page as bytes, anything else as text
+const packet = (from, data) => (data[0] === 0xB1 ? { from, bin: new Uint8Array(data) } : { from, text: data.toString('utf8') });
+const ACCEPT_T = 250;    // ms between accepting the lobby members' sessions (newer messages)
+const NETLOG_T = 10000;  // ms between each peer's state and ping in the log
+let acceptAt = 0, netlogAt = 0;
+function lobbyPeers() {
+  const me = myId(), out = new Set();
+  for (const l of lobbies.values()) { try { for (const m of l.getMembers()) { const id = str(m.steamId64); if (id !== me) out.add(id); } } catch (e) { } }
+  return out;
+}
 function pump() {
   if (!steam || !win || win.isDestroyed()) return;
   const list = [];
+  if (useMsgs) {
+    const now = Date.now();
+    if (now >= acceptAt) {
+      acceptAt = now + ACCEPT_T;
+      const peers = lobbyPeers();
+      for (const id of peers) msgs.accept(id);
+      if (now >= netlogAt && peers.size) {
+        netlogAt = now + NETLOG_T;
+        slog('net ' + [...peers].map((id) => { const s = msgs.status(id); return id + ' ' + s.state + ' ' + s.ping + 'ms'; }).join(', '));
+      }
+    }
+    for (const m of msgs.receive()) list.push(packet(m.from, m.data));
+  }
   let n;
   while ((n = steam.networking.isP2PPacketAvailable()) > 0) {
     const pk = steam.networking.readP2PPacket(n);
+    // invites always come this way (a friend outside our lobbies has no session to accept)
     if (pk.data[0] === INVITE_MAGIC) { invited(str(pk.steamId.steamId64), pk.data); continue; }
-    // a binary frame (the transport's magic first byte) goes to the page as bytes, anything else as text
-    list.push(pk.data[0] === 0xB1 ? { from: str(pk.steamId.steamId64), bin: new Uint8Array(pk.data) } : { from: str(pk.steamId.steamId64), text: pk.data.toString('utf8') });
+    list.push(packet(str(pk.steamId.steamId64), pk.data));
     if (list.length >= 64) break;
   }
   if (list.length) win.webContents.send('steam:packets', list);
@@ -193,7 +229,11 @@ function invited(from, data) {
 }
 if (steam) {
   const CB = steam.callback.SteamCallback;
-  steam.callback.register(CB.LobbyChatUpdate, (v) => emit({ t: 'chat', lobby: str(v.lobby), user: str(v.user_changed), change: v.member_state_change }));
+  const LEFT = 2 | 4 | 8 | 16; // EChatMemberStateChange: left, disconnected, kicked, banned
+  steam.callback.register(CB.LobbyChatUpdate, (v) => {
+    if (useMsgs && (v.member_state_change & LEFT) && !lobbyPeers().has(str(v.user_changed))) msgs.forget(str(v.user_changed));
+    emit({ t: 'chat', lobby: str(v.lobby), user: str(v.user_changed), change: v.member_state_change });
+  });
   steam.callback.register(CB.LobbyDataUpdate, (v) => emit({ t: 'data', lobby: str(v.lobby), member: str(v.member), ok: v.success }));
   steam.callback.register(CB.P2PSessionRequest, (v) => { steam.networking.acceptP2PSession(v.remote); emit({ t: 'session', from: str(v.remote) }); });
   steam.callback.register(CB.P2PSessionConnectFail, (v) => emit({ t: 'sessionFail', from: str(v.remote), error: v.error }));

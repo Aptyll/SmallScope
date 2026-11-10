@@ -15,7 +15,7 @@ passes never overlap on the target. Which call reaches it depends on the pass:
   and `renderLighting` stamps the queue after the night grade — draw the outline in place and
   the tint sinks a team colour into blue snow. The queue itself:
   [Light and weather](light-and-weather.md). Sites: floaters (damage numbers, gold, `LEVEL n`),
-  the overhead name tags, `MERCH`, the roost's `PERCH` (2x), the noticed `!` (`drawSenseMark`).
+  the overhead name tags, the roost's `PERCH` (2x), the noticed `!` (`drawSenseMark`).
   Called from a UI pass (the wiki's animal page) it draws the outline where it stands. Names on
   the ground **overlap**, as League's do: a crowd's tags stacked into a tower read worse. The one
   exception is **a wing of riders** (`seatedName`: the riders seated on a bird; in flight only your own name rides it), queued

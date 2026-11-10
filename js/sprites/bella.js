@@ -340,3 +340,25 @@ const BELLA_SPATHA = [
   '......................',
 ];
 const BELLA_SPATHA_PAL = { o: '#241a12', e: '#c8d2e4', E: '#8b93a8', W: '#ffffff', T: '#eef2f8', g: '#6b4a30', G: '#a3794f', y: '#f2cc6a', Y: '#b98a2e' };
+
+// ------------------------------------------------------------ bella registry
+// BELLA in the hero art registry (heroArt, js/sprites/hero-art.js): the looks and
+// their paint, the skins tab's 8x8 glyph and the 12x12 emblem
+heroArt('bella', {
+  looks: BELLA_SKINS, pal: BELLA_PAL,
+  glyph: ['..www...', '.wwwwww.', '.w...w.w', '.w...w.w', '..www..w', '...w....', '.wwwww..', '.wwwww..'],
+  emblem: [ // the saber, its edge curving up to the point, the gold guard
+    '.........oo.',
+    '........oWo.',
+    '.......oCo..',
+    '......oCo...',
+    '.....oCo....',
+    '....oCso....',
+    '.o.oCso.....',
+    '.ogoCo......',
+    '..oggo......',
+    '.owoGgo.....',
+    'owo..o......',
+    '.o..........',
+  ],
+});

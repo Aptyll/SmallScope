@@ -10,9 +10,7 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
 
 - **Items** `menuItems()` (FIRST MATCH on top while `PROFILE.guided()` is false - a profile that has
   never seen a match to its result nor the coach through - then QUICKPLAY / RANKED / PRACTICE TOOL, and QUIT under them in the desktop build only —
-  and nothing else; `menuActivate` dispatches on the word. RANKED stands grey with a lock before it and
-  one pip per match after it (`drawRankedLock`/`drawRankedPips`, js/ui/guide.js) until `rankedOpen()`
-  (js/ui/rooms.js); a press on it then is a refusal that shakes the lock (`menu.shutFx`). FIRST MATCH opens
+  and nothing else; `menuActivate` dispatches on the word. FIRST MATCH opens
   the party in its `guide` mode ([the coach](../gameplay/settings.md)). QUIT closes the app
   (`steamBridge.quit`, `win:quit` in desktop/main.js): the build opens fullscreen, and a browser tab has its own X. The first three open the
   [party lobby](../gameplay/settings.md) in that mode (`beginParty`): QUICKPLAY's and RANKED's FIND
@@ -245,9 +243,9 @@ On the lobby's painted night, in [js/ui/skins.js](../../../js/ui/skins.js)
 (`menu.screen = 'skins'`, `beginSkins`/`leaveSkins`, its own ease `menu.skinT`). `skinsLayout()`
 is the one rect source for the draw, the hit test (`skinsHit`) and the cursor.
 
-- **The navbar** over the grid's left edge is one tab per `SKIN_TABS` category (EAGLE, TRAIL,
-  then a tab per hero, ARMATOS first; a load check in js/ui/skins.js throws for a hero without
-  one; `drawSkinTab`): an 8x8 glyph and the word, slate at rest, pale under the hand,
+- **The navbar** over the grid's left edge is one tab per `SKIN_TABS` category (EAGLE, then a
+  tab per hero in the hero grid's order, each built off the hero's row in the hero art registry,
+  js/sprites/hero-art.js; `drawSkinTab`): an 8x8 glyph and the word, slate at rest, pale under the hand,
   white on the open tab (`menu.skTab`, the eagle at boot) with a 1 px line as wide as the word.
   A click, Q/E, or up off the grid's top row then left/right (`menu.skNav`) turns it. The purse
   (coin + number) sits over the grid's right edge, and the tabs run only up to it: more tabs than
@@ -260,10 +258,9 @@ is the one rect source for the draw, the hit test (`skinsHit`) and the cursor.
   worn card and on a picked one; under a hairline the name and, opposite it, the price (coin +
   number, red when the purse is short) or a tick on the skin worn; a 2 px bar of the rarity's
   colour along the foot. Rims are slate, lighter under the hand, bright steel on the worn and the
-  picked card. The trail table is a placeholder: a streak in the row's two colours, and nothing
-  in a match wears it. A hero's tab is real (`hero` on the tab, its `rows` the hero's own
-  `skins`: ARMATOS's `ARM_SKINS`, FORTIVA's `FORT_SKINS` and so on): its card is the hero standing
-  in that look.
+  picked card. Every card is worn in a match: a hero's tab (`hero` on the tab, its `rows` the
+  hero's own looks from its registry row: ARMATOS's `ARM_SKINS`, FORTIVA's `FORT_SKINS` and so on)
+  shows the hero standing in that look, the eagle's its bird.
 - **A press** (`skinPress`) on an owned card wears it; on a card for sale it picks it
   (`menu.skPick`) and its price plate lights and pulses; a second press on the same card buys it
   and wears it (`PROFILE.buy`, the card flashes white, the purse flashes, `SFX.coin`). A short
