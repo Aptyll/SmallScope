@@ -110,3 +110,11 @@ function lucernaLantern() {
   return lucernaLanternArt;
 }
 HERO_STAVES.lantern = { art: lucernaLantern, grip: LUCERNA_LANTERN_GRIP };
+
+// ---- the status plate -------------------------------------------------------------
+// PULLED (lucernaPull, js/sim/lucerna.js) on the frame's plate (statusIcon,
+// js/draw/overhead.js): a rival caught on the crook's line, stunned for the trip, wears
+// the crook; an ally carried by the lantern is not stunned and wears nothing
+statusIcon({ id: 'pull', rank: 20, on: (e) => e.pullT > 0 && e.stunT > 0, left: (e) => e.stunT, max: (e) => e.stunMax,
+  ink: LU_BRASS, lit: LU_LIGHT, deep: LU_WOOD_D,
+  px: ['...##..', '...#...', '...#...', '...#...', '+..#...', '#..#...', '.##....'] });

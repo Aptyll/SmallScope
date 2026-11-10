@@ -33,15 +33,15 @@ rabbit's dodge charge (both `STAM_COL` white, at the health bar's own width:
 spans both**: `drawLevelBadge(rx, topY, level)` is the one 7-tall badge a hero and a beast
 share, hard against the bar backing's left column and growing left with the digits, so a
 rabbit's frame is the player's frame at 8 px. **A bear's frame is its body's size**: its
-`MONSTER.frame` (`BEAR_FRAME`) draws the whole frame, bars, plate, `!` and stars, `s` (2) pixels
+`MONSTER.frame` (`BEAR_FRAME`) draws the whole frame, bars, plates and `!`, `s` (2) pixels
 to its own pixel (each drawer takes that scale), a `w`-pixel bar cut into a fixed `segs` (5)
 instead of `hpSegCount`'s, and centres it whole, plate and bar together, on the bear's centre
 column, where every other frame centres its bar (`drawBeastFrame`). An empty bar is bare track (`drawHealthBar`
 paints no fill at zero; a living thing's last sliver of hp is still a pixel). Over the frame,
-where the stun stars turn, an animal that has a player in sight wears the **noticed mark** —
+an animal that has a player in sight wears the **noticed mark** —
 `drawSenseMark`, the font's `!` under a dark rim, white on prey and threat red on a camp monster,
 rising out of the head over its first tenth of a second and gone the frame the sight is
-([gameplay.md](../gameplay/wildlife.md)); the stars win while a stun runs. How full a bar is carries the
+([gameplay.md](../gameplay/wildlife.md)); a stun hides it, its status plate saying the body sees nothing. How full a bar is carries the
 health — never its colour: a bar that drained toward red would spend the rival's colour on
 "hurt", and a hurt ally would read as an enemy at a glance.
 The overhead bar is the **only** player health display (the heart sprites in
@@ -77,15 +77,15 @@ your head, so hiding it from you alone would make it the one label in the game y
 **The frame is centred on the body, and the bars pay for it (`FRAME_DX`).** Horizontally the frame
 is a 6 px level plate hard against the 16 px bar backing — 22 px at one digit; the plate sizes
 itself to the number and grows *left*, so a two-digit level (the cap is 12) overhangs the way
-the stun plate does on the right — and it is the *frame* that has
+the status plate does on the right — and it is the *frame* that has
 to straddle the sprite, not the bars inside it. So the whole stack is drawn `FRAME_DX` (3 px) right
 of the sprite's own centre: `fx = round(p.x - ex) + FRAME_DX` is the stack's centre column and
 everything in it hangs off that, giving `cx-11 .. cx+10`, exactly centred on the seam a 16×16
 sprite is centred on. Measured off the canvas: a 22-column run from −11 to +10, centre 0.
 
-**The stun plate is deliberately not counted.** It is a transient annex sharing the bar backing's
-right edge (`fx+8 .. fx+13`), so a stun makes the frame 28 px and overhangs to the right until it
-clears: the level badge is permanent and the stun plate is not, so the geometry follows the
+**The status plate is deliberately not counted.** It is a transient annex sharing the bar backing's
+right edge (`fx+8 .. fx+15`, `drawStatusPlate`: what control holds the body, [status effects](../gameplay/status-effects-one-set-for-every-unit.md)), so a stun makes the frame 30 px and overhangs to the right until it
+clears: the level badge is permanent and the status plate is not, so the geometry follows the
 permanent one. Turn the
 [centre column](debug-overlays-hitboxes-and-routes.md#the-centre-column-hbmid) on under `.` before changing any of these numbers.
 
@@ -115,7 +115,7 @@ BELLA's pips, SAGITTA's bolts at her feet) stays a `HERO_MARK`.
 
 **Every other bar in the game is centred on its model directly** — an animal's frame carries the
 level badge too, but its bars stay on the body's own centre and the badge simply overhangs to the
-left, the way a stun plate overhangs right, so nothing but a player needs `FRAME_DX`. `drawHealthBar(cxp, …)` centres an even-width bar on `cxp`, and
+left, the way a status plate overhangs right, so nothing but a player needs `FRAME_DX`. `drawHealthBar(cxp, …)` centres an even-width bar on `cxp`, and
 every caller hands it a true centre: `a.x - ex` for an
 animal (whose sprite is placed at `round(a.x - w/2 - ex)`), `b.x - ex` for a robot, and the centre
 of the **footprint** for a building — `sx + sh + (spr.width >> 1)`, which is where the sprite

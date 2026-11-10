@@ -392,6 +392,73 @@ function drawStunStars(cx, cy, e, r, squash, s) {
   }
 }
 
+// ---- the status plate beside the frame ----------------------------------
+// What has a body pinned, as one 7x7 icon on a plate hard against the
+// frame's RIGHT edge, the level badge's mirror: it shares the bar backing's
+// column, so the stack still reads as one outline, and stands a row proud of
+// the frame above and below, the one thing on it that is not a bar. One
+// state at a time, the highest in STATUS_ICONS (the list is the priority:
+// the first row whose `on` holds wins), the way a League bar shows the one
+// control that matters. Behind the icon the plate fills in the state's own
+// deep tone and drains from the bottom as `left(e)` runs down from `max(e)`,
+// which answers the only question a control asks: how long. Nothing at all
+// while nothing holds - an empty plate parked over every head is a bar that
+// is never a bar. A row's `px` is its icon, 7 strings of 7: '#' its ink, '+'
+// its lit pixel; 'x' the frame's ink, a cut through it.
+// Shared by a hero's frame (drawPlayer) and a beast's (drawBeastFrame); a
+// hero's kit adds its own control with statusIcon (HIEMS's freeze and
+// whiteout, LUCERNA's pull), ranked into place by `rank`.
+const STATUS_ICONS = [];
+function statusIcon(row) {
+  const at = STATUS_ICONS.findIndex((r) => r.rank > row.rank);
+  STATUS_ICONS.splice(at < 0 ? STATUS_ICONS.length : at, 0, row);
+}
+// THROWN: knocked up, a stun no tenacity cuts (knockUp, js/sim/actions.js)
+statusIcon({ id: 'up', rank: 10, on: (e) => e.upT > 0, left: (e) => e.upT, max: (e) => e.upMax,
+  ink: '#eef4fb', lit: '#ffffff', deep: '#55407a',
+  px: ['...+...', '..###..', '.#####.', '...#...', '...#...', '.......', '##...##'] });
+// STUNNED: seeing stars
+statusIcon({ id: 'stun', rank: 40, on: (e) => e.stunT > 0, left: (e) => e.stunT, max: (e) => e.stunMax,
+  ink: '#ffd95c', lit: '#ffffff', deep: '#6a4410',
+  px: ['...#...', '..#+#..', '...#...', '.......', '.#...#.', '#+#.#+#', '.#...#.'] });
+// ROOTED: locked where it stands (rootUnit)
+statusIcon({ id: 'root', rank: 50, on: (e) => e.rootT > 0, left: (e) => e.rootT, max: (e) => e.rootMax,
+  ink: '#dfe6f2', lit: '#ffffff', deep: '#2e3446',
+  px: ['..###..', '.#...#.', '.#...#.', '#######', '###x###', '###x###', '#######'] });
+// WEAKENED: its blows worth WEAK_MUL of themselves, the blade snapped (weakenUnit)
+statusIcon({ id: 'weak', rank: 70, on: (e) => e.weakT > 0, left: (e) => e.weakT, max: (e) => e.weakMax,
+  ink: '#eef2fa', lit: '#f2cc6a', deep: '#5e3a52',
+  px: ['......#', '.....##', '....##.', '...x#..', '..##...', '+++....', '.+.....'] });
+// SLOWED: the snail (slowUnit)
+statusIcon({ id: 'slow', rank: 80, on: (e) => e.slowT > 0 && e.slowMul < 1, left: (e) => e.slowT, max: (e) => e.slowMax,
+  ink: '#e0d49a', lit: '#fff6cc', deep: '#5a5030',
+  px: ['.......', '...###.', '..#...#', '..#.#.#', '+.#..##', '#.####.', '#######'] });
+// the row that wins on this body, or null
+function statusOf(e) {
+  for (const r of STATUS_ICONS) if (r.on(e)) return r;
+  return null;
+}
+// the plate, its left column `bx` (the column past the bar backing's right
+// wall) and its top `by` (a row over the backing's), `k` pixels to its own pixel
+const STATUS_W = 8, STATUS_N = 7;
+function drawStatusPlate(bx, by, e, r, k) {
+  k = k || 1;
+  const n = STATUS_N;
+  ctx.fillStyle = BAR_FRAME;
+  ctx.fillRect(bx, by, STATUS_W * k, (n + 2) * k); // the column to its left is the bar backing, already painted
+  ctx.fillStyle = BAR_TRACK;
+  ctx.fillRect(bx, by + k, n * k, n * k);
+  const m = r.max(e), h = m > 0 ? Math.max(1, Math.round(n * Math.min(1, r.left(e) / m))) : n;
+  ctx.fillStyle = r.deep;
+  ctx.fillRect(bx, by + (n + 1 - h) * k, n * k, h * k);
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+    const c = r.px[y][x];
+    if (c === '.') continue;
+    ctx.fillStyle = c === '+' ? r.lit : c === 'x' ? BAR_FRAME : r.ink;
+    ctx.fillRect(bx + x * k, by + (1 + y) * k, k, k);
+  }
+}
+
 // A big build's reveal: the first 12% of the timer is the staked foundation
 // alone, then the sprite rises bottom-up. Shared by the draw pass (the clip)
 // and updateStructures (sparks along the edge), so the two can't disagree.

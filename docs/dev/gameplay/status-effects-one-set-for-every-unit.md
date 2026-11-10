@@ -52,24 +52,32 @@ The seven states, and what each does to a body:
 
 | state | field | what it does | the tell on the body |
 | --- | --- | --- | --- |
-| **stun** | `stunT`/`stunMax` | a player has every intent dropped out of `p.input` at the top of `updatePlayer` (movement, fire, work, slide, the edge-triggered lot) rather than each action refusing separately, so a human and an AI fill are pinned by the identical window — the draw, the swing in flight and any roll are cancelled outright; an animal or a bot skips its brain for the window in `updateAnimal`/`updateRobot`. Never touches velocity: whatever hit you still slides you | three sparks orbiting (`drawStunStars`) |
-| **root** | `rootT` | move multiplier 0 — no walk, no roll, no slide; attacks still work (MARIS's HARPOON, among others) | sprung iron jaws at the feet |
-| **slow** | `slowT`/`slowMul` | the multiplier on every speed cap | — |
+| **stun** | `stunT`/`stunMax` | a player has every intent dropped out of `p.input` at the top of `updatePlayer` (movement, fire, work, slide, the edge-triggered lot) rather than each action refusing separately, so a human and an AI fill are pinned by the identical window — the draw, the swing in flight and any roll are cancelled outright; an animal or a bot skips its brain for the window in `updateAnimal`/`updateRobot`. Never touches velocity: whatever hit you still slides you | three sparks orbiting (`drawStunStars`) over a robot's bar; on a frame, the status plate's stars |
+| **root** | `rootT`/`rootMax` | move multiplier 0 — no walk, no roll, no slide; attacks still work (MARIS's HARPOON, among others) | sprung iron jaws at the feet |
+| **slow** | `slowT`/`slowMax`/`slowMul` | the multiplier on every speed cap | — |
 | **mark** | `markT` | on a player, `seenAt()` returns full range and both maps keep drawing them (its one legal bypass); an animal or a bot has no cover to strip, so it is the reveal alone (AURA's STARLIGHT, LUCERNA's LAMPLIGHT) | gold chevrons falling toward the head |
 | **fire** | `burnT`/`burnDps`/`burnBy` | see below | flame tongues off the crown, and lit snow under the feet |
 | **healing cut** | `healCutT`/`healCut` | every heal `healPlayer` gives the body is `healCut` smaller (FROSTBITE: 40% for 3 s, the item passive; the TORCH trick: `TORCH_CUT` for `TORCH_T`, [the loadout](loadout.md)); only players heal, so the other kinds carry it harmlessly | the health bar's fill frosted, every other pixel of its lower row ice white (`drawHealCut`) |
-| **weak** | `weakT` | every blow the body lands is worth `WEAK_MUL` (`loadoutDeal`, from `hurtUnit`; the BOLAS trick) | a cord round the shins |
+| **weak** | `weakT`/`weakMax` | every blow the body lands is worth `WEAK_MUL` (`loadoutDeal`, from `hurtUnit`; the BOLAS trick) | a cord round the shins |
 
 Every one of them is **drawn on the body, for both sides**, at whatever size that body is —
 `drawUnitStates(e, px, py, w, h, now)` (js/draw/abilities.js) takes the sprite's own box and is called by
 `drawAbilityOnPlayer`, `drawAnimal` and `drawRobot` alike. A state you cannot see is a
 rule you cannot play around, and that is as true of a deer as of a rival. The player keeps one tell
-of its own on top (a raised shield, `drawAbilityOnPlayer`), and the stun badge is the one visual that
-differs by kind: over an animal or a robot the sparks sit above the health bar, while on a player
-they ride a badge that **mirrors the level badge on the other side of the overhead frame** — same
-backing and track, its left frame column shared with the health bar backing's right edge — whose
-5×5 track drains from the bottom as the window runs out (`stunMax` is the height it drains from).
-It is drawn for every player, like the stamina bar: a rival seeing stars is a tell worth having.
+of its own on top (a raised shield, `drawAbilityOnPlayer`).
+
+**The status plate** says which control holds a body, League's crowd-control icon: on every frame
+that wears a level badge (a hero's, `drawPlayer`, and a beast's, `drawBeastFrame`) one 7×7 icon
+on a plate that **mirrors the level badge on the other side of the overhead frame**, its left
+frame column shared with the health bar backing's right edge and a row proud of the frame above
+and below (`drawStatusPlate`, js/draw/overhead.js). One state at a time: `STATUS_ICONS` is the
+priority list, and `statusOf(e)` is its first row whose `on` holds — thrown (`upT`), pulled
+(LUCERNA's crook), frozen (HIEMS's freeze), stunned, rooted, blinded (inside a rival WHITEOUT),
+weakened, slowed. Each row's `max` is the length its fill drains from: the setters keep
+`stunMax`/`rootMax`/`slowMax`/`weakMax` the way a stun always kept its own. A hero's control
+joins with `statusIcon(row)` from its draw file, ranked into place. Nothing is drawn while no
+row holds. Burning, the mark and the healing cut keep their tells on the body and the bar and take
+no plate. A robot has no badge, so its stun stays the sparks over its bar.
 
 ## Damage types, and fire
 

@@ -790,8 +790,10 @@ function stunUnit(e, t, src, firm) {
 function rootUnit(e, t, src) {
   t *= ccMul(e);
   if (t <= 0 || !unitAlive(e)) return;
-  ccCredit(e, e.rootT || 0, t, src);
-  e.rootT = Math.max(e.rootT || 0, t);
+  const cur = e.rootT || 0;
+  ccCredit(e, cur, t, src);
+  e.rootT = Math.max(cur, t);
+  e.rootMax = cur > 0 ? Math.max(e.rootMax || 0, e.rootT) : e.rootT; // the hold's full length, what its plate drains from (drawStatusPlate)
   if (e.zip >= 0) zipEnd(e, true); // a rider is pulled off the cable
   if (e instanceof Player) { e.vx = 0; e.vy = 0; e.sliding = false; }
 }
@@ -801,7 +803,9 @@ function rootUnit(e, t, src) {
 function slowUnit(e, t, mul) {
   t *= ccMul(e);
   if (t <= 0 || !unitAlive(e)) return;
-  e.slowT = Math.max(e.slowT || 0, t);
+  const cur = e.slowT || 0;
+  e.slowT = Math.max(cur, t);
+  e.slowMax = cur > 0 ? Math.max(e.slowMax || 0, e.slowT) : e.slowT;
   e.slowMul = Math.min(e.slowMul === undefined ? 1 : e.slowMul, mul);
 }
 // KNOCKED UP: thrown into the air - a stun no tenacity shortens, with the body
@@ -954,7 +958,9 @@ function updateBurn(e, dt) {
 // (loadoutDeal, from hurtUnit), League's exhaust. From the BOLAS trick.
 function weakenUnit(e, t) {
   if (t <= 0 || !unitAlive(e)) return;
-  e.weakT = Math.max(e.weakT || 0, t * ccMul(e));
+  const cur = e.weakT || 0;
+  e.weakT = Math.max(cur, t * ccMul(e));
+  e.weakMax = cur > 0 ? Math.max(e.weakMax || 0, e.weakT) : e.weakT;
 }
 // put a body out - a death, a respawn, a fresh landing
 function douseUnit(e) { e.burnT = 0; e.burnDps = 0; e.burnTick = 0; e.burnBy = -1; e.burnFxT = 0; }
@@ -986,8 +992,8 @@ function unitMoveMul(e) {
 // every timed state a fresh body starts with none of, on any kind of unit
 function clearUnitStatus(e) {
   e.stunT = 0; e.stunMax = 0;
-  e.rootT = 0; e.slowT = 0; e.slowMul = 1; e.markT = 0; e.upT = 0; e.healCutT = 0; e.healCut = 0;
-  e.weakT = 0;
+  e.rootT = 0; e.rootMax = 0; e.slowT = 0; e.slowMax = 0; e.slowMul = 1; e.markT = 0; e.upT = 0; e.healCutT = 0; e.healCut = 0;
+  e.weakT = 0; e.weakMax = 0;
   douseUnit(e);
 }
 

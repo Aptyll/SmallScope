@@ -145,3 +145,21 @@ function hiemsFlake() {
   return hiemsFlakeArt;
 }
 HERO_STAVES.flake = { art: hiemsFlake, grip: HIEMS_FLAKE_GRIP, hold: 'far' };
+
+// ---- the status plate -------------------------------------------------------------
+// her two controls on the frame's plate (statusIcon, js/draw/overhead.js): FROZEN, a
+// stun in ice that outranks the bare sparks, and BLINDED inside a rival's WHITEOUT, the
+// closed eye, draining with the storm's own clock
+statusIcon({ id: 'frozen', rank: 30, on: (e) => e.frozeT > 0, left: (e) => e.frozeT, max: (e) => e.stunMax,
+  ink: HI_MID, lit: HI_WHITE, deep: HI_DEEP,
+  px: ['...#...', '.#.#.#.', '..###..', '###+###', '..###..', '.#.#.#.', '...#...'] });
+function whiteoutLeft(e) {
+  const t = unitTeam(e);
+  let left = 0;
+  for (const s of hiemsStorms) if (s.team !== t && Math.hypot(e.x - s.x, e.y - s.y) <= WHITE_R) left = Math.max(left, s.life - s.t);
+  return left;
+}
+statusIcon({ id: 'blind', rank: 60, on: (e) => e instanceof Player && hiemsStorms.length > 0 && inRivalStorm(e),
+  left: whiteoutLeft, max: () => WHITE_T,
+  ink: HI_PALE, lit: HI_WHITE, deep: '#5a6688',
+  px: ['x......', '.x###..', '.#x..#.', '#.+x..#', '.#..x#.', '..###x.', '......x'] });
