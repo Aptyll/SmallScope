@@ -323,7 +323,7 @@ function hudPress(mx, my) {
   }
   const sh = stripHit(mx, my);
   if (sh) {
-    if (sh.kind === 'ab') { if (msOn()) msWell(sh.i); else player.input.ability = sh.i; } // click-to-cast: the well IS the key (under MOUSE it readies - msWell)
+    if (sh.kind === 'ab') player.input.ability = sh.i; // click-to-cast: the well IS the key
     else if (sh.kind === 'item' && player.items[sh.i] === 'potion') player.input.useItem = sh.i; // the well IS the key, refusals and all (useItem)
     else if (sh.kind === 'trick') player.input.trick = sh.i; // ...and a trick's (tryTrick, js/sim/loadout.js)
     return true;

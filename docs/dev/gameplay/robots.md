@@ -143,7 +143,7 @@ pushing bot only walks in to hit one while its own wave stands in the ring (`aiL
 Each eagle is **driven** by its team's merchant — the old trader in the wide fur hat with the
 team-cloth crown and the white beard, seated on the bird's neck in flight (`SPRITES.perch.merchSeat`, `drawEagle`; the look is
 [sprites.md](../sprites.md)'s own 16 × 18 grids, built so it never reads as a player on either side,
-with a `MERCH` nameplate and a bar in its side's paint over it, `drawMerchant`; the bird wears only its hp bar) — who climbs
+with a bar in its side's paint over it and no word (its stall and the E SHOP prompt say what it is), `drawMerchant`; the bird wears only its hp bar) — who climbs
 down the moment it roosts (`spawnMerchant`, called
 from `eagleCrash`, the `merchant` banner in js/sim/robots.js) and works **home** for its side, never
 toward the fight. It raises no walls and no guns. (The practice field has one more: a keeper with no

@@ -537,11 +537,11 @@ const SET_CONTENT_B = SET_H - 24; // ... and bottom (the foot's buttons sit belo
 // beside it; the title's slide-in has nothing to leave, so it hangs CLOSE alone
 const SET_FOOT_Y = SET_H - 19, SET_PLANK_W = 72, SET_PLANK_H = 13, SET_PLANK_GAP = 8;
 
-// The CONTROLS page is itself tabbed, one cell per SCHEME (WASD / CLICK /
-// MOUSE), so picking the scheme IS picking the listing: the cell in force
+// The CONTROLS page is itself tabbed, one cell per SCHEME (WASD / CLICK),
+// so picking the scheme IS picking the listing: the cell in force
 // wears the navbar's gold. Its navbar sits pinned at the top of the content
 // window and only the listing scrolls.
-const CTRL_TABS = [{ id: 'wasd', label: 'WASD' }, { id: 'click', label: 'CLICK' }, { id: 'mouse', label: 'MOUSE' }];
+const CTRL_TABS = [{ id: 'wasd', label: 'WASD' }, { id: 'click', label: 'CLICK' }];
 const CTRL_TAB_H = 13; // the band the sub-navbar takes off the content window
 
 // Everything positioned inside the panel comes from here: the navbar cells,
@@ -638,13 +638,11 @@ const CTRL_COL_X = [10, 110, 210];
 // DBG.keyRows all read it, so a click can never disagree with a pixel.
 // The listing is the live SCHEME's (settings.scheme: the WASD scheme, or
 // the CLICK scheme of the `click to move` banner, input.js) - the scheme is
-// picked on the CONTROLS navbar (CTRL_TABS), where WASD, CLICK and MOUSE are
-// cells of the keyboard's. Under CLICK the walk keys and the harvest key are
-// the right button's, so those rows are the mouse's fixed words instead;
-// MOUSE adds the middle button's action wheel, and its dodge and slide caps
-// print the side buttons (MB4, MB5). No column runs past KEY_ROWS_N's eight,
-// so CLICK leaves the debug '.' off its listing, and MOUSE both debug keys
-// (the keys still work).
+// picked on the CONTROLS navbar (CTRL_TABS), where WASD and CLICK are its
+// two cells. Under CLICK the walk keys and the harvest key are the right
+// button's, so those rows are the mouse's fixed words instead. No column runs
+// past KEY_ROWS_N's eight, so CLICK leaves the debug '.' off its listing (the
+// key still works).
 const KEY_ROWS = {
   wasd: [
     [{ acts: ['up', 'left', 'down', 'right'], verb: 'MOVE' }, { acts: ['ab1', 'ab2', 'ab3', 'ab4'], verb: 'ABILITIES' },
@@ -657,12 +655,6 @@ const KEY_ROWS = {
       ['CLICK', 'FIRE'], 'amove', 'stop', 'dodge', 'slide'],
     [{ acts: ['item1', 'item2', 'item3'], verb: 'ITEMS' }, { acts: ['item4', 'item5', 'item6'], verb: 'ITEMS' }, 'ping', 'char', 'recall', 'details'],
     [ 'map', 'board', 'mute', 'pause', ['ESC', 'SETTINGS'], ['SCROLL', 'ZOOM'], ['F3', 'INFO']],
-  ],
-  mouse: [
-    [['RMB', 'MOVE / ACT'], ['HOLD RMB', 'FOLLOW'], ['CLICK', 'FIRE'], ['HOLD MMB', 'ACTION WHEEL'],
-      'dodge', 'slide', { acts: ['ab1', 'ab2', 'ab3', 'ab4'], verb: 'ABILITIES' }, 'amove'],
-    ['stop', { acts: ['item1', 'item2', 'item3'], verb: 'ITEMS' }, { acts: ['item4', 'item5', 'item6'], verb: 'ITEMS' }, 'ping', 'char', 'recall', 'details'],
-    ['map', 'board', 'mute', 'pause', ['ESC', 'SETTINGS'], ['SCROLL', 'ZOOM'], ['F3', 'INFO']],
   ],
 };
 const KEY_ROW_H = 12, KEY_ROWS_Y = 5;

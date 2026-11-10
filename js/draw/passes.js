@@ -99,9 +99,6 @@ function drawFlatPass(ox, oy, ex, ey, tx0, ty0, tx1, ty1, now) {
   // the CLICK scheme's rings: where the last order landed, and the lock's
   // ring under its target
   drawClickMarks(ex, ey, now);
-  // ...and the MOUSE scheme's range preview: what a wedge or a readied
-  // ability would cover
-  drawCastPreview(ex, ey, now);
 
   // what the abilities left flat on the snow - a kneeling shot's telegraph
   // line (all under entities)

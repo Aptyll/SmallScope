@@ -137,15 +137,15 @@ SPACE, SHIFT, UP, SEMI …).
 verb — the four walk keys, the four abilities, dodge, slide, use (E), the six item keys, recall, the sheet, DETAILS (Alt: held, an ability's hover opens every rank's numbers), the map, the scoreboard, mute,
 pause, and the CLICK
 scheme's three of its own (attack-move, stop, the ping) — with the key each starts on
-per scheme (`key` on WASD, `ck` on CLICK, `ms` on MOUSE where it differs from `ck`; an action
+per scheme (`key` on WASD, `ck` on CLICK; an action
 with none is not on that scheme), in the
-order the CONTROLS page lists them. **The keyboard has three schemes and each keeps its own map**
+order the CONTROLS page lists them. **The keyboard has two schemes and each keeps its own map**
 (`settings.scheme`, `SCHEMES`): `settings.binds` is the WASD scheme's (action id → key name),
-`settings.bindsClick` the CLICK scheme's and `settings.bindsMouse` the MOUSE scheme's,
+`settings.bindsClick` the CLICK scheme's,
 `binds()` whichever is live, all saved with the
 profile and made whole by `mendBinds` after `loadSettings` (a bind an action never had, a
-reserved key or a key two actions share falls back to its default; `schemeActs`/`schemeKey`
-are the per-scheme roster and default). **Nothing compares a key
+reserved key or a key two actions share falls back to its default, and a profile saved on the
+old MOUSE scheme wakes on CLICK; `schemeActs`/`schemeKey` are the per-scheme roster and default). **Nothing compares a key
 event against a literal**: `keyIs(e, 'work')`, `keyHeld('slide')`, `moveDir(k)` (the four walk
 binds and the arrows, which every key-driven menu steps on — the title's planks, the death
 planks, the wiki, the hero pop-up, the lobby, the settings slab; under CLICK the arrows alone) and
@@ -154,18 +154,21 @@ planks, the wiki, the hero pop-up, the lobby, the settings slab; under CLICK the
 has no key for prints RMB, because under CLICK the walk and the use key are the right button's). What is *not* an action is fixed: Escape backs out of everything,
 Enter and the arrows walk the menus (the arrows always walk the body too), F3 and `.` are the
 debug flips, the three main mouse buttons are the mouse's, and `keyReserved` refuses those and the
-browser's F row to a bind.
+browser's F row to a bind. **The side buttons are keys**: `sideButton` names the back button
+`'Mouse4'` and forward `'Mouse5'` and presses them through `keyPress`/`keyRelease`, so any action
+on either scheme binds, rebinds (a listening cap takes a side press) and holds on one; the caps
+print MB4 and MB5, and the listeners swallow both buttons' browser back and forward.
 
 **Rebinding** is a cap on the CONTROLS page's KEYBOARD listing
 ([the panel](gameplay/settings.md); the listing is the live scheme's, and the CONTROLS navbar's
-WASD / CLICK / MOUSE cells are the scheme switch, `CTRL_TABS`/`KEY_ROWS`, panels.js): a click sets it listening (`state.rebind` is the action,
+WASD / CLICK cells are the scheme switch, `CTRL_TABS`/`KEY_ROWS`, panels.js): a click sets it listening (`state.rebind` is the action,
 `rebindStart`), the next key down is its key (`rebindKey`, first thing in `keyPress`), Escape calls
 it off, a reserved key is refused with the deny cue, and a key another action holds **swaps** —
 that action takes the old key (`setBind`) — so every action always has one key of its own and no
 two share one. Every held key lets go on a rebind, the listen dies with the slab (`rebindLive`),
 on blur and on any press but its own cap, and `resetBinds` puts the defaults back. Several
 presses share `openPingWheel()`: the ping wheel on the point under the pointer (the chart's or
-the minimap disc's point when the pointer is on one); the right button, G and the middle button
+the minimap disc's point when the pointer is on one); the right button and G
 open it.
 
 ### The CLICK scheme
@@ -215,39 +218,6 @@ bot fills, once per step from `sampleHumanInput`.
 - **What the eye gets** (`drawClickMarks`, js/draw/marks.js): a ring blooms and fades where the
   order landed — white for a walk, gold for a job, red for a fight (`CK_COL`) — and a breathing
   ring in the foe's ink sits under a locked target's feet. Nothing is written.
-
-### The MOUSE scheme
-
-The keyboard's third scheme (`settings.scheme = 'mouse'`; the `mouse only` banner, input.js) is
-**CLICK for one hand**: `ckOn()` is true under it too, so every CLICK gesture above stands, and
-what CLICK leaves on the keyboard moves onto the mouse. The keys still work; nothing needs them.
-
-- **The side buttons are keys.** `sideButton` names the back button `'Mouse4'` and forward
-  `'Mouse5'` and presses them through `keyPress`/`keyRelease`, so they bind, rebind (a listening
-  cap takes a side press) and hold like any key, on any scheme. MOUSE starts the **dodge** on
-  back and the **slide** on forward (`ms` on `KEY_ACTIONS`); the caps print MB4 and MB5. The
-  listeners swallow both buttons' browser back and forward.
-- **A left press on a foe takes the lock** as it draws (`msLeftPress`, `ck.stand`): the loose
-  goes to the body, CLICK's assist, and the auto-attack keeps working it from where you stand.
-  A stand lock never walks (the chase is the right button's) and a new order drops it; a left
-  press at open snow lets it go.
-- **Holding the middle button opens the ACTION WHEEL** at the pointer (`msWheelPress`, wheel
-  kind `'kit'`, `MS_WHEEL`): the four abilities clockwise from the top, the potion, the ping.
-  The travel picks and the release performs (`msKitPick`). An ability casts at the point the
-  press was made, not where the flick ended: `ms.castAt` holds the aim through the whole
-  wind-up (`ckStep`), since the effect lands at the aim held at its end. The ping wedge stands
-  the ping wheel up on that point (`w.stand`), and the next press of any button picks from it
-  (its hub is GO HERE). Over the chart the middle button opens the ping wheel directly.
-- **A click on an ability well readies it** (`msWell`, `ms.ready`) where the key would cast: the
-  well's rim goes gold, the pointer wears the `cast` reticle, the next left press on the world
-  casts there, and a right press (the walk), Escape or the well again puts it down. The scroll
-  wheel walks the readied ability along the wells while one is up (the zoom waits). Only a row whose `aim` is a line or a cone readies (`msAims`); the rest
-  cast at once, and a skill point in hand buys, as the key does.
-- **What the eye gets:** `drawCastPreview` (js/draw/marks.js) draws the ground the lit wedge or
-  the readied ability covers, from the body toward its cast point, off the row's own `aim`
-  (`CLASS_AB`, js/sim/abilities.js: a `line`, a `cone` with its `half`, or a `ring` round the body),
-  gold when it will cast and grey while it cannot. The wheel's wedges wear the strip's icons,
-  dark while locked, waiting or out of stock (`drawKitWedge`, js/ui/wheel.js).
 
 ## Classes
 
