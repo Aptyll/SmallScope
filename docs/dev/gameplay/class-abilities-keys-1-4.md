@@ -178,7 +178,7 @@ AURA, THE NORTHERN LIGHT — the far, patient mage: artillery. Her rules live in
 **[js/sim/aura.js](../../../js/sim/aura.js)** (`AURA_AB`, its `aura` banner), her pixels in
 [js/draw/aura.js](../../../js/draw/aura.js), her icons and staff art in
 [js/sprites/aura.js](../../../js/sprites/aura.js). The least life of anyone (78 hp, 9 armor) and a
-step slower than anyone, she shoots a star bolt (her `attack` row, the STAR SHARD, drawn as her own
+step slower than anyone, she shoots a star bolt (her `attack` row, the STAR-GLASS, drawn as her own
 shot through its `look`; the shard is carried upright, `HERO_STAVES`) and strikes from further than any key in the game: slowly, and in plain
 view, since everything she casts is on the snow for both sides until it lands. Her strikes are
 things she leaves in the world (`auraStars`, `auraOrbs`, `auraCurtains`, each carrying the rank

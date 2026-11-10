@@ -112,9 +112,10 @@ function towerStand(team, at) {
   return null;
 }
 // THE CUT: each cable, from its bird to the furthest standing tower on it,
-// or none. Asked every step by the sim (updateStructures) and every
-// frame by the draw (drawZips), since a client never steps the sim - the
-// towers it reads come over the wire with the tiles. In the sim's call
+// or none. Asked every step by the sim (updateStructures), on every
+// snapshot a client applies (snapApplyTiles) and every frame by the draw
+// (drawZips), since a client never steps the sim - the towers it reads come
+// over the wire with the tiles. In the sim's call
 // (`sim`), a rider past the new end comes down where it hangs (towersDrop).
 function towersSync(sim) {
   zipWhole.forEach((w, L) => {

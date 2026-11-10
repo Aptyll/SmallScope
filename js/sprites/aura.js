@@ -251,7 +251,7 @@ const AURA_SKINS = [
 ];
 
 // ------------------------------------------------------------ aura staff
-// Her STAR SHARD as the weapon art the HUD shows and the hands aim on a draw
+// Her STAR-GLASS as the weapon art the HUD shows and the hands aim on a draw
 // (SPRITES.weaponArt, js/sprites/weapons.js): a fallen star's pale shard bound to a
 // dark staff, head left like the sword's point. Carried, it is upright (HERO_STAVES.shard, js/draw/aura.js).
 WEAPON_FWD.starstaff = Math.PI;

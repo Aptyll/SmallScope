@@ -161,7 +161,7 @@ const CLASSES = [
     // short of it; slow damage, not burst, and the least life of anyone
     name: 'IGNIA', role: 'THE HEARTHKEEPER', passive: 'spreadflame', // HERO_PASSIVE, js/sim/ignia.js
     blurb: ['THE ONLY FIRE FOR MILES.', 'ONE BURNING RIVAL SETS THE NEXT ALIGHT.', 'SNOW AND WATER PUT YOUR FIRE OUT.'],
-    story: "SHE KEPT THE GREAT HEARTH IN THE EMPEROR'S HALL, AND ONE HARD WINTER SHE CARRIED ITS COALS TO A VILLAGE THAT HAD NONE. THE HALL WENT COLD AND THE COURT DID NOT FORGIVE IT. IN THE VALLEY SHE IS THE ONLY FIRE FOR MILES, AND EVERYONE WANTS TO SIT NEAR HER.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
+    story: "SHE KEPT THE GREAT HEARTH IN THE EMPEROR'S HALL, AND ONE HARD WINTER SHE CARRIED ITS COALS TO A VILLAGE THAT HAD NONE. THE COURT DID NOT FORGIVE IT. SHE STILL CARRIES THE LAST OF THOSE COALS IN HER LANTERN, AND EVERYONE IN THE VALLEY WANTS TO SIT NEAR HER.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
     // a staff's ember, not an arrow: a little shorter and slower than the shortbow
     staff: 'crook', // her CROOK AND LANTERN, carried upright (HERO_STAVES, js/draw/ignia.js)
     attack: { name: 'CROOK AND LANTERN', art: 'staff', cycle: 60 / 60, kb: 0.6, shot: { speed: 260, life: 0.85, col: '#ff9a3a', look: 'ember' } },
@@ -180,10 +180,10 @@ const CLASSES = [
     // slower than anyone; slow, telegraphed strikes, one blink, and nothing else
     name: 'AURA', role: 'THE NORTHERN LIGHT', passive: 'starlight', // HERO_PASSIVE, js/sim/aura.js
     blurb: ['THE NIGHT IS ON YOUR SIDE.', 'OUTREACH ANYONE. NOTHING HIDES FROM YOUR LIGHT.', 'CAUGHT UP CLOSE, YOU HAVE ONE STEP.'],
-    story: "SHE STEERED THE EMPIRE'S FLEET BY THE STARS, AND WARNED THE ADMIRALS A STORM WAS COMING. THEY SAILED ANYWAY, AND SHE BROUGHT HER ONE SHIP HOME. THE VALLEY'S NIGHTS ARE CLEAR AND BLUE, AND SHE STILL KNOWS EVERY STAR BY NAME.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
+    story: "SHE STEERED THE EMPIRE'S FLEET BY THE STARS, AND WARNED THE ADMIRALS A STORM WAS COMING. THEY SAILED ANYWAY, AND SHE BROUGHT HER ONE SHIP HOME. SHE KEPT ITS STAR-GLASS, AND ON THE VALLEY'S CLEAR NIGHTS SHE GATHERS THE STARLIGHT IN IT AND TURNS IT ON THE SNOW.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
     // a staff's star bolt: a little shorter and slower than the shortbow
-    staff: 'shard', // her STAR SHARD, carried upright (HERO_STAVES, js/draw/aura.js)
-    attack: { name: 'STAR SHARD', art: 'starstaff', cycle: 66 / 60, kb: 0.5, shot: { speed: 270, life: 0.95, col: '#e6f8ff', look: 'starbolt' } },
+    staff: 'shard', // her STAR-GLASS, carried upright (HERO_STAVES, js/draw/aura.js)
+    attack: { name: 'STAR-GLASS', art: 'starstaff', cycle: 66 / 60, kb: 0.5, shot: { speed: 270, life: 0.95, col: '#e6f8ff', look: 'starbolt' } },
     base: { hp: 78, dmg: 13, armor: 9, ap: 0, haste: 0, ms: PLAYER_SPEED - 4 },
     grow: { hp: 5.5, dmg: 1, as: 0.01, armor: 1.7 },
     rankOrder: [0, 1, 2], // the falling star, the drifting light, the step
@@ -236,7 +236,7 @@ const CLASSES = [
     // with ice and a blizzard; low burst, and a step slower than most
     name: 'HIEMS', role: 'THE LONG WINTER', passive: 'deepchill', // HERO_PASSIVE, js/sim/hiems.js
     blurb: ['THE COLD IS ON YOUR SIDE.', 'EVERY HIT CHILLS. THE THIRD CHILL FREEZES THEM IN PLACE.', 'LITTLE BURST: FREEZE THEM, THEN LET YOUR SIDE FINISH.'],
-    story: "SHE KEPT THE WEATHER RECORDS FOR THE EMPIRE'S COURT, AND TOLD THEM THE COLD YEARS WERE COMING AND WOULD NOT STOP. THEY SENT HER AWAY FOR SPOILING THE HARVEST FEAST. SHE CAME UP THE PASS TO SEE WHETHER SHE WAS RIGHT. THE SNOW HAS NOT STOPPED.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
+    story: "SHE KEPT THE WEATHER RECORDS FOR THE EMPIRE'S COURT, AND TOLD THEM THE COLD YEARS WERE COMING AND WOULD NOT STOP. THEY SENT HER AWAY FOR SPOILING THE HARVEST FEAST. SHE CAME UP THE PASS TO SEE WHETHER SHE WAS RIGHT. THE SNOW HAS NOT STOPPED, AND SHE HAS LEARNED TO PUT IT WHERE SHE WANTS.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
     // a staff's frost bolt: AURA's star bolt, a little shorter
     staff: 'flake', // her SNOWFLAKE STAFF, carried upright (HERO_STAVES, js/draw/hiems.js)
     attack: { name: 'SNOWFLAKE STAFF', art: 'flakestaff', cycle: 62 / 60, kb: 0.5, shot: { speed: 270, life: 0.85, col: '#e6f8ff', look: 'frostbolt' } },

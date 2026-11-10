@@ -307,6 +307,9 @@ function snapApplyTiles(s) {
     }
   }
   if (s.structs) { structures.length = 0; for (const i of s.structs) if (objects[i]) structures.push(objects[i]); }
+  // ...and each cable cut to the towers just sent (towersSync, js/sim/towers.js), now, so
+  // nothing drawn before the cables this frame (the zipline's E) reads last frame's
+  towersSync();
   // the ground: only tiles that changed are repainted - the whole array is
   // a boot-time bake (repaintGround, js/draw/ground.js)
   if (s.ground) {
