@@ -221,9 +221,9 @@ const MARIS_BODY = {
     side: [
       '................',
       '.....oooooo.....',
-      '....oqQQQQQo....',
-      '....oqqyyIyo....',
-      '....oqqqkkko....',
+      '....oQLLQQQo....',
+      '....oLqyyIyo....',
+      '....oQqqkkko....',
       '....oqqqkeko....',
       '....oqqqkkKo....',
       '.....oqqqqo.....',
@@ -295,7 +295,7 @@ const MARIS_BODY = {
   },
 };
 // her sealskin, the brass of the diving glass, her line and leather over ARMATOS's letters
-const MARIS_PAL = Object.assign({}, ARM_PAL, { q: '#262b3a', Q: '#3e4760', y: '#d9a648', Y: '#f2cc6a', I: '#cfeeff', c: '#c8a46a', a: '#5c3c28', s: '#7d8699', W: '#eef2f8' });
+const MARIS_PAL = Object.assign({}, ARM_PAL, { q: '#262b3a', Q: '#3e4760', L: '#5a6688', y: '#d9a648', Y: '#f2cc6a', I: '#cfeeff', c: '#c8a46a', a: '#5c3c28', s: '#7d8699', W: '#eef2f8' });
 // Her looks: BARGE DIVER is her own and free, ORCA SKIN the first skin (js/ui/skins.js). Both run
 // as their drawn bodies (`run: 'drawn'`, heroRunFront); the dolls (app/bake-player: diver,
 // orca) roll them.
