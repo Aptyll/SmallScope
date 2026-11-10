@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['The pines round each jungle camp can no longer be chopped open either', '0.860'],
     ['HIEMS and AURA show their team colour from behind', '0.859'],
     ['FIRST MATCH: THE COACH POINTS AT BUY ON YOUR FIRST SHOP VISIT', '0.858'],
     ['Zipline posts stand in drifted snow', '0.857'],

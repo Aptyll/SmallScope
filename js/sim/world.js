@@ -49,8 +49,8 @@ function treeFells(o) { return !!o && o.type === 'tree' && !o.wall; }
 const OBJECTS = {
   // lift 33: the pine's canopy reaches 21 px above its own tile (drawn at
   // py - 21), and the prompt clears it by the same 12 px everything else gets
-  // `ready`: a pine that holds one of the jungle's designed walls (`wall`,
-  // stamped by layJungle, js/sim/jungle.js) never comes down (treeFells)
+  // `ready`: a pine that holds one of the jungle's designed walls or a camp's
+  // drawn ring (`wall`, stamped by layJungle and layCampPlan) never comes down (treeFells)
   tree:     { solid: true,  work: true, verb: 'CHOP', lift: 33, auto: true, ready: (o) => treeFells(o),
               mm: [52, 100, 82],   map: CH_FOREST },
   // a SNOWDROP clump, stamped only by the warren camp (CAMPS.meadow): open
