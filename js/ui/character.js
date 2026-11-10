@@ -9,6 +9,7 @@ const HUD_CELL = 34;
 const BAG_PAD = 3;            // frame edge to the first well: line, light, ground (drawHudFrame)
 const BAG_BG = '#16181c';     // a HUD frame's ground
 const BAG_WELL = '#0e0f12';   // a filled well
+const BAG_KEY = '#5a5f69';    // an empty well's key: a step over the rim, so the six read as keys and not as holes
 // the pointer is over HUD that owns its own clicks, not over the world
 function overHud(x, y) {
   return !!charHit(x, y) || !!shopHit(x, y) || !!stripHit(x, y) || abBuyHit(x, y) >= 0 ||

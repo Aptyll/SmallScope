@@ -269,8 +269,9 @@ League's shop on the HUD's own graphite plate (`drawHudFrame`, js/ui/strip.js), 
   tick, `shopTreeOwned`, and so is everything under it), its **card** (icon, name in its tier's
   ink, full price, each stat with its icon in green, the passive in gold over one dim line, ONE
   PAIR on boots, a drink's heal on the potion) and the **BUY** plate at its foot with what the buy
-  costs you now: green when it can go through, red when the purse is short, grey when there is no
-  room or it would be a second pair (`shopBuyState`);
+  costs you now: green when it can go through, grey when there is no room or it would be a second
+  pair, and grey with the gold still missing behind a minus, in gold, when the purse is short
+  (`shopBuyState`; never an error's red, since nothing went wrong);
 - in the bottom-left corner, **your six slots three by two**, the bottom bar's own shape (a potion
   stack wearing its count), the **SELL** plate with what the picked slot sells for, and the purse.
   **Gold shows once** along the bottom: the purse wears the coin, and both plates print bare
