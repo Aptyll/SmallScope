@@ -82,11 +82,14 @@ HERO_MARK.push(drawBucinaMarks);
 
 // ---- the keys' own looks ----------------------------------------------------------------
 // HORN BLAST's wind-up: the sound swelling in the horn's bell, fronts pulsing out of it
+// from where she holds it at her lips: BU_BELL_Y px over her feet, and BU_BELL_X px to the
+// hand's side when she faces the camera or away (the horn is beside her head then)
+const BU_BELL_Y = 10, BU_BELL_X = 9;
 function drawBlastTele(px, py, a, closing, now) {
   const nx = Math.cos(a), ny = Math.sin(a);
   for (let k = 0; k < 3; k++) {
     const d = 8 + ((now * 40 + k * 7) % 21) * (0.5 + 0.5 * closing);
-    drawEchoFront(Math.round(px + nx * d), Math.round(py - 4 + ny * d), nx, ny, 0.4 + 0.5 * closing);
+    drawEchoFront(Math.round(px + ny * BU_BELL_X + nx * d), Math.round(py - BU_BELL_Y + ny * d), nx, ny, 0.4 + 0.5 * closing);
   }
 }
 // HORN BLAST landing: three fronts of sound sweep out through the wedge, wide as it is,

@@ -111,7 +111,7 @@ function bellaSpathas() {
   if (bellaSpathaArt) return bellaSpathaArt;
   return (bellaSpathaArt = { flat: bakeBladeArt(BELLA_SPATHA, BELLA_SPATHA_PAL), diag: bakeBladeArt(BELLA_SPATHA_DIAG, BELLA_SPATHA_PAL) });
 }
-HERO_BLADES.spatha = { art: bellaSpathas, hilt: [18, 11], hip: { down: [13, 11], up: [11, 10] }, grip: BELLA_SPATHA_GRIP };
+HERO_BLADES.spatha = { away: (p) => p.parryT > 0, art: bellaSpathas, hilt: [18, 11], hip: { down: [13, 11], up: [11, 10] }, grip: BELLA_SPATHA_GRIP };
 
 HERO_MARK.push(drawBellaMarks);
 HERO_GROUND.push(drawBellaDuels);

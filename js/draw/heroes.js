@@ -6,7 +6,8 @@
 // hilt: [x, y] where the hands close on the flat art (the blade turns about it,
 // WEAPON_GRIP's rule), hip: { down, up } where the grip sits on the 16 px cell
 // by facing, grip: where the hands close on the slanted grid, and optionally fine() ->
-// the same pair at `dens` px a world px for a body drawn fine (bladeArt) }.
+// the same pair at `dens` px a world px for a body drawn fine (bladeArt), and optionally
+// away(p) -> true while the blade is drawn somewhere else, so it is not also carried }.
 const HERO_BLADES = {};
 // a grid of palette letters baked to a canvas, once
 function bakeBladeArt(rows, pal) { return SPR.bake(rows, pal); } // the shared bake, which keeps the art's pixels (SPR.pixelsOf)
@@ -243,6 +244,7 @@ function heroCarry(p, px, py, back) {
   const pass = (p.dir === 'up') === back; // a carried thing is behind a body facing away
   const b = heroBladeOf(p);
   if (b && b.hip.down && attackOf(p).cut) {
+    if (b.away && b.away(p)) return true; // the blade is elsewhere and drawn there: BELLA's parry holds it crosswise (drawBellaMarks)
     const hold = BLADE_HOLDS[b.hold || 'slant'], img = bladeArt(p, b).diag, up = p.dir === 'up';
     const rc = heroReach(p);
     const lead = p.dir === 'down' || p.dir === 'right'; // the leading hand is on the right
