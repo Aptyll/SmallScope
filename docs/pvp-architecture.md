@@ -130,6 +130,7 @@ panel (js/ui/friends.js): `friends`, `inviteFriend` (Steam's invite plus a `0xB2
 friend's pump turns into an `invite` event, from friends only), `overlayUser` (the add-friend
 page), `overlayFriends`, `presence` (rich presence: `status`, `connect`, `sf_*`) and `playedWith`.
 If koffi or the DLL fails, `friends()` answers `ok: false` and the panel never draws.
+`desktop/steam-messages.js` reaches Steam's newer messages the same way (the Steam section below).
 
 **The role is decided by `netSetup(role, transport)`**: at boot from `?net=host|client` with
 `&room=CODE` or `&lobby=ID`, or from the rooms screen through `netHost()`/`netJoin(code)`;
@@ -324,14 +325,19 @@ sequence is given up once `STEAM_PENDING` newer ones have come (`lost` on the tr
 `netStatus().framesLost`) - the ack-keyed ring resends what it carried, and a half-applied
 delta would be a world the host never had. A repeat after completion is ignored (the completed
 marker stays until it ages out), parts may arrive in any order, and the sequence wraps at
-65536. Everything else - the full sync (three reliable frames of `STEAM_CHUNK`), the welcome,
+65536. Everything else - the full sync (about twelve reliable frames of `STEAM_CHUNK`), the welcome,
 rosters, a client's inputs - stays reliable. The bridge (`steam:send`, the pump in
 `desktop/main.js`) carries a Uint8Array as bytes both ways, a frame told from text by its first
 byte (`STEAM_MAGIC`, 0xB1; JSON starts with `{`); a text message over `STEAM_CHUNK` goes as
-numbered `{t:'part'}` texts. steamworks.js exposes Steam's older P2P packets
-(`steam.networking.sendP2PPacket`/`readP2PPacket`, sessions accepted on `P2PSessionRequest`), not
-Steam's networking sockets: a reliable packet is capped at 1 MB and an unreliable one at 1200
-bytes (`STEAM_UNREL`), which is why a delta must stay small enough to split. **None of this has
+numbered `{t:'part'}` texts. The bridge sends over Steam's newer messages
+(ISteamNetworkingMessages through koffi, `desktop/steam-messages.js`: Steam's relay network,
+which hides IPs and crosses strict routers, a ping per peer in `softfall-steam.log`, 512 KB a
+message), accepting a session only from a member of a lobby it is in. If that fails to load, or
+with `--steamnet=p2p`, it sends over the older P2P packets steamworks.js exposes
+(`sendP2PPacket`/`readP2PPacket`, sessions accepted on `P2PSessionRequest`): 1 MB reliable, 1200
+bytes unreliable (`STEAM_UNREL`), which is why a delta stays small enough to split and
+`STEAM_CHUNK` fits 512 KB even escaped. Both PCs must use the same path. Invites always go as P2P
+packets. **None of this has
 run against a live Steam** (Status, above).
 
 ## Message schema
