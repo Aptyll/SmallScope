@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['Hog hut: a whole snow roof, a doorway and a warm window', '0.882'],
     ['Nix holds her ice dirk point up at the ready, and it shows clearer on snow', '0.881'],
     ['FALCO\'s knife is longer and paler, and his hawk stands clear of his hat', '0.880'],
     ['Buildings: the tower merlons and the pump works carry snow', '0.879'],
