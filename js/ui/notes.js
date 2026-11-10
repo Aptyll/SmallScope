@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['HIEMS at 32 px behind ?fine=1: both looks, rolls and snowflake staff', '0.845'],
     ['ABILITY UNLOCKED WORD IS EASIER TO READ', '0.844'],
     ['Each eagle roosts on a kerbed stone round at the heart of its base', '0.843'],
     ['The frozen river has clear banks and wind-swept snow on its ice', '0.842'],
