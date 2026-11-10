@@ -21,7 +21,26 @@ const TITLE_WORDS = [72, 6];   // view px half-width of the word column (its wid
 const TITLE_BODY = [18, 12, 44]; // world px a hero needs clean: each side of it, over its feet's row, and under it (a pine to its south stands that tall over it)
 const TITLE_REACH = 44;        // tiles from the centre the search goes
 const TITLE_STEP = 8;          // world px between two spots tried, and between two points of a rect sampled
+const TITLE_EDGE = [22, 28];   // world px the formation keeps from the view's side, and from its foot
+const TITLE_HEAD = 18;        // world px a body stands over its feet: the back row's heads start under the logo's foot
 let titleBodies = null;
+let titleFit = null;           // TITLE_SPOTS fitted to the view: { spots, key }
+// THE FORMATION FITS THE VIEW: a smaller view (a 1600x900 window shows fewer
+// world px than 1280x720) would put the back row level with the logo, so the
+// spots slide down until their top row's heads stand under the logo's foot,
+// and squeeze only when the room between the logo and the view's foot, or
+// between its sides, is less than the formation's own
+function titleSpots() {
+  const key = VIEW_W + 'x' + VIEW_H;
+  if (titleFit && titleFit.key === key) return titleFit.spots;
+  const hw = VIEW_W / 2 / ZOOM_TITLE, hh = VIEW_H / 2 / ZOOM_TITLE;
+  const ys = TITLE_SPOTS.map((sp) => sp[1]), y0 = Math.min(...ys), y1 = Math.max(...ys);
+  const top = Math.max(y0, (LOGO_Y + TITLE_LOGO[1]) / ZOOM_TITLE - hh + TITLE_HEAD), bot = hh - TITLE_EDGE[1];
+  const ky = Math.min(1, (bot - top) / (y1 - y0));
+  const kx = Math.min(1, (hw - TITLE_EDGE[0]) / Math.max(...TITLE_SPOTS.map((sp) => -sp[0])));
+  titleFit = { key, spots: TITLE_SPOTS.map((sp) => [Math.round(sp[0] * kx), Math.round(top + (sp[1] - y0) * ky)]) };
+  return titleFit.spots;
+}
 let titleSpot = null;          // the found spot and the view it was found for: { x, y, key }
 
 // what a world point stands on, for the picture: 'S' open snow, 'L' plain paving, 'X' anything else
@@ -50,7 +69,7 @@ function titleSpotOk(X, Y) {
   const wy0 = VIEW_H - MENU_BOTTOM - TITLE_WORDS[1] * MENU_TXT_PITCH;
   if (titleRectGround(X - TITLE_WORDS[0] * k, Y + (wy0 - hh) * k, X + TITLE_WORDS[0] * k, Y + hh * k) === 'X') return false;
   let g = null;
-  for (const sp of TITLE_SPOTS) for (const m of [1, -1]) {
+  for (const sp of titleSpots()) for (const m of [1, -1]) {
     const c = titleRectGround(X + m * sp[0] - TITLE_BODY[0], Y + sp[1] - TITLE_BODY[1], X + m * sp[0] + TITLE_BODY[0], Y + sp[1] + TITLE_BODY[2]);
     if (c === 'X' || (g && c !== g)) return false;
     g = c;
@@ -93,9 +112,9 @@ function titleCast() {
   if (titleBodies && titleBodies[0].cls === player.cls && titleBodies[0].team === player.team) return titleBodies;
   const deal = titleDeal(), at = titleSceneAt();
   titleBodies = [];
-  const n = TITLE_SPOTS.length;
+  const spots = titleSpots(), n = spots.length;
   for (let i = 0; i < n * 2; i++) {
-    const mine = i < n, sp = TITLE_SPOTS[i % n];
+    const mine = i < n, sp = spots[i % n];
     const b = new Player(100 + i, 'none', mine ? player.team : 1 - player.team);
     setClass(b, deal[i % deal.length]);
     if (i === 0) b.skins = player.skins; // your own look on your own hero
@@ -116,7 +135,7 @@ const TITLE_PACE_HOLD = 2.2;   // s it stands at the far end
 const TITLE_LOOK_T = 1.8;      // s a face is turned to you
 const TITLE_ACT_EVERY = 11;    // s between one body's acts, give or take its seat
 function titleCastPose(b, i, t) {
-  const n = TITLE_SPOTS.length, mine = i < n, k = i % n, sp = TITLE_SPOTS[k], at = titleSceneAt();
+  const spots = titleSpots(), n = spots.length, mine = i < n, k = i % n, sp = spots[k], at = titleSceneAt();
   const hx = at.x + (mine ? sp[0] : -sp[0]), toward = mine ? 1 : -1, face = mine ? 'right' : 'left', back = mine ? 'left' : 'right';
   b.x = hx; b.y = at.y + sp[1]; b.dir = face; b.moving = false; b.vx = 0; b.animT = 0;
   if (k === 0) return; // a leader holds its ground
