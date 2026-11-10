@@ -815,9 +815,9 @@ const SNOW_BASE = 1;                           // the flat snow's tone
 const SNOW_GLINT = rgbOf('#ffffff'), SNOW_GLINT_P = 0.996; // a crystal, only on the lit tone
 let SNOW_ANG = -0.33, SNOW_C = Math.cos(SNOW_ANG), SNOW_S = Math.sin(SNOW_ANG); // a match turns it onto the seed's prevailing wind (layDrifts, js/sim/depth.js)
 const SNOW_LOOKS = [
-  { sc: 1,   rel: 7, dith: 0.8 },              // fine drifts
-  { sc: 1.8, rel: 8, dith: 0.6 },              // broad swells
-  { sc: 1.5, rel: 9, dith: 0.6, lee: true },   // lee only
+  { sc: 1,   rel: 7, dith: 0 },              // fine drifts
+  { sc: 1.8, rel: 8, dith: 0 },              // broad swells
+  { sc: 1.5, rel: 9, dith: 0, lee: true },   // lee only
 ];
 const SNOW_REGION = 22 * TILE;       // world px per step of the region noise
 const SNOW_CUT = [0.41, 0.6];        // region noise thresholds between the looks (~thirds of the map)
