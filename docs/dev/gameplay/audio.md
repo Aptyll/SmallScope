@@ -79,6 +79,23 @@ hundredth and not the first. The whole sampled bank spans about **10 dB**, and n
 should sit more than ~2 dB apart — `SFX.debug()` prints every clip's `g` and `SFX.meter()` reads
 the bus, so both are checkable without guessing.
 
+**Two things keep a busy moment from turning into a wall of noise.** Each cue plays on a
+*channel* (its key, unless it names `ch`), and a channel holds at most `max` shots at once
+(`SMP_VOICES` by default): a shot that arrives while that many still ring is dropped, not stacked.
+`chop()` holds two, a tenth of a second apart, so a treeline full of axes stays a few clear blows.
+A cue that borrows another's clip names its own channel (`swing`, `dodge` and `gust` all play the
+whoosh), so one can never use up another's voices or gap. Then the whole SOUNDS layer runs through
+the **bus damper**: a gentle compressor (`COMP`) that leaves one cue alone and squeezes a pile-up,
+and a trim taking the layer `BUS_DAMP_DB` down. Chromium's compressor adds makeup gain of its own
+(`COMP_MAKEUP_DB`, measured for these settings), which the trim takes back off; change `COMP` and
+measure it again, or every quiet cue comes out louder than it went in. `SFX.debug().voices` shows
+what each channel has sounding.
+
+**The lane's own fight is quieter than the heroes'.** A wave soldier's swing and landing play
+`waveSwing()`/`waveHit()` (`robotStrike`, js/sim/robots.js; the blow reaches `hurtRobot` and
+`hurtStruct` marked as a soldier's), well under `swing()`/`hit()` and two at a time, so a lane
+brawl is a murmur behind the heroes and never takes their voices away.
+
 **A failed load must never be quiet about it.** `loadBank()` counts every file into `bankStat`
 (`want`/`got`/`err`), logs one console warning naming the first failure, and `SFX.banked()` reads
 the tally back — the **info stack prints `SFX got/want`, red when anything is missing**. This is
