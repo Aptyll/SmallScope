@@ -40,6 +40,7 @@ if (ARENA) {
   placeCamps();      // worldgen's last pass, before the ground is baked: the camps clear their sites
   placeLandmarks();  // ...and the story landmarks take their spots (landmarks.js)
   placePumps();      // ...and the two gold pumps beside the top and bot lanes' middles, with no rng() (js/sim/pumps.js)
+  towerLandings();   // ...and, with every pine planted, each cable's run-out past its towers (js/sim/towers.js)
   spawnAnimals();
   spawnFish();
   spawnOrca();       // ...and the orca under its lake (js/sim/orca.js)

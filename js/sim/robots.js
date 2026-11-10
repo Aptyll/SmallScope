@@ -563,8 +563,8 @@ function updateMerchant(b, dt) {
 // rival mouth and into the rival hollow (laneWaypoints, js/sim/lanes.js). A
 // waypoint it cannot reach is skipped, not waited on, so a wave never stands
 // still on a blocked tile. On the march it rides its own side's ZIPLINE of its
-// lane out to the front (soldierBoard; never the rival's, which ends under a
-// standing rival road tower) - hands on
+// lane out to the front (soldierBoard; never the rival's, which ends just past
+// a standing rival road tower) - hands on
 // the handle, so a soldier on the cable swings at nothing, and a rival who
 // meets it on the line crashes with it (zipCrash, js/sim/zipline.js).
 const SOLDIER_SPD = 44;        // px/s, a step slower than a walking player
@@ -645,7 +645,7 @@ function soldierBoard(b, walkToward) {
   const here = Math.hypot(g.x - b.x, g.y - b.y);
   for (const z of zips) {
     // its own side's cable of its own lane: a column never rides off to another
-    // lane, and the rival's always ends under a standing rival road tower
+    // lane, and the rival's always ends just past a standing rival road tower
     // (towersSync), so a ride in on it would skip that tower
     if (!z || z.lane !== b.lane || z.team !== b.team) continue;
     const n = zipNearest(z, b.x, b.y);

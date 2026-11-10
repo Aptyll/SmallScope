@@ -123,7 +123,9 @@ met. A side's own riders pass through each other. Players (any seat) and soldier
 **Letting go keeps the cable's speed** — `zipEnd(p, false)` leaves `vx/vy` at 220 px/s for the
 surface model to spend, so a hop-off is a dash (snow kills
 it in under a second) and shift on landing carves a slide; a body coming down over a solid tile
-(the odd pine on the shoulder) is set beside it (`nearestDryTile`). Riders draw lifted
+(the odd pine on the shoulder) is set beside it (`nearestDryTile`). A cable cut at a tower runs on
+through it to a landing on open snow past it (`towerLandings`, js/sim/towers.js), so the ride's
+front end never lets go inside the stone. Riders draw lifted
 `ZIP_ALT` px with their shadow on the ground, the handle over the head and a rope up to the cable
 (`drawZipHandle`, js/draw/zipline.js), in the standing pose; the bare key cap over the cable is
 `drawZipHint` (js/ui/wheel.js). Bots ride it too, through the same hop intent, folded into every

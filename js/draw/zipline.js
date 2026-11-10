@@ -114,6 +114,63 @@ function drawZips(ex, ey, now) {
         ctx.fillStyle = lit; ctx.fillRect(x, y + 1, 1, 1);
       }
     }
+    // a cable cut at a tower runs on past it to its landing and comes down
+    // there to its stake in the snow (towerLandings, js/sim/towers.js): a
+    // straight guy line, the stake itself on the ground (drawZipStakes)
+    const st = z.stake, e = z.pts[z.pts.length - 1];
+    if (!st) continue;
+    const ax = e.x - ex, ay = e.y + 4 - ZIP_H - ey, bx = st.x - ex, by = st.y + 4 - ZIP_STAKE_H - ey;
+    if (Math.max(ax, bx) < -2 || Math.min(ax, bx) > WV_W + 2 || Math.max(ay, by) < -2 || Math.min(ay, by) > WV_H + 2) continue;
+    const n = Math.max(1, Math.ceil(Math.max(Math.abs(bx - ax), Math.abs(by - ay))));
+    let lx = -1, ly = -1;
+    for (let k = 0; k <= n; k++) {
+      const x = Math.round(ax + (bx - ax) * k / n), y = Math.round(ay + (by - ay) * k / n);
+      if (x === lx && y === ly) continue;
+      lx = x; ly = y;
+      ctx.fillStyle = ZIP_INK; ctx.fillRect(x, y, 1, 1);
+      ctx.fillStyle = lit; ctx.fillRect(x, y + 1, 1, 1);
+    }
+    // the end stop clamped on the cable where the ride lets go
+    const sx = Math.round(ax), sy = Math.round(ay);
+    ctx.fillStyle = ZIP_INK; ctx.fillRect(sx - 2, sy - 1, 5, 4);
+    ctx.fillStyle = '#9aa2b2'; ctx.fillRect(sx - 1, sy, 3, 2);
+  }
+}
+// the stakes the cut cables come down to, on the snow under every body
+// (render, after the flat pass): a pylon's foot cut short - its cap, its
+// side's band and the snow banked round it - the guy line tied under the cap
+const ZIP_STAKE_H = 6; // px above the ground the guy line ties to the stake
+const STAKE_SPRS = (() => {
+  const rows = [
+    '.oooo.',
+    '.oGgo.',  // the cap the guy line is tied under
+    '.opPo.',
+    '.otTo.',  // the side's band
+    '.opPo.',
+    'oppPPo',
+    'osssso',  // snow banked against it
+    '.oooo.',
+  ];
+  return [0, 1].map((t) => {
+    const k = SPRITES.teams[t];
+    const pal = { o: '#241a12', p: '#5c4226', P: '#8a6142', G: '#9aa2b2', g: '#737b8c', t: k.coat, T: k.coatL, s: '#f4f7ff' };
+    const c = document.createElement('canvas');
+    c.width = 6; c.height = rows.length;
+    const g = c.getContext('2d');
+    rows.forEach((r, y) => {
+      for (let x = 0; x < 6; x++) if (pal[r[x]]) { g.fillStyle = pal[r[x]]; g.fillRect(x, y, 1, 1); }
+    });
+    return c;
+  });
+})();
+function drawZipStakes(ex, ey) {
+  for (const z of zips) {
+    const st = z && z.stake;
+    if (!st) continue;
+    const x = Math.round(st.x - ex), y = Math.round(st.y + 4 - ey);
+    if (x < -6 || x > WV_W + 6 || y < -2 || y > WV_H + 10) continue;
+    ctx.fillStyle = 'rgba(40,60,100,0.25)'; ctx.fillRect(x - 3, y, 7, 2); // its shadow
+    ctx.drawImage(STAKE_SPRS[skin(z.team)], x - 3, y - 7);
   }
 }
 // The guide: while the pointer rests on a cable - or the body is
