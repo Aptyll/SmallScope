@@ -119,7 +119,7 @@ function layJungle() {
     if (o && JUNGLE_FELLS[o.type]) objects[i] = null;
     if (objects[i] || ground[i] !== 0 || open(tx, ty)) continue;
     if (baseAt(tx, ty, BASE_KEEP) >= 0 || cisternTouches(tx, ty) || towerKeeps(tx, ty)) continue;
-    placeObj(tx, ty, 'tree', { hp: TREE_HP, rare: treeRare(tx, ty) });
+    placeObj(tx, ty, 'tree', { hp: TREE_HP, rare: treeRare(tx, ty), wall: true });
   }
   jungleMarks();
 }
@@ -157,7 +157,7 @@ function jungleMarks() {
     });
     if (at.includes(null)) continue;
     at.forEach(([tx, ty], k) => {
-      if (kind === 'pine') { placeObj(tx, ty, 'tree', { hp: TREE_HP, rare: treeRare(tx, ty) }); return; }
+      if (kind === 'pine') { placeObj(tx, ty, 'tree', { hp: TREE_HP, rare: treeRare(tx, ty), wall: true }); return; }
       const { ln, tiles } = trunkAt(k, tx, ty);
       for (const [x, y] of tiles) placeObj(x, y, 'trunk', ln);
     });

@@ -261,7 +261,7 @@ function merchStallSite(b) {
   const fits = (tx, ty) => footprint('barracks', tx, ty).every(([x, y]) => {
     if (!inWorld(x, y) || waterAt(x, y) || ground[idx(x, y)] !== 0 || laneDist(x, y) < 0) return false;
     const o = objAt(x, y);
-    return !o || laneFells(o) || o.type === 'stump';
+    return !o || merchFells(o) || o.type === 'stump';
   });
   let best = null, bd = 1e9;
   for (const ang of [MERCH_STALL_ANG, -MERCH_STALL_ANG]) {
@@ -312,7 +312,7 @@ function merchBaySite(team, lane) {
   const fits = (tx, ty) => footprint('barracks', tx, ty).every(([x, y]) => {
     if (!inWorld(x, y) || ground[idx(x, y)] !== 0) return false;
     const o = objAt(x, y);
-    return !o || laneFells(o) || o.type === 'stump';
+    return !o || merchFells(o) || o.type === 'stump';
   });
   let best = null, bd = 1e9;
   for (let dy = -3; dy <= 3; dy++) for (let dx = -3; dx <= 3; dx++) {
@@ -326,12 +326,14 @@ function merchBaySite(team, lane) {
 // nearest the merchant, that its swing will not reach this frame anyway
 // (a stump counts only on the footprint itself: the ring round it keeps
 // its stumps, walkable and a site like every other the merchant leaves)
+// what the merchant's axe takes off a site: a pine, never a jungle wall's (treeFells)
+function merchFells(o) { return laneFells(o) && treeFells(structOf(o)); }
 function merchOnBay(s, x, y) { return x >= s.tx && x < s.tx + 3 && y >= s.ty && y < s.ty + 2; }
 function merchBayBlocker(b, s) {
   let best = null, bd = 1e9;
   for (let y = s.ty - MERCH_BAY_RING; y < s.ty + 2 + MERCH_BAY_RING; y++) for (let x = s.tx - MERCH_BAY_RING; x < s.tx + 3 + MERCH_BAY_RING; x++) {
     const o = structOf(objAt(x, y));
-    if (!o || !(laneFells(o) || (o.type === 'stump' && merchOnBay(s, x, y))) || b.avoids.some((a) => a.o === o)) continue;
+    if (!o || !(merchFells(o) || (o.type === 'stump' && merchOnBay(s, x, y))) || b.avoids.some((a) => a.o === o)) continue;
     const d = Math.hypot(x * TILE + 8 - b.x, y * TILE + 8 - b.y);
     if (d < bd) { bd = d; best = o; }
   }
@@ -348,7 +350,7 @@ function merchBackPine(b) {
   let best = null, bs = Infinity;
   for (let ty = cty0 - R; ty <= cty0 + R; ty++) for (let tx = ctx0 - R; tx <= ctx0 + R; tx++) {
     const o = objAt(tx, ty);
-    if (!o || o.type !== 'tree') continue;
+    if (!treeFells(o)) continue;
     const px = tx * TILE + 8 - e.x, py = ty * TILE + 8 - e.y, dr = Math.hypot(px, py);
     if (dr > MERCH_BACK_R * TILE) continue;
     if (Math.abs(Math.atan2(px * -ly + py * lx, px * lx + py * ly)) < MERCH_BACK_ARC) continue;
