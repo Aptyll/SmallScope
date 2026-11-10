@@ -84,6 +84,10 @@ declare victory. The affordances:
     adds or removes a `state` key passes `--drop key`. Bots rarely take some paths (a rope, a
     rare item): write a staged scene, a function body given `D`, `step(n)` and `mark(tag)`, and
     pass `--scene <file>` (the comment at the top of the script). About 4 minutes on four cores.
+  - **`node app/check-paint.js`** — run it after touching any sprite grid or palette: it opens
+    `index.html?fine=1` headless, bakes every hero look on both teams (16 px, 32 px and the roll)
+    and every held blade, staff and shot weapon, and fails on any letter with no colour in its
+    palette (a hole the ground shows through; `SPR.takeUnpainted`). Needs Playwright as above.
   - **`node app/check-load.js`** — run it after touching `js/net/`, `SNAP_SKIP` or anything that adds
     bodies to a match: a host and nine headless players (`N=4` for fewer) on the relay, every seat a
     bot, the match STAGED (run fast to the first wave, then an extra wave queued at every bay), then
