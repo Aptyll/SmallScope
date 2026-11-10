@@ -44,42 +44,51 @@ function drawClivusRope(w, ex, ey, now) {
 function drawClivusAir(ex, ey, now) { for (const w of clivusRopes) drawClivusRope(w, ex, ey, now); }
 
 // ---- the rope ring ---------------------------------------------------------------------------
-// the rope round on the snow one pixel wide, eight stakes standing out of it; it goes up over
-// CL_UP, and blinks its last half second
-const CL_UP = 0.15;
-// the rope round (cx, cy) at radius r from bearing a0 to a1, a pixel wide, twisted
-function drawRopeArc(cx, cy, r, a0, a1) {
-  const n = Math.ceil(Math.abs(a1 - a0) * r);
-  for (let k = 0; k <= n; k++) {
-    const a = a0 + (a1 - a0) * k / Math.max(1, n), x = Math.round(cx + Math.cos(a) * r), y = Math.round(cy + Math.sin(a) * r);
-    ctx.fillStyle = CL_INK; ctx.fillRect(x, y + 1, 1, 1);
-    ctx.fillStyle = k % 3 === 0 ? CL_ROPE_D : CL_ROPE; ctx.fillRect(x, y, 1, 1);
+// A fence, not a circle: eight stakes driven round him, each with its side's colour tied
+// on, and a thick twisted rope strung from each stake's top to the next, sagging to the
+// snow between them over its own shadow. It pulls taut over CL_UP, and blinks its last
+// half second.
+const CL_UP = 0.15, CL_STAKES = 8, CL_STAKE_H = 7, CL_TIE = 5, CL_SAG = 0.75; // the rope is tied CL_TIE px up a stake and hangs CL_SAG of that at mid-span
+function clStakeAt(cx, cy, r, k) { const a = k * 2 * Math.PI / CL_STAKES; return [Math.round(cx + Math.cos(a) * r), Math.round(cy + Math.sin(a) * r)]; }
+// the rope from stake k to the next: `up` is how far it has been pulled up (0 on the snow, 1 taut)
+function drawRopeSpan(cx, cy, r, k, up) {
+  const [x0, y0] = clStakeAt(cx, cy, r, k), [x1, y1] = clStakeAt(cx, cy, r, k + 1);
+  const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)) || 1, steep = Math.abs(y1 - y0) > Math.abs(x1 - x0);
+  for (let pass = 0; pass < 3; pass++) for (let i = 0; i <= n; i++) {
+    const u = i / n, x = Math.round(x0 + (x1 - x0) * u), gy = y0 + (y1 - y0) * u;
+    const y = Math.round(gy - up * CL_TIE * (1 - CL_SAG * 4 * u * (1 - u)));
+    if (pass === 0) { ctx.fillStyle = '#9fb0cf'; ctx.fillRect(x, Math.round(gy) + 1, 1, 1); } // its shadow on the snow
+    else if (pass === 1) { ctx.fillStyle = CL_INK; ctx.fillRect(x - (steep ? 1 : 0), y - 1, steep ? 4 : 1, steep ? 1 : 4); }
+    else {
+      const dark = (i + k) % 3 === 0; // the twist
+      ctx.fillStyle = dark ? CL_ROPE_D : CL_ROPE; ctx.fillRect(x, y, 1, 1);
+      ctx.fillStyle = dark ? CL_ROPE : CL_ROPE_D; if (steep) ctx.fillRect(x + 1, y, 1, 1); else ctx.fillRect(x, y + 1, 1, 1);
+    }
   }
 }
-// a stake standing on (x, y) with its side's colour tied on, h px out of the snow
+// a stake standing on (x, y), h px out of the snow, its side's colour tied round it under the head
 function drawClivusStake(x, y, col, h) {
-  ctx.fillStyle = CL_INK; ctx.fillRect(x - 1, y - h - 1, 3, h + 2);
-  ctx.fillStyle = CL_STAKE; ctx.fillRect(x, y - h, 1, h + 1);
-  if (h > 2) { ctx.fillStyle = col; ctx.fillRect(x, y - h + 1, 1, 1); }
+  ctx.fillStyle = CL_INK; ctx.fillRect(x - 2, y - h - 1, 4, h + 3);
+  ctx.fillStyle = CL_STAKE; ctx.fillRect(x - 1, y - h, 2, h + 1);
+  ctx.fillStyle = '#9a6e40'; ctx.fillRect(x - 1, y - h, 1, h); // its lit side
+  if (h > 3) { ctx.fillStyle = col; ctx.fillRect(x - 1, y - h + 1, 2, 2); }
 }
 function drawClivusRing(g, ex, ey, now) {
   const left = g.life - g.t;
   if (left < 0.5 && Math.floor(now * 10) % 2 === 0) return;
-  const cx = g.x - ex, cy = g.y - ey, r = g.r * Math.min(1, 0.4 + 0.6 * g.t / CL_UP);
-  drawRopeArc(cx, cy, r, 0, 2 * Math.PI);
-  const col = TEAMS[skin(g.team)].mark;
-  for (let k = 0; k < 8; k++) drawClivusStake(Math.round(cx + Math.cos(k * Math.PI / 4) * r), Math.round(cy + Math.sin(k * Math.PI / 4) * r), col, 4);
+  const cx = g.x - ex, cy = g.y - ey, up = Math.min(1, g.t / CL_UP), col = TEAMS[skin(g.team)].mark;
+  for (let k = 0; k < CL_STAKES; k++) drawRopeSpan(cx, cy, g.r, k, up);
+  for (let k = 0; k < CL_STAKES; k++) { const [x, y] = clStakeAt(cx, cy, g.r, k); drawClivusStake(x, y, col, CL_STAKE_H); }
 }
 // ROPE RING's wind-up: he drives the stakes one by one round him, each going in with a
-// puff of snow, and the rope is strung from each to the next as it stands
+// puff of snow, and the rope is paid out on the snow from each to the next as it stands
 function drawRingTele(p, px, py, closing) {
-  const col = TEAMS[skin(p.team)].mark, cy = py + 2, n = Math.min(8, Math.floor(closing * 9));
+  const col = TEAMS[skin(p.team)].mark, cy = py + 2, n = Math.min(CL_STAKES, Math.floor(closing * (CL_STAKES + 1)));
+  for (let k = 1; k < n; k++) drawRopeSpan(px, cy, RING_R, k - 1, 0);
   for (let k = 0; k < n; k++) {
-    const a = k * Math.PI / 4, x = Math.round(px + Math.cos(a) * RING_R), y = Math.round(cy + Math.sin(a) * RING_R);
-    if (k > 0) drawRopeArc(px, cy, RING_R, (k - 1) * Math.PI / 4, a);
-    const fresh = closing * 9 - k < 1;
-    drawClivusStake(x, y, col, fresh ? 6 : 4); // a fresh one stands tall till it is driven home
-    if (fresh) { ctx.fillStyle = '#f4f7ff'; ctx.fillRect(x - 2, y, 1, 1); ctx.fillRect(x + 2, y, 1, 1); }
+    const [x, y] = clStakeAt(px, cy, RING_R, k), fresh = closing * (CL_STAKES + 1) - k < 1;
+    drawClivusStake(x, y, col, fresh ? CL_STAKE_H + 3 : CL_STAKE_H); // a fresh one stands tall till it is driven home
+    if (fresh) { ctx.fillStyle = CL_INK; ctx.fillRect(x - 4, y, 2, 2); ctx.fillRect(x + 2, y, 2, 2); ctx.fillStyle = '#f4f7ff'; ctx.fillRect(x - 4, y - 1, 2, 2); ctx.fillRect(x + 2, y - 1, 2, 2); }
   }
 }
 
