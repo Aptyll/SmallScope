@@ -4,7 +4,8 @@
 // pack's trails out past where each wolf waits (the camp's `spots`) and a
 // ring of half-buried stones; a hog hut has a smaller trodden yard, a packed
 // path from its door out into the clearing, a woodpile against its wall and a
-// chopping block. A yard is two pressed bands of snow with a shaded upper
+// chopping block; the gold pump, a building, has a worked yard of its own
+// (its row). A yard is two pressed bands of snow with a shaded upper
 // wall and a lit lower rim, like any hollow in this light. Pure dressing: one
 // canvas a camp, a function of its tile and hash2/vnoise alone, on open snow
 // only, drawn under every body (render, after the flat pass) the way a
@@ -18,7 +19,8 @@ const YARD_TRAIL_STEP = 5;                  // px between prints along a trail
 const YARD_PATH_HW = 4.5;                   // px: half the width of a packed path
 // what lies in a yard, on 1 px grids: the den's rock (DNPAL, js/sprites/terrain.js), the hut's wood
 const YARD_PAL = { o: '#2b3040', y: '#7b8398', Y: '#99a1b6', v: '#5a6176', w: '#eef4fb', s: '#c9dcee', d: '#aab8d2',
-  k: '#2a2018', l: '#6f4d38', L: '#4a3324', c: '#d9ad72', C: '#b9884f', m: '#aab4c4', h: '#8a6a48' };
+  k: '#2a2018', l: '#6f4d38', L: '#4a3324', c: '#d9ad72', C: '#b9884f', m: '#aab4c4', h: '#8a6a48',
+  e: '#4c4a52', E: '#5e5b62', g: '#e8b23a', p: '#6d7689' };
 const YARD_THINGS = {
   rockA: ['...wwwww....', '..wwwwwwww..', '.wwwwwwsswo.', 'owwwsssyyYYo', 'oYyyyyyyyvvo', 'ovyyYyyyvvvo', '.dddddddddd.'], // a boulder's crown under its cap
   rockB: ['..wwww...', '.wwwwwwo.', 'owwssyYYo', 'oYyyyyvvo', '.ddddddd.'],
@@ -27,6 +29,12 @@ const YARD_THINGS = {
   pile: ['....sswwwwwss....', '...swwwwwwwwws...', '..kkkkkkkkkkkkk..', '..kcCckcCckcCck..', '..kcLckcLckcLck..', 'kkkkkkkkkkkkkkkkk', 'kcCckcCckcCckcCck', 'kcLckcLckcLckcLck', 'kkkkkkkkkkkkkkkkk', '.ddddddddddddddd.'], // split logs stacked end on, two rows under a cap of snow
   block: ['.....mm..', '....mmh..', '.....h...', '.kkkhkk..', 'kccchcck.', 'kcCCCCck.', 'kLlllLLk.', '.kkkkkk..', '..ddddd..'],          // the chopping block, the axe left in it
   log: ['.kkkk.', 'kclLLk', '.kkkd.'],
+  // the pump's works: a barrel under its cap of snow, spare boards, pipe lengths, and the spoil dug from the bore, gold in it
+  barrel: ['..kkkkk..', '.kwwwwsk.', 'kwwwwsssk', 'kkssssskk', 'klkkkkkLk', 'kmmmmmmpk', 'kllllLLLk', 'kllllLLLk', 'kmmmmmmpk', '.klllLLk.', '..kkkkk..', '.ddddddd.'],
+  boards: ['.kkkkkkkkkkkkkkkk.', '.kwwwscCCcCCCCsck.', 'kkkkkkkkkkkkkkkkkk', 'kcCCcCCCwwsCCCCCck', 'kkkkkkkkkkkkkkkkkk', 'klLLlLLLLlLLLLLLlk', 'kkkkkkkkkkkkkkkkkk', '.dddddddddddddddd.'],
+  pipes: ['..kkkkkkkkkkkkkk', '.kmmmmmmmmmmmmpk', 'kkkppppppppppkkk', 'kmmmmmmmmmmmmpk.', 'kpppppppppppppk.', '.kkkkkkkkkkkkk..', '.ddddddddddddd..'],
+  spoil: ['.....wEEe.......', '...wEEEEEee.....', '..EEEgEEEEeee...', '.EEEEEEeEEgeee..', 'EEeEEeeeEeeeeee.', '.eeeeegeeeeeeee.', '..ddddddddddddd.'],
+  spoilB: ['..wEe...', '.EEgEee.', 'EEeeeeee', '.dddddd.'],
 };
 const YARDS = {
   den: {
@@ -41,7 +49,20 @@ const YARDS = {
     // the woodpile stands against the right wall (`true`: it stays put when the yard flips)
     things: [[33, -1, 'pile', true], [-24, 10, 'block'], [-33, 22, 'log'], [-13, 24, 'log'], [46, 12, 'rockD'], [-40, 2, 'rockC']],
   },
+  // the gold pump (a building, not a camp: drawYards asks `structures` too):
+  // a worked yard inside its ring, a walk of boards laid from the deck to the
+  // lane it stands beside (`walk`: yardWalk), its stores against the deck's
+  // far end (the yard flips so they are never on the walk) and the spoil
+  // heaped out in front
+  pump: {
+    rx: 60, ry: 34, rag: 0.25, dy: -8, mid: 0, walk: true,
+    door: (o) => ({ x: (o.tx + structW(o) / 2) * TILE, y: (o.ty + structH(o)) * TILE }), // the middle of the deck's front edge
+    things: [[-39, -15, 'barrel'], [-48, -9, 'barrel'], [-52, 5, 'pipes'], [-27, 10, 'spoil'], [-12, 15, 'spoilB'], [34, 8, 'boards']],
+  },
 };
+const YARD_WALK_BOARD = 4; // px a board takes along the walk, its seam with it
+const YARD_WALK_HW = 6, YARD_WALK_FAR = 104; // px: half a board walk's width, and as far as one is laid to reach paving
+const YARD_WALK_COL = { seam: '#2a2018', lit: ['#a87c52', '#96694a'], face: ['#7d573d', '#6f4d38'], shade: 'rgba(92,106,142,0.5)' };
 const yardCvs = new Map(); // a camp's tile index -> its yard
 
 function yardOf(C, Y) {
@@ -49,11 +70,13 @@ function yardOf(C, Y) {
   let c = yardCvs.get(key);
   if (c) return c;
   const m = Y.door(C), cx = m.x, cy = m.y + Y.dy;
-  const reachY = Math.max(Y.ry * (1 + Y.rag), Y.path ? Y.path[Y.path.length - 1][1] : 0);
-  const W = Math.ceil(Y.rx * (1 + Y.rag)) * 2 + 24, H = Math.ceil(reachY) * 2 + 24;
+  const path = Y.path, walk = Y.walk ? yardWalk(C, m) : null;
+  let reachX = Y.rx * (1 + Y.rag), reachY = Math.max(Y.ry * (1 + Y.rag), path ? path[path.length - 1][1] : 0);
+  if (walk) { reachX = Math.max(reachX, Math.abs(walk.x + walk.dx * walk.len - cx)); reachY = Math.max(reachY, Math.abs(walk.y + walk.dy * walk.len - cy)); }
+  const W = Math.ceil(reachX) * 2 + 24, H = Math.ceil(reachY) * 2 + 24;
   c = document.createElement('canvas'); c.width = W; c.height = H;
   c.wx = cx - (W >> 1); c.wy = cy - (H >> 1);
-  const g = c.getContext('2d'), flip = hash2(key, 81) > 0.5;
+  const g = c.getContext('2d'), flip = walk ? walk.dx < 0 : hash2(key, 81) > 0.5; // (a walk off the left end sends the stores to the right one)
   // open snow only: the yard stops at a pine, at ice and at paving
   const open = (x, y) => {
     const tx = Math.floor(x / TILE), ty = Math.floor(y / TILE);
@@ -61,14 +84,19 @@ function yardOf(C, Y) {
     const ob = objects[idx(tx, ty)];
     return !(ob && ob.type === 'tree');
   };
+  // a board may lie on the verge too, up to the lane's first stone
+  const walkOn = (x, y) => {
+    const tx = Math.floor(x / TILE), ty = Math.floor(y / TILE), ob = inWorld(tx, ty) && objects[idx(tx, ty)];
+    return inWorld(tx, ty) && ground[idx(tx, ty)] === 0 && !(ob && ob.type === 'tree') && !roadPavedAt(x, y);
+  };
   // px from the packed path's line (99 with none), the line bending a little on the noise
   const pathAt = (x, y) => {
-    if (!Y.path) return 99;
+    if (!path) return 99;
     let best = 99;
     const bx = x - m.x - (vnoise(y / 11, key) - 0.5) * 5, by = y - m.y;
-    for (let k = 1; k < Y.path.length; k++) {
+    for (let k = 1; k < path.length; k++) {
       const sg = (q) => (flip && q > 1 ? -1 : 1); // past its first step out of the door the path bends the other way at a flipped camp
-      const ax = Y.path[k - 1][0] * sg(k - 1), ay = Y.path[k - 1][1], qx = Y.path[k][0] * sg(k), qy = Y.path[k][1], vx = qx - ax, vy = qy - ay;
+      const ax = path[k - 1][0] * sg(k - 1), ay = path[k - 1][1], qx = path[k][0] * sg(k), qy = path[k][1], vx = qx - ax, vy = qy - ay;
       const t = Math.max(0, Math.min(1, ((bx - ax) * vx + (by - ay) * vy) / (vx * vx + vy * vy)));
       best = Math.min(best, Math.hypot(bx - ax - vx * t, by - ay - vy * t));
     }
@@ -115,6 +143,21 @@ function yardOf(C, Y) {
       g.fillRect(px - c.wx, py - c.wy, 2, 1); g.fillRect(px - c.wx + (ux > 0 ? 1 : 0), py - c.wy + 1, 1, 1);
     }
   }
+  // the board walk: boards laid across its line, YARD_WALK_BOARD px each with the seam,
+  // every board a little out of true and one of two woods, snow drifted over
+  // it in patches; its low side throws a line of shade
+  for (let i = 0; walk && i < walk.len; i++) {
+    const n = Math.floor(i / YARD_WALK_BOARD), r = i % YARD_WALK_BOARD, seam = r === YARD_WALK_BOARD - 1, off = Math.round((hash2(key + n, 7) - 0.5) * 2.4), wood = hash2(key + n, 19) > 0.5 ? 1 : 0;
+    for (let j = -YARD_WALK_HW + off; j <= YARD_WALK_HW + off; j++) {
+      const wx = Math.round(walk.x + walk.dx * i + walk.dy * j), wy = Math.round(walk.y + walk.dy * i + walk.dx * j);
+      if (!open(wx, wy) && !walkOn(wx, wy)) continue;
+      const end = j === -YARD_WALK_HW + off || j === YARD_WALK_HW + off;
+      if (j === YARD_WALK_HW + off && !seam) { g.fillStyle = YARD_WALK_COL.shade; g.fillRect(wx - c.wx + walk.dy, wy - c.wy + walk.dx, 1, 1); }
+      if (!end && !seam && vnoise(wx / 6 + 21.5, wy / 6 + key) > 0.76) continue; // under the drift
+      g.fillStyle = end || seam ? YARD_WALK_COL.seam : r === 0 ? YARD_WALK_COL.lit[wood] : YARD_WALK_COL.face[wood];
+      g.fillRect(wx - c.wx, wy - c.wy, 1, 1);
+    }
+  }
   // what lies in it, where the ground is open; which side of the yard's middle (`mid`, px off the door) each lies flips with the camp
   for (const [ox, oy, name, stays] of Y.things) {
     const rows = YARD_THINGS[name], x0 = Math.round(m.x + (flip && !stays ? 2 * Y.mid - ox : ox) - rows[0].length / 2), y0 = Math.round(m.y + oy);
@@ -127,12 +170,30 @@ function yardOf(C, Y) {
   yardCvs.set(key, c);
   return c;
 }
+// where a building's board walk is laid: from the middle of its deck's
+// front, either corner of its back (clear of the works that stand on its
+// middle, so a walk behind it lies on the snow and is no ladder up them) or
+// either end, straight out to the nearest paving within YARD_WALK_FAR, the
+// shortest of them; null with no paving near
+function yardWalk(o, m) {
+  const hw = structW(o) * TILE / 2, hh = structH(o) * TILE / 2;
+  let best = null;
+  for (const [x, y, dx, dy] of [[m.x, m.y, 0, 1], [m.x - hw + YARD_WALK_HW + 1, m.y - 2 * hh - 1, 0, -1], [m.x + hw - YARD_WALK_HW - 2, m.y - 2 * hh - 1, 0, -1], [m.x - hw, m.y - hh, -1, 0], [m.x + hw - 1, m.y - hh, 1, 0]]) {
+    for (let len = 1; len <= YARD_WALK_FAR && !(best && len >= best.len); len++) {
+      if (roadPavedAt(x + dx * len, y + dy * len)) { best = { x, y, dx, dy, len: len + YARD_WALK_HW }; break; } // on past the first stone: the ragged edge takes each board where it will
+    }
+  }
+  return best;
+}
+function drawYard(C, Y, ex, ey) {
+  const c = yardOf(C, Y);
+  if (c.wx - ex > WV_W || c.wx + c.width - ex < 0 || c.wy - ey > WV_H || c.wy + c.height - ey < 0) return;
+  ctx.drawImage(c, Math.round(c.wx - ex), Math.round(c.wy - ey));
+}
 function drawYards(ex, ey) {
   for (const C of camps) {
     const o = objects[idx(C.tx, C.ty)], Y = o && YARDS[o.type];
-    if (!Y) continue;
-    const c = yardOf(C, Y);
-    if (c.wx - ex > WV_W || c.wx + c.width - ex < 0 || c.wy - ey > WV_H || c.wy + c.height - ey < 0) continue;
-    ctx.drawImage(c, Math.round(c.wx - ex), Math.round(c.wy - ey));
+    if (Y) drawYard(C, Y, ex, ey);
   }
+  for (const o of structures) if (YARDS[o.type] && !o.dead) drawYard(o, YARDS[o.type], ex, ey);
 }
