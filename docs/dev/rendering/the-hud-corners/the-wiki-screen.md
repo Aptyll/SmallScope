@@ -22,6 +22,8 @@ to its name), `beast` (a kind standing on its snow beside its growth table, `WIK
 wrapped by `wrapText`, the row as tall as it needs (`wikiAbH`); hoverable, answering `tipClassAb`) and `lore` (a WORLD entry,
 `WIKI_WORLD`: its figures in a `WIKI_FIG_W` column, its name in gold and its paragraph from
 `WIKI_TEXT_X`, as tall as the taller of the two) —
+every word from the text table (`wiki.*`, `beast.*`, `world.*` keys, [the text table](../the-text-table.md); a beast's
+numbers go in through slots, read off the sim's constants) —
 each with a fixed height, built once per content width (`wikiBlocks(pageId, cw)`: a page whose
 `build` reads `cw` wraps its sentences, a hero's story or a beast's line, to a slab that has
 narrowed with the view). `wikiLayout()` is the single source of

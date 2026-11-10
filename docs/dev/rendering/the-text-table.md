@@ -9,7 +9,7 @@ the same keys.
 the death recap, `board.*` the TAB scoreboard, `tip.*` the hover tooltip (a rank row's label is
 `tip.<rank key>`, the key in `AB_RANK_STAT`), `shop.*` the shop (an item's tier word is a key in
 `SHOP_TIER_WORD`), `set.*` the settings slab and `ctl.*` its CONTROLS page (`SET_TABS`, `KEY_ROWS`), `pick.*` the
-hero pick. A number or a name goes in through a slot,
+hero pick, `wiki.*` the wiki's tabs and page lines, `beast.*` and `world.*` its BEASTS and WORLD pages. A number or a name goes in through a slot,
 `tr('end.respawn', { s: 5 })` for `RESPAWNING IN {s}S`, never by gluing strings round a word, so
 another language can move it. A screen that keeps its choices in a data table keeps the keys
 there (`DEAD_ITEMS`, `SCORE_GROUPS`, `RC_KIND`) and compares keys, never printed words, so a
