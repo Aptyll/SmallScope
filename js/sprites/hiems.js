@@ -319,3 +319,25 @@ SPRITES.weaponArt.flakestaff = SPR.bake([
   'oCoCo.......', '.oCCooooooo.', 'oCSCcoGgGgo.', '.oCCooooooo.',
   'oCoCo.......', '.o.o........', '............', '............',
 ], { '.': null, o: '#2e2440', C: '#e6f8ff', c: '#7cc4e8', S: '#ffffff', g: '#8a95a8', G: '#c3ccd8' });
+
+// ------------------------------------------------------------ hiems registry
+// HIEMS in the hero art registry (heroArt, js/sprites/hero-art.js): the looks and
+// their paint, the skins tab's 8x8 glyph and the 12x12 emblem
+heroArt('hiems', {
+  looks: HIEMS_SKINS, pal: HIEMS_PAL,
+  glyph: ['...w....', '.w.w.w..', '..www...', 'wwwwwww.', '..www...', '.w.w.w..', '...w....', '........'],
+  emblem: [ // a six-armed snowflake
+    '.....o......',
+    '..o.oWo.o...',
+    '.oWooWooWo..',
+    '..oWoWoWo...',
+    '.ooooWoooo..',
+    'oWWWWWWWWWo.',
+    '.ooooWoooo..',
+    '..oWoWoWo...',
+    '.oWooWooWo..',
+    '..o.oWo.o...',
+    '.....o......',
+    '............',
+  ],
+});

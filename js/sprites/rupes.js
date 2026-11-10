@@ -347,3 +347,25 @@ const RUPES_MAUL_DIAG = [
 ];
 const RUPES_MAUL_GRIP = [3, 9]; // where the hands close on the slanted grid
 const RUPES_MAUL_PAL = { o: '#241a12', i: '#7cc4e8', I: '#cfeeff', w: '#a8794a', u: '#6e4a28' };
+
+// ------------------------------------------------------------ rupes registry
+// RUPES in the hero art registry (heroArt, js/sprites/hero-art.js): the looks and
+// their paint, the skins tab's 8x8 glyph and the 12x12 emblem
+heroArt('rupes', {
+  looks: RUPES_SKINS, pal: RUPES_PAL,
+  glyph: ['..wwww..', '.wwwwww.', 'ww..wwww', 'w....www', 'w....www', 'ww..wwww', '.wwwwww.', '..wwww..'],
+  emblem: [ // the snowball, its trail behind it
+    '....oooo....',
+    '..ooWWWWoo..',
+    '.oWWWWWWWbo.',
+    '.oWWWWWWbbo.',
+    'oWWWWWWWbbbo',
+    'oWWWWWWbbbbo',
+    'oWWWWWbbbbbo',
+    '.oWWbbbbbbo.',
+    '.obbbbbbbbo.',
+    '..oobbbboo..',
+    '....oooo....',
+    '............',
+  ],
+});

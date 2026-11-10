@@ -349,3 +349,25 @@ const LIGNUM_AXE_DIAG = [
 ];
 const LIGNUM_AXE_GRIP = [4, 9]; // where the hands close on the slanted grid
 const LIGNUM_AXE_PAL = { o: '#241a12', T: '#e6ebf2', S: '#c8d2e4', s: '#8b93a8', w: '#a8794a', u: '#6e4a28' };
+
+// ------------------------------------------------------------ lignum registry
+// LIGNUM in the hero art registry (heroArt, js/sprites/hero-art.js): the looks and
+// their paint, the skins tab's 8x8 glyph and the 12x12 emblem
+heroArt('lignum', {
+  looks: LIGNUM_SKINS, pal: LIGNUM_PAL,
+  glyph: ['.www....', 'wwwww...', 'wwww....', '.w.w....', '....w...', '.....w..', '......w.', '.......w'],
+  emblem: [ // his felling axe's broad bit on its haft
+    '..oooo......',
+    '.oWWWWo.....',
+    '.oWWWWoo....',
+    '..oWWowo....',
+    '...ooowo....',
+    '.....owo....',
+    '.....owo....',
+    '.....owo....',
+    '.....owo....',
+    '.....owo....',
+    '.....ooo....',
+    '............',
+  ],
+});

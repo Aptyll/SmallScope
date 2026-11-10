@@ -327,16 +327,16 @@ function draftNextRole() {
 // the skin strip under the showcase; the host takes a seat's the same way
 function draftWearSkin(p, h, id) {
   const c = CLASSES[h];
-  if (!c || !c.skinSlot) return false;
+  if (!c) return false;
   const m = Object.assign({}, p.skins);
-  if (id) m[c.skinSlot] = String(id); else delete m[c.skinSlot];
+  if (id) m[c.id] = String(id); else delete m[c.id];
   p.skins = cleanHeroSkins(m);
   return true;
 }
 function draftSkin(h, id) {
   const c = CLASSES[h];
-  if (!c || !c.skinSlot) return;
-  PROFILE.wear(c.skinSlot, id || null);
+  if (!c) return;
+  PROFILE.wear(c.id, id || null);
   draftWearSkin(player, h, id);
   if (NET.isClient) NET.transport.send('host', { t: 'draft', k: 'skin', h, id: id || '' });
   SFX.pickup();

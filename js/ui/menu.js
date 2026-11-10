@@ -36,7 +36,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.683';
+const PATCH_TXT = 'PATCH 0.684';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -52,6 +52,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.684', 'THE TRAIL SKINS, WHICH NOTHING IN A MATCH EVER WORE, LEAVE THE SHOP AND ANY YOU BOUGHT ARE REFUNDED IN COINS; THE SKINS SCREEN LISTS THE HEROES IN THE HERO GRID\'S ORDER.'],
   ['0.683', 'UNDER THE HOOD: THE SETTINGS AND CONTROLS WORDS NOW LIVE IN THE ONE TEXT TABLE.'],
   ['0.682', 'STEAM MATCHES NOW CROSS STEAM\'S OWN RELAY NETWORK, WHICH HIDES EVERY PLAYER\'S ADDRESS AND GETS THROUGH STRICT HOME ROUTERS.'],
   ['0.681', 'UNDER THE HOOD: THE SHOP WORDS NOW LIVE IN THE ONE TEXT TABLE, AND THE POTION READS +100 HEALTH OVER 15S.'],
@@ -1555,263 +1556,10 @@ function lobbySkin(k) {
 
 // The heroes' EMBLEMS at 12px - ARMATOS's broken standard, and one each - for
 // the team rail's chips (drawRailChip), the rooms and tooltips, on the
-// shared big-icon palette (AB32_PAL, js/sim/abilities.js): drawn by hand at
-// that size, keyed by hero name. The local player's own chip is baked with
-// every colour but the outline pushed to white, the maps' "you". A new hero
-// brings a CLASS12 grid (checked at load below).
-const CLASS12 = {
-  ARMATOS: [ // the broken standard - the pole, the torn cloth off its head
-    '..o.........',
-    '.ogooooo....',
-    '.oGrrrrro...',
-    '.owrRRrrro..',
-    '.owrrrrro...',
-    '.owrrRro....',
-    '.owrro.o....',
-    '.owro.......',
-    '.owo........',
-    '.owo........',
-    '.owo........',
-    '..o.........',
-  ],
-  FORTIVA: [ // the broken chain - a link snapped, its two ends apart
-    '............',
-    '..oooo......',
-    '.oCCCso.....',
-    '.oCo.so.....',
-    '.oCo.so.g...',
-    '.oCo.so..g..',
-    '.oCsso.g....',
-    '..oooo.oooo.',
-    '....g..oCCso',
-    '...g...oCo.o',
-    '.....g.oCsso',
-    '........ooo.',
-  ],
-  BELLA: [ // the saber, its edge curving up to the point, the gold guard
-    '.........oo.',
-    '........oWo.',
-    '.......oCo..',
-    '......oCo...',
-    '.....oCo....',
-    '....oCso....',
-    '.o.oCso.....',
-    '.ogoCo......',
-    '..oggo......',
-    '.owoGgo.....',
-    'owo..o......',
-    '.o..........',
-  ],
-  IGNIA: [ // one flame, white at its heart
-    '.....o......',
-    '....oro.....',
-    '....oro.o...',
-    '...orrgoro..',
-    '..orrggoro..',
-    '..orgggrro..',
-    '.orggWggro..',
-    '.orgWWWgro..',
-    '.orgWWWgro..',
-    '..orgWgro...',
-    '...orrro....',
-    '....ooo.....',
-  ],
-  AURA: [ // a four-pointed star, the light that falls
-    '.....o......',
-    '....oWo.....',
-    '....oWo.....',
-    '...obWbo....',
-    '.ooobWbooo..',
-    'oWWWWWWWWWo.',
-    '.ooobWbooo..',
-    '...obWbo....',
-    '....oWo.....',
-    '....oWo.....',
-    '.....o......',
-    '............',
-  ],
-  SALVIA: [ // a snowdrop, its white bell nodding off the stem
-    '...ooo......',
-    '..ovvvoo....',
-    '..ovooovo...',
-    '..ovo.ovo...',
-    '..ovooWWWo..',
-    '..ovoWWWWWo.',
-    '..ovooWoWo..',
-    '.oVvo.o.o...',
-    'oVVvo.......',
-    '.oovo.......',
-    '..ovo.......',
-    '...o........',
-  ],
-  LUCERNA: [ // her lantern, lit, on its ring
-    '....oooo....',
-    '....o..o....',
-    '...oooooo...',
-    '...oggggo...',
-    '..ogWWWWgo..',
-    '..ogWWWWgo..',
-    '..ogWbbWgo..',
-    '..ogWWWWgo..',
-    '...oggggo...',
-    '....oooo....',
-    '............',
-  ],
-  HIEMS: [ // a six-armed snowflake
-    '.....o......',
-    '..o.oWo.o...',
-    '.oWooWooWo..',
-    '..oWoWoWo...',
-    '.ooooWoooo..',
-    'oWWWWWWWWWo.',
-    '.ooooWoooo..',
-    '..oWoWoWo...',
-    '.oWooWooWo..',
-    '..o.oWo.o...',
-    '.....o......',
-    '............',
-  ],
-  RUPES: [ // the snowball, its trail behind it
-    '....oooo....',
-    '..ooWWWWoo..',
-    '.oWWWWWWWbo.',
-    '.oWWWWWWbbo.',
-    'oWWWWWWWbbbo',
-    'oWWWWWWbbbbo',
-    'oWWWWWbbbbbo',
-    '.oWWbbbbbbo.',
-    '.obbbbbbbbo.',
-    '..oobbbboo..',
-    '....oooo....',
-    '............',
-  ],
-  VARRO: [ // a wolf's paw print
-    '...oo.oo....',
-    '..oWWoWWo...',
-    '.ooWWoWWoo..',
-    'oWWoo.ooWWo.',
-    'oWWoooooWWo.',
-    '.oooWWWooo..',
-    '..oWWWWWo...',
-    '.oWWWWWWWo..',
-    '.oWWWWWWWo..',
-    '..oWWoWWo...',
-    '...oo.oo....',
-    '............',
-  ],
-  BUCINA: [ // her horn, the bell to the right
-    '............',
-    '.........oo.',
-    '........ogWo',
-    '.......ogggo',
-    '..ooo.ogggGo',
-    '.ogggogggGo.',
-    'ogGoggggGo..',
-    'ogo.oGGGoo..',
-    '.o...ooo....',
-    '............',
-    '............',
-    '............',
-  ],
-  NIX: [ // the snowblind's goggles, two slits in a bone band
-    '............',
-    '............',
-    '............',
-    '.oooooooooo.',
-    'oWWWWWWWWWWo',
-    'oWooWWWWooWo',
-    'oWWWWooWWWWo',
-    '.oooo..oooo.',
-    '............',
-    '............',
-    '............',
-    '............',
-  ],
-  FABER: [ // a gear
-    '....ooo.....',
-    '.oo.oWo.oo..',
-    '.oWooWooWo..',
-    '..oWWWWWo...',
-    'ooWWoooWWoo.',
-    'oWWWo.oWWWo.',
-    'ooWWoooWWoo.',
-    '..oWWWWWo...',
-    '.oWooWooWo..',
-    '.oo.oWo.oo..',
-    '....ooo.....',
-    '............',
-  ],
-  VELOX: [ // a skate, its blade under it
-    '............',
-    '.oooo.......',
-    '.oWWo.......',
-    '.oWWo.......',
-    '.oWWooooo...',
-    '.oWWWWWWWo..',
-    '.oWWWWWWWWo.',
-    '.ooooooooo..',
-    '..o.....o...',
-    'oWWWWWWWWWWo',
-    '.oooooooooo.',
-    '............',
-  ],
-  FALCO: [ // a hawk stooping, wings folded back
-    '............',
-    '.o........o.',
-    '.oWo....oWo.',
-    '..oWo..oWo..',
-    '...oWooWo...',
-    '....oWWo....',
-    '....oWWo....',
-    '....oWWo....',
-    '...oWooWo...',
-    '....o..o....',
-    '............',
-  ],
-  MARIS: [ // her harpoon's barbed head
-    '........ooo.',
-    '.......oWWo.',
-    '......oWWWo.',
-    '.....oWWWo..',
-    '....oooWo...',
-    '...owo.o....',
-    '..owo.......',
-    '.owo........',
-    'owo.........',
-    'oo..........',
-    '............',
-    '............',
-  ],
-  LIGNUM: [ // his felling axe's broad bit on its haft
-    '..oooo......',
-    '.oWWWWo.....',
-    '.oWWWWoo....',
-    '..oWWowo....',
-    '...ooowo....',
-    '.....owo....',
-    '.....owo....',
-    '.....owo....',
-    '.....owo....',
-    '.....owo....',
-    '.....ooo....',
-    '............',
-  ],
-  SAGITTA: [ // a crossbow, prod up, the stock down
-    '............',
-    '.oooooooooo.',
-    'oWWWWWWWWWWo',
-    'oWooooooooWo',
-    'oWo.oWWo.oWo',
-    '.o..oWWo..o.',
-    '....oWWo....',
-    '...ooWWoo...',
-    '...oWWWWo...',
-    '...oWWWWo...',
-    '....oooo....',
-    '............',
-  ],
-};
-for (const c of CLASSES) if (!CLASS12[c.name]) throw new Error('menu.js: ' + c.name + ' has no CLASS12 emblem');
+// shared big-icon palette (AB32_PAL, js/draw/abilities.js): drawn by hand at
+// that size, each in its hero's registry row (`emblem`, heroArt). The local
+// player's own chip is baked with every colour but the outline pushed to
+// white, the maps' "you".
 const class12Cache = new Map();
 function classIcon12(i, you) {
   const key = i * 2 + (you ? 1 : 0);
@@ -1820,7 +1568,7 @@ function classIcon12(i, you) {
     cv = document.createElement('canvas');
     cv.width = cv.height = 12;
     const g = cv.getContext('2d');
-    const rows = CLASS12[CLASSES[i].name];
+    const rows = heroArtOf(i).emblem;
     for (let r = 0; r < rows.length; r++) {
       const row = rows[r];
       for (let c = 0; c < row.length; c++) {

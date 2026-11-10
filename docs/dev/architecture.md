@@ -50,6 +50,7 @@ order, so the script tags still interleave them:
 | [js/sprites/icons.js](../../js/sprites/icons.js) | ~80 | → `SPRITES` | HUD art: the cursor set |
 | [js/sprites/item-icons.js](../../js/sprites/item-icons.js) | ~84 | → `SPRITES` | the item icons: one 16 px grid an item, `SPRITES['item_' + id]` |
 | [js/sprites/weapons.js](../../js/sprites/weapons.js) | ~50 | → `SPRITES`, `WEAPON_FWD`, `WEAPON_GRIP` | the heroes' weapons as the hand holds them (a basic attack's `art`) |
+| [js/sprites/hero-art.js](../../js/sprites/hero-art.js) | ~25 | `HERO_ART`, `heroArt` | the hero art registry: each hero's own sprite file registers its looks, their paint, the skins tab's glyph and the 12 px emblem under its `CLASSES` `id`; every reader asks `heroArtOf` (player.js) |
 | [js/sprites/armatos.js](../../js/sprites/armatos.js) | ~430 | shared scope, no `window.*` export | ARMATOS's 32 px ability and passive icons (`ARM_ICON32`), his looks' 16 px grids and skins table (`ARM_BODY`, `ARM_SKINS`), and his greatsword (`ARM_SWORD`) |
 | [js/sprites/fortiva.js](../../js/sprites/fortiva.js) | ~370 | shared scope, no `window.*` export | FORTIVA's 32 px ability and passive icons (`FORT_ICON32`), her looks' 16 px grids and skins table (`FORT_BODY`, `FORT_SKINS`), and her greatsword (`FORT_SWORD`) |
 | [js/sprites/aura.js](../../js/sprites/aura.js) | ~260 | shared scope, no `window.*` export | AURA's 32 px ability and passive icons (`AURA_ICON32`) and her STAR SHARD staff's weapon art |
@@ -287,7 +288,7 @@ file is a save file.
 - **The purse and the wardrobe are ids and a count.** `coins` starts at `START_COINS` (a
   profile from before the purse gets it too), `owned` holds the ids bought (a free cosmetic is
   never written there; the key is `slot:id`, bare for the bird's) and `worn` maps a slot
-  (`'bird'`, `'trail'`, or a hero's own, `'armatos'` ...) to the id worn. `buy(key, price)` spends and records in one write or
+  (`'bird'`, or a hero's own `id`, `'armatos'` ...) to the id worn. `buy(key, price)` spends and records in one write or
   does nothing; `wear(slot, id)` (null for the free default) writes through; `addCoins(n)` is a
   finished match's pay (`payMatchCoins`, js/ui/skins.js, from `endMatch`). Prices and what an id
   is live in the callers' tables (`SKIN_TABS`, js/ui/skins.js, and `BIRD_SKINS`,

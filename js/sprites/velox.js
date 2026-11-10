@@ -315,3 +315,25 @@ SPRITES.weaponArt.sling = SPR.bake([
   'oGoooooooooo', '.oo.obbbbbbo', 'oco..ooooooo', 'oqo.........',
   'oSo.........', '.o..........', '............', '............',
 ], { '.': null, o: '#241a12', G: '#c3ccd8', b: '#8a6440', c: '#d8c49a', q: '#6f4d38', S: '#9aa3b8' });
+
+// ------------------------------------------------------------ velox registry
+// VELOX in the hero art registry (heroArt, js/sprites/hero-art.js): the looks and
+// their paint, the skins tab's 8x8 glyph and the 12x12 emblem
+heroArt('velox', {
+  looks: VELOX_SKINS, pal: VELOX_PAL,
+  glyph: ['........', 'ww......', 'w.......', 'wwwwww..', 'wwwwwww.', 'ww......', 'wwwwwwww', '.w...w..'],
+  emblem: [ // a skate, its blade under it
+    '............',
+    '.oooo.......',
+    '.oWWo.......',
+    '.oWWo.......',
+    '.oWWooooo...',
+    '.oWWWWWWWo..',
+    '.oWWWWWWWWo.',
+    '.ooooooooo..',
+    '..o.....o...',
+    'oWWWWWWWWWWo',
+    '.oooooooooo.',
+    '............',
+  ],
+});

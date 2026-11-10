@@ -431,3 +431,25 @@ const ARM_SWORD_DIAG = [
 ];
 const ARM_GRIP = [5, 18];   // where the hands close on the slanted grid
 const ARM_SWORD_PAL = { o: '#241a12', e: '#c8d2e4', E: '#8b93a8', W: '#ffffff', T: '#eef2f8', g: '#6b4a30', G: '#a3794f', y: '#f2cc6a', Y: '#b98a2e' };
+
+// ------------------------------------------------------------ armatos registry
+// ARMATOS in the hero art registry (heroArt, js/sprites/hero-art.js): the looks and
+// their paint, the skins tab's 8x8 glyph and the 12x12 emblem
+heroArt('armatos', {
+  looks: ARM_SKINS, pal: ARM_PAL,
+  glyph: ['.wwww...', '.w..ww..', '.wwww...', '.w......', '.w......', '.w......', '.w......', 'www.....'],
+  emblem: [ // the broken standard - the pole, the torn cloth off its head
+    '..o.........',
+    '.ogooooo....',
+    '.oGrrrrro...',
+    '.owrRRrrro..',
+    '.owrrrrro...',
+    '.owrrRro....',
+    '.owrro.o....',
+    '.owro.......',
+    '.owo........',
+    '.owo........',
+    '.owo........',
+    '..o.........',
+  ],
+});

@@ -6,3 +6,4 @@
 | his looks: the standing grids, his iron, the skins table, the walk off a standing frame | `ARM_BODY`, `ARM_PAL`, `ARM_SKINS`, `heroWalk` | `armatos bodies` |
 | every named hero's side run and held run off its own drawn side frame (legs scissored, body bobbed), and the front and back run for a look with `run: 'drawn'` | `HERO_STRIDE`, `heroRunSide`, `heroRunFront` (used by `champLook`, characters.js) | `armatos bodies` |
 | his greatsword's two grids and where the hands close on the slanted one | `ARM_SWORD`, `ARM_SWORD_DIAG`, `ARM_GRIP`, `ARM_SWORD_PAL` | `armatos greatsword` |
+| ARMATOS in the hero art registry: its looks and paint, the skins tab's glyph, the 12px emblem | `heroArt('armatos', ...)` (js/sprites/hero-art.js) | `armatos registry` |

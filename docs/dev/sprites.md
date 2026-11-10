@@ -128,11 +128,16 @@ some); never edit the grids.
 
 ## Hero looks
 
-Every hero is drawn only in its own looks. Its `CLASSES` row carries `skins` (`ARM_SKINS`,
-js/sprites/armatos.js, and one table per hero), and `champLook(cls, team, skinId)` (characters.js,
+Every hero is drawn only in its own looks. Its `CLASSES` row carries its `id`, which names its row
+in the **hero art registry** (`HERO_ART`, [js/sprites/hero-art.js](../../js/sprites/hero-art.js)):
+each hero's own sprite file ends with one `heroArt(id, { looks, pal, glyph, emblem })` call (its looks,
+e.g. `ARM_SKINS`, their paint, the skins tab's glyph and the 12 px emblem), every reader asks
+`heroArtOf(cls)` (player.js), and player.js refuses to boot when a row and its art do not pair up.
+`champLook(cls, team, skinId)` (characters.js,
+the `heroes` banner) bakes the chosen row's own grids `champLook(cls, team, skinId)` (characters.js,
 the `heroes` banner) bakes the chosen row's own grids (its standing frame per facing, the walk
 lifted off it by `heroWalk`, the roll from its doll by name through `motionSet`, lying down by
-`lie`) in the hero's paint (`skinPal`, e.g. `ARM_PAL`, then the row's own `pal` if it has one)
+`lie`) in the hero's paint (`pal`, e.g. `ARM_PAL`, then the row's own `pal` if it has one)
 over the team's coat (`teamPlayerPal` over `PPAL`). A `skinId` that names no row, or none, wears
 the free first row. The set is cached per (hero, team, look): ten players and a menu or two is
 all that ever asks. Every reader of a player's body goes through `classSet(p)` (player.js), which
@@ -143,7 +148,7 @@ side run was a pixel or two narrower and read as the hero shrinking when turning
 The run facing down and up is still the doll's, unless the look's row says `run: 'drawn'`: then
 `heroRunFront` lifts the drawn front and back the same way (IGNIA's two looks, AURA's, SALVIA's, LUCERNA's and BUCINA's two, whose shawl, mantle, coat, cape and hair
 the doll does not match). Which look a player wears is `heroSkinOf(p)` (player.js): the id in `p.skins` under the
-hero's `skinSlot`, or the free first row. LAST STANDARD (nasal helm, white beard, tabard) is his
+hero's `id`, or the free first row. LAST STANDARD (nasal helm, white beard, tabard) is his
 own; IRON OATH (closed helm with a gold cross, pauldrons, a cape) is bought on the skins screen.
 They are F and G off armatos-round4.png in the project files. His 48 px face is his own standing
 front at 3x (below).

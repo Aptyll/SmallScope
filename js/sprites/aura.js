@@ -260,3 +260,25 @@ SPRITES.weaponArt.starstaff = SPR.bake([
   '.oCCoo......', 'oCCcco.ooooo', 'occcCyoGgGgo', '.oooyo.ooooo',
   '............', '............', '............', '............',
 ], { '.': null, o: '#2e2440', C: '#e6f8ff', c: '#7cc4e8', y: '#f2cc6a', g: '#3a2c40', G: '#5c4868' });
+
+// ------------------------------------------------------------ aura registry
+// AURA in the hero art registry (heroArt, js/sprites/hero-art.js): the looks and
+// their paint, the skins tab's 8x8 glyph and the 12x12 emblem
+heroArt('aura', {
+  looks: AURA_SKINS, pal: AURA_PAL,
+  glyph: ['...w....', '...w....', '..www...', 'wwwwwww.', '..www...', '.w...w..', 'w.....w.', '........'],
+  emblem: [ // a four-pointed star, the light that falls
+    '.....o......',
+    '....oWo.....',
+    '....oWo.....',
+    '...obWbo....',
+    '.ooobWbooo..',
+    'oWWWWWWWWWo.',
+    '.ooobWbooo..',
+    '...obWbo....',
+    '....oWo.....',
+    '....oWo.....',
+    '.....o......',
+    '............',
+  ],
+});

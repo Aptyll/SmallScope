@@ -372,3 +372,25 @@ SPRITES.weaponArt.spear = SPR.bake([
   '.ooo........', 'oWeeoooooooo', 'oeEEnGGgGGgo', '.oooofoooooo',
   '....oFo.....', '.....o......', '............', '............',
 ], Object.assign({ '.': null }, VARRO_SPEAR_PAL));
+
+// ------------------------------------------------------------ varro registry
+// VARRO in the hero art registry (heroArt, js/sprites/hero-art.js): the looks and
+// their paint, the skins tab's 8x8 glyph and the 12x12 emblem
+heroArt('varro', {
+  looks: VARRO_SKINS, pal: VARRO_PAL,
+  glyph: ['w....w..', 'ww..ww..', 'wwwwww..', 'w.ww.w..', 'wwwwww..', '.wwww...', '..ww....', '........'],
+  emblem: [ // a wolf's paw print
+    '...oo.oo....',
+    '..oWWoWWo...',
+    '.ooWWoWWoo..',
+    'oWWoo.ooWWo.',
+    'oWWoooooWWo.',
+    '.oooWWWooo..',
+    '..oWWWWWo...',
+    '.oWWWWWWWo..',
+    '.oWWWWWWWo..',
+    '..oWWoWWo...',
+    '...oo.oo....',
+    '............',
+  ],
+});
