@@ -162,6 +162,7 @@ function paintGroundTile(g, tx, ty) {
       // last, over everything lying on the ground: the shade the scenery
       // standing around this tile throws across it (the `cast shadows` banner)
       paintCastShade(g, tx, ty, px, py);
+      if (!shadeBulk) paintForestFloor(g, tx, ty, px, py); // (a chunk bake lays it after its shade: shadeChunk)
 }
 
 // ---- the road's pixels ----------------------------------------------------
@@ -1112,13 +1113,14 @@ const whole = (cv, x, y) => [cv, 0, cv.width, cv.height, x, y];
 const CASTERS = {
   // a pine's code is its standing frame AND its nudge (treeNudgeX/Y), so a
   // shade is cut once per pair and lands under the art where it was nudged;
-  // every palette row has the same silhouette, so the art is row 0's
+  // every palette row of a height has the same silhouette, so the art is the
+  // height's first row (treeSize)
   tree:     { code: (o, tx, ty) => 1000 + treeRestFrame(tx, ty) + SPRITES.treeAtlas.cols *
-                ((treeNudgeX(tx, ty) + TREE_NUDGE_X) * (TREE_NUDGE_Y * 2 + 1) + treeNudgeY(tx, ty) + TREE_NUDGE_Y),
+                (((treeNudgeX(tx, ty) + TREE_NUDGE_X) * (TREE_NUDGE_Y * 2 + 1) + treeNudgeY(tx, ty) + TREE_NUDGE_Y) * 3 + treeSize(tx, ty)),
               art: (c) => {
-                const A = SPRITES.treeAtlas, f = (c - 1000) % A.cols, n = Math.floor((c - 1000) / A.cols);
+                const A = SPRITES.treeAtlas, f = (c - 1000) % A.cols, m = Math.floor((c - 1000) / A.cols), size = m % 3, n = (m - size) / 3;
                 const nx = Math.floor(n / (TREE_NUDGE_Y * 2 + 1)) - TREE_NUDGE_X, ny = n % (TREE_NUDGE_Y * 2 + 1) - TREE_NUDGE_Y;
-                return [A, f * A.fw, A.fw, A.fh, -5 + nx, -21 + ny];
+                return [A, f * A.fw, A.fw, A.fh, -5 + nx, -21 + ny, size * A.pals * A.fh]; // the height's own rows of the atlas
               } },
   stump:    { code: () => 121, art: () => whole(SPRITES.stump, 0, 4) },
   den:      { code: () => 122, art: () => whole(SPRITES.den, 0, -4) },
@@ -1129,9 +1131,9 @@ const CASTERS = {
 // a frame's shade: an opaque silhouette thrown down-right in `col`, its top
 // row on the art's foot row (cv.oy rows below the art's top); copied at
 // `alpha` when the caller wants it translucent
-function shadeMask(src, sx, sw, sh, col, alpha) {
-  const px = SPR.pixelsOf(src); // the source's kept pixels (the pine atlas holds 48 frames)
-  const op = (i, j) => px[(j * src.width + sx + i) * 4 + 3] > 100;
+function shadeMask(src, sx, sw, sh, col, alpha, sy = 0) {
+  const px = SPR.pixelsOf(src); // the source's kept pixels (the pine atlas holds 48 frames a row)
+  const op = (i, j) => px[((sy + j) * src.width + sx + i) * 4 + 3] > 100;
   let bot = -1;
   for (let j = 0; j < sh; j++) for (let i = 0; i < sw; i++) if (op(i, j)) bot = j;
   if (bot < 0) return null;
@@ -1157,8 +1159,8 @@ const shadeByCode = new Map();
 function shadeFor(C, c) {
   let m = shadeByCode.get(c);
   if (m !== undefined) return m;
-  const [src, sx, sw, sh, ax, ay] = C.art(c);
-  m = shadeMask(src, sx, sw, sh, SHADE_TINT, 1);
+  const [src, sx, sw, sh, ax, ay, sy] = C.art(c);
+  m = shadeMask(src, sx, sw, sh, SHADE_TINT, 1, sy);
   if (m) {
     m.ax = ax; m.ay = ay + m.oy;
     if (Math.floor(ax / TILE) < CAST_REACH[0] || Math.floor(m.ay / TILE) < CAST_REACH[1] ||
@@ -1213,11 +1215,30 @@ function shadeChunk(g, tx0, ty0, tx1, ty1) {
       c.drawImage(m, cx * TILE + m.ax - x0, cy * TILE + m.ay - y0);
     }
   }
-  if (!any) return;
-  g.save();
-  g.globalCompositeOperation = 'multiply'; g.globalAlpha = SHADE_A;
-  g.drawImage(shadeChunkCv, x0, y0);
-  g.restore();
+  if (any) {
+    g.save();
+    g.globalCompositeOperation = 'multiply'; g.globalAlpha = SHADE_A;
+    g.drawImage(shadeChunkCv, x0, y0);
+    g.restore();
+  }
+  for (let ty = ty0; ty < ty1; ty++) for (let tx = tx0; tx < tx1; tx++) paintForestFloor(g, tx, ty, tx * TILE, ty * TILE);
+}
+// The forest floor: no light reaches the ground inside a stand, so the gaps
+// between its crowns are the dark under the boughs, never lit snow - a wall
+// of pines reads as one mass. A pine's tile wears it when pines stand west,
+// east and north of it; its bottom rows only when one stands south too (the
+// front row keeps its snow at the foot). Laid over the cast shade, so a bake
+// and a repaint agree; a felled neighbour is a changed caster, whose reach
+// (CAST_REACH) repaints every tile that read it.
+const FLOOR_COL = '#27414a', FLOOR_FLECK = '#1f363f', FLOOR_ROWS = 11;
+function paintForestFloor(g, tx, ty, px, py) {
+  if (!inWorld(tx, ty)) return;
+  const o = objects[idx(tx, ty)];
+  if (!o || o.type !== 'tree' || !woody(tx - 1, ty) || !woody(tx + 1, ty) || !woody(tx, ty - 1)) return;
+  g.fillStyle = FLOOR_COL;
+  g.fillRect(px, py, TILE, woody(tx, ty + 1) ? TILE : FLOOR_ROWS);
+  g.fillStyle = FLOOR_FLECK;
+  for (let i = 0; i < 3; i++) g.fillRect(px + Math.floor(hash2(tx * 41 + i, ty * 43 + 5) * 13), py + Math.floor(hash2(tx * 47 + 9, ty * 53 + i) * 10), 3, 1);
 }
 let castAt = null; // per tile: the caster code its reach was last painted with
 function noteCasts() {
@@ -1296,11 +1317,11 @@ function treeLean(tx, ty, sway) {
 // The ROW is a variant (B, C or D of docs/media/concepts/tree-filters-2.png,
 // a third of the forest each off the tile's hash) and a TONE for how deep in
 // the forest the tree stands: 0 lighter on the edge (an open tile among its 8
-// neighbours), 2 darker deep inside (every tile two rings out is forest too),
-// 1 between. It is read live, so felling a pine brightens the ones it opens.
+// neighbours), 2 deep inside (every tile two rings out is forest too), 1
+// between, 3 the heart, its snow in shade (forest three tiles each way). It is read live, so felling a pine brightens the ones it opens.
 // A stand is anything woody - a dead snag walls a forest in like a pine - and
 // the world's border counts as forest.
-const TREE_TONES = 3;
+const TREE_TONES = 4;
 function woody(tx, ty) {
   if (!inWorld(tx, ty)) return true;
   const o = objects[idx(tx, ty)];
@@ -1310,19 +1331,30 @@ function treeTone(tx, ty) {
   for (let y = ty - 1; y <= ty + 1; y++) for (let x = tx - 1; x <= tx + 1; x++) if (!woody(x, y)) return 0;
   for (let x = tx - 2; x <= tx + 2; x++) if (!woody(x, ty - 2) || !woody(x, ty + 2)) return 1;
   for (let y = ty - 1; y <= ty + 1; y++) if (!woody(tx - 2, y) || !woody(tx + 2, y)) return 1;
-  return 2;
+  // the heart: three tiles of forest each way along the tile's row and column
+  if (!woody(tx - 3, ty) || !woody(tx + 3, ty) || !woody(tx, ty - 3) || !woody(tx, ty + 3)) return 2;
+  return 3;
+}
+// Which of the pine's three heights a tile wears (TREE_CUTS, js/sprites/terrain.js):
+// 0 the drawn tree, 1 and 2 shorter. Half of it is a slow noise, so tall and
+// short pines stand in groves, and half the tile's own hash, so no grove is
+// level. Off the tile alone - a felled neighbour never changes a tree's height.
+const TREE_GROVE = 5; // tiles across a grove of like heights
+function treeSize(tx, ty) {
+  const v = vnoise(tx / TREE_GROVE + 31.5, ty / TREE_GROVE + 7.5) * 0.55 + hash2(tx * 23 + 7, ty * 29 + 3) * 0.45;
+  return v < 0.45 ? 0 : v < 0.62 ? 1 : 2;
 }
 // the cell in SPRITES.treeAtlas: column (treeFrame's lean) + palette row
 function treeCell(tx, ty, col) {
   const v = Math.floor(hash2(tx * 5 + 3, ty * 7 + 1) * 3);
-  return col + (v * TREE_TONES + treeTone(tx, ty)) * SPRITES.treeAtlas.cols;
+  return col + (treeSize(tx, ty) * SPRITES.treeAtlas.pals + v * TREE_TONES + treeTone(tx, ty)) * SPRITES.treeAtlas.cols;
 }
 // The nudge that breaks the grid: up to TREE_NUDGE_X px either side of the
 // tile's centre line and TREE_NUDGE_Y up or down. Only the art moves - the
 // tree's tile, its collision and its chop reach stay where they are - so the
 // sprite, its cast shade (CASTERS.tree), the work-target rim and the hit
 // flash all read it from here.
-const TREE_NUDGE_X = 2, TREE_NUDGE_Y = 1;
+const TREE_NUDGE_X = 3, TREE_NUDGE_Y = 2;
 function treeNudgeX(tx, ty) { return Math.floor(hash2(tx * 11 + 5, ty * 13 + 9) * (TREE_NUDGE_X * 2 + 1)) - TREE_NUDGE_X; }
 function treeNudgeY(tx, ty) { return Math.floor(hash2(tx * 17 + 2, ty * 19 + 4) * (TREE_NUDGE_Y * 2 + 1)) - TREE_NUDGE_Y; }
 

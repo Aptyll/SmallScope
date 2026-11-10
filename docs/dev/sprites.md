@@ -499,19 +499,25 @@ Every frame being the same tree, each atlas row holds **forty-eight**: the 24 ag
 the tile's `hash2` sending half the forest into them. `TPAL` above it stays: it still dresses the
 `stump` a felled pine leaves.
 
-**No pine draws in `TSPAL` as is: it is the source of nine palettes** (`treePals`), one atlas row
-each (row = variant × 3 + tone), filtered in OKLCH at bake time rather than drawn. The drawn pine
+**No pine draws in `TSPAL` as is: it is the source of twelve palettes** (`treePals`), one atlas row
+each for each height (row = size × 12 + variant × 4 + tone), filtered in OKLCH at bake time rather than drawn. The drawn pine
 ran from a near-black outline to near-white snow, which read as a foreground object; the three
 **variants** Noah picked from `docs/media/concepts/tree-filters-2.png` lower that contrast and keep
 the colour, because a desaturated pine turns to mud under the night grade (round 1,
 `tree-filters-1.png`, is the grey version that was turned down). **B** gives the outline a dark
 muted green, lifts the needle darks to an L floor of 0.40 and brings the snow down to a soft
 blue-grey band; **C** adds a hue shift by value (shadows toward teal, lights toward yellow-green);
-**D** takes C to 80% colour and mutes the trunk. Each comes in three **tones** by forest depth
-(`TREE_TONES`, a needle L shift): the deep is the filtered look itself, the ring inside the edge
-+0.035, the edge +0.07 — nine pines in ten stand deep, so darkening the deep instead would darken
+**D** takes C to 80% colour and mutes the trunk. Each comes in four **tones** by forest depth
+(`TREE_TONES`, a needle and a snow L shift): the deep is the filtered look itself, the ring inside the edge
++0.035, the edge +0.07, and the **heart** (forest three tiles each way) drops its snow into shade so a wide wall is one dark mass with a lit rim — nine pines in ten stand deep, so darkening the deep instead would darken
 the whole forest. Which row a tree wears is decided on its tile at draw time
 ([rendering.md](rendering/render-pass-order.md)). `SPRITES.tree` is variant B's deep row.
+
+**The pine stands in three heights** (`TREE_CUTS`/`treeSizes`): the drawn tree, one without its
+middle tier of boughs (30 rows) and one without its bottom tier (26). Each is cut from the tree
+standing straight, set on the cell's floor and leant again by the same cantilever, so every
+height shares the 27×37 cell and the draw offset. Which height a tile wears is `treeSize`
+(js/draw/ground.js): half a slow noise, so heights stand in groves, half the tile's hash.
 
 Which frame a tree is wearing is decided by the
 wind, not here - [rendering.md](rendering/drawing-a-thousand-of-something.md#the-wind-field).
