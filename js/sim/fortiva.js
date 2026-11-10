@@ -22,21 +22,25 @@ const SEVER_HALF = 1.2;        // rad either side of the aim (a ~140 degree arc)
 const SEVER_EDGE = 26;         // px out from her where the edge begins
 const SEVER_EDGE_MUL = 1.5;    // the edge's blow
 const SEVER_HEAL = 6, SEVER_HEAL_HP = 0.04; // heal per hero the edge catches: flat + share of her most health
+const SEVER_FX_LIFE = 0.4;     // s its cut shows (drawn: AB_FX_LOOK.sever, js/draw/fortiva.js)
 const SEVER_HEAL_N = 3;        // heroes that count toward it
 // W DEFIANT HEART: a shield; when it breaks or runs out, the shockwave pays back what it took
 const DEFY_T = 2.5;            // s the shield is held (its size is the row's `rank`)
 const DEFY_R = 40;             // px of shockwave
+const DEFY_FX_LIFE = 0.5;      // s its shards fly
 const DEFY_PAY = 0.8;          // share of what the shield absorbed added to the wave
 // E BREAK THE YOKE: a lunge, then the ground struck; a hero caught gives back the cooldown
 const YOKE_SPD = 300;
 const YOKE_T = 0.15;           // s of lunge (~45 px)
 const YOKE_R = 28;             // px of the strike at its end
+const YOKE_FX_LIFE = 0.5;      // s its cracks show
 const YOKE_REFUND = 0.45;      // share of the cooldown a hero hit gives back
 // R NO KNEELING: the leap onto a spot, the sword brought down; after, harder to stop and hitting harder
 const NOKNEEL_RANGE = 110;     // px the leap may reach
 const NOKNEEL_SPD = 280;       // px/s through the air
 const NOKNEEL_R = 40;          // px of the impact
 const NOKNEEL_UP_R = 22;       // px about the heart of it that throws bodies up...
+const NOKNEEL_FX_LIFE = 0.7;   // s its crater shows
 const NOKNEEL_T = 4;           // s of the after
 const NOKNEEL_TEN = 0.5;       // tenacity in the after
 const NOKNEEL_AD = 8, NOKNEEL_AD_LV = 1.5; // attack damage in the after: flat + per level
@@ -51,7 +55,7 @@ const FORT_AB = [
     tip: 'WIDE SWING. THE EDGE HEALS YOU',
     blurb: 'A WIDE SWING. THE OUTER EDGE HITS HARDER, AND HEALS YOU FOR EVERY HERO IT CATCHES.',
     use: (p) => fortSever(p),
-    tele: (p, px, py, a, col, closing) => drawSeverTele(px, py, a, col, closing),
+    tele: (p, px, py, a, col, closing) => drawSeverTele(p, px, py, a, closing), // the sword swung back, a chain round its edge (js/draw/fortiva.js)
     pose: (p, prog) => ({ dx: p.dir === 'left' ? 1 : p.dir === 'right' ? -1 : 0, dy: prog < 0.7 ? 0 : 1, rot: 0 }), // wound back, then through
     icon: FORT_ICON32.sever, mark: 'heal',
     bot: (p, foe, d) => d > SEVER_EDGE - 8 && d < SEVER_R - 2,
@@ -73,7 +77,7 @@ const FORT_AB = [
     tip: 'LUNGE AND SLOW. A HERO HIT CUTS THE WAIT',
     blurb: 'LUNGE AND STRIKE THE GROUND. SLOWS ALL IT HITS. A HERO HIT GIVES BACK MUCH OF THE WAIT.',
     use: (p) => fortYoke(p),
-    tele: (p, px, py, a, col, closing, now, ex, ey) => drawYokeTele(p, a, col, closing, now, ex, ey),
+    tele: (p, px, py, a, col, closing, now, ex, ey) => drawYokeTele(p, a, closing, ex, ey), // the point lowered where she strikes
     pose: (p, prog) => ({ dx: 0, dy: prog < 0.5 ? 1 : 0, rot: 0.12 * (p.dir === 'left' ? -1 : 1) }), // low, coiled
     icon: FORT_ICON32.yoke, mark: 'slow',
     bot: (p, foe, d, clear) => clear && d > 18 && d < YOKE_SPD * YOKE_T + YOKE_R - 10,
@@ -84,7 +88,7 @@ const FORT_AB = [
     tip: 'LEAP IN AND KNOCK UP',
     blurb: 'LEAP AND BRING THE SWORD DOWN. THE HEART OF THE BLOW THROWS THEM UP. AFTER, YOU ARE HARD TO STOP AND HIT HARDER.',
     use: (p) => fortNoKneel(p),
-    tele: (p, px, py, a, col, closing, now, ex, ey) => drawNoKneelTele(p, col, closing, ex, ey),
+    tele: (p, px, py, a, col, closing, now, ex, ey) => drawNoKneelTele(p, closing, ex, ey), // her shadow where she comes down
     pose: (p, prog) => ({ dx: 0, dy: Math.round(2 * prog), rot: 0 }), // the crouch before the jump
     icon: FORT_ICON32.nokneel, mark: 'up',
     bot: (p, foe, d) => foe instanceof Player && d > 30 && d < NOKNEEL_RANGE && (foe.hp < foe.maxHp * 0.6 || p.resolve >= UNB_HIGH),
@@ -146,7 +150,7 @@ function fortSever(p) {
     healPlayer(p, Math.min(heroes, SEVER_HEAL_N) * (SEVER_HEAL + p.maxHp * SEVER_HEAL_HP));
     burst(p.x, p.y - 10, '#9fd6a0', 8, 35, 0.45, true);
   }
-  abFx.push({ kind: 'wedge', x: p.x, y: p.y - 2, a, r: SEVER_R, half: SEVER_HALF, t: 0, col: '#f4f7ff' });
+  abFx.push({ kind: 'wedge', x: p.x, y: p.y - 2, a, r: SEVER_R, half: SEVER_HALF, t: 0, col: '#f4f7ff', fx: 'sever', life: SEVER_FX_LIFE });
   p.slashT = SLASH_T; p.slashA = a; p.slashHalf = SEVER_HALF; // the blade swept through the arc in her hands
   sfxAt('swing', p.x, p.y);
 }
@@ -174,7 +178,7 @@ function defyRelease(p) {
   }
   for (const s of structsNear(p, p.x, p.y, DEFY_R)) hurtStruct(s, dmg, p);
   if (PRACTICE) abHitDummies(p.x, p.y, DEFY_R, dmg);
-  abFx.push({ kind: 'ring', x: p.x, y: p.y, r: DEFY_R, t: 0, col: took > 0 ? '#f2cc6a' : '#cfd8e8' });
+  abFx.push({ kind: 'ring', x: p.x, y: p.y, r: DEFY_R, t: 0, col: took > 0 ? '#f2cc6a' : '#cfd8e8', fx: 'defy', life: DEFY_FX_LIFE });
   sfxAt('shieldBreak', p.x, p.y);
 }
 
@@ -213,7 +217,7 @@ function yokeStrike(p) {
   if (PRACTICE) abHitDummies(cx, cy, YOKE_R, dmg);
   const i = abKeyOf(p, 'yoke');
   if (hero && i >= 0) { p.abCd[i] *= 1 - YOKE_REFUND; burst(p.x, p.y - 12, '#f2cc6a', 6, 35, 0.4, true); }
-  abFx.push({ kind: 'ring', x: cx, y: cy, r: YOKE_R, t: 0, col: '#f4f7ff' });
+  abFx.push({ kind: 'ring', x: cx, y: cy, r: YOKE_R, t: 0, col: '#f4f7ff', fx: 'yoke', life: YOKE_FX_LIFE });
   for (let s = -10; s <= 10; s += 5) burst(cx - p.rushNY * s, cy + 2 + p.rushNX * s, '#eef4fb', 2, 30, 0.35, true); // the crack across the line
   sfxAt('break_', cx, cy);
 }
@@ -256,8 +260,7 @@ function noKneelLand(p) {
   for (const s of structsNear(p, p.x, p.y, NOKNEEL_R)) hurtStruct(s, dmg, p);
   if (PRACTICE) abHitDummies(p.x, p.y, NOKNEEL_R, dmg);
   p.nkT = NOKNEEL_T;
-  abFx.push({ kind: 'ring', x: p.x, y: p.y, r: NOKNEEL_R, t: 0, col: '#f2cc6a' });
-  abFx.push({ kind: 'ring', x: p.x, y: p.y, r: NOKNEEL_UP_R, t: 0, col: '#f4f7ff' });
+  abFx.push({ kind: 'ring', x: p.x, y: p.y, r: NOKNEEL_R, t: 0, col: '#f2cc6a', fx: 'nokneel', life: NOKNEEL_FX_LIFE });
   for (let i = 0; i < 18; i++) { // the snow thrown off the impact
     const an = (i / 18) * Math.PI * 2;
     burst(p.x + Math.cos(an) * 10, p.y + 2 + Math.sin(an) * 6, i % 3 ? '#eef4fb' : '#cfd8e8', 1, 60, 0.4, true);

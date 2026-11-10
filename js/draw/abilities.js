@@ -195,9 +195,10 @@ function drawCracks(px, py, n, len, grow, seed, dark, lite) {
     const L = len * (0.6 + 0.4 * fxRoll(seed, k, 5)) * grow;
     for (let s = 0; s < L; s += 2) {
       t += (fxRoll(seed, k, 10 + s) - 0.5) * 0.9;
+      const mx = x + Math.cos(t), my = y + Math.sin(t); // the step's middle too: an unbroken split, not dots
       x += Math.cos(t) * 2; y += Math.sin(t) * 2;
-      ctx.fillStyle = dark; ctx.fillRect(Math.round(x), Math.round(y), 1, 1);
-      ctx.fillStyle = lite; ctx.fillRect(Math.round(x), Math.round(y) + 1, 1, 1);
+      ctx.fillStyle = lite; ctx.fillRect(Math.round(mx), Math.round(my) + 1, 1, 1); ctx.fillRect(Math.round(x), Math.round(y) + 1, 1, 1);
+      ctx.fillStyle = dark; ctx.fillRect(Math.round(mx), Math.round(my), 1, 1); ctx.fillRect(Math.round(x), Math.round(y), 1, 1);
       if (s > 6 && fxRoll(seed, k, 40 + s) < 0.12) { // a short branch off it
         const b = t + (fxRoll(seed, k, 60 + s) < 0.5 ? 0.9 : -0.9);
         ctx.fillStyle = dark; ctx.fillRect(Math.round(x + Math.cos(b) * 2), Math.round(y + Math.sin(b) * 2), 1, 1);
