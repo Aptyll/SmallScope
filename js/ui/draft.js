@@ -22,6 +22,7 @@
 // ends on the title, and its result is the class each player flies out with.
 const DRAFT_BAN_T = 15;        // s: the ban phase
 const DRAFT_PICK_T = 30;       // s: the blind pick, everyone at once (ends early once every seat has locked)
+const DRAFT_PICK_FIRST_T = 60; // s: ...and a FIRST MATCH's, time to read a hero or two (the brief, js/ui/select.js)
 const DRAFT_BAN_MANY = 15;     // heroes at which every seat bans one; under it each team bans one
 const DRAFT_KEEP = 3;          // heroes the bans always leave pickable
 const DRAFT_RANGED = 2;        // a bot's side wants about this many heroes at range
@@ -37,6 +38,7 @@ const DRAFT = {
   role: [],                    // per seat: its POSITIONS index (your side's; a rival's is -1 on a guest)
   fx: 0,                       // s: the flash as a phase turns
 };
+function draftPickT() { return NET.mode === 'guide' ? DRAFT_PICK_FIRST_T : DRAFT_PICK_T; }
 function draftOpen() { return DRAFT.phase === 'ban' || DRAFT.phase === 'pick'; }
 function draftHiding() { return draftOpen() || DRAFT.phase === 'wait'; }
 function heroRanged(h) { return !!CLASSES[h].attack.shot; }
@@ -176,7 +178,7 @@ function draftLeads() { DRAFT.lead = [draftTeamBans(0), draftTeamBans(1)]; }
 function draftPickPhase() {
   const D = DRAFT;
   if (D.phase === 'ban') { draftLeads(); D.banned = [...new Set(D.lead[0].concat(D.lead[1]))]; }
-  D.phase = 'pick'; D.t = DRAFT_PICK_T; D.fx = 0.5;
+  D.phase = 'pick'; D.t = draftPickT(); D.fx = 0.5;
   heroSearchClear();
   D.lock = players.map(() => -1);
   D.hover = players.map((p) => isHuman(p) && !D.banned.includes(D.cls0[p.id]) ? D.cls0[p.id] : -1); // a person starts on their own

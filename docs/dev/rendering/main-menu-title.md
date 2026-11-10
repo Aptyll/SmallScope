@@ -17,7 +17,7 @@ the logo and the words. Everything else lives in the `main menu` banner and on `
 - **Items** `menuItems()` (FIRST MATCH on top while `PROFILE.guided()` is false - a profile that has
   never seen a match to its result nor the coach through - then QUICKPLAY / RANKED / PRACTICE TOOL, and QUIT under them in the desktop build only —
   and nothing else; `menuActivate` dispatches on the word. FIRST MATCH opens
-  the party in its `guide` mode ([the coach](../gameplay/settings.md)). QUIT closes the app
+  the party in its `guide` mode and goes straight on to the hero pick (`partyFind`; the party screen is an ESC back) ([the coach](../gameplay/settings.md)). QUIT closes the app
   (`steamBridge.quit`, `win:quit` in desktop/main.js): the build opens fullscreen, and a browser tab has its own X. The first three open the
   [party lobby](../gameplay/settings.md) in that mode (`beginParty`): QUICKPLAY's and RANKED's FIND
   MATCH leads to the [lobby](../rendering.md#lobby)'s hero select, PRACTICE TOOL's START to the
