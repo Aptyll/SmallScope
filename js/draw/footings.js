@@ -12,7 +12,7 @@
 // down-right, under a pixel of snow lip, opening where it meets the lane.
 const FOOTINGS = {
   tower: { rx: 50, ry: 25, at: (o) => towerFoot(o), kerb: true },
-  barracks: { rx: 42, ry: 23, at: (o) => ({ x: (o.tx + structW(o) / 2) * TILE, y: (o.ty + structH(o)) * TILE - 8 }) },
+  barracks: { rx: 42, ry: 23, at: (o) => ({ x: (o.tx + structW(o) / 2) * TILE, y: (o.ty + structH(o)) * TILE - 8 }), kerb: true },
   roost: { rx: 88, ry: 76, kerb: true, over: true, kerbW: 6, block: 15 }, // round a roost's pad, wide of its stones, drawn over the paving (roostFootingOf)
   stall: { rx: 56, ry: 24, at: (o) => ({ x: (o.tx + OBJECTS.stall.w / 2) * TILE, y: (o.ty + 1) * TILE - 8 }) }, // its anchor is the front-left tile
 };
