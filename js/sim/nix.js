@@ -272,6 +272,7 @@ function nixWhiteout(p) {
   p.nixWhiteT = WHITEOUT_T;
   p.invuln = Math.max(p.invuln, WHITEOUT_T);
   p.nixStrikeOnce = !again;
+  abFx.push({ kind: 'ring', x: p.x, y: p.y, r: 16, t: 0, col: '#ffffff', fx: 'squall', life: WHITEOUT_T * 1.25 });
   burst(p.x, p.y - 6, '#ffffff', 26, 80, 0.6, true);
   burst(p.x, p.y, '#dfe8f4', 14, 50, 0.7, true);
   sfxAt('splash', p.x, p.y);
