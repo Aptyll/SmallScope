@@ -406,10 +406,10 @@ function drawArrows(ex, ey, now) {
     const back = own ? SHOT_STREAK[a.look] : ARROW_LEN; // where its body ends, behind the tip
     if (back && (a.flown || 0) > back + SHOT_STREAK_LEN) {
       // THE STREAK: a few px of the shot's own colour off its tail, brightest at the shot,
-      // one unbroken line that thins into its darker shade. Never dots, never left behind.
-      const vd = Math.hypot(a.vx, a.vy) || 1, nx = a.vx / vd, ny = a.vy / vd, col = a.col || '#c8a46a';
+      // one unbroken line ending in its side's colour. Never dots, never left behind.
+      const vd = Math.hypot(a.vx, a.vy) || 1, nx = a.vx / vd, ny = a.vy / vd, col = a.col || '#c8a46a', mark = TEAMS[skin(a.team)].mark;
       for (let s = SHOT_STREAK_LEN; s >= 1; s--) {
-        ctx.fillStyle = s * 2 <= SHOT_STREAK_LEN ? col : buffShade(col);
+        ctx.fillStyle = s * 2 <= SHOT_STREAK_LEN ? col : mark; // its far end in its side's colour: whose shot it is
         ctx.fillRect(Math.round(a.x - nx * (back + s) - ex), Math.round(a.y - ny * (back + s) - ey), 1, 1);
       }
     }

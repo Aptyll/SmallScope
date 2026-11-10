@@ -150,7 +150,7 @@ it, which is why the view cull uses the widened ±22 bound. The whole body is 16
 one 16×16 sprite cell, the scale everything else in the world is drawn at.
 
 Behind it, each shot draws a **short streak** (`drawArrows`, js/draw/passes.js): `SHOT_STREAK_LEN`
-px of the shot's own colour off its tail, one unbroken line that thins into its darker shade,
+px of the shot's own colour off its tail, one unbroken line whose far end is its side's colour,
 once the tail has cleared the bow (`a.flown`). A hero's own shot that flies bare names where its
 body ends in `SHOT_STREAK`; one with a tail of its own gets none. Nothing is left behind in the
 air. In the particle draw pass, a particle's

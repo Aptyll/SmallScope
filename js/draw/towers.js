@@ -56,8 +56,8 @@ function drawTowerFx(ex, ey, now) {
     const tg = o.tgt;
     // THE AIM: while it winds on a HERO, the gun's sight line, one unbroken thread in
     // its side's colour from the gun's nose toward their chest. It runs out as the
-    // string comes back and reaches them as the bolt is loosed, a glint riding its
-    // end; the last moment it burns pale. No line on the snow, no ring at the feet:
+    // string comes back and reaches them as the bolt is loosed, a glint on their
+    // chest all the while; the last moment it burns pale. No line on the snow, no ring at the feet:
     // the loose is coming down this line. (A bot is never warned.)
     if (tg instanceof Player && o.chg > 0.02 && !o.bolt && fogShown(tg, now)) {
       const hot = o.chg > TOWER_AIM_HOT;
@@ -66,10 +66,12 @@ function drawTowerFx(ex, ey, now) {
       const m = Math.round(n * Math.min(1, o.chg / TOWER_AIM_HOT));
       for (let i = 0; i <= m; i++) {
         const x = Math.round(x0 + dx * i / n - ex), y = Math.round(y0 + dy * i / n - ey);
-        ctx.fillStyle = TOWER_RIM; ctx.fillRect(x, y + 1, 1, 1);
+        ctx.fillStyle = TOWER_RIM; ctx.fillRect(x, y - 1, 1, 3); // dark above and below: it holds on stone as on snow
         ctx.fillStyle = hot ? TOWER_AIM_PALE : tm.mark; ctx.fillRect(x, y, 1, 1);
       }
-      const hx = Math.round(x0 + dx * m / n - ex), hy = Math.round(y0 + dy * m / n - ey); // the glint on its end
+      // the glint on the mark's chest from the first frame of the wind: they know at once,
+      // and the thread runs out from the gun to meet it
+      const hx = Math.round(tg.x - ex), hy = Math.round(tg.y - 6 - ey);
       ctx.fillStyle = TOWER_RIM; ctx.fillRect(hx - 2, hy - 1, 5, 3); ctx.fillRect(hx - 1, hy - 2, 3, 5);
       fxMote(hx, hy, '#ffffff', TOWER_AIM_PALE); // warm on either side: never a loose dot of a side's red
     }
