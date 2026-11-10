@@ -48,6 +48,18 @@ function heldBaked(cache, img, lay) {
   }
   return cache.get(img);
 }
+// true when an art, as drawn, leans left (its top left of its foot), read once off
+// its painted pixels, so every staff can be turned to lean the way its holder looks
+const heldLeans = new WeakMap();
+function heldLeansLeft(img) {
+  if (!heldLeans.has(img)) {
+    const d = img.getContext('2d').getImageData(0, 0, img.width, img.height).data;
+    let n = 0, sx = 0, sy = 0, sxy = 0;
+    for (let y = 0; y < img.height; y++) for (let x = 0; x < img.width; x++) if (d[(y * img.width + x) * 4 + 3]) { n++; sx += x; sy += y; sxy += x * y; }
+    heldLeans.set(img, n > 0 && sxy / n - (sx / n) * (sy / n) > 0);
+  }
+  return heldLeans.get(img);
+}
 function heldFlip(img) { return heldBaked(heldFlips, img, (g) => { g.scale(-1, 1); g.drawImage(img, -img.width, 0); }); }
 function heldDrop(img) { return heldBaked(heldDrops, img, (g) => { g.scale(1, -1); g.drawImage(img, 0, -img.height); }); }
 // THE CAST POSE: a key's cast, and the beat a shot leaves the staff, raise it
@@ -62,10 +74,13 @@ function heroStaff(p, px, py) {
   if (!s) return false;
   const busy = p.charging || staffCasting(p); // in use it stands in the leading hand
   let back = p.dir === 'left' || p.dir === 'up';
-  if (STAFF_HOLDS[!busy && s.hold || 'lead'].far) back = !back;
+  if (STAFF_HOLDS[!busy && s.hold || 'lead'].far && p.dir === 'down') back = !back; // side-on it is always out in front
+  // whichever hand holds it, it leans the way the face looks (THE GRIP RULE): the
+  // art is drawn leaning right, mirrored for a body facing left or away
   let img = s.art()[Math.floor(state.elapsed * 5) % 2];
-  if (back) img = heldFlip(img);
-  const gx = back ? img.width - 1 - s.grip[0] : s.grip[0];
+  const mirror = (p.dir === 'left' || p.dir === 'up') !== heldLeansLeft(img);
+  if (mirror) img = heldFlip(img);
+  const gx = mirror ? img.width - 1 - s.grip[0] : s.grip[0];
   const up = staffCasting(p), rc = heroReach(p) + (up ? STAFF_OUT : 0);
   const hx = back ? px + 2 - rc : px + 13 + rc, hy = py + 10 - (up ? STAFF_RAISE : p.charging ? 1 : 0); // a draw lifts it, a cast or a shot raises it
   ctx.drawImage(img, Math.round(hx - gx), Math.round(hy - s.grip[1]));
@@ -113,10 +128,13 @@ const HERO_CARRY = [];
 // (none is 'slant'):
 //   slant     up and out from the leading hand, at the ready
 //   far       the same in the other hand facing down
-//   shoulder  back over the shoulder, behind the head (an axe's head rides there)
-//   rest      the head down on the snow beside the foot, the haft up in the hand
+//   shoulder  over the shoulder (an axe's head rides there): behind the head facing
+//             down or up, forward over the shoulder side-on
+//   rest      the head down on the snow beside the foot, the haft up in the hand,
+//             facing down or up; side-on it is carried slanted
 // Every one is the row's own drawn slanted grid, mirrored left to right or top to
-// bottom; none rises past the head, where the health frame sits.
+// bottom; none rises past the head, where the health frame sits. Side-on every
+// one leans the way the face looks (THE GRIP RULE, heroFist).
 const BLADE_HOLDS = { slant: {}, far: { far: true }, shoulder: { shoulder: true }, rest: { rest: true } };
 // the carried blade in drawHeldTool's pass (`back`: behind the body); true when
 // this hero holds it its own way in this facing, drawn in this pass or the other
@@ -132,9 +150,11 @@ function heroCarry(p, px, py, back) {
     if (hold.shoulder) {
       if (back === up) return true; // behind the head; over the back of a body facing away
       const sx = lead ? px + 13 + rc : px + 2 - rc;
-      put(lead ? heldFlip(img) : img, !lead, sx, py + 9, b.grip[1]);
+      // side-on the haft leans the way the face looks, the head forward over the shoulder
+      const fwd = p.dir === 'right' || p.dir === 'left', m = fwd ? !lead : lead;
+      put(m ? heldFlip(img) : img, !m, sx, py + 9, b.grip[1]);
       heroFist(p, sx, py + 9, lead ? 1 : -1);
-    } else if (hold.rest) {
+    } else if (hold.rest && (p.dir === 'down' || p.dir === 'up')) { // side-on it is carried slanted like any haft
       if (!pass) return true;
       const sx = lead ? px + 13 + rc : px + 2 - rc;
       put(lead ? heldDrop(img) : heldFlip(heldDrop(img)), lead, sx, py + 9, img.height - 1 - b.grip[1]);
