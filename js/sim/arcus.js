@@ -31,7 +31,7 @@ const VOLLEY_RANGE = 220;       // px
 const VOLLEY_MORE = 0.4;        // a body's second and later arrow x this
 // W TWIN NOCK: for a while each basic arrow is loosed with a second beside it
 const TWIN_T = 5;               // s
-const TWIN_SIDE = 7;            // px the second flies beside the first
+const TWIN_SIDE = 7;            // px between the pair, which straddles the aim
 // E GATHER UP: every arrow of his standing in the snow flies back to where he
 // stands, through every rival between; one struck by three of them is slowed
 const GATHER_SPD = 520;         // px/s
@@ -129,8 +129,11 @@ function arcusStack(p) {
 function arcusShot(p, a) {
   a.hit = 'arcus';
   if (!(p.twinT > 0)) return;
-  const vd = Math.hypot(a.vx, a.vy) || 1, sx = -a.vy / vd * TWIN_SIDE, sy = a.vx / vd * TWIN_SIDE;
-  arrows.push(Object.assign({}, a, { x: a.x + sx, y: a.y + sy, ox: a.ox + sx, oy: a.oy + sy,
+  // the pair straddles the aim, half the gap each side, so both cross whatever
+  // the aim was on (a body's hit disc is ARROW_HIT_R across its middle)
+  const vd = Math.hypot(a.vx, a.vy) || 1, sx = -a.vy / vd * TWIN_SIDE / 2, sy = a.vx / vd * TWIN_SIDE / 2;
+  a.x -= sx; a.y -= sy; a.ox -= sx; a.oy -= sy;
+  arrows.push(Object.assign({}, a, { x: a.x + 2 * sx, y: a.y + 2 * sy, ox: a.ox + 2 * sx, oy: a.oy + 2 * sy,
     dmg: Math.round(a.dmg * abRk(p, 'twin', 'share')), basic: false, ab: 'twin' }));
 }
 // a basic arrow (or a twin) that hit a rival hero lands in the snow past them
