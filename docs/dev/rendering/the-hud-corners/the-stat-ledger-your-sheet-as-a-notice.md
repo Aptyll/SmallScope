@@ -45,3 +45,8 @@ prices a pre-match pick where every hero is level 1 and passes nothing (the kit 
 
 **Anything outside the seven lights nothing** — an item bonus to ice, the dodge, stealth,
 hunts, fells or `killHeal` moves no row.
+
+**The counter holds the sheet back** (`statHold`): the lane runs down the merchant's counter's right
+edge, so while the counter is open no stats plate is up. One that was comes down, a change made at the
+counter is owed (`statDue`, the seconds of news left), and the sheet flies in when the counter closes if
+that has not run out. The cue (`SFX.stat`) still sounds on the buy.

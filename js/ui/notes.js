@@ -96,7 +96,10 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
-    ['The pines round each jungle camp can no longer be chopped open either', '0.855'],
+    ['The pines round each jungle camp can no longer be chopped open either', '0.858'],
+    ['Zipline posts stand in drifted snow', '0.857'],
+    ['Your stat sheet waits for the counter to close instead of covering it', '0.856'],
+    ['Deep forest: old pines stand taller under snow, with a rare dead snag; the fallen pine carries a snow load you can see', '0.855'],
     ['HIEMS and AURA at 32 px: team colour into the shoulders from behind', '0.854'],
     ['Lignum swings the same single-bit axe he carries', '0.853'],
     ['The jungle\'s pine walls can no longer be chopped open', '0.852'],

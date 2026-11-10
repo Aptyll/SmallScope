@@ -35,7 +35,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.855';
+const PATCH_TXT = 'PATCH 0.858';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -51,7 +51,10 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
-  ['0.855', 'A JUNGLE CAMP\'S OWN PINES STAND TOO, SO NO WALL OF THE JUNGLE CAN BE CHOPPED OPEN.'],
+  ['0.858', 'A JUNGLE CAMP\'S OWN PINES STAND TOO, SO NO WALL OF THE JUNGLE CAN BE CHOPPED OPEN.'],
+  ['0.857', 'ZIPLINE POSTS STAND IN A DRIFT OF SNOW, AND THE ROOST\'S KERB ENDS ON DRESSED BLOCKS WHERE THE LANES LEAVE.'],
+  ['0.856', 'YOUR STAT SHEET WAITS UNTIL THE COUNTER CLOSES'],
+  ['0.855', 'THE DEEP FOREST HAS OLD PINES STANDING OVER THE REST AND A RARE DEAD SNAG, AND THE FALLEN PINE CARRIES ITS SNOW'],
   ['0.854', 'HIEMS AND AURA SHOW THEIR SIDE\'S COLOUR FROM BEHIND AT 32 PX.'],
   ['0.853', 'LIGNUM SWINGS THE SAME SINGLE-BIT AXE HE CARRIES, AND HIS WHOLE KIT IS DRAWN AT 32 PX BEHIND THE SWITCH.'],
   ['0.852', 'THE JUNGLE\'S PINE WALLS STAND: NO SWING, BOT, MERCHANT OR TIMBER CAN CUT A WAY THROUGH THEM.'],
