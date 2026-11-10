@@ -21,6 +21,12 @@
 // auto. A wave soldier's bar is short, so its bar is higher, or every
 // soldier swing in a lane fight would spark.
 const HIT_BIG = { P: 0.12, A: 0.2, R: 0.34 }; // share of max health one blow must take: players, beasts, soldiers
+// An ordinary blow on a hero or a beast (HIT_SMALL of its health, under HIT_BIG) gets the
+// small set: a little spark on the struck side for a beat and the body 1 px back along the
+// blow, no hit-stop and no snow. Soldiers get none: a lane fight would glitter.
+const HIT_SMALL = { P: 0.02, A: 0.05, R: 9 };
+const HIT_SMALL_T = 0.1;    // s a small hit shows: its spark for the first HIT_SPARK_T[0] + 0.02, its 1 px back for all of it
+let hitBig = false;         // whether the hit hitAge last answered for is a big one
 const HIT_STOP_T = 0.07;    // s the struck body is held where it was hit
 const HIT_CATCH_T = 0.06;   // s it then takes to slide to where it really is
 const HIT_STOP_MAX = 6;     // px the held drawing may lag the body
@@ -38,10 +44,13 @@ const hitCur = { nx: 0, ny: 0, seed: 0 }; // the hit being drawn (drawHitSpark/d
 // The sim's tick, plus on a client the time since the host's last word
 // landed, so the spark plays smoothly between 15 Hz snapshots
 function hitAge(u, now) {
-  if (u.merchant || !(u.maxHp > 0) || !(u.tallyLast >= HIT_BIG[u instanceof Player ? 'P' : u.bot ? 'R' : 'A'] * u.maxHp)) return -1;
+  if (u.merchant || !(u.maxHp > 0)) return -1;
+  const k = u instanceof Player ? 'P' : u.bot ? 'R' : 'A';
+  hitBig = u.tallyLast >= HIT_BIG[k] * u.maxHp;
+  if (!hitBig && !(u.tallyLast >= HIT_SMALL[k] * u.maxHp)) return -1;
   const sub = NET.role === 'client' && NET.easeAt ? Math.max(0, Math.min(SNAP_EVERY * TICK_DT, now - NET.easeAt / 1000)) : 0;
   const t = (state.tick - u.tallyTick) * TICK_DT + sub;
-  return t >= 0 && t <= HIT_PUFF_T ? t : -1;
+  return t >= 0 && t <= (hitBig ? HIT_PUFF_T : HIT_SMALL_T) ? t : -1;
 }
 function hitCurOf(u) {
   hitCur.nx = u.hitNx || 0; hitCur.ny = u.hitNy || 0; hitCur.seed = u.tallyTick | 0;
@@ -53,6 +62,7 @@ function hitCurOf(u) {
 // sliding back, plus the 1 px recoil along the blow
 function hitNudge(u, now) {
   const t = hitAge(u, now);
+  if (t >= 0 && !hitBig) { hitOff.x = Math.round(u.hitNx || 0); hitOff.y = Math.round(u.hitNy || 0); return hitOff; }
   if (t < 0 || (t >= HIT_STOP_T + HIT_CATCH_T && t >= HIT_RECOIL_T)) return HIT_NONE;
   let dx = 0, dy = 0;
   if (t < HIT_STOP_T + HIT_CATCH_T) {
@@ -75,7 +85,7 @@ function hitBodies(fn) {
 function drawHitPuffs(ex, ey, now) {
   hitBodies((u) => {
     const t = hitAge(u, now);
-    if (t < 0 || !hitShown(u, now) || u.alt || u.fallT > 0) return;
+    if (t < 0 || !hitBig || !hitShown(u, now) || u.alt || u.fallT > 0) return;
     const n = hitNudge(u, now);
     drawHitPuff(hitCurOf(u), Math.round(u.x + n.x - ex), Math.round(u.y + n.y + (u instanceof Player ? 3 : 2) - ey), t);
   });
@@ -83,9 +93,10 @@ function drawHitPuffs(ex, ey, now) {
 // the sparks, over the bodies (render(), after the particles)
 function drawHitFx(ex, ey, now) {
   hitBodies((u) => {
-    const t = hitAge(u, now);
+    const t = hitAge(u, now), big = hitBig;
     if (t < 0 || t >= HIT_SPARK_T[2] || !hitShown(u, now)) return;
     const n = hitNudge(u, now), h = hitCurOf(u);
+    if (!big) { if (t < HIT_SPARK_T[0] + 0.02) drawHitTick(Math.round(u.x + n.x - h.nx * 6 - ex), Math.round(u.y + n.y - (u.alt || 0) - 6 - h.ny * 2 - ey)); return; }
     drawHitSpark(h, Math.round(u.x + n.x - h.nx * 6 - ex), Math.round(u.y + n.y - (u.alt || 0) - 6 - h.ny * 2 - ey), t);
   });
 }
@@ -103,6 +114,12 @@ function hitAngle(h, i) {
   const j = (hash2(h.seed, i) - 0.5) * 0.4;
   if (!h.nx && !h.ny) return -Math.PI / 2 + i * 2.094 + j;
   return Math.atan2(-h.ny, -h.nx) + (i - 1) * 0.6 + j;
+}
+// a small hit's spark: a white heart with one-pixel arms and pale tips, rimmed
+function drawHitTick(cx, cy) {
+  const pts = [[cx, cy, HIT_WHITE]];
+  for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) pts.push([cx + dx, cy + dy, HIT_WHITE], [cx + dx * 2, cy + dy * 2, HIT_PALE]);
+  hitInked(pts);
 }
 function drawHitSpark(h, cx, cy, t) {
   const pts = [];
