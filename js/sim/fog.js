@@ -59,7 +59,10 @@ function sightSources(team, out) {
   }
   const e = state.drop && state.drop.eagles[team];
   if (e && e.state === 'down') out.push(sightEye(e.x, e.y, FOG_PERCH, false));
-  for (const z of zips) if (z && z.team === team) for (const q of zipEyes(z)) out.push(sightEye(q.x, q.y, FOG_ZIP, false));
+  for (const z of zips) if (z && z.team === team) {
+    let was = null; // each cable eye names the one after it (`next`), so the drawn fog can join them into a band (js/draw/fog.js)
+    for (const q of zipEyes(z)) { const s = sightEye(q.x, q.y, FOG_ZIP, false); if (was) was.next = s; out.push(was = s); }
+  }
   return out;
 }
 // how far a hero sees: FOG_HERO, times any hero's own (HERO_SIGHT, js/sim/heroes.js: LUCERNA's
