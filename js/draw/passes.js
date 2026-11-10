@@ -85,7 +85,7 @@ function drawFlatPass(ox, oy, ex, ey, tx0, ty0, tx1, ty1, now) {
       if (!o) continue;
       const px = tx * TILE - ox, py = ty * TILE - oy;
       // +4 - any lower and the canopy of a tree on the tile below buries it
-      if (o.type === 'stump') ctx.drawImage(SPRITES.stump, px, py + 4);
+      if (o.type === 'stump') { const L = stumpLook(tx, ty); ctx.drawImage(SPRITES.stumps[L.v], px + L.dx, py + 4 + L.dy); }
     }
   }
   drawRecallGround(ex, ey); // each roost's healing ring and the recall's closing on the feet (js/draw/recall.js)
