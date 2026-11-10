@@ -1496,7 +1496,7 @@ function payTakedown(p, killer, foes, worth, bounty) {
 // side hears every call, the way League's announcer speaks to the whole match.
 // Practice is never a match: it calls nothing.
 //
-// One call per kill, the biggest it earns: FIRST BLOOD (the match's first),
+// One call per kill, the biggest it earns: FIRST STRIKE (the match's first),
 // else a MULTI-kill of 2..5 (the run die() keeps, MULTI_T apart), else a
 // SHUTDOWN (the body wore a bounty). Every player kill leaves a row on the
 // feed whether it earned a call or not. An ACE follows when that kill left

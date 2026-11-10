@@ -20,7 +20,7 @@ function onevoneTowers(team) { let n = 0; for (const o of structures) if (o.type
 // why side `team` has lost the duel, or null while it has not
 function onevoneLost(team) {
   const side = players.filter((p) => p.active && p.team === team);
-  if (side.some((p) => p.deaths > 0)) return 'FIRST BLOOD';
+  if (side.some((p) => p.deaths > 0)) return 'FIRST STRIKE';
   if (players.some((q) => q.active && q.team !== team && q.farm >= ONEVONE_FARM)) return ONEVONE_FARM + ' SOLDIERS';
   if (onevoneTowers(team) < state.onevone.towers[team]) return 'FIRST TOWER';
   return null;
