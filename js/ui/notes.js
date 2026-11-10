@@ -73,11 +73,11 @@ function drawLinkArrow(x, y, col) {
 // reads it, the way PATCH_NOTES are. It folds like the notes (NOTES_GROUPS
 // below), every section open at first.
 const ROADMAP = [
-  ['BEFORE THE PLAYTEST', [
-    [0, 'LAG-FREE MULTIPLAYER TEST: A NEW STEAM BUILD, TWO PCS, TWO STEAM ACCOUNTS, ONE WHOLE MATCH'],
-  ]],
   ['MULTIPLAYER', [
     [0, 'A PLAYER JOINING MID-MATCH NO LONGER FREEZES THE HOST FOR HALF A SECOND'],
+  ]],
+  ['AFTER LAUNCH', [
+    [0, 'SOFTFALL IN GERMAN, RUSSIAN, CHINESE (SIMPLIFIED), PORTUGUESE, FRENCH, JAPANESE AND SPANISH'],
   ]],
 ];
 
