@@ -138,7 +138,7 @@ function towerLandOk(x, y) {
 // footprint of snow is near does one take road tiles (never ice, water or a
 // ford). Null if none will stand.
 const TOWER_SEEK = 6;   // tiles from its pylon a tower's footprint is looked for
-const TOWER_CLEAR = 1;  // tiles round a tower (one more in front) the lane's pines give way
+const TOWER_CLEAR = 2;  // tiles round a tower (one more in front) the pines give way, so it stands in its own small clearing with its footing whole
 function towerStand(team, at) {
   const tx0 = Math.floor(at.x / TILE), ty0 = Math.floor((at.y + 4) / TILE);
   const w = structW('tower'), h = structH('tower'), offs = [];
@@ -159,12 +159,23 @@ function towerStand(team, at) {
     // front, so no pine stands over the tower's face
     const pq = objects[idx(tx0, ty0)];
     if (inWorld(tx0, ty0) && pq && pq.type === 'pylon') objects[idx(tx0, ty0)] = null;
-    for (let y = ay - TOWER_CLEAR; y < ay + h + TOWER_CLEAR + 1; y++) for (let x = ax - TOWER_CLEAR; x < ax + w + TOWER_CLEAR; x++) {
-      if (inWorld(x, y) && objects[idx(x, y)] && laneFells(objects[idx(x, y)])) objects[idx(x, y)] = null;
+    const o = createStruct(ax, ay, 'tower', { id: -1, team }, false);
+    for (let y = ay - TOWER_CLEAR; y <= ay + h + TOWER_CLEAR; y++) for (let x = ax - TOWER_CLEAR; x < ax + w + TOWER_CLEAR; x++) {
+      if (towerKeeps(x, y) && objects[idx(x, y)] && laneFells(objects[idx(x, y)])) objects[idx(x, y)] = null;
     }
-    return createStruct(ax, ay, 'tower', { id: -1, team }, false);
+    return o;
   }
   return null;
+}
+// whether a tile lies in a tower's clearing: TOWER_CLEAR round its footprint,
+// one more in front. The woods planted after the towers stand (layJungle) keep off it too
+function towerKeeps(tx, ty) {
+  if (!inWorld(tx, ty)) return false;
+  for (const o of structures) {
+    if (o.type !== 'tower') continue;
+    if (tx >= o.tx - TOWER_CLEAR && tx < o.tx + structW(o) + TOWER_CLEAR && ty >= o.ty - TOWER_CLEAR && ty <= o.ty + structH(o) + TOWER_CLEAR) return true;
+  }
+  return false;
 }
 // THE CUT: each cable, from its bird to the furthest standing tower on it,
 // or none. Asked every step by the sim (updateStructures), on every

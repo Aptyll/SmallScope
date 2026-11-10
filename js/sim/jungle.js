@@ -118,7 +118,7 @@ function layJungle() {
     const o = objects[i];
     if (o && JUNGLE_FELLS[o.type]) objects[i] = null;
     if (objects[i] || ground[i] !== 0 || open(tx, ty)) continue;
-    if (baseAt(tx, ty, BASE_KEEP) >= 0 || cisternTouches(tx, ty)) continue;
+    if (baseAt(tx, ty, BASE_KEEP) >= 0 || cisternTouches(tx, ty) || towerKeeps(tx, ty)) continue;
     placeObj(tx, ty, 'tree', { hp: TREE_HP, rare: treeRare(tx, ty) });
   }
   jungleMarks();
