@@ -47,15 +47,17 @@ function drawHiemsGround(ex, ey, now) {
     const px = Math.round(g.x - ex), py = Math.round(g.y - ey);
     if (px < -GLAZE_R - 4 || py < -GLAZE_R - 4 || px > WV_W + GLAZE_R + 4 || py > WV_H + GLAZE_R + 4) continue;
     const a = g.t < g.life ? 1 : Math.max(0, 1 - (g.t - g.life) / GLAZE_FADE);
-    const ry = GLAZE_R; // a circle on the ground, as every ring is (drawRing) and as the rule reads it
-    // the glaze: a blue rim, the clear ice, shine streaks that slide across it
-    ctx.globalAlpha = 0.75 * a; hiDisc(px, py, GLAZE_R, ry, HI_DEEP);
-    ctx.globalAlpha = 0.7 * a; hiDisc(px, py, GLAZE_R - 2, ry - 1, HI_MID);
-    ctx.globalAlpha = 0.85 * a; ctx.fillStyle = HI_WHITE;
+    // the glaze: a sheet of clear ice with a broken edge, its lip a shade deeper on
+    // the near side, and shine streaks that slide across it
+    const seed = (Math.round(g.x) * 7 + Math.round(g.y) * 13) | 0, ry = GLAZE_R;
+    ctx.globalAlpha = 0.6 * a; fxPatch(px, py + 2, GLAZE_R, 1, 6, seed, HI_DEEP);
+    ctx.globalAlpha = 0.85 * a; fxPatch(px, py, GLAZE_R, 1, 6, seed, HI_MID);
+    ctx.globalAlpha = 0.5 * a; fxPatch(px - 4, py - 5, GLAZE_R * 0.45, 0.7, 4, seed + 3, HI_PALE); // where it lies thickest
+    ctx.globalAlpha = 0.9 * a; ctx.fillStyle = HI_WHITE;
     const sh = Math.floor(now * 8) % 12;
-    for (let k = -2; k <= 2; k++) {
-      const x0 = px + k * 9 - 3 + (sh - 6), y0 = py - k * 2;
-      for (let s = 0; s < 5; s++) { const x = x0 + s, y = y0 - Math.round(s / 2); if (Math.abs(x - px) / GLAZE_R + Math.abs(y - py) / ry < 0.85) ctx.fillRect(x, y, 1, 1); }
+    for (let k = -1; k <= 1; k++) {
+      const x0 = px + k * 11 - 4 + (sh - 6), y0 = py - k * 5 + 2;
+      for (let s = 0; s < 8; s++) { const x = x0 + s, y = y0 - Math.round(s / 2); if (Math.abs(x - px) / GLAZE_R + Math.abs(y - py) / ry < 0.8) ctx.fillRect(x, y, 1, 1); }
     }
     ctx.globalAlpha = 1;
   }
@@ -101,13 +103,21 @@ function hiCrystal(x, y, s) {
   ctx.fillStyle = HI_ICE; ctx.fillRect(x - s, y, s * 2 + 1, 1); ctx.fillRect(x, y - s, 1, s * 2 + 1);
   ctx.fillStyle = HI_WHITE; ctx.fillRect(x, y, 1, 1);
 }
-// ICICLE's wind-up: frost creeping out down the line from her feet, a crystal every
-// few px, reaching the shard's whole flight as she lets go
+// ICICLE's wind-up: frost creeping out down the line from her feet, broad and thick by
+// her and thinning to a point, its edge broken, a few crystals where it has taken hold
 function drawIcicleTele(p, a, closing, ex, ey) {
   const nx = Math.cos(a), ny = Math.sin(a), L = teleLen(p.x, p.y, nx, ny, ICICLE_RANGE) * (0.25 + 0.75 * closing);
-  for (let s = 10, k = 0; s < L; s += 7, k++) {
-    const side = (k % 2 ? 1 : -1) * 2, x = Math.round(p.x + nx * s - ny * side - ex), y = Math.round(p.y + ny * s + nx * side - ey);
-    hiCrystal(x, y, s > L - 14 ? 1 : 2);
+  for (let s = 8; s < L; s++) {
+    const w = Math.max(0, Math.round(3.2 * (1 - s / L) + (fxRoll(p.id, s, 1) - 0.5) * 1.6));
+    for (let k = -w; k <= w; k++) {
+      if (w && Math.abs(k) === w && fxRoll(p.id, s, 5 + k) < 0.45) continue;
+      ctx.fillStyle = k === 0 && fxRoll(p.id, s, 2) < 0.5 ? HI_WHITE : Math.abs(k) === w ? HI_ICE : HI_MID;
+      ctx.fillRect(Math.round(p.x + nx * s - ny * k - ex), Math.round(p.y + 3 + ny * s + nx * k - ey), 1, 1);
+    }
+  }
+  for (let k = 0; k < 5; k++) {
+    const f = fxRoll(p.id, k, 9) ** 2, s = 10 + f * (L - 14), o = (fxRoll(p.id, k, 10) * 2 - 1) * 6;
+    if (s < L - 4) hiCrystal(Math.round(p.x + nx * s - ny * o - ex), Math.round(p.y + 3 + ny * s + nx * o - ey), f < 0.35 ? 2 : 1);
   }
 }
 // CLEAR ICE's wind-up: plates of ice forming from the middle out over the patch it glazes

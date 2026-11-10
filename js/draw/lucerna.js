@@ -30,13 +30,23 @@ function luPool(px, py, r, alpha) {
   }
   ctx.globalAlpha = 1;
 }
+// lamplight lying on the snow `r` px round (px, py): the snow warmed amber, deeper at its
+// heart, its edge broken so it reads as light spilt and never as a ring
+function luWarm(px, py, r, alpha, seed) {
+  ctx.globalAlpha = alpha * 0.55; fxPatch(px, py, r, 0.55, 7, seed, '#f0b24a');
+  ctx.globalAlpha = alpha * 0.6; fxPatch(px, py, Math.round(r * 0.6), 0.55, 5, seed + 1, '#ffd27a');
+  ctx.globalAlpha = 1;
+}
 // the small lantern at (px, py) (its foot), lit
 function luLantern(px, py, now) {
   ctx.fillStyle = LU_INK; ctx.fillRect(px - 3, py - 8, 7, 8); ctx.fillRect(px - 1, py - 10, 3, 2);
   ctx.fillStyle = LU_BRASS_D; ctx.fillRect(px - 2, py - 7, 5, 6);
   ctx.fillStyle = LU_BRASS; ctx.fillRect(px - 2, py - 7, 5, 1); ctx.fillRect(px - 2, py - 2, 5, 1);
   ctx.fillStyle = Math.sin(now * 9) > -0.2 ? LU_LIGHT : LU_BRASS; ctx.fillRect(px - 1, py - 6, 3, 4);
-  ctx.fillStyle = LU_WHITE; ctx.fillRect(px, py - 5, 1, 2);
+  ctx.fillStyle = LU_WHITE; ctx.fillRect(px - 1, py - 5, 3, 2); ctx.fillRect(px, py - 6, 1, 4); // its flame, a bright core
+  const b = Math.floor(now * 6) % 2; // and the light it throws, four short rays that breathe
+  ctx.fillStyle = LU_BRASS; ctx.fillRect(px - 6 - b, py - 4, 2, 1); ctx.fillRect(px + 5 + b, py - 4, 2, 1); ctx.fillRect(px, py - 13 - b, 1, 2);
+  ctx.fillStyle = LU_LIGHT; ctx.fillRect(px - 5, py - 9, 1, 1); ctx.fillRect(px + 5, py - 9, 1, 1);
 }
 function drawLucernaGround(ex, ey, now) {
   // her own LAMPLIGHT: a faint pool round every LUCERNA standing
@@ -50,13 +60,20 @@ function drawLucernaGround(ex, ey, now) {
     const px = Math.round(c.x - ex), py = Math.round(c.y - ey);
     if (px < -CIRCLE_R - 4 || py < -CIRCLE_R - 4 || px > WV_W + CIRCLE_R + 4 || py > WV_H + CIRCLE_R + 4) continue;
     const k = c.t / CIRCLE_T, a = k > 0.85 ? (1 - k) / 0.15 : 1;
-    luRim(px, py, CIRCLE_R, a); // a wall of light, not a drawn line
-    // light standing up off the rim, a stroke at a time, walking round it
+    // its edge is the posts of light standing round it and the warm snow at each one's
+    // foot, bead by bead and uneven: no line is drawn
     for (let i = 0; i < 24; i++) {
       const ang = i / 24 * Math.PI * 2 + now * 0.4;
       const x = Math.round(px + Math.cos(ang) * CIRCLE_R), y = Math.round(py + Math.sin(ang) * CIRCLE_R);
-      const h = 3 + ((i * 7) % 4);
-      ctx.globalAlpha = a * 0.6; ctx.fillStyle = i % 3 ? LU_LIGHT : LU_WHITE; ctx.fillRect(x, y - h, 1, h);
+      ctx.globalAlpha = a * 0.45; fxPatch(x, y + 1, 4 + (i * 5) % 4, 0.5, 3, i, i % 2 ? '#f0b24a' : '#ffd27a');
+    }
+    for (let i = 0; i < 24; i++) {
+      const ang = i / 24 * Math.PI * 2 + now * 0.4;
+      const x = Math.round(px + Math.cos(ang) * CIRCLE_R), y = Math.round(py + Math.sin(ang) * CIRCLE_R);
+      const h = 4 + ((i * 7) % 5);
+      ctx.globalAlpha = a * 0.9; ctx.fillStyle = LU_BRASS_D; ctx.fillRect(x, y - h, 2, h + 1);
+      ctx.fillStyle = i % 3 ? LU_BRASS : LU_LIGHT; ctx.fillRect(x, y - h, 1, h);
+      ctx.fillStyle = LU_WHITE; ctx.fillRect(x, y - h, 2, 1);
     }
     ctx.globalAlpha = 1;
   }
@@ -64,8 +81,9 @@ function drawLucernaGround(ex, ey, now) {
     const px = Math.round(l.x - ex), py = Math.round(l.y - ey);
     if (px < -LANTERN_SEE || py < -LANTERN_SEE || px > WV_W + LANTERN_SEE || py > WV_H + LANTERN_SEE) continue;
     const left = l.life - l.t;
-    luPool(px, py, LANTERN_SEE * 0.8, 0.22);
-    if (!(left < 1 && Math.floor(now * 8) % 2)) luPool(px, py, LANTERN_R, 0.5); // the bright heart an ally steps on
+    const seed = (Math.round(l.x) * 7 + Math.round(l.y) * 13) | 0;
+    luWarm(px, py, Math.round(LANTERN_SEE * 0.8), 0.7, seed);
+    if (!(left < 1 && Math.floor(now * 8) % 2)) { ctx.globalAlpha = 0.6; fxPatch(px, py, LANTERN_R, 0.6, 3, seed + 2, LU_LIGHT); ctx.globalAlpha = 1; } // the bright heart an ally steps on
     luLantern(px, py, now);
   }
   for (const h of lucernaHooks) {
@@ -83,21 +101,6 @@ function drawLucernaGround(ex, ey, now) {
   }
 }
 HERO_GROUND.push(drawLucernaGround);
-// the CIRCLE's rim: a band of lamplight a few px wide, dithered so the snow reads through
-function luRim(px, py, r, alpha) {
-  const n = Math.ceil(r * 2 * Math.PI);
-  for (let k = 0; k < n; k++) {
-    const t = k / n * Math.PI * 2;
-    for (let d = -5; d <= 3; d++) {
-      if (Math.abs(d) > 1 && (k + d) & 1) continue; // the glow dithers out either side
-      ctx.globalAlpha = alpha * (Math.abs(d) <= 1 ? 0.9 : 0.7 - Math.abs(d) * 0.1);
-      ctx.fillStyle = d === 0 ? LU_BRASS_D : Math.abs(d) <= 1 ? LU_BRASS : LU_LIGHT;
-      ctx.fillRect(Math.round(px + Math.cos(t) * (r + d)), Math.round(py + Math.sin(t) * (r + d)), 1, 1);
-    }
-  }
-  ctx.globalAlpha = 1;
-}
-
 // ---- the keys' own looks -----------------------------------------------------------------
 // SHEPHERD'S CROOK's wind-up: the hook's line run out down the aim, a glint of her lamp
 // running along it to the hook at the end of its throw
@@ -117,8 +120,7 @@ function drawCrookTele(p, a, closing, now, ex, ey) {
 }
 // LANTERN's wind-up: the light gathering on the spot it will land, brightest at its heart
 function drawLanternTele(x, y, closing) {
-  luPool(x, y, Math.round(LANTERN_SEE * 0.8 * (0.3 + 0.7 * closing)), 0.15 + 0.15 * closing);
-  luPool(x, y, LANTERN_R, 0.3 + 0.4 * closing);
+  luWarm(x, y, Math.round(LANTERN_SEE * 0.8 * (0.3 + 0.7 * closing)), 0.4 + 0.4 * closing, 11);
 }
 // CIRCLE OF LIGHT's wind-up: strokes of light standing up round her one after another,
 // round the whole rim it will light, before the light fills in between

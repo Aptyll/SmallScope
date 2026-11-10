@@ -188,6 +188,18 @@ function fxMote(x, y, core, glow) {
   ctx.fillStyle = glow; ctx.fillRect(x - 1, y, 3, 1); ctx.fillRect(x, y - 1, 1, 3);
   ctx.fillStyle = core; ctx.fillRect(x, y, 1, 1);
 }
+// A flat patch of colour `r` px round (px, py), squashed top to bottom by `sq`, with a
+// ragged edge: each row stops up to `rag` px short by its own roll, so it lies on the
+// snow as a sheet or a stain and never reads as a drawn circle
+function fxPatch(px, py, r, sq, rag, seed, col) {
+  ctx.fillStyle = col;
+  const ry = Math.max(1, Math.round(r * sq));
+  for (let y = -ry; y <= ry; y++) {
+    const w = Math.floor(r * Math.sqrt(Math.max(0, 1 - (y / (ry + 0.5)) ** 2)));
+    const l = Math.round(fxRoll(seed, y + 200, 1) * rag), e = Math.round(fxRoll(seed, y + 200, 2) * rag);
+    if (w * 2 + 1 - l - e > 0) ctx.fillRect(px - w + l, py + y, w * 2 + 1 - l - e, 1);
+  }
+}
 // Cracks run out from (px, py): n jagged lines, each `len` px at full, grown to `grow`
 // of that. dark is the split, lite the lit lip under it.
 function drawCracks(px, py, n, len, grow, seed, dark, lite) {
