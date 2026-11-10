@@ -545,7 +545,7 @@ function updateMerchant(b, dt) {
 // ------------------------------------------------------------ soldiers
 // The WAVES. Every STRUCTS.barracks.waveT seconds each merchant's barracks
 // (the `merchant` banner above) rolls out a column of soldiers - a bot's
-// chassis under its side's pennant (drawRobot) - that marches the ROAD
+// chassis in its side's paint (drawRobot) - that marches the ROAD
 // (placeRoad, world.js) to the rival bird and strikes it. A soldier is
 // allowed to FIGHT and nothing else: nobody owns it (owner -1), no tree
 // tempts it, and it lands its kind's blow (robotStrike; SOLDIER_TYPES) on any

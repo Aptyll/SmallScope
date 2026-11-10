@@ -156,7 +156,6 @@ function rupesShed(p) {
   abFx.push({ kind: 'ring', x: p.x, y: p.y, r: SHED_R, t: 0, col: '#f4f7ff' });
   burst(p.x, p.y - 6, '#f4f7ff', 10 + 8 * n, 70 + 15 * n, 0.5, true);
   burst(p.x, p.y - 6, '#cfd8e8', 6 + 4 * n, 50, 0.5, true);
-  shakeFor(p, 2 + n);
   sfxAt('break_', p.x, p.y);
 }
 
@@ -201,7 +200,6 @@ function shoulderEnd(p, q) {
   }
   p.vx = -nx * 30; p.vy = -ny * 30; // the blow rocks him back
   burst(q.x, unitMidY(q), '#eef4fb', 8, 50, 0.45, true);
-  shakeFor(p, pinned ? 5 : 3, q);
   sfxAt('hit', q.x, q.y);
 }
 
@@ -276,7 +274,6 @@ function avaBurst(p) {
   burst(p.x, p.y - 4, '#cfd8e8', 10 + Math.round(10 * g), 50, 0.6, true);
   packGain(p, 1); // he comes out of it packed in snow
   p.avaD = 0;
-  shakeFor(p, 4 + Math.round(4 * g));
   sfxAt('break_', p.x, p.y);
 }
 

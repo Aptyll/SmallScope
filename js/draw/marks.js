@@ -1,6 +1,6 @@
 'use strict';
 // The glyph grammar both maps and the world share: a camp's icon and
-// clock, a soldier's pennant, and what a body looks like as a dot on the
+// clock, and what a body looks like as a dot on the
 // minimap or the chart.
 // ---- the camp glyph both maps and the drop chart stamp -------------------
 // a camp's glyph, centred on x,y: a rim pass so it reads on parchment,
@@ -66,17 +66,7 @@ function drawCampMapClock(g, C, x, y) {
   drawPixelTextOutline(g, t, Math.round(x - pixelTextWidth(t) / 2), Math.round(y) + 5, CAMP_CLOCK_INK, HUD_INK);
 }
 
-// ---- a pennant ------------------------------------------------------------
-// a pole and a pennant, (x, y) is its FOOT, rimmed dark: the side's pennant a
-// wave's soldier carries (drawRobot, js/draw/bodies.js)
-function drawPennant(g, x, y, col, rim) {
-  const px = Math.round(x), py = Math.round(y);
-  const rects = [[px, py - 7, 1, 8], [px + 1, py - 7, 4, 3]];
-  g.fillStyle = rim || '#0f1632';
-  for (const [rx, ry, rw, rh] of rects) g.fillRect(rx - 1, ry - 1, rw + 2, rh + 2);
-  g.fillStyle = col;
-  for (const [rx, ry, rw, rh] of rects) g.fillRect(rx, ry, rw, rh);
-}
+// ---- the click marks -------------------------------------------------------
 // The CLICK scheme's two rings (the `click to move` banner, input.js), flat
 // on the snow under everything that walks: where the last order landed - a
 // ring that blooms out and fades over CK_MARK_T, white for a walk, gold for

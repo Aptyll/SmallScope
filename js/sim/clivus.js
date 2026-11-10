@@ -257,7 +257,6 @@ function vaultLand(p) {
   for (const s of structsNear(p, p.x, p.y, VAULT_HIT_R)) hurtStruct(s, p.clVaultDmg, p);
   if (PRACTICE) abHitDummies(p.x, p.y, VAULT_HIT_R, p.clVaultDmg);
   burst(p.x, p.y + 4, '#f4f7ff', 10, 50, 0.45, true);
-  shakeFor(p, 2);
   sfxAt('hit', p.x, p.y);
 }
 
@@ -282,7 +281,6 @@ function clivusRing(p) {
   }
   clivusRings.push({ x: Math.round(p.x), y: Math.round(p.y), r: RING_R, team: p.team, owner: p.id, t: 0, life: abRk(p, 'ring', 't'), tiles });
   for (let k = 0; k < 8; k++) burst(p.x + Math.cos(k * Math.PI / 4) * RING_R, p.y + Math.sin(k * Math.PI / 4) * RING_R, '#f4f7ff', 3, 40, 0.4, true);
-  shakeFor(p, 4);
   sfxAt('chop', p.x, p.y);
 }
 function updateClivusRings(dt) {

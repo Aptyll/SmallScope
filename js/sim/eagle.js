@@ -259,10 +259,7 @@ function landPlayer(p) {
   burst(p.x, p.y - 2, '#f4f7ff', 16, 70, 0.5, true);
   // the whole crew lands on one beat: a LANDED tag over each was four tags
   // stacked on the roost, so only your own boots answer it
-  if (p === player) {
-    state.shake = 5;
-    SFX.land();
-  }
+  if (p === player) SFX.land();
 }
 
 // mode 'drop' -> 'play' for the local player, still on the bird's back at
@@ -283,7 +280,6 @@ function handOver(p) {
 // leaps (updateDrop)
 function landAboard(p) {
   handOver(p);
-  state.shake = 9;
   state.rayT = RAY_AFTER;
   SFX.music.play('jump', { out: 0.1, in: 0.05 });
 }
@@ -542,8 +538,7 @@ function eagleCrash(e) {
     if (!objAt(tx, ty) && !waterAt(tx, ty)) placeObj(tx, ty, 'eagle', { team: e.team });
   }
   eagleBoomFx(e, 1);
-  // felt everywhere, hardest close by: three rings, the widest reaching every screen
-  shakeAt(e.x, e.y, 3, EV_ANYWHERE); shakeAt(e.x, e.y, 5, 1000); shakeAt(e.x, e.y, 9, 400);
+  // heard on every screen
   sfxAt('boom', e.x, e.y, EV_ANYWHERE);
   logEvent('THE ' + TEAMS[skin(e.team)].name + ' EAGLE HAS LANDED', players.find((p) => p.team === e.team));
   // the way out is the road: from the roost up it to the junction (e.mouth),
@@ -554,7 +549,7 @@ function eagleCrash(e) {
   // with the road it lands on - so its tiles turn to 3 at
   // once and the ground repaints out to the verge through repaintGround,
   // which also tells the trample the snow there is gone (a one-time cost,
-  // under the shake and the boom)
+  // under the boom)
   e.pad = addPad(e.team, e.x / TILE - 0.5, e.y / TILE - 0.5, BOOM_R);
   const PR = Math.ceil(BOOM_R) + 3;
   for (let dy = -PR; dy <= PR; dy++) for (let dx = -PR; dx <= PR; dx++) {
@@ -664,7 +659,6 @@ function eagleFlee(e, src, line) {
     if (o && o.type === 'eagle' && o.team === e.team) setTile(idx(tx, ty), null);
   }
   eagleGustFx(e, 2); // the takeoff downdraft: the gust's language writ large
-  shakeAt(e.x, e.y, 4, EV_ANYWHERE); shakeAt(e.x, e.y, 7, 500);
   sfxAt('gust', e.x, e.y, EV_ANYWHERE);
   logEvent(line || 'THE ' + TEAMS[skin(e.team)].name + ' EAGLE WAS DRIVEN OFF', src || players.find((p) => p.team === e.team));
   state.eagleCine = { team: e.team, t: 0, srcId: src ? src.id : -1 };

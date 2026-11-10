@@ -127,7 +127,6 @@ function starStrike(s) {
   abFx.push({ kind: 'ring', x: s.x, y: s.y, r: STAR_CORE, t: 0, col: '#ffffff' });
   burst(s.x, s.y, '#fff3b0', 18, 70, 0.5, true);
   burst(s.x, s.y, '#ffffff', 8, 40, 0.4, true);
-  shakeAt(s.x, s.y, 3, 80);
   sfxAt('break_', s.x, s.y);
 }
 
@@ -221,7 +220,6 @@ function curtainFall(c) {
   if (PRACTICE) for (let s = 0; s <= c.len; s += CURTAIN_HALF * 2) abHitDummies(c.x + c.nx * s, c.y + c.ny * s, CURTAIN_HALF, c.dmg);
   abFx.push({ kind: 'line', x: c.x, y: c.y, a: Math.atan2(c.ny, c.nx), r: c.len, half: CURTAIN_HALF, t: 0, col: '#86f0bf' });
   for (let s = 8; s < c.len; s += 16) burst(c.x + c.nx * s, c.y + c.ny * s, s % 32 ? '#86f0bf' : '#e6f8ff', 2, 30, 0.45, true);
-  if (src) shakeFor(src, 4);
   sfxAt('break_', c.x + c.nx * c.len / 2, c.y + c.ny * c.len / 2);
 }
 

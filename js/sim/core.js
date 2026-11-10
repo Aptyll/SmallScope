@@ -154,7 +154,6 @@ const state = {
   // seconds of sun shafts still owed after the eagle drop (landPlayer sets it,
   // updateFx counts it down, rayLight reads it - js/draw-world.js)
   rayT: 0,
-  shake: 0,
   deadTimer: 0,
   // out of the match: the overlay's state. over: 'lost' | 'won' | null; view:
   // 'menu' (the planks) | 'spec' (following a living player); spec: that player's
@@ -247,7 +246,7 @@ const state = {
 // volume is the master dial; musicVol and sfxVol sit under it (SFX.setVolume /
 // setMusicVolume / setSfxVolume). A save written before the split simply has
 // neither key and keeps the defaults - no version bump needed.
-const settings = { v: 4, volume: 0.5, musicVol: 0.7, sfxVol: 1, mmR: 24, mmZoom: 5, hudScale: 1, shake: true, muted: false, info: false, pixelCursor: true, hitbox: 0,
+const settings = { v: 4, volume: 0.5, musicVol: 0.7, sfxVol: 1, mmR: 24, mmZoom: 5, hudScale: 1, muted: false, info: false, pixelCursor: true, hitbox: 0,
   // your side is painted BLUE and the rival side RED whatever team the roster
   // dealt you (skin(), js/sim/player.js); off = the roster's real colours
   teamBlue: true,
@@ -326,6 +325,7 @@ function loadSettings() {
   try {
     const s = PROFILE.settings(); // null when this profile has never saved any
     if (s) Object.assign(settings, s);
+    delete settings.shake; // the screen shake and its toggle are gone (0.711)
     applyTeamPal();
     // a save from before the minimap ladder grew: its mmZoom indexes the old
     // six-rung array, so carry it across instead of silently rescaling the

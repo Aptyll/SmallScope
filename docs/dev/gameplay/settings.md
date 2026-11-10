@@ -67,7 +67,7 @@ patch, state, seat counts, code and `seek` into the lobby's data, and the list h
 `netRelay()` (js/net/net.js) - `?relay=host:port` once,
 remembered with the settings (`settings.relay`), else the page's own host.
 
-`settings` (`v`, `volume`, `musicVol`, `sfxVol`, `mmR`, `mmZoom`, `hudScale`, `hudRail`, `shake`, `muted`, `info`, `pixelCursor`, `hitbox`,
+`settings` (`v`, `volume`, `musicVol`, `sfxVol`, `mmR`, `mmZoom`, `hudScale`, `hudRail`, `muted`, `info`, `pixelCursor`, `hitbox`,
 `teamBlue` — your side always painted BLUE, see [teams and colours](../multiplayer.md#teams-and-colours) —
 `teamPal` — the VIDEO page's COLOUR BLIND dropdown: `def` (OFF) or a colour-blind palette (`rg`, `by`, `hc`), same section —
 `tipFollow` — the TOOLTIP row, the hover panel beside the pointer (the default) or parked bottom
@@ -98,7 +98,7 @@ under it (`drawSlabHead`). A toggle is a switch (gold track, knob
 right when on), and the row under the pointer lifts as a band with its name white.
 
 **The panel is tabbed.** A navbar under the title splits the rows into four pages — GAME
-(top bar size, minimap size, bottom bar size, screen shake, info display, cursor, tooltip, my team), VIDEO (below),
+(top bar size, minimap size, bottom bar size, info display, cursor, tooltip, my team), VIDEO (below),
 AUDIO (the three sound dials and the speaker), CONTROLS (the listings, below) — and each page scrolls independently
 inside the content window (`SET_CONTENT_Y`..`SET_CONTENT_B`, panel-local 43..202) when its rows
 outgrow it, which is what lets the slab hold any number of future settings: the slab is 320×226

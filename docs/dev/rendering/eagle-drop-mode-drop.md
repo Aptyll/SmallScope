@@ -69,7 +69,7 @@ rival-only E target; `eagleFlee` clears them again at liftoff), sets `e.laneDir`
 vector from the roost up the road to `e.mouth`, the bearing the merchant's work reads) and drops
 off the **merchant** (below), and fires `eagleBoomFx` (snow + team-colour
 bursts, hanging feathers, a radial dust ring, two shockwave rings squashed flat over `BOOM_LIFE`
-so they read as a blast wave along the ground, never a halo), distance-scaled `state.shake`,
+so they read as a blast wave along the ground, never a halo),
 `SFX.boom()` (the timber sample dropped low under a synth blast, layered on purpose) and a
 `HAS LANDED` line in the event log (`logEvent`) — the landing is a landing, not a wound: the bird takes **no damage**
 from its own dive. The grounded bird

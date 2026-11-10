@@ -7,7 +7,7 @@ cue at a place is `sfxAt('cue', x, y[, r][, 0, arg])` (heard within `r` px, `nea
 default when 0; `EV_ANYWHERE` reaches every screen - the eagle's boom); a cue for one body is
 `sfxFor(p, 'cue')` (a step, a nock, a refusal, a status landing on *you*); a level gained is
 `sfxOwn(p, 'levelUp', 'pickup')` - one cue for the owner, another for bystanders in earshot.
-Shakes go the same way (`shakeFor(p, n[, q])`, `shakeAt(x, y, n[, r])`). The why, and the bare
+There is no screen shake (removed 0.711). The why, and the bare
 `SFX.cue()` outside the step, are CLAUDE.md's hard rule. Two cues still gate by hand on purpose, pending the plan's semantic events: the
 roost alarm (with its plate) and the two end-of-match songs.
 `SFX.stat(up)` is bare for a different reason and not an exception at all: `updateStatLedger`
