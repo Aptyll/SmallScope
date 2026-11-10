@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['Faber\'s staff is shorter than Aura\'s and Hiems\'s, its gear clear of the health bar', '0.781'],
     ['THE DEEP FOREST HAS RIDGES AND HOLLOWS', '0.780'],
     ['Staff heroes gather the staff up and then thrust it forward when they cast', '0.779'],
     ['Clivus\'s ice axe head and Arcus\'s hat read clearly at a glance', '0.778'],
