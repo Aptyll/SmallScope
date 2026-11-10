@@ -15,7 +15,7 @@ const FOG_TINT = [158, 160, 168]; // the multiply: a flat grey dim, cooler than 
 const FOG_CELL = 4;   // world px between the corners the edge is measured at
 const FOG_STEP = 2;   // world px per step of the rim
 const FOG_ARC = 3;    // world px of arc between two sight lines at the end of their reach
-const FOG_CLAMP = 64; // px either side of the edge a corner's distance is kept to (as far as two edges are joined, FOG_JOIN)
+const FOG_CLAMP = 16; // px inside the edge a corner's distance is kept to (and out of it, for who is shown)
 const FOG_BAND = 8;   // world px of half-dim just outside the edge: the rim is two flat steps, not one hard line
 const FOG_HALF = FOG_TINT.map((v) => Math.round((v + 255) / 2)); // ...and that band's multiply, halfway to no dim
 // world px over which two eyes' edges are joined in the mask: where two
@@ -23,6 +23,10 @@ const FOG_HALF = FOG_TINT.map((v) => Math.round((v + 255) / 2)); // ...and that 
 // (a row of them along a lane reads as a saw), so the mask takes a smooth max
 // (fogJoin) that rounds the V off, filling at most FOG_JOIN / 4 px of it
 const FOG_JOIN = 64;
+// px out of an edge the mask's distances are worked out to, and floored at:
+// a join lifts at most FOG_JOIN / 4 px, so ground further out stays fog; the
+// floor is the same inside an eye's box and past it, so no box shows
+const FOG_REACH = 64;
 
 const fogEyesDraw = [];
 const fogBands = []; // the cables' eyes joined pair by pair, for the mask (fogBand)
@@ -117,6 +121,7 @@ function fogShown(u, now) {
 // (fogShown) and the maps still ask the eyes, so the few px of unseen ground
 // a join lights show no body
 function fogJoin(a, b) {
+  if (b < -FOG_REACH) b = -FOG_REACH;
   const h = FOG_JOIN - Math.abs(a - b), m = (a > b ? a : b) + (h > 0 ? h * h / (4 * FOG_JOIN) : 0);
   return m > FOG_CLAMP ? FOG_CLAMP : m;
 }
@@ -126,9 +131,9 @@ function fogCorners(gx0, gy0) {
   fogGW = Math.ceil(WV_W / FOG_CELL) + 3; fogGH = Math.ceil(WV_H / FOG_CELL) + 3;
   if (!fogGrid || fogGrid.length < fogGW * fogGH) fogGrid = new Float32Array(fogGW * fogGH);
   const g = fogGrid, W = fogGW;
-  g.fill(-FOG_CLAMP, 0, W * fogGH);
+  g.fill(-FOG_REACH, 0, W * fogGH);
   for (const s of fogBands) {
-    const r = s.r + FOG_CLAMP;
+    const r = s.r + FOG_REACH;
     const i0 = Math.max(0, Math.floor((Math.min(s.ax, s.ax + s.dx) - r) / FOG_CELL) - gx0), i1 = Math.min(W - 1, Math.ceil((Math.max(s.ax, s.ax + s.dx) + r) / FOG_CELL) - gx0);
     const j0 = Math.max(0, Math.floor((Math.min(s.ay, s.ay + s.dy) - r) / FOG_CELL) - gy0), j1 = Math.min(fogGH - 1, Math.ceil((Math.max(s.ay, s.ay + s.dy) + r) / FOG_CELL) - gy0);
     for (let j = j0; j <= j1; j++) {
@@ -143,7 +148,7 @@ function fogCorners(gx0, gy0) {
   }
   for (const s of fogEyesDraw) {
     if (s.banded) continue; // drawn by its band
-    const r = s.r + FOG_CLAMP, inner = s.open ? s.r - FOG_CLAMP : -1;
+    const r = s.r + FOG_REACH, inner = s.open ? s.r - FOG_CLAMP : -1;
     const i0 = Math.max(0, Math.floor((s.x - r) / FOG_CELL) - gx0), i1 = Math.min(W - 1, Math.ceil((s.x + r) / FOG_CELL) - gx0);
     const j0 = Math.max(0, Math.floor((s.y - r) / FOG_CELL) - gy0), j1 = Math.min(fogGH - 1, Math.ceil((s.y + r) / FOG_CELL) - gy0);
     for (let j = j0; j <= j1; j++) {
