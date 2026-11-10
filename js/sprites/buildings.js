@@ -10,7 +10,7 @@
   // ---------------------------------------------------------------- barracks bay
   // The barracks' art (STRUCTS.barracks, art: 'spawner'): a 48x38 bot garage on a 3x2 tile footprint
   // w/h), drawn with its snow skirt on the footprint's bottom edge. Steel
-  // plate walls; the outline runs along the roof's top edge and a plain two-row snow cap sits on it unoutlined (a few 1px drips),
+  // plate walls under a full load of snow on the roof (humped, rimmed in the snow's own blue so it stands off the snow behind it, hanging over the eave in places) and a drift banked against the left wall, the side the map's prevailing wind blows from (driftWind, js/sim/depth.js),
   // a team-painted lintel band (L/T/t) above a 20px-wide bay with a dark
   // interior and a lit floor lip (doorway cols 14-33, rows 13-35, floor row 36), riveted flanks with a vent grille and a
   // hazard stripe, the mouth open to the ground. One tier -
@@ -21,6 +21,7 @@
     'S': '#f4f7fc', // snow
     's': '#dce5f0', // snow shade
     'z': '#b9c9db', // snow edge / icicle
+    'Z': '#8fa6c4', // the roof load's and the drift's own rim, against the snow behind
     'P': '#b9c1cd', // plate light
     'p': '#98a1b0', // plate
     'q': '#7d8696', // plate shade
@@ -39,14 +40,14 @@
     'w': '#c9dcee', // snow skirt
   };
   const bay = [
-    '...SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS...',
-    '...ssssssssssssssssssssssssssssssssssssssssss...',
-    '..oooooooooooooooooooooooooooooooooooooooooooo..',
-    '..ozPPPPPPPPPzPPPPPPPPPPPPPPPPzPPPPPPPPPPPPPzo..',
-    '..oqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqo..',
-    '..oPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPo..',
-    '..opLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLpo..',
-    '..opTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTpo..',
+    '.............ZZZZZZZ...............ZZZZZZZ......',
+    '.....ZZZZZZZZSSSSSSSZZZZ.....ZZZZZZSSSSSSSZZ....',
+    '..ZZZSSSSSSSSSSSSSSSSSSSZZZZZSSSSSSSSSSSSSSSZZ..',
+    '.ZSSSSSSSSSSSSSSSSSSSSSSSSSSSSSsssssssssssssssZ.',
+    '.ZssssssssssssssssssssssssssssssssssssssssssssZ.',
+    '.ZoooosssoooooooossooooooossooooosooooosssooooZ.',
+    '..opLLzszLLLLLLLLzzLLLLLLLszLLLLLzLLLLLzszLLpo..',
+    '..opTTTzTTTTTTTTTTTTTTTTTTzTTTTTTTTTTTTTzTTTpo..',
     '..opTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTpo..',
     '..opTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTpo..',
     '..opttttttttttttttttttttttttttttttttttttttttpo..',
@@ -68,15 +69,15 @@
     '..oppppppppppokkkkkkKkkkkkkKkkkkkkoqqqqqqqqqqo..',
     '..oppppppppppokkkkkkKkkkkkkKkkkkkkoqqqqqqqqqqo..',
     '..oppppppppppokkkkkkKkkkkkkKkkkkkkoqqqqqqqqqqo..',
-    '..oppppppppppokkkkkkKkkkkkkKkkkkkkoqqqqqqqqqqo..',
-    '..oyyYYyyYYyyokkkkkkKkkkkkkKkkkkkkoyyYYyyYYyyo..',
-    '..oyYYyyYYyyYokkkkkkKkkkkkkKkkkkkkoyYYyyYYyyYo..',
-    '..oYYyyYYyyYYoKKKKKKKKKKKKKKKKKKKKoYYyyYYyyYYo..',
-    '..oYyyYYyyYYyoFFFFFFFFFFFFFFFFFFFFoYyyYYyyYYyo..',
-    '..oppppppppppoffffffffffffffffffffoqqqqqqqqqqo..',
-    '..orpppppppprofffffffffffffffffffforqqqqqqqqro..',
-    '..oooooooooooffffffffffffffffffffffooooooooooo..',
-    '..wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww..',
+    'ZZoppppppppppokkkkkkKkkkkkkKkkkkkkoqqqqqqqqqqo..',
+    'SSZyyYYyyYYyyokkkkkkKkkkkkkKkkkkkkoyyYYyyYYyyo..',
+    'SSSZYYyyYYyyYokkkkkkKkkkkkkKkkkkkkoyYYyyYYyyYo..',
+    'SSSSZyyYYyyYYoKKKKKKKKKKKKKKKKKKKKoYYyyYYyyYYo..',
+    'SSSSSZYYyyYYyoFFFFFFFFFFFFFFFFFFFFoYyyYYyyYYyo..',
+    'sSSSSSZppppppoffffffffffffffffffffoqqqqqqqqqqo..',
+    'sSSSSSZppppprofffffffffffffffffffforqqqqqqqqro..',
+    'sSSSSSSZoooooffffffffffffffffffffffooooooooooo..',
+    'wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww..',
   ];
 
   // Soldier: a boxy chassis sitting straight on one full-width tread, stub

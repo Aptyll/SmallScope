@@ -44,7 +44,7 @@ paint is `k`/`K`/`e`/`E` (fit, coatD, coat, coatL), baked inside `SPR.onTeams`. 
 (js/draw/towers.js) lays the gun and the parapet; the bolt in flight is `towerBolt[heading]`.
 
 The **barracks** wears the bay grid (`STRUCTS.barracks.art` is `'spawner'`): a single-tier 48×38
-grid (`bay`, `BAYPAL`) on a 3×2 tile footprint — steel plates under a flat two-row snow cap, a
+grid (`bay`, `BAYPAL`) on a 3×2 tile footprint — steel plates under a humped load of snow that hangs over the eave, a drift against the left (windward) wall, a
 team-painted lintel band (`L`/`T`/`t` via `bayTeamPal`), riveted flanks with a grille and hazard
 stripe, and a 20-px dark doorway (cols 14–33, rows 13–35, floor row 36 — `drawBarracksOverlay` in
 js/draw/overhead.js clips to it), baked as `teamBuild[team].spawner`.
@@ -533,7 +533,7 @@ rounding thresholds at different heights, so 21 of the 24 frames are distinct pi
 
 Every frame being the same tree, each atlas row holds **forty-eight**: the 24 again, mirrored, with
 the tile's `hash2` sending half the forest into them. `TPAL` above it stays: it still dresses the
-`stumps` a felled pine leaves (three cuts, picked and nudged by `stumpLook`, js/draw/ground.js).
+`stumps` a felled pine leaves (three cuts, picked and nudged by `stumpLook`, js/draw/footings.js; round a roost also a stump drifted under, two broken trunks lying, and none under the roost's paving, `STUMP_LAIN`/`STUMP_BURIED`/`STUMP_THIN`).
 
 **No pine draws in `TSPAL` as is: it is the source of twelve palettes** (`treePals`), one atlas row
 each for each height (row = size × 12 + variant × 4 + tone), filtered in OKLCH at bake time rather than drawn. The drawn pine
