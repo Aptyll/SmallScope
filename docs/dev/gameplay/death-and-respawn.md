@@ -45,7 +45,8 @@ that climbs behind a table which already counted it reads as a bug — and becau
 is opened off a plank minutes later, by which time none of those numbers are still true. Spectating
 sets `state.spec` to a living player's id and `viewPlayer()` — the one place the camera and minimap
 ask who to frame — returns it. The control is
-a top-centre `[<] NAME [>]` strip (`specLayout`/`specHit`, sized to the widest player name so the
+a top-centre `[<] FACE HERO [>]` strip on the HUD's graphite (`specLayout`/`specHit`: the watched hero's face and
+its hero name at 2x, `specName`, over a rule in its side's colour; sized to the widest hero name so the
 arrows never shift): clicking an arrow or pressing the arrow keys cycles (`specNext`, player order,
 skipping the dead — and skipping rivals while a respawn wait runs, since the wait is not a scouting
 window), ESC returns to the planks (on a wait, which has none, it closes the replay instead), and a
