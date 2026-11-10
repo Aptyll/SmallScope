@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['Sagitta carries her arbalest under her arm, so it no longer covers her face', '0.799'],
     ['FLAGSTONES SHOW WEAR', '0.798'],
     ['STAFF SHOTS: IGNIA, AURA, SALVIA, LUCERNA, HIEMS AND BUCINA EACH SHOOT THEIR OWN SHAPE', '0.797'],
     ['BRUSH PATCHES ARE FULL OF REEDS', '0.796'],
