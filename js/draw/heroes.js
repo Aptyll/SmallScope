@@ -23,7 +23,8 @@ const HERO_SHOTS = {};
 // A hero whose CLASSES row names a `staff` carries it upright, its foot by the
 // hero's own, in every facing, drawn or not (a mage's staff is held, never swung
 // or aimed): HERO_STAVES[name] = { art() -> [frame, frame] canvases (the flame's
-// two beats), grip: [x, y] where the hand closes on the art, hold, lean, cast }. `hold` is
+// two beats), grip: [x, y] where the hand closes on the art, hold, lean, cast, and optionally
+// fine() -> the frames at `dens` px a world px for a body drawn fine (staffArt) }. `hold` is
 // which hand THIS hero carries it in at rest (STAFF_HOLDS; none is 'lead'), so two
 // staff heroes side by side are not one shape. A draw or a cast brings it into the
 // leading hand: the staff coming across is part of the tell.
@@ -73,6 +74,13 @@ function staffBeat(p) {
   return p.nockT > 0 && attackCycle(p) - p.nockT < STAFF_SHOT_T ? 2 : 0;
 }
 function staffCasting(p) { return staffBeat(p) > 0; }
+// a staff row's frames for this body: its finer pair (`fine`, the art at `dens` px a world px,
+// its grip in world px) for a body drawn fine (bodySet), else its own doubled (fineArt, a
+// stopgap), else its own
+function staffArt(p, s) {
+  if (!(bodySet(p).dens > 1)) return s.art();
+  return s.fine ? s.fine() : s.art().map(fineArt);
+}
 function heroStaff(p, px, py) {
   const s = heroStaffOf(p);
   if (!s) return false;
@@ -82,15 +90,15 @@ function heroStaff(p, px, py) {
   // whichever hand holds it, it leans the way the face looks (THE GRIP RULE): the
   // art is drawn leaning right, mirrored for a body facing left or away; facing the
   // camera it leans out from the body, so its head never hides behind hers
-  let img = s.art()[Math.floor(state.elapsed * 5) % 2];
+  let img = staffArt(p, s)[Math.floor(state.elapsed * 5) % 2];
   const mirror = (p.dir === 'down' ? back : p.dir === 'left' || p.dir === 'up') !== (s.lean ? s.lean === 'left' : heldLeansLeft(img)); // `lean` says it when a thing hung low off the staff would fool the reading
   if (mirror) img = heldFlip(img);
-  const gx = mirror ? img.width - 1 - s.grip[0] : s.grip[0];
+  const gx = mirror ? heldW(img) - 1 - s.grip[0] : s.grip[0];
   const beat = staffBeat(p), kept = beat === 2 && s.cast && s.cast.keep; // a row's `cast.keep` holds its gather through the loosing beat: BUCINA sounds the horn at her lips
   const use = beat === 1 || kept ? s.cast || STAFF_CAST : null, rc = heroReach(p) + (use ? use.out : 0), th = beat === 2 && !kept ? STAFF_THRUST[p.dir] : [0, 0];
   const hx = (back ? px + 2 - rc : px + 13 + rc) + th[0];
   const hy = py + 10 - (use ? use.up : p.charging ? 1 : 0) + th[1]; // a draw lifts it, a cast gathers it up, then looses it forward
-  ctx.drawImage(img, Math.round(hx - gx), Math.round(hy - s.grip[1]));
+  ctx.drawImage(img, Math.round(hx - gx), Math.round(hy - s.grip[1]), heldW(img), heldH(img));
   if (th[0]) heroSleeve(p, px, hy, back ? -1 : 1); // the arm reaches out behind the thrust
   if (p.dir !== 'up') heroFist(p, hx, hy, back ? -1 : 1);
   return true;
