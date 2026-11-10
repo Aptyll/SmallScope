@@ -18,6 +18,7 @@ const YARD_BED_COL = ['#6e6052', '#807060', '#a08c58']; // a bed's scraped earth
 const YARD_PRINT_COL = 'rgba(96,110,146,0.6)';
 const YARD_TRAIL_STEP = 5;                  // px between prints along a trail
 const YARD_TRACK_STEP = 9;                  // ...and between a heavy beast's
+const YARD_TRACK_COL = 'rgba(78,92,132,0.85)'; // ...which are pressed deeper, a tone darker
 const YARD_PATH_HW = 4.5;                   // px: half the width of a packed path
 // what lies in a yard, on 1 px grids: the den's rock (DNPAL, js/sprites/terrain.js), the hut's wood
 const YARD_PAL = { o: '#2b3040', y: '#7b8398', Y: '#99a1b6', v: '#5a6176', w: '#eef4fb', s: '#c9dcee', d: '#aab8d2',
@@ -103,10 +104,10 @@ function yardOf(C, Y) {
     const ob = objects[idx(tx, ty)];
     return !(ob && ob.type === 'tree');
   };
-  // a board may lie on the verge too, up to the lane's first stone
+  // a board may lie on the verge and on the lane's first stones too: the walk's last board is whole
   const walkOn = (x, y) => {
     const tx = Math.floor(x / TILE), ty = Math.floor(y / TILE), ob = inWorld(tx, ty) && objects[idx(tx, ty)];
-    return inWorld(tx, ty) && ground[idx(tx, ty)] === 0 && !(ob && ob.type === 'tree') && !roadPavedAt(x, y);
+    return inWorld(tx, ty) && (ground[idx(tx, ty)] === 0 || ground[idx(tx, ty)] === 3) && !(ob && ob.type === 'tree');
   };
   // px from the packed path's line (99 with none), the line bending a little on the noise
   const pathAt = (x, y) => {
@@ -194,6 +195,7 @@ function yardOf(C, Y) {
       const off = Math.sin(d / L * Math.PI) * bend + (n & 1 ? 3 : -3);
       const px = Math.round(sx + ux * d - uy * off), py = Math.round(sy + uy * d + ux * off);
       if (!open(px, py) || !open(px + 3, py + 2) || bare(px, py)) continue;
+      g.fillStyle = YARD_TRACK_COL;
       g.fillRect(px - c.wx - 1, py - c.wy - 1, 3, 2); // the pad
       for (const t of [-2, 0, 2]) g.fillRect(Math.round(px + ux * 3 - uy * t) - c.wx, Math.round(py + uy * 3 + ux * t) - c.wy, 1, 1); // the toes
     }
@@ -219,7 +221,7 @@ function yardWalk(o, m) {
   let best = null;
   for (const [x, y, dx, dy] of [[m.x, m.y, 0, 1], [m.x - out, m.y - 4, 0, -1], [m.x + out, m.y - 4, 0, -1], [m.x - hw, m.y - hh, -1, 0], [m.x + hw - 1, m.y - hh, 1, 0]]) {
     for (let len = 1; len <= YARD_WALK_FAR + (dx ? 0 : hh) && !(best && len >= best.len); len++) {
-      if (roadPavedAt(x + dx * len, y + dy * len)) { best = { x, y, dx, dy, len: len + YARD_WALK_HW }; break; } // on past the first stone: the ragged edge takes each board where it will
+      if (roadPavedAt(x + dx * len, y + dy * len)) { best = { x, y, dx, dy, len: Math.ceil((len + 3) / YARD_WALK_BOARD) * YARD_WALK_BOARD - 1 }; break; } // whole boards, the last one lapping onto the first stones (its seam left off)
     }
   }
   return best;
