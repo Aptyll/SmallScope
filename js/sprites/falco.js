@@ -267,7 +267,7 @@ SPRITES.weaponArt.knife = SPR.bake([
 // The same knife as his hand holds it on the snow, small and never level at arm's length
 // (falcoCarry and HERO_AIMED.knife, js/draw/falco.js). FALCO_KNIFE.down hangs point down from
 // the fist at rest (`fwd` side-on, its point a pixel forward, drawn for a body facing right);
-// FALCO_KNIFE.up is cocked point up for the throw (`back` side-on, its point a pixel back).
+// FALCO_KNIFE.up is raised point up for the throw.
 // Each is { img, grip }, the grip where the fist closes.
 const FALCO_KNIFE = (() => {
   const pal = { '.': null, o: '#241a12', W: '#ffffff', E: '#aab4c8', G: '#a3794f' };
@@ -275,30 +275,22 @@ const FALCO_KNIFE = (() => {
   return {
     down: k(['.o.', 'oGo', 'oGo', 'oWo', 'oEo', 'oEo', '.o.'], [1, 2]),
     fwd: k(['.o..', 'oGo.', 'oGo.', 'oWo.', '.oEo', '.oEo', '..o.'], [1, 2]),
-    up: k(['.o.', 'oWo', 'oWo', 'oEo', 'oGo', 'oGo', '.o.'], [1, 4]),
-    back: k(['.o..', 'oWo.', 'oWo.', '.oEo', '.oGo', '.oGo', '..o.'], [2, 4]),
+    up: k(['.o.', 'oWo', 'oWo', 'oWo', 'oEo', 'oGo', 'oGo', '.o.'], [1, 5]),
   };
 })();
-// THE THROW, by the aim's heading (0..7 clockwise from +x) and step (HERO_AIMED): 1 and 2 the
-// knife cocked back over the shoulder away from the aim, a pixel further at the full draw;
-// 0 the empty hand flung out on the aim after the knife has left it. `hand` is where the
-// fist is, px from the chest.
-const FALCO_KNIFE_AIM = (() => {
-  const out = [];
-  for (let h = 0; h < 8; h++) {
-    const q = h * Math.PI / 4, c = Math.round(Math.cos(q)), sn = Math.round(Math.sin(q));
-    const art = !c ? FALCO_KNIFE.up : FALCO_KNIFE.back;
-    const img = c < 0 ? SPR.flipH(art.img) : art.img, grip = c < 0 ? [art.img.width - 1 - art.grip[0], art.grip[1]] : art.grip;
-    const lf = (v) => v < 0 ? 1 : 0; // the chest's middle is between two columns: a hand to the left reaches one more
-    const bx = c ? -c : 1; // the throwing hand: behind the aim side-on, the right hand facing down or up
-    out.push([
-      { img: null, grip: [0, 0], hand: [c ? c * 5 - lf(c) : 5, sn * 3] },
-      { img, grip, hand: [bx * 5 - lf(bx), -1] },
-      { img, grip, hand: [bx * 6 - lf(bx), -2] },
-    ]);
-  }
-  return out;
-})();
+// HIS HAWK ON THE GLOVE (drawFalcoPerch, js/draw/falco.js): the falconer's one shape. A tan
+// gauntlet on the hand that does not hold the knife, raised beside him, and the hawk
+// perched on it while it is home: brown back, pale chest, one dark eye, a gold beak. Drawn
+// looking right; FALCO_HAWK_FOOT is the pixel of its feet, which stand on the glove.
+const FALCO_HAWK = SPR.bake(['.ooo.', 'obWey', 'oBWWo', 'oBbWo', 'oBBWo', 'oBoo.', '.o...'],
+  { '.': null, o: '#2e2440', b: '#a8794a', B: '#6e4a28', W: '#efe8d6', e: '#2e2440', y: '#f2cc6a' });
+const FALCO_HAWK_FOOT = [2, 6];
+const FALCO_GLOVE = '#c8a46a';
+// THE THROW (HERO_AIMED.knife): by step, for the knife hand on the right of the body (`x`
+// mirrors for the left). 1 and 2 the knife raised point up beside the head, a pixel higher
+// at the full draw; 0 the closed, empty hand down the throw's line after the knife has left
+// it. `hand` is where the fist is, px from the chest.
+const FALCO_THROW = [{ hand: [5, 2] }, { hand: [5, -1] }, { hand: [5, -2] }];
 
 // ------------------------------------------------------------ falco registry
 // FALCO in the hero art registry (heroArt, js/sprites/hero-art.js): the looks and

@@ -695,7 +695,7 @@ function heroAimed(p) {
   const behind = heldBehind(ha), own = HERO_AIMED[A.art];
   if (own) {
     if (!drawing && !(p.nockT > 0 && p.castT <= 0 && attackCycle(p) - p.nockT < AIMED_LOOSE_T)) return null;
-    const r = own(h, !drawing ? 0 : drawPow(p) < 0.5 ? 1 : 2);
+    const r = own(h, !drawing ? 0 : drawPow(p) < 0.5 ? 1 : 2, p);
     return { img: r.img, grip: r.grip, rot: 0, x: r.hand[0], y: r.hand[1] - 2, behind, fist: true };
   }
   const dg = drawing && SPRITES.weaponDiag[A.art];
