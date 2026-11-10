@@ -1279,9 +1279,15 @@ function treeLean(tx, ty, sway) {
 // the forest the tree stands: 0 lighter on the edge (an open tile among its 8
 // neighbours), 2 deep inside (every tile two rings out is forest too), 1
 // between, 3 the heart, its snow in shade (forest three tiles each way). It is read live, so felling a pine brightens the ones it opens.
+// The heart is not one sheet: a slow noise CANOPY_SWELL tiles across lifts
+// it in broad RIDGES (tone 1, their snow in the light) and sinks it in
+// HOLLOWS (tone 4, darker than the heart), so a wide forest has a shape that
+// still reads from the eagle's back.
 // A stand is anything woody - a dead snag walls a forest in like a pine - and
 // the world's border counts as forest.
-const TREE_TONES = 4;
+const TREE_TONES = 5;
+const CANOPY_SWELL = 11;    // tiles across a ridge or a hollow of the deep forest
+const CANOPY_RIDGE = 0.58, CANOPY_HOLLOW = 0.4; // the swell above which the heart is a ridge, below which a hollow
 function woody(tx, ty) {
   if (!inWorld(tx, ty)) return true;
   const o = objects[idx(tx, ty)];
@@ -1293,7 +1299,10 @@ function treeTone(tx, ty) {
   for (let y = ty - 1; y <= ty + 1; y++) if (!woody(tx - 2, y) || !woody(tx + 2, y)) return 1;
   // the heart: three tiles of forest each way along the tile's row and column
   if (!woody(tx - 3, ty) || !woody(tx + 3, ty) || !woody(tx, ty - 3) || !woody(tx, ty + 3)) return 2;
-  return 3;
+  // the swell, ragged a little by the tile's own hash so a ridge's edge is
+  // crowns, not a contour line
+  const sw = vnoise(tx / CANOPY_SWELL + 11.5, ty / CANOPY_SWELL + 47.5) * 0.7 + vnoise(tx / 4 + 3.5, ty / 4 + 19.5) * 0.3 + (hash2(tx * 13 + 5, ty * 17 + 9) - 0.5) * 0.08;
+  return sw > CANOPY_RIDGE ? 1 : sw < CANOPY_HOLLOW ? 4 : 3;
 }
 // Which of the pine's three heights a tile wears (TREE_CUTS, js/sprites/terrain.js):
 // 0 the drawn tree, 1 and 2 shorter. Half of it is a slow noise, so tall and

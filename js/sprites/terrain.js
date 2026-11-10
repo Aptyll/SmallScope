@@ -1152,7 +1152,7 @@
   // night grade). B: a dark muted green outline, the needle darks lifted, the
   // snow a soft blue-grey. C: B with the needles' hue shifted by value -
   // shadows toward teal, lights toward yellow-green. D: C at 80% colour with
-  // a muted trunk. Each of the three comes in four TONES for how deep in the
+  // a muted trunk. Each of the three comes in five TONES for how deep in the
   // forest a tree stands (treeTone, js/draw/ground.js): the deep as filtered,
   // the ring inside the edge lighter, the edge lighter again. Nine pines in
   // ten stand deep, so the deep tone IS the picked look and the edge is what
@@ -1178,8 +1178,9 @@
   // (three rings in and further): its snow falls into shade with its needles,
   // so a wide wall reads as one dark mass with a lit rim, not a sheet of caps
   // A trunk inside the stand goes dark with it: left bright it is an orange
-  // speck on the forest floor.
-  const TREE_TONES = [[0.07, 0, 0], [0.035, 0, -0.17], [0, -0.035, -0.2], [-0.04, -0.13, -0.22]];
+  // speck on the forest floor. The fifth is the HOLLOW, darker again: where
+  // the deep forest's swell sinks (treeTone, js/draw/ground.js).
+  const TREE_TONES = [[0.07, 0, 0], [0.035, 0, -0.17], [0, -0.035, -0.2], [-0.04, -0.13, -0.22], [-0.08, -0.22, -0.22]];
   const treePals = (() => {
     const lin = (c) => (c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
     const gam = (c) => (c <= 0.0031308 ? 12.92 * c : 1.055 * Math.pow(c, 1 / 2.4) - 0.055);
@@ -1236,7 +1237,7 @@
       if (ti > 0) { pal.u = '#27414a'; pal.U = '#1f363f'; }
       out.push(pal);
     });
-    return out; // row = variant * 4 + tone
+    return out; // row = variant * TREE_TONES.length + tone
   })();
   // baked once, up here, because both the array and the atlas below need it:
   // one run of 24 frames per palette row
@@ -1587,7 +1588,7 @@
     // there and treeFrame() reverses the index when it crosses.
     // Each ROW is one height in one palette (treeSizes x treePals: three
     // heights, three variants x four forest depth tones, row = size * 12 +
-    // variant * 4 + tone; `pals` is the 12), each holding the same 48 frames,
+    // variant * 5 + tone; `pals` is the 15), each holding the same 48 frames,
     // so the whole forest - every variant, every tone - is still one texture.
     // A cell index is column + row * cols (treeCell, js/draw/ground.js).
     // `fw`/`fh`/`cols` ride on the canvas so the caller needs no second constant.
