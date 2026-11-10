@@ -119,6 +119,7 @@ function render() {
   const ty1 = Math.min(WORLD - 1, Math.ceil((oy + WV_H) / TILE) + 2);
 
   drawFlatPass(ox, oy, ex, ey, tx0, ty0, tx1, ty1, now); // the ice's sky, the flat objects, the rings
+  drawDenYards(ex, ey); // the trodden yard at a wolf den's mouth (js/draw/dens.js)
   drawTowerFootings(ex, ey); // the paved round a road tower stands on, under the bodies (js/draw/towers.js)
   drawZipStakes(ex, ey); // where a cut cable comes down past its tower, under the bodies (js/draw/zipline.js)
 
