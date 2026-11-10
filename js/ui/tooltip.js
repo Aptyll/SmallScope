@@ -147,7 +147,7 @@ function tipAt(mx, my) {
     if (m.screen === 'hero' && m.popT >= 1) { const h = heroScreenHit(); return h && h.ab != null ? tipClassAb(h.ab, player.cls) : null; }
     if (m.screen === 'lobby' && m.screenT >= 1) {
       const L = lobbyLayout(), b = selBriefHit(L); // the pick's brief: an ability's card (js/ui/select.js)
-      return b ? tipClassAb(b.i, b.h) : loadoutTip(L);
+      return b ? Object.assign(tipClassAb(b.i, b.h), { over: selBrief(L).wells[0] }) : loadoutTip(L); // ...standing over the wells, never on them
     } // the picks' wells and picker (js/ui/loadout.js)
     return null;
   }
@@ -204,7 +204,12 @@ function tipSize(d) {
 // side at the right edge and clamps into the view, so a corner still reads.
 const TIP_GAP = 11;   // clear air between pointer and panel, sideways
 const TIP_EDGE = 4;   // closest the panel comes to any view edge
-function tipPos(w, h) {
+const TIP_OVER = 3;   // air between a card and the rect it stands over
+// (a card with `over`, a rect, stands on top of that rect instead - the pick's
+// brief: a card at the pointer there would lie across the next wells and LOCK IN)
+function tipPos(w, h, over) {
+  const clampX = (v) => Math.max(TIP_EDGE, Math.min(v, Math.max(TIP_EDGE, VIEW_W - TIP_EDGE - w)));
+  if (over) return { x: clampX(over.x), y: Math.max(TIP_EDGE, over.y - h - TIP_OVER) };
   if (!settings.tipFollow) return { x: TIP_EDGE, y: VIEW_H - 8 - h };
   const mx = Math.round(mouse.x), my = Math.round(mouse.y);
   let x = mx + TIP_GAP;
@@ -223,7 +228,7 @@ function drawTooltip() {
   const d = tipNow;
   if (!d) return;
   const { w, h } = tipSize(d);
-  const { x, y } = tipPos(w, h);
+  const { x, y } = tipPos(w, h, d.over);
   ctx.fillStyle = 'rgba(4,6,18,0.55)';
   ctx.fillRect(x + 2, y + 2, w, h);
   ctx.fillStyle = BAG_BG;
