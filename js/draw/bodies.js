@@ -727,8 +727,10 @@ function bladeLen(img, grip) {
 // swept, from angle a0 to the blade at e, deepest at the blade and thinning to
 // its tail (SWISH_W); a light outer edge, a body, and an ink line along the
 // outside so it reads on snow. Each pixel takes the pass its own angle would
-// (heldBehind), and none lands on the head (rules.md rule 1). `hand(a)` is where the hands are at angle a, L the
-// blade's reach from them, (px, cyp) the cell's left and the hands' row.
+// (heldBehind), and none lands on the head (rules.md rule 1), sized by the
+// swinger p's cell (heroRise, heroReach). `hand(a)` is where the hands are at
+// angle a, L the blade's reach from them, (px, cyp) the cell's left and the
+// hands' row.
 function drawSwish(p, px, cyp, hand, L, a0, e, back) {
   if (L < 4) return;
   const cx = px + 8, span = e - a0, dir = span < 0 ? -1 : 1, R = Math.ceil(L + 8);
