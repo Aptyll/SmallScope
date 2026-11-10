@@ -135,7 +135,7 @@ slots are the build. There is no backpack and no food pouch.
 
 **Heals are League's.** A **health potion** (50 gold, up to five stacked in one item slot) heals
 100 over 15 s on the slot's key and nothing stops it; a **creek fish** rolled over heals 40 at
-once, a ripe **berry bush** walked into heals 30 and regrows. Nothing else is eaten.
+once. Nothing else is eaten.
 [Heals](gameplay/heals.md).
 
 **Items are bought at a counter.** You walk to a body to get them.

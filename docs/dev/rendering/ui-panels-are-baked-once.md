@@ -27,7 +27,7 @@ chart folds the match's `WORLD` tiles into fewer px), and paints one flat ink pe
 pale snow for the open ground, deep slate for the woods, cold blue for the ice and the creek, a
 tan track for the road. Nothing is painted over the inks — no lit or inked rims, no grain — since
 the marks and the team inks are the read, and shading fought them. No grid: a single
-bush or stump has no class and shows the ground, because at that scale a speck is noise. A side's buildings
+stump has no class and shows the ground, because at that scale a speck is noise. A side's buildings
 and its bird are two depths of one team ink (`chTeam`/`chEagle`, through `skin()`), so a base
 reads as a shape in its colour with the bird bright at its heart. The sim keeps stepping under
 it and the local player keeps walking

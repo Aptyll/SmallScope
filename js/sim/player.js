@@ -489,7 +489,7 @@ function kitOf(p) { return p.kit || CLASSES[p.cls].kit; }
 function setClass(p, c) { p.cls = c; refreshKit(p); p.hp = p.maxHp; }
 // the hero's HEALTH stat: its base, its levels and its bonuses (statOf, js/sim/stats.js)
 function levelMaxHp(p) { return statOf(p, 'hp'); }
-// THE ONE WAY HEALTH COMES BACK to a player: a potion, a creek fish, a berry bush, the daylight, a hero's
+// THE ONE WAY HEALTH COMES BACK to a player: a potion, a creek fish, the daylight, a hero's
 // heal, a kill's heal. Capped at the most, and what it actually gave back is
 // counted for the post-game record (js/ui/lobby.js) and returned.
 function healPlayer(p, n) {
@@ -618,8 +618,8 @@ function playerTint(p) {
 // Gold is a wallet number and never an item - it is currency, and a purse
 // that could run out of room would make a kill refuse its own bounty. The six
 // item slots are their own list (p.items, js/sim/items.js), and a health
-// potion stacks in one of them. Nothing else is carried: a creek fish and a
-// berry bush heal where they stand (js/sim/world.js).
+// potion stacks in one of them. Nothing else is carried: a creek fish heals
+// where it swims (js/sim/world.js).
 // the class kit plus the defaults no class kit carries; an
 // item's mod() edits them in place. Shared by refreshKit and the hero
 // pop-up's preview ledger (js/ui/menu.js), so the numbers that page shows can

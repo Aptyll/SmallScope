@@ -104,7 +104,7 @@ obs = {
   animals:  [{ id, kind, level, x, y, hp, maxHp }],   // near you: rabbit, deer, wolf, alpha, orca, bird
   eagles:   [{ team, x, y, state, hp, maxHp, hitT, mouth }],  // both birds, always
   structs:  [{ id, type, team, tx, ty, hp, maxHp, building }],  // buildings near you: type 'barracks', 'tower' or 'pump'
-  nodes:    [{ kind, tx, ty }],    // tree or ripe bush near you; nearest 64, nearest first
+  nodes:    [{ kind, tx, ty }],    // trees near you; nearest 64, nearest first
   shots:    [{ x, y, vx, vy, team }],  // shots in flight near you
   pings:    [{ owner, k, x, y, t }],   // your side's pings up now: k is go, attack, omw, danger or defend; t the seconds left
   merchants: [{ team, x, y, stall }],  // both merchants, always; stall: { tx, ty } | null
@@ -147,9 +147,8 @@ obs = {
   `cmd: { kind: 'shop', act: 'item', id }`; it needs a free slot once its parts are used. The
   health potion (`stack` 5) is the one that stacks: the first takes a slot, the next ones join it.
 - **Healing.** Drink a potion with `useItem` (its slot): 100 health over 15 s that nothing
-  stops, one at a time. Walk into a ripe bush (`nodes`, kind `bush`) for 30 at once. Roll
-  (`dodge`) over a creek fish from the bank for 40 at once. Fish and bushes do nothing at full
-  health.
+  stops, one at a time. Roll (`dodge`) over a creek fish from the bank for 40 at once. A fish does
+  nothing at full health.
 
 ## The act
 
@@ -244,5 +243,5 @@ where you *want* to aim; lead a moving target yourself.
 
 ## Versioning
 
-`hello.api` is 6 (2 swapped the side's `flags` for `pings`, and the `flag` order for `ping`; 3 dropped `me.bag`, the `useCard` edge and the shop's `sell` act, with the backpack and cards; 4 dropped `me.food`, `drops`, the `eatBerry`/`eatFish` edges and the shop's `trade` act, and added `me.potions`/`me.potionT` and the `useItem` edge; 5 renamed a gold pump's `structs` type from `generator` to `pump`; 6 dropped the HUNTER and the WARRIOR, `me.prone`, `me.hide`, `enemies[].prone` and the `grapple` act, and added `attack` to `allies` and `enemies`). A new field may appear at any time; a field is never renamed or removed without
+`hello.api` is 7 (2 swapped the side's `flags` for `pings`, and the `flag` order for `ping`; 3 dropped `me.bag`, the `useCard` edge and the shop's `sell` act, with the backpack and cards; 4 dropped `me.food`, `drops`, the `eatBerry`/`eatFish` edges and the shop's `trade` act, and added `me.potions`/`me.potionT` and the `useItem` edge; 5 renamed a gold pump's `structs` type from `generator` to `pump`; 6 dropped the HUNTER and the WARRIOR, `me.prone`, `me.hide`, `enemies[].prone` and the `grapple` act, and added `attack` to `allies` and `enemies`; 7 dropped the berry bush, so `nodes` lists trees only). A new field may appear at any time; a field is never renamed or removed without
 the number going up.

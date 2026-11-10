@@ -516,11 +516,6 @@ function eagleCrash(e) {
     const o = objAt(tx, ty);
     if (!o) continue;
     const ox = tx * TILE + 8, oy = ty * TILE + 8;
-    if (o.type === 'bush') { // flattened outright, out to the outer ring: a bush in the wall's band would leave a hole in it
-      fellScenery(tx, ty);
-      burst(ox, oy - 6, '#88b090', 6, 50, 0.45, true);
-      continue;
-    }
     if (o.type !== 'tree') continue;
     setTile(idx(tx, ty), Math.hypot(dx, dy) <= BOOM_R ? null : { type: 'stump', tx, ty, flash: 0, shake: 0 });
     burst(ox, oy - 8, '#eef4fb', 8, 70, 0.6, true);

@@ -220,7 +220,7 @@ is in reach — `autoWork`; without it the thing waits for E, as only bare ice a
 rival building needs no flag — `autoWorks` asks `STRUCTS` and `ownsStruct`), `verb` and `lift` (the E key prompt, which an `auto` type never shows), and `mm`/`map` (what each of the two maps
 paints it — `mm` an `[r, g, b]` for the minimap disc, `map` a `CH_*` class the chart files it
 under, each a constant or a function of the object, as a roosting eagle's side is; leave `map`
-out for anything that stands alone on its tile — a bush, a stump — since at the chart's
+out for anything that stands alone on its tile — a stump — since at the chart's
 scale a speck is noise, and read [rendering](rendering/ui-panels-are-baked-once.md) for what the
 chart does with a class). `isSolidTile()`, `workTarget()`, `autoTarget()`, `hitObject()`'s tool
 gate, `drawWorkHint()`, `updateMinimap()` and `buildWorldMapImg()` all read that one entry and
@@ -253,7 +253,7 @@ the byte-fragile grid files under js/sprites/ — see `SPR.bake` in js/sprites/c
 should **loop** is still one canvas to everything that draws it — put the frames in
 `SPRITES.itemAnim[key]` and the canvas in `SPRITES[key]`, and `stepItemIcons` animates it, see
 [sprites.md](sprites.md)). A heal the WORLD hands out is not carried at all: it is taken where it
-stands through `healPlayer`, like the creek fish and the berry bush. Gold is **not** an item and
+stands through `healPlayer`, like the creek fish. Gold is **not** an item and
 must not become one: it is a wallet number with no ceiling.
 
 **Adding or changing a hero's basic attack** — one `attack` row on its `CLASSES` entry

@@ -538,7 +538,7 @@ function openPingWheel() {
 // and NO KEY WALKS THE BODY. A right press on open ground is an ORDER to walk
 // there by route - navTo, the bots' own walker, so the same feet round the
 // same trees - and holding it drags the goal under the pointer (the League
-// habit). On a tree, a bush, a hole or a rival building it is a walk into
+// habit). On a tree, a hole or a rival building it is a walk into
 // reach and the swing; on a merchant or the practice furniture a walk into
 // reach and the thing opening; on the chart
 // or the minimap a walk across the map; seated on the roost, the hop. On a

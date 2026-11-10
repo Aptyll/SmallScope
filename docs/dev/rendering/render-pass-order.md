@@ -110,16 +110,15 @@ draws under a **pulsing gold rim** (`drawTargetRim`: the buy plates' two
 golds, stamped through the scratch canvas at the eight neighbours, the rim grammar of
 `drawPixelTextOutline`; a windowed pine's rim opens with it), so the target is its own visible
 state everywhere the cursor lands;
-a bush never rims (E does nothing to it: walking into a ripe one heals) — a *hovered* bare
-bush shows its regrow clock instead, the neutral unit bar (`drawHealthBar`, gold) over the plant
-filling toward `BUSH_REGROW`, drawn only while the pointer's tile is that bush (`hovO`, resolved
+a *hovered* resting snowdrop shows its clock, the neutral unit bar (`drawHealthBar`, gold) over the plant
+filling toward `SNOWDROP_CD`, drawn only while the pointer's tile is that clump (`hovO`, resolved
 beside `wkO` at any reach, since a look asks nothing of the legs). A **camp anchor**
 (a wolf den's mouth) wears the seconds until the camp is back over the prop, hovered or not,
 while the camp is cleared and the watched side knows it (`drawCampClock`; a camp with no anchor
 wears it over its mark through a `fn` entry of the sorted list, `campClockDraws`,
 [world.md](../world.md#runtime)), nothing while anything in it lives. Only a
-covering canopy leaves the atlas batch, so the batch below stays whole. A **dead tree** is a 16×24 snag at `py - 8`. Short ground sprites (bush,
-stump) all draw at `py + 4` to stay clear of that band — drop one lower and
+covering canopy leaves the atlas batch, so the batch below stays whole. A **dead tree** is a 16×24 snag at `py - 8`. Short ground sprites (the
+stump) draw at `py + 4` to stay clear of that band — drop one lower and
 a tree on the tile below hides it almost completely. The den is tall enough not to need it: its 21 rows
 sit at `py - 4`, the lip on the foot of its two tiles.
 

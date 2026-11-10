@@ -139,7 +139,7 @@ function renderScoreboard() {
 // a track through it. Nothing is painted over the inks - no lit or inked
 // rims, no grain (both went in 0.459: the marks and the team inks are the
 // read, and the old winter shading fought them).
-// No grid, no dot for a single bush: a lone tile is a speck at this scale. The image is re-inked at most every MM_REBUILD ticks like the
+// No grid, no dot for a single tile: a lone tile is a speck at this scale. The image is re-inked at most every MM_REBUILD ticks like the
 // minimap's (a wall going up half a second late on a chart is invisible)
 // and on the tick a fresh match resets the clock.
 //

@@ -61,8 +61,7 @@ heading turns from the line's to the crash's bearing over the first part of the 
 within `BOOM_R` (3.6 tiles) outright and **paves the disc** (the pad: every snow tile in it turns
 to ground `3` that frame and `addPad` registers it with the road, [world.md](../world.md#the-road),
 so the roost stands on the same packed earth as the road it ends), snaps every tree beyond it
-out to `BOOM_STUMP_R2` (6.0) to a stump, and clears every
-bush out to the outer ring outright, so the whole disc is ground a side can build on —
+out to `BOOM_STUMP_R2` (6.0) to a stump, so the whole disc is ground a side can build on —
 **paying no gold**, a crater of free fells would warp the economy at minute one — plants the
 **roost hitbox** (`eagle` objects on the open tiles within `EAGLE_TILE_R`, solid to walkers and a
 rival-only E target; `eagleFlee` clears them again at liftoff), sets `e.laneDir` (the unit

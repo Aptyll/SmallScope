@@ -42,7 +42,7 @@ Whenever `workTarget()` is non-null, `near`, **and not something the hands take 
 (`autoWorks(t.o, player)` nulls it — and tools aren't blocked, the bow drawn or a cable
 ridden), `drawWorkHint()` — called right after `drawSelection` in the overlay pass — floats a
 key prompt over the target: a pixel key-cap wearing the work key (**E** until rebound) plus the
-verb. Since every tree, bush and rival building is `auto`, the only prompt that shows in play
+verb. Since every tree and rival building is `auto`, the only prompt that shows in play
 is **HIT** over the practice dummy; the verb and the lift are still read off the `OBJECTS` entry
 (`verb`, `lift`: 33 for a pine, 28 for the dummy, 10–12 for the short ones),
 scenery wider than a tile takes it on its middle (`w`), and the building branch — BREAK,

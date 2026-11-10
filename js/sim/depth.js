@@ -171,15 +171,14 @@ function layBrush() {
     }
   });
 }
-const BRUSH_FELLS = { tree: true, bush: true, stump: true, snag: true };
+const BRUSH_FELLS = { tree: true, stump: true, snag: true };
 
 // ---- laying the drifts ----------------------------------------------------
 // what breaks the wind: anything worldgen stood up that stands above the
-// snow (a pine, a snag, a den, a hut) and the berry bushes,
-// which trap it the way a hedge does - each holds a lee pad (layLees)
+// snow (a pine, a snag, a den, a hut) - each holds a lee pad (layLees)
 function driftBreak(tx, ty) {
   const o = objAt(tx, ty);
-  return !!o && (o.type === 'bush' || !!(OBJECTS[o.type] && OBJECTS[o.type].solid) || o.type === 'part');
+  return !!o && (!!(OBJECTS[o.type] && OBJECTS[o.type].solid) || o.type === 'part');
 }
 // the tiles a drift reaches, with the margin its rim and cast shade need
 function driftTiles(D, pad) {
@@ -256,7 +255,7 @@ function poolIn(D, fx, fy) {
   return m;
 }
 // Every standing thing out in the open - a pine on the treeline's edge or in
-// a stand's fringe, a bush, a stump, a snag, a den, a hut - holds a
+// a stand's fringe, a stump, a snag, a den, a hut - holds a
 // small pad of snow in its own lee along driftWind: the same drift shape at a
 // tile or two long and LEE_AMP tall, so it lives in the MID band and never
 // slows anybody. Forest floor (LEE_WOODS breakers round it) gets none: the

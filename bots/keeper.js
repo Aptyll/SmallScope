@@ -1,6 +1,6 @@
 // KEEPER: stays home. Chops the woods by its own bird for gold, spends it on
 // items at its counter, and turns on anything that comes for the bird. Shows work (E), an
-// order (`cmd`), a heal from a berry bush and reading your own bird's `hitT`.
+// order (`cmd`), a potion drunk when hurt and reading your own bird's `hitT`.
 defineBot({
   name: 'KEEPER',
   author: 'Softfall',
@@ -33,12 +33,10 @@ defineBot({
     }
     this.drawT = 0;
 
-    // hurt: walk into the nearest ripe bush near home (obs.nodes lists only ripe ones); it heals on touch
-    if (me.hp < me.maxHp * 0.6) {
-      const b = obs.nodes.filter((n) => n.kind === 'bush').map((n) => ({ x: n.tx * 16 + 8, y: n.ty * 16 + 4 }))
-        .filter((q) => Math.hypot(q.x - home.x, q.y - home.y) < 300).sort((a, c) => dist(a) - dist(c))[0];
-      if (b) { act.goTo = { x: b.x, y: b.y }; act.think = { goal: 'HEAL', why: 'LOW HP', target: { kind: 'point', x: b.x, y: b.y } }; return act; }
-    }
+    // hurt: drink a potion (useItem is the slot's key; it heals over time and
+    // never stops the hands), and keep working
+    const pot = me.items.indexOf('potion');
+    if (me.hp < me.maxHp * 0.6 && pot >= 0 && me.potionT <= 0) act.useItem = pot;
 
     // work the nearest tree within 250 of home; a tree it found no way to is
     // skipped from then on (me.nav says 'fail' when the last goTo had no route)

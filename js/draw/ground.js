@@ -1075,7 +1075,6 @@ const CASTERS = {
                 const nx = Math.floor(n / (TREE_NUDGE_Y * 2 + 1)) - TREE_NUDGE_X, ny = n % (TREE_NUDGE_Y * 2 + 1) - TREE_NUDGE_Y;
                 return [A, f * A.fw, A.fw, A.fh, -5 + nx, -21 + ny];
               } },
-  bush:     { code: () => 120, art: () => whole(SPRITES.bush, 0, 4) },
   stump:    { code: () => 121, art: () => whole(SPRITES.stump, 0, 4) },
   den:      { code: () => 122, art: () => whole(SPRITES.den, 0, -4) },
   hut:      { code: () => 125, art: () => { const s = SPRITES.hogHut[0]; return whole(s, TILE - (s.width >> 1), TILE - s.height); } },
