@@ -1338,16 +1338,20 @@ function treeTone(tx, ty) {
 // Which of the pine's three heights a tile wears (TREE_CUTS, js/sprites/terrain.js):
 // 0 the drawn tree, 1 and 2 shorter. Half of it is a slow noise, so tall and
 // short pines stand in groves, and half the tile's own hash, so no grove is
-// level. Off the tile alone - a felled neighbour never changes a tree's height.
+// level. The row that borders open ground is always the drawn tree, so a
+// wall's edge is one solid line and a short pine never reads as a gap to
+// walk through (a pine a felling opens up stands up to it).
 const TREE_GROVE = 5; // tiles across a grove of like heights
-function treeSize(tx, ty) {
+function treeSize(tx, ty, tone = treeTone(tx, ty)) {
+  if (tone === 0) return 0;
   const v = vnoise(tx / TREE_GROVE + 31.5, ty / TREE_GROVE + 7.5) * 0.55 + hash2(tx * 23 + 7, ty * 29 + 3) * 0.45;
   return v < 0.45 ? 0 : v < 0.62 ? 1 : 2;
 }
 // the cell in SPRITES.treeAtlas: column (treeFrame's lean) + palette row
 function treeCell(tx, ty, col) {
   const v = Math.floor(hash2(tx * 5 + 3, ty * 7 + 1) * 3);
-  return col + (treeSize(tx, ty) * SPRITES.treeAtlas.pals + v * TREE_TONES + treeTone(tx, ty)) * SPRITES.treeAtlas.cols;
+  const tone = treeTone(tx, ty);
+  return col + (treeSize(tx, ty, tone) * SPRITES.treeAtlas.pals + v * TREE_TONES + tone) * SPRITES.treeAtlas.cols;
 }
 // The nudge that breaks the grid: up to TREE_NUDGE_X px either side of the
 // tile's centre line and TREE_NUDGE_Y up or down. Only the art moves - the
