@@ -107,15 +107,16 @@ function brushOf(x, y) {
 //   mid:    one either side of the mid road
 //   jungle: one each side of the road between the mid road and the dens
 //   river:  one each side short of the creek, toward the bears
-//   ring:   the cistern's floor, one drift either side of the road through it
-const CIST_DRIFT_S = 5; // tiles off the road's middle a ring drift lies (the road is ROAD_HW either side)
+//   ring:   the cistern's floor, one drift either side of the road through it,
+//           in the middle of the floor: clear of the road's verge and of the wall
+const CIST_DRIFT_S = 6.9; // tiles off the road's middle a ring drift lies: its rim stays a tile and a half off the road's verge and its skirt inside the wall (9.5)
 const BRUSH_PATCHES = [
   [60, -25.5, 4, 1.7, -70], [60, 25.5, 4, 1.7, -20], // lane, inside the first tower
   [86, -55, 4, 1.7, -85], [86, 55, 4, 1.7, -5],     // lane, out by the second tower
   [90, -8.5, 3.5, 1.5, -45], [90, 8.5, 3.5, 1.5, -45], // mid
   [76, -13, 3, 2, 45], [76, 13, 3, 2, 45],         // jungle
   [103, -28, 3.5, 2, 45], [103, 30, 3.5, 2, 45],   // river
-  [(WORLD - 1) / 2 / MAP_K, -CIST_DRIFT_S / MAP_K, 4, 1.9, -45], [(WORLD - 1) / 2 / MAP_K, CIST_DRIFT_S / MAP_K, 4, 1.9, -45], // ring
+  [(WORLD - 1) / 2 / MAP_K, -CIST_DRIFT_S / MAP_K, 2.8, 1.1, -45], [(WORLD - 1) / 2 / MAP_K, CIST_DRIFT_S / MAP_K, 2.8, 1.1, -45], // ring
 ].map(([u, s, a, b, ang]) => [u * MAP_K, s * MAP_K, a, b, ang]); // MAP_K spreads where they stand, never their size
 const BRUSH_AMP = 0.95;   // the depth in a patch past its rim's slope
 const BRUSH_EDGE = 0.6;   // tiles in from the rim it takes to reach BRUSH_AMP

@@ -470,7 +470,8 @@ function deadClick() {
 }
 
 // the wait, and not a word more: the recap, then the ally the camera is on,
-// is the screen, and the number is the only thing to read. 3x in the upper
+// is the screen, and the number is the only thing to read (a FIRST MATCH adds
+// its coach's card, the lesson of that death: renderGuideDead, js/ui/guide.js). 3x in the upper
 // band where an eye lands, 2x on a view too narrow to hold it.
 function drawRespawnLine() {
   const t = tr('end.respawn', { s: Math.max(0, Math.ceil(player.respawnT)) });
@@ -482,7 +483,7 @@ function drawRespawnLine() {
 function renderDead(now) {
   if (state.deadView === 'scores') { renderScores(now); return; } // the post-game record (js/ui/lobby.js)
   // the recap owns the frame: only a respawn wait's countdown reads over it
-  if (replayFull()) { if (state.over === 'respawning') drawRespawnLine(); return; }
+  if (replayFull()) { if (state.over === 'respawning') { drawRespawnLine(); renderGuideDead(now); } return; }
   if (state.deadView === 'spec') {
     // top centre: [<] FACE HERO [>]. The watched hero's face and name at 2x over a rule in its side's
     // colour; each arrow is its own box that lights gold under the
@@ -516,7 +517,7 @@ function renderDead(now) {
       ctx.fillStyle = '#6c717a';
       ctx.fillRect(Math.round(L.x + L.w / 2) - 4, L.y + 9, 8, 2);
     }
-    if (state.over === 'respawning') drawRespawnLine();
+    if (state.over === 'respawning') { drawRespawnLine(); renderGuideDead(now); }
     return;
   }
   if (state.deadView === 'defeat') { renderDefeat(now); return; } // the loss's own summary

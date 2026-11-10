@@ -201,7 +201,7 @@ function guideOverX(r, mx, my) {
 }
 // the line of detail: open for a lesson's first GUIDE_TIP_T s, so a first match reads each one once
 // unasked, then folded to the word; the DETAILS key (or ABILITY DETAILS on ALWAYS) opens it again
-function guideTipOn() { return settings.tipFull || keyHeld('details') || (guide.step >= 0 && !guide.flash && guide.t < GUIDE_TIP_T); }
+function guideTipOn() { return settings.tipFull || keyHeld('details') || state.mode === 'dead' || (guide.step >= 0 && !guide.flash && guide.t < GUIDE_TIP_T); }
 function guideWord(s) { return s.need ? s.word + ' ' + Math.min(s.need, Math.max(0, s.count(guide))) + '/' + s.need : s.word; }
 function guideShown() {
   if (!guideOn() || player.dead || guide.step < 0) return null;
@@ -255,6 +255,30 @@ const GUIDE_EDGE_ARROW = [
   ['......#', '.....##', '....###', '...####', '..#####', '.######', '#######'],
 ];
 
+// ---- the wait to respawn ---------------------------------------------------
+// A death in a FIRST MATCH is a lesson too: while the respawn clock runs the
+// card stands where it always does, with the one thing that death teaches,
+// read off the blows that did it (player.deathLog, recapNote in
+// js/sim/player.js): a tower's share of them past GUIDE_DEATH_TOWER is the
+// TOWER lesson, anything else is RECALL. Its line of detail stays open the
+// whole wait and it wears no X (a press belongs to the death screen).
+const GUIDE_DEATH_TOWER = 0.3; // a tower's share of the killing blows that makes the death the tower's
+const GUIDE_DEATHS = {
+  tower: { id: 'tower', word: 'TOWER', tip: 'GO IN BEHIND YOUR SOLDIERS: A TOWER SHOOTS THEM FIRST', caps: () => [] },
+  recall: { id: 'recall', word: 'RECALL', tip: 'LOW ON HEALTH? YOUR EAGLE TAKES YOU HOME TO HEAL', caps: () => [keyCap('recall')] },
+};
+function guideDeathLesson() {
+  if (NET.mode !== 'guide' || PRACTICE || guide.off || state.mode !== 'dead' || state.over !== 'respawning') return null;
+  const log = player.deathLog || [];
+  let all = 0, tower = 0;
+  for (const e of log) { all += e.d; if (e.k === 'world' && e.c === 'tower') tower += e.d; }
+  return all > 0 && tower / all >= GUIDE_DEATH_TOWER ? GUIDE_DEATHS.tower : GUIDE_DEATHS.recall;
+}
+function renderGuideDead(now) {
+  const s = guideDeathLesson();
+  if (s) drawGuideCard(now, s, false, -1, false);
+}
+
 // the card: flat graphite, the caps and the word, the lessons' pips over it
 function renderGuide(now) {
   updateGuide(now);
@@ -262,8 +286,12 @@ function renderGuide(now) {
   if (!s) return;
   const at = !guide.flash && s.at ? s.at() : null;
   if (at) drawGuideArrow(now, at);
-  const r = guideRect(s), lit = guide.flash > 0;
-  const hot = mouse.inside && guideOverX(r, mouse.x, mouse.y);
+  drawGuideCard(now, s, guide.flash > 0, guide.step, true);
+}
+// the card itself. cur: the lesson its white pip marks (-1: none); x: it wears the X
+function drawGuideCard(now, s, lit, cur, x0) {
+  const r = guideRect(s);
+  const hot = x0 && mouse.inside && guideOverX(r, mouse.x, mouse.y);
   const w = r.lw, h = r.lh;
   ctx.save();
   ctx.translate(r.x, r.y); ctx.scale(GUIDE_K, GUIDE_K); // from here the card's own px
@@ -286,13 +314,13 @@ function renderGuide(now) {
   }
   // the X
   ctx.fillStyle = hot ? GUIDE_GOLD : GUIDE_DIM;
-  for (let i = 0; i < 5; i++) { ctx.fillRect(r.xx + i, r.xy + i, 1, 1); ctx.fillRect(r.xx + 4 - i, r.xy + i, 1, 1); }
+  if (x0) for (let i = 0; i < 5; i++) { ctx.fillRect(r.xx + i, r.xy + i, 1, 1); ctx.fillRect(r.xx + 4 - i, r.xy + i, 1, 1); }
   if (guideTipOn()) drawPixelText(ctx, s.tip, GUIDE_PAD, GUIDE_H + 1, GUIDE_LBL, 1);
   // one pip a lesson: learned gold, this one white, the rest dark
   const n = GUIDE_STEPS.length, pw = n * 4 - 1, px0 = (w - pw) >> 1;
   for (let i = 0; i < n; i++) {
     ctx.fillStyle = GUIDE_INK; ctx.fillRect(px0 + i * 4 - 1, -6, 4, 4);
-    ctx.fillStyle = guide.learned[i] ? GUIDE_GOLD : i === guide.step ? GUIDE_TXT : GUIDE_EDGE;
+    ctx.fillStyle = guide.learned[i] ? GUIDE_GOLD : i === cur ? GUIDE_TXT : GUIDE_EDGE;
     ctx.fillRect(px0 + i * 4, -5, 2, 2);
   }
   ctx.restore();
