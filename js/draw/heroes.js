@@ -55,10 +55,10 @@ function heldLeansLeft(img) {
 function heldFlip(img) { return heldBaked(heldFlips, img, SPR.flipH); }
 function heldDrop(img) { return heldBaked(heldDrops, img, SPR.flipV); }
 // THE CAST POSE: a key's cast, and the beat a shot leaves the staff, raise it
-// up and out from the body (STAFF_RAISE, STAFF_OUT px) while the body rises a
+// up and out from the body (STAFF_CAST px) while the body rises a
 // pixel with it (attackLean, js/draw/bodies.js); a draw lifts it 1 px. Drawn
 // only, off the cast and the cycle the sim keeps (castT, nockT).
-const STAFF_RAISE = 2, STAFF_OUT = 1; // out 1, so the hand stays on it
+const STAFF_CAST = { up: 2, out: 1 }; // out 1, so the hand stays on it; a row's own `cast` replaces it (BUCINA's horn goes to her lips)
 const STAFF_SHOT_T = 1 / 6; // s the staff stays raised after a shot leaves it (two body frames)
 function staffCasting(p) { return p.castT > 0 || (p.nockT > 0 && attackCycle(p) - p.nockT < STAFF_SHOT_T); }
 function heroStaff(p, px, py) {
@@ -74,8 +74,8 @@ function heroStaff(p, px, py) {
   const mirror = (p.dir === 'down' ? back : p.dir === 'left' || p.dir === 'up') !== (s.lean ? s.lean === 'left' : heldLeansLeft(img)); // `lean` says it when a thing hung low off the staff would fool the reading
   if (mirror) img = heldFlip(img);
   const gx = mirror ? img.width - 1 - s.grip[0] : s.grip[0];
-  const up = staffCasting(p), rc = heroReach(p) + (up ? STAFF_OUT : 0);
-  const hx = back ? px + 2 - rc : px + 13 + rc, hy = py + 10 - (up ? STAFF_RAISE : p.charging ? 1 : 0); // a draw lifts it, a cast or a shot raises it
+  const up = staffCasting(p), use = up && s.cast || STAFF_CAST, rc = heroReach(p) + (up ? use.out : 0);
+  const hx = back ? px + 2 - rc : px + 13 + rc, hy = py + 10 - (up ? use.up : p.charging ? 1 : 0); // a draw lifts it, a cast or a shot raises it
   ctx.drawImage(img, Math.round(hx - gx), Math.round(hy - s.grip[1]));
   if (p.dir !== 'up') heroFist(p, hx, hy, back ? -1 : 1);
   return true;
