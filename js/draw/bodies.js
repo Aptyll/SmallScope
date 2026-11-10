@@ -682,6 +682,30 @@ function drawGripped(img, grip, hx, hy, rot) {
 // fore hand is AIM_HAND px out from the hips, so the stock stays on the body.
 const AIM_HAND = 6, AIM_HAND_UP = 2, AIM_DROP = 1; // a row under the hands' line: a level stock sits below the chin
 function aimHeading(a) { return ((Math.round(a / (Math.PI / 4)) % 8) + 8) % 8; }
+// THE ONE HOOK for an aim in drawn headings: what the hands hold on the aim, or null
+// when this weapon is turned freely (a blade) or is not up. { img, grip, rot, x, y, behind,
+// fist }: the art, where the hand closes on it, the quarter turns it is drawn at, the hand
+// from the hands' middle, whether it goes behind the body, and whether a fist shows on it.
+// A hero's own frames first (HERO_AIMED, js/draw/heroes.js: they change through the draw
+// and stay up a beat after the shot); else a rigid weapon's slanted grid, while drawn.
+function heroAimed(p) {
+  const A = attackOf(p);
+  if (A.cut) return null;
+  const drawing = p.charging || castAims(p), h = aimHeading(aimAngle(p)), ha = h * Math.PI / 4;
+  const behind = heldBehind(ha), own = HERO_AIMED[A.art];
+  if (own) {
+    if (!drawing && !(p.nockT > 0 && p.castT <= 0 && attackCycle(p) - p.nockT < AIMED_LOOSE_T)) return null;
+    const r = own(h, !drawing ? 0 : drawPow(p) < 0.5 ? 1 : 2);
+    return { img: r.img, grip: r.grip, rot: 0, x: r.hand[0], y: r.hand[1] - 2, behind, fist: true };
+  }
+  const dg = drawing && SPRITES.weaponDiag[A.art];
+  if (!dg) return null;
+  // the stock at the shoulder; aimed up the screen it stays at the shoulders, behind the head and under the health frame
+  const x = Math.round(Math.cos(ha) * AIM_HAND), y = AIM_DROP + Math.round(Math.sin(ha) * (Math.sin(ha) < 0 ? AIM_HAND_UP : AIM_HAND));
+  if (h & 1) return { img: dg, grip: WEAPON_GRIP.diag[A.art], rot: ha - Math.PI / 4, x, y, behind, fist: false };
+  const icon = SPRITES.weaponArt[A.art];
+  return { img: icon, grip: WEAPON_GRIP.icon[A.art] || [icon.width >> 1, icon.height >> 1], rot: ha - (WEAPON_FWD[A.art] || 0), x, y, behind, fist: false };
+}
 // is a key mid-wind-up holding the weapon on the aim (its CLASS_AB row's `aimHeld`: SAGITTA's bolts)
 function castAims(p) { if (!(p.castT > 0)) return false; const ab = abOf(p, p.castAb); return !!(ab && ab.aimHeld); }
 // ---- the blow's motion -----------------------------------------------------
@@ -812,22 +836,25 @@ function drawHeldTool(p, px, py, back) {
     return;
   }
 
+  // an aim in drawn headings (heroAimed): one of eight set frames on the snapped aim, the
+  // hand closed on its grip, behind the body when it points up the screen
+  const aimed = swinging ? null : heroAimed(p);
+  if (aimed) {
+    const hx = cxp + aimed.x, hy = cyp + aimed.y;
+    if (aimed.behind === back) {
+      if (aimed.img) drawGripped(aimed.img, aimed.grip, hx, hy, aimed.rot);
+      if (aimed.fist && !back) heroFist(p, hx, hy, aimed.x < 0 ? -1 : 1);
+    }
+    return;
+  }
+
   // the drawn weapon tracks the aim. Drawn over the sweep: the shot about to
   // leave is the thing to read. A blade is drawn back to the START of its
   // arc, wound up, so the draw reads as the swing it is about to be.
   if (drawing) {
     const a = aimAngle(p);
     const w = cut ? a - cut.half * (0.4 + 0.6 * Math.floor(drawPow(p) * 2) / 2) : a; // cocked back in two steps, not a creep
-    const dg = cut ? null : SPRITES.weaponDiag[A.art];
-    if (dg) { // eight drawn headings, the stock at the shoulder
-      const h = aimHeading(w), ha = h * Math.PI / 4;
-      if (heldBehind(ha) === back) {
-        const up = Math.sin(ha) < 0; // aimed up the screen it stays at the shoulders, behind the head and under the health frame
-        const hx = cxp + Math.round(Math.cos(ha) * AIM_HAND), hy = cyp + AIM_DROP + Math.round(Math.sin(ha) * (up ? AIM_HAND_UP : AIM_HAND));
-        if (h & 1) drawGripped(dg, WEAPON_GRIP.diag[A.art], hx, hy, ha - Math.PI / 4);
-        else drawGripped(wIcon, iGrip, hx, hy, ha - fwd);
-      }
-    } else if (heldBehind(w) === back) {
+    if (heldBehind(w) === back) {
       drawGripped(cut ? wHeld : wIcon, cut ? hGrip : iGrip,
         cxp + Math.cos(w) * (cut ? BLADE_HAND[0] : 8), cyp + (cut ? Math.sin(w) * BLADE_HAND[1] : Math.sin(w) * 8 - 2), w - fwd);
     }

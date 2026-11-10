@@ -110,6 +110,15 @@ function heroBladeOf(p) { const c = CLASSES[p.cls]; return c && c.blade ? HERO_B
 // the blade a hero's hands hold in place of its sword's own art and where the
 // hands close on it ({ img, grip }), or null
 function heroBlade(p) { const b = attackOf(p).cut ? heroBladeOf(p) : null; return b ? { img: b.art().flat, grip: b.hilt } : null; }
+// A shot weapon with its own DRAWN aim frames (a bow's string and arrow, a knife cocked
+// back): HERO_AIMED[art] = fn(heading, step) -> { img, grip, hand }. `heading` is the aim
+// snapped to eight, 0..7 clockwise from +x (aimHeading); `step` is 0 the beat after the shot
+// has left (AIMED_LOOSE_T), 1 half drawn, 2 full drawn. `img` may be null (an empty hand);
+// `hand` is where the fist is, px from the chest. heroAimed (js/draw/bodies.js) is the one
+// place every drawn-heading aim is resolved: these rows, and a rigid weapon's slanted grid
+// (SPRITES.weaponDiag) where a hero has no row.
+const HERO_AIMED = {};
+const AIMED_LOOSE_T = 1 / 6; // s the weapon stays up on the aim after its shot (two body frames)
 // A hero's own way of carrying its weapon at rest, where a blade row's hold would
 // not read: HERO_CARRY fns(p, px, py) -> true once drawn (SAGITTA's crossbow on
 // her shoulder); (px, py) is the 16 px cell's top-left.

@@ -356,9 +356,11 @@ with a white feather over short brown hair and a beard, a leather jerkin and a q
 and FIRST SNOW (rare, 200 coins: the same cut in pale wool, its `pal` repainting the cap, jerkin and
 feather), both on ARMATOS's frame. The cut is C off arcus-round1.png in the project files. His doll
 is `Fletcher` in app/bake-player/bodies.py (motion `fletcher`); he runs on his drawn frames
-(`run: 'drawn'`). His WILLOW LONGBOW is his basic attack's `art` (`SPRITES.weaponArt.longbow`): held
-level facing a side, carried upright in his leading hand facing down or up (`HERO_CARRY`,
-js/draw/arcus.js).
+(`run: 'drawn'`). His WILLOW LONGBOW is his basic attack's `art` (`SPRITES.weaponArt.longbow`): at rest
+he carries its own carried art (`ARCUS_BOW_CARRY`, a shallow D) upright in his leading hand, beside
+the body in every facing (`HERO_CARRY`, js/draw/arcus.js). Drawn, it is one of eight set frames on
+the snapped aim with the string back and an arrow on it, half then full, and the string straight for
+a beat after the shot (`ARCUS_BOW_AIM`; `HERO_AIMED`, js/draw/heroes.js): never a turned sprite.
 
 FABER has two looks (`FABER_SKINS`, js/sprites/faber.js): CLOCKMAKER (free) and WORKS FOREMAN
 (rare, 200 coins), both on ARMATOS's frame. `FABER_PAL` is `ARM_PAL` with the leather cap and apron
