@@ -72,8 +72,11 @@ function guideSoldier() {
       if (d > od) { od = d; own = b; }
     }
   }
-  // before the first wave no soldier is out: the arrow leads to where your lane's laner waits for it (laneHold), so the wait is the walk
-  const t = rival || own || laneHold(player.team, lane);
+  // until your own soldiers are out and past it, the arrow leads to where your lane's laner waits for them (laneHold):
+  // the wait is the walk, and a wave leaving home never points you back
+  const hold = laneHold(player.team, lane);
+  if (own && home && od < Math.hypot(hold.x - home.x, hold.y - home.y)) own = null;
+  const t = rival || own || hold;
   if (!own || rival) { const sx = wToSX(t.x), sy = wToSY(t.y); if (sx >= 0 && sx < VIEW_W && sy >= 0 && sy < VIEW_H) return null; }
   return { x: t.x, y: t.y - 24 };
 }
