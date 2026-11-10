@@ -94,6 +94,17 @@ function statPlateH() { return STAT_TOP * 2 + (STAT_ROWS.length - 1) * STAT_PITC
 let statSeen = null;    // the last value of each row; null = not seeded yet
 let statOwner = null;   // the body those came off - a new match reseeds silently
 const statLit = [];     // per row: { d, t } - the delta and the seconds of hold left
+// THE COUNTER HOLDS THE SHEET BACK. The lane runs down the counter's right edge, so a sheet that flew in
+// on a buy landed across the item tree. While the counter is open no stats plate is up: one that was
+// comes down, a change made there is owed (statDue, the seconds of news left in it), and the sheet
+// flies in when the counter closes if that has not run out.
+let statDue = 0;
+function statHold(dt) {
+  if (statDue > 0) statDue -= dt;
+  if (shopOpen()) {
+    for (let i = notices.length - 1; i >= 0; i--) if (notices[i].kind === 'stats') { statDue = Math.max(statDue, NOTE_LIFE - notices[i].t); notices.splice(i, 1); }
+  } else if (statDue > 0) { statDue = 0; raiseStatNote(); }
+}
 // drop any stats plate that is up and fly a fresh one: it arrives at the head
 // of the lane, shoving whatever stood there down, and re-runs its own pulse
 function raiseStatNote() {
@@ -107,6 +118,7 @@ function raiseStatNote() {
 // remember to announce it. Aged from updateFx (js/sim/sim.js) beside ageNotices.
 function updateStatLedger(dt) {
   for (let i = 0; i < statLit.length; i++) if (statLit[i] && (statLit[i].t -= dt) <= 0) statLit[i] = null;
+  statHold(dt);
   const p = player;
   // the menus, the lobby's picks and the drop tour reseed in
   // silence: nothing there is news, and a plate must not be waiting to fly in
@@ -128,7 +140,7 @@ function updateStatLedger(dt) {
     moved++;
   }
   if (!moved) return;
-  raiseStatNote();
+  if (shopOpen()) statDue = NOTE_LIFE; else raiseStatNote(); // over the counter it waits (statHold)
   // ONE cue for the batch, never one per row: a gold card moves three numbers
   // and is one thing that happened. Its direction is the batch's balance, so a
   // card that trades health for damage still speaks and reads as whichever way
