@@ -9,12 +9,18 @@ const LO_INK = '#1a1418', LO_ROPE = '#d8c09a', LO_ROPE_D = '#9a7a58', LO_STREAK 
 function loBlink(t, now) { return t > 0 && (t >= 0.5 || Math.floor(now * 8) % 2 === 0); }
 function drawLoadoutMarks(e, px, py, w, h, now) {
   const cx = px + (w >> 1);
-  if (loBlink(e.weakT, now)) { // the cord, wound twice round the shins
-    const y = py + h - 5;
-    ctx.fillStyle = LO_INK; ctx.fillRect(cx - 5, y - 1, 11, 4);
-    ctx.fillStyle = LO_ROPE; ctx.fillRect(cx - 4, y, 9, 1);
-    ctx.fillStyle = LO_ROPE_D; ctx.fillRect(cx - 4, y + 1, 9, 1);
-    ctx.fillStyle = LO_ROPE; ctx.fillRect(cx - 2, y + 1, 1, 1); ctx.fillRect(cx + 2, y + 1, 1, 1);
+  if (loBlink(e.weakT, now)) { // the cord, wound twice round the shins, its lay showing, a stone weight hung off each end
+    const y = py + h - 6;
+    ctx.fillStyle = LO_INK; ctx.fillRect(cx - 3, y + 1, 7, 1); ctx.fillRect(cx - 3, y + 3, 7, 1);
+    for (let k = -3; k <= 3; k++) {
+      ctx.fillStyle = k & 1 ? LO_ROPE_D : LO_ROPE; ctx.fillRect(cx + k, y, 1, 1);
+      ctx.fillStyle = k & 1 ? LO_ROPE : LO_ROPE_D; ctx.fillRect(cx + k, y + 2, 1, 1);
+    }
+    for (const [wx, wy] of [[cx - 5, y + 2], [cx + 4, y + 1]]) {
+      ctx.fillStyle = LO_INK; ctx.fillRect(wx - 1, wy, 4, 2); ctx.fillRect(wx, wy - 1, 2, 4);
+      ctx.fillStyle = WRECK_STONE.L; ctx.fillRect(wx, wy, 2, 2); // the rubble's own grey: thrown stone is one material (js/draw/falls.js)
+      ctx.fillStyle = WRECK_STONE.D; ctx.fillRect(wx + 1, wy + 1, 1, 1);
+    }
   }
   if (e instanceof Player && !e.dead) {
     const run = e.sprintT > 0 || e.runT > 0 || (e.ks && e.ks.on > 0 && callingOf(e) === 'outrider');

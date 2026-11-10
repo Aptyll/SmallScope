@@ -316,6 +316,18 @@ function abilityPose(p) {
 // the same tells at their own size - a state you cannot see is a rule you
 // cannot play around, and that is as true of a deer as of a rival. Called by drawAbilityOnPlayer below and by drawAnimal /
 // drawRobot (js/draw/bodies.js).
+// one tongue of a burning body's fire (drawUnitStates): its foot at (x, y), `hgt` px tall, leaning `lean`
+// px by its tip; an amber body three wide at the foot and one at the tip, a yellow heart inside it low down; the crown's
+// stays short of the overhead frame
+const BURN_BEAT_H = [2, 1, 0, 1], BURN_BEAT_LEAN = [0, 1, 0, -1];
+function burnTongue(x, y, hgt, lean) {
+  for (let r = 0; r < hgt; r++) {
+    const u = r / hgt, wd = u < 0.6 ? 3 : 1, ox = Math.round(lean * u); // odd widths, so the heart sits inside the flame and never beside it
+    ctx.fillStyle = u < 0.6 ? '#f07a28' : '#c8641e';
+    ctx.fillRect(x - (wd >> 1) + ox, y - r, wd, 1);
+    if (u < 0.45) { ctx.fillStyle = r < 1 ? '#fff0a8' : '#ffd95c'; ctx.fillRect(x + ox, y - r, 1, 1); }
+  }
+}
 function drawUnitStates(e, px, py, w, h, now) {
   if (e.rootT > 0) {
     // the sprung jaws, closed on the feet
@@ -335,21 +347,17 @@ function drawUnitStates(e, px, py, w, h, now) {
     }
   }
   if (e.burnT > 0) {
-    // Alight: tongues licking UP off the crown, and the snow under the feet
-    // lit by them - never a wash over the body, because a burning rival still
-    // has to read as the rival it is. Phased off the body's own burn clock, so
-    // two burning things are never in lockstep and no global clock is involved.
+    // Alight: flames licking up off the shoulders and the crown, each a tongue that tapers and leans as it
+    // flickers (never a bar), kept under the overhead frame, and the snow under the feet lit by them - never
+    // a wash over the body, because a burning rival still has to read as the rival it is. Phased off the
+    // body's own burn clock, so two burning things are never in lockstep and no global clock is involved.
     const ph = e.burnT * 9;
-    const n = Math.max(2, Math.min(4, w >> 2));
+    const n = w >= 14 ? 3 : 2, sh = py + Math.round(h * 0.3);
     for (let k = 0; k < n; k++) {
-      const fx = px + 1 + Math.round((w - 3) * ((k + 0.5) / n));
-      const lift = 2 + Math.round(2.2 * (1 + Math.sin(ph + k * 2.1)));
-      ctx.fillStyle = '#e0533a';
-      ctx.fillRect(fx, py - lift, 2, lift + 1);
-      ctx.fillStyle = '#ff9440';
-      ctx.fillRect(fx, py - lift + 1, 1, lift);
-      ctx.fillStyle = '#ffd95c';
-      ctx.fillRect(fx, py - lift, 1, 1);
+      const crown = n === 3 && k === 1;
+      const fx = crown ? px + (w >> 1) : k === 0 ? px + 1 : px + w - 2;
+      const beat = Math.floor(ph + k * 1.3) & 3; // four frames a tongue: tall, leaning, short, leaning back
+      burnTongue(fx, crown ? py + 1 : sh, (crown ? 2 : 5) + BURN_BEAT_H[beat], BURN_BEAT_LEAN[beat] * (k ? 1 : -1));
     }
     ctx.globalAlpha = 0.45 + 0.2 * Math.sin(ph * 1.7);
     ctx.fillStyle = '#ff9440';
