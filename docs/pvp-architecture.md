@@ -249,7 +249,8 @@ from this snapshot, not written beside it:
   echo harness runs without them, so a name added there is proven harmless or caught as pixels.
 
 **The proofs** (all on `DBG`, recipes in [checklists](dev/checklists.md)): `netEcho()` renders the
-world frame, snapshots through the bytes, blanks every singleton, applies and renders again - the
+world frame, snapshots through the bytes, blanks every singleton, applies and renders again (never a frame of the blank world between: a
+body's fall and a call's plate lean on the last frame the draw saw) - the
 pixels that differ are what the snapshot misses, and `snapCompare` names the fields (the harness
 pins the wall clock, which animations would otherwise read, and catches the
 trampled snow's chunk repaints up whole, `trCatchUp`, which it would otherwise spread over frames). `netDeltaRun(ticks,
