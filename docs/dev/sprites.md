@@ -44,7 +44,7 @@ paint is `k`/`K`/`e`/`E` (fit, coatD, coat, coatL), baked inside `SPR.onTeams`. 
 (js/draw/towers.js) lays the gun and the parapet; the bolt in flight is `towerBolt[heading]`.
 
 The **barracks** wears the bay grid (`STRUCTS.barracks.art` is `'spawner'`): a single-tier 48×38
-grid (`bay`, `BAYPAL`) on a 3×2 tile footprint — steel plates under a flat two-row snow cap, a
+grid (`bay`, `BAYPAL`) on a 3×2 tile footprint — steel plates under a humped load of snow that hangs over the eave, a drift against the left (windward) wall, a
 team-painted lintel band (`L`/`T`/`t` via `bayTeamPal`), riveted flanks with a grille and hazard
 stripe, and a 20-px dark doorway (cols 14–33, rows 13–35, floor row 36 — `drawBarracksOverlay` in
 js/draw/overhead.js clips to it), baked as `teamBuild[team].spawner`.
