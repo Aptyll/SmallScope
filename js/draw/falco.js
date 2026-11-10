@@ -102,9 +102,9 @@ function drawFalcoStoop(p, px, py, now) { // HERO_AIR, over the field: the body 
   const gx = Math.round(px + 8 + (seen ? (q.x - p.x) * e : 0)), gy = Math.round(py + 15 + (seen ? (q.y - p.y) * e : 0)); // the snow under him
   const s = seen && q.x < p.x ? -1 : 1, y = gy - 13 - Math.round(60 * up), tm = TEAMS[skin(p.team)];
   // the shadow: the bird's spread wings high up, closing to a body's width as he comes down
-  const r = Math.round(7 - 4 * up);
+  const r = Math.round(9 - 4 * up);
   ctx.globalAlpha = 0.3; ctx.fillStyle = FC_INK;
-  ctx.fillRect(gx - r, gy, r * 2 + 1, 1); ctx.fillRect(gx - r + 2, gy - 1, r * 2 - 3, 1); ctx.fillRect(gx - r + 2, gy + 1, r * 2 - 3, 1);
+  ctx.fillRect(gx - r, gy, r * 2 + 1, 1); ctx.fillRect(gx - r + 2, gy - 1, r * 2 - 3, 1); ctx.fillRect(gx - r + 2, gy + 1, r * 2 - 3, 1); ctx.fillRect(gx - 1, gy - 2, 3, 5);
   ctx.globalAlpha = 1;
   if (fall) for (let j = 0; j < 3; j++) { // the air he falls through, behind him
     ctx.fillStyle = j ? '#7f98bc' : '#4f6288'; ctx.fillRect(gx - 3 + j * 3, y - 14 - j * 2, 1, 5 - j);
