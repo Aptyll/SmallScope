@@ -55,6 +55,8 @@ function guideNearTower() {
 // your side sees, else your own lane's soldier furthest down it (walk with
 // them and the fight finds you). With a rival soldier on the screen the
 // lesson is in front of you and no arrow hops between them.
+// With no soldier out yet it is the spot up your lane where they will meet,
+// until that spot is on the screen.
 function guideSoldier() {
   const pos = POSITIONS[player.position], lane = pos && pos.lane >= 0 ? pos.lane : 1;
   const home = state.drop && state.drop.eagles[player.team];
@@ -70,9 +72,9 @@ function guideSoldier() {
       if (d > od) { od = d; own = b; }
     }
   }
-  const t = rival || own;
-  if (!t) return null;
-  if (rival) { const sx = wToSX(rival.x), sy = wToSY(rival.y); if (sx >= 0 && sx < VIEW_W && sy >= 0 && sy < VIEW_H) return null; }
+  // before the first wave no soldier is out: the arrow leads to where your lane's laner waits for it (laneHold), so the wait is the walk
+  const t = rival || own || laneHold(player.team, lane);
+  if (!own || rival) { const sx = wToSX(t.x), sy = wToSY(t.y); if (sx >= 0 && sx < VIEW_W && sy >= 0 && sy < VIEW_H) return null; }
   return { x: t.x, y: t.y - 24 };
 }
 
