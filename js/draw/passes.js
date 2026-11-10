@@ -146,6 +146,9 @@ function gatherDraws(ox, oy, tx0, ty0, tx1, ty1, now) {
   return draws;
 }
 
+// the box a tile object's art is sure to stand inside, off its tile's top-left:
+// the widest building and the tallest tower, with room for a shake
+const SCENERY_BOX_L = 48, SCENERY_BOX_UP = 144, SCENERY_BOX_W = 176, SCENERY_BOX_H = 208;
 // the y-sorted pass: bodies, animals and the scenery, back to front
 function drawSorted(draws, ox, oy, ex, ey, now) {
   // whose view the canopies must not hide (null while dead or airborne - no
@@ -154,6 +157,7 @@ function drawSorted(draws, ox, oy, ex, ey, now) {
   let heroP = viewPlayer();
   if (!heroP.active || heroP.dead || inAir(heroP)) heroP = null;
   canopyFrame(heroP);
+  bodyLightFrame(); // tonight's record of where a body shows (the body light banner, js/draw/light.js)
   let wkO = null;
   // the scenery under the pointer, for the one thing a hover shows on a
   // thing that is resting: a regrowing bush's clock (its branch below).
@@ -168,15 +172,21 @@ function drawSorted(draws, ox, oy, ex, ey, now) {
 
   airRiders.length = 0;
   for (const d of draws) {
-    if (d.reed) { drawReed(d.reed, ex, ey, heroP); continue; } // the brush's reeds (js/draw/depth.js)
+    if (d.reed) { litPunch(d.reed.x - ex - (REED_W >> 1) - 1, d.reed.y - ey - REED_H + 1, REED_W + 2, REED_H + 2, () => drawReed(d.reed, ex, ey, heroP)); continue; } // the brush's reeds (js/draw/depth.js)
     if (d.down) { drawDown(d.down, ex, ey, now); continue; }
     if (d.p && !d.ghost && (d.p.zip >= 0 || heroDashOver(d.p))) { airRiders.push(d.p); continue; } // on a cable, or over the pines on a hero's dash (HERO_DASH `over`): the air layer's, below
     if (d.p) { if (d.ghost) drawGhost(d.p, ex, ey); else drawPlayer(d.p, ex, ey, now); continue; }
     if (d.a) { drawAnimal(d.a, ex, ey, now); continue; }
     if (d.r) { drawRobot(d.r, ex, ey, now); continue; }
     if (d.pt) { drawPTarget(d.pt, ex, ey, now); continue; }
-    if (d.fn) { d.fn(d, ex, ey, now); continue; }
-    drawSceneryObj(d, ox, oy, now, wkO, hovO);
+    // what stands in the sort that is not a body covers a body's night light
+    // as it covers its pixels (litPunch, js/draw/light.js)
+    if (d.fn) { litPunch(0, 0, WV_W, WV_H, () => d.fn(d, ex, ey, now)); continue; }
+    // a pine is most of what stands in the sort, so it gets its own tight box
+    // (27x37 at px - 5, py - 21, its nudge, its shake and the target rim)
+    const sx = d.tx * TILE - ox, sy = d.ty * TILE - oy, obj = () => drawSceneryObj(d, ox, oy, now, wkO, hovO);
+    if (d.o.type === 'tree') litPunch(sx - 10, sy - 24, 38, 44, obj);
+    else litPunch(sx - SCENERY_BOX_L, sy - SCENERY_BOX_UP, SCENERY_BOX_W, SCENERY_BOX_H, obj);
   }
 }
 

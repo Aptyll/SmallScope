@@ -36,7 +36,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.696';
+const PATCH_TXT = 'PATCH 0.697';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -52,6 +52,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.697', 'EASIER TO READ AT A GLANCE: YOUR OWN HEALTH BAR IS GREEN, EVERY HERO STANDS IN A RING OF ITS TEAM\'S COLOUR, AND AT NIGHT HEROES, SOLDIERS AND BEASTS KEEP THEIR LIGHT WHILE THE VALLEY GOES DARK.'],
   ['0.696', 'A NEW HERO, CLIVUS THE GUIDE: HE VAULTS OVER PINES, ROCKS AND THE CREEK, TIES A RIVAL WITH HIS ROPE AND ROOTS THEM IF THEY STAY CLOSE, STRIKES TWICE AS HARD ON A RIVAL HE HOLDS, AND STAKES A ROPE RING NO RIVAL CAN CROSS.'],
   ['0.695', 'THE EAGLE SKINS ARE GONE: EVERY EAGLE FLIES IN ITS CLASSIC FEATHERS, AND ANY COINS SPENT ON ONE COME BACK TO YOU ONCE.'],
   ['0.693', 'THE JUNGLE IS BACK TO ITS WOLF DENS: THE FOX HOLLOWS AND OX RANGES ARE OUT UNTIL THEY LOOK RIGHT. THE ORCA BITES SOFTER AND HAS LESS HEALTH, SO A TEAM THAT STAYS IN THE FIGHT CAN TAKE IT.'],
