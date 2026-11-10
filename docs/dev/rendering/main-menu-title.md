@@ -267,8 +267,7 @@ is the one rect source for the draw, the hit test (`skinsHit`) and the cursor.
   purse shakes the plate (`SFX.deny`). A click off the cards or Esc drops the pick; Esc with
   nothing picked leaves. The arrows walk `menu.skSel` over the grid, Enter presses; after a key press the
   selected card lifts and wears a 1 px line under it (`menu.skKeyed`) until the next click.
-- **A skin is paint on this screen only.** `birdSkinFor(team)` is the drawer's one question: the
-  local player's company wears the skin worn, the other company the free first row (skins are
-  not sent over the wire). `drawEagle` asks it at draw time; it is paint, never read by the sim.
+- **A look is worn on every screen.** The pick rides the hello in `p.skins` and the snapshot
+  carries it (`heroSkinOf`, player.js); it is paint, never read by the sim.
   A hero's look is the exception: it is sent (`p.skins`, [classes](../multiplayer.md#classes)), so
   everyone sees the look a person wears; bots wear the hero's own.

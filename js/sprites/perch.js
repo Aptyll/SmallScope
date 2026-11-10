@@ -2,9 +2,8 @@
 // Perch: the drop bird the crew rides in and the objective it roosts as, in
 // look D: seen from above, wings open, the crew's saddle on its back, a
 // narrow arrow head with no face. NEW CLASSIC (white head and tail, a team
-// mantle and covert band, dark slate flight feathers) and IRONCLAD (slate
-// plumage, iron lames, an iron cap) and the four war eagles (a helm, a
-// crown and arm armour over a plumage) are all its looks.
+// mantle and covert band, dark slate flight feathers) is its one look: every
+// eagle wears it (the eagle skins were cut in 0.695).
 // PAINTED IN CODE: a stack of flat shapes (ellipses, feather blades, polygons)
 // on a 112 px grid facing left, one world px a cell at the roost, shaded the
 // way a hand artist would: a flat base tone, a shadow rim away from the
@@ -26,40 +25,20 @@
   const INK = hex('#1a1424');
   const SHADE = [40, 50, 110, 70]; // the tight shadow on the snow, light from the top-left
   const WHITE = ramp('#7a86a8', '#b8c4de', '#e6ecf6', '#fbfcff');
-  const SLATE = ramp('#1f2234', '#343a52', '#525c78', '#76829e');
   const COMMON = {
     beak: ramp('#6a3c12', '#b07a20', '#e9b23c', '#fadc7a'),
     talon: ramp('#141018', '#2a2230', '#3e3646', '#5a5262'),
     leather: ramp('#2e1a14', '#5a3424', '#8a5634', '#b07a4a'),
     strap: ramp('#24161a', '#3e2a26', '#5a3e30', '#76523c'),
     brass: ramp('#62381a', '#a87226', '#e2b448', '#fae296'),
-    metal: ramp('#464b62', '#7a869e', '#afbbcd', '#eaf0f8'),
-    slit: ramp('#120e18', '#120e18', '#120e18', '#120e18'),
   };
-  // what each roosting look wears, by its BIRD_SKINS id; 'team' = the side's coat
+  // what the look wears, by part; 'team' = the side's coat. One look, under
+  // the id every frame is keyed by (SPRITES.perch.look)
+  const LOOK_ID = 'classic';
   const LOOKS = {
     classic: { plume: 'team', head: WHITE, nape: WHITE, wing: ramp('#161a28', '#262c40', '#3a4258', '#545e78'), cov: 'team',
       prim: ramp('#0e1018', '#1a1e2c', '#2a3042', '#3e4660'), tail: WHITE },
-    ironclad: { plume: SLATE, head: SLATE, nape: ramp('#343a52', '#525c78', '#76829e', '#a0aac0'), wing: SLATE,
-      cov: ramp('#343a52', '#525c78', '#76829e', '#a0aac0'), prim: ramp('#12141e', '#1f2234', '#343a52', '#4a5068'), tail: SLATE,
-      metal: ramp('#2f3342', '#505870', '#7c869c', '#b8c2d2'), cap: 'iron', lames: true },
   };
-  // the war eagles in the same look: a plumage ramp, its
-  // covert band a step lighter, a helm (cap) and a crown on the head, and
-  // armour on the arm (pauldron plates, or a metal leading edge)
-  const STEEL = ramp('#464b62', '#7a869e', '#afbbcd', '#eaf0f8'), BRONZE = ramp('#553620', '#8a5c2e', '#bd8a44', '#eecb78');
-  const STEEL_D = ramp('#2f3342', '#505870', '#7c869c', '#b8c2d2'), BRONZE_D = ramp('#2e1c12', '#553620', '#8a5c2e', '#bd8a44'); // the arm's plates, a step down from the helm
-  const war = (pl, lt, pr, o) => Object.assign({ plume: pl, head: pl, nape: lt, wing: pl, cov: lt, prim: pr, tail: pl }, o);
-  Object.assign(LOOKS, {
-    helm: war(ramp('#261c28', '#43303a', '#654638', '#8a6446'), ramp('#43303a', '#654638', '#8a6446', '#b08660'), ramp('#1a1218', '#2c1f26', '#43303a', '#5e4440'),
-      { metal: STEEL, plate: STEEL_D, cap: 'great', armour: 'pauldron' }),
-    beak: war(SLATE, ramp('#343a52', '#525c78', '#76829e', '#a0aac0'), ramp('#12141e', '#1f2234', '#343a52', '#4a5068'),
-      { tail: WHITE, metal: STEEL, plate: STEEL_D, cap: 'guard', crown: 'plume', armour: 'edge' }),
-    horned: war(ramp('#33231f', '#5e3e2c', '#8e6236', '#bd8c4a'), ramp('#5e3e2c', '#8e6236', '#bd8c4a', '#e0b466'), ramp('#20160f', '#33231f', '#5e3e2c', '#7a5636'),
-      { metal: BRONZE_D, plate: BRONZE_D, bone: ramp('#8a7c6a', '#b8a88e', '#ddd0b4', '#f6eed8'), cap: 'grille', crown: 'horns', armour: 'pauldron' }),
-    crested: war(ramp('#1b1926', '#2e2a3c', '#474258', '#655e76'), ramp('#2e2a3c', '#474258', '#655e76', '#8a849a'), ramp('#100e16', '#1b1926', '#2e2a3c', '#433e52'),
-      { metal: BRONZE_D, plate: BRONZE_D, crest: BRONZE, cap: 'slit', crown: 'fin', armour: 'edge' }),
-  });
   function palette(cfg, t) {
     const T = TEAM_SKINS[t], team = ramp(T.fit, T.coatD, T.coat, T.coatL);
     const p = Object.assign({}, COMMON, { team, trim: [mix(hex(T.trimD), hex(T.fit), 0.3), hex(T.trimD), hex(T.trim), mix(hex(T.trim), [255, 255, 255], 0.7)] });
@@ -137,12 +116,6 @@
       }
       add(poly([[40, Y(6)], [38, Y(16)], [42, Y(28)], [50, Y(29)], [56, Y(18)], [57, Y(8)]]), 'cov', { hl: true, side });
       add(rell(52, Y(14), 5, 4.5), 'cov', { lt: 1, side }); add(rell(50, Y(23), 4.5, 4), 'cov', { lt: 1, side });
-      if (cfg.lames) for (const [x, y] of [[44, Y(12)], [42, Y(20)]]) // ironclad: iron plates down the arm
-        add(poly([[x - 4, y - side * 3], [x + 5, y - side * 3], [x + 6, y + side * 3], [x - 3, y + side * 3]]), 'metal', { hl: true, side });
-      if (cfg.armour === 'pauldron') // a shoulder plate over the coverts
-        add(poly([[37.5, Y(6)], [36.5, Y(13)], [40, Y(19)], [47, Y(19.5)], [50, Y(13)], [48.5, Y(6)]]), 'plate', { hl: true, side });
-      if (cfg.armour === 'edge') // a metal leading edge down the arm
-        for (const [a, b] of [[[40.5, 6], [37.2, 17]], [[37.2, 17], [41.5, 28.5]]]) add(blade(a[0], Y(a[1]), b[0], Y(b[1]), 2.6, 2.2), 'plate', { hl: true, side });
     }
     add(rell(55, C, 17, 11), 'plume', { sh: 2, hl: true });
     saddle(add, dot);
@@ -189,31 +162,6 @@
     D(HEAD[0][0] + 0.6, 0, 'beak', 0);                                               // the hook's dark tip
     for (const t of range(BEAK_T + 1, 12, 1 / HK)) D(t, -0.4, 'head', 3);            // the crown's ridge, lit
     for (const e of [-1, 1]) D(2.6, e * 4.0, 'head', e < 0 ? 3 : 1);                // the arrow's corners
-    if (cfg.cap) { // a metal cap of the arrow's shape: ironclad's, or a war eagle's helm
-      const t0 = cfg.cap === 'guard' ? HEAD[0][0] - 0.4 : BEAK_T + 0.6, wide = cfg.cap === 'great' ? 1.1 : 0.6;
-      const cap = [[t0, cfg.cap === 'guard' ? 0.6 : half(t0) + 0.5]].concat(HEAD.filter(([t]) => t > t0).map(([t, y]) => [t, y + wide]));
-      if (cfg.cap === 'guard') cap.splice(cap.findIndex(([t]) => t > 5), Infinity, [5.5, half(5.5) + 0.6], [6.5, 0]); // the guard sheathes the beak and stops short of the crown
-      add(poly(both(cap)), 'metal', { hl: true });
-      const back = cfg.cap === 'guard' ? 5 : 13;
-      for (const t of range(t0 + 1, back, 1 / HK)) D(t, -0.2, 'metal', 3);  // its ridge, lit
-      for (const t of range(t0 + 1, back, 1 / HK)) D(t, 0.8, 'metal', 1);
-      if (cfg.cap === 'great') for (const y of range(-3.6, 3.7, 1 / HK)) D(1.2, y, 'slit', 0);          // the great helm's eye slit across its brow
-      if (cfg.cap === 'grille') for (const t of [0.4, 1.8, 3.2]) for (const y of [-2.4, -1, 1, 2.4]) D(t, y, 'slit', 0); // the grille's bars
-      if (cfg.cap === 'slit') { for (const y of range(-3, 3.1, 1 / HK)) D(1.6, y, 'slit', 0); }
-    }
-    if (cfg.crown === 'plume') for (let j = 0; j < 3; j++) { // a team plume streaming back off the crown
-      const u = j - 1;
-      add(blade(X(5), Y(u * 0.8), X(19), Y(u * 3.2), 3.4 * HK, 1.2), 'team', { hl: j === 1, lt: 1 });
-    }
-    if (cfg.crown === 'horns') for (const e of [-1, 1]) { // two horns out from the helm's sides, curling forward
-      add(blade(X(6), Y(e * 3.6), X(5.5), Y(e * 8.5), 4.2, 3.4), 'bone', { hl: true, seam: false, lt: 1 });
-      add(blade(X(5.5), Y(e * 8.5), X(2), Y(e * 11.5), 3.4, 2.4), 'bone', { hl: true, seam: false, lt: 1 });
-      add(blade(X(2), Y(e * 11.5), X(-3.5), Y(e * 12), 2.4, 0.8), 'bone', { hl: true, seam: false, lt: 1 });
-    }
-    if (cfg.crown === 'fin') { // a tall fin crest down the crown and the neck, its far face in shadow
-      add(blade(X(-1.5), Y(0.9), X(22), Y(0.9), 3.6, 1.6), 'crest', { sh: 0 });
-      add(blade(X(-1.5), C, X(22), C, 3.2, 1.4), 'crest', { hl: true, sh: 1 });
-    }
   }
 
 
@@ -492,16 +440,6 @@
       return out;
     });
   }
-  function icons(id, team) {
-    const key = id + '|' + team;
-    let set = stills.get(key);
-    if (!set) {
-      set = cropped(['s0', 's3', 's5'].map((k) => paint(id, team, -Math.PI / 2, k, 1, false)));
-      set.push(set[1]);
-      stills.set(key, set);
-    }
-    return set;
-  }
   const FIGURE_SCALE = 0.42; // the wiki's figure column is a hero's few widths
   function figure(id, team) {
     const key = id + '|' + team + '|fig';
@@ -538,14 +476,5 @@
     }
     return r;
   }
-  // drawEagle asks has(id) for the skin a bird wears
-  SPRITES.perch = { has: (id) => !!LOOKS[id], frame, shadow, flash, put, reach, warm, tick, seat, figure, STROKE_N, DIVE_N, merchSeat: [6, 0] };
-  // the skins screen's cards: SPRITES.birdSkinIcon[id][skin(team)], painted
-  // the first time a card asks
-  SPRITES.birdSkinIcon = {};
-  for (const id in LOOKS) {
-    const per = {};
-    for (const t of [0, 1]) Object.defineProperty(per, t, { get: () => icons(id, t) });
-    Object.defineProperty(SPRITES.birdSkinIcon, id, { value: per, enumerable: true });
-  }
+  SPRITES.perch = { look: LOOK_ID, frame, shadow, flash, put, reach, warm, tick, seat, figure, STROKE_N, DIVE_N, merchSeat: [6, 0] };
 })();
