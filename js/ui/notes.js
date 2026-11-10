@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['BELLA is drawn at 32 px (both looks, roll, spatha), waiting behind the fine-art switch', '0.801'],
     ['BRUSH PATCHES ARE RAGGED, NOT OVALS', '0.800'],
     ['Sagitta carries her arbalest under her arm, so it no longer covers her face', '0.799'],
     ['FLAGSTONES SHOW WEAR', '0.798'],
