@@ -96,6 +96,8 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['SIXTEEN ABILITIES REDRAWN: NO DISCS, NO DOTTED LINES, ICE AND SNOW THAT LOOK LIKE ICE AND SNOW', '0.757'],
+    ['THE TEAM MARK UNDER A HERO IS ONE THIN RIM, SO BOOTS SHOW', '0.757'],
     ['Fortiva, Bucina and Faber carry weapons that are their own: a chained blade, a coiled horn, a brass gear', '0.756'],
     ['BAYS AND THE STALL STAND ON PAVING', '0.755'],
     ['FIRST MATCH: ONE CLICK TO THE HERO PICK, A MINUTE TO CHOOSE', '0.754'],
