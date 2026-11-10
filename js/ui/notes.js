@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['The frozen river has clear banks and wind-swept snow on its ice', '0.842'],
     ['FABER at 32 px behind ?fine=1: both looks, rolls and gear staff', '0.841'],
     ['FIRST MATCH: BEFORE THE FIRST WAVE THE COACH POINTS UP YOUR LANE', '0.840'],
     ['Maris keeps the hooked barb and line on her harpoon when she thrusts it', '0.839'],
