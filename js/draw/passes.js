@@ -205,7 +205,9 @@ function drawSceneryObj(d, ox, oy, now, wkO, hovO) {
     // which palette row (variant, forest-depth tone) and where on the tile
     // it stands are the tile's too: treeCell / treeNudgeX/Y, js/draw/ground.js
     const fi = treeCell(d.tx, d.ty, treeFrame(d.tx, d.ty));
-    const artX = px - 5 + sh + treeNudgeX(d.tx, d.ty), artY = py - 21 + treeNudgeY(d.tx, d.ty);
+    const snag = treeSnag(d.tx, d.ty); // a dead pine in the forest's heart: a bare pole (js/draw/ground.js)
+    const old = !snag && treeOld(d.tx, d.ty); // an old pine stands over the rest under a load of snow
+    const artX = px - 5 + sh + treeNudgeX(d.tx, d.ty), artY = py - 21 + treeNudgeY(d.tx, d.ty) - (old ? TREE_OLD_LIFT : 0);
     // the hero's own work target wears the gold rim; a canopy over the
     // hero's model opens its window (canopyOver/drawWindowed,
     // js/draw/canopy.js), rim and all. Only a covering canopy leaves the
@@ -213,7 +215,9 @@ function drawSceneryObj(d, ox, oy, now, wkO, hovO) {
     const A = SPRITES.treeAtlas, fw = A.fw, fh = A.fh, cx = (fi % A.cols) * fw, cy = Math.floor(fi / A.cols) * fh;
     const drawTree = () => {
       if (o === wkO) drawTargetRim(A, cx, cy, fw, fh, artX, artY, now);
+      if (snag) { ctx.drawImage(snagArt(), artX, artY); return; }
       drawFrameFlash(treeArt(), fi, artX, artY, o.flash); // the atlas, warmed at dawn and dusk (js/draw/ground.js)
+      if (old) drawTreeLoad(fi, artX, artY);
     };
     const open = canopyOver(A, cx, cy, fw, fh, artX, artY);
     if (open > 0) drawWindowed(open, artX, artY, fw, fh, drawTree); else drawTree();

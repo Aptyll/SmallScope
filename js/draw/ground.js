@@ -1470,9 +1470,65 @@ function treeTone(tx, ty) {
 // walk through (a pine a felling opens up stands up to it).
 const TREE_GROVE = 5; // tiles across a grove of like heights
 function treeSize(tx, ty, tone = treeTone(tx, ty)) {
-  if (tone === 0) return 0;
+  if (tone === 0 || treeOld(tx, ty, tone)) return 0;
   const v = vnoise(tx / TREE_GROVE + 31.5, ty / TREE_GROVE + 7.5) * 0.55 + hash2(tx * 23 + 7, ty * 29 + 3) * 0.45;
   return v < 0.45 ? 0 : v < 0.62 ? 1 : 2;
+}
+// THE OLD PINES. Deep in a stand (never on its edge rows, so a wall's line is
+// untouched) one pine in a dozen or so is an old one that stands over the
+// rest: the full height, its art lifted TREE_OLD_LIFT px, and its crown
+// loaded with snow (SPRITES.treeGlow, the crown's snow and lightest needles,
+// laid over it: drawTreeLoad). Off the tile's hash, a few gathered where a
+// slow noise runs high, so a screen of forest has taller white heads in it
+// and is not one crown repeated. Read live like the tone: a felling that
+// opens a pine up to the edge makes it an ordinary edge pine.
+const TREE_OLD = 0.05, TREE_OLD_GROVE = 0.12; // the share of deep pines that are old, in the open forest and where they gather
+const TREE_OLD_LIFT = 9;    // px an old pine's art stands above its tile's line
+const TREE_OLD_LOAD = 1;    // how much of the snow load's white lies over its crown
+function treeOld(tx, ty, tone = treeTone(tx, ty)) {
+  if (tone < 2 || treeSnag(tx, ty, tone)) return false;
+  const h = hash2(tx * 31 + 11, ty * 37 + 5);
+  return h < TREE_OLD_GROVE && (h < TREE_OLD || vnoise(tx / 9 + 51.5, ty / 9 + 23.5) > 0.6);
+}
+// an old pine's snow load, over the cell drawFrameFlash has just drawn
+function drawTreeLoad(fi, x, y) {
+  const A = SPRITES.treeAtlas;
+  ctx.globalAlpha = TREE_OLD_LOAD;
+  ctx.drawImage(SPRITES.treeGlow, (fi % A.cols) * A.fw, 0, A.fw, A.fh, x, y, A.fw, A.fh); // the full height's row
+  ctx.globalAlpha = 1;
+}
+// THE SNAGS. In a stand's heart (tone 3 and deeper: three tiles of forest
+// every way, so no walker ever stands beside one) a rare pine is a dead one:
+// a bare grey pole with three broken limbs, snow on each and on its tip,
+// standing in a gap of the forest's floor. The tile is a pine to the sim as
+// ever; only its art differs, off the tile's hash, and a felling that opens
+// the heart up turns it back into the pine it is.
+const TREE_SNAG = 0.009; // the share of the heart's pines that stand dead
+const SNAG_COL = { k: '#18242b', l: '#bdb5a4', b: '#948b7a', B: '#675e52', w: '#f4f8fd', s: '#c6d6e8' };
+const SNAG_LIMBS = [[10, 1, 5], [16, -1, 5], [22, 1, 3]]; // [px up the pole from its foot, side, px long]: each climbs a px every other px out
+function treeSnag(tx, ty, tone = treeTone(tx, ty)) { return tone >= 3 && hash2(tx * 41 + 7, ty * 43 + 13) < TREE_SNAG; }
+let snagCv = null;
+function snagArt() {
+  if (snagCv) return snagCv;
+  const A = SPRITES.treeAtlas, W = A.fw, H = A.fh, cx = W >> 1, top = H - 31;
+  const cell = new Map(), put = (x, y, c) => cell.set(y * W + x, c);
+  for (let y = H - 1; y >= top; y--) { // the pole, three px wide, two at its top, lit on the left
+    const thin = y < top + 9;
+    if (!thin) put(cx - 1, y, 'l');
+    put(cx, y, thin ? 'l' : 'b'); put(cx + 1, y, 'B');
+  }
+  put(cx, top - 1, 'w'); put(cx + 1, top - 1, 'w'); put(cx, top, 's'); // snow on its broken tip
+  for (const [up, side, len] of SNAG_LIMBS) for (let i = 1; i <= len; i++) {
+    const x = cx + (side > 0 ? 1 + i : -1 - i), y = H - 1 - up - (i >> 1);
+    put(x, y, side > 0 ? 'B' : 'b'); put(x, y - 1, i > 1 ? 'w' : 's'); // the limb, and the snow lying on it
+  }
+  snagCv = document.createElement('canvas'); snagCv.width = W; snagCv.height = H;
+  const g = snagCv.getContext('2d');
+  // a dark line round the whole shape, then the shape
+  g.fillStyle = SNAG_COL.k;
+  for (const k of cell.keys()) g.fillRect(k % W - 1, Math.floor(k / W) - 1, 3, 3);
+  for (const [k, c] of cell) { g.fillStyle = SNAG_COL[c]; g.fillRect(k % W, Math.floor(k / W), 1, 1); }
+  return snagCv;
 }
 // the cell in SPRITES.treeAtlas: column (treeFrame's lean) + palette row
 function treeCell(tx, ty, col) {
