@@ -35,9 +35,10 @@ HERO_SHOTS.longbolt = (a, sx, sy) => drawBoltBody(a, sx, sy, 15, SG_WHITE, true)
 // bolt will fly, soft, out to the first tree or wall on it, and a glint on the chest of
 // the first body it meets from its first frame, so whoever it is knows at once. The two
 // are told apart by weight: PIN is the thread and a small glint; THE LONG BOLT shows the
-// bolt itself nocked at the bow end, and its glint is a bigger star that burns warm
-// through the last quarter.
+// bolt itself nocked on the stock, and its sparkle is the bigger, warm through the last
+// quarter. A sparkle is thin and has nothing dark behind it: never a cross in a box.
 const SG_THREAD = '#dfe6f0', SG_THREAD_D = '#7f8eae', SG_WARM = '#ffe9a0', SG_SIGHT_R = 7; // px off the line a body still counts as on it
+const SG_NOCK = 16, SG_NOCK_LEN = 9; // px from her to the nocked bolt's point (a few past the bow's nose), and how much of it shows
 function sightFirst(p, x0, y0, nx, ny, L, now) {
   let best = null, bt = L;
   const look = (u) => {
@@ -61,7 +62,7 @@ function drawSightLine(p, a, range, closing, now, ex, ey, long) {
     ctx.fillStyle = SG_THREAD; ctx.fillRect(x, y, 1, 1);
   }
   ctx.globalAlpha = 1;
-  if (long) drawBoltBody({ vx: nx, vy: ny, team: p.team }, x0 + nx * 20 - ex, y0 + ny * 20 - ey, 15, SG_WHITE, true); // the bolt, nocked
+  if (long) drawBoltBody({ vx: nx, vy: ny, team: p.team }, x0 + nx * SG_NOCK - ex, y0 + 2 + ny * SG_NOCK - ey, SG_NOCK_LEN, SG_WHITE, false); // the bolt, nocked: on the stock's line, its tail at the string
 }
 // the glint, over the bodies (HERO_AIR): on the chest of the first body her sight meets
 function drawSightGlints(ex, ey, now) {
@@ -73,11 +74,11 @@ function drawSightGlints(ex, ey, now) {
     const u = sightFirst(p, x0, y0, nx, ny, teleLen(x0, y0, nx, ny, long ? LONG_RANGE : PIN_RANGE), now);
     if (!u) continue;
     const hx = Math.round(u.x - ex), hy = Math.round(u.y - 3 - ey), glow = long && castProg(p) > 0.75 ? SG_WARM : SG_THREAD;
-    ctx.fillStyle = SG_INK;
-    if (long) { ctx.fillRect(hx - 4, hy - 1, 9, 3); ctx.fillRect(hx - 1, hy - 4, 3, 9); ctx.fillRect(hx - 2, hy - 2, 5, 5); }
-    else { ctx.fillRect(hx - 2, hy - 1, 5, 3); ctx.fillRect(hx - 1, hy - 2, 3, 5); }
-    fxMote(hx, hy, SG_WHITE, glow);
-    if (long) { ctx.fillStyle = glow; ctx.fillRect(hx - 3, hy, 2, 1); ctx.fillRect(hx + 2, hy, 2, 1); ctx.fillRect(hx, hy - 3, 1, 2); ctx.fillRect(hx, hy + 2, 1, 2); ctx.fillStyle = SG_WHITE; ctx.fillRect(hx - 1, hy, 3, 1); ctx.fillRect(hx, hy - 1, 1, 3); }
+    // a sparkle, never a cross in a box: thin, taller than it is wide, a white core, a pale halo on its slants, nothing dark behind it
+    const up = long ? 3 : 2, out = long ? 2 : 1;
+    ctx.fillStyle = glow; ctx.fillRect(hx - 1, hy - 1, 1, 1); ctx.fillRect(hx + 1, hy - 1, 1, 1); ctx.fillRect(hx - 1, hy + 1, 1, 1); ctx.fillRect(hx + 1, hy + 1, 1, 1);
+    ctx.fillRect(hx, hy - up, 1, 1); ctx.fillRect(hx, hy + up, 1, 1); ctx.fillRect(hx - out, hy, 1, 1); ctx.fillRect(hx + out, hy, 1, 1);
+    ctx.fillStyle = SG_WHITE; ctx.fillRect(hx, hy - up + 1, 1, up * 2 - 1); ctx.fillRect(hx - out + 1, hy, out * 2 - 1, 1);
   }
 }
 HERO_AIR.push(drawSightGlints);
