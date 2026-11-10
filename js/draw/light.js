@@ -852,6 +852,136 @@ function flushWorldInk() {
   worldInk.length = 0;
 }
 
+// ---- body light ----
+// At night a body keeps most of its daylight. The grade below is one multiply
+// over the finished frame, so a hero on the snow cooled exactly as fast as the
+// snow did and the two closed on each other: measured on a staged 5v5 on the
+// mid road, a body stood 83 levels of luminance off the ground behind it by
+// day and 36 at full dark, while its name and bars, held back from the grade,
+// kept all of theirs - at night the labels were what read and the bodies under
+// them were not. So the bodies are held back too, in part: every hero, soldier
+// and beast draws its MODEL through a small layer (bodyLayerOpen/Close, the
+// canopy window's own trick, js/draw/canopy.js) that also lands in litCv, the
+// frame's record of where a body shows; scenery drawn after a body in the
+// y-sort and standing over it is cut back out of that record (litPunch), so a
+// body behind a pine is as hidden as it ever was; and renderLighting copies
+// the frame as it stood before the night back through the record at
+// BODY_HOLD. The ground, the trees, the shade under the feet and the rim all
+// take the whole night; a body takes the rest of it. A body out of a
+// rival's sight is never drawn (fogShown), so nothing hidden is lit.
+const BODY_HOLD = 0.65;                 // the share of the night a body does not take
+const BODY_LW = 128, BODY_LH = 128, BODY_FOOT = 104; // the layer, the feet at (BODY_LW / 2, BODY_FOOT)
+const bodyCv = document.createElement('canvas');
+bodyCv.width = BODY_LW; bodyCv.height = BODY_LH;
+const bodyCtx = bodyCv.getContext('2d');
+bodyCtx.imageSmoothingEnabled = false;
+const litCv = document.createElement('canvas'), lctx = litCv.getContext('2d');     // where a body shows this frame
+const punchCv = document.createElement('canvas'), pctx = punchCv.getContext('2d'); // one piece of scenery, to cut out of it
+const preCv = document.createElement('canvas'), prectx = preCv.getContext('2d');   // the frame before the night
+const LIT_STEP = 64;
+let litOn = false;      // the night is deep enough to hold anything back this frame
+const litBoxes = [];    // x, y, w, h of every body in litCv, world-buffer px
+function bodyLightFrame() {
+  litOn = ctx === wctx && state.darkness > 0.005;
+  litBoxes.length = 0;
+  if (!litOn) return;
+  // sized to the view in steps (LIT_STEP), never to the whole world buffer: a
+  // canvas read back as a source is copied whole, and the buffer is cut for
+  // the furthest zoom out
+  const lw = Math.ceil((WV_W + 1) / LIT_STEP) * LIT_STEP, lh = Math.ceil((WV_H + 1) / LIT_STEP) * LIT_STEP;
+  for (const c of [litCv, preCv]) if (c.width !== lw || c.height !== lh) { c.width = lw; c.height = lh; }
+  if (punchCv.width !== PUNCH_W) { punchCv.width = PUNCH_W; punchCv.height = PUNCH_H; }
+  lctx.clearRect(0, 0, WV_W + 1, WV_H + 1); // the corner of the buffer this frame uses (sizeWorldView)
+}
+// a model drawn into a layer of its own (the hero's, heroCv) joins the record
+// (cx, fy) its centre column and foot row in the layer, hw and up how far the
+// model can reach to either side and over its feet: the box scenery is tested on
+function litAdd(cv, x, y, cx, fy, hw, up) {
+  if (!litOn) return;
+  lctx.drawImage(cv, x, y);
+  litBoxes.push(x + cx - hw, y + fy - up, hw * 2, up + 8);
+}
+// a body's model pass, (cx, fy) its centre column and foot row: from here to
+// bodyLayerClose the global ctx is the body layer, lined up with the world
+function bodyLayerOpen(cx, fy, hw, up) {
+  if (!litOn || ctx !== wctx) return null;
+  const T = wctx.getTransform();
+  const lx = cx - (BODY_LW >> 1), ly = fy - BODY_FOOT;
+  bodyCtx.setTransform(1, 0, 0, 1, 0, 0);
+  bodyCtx.globalAlpha = 1;
+  bodyCtx.clearRect(0, 0, BODY_LW, BODY_LH);
+  bodyCtx.save();
+  bodyCtx.setTransform(1, 0, 0, 1, -lx, -ly);
+  bodyCtx.globalAlpha = wctx.globalAlpha; // the caller's fade rides in with it
+  ctx = bodyCtx;
+  return { x: lx + T.e, y: ly + T.f, hw, up };
+}
+function bodyLayerClose(L) {
+  if (!L) return;
+  bodyCtx.restore();
+  ctx = wctx;
+  const a = wctx.globalAlpha;
+  wctx.save();
+  wctx.setTransform(1, 0, 0, 1, 0, 0);
+  wctx.globalAlpha = 1; // the layer already carries the fade
+  wctx.drawImage(bodyCv, L.x, L.y);
+  wctx.restore();
+  wctx.globalAlpha = a;
+  litAdd(bodyCv, L.x, L.y, BODY_LW >> 1, BODY_FOOT, L.hw, L.up);
+}
+// Scenery in the y-sort, drawn by `draw` inside the box (x, y, w, h) in the
+// world's own coordinates: for every body on record that box crosses, the
+// piece is drawn once more, cut to that body's box, and taken out of the
+// record, so what stands in front of a body covers its light as well as its
+// pixels. The scratch is one body's box, never the frame: a canvas used as a
+// source right after it was drawn on is copied whole, and a frame-sized one
+// copied per pine cost more than the rest of the night together.
+const PUNCH_W = 160, PUNCH_H = 160;
+function litPunch(x, y, w, h, draw) {
+  draw();
+  if (!litOn || !litBoxes.length || ctx !== wctx) return;
+  const T = wctx.getTransform();
+  const x0 = Math.floor(x + T.e), y0 = Math.floor(y + T.f), x1 = x0 + Math.ceil(w) + 1, y1 = y0 + Math.ceil(h) + 1;
+  // a piece no bigger than the scratch (a pine, most of the sort) is drawn
+  // once for every body it crosses; a bigger one once per body, cut to it
+  const small = x1 - x0 <= PUNCH_W && y1 - y0 <= PUNCH_H;
+  for (let i = 0; i < litBoxes.length; i += 4) {
+    const bx = litBoxes[i], by = litBoxes[i + 1], bw = Math.min(PUNCH_W, litBoxes[i + 2]), bh = Math.min(PUNCH_H, litBoxes[i + 3]);
+    if (x0 >= bx + bw || x1 <= bx || y0 >= by + bh || y1 <= by) continue;
+    const cx = small ? x0 : bx, cy = small ? y0 : by, cw = small ? x1 - x0 : bw, ch = small ? y1 - y0 : bh;
+    pctx.setTransform(1, 0, 0, 1, 0, 0);
+    pctx.globalAlpha = 1; pctx.globalCompositeOperation = 'source-over';
+    pctx.clearRect(0, 0, PUNCH_W, PUNCH_H);
+    pctx.save();
+    pctx.beginPath(); pctx.rect(0, 0, cw, ch); pctx.clip();
+    pctx.setTransform(T.a, T.b, T.c, T.d, T.e - cx, T.f - cy);
+    ctx = pctx;
+    try { draw(); } finally { ctx = wctx; pctx.restore(); }
+    lctx.globalCompositeOperation = 'destination-out';
+    lctx.drawImage(punchCv, 0, 0, cw, ch, cx, cy, cw, ch);
+    lctx.globalCompositeOperation = 'source-over';
+    if (small) return;
+  }
+}
+// the frame as it stands, before the night goes over it...
+function bodyLightKeep() {
+  if (!litOn || !litBoxes.length) return false;
+  prectx.globalCompositeOperation = 'copy';
+  prectx.drawImage(worldCv, 0, 0, WV_W + 1, WV_H + 1, 0, 0, WV_W + 1, WV_H + 1);
+  return true;
+}
+// ...and its bodies stamped back over the night at BODY_HOLD
+function bodyLightStamp() {
+  lctx.globalCompositeOperation = 'source-in';
+  lctx.drawImage(preCv, 0, 0, WV_W + 1, WV_H + 1, 0, 0, WV_W + 1, WV_H + 1);
+  lctx.globalCompositeOperation = 'source-over';
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.globalAlpha = BODY_HOLD;
+  ctx.drawImage(litCv, 0, 0, WV_W + 1, WV_H + 1, 0, 0, WV_W + 1, WV_H + 1);
+  ctx.restore();
+}
+
 function renderLighting(ox, oy, now) {
   drawFog(ox, oy, now); // the fog of war, under the hour and the night (js/draw/fog.js)
   const dark = state.darkness;
@@ -887,6 +1017,7 @@ function renderLighting(ox, oy, now) {
   // closes in - the half of the effect that is allowed to be dark, because
   // there is nothing out there to read.
   if (dark > 0.005) {
+    const hold = bodyLightKeep(); // the bodies keep most of their daylight (the body light banner above)
     ctx.globalCompositeOperation = 'multiply';
     ctx.globalAlpha = dark;
     ctx.fillStyle = NIGHT_TINT;
@@ -897,6 +1028,7 @@ function renderLighting(ox, oy, now) {
     ctx.fillRect(0, 0, WV_W, WV_H);
     ctx.globalAlpha = 1;
     nightEdge(dark * NIGHT_EDGE);
+    if (hold) bodyLightStamp();
   }
   // a frosty day's glints ride over the grade: white on the day's white snow
   // says nothing, and at night the blue it sits in is what makes it catch

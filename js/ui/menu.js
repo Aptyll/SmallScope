@@ -36,7 +36,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.691';
+const PATCH_TXT = 'PATCH 0.692';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -52,6 +52,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.692', 'EASIER TO READ AT A GLANCE: YOUR OWN HEALTH BAR IS GREEN, EVERY HERO STANDS IN A RING OF ITS TEAM\'S COLOUR, AND AT NIGHT HEROES, SOLDIERS AND BEASTS KEEP THEIR LIGHT WHILE THE VALLEY GOES DARK.'],
   ['0.691', 'BELLA HOLDS HER SWORD SLANTED AT THE READY LIKE THE OTHER BLADES, AND RUPES IS TWO PIXELS NARROWER SO EVERY HERO STANDS WITHIN A QUARTER OF ARMATOS\'S BUILD.'],
   ['0.690', 'UNDER THE HOOD: ONE COMMAND NOW PROVES A CODE CLEANUP CHANGED NOTHING IN HOW THE GAME PLAYS OR LOOKS.'],
   ['0.689', 'UNDER THE HOOD: THE WIKI WORDS, ITS BEASTS AND ITS WORLD PAGE NOW LIVE IN THE ONE TEXT TABLE.'],

@@ -31,6 +31,24 @@ apart — `NIGHT_TINT`'s blue is nearly twice its red, and **that ratio is the w
 it is what turns night into dusk. `NIGHT_EDGE` then takes the light back at the corners, where
 nobody is reading anything. Those four numbers are what to re-measure after retuning it.
 
+**A body keeps most of its daylight (the `body light` banner).** One multiply over the finished
+frame cools a hero exactly as fast as the snow under it, so the two close on each other: on a staged
+5v5 on the mid road a body stood 83 levels of luminance off the ground behind it by day and 36 at
+full dark, while its name and bars, held back, kept all of theirs. So every hero, soldier, beast
+and merchant draws its **model** through a small layer (`bodyLayerOpen`/`bodyLayerClose`, the
+canopy window's trick; the viewed hero's own layer joins through `litAdd`) that also lands in
+`litCv`, the frame's record of where a body shows. Whatever stands after a body in the y-sort and
+over it is drawn once more into a scratch and cut out of the record (`litPunch`, called by
+`drawSorted` round every reed, `fn` draw and tile object), so a body behind a pine is as hidden as
+it was. `renderLighting` copies the frame as it stood before the night (`bodyLightKeep`) and stamps
+it back through the record at `BODY_HOLD` (`bodyLightStamp`). The ground, the trees, the shade
+under the feet and the rim take the whole night. Never a bird, a ghost seat or a rider on the air layer; a body out of a rival's sight is not drawn
+at all (`fogShown`), so nothing hidden is lit. By day the pass does
+nothing (`litOn`). The scratch is one body's box and the record is sized to the view in steps: a
+canvas read back as a source right after it was drawn on is copied whole. Cost on the headless
+software renderer: about 2 ms with 37 bodies on screen at a treeline, nothing by day.
+Check it with a rival under a canopy: no pixel the canopy covers may change.
+
 **The grade dims what the world *is*, never what the game is *saying*.** A name tag, the
 PERCH cap and a damage floater are HUD that happens to be pinned to a body, and a `multiply`
 lands on the ink and on the snow under it alike — so a coloured readout converges on its own
