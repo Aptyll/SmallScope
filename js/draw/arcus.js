@@ -87,8 +87,18 @@ function drawVolleyTele(p, a0, closing, ex, ey) {
       ctx.fillRect(Math.round(x0 + nx * s), Math.round(y0 + ny * s), 1, 1);
     }
     ctx.globalAlpha = 1;
-    acArrow(Math.round(x0 + nx * 14), Math.round(y0 + ny * 14), a, ARROW_LEN, p.team);
   }
+  // on the string, three of the five (the wind-up only has to say several): the middle and the two outermost bearings,
+  // three px apart along the string, only the head and fore shaft of each showing ahead of the bow, clear of his
+  // body, painted as one
+  // (every rim first, then every shaft) so each keeps its own rim with snow between
+  AC_PX.length = 0;
+  const slant = Math.min(Math.abs(Math.cos(a0)), Math.abs(Math.sin(a0))) > 0.38; // on a diagonal three stepped shafts tangle: only the middle one shows
+  for (let k = slant ? 0 : -1; k <= (slant ? 0 : 1); k++) {
+    const a = a0 + k * VOLLEY_HALF, nx = Math.cos(a), ny = Math.sin(a), off = k * 3;
+    arrowBodyPx(AC_PX, Math.round(x0 + nx * 18 - Math.sin(a0) * off), Math.round(y0 + ny * 18 + Math.cos(a0) * off), nx, ny, 0, 7, AC_WHITE, AC_SHAFT, AC_SHAFT, 0); // head and fore shaft only: the rest is behind the bow
+  }
+  paintArrowPx(AC_PX);
 }
 // GATHER UP: every arrow of his in the snow shakes loose and leans out toward him, a short
 // streak behind it showing the way it will fly, so a rival standing on one sees it coming
