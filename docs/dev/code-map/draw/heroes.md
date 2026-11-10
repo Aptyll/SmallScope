@@ -8,3 +8,4 @@
 | what a hero wears on or around its body beyond its sprite (ARMATOS's standard on his back, FORTIVA's glints and shell), drawn behind and over the body | `HERO_BODY_FX`, `heroBodyFx` (`drawPlayer`, bodies.js) | `hero blades` |
 | a hero drawn as something else for a while, in place of its sprite and held tool (RUPES's snowball while he rolls, MARIS's heaving snow while she is under it, FALCO gone into the sky on STOOP) | `HERO_BODY_DRAW`, `heroBodyDraw` (`drawPlayer`, bodies.js) | `hero blades` |
 | a hero its own kit hides, drawn see-through for the side that still sees it (NIX in her cloud) | `HERO_FADE`, `heroFade` (`drawPlayer`, bodies.js) | `hero blades` |
+| how far a look on a larger cell stands over and out past the 16 px one (the overhead frame's lift, a hand's reach) | `heroRise`, `heroReach` | `heroes` |
