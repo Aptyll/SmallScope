@@ -682,6 +682,11 @@ function drawGripped(img, grip, hx, hy, rot) {
 // a 16 px sprite came out in half pixels).
 const turnCv = document.createElement('canvas'), turnCtx = turnCv.getContext('2d');
 function drawTurned(tx, ty, rot, r, draw, d = 1) {
+  if (d >= WD) { // the art is as fine as the buffer: turned straight in
+    ctx.save(); ctx.translate(tx, ty); ctx.rotate(rot);
+    try { draw(); } finally { ctx.restore(); }
+    return;
+  }
   const n = 2 * r + 2;
   if (turnCv.width < n * d || turnCv.height < n * d) { turnCv.width = turnCv.height = n * d; }
   turnCtx.setTransform(1, 0, 0, 1, 0, 0);

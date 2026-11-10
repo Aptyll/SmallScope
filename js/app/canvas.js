@@ -30,7 +30,10 @@ ctx.imageSmoothingEnabled = false;
 // drawn at 1/WD and keeps every one of its pixels. A layer that holds what the
 // world buffer holds (the body, hero, lit and canopy layers) is WD times its
 // world size, and copies between them go through worldBlit.
-const WD = 2;
+// It is 1 (today's buffer, today's cost) until a real-GPU frame time says the
+// finer buffer is affordable and a fine look's weapon, fist and roll are fine
+// too; `?fine=1` turns it to 2 for a tool or a look being drawn.
+const WD = /[?&]fine=1\b/.test(location.search) ? 2 : 1;
 function worldBase(c) { c.setTransform(WD, 0, 0, WD, 0, 0); }
 // a WD-dense layer's (sx, sy, sw, sh), all in world px, onto c at (dx, dy) in c's world px
 function worldBlit(c, cv, sx, sy, sw, sh, dx, dy) { c.drawImage(cv, sx * WD, sy * WD, sw * WD, sh * WD, dx, dy, sw, sh); }
