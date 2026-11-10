@@ -6,7 +6,7 @@
 // the warmth waits (HERO_BODY_FX). A body she set burning wears the shared
 // flames (drawUnitStates); the wildfire's jumps flash as lines (abFx).
 
-const IG_THAW_RIM = '#c3d0e6', IG_THAW = '#9fb2cf', IG_THAW_WET = '#7f95b8'; // thawing snow: its slumped lip, the wet of it, the soaked middle
+const IG_THAW_RIM = '#c3d0e6', IG_THAW = '#9fb2cf', IG_THAW_WET = '#9c7c56'; // thawing snow: its slumped lip, the wet of it, the scorched soaked middle (dull amber, it is fire's)
 const IG_INK = '#2e2440', IG_EMBER = '#d8502e', IG_FLAME = '#ff9a3a', IG_CORE = '#ffe07a', IG_AMBER = '#c8721e';
 
 // one small flame standing at (x, y), `h` px tall, flickering on its own beat
@@ -53,7 +53,7 @@ function drawBrushTele(cx, cy, nx, ny, closing, now) {
   for (let k = 0; k < 5; k++) {
     const u = (now * 2 + k / 5) % 1, s = (fxRoll(77, k + Math.floor(now * 2 + k / 5) * 5, 1) * 2 - 1) * run;
     const x = Math.round(cx + nx * s), y = Math.round(cy + ny * s - 4 * 4 * u * (1 - u));
-    ctx.fillStyle = IG_EMBER; ctx.fillRect(x, y + 1, 1, 1);
+    ctx.fillStyle = IG_AMBER; ctx.fillRect(x, y + 1, 1, 1); // amber under gold: never a loose red pixel
     ctx.fillStyle = u < 0.5 ? IG_CORE : IG_FLAME; ctx.fillRect(x, y, 1, 1);
   }
 }
@@ -88,11 +88,17 @@ function drawBrushfires(ex, ey, now) {
 function drawBrandTele(p, a, closing, now, ex, ey) {
   const nx = Math.cos(a), ny = Math.sin(a), L = teleLen(p.x, p.y, nx, ny, BRAND_RANGE) * (0.35 + 0.65 * closing);
   fxStrip(p.x + nx * 8 - ex, p.y + 4 + ny * 8 - ey, nx, ny, L - 8, 3, 1, p.id * 31, IG_THAW_RIM, IG_THAW, IG_THAW_WET);
+  for (let k = 0; k < 6; k++) { // embers glowing in the wet of it, each where it likes
+    const es = 10 + fxRoll(p.id, k, 11) * (L - 16), o = (fxRoll(p.id, k, 12) * 2 - 1) * 1.5;
+    if (es > L - 4) continue;
+    ctx.fillStyle = Math.floor(now * 6 + k) % 3 ? IG_AMBER : IG_FLAME;
+    ctx.fillRect(Math.round(p.x + nx * es - ny * o - ex), Math.round(p.y + 4 + ny * es + nx * o - ey), 2, 1);
+  }
   drawFlameTongue(p.x + nx * L - ex, p.y + 4 + ny * L - ey, 2 + Math.round(3 * closing), 3, now * 14); // the thaw's warm front
   for (let k = 0; k < 4; k++) { // sparks rising off it, each on its own beat
     const u = (now * 1.6 + k / 4) % 1, s = 10 + (L - 10) * fxRoll(p.id, k + Math.floor(now * 1.6 + k / 4) * 7, 2);
     const x = Math.round(p.x + nx * s - ex + Math.sin(u * 6 + k) * 1.5), y = Math.round(p.y + 2 + ny * s - ey - u * 9);
-    ctx.fillStyle = IG_EMBER; ctx.fillRect(x, y + 1, 1, 1);
+    ctx.fillStyle = IG_AMBER; ctx.fillRect(x, y + 1, 1, 1); // amber under gold: never a loose red pixel
     ctx.fillStyle = u < 0.5 ? IG_CORE : IG_FLAME; ctx.fillRect(x, y, 1, 1);
   }
 }

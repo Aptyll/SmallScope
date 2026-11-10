@@ -67,7 +67,7 @@ function drawNixShard(s, ex, ey) {
 // to the first tree or wall on it
 function drawShardTele(p, a, closing, ex, ey) {
   const nx = Math.cos(a), ny = Math.sin(a), L = teleLen(p.x, p.y, nx, ny, SHARD_LEN) * (0.35 + 0.65 * closing);
-  fxStrip(p.x + nx * 8 - ex, p.y + 3 + ny * 8 - ey, nx, ny, L - 8, 3, 1, p.id * 29, '#ffffff', NIX_ICE, NIX_ICE_D);
+  fxStrip(p.x + nx * 8 - ex, p.y + 3 + ny * 8 - ey, nx, ny, L - 8, 2, 0, p.id * 29, '#ffffff', NIX_ICE, NIX_ICE_D); // narrow, to a sharp point: a shard's
   for (let k = 0; k < 4; k++) { // glints on the glaze, each where it likes, lit as the throw nears
     const s = 12 + fxRoll(p.id, k, 3) * (L - 20), o = (fxRoll(p.id, k, 6) * 2 - 1) * 1.5;
     if (s > L - 6 || fxRoll(p.id, k, 4) > 0.4 + closing) continue;
