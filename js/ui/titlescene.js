@@ -152,12 +152,14 @@ function titleCastPose(b, i, t) {
   b.x = Math.round(b.x);
 }
 // AN EAGLE PASSES OVER. Every TITLE_FLY_EVERY s the shadow of a bird in
-// flight crosses the snow and the ten, wings beating, one way and then the
+// flight crosses the snow and the ten, wings wide, one way and then the
 // other - only the shadow: the bird itself is above the picture, so nothing
 // with lines ever crosses the logo or the words. Off the menu's own clock.
 const TITLE_FLY_FIRST = 4;     // s the title is up before the first pass
 const TITLE_FLY_EVERY = 24;    // s from one pass to the next
-const TITLE_FLY_T = 5;         // s a pass takes, edge to edge
+const TITLE_FLY_T = 2.5;       // s a pass takes, edge to edge: quick, so it reads as something flying and never sits on a hero as a stain
+const TITLE_FLY_WINGS = [0, 1, 2, 1]; // the stroke's widest poses, a shallow beat: the outline stays a bird's the whole way
+const TITLE_FLY_BEAT = 4;      // poses a second
 const TITLE_FLY_RISE = 36;     // world px a pass climbs across the view
 const TITLE_FLY_PAD = 100;     // world px past each edge it starts and ends: the wings' reach
 const titleFlyer = {};         // whose frames these are, to SPRITES.perch (it holds the last one a busy frame falls back on)
@@ -167,7 +169,7 @@ function titleFlyDraw(ex, ey) {
   if (t < 0 || u > 1) return;
   const PR = SPRITES.perch, at = titleSceneAt(), dir = n % 2 ? -1 : 1, span = WV_W / 2 + TITLE_FLY_PAD;
   const x = at.x + dir * (u * 2 - 1) * span, y = at.y + TITLE_FLY_RISE / 2 - u * TITLE_FLY_RISE;
-  const shw = PR.shadow(PR.look, skin(player.team), Math.atan2(-TITLE_FLY_RISE, dir * span * 2), 's' + strokeAt(t, PR.STROKE_N), titleFlyer);
+  const shw = PR.shadow(PR.look, skin(player.team), Math.atan2(-TITLE_FLY_RISE, dir * span * 2), 's' + TITLE_FLY_WINGS[Math.floor(t * TITLE_FLY_BEAT) % TITLE_FLY_WINGS.length], titleFlyer);
   PR.put(ctx, shw, Math.round(x - ex) - (shw.fw >> 1), Math.round(y - ey) - (shw.fh >> 1));
 }
 // into the sorted pass (bodyDraws, js/draw/passes.js), by the feet like every body
