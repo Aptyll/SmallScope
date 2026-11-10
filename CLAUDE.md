@@ -81,8 +81,8 @@ Each rule spans folders; its names are listed under the folder that owns them.
 - Double-clicking `index.html` must work: nothing may `fetch` or need a server.
 - There are no tests. Verify in headless Chromium with a small staged scene of exactly the changed
   case: `window.DBG`, `?seed=N`, `POST /shot`, `.` for hitboxes ([how](docs/dev/checklists.md#verifying-a-change)).
-  A refactor proves itself against main: same seed, same `DBG.saveHash`, same pixels. A bot match
-  never judges a feature.
+  A refactor proves itself against main with `node app/check-same.js`: same seeds, same
+  `DBG.saveHash`, same pixels. A bot match never judges a feature.
 - Keyboard and mouse only. Never add gamepad, touch or mobile support.
 
 ## Shipping
