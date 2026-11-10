@@ -1,5 +1,5 @@
 // ------------------------------------------------------------ match story
-// Three lines under the tally that say what happened to YOU this match and
+// Three lines under the end screens' table that say what happened to YOU this match and
 // who did it: the rival who kept hunting you, the mate who held the bird
 // when it was nearly gone, the one who never went down. Bots have names and
 // moods, but a player only remembers them if the match tells them what the
@@ -98,8 +98,8 @@ function storyLines(ws) {
   return (ws.story = out);
 }
 
-// Under the tally, in both ceremonies: each line arrives on its own beat
-// after the last plate has landed, centred, 1x, the name in its side's paint.
+// Under the table, on both end screens: each line arrives on its own beat
+// after the last row has landed, centred, 1x, the name in its side's paint.
 function drawStoryLines(ws, t, y, T, ac) {
   const lines = storyLines(ws);
   const t0 = T.stats + 4 * T.statStep + T.roll;

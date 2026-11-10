@@ -34,18 +34,15 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   logo is `LOGO_IMG` (the picture `docs/media/logos/mainMenuSoftfall.png` keyed and baked to
   `js/baked/logodata.js` by `app/bake-logo.js`), drawn 1:1 with its top `LOGO_Y` below the view's top edge under a cold pulsing glow,
   still at rest, with no rule and no subtitle, the pixel-font word standing in only until it
-  decodes. Nothing on the title burns and nothing is ruled: `drawEmbers` and `drawGoldRule` live
-  here for the wiki's header and the end screens (js/ui/endscreens.js). `PATCH_TXT` prints bottom-right and the
+  decodes. Nothing on the title burns and nothing is ruled: `drawGoldRule` lives
+  here for the wiki's header. `PATCH_TXT` prints bottom-right and the
   profile's name bottom-left (`drawProfileTag`, js/ui/profile-card.js); both are click targets, and both ride the footer's
   fade so a panel hides them.
 - **Items** are plain words in the pixel font at `MENU_TXT_SCALE` with a dark rim (`drawPixelTextOutline`): white,
   and gold and lifted a px only under the pointer, or as the keys' pick until the pointer next
   moves (`menu.keyNav`; `menu.hover[i]` eases 0→1 toward it), a press (`menu.pressT`) sinking
-  it a px; at rest nothing is lit. No plank, slab or frame — the
-  **frost plank** (`drawMenuButton`: chamfered slab with hashed wood-grain, a snow cap, icicles,
-  corner rivets, a gold rule when hot, and a sealed ice glaze with a cold shimmer when `frozen`)
-  is drawn by the lobby's PLAY, the notes' WIKI and the end screens,
-  sized `MENU_BW`×`MENU_BH` at `MENU_Y0` where those stand it.
+  it a px; at rest nothing is lit. No plank, slab or frame: the end screens' LOBBY is the same
+  bare word. `MENU_BW`×`MENU_BH` at `MENU_Y0` is where the lobby's PLAY and the rooms' HOST stand.
 - **Panels** slide up from the bottom edge over the still-visible world (`menu.panel`,
   `menu.panelT` over `PANEL_SLIDE_T`, `menu.closing` on the way out); the menu chrome ducks to
   zero alpha underneath. The `'settings'` kind is the ESC slab via `renderSettings(now, { bare, slide })`, opened by the **gear** (`SET_GEAR`, `gearRect` / `overGear` / `drawGear` / `openMenuPanel`, js/ui/menu.js: left of the coin tag on the title, under the add-friend on the party screen's social column; gold under the hand). While a panel is up it takes every key and click before the screen under it, the party screen too; there it stands centred over the room left of the social column (`slabCentre`, through `placeSlab`, js/sim/core.js, which relayout also uses), back to the view's centre once it has slid away

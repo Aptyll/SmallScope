@@ -31,12 +31,11 @@ function menuItems() {
 // the hero select below; PRACTICE TOOL opens it too, whose START takes the
 // party onto the training arena (partyPractice).
 const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
-// The frost plank (drawMenuButton) is no longer the title's: MENU_BW x
-// MENU_BH at MENU_Y0 in the 270-tall authored frame is where the lobby's
+// MENU_BW x MENU_BH at MENU_Y0 in the 270-tall authored frame is where the lobby's
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.723';
+const PATCH_TXT = 'PATCH 0.724';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -52,6 +51,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.724', 'NEW VICTORY AND DEFEAT SCREENS: YOUR TEAM AS A BOARD, EACH HERO\'S DAMAGE A BAR SO YOU SEE WHO CARRIED, WITH K/D/A, SOLDIERS AND GOLD. A 1V1 SHOWS YOU OVER YOUR RIVAL.'],
   ['0.723', 'THE BERRY BUSHES ARE GONE: HEAL WITH POTIONS, CREEK FISH AND YOUR ROOST RING.'],
   ['0.722', 'FEWER FISH SWIM THE RIVER: 33 INSTEAD OF 79. EACH ONE STILL HEALS 40 WHEN YOU ROLL OVER IT.'],
   ['0.721', 'EVERY HERO HOLDS THEIR WEAPON IN A HAND, AND IT LEANS THE WAY THEY ARE FACING.'],
@@ -1027,139 +1027,10 @@ function chamRect(x, y, w, h) {
   ctx.fillRect(x + 1, y + 1, w - 2, h - 2);
 }
 
-// a frost plank: snow-capped slab with icicles hanging off it. hv (0..1) is the
-// hover ease - it lifts and warms; pressed sinks it a px. frozen seals the
-// plank under an ice glaze - heavier icicles, muted label, nothing animates
-function drawMenuButton(r, label, hv, now, pressed, frozen) {
-  const a0 = ctx.globalAlpha; // respect the caller's fade (the menu and select screens animate alpha)
-  const cold = frozen ? hv : 0; // the frozen plank hovers cold: it chills instead of lifting and warming
-  if (frozen) hv = 0;
-  const lift = Math.round(hv * 2) - (pressed ? 2 : 0);
-  const x = r.x, y = r.y - lift, w = r.w, h = r.h;
-  // shadow stays on the ground while the plank lifts
-  ctx.fillStyle = 'rgba(4,6,18,0.55)';
-  chamRect(x + 2, r.y + 2, w, h);
-  // slab
-  ctx.fillStyle = '#0a0e23'; chamRect(x, y, w, h);
-  ctx.fillStyle = hv > 0.5 ? '#1f2b5c' : '#141c3c'; chamRect(x + 1, y + 1, w - 2, h - 2);
-  // wood-grain mottling
-  for (let yy = 3; yy < h - 3; yy += 3) {
-    for (let xx = 3; xx < w - 3; xx += 3) {
-      const hb = hash2(xx * 11 + r.y, yy * 7 + 19);
-      if (hb > 0.86) { ctx.fillStyle = hv > 0.5 ? '#263470' : '#182148'; ctx.fillRect(x + xx, y + yy, 3, 3); }
-      else if (hb < 0.10) { ctx.fillStyle = '#111834'; ctx.fillRect(x + xx, y + yy, 3, 3); }
-    }
-  }
-  // bevel
-  ctx.fillStyle = hv > 0.5 ? '#5a7fb8' : '#35426e';
-  ctx.fillRect(x + 2, y + 1, w - 4, 1); ctx.fillRect(x + 1, y + 2, 1, h - 4);
-  ctx.fillStyle = '#080c1c';
-  ctx.fillRect(x + 2, y + h - 2, w - 4, 1); ctx.fillRect(x + w - 2, y + 2, 1, h - 4);
-  // gold inner rule when hot
-  if (hv > 0.5) {
-    ctx.globalAlpha = a0 * (hv - 0.5) * 2;
-    ctx.fillStyle = '#c89a3c';
-    ctx.fillRect(x + 3, y + 2, w - 6, 1); ctx.fillRect(x + 3, y + h - 3, w - 6, 1);
-    ctx.globalAlpha = a0;
-  }
-  // corner rivets (iron, gilt when hot)
-  ctx.fillStyle = hv > 0.5 ? '#ffd95c' : '#5a7fb8';
-  ctx.fillRect(x + 3, y + 3, 1, 1); ctx.fillRect(x + w - 4, y + 3, 1, 1);
-  ctx.fillRect(x + 3, y + h - 4, 1, 1); ctx.fillRect(x + w - 4, y + h - 4, 1, 1);
-  // snow cap along the top edge: ragged drift, shaded underside
-  for (let px = 2; px < w - 2; px++) {
-    const hb = hash2(px * 3 + 5, r.y * 13);
-    const sh = 1 + (hb > 0.5 ? 1 : 0) + (hb > 0.85 ? 1 : 0);
-    ctx.fillStyle = '#f4f7ff';
-    ctx.fillRect(x + px, y + 1 - sh, 1, sh);
-    if (hb > 0.3 && hb < 0.5) { ctx.fillStyle = '#b8cce6'; ctx.fillRect(x + px, y + 1, 1, 1); }
-  }
-  // icicles off the bottom edge, tips glinting when hot; a frozen plank grows them thick
-  const ith = frozen ? 0.62 : 0.84;
-  for (let px = 4; px < w - 4; px++) {
-    const hb = hash2(px * 7 + 1, r.y * 17 + 3);
-    if (hb < ith) continue;
-    const len = 2 + Math.floor((hb - ith) * (frozen ? 16 : 25)); // 2..5, frozen 2..8
-    ctx.fillStyle = '#a8c8e8';
-    ctx.fillRect(x + px, y + h, 1, len);
-    ctx.fillStyle = '#e8f4ff';
-    ctx.fillRect(x + px, y + h, 1, 1);
-    if (hv > 0.5 && ((now * 6 + px) | 0) % 5 === 0) { ctx.fillStyle = '#ffffff'; ctx.fillRect(x + px, y + h + len - 1, 1, 1); }
-  }
-  // label
-  const tw = pixelTextWidth(label, 2);
-  const lx = Math.round(x + (w - tw) / 2), ly = y + Math.round((h - 10) / 2) + (pressed ? 1 : 0);
-  drawPixelTextShadow(ctx, label, lx, ly, frozen ? '#8fa6c8' : hv > 0.5 ? '#ffd95c' : '#cfe0ff', '#0a0e23', 2);
-  if (frozen) {
-    const m = state.menu;
-    // sealed under a sheet of ice: a pale glaze over everything, rime creeping
-    // in from the sides, and static glints - the plank itself never animates.
-    // hover wakes the surface: a pale rim, a sheen sweeping the glaze, frost
-    // breath rising off the cap. A knock (iceT) flashes cracks that heal shut
-    ctx.fillStyle = 'rgba(150,190,230,0.33)'; chamRect(x, y, w, h);
-    ctx.fillStyle = 'rgba(232,244,255,0.75)';
-    ctx.fillRect(x + 2, y + 1, w - 4, 1);
-    ctx.fillStyle = 'rgba(200,224,248,0.45)';
-    for (let yy = 2; yy < h - 2; yy++) {
-      const rl = 1 + ((hash2(yy * 5 + 3, r.y * 3) * 4) | 0), rr2 = 1 + ((hash2(yy * 9 + 1, r.y * 7) * 4) | 0);
-      ctx.fillRect(x + 1, y + yy, rl, 1); ctx.fillRect(x + w - 1 - rr2, y + yy, rr2, 1);
-    }
-    for (let gx = 4; gx < w - 4; gx += 2) {
-      const hb = hash2(gx * 13 + 7, r.y * 5 + 1);
-      if (hb > 0.9) { ctx.fillStyle = '#e8f4ff'; ctx.fillRect(x + gx, y + 3 + ((hb * 97) | 0) % (h - 6), 1, 1); }
-    }
-    if (cold > 0.02) {
-      ctx.globalAlpha = a0 * cold * 0.7;
-      ctx.fillStyle = '#a8c8e8';
-      ctx.fillRect(x + 2, y, w - 4, 1); ctx.fillRect(x + 2, y + h - 1, w - 4, 1);
-      ctx.fillRect(x, y + 2, 1, h - 4); ctx.fillRect(x + w - 1, y + 2, 1, h - 4);
-      const sw = ((now * 26) % (w + h + 24)) - h - 12;
-      ctx.globalAlpha = a0 * cold * 0.3;
-      ctx.fillStyle = '#ffffff';
-      for (let yy = 2; yy < h - 2; yy++) {
-        const gx = Math.round(sw + yy);
-        if (gx >= 2 && gx < w - 4) ctx.fillRect(x + gx, y + yy, 2, 1);
-      }
-      ctx.fillStyle = '#e8f4ff';
-      for (let k = 0; k < 6; k++) {
-        const ph = (now * (0.35 + hash2(k * 3, r.y) * 0.3) + hash2(k * 7 + 2, r.y)) % 1;
-        const bx = x + 6 + ((hash2(k * 13 + 5, r.y * 11) * (w - 12)) | 0);
-        ctx.globalAlpha = a0 * cold * (1 - ph) * 0.8;
-        ctx.fillRect(bx, y - 3 - Math.round(ph * 9), 1, 1);
-      }
-      ctx.globalAlpha = a0;
-    }
-    // one knock's crack web: dark fissures with the odd white glint, so they
-    // read against the pale glaze (nothing knocks today; a client's sealed
-    // host plank never sets iceT)
-    const cracksAt = (px0, py0, seed, alpha, steps) => {
-      ctx.globalAlpha = alpha;
-      for (let c = 0; c < 5; c++) {
-        let px = px0, py = py0;
-        let ang = (c / 5) * Math.PI * 2 + hash2(c * 7 + seed, seed) * 1.3;
-        for (let s = 0; s < (steps || 12); s++) {
-          ang += (hash2(c * 11 + s, seed * 5 + 1) - 0.5) * 0.9;
-          px += Math.cos(ang) * 1.5; py += Math.sin(ang) * 1.5;
-          if (px < 2 || px >= w - 2 || py < 1 || py >= h - 1) break;
-          ctx.fillStyle = hash2(c * 3 + s * 7, seed) > 0.85 ? '#ffffff' : s % 2 ? '#1a2040' : '#0a0e23';
-          ctx.fillRect(x + Math.round(px), y + Math.round(py), 1, 1);
-        }
-      }
-      // the impact point itself: a bright chip out of the glaze
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(x + Math.round(px0), y + Math.round(py0), 1, 1);
-      ctx.globalAlpha = a0;
-    };
-    if (m.iceT > 0 && m.iceI === r.i) cracksAt(m.iceX, m.iceY, m.iceSeed, a0 * Math.min(1, m.iceT / 0.45));
-  }
-}
-
-
 // ---- title dressing -------------------------------------------------------
 // What the title still dresses itself in: a tint that weighs on the edges and
 // leaves the centre clear (drawTitleBackdrop). The rest of this banner - the
-// gold rule, the embers, the frost slab - is drawn by the wiki, the rooms and
-// the end screens (js/ui/screens.js); the title itself is the logo and three
+// gold rule and the frost slab - is drawn by the wiki and the rooms; the title itself is the logo and three
 // words over the world. Every piece takes its alpha from the caller so it
 // fades with the chrome.
 
@@ -1179,10 +1050,8 @@ function drawTitleBackdrop(tintA) {
 
 // a gold rule with diamond finials at both ends and an ember-set one in the middle
 // pal is the four colours the rule is struck in - the bar, its lit middle,
-// the end diamonds and the spark in the centre. It defaults to gold; the
-// defeat screen passes RULE_FROST, so one rule serves both endings.
+// the end diamonds and the spark in the centre. It defaults to gold.
 const RULE_GOLD = { bar: '#c89a3c', hi: '#ffd95c', gem: '#ffd95c', spark: '#ff8a3c' };
-const RULE_FROST = { bar: '#4a5f96', hi: '#9fbde0', gem: '#cfe4f2', spark: '#e8f2ff' };
 function drawGoldRule(cx, y, half, a, pal) {
   const P = pal || RULE_GOLD;
   ctx.globalAlpha = a;
@@ -1196,22 +1065,6 @@ function drawGoldRule(cx, y, half, a, pal) {
   for (const ex of [cx - half, cx + half]) { dia(ex, 2, '#0a0e23'); dia(ex, 1, P.gem); }
   dia(cx, 3, '#0a0e23'); dia(cx, 2, P.bar);
   ctx.fillStyle = P.spark; ctx.fillRect(cx, y, 1, 1);
-}
-
-// n embers rising from (ox, oy) across spread px, each on its own loop
-function drawEmbers(now, a, ox, oy, spread, n, k) {
-  for (let i = 0; i < n; i++) {
-    const h1 = hash2(i * 13 + k, 71), h2 = hash2(i * 7 + k, 93), h3 = hash2(i * 3 + k, 29);
-    const ph = ((now / (2 + h1 * 1.8)) + h2) % 1;
-    const al = a * (1 - ph) * Math.min(1, ph * 10);
-    if (al <= 0.01) continue;
-    const x = Math.round(ox + (h3 - 0.5) * spread + Math.sin(now * 2.1 + i) * 2.5);
-    const y = Math.round(oy - ph * (26 + h1 * 22));
-    ctx.globalAlpha = al;
-    ctx.fillStyle = (i & 1) ? '#ffd95c' : '#ff8a3c';
-    const sz = ph < 0.45 ? 2 : 1;
-    ctx.fillRect(x, y, sz, sz);
-  }
 }
 
 // the frosted slab behind the menu column: translucent so the world still

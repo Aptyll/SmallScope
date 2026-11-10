@@ -1,6 +1,6 @@
 'use strict';
 // Goods and their icons: the health potion, the gold piece and its
-// live icon, the merchant's sack, and the axe and bow a drop shows on the snow.
+// live icon, the merchant's sack, and the axe a drop shows on the snow.
 (() => {
   const { bake, liveIcon } = SPR;
 
@@ -368,18 +368,6 @@
     '..oo....',
   ];
 
-  // the bow tool icon, same palette as the axe (y/Y double as string/steel)
-  const itemBow = [
-    '...ou...',
-    '..ou.y..',
-    '.oU..y..',
-    '.oU..y..',
-    '.oU..y..',
-    '.oU..y..',
-    '..ou.y..',
-    '...ou...',
-  ];
-
   // The good that MOVES. Its frames bake like anything else; what
   // ships beside them is a blank canvas of the same size per icon, which
   // stepItemIcons (js/render.js) redraws each frame. It starts on frame 0 so
@@ -402,6 +390,5 @@
     // the merchant's sack, ten frames of coin catching the light: 16x16
     goldSack: sack.map((f) => bake(f, SACKPAL)),
     itemAxe: bake(itemAxe, AXPAL),
-    itemBow: bake(itemBow, AXPAL),
   });
 })();
