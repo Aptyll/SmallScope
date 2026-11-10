@@ -93,6 +93,25 @@ function heroStaff(p, px, py) {
   if (p.dir !== 'up') heroFist(p, hx, hy, back ? -1 : 1);
   return true;
 }
+// THE ARM BEHIND A THRUST: a weapon pushed out past the hands' place (a spear's jab,
+// SWING_JAB, js/draw/bodies.js) takes the arm with it: a sleeve two px thick in the
+// side's coat from (x0, y0) to the grip (x1, y1), inked round, drawn under the haft;
+// heroKnuckles then closes the hand over the haft at the grip.
+function heroArm(p, x0, y0, x1, y1) {
+  const set = classSet(p), n = Math.max(1, Math.round(Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0))));
+  for (let pass = 0; pass < 2; pass++) {
+    ctx.fillStyle = pass ? set.sleeve : set.ink;
+    for (let i = 0; i <= n; i++) {
+      const x = Math.round(x0 + (x1 - x0) * i / n), y = Math.round(y0 + (y1 - y0) * i / n);
+      if (pass) ctx.fillRect(x, y - 1, 1, 2); else ctx.fillRect(x - 1, y - 2, 3, 4);
+    }
+  }
+}
+function heroKnuckles(p, x, y) {
+  const set = classSet(p), gx = Math.round(x), gy = Math.round(y);
+  ctx.fillStyle = set.ink; ctx.fillRect(gx - 1, gy - 2, 3, 4);
+  ctx.fillStyle = set.hand; ctx.fillRect(gx - 1, gy - 1, FIST, FIST);
+}
 // the sleeve between a side-on body and a fist thrust out past it: SLEEVE px of the
 // side's coat at the fist's height, ink over and under, from the cell's column 12
 // (or 3, mirrored) outward

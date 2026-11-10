@@ -904,7 +904,12 @@ function drawHeldTool(p, px, py, back) {
     const hbo = heroBladeOf(p), smear = (hbo && hbo.smear) || 'edge';
     if (smear === 'thrust') { // a spear is not swung: its point goes straight out along the aim and comes back
       const a = p.slashA, j = SWING_JAB[Math.min(f, SWING_JAB.length - 1)];
-      if (heldBehind(a) === back) { const h = hand(a); drawGripped(wHeld, hGrip, h[0] + Math.round(Math.cos(a) * j), h[1] + Math.round(Math.sin(a) * j), a - fwd); }
+      if (heldBehind(a) === back) {
+        const h = hand(a), gx = h[0] + Math.round(Math.cos(a) * j), gy = h[1] + Math.round(Math.sin(a) * j);
+        if (j > 0) heroArm(p, h[0], h[1], gx, gy); // the arm goes out with the point, so the haft never leaves the hand
+        drawGripped(wHeld, hGrip, gx, gy, a - fwd);
+        if (j > 0) heroKnuckles(p, gx, gy);
+      }
       return;
     }
     // the swish runs at the cut's true reach, however short the blade drawn in the hand

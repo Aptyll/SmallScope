@@ -70,7 +70,8 @@ from `updatePlay`, carrying the `blade` that made it), and what it leaves in the
 weapon family's own (a blade row's `smear`, `HERO_BLADES`; `edge` when it names none): a sword a
 long thin swish, an axe or a pick a short heavy one and chips off its bite, a hammer a broad dull
 one and the snow its head knocks up, a dirk a small quick one, and a spear none at all, since
-its point is pushed straight out (`SWING_JAB`) with two lines of air beside it. The swish is the
+its point is pushed straight out (`SWING_JAB`) with two lines of air beside it, the arm going
+out with it so the haft stays in the hand (`heroArm`, `heroKnuckles`, js/draw/heroes.js). The swish is the
 blade's (`drawSwish`, `SWISH_KIND`, js/draw/bodies.js); the chips, the snow and the thrust's
 lines are `drawSlashes` (js/draw/abilities.js), gold when the blow landed. The local player's draw
 grows the same wedge in place of the aim line (`drawAimLine`), so the reach the cut is about to
