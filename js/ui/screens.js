@@ -122,6 +122,7 @@ function replayLive() {
 function replayShowing() {
   if (!rpCount || window.DBG.hideUI || state.mapOpen || state.settingsOpen || goingDown(player)) return false;
   if (state.paused) return true;
+  if (state.eagleCine) return false; // a bird driven off has the frame (hudInT, js/ui/strip.js): a respawn wait's recap, bar and countdown step aside
   // not over an end screen: both are compositions, and the frame is theirs
   if (state.mode !== 'dead' || endScreen() || !deadReady()) return false;
   // a respawn wait only: a lost match has just been watched live (the bird's
@@ -485,6 +486,7 @@ function drawRespawnLine() {
 }
 
 function renderDead(now) {
+  if (state.eagleCine) return; // ...and so do the wait's spectate bar and countdown
   if (state.deadView === 'scores') { renderScores(now); return; } // the post-game record (js/ui/lobby.js)
   // the recap owns the frame: only a respawn wait's countdown reads over it
   if (replayFull()) { if (state.over === 'respawning') { drawRespawnLine(); renderGuideDead(now); } return; }

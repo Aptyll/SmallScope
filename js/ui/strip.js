@@ -117,8 +117,14 @@ const HUD_SLIDE = AB_H + XP_TAG + 5; // ...and their outline
 // piece that hangs in the open screen ABOVE the strip - the buy plates, which
 // the slide is not deep enough to carry off the bottom on their own - asks
 // this before it draws or answers the pointer, or it bobs there alone over a
-// cinematic with no strip under it.
+// cinematic with no strip under it. The match's last picture is one too: the
+// HUD slides away over HUD_OUT_T as a bird is driven off (state.eagleCine,
+// js/sim/eagle.js) and stays away through a loss's one line (lostBeat,
+// js/ui/screens.js), so the frame is the bird alone until an end screen takes it.
+const HUD_OUT_T = 0.45;
 function hudInT() {
+  if (state.eagleCine) return 1 - easeOut(Math.min(1, state.eagleCine.t / HUD_OUT_T));
+  if (lostBeat()) return 0;
   return state.intro > 0 ? easeOut(Math.max(0, 1 - state.intro / HUD_IN_T)) : 1;
 }
 function hudHome() { return hudInT() >= 1; }
