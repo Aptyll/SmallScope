@@ -96,6 +96,10 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['Hog hut: a whole snow roof, a doorway and a warm window', '0.882'],
+    ['Nix holds her ice dirk point up at the ready, and it shows clearer on snow', '0.881'],
+    ['FALCO\'s knife is longer and paler, and his hawk stands clear of his hat', '0.880'],
+    ['Buildings: the tower merlons and the pump works carry snow', '0.879'],
     ['Aimed keys of IGNIA, NIX, HIEMS and ARMATOS wind up as strips of thaw, frost and trodden snow instead of thin lines', '0.878'],
     ['ARCUS\'s VOLLEY wind-up shows arrowheads you can read', '0.876'],
     ['Nix wears a pale ice scarf, so only her side colour stands out on her', '0.875'],

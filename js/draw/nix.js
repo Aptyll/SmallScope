@@ -98,9 +98,9 @@ function nixFade(p) {
 }
 
 // ---- the dirk in her hands ---------------------------------------------------
-// Her ICE DIRK (HERO_BLADES.dirk, js/draw/heroes.js): at rest she holds it the knife
-// fighter's way, point down and out from the fist at her hip (BLADE_HOLDS.low), the
-// same in every facing, so it is never level at arm's length or over her head
+// Her ICE DIRK (HERO_BLADES.dirk, js/draw/heroes.js): at rest she holds it at the
+// ready, point up and out from the fist at her hip (BLADE_HOLDS.slant), the same in
+// every facing; short as it is, the point stays under her brow
 let nixDirkArt = null;
 function nixDirks() {
   return nixDirkArt || (nixDirkArt = { flat: bakeBladeArt(NIX_DIRK, NIX_DIRK_PAL), diag: bakeBladeArt(NIX_DIRK_DIAG, NIX_DIRK_PAL) });
@@ -112,7 +112,7 @@ function nixDirksFine() {
   const tag = (c) => { c.dens = 2; return c; };
   return (nixDirkFine = { flat: tag(bakeBladeArt(NIX_DIRK_FINE, NIX_DIRK_PAL)), diag: tag(bakeBladeArt(NIX_DIRK_DIAG_FINE, NIX_DIRK_PAL)) });
 }
-HERO_BLADES.dirk = { smear: 'nick', art: nixDirks, fine: nixDirksFine, hilt: [18, 11], hip: { down: [13, 10], up: [13, 10] }, grip: NIX_DIRK_GRIP, hold: 'low' };
+HERO_BLADES.dirk = { smear: 'nick', art: nixDirks, fine: nixDirksFine, hilt: [18, 11], hip: { down: [13, 10], up: [13, 10] }, grip: NIX_DIRK_GRIP };
 
 HERO_GROUND.push(drawNixGround);
 HERO_AIR.push(drawNixAir);
