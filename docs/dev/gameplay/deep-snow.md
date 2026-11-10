@@ -14,7 +14,9 @@ shows a marked body anywhere.
 
 **The look** ([js/draw/depth.js](../../../js/draw/depth.js)): the patch is baked into the ground as
 a raised drift (`deepTone`), and frosted dead reeds stand in it (`reedsOf`, a staggered `REED_STEP`
-grid jittered off the position hash, wherever the snow is deep). Each reed is a sprite off one
+grid jittered off the position hash, wherever the snow is deep; whole along the rim, `REED_RIM`,
+and open in patches inside it, `REED_GAP`, so the straw stands in clumps). Each reed is a tuft, a
+dark root with blades fanning out of it, off one
 small atlas (`reedAtlas`, `REED_PAL`), y-sorted with the bodies (`reedDraws` from `gatherDraws`,
 `drawReed` in `drawSorted`, js/draw/passes.js), so a body among them stands half behind the ones in
 front. Reeds within `REED_FADE` of the viewed hero thin to `REED_SEE`, so your own hero is never

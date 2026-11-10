@@ -251,16 +251,17 @@ function trMask(ci) {
 }
 
 // ---- the trample's pixels ----------------------------------------------------
-// Drawn at the world's own pixel, in flat shades, dithered on the world's
-// 4x4 Bayer grid (BAYER4, ground.js) so the edge of a path breaks up into
-// the same pattern the drifts do and never smears. Snow packs through three
+// Drawn at the world's own pixel, in FLAT shades that meet on clean stepped
+// edges, the drifts' own language (snowTile, ground.js): never a dither, so
+// a path is a soft darker band and not a texture. Snow packs through three
 // shades of pressed grey-blue laid over the drift (so the drift's own
-// shading still reads through a path); churned snow is thrown clods, each a
+// shading still reads through a path), each band inside the last; churned snow is thrown clods, each a
 // dark pit with the lit lump it threw up on its top side, lit from the
 // top-left like the rest of the art. Ice has no snow to pack: a body on it
 // only scuffs frost into the sheet (the skate scratch's colour, sim.js),
 // sparse and capped, so a lake never greys over. Water shows nothing.
-const TR_PACK_COL = [null, [146, 158, 184, 0.2], [134, 146, 174, 0.32], [120, 132, 162, 0.44]];
+const TR_PACK_COL = [null, [146, 158, 184, 0.13], [134, 146, 174, 0.25], [120, 132, 162, 0.38]];
+const TR_BAND = 0.3; // how far into a band the press has to be before it shows: a single pass barely does
 const TR_PIT = [92, 114, 156, 0.5], TR_LUMP = [252, 254, 255, 0.7];
 const TR_FROST = [238, 250, 255, 0.5];
 const trRowAny = new Uint8Array(TR_CH + 2);
@@ -303,7 +304,6 @@ function trPaint(ci, c) {
       const p = (trPack[a] * (1 - fu) + trPack[b] * fu) * (1 - fv) + (trPack[e] * (1 - fu) + trPack[f] * fu) * fv;
       const ch = (trChurn[a] * (1 - fu) + trChurn[b] * fu) * (1 - fv) + (trChurn[e] * (1 - fu) + trChurn[f] * fu) * fv;
       if (p < 0.01 && ch < 0.01) continue;
-      const t = BAYER4[(y & 3) * 4 + (x & 3)] + 0.47; // 0 .. 15/16
       if (s === 2) {
         if (trDustLayer()) continue; // the lakes' dust shows it: thinned where trodden
         const w = Math.min(0.35, p * 0.3 + ch * 0.5);
@@ -317,7 +317,7 @@ function trPaint(ci, c) {
       // pressed: the churned snow is trodden too, a little
       // the bands climb as p^0.6, so a few passes already read and a road
       // still has somewhere to go
-      const band = Math.min(3, Math.floor(Math.pow(Math.max(p, ch * 0.5), 0.6) * 3 + t));
+      const band = Math.min(3, Math.floor(Math.pow(Math.max(p, ch * 0.5), 0.6) * 3 + TR_BAND));
       if (band > 0) trPut(d, o * 4, TR_PACK_COL[band]);
     }
   }
