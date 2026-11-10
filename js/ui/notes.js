@@ -96,6 +96,8 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['SHOTS: A SHORT STREAK BEHIND EVERY ARROW, BOLT AND STONE, NO MORE DOTS', '0.811'],
+    ['TOWERS: A SIGHT LINE RUNS FROM THE GUN TO THE HERO IT IS ABOUT TO SHOOT', '0.811'],
     ['ARCUS is drawn at 32 px (body, roll, a finer longbow), waiting behind the fine-art switch', '0.810'],
     ['ABILITY WORDS AND SHOP NUMBERS SHOW ONLY ON YOUR OWN SCREEN', '0.808'],
     ['MOONLIT PINES AT NIGHT', '0.807'],
