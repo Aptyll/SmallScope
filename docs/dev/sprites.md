@@ -238,8 +238,8 @@ keeps the head at the front's width, the face flush with it. From behind her dre
 under the hair and the mantle in the side's colour, so her side reads in every facing. Her doll (`Light` in
 app/bake-player/bodies.py) paints the mantle in the doll's `cloak` material and only the roll is
 used. Her 48 px model is her own front frame at 3x (`portrait`). Her STAR-GLASS is a staff like IGNIA's:
-`staff: 'shard'` names `HERO_STAVES.shard` (`AURA_SHARD`, js/draw/aura.js), a fallen star's
-splinter on a dark shaft whose tip glints between two baked frames.
+`staff: 'shard'` names `HERO_STAVES.shard` (`AURA_SHARD`, js/draw/aura.js), a fallen star,
+warm white and gold, on a dark shaft; it flares between two baked frames (`AURA_SHARD_FLARE`).
 
 SALVIA has two looks (`SALVIA_SKINS`, js/sprites/salvia.js): MENDER (free: a sage hood and
 shawl, a linen apron over the side's dress) and FIELD TENT (rare, 200 coins: a linen headscarf
