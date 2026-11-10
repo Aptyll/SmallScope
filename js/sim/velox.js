@@ -248,7 +248,7 @@ function veloxEcho(p, e) {
     x: p.x, y: p.y - BOW_Y,
     vx: dx / d * RUN_ECHO_SPD, vy: dy / d * RUN_ECHO_SPD,
     t: 0, life: (d + 20) / RUN_ECHO_SPD, dmg: abDmg(p, 'run', abRk(p, 'run', 'dmg')), pow: 1,
-    owner: p.id, team: p.team, trailD: 0,
+    owner: p.id, team: p.team,
     solid: true, kb: 0.5, col: '#9aa3b8', ab: 'run',
     look: 'slingstone', // drawn as her stone (HERO_SHOTS, js/draw/velox.js)
     ang: Math.atan2(dy, dx), spd: RUN_ECHO_SPD, ox: p.x, oy: p.y - BOW_Y,

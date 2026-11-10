@@ -121,7 +121,7 @@ function marisHarpoon(p) {
     x: p.x, y: p.y - BOW_Y,
     vx: Math.cos(a) * HARPOON_SPD, vy: Math.sin(a) * HARPOON_SPD,
     t: 0, life: HARPOON_RANGE / HARPOON_SPD, dmg: abDmg(p, 'harpoon', abRk(p, 'harpoon', 'dmg')), pow: 1,
-    owner: p.id, team: p.team, trailD: 0,
+    owner: p.id, team: p.team,
     solid: true, kb: 0, col: '#b4bdcc', ab: 'harpoon',
     look: 'harpoon', // drawn as the harpoon and its line (HERO_SHOTS, js/draw/maris.js)
     ang: a, spd: HARPOON_SPD, ox: p.x, oy: p.y - BOW_Y,

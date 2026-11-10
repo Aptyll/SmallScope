@@ -131,7 +131,7 @@ function rupesHeave(p) {
     x: p.x, y: p.y - BOW_Y,
     vx: Math.cos(a) * HEAVE_SPD, vy: Math.sin(a) * HEAVE_SPD,
     t: 0, life: HEAVE_RANGE / HEAVE_SPD, dmg: abDmg(p, 'heave', abRk(p, 'heave', 'dmg')), pow: 1,
-    owner: p.id, team: p.team, trailD: 0,
+    owner: p.id, team: p.team,
     solid: true, kb: 0.8, col: '#f4f7ff', ab: 'heave',
     slow: [abRk(p, 'heave', 'slowT'), abRk(p, 'heave', 'slow')], // [s, walk x]: put on as the blow lands
     look: 'snowblock', // drawn as the block (HERO_SHOTS, js/draw/rupes.js)
