@@ -87,7 +87,7 @@ hit flash all read the nudge. The atlas **row** it draws from is the tile's too 
 three heights (`treeSize`, in groves), a
 palette variant off the hash, a third of the forest each, and a **tone** for its depth in the
 forest (`treeTone`: 0 if any of its 8 neighbours is open, 2 if the ring two out is forest too, 1
-between, 3 in the heart, where a slow swell (`CANOPY_SWELL` tiles across) lifts broad ridges back to 1 and sinks hollows to 4; a dead snag and the world's border count as forest). It is read live, so felling a pine
+between, 3 in the heart, where a slow swell (`CANOPY_SWELL` tiles across) lifts broad ridges to 5 and sinks hollows to 4; a dead snag and the world's border count as forest). It is read live, so felling a pine
 lightens the ones it opens up. None of it is world state — no `rng`, nothing on the wire. How far over it is
 leaning comes from `treeFrame(tx, ty)` off the [wind field](drawing-a-thousand-of-something.md#the-wind-field), never
 from a clock of its own, and it is blitted out of **one atlas texture** rather than a per-frame
