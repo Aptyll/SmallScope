@@ -120,3 +120,36 @@ function towerFigure(sk) {
   x.drawImage(body, 0, -top); x.drawImage(gun, t[0] + g[0], t[1] + g[1] - top); x.drawImage(set.towerFront, 0, -top);
   return (towerFigs[sk] = c);
 }
+
+// The footing: a road tower stands on a round of the lane's own flagstones,
+// laid whole (roadStoneAt, js/draw/ground.js) under a lip of snow like the
+// lane's edge, so it is built ON something and its foot reads as a place.
+// Drawn on the snow under every body (render, after the flat pass) while the
+// tower stands; three rounds, a tower wearing one by its tile.
+const TOWER_FOOT_RX = 31, TOWER_FOOT_RY = 17; // px: the round's half width and half height
+const towerFootCvs = [];
+function towerFooting(v) {
+  if (towerFootCvs[v]) return towerFootCvs[v];
+  const W = TOWER_FOOT_RX * 2 + 8, H = TOWER_FOOT_RY * 2 + 8, c = document.createElement('canvas');
+  c.width = W; c.height = H;
+  const g = c.getContext('2d'), ox = v * 977 + 131, oy = v * 613 + 59; // each round its own stones
+  const inside = (x, y) => { const u = (x - ox - W / 2) / (TOWER_FOOT_RX - 4), w = (y - oy - H / 2) / (TOWER_FOOT_RY - 3); return u * u + w * w < 1; };
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const st = roadStoneAt(x + ox, y + oy, 10, 0.8), in1 = inside(st.x1, st.y1), in2 = inside(st.x2, st.y2);
+    let col = null;
+    if (in1) col = roadStonePx(st, ROAD_COL_DEEP);
+    else if (in2 && st.gap < 1.1) col = ROAD_COL_DEEP;
+    else if (in2 && st.gap < ROAD_LIP) col = (st.x2 - ox - x) + (st.y2 - oy - y) > 0 ? ROAD_COL_LIP : ROAD_COL_LIP_SHD;
+    if (col) { g.fillStyle = col; g.fillRect(x, y, 1, 1); }
+  }
+  return (towerFootCvs[v] = c);
+}
+function drawTowerFootings(ex, ey) {
+  for (const o of structures) {
+    if (o.type !== 'tower') continue;
+    const c = towerFooting((o.tx + o.ty) % 3), f = towerFoot(o);
+    const x = Math.round(f.x - ex) - (c.width >> 1), y = Math.round(f.y - ey) - (c.height >> 1) - 2;
+    if (x > WV_W || y > WV_H || x + c.width < 0 || y + c.height < 0) continue;
+    ctx.drawImage(c, x, y);
+  }
+}

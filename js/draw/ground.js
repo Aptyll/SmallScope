@@ -1151,9 +1151,18 @@ const CASTERS = {
 // a frame's shade: an opaque silhouette thrown down-right in `col`, its top
 // row on the art's foot row (cv.oy rows below the art's top); copied at
 // `alpha` when the caller wants it translucent
-function shadeMask(src, sx, sw, sh, col, alpha, sy = 0) {
+function shadeMask(src, sx, sw, sh, col, alpha, sy = 0, solid = false) {
   const px = SPR.pixelsOf(src); // the source's kept pixels (the pine atlas holds 48 frames a row)
-  const op = (i, j) => px[((sy + j) * src.width + sx + i) * 4 + 3] > 100;
+  const raw = (i, j) => px[((sy + j) * src.width + sx + i) * 4 + 3] > 100;
+  // `solid`: a row is filled from its first kept pixel to its last, so a
+  // building's arrow slits and the gap under its gun are not holes of light
+  // in its shade
+  let op = raw;
+  if (solid) {
+    const span = [];
+    for (let j = 0; j < sh; j++) { let a = -1, b = -1; for (let i = 0; i < sw; i++) if (raw(i, j)) { if (a < 0) a = i; b = i; } span.push([a, b]); }
+    op = (i, j) => i >= span[j][0] && i <= span[j][1];
+  }
   let bot = -1;
   for (let j = 0; j < sh; j++) for (let i = 0; i < sw; i++) if (op(i, j)) bot = j;
   if (bot < 0) return null;
@@ -1288,9 +1297,9 @@ function syncCasts(tx0, ty0, tx1, ty1) {
 }
 // a body's shade, under its sprite drawn at (x, y) in the frame being drawn
 const bodyShade = new WeakMap();
-function drawCastShade(spr, x, y) {
+function drawCastShade(spr, x, y, solid) {
   let m = bodyShade.get(spr);
-  if (m === undefined) { m = shadeMask(spr, 0, spr.width, spr.height, SHADE_BODY, SHADE_BODY_A); bodyShade.set(spr, m); }
+  if (m === undefined) { m = shadeMask(spr, 0, spr.width, spr.height, SHADE_BODY, SHADE_BODY_A, 0, solid); bodyShade.set(spr, m); }
   if (m) ctx.drawImage(m, x, y + m.oy);
 }
 

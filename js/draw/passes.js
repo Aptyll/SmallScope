@@ -337,7 +337,7 @@ function drawStructObj(o, px, py, sh, now) {
     // its type's own frame when it moves (the gold pump's stroke, off its
     // payout clock) and its type's own pass over the sprite (STRUCTS `over`)
     const S = STRUCTS[o.type], art = S.frame ? S.frame(o) : spr;
-    drawCastShade(art, sx, sy); // a standing building throws the sun's shade like a body (ground.js)
+    drawCastShade(art, sx, sy, true); // a standing building throws the sun's shade like a body, in one solid piece (ground.js)
     drawSpriteFlash(art, sx + sh, sy, o.flash);
     if (S.over) S.over(o, sx + sh, sy, now);
     if (o.hp < o.maxHp * 0.6) {
