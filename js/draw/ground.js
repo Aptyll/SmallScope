@@ -167,26 +167,23 @@ function paintGroundTile(g, tx, ty) {
 // ---- the road's pixels ----------------------------------------------------
 // The road (placeRoad, world.js) is not a kind of tile but a BAND laid over
 // the snow at pixel precision: every pixel of a tile near it asks roadDist
-// for its distance to the ragged edge and is painted by that - inside, packed
-// earth in two tones by 8 px quad, a full value step under the snow so it
-// reads without colour and at night, with its detail (roadDetailAt: ruts,
-// frozen puddles, stones) kept within that step, and snow lying in clumps
-// over the last half tile of the verge; outside, ROAD_EDGE tiles of earth
-// breaking up into the snow in clumps, then snow greyed by the march and dry
+// for its distance to the ragged edge and is painted by that - inside, a
+// FLAGSTONE path (roadStoneAt: big flat greys, a lit rim toward the light and
+// a shaded one away from it, packed earth in the joints), a full value step
+// under the snow so it reads without colour and at night, with snow lying in
+// clumps over the last half tile of the verge; outside, ROAD_EDGE tiles of
+// earth breaking up into the snow in clumps, then snow greyed by the march and dry
 // grass through it. So the edge is one wandering line and never a tile staircase, and
 // a 16 px tile can be half road and half snow. On an ICE tile - which only
 // a PATH ever crosses, never the diagonal - `onIce` paints the earth and its
 // snowy verge the same way but leaves the water alone outside it, under a
 // pale rim a pixel or two wide that follows the same ragged edge: a lake has
 // a shoreline, not a muddy shoulder. 
-const ROAD_COL_A = '#b5a182', ROAD_COL_B = '#ad997a'; // the two tones of packed earth
-const ROAD_COL_DEEP = '#8a7556';                       // the earth in shade (the wiki mound's rim)
-const ROAD_COL_RUT = '#94805f';                        // the ruts the siege carts wear
-const ROAD_COL_ICE = '#b4c4cf', ROAD_COL_GLINT = '#dde8ef'; // a frozen puddle in a rut
-const ROAD_COL_STONE = '#9b958c', ROAD_COL_STONE_LIT = '#c9c4ba', ROAD_COL_STONE_SHADE = '#6e675d';
+const ROAD_COL_B = '#ad997a';                          // the trodden earth along the shoulder
+const ROAD_COL_DEEP = '#8a7556';                       // the earth in shade (the wiki mound's rim), and in the flagstones' joints
+const ROAD_FLAG = 12;                                  // px a flagstone's cell spans
 const ROAD_COL_GREY = '#d5dce6';                       // the snow beside the lane, greyed by the march
 const ROAD_COL_GRASS = '#a08c58', ROAD_COL_GRASS_D = '#73643c'; // dry grass through the verge snow
-const ROAD_RUT = 1.0;                                  // tiles off a lane's centreline its two ruts run
 const ROAD_EDGE = 0.45;                                // tiles past the edge the earth breaks up over
 const ROAD_COL_RIM = '#d6ecf4';                        // the broken-ice rim where a path crosses a frozen lake
 const ROAD_COL_SNOW = '#e7eff8';                       // snow melting in over the verge
@@ -234,54 +231,7 @@ function paintLog(g, seg, px, py, ox, oy) {
   }
   penFlush();
 }
-// tiles off the centreline of the lane (fx, fy) lies on - the diagonal's or
-// a side lane's - or 99 off both (a pad is neither)
-function roadLatAt(fx, fy) {
-  const dm = roadMainDist(fx, fy), ds = sideLaneDist(fx, fy);
-  if (dm < 0 && dm <= ds) return Math.abs(roadOffS(fx, fy));
-  return ds < 0 ? segsLat(laneSegs, laneA, laneB, fx, fy) : 99;
-}
-// how far (tiles) a point `lat` off its lane's centreline lies from the
-// nearer rut, which wanders a little either way along the lane
-function roadRutOff(fx, fy, lat) {
-  return Math.abs(lat - ROAD_RUT - (vnoise(fx * 0.11 + 4.4, fy * 0.11 + 8.8) - 0.5) * 0.35);
-}
-// the lane's own pixel detail at world pixel (wx, wy), or null for plain
-// earth. Everything sits within a value step of the earth, so the lane still
-// reads as one dark band at night: two broken RUTS worn by the siege carts
-// down every lane, a FROZEN PUDDLE now and then lying in a rut (an 8x4 oval
-// in one cell of 14 px in a few, kept where its centre falls on a rut), and
-// the odd small STONE with its lit top and shade.
-const ROAD_POOL = ['.dddddd.', 'digiiiib', 'diiiiiib', '.bbbbbb.'];
-function roadDetailAt(wx, wy, fx, fy, hp) {
-  const pcx = Math.floor(wx / 14), pcy = Math.floor(wy / 14), ph = hash2(pcx * 14 + 7, pcy * 14 + 9);
-  if (ph < 0.4) {
-    const x0 = pcx * 14 + 1 + ((ph * 700) | 0) % 5, y0 = pcy * 14 + 2 + ((ph * 1900) | 0) % 7;
-    const ox = wx - x0, oy = wy - y0;
-    if (ox >= 0 && ox < 8 && oy >= 0 && oy < 4 && ROAD_POOL[oy][ox] !== '.') {
-      const cx = (x0 + 4) / TILE - 0.5, cy = (y0 + 2) / TILE - 0.5, lat = roadLatAt(cx, cy);
-      if (lat < 99 && roadRutOff(cx, cy, lat) < 0.16 && laneDist(cx, cy) < -0.8) {
-        const ch = ROAD_POOL[oy][ox];
-        return ch === 'd' ? ROAD_COL_DEEP : ch === 'b' ? ROAD_COL_A : ch === 'g' ? ROAD_COL_GLINT : ROAD_COL_ICE;
-      }
-    }
-  }
-  const lat = roadLatAt(fx, fy);
-  if (lat < 99) {
-    const r = roadRutOff(fx, fy, lat);
-    if (r < 0.075 && hp > 0.1 && vnoise(wx / 5 + 9.1, wy / 5 + 2.2) > 0.22) return ROAD_COL_RUT;
-  }
-  // a stone: one in a few cells of 7 px, a 3x2 pebble at a rolled spot in it
-  const cx = Math.floor(wx / 7), cy = Math.floor(wy / 7), h = hash2(cx * 7 + 3, cy * 7 + 5);
-  if (h < 0.035) {
-    const ox = wx - cx * 7 - 1 - ((h * 400) | 0) % 4, oy = wy - cy * 7 - 1 - ((h * 1300) | 0) % 4;
-    if (oy === 0 && ox >= 0 && ox <= 2) return ox === 0 ? ROAD_COL_STONE : ROAD_COL_STONE_LIT;
-    if (oy === 1 && ox >= 0 && ox <= 2) return ox === 2 ? ROAD_COL_STONE_SHADE : ROAD_COL_STONE;
-    if (oy === 2 && ox >= 1 && ox <= 3) return ROAD_COL_DEEP;
-  }
-  return null;
-}
-// the stone a pixel lies on in a laid path: a jittered grid of `cell` px,
+// the flagstone a pixel lies on: a jittered grid of `cell` px,
 // each pixel the nearest point's stone. Returns that stone's roll, the gap
 // to the next stone (px: under 1 is the joint) and which way the pixel lies
 // from the stone's middle (lx + ly < 0 faces the light, up-left)
@@ -294,7 +244,7 @@ function roadStoneAt(wx, wy, cell, jit) {
     const d = Math.hypot(wx + 0.5 - fx, wy + 0.5 - fy);
     if (d < d1) { d2 = d1; d1 = d; id = h; lx = wx + 0.5 - fx; ly = wy + 0.5 - fy; } else if (d < d2) d2 = d;
   }
-  return { id, gap: d2 - d1, lx, ly, r: d1 };
+  return { id, gap: d2 - d1, lx, ly };
 }
 // a stone's own pixel: three greys by its roll, a lit rim toward the light
 // and a shaded one away from it, the joint dark
@@ -307,31 +257,6 @@ function roadStonePx(st, joint) {
 const ROAD_STONE_LIT = ['#b9b4aa', '#b2ab9c', '#c0bab0'];
 const ROAD_STONE_MID = ['#9f9a90', '#999283', '#a7a197'];
 const ROAD_STONE_SHD = ['#7f7a71', '#7a7365', '#86817a'];
-// which lane look the bake paints (staging the A-D sheet)
-let ROAD_LOOK = 'ruts';
-function roadLookAt(wx, wy, fx, fy, d, hp, earth) {
-  if (ROAD_LOOK === 'flag') { // A: big flat flagstones, earth in the joints
-    return roadStonePx(roadStoneAt(wx, wy, 12, 0.8), ROAD_COL_DEEP);
-  }
-  if (ROAD_LOOK === 'cobble') { // B: small round cobbles packed close
-    return roadStonePx(roadStoneAt(wx, wy, 6, 0.7), ROAD_COL_STONE_SHADE);
-  }
-  if (ROAD_LOOK === 'kerb') { // C: the rutted earth lane with a kerb of stones down each edge
-    if (d > -1.7 && d < 0) {
-      const st = roadStoneAt(wx, wy, 7, 0.5);
-      const sx = (wx + 0.5 - st.lx) / TILE - 0.5, sy = (wy + 0.5 - st.ly) / TILE - 0.5, sd = laneDist(sx, sy);
-      if (sd > -1.0 && sd < -0.45) return roadStonePx(st, ROAD_COL_DEEP);
-    }
-    return roadDetailAt(wx, wy, fx, fy, hp) || earth;
-  }
-  if (ROAD_LOOK === 'old') { // D: an old stone road half buried, earth showing where it is worn
-    const st = roadStoneAt(wx, wy, 8, 0.7);
-    const worn = vnoise(wx / 18 + 6.6, wy / 18 + 1.4) < 0.42 + (d + 2) * 0.12 || hash2(Math.round(st.id * 9973), 3) < 0.18;
-    if (worn) return roadDetailAt(wx, wy, fx, fy, hp) || earth;
-    return roadStonePx(st, ROAD_COL_DEEP);
-  }
-  return roadDetailAt(wx, wy, fx, fy, hp) || earth;
-}
 // a tuft of dry grass through the snow at the verge: a 4x4 clump of
 // blades in one cell of 8 px in a few, mirrored on half of them, or null
 const ROAD_TUFT = ['.g..', '.g.g', 'gdgd', '.dd.'];
@@ -354,9 +279,8 @@ function paintRoadOverlay(g, tx, ty, px, py, onIce) {
     const clump = vnoise(wx / 6 + 3.1, wy / 6 + 7.7);
     let c = null;
     if (d < 0) {
-      // packed earth in two tones by 8 px quad
-      c = vnoise((wx >> 3) / 13, (wy >> 3) / 13) > 0.5 ? ROAD_COL_A : ROAD_COL_B;
-      c = roadLookAt(wx, wy, fx, fy, d, hp, c);
+      // the flagstones, earth in their joints
+      c = roadStonePx(roadStoneAt(wx, wy, ROAD_FLAG, 0.8), ROAD_COL_DEEP);
       // the verge: snow lying over the last of the earth in clumps
       if (d > -0.6 && clump + hp * 0.15 > 1.0 - (d + 0.6) / 0.6 * 0.5) c = ROAD_COL_SNOW;
     } else if (onIce) {
