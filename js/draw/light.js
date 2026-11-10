@@ -86,7 +86,6 @@ const CLOUD_A_STR = 0.60, CLOUD_B_STR = 0.30; // and how much of each layer reac
 // deep part of a cloud is what actually darkens: the light-to-dark swing over
 // the ground roughly doubles while the field's average brightness barely moves.
 const CLOUD_CURVE = 1.35, CLOUD_GAIN = 1.9;
-const CLOUD_STEPS = 4;                    // flat steps of shade a layer is cut into: pixel art has edges, not gradients
 const CLOUD_TINT = [126, 143, 186];       // a cool shadow, never a grey one
 
 // Value noise on a WRAPPED lattice: hashing (x mod per) is the whole trick -
@@ -127,7 +126,7 @@ function bakeCloud(size, octX, octY, lo, hi) {
     for (let x = 0; x < size; x++) {
       const n = oc(x, y, 1) * 0.50 + oc(x, y, 2) * 0.27 + oc(x, y, 4) * 0.15 + oc(x, y, 8) * 0.08;
       const r = Math.max(0, Math.min(1, (n - lo) / (hi - lo)));
-      const a = Math.round(Math.min(1, Math.pow(r, CLOUD_CURVE) * CLOUD_GAIN) * CLOUD_STEPS) / CLOUD_STEPS;
+      const a = Math.min(1, Math.pow(r, CLOUD_CURVE) * CLOUD_GAIN);
       const i = (y * size + x) * 4;
       d[i] = CLOUD_TINT[0]; d[i + 1] = CLOUD_TINT[1]; d[i + 2] = CLOUD_TINT[2];
       d[i + 3] = Math.round(a * (255 * CLOUD_DEEP));

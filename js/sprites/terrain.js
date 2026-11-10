@@ -1204,8 +1204,14 @@
     };
     const B = [outline, liftDarks, softSnow], C = B.concat([hueShift]), D = C.concat([colour(0.8), trunk]);
     const out = [];
-    for (const v of [B, C, D]) for (const t of TREE_TONES) out.push(run(v.concat([tone(t)])));
-    return out; // row = variant * 3 + tone
+    for (const v of [B, C, D]) TREE_TONES.forEach((t, ti) => {
+      const pal = run(v.concat([tone(t)]));
+      // inside a stand the next pine's crown would cover the trunk: it wears
+      // the forest floor's own two tones (FLOOR_COL/FLOOR_FLECK, js/draw/ground.js) and is gone
+      if (ti > 0) { pal.u = '#27414a'; pal.U = '#1f363f'; }
+      out.push(pal);
+    });
+    return out; // row = variant * 4 + tone
   })();
   // baked once, up here, because both the array and the atlas below need it:
   // one run of 24 frames per palette row

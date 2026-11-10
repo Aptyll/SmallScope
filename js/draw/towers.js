@@ -137,10 +137,18 @@ function towerFooting(o) {
   c = document.createElement('canvas'); c.width = W; c.height = H;
   c.wx = Math.round(f.x) - (W >> 1); c.wy = Math.round(f.y) - (H >> 1) + 1; // its top-left, world px
   const g = c.getContext('2d');
-  const round = (x, y) => { const u = (x - c.wx - W / 2) / (TOWER_FOOT_RX - 5), w = (y - c.wy - H / 2) / (TOWER_FOOT_RY - 4); return u * u + w * w < 1; };
+  // a stone is laid inside the round, on open ground: none under a pine, so the lip closes before the trees
+  const round = (x, y) => {
+    const u = (x - c.wx - W / 2) / (TOWER_FOOT_RX - 5), w = (y - c.wy - H / 2) / (TOWER_FOOT_RY - 4);
+    if (u * u + w * w >= 1) return false;
+    const tx = Math.floor(x / TILE), ty = Math.floor(y / TILE), ob = inWorld(tx, ty) && objects[idx(tx, ty)];
+    return !(ob && ob.type === 'tree');
+  };
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     const wx = c.wx + x, wy = c.wy + y, st = roadStoneAt(wx, wy, ROAD_FLAG, 0.8);
     const r1 = round(st.x1, st.y1), r2 = round(st.x2, st.y2);
+    const ob = objects[idx(Math.floor(wx / TILE), Math.floor(wy / TILE))];
+    if (ob && ob.type === 'tree') continue; // under a pine: the forest's ground
     let col = null;
     if (r1) col = roadStonePx(st, ROAD_COL_DEEP);
     else if (roadStoneIn(st.x1, st.y1)) continue; // the lane's own stone: the ground's

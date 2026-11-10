@@ -801,8 +801,8 @@ function paintSnowShore(g, tx, ty, px, py) {
 // ------------------------------------------------------------ the snow's pixels
 // Open snow wears a soft relief of wind-laid drifts: long swells stretched
 // along SNOW_ANG, lit on the side facing the sun (top-left, the one the cast
-// shadows fall from) and shaded blue on the lee, in four close tones under a
-// Bayer dither. The valley is not one field of it: a very low noise
+// shadows fall from) and shaded blue on the lee, in four close FLAT tones: a
+// drift's tones meet on clean stepped edges, never through a dither. The valley is not one field of it: a very low noise
 // (SNOW_REGION) lays out regions of three LOOKS - fine drifts, broad swells,
 // and lee-only (bright flat snow with shade only behind each swell) -
 // blended across a soft band, so no seam shows. Every pixel is a function of
@@ -815,9 +815,9 @@ const SNOW_BASE = 1;                           // the flat snow's tone
 const SNOW_GLINT = rgbOf('#ffffff'), SNOW_GLINT_P = 0.996; // a crystal, only on the lit tone
 let SNOW_ANG = -0.33, SNOW_C = Math.cos(SNOW_ANG), SNOW_S = Math.sin(SNOW_ANG); // a match turns it onto the seed's prevailing wind (layDrifts, js/sim/depth.js)
 const SNOW_LOOKS = [
-  { sc: 1,   rel: 7, dith: 0 },              // fine drifts
-  { sc: 1.8, rel: 8, dith: 0 },              // broad swells
-  { sc: 1.5, rel: 9, dith: 0, lee: true },   // lee only
+  { sc: 1,   rel: 7 },             // fine drifts
+  { sc: 1.8, rel: 8 },             // broad swells
+  { sc: 1.5, rel: 9, lee: true },   // lee only
 ];
 const SNOW_REGION = 22 * TILE;       // world px per step of the region noise
 const SNOW_CUT = [0.41, 0.6];        // region noise thresholds between the looks (~thirds of the map)
@@ -903,10 +903,10 @@ function snowTile(px, py) {
     const v = j / TILE, qa = q00 + (q01 - q00) * v, qb = q10 + (q11 - q10) * v, y = py + j, fy = y / 2 - Y0;
     for (let i = 0; i < TILE; i++) {
       const x = px + i, fx = x / 2 - X0;
-      let d = 0, dith = 0;
+      let d = 0;
       if (only >= 0) { // the whole tile inside one look's region: no blend to weigh
         const L = SNOW_LOOKS[only], s = latAt(snowLatS[only], fx, fy);
-        d = L.lee ? Math.min(0, s) + 1 : s; dith = L.dith;
+        d = L.lee ? Math.min(0, s) + 1 : s;
       } else {
         const q = qa + (qb - qa) * (i / TILE);
         snowW[0] = on0 ? smooth01(SNOW_CUT[0] + SNOW_BLEND, SNOW_CUT[0] - SNOW_BLEND, q) : 0;
@@ -916,10 +916,10 @@ function snowTile(px, py) {
           const w = snowW[l];
           if (w <= 0) continue;
           const L = SNOW_LOOKS[l], s = latAt(snowLatS[l], fx, fy);
-          d += w * (L.lee ? Math.min(0, s) + 1 : s); dith += w * L.dith;
+          d += w * (L.lee ? Math.min(0, s) + 1 : s);
         }
       }
-      const t = Math.round(SNOW_BASE + d + BAYER4[(y & 3) * 4 + (x & 3)] * dith);
+      const t = Math.round(SNOW_BASE + d);
       const tone = t >= 3 ? (hash2(x * 3 + 7, y * 5 + 11) > SNOW_GLINT_P ? 4 : 3) : t < 0 ? 0 : t;
       snowTone[j * TILE + i] = deep ? deepTone(x, y, tone) : tone;
     }
