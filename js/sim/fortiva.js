@@ -225,7 +225,7 @@ function noKneelAt(p) {
   const k = d > NOKNEEL_RANGE ? NOKNEEL_RANGE / d : 1;
   return [p.x + dx * k, p.y + dy * k, Math.min(d, NOKNEEL_RANGE)];
 }
-// The leap is a hero dash too (HERO_DASH.vault): straight at the spot at its own
+// The leap is a hero dash too (HERO_DASH.nokneel): straight at the spot at its own
 // speed, for as long as the spot is away. A wall stops it short, a stun drops her
 // where she is (stunUnit ends any dash) and nothing lands.
 function fortNoKneel(p) {
@@ -234,13 +234,13 @@ function fortNoKneel(p) {
   p.rushNX = (tx - p.x) / n; p.rushNY = (ty - p.y) / n;
   p.rushT = Math.max(TICK_DT, d / NOKNEEL_SPD);
   p.vaultMax = p.rushT;
-  p.dash = 'vault';
+  p.dash = 'nokneel';
   p.sliding = false;
   faceToward(p, tx - p.x, ty - p.y, true);
   burst(p.x, p.y + 4, '#dfe8f4', 10, 50, 0.4, true);
   sfxAt('dodge', p.x, p.y);
 }
-HERO_DASH.vault = { spd: NOKNEEL_SPD, t: NOKNEEL_RANGE / NOKNEEL_SPD, ramp: 0.001,
+HERO_DASH.nokneel = { spd: NOKNEEL_SPD, t: NOKNEEL_RANGE / NOKNEEL_SPD, ramp: 0.001,
   step: (p, mv) => { if (mv.blockedX || mv.blockedY || p.rushT <= 0) noKneelLand(p); },
   pose: (p) => ({ dx: 0, dy: -Math.round(12 * Math.sin(Math.PI * Math.min(1, 1 - p.rushT / (p.vaultMax || 1)))), rot: 0 }) }; // the arc through the air
 function noKneelLand(p) {

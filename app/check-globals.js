@@ -13,7 +13,8 @@
 //   - a function or var declared twice loads fine and the LATER one silently
 //     replaces the earlier everywhere, which is how one agent's helper
 //     quietly rewires another's feature.
-// It also reports a js file index.html never loads, and one it loads twice.
+// It also reports a js file index.html never loads, and one it loads twice, and
+// a HERO_* hook table key (HERO_DASH.vault) that two lines assign.
 // It runs app/check-size.js too, so a file or function grown too big fails here,
 // app/check-dead.js, so a top-level name, a sprite, a sound cue or a sound
 // file nothing uses fails here, and
@@ -270,6 +271,21 @@ function main() {
     const where = list.map((e) => `${e.file}:${e.line} (${e.kind === 'window' ? 'window.' + name + ' =' : e.kind})`).join(', ');
     problems.push(`${lex ? 'LOAD ERROR' : 'OVERRIDE  '} ${name}: ${where}`);
   }
+  // a hero's hook keyed twice (HERO_DASH.vault in two files): the later file's
+  // entry silently runs for both heroes, the same quiet rewire one level down
+  const hookAt = new Map(); // 'HERO_X.key' -> ['file:line', ...]
+  for (const f of order) {
+    const p = path.join(ROOT, f);
+    if (!fs.existsSync(p)) continue;
+    fs.readFileSync(p, 'utf8').split('\n').forEach((ln, i) => {
+      const m = /^(HERO_[A-Z_]+)(?:\.([A-Za-z_$][\w$]*)|\[\s*(['"])([^'"]+)\3\s*\])\s*=[^=]/.exec(ln);
+      if (!m) return;
+      const key = m[1] + '.' + (m[2] || m[4]);
+      if (!hookAt.has(key)) hookAt.set(key, []);
+      hookAt.get(key).push(`${f}:${i + 1}`);
+    });
+  }
+  for (const [key, at] of hookAt) if (at.length > 1) { silent++; problems.push(`OVERRIDE   ${key}: ${at.join(', ')} (one hero's hook replaces another's)`); }
   // no file or function may grow too big to read whole (app/check-size.js says how it counts)
   const sizes = require('./check-size.js').check();
   problems.push(...sizes);
