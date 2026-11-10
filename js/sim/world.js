@@ -531,10 +531,11 @@ function roadSpan() {
   return roadSpanC;
 }
 // the road as it is LAID and DRAWN: roadDist ended on the perches, and
-// straight on through the cistern's gates and over its floor. Not genWorld's:
+// straight on through the cistern's gates and over its floor, widened to
+// each gate's pillars across its sill (cisternApron, js/sim/cistern.js). Not genWorld's:
 // its carve rules ask the whole line, before the creek is in, so no seed's
 // ponds move
-function laneDist(fx, fy) { return roadDist(fx, fy, true); }
+function laneDist(fx, fy) { const d = roadDist(fx, fy, true); return ARENA ? d : Math.min(d, cisternApron(fx, fy)); }
 function onRoad(tx, ty) { return laneDist(tx, ty) < 0; }
 // where a side's bird roosts and where its road leaves home: the NEST is the
 // perch at the back of the side's base, on the centreline (basePerch,
