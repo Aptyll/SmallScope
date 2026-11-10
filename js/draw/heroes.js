@@ -151,7 +151,7 @@ function heroBlade(p) { const b = attackOf(p).cut ? heroBladeOf(p) : null; retur
 // a blade row's art for this body: its finer pair (`fine`, the art at `dens` px a world px,
 // its grips still in world px) for a body drawn fine (bodySet), else its own
 function bladeArt(p, b) {
-  if (bodySet(p).dens < 2) return b.art();
+  if (!(bodySet(p).dens > 1)) return b.art(); // a 16 px set carries no dens
   if (b.fine) return b.fine();
   const a = b.art();
   return { flat: fineArt(a.flat), diag: a.diag && fineArt(a.diag) };
