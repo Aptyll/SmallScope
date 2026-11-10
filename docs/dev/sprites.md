@@ -303,7 +303,7 @@ front's width and the body is two pixels narrower. Her dolls (`Horn` and `Column
 app/bake-player/bodies.py) paint the cape in the doll's `cloak` material and the collar in `beard`
 (`gold` for the gorget); only the roll is used. Her
 HORN is a staff: `staff: 'horn'` names `HERO_STAVES.horn` (`BUCINA_HORN`, js/draw/bucina.js), a brass
-signal horn held upright with the bell at the top, glinting between two baked frames.
+bucina coiled in one loop with the bell up and out, held by the loop, glinting between two baked frames.
 VARRO has two looks (`VARRO_SKINS`, js/sprites/varro.js): WOLF-KEPT (free) and WHITE PACK (rare,
 200 coins), both on ARMATOS's frame (`VARRO_PAL` is `ARM_PAL` with the grey pelt `f`/`F`/`j`, the
 white pelt `u`/`U`/`v` shaded blue so it holds on snow, and his dark hair `a`). The pelt is worn as
@@ -368,7 +368,7 @@ FABER has two looks (`FABER_SKINS`, js/sprites/faber.js): CLOCKMAKER (free) and 
 faber-round1.png in the project files. Their dolls (`Clockmaker` and `Foreman` in
 app/bake-player/bodies.py) paint the cap in the doll's `hair` material and the hard hat in `hat`;
 only the roll is used. His CLOCK STAFF is a staff like IGNIA's: `staff: 'clock'` names
-`HERO_STAVES.clock` (`FABER_CLOCK`, js/draw/faber.js), a brass clock face on a walnut shaft whose
+`HERO_STAVES.clock` (`FABER_CLOCK`, js/draw/faber.js), a brass clock dial (quarter marks, two hands) hung out from a walnut shaft, whose
 hand ticks between two baked frames. His two machines draw themselves from small grids baked per
 side (`faberArt`, js/draw/faber.js), the side's colour in a band across each.
 
