@@ -89,6 +89,12 @@ function deepTone(x, y, t) {
 // staggered REED_STEP grid jittered off the position hash, wherever the snow
 // is deep: pure position, so every screen stands the same reeds.
 const REED_PAL = { root: '#6b5f47', blade: '#a8955f', lit: '#d6c48c', tip: '#ffffff', foot: '#b4c5dc' };
+// a stand is not one straw: whole CLUMPS of it (REED_CLUMP px across, a slow
+// noise cut in flat steps) are the straw above, an older umber, or bleached
+// pale - a row of the atlas each
+const REED_TONES = [REED_PAL, { root: '#574a38', blade: '#86703f', lit: '#ad9558' }, { root: '#7d745c', blade: '#c2b488', lit: '#ebe0b8' }];
+const REED_CLUMP = 30, REED_UMBER = 0.4, REED_PALE = 0.62; // px across a clump; the noise under which it is umber, and over which pale
+const REED_REST = 13;  // px round where a camp's beast rests that no reed stands: it lies in a form it has pressed, in plain sight
 const REED_STEP = 7;   // px between reeds on the grid
 const REED_JIT = 5;    // px either way a reed wanders off its grid point
 const REED_IN = 0.03;  // depth past DEPTH_DEEP a reed's foot needs: none on the rim's own line
@@ -97,6 +103,7 @@ const REED_GLADE = 9;  // px across one of those openings
 const REED_RIM = 0.14; // depth past DEPTH_DEEP inside which the stand is whole: the rim says where the brush is
 const REED_FADE = 16;  // px from the viewed hero's feet the reeds thin...
 const REED_SEE = 0.3;  // ...to this alpha
+const REED_FADE_BEAST = 10; // px either way from a shown beast's feet they thin the same
 const REED_VARS = 8, REED_W = 11, REED_H = 14; // the atlas: variants, and each cell's size
 let reedCv = null;
 // the atlas: REED_VARS TUFTS, each a dark root three pixels wide in a foot of
@@ -106,26 +113,27 @@ let reedCv = null;
 // reads as clumps of straw on the drift, not as tan static over it.
 function reedAtlas() {
   if (reedCv) return reedCv;
-  reedCv = document.createElement('canvas'); reedCv.width = REED_W * REED_VARS; reedCv.height = REED_H;
+  reedCv = document.createElement('canvas'); reedCv.width = REED_W * REED_VARS; reedCv.height = REED_H * REED_TONES.length;
   const g = reedCv.getContext('2d');
-  for (let v = 0; v < REED_VARS; v++) {
+  for (let t = 0; t < REED_TONES.length; t++) for (let v = 0; v < REED_VARS; v++) {
+    const P = REED_TONES[t];
     // three kinds, so a stand is not one tuft stamped over: four tall, two short and thin, two bent over by the wind
     const short = v === 4 || v === 5, bent = v > 5;
     const n = short ? 3 : bent ? 4 : 4 + (v % 3), tall = short ? 6 + (v & 1) : REED_H - 5 + ((v * 5) % 4);
     const tilt = bent ? (v & 1 ? 0.4 : -0.4) : ((v * 3) % 5 - 2) * 0.12;
-    const x0 = v * REED_W + (REED_W >> 1), y0 = REED_H - 3;
+    const x0 = v * REED_W + (REED_W >> 1), y0 = t * REED_H + REED_H - 3;
     const px = (x, y, c) => { g.fillStyle = c; g.fillRect(x, y, 1, 1); };
     // the foot's shade on the drift, down-right of the root, then the root itself
     for (let i = -1; i <= 3; i++) px(x0 + i, y0 + 2, REED_PAL.foot);
     px(x0 + 2, y0 + 1, REED_PAL.foot); px(x0 + 3, y0 + 1, REED_PAL.foot);
-    for (let i = -1; i <= 1; i++) { px(x0 + i, y0 + 1, REED_PAL.root); px(x0 + i, y0, REED_PAL.root); }
+    for (let i = -1; i <= 1; i++) { px(x0 + i, y0 + 1, P.root); px(x0 + i, y0, P.root); }
     for (let k = 0; k < n; k++) {
       const off = k - (n - 1) / 2, edge = Math.abs(off) / ((n - 1) / 2); // 0 the middle blade .. 1 the outermost
       const len = Math.max(4, Math.round(tall * (1 - edge * 0.45)) - (k & 1));
       const lean = off * 0.5 + tilt;
       for (let j = 1; j <= len; j++) {
         const u = j / len, x = x0 + Math.round(off * 0.5 + lean * u * u * len * 0.55);
-        const c = j === len && edge < 0.6 ? REED_PAL.tip : j <= 2 ? REED_PAL.root : off < 0 ? REED_PAL.lit : REED_PAL.blade;
+        const c = j === len && edge < 0.6 ? REED_PAL.tip : j <= 2 ? P.root : off < 0 ? P.lit : P.blade;
         px(x, y0 - j, c);
       }
     }
@@ -137,6 +145,9 @@ function reedsOf(D) {
   if (D.reeds) return D.reeds;
   const out = D.reeds = [];
   const r = (D.len + 1) * TILE, X = D.x * TILE, Y = D.y * TILE;
+  // where the camps' beasts rest (a drawn camp's spots, or its spec's), in px
+  const rest = [];
+  for (const C of camps) for (const q of C.spots || C.spec.spots) rest.push([(C.tx + q[0] + 0.5) * TILE, (C.ty + q[1] + 0.5) * TILE]);
   const y0 = Math.floor((Y - r) / REED_STEP), y1 = Math.ceil((Y + r) / REED_STEP);
   const x0 = Math.floor((X - r) / REED_STEP), x1 = Math.ceil((X + r) / REED_STEP);
   for (let j = y0; j <= y1; j++) for (let i = x0; i <= x1; i++) {
@@ -147,13 +158,16 @@ function reedsOf(D) {
     // inside the rim the stand opens in a few small glades, REED_GLADE px across: a noise
     // finer than the patch, so the middle is clumps and openings, never one bare floor in a wreath
     if (dd > DEPTH_DEEP + REED_RIM && vnoise(x / REED_GLADE + 5.5, y / (REED_GLADE * 0.8) + 2.5) < REED_GAP) continue;
-    out.push({ x, y, v: (hash2(x * 3, y * 7) * REED_VARS) | 0 });
+    if (rest.some((q) => Math.hypot(x - q[0], (y - q[1]) * 1.4) < REED_REST)) continue;
+    const tone = vnoise(x / REED_CLUMP + 31.5, y / REED_CLUMP + 12.5);
+    out.push({ x, y, v: (hash2(x * 3, y * 7) * REED_VARS) | 0, t: tone < REED_UMBER ? 1 : tone > REED_PALE ? 2 : 0 });
   }
   out.sort((a, b) => a.y - b.y);
   return out;
 }
 // the reeds over the view, into the frame's y-sorted draws (gatherDraws)
 function reedDraws(draws, ox, oy) {
+  reedBeasts = draws.filter((d) => d.a).map((d) => d.a); // the beasts this frame shows: the reeds thin round each (drawReed)
   for (const D of drifts) {
     const r = (D.len + 1) * TILE, X = D.x * TILE, Y = D.y * TILE;
     if (X + r < ox || Y + r < oy - REED_H || X - r > ox + WV_W || Y - r > oy + WV_H + REED_H) continue;
@@ -164,10 +178,14 @@ function reedDraws(draws, ox, oy) {
     }
   }
 }
-// one reed, thinned round the viewed hero (null while dead or airborne)
+// one reed, thinned round the viewed hero (null while dead or airborne) and,
+// closer in, round every beast the frame shows: a rabbit in its own brush is
+// a thing to hunt, not to lose
+let reedBeasts = [];
 function drawReed(q, ex, ey, hero) {
-  const near = hero && Math.hypot(q.x - hero.x, q.y - hero.y - 4) < REED_FADE;
+  let near = hero && Math.hypot(q.x - hero.x, q.y - hero.y - 4) < REED_FADE;
+  for (let i = 0; !near && i < reedBeasts.length; i++) near = Math.abs(q.x - reedBeasts[i].x) < REED_FADE_BEAST && Math.abs(q.y - reedBeasts[i].y - 4) < REED_FADE_BEAST;
   if (near) ctx.globalAlpha = REED_SEE;
-  ctx.drawImage(reedAtlas(), q.v * REED_W, 0, REED_W, REED_H, Math.round(q.x - ex) - (REED_W >> 1), Math.round(q.y - ey) - REED_H + 3, REED_W, REED_H);
+  ctx.drawImage(reedAtlas(), q.v * REED_W, q.t * REED_H, REED_W, REED_H, Math.round(q.x - ex) - (REED_W >> 1), Math.round(q.y - ey) - REED_H + 3, REED_W, REED_H);
   if (near) ctx.globalAlpha = 1;
 }

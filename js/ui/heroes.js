@@ -17,7 +17,8 @@
 
 const HERO_CELL = 42;                  // a cell's side: a 20 px head crop at 2x, and its rim
 const HERO_GAP = 6;
-const HERO_PITCH = HERO_CELL + 12;     // a grid row and the names under it
+const HERO_PITCH = HERO_CELL + 12;     // a grid row and the names under it...
+const HERO_PITCH_MIN = HERO_CELL + 8;  // ...and its tightest, on a short view: the name still clear of the row under it
 const HERO_FACE = 20;                  // a face cell's side at 1x (heroHead, js/ui/draft.js)
 const HERO_SEARCH_W = 96;              // the search field, right of the filters
 const HERO_SEARCH_MAX = 12;
@@ -33,11 +34,17 @@ function heroShown() {
   return heroList().map((h, i) => ({ h, i })).filter(({ h }) => h.name.includes(q));
 }
 function heroCols(L) { return Math.max(1, Math.floor((L.grid.w + HERO_GAP) / (HERO_CELL + HERO_GAP))); }
+// a row's pitch: HERO_PITCH where every hero's row fits over LOCK IN, tighter on a short view
+// (down to HERO_PITCH_MIN) so the last row never runs under the button. Off the whole roster, so a search never moves a row
+function heroPitch(L) {
+  const rows = Math.ceil(heroList().length / heroCols(L));
+  return Math.max(HERO_PITCH_MIN, Math.min(HERO_PITCH, Math.floor((L.play.y - 4 - L.grid.y) / rows)));
+}
 // the grid's cells from its top-left, as many to a row as its width takes
 function heroCells(L) {
   const cols = heroCols(L);
   return heroShown().map(({ h, i }, k) => ({
-    x: L.grid.x + (k % cols) * (HERO_CELL + HERO_GAP), y: L.grid.y + Math.floor(k / cols) * HERO_PITCH,
+    x: L.grid.x + (k % cols) * (HERO_CELL + HERO_GAP), y: L.grid.y + Math.floor(k / cols) * L.pitch,
     w: HERO_CELL, h: HERO_CELL, i, hero: h,
   }));
 }

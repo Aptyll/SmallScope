@@ -117,6 +117,7 @@ function paintGroundTile(g, tx, ty) {
         if (inner && h < 0.12) { g.fillStyle = '#ddf1f8'; g.fillRect(px + ((h * 210) | 0) % 12, py + ((h * 87) | 0) % 12, 2, 2); }
         paintDressing(g, tx, ty, px, py); // long cracks, the downwind bank (js/draw/lakes.js)
         if (inner && orcaLakeAt(tx, ty)) paintRime(g, tx, ty, px, py); // the orca's pool: rough ice that holds a foot (slickUnder)
+        else if (inner && lakeStyle[idx(tx, ty)] === CREEK_ICE_STYLE) paintRime(g, tx, ty, px, py, RIVER_GLINTS); // the river: a few glints of the same frost
         // ...and, where any road reaches the lake, the earth spilling over
         // this tile's share of the crossing, rimmed along its own ragged edge
         // rather than along the tile's sides. The diagonal road never meets
@@ -251,6 +252,7 @@ const TRUNK_R = [6.5, 4.5];   // px half-thickness at the foot and at the broken
 const TRUNK_PLATE = [5, 13];  // px the root plate stands along the line and across it
 const TRUNK_STUBS = [[0.34, -1], [0.55, 1], [0.78, -1]]; // [along, side]: a lopped branch (side -1 the upper)
 const TRUNK_SHADE = 'rgba(40,60,100,0.24)';
+const TRUNK_CAP = 0.1;        // how far past the trunk's middle, in half-thicknesses, its snow cap comes down: most of what is seen from above is snow
 function paintTrunk(g, tr, px, py) {
   const vx = tr.x1 - tr.x0, vy = tr.y1 - tr.y0, L = Math.hypot(vx, vy), ux = vx / L, uy = vy / L;
   let nx = -uy, ny = ux;
@@ -273,7 +275,7 @@ function paintTrunk(g, tr, px, py) {
       const stub = TRUNK_STUBS.find(([sf, side]) => Math.abs(a - sf * L) <= 1 && d * side > r - 1 && d * side < r + 4);
       if (stub) c = ad >= r + 3 ? TRUNK_COL.rim : stub[1] < 0 ? TRUNK_COL.snowD : TRUNK_COL.dark;
       else if (ad <= r && a <= end) {
-        const cap = -r * 0.15 + (vnoise(a / 4 + seed, 1.7) - 0.5) * 3; // the snow cap's lower edge
+        const cap = r * TRUNK_CAP + (vnoise(a / 4 + seed, 1.7) - 0.5) * 3; // the snow cap's lower edge
         if (ad > r - 1) c = d < cap ? TRUNK_COL.capRim : TRUNK_COL.rim; // the snow's own edge is blue, never the bark's dark
         else if (a > end - 2) c = h < 0.3 ? TRUNK_COL.light : TRUNK_COL.wood; // the break's raw wood
         else if (d < cap) c = d > cap - 1.5 || h < 0.15 ? TRUNK_COL.snowD : TRUNK_COL.snow;
@@ -578,7 +580,7 @@ function repaintGround(tx, ty) {
 const ICE_STYLES = [
   { id: 'lip',   w: 1, amp: 0.42, fr: 0.56, amp2: 0.14, fr2: 0.19, band: 2 },
   { id: 'deep',  w: 2, amp: 0.5,  fr: 0.75, amp2: 0.1,  fr2: 0.25, band: 3, deep: true },
-  { id: 'river', w: 0, amp: 0.42, fr: 0.56, amp2: 0.14, fr2: 0.19, band: 2, river: true }, // never rolled: the frozen creek's own (riverTone)
+  { id: 'river', w: 0, amp: 0.42, fr: 0.56, amp2: 0.14, fr2: 0.19, band: 3, river: true }, // never rolled: the frozen creek's own (riverTone)
 ];
 const ICE_W = ICE_STYLES.reduce((a, s) => a + s.w, 0);
 const ORCA_ICE = ICE_STYLES.findIndex((s) => s.deep); // the orca's pool's style, whatever its roll (bakeLakes)
@@ -590,6 +592,11 @@ const ICE_MID = [rgbOf('#a6cde2'), rgbOf('#add2e6')];      // ...the water deepe
 const ICE_DEEP = [rgbOf('#8fbcd8'), rgbOf('#96c1db')];     // ...the middle
 const BANK_SHADE = rgbOf('#9ec5da'), BANK_SHADE_DEEP = rgbOf('#8db6d0'), BANK_SHADE2 = rgbOf('#aacfe2');
 const BANK_LIP = rgbOf('#ffffff'), BANK_FACE = rgbOf('#e0f2f9');
+// THE RIVER'S BANKS are drawn harder than a pond's, so the map's spine has an
+// edge: under the bank that faces away from the sun a rim of three steps,
+// dark first; on the sunward bank a bright face and, on the snow behind it,
+// the line of the bank's crest in shade
+const RIVER_RIM = [rgbOf('#7aa9c7'), rgbOf('#8fbbd6'), rgbOf('#a3cbe1')], RIVER_FACE = rgbOf('#f4fbfe'), RIVER_CREST = rgbOf('#c3d6ea');
 
 let lakeStyle = null; // per tile: its lake's index into ICE_STYLES, 255 off the ice
 let lakeDepth = null; // per tile: tiles in from the lake's edge (1 = on it), 0 off the ice
@@ -724,6 +731,9 @@ const RIVER_CHANNEL = rgbOf('#a9d0e4');    // the clear channel down the middle
 const RIVER_CORE = rgbOf('#9cc6de');       // ...its deepest thread
 const RIVER_STREAK = rgbOf('#d4eaf4');     // wind-laid snow along the flow, on the sheet either side of the channel
 const RIVER_CRACK = rgbOf('#86b2cc'), RIVER_CRACK_LIT = rgbOf('#e6f4fa');
+const RIVER_SNOW = rgbOf('#e9f3fa');        // snow swept across it by the wind
+const RIVER_SWEPT_LONG = 30, RIVER_SWEPT_WIDE = 4.5, RIVER_SWEPT = 0.74; // px per step of that snow's noise along and across the wind, and the noise it lies over
+const RIVER_GLINTS = 3;                    // frost glints on a tile of it well inside the banks
 const RIVER_CHANNEL_W = 0.42;              // share of the half-width the channel takes, either side of the middle
 const RIVER_STREAK_ROW = 2.5;              // px across between streak rows
 const RIVER_CRACK_EVERY = 7;               // tiles along the water between cracks, give or take
@@ -743,6 +753,10 @@ function riverTone(x, y) {
     if (off >= 0 && off < 1) return RIVER_CRACK;
     if (off >= 1 && off < 2) return RIVER_CRACK_LIT;
   }
+  // snow the wind has swept over the sheet: long tongues lying along the
+  // wind (not the flow), a flat near-white, off the crack lines
+  const u = x * LW_X + y * LW_Y, v = -x * LW_Y + y * LW_X;
+  if (vnoise(u / RIVER_SWEPT_LONG + 9.5, v / RIVER_SWEPT_WIDE + 3.5) > RIVER_SWEPT) return RIVER_SNOW;
   // a streak: 2 px rows across the flow, each with its own runs along it
   const row = Math.floor((n * TILE) / RIVER_STREAK_ROW);
   if (t > RIVER_CHANNEL_W + 0.12 && vnoise(a * 0.22 + row * 5.3, row * 1.9) > 0.72) return RIVER_STREAK; // on the sheet only: a streak down the channel reads as a road's paint
@@ -785,11 +799,12 @@ function markMirror(tx, ty) {
 function bankAt(i, j, s) {
   if (iceMk(i, j)) {
     for (let k = 1; k <= s.band; k++) {
-      if (!iceMk(i, j - k) || (k === 1 && !iceMk(i - 1, j))) return k === 1 ? (s.deep ? BANK_SHADE_DEEP : BANK_SHADE) : BANK_SHADE2;
+      if (!iceMk(i, j - k) || (k <= (s.river ? 2 : 1) && !iceMk(i - k, j))) return s.river ? RIVER_RIM[k - 1] : k === 1 ? (s.deep ? BANK_SHADE_DEEP : BANK_SHADE) : BANK_SHADE2;
     }
-    return !iceMk(i, j + 1) || !iceMk(i + 1, j) ? BANK_FACE : null;
+    return !iceMk(i, j + 1) || !iceMk(i + 1, j) ? (s.river ? RIVER_FACE : BANK_FACE) : null;
   }
-  return iceMk(i, j + 1) || iceMk(i + 1, j) ? BANK_LIP : null;
+  if (iceMk(i, j + 1) || iceMk(i + 1, j)) return BANK_LIP;
+  return s.river && (iceMk(i, j - 1) || iceMk(i - 1, j)) ? RIVER_CREST : null;
 }
 function lakesAround(tx, ty) {
   let n = 0;
@@ -801,8 +816,8 @@ function lakesAround(tx, ty) {
 // scattered over the ice, so its sheet reads as a crust a foot grips and not
 // the glass the other lakes are. Inside the tile only; nothing rolls.
 const RIME = ['#e4f3f9', '#f2fafd', '#d3e9f3'];
-function paintRime(g, tx, ty, px, py) {
-  const n = 9 + ((hash2(tx * 5 + 1, ty * 3 + 7) * 7) | 0);
+function paintRime(g, tx, ty, px, py, few) {
+  const n = few || 9 + ((hash2(tx * 5 + 1, ty * 3 + 7) * 7) | 0);
   for (let i = 0; i < n; i++) {
     const a = hash2(tx * 17 + i * 3, ty * 23 + i * 7), b = hash2(tx * 29 + i * 11, ty * 13 + i * 5);
     const x = (a * TILE) | 0, y = (b * TILE) | 0, w = a > 0.7 ? 2 : 1;

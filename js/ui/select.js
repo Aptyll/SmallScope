@@ -408,7 +408,7 @@ function selBriefHero(L, under) {
 function selBrief(L, under) {
   const h = selBriefHero(L, under);
   if (h < 0) return null;
-  const last = L.heroes.length ? L.heroes[L.heroes.length - 1].y + HERO_PITCH : L.grid.y;
+  const last = L.heroes.length ? L.heroes[L.heroes.length - 1].y + L.pitch : L.grid.y;
   if (L.play.y - last < BRIEF_WELL + 8) return null; // no room under this grid
   const c = CLASSES[h], n = CLASS_AB[h].length;
   const tw = Math.max(pixelTextWidth(c.name, 2), pixelTextWidth(c.role || ''));

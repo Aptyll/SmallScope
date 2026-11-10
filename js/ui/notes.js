@@ -96,6 +96,13 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['ABILITY UNLOCKED WORD IS EASIER TO READ', '0.844'],
+    ['Each eagle roosts on a kerbed stone round at the heart of its base', '0.843'],
+    ['The frozen river has clear banks and wind-swept snow on its ice', '0.842'],
+    ['FABER at 32 px behind ?fine=1: both looks, rolls and gear staff', '0.841'],
+    ['FIRST MATCH: BEFORE THE FIRST WAVE THE COACH POINTS UP YOUR LANE', '0.840'],
+    ['Maris keeps the hooked barb and line on her harpoon when she thrusts it', '0.839'],
+    ['Brush reeds in three tones; a beast in the brush stays in sight', '0.838'],
     ['The found mark shows at the feet instead of hiding behind the health frame', '0.837'],
     ['BUCINA at 32 px behind ?fine=1: both looks, rolls and horn', '0.836'],
     ['Burning shows as flames off the shoulders; the tangle is a cord with stone weights', '0.835'],

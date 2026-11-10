@@ -126,6 +126,7 @@ function abAp(p, id) {
 }
 // an ability's blow: its base and its ability power share, whole
 function abDmg(p, id, base) { return Math.round(base + abAp(p, id)); }
+const AB_WORD_INK = '#f4f7ff', AB_WORD_T = 1.8; // UNLOCKED's ink and s: the rank inks are too dim on snow for a word a new player must read
 const AB_WORD_UP = 40; // world px over the feet a learned ability's word starts: clear of the name and the bar
 function buyAbilityLv(p, i) {
   if (!abLvCanBuy(p, i)) { sfxFor(p, 'deny'); return p.skillPts > 0 ? 'max' : 'points'; }
@@ -135,7 +136,8 @@ function buyAbilityLv(p, i) {
   // every one after is a number going up
   const nm = abOf(p, i).name;
   const ink = p.abLv[i] === abLvMax(p, i) ? AB_LV_MATS[AB_LV_MATS.length - 1] : AB_LV_MATS[p.abLv[i] - 1]; // a full key is gold
-  addFloater(p.x, p.y - AB_WORD_UP, p.abLv[i] === 1 ? nm + ' UNLOCKED' : nm + ' ' + p.abLv[i], ink, { own: p.id }); // its own hero's screen only (drawPops): ten of these at a landing told nobody anything
+  const first = p.abLv[i] === 1; // UNLOCKED is read once and matters: white, and it stands longer than a rank's number
+  addFloater(p.x, p.y - AB_WORD_UP, first ? nm + ' UNLOCKED' : nm + ' ' + p.abLv[i], first ? AB_WORD_INK : ink, first ? { own: p.id, life: AB_WORD_T } : { own: p.id }); // its own hero's screen only (drawPops): ten of these at a landing told nobody anything
   burst(p.x, p.y - 8, ink, p.abLv[i] === 1 ? 14 : 8, p.abLv[i] === 1 ? 55 : 40, 0.45);
   sfxOwn(p, 'levelUp', 'pickup');
   return true;

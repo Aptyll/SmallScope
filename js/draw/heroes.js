@@ -106,8 +106,14 @@ function heroStaff(p, px, py) {
 // THE ARM BEHIND A THRUST: a weapon pushed out past the hands' place (a spear's jab,
 // SWING_JAB, js/draw/bodies.js) takes the arm with it: a sleeve two px thick in the
 // side's coat from (x0, y0) to the grip (x1, y1), inked round, drawn under the haft;
-// heroKnuckles then closes the hand over the haft at the grip.
+// heroKnuckles then closes the hand over the haft at the grip. A body drawn fine
+// (bodySet) has the arm on its own art px (heroArmFine), over the haft: a sleeve that tapers from
+// THRUST_ARM_FINE[0] art px at the shoulder to THRUST_ARM_FINE[1] at a cuff, its top lit, ink on its
+// underside alone.
+const THRUST_ARM_FINE = [6, 4], THRUST_ARM_CUFF = 2, THRUST_ARM_ROOT = 3; // art px thick at each end; art px of cuff before the fist; world px the sleeve runs back from the hands' place into the slimmer fine torso
 function heroArm(p, x0, y0, x1, y1) {
+  const fine = bodySet(p);
+  if (fine.dens > 1) { heroArmFine(classSet(p), fine.dens, x0, y0, x1, y1); return; }
   const set = classSet(p), n = Math.max(1, Math.round(Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0))));
   for (let pass = 0; pass < 2; pass++) {
     ctx.fillStyle = pass ? set.sleeve : set.ink;
@@ -117,8 +123,37 @@ function heroArm(p, x0, y0, x1, y1) {
     }
   }
 }
+function heroArmFine(set, dens, x0, y0, x1, y1) {
+  const u = 1 / dens, flat = Math.abs(x1 - x0) >= Math.abs(y1 - y0), len = Math.hypot(x1 - x0, y1 - y0) || 1;
+  x0 -= (x1 - x0) / len * THRUST_ARM_ROOT; y0 -= (y1 - y0) / len * THRUST_ARM_ROOT; // back to the shoulder, so torso, sleeve, fist and haft are one line
+  const n = Math.max(1, Math.round(Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)) * dens));
+  const snap = (v) => Math.round(v * dens) / dens;
+  // one art px slice across the arm at a time: `a` along it, `b` its lit edge (top, or left when it runs up or down)
+  const slice = (a, b, w, col, alpha) => {
+    ctx.globalAlpha = alpha; ctx.fillStyle = col;
+    if (flat) ctx.fillRect(a, b, u, w); else ctx.fillRect(b, a, w, u);
+  };
+  for (let i = 0; i <= n; i++) {
+    const t = Math.round(THRUST_ARM_FINE[0] + (THRUST_ARM_FINE[1] - THRUST_ARM_FINE[0]) * i / n) * u;
+    const x = snap(x0 + (x1 - x0) * i / n), y = snap(y0 + (y1 - y0) * i / n);
+    const a = flat ? x : y, b = snap((flat ? y : x) - t / 2);
+    slice(a, b, t, set.sleeve, 1);
+    slice(a, b, u, '#ffffff', n - i < THRUST_ARM_CUFF ? 0.5 : 0.3); // the lit top
+    if (n - i < THRUST_ARM_CUFF) slice(a, b + u, t - u, '#ffffff', 0.25); // the cuff
+    slice(a, b + t, u, set.ink, 1); // ink under it only
+  }
+  ctx.globalAlpha = 1;
+}
 function heroKnuckles(p, x, y) {
-  const set = classSet(p), gx = Math.round(x), gy = Math.round(y);
+  const fine = bodySet(p), set = classSet(p);
+  if (fine.dens > 1) { // a closed fist on the art's own px: lit knuckles, ink under and behind
+    const u = 1 / fine.dens, f = FIST_FINE * u, gx = Math.round(x * fine.dens) / fine.dens - f / 2, gy = Math.round(y * fine.dens) / fine.dens - f / 2;
+    ctx.fillStyle = set.ink; ctx.fillRect(gx - u, gy, f + 2 * u, f + u);
+    ctx.fillStyle = set.hand; ctx.fillRect(gx, gy, f, f);
+    ctx.globalAlpha = 0.35; ctx.fillStyle = '#ffffff'; ctx.fillRect(gx, gy, f, u); ctx.globalAlpha = 1;
+    return;
+  }
+  const gx = Math.round(x), gy = Math.round(y);
   ctx.fillStyle = set.ink; ctx.fillRect(gx - 1, gy - 2, 3, 4);
   ctx.fillStyle = set.hand; ctx.fillRect(gx - 1, gy - 1, FIST, FIST);
 }
@@ -130,6 +165,8 @@ function heroSleeve(p, px, y, out) {
   const set = classSet(p), x0 = Math.round(out > 0 ? px + 12 : px + 4 - SLEEVE), y0 = Math.round(y) - FIST + 1;
   ctx.fillStyle = set.ink; ctx.fillRect(x0, y0 - 1, SLEEVE, FIST + 2);
   ctx.fillStyle = set.sleeve; ctx.fillRect(x0, y0, SLEEVE, FIST);
+  // on a fine body the sleeve's top art px row is lit, so the reach reads as an arm, not a bar
+  if (bodySet(p).dens > 1) { const u = 1 / bodySet(p).dens; ctx.globalAlpha = 0.3; ctx.fillStyle = '#ffffff'; ctx.fillRect(x0, y0, SLEEVE, u); ctx.globalAlpha = 1; }
 }
 // A look on a larger cell stands taller and wider than the 16 px one every offset
 // here was first set for: `heroRise` rows over it (the overhead frame lifts by

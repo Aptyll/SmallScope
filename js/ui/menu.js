@@ -35,7 +35,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.837';
+const PATCH_TXT = 'PATCH 0.844';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -51,6 +51,13 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.844', 'THE WORD OVER YOUR HERO WHEN AN ABILITY UNLOCKS IS WHITE AND STANDS LONG ENOUGH TO READ.'],
+  ['0.843', 'EACH EAGLE ROOSTS ON A BUILT ROUND OF PAVING, KERBED IN DRESSED STONE, WITH THE MERCHANT\'S STALL AT ITS EDGE.'],
+  ['0.842', 'THE FROZEN RIVER HAS BANKS YOU CAN SEE AND SNOW SWEPT ACROSS ITS ICE.'],
+  ['0.841', 'FABER\'S WHOLE KIT IS DRAWN AT 32 PX BEHIND THE SWITCH.'],
+  ['0.840', 'THE HERO PICK FITS A 1600 BY 900 WINDOW, AND BEFORE THE FIRST WAVE THE FIRST MATCH COACH POINTS UP YOUR LANE.'],
+  ['0.839', 'MARIS\'S HARPOON KEEPS ITS HOOKED BARB AND LINE WHEN SHE THRUSTS IT, AND HER WHOLE KIT IS DRAWN AT 32 PX BEHIND THE SWITCH.'],
+  ['0.838', 'THE BRUSH STANDS IN CLUMPS OF THREE STRAWS, AND A RABBIT IN ITS REEDS STAYS IN SIGHT.'],
   ['0.837', 'A FOUND HERO WEARS GOLD CHEVRONS AT THE FEET, WHERE THE HEALTH FRAME NO LONGER HIDES THEM.'],
   ['0.836', 'BUCINA\'S WHOLE KIT IS DRAWN AT 32 PX BEHIND THE SWITCH.'],
   ['0.835', 'A BURNING BODY WEARS FLAMES LICKING OFF ITS SHOULDERS, AND A TANGLED ONE A TWISTED CORD WITH STONE WEIGHTS.'],
@@ -1250,10 +1257,11 @@ function lobbyLayout() {
   const filter = { y: LOBBY_HEAD };
   const grid = { x: gx, y: LOBBY_HEAD + 19, w: gw };
   const L = { cx, pw, play, filter, grid, cards, chat };
+  L.pitch = heroPitch(L);
   L.heroes = heroCells(L);
   // the stage under the grid: the hero pointed at, standing at 2x, when the
   // view has the room for it under the grid's last row
-  const last = L.heroes.length ? L.heroes[L.heroes.length - 1].y + HERO_PITCH : grid.y;
+  const last = L.heroes.length ? L.heroes[L.heroes.length - 1].y + L.pitch : grid.y;
   const S = LOBBY_MODEL, bs = 48 * S, feet = play.y - 10;
   L.S = S;
   L.body = { x: cx - (bs >> 1), y: feet - 46 * S, w: bs, h: bs };
