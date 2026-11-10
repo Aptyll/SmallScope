@@ -122,7 +122,7 @@ function dressFree(tx, ty, rim) {
 // ------------------------------------------------------------ drifts in the lee
 // The mid band of the depth map, drawn: every pixel where the snow lies at
 // least DEPTH_MID deep but short of the deep band is a low, flat pile - the
-// pads the map lays in the lee of a pine, a rock or the hut, and the skirt
+// pads the map lays in the lee of a pine or the hut, and the skirt
 // round each deep drift. The shape IS the map's (leeDepth/driftsDepth read
 // per pixel, not per tile, since a pad is smaller than a tile), so a pile
 // is exactly where the map says the snow is, and it stops where the deep

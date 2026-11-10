@@ -113,9 +113,7 @@ do not run the step, aged by `state.tick`): a gold coin that hops and spins off 
 grey one that drops and fades where a miss fell, drawn only for the side that missed it and only
 within `COIN_MISS_R` of the watched body (`drawPops`, js/draw/pops.js). A rival's gold coin in
 the fog is not drawn. The wolf den is the jungle: four wolves at 110 each and back `repop` (75 s)
-after the last dies, its clock on the den and on both maps; beside it in each quarter a fox hollow
-(three foxes at 90 each, back in 60 s) and an ox range (one musk ox at 280, back in 90 s), their
-clocks at the camp's mark ([world.md](../world.md#runtime)).
+after the last dies, its clock on the den and on both maps ([world.md](../world.md#runtime)).
 Bots farm through two roles, the LANER and the JUNGLER ([multiplayer.md](../multiplayer.md#bots)).
 
 ## Road towers

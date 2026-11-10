@@ -63,8 +63,6 @@ const YIELD = {
   rabbit: { coins: 2, each: 35 },       // 70 gold, but it bolts
   deer:   { coins: 3, each: 40, xp: 40 }, // 120 gold, the big mobile target
   wolf:   { coins: 2, each: 55, xp: 15 }, // 110 gold, a den's four (440): the jungle's farm, a soldier's last hit apiece, and it bites back once woken
-  fox:    { coins: 2, each: 45, xp: 12 }, // 90 gold, a hollow's three (270): a quick clear on the way past
-  ox:     { coins: 4, each: 70, xp: 60 }, // 280 gold in one body: the quarter's big camp
   orca:   { coins: 8, each: 110, xp: 300 }, // the orca's pay: 880 gold to the killer, and EPIC_TEAM_GOLD to every teammate besides
   alpha:  { coins: 6, each: 105, xp: 150 }, // the black bear's pay: 630 gold to the killer, and EPIC_TEAM_GOLD to every teammate besides
   bird:   { coins: 2, each: 28 },       // 56 gold, and the hardest shot in the game (dormant: nothing spawns a bird now)
@@ -112,9 +110,24 @@ const SEED = (function () {
   if (q) return (parseInt(q[1], 10) >>> 0) || 1;
   return rollSeed();
 })();
+// the MATCH's stream: everything that rolls while the match runs (and the
+// beasts it starts with). The map is not made on it: see worldRng.
 const rng = mulberry32(SEED);
 function rand(a, b) { return a + rng() * (b - a); }
 function randi(a, b) { return Math.floor(rand(a, b + 1)); }
+// Worldgen's streams: each pass that makes the map draws from its own,
+// worldRng('ponds') and so on (the pass's name hashed into SEED), never from
+// rng(). So a pass that changes (draws more or less, is added or cut) moves
+// only its own layer; every other layer of a seed's valley, and the match's
+// stream, stay where they were. A stream carries its own rand and randi.
+function worldRng(name) {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < name.length; i++) { h ^= name.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+  const r = mulberry32((SEED ^ h) >>> 0);
+  r.rand = (a, b) => a + r() * (b - a);
+  r.randi = (a, b) => Math.floor(r.rand(a, b + 1));
+  return r;
+}
 
 // ------------------------------------------------------------ state
 const state = {

@@ -85,7 +85,7 @@ Steps once the source is chosen:
    `p.cards` is mutable sim state: check it rides the snapshot (players are serialized whole) and
    the save (`SAVE_ROOTS`, js/sim/save.js).
 2. Grant through one shared function (`gainCard(p, rarity)`), from the source, on the host only
-   (a client never runs the sim); any roll uses `rng()` outside `genWorld()`.
+   (a client never runs the sim); any roll uses the match's `rng()`.
 3. A pick between cards is a player action: it rides `p.input` (a `cmd`), never `keys`/`mouse`,
    and a bot answers it in js/ai/ai.js.
 4. Show it: the card icons and colours above, a burst and the name floater (`cardFx` at 0.523), the

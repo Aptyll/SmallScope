@@ -147,7 +147,7 @@ function brushNear(x, y, r, ok) {
   return best && { x: best.x * TILE, y: best.y * TILE };
 }
 // lay the patches, both sides', and clear what stands in them: the pines,
-// rocks, bushes, stumps and snags inside BRUSH_CLEAR of the rim, and the ice
+// bushes, stumps and snags inside BRUSH_CLEAR of the rim, and the ice
 // (to snow). Anything else on a tile there - a landmark, a camp's
 // prop - stands, and the reeds round it. No rng(): placed, never rolled.
 function layBrush() {
@@ -171,7 +171,7 @@ function layBrush() {
     }
   });
 }
-const BRUSH_FELLS = { tree: true, rock: true, bush: true, stump: true, snag: true };
+const BRUSH_FELLS = { tree: true, bush: true, stump: true, snag: true };
 
 // ---- laying the drifts ----------------------------------------------------
 // what breaks the wind: anything worldgen stood up that stands above the
@@ -256,7 +256,7 @@ function poolIn(D, fx, fy) {
   return m;
 }
 // Every standing thing out in the open - a pine on the treeline's edge or in
-// a stand's fringe, a rock, a bush, a stump, a snag, a den, a hut - holds a
+// a stand's fringe, a bush, a stump, a snag, a den, a hut - holds a
 // small pad of snow in its own lee along driftWind: the same drift shape at a
 // tile or two long and LEE_AMP tall, so it lives in the MID band and never
 // slows anybody. Forest floor (LEE_WOODS breakers round it) gets none: the

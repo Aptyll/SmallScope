@@ -167,11 +167,9 @@ A flake does not fall screen-top to screen-bottom: it is born with `h` (30–120
 fall, **lands** when that runs out, rests on the ground fading out for `FLAKE_REST` (0.7 s), and is
 then reborn (`makeFlake`) at a fresh spot in the field.
 
-**The seventy boot flakes come off the main `rng` and that count is load-bearing** — that loop runs
-before `genWorld()`, so adding or dropping one shifts the rng prefix and every existing seed with
-it. Everything else (resize and zoom top-ups, and **rebirths**) draws from `fxRng`, never `rng`:
-the count follows the zoom, so a rebirth off the main stream would make a match's rolls depend on
-the player's camera.
+**Every flake draws from `fxRng`, never `rng`**: the boot fall, the resize and zoom top-ups, and
+the **rebirths**. The count follows the zoom, so a flake off the match's stream would make a
+match's rolls depend on the player's camera.
 
 Drawn after `renderLighting` (never graded) and before the vignettes and HUD. `DBG.flakes` and
 `DBG.cam()` expose the array and the exact camera.

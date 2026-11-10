@@ -38,7 +38,7 @@ const RC_KIND = {
 };
 const RC_KINDS = ['atk', 'ab', 'other'];
 // the world's names, by cause, for the pointer
-const RC_WORLD = { tower: 'recap.tower', soldier: 'recap.wave', wolf: 'recap.wolf', fox: 'recap.fox', ox: 'recap.ox', bear: 'recap.bear', fire: 'recap.fire',
+const RC_WORLD = { tower: 'recap.tower', soldier: 'recap.wave', wolf: 'recap.wolf', bear: 'recap.bear', fire: 'recap.fire',
   orca: 'recap.orca', ice: 'recap.ice', creek: 'recap.creek', tackle: 'recap.tackle', eagle: 'recap.eagle' };
 const RC_MOVE = { roll: 'recap.roll' };
 // 0 the ring alone, 1 the lines, 2 opened out: this screen's, kept across deaths
@@ -79,8 +79,6 @@ function rcWorldFig(c, team) {
     case 'tower': return towerFigure(rival);
     case 'soldier': return SPRITES.robotTeam[rival][0];
     case 'wolf': return SPRITES.wolf.right.idle[0];
-    case 'fox': return SPRITES.fox.right.idle[0];
-    case 'ox': return SPRITES.ox.right.idle[0];
     case 'bear': return SPRITES.alpha && SPRITES.alpha.right.idle[0];
     case 'fire': return SPRITES.fire[0];
     default: return null;

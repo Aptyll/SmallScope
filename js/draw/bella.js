@@ -61,15 +61,14 @@ function drawBellaDuels(ex, ey, now) {
   }
 }
 // ---- the spatha in her hands ---------------------------------------------------
-// Her EAGLE SPATHA (HERO_BLADES.spatha, js/draw/heroes.js): no slanted carry, so
-// facing down or up she holds it upright in the leading hand like any sword
+// Her EAGLE SPATHA (HERO_BLADES.spatha, js/draw/heroes.js): flat for the swing and
+// the wind-up, slanted at the ready in her leading hand at rest in every facing
 let bellaSpathaArt = null;
 function bellaSpathas() {
   if (bellaSpathaArt) return bellaSpathaArt;
-  const flat = bakeBladeArt(BELLA_SPATHA, BELLA_SPATHA_PAL);
-  return (bellaSpathaArt = { flat, diag: flat });
+  return (bellaSpathaArt = { flat: bakeBladeArt(BELLA_SPATHA, BELLA_SPATHA_PAL), diag: bakeBladeArt(BELLA_SPATHA_DIAG, BELLA_SPATHA_PAL) });
 }
-HERO_BLADES.spatha = { art: bellaSpathas, hilt: [18, 11], hip: {}, grip: [0, 0] };
+HERO_BLADES.spatha = { art: bellaSpathas, hilt: [18, 11], hip: { down: [13, 12], up: [11, 10] }, grip: BELLA_SPATHA_GRIP };
 
 HERO_MARK.push(drawBellaMarks);
 HERO_GROUND.push(drawBellaDuels);
