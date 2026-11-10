@@ -303,7 +303,7 @@ function nixWhiteStrike(p) {
 
 // ---- the hooks she registers (js/sim/heroes.js) ------------------------------------
 HERO_PASSIVE.nightwatch = { deal: watchDeal, tick: nixTick, out: nixOut,
-  name: 'NIGHT WATCH', blurb: 'YOU WALK FASTER THE DARKER IT IS. YOUR FIRST HIT ON A HERO AFTER BEING HIDDEN HITS HARDER, MORE AT NIGHT.', icon: NIX_ICON32.watch };
+  name: 'NIGHT WATCH', blurb: 'YOU WALK FASTER THE DARKER IT IS. YOUR FIRST HIT ON A HERO AFTER BEING HIDDEN HITS HARDER, MORE AT NIGHT.', icon: NIX_ICON32.watch, mark: 'speed' };
 HERO_MOVE.push(nixMoveMul);
 HERO_COVER.push(nixCover);
 HERO_TICK.push((dt) => { updateNixShards(dt); updateNixClouds(dt); });

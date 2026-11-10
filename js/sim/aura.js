@@ -64,7 +64,7 @@ const AURA_AB = [
     use: (p) => auraOrb(p),
     tele: (p, px, py, a, col, closing, now, ex, ey) => drawTeleLine(p.x, p.y, Math.cos(a), Math.sin(a), auraReach(p, ORB_LEN), col, 0.5 + 0.45 * closing, now, ex, ey),
     pose: (p, prog) => ({ dx: 0, dy: prog < 0.6 ? -1 : 0, rot: 0 }),
-    icon: AURA_ICON32.orb,
+    icon: AURA_ICON32.orb, mark: 'slow',
     bot: (p, foe, d) => foe instanceof Player && d < auraReach(p, ORB_LEN) * 0.8,
   },
   {
@@ -73,7 +73,7 @@ const AURA_AB = [
     tip: 'BLINK. RIVALS WHERE YOU STOOD ARE SLOWED',
     blurb: 'A SHORT BLINK. RIVALS AT THE SPOT YOU LEFT ARE SLOWED.',
     use: (p) => auraStep(p),
-    icon: AURA_ICON32.step,
+    icon: AURA_ICON32.step, mark: 'slow',
     bot: (p, foe, d) => foe instanceof Player && d < 44, // reached: her one way out
     botAim: (p, foe) => { const dx = p.x - foe.x, dy = p.y - foe.y, d = Math.hypot(dx, dy) || 1; return { x: p.x + dx / d * 60, y: p.y + dy / d * 60 }; }, // away from them
   },

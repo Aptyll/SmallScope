@@ -93,12 +93,6 @@ const DRAW_COL = '#ffd95c', DRAW_FULL_COL = '#fff3c4', DRAW_FULL_FLASH = 0.12; /
 const NOCK_COL = '#6f7ca8'; // reloading
 const THREAT_COL = '#ff6a6a'; // a wolf's threat bar: the red it already wears on the debug overlay
 function barCol(team) { return team === undefined || team === null ? BAR_NEUTRAL : TEAMS[skin(team)].mark; }
-// YOUR OWN bar is green on your screen, the green of the health bar in the
-// HUD strip (HP_LIT, js/ui/hud-draw.js), and nobody else's ever is: two heroes
-// of one side can wear the same coat, and the bar is the one mark that says
-// which of them the keys move. Allies stay the side's blue, rivals red.
-const SELF_COL = '#7fd36b';
-function unitBarCol(u) { return u === player ? SELF_COL : barCol(u.team); }
 
 // Health reads in EVEN segments: N blocks of one width with a 1 px dark tick
 // between, across the fill and the bare track alike, so a w-wide bar splits
@@ -178,7 +172,7 @@ function queueXp(p, rx, cy) {
 // a player dropped in the step before any frame showed its total (a
 // one-shot): its spot is where drawPlayer's frame would have hung it
 function tallyFall(p) {
-  if (p.tallyN && !tallySpot.has(p)) tallySpot.set(p, { x: p.x + FRAME_DX + 8, y: p.y - 16.5, col: unitBarCol(p), a: 1, f: -1 });
+  if (p.tallyN && !tallySpot.has(p)) tallySpot.set(p, { x: p.x + FRAME_DX + 8, y: p.y - 16.5, col: barCol(p.team), a: 1, f: -1 });
 }
 function tallyImg(txt, col) {
   const key = txt + '|' + col;
@@ -244,24 +238,23 @@ function drawTallies(k, subX, subY) {
 // bear's frame is its body's 2x (MONSTER.frame, js/sim/wildlife.js) - with `w`
 // and the cut still counted in the bar's own pixels; `segs` fixes the cut
 // instead of hpSegCount's (it must divide w + 1)
-function drawHealthBar(cxp, topY, hp, maxHp, w, team, col, u, s, segs, paint, rows) {
+function drawHealthBar(cxp, topY, hp, maxHp, w, team, col, u, s, segs, rows) {
   const k = s || 1;
   overheadPlate(() => {
-    healthBarPx(cxp, topY, hp, maxHp, w, team, col, k, segs, paint, rows);
+    healthBarPx(cxp, topY, hp, maxHp, w, team, col, k, segs, rows);
     if (u) queueTally(u, Math.round(cxp - w * k / 2) + (w + 1) * k + (foeCue(team) ? 1 : 0), Math.round(topY) + k, barCol(team));
   });
 }
-// `col` makes the bar a meter (unsegmented); `paint` only recolours a health
-// bar's fill (the local player's own green, unitBarCol) and keeps its segments;
+// `col` makes the bar a meter (unsegmented);
 // `rows` is how tall the fill stands (2, or HP_ROWS_ALONE over a hero with no stamina bar under it)
-function healthBarPx(cxp, topY, hp, maxHp, w, team, col, s, segs, paint, rows) {
+function healthBarPx(cxp, topY, hp, maxHp, w, team, col, s, segs, rows) {
   const k = s || 1, r = rows || 2, x = Math.round(cxp - w * k / 2), y = Math.round(topY);
   const frac = Math.max(0, Math.min(1, hp / maxHp));
   ctx.fillStyle = BAR_FRAME;
   ctx.fillRect(x - k, y - k, (w + 2) * k, (r + 2) * k);
   ctx.fillStyle = BAR_TRACK;
   ctx.fillRect(x, y, w * k, r * k);
-  ctx.fillStyle = col || paint || barCol(team);
+  ctx.fillStyle = col || barCol(team);
   // a living thing's last sliver of hp is still a pixel; an empty charge
   // (a wolf's threat at rest, a spent jink) is bare track, not a false one
   const fw = frac > 0 ? Math.max(1, Math.round(w * frac)) : 0;

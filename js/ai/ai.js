@@ -460,12 +460,11 @@ function updateAI(p, dt) {
 // THE HEALS a bot takes, as a human takes them. Rung 1 drinks a potion under
 // AI_POTION_HP - early, since the heal comes over POTION_T and a level-1 body
 // is rarely a whole potion short before it goes home - never in its own roost ring, which heals faster for free. Rung 5' (aiHealRung)
-// is the free heals: hurt, with no rival near, a ripe bush within AI_HEAL_R
-// is walked into (bushTouch, js/sim/world.js), and a showing creek fish is
-// rolled over from the bank (creekFishCatch) - only a roll whose end lands
+// is the free heal: hurt, with no rival near, a showing creek fish within
+// AI_HEAL_R is rolled over from the bank (creekFishCatch) - only a roll whose end lands
 // on dry ground, so the bot never rolls itself into the current.
 const AI_POTION_HP = 0.6;   // share of max health under which a bot drinks
-const AI_HEAL_HP = 0.85;    // ...and under which it walks to a bush or a fish
+const AI_HEAL_HP = 0.85;    // ...and under which it goes for a fish
 const AI_HEAL_R = 10;       // tiles it walks for one
 const AI_HEAL_SAFE = 200;   // px: a rival in sight this close and it fights instead
 const AI_FISH_T = 5, AI_FISH_REST = 10; // s a fish is chased, and s before the next chase
@@ -478,19 +477,11 @@ function aiHealRung(k) {
   const { p, dt, inp, ai, steerTo } = k;
   if (k.foeD < AI_HEAL_SAFE || p.hp >= p.maxHp * AI_HEAL_HP || roostRing(p)) { ai.fishT = 0; return false; }
   const miss = p.maxHp - p.hp, px = p.x, py = p.y + 4;
-  // a fish first: it swims off, a bush waits. A chase that has not landed a
-  // roll in AI_FISH_T is dropped for AI_FISH_REST, so no bot follows the
-  // current down the map
+  // a chase that has not landed a roll in AI_FISH_T is dropped for
+  // AI_FISH_REST, so no bot follows the current down the map
   ai.fishT = (ai.fishT || 0) + dt;
   if (ai.fishT > AI_FISH_T + AI_FISH_REST) ai.fishT = 0;
-  if (miss >= CREEK_FISH_HEAL && p.dodgeCharges > 0 && ai.fishT < AI_FISH_T && aiFishRoll(p, inp, steerTo, px, py)) return true;
-
-  if (miss < BUSH_HEAL) return false;
-  const b = nearestObj(p.x, p.y, AI_HEAL_R, (o) => o.type === 'bush' && o.berries > 0);
-  if (!b) return false;
-  if (steerTo(b.tx * TILE + 8, b.ty * TILE + 4, 0) < 0) return false;
-  aiNote(p, 'HEAL', 'BUSH', b);
-  return true;
+  return miss >= CREEK_FISH_HEAL && p.dodgeCharges > 0 && ai.fishT < AI_FISH_T && aiFishRoll(p, inp, steerTo, px, py);
 }
 // the nearest showing fish: roll at it from the dry bank when the roll ends on
 // dry ground past it, else walk to the bank across from it (CREEK_HW + 0.4

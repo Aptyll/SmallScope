@@ -8,7 +8,7 @@ and the dens are where it gets rich, and the woods are pocket money.
 
 Every player owns a wallet, `p.gold`: currency only, no ceiling. The six item slots beside it
 are the build. **Gold is
-the only currency**; the heals in the world (creek fish, berry bushes) are taken where they stand
+the only currency**; the heal in the world (the creek fish) is taken where it swims
 and never carried ([Heals](heals.md)). The whole economy is the
 `YIELD` table in the constants banner of [js/sim/core.js](../../../js/sim/core.js) - the one tuning table
 with no single owner - which gives every source a different **yield profile**

@@ -489,7 +489,7 @@ function kitOf(p) { return p.kit || CLASSES[p.cls].kit; }
 function setClass(p, c) { p.cls = c; refreshKit(p); p.hp = p.maxHp; }
 // the hero's HEALTH stat: its base, its levels and its bonuses (statOf, js/sim/stats.js)
 function levelMaxHp(p) { return statOf(p, 'hp'); }
-// THE ONE WAY HEALTH COMES BACK to a player: a potion, a creek fish, a berry bush, the daylight, a hero's
+// THE ONE WAY HEALTH COMES BACK to a player: a potion, a creek fish, the daylight, a hero's
 // heal, a kill's heal. Capped at the most, and what it actually gave back is
 // counted for the post-game record (js/ui/lobby.js) and returned.
 function healPlayer(p, n) {
@@ -618,8 +618,8 @@ function playerTint(p) {
 // Gold is a wallet number and never an item - it is currency, and a purse
 // that could run out of room would make a kill refuse its own bounty. The six
 // item slots are their own list (p.items, js/sim/items.js), and a health
-// potion stacks in one of them. Nothing else is carried: a creek fish and a
-// berry bush heal where they stand (js/sim/world.js).
+// potion stacks in one of them. Nothing else is carried: a creek fish heals
+// where it swims (js/sim/world.js).
 // the class kit plus the defaults no class kit carries; an
 // item's mod() edits them in place. Shared by refreshKit and the hero
 // pop-up's preview ledger (js/ui/menu.js), so the numbers that page shows can
@@ -1342,18 +1342,23 @@ function practiceRevive(p) {
 }
 
 // Both end screens print the same object, so there is one of these rather
-// than one per ending: the four tally numbers, the class it was played in,
-// and the whole side both stages stand.
+// than one per ending: the match clock, the class it was played in, and the
+// whole side's table, frozen at the whistle.
 function endSnapshot() {
   return {
-    gold: player.earned, kills: player.kills, level: player.level, time: state.elapsed,
+    time: state.elapsed,
     team: player.team, cls: player.cls,
-    // the whole side, the local player first: every body either ending stands
-    // on its stage, with the name TAB gives it (boardName: a bot goes by its hero), the hero and look it finished in (a mate who
+    // the whole side, the local player first: every row either ending's table
+    // prints, with the name TAB gives it (boardName: a bot goes by its hero), the hero and look it finished in (a mate who
     // is down at the whistle still shares the result)
-    roster: players.filter((q) => q.active && q.team === player.team)
+    // (a 1V1's is the duel: your row over your rival's)
+    roster: players.filter((q) => q.active && (q.team === player.team || state.onevone))
       .sort((a, b) => (a === player ? -1 : b === player ? 1 : a.id - b.id))
-      .map((q) => ({ name: boardName(q), cls: q.cls, skin: heroSkinOf(q), team: q.team })),
+      .map((q) => ({
+        id: q.id, name: boardName(q), cls: q.cls, skin: heroSkinOf(q), team: q.team,
+        // the row the end screens' table prints for it (js/ui/endscreens.js)
+        kills: q.kills, deaths: q.deaths, assists: q.assists || 0, dmg: q.dmgOut, farm: q.farm, gold: q.earned,
+      })),
   };
 }
 
@@ -1366,6 +1371,9 @@ function endMatch(how) {
   // ...and the same edge for the loss sting below: a second endMatch('lost')
   // (or a driver poking it) must not ring twice over one ending
   const firstLoss = how === 'lost' && state.over !== 'lost';
+  // the same death ending the match (a 1V1 lost on FIRST STRIKE, a bird driven off
+  // while you wait to respawn) is not a new one: a replay already put away stays away
+  const sameDeath = state.mode === 'dead' && player.dead;
   state.over = how;
   // the post-game lobby prints the match as it ENDED (js/ui/lobby.js): a won
   // match runs on underneath its own ceremony, so the table is frozen here
@@ -1386,7 +1394,7 @@ function endMatch(how) {
   state.wheel = null;
   state.deadTimer = 0;
   state.defeatT = 0;
-  state.rpClosed = how === 'hostleft'; // every death opens the replay again; a host walking out is no death, and its door (LOBBY) shows at once
+  state.rpClosed = how === 'hostleft' || (sameDeath && state.rpClosed); // every new death opens the replay again; a host walking out is no death, and its door (LOBBY) shows at once
   // an ENDING freezes its numbers here, not in the render pass: the match
   // runs on underneath (a gold pump can still pay out, a rival can still
   // fall) and a total that climbs behind a tally which already counted it

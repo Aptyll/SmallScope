@@ -69,7 +69,7 @@ const VELOX_AB = [
     use: (p) => veloxLane(p),
     tele: (p, px, py, a, col, closing, now, ex, ey) => drawLaneTele(p, a, closing, ex, ey), // the ice freezing out from her feet
     pose: () => ({ dx: 0, dy: 1, rot: 0 }), // the staff swept low
-    icon: VELOX_ICON32.lane,
+    icon: VELOX_ICON32.lane, mark: 'speed',
     bot: (p, foe, d) => foe instanceof Player && d < LANE_LEN,
   },
   {
@@ -89,7 +89,7 @@ const VELOX_AB = [
     blurb: 'FOR A FEW SECONDS YOU SKATE AT FULL SPEED AND SLOWS BARELY HOLD YOU. EACH SLING THROW THAT LANDS THROWS A SECOND STONE AT THE NEXT RIVAL NEAR IT.',
     use: (p) => veloxRun(p),
     pose: () => ({ dx: 0, dy: -1, rot: 0 }),
-    icon: VELOX_ICON32.run,
+    icon: VELOX_ICON32.run, mark: 'speed',
     bot: (p, foe, d) => foe instanceof Player && d < 170 && (foe.hp < foe.maxHp * 0.6 || p.hp < p.maxHp * 0.4),
   },
 ];

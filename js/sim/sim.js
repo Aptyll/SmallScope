@@ -459,8 +459,7 @@ function shotContacts(a, x0, y0, dx, dy) {
   return shotHits;
 }
 // ------------------------------------------------------------ object timers
-// A map object's running clocks: the hit blink (flash), the shiver (shake),
-// a picked bush growing back.
+// A map object's running clocks: the hit blink (flash) and the shiver (shake).
 // Only the objects with one running are ticked: the map is ~54,000 tiles and
 // ~33,000 of them pines, and walking all of them every step to find the few
 // that blink cost half the step. So a clock is only ever STARTED through
@@ -474,7 +473,7 @@ function joltObj(o, flash, shake) {
   if (shake !== undefined) o.shake = shake;
   objTimed.add(o);
 }
-const objTiming = (o) => o.flash > 0 || o.shake > 0 || (o.type === 'bush' && o.berries === 0);
+const objTiming = (o) => o.flash > 0 || o.shake > 0;
 function objTimersRescan() {
   objTimed.clear();
   for (const o of objects) if (o && objTiming(o)) objTimed.add(o);
@@ -491,10 +490,6 @@ function tickObjTimers(dt) {
   for (const o of objTickList) {
     if (o.flash > 0) o.flash -= dt;
     if (o.shake > 0) o.shake -= dt;
-    if (o.type === 'bush' && o.berries === 0) {
-      o.regrow -= dt;
-      if (o.regrow <= 0) o.berries = 2;
-    }
     if (!objTiming(o)) objTimed.delete(o);
   }
 }
@@ -535,7 +530,7 @@ function updatePlay(dt) {
   }
   updateIceBreaks(); // a break's hole opening and its tiles freezing back (js/sim/icebreak.js)
   botLogStep(dt);    // the bot dev view's recorder: reads what the bots just decided (js/ui/botview.js)
-  resolveContests(); // this step's work swings, creek fish and bush claims
+  resolveContests(); // this step's work swings, creek fish claims
   if (!PRACTICE) sampleStats(dt); // the post-game lobby's two graphs (js/ui/lobby.js)
   updateShop(); // the counter shuts when you walk off (js/ui/shop.js)
   updateAbilityWorld(dt); // the ability flashes, and what each hero left in the world
@@ -1105,8 +1100,6 @@ function updatePlayer(p, dt) {
   if (p.dead) return; // a burn can finish the player in there; a body takes no more steps
   // ...and the recall's, with the roost ring's heal (js/sim/recall.js)
   updateRecall(p, dt);
-  // ...and a ripe berry bush walked into is a heal taken (js/sim/world.js)
-  bushTouch(p);
 
   // a stun, a fall or the cable takes a rider out of the saddle (js/sim/wildlife.js)
   rideCheck(p);

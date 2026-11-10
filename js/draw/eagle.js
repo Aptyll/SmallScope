@@ -52,10 +52,9 @@ function drawDropAir(ex, ey, now, air) {
     ctx.restore();
     ctx.globalAlpha = 1;
   }
-  if (air) drawDropSky(ex, ey, now, false);
+  if (air) drawDropSky();
   for (const e of d.eagles) if (dropFlies(e) === air) drawEagle(e, ex, ey, now);
   if (!air) return;
-  drawDropSky(ex, ey, now, true);
   // fallers: a hop off the wing, then the shrink from rider scale to the
   // ground's, shadow growing under them. This is a WORLD pass, so the cull is
   // against WV_*, not VIEW_* - the old VIEW_* bounds were half the zoomed-out
@@ -78,75 +77,11 @@ function drawDropAir(ex, ey, now, air) {
 }
 
 // THE SKY of the ride: height you can see. While your own bird flies, a pale
-// veil of altitude lies over the ground, a few clouds drift by between the
-// bird and the pines, and a couple of big ones slide past over it at the
-// frame's edges - each layer nearer the camera than the ground, so it slides
-// faster than the ground does (its parallax, DROP_SKY_UNDER/OVER). The
-// stoop takes it all away: the veil lifts and the clouds swell past the
-// frame as the bird drops through them. Pure reads of the bird's clock and
-// the camera, painted on the pixel grid (cloudSprite), seeded by hash2: every
-// screen grows the same sky, and nothing here touches the match.
-const DROP_SKY_UNDER = 1.35;  // the low clouds' parallax: how much faster than the ground they slide
-const DROP_SKY_OVER = 2.1;    // ...and the high ones, near the camera
+// veil of altitude lies over the ground under it, and the stoop lifts it as
+// the bird drops to the roost. No clouds in the ride (Noah, 11-10): the
+// arrival reads as the bird over the field itself. A pure read of the bird's
+// clock, so every screen shows the same, and nothing here touches the match.
 const DROP_VEIL = 'rgba(226,236,248,0.30)'; // altitude: the ground under a flying bird, paled
-const SKY_LIGHT = '#f6f9fe', SKY_MID = '#dfe8f4', SKY_SHADE = '#bccbe0'; // a cloud's three values, lit from the top left
-const SKY_DROP_SHADOW = 'rgba(30,48,84,0.28)'; // where a cloud's shadow falls on the ground
-const SKY_SHADOW_DX = 18, SKY_SHADOW_DY = 30; // world px from a low cloud to its shadow (the sun is high in the top left)
-const cloudCache = new Map();
-// one cloud, w x h world px, on a 2 px block grid: a cluster of round puffs
-// (stepped circles, never smoothed), lit on the top-left rim, shaded on the
-// bottom-right, flat between
-function cloudSprite(w, h, seed) {
-  const key = w + 'x' + h + ':' + seed;
-  let cv = cloudCache.get(key);
-  if (cv) return cv;
-  const B = 2, cw = w / B | 0, ch = h / B | 0;
-  const puffs = [];
-  const n = 5 + Math.floor(hash2(seed, 1) * 4);
-  for (let i = 0; i < n; i++) {
-    const u = (i + 0.5) / n, mid = 1 - Math.abs(u - 0.5) * 1.1; // biggest in the middle, a long low heap
-    const r = ch * (0.3 + 0.22 * hash2(seed, 10 + i)) * (0.55 + 0.45 * mid);
-    puffs.push({ x: cw * (0.16 + 0.68 * u), y: ch * (0.52 + (hash2(seed, 20 + i) - 0.5) * 0.36 * mid), r: Math.max(2, r) });
-  }
-  const inside = (x, y) => puffs.some((p) => (x - p.x) * (x - p.x) + (y - p.y) * (y - p.y) <= p.r * p.r);
-  cv = document.createElement('canvas');
-  cv.width = cw * B; cv.height = ch * B;
-  const g = cv.getContext('2d');
-  for (let y = 0; y < ch; y++) for (let x = 0; x < cw; x++) {
-    if (!inside(x + 0.5, y + 0.5)) continue;
-    g.fillStyle = !inside(x + 0.5, y + 2.5) || !inside(x + 2.5, y + 1.5) ? SKY_SHADE
-      : !inside(x - 0.5, y - 0.5) ? SKY_LIGHT : SKY_MID;
-    g.fillRect(x * B, y * B, B, B);
-  }
-  // ...and its shadow on the pines below: the same shape, flat and cool
-  const sh = document.createElement('canvas');
-  sh.width = cv.width; sh.height = cv.height;
-  const g2 = sh.getContext('2d');
-  g2.drawImage(cv, 0, 0); g2.globalCompositeOperation = 'source-in';
-  g2.fillStyle = SKY_DROP_SHADOW; g2.fillRect(0, 0, sh.width, sh.height);
-  cv.shadow = sh;
-  cloudCache.set(key, cv);
-  return cv;
-}
-// the clouds of one layer, world-anchored on a grid of cells (one cloud or
-// none per cell, by hash2), so the sky has no edge wherever the ride goes:
-// `over` picks the high layer, bigger and sparser
-const SKY_CELL = 180, SKY_CELL_OVER = 400;
-function skyClouds(over, x0, y0, x1, y1) {
-  const out = [], C = over ? SKY_CELL_OVER : SKY_CELL, salt = over ? 900 : 300;
-  for (let gy = Math.floor(y0 / C) - 1; gy <= Math.floor(y1 / C) + 1; gy++) {
-    for (let gx = Math.floor(x0 / C) - 1; gx <= Math.floor(x1 / C) + 1; gx++) {
-      if (hash2(gx + salt, gy) > (over ? 0.4 : 0.7)) continue;
-      const sd = (gx * 73 + gy * 151 + salt) | 0;
-      out.push({
-        x: (gx + 0.2 + 0.6 * hash2(sd, 2)) * C, y: (gy + 0.2 + 0.6 * hash2(sd, 3)) * C,
-        w: over ? 200 + Math.round(hash2(sd, 4) * 120) : 100 + Math.round(hash2(sd, 4) * 110),
-        h: over ? 80 + Math.round(hash2(sd, 5) * 40) : 44 + Math.round(hash2(sd, 5) * 34), sd,
-      });
-    }
-  }
-  return out;
-}
 // how high the camera's bird still is: 1 in level flight, 0 on the ground
 function skyLift(e) {
   if (state.mode !== 'drop' || !e) return 0;
@@ -155,24 +90,10 @@ function skyLift(e) {
   const u = Math.min(1, e.diveT / EAGLE_DIVE_T);
   return 1 - u * u;
 }
-function drawDropSky(ax, ay, now, over) {
-  const e = state.drop.eagles[player.team], lift = skyLift(e);
+function drawDropSky() {
+  const lift = skyLift(state.drop.eagles[player.team]);
   if (lift <= 0) return;
-  if (!over) { ctx.fillStyle = DROP_VEIL; ctx.globalAlpha = lift; ctx.fillRect(0, 0, WV_W, WV_H); ctx.globalAlpha = 1; }
-  // the camera's centre in the world: what every layer's parallax turns about
-  const cx = ax + WV_W / 2, cy = ay + WV_H / 2;
-  const s = (over ? DROP_SKY_OVER : DROP_SKY_UNDER) * (1 + (1 - lift) * 1.6); // the stoop drops the bird through them
-  ctx.globalAlpha = Math.min(1, lift * 1.6);
-  const hw = WV_W / 2 / s, hh = WV_H / 2 / s;
-  for (const c of skyClouds(over, cx - hw, cy - hh, cx + hw, cy + hh)) {
-    const sp = cloudSprite(c.w, c.h, c.sd);
-    const x = Math.round(WV_W / 2 + (c.x - cx) * s - sp.width / 2 + Math.sin(now * 0.3 + c.sd) * 2);
-    const y = Math.round(WV_H / 2 + (c.y - cy) * s - sp.height / 2);
-    if (x > WV_W + 60 || y > WV_H + 60 || x + sp.width < -60 || y + sp.height < -60) continue;
-    if (!over) { const a = ctx.globalAlpha; ctx.globalAlpha = lift; ctx.drawImage(sp.shadow, x + SKY_SHADOW_DX, y + SKY_SHADOW_DY); ctx.globalAlpha = a; }
-    ctx.drawImage(sp, x, y);
-  }
-  ctx.globalAlpha = 1;
+  ctx.fillStyle = DROP_VEIL; ctx.globalAlpha = lift; ctx.fillRect(0, 0, WV_W, WV_H); ctx.globalAlpha = 1;
 }
 
 // The WIND TRAIL: level flight tears the air. ONE continuous ribbon streams

@@ -21,7 +21,7 @@ into its **corner's** woods, RED always bottom-left, BLUE always top-right
 the road's head, a shop for anybody at all who walks up to it, then raises the bot bays and fells
 the back woods behind the bird for logs to rebuild them; idle, it keeps to the road just up from the bird.
 **Three lanes** join the bases, like a Rift: **the road** (mid) runs the map's diagonal from one
-perch to the other, one straight, dry packed-earth lane, and **the top and bot lanes** run
+perch to the other, one straight flagstone lane, and **the top and bot lanes** run
 straight up either edge of the valley and turn one hard corner, like the Rift's, crossing the creek on a ford at that corner, the middle. All
 three are there from worldgen, the same every match and readable from anywhere, and each leaves a
 base by its own mouth of the hollow ([the road](world.md#the-road),
@@ -38,7 +38,7 @@ down at their own bird.
 **Your side is always blue.** Whatever team index the roster dealt you, your allies are painted
 BLUE and your enemies RED — nameplates, arrows, armour, buildings, map marks, bot names, all of
 it — through one function (`skin`, js/sim/player.js) the paint goes through and the rules never do.
-**You alone are green**: your own health bar and the ring at your feet (`SELF_COL`), so you find your hero among allies in the same coat; every hero stands in a ring of its side's colour, and no soldier or beast does.
+Every hero, you included, stands in a ring of its side's colour under a bar of the same side's colour; no soldier or beast does. Your own hero is told apart by the stamina bar and XP over it and the name's full rim.
 A settings toggle (MY TEAM) shows the roster's real colours instead.
 [Teams and colours](multiplayer.md#teams-and-colours).
 
@@ -135,7 +135,7 @@ slots are the build. There is no backpack and no food pouch.
 
 **Heals are League's.** A **health potion** (50 gold, up to five stacked in one item slot) heals
 100 over 15 s on the slot's key and nothing stops it; a **creek fish** rolled over heals 40 at
-once, a ripe **berry bush** walked into heals 30 and regrows. Nothing else is eaten.
+once. Nothing else is eaten.
 [Heals](gameplay/heals.md).
 
 **Items are bought at a counter.** You walk to a body to get them.
@@ -204,7 +204,8 @@ anywhere — hands on the handle, still a target, dropped by a stun or a root, a
 into the fight always walked. **Three road towers hold each cable**: a stone tower with a
 great crossbow on its deck stands beside the lane a third and two thirds of the way out and at the end of every cable,
 so nine a side, and the cable runs only to the furthest one still standing, so breaking a tower takes ground back
-from the rival's ride. A tower shoots the rival wave first, so a hero who walks in under it with
+from the rival's ride. Past that tower the cable runs on to a stake in the open snow, so the ride lets go clear of
+the stone. A tower shoots the rival wave first, so a hero who walks in under it with
 their own soldiers can bring it down, and a hero who hits one of its side's heroes in its ring, or
 walks in alone, gets the bolt: it winds for a beat with a dashed line on the snow to its mark, and
 each bolt in a row into the same hero hits harder. [Road towers](gameplay/robots.md#road-towers),

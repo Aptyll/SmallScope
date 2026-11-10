@@ -40,9 +40,8 @@ screen's LOBBY is the door out.
 `'respawning'` needs no state of its own beyond `state.rpClosed` (reset by every `endMatch`):
 once `p.respawnT` hits 0, `respawnPlayer(p)` snaps `state.mode` back to `'play'`, lands the local player at its bird, and replays the HUD
 slide-in a fresh eagle landing gets. A win *or* an elimination also freezes what its screen will
-print (`endSnapshot()` on `state.end`: gold, kills, level, clock, team, class, the kit, and the
-killer only the loss prints) because the match keeps running underneath and a total
-that climbs behind a tally which already counted it reads as a bug — and because a loss's summary
+print (`endSnapshot()` on `state.end`: the clock, team, class and the side's table) because the match keeps running underneath and a total
+that climbs behind a table which already counted it reads as a bug — and because a loss's summary
 is opened off a plank minutes later, by which time none of those numbers are still true. Spectating
 sets `state.spec` to a living player's id and `viewPlayer()` — the one place the camera and minimap
 ask who to frame — returns it. The control is

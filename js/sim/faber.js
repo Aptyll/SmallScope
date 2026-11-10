@@ -95,7 +95,7 @@ const FABER_AB = [
     use: (p) => faberSpring(p),
     tele: (p, px, py, a, col, closing, now, ex, ey) => { const c = faberSpot(p, SPRING_RANGE); drawSpringTele(Math.round(c.x - ex), Math.round(c.y - ey), closing, now); }, // the jaws set open
     pose: () => ({ dx: 0, dy: 2, rot: 0 }),
-    icon: FABER_ICON32.spring,
+    icon: FABER_ICON32.spring, mark: 'root',
     bot: (p, foe, d) => foe instanceof Player && d < SPRING_RANGE,
   },
   {

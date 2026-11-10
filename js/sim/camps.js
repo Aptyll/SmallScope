@@ -249,7 +249,7 @@ function layCampPlan(C) {
 }
 
 // the ground a camp stands on: everything inside r + 2 of the centre is
-// cleared - a pine, a rock, a bush goes, ice becomes snow - so a camp is the
+// cleared - a pine, a rock goes, ice becomes snow - so a camp is the
 // same clearing on every seed, and what the props then stamp is the same too
 function clearCamp(C) {
   const R = C.r + 2;

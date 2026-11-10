@@ -340,6 +340,15 @@ function drawAbilityOnPlayer(p, px, py, now) {
 // strip's ability wells and the ability tooltip (drawClassAbCell /
 // tipClassAb). Each icon repeats the ability's in-world look, so the well
 // and the snow speak the same picture.
+// The rules a new icon is drawn to (blind reads, 11-10: bold art alone did not
+// read better; art plus what it DOES did):
+// - One bold shape, ink-outlined, inside the well's open box: x 7-31, y 7-31.
+//   The strip lays the rank pips over rows 1-5 and the key digit over the
+//   bottom-left corner (drawClassAbCell, js/ui/hud-draw.js).
+// - The row's `mark` (an id) stamps what the ability does in the bottom-right
+//   corner (abMark below): the SAME 7x7 icon the rival's health bar shows
+//   (STATUS_ICONS, js/draw/overhead.js) or a kit mark (AB_MARKS). A mark only
+//   says what the picture does not: no burn mark on a flame.
 const AB32_PAL = {
   o: '#141a2c', k: '#0f1632',
   W: '#f4f7ff', b: '#cfe0f2', B: '#9fb6d8',
@@ -352,13 +361,68 @@ const AB32_PAL = {
   v: '#4f8a46', V: '#9cc87a', // SALVIA's sage (js/sprites/salvia.js)
   q: '#2c5478', Q: '#5f9cc8', // MARIS's water (js/sprites/maris.js)
   j: '#2f5c4b', // LIGNUM's pine dark (js/sprites/lignum.js)
+  f: '#ff9a3a', F: '#ffe07a', a: '#c8502a', // fire: flame, its hot core, its rim
+  i: '#7fc8ff', I: '#4f86c0', // ice: the control blue of the colour key, its shade
 };
+// what an ability does that is not a body's control state, as a mark in the
+// status plate's grammar ('#' ink, '+' lit; STATUS_ICONS holds the rest)
+const AB_MARKS = {
+  shield: { ink: '#ffd95c', lit: '#ffffff', deep: '#5a4410',
+    px: ['#######', '#+#####', '#+#####', '#######', '.#####.', '..###..', '...#...'] },
+  burn: { ink: '#ff9a3a', lit: '#ffe07a', deep: '#6a2a14',
+    px: ['...#...', '..##...', '..###..', '.##+##.', '.#+++#.', '.#+++#.', '..###..'] },
+  speed: { ink: '#f4f7ff', lit: '#ffffff', deep: '#3a3f4a',
+    px: ['#..#...', '##.##..', '.##.##.', '..##.##', '.##.##.', '##.##..', '#..#...'] },
+  heal: { ink: '#7fd36b', lit: '#ffffff', deep: '#1d3a22',
+    px: ['..###..', '..#+#..', '###+###', '#+++++#', '###+###', '..#+#..', '..###..'] },
+};
+// stamp mark `id` on a baked icon: a 9x9 ink plate in the bottom-right
+// corner, the mark's deep tone, its 7x7 icon
+function abMark(cv, id) {
+  const r = AB_MARKS[id] || STATUS_ICONS.find((q) => q.id === id);
+  if (!r) throw new Error('no ability mark ' + id);
+  const g = cv.getContext('2d');
+  g.fillStyle = AB32_PAL.o; g.fillRect(23, 23, 9, 9);
+  g.fillStyle = r.deep; g.fillRect(24, 24, 7, 7);
+  for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {
+    const c = r.px[y][x];
+    if (c === '.') continue;
+    g.fillStyle = c === '+' ? r.lit : c === 'x' ? AB32_PAL.o : r.ink;
+    g.fillRect(24 + x, 24 + y, 1, 1);
+  }
+  return cv;
+}
+// A hero's kit shares one backing (its art row's `glow`, js/sprites/hero-art.js:
+// five tones, dark edge to bright core): the colour says WHO, the shape and
+// the mark say WHAT (Noah 11-10, from League's kits: one theme per champion,
+// light behind the subject, dark at the edges). The core sits on the
+// subject's own middle, so every icon lights where its picture is.
+const AB_GLOW_R = [17, 12, 8, 5]; // a band's outer radius, edge tone inward
+function abGlow(g, rows, glow) {
+  let sx = 0, sy = 0, n = 0;
+  for (let y = 0; y < rows.length; y++) for (let x = 0; x < rows[y].length; x++) if (AB32_PAL[rows[y][x]]) { sx += x; sy += y; n++; }
+  const cx = n ? sx / n : 15.5, cy = n ? sy / n : 15.5;
+  for (let y = 0; y < 32; y++) for (let x = 0; x < 32; x++) {
+    const d = Math.hypot(x - cx, y - cy);
+    let b = 0;
+    while (b < AB_GLOW_R.length && d < AB_GLOW_R[b]) b++;
+    g.fillStyle = glow[b];
+    g.fillRect(x, y, 1, 1);
+  }
+}
+// hero cls's row's icon baked: the kit's backing, the grid, its mark if it has one
+function bakeAbRow(cls, row) {
+  const glow = heroArtOf(cls).glow;
+  const cv = bakeAb32(row.icon, glow ? (g) => abGlow(g, row.icon, glow) : null);
+  return row.mark ? abMark(cv, row.mark) : cv;
+}
 const ab32Cache = new Map();
-// a 32x32 grid in AB32_PAL on its own canvas
-function bakeAb32(rows) {
+// a 32x32 grid in AB32_PAL on its own canvas, over what `under(g)` paints
+function bakeAb32(rows, under) {
   const cv = document.createElement('canvas');
   cv.width = cv.height = 32;
   const g = cv.getContext('2d');
+  if (under) under(g);
   for (let r = 0; r < rows.length; r++) {
     const row = rows[r];
     for (let c = 0; c < row.length; c++) {
@@ -373,7 +437,7 @@ function bakeAb32(rows) {
 // a named hero's passive icon (HERO_PASSIVE, js/sim/heroes.js)
 function passiveIcon(cls) {
   const key = cls + ':p';
-  if (!ab32Cache.has(key)) ab32Cache.set(key, bakeAb32(HERO_PASSIVE[CLASSES[cls].passive].icon));
+  if (!ab32Cache.has(key)) ab32Cache.set(key, bakeAbRow(cls, HERO_PASSIVE[CLASSES[cls].passive]));
   return ab32Cache.get(key);
 }
 // the baked 32x32 icon for hero cls's ability on key i
@@ -381,7 +445,7 @@ function classAbIcon(cls, i) {
   const key = cls + ':' + i;
   let cv = ab32Cache.get(key);
   if (!cv) {
-    cv = bakeAb32(CLASS_AB[cls][i].icon);
+    cv = bakeAbRow(cls, CLASS_AB[cls][i]);
     ab32Cache.set(key, cv);
   }
   return cv;

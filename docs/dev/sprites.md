@@ -56,14 +56,6 @@ spent; the cart's set adds those four mirrored, shown while it faces left (`b.fa
 `SPRITES.robotAx` says where in each frame the body's x stands (a mirrored frame's is its width less
 that).
 
-**Lying down is derived, not drawn.** A hero's set carries `prone[dir]` beside
-`down`/`up`/`right`/`left`, and no grid of its own: `lie` (the `lying down` banner in
-characters.js) turns each standing frame a quarter clockwise, exactly, so pixels stay pixels, and
-drops it to the cell's floor where the standing feet were. The side frame turned lies belly-down
-with the head toward `right`, the front frame on its side facing out, the back frame facing in.
-Only the end screens read it: the emotes (`EMOTES`, js/ui/screens.js; the flop goes down through
-`prone.down[0]`) and the loss's stage (js/ui/endscreens.js).
-
 ## The run and the roll
 
 **The run, the held run and the dodge roll are the one set of player frames not typed by hand.**
@@ -140,8 +132,7 @@ e.g. `ARM_SKINS`, their paint, the skins tab's glyph and the 12 px emblem), ever
 `champLook(cls, team, skinId)` (characters.js,
 the `heroes` banner) bakes the chosen row's own grids `champLook(cls, team, skinId)` (characters.js,
 the `heroes` banner) bakes the chosen row's own grids (its standing frame per facing, the walk
-lifted off it by `heroWalk`, the roll from its doll by name through `motionSet`, lying down by
-`lie`) in the hero's paint (`pal`, e.g. `ARM_PAL`, then the row's own `pal` if it has one)
+lifted off it by `heroWalk`, the roll from its doll by name through `motionSet`) in the hero's paint (`pal`, e.g. `ARM_PAL`, then the row's own `pal` if it has one)
 over the team's coat (`teamPlayerPal` over `PPAL`). A `skinId` that names no row, or none, wears
 the free first row. The set is cached per (hero, team, look): ten players and a menu or two is
 all that ever asks. Every reader of a player's body goes through `classSet(p)` (player.js), which
@@ -449,7 +440,7 @@ team ink and all of it), a white **beard** (`w`/`W`) down the chest, a khaki woo
 walk, the coat hangs; the side grid faces right and flips), under `merchantPal`. It is look **D**
 off the concept sheet in `docs/media/concepts/merchant-concepts-2.png` (the `concept-art` skill
 in `.claude/skills/` is how a sheet is made and picked). Nothing on it is a player's coat or hat,
-so the side reads off the crown, the nameplate and the bar (no prone poses — it never lies down).
+so the side reads off the crown, the nameplate and the bar.
 
 **The merchant's stall** (`stall` in js/sprites/buildings.js, baked per side inside `SPR.onTeams`
 as `SPRITES.teamBuild[skin(team)].stall` under `stallPal`) is **48 × 38** over its 3×2 footprint:
@@ -458,7 +449,7 @@ lantern, a scale and a planked counter. It is look **D** off
 `docs/media/concepts/tent-concepts-2.png` (round 1, `tent-concepts-1.png`, picked the stall
 shape; round 2 grew it).
 
-**The axe and bow icons** (`itemAxe`/`itemBow`) are 8×8 grids sharing `AXPAL`. The axe is drawn at
+**The axe icon** (`itemAxe`) is an 8×8 grid on `AXPAL`. The axe is drawn at
 **1×** by `drawHeldTool()` (inside a translate/rotate, while a swing runs) and by `drawRobot()` for a
 bot's swing; the bow is the end screen's kills plate. At rest `drawHeldTool()` draws the **hero's own weapon** instead, a 12×12
 `SPRITES.weaponArt` canvas baked in [js/sprites/weapons.js](../../js/sprites/weapons.js) (a blade at
@@ -627,11 +618,7 @@ paw's claw trail and the bite's snap are baked into their frames (`SM`/`SD`, whi
 `fish` clip's catch (`FISH_PX` in bear.py, `FL`/`FM` silver inked in `SD`). Change the rig and rebake; never edit the grids.
 
 The three camp props are
-`deadTree` (two 16×24 snags on `DTPAL`, now only the wiki's THE WORKS figure) and `den` (A ROCK MAW of [den-concepts-1.png](../media/concepts/den-concepts-1.png): a 32×21 snow-capped boulder cave with icicle fangs over its mouth, on `DNPAL`, drawn at `py - 4` over its two tiles — the concept's trampled-snow rows were left off, because a decal must not cast a shade) and `hogHut` (eight 35×35 frames of the HOG HUT's chimney smoke on `HHPAL`, converted 1:1 from docs/media/new_media5/hog-hut-chimney-moving.png and drawn centred over the front row of its 2×2 footprint). The berry bush is
-four frames on `BPAL` — `bush`, `bushEmpty`, `bushBud`, `bushRipen` — one silhouette in which only
-the four berry pixels change (ripe, gone, pale `b` buds, dull `d` berries), because the frames are
-a clock the player reads at a glance and a bush that seemed to move would read as a different
-plant ([the regrow stages](world.md#the-tile-world)).
+`deadTree` (two 16×24 snags on `DTPAL`, now only the wiki's THE WORKS figure) and `den` (A ROCK MAW of [den-concepts-1.png](../media/concepts/den-concepts-1.png): a 32×21 snow-capped boulder cave with icicle fangs over its mouth, on `DNPAL`, drawn at `py - 4` over its two tiles — the concept's trampled-snow rows were left off, because a decal must not cast a shade) and `hogHut` (eight 35×35 frames of the HOG HUT's chimney smoke on `HHPAL`, converted 1:1 from docs/media/new_media5/hog-hut-chimney-moving.png and drawn centred over the front row of its 2×2 footprint).
 
 Anything drawn through `drawSpriteFlash()` must stay within **64×64**: it recolours through a
 shared 64×64 scratch canvas and a larger sprite clips ([rendering.md](rendering/render-pass-order.md)).
@@ -640,8 +627,8 @@ shared 64×64 scratch canvas and a larger sprite clips ([rendering.md](rendering
 and the practice dummy (`DUMMY_SPR`, js/draw/practice.js)
 paint their char grids onto their own canvases and assign into `SPRITES`, which works because it
 is a plain object - exactly what each js/sprites/ file does for its own keys (the paragraph
-below), so a sprite that belongs to a drawer can live beside it. The detailed 32×32 ability icons (`AB32`/`AB32_PAL`,
-js/sim/abilities.js) bake lazily beside their drawer.
+below), so a sprite that belongs to a drawer can live beside it. The detailed 32×32 ability icons (`AB32_PAL`,
+js/draw/abilities.js) bake lazily beside their drawer.
 
 **The story landmarks** (`landmarks.js`, palette `LMPAL`) are E of
 `docs/media/concepts/landmarks-concepts-1.png`: the rowboat (50×24 over 3×1). The paint on the hull is a
@@ -671,9 +658,9 @@ with it.
 | File | Banners | Registers |
 | --- | --- | --- |
 | `motion.js` | none: generated by app/bake-player/bake.py | `SPR.motion` (not `SPRITES`: the run, held run and roll grids of every hero look, the bobs and the roll's timing, for characters.js) |
-| `characters.js` | paint, run and roll, lying down, heroes (then the merchant) | `champLook` (a hero's set, with its `run`/`hold`/`roll` and `prone`), `portrait`, `merchant`, `motionBox`/`runBob`/`holdBob`/`rollAt` |
+| `characters.js` | paint, run and roll, heroes (then the merchant) | `champLook` (a hero's set, with its `run`/`hold`/`roll`), `portrait`, `merchant`, `motionBox`/`runBob`/`holdBob`/`rollAt` |
 | `armatos.js` and one file per hero | none: top-level globals | the hero's `*_SKINS` rows, palette and held art, which its `CLASSES` row names (armatos.js also holds `heroWalk`, `heroRunSide`, `heroRunFront`, `heroLegTop`, `heroBreath` and `heroCloth` for every hero) |
-| `terrain.js` | trees, bush, the dead snags, the den, the hog hut | `tree`, `treeAtlas`, `stump`, `bush*`, `deadTree`, `den`, `hogHut` |
+| `terrain.js` | trees, the dead snags, the den, the hog hut | `tree`, `treeAtlas`, `stump`, `deadTree`, `den`, `hogHut` |
 | `beasts.js` | rabbit, deer, wolf | `rabbit`, `wolf`, `deer` |
 | `bears.js` | none: generated by app/bake-bears/bake.py | `alpha` (black bear) |
 | `fish.js` | none: generated by app/bake-fish/paint.py | `creekFish.whitefish` (`swim[heading][frame]`, 16 headings, 2 tail frames, rimmed in the water's shade), `iceFish[kind]` (`fish` the frost pike, `sunfish` the gold sunfish: `swim` and the cold `shadow` under the ice, same headings and frames); looks E/F, I/K and shadow N off `docs/media/concepts/winter-fish-concepts-2/3/4.png` |
@@ -682,7 +669,7 @@ with it.
 | `snowdrops.js` | none: generated by app/bake-snowdrops/bake.js | `snowdrop[variant]` (`closed`/`open` at three leans, `picked`, `glow[lean][phase]`) |
 | `soldiers.js` | none: generated by app/bake-soldiers/bake.py | `robotRanged`, `robotSiege` (per team: 2 loaded, 2 spent; the cart's 4 more mirrored), `robotAx` |
 | `perch.js` | palettes, shapes, the bird, poses, painter, cache | `perch` (no grids: painted in code, below) |
-| `items.js` | items, gold nugget, gold sack, axe icon | `itemPotion` (the health potion's 11×12 flask), `itemAnim` + the gold's live icon, `goldSack`, `itemAxe`/`itemBow` |
+| `items.js` | items, gold nugget, gold sack, axe icon | `itemPotion` (the health potion's 11×12 flask), `itemAnim` + the gold's live icon, `goldSack`, `itemAxe` |
 | `buildings.js` | the barracks bay, soldiers, the merchant's stall, fire | `teamBuild` (`spawner`, `stall`), `robotTeam`, `robot`, `fire` |
 | `landmarks.js` | landmarks | `landmark` (`boat`) |
 | `icons.js` | cursors | `cursor`, `cursorShadow` |

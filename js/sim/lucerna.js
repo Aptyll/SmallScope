@@ -52,7 +52,7 @@ const LUCERNA_AB = [
     blurb: 'A HOOK THROWN IN A LINE. THE FIRST RIVAL IT CATCHES IS PULLED TO HER AND SLOWED.',
     use: (p) => lucernaCrook(p),
     tele: (p, px, py, a, col, closing, now, ex, ey) => drawCrookTele(p, a, closing, now, ex, ey), // the hook's line run out, a glint along it (js/draw/lucerna.js)
-    icon: LUCERNA_ICON32.crook,
+    icon: LUCERNA_ICON32.crook, mark: 'pull',
     bot: (p, foe, d, clear) => foe instanceof Player && clear && d > 45 && d < CROOK_RANGE * 0.85,
   },
   {
@@ -82,7 +82,7 @@ const LUCERNA_AB = [
     blurb: 'A WIDE RING OF LAMPLIGHT AROUND HER FOR A FEW SECONDS. RIVALS WHO CROSS ITS EDGE ARE SLOWED HARD AND SHOWN.',
     use: (p) => lucernaCircle(p),
     tele: (p, px, py, a, col, closing, now) => drawCircleTele(px, py, closing, now), // light rising round her, stroke by stroke
-    icon: LUCERNA_ICON32.circle,
+    icon: LUCERNA_ICON32.circle, mark: 'slow',
     bot: (p, foe, d) => foe instanceof Player && d < CIRCLE_R && d > CIRCLE_R * 0.4,
   },
 ];

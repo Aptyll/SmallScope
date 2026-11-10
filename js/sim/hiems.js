@@ -60,7 +60,7 @@ const HIEMS_AB = [
     use: (p) => hiemsIcicle(p),
     tele: (p, px, py, a, col, closing, now, ex, ey) => drawIcicleTele(p, a, closing, ex, ey), // frost creeping down the line (js/draw/hiems.js)
     pose: (p, prog) => ({ dx: 0, dy: prog < 0.7 ? -1 : 1, rot: 0 }),
-    icon: HIEMS_ICON32.icicle,
+    icon: HIEMS_ICON32.icicle, mark: 'slow',
     bot: (p, foe, d, clear) => clear && d < ICICLE_RANGE - 10,
   },
   {
@@ -71,7 +71,7 @@ const HIEMS_AB = [
     use: (p) => hiemsGlaze(p),
     tele: (p, px, py, a, col, closing, now, ex, ey) => { const c = hiemsSpot(p, GLAZE_RANGE); drawGlazeTele(Math.round(c.x - ex), Math.round(c.y - ey), closing); }, // the ice spreading
     pose: () => ({ dx: 0, dy: 1, rot: 0 }), // the staff swept low
-    icon: HIEMS_ICON32.glaze,
+    icon: HIEMS_ICON32.glaze, mark: 'slow',
     bot: (p, foe, d) => d < GLAZE_RANGE && foe instanceof Player,
   },
   {
@@ -82,7 +82,7 @@ const HIEMS_AB = [
     use: (p) => hiemsSnap(p),
     tele: (p, px, py, a, col, closing, now, ex, ey) => { const c = hiemsSpot(p, SNAP_RANGE); drawSnapTele(Math.round(c.x - ex), Math.round(c.y - ey), closing, p.id); }, // the ground freezing and cracking
     pose: () => ({ dx: 0, dy: -2, rot: 0 }), // the staff raised
-    icon: HIEMS_ICON32.snap,
+    icon: HIEMS_ICON32.snap, mark: 'root',
     bot: (p, foe, d) => d < SNAP_RANGE && (foe.chillN > 0 || unitsNear(p, foe.x, foe.y, SNAP_R).length >= 3),
   },
   {
@@ -93,7 +93,7 @@ const HIEMS_AB = [
     use: (p) => hiemsWhiteout(p),
     tele: (p, px, py, a, col, closing, now) => drawWhiteoutTele(px, py, closing, now), // the wind gathering round her
     pose: () => ({ dx: 0, dy: -2, rot: 0 }),
-    icon: HIEMS_ICON32.whiteout,
+    icon: HIEMS_ICON32.whiteout, mark: 'blind',
     bot: (p, foe, d) => foe instanceof Player && d < WHITE_R && (unitsNear(p, p.x, p.y, WHITE_R).filter((q) => q instanceof Player).length >= 2 || foe.hp < foe.maxHp * 0.6),
   },
 ];

@@ -42,7 +42,7 @@ Whenever `workTarget()` is non-null, `near`, **and not something the hands take 
 (`autoWorks(t.o, player)` nulls it — and tools aren't blocked, the bow drawn or a cable
 ridden), `drawWorkHint()` — called right after `drawSelection` in the overlay pass — floats a
 key prompt over the target: a pixel key-cap wearing the work key (**E** until rebound) plus the
-verb. Since every tree, bush and rival building is `auto`, the only prompt that shows in play
+verb. Since every tree and rival building is `auto`, the only prompt that shows in play
 is **HIT** over the practice dummy; the verb and the lift are still read off the `OBJECTS` entry
 (`verb`, `lift`: 33 for a pine, 28 for the dummy, 10–12 for the short ones),
 scenery wider than a tile takes it on its middle (`w`), and the building branch — BREAK,
@@ -188,6 +188,12 @@ its own middle, so a blade reaches out of the fist; a blade's hand rides an elli
 (`BLADE_HAND`), a carry sits at `CARRY_HAND_Y` by facing; and anything pointing up the screen
 (`heldBehind`, past `HELD_RISE`) is drawn behind the body, as is a carried staff. `drawPlayer`
 calls it twice, behind the body and over it.
+**The grip rule** (`heroFist`, js/draw/heroes.js) keeps a hand on it: wherever a carry lands its
+grip, outside a body facing away, a 2 px fist in the look's hand colour (`set.hand`, the skin
+unless the look names a `hand` letter, with `set.ink` its outline) is drawn over the weapon,
+reaching back to close the sleeve. A slanted blade's grip sits at the arm's end (`hip.down`), so
+nothing grows out from under the body unheld. A carry a hero draws its own way (`HERO_CARRY`)
+calls `heroFist` too.
 Every art says which way its business end points as drawn (`WEAPON_FWD`, js/sprites/weapons.js)
 and the hand turns it by the facing or the aim minus that: a bow's arrowhead is at +x, drawn the
 way a bow is held — string toward the archer, belly toward the target — and the sword's point at

@@ -42,7 +42,7 @@ stable per tile.
   instead of ending in a cut. Neither test rolls anything, so the `'rivers'` stream is what it was.
 - `objects` — flat `Array(WORLD*WORLD)`, **at most one object per tile**. Every object is
   `{ type, tx, ty, hp, flash, shake, ...extra }`. The `OBJECTS` table's types: `tree`,
-  `bush`, `den`, `dummy`, `banner`, `log`,
+  `snowdrop`, `den`, `dummy`, `banner`, `log`,
   `pylon`, `pkdie`, `agbell`, `stump`, `eagle`, `hut`, `part`, and the
   [story landmarks](#story-landmarks)' `boat` (added from `LANDMARKS`); the `STRUCTS` table's: `pump`,
   `barracks`, `tower`. `banner`/`log` are
@@ -68,18 +68,11 @@ stable per tile.
   buildTotal, dustT, sparkT }` plus the fields its entry's `init` lays (pump `hold`, `cap`, `capBy`, `payT`, `paid`, `lane`: [the gold pumps](gameplay/buildings.md#the-gold-pumps); barracks `waveT`, `queue`,
   `rollT`, `born`, `door`; tower `ang`, `tgt`, `chg`, `cd`, `bolt`), and every live one is also referenced from the module-scope `structures`
   array so `updateStructures()` never scans the 53,824-tile grid. Nor do the object clocks
-  (`flash`/`shake`, bush regrow): `tickObjTimers` (js/sim/sim.js, the
+  (`flash`/`shake`): `tickObjTimers` (js/sim/sim.js, the
   `object timers` banner) ticks only the objects in `objTimed`, in map order, and drops each one
   once its clocks run down. A clock is started only through `joltObj(o, flash, shake)` or
   `timeObj(o)`, which enrol the object; one set straight on the object never runs.
-  `objTimersRescan` rebuilds the set after a load (`saveApply`). An emptied
-  bush ([Heals](gameplay/heals.md): walked into, it heals and empties) regrows in `BUSH_REGROW` (70 s) and **wears its own clock**: `bushEmpty` until ripening is
-  `BUSH_BUD_T` away, then `bushBud` (pale buds where the berries will be), `bushRipen` (the
-  berries back but dull) inside `BUSH_RIPEN_T`, then `bush` — chosen in `render()`'s bush
-  branch, so a player reads wait-or-move-on off the plant at a glance, and **under the pointer a
-  regrowing bush wears the neutral unit bar** filling toward ripe (the frames say roughly, a hover
-  says exactly — [rendering.md](rendering/render-pass-order.md)). A bush never rims: E does
-  nothing to it. `placeBushes` lays them at boot by the wolf dens and on the creek's banks. Each
+  `objTimersRescan` rebuilds the set after a load (`saveApply`). Each
   type has one tier and a footprint (`STRUCTS[type].w/h`, 1×1 when absent), with `footprint()`,
   `structCenter()` and `structMouth()` (the ground point in front of the doorway) as the geometry
   helpers. A wreck leaves the tiles empty.

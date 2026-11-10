@@ -6,7 +6,7 @@
 | the one on-the-spot gold payout every source uses (gold is never a drop) | `awardGold` | `players` (beside `gainGold`) |
 | gold leaving a wallet: the shop's one way to take it, counted in `goldSpent` | `spendGold` | `players` (beside `gainGold`) |
 | XP: the one way it enters a body (the bar, the levels it crosses, the running total), and a death's XP shared by the side standing near | `gainXp`, `shareXp`, `XP_R`/`XP_SHARE`, `LEVEL_XP` (the table: `players`) (what each death is worth: `SOLDIER_XP`, robots.js; `KILL_XP`/`KILL_XP_LV`, `damage & death`; `YIELD`'s `xp`, core.js) | `players` |
-| the one way health comes back to a player - a potion, a creek fish, a bush, the roost ring, a kill's heal - capped and counted | `healPlayer` | `players` (beside `gainGold`) |
+| the one way health comes back to a player - a potion, a creek fish, the roost ring, a kill's heal - capped and counted | `healPlayer` | `players` (beside `gainGold`) |
 | which way a player's body faces: the one function every turn goes through, its diagonal bias and the hold an aimed action leaves | `faceToward`, `FACE_BIAS`, `FACE_HOLD`, `p.faceT` | `facing` (player.js) |
 | the numbers a player is made of: the player count and teams, walk/roll/slide speeds, hero levels, and the two bow baselines a kit is written against | `MAX_PLAYERS`, `TEAM_COUNT`, `PVP`, `PLAYER_SPEED`/`PLAYER_R`, `ICE_MAX`/`SLIDE_MIN`/`SLIDE_EXIT`/`TRAIL_MIN`/`SNOW_TRAIL_*`, `LEVEL_*`, `DODGE_*`, `BOW_CHARGE`/`BOW_NOCK` | `players` (above `CLASSES`, which reads some of them at load time) |
 | which preset a team wears on this screen, and whether a rival wears its colour-blind shape cue | `TEAMS`, `skin`, `foeCue` | top of the file |

@@ -214,7 +214,7 @@ cost you.
 slot's stack after, up to five (`potionRoom`); selling the slot sells **one** potion at half price
 (25), and the last frees the slot (`takePotion`). It is built from nothing and into nothing, so its
 card in the pane shows what one drink heals, over how long, and how many you carry instead of a tree.
-Fish and berries are never bought or sold: they heal where they stand.
+Fish are never bought or sold: they heal where they swim.
 
 **A sale pays gold but does not count as earned**: `tradeGold`, the one documented exception to
 the `gainGold` rule in [CLAUDE.md](../../../CLAUDE.md). It adds nothing to `p.earned`, so selling

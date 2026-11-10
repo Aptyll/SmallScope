@@ -73,7 +73,7 @@ const IGNIA_AB = [
     blurb: 'YOUR NEXT ABILITY IS CAST TWICE AS HOT. WHILE IT IS READY, YOU WALK FASTER.',
     use: (p) => igniaWarm(p),
     acol: '#ff9a3a', activeF: (p) => (p.warmT > 0 ? p.warmT / WARM_T : 0),
-    icon: IGNIA_ICON32.warm,
+    icon: IGNIA_ICON32.warm, mark: 'speed',
     bot: (p, foe, d) => d < WILD_RANGE && (abReady(p, 0) || abReady(p, 3)),
   },
   {

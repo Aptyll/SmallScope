@@ -11,7 +11,7 @@ let clivusAxeArt = null;
 function clivusAxeArtOf() {
   return clivusAxeArt || (clivusAxeArt = { flat: bakeBladeArt(CLIVUS_AXE, CLIVUS_AXE_PAL), diag: bakeBladeArt(CLIVUS_AXE_DIAG, CLIVUS_AXE_PAL) });
 }
-HERO_BLADES.iceaxe = { art: clivusAxeArtOf, hilt: [13, 9], hip: { down: [13, 12], up: [11, 10] }, grip: CLIVUS_AXE_GRIP };
+HERO_BLADES.iceaxe = { art: clivusAxeArtOf, hilt: [13, 9], hip: { down: [13, 11], up: [11, 10] }, grip: CLIVUS_AXE_GRIP };
 
 // ---- the rope: from his hands to its weight, or to the hero it is tied to ----------------------
 // one pixel wide, light and dark in turn so it reads as twisted; it sags while it flies and

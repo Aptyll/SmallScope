@@ -56,7 +56,7 @@ const SAGITTA_AB = [
     use: (p) => sagittaPin(p),
     tele: (p, px, py, a, col, closing, now, ex, ey) => drawSightLine(p, a, PIN_RANGE, closing, now, ex, ey, false), // her sight down the bolt's line (js/draw/sagitta.js)
     pose: () => ({ dx: 0, dy: 0, rot: 0 }),
-    icon: SAGITTA_ICON32.pin,
+    icon: SAGITTA_ICON32.pin, mark: 'stun',
     bot: (p, foe, d, clear) => clear && d < PIN_RANGE - 10,
   },
   {
@@ -67,7 +67,7 @@ const SAGITTA_AB = [
     use: (p) => sagittaPavise(p),
     tele: (p, px, py, a, col, closing) => drawPaviseTele(p, Math.round(px + Math.cos(a) * PAV_D), Math.round(py + 2 + Math.sin(a) * PAV_D), a, closing), // the shield coming up where it plants
     pose: () => ({ dx: 0, dy: 1, rot: 0 }),
-    icon: SAGITTA_ICON32.pavise,
+    icon: SAGITTA_ICON32.pavise, mark: 'shield',
     bot: (p, foe, d) => foe instanceof Player && d > 70 && d < 260 && p.hp < p.maxHp * 0.8, // cover once the trade is going against her
   },
   {
@@ -77,7 +77,7 @@ const SAGITTA_AB = [
     blurb: 'FIRE A BOLT INTO THE SNOW AT YOUR FEET. YOU ARE THROWN BACK, AWAY FROM YOUR AIM, AND RIVALS NEAR YOU ARE HIT AND SLOWED.',
     use: (p) => sagittaCrank(p),
     pose: () => ({ dx: 0, dy: 0, rot: 0 }),
-    icon: SAGITTA_ICON32.crank,
+    icon: SAGITTA_ICON32.crank, mark: 'slow',
     bot: (p, foe, d) => d < 50,
   },
   {

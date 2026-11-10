@@ -38,16 +38,9 @@ defineBot({
     }
 
     // hurt: drink a potion (useItem is the slot's key; it heals over time and
-    // never stops the hands), and with nobody close walk into a ripe berry
-    // bush (obs.nodes lists only ripe ones; touching one heals at once)
+    // never stops the hands)
     const pot = me.items.indexOf('potion');
     if (me.hp < me.maxHp * 0.5 && pot >= 0 && me.potionT <= 0) act.useItem = pot;
-    const bush = obs.nodes.find((n) => n.kind === 'bush');
-    if (me.hp < me.maxHp * 0.5 && bush && fd > 160) {
-      act.goTo = { x: bush.tx * 16 + 8, y: bush.ty * 16 + 4 };
-      act.think = { goal: 'HEAL', why: 'LOW HP' };
-      return act;
-    }
 
     const melee = me.attack === 'cut';
     if (foe && fd < (melee ? 160 : 220)) {

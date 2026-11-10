@@ -88,7 +88,7 @@ const WIKI_STATS = ['hp', 'dmg', 'as', 'armor', 'ms']; // the class card's rows:
 // the world page: the setting, in the order an exile meets it. An entry is a
 // name, a paragraph (wrapped to the column when the page is built) and `fig` -
 // the sprites that stand on its mound, left to right, read at draw time so
-// they wear the side you play. `road` stands them on packed earth, not snow,
+// they wear the side you play. `road` stands them on the road's flagstones, not snow,
 // and `air` on nothing (the eagle's sprite is the bird seen from above).
 // Every sentence is either something the match does or the reason for it -
 // the voice, the fixed words and what stays unanswered: docs/dev/lore.md.
@@ -287,11 +287,11 @@ function wikiClick() {
 }
 
 // the ground a figure stands on, w px wide: a low pale mound with a shaded
-// rim - snow, or the road's packed earth (ROAD_COL_*, js/draw/ground.js)
+// rim - snow, or the road's flagstones (ROAD_STONE_*, js/draw/ground.js)
 function wikiMound(cx, baseY, w, road) {
   const hw = w >> 1;
-  ctx.fillStyle = road ? ROAD_COL_DEEP : '#c9dcee'; ctx.fillRect(cx - hw, baseY - 1, w, 3);
-  ctx.fillStyle = road ? ROAD_COL_A : '#eef4fb'; ctx.fillRect(cx - hw + 2, baseY - 2, w - 4, 3);
+  ctx.fillStyle = road ? ROAD_STONE_SHD[0] : '#c9dcee'; ctx.fillRect(cx - hw, baseY - 1, w, 3);
+  ctx.fillStyle = road ? ROAD_STONE_MID[0] : '#eef4fb'; ctx.fillRect(cx - hw + 2, baseY - 2, w - 4, 3);
 }
 // a WORLD entry's figures on one mound, left to right about cx, each over
 // its own shadow - or, `air`, on the wing with no ground under them at all

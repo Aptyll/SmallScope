@@ -68,7 +68,7 @@ const FALCO_AB = [
     use: (p) => falcoFan(p),
     tele: (p, px, py, a, col, closing, now, ex, ey) => drawFanTele(p, a, closing, ex, ey), // three blades fanned in his hand, their glint down each line
     pose: (p, prog) => ({ dx: 0, dy: prog < 0.6 ? -1 : 1, rot: 0 }), // the arm back, then the throw
-    icon: FALCO_ICON32.fan,
+    icon: FALCO_ICON32.fan, mark: 'slow',
     bot: (p, foe, d, clear) => clear && d < FAN_LEN - 10,
   },
   {
@@ -90,7 +90,7 @@ const FALCO_AB = [
     use: (p) => falcoStoop(p),
     ok: (p) => !!stoopTarget(p),
     acol: '#f2cc6a', activeF: (p) => (p.falcoSkyT > 0 ? p.falcoSkyT / STOOP_UP : 0),
-    icon: FALCO_ICON32.stoop,
+    icon: FALCO_ICON32.stoop, mark: 'up',
     bot: (p, foe, d) => foe instanceof Player && falcoMarked(foe, p) && d < STOOP_REACH && foe.hp < foe.maxHp * 0.7,
   },
 ];

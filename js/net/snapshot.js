@@ -53,7 +53,7 @@ const SNAP_SKIP = new Set(['input', 'ai', 'nav', '_fx', '_fy', '_tx', '_ty', '_t
 // client without it drew pose 'lundefined' and threw)
 // the match's own state keys: the clock, the result, the birds. Everything
 // else on `state` is one screen's UI (overlays, the menu, the death view)
-const SNAP_STATE = ['time', 'elapsed', 'day', 'tick', 'darkness', 'wind', 'windDir', 'windT', 'fishT', 'creekGone', 'over', 'end', 'eagleCine', 'story', 'votes', 'voteCd', 'surrendered', 'prac', 'bearStacks'];
+const SNAP_STATE = ['time', 'elapsed', 'day', 'tick', 'darkness', 'wind', 'windDir', 'windT', 'fishT', 'creekGone', 'over', 'end', 'eagleCine', 'story', 'votes', 'voteCd', 'surrendered', 'prac', 'bearStacks', 'onevone'];
 const SNAP_DEPTH = 8; // how deep pack() follows plain objects before giving up (a cycle guard)
 // the moving kinds, their arrays and their token letters
 const SNAP_KINDS = { R: () => robots, A: () => animals, W: () => arrows, F: () => fish };
@@ -376,7 +376,7 @@ function snapApply(s) {
 const HIST_KEEP = 75; // flush ticks kept in the ring: 5 s at 15 Hz. An ack older than this is a full sync
 const snapShadow = { objs: null, objN: null, ground: null, hist: [], byTick: new Map(), sweepAt: 0, swept: false, tiles: null, late: 0, lateBy: {} };
 // The tiles a host looks at on a flush step (snapTileHot): of ~54k tiles, a
-// few hundred ever change in a match (pines hit, bushes regrowing, the
+// few hundred ever change in a match (pines hit, snowdrops resting, the
 // buildings' clocks), so the flush step checks only the tiles that can be
 // changing now - every structure, every tile with a clock running (objTimed,
 // js/sim/sim.js), every tile placeObj wrote and every tile seen changing in

@@ -65,7 +65,7 @@ const VARRO_AB = [
     blurb: 'A HOWL THAT CARRIES. RIVALS NEAR YOU ARE THROWN BACK AND SLOWED, AND YOUR WOLVES RUN FASTER.',
     use: (p) => varroHowl(p),
     pose: () => ({ dx: 0, dy: -1, rot: 0 }), // head up
-    icon: VARRO_ICON32.howl,
+    icon: VARRO_ICON32.howl, mark: 'slow',
     bot: (p, foe, d) => d < HOWL_R - 10 && (foe instanceof Player || p.hp < p.maxHp * 0.4),
   },
   {
@@ -75,7 +75,7 @@ const VARRO_AB = [
     blurb: 'TWO QUICK SPEAR STRIKES ON YOUR MARK, OR THE RIVAL AT THE AIM. THE SECOND SLOWS THEM.',
     use: (p) => varroSnap(p),
     ok: (p) => !!snapTarget(p),
-    icon: VARRO_ICON32.snap,
+    icon: VARRO_ICON32.snap, mark: 'slow',
     bot: (p, foe, d) => d < SNAP_REACH - 4,
   },
   {

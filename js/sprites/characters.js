@@ -53,22 +53,6 @@
     r: t.coat, R: t.coatL, d: t.coatD, t: t.hat, T: t.hatL, m: t.trim, M: t.trimD,
   });
 
-  // ---------------------------------------------------------------- lying down
-  // `prone[dir]`: a hero flat in the snow, for the emotes and the loss's stage
-  // (js/ui/screens.js, js/ui/endscreens.js). No grid of its own: a standing frame
-  // turned a quarter clockwise (exact, so pixels stay pixels) and dropped to the
-  // cell's floor, where the standing feet were. The side frame turned so lies
-  // belly-down with the head toward `right`, the front frame on its side facing
-  // out, the back frame facing in: four bodies for a turn on the ground.
-  const lie = (g) => {
-    const h = g.length, w = g[0].length, r = [];
-    for (let y = 0; y < w; y++) { let row = ''; for (let x = 0; x < h; x++) row += g[h - 1 - x][y]; r.push(row); }
-    let floor = r.length - 1;
-    while (floor > 0 && !/[^.]/.test(r[floor])) floor--;
-    const drop = r.length - 1 - floor, blank = '.'.repeat(h);
-    return Array(drop).fill(blank).concat(r.slice(0, r.length - drop));
-  };
-
   // ---------------------------------------------------------------- heroes
   // champLook(cls, team, skinId): the full pose set for one hero in one team's
   // paint, in one of its looks (heroArtOf(cls).looks, e.g. ARM_SKINS: `skinId`,
@@ -84,10 +68,9 @@
     if (set) return set;
     const sp = Object.assign({}, teamPlayerPal(TEAM_SKINS[team]), art.pal, row.pal); // a look may repaint the hero's letters (`pal`: NIX's MOONLESS)
     const w = heroWalk(row.grids);
-    const side = w.side.map((g) => bake(g, sp)), flat = (gs) => gs.map((g) => bake(lie(g), sp)), pside = flat(w.side);
+    const side = w.side.map((g) => bake(g, sp));
     set = Object.assign({
       down: w.down.map((g) => bake(g, sp)), up: w.up.map((g) => bake(g, sp)), right: side, left: side.map(flipH),
-      prone: { right: pside, left: pside.map(flipH), down: flat(w.down), up: flat(w.up) },
     }, motionSet(row.motion, sp));
     // side-on the run and the held run are the hero's own standing frame, legs stepping
     // (heroRunSide, js/sprites/armatos.js): the doll's are narrower than the hand-drawn body
@@ -109,6 +92,9 @@
     // further out (heroRise, heroReach, js/draw/heroes.js)
     const more = row.grids.down.length - 16; // a 20 px cell: 3 rows taller (one more is headroom), 1 px wider a side
     set.rise = (more * 3) >> 2; set.reach = more >> 2;
+    // the hand that closes on the carried weapon (heroFist, js/draw/heroes.js): the look's
+    // own `hand` letter (a glove), else its skin, ringed in its outline
+    set.hand = sp[row.hand || art.hand || 'k']; set.ink = sp.o;
     // standing still: the breath's two frames a facing (heroBreath, js/sprites/armatos.js),
     // and the loose cloth a pixel behind for the beat after a stop or a turn (heroCloth),
     // baked on first ask (drawPlayer's idle, js/draw/idle.js)

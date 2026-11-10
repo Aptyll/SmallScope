@@ -30,7 +30,7 @@ function aiThink(p, dt) {
   if (aiBackOffRung(k)) return; // 2b. a human's DANGER ping
   if (aiFight(k)) return;      // 3. a rival in sight
   if (aiCampFight(k)) return;  // 4. a camp it woke
-  if (aiHealRung(k)) return;   // 5'. hurt and alone: a ripe bush, a creek fish
+  if (aiHealRung(k)) return;   // 5'. hurt and alone: a creek fish
   if (aiPingRung(k)) return;   // 5a. a human's ping
   if (aiDefendRung(k)) return; // 5b. its bird
   if (aiHomeRung(k)) return;   // 5b''. the guard's patrol
@@ -165,7 +165,7 @@ function aiOrders(k) {
 function aiFoe(k) {
   const { p, dt, ai, prof, T, mine, theirs, own, pushE, defend, guardE, ward, order, caller } = k;
   // 1. the rival in sight. `foe` is read here rather than at rung 2 because
-  //    the heal rung (5') asks it too: nobody walks to a bush under fire.
+  //    the heal rung (5') asks it too: nobody goes fishing under fire.
   // (a ping's spot is an anchor too: a rival on it is found on arrival)
   // (and a teammate it is answering is one: the fight it walks into is found)
   let foe = aiNearestEnemy(p, prof, [defend || guardE, pushE, ward, order, caller]);
