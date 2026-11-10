@@ -308,15 +308,26 @@ const SAGITTA_SKINS = [
 
 // ------------------------------------------------------------ sagitta arbalest
 // Her HEAVY ARBALEST as the weapon art the HUD shows and the hands hold (SPRITES.weaponArt,
-// js/sprites/weapons.js): a steel prod across the front, a walnut stock, a brass trigger,
-// prod left like the sword's point. Carried facing down or up it rides her shoulder
-// (HERO_CARRY, js/draw/sagitta.js).
+// js/sprites/weapons.js), seen from above and cocked: a steel prod swept back across the
+// front, the string drawn to the nut, a walnut stock with a brass lock, prod left like the
+// sword's point. SPRITES.weaponDiag is the same crossbow drawn pointing down and right: the
+// hands aim it in eight drawn headings (heldAim, js/draw/bodies.js) and carry it low at the
+// hip in every facing (HERO_CARRY, js/draw/sagitta.js). The grips are the fore hand's.
 WEAPON_FWD.arbalest = Math.PI;
-WEAPON_GRIP.icon.arbalest = [7, 5];
-SPRITES.weaponArt.arbalest = SPR.bake([
-  '.oo.......', 'oGGo......', 'oGo.......', 'oGooooooo.', 'oWbbbbbYbo', 'oGooooBBBo',
-  'oGo...oBBo', 'oGo...oYo.', 'oGo....o..', 'oGGo......', '.oo.......',
-], { '.': null, o: '#241a12', G: '#c3ccd8', W: '#eef2f8', b: '#8a6440', B: '#5e4128', Y: '#d9a640' });
+WEAPON_GRIP.icon.arbalest = [6, 5];
+WEAPON_GRIP.diag.arbalest = [6, 6];
+(() => {
+  const pal = { '.': null, o: '#241a12', s: '#241a12', G: '#aab6c8', g: '#77839a', W: '#eef2f8', b: '#8a6440', B: '#5e4128', Y: '#d9a640' };
+  SPRITES.weaponArt.arbalest = SPR.bake([ // 12 px square, like every icon the HUD draws
+    '....oo......', '...oGgo.....', '..oGgs......', '.oGgo.s.oo..', '.oGoooosBBo.', 'oGWbbbbYbbBo',
+    '.oGoooosBBo.', '.oGgo.s.oo..', '..oGgs......', '...oGgo.....', '....oo......', '............',
+  ], pal);
+  SPRITES.weaponDiag.arbalest = SPR.bake([
+    '.oo..........', 'oBBo.........', '.oBBo........', '..obbo.....o.', '...obbo.sssGo',
+    '....oYYs..oGo', '.....obbooGo.', '.....sobbGgo.', '....s..oWgo..', '....s.oggo...',
+    '....soggo....', '...oggoo.....', '....oo.......',
+  ], pal);
+})();
 
 // ------------------------------------------------------------ sagitta registry
 // SAGITTA in the hero art registry (heroArt, js/sprites/hero-art.js): the looks and

@@ -3,8 +3,8 @@
 // SAGITTA's pixels (her rules: js/sim/sagitta.js): her bolts in flight
 // (HERO_SHOTS), the PAVISE standing on the snow (HERO_MACHINE's draw), THE
 // LONG BOLT's crawling line while she kneels (its row's `tele`), HEAVY BOLTS'
-// count over her (HERO_MARK), and her arbalest on her shoulder facing down or
-// up (HERO_CARRY). Both sides see all of it.
+// count over her (HERO_MARK), and her arbalest carried low at her hip
+// (HERO_CARRY). Both sides see all of it.
 
 const SG_STEEL = '#c3ccd8', SG_WOOD = '#8a6440', SG_BRASS = '#d9a640', SG_INK = '#141a2c', SG_WHITE = '#ffffff';
 
@@ -130,15 +130,20 @@ function drawSagittaMarks(e, px, py, w, h, now) {
 }
 HERO_MARK.push(drawSagittaMarks);
 
-// ---- the arbalest on her shoulder ----------------------------------------------------
-// Facing down or up the level carry would lay the crossbow across her feet; she
-// shoulders it instead, prod up beside her head and clear of her face (HERO_CARRY)
+// ---- the arbalest at her hip ----------------------------------------------------------
+// At rest she carries it low and ready in the leading hand, the prod down and out from
+// her hip, the same in every facing (HERO_CARRY): the slanted grid as drawn, mirrored for
+// a body facing left. Facing away it is behind her (heroCarry's pass). THE GRIP RULE:
+// her fist closes on the stock behind the lock.
+const SG_CARRY = [4, 4]; // where that hand closes on the slanted grid
 function sagittaCarry(p, px, py) {
-  if (!isSagitta(p) || (p.dir !== 'down' && p.dir !== 'up')) return false;
-  const A = attackOf(p), img = SPRITES.weaponArt[A.art];
+  if (!isSagitta(p)) return false;
+  const img = SPRITES.weaponDiag[attackOf(p).art];
   if (!img) return false;
-  drawGripped(img, WEAPON_GRIP.icon[A.art], p.dir === 'down' ? px + 17 : px - 1, py + 11, -Math.PI / 2 - WEAPON_FWD[A.art]);
-  if (p.dir === 'down') heroFist(p, px + 17, py + 11, 1);
+  const out = p.dir !== 'left', rc = heroReach(p); // the prod runs right of the hand
+  const hx = out ? px + 12 + rc : px + 3 - rc, hy = py + 10;
+  ctx.drawImage(out ? img : heldFlip(img), hx - (out ? SG_CARRY[0] : img.width - 1 - SG_CARRY[0]), hy - SG_CARRY[1]);
+  if (p.dir !== 'up') heroFist(p, hx, hy, out ? 1 : -1);
   return true;
 }
 HERO_CARRY.push(sagittaCarry);

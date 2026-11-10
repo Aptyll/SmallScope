@@ -177,10 +177,10 @@ every facing** so a hero keeps one shape as it turns and nothing heavy is held o
 `HERO_BLADES` row with a slanted grid names its `hold` (`BLADE_HOLDS`; none is `slant`, up and out
 from the leading hand: ARMATOS, VARRO, MARIS; `far` the other hand facing down: FORTIVA; `shoulder`
 back over the shoulder behind the head: LIGNUM's axe; `rest` the head down on the snow beside the
-foot: RUPES's maul). Each is the row's own slanted grid mirrored left to right or top to bottom
+foot: RUPES's maul; `low` point down and out from the fist at the hip, the knife fighter's way:
+NIX's dirk). Each is the row's own slanted grid mirrored left to right or top to bottom
 (`heldFlip`, `heldDrop`); none rises past the head, where the health frame sits. A row with no
-slanted grid keeps the level carry (BELLA, NIX), and its `lift` raises a short blade hung at the
-side so its tip rests at the feet (NIX).
+slanted grid keeps the level carry.
 
 FORTIVA's looks (`FORT_SKINS`, js/sprites/fortiva.js) are built the same way on ARMATOS's frame and in
 his iron (`FORT_PAL` is `ARM_PAL` with her copper hair `a`/`A` and her chain `c`/`C`). UNBROKEN
@@ -330,7 +330,7 @@ NIX has two looks (`NIX_SKINS`, js/sprites/nix.js) on one set of grids and one d
 cut repainted by its row's `pal` (moonless black, gold goggles, a violet scarf), which
 `champLook` lays over the hero's palette. It is A off nix-round1.png in the project files. Her
 doll is `Snowblind` in app/bake-player/bodies.py. Her ICE DIRK is a `HERO_BLADES` row (`dirk`,
-js/draw/nix.js), half a sword's length.
+js/draw/nix.js), half a sword's length, with its own slanted grid (`NIX_DIRK_DIAG`) held `low`.
 
 VELOX has two looks (`VELOX_SKINS`, js/sprites/velox.js): CANAL RUNNER (free: a navy wool cap, auburn
 hair in a braid down her back, a gold scarf, a satchel at her hip, skate blades under her boots) and
@@ -345,8 +345,11 @@ with a brass goggle band over dark hair, a work apron over the side's coat) and 
 200 coins: the same cut in slate and steel), both on ARMATOS's frame. They are A and C off
 sagitta-round1.png in the project files. Her dolls are `Siege` and `Tower` in
 app/bake-player/bodies.py; she runs on her drawn frames (`run: 'drawn'`). Her HEAVY ARBALEST is her
-basic attack's `art` (`SPRITES.weaponArt.arbalest`, prod left): held level facing a side and on the
-aim while drawn, shouldered prod-up facing down or up (`HERO_CARRY`, js/draw/sagitta.js).
+basic attack's `art` (`SPRITES.weaponArt.arbalest`, prod left, seen from above and cocked), with a
+slanted grid of the same crossbow (`SPRITES.weaponDiag.arbalest`, pointing down and right): she
+carries the slanted one low at her hip in every facing (`HERO_CARRY`, js/draw/sagitta.js) and aims
+in eight drawn headings, the level art in quarter turns or the slanted one (`aimHeading`,
+js/draw/bodies.js), never turned to a free angle.
 
 ARCUS has two looks (`ARCUS_SKINS`, js/sprites/arcus.js): WILLOW CUTTER (free: a brimmed felt cap
 with a white feather over short brown hair and a beard, a leather jerkin and a quiver on his back)

@@ -278,6 +278,12 @@ const NIX_DIRK = [
   '......................',
   '......................',
 ];
+// The same dirk slanted, point up and right (her carry turns it point down: BLADE_HOLDS.low)
+const NIX_DIRK_DIAG = [
+  '.........o..', '........oWo.', '.......oIio.', '......oIio..', '...o.oIio...', '..oEoWio....',
+  '...oEoo.....', '..oGoEo.....', '.ogo.o......', 'oIo.........', '.o..........',
+];
+const NIX_DIRK_GRIP = [3, 7]; // where her hand closes on the slanted grid
 const NIX_DIRK_PAL = { o: '#241a12', I: '#bfe6f8', i: '#7cc4e8', W: '#ffffff', E: '#8b93a8', g: '#3a3248', G: '#5c5470' };
 
 // ------------------------------------------------------------ nix registry
