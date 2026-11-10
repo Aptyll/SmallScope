@@ -285,12 +285,10 @@ const HERO_CARRY = [];
 //             down or up, forward over the shoulder side-on
 //   rest      the head down on the snow beside the foot, the haft up in the hand,
 //             facing down or up; side-on it is carried slanted
-//   low       point down and out from the fist at the hip (a short blade held the
-//             knife fighter's way)
 // Every one is the row's own drawn slanted grid, mirrored left to right or top to
 // bottom; none rises past the head, where the health frame sits. Side-on every
 // one leans the way the face looks (THE GRIP RULE, heroFist).
-const BLADE_HOLDS = { slant: {}, far: { far: true }, shoulder: { shoulder: true }, rest: { rest: true }, low: { low: true } };
+const BLADE_HOLDS = { slant: {}, far: { far: true }, shoulder: { shoulder: true }, rest: { rest: true } };
 // the carried blade in drawHeldTool's pass (`back`: behind the body); true when
 // this hero holds it its own way in this facing, drawn in this pass or the other
 function heroCarry(p, px, py, back) {
@@ -321,8 +319,7 @@ function heroCarry(p, px, py, back) {
       const at = up ? b.hip.up : b.hip.down;
       const out = up ? true : hold.far && p.dir === 'down' ? false : lead;
       const sx = out ? px + at[0] + rc : px + 15 - at[0] - rc;
-      const im = hold.low ? heldDrop(img) : img; // the point down
-      put(out ? im : heldFlip(im), out, sx, py + at[1], hold.low ? heldH(img) - 1 - b.grip[1] : b.grip[1]);
+      put(out ? img : heldFlip(img), out, sx, py + at[1], b.grip[1]);
       if (!up) heroFist(p, sx, py + at[1], out ? 1 : -1); // facing away the hand is the body's far side
     }
     return true;
