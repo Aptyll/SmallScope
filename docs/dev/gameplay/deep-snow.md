@@ -15,7 +15,7 @@ shows a marked body anywhere.
 **The look** ([js/draw/depth.js](../../../js/draw/depth.js)): the patch is baked into the ground as
 a raised drift (`deepTone`; its painted edge wanders a few pixels off the sim's rim, `DEEP_RAG`, so it is not a ruled oval, while who is hidden still reads the sim's own depth), and frosted dead reeds stand in it (`reedsOf`, a staggered `REED_STEP`
 grid jittered off the position hash, wherever the snow is deep; whole along the rim, `REED_RIM`,
-and open in patches inside it, `REED_GAP`, so the straw stands in clumps). Each reed is a tuft, a
+and open in a few small glades inside it, `REED_GAP` and `REED_GLADE`, so the middle is clumps and openings, never one bare floor). Each reed is a tuft, a
 dark root with blades fanning out of it (tall, short and thin, or bent over by the wind), off one
 small atlas (`reedAtlas`, `REED_PAL`), y-sorted with the bodies (`reedDraws` from `gatherDraws`,
 `drawReed` in `drawSorted`, js/draw/passes.js), so a body among them stands half behind the ones in
