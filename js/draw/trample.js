@@ -22,6 +22,11 @@ const TR_SHOVE_V = 40;                      // knockback speed (px/s) that throw
 const TR_HIT = 0.025;                       // churn per point of damage taken...
 const TR_HIT_MAX = 0.45;                    // ...up to this for one blow
 const TR_DEATH = 0.7;                       // a body going down
+const TR_SCUFF_N = 3;                       // scuffs a blow leaves (a fall leaves two more)
+const TR_SCUFF_R = 5;                       // px a scuff reaches along the snow, about
+const TR_SCUFF_FLAT = 2.4;                  // ...and how many times wider than tall it is
+const TR_SCUFF_OUT = 5;                     // px past the body's edge the furthest lands
+const TR_SCUFF_RISE = 5;                    // px of height the scuffs are spread over
 // Refill is LINEAR, the way snowfall fills a hollow: a constant depth per
 // second. At light snow a one-pass trail (~0.1) is gone in about ninety
 // seconds and a packed road (1.0) takes a quarter of an hour, so what a
@@ -64,18 +69,33 @@ function trChunk(ci) {
 }
 
 // press a disc of radius r (world px) round (x, y): pack and churn at its
-// centre, falling off to nothing at its rim
-function trStamp(x, y, r, pack, churn) {
+// centre, falling off to nothing at its rim. `flat` squashes it into a low
+// wide mark, that many times wider than it is tall (a scuff, trScuff)
+function trStamp(x, y, r, pack, churn, flat) {
   const c0 = Math.max(0, Math.floor((x - r) / TR_CELL)), c1 = Math.min(TR_W - 1, Math.floor((x + r) / TR_CELL));
   const r0 = Math.max(0, Math.floor((y - r) / TR_CELL)), r1 = Math.min(TR_W - 1, Math.floor((y + r) / TR_CELL));
-  const rr = r + TR_CELL * 0.5;
+  const rr = r + TR_CELL * 0.5, fy = flat || 1;
   for (let cy = r0; cy <= r1; cy++) for (let cx = c0; cx <= c1; cx++) {
-    const d = Math.hypot((cx + 0.5) * TR_CELL - x, (cy + 0.5) * TR_CELL - y);
+    const d = Math.hypot((cx + 0.5) * TR_CELL - x, ((cy + 0.5) * TR_CELL - y) * fy);
     if (d >= rr) continue;
     const k = 1 - d / rr, i = cy * TR_W + cx;
     if (pack) trPack[i] = Math.min(1, trPack[i] + pack * k);
     if (churn) trChurn[i] = Math.min(1, trChurn[i] + churn * k);
     trChunk(((cy / TR_CH) | 0) * TR_NCH + ((cx / TR_CH) | 0));
+  }
+}
+
+// a blow or a fall on the snow: never a disc of clods (it read as a dotted
+// ring under every fight). `n` scuffs instead, each low and wide, thrown
+// either side of the feet at its own reach, size and strength, the same on
+// every screen for the same spot
+function trScuff(x, y, r, n, pack, churn) {
+  const sx = Math.round(x), sy = Math.round(y);
+  for (let i = 0; i < n; i++) {
+    const side = (i & 1 ? 1 : -1) * (hash2(sx + i * 31, sy) < 0.5 ? 1 : -1); // not a matched pair every time
+    const ox = side * (2 + hash2(sx + i * 17, sy + 5) * (r + TR_SCUFF_OUT)), oy = (hash2(sx + 9, sy + i * 13) - 0.5) * TR_SCUFF_RISE;
+    const k = 0.55 + 0.45 * hash2(sx + i * 7, sy + 11);
+    trStamp(x + ox, y + oy, TR_SCUFF_R * (0.7 + 0.6 * hash2(sx + 3, sy + i * 19)), pack * k, churn * k, TR_SCUFF_FLAT);
   }
 }
 
@@ -86,13 +106,13 @@ function trBody(e, foot, r, pack) {
   const fy = e.y + foot;
   if (!s) { trSeen.set(e, { x: e.x, y: fy, d: 0, hp: e.hp, dead: !!e.dead }); return; }
   if (e.dead) {
-    if (!s.dead) trStamp(s.x, s.y, r + 5, TR_DEATH * 0.4, TR_DEATH);
+    if (!s.dead) trScuff(s.x, s.y, r + 3, TR_SCUFF_N + 2, TR_DEATH * 0.4, TR_DEATH);
     s.dead = true; s.hp = e.hp;
     return;
   }
   s.dead = false;
   if (typeof e.hp === 'number' && typeof s.hp === 'number' && e.hp < s.hp) {
-    trStamp(e.x, fy, r + 4, 0, Math.min(TR_HIT_MAX, (s.hp - e.hp) * TR_HIT));
+    trScuff(e.x, fy, r, TR_SCUFF_N, 0, Math.min(TR_HIT_MAX, (s.hp - e.hp) * TR_HIT));
   }
   s.hp = e.hp;
   const dx = e.x - s.x, dy = fy - s.y, d = Math.hypot(dx, dy);
