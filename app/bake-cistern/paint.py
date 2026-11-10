@@ -282,12 +282,21 @@ def paint_tops(c, out):
     # the sills: big quiet slabs, snow lying in clumps
     xw, yw = c['xw'], c['yw']
     d1, d2 = xw - yw, xw + yw
+    # each slab its own tone, bevelled: its up-left arris lit, its down-right
+    # edge dark against the joint, a crack across the odd one, snow packed in
+    # the joints and drifted on the slabs where the noise lies thick
     row = np.floor_divide(d2, 12)
-    joint = (np.mod(d1 + (row % 2) * 9, 18) == 0) | (np.mod(d2, 12) == 0)
+    u, v = np.mod(d1 + (row % 2) * 9, 18), np.mod(d2, 12)
+    joint = (u == 0) | (v == 0)
     slab = h2(np.floor_divide(d1 + (row % 2) * 9, 18) * 1.0, row * 1.0)
-    col = np.where((slab < 0.35)[:, None], COL['mid2'], COL['mid'])
+    col = np.where((slab < 0.3)[:, None], COL['mid2'], np.where((slab < 0.7)[:, None], COL['mid'], COL['lit']))
+    col = np.where(((u == 17) | (v == 11))[:, None], COL['dark'], col)
+    col = np.where(((u == 1) | (v == 1))[:, None] & ~((u == 17) | (v == 11))[:, None], COL['lit'], col)
+    crack = (slab > 0.84) & (np.abs(u - 4 - v * 0.8) < 0.6) & (u > 2) & (u < 16)
+    col = np.where(crack[:, None], COL['dark'], col)
     col = np.where(joint[:, None], COL['jt'], col)
     sn = vnoise(xw / 7.0 + 3.1, yw / 7.0 + 7.7) * 0.75 + c['hh'] * 0.12
+    col = np.where((joint & (sn > 0.55))[:, None], COL['snowD'], col)
     col = np.where((sn > 0.86)[:, None], COL['snow'], col)
     m = mt & (mat == M_SILL); out[m] = col[m]
     # a broken course's top: the cut blocks, their joints, snow lying on every step
@@ -301,6 +310,8 @@ def paint_tops(c, out):
     # a fallen block: snow on its top, darker where it tilts from the sun
     col = np.where((c['hh'] < 0.08)[:, None], COL['snowD'], COL['snow'])
     col = np.where((c['lumT'] < 0.55)[:, None], COL['snowD'], col)
+    bare = vnoise(c['xw'] / 3.0 + 4.7, c['yw'] / 3.0 + 1.9) > 0.72 # where the snow slid off: the cut stone under it
+    col = np.where(bare[:, None], np.where((c['lumT'] < 0.55)[:, None], COL['mid'], COL['lit']), col)
     m = mt & (mat == M_BLOCK); out[m] = col[m]
 
 def paint_faces(c, out):
