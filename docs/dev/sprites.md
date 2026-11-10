@@ -189,7 +189,7 @@ is bought. They are M and O off fortiva-round4.png in the project files; their d
 BELLA's looks (`BELLA_SKINS`, js/sprites/bella.js) are built the same way on ARMATOS's frame, legs
 and torso planes (`BELLA_PAL` is `ARM_PAL` with her dark hair `a`/`A` and the traitor's mask and
 mantle `q`/`Q`). Three shapes carry her from a distance: the high ponytail, the gold epaulettes
-and her side's coat. IMPERIAL GENERAL (a gold circlet) is her own; TRAITOR'S BLADE (the same
+and her side's coat. IMPERIAL GENERAL (a gold circlet) is her own; EXILE'S BLADE (the same
 ponytail, an iron band, a dark mask, a dark mantle where the gold was) is bought. They are P off
 bella-round4.png in the project files and its skin; their dolls (`General`, `Traitor` in
 app/bake-player/bodies.py) stream the ponytail behind her in the run (the doll's `hair` and `cloak`
@@ -223,7 +223,7 @@ star-gold `s` of her circlet). It is A off aura-round1.png in the project files;
 keeps the head at the front's width, the face flush with it. From behind her dress shows
 under the hair and the mantle in the side's colour, so her side reads in every facing. Her doll (`Light` in
 app/bake-player/bodies.py) paints the mantle in the doll's `cloak` material and only the roll is
-used. Her 48 px model is her own front frame at 3x (`portrait`). Her STAR SHARD is a staff like IGNIA's:
+used. Her 48 px model is her own front frame at 3x (`portrait`). Her STAR-GLASS is a staff like IGNIA's:
 `staff: 'shard'` names `HERO_STAVES.shard` (`AURA_SHARD`, js/draw/aura.js), a fallen star's
 splinter on a dark shaft whose tip glints between two baked frames.
 
