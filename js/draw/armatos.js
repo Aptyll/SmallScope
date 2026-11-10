@@ -10,29 +10,31 @@ const STD_INK = '#141a2c';
 
 // the cloth: 4 x 5 off the pole's head, torn up the bottom, `dir` +1 flying
 // right of the pole and -1 left. `fill` 0..1 is how much of it (from the bottom)
-// is gold; full, it glints.
-function drawStdCloth(x, y, dir, col, fill, now) {
+// is gold; full, it glints. `sway` +1 streams it a pixel further out, -1 a pixel in
+// (the cloth a beat behind his stop or turn, idleShown, js/draw/idle.js).
+function drawStdCloth(x, y, dir, col, fill, now, sway) {
   const rows = [4, 4, 4, 3, 2]; // the tear: shorter toward the bottom
   const gold = Math.round(fill * rows.length);
   for (let r = 0; r < rows.length; r++) {
     const g = r >= rows.length - gold;
-    for (let c = 0; c < rows[r]; c++) {
+    const n = Math.max(1, rows[r] + (sway || 0));
+    for (let c = 0; c < n; c++) {
       const cx = dir > 0 ? x + 1 + c : x - 1 - c;
-      ctx.fillStyle = g ? (c === rows[r] - 1 ? STD_GOLD_D : STD_GOLD) : col;
+      ctx.fillStyle = g ? (c === n - 1 ? STD_GOLD_D : STD_GOLD) : col;
       ctx.fillRect(cx, y + r, 1, 1);
     }
   }
   if (fill >= 1 && Math.floor(now * 4) % 3 === 0) { ctx.fillStyle = '#ffffff'; ctx.fillRect(dir > 0 ? x + 2 : x - 2, y + 1, 1, 1); }
 }
 // the pole and its cloth, its foot at (fx, fy), `h` px tall
-function drawStandard(fx, fy, h, dir, col, fill, now) {
+function drawStandard(fx, fy, h, dir, col, fill, now, sway) {
   ctx.fillStyle = STD_INK;
   ctx.fillRect(fx - 1, fy - h - 1, 3, h + 1);
   ctx.fillStyle = STD_POLE;
   ctx.fillRect(fx, fy - h, 1, h);
   ctx.fillStyle = STD_GOLD;   // the finial
   ctx.fillRect(fx, fy - h - 1, 1, 1);
-  drawStdCloth(fx, fy - h + 1, dir, col, fill, now);
+  drawStdCloth(fx, fy - h + 1, dir, col, fill, now, sway);
 }
 // The standard on his back, at the body's cell (ax, ay, its top-left).
 // Facing away it is drawn over the body (the back is what shows); otherwise
@@ -44,7 +46,8 @@ function drawHeroBack(p, ax, ay, now, front) {
   if (front !== up) return;
   const fx = ax + (p.dir === 'left' ? 11 : 4); // over the shoulder the sword is not in
   const dir = p.dir === 'left' ? 1 : -1; // the cloth streams out away from the body
-  drawStandard(fx, ay + 10, 11, dir, TEAMS[skin(p.team)].mark, p.resolve, now); // its head beside his, under the plate
+  const idle = idleShown(p); // it rides his shoulders' breath, and its cloth hangs behind his stop or turn
+  drawStandard(fx, ay + 10, 11 - idle.b, dir, TEAMS[skin(p.team)].mark, p.resolve, now, idle.lag ? idle.lag.dx * dir : 0); // its head beside his, under the plate
 }
 
 // ---- the greatsword in his hands -----------------------------------------------

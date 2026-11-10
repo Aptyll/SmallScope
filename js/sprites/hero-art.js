@@ -4,7 +4,8 @@
 // `id` on its CLASSES row (js/sim/player.js), which is also the profile's skin
 // slot and the key its look rides the hello under (p.skins). Each hero's own
 // sprite file registers once, at its end, with heroArt(id, art):
-//   looks   its looks, the free one first (`grids`, `motion`, optional `pal`):
+//   looks   its looks, the free one first (`grids`, `motion`, optional `pal`, and the
+//           loose `cloth` boxes and skirt `hem` rows that hang behind a stop, heroCloth):
 //           every body (champLook), the skins screen's tab, the draft's strip
 //   pal     the paint under every look, over the team's coat
 //   glyph   the skins navbar's 8x8 tab glyph ('w' lit)

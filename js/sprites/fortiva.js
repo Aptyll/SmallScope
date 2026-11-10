@@ -309,8 +309,8 @@ const FORT_PAL = Object.assign({}, ARM_PAL, { a: '#9a4a26', A: '#c86a34', c: '#b
 // The looks she can wear: the first is her own and free, the rest are bought
 // with coins on the skins screen (js/ui/skins.js, the FORTIVA tab).
 const FORT_SKINS = [
-  { id: 'unbroken', name: 'UNBROKEN', rarity: 'common', price: 0, grids: FORT_BODY.unbroken, motion: 'unbroken' },
-  { id: 'coif', name: 'CHAINBREAKER', rarity: 'rare', price: 200, grids: FORT_BODY.coif, motion: 'coif' },
+  { id: 'unbroken', name: 'UNBROKEN', rarity: 'common', price: 0, grids: FORT_BODY.unbroken, motion: 'unbroken', cloth: { down: [[12, 11, 13, 14]], side: [[2, 5, 3, 11]], up: [[2, 12, 3, 14]] } },
+  { id: 'coif', name: 'CHAINBREAKER', rarity: 'rare', price: 200, grids: FORT_BODY.coif, motion: 'coif', cloth: { down: [[2, 12, 3, 14], [12, 12, 13, 14]], up: [[2, 12, 3, 14], [12, 12, 13, 14]] } },
 ];
 
 // ------------------------------------------------------------ fortiva greatsword

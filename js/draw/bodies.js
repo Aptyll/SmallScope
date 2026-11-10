@@ -386,6 +386,9 @@ function drawPlayer(p, ex, ey, now, stage) {
   // ...and a body on the move runs: the doll's eight frames (runFrame)
   const running = frame > 0 && p.fallT <= 0;
   if (running) spr = classSet(p)[handsBusy(p) ? 'hold' : 'run'][p.dir][runFrame(p)];
+  // ...and standing still it breathes, its cloth a beat behind a stop or a turn (js/draw/idle.js)
+  idleTick(p, striding, now);
+  if (frame === 0 && !seat && p.fallT <= 0 && !(state.mode !== 'title' && abilityPose(p))) spr = idleFrame(p, now);
   const MB = SPRITES.motionBox;
   const px = Math.round(p.x - 8 - ex) + (seat ? seat.dx : 0);
   const py = Math.round(p.y - 12 - ey) - rl; // a rider's whole body - held tool, marks, plate - sits up on the deer
