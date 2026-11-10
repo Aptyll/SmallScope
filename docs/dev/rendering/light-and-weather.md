@@ -25,14 +25,14 @@ object adds a pass here; it does not register anywhere.
 **hue** and the **edge**, because the one thing it cannot be is the middle of the screen going
 dark — a top-down field read at a glance has to stay read at a glance. Measured on seed 42's
 roost (daylight: open snow L169, pines L108), the tint leaves snow at **L98** and pines at
-**L51** — a darker one sinks a blue MERCH tag into blue snow and takes the red out of a red
+**L51** — a darker one sinks a blue name tag into blue snow and takes the red out of a red
 team's paint — while its channels stay far
 apart — `NIGHT_TINT`'s blue is nearly twice its red, and **that ratio is the whole read**; lifting
 it is what turns night into dusk. `NIGHT_EDGE` then takes the light back at the corners, where
 nobody is reading anything. Those four numbers are what to re-measure after retuning it.
 
-**The grade dims what the world *is*, never what the game is *saying*.** A name tag, the MERCH /
-PERCH caps and a damage floater are HUD that happens to be pinned to a body, and a `multiply`
+**The grade dims what the world *is*, never what the game is *saying*.** A name tag, the
+PERCH cap and a damage floater are HUD that happens to be pinned to a body, and a `multiply`
 lands on the ink and on the snow under it alike — so a coloured readout converges on its own
 background exactly as fast as that background cools. Pre-brightening the ink cannot fix it: the
 tint's red channel is half its blue, so a RED team's tag loses its hue before it regains its
