@@ -32,11 +32,21 @@ function luPool(px, py, r, alpha) {
   }
   ctx.globalAlpha = 1;
 }
-// lamplight lying on the snow `r` px round (px, py): the snow warmed amber, deeper at its
-// heart, its edge broken so it reads as light spilt and never as a ring
-function luWarm(px, py, r, alpha, seed) {
-  ctx.globalAlpha = alpha * 0.55; fxPatch(px, py, r, 0.55, 7, seed, '#f0b24a');
-  ctx.globalAlpha = alpha * 0.6; fxPatch(px, py, Math.round(r * 0.6), 0.55, 5, seed + 1, '#ffd27a');
+// lamplight lying on the snow `r` px round (px, py): never a flat see-through blob. The
+// snow warmed in three stepped bands with a wandering shore, each brighter toward the
+// lamp, and short rays of light thrown out over it that breathe, no two a like length
+function luWarm(px, py, r, alpha, seed, now) {
+  ctx.globalAlpha = alpha * 0.5; fxSheet(px, py, r, 0.16, seed, '#f0b24a', null, 0.55);
+  ctx.globalAlpha = alpha * 0.65; fxSheet(px, py, r * 0.66, 0.2, seed + 1, '#ffd27a', null, 0.55);
+  ctx.globalAlpha = alpha * 0.8; fxSheet(px, py, r * 0.34, 0.22, seed + 2, LU_LIGHT, null, 0.55);
+  ctx.globalAlpha = alpha; ctx.fillStyle = LU_LIGHT;
+  for (let k = 0; k < 9; k++) {
+    const a = (k + fxRoll(seed, k, 3) * 0.7) / 9 * Math.PI * 2, len = r * (0.5 + 0.4 * fxRoll(seed, k, 4)) + Math.sin((now || 0) * 3 + k * 1.7) * 2;
+    for (let d = r * 0.3; d < len; d += 1) {
+      if (d > len - 3 && (d | 0) % 2) continue; // thinning out at its tip
+      ctx.fillRect(Math.round(px + Math.cos(a) * d), Math.round(py + Math.sin(a) * d * 0.55), 1, 1);
+    }
+  }
   ctx.globalAlpha = 1;
 }
 // the small lantern at (px, py) (its foot), lit
@@ -84,7 +94,7 @@ function drawLucernaGround(ex, ey, now) {
     if (px < -LANTERN_SEE || py < -LANTERN_SEE || px > WV_W + LANTERN_SEE || py > WV_H + LANTERN_SEE) continue;
     const left = l.life - l.t;
     const seed = (Math.round(l.x) * 7 + Math.round(l.y) * 13) | 0;
-    luWarm(px, py, Math.round(LANTERN_SEE * 0.8), 0.7, seed);
+    luWarm(px, py, Math.round(LANTERN_SEE * 0.8), 0.7, seed, now);
     if (!(left < 1 && Math.floor(now * 8) % 2)) { ctx.globalAlpha = 0.6; fxPatch(px, py, LANTERN_R, 0.6, 3, seed + 2, LU_LIGHT); ctx.globalAlpha = 1; } // the bright heart an ally steps on
     luLantern(px, py, now);
   }

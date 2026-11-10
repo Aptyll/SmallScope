@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['HIEMS clear ice, LUCERNA lantern and SALVIA thaw lie on the snow as ice, light and melt instead of flat discs', '0.888'],
     ['SAGITTA sight is a pale thread with a sparkle on the first body in its path', '0.887'],
     ['FALCO\'s hawk has a dark hood, a pale breast and a tail', '0.886'],
     ['Lignum fells a whole snowy pine with TIMBER: boughs, a pine shadow as it tips, and snow thrown up where it lands', '0.885'],

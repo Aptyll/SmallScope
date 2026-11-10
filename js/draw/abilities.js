@@ -254,6 +254,32 @@ function fxPatch(px, py, r, sq, rag, seed, col) {
     if (w * 2 + 1 - l - e > 0) ctx.fillRect(px - w + l, py + y, w * 2 + 1 - l - e, 1);
   }
 }
+// A sheet lying on the snow with a shore, not a circle: round (px, py) out to about r,
+// its edge wandering in and out by `wob` of that in a few slow lobes and a fine ripple,
+// the same for the same seed. Filled a row at a time in the current alpha; `rim` (if
+// given) is laid on the two ends of most rows, so the shore has a broken lip.
+function fxShore(seed, a) {
+  return Math.sin(a * 2 + fxRoll(seed, 1, 1) * 6.3) * 0.45 + Math.sin(a * 3 + fxRoll(seed, 2, 1) * 6.3) * 0.3 + Math.sin(a * 7 + fxRoll(seed, 3, 1) * 6.3) * 0.25;
+}
+function fxSheet(px, py, r, wob, seed, col, rim, sq) {
+  const R = Math.ceil(r * (1 + wob)), k = sq || 1, Ry = Math.ceil(R * k); // sq squashes it top to bottom (light lying on the ground, seen from above and behind)
+  for (let y = -Ry; y <= Ry; y++) {
+    let x0 = 1, x1 = -1;
+    for (let x = -R; x <= R; x++) {
+      const d = Math.hypot(x, y / k);
+      if (d > r * (1 + wob * fxShore(seed, Math.atan2(y / k, x)))) continue;
+      if (x0 > x1) x0 = x;
+      x1 = x;
+    }
+    if (x0 > x1) continue;
+    ctx.fillStyle = col; ctx.fillRect(px + x0, py + y, x1 - x0 + 1, 1);
+    if (rim) { // broken here and there: a lip, not an outline
+      ctx.fillStyle = rim;
+      if (fxRoll(seed, y + 300, 8) > 0.3) ctx.fillRect(px + x0, py + y, 1, 1);
+      if (fxRoll(seed, y + 300, 9) > 0.3) ctx.fillRect(px + x1, py + y, 1, 1);
+    }
+  }
+}
 // Cracks run out from (px, py): n jagged lines, each `len` px at full, grown to `grow`
 // of that. dark is the split, lite the lit lip under it.
 function drawCracks(px, py, n, len, grow, seed, dark, lite) {
