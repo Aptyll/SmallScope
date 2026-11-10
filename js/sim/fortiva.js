@@ -80,7 +80,6 @@ const FORT_AB = [
   },
   {
     id: 'nokneel', name: 'NO KNEELING', cd: [90, 80, 70], ap: 0.8, cast: 0.3, aim: { ring: NOKNEEL_R },
-    worn: { t: 'nkT', look: 'power' }, // the look it leaves on the body (drawWorn, js/draw/abilities.js)
     rank: { dmg: [30, 45, 60], up: 0.6, t: NOKNEEL_T, ten: NOKNEEL_TEN }, // up: the heart of it; t/ten: the after
     tip: 'LEAP IN AND KNOCK UP',
     blurb: 'LEAP AND BRING THE SWORD DOWN. THE HEART OF THE BLOW THROWS THEM UP. AFTER, YOU ARE HARD TO STOP AND HIT HARDER.',

@@ -67,7 +67,6 @@ const IGNIA_AB = [
   },
   {
     id: 'warm', name: 'WARM HANDS', cd: [14, 13, 12, 11, 10], cast: 0.05,
-    worn: { t: 'warmT', look: 'power' }, // the look it leaves on the body (drawWorn, js/draw/abilities.js)
     rank: { walk: [1.15, 1.2, 1.25, 1.3, 1.35], hot: WARM_HOT, t: WARM_T }, // walk: her walk while it waits; hot: the next key's burn
     tip: 'NEXT ABILITY BURNS TWICE AS HOT',
     blurb: 'YOUR NEXT ABILITY IS CAST TWICE AS HOT. WHILE IT IS READY, YOU WALK FASTER.',

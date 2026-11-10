@@ -51,7 +51,6 @@ const BUCINA_AB = [
   },
   {
     id: 'note', name: 'RALLYING NOTE', cd: [16, 15, 14, 13, 12], cast: 0.25,
-    worn: { t: 'rallyT', look: 'power' }, // the look it leaves on the body (drawWorn, js/draw/abilities.js)
     rank: { as: [0.2, 0.25, 0.3, 0.35, 0.4] }, // attack speed added to each ally inside
     tip: 'ALLIES NEAR YOU ATTACK FASTER AND HOLD FIRM',
     blurb: 'A NOTE IN A RING AROUND HER. ALLIES INSIDE ATTACK FASTER AND SHRUG OFF PART OF EVERY STUN AND SLOW FOR A FEW SECONDS.',

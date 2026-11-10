@@ -69,7 +69,6 @@ const SALVIA_AB = [
   },
   {
     id: 'cloak', name: 'WARM CLOAK', cd: [16, 15, 14, 13, 12], ap: 0.18, cast: 0.1, aim: { line: CLOAK_RANGE },
-    worn: { t: 'cloakT', look: 'haste' }, // the look it leaves on the body (drawWorn, js/draw/abilities.js)
     rank: { shield: [40, 60, 80, 100, 120] }, // the shield round the ally wrapped
     tip: 'SHIELD AN ALLY AND SPEED THEM UP',
     blurb: 'WRAP THE ALLY NEAREST THE AIM, OR YOURSELF, IN A WARM CLOAK: A SHIELD FOR A FEW SECONDS AND A BURST OF SPEED.',

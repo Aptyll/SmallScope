@@ -85,7 +85,6 @@ const VELOX_AB = [
   },
   {
     id: 'run', name: 'LONG RUN', cd: [100, 85, 70], ap: 0.3, cast: 0.1,
-    worn: { t: 'runT', look: 'haste' }, // the look it leaves on the body (drawWorn, js/draw/abilities.js)
     rank: { t: [4, 5, 6], dmg: [14, 22, 30] }, // t: s it lasts; dmg: each second stone
     tip: 'SKATE FAST. EACH THROW THROWS TWO',
     blurb: 'FOR A FEW SECONDS YOU SKATE AT FULL SPEED AND SLOWS BARELY HOLD YOU. EACH SLING THROW THAT LANDS THROWS A SECOND STONE AT THE NEXT RIVAL NEAR IT.',

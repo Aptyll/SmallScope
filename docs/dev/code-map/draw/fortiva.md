@@ -4,4 +4,4 @@
 | --- | --- | --- |
 | her keys' wind-up shapes on the snow | `drawSeverTele`, `drawYokeTele`, `drawNoKneelTele` (`drawAbilityGround`, abilities.js) | `fortiva` |
 | her greatsword in her hands, in the other hand from ARMATOS facing down (`HERO_BLADES.chain`, `hold: 'far'`) | `fortSwords` | `fortiva` › `the greatsword in her hands` |
-| what her state wears on her body: high-resolve glints (`HERO_BODY_FX`; the ward and the after wear the shared `worn` rims, js/draw/abilities.js) | `drawFortBody` | `fortiva` › `on her body` |
+| what her state wears on her body: high-resolve glints, DEFIANT HEART's shell, NO KNEELING's embers (`HERO_BODY_FX`) | `drawFortBody` | `fortiva` › `on her body` |

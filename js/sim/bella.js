@@ -67,7 +67,6 @@ const BELLA_AB = [
   },
   {
     id: 'parry', name: 'PERFECT PARRY', cd: [10, 9.5, 9, 8.5, 8], ap: 0.5, cast: 0.05,
-    worn: { t: 'parryT', look: 'guard' }, // the look it leaves on the body (drawWorn, js/draw/abilities.js)
     rank: { dmg: [14, 19, 24, 29, 34], stun: PARRY_STUN, t: PARRY_T, cut: PARRY_CUT }, // dmg/stun: the riposte
     tip: 'PARRY A HERO. RIPOSTE AND STUN',
     blurb: 'A SHORT STANCE. THE FIRST HERO WHO STRIKES YOU IN IT IS TURNED ASIDE AND ANSWERED: A RIPOSTE THAT STUNS.',

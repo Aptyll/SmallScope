@@ -107,82 +107,6 @@ function drawSlashes(ex, ey) {
   }
 }
 
-// ---- the landing beat ----
-// A blow's first beat on the snow is the whole shape filled solid in the
-// blow's colour inside an ink rim, so the moment it lands is the loudest
-// thing about it - louder than the wind-up that warned of it - and a pale
-// blow still reads on white snow. Then the outline fades as before.
-const AB_IMPACT = 0.4;   // share of AB_FX_T the solid beat holds
-const IMPACT_INK = '#1b2233';
-// fill polygons of whole pixels, row by row, even-odd (so a contour inside
-// another is a hole), so the shape stays on the pixel grid: one rect per
-// run, never a smoothed path. `cs` is a list of contours, each a list of [x, y]
-function fillPolyPx(cs) {
-  let y0 = Infinity, y1 = -Infinity;
-  for (const c of cs) for (const q of c) { y0 = Math.min(y0, q[1]); y1 = Math.max(y1, q[1]); }
-  y0 = Math.max(Math.ceil(y0), -2); y1 = Math.min(Math.floor(y1), WV_H + 2);
-  const xs = [];
-  for (let y = y0; y <= y1; y++) {
-    xs.length = 0;
-    const yc = y + 0.5;
-    for (const c of cs) for (let i = 0, j = c.length - 1; i < c.length; j = i++) {
-      const a = c[i], b = c[j];
-      if ((a[1] > yc) !== (b[1] > yc)) xs.push(a[0] + (yc - a[1]) / (b[1] - a[1]) * (b[0] - a[0]));
-    }
-    xs.sort((m, n) => m - n);
-    for (let k = 0; k + 1 < xs.length; k += 2) {
-      const l = Math.max(-2, Math.round(xs[k])), r = Math.min(WV_W + 2, Math.round(xs[k + 1]));
-      if (r > l) ctx.fillRect(l, y, r - l, 1);
-    }
-  }
-}
-// a ring's or a wedge's arc as points, radius r
-function arcPts(px, py, r, a0, a1, n) {
-  const pts = [];
-  for (let i = 0; i <= n; i++) { const t = a0 + (i / n) * (a1 - a0); pts.push([px + Math.cos(t) * r, py + Math.sin(t) * r]); }
-  return pts;
-}
-// the contours of a landed shape in screen px, grown by `grow`; a ring or a
-// wedge wider than IMPACT_BAND is only its outer band (a shockwave, not a
-// painted disc), the inside left to the hash
-const IMPACT_BAND = 5;
-function impactPts(f, px, py, grow) {
-  if (f.kind === 'line') {
-    const nx = Math.cos(f.a), ny = Math.sin(f.a), h = f.half + grow, l = f.r + grow, b = -grow;
-    return [[[px + nx * b - ny * h, py + ny * b + nx * h], [px + nx * l - ny * h, py + ny * l + nx * h], [px + nx * l + ny * h, py + ny * l - nx * h], [px + nx * b + ny * h, py + ny * b - nx * h]]];
-  }
-  const r = f.r + grow, ri = r - IMPACT_BAND - grow;
-  if (f.kind === 'wedge') {
-    const n = Math.max(6, Math.round(r * f.half / 2));
-    const out = arcPts(px, py, r, f.a - f.half, f.a + f.half, n);
-    if (ri < 6) return [[[px, py], ...out]];
-    return [[...out, ...arcPts(px, py, ri, f.a + f.half, f.a - f.half, n)]];
-  }
-  const n = Math.max(16, Math.round(r * 1.5));
-  const cs = [arcPts(px, py + 2, r, 0, Math.PI * 2, n)];
-  if (ri > 4) cs.push(arcPts(px, py + 2, ri, 0, Math.PI * 2, n));
-  return cs;
-}
-// a pale blow (white, frost) lands in the wind-up's own hot gold instead:
-// white on snow is no landing at all
-const impactCols = {};
-function impactCol(col) {
-  if (impactCols[col]) return impactCols[col];
-  const n = parseInt(col.slice(1), 16), lum = (0.3 * (n >> 16) + 0.59 * ((n >> 8) & 255) + 0.11 * (n & 255)) / 255;
-  return (impactCols[col] = lum > 0.8 ? TELE_HOT : col);
-}
-// k: 1 at the landing, 0 as the beat ends
-function drawImpact(f, px, py, k) {
-  const grow = (1 - k) * 3;
-  ctx.globalAlpha = 0.8 * k;
-  ctx.fillStyle = IMPACT_INK;
-  fillPolyPx(impactPts(f, px, py + 1, grow + 1.5));
-  ctx.globalAlpha = Math.min(1, 0.35 + k);
-  ctx.fillStyle = impactCol(f.col);
-  fillPolyPx(impactPts(f, px, py, grow));
-  ctx.globalAlpha = 1;
-}
-
 function drawAbilityGround(ex, ey, now) {
   // every wind-up's telegraph, live off the caster and drawn for BOTH sides
   // (each row's own `tele`): a line, a ring, a wedge - each in the wind-up
@@ -209,7 +133,6 @@ function drawAbilityGround(ex, ey, now) {
     if (px < -60 || py < -60 || px > WV_W + 60 || py > WV_H + 60) continue;
     const prog = f.t / AB_FX_T;
     const alpha = 0.9 * (1 - prog);
-    if (prog < AB_IMPACT) drawImpact(f, px, py, 1 - prog / AB_IMPACT); // the beat it lands: the whole shape, solid
     if (f.kind === 'wedge') drawWedge(px, py, f.a, f.r + prog * 3, f.half, f.col, alpha, 1 - prog);
     else if (f.kind === 'line') drawLineBox(px, py, f.a, f.r, f.half, f.col, alpha, 1 - prog);
     else drawRing(px, py + 2, f.r + prog * 4, f.col, alpha, 1 - prog);
@@ -242,7 +165,6 @@ function abilityPose(p) {
 // cannot play around, and that is as true of a deer as of a rival. Called by drawAbilityOnPlayer below and by drawAnimal /
 // drawRobot (js/draw/bodies.js).
 function drawUnitStates(e, px, py, w, h, now) {
-  if (e.slowT > 0 && !(e.rootT > 0)) drawSlowFrost(e, px, py, w, h);
   if (e.rootT > 0) {
     // the sprung jaws, closed on the feet
     ctx.fillStyle = '#3c4356';
@@ -307,109 +229,7 @@ function drawAbilityOnPlayer(p, px, py, now) {
     ctx.fillRect(0, -2, 1, 4);
     ctx.restore();
   }
-  drawWorn(p, px, py, now);
   drawUnitStates(p, px, py, 16, 16, now);
-}
-
-// ---- what a key leaves worn on a body ----------------------------------
-// A key that changes a body without moving it (a brace, a buff, a quickening)
-// names the clock it sets and one of three shared looks on its row (`worn`):
-// GUARD a gold rim round the model (hits cut, a ward up), POWER an orange
-// rim (its blows hit harder or faster), HASTE white streaks trailing it (it
-// runs faster). The same look means the same thing on
-// every hero, for both sides, and on an ally who was given it. Every ward
-// (shieldUnit's wardHp) wears GUARD too. Each mark has an ink rim: pale alone
-// vanishes on snow. The colours are the ability key's (damage red, control
-// ice, heal green, protect gold, move white).
-const WORN_COL = { guard: '#ffd95c', power: '#ff9440', haste: '#f4f7ff' };
-const WORN_INK = '#1b2233';
-const WORN_FADE = 0.5; // s a look fades out over before its clock ends
-let wornRows = null;
-function wornOf() {
-  if (wornRows) return wornRows;
-  wornRows = [];
-  for (const rows of CLASS_AB) for (const ab of rows) if (ab && ab.worn && !wornRows.some((w) => w.t === ab.worn.t)) wornRows.push(ab.worn);
-  return wornRows;
-}
-// how strongly each look is on this body, 0..1 (fading out over WORN_FADE)
-function wornOn(p) {
-  const on = { guard: 0, power: 0, haste: 0 };
-  for (const w of wornOf()) if (p[w.t] > 0) on[w.look] = Math.max(on[w.look], Math.min(1, p[w.t] / WORN_FADE));
-  if (p.wardHp > 0 && p.wardT > 0) on.guard = Math.max(on.guard, Math.min(1, p.wardT / WORN_FADE));
-  return on;
-}
-// over the body: the streaks (the rims ride under the model, drawWornRim)
-function drawWorn(p, px, py, now) {
-  if (p.prone) return;
-  const on = wornOn(p);
-  if (on.haste) wornHaste(p, px, py, now, on.haste);
-}
-// GUARD and POWER hug the model itself: a 1 px rim of the look's colour round
-// the sprite's own silhouette, drawn just before the sprite (drawPlayer), so it
-// fits every hero and every frame and never sits where the frame or a weapon
-// is. Guard wins when both are on: being hard to hurt is the thing to read.
-const WORN_RIM1 = [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [1, -1], [-1, 1], [1, 1]]; // the colour, 1 px out
-const WORN_RIM2 = [[-2, 0], [2, 0], [0, -2], [0, 2], [-2, -1], [2, -1], [-2, 1], [2, 1], [-1, -2], [1, -2], [-1, 2], [1, 2]]; // its ink, 2 px out
-const wornTint = new WeakMap(); // sprite -> { colour: its silhouette in that colour }
-function wornSil(spr, col) {
-  let m = wornTint.get(spr);
-  if (!m) wornTint.set(spr, (m = {}));
-  if (m[col]) return m[col];
-  const cv = document.createElement('canvas');
-  cv.width = spr.width; cv.height = spr.height;
-  const g = cv.getContext('2d');
-  g.drawImage(spr, 0, 0);
-  g.globalCompositeOperation = 'source-in';
-  g.fillStyle = col; g.fillRect(0, 0, cv.width, cv.height);
-  return (m[col] = cv);
-}
-function drawWornRim(p, spr, sx, sy, now) {
-  if (p.prone) return;
-  const on = wornOn(p);
-  const look = on.guard ? 'guard' : on.power ? 'power' : '';
-  if (!look) return;
-  const a0 = ctx.globalAlpha, ink = wornSil(spr, WORN_INK), sil = wornSil(spr, WORN_COL[look]);
-  ctx.globalAlpha = a0 * on[look] * (0.8 + 0.2 * Math.sin(now * 8));
-  for (const [dx, dy] of WORN_RIM2) ctx.drawImage(ink, sx + dx, sy + dy);
-  for (const [dx, dy] of WORN_RIM1) ctx.drawImage(sil, sx + dx, sy + dy);
-  ctx.globalAlpha = a0;
-}
-function wornDot(x, y, w, h, col) {
-  ctx.fillStyle = WORN_INK; ctx.fillRect(x - 1, y - 1, w + 2, h + 2);
-  ctx.fillStyle = col; ctx.fillRect(x, y, w, h);
-}
-// three streaks trailing the way it came (behind its facing when it stands)
-function wornHaste(p, px, py, now, a) {
-  const sp = Math.hypot(p.vx || 0, p.vy || 0);
-  let bx = -(p.vx || 0) / (sp || 1), by = -(p.vy || 0) / (sp || 1);
-  if (sp < 8) { bx = p.dir === 'left' ? 1 : p.dir === 'right' ? -1 : 0; by = p.dir === 'up' ? 1 : p.dir === 'down' ? -1 : 0; if (!bx && !by) bx = -1; }
-  const side = Math.abs(bx) >= Math.abs(by);
-  ctx.globalAlpha = a;
-  for (let k = 0; k < 3; k++) {
-    const len = 4 + ((k + Math.floor(now * 8)) % 3);
-    if (side) {
-      const x = bx > 0 ? px + 17 : px - 1 - len, y = py + 5 + k * 3;
-      wornDot(x, y, len, 1, WORN_COL.haste);
-    } else {
-      const y = by > 0 ? py + 17 : py - 1 - len, x = px + 3 + k * 4;
-      wornDot(x, y, 1, len, WORN_COL.haste);
-    }
-  }
-  ctx.globalAlpha = 1;
-}
-// SLOWED: ice crusted round the feet, inked, in the control colour - the
-// commonest state in a fight had no tell on the body at all
-const SLOW_ICE = '#7fc8ff', SLOW_ICE_LIT = '#e6f6ff';
-function drawSlowFrost(e, px, py, w, h) {
-  ctx.globalAlpha = Math.min(1, e.slowT / WORN_FADE);
-  const y = py + h - 2, n = Math.max(2, Math.round(w / 5));
-  for (let k = 0; k < n; k++) {
-    const x = px + Math.round((w - 3) * (k / Math.max(1, n - 1))), tall = k % 2 ? 2 : 3;
-    ctx.fillStyle = WORN_INK; ctx.fillRect(x - 1, y - tall, 4, tall + 2);
-    ctx.fillStyle = SLOW_ICE; ctx.fillRect(x, y - tall + 1, 2, tall);
-    ctx.fillStyle = SLOW_ICE_LIT; ctx.fillRect(x, y - tall + 1, 1, 1);
-  }
-  ctx.globalAlpha = 1;
 }
 
 // ---- the strip icons -----------------------------------------------------

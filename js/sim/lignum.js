@@ -69,7 +69,6 @@ const LIGNUM_AB = [
   },
   {
     id: 'bark', name: 'BARK SKIN', cd: [15, 14, 13, 12, 11], ap: 0, cast: 0.1, // no aim: it is on him
-    worn: { t: 'barkT', look: 'guard' }, // the look it leaves on the body (drawWorn, js/draw/abilities.js)
     rank: { ward: [0.15, 0.17, 0.19, 0.21, 0.23] }, // the share off every hit; beside a pine twice it
     tip: 'TAKE LESS FROM HITS. TWICE BY A PINE',
     blurb: 'YOUR SKIN HARDENS LIKE BARK FOR A FEW SECONDS: TAKE LESS FROM EVERY HIT. STANDING BESIDE A PINE, TWICE AS LITTLE.',

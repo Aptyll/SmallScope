@@ -52,7 +52,6 @@ const MARIS_AB = [
   },
   {
     id: 'brace', name: 'BRACE FOR COLD', cd: [16, 15, 14, 13, 12], ap: 0, cast: 0.1, // no aim: it is on her
-    worn: { t: 'braceT', look: 'guard' }, // the look it leaves on the body (drawWorn, js/draw/abilities.js)
     rank: { ward: [0.15, 0.18, 0.21, 0.24, 0.27] }, // the share off every hit, before any rival is near
     tip: 'TAKE LESS FROM HITS, MORE IF CROWDED',
     blurb: 'BRACE FOR A FEW SECONDS: TAKE LESS FROM EVERY HIT, AND LESS STILL FOR EACH RIVAL HERO NEAR YOU.',

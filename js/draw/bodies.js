@@ -482,7 +482,6 @@ function drawPlayer(p, ex, ey, now, stage) {
       // never washed white when struck: a hero's model stays solid so a
       // fight reads (Noah, 2026-11-10); the spark and the recoil tell the
       // hit (js/draw/hitfx.js)
-      if (state.mode !== 'title') drawWornRim(p, spr, sx, sy, now); // a key's guard or power, round the model (js/draw/abilities.js)
       ctx.drawImage(spr, sx, sy);
     }
     heroBodyFx(p, ax, ay, now, true); // ...or over it (his standard facing away)
