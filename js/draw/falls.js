@@ -1,6 +1,6 @@
 'use strict';
 // ------------------------------------------------------------ falls
-// A soldier or a beast going down (the record: `falls`, unitFall, js/sim/farm.js),
+// A soldier or a beast going down, or a building wrecked (the record: `falls`, unitFall, js/sim/farm.js),
 // drawn from the body's own pixels where it stood, sorted with the bodies. A white
 // blink, then: a machine comes apart into grey plates thrown a little the way the
 // blow went (one or two still in its side's paint until they land), its treads left
@@ -45,12 +45,13 @@ function fallDraws(draws, now) {
   const vp = viewPlayer();
   for (const f of falls) {
     const t = (state.tick - f.tick) * TICK_DT;
-    if (t < 0 || t > FALL_T || (vp && !inSight(vp.team, f))) continue; // one in the fog is not seen (js/sim/fog.js)
+    if (t < 0 || t > fallLife(f) || (vp && !inSight(vp.team, f))) continue; // one in the fog is not seen (js/sim/fog.js)
     draws.push({ y: f.y + 4, fall: f });
   }
 }
 
 function drawFall(f, ex, ey) {
+  if (f.k === 'S') { drawWreck(f, ex, ey); return; }
   const spr = fallSpr(f);
   if (!spr) return;
   const t = (state.tick - f.tick) * TICK_DT, w = spr.width, h = spr.height, px = downPixels(spr), seed = (Math.round(f.x) * 7 + Math.round(f.y) * 13 + f.tick) | 0;
@@ -99,5 +100,56 @@ function drawFall(f, ex, ey) {
       fxPatch(x, y + 1, r, 0.7, 1, seed + k, '#7f98bc');
       fxPatch(x, y, r, 0.7, 1, seed + k, '#b8c8e2');
     }
+  }
+}
+
+// ---- a building coming down ------------------------------------------------------
+// A wrecked building (k 'S': f.spr its type, (f.x, f.y) its footprint's bottom-left)
+// does not blink out. Its own picture shudders, then drops straight down into the dust
+// it raises, band by band a step out of line; stones are thrown clear and lie in the
+// snow; then the dust thins and the stones go.
+// Whole pixels, nothing turned. WRECK_ART is the standing picture by type.
+const WRECK_ART = { tower: (f) => towerFigure(skin(f.team)) };
+const WRECK_SHAKE = 0.22, WRECK_DROP = 0.75, WRECK_BAND = 9, WRECK_STONES = 9;
+const WRECK_DUST = ['#6f86ad', '#9fb2d2', '#c3d0e6']; // the dust, dark to light: steps under the snow so it holds on it
+function drawWreck(f, ex, ey) {
+  const art = WRECK_ART[f.spr];
+  if (!art) return;
+  const fig = art(f), w = fig.width, h = fig.height, t = (state.tick - f.tick) * TICK_DT;
+  const fw = STRUCTS[f.spr].w * TILE, x0 = Math.round(f.x - ex) + ((fw - w) >> 1), gy = Math.round(f.y - ey), cx = x0 + (w >> 1);
+  const seed = (Math.round(f.x) * 7 + Math.round(f.y) * 13 + f.tick) | 0;
+  // the body: shuddering where it stands, then dropping into the ground line, faster as it goes
+  const u = Math.max(0, Math.min(1, (t - WRECK_SHAKE) / WRECK_DROP)), sink = Math.round(h * u * u);
+  if (u < 1) {
+    const beat = Math.floor(t * 30);
+    for (let b = 0; b * WRECK_BAND < h; b++) {
+      const by = b * WRECK_BAND, rows = Math.min(WRECK_BAND, h - by, h - sink - by); // what of this band is still over the ground
+      if (rows <= 0) break;
+      const jx = (t < WRECK_SHAKE ? 1 : 1 + Math.round(u * 2)) * (((b + beat) % 3) - 1); // each band a step out of line, more as it breaks up
+      ctx.drawImage(fig, 0, by, w, rows, x0 + jx, gy - h + by + sink, w, rows);
+    }
+  }
+  // the dust it raises: rolling out from the foot both ways and up, thinning at the end
+  const du = Math.max(0, (t - WRECK_SHAKE * 0.6) / (FALL_T_WRECK - WRECK_SHAKE * 0.6));
+  if (du > 0) for (let k = 0; k < 14; k++) {
+    const r1 = fxRoll(seed, k, 21), r2 = fxRoll(seed, k, 22), side = k % 2 ? 1 : -1;
+    const grow = Math.min(1, du * 2.2), fade = Math.max(0, (du - 0.55) / 0.45);
+    const r = Math.round((3 + r1 * 5) * grow * (1 - fade));
+    if (r < 1) continue;
+    const x = Math.round(cx + side * (r2 * w * 0.5 + grow * (6 + r1 * 14))), y = gy - 2 - Math.round(grow * r2 * 14 + du * 6 * r1);
+    fxPatch(x, y + 1, r + 1, 0.7, 1, seed + k, WRECK_DUST[0]);
+    fxPatch(x, y, r, 0.7, 1, seed + k + 50, WRECK_DUST[1]);
+    if (r > 3) fxPatch(x - 1, y - 1, r - 2, 0.7, 1, seed + k + 90, WRECK_DUST[2]);
+  }
+  // the stones thrown clear: up and out, down, lying, then gone one by one
+  if (t > WRECK_SHAKE) for (let i = 0; i < WRECK_STONES; i++) {
+    const r1 = fxRoll(seed, i, 1), r2 = fxRoll(seed, i, 2), r3 = fxRoll(seed, i, 3), side = i % 2 ? 1 : -1;
+    const t0 = WRECK_SHAKE + r3 * 0.35, air = 0.3 + r2 * 0.15, v = Math.min(1, (t - t0) / air);
+    if (v < 0 || t > FALL_T_WRECK - 0.5 + r1 * 0.45) continue;
+    const lx = cx + side * (w * 0.35 + r1 * 22), ly = gy - 1 + Math.round((r2 - 0.5) * 8), sy0 = gy - h * (0.25 + r3 * 0.4);
+    const x = Math.round(cx + (lx - cx) * v) - 2, y = Math.round(sy0 + (ly - sy0) * v - Math.sin(v * Math.PI) * (8 + r1 * 8)) - 2, big = i % 3 === 0 ? 5 : 4;
+    ctx.fillStyle = FALL_PLATE[2]; ctx.fillRect(x - 1, y - 1, big + 2, big + 2);
+    ctx.fillStyle = FALL_PLATE[1]; ctx.fillRect(x, y, big, big);
+    ctx.fillStyle = FALL_PLATE[0]; ctx.fillRect(x, y, big, big - 1); // bare stone, never its side's paint: a red square in the air reads wrong
   }
 }
