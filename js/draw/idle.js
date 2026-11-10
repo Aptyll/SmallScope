@@ -13,10 +13,14 @@ const DIR_X = { left: -1, right: 1, up: 0, down: 0 }, DIR_Y = { left: 0, right: 
 const idleOf = new WeakMap();
 // once a frame, from drawPlayer: what the body did since the last frame. A stop
 // swings the cloth on along the way it was going; a turn leaves it on the side it
-// turned from.
+// turned from. A second paint of the same instant changes nothing: only time passing
+// moves the cloth, so a repaint (the snapshot's proof, netEcho) draws the same body.
 function idleTick(p, striding, now) {
   let s = idleOf.get(p);
-  if (!s) idleOf.set(p, (s = { dir: p.dir, striding, mx: 0, my: 0, t: -1e9, dx: 0, dy: 0 }));
+  if (!s) idleOf.set(p, (s = { dir: p.dir, striding, mx: 0, my: 0, t: -1e9, dx: 0, dy: 0, now }));
+  s.b = 0; s.lag = null;
+  if (now === s.now) return;
+  s.now = now;
   if (striding) {
     const sp = Math.hypot(p.vx, p.vy) || 1;
     s.mx = Math.abs(p.vx / sp) > 0.38 ? Math.sign(p.vx) : 0;
@@ -27,7 +31,7 @@ function idleTick(p, striding, now) {
     s.t = now; s.dx = DIR_X[s.dir] - DIR_X[p.dir]; s.dy = DIR_Y[s.dir] - DIR_Y[p.dir];
     s.dx = Math.sign(s.dx); s.dy = Math.sign(s.dy);
   }
-  s.striding = striding; s.dir = p.dir; s.b = 0; s.lag = null;
+  s.striding = striding; s.dir = p.dir;
 }
 // the breath frame (0 or 1) for a body standing still: each body on its own phase,
 // so a line of heroes never breathes in step
