@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['Bucina raises the horn to her lips when she attacks or casts', '0.773'],
     ['PINE STANDS THROW ONE MASS OF SHADE', '0.772'],
     ['Aura\'s staff top is a gold star, clearly apart from Hiems\'s blue snowflake', '0.771'],
     ['THE TITLE STANDS BY THE FROZEN RIVER', '0.770'],
