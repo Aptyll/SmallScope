@@ -243,7 +243,7 @@ function timberPine(p) {
   const tx = Math.floor(p.x / TILE), ty = Math.floor(p.y / TILE), R = Math.ceil(TIMBER_PICK / TILE);
   for (let dy = -R; dy <= R; dy++) for (let dx = -R; dx <= R; dx++) {
     const o = inWorld(tx + dx, ty + dy) && objects[idx(tx + dx, ty + dy)];
-    if (!o || o.type !== 'tree') continue;
+    if (!treeFells(o)) continue; // a jungle wall's pine stands (js/sim/world.js)
     const d = Math.hypot((o.tx + 0.5) * TILE - p.x, (o.ty + 0.5) * TILE - p.y);
     if (d < bd) { bd = d; best = o; }
   }

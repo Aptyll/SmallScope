@@ -693,7 +693,7 @@ function aiHarvestRung(k) {
   if (!ai.tgt && ai.thinkT <= 0) {
     ai.thinkT = 0.6;
     ai.tgt = nearestObj(p.x, p.y, Math.round(AI_FORAGE * aiMood(p).greed), (o) => o !== ai.avoid &&
-      o.type === 'tree' &&
+      treeFells(o) &&
       aiOpenSides(o.tx, o.ty) >= 1 &&
       (!guardE || Math.hypot(o.tx * TILE + 8 - guardE.x, o.ty * TILE + 8 - guardE.y) < AI_GUARD_R * 0.85)); // (a guard works inside its leash)
   }
