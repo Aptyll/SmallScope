@@ -7,12 +7,12 @@
 // any body, so they wear the real sprites, weapons, shade and team rings.
 // Your own hero (the profile's last pick) leads the blue side; the other nine
 // are dealt fresh each time the title opens.
-const TITLE_AT = [9, 12];      // world px off the boat's tile the scene is framed on: the merchant's boat, frozen into the middle
+const TITLE_AT = [14, 12];     // world px off the boat's tile the scene is framed on: the merchant's boat, frozen into the middle
                                // (off the map's centre on a map with no boat)
 const TITLE_DRIFT = [3, 2];    // world px the camera breathes round it, each axis
 // where each side's five stand, world px off the scene's centre, the leader first
 // (your side as written, left of the boat; the rivals mirrored across it)
-const TITLE_SPOTS = [[-62, -4], [-84, -30], [-80, 22], [-108, -8], [-102, -46]];
+const TITLE_SPOTS = [[-72, -2], [-92, -30], [-90, 24], [-104, -4], [-102, -52]];
 let titleBodies = null;
 
 function titleSceneAt() {
