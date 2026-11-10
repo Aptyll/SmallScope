@@ -86,6 +86,38 @@ function drawBrushfires(ex, ey, now) {
     ctx.globalAlpha = 1;
   }
 }
+// FIREBRAND's wind-up: the snow down its line already thawing to a wet dark streak,
+// out further as she draws back, and sparks lifting off it here and there
+function drawBrandTele(p, a, closing, now, ex, ey) {
+  const nx = Math.cos(a), ny = Math.sin(a), L = teleLen(p.x, p.y, nx, ny, BRAND_RANGE) * (0.35 + 0.65 * closing);
+  for (let s = 8; s < L; s++) {
+    const x = Math.round(p.x + nx * s - ex), y = Math.round(p.y + 3 + ny * s - ey);
+    ctx.fillStyle = '#8fa6c4'; ctx.fillRect(x, y, 1, 2);
+  }
+  drawFlameTongue(p.x + nx * L - ex, p.y + 4 + ny * L - ey, 2 + Math.round(3 * closing), 3, now * 14); // the thaw's warm front
+  for (let k = 0; k < 4; k++) { // sparks rising off it, each on its own beat
+    const u = (now * 1.6 + k / 4) % 1, s = 10 + (L - 10) * fxRoll(p.id, k + Math.floor(now * 1.6 + k / 4) * 7, 2);
+    const x = Math.round(p.x + nx * s - ex + Math.sin(u * 6 + k) * 1.5), y = Math.round(p.y + 2 + ny * s - ey - u * 9);
+    ctx.fillStyle = IG_INK; ctx.fillRect(x - 1, y - 1, 3, 3);
+    ctx.fillStyle = u < 0.5 ? IG_CORE : IG_FLAME; ctx.fillRect(x, y, 1, 1);
+  }
+}
+// the passive's wild jump: a tongue of fire leaping in an arc from one alight body to
+// the next it lights
+function drawFireLeapFx(f, px, py, now) {
+  const u = f.t / f.life, nx = Math.cos(f.a), ny = Math.sin(f.a), lead = Math.min(1, u * 3);
+  for (let i = 0; i <= 12; i++) {
+    const t = i / 12;
+    if (t > lead || t < lead - 0.55) continue;
+    const z = Math.sin(Math.PI * t) * Math.min(20, f.r * 0.35);
+    const x = Math.round(px + nx * f.r * t), y = Math.round(py + ny * f.r * t - z), hot = lead - t < 0.12;
+    ctx.globalAlpha = Math.max(0, 1 - u) * (1 - (lead - t) / 0.55);
+    ctx.fillStyle = IG_INK; ctx.fillRect(x - 1, y - 1, hot ? 4 : 3, hot ? 4 : 3);
+    ctx.fillStyle = hot ? IG_CORE : i % 2 ? IG_FLAME : IG_EMBER; ctx.fillRect(x, y, hot ? 2 : 1, hot ? 2 : 1);
+  }
+  ctx.globalAlpha = 1;
+}
+AB_FX_LOOK.leap = drawFireLeapFx;
 HERO_GROUND.push(drawBrushfires);
 
 // ---- on her ---------------------------------------------------------------------

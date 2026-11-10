@@ -20,6 +20,7 @@ const IGNIA_BURN_AD = 0.15;     // ...and per point of her DAMAGE (the stat item
 const BRAND_SPD = 300;          // px/s
 const BRAND_RANGE = 150;        // px of flight
 const BRAND_BURN_T = 3;         // s the stick leaves its rival burning
+const LEAP_FX_LIFE = 0.45;      // s a wild jump's tongue of fire shows (drawn: AB_FX_LOOK.leap, js/draw/ignia.js)
 // W BRUSHFIRE: a line of fire laid across the aim, at the aim
 const BRUSH_RANGE = 120;        // px from her the line's middle may be set
 const BRUSH_LEN = 56;           // px of fire, across the aim
@@ -50,7 +51,7 @@ const IGNIA_AB = [
     tip: 'THROW A BRAND. THE FIRST RIVAL BURNS',
     blurb: 'THROW A BURNING STICK DOWN A LINE. THE FIRST RIVAL IT HITS TAKES THE BLOW AND CATCHES FIRE.',
     use: (p) => igniaBrand(p),
-    tele: (p, px, py, a, col, closing, now, ex, ey) => drawTeleLine(p.x, p.y, Math.cos(a), Math.sin(a), teleLen(p.x, p.y, Math.cos(a), Math.sin(a), BRAND_RANGE), col, 0.5 + 0.45 * closing, now, ex, ey),
+    tele: (p, px, py, a, col, closing, now, ex, ey) => drawBrandTele(p, a, closing, now, ex, ey), // the snow thawing down its line (js/draw/ignia.js)
     pose: (p, prog) => ({ dx: 0, dy: prog < 0.7 ? -1 : 1, rot: 0 }), // the arm back, then the throw
     icon: IGNIA_ICON32.brand,
     bot: (p, foe, d, clear) => clear && d < BRAND_RANGE - 10,
@@ -150,7 +151,7 @@ function updateKindling(dt) {
       if (q === e || unitTeam(q) === p.team || q.burnT > 0) continue; // a body already alight is not lit twice
       if (wild ? waterBetween(e.x, e.y, q.x, q.y) : igniaDoused(q)) continue;
       igniaLight(p, q, e.burnT, e.burnDps, wild ? e.wildT : 0);
-      if (wild) abFx.push({ kind: 'line', x: e.x, y: unitMidY(e), a: Math.atan2(q.y - e.y, q.x - e.x), r: Math.hypot(q.x - e.x, q.y - e.y), half: 2, t: 0, col: '#ff9a3a' });
+      if (wild) abFx.push({ kind: 'line', x: e.x, y: unitMidY(e), a: Math.atan2(q.y - e.y, q.x - e.x), r: Math.hypot(q.x - e.x, q.y - e.y), half: 2, t: 0, col: '#ff9a3a', fx: 'leap', life: LEAP_FX_LIFE });
     }
   }
 }
