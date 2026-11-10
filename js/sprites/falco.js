@@ -247,8 +247,8 @@ const FALCO_PAL = Object.assign({}, ARM_PAL, { q: '#3c5a3a', Q: '#56784e', a: '#
 // belt, the hair gone silver, a pale gold feather. `run: 'drawn'`: the hat's brim and the
 // cape are not the doll's (Falconer, app/bake-player/bodies.py), which is used only for the roll.
 const FALCO_SKINS = [
-  { id: 'falconer', name: 'HUNTSMAN', rarity: 'common', price: 0, grids: FALCO_BODY.falconer, motion: 'falconer', run: 'drawn' },
-  { id: 'lasthawk', name: 'LAST HAWK', rarity: 'rare', price: 200, grids: FALCO_BODY.falconer, motion: 'falconer', run: 'drawn',
+  { id: 'falconer', name: 'HUNTSMAN', rarity: 'common', price: 0, grids: FALCO_BODY.falconer, motion: 'falconer', hem: 2, cloth: { down: [[12, 0, 13, 2]], up: [[12, 0, 13, 2]], side: [[11, 0, 12, 1]] }, run: 'drawn' },
+  { id: 'lasthawk', name: 'LAST HAWK', rarity: 'rare', price: 200, grids: FALCO_BODY.falconer, motion: 'falconer', hem: 2, cloth: { down: [[12, 0, 13, 2]], up: [[12, 0, 13, 2]], side: [[11, 0, 12, 1]] }, run: 'drawn',
     pal: { q: '#161a26', Q: '#262c3e', a: '#a9b4cc', A: '#e8edf7', x: '#f2cc6a', W: '#fff3b0' } },
 ];
 

@@ -80,12 +80,18 @@ function drawBeastFrame(kind, cx, mid, fy, e, two, u, now) {
 }
 
 // A bot (a wave's soldier): one sprite, two tread frames. The whole thing
-// bobs 1px while driving so body and tread never part. No face - the states
-// are the tread rolling and the axe swinging at a foe.
-// where each soldier sprite set flies its pennant: [px right of the body's
-// x, px up from the tread's foot] - the roof's corner, two rows down; the
-// ballista cart's off the top of its winch at the back (mirrored with it)
-const PENNANT_AT = { robotTeam: [4, 8], robotRanged: [-5, 8], robotSiege: [-10, 16] };
+// bobs 1px while driving so body and tread never part. No face, and nothing
+// carried: the states are the tread rolling and, for a melee soldier, the
+// chassis itself ramming a foe (soldierRam).
+// a melee soldier's blow, in whole px along the line to its foe: it rocks
+// back through the wind-up, drives in as the blow lands (atkCd running out,
+// prog 1) and settles back over the first beat after
+function soldierRam(prog) {
+  if (prog < 0.12) return 2;
+  if (prog < 0.24) return 1;
+  if (prog < 0.55) return 0;
+  return prog < 0.85 ? -1 : 1;
+}
 function drawRobot(b, ex, ey, now) {
   if (b.merchant) { drawMerchant(b, ex, ey, now); return; }
   // its kind's sprite set (SOLDIER_TYPES' `spr`): frames 0-1 roll, and a
@@ -104,35 +110,23 @@ function drawRobot(b, ex, ey, now) {
   const bx = Math.round(b.x - ex) - (left ? spr.width - ax : ax);
   const zl = b.zip >= 0 ? ZIP_ALT : 0; // a soldier on a zipline hangs ZIP_ALT rows up, its shadow on the snow
   const by = Math.round(b.y + 4 - ey) - spr.height - bob - zl; // tread bottom sits at b.y + 4
+  // the ram (soldierRam): the body and its shadow shift, the bar holds still
+  let rx = 0, ry = 0;
+  if (b.atkAim && !T.shot) {
+    const dx = b.atkAim.x - b.x, dy = b.atkAim.y - b.y, d = Math.hypot(dx, dy) || 1;
+    const n = soldierRam(1 - b.atkCd / T.cd);
+    rx = Math.round(dx / d * n); ry = Math.round(dy / d * n);
+  }
 
-  drawCastShade(spr, bx, by + bob + zl); // on the ground under the bob
+  drawCastShade(spr, bx + rx, by + bob + zl + ry); // on the ground under the bob
 
   const lit = bodyLayerOpen(Math.round(b.x - ex), by + spr.height, 20, 36); // keeps its light at night (js/draw/light.js)
   if (zl) drawZipHandle(b, Math.round(b.x - ex), by, ey); // the handle over the chassis and the rope up to the cable (js/draw/zipline.js)
-  drawSpriteFlash(spr, bx, by, b.flash);
-  // a soldier (the `soldiers` banner, robots.js) flies its side's pennant off a back corner of the
-  // chassis' roof (a thrower's left, its arm is on the right), two rows down
-  const pd = PENNANT_AT[T.spr] || PENNANT_AT.robotTeam;
-  drawPennant(ctx, Math.round(b.x - ex) + (left ? -pd[0] - 1 : pd[0]), by + spr.height - pd[1], TEAMS[skin(b.team)].mark);
-
-  // a melee soldier's blow: the axe aimed at whatever b.atkAim points to,
-  // raised away from the target through a slow wind-up, then a fast chop
-  // that lands pointing at it
-  if (b.atkAim && !T.shot) {
-    const prog = 1 - b.atkCd / T.cd;
-    const tdx = b.atkAim.x - b.x, tdy = b.atkAim.y - b.y;
-    const e = prog < 0.7 ? prog / 0.7 * 0.3 : 0.3 + (prog - 0.7) / 0.3 * 0.7;
-    const a = Math.atan2(tdy, tdx) - 1.6 * (1 - e);
-    ctx.save();
-    ctx.translate(Math.round(bx + 6 + Math.cos(a) * 7), Math.round(by + 3 + Math.sin(a) * 7));
-    ctx.rotate(a + Math.PI / 2);
-    ctx.drawImage(SPRITES.itemAxe, -4, -4);
-    ctx.restore();
-  }
+  drawSpriteFlash(spr, bx + rx, by + ry, b.flash);
   if (b.shot) drawSoldierShot(b, T, ex, ey, left);
 
   // the four shared tells, same as any other body (js/sim/abilities.js)
-  drawUnitStates(b, bx, by, spr.width, spr.height, now);
+  drawUnitStates(b, bx + rx, by + ry, spr.width, spr.height, now);
   bodyLayerClose(lit);
   drawHealthBar(b.x - ex, by - 4, b.hp, b.maxHp, T.spr === 'robotSiege' ? 12 : 8, b.team, undefined, b);
   if (b.stunT > 0) drawStunStars(Math.round(b.x - ex), by - 9, b, 4);
@@ -180,7 +174,7 @@ function drawSoldierShot(b, T, ex, ey, left) {
 // The merchant (the `merchant` banner, robots.js): its own 16x18 hooded-robe
 // grids (sprites.js), two rows taller than a slot, standing on player feet
 // (b.y + 8 in the sort, the feet on the player's own foot row),
-// with the soldier's axe swing over whatever it is felling or setting, the hop
+// with an axe swing over whatever it is felling or setting, the hop
 // off the bird as a lift, the shared tells, and a MERCH nameplate in the
 // side's paint - a name, the one text a body over the world gets (the bird it
 // drives wears PERCH the same way, drawEagle in eagle.js). NO HEALTH BAR: it
@@ -198,7 +192,7 @@ function drawMerchant(b, ex, ey, now) {
   drawCastShade(spr, px, py); // stays on the snow through a hop
   const lit = bodyLayerOpen(px + 8, py + spr.height, 20, 40); // keeps its light at night (js/draw/light.js)
   drawSpriteFlash(spr, px, py - lift, b.flash);
-  // the swing: the soldier's wind-up and chop, aimed at the tile in hand
+  // the swing: a slow wind-up and a fast chop, aimed at the tile in hand
   if (b.tgt && !b.moving && lift === 0) {
     const tdx = b.tgt.tx * TILE + 8 - b.x, tdy = b.tgt.ty * TILE + 8 - b.y;
     if (Math.hypot(tdx, tdy) <= 20) {
@@ -386,6 +380,9 @@ function drawPlayer(p, ex, ey, now, stage) {
   // ...and a body on the move runs: the doll's eight frames (runFrame)
   const running = frame > 0 && p.fallT <= 0;
   if (running) spr = classSet(p)[handsBusy(p) ? 'hold' : 'run'][p.dir][runFrame(p)];
+  // ...and standing still it breathes, its cloth a beat behind a stop or a turn (js/draw/idle.js)
+  idleTick(p, striding, now);
+  if (frame === 0 && !seat && p.fallT <= 0 && !(state.mode !== 'title' && abilityPose(p))) spr = idleFrame(p, now);
   const MB = SPRITES.motionBox;
   const px = Math.round(p.x - 8 - ex) + (seat ? seat.dx : 0);
   const py = Math.round(p.y - 12 - ey) - rl; // a rider's whole body - held tool, marks, plate - sits up on the deer
@@ -417,7 +414,7 @@ function drawPlayer(p, ex, ey, now, stage) {
     const sink = Math.round(Math.min(7, (HOLE_FALL_T - p.fallT) * 40));
     ctx.save();
     ctx.beginPath(); ctx.rect(bx - 2, by - 8, spr.width + 4, py + 12 - (by - 8)); ctx.clip();
-    drawSpriteFlash(spr, bx, by + sink, p.hurtT > 0.12 ? 1 : 0);
+    ctx.drawImage(spr, bx, by + sink);
     ctx.restore();
     // ripple rings at the waterline
     ctx.fillStyle = 'rgba(207,228,242,0.75)';
@@ -446,7 +443,9 @@ function drawPlayer(p, ex, ey, now, stage) {
     // js/sim/abilities.js), so an ability visibly happens to the model
     const pose = state.mode !== 'title' ? abilityPose(p) : null;
     const bob = seat ? seat.bob : 0; // a rider rises and falls with the gallop, the plate holds still
-    const ax = px + (pose ? pose.dx : 0), ay = py + (pose ? pose.dy : 0) - zl + bob;
+    // a blade's blow moves the whole body, and the hands with it: back on the draw, in on the cut (attackLean)
+    const lean = state.mode !== 'title' ? attackLean(p) : null, lx = lean ? lean.dx : 0, ly = lean ? lean.dy : 0;
+    const ax = px + lx + (pose ? pose.dx : 0), ay = py + ly + (pose ? pose.dy : 0) - zl + bob;
     const sy = ay + by - py, sx = ax + bx - px; // a taller frame (the hoist) keeps its feet
     // held tool: behind the body when facing away or pointing up the screen,
     // in the hand otherwise. A body
@@ -456,7 +455,7 @@ function drawPlayer(p, ex, ey, now, stage) {
     const held = (state.mode !== 'title' || stage) &&
       (p.castT <= 0 || heroStaffOf(p) || castAims(p)) && p.shieldT <= 0 && p.rushT <= 0 && p.zip < 0; // ...or holding a zipline's handle
     // what points up the screen or is carried facing away goes behind (THE CARRY RULE, drawHeldTool)
-    if (held) drawHeldTool(p, px, py + bob, true);
+    if (held) drawHeldTool(p, px + lx, py + ly + bob, true);
     // a rider's body stops at the deer's back: the rows from its hip down
     // are the deer's (riderSeat); what the hands hold is not cut
     if (seat) {
@@ -471,15 +470,18 @@ function drawPlayer(p, ex, ey, now, stage) {
       // turned about the cell's middle (a doll frame is wider than the cell it holds)
       ctx.translate(ax + 8, ay + 8);
       ctx.rotate(pose.rot);
-      drawSpriteFlash(spr, sx - ax - 8, sy - ay - 8, p.hurtT > 0.12 ? 1 : 0);
+      ctx.drawImage(spr, sx - ax - 8, sy - ay - 8);
       ctx.restore();
     } else {
-      drawSpriteFlash(spr, sx, sy, p.hurtT > 0.12 ? 1 : 0);
+      // never washed white when struck: a hero's model stays solid so a
+      // fight reads (Noah, 2026-11-10); the spark and the recoil tell the
+      // hit (js/draw/hitfx.js)
+      ctx.drawImage(spr, sx, sy);
     }
     heroBodyFx(p, ax, ay, now, true); // ...or over it (his standard facing away)
     if (seat) ctx.restore();
     ctx.globalAlpha = 1;
-    if (held) drawHeldTool(p, px, py + bob, false);
+    if (held) drawHeldTool(p, px + lx, py + ly + bob, false);
     // what an ability left ON this body - shield, net, jaws, fury, mark -
     // drawn over the sprite for every side alike (js/sim/abilities.js)
     if (state.mode !== 'title') drawAbilityOnPlayer(p, ax, ay, now);
@@ -677,6 +679,79 @@ function drawGripped(img, grip, hx, hy, rot) {
 }
 // is a key mid-wind-up holding the weapon on the aim (its CLASS_AB row's `aimHeld`: SAGITTA's bolts)
 function castAims(p) { if (!(p.castT > 0)) return false; const ab = abOf(p, p.castAb); return !!(ab && ab.aimHeld); }
+// ---- the blow's motion -----------------------------------------------------
+// A blade's attack is drawn as frames at SWING_FPS, the body's rate, never a
+// 60 fps tween: the wind-up (the body 1 px back off the aim while the blade is
+// drawn), the strike (1 px in toward it, the blade across with a solid swish),
+// the finish (held at the arc's end), then the body comes back. Draw only: it
+// reads the draw, the sweep and the cycle the sim already keeps (charging,
+// slashT, slashA, nockT).
+const SWING_FPS = 12;      // frames a second of a swing
+const SWING_FIRST = 0.45;  // how far across the arc the blade is on the strike's first frame
+const SWISH_FRAMES = 3;    // the swish shows on the strike's frames and one more as it goes
+const SWISH_TAIL = 0.4;    // ...that last one keeps only this leading part of the arc
+const SWISH_W = [2, 6];   // the swish's depth in px at its tail and at the blade
+const SWISH_COL = ['#f8fcff', '#9cb6d4', '#1b2233']; // light edge, body, ink outline
+const SWING_FRAMES = 5;    // frames from the loose to the recover: the last two are the held finish
+// which frame of its blow a blade is on, or -1. The sweep (slashT) runs the
+// strike; the held finish runs on into the cycle (nockT) that no draw can start inside.
+function swingFrame(p) {
+  if (!attackOf(p).cut) return -1;
+  if (p.slashT > 0) return Math.floor((SLASH_T - p.slashT) * SWING_FPS);
+  if (p.nockT <= 0 || p.charging || p.castT > 0) return -1;
+  const f = Math.floor((attackCycle(p) - p.nockT) * SWING_FPS);
+  return f >= 0 && f < SWING_FRAMES ? f : -1;
+}
+// the body's offset for a blow or a staff's cast ({ dx, dy } whole px), or null
+function attackLean(p) {
+  if (heroStaffOf(p)) return staffCasting(p) ? { dx: 0, dy: -1 } : null; // a staff's cast lifts the body with it (staffCasting, js/draw/heroes.js)
+  if (!attackOf(p).cut) return null;
+  let a, s;
+  if (swingFrame(p) >= 0) { a = p.slashA; s = 1; } // the strike and the held finish
+  else if (p.charging) { a = aimAngle(p); s = -1; } // the wind-up
+  else return null;
+  return { dx: s * Math.round(Math.cos(a)), dy: s * Math.round(Math.sin(a)) };
+}
+// how far a held art reaches from where the hand closes on it: its farthest painted pixel
+const bladeLens = new WeakMap();
+function bladeLen(img, grip) {
+  let L = bladeLens.get(img);
+  if (L !== undefined) return L;
+  const c = document.createElement('canvas'); c.width = img.width; c.height = img.height;
+  const g = c.getContext('2d'); g.drawImage(img, 0, 0);
+  const d = g.getImageData(0, 0, c.width, c.height).data;
+  L = 0;
+  for (let y = 0; y < c.height; y++) for (let x = 0; x < c.width; x++) if (d[(y * c.width + x) * 4 + 3]) L = Math.max(L, Math.hypot(x - grip[0], y - grip[1]));
+  bladeLens.set(img, L);
+  return L;
+}
+// The swish: one solid crescent of pixels along the arc the blade's outer part
+// swept, from angle a0 to the blade at e, deepest at the blade and thinning to
+// its tail (SWISH_W); a light outer edge, a body, and an ink line along the
+// outside so it reads on snow. Each pixel takes the pass its own angle would
+// (heldBehind), and none lands on the head (rules.md rule 1), sized by the
+// swinger p's cell (heroRise, heroReach). `hand(a)` is where the hands are at
+// angle a, L the blade's reach from them, (px, cyp) the cell's left and the
+// hands' row.
+function drawSwish(p, px, cyp, hand, L, a0, e, back) {
+  if (L < 4) return;
+  const cx = px + 8, span = e - a0, dir = span < 0 ? -1 : 1, R = Math.ceil(L + 8);
+  const rise = heroRise(p), reach = heroReach(p), headTop = cyp - 10 - rise, headBot = cyp - 4; // the head's rows, taller on a larger cell
+  for (let y = Math.round(cyp) - R; y <= Math.round(cyp) + R; y++) for (let x = Math.round(cx) - R; x <= Math.round(cx) + R; x++) {
+    // the pixel's angle about the hands' middle, as a fraction of the way along the arc
+    const a = Math.atan2(y - cyp, x - cx);
+    let d = (a - a0) * dir; d -= Math.floor(d / (2 * Math.PI)) * 2 * Math.PI;
+    const u = d / Math.abs(span);
+    if (u > 1) continue;
+    const h = hand(a), out = Math.hypot(h[0] - cx, h[1] - cyp) + L; // the blade's tip at that angle
+    const rr = Math.hypot(x - cx, y - cyp), w = SWISH_W[0] + (SWISH_W[1] - SWISH_W[0]) * u;
+    if (rr > out + 1 || rr < out - w) continue;
+    if (heldBehind(a) !== back) continue;
+    if (!back && y >= headTop && y <= headBot && x >= px + 3 - reach && x <= px + 12 + reach) continue;
+    ctx.fillStyle = SWISH_COL[rr > out ? 2 : rr > out - 1.5 ? 0 : 1]; // ink only on the outer edge: the inner one is the motion
+    ctx.fillRect(x, y, 1, 1);
+  }
+}
 function drawHeldTool(p, px, py, back) {
   // At rest the hands hold the hero's WEAPON (its basic attack's `art`,
   // SPRITES.weaponArt, js/sprites/weapons.js), so what somebody fights with
@@ -720,21 +795,17 @@ function drawHeldTool(p, px, py, back) {
   const hGrip = gripOf(wHeld, hb ? hb.grip : held ? WEAPON_GRIP.held[A.art] : WEAPON_GRIP.icon[A.art]);
   const iGrip = gripOf(wIcon, WEAPON_GRIP.icon[A.art]);
 
-  // THE SWING: a blade mid-cut is swung through its whole wedge from the
-  // hands - the sword itself at the sweep's edge with two ghosts of it
-  // trailing, so the arc the cut took is read off the weapon and not only off
-  // the snow. Each sits behind the body while it points up the screen.
-  if (p.slashT > 0 && cut) {
-    const prog = 1 - p.slashT / SLASH_T;
-    const sw = Math.min(1, prog / 0.7); // the blade crosses in the first 70%, then hangs at the end of the arc
-    const e = p.slashA - p.slashHalf + sw * p.slashHalf * 2;
-    for (let k = 2; k >= 0; k--) {
-      const a = e - k * 0.32 * sw;
-      if (heldBehind(a) !== back) continue;
-      ctx.globalAlpha = k ? (k === 1 ? 0.4 : 0.18) * (1 - prog) : 1;
-      drawGripped(wHeld, hGrip, cxp + Math.cos(a) * BLADE_HAND[0], cyp + Math.sin(a) * BLADE_HAND[1], a - fwd);
-    }
-    ctx.globalAlpha = 1;
+  // THE SWING: a blade mid-cut is swung through its wedge from the hands in
+  // drawn steps (SWING_FPS): across, through with the swish behind it, the
+  // swish going, then the blade held at the arc's end. Behind the body while
+  // it points up the screen.
+  const f = swingFrame(p);
+  if (f >= 0) {
+    const sw = f === 0 ? SWING_FIRST : 1;
+    const a0 = p.slashA - p.slashHalf, e = a0 + sw * p.slashHalf * 2;
+    const hand = (a) => [cxp + Math.cos(a) * BLADE_HAND[0], cyp + Math.sin(a) * BLADE_HAND[1]];
+    if (f < SWISH_FRAMES) drawSwish(p, px, cyp, hand, bladeLen(wHeld, hGrip), f === 2 ? e - (e - a0) * SWISH_TAIL : a0, e, back);
+    if (heldBehind(e) === back) { const h = hand(e); drawGripped(wHeld, hGrip, h[0], h[1], e - fwd); }
     return;
   }
 
@@ -743,7 +814,7 @@ function drawHeldTool(p, px, py, back) {
   // arc, wound up, so the draw reads as the swing it is about to be.
   if (drawing) {
     const a = aimAngle(p);
-    const w = cut ? a - cut.half * (0.4 + 0.6 * drawPow(p)) : a;
+    const w = cut ? a - cut.half * (0.4 + 0.6 * Math.floor(drawPow(p) * 2) / 2) : a; // cocked back in two steps, not a creep
     if (heldBehind(w) === back) {
       drawGripped(cut ? wHeld : wIcon, cut ? hGrip : iGrip,
         cxp + Math.cos(w) * (cut ? BLADE_HAND[0] : 8), cyp + (cut ? Math.sin(w) * BLADE_HAND[1] : Math.sin(w) * 8 - 2), w - fwd);

@@ -52,7 +52,7 @@ order, so the script tags still interleave them:
 | [js/sprites/hero-art.js](../../js/sprites/hero-art.js) | ~25 | `HERO_ART`, `heroArt` | the hero art registry: each hero's own sprite file registers its looks, their paint, the skins tab's glyph and the 12 px emblem under its `CLASSES` `id`; every reader asks `heroArtOf` (player.js) |
 | [js/sprites/armatos.js](../../js/sprites/armatos.js) | ~430 | shared scope, no `window.*` export | ARMATOS's 32 px ability and passive icons (`ARM_ICON32`), his looks' 16 px grids and skins table (`ARM_BODY`, `ARM_SKINS`), and his greatsword (`ARM_SWORD`) |
 | [js/sprites/fortiva.js](../../js/sprites/fortiva.js) | ~370 | shared scope, no `window.*` export | FORTIVA's 32 px ability and passive icons (`FORT_ICON32`), her looks' 16 px grids and skins table (`FORT_BODY`, `FORT_SKINS`), and her greatsword (`FORT_SWORD`) |
-| [js/sprites/aura.js](../../js/sprites/aura.js) | ~260 | shared scope, no `window.*` export | AURA's 32 px ability and passive icons (`AURA_ICON32`) and her STAR SHARD staff's weapon art |
+| [js/sprites/aura.js](../../js/sprites/aura.js) | ~260 | shared scope, no `window.*` export | AURA's 32 px ability and passive icons (`AURA_ICON32`) and her STAR-GLASS staff's weapon art |
 | [js/sprites/salvia.js](../../js/sprites/salvia.js) | ~320 | shared scope, no `window.*` export | SALVIA's 32 px ability and passive icons (`SALVIA_ICON32`) and her SNOWDROP STAFF staff's weapon art |
 | [js/sprites/lucerna.js](../../js/sprites/lucerna.js) | ~330 | shared scope, no `window.*` export | LUCERNA's 32 px ability and passive icons (`LUCERNA_ICON32`), her two looks and her LANTERN's weapon art |
 | [js/sprites/hiems.js](../../js/sprites/hiems.js) | ~320 | shared scope, no `window.*` export | HIEMS's 32 px ability and passive icons (`HIEMS_ICON32`), her looks' 16 px grids and skins table (`HIEMS_BODY`, `HIEMS_SKINS`) and her SNOWFLAKE STAFF's weapon art |
@@ -89,7 +89,7 @@ order, so the script tags still interleave them:
 | [js/sim/pumps.js](../../js/sim/pumps.js) | ~170 | shared scope, no `window.*` export | the two neutral gold pumps: standing the mirrored pair at boot, the ring's capture and the pay to the holding side |
 | [js/sim/camps.js](../../js/sim/camps.js) | ~360 | shared scope, no `window.*` export | the camps at their fixed mirrored sites: standing them up, stocking them, the respawn clock |
 | [js/sim/practice.js](../../js/sim/practice.js) | ~1470 | shared scope, no `window.*` export | the practice tool: its map opening (both birds down), and its arena's training grounds: their world, the dummies, the archery track and bell, the parkour, the practice bar, the deer ride |
-| [js/sim/depth.js](../../js/sim/depth.js) | ~280 | shared scope, no `window.*` export | the snow's depth: the seed's prevailing wind, the hand-placed brush patches (`layBrush`) and the lee pads (`layDrifts`, at boot after worldgen), `snowDepth`/`deepAt`/`brushOf` - the detail: [world](world.md#snow-depth) |
+| [js/sim/depth.js](../../js/sim/depth.js) | ~280 | shared scope, no `window.*` export | the snow's depth: the map's prevailing wind, the hand-placed brush patches (`layBrush`) and the lee pads (`layDrifts`, at boot after worldgen), `snowDepth`/`deepAt`/`brushOf` - the detail: [world](world.md#snow-depth) |
 | [js/sim/landmarks.js](../../js/sim/landmarks.js) | ~130 | shared scope, no `window.*` export | the story landmarks: the `LANDMARKS` table (each entry becomes an `OBJECTS` row), and their seeded placement |
 | [js/sim/nav.js](../../js/sim/nav.js) | ~390 | shared scope, no `window.*` export | `moveEntity`, `separateUnits`, and A* routing (`findPath`/`navTo`/`navStep`) |
 | [js/sim/wildlife.js](../../js/sim/wildlife.js) | ~1300 | shared scope, no `window.*` export | prey, the fish shoal, the camps' monsters |
@@ -136,11 +136,11 @@ order, so the script tags still interleave them:
 | [js/sim/weather.js](../../js/sim/weather.js) | ~260 | shared scope, no `window.*` export | the day's weather and the one wind field the sim and the draw read |
 | [js/sim/shed.js](../../js/sim/shed.js) | ~90 | shared scope, no `window.*` export | snow knocked off the pines by a gust's crest or a blow, raised in the sim and carried by `burst` |
 | [js/ai/ai-callouts.js](../../js/ai/ai-callouts.js) | ~190 | shared scope, no `window.*` export | bot callouts: when a bot tells its side something (HELP!, BIRD!, BEAR LOW!), the words of the brain's ping answers (ON IT), a player's pings riding the same list, a grudge (YOU AGAIN), the anti-spam rules, `addCallout` |
-| [js/net/events.js](../../js/net/events.js) | ~80 | shared scope, no `window.*` export | the sim's cosmetics on their way to the screen: `sfxAt`/`sfxFor`/`sfxOwn`/`shakeAt`/`shakeFor`, the ring a host records them into (`evPush`/`evDrain`, only inside the step and only with `evRecord` on - solo records nothing) and `evPlay`, the client's replay of one entry. The online plan the js/net/ files follow: [docs/pvp-architecture.md](../pvp-architecture.md) |
+| [js/net/events.js](../../js/net/events.js) | ~80 | shared scope, no `window.*` export | the sim's cosmetics on their way to the screen: `sfxAt`/`sfxFor`/`sfxOwn`, the ring a host records them into (`evPush`/`evDrain`, only inside the step and only with `evRecord` on - solo records nothing) and `evPlay`, the client's replay of one entry. The online plan the js/net/ files follow: [docs/pvp-architecture.md](../pvp-architecture.md) |
 | [js/net/net.js](../../js/net/net.js) | ~800 | shared scope, no `window.*` export | `NET`: this screen's role (`solo` / `host` / `client`; `isHost` is "am I simulating?"), `isHuman`, the five-call transport interface and its loopback, and the match protocol (`netHostStep`/`netHostFlush`, `netClientStep`/`netClientMode`; `RECONNECT_GRACE`, `SNAP_EVERY`) - the detail: [code-map](code-map.md) |
 | [js/net/snapshot.js](../../js/net/snapshot.js) | ~1000 | shared scope, no `window.*` export | the match's authoritative state as one plain object (`snapBuild`/`snapApply`, refs packed to kind+id tokens by `pack`), its wire form (`snapBuildDelta`/`snapApplyDelta` against a shadow of the last send, `snapEncode`/`snapDecode` binary with a shared key dictionary) and the proofs (`netEcho`, `netEchoRun`, `netDeltaRun`: render, send through the bytes, render again, count differing pixels) |
-| [js/net/transport-ws.js](../../js/net/transport-ws.js) | ~90 | shared scope, no `window.*` export | the transport for tabs on one machine: the dev server's relay over a WebSocket, JSON frames, a client redialing every `WS_RETRY` s with the same uid |
-| [js/net/transport-steam.js](../../js/net/transport-steam.js) | ~190 | shared scope, no `window.*` export | the transport for the wrapper: a Steam lobby is the room and its owner the host, packets peer to peer through `window.steamBridge` - text reliable in parts over `STEAM_CHUNK`, a lossy delta as binary frames on the unreliable channel under its 1200-byte cap, dropped whole when a part never comes - a joiner reloading onto the lobby's seed |
+| [js/net/transport-ws.js](../../js/net/transport-ws.js) | ~120 | shared scope, no `window.*` export | the transport for tabs on one machine: the dev server's relay over a WebSocket, JSON frames, a dropped socket redialing with the same uid on a doubling wait (`wsBackoff`), and one that never reached a relay giving up (`NORELAY`) |
+| [js/net/transport-steam.js](../../js/net/transport-steam.js) | ~190 | shared scope, no `window.*` export | the transport for the wrapper: a Steam lobby is the room and its owner the host, packets peer to peer through `window.steamBridge` - text reliable in parts over `STEAM_CHUNK`, a lossy delta as binary frames on the unreliable channel under its 1200-byte cap, dropped whole when a part never comes - every page born on the one map, so a joiner never reloads |
 | [js/draw/ground.js](../../js/draw/ground.js) | ~1300 | shared scope, no `window.*` export | `hash2`/`vnoise`, the prerendered ground and its runtime repaints, the road's pixels, the scenery bakes (the pine's wind frame, the practice dummy) - first of the draw files, every other one calls `hash2` |
 | [js/draw/landmarks.js](../../js/draw/landmarks.js) | ~21 | shared scope, no `window.*` export | a landmark's pixels and cast shade |
 | [js/draw/lakes.js](../../js/draw/lakes.js) | ~510 | shared scope, no `window.*` export | the wind's leavings, laid at the ground bake: drifts in the lee of what stands, the lakes' dust, downwind banks and long cracks, and the weather's per-frame pass over the ice (`drawLakeSky`), and the lake's fish drawn under it (`drawIceFish`) - the detail: [world](world.md#the-winds-leavings) |
@@ -157,6 +157,7 @@ order, so the script tags still interleave them:
 | [js/draw/canopy.js](../../js/draw/canopy.js) | ~160 | shared scope, no `window.*` export | the canopy window: the viewed hero's model drawn through a layer (`heroLayerOpen`/`heroLayerClose`, from `drawPlayer`) so a pine or snag covering it opens round it (`canopyOver`, `drawWindowed`, from `render()`) |
 | [js/draw/bodies.js](../../js/draw/bodies.js) | ~710 | shared scope, no `window.*` export | every walking thing's sprite pass: a beast on its clip, a robot, the merchant, and `drawPlayer` with its buff ring, ghost and held tool |
 | [js/draw/heroes.js](../../js/draw/heroes.js) | ~60 | shared scope, no `window.*` export | a hero's own blade in its hands and its hold at rest (`HERO_BLADES`, `BLADE_HOLDS`, `heroBlade`, `heroCarry`), a staff carried upright in its hero's own hand (`HERO_STAVES`, `STAFF_HOLDS`, `heroStaff`), a shot drawn with its own `look` (`HERO_SHOTS`), what it wears on its body (`HERO_BODY_FX`), and what is drawn in its place for a while (`HERO_BODY_DRAW`) |
+| [js/draw/idle.js](../../js/draw/idle.js) | ~55 | shared scope, no `window.*` export | a standing hero's breath and its cloth a beat behind a stop or a turn (`idleTick`, `idleFrame`, `idleShown`) |
 | [js/draw/armatos.js](../../js/draw/armatos.js) | ~120 | shared scope, no `window.*` export | ARMATOS's pixels: his greatsword in his hands, the standard on his back and planted, and his keys' shapes on the snow |
 | [js/draw/fortiva.js](../../js/draw/fortiva.js) | ~90 | shared scope, no `window.*` export | FORTIVA's pixels: her greatsword in her hands, her state on her body, and her keys' shapes on the snow |
 | [js/draw/aura.js](../../js/draw/aura.js) | ~150 | shared scope, no `window.*` export | AURA's pixels: her star bolt, and the star's ring, the orb and the curtain's band on the snow |
@@ -177,7 +178,8 @@ order, so the script tags still interleave them:
 | [js/draw/falco.js](../../js/draw/falco.js) | ~100 | shared scope, no `window.*` export | FALCO's pixels: his hawk over him and out (`HERO_AIR`, `HERO_GROUND`), his thrown knives (`HERO_SHOTS`), a rival marked for his side (`HERO_OVER`), his body gone into the sky (`HERO_BODY_DRAW`) |
 | [js/draw/bella.js](../../js/draw/bella.js) | ~70 | shared scope, no `window.*` export | BELLA's pixels: her precision pips, the parry's blade, the marks and the duel's ring, and her spatha in her hands |
 | [js/draw/ignia.js](../../js/draw/ignia.js) | ~140 | shared scope, no `window.*` export | IGNIA's pixels: the brand and the ember in flight, the lines of fire and their melted strip, the warm hands' sparks, and her crook and lantern |
-| [js/draw/marks.js](../../js/draw/marks.js) | ~200 | shared scope, no `window.*` export | the glyph grammar both maps share: a camp's icon and clock, a soldier's pennant, what a body looks like as a dot |
+| [js/draw/marks.js](../../js/draw/marks.js) | ~200 | shared scope, no `window.*` export | the glyph grammar both maps share: a camp's icon and clock, the click marks, what a body looks like as a dot |
+| [js/draw/hitfx.js](../../js/draw/hitfx.js) | ~150 | shared scope, no `window.*` export | a big hit's look, draw only, drawn from snapshot fields alone (the last blow's size, tick and direction): the hit-stop (the body held where it was struck), the 1 px recoil, the white spark toward the blow and the snow puff at its feet |
 | [js/draw/pops.js](../../js/draw/pops.js) | ~70 | shared scope, no `window.*` export | the numbers and coins that pop over a body: the floaters, and the spinning coin a soldier's last hit (gold) or its miss (grey, its own side only) throws up |
 | [js/draw/callouts.js](../../js/draw/callouts.js) | ~160 | shared scope, no `window.*` export | what a callout looks like: the plate over the caller, the ground ping, the minimap pulse |
 | [js/draw/fog.js](../../js/draw/fog.js) | ~210 | shared scope, no `window.*` export | the fog of war's picture: the viewed side's sight lines, the stepped mask laid over the world, the maps' fog by tile, and `fogShown` (whether a body is drawn) |
@@ -212,9 +214,9 @@ order, so the script tags still interleave them:
 | [js/ui/endscreens.js](../../js/ui/endscreens.js) | ~920 | shared scope, no `window.*` export | the victory and defeat ceremonies |
 | [js/ui/recap.js](../../js/ui/recap.js) | ~280 | shared scope, no `window.*` export | the death recap in the replay's top-left corner: who hit you, with what, how much, and the split by kind |
 | [js/ui/lobby.js](../../js/ui/lobby.js) | ~540 | shared scope, no `window.*` export | the post-game lobby: the match's own record, and the sampling during play its graphs are drawn from |
-| [js/sim/save.js](../../js/sim/save.js) | ~350 | shared scope, no `window.*` export | the replay proof: the valley's baseline, the match as one object graph (`saveCapture`/`saveApply`), `saveHash`, and the record put back on a fresh page (`saveDevLoad`) |
+| [js/sim/save.js](../../js/sim/save.js) | ~350 | shared scope, no `window.*` export | the replay proof: the map's baseline as it grew, the match as one object graph (`saveCapture`/`saveApply`), `saveHash`, and the record put back on a fresh page (`saveDevLoad`) |
 | [js/ui/botview.js](../../js/ui/botview.js) | ~470 | shared scope, no `window.*` export | the bot dev view: every bot's thought read one way, the recorder, the F4 map overlay and table, the link to the out-of-game page [botlab.html](../../botlab.html) ([botview.md](botview.md)) |
-| [js/sim/eagle.js](../../js/sim/eagle.js) | ~710 | shared scope, no `window.*` export | the eagle drop: each bird's flight in over its own corner, the ride, the hop off, the crash on the perch, the drop brief, the bird each side guards |
+| [js/sim/eagle.js](../../js/sim/eagle.js) | ~710 | shared scope, no `window.*` export | the eagle drop: each bird's flight in over its own corner, the ride, the arrival's camera, the crew's leap, the crash on the perch, the bird each side guards |
 | [js/draw/eagle.js](../../js/draw/eagle.js) | ~460 | shared scope, no `window.*` export | the drop's pixels: the birds, the riders, the trail, the roost's bar, the ride's HUD, the brief's headline; loaded right after js/sim/eagle.js |
 | [js/sim/base.js](../../js/sim/base.js) | ~80 | shared scope, no `window.*` export | the bases: each side's fixed hollow, perch and three lane mouths in its roost corner, where each lane's bay stands, the road's two ends, `placeBase` |
 | [js/sim/jungle.js](../../js/sim/jungle.js) | ~60 | shared scope, no `window.*` export | the jungle's pine walls: one quarter's capsules mirrored to all four, planted at boot with no `rng()` |
@@ -256,9 +258,7 @@ tag `pre-split` keeps the one-file history.
 The local player profile — **one `name`** (every other player sees it), its lifetime `stats`
 (`wins` / `matches` / `gold` / `kills` / `deaths`), `hero` (the NAME of the hero last
 locked in, '' for none, where the champ select's grid opens next time; `profileHero()`, js/sim/player.js, turns it into a `CLASSES` index), `pos` (the draft position it asks
-for, a `POSITIONS` index or -1 any: `pos()`/`setPos()`), the
-one-shot `dropped` flag (`hasDropped()`/`markDropped()`: has this profile ever jumped off the
-eagle, gating the scripted first flight that rides the landing), `bestLap`
+for, a `POSITIONS` index or -1 any: `pos()`/`setPos()`), `bestLap`
 (`bestLap()`/`setBestLap()`: the ice parkour's all-time record) and `bestRange`
 (`bestRange()`/`setBestRange()`: the archery round's best score) — the only two things the
 practice arena writes ([world.md](world.md#the-practice-tool)) — the
@@ -523,7 +523,7 @@ None of the scripts is part of the game, and nothing in `js/` may depend on one 
   ([checklists](checklists.md#verifying-a-change)).
 - **`app/check-same.js`** — the refactor check (Playwright): this tree (uncommitted edits too) and
   another commit (`origin/main` by default, written out with `git archive`) served side by side
-  and played on the same seeds and the practice map, every seat a bot, the page frozen from its
+  and played on the same match seeds and the practice tool, every seat a bot, the page frozen from its
   first frame with `Math.random`, `performance.now` and `Date.now` faked. Every 10 s of match it
   compares `DBG.saveHash` and the canvas in six views; the base plays its first seed twice so a
   leak outside the seed reads as "cannot judge", not as a pass. On a sim difference it names the
@@ -557,3 +557,10 @@ None of the scripts is part of the game, and nothing in `js/` may depend on one 
   Python bakers, desktop/, bots/, .claude/, the root pages); a name written `prefix*` needs some
   code word to start with it. `SKIP_FILES` lists the docs that name old code on purpose (the parked
   cards) and `ALLOW` the few backticked words that are not code, each with its reason.
+- **`app/check-names.js`** — the undeclared-name check, run by `check-globals.js` (or alone). A
+  call to a renamed or deleted function still loads and throws only when its line runs, which can
+  be a screen no check visits. It fails a name a js/ file reads (not after a `.`, not an object
+  key, not a method's own name or a label) that no js/ file declares at any depth (const/let/var,
+  a function or class, a parameter, a catch binding, `window.X =`) and that is not the language's
+  or the page's own (`BROWSER`). It works by name, not by scope, so it can miss a misspelt local
+  that matches a name declared elsewhere, never invent one.

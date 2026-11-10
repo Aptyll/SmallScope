@@ -9,7 +9,7 @@ and items and levels grow it through the hero's stats ([hero stats](hero-stats.m
 
 | field | means |
 | --- | --- |
-| `name` | what the tooltip calls it (OATH GREATSWORD, STAR SHARD, HEAVY ARBALEST) |
+| `name` | what the tooltip calls it (OATH GREATSWORD, STAR-GLASS, HEAVY ARBALEST) |
 | `art` | the weapon's picture: `SPRITES.weaponArt[art]` (its 12 px icon) and `SPRITES.weaponHeld[art]` (a blade at its real length), js/sprites/weapons.js |
 | `cycle` | seconds of renock after a press, before the next draw may start. `attackCycle(p)` scales it by `kit.nock / BOW_NOCK` (anything that shortens `kit.nock` quickens it) and divides by ATTACK SPEED (`asMul`) |
 | `kb` | [knockback](#knockback): the multiplier the blow shoves with |
@@ -18,7 +18,7 @@ and items and levels grow it through the hero's stats ([hero stats](hero-stats.m
 
 Today's rows include ARMATOS's OATH GREATSWORD and FORTIVA's CHAIN GREATSWORD (a cut, 28 px and 1.05 rad,
 `cycle` 30/60 s, `kb` 1.2), and BELLA's EAGLE SPATHA (a quicker, shorter cut: 26 px, 0.95 rad, `cycle` 26/60 s, `kb` 1; each named hero's blade is drawn as its own through `heroBlade`,
-js/draw/heroes.js), and IGNIA's CROOK AND LANTERN (a slower ember shot: 260 px/s for 0.85 s, `cycle` 60/60 s, `kb` 0.6, drawn as `look: 'ember'`; her staff is carried, not swung: `staff` on the row, `HERO_STAVES`), and AURA's STAR SHARD (a star bolt, 270 px/s for 0.95 s, `cycle` 66/60 s, `kb` 0.5, drawn as `look: 'starbolt'`; carried upright like IGNIA's staff, `staff: 'shard'`), and SALVIA's SNOWDROP STAFF (a sprig, 250 px/s for 0.85 s, `cycle` 62/60 s, `kb` 0.5, drawn as `look: 'sprig'`; carried upright, `staff: 'snowdrop'`), and LUCERNA's LANTERN (a spark, 260 px/s for 0.8 s, `cycle` 62/60 s, `kb` 0.6, drawn as `look: 'lampspark'`; the lantern hangs from her hand, `staff: 'lantern'`), and BUCINA's HORN (a note, 255 px/s for 0.8 s, `cycle` 62/60 s, `kb` 0.6, drawn as `look: 'hornnote'`; carried upright, `staff: 'horn'`), and VARRO's HUNTING SPEAR (a thrust a touch longer and narrower than the greatsword's cut: 30 px, 0.8 rad, `cycle` 28/60 s, drawn as his own blade, `HERO_BLADES.spear`), and VELOX's STAFF SLING (a sling stone, 300 px/s for 0.6 s, `cycle` 50/60 s, `kb` 0.6, drawn as `look: 'slingstone'`; carried upright, `staff: 'sling'`), ARCUS's WILLOW LONGBOW (an arrow, 400 px/s for 0.68 s, `cycle` 46/60 s, `kb` 0.7; carried upright facing down or up, `HERO_CARRY`; a hit on a rival hero leaves it standing in the snow, `HERO_SHOT_END`), and SAGITTA's HEAVY ARBALEST (a bolt, 430 px/s for 0.82 s, `cycle` 80/60 s, `kb` 1.3, drawn as `look: 'bolt'`; every third is a heavy bolt, `HERO_PASSIVE` `shot`). A new hero is a new
+js/draw/heroes.js), and IGNIA's CROOK AND LANTERN (a slower ember shot: 260 px/s for 0.85 s, `cycle` 60/60 s, `kb` 0.6, drawn as `look: 'ember'`; her staff is carried, not swung: `staff` on the row, `HERO_STAVES`), and AURA's STAR-GLASS (a star bolt, 270 px/s for 0.95 s, `cycle` 66/60 s, `kb` 0.5, drawn as `look: 'starbolt'`; carried upright like IGNIA's staff, `staff: 'shard'`), and SALVIA's SNOWDROP STAFF (a sprig, 250 px/s for 0.85 s, `cycle` 62/60 s, `kb` 0.5, drawn as `look: 'sprig'`; carried upright, `staff: 'snowdrop'`), and LUCERNA's LANTERN (a spark, 260 px/s for 0.8 s, `cycle` 62/60 s, `kb` 0.6, drawn as `look: 'lampspark'`; the lantern hangs from her hand, `staff: 'lantern'`), and BUCINA's HORN (a note, 255 px/s for 0.8 s, `cycle` 62/60 s, `kb` 0.6, drawn as `look: 'hornnote'`; carried upright, `staff: 'horn'`), and VARRO's HUNTING SPEAR (a thrust a touch longer and narrower than the greatsword's cut: 30 px, 0.8 rad, `cycle` 28/60 s, drawn as his own blade, `HERO_BLADES.spear`), and VELOX's STAFF SLING (a sling stone, 300 px/s for 0.6 s, `cycle` 50/60 s, `kb` 0.6, drawn as `look: 'slingstone'`; carried upright, `staff: 'sling'`), ARCUS's WILLOW LONGBOW (an arrow, 400 px/s for 0.68 s, `cycle` 46/60 s, `kb` 0.7; carried upright facing down or up, `HERO_CARRY`; a hit on a rival hero leaves it standing in the snow, `HERO_SHOT_END`), and SAGITTA's HEAVY ARBALEST (a bolt, 430 px/s for 0.82 s, `cycle` 80/60 s, `kb` 1.3, drawn as `look: 'bolt'`; every third is a heavy bolt, `HERO_PASSIVE` `shot`). A new hero is a new
 `attack` row and nothing else. The ATTACK SPEED stat is read off the same row: `classAs(cls)` is
 one over the full draw plus the renock (js/sim/stats.js).
 
@@ -52,6 +52,11 @@ It rides to `hurtUnit` as `o.kbMul`, which scales whatever shove that kind takes
 is still the absolute px/s an *ability* (or the cut's own 30) picks for a particular blow. A shot
 with no `kb` at all takes the ordinary shove, ×1.
 
+A **player** is never shoved by an attack: `damagePlayer` gives a player knockback only from a
+key's blow (one with `o.ab`, never `o.basic`), so a soldier's, a tower's, a beast's or a hero's
+attack lands where the player stands. It still keeps which way the blow came (`hitNx`/`hitNy`) for
+the hit's spark and recoil (js/draw/hitfx.js). An attack's `kb` still shoves animals and soldiers.
+
 ## The cut
 
 A `cut` row is a blade. **The draw is still the throttle** — a tap reaches `SLASH_REACH_MIN`
@@ -67,8 +72,12 @@ grows the same wedge in place of the aim line (`drawAimLine`), so the reach the 
 have is on the ground before it lands. **The hand swings the blade itself**: it is drawn at its
 real 22 px length (`SPRITES.weaponHeld`, or the hero's own blade), a draw winds it back to the
 start of its arc, and for `SLASH_T` after the loose (`p.slashT`/`slashA`/`slashHalf`, counted
-down in `updatePlayer`) `drawHeldTool` sweeps it across the wedge from the hands (turned about its grip), two
-ghosts of it trailing, each behind the body while it points up the screen. A bot with a blade fights at `AI_MELEE_D` (18 px) instead of a bow's 70,
+down in `updatePlayer`) `drawHeldTool` swings it across the wedge from the hands (turned about its grip) in drawn steps
+at `SWING_FPS` (`swingFrame`): part way across, through with one solid pixel swish behind it
+(`drawSwish`: a light edge, a body and an ink line on the outside, never over the head), the swish
+going, then held at the arc's end. Each pixel sits behind the body while it points up the screen.
+The whole body acts with it (`attackLean`): 1 px back off the aim through the draw, 1 px in toward
+it through the cut and the held finish. A bot with a blade fights at `AI_MELEE_D` (18 px) instead of a bow's 70,
 and only presses fire once the target is under the edge (`aiMelee`, js/ai/ai.js).
 
 ## A shot in flight

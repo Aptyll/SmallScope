@@ -1,6 +1,6 @@
 'use strict';
 // The valley's story landmarks - a boat frozen into a lake: scenery placed
-// from the seed where it makes sense.
+// on the map's own stream where it makes sense.
 // ------------------------------------------------------------ landmarks
 // A landmark is one entry here, one sprite (SPRITES.landmark, js/sprites/
 // landmarks.js) and nothing else: the entry becomes an OBJECTS row below, the
@@ -10,7 +10,7 @@
 //            parts are stamped east and north of it, as the hog hut's are
 //   solid    blocks a walker or not
 //   where    a LM_WHERE rule: which tiles an anchor may take
-//   count    how many a map stands, if the seed finds room for them
+//   count    how many the map stands, if it has room for them
 //   mirror   stood in pairs, one in each side's half, reflected across the
 //            diagonal the way the camps are (a thing a player USES is fair)
 //   spacing  tiles between two of the same kind
@@ -95,7 +95,7 @@ const landmarks = []; // every landmark stood this match: { key, tx, ty } (place
 // Worldgen's landmark pass (boot.js, after placeCamps): each kind in table
 // order takes its count of anchors from the tiles its rule allows, in an
 // order shuffled on its own stream, worldRng('landmarks').
-// It writes only `objects`. A seed that has no room for one stands fewer.
+// It writes only `objects`. Where the map has no room for one it stands fewer.
 function placeLandmarks() {
   const rnd = worldRng('landmarks');
   const depth = lmIceDepth();

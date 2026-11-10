@@ -1,16 +1,16 @@
 // ------------------------------------------------------------ sim events
 // Everything the SIM does that only the eye and the ear can tell - a puff of
-// snow, a damage number, a cue, a shake - lands here on its way to the
+// snow, a damage number, a cue - lands here on its way to the
 // screen, so that a host can WRITE IT DOWN for the clients that do not run
 // the sim at all (docs/pvp-architecture.md). Solo play records nothing: the
 // helpers play the cosmetic exactly as the bare call did, and the ring stays
 // empty. This is step 3 of the plan; the client that replays the ring is a
 // later one, and evPlay below is what it will call per entry.
 //
-// THE RULE: a sound, a shake or a puff raised inside the step that used to be
+// THE RULE: a sound or a puff raised inside the step that used to be
 // gated on the LOCAL screen - `if (nearPlayer(x, y)) SFX.cue()`, `if (p ===
-// player) SFX.cue()`, `if (p === player) state.shake = ...` - goes through
-// sfxAt / sfxFor / sfxOwn / shakeAt / shakeFor, which carry the WHERE and the
+// player) SFX.cue()` - goes through
+// sfxAt / sfxFor / sfxOwn, which carry the WHERE and the
 // WHO instead of the answer, because the answer differs per screen: the host
 // is near its own player, not a client's. burst() and the floaters need no
 // call-site change - they carry a position already and record themselves.
@@ -52,16 +52,6 @@ function sfxOwn(p, own, other) {
   if (p === player) SFX[own]();
   else if (nearPlayer(p.x, p.y)) SFX[other]();
 }
-// a shake for one body (or either of two: the striker and the struck)
-function shakeFor(p, n, q) {
-  evPush('shakep', [evPid(p), n, evPid(q)]);
-  if (p === player || (q && q === player)) state.shake = Math.max(state.shake, n);
-}
-// a shake at a place, for every screen within r px of it
-function shakeAt(x, y, n, r) {
-  evPush('shake', [x, y, n, r || 0]);
-  if (nearPlayer(x, y, r || 0)) state.shake = Math.max(state.shake, n);
-}
 
 // replaying one recorded entry on a screen that did not run the step: the
 // same answers, asked of THIS screen's player. burst/float go straight back
@@ -77,10 +67,8 @@ function evPlay(ev) {
     case 'sfx': if (nearPlayer(a[1], a[2], a[3])) SFX[a[0]](a[4]); break;
     case 'sfxp': if (a[1] === player.id) SFX[a[0]](a[2]); break;
     case 'sfxo': if (a[2] === player.id) SFX[a[0]](); else if (nearPlayer(a[3], a[4])) SFX[a[1]](); break;
-    case 'shakep': if (a[0] === player.id || a[2] === player.id) state.shake = Math.max(state.shake, a[1]); break;
     case 'ann': annTake({ k: a[0], n: a[1], a: a[2], at: a[3], bk: a[4], bv: a[5] }); break; // the announcer's call, for every side (js/ui/announcer.js)
     case 'roost': roostWarnHere(a[0], a[1], a[2], a[3]); break; // a blow on a bird: its own side's screens out of earshot are warned (js/sim/eagle.js)
     case 'call': addCallout(a[0], a[1], a[2], a[3], a[4], a[5], a[6]); break; // a bot's callout (js/ai/ai-callouts.js)
-    case 'shake': if (nearPlayer(a[0], a[1], a[3])) state.shake = Math.max(state.shake, a[2]); break;
   }
 }

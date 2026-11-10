@@ -178,8 +178,8 @@ weather moves reads it rather than keeping a clock of its own:
 
 ## The day's weather
 
-Every day of a match rolls one of four weathers (the `weather` banner, js/sim/weather.js) off the seed
-and `state.day` with `hash2`, so every client that knows the day (the snapshot already carries it)
+Every day of a match rolls one of four weathers (the `weather` banner, js/sim/weather.js) off the map's seed
+and `state.day` with `hash2`, so a day brings the same weather every match and every client that knows the day (the snapshot already carries it)
 knows the sky, and the wire carries nothing new. `weatherOf(day)` names it off `WX_ODDS`; the
 practice arena always gets `snow`. A weather is only a row of **dials** in `WEATHERS` that the
 passes above already read:
@@ -216,7 +216,7 @@ squares the daylight, so a blizzard's night is as still as any other.
   toggle (`settings.vidStars`).
 
 `DBG.weather('blizzard')` pins a weather (fading to it like a dawn; `DBG.weather()` hands it back
-to the day), `DBG.wx` reads the dials and `DBG.weatherOf(day)` what a day rolls on this seed.
+to the day), `DBG.wx` reads the dials and `DBG.weatherOf(day)` what a day rolls.
 
 On a GTX 1060 at 886×498 over the treeline the whole pass is inside measurement noise of not
 running at all — see [What this pass costs](#what-this-pass-costs). Do not profile this in a

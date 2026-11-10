@@ -195,7 +195,6 @@ function bucinaPines(p) {
   }
   if (struck) bucinaHeard(p);
   bucinaCalls.push({ x: p.x, y: p.y, team: p.team, t: 0 });
-  shakeAt(p.x, p.y, 2, 60);
   sfxAt('break_', p.x, p.y);
 }
 const HORN_CALL_T = 0.8; // s the call's ring stays on the snow

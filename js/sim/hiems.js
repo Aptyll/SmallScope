@@ -205,7 +205,6 @@ function hiemsSnap(p) {
   abFx.push({ kind: 'ring', x: c.x, y: c.y, r: SNAP_R, t: 0, col: '#e6f8ff' });
   burst(c.x, c.y, '#e6f8ff', 20, 70, 0.5, true);
   burst(c.x, c.y, '#7cc4e8', 10, 50, 0.45, true);
-  shakeFor(p, 3);
   sfxAt('break_', c.x, c.y);
 }
 

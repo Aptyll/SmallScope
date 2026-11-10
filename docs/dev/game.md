@@ -23,7 +23,7 @@ the back woods behind the bird for logs to rebuild them; idle, it keeps to the r
 **Three lanes** join the bases, like a Rift: **the road** (mid) runs the map's diagonal from one
 perch to the other, one straight, dry packed-earth lane, and **the top and bot lanes** run
 straight up either edge of the valley and turn one hard corner, like the Rift's, crossing the creek on a ford at that corner, the middle. All
-three are there from worldgen, the same on every seed and readable from anywhere, and each leaves a
+three are there from worldgen, the same every match and readable from anywhere, and each leaves a
 base by its own mouth of the hollow ([the road](world.md#the-road),
 [the side lanes](world.md#the-side-lanes)). Half a minute after landing each merchant raises a
 **barracks** (a bot bay) just inside the mid mouth, then one inside the top and bot mouths:
@@ -74,7 +74,7 @@ ride). Nothing in either counts and nothing is at stake. See [the practice tool]
 ## The pillars
 
 **Your weapon is your hero's.** The left button is one plain MOBA basic attack that belongs to
-the hero's kit (ARMATOS's OATH GREATSWORD, FORTIVA's CHAIN GREATSWORD, BELLA's EAGLE SPATHA, IGNIA's CROOK AND LANTERN, NIX's ICE DIRK, FALCO's THROWING KNIFE, AURA's STAR SHARD, SALVIA's SNOWDROP STAFF, LUCERNA's LANTERN, HIEMS's SNOWFLAKE STAFF, FABER's CLOCK STAFF, VARRO's HUNTING SPEAR, BUCINA's HORN, RUPES's ICE MAUL, MARIS's HARPOON, LIGNUM's FELLING AXE, VELOX's STAFF SLING, SAGITTA's HEAVY ARBALEST, CLIVUS's ICE AXE, ARCUS's WILLOW LONGBOW), held
+the hero's kit (ARMATOS's OATH GREATSWORD, FORTIVA's CHAIN GREATSWORD, BELLA's EAGLE SPATHA, IGNIA's CROOK AND LANTERN, NIX's ICE DIRK, FALCO's THROWING KNIFE, AURA's STAR-GLASS, SALVIA's SNOWDROP STAFF, LUCERNA's LANTERN, HIEMS's SNOWFLAKE STAFF, FABER's CLOCK STAFF, VARRO's HUNTING SPEAR, BUCINA's HORN, RUPES's ICE MAUL, MARIS's HARPOON, LIGNUM's FELLING AXE, VELOX's STAFF SLING, SAGITTA's HEAVY ARBALEST, CLIVUS's ICE AXE, ARCUS's WILLOW LONGBOW), held
 to draw and released to land, and nothing on the map drops another: what grows over a match is the
 hero's level and the six item slots. The **bottom bar** shows those six slots beside the
 abilities at all times. [The basic attack](gameplay/the-basic-attack.md).

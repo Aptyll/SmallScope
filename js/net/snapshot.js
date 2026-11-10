@@ -176,7 +176,7 @@ function snapSingles() {
   const s = { state: {}, camps: [] };
   for (const k of SNAP_STATE) { const v = pack(state[k], 0); if (v !== undefined) s.state[k] = v; }
   for (const c of camps) s.camps.push({ repopT: c.repopT, seen: (c.seen || [0, 0]).slice() }); // the rest of a camp is written down by worldgen
-  s.dropMeta = state.drop ? { firstFlight: state.drop.firstFlight } : null;
+  s.dropMeta = state.drop ? {} : null; // the ride is there or not: its birds ride with the entities
   s.pads = pack(pads, 0); // the road registry: each side's crash pad
   s.iceBreaks = iceBreaks.slice(); // plain numbers and tile lists: every screen rebuilds the pixels (js/sim/icebreak.js)
   s.orca = pack(orca, 0); // the orca's few numbers (js/sim/orca.js); a client eases its x/y like a body's
@@ -229,7 +229,7 @@ function snapApplySingles(s) {
   }
   if (s.dropMeta !== undefined) {
     if (!s.dropMeta) state.drop = null;
-    else { if (!state.drop) state.drop = { eagles: [], firstFlight: s.dropMeta.firstFlight }; state.drop.firstFlight = s.dropMeta.firstFlight; }
+    else if (!state.drop) state.drop = { eagles: [] };
   }
   if (s.pads) {
     // the road registry, merged by team so an entry keeps its identity
@@ -307,6 +307,9 @@ function snapApplyTiles(s) {
     }
   }
   if (s.structs) { structures.length = 0; for (const i of s.structs) if (objects[i]) structures.push(objects[i]); }
+  // ...and each cable cut to the towers just sent (towersSync, js/sim/towers.js), now, so
+  // nothing drawn before the cables this frame (the zipline's E) reads last frame's
+  towersSync();
   // the ground: only tiles that changed are repainted - the whole array is
   // a boot-time bake (repaintGround, js/draw/ground.js)
   if (s.ground) {
@@ -897,14 +900,11 @@ function snapBlank() {
 const SNAP_T0 = 1e6; // the one instant every harness frame is rendered at (ms)
 function snapFrame() {
   const now = performance.now;
-  // ...and the shake: render() rolls a fresh random offset for the frame
-  // while it is up, which would make two frames of one state disagree.
   // The trampled snow repaints a few chunks a frame (drawTrample): caught
   // up whole here, or a chunk the budget held back on one frame paints on
   // the next and shows as pixels no field explains
-  const shake = state.shake; state.shake = 0;
   performance.now = () => SNAP_T0; trCatchUp = true;
-  try { render(); } finally { performance.now = now; state.shake = shake; trCatchUp = false; }
+  try { render(); } finally { performance.now = now; trCatchUp = false; }
   return new Uint32Array(wctx.getImageData(0, 0, WV_W, WV_H).data.buffer);
 }
 // every path at which two packed snapshots disagree (the first `max`): the
@@ -983,8 +983,11 @@ function netEcho() {
   const size = snapSize(s);
   const dict = encDict(), bytes = snapEncode(s, dict);
   const kept = snapKeepSkipped();
+  // no frame of the blank world: the draw keeps a little of its last frame
+  // (a body's fall starts on the edge of p.dead it SAW, trackDowns; a call
+  // plate hangs on the name tag the air layer left, callAnchor), and a blank
+  // frame between would hand the echo a death, or a world, no screen saw
   snapBlank();
-  const blanked = snapFrame();
   snapApply(snapDecode(bytes, encDict()));
   const b = snapFrame();
   // what did not survive the round trip, field by field (a second build
@@ -992,7 +995,7 @@ function netEcho() {
   const mismatch = [];
   snapCompare(JSON.parse(json), snapBuild(), '', mismatch, 20);
   snapRestoreSkipped(kept); // the page goes on stepping this world: its bookkeeping back (a heading lost is a NaN walk)
-  return { diff: snapDiff(a2, b), noise, blankDiff: snapDiff(a2, blanked), bytes: json.length, binBytes: bytes.length, size, mismatch };
+  return { diff: snapDiff(a2, b), noise, bytes: json.length, binBytes: bytes.length, size, mismatch };
 }
 // echo every `every` ticks over `ticks` of stepping; the worst diff and when
 function netEchoRun(ticks, every) {

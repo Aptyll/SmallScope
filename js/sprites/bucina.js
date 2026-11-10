@@ -303,8 +303,8 @@ const BUCINA_PAL = Object.assign({}, ARM_PAL, { a: '#7a3a22', A: '#a0522d', q: '
 // doll's (app/bake-player: horn, column), so her run is her drawn body in every facing
 // (heroRunFront, js/sprites/armatos.js); the doll rolls her.
 const BUCINA_SKINS = [
-  { id: 'horn', name: 'HORN-BLOWER', rarity: 'common', price: 0, grids: BUCINA_BODY.horn, motion: 'horn', run: 'drawn' },
-  { id: 'column', name: 'COLUMN CALL', rarity: 'rare', price: 200, grids: BUCINA_BODY.column, motion: 'column', run: 'drawn' },
+  { id: 'horn', name: 'HORN-BLOWER', rarity: 'common', price: 0, grids: BUCINA_BODY.horn, motion: 'horn', hem: 2, run: 'drawn' },
+  { id: 'column', name: 'COLUMN CALL', rarity: 'rare', price: 200, grids: BUCINA_BODY.column, motion: 'column', hem: 2, run: 'drawn' },
 ];
 
 // ------------------------------------------------------------ bucina horn

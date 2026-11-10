@@ -83,12 +83,6 @@ function drawTargetRim(src, sx, sy, w, h, x, y, now) {
 function render() {
   const now = performance.now() / 1000;
   stepItemIcons(now * 1000); // the animated item icons, before anything reads one
-  // the shake's jitter comes off fxRng, never the sim's rng: a frame is not a
-  // step, and a draw off the main stream here made how many frames a screen
-  // happened to render change the match (a saved one replayed differently)
-  const shk = (s) => Math.round(-s + fxRng() * 2 * s);
-  const shx = settings.shake && state.shake > 0.2 ? shk(state.shake) : 0;
-  const shy = settings.shake && state.shake > 0.2 ? shk(state.shake) : 0;
   // THE SUB-PIXEL CAMERA. The world buffer's corner is the camera FLOORED to
   // a whole world px, and what is left over (camX - floor, 0..1 world px) is
   // spent at the blit below, in device px: a world px is k device px (6 at a
@@ -102,8 +96,8 @@ function render() {
   // and never vibrates against it. The cost: a followed body sits on the
   // world grid while the screen slides under it, so it wanders within half
   // a world px of the centre - one sprite, instead of the whole frame.
-  const ox = Math.floor(camX) + shx;
-  const oy = Math.floor(camY) + shy;
+  const ox = Math.floor(camX);
+  const oy = Math.floor(camY);
   const ex = ox, ey = oy;
   wOX = ox; wOY = oy;
 
@@ -127,6 +121,7 @@ function render() {
   drawFlatPass(ox, oy, ex, ey, tx0, ty0, tx1, ty1, now); // the ice's sky, the flat objects, the rings
 
   const draws = gatherDraws(ox, oy, tx0, ty0, tx1, ty1, now);
+  drawHitPuffs(ex, ey, now); // a big hit's snow puff, under the bodies (js/draw/hitfx.js)
   drawSorted(draws, ox, oy, ex, ey, now);
 
   drawSelection(ox, oy, now);
@@ -140,6 +135,7 @@ function render() {
 
   drawBuildBars(ox, oy); // construction progress bars
   drawParticles(ex, ey);
+  drawHitFx(ex, ey, now); // a big hit's spark, over the bodies (js/draw/hitfx.js)
 
   drawAimLine(ex, ey, now);
   drawZipGuide(ex, ey);     // the dotted walk to the hovered cable (js/draw/zipline.js)
@@ -170,8 +166,8 @@ function render() {
   drawHitboxes(ox, oy, ex, ey);
   drawBotLines(ex, ey); // F4: a line from each bot to what it is after (js/ui/botview.js)
 
-  renderAirLayer(shx, shy, now); // the air layer: a bird in flight, its riders, the zipline riders
-  renderScreen(ox, oy, shx, shy, now); // the blit, then the screen: weather, HUD, screens, pointer
+  renderAirLayer(now); // the air layer: a bird in flight, its riders, the zipline riders
+  renderScreen(ox, oy, now); // the blit, then the screen: weather, HUD, screens, pointer
 }
 
 // ---- the shot's body ------------------------------------------------------

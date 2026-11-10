@@ -268,7 +268,6 @@ function falcoDrop(p) {
   knockUp(q, STOOP_KNOCK, p);
   abFx.push({ kind: 'ring', x: q.x, y: q.y, r: 24, t: 0, col: '#f2cc6a' });
   burst(q.x, q.y + 2, '#eef4fb', 22, 80, 0.55, true);
-  shakeFor(p, 5, q);
   sfxAt('break_', q.x, q.y);
 }
 

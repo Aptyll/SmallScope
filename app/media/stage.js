@@ -15,8 +15,6 @@ window.MEDIA = (function () {
     // a match flies its drop first; the practice field (o.practice) boots on the ground
     if (!PRACTICE) D.beginDrop();
     for (let i = 0; i < 60 * 90 && !PRACTICE; i++) {
-      if (state.dropBrief) state.dropBrief = null;
-      if (player.aboard && D.drop.eagles[player.team].state === 'down') D.hopOff(player);
       update(DT);
       if (state.mode === 'play' && players.every((p) => !p.active || !inAir(p))) break;
     }

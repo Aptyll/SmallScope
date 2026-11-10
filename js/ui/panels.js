@@ -462,7 +462,6 @@ const SET_TABS = [
     { id: 'hudRail', label: 'set.hudRail', kind: 'slider' },
     { id: 'map', label: 'set.map', kind: 'slider' },
     { id: 'hud', label: 'set.hud', kind: 'slider' },
-    { id: 'shake', label: 'set.shake', kind: 'toggle' },
     { id: 'info', label: 'set.info', kind: 'toggle' },
     { id: 'cursor', label: 'set.cursor', kind: 'toggle', on: 'set.pixel', off: 'set.browser' },
     // where the hover tooltip sits (tipPos, js/ui/tooltip.js) - beside the
@@ -762,7 +761,7 @@ function settingsClose() {
 
 // which settings widget is under the pointer (null for none); shared by the
 // click handler and the cursor so the hand cursor can never disagree with a click
-// Answers: a row id ('vol', 'shake', 'vidClouds', ...), 'mute', 'leave',
+// Answers: a row id ('vol', 'info', 'vidClouds', ...), 'mute', 'leave',
 // 'tab:<id>' for a navbar cell, 'ctab:<id>' for a controls-page cell,
 // 'c:<row>:<opt>' for a choice row's word (QUALITY), or
 // 'key:<action>' for a keyboard cap and 'keyreset' for the word under them.

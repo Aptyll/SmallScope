@@ -75,7 +75,7 @@ function dirCam(dt) {
   director.flash = Math.max(0, director.flash - dt);
   if (!director.free) {
     if (state.mode !== 'play' && state.mode !== 'dead') return false;
-    if (state.intro > 0 || state.eagleCine || state.dropBrief) return false;
+    if (state.intro > 0 || state.eagleCine) return false;
     const vp = viewPlayer(), a = Math.min(1, dt * DIR_FOLLOW);
     camX += (vp.x - WV_W / 2 - camX) * a;
     camY += (vp.y - WV_H / 2 - camY) * a;

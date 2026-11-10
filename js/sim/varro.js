@@ -168,7 +168,6 @@ function leapLand(p, q) {
   if (PRACTICE) abHitDummies(q.x, q.y, 10, dmg);
   p.slashT = SLASH_T; p.slashA = Math.atan2(ny, nx); p.slashHalf = 0.5; // the spear driven in
   burst(q.x, unitMidY(q), '#eef4fb', 8, 50, 0.4, true);
-  shakeFor(p, 3, q);
   sfxAt('hit', q.x, q.y);
 }
 function leapEnd(p) {
@@ -190,7 +189,6 @@ function varroHowl(p) {
   for (const a of animals) if (a.summon === 'pack' && a.owner === p.id) a.howlT = HOWL_PACK_T;
   abFx.push({ kind: 'ring', x: p.x, y: p.y, r: HOWL_R, t: 0, col: '#cfd8e8' });
   burst(p.x, p.y - 12, '#eef4fb', 12, 55, 0.5, true);
-  shakeFor(p, 2);
   sfxAt('howl', p.x, p.y);
 }
 
@@ -223,7 +221,6 @@ function varroStrike(p) {
   if (PRACTICE) abHitDummies(q.x, q.y, 10, dmg);
   p.slashT = SLASH_T; p.slashA = Math.atan2(ny, nx) + (last ? -0.3 : 0.3); p.slashHalf = 0.5;
   burst(q.x, unitMidY(q), last ? '#cfd8e8' : '#eef4fb', last ? 8 : 5, 45, 0.4, true);
-  shakeFor(p, last ? 3 : 1, q);
   sfxAt('hit', q.x, q.y);
 }
 

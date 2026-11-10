@@ -113,7 +113,7 @@ function drawAuraGround(ex, ey, now) {
 }
 HERO_GROUND.push(drawAuraGround);
 
-// ---- the STAR SHARD ------------------------------------------------------------------
+// ---- the STAR-GLASS ------------------------------------------------------------------
 // Her staff (CLASSES' `staff: 'shard'`; HERO_STAVES, js/draw/heroes.js): a fallen star's
 // pale shard bound in gold to a dark staff, carried upright; a glint walks up the shard
 // between two frames. The hand closes on the shaft at AURA_SHARD_GRIP.

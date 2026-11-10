@@ -11,12 +11,12 @@ node app/arena/run.js --seeds 1-8 --kind versus --a 2 --b 1 # HARD against NORMA
 node app/arena/match.js '{"seed":42,"maxMin":3}' > one.json   # one match, its log on stdout
 ```
 
-`run.js` flags: `--seeds` (`a-b` or `a,b,c`), `--level` (one or a list of `AI_LEVELS` indexes: 0 EASY, 1 NORMAL, 2 HARD, 3 IMPOSSIBLE; default 1),
+`run.js` flags: `--seeds` (`a-b` or `a,b,c`: each one the match's own stream, `SEED`; the map is always the one map), `--level` (one or a list of `AI_LEVELS` indexes: 0 EASY, 1 NORMAL, 2 HARD, 3 IMPOSSIBLE; default 1),
 `--kind level|versus` with `--a`/`--b`, `--proxy` (the profile seat 0 plays, below), `--max` (minutes before a timeout, default 40), `--every` (sample pitch in s,
 default 2), `--jobs` (parallel matches, default one per core), `--out` (default
 `arena-out/<date>`, gitignored; a folder that already holds a run is refused unless `--force`),
 `--wall` (seconds of real time before a match is killed, default 1.5 x `--max` + 60), `--quiet`. It writes `<out>/<id>.json` per match,
-`<out>/summary.jsonl` (one line per match without the samples), `<out>/map-<seed>-<shape>.json` (the terrain as the minimap paints it, once per seed; `shape` is always 0 now that the game has one map) and `<out>/aggregate.json` (the
+`<out>/summary.jsonl` (one line per match without the samples), `<out>/map-<seed>-<shape>.json` (the terrain as the minimap paints it, once per seed; every seed's is the same map and `shape` is always 0) and `<out>/aggregate.json` (the
 means per setup), and prints a table.
 
 From a script: `require('./app/arena/match').playMatch(opts)` plays one match in the calling
@@ -68,7 +68,6 @@ What differs from a real match, on purpose:
 - **The clock never stops for seat 0's death.** A dead `player` puts the page in `'dead'`, which
   stops `state.elapsed` and the day. The harness puts it back to `'play'` each tick, so the match
   runs on as it does for everyone else in it. The respawn itself is the game's.
-- **No drop brief** (`PROFILE.markDropped()`), so seat 0 hops off the roost like every other bot.
 
 ## Setups
 

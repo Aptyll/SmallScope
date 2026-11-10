@@ -11,6 +11,15 @@
   let ctx = null;
   let master = null;   // the master dial: destination for everything synthesised or sampled
   let sfxBus = null;   // the SOUNDS dial, under master
+  // THE BUS DAMPER, between the SOUNDS dial and master: a gentle compressor
+  // that leaves one cue alone and squeezes a pile-up (a lane fight, ten axes),
+  // then a trim that takes the whole layer BUS_DAMP_DB down. Chromium's
+  // compressor adds its own makeup gain (COMP_MAKEUP_DB, measured in Chromium
+  // for these exact settings), which the trim takes back off, or every quiet
+  // cue would come out louder than it went in.
+  const COMP = { threshold: -14, knee: 8, ratio: 4, attack: 0.004, release: 0.25 };
+  const COMP_MAKEUP_DB = 4.7;
+  const BUS_DAMP_DB = -2;
   let muted = false;
   let volume = 0.5;    // master
   let musicVol = 0.7;
@@ -27,7 +36,11 @@
       master.connect(ctx.destination);
       sfxBus = ctx.createGain();
       sfxBus.gain.value = sfxVol;
-      sfxBus.connect(master);
+      const comp = ctx.createDynamicsCompressor();
+      for (const k in COMP) comp[k].value = COMP[k];
+      const trimBus = ctx.createGain();
+      trimBus.gain.value = Math.pow(10, (BUS_DAMP_DB - COMP_MAKEUP_DB) / 20);
+      sfxBus.connect(comp).connect(trimBus).connect(master);
       startWind();
       loadBank();
     }
@@ -322,11 +335,19 @@
     loadBank();
   }
 
-  const lastAt = {}; // per key, when it last fired: two events in one frame must not double up
+  const lastAt = {}; // per channel, when it last fired: two events in one frame must not double up
+  // per channel, when each shot still sounding ends. A channel holds at most
+  // `max` at once (SMP_VOICES unless the cue says): a tenth axe landing while
+  // nine still ring is dropped, not stacked, so a busy treeline or a lane
+  // fight stays a few clear hits instead of a wall of them.
+  const voices = {};
+  const SMP_VOICES = 4;
   // Play one of `key`'s samples. Returns true if the sampled layer handled the
   // cue (including while muted), false if the caller should fall back to synth.
   // opts: vol, rate + jitter (fraction of rate, random per shot), lp/hp filter
-  // corners, delay, gap (the minimum seconds between two of this key), and dur -
+  // corners, delay, gap (the minimum seconds between two on this channel), max
+  // (how many may sound at once on it), ch (the channel: the key unless named,
+  // so a cue borrowing a clip keeps its own gap and voices), and dur -
   // seconds of the sample to take. Several of these clips hold more than one
   // cue (the footstep file is a whole walking loop, the coin rolls for two
   // seconds), so `dur` cuts one hit out of the front and rides a release ramp
@@ -350,9 +371,13 @@
     ensure();                                     // a context suspended behind a tab switch must resume
     o = o || {};
     const t = ctx.currentTime + (o.delay || 0);
+    const ch = o.ch || key;
     const gap = o.gap === undefined ? 0.03 : o.gap;
-    if (t - (lastAt[key] === undefined ? -9 : lastAt[key]) < gap) return true;
-    lastAt[key] = t;
+    if (t - (lastAt[ch] === undefined ? -9 : lastAt[ch]) < gap) return true;
+    const live = voices[ch] || (voices[ch] = []);
+    for (let i = live.length - 1; i >= 0; i--) if (live[i] <= t) live.splice(i, 1);
+    if (live.length >= (o.max || SMP_VOICES)) return true;
+    lastAt[ch] = t;
     const s = bank[key][(Math.random() * bank[key].length) | 0];
     const src = ctx.createBufferSource();
     src.buffer = s.buf;
@@ -374,6 +399,7 @@
     }
     node.connect(g).connect(sfxBus);
     src.start(t, s.s, dur);
+    live.push(t + dur / src.playbackRate.value);
     return true;
   }
 
@@ -540,6 +566,13 @@
   // Note the typeof test: `+null` is 0, not NaN, so a coercing guard would let
   // a null straight through to silence - which is the exact trap this exists to
   // close. A real 0 is still honoured; only a non-number keeps the old value.
+  // how many shots each channel has sounding right now (SFX.debug)
+  function liveVoices() {
+    const now = ctx ? ctx.currentTime : 0, out = {};
+    for (const ch in voices) { const n = voices[ch].filter((e) => e > now).length; if (n) out[ch] = n; }
+    return out;
+  }
+
   function dial(v, keep) {
     if (typeof v !== 'number' || !isFinite(v)) return keep;
     return Math.max(0, Math.min(1, v));
@@ -596,7 +629,7 @@
       const b = {};
       for (const k in bank) b[k] = bank[k].map((s) => ({ s: +s.s.toFixed(3), d: +s.d.toFixed(3), g: +s.g.toFixed(2) }));
       return { state: ctx ? ctx.state : 'none', volume, musicVol, sfxVol, muted, music: curKey,
-        loaded: bankStat.got, want: bankStat.want, errors: bankStat.err.slice(), bank: b };
+        loaded: bankStat.got, want: bankStat.want, errors: bankStat.err.slice(), bank: b, voices: liveVoices() };
     },
     // how many sample files are actually decoded and ready, out of how many the
     // table asks for. The info stack (F3) prints this, so "I hear no new sounds"
@@ -622,7 +655,9 @@
       return p;
     },
 
-    chop() { if (smp('chop', { vol: 0.56, jitter: 0.09, dur: 0.42 })) return; noise(0.08, 0.3, 900); tone(180, 0.06, 'triangle', 0.12, -60); },
+    // an axe in a tree. Two at most at once and a tenth of a second apart:
+    // a treeline full of choppers is a few clear blows, never a pile of them
+    chop() { if (smp('chop', { vol: 0.45, jitter: 0.09, dur: 0.42, max: 2, gap: 0.1 })) return; noise(0.08, 0.3, 900); tone(180, 0.06, 'triangle', 0.12, -60); },
     mine() { if (smp('mine', { vol: 0.57, rate: 1.05, jitter: 0.12, dur: 0.4 })) return; noise(0.06, 0.25, 2200); tone(320, 0.05, 'square', 0.06, -80); },
     // the UI blip: a selection moving, a panel answering. Synth on purpose -
     // menus need a click that is instant and identical every time, and the
@@ -630,15 +665,21 @@
     pickup() { tone(660, 0.07, 'square', 0.16); tone(990, 0.09, 'square', 0.16, 0, 0.06); },
     // gold landing in the purse
     coin() { if (smp('coin', { vol: 0.59, jitter: 0.12, dur: 0.55 })) return; tone(880, 0.06, 'square', 0.07); tone(1320, 0.09, 'triangle', 0.06, 0, 0.05); },
-    swing() { if (smp('whoosh', { vol: 0.56, rate: 1.6, jitter: 0.12, hp: 400, dur: 0.45 })) return; noise(0.07, 0.1, 600); },
+    swing() { if (smp('whoosh', { vol: 0.5, rate: 1.6, jitter: 0.12, hp: 400, dur: 0.45, ch: 'swing', max: 3 })) return; noise(0.07, 0.1, 600); },
+    // A WAVE SOLDIER'S BLOW: the swing and the landing of the lane's own
+    // fight, which never stops. Their own channels, well under a hero's
+    // swing() and hit(), two at a time: a lane brawl reads as a murmur behind
+    // the heroes rather than over them, and never takes a hero's voice away.
+    waveSwing() { smp('whoosh', { vol: 0.28, rate: 1.8, jitter: 0.14, hp: 600, dur: 0.3, ch: 'waveSwing', max: 2, gap: 0.08 }); },
+    waveHit() { smp('impact', { vol: 0.32, rate: 1.25, jitter: 0.12, lp: 2600, dur: 0.3, ch: 'waveHit', max: 2, gap: 0.08 }); },
     bowDraw() { noise(0.14, 0.06, 350); tone(160, 0.12, 'triangle', 0.04, 60); },
-    dodge() { if (smp('whoosh', { vol: 0.53, rate: 0.8, jitter: 0.08, lp: 2400, dur: 0.6 })) return; noise(0.16, 0.14, 550); tone(340, 0.12, 'triangle', 0.06, -220); },
+    dodge() { if (smp('whoosh', { vol: 0.53, rate: 0.8, jitter: 0.08, lp: 2400, dur: 0.6, ch: 'dodge' })) return; noise(0.16, 0.14, 550); tone(340, 0.12, 'triangle', 0.06, -220); },
     // A BODY MOVED WITHOUT WALKING IT (the recall home, js/sim/recall.js). It borrowed
     // the dodge whoosh, which is the sound of air being crossed - the one
     // thing a teleport never does. Nothing else in the game moves a body this
     // way, so it gets the one cue nothing else in the game sounds like.
     warp() { if (smp('warp', { vol: 0.71, jitter: 0 })) return; tone(880, 0.1, 'sine', 0.08, -700); noise(0.14, 0.12, 2600); tone(180, 0.22, 'triangle', 0.08, 120, 0.04); },
-    arrow() { if (smp('bow', { vol: 0.71, jitter: 0.08, dur: 0.6 })) return; noise(0.09, 0.18, 1800); tone(720, 0.06, 'triangle', 0.07, -260); },
+    arrow() { if (smp('bow', { vol: 0.56, jitter: 0.08, dur: 0.6 })) return; noise(0.09, 0.18, 1800); tone(720, 0.06, 'triangle', 0.07, -260); },
     // one boot in the snow. Quiet and heavily jittered - it plays six times a second.
     step() { smp('step', { vol: 0.4, jitter: 0.15, gap: 0.08, dur: 0.24 }); },
     // the shot rhythm: a dry wooden tick the moment the next arrow is nocked and
@@ -654,8 +695,8 @@
     // ...and the rock arriving: a dull stone knock with the snow it threw up
     // after it. This is the cue that says a throw LANDED, hit or miss.
     rockLand() { noise(0.05, 0.22, 700); tone(150, 0.08, 'triangle', 0.09, -60); noise(0.16, 0.08, 2400, 0.04); },
-    hit() { if (smp('impact', { vol: 0.69, rate: 1.1, jitter: 0.1, dur: 0.5 })) return; noise(0.06, 0.25, 800); tone(140, 0.08, 'sawtooth', 0.1, -50); },
-    hurt() { if (smp('oof', { vol: 0.71, jitter: 0.07 })) return; tone(200, 0.18, 'sawtooth', 0.16, -120); noise(0.12, 0.2, 500); },
+    hit() { if (smp('impact', { vol: 0.56, rate: 1.1, jitter: 0.1, dur: 0.5, max: 3 })) return; noise(0.06, 0.25, 800); tone(140, 0.08, 'sawtooth', 0.1, -50); },
+    hurt() { if (smp('oof', { vol: 0.63, jitter: 0.07, max: 2 })) return; tone(200, 0.18, 'sawtooth', 0.16, -120); noise(0.12, 0.2, 500); },
     // A GREAT BIRD taking a blow. The eagle used hurt() - a man's winded oof
     // for the objective the whole match is about - so the roost sounded like
     // a person being punched. Its own voice, dropped low, is the difference
@@ -685,7 +726,7 @@
     deny() { tone(140, 0.12, 'square', 0.17, -30); },
     // knocking on solid ice: a glassy crack over a dull refusal
     iceKnock() { noise(0.06, 0.3, 3200); tone(1400, 0.08, 'triangle', 0.06, -700); tone(130, 0.12, 'square', 0.07, -25); },
-    break_() { if (smp('timber', { vol: 0.78, rate: 1.4, jitter: 0.1, hp: 180, dur: 0.6 })) return; noise(0.2, 0.3, 700); tone(120, 0.15, 'triangle', 0.12, -60); },
+    break_() { if (smp('timber', { vol: 0.63, rate: 1.4, jitter: 0.1, hp: 180, dur: 0.6 })) return; noise(0.2, 0.3, 700); tone(120, 0.15, 'triangle', 0.12, -60); },
     // an animal going down; a wolf yelps where everything else squeals
     monsterDie(kind) {
       if (smp(kind === 'wolf' ? 'yelp' : 'beastDie', { vol: 0.71, jitter: 0.08 })) return;
@@ -695,7 +736,7 @@
     // a wingbeat blast - the eagle's gust and its takeoff: the dodge whoosh
     // slowed into a heavy buffet of air over a low push
     gust() {
-      if (smp('whoosh', { vol: 0.73, rate: 0.55, jitter: 0.06, lp: 1600, dur: 0.9 })) return;
+      if (smp('whoosh', { vol: 0.73, rate: 0.55, jitter: 0.06, lp: 1600, dur: 0.9, ch: 'gust' })) return;
       noise(0.3, 0.32, 500); tone(120, 0.22, 'triangle', 0.09, -55);
     },
     // an eagle hitting the treeline: the timber sample dropped low with a
@@ -853,7 +894,7 @@
       if (smp('roar', { vol: 0.89, jitter: 0.05 })) return;
       tone(110, 0.7, 'sawtooth', 0.09, -40); tone(82, 0.8, 'sawtooth', 0.07, -25, 0.05); noise(0.6, 0.12, 380);
     },
-    bite() { if (smp('impact', { vol: 0.51, rate: 1.45, jitter: 0.1, gap: 0.05, dur: 0.35 })) return; noise(0.07, 0.32, 1100); tone(210, 0.08, 'sawtooth', 0.11, -110); },
+    bite() { if (smp('impact', { vol: 0.51, rate: 1.45, jitter: 0.1, gap: 0.05, dur: 0.35, ch: 'bite' })) return; noise(0.07, 0.32, 1100); tone(210, 0.08, 'sawtooth', 0.11, -110); },
     // the rookery going up: three overlapping beats of wings
     wings() { noise(0.09, 0.14, 520); noise(0.09, 0.12, 460, 0.07); noise(0.08, 0.09, 400, 0.15); },
   };

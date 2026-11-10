@@ -149,7 +149,6 @@ function armVerdict(p) {
   abFx.push({ kind: 'line', x: p.x, y: p.y - 2, a, r: VERDICT_LEN, half: VERDICT_HALF, t: 0, col: '#f4f7ff' });
   // the crack running down the line
   for (let s = 6; s < VERDICT_LEN; s += 6) burst(p.x + nx * s, p.y + 2 + ny * s, s % 12 ? '#eef4fb' : '#cfd8e8', 2, 30, 0.35, true);
-  shakeFor(p, 4);
   sfxAt('break_', p.x, p.y);
 }
 
@@ -189,7 +188,6 @@ function armBash(p) {
     hurtUnit(q, dmg, nx, ny, p, { kb: BASH_KB });
     if (!q.dead) { if (primed) stunUnit(q, stun, p); q.kbx += nx * BASH_KB * 0.5; q.kby += ny * BASH_KB * 0.5; }
     burst(q.x, unitMidY(q), primed ? '#ffd95c' : '#cfd8e8', 8, 50, 0.45, true);
-    shakeFor(p, primed ? 5 : 3, q);
   }
   for (const s of structsInCone(p, p.x, p.y, a, BASH_R, BASH_HALF)) hurtStruct(s, dmg, p);
   if (PRACTICE) abHitDummies(p.x + nx * BASH_R * 0.5, p.y + ny * BASH_R * 0.5, BASH_R * 0.5, dmg);
@@ -243,7 +241,6 @@ function marchEnd(p, q) {
   hurtUnit(q, abDmg(p, 'march', abRk(p, 'march', 'dmg')), p.rushNX, p.rushNY, p, { kb: 60, ab: 'march' });
   if (!q.dead) stunUnit(q, abRk(p, 'march', 'stun'), p);
   burst(q.x, unitMidY(q), '#ffd95c', 10, 55, 0.5, true);
-  shakeFor(p, 5, q);
   sfxAt('hit', q.x, q.y);
 }
 
@@ -255,7 +252,6 @@ function armGuard(p) {
     life: rk('t'), armor: rk('armor'), ten: rk('ten'), slow: rk('slow'), slowT: rk('slowT') });
   abFx.push({ kind: 'ring', x: p.x, y: p.y, r: GUARD_R, t: 0, col: '#f2cc6a' });
   burst(p.x, p.y + 2, '#eef4fb', 14, 60, 0.5, true);
-  shakeFor(p, 4);
   sfxAt('break_', p.x, p.y);
 }
 // the standard an ally of `e` stands inside, or null - a player of either kind

@@ -84,10 +84,9 @@ function renderUI(now) {
 // ------------------------------------------------------------ the info stack
 // the info stack (settings.info - the INFO row in the ESC menu, or F3, the
 // minecraft reflex): fps, the ms a frame spends stepping and drawing, the
-// framed player's tile coordinates, and the run seed as one vertical list on
-// the left edge at the top quarter of the view, above every overlay. In title only the fps, sim and
-// draw lines show - nobody stands anywhere yet, and the menu prints the seed
-// itself with the reroll die.
+// framed player's tile coordinates as one vertical list on the left edge at
+// the top quarter of the view, above every overlay. In title only the fps, sim,
+// draw and sound lines show - nobody stands anywhere yet.
 function drawTags() {
   if (!settings.info) return;
   // two columns: a dim label, then the value on one shared x so the numbers
@@ -95,7 +94,7 @@ function drawTags() {
   // tooltips use. Red means one thing and one thing only:
   // something is wrong (a bad frame rate, a sample bank that did not load).
   // Nothing else is tinted for decoration.
-  const lx = 5, vx = lx + Math.max(pixelTextWidth('SEED'), pixelTextWidth('DRAW')) + 5;
+  const lx = 5, vx = lx + Math.max(pixelTextWidth('POS'), pixelTextWidth('DRAW')) + 5;
   let y = Math.round(VIEW_H * 0.25);
   const line = (label, value, col) => {
     drawPixelTextOutline(ctx, label, lx, y, '#7a8bb8', '#0f1632');
@@ -117,6 +116,5 @@ function drawTags() {
   if (state.mode !== 'title') {
     const vp = viewPlayer(); // spectators read the player the camera frames
     line('POS', Math.floor(vp.x / TILE) + ', ' + Math.floor(vp.y / TILE));
-    line('SEED', String(SEED));
   }
 }
