@@ -90,7 +90,7 @@ function drawSlashes(ex, ey) {
         for (let k = from; k < to; k++) {
           const x = Math.round(px + c * k - sn * o), y = Math.round(py + sn * k + c * o);
           ctx.fillStyle = cols[0]; ctx.fillRect(x, y + 1, 1, 1);
-          ctx.fillStyle = k > to - 5 ? cols[1] : cols[2]; ctx.fillRect(x, y, 1, 1);
+          ctx.fillStyle = k > to - 5 ? cols[1] : s.hit ? cols[2] : '#6f8fc0'; ctx.fillRect(x, y, 1, 1);
         }
       }
       if (u < 0.6) { // the point at its reach
@@ -103,8 +103,8 @@ function drawSlashes(ex, ey) {
       if (s.hit && u > 0.25) drawFlung(Math.round(px + Math.cos(s.a) * s.r * 0.9), Math.round(py + Math.sin(s.a) * s.r * 0.9), s.a, 1, 10, 0.3, 6, 5, (u - 0.25) / 0.75, seed, (x, y, k) => fxChip(x, y, k, cols[1], cols[2], cols[0]));
     } else if (kind === 'blunt' && u > 0.3) { // the snow knocked up where the head stops
       const v = (u - 0.3) / 0.7, t = s.a + s.half * 0.7, x0 = px + Math.cos(t) * s.r, y0 = py + Math.sin(t) * s.r;
-      for (let k = 0; k < 5; k++) {
-        const x = Math.round(x0 + (fxRoll(seed, k, 1) - 0.5) * 14 * (0.5 + v)), y = Math.round(y0 + 3 - v * (3 + fxRoll(seed, k, 2) * 6)), r = Math.max(1, Math.round((1 - v) * 3.4));
+      for (let k = 0; k < 6; k++) {
+        const x = Math.round(x0 + (fxRoll(seed, k, 1) - 0.5) * 18 * (0.5 + v)), y = Math.round(y0 + 3 - v * (3 + fxRoll(seed, k, 2) * 7)), r = Math.max(1, Math.round((1 - v) * 4.4));
         fxPatch(x, y + 1, r + 1, 0.7, 1, seed + k, '#5f79a8'); fxPatch(x, y, r, 0.7, 1, seed + k, '#eef3fb');
       }
     }

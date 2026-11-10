@@ -236,12 +236,11 @@ function centreTextX(sx, txt, scale) { return Math.round(sx) - (pixelTextWidth(t
 // something that is usually absent is what made the plate lopsided before.
 const FRAME_DX = 3;
 
-// A bear buff, worn: a ring of pips around the feet in that bear's colour
-// (MONSTER's buffCol: violet the black bear's), rimmed dark
-// so it reads on snow, that loses a pip at a time as the buff runs out -
-// the ring IS the timer, and a full ring on a rival is the warning. The
-// longest buff (a bear's) fills every pip.
-const BUFF_RING = 12;                // pips round the ring
+// A bear buff, worn: motes of that bear's colour (MONSTER's buffCol: violet the black
+// bear's) lifting off the snow round the feet, each on its own darker glow so it reads
+// on snow. They thin out one at a time as the buff runs out - the motes ARE the timer,
+// and a full set on a rival is the warning. The longest buff (a bear's) lifts all of them.
+const BUFF_MOTES = 8;                // motes round the feet at a full buff
 const BUFF_COL = '#ffb04a';          // a buff with no bear named (a hand grant): amber
 // THE TEAM RING: one pixel ring on the snow round every hero's feet, in its
 // side's paint (the coat's own shade, a value step under the mark so a blue
@@ -269,23 +268,39 @@ function drawHeroRing(p, cx, cy) {
   const T = TEAMS[skin(p.team)];
   for (const q of heroRingPts || heroRingShape()) { ctx.fillStyle = q[0] + q[1] * 2 < -3 ? T.mark : T.coat; ctx.fillRect(cx + q[0], cy + q[1], 1, 1); } // the lit side a step brighter
 }
-function drawBuffRing(p, cx, cy, now) {
-  drawPipRing(cx, cy, 7 + ((now * 3) & 1), p.buffT / CAMP_BUFF_EPIC_T, (MONSTER[p.buffKind] && MONSTER[p.buffKind].buffCol) || BUFF_COL);
+function drawBuffRing(p, cx, cy, now, front) {
+  drawBuffMotes(cx, cy, 8, p.buffT / CAMP_BUFF_EPIC_T, (MONSTER[p.buffKind] && MONSTER[p.buffKind].buffCol) || BUFF_COL, now, 0, 2, front);
 }
-// the orca buff (p.pushT), the same ring a size out in the orca's colour, so
-// a hero wearing both shows both
-function drawPushRing(p, cx, cy, now) {
-  drawPipRing(cx, cy, 10 + ((now * 3) & 1), p.pushT / ORCA_PUSH_T, MONSTER.orca.buffCol);
+// the orca buff (p.pushT), the same motes a size up and a step out in the orca's colour,
+// standing between the bear's, so a hero wearing both shows both
+function drawPushRing(p, cx, cy, now, front) {
+  drawBuffMotes(cx, cy, 10, p.pushT / ORCA_PUSH_T, MONSTER.orca.buffCol, now, 0.5, 3, front);
 }
-// `r` px round (squashed to the ground's 3/4 view), `share` of its pips lit
-function drawPipRing(cx, cy, r, share, col) {
-  const n = Math.ceil(BUFF_RING * Math.min(1, share));
+// `share` of the motes, standing `r` px out round the feet (squashed to the ground's
+// 3/4 view), each `sz` px square with a bright core on a dark rim so it holds on snow
+// and on ice, rising from the feet to the shoulders on its own beat and shrinking to
+// a point before it goes: never above the head. `off` shifts where they stand so two
+// buffs never share a spot. Drawn twice: the far half before the body, the near half
+// (`front`) over it, so the buff is read against the body too.
+const BUFF_RISE = 13;
+function drawBuffMotes(cx, cy, r, share, col, now, off, sz, front) {
+  const n = Math.ceil(BUFF_MOTES * Math.min(1, share)), dark = buffShade(col);
   for (let i = 0; i < n; i++) {
-    const a = -Math.PI / 2 + (i / BUFF_RING) * Math.PI * 2;
-    const x = Math.round(cx + Math.cos(a) * r), y = Math.round(cy + Math.sin(a) * r * 0.6);
-    ctx.fillStyle = '#0f1632'; ctx.fillRect(x - 1, y - 1, 3, 3);
-    ctx.fillStyle = col; ctx.fillRect(x, y, 1, 1);
+    const a = ((i + off) / BUFF_MOTES) * Math.PI * 2 + 0.4;
+    if ((Math.sin(a) >= 0) !== !!front) continue;
+    const u = (now * 0.7 + i * 0.37) % 1, s = u > 0.8 ? 1 : u > 0.5 ? 2 : sz;
+    const x = Math.round(cx + Math.cos(a) * r * (1 - 0.25 * u)) - (s >> 1), y = Math.round(cy + Math.sin(a) * r * 0.5 * (1 - u) - u * BUFF_RISE) - (s >> 1); // every one tops out at the same height
+    ctx.fillStyle = dark; ctx.fillRect(x - 1, y, s + 2, s); ctx.fillRect(x, y - 1, s, s + 2);
+    ctx.fillStyle = col; ctx.fillRect(x, y, s, s);
+    if (s > 1) { ctx.fillStyle = '#ffffff'; ctx.fillRect(x, y, 1, 1); }
   }
+}
+// a buff colour's own darker step, for a mote's rim
+const buffShades = {};
+function buffShade(col) {
+  if (buffShades[col]) return buffShades[col];
+  const v = parseInt(col.slice(1), 16), k = (c) => Math.round(c * 0.4);
+  return (buffShades[col] = 'rgb(' + k(v >> 16) + ',' + k((v >> 8) & 255) + ',' + k(v & 255) + ')');
 }
 
 // The class body's run and dodge roll are the doll's frames (js/baked/motion.js,
@@ -484,6 +499,8 @@ function drawPlayer(p, ex, ey, now, stage) {
     // what an ability left ON this body - shield, net, jaws, fury, mark -
     // drawn over the sprite for every side alike (js/sim/abilities.js)
     if (state.mode !== 'title') drawAbilityOnPlayer(p, ax, ay, now);
+    if (p.buffT > 0 && p.fallT <= 0) drawBuffRing(p, Math.round(p.x - ex), Math.round(p.y - ey) + 3, now, true); // the near half of a buff's motes, over the body
+    if (p.pushT > 0 && p.fallT <= 0) drawPushRing(p, Math.round(p.x - ex), Math.round(p.y - ey) + 3, now, true);
     if (zl) drawZipHandle(p, Math.round(p.x - ex), sy, ey); // the handle over the head and the rope up to the cable (js/draw/zipline.js)
   }
   heroLayerClose(layer);
@@ -759,9 +776,9 @@ const SWISH_COL_0 = ['#f8fcff', '#9cb6d4', '#1b2233']; // a swish's light edge, 
 // `thrust` leaves none: the point is pushed straight out (SWING_JAB) and drawSlashes
 // (js/draw/abilities.js) draws its lines.
 const SWISH_KIND = {
-  edge: { w: [2, 5], from: 0 },                                              // a sword: a long thin bright edge
+  edge: { w: [0, 5], from: 0, col: ['#ffffff', '#a8c2e6', '#1b2233'] },         // a sword: a long bright edge, down to its ink line at the tail
   chop: { w: [4, 9], from: 0.55 },                                           // an axe or a pick: short and heavy, the end of the swing only
-  blunt: { w: [6, 10], from: 0.3, col: ['#dfe6f0', '#8494b0', '#1b2233'] },  // a hammer: broad and dull
+  blunt: { w: [6, 10], from: 0.3, col: ['#eef3fb', '#a9b8d0', '#1b2233'] },  // a hammer: broad and dull, never as dark as a shadow
   nick: { w: [1, 3], from: 0.5 },                                            // a dirk: a small quick cut
 };
 const SWING_JAB = [-3, 5, 4, 2, 0]; // px a thrust's point is out along the aim, by the swing's frame

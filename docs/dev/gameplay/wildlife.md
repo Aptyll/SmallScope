@@ -281,9 +281,9 @@ seconds during which every blow the player lands is `CAMP_BUFF_DMG` (×1.25, app
 `hurtUnit` — a shot, a roll and a key alike) and the walk is `CAMP_BUFF_SPD` (×1.15, in
 `abilityMoveMul`). The kill gives the killer's whole team the buff for `CAMP_BUFF_EPIC_T`
 (120 s); a fresh grant only ever extends what is left, and the latest bear is the one worn. It is worn as a
-**ring of twelve pips around the feet in the bear's colour** (`buffCol`: violet) (`drawBuffRing`, js/draw/bodies.js) that loses a pip
-at a time as it runs out — the ring is the timer, a full ring on a rival is the warning — and it
-goes out with the body on death. There is no HUD element for it: the ring is the read.
+**set of eight motes lifting off the snow round the feet in the bear's colour** (`buffCol`: violet) (`drawBuffRing`, js/draw/bodies.js) that loses a mote
+at a time as it runs out — the motes are the timer, a full set on a rival is the warning — and it
+goes out with the body on death. There is no HUD element for it: the motes are the read.
 
 **Bots and camps.** A bot fights a camp that is already hunting it (`aiNearestWolf` answers
 a monster whose `target` is that bot, inside `AI_SIGHT`) — and an **ally** also fights one hunting
@@ -326,7 +326,7 @@ that rides the snapshot; the client eases it like a body (`netClientLerp`).
   past that SPOUTS (`orcaSpout`): a lump of the pool's ice thrown at the spot they stood on, landing
   `ORCA_SPOUT_T` later on everyone inside `ORCA_SPOUT_HIT`, its ring on the ground the warning
   (`drawOrcaPool`). Felled, it pays like the bear and gives the side the **ORCA BUFF** (`p.pushT`
-  for `ORCA_PUSH_T`, the blue pip ring a size out from the bear's): the side's soldiers within
+  for `ORCA_PUSH_T`, blue motes a size out from the bear's): the side's soldiers within
   `ORCA_PUSH_R` of a hero wearing it hit buildings `ORCA_PUSH_STRUCT` (2) times as hard
   (`orcaPushMul`, in `soldierLand`). Then it goes back under (`orcaPutIn`), locking nobody for
   `ORCA_CALM`, until the clock brings it up again.
