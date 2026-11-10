@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['FIRST MATCH: THE COACH TEACHES RECALL THE MOMENT YOU ARE HURT', '0.872'],
     ['Nix, Lignum, Salvia and Varro show more of their side colour from behind', '0.871'],
     ['BELLA\'s marks over a head keep their size behind ?fine=1', '0.870'],
     ['Jungle: lines of animal prints run between the camps, and the wind has cut thin ridges in the open snow', '0.869'],
