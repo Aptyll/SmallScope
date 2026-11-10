@@ -149,6 +149,13 @@ asks it. **A hero's side run and held run come off its own drawn side
 frame, not the doll**: `heroRunSide` (armatos.js) finds the leg rows, scissors them by
 `HERO_STRIDE` and bobs the body over them, so the head and coat keep the standing width (the doll's
 side run was a pixel or two narrower and read as the hero shrinking when turning left or right).
+**A look's cell may be larger than 16 px** (a square of any even size, feet on its last row): `heroWalk`,
+`heroRunSide` and `heroRunFront` count rows and columns off the grid's own size (run frames come out
+in `heroRunBox`), `drawPlayer` centres any frame on the 16 px cell with its floor on the cell's, and
+`champLook` sets the set's `rise` and `reach` from the cell size (`heroRise`, `heroReach`,
+js/draw/heroes.js): the overhead frame lifts by `rise`, a staff or blade hand sits `reach` px further
+out. No look uses a larger cell yet; the roll and the other doll poses are still 16 px, and the menus
+draw frames into 16 px boxes.
 The run facing down and up is still the doll's, unless the look's row says `run: 'drawn'`: then
 `heroRunFront` lifts the drawn front and back the same way (IGNIA's two looks, AURA's, SALVIA's, LUCERNA's and BUCINA's two, whose shawl, mantle, coat, cape and hair
 the doll does not match). Which look a player wears is `heroSkinOf(p)` (player.js): the id in `p.skins` under the
