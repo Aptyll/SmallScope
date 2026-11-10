@@ -17,7 +17,8 @@ from. The procedure is the `concept-art` skill in
 ## Verifying a change
 
 After cloning, run `sh scripts/setup-hooks.sh` once: its pre-push hook refuses a push to main
-or a branch behind origin/main.
+or a branch behind origin/main. Cloud sessions get it on their own: `.claude/hooks/session-start.sh`
+runs it at session start.
 
 The rule is in [CLAUDE.md](../../CLAUDE.md): look at the running game, don't re-read the code and
 declare victory. The affordances:
