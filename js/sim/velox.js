@@ -69,7 +69,7 @@ const VELOX_AB = [
     use: (p) => veloxLane(p),
     tele: (p, px, py, a, col, closing, now, ex, ey) => drawTeleLine(p.x, p.y, Math.cos(a), Math.sin(a), LANE_LEN, col, 0.45 + 0.45 * closing, now, ex, ey),
     pose: () => ({ dx: 0, dy: 1, rot: 0 }), // the staff swept low
-    icon: VELOX_ICON32.lane,
+    icon: VELOX_ICON32.lane, mark: 'speed',
     bot: (p, foe, d) => foe instanceof Player && d < LANE_LEN,
   },
   {
@@ -91,7 +91,7 @@ const VELOX_AB = [
     use: (p) => veloxRun(p),
     tele: (p, px, py, a, col, closing) => drawRing(px, py, 14, col, 0.4 + 0.45 * closing, closing * 0.3),
     pose: () => ({ dx: 0, dy: -1, rot: 0 }),
-    icon: VELOX_ICON32.run,
+    icon: VELOX_ICON32.run, mark: 'speed',
     bot: (p, foe, d) => foe instanceof Player && d < 170 && (foe.hp < foe.maxHp * 0.6 || p.hp < p.maxHp * 0.4),
   },
 ];

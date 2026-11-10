@@ -67,7 +67,7 @@ const FALCO_AB = [
     use: (p) => falcoFan(p),
     tele: (p, px, py, a, col, closing) => drawWedge(px, py, a, FAN_LEN, FAN_SPREAD, col, 0.5 + 0.45 * closing),
     pose: (p, prog) => ({ dx: 0, dy: prog < 0.6 ? -1 : 1, rot: 0 }), // the arm back, then the throw
-    icon: FALCO_ICON32.fan,
+    icon: FALCO_ICON32.fan, mark: 'slow',
     bot: (p, foe, d, clear) => clear && d < FAN_LEN - 10,
   },
   {
@@ -89,7 +89,7 @@ const FALCO_AB = [
     use: (p) => falcoStoop(p),
     ok: (p) => !!stoopTarget(p),
     acol: '#f2cc6a', activeF: (p) => (p.falcoSkyT > 0 ? p.falcoSkyT / STOOP_UP : 0),
-    icon: FALCO_ICON32.stoop,
+    icon: FALCO_ICON32.stoop, mark: 'up',
     bot: (p, foe, d) => foe instanceof Player && falcoMarked(foe, p) && d < STOOP_REACH && foe.hp < foe.maxHp * 0.7,
   },
 ];
