@@ -36,7 +36,7 @@ function applyZoom(dt, snap) {
   // the title's backdrop and the shows the match puts on (the roost tour, the
   // driven-off ceremony) hold ZOOM_SHOW whatever the wheel says: they frame
   // birds and valley, not your boots, and glide back to the wheel's zoom after
-  const show = state.mode === 'title' || (state.drop && (state.dropBrief || state.eagleCine ||
+  const show = state.mode === 'title' || (state.drop && (state.eagleCine ||
     (state.mode === 'dead' && state.drop.eagles.some((q) => q.state === 'flee'))));
   const want = show ? ZOOM_SHOW
     : state.mode !== 'drop' ? zoomWantOf()
@@ -160,14 +160,16 @@ function update(dt) {
     const c = titleCamTarget();
     camX = c.x; camY = c.y;
   } else if (state.mode === 'drop') {
-    // riding: track the eagle (the rider sits on it). The first INTRO_T is
-    // the opening shot: held on your seat while applyZoom pulls the view out
-    // round it. Kept inside the world, like play's: the bird comes in over
-    // its own corner, from the very edge of the map. While your bird is up
-    // the camera holds your seat exactly, so the stoop's zoom (dropStoopZoom)
-    // lands on the very framing the crash hands over (handOver).
-    const tx = Math.max(0, Math.min(WORLD * TILE - WV_W, player.x - WV_W / 2));
-    const ty = Math.max(0, Math.min(WORLD * TILE - WV_H, player.y - WV_H / 2));
+    // riding: the arrival's one shot (dropCamAim, js/sim/eagle.js). The
+    // first INTRO_T is the opening: tight on your seat while applyZoom pulls
+    // the view out round it, the lean toward your roost growing in. Kept
+    // inside the world, like play's: the bird comes in over its own corner,
+    // from the very edge of the map. While your bird is up the camera holds
+    // the aim exactly, so the stoop's zoom (dropStoopZoom) lands on the very
+    // framing the crash hands over (handOver).
+    const aim = dropCamAim();
+    const tx = Math.max(0, Math.min(WORLD * TILE - WV_W, aim.x - WV_W / 2));
+    const ty = Math.max(0, Math.min(WORLD * TILE - WV_H, aim.y - WV_H / 2));
     if (state.intro > 0 || dropFlies(state.drop.eagles[player.team])) {
       state.intro = Math.max(0, state.intro - dt);
       camX = tx; camY = ty;
@@ -185,14 +187,6 @@ function update(dt) {
       : state.drop.eagles.find((q) => q.state === 'flee');
     camX += (ec.x - WV_W / 2 - camX) * Math.min(1, dt * 3.5);
     camY += (ec.y - WV_H / 2 - camY) * Math.min(1, dt * 3.5);
-  } else if (state.drop && state.dropBrief) {
-    // the drop brief (updateDrop, js/sim/eagle.js): a forced landing's roost tour.
-    // The same glide the driven-off ceremony uses, aimed by the brief's phase
-    // - out to your own bird (tracking its dive if it is still falling), the
-    // rival's, then home to your boots, where the play camera takes over.
-    const bt = dropBriefTarget();
-    camX += (bt.x - WV_W / 2 - camX) * Math.min(1, dt * 3.5);
-    camY += (bt.y - WV_H / 2 - camY) * Math.min(1, dt * 3.5);
   } else {
     const vp = viewPlayer();
     const look = vp === player ? 0.12 : 0; // the aim lean is the local player's; a watched one is framed dead centre
@@ -535,7 +529,7 @@ function updatePlay(dt) {
     // the hop off the roost is the one act a rider can take: read here, before
     // the air skips the body, so a remote hand's press lands like a local one
     // ...and on the ground the same intent is the zipline's and the deer's (hopToggle, wildlife.js)
-    if (p.input.jump) { p.input.jump = false; if (p.active && p.aboard) hopOff(p); else if (p.active && !p.dead && !inAir(p)) hopToggle(p); }
+    if (p.input.jump) { p.input.jump = false; if (p.active && !p.dead && !inAir(p)) hopToggle(p); } // seated on the bird there is no hop to ask for: the crew leaps on its own
     if (!p.active || inAir(p)) continue;
     if (p.control === 'ai') (p.botId ? botStep : updateAI)(p, dt); // a bot file's seat, or the built-in brain (js/ai/bot-api.js)
     updatePlayer(p, dt);

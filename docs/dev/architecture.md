@@ -214,7 +214,7 @@ order, so the script tags still interleave them:
 | [js/ui/lobby.js](../../js/ui/lobby.js) | ~540 | shared scope, no `window.*` export | the post-game lobby: the match's own record, and the sampling during play its graphs are drawn from |
 | [js/sim/save.js](../../js/sim/save.js) | ~350 | shared scope, no `window.*` export | the replay proof: the valley's baseline, the match as one object graph (`saveCapture`/`saveApply`), `saveHash`, and the record put back on a fresh page (`saveDevLoad`) |
 | [js/ui/botview.js](../../js/ui/botview.js) | ~470 | shared scope, no `window.*` export | the bot dev view: every bot's thought read one way, the recorder, the F4 map overlay and table, the link to the out-of-game page [botlab.html](../../botlab.html) ([botview.md](botview.md)) |
-| [js/sim/eagle.js](../../js/sim/eagle.js) | ~710 | shared scope, no `window.*` export | the eagle drop: each bird's flight in over its own corner, the ride, the hop off, the crash on the perch, the drop brief, the bird each side guards |
+| [js/sim/eagle.js](../../js/sim/eagle.js) | ~710 | shared scope, no `window.*` export | the eagle drop: each bird's flight in over its own corner, the ride, the arrival's camera, the crew's leap, the crash on the perch, the bird each side guards |
 | [js/draw/eagle.js](../../js/draw/eagle.js) | ~460 | shared scope, no `window.*` export | the drop's pixels: the birds, the riders, the trail, the roost's bar, the ride's HUD, the brief's headline; loaded right after js/sim/eagle.js |
 | [js/sim/base.js](../../js/sim/base.js) | ~80 | shared scope, no `window.*` export | the bases: each side's fixed hollow, perch and three lane mouths in its roost corner, where each lane's bay stands, the road's two ends, `placeBase` |
 | [js/sim/jungle.js](../../js/sim/jungle.js) | ~60 | shared scope, no `window.*` export | the jungle's pine walls: one quarter's capsules mirrored to all four, planted at boot with no `rng()` |
@@ -256,9 +256,7 @@ tag `pre-split` keeps the one-file history.
 The local player profile — **one `name`** (every other player sees it), its lifetime `stats`
 (`wins` / `matches` / `gold` / `kills` / `deaths`), `hero` (the NAME of the hero last
 locked in, '' for none, where the champ select's grid opens next time; `profileHero()`, js/sim/player.js, turns it into a `CLASSES` index), `pos` (the draft position it asks
-for, a `POSITIONS` index or -1 any: `pos()`/`setPos()`), the
-one-shot `dropped` flag (`hasDropped()`/`markDropped()`: has this profile ever jumped off the
-eagle, gating the scripted first flight that rides the landing), `bestLap`
+for, a `POSITIONS` index or -1 any: `pos()`/`setPos()`), `bestLap`
 (`bestLap()`/`setBestLap()`: the ice parkour's all-time record) and `bestRange`
 (`bestRange()`/`setBestRange()`: the archery round's best score) — the only two things the
 practice arena writes ([world.md](world.md#the-practice-tool)) — the

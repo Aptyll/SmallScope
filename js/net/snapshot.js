@@ -176,7 +176,7 @@ function snapSingles() {
   const s = { state: {}, camps: [] };
   for (const k of SNAP_STATE) { const v = pack(state[k], 0); if (v !== undefined) s.state[k] = v; }
   for (const c of camps) s.camps.push({ repopT: c.repopT, seen: (c.seen || [0, 0]).slice() }); // the rest of a camp is written down by worldgen
-  s.dropMeta = state.drop ? { firstFlight: state.drop.firstFlight } : null;
+  s.dropMeta = state.drop ? {} : null; // the ride is there or not: its birds ride with the entities
   s.pads = pack(pads, 0); // the road registry: each side's crash pad
   s.iceBreaks = iceBreaks.slice(); // plain numbers and tile lists: every screen rebuilds the pixels (js/sim/icebreak.js)
   s.orca = pack(orca, 0); // the orca's few numbers (js/sim/orca.js); a client eases its x/y like a body's
@@ -229,7 +229,7 @@ function snapApplySingles(s) {
   }
   if (s.dropMeta !== undefined) {
     if (!s.dropMeta) state.drop = null;
-    else { if (!state.drop) state.drop = { eagles: [], firstFlight: s.dropMeta.firstFlight }; state.drop.firstFlight = s.dropMeta.firstFlight; }
+    else if (!state.drop) state.drop = { eagles: [] };
   }
   if (s.pads) {
     // the road registry, merged by team so an entry keeps its identity

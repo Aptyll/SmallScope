@@ -63,7 +63,7 @@ function practiceSeat(p) {
 // merchant climbs off to pitch its stall and raise the bays before the first
 // wave, as in a match). Nobody is aboard; practiceSeat puts people on the roosts
 function practiceLand() {
-  state.drop = { eagles: makeEagles(), firstFlight: false };
+  state.drop = { eagles: makeEagles() };
   for (const e of state.drop.eagles) { e.crash = findCrashPoint(e); eagleCrash(e); }
   state.shake = 0; // the boot is not an impact
 }

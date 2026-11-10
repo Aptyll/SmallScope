@@ -391,25 +391,15 @@ function drawEagle(e, ex, ey, now) {
         PR.put(ctx, PR.flash(spr), sx - Math.round(w / 2), sy + breath - Math.round(h / 2));
         ctx.globalAlpha = 1;
       }
-      // whoever rode the landing, still seated - world-sized now, the bird at
-      // rest is just a big bird - breathing with it, facing where it points
-      // (the local player: their first ground is this bird's back), with the
-      // gold landing ring pulsing under the bird once the brief has handed
-      // back - where the hop lands
+      // the crew for the beat before it leaps (CREW_HOP_T) - world-sized
+      // now, the bird at rest is just a big bird - breathing with it, facing
+      // where it points; only your name, as in flight
       const rd = riderDir(e);
       for (const p of players) {
         if (!p.active || !p.aboard || p.team !== e.team) continue;
         const [dx, dy] = seatAt(EAGLE_SEATS[p.seat % EAGLE_SEATS.length]);
         drawSeated(classSet(p), rd, sx + dx, sy + breath + dy, 1);
-        seatedName(classSet(p), rd, sx + dx, sy + breath + dy, 1, boardName(p), p.team);
-      }
-      if (player.aboard && player.team === e.team && state.mode === 'play' && !state.dropBrief) {
-        const ph = (now * 1.2) % 1;
-        ctx.globalAlpha = 0.8 - ph * 0.6;
-        ctx.strokeStyle = '#ffd95c';
-        ctx.lineWidth = 1;
-        ctx.beginPath(); ctx.arc(sx, sy, 10 + ph * 14, 0, Math.PI * 2); ctx.stroke();
-        ctx.globalAlpha = 1;
+        if (p === player) seatedName(classSet(p), rd, sx + dx, sy + breath + dy, 1, p.name, p.team);
       }
       // the pool, in team colour, up from the moment it roosts - the bar IS
       // the objective's introduction, so it never waits for a first hit.
@@ -444,7 +434,7 @@ function drawEagle(e, ex, ey, now) {
 
 // the ride's HUD: the gold arrow over you on the wing, the DRIFT key while
 // you step down, and the MAP key. The wider read is the M map.
-const FLIGHT_OPEN = '#ffd95c'; // the gold every "do it now" wears: your arrow on the wing, the HOP OFF key
+const FLIGHT_OPEN = '#ffd95c'; // the gold of your arrow on the wing
 function renderDropUI(now) {
   const d = state.drop;
   if (!d || window.DBG.hideUI) return;
@@ -474,15 +464,6 @@ function drawYouArrow(now, e) {
   ctx.fillStyle = FLIGHT_OPEN;
   for (let r = 0; r < 4; r++) ctx.fillRect(cx - 4 + r, cy + r, 9 - 2 * r, 1);
 }
-// an action's key cap - the shared one (drawKeyCap, js/ui/wheel.js), its
-// face lit white when `lit` - with its one word beside it in `col`, the pair centred on x with its top at y.
-// The roost's HOP OFF wears it.
-function drawCapBind(act, verb, x, y, col, lit) {
-  const vw = pixelTextWidth(verb);
-  const lab = keyCap(act), x0 = Math.round(x - (pixelTextWidth(lab) + 6 + 3 + vw) / 2);
-  const cw = drawKeyCap(ctx, x0, y, lab, false, lit ? 1 : 0);
-  drawPixelTextOutline(ctx, verb, x0 + cw + 3, y + 3, col, '#0f1632');
-}
 // one of the flight HUD's two keybind indicators: `KEY - VERB` as text for
 // the keyboard - the key the action is bound to (keyCap, input.js).
 // Centred on x, or ending at x when `centre` is false.
@@ -491,59 +472,36 @@ function drawDropBind(act, verb, x, y, col, ts, centre) {
   drawPixelTextOutline(ctx, t, Math.round(centre ? x - w / 2 : x - w), y, col, '#0f1632', ts);
 }
 
-// The way off the roost, for a rider still seated after the brief: a keybind
-// indicator - the work key's cap with the one word beside it, bobbing at the seated
-// player's shoulder (beside, not above: above is the bird's own bar and
-// whoever is standing on the far side of it) - and the gold landing ring
-// pulsing under the bird (drawEagle). Play mode's UI pass, over the world (wToSX/wToSY), gone
-// the moment the hop starts.
-function drawHopPrompt(now) {
-  if (!state.drop || !player.aboard || state.dropBrief || window.DBG.hideUI) return;
-  const e = state.drop.eagles[player.team];
-  if (e.state !== 'down') return;
-  const bob = Math.round(Math.sin(now * 4) * 2);
-  // centred over your head, its foot HOP_GAP clear of your name tag's top
-  // (seatedName: the tag sits 8 world px over the seated body's head)
-  const set = classSet(player), dir = riderDir(e);
-  const tagTop = Math.round(wToSY(player.y - (set[dir][0].height - 5) - 8));
-  const y = tagTop - HOP_GAP - 10 + bob, cx = Math.round(wToSX(player.x));
-  drawCapBind('work', 'HOP OFF', cx, y, FLIGHT_OPEN, true);
-}
-
-
-// the brief's two headlines, one per roost: the bird on screen is the
-// picture, this says what to DO about it (the headline carve-out - a match
-// has exactly one win condition, and this is the once it is ever written
-// down). One line, verb first, nothing under it: the roost's team colour at
-// four times the drop HUD's text scale, low in the view under the bird, on
-// no plate - a 2 px dark rim carries it over the pines instead. Baked opaque
-// and faded as a canvas: an outline stamped under
-// globalAlpha goes blotchy (the CLAUDE.md text rule).
-let briefCv = null, briefCvKey = '';
-function drawDropBrief() {
-  const b = state.dropBrief;
-  if (!b || window.DBG.hideUI) return;
-  if (b.ph !== 'ours' && b.ph !== 'theirs') return;
-  const hold = b.ph === 'ours' ? BRIEF_HOLD_OURS : BRIEF_HOLD;
-  const a = Math.min(1, b.t / 0.25, Math.max(0, (hold - b.t) / 0.3));
+// the landing's headline: PROTECT YOUR EAGLE, low in the view under your
+// own roost, every match, while its wings settle (HEADLINE_IN, HEADLINE_HOLD
+// off the bird's own restT, so a client shows it on the same beat). The
+// headline carve-out: a match has exactly one win condition, and this is the
+// once it is ever written down. Verb first, nothing under it, in your side's
+// paint at HEADLINE_TEXT times the drop HUD's text scale, on no plate - a
+// dark rim carries it over the pines. Baked opaque and faded as a canvas: an
+// outline stamped under globalAlpha goes blotchy (the CLAUDE.md text rule).
+let headCv = null, headCvKey = '';
+function drawDropHeadline() {
+  const e = state.drop && state.drop.eagles[player.team];
+  if (PRACTICE || !e || e.state !== 'down' || window.DBG.hideUI || endScreen()) return; // the practice field boots with its birds down: no arrival
+  const t = e.restT - HEADLINE_IN;
+  const a = Math.min(1, t / 0.25, Math.max(0, (HEADLINE_HOLD - t) / 0.4));
   if (a <= 0) return;
   const ts = VIEW_H >= 500 ? 2 : 1; // the drop HUD's own text scale (renderDropUI)
-  const key = b.ph + ts;
-  if (!briefCv || briefCvKey !== key) {
-    const team = b.ph === 'ours' ? player.team : 1 - player.team;
-    const t1 = b.ph === 'ours' ? 'PROTECT YOUR EAGLE' : 'ATTACK THEIR EAGLE';
-    const hs = BRIEF_TEXT * ts, rim = BRIEF_RIM;
-    briefCv = document.createElement('canvas');
-    briefCv.width = pixelTextWidth(t1, hs) + rim * 2;
-    briefCv.height = 5 * hs + rim * 2;
-    const c2 = briefCv.getContext('2d');
+  const key = player.team + ':' + ts;
+  if (!headCv || headCvKey !== key) {
+    const t1 = 'PROTECT YOUR EAGLE', hs = HEADLINE_TEXT * ts, rim = HEADLINE_RIM;
+    headCv = document.createElement('canvas');
+    headCv.width = pixelTextWidth(t1, hs) + rim * 2;
+    headCv.height = 5 * hs + rim * 2;
+    const c2 = headCv.getContext('2d');
     for (let dy = -rim; dy <= rim; dy++) for (let dx = -rim; dx <= rim; dx++) {
       if (dx || dy) drawPixelText(c2, t1, rim + dx, rim + dy, '#0f1632', hs);
     }
-    drawPixelText(c2, t1, rim, rim, TEAMS[skin(team)].mark, hs);
-    briefCvKey = key;
+    drawPixelText(c2, t1, rim, rim, TEAMS[skin(player.team)].mark, hs);
+    headCvKey = key;
   }
   ctx.globalAlpha = a;
-  ctx.drawImage(briefCv, Math.round((VIEW_W - briefCv.width) / 2), Math.round(VIEW_H * BRIEF_Y));
+  ctx.drawImage(headCv, Math.round((VIEW_W - headCv.width) / 2), Math.round(VIEW_H * HEADLINE_Y));
   ctx.globalAlpha = 1;
 }
