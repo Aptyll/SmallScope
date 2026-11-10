@@ -9,6 +9,11 @@
 // cooldown speed, leather for boots. The health potion keeps its own flask
 // (itemPotion, js/sprites/items.js).
 //
+// Each icon sits on a glow in the colour of what the item is about (itemKind,
+// js/sim/items.js), the shop's own stat-filter colours (STAT_ICON_ART): light
+// behind the subject and dark at the edges, the ability icons' backing, so the
+// colour says what an item gives and the shape says which item it is.
+//
 // The grids started from a primitives-and-shading script (kept beside the
 // shop's concept sheets in the project files) and are plain char grids now:
 // edit a pixel here like any other sprite.
@@ -82,3 +87,44 @@
   I.banner = [["..090...........", "..020000000000..", "..0577777777740.", "..057411878710..", "..057187747110..", "..05747411180...", "..05744188740...", "..057418668740..", "..057447837410..", "..0541114411140.", "..020000000000..", "..020...........", "..020...........", "..020...........", "..020...........", "..020..........."], {"0": "#1a1418", "1": "#5c1c24", "2": "#6b4a30", "3": "#8a7e66", "4": "#a0343c", "5": "#a3794f", "6": "#cfc4a8", "7": "#e0646a", "8": "#f4ecd6", "9": "#ffe08a"}];
   for (const id in I) SPRITES['item_' + id] = SPR.bake(I[id][0], Object.assign({ '.': null }, I[id][1]));
 })();
+
+// a glow's five tones, edge to core, one a stat (the stat strip's inks, deepened)
+const ITEM_GLOW = {
+  dmg:   ['#1a0c0a', '#3e1810', '#6c2816', '#9c3c1c', '#cc5a24'],
+  as:    ['#181208', '#3a2a0c', '#644812', '#906a18', '#bc9022'],
+  hp:    ['#0a160c', '#143818', '#1e5c24', '#2a8030', '#3caa40'],
+  armor: ['#0e121a', '#1c2636', '#2c3e56', '#405a7a', '#5a7ca2'],
+  ap:    ['#120c1e', '#281644', '#44226e', '#62329a', '#8448c4'],
+  haste: ['#08161c', '#0e2e3e', '#16505e', '#20727e', '#2c96a0'],
+  ms:    ['#121316', '#262830', '#3c404a', '#585e6a', '#7a818e'],
+};
+const ITEM_GLOW_R = [9.5, 7, 4.5, 2.5]; // a band's outer radius in px, edge tone inward
+const ITEM_ICON_PX = 16;
+const itemIconCache = new Map();
+// item id's icon: its grid over its kind's glow, the glow centred on the
+// subject's own middle (every shop well, slot, tooltip and wiki page reads this)
+function itemIcon(id) {
+  let cv = itemIconCache.get(id);
+  if (cv) return cv;
+  const im = SPRITES[BUILD_ITEMS[id].icon || 'item_' + id], n = ITEM_ICON_PX;
+  const ox = (n - im.width) >> 1, oy = (n - im.height) >> 1;
+  const px = im.getContext('2d').getImageData(0, 0, im.width, im.height).data;
+  let sx = 0, sy = 0, k = 0;
+  for (let y = 0; y < im.height; y++) for (let x = 0; x < im.width; x++) {
+    if (px[(y * im.width + x) * 4 + 3]) { sx += x + ox; sy += y + oy; k++; }
+  }
+  const cx = k ? sx / k : (n - 1) / 2, cy = k ? sy / k : (n - 1) / 2, tones = ITEM_GLOW[itemKind(id)];
+  cv = document.createElement('canvas');
+  cv.width = cv.height = n;
+  const g = cv.getContext('2d');
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+    const d = Math.hypot(x - cx, y - cy);
+    let b = 0;
+    while (b < ITEM_GLOW_R.length && d < ITEM_GLOW_R[b]) b++;
+    g.fillStyle = tones[b];
+    g.fillRect(x, y, 1, 1);
+  }
+  g.drawImage(im, ox, oy);
+  itemIconCache.set(id, cv);
+  return cv;
+}
