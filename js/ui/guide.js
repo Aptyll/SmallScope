@@ -15,6 +15,7 @@
 const GUIDE_MOVE_PX = 96;      // px walked from the landing that counts as moving
 const GUIDE_RECALL_GOLD = 400; // gold in the purse (or half health) before RECALL is taught
 const GUIDE_FLASH = 0.7;       // s a finished step's card holds, gold, before the next
+const GUIDE_TIP_T = 7;         // s a lesson's line of detail stands open before it folds away
 const GUIDE_HOME_T = 1.5;      // s RECALL's card shows before standing at home counts
 const GUIDE_LIFT = 8;          // px between the card's foot and the strip's buy plates
 const GUIDE_H = 16, GUIDE_TIP_H = 10, GUIDE_PAD = 4;
@@ -108,9 +109,14 @@ const GUIDE_STEPS = [
 // the coach's own state: this page's, never the sim's (a rematch reloads it)
 const guide = { step: -1, t: 0, flash: 0, off: false, casts: 0, cd: [0, 0, 0, 0], last: 0, hot: false };
 
+// the landing's headline (drawDropHeadline, js/draw/eagle.js) stands on the card's ground for its first seconds: the coach waits its turn
+function guideHeadlineUp() {
+  const e = state.drop && state.drop.eagles[player.team];
+  return !!e && e.state === 'down' && e.restT < HEADLINE_IN + HEADLINE_HOLD;
+}
 function guideOn() {
   return NET.mode === 'guide' && !PRACTICE && !guide.off && state.mode === 'play' && !!state.drop &&
-    !player.aboard && !inAir(player) && hudHome();
+    !player.aboard && !inAir(player) && hudHome() && !guideHeadlineUp();
 }
 function guideOpen(i) {
   guide.step = i; guide.t = 0;
@@ -163,7 +169,9 @@ function guideRect(s) {
 function guideOverX(r, mx, my) {
   return mx >= r.x + (r.xx - 3) * GUIDE_K && mx < r.x + r.w && my >= r.y && my < r.y + GUIDE_H * GUIDE_K;
 }
-function guideTipOn() { return settings.tipFull || keyHeld('details'); }
+// the line of detail: open for a lesson's first GUIDE_TIP_T s, so a first match reads each one once
+// unasked, then folded to the word; the DETAILS key (or ABILITY DETAILS on ALWAYS) opens it again
+function guideTipOn() { return settings.tipFull || keyHeld('details') || (guide.step >= 0 && !guide.flash && guide.t < GUIDE_TIP_T); }
 function guideWord(s) { return s.need ? s.word + ' ' + Math.min(s.need, Math.max(0, s.count(guide))) + '/' + s.need : s.word; }
 function guideShown() {
   if (!guideOn() || player.dead || guide.step < 0) return null;

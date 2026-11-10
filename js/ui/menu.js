@@ -35,7 +35,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.802';
+const PATCH_TXT = 'PATCH 0.803';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -51,6 +51,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.803', 'THE COACH WAITS FOR THE LANDING HEADLINE AND SHOWS EACH LESSON ITS LINE ONCE'],
   ['0.802', 'UNDER THE HOOD: FORTIVA\'S SHARPER ART IS DRAWN BY HAND, HER GREATSWORD, PLATES, MAIL AND BOOTS, READY FOR THE DAY THE SHARP SWITCH TURNS ON. NOTHING LOOKS DIFFERENT YET.'],
   ['0.801', 'BELLA HAS A WHOLE 32 PX KIT BEHIND THE FINE SWITCH: BOTH LOOKS, HER ROLL AND HER SPATHA.'],
   ['0.800', 'BRUSH PATCHES HAVE RAGGED BAYS AND BULGES, NOT DRAWN OVALS, AND EACH IS THE SAME SHAPE ON BOTH SIDES OF THE VALLEY.'],

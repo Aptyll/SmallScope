@@ -228,7 +228,7 @@ The coach is this screen's UI only: it reads the local player and never writes t
 in a FIRST MATCH party coaches its own player. One flat graphite card stands centred over the hud strip's
 buy plates, drawn `GUIDE_K` view px to each of its own so a first look finds it: the key caps of the live scheme (`keyCap`) and one word, a gold count where a lesson has one, a
 dim X that turns the coach off for good (`guideClick`, which also sets `PROFILE.setGuided`), and a row of
-pips over it, one per lesson. The DETAILS key (or ABILITY DETAILS on ALWAYS) opens one line of detail under it. A
+pips over it, one per lesson. One line of detail stands open under it for a lesson's first `GUIDE_TIP_T` seconds, then folds away; the DETAILS key (or ABILITY DETAILS on ALWAYS) opens it again. A
 lesson's whole meaning is its `GUIDE_STEPS` row: MOVE (walk `GUIDE_MOVE_PX` off the landing), SHOP (any
 buy; a gold arrow over your side's stall or merchant), ABILITIES (two casts; a key a point would learn
 pulses gold), LAST HIT (three), RECALL (shown once the purse holds `GUIDE_RECALL_GOLD` or health is
