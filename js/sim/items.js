@@ -450,7 +450,7 @@ function drinkPotion(p, slot) {
   p.potT = POTION_T;
   p.potFxT = 0;
   sfxAt('heal', p.x, p.y);
-  burst(p.x, p.y - 8, '#e0505a', 6, 30, 0.4);
+  burst(p.x, p.y - 8, '#c8f2c0', 6, 30, 0.4); // a pale green breath, never red: red specks on a face read as blood
 }
 function potionTick(p, dt) {
   if (!(p.potT > 0)) return;

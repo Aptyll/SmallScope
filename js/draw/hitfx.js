@@ -203,3 +203,25 @@ function drawLevelUp(p, spr, sx, sy, cx, cy) {
     ctx.fillStyle = LV_GOLD; ctx.fillRect(x, y, 1, Math.min(2, len));
   }
 }
+
+// ------------------------------------------------------------ a potion at work
+// THE DRINK, on the body while it heals (p.potT, js/sim/items.js): a small green heart,
+// the health stat's own sign, lifts off beside the body from the waist to the shoulder
+// and fades, then the next on its other side. Read off p.potT alone, so every screen
+// shows the same hearts. Beside the body: never over the face or the plate.
+const POT_HEART = ['.G.G.', 'GGGGG', '.gGg.', '..g..']; // G the heart's green, g its shaded underside
+const POT_GREEN = '#8fe08a', POT_SHADE = '#4fa860';
+const POT_BEAT = 1.25, POT_RISE_T = 0.85; // s from one heart to the next, and the s one takes to lift and fade
+const POT_RISE = 9, POT_OUT = 11;         // px it lifts, and px out from the body's middle it lifts at
+function drawPotionHearts(p, cx, cy) {
+  const t = POTION_T - p.potT, n = Math.floor(t / POT_BEAT), u = (t - n * POT_BEAT) / POT_RISE_T;
+  if (u >= 1) return; // the rest between two hearts
+  const side = n % 2 ? 1 : -1, x0 = cx + side * POT_OUT - 2, y0 = cy - 6 - Math.round(u * POT_RISE);
+  ctx.globalAlpha = u > 0.65 ? (1 - u) / 0.35 : 1;
+  POT_HEART.forEach((row, y) => { for (let x = 0; x < row.length; x++) {
+    if (row[x] === '.') continue;
+    ctx.fillStyle = row[x] === 'G' ? POT_GREEN : POT_SHADE;
+    ctx.fillRect(x0 + x, y0 + y, 1, 1);
+  } });
+  ctx.globalAlpha = 1;
+}

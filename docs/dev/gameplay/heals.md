@@ -23,7 +23,9 @@ while `p.potions` is how many. `isStack(id)` says so; `isPart` and `ITEM_PARTS` 
   a drink is running (`p.potT > 0`), at full health, dead or in the air. A drink heals
   `POTION_HEAL` (100) over `POTION_T` (15 s), `potionTick` paying it every step through
   `healPlayer`. **Nothing stops it**: a hit, a stun, a roll and a recall all let it run. Death ends
-  it (`die`), and it never ends a recall.
+  it (`die`), and it never ends a recall. On the body a small green heart lifts off beside it, one side then the
+  other, for as long as it runs (`drawPotionHearts` off `p.potT`, js/draw/hitfx.js); the first sip is a pale green
+  breath, never red.
 - **On the HUD** the well shows the flask, the count top-right and the key bottom-left, and sweeps
   the time left of a running drink with the strip's cooldown veil (`drawItemCell`,
   js/ui/hud-draw.js).

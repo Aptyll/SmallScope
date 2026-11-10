@@ -511,6 +511,7 @@ function drawPlayer(p, ex, ey, now, stage) {
     if (p.recallT > 0) drawRecallFeathers(p, Math.round(p.x - ex), Math.round(p.y - ey) + 5, true);
     if (p.backT > 0) drawBackFeathers(p, Math.round(p.x - ex), Math.round(p.y - ey) + 5, true);
     if (p.mendT > 0) drawMendFeathers(p, Math.round(p.x - ex), Math.round(p.y - ey) + 5, true);
+    if (p.potT > 0) drawPotionHearts(p, Math.round(p.x - ex), Math.round(p.y - ey) + 5); // a drink at work (js/draw/hitfx.js)
     if (p.lvT > 0) drawLevelUp(p, spr, sx, sy, Math.round(p.x - ex), Math.round(p.y - ey) + 5);
     if (zl) drawZipHandle(p, Math.round(p.x - ex), sy, ey); // the handle over the head and the rope up to the cable (js/draw/zipline.js)
   }
