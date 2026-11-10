@@ -35,6 +35,7 @@ const FEED_LIFE = 10;    // s a row stays
 const FEED_IN = 0.2;     // s it takes to slide in from the right
 const FEED_FACE = 12;    // the feed's faces
 const FEED_AIR = 2;      // between two rows
+const FEED_BAR = 3;      // px the maker's side bar down a row's left end
 const ANN_DIM = 'rgba(7,8,10,0.55)'; // over the face that was taken
 const ANN_TOWER = [[0, 0, 1, 2], [3, 0, 1, 2], [6, 0, 1, 2], [0, 1, 7, 1], [1, 2, 5, 5]]; // a road tower's battlements, the camps' 7x7 grid
 // the headline each kind reads; a multi-kill's comes from its count, a bear's
@@ -67,13 +68,18 @@ function annTake(c) {
   annQ.push(c);
   while (annQ.length > ANN_WAIT + 1) annQ.splice(1, 1);
 }
+// the panels that stand where the plate lands: the merchant's counter, the M map, the ESC slab, the held scoreboard
+function annCovered() { return shopOpen() || !!state.mapOpen || !!state.settingsOpen || scoreboardOpen(); }
 function annHold() { return annQ.length > 1 ? ANN_RUSH : ANN_LIFE; }
 // aged from updateFx (js/sim/sim.js) with the news plates; the sting rings
 // when a call comes UP, not when it is queued, so the ear and the eye agree
 function ageAnnouncer(dt) {
   for (let i = annFeed.length - 1; i >= 0; i--) if ((annFeed[i].t += dt) > FEED_LIFE) annFeed.splice(i, 1);
   if (!annQ.length) return;
-  if (annT < 0) { annT = 0; annSting(annQ[0]); return; }
+  // a call never draws over a panel: while one covers the top centre it waits, and one that was up goes
+  // back to the head of the line to come up whole when the panel closes (its sting rings once)
+  if (annCovered()) { annT = -1; return; }
+  if (annT < 0) { annT = 0; if (!annQ[0].rung) { annQ[0].rung = true; annSting(annQ[0]); } return; }
   annT += dt;
   if (annT < annHold()) return;
   annQ.shift(); annT = -1;
@@ -141,20 +147,21 @@ function drawAnnPlate(c, t) {
 // right-aligned on the minimap's edge like the news plates, starting where
 // they end (noteLaneBottom, js/ui/notices.js) and stopping at the lane's floor
 function drawFeedRow(e, x, y) {
-  const c = e.c, S = FEED_FACE, rh = S + 4, w = 2 + S + 2 + 7 + 2 + S + 2;
+  const c = e.c, S = FEED_FACE, rh = S + 4, w = feedRowW();
   const col = TEAMS[skin(c.at)].mark;
   ctx.fillStyle = HUD_INK; ctx.fillRect(x, y, w, rh);
   ctx.fillStyle = AB_BG; ctx.fillRect(x + 1, y + 1, w - 2, rh - 2);
-  ctx.fillStyle = col; ctx.fillRect(x + 1, y + rh - 2, w - 2, 1);
-  annFaceA(c, x + 2, y + 2, S);
+  ctx.fillStyle = col; ctx.fillRect(x + 1, y + 1, FEED_BAR, rh - 2); // the maker's side, a bar down the maker's end: ours and theirs read apart at a glance
+  const fx = x + 1 + FEED_BAR + 1;
+  annFaceA(c, fx, y + 2, S);
   // the chevron, pointing at what was taken
-  const cx = x + 2 + S + 2, cy = y + 4;
+  const cx = fx + S + 2, cy = y + 4;
   ctx.fillStyle = col;
   ctx.fillRect(cx + 1, cy, 2, 2); ctx.fillRect(cx + 3, cy + 2, 2, 2); ctx.fillRect(cx + 5, cy + 4, 1, 1);
   ctx.fillRect(cx + 3, cy + 4, 2, 2); ctx.fillRect(cx + 1, cy + 6, 2, 2);
   annFaceB(c, x + w - 2 - S, y + 2, S);
 }
-function feedRowW() { return 2 + FEED_FACE + 2 + 7 + 2 + FEED_FACE + 2; }
+function feedRowW() { return 1 + FEED_BAR + 1 + FEED_FACE + 2 + 7 + 2 + FEED_FACE + 2; }
 function drawFeed() {
   const w = feedRowW(), rh = FEED_FACE + 4, floor = noteLaneFloor();
   let y = noteLaneBottom() + 2;
@@ -170,5 +177,5 @@ function drawFeed() {
 
 function renderAnnouncer() {
   if (annFeed.length) drawFeed();
-  if (annQ.length && annT >= 0) drawAnnPlate(annQ[0], annT);
+  if (annQ.length && annT >= 0 && !annCovered()) drawAnnPlate(annQ[0], annT);
 }

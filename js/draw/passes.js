@@ -500,13 +500,14 @@ function renderScreen(ox, oy, now) {
   // what the pointer is on, resolved ONCE per frame, before the UI draws
   // (see the tooltips banner, ui.js)
   tipResolve();
+  // the landing's headline over your roost (drawDropHeadline, js/draw/eagle.js): under the HUD, so the
+  // merchant's counter opened in the first seconds stands over it and not behind it
+  if (state.mode === 'play') drawDropHeadline();
   renderUI(now);
   // the archery round's live layer: countdown, GO, the TIME/SCORE/HITS
   // plate, the final score (drawAgameUI, js/draw-world.js)
   if (ARENA && state.mode === 'play') drawAgameUI(now);
   if (state.mode === 'drop') renderDropUI(now);
-  // the landing's headline over your roost (drawDropHeadline, js/draw/eagle.js)
-  if (state.mode === 'play') drawDropHeadline();
   // the M map works mid-flight too: the ride's wider read lives here now
   if ((state.mode === 'play' || state.mode === 'drop') && state.mapOpen) renderWorldMap(now);
   // after the chart: a ping wheel opens over it too (pinned to the press point)

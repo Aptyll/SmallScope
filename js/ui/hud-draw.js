@@ -329,7 +329,7 @@ function drawItemCell(i, now, on) {
   const act = ITEM_KEYS[i];
   if (!id) {
     const t = keyCapShort(act);
-    drawPixelText(ctx, t, r.x + ((r.w - pixelTextWidth(t)) >> 1) + 1, r.y + ((r.h - 5) >> 1), '#33363d', 1);
+    drawPixelText(ctx, t, r.x + ((r.w - pixelTextWidth(t)) >> 1) + 1, r.y + ((r.h - 5) >> 1), BAG_KEY, 1);
   } else {
     shopIcon(itemIcon(id), r);
     if (id === 'potion') {

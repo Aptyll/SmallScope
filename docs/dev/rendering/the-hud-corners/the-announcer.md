@@ -13,10 +13,14 @@ dusk; a tower and a bear are 7x7 glyphs (`ANN_TOWER`, the camp's own `icon`); a 
 a wave and no player shows the wrecking side's colour. Calls queue: one is up at a time for
 `ANN_LIFE`, cut to `ANN_RUSH` while others wait, and past `ANN_WAIT` waiting the oldest is
 dropped. The sting (`SFX.announce`) rings when the plate comes up: a bell run as long as the
-multi-kill, rising for your side's call and falling for theirs.
+multi-kill, rising for your side's call and falling for theirs. A call never draws over a panel
+(`annCovered`: the merchant's counter, the M map, the ESC slab, the held scoreboard): it waits, and one
+that was up goes back to the head of the line and comes up whole when the panel closes, its sting rung
+once.
 
 **The feed.** Every player kill, tower and bear also leaves a row under the notice plates, right
-on the minimap's edge: maker's face, a chevron in their colour, the dimmed face taken. No words.
+on the minimap's edge: a `FEED_BAR` bar in the maker's colour down the row's left end, the maker's face, a chevron in their
+colour, the dimmed face taken. No words.
 Newest on top, `FEED_MAX` rows, each gone after `FEED_LIFE`; it starts where the plates end
 (`noteLaneBottom`) and stops at `noteLaneFloor`.
 
