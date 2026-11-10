@@ -62,6 +62,7 @@ const SAVE_ROOTS = [
   ['faberParts', ...saveArr(faberParts)], ['faberArcs', ...saveArr(faberArcs)], ['faberBolts', ...saveArr(faberBolts)], ['faberSprings', ...saveArr(faberSprings)], // FABER's spare parts, sparks' jumps, bolts and clocksprings (js/sim/faber.js; his machines ride `robots`)
   ['falcoKnives', ...saveArr(falcoKnives)], // FALCO's knives in flight (js/sim/falco.js; his hawk out rides `robots`)
   ['lignumAxes', ...saveArr(lignumAxes)], ['lignumLogs', ...saveArr(lignumLogs)], // LIGNUM's thrown axes and felled trunks (js/sim/lignum.js)
+  ['clivusRopes', ...saveArr(clivusRopes)], ['clivusRings', ...saveArr(clivusRings)], // CLIVUS's ropes and rope rings (js/sim/clivus.js)
   ['wordPops', ...saveArr(wordPops)], ['coinPops', ...saveArr(coinPops)], ['ptargets', ...saveArr(ptargets)], ['slashes', ...saveArr(slashes)],
   ['shed', () => [shedWait, shedLive], (v) => { saveArr(shedWait)[1](v[0]); shedLive = v[1]; }],
   ['iceBreaks', ...saveArr(iceBreaks)], // the breaks in their own shape (js/sim/icebreak.js); their pixels rebuild off them

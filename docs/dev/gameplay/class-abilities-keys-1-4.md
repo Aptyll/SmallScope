@@ -293,6 +293,23 @@ world (`lignumAxes`, `lignumLogs`) is stepped by `HERO_TICK`:
 | 3 | **BARK SKIN** | 15/14/13/12/11 s | for `BARK_T` every hit he takes is cut by `ward` (15/17/19/21/23%), twice that with a pine within `BARK_NEAR` tile of his feet (`barkTaken`, a `HERO_TAKEN` row) |
 | 4 | **TIMBER** | 100/85/70 s | after a 0.6 s wind-up showing its line, the nearest pine within `TIMBER_PICK` falls down the aim (a stump where it stood); with none, the trunk is laid from his feet. Every rival body and building along `TIMBER_LEN` (104 px), `TIMBER_W` either side, takes `dmg` (90/140/190) and is knocked up `up` (0.9/1/1.15 s), thrown off the side it stood on. The trunk then lies there `TIMBER_T` (3 s): each open tile under it is a wall to every walker and shot (`HERO_SOLID`, read by `isSolidTile`) |
 
+CLIVUS, THE GUIDE — the climbing fighter. His rules live in
+**[js/sim/clivus.js](../../../js/sim/clivus.js)** (`CLIVUS_AB`, its `clivus` banner), his pixels in
+[js/draw/clivus.js](../../../js/draw/clivus.js), his icons, look and ice axe in
+[js/sprites/clivus.js](../../../js/sprites/clivus.js). 110 hp and 17 armor at a plain walk, sure on
+ice (a quick turn there); his ICE AXE's basic blow is a little quicker and shorter than LIGNUM's
+(`reach` 24, `half` 0.95). Strong once he is on a rival and can go over what stands between;
+a long wait between vaults, so a rival who snaps his rope gets away. What he leaves in the world
+(`clivusRopes`, `clivusRings`) is stepped by `HERO_TICK`:
+
+| key | name | cd | what it does |
+| --- | --- | --- | --- |
+| P | **FOOTHOLD** | — | every key that lands (`passiveCast`) readies his next basic strike for `FOOT_T` (3 s): it lands ×(1 + `FOOT_DMG`) (1.4) (`clivusDeal`). `HERO_PASSIVE.foothold` |
+| 1 | **PICK STRIKE** | 7/6.5/6/5.5/5 s | a swing through the wedge ahead (`PICK_R`, `PICK_HALF`): every rival body and building in it takes `dmg` (30/45/60/75/90), ×`PICK_HELD` (2) on a rival he holds: tied by his rope, rooted or stunned (`clivusHolds`) |
+| 2 | **ROPE** | 14/13/12/11/10 s | a weighted rope down the aim (`ROPE_SPD` for `ROPE_RANGE`, 190 px): the first rival body or building takes `dmg` (35/50/65/80/95). A rival hero is tied for `ROPE_TIE` (2 s) and then rooted for `root` (1/1.1/1.2/1.3/1.4 s), unless they got `ROPE_SNAP` (230 px) from him first and snapped it |
+| 3 | **VAULT** | 16/15/14/13/12 s | a hop down the aim (`VAULT_LEN`, 72 px, at `VAULT_SPD`) over every tile but a building's, and over open water (`HERO_DASH.vault`, `over`: `isSolidTile`, `playerPlunge`). He lands on the first spot past it his body fits (to `VAULT_REACH` more), else the last one short; refused (`ok`) with none. Every rival body and building within `VAULT_HIT_R` of the landing takes `dmg` (30/45/60/75/90) and is slowed ×`slow` (0.7) for `VAULT_SLOW_T`. A stun in the air sets him down clear of what he was over (`vaultSettle`) |
+| 4 | **ROPE RING** | 110/95/80 s | after a 0.35 s wind-up showing the ring, every rival body and building within `RING_CAST_R` takes `dmg` (80/125/170), the ones by the rope thrown inward. The ring then stands `t` (3/3.5/4 s): each open tile half a tile past `RING_R` (52 px) is a wall to every body not of his side (`ringSolid`, `HERO_SOLID`), in or out; his side and every shot go over it |
+
 LUCERNA, THE LANTERN — the catch-and-save support. Her rules live in
 **[js/sim/lucerna.js](../../../js/sim/lucerna.js)** (`LUCERNA_AB`, its `lucerna` banner), her pixels in
 [js/draw/lucerna.js](../../../js/draw/lucerna.js), her icons, looks and lantern art in
