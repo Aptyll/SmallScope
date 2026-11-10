@@ -2,4 +2,4 @@
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| the rabbit, the deer, the wolf, the fox, the musk ox, and the clip sets built from them | by banner (`bakeClips` at the foot) | `rabbit`, `deer`, `wolf`, `fox`, `ox` |
+| the rabbit, the deer, the wolf, and the clip sets built from them | by banner (`bakeClips` at the foot) | `rabbit`, `deer`, `wolf` |

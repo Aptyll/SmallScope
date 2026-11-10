@@ -96,9 +96,10 @@
       bestRange: 0,    // the archery range's all-time best round score (0 = never played)
       bestRounds: {},  // ...and the bell's other rounds' (AG_ROUNDS, js/sim/practice.js), by round id - these three are all practice writes
       // the cosmetics' purse and what it bought: coins, the owned ids, and
-      // per slot ('bird') the id worn. A free cosmetic is never written to
+      // per slot (a hero's id) the id worn. A free cosmetic is never written to
       // `owned`, and an id the game no longer has is kept but never worn
-      // (birdSkinFor, js/ui/skins.js, falls back to the free one).
+      // (skinWorn, js/ui/skins.js, falls back to the free one), unless it is
+      // retired and refunded (refundRetired).
       coins: START_COINS,
       rank: RANK_START,
       // the FIRST MATCH's coach was seen through or turned off: the title
@@ -340,7 +341,7 @@
 
     // ---- cosmetics ----------------------------------------------------------
     // The purse and the wardrobe. Prices and what an id IS live in the
-    // callers' tables (BIRD_SKINS, js/sprites/eagle.js); every write here is
+    // callers' tables (each hero's looks, heroArt, js/sprites/hero-art.js); every write here is
     // a moment, not a trickle, so each saves through at once.
     coins() { return profile.coins; },
     owns(id) { return profile.owned.indexOf(id) >= 0; },

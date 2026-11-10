@@ -11,7 +11,7 @@
 // top across it.
 //
 // A lane IS road, like a path: roadDist mins over sideLaneDist, so placeRoad
-// paves it with the mid road in its one pass (fells the pines and rocks on it,
+// paves it with the mid road in its one pass (fells the pines on it,
 // turns ice to road), both maps ink it and every reader of the road reads it.
 // And each side
 // strings its own cable down it (laneZipTiles, below). Laid by

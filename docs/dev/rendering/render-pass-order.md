@@ -54,7 +54,7 @@
 14. `renderLighting` (its first pass `drawFog`, [the fog of war](../gameplay/fog-of-war.md), js/draw/fog.js) → `drawNavPaths` + `drawHitboxes` (the `.` debug overlay — deliberately
     **above** the lighting, see [Debug overlays](debug-overlays-hitboxes-and-routes.md));
 15. the air layer (`ctx = actx`): `drawDropAir(…, true)` (a bird in flight, its shadow and trail,
-    the riders and every faller) → the zipline riders (`airRiders`, `drawPlayer`) → `lightAir` ([the air layer](world-zoom-and-the-two-pixel-spaces.md#the-resting-zoom-is-always-pixel-exact)).
+    the riders and every faller) → the zipline riders and a hero over the scenery on an `over` dash (`airRiders`, `drawPlayer`) → `lightAir` ([the air layer](world-zoom-and-the-two-pixel-spaces.md#the-resting-zoom-is-always-pixel-exact)).
 
 Then **the world blit** (`ctx = uictx`; `worldCv` scaled onto the canvas — everything above it
 drew in world space, everything below draws in screen space; see
@@ -167,11 +167,9 @@ A flake does not fall screen-top to screen-bottom: it is born with `h` (30–120
 fall, **lands** when that runs out, rests on the ground fading out for `FLAKE_REST` (0.7 s), and is
 then reborn (`makeFlake`) at a fresh spot in the field.
 
-**The seventy boot flakes come off the main `rng` and that count is load-bearing** — that loop runs
-before `genWorld()`, so adding or dropping one shifts the rng prefix and every existing seed with
-it. Everything else (resize and zoom top-ups, and **rebirths**) draws from `fxRng`, never `rng`:
-the count follows the zoom, so a rebirth off the main stream would make a match's rolls depend on
-the player's camera.
+**Every flake draws from `fxRng`, never `rng`**: the boot fall, the resize and zoom top-ups, and
+the **rebirths**. The count follows the zoom, so a flake off the match's stream would make a
+match's rolls depend on the player's camera.
 
 Drawn after `renderLighting` (never graded) and before the vignettes and HUD. `DBG.flakes` and
 `DBG.cam()` expose the array and the exact camera.

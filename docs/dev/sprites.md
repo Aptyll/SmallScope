@@ -68,7 +68,7 @@ Only the end screens read it: the emotes (`EMOTES`, js/ui/screens.js; the flop g
 
 **The run, the held run and the dodge roll are the one set of player frames not typed by hand.**
 [app/bake-player/](../../app/bake-player/) paints them off a jointed doll of each hero look (ARMATOS's `standard` and `oath`, FORTIVA's `unbroken` and `coif`, BELLA's `general` and `traitor`,
-IGNIA's `hearth` and `wanderer`, AURA's `light`, SALVIA's `hood` and `tent`, LUCERNA's `lamp` and `dusk`, HIEMS's `scholar` and `frost`, FABER's `clockmaker` and `foreman`, NIX's `snowblind`, FALCO's `falconer`, RUPES's `quarry` and `cellar`, VARRO's `wolfkept` and `whitepack`, VELOX's `canal` and `night`, BUCINA's `horn` and `column`, MARIS's `diver` and `orca`, SAGITTA's `siege` and `tower`, LIGNUM's `feller` and `forest`; [hero looks](#hero-looks)) and
+IGNIA's `hearth` and `wanderer`, AURA's `light`, SALVIA's `hood` and `tent`, LUCERNA's `lamp` and `dusk`, HIEMS's `scholar` and `frost`, FABER's `clockmaker` and `foreman`, NIX's `snowblind`, FALCO's `falconer`, RUPES's `quarry` and `cellar`, VARRO's `wolfkept` and `whitepack`, VELOX's `canal` and `night`, BUCINA's `horn` and `column`, MARIS's `diver` and `orca`, SAGITTA's `siege` and `tower`, LIGNUM's `feller` and `forest`, CLIVUS's `guide`; [hero looks](#hero-looks)) and
 writes them to js/baked/motion.js as char grids in characters.js's own letters, so `motionSet`
 bakes them through the same team and hero palettes as every hand-drawn pose: `run[dir]`,
 `hold[dir]` and `roll[dir]` sit beside the walking directions, `left` the mirror of `right`.
@@ -260,6 +260,16 @@ the leather `a`/`A`, the hood `q`/`Q` and the buckle `y`/`Y`. His FELLING AXE is
 row (`blade: 'felling'`, js/draw/lignum.js). BARK SKIN lays bark plates on his shoulders
 (`HERO_BODY_FX`); TIMBER's trunk is drawn on the snow (`HERO_GROUND`).
 
+CLIVUS has one look (`CLIVUS_SKINS`, js/sprites/clivus.js): GUIDE (free; a knit cap with snow
+goggles pushed up on the brow, a coil of rope over his left shoulder across to the right hip, a
+belt). It is drawn on ARMATOS's frame (15 rows tall, 10 wide from the front, 8 from the side) and
+runs as its drawn body (`run: 'drawn'`); its doll (`Guide` in app/bake-player/bodies.py: the cap in
+`cap`, the rope in `hair`, the belt in `trim`) is used only for the roll. `CLIVUS_PAL` is `ARM_PAL`
+with the cap `c`/`C` and the rope `a`/`A`. His ICE AXE is a `HERO_BLADES` row (`blade: 'iceaxe'`,
+js/draw/clivus.js); the rope out and tied is drawn in the air (`HERO_AIR`), the rope ring on its
+stakes on the snow (`HERO_GROUND`), and a readied FOOTHOLD as a glint running up his rope
+(`HERO_BODY_FX`). In the air on his vault he joins the air layer, over the pines.
+
 LUCERNA has two looks (`LUCERNA_SKINS`, js/sprites/lucerna.js): LAMPLIGHTER (free: a flat cap over
 dark hair, a warm brown greatcoat open on the side's waistcoat, brass buttons) and DUSK ROAD (rare,
 200 coins: the same coat with a mustard scarf and a wide hat), both on ARMATOS's frame
@@ -383,18 +393,14 @@ A new character or building sprite has to be added to those bakes, not just to t
 entry, or it will not wear a team's colour — and every read indexes by `skin(team)` (the
 CLAUDE.md hard rule), never the bare team.
 
-**Perch** (`perch.js`) is the drop bird in every skin it wears (`LOOKS`, by `BIRD_SKINS` id:
-the classic, the ironclad and the four war eagles, which `war` builds as a plumage with a helm
-`cap`, a `crown` and `armour` on the arm), in flight and at the roost: seen from above, the
+**Perch** (`perch.js`) is the drop bird in its one look (`LOOKS.classic`, `SPRITES.perch.look`:
+the eagle skins were cut in 0.695), in flight and at the roost: seen from above, the
 crew's saddle on its back, a narrow arrow head with no face, and no grids either. It is a stack
 of flat shapes (`rell` ellipses, `blade` feathers, `poly`, `rect`) on a 112 px grid facing left,
 shaded by rule: a shadow rim away from the top-left light, a lit rim on `hl` parts, a contact
 shadow under whatever overlaps from above, an inner line (`lt`) where a part passes over the same
 material (`seam: false` melts a part into it instead), one ink outline, and on the ground a tight
-snow shadow. The war eagles' metal is parts like any other: the helm (`cap`: `great`, `guard`,
-`grille`, `slit`) follows the arrow head's shape with dark sight dots, the crown (`plume` in the
-team's colour, bone `horns`, a `fin`) rides the crown, and the arm wears `pauldron` plates or a
-metal leading `edge`. A **pose** (`POSE(key)`) moves the wings and tail: `r0`-`r2` the roost's three beats,
+snow shadow. A **pose** (`POSE(key)`) moves the wings and tail: `r0`-`r2` the roost's three beats,
 `s0`-`s9` level flight's one smooth stroke (`STROKE_N` phases), `d0`-`dDIVE_N` the stoop by its
 progress (the wings tuck back off the stroke, hold, then flare to brake), `l0`-`l2` the takeoff's
 hard beats; a lifted wing turned from the light steps a tone darker (`litStep`). `frame(id, team,
@@ -409,8 +415,7 @@ painted yet holds its last one, and the least recently drawn go past `KEEP`. A c
 or shadow keeps only the box its pixels fill (`trimmed`: the air round the wings was three
 quarters of it), carrying where that box sat (`ox`, `oy`) and the whole frame's size (`fw`, `fh`):
 draw it with `put(g, cv, x, y)`, `x, y` the whole frame's top-left, never a bare `drawImage`. The team parts read
-`TEAM_SKINS`, so the cache clears in `onTeams`. `SPRITES.birdSkinIcon` gets every look's card
-frames (the stroke nose-up) and `figure` the wiki's. The concept rounds' Python
+`TEAM_SKINS`, so the cache clears in `onTeams`. `figure` paints the wiki's. The concept rounds' Python
 (perch-landed/src/styles.py, look D, head H) lives in the project files, not the repo.
 
 **The merchant** has its **own grids**, `merchDown`/`merchUp`/`merchSide`
@@ -550,8 +555,6 @@ snapped onto `RBPAL` (eleven colours) and `DEPAL` (thirteen), source order the a
 | `rabbit` | `idle` 10 `bunny…gently_look_around`, `hop` 6 `…hopping_right`, `rise` 8 `…stand_up_and_wiggle` | 28×30 | **11×12** |
 | `deer` | `idle` 10 `deer…gently_look_around`, `graze` 12 `…grazing_loop`, `run` 12 `…galloping` | 38×38 | **38×38** (its own cell, snapped onto `DEPAL` 1:1) |
 | `wolf` | `idle` 1, `run` 2 | — | 16×13 |
-| `fox` | `idle` 1, `run` 2 | — | 27×18 |
-| `ox` (the musk ox) | `idle` 1, `run` 4 (step, stand, step, stand) | — | 47×32 |
 | `alpha` (the bear) | `idle` 6, `walk` 8, `run` 6, `bite` 10, `paw` 10, `roar` 8, `fish` 12 | a painted rig | 110×76 |
 
 The rabbit is [resampled offline](#the-offline-resample) — at its own cell size the bunny stands taller
@@ -564,9 +567,7 @@ reaches column 0, the graze column 37); the rabbit is trimmed to 28×30, which s
 tips the hop throws up.
 
 The wolf keeps its hand-drawn grids (a shared `wolfBody` plus three leg rows per frame): an idle
-and a two-frame gait. The fox and the musk ox are hand-set grids too, drawn at 1x the way
-[art.md](art.md) lays out (flat shapes, one ink outline): the fox in the wolf's stand and two-frame
-run, the ox a stand and the two steps of a walk. Left variants are `flipH` of the right-facing frames.
+and a two-frame gait. Left variants are `flipH` of the right-facing frames.
 
 The warrens' **snowdrops** ([world.md](world.md#camps)) are painted by
 `app/bake-snowdrops/paint.py` (Python with numpy and Pillow): distance-field shapes at 8×
@@ -650,14 +651,13 @@ with it.
 | `characters.js` | paint, run and roll, lying down, heroes (then the merchant) | `champLook` (a hero's set, with its `run`/`hold`/`roll` and `prone`), `portrait`, `merchant`, `motionBox`/`runBob`/`holdBob`/`rollAt` |
 | `armatos.js` and one file per hero | none: top-level globals | the hero's `*_SKINS` rows, palette and held art, which its `CLASSES` row names (armatos.js also holds `heroWalk`, `heroRunSide` and `heroRunFront` for every hero) |
 | `terrain.js` | trees, bush, the dead snags, the den, the hog hut | `tree`, `treeAtlas`, `stump`, `bush*`, `deadTree`, `den`, `hogHut` |
-| `beasts.js` | rabbit, deer, wolf, fox, musk ox | `rabbit`, `wolf`, `fox`, `ox`, `deer` |
+| `beasts.js` | rabbit, deer, wolf | `rabbit`, `wolf`, `deer` |
 | `bears.js` | none: generated by app/bake-bears/bake.py | `alpha` (black bear) |
 | `fish.js` | none: generated by app/bake-fish/paint.py | `creekFish.whitefish` (`swim[heading][frame]`, 16 headings, 2 tail frames, rimmed in the water's shade), `iceFish[kind]` (`fish` the frost pike, `sunfish` the gold sunfish: `swim` and the cold `shadow` under the ice, same headings and frames); looks E/F, I/K and shadow N off `docs/media/concepts/winter-fish-concepts-2/3/4.png` |
 | `orca.js` | none: generated by app/bake-orca/paint.py | `orca` (`breach`: `open`/`shut` side-on, head up and left, `openR`/`shutR` their mirrors, `jaw` the pixel between the jaws in the `bcell`; `shade(heading, step)`, 64 headings from east clockwise, 8 steps of the flukes' up-and-down beat, in `cell` squares, packed run-length and baked on first use); look D BOLD off `docs/media/concepts/orca-concepts-2.png` |
 | `cistern.js` | none: generated by app/bake-cistern/paint.py | `cistern` (`geo`, the ring's measures in tiles the sim reads; `flat`, the sills and every shadow, one canvas; `segs`, the standing stone cut into pieces two ground rows deep, each with its y-sort key `k`; `solid`, the footprint as on/off runs per ground row; all in px of a box `rb` round the crossing); a heightfield painted per world px in the 3/4 view, look H CUT BLOCKS off `docs/media/concepts/cistern-concepts-4.png` |
 | `snowdrops.js` | none: generated by app/bake-snowdrops/bake.js | `snowdrop[variant]` (`closed`/`open` at three leans, `picked`, `glow[lean][phase]`) |
 | `soldiers.js` | none: generated by app/bake-soldiers/bake.py | `robotRanged`, `robotSiege` (per team: 2 loaded, 2 spent; the cart's 4 more mirrored), `robotAx` |
-| `eagle.js` | none: only `BIRD_SKINS`, the skins' table | none |
 | `perch.js` | palettes, shapes, the bird, poses, painter, cache | `perch` (no grids: painted in code, below) |
 | `items.js` | items, gold nugget, gold sack, axe icon | `itemPotion` (the health potion's 11×12 flask), `itemAnim` + the gold's live icon, `goldSack`, `itemAxe`/`itemBow` |
 | `buildings.js` | the barracks bay, soldiers, the merchant's stall, fire | `teamBuild` (`spawner`, `stall`), `robotTeam`, `robot`, `fire` |

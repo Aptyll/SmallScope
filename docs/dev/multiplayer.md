@@ -261,6 +261,7 @@ read through `statOf(p, key)` (js/sim/stats.js), never off the kit. `setClass(p,
 | 15 | **MARIS** — THE ICE DIVER, the catch tank (passive COLD WATER) | harpoon one rival and reel in, burst up under a fight from the snow, break the ice under them | her own body (BARGE DIVER, or ORCA SKIN bought on the skins screen) and her HARPOON |
 | 16 | **LIGNUM** — THE FELLER, the treeline skirmisher (passive TREELINE) | wait in the woods, step out, chop hard, step back; fell a pine across a fight | his own body (FELLER, or LAST FOREST bought on the skins screen) and his FELLING AXE |
 | 17 | **SAGITTA** — THE BOLT-THROWER, the siege marksman (passive HEAVY BOLTS) | set up, then strike from far away: pin rivals to trees, shoot from behind your pavise | her own body (SIEGEWRIGHT, or TOWER BUILDER bought on the skins screen), 78 hp, 9 armor, a step slower | the HEAVY ARBALEST: a bolt, 430 px/s for 0.82 s, `cycle` 80/60 s, `kb` 1.3, drawn as her own shot (`look: 'bolt'`, `HERO_SHOTS`) |
+| 18 | **CLIVUS** — THE GUIDE, the climbing fighter (passive FOOTHOLD) | go over, not around: vault in, tie them, strike what you hold; stake a ring they cannot leave | his own body (GUIDE), 110 hp, 17 armor | the ICE AXE: a cut, `reach` 24, `half` 0.95, `cycle` 30/60 s, `kb` 1 |
 
 The **weapon is part of the hero**: each `CLASSES` entry carries its own `attack` row, so the
 swordsmen and the throwers do not attack the same way and every bot arrives armed, with nothing to
@@ -654,7 +655,7 @@ Three small rules, and the teamwork is what they add up to:
   own soldier on that lane nearest a clash, or wait at the lane's hold point (`laneHold`,
   `LANE_HOLD` (0.6) of the way from their mouth to its middle) while they have no column there
   (`aiLaneSpot`), and pick the lowest-health rival soldier in sight. JUNGLE is the JUNGLER: it
-  walks the side's own farm camps (CAMPS' `farm`: the wolf dens, fox hollows and ox ranges) on their clocks (`aiDenSpot`: a camp with its pack up is walked
+  walks the side's own wolf dens on their clocks (`aiDenSpot`: a den with its pack up is walked
   to and hunted by rung 6; a cleared one is waited on just outside `CAMP_HOLD`, set off
   `AI_DEN_EARLY` before it is due, and worked away from until then). SUPPORT walks with the
   side's BOT, bot or person (`aiCarry`), `AI_SUP_BACK` behind it toward home and `AI_SUP_SIDE`

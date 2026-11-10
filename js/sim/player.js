@@ -437,6 +437,26 @@ const CLASSES = [
     kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1, chargeMul: 0.45,
       bowCharge: 0.75, nock: 0.4, spdDmg: 0, dodgeSpeed: DODGE_SPEED },
   },
+  {
+    // the nineteenth named hero (js/sim/clivus.js): a fighter who climbs. He goes over what
+    // stands between him and a rival, ties them and holds them; strong once he is on you,
+    // and a long wait between vaults, so a rival who slips his rope gets away
+    name: 'CLIVUS', role: 'THE GUIDE', passive: 'foothold', // HERO_PASSIVE, js/sim/clivus.js
+    blurb: ['GO OVER, NOT AROUND.', 'VAULT IN, TIE THEM, STRIKE WHAT YOU HOLD.', 'STAKE A RING THEY CANNOT LEAVE.'],
+    story: "HE GUIDED THE EMPIRE'S COLUMNS OVER THE PASS FOR TWENTY WINTERS. THE LAST COLUMN HE TOOK WAS FAMILIES THE EMPIRE MEANT TO KEEP, ROPED TOGETHER IN A WHITEOUT, AND HE BROUGHT EVERY ONE OF THEM DOWN. HE HAS NOT BEEN BACK UP SINCE.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
+    // an ice axe's blow: quicker and a little shorter than LIGNUM's felling axe
+    attack: { name: 'ICE AXE', art: 'sword', cycle: 30 / 60, kb: 1, cut: { reach: 24, half: 0.95 } },
+    // its art: the heroArt('clivus') row in js/sprites/clivus.js (its look, its paint,
+    // the glyph and the emblem)
+    id: 'clivus',
+    blade: 'iceaxe', // his ICE AXE in his hands (HERO_BLADES, js/draw/clivus.js)
+    base: { hp: 110, dmg: 17, armor: 17, ap: 0, haste: 0, ms: PLAYER_SPEED },
+    grow: { hp: 8.6, dmg: 1.7, as: 0.012, armor: 2.3 },
+    rankOrder: [0, 1, 2], // the pick strike, the rope, the vault
+    // a mountain guide: sure on the ice, a quick turn and a high cap on it
+    kit: { iceMax: 1.1, iceSteer: 3.6, slideMin: 80, fatigue: 0.8, chargeMul: 0.7,
+      bowCharge: 0.75, nock: 0.5, spdDmg: 5, dodgeSpeed: 225 },
+  },
 ];
 // a hero's CLASSES index by name, -1 for none: what a profile or a bot names
 function heroIndex(name) { return CLASSES.findIndex((c) => c.name === name); }
@@ -819,6 +839,8 @@ class Player {
     this.coldT = 0; this.braceT = 0; this.braceCut = 0; this.underT = 0; this.reelX = 0; this.reelY = 0;
     // LIGNUM (js/sim/lignum.js): in the woods last step, TREELINE's ready blow and its run, CHOP's wait for the second blow, BARK SKIN's clock and its share
     this.lgWoods = false; this.lgEdgeT = 0; this.lgRunT = 0; this.chopT = 0; this.barkT = 0; this.barkCut = 0;
+    // CLIVUS (js/sim/clivus.js): FOOTHOLD's ready strike, in the air on a vault, the vault's whole flight (s), and its landing blow as it was sprung
+    this.clFootT = 0; this.clAir = false; this.clVaultT = 0; this.clVaultDmg = 0; this.clVaultSlow = 1;
     // VARRO (js/sim/varro.js): the body LUNGE is leaping at, SNAP's strikes still to land and
     // their clock; and on any body, whose mark it wears (LUNGE) and until when
     this.leapQ = null; this.snapN = 0; this.snapT = 0; this.packBy = -1; this.packUntil = 0;
@@ -1041,7 +1063,7 @@ function damagePlayer(p, dmg, dx, dy, src, cause, crit, kb, o) {
 }
 
 // what the log says when nobody gets the credit
-const DEATH_CAUSE = { ice: 'FELL THROUGH THE ICE', creek: 'WENT IN THE CREEK', wolf: 'WENT TO THE WOLVES', fox: 'WENT TO THE FOXES', ox: 'MET A MUSK OX', bear: 'MET A BEAR', tackle: 'RAN INTO SOMETHING SOLID', eagle: 'LOST THEIR EAGLE', fire: 'BURNED IN THE SNOW', soldier: 'FELL TO THE WAVE', orca: 'WENT TO THE ORCA', tower: 'TOOK A TOWER BOLT' };
+const DEATH_CAUSE = { ice: 'FELL THROUGH THE ICE', creek: 'WENT IN THE CREEK', wolf: 'WENT TO THE WOLVES', bear: 'MET A BEAR', tackle: 'RAN INTO SOMETHING SOLID', eagle: 'LOST THEIR EAGLE', fire: 'BURNED IN THE SNOW', soldier: 'FELL TO THE WAVE', orca: 'WENT TO THE ORCA', tower: 'TOOK A TOWER BOLT' };
 // ...and what the line says when there IS credit but no arrow: `cause` is
 // read for the verb too, so a burn doesn't get written up as a shot
 const KILL_VERB = { fire: 'BURNED' };

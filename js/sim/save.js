@@ -25,8 +25,8 @@
 // the saved valley and not the fresh one.
 
 // ---- tuning ---------------------------------------------------------------
-const SAVE_V = 12;          // the body's shape; a body of another shape is refused, never half-read, so
-                            // nothing below fills in a field an older save lacked (4: the survival leftovers cut; 5: the wallet is p.gold; 6: buildings lose `tier`, the pump's type is 'pump'; 7: one `shields` list; 8: a player's `buys`, `lifeT` and FROSTBITE's heal cut; 9: the loadout's picks, cooldowns and calling clocks; 10: the valley a fifth bigger; 11: HUNTER and WARRIOR gone, so every hero index moved, and craters and nets cut)
+const SAVE_V = 13;          // the body's shape; a body of another shape is refused, never half-read, so
+                            // nothing below fills in a field an older save lacked (4: the survival leftovers cut; 5: the wallet is p.gold; 6: buildings lose `tier`, the pump's type is 'pump'; 7: one `shields` list; 8: a player's `buys`, `lifeT` and FROSTBITE's heal cut; 9: the loadout's picks, cooldowns and calling clocks; 10: the valley a fifth bigger; 11: HUNTER and WARRIOR gone, so every hero index moved, and craters and nets cut; 12: a crash pad's centre is tx/ty; 13: the map grows on worldgen's own streams, so every seed's valley moved)
 
 // ---- what is saved ----------------------------------------------------------
 // [name, get, put]: get() hands the live value in, put(v) takes the decoded
@@ -61,6 +61,7 @@ const SAVE_ROOTS = [
   ['faberParts', ...saveArr(faberParts)], ['faberArcs', ...saveArr(faberArcs)], ['faberBolts', ...saveArr(faberBolts)], ['faberSprings', ...saveArr(faberSprings)], // FABER's spare parts, sparks' jumps, bolts and clocksprings (js/sim/faber.js; his machines ride `robots`)
   ['falcoKnives', ...saveArr(falcoKnives)], // FALCO's knives in flight (js/sim/falco.js; his hawk out rides `robots`)
   ['lignumAxes', ...saveArr(lignumAxes)], ['lignumLogs', ...saveArr(lignumLogs)], // LIGNUM's thrown axes and felled trunks (js/sim/lignum.js)
+  ['clivusRopes', ...saveArr(clivusRopes)], ['clivusRings', ...saveArr(clivusRings)], // CLIVUS's ropes and rope rings (js/sim/clivus.js)
   ['wordPops', ...saveArr(wordPops)], ['coinPops', ...saveArr(coinPops)], ['ptargets', ...saveArr(ptargets)], ['slashes', ...saveArr(slashes)],
   ['shed', () => [shedWait, shedLive], (v) => { saveArr(shedWait)[1](v[0]); shedLive = v[1]; }],
   ['iceBreaks', ...saveArr(iceBreaks)], // the breaks in their own shape (js/sim/icebreak.js); their pixels rebuild off them

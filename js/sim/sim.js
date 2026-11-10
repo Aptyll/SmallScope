@@ -929,7 +929,7 @@ function playerPlunge(p) {
   // easily, the creek's three only from its bank, so a roll that runs out over
   // the current goes in. The creek asks the feet against its banks as drawn
   // (creekWet), so nobody goes in off a pixel of snow or the frozen stretch.
-  if (p.fallT <= 0 && !heroSwim(p)) { // ...unless the hero swims (HERO_SWIM, js/sim/heroes.js)
+  if (p.fallT <= 0 && !heroSwim(p) && !heroDashOver(p)) { // ...unless the hero swims (HERO_SWIM, js/sim/heroes.js) or is in the air over it (HERO_DASH `over`)
     const htx = Math.floor(p.x / TILE), hty = Math.floor((p.y + 4) / TILE);
     const g = inWorld(htx, hty) ? ground[idx(htx, hty)] : 0;
     // a tile an ice break holds open is wet only where its pixels are: the
@@ -1182,18 +1182,14 @@ function makeFlake(r) {
     size: r() < 0.75 ? 1 : 2, a: 0.35 + r() * 0.45,
   };
 }
-// EXACTLY seventy, off the main stream, and that count is load-bearing: this
-// runs before genWorld(), so adding or dropping one here shifts the rng prefix
-// and every existing seed with it. fitFlakes() does all the resizing, off fxRng.
-for (let i = 0; i < 70; i++) flakes.push(makeFlake(rng));
-
-// Keep snow density constant per world area, not per screen. Top-ups draw from
-// a separate seeded stream so they never perturb the main rng's worldgen prefix.
+// The flakes draw on a seeded stream of their own, fxRng, never the match's rng().
+const fxRng = mulberry32((SEED ^ 0x9e3779b9) >>> 0);
+for (let i = 0; i < 70; i++) flakes.push(makeFlake(fxRng)); // the first fall; fitFlakes does all the resizing
+// Keep snow density constant per world area, not per screen.
 // Called every frame from updateFx as well as from relayout(), because the ZOOM
 // moves the target as surely as a resize does; both loops are no-ops when the
 // count already matches, which is every frame but the ones a zoom is easing
 // through.
-const fxRng = mulberry32((SEED ^ 0x9e3779b9) >>> 0);
 function fitFlakes() {
   const target = Math.max(FLAKE_MIN, Math.min(FLAKE_MAX,
     Math.round(FLAKE_BASE * (WV_W * WV_H) / FLAKE_AREA)));

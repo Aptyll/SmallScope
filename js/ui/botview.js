@@ -90,7 +90,7 @@ function botAimed(p) {
     if (d < bd) { bd = d; best = { e, kind, isWolf }; }
   };
   for (const q of players) if (enemyOf(p, q)) look(q, 'RIVAL', false);
-  for (const a of animals) if (!a.dead) look(a, a.kind === 'wolf' ? 'WOLF' : a.kind === 'fox' ? 'FOX' : a.kind === 'ox' ? 'OX' : isBigBeast(a) ? 'BEAR' : 'ANIMAL', isCampKind(a.kind) && !isBigBeast(a));
+  for (const a of animals) if (!a.dead) look(a, a.kind === 'wolf' ? 'WOLF' : isBigBeast(a) ? 'BEAR' : 'ANIMAL', a.kind === 'wolf');
   for (const r of robots) if (!r.dead && r.team !== p.team) look(r, 'SOLDIER', false);
   return best;
 }

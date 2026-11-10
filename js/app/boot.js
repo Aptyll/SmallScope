@@ -38,10 +38,9 @@ if (ARENA) {
   placeTowers();     // ...and three road towers on each side's cable, which it is cut back to (js/sim/towers.js)
   layJungle();       // ...and the pine walls that make the field a jungle, mirrored to all four quarters (js/sim/jungle.js)
   placeCamps();      // worldgen's last pass, before the ground is baked: the camps clear their sites
-  liftRocks();       // ...then genWorld's placeholder rocks come up again (world.js)
-  placeLandmarks();  // ...and the story landmarks take their spots, on a stream of their own (landmarks.js)
+  placeLandmarks();  // ...and the story landmarks take their spots (landmarks.js)
   placePumps();      // ...and the two gold pumps beside the top and bot lanes' middles, with no rng() (js/sim/pumps.js)
-  placeBushes();     // ...and the berry bushes move to the camps and the river, on no rng at all (world.js)
+  placeBushes();     // ...and the berry bushes by the camps and the river, on no rng at all (world.js)
   spawnAnimals();
   spawnFish();
   spawnOrca();       // ...and the orca under its lake (js/sim/orca.js)
@@ -151,7 +150,7 @@ window.DBG = {
   // the local profile: the store itself, the profile card (js/ui/profile-card.js)
   // and the hero row (js/ui/heroes.js), so a driver can rename, pick and read back
   PROFILE, beginProfile, leaveProfile, profileCommit, profileKey, profileHit, profileLayout, profileTagRect, overProfileTag,
-  applyProfile, heroList, lobbyPick, beginSkins, skinsLayout, birdSkinFor, coinTagRect, setCoins: (n) => PROFILE.setCoins(n),
+  applyProfile, heroList, lobbyPick, beginSkins, skinsLayout, coinTagRect, setCoins: (n) => PROFILE.setCoins(n),
   // the radial wheel: open one by hand (state.wheel) and read back the
   // geometry the hover test and the pixels both use
   wheelLayout, wheelSpan, wheelAng, WHEEL_HUB, WHEEL_R, WHEEL_RING,

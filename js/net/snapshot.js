@@ -193,6 +193,7 @@ function snapSingles() {
   s.faber = [pack(faberParts, 0), pack(faberArcs, 0), pack(faberBolts, 0), pack(faberSprings, 0)]; // FABER's parts, jumps, bolts and traps (js/sim/faber.js; his machines ride `robots`)
   s.falco = [pack(falcoKnives, 0)]; // FALCO's knives (js/sim/falco.js; his hawk out rides `robots`)
   s.lignum = [pack(lignumAxes, 0), pack(lignumLogs, 0)]; // LIGNUM's thrown axes and felled trunks (js/sim/lignum.js)
+  s.clivus = [pack(clivusRopes, 0), pack(clivusRings, 0)]; // CLIVUS's ropes and rope rings (js/sim/clivus.js)
   return s;
 }
 // `team` (0 or 1): only what that side sees (the `fog` banner); left out, everything
@@ -254,6 +255,7 @@ function snapApplySingles(s) {
   if (s.faber) [faberParts, faberArcs, faberBolts, faberSprings].forEach((L, i) => { L.length = 0; for (const w of unpack(s.faber[i])) L.push(w); });
   if (s.falco) [falcoKnives].forEach((L, i) => { L.length = 0; for (const w of unpack(s.falco[i])) L.push(w); });
   if (s.lignum) [lignumAxes, lignumLogs].forEach((L, i) => { L.length = 0; for (const w of unpack(s.lignum[i])) L.push(w); });
+  if (s.clivus) [clivusRopes, clivusRings].forEach((L, i) => { L.length = 0; for (const w of unpack(s.clivus[i])) L.push(w); });
 }
 // a field onto an entity the game holds by identity: a nested plain object
 // is merged into the one already there (a player's `kit` and `spawn` are
@@ -881,6 +883,7 @@ function snapBlank() {
   faberParts.length = 0; faberArcs.length = 0; faberBolts.length = 0; faberSprings.length = 0;
   falcoKnives.length = 0;
   lignumAxes.length = 0; lignumLogs.length = 0;
+  clivusRopes.length = 0; clivusRings.length = 0;
   Object.assign(orca, ORCA_FRESH());
   for (const c of camps) { c.repopT = 0; c.seen = [0, 0]; }
   if (state.drop) for (const e of state.drop.eagles) for (const k of Object.keys(e)) if (!SNAP_SKIP.has(k) && k !== 'team') e[k] = typeof e[k] === 'number' ? 0 : null;
@@ -949,7 +952,7 @@ function snapQuantize() {
   };
   walk(players); for (const k in SNAP_KINDS) walk(SNAP_KINDS[k]());
   if (state.drop) walk(state.drop.eagles);
-  walk(objects); walk(guards); walk(brushfires); walk(auraStars); walk(orcaSpouts); walk(auraOrbs); walk(auraCurtains); walk(salviaBundles); walk(salviaDrops); walk(salviaThaws); walk(lucernaHooks); walk(lucernaLanterns); walk(lucernaCircles); walk(bucinaEchoes); walk(bucinaCalls); walk(hiemsGlazes); walk(hiemsStorms); walk(faberParts); walk(faberArcs); walk(faberBolts); walk(faberSprings); walk(nixShards); walk(nixClouds); walk(falcoKnives); walk(lignumAxes); walk(lignumLogs); walk(veloxStones); walk(veloxLanes); walk(pads); walk(state.end); walk(state.eagleCine);
+  walk(objects); walk(guards); walk(brushfires); walk(auraStars); walk(orcaSpouts); walk(auraOrbs); walk(auraCurtains); walk(salviaBundles); walk(salviaDrops); walk(salviaThaws); walk(lucernaHooks); walk(lucernaLanterns); walk(lucernaCircles); walk(bucinaEchoes); walk(bucinaCalls); walk(hiemsGlazes); walk(hiemsStorms); walk(faberParts); walk(faberArcs); walk(faberBolts); walk(faberSprings); walk(nixShards); walk(nixClouds); walk(falcoKnives); walk(lignumAxes); walk(lignumLogs); walk(clivusRopes); walk(clivusRings); walk(veloxStones); walk(veloxLanes); walk(pads); walk(state.end); walk(state.eagleCine);
 }
 // One echo: quantize, frame, snapshot, blank, apply, frame; the pixels that differ,
 // the frame's own noise (two renders of the same state, for anything that

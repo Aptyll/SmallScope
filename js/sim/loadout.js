@@ -94,7 +94,7 @@ const TRICKS_BY_POS = [['sprint', 'torch'], ['cleaver', 'sprint'], ['torch', 'bu
 const TRICKS_ANY = ['sprint', 'bandage'];
 const CALLING_OF = {
   VELOX: 'quickhand', SAGITTA: 'quickhand',
-  FORTIVA: 'duelist', BELLA: 'duelist',
+  FORTIVA: 'duelist', BELLA: 'duelist', CLIVUS: 'duelist',
   ARMATOS: 'stalwart', RUPES: 'stalwart', MARIS: 'stalwart',
   IGNIA: 'warden', SALVIA: 'warden', LUCERNA: 'warden', BUCINA: 'warden',
   AURA: 'ambusher', HIEMS: 'ambusher', FABER: 'ambusher', NIX: 'ambusher', FALCO: 'ambusher',
