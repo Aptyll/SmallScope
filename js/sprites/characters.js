@@ -67,8 +67,11 @@
     }, motionSet(row.motion, sp));
     if (d > 1) set.dens = d;
     // a finer look's own roll (`roll`: its frames in the doll's box at `d` px a world px)
-    if (row.roll) {
-      const R = row.roll, once = {}, get = (f) => once[f] || (once[f] = f === 'left' ? get('right').map(fl) : R[f].map((g) => bk(g)));
+    // ...and a fine look with none of its own gets its doll's, doubled on first ask (SPR.fine2x)
+    const doll = d === 2 && SPR.motion.GRIDS[row.motion];
+    if (row.roll || doll) {
+      const R = (f) => (row.roll ? row.roll[f] : doll.roll[f].map(SPR.fine2x));
+      const once = {}, get = (f) => once[f] || (once[f] = f === 'left' ? get('right').map(fl) : R(f).map((g) => bk(g)));
       set.roll = Object.defineProperties({}, Object.fromEntries(['down', 'up', 'right', 'left'].map((f) => [f, { get: () => get(f), enumerable: true }])));
     }
     // side-on the run and the held run are the hero's own standing frame, legs stepping

@@ -150,7 +150,41 @@ function heroBladeOf(p) { const c = CLASSES[p.cls]; return c && c.blade ? HERO_B
 function heroBlade(p) { const b = attackOf(p).cut ? heroBladeOf(p) : null; return b ? { img: bladeArt(p, b).flat, grip: b.hilt } : null; }
 // a blade row's art for this body: its finer pair (`fine`, the art at `dens` px a world px,
 // its grips still in world px) for a body drawn fine (bodySet), else its own
-function bladeArt(p, b) { return b.fine && bodySet(p).dens > 1 ? b.fine() : b.art(); }
+function bladeArt(p, b) {
+  if (bodySet(p).dens < 2) return b.art();
+  if (b.fine) return b.fine();
+  const a = b.art();
+  return { flat: fineArt(a.flat), diag: a.diag && fineArt(a.diag) };
+}
+// any baked art on twice the px (SPR.fine2x over its own pixels: its colours as letters, its
+// ink the darkest colour on its rim), tagged `dens` 2 and kept: a hero's blade before it has a
+// drawn fine pair of its own
+const fineArts = new WeakMap();
+function fineArt(cv) {
+  if (fineArts.has(cv)) return fineArts.get(cv);
+  const px = SPR.pixelsOf(cv), W = cv.width, H = cv.height, key = (i) => (px[i * 4 + 3] ? px[i * 4] + ',' + px[i * 4 + 1] + ',' + px[i * 4 + 2] : '');
+  const pal = { '.': null }, letter = new Map(), LET = 'abcdefghijklmnpqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let ink = null, inkL = 1e9;
+  for (let i = 0; i < W * H; i++) {
+    const k = key(i);
+    if (!k || letter.has(k)) continue;
+    letter.set(k, LET[letter.size] || '#');
+    pal[letter.get(k)] = 'rgb(' + k + ')';
+  }
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { // the ink: the darkest colour beside the outside
+    const k = key(y * W + x);
+    if (!k) continue;
+    const rim = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([a, b]) => x + a < 0 || x + a >= W || y + b < 0 || y + b >= H || !px[((y + b) * W + x + a) * 4 + 3]);
+    const c = k.split(',').map(Number), l = 0.3 * c[0] + 0.59 * c[1] + 0.11 * c[2];
+    if (rim && l < inkL) { inkL = l; ink = k; }
+  }
+  if (ink) { pal.o = pal[letter.get(ink)]; letter.set(ink, 'o'); }
+  const rows = Array.from({ length: H }, (_, y) => Array.from({ length: W }, (_, x) => { const k = key(y * W + x); return k ? letter.get(k) : '.'; }).join(''));
+  const f = SPR.bake(SPR.fine2x(rows), pal);
+  f.dens = 2;
+  fineArts.set(cv, f);
+  return f;
+}
 // an art's size in world px: a finer one's (`dens`) at 1/dens
 function heldW(img) { return img.width / (img.dens || 1); }
 function heldH(img) { return img.height / (img.dens || 1); }

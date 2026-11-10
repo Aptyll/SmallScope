@@ -174,8 +174,11 @@ eagle's seats and a falling body keep the 16 px set. **The rest of the kit follo
 the doll's; a `HERO_BLADES` row's `fine()` (`armSwordsFine`: the art at 32 px, its `hilt` and
 `grip` the same world px) is what `bladeArt` hands the hands, and `drawGripped` and `heroCarry`
 draw any art at `heldW`×`heldH`; the fist closes on its art px (`heroFistFine`), and ARMATOS's
-standard draws on half px (`drawStandardFine`); a swing's crescent (`drawSwish`) lays itself on the body's art px. ARMATOS is the one whole kit so far; another
-hero's weapon, fist and roll stay 16 px until it gets its own.
+standard draws on half px (`drawStandardFine`); a swing's crescent (`drawSwish`) lays itself on the body's art px. **A fine body brings the rest along**: a fine look with no `roll` gets its doll's roll
+doubled (`SPR.fine2x`: Scale2x, the outline back to one px), and a blade row with no `fine()`
+gets its own art doubled the same way (`fineArt`, the ink read as the darkest colour on the art's
+rim). So `fine.grids` alone is a whole kit; a drawn `roll` or `fine()` (ARMATOS's) replaces the
+doubled one where the doubling reads badly (a 45 degree edge comes out in two px steps).
 The run facing down and up is still the doll's, unless the look's row says `run: 'drawn'`: then
 `heroRunFront` lifts the drawn front and back the same way (IGNIA's two looks, AURA's, SALVIA's, LUCERNA's and BUCINA's two, whose shawl, mantle, coat, cape and hair
 the doll does not match). Which look a player wears is `heroSkinOf(p)` (player.js): the id in `p.skins` under the
