@@ -72,25 +72,42 @@ function drawRing(px, py, r, col, alpha, fill) {
   ctx.globalAlpha = 1;
 }
 
-// the sword's sweep, drawn over the bodies (js/render.js beside the E swing
-// arcs): the wedge it reached, fading, and a bright edge sweeping across it
+// What a basic attack leaves beside the blade's own swish (drawSwish, js/draw/bodies.js),
+// drawn over the bodies, by the family the blade's row names (HERO_BLADES' `smear`): a
+// spear's thrust is straight lines out to its reach and a bright point, an axe's bite
+// throws chips, a hammer knocks the snow up where its head stops. A sword and a dirk
+// leave only their swish. White on a blue shade so it holds on snow, gold when it bit.
 function drawSlashes(ex, ey) {
   for (const s of slashes) {
     const px = Math.round(s.x - ex), py = Math.round(s.y - ey);
     if (px < -40 || py < -40 || px > WV_W + 40 || py > WV_H + 40) continue;
-    const prog = s.t / SLASH_T;
-    drawWedge(px, py, s.a, s.r, s.half, s.hit ? '#ffd95c' : '#f4f7ff', 0.7 * (1 - prog), 0);
-    const e = s.a - s.half + prog * s.half * 2; // the edge, across the wedge over the sweep
-    ctx.globalAlpha = 0.9 - prog * 0.5;
-    for (let i = 0; i < 3; i++) {
-      const t = e - i * 0.18;
-      const rr = s.r - 1 - i * 2;
-      for (let k = 6; k < rr; k += 2) {
-        ctx.fillStyle = i ? '#cfe0f2' : '#ffffff';
-        ctx.fillRect(Math.round(px + Math.cos(t) * k), Math.round(py + Math.sin(t) * k), 1, 1);
+    const u = Math.min(1, s.t / SLASH_T), B = HERO_BLADES[s.blade], kind = (B && B.smear) || 'edge', seed = fxSeed(s);
+    const cols = s.hit ? ['#7a5a1c', '#ffd95c', '#b98a2e'] : ['#4f6288', '#ffffff', '#9fb4d6'];
+    if (kind === 'thrust') {
+      const c = Math.cos(s.a), sn = Math.sin(s.a), out = Math.min(1, u * 3), r0 = s.r * (0.45 + 0.4 * Math.max(0, u * 1.6 - 0.6));
+      ctx.globalAlpha = u < 0.5 ? 1 : Math.max(0, 1 - (u - 0.5) / 0.5);
+      for (const [o, from, to] of [[-2, r0, s.r * out - 3], [2, r0 + 3, s.r * out - 5]]) { // the air either side of the shaft
+        for (let k = from; k < to; k++) {
+          const x = Math.round(px + c * k - sn * o), y = Math.round(py + sn * k + c * o);
+          ctx.fillStyle = cols[0]; ctx.fillRect(x, y + 1, 1, 1);
+          ctx.fillStyle = k > to - 5 ? cols[1] : cols[2]; ctx.fillRect(x, y, 1, 1);
+        }
+      }
+      if (u < 0.6) { // the point at its reach
+        const tx = Math.round(px + c * s.r * out), ty = Math.round(py + sn * s.r * out);
+        ctx.fillStyle = cols[0]; ctx.fillRect(tx - 1, ty - 1, 3, 4);
+        ctx.fillStyle = cols[1]; ctx.fillRect(tx - 1, ty - 1, 3, 3);
+      }
+      ctx.globalAlpha = 1;
+    } else if (kind === 'chop') {
+      if (s.hit && u > 0.25) drawFlung(Math.round(px + Math.cos(s.a) * s.r * 0.9), Math.round(py + Math.sin(s.a) * s.r * 0.9), s.a, 1, 10, 0.3, 6, 5, (u - 0.25) / 0.75, seed, (x, y, k) => fxChip(x, y, k, cols[1], cols[2], cols[0]));
+    } else if (kind === 'blunt' && u > 0.3) { // the snow knocked up where the head stops
+      const v = (u - 0.3) / 0.7, t = s.a + s.half * 0.7, x0 = px + Math.cos(t) * s.r, y0 = py + Math.sin(t) * s.r;
+      for (let k = 0; k < 5; k++) {
+        const x = Math.round(x0 + (fxRoll(seed, k, 1) - 0.5) * 14 * (0.5 + v)), y = Math.round(y0 + 3 - v * (3 + fxRoll(seed, k, 2) * 6)), r = Math.max(1, Math.round((1 - v) * 3.4));
+        fxPatch(x, y + 1, r + 1, 0.7, 1, seed + k, '#5f79a8'); fxPatch(x, y, r, 0.7, 1, seed + k, '#eef3fb');
       }
     }
-    ctx.globalAlpha = 1;
   }
 }
 

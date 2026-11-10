@@ -96,6 +96,8 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['EVERY WEAPON SWINGS ITS OWN WAY: A SPEAR THRUSTS, AN AXE CHOPS, A HAMMER KNOCKS UP SNOW', '0.777'],
+    ['A SMALL SPARK ON EVERY BLOW THAT LANDS ON A HERO', '0.777'],
     ['THE SHOP OPENS ON WHAT YOUR GOLD BUYS NOW', '0.776'],
     ['THE SIGHT EDGE STEPS DOWN IN TWO BANDS', '0.775'],
     ['Bucina raises the horn to her lips when she attacks or casts', '0.773'],

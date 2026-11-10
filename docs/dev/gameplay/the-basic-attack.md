@@ -65,9 +65,14 @@ worth (`slashReach`). What the edge reaches is the **wedge** —
 `inCone`/`unitsInCone`/`structsInCone` (js/sim/actions.js): a body counts by its centre plus its
 own radius, a building by any tile of its footprint — and nothing else: a body behind the
 attacker is never cut. In the practice field the wedge's far half also lands on the dummies
-(`abHitDummies`). Each cut leaves its wedge on the snow (`slashes`, `SLASH_T` 0.28 s, ticked by
-`updateSlashes` from `updatePlay`) — the outline in white, gold when it landed, with a bright edge
-sweeping across it — drawn by `drawSlashes` (js/draw/abilities.js), and the local player's draw
+(`abHitDummies`). Each cut is recorded (`slashes`, `SLASH_T` 0.28 s, ticked by `updateSlashes`
+from `updatePlay`, carrying the `blade` that made it), and what it leaves in the air is its
+weapon family's own (a blade row's `smear`, `HERO_BLADES`; `edge` when it names none): a sword a
+long thin swish, an axe or a pick a short heavy one and chips off its bite, a hammer a broad dull
+one and the snow its head knocks up, a dirk a small quick one, and a spear none at all, since
+its point is pushed straight out (`SWING_JAB`) with two lines of air beside it. The swish is the
+blade's (`drawSwish`, `SWISH_KIND`, js/draw/bodies.js); the chips, the snow and the thrust's
+lines are `drawSlashes` (js/draw/abilities.js), gold when the blow landed. The local player's draw
 grows the same wedge in place of the aim line (`drawAimLine`), so the reach the cut is about to
 have is on the ground before it lands. **The hand swings the blade itself**: it is drawn at its
 real 22 px length (`SPRITES.weaponHeld`, or the hero's own blade), a draw winds it back to the

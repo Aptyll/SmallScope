@@ -44,18 +44,28 @@ function drawStarPool(px, py, k, now) {
   }
   if (k > 0.12) auTwinkle(px, py, 2 + Math.round(3 * k), AU_STAR);
 }
-// its strike: a flash at the heart, rays of light out to the reach, sparks thrown
+// its strike, the loudest frame of the key: for two frames the snow lit under a big
+// star, then its four long rays and four short ones running out to the reach, each on
+// its own gold shade so it holds on snow, and sparks thrown outward
 function drawStarFx(f, px, py, now) {
-  const u = f.t / f.life, seed = fxSeed(f), go = Math.min(1, u * 4);
-  ctx.globalAlpha = Math.max(0, 1 - u);
-  ctx.fillStyle = AU_WHITE; fillEllipsePx(px, py, Math.round(STAR_CORE * (1 - u)), Math.round(STAR_CORE * (1 - u)));
+  const u = f.t / f.life, seed = fxSeed(f), go = Math.min(1, u * 5);
+  if (f.t < 0.07) { fxPatch(px, py + 1, STAR_CORE + 7, 0.6, 3, seed, '#e8c25a'); fxPatch(px, py, STAR_CORE + 5, 0.6, 3, seed + 1, AU_STAR); fxPatch(px, py, STAR_CORE, 0.6, 2, seed + 2, AU_WHITE); }
+  ctx.globalAlpha = Math.max(0, 1 - u * u);
   for (let i = 0; i < 8; i++) {
-    const t = i * Math.PI / 4 + 0.2, c = Math.cos(t), sn = Math.sin(t);
-    for (let r = STAR_CORE * go; r < f.r * go; r++) {
-      ctx.fillStyle = r > f.r * go - 4 ? AU_WHITE : AU_STAR; ctx.fillRect(Math.round(px + c * r), Math.round(py + sn * r), 1, 1);
+    const t = i * Math.PI / 4, c = Math.cos(t), sn = Math.sin(t) * 0.75, long = i % 2 === 0;
+    const r1 = (long ? f.r : f.r * 0.55) * go, r0 = r1 * Math.max(0, u * 1.6 - 0.3); // the ray's tail lets go of the heart as it runs out
+    for (let r = Math.max(2, r0); r < r1; r++) {
+      const x = Math.round(px + c * r), y = Math.round(py + sn * r), w = long && r < r1 * 0.5 ? 2 : 1;
+      ctx.fillStyle = '#d9a93a'; ctx.fillRect(x, y + 1, w, 1);
+      ctx.fillStyle = r > r1 - 4 ? AU_WHITE : AU_STAR; ctx.fillRect(x, y, w, 1);
     }
   }
-  drawFlung(px, py, 0, Math.PI, f.r + 6, 0.5, 12, 12, Math.min(1, u * 1.3), seed, (x, y, k) => fxMote(x, y, k % 2 ? AU_STAR : '#c6ecff', k % 2 ? '#d9a93a' : '#4f9bd6'));
+  if (u < 0.5) { // the star itself where it struck, shrinking: a bright core and four points
+    const r = Math.round(8 * (1 - u * 2)) + 1;
+    auTwinkle(px, py, r, AU_STAR);
+    ctx.fillStyle = AU_WHITE; ctx.fillRect(px - 1, py - 1, 3, 3);
+  }
+  drawFlung(px, py, 0, Math.PI, f.r + 8, 0.5, 14, 20, Math.min(1, u * 1.3), seed, (x, y, k) => fxMote(x, y, k % 2 ? AU_STAR : '#c6ecff', k % 2 ? '#d9a93a' : '#4f9bd6'));
   ctx.globalAlpha = 1;
 }
 AB_FX_LOOK.star = drawStarFx;
@@ -155,12 +165,13 @@ function drawAuraGround(ex, ey, now) {
     drawStarPool(px, py, k, now);
     // the star itself, coming down onto its ring
     const h = Math.round(36 * (1 - k)), sx = px + Math.round(10 * (1 - k)), sy = py - h;
-    for (let j = 2; j <= 16; j++) { // its streak, back up the way it came, thinning
-      const tx = sx + Math.round(j * 0.3), ty = sy - j;
-      ctx.fillStyle = '#3f73b0'; ctx.fillRect(tx - 1, ty, j < 9 ? 3 : 2, 1);
-      ctx.fillStyle = j < 6 ? AU_STAR : j < 11 ? AU_PALE : '#7cc4e8'; ctx.fillRect(tx, ty, 1, 1);
+    for (let j = 2; j <= 22; j++) { // its streak, back up the way it came, thinning
+      const tx = sx + Math.round(j * 0.3), ty = sy - j, w = j < 7 ? 3 : j < 14 ? 2 : 1;
+      ctx.fillStyle = '#3f73b0'; ctx.fillRect(tx - 1, ty, w + 2, 1);
+      ctx.fillStyle = j < 8 ? AU_STAR : j < 15 ? AU_PALE : '#7cc4e8'; ctx.fillRect(tx, ty, w, 1);
     }
-    auTwinkle(sx, sy, 3, AU_STAR);
+    auTwinkle(sx, sy, 5, AU_STAR);
+    ctx.fillStyle = AU_WHITE; ctx.fillRect(sx - 1, sy - 1, 3, 3); // a core that stays white
   }
   for (const o of auraOrbs) {
     const px = Math.round(o.x - ex), py = Math.round(o.y - ey);

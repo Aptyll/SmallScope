@@ -102,7 +102,7 @@ function shootAttack(p, A) {
 // drawSlashes) is that exact wedge, so what a rival saw is what hit them.
 const SLASH_T = 0.28;        // s the sweep lives on the snow - and the hand swings the blade through it
 const SLASH_REACH_MIN = 0.6; // a tap reaches this fraction of the blade
-const slashes = [];          // {x, y, a, r, half, t, hit}
+const slashes = [];          // {x, y, a, r, half, t, hit, blade}
 function slashReach(cut, pw) { return cut.reach * (SLASH_REACH_MIN + (1 - SLASH_REACH_MIN) * pw); }
 function cutAttack(p, A) {
   const pw = drawPow(p), cut = A.cut;
@@ -121,7 +121,7 @@ function cutAttack(p, A) {
   for (const w of structsInCone(p, p.x, p.y, a, r, cut.half)) hurtStruct(w, dmg, p);
   // the practice dummy: the wedge's far half is where a dummy stands to be hit
   if (PRACTICE) abHitDummies(p.x + Math.cos(a) * r * 0.5, p.y + Math.sin(a) * r * 0.5, r * 0.5, dmg);
-  slashes.push({ x: p.x, y: p.y - 2, a, r, half: cut.half, t: 0, hit: targets.length > 0 });
+  slashes.push({ x: p.x, y: p.y - 2, a, r, half: cut.half, t: 0, hit: targets.length > 0, blade: CLASSES[p.cls].blade || '' }); // `blade`: whose weapon cut it, for its smear (HERO_BLADES' `smear`, drawSlashes)
   p.slashT = SLASH_T; p.slashA = a; p.slashHalf = cut.half; // the hand swings the blade through the same arc (drawHeldTool)
   faceToward(p, dx, dy, true);
   sfxAt('swing', p.x, p.y); if (targets.length) sfxAt('hit', p.x, p.y);
