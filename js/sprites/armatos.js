@@ -1857,6 +1857,7 @@ const ARM_PAL = {
   o: '#2e2440', t: '#7d8699', T: '#b4bdcc', n: '#4f5668', y: '#f2cc6a', Y: '#b98a2e', k: '#fbe0c4', K: '#e2b898',
   e: '#2e2440', w: '#e6e1d6', W: '#f4f0e8', m: '#5c6478', M: '#454c5e', p: '#463c5c', b: '#6f4d38', B: '#4a3324',
   g: '#1c2232', G: '#9aa3b8', S: '#c8d8e8', x: '#f0a89a', h: '#f4f0e8', H: '#ffffff',
+  v: '#c4bdae', // the beard's shade side at 32 px (ARM_FINE)
 };
 // The looks he can wear: the first is his own and free, the rest are bought
 // with coins on the skins screen (js/ui/skins.js, the ARMATOS tab; the profile
