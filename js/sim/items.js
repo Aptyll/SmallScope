@@ -457,15 +457,15 @@ const BOT_BUILDS = {
   ARMATOS: ['bearskin', 'hobnail', 'brambmail', 'banner', 'glacier', 'stonehide'], // the wall first: health and armor, then the walk to the fight
   FORTIVA: ['brand', 'mukluk', 'fang', 'oakheart', 'stonehide', 'maul'], // the hit first, the health to stay in the fight, then the legs to reach it
   IGNIA: ['marsh', 'emberb', 'storm', 'lens', 'deeprod', 'mantle'], // the fire first: power, haste and the scorch, then the boots and more power
-  BELLA: ['beartooth', 'quick', 'maul', 'auger', 'feathers', 'sunstone'], // the blade first: damage and its cut, then the speed to chain it
+  BELLA: ['beartooth', 'shoes', 'maul', 'auger', 'sunstone', 'collar'], // the blade first, then the keys' wait: an assassin bursts, never out-shoots a marksman
   BUCINA: ['emberb', 'marsh', 'banner', 'clock', 'slate', 'storm'], // the keys' wait first, then the boots to lead the charge, then the armor up front
   LUCERNA: ['emberb', 'clock', 'banner', 'marsh', 'slate', 'storm'], // the crook's wait first: haste, then the boots, then the armor she needs up front
   SALVIA: ['shepherd', 'emberb', 'marsh', 'clock', 'hoarfrost', 'storm'], // the shepherd's staff first: heals that go further, then the boots, power, the armor a healer under focus needs, and the cut on the rival healer
   FABER: ['emberb', 'storm', 'marsh', 'slate', 'mantle', 'deeprod'], // haste first for more machines and traps, then power, the boots and the armor a mage holding a spot needs
   HIEMS: ['storm', 'marsh', 'emberb', 'hoarfrost', 'slate', 'deeprod'], // power and haste for more chills, then the armor a control mage standing in the fight needs
   RUPES: ['glacier', 'hobnail', 'bearskin', 'stonehide', 'brambmail', 'hearth'], // armor and health first, the snow takes the rest; the boots to reach the fight
-  NIX: ['beartooth', 'quick', 'feathers', 'maul', 'bite', 'sunstone'], // the blade first, the speed to reach a lone rival, then more blade
-  FALCO: ['beartooth', 'quick', 'feathers', 'auger', 'maul', 'sunstone'], // the knives first, the speed to reach a lone rival, then more blade
+  NIX: ['beartooth', 'shoes', 'bite', 'maul', 'sunstone', 'fang'], // the blade first, then the keys' wait to strike again sooner, then more blade
+  FALCO: ['beartooth', 'shoes', 'auger', 'maul', 'sunstone', 'collar'], // the knives first, then the keys' wait: the hawk and the fan more often
   LIGNUM: ['beartooth', 'hobnail', 'fang', 'oakheart', 'stonehide', 'bearskin'], // a skirmisher's: the bite first, the legs to step out and back, then health for the trades
   MARIS: ['glacier', 'hobnail', 'stonehide', 'bearskin', 'brambmail', 'hearth'], // a tank's: armor and health, the boots for reaching the water
   AURA: ['storm', 'emberb', 'deeprod', 'lens', 'marsh', 'mantle'], // the reach first: power and haste for more stars, then the boots, then the armor a mage caught close needs
