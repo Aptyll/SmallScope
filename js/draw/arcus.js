@@ -88,14 +88,14 @@ function drawVolleyTele(p, a0, closing, ex, ey) {
     }
     ctx.globalAlpha = 1;
   }
-  // the five on the string, side by side and painted as one: every rim first, then every shaft, so no arrow's rim
-  // covers its neighbour and each shaft reads
-  const tm = TEAMS[skin(p.team)];
+  // on the string, three of the five (the wind-up only has to say several): the middle and the two outermost bearings,
+  // three px apart along the string, only the head and fore shaft of each showing ahead of the bow, clear of his
+  // body, painted as one
+  // (every rim first, then every shaft) so each keeps its own rim with snow between
   AC_PX.length = 0;
-  for (let k = 0; k < VOLLEY_N; k++) {
-    const a = a0 - VOLLEY_HALF + (2 * VOLLEY_HALF * k) / (VOLLEY_N - 1), nx = Math.cos(a), ny = Math.sin(a);
-    const off = (k - (VOLLEY_N - 1) / 2) * 2; // each two px along the string from the next, a rim's width of dark between shafts
-    arrowBodyPx(AC_PX, Math.round(x0 + nx * 14 - Math.sin(a0) * off), Math.round(y0 + ny * 14 + Math.cos(a0) * off), nx, ny, 0, ARROW_LEN, tm.mark, tm.coatD, AC_SHAFT, 0);
+  for (let k = -1; k <= 1; k++) {
+    const a = a0 + k * VOLLEY_HALF, nx = Math.cos(a), ny = Math.sin(a), off = k * 3;
+    arrowBodyPx(AC_PX, Math.round(x0 + nx * 18 - Math.sin(a0) * off), Math.round(y0 + ny * 18 + Math.cos(a0) * off), nx, ny, 0, 7, AC_WHITE, AC_SHAFT, AC_SHAFT, 0); // head and fore shaft only: the rest is behind the bow
   }
   paintArrowPx(AC_PX);
 }
