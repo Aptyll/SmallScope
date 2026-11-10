@@ -121,16 +121,23 @@ AB_FX_LOOK.leap = drawFireLeapFx;
 HERO_GROUND.push(drawBrushfires);
 
 // ---- on her ---------------------------------------------------------------------
-// WARM HANDS waiting: sparks rising off her hands, over the body
+// WARM HANDS waiting: a small flame cupped in each hand she shows (both facing the
+// screen or away, the leading one side-on), flaring tall as it catches and flickering
+// between two shapes while it waits, a spark rising off each
+const WARM_HAND = { down: [3, 12], up: [3, 12], right: [11], left: [4] }; // the hands' x in her 16 px cell
+const WARM_FLARE = 0.3; // s the flames stand tall after the press
 function drawIgniaHands(p, ax, ay, now, front) {
   if (!front || !(p.warmT > 0) || CLASSES[p.cls].passive !== 'spreadflame') return;
-  for (let k = 0; k < 3; k++) {
-    const t = (now * 1.6 + k / 3) % 1;
-    const x = ax + (k === 1 ? 3 : 13) + Math.round(Math.sin(now * 5 + k) * 1);
-    const y = ay + 11 - Math.round(t * 9);
-    ctx.fillStyle = t < 0.5 ? IG_CORE : IG_FLAME;
-    ctx.fillRect(x, y, 1, 1);
-  }
+  const flare = p.warmT > WARM_T - WARM_FLARE, beat = Math.floor(now * 9) % 2;
+  (WARM_HAND[p.dir] || WARM_HAND.down).forEach((hx, k) => {
+    const lean = (beat + k) % 2, h = flare ? 6 : 3 + lean, x = ax + hx, y = ay + 11; // y: the row the flame sits on
+    ctx.fillStyle = IG_INK; ctx.fillRect(x - 2, y - 2, 5, 3); ctx.fillRect(x - 1, y - h, 3, h);
+    ctx.fillStyle = IG_EMBER; ctx.fillRect(x - 1, y - 1, 3, 2);
+    ctx.fillStyle = IG_FLAME; ctx.fillRect(x, y - h + 1, 1, h - 1); ctx.fillRect(x - 1 + lean * 2, y - 2, 1, 1);
+    ctx.fillStyle = IG_CORE; ctx.fillRect(x, y - Math.max(1, h - 3), 1, Math.max(1, h - 3));
+    const t = (now * 1.6 + k / 2) % 1; // a spark off it
+    ctx.fillStyle = t < 0.5 ? IG_CORE : IG_FLAME; ctx.fillRect(x + (lean ? 1 : -1), y - h - 1 - Math.round(t * 6), 1, 1);
+  });
 }
 HERO_BODY_FX.push(drawIgniaHands);
 

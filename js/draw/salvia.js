@@ -136,6 +136,38 @@ function drawCloakTele(x, y, closing, now) {
   }
   ctx.globalAlpha = 1;
 }
+// WARM CLOAK on the one wrapped (HERO_BODY_FX, any ally's body): a short linen cape
+// over the shoulders, a gold clasp at the throat and a sage hem, open down the chest
+// facing the screen (the side's colour stays seen) and whole across the back facing
+// away; it falls into place row by row over CLOAK_FALL and fades as the speed runs out
+const CLOAK_FALL = 0.2;
+const CLOAK_ROWS = [ // [y, x0, x1] in the 16 px cell, top row first; the last is the hem
+  [7, 4, 11], [8, 3, 12], [9, 3, 12], [10, 3, 12],
+];
+function drawSalviaCloak(p, ax, ay, now, front) {
+  if (!front || !(p.cloakT > 0)) return;
+  const n = Math.max(1, Math.ceil(CLOAK_ROWS.length * Math.min(1, (CLOAK_RUN_T - p.cloakT) / CLOAK_FALL)));
+  const back = p.dir === 'up';
+  ctx.globalAlpha = Math.min(1, p.cloakT * 4);
+  for (let i = 0; i < n; i++) {
+    const [y, x0, x1] = CLOAK_ROWS[i], hem = i === CLOAK_ROWS.length - 1, open = !back && i >= 2; // open: the chest shows between its two sides
+    ctx.fillStyle = SV_INK; ctx.fillRect(ax + x0 - 1, ay + y, 1, 1); ctx.fillRect(ax + x1 + 1, ay + y, 1, 1);
+    for (let x = x0; x <= x1; x++) {
+      if (open && x > x0 + 2 && x < x1 - 2) continue;
+      const fold = x === x0 + 2 || x === x1 - 2 || (back && (x === 7 || x === 8) && i > 0);
+      ctx.fillStyle = hem ? ((x + (back ? 0 : 1)) % 2 ? SV_SAGE : SV_SAGE_D) : fold ? SV_LINEN_D : SV_LINEN;
+      ctx.fillRect(ax + x, ay + y, 1, 1);
+    }
+    if (hem) { ctx.fillStyle = SV_INK; for (let x = x0; x <= x1; x++) if (!(open && x > x0 + 2 && x < x1 - 2)) ctx.fillRect(ax + x, ay + y + 1, 1, 1); }
+  }
+  if (!back) { ctx.fillStyle = SV_GOLD; ctx.fillRect(ax + 7, ay + 7, 2, 1); } // the clasp
+  for (let k = 0; k < 3; k++) { // warmth rising off it
+    const t = (now * 1.4 + k / 3) % 1;
+    ctx.fillStyle = k % 2 ? SV_GOLD : SV_LINEN; ctx.fillRect(ax + [2, 13, 8][k], ay + 6 - Math.round(t * 5), 1, 1);
+  }
+  ctx.globalAlpha = 1;
+}
+HERO_BODY_FX.push(drawSalviaCloak);
 // THAW's wind-up: the snow melting out from her feet, wet patches and steam spreading
 function drawThawTele(px, py, closing, now) {
   for (const [ux, uy, r] of fxSpots(28)) {
