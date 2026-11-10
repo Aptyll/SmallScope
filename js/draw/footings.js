@@ -75,8 +75,15 @@ function paintKerbRound(g, F, c, W, H, rounds) {
     if (roadPavedAt(wx, wy) && !(F.over && out < 0)) continue;
     let col = null;
     const along = Math.atan2(dy / ay, dx / ax) * (ax + ay) / 2;
-    if (out < -KW || (out < 0 && F.over && kerbMouth(r, along, KW, KB))) col = roadStonePx(roadStoneAt(wx, wy, ROAD_FLAG, 0.8), ROAD_COL_DEEP);
-    else if (out < 0) {
+    const mouth = F.over && out < 2 && kerbMouth(r, along, KW, KB);
+    // an END block, the last before a mouth, stands a pixel proud and dressed
+    // light, so the kerb finishes there instead of just stopping
+    const end = F.over && !mouth && out < 2 && (kerbMouth(r, along - KB, KW, KB) || kerbMouth(r, along + KB, KW, KB));
+    if (out < -KW || (out < 0 && mouth)) col = roadStonePx(roadStoneAt(wx, wy, ROAD_FLAG, 0.8), ROAD_COL_DEEP);
+    else if (end && out < 1) {
+      const a0 = ((along % KB) + KB) % KB, face = kerbMouth(r, along + KB, KW, KB) ? a0 > KB - 2 : a0 < 1; // its face toward the mouth
+      col = face || out >= 0 ? FOOT_KERB_COL.shd : out < -KW + 1 ? FOOT_KERB_COL.mid : FOOT_KERB_COL.lit;
+    } else if (out < 0) {
       // the kerb: blocks along the ring, a joint between each, the light from the up-left
       const lit = -(dx / ax + dy / ay); // > 0 on the side facing the light
       if (Math.abs(((along % KB) + KB) % KB) < 1) col = FOOT_KERB_COL.joint;

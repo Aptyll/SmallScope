@@ -62,10 +62,31 @@ const PYLON_SPRS = (() => {
     return c;
   });
 })();
+// the drift the wind banks round a pylon's foot, so it stands IN the snow:
+// lit across its crown, shaded on the down-right, its lee in the snow's blue
+const PYLON_DRIFT = (() => {
+  const rows = [
+    '.........ww...........',
+    '.......wwWWww.........',
+    '.....wwWWWWWWww.......',
+    '...wwWWWWWWWWWWwww....',
+    '..wWWWWWWWWWWWWWWWwb..',
+    '.wWWWWWWWWWWWWWWWWWbbs',
+    '.bwwwwwwwwwwwwwwwwbbss',
+    '..sbbbbbbbbbbbbbbbbss.',
+    '....ssssssssssssssss..',
+  ];
+  const pal = { W: '#ffffff', w: '#e9eef8', b: '#b9c3da', s: 'rgba(60,80,130,0.3)' };
+  const c = document.createElement('canvas');
+  c.width = rows[0].length; c.height = rows.length;
+  const g = c.getContext('2d');
+  rows.forEach((r, y) => { for (let x = 0; x < r.length; x++) if (pal[r[x]]) { g.fillStyle = pal[r[x]]; g.fillRect(x, y, 1, 1); } });
+  return c;
+})();
 // a pylon in render()'s y-sorted object pass: bottom-aligned on its tile
-// like a den, its foot's shadow first
+// like a den, the drift at its foot first
 function drawPylon(o, px, py) {
-  ctx.fillStyle = 'rgba(40,60,100,0.25)'; ctx.fillRect(px + 2, py + TILE - 2, 12, 2);
+  ctx.drawImage(PYLON_DRIFT, px - 3, py + TILE - 7); // its peak against the pole's windward (left) side
   drawSpriteFlash(PYLON_SPRS[skin(o.team)], px + 3, py + TILE - PYLON_H, o.flash);
 }
 // the cable's colours: steel in shadow, and the lit strand under it; under

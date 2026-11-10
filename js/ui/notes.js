@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['Zipline posts stand in drifted snow', '0.857'],
     ['Your stat sheet waits for the counter to close instead of covering it', '0.856'],
     ['Deep forest: old pines stand taller under snow, with a rare dead snag; the fallen pine carries a snow load you can see', '0.855'],
     ['HIEMS and AURA at 32 px: team colour into the shoulders from behind', '0.854'],
