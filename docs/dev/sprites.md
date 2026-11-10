@@ -46,11 +46,15 @@ stub arms sitting on a single full-width tread, the two frames differing only in
 notches). The body chars `L`/`T`/`t` are the team paint (`teamRobotPal` → `coatL`/`coat`/`coatD`),
 so `robotTeam[team]` is the whole melee bot in that colour; `drawRobot()` bobs the entire sprite while
 driving and adds the pennant (`PENNANT_AT`, per set) and the axe swing in code. The **ranged** and
-**siege** soldiers (`robotRanged`/`robotSiege`, js/baked/soldiers.js) are that same grid with new
-parts painted over it by app/bake-soldiers/bake.py (looks B SNOWBALL ARM and C SLED CATAPULT off
-`docs/media/concepts/wave-soldiers-concepts-1.png`): a raised arm holding a snowball, and a chassis
-six columns wider carrying a throwing arm. Each has four frames, two tread notches with the ball
-in hand and the same two thrown; `SPRITES.robotAx` says where in each frame the body's x stands.
+**siege** soldiers (`robotRanged`/`robotSiege`, js/baked/soldiers.js) are drawn by
+app/bake-soldiers/bake.py (looks B SNOWBALL ARM and D BALLISTA CART off
+`docs/media/concepts/wave-soldiers-concepts-1.png`, the cart redrawn in
+`docs/media/concepts/wave-soldiers-ballista-2.png`): the same grid with a raised arm holding a
+snowball, and the chassis a size up carrying a bow on a swivel post, its own arm at the winch, the
+bolt's fletching in the side's mark. Each has four frames, two tread notches loaded and the same two
+spent; the cart's set adds those four mirrored, shown while it faces left (`b.faceL`).
+`SPRITES.robotAx` says where in each frame the body's x stands (a mirrored frame's is its width less
+that).
 
 **Lying down is derived, not drawn.** A hero's set carries `prone[dir]` beside
 `down`/`up`/`right`/`left`, and no grid of its own: `lie` (the `lying down` banner in
@@ -128,11 +132,16 @@ some); never edit the grids.
 
 ## Hero looks
 
-Every hero is drawn only in its own looks. Its `CLASSES` row carries `skins` (`ARM_SKINS`,
-js/sprites/armatos.js, and one table per hero), and `champLook(cls, team, skinId)` (characters.js,
+Every hero is drawn only in its own looks. Its `CLASSES` row carries its `id`, which names its row
+in the **hero art registry** (`HERO_ART`, [js/sprites/hero-art.js](../../js/sprites/hero-art.js)):
+each hero's own sprite file ends with one `heroArt(id, { looks, pal, glyph, emblem })` call (its looks,
+e.g. `ARM_SKINS`, their paint, the skins tab's glyph and the 12 px emblem), every reader asks
+`heroArtOf(cls)` (player.js), and player.js refuses to boot when a row and its art do not pair up.
+`champLook(cls, team, skinId)` (characters.js,
+the `heroes` banner) bakes the chosen row's own grids `champLook(cls, team, skinId)` (characters.js,
 the `heroes` banner) bakes the chosen row's own grids (its standing frame per facing, the walk
 lifted off it by `heroWalk`, the roll from its doll by name through `motionSet`, lying down by
-`lie`) in the hero's paint (`skinPal`, e.g. `ARM_PAL`, then the row's own `pal` if it has one)
+`lie`) in the hero's paint (`pal`, e.g. `ARM_PAL`, then the row's own `pal` if it has one)
 over the team's coat (`teamPlayerPal` over `PPAL`). A `skinId` that names no row, or none, wears
 the free first row. The set is cached per (hero, team, look): ten players and a menu or two is
 all that ever asks. Every reader of a player's body goes through `classSet(p)` (player.js), which
@@ -143,15 +152,23 @@ side run was a pixel or two narrower and read as the hero shrinking when turning
 The run facing down and up is still the doll's, unless the look's row says `run: 'drawn'`: then
 `heroRunFront` lifts the drawn front and back the same way (IGNIA's two looks, AURA's, SALVIA's, LUCERNA's and BUCINA's two, whose shawl, mantle, coat, cape and hair
 the doll does not match). Which look a player wears is `heroSkinOf(p)` (player.js): the id in `p.skins` under the
-hero's `skinSlot`, or the free first row. LAST STANDARD (nasal helm, white beard, tabard) is his
+hero's `id`, or the free first row. LAST STANDARD (nasal helm, white beard, tabard) is his
 own; IRON OATH (closed helm with a gold cross, pauldrons, a cape) is bought on the skins screen.
 They are F and G off armatos-round4.png in the project files. His 48 px face is his own standing
 front at 3x (below).
 
 His OATH GREATSWORD (`ARM_SWORD`, `ARM_SWORD_DIAG`) replaces the sword's held art in his hands
-(`HERO_BLADES.oath`, js/draw/heroes.js: `heroBlade`, asked by `drawHeldTool`): flat for the side, the swing and the wind-up (turned about its `hilt`), and slanted
-facing down or up (`heroCarry`), the grip at his right hip (the row's `hip`) and the blade up past the
-shoulder, drawn behind the body facing up.
+(`HERO_BLADES.oath`, js/draw/heroes.js: `heroBlade`, asked by `drawHeldTool`): flat for the swing and the wind-up (turned about its `hilt`), and slanted
+at rest in every facing (`heroCarry`), the grip at his hip (the row's `hip`) and the blade up past the
+shoulder, mirrored facing left, drawn behind the body facing up. **A blade is held the same way in
+every facing** so a hero keeps one shape as it turns and nothing heavy is held out level: a
+`HERO_BLADES` row with a slanted grid names its `hold` (`BLADE_HOLDS`; none is `slant`, up and out
+from the leading hand: ARMATOS, VARRO, MARIS; `far` the other hand facing down: FORTIVA; `shoulder`
+back over the shoulder behind the head: LIGNUM's axe; `rest` the head down on the snow beside the
+foot: RUPES's maul). Each is the row's own slanted grid mirrored left to right or top to bottom
+(`heldFlip`, `heldDrop`); none rises past the head, where the health frame sits. A row with no
+slanted grid keeps the level carry (BELLA, NIX), and its `lift` raises a short blade hung at the
+side so its tip rests at the feet (NIX).
 
 FORTIVA's looks (`FORT_SKINS`, js/sprites/fortiva.js) are built the same way on ARMATOS's frame and in
 his iron (`FORT_PAL` is `ARM_PAL` with her copper hair `a`/`A` and her chain `c`/`C`). UNBROKEN
@@ -170,8 +187,8 @@ ponytail, an iron band, a dark mask, a dark mantle where the gold was) is bought
 bella-round4.png in the project files and its skin; their dolls (`General`, `Traitor` in
 app/bake-player/bodies.py) stream the ponytail behind her in the run (the doll's `hair` and `cloak`
 materials). Her 48 px model is her own standing front too. Her EAGLE SPATHA (`BELLA_SPATHA`,
-`HERO_BLADES.spatha`) has no slanted carry (an empty `hip`): facing down or up she holds it upright
-in the leading hand.
+`HERO_BLADES.spatha`) is flat for the swing and slanted at rest (`BELLA_SPATHA_DIAG`, the grip at
+`BELLA_SPATHA_GRIP`): she holds it at the ready in the leading hand in every facing.
 
 IGNIA's looks (`IGNIA_SKINS`, js/sprites/ignia.js) are drawn on ARMATOS's frame too (`IGNIA_PAL` is
 `ARM_PAL` with her copper hair `a`/`A` and the ember letters `u`/`f`/`F`). HEARTHKEEPER (loose
@@ -184,10 +201,9 @@ Her 48 px model is her own standing front too. Her CROOK AND LANTERN is not a bl
 the leading hand in every facing (`heroStaff`, asked by `drawHeldTool`, mirrored facing left or up)
 and held through a cast; the lantern's heart flickers between two baked frames. **Each staff hero
 carries it its own way** so two of them are two shapes on the snow: a `HERO_STAVES` row's `hold`
-names a `STAFF_HOLDS` entry (none is the leading hand; `far` the other hand, SALVIA;
-`yoke` level behind the shoulders, HIEMS; `hip` level at the hip, FABER). The level holds are the
-upright art a quarter turn over, baked once (`staffTurn`). A draw or a cast brings any hold upright
-into the leading hand. A new staff hero takes a hold no other staff hero has, or a new one.
+names a `STAFF_HOLDS` entry (none is the leading hand; `far` the other hand, SALVIA and HIEMS).
+A staff is always upright with its foot by the hero's own. A draw or a cast brings it into the
+leading hand.
 
 **Every hero body shows its side from every facing**: the side's coat letters (`r`/`R`/`d`) fill 16 px
 or more of the torso facing down and up and 12 or more side-on, the lower back from behind
@@ -215,8 +231,8 @@ swaying between two baked frames.
 RUPES has two looks (`RUPES_SKINS`, js/sprites/rupes.js): QUARRYMAN (free; a fur cap with ear
 flaps, a full beard, leather straps over the side's coat, fur mitts) and ICE CELLAR (200 coins; the
 side's hood up, a leather mantle, an ice-blue scarf), A and B off heroes-rupes/round1 in the project
-files. Both are drawn on ARMATOS's frame with the broadest shoulders of anyone (14 px head-on,
-12 side-on) and run as their drawn bodies (`run: 'drawn'`); their dolls (`Quarry`, `Cellar` in
+files. Both are drawn on ARMATOS's frame with the broadest shoulders of anyone (12 px head-on,
+11 side-on as QUARRYMAN: every hero's body stays within 25% of ARMATOS's 10 px) and run as their drawn bodies (`run: 'drawn'`); their dolls (`Quarry`, `Cellar` in
 app/bake-player/bodies.py) are used only for the roll. `RUPES_PAL` is `ARM_PAL` with the fur
 `t`/`T`, beard `w`/`W`, leather `m`/`M` and scarf `i`/`I`. His ICE MAUL is a `HERO_BLADES` row
 (`blade: 'maul'`, js/draw/rupes.js). While he rolls (AVALANCHE) a `HERO_BODY_DRAW` row draws the
@@ -309,6 +325,15 @@ app/bake-player/bodies.py; she runs on her drawn frames (`run: 'drawn'`). Her HE
 basic attack's `art` (`SPRITES.weaponArt.arbalest`, prod left): held level facing a side and on the
 aim while drawn, shouldered prod-up facing down or up (`HERO_CARRY`, js/draw/sagitta.js).
 
+ARCUS has two looks (`ARCUS_SKINS`, js/sprites/arcus.js): WILLOW CUTTER (free: a brimmed felt cap
+with a white feather over short brown hair and a beard, a leather jerkin and a quiver on his back)
+and FIRST SNOW (rare, 200 coins: the same cut in pale wool, its `pal` repainting the cap, jerkin and
+feather), both on ARMATOS's frame. The cut is C off arcus-round1.png in the project files. His doll
+is `Fletcher` in app/bake-player/bodies.py (motion `fletcher`); he runs on his drawn frames
+(`run: 'drawn'`). His WILLOW LONGBOW is his basic attack's `art` (`SPRITES.weaponArt.longbow`): held
+level facing a side, carried upright in his leading hand facing down or up (`HERO_CARRY`,
+js/draw/arcus.js).
+
 FABER has two looks (`FABER_SKINS`, js/sprites/faber.js): CLOCKMAKER (free) and WORKS FOREMAN
 (rare, 200 coins), both on ARMATOS's frame. `FABER_PAL` is `ARM_PAL` with the leather cap and apron
 `a`/`A`, the goggle lenses `C`, the moustache `U` and the hard hat's lamp `S`. They are A and B off
@@ -320,11 +345,12 @@ hand ticks between two baked frames. His two machines draw themselves from small
 side (`faberArt`, js/draw/faber.js), the side's colour in a band across each.
 
 FALCO has two looks (`FALCO_SKINS`, js/sprites/falco.js) on one set of grids and one doll:
-FALCONER (free) and LAST HAWK (rare, 200). `FALCO_PAL` is `ARM_PAL` with his leather `q`/`Q`
-(the doll's `cloak`), brown hair `a`/`A` (the doll's `hair`), the kestrel-rust collar `x`/`X`
-and a cream feather `W`; LAST HAWK is the same cut repainted by its row's `pal` (black leather,
-silver hair, gold at the collar). It is A off falco-round1.png in the project files. His doll is
-`Falconer` in app/bake-player/bodies.py. His THROWING KNIFE is weapon art
+HUNTSMAN (free; row id `falconer`) and LAST HAWK (rare, 200). `FALCO_PAL` is `ARM_PAL` with the
+green hat and shoulder cape `q`/`Q`, brown hair `a`/`A`, a leather belt `x` and the hat's long
+cream feather `W`; LAST HAWK is the same cut repainted by its row's `pal` (black hat and cape,
+silver hair, a gold belt). It is C off falco-round1.png in the project files. Both run as their
+drawn bodies (`run: 'drawn'`); his doll (`Falconer` in app/bake-player/bodies.py) is used only for
+the roll. His THROWING KNIFE is weapon art
 (`SPRITES.weaponArt.knife`, point right, `WEAPON_GRIP.icon.knife`), carried in the leading hand and held on
 the aim while drawn, and thrown as a shot drawn by `HERO_SHOTS.knife`.
 
@@ -366,18 +392,14 @@ A new character or building sprite has to be added to those bakes, not just to t
 entry, or it will not wear a team's colour — and every read indexes by `skin(team)` (the
 CLAUDE.md hard rule), never the bare team.
 
-**Perch** (`perch.js`) is the drop bird in every skin it wears (`LOOKS`, by `BIRD_SKINS` id:
-the classic, the ironclad and the four war eagles, which `war` builds as a plumage with a helm
-`cap`, a `crown` and `armour` on the arm), in flight and at the roost: seen from above, the
+**Perch** (`perch.js`) is the drop bird in its one look (`LOOKS.classic`, `SPRITES.perch.look`:
+the eagle skins were cut in 0.695), in flight and at the roost: seen from above, the
 crew's saddle on its back, a narrow arrow head with no face, and no grids either. It is a stack
 of flat shapes (`rell` ellipses, `blade` feathers, `poly`, `rect`) on a 112 px grid facing left,
 shaded by rule: a shadow rim away from the top-left light, a lit rim on `hl` parts, a contact
 shadow under whatever overlaps from above, an inner line (`lt`) where a part passes over the same
 material (`seam: false` melts a part into it instead), one ink outline, and on the ground a tight
-snow shadow. The war eagles' metal is parts like any other: the helm (`cap`: `great`, `guard`,
-`grille`, `slit`) follows the arrow head's shape with dark sight dots, the crown (`plume` in the
-team's colour, bone `horns`, a `fin`) rides the crown, and the arm wears `pauldron` plates or a
-metal leading `edge`. A **pose** (`POSE(key)`) moves the wings and tail: `r0`-`r2` the roost's three beats,
+snow shadow. A **pose** (`POSE(key)`) moves the wings and tail: `r0`-`r2` the roost's three beats,
 `s0`-`s9` level flight's one smooth stroke (`STROKE_N` phases), `d0`-`dDIVE_N` the stoop by its
 progress (the wings tuck back off the stroke, hold, then flare to brake), `l0`-`l2` the takeoff's
 hard beats; a lifted wing turned from the light steps a tone darker (`litStep`). `frame(id, team,
@@ -392,8 +414,7 @@ painted yet holds its last one, and the least recently drawn go past `KEEP`. A c
 or shadow keeps only the box its pixels fill (`trimmed`: the air round the wings was three
 quarters of it), carrying where that box sat (`ox`, `oy`) and the whole frame's size (`fw`, `fh`):
 draw it with `put(g, cv, x, y)`, `x, y` the whole frame's top-left, never a bare `drawImage`. The team parts read
-`TEAM_SKINS`, so the cache clears in `onTeams`. `SPRITES.birdSkinIcon` gets every look's card
-frames (the stroke nose-up) and `figure` the wiki's. The concept rounds' Python
+`TEAM_SKINS`, so the cache clears in `onTeams`. `figure` paints the wiki's. The concept rounds' Python
 (perch-landed/src/styles.py, look D, head H) lives in the project files, not the repo.
 
 **The merchant** has its **own grids**, `merchDown`/`merchUp`/`merchSide`
@@ -635,8 +656,7 @@ with it.
 | `orca.js` | none: generated by app/bake-orca/paint.py | `orca` (`breach`: `open`/`shut` side-on, head up and left, `openR`/`shutR` their mirrors, `jaw` the pixel between the jaws in the `bcell`; `shade(heading, step)`, 64 headings from east clockwise, 8 steps of the flukes' up-and-down beat, in `cell` squares, packed run-length and baked on first use); look D BOLD off `docs/media/concepts/orca-concepts-2.png` |
 | `cistern.js` | none: generated by app/bake-cistern/paint.py | `cistern` (`geo`, the ring's measures in tiles the sim reads; `flat`, the sills and every shadow, one canvas; `segs`, the standing stone cut into pieces two ground rows deep, each with its y-sort key `k`; `solid`, the footprint as on/off runs per ground row; all in px of a box `rb` round the crossing); a heightfield painted per world px in the 3/4 view, look H CUT BLOCKS off `docs/media/concepts/cistern-concepts-4.png` |
 | `snowdrops.js` | none: generated by app/bake-snowdrops/bake.js | `snowdrop[variant]` (`closed`/`open` at three leans, `picked`, `glow[lean][phase]`) |
-| `soldiers.js` | none: generated by app/bake-soldiers/bake.py | `robotRanged`, `robotSiege` (per team: 2 in hand, 2 thrown), `robotAx` |
-| `eagle.js` | none: only `BIRD_SKINS`, the skins' table | none |
+| `soldiers.js` | none: generated by app/bake-soldiers/bake.py | `robotRanged`, `robotSiege` (per team: 2 loaded, 2 spent; the cart's 4 more mirrored), `robotAx` |
 | `perch.js` | palettes, shapes, the bird, poses, painter, cache | `perch` (no grids: painted in code, below) |
 | `items.js` | items, gold nugget, gold sack, axe icon | `itemPotion` (the health potion's 11×12 flask), `itemAnim` + the gold's live icon, `goldSack`, `itemAxe`/`itemBow` |
 | `buildings.js` | the barracks bay, soldiers, the merchant's stall, fire | `teamBuild` (`spawner`, `stall`), `robotTeam`, `robot`, `fire` |

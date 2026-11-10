@@ -42,16 +42,18 @@ const wikiScroll = {};        // px scrolled per page id
 
 // the beast cards: kind, name, a line of what it does - every number in it read off the sim's own constants
 const WIKI_BEASTS = [
-  { kind: 'rabbit', name: 'RABBIT',
-    line: () => 'BOLTS AT ' + FLEE_SIGHT.rabbit + ' PX. ONE JINK CHARGE EVERY ' + RABBIT_DODGE_CD + ' S.' },
-  { kind: 'deer', name: 'DEER',
-    line: () => 'TWO, ONE EACH SIDE OF THE CREEK, ALWAYS ON THE MOVE. BOLTS AT ' + FLEE_SIGHT.deer + ' PX. SPRINTS ' + DEER_SPRINT_T + ' S AT ' + DEER_SPRINT + ', THEN ' + PREY_RUN.deer + '.' },
-  { kind: 'wolf', name: 'WOLF',
-    line: () => 'A DEN OF ' + CAMPS.resource.pop + '. NEUTRAL UNTIL HIT. BITES ' + MONSTER.wolf.bite + ' +' + MONSTER.wolf.lvBite + ' A LEVEL. BACK IN ' + CAMPS.resource.repop + ' S.' },
-  { kind: 'alpha', name: 'BLACK BEAR',
-    line: () => 'ONE ON A BEND OF THE CREEK, OUT AT ' + clockTxt(CAMPS.buff.first) + ', BACK ' + clockTxt(CAMPS.buff.repop) + ' AFTER A KILL. NEVER UNDER LV ' + MONSTER.alpha.lv + '. SWIPES ' + MONSTER.alpha.bite + ' +' + MONSTER.alpha.lvBite + '. THE TEAM GETS ' + EPIC_TEAM_GOLD + ' EACH AND ' + CAMP_BUFF_EPIC_T + ' S OF THE ' + MONSTER.alpha.buff + ', AND +' + Math.round(BLACK_STACK_DMG * 100) + '% ON EVERY BLOW FOR GOOD, UP TO ' + BLACK_STACK_MAX + ' BEARS.' },
-  { kind: 'orca', name: 'ORCA',
-    line: () => 'UNDER THE ICE OF ITS POOL UNTIL ' + clockTxt(CAMPS.orca.first) + ', THEN UP IN ITS HOLE, BACK ' + clockTxt(CAMPS.orca.repop) + ' AFTER A KILL. LUNGES ' + MONSTER.orca.bite + ' +' + MONSTER.orca.lvBite + ', SPOUTS AT RANGE. THE TEAM GETS ' + EPIC_TEAM_GOLD + ' EACH AND ' + ORCA_PUSH_T + ' S OF THE ' + MONSTER.orca.buff + ': SOLDIERS NEAR YOU HIT BUILDINGS ' + ORCA_PUSH_STRUCT + 'X.' },
+  { kind: 'rabbit', name: 'beast.rabbit',
+    line: () => tr('beast.rabbitLine', { sight: FLEE_SIGHT.rabbit, cd: RABBIT_DODGE_CD }) },
+  { kind: 'deer', name: 'beast.deer',
+    line: () => tr('beast.deerLine', { sight: FLEE_SIGHT.deer, t: DEER_SPRINT_T, sprint: DEER_SPRINT, run: PREY_RUN.deer }) },
+  { kind: 'wolf', name: 'beast.wolf',
+    line: () => tr('beast.wolfLine', { n: CAMPS.resource.pop, bite: MONSTER.wolf.bite, lv: MONSTER.wolf.lvBite, back: CAMPS.resource.repop }) },
+  { kind: 'alpha', name: 'beast.alpha',
+    line: () => tr('beast.alphaLine', { out: clockTxt(CAMPS.buff.first), back: clockTxt(CAMPS.buff.repop), lv: MONSTER.alpha.lv, bite: MONSTER.alpha.bite, lvBite: MONSTER.alpha.lvBite,
+      gold: EPIC_TEAM_GOLD, t: CAMP_BUFF_EPIC_T, buff: MONSTER.alpha.buff, pct: Math.round(BLACK_STACK_DMG * 100), max: BLACK_STACK_MAX }) },
+  { kind: 'orca', name: 'beast.orca',
+    line: () => tr('beast.orcaLine', { out: clockTxt(CAMPS.orca.first), back: clockTxt(CAMPS.orca.repop), bite: MONSTER.orca.bite, lvBite: MONSTER.orca.lvBite,
+      gold: EPIC_TEAM_GOLD, t: ORCA_PUSH_T, buff: MONSTER.orca.buff, x: ORCA_PUSH_STRUCT }) },
 ];
 // what a beast is at a level: the sim's own arithmetic (makeAnimal, animalDies)
 function wikiBeastHp(kind, lv) { return animalHpAt(kind, lv); }
@@ -66,15 +68,15 @@ function wikiItemStats(id) {
   return ITEM_STAT_ORDER.filter((k) => st[k]).map((k) => ITEM_STATS[k].fmt(st[k]) + ' ' + ITEM_STATS[k].short).join('  ');
 }
 const WIKI_ITEM_COLS = [
-  { label: 'STATS', w: 150, get: wikiItemStats, col: '#f4f7ff' },
-  { label: 'PASSIVE', w: 52, get: (id) => BUILD_ITEMS[id].passive ? ITEM_PASSIVES[BUILD_ITEMS[id].passive].name : '', col: '#9fd6a0' },
-  { label: 'PRICE', w: 30, get: (id) => String(BUILD_ITEMS[id].price), col: RES_COLORS.gold },
+  { label: 'wiki.stats', w: 150, get: wikiItemStats, col: '#f4f7ff' },
+  { label: 'wiki.passive', w: 52, get: (id) => BUILD_ITEMS[id].passive ? ITEM_PASSIVES[BUILD_ITEMS[id].passive].name : '', col: '#9fd6a0' },
+  { label: 'shop.price', w: 30, get: (id) => String(BUILD_ITEMS[id].price), col: RES_COLORS.gold },
 ];
 // the classes page: an ability row's two numbers (the tooltip's own rows,
 // tipClassAb), and the stats a class card shows at level 1 (WIKI_STATS)
 const WIKI_AB_COLS = [
-  { label: 'COOLDOWN', w: 40, get: (ab) => tipSec(rankAt(ab.cd, 1)) }, // rank 1's: the card says every rank's
-  { label: 'CAST', w: 32, get: (ab) => tipSec(ab.cast) },
+  { label: 'tip.cooldown', w: 40, get: (ab) => tipSec(rankAt(ab.cd, 1)) }, // rank 1's: the card says every rank's
+  { label: 'wiki.cast', w: 32, get: (ab) => tipSec(ab.cast) },
 ];
 // an ability row's height: its name line, then every line of its blurb in the
 // width right of the icon (37 px past the 10 px key column), never under the icon's 36
@@ -97,53 +99,53 @@ const WIKI_BEAST_W = 52; // a beast card's figure column, at least: a wider beas
 // coat (or the other side's, `rival`)
 function wikiHero(name, dir, rival) { return SPRITES.champLook(heroIndex(name), skin(rival ? 1 - player.team : player.team))[dir][0]; }
 const WIKI_WORLD = [
-  { name: 'SOFTFALL', fig: () => [SPRITES.tree[0]],
-    text: 'THE SNOW CAME DOWN SOFT AND DID NOT STOP, AND THE VALLEY\'S OLD WORKS WENT UNDER WHOLE. IT STILL FALLS EVERY WINTER, AND THE VALLEY COMES OUT FROM UNDER IT A DIFFERENT SHAPE EACH TIME. NO MAP OF SOFTFALL IS GOOD FOR TWO WINTERS.' },
-  { name: 'THE EMPIRE', fig: () => [wikiHero('ARMATOS', 'down'), wikiHero('BELLA', 'down')],
-    text: 'OVER THE PASS IS AN EMPIRE BIG ENOUGH THAT IT HAS NEVER NEEDED A NAME. IT KEEPS WHAT IT CAN USE. THE REST IT WALKS UP TO THE LAST PASS, A GENERAL OR A LAMPLIGHTER ALIKE, AND SHUTS THE GATE BEHIND THEM. NOBODY IS LET BACK.' },
-  { name: 'THE EXILES', fig: () => [wikiHero('FORTIVA', 'down'), wikiHero('LUCERNA', 'down')],
-    text: 'NOBODY IN SOFTFALL WAS BORN HERE. A SOLDIER WHO WALKED HOME, A SMITH WHO WOULD NOT KNEEL, A GENERAL WHO WON THE WRONG WAR: THE VALLEY TAKES ANYONE WHO CAN DIG. ONE WHO GOES DOWN IS CARRIED BACK TO THE ROOST AND SENT OUT AGAIN, AND THE BETTER THE EXILE, THE LONGER THE COMPANY MAKES THEM SIT FIRST.' },
-  { name: 'THE WORKS', fig: () => [SPRITES.deadTree[0]],
-    text: 'NOBODY ALIVE SAW THE WORKS RUNNING. THE PINES GREW UP THROUGH THEM, SO THERE IS GOLD IN THE WOOD. THE ROAD, ITS TOWERS AND THE MACHINES ARE WHAT STILL STANDS ABOVE THE SNOW.' },
-  { name: 'THE CLAIM', fig: () => [wikiHero('SAGITTA', 'right'), wikiHero('LIGNUM', 'left', true)],
-    text: 'TWO COMPANIES HIRE EXILES TO DIG THE WORKS OUT, AND NEITHER ASKS WHERE THEY CAME FROM. VALLEY LAW IS ONE LINE LONG: A CLAIM STANDS WHILE ITS BIRD HOLDS ITS ROOST. SO NOBODY COMES TO SOFTFALL TO KILL ANYBODY. SCARE THE OTHER BIRD OFF ITS GROUND AND THE VALLEY IS YOURS UNTIL THE NEXT SNOW.' },
-  { name: 'THE EAGLES', air: true, fig: () => [SPRITES.perch.figure(BIRD_SKINS[0].id, skin(player.team))],
-    text: 'BIG ENOUGH TO CARRY FIVE EXILES AND A MERCHANT, ARMOURED IN COMPANY COLOUR, AND BRAVE ONLY UP TO A POINT. IT BEATS ITS WINGS AT WHATEVER CROWDS IT. HIT IT ENOUGH AND ITS NERVE GOES. IT LEAVES, AND ITS COMPANY LEAVES WITH IT.' },
-  { name: 'THE COUNTER', fig: () => [SPRITES.merchant[skin(player.team)].down[0]],
-    text: 'THE MERCHANTS ARE A GUILD OF THEIR OWN. ONE RIDES IN WITH EACH BIRD, BUILDS ITS BARRACKS AND SELLS TO ANY PURSE THAT WALKS UP, YOURS OR THEIRS. THEY ARE NOT ON A SIDE. THEY ARE ON THE PRICE OF FISH. NOBODY LAYS A HAND ON ONE.' },
-  { name: 'THE MACHINES', fig: () => [SPRITES.robotTeam[skin(player.team)][0], SPRITES.robotRanged[skin(player.team)][0], SPRITES.robotSiege[skin(player.team)][0]],
-    text: 'OLDER THAN THE ROAD. THEY SLEEP UNDER THE SNOW UNTIL GOLD WAKES ONE, AND THEN THEY DO THE ONE THING THEY REMEMBER: MARCH. WHO BUILT THEM IS THE VALLEY\'S FAVOURITE ARGUMENT.' },
-  { name: 'THE ROAD', road: true, fig: () => [SPRITES.robotTeam[skin(player.team)][0], SPRITES.robotTeam[skin(1 - player.team)][0]],
-    text: 'THE WORKS\' HAUL ROAD RUNS STRAIGHT FROM ROOST TO ROOST, PACKED HARD BY WHATEVER THEY HAULED ALONG IT, AND A TRACK RUNS ROUND EACH SIDE OF THE VALLEY BY THE TREES. BOTH COLUMNS MARCH DOWN ALL THREE, SO EVERYTHING IN SOFTFALL ENDS UP ON A ROAD. MOST OF IT MEETS IN THE MIDDLE.' },
-  { name: 'THE TOWERS', road: true, fig: () => [towerFigure(skin(player.team))],
-    text: 'THE WORKS RAISED THEM IN CUT STONE TO HOLD THE ROADS, THREE TO EVERY CABLE, AND GOLD WOKE THE CROSSBOWS ON TOP. A COMPANY\'S CABLE RUNS NO FURTHER THAN ITS LAST TOWER STANDING. A TOWER SHOOTS THE MARCHING COLUMN, UNTIL AN EXILE HURTS ONE OF ITS OWN UNDER IT.' },
-  { name: 'THE WOLVES', fig: () => [SPRITES.wolf.right.idle[0], SPRITES.wolf.left.idle[0]],
-    text: 'THE WOLVES WERE HERE FIRST AND HAVE NO OPINION ABOUT CLAIMS. LEAVE A DEN ALONE AND IT LEAVES YOU ALONE. THE BEARS WALK THE BENDS OF THE CREEK, AND A COMPANY THAT BRINGS ONE DOWN WALKS TALLER FOR A WHILE.' },
-  { name: 'GOLD', fig: () => [SPRITES.goldSack[SPRITES.goldSack.length - 1]],
-    text: 'THE ONLY THING THE VALLEY PAYS IN. THE WORKS WILL MAKE AN EXILE RICH, BUT A PINE NEVER TAUGHT ANYBODY ANYTHING. AN EXILE LEARNS ON THE ROAD, STANDING CLOSE WHEN THINGS FALL, AND THAT IS ALL A LEVEL IS.' },
+  { name: 'world.softfall', fig: () => [SPRITES.tree[0]],
+    text: 'world.softfallText' },
+  { name: 'world.empire', fig: () => [wikiHero('ARMATOS', 'down'), wikiHero('BELLA', 'down')],
+    text: 'world.empireText' },
+  { name: 'world.exiles', fig: () => [wikiHero('FORTIVA', 'down'), wikiHero('LUCERNA', 'down')],
+    text: 'world.exilesText' },
+  { name: 'world.works', fig: () => [SPRITES.deadTree[0]],
+    text: 'world.worksText' },
+  { name: 'world.claim', fig: () => [wikiHero('SAGITTA', 'right'), wikiHero('LIGNUM', 'left', true)],
+    text: 'world.claimText' },
+  { name: 'world.eagles', air: true, fig: () => [SPRITES.perch.figure(SPRITES.perch.look, skin(player.team))],
+    text: 'world.eaglesText' },
+  { name: 'world.counter', fig: () => [SPRITES.merchant[skin(player.team)].down[0]],
+    text: 'world.counterText' },
+  { name: 'world.machines', fig: () => [SPRITES.robotTeam[skin(player.team)][0], SPRITES.robotRanged[skin(player.team)][0], SPRITES.robotSiege[skin(player.team)][0]],
+    text: 'world.machinesText' },
+  { name: 'world.road', road: true, fig: () => [SPRITES.robotTeam[skin(player.team)][0], SPRITES.robotTeam[skin(1 - player.team)][0]],
+    text: 'world.roadText' },
+  { name: 'world.towers', road: true, fig: () => [towerFigure(skin(player.team))],
+    text: 'world.towersText' },
+  { name: 'world.wolves', fig: () => [SPRITES.wolf.right.idle[0], SPRITES.wolf.left.idle[0]],
+    text: 'world.wolvesText' },
+  { name: 'world.gold', fig: () => [SPRITES.goldSack[SPRITES.goldSack.length - 1]],
+    text: 'world.goldText' },
 ];
 
 const WIKI_PAGES = [
-  { id: 'classes', label: 'HEROES', build(cw) {
+  { id: 'classes', label: 'wiki.heroes', build(cw) {
     const b = [];
-    b.push({ kind: 'line', h: 9, text: 'THE HEROES. EACH ABILITY HAS ITS OWN COOLDOWN.', col: '#cfe0ff' });
-    b.push({ kind: 'line', h: 9, text: 'A SKILL POINT UNLOCKS AN ABILITY OR RANKS IT UP: ' + AB_RANK_LV.length + ' RANKS ON THE FIRST THREE, ' + AB_ULT_LV.length + ' ON THE ULTIMATE AT LEVELS ' + AB_ULT_LV.join(', ') + '.', col: TIP_DIM });
+    b.push({ kind: 'line', h: 9, text: tr('wiki.heroesLine'), col: '#cfe0ff' });
+    b.push({ kind: 'line', h: 9, text: tr('wiki.skillLine', { ranks: AB_RANK_LV.length, ult: AB_ULT_LV.length, levels: AB_ULT_LV.join(', ') }), col: TIP_DIM });
     CLASSES.forEach((c, cls) => {
       b.push({ kind: cls ? 'rule' : 'gap', h: cls ? 10 : 4 });
       b.push({ kind: 'cls', h: 52, cls });
       // who the hero was before the pass, under the card the way League's
       // champion page puts the bio over the abilities (CLASSES `story`)
       if (c.story) { const lines = wrapText(c.story, cw - WIKI_CLS_TEXT_X); b.push({ kind: 'story', h: lines.length * 8 + 8, lines }); }
-      b.push({ kind: 'head', h: 12, text: 'ABILITIES', cols: WIKI_AB_COLS });
+      b.push({ kind: 'head', h: 12, text: tr('recap.abilities'), cols: WIKI_AB_COLS });
       if (c.passive) b.push({ kind: 'ab', h: wikiAbH(HERO_PASSIVE[c.passive].blurb, cw), cls, i: -1, cols: [] }); // a named hero's passive heads its keys (HERO_PASSIVE, js/sim/heroes.js)
       CLASS_AB[cls].forEach((ab, i) => b.push({ kind: 'ab', h: wikiAbH(ab.blurb, cw), cls, i, cols: WIKI_AB_COLS }));
     });
     return b;
   } },
-  { id: 'beasts', label: 'BEASTS', build(cw) {
+  { id: 'beasts', label: 'wiki.beasts', build(cw) {
     const b = [];
-    b.push({ kind: 'line', h: 9, text: 'EVERY BEAST IS DEALT THE TABLE\'S AVERAGE HERO LEVEL WHEN IT SPAWNS, AND KEEPS IT.', col: '#cfe0ff' });
-    b.push({ kind: 'line', h: 9, text: 'A LEVEL IS MORE HEALTH TO SHOOT THROUGH, AND MORE GOLD AND XP FOR THE KILL.', col: TIP_DIM });
+    b.push({ kind: 'line', h: 9, text: tr('wiki.beastsLine'), col: '#cfe0ff' });
+    b.push({ kind: 'line', h: 9, text: tr('wiki.beastsLevel'), col: TIP_DIM });
     b.push({ kind: 'legend', h: SPRITES.deer.right.idle[0].height + 26 }); // the deer under its frame, as a card's figure
     b.push({ kind: 'rule', h: 8 });
     // a card is as wide and as tall as its beast standing under its frame
@@ -156,33 +158,33 @@ const WIKI_PAGES = [
     }
     return b;
   } },
-  { id: 'items', label: 'ITEMS', build() {
+  { id: 'items', label: 'wiki.items', build() {
     const b = [];
-    b.push({ kind: 'line', h: 9, text: 'SIX SLOTS. EVERY ITEM IS ON SALE AT EITHER COUNTER, ALWAYS AT ONE PRICE.', col: '#cfe0ff' });
-    b.push({ kind: 'line', h: 9, text: 'AN ITEM COSTS LESS FOR EVERY PART OF IT YOU ALREADY HOLD. ONE PAIR OF BOOTS.', col: TIP_DIM });
-    for (const [title, kind] of [['BASIC', 'basic'], ['BOOTS', 'boots'], ['EPIC', 'epic'], ['LEGENDARY', 'legend']]) {
+    b.push({ kind: 'line', h: 9, text: tr('wiki.itemsLine'), col: '#cfe0ff' });
+    b.push({ kind: 'line', h: 9, text: tr('wiki.itemsParts'), col: TIP_DIM });
+    for (const [title, kind] of [['shop.basic', 'basic'], ['shop.boots', 'boots'], ['shop.epic', 'epic'], ['shop.legend', 'legend']]) {
       b.push({ kind: 'gap', h: 4 });
-      b.push({ kind: 'head', h: 12, text: title, cols: WIKI_ITEM_COLS });
+      b.push({ kind: 'head', h: 12, text: tr(title), cols: WIKI_ITEM_COLS });
       for (const id of ITEM_ALL) if (shopRowKind(id) === kind && !isStack(id)) b.push({ kind: 'row', h: 20, id, cols: WIKI_ITEM_COLS });
     }
     return b;
   } },
-  { id: 'world', label: 'WORLD', build(cw) {
+  { id: 'world', label: 'wiki.world', build(cw) {
     // the one page of sentences, so the one page that wraps: every line is
     // broken to the content width it is built for (cw), and an entry is as
     // tall as the taller of its figure and its paragraph
     const b = [];
     const para = (text, col) => { for (const t of wrapText(text, cw)) b.push({ kind: 'line', h: 9, text: t, col }); };
-    para('SOFTFALL IS A VALLEY OVER THE EMPIRE\'S LAST PASS, AND THE SNOW THAT BURIED IT.', '#cfe0ff');
-    para('THE EMPIRE THROWS PEOPLE OUT. THE VALLEY TAKES ANYONE WHO CAN DIG.', TIP_DIM);
+    para(tr('world.intro'), '#cfe0ff');
+    para(tr('world.introSub'), TIP_DIM);
     b.push({ kind: 'rule', h: 10 });
     for (const e of WIKI_WORLD) {
-      const lines = wrapText(e.text, cw - WIKI_TEXT_X);
+      const lines = wrapText(tr(e.text), cw - WIKI_TEXT_X);
       const fh = Math.max(...e.fig().map((s) => s.height));
       b.push({ kind: 'lore', h: Math.max(Math.max(fh, 18) + 12, 14 + lines.length * 8 + 8), entry: e, lines, fh });
     }
     b.push({ kind: 'rule', h: 10 });
-    para('THAT IS ALL ANYBODY KNOWS. THE REST IS UNDER THE SNOW.', TIP_DIM);
+    para(tr('world.outro'), TIP_DIM);
     return b;
   } },
 ];
@@ -204,7 +206,7 @@ function wikiLayout() {
   const w = Math.min(WIKI_W_MAX, VIEW_W - 24), x = cx - (w >> 1);
   const y = NOTES_TOP + 34, h = WIKI_H; // under the title's tabs (drawPageTabs, js/ui/notes.js)
   const n = WIKI_PAGES.length, cw = Math.floor((w - 24) / n);
-  const tabs = WIKI_PAGES.map((p, i) => ({ id: p.id, label: p.label, x: x + 12 + i * cw, y: y + 7, w: cw, h: 9 }));
+  const tabs = WIKI_PAGES.map((p, i) => ({ id: p.id, label: tr(p.label), x: x + 12 + i * cw, y: y + 7, w: cw, h: 9 }));
   const winY = y + 22, winH = h - 28;
   const page = wikiPage();
   const blocks = wikiBlocks(page.id, w - 28); // the content's width: the margins under `left`/`right` below
@@ -396,7 +398,7 @@ function renderWiki(now, a) {
       let rx = L.right;
       for (let i = bl.cols.length - 1; i >= 0; i--) {
         const c = bl.cols[i];
-        drawPixelTextShadow(ctx, c.label, rx - pixelTextWidth(c.label), y + 2, TIP_LABEL, '#0a0e23');
+        drawPixelTextShadow(ctx, tr(c.label), rx - pixelTextWidth(tr(c.label)), y + 2, TIP_LABEL, '#0a0e23');
         rx -= c.w;
       }
       ctx.fillStyle = '#2c3a68';
@@ -459,32 +461,32 @@ function renderWiki(now, a) {
       const fx = L.left + 40, base = y + bl.h - 6;
       const spr = SPRITES.deer.right.idle[0], py = base + 2 - spr.height;
       drawWikiBeast(WIKI_BEASTS[1], fx, base, level, now);
-      wikiLeader(fx - 17, py - 6, fx - 27, py - 6, 'LEVEL', '#f2cc6a');
-      wikiLeader(fx + 4, py - 14, fx + 26, py - 22, 'SEES YOU', '#f4f7ff');
-      wikiLeader(fx + 11, py - 7, fx + 34, py - 12, 'HEALTH', BAR_NEUTRAL);
-      wikiLeader(fx + 11, py - 4, fx + 42, py - 2, 'STAMINA - A WOLF\'S LEASH', STAM_COL);
+      wikiLeader(fx - 17, py - 6, fx - 27, py - 6, tr('tip.level'), '#f2cc6a');
+      wikiLeader(fx + 4, py - 14, fx + 26, py - 22, tr('wiki.seesYou'), '#f4f7ff');
+      wikiLeader(fx + 11, py - 7, fx + 34, py - 12, tr('wiki.health'), BAR_NEUTRAL);
+      wikiLeader(fx + 11, py - 4, fx + 42, py - 2, tr('wiki.stamina'), STAM_COL);
     } else if (bl.kind === 'lore') {
       // a WORLD entry: its figures on their mound in the left column, feet a
       // fixed drop under the entry's top, its name in gold and its paragraph
       const e = bl.entry, tx = L.left + WIKI_TEXT_X;
       drawWikiFig(e, L.left + (WIKI_FIG_W >> 1), y + Math.max(bl.fh, 18) + 4);
-      drawPixelTextShadow(ctx, e.name, tx, y + 4, '#ffd95c', '#0a0e23');
+      drawPixelTextShadow(ctx, tr(e.name), tx, y + 4, '#ffd95c', '#0a0e23');
       bl.lines.forEach((t, k) => drawPixelTextShadow(ctx, t, tx, y + 14 + k * 8, TIP_DIM, '#0a0e23'));
     } else if (bl.kind === 'beast') {
       const bs = bl.beast;
       drawWikiBeast(bs, L.left + (bl.figW >> 1), y + bl.h - 6, level, now);
       const nx = L.left + bl.figW + 8, dy = (bl.lines.length - 1) * 8; // a wrapped line pushes the table down
-      drawPixelTextShadow(ctx, bs.name, nx, y + 4, '#ffd95c', '#0a0e23');
+      drawPixelTextShadow(ctx, tr(bs.name), nx, y + 4, '#ffd95c', '#0a0e23');
       bl.lines.forEach((t, k) => drawPixelTextShadow(ctx, t, nx, y + 13 + k * 8, TIP_DIM, '#0a0e23'));
       // the growth table: LV heads over three columns, HEALTH, KILL GOLD and
       // (a kind worth any) KILL XP under them, a dotted leader from each label to its first number
       const levels = wikiLevels(bs.kind), colW = 30, cx0 = L.right - colW * levels.length;
       levels.forEach((lv, i) => {
-        const t = 'LV ' + lv;
+        const t = tr('wiki.lv', { n: lv });
         drawPixelTextShadow(ctx, t, cx0 + (i + 1) * colW - pixelTextWidth(t), y + 4, TIP_LABEL, '#0a0e23');
       });
-      const rowsT = [['HEALTH', (lv) => String(wikiBeastHp(bs.kind, lv)), BAR_NEUTRAL], ['KILL GOLD', (lv) => String(wikiBeastGold(bs.kind, lv)), '#f2cc6a']];
-      if (wikiBeastXp(bs.kind, 1)) rowsT.push(['KILL XP', (lv) => String(wikiBeastXp(bs.kind, lv)), PORT_XP_LIT]);
+      const rowsT = [[tr('wiki.health'), (lv) => String(wikiBeastHp(bs.kind, lv)), BAR_NEUTRAL], [tr('wiki.killGold'), (lv) => String(wikiBeastGold(bs.kind, lv)), '#f2cc6a']];
+      if (wikiBeastXp(bs.kind, 1)) rowsT.push([tr('wiki.killXp'), (lv) => String(wikiBeastXp(bs.kind, lv)), PORT_XP_LIT]);
       rowsT.forEach(([label, get, col], k) => {
         const ry = y + 24 + dy + k * 9;
         drawPixelTextShadow(ctx, label, nx, ry, TIP_LABEL, '#0a0e23');

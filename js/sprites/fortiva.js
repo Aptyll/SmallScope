@@ -371,3 +371,25 @@ const FORT_SWORD_DIAG = [
 ];
 const FORT_GRIP = [5, 18];
 const FORT_SWORD_PAL = { o: '#241a12', e: '#c8d2e4', E: '#8b93a8', W: '#ffffff', T: '#eef2f8', n: '#4f5668', t: '#7d8699', c: '#9aa3b8', C: '#5c6478' };
+
+// ------------------------------------------------------------ fortiva registry
+// FORTIVA in the hero art registry (heroArt, js/sprites/hero-art.js): the looks and
+// their paint, the skins tab's 8x8 glyph and the 12x12 emblem
+heroArt('fortiva', {
+  looks: FORT_SKINS, pal: FORT_PAL,
+  glyph: ['..ww....', '.w..w...', '.w..w...', '..w.....', '.....w..', '...w..w.', '...w..w.', '....ww..'],
+  emblem: [ // the broken chain - a link snapped, its two ends apart
+    '............',
+    '..oooo......',
+    '.oCCCso.....',
+    '.oCo.so.....',
+    '.oCo.so.g...',
+    '.oCo.so..g..',
+    '.oCsso.g....',
+    '..oooo.oooo.',
+    '....g..oCCso',
+    '...g...oCo.o',
+    '.....g.oCsso',
+    '........ooo.',
+  ],
+});

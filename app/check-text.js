@@ -11,12 +11,13 @@
 //     which prints as '?', or with lowercase (the game's text is capitals);
 //   - a loose word in a MOVED file: a file whose words have all moved into
 //     the table may not grow a new one, so the table stays the one place.
+//     A hero's name handed to a lookup (NAME_LOOKUP) is data, not a word.
 //
 // A key counts as named wherever its exact text sits in a quoted string, so
 // a key kept in a data table (`word: 'recap.attacks'`) and passed to tr()
 // later counts too. A loose word is a quoted string with two capitals in a
-// row and no lowercase (a colour, an id with an underscore, a lone mark
-// are not words). No packages.
+// row and no lowercase (a colour, an id with an underscore, a lone mark,
+// a sprite row of one letter are not words). No packages.
 'use strict';
 const fs = require('fs');
 const path = require('path');
@@ -32,7 +33,15 @@ const MOVED = [
   'js/ui/endscreens.js',
   'js/ui/recap.js',
   'js/ui/lobby.js',
+  'js/ui/tooltip.js',
+  'js/ui/shop.js',
+  'js/ui/panels.js',
+  'js/ui/select.js',
+  'js/ui/wiki.js',
 ];
+
+// a hero found by its name (heroIndex, js/sim/player.js) is a lookup, not a word printed
+const NAME_LOOKUP = new Set(['heroIndex', 'wikiHero']);
 
 function readText() {
   const src = fs.readFileSync(path.join(ROOT, TEXT_FILE), 'utf8');
@@ -47,7 +56,8 @@ function readGlyphs() {
   return set;
 }
 const unescape = (v) => v.replace(/\\(.)/g, '$1');
-const looseWord = (v) => /[A-Z]{2}/.test(v) && !/[a-z]/.test(v) && !/^#/.test(v) && !/_/.test(v);
+const looseWord = (v) => /[A-Z]{2}/.test(v) && !/[a-z]/.test(v) && !/^#/.test(v) && !/_/.test(v) &&
+  new Set(v.replace(/[^A-Z]/g, '')).size > 1; // one letter over and over is a sprite row, not a word
 
 function check() {
   const problems = [];
@@ -74,7 +84,8 @@ function check() {
       if (keys.has(v)) used.add(v);
       const call = toks[i - 2] && toks[i - 2].t === 'id' && toks[i - 2].v === 'tr' && toks[i - 1].v === '(';
       if (call && v && !keys.has(v)) problems.push(`TEXT MISS  ${file}:${t.line} tr('${v}'): no such key in ${TEXT_FILE}`);
-      if (looseWord(v)) loose.push({ file, line: t.line, v });
+      const lookup = toks[i - 2] && toks[i - 2].t === 'id' && NAME_LOOKUP.has(toks[i - 2].v) && toks[i - 1].v === '(';
+      if (looseWord(v) && !lookup) loose.push({ file, line: t.line, v });
     }
   }
   for (const k of keys) if (!used.has(k)) problems.push(`TEXT DEAD  '${k}': no game file names it - delete it`);

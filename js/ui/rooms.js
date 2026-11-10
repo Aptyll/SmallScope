@@ -49,10 +49,6 @@ const SEEK_T = 6;                      // s a typed code is looked for on the li
 // up for a win and down for a loss, and the bots' level read off the party's
 // average rating, one AI_LEVELS step per RANK_BAND around the start
 const RANK_STEP = 25, RANK_BAND = 200;
-// RANKED opens once a profile has seen this many matches to their result
-// (League waits for level 30; a few matches is enough to know the map)
-const RANKED_AT = 3;
-function rankedOpen() { return PROFILE.finished() >= RANKED_AT; }
 
 let roomsFeed = null; // the relay's list socket (or Steam's lobby poll) while a code is being looked for
 function roomsFeedClose() { if (roomsFeed) { roomsFeed.close(); roomsFeed = null; } }
@@ -100,7 +96,7 @@ function modeSwapOk() { return NET.role === 'host' && seatsOpen() && !state.menu
 function modeSet(mode) {
   const m = state.menu;
   m.modeOpen = false;
-  if (!modeSwapOk() || !PARTY_MODES[mode] || (mode === 'ranked' && !rankedOpen()) || partySize() > partyCap(mode)) { SFX.deny(); return; }
+  if (!modeSwapOk() || !PARTY_MODES[mode] || partySize() > partyCap(mode)) { SFX.deny(); return; }
   if (mode !== NET.mode) {
     NET.mode = mode;
     NET.ready.clear();
@@ -146,13 +142,10 @@ function rankLevel() {
   return Math.max(0, Math.min(AI_LEVELS.length - 1, 1 + Math.floor((avg - PROFILE.RANK_START) / RANK_BAND + 0.5)));
 }
 // a match's ending, once (endMatch, js/sim/player.js): a ranked one moves the
-// profile's rating, every one counts toward RANKED, and a FIRST MATCH seen
-// through stops the title offering it
+// profile's rating, and any match seen through stops the title offering FIRST MATCH
 function rankResult(won) {
   if (NET.mode === 'ranked') PROFILE.addRank(won ? RANK_STEP : -RANK_STEP);
-  if (PRACTICE) return;
-  PROFILE.addFinished();
-  if (NET.mode === 'guide') PROFILE.setGuided();
+  if (!PRACTICE) PROFILE.setGuided();
 }
 
 // FIND MATCH: every friend READY, then the party looks for another
@@ -767,9 +760,8 @@ function renderRoom(now, a) {
     rs.forEach((r, i) => {
       const hot = hit ? hit.kind === 'modeItem' && hit.k === r.k : m.rkeys && m.modeSel === i;
       ctx.fillStyle = hot ? SC_HOT : SC_PLATE; ctx.fillRect(r.x + 1, r.y, r.w - 2, r.h);
-      const shut = r.k === 'ranked' && !rankedOpen(), tw = pixelTextWidth(PARTY_MODES[keys[i]]), tx = r.x + ((r.w - tw) >> 1);
-      drawPixelText(ctx, PARTY_MODES[keys[i]], tx, r.y + 4, shut ? SC_DIM : r.k === NET.mode ? SC_GOLD : hot ? SC_LIT : SC_TXT, 1);
-      if (shut) drawRankedLock(tx - 10, r.y + 3, SC_DIM); // shut until RANKED_AT matches are seen through (js/ui/guide.js)
+      const tw = pixelTextWidth(PARTY_MODES[keys[i]]), tx = r.x + ((r.w - tw) >> 1);
+      drawPixelText(ctx, PARTY_MODES[keys[i]], tx, r.y + 4, r.k === NET.mode ? SC_GOLD : hot ? SC_LIT : SC_TXT, 1);
     });
   }
   if (m.botsOpen) { // the levels' list, over the seats

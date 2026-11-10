@@ -24,15 +24,16 @@
 // into numbered text parts. The wire form's bytes (js/net/snapshot.js) go RAW,
 // in binary frames - a 7-byte header (STEAM_MAGIC, a sequence, part index and
 // part count) over the payload - and arrive as `bin`, the way the relay hands
-// them over. steamworks.js exposes Steam's older P2P sockets: reliable packets
-// are capped at 1 MB and unreliable at 1200 bytes. A frame the host marks LOSSY
+// them over. The wrapper sends over Steam's newer messages (512 KB a message)
+// or, with --steamnet=p2p, its older P2P packets (1 MB reliable, 1200 bytes
+// unreliable); the sizes here fit both (desktop/main.js). A frame the host marks LOSSY
 // (a snapshot delta, netHostFlush) is split into STEAM_UNREL-byte parts on the
 // UNRELIABLE channel when it fits STEAM_LOSSY_PARTS of them; a delta whose
 // part never comes is dropped WHOLE here (the ack-keyed ring resends what it
 // carried, docs/pvp-architecture.md) - never applied half, since a half delta
 // is a world the host never had. Everything else - the full sync, the
 // welcome, a client's inputs - stays reliable.
-const STEAM_CHUNK = 900000;      // a reliable part's payload
+const STEAM_CHUNK = 160000;      // a reliable part's payload, in bytes or text characters: escaped or in utf8 it still fits 512 KB
 const STEAM_UNREL = 1200;        // Steam's unreliable packet cap, header included
 const STEAM_LOSSY_PARTS = 16;    // a lossy frame above this many parts goes reliable after all
 const STEAM_FRAME_HDR = 7;

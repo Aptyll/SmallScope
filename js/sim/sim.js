@@ -705,6 +705,14 @@ function iceUnder(p) {
   const ftx = Math.floor(p.x / TILE), fty = Math.floor((p.y + 4) / TILE);
   return (inWorld(ftx, fty) && ground[idx(ftx, fty)] === 1) || heroIce(p); // ...or a rival hero's ice (HERO_ICE, js/sim/heroes.js)
 }
+// ...and whether that ice glides, which is what the walk reads (walkSlide,
+// walkStep). The orca's pool is rough ice, crusted with rime: it holds a
+// foot like snow, so its late fight is fought standing a blade's reach from
+// the hole, not skating past it. A rival hero's ice glides anywhere.
+function slickUnder(p) {
+  const ftx = Math.floor(p.x / TILE), fty = Math.floor((p.y + 4) / TILE);
+  return (inWorld(ftx, fty) && ground[idx(ftx, fty)] === 1 && !orcaLakeAt(ftx, fty)) || heroIce(p);
+}
 function clampWorld(p) {
   p.x = Math.max(8, Math.min(WORLD * TILE - 8, p.x));
   p.y = Math.max(8, Math.min(WORLD * TILE - 8, p.y));
@@ -1121,10 +1129,10 @@ function updatePlayer(p, dt) {
   kbDecay(p, dt);
 
   // ---- unified momentum: input accelerates vx/vy, the surface sets friction/caps
-  const onIce = iceUnder(p);
+  const onIce = iceUnder(p), slick = slickUnder(p);
   const kit = kitOf(p);
-  walkSlide(p, inp.slide, dt, onIce, kit);
-  playerMove(p, dt, mx, my, len, onIce, kit);
+  walkSlide(p, inp.slide, dt, slick, kit);
+  playerMove(p, dt, mx, my, len, slick, kit);
   clampWorld(p);
   playerPlunge(p);
   playerStamina(p, dt, kit);
@@ -1176,18 +1184,14 @@ function makeFlake(r) {
     size: r() < 0.75 ? 1 : 2, a: 0.35 + r() * 0.45,
   };
 }
-// EXACTLY seventy, off the main stream, and that count is load-bearing: this
-// runs before genWorld(), so adding or dropping one here shifts the rng prefix
-// and every existing seed with it. fitFlakes() does all the resizing, off fxRng.
-for (let i = 0; i < 70; i++) flakes.push(makeFlake(rng));
-
-// Keep snow density constant per world area, not per screen. Top-ups draw from
-// a separate seeded stream so they never perturb the main rng's worldgen prefix.
+// The flakes draw on a seeded stream of their own, fxRng, never the match's rng().
+const fxRng = mulberry32((SEED ^ 0x9e3779b9) >>> 0);
+for (let i = 0; i < 70; i++) flakes.push(makeFlake(fxRng)); // the first fall; fitFlakes does all the resizing
+// Keep snow density constant per world area, not per screen.
 // Called every frame from updateFx as well as from relayout(), because the ZOOM
 // moves the target as surely as a resize does; both loops are no-ops when the
 // count already matches, which is every frame but the ones a zoom is easing
 // through.
-const fxRng = mulberry32((SEED ^ 0x9e3779b9) >>> 0);
 function fitFlakes() {
   const target = Math.max(FLAKE_MIN, Math.min(FLAKE_MAX,
     Math.round(FLAKE_BASE * (WV_W * WV_H) / FLAKE_AREA)));

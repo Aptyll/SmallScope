@@ -31,7 +31,7 @@ const VOLLEY_RANGE = 220;       // px
 const VOLLEY_MORE = 0.4;        // a body's second and later arrow x this
 // W TWIN NOCK: for a while each basic arrow is loosed with a second beside it
 const TWIN_T = 5;               // s
-const TWIN_SIDE = 4;            // px the second flies beside the first
+const TWIN_SIDE = 7;            // px the second flies beside the first
 // E GATHER UP: every arrow of his standing in the snow flies back to where he
 // stands, through every rival between; one struck by three of them is slowed
 const GATHER_SPD = 520;         // px/s

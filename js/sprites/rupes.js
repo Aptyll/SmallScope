@@ -178,10 +178,10 @@ const RUPES_ICON32 = {
 
 // ------------------------------------------------------------ rupes bodies
 // His own 16 px body in each look, on ARMATOS's standing frame (his head box, legs and ink;
-// js/sprites/armatos.js), the broadest shoulders of anyone: he is the slope. Worn over the
+// js/sprites/armatos.js), the broadest shoulders of anyone (12 px head-on, inside the 25% band around ARMATOS): he is the slope. Worn over the
 // side's coat (r/R/d). QUARRYMAN: a fur cap (t/T) with ear flaps, a full beard (w/W),
 // leather straps (m/M) and fur mitts. ICE CELLAR: the side's hood up, a leather mantle, an
-// ice-blue scarf (i/I). Side-on the head is as wide as head-on and the body two px narrower.
+// ice-blue scarf (i/I). Side-on the head is as wide as head-on and the body a px or two narrower.
 const RUPES_BODY = {
   quarry: {
     down: [
@@ -192,13 +192,13 @@ const RUPES_BODY = {
       '....otekketo....',
       '...otkkKKkkto...',
       '....owwkkwwo....',
-      '..oooowwwwoooo..',
-      '.orrrmowwomrrro.',
-      '.orRrrmowmrrRro.',
-      '.odrrrrmmrrrrdo.',
-      '.oTTdrrrrrrdTTo.',
-      '.oTTodmmmmdoTTo.',
-      '..oo.oppppo.oo..',
+      '...ooowwwwooo...',
+      '..orrmowwomrro..',
+      '..oRrrmowmrrRo..',
+      '..odrrrmmrrrdo..',
+      '..oTTdrrrrdTTo..',
+      '..oTTdmmmmdTTo..',
+      '...oooppppooo...',
       '.....bb..bb.....',
       '.....BB..BB.....',
     ],
@@ -210,13 +210,13 @@ const RUPES_BODY = {
       '....ottTTtto....',
       '...otttttttto...',
       '....otttttto....',
-      '..oooorrrroooo..',
-      '.orrrmrrrrmrrro.',
-      '.orRrrmrrmrrRro.',
-      '.odrrrrmmrrrrdo.',
-      '.oTTdrrmrrrdTTo.',
-      '.oTTodmmmmdoTTo.',
-      '..oo.oppppo.oo..',
+      '...ooorrrrooo...',
+      '..orrmrrrrmrro..',
+      '..oRrrmrrmrrRo..',
+      '..odrrrmmrrrdo..',
+      '..oTTdrmrrdTTo..',
+      '..oTTdmmmmdTTo..',
+      '...oooppppooo...',
       '.....bb..bb.....',
       '.....BB..BB.....',
     ],
@@ -228,13 +228,13 @@ const RUPES_BODY = {
       '....ottTkeko....',
       '...otttkkkKo....',
       '....ottwwwwo....',
-      '..ooorrwwwwo....',
-      '..orrRRrrmwwro..',
-      '..orRRrrrmrrro..',
-      '..odrrrrrmmrro..',
-      '..oTTrrrrrrrdo..',
-      '..oTTodmmmmmdo..',
-      '...oo..oppo.....',
+      '...oorrwwwwo....',
+      '...orRRrrmwwro..',
+      '...oRRrrrmrrro..',
+      '...odrrrrmmrro..',
+      '...oTTrrrrrrdo..',
+      '...oTTdmmmmmdo..',
+      '....oo.oppo.....',
       '......bb.bb.....',
       '......BB.BB.....',
     ],
@@ -249,11 +249,11 @@ const RUPES_BODY = {
       '...orkkKKkkro...',
       '....oiIIIIio....',
       '..oommmiimmmoo..',
-      '.ommmmiiIimmmmo.',
-      '.ommmdrIirdmmmo.',
-      '.odmmrrIirrmmdo.',
-      '.okodrrrrrrdoko.',
-      '..o.odrrrrdo.o..',
+      '..ommmiiIimmmo..',
+      '..ommdrIirdmmo..',
+      '..odmrrIirrmdo..',
+      '..okdrrrrrrdko..',
+      '...oodrrrrdoo...',
       '.....oppppo.....',
       '.....bb..bb.....',
       '.....BB..BB.....',
@@ -267,11 +267,11 @@ const RUPES_BODY = {
       '...orrrRRrrro...',
       '....ommmmmmo....',
       '..oommmmmmmmoo..',
-      '.ommmmmmmmmmmmo.',
-      '.ommmdrrrrdmmmo.',
-      '.odmmrrRRrrmmdo.',
-      '.okodrrRRrrdoko.',
-      '..o.odrrrrdo.o..',
+      '..ommmmmmmmmmo..',
+      '..ommdrrrrdmmo..',
+      '..odmrrRRrrmdo..',
+      '..okdrrRRrrdko..',
+      '...oodrrrrdoo...',
       '.....oppppo.....',
       '.....bb..bb.....',
       '.....BB..BB.....',
@@ -347,3 +347,25 @@ const RUPES_MAUL_DIAG = [
 ];
 const RUPES_MAUL_GRIP = [3, 9]; // where the hands close on the slanted grid
 const RUPES_MAUL_PAL = { o: '#241a12', i: '#7cc4e8', I: '#cfeeff', w: '#a8794a', u: '#6e4a28' };
+
+// ------------------------------------------------------------ rupes registry
+// RUPES in the hero art registry (heroArt, js/sprites/hero-art.js): the looks and
+// their paint, the skins tab's 8x8 glyph and the 12x12 emblem
+heroArt('rupes', {
+  looks: RUPES_SKINS, pal: RUPES_PAL,
+  glyph: ['..wwww..', '.wwwwww.', 'ww..wwww', 'w....www', 'w....www', 'ww..wwww', '.wwwwww.', '..wwww..'],
+  emblem: [ // the snowball, its trail behind it
+    '....oooo....',
+    '..ooWWWWoo..',
+    '.oWWWWWWWbo.',
+    '.oWWWWWWbbo.',
+    'oWWWWWWWbbbo',
+    'oWWWWWWbbbbo',
+    'oWWWWWbbbbbo',
+    '.oWWbbbbbbo.',
+    '.obbbbbbbbo.',
+    '..oobbbboo..',
+    '....oooo....',
+    '............',
+  ],
+});

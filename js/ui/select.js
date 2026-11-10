@@ -84,10 +84,10 @@ function posIcon(r, col) {
 // as a dim face, a ban made as a face struck through in red.
 function selHeadline() {
   const D = DRAFT;
-  if (D.phase === 'ban') return 'BAN A HERO!';
-  if (D.phase === 'pick' && D.lock[localId] < 0) return 'PICK YOUR HERO!';
-  if (D.phase === 'wait') return 'PICK YOUR HERO!';
-  return 'PREPARE YOUR LOADOUT!';
+  if (D.phase === 'ban') return tr('pick.ban');
+  if (D.phase === 'pick' && D.lock[localId] < 0) return tr('pick.pick');
+  if (D.phase === 'wait') return tr('pick.pick');
+  return tr('pick.loadout');
 }
 function selClock() {
   const D = DRAFT, m = state.menu;
@@ -188,20 +188,20 @@ function drawSeatRow(r, mine, hidden, flash, hot) {
   ctx.fillStyle = SC_EDGE; ctx.fillRect(r.x + 8, r.y + r.h - 1, r.w - 16, 1);
   const dx = mine ? r.x + 26 : r.x + r.w - 26, dy = r.y + (r.h >> 1);
   const ring = h >= 0 && banning ? SEL_RED : h >= 0 && firm ? mark : me ? SEL_GOLD : SC_EDGE;
-  const worn = h >= 0 && CLASSES[h].skinSlot && p.skins ? p.skins[CLASSES[h].skinSlot] || null : null; // the look this seat wears
+  const worn = h >= 0 && p.skins ? p.skins[CLASSES[h].id] || null : null; // the look this seat wears
   drawSelDisc(dx, dy, ring, h, team, firm ? 1 : 0.45, role, worn);
   if (h >= 0 && banning && D.lock[p.id] >= 0) draftSlash(dx - 10, dy - 10, 21);
   if (me && draftOpen()) drawSelSwap(r, hot === 'swap');
   // the three lines
   const tx = (s, sc) => mine ? r.x + 48 : r.x + r.w - 48 - pixelTextWidth(s, sc);
-  const status = acting ? (banning ? 'BANNING...' : 'PICKING...') : '';
+  const status = acting ? tr(banning ? 'pick.banning' : 'pick.picking') : '';
   let l1, l2, l3 = p.name, c2 = '#f4f7ff';
   if (mine) {
     l1 = status || (role >= 0 ? POSITIONS[role].name : '');
     if (h >= 0 && !banning) { l2 = CLASSES[h].name; if (!firm) c2 = SC_DIM; if (!status && role < 0) l1 = ''; }
     else { l2 = role >= 0 ? POSITIONS[role].name : p.name; if (role >= 0) l1 = status; else l3 = ''; }
   } else if (hidden) {
-    l1 = D.phase === 'pick' ? (acting ? 'PICKING...' : 'LOCKED IN') : '';
+    l1 = D.phase === 'pick' ? tr(acting ? 'pick.picking' : 'pick.locked') : '';
     l2 = p.name; l3 = '';
   } else { l1 = ''; l2 = h >= 0 ? CLASSES[h].name : p.name; }
   const c1 = acting && me ? SEL_GOLD : me && !status ? SEL_GOLD : SC_DIM;
@@ -281,11 +281,11 @@ function drawShowcase(L, now, a) {
   drawPixelTextOutline(ctx, nm, L.cx - (pixelTextWidth(nm, 2) >> 1), S.y + S.h + 6, '#f4f7ff', SC_INK, 2);
 }
 function selSkinRows(h) {
-  const c = CLASSES[h], tab = c && c.skinSlot ? SKIN_TABS.find((t) => t.hero === h) : null;
+  const c = CLASSES[h], tab = c ? SKIN_TABS.find((t) => t.hero === h) : null;
   return tab ? tab.rows.map((r) => ({ r, tab, own: skinHas(tab, r) })) : [{ r: { id: null, name: c.name, rarity: 'common' }, tab: null, own: true }];
 }
 function selSkinWorn(h) {
-  const c = CLASSES[h], id = c && c.skinSlot && player.skins ? player.skins[c.skinSlot] || null : null;
+  const c = CLASSES[h], id = c && player.skins ? player.skins[c.id] || null : null;
   const rows = selSkinRows(h), k = rows.findIndex((s) => s.r.id === id);
   return k > 0 ? k : 0;
 }
@@ -379,7 +379,7 @@ function drawSelChevron(r, d, hot) {
 // ------------------------------------------------------------ foot
 // The foot: the match bottom right - its size and its mode - and the confirm
 // plate under the grid.
-function selModeName() { return PARTY_MODES[NET.mode] || (PRACTICE ? 'PRACTICE TOOL' : 'QUICKPLAY'); }
+function selModeName() { return PARTY_MODES[NET.mode] || tr(PRACTICE ? 'pick.practice' : 'pick.quick'); }
 function drawSelMode(L, a) {
   // the size off the seats in the match, unless the mode's name says it (1V1)
   const n = [0, 1].map((t) => players.filter((p) => p.active && p.team === t).length);

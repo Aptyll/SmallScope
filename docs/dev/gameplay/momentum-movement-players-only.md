@@ -21,7 +21,9 @@ back on the next frame. A draw and a shield still turn it every step.
   ease-the-speed model: the travel direction *rotates* toward the input at a per-state rad/s
   rate (carving, never snapping), while speed eases toward a per-state target. Ice pumps
   toward `ICE_MAX` (150, ~2× walk) while a direction is held, glides on idle, and barely
-  bleeds overspeed; snow kills overspeed (dodge exits included) in well under a second
+  bleeds overspeed (what glides is `slickUnder`, js/sim/sim.js: the ice underfoot except the
+  orca's pool, rough ice crusted with rime that walks like snow so its fight is fought standing;
+  a rival hero's ice glides everywhere); snow kills overspeed (dodge exits included) in well under a second
   unless you shift-slide to keep it.
 - **Dodge roll** is an impulse into the same velocity: `tryDodge()` sets `vx/vy` to
   `max(DODGE_SPEED, current speed)` (a dash never slows you), the roll itself applies no

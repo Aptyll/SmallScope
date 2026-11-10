@@ -48,6 +48,6 @@ The short card is the name with its cooldown under it, the number its rank raise
 the row's `rank` table given as a list) at the rank held, and the row's one-line `tip`; the full
 `blurb` stays on the wiki. **The DETAILS key held** (Alt unless rebound; never Shift, the slide), or ABILITY DETAILS on ALWAYS (`settings.tipFull`),
 opens the long card, League's way: every rank's numbers slashed together on each row with the
-rank held lit gold (`tipRanks`, labels in `AB_RANK_STAT`; a row value may be such a list of
+rank held lit gold (`tipRanks`, labels in `AB_RANK_STAT` as text-table keys `tip.<rank key>`; a row value may be such a list of
 coloured segments), and the hero level the next rank waits for), and the shop's `tipItem` (an item slot on the strip or the character panel, a
 wiki ITEMS row).

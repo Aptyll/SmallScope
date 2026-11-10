@@ -268,7 +268,7 @@ still load. All three run
 | --- | --- | --- | --- | --- | --- |
 | wolf | 30 (+3) | 9 (+1) | 13 px / 1 s / 96 | r 4.5, mass 2, a roll passes through | `YIELD.wolf` 110, a FARM |
 | alpha (black bear) | 640 (+50) | 22 (+3) | 44 px / 1.4 s / 100 | r 18, mass 5, a big body a roll **tackles** | `YIELD.alpha` 630, `EPIC_TEAM_GOLD` (280) to every teammate on the ground, the BLACK BUFF for the whole team, a feed line |
-| orca (up in its pool, from 20:00) | 1800 (+120), from lv 12 | 34 (+4) | 80 px / 1.8 s / 0: `still`, it never leaves its hole; past its reach it spouts (`spout`, 240 px) | r 20, mass 9, anchored | `YIELD.orca` 880, `EPIC_TEAM_GOLD` to every teammate on the ground, the ORCA BUFF (`p.pushT`, `ORCA_PUSH_T` 180 s) for the whole team, a feed line |
+| orca (up in its pool, from 20:00) | 1560 (+100), from lv 12 | 28 (+3) | 80 px / 1.8 s / 0: `still`, it never leaves its hole; past its reach it spouts (`spout`, 240 px) | r 20, mass 9, anchored | `YIELD.orca` 880, `EPIC_TEAM_GOLD` to every teammate on the ground, the ORCA BUFF (`p.pushT`, `ORCA_PUSH_T` 180 s) for the whole team, a feed line |
 
 The bear is the one `teamPay` camp kind, on its bend of [the creek](../world.md#the-creek)
 (BLUE's bank; the orca's pool faces it across the road on RED's). It is first out at 5:00
@@ -326,7 +326,9 @@ that rides the snapshot; the client eases it like a body (`netClientLerp`).
   `ORCA_LET`.
 - **Up, from 20:00** (THE ORCA UP, `CAMPS.orca` `first` 1200, `repop` 360): the orca's camp brings it
   out of the water as a camp monster (`MONSTER.orca`: `still`, `hole`, `spout`, `push`) in a hole
-  in the middle of the pool, and the shadow is off while it is (`orcaUp`, `updateOrca`). It lunges
+  in the middle of the pool, and the shadow is off while it is (`orcaUp`, `updateOrca`). The pool
+  is rough ice (`slickUnder`, js/sim/sim.js; its rime is `paintRime`, js/draw/ground.js): it holds a
+  foot like snow, so a blade can stand in reach of the hole instead of skating past it. It lunges
   at whoever it hunts inside its reach (the bear's wind-up and strike, jaws open as the tell) and
   past that SPOUTS (`orcaSpout`): a lump of the pool's ice thrown at the spot they stood on, landing
   `ORCA_SPOUT_T` later on everyone inside `ORCA_SPOUT_HIT`, its ring on the ground the warning

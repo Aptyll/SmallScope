@@ -50,8 +50,7 @@ neutral bar. A body at full health walks through and leaves it ripe. No berry dr
 nothing to a bush.
 
 **Where they stand**: `placeBushes()` runs at boot after the camps and landmarks
-(js/app/boot.js) and uses **no rng**. genWorld still lays its own bushes so its stream never shifts
-(CLAUDE.md hard rule 3); `placeBushes` takes every one of them up and sets:
+(js/app/boot.js) and uses **no rng**. It sets:
 
 - `BUSH_DEN_N` (2) round each of RED's wolf dens, toward the map's middle, mirrored onto BLUE's dens
   (tx <-> ty). A pair is laid only where both tiles are open, nudged up to `BUSH_NUDGE` tiles.

@@ -263,3 +263,25 @@ SPRITES.weaponArt.longbow = SPR.bake([
   '....og......', '....oGg.....', '...F.oGg....', '...F..oGg...', '...F...oGg..', '...F....oGg.',
   '...F...oGg..', '...F..oGg...', '...F.oGg....', '....oGg.....', '....og......', '............',
 ], { '.': null, o: '#241a12', g: '#6b4a30', G: '#a3794f', F: '#d8d2c4' });
+
+// ------------------------------------------------------------ arcus registry
+// ARCUS in the hero art registry (heroArt, js/sprites/hero-art.js): the looks and
+// their paint, the skins tab's 8x8 glyph and the 12x12 emblem
+heroArt('arcus', {
+  looks: ARCUS_SKINS, pal: ARCUS_PAL,
+  glyph: ['.ww.....', '.w.ww...', '.w...w..', '.w....w.', '.w....w.', '.w...w..', '.w.ww...', '.ww.....'],
+  emblem: [ // a longbow, string on the left, the belly bowed right
+    '............',
+    '..oooo......',
+    '..oWWWoo....',
+    '..oWooWWo...',
+    '..oWo.oWWo..',
+    '..oWo..oWo..',
+    '..oWo..oWo..',
+    '..oWo.oWWo..',
+    '..oWooWWo...',
+    '..oWWWoo....',
+    '..oooo......',
+    '............',
+  ],
+});

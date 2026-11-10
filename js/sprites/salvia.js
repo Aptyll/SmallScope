@@ -318,3 +318,25 @@ SPRITES.weaponArt.dropstaff = SPR.bake([
   'oWWWo.o.....', 'oWsWoolooooo', 'oWWWoUouuuuo', '.ooo..oooooo',
   '............', '............', '............', '............',
 ], { '.': null, o: '#2e2440', W: '#f8f8ff', s: '#c8d8e8', l: '#4f8a46', U: '#4f8a46', u: '#b08a62' });
+
+// ------------------------------------------------------------ salvia registry
+// SALVIA in the hero art registry (heroArt, js/sprites/hero-art.js): the looks and
+// their paint, the skins tab's 8x8 glyph and the 12x12 emblem
+heroArt('salvia', {
+  looks: SALVIA_SKINS, pal: SALVIA_PAL,
+  glyph: ['..www...', '.w...ww.', '.w..w..w', '.w..w.ww', '.w...ww.', '.w......', '.ww.....', '..w.....'],
+  emblem: [ // a snowdrop, its white bell nodding off the stem
+    '...ooo......',
+    '..ovvvoo....',
+    '..ovooovo...',
+    '..ovo.ovo...',
+    '..ovooWWWo..',
+    '..ovoWWWWWo.',
+    '..ovooWoWo..',
+    '.oVvo.o.o...',
+    'oVVvo.......',
+    '.oovo.......',
+    '..ovo.......',
+    '...o........',
+  ],
+});

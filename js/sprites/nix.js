@@ -279,3 +279,25 @@ const NIX_DIRK = [
   '......................',
 ];
 const NIX_DIRK_PAL = { o: '#241a12', I: '#bfe6f8', i: '#7cc4e8', W: '#ffffff', E: '#8b93a8', g: '#3a3248', G: '#5c5470' };
+
+// ------------------------------------------------------------ nix registry
+// NIX in the hero art registry (heroArt, js/sprites/hero-art.js): the looks and
+// their paint, the skins tab's 8x8 glyph and the 12x12 emblem
+heroArt('nix', {
+  looks: NIX_SKINS, pal: NIX_PAL,
+  glyph: ['...w....', '.w.w.w..', '..www...', 'wwwwwww.', '..www...', '.w.w.w..', '...w....', '........'],
+  emblem: [ // the snowblind's goggles, two slits in a bone band
+    '............',
+    '............',
+    '............',
+    '.oooooooooo.',
+    'oWWWWWWWWWWo',
+    'oWooWWWWooWo',
+    'oWWWWooWWWWo',
+    '.oooo..oooo.',
+    '............',
+    '............',
+    '............',
+    '............',
+  ],
+});

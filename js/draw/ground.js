@@ -116,6 +116,7 @@ function paintGroundTile(g, tx, ty) {
         }
         if (inner && h < 0.12) { g.fillStyle = '#ddf1f8'; g.fillRect(px + ((h * 210) | 0) % 12, py + ((h * 87) | 0) % 12, 2, 2); }
         paintDressing(g, tx, ty, px, py); // long cracks, the downwind bank (js/draw/lakes.js)
+        if (inner && orcaLakeAt(tx, ty)) paintRime(g, tx, ty, px, py); // the orca's pool: rough ice that holds a foot (slickUnder)
         // ...and, where any road reaches the lake, the earth spilling over
         // this tile's share of the crossing, rimmed along its own ragged edge
         // rather than along the tile's sides. The diagonal road never meets
@@ -677,6 +678,21 @@ function lakesAround(tx, ty) {
   let n = 0;
   for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (isLake(tx + dx, ty + dy)) n++;
   return n;
+}
+
+// the rime on the orca's pool (slickUnder, js/sim/sim.js): frost flecks
+// scattered over the ice, so its sheet reads as a crust a foot grips and not
+// the glass the other lakes are. Inside the tile only; nothing rolls.
+const RIME = ['#e4f3f9', '#f2fafd', '#d3e9f3'];
+function paintRime(g, tx, ty, px, py) {
+  const n = 9 + ((hash2(tx * 5 + 1, ty * 3 + 7) * 7) | 0);
+  for (let i = 0; i < n; i++) {
+    const a = hash2(tx * 17 + i * 3, ty * 23 + i * 7), b = hash2(tx * 29 + i * 11, ty * 13 + i * 5);
+    const x = (a * TILE) | 0, y = (b * TILE) | 0, w = a > 0.7 ? 2 : 1;
+    if (x + w > TILE) continue;
+    g.fillStyle = RIME[i % 3];
+    g.fillRect(px + x, py + y, w, 1);
+  }
 }
 
 // an ice tile, every pixel: returns whether the whole 3x3 is lake (no edge
