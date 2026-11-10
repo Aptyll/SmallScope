@@ -170,7 +170,7 @@ function drawSorted(draws, ox, oy, ex, ey, now) {
   for (const d of draws) {
     if (d.reed) { drawReed(d.reed, ex, ey, heroP); continue; } // the brush's reeds (js/draw/depth.js)
     if (d.down) { drawDown(d.down, ex, ey, now); continue; }
-    if (d.p && !d.ghost && d.p.zip >= 0) { airRiders.push(d.p); continue; } // on a cable: the air layer's, below
+    if (d.p && !d.ghost && (d.p.zip >= 0 || heroDashOver(d.p))) { airRiders.push(d.p); continue; } // on a cable, or over the pines on a hero's dash (HERO_DASH `over`): the air layer's, below
     if (d.p) { if (d.ghost) drawGhost(d.p, ex, ey); else drawPlayer(d.p, ex, ey, now); continue; }
     if (d.a) { drawAnimal(d.a, ex, ey, now); continue; }
     if (d.r) { drawRobot(d.r, ex, ey, now); continue; }
