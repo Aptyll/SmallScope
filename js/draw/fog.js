@@ -20,6 +20,7 @@ const FOG_BAND = 8;   // world px of half-dim just outside the edge: the rim is 
 const FOG_HALF = FOG_TINT.map((v) => Math.round((v + 255) / 2)); // ...and that band's multiply, halfway to no dim
 
 const fogEyesDraw = [];
+const fogBands = []; // the cables' eyes joined pair by pair, for the mask (fogBand)
 let fogNow = -1, fogTeam = -1, fogLines = new Map();
 const fogShownMap = new Map();
 const fogMaskCv = document.createElement('canvas'), fogMaskCtx = fogMaskCv.getContext('2d');
@@ -35,11 +36,13 @@ function fogView(now) {
   fogTeam = fogUp() ? viewPlayer().team : -1;
   if (fogTeam < 0) return false;
   sightSources(fogTeam, fogEyesDraw);
+  fogBands.length = 0;
   // an eye that has not moved a px since the last frame keeps its lines
   const was = fogLines;
   fogLines = new Map();
   for (const s of fogEyesDraw) {
     s.n = Math.ceil(Math.PI * 2 * s.r / FOG_ARC);
+    if (s.next && s.open && s.next.open) fogBand(s, s.next);
     if (s.open) continue;
     const key = Math.round(s.x) + ',' + Math.round(s.y) + ',' + s.r;
     let d = was.get(key);
@@ -55,6 +58,19 @@ function fogView(now) {
   return true;
 }
 
+// Two eyes in a row on one cable, drawn as ONE straight band between them and
+// not as two circles: a row of circles has a cusp between every pair, and a
+// cable's worth of cusps read as a saw edge. The band is as wide as the two
+// circles are where they cross, so it lies wholly inside what the side sees:
+// the mask dims at most the cusps' own depth (under FOG_BAND) of seen ground
+// and lights nothing unseen. Only the mask reads it; who is shown (fogShown)
+// and the maps still ask the eyes themselves.
+function fogBand(a, b) {
+  const dx = b.x - a.x, dy = b.y - a.y, half = Math.hypot(dx, dy) / 2, r = Math.min(a.r, b.r);
+  if (half >= r) return; // too far apart to touch: two circles
+  a.banded = b.banded = true;
+  fogBands.push({ ax: a.x, ay: a.y, dx, dy, len2: dx * dx + dy * dy || 1, r: Math.sqrt(r * r - half * half) });
+}
 // which of eye s's sight lines points along (dx, dy)
 function fogRay(s, dx, dy) {
   let a = Math.atan2(dy, dx);
@@ -98,7 +114,23 @@ function fogCorners(gx0, gy0) {
   if (!fogGrid || fogGrid.length < fogGW * fogGH) fogGrid = new Float32Array(fogGW * fogGH);
   const g = fogGrid, W = fogGW;
   g.fill(-FOG_CLAMP, 0, W * fogGH);
+  for (const s of fogBands) {
+    const r = s.r + FOG_CLAMP;
+    const i0 = Math.max(0, Math.floor((Math.min(s.ax, s.ax + s.dx) - r) / FOG_CELL) - gx0), i1 = Math.min(W - 1, Math.ceil((Math.max(s.ax, s.ax + s.dx) + r) / FOG_CELL) - gx0);
+    const j0 = Math.max(0, Math.floor((Math.min(s.ay, s.ay + s.dy) - r) / FOG_CELL) - gy0), j1 = Math.min(fogGH - 1, Math.ceil((Math.max(s.ay, s.ay + s.dy) + r) / FOG_CELL) - gy0);
+    for (let j = j0; j <= j1; j++) {
+      const py = (gy0 + j) * FOG_CELL - s.ay, row = j * W;
+      for (let i = i0; i <= i1; i++) {
+        if (g[row + i] >= FOG_CLAMP) continue;
+        const px = (gx0 + i) * FOG_CELL - s.ax;
+        const t = Math.max(0, Math.min(1, (px * s.dx + py * s.dy) / s.len2)), ex = px - s.dx * t, ey = py - s.dy * t;
+        const m = s.r - Math.sqrt(ex * ex + ey * ey);
+        if (m > g[row + i]) g[row + i] = m > FOG_CLAMP ? FOG_CLAMP : m;
+      }
+    }
+  }
   for (const s of fogEyesDraw) {
+    if (s.banded) continue; // drawn by its band
     const r = s.r + FOG_CLAMP, inner = s.open ? s.r - FOG_CLAMP : -1;
     const i0 = Math.max(0, Math.floor((s.x - r) / FOG_CELL) - gx0), i1 = Math.min(W - 1, Math.ceil((s.x + r) / FOG_CELL) - gx0);
     const j0 = Math.max(0, Math.floor((s.y - r) / FOG_CELL) - gy0), j1 = Math.min(fogGH - 1, Math.ceil((s.y + r) / FOG_CELL) - gy0);

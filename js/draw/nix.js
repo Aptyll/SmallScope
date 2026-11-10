@@ -86,6 +86,27 @@ function drawWhiteStrikeFx(f, px, py, now) {
   });
 }
 AB_FX_LOOK.white = drawWhiteStrikeFx;
+// DRIFT STEP's path: the drift snow her step sweeps up, low over the ground. Scattered,
+// never rows: big curls bunched where she left, thinning to a few flecks where she
+// comes out, strays off both sides; thrown up as she passes, settling from the near end
+function drawDriftFx(f, px, py, now) {
+  const u = f.t / f.life, c = Math.cos(f.a), s = Math.sin(f.a), seed = fxSeed(f);
+  const front = Math.min(1, u * 5) * f.r, gone = Math.max(0, (u - 0.35) / 0.65) * f.r; // how far it has been swept, how far it has settled
+  for (let k = 0, n = Math.round(f.r / 2.5); k < n; k++) {
+    const far = Math.pow(fxRoll(seed, k, 1), 1.7), d = 2 + far * (f.r - 4); // bunched toward where she left
+    if (d > front || d < gone || fxRoll(seed, k, 4) < far * 0.5) continue;
+    const age = Math.min(1, (front - d) / 30 + u), wide = fxRoll(seed, k, 2) * 2 - 1;
+    const side = wide * (3 + 9 * fxRoll(seed, k, 5)) * (0.6 + 0.4 * age); // strays well off either side
+    const big = 2 + Math.round(4 * (1 - far) * (0.35 + 0.65 * fxRoll(seed, k, 3))), w = Math.max(1, Math.round(big * (age < 0.7 ? 1 : 0.6))); // 2 to 6 px, smaller as it settles
+    const lift = Math.round((2 + big) * Math.sin(Math.PI * Math.min(1, age * 1.3)) * 0.8);
+    const x = Math.round(px + c * d - s * side), y = Math.round(py + 3 + s * d + c * side);
+    ctx.fillStyle = 'rgba(40,52,90,0.4)'; ctx.fillRect(x - 1, y + 1, w + 2, 1); // its shadow on the snow
+    ctx.fillStyle = NIX_SNOW_D; ctx.fillRect(x, y - lift, w, w > 3 ? 2 : 1); // its shaded underside
+    ctx.fillStyle = NIX_SNOW; ctx.fillRect(x, y - lift - (w > 3 ? 2 : 1), w, w > 3 ? 2 : 1); // its lit top,
+    if (w > 4) { ctx.fillRect(x + 1, y - lift - 3, w - 2, 1); ctx.fillStyle = NIX_ICE_D; ctx.fillRect(x + w, y - lift - 2, 1, 1); } // a big one's curl and a fleck of ice off it
+  }
+}
+AB_FX_LOOK.drift = drawDriftFx;
 function drawNixGround(ex, ey) { for (const c of nixClouds) drawNixCloudShadow(c, ex, ey); }
 function drawNixAir(ex, ey, now) {
   for (const c of nixClouds) drawNixCloud(c, ex, ey, now);

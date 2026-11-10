@@ -10,7 +10,8 @@ A side sees a circle round each of its heroes (`FOG_HERO`, 10 tiles, times any h
 - the bird while it roosts on the perch (`FOG_PERCH`, 14) and the merchant wherever it works (`FOG_MERCH`, 8).
 - each of the side's own cables: a row of small eyes (`FOG_ZIP` every `FOG_ZIP_STEP` px, `zipEyes`),
   a band about 2.5 tiles either side. A cable runs only to its furthest standing tower
-  (`towersSync`), so the band shrinks as towers fall.
+  (`towersSync`), so the band shrinks as towers fall. The drawn dim joins the row into a
+  straight-edged band (`fogBand`, js/draw/fog.js) that lies inside the circles; who is seen still asks the eyes.
 - a hero's machine (`HERO_MACHINE` `sight`): FABER's machines, and FALCO's hawk while it is out
   on TALONS, which sees `TALON_SIGHT` round itself.
 
