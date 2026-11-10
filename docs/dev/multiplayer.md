@@ -187,7 +187,7 @@ bot fills, once per step from `sampleHumanInput`.
   side's cable, a press **on the drawn cable** (`zipUnder`, the strand the hover lights) clips on,
   or from out of reach walks the body there and clips on (`zipWalkStart` — the channel, ended by
   any order of your own; a press anywhere else is the walk it always was).
-- **On a tree, a bush, an ice hole or a rival building it is a walk into reach and the swing**
+- **On a tree, an ice hole or a rival building it is a walk into reach and the swing**
   (`workTargetAt`, the work target by tile), held until the thing is spent. On a merchant or the
   practice furniture it is a walk into reach and the thing opening
   (`ckUse`: the counter as a panel; the die and bell wheels as wheels left
@@ -543,8 +543,8 @@ contest('work:' + idx(tx, ty), p, () => { /* runs only if p wins */ });
 (drop pickups). Claims must re-check their preconditions inside the callback — cost is paid at
 resolution, so a loser keeps its gold.
 
-Currently contested: work swings (`swingHit`, keyed by tile), creek fish (`creekFishCatch`, keyed by fish index) and ripe bushes (`bushTouch`, keyed by
-tile), first-come whichever team gets there. A shop buy
+Currently contested: work swings (`swingHit`, keyed by tile) and creek fish (`creekFishCatch`, keyed by fish index),
+first-come whichever team gets there. A shop buy
 is not contested: every item is always on sale, so two buyers never want the same thing.
 
 ## Bots
@@ -768,7 +768,7 @@ The ladder:
    to it. The camp goes for whoever is nearest, so the helpers keep on whichever of
    the side it is chasing.
 5'. **heal** — hurt, out of its roost ring and no rival within `AI_HEAL_SAFE`: roll over a showing
-   creek fish from the dry bank, else walk into a ripe bush near by (`aiHealRung`, [Heals](gameplay/heals.md#bots)).
+   creek fish from the dry bank (`aiHealRung`, [Heals](gameplay/heals.md#bots)).
 5a. **the ping** — a human teammate's [ping](gameplay/pings.md) this bot took up (`ai.ping`,
    set by `pingSteer` for the two bots nearest the spot). Read before the ladder (the `order`
    block of `aiOrders`): it overrides the defend, guard and push reads below and the human as an anchor — the one

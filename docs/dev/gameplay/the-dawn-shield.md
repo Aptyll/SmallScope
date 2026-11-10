@@ -10,7 +10,7 @@ of shield on **every hero of the picker's side** who is up and on the ground, wh
 stacking to `DAWN_SHIELD_MAX` (30): so the clumps are worth racing the other side to, one segment
 each. Then that clump alone rests `SNOWDROP_CD` (90 s; `o.readyAt`, the match second it opens,
 read by `snowdropLeft`): a snapped stem, a shut bud for its last `SNOWDROP_BUD_T` (25 s), open
-again at zero, and the neutral bar a bush wears under the pointer while it rests.
+again at zero, and the neutral unit bar under the pointer while it rests.
 
 The shield (the `dawn` kind in `p.shields`, `SHIELD_KINDS`) holds until hits break it or its hero
 goes down — it never wears off. `damagePlayer` spends it **after** the damage reduction and

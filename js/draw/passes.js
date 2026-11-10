@@ -90,7 +90,7 @@ function drawFlatPass(ox, oy, ex, ey, tx0, ty0, tx1, ty1, now) {
       const o = objects[idx(tx, ty)];
       if (!o) continue;
       const px = tx * TILE - ox, py = ty * TILE - oy;
-      // +4 like bushes - any lower and the canopy of a tree on the tile below buries it
+      // +4 - any lower and the canopy of a tree on the tile below buries it
       if (o.type === 'stump') ctx.drawImage(SPRITES.stump, px, py + 4);
     }
   }
@@ -160,7 +160,7 @@ function drawSorted(draws, ox, oy, ex, ey, now) {
   bodyLightFrame(); // tonight's record of where a body shows (the body light banner, js/draw/light.js)
   let wkO = null;
   // the scenery under the pointer, for the one thing a hover shows on a
-  // thing that is resting: a regrowing bush's clock (its branch below).
+  // thing that is resting: a resting snowdrop's clock (its branch below).
   // Any reach: a look asks nothing of the legs
   let hovO = null;
   if (heroP) {
@@ -191,7 +191,7 @@ function drawSorted(draws, ox, oy, ex, ey, now) {
   }
 }
 
-// one tile object in the y-sorted pass: a tree, a bush, a building...
+// one tile object in the y-sorted pass: a tree, a stump, a building...
 function drawSceneryObj(d, ox, oy, now, wkO, hovO) {
   const o = d.o;
   const px = d.tx * TILE - ox, py = d.ty * TILE - oy;
@@ -274,23 +274,10 @@ function drawSceneryObj(d, ox, oy, now, wkO, hovO) {
       drawAgBell(o, px + sh, py + Math.round(su * 29), now);
       ctx.restore();
     } else drawAgBell(o, px + sh, py, now);
-  } else if (o.type === 'bush') {
-    // the plant is its own regrow clock (BUSH_BUD_T / BUSH_RIPEN_T, world.js):
-    // bare, then buds, then dull berries, then ripe
-    const spr = o.berries > 0 ? SPRITES.bush
-      : o.regrow <= BUSH_RIPEN_T ? SPRITES.bushRipen
-      : o.regrow <= BUSH_BUD_T ? SPRITES.bushBud : SPRITES.bushEmpty;
-    // no rim: E does nothing to a bush - walking into a ripe one heals
-    // (bushTouch, world.js), so the berries themselves are the whole tell
-    drawSpriteFlash(spr, px + sh, py + 4, o.flash);
-    // hovered while regrowing: the clock itself, the neutral unit bar over
-    // the plant filling toward ripe - the frames say roughly, a look asks
-    // exactly - the cooldown of the heal it gives.
-    if (o.berries <= 0 && o === hovO) drawHealthBar(px + 8, py + 1, BUSH_REGROW - o.regrow, BUSH_REGROW, 12, undefined, BAR_NEUTRAL);
   } else if (o.type === 'snowdrop') {
     // a warren's clump: open until picked, then the snapped stem, then the
     // shut bud as it comes back (snowdropLeft, world.js) - and hovered while
-    // it rests, the neutral bar a bush wears, filling toward open. It leans
+    // it rests, the neutral unit bar, filling toward open. It leans
     // with the pines' own wind - lighter, so the same breath moves it
     // further (SNOWDROP_SWAY) - and sits a hash's few pixels off its tile's
     // grid so two clumps never line up. Its 24 px cell stands its feet at

@@ -1,7 +1,7 @@
 'use strict';
 // The ground's furniture: the pine and its 24 wind frames (and the one atlas
-// every pine on screen draws from), stumps, the berry
-// bush's four states, the camps' dead snags, the wolf den and the hog hut.
+// every pine on screen draws from), stumps, the camps' dead snags, the wolf
+// den and the hog hut.
 (() => {
   const { bake, flipH } = SPR;
 
@@ -1012,65 +1012,6 @@
     '................',
   ];
 
-  // ---------------------------------------------------------------- bush
-  const BPAL = {
-    '.': null,
-    'o': '#22383a',
-    'g': '#3a6b52',
-    'G': '#4c8560',
-    'r': '#d6454f', // berry
-    'R': '#f2707a', // berry shine
-    'w': '#eef4fb',
-    's': '#c9dcee',
-    'b': '#b9d9a4', // bud: pale, unripe
-    'd': '#7b2c3a', // berry coming in: dull, no shine yet
-  };
-
-  const bush = [
-    '................',
-    '....owwwso......',
-    '...ogwGgGgo.....',
-    '..ogGrGGgrGo....',
-    '..oGgRGgGgGgo...',
-    '..ogGgGrGRgGo...',
-    '...ogGgGgGgo....',
-    '....ssssss......',
-  ];
-  const bushEmpty = [
-    '................',
-    '....owwwso......',
-    '...ogwGgGgo.....',
-    '..ogGgGGggGo....',
-    '..oGgGGgGgGgo...',
-    '..ogGgGgGGgGo...',
-    '...ogGgGgGgo....',
-    '....ssssss......',
-  ];
-  // the regrow clock, read off the plant (BUSH_BUD_T / BUSH_RIPEN_T,
-  // js/sim/world.js): pale buds where the berries will be, then the berries
-  // back but dull, then `bush` again. Same silhouette, only the four berry
-  // pixels change, so the stage reads without the bush seeming to move.
-  const bushBud = [
-    '................',
-    '....owwwso......',
-    '...ogwGgGgo.....',
-    '..ogGbGGgbGo....',
-    '..oGgGGgGgGgo...',
-    '..ogGgGbGbgGo...',
-    '...ogGgGgGgo....',
-    '....ssssss......',
-  ];
-  const bushRipen = [
-    '................',
-    '....owwwso......',
-    '...ogwGgGgo.....',
-    '..ogGdGGgdGo....',
-    '..oGgdGgGgGgo...',
-    '..ogGgGdGdgGo...',
-    '...ogGgGgGgo....',
-    '....ssssss......',
-  ];
-
   // Dead trees: bare snags, the wiki's THE WORKS figure (js/ui/wiki.js). Same
   // 16x24 footprint as a pine, drawn at py-8 in the same band, but stripped to
   // grey wood and snow.
@@ -1608,10 +1549,6 @@
       return c;
     })(),
     stump: bake(stump, TPAL),
-    bush: bake(bush, BPAL),
-    bushEmpty: bake(bushEmpty, BPAL),
-    bushBud: bake(bushBud, BPAL),
-    bushRipen: bake(bushRipen, BPAL),
     deadTree: [bake(deadTree1, DTPAL), bake(deadTree2, DTPAL)],
     den: bake(den, DNPAL),
     hogHut: hogHut.map((f) => bake(f, HHPAL)),

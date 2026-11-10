@@ -40,7 +40,6 @@ if (ARENA) {
   placeCamps();      // worldgen's last pass, before the ground is baked: the camps clear their sites
   placeLandmarks();  // ...and the story landmarks take their spots (landmarks.js)
   placePumps();      // ...and the two gold pumps beside the top and bot lanes' middles, with no rng() (js/sim/pumps.js)
-  placeBushes();     // ...and the berry bushes by the camps and the river, on no rng at all (world.js)
   spawnAnimals();
   spawnFish();
   spawnOrca();       // ...and the orca under its lake (js/sim/orca.js)
@@ -198,9 +197,9 @@ window.DBG = {
   BUILD_ITEMS, ITEM_PARTS, ITEM_DONE, ITEM_ALL, itemTier, itemInto, shopRecommended, itemCost: (id, p) => itemCost(p || player, id),
   buyItem: (id, p) => buyItem(p || player, id), sellItem: (slot, p) => sellItem(p || player, slot),
   botNextItem, botItemBuy,
-  // the heals: the potion's slot and its drink, a creek fish's heal and the bushes'
+  // the heals: the potion's slot and its drink, and a creek fish's heal
   potionSlot: (p) => potionSlot(p || player), useItem: (slot, p) => useItem(p || player, slot),
-  POTION_HEAL, POTION_T, CREEK_FISH_HEAL, BUSH_HEAL, BUSH_REGROW, creekFishN, creekFishAt, placeBushes,
+  POTION_HEAL, POTION_T, CREEK_FISH_HEAL, creekFishN, creekFishAt,
   // the news plates under the minimap: the live stack, where a slot lands,
   // and a way to raise one
   notices, noteRect, NOTE_KIND, raiseNotice,

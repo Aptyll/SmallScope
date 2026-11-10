@@ -2,4 +2,4 @@
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| the pines' bend frames and their nine palettes (`treePals`, filtered from `TSPAL`), the bush at each stage | by banner | `trees`, `bush` |
+| the pines' bend frames and their nine palettes (`treePals`, filtered from `TSPAL`) | by banner | `trees` |

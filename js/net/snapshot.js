@@ -376,7 +376,7 @@ function snapApply(s) {
 const HIST_KEEP = 75; // flush ticks kept in the ring: 5 s at 15 Hz. An ack older than this is a full sync
 const snapShadow = { objs: null, objN: null, ground: null, hist: [], byTick: new Map(), sweepAt: 0, swept: false, tiles: null, late: 0, lateBy: {} };
 // The tiles a host looks at on a flush step (snapTileHot): of ~54k tiles, a
-// few hundred ever change in a match (pines hit, bushes regrowing, the
+// few hundred ever change in a match (pines hit, snowdrops resting, the
 // buildings' clocks), so the flush step checks only the tiles that can be
 // changing now - every structure, every tile with a clock running (objTimed,
 // js/sim/sim.js), every tile placeObj wrote and every tile seen changing in

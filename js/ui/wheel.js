@@ -176,7 +176,7 @@ function drawWorkHint(ox, oy) {
   // ...then a deer in reach (keyPress again)
   if (drawRideHint(ox, oy)) return;
   let t = workTarget(player);
-  // what the hands take on their own (autoWorks: a tree, a bush, a
+  // what the hands take on their own (autoWorks: a tree, a
   // rival's building or eagle) asks for no key - the swing itself is the whole signal
   if (t && t.o && autoWorks(t.o, player)) t = null;
   
