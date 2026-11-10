@@ -84,10 +84,10 @@ function posIcon(r, col) {
 // as a dim face, a ban made as a face struck through in red.
 function selHeadline() {
   const D = DRAFT;
-  if (D.phase === 'ban') return 'BAN A HERO!';
-  if (D.phase === 'pick' && D.lock[localId] < 0) return 'PICK YOUR HERO!';
-  if (D.phase === 'wait') return 'PICK YOUR HERO!';
-  return 'PREPARE YOUR LOADOUT!';
+  if (D.phase === 'ban') return tr('pick.ban');
+  if (D.phase === 'pick' && D.lock[localId] < 0) return tr('pick.pick');
+  if (D.phase === 'wait') return tr('pick.pick');
+  return tr('pick.loadout');
 }
 function selClock() {
   const D = DRAFT, m = state.menu;
@@ -194,14 +194,14 @@ function drawSeatRow(r, mine, hidden, flash, hot) {
   if (me && draftOpen()) drawSelSwap(r, hot === 'swap');
   // the three lines
   const tx = (s, sc) => mine ? r.x + 48 : r.x + r.w - 48 - pixelTextWidth(s, sc);
-  const status = acting ? (banning ? 'BANNING...' : 'PICKING...') : '';
+  const status = acting ? tr(banning ? 'pick.banning' : 'pick.picking') : '';
   let l1, l2, l3 = p.name, c2 = '#f4f7ff';
   if (mine) {
     l1 = status || (role >= 0 ? POSITIONS[role].name : '');
     if (h >= 0 && !banning) { l2 = CLASSES[h].name; if (!firm) c2 = SC_DIM; if (!status && role < 0) l1 = ''; }
     else { l2 = role >= 0 ? POSITIONS[role].name : p.name; if (role >= 0) l1 = status; else l3 = ''; }
   } else if (hidden) {
-    l1 = D.phase === 'pick' ? (acting ? 'PICKING...' : 'LOCKED IN') : '';
+    l1 = D.phase === 'pick' ? tr(acting ? 'pick.picking' : 'pick.locked') : '';
     l2 = p.name; l3 = '';
   } else { l1 = ''; l2 = h >= 0 ? CLASSES[h].name : p.name; }
   const c1 = acting && me ? SEL_GOLD : me && !status ? SEL_GOLD : SC_DIM;
@@ -379,7 +379,7 @@ function drawSelChevron(r, d, hot) {
 // ------------------------------------------------------------ foot
 // The foot: the match bottom right - its size and its mode - and the confirm
 // plate under the grid.
-function selModeName() { return PARTY_MODES[NET.mode] || (PRACTICE ? 'PRACTICE TOOL' : 'QUICKPLAY'); }
+function selModeName() { return PARTY_MODES[NET.mode] || tr(PRACTICE ? 'pick.practice' : 'pick.quick'); }
 function drawSelMode(L, a) {
   // the size off the seats in the match, unless the mode's name says it (1V1)
   const n = [0, 1].map((t) => players.filter((p) => p.active && p.team === t).length);

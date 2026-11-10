@@ -217,6 +217,16 @@ const TEXT = {
   'ctl.moveAct': 'MOVE / ACT',
   'ctl.holdRmb': 'HOLD RMB',
   'ctl.follow': 'FOLLOW',
+
+  // ---- the hero pick (js/ui/select.js): a hero's and a position's names stay on their entries
+  'pick.ban': 'BAN A HERO!',
+  'pick.pick': 'PICK YOUR HERO!',
+  'pick.loadout': 'PREPARE YOUR LOADOUT!',
+  'pick.banning': 'BANNING...',
+  'pick.picking': 'PICKING...',
+  'pick.locked': 'LOCKED IN',
+  'pick.practice': 'PRACTICE TOOL',
+  'pick.quick': 'QUICKPLAY',
 };
 
 // the word for a key, with each {slot} filled from vars. An unknown key
