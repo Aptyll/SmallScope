@@ -6,7 +6,7 @@
 // over him (HERO_OVER), and his longbow upright at his side at rest
 // (HERO_CARRY). Both sides see all of it, but a rival's arrow in the fog is not there.
 
-const AC_SHADE = '#8a6a2c'; // a gold streak's underside
+const AC_PALE = '#f6e2a0'; // a flight path's pale gold
 const AC_INK = '#141a2c', AC_GOLD = '#f2cc6a', AC_WHITE = '#ffffff', AC_SHAFT = '#c8a46a';
 
 // ---- on the snow --------------------------------------------------------------------
@@ -75,17 +75,18 @@ function acArrow(x, y, a, len, team) {
   paintArrowPx(AC_PX);
 }
 // VOLLEY: the five arrows fanned on the string, each with the path of its flight laid
-// out down its bearing as he draws: a soft gold band, two px by him and one further out,
-// solid to the volley's reach (never a hairline of see-through dashes), white at its tip
+// out down its bearing as he draws: one px of soft pale gold, solid (never dashes), that
+// fades to nothing by two thirds of the volley's reach, so the fan shows and no body is
+// buried under it
+const VOLLEY_PATH = 2 / 3; // the share of the reach a path is drawn over
 function drawVolleyTele(p, a0, closing, ex, ey) {
-  const x0 = p.x - ex, y0 = p.y - BOW_Y - ey, L = VOLLEY_RANGE * closing;
-  ctx.globalAlpha = 0.45 + 0.35 * closing;
+  const x0 = p.x - ex, y0 = p.y - BOW_Y - ey, L = VOLLEY_RANGE * closing * VOLLEY_PATH;
+  ctx.fillStyle = AC_PALE;
   for (let k = 0; k < VOLLEY_N; k++) {
     const a = a0 - VOLLEY_HALF + (2 * VOLLEY_HALF * k) / (VOLLEY_N - 1), nx = Math.cos(a), ny = Math.sin(a);
     for (let s = 18; s < L; s++) {
-      const th = s < L * 0.45 ? 2 : 1, x = Math.round(x0 + nx * s), y = Math.round(y0 + ny * s);
-      ctx.fillStyle = AC_SHADE; ctx.fillRect(x, y + th, th, 1); // its shadow under it, so it holds on snow
-      ctx.fillStyle = s > L - 6 ? AC_WHITE : AC_GOLD; ctx.fillRect(x, y, th, th);
+      ctx.globalAlpha = (0.35 + 0.4 * closing) * (1 - (s - 18) / (L - 18));
+      ctx.fillRect(Math.round(x0 + nx * s), Math.round(y0 + ny * s), 1, 1);
     }
   }
   ctx.globalAlpha = 1;
