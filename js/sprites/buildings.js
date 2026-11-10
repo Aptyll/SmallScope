@@ -10,7 +10,7 @@
   // ---------------------------------------------------------------- barracks bay
   // The barracks' art (STRUCTS.barracks, art: 'spawner'): a 48x38 bot garage on a 3x2 tile footprint
   // w/h), drawn with its snow skirt on the footprint's bottom edge. Steel
-  // plate walls under a full load of snow on the roof (humped, rimmed in the snow's own blue so it stands off the snow behind it, hanging over the eave in places) and a drift banked against the left wall, the side the map's prevailing wind blows from (driftWind, js/sim/depth.js),
+  // plate walls under a full load of snow on the roof (humped, rimmed in the snow's own blue so it stands off the snow behind it, hanging over the eave in places) and a low mound of drift at the foot of the left wall, the side the map's prevailing wind blows from (driftWind, js/sim/depth.js),
   // a team-painted lintel band (L/T/t) above a 20px-wide bay with a dark
   // interior and a lit floor lip (doorway cols 14-33, rows 13-35, floor row 36), riveted flanks with a vent grille and a
   // hazard stripe, the mouth open to the ground. One tier -
@@ -69,14 +69,14 @@
     '..oppppppppppokkkkkkKkkkkkkKkkkkkkoqqqqqqqqqqo..',
     '..oppppppppppokkkkkkKkkkkkkKkkkkkkoqqqqqqqqqqo..',
     '..oppppppppppokkkkkkKkkkkkkKkkkkkkoqqqqqqqqqqo..',
-    'ZZoppppppppppokkkkkkKkkkkkkKkkkkkkoqqqqqqqqqqo..',
-    'SSZyyYYyyYYyyokkkkkkKkkkkkkKkkkkkkoyyYYyyYYyyo..',
-    'SSSZYYyyYYyyYokkkkkkKkkkkkkKkkkkkkoyYYyyYYyyYo..',
-    'SSSSZyyYYyyYYoKKKKKKKKKKKKKKKKKKKKoYYyyYYyyYYo..',
-    'SSSSSZYYyyYYyoFFFFFFFFFFFFFFFFFFFFoYyyYYyyYYyo..',
-    'sSSSSSZppppppoffffffffffffffffffffoqqqqqqqqqqo..',
-    'sSSSSSZppppprofffffffffffffffffffforqqqqqqqqro..',
-    'sSSSSSSZoooooffffffffffffffffffffffooooooooooo..',
+    '..oppppppppppokkkkkkKkkkkkkKkkkkkkoqqqqqqqqqqo..',
+    '..oyyYYyyYYyyokkkkkkKkkkkkkKkkkkkkoyyYYyyYYyyo..',
+    '..oyYYyyYYyyYokkkkkkKkkkkkkKkkkkkkoyYYyyYYyyYo..',
+    '..oYYyyYYyyYYoKKKKKKKKKKKKKKKKKKKKoYYyyYYyyYYo..',
+    '..oYyyYYyyYYyoFFFFFFFFFFFFFFFFFFFFoYyyYYyyYYyo..',
+    '..ZZZZpppppppoffffffffffffffffffffoqqqqqqqqqqo..',
+    '.ZSSSSZZpppprofffffffffffffffffffforqqqqqqqqro..',
+    'ZSSSSsssZooooffffffffffffffffffffffooooooooooo..',
     'wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww..',
   ];
 
