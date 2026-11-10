@@ -60,7 +60,7 @@ const CLIVUS_AB = [
     use: (p) => clivusThrow(p),
     tele: (p, px, py, a, col, closing, now, ex, ey) => drawTeleLine(p.x, p.y, Math.cos(a), Math.sin(a), teleLen(p.x, p.y, Math.cos(a), Math.sin(a), ROPE_RANGE), col, 0.5 + 0.45 * closing, now, ex, ey),
     pose: (p, prog) => ({ dx: 0, dy: prog < 0.7 ? -1 : 1, rot: 0 }), // swung back, then thrown
-    icon: CLIVUS_ICON32.rope,
+    icon: CLIVUS_ICON32.rope, mark: 'root',
     bot: (p, foe, d, clear) => clear && foe instanceof Player && d < ROPE_RANGE - 12,
   },
   {
@@ -77,7 +77,7 @@ const CLIVUS_AB = [
       drawRing(Math.round(s.x - ex), Math.round(s.y - ey), VAULT_HIT_R, col, 0.4 + 0.4 * closing, closing * 0.4);
     },
     pose: () => ({ dx: 0, dy: 1, rot: 0 }), // crouched to spring
-    icon: CLIVUS_ICON32.vault,
+    icon: CLIVUS_ICON32.vault, mark: 'slow',
     bot: (p, foe, d) => foe instanceof Player && d > 36 && d < VAULT_LEN + 16,
   },
   {
