@@ -107,6 +107,48 @@ function drawSlashes(ex, ey) {
   }
 }
 
+// ---- a key's own look ----
+// A key worth reading is drawn as the thing it is - fire bursting out of
+// the snow, water churning, snow blown flat by a howl - never as one more
+// dotted ring. A landing that names `fx` is drawn by AB_FX_LOOK[fx](f, px, py,
+// now) (registered by the hero's draw file) for its own `life`, and the
+// row's `tele` draws that same thing gathering. The helpers below are the
+// shared pixel pieces those looks are built from.
+const AB_FX_LOOK = {};
+// n points spread evenly over a disc of radius 1 (a sunflower spiral: no rng,
+// the same on every screen), as [x, y, r]
+const fxSpotCache = {};
+function fxSpots(n) {
+  if (fxSpotCache[n]) return fxSpotCache[n];
+  const out = [];
+  for (let i = 0; i < n; i++) {
+    const r = Math.sqrt((i + 0.5) / n), t = i * 2.39996;
+    out.push([Math.cos(t) * r, Math.sin(t) * r, r]);
+  }
+  return (fxSpotCache[n] = out);
+}
+// a flat ellipse of whole pixels, one rect a row
+function fillEllipsePx(cx, cy, rx, ry) {
+  cx = Math.round(cx); cy = Math.round(cy);
+  for (let dy = -ry; dy <= ry; dy++) {
+    const w = Math.round(rx * Math.sqrt(Math.max(0, 1 - (dy * dy) / ((ry + 0.5) * (ry + 0.5)))));
+    if (w > 0) ctx.fillRect(cx - w, cy + dy, w * 2 + 1, 1);
+  }
+}
+// one tongue of flame standing on (x, y), h px tall, w px wide at the foot,
+// licking with phase ph: dark red rim, orange body, a yellow heart
+function drawFlameTongue(x, y, h, w, ph) {
+  x = Math.round(x); y = Math.round(y);
+  if (h < 1) return;
+  for (let c = 0; c < w; c++) {
+    const edge = Math.abs(c - (w - 1) / 2) / Math.max(1, w / 2);
+    const ch = Math.max(1, Math.round(h * (1 - edge * 0.65) + Math.sin(ph + c * 1.7) * 1.2));
+    ctx.fillStyle = '#a8321f'; ctx.fillRect(x - (w >> 1) + c, y - ch, 1, ch);
+    if (ch > 2) { ctx.fillStyle = '#ff7a2e'; ctx.fillRect(x - (w >> 1) + c, y - ch + 1, 1, ch - 1); }
+    if (ch > 4 && edge < 0.5) { ctx.fillStyle = '#ffd95c'; ctx.fillRect(x - (w >> 1) + c, y - Math.round(ch * 0.55), 1, Math.round(ch * 0.4)); }
+  }
+}
+
 function drawAbilityGround(ex, ey, now) {
   // every wind-up's telegraph, live off the caster and drawn for BOTH sides
   // (each row's own `tele`): a line, a ring, a wedge - each in the wind-up
@@ -131,6 +173,8 @@ function drawAbilityGround(ex, ey, now) {
   for (const f of abFx) {
     const px = Math.round(f.x - ex), py = Math.round(f.y - ey);
     if (px < -60 || py < -60 || px > WV_W + 60 || py > WV_H + 60) continue;
+    const look = f.fx && AB_FX_LOOK[f.fx];
+    if (look) { look(f, px, py, now); continue; } // a key with a look of its own (a hero's draw file)
     const prog = f.t / AB_FX_T;
     const alpha = 0.9 * (1 - prog);
     if (f.kind === 'wedge') drawWedge(px, py, f.a, f.r + prog * 3, f.half, f.col, alpha, 1 - prog);

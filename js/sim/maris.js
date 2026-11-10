@@ -28,6 +28,7 @@ const BRACE_NEAR = 110;         // px a rival hero counts from
 const BRACE_PER = 0.06;         // more off for each one near...
 const BRACE_CAP = 0.5;          // ...up to this share
 // E UNDERTOW: a ring of cold water round her
+const TOW_FX_LIFE = 0.6;        // s the whirl's crests take to close in (drawUndertowFx, js/draw/maris.js)
 const UNDERTOW_R = 56;          // px
 const UNDERTOW_T = 1.6;         // s of slow
 // R BREACH: under the snow to a spot, then up through it
@@ -56,7 +57,6 @@ const MARIS_AB = [
     tip: 'TAKE LESS FROM HITS, MORE IF CROWDED',
     blurb: 'BRACE FOR A FEW SECONDS: TAKE LESS FROM EVERY HIT, AND LESS STILL FOR EACH RIVAL HERO NEAR YOU.',
     use: (p) => marisBrace(p),
-    tele: (p, px, py, a, col, closing) => drawRing(px, py + 2, 12, col, 0.45 + 0.4 * closing, closing * 0.5),
     pose: () => ({ dx: 0, dy: 1, rot: 0 }), // set low
     icon: MARIS_ICON32.brace,
     bot: (p, foe, d) => d < BRACE_NEAR && p.hp < p.maxHp * 0.75,
@@ -67,7 +67,7 @@ const MARIS_AB = [
     tip: 'COLD RING. SLOWS, MORE ON ICE',
     blurb: 'A RING OF COLD WATER WELLS UP ROUND YOU. RIVALS INSIDE ARE HURT AND SLOWED, AND SLOWED MUCH MORE ON ICE.',
     use: (p) => marisUndertow(p),
-    tele: (p, px, py, a, col, closing) => drawRing(px, py + 2, UNDERTOW_R, col, 0.45 + 0.4 * closing, closing * 0.5),
+    tele: (p, px, py, a, col, closing, now) => drawUndertowTele(px, py, closing, now), // the water's seams spiralling out (js/draw/maris.js)
     pose: (p, prog) => ({ dx: 0, dy: prog < 0.6 ? 0 : 1, rot: 0 }),
     icon: MARIS_ICON32.undertow,
     bot: (p, foe, d) => d < UNDERTOW_R - 6,
@@ -184,7 +184,7 @@ function marisUndertow(p) {
   }
   for (const s of structsNear(p, p.x, p.y, UNDERTOW_R)) hurtStruct(s, dmg, p);
   if (PRACTICE) abHitDummies(p.x, p.y, UNDERTOW_R, dmg);
-  abFx.push({ kind: 'ring', x: p.x, y: p.y, r: UNDERTOW_R, t: 0, col: '#7cc4e8' });
+  abFx.push({ kind: 'ring', x: p.x, y: p.y, r: UNDERTOW_R, t: 0, col: '#7cc4e8', fx: 'undertow', life: TOW_FX_LIFE });
   burst(p.x, p.y + 2, '#3a6080', 10, 60, 0.5, true);
   burst(p.x, p.y + 2, '#cfeeff', 10, 70, 0.5, true);
   sfxAt('splash', p.x, p.y);

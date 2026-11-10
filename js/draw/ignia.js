@@ -136,3 +136,54 @@ function igniaCrook() {
   return igniaCrookArt;
 }
 HERO_STAVES.crook = { art: igniaCrook, grip: IGNIA_CROOK_GRIP };
+
+// ---- WILDFIRE -----------------------------------------------------------------------
+// Never a ring: the ground under the aim starts to smoulder from its middle
+// out through the wind-up (embers waking in the snow, smoke rising), so the
+// patch that will burn is the patch already burning; then fire bursts up out
+// of every ember, the middle first, and leaves the snow scorched.
+const WILD_SPOTS = 30;
+const WILD_SPREAD = 0.12; // s the burst takes from the middle to the rim
+function drawWildTele(px, py, closing, now) {
+  for (const [sx, sy, r] of fxSpots(WILD_SPOTS)) {
+    if (r > closing * 1.4 + 0.15) continue; // the smoulder spreads out from the middle
+    const x = Math.round(px + sx * WILD_R), y = Math.round(py + sy * WILD_R);
+    ctx.globalAlpha = 0.25 + 0.35 * closing; // the snow going soft and dark round each ember
+    ctx.fillStyle = '#8a5a44';
+    fillEllipsePx(x, y, 1 + Math.round(3 * closing), 1);
+    ctx.globalAlpha = 1;
+    if (closing > 0.5) drawFlameTongue(x, y, 1 + Math.round(5 * (closing - 0.5) / 0.5), 2, now * 14 + sx * 9);
+    else { ctx.fillStyle = Math.floor(now * 9 + r * 20) % 3 ? '#ff7a2e' : '#ffd95c'; ctx.fillRect(x, y - 1, 2, 1); }
+    const w = (now * 1.4 + r * 3.7) % 1; // a wisp of smoke off each ember
+    ctx.globalAlpha = 0.55 * (1 - w);
+    ctx.fillStyle = '#6f7790';
+    ctx.fillRect(x + Math.round(Math.sin(now * 3 + sx * 5) * 1.5), y - 3 - Math.round(w * 10), 1, 1);
+  }
+  ctx.globalAlpha = 1;
+}
+function drawWildFx(f, px, py, now) {
+  const life = f.life || WILD_FX_LIFE, fade = 1 - f.t / life;
+  for (const [sx, sy, r] of fxSpots(WILD_SPOTS)) { // the snow melted to wet earth, lit by the fire, once its flame has gone up
+    if (f.t < r * WILD_SPREAD) continue;
+    const x = px + sx * WILD_R, y = py + sy * WILD_R;
+    ctx.globalAlpha = 0.6 * fade;
+    ctx.fillStyle = '#5a3f36'; fillEllipsePx(x, y, 4, 2);
+    ctx.globalAlpha = 0.5 * fade * fade;
+    ctx.fillStyle = '#ff9a3a'; fillEllipsePx(x, y, 2, 1);
+  }
+  for (const [sx, sy, r] of fxSpots(WILD_SPOTS)) {
+    const u = (f.t - r * WILD_SPREAD) / 0.8; // the middle bursts first
+    if (u < 0 || u > 1) continue;
+    const x = px + sx * WILD_R, y = py + sy * WILD_R;
+    const big = r < 0.4;
+    const h = Math.round((big ? 22 : 15) * (0.65 + 0.6 * Math.abs(Math.sin(sx * 17 + sy * 29))) * Math.pow(Math.sin(Math.PI * Math.min(1, u * 1.3)), 0.5) * (1 - u * 0.4));
+    ctx.globalAlpha = 1;
+    drawFlameTongue(x, y, h, big ? 6 : 4, now * 16 + sx * 11);
+    ctx.fillStyle = '#ffd95c'; // sparks thrown off the top
+    ctx.fillRect(Math.round(x + Math.sin(sx * 13 + u * 4) * 4), Math.round(y - h - u * 14), 1, 1);
+    ctx.fillStyle = '#ff7a2e';
+    ctx.fillRect(Math.round(x - Math.sin(sy * 11 + u * 3) * 3), Math.round(y - h * 0.6 - u * 9), 1, 1);
+  }
+  ctx.globalAlpha = 1;
+}
+AB_FX_LOOK.wildfire = drawWildFx;

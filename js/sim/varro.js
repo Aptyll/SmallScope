@@ -27,6 +27,7 @@ const LEAP_BONUS_AD = 0.2;      // each marked blow's extra (its rank's markDmg)
 // W HOWL: the ring around him; rivals in it are slowed and thrown back, and
 // his wolves run faster for a while
 const HOWL_R = 56;
+const HOWL_FX_LIFE = 0.5;       // s the blown snow lies on the ground (drawHowlFx, js/draw/varro.js)
 const HOWL_KB = 260;            // px/s of shove, out from him
 const HOWL_PACK_T = 3;          // s his wolves run at HOWL_PACK_MUL
 const HOWL_PACK_MUL = 1.3;
@@ -63,7 +64,6 @@ const VARRO_AB = [
     tip: 'RIVALS NEAR ARE THROWN BACK AND SLOWED',
     blurb: 'A HOWL THAT CARRIES. RIVALS NEAR YOU ARE THROWN BACK AND SLOWED, AND YOUR WOLVES RUN FASTER.',
     use: (p) => varroHowl(p),
-    tele: (p, px, py, a, col, closing) => drawRing(px, py + 2, HOWL_R, col, 0.45 + 0.4 * closing, closing * 0.4),
     pose: () => ({ dx: 0, dy: -1, rot: 0 }), // head up
     icon: VARRO_ICON32.howl,
     bot: (p, foe, d) => d < HOWL_R - 10 && (foe instanceof Player || p.hp < p.maxHp * 0.4),
@@ -187,7 +187,7 @@ function varroHowl(p) {
     burst(q.x, unitMidY(q), '#cfd8e8', 5, 35, 0.35, true);
   }
   for (const a of animals) if (a.summon === 'pack' && a.owner === p.id) a.howlT = HOWL_PACK_T;
-  abFx.push({ kind: 'ring', x: p.x, y: p.y, r: HOWL_R, t: 0, col: '#cfd8e8' });
+  abFx.push({ kind: 'ring', x: p.x, y: p.y, r: HOWL_R, t: 0, col: '#cfd8e8', fx: 'howl', life: HOWL_FX_LIFE });
   burst(p.x, p.y - 12, '#eef4fb', 12, 55, 0.5, true);
   sfxAt('howl', p.x, p.y);
 }

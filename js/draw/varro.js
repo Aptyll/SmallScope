@@ -31,3 +31,35 @@ function varroSpears() {
   return varroSpearArt || (varroSpearArt = { flat: bakeBladeArt(VARRO_SPEAR, VARRO_SPEAR_PAL), diag: bakeBladeArt(VARRO_SPEAR_DIAG, VARRO_SPEAR_PAL) });
 }
 HERO_BLADES.spear = { art: varroSpears, hilt: [18, 11], hip: { down: [13, 12], up: [11, 10] }, grip: VARRO_GRIP };
+
+// ---- HOWL -----------------------------------------------------------------------------
+// No ring and no warning on the snow: his head goes up (the row's pose), and
+// the howl lands as the snow round him blown flat - spokes of spray racing
+// out from his feet to the reach, a clod thrown at each tip - so how far it
+// carried is written on the ground for a beat after.
+const HOWL_SPOKES = 16;
+function drawHowlFx(f, px, py, now) {
+  const life = f.life || HOWL_FX_LIFE, u = f.t / life;
+  const go = Math.min(1, u / 0.4 * (2 - u / 0.4)); // out fast, then held
+  ctx.globalAlpha = Math.min(1, 2.4 * (1 - u));
+  for (let i = 0; i < HOWL_SPOKES; i++) {
+    const a = i * Math.PI * 2 / HOWL_SPOKES + Math.sin(i * 7.3) * 0.15;
+    const tip = HOWL_R * go * (0.7 + 0.3 * Math.abs(Math.sin(i * 3.1)));
+    const tail = Math.max(9, tip - 18); // a streak of spray, not a spoke from his feet
+    const ca = Math.cos(a), sa = Math.sin(a), y0 = py + 2;
+    for (let s = tail; s < tip; s += 1) {
+      const x = Math.round(px + ca * s), y = Math.round(y0 + sa * s);
+      const head = s > tip - 7;
+      ctx.fillStyle = '#9fb6d8'; ctx.fillRect(x, y + 1, 1, 1); // its shadow on the snow
+      ctx.fillStyle = head ? '#ffffff' : '#e6eefa'; ctx.fillRect(x, y, head ? 2 : 1, 1);
+    }
+    for (let k = 0; k < 2; k++) { // clods thrown on past it
+      const s = tip + 3 + k * 5 + u * 10;
+      const x = Math.round(px + ca * s + Math.sin(i + k) * 2), y = Math.round(y0 + sa * s);
+      ctx.fillStyle = VARRO_INK; ctx.fillRect(x, y + 1, 2, 1);
+      ctx.fillStyle = '#f4f7ff'; ctx.fillRect(x, y, 2, 1);
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+AB_FX_LOOK.howl = drawHowlFx;
