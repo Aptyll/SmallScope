@@ -247,18 +247,19 @@ function paintLog(g, seg, px, py, ox, oy) {
 // side, a root plate of earth standing up at its foot, a splintered top,
 // three lopped branch stubs, a drift banked on its upper side and its shade
 // off the lower one, so it lies in the snow and has a top and a bottom
-const TRUNK_COL = { rim: '#2a1c10', dark: '#4a3218', mid: '#6b4a2a', light: '#8a6142', wood: '#d9b382', earth: '#3b2c22', root: '#5a4330', snow: '#f4f7ff', snowD: '#d8e4f2', capRim: '#6f86a8', capSide: '#c4d4e8', drift: '#cfdbea' };
+const TRUNK_COL = { rim: '#2a1c10', dark: '#4a3218', mid: '#6b4a2a', light: '#8a6142', wood: '#d9b382', earth: '#3b2c22', root: '#5a4330', snow: '#f4f7ff', snowD: '#d8e4f2', capRim: '#6f86a8', capSide: '#a9bcd9', drift: '#cfdbea' };
 const TRUNK_R = [6.5, 4.5];   // px half-thickness at the foot and at the broken top
 const TRUNK_PLATE = [5, 13];  // px the root plate stands along the line and across it
 const TRUNK_STUBS = [[0.34, -1], [0.55, 1], [0.78, -1]]; // [along, side]: a lopped branch (side -1 the upper)
 const TRUNK_SHADE = 'rgba(40,60,100,0.24)';
 const TRUNK_CREST = 3;         // px of that cap, along the spine, that are its white crest: the line that holds in shade and at night
 const TRUNK_CAP = 0.1;        // how far past the trunk's middle, in half-thicknesses, its snow cap comes down: most of what is seen from above is snow
+const TRUNK_CAP_IN = 0.3;     // of a half-thickness: how far a trunk lying straight up the screen draws its cap in from each side
 function paintTrunk(g, tr, px, py) {
   const vx = tr.x1 - tr.x0, vy = tr.y1 - tr.y0, L = Math.hypot(vx, vy), ux = vx / L, uy = vy / L;
   let nx = -uy, ny = ux;
   if (ny < 0) { nx = -nx; ny = -ny; } // n points down the screen: d < 0 is the trunk's upper side
-  const seed = tr.x0 * 3 + tr.y0;
+  const seed = tr.x0 * 3 + tr.y0, steep = uy * uy;
   for (let y = 0; y < TILE; y++) for (let x = 0; x < TILE; x++) {
     const wx = px + x + 0.5 - tr.x0, wy = py + y + 0.5 - tr.y0;
     const a = wx * ux + wy * uy, d = wx * nx + wy * ny, h = hash2(px + x, py + y);
@@ -276,8 +277,12 @@ function paintTrunk(g, tr, px, py) {
       const stub = TRUNK_STUBS.find(([sf, side]) => Math.abs(a - sf * L) <= 1 && d * side > r - 1 && d * side < r + 4);
       if (stub) c = ad >= r + 3 ? TRUNK_COL.rim : stub[1] < 0 ? TRUNK_COL.snowD : TRUNK_COL.dark;
       else if (ad <= r && a <= end) {
-        const cap = r * TRUNK_CAP + (vnoise(a / 4 + seed, 1.7) - 0.5) * 3; // the snow cap's lower edge
-        if (ad > r - 1) c = d < cap ? TRUNK_COL.capRim : TRUNK_COL.rim; // the snow's own edge is blue, never the bark's dark
+        // the load lies on top of the trunk: on one lying across the screen that is its upper half, on one
+        // lying up the screen its middle, bark showing down both sides
+        const cap = r * (TRUNK_CAP + TRUNK_CAP_IN * steep) + (vnoise(a / 4 + seed, 1.7) - 0.5) * 3 * (1 - steep * 0.6); // the snow cap's lower edge
+        const capTop = -r + r * TRUNK_CAP_IN * steep; // and its upper one
+        if (ad > r - 1.4) c = d < 0 ? (capTop < -r + 1.5 ? TRUNK_COL.capRim : TRUNK_COL.dark) : TRUNK_COL.rim; // an unbroken edge all the way round: the snow's own is blue, never the bark's dark
+        else if (d < capTop) c = h < 0.3 ? TRUNK_COL.light : TRUNK_COL.mid; // the bark of its upper side, lit
         else if (a > end - 2) c = h < 0.3 ? TRUNK_COL.light : TRUNK_COL.wood; // the break's raw wood
         else if (d < cap) c = d > cap - TRUNK_CREST ? TRUNK_COL.snow : h < 0.12 ? TRUNK_COL.snow : TRUNK_COL.capSide; // the load's crest along the spine, white; its far side rounding away in shade
         else if (d < cap + 1.5) c = TRUNK_COL.light;
