@@ -1246,7 +1246,7 @@
   const treeRows = [].concat(...treeSizes.map((frames) => treePals.map((pal) => frames.map((f) => bake(f, pal)))));
   // THE HOUR ON THE CROWNS: the pine's snow and its lightest needles alone, in
   // a warm white, one run of frames per height. Laid over a pine at dawn and
-  // dusk (crownHour, js/draw/ground.js) it lifts the crown's blue-grey snow
+  // dusk (treeArt, js/draw/ground.js) it lifts the crown's blue-grey snow
   // to the open snow's white, so the hour's grade turns both the same rose or
   // gold instead of leaving the forest cold beside warm drifts.
   const TREE_GLOW = { w: '#f6f2ee', S: '#f6f2ee', s: 'rgba(246,242,238,0.7)', m: 'rgba(246,242,238,0.45)', l: 'rgba(246,242,238,0.3)' };

@@ -1336,14 +1336,32 @@ function crownHour() {
   if (crownT !== state.time) { crownT = state.time; crownA = Math.min(1, todWarmth() * CROWN_HOUR); }
   return crownA;
 }
-// the glow over a pine drawn from treeAtlas cell fi at (x, y)
-function drawCrownHour(fi, x, y) {
-  const a = crownHour();
-  if (a < 0.03) return;
-  const A = SPRITES.treeAtlas, row = Math.floor(fi / A.cols);
-  ctx.globalAlpha = a * CROWN_TONE[row % TREE_TONES];
-  ctx.drawImage(SPRITES.treeGlow, (fi % A.cols) * A.fw, Math.floor(row / A.pals) * A.fh, A.fw, A.fh, x, y, A.fw, A.fh);
-  ctx.globalAlpha = 1;
+// The atlas this frame's pines are drawn off: the plain one while the hour is
+// clean, else a copy with the glow already laid over every cell, rebuilt only
+// when the hour moves a step (CROWN_STEPS), so a warm crown costs the frame
+// nothing: the thousand-pine batch is still one blit a pine.
+const CROWN_STEPS = 8;
+let crownCv = null, crownStep = 0;
+function treeArt() {
+  const A = SPRITES.treeAtlas, step = Math.round(crownHour() * CROWN_STEPS);
+  if (!step) return A;
+  if (!crownCv) {
+    crownCv = document.createElement('canvas');
+    crownCv.width = A.width; crownCv.height = A.height;
+    crownCv.fw = A.fw; crownCv.fh = A.fh; crownCv.cols = A.cols; crownCv.pals = A.pals;
+  }
+  if (step !== crownStep) {
+    crownStep = step;
+    const g = crownCv.getContext('2d'), G = SPRITES.treeGlow;
+    g.globalCompositeOperation = 'copy'; g.globalAlpha = 1;
+    g.drawImage(A, 0, 0);
+    g.globalCompositeOperation = 'source-atop';
+    for (let r = 0; r * A.fh < A.height; r++) {
+      g.globalAlpha = step / CROWN_STEPS * CROWN_TONE[r % TREE_TONES];
+      g.drawImage(G, 0, Math.floor(r / A.pals) * A.fh, G.width, A.fh, 0, r * A.fh, G.width, A.fh);
+    }
+  }
+  return crownCv;
 }
 // The nudge that breaks the grid: up to TREE_NUDGE_X px either side of the
 // tile's centre line and TREE_NUDGE_Y up or down. Only the art moves - the

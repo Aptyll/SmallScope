@@ -213,8 +213,7 @@ function drawSceneryObj(d, ox, oy, now, wkO, hovO) {
     const A = SPRITES.treeAtlas, fw = A.fw, fh = A.fh, cx = (fi % A.cols) * fw, cy = Math.floor(fi / A.cols) * fh;
     const drawTree = () => {
       if (o === wkO) drawTargetRim(A, cx, cy, fw, fh, artX, artY, now);
-      drawFrameFlash(A, fi, artX, artY, o.flash);
-      drawCrownHour(fi, artX, artY); // dawn and dusk on its snow (js/draw/ground.js)
+      drawFrameFlash(treeArt(), fi, artX, artY, o.flash); // the atlas, warmed at dawn and dusk (js/draw/ground.js)
     };
     const open = canopyOver(A, cx, cy, fw, fh, artX, artY);
     if (open > 0) drawWindowed(open, artX, artY, fw, fh, drawTree); else drawTree();

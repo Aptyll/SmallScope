@@ -537,7 +537,7 @@ blue-grey band; **C** adds a hue shift by value (shadows toward teal, lights tow
 (`TREE_TONES`, a needle and a snow L shift): the deep is the filtered look itself, the ring inside the edge
 +0.035, the edge +0.07, and the **heart** (forest three tiles each way) drops its snow into shade so a wide wall is one dark mass with a lit rim, the **hollow** is darker again and the **ridge** has needles and snow back in the light (where the deep forest's swell sinks and lifts) — nine pines in ten stand deep, so darkening the deep instead would darken
 the whole forest. Which row a tree wears is decided on its tile at draw time
-([rendering.md](rendering/render-pass-order.md)). `SPRITES.tree` is variant B's deep row. `SPRITES.treeGlow` is the snow and lightest needles alone in a warm white, a row per height: what a crown wears at dawn and dusk (`drawCrownHour`, js/draw/ground.js) so the hour's grade warms it with the drifts.
+([rendering.md](rendering/render-pass-order.md)). `SPRITES.tree` is variant B's deep row. `SPRITES.treeGlow` is the snow and lightest needles alone in a warm white, a row per height: what a crown wears at dawn and dusk (`treeArt`, js/draw/ground.js) so the hour's grade warms it with the drifts.
 
 **The pine stands in three heights** (`TREE_CUTS`/`treeSizes`): the drawn tree, one without its
 middle tier of boughs (30 rows) and one without its bottom tier (26). Each is cut from the tree
