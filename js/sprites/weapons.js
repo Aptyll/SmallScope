@@ -15,6 +15,9 @@ const WEAPON_FWD = { sword: Math.PI, staff: Math.PI };
 // slanted grid of an aimed weapon that has one (SPRITES.weaponDiag: the same
 // weapon drawn pointing down and right, so an aim is eight drawn headings).
 const WEAPON_GRIP = { held: { sword: [20, 11] }, icon: { sword: [10, 5], staff: [2, 6] }, diag: {} };
+// WEAPON_FINE[art] -> { icon, diag }: a shot weapon's own pair drawn at 32 px (`dens` 2) for a body drawn
+// fine, the grips still in world px (shotArt, js/draw/heroes.js); an art with none is doubled there
+const WEAPON_FINE = {};
 (() => {
   // the wood and steel every weapon here is painted in
   const PAL = {
