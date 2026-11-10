@@ -172,7 +172,9 @@ pick (without it the pick flips forever between two walled-in trees).
 
 The **bays** (the barracks, [base building](buildings.md)) jump that queue whenever one is due:
 **one per lane**, each just inside that lane's mouth of the hollow (`baseBaySpot`,
-js/sim/base.js), whose waves walk that lane. They are due the moment its stall stands; `merchNextBay` takes the lanes in `MERCH_BAY_ORDER` (mid, top, bot) and the first with no
+js/sim/base.js), whose waves walk that lane. Worldgen keeps each spot in a clearing (`bayKeeps`:
+`BAY_CLEAR` tiles round the footprint, one more in front, pines only, never a jungle wall's), so a
+bay stands in the open like a tower. They are due the moment its stall stands; `merchNextBay` takes the lanes in `MERCH_BAY_ORDER` (mid, top, bot) and the first with no
 bay standing, and `merchBaySite` the nearest 3×2 placement to its spot whose footprint is dry land
 off the road holding nothing the axe cannot take. Each lane's **first** bay is free
 (`b.bayGift`), so all three go up one after another, about 0:28 to 0:46 of match time on seed 42 and risen by

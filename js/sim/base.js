@@ -37,6 +37,20 @@ function baseGate(team, lane) {
   return lane === 1 ? baseTile(team, BASE_U + BASE_R, 0) : baseTile(team, BASE_SIDE_U, (lane - 1) * BASE_SIDE_S);
 }
 function baseBaySpot(team, lane) { return baseTile(team, BASE_BAYS[lane][0], BASE_BAYS[lane][1]); }
+// where a bay's 3x2 footprint is centred (merchBaySite, js/sim/robots.js),
+// and the clearing round it: BAY_CLEAR tiles of the woods give way round the
+// footprint, one more in front, so the bay stands in the open like a tower
+// (TOWER_CLEAR) instead of half behind the hollow's edge pines
+const BAY_CLEAR = 2;
+function baseBaySite(team, lane) { const p = baseBaySpot(team, lane); return { cx: p.tx - 1, cy: p.ty - 0.5 }; }
+function bayKeeps(tx, ty) {
+  if (ARENA) return false;
+  for (const team of [0, 1]) for (let lane = 0; lane < BASE_BAYS.length; lane++) {
+    const c = baseBaySite(team, lane), ax = Math.round(c.cx), ay = Math.round(c.cy);
+    if (tx >= ax - BAY_CLEAR && tx < ax + 3 + BAY_CLEAR && ty >= ay - BAY_CLEAR && ty <= ay + 2 + BAY_CLEAR) return true;
+  }
+  return false;
+}
 function baseCentre(team) { const u = baseU(team, BASE_U); return { tx: u, ty: WORLD - 1 - u }; }
 function basePerch(team) { const u = baseU(team, PERCH_U); return { u, tx: u, ty: WORLD - 1 - u }; }
 // the u where the road leaves the hollow through its mouth: a side's junction (roadNest)
@@ -62,7 +76,7 @@ function baseRoadEnd(fx, fy) {
   return Math.max(PERCH_U - u, u - (WORLD - 1 - PERCH_U));
 }
 // clear both hollows: whatever worldgen stood there goes (a rock with both of
-// its tiles), and any ice is snow. Runs after placeRoad, before the cables
+// its tiles), and any ice is snow; round each bay the pines go too (bayKeeps). Runs after placeRoad, before the cables
 // and the camps (js/app/boot.js).
 function placeBase() {
   if (ARENA) return;
@@ -74,6 +88,14 @@ function placeBase() {
       const i = idx(tx, ty);
       if (objects[i]) fellScenery(tx, ty);
       if (ground[i] === 1) ground[i] = 0;
+    }
+  }
+  // ...and each bay's clearing: its pines only, never a jungle wall's (treeFells)
+  const R2 = BAY_CLEAR + 3;
+  for (const team of [0, 1]) for (let lane = 0; lane < BASE_BAYS.length; lane++) {
+    const c = baseBaySite(team, lane), ax = Math.round(c.cx), ay = Math.round(c.cy);
+    for (let ty = ay - R2; ty <= ay + R2; ty++) for (let tx = ax - R2; tx <= ax + R2; tx++) {
+      if (inWorld(tx, ty) && bayKeeps(tx, ty) && treeFells(objects[idx(tx, ty)])) objects[idx(tx, ty)] = null;
     }
   }
 }
