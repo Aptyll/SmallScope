@@ -430,6 +430,23 @@ PIN and THE LONG BOLT hold the crossbow on the aim through their wind-up (the ro
 | 3 | **CRANK BACK** | 14/13/12/11/10 s | every rival body within `CRANK_R` of her feet takes `CRANK_DMG` and walks ×`CRANK_SLOW` for `slowT` (1-2 s); she is thrown `CRANK_D` away from her aim (`p.dash = 'crank'`), still facing it |
 | 4 | **THE LONG BOLT** | 110/95/80 s | she kneels for `LONG_WIND` (no walk: `HERO_MOVE`) with the towers' crawling line down her aim, then looses a bolt at `LONG_SPD` for `LONG_RANGE`: it goes through soldiers and beasts (`pierce`) and ends on the first hero (`HERO_SHOT_HIT.longbolt`), who takes `dmg` (180/280/380) and a shove ×`LONG_KB` |
 
+ARCUS, THE FLETCHER — the planted marksman: a longbow quick on the string (a full-draw arrow flies
+about 270 px), and no way out of a dive. His rules live in **[js/sim/arcus.js](../../../js/sim/arcus.js)**
+(`ARCUS_AB`, its `arcus` banner), his pixels in [js/draw/arcus.js](../../../js/draw/arcus.js), his icons
+and looks in [js/sprites/arcus.js](../../../js/sprites/arcus.js). 80 hp, 9 armor, a step slower than a
+walk (`chargeMul` 0.75). His arrows in flight are shots in `arrows` like any other; the ones standing
+in the snow are `arcusShafts`, FULL QUIVER's falling spots `arcusRains` (both in `SAVE_ROOTS` and the
+snapshot's `arcus`). An arrow lands in the snow through `HERO_SHOT_END` (the shot's `hit` when it ends,
+out of life or on what it struck). VOLLEY holds the bow on the aim through its wind-up (`aimHeld`).
+
+| key | name | cd | what it does |
+| --- | --- | --- | --- |
+| P | **WASTE NOTHING** | — | a basic arrow that hits a rival hero, and every arrow of his keys, stands in the snow where it ends (`SHAFT_PAST` beyond a hero it hit) for `SHAFT_LIFE`, at most `SHAFT_MAX` of his at once. Walking within `SHAFT_PICK_R` of one pulls it up: a stack of ×`WASTE_AS` attack speed, up to `WASTE_MAX`, all held `WASTE_T` from the last (`HERO_PASSIVE.wastenothing`, `HERO_STAT`), shown as gold arrows over him (`HERO_OVER`). Only he sees his stacks grow; both sides see the arrows |
+| 1 | **VOLLEY** | 9/8.5/8/7.5/7 s | `VOLLEY_N` arrows in a fan `VOLLEY_HALF` either side of the aim at `VOLLEY_SPD` for `VOLLEY_RANGE`: each first arrow on a body deals `dmg` (40/60/80/100/120), each later arrow of the same volley ×`VOLLEY_MORE` (`HERO_SHOT_HIT.volley`) |
+| 2 | **TWIN NOCK** | 14/13/12/11/10 s | for `TWIN_T` each basic arrow is loosed with a second `TWIN_SIDE` beside it, dealing ×`share` (50/60/70/80/90 %) of the first (`arcusShot`, the passive's `shot`); his stacks over him turn white while it lasts |
+| 3 | **GATHER UP** | 12/11/10/9/8 s | castable only with an arrow of his standing (`ok`). Every one flies back to where he stands at `GATHER_SPD`, through every rival between: each deals `dmg` (30/45/60/75/90), and a body struck by `GATHER_N` of one call walks ×`GATHER_SLOW` for `GATHER_SLOW_T`. A dotted line runs from each arrow to him through the wind-up (`tele`), so the rival standing on one sees it coming |
+| 4 | **FULL QUIVER** | 100/85/70 s | a spot up to `RAIN_RANGE` away takes `RAIN_N` arrows over `RAIN_T`, spread inside `RAIN_R` on a sunflower spiral (no rng), each seen falling for `RAIN_FALL` with its shadow growing. Each landing deals `dmg` (40/60/80) within `RAIN_HIT` and walks a rival ×`RAIN_SLOW` for `RAIN_SLOW_T`, hits buildings too, and stands in the snow for him to pull up. A ring marks the spot for both sides while arrows are still coming |
+
 Bots play every hero through each row's `bot(p, foe, d, clear)` (`abBotKey`, asked by the ladder's
 ability block in js/ai/ai-ladder.js); a row's `botAim(p, foe)` turns the aim to a point of its own for that cast, held through the wind-up until it lands (AURA's step away, SALVIA's heals, LUCERNA's lantern). Every hero's four rows carry one: a load check under `CLASS_AB` throws for a hero without four
 keys that each have a `bot`.

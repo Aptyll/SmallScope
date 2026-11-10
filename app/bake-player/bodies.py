@@ -1,6 +1,6 @@
 # Each hero's looks on the doll (doll.py), all built on HeroBase (fur hood with goggles,
 # a trailing scarf, skate blades)
-# (ARMATOS: standard, oath; FORTIVA: unbroken, coif; BELLA: general, traitor; IGNIA: hearth, wanderer; AURA: light; SALVIA: hood, tent; LUCERNA: lamp, dusk; HIEMS: scholar, frost; RUPES: quarry, cellar; NIX: snowblind; VARRO: wolfkept, whitepack; FABER: clockmaker, foreman; MARIS: diver, orca; VELOX: canal, night; SAGITTA: siege, tower; LIGNUM: feller, forest; CLIVUS: guide). Their sizes are measured off the
+# (ARMATOS: standard, oath; FORTIVA: unbroken, coif; BELLA: general, traitor; IGNIA: hearth, wanderer; AURA: light; SALVIA: hood, tent; LUCERNA: lamp, dusk; HIEMS: scholar, frost; RUPES: quarry, cellar; NIX: snowblind; VARRO: wolfkept, whitepack; FABER: clockmaker, foreman; MARIS: diver, orca; VELOX: canal, night; SAGITTA: siege, tower; LIGNUM: feller, forest; CLIVUS: guide; ARCUS: fletcher). Their sizes are measured off the
 # hand-drawn 16 px frames in each hero's js/sprites/<hero>.js, so the doll's idle lands on those
 # frames pixel for pixel and the run and the roll it paints wear the same body.
 #
@@ -877,6 +877,32 @@ class Feller(Standard):
         cv.blob(cam, hc + Rh @ v3(1.4, 0, -2.0), Rh, (1.2, 2.0, 1.7), 'beard', 'beard', bias=0.6)
 
 
+class Fletcher(Standard):
+    """ARCUS as WILLOW CUTTER (his default look) and FIRST SNOW (his skin: the same doll in
+    other paint): a wide felt hat over short brown hair, a short beard, his side's coat;
+    Armatos's frame, boots"""
+    ARM_MAT, MITT_MAT = 'coat', 'skin'
+    MARKS = [(-1.5, 0.9, 'e'), (1.5, 0.9, 'e')]
+
+    @staticmethod
+    def face_region(n, q):
+        """under the hat: the face, the hair round it"""
+        return np.where(q[2] > 0.3, 'cap', np.where((q[0] > 0.2) & (np.abs(q[1]) < 0.75) & (q[2] > -0.95), 'skin', 'hair'))
+
+    def head(self, cv, cam, hc, Rh, pose, snap):
+        cv.blob(cam, hc, Rh, self.HEAD_R, 'head', 'hair', p=self.HEAD_P, region=self.face_region)
+        self.face_marks(cv, cam, hc, Rh)
+        cv.blob(cam, hc + Rh @ v3(1.5, 0, -2.6), Rh, (1.2, 2.2, 1.3), 'beard', 'hair', bias=0.6)
+        cv.blob(cam, hc + Rh @ v3(0, 0, 1.1), Rh, (3.4, 3.6, 0.45), 'brim', 'cap', bias=0.5)
+
+    def coat(self, cv, cam, U, R):
+        cv.blob(cam, U(v3(0, 0, Z(6.1))), R, (2.75, 3.05, Z(2.05)), 'coat', 'coat', p=2.2)
+        cv.blob(cam, U(v3(0, 0, Z(4.0))), R, (2.6, 3.1, Z(0.6)), 'hem', 'boot', bias=-0.3)
+
+    def ball_head(self, cv, cam, hc, Rh):
+        cv.blob(cam, hc, Rh, (2.6, 2.85, 2.5), 'head', 'cap', p=self.HEAD_P)
+
+
 class Forest(Feller):
     """LIGNUM as LAST FOREST (the first skin): a pine-green hood and shoulders over a
     bark-brown mantle, his side's colour down the front"""
@@ -935,7 +961,7 @@ BODIES = {'standard': Standard(), 'oath': Oath(),
           'quarry': Quarry(), 'cellar': Cellar(),
           'wolfkept': Wolfkept(), 'whitepack': Whitepack(),
           'horn': Horn(), 'column': Column(),
-          'snowblind': Snowblind(), 'falconer': Falconer(),
+          'snowblind': Snowblind(), 'fletcher': Fletcher(), 'falconer': Falconer(),
           'clockmaker': Clockmaker(), 'foreman': Foreman(),
           'canal': Canal(), 'night': Night(),
           'diver': Diver(), 'orca': Orca(),

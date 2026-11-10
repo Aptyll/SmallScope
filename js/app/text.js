@@ -107,6 +107,7 @@ const TEXT = {
   'tip.shield': 'SHIELD',
   'tip.as': 'ATTACK SPEED',
   'tip.shot': 'DAMAGE X',
+  'tip.share': 'SECOND ARROW DAMAGE',
   'tip.basicAttack': 'BASIC ATTACK',
   'tip.fullCharge': 'FULL CHARGE',
   'tip.betweenHits': 'BETWEEN HITS',

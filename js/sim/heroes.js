@@ -62,6 +62,9 @@
 // - HERO_SHOT_HIT[id]: fn(a, t, nx, ny) once a shot with `a.hit = id` has landed its
 //   blow on body t (the arrow loop, js/sim/sim.js): SAGITTA's pin against a tree.
 //   Clearing a.pierce there ends a piercing shot on that body.
+// - HERO_SHOT_END[id]: fn(a, k) once a shot with `a.hit = id` is gone (the arrow loop):
+//   k is what ended it, 'life' for the end of its flight, else the contact's kind
+//   ('wall', 'player', 'robot', 'animal' ...): ARCUS's arrows left standing in the snow.
 // An ability row may also carry recast(p) (true: the key pressed again is
 // its second half, castSlam), ok(p) (false: the press is refused) and aimHeld
 // (its wind-up holds the weapon on the aim: castAims, js/draw/bodies.js).
@@ -87,6 +90,7 @@ const HERO_WRECK = [];
 const HERO_SWIM = [];
 const HERO_SOLID = [];
 const HERO_SHOT_HIT = {};
+const HERO_SHOT_END = {};
 
 // the ability whose use() is running right now, so a blow it lands says so
 // (o.ab, stamped by hurtUnit, js/sim/actions.js); '' between casts. Never state: set and cleared
@@ -137,3 +141,4 @@ function heroWreck(b, src) { for (const f of HERO_WRECK) f(b, src); }
 function heroSolid(tx, ty, e) { for (const f of HERO_SOLID) if (f(tx, ty, e)) return true; return false; }
 function heroSwim(p) { for (const f of HERO_SWIM) if (f(p)) return true; return false; }
 function heroShotHit(a, t, nx, ny) { const f = a.hit && HERO_SHOT_HIT[a.hit]; if (f) f(a, t, nx, ny); }
+function heroShotEnd(a, k) { const f = a.hit && HERO_SHOT_END[a.hit]; if (f) f(a, k); }

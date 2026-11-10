@@ -335,6 +335,15 @@ app/bake-player/bodies.py; she runs on her drawn frames (`run: 'drawn'`). Her HE
 basic attack's `art` (`SPRITES.weaponArt.arbalest`, prod left): held level facing a side and on the
 aim while drawn, shouldered prod-up facing down or up (`HERO_CARRY`, js/draw/sagitta.js).
 
+ARCUS has two looks (`ARCUS_SKINS`, js/sprites/arcus.js): WILLOW CUTTER (free: a brimmed felt cap
+with a white feather over short brown hair and a beard, a leather jerkin and a quiver on his back)
+and FIRST SNOW (rare, 200 coins: the same cut in pale wool, its `pal` repainting the cap, jerkin and
+feather), both on ARMATOS's frame. The cut is C off arcus-round1.png in the project files. His doll
+is `Fletcher` in app/bake-player/bodies.py (motion `fletcher`); he runs on his drawn frames
+(`run: 'drawn'`). His WILLOW LONGBOW is his basic attack's `art` (`SPRITES.weaponArt.longbow`): held
+level facing a side, carried upright in his leading hand facing down or up (`HERO_CARRY`,
+js/draw/arcus.js).
+
 FABER has two looks (`FABER_SKINS`, js/sprites/faber.js): CLOCKMAKER (free) and WORKS FOREMAN
 (rare, 200 coins), both on ARMATOS's frame. `FABER_PAL` is `ARM_PAL` with the leather cap and apron
 `a`/`A`, the goggle lenses `C`, the moustache `U` and the hard hat's lamp `S`. They are A and B off

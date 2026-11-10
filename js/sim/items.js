@@ -473,6 +473,7 @@ const BOT_BUILDS = {
   VELOX: ['quick', 'horn', 'feathers', 'frostline', 'bite', 'sunstone'], // a marksman's, attack speed first: more throws, more KEEP MOVING stacks
   CLIVUS: ['fang', 'hobnail', 'beartooth', 'stonehide', 'oakheart', 'bearskin'], // a fighter's: the bite and the legs to reach a rival, then health to stay on them
   SAGITTA: ['beartooth', 'horn', 'feathers', 'auger', 'maul', 'sunstone'], // damage first: every bolt is slow, so each one has to land like a hammer
+  ARCUS: ['horn', 'quick', 'frostline', 'feathers', 'sunstone', 'cloak'], // attack speed on attack speed: his arrows in the snow stack on top, so every item is more shots
 };
 for (const c of CLASSES) if (!BOT_BUILDS[c.name]) throw new Error('items.js: ' + c.name + ' has no BOT_BUILDS row');
 function botBuild(p) { return BOT_BUILDS[CLASSES[p.cls].name]; }

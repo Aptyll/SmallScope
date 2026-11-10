@@ -189,6 +189,7 @@ function snapSingles() {
   s.bucina = [pack(bucinaEchoes, 0), pack(bucinaCalls, 0)]; // BUCINA's echoes and horn calls (js/sim/bucina.js)
   s.hiems = [pack(hiemsGlazes, 0), pack(hiemsStorms, 0)]; // HIEMS's ice and blizzards (js/sim/hiems.js)
   s.velox = [pack(veloxStones, 0), pack(veloxLanes, 0)]; // VELOX's skipping stones and ice lanes (js/sim/velox.js)
+  s.arcus = [pack(arcusShafts, 0), pack(arcusRains, 0)]; // ARCUS's arrows in the snow and his falling quiver (js/sim/arcus.js)
   s.nix = [pack(nixShards, 0), pack(nixClouds, 0)]; // NIX's shards and clouds (js/sim/nix.js)
   s.faber = [pack(faberParts, 0), pack(faberArcs, 0), pack(faberBolts, 0), pack(faberSprings, 0)]; // FABER's parts, jumps, bolts and traps (js/sim/faber.js; his machines ride `robots`)
   s.falco = [pack(falcoKnives, 0)]; // FALCO's knives (js/sim/falco.js; his hawk out rides `robots`)
@@ -251,6 +252,7 @@ function snapApplySingles(s) {
   if (s.bucina) [bucinaEchoes, bucinaCalls].forEach((L, i) => { L.length = 0; for (const w of unpack(s.bucina[i])) L.push(w); });
   if (s.hiems) [hiemsGlazes, hiemsStorms].forEach((L, i) => { L.length = 0; for (const w of unpack(s.hiems[i])) L.push(w); });
   if (s.velox) [veloxStones, veloxLanes].forEach((L, i) => { L.length = 0; for (const w of unpack(s.velox[i])) L.push(w); });
+  if (s.arcus) [arcusShafts, arcusRains].forEach((L, i) => { L.length = 0; for (const w of unpack(s.arcus[i])) L.push(w); });
   if (s.nix) [nixShards, nixClouds].forEach((L, i) => { L.length = 0; for (const w of unpack(s.nix[i])) L.push(w); });
   if (s.faber) [faberParts, faberArcs, faberBolts, faberSprings].forEach((L, i) => { L.length = 0; for (const w of unpack(s.faber[i])) L.push(w); });
   if (s.falco) [falcoKnives].forEach((L, i) => { L.length = 0; for (const w of unpack(s.falco[i])) L.push(w); });
@@ -877,7 +879,7 @@ function snapBlank() {
   lucernaHooks.length = 0; lucernaLanterns.length = 0; lucernaCircles.length = 0;
   bucinaEchoes.length = 0; bucinaCalls.length = 0;
   hiemsGlazes.length = 0; hiemsStorms.length = 0;
-  veloxStones.length = 0; veloxLanes.length = 0;
+  veloxStones.length = 0; veloxLanes.length = 0; arcusShafts.length = 0; arcusRains.length = 0;
   iceBreaks.length = 0; pads.length = 0;
   nixShards.length = 0; nixClouds.length = 0;
   faberParts.length = 0; faberArcs.length = 0; faberBolts.length = 0; faberSprings.length = 0;
@@ -952,7 +954,7 @@ function snapQuantize() {
   };
   walk(players); for (const k in SNAP_KINDS) walk(SNAP_KINDS[k]());
   if (state.drop) walk(state.drop.eagles);
-  walk(objects); walk(guards); walk(brushfires); walk(auraStars); walk(orcaSpouts); walk(auraOrbs); walk(auraCurtains); walk(salviaBundles); walk(salviaDrops); walk(salviaThaws); walk(lucernaHooks); walk(lucernaLanterns); walk(lucernaCircles); walk(bucinaEchoes); walk(bucinaCalls); walk(hiemsGlazes); walk(hiemsStorms); walk(faberParts); walk(faberArcs); walk(faberBolts); walk(faberSprings); walk(nixShards); walk(nixClouds); walk(falcoKnives); walk(lignumAxes); walk(lignumLogs); walk(clivusRopes); walk(clivusRings); walk(veloxStones); walk(veloxLanes); walk(pads); walk(state.end); walk(state.eagleCine);
+  walk(objects); walk(guards); walk(brushfires); walk(auraStars); walk(orcaSpouts); walk(auraOrbs); walk(auraCurtains); walk(salviaBundles); walk(salviaDrops); walk(salviaThaws); walk(lucernaHooks); walk(lucernaLanterns); walk(lucernaCircles); walk(bucinaEchoes); walk(bucinaCalls); walk(hiemsGlazes); walk(hiemsStorms); walk(faberParts); walk(faberArcs); walk(faberBolts); walk(faberSprings); walk(nixShards); walk(nixClouds); walk(falcoKnives); walk(lignumAxes); walk(lignumLogs); walk(clivusRopes); walk(clivusRings); walk(veloxStones); walk(veloxLanes); walk(arcusShafts); walk(arcusRains); walk(pads); walk(state.end); walk(state.eagleCine);
 }
 // One echo: quantize, frame, snapshot, blank, apply, frame; the pixels that differ,
 // the frame's own noise (two renders of the same state, for anything that
