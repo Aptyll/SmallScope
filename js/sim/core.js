@@ -425,6 +425,7 @@ function tallyHit(u, amount) {
   if (!u.tallyN || (state.tick - u.tallyTick) * TICK_DT > TALLY_HOLD) u.tallyN = 0;
   u.tallyN += n;
   u.tallyTick = state.tick;
+  u.tallyLast = n; // ...and this blow on its own: a big one draws its hit (js/draw/hitfx.js)
 }
 
 // A word that floats up off a hit (a staged target's `word`, hitPTarget,

@@ -127,7 +127,6 @@ function gatherDraws(ox, oy, tx0, ty0, tx1, ty1, now) {
     }
   }
   trackDowns(now); // a body that just dropped goes down in place (the `going down` banner, js/draw/bodies.js)
-  trackHits(now); // a body that just took a big hit (the `hit feedback` banner, js/draw/hitfx.js)
   for (const p of players) {
     if (goingDown(p)) { if (fogShown(p, now)) draws.push({ y: p.y + 8, down: p }); continue; }
     if (p.dead || inAir(p) || !fogShown(p, now)) continue; // airborne players draw in drawDropAir; one in the fog not at all (js/draw/fog.js)

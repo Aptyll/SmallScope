@@ -1079,8 +1079,7 @@ function damagePlayer(p, dmg, dx, dy, src, cause, crit, kb, o) {
   if (!dot) {
     const k = o && o.ab && !o.basic ? HIT_KB * (kb === undefined ? 1 : kb) : 0;
     p.kbx = dx * k; p.kby = dy * k;
-    const n = Math.hypot(dx, dy) || 1;
-    p.hitNx = Math.round(dx / n * 8) / 8; p.hitNy = Math.round(dy / n * 8) / 8;
+    hitAim(p, dx, dy);
   }
   breakRecall(p); // a hit ends the walk home - that is what makes the channel a channel
   // a burn shakes and shouts once, when it lights (igniteUnit) - not four

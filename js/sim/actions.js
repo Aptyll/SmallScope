@@ -693,6 +693,12 @@ function structsInCone(src, x, y, a, r, half) {
 // anyway - a player's HIT_KB, a soldier's ROBOT_KB, an animal's own curve - and
 // it is what a basic attack's `kb` rides in on (CLASSES[c].attack, js/sim/attack.js),
 // so one number on an attack means the same thing landed on any of the three.
+// which way the last blow came, kept on the body (hitNx/hitNy) for its
+// spark and recoil (js/draw/hitfx.js): a player's is set in damagePlayer
+function hitAim(e, nx, ny) {
+  const n = Math.hypot(nx, ny) || 1;
+  e.hitNx = Math.round(nx / n * 8) / 8; e.hitNy = Math.round(ny / n * 8) / 8;
+}
 function hurtUnit(e, dmg, nx, ny, src, o) {
   if (!unitAlive(e)) return;
   o = o || {};
@@ -710,9 +716,11 @@ function hurtUnit(e, dmg, nx, ny, src, o) {
   if (e instanceof Player) {
     damagePlayer(e, dmg, nx, ny, src, o.cause || null, o.crit, km, o);
   } else if (isAnimalUnit(e)) {
+    hitAim(e, nx, ny);
     if (src instanceof Player) src.dmgBeast += Math.min(dmg, Math.max(0, e.hp)); // the post-game record (js/ui/lobby.js)
     hurtAnimal(e, dmg, nx, ny, (o.kb === undefined ? 30 : o.kb) * km, src ? src.id : undefined);
   } else {
+    hitAim(e, nx, ny);
     hurtRobot(e, dmg, nx, ny, src);
     // the chassis takes its own shove inside hurtRobot; anything that names
     // one of its own, or scales the one it has, writes over it here

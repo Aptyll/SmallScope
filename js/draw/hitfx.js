@@ -7,13 +7,14 @@
 // never blood: the blow reads by white and motion (the flash is the
 // body's own, drawSpriteFlash).
 //
-// It reads only what the sim already keeps and the snapshot already
-// carries: a body's running damage total and the tick of its last hit
-// (tallyHit, js/sim/core.js), and which way the blow came (a player's
-// hitNx/hitNy, anything else's knockback kbx/kby). So a client sees
-// the same hit the host does, and nothing here can change the match. The
-// hit-stop is a held DRAWING: the sim never pauses, the body is drawn where
-// it stood and then slides to where it really is.
+// It is drawn from what the snapshot carries and nothing else, with no
+// memory of its own: the last blow's size and tick (tallyLast/tallyTick,
+// tallyHit, js/sim/core.js), which way it came (hitNx/hitNy: damagePlayer,
+// hurtUnit) and how the body is moving. So a client, a full snapshot and
+// the echo harness (DBG.netEcho) all draw the same hit the host does, and
+// nothing here can change the match. The hit-stop is a held DRAWING: the
+// sim never pauses, the body is drawn where it was when struck (its speed
+// played back) and then slides to where it really is.
 //
 // A hit is big when one blow takes HIT_BIG of the body's health: about
 // the top fifth of hero hits (a key, a crit, a tower bolt), not every
@@ -22,87 +23,73 @@
 const HIT_BIG = { P: 0.12, A: 0.2, R: 0.34 }; // share of max health one blow must take: players, beasts, soldiers
 const HIT_STOP_T = 0.07;    // s the struck body is held where it was hit
 const HIT_CATCH_T = 0.06;   // s it then takes to slide to where it really is
-const HIT_STOP_MAX = 6;     // px the held drawing may lag the body (a blink past it lets go)
+const HIT_STOP_MAX = 6;     // px the held drawing may lag the body
 const HIT_RECOIL_T = 0.16;  // s the body sits 1 px back along the blow
-const HIT_AGAIN_T = 0.12;   // s before another big hit on the same body starts over
 const HIT_SPARK_T = [0.04, 0.09, 0.14]; // s each spark frame ends: the star, the streaks, the dots
 const HIT_PUFF_T = 0.3;     // s the snow puff lasts
 const HIT_INK = '#1b2233';  // the spark's rim, so white reads on snow
 const HIT_PUFF_RIM = '#4f6288'; // a snow clump's rim: softer than ink, still dark on snow
 const HIT_WHITE = '#ffffff', HIT_PALE = '#cfe6ff', HIT_SNOW_SHADE = '#94a9c8'; // the spark's heart and edge; a snow clump's underside
-
-const hitSeen = new WeakMap(); // body -> its total and hit tick as of the last frame
-const hitFx = new WeakMap();   // body -> the big hit on show { t0, x, y, nx, ny, seed }
-const hitLive = new Set();     // the bodies with a big hit on show
 const HIT_NONE = { x: 0, y: 0 };
 const hitOff = { x: 0, y: 0 };
+const hitCur = { nx: 0, ny: 0, seed: 0 }; // the hit being drawn (drawHitSpark/drawHitPuff read it)
 
-// once a frame, before anything is drawn: which bodies took a big hit since
-// the last frame. A body seen for the first time only starts its record, so
-// coming out of a load or the fog never fires an old hit.
-function trackHits(now) {
-  for (const p of players) hitWatch(p, 'P', now);
-  for (const a of animals) hitWatch(a, 'A', now);
-  for (const b of robots) if (!b.merchant) hitWatch(b, 'R', now);
+// how long ago a body took a big hit, in s, or -1 when it has none on show.
+// The sim's tick, plus on a client the time since the host's last word
+// landed, so the spark plays smoothly between 15 Hz snapshots
+function hitAge(u, now) {
+  if (u.merchant || !(u.maxHp > 0) || !(u.tallyLast >= HIT_BIG[u instanceof Player ? 'P' : u.bot ? 'R' : 'A'] * u.maxHp)) return -1;
+  const sub = NET.role === 'client' && NET.easeAt ? Math.max(0, Math.min(SNAP_EVERY * TICK_DT, now - NET.easeAt / 1000)) : 0;
+  const t = (state.tick - u.tallyTick) * TICK_DT + sub;
+  return t >= 0 && t <= HIT_PUFF_T ? t : -1;
 }
-function hitWatch(u, kind, now) {
-  const n = u.tallyN || 0, tick = u.tallyTick, was = hitSeen.get(u);
-  if (!was) { hitSeen.set(u, { n, tick }); return; }
-  if (tick === was.tick && n === was.n) return;
-  // a hit after TALLY_HOLD of quiet starts a new total: all of it is this blow
-  const fresh = tick !== was.tick && (n < was.n || (tick - was.tick) * TICK_DT > TALLY_HOLD);
-  const dealt = fresh ? n : n - was.n;
-  was.n = n; was.tick = tick;
-  if (!(u.maxHp > 0) || dealt < HIT_BIG[kind] * u.maxHp) return;
-  const cur = hitFx.get(u);
-  if (cur && now - cur.t0 < HIT_AGAIN_T) return;
-  // which way the blow came: a player keeps it (hitNx/hitNy, damagePlayer),
-  // since an attack no longer shoves one; anything else is read off its shove
-  const k = Math.hypot(u.kbx || 0, u.kby || 0);
-  const nx = kind === 'P' ? u.hitNx || 0 : k > 1 ? u.kbx / k : 0, ny = kind === 'P' ? u.hitNy || 0 : k > 1 ? u.kby / k : 0;
-  hitFx.set(u, { t0: now, x: u.x, y: u.y, nx, ny, seed: tick | 0 });
-  hitLive.add(u);
+function hitCurOf(u) {
+  hitCur.nx = u.hitNx || 0; hitCur.ny = u.hitNy || 0; hitCur.seed = u.tallyTick | 0;
+  return hitCur;
 }
 
 // where a struck body is drawn off its true spot right now, in whole px:
-// held at the hit, sliding back, plus the 1 px recoil along the blow
+// held where it was when struck (its walk and shove since, played back),
+// sliding back, plus the 1 px recoil along the blow
 function hitNudge(u, now) {
-  const h = hitFx.get(u);
-  if (!h) return HIT_NONE;
-  const t = now - h.t0;
-  if (t >= HIT_STOP_T + HIT_CATCH_T && t >= HIT_RECOIL_T) return HIT_NONE;
+  const t = hitAge(u, now);
+  if (t < 0 || (t >= HIT_STOP_T + HIT_CATCH_T && t >= HIT_RECOIL_T)) return HIT_NONE;
   let dx = 0, dy = 0;
-  const lx = h.x - u.x, ly = h.y - u.y;
-  if (t < HIT_STOP_T + HIT_CATCH_T && Math.abs(lx) <= HIT_STOP_MAX * 3 && Math.abs(ly) <= HIT_STOP_MAX * 3) {
-    const hold = t < HIT_STOP_T ? 1 : 1 - (t - HIT_STOP_T) / HIT_CATCH_T;
-    dx = Math.max(-HIT_STOP_MAX, Math.min(HIT_STOP_MAX, lx)) * hold;
-    dy = Math.max(-HIT_STOP_MAX, Math.min(HIT_STOP_MAX, ly)) * hold;
+  if (t < HIT_STOP_T + HIT_CATCH_T) {
+    const held = t < HIT_STOP_T ? t : HIT_STOP_T * (1 - (t - HIT_STOP_T) / HIT_CATCH_T);
+    dx = -Math.max(-HIT_STOP_MAX, Math.min(HIT_STOP_MAX, ((u.vx || 0) + (u.kbx || 0)) * held));
+    dy = -Math.max(-HIT_STOP_MAX, Math.min(HIT_STOP_MAX, ((u.vy || 0) + (u.kby || 0)) * held));
   }
-  if (t < HIT_RECOIL_T) { dx += h.nx; dy += h.ny; }
+  if (t < HIT_RECOIL_T) { dx += u.hitNx || 0; dy += u.hitNy || 0; }
   hitOff.x = Math.round(dx); hitOff.y = Math.round(dy);
   return hitOff;
 }
 
+function hitBodies(fn) {
+  for (const p of players) fn(p);
+  for (const a of animals) fn(a);
+  for (const b of robots) fn(b);
+}
 // the snow puffs, on the ground under the bodies (render(), before the
 // sorted pass), so a body stands in its own snow and the clumps show round it
 function drawHitPuffs(ex, ey, now) {
-  for (const u of hitLive) {
-    const h = hitFx.get(u), t = h ? now - h.t0 : 1e9;
-    if (t < 0 || t > HIT_PUFF_T || !hitShown(u, now) || u.alt || u.fallT > 0) continue;
-    drawHitPuff(h, Math.round(h.x - ex), Math.round(h.y + (u instanceof Player ? 3 : 2) - ey), t);
-  }
+  hitBodies((u) => {
+    const t = hitAge(u, now);
+    if (t < 0 || !hitShown(u, now) || u.alt || u.fallT > 0) return;
+    const n = hitNudge(u, now);
+    drawHitPuff(hitCurOf(u), Math.round(u.x + n.x - ex), Math.round(u.y + n.y + (u instanceof Player ? 3 : 2) - ey), t);
+  });
 }
-// the sparks, over the bodies (render(), after the particles); a hit that
-// has run its course leaves the list here
+// the sparks, over the bodies (render(), after the particles)
 function drawHitFx(ex, ey, now) {
-  for (const u of hitLive) {
-    const h = hitFx.get(u), t = h ? now - h.t0 : 1e9;
-    if (t > HIT_PUFF_T || t < 0) { hitLive.delete(u); continue; }
-    if (t >= HIT_SPARK_T[2] || !hitShown(u, now)) continue;
-    drawHitSpark(h, Math.round(h.x - h.nx * 6 - ex), Math.round(h.y - (u.alt || 0) - 6 - h.ny * 2 - ey), t);
-  }
+  hitBodies((u) => {
+    const t = hitAge(u, now);
+    if (t < 0 || t >= HIT_SPARK_T[2] || !hitShown(u, now)) return;
+    const n = hitNudge(u, now), h = hitCurOf(u);
+    drawHitSpark(h, Math.round(u.x + n.x - h.nx * 6 - ex), Math.round(u.y + n.y - (u.alt || 0) - 6 - h.ny * 2 - ey), t);
+  });
 }
-function hitShown(u, now) { return fogShown(u, now) && !(u instanceof Player && (inAir(u) || u.zip >= 0)); }
+function hitShown(u, now) { return fogShown(u, now) && !(u instanceof Player && (!u.active || inAir(u) || u.zip >= 0)); }
 
 // a pixel list drawn with a 1 px rim round all of it (ink unless named), then its colours
 function hitInked(pts, rim) {
