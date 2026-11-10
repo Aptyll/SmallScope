@@ -797,9 +797,9 @@ class Foreman(Coif):
 
 
 class Falconer(Standard):
-    """FALCO as FALCONER (his default look; LAST HAWK is the same cut in another paint): a
-    close leather cap over brown hair, leather straps over the side's coat, the big glove.
-    Armatos's frame, legs and boots."""
+    """FALCO's doll, used only for his roll (HUNTSMAN and LAST HAWK run as their drawn bodies):
+    a close cap in his hat's colour over brown hair, his side's coat. Armatos's frame, legs
+    and boots."""
     ARM_MAT, MITT_MAT = 'cloak', 'cloak'
     MARKS = [(-1.5, 0.9, 'e'), (1.5, 0.9, 'e')]
 
