@@ -137,6 +137,7 @@ function paintGroundTile(g, tx, ty) {
           g.fillStyle = '#b6c2d4';
           g.fillRect(px + ((h * 700) | 0) % 12 + 2, py + ((h * 900) | 0) % 12 + 2, 2, 1);
         }
+        paintTrails(g, tx, ty); // a beast's prints between the camps (js/draw/trails.js)
         // a lake's edge reaching over onto this snow, and the lip of its bank
         paintSnowShore(g, tx, ty, px, py);
         // the drifts in the lee of what stands, a lake's downwind bank
@@ -487,6 +488,7 @@ function paintRoadOverlay(g, tx, ty, px, py, onIce) {
 function prepGround() {
   bakeLakes();
   bakeDressing(); // the drifts and the lakes' dressing (js/draw/lakes.js)
+  bakeTrails(); // (js/draw/trails.js)
   noteCasts();
   groundIdleArm();
 }
@@ -894,6 +896,14 @@ const SNOW_LOOKS = [
 const SNOW_REGION = 22 * TILE;       // world px per step of the region noise
 const SNOW_CUT = [0.41, 0.6];        // region noise thresholds between the looks (~thirds of the map)
 const SNOW_BLEND = 0.05;             // half-width of the blend across each threshold
+// THE WIND'S RIDGES: here and there over the open snow (a low noise, SNOW_RIDGE_FIELD, says where) the wind has
+// cut long thin ridges lying along it, like the snow it sweeps over the river: a crest one tone up, the line in its
+// lee one tone down, no outline. They thin out toward the edge of their patch and keep off a deep drift.
+const SNOW_RIDGE_FIELD = 11 * TILE;  // world px per step of the noise that says where the ridges lie
+const SNOW_RIDGE_CUT = 0.56, SNOW_RIDGE_FULL = 0.66; // that noise where they begin, and where they stand at full
+const SNOW_RIDGE_LONG = 34, SNOW_RIDGE_WIDE = 4; // px per step of a ridge's own noise along and across the wind
+const SNOW_RIDGE = 0.72, SNOW_RIDGE_THIN = 1.6;  // the noise a ridge lies over, and how fast that rises toward a patch's edge
+const snowRidge = new Uint8Array((TILE + 1) * (TILE + 1));
 const BAYER4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map((v) => v / 16 - 0.47);
 
 // drift height at a world pixel, for swells sc times the fine look's size
@@ -971,6 +981,17 @@ function snowTile(px, py) {
   }
   const deep = driftCell && driftCell[idx(px / TILE, py / TILE)]; // a deep drift reaches this tile (js/sim/depth.js)
   if (deep) deepTileOpen(px, py); // its depths, each worked out once (js/draw/depth.js)
+  // the wind's ridges (SNOW_RIDGE): which of this tile's pixels, and the pixel up-left of each, lie on one
+  const rg = (x, y) => vnoise(x / SNOW_RIDGE_FIELD + 31.7, y / SNOW_RIDGE_FIELD + 12.3);
+  let ridged = !deep && !woody(px / TILE, py / TILE) && rg(px + TILE / 2, py + TILE / 2) > SNOW_RIDGE_CUT - 0.04, r00 = 0, r10 = 0, r01 = 0, r11 = 0; // (under a pine nothing of it shows)
+  if (ridged) { r00 = rg(px, py); r10 = rg(px + TILE, py); r01 = rg(px, py + TILE); r11 = rg(px + TILE, py + TILE); ridged = Math.max(r00, r10, r01, r11) > SNOW_RIDGE_CUT; }
+  if (ridged) {
+    for (let j = -1; j < TILE; j++) for (let i = -1; i < TILE; i++) {
+      const x = px + i, y = py + j, u = x * SNOW_C + y * SNOW_S, v = -x * SNOW_S + y * SNOW_C;
+      const m = r00 + (r10 - r00) * (i / TILE) + (r01 - r00) * (j / TILE) + (r00 - r10 - r01 + r11) * (i / TILE) * (j / TILE);
+      snowRidge[(j + 1) * (TILE + 1) + i + 1] = m > SNOW_RIDGE_CUT && vnoise(u / SNOW_RIDGE_LONG + 5.5, v / SNOW_RIDGE_WIDE + 8.5) > SNOW_RIDGE + Math.max(0, SNOW_RIDGE_FULL - m) * SNOW_RIDGE_THIN ? 1 : 0;
+    }
+  }
   for (let j = 0; j < TILE; j++) {
     const v = j / TILE, qa = q00 + (q01 - q00) * v, qb = q10 + (q11 - q10) * v, y = py + j, fy = y / 2 - Y0;
     for (let i = 0; i < TILE; i++) {
@@ -991,7 +1012,8 @@ function snowTile(px, py) {
           d += w * (L.lee ? Math.min(0, s) + 1 : s);
         }
       }
-      const t = Math.round(SNOW_BASE + d);
+      let t = Math.round(SNOW_BASE + d);
+      if (ridged) { const k = (j + 1) * (TILE + 1) + i + 1; t += snowRidge[k] ? 1 : snowRidge[k - TILE - 2] ? -1 : 0; } // a ridge's crest a tone up, the line in its lee a tone down
       const tone = t >= 3 ? (hash2(x * 3 + 7, y * 5 + 11) > SNOW_GLINT_P ? 4 : 3) : t < 0 ? 0 : t;
       snowTone[j * TILE + i] = deep ? deepTone(x, y, tone) : tone;
     }
