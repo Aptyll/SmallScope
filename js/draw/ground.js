@@ -1415,7 +1415,7 @@ function treeCell(tx, ty, col) {
   const tone = treeTone(tx, ty);
   return col + (treeSize(tx, ty, tone) * SPRITES.treeAtlas.pals + v * TREE_TONES + tone) * SPRITES.treeAtlas.cols;
 }
-// THE HOUR ON THE CROWNS. The hour's grade (todGrade, js/draw/light.js) is one
+// THE HOUR ON THE CROWNS (and the moon: CROWN_MOON). The hour's grade (todGrade, js/draw/light.js) is one
 // multiply over the frame, and it turns white drifts rose or gold while a
 // pine's blue-grey snow barely moves, so at dusk the forest stood cold beside
 // warm snow. While the hour has a colour each pine wears SPRITES.treeGlow over
@@ -1424,9 +1424,13 @@ function treeCell(tx, ty, col) {
 // warms crown and drift alike.
 const CROWN_HOUR = 2.6;                          // how hard the hour's colour pulls the crowns
 const CROWN_TONE = [1, 0.85, 0.65, 0.4, 0.25, 1]; // the share each treeTone takes
-let crownT = -1, crownA = 0;
+const CROWN_MOON = 0.7;                         // ...and the moon, at full dark: the same lift, which the night's blue turns silver
+let crownT = -1, crownD = -1, crownA = 0;
 function crownHour() {
-  if (crownT !== state.time) { crownT = state.time; crownA = Math.min(1, todWarmth() * CROWN_HOUR); }
+  if (crownT !== state.time || crownD !== state.darkness) {
+    crownT = state.time; crownD = state.darkness;
+    crownA = Math.min(1, Math.max(todWarmth() * CROWN_HOUR, ARENA ? 0 : state.darkness * CROWN_MOON));
+  }
   return crownA;
 }
 // The atlas this frame's pines are drawn off: the plain one while the hour is
