@@ -58,6 +58,16 @@ function cisternBlocks(tx, ty) { return cistOn && inWorld(tx, ty) && (cistTiles[
 function cisternTouches(tx, ty) { return cistOn && inWorld(tx, ty) && (cistTiles[idx(tx, ty)] & CIST_ANY) !== 0; }
 function cisternCuts(i, k) { return cistOn && ((cistCuts[i] >> k) & 1) === 1; } // tile index i, NAV_DX/NAV_DY's k
 
+// THE APRONS: the road widens to a gate's pillars where it passes through
+// one, so its stones run whole from pillar face to pillar face across each
+// sill (CIST_GH, CIST_SILL) instead of its ragged edge leaving snow between
+// them, and narrow back to the ragged road over CIST_APRON tiles either side.
+// Signed tiles from the apron's edge, negative inside (laneDist, world.js).
+const CIST_APRON = 2.5;
+function cisternApron(fx, fy) {
+  const a = Math.abs(creekP(fx, fy)), t = Math.max(0, CIST_SILL[0] - a, a - CIST_SILL[1]) / CIST_APRON;
+  return t >= 1 ? 99 : Math.abs(roadOffS(fx, fy)) - CIST_GH * (1 - 0.4 * t * t);
+}
 // px from a world point to the nearest stone (Infinity off the field)
 function cisternDist(x, y) {
   const f = cistField;

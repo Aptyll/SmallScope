@@ -5,7 +5,7 @@
 // its own small bar (HERO_MACHINE draw: drawHawkOut); his thrown knives in flight,
 // the basic attack's (HERO_SHOTS) and KNIFE FAN's; over a rival his hawk marked, a
 // gold talon notch his own side sees (HERO_MARK); up in the sky on STOOP his body is
-// gone and only its shadow and a falling dart are drawn (HERO_BODY_DRAW).
+// gone: his hawk carries him over to the marked hero, their shadow under them (HERO_BODY_DRAW).
 
 const FC_INK = '#2e2440', FC_WING = '#a8794a', FC_WING_D = '#6e4a28', FC_BELLY = '#d9ad72', FC_GOLD = '#f2cc6a', FC_STEEL = '#c8d2e4';
 
@@ -47,6 +47,7 @@ function drawFalcoPerch(p, ax, ay, now, front) {
 HERO_BODY_FX.push(drawFalcoPerch);
 function drawFalcoAir(ex, ey, now) {
   for (const k of falcoKnives) if (fogShown(k, now)) drawThrownKnife(Math.round(k.x - ex), Math.round(k.y - ey) - BOW_Y, k.nx, k.ny, now);
+  for (const p of players) if (p.falcoSkyT > 0 && fogShown(p, now)) drawFalcoStoop(p, Math.round(p.x - 8 - ex), Math.round(p.y - 12 - ey), now); // the body's own box corner
 }
 
 // the hawk out (HERO_MACHINE.falcoHawk's draw, in the body pass where its side sees it):
@@ -90,20 +91,38 @@ HERO_OVER.push({
 });
 
 // ---- STOOP ------------------------------------------------------------------------
-// up in the sky: no body on the snow, only its shadow shrinking as he climbs and
-// swelling as he falls, and a dark dart high over it
-function drawFalcoSky(p, px, py, now) {
-  if (!(p.falcoSkyT > 0)) return false;
+// up in the sky: no body on the snow. His hawk carries him up off his spot and over to the hero it marked (where
+// this screen can see that hero), wings beating on the climb and folded on the fall, his knife out under him on
+// the way down; their shadow runs along the snow beneath, small at the top of the arc and wide as he lands
+function drawFalcoSky(p) { return p.falcoSkyT > 0; } // HERO_BODY_DRAW: nothing where he stood
+function drawFalcoStoop(p, px, py, now) { // HERO_AIR, over the field: the body pass keeps a body to its own box
   const k = 1 - p.falcoSkyT / STOOP_UP; // 0 as he leaves, 1 as he lands
-  const up = Math.sin(Math.PI * k);
+  const up = Math.sin(Math.PI * k), e = k * k * (3 - 2 * k), fall = k > 0.5;
+  const q = p.falcoStoopId >= 0 ? players[p.falcoStoopId] : null, seen = q && unitAlive(q) && fogShown(q, now);
+  const gx = Math.round(px + 8 + (seen ? (q.x - p.x) * e : 0)), gy = Math.round(py + 15 + (seen ? (q.y - p.y) * e : 0)); // the snow under him
+  const s = seen && q.x < p.x ? -1 : 1, y = gy - 13 - Math.round(60 * up), tm = TEAMS[skin(p.team)];
+  // the shadow: the bird's spread wings high up, closing to a body's width as he comes down
+  const r = Math.round(9 - 4 * up);
   ctx.globalAlpha = 0.3; ctx.fillStyle = FC_INK;
-  const r = Math.round(5 - 3 * up);
-  ctx.fillRect(px + 8 - r, py + 15, r * 2, 1); ctx.fillRect(px + 9 - r, py + 14, r * 2 - 2, 1);
+  ctx.fillRect(gx - r, gy, r * 2 + 1, 1); ctx.fillRect(gx - r + 2, gy - 1, r * 2 - 3, 1); ctx.fillRect(gx - r + 2, gy + 1, r * 2 - 3, 1); ctx.fillRect(gx - 1, gy - 2, 3, 5);
   ctx.globalAlpha = 1;
-  const y = Math.round(py + 4 - 60 * up);
-  ctx.fillStyle = FC_INK; ctx.fillRect(px + 7, y, 3, 6);
-  ctx.fillStyle = FC_WING; ctx.fillRect(px + 8, y + 1, 1, 4);
-  return true;
+  if (fall) for (let j = 0; j < 3; j++) { // the air he falls through, behind him
+    ctx.fillStyle = j ? '#7f98bc' : '#4f6288'; ctx.fillRect(gx - 3 + j * 3, y - 14 - j * 2, 1, 5 - j);
+  }
+  drawHawk(gx, y - 4, fall || Math.floor(now * 14) % 2, s < 0); // the hawk over him: beating up, folded down
+  // him under it: hat, face, coat in his side's colour, boots, all inked
+  ctx.fillStyle = FC_INK; ctx.fillRect(gx - 3, y + 1, 7, 9); ctx.fillRect(gx - 2, y + 10, 5, 1);
+  ctx.fillStyle = '#56784e'; ctx.fillRect(gx - 2, y + 2, 5, 1); ctx.fillRect(gx - 1, y + 1, 3, 1);
+  ctx.fillStyle = '#3c5a3a'; ctx.fillRect(gx - 2, y + 3, 5, 1);
+  ctx.fillStyle = '#e8b890'; ctx.fillRect(gx - 1 + (s > 0 ? 1 : 0), y + 4, 2, 1);
+  ctx.fillStyle = tm.mark; ctx.fillRect(gx - 2, y + 5, 5, 3);
+  ctx.fillStyle = tm.coatD; ctx.fillRect(gx - 2, y + 7, 5, 1);
+  ctx.fillStyle = '#5a4030'; ctx.fillRect(gx - 2, y + 8, 2, 2); ctx.fillRect(gx + 1, y + 8, 2, 2);
+  if (fall) { // the knife leads the fall
+    ctx.fillStyle = FC_INK; ctx.fillRect(gx + s * 4 - 1, y + 5, 3, 8);
+    ctx.fillStyle = FC_GOLD; ctx.fillRect(gx + s * 4, y + 6, 1, 1);
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(gx + s * 4, y + 7, 1, 5);
+  }
 }
 
 // ---- the keys' own looks -------------------------------------------------------------
