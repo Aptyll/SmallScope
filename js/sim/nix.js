@@ -23,6 +23,7 @@ const SHARD_BACK = 300;         // px/s home
 const SHARD_R = 6;              // px round it a body is struck
 const SHARD_CATCH = 12;         // px from her it is caught
 const SHARD_REFUND = 0.4;       // share of the wait a catch gives back
+const WHITE_FX_LIFE = 0.4;      // s WHITEOUT's strike shows (drawn: AB_FX_LOOK.white, js/draw/nix.js)
 // W SNOW CLOUD: a cloud of snow powder thrown down at her feet. Inside it she
 // is hidden from a side unless one of its heroes or soldiers stands in it too;
 // a blow struck from inside shows her for a moment.
@@ -55,7 +56,7 @@ const NIX_AB = [
     tip: 'THROW A SHARD. CATCH IT TO THROW SOONER',
     blurb: 'THROW A SHARD OF ICE DOWN A LINE. THE FIRST RIVAL IT HITS TAKES THE BLOW, AND THE SHARD FLIES BACK TO YOU. CATCH IT AND ITS COOLDOWN IS SHORTER.',
     use: (p) => nixShard(p),
-    tele: (p, px, py, a, col, closing, now, ex, ey) => drawTeleLine(p.x, p.y, Math.cos(a), Math.sin(a), teleLen(p.x, p.y, Math.cos(a), Math.sin(a), SHARD_LEN), col, 0.5 + 0.45 * closing, now, ex, ey),
+    tele: (p, px, py, a, col, closing, now, ex, ey) => drawShardTele(p, a, closing, ex, ey), // frost creeping down its line (js/draw/nix.js)
     pose: (p, prog) => ({ dx: 0, dy: prog < 0.6 ? -1 : 1, rot: 0 }), // the arm back, then the throw
     icon: NIX_ICON32.shard,
     bot: (p, foe, d, clear) => clear && d > 20 && d < SHARD_LEN - 6,
@@ -296,7 +297,7 @@ function nixWhiteStrike(p) {
   hurtUnit(q, abDmg(p, 'whiteout', abRk(p, 'whiteout', 'dmg')) + Math.round(statOf(p, 'dmg') * WHITE_AD), nx, ny, p, { kb: 60, ab: 'whiteout', crit: true });
   if (p.nixStrikeOnce) { p.nixStrikeId = q.id; p.nixResetT = WHITE_RESET; }
   p.slashT = SLASH_T; p.slashA = Math.atan2(ny, nx); p.slashHalf = 0.9;
-  abFx.push({ kind: 'wedge', x: p.x, y: p.y - 2, a: Math.atan2(ny, nx), r: 20, half: 0.6, t: 0, col: '#ffffff' });
+  abFx.push({ kind: 'wedge', x: p.x, y: p.y - 2, a: Math.atan2(ny, nx), r: 20, half: 0.6, t: 0, col: '#ffffff', fx: 'white', life: WHITE_FX_LIFE });
   burst(q.x, unitMidY(q), '#ffffff', 14, 60, 0.45, true);
   sfxAt('break_', q.x, q.y);
 }
