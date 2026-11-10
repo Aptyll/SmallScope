@@ -92,7 +92,8 @@ const REED_PAL = { root: '#6b5f47', blade: '#a8955f', lit: '#d6c48c', tip: '#fff
 const REED_STEP = 7;   // px between reeds on the grid
 const REED_JIT = 5;    // px either way a reed wanders off its grid point
 const REED_IN = 0.03;  // depth past DEPTH_DEEP a reed's foot needs: none on the rim's own line
-const REED_GAP = 0.27; // the share of a stand's inside left as open drift, in patches (never on its rim)
+const REED_GAP = 0.27; // the noise under which a stand's inside is left as open drift (never on its rim)
+const REED_GLADE = 9;  // px across one of those openings
 const REED_RIM = 0.14; // depth past DEPTH_DEEP inside which the stand is whole: the rim says where the brush is
 const REED_FADE = 16;  // px from the viewed hero's feet the reeds thin...
 const REED_SEE = 0.3;  // ...to this alpha
@@ -143,8 +144,9 @@ function reedsOf(D) {
     const x = Math.round(gx + (hash2(gx, gy) - 0.5) * REED_JIT), y = Math.round(gy + (hash2(gy + 9, gx + 3) - 0.5) * REED_JIT);
     const dd = driftDepth(D, x / TILE, y / TILE);
     if (dd < DEPTH_DEEP + REED_IN) continue;
-    // inside the rim the stand opens in patches: a slow noise, so the straw stands in clumps
-    if (dd > DEPTH_DEEP + REED_RIM && vnoise(x / 19 + 5.5, y / 15 + 2.5) < REED_GAP) continue;
+    // inside the rim the stand opens in a few small glades, REED_GLADE px across: a noise
+    // finer than the patch, so the middle is clumps and openings, never one bare floor in a wreath
+    if (dd > DEPTH_DEEP + REED_RIM && vnoise(x / REED_GLADE + 5.5, y / (REED_GLADE * 0.8) + 2.5) < REED_GAP) continue;
     out.push({ x, y, v: (hash2(x * 3, y * 7) * REED_VARS) | 0 });
   }
   out.sort((a, b) => a.y - b.y);
