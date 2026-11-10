@@ -28,6 +28,7 @@ const PARRY_T = 0.75;           // s the stance holds
 const PARRY_CUT = 0.75;         // share of that blow the parry takes off
 const PARRY_REACH = 56;         // px the riposte reaches (a shot from further is only turned)
 const PARRY_STUN = 0.9;
+const RIPOSTE_FX_LIFE = 0.35;   // s its thrust shows (drawn: AB_FX_LOOK.riposte, js/draw/bella.js)
 // E OUTMANEUVER: slip through a rival body near the aim, cut it, mark it;
 // her next basic attack on the mark hits harder
 const OUT_RANGE = 72;           // px from her to the body she slips through
@@ -47,6 +48,7 @@ const DUEL_MS = 1.3;            // walk toward them x1.3
 const FLURRY_REACH = 64;        // px the key again can close (a short lunge in)
 const FLURRY_N = 3, FLURRY_GAP = 0.12; // three strikes, this far apart
 const FLURRY_DMG = 9;
+const FLURRY_FX_LIFE = 0.25;    // s each strike's cut shows (AB_FX_LOOK.flurry)
 const FINISH_MISSING = 0.3;     // ...plus this share of the life they are missing
 
 // ---- the keys ---------------------------------------------------------------
@@ -60,7 +62,6 @@ const BELLA_AB = [
     tip: 'DASH AND CUT. A HERO HIT CUTS THE WAIT',
     blurb: 'DASH A SHORT LINE AND CUT EVERY RIVAL IN THE PATH. HITTING A HERO GIVES BACK MOST OF THE COOLDOWN.',
     use: (p) => bellaLunge(p),
-    tele: (p, px, py, a, col, closing, now, ex, ey) => drawTeleLine(p.x, p.y, Math.cos(a), Math.sin(a), teleLen(p.x, p.y, Math.cos(a), Math.sin(a), LUNGE_LEN), col, 0.5 + 0.45 * closing, now, ex, ey),
     pose: (p, prog) => ({ dx: 0, dy: prog < 0.6 ? 1 : 0, rot: 0.18 * (p.dir === 'left' ? -1 : 1) }), // low, coiled
     icon: BELLA_ICON32.firstcut,
     bot: (p, foe, d, clear) => clear && d > 14 && d < LUNGE_LEN + 4,
@@ -234,7 +235,7 @@ function bellaRiposte(p) {
   hurtUnit(q, abDmg(p, 'parry', abRk(p, 'parry', 'dmg')), nx, ny, p, { kb: 60, ab: 'parry' });
   if (!q.dead) stunUnit(q, PARRY_STUN, p);
   p.slashT = SLASH_T; p.slashA = Math.atan2(ny, nx); p.slashHalf = 0.9; // the blade answers through the arc
-  abFx.push({ kind: 'line', x: p.x, y: p.y - 2, a: p.slashA, r: d, half: 3, t: 0, col: '#ffd95c' });
+  abFx.push({ kind: 'line', x: p.x, y: p.y - 2, a: p.slashA, r: d, half: 3, t: 0, col: '#ffd95c', fx: 'riposte', life: RIPOSTE_FX_LIFE });
   burst(q.x, unitMidY(q), '#ffd95c', 10, 55, 0.45, true);
   sfxAt('hit', q.x, q.y);
 }
@@ -312,7 +313,7 @@ function bellaStrike(p) {
   faceToward(p, nx, ny, true);
   hurtUnit(q, dmg, nx, ny, p, { kb: last ? 90 : 0, kbMul: last ? 1 : 0, ab: 'gambit', crit: last }); // (held in place until the finish throws them)
   p.slashT = SLASH_T; p.slashA = Math.atan2(ny, nx) + (p.flurryN % 2 ? 0.5 : -0.5); p.slashHalf = 0.8;
-  abFx.push({ kind: 'wedge', x: p.x, y: p.y - 2, a: Math.atan2(ny, nx), r: d + 6, half: last ? 0.6 : 0.35, t: 0, col: last ? '#ffd95c' : '#eef4fb' });
+  abFx.push({ kind: 'wedge', x: p.x, y: p.y - 2, a: Math.atan2(ny, nx), r: d + 6, half: last ? 0.6 : 0.35, t: 0, col: last ? '#ffd95c' : '#eef4fb', fx: 'flurry', life: FLURRY_FX_LIFE, n: p.flurryN });
   burst(q.x, unitMidY(q), last ? '#ffd95c' : '#eef4fb', last ? 12 : 6, last ? 60 : 45, 0.45, true);
   sfxAt(last ? 'break_' : 'hit', q.x, q.y);
 }
