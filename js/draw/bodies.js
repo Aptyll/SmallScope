@@ -271,6 +271,7 @@ function drawHeroRing(p, cx, cy) {
 // shoulder and leaves the chest open (the side's colour stays seen); facing away it is one
 // mantle across the back. It thins at the hem through the buff's last share, so a rival's
 // is read as fresh or nearly spent. In the 16 px cell, like WARM CLOAK (js/draw/salvia.js).
+const RUFF_MOTES = 4; // motes of its light at a full buff
 const RUFF_FUR = '#2c2533', RUFF_LIT = '#4b3f57', RUFF_INK = '#141a2c', RUFF_LATE = 0.25; // fur, its lit tufts, the rim, and the share left when it starts to thin
 const RUFF_ROWS = { // [y, x0, x1] per facing, top row first; the last row is the tufted hem
   front: [[9, 2, 5], [10, 1, 4], [9, 10, 13], [10, 11, 14]],
@@ -297,13 +298,23 @@ function drawBearRuff(p, ax, ay, now) {
       put(x, y + 1, RUFF_INK);
     }
   }
+  // its light: a few motes of the sheen lifting off the fur and fading, beside the head,
+  // never above it - the glance that says "buffed" at play zoom
+  const m = Math.max(1, Math.ceil(RUFF_MOTES * Math.max(share, 0.25)));
+  for (let i = 0; i < m; i++) {
+    const u = (now * 0.8 + i / RUFF_MOTES + p.id * 0.13) % 1, x = [1, 14, 3, 12][i % 4], y = Math.round(9 - u * 7);
+    ctx.globalAlpha = 1 - u * u;
+    ctx.fillStyle = sheen; ctx.fillRect(ax + x, ay + y, u < 0.5 ? 2 : 1, u < 0.5 ? 2 : 1);
+    if (u < 0.5) { ctx.fillStyle = '#ffffff'; ctx.fillRect(ax + x, ay + y, 1, 1); }
+  }
+  ctx.globalAlpha = 1;
 }
 // THE ORCA BUFF, worn (p.pushT): the body comes out of the orca's pool wet. The clothes over
 // the shoulders and chest are a value darker, soaked, and short runs of water drip off the
 // hem and the hands to dark wet spots at the feet; more while the buff is fresh, fewer as it
 // runs out. Never on or beside the face (on a rival they read as tears).
-const DRIP_N = 6, DRIP_T = 0.5, DRIP_COL = '#bfeeff', DRIP_DARK = '#2c5478', WET = 'rgba(16,34,72,0.3)';
-const DRIP_FROM = [[2, 11], [13, 11], [4, 13], [11, 13], [6, 14], [9, 14]]; // [x, y] in the cell: the hands, then the hem
+const DRIP_N = 3, DRIP_T = 0.9, DRIP_COL = '#bfeeff', DRIP_DARK = '#2c5478', WET = 'rgba(16,34,72,0.3)';
+const DRIP_FROM = [[2, 11], [12, 11], [6, 14]]; // [x, y] in the cell: the hands, then the hem
 const WET_ROWS = [8, 12]; // the cell rows the soaked clothes cover (shoulders to the waist)
 function drawOrcaDrips(p, ax, ay, now, spr, sx, sy) {
   if (spr && !(spr.dens > 1)) { // the soak: every inked px of the body in those rows, a value darker
@@ -314,12 +325,16 @@ function drawOrcaDrips(p, ax, ay, now, spr, sx, sy) {
       for (let i = 0; i < w; i++) if (m[j * w + i]) ctx.fillRect(sx + i, ay + y, 1, 1);
     }
   }
-  const share = Math.min(1, p.pushT / ORCA_PUSH_T), n = Math.max(2, Math.ceil(DRIP_N * share));
+  const share = Math.min(1, p.pushT / ORCA_PUSH_T), n = Math.max(1, Math.ceil(DRIP_N * share));
   for (let i = 0; i < n; i++) {
     const [x, y0] = DRIP_FROM[i], u = (now / DRIP_T + i * 0.41 + p.id * 0.23) % 1;
     const y = y0 + Math.round(u * u * (15 - y0)); // gravity: slow off the cloth, quick to the snow
-    if (u < 0.8) { ctx.fillStyle = DRIP_COL; ctx.fillRect(ax + x, ay + y, 1, 2); }
-    else { ctx.fillStyle = DRIP_DARK; ctx.fillRect(ax + x - 1, ay + 16, 3, 1); } // the wet spot it lands as
+    if (u < 0.8) { ctx.fillStyle = DRIP_COL; ctx.fillRect(ax + x, ay + y, 2, 2); ctx.fillStyle = DRIP_DARK; ctx.fillRect(ax + x, ay + y + 2, 2, 1); }
+    else { // it lands: a dark wet spot and two flecks thrown out of it
+      const k = u < 0.9 ? 1 : 2;
+      ctx.fillStyle = DRIP_DARK; ctx.fillRect(ax + x - 1, ay + 16, 4, 1);
+      ctx.fillStyle = DRIP_COL; ctx.fillRect(ax + x - k, ay + 15 - k, 1, 1); ctx.fillRect(ax + x + 1 + k, ay + 15 - k, 1, 1);
+    }
   }
 }
 
