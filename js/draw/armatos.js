@@ -249,5 +249,29 @@ function drawGuardFx(f, px, py, now) {
   ctx.globalAlpha = 1;
 }
 AB_FX_LOOK.guard = drawGuardFx;
+// HOLD THE LINE, braced (shieldT, js/sim/abilities.js): THE OLD GUARD's legion shield at his own size, in his
+// side's colour with a steel rim and a gold boss, set between him and the aim. Three set frames, never a turned
+// one: side-on a slice of its face bowed toward the aim, toward the camera its whole face across his legs, and
+// aimed away it stands beyond him, its wooden back drawn behind his body so its top and rim show past his head
+// and shoulders. The rim goes gold while the bash is primed. Never over his face.
+const HOLD_SHIELD = {
+  side: ['..oo..', '.oRRo.', '.oRTRo', 'oRtTRo', 'oRtTTR', 'oRtTTR', 'oRtyTR', 'oRtyTR', 'oRtTTR', 'oRtTTR', 'oRtTRo', '.oRTRo', '.oRRo.', '..oo..'],
+  front: ['.ooooooooo.', 'oRRRRRRRRRo', 'oRTTTTTTTRo', 'oRTTTTTTtRo', 'oRTTTTTTtRo', 'oRTTyyTTtRo', 'oRTTyYTTtRo', 'oRTTTTTTtRo', 'oRTTTTTTtRo', 'orTTTTTTtro', '.orrrrrrro.', '..ooooooo..'],
+  back: ['..ooooooooo..', '.oRRRRRRRRRo.', 'oRWWWWWWWWWRo', 'oRWWWWWWWWWRo', 'oRwwwwwwwwwRo', 'oRWWWWWWWWWRo', 'oRWWWWWWWWWRo', 'oRWWWWWWWWWRo', 'oRwwwwwwwwwRo', 'oRWWWWWWWWWRo', 'orWWWWWWWWWro', '.orrrrrrrrro.', '..ooooooooo..'],
+};
+function drawHoldShield(p, px, py, now, front) {
+  if (!(p.shieldT > 0)) return;
+  const c = Math.cos(p.shieldA), sn = Math.sin(p.shieldA), tm = TEAMS[skin(p.team)], side = Math.abs(c) > 0.5;
+  const kind = side ? 'side' : sn > 0 ? 'front' : 'back';
+  if ((kind !== 'back') !== front) return; // aimed away, the shield is beyond him: under the body
+  const pal = { o: '#242a3a', R: p.holdHit ? '#ffd95c' : '#c8d2e4', r: p.holdHit ? STD_GOLD_D : '#8b93a8', T: tm.mark, t: tm.coatD, y: STD_GOLD, Y: STD_GOLD_D, W: '#8a623e', w: '#6b4a30' };
+  const rows = HOLD_SHIELD[kind], w = rows[0].length;
+  const x0 = side ? (c > 0 ? px + 11 : px + 5 - w) : px + 8 - (w >> 1), y0 = side ? py + 3 + Math.round(sn * 3) : sn > 0 ? py + 9 : py - 1;
+  for (let r = 0; r < rows.length; r++) for (let i = 0; i < w; i++) {
+    const ch = rows[r][side && c < 0 ? w - 1 - i : i];
+    if (ch !== '.') { ctx.fillStyle = pal[ch]; ctx.fillRect(x0 + i, y0 + r, 1, 1); }
+  }
+}
+HERO_BODY_FX.push(drawHoldShield);
 HERO_GROUND.push(drawGuards);
 HERO_BODY_FX.push(drawHeroBack);

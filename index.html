@@ -21,7 +21,12 @@
     image-rendering: pixelated;
     image-rendering: crisp-edges;
   }
-  #game { position: relative; z-index: 1; background: #0d1524; -webkit-user-select: none; user-select: none; }
+  /* 100vw x 100vh until fitCanvas (js/app/canvas.js) sizes it: the boot's dark ground covers the window, not a small box in the middle */
+  #game { position: relative; z-index: 1; background: #0d1524; width: 100vw; height: 100vh; -webkit-user-select: none; user-select: none; }
+  /* the boot mark: the logo from the page's first paint, where the title will
+     stand it, through the seconds the scripts and the world take. The script
+     under it sets its top and scale; the first frame takes it down (js/app/boot.js) */
+  #bootmark { position: fixed; z-index: 3; left: 50%; top: 0; transform-origin: 50% 0; image-rendering: pixelated; pointer-events: none; }
   /* the replay window's frame, at device resolution over the game canvas's
      bottom-left corner: the game canvas has too few pixels there to hold it */
   #replay { position: fixed; z-index: 2; display: none; pointer-events: none; }
@@ -33,6 +38,24 @@
 <canvas id="bars"></canvas>
 <canvas id="game" width="640" height="360"></canvas>
 <canvas id="replay"></canvas>
+<!-- js/baked/logo.png is written by app/bake-logo.js beside logodata.js: an <img> the page shows and no canvas draws, so it taints nothing -->
+<img id="bootmark" src="js/baked/logo.png" alt="">
+<script>
+// The boot mark stands exactly where the title's logo will: fitCanvas's pick
+// of the scale (TARGET_ROWS and the footprint floor, js/app/canvas.js) and
+// LOGO_Y (js/ui/menu.js), worked out here because this runs before the first
+// paint and every script below runs after it. If those change, change this.
+(function () {
+  var dpr = window.devicePixelRatio || 1, W = Math.round(innerWidth * dpr), H = Math.round(innerHeight * dpr);
+  var dev = Math.max(1, Math.round(H / 360));
+  while (dev > 1 && (W / dev < 320 || H / dev < 240)) dev--;
+  var s = dev / dpr, vh = Math.ceil(H / dev), vw = Math.min(Math.ceil(W / dev), Math.ceil(vh * 16 / 9));
+  var top = (innerHeight - vh * s) / 2 + 12 * s;
+  var nudge = vw % 2 ? s / 2 : 0; // the title rounds the logo's x to a whole view px: half a px right in a view an odd number wide (the logo's width is even)
+  var el = document.getElementById('bootmark');
+  el.style.transform = 'translate(calc(-50% + ' + nudge + 'px), ' + top + 'px) scale(' + s + ')';
+})();
+</script>
 <!-- every script is `defer`: still run in this order, after the page is parsed.
      The CSP <meta> above turns off Chrome's look-ahead fetch, so without defer
      each file waited for the one before it to download and run (one round

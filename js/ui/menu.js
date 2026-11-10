@@ -35,7 +35,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.888';
+const PATCH_TXT = 'PATCH 0.893';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -44,6 +44,11 @@ const PATCH_TXT = 'PATCH 0.888';
 const LOGO_IMG = new Image();
 LOGO_IMG.src = window.LOGO_PNG || '';
 const LOGO_Y = 12;
+// index.html's boot mark has stood the logo here since the page's first paint
+// (it works LOGO_Y and the view's scale out for itself): the first title has
+// its logo at rest, with no drop-in, and the valley fades up under it
+let logoStood = !!document.getElementById('bootmark');
+const LOGO_DAWN = 0.5; // s that fade takes
 // PATCH_TXT prints bottom-right of the title screen; click it for the notes.
 // one sentence per patch, newest first - the biggest change only, in plain english.
 // The number counts patches: 0.391 is the 391st, each patch is 0.001 more, and the
@@ -51,6 +56,11 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.893', 'NIGHT ON THE MID RING DRAWS FOUR TIMES FASTER'],
+  ['0.892', 'ARMATOS\'S HOLD THE LINE RAISES A REAL SHIELD IN HIS SIDE\'S COLOUR, ITS RIM GOLD WHEN THE BASH IS PRIMED.'],
+  ['0.891', 'EACH BAY STANDS IN ITS OWN CLEARING, NOT HALF HIDDEN IN THE PINES.'],
+  ['0.890', 'IGNIA\'S WARM HANDS SHOWS FLAMES IN HER HANDS, AND SALVIA\'S WARM CLOAK SHOWS A CAPE ON THE ALLY SHE WRAPS.'],
+  ['0.889', 'THE LOGO STANDS ON THE SCREEN FROM THE FIRST INSTANT THE GAME OPENS, AND THE VALLEY FADES UP UNDER IT.'],
   ['0.888', 'CLEAR ICE, THE LANTERN AND THAW LIE ON THE SNOW AS ICE, LIGHT AND MELT, NOT FLAT DISCS'],
   ['0.887', 'SAGITTA TAKES AIM WITH A PALE THREAD AND A SPARKLE ON WHOEVER IS IN THE WAY'],
   ['0.886', 'FALCO\'S HAWK IS A HOODED BIRD WITH A PALE BREAST, LOOKING OUT FROM HIS GLOVE.'],
@@ -1851,7 +1861,9 @@ function renderTitle(now) {
   const chromeA = (1 - out) * (1 - pan);
 
   // logo: drops in at boot, lifts away on play
-  const logoIn = easeOut(m.t / 0.6);
+  if (logoStood && m.t < LOGO_DAWN) { ctx.globalAlpha = 1 - m.t / LOGO_DAWN; ctx.fillStyle = '#0d1524'; ctx.fillRect(0, 0, VIEW_W, VIEW_H); ctx.globalAlpha = 1; } // the page's boot ground (index.html's #game), lifting off the valley
+  if (m.t >= 0.6) logoStood = false;
+  const logoIn = logoStood ? 1 : easeOut(m.t / 0.6);
   const ly = Math.round(LOGO_Y - (1 - logoIn) * 30 - out * 40); // still at rest: no bob
   const logoA = logoIn * (1 - out) * (1 - pan) * (1 - sc);
   const logoOk = LOGO_IMG.complete && LOGO_IMG.naturalWidth > 0;

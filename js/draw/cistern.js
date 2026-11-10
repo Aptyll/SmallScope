@@ -38,7 +38,7 @@ function pushMiddleDraws(draws, ox, oy) {
   for (const s of SPRITES.cistern.segs) {
     const x = o + s.x, y = o + s.y;
     if (x + s.c.width <= ox || y + s.c.height <= oy || x >= ox + WV_W || y >= oy + WV_H) continue;
-    draws.push({ y: o + s.k, fn: drawCisternSeg, s });
+    draws.push({ y: o + s.k, fn: drawCisternSeg, s, bx: x, by: y, bw: s.c.width, bh: s.c.height }); // its box, for the night's body light (litPunch)
   }
 }
 function drawCisternSeg(d, ex, ey) { const o = cistOrigin(); ctx.drawImage(d.s.c, o + d.s.x - ex, o + d.s.y - ey); }

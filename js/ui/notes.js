@@ -96,6 +96,11 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['Night frames on the mid ring draw four times faster', '0.893'],
+    ['ARMATOS braces behind a real legion shield', '0.892'],
+    ['Each bay stands in its own clearing at the edge of the base, no longer half hidden in the pines', '0.891'],
+    ['Two keys that showed nothing now read: flames in the hands of Ignia for WARM HANDS, and a linen cape on the ally Salvia wraps with WARM CLOAK', '0.890'],
+    ['The logo shows the instant the game opens', '0.889'],
     ['HIEMS clear ice, LUCERNA lantern and SALVIA thaw lie on the snow as ice, light and melt instead of flat discs', '0.888'],
     ['SAGITTA sight is a pale thread with a sparkle on the first body in its path', '0.887'],
     ['FALCO\'s hawk has a dark hood, a pale breast and a tail', '0.886'],

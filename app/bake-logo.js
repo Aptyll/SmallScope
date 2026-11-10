@@ -1,5 +1,5 @@
 // Bakes docs/media/logos/mainMenuSoftfall.png into js/baked/logodata.js as a PNG
-// data URL, keyed out of its sky, trimmed and shrunk SHRINK times, so the
+// data URL (and js/baked/logo.png, the same bytes as a file, for the page's boot mark), keyed out of its sky, trimmed and shrunk SHRINK times, so the
 // title's logo works with no server at all - opening index.html
 // off the disk is a first-class way to run this game, and an <img> read off a
 // file:// path taints the canvas it is drawn on (the /shot sink and every
@@ -25,6 +25,7 @@ const zlib = require('zlib');
 const ROOT = path.join(__dirname, '..');
 const SRC = path.join(ROOT, 'docs', 'media', 'logos', 'mainMenuSoftfall.png');
 const OUT = path.join(ROOT, 'js', 'baked', 'logodata.js');
+const OUT_PNG = path.join(ROOT, 'js', 'baked', 'logo.png'); // the same picture as a file: the page's boot mark (index.html's #bootmark), an <img> no canvas ever draws
 const OUTLINE_MAX = 70; // a channel above this is not outline navy
 const SHRINK = 4;       // source px per baked px
 const PROBE = process.argv.includes('--probe');
@@ -154,4 +155,5 @@ const lines = [
   '',
 ];
 fs.writeFileSync(OUT, lines.join('\r\n'));
+fs.writeFileSync(OUT_PNG, png);
 console.log('baked ' + gw + 'x' + gh + ' (shrink ' + SHRINK + ') -> ' + (png.length / 1024).toFixed(1) + ' KB at ' + path.relative(ROOT, OUT));

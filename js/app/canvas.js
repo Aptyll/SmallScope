@@ -84,6 +84,8 @@ const bctx = barsCv.getContext('2d');
 // 16:9 so ultrawides get slim pillarbox bars instead of extra vision.
 // 360 rows is 640x360 at 16:9: 720p at 2x, 1080p at 3x, 1440p at exactly 4x
 // and 4K at 6x - every common monitor lands on a whole pixel with no breathe.
+// index.html's boot mark works the same scale out before any script runs: a
+// change to this number or to fitCanvas's pick of `dev` changes it there too.
 const TARGET_ROWS = 360;
 
 // ---- world zoom ----

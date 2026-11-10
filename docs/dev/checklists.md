@@ -494,7 +494,7 @@ already current, so it is safe to call from a state change that repeats.
 | js/sim/core.js | the `YIELD` table (every gold payout, the one table still in core.js) |
 | js/sim/player.js | `RESPAWN_WAIT` (the wait for the bird, beside `die()`) and the takedown gold (`TAKEDOWN_GOLD`, `KILL_SOLDIERS`, `ASSIST_*`, `BOUNTY_*`, `FEED_*`, the `takedowns` banner); the hero-level table (`LEVEL_XP` — sized against the road's XP, see [multiplayer.md](multiplayer.md#hero-levels)) and what a downed hero is worth (`KILL_XP`/`KILL_XP_LV`); each hero's stats and growth (`CLASSES[c].base`/`.grow`, read through js/sim/stats.js); `BOW_CHARGE` and the momentum constants (`ICE_MAX`, `SLIDE_MIN`/`SLIDE_EXIT`, `TRAIL_MIN`) above `CLASSES`; the player count (`MAX_PLAYERS`) |
 | js/sim/world.js | `TREE_HP`; `TREE_RARE_CHANCE` in `treeRare()`; the road (`ROAD_HW`/`ROAD_RAG`/`ROAD_ICE_KEEP`/`ROAD_ICE_TAPER`/`ROAD_STEP`/`ROAD_HW_WOOD`), which reshapes the map |
-| js/sim/base.js | the bases (`BASE_U`/`BASE_R`/`BASE_RAG`/`PERCH_U`/`BASE_KEEP`, the side mouths `BASE_SIDE_U`/`BASE_SIDE_S`, the bay spots `BASE_BAYS`), which reshape both roost corners |
+| js/sim/base.js | the bases (`BASE_U`/`BASE_R`/`BASE_RAG`/`PERCH_U`/`BASE_KEEP`, the side mouths `BASE_SIDE_U`/`BASE_SIDE_S`, the bay spots `BASE_BAYS` and their clearing `BAY_CLEAR`), which reshape both roost corners |
 | js/sim/jungle.js | the jungle's pine walls (planted solid inside the lanes, with `JUNGLE_PATHS` and `JUNGLE_CLEARINGS` cut out for one quarter, mirrored; `JUNGLE_RAG`, `JUNGLE_ROAD_KEEP`) |
 | js/sim/lanes.js | the top and bot lanes (`LANE_HALF`, their fixed control points, `LANE_HW`/`LANE_RAG`) and their cables (`LANE_ZIP_*`) |
 | js/sim/structures.js | `STRUCTS` costs/HP/build times (plus the gold pump's pay/period and each type's `w`/`h` footprint); the waves (`STRUCTS.barracks`'s `mix`/`siege`/`first`/`waveT`/`grow`/`cap`/`hp`, `BARRACKS_ROLL`) |
@@ -518,6 +518,12 @@ just a repaint: `bakeCloud`'s `lo`/`hi` ramp, its `CLOUD_CURVE` / `CLOUD_GAIN` c
 `CLOUD_TINT` (all three baked into both cloud textures), the beam texture `RAY_CV`, and
 the speck atlases `MOTE_CV` / `STAR_CV` / `FLAKE_CV` (colour and shape are baked in; only the alpha
 that picks a level is live).
+
+**Changing the view's scale or the title logo's place** — `fitCanvas`'s pick of `dev` and
+`TARGET_ROWS` ([js/app/canvas.js](../../js/app/canvas.js)) and `LOGO_Y` ([js/ui/menu.js](../../js/ui/menu.js))
+are worked out a second time by the inline script under `#bootmark` in `index.html`, which places
+the page's boot logo before any script file runs. Change the pair together, or the logo jumps for
+a frame as the first title takes over from the page ([the boot mark](rendering/main-menu-title.md)).
 
 **Moving code between js files** — the game files share one global scope
 ([architecture.md](architecture.md#shared-global-scope)); these rules stand for any move.

@@ -470,7 +470,7 @@ fit both, and a snapshot delta rides the unreliable channel as numbered binary f
 ## app/
 
 None of the scripts is part of the game, and nothing in `js/` may depend on one having run — except
-`sfxdata.js`, `logodata.js`, `notesart.js` and `splash.js`, which four of them write.
+`sfxdata.js`, `logodata.js` (with `logo.png` beside it), `notesart.js` and `splash.js`, which four of them write.
 
 - **`app/server.js`** — a static server on `http://localhost:8471` with a `POST /shot` sink that
   writes the canvas to `shot.png`, and the **match relay** at `/ws` (`role=host` is given a
@@ -502,6 +502,7 @@ None of the scripts is part of the game, and nothing in `js/` may depend on one 
 - **`app/bake-pump/bake.py`** — Python (needs numpy): paints the gold pump's stroke (pump.py, on app/media/paint.py), writes `js/baked/pump.js`.
 - **`app/bake-tower/bake.py`** — Python (numpy and Pillow, app/media/paint.py's parts): paints the road tower and its crossbow (tower.py), writes `js/baked/tower.js`.
 - **`app/bake-logo.js`** — reads `docs/media/logos/mainMenuSoftfall.png`, writes `js/baked/logodata.js`
+  and the same picture as a file, `js/baked/logo.png`, for the page's boot mark
   (`--probe` prints the key's box without writing).
 - **`app/bake-notes-art.js`** — reads `docs/media/notes/*.png`, writes `js/baked/notesart.js`: the pictures
   a patch note names in its third field, as PNG data URLs (rerun after adding one).
