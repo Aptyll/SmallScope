@@ -557,3 +557,10 @@ None of the scripts is part of the game, and nothing in `js/` may depend on one 
   Python bakers, desktop/, bots/, .claude/, the root pages); a name written `prefix*` needs some
   code word to start with it. `SKIP_FILES` lists the docs that name old code on purpose (the parked
   cards) and `ALLOW` the few backticked words that are not code, each with its reason.
+- **`app/check-names.js`** — the undeclared-name check, run by `check-globals.js` (or alone). A
+  call to a renamed or deleted function still loads and throws only when its line runs, which can
+  be a screen no check visits. It fails a name a js/ file reads (not after a `.`, not an object
+  key, not a method's own name or a label) that no js/ file declares at any depth (const/let/var,
+  a function or class, a parameter, a catch binding, `window.X =`) and that is not the language's
+  or the page's own (`BROWSER`). It works by name, not by scope, so it can miss a misspelt local
+  that matches a name declared elsewhere, never invent one.
