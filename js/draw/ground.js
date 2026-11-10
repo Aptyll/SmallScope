@@ -285,14 +285,20 @@ function roadStonePx(st, joint) {
 const ROAD_STONE_LIT = ['#b9b4aa', '#b2ab9c', '#c0bab0'];
 const ROAD_STONE_MID = ['#9f9a90', '#999283', '#a7a197'];
 const ROAD_STONE_SHD = ['#7f7a71', '#7a7365', '#86817a'];
-// a tuft of dry grass through the snow at the verge: a 4x4 clump of
-// blades in one cell of 8 px in a few, mirrored on half of them, or null
-const ROAD_TUFT = ['.g..', '.g.g', 'gdgd', '.dd.'];
+// dry grass through the snow at the verge, in cells of 8 px. It comes up in
+// CLUMPS (a slow noise ROAD_TUFT_CLUMP cells across: thick where it is high,
+// a stray sprig elsewhere), and each cell's sprig is one of ROAD_TUFTS, mirrored
+// on half of them: a full tuft, a tall one, and two small ones
+const ROAD_TUFTS = [['.g..', '.g.g', 'gdgd', '.dd.'], ['..g.', 'g.g.', 'gdg.', '.dd.', '.d..'], ['g.g', '.d.'], ['.g.', 'gd.']];
+const ROAD_TUFT_CLUMP = 4;                       // cells across a clump
+const ROAD_TUFT_THICK = 0.5, ROAD_TUFT_THIN = 0.04; // share of cells holding a sprig, in a clump and out of one
 function roadTuftAt(wx, wy) {
   const cx = Math.floor(wx / 8), cy = Math.floor(wy / 8), h = hash2(cx * 8 + 11, cy * 8 + 1);
-  if (h > 0.16) return null;
-  const ox = wx - cx * 8 - 1 - ((h * 900) | 0) % 3, oy = wy - cy * 8 - 1 - ((h * 2100) | 0) % 3;
-  const ch = ox >= 0 && ox < 4 && oy >= 0 && oy < 4 ? ROAD_TUFT[oy][h < 0.08 ? ox : 3 - ox] : '.';
+  const thick = vnoise(cx / ROAD_TUFT_CLUMP + 9.5, cy / ROAD_TUFT_CLUMP + 2.5) > 0.56;
+  if (h > (thick ? ROAD_TUFT_THICK : ROAD_TUFT_THIN)) return null;
+  const r = hash2(cx * 8 + 3, cy * 8 + 17), T = ROAD_TUFTS[(r * 97 | 0) % ROAD_TUFTS.length], w = T[0].length;
+  const ox = wx - cx * 8 - 1 - (r * 900 | 0) % 3, oy = wy - cy * 8 - 1 - (r * 2100 | 0) % 3;
+  const ch = ox >= 0 && ox < w && oy >= 0 && oy < T.length ? T[oy][r < 0.5 ? ox : w - 1 - ox] : '.';
   return ch === 'g' ? ROAD_COL_GRASS : ch === 'd' ? ROAD_COL_GRASS_D : null;
 }
 function paintRoadOverlay(g, tx, ty, px, py, onIce) {
