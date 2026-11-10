@@ -304,8 +304,8 @@ const FABER_PAL = Object.assign({}, ARM_PAL, { a: '#5a3a24', A: '#8a5a34', C: '#
 // not the doll's run (app/bake-player: clockmaker, foreman), so his run is his drawn body in
 // every facing (heroRunFront, js/sprites/armatos.js); the doll rolls him.
 const FABER_SKINS = [
-  { id: 'clockmaker', name: 'CLOCKMAKER', rarity: 'common', price: 0, grids: FABER_BODY.clockmaker, motion: 'clockmaker', run: 'drawn' },
-  { id: 'foreman', name: 'WORKS FOREMAN', rarity: 'rare', price: 200, grids: FABER_BODY.foreman, motion: 'foreman', run: 'drawn' },
+  { id: 'clockmaker', name: 'CLOCKMAKER', rarity: 'common', price: 0, grids: FABER_BODY.clockmaker, motion: 'clockmaker', hem: 2, run: 'drawn' },
+  { id: 'foreman', name: 'WORKS FOREMAN', rarity: 'rare', price: 200, grids: FABER_BODY.foreman, motion: 'foreman', hem: 1, run: 'drawn' },
 ];
 
 // ------------------------------------------------------------ faber staff

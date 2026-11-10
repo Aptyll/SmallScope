@@ -301,8 +301,8 @@ const VELOX_PAL = Object.assign({}, ARM_PAL, { a: '#6e3a22', A: '#a85a32', c: '#
 // not the doll's run (app/bake-player: canal, night), so her run is her drawn body in every
 // facing (heroRunFront, js/sprites/armatos.js); the doll rolls her.
 const VELOX_SKINS = [
-  { id: 'canal', name: 'CANAL RUNNER', rarity: 'common', price: 0, grids: VELOX_BODY.canal, motion: 'canal', run: 'drawn' },
-  { id: 'night', name: 'NIGHT POST', rarity: 'rare', price: 200, grids: VELOX_BODY.night, motion: 'night', run: 'drawn' },
+  { id: 'canal', name: 'CANAL RUNNER', rarity: 'common', price: 0, grids: VELOX_BODY.canal, motion: 'canal', cloth: { side: [[2, 7, 3, 10]] }, run: 'drawn' },
+  { id: 'night', name: 'NIGHT POST', rarity: 'rare', price: 200, grids: VELOX_BODY.night, motion: 'night', cloth: { side: [[2, 7, 3, 10]] }, run: 'drawn' },
 ];
 
 // ------------------------------------------------------------ velox sling

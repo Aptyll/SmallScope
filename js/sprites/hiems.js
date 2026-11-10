@@ -305,8 +305,8 @@ const HIEMS_PAL = Object.assign({}, ARM_PAL, { a: '#24405e', A: '#3c6690', q: '#
 // not the doll's run (app/bake-player: scholar, frost), so her run is her drawn body in every
 // facing (heroRunFront, js/sprites/armatos.js); the doll rolls her.
 const HIEMS_SKINS = [
-  { id: 'scholar', name: 'WEATHER SCHOLAR', rarity: 'common', price: 0, grids: HIEMS_BODY.scholar, motion: 'scholar', run: 'drawn' },
-  { id: 'frost', name: 'FIRST FROST', rarity: 'rare', price: 200, grids: HIEMS_BODY.frost, motion: 'frost', run: 'drawn' },
+  { id: 'scholar', name: 'WEATHER SCHOLAR', rarity: 'common', price: 0, grids: HIEMS_BODY.scholar, motion: 'scholar', hem: 2, run: 'drawn' },
+  { id: 'frost', name: 'FIRST FROST', rarity: 'rare', price: 200, grids: HIEMS_BODY.frost, motion: 'frost', hem: 2, run: 'drawn' },
 ];
 
 // ------------------------------------------------------------ hiems staff
