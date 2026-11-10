@@ -32,6 +32,7 @@ const MOVED = [
   'js/ui/endscreens.js',
   'js/ui/recap.js',
   'js/ui/lobby.js',
+  'js/ui/tooltip.js',
 ];
 
 function readText() {

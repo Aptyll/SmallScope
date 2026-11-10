@@ -38,16 +38,15 @@ function tipSec(s) { return (Math.round(s * 100) / 100).toFixed(2) + 'S'; }
 const tipNum = (v) => String(Math.round(v * 100) / 100);
 const tipCent = (v) => String(Math.round(v * 100));
 const AB_RANK_STAT = {
-  dmg: ['DAMAGE', tipNum, ''], shove: ['SHOVE DAMAGE', tipNum, ''], cut: ['FRONT DAMAGE CUT', tipCent, '%'],
-  slow: ['SLOW', (v) => tipCent(1 - v), '%'], slowT: ['SLOW FOR', tipNum, 'S'], stun: ['STUN', tipNum, 'S'],
-  root: ['ROOT', tipNum, 'S'], up: ['KNOCK UP', tipNum, 'S'], t: ['LASTS', tipNum, 'S'],
-  ward: ['DAMAGE CUT', tipCent, '%'], // MARIS's BRACE FOR COLD, LIGNUM's BARK SKIN
-  chop: ['CHOP DAMAGE', tipNum, ''], // LIGNUM's CHOP, its second blow (js/sim/lignum.js)
-  armor: ['ARMOR', tipNum, ''], ten: ['TENACITY', tipCent, '%'], heal: ['HEALS % MAX HEALTH', tipCent, '%'],
-  mark: ['MARKED FOR', tipNum, 'S'], shieldHp: ['SHIELD % MAX HEALTH', tipCent, '%'],
-  missing: ['OF HP ALREADY LOST', tipCent, '%'], bonus: ['MOST EXTRA', tipNum, ''],
-  burn: ['BURN A SECOND', tipNum, ''], walk: ['WALKS FASTER', (v) => tipCent(v - 1), '%'],
-  markDmg: ['MARKED HIT DAMAGE', tipNum, ''], hp: ['HEALS', tipNum, ''], wolfHp: ['WOLF HEALTH', tipNum, ''], hps: ['HEALS A SECOND', tipNum, ''], shield: ['SHIELD', tipNum, ''], as: ['ATTACK SPEED', tipCent, '%'], shot: ['DAMAGE x', tipNum, ''],
+  dmg: ['tip.dmg', tipNum, ''], shove: ['tip.shove', tipNum, ''], cut: ['tip.cut', tipCent, '%'],
+  slow: ['tip.slow', (v) => tipCent(1 - v), '%'], slowT: ['tip.slowT', tipNum, 'S'], stun: ['tip.stun', tipNum, 'S'],
+  root: ['tip.root', tipNum, 'S'], up: ['tip.up', tipNum, 'S'], t: ['tip.t', tipNum, 'S'],
+  ward: ['tip.ward', tipCent, '%'], // MARIS's BRACE FOR COLD, LIGNUM's BARK SKIN
+  chop: ['tip.chop', tipNum, ''], // LIGNUM's CHOP, its second blow (js/sim/lignum.js)
+  armor: ['tip.armor', tipNum, ''], ten: ['tip.ten', tipCent, '%'], heal: ['tip.heal', tipCent, '%'],
+  mark: ['tip.mark', tipNum, 'S'], shieldHp: ['tip.shieldHp', tipCent, '%'],
+  burn: ['tip.burn', tipNum, ''], walk: ['tip.walk', (v) => tipCent(v - 1), '%'],
+  markDmg: ['tip.markDmg', tipNum, ''], hp: ['tip.hp', tipNum, ''], wolfHp: ['tip.wolfHp', tipNum, ''], hps: ['tip.hps', tipNum, ''], shield: ['tip.shield', tipNum, ''], as: ['tip.as', tipCent, '%'], shot: ['tip.shot', tipNum, ''],
 };
 const TIP_RANK_ON = '#f2cc6a';
 // one ranked value as a row's value: plain text when it never changes, else
@@ -72,13 +71,13 @@ function tipValW(v) { return Array.isArray(v) ? v.reduce((w, sg) => w + pixelTex
 // the same functions the sim swings by, so the card can never disagree
 function tipAttack(p) {
   const A = attackOf(p), tp = cellPlate(true);
-  const d = { title: A.name, tcol: '#f4f7ff', kind: 'BASIC ATTACK', rows: [], notes: [],
+  const d = { title: A.name, tcol: '#f4f7ff', kind: tr('tip.basicAttack'), rows: [], notes: [],
     icon: SPRITES.weaponArt[A.art], plate: tp.plate, rim: tp.rim };
-  d.rows.push(['DAMAGE', String(attackDmg(p, 1, false)), '#e0637a']);
-  d.rows.push(['FULL CHARGE', tipSec(drawTime(p)), '#f4f7ff']);
-  d.rows.push(['BETWEEN HITS', tipSec(attackCycle(p)), '#f4f7ff']);
+  d.rows.push([tr('tip.dmg'), String(attackDmg(p, 1, false)), '#e0637a']);
+  d.rows.push([tr('tip.fullCharge'), tipSec(drawTime(p)), '#f4f7ff']);
+  d.rows.push([tr('tip.betweenHits'), tipSec(attackCycle(p)), '#f4f7ff']);
   const reach = A.cut ? A.cut.reach : (() => { const f = shotFlight(A.shot, 1); return Math.round(f.spd * f.life); })();
-  d.rows.push(['REACH', String(reach), '#f4f7ff']);
+  d.rows.push([tr('tip.reach'), String(reach), '#f4f7ff']);
   return d;
 }
 // the gold plate: the exact figure, since the plate itself is rounded
@@ -88,13 +87,13 @@ function tipAttack(p) {
 function tipRail(c) {
   const p = c.p, cls = CLASSES[p.cls];
   const d = { title: p.name, tcol: playerTint(p), kind: cls.name, icon: classIcon12(p.cls, false),
-    plate: BAG_WELL, rim: TEAMS[skin(p.team)].mark, rows: [['LEVEL', String(p.level), '#cfe0ff']], notes: [] };
-  if (p.dead) d.rows.push(['RESPAWN', p.eliminated || p.respawnT <= 0 ? 'OUT' : Math.ceil(p.respawnT) + ' S', '#8f9cc4']);
+    plate: BAG_WELL, rim: TEAMS[skin(p.team)].mark, rows: [[tr('tip.level'), String(p.level), '#cfe0ff']], notes: [] };
+  if (p.dead) d.rows.push([tr('tip.respawn'), p.eliminated || p.respawnT <= 0 ? tr('board.out') : tr('board.wait', { s: Math.ceil(p.respawnT) }), '#8f9cc4']);
   return d;
 }
 function tipGold() {
-  return { title: 'GOLD', tcol: '#f5c542', kind: 'PURSE', icon: SPRITES.itemGold, plate: BAG_WELL, rim: '#3c4048',
-    rows: [['CARRIED', String(player.gold), '#f5c542']], notes: [] };
+  return { title: tr('tip.gold'), tcol: '#f5c542', kind: tr('tip.purse'), icon: SPRITES.itemGold, plate: BAG_WELL, rim: '#3c4048',
+    rows: [[tr('tip.carried'), String(player.gold), '#f5c542']], notes: [] };
 }
 // an ability well - the strip's in play (cls omitted: the local player's
 // hero, live cooldown, the cast hint), or the lobby's stage (cls given:
@@ -102,7 +101,7 @@ function tipGold() {
 function tipClassAb(i, cls) {
   const c = cls == null ? player.cls : cls;
   const ab = CLASS_AB[c][i];
-  const d = { title: ab.name, tcol: '#f4f7ff', kind: CLASSES[c].name + ' ABILITY',
+  const d = { title: ab.name, tcol: '#f4f7ff', kind: tr('tip.heroAbility', { hero: CLASSES[c].name }),
     rows: [], notes: [], icon: classAbIcon(c, i), plate: BAG_WELL, rim: '#3c4048' };
   // Read mid-fight, so the short card says only what decides a press: the
   // cooldown and the number a rank raises (a `rank` key given as a list), at
@@ -117,15 +116,15 @@ function tipClassAb(i, cls) {
   const val = (v, fmt, unit) => (full ? tipRanks(v, lv, fmt, unit) : fmt(rankAt(v, lv)) + unit);
   const cds = Array.isArray(ab.cd) ? ab.cd.map((v) => v * hm) : ab.cd * hm;
   // (short, the cooldown takes the line under the name the long card gives the hero's name)
-  if (full) d.rows.push(['COOLDOWN', val(cds, tipNum, 'S'), '#f4f7ff']);
-  else d.kind = 'COOLDOWN ' + val(cds, tipNum, 'S');
+  if (full) d.rows.push([tr('tip.cooldown'), val(cds, tipNum, 'S'), '#f4f7ff']);
+  else d.kind = tr('tip.cooldownIs', { s: val(cds, tipNum, 'S') });
   for (const k in ab.rank || {}) {
     const st = AB_RANK_STAT[k];
-    if (st && Array.isArray(ab.rank[k])) d.rows.push([st[0], val(ab.rank[k], st[1], st[2]), '#f4f7ff']);
+    if (st && Array.isArray(ab.rank[k])) d.rows.push([tr(st[0]), val(ab.rank[k], st[1], st[2]), '#f4f7ff']);
   }
   if (cls == null && full) {
     const need = abReqOf(ab, i)[player.abLv[i]]; // the next rank waits for the hero (abLvCanBuy)
-    if (need && player.level < need) d.rows.push(['HERO LEVEL', String(need), '#e0637a']);
+    if (need && player.level < need) d.rows.push([tr('tip.heroLevel'), String(need), '#e0637a']);
   }
   d.notes.push([ab.tip || ab.blurb.split('. ')[0].replace(/\.$/, ''), TIP_DIM]);
   return d;
