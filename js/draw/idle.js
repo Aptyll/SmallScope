@@ -6,7 +6,7 @@
 // Draw only: read off what drawPlayer already shows (the facing and whether the body
 // strides), kept per body on this screen, never in the sim.
 
-const IDLE_BREATH_T = 0.6; // s each breath frame holds: a breath in about a second and a quarter
+const IDLE_BREATH_T = 0.8; // s each breath frame holds: a slow breath, one in about a second and a half
 const CLOTH_LAG_T = 0.12;  // s the cloth hangs a pixel behind: one step of the body's stepped motion
 const DIR_X = { left: -1, right: 1, up: 0, down: 0 }, DIR_Y = { left: 0, right: 0, up: -1, down: 1 };
 
