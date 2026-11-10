@@ -110,7 +110,7 @@ function heroStaff(p, px, py) {
 // (bodySet) has the arm on its own art px (heroArmFine), over the haft: a sleeve that tapers from
 // THRUST_ARM_FINE[0] art px at the shoulder to THRUST_ARM_FINE[1] at a cuff, its top lit, ink on its
 // underside alone.
-const THRUST_ARM_FINE = [6, 4], THRUST_ARM_CUFF = 2; // art px thick at each end; art px of cuff before the fist
+const THRUST_ARM_FINE = [6, 4], THRUST_ARM_CUFF = 2, THRUST_ARM_ROOT = 3; // art px thick at each end; art px of cuff before the fist; world px the sleeve runs back from the hands' place into the slimmer fine torso
 function heroArm(p, x0, y0, x1, y1) {
   const fine = bodySet(p);
   if (fine.dens > 1) { heroArmFine(classSet(p), fine.dens, x0, y0, x1, y1); return; }
@@ -124,13 +124,14 @@ function heroArm(p, x0, y0, x1, y1) {
   }
 }
 function heroArmFine(set, dens, x0, y0, x1, y1) {
-  const u = 1 / dens, flat = Math.abs(x1 - x0) >= Math.abs(y1 - y0);
+  const u = 1 / dens, flat = Math.abs(x1 - x0) >= Math.abs(y1 - y0), len = Math.hypot(x1 - x0, y1 - y0) || 1;
+  x0 -= (x1 - x0) / len * THRUST_ARM_ROOT; y0 -= (y1 - y0) / len * THRUST_ARM_ROOT; // back to the shoulder, so torso, sleeve, fist and haft are one line
   const n = Math.max(1, Math.round(Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)) * dens));
   const snap = (v) => Math.round(v * dens) / dens;
   // one art px slice across the arm at a time: `a` along it, `b` its lit edge (top, or left when it runs up or down)
-  const slice = (a, b, len, col, alpha) => {
+  const slice = (a, b, w, col, alpha) => {
     ctx.globalAlpha = alpha; ctx.fillStyle = col;
-    if (flat) ctx.fillRect(a, b, u, len); else ctx.fillRect(b, a, len, u);
+    if (flat) ctx.fillRect(a, b, u, w); else ctx.fillRect(b, a, w, u);
   };
   for (let i = 0; i <= n; i++) {
     const t = Math.round(THRUST_ARM_FINE[0] + (THRUST_ARM_FINE[1] - THRUST_ARM_FINE[0]) * i / n) * u;
