@@ -54,6 +54,61 @@
   });
 
   // ---------------------------------------------------------------- heroes
+  // One look's pose set off `grids`, a square cell of d art px a world px: every frame
+  // carries `dens` = d, so a reader draws it at 1/d (drawFrame, js/draw/bodies.js). The
+  // roll stays the doll's 16 px frames at any d.
+  function lookSet(row, grids, d, sp, hand) {
+    const tag = (c) => { if (d > 1) c.dens = d; return c; };
+    const bk = (g) => tag(bake(g, sp)), fl = (c) => tag(flipH(c));
+    const w = heroWalk(grids, d);
+    const side = w.side.map((g) => bk(g));
+    const set = Object.assign({
+      down: w.down.map((g) => bk(g)), up: w.up.map((g) => bk(g)), right: side, left: side.map(fl),
+    }, motionSet(row.motion, sp));
+    // side-on the run and the held run are the hero's own standing frame, legs stepping
+    // (heroRunSide, js/sprites/armatos.js): the doll's are narrower than the hand-drawn body
+    for (const kind of ['run', 'hold']) {
+      const mo = set[kind], bob = kind === 'run' ? SPR.motion.RUN_BOB : SPR.motion.HOLD_BOB;
+      let r = null;
+      const right = () => r || (r = heroRunSide(grids.side, bob, row, d).map((g) => bk(g)));
+      let l = null;
+      // ...and head-on and from behind too, for a look that says its doll does not match it
+      const drawn = row.run === 'drawn', fr = {};
+      const front = (f) => (drawn ? () => fr[f] || (fr[f] = heroRunFront(grids[f], bob, d).map((g) => bk(g))) : () => mo[f]);
+      set[kind] = Object.defineProperties({}, {
+        down: { get: front('down'), enumerable: true }, up: { get: front('up'), enumerable: true },
+        right: { get: right, enumerable: true }, left: { get: () => l || (l = right().map(fl)), enumerable: true },
+      });
+    }
+    // how far this look's body stands over and out past the 16 px cell's 15-row one
+    // (a larger cell's): the overhead frame lifts by `rise`, a hand sits `reach` px
+    // further out (heroRise, heroReach, js/draw/heroes.js)
+    const more = grids.down.length / d - 16; // a 20 px cell: 3 rows taller (one more is headroom), 1 px wider a side
+    set.rise = (more * 3) >> 2; set.reach = more >> 2;
+    // the hand that closes on the carried weapon (heroFist, js/draw/heroes.js): the look's
+    // own `hand` letter (a glove), else its skin, ringed in its outline
+    set.hand = sp[row.hand || hand || 'k']; set.ink = sp.o;
+    // standing still: the breath's two frames a facing (heroBreath, js/sprites/armatos.js),
+    // and the loose cloth a pixel behind for the beat after a stop or a turn (heroCloth),
+    // baked on first ask (drawPlayer's idle, js/draw/idle.js)
+    const FACE = { down: 'down', up: 'up', right: 'side', left: 'side' }, breaths = {}, cloths = new Map();
+    const breathOf = (f) => breaths[f] || (breaths[f] = [grids[FACE[f]], heroBreath(grids[FACE[f]], d)]);
+    const facing = (f, g) => (f === 'left' ? fl(bk(g)) : bk(g));
+    set.breath = Object.defineProperties({}, Object.fromEntries(Object.keys(FACE).map((f) => {
+      let fr = null;
+      return [f, { get: () => fr || (fr = f === 'left' ? set.breath.right.map(fl) : breathOf(f).map((g) => bk(g))), enumerable: true }];
+    })));
+    // the cloth's step is a world px, d of this grid's (its boxes are the look's for this grid)
+    set.cloth = (f, dx, dy, b) => {
+      const k = f + dx + ',' + dy + b;
+      if (!cloths.has(k)) {
+        const g = heroCloth(breathOf(f)[b], row, FACE[f], (f === 'left' ? -dx : dx) * d, dy * d, d);
+        cloths.set(k, g && facing(f, g));
+      }
+      return cloths.get(k);
+    };
+    return set;
+  }
   // champLook(cls, team, skinId): the full pose set for one hero in one team's
   // paint, in one of its looks (heroArtOf(cls).looks, e.g. ARM_SKINS: `skinId`,
   // the free first one for none), baked on first ask and kept - ten players and
@@ -67,52 +122,11 @@
     let set = lookCache.get(key);
     if (set) return set;
     const sp = Object.assign({}, teamPlayerPal(TEAM_SKINS[team]), art.pal, row.pal); // a look may repaint the hero's letters (`pal`: NIX's MOONLESS)
-    const w = heroWalk(row.grids);
-    const side = w.side.map((g) => bake(g, sp));
-    set = Object.assign({
-      down: w.down.map((g) => bake(g, sp)), up: w.up.map((g) => bake(g, sp)), right: side, left: side.map(flipH),
-    }, motionSet(row.motion, sp));
-    // side-on the run and the held run are the hero's own standing frame, legs stepping
-    // (heroRunSide, js/sprites/armatos.js): the doll's are narrower than the hand-drawn body
-    for (const kind of ['run', 'hold']) {
-      const mo = set[kind], bob = kind === 'run' ? SPR.motion.RUN_BOB : SPR.motion.HOLD_BOB;
-      let r = null;
-      const right = () => r || (r = heroRunSide(row.grids.side, bob, row).map((g) => bake(g, sp)));
-      let l = null;
-      // ...and head-on and from behind too, for a look that says its doll does not match it
-      const drawn = row.run === 'drawn', fr = {};
-      const front = (d) => (drawn ? () => fr[d] || (fr[d] = heroRunFront(row.grids[d], bob).map((g) => bake(g, sp))) : () => mo[d]);
-      set[kind] = Object.defineProperties({}, {
-        down: { get: front('down'), enumerable: true }, up: { get: front('up'), enumerable: true },
-        right: { get: right, enumerable: true }, left: { get: () => l || (l = right().map(flipH)), enumerable: true },
-      });
-    }
-    // how far this look's body stands over and out past the 16 px cell's 15-row one
-    // (a larger cell's): the overhead frame lifts by `rise`, a hand sits `reach` px
-    // further out (heroRise, heroReach, js/draw/heroes.js)
-    const more = row.grids.down.length - 16; // a 20 px cell: 3 rows taller (one more is headroom), 1 px wider a side
-    set.rise = (more * 3) >> 2; set.reach = more >> 2;
-    // the hand that closes on the carried weapon (heroFist, js/draw/heroes.js): the look's
-    // own `hand` letter (a glove), else its skin, ringed in its outline
-    set.hand = sp[row.hand || art.hand || 'k']; set.ink = sp.o;
-    // standing still: the breath's two frames a facing (heroBreath, js/sprites/armatos.js),
-    // and the loose cloth a pixel behind for the beat after a stop or a turn (heroCloth),
-    // baked on first ask (drawPlayer's idle, js/draw/idle.js)
-    const FACE = { down: 'down', up: 'up', right: 'side', left: 'side' }, breaths = {}, cloths = new Map();
-    const breathOf = (d) => breaths[d] || (breaths[d] = [row.grids[FACE[d]], heroBreath(row.grids[FACE[d]])]);
-    const facing = (d, g) => (d === 'left' ? flipH(bake(g, sp)) : bake(g, sp));
-    set.breath = Object.defineProperties({}, Object.fromEntries(Object.keys(FACE).map((d) => {
-      let fr = null;
-      return [d, { get: () => fr || (fr = d === 'left' ? set.breath.right.map(flipH) : breathOf(d).map((g) => bake(g, sp))), enumerable: true }];
-    })));
-    set.cloth = (d, dx, dy, b) => {
-      const k = d + dx + ',' + dy + b;
-      if (!cloths.has(k)) {
-        const g = heroCloth(breathOf(d)[b], row, FACE[d], d === 'left' ? -dx : dx, dy);
-        cloths.set(k, g && facing(d, g));
-      }
-      return cloths.get(k);
-    };
+    set = lookSet(row, row.grids, 1, sp, art.hand);
+    // a look drawn finer for the world (`fine`: grids at `dens` art px a world px, the
+    // WD-dense world buffer's, js/app/canvas.js): its own set, which drawPlayer asks for
+    // through bodySet; the menus, portraits and cards keep the 16 px one
+    if (row.fine) set.fine = lookSet(Object.assign({}, row, row.fine, { run: 'drawn' }), row.fine.grids, row.fine.dens, sp, art.hand);
     lookCache.set(key, set);
     return set;
   }

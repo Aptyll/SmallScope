@@ -161,6 +161,14 @@ in `heroRunBox`), `drawPlayer` centres any frame on the 16 px cell with its floo
 js/draw/heroes.js): the overhead frame lifts by `rise`, a staff or blade hand sits `reach` px further
 out. No look uses a larger cell yet; the roll and the other doll poses are still 16 px, and the menus
 draw frames into 16 px boxes.
+**A look can carry a finer world body**: `fine: { dens, grids }` on its row (ARMATOS's LAST
+STANDARD, `ARM_FINE`) is a `down`/`up`/`side` set at `dens` art px a world px (32 px on the 16
+px cell). `champLook` builds it beside the 16 px set as `set.fine` through the same `lookSet`
+(walk, side and front run, breath and cloth step `dens` px, a world px; every frame carries
+`dens`), and only `drawPlayer` reads it, through `bodySet` and only in a world layer, which is
+`WD` dense ([world zoom](rendering/world-zoom-and-the-two-pixel-spaces.md)). The menus,
+portraits, cards, the eagle's seats and a falling body keep the 16 px set, and the roll and the
+held weapon stay 16 px art.
 The run facing down and up is still the doll's, unless the look's row says `run: 'drawn'`: then
 `heroRunFront` lifts the drawn front and back the same way (IGNIA's two looks, AURA's, SALVIA's, LUCERNA's and BUCINA's two, whose shawl, mantle, coat, cape and hair
 the doll does not match). Which look a player wears is `heroSkinOf(p)` (player.js): the id in `p.skins` under the

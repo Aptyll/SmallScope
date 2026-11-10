@@ -30,7 +30,7 @@ Never over [the end screens](the-end-screens.md).
 It records pixels, not state, so it costs nothing to keep and re-renders nothing to play.
 
 **Where each draws.** The recap draws in the game canvas: the capture is the **world layer**
-(`worldCv`, one sample per world px, before the blit scales it), and each frame keeps the device
+(`worldCv` sampled at one px per world px, before the blit scales it: a finer hero body shows at 16 px there), and each frame keeps the device
 px per world px it was blitted at live (`rpFK`). Drawn back from the same top-left corner at that
 same scale, nearest-neighbour, every world px lands on the same k×k block of device px it had
 live, so the recap is **pixel for pixel at any resting zoom**, zoomed in or not. Only a view wider
