@@ -180,10 +180,8 @@ bots near a DANGER back off. [Pings](gameplay/pings.md), [Bots](multiplayer.md#b
 
 **Pine walls make the field a jungle** (js/sim/jungle.js): in each quarter a wall off the mid road, one
 off the river, one between the den and the warren and a block at the lane's corner, mirrored to all four, with gaps to walk in.
-**The camps are the jungle, and the jungle is symmetric.** Fixed sites on each side of the
-road, mirrored so both teams walk the same distance. Each jungle quarter holds three camps that pay
-gold: a **WOLF DEN** (four wolves), a **FOX HOLLOW** (three foxes, a quick clear) and an **OX RANGE**
-(one musk ox, slow and heavy, the quarter's big camp). On the middle line stands one
+**The camps are the jungle, and the jungle is symmetric.** Six fixed sites, three on each side of the
+road, mirrored so both teams walk the same distance: four **WOLF DENS** that pay gold, and one
 **BLACK BEAR BEND**, the one bear, patrolling a bank of the creek: first out at 5:00 and back 5:00
 after each kill, which pays the whole team, gives it the BLACK BUFF, and adds a black bear to the
 side's count: +5% on every blow for the rest of the match, up to four. Facing it across the road is

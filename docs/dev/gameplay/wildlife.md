@@ -101,7 +101,6 @@ a wander is the same gallop run slower, not a second animation; and `clipFrame`
 | `rabbit` | `idle` low over its paws, `rise` up on its haunches, `hop` | `updatePrey` |
 | `deer` | `graze` head down in the snow, `idle` head up and turning, `run` the gallop | `updatePrey` |
 | `wolf` | `idle`, `run` | `updateCampMonster` |
-| `fox`, `ox` (the musk ox) | `idle`, `run` (the ox's is its four-frame walk) | `updateCampMonster` |
 | `alpha` / `dire` (the bears) | `idle`, `walk`, `run`, `bite`, `paw`, `roar`, `fish` | `updateCampMonster` |
 
 **The head is the tell.** Standing still and settled, a deer's head is DOWN in the snow and a
@@ -203,7 +202,7 @@ They are not shown on the minimap or world map.
 
 ## Camp monsters: neutral until hit
 
-The [camps](../world.md#camps) keep these kinds — the **wolf** (a den's 4), the **fox** (a hollow's 3), the **musk ox** (`ox`, a range's 1), the **black bear**
+The [camps](../world.md#camps) keep three kinds — the **wolf** (a den's 4), the **black bear**
 (`alpha`, BLUE's river camp, 1) — one `MONSTER`
 row each (wildlife.js: the bite and what it grows a level, the reach, the seconds between one
 body's bites, the hunting speed, the body's radius and mass, `big` for a bear's big body, and
@@ -240,7 +239,7 @@ still load. All three run
   it cannot route to (out on a hole) it holds and faces. Bites do the row's `bite` plus `lvBite`
   for every level past the monster's first, inside `reach`, every `cd` seconds *per body*,
   through `damagePlayer(t, dmg, dx, dy, null, cause)` — `'wolf'` (`WENT TO THE WOLVES`) for the
-  pack, `'fox'` and `'ox'` for the hollow's and the range's, `'bear'` (`MET A BEAR`) for either bear. **A bear's blow is telegraphed**: in reach it
+  pack, `'bear'` (`MET A BEAR`) for either bear. **A bear's blow is telegraphed**: in reach it
   plays one of its attacks, on all fours and planted: the `bite` (coil, jaw wide, lunge, snap) or
   the `paw` (paw cocked over the head, swept out flat in front), taken in turn (`BEAR_ATTACKS`,
   `a.atkN`) so two blows in a row never look alike. The blow (`monsterBite`) lands only as the clip
@@ -268,10 +267,8 @@ still load. All three run
 | Kind | hp (+ a level) | bite (+ a level) | reach / cd / spd | body | kill |
 | --- | --- | --- | --- | --- | --- |
 | wolf | 30 (+3) | 9 (+1) | 13 px / 1 s / 96 | r 4.5, mass 2, a roll passes through | `YIELD.wolf` 110, a FARM |
-| fox | 26 (+3) | 7 (+1) | 14 px / 0.9 s / 104 | r 5, mass 1.6, a roll passes through; its own arrow disc and pointer box (`hit`, `box`) | `YIELD.fox` 90, a FARM |
-| ox (musk ox) | 240 (+22) | 18 (+2) | 26 px / 1.5 s / 78 | r 11, mass 4, `solid`: a roll **tackles** it | `YIELD.ox` 280, a FARM |
 | alpha (black bear) | 640 (+50) | 22 (+3) | 44 px / 1.4 s / 100 | r 18, mass 5, a big body a roll **tackles** | `YIELD.alpha` 630, `EPIC_TEAM_GOLD` (280) to every teammate on the ground, the BLACK BUFF for the whole team, a feed line |
-| orca (up in its pool, from 20:00) | 1800 (+120), from lv 12 | 34 (+4) | 80 px / 1.8 s / 0: `still`, it never leaves its hole; past its reach it spouts (`spout`, 240 px) | r 20, mass 9, anchored | `YIELD.orca` 880, `EPIC_TEAM_GOLD` to every teammate on the ground, the ORCA BUFF (`p.pushT`, `ORCA_PUSH_T` 180 s) for the whole team, a feed line |
+| orca (up in its pool, from 20:00) | 1560 (+100), from lv 12 | 28 (+3) | 80 px / 1.8 s / 0: `still`, it never leaves its hole; past its reach it spouts (`spout`, 240 px) | r 20, mass 9, anchored | `YIELD.orca` 880, `EPIC_TEAM_GOLD` to every teammate on the ground, the ORCA BUFF (`p.pushT`, `ORCA_PUSH_T` 180 s) for the whole team, a feed line |
 
 The bear is the one `teamPay` camp kind, on its bend of [the creek](../world.md#the-creek)
 (BLUE's bank; the orca's pool faces it across the road on RED's). It is first out at 5:00
