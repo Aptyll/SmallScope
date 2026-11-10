@@ -425,7 +425,7 @@ shipwreck and shop are meant to land here, and so is a rookery. Nothing in the m
 needs to learn about it. What *does* cost work: any **new object type** its `props` stamp (the
 checklist above), and any **new kind of monster** (a `MONSTER` row if it fights like the three
 wolves — hp in `ANIMAL_HP`/`ANIMAL_LV_HP`, a `HIT_PUFF` colour, a `YIELD` payout, a `WIKI_BEASTS`
-card, its sprite set in `SPRITES[kind]`, the cursor's hover box in `cursorInfo` and the hitbox
+card (its name and line as `beast.*` keys in js/app/text.js), its sprite set in `SPRITES[kind]`, the cursor's hover box in `cursorInfo` and the hitbox
 overlay's sizes in js/draw/render.js, `animalHitR`'s radius if it is not 8, and — if it can hurt a player
 — a `DEATH_CAUSE` key; a kind that does *not* fight needs its own `updateAnimal` branch).
 

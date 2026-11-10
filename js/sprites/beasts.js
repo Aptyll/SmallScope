@@ -1,6 +1,6 @@
 'use strict';
-// Everything with four legs: the rabbit, the deer and the wolf. The camps'
-// two bears are js/baked/bears.js.
+// Everything with four legs: the rabbit, the deer, the wolf, the fox and the
+// musk ox. The camps' bear is js/baked/bears.js.
 (() => {
   const { flipH, bakeClips, mapClips } = SPR;
 
@@ -1827,13 +1827,213 @@
     '....ooo..ooo....',
   ]);
 
+  // ---------------------------------------------------------------- fox
+  // The fox hollow's pack: a red fox in side view, white tail tip and bib, dark
+  // socks, in the wolf's own stand/run set (left = flipH). Hand-set at 1x.
+  const FXPAL = {
+    '.': null,
+    'k': '#1e1622', // outline
+    'd': '#8e3a1e', // coat shade
+    'm': '#cc5e26', // coat
+    'l': '#ee8a3c', // coat light
+    'w': '#f8f2e6', // tail tip, bib, muzzle
+    'b': '#2c1e26', // socks, eye, nose
+  };
+  const foxStand = [
+    '....................k...k..',
+    '...................klk.klk.',
+    '..................klmlklmlk',
+    '...kkk............kmmlllmmk',
+    '..kwwlkk....kkkkkkkmlllllmk',
+    '.kwwwllmk.kkllllllkmblllbmk',
+    'kwwwlllmmklllllllllmwwllwwk',
+    '.kwwmmmmmmmmmmmmmmmmmwwbwk.',
+    '..kwmmmmdmmmmmmmmmmmwwwwk..',
+    '...kddddkmmmmmmmmmwwwwkk...',
+    '....kkkkkmmmddwwwmmmwk.....',
+    '........kmmdkkkkkmmdk......',
+    '........kmmdk...kmmdk......',
+    '........kmmdk...kmmdk......',
+    '........kbbdk...kbbdk......',
+    '........kbbbk...kbbbk......',
+    '........kbbbbk..kbbbbk.....',
+    '.........kkkk....kkkk......',
+  ];
+  const foxRunA = [
+    '....................k...k..',
+    '...................klk.klk.',
+    '..................klmlklmlk',
+    '...kkk............kmmlllmmk',
+    '..kwwlkk....kkkkkkkmlllllmk',
+    '.kwwwllmk.kkllllllkmblllbmk',
+    'kwwwlllmmklllllllllmwwllwwk',
+    '.kwwmmmmmmmmmmmmmmmmmwwbwk.',
+    '..kwmmmmdmmmmmmmmmmmwwwwk..',
+    '...kddddkmmmmmmmmmwwwwkk...',
+    '....kkkkkmmmddwwwmmmwk.....',
+    '.......kmmdkkkkkkmmdk......',
+    '......kmmdk......kmmdk.....',
+    '.....kbbdk........kbbdk....',
+    '....kbbbk..........kbbbkk..',
+    '...kbbbk............kbbbbk.',
+    '....kkk..............kkkk..',
+    '...........................',
+  ];
+  const foxRunB = [
+    '....................k...k..',
+    '...................klk.klk.',
+    '..................klmlklmlk',
+    '...kkk............kmmlllmmk',
+    '..kwwlkk....kkkkkkkmlllllmk',
+    '.kwwwllmk.kkllllllkmblllbmk',
+    'kwwwlllmmklllllllllmwwllwwk',
+    '.kwwmmmmmmmmmmmmmmmmmwwbwk.',
+    '..kwmmmmdmmmmmmmmmmmwwwwk..',
+    '...kddddkmmmmmmmmmwwwwkk...',
+    '....kkkkkmmmddwwwmmmwk.....',
+    '.........kmmdkkkmmdkk......',
+    '..........kmmdkmmdk........',
+    '...........kbbdbbk.........',
+    '...........kbbbbbk.........',
+    '..........kbbbkbbbk........',
+    '...........kkk.kkk.........',
+    '...........................',
+  ];
+
+  // ---------------------------------------------------------------- musk ox
+  // The ox range's beast: a shaggy dome with a pale saddle, the head carried low
+  // under a horn boss, dark legs in pale socks. Stand, and the two steps of its
+  // walk (the stand is the pass between them). Hand-set at 1x.
+  const OXPAL = {
+    '.': null,
+    'k': '#191018', // outline, hooves
+    'd': '#2e2024', // skirt and face
+    'm': '#4c3830', // coat
+    'l': '#6e5040', // coat light
+    'h': '#927058', // hump highlight
+    'c': '#cdb890', // saddle
+    'C': '#efe4c4', // saddle light
+    'n': '#c8b48c', // horn shade
+    'N': '#f2e6c6', // horn
+    's': '#8c7c6c', // far sock
+    'S': '#b4a490', // near sock
+    'e': '#ffc24a', // eye
+    'p': '#a08078', // muzzle
+  };
+  const oxStand = [
+    '......................k........................',
+    '...............kkkkkkkmkk......................',
+    '............kkkmmmmlllllmkk....................',
+    '........kkkkmcccccclhhhhhmmk...................',
+    '......kkmmccccCCCCclhhhhhhlmk..................',
+    '.....kmccCCCCCCCCcclhhhhhhhlk..................',
+    '...kkmmcccCCCCCCccclhhhhhlllmk.................',
+    '..kmmlmmcccccccccccllllhlllllk.................',
+    '..kmllmmcccccccccmmllllllllllk..kkk............',
+    '.klllllmmmmmmmcmmmmmllllllllmmkkNNNk...........',
+    '.klllllmmmmmmmmmmmmmmlllllllmmkNNNNNkkk........',
+    'kmllllmmmmmmmmmmmmmmmmlmmmmmmmkNNnNddddk...k...',
+    'kmllllmmmmmmmmmmmmmmmmmmmmmmmmmkdnNddmddkkkNk..',
+    'kmlllmmmmmmmmmmmmmmmmmmmmmmmmmmddnNddkkkddkNk..',
+    'kmdmmdmmdmmdmmdmmdmmdmmdmmdmmdddddNddmemmmNk...',
+    'kmddmddmddmddmddmddmddmddmddmdddddnNdmmmmNNdk..',
+    'kddmddmddmddmddmddmddmddmddmdddddddNddmmNnmdk..',
+    'kddmddmddmddmddmddmddmddmddmdddddddnNddNmmmmdk.',
+    'kdddddddddddddddddddddddddddddddddddnNNddmmmmdk',
+    'kdddmdddmdddmdddmdddmdddmdddmddddddddnnddddddpk',
+    'kdddmdddmdddmdddmdddmdddmdddmdddddddddddddppppk',
+    '.kddmdddmdddmdddmdddmdddmdddmdddddddddddddpppkk',
+    '.kdddddddddddddddddddddddddddddkdddddddddpppppk',
+    '.kddkddddkdddkdkkkkdddddddddkkk.kddddddddppppk.',
+    '..kkkddddkdddkk....kdddkddddk....kkddddddddpk..',
+    '....kddddkdddk.....kdddkddddk.....kdddddkkkk...',
+    '....kSSSSkdddk.....kdddkSSSSk......kddddk......',
+    '....kSSSSksssk.....kssskSSSSk......kdddk.......',
+    '....kSSSSksssk.....kssskSSSSk.......kkk........',
+    '....kSSSSkkkkk.....kkkkkSSSSk..................',
+    '....kkkkkkkkk.......kkkkkkkkk..................',
+    '.....kkkk...............kkkk...................',
+  ];
+  const oxStepA = [
+    '......................k........................',
+    '...............kkkkkkkmkk......................',
+    '............kkkmmmmlllllmkk....................',
+    '........kkkkmcccccclhhhhhmmk...................',
+    '......kkmmccccCCCCclhhhhhhlmk..................',
+    '.....kmccCCCCCCCCcclhhhhhhhlk..................',
+    '...kkmmcccCCCCCCccclhhhhhlllmk.................',
+    '..kmmlmmcccccccccccllllhlllllk.................',
+    '..kmllmmcccccccccmmllllllllllk..kkk............',
+    '.klllllmmmmmmmcmmmmmllllllllmmkkNNNk...........',
+    '.klllllmmmmmmmmmmmmmmlllllllmmkNNNNNkkk........',
+    'kmllllmmmmmmmmmmmmmmmmlmmmmmmmkNNnNddddk...k...',
+    'kmllllmmmmmmmmmmmmmmmmmmmmmmmmmkdnNddmddkkkNk..',
+    'kmlllmmmmmmmmmmmmmmmmmmmmmmmmmmddnNddkkkddkNk..',
+    'kmdmmdmmdmmdmmdmmdmmdmmdmmdmmdddddNddmemmmNk...',
+    'kmddmddmddmddmddmddmddmddmddmdddddnNdmmmmNNdk..',
+    'kddmddmddmddmddmddmddmddmddmdddddddNddmmNnmdk..',
+    'kddmddmddmddmddmddmddmddmddmdddddddnNddNmmmmdk.',
+    'kdddddddddddddddddddddddddddddddddddnNNddmmmmdk',
+    'kdddmdddmdddmdddmdddmdddmdddmddddddddnnddddddpk',
+    'kdddmdddmdddmdddmdddmdddmdddmdddddddddddddppppk',
+    '.kddmdddmdddmdddmdddmdddmdddmdddddddddddddpppkk',
+    '.kdddddddddddddddddddddddddddddkdddddddddpppppk',
+    '.kdddddkkkkddddkkkdddkkdkkddddk.kddddddddppppk.',
+    '..kddddk...kdddk.kdddk.k.kddddk..kkddddddddpk..',
+    '..kddddk...kdddk.kdddk...kddddk...kdddddkkkk...',
+    '..kSSSSk...kdddk.kdddk...kSSSSk....kddddk......',
+    '..kSSSSk...ksssk.ksssk...kSSSSk....kdddk.......',
+    '..kSSSSk...ksssk.ksssk...kSSSSk.....kkk........',
+    '..kSSSSk...kkkkk.kkkkk...kSSSSk................',
+    '..kkkkkk....kkk...kkk....kkkkkk................',
+    '...kkkk...................kkkk.................',
+  ];
+  const oxStepB = [
+    '...............................................',
+    '......................k........................',
+    '...............kkkkkkkmkk......................',
+    '............kkkmmmmlllllmkk....................',
+    '........kkkkmcccccclhhhhhmmk...................',
+    '......kkmmccccCCCCclhhhhhhlmk..................',
+    '.....kmccCCCCCCCCcclhhhhhhhlk..................',
+    '...kkmmcccCCCCCCccclhhhhhlllmk.................',
+    '..kmmlmmcccccccccccllllhlllllk.................',
+    '..kmllmmcccccccccmmllllllllllk..kkk............',
+    '.klllllmmmmmmmcmmmmmllllllllmmkkNNNk...........',
+    '.klllllmmmmmmmmmmmmmmlllllllmmkNNNNNkkk........',
+    'kmllllmmmmmmmmmmmmmmmmlmmmmmmmkNNnNddddk...k...',
+    'kmllllmmmmmmmmmmmmmmmmmmmmmmmmmkdnNddmddkkkNk..',
+    'kmlllmmmmmmmmmmmmmmmmmmmmmmmmmmddnNddkkkddkNk..',
+    'kmdmmdmmdmmdmmdmmdmmdmmdmmdmmdddddNddmemmmNk...',
+    'kmddmddmddmddmddmddmddmddmddmdddddnNdmmmmNNdk..',
+    'kddmddmddmddmddmddmddmddmddmdddddddNddmmNnmdk..',
+    'kddmddmddmddmddmddmddmddmddmdddddddnNddNmmmmdk.',
+    'kdddddddddddddddddddddddddddddddddddnNNddmmmmdk',
+    'kdddmdddmdddmdddmdddmdddmdddmddddddddnnddddddpk',
+    'kdddmdddmdddmdddmdddmdddmdddmdddddddddddddppppk',
+    '.kddmdddmdddmdddmdddmdddmdddmdddddddddddddpppkk',
+    '.kdddddddddddddddddddddddddddddkdddddddddpppppk',
+    '.kddkkddddddkkdkkkkdkkddddddkkk.kddddddddppppk.',
+    '..kk..kddddk..k....k.kddddkk.....kkddddddddpk..',
+    '......kSdddk.........kdddSk.......kdddddkkkk...',
+    '......kSSSSk.........kSSSSk........kddddk......',
+    '......kSSSSk.........kSSSSk........kdddk.......',
+    '......kSkkkk.........kkkkSk.........kkk........',
+    '......kkkkkk.........kkkkkk....................',
+    '.......kkkk...........kkkk.....................',
+  ];
+
   const rabbitSet = bakeClips({ idle: rabbitIdle, hop: rabbitHop, rise: rabbitRise }, RBPAL);
   const deerSet = bakeClips({ idle: deerIdle, graze: deerGraze, run: deerRun }, DEPAL);
   const wolfSet = bakeClips({ idle: [wolfStand], run: [wolfRunA, wolfRunB] }, WOPAL);
+  const foxSet = bakeClips({ idle: [foxStand], run: [foxRunA, foxRunB] }, FXPAL);
+  const oxSet = bakeClips({ idle: [oxStand], run: [oxStepA, oxStand, oxStepB, oxStand] }, OXPAL);
 
   Object.assign(SPRITES, {
     rabbit: { right: rabbitSet, left: mapClips(rabbitSet, flipH) },
     wolf: { right: wolfSet, left: mapClips(wolfSet, flipH) },
+    fox: { right: foxSet, left: mapClips(foxSet, flipH) },
+    ox: { right: oxSet, left: mapClips(oxSet, flipH) },
     deer: { right: deerSet, left: mapClips(deerSet, flipH) },
   });
 })();
