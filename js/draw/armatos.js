@@ -100,7 +100,7 @@ function drawVerdictTele(p, px, py, a, closing, now) {
   }
   if (closing > 0.75) { // the edge catches the light as it comes down
     ctx.fillStyle = '#ffffff';
-    for (let s = 8; s < len - 2; s += 2) ctx.fillRect(Math.round(px + nx * s), Math.round(py + 2 + ny * s), 1, 1);
+    for (let s = 8; s < len - 2; s++) ctx.fillRect(Math.round(px + nx * s), Math.round(py + 2 + ny * s), 1, 1);
   }
   const seed = p.id * 31;
   for (let k = 0; k < 9; k++) { // flecks hopping in the middle stretch
