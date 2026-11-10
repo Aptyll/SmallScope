@@ -1744,7 +1744,7 @@ function renderTitle(now) {
   const bc = easeInOut(m.skinT);               // ...and the skins screen's
   const pan = Math.max(m.panel ? easeOut(m.panelT) : 0, sc, tc, nc, kc, rc, bc); // chrome ducks under a panel or any full screen
   const tintA = 1 - easeOut(outQ / 0.45);
-  if (tintA > 0.005) drawTitleBackdrop(tintA, pan);
+  if (tintA > 0.005) drawTitleBackdrop(tintA, Math.max(pan, state.settingsOpen ? 1 : 0)); // ...and the scene deepens under the settings slab too
   const { toy, rects } = menuLayout();
   const cx = Math.round(VIEW_W / 2);
   const chromeA = (1 - out) * (1 - pan);
