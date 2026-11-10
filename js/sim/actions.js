@@ -892,8 +892,8 @@ function cutHeal(e, t, cut) {
 // gold chevrons alone - the mark still says "I have found this".
 function markUnit(e, t) {
   if (t <= 0 || !unitAlive(e)) return;
-  // being FOUND is the one status a player has to hear: the chevrons are over
-  // your own head where you cannot see them, and what has changed is that
+  // being FOUND is the one status a player has to hear: the chevrons are small
+  // beside your own body in a fight, and what has changed is that
   // your stealth has stopped working. Fresh marks only, or a mark refreshed
   // every second re-rings it every second.
   if (!(e.markT > 0)) sfxFor(e, 'marked');
