@@ -54,7 +54,7 @@ function litLamps(ox, oy, now, dark) {
   lampSpots.length = 0;
   for (const o of structures) {
     const L = LAMPS[o.type];
-    if (!L || o.dead) continue;
+    if (!L || o.dead || o.building) continue; // (a building draws live in the fog of war, so its lamp does too)
     const spr = structSprite(o), off = structArtOff(o, spr);
     lampAt(L, o.tx * TILE + off.x, o.ty * TILE + off.y, ox, oy, o.tx * 7 + o.ty * 3);
   }
