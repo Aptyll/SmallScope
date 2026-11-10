@@ -16,14 +16,11 @@ const PANEL_SLIDE_T = 0.32;
 // fullscreen, so the app needs its own way out; a browser tab has its X
 // FIRST MATCH leads the words for a profile that has never finished a match
 // nor seen the coach through (PROFILE.guided, js/app/profile.js): offered
-// until then, and always a mode in the party's list. RANKED stands dim with
-// a lock and its pips until RANKED_AT matches are played (rankedOpen,
-// js/ui/rooms.js).
+// until then, and always a mode in the party's list.
 function menuItems() {
   return (PROFILE.guided() ? [] : ['FIRST MATCH']).concat(['QUICKPLAY', 'RANKED', '1V1', 'PRACTICE TOOL'],
     window.steamBridge && steamBridge.quit ? ['QUIT'] : []);
 }
-function menuShut(label) { return label === 'RANKED' && !rankedOpen(); }
 // SETTINGS has no plank: it is the ESC panel's in play (js/ui/panels.js),
 // and the WIKI is a tab beside the patch notes (js/ui/notes.js).
 // The items are plain words at MENU_TXT_SCALE - white, the picked one gold -
@@ -39,7 +36,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.679';
+const PATCH_TXT = 'PATCH 0.680';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -55,6 +52,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.680', 'RANKED IS OPEN FROM YOUR FIRST BOOT: NO LOCK AND NO MATCHES TO PLAY FIRST.'],
   ['0.679', 'FALCO WEARS THE OLD HUNT\'S GREEN: A HUNTSMAN\'S HAT WITH A LONG FEATHER AND A GREEN SHOULDER CAPE. LAST HAWK IS THE SAME CUT IN BLACK AND GOLD.'],
   ['0.678', 'HEROES HOLD THEIR WEAPONS THE SAME WAY WHICHEVER WAY THEY FACE: SWORDS AND SPEARS SLANTED AT THE READY, LIGNUM\'S AXE OVER HIS SHOULDER, RUPES\'S MAUL RESTING ON THE SNOW, AND EVERY STAFF UPRIGHT.'],
   ['0.677', 'UNDER THE HOOD: THE HOVER TOOLTIP WORDS NOW LIVE IN THE ONE TEXT TABLE.'],
@@ -770,7 +768,6 @@ function menuSelect(i) {
 function menuActivate(i) {
   SFX.unlock();
   const it = menuItems()[i];
-  if (menuShut(it)) { SFX.deny(); state.menu.shutFx = 0.3; return; } // RANKED, still locked: the lock shakes
   if (it === 'FIRST MATCH') beginParty('guide'); // QUICKPLAY against EASY bots with the coach (js/ui/guide.js)
   else if (it === 'QUICKPLAY') beginParty('quick'); // the party lobby (js/ui/rooms.js)
   else if (it === 'RANKED') beginParty('ranked');
@@ -940,7 +937,6 @@ function updateTitle(dt) {
   updateRooms(dt);
   // a word lights under the pointer, or as the keys' pick until the pointer moves
   const hit = !m.panel && m.screen === 'menu' && mouse.inside ? menuHit() : -1;
-  if (m.shutFx > 0) m.shutFx -= dt;
   for (let i = 0; i < menuItems().length; i++) {
     const target = hit === i || (m.keyNav && m.sel === i) ? 1 : 0;
     // `|| 0` because the array's length is a literal in core.js: a missing
@@ -2092,13 +2088,7 @@ function renderTitle(now) {
     const y = r.y + 2 + Math.round((1 - inT) * 8) + Math.round(out * 25) - Math.round(hv) + (pressed ? 1 : 0);
     ctx.globalAlpha = a;
     const label = menuItems()[i];
-    if (menuShut(label)) { // RANKED, locked: grey, its lock before it and the matches it waits for after
-      const sh = m.shutFx > 0 ? Math.round(Math.sin(m.shutFx * 60) * 2) : 0;
-      drawPixelTextOutline(ctx, label, r.x + 4, y, '#7d849a', 'rgba(8,12,28,0.9)', MENU_TXT_SCALE);
-      drawRankedLock(r.x - 10 + sh, y, 'rgba(8,12,28,0.9)', 2); // its shadow
-      drawRankedLock(r.x - 11 + sh, y - 1, hv > 0.5 ? '#ffd95c' : '#7d849a', 2);
-      drawRankedPips(r.x + r.w + 2, y + 3, 2);
-    } else drawPixelTextOutline(ctx, label, r.x + 4, y, hv > 0.5 ? '#ffd95c' : '#f4f7ff', 'rgba(8,12,28,0.9)', MENU_TXT_SCALE);
+    drawPixelTextOutline(ctx, label, r.x + 4, y, hv > 0.5 ? '#ffd95c' : '#f4f7ff', 'rgba(8,12,28,0.9)', MENU_TXT_SCALE);
     ctx.globalAlpha = 1;
   }
 

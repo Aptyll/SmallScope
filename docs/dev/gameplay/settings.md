@@ -219,7 +219,7 @@ but `DBG`). Under the disc runs the notice lane, and the **stat sheet** flies in
 number on yours moves - every row of your sheet, the moved ones lit and blinking, gone again in
 eight seconds: [rendering.md](../rendering/the-hud-corners/the-stat-ledger-your-sheet-as-a-notice.md).
 
-## The FIRST MATCH and RANKED's lock
+## The FIRST MATCH
 
 **The FIRST MATCH** (`PARTY_MODES.guide`) is a real 5v5 against EASY bots with the coach on (js/ui/guide.js).
 The coach is this screen's UI only: it reads the local player and never writes the sim, so every screen
@@ -235,6 +235,4 @@ and THEIR EAGLE, which stays to the end. An arrow off screen is a 2x chevron on 
 finished lesson holds its card gold for `GUIDE_FLASH`. The title stops offering FIRST MATCH once the
 TOWER lesson is done, the X is pressed, or any match reaches its result.
 
-**RANKED's lock**: a profile counts the matches it saw to their result (`PROFILE.finished`, one per
-ending in `rankResult`; a profile from before the count starts from its takeoffs). Under `RANKED_AT`
-the title shows RANKED locked and the leader's list of modes greys it, and `modeSet` refuses it.
+RANKED is open from the first boot, with no matches to play first.

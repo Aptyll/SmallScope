@@ -222,20 +222,3 @@ function renderGuide(now) {
     ctx.fillRect(px0 + i * 4, r.y - 5, 2, 2);
   }
 }
-
-// the lock RANKED wears until a profile has seen RANKED_AT matches through
-// (the title's word and the party's list of modes): 5 wide, 6 tall, at scale
-const RANK_LOCK = ['.###.', '.#.#.', '.#.#.', '#####', '##.##', '#####'];
-function drawRankedLock(x, y, col, sc) {
-  sc = sc || 1;
-  ctx.fillStyle = col;
-  RANK_LOCK.forEach((row, j) => { for (let i = 0; i < 5; i++) if (row[i] === '#') ctx.fillRect(x + i * sc, y + j * sc, sc, sc); });
-}
-// ...and how far along: one pip per match it waits for, gold once played
-function drawRankedPips(x, y, sc) {
-  for (let i = 0; i < RANKED_AT; i++) {
-    ctx.fillStyle = 'rgba(8,12,28,0.9)'; ctx.fillRect(x + i * 3 * sc - 1, y - 1, 2 * sc + 2, 2 * sc + 2);
-    ctx.fillStyle = i < PROFILE.finished() ? GUIDE_GOLD : '#3c4048';
-    ctx.fillRect(x + i * 3 * sc, y, 2 * sc, 2 * sc);
-  }
-}
