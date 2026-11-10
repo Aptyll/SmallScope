@@ -1849,9 +1849,9 @@ const FALCO_FINE_ART = (() => {
       up: k(['..o...', '.oWo..', '.oWEo.', '.oWEo.', '.oWEo.', '.oWEo.', '.oWEo.', '.oWEo.', '.oWEo.', 'oyyyyo', '.oGGo.', '.oGgo.', '.oGGo.', '.oGGo.', '..oo..', '......'], [1, 5]),
     },
     hawk: tag(SPR.bake(['..oooo....', '.obbbbo...', 'obbbebyy..', 'oBbbbbyo..', 'oBBbWWWo..', 'oBBbWWWWo.', 'oBBBbWwWo.', 'oBBBbWWwo.', '.oBBBbWo..', '..oBBbyo..', '...oBBo...', '....oo....'],
-      { '.': null, o: '#2e2440', b: '#a8794a', B: '#6e4a28', W: '#efe8d6', w: '#cdbf9f', e: '#2e2440', y: '#f2cc6a' })),
+      { '.': null, o: '#2e2440', b: '#c09462', B: '#6e4a28', W: '#f6f0e2', w: '#e0d4b8', e: '#2e2440', y: '#f2cc6a' })),
     glove: tag(SPR.bake(['..oooooo..', '.oGGGGGGo.', 'oGGGGGGGGo', 'oGGGGGGGgo', 'oGGGGGGggo', 'oggggggggo', '.oggggggo.', '..oooooo..'],
-      { '.': null, o: '#2e2440', G: '#c8a46a', g: '#a08250' })),
+      { '.': null, o: '#2e2440', G: '#a8844e', g: '#80623a' })),
   };
 })();
 // THE THROW (HERO_AIMED.knife): by step, for the knife hand on the right of the body (`x`
