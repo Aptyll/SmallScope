@@ -244,37 +244,40 @@ function drawFaberEngine(b, ex, ey, now) {
 }
 
 // ---- the CLOCK STAFF ------------------------------------------------------------
-// His staff (CLASSES' `staff: 'clock'`; HERO_STAVES, js/draw/heroes.js): a brass clock face on
-// a walnut staff, carried upright; its hand ticks round between two frames.
+// His staff (CLASSES' `staff: 'clock'`; HERO_STAVES, js/draw/heroes.js): a brass gear on a walnut
+// staff, carried upright: toothed all round, a dark hub, one light on the lit side, standing out
+// from the top of the staff so the whole wheel is clear of his head; it turns a tooth on between
+// two frames.
 // The hand closes on the shaft at FABER_CLOCK_GRIP.
+const FABER_SHAFT = ['.oAo......', '.oAo......', '.oAo......', '.oAo......', '.oAo......', '.oAo......', '.oAo......', '.oAo......', '.oao......', '.oao......', '..o.......'];
 const FABER_CLOCK = [
-  '..ooo..',
-  '.oyYyo.',
-  'oywwwyo',
-  'oywowyo',
-  'oywooyo',
-  'oywwwyo',
-  '.oyYyo.',
-  '..oyo..',
-  '..oAo..',
-  '..oAo..',
-  '..oAo..',
-  '..oAo..',
-  '..oAo..',
-  '..oAo..',
-  '..oAo..',
-  '..oAo..',
-  '..oao..',
-  '..oao..',
-  '...o...',
-];
-const FABER_CLOCK_GRIP = [3, 10];
-const FABER_CLOCK_PAL = { o: FA_INK, y: FA_BRASS, Y: FA_DEEP, w: '#f4f0e8', A: '#8a5a34', a: '#5a3a24' };
+  '..o.o.o...',
+  '.oyoyoyo..',
+  'oyyyyyyyo.',
+  '.oyWyyyo..',
+  'oyyyoyyyo.',
+  '.oyyyYyo..',
+  'oyyyYYyyo.',
+  '.oyoyoyo..',
+  '.oAoo.o...',
+].concat(FABER_SHAFT);
+const FABER_CLOCK_TURN = [ // the same wheel a tooth on
+  '.o.o.o.o..',
+  'oyoyoyoyo.',
+  '.oyyyyyo..',
+  'oyyWyyyyo.',
+  '.oyyoyyo..',
+  'oyyyyYyyo.',
+  '.oyyYYyo..',
+  'oyoyoyoyo.',
+  '.oAo.o.o..',
+].concat(FABER_SHAFT);
+const FABER_CLOCK_GRIP = [2, 11];
+const FABER_CLOCK_PAL = { o: FA_INK, y: FA_BRASS, Y: FA_DEEP, W: FA_WHITE, A: '#8a5a34', a: '#5a3a24' };
 let faberClockArt = null;
 function faberClock() {
   if (faberClockArt) return faberClockArt;
-  const tick = FABER_CLOCK.map((r, y) => (y === 3 ? 'oywowyo' : y === 4 ? 'oyoowyo' : r)); // the hand a quarter on
-  faberClockArt = [bakeBladeArt(FABER_CLOCK, FABER_CLOCK_PAL), bakeBladeArt(tick, FABER_CLOCK_PAL)];
+  faberClockArt = [bakeBladeArt(FABER_CLOCK, FABER_CLOCK_PAL), bakeBladeArt(FABER_CLOCK_TURN, FABER_CLOCK_PAL)];
   return faberClockArt;
 }
 HERO_STAVES.clock = { art: faberClock, grip: FABER_CLOCK_GRIP };
