@@ -57,6 +57,7 @@ function renderUI(now) {
   if (shop) {
     shopScrim();
     drawShopPanel(now);
+    renderGuideShop(now); // the coach's arrow over BUY on a first visit (js/ui/guide.js)
   }
 
   // the character panel (G): over the HUD, under the toasts and the tooltip
