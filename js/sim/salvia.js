@@ -18,6 +18,7 @@ const POULTICE_SPD = 240;       // px/s
 const POULTICE_R = 7;           // px round it a body is met
 const POULTICE_SLOW = 0.65;     // a rival's walk x this...
 const POULTICE_SLOW_T = 1.5;    // ...for this long
+const POULTICE_FX_R = 14, POULTICE_FX_LIFE = 0.6; // its leaves thrown this far, lying this long
 // W SNOWDROPS: a few snowdrops planted round a spot near her; an ally who walks over one picks it
 const DROP_RANGE = 80;          // px from her the spot may be set
 const DROP_N = 3;               // planted each cast
@@ -51,7 +52,7 @@ const SALVIA_AB = [
     tip: 'HEALS THE FIRST ALLY. SLOWS A RIVAL',
     blurb: 'A TOSSED BUNDLE OF HERBS FLIES IN A LINE. THE FIRST ALLY IT MEETS IS HEALED; THE FIRST RIVAL IT MEETS IS SLOWED.',
     use: (p) => salviaPoultice(p),
-    tele: (p, px, py, a, col, closing, now, ex, ey) => drawPoulticeTele(p, a, closing, now, ex, ey), // a trail of herb leaves down the line (js/draw/salvia.js)
+    tele: (p, px, py, a, col, closing, now, ex, ey) => drawPoulticeTele(p, a, closing, now, ex, ey), // the bundle held out (js/draw/salvia.js)
     icon: SALVIA_ICON32.poultice, mark: 'heal',
     bot: (p, foe, d, clear) => !!salviaNeedy(p, POULTICE_RANGE * 0.85, 0.75, false) || (clear && d < POULTICE_RANGE * 0.8),
     botAim: (p, foe) => salviaAimAt(salviaNeedy(p, POULTICE_RANGE * 0.85, 0.75, false) || foe),
@@ -168,7 +169,10 @@ function updateBundles(dt) {
       else { slowUnit(q, POULTICE_SLOW_T, POULTICE_SLOW); burst(q.x, unitMidY(q), '#d8cfb8', 6, 40, 0.35, true); sfxAt('hit', q.x, q.y); }
       done = true;
     }
-    if (done || b.d >= POULTICE_RANGE) salviaBundles.splice(i, 1);
+    if (done || b.d >= POULTICE_RANGE) {
+      abFx.push({ kind: 'ring', x: b.x, y: b.y, r: POULTICE_FX_R, t: 0, col: '#9cc87a', fx: 'poultice', life: POULTICE_FX_LIFE });
+      salviaBundles.splice(i, 1);
+    }
   }
 }
 

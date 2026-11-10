@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['RUPES and SALVIA: SHOULDER ploughs a furrow in the snow, POULTICE is a tied linen bundle with sage', '0.910'],
     ['POTION: green hearts lift off the body while it heals', '0.908'],
     ['AURA\'s THE CURTAIN is drawn as solid ribbons of light', '0.907'],
     ['ROOST: no ring, a white feather settles on the hero the bird is mending', '0.906'],

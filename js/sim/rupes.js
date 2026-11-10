@@ -29,6 +29,7 @@ const SHOULDER_SPD = 300;
 const SHOULDER_T = 0.24;        // s of charge (~4.5 tiles)
 const SHOULDER_RAMP = 0.05;
 const SHOULDER_KB = 240;        // px/s the body is thrown
+const SHOULDER_FX_LIFE = 0.7;    // s the ploughed furrow lies
 const SHOULDER_PIN = 30;        // px behind the body a tree, a rock or a wall pins it: stunned
 // R AVALANCHE: the roll. Speed climbs as it goes; the ring and the hold grow
 // with the distance rolled, full at AVA_FULL px
@@ -185,6 +186,8 @@ function solidBehind(x, y, nx, ny, r) {
   return false;
 }
 function shoulderEnd(p, q) {
+  const ran = SHOULDER_SPD * (SHOULDER_T - Math.max(0, p.rushT));
+  if (ran > 12) abFx.push({ kind: 'line', x: p.x, y: p.y + 4, a: Math.atan2(-p.rushNY, -p.rushNX), r: ran, half: 6, t: 0, col: '#dfe8f4', fx: 'furrow', life: SHOULDER_FX_LIFE });
   p.rushT = 0;
   p.dash = '';
   p.vx = p.rushNX * 40; p.vy = p.rushNY * 40;
