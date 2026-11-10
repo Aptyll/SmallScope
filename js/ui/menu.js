@@ -35,7 +35,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.787';
+const PATCH_TXT = 'PATCH 0.788';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -51,6 +51,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.788', 'BUCINA SOUNDS THE HORN AT HER LIPS AND BELLA PARRIES WITH ONE BLADE, NOT TWO.'],
   ['0.787', 'A SPEAR THRUST TAKES THE ARM WITH IT: THE HAFT STAYS IN THE HAND.'],
   ['0.786', 'ARMATOS\'S SWING SWEEPS AT HIS NEW PIXEL DETAIL, AND ANY HERO MOVED TO IT CARRIES ITS WHOLE KIT ALONG; STILL SWITCHED OFF FOR NOW.'],
   ['0.784', 'AT DAWN AND DUSK THE PINES TAKE THE SAME ROSE AND GOLD LIGHT AS THE SNOW, AND THE FOREST SHOWS ITS RIDGES FROM THE EAGLE.'],

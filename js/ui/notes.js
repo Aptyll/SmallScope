@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['Bucina keeps the horn at her lips while it sounds; Bella\'s parry shows a single blade', '0.788'],
     ['Maris and Varro keep a hand on the spear when they thrust', '0.787'],
     ['PINES WARM WITH THE SNOW AT DAWN AND DUSK', '0.784'],
     ['BEAR AND ORCA BUFFS RISE AS MOTES ROUND THE HERO INSTEAD OF A RING OF DOTS', '0.783'],
