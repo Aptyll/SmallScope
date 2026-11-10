@@ -231,8 +231,8 @@ swaying between two baked frames.
 RUPES has two looks (`RUPES_SKINS`, js/sprites/rupes.js): QUARRYMAN (free; a fur cap with ear
 flaps, a full beard, leather straps over the side's coat, fur mitts) and ICE CELLAR (200 coins; the
 side's hood up, a leather mantle, an ice-blue scarf), A and B off heroes-rupes/round1 in the project
-files. Both are drawn on ARMATOS's frame with the broadest shoulders of anyone (14 px head-on,
-12 side-on) and run as their drawn bodies (`run: 'drawn'`); their dolls (`Quarry`, `Cellar` in
+files. Both are drawn on ARMATOS's frame with the broadest shoulders of anyone (12 px head-on,
+11 side-on as QUARRYMAN: every hero's body stays within 25% of ARMATOS's 10 px) and run as their drawn bodies (`run: 'drawn'`); their dolls (`Quarry`, `Cellar` in
 app/bake-player/bodies.py) are used only for the roll. `RUPES_PAL` is `ARM_PAL` with the fur
 `t`/`T`, beard `w`/`W`, leather `m`/`M` and scarf `i`/`I`. His ICE MAUL is a `HERO_BLADES` row
 (`blade: 'maul'`, js/draw/rupes.js). While he rolls (AVALANCHE) a `HERO_BODY_DRAW` row draws the
