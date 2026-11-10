@@ -131,7 +131,6 @@ function playInPage({ chunks, CHUNK, drop, scene, upTo }) {
     window.__checkT += 7;
     settings.hitbox = 2; D.showPaths = true; v.hit = shot(); settings.hitbox = 0; D.showPaths = false;
     state.mapOpen = true; v.map = shot(); state.mapOpen = false;
-    const sk = settings.shake; settings.shake = true; state.shake = 3; v.shake = shot(); state.shake = 0; settings.shake = sk;
     mouse.inside = true; mouse.x = VIEW_W / 2 + 10; mouse.y = VIEW_H / 2 - 6; v.mouse = shot(); mouse.inside = false;
     D.hideUI = true; v.clean = shot(); D.hideUI = false;
     return v;

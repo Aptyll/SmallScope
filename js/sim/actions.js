@@ -274,7 +274,6 @@ function rollTackle(p, sp, nx, ny) {
   p.vx = -nx * 30; p.vy = -ny * 30; // bounced back off it
   damagePlayer(p, Math.max(1, Math.round(rollLerp(ROLL_DMG, t) * TACKLE_SELF)), -nx, -ny, null, 'tackle');
   if (!p.dead) stunUnit(p, rollLerp(TACKLE_STUN, t));
-  shakeFor(p, 4);
   sfxAt('hit', p.x, p.y);
   burst(p.x + nx * 5, p.y - 3, '#eef4fb', 8, 45, 0.45, true);
 }
@@ -397,7 +396,6 @@ function chopTree(o, p) {
   if (o.hp > 0) { shedHit(o); return; } // the blow shakes the crown (js/sim/shed.js); a fell has its own snow
   setTile(idx(o.tx, o.ty), { type: 'stump', tx: o.tx, ty: o.ty, flash: 0, shake: 0 });
   sfxAt('treeFall', ox, oy);
-  shakeFor(p, 2.5);
   // the fell's one payout, a gold pine's included
   const gold = o.rare;
   awardGold(p, YIELD.treeFall + (gold ? YIELD.treeRare : 0), ox, oy - 6);
@@ -500,7 +498,6 @@ function hurtStruct(o, dmg, p, bot) {
   sfxAt(bot ? 'waveHit' : 'hit', c.x, c.y); // a soldier's axe on a wall is the lane's quieter blow
   burst(c.x, c.y - 4, '#a3794f', 5, 40, 0.4, true);
   tallyHit(o, dmg);
-  shakeFor(p, 1);
   if (o.hp <= 0) {
     const name = STRUCTS[o.type].name;
     // the wreck pays out half its price, straight to whoever broke it

@@ -298,7 +298,6 @@ function nixWhiteStrike(p) {
   p.slashT = SLASH_T; p.slashA = Math.atan2(ny, nx); p.slashHalf = 0.9;
   abFx.push({ kind: 'wedge', x: p.x, y: p.y - 2, a: Math.atan2(ny, nx), r: 20, half: 0.6, t: 0, col: '#ffffff' });
   burst(q.x, unitMidY(q), '#ffffff', 14, 60, 0.45, true);
-  shakeFor(p, 4, q);
   sfxAt('break_', q.x, q.y);
 }
 

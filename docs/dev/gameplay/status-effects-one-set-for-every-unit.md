@@ -44,7 +44,7 @@ Because a hit grants none, every blow lands its own
 damage, its own shove and its own fire, nothing caps a wolf pack
 ([Camp monsters](wildlife.md#camp-monsters-neutral-until-hit)), and
 a body can take several hits in one frame — `SFX.hurt()`’s 0.03 s `gap` collapses the oofs into
-one so they do not phase, while the damage total (each hit adds to it), the red flash, the shove and the shake are
+one so they do not phase, while the damage total (each hit adds to it), the red flash and the shove are
 per hit. Knockback does not accumulate: the last blow of a step writes `kbx`/`kby` outright.
 
 The seven states, and what each does to a body:

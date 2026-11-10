@@ -236,7 +236,6 @@ function bellaRiposte(p) {
   p.slashT = SLASH_T; p.slashA = Math.atan2(ny, nx); p.slashHalf = 0.9; // the blade answers through the arc
   abFx.push({ kind: 'line', x: p.x, y: p.y - 2, a: p.slashA, r: d, half: 3, t: 0, col: '#ffd95c' });
   burst(q.x, unitMidY(q), '#ffd95c', 10, 55, 0.45, true);
-  shakeFor(p, 4, q);
   sfxAt('hit', q.x, q.y);
 }
 
@@ -315,7 +314,6 @@ function bellaStrike(p) {
   p.slashT = SLASH_T; p.slashA = Math.atan2(ny, nx) + (p.flurryN % 2 ? 0.5 : -0.5); p.slashHalf = 0.8;
   abFx.push({ kind: 'wedge', x: p.x, y: p.y - 2, a: Math.atan2(ny, nx), r: d + 6, half: last ? 0.6 : 0.35, t: 0, col: last ? '#ffd95c' : '#eef4fb' });
   burst(q.x, unitMidY(q), last ? '#ffd95c' : '#eef4fb', last ? 12 : 6, last ? 60 : 45, 0.45, true);
-  shakeFor(p, last ? 5 : 2, q);
   sfxAt(last ? 'break_' : 'hit', q.x, q.y);
 }
 

@@ -111,7 +111,7 @@ function tallyCues(t0, t1, T, stats) {
 function winCues(t0, t1) {
   if (!state.end) return;
   if (t0 < WIN_T.crownLand && t1 >= WIN_T.crownLand) {
-    SFX.levelUp(); state.shake = Math.max(state.shake, 2.5);
+    SFX.levelUp();
   }
   tallyCues(t0, t1, WIN_T, WIN_STATS);
 }

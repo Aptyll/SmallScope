@@ -36,7 +36,7 @@ function saveArr(a) { return [() => a, (v) => { a.length = 0; if (v) for (const 
 // state's own UI keys are this screen's and never the match's: a load opens
 // with every panel shut
 const SAVE_STATE_SKIP = new Set(['paused', 'mapOpen', 'charOpen', 'shop',
-  'settingsOpen', 'rebind', 'wheel', 'menu', 'intro', 'introLen', 'introFrom', 'fade', 'shake',
+  'settingsOpen', 'rebind', 'wheel', 'menu', 'intro', 'introLen', 'introFrom', 'fade',
   'shopSel', 'shopSlot', 'shopCat', 'shopTab']); // the counter's pick, filter and tab (js/ui/shop.js)
 const SAVE_ROOTS = [
   ['state', () => { const o = {}; for (const k of Object.keys(state)) if (!SAVE_STATE_SKIP.has(k)) o[k] = state[k]; return o; },

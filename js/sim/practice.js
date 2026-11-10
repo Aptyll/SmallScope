@@ -64,7 +64,6 @@ function practiceSeat(p) {
 function practiceLand() {
   state.drop = { eagles: makeEagles() };
   for (const e of state.drop.eagles) { e.crash = findCrashPoint(e); eagleCrash(e); }
-  state.shake = 0; // the boot is not an impact
 }
 // a bird driven to zero in practice is not driven off - nothing ends here -
 // it shakes the scare off and its nerve is whole again (hurtEagle)

@@ -246,7 +246,6 @@ function igniaWildfire(p) {
   abFx.push({ kind: 'ring', x: c.x, y: c.y, r: WILD_R, t: 0, col: '#ff9a3a' });
   burst(c.x, c.y, '#ff9a3a', 24, 80, 0.6, true);
   burst(c.x, c.y, '#ffd95c', 12, 60, 0.5, true);
-  shakeFor(p, 4);
   sfxAt('break_', c.x, c.y);
 }
 

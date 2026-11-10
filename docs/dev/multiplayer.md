@@ -402,8 +402,7 @@ full-draw arrow takes to fly 80 px, and the same disc on every side keeps it a f
 rather than a hidden handicap; a hit calls `damagePlayer(target, dmg, dx, dy, src, cause)` for the shove a key's blow lands (an attack lands none on a player), the hit's spark (js/draw/hitfx.js), the
 floater and possibly `die(p, src, cause)`. Friendly fire is off, and an arrow can never hit its
 shooter. `damagePlayer` takes a seventh argument, `crit` (a blow's `crit` through `hurtUnit`, e.g.
-FALCO's STOOP or NIX's WHITEOUT): it runs the damage floater hotter and at double scale and doubles
-the local shake. SAGITTA's piercing bolt (`a.pierce`) is the one shot that takes a body and keeps flying — everyone on the
+FALCO's STOOP or NIX's WHITEOUT): it runs the damage floater hotter and at double scale. SAGITTA's piercing bolt (`a.pierce`) is the one shot that takes a body and keeps flying — everyone on the
 line is hit once each (`a.pierceHit`), and only a raised shield or the world stops it. A player
 riding a zipline is a target like any other, and cannot shoot back ([the ride](gameplay/momentum-movement-players-only.md#the-zipline)).
 
@@ -972,7 +971,7 @@ what the rest of the code needs to know is this:
 - **A side is a field, not a slot.** Anything that wants "which side" reads `p.team`, never the
   slot number; a party sits on the leader's side.
 - **A cue reaches a client only if the sim said where and who.** Inside the step, `sfxAt`,
-  `sfxFor`, `sfxOwn`, `shakeAt` and `shakeFor` (js/net/events.js) play the cosmetic on the host and
+  `sfxFor` and `sfxOwn` (js/net/events.js) play the cosmetic on the host and
   record it (`evPush`; `burst` and the floaters record themselves); the ring rides out with the
   snapshot and the client replays each entry against its *own* player (`evPlay`). A bare
   `if (p === player) SFX.cue()` in the step is a sound no client hears.

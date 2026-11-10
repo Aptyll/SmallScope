@@ -141,7 +141,6 @@ function pinHit(a, t, nx, ny) {
   if (t instanceof Player) { t.kbx = 0; t.kby = 0; } else { t.kbx = 0; t.kby = 0; t.vx = 0; t.vy = 0; }
   burst(t.x + nx * 6, unitMidY(t) + ny * 4, '#ffd95c', 10, 50, 0.5, true);
   sfxAt('break_', t.x, t.y);
-  shakeFor(t, 3);
 }
 
 // ---- W PAVISE ---------------------------------------------------------------------
@@ -195,7 +194,6 @@ function sagittaCrank(p) {
   burst(p.x, p.y + 4, '#eef4fb', 14, 60, 0.45, true);
   burst(p.x, p.y + 4, '#a3794f', 5, 40, 0.35, true);
   sfxAt('hit', p.x, p.y);
-  shakeFor(p, 2);
 }
 function crankStep(p, mv) {
   if (mv.blockedX || mv.blockedY || p.rushT <= 0) {
@@ -210,14 +208,12 @@ function sagittaLong(p) {
     hit: 'longbolt', pierce: true, pierceHit: [], look: 'longbolt' });
   burst(p.x, p.y - BOW_Y, '#f4f7ff', 10, 60, 0.4, true);
   sfxAt('arrow', p.x, p.y);
-  shakeFor(p, 3);
 }
 // it ends on the first hero it meets (HERO_SHOT_HIT): the soldiers and beasts before it are pierced
 function longHit(a, t) {
   if (!(t instanceof Player)) return;
   a.pierce = false;
   burst(t.x, unitMidY(t), '#f4f7ff', 12, 70, 0.5, true);
-  shakeFor(t, 5);
 }
 
 // ---- the hooks she registers (js/sim/heroes.js) ------------------------------------

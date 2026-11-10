@@ -434,7 +434,7 @@ function drawSwingArcs(ex, ey, now) {
   }
 }
 
-function renderAirLayer(shx, shy, now) {
+function renderAirLayer(now) {
   // the air layer (airCv, js/app/canvas.js): a bird in flight, its riders,
   // anyone falling and a player on a zipline's handle, off the EXACT camera
   // so the body the camera rides holds still on the screen while the ground
@@ -442,7 +442,7 @@ function renderAirLayer(shx, shy, now) {
   // laid it over the world. Only the box round what it holds is graded and
   // blitted (airBox): a bird's trail and shadow reach across the frame, so a
   // flight takes all of it, but a rider is a few dozen px
-  const ax = camX + shx, ay = camY + shy;
+  const ax = camX, ay = camY;
   airBox.x0 = airBox.y0 = Infinity; airBox.x1 = airBox.y1 = -Infinity;
   if (state.drop && state.drop.eagles.some(dropFlies)) airGrow(0, 0, WV_W, WV_H);
   for (const p of players) if (p.active && p.dropT > 0) airGrow(p.x - ax - AIR_PAD, p.y - ay - DROP_ALT - 60, p.x - ax + AIR_PAD, p.y - ay + AIR_PAD);
@@ -461,7 +461,7 @@ function renderAirLayer(shx, shy, now) {
 
 // the world blit, then everything drawn in screen space: the weather, the HUD,
 // the screens over it and the pointer
-function renderScreen(ox, oy, shx, shy, now) {
+function renderScreen(ox, oy, now) {
   // Back to the screen, and the only place the two pixel spaces meet. The
   // blit is done in DEVICE pixels (identity transform) at k = zoom * devScale
   // px per world px: whole at rest, so every world pixel gets exactly the
@@ -477,7 +477,7 @@ function renderScreen(ox, oy, shx, shy, now) {
   ctx = uictx;
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   const kPx = zoomCur * devScale;
-  const subX = Math.round((camX + shx - ox) * kPx), subY = Math.round((camY + shy - oy) * kPx);
+  const subX = Math.round((camX - ox) * kPx), subY = Math.round((camY - oy) * kPx);
   ctx.drawImage(worldCv, 0, 0, WV_W, WV_H, -subX, -subY, WV_W * kPx, WV_H * kPx);
   if (airOn) {
     const b = airBox, bw = b.x1 - b.x0, bh = b.y1 - b.y0;
@@ -487,7 +487,7 @@ function renderScreen(ox, oy, shx, shy, now) {
   // devScale - so 1px HUD rects and the 3x5 font stay exact at any zoom
   ctx.setTransform(devScale, 0, 0, devScale, 0, 0);
 
-  renderWeather(camX + shx, camY + shy); // on the screen: the exact camera, the way the ground was blitted
+  renderWeather(camX, camY); // on the screen: the exact camera, the way the ground was blitted
   renderVignettes();
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   drawTallies(kPx, subX, subY); // the running damage totals the frames queued, crisp at any zoom (js/draw/overhead.js)

@@ -76,7 +76,7 @@ because with no role asked for the only transport is the loopback.
 
 | File | Owns | Talks to |
 | --- | --- | --- |
-| `js/net/events.js` | the cosmetic ring: `sfxAt`/`sfxFor`/`sfxOwn`/`shakeAt`/`shakeFor` are what a sim file calls where it used to gate a cue on the local screen; `evPush` records (host, inside the step only), `evDrain` empties the ring into a snapshot message, `evPlay` replays one entry on a client | every sim file that raises a cue |
+| `js/net/events.js` | the cosmetic ring: `sfxAt`/`sfxFor`/`sfxOwn` are what a sim file calls where it used to gate a cue on the local screen; `evPush` records (host, inside the step only), `evDrain` empties the ring into a snapshot message, `evPlay` replays one entry on a client | every sim file that raises a cue |
 | `js/net/net.js` | `NET` (the role `solo`/`host`/`client`, the peer table, the parked slots, the dictionaries, the byte counters), `isHuman`, the loopback transport, `netSetup`, `netRelay`, the three doors `netHost`/`netJoin`/`netLeave`, the host side (`netHostStep`, `netHostHello`, `netHostFull`, `netHostLeave`, `netHostFlush`, `netHostRoom`, `netHostRoster`), the client side (`netClientStep`, `netClientWelcome`, `netClientApply`, `netClientApplyDelta`, `netClientLerp`, `netClientMode`) | sim.js, boot.js, ui/menu.js |
 | `js/net/snapshot.js` | the snapshot by reflection (`pack`/`packEnt`/`snapBuild`, `snapApply`), network ids (`snapNid`), the ack-keyed ring and the delta (`snapHistoryPush`, `snapHistoryAt`, `snapDeltaFrom`, `snapApplyDelta`), the bytes (`snapEncode`/`snapDecode`, `encDict`, the `SNAP_QUANT` quantizer), the proofs (`netEcho`, `netEchoRun`, `netDeltaRun`, `snapCompare`) | net.js, the singletons |
 | `js/net/transport-ws.js` | `wsTransport(relay, room)` over the relay in `app/server.js`, and `wsRooms`, the live room list | net.js, ui/menu.js |
@@ -187,7 +187,7 @@ netClientStep(dt): send {t:'in'} - this tick's input and the ack - step our own 
 | ARMATOS's planted standards (`guards`), IGNIA's lines of fire (`brushfires`), the ice breaks (`iceBreaks`), the orca (eased like a body: `netClientLerp`), the road registry (`pads`), the camps' `repopT` and `seen` (a side's cut: its own `seen` only, `snapFogCamps`) | host | snapshot singletons, sent when touched |
 | `state`: `SNAP_STATE` (`time`, `elapsed`, `day`, `tick`, `darkness`, the wind's three, `fishT`, `creekGone`, `over`, `end`, `eagleCine`) | host | snapshot singleton, by the names touched; a client keeps its own `over`/`end` and holds the host's as `NET.hostOver` |
 | deaths, respawns, the end of the match | host | snapshot state - `netClientMode` reads the local body (`aboard`, `dropT`, `dead`, `eliminated`) and the host's verdict turned to its own side |
-| a hit's puff and number, a cue, a shake | host | the cosmetic ring (`ev` on a `snap`), replayed by `evPlay` |
+| a hit's puff and number, a cue | host | the cosmetic ring (`ev` on a `snap`), replayed by `evPlay` |
 | particles, footprints, snow, camera, cursor, HUD, tooltips, minimap, audio | each machine | never on the wire |
 | profile stats | client-side | every `PROFILE.add*` in the sim is gated on `p === player` inside the step, which is the host's screen, so a client writes its own from its snapshot body: `netClientStats` (js/net/net.js) diffs `earned` (gold), `kills`, `dead`'s rising edge (the leap's cue arrives as `sfxFor`'s event), counts the match and its first day at takeoff, and `endMatch('won')` writes `addWin` |
 
@@ -249,7 +249,7 @@ from this snapshot, not written beside it:
 **The proofs** (all on `DBG`, recipes in [checklists](dev/checklists.md)): `netEcho()` renders the
 world frame, snapshots through the bytes, blanks every singleton, applies and renders again - the
 pixels that differ are what the snapshot misses, and `snapCompare` names the fields (the harness
-pins the wall clock and the shake, which `render()` would otherwise roll, and catches the
+pins the wall clock, which animations would otherwise read, and catches the
 trampled snow's chunk repaints up whole, `trCatchUp`, which it would otherwise spread over frames). `netDeltaRun(ticks,
 every, loss)` applies a run of deltas back in the page and compares after each.
 `DBG.netVerify(on)` makes a host ride its full form along every `VERIFY_EVERY` (300) ticks so each
@@ -412,7 +412,7 @@ is no per-recipient field policy beyond the fog.
 
 **Only cosmetics are events** (js/net/events.js): the ring carries `burst`, `float`, `dmg`, `sfx`
 (cue at a place with a radius; `EV_ANYWHERE` reaches every screen), `sfxp` (cue for a player id),
-`sfxo` (owner cue / bystander cue), `shake` and `shakep` entries as `{k, a}`, recorded inside the
+`sfxo` (owner cue / bystander cue) entries as `{k, a}`, recorded inside the
 step on the host (`evInStep` and `evRecord`, which is on only while there are peers; `EV_MAX` 1024
 per flush) and replayed by `evPlay` on a client against *its* player. A side's peers get only the
 `burst`, `stream`, `float` and last-hit `coin` entries raised where it sees, and the bot calls and
