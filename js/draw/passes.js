@@ -385,6 +385,7 @@ function drawParticles(ex, ey) {
   for (const p of particles) {
     // every particle in the world is in the list; one off the frame paints nothing
     const x = Math.round(p.x - ex), y = Math.round(p.y - ey);
+    if (p.art) continue; // a struck bird's feather is drawn over the bird (drawLooseFeathers, js/draw/recall.js)
     if (x + p.size <= 0 || y + p.size <= 0 || x >= WV_W || y >= WV_H) continue;
     // `maxLife` is the seconds a particle spends fading out (bursts hold full
     // opacity until their last 0.4 s); `alpha` caps how opaque it ever gets,

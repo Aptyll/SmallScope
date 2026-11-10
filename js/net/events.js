@@ -61,6 +61,7 @@ function evPlay(ev) {
   const a = ev.a;
   switch (ev.k) {
     case 'burst': burst(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7]); break;
+    case 'feather': knockFeather(a[0], a[1], a[2]); break; // a feather knocked off a struck bird (js/sim/eagle.js)
     case 'stream': streamTo(a[0], a[1], a[2], a[3], a[4], a[5], a[6]); break;
     case 'float': addFloater(a[0], a[1], a[2], a[3], a[4]); break;
     case 'coin': coinPop(a[0], a[1], a[2], a[3]); break; // a last hit's coin, or a miss's (js/sim/farm.js)

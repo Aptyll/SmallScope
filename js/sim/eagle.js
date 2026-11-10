@@ -580,6 +580,15 @@ function eagleBoomFx(e, k) {
   }
 }
 
+// A FEATHER KNOCKED LOOSE (hurtEagle): it pops up off the hit, tips out to one side and
+// sinks, turning as it goes (drawLooseFeather, js/draw/recall.js). Recorded, so every screen
+// sees the same feather.
+const FEATHER_GAP = 0.3, FEATHER_LIFE = 1.2; // s between two off one bird, and how long one hangs in the air
+function knockFeather(x, y, side) {
+  evPush('feather', [x, y, side]);
+  particles.push({ x, y, vx: side * 70, vy: -30, life: FEATHER_LIFE, maxLife: 0.35, color: '#f4f7ff', size: 11, grav: 70, art: 'feather', side });
+}
+
 // a rival's arrow or E swing into the grounded bird. hx/hy is where the hit
 // landed (an arrow into a wingtip puffs at the wingtip, not the body's centre);
 // callers with no better point omit them.
@@ -594,7 +603,9 @@ function hurtEagle(e, dmg, src, hx, hy) {
   e.flash = 0.12;
   const px = hx === undefined ? e.x : hx, py = (hy === undefined ? e.y : hy) - 8;
   burst(px, py, '#f6f8ff', 5, 45, 0.5, true);
-  burst(px, py, TEAMS[skin(e.team)].mark, 3, 40, 0.4);
+  // a feather knocked loose, never specks in the side's colour: red ones off a struck
+  // bird read as blood. One at a time, so a crowd on the bird is not a pillow fight
+  if (state.elapsed - (e.featherT || -9) >= FEATHER_GAP) { e.featherT = state.elapsed; knockFeather(px, py, rng() < 0.5 ? -1 : 1); }
   // WITHIN EARSHOT it is the bird's own voice - it had been using hurt(), the
   // man's winded oof, so the objective the whole match is about sounded like
   // somebody being punched. OUT OF EARSHOT, and only for YOUR OWN bird, it is
