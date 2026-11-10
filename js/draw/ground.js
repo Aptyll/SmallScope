@@ -154,6 +154,13 @@ function paintGroundTile(g, tx, ty) {
         const dx = LOG_NBR[n], dy = LOG_NBR[n + 1], lo = objAt(tx + dx, ty + dy);
         if (lo && lo.type === 'log') paintLog(g, lo.seg, px, py, -dx * TILE, -dy * TILE);
       }
+      // a fallen pine on the bank (jungleMarks) reaches up to two tiles past the tiles it holds
+      for (let dy = -2, seen = []; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
+        const tr = objAt(tx + dx, ty + dy);
+        if (!tr || tr.type !== 'trunk' || seen.includes(tr.x0 * 8192 + tr.y0)) continue;
+        seen.push(tr.x0 * 8192 + tr.y0);
+        paintTrunk(g, tr, px, py);
+      }
       // the cistern's sills and the shadow its stone throws (js/draw/cistern.js)
       paintCisternFlat(g, tx, ty, px, py);
       // last, over everything lying on the ground: the shade the scenery
@@ -231,6 +238,57 @@ function paintLog(g, seg, px, py, ox, oy) {
     else if (t <= 2) c = h < 0.08 ? LOG_COL.rim : h < 0.35 ? LOG_COL.dark : LOG_COL.mid; // bark grain, a knot now and then
     else c = h < 0.3 ? LOG_COL.mid : LOG_COL.dark;
     penDot(g, c, px + x, py + y);
+  }
+  penFlush();
+}
+// a fallen pine, painted into one tile's px from the trunk's line (x0, y0 the
+// root plate, x1, y1 the broken top): bark under a snow cap on its upper
+// side, a root plate of earth standing up at its foot, a splintered top,
+// three lopped branch stubs, a drift banked on its upper side and its shade
+// off the lower one, so it lies in the snow and has a top and a bottom
+const TRUNK_COL = { rim: '#2a1c10', dark: '#4a3218', mid: '#6b4a2a', light: '#8a6142', wood: '#d9b382', earth: '#3b2c22', root: '#5a4330', snow: '#f4f7ff', snowD: '#d8e4f2', capRim: '#8ea2bc', drift: '#cfdbea' };
+const TRUNK_R = [6.5, 4.5];   // px half-thickness at the foot and at the broken top
+const TRUNK_PLATE = [5, 13];  // px the root plate stands along the line and across it
+const TRUNK_STUBS = [[0.34, -1], [0.55, 1], [0.78, -1]]; // [along, side]: a lopped branch (side -1 the upper)
+const TRUNK_SHADE = 'rgba(40,60,100,0.24)';
+function paintTrunk(g, tr, px, py) {
+  const vx = tr.x1 - tr.x0, vy = tr.y1 - tr.y0, L = Math.hypot(vx, vy), ux = vx / L, uy = vy / L;
+  let nx = -uy, ny = ux;
+  if (ny < 0) { nx = -nx; ny = -ny; } // n points down the screen: d < 0 is the trunk's upper side
+  const seed = tr.x0 * 3 + tr.y0;
+  for (let y = 0; y < TILE; y++) for (let x = 0; x < TILE; x++) {
+    const wx = px + x + 0.5 - tr.x0, wy = py + y + 0.5 - tr.y0;
+    const a = wx * ux + wy * uy, d = wx * nx + wy * ny, h = hash2(px + x, py + y);
+    const r = TRUNK_R[0] + (TRUNK_R[1] - TRUNK_R[0]) * Math.max(0, Math.min(1, a / L));
+    const ad = Math.abs(d), f = a / L;
+    let c = null;
+    // the root plate: a disc of earth and torn roots standing on edge at the foot
+    const pa = (a + 1) / TRUNK_PLATE[0], pd = d / (TRUNK_PLATE[1] + (hash2(seed, Math.round(d)) - 0.5) * 3);
+    if (pa * pa + pd * pd <= 1 && a < 2) {
+      c = ad > TRUNK_PLATE[1] - 3 && h < 0.5 ? TRUNK_COL.root : d < -TRUNK_PLATE[1] * 0.45 ? (h < 0.25 ? TRUNK_COL.snowD : TRUNK_COL.snow) : h < 0.2 ? TRUNK_COL.root : TRUNK_COL.earth;
+      if (pa * pa + pd * pd > 0.8) c = TRUNK_COL.rim;
+    } else if (a >= 0 && a <= L + 3) {
+      // the broken top: splinters of pale wood of their own lengths
+      const end = L - 2 + hash2(seed + 7, Math.round(d)) * 5;
+      const stub = TRUNK_STUBS.find(([sf, side]) => Math.abs(a - sf * L) <= 1 && d * side > r - 1 && d * side < r + 4);
+      if (stub) c = ad >= r + 3 ? TRUNK_COL.rim : stub[1] < 0 ? TRUNK_COL.snowD : TRUNK_COL.dark;
+      else if (ad <= r && a <= end) {
+        const cap = -r * 0.15 + (vnoise(a / 4 + seed, 1.7) - 0.5) * 3; // the snow cap's lower edge
+        if (ad > r - 1) c = d < cap ? TRUNK_COL.capRim : TRUNK_COL.rim; // the snow's own edge is blue, never the bark's dark
+        else if (a > end - 2) c = h < 0.3 ? TRUNK_COL.light : TRUNK_COL.wood; // the break's raw wood
+        else if (d < cap) c = d > cap - 1.5 || h < 0.15 ? TRUNK_COL.snowD : TRUNK_COL.snow;
+        else if (d < cap + 1.5) c = TRUNK_COL.light;
+        else c = h < 0.08 ? TRUNK_COL.rim : d > r * 0.55 ? TRUNK_COL.dark : h < 0.35 ? TRUNK_COL.dark : TRUNK_COL.mid;
+      } else if (a <= end && d > r && d < r + 5 - f * 2) c = TRUNK_SHADE; // its shade, off the lower side
+      else if (a <= end && d < -r) {
+        // the drift banked on its upper side, highest at the middle
+        const top = r + 1 + 4 * Math.sin(Math.PI * Math.min(1, a / L)) * (0.7 + vnoise(a / 6, seed) * 0.5);
+        if (-d < r + 1.5) c = TRUNK_COL.snowD; // the crease where the drift meets the bark
+        else if (-d < top - 1.5) c = TRUNK_COL.snow;
+        else if (-d < top) c = TRUNK_COL.drift;
+      }
+    }
+    if (c) penDot(g, c, px + x, py + y);
   }
   penFlush();
 }
@@ -596,14 +654,19 @@ const RIVER_CRACK = rgbOf('#86b2cc'), RIVER_CRACK_LIT = rgbOf('#e6f4fa');
 const RIVER_CHANNEL_W = 0.42;              // share of the half-width the channel takes, either side of the middle
 const RIVER_STREAK_ROW = 2.5;              // px across between streak rows
 const RIVER_CRACK_EVERY = 7;               // tiles along the water between cracks, give or take
+const RIVER_CRACK_JAG = 0.8;               // tiles across the water per leg of a crack's zigzag
 function riverTone(x, y) {
   const fx = (x + 0.5) / TILE - 0.5, fy = (y + 0.5) / TILE - 0.5;
   creekAt(fx, fy);
   const a = CQ.a, n = CQ.n, hw = creekHW(a, n < 0 ? -1 : 1) || 1, t = Math.abs(n) / hw;
-  // a crack across: where the along-position, bent a little by a slow noise, crosses a crack's line
-  const ca = a + (vnoise(n * 0.35 + 4.1, a * 0.05) - 0.5) * 1.6, ci = Math.floor(ca / RIVER_CRACK_EVERY);
-  if (hash2(ci * 7 + 3, 91) < 0.7) {
-    const off = (ca - (ci + 0.5) * RIVER_CRACK_EVERY) * TILE; // px from the crack's line
+  // a crack across: each one its own line bank to bank, leaning by its hash
+  // and broken into jags (RIVER_CRACK_JAG tiles a leg), never ruler-straight
+  for (let ci = Math.floor(a / RIVER_CRACK_EVERY) - 1, c1 = ci + 2; ci <= c1; ci++) {
+    if (hash2(ci * 7 + 3, 91) >= 0.7) continue;
+    const lean = (hash2(ci * 11 + 5, 37) - 0.5) * 0.7, leg = n / RIVER_CRACK_JAG, k = Math.floor(leg), f = leg - k;
+    const jag = (q) => (hash2(ci * 13 + q * 7, 53) - 0.5) * 0.6;
+    const line = (ci + 0.5) * RIVER_CRACK_EVERY + lean * n + jag(k) + (jag(k + 1) - jag(k)) * f;
+    const off = (a - line) * TILE; // px from the crack's line, along the flow
     if (off >= 0 && off < 1) return RIVER_CRACK;
     if (off >= 1 && off < 2) return RIVER_CRACK_LIT;
   }

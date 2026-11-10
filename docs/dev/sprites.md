@@ -177,7 +177,8 @@ draw any art at `heldW`×`heldH`; the fist closes on its art px (`heroFistFine`)
 standard draws on half px (`drawStandardFine`); a swing's crescent (`drawSwish`) lays itself on the body's art px. **A fine body brings the rest along**: a fine look with no `roll` gets its doll's roll
 doubled (`SPR.fine2x`: Scale2x, the outline back to one px), and a blade row with no `fine()`
 gets its own art doubled the same way (`fineArt`, the ink read as the darkest colour on the art's
-rim). So `fine.grids` alone is a whole kit; a drawn `roll` or `fine()` (ARMATOS's) replaces the
+rim). A staff (`HERO_STAVES`) follows the same way: its row's `fine()` frames, else its own
+doubled (`staffArt`). So `fine.grids` alone is a whole kit; a drawn `roll` or `fine()` (ARMATOS's) replaces the
 doubled one where the doubling reads badly (a 45 degree edge comes out in two px steps).
 **The doubling is a stopgap, not 32 px art**: it keeps a fine kit from mixing pixel sizes, and
 reads softer than a drawn part beside it. A hero whose roll or blade is still doubled does not count
