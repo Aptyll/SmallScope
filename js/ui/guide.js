@@ -46,7 +46,8 @@ function guideShopNear() {
 // your health and keeps it until GUIDE_HURT_OUT, so a hero at the line does not flip cards
 function guideHurt() {
   const up = guide.step >= 0 && GUIDE_STEPS[guide.step].id === 'recall';
-  return !roostRing(player) && player.hp < player.maxHp * (up ? GUIDE_HURT_OUT : GUIDE_HURT);
+  const c = guideCounter(), far = c ? Math.hypot(c.x - player.x, c.y - player.y) > GUIDE_SHOP_PX : !roostRing(player); // home is a real walk away
+  return far && player.hp < player.maxHp * (up ? GUIDE_HURT_OUT : GUIDE_HURT);
 }
 function guideRivalTowers() { return structures.filter((o) => o.type === 'tower' && o.team !== player.team); }
 function guideNearTower() {
