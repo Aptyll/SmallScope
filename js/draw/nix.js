@@ -62,21 +62,17 @@ function drawNixShard(s, ex, ey) {
     ctx.fillStyle = k < 2 ? '#ffffff' : k < 4 ? NIX_ICE : NIX_ICE_D; ctx.fillRect(px, py, 1, 1);
   }
 }
-// ICE SHARD's wind-up: frost creeping out down the line it will fly, a thin glaze on
-// the snow with crystals pricking up off it, to the first tree or wall on it
+// ICE SHARD's wind-up: frost creeping out down the line it will fly, a strip of glaze on
+// the snow, white at its broken edge, a few glints on it,
+// to the first tree or wall on it
 function drawShardTele(p, a, closing, ex, ey) {
   const nx = Math.cos(a), ny = Math.sin(a), L = teleLen(p.x, p.y, nx, ny, SHARD_LEN) * (0.35 + 0.65 * closing);
-  for (let s = 8, last = 0; s < L; s++) {
-    const x = Math.round(p.x + nx * s - ex), y = Math.round(p.y + 3 + ny * s - ey);
-    ctx.fillStyle = NIX_ICE_D; ctx.fillRect(x, y + 1, 1, 1);
-    ctx.fillStyle = s > L - 4 ? '#ffffff' : NIX_ICE; ctx.fillRect(x, y, 1, 1);
-    if (s - last > 5 && s < L - 6 && fxRoll(p.id, s, 3) < 0.3) { // a crystal pricking up, to a point, taller as the throw nears
-      last = s;
-      const h = 2 + Math.round(2 * closing + 2 * fxRoll(p.id, s, 4)), lean = fxRoll(p.id, s, 5) < 0.5 ? -1 : 1;
-      ctx.fillStyle = NIX_INK; ctx.fillRect(x - 1, y - h + 1, 3, h); ctx.fillRect(x + (h > 3 ? lean : 0), y - h, 1, 1);
-      ctx.fillStyle = NIX_ICE_D; ctx.fillRect(x, y - h + 2, 1, h - 2);
-      ctx.fillStyle = '#ffffff'; ctx.fillRect(x, y - h + 1, 1, 1);
-    }
+  fxStrip(p.x + nx * 8 - ex, p.y + 3 + ny * 8 - ey, nx, ny, L - 8, 3, 1, p.id * 29, '#ffffff', NIX_ICE, NIX_ICE_D);
+  for (let k = 0; k < 4; k++) { // glints on the glaze, each where it likes, lit as the throw nears
+    const s = 12 + fxRoll(p.id, k, 3) * (L - 20), o = (fxRoll(p.id, k, 6) * 2 - 1) * 1.5;
+    if (s > L - 6 || fxRoll(p.id, k, 4) > 0.4 + closing) continue;
+    const x = Math.round(p.x + nx * s - ny * o - ex), y = Math.round(p.y + 3 + ny * s + nx * o - ey);
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(x - 1, y, 3, 1); ctx.fillRect(x, y - 1, 1, 3);
   }
 }
 // WHITEOUT's strike: she bursts up out of the snow, a white cut of her dirks and the

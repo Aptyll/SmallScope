@@ -103,17 +103,11 @@ function hiCrystal(x, y, s) {
   ctx.fillStyle = HI_WHITE; ctx.fillRect(x, y, 1, 1);
 }
 // ICICLE's wind-up: frost creeping out down the line from her feet, broad and thick by
-// her and thinning to a point, its edge broken, a few crystals where it has taken hold
+// her and narrowing, never thinner than a solid band, its edge broken, a few crystals
+// where it has taken hold
 function drawIcicleTele(p, a, closing, ex, ey) {
   const nx = Math.cos(a), ny = Math.sin(a), L = teleLen(p.x, p.y, nx, ny, ICICLE_RANGE) * (0.25 + 0.75 * closing);
-  for (let s = 8; s < L; s++) {
-    const w = Math.max(0, Math.round(3.2 * (1 - s / L) + (fxRoll(p.id, s, 1) - 0.5) * 1.6));
-    for (let k = -w; k <= w; k++) {
-      if (w && Math.abs(k) === w && fxRoll(p.id, s, 5 + k) < 0.45) continue;
-      ctx.fillStyle = k === 0 && fxRoll(p.id, s, 2) < 0.5 ? HI_WHITE : Math.abs(k) === w ? HI_ICE : HI_MID;
-      ctx.fillRect(Math.round(p.x + nx * s - ny * k - ex), Math.round(p.y + 3 + ny * s + nx * k - ey), 1, 1);
-    }
-  }
+  fxStrip(p.x + nx * 8 - ex, p.y + 3 + ny * 8 - ey, nx, ny, L - 8, 4, 1, p.id * 23, HI_ICE, HI_MID, HI_PALE);
   for (let k = 0; k < 5; k++) {
     const f = fxRoll(p.id, k, 9) ** 2, s = 10 + f * (L - 14), o = (fxRoll(p.id, k, 10) * 2 - 1) * 6;
     if (s < L - 4) hiCrystal(Math.round(p.x + nx * s - ny * o - ex), Math.round(p.y + 3 + ny * s + nx * o - ey), f < 0.35 ? 2 : 1);
