@@ -1620,31 +1620,6 @@ function treeNudgeY(tx, ty) { return Math.floor(hash2(tx * 17 + 2, ty * 19 + 4) 
 // where its pine stood - the pine's own nudge, never lower than the tile's
 // line (a pine on the tile below would bury it) - so a felled stand is not a
 // grid of one stump
-// Round a roost (a pad, within BOOM_STUMP_R2 of it) the blast's stumps were
-// felled on the forest's own grid, so drawn as cut they stand in rows. There
-// each draws by its tile's own roll and how far out it lies: cut at the
-// round's edge, thinning to a stump drifted under (cut 3) further
-// out, and here and there a broken trunk lying (cuts 4 and 5); one under the
-// round's own paving is paved over (cut 6, nothing). Draw only:
-// every stump is still the sim's, on its tile.
-const STUMP_LAIN = 0.12;   // the share of a roost's stumps drawn as a trunk lying
-const STUMP_BURIED = 0.7;  // the share drifted under at the blast's outer edge (none at the round's)...
-const STUMP_THIN = 0.3;    // ...which lies this far out past the round, as a share of its size
-function stumpLook(tx, ty) {
-  let v = Math.floor(hash2(tx * 23 + 7, ty * 29 + 3) * 3);
-  for (const sp of pads) {
-    const d = Math.hypot(tx - sp.tx, ty - sp.ty);
-    if (d > BOOM_STUMP_R2 + 0.5) continue;
-    // how far out from the roost's kerbed round (FOOTINGS.roost): a stump on its paving stands cut
-    const R = FOOTINGS.roost, e = Math.hypot((tx - sp.tx) * TILE / (R.rx - FOOT_PAD), (ty - sp.ty) * TILE / (R.ry - FOOT_PAD));
-    if (e < 1) { v = 6; break; }
-    const f = Math.min(1, (e - 1) / STUMP_THIN), h = hash2(tx * 13 + 5, ty * 17 + 9);
-    if (h < STUMP_LAIN) v = 4 + (hash2(tx * 7 + 1, ty * 5 + 2) < 0.5 ? 1 : 0);
-    else if (hash2(tx * 31 + 4, ty * 11 + 6) < STUMP_BURIED * f) v = 3;
-    break;
-  }
-  return { v, dx: treeNudgeX(tx, ty), dy: Math.min(0, treeNudgeY(tx, ty)) };
-}
 
 // The practice dummy (the `practice arena` banner, js/sim/practice.js), baked here
 // beside its draw rather than under js/sprites/. A big target you read across the arena:
