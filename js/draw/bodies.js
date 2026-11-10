@@ -913,8 +913,10 @@ function drawHeldTool(p, px, py, back) {
       const a = p.slashA, j = SWING_JAB[Math.min(f, SWING_JAB.length - 1)];
       if (heldBehind(a) === back) {
         const h = hand(a), gx = h[0] + Math.round(Math.cos(a) * j), gy = h[1] + Math.round(Math.sin(a) * j);
-        if (j > 0) heroArm(p, h[0], h[1], gx, gy); // the arm goes out with the point, so the haft never leaves the hand
+        const over = bodySet(p).dens > 1; // a fine body's sleeve is drawn, so it lies over the haft's butt instead of boxing it from under
+        if (j > 0 && !over) heroArm(p, h[0], h[1], gx, gy); // the arm goes out with the point, so the haft never leaves the hand
         drawGripped(wHeld, hGrip, gx, gy, a - fwd);
+        if (j > 0 && over) heroArm(p, h[0], h[1], gx, gy);
         if (j > 0) heroKnuckles(p, gx, gy);
       }
       return;
