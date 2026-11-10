@@ -59,10 +59,15 @@ function heroStaff(p, px, py) {
   let img = s.art()[Math.floor(state.elapsed * 5) % 2];
   if (back) img = heldFlip(img);
   const gx = back ? img.width - 1 - s.grip[0] : s.grip[0];
-  const hx = back ? px + 2 : px + 13, hy = py + 10 - (p.charging ? 1 : 0); // a draw lifts it
+  const rc = heroReach(p), hx = back ? px + 2 - rc : px + 13 + rc, hy = py + 10 - (p.charging ? 1 : 0); // a draw lifts it
   ctx.drawImage(img, Math.round(hx - gx), Math.round(hy - s.grip[1]));
   return true;
 }
+// A look on a larger cell stands taller and wider than the 16 px one every offset
+// here was first set for: `heroRise` rows over it (the overhead frame lifts by
+// as much), a hand `heroReach` px further out from the body's middle.
+function heroRise(p) { return classSet(p).rise || 0; }
+function heroReach(p) { return classSet(p).reach || 0; }
 function heroBodyFx(p, ax, ay, now, front) { for (const f of HERO_BODY_FX) f(p, ax, ay, now, front); }
 // A hero that is, for a while, not its body at all: fn(p, px, py, now) -> true
 // when it drew what stands there in its place (the held tool and the body's
@@ -96,20 +101,21 @@ function heroCarry(p, px, py, back) {
   const b = heroBladeOf(p);
   if (b && b.hip.down && attackOf(p).cut) {
     const hold = BLADE_HOLDS[b.hold || 'slant'], img = b.art().diag, up = p.dir === 'up';
+    const rc = heroReach(p);
     const lead = p.dir === 'down' || p.dir === 'right'; // the leading hand is on the right
     // (ax, ay) the grip on the screen; `out` the blade runs right of it
     const put = (im, out, ax, ay, gy) => ctx.drawImage(im, Math.round(ax - (out ? b.grip[0] : img.width - 1 - b.grip[0])), Math.round(ay - gy));
     if (hold.shoulder) {
       if (back === up) return true; // behind the head; over the back of a body facing away
-      put(lead ? heldFlip(img) : img, !lead, lead ? px + 13 : px + 2, py + 9, b.grip[1]);
+      put(lead ? heldFlip(img) : img, !lead, lead ? px + 13 + rc : px + 2 - rc, py + 9, b.grip[1]);
     } else if (hold.rest) {
       if (!pass) return true;
-      put(lead ? heldDrop(img) : heldFlip(heldDrop(img)), lead, lead ? px + 13 : px + 2, py + 9, img.height - 1 - b.grip[1]);
+      put(lead ? heldDrop(img) : heldFlip(heldDrop(img)), lead, lead ? px + 13 + rc : px + 2 - rc, py + 9, img.height - 1 - b.grip[1]);
     } else {
       if (!pass) return true;
       const at = up ? b.hip.up : b.hip.down;
       const out = up ? true : hold.far && p.dir === 'down' ? false : lead;
-      put(out ? img : heldFlip(img), out, out ? px + at[0] : px + 15 - at[0], py + at[1], b.grip[1]);
+      put(out ? img : heldFlip(img), out, out ? px + at[0] + rc : px + 15 - at[0] - rc, py + at[1], b.grip[1]);
     }
     return true;
   }

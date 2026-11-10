@@ -315,23 +315,31 @@ const ARM_SKINS = [
   { id: 'oath', name: 'IRON OATH', rarity: 'rare', price: 200, grids: ARM_BODY.oath, motion: 'oath' },
 ];
 // the walk off a standing frame: down and up lift one foot then the other
-// (split at the body's middle column), the side spreads the feet then closes them
+// (split at the body's middle column), the side spreads the feet then closes them.
+// A frame is a square cell of any even size (16 px, or the larger 20): every
+// column and row here is counted off the grid's own size, feet on its last rows.
 function heroWalk(b) {
+  const N = b.down.length, H = N >> 1, blank = '.'.repeat(H), leg = Math.round(N / 8); // a leg's width
   const lift = (g, s) => {
-    const r = g.slice(), a = r[14], c = r[15];
-    if (s > 0) { r[14] = a.slice(0, 8) + c.slice(8); r[15] = c.slice(0, 8) + '........'; }
-    else { r[14] = c.slice(0, 8) + a.slice(8); r[15] = '........' + c.slice(8); }
+    const r = g.slice(), a = r[N - 2], c = r[N - 1];
+    if (s > 0) { r[N - 2] = a.slice(0, H) + c.slice(H); r[N - 1] = c.slice(0, H) + blank; }
+    else { r[N - 2] = c.slice(0, H) + a.slice(H); r[N - 1] = blank + c.slice(H); }
     return r;
   };
-  const spread = (row) => { let o = ''; for (let x = 0; x < 16; x++) o += (x < 8 ? row[x + 1] : x > 8 ? row[x - 1] : '.') || '.'; return o; };
-  const sideA = (g) => g.slice(0, 14).concat([spread(g[14]), spread(g[15])]);
-  const sideB = (g) => g.slice(0, 14).concat(['.......' + g[14].slice(6, 8) + '.......', '.......' + g[15].slice(6, 8) + '.......']);
+  const spread = (row) => { let o = ''; for (let x = 0; x < N; x++) o += (x < H ? row[x + 1] : x > H ? row[x - 1] : '.') || '.'; return o; };
+  const close = (row) => ('.'.repeat(H - 1) + row.slice(H - leg, H)).padEnd(N, '.');
+  const sideA = (g) => g.slice(0, N - 2).concat([spread(g[N - 2]), spread(g[N - 1])]);
+  const sideB = (g) => g.slice(0, N - 2).concat([close(g[N - 2]), close(g[N - 1])]);
   return {
     down: [b.down, lift(b.down, 1), lift(b.down, -1)],
     up: [b.up, lift(b.up, 1), lift(b.up, -1)],
     side: [b.side, sideA(b.side), sideB(b.side)],
   };
 }
+// The box a hero's run frames come out in: SPR.motion's for the 16 px cell (the
+// doll's frames share it), the same margins round a larger cell. Every frame is
+// drawn centred on its cell with its floor on the cell's (drawPlayer).
+function heroRunBox(N) { const B = SPR.motion.BOX; return N === 16 ? B : { w: N + B.w - 16, h: N + B.h - 16, x: B.x, y: B.y }; }
 // The run and the held run seen side-on, off the hero's own standing side frame
 // rather than the doll's (app/bake-player): the doll's side run is a head and a
 // coat narrower than the hand-drawn body, so a hero shrank the moment it ran left
@@ -339,22 +347,22 @@ function heroWalk(b) {
 // whole pixels by `bob` (SPR.motion's RUN_BOB / HOLD_BOB: up, the feet leave the snow
 // with it; down, the hips sink over the legs), and the legs - the
 // bottom rows that stand as two apart - scissor fore and aft, the near one over
-// the far one. Frames come out in SPR.motion's box (the 16 px cell at BOX.x, BOX.y).
+// the far one. Frames come out in the cell's run box (heroRunBox).
 const HERO_STRIDE = [2, 1, 0, -1, -2, -1, 0, 1]; // px the near foot is ahead, a frame at a time (the far one behind by as much)
 function heroRunSide(side, bob) {
-  const B = SPR.motion.BOX;
-  const runs = (row) => { const out = []; let x0 = -1; for (let x = 0; x <= 16; x++) { const on = x < 16 && row[x] !== '.'; if (on && x0 < 0) x0 = x; if (!on && x0 >= 0) { out.push([x0, x]); x0 = -1; } } return out; };
-  let legTop = 16;
+  const N = side.length, B = heroRunBox(N);
+  const runs = (row) => { const out = []; let x0 = -1; for (let x = 0; x <= N; x++) { const on = x < N && row[x] !== '.'; if (on && x0 < 0) x0 = x; if (!on && x0 >= 0) { out.push([x0, x]); x0 = -1; } } return out; };
+  let legTop = N;
   while (legTop > 0 && runs(side[legTop - 1]).length >= 2) legTop--; // the rows that stand as two legs
   return HERO_STRIDE.map((step, f) => {
     const g = Array.from({ length: B.h }, () => Array(B.w).fill('.'));
     const put = (x, y, c) => { if (c !== '.' && y >= 0 && y < B.h && x >= 0 && x < B.w) g[y][x] = c; };
-    for (let y = legTop; y < 16; y++) { // the legs: the far (first) one, then the near over it
-      const r = runs(side[y]), deep = y === legTop && 16 - legTop > 2 ? 0.5 : 1;
+    for (let y = legTop; y < N; y++) { // the legs: the far (first) one, then the near over it
+      const r = runs(side[y]), deep = y === legTop && N - legTop > 2 ? 0.5 : 1;
       const legs = [[r[0], -1], [r[r.length - 1], 1]];
       for (const [[x0, x1], sgn] of legs) for (let x = x0; x < x1; x++) put(B.x + x + Math.round(sgn * step * deep), B.y + y + Math.min(0, bob[f]), side[y][x]); // up: the whole body leaves the snow
     }
-    for (let y = 0; y < legTop; y++) for (let x = 0; x < 16; x++) put(B.x + x, B.y + y + bob[f], side[y][x]); // the body, over the hips
+    for (let y = 0; y < legTop; y++) for (let x = 0; x < N; x++) put(B.x + x, B.y + y + bob[f], side[y][x]); // the body, over the hips
     return g.map((r) => r.join(''));
   });
 }
@@ -362,12 +370,12 @@ function heroRunSide(side, bob) {
 // body (a skin row's `run: 'drawn'`): the standing frame bobbed the same way, one
 // foot lifted and then the other (heroWalk's step) while the stride is out
 function heroRunFront(grid, bob) {
-  const B = SPR.motion.BOX, w = heroWalk({ down: grid, up: grid, side: grid }).down;
+  const N = grid.length, B = heroRunBox(N), w = heroWalk({ down: grid, up: grid, side: grid }).down;
   return HERO_STRIDE.map((step, f) => {
     const src = step > 0 ? w[1] : step < 0 ? w[2] : w[0];
     const g = Array.from({ length: B.h }, () => Array(B.w).fill('.'));
-    for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) {
-      const c = src[y][x], yy = B.y + y + (y < 13 ? bob[f] : Math.min(0, bob[f]));
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+      const c = src[y][x], yy = B.y + y + (y < N - 3 ? bob[f] : Math.min(0, bob[f]));
       if (c !== '.' && yy >= 0 && yy < B.h) g[yy][B.x + x] = c;
     }
     return g.map((r) => r.join(''));

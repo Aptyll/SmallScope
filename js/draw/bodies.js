@@ -389,11 +389,11 @@ function drawPlayer(p, ex, ey, now, stage) {
   const MB = SPRITES.motionBox;
   const px = Math.round(p.x - 8 - ex) + (seat ? seat.dx : 0);
   const py = Math.round(p.y - 12 - ey) - rl; // a rider's whole body - held tool, marks, plate - sits up on the deer
-  // where the frame's top-left sits: a frame fills the 16x16 cell (a taller
-  // one keeps its feet on the cell's floor, a doll frame holds the cell at
-  // motionBox's x, y)
-  const bx = running ? px - MB.x : px;
-  const by = running ? py - MB.y : py + 16 - spr.height;
+  // where the frame's top-left sits: any frame - the 16x16 cell, a larger
+  // hero's, a wider run frame, the hoist - is centred on the cell with its
+  // floor on the cell's floor
+  const bx = px - ((spr.width - 16) >> 1);
+  const by = py + 16 - spr.height;
   // shadow (not while swimming in a hole, and not on a deer, which casts its own)
   if (!stage && p.fallT <= 0 && !p.mount) {
     // the sun's shade, cut from the frame on show (ground.js), feet on the
@@ -497,7 +497,7 @@ function drawPlayer(p, ex, ey, now, stage) {
   if (stage || state.mode === 'title' || endScreen()) return;
 
   // the whole stack hangs off one y
-  const hy = py - (zl ? zl + 5 : 0) - // a rider's frame rises with it and clears the handle
+  const hy = py - heroRise(p) - (zl ? zl + 5 : 0) - // a taller body lifts it; a rider's frame rises with it and clears the handle
     (p.mount ? MOUNT_BAR_ROWS : 0); // ...and a deer's rider stands the frame up off the head for the deer's row
   // fx is the stack's own centre column - the body's, shifted by FRAME_DX so
   // the frame straddles the sprite. Everything in the frame hangs off it.
