@@ -216,7 +216,8 @@ const POT_RISE = 9, POT_OUT = 11;         // px it lifts, and px out from the bo
 function drawPotionHearts(p, cx, cy) {
   const t = POTION_T - p.potT, n = Math.floor(t / POT_BEAT), u = (t - n * POT_BEAT) / POT_RISE_T;
   if (u >= 1) return; // the rest between two hearts
-  const side = n % 2 ? -1 : 1, x0 = cx + side * POT_OUT - 2, // its first on the right: the roost's first feather comes down on the left y0 = cy - 6 - Math.round(u * POT_RISE);
+  // its first on the right: the roost's first feather comes down on the left
+  const side = n % 2 ? -1 : 1, x0 = cx + side * POT_OUT - 2, y0 = cy - 6 - Math.round(u * POT_RISE);
   ctx.globalAlpha = u > 0.65 ? (1 - u) / 0.35 : 1;
   POT_HEART.forEach((row, y) => { for (let x = 0; x < row.length; x++) {
     if (row[x] === '.') continue;
