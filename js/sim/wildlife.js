@@ -623,19 +623,14 @@ function animalDies(a) {
     awardGold(hunter, Math.round(y.coins * y.each * (1 + ANIMAL_LV_GOLD * ((a.level || 1) - 1))), a.x, a.y);
   }
   if (hunter && y && y.xp) shareXp(a, y.xp * (1 + ANIMAL_LV_XP * ((a.level || 1) - 1)), hunter.team, hunter);
-  if (a.kind === 'rabbit') {
-    burst(a.x, a.y - 3, '#9a6a45', 10, 45, 0.5);
-    burst(a.x, a.y - 3, '#c29068', 6, 35, 0.4);
-  } else if (a.kind === 'deer') {
-    burst(a.x, a.y - 5, '#8f582f', 12, 50, 0.55);
-    burst(a.x, a.y - 5, '#f2cc6a', 8, 45, 0.5);
-  } else if (a.kind === 'wolf') {
-    burst(a.x, a.y - 5, '#6f778c', 12, 50, 0.55);
-    burst(a.x, a.y - 5, '#cfd8e8', 8, 45, 0.5);
-    addFloater(a.x, a.y - 26, 'WOLF DOWN', '#f2cc6a');
-  } else if (isBigBeast(a)) {
+  // the body tips over where it stood and the snow takes it (unitFall, js/sim/farm.js);
+  // the orca goes back under its ice instead. A wolf says nothing over its head: a den is
+  // four of them, and the coin already said it
+  const pool = !!(MONSTER[a.kind] && MONSTER[a.kind].still);
+  if (!pool) unitFall('A', a.kind, a.dir, -1, a.x, a.y, false, fallAng(a, a.lastHit !== undefined ? players[a.lastHit] : null));
+  if (isBigBeast(a)) {
     burst(a.x, a.y - 16, HIT_PUFF[a.kind], 20, 60, 0.7);
-    burst(a.x, a.y - 16, '#ffb04a', 14, 55, 0.6);
+    if (pool) burst(a.x, a.y - 16, '#ffb04a', 14, 55, 0.6);
     addFloater(a.x, a.y - 68, MONSTER[a.kind].feed + ' DOWN', '#ffb04a');
   }
   // a teamPay kill (the bear's, the orca's): the whole team is paid and given

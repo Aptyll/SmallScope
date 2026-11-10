@@ -78,8 +78,7 @@ function robotDies(b, src) {
   if (M && M.fall) M.fall(b, src); // a hero's body that is no machine (FALCO's hawk) ends its own way and leaves no wreck
   else {
     sfxAt('break_', b.x, b.y);
-    burst(b.x, b.y - 4, '#98a1b0', 10, 50, 0.5, true);
-    burst(b.x, b.y - 4, '#3b4150', 4, 35, 0.4);
+    unitFall('R', soldierType(b).spr, '', b.team, b.x, b.y, b.faceL, fallAng(b, src)); // it comes apart where it stood (js/sim/farm.js)
     heroWreck(b, src); // what a hero makes of a wreck near them (HERO_WRECK: FABER's spare parts)
   }
   if (M) {

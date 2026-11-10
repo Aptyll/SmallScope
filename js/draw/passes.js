@@ -131,6 +131,7 @@ function gatherDraws(ox, oy, tx0, ty0, tx1, ty1, now) {
   titleCastDraws(draws); // the title's ten, this screen's own bodies (js/ui/titlescene.js)
   for (const a of animals) if (fogShown(a, now)) draws.push({ y: a.y + 4, a });
   for (const b of robots) if (fogShown(b, now)) draws.push({ y: b.y + (b.merchant ? 8 : 4), r: b }); // a merchant stands on player feet (robots.js)
+  fallDraws(draws, now); // a soldier or a beast going down where it stood (js/draw/falls.js)
   // the archery targets (the training grounds', or one a staged scene stood in
   // a match): entities, never tile objects (a slider crosses tiles every
   // frame), sorted by their base like everything
@@ -171,6 +172,7 @@ function drawSorted(draws, ox, oy, ex, ey, now) {
   for (const d of draws) {
     if (d.reed) { litPunch(d.reed.x - ex - (REED_W >> 1) - 1, d.reed.y - ey - REED_H + 1, REED_W + 2, REED_H + 2, () => drawReed(d.reed, ex, ey, heroP)); continue; } // the brush's reeds (js/draw/depth.js)
     if (d.down) { drawDown(d.down, ex, ey, now); continue; }
+    if (d.fall) { drawFall(d.fall, ex, ey); continue; }
     if (d.p && !d.ghost && (d.p.zip >= 0 || heroDashOver(d.p))) { airRiders.push(d.p); continue; } // on a cable, or over the pines on a hero's dash (HERO_DASH `over`): the air layer's, below
     // a body under a big hit is drawn held where it was struck, then 1 px back (hitNudge, js/draw/hitfx.js)
     if (d.p) { if (d.ghost) drawGhost(d.p, ex, ey); else { const n = hitNudge(d.p, now); drawPlayer(d.p, ex - n.x, ey - n.y, now); } continue; }
