@@ -341,6 +341,9 @@
     const cv = document.createElement('canvas');
     cv.width = x1 - x0 + 1; cv.height = y1 - y0 + 1;
     cv.getContext('2d').putImageData(img, -x0, -y0, x0, y0, cv.width, cv.height);
+    const px = new Uint8ClampedArray(cv.width * cv.height * 4); // the box's own pixels, kept (SPR.pixelsOf)
+    for (let y = 0; y < cv.height; y++) px.set(D.subarray(((y0 + y) * W + x0) * 4, ((y0 + y) * W + x1 + 1) * 4), y * cv.width * 4);
+    SPR.keepPixels(cv, px);
     cv.ox = x0; cv.oy = y0; cv.fw = cv.fh = W;
     return cv;
   }
@@ -348,7 +351,7 @@
     const cv = document.createElement('canvas');
     cv.width = W; cv.height = W;
     cv.getContext('2d').putImageData(img, 0, 0);
-    return cv;
+    return SPR.keepPixels(cv, img.data);
   }
   // a cached frame drawn with its full frame's top-left at (x, y)
   const put = (g, cv, x, y) => g.drawImage(cv, x + cv.ox, y + cv.oy);
@@ -427,7 +430,7 @@
     const N = full[0].width;
     let x0 = N, y0 = N, x1 = -1, y1 = -1;
     for (const cv of full) {
-      const d = cv.getContext('2d').getImageData(0, 0, N, N).data;
+      const d = SPR.pixelsOf(cv);
       for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
         if (!d[(y * N + x) * 4 + 3]) continue;
         if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
@@ -468,7 +471,7 @@
   function reach(src) {
     let r = reaches.get(src);
     if (!r) {
-      const d = src.getContext('2d').getImageData(0, 0, src.width, src.height).data;
+      const d = SPR.pixelsOf(src);
       let y0 = src.height, y1 = -1;
       for (let y = 0; y < src.height; y++) for (let x = 0; x < src.width; x++) if (d[(y * src.width + x) * 4 + 3]) { if (y < y0) y0 = y; y1 = y; break; }
       const oy = src.oy || 0, fh = src.fh || src.height;

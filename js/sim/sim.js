@@ -311,11 +311,11 @@ function sweepBox(x0, y0, dx, dy, b) {
 // site still going up, which is its footprint alone (the art is not up yet),
 // and for a building a shot never meets (the net lies flat on the water).
 // The `.` overlay draws exactly this (drawHitboxes).
-const artBoxes = new WeakMap(); // sprite canvas -> the box its opaque pixels cover, read once
+const artBoxes = new WeakMap(); // sprite canvas -> the box its opaque pixels cover, measured once off its kept pixels (SPR.pixelsOf)
 function artBox(spr) {
   let b = artBoxes.get(spr);
   if (b) return b;
-  const px = spr.getContext('2d').getImageData(0, 0, spr.width, spr.height).data;
+  const px = SPR.pixelsOf(spr);
   b = { x0: spr.width, y0: spr.height, x1: 0, y1: 0 };
   for (let y = 0; y < spr.height; y++) for (let x = 0; x < spr.width; x++) {
     if (!px[(y * spr.width + x) * 4 + 3]) continue;

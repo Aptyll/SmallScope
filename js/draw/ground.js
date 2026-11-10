@@ -1129,10 +1129,8 @@ const CASTERS = {
 // a frame's shade: an opaque silhouette thrown down-right in `col`, its top
 // row on the art's foot row (cv.oy rows below the art's top); copied at
 // `alpha` when the caller wants it translucent
-const artAlpha = new WeakMap(); // a source canvas's pixels, read back once (the pine atlas holds 48 frames)
 function shadeMask(src, sx, sw, sh, col, alpha) {
-  let px = artAlpha.get(src);
-  if (!px) { px = src.getContext('2d').getImageData(0, 0, src.width, src.height).data; artAlpha.set(src, px); }
+  const px = SPR.pixelsOf(src); // the source's kept pixels (the pine atlas holds 48 frames)
   const op = (i, j) => px[(j * src.width + sx + i) * 4 + 3] > 100;
   let bot = -1;
   for (let j = 0; j < sh; j++) for (let i = 0; i < sw; i++) if (op(i, j)) bot = j;

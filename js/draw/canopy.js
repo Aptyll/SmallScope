@@ -30,6 +30,10 @@ const heroCv = document.createElement('canvas');
 heroCv.width = HERO_LW; heroCv.height = HERO_LH;
 const hctx = heroCv.getContext('2d', { willReadFrequently: true }); // read back for the mask, one small layer a frame
 hctx.imageSmoothingEnabled = false;
+// a sprite drawn into this CPU layer is drawn from its CPU twin (SPR.cpuTwin):
+// a GPU canvas drawn into a CPU one is read back off the GPU every frame
+const hctxDraw = hctx.drawImage.bind(hctx);
+hctx.drawImage = (img, ...a) => hctxDraw((img instanceof HTMLCanvasElement && SPR.cpuTwin(img)) || img, ...a);
 const holeCv = document.createElement('canvas');
 holeCv.width = HERO_LW; holeCv.height = HERO_LH;
 const holeCtx = holeCv.getContext('2d');
@@ -80,20 +84,18 @@ function heroMaskNow() {
 
 // which pixels of a sprite (or one atlas cell) are ink, cached per source
 const inkMasks = new WeakMap(); // canvas -> Map('sx,sy' -> Uint8Array)
-const inkCv = document.createElement('canvas');
-inkCv.width = 64; inkCv.height = 64;
-const inkCtx = inkCv.getContext('2d', { willReadFrequently: true });
 function inkMask(src, sx, sy, w, h) {
   let m = inkMasks.get(src);
   if (!m) inkMasks.set(src, m = new Map());
   const key = sx + ',' + sy;
   let a = m.get(key);
   if (!a) {
-    inkCtx.clearRect(0, 0, 64, 64);
-    inkCtx.drawImage(src, sx, sy, w, h, 0, 0, w, h);
-    const d = inkCtx.getImageData(0, 0, w, h).data;
+    const d = SPR.pixelsOf(src), W = src.width, H = src.height; // its kept pixels, never the GPU's
     a = new Uint8Array(w * h);
-    for (let i = 0; i < a.length; i++) a[i] = d[i * 4 + 3] ? 1 : 0;
+    for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
+      const x = sx + i, y = sy + j;
+      if (x >= 0 && y >= 0 && x < W && y < H && d[(y * W + x) * 4 + 3]) a[j * w + i] = 1;
+    }
     m.set(key, a);
   }
   return a;
