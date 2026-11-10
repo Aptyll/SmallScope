@@ -111,7 +111,15 @@ function drawFall(f, ex, ey) {
 // Whole pixels, nothing turned. WRECK_ART is the standing picture by type.
 const WRECK_ART = { tower: (f) => towerFigure(skin(f.team)) };
 const WRECK_SHAKE = 0.22, WRECK_DROP = 0.75, WRECK_BAND = 9, WRECK_STONES = 9;
-const WRECK_DUST = ['#6f86ad', '#9fb2d2', '#c3d0e6']; // the dust, dark to light: steps under the snow so it holds on it
+const WRECK_DUST = ['#6f86ad', '#9fb2d2']; // the dust, shade and body: steps under the snow so it holds on it
+// the stones: pieces of the wall itself, its two greys and its dark mortar line, corners knocked off, no two alike
+const WRECK_STONE = { L: '#8d94a6', D: '#5d6478', m: '#33384c' };
+const WRECK_CHUNKS = [
+  ['.LLL.', 'LLLDD', 'mmLDD', '.DDD.'],
+  ['LL.', 'LLD', '.DD'],
+  ['.LLLL', 'LLLLD', 'LmmmD', 'LLDDD', '.DD..'],
+  ['.LL', 'LLD', 'mDD', 'DD.'],
+];
 function drawWreck(f, ex, ey) {
   const art = WRECK_ART[f.spr];
   if (!art) return;
@@ -129,17 +137,16 @@ function drawWreck(f, ex, ey) {
       ctx.drawImage(fig, 0, by, w, rows, x0 + jx, gy - h + by + sink, w, rows);
     }
   }
-  // the dust it raises: rolling out from the foot both ways and up, thinning at the end
+  // the dust it raises: low, wide puffs rolling out along the ground both ways, thinning at the end
   const du = Math.max(0, (t - WRECK_SHAKE * 0.6) / (FALL_T_WRECK - WRECK_SHAKE * 0.6));
-  if (du > 0) for (let k = 0; k < 14; k++) {
+  if (du > 0) for (let k = 0; k < 12; k++) {
     const r1 = fxRoll(seed, k, 21), r2 = fxRoll(seed, k, 22), side = k % 2 ? 1 : -1;
-    const grow = Math.min(1, du * 2.2), fade = Math.max(0, (du - 0.55) / 0.45);
-    const r = Math.round((3 + r1 * 5) * grow * (1 - fade));
-    if (r < 1) continue;
-    const x = Math.round(cx + side * (r2 * w * 0.5 + grow * (6 + r1 * 14))), y = gy - 2 - Math.round(grow * r2 * 14 + du * 6 * r1);
-    fxPatch(x, y + 1, r + 1, 0.7, 1, seed + k, WRECK_DUST[0]);
-    fxPatch(x, y, r, 0.7, 1, seed + k + 50, WRECK_DUST[1]);
-    if (r > 3) fxPatch(x - 1, y - 1, r - 2, 0.7, 1, seed + k + 90, WRECK_DUST[2]);
+    const grow = Math.min(1, du * 2.2), fade = Math.max(0, (du - 0.5) / 0.5);
+    const r = Math.round((5 + r1 * 6) * grow * (1 - fade));
+    if (r < 2) continue;
+    const x = Math.round(cx + side * (r2 * w * 0.45 + grow * (8 + r1 * 22))), y = gy - 1 - Math.round(grow * r2 * 5);
+    fxPatch(x, y + 1, r + 1, 0.34, 2, seed + k, WRECK_DUST[0]);
+    fxPatch(x, y, r, 0.34, 2, seed + k + 50, WRECK_DUST[1]);
   }
   // the stones thrown clear: up and out, down, lying, then gone one by one
   if (t > WRECK_SHAKE) for (let i = 0; i < WRECK_STONES; i++) {
@@ -147,9 +154,13 @@ function drawWreck(f, ex, ey) {
     const t0 = WRECK_SHAKE + r3 * 0.35, air = 0.3 + r2 * 0.15, v = Math.min(1, (t - t0) / air);
     if (v < 0 || t > FALL_T_WRECK - 0.5 + r1 * 0.45) continue;
     const lx = cx + side * (w * 0.35 + r1 * 22), ly = gy - 1 + Math.round((r2 - 0.5) * 8), sy0 = gy - h * (0.25 + r3 * 0.4);
-    const x = Math.round(cx + (lx - cx) * v) - 2, y = Math.round(sy0 + (ly - sy0) * v - Math.sin(v * Math.PI) * (8 + r1 * 8)) - 2, big = i % 3 === 0 ? 5 : 4;
-    ctx.fillStyle = FALL_PLATE[2]; ctx.fillRect(x - 1, y - 1, big + 2, big + 2);
-    ctx.fillStyle = FALL_PLATE[1]; ctx.fillRect(x, y, big, big);
-    ctx.fillStyle = FALL_PLATE[0]; ctx.fillRect(x, y, big, big - 1); // bare stone, never its side's paint: a red square in the air reads wrong
+    const x = Math.round(cx + (lx - cx) * v) - 2, y = Math.round(sy0 + (ly - sy0) * v - Math.sin(v * Math.PI) * (8 + r1 * 8)) - 2;
+    const art = WRECK_CHUNKS[i % WRECK_CHUNKS.length];
+    ctx.fillStyle = FALL_PLATE[2]; // its ink, one px round every pixel of it
+    for (let yy = 0; yy < art.length; yy++) for (let xx = 0; xx < art[yy].length; xx++) if (art[yy][xx] !== '.') { ctx.fillRect(x + xx - 1, y + yy, 3, 1); ctx.fillRect(x + xx, y + yy - 1, 1, 3); }
+    for (let yy = 0; yy < art.length; yy++) for (let xx = 0; xx < art[yy].length; xx++) {
+      const c = art[yy][xx];
+      if (c !== '.') { ctx.fillStyle = WRECK_STONE[c]; ctx.fillRect(x + xx, y + yy, 1, 1); }
+    }
   }
 }
