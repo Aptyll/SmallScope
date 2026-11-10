@@ -1,5 +1,6 @@
 'use strict';
-// The valley's story landmarks - a boat frozen into a lake: scenery placed
+// The valley's story landmarks - a boat frozen into a lake, a waypost at each
+// base fork: scenery placed
 // on the map's own stream where it makes sense.
 // ------------------------------------------------------------ landmarks
 // A landmark is one entry here, one sprite (SPRITES.landmark, js/sprites/
@@ -17,9 +18,14 @@
 //   art      the SPRITES.landmark key; foot lowers it past the anchor's foot
 //            row (a snow bank that spills onto the tile in front)
 //   mm       the minimap's colour
+//   home     may stand inside a roost's corner (lmClear's roost gap does not hold it)
 const LANDMARKS = {
-  boat:  { w: 3, h: 1, solid: true,  where: 'lake',  count: 2, spacing: 50, art: 'boat',  foot: 3, mm: [142, 90, 72] },
+  boat:    { w: 3, h: 1, solid: true,  where: 'lake',  count: 2, spacing: 50, art: 'boat',    foot: 3, mm: [142, 90, 72] },
+  waypost: { w: 1, h: 1, solid: true,  where: 'fork',  count: 2, mirror: true, spacing: 50, art: 'waypost', foot: 2, home: true, mm: [138, 97, 66] },
 };
+// the WAYPOST: a fingerpost on the open snow beside each base fork, where the
+// lanes part outside the hollow, in the side's road frame (baseTile, js/sim/base.js)
+const LM_FORK_U = 33.75 * MAP_K, LM_FORK_S = 4.1 * MAP_K;
 const LM_GAP = 14;       // tiles between any two landmarks, whatever their kind
 const LM_CAMP_GAP = 8;   // tiles past a camp's clearing (r + 2) nothing stands
 const LM_ROOST_GAP = 16; // tiles past the roost disc (ROOST_R) nothing stands: the eagles land, the merchant builds there
@@ -40,6 +46,11 @@ const LM_WHERE = {
     for (const [x, y] of lmFoot(tx, ty, L)) if (depth[idx(x, y)] < LM_LAKE_DEEP || orcaLakeAt(x, y)) return false;
     return true;
   },
+  // the one tile beside either side's fork
+  fork: (tx, ty) => [0, 1].some((team) => {
+    const p = baseTile(team, LM_FORK_U, LM_FORK_S);
+    return tx === Math.round(p.tx) && ty === Math.round(p.ty);
+  }),
 };
 
 // the tiles a landmark covers from its anchor: w east, h north
@@ -86,7 +97,7 @@ function lmClear(tx, ty, L) {
   }
   for (const C of camps) if (campNear(C, tx, ty, 2 + LM_CAMP_GAP)) return false;
   const roost = ROOST_R + LM_ROOST_GAP;
-  if (Math.hypot(tx, WORLD - 1 - ty) < roost || Math.hypot(WORLD - 1 - tx, ty) < roost) return false;
+  if (!L.home && (Math.hypot(tx, WORLD - 1 - ty) < roost || Math.hypot(WORLD - 1 - tx, ty) < roost)) return false;
   return true;
 }
 

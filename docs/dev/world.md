@@ -43,7 +43,7 @@ stable per tile.
   `{ type, tx, ty, hp, flash, shake, ...extra }`. The `OBJECTS` table's types: `tree`,
   `snowdrop`, `den`, `dummy`, `banner`, `log`, `trunk`,
   `pylon`, `pkdie`, `agbell`, `stump`, `eagle`, `hut`, `part`, and the
-  [story landmarks](#story-landmarks)' `boat` (added from `LANDMARKS`); the `STRUCTS` table's: `pump`,
+  [story landmarks](#story-landmarks)' `boat` and `waypost` (added from `LANDMARKS`); the `STRUCTS` table's: `pump`,
   `barracks`, `tower`. `banner`/`log` are
   [the road](#the-road)'s furniture (`banner` is also the practice gate's flag), `trunk` the fallen pine a
   junction's landmark (`jungleMarks`: each tile it lies across carries the trunk's whole line), `pylon`

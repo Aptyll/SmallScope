@@ -1,6 +1,6 @@
 'use strict';
 // The story landmarks' art (LANDMARKS, js/sim/landmarks.js): the boat frozen into
-// a lake. Weathered wood and a faded rust paint - never a saturated red or
+// a lake, the waypost at each base fork. Weathered wood and a faded rust paint - never a saturated red or
 // blue, which are the teams' inks, so nothing here reads as anybody's.
 // Picked from docs/media/concepts/landmarks-concepts-1.png: E.
 (() => {
@@ -51,7 +51,38 @@
     '..................................................',
   ];
 
+  // the WAYPOST at each base fork: two boards pointing the lanes' ways, snow on
+  // each and drifted round its foot. 20x26 over one tile.
+  const waypost = [
+    '........oo..........',
+    '.......oLLo.........',
+    '.......oLso.........',
+    '....ooooWdooooooo...',
+    '....oLLLLLLLLLLLso..',
+    '....oWWWWWWWWWWWWWo.',
+    '....owwwwwwwwwwwwwwo',
+    '....oddddddddddddddo',
+    '....ooooowdoooooooo.',
+    '........oWdo........',
+    '..oooooooWdoooo.....',
+    '.oLLLLLLLLLLLLso....',
+    'oWWWWWWWWWWWWWWo....',
+    'owwwwwwwwwwwwwwo....',
+    '.oddddddddddddo.....',
+    '..oooooooWdooo......',
+    '........oWdo........',
+    '........oWdo........',
+    '........oWdo........',
+    '........oWdo........',
+    '........oWdo........',
+    '......ooWWddoo......',
+    '....oosLLLLLLsoo....',
+    '...osLLLLLLLLLLso...',
+    '....ooossssssoo.....',
+    '......oooooooo......',
+  ];
+
   Object.assign(SPRITES, {
-    landmark: { boat: bake(boat, LMPAL) },
+    landmark: { boat: bake(boat, LMPAL), waypost: bake(waypost, LMPAL) },
   });
 })();
