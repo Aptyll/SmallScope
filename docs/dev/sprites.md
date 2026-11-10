@@ -179,6 +179,9 @@ doubled (`SPR.fine2x`: Scale2x, the outline back to one px), and a blade row wit
 gets its own art doubled the same way (`fineArt`, the ink read as the darkest colour on the art's
 rim). So `fine.grids` alone is a whole kit; a drawn `roll` or `fine()` (ARMATOS's) replaces the
 doubled one where the doubling reads badly (a 45 degree edge comes out in two px steps).
+**The doubling is a stopgap, not 32 px art**: it keeps a fine kit from mixing pixel sizes, and
+reads softer than a drawn part beside it. A hero whose roll or blade is still doubled does not count
+toward turning `?fine=1` on for players; every part gets drawn first.
 The run facing down and up is still the doll's, unless the look's row says `run: 'drawn'`: then
 `heroRunFront` lifts the drawn front and back the same way (IGNIA's two looks, AURA's, SALVIA's, LUCERNA's and BUCINA's two, whose shawl, mantle, coat, cape and hair
 the doll does not match). Which look a player wears is `heroSkinOf(p)` (player.js): the id in `p.skins` under the
