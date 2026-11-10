@@ -12,7 +12,7 @@ let lignumAxeArt = null;
 function lignumAxeArtOf() {
   return lignumAxeArt || (lignumAxeArt = { flat: bakeBladeArt(LIGNUM_AXE, LIGNUM_AXE_PAL), diag: bakeBladeArt(LIGNUM_AXE_DIAG, LIGNUM_AXE_PAL) });
 }
-HERO_BLADES.felling = { art: lignumAxeArtOf, hilt: [14, 9], hip: { down: [13, 12], up: [11, 10] }, grip: LIGNUM_AXE_GRIP };
+HERO_BLADES.felling = { art: lignumAxeArtOf, hilt: [14, 9], hip: { down: [13, 12], up: [11, 10] }, grip: LIGNUM_AXE_GRIP, hold: 'shoulder' };
 
 // ---- the hand axe: turning in flight, still in what it struck ------------------------------
 function drawLignumAxe(w, ex, ey, now) {

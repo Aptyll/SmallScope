@@ -144,4 +144,4 @@ function hiemsFlake() {
   hiemsFlakeArt = [bakeBladeArt(HIEMS_FLAKE, HIEMS_FLAKE_PAL), bakeBladeArt(glint, HIEMS_FLAKE_PAL)];
   return hiemsFlakeArt;
 }
-HERO_STAVES.flake = { art: hiemsFlake, grip: HIEMS_FLAKE_GRIP, hold: 'yoke' };
+HERO_STAVES.flake = { art: hiemsFlake, grip: HIEMS_FLAKE_GRIP, hold: 'far' };
