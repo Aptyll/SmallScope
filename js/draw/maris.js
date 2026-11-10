@@ -7,7 +7,7 @@
 // it (HERO_BODY_DRAW).
 
 const MA_INK = '#141a2c', MA_SNOW = '#f4f7ff', MA_SNOW_M = '#cfe0f2', MA_SNOW_D = '#9fb6d8';
-const MA_WATER = '#2c5478', MA_WATER_L = '#5f9cc8', MA_LINE = '#e8dcb4', MA_WET_D = '#8aa3c9';
+const MA_WATER = '#2c5478', MA_WATER_L = '#5f9cc8', MA_LINE = '#e8dcb4', MA_LINE_D = '#b39a66', MA_WET_D = '#8aa3c9';
 
 // ---- the harpoon in her hands ----------------------------------------------------------
 let marisHarpoonArt = null;
@@ -73,21 +73,25 @@ function drawMarisFx(p, ax, ay, now, front) {
 HERO_BODY_FX.push(drawMarisFx);
 
 // ---- the keys' wind-ups -------------------------------------------------------------
-// HARPOON's: her line paid out along the snow down the throw, lying in loose waves,
-// out further as she draws back, its barbed head at the end of it
+// HARPOON's: her line paid out along the snow down the throw, a thick twisted cord lying
+// in loose waves, out further as she draws back, its barbed iron head at the end of it
 function drawHarpoonTele(p, a, closing, now, ex, ey) {
   const nx = Math.cos(a), ny = Math.sin(a), L = teleLen(p.x, p.y, nx, ny, HARPOON_RANGE) * (0.3 + 0.7 * closing);
+  const at = (s) => { const w = Math.sin(s * 0.12 - now * 3) * 2 * (1 - s / (L + 20)); return [Math.round(p.x + nx * s - ny * w - ex), Math.round(p.y + 3 + ny * s + nx * w - ey)]; };
+  ctx.fillStyle = MA_INK;
+  for (let s = 8; s < L; s++) { const [x, y] = at(s); ctx.fillRect(x - 1, y - 1, 4, 4); }
   for (let s = 8; s < L; s++) {
-    const w = Math.sin(s * 0.12 - now * 3) * 2 * (1 - s / (L + 20));
-    const x = Math.round(p.x + nx * s - ny * w - ex), y = Math.round(p.y + 3 + ny * s + nx * w - ey);
-    ctx.fillStyle = MA_INK; ctx.fillRect(x, y + 1, 1, 1);
-    ctx.fillStyle = MA_LINE; ctx.fillRect(x, y, 1, 1);
+    const [x, y] = at(s), dark = (s | 0) % 4 === 0; // the twist
+    ctx.fillStyle = dark ? MA_LINE_D : MA_LINE; ctx.fillRect(x, y, 2, 1);
+    ctx.fillStyle = dark ? MA_LINE : MA_LINE_D; ctx.fillRect(x, y + 1, 2, 1);
   }
-  const x = Math.round(p.x + nx * L - ex), y = Math.round(p.y + 3 + ny * L - ey); // the head, barbs back
-  for (const [dx, dy] of [[0, 0], [-ny * 2 - nx * 2, nx * 2 - ny * 2], [ny * 2 - nx * 2, -nx * 2 - ny * 2]]) {
-    ctx.fillStyle = MA_INK; ctx.fillRect(Math.round(x + dx) - 1, Math.round(y + dy) - 1, 3, 3);
-  }
-  ctx.fillStyle = '#c3ccd8'; ctx.fillRect(x, y, 1, 1); ctx.fillRect(Math.round(x - ny * 2 - nx * 2), Math.round(y + nx * 2 - ny * 2), 1, 1); ctx.fillRect(Math.round(x + ny * 2 - nx * 2), Math.round(y - nx * 2 - ny * 2), 1, 1);
+  const x = Math.round(p.x + nx * L - ex), y = Math.round(p.y + 4 + ny * L - ey); // the head: a point, two barbs swept back
+  const pts = [];
+  for (let k = 0; k <= 6; k++) pts.push([x + nx * k, y + ny * k]);
+  for (let k = 1; k <= 4; k++) for (const sd of [-1, 1]) pts.push([x + nx * (4 - k) + ny * sd * k * 0.8, y + ny * (4 - k) - nx * sd * k * 0.8]);
+  ctx.fillStyle = MA_INK; for (const [qx, qy] of pts) ctx.fillRect(Math.round(qx) - 1, Math.round(qy) - 1, 4, 4);
+  ctx.fillStyle = '#c3ccd8'; for (const [qx, qy] of pts) ctx.fillRect(Math.round(qx), Math.round(qy), 2, 2);
+  ctx.fillStyle = '#ffffff'; ctx.fillRect(Math.round(x + nx * 6), Math.round(y + ny * 6), 1, 1);
 }
 // BREACH's: the spot she will come up, her fin cutting a circle through the snow round
 // it and the crust over it heaving and starting to crack
