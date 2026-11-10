@@ -315,8 +315,8 @@ const FORT_SKINS = [
 
 // ------------------------------------------------------------ fortiva greatsword
 // The CHAIN GREATSWORD as she holds it (HERO_BLADES.chain, js/draw/fortiva.js):
-// a long blade in dark iron, its grip and the foot of the blade wound in the
-// chain she broke. Flat with the point left for the side, the swing and the
+// a broad blade in dark iron with a square tip (19 px, a greatsword's band), its grip
+// and the foot of the blade wound in the chain she broke, three links of it gold. Flat with the point left for the side, the swing and the
 // wind-up; at 45 degrees with the point up and right for a body facing down or
 // up, the grip in her hands at FORT_GRIP (ARMATOS's slant, js/sprites/armatos.js).
 const FORT_SWORD = [
@@ -329,11 +329,11 @@ const FORT_SWORD = [
   '......................',
   '...............oo.....',
   '..............onto....',
-  '.oooooooooooooontoo.oo',
-  'oeTTTTTTTTTcTcTntoCoCn',
-  'WWEeEEEEEEEEEeEntcCcCn',
-  'oeeeeeeeeeeececntoCoCn',
-  '.oooooooooooooontoo.oo',
+  '....ooooooooooontoo.oo',
+  '...oTTTTTTTyTcTntoCoCn',
+  '...oEEEEEEEEyEcntcCcCn',
+  '...oeeeeeeeeeyentoCoCn',
+  '....ooooooooooontoo.oo',
   '..............onto....',
   '...............oo.....',
   '......................',
@@ -346,18 +346,18 @@ const FORT_SWORD = [
 const FORT_SWORD_DIAG = [
   '........................',
   '........................',
-  '...................oo...',
-  '..................oTWo..',
-  '.................oTEeo..',
-  '................oTEeo...',
+  '........................',
+  '........................',
+  '........................',
+  '................oooo....',
   '...............oTEeo....',
   '..............oTEeo.....',
   '.............oTEeo......',
   '............oTEeo.......',
   '...........oTEeo........',
-  '..........oTceo.........',
-  '.........oTEeo..........',
-  '.....o..oTceo...........',
+  '..........oTyeo.........',
+  '.........oTEyo..........',
+  '.....o..oyEeo...........',
   '....onooTEeo............',
   '.....onTEeo.............',
   '......oneo..............',
@@ -370,7 +370,7 @@ const FORT_SWORD_DIAG = [
   '........................',
 ];
 const FORT_GRIP = [5, 18];
-const FORT_SWORD_PAL = { o: '#241a12', e: '#c8d2e4', E: '#8b93a8', W: '#ffffff', T: '#eef2f8', n: '#4f5668', t: '#7d8699', c: '#9aa3b8', C: '#5c6478' };
+const FORT_SWORD_PAL = { o: '#241a12', e: '#565e72', E: '#7d8699', W: '#ffffff', T: '#b4bdcc', y: '#f2cc6a', n: '#4f5668', t: '#7d8699', c: '#9aa3b8', C: '#5c6478' };
 
 // ------------------------------------------------------------ fortiva registry
 // FORTIVA in the hero art registry (heroArt, js/sprites/hero-art.js): the looks and

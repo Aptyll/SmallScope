@@ -244,36 +244,39 @@ function drawFaberEngine(b, ex, ey, now) {
 }
 
 // ---- the CLOCK STAFF ------------------------------------------------------------
-// His staff (CLASSES' `staff: 'clock'`; HERO_STAVES, js/draw/heroes.js): a brass clock face on
-// a walnut staff, carried upright; its hand ticks round between two frames.
+// His staff (CLASSES' `staff: 'clock'`; HERO_STAVES, js/draw/heroes.js): a brass clock on a walnut
+// staff, carried upright: a white dial with its four quarter marks and two hands, hung out
+// from the top of the staff so the whole face stands clear of his head; the long hand ticks
+// a quarter on between two frames.
 // The hand closes on the shaft at FABER_CLOCK_GRIP.
 const FABER_CLOCK = [
-  '..ooo..',
-  '.oyYyo.',
-  'oywwwyo',
-  'oywowyo',
-  'oywooyo',
-  'oywwwyo',
-  '.oyYyo.',
-  '..oyo..',
-  '..oAo..',
-  '..oAo..',
-  '..oAo..',
-  '..oAo..',
-  '..oAo..',
-  '..oAo..',
-  '..oAo..',
-  '..oAo..',
-  '..oao..',
-  '..oao..',
-  '...o...',
+  '..ooooo..',
+  '.oyyyyyo.',
+  'oyywowyyo',
+  'oywwowwyo',
+  'oyowoooyo',
+  'oywwwwwyo',
+  'oyywowyyo',
+  '.oyyyyyo.',
+  'oAooooo..',
+  'oAo......',
+  'oAo......',
+  'oAo......',
+  'oAo......',
+  'oAo......',
+  'oAo......',
+  'oAo......',
+  'oAo......',
+  'oao......',
+  'oao......',
+  '.o.......',
 ];
-const FABER_CLOCK_GRIP = [3, 10];
+const FABER_CLOCK_GRIP = [1, 11];
 const FABER_CLOCK_PAL = { o: FA_INK, y: FA_BRASS, Y: FA_DEEP, w: '#f4f0e8', A: '#8a5a34', a: '#5a3a24' };
 let faberClockArt = null;
 function faberClock() {
   if (faberClockArt) return faberClockArt;
-  const tick = FABER_CLOCK.map((r, y) => (y === 3 ? 'oywowyo' : y === 4 ? 'oyoowyo' : r)); // the hand a quarter on
+  const tick = FABER_CLOCK.map((r, y) => (y === 3 ? 'oywwwwwyo' : y === 5 ? 'oywwowwyo' : r)); // the long hand a quarter on
   faberClockArt = [bakeBladeArt(FABER_CLOCK, FABER_CLOCK_PAL), bakeBladeArt(tick, FABER_CLOCK_PAL)];
   return faberClockArt;
 }

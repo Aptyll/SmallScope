@@ -164,27 +164,28 @@ function drawPinesTele(ex, ey, now) {
 HERO_AIR.push(drawPinesTele);
 
 // ---- the HORN ----------------------------------------------------------------------
-// What she carries (CLASSES' `staff: 'horn'`; HERO_STAVES, js/draw/heroes.js): a brass signal
-// horn held upright, the bell at the top; the bell's light glints between two frames. The
-// hand closes on the tube at BUCINA_HORN_GRIP.
+// What she carries (CLASSES' `staff: 'horn'`; HERO_STAVES, js/draw/heroes.js): a brass bucina,
+// its tube coiled in one loop and the bell flaring up and out past it; the bell's light
+// glints between two frames. The hand closes on the loop's near side at BUCINA_HORN_GRIP,
+// so the whole horn stands outside the body.
 const BUCINA_HORN = [
-  '...oooo',
-  '..oyFFo',
-  '..oyyyo',
-  '..oYyo.',
-  '.oyYo..',
-  '.oyo...',
-  '.oYo...',
-  '.oyo...',
-  '..oYo..',
-  '...oo..',
+  '.....oooo.',
+  '....oyFFFo',
+  '....oyyyo.',
+  '.oooooyo..',
+  'oyyyyoyo..',
+  'oyoooyYo..',
+  'oyo.oyo...',
+  'oYyooyo...',
+  '.oYyyo....',
+  '..ooo.....',
 ];
-const BUCINA_HORN_GRIP = [2, 6];
+const BUCINA_HORN_GRIP = [1, 6];
 const BUCINA_HORN_PAL = { o: '#2e2440', y: '#f2cc6a', Y: '#b98a2e', F: '#fff1b8', W: '#ffffff' };
 let bucinaHornArt = null;
 function bucinaHorn() {
   if (bucinaHornArt) return bucinaHornArt;
-  const glint = BUCINA_HORN.map((r, y) => (y === 1 ? '..oyWFo' : r));
+  const glint = BUCINA_HORN.map((r, y) => (y === 1 ? '....oyWFFo' : r));
   bucinaHornArt = [bakeBladeArt(BUCINA_HORN, BUCINA_HORN_PAL), bakeBladeArt(glint, BUCINA_HORN_PAL)];
   return bucinaHornArt;
 }
