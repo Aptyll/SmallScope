@@ -171,21 +171,26 @@ function paintGroundTile(g, tx, ty) {
 // for its distance to the ragged edge and is painted by that - inside, a
 // FLAGSTONE path (roadStoneAt: big flat greys, a lit rim toward the light and
 // a shaded one away from it, packed earth in the joints), a full value step
-// under the snow so it reads without colour and at night, with snow lying in
-// clumps over the last half tile of the verge; outside, ROAD_EDGE tiles of
-// earth breaking up into the snow in clumps, then snow greyed by the march and dry
-// grass through it. So the edge is one wandering line and never a tile staircase, and
-// a 16 px tile can be half road and half snow. On an ICE tile - which only
+// under the snow so it reads without colour and at night. The path ends on
+// WHOLE stones: a stone is laid if its middle is inside the edge (roadStoneIn),
+// so the edge steps from stone to stone along the wandering line, never
+// through one. The snow stands a little higher than the stones: round the
+// last of them runs the joint, then a LIP of snow two pixels wide, lit where
+// it faces the light and shaded where it faces away (ROAD_LIP), and a drift
+// laps over a stone here and there under its own shade. Past the lip, snow
+// greyed by the march and dry grass through it. A 16 px tile can be half road
+// and half snow. On an ICE tile - which only
 // a PATH ever crosses, never the diagonal - `onIce` paints the earth and its
 // snowy verge the same way but leaves the water alone outside it, under a
 // pale rim a pixel or two wide that follows the same ragged edge: a lake has
 // a shoreline, not a muddy shoulder. 
-const ROAD_COL_B = '#ad997a';                          // the trodden earth along the shoulder
 const ROAD_COL_DEEP = '#8a7556';                       // the earth in shade (the wiki mound's rim), and in the flagstones' joints
 const ROAD_FLAG = 12;                                  // px a flagstone's cell spans
 const ROAD_COL_GREY = '#d5dce6';                       // the snow beside the lane, greyed by the march
 const ROAD_COL_GRASS = '#a08c58', ROAD_COL_GRASS_D = '#73643c'; // dry grass through the verge snow
-const ROAD_EDGE = 0.45;                                // tiles past the edge the earth breaks up over
+const ROAD_LIP = 3.2;                                  // px of gap out from the last stone the snow's lip is drawn over
+const ROAD_COL_LIP = '#ffffff', ROAD_COL_LIP_SHD = '#b4c5dc'; // the lip facing the light, and facing away
+const ROAD_COL_LAP_SHD = '#7f8794';                    // the shade a drift lapping over the stones throws on them
 const ROAD_COL_RIM = '#d6ecf4';                        // the broken-ice rim where a path crosses a frozen lake
 const ROAD_COL_SNOW = '#e7eff8';                       // snow melting in over the verge
 // The felled trunk across each forest road's far end (placeRoad, world.js):
@@ -238,15 +243,17 @@ function paintLog(g, seg, px, py, ox, oy) {
 // from the stone's middle (lx + ly < 0 faces the light, up-left)
 function roadStoneAt(wx, wy, cell, jit) {
   const cx = Math.floor(wx / cell), cy = Math.floor(wy / cell);
-  let d1 = 1e9, d2 = 1e9, id = 0, lx = 0, ly = 0;
+  let d1 = 1e9, d2 = 1e9, id = 0, x1 = 0, y1 = 0, x2 = 0, y2 = 0;
   for (let j = -1; j <= 1; j++) for (let i = -1; i <= 1; i++) {
     const h = hash2(cx + i + 501, cy + j + 907), h2 = hash2(cx + i + 133, cy + j + 71);
     const fx = (cx + i + 0.5 + (h - 0.5) * jit) * cell, fy = (cy + j + 0.5 + (h2 - 0.5) * jit) * cell;
     const d = Math.hypot(wx + 0.5 - fx, wy + 0.5 - fy);
-    if (d < d1) { d2 = d1; d1 = d; id = h; lx = wx + 0.5 - fx; ly = wy + 0.5 - fy; } else if (d < d2) d2 = d;
+    if (d < d1) { d2 = d1; d1 = d; id = h; x2 = x1; y2 = y1; x1 = fx; y1 = fy; } else if (d < d2) { d2 = d; x2 = fx; y2 = fy; }
   }
-  return { id, gap: d2 - d1, lx, ly };
+  return { id, gap: d2 - d1, lx: wx + 0.5 - x1, ly: wy + 0.5 - y1, x1, y1, x2, y2 };
 }
+// is the stone whose middle is (x, y) world px part of the path: its middle inside the edge
+function roadStoneIn(x, y) { return laneDist(x / TILE - 0.5, y / TILE - 0.5) < -0.12; }
 // a stone's own pixel: three greys by its roll, a lit rim toward the light
 // and a shaded one away from it, the joint dark
 function roadStonePx(st, joint) {
@@ -279,21 +286,34 @@ function paintRoadOverlay(g, tx, ty, px, py, onIce) {
     // so the melt reads as patches of snow and mud rather than sand
     const clump = vnoise(wx / 6 + 3.1, wy / 6 + 7.7);
     let c = null;
-    if (d < 0) {
-      // the flagstones, earth in their joints
-      c = roadStonePx(roadStoneAt(wx, wy, ROAD_FLAG, 0.8), ROAD_COL_DEEP);
-      // the verge: snow lying over the last of the earth in clumps
-      if (d > -0.6 && clump + hp * 0.15 > 1.0 - (d + 0.6) / 0.6 * 0.5) c = ROAD_COL_SNOW;
+    // the stone under the pixel and the next one over; well inside the path
+    // both are laid, and past a stone's reach of the edge neither is
+    const near = d > -1.1 && d < 1.1;
+    const st = d < 1.1 ? roadStoneAt(wx, wy, ROAD_FLAG, 0.8) : null;
+    const in1 = st && (near ? roadStoneIn(st.x1, st.y1) : d < 0), in2 = st && (near ? roadStoneIn(st.x2, st.y2) : d < 0);
+    if (in1) {
+      // a flagstone, earth in its joints - and round the path's last stones
+      c = roadStonePx(st, ROAD_COL_DEEP);
+      // a drift lapping over the stones by the edge: a clean clump of snow,
+      // its shade on the stone below and right of it
+      if (near && !onIce && st.gap >= 1.1) {
+        const lap = (x, y) => vnoise(x / 7 + 3.1, y / 7 + 7.7) > 0.74 - (laneDist(x / TILE - 0.5, y / TILE - 0.5) + 1.1) * 0.12;
+        if (d > -0.8 && lap(wx, wy)) c = ROAD_COL_SNOW;
+        else if (d > -0.9 && lap(wx - 1, wy - 1)) c = ROAD_COL_LAP_SHD;
+      }
+    } else if (in2 && st.gap < 1.1) {
+      c = ROAD_COL_DEEP; // the joint round the last stone
     } else if (onIce) {
       // the bank: broken ice along the crossing's own edge, and open water past it
-      if (d < 0.09) c = ROAD_COL_RIM;
+      if (in2 && st.gap < ROAD_LIP) c = ROAD_COL_RIM;
+    } else if (in2 && st.gap < ROAD_LIP) {
+      // the snow's lip: it faces the light where the stone lies down-right of it
+      c = (st.x2 - wx) + (st.y2 - wy) > 0 ? ROAD_COL_LIP : ROAD_COL_LIP_SHD;
     } else {
-      // the shoulder: trodden earth breaking up into the snow in clumps, then
-      // snow greyed by the march in patches thinning to the field, dry grass
-      // poking through it
-      const k = 1 - d / ROAD_SHOULDER;
-      if (d < ROAD_EDGE && clump < 0.62 - d / ROAD_EDGE * 0.5) c = ROAD_COL_B;
-      else if (clump < k * k * 0.7 - 0.05) c = ROAD_COL_GREY;
+      // the shoulder: snow greyed by the march in patches thinning to the
+      // field, dry grass poking through it
+      const k = 1 - Math.max(0, d) / ROAD_SHOULDER;
+      if (clump < k * k * 0.7 - 0.05) c = ROAD_COL_GREY;
       if (d < 0.9) c = roadTuftAt(wx, wy) || c;
     }
     if (c) penDot(g, c, wx, wy);
@@ -1338,16 +1358,20 @@ function treeTone(tx, ty) {
 // Which of the pine's three heights a tile wears (TREE_CUTS, js/sprites/terrain.js):
 // 0 the drawn tree, 1 and 2 shorter. Half of it is a slow noise, so tall and
 // short pines stand in groves, and half the tile's own hash, so no grove is
-// level. Off the tile alone - a felled neighbour never changes a tree's height.
+// level. The row that borders open ground is always the drawn tree, so a
+// wall's edge is one solid line and a short pine never reads as a gap to
+// walk through (a pine a felling opens up stands up to it).
 const TREE_GROVE = 5; // tiles across a grove of like heights
-function treeSize(tx, ty) {
+function treeSize(tx, ty, tone = treeTone(tx, ty)) {
+  if (tone === 0) return 0;
   const v = vnoise(tx / TREE_GROVE + 31.5, ty / TREE_GROVE + 7.5) * 0.55 + hash2(tx * 23 + 7, ty * 29 + 3) * 0.45;
   return v < 0.45 ? 0 : v < 0.62 ? 1 : 2;
 }
 // the cell in SPRITES.treeAtlas: column (treeFrame's lean) + palette row
 function treeCell(tx, ty, col) {
   const v = Math.floor(hash2(tx * 5 + 3, ty * 7 + 1) * 3);
-  return col + (treeSize(tx, ty) * SPRITES.treeAtlas.pals + v * TREE_TONES + treeTone(tx, ty)) * SPRITES.treeAtlas.cols;
+  const tone = treeTone(tx, ty);
+  return col + (treeSize(tx, ty, tone) * SPRITES.treeAtlas.pals + v * TREE_TONES + tone) * SPRITES.treeAtlas.cols;
 }
 // The nudge that breaks the grid: up to TREE_NUDGE_X px either side of the
 // tile's centre line and TREE_NUDGE_Y up or down. Only the art moves - the
