@@ -1750,6 +1750,13 @@ function renderTitle(now) {
     ctx.globalAlpha = a;
     const label = menuItems()[i];
     drawPixelTextOutline(ctx, label, r.x + 4, y, hv > 0.5 ? '#ffd95c' : '#f4f7ff', 'rgba(8,12,28,0.9)', MENU_TXT_SCALE);
+    if (label === 'FIRST MATCH') { // the one word a new profile is offered: a gold diamond stands before it
+      const dx = r.x - 6, dy = y + 6;
+      for (const [rr, c] of [[4, 'rgba(8,12,28,0.9)'], [3, '#ffd95c']]) {
+        ctx.fillStyle = c;
+        for (let d = -rr; d <= rr; d++) { const w = rr - Math.abs(d); ctx.fillRect(dx - w, dy + d, w * 2 + 1, 1); }
+      }
+    }
     ctx.globalAlpha = 1;
   }
 
