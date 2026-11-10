@@ -1371,6 +1371,9 @@ function endMatch(how) {
   // ...and the same edge for the loss sting below: a second endMatch('lost')
   // (or a driver poking it) must not ring twice over one ending
   const firstLoss = how === 'lost' && state.over !== 'lost';
+  // the same death ending the match (a 1V1 lost on FIRST STRIKE, a bird driven off
+  // while you wait to respawn) is not a new one: a replay already put away stays away
+  const sameDeath = state.mode === 'dead' && player.dead;
   state.over = how;
   // the post-game lobby prints the match as it ENDED (js/ui/lobby.js): a won
   // match runs on underneath its own ceremony, so the table is frozen here
@@ -1391,7 +1394,7 @@ function endMatch(how) {
   state.wheel = null;
   state.deadTimer = 0;
   state.defeatT = 0;
-  state.rpClosed = how === 'hostleft'; // every death opens the replay again; a host walking out is no death, and its door (LOBBY) shows at once
+  state.rpClosed = how === 'hostleft' || (sameDeath && state.rpClosed); // every new death opens the replay again; a host walking out is no death, and its door (LOBBY) shows at once
   // an ENDING freezes its numbers here, not in the render pass: the match
   // runs on underneath (a gold pump can still pay out, a rival can still
   // fall) and a total that climbs behind a tally which already counted it
