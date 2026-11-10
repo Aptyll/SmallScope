@@ -63,7 +63,7 @@ function armSwords() {
 HERO_BLADES.oath = { art: armSwords, hilt: [19, 11], hip: { down: [13, 11], up: [11, 10] }, grip: ARM_GRIP };
 
 // ---- on the snow --------------------------------------------------------------
-// a box laid down a bearing: the IRON VERDICT's line, (px, py) its near end
+// a box laid down a bearing, (px, py) its near end: a landing's line with no look of its own
 function drawLineBox(px, py, a, len, half, col, alpha, fill) {
   const nx = Math.cos(a), ny = Math.sin(a);
   ctx.globalAlpha = alpha;
@@ -88,47 +88,141 @@ function drawLineBox(px, py, a, len, half, col, alpha, fill) {
   }
   ctx.globalAlpha = 1;
 }
-// the verdict's wind-up: the line, and its middle - where a body is thrown up -
-// hashed in solid as the blade comes down
-function drawVerdictTele(px, py, a, col, closing) {
-  drawLineBox(px, py, a, VERDICT_LEN, VERDICT_HALF, col, 0.55 + 0.4 * closing, closing);
-  const nx = Math.cos(a), ny = Math.sin(a);
-  ctx.globalAlpha = 0.35 + 0.5 * closing;
-  ctx.fillStyle = TELE_HOT;
-  for (let s = VERDICT_LEN * VERDICT_MID[0]; s <= VERDICT_LEN * VERDICT_MID[1]; s += 2) {
-    for (let k = -VERDICT_HALF + 2; k <= VERDICT_HALF - 2; k += 2) {
-      if ((Math.round(s / 2) + Math.round(k / 2)) % 2) continue;
-      ctx.fillRect(Math.round(px + nx * s - ny * k), Math.round(py + ny * s + nx * k), 1, 1);
+// IRON VERDICT's wind-up: the sword's shadow thrown down the line as he lifts it,
+// longer as it rises, and in its middle - where a body is thrown up - the snow
+// already jumping under it
+function drawVerdictTele(p, px, py, a, closing, now) {
+  const nx = Math.cos(a), ny = Math.sin(a), len = VERDICT_LEN * (0.35 + 0.65 * closing);
+  ctx.fillStyle = 'rgba(40,52,90,0.32)';
+  for (let s = 6; s < len; s++) {
+    const w = Math.max(0, Math.round((VERDICT_HALF - 3) * (1 - s / (len + 6)))); // broad at the hilt, to a point
+    for (let k = -w; k <= w; k++) ctx.fillRect(Math.round(px + nx * s - ny * k), Math.round(py + 2 + ny * s + nx * k), 1, 1);
+  }
+  if (closing > 0.75) { // the edge catches the light as it comes down
+    ctx.fillStyle = '#ffffff';
+    for (let s = 8; s < len - 2; s += 2) ctx.fillRect(Math.round(px + nx * s), Math.round(py + 2 + ny * s), 1, 1);
+  }
+  const seed = p.id * 31;
+  for (let k = 0; k < 9; k++) { // flecks hopping in the middle stretch
+    const s = VERDICT_LEN * (VERDICT_MID[0] + (VERDICT_MID[1] - VERDICT_MID[0]) * fxRoll(seed, k, 1));
+    const o = (fxRoll(seed, k, 2) * 2 - 1) * (VERDICT_HALF - 2);
+    const z = Math.round(Math.abs(Math.sin(now * 14 + k * 1.7)) * (1 + 3 * closing));
+    const x = Math.round(px + nx * s - ny * o), y = Math.round(py + 2 + ny * s + nx * o);
+    ctx.fillStyle = 'rgba(40,52,90,0.3)'; ctx.fillRect(x, y + 1, 1, 1);
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(x, y - z, 1, 1);
+  }
+}
+// its landing: the snow split down the line, banks thrown up either side, and
+// the middle stretch thrown into the air
+function drawVerdictFx(f, px, py, now) {
+  const u = f.t / f.life, seed = fxSeed(f), nx = Math.cos(f.a), ny = Math.sin(f.a), y0 = py + 4;
+  const run = f.r * Math.min(1, u * 6);
+  ctx.globalAlpha = Math.min(1, 2.5 * (1 - u));
+  for (let s = 4, o = 0; s < run; s++) {
+    if (fxRoll(seed, s, 11) < 0.35) o = Math.max(-2, Math.min(2, o + (fxRoll(seed, s, 12) < 0.5 ? -1 : 1))); // a jagged split, not a wave
+    const x = px + nx * s - ny * o, y = y0 + ny * s + nx * o;
+    ctx.fillStyle = STD_INK; ctx.fillRect(Math.round(x), Math.round(y), 2, 1); // the split
+    ctx.fillStyle = '#9fb6d8'; ctx.fillRect(Math.round(x), Math.round(y) + 1, 2, 1);
+    if (s % 2) continue;
+    for (const side of [-1, 1]) { // the banks it threw up
+      const b = side * (f.half - 4 + Math.round(fxRoll(seed, s, side + 3) * 2));
+      const bx = Math.round(px + nx * s - ny * b), by = Math.round(y0 + ny * s + nx * b);
+      ctx.fillStyle = '#9fb6d8'; ctx.fillRect(bx, by + 1, 2, 1);
+      ctx.fillStyle = '#f4f7ff'; ctx.fillRect(bx, by, 2, 1);
     }
+  }
+  const z0 = 14 * 4 * u * (1 - u);
+  for (let k = 0; k < 10; k++) { // the middle thrown up
+    const s = f.r * (VERDICT_MID[0] + (VERDICT_MID[1] - VERDICT_MID[0]) * fxRoll(seed, k, 7));
+    const o = (fxRoll(seed, k, 8) * 2 - 1) * f.half * (0.4 + u);
+    const x = Math.round(px + nx * s - ny * o), y = Math.round(y0 + ny * s + nx * o);
+    ctx.fillStyle = 'rgba(40,52,90,0.3)'; ctx.fillRect(x, y + 1, 2, 1);
+    const z = Math.round(z0 * (0.6 + 0.4 * fxRoll(seed, k, 9)));
+    ctx.fillStyle = STD_INK; ctx.fillRect(x - 1, y - z - 1, 4, 3);
+    ctx.fillStyle = k % 3 ? '#f4f7ff' : '#cfd8e8'; ctx.fillRect(x, y - z, 2, 1);
   }
   ctx.globalAlpha = 1;
 }
-// the march's wind-up: the charge's own dashed line to where it would end
-function drawMarchTele(p, a, col, closing, now, ex, ey) {
-  const nx = Math.cos(a), ny = Math.sin(a);
-  const len = teleLen(p.x, p.y, nx, ny, MARCH_SPD * MARCH_T);
-  drawTeleLine(p.x, p.y, nx, ny, len, col, 0.5 + 0.45 * closing, now, ex, ey);
-  drawTeleLine(p.x - ny * 4, p.y + nx * 4, nx, ny, len, col, 0.3 + 0.3 * closing, now, ex, ey);
-  drawTeleLine(p.x + ny * 4, p.y - nx * 4, nx, ny, len, col, 0.3 + 0.3 * closing, now, ex, ey);
+AB_FX_LOOK.verdict = drawVerdictFx;
+// HOLD THE LINE's bash: the shield's face swept round in front of him, gold when
+// a hero had primed it, and the snow thrown off its rim
+function drawBashFx(f, px, py, now) {
+  const u = f.t / f.life, gold = f.col === '#ffd95c';
+  drawSwoosh(px, py, f.a, f.r, f.half, u, 7, [STD_INK, gold ? '#ffd95c' : '#ffffff', gold ? STD_GOLD_D : '#8796ad'], 1);
+  drawFlung(px, py + 2, f.a, f.half, f.r + 10, 0.7, 6, 8, Math.min(1, u * 1.5), fxSeed(f), (x, y, k) => {
+    ctx.fillStyle = STD_INK; ctx.fillRect(x, y + 1, 1, 1);
+    ctx.fillStyle = gold && k % 2 ? '#ffd95c' : '#ffffff'; ctx.fillRect(x, y, 1, 1);
+  });
 }
-// THE OLD GUARD: the ring in the side's colour, the standard planted at its
-// heart, both thinning out over its last second. Drawn on the snow with the
-// other ability shapes (HERO_GROUND, js/sim/heroes.js), for both sides.
+AB_FX_LOOK.bash = drawBashFx;
+// VETERAN'S MARCH's wind-up: his boot prints stamped down the line he will
+// charge, out to where it ends, more of them as he lowers his head
+function drawMarchTele(p, a, closing, ex, ey) {
+  const nx = Math.cos(a), ny = Math.sin(a), len = teleLen(p.x, p.y, nx, ny, MARCH_SPD * MARCH_T);
+  const reach = len * (0.4 + 0.6 * closing), col = TEAMS[skin(p.team)].mark;
+  for (let s = 12, k = 0; s < reach; s += 9, k++) {
+    const o = k % 2 ? 3 : -3, x = Math.round(p.x + nx * s - ny * o - ex), y = Math.round(p.y + 2 + ny * s + nx * o - ey);
+    ctx.fillStyle = '#5f7aa3'; ctx.fillRect(x - 1, y - 1, 3, 3); ctx.fillRect(x, y + 2, 1, 1); // the print, its heel behind
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(x - 1, y + 2, 1, 1); ctx.fillRect(x + 1, y + 2, 1, 1);
+    if (s + 9 >= reach) { ctx.fillStyle = col; ctx.fillRect(x, y, 1, 1); } // the newest, in his side's mark
+  }
+  const x = Math.round(p.x + nx * len - ex), y = Math.round(p.y + 2 + ny * len - ey); // where it ends
+  ctx.globalAlpha = 0.4 + 0.5 * closing;
+  ctx.fillStyle = 'rgba(40,52,90,0.4)'; fillEllipsePx(x, y, 6, 2);
+  ctx.globalAlpha = 1;
+}
+// THE OLD GUARD: a shield stood in the snow, in the side's colour, its boss gold
+const GUARD_SHIELDS = 20;
+function drawGuardShield(x, y, col, colD) {
+  ctx.fillStyle = STD_INK; ctx.fillRect(x - 3, y - 7, 7, 8); ctx.fillRect(x - 2, y + 1, 5, 1); ctx.fillRect(x - 1, y + 2, 3, 1);
+  ctx.fillStyle = col; ctx.fillRect(x - 2, y - 6, 5, 7); ctx.fillRect(x - 1, y + 1, 3, 1);
+  ctx.fillStyle = colD; ctx.fillRect(x + 1, y - 6, 1, 7);
+  ctx.fillStyle = STD_GOLD; ctx.fillRect(x, y - 3, 1, 1);
+}
+// its wind-up: the shields coming up round the reach, one by one
+function drawGuardTele(p, px, py, closing) {
+  const tm = TEAMS[skin(p.team)], n = Math.ceil(GUARD_SHIELDS * closing);
+  for (let i = 0; i < n; i++) {
+    const t = i * Math.PI * 2 / GUARD_SHIELDS - Math.PI / 2;
+    const x = Math.round(px + Math.cos(t) * GUARD_R), y = Math.round(py + 2 + Math.sin(t) * GUARD_R * 0.62);
+    const rise = i === n - 1 ? Math.round(3 * (1 - (GUARD_SHIELDS * closing - i))) : 0; // the newest still coming up
+    ctx.fillStyle = 'rgba(160,182,214,0.7)'; ctx.fillRect(x - 3, y + 1, 7, 1);
+    drawGuardShield(x, y + rise, tm.mark, tm.coatD);
+  }
+}
+// the standard planted: the ring of shields in the side's colour round its reach, a
+// gap of snow broken at each one's foot, the standard at its heart, all thinning out
+// over its last second. Drawn on the snow with the other ability shapes
+// (HERO_GROUND, js/sim/heroes.js), for both sides.
 function drawGuards(ex, ey, now) {
   for (const g of guards) {
     const px = Math.round(g.x - ex), py = Math.round(g.y - ey);
     if (px < -GUARD_R - 8 || py < -GUARD_R - 20 || px > WV_W + GUARD_R + 8 || py > WV_H + GUARD_R + 8) continue;
-    const fade = Math.min(1, (g.life - g.t) / 1, g.t / 0.2);
-    const col = TEAMS[skin(g.team)].mark;
-    drawRing(px, py + 2, GUARD_R, col, 0.75 * fade, 0);
-    // the inner ring breathes, so the zone reads as alive
-    drawRing(px, py + 2, GUARD_R - 5 - Math.round(2 * Math.sin(now * 3)), col, 0.25 * fade, 0);
+    const fade = Math.min(1, (g.life - g.t) / 1, g.t / 0.2), tm = TEAMS[skin(g.team)];
     ctx.globalAlpha = fade;
+    for (let i = 0; i < GUARD_SHIELDS; i++) {
+      const t = i * Math.PI * 2 / GUARD_SHIELDS - Math.PI / 2;
+      const x = Math.round(px + Math.cos(t) * GUARD_R), y = Math.round(py + 2 + Math.sin(t) * GUARD_R * 0.62);
+      ctx.fillStyle = 'rgba(160,182,214,0.7)'; ctx.fillRect(x - 3, y + 1, 7, 1);
+      drawGuardShield(x, y, tm.mark, tm.coatD);
+    }
     ctx.fillStyle = 'rgba(160,182,214,0.7)'; // the snow broken at its foot
     ctx.fillRect(px - 2, py + 2, 5, 1);
-    drawStandard(px, py + 2, 16, 1, col, 0, now);
+    drawStandard(px, py + 2, 16, 1, tm.mark, 0, now);
     ctx.globalAlpha = 1;
   }
 }
+// its landing: the standard driven in, cracks run out from its foot and snow thrown round
+function drawGuardFx(f, px, py, now) {
+  const u = f.t / f.life, seed = fxSeed(f);
+  ctx.globalAlpha = Math.min(1, 2.5 * (1 - u));
+  drawCracks(px, py + 3, 7, 22, Math.min(1, u * 5), seed, STD_INK, '#ffffff');
+  drawFlung(px, py + 3, 0, Math.PI, 30, 0.4, 10, 16, Math.min(1, u * 1.4), seed, (x, y, k) => {
+    ctx.fillStyle = STD_INK; ctx.fillRect(x - 1, y - 1, 3, 3);
+    ctx.fillStyle = k % 4 ? '#f4f7ff' : STD_GOLD; ctx.fillRect(x, y, 1, 1);
+  });
+  ctx.globalAlpha = 1;
+}
+AB_FX_LOOK.guard = drawGuardFx;
 HERO_GROUND.push(drawGuards);
 HERO_BODY_FX.push(drawHeroBack);
