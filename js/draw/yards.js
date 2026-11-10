@@ -24,7 +24,7 @@ const YARD_THINGS = {
   rockB: ['..wwww...', '.wwwwwwo.', 'owwssyYYo', 'oYyyyyvvo', '.ddddddd.'],
   rockC: ['...www..', '.wwwwwo.', 'owssyyYo', 'ovyyyvvo', '.dddddd.'],
   rockD: ['.www.', 'owsYo', 'oyvvo', '.ddd.'],
-  pile: ['...wwwwwwww...', '..wwwwswwwww..', '..kcckcckcck..', '..kCckCckCck..', '.kcckcckcckcck', '.kCckCckCckCck', '.kkkkkkkkkkkkk', '..ddddddddddd.'], // split logs stacked end on, snow on top
+  pile: ['....sswwwwwss....', '...swwwwwwwwws...', '..kkkkkkkkkkkkk..', '..kcCckcCckcCck..', '..kcLckcLckcLck..', 'kkkkkkkkkkkkkkkkk', 'kcCckcCckcCckcCck', 'kcLckcLckcLckcLck', 'kkkkkkkkkkkkkkkkk', '.ddddddddddddddd.'], // split logs stacked end on, two rows under a cap of snow
   block: ['.....mm..', '....mmh..', '.....h...', '.kkkhkk..', 'kccchcck.', 'kcCCCCck.', 'kLlllLLk.', '.kkkkkk..', '..ddddd..'],          // the chopping block, the axe left in it
   log: ['.kkkk.', 'kclLLk', '.kkkd.'],
 };
@@ -38,7 +38,7 @@ const YARDS = {
     rx: 50, ry: 28, rag: 0.3, dy: 12, flip: false,
     door: (C) => ({ x: C.tx * TILE + 6, y: (C.ty + 1) * TILE - 4 }),  // the door in its left wall (SPRITES.hogHut)
     path: [[0, 0], [-7, 12], [-5, 34], [6, 58], [2, 84]],              // px off the door: out, and down into the clearing
-    things: [[31, 2, 'pile'], [-24, 10, 'block'], [-33, 22, 'log'], [-13, 24, 'log'], [40, 14, 'rockD']],
+    things: [[33, -1, 'pile'], [-24, 10, 'block'], [-33, 22, 'log'], [-13, 24, 'log'], [40, 14, 'rockD']],
   },
 };
 const yardCvs = new Map(); // a camp's tile index -> its yard
