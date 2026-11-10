@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['Jungle: lines of animal prints run between the camps, and the wind has cut thin ridges in the open snow', '0.869'],
     ['BELLA\'s parry blade and precision pips on half px behind ?fine=1', '0.867'],
     ['Each bay stands on a kerbed round of paving', '0.866'],
     ['A blow or a fall leaves a few low scuffs on the snow instead of a dotted ring', '0.864'],
