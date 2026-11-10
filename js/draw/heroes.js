@@ -185,6 +185,14 @@ function bladeArt(p, b) {
   const a = b.art();
   return { flat: fineArt(a.flat), diag: a.diag && fineArt(a.diag) };
 }
+// a shot weapon's level art and slanted grid for this body: its drawn 32 px pair (WEAPON_FINE,
+// js/sprites/weapons.js) for a body drawn fine, else doubled (fineArt, a stopgap), else its own
+function shotArt(p, art) {
+  const icon = SPRITES.weaponArt[art], diag = SPRITES.weaponDiag[art];
+  if (!(bodySet(p).dens > 1)) return { icon, diag };
+  if (WEAPON_FINE[art]) return WEAPON_FINE[art]();
+  return { icon: icon && fineArt(icon), diag: diag && fineArt(diag) };
+}
 // any baked art on twice the px (SPR.fine2x over its own pixels: its colours as letters, its
 // ink the darkest colour on its rim), tagged `dens` 2 and kept: a hero's blade before it has a
 // drawn fine pair of its own

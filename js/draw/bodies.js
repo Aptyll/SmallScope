@@ -741,13 +741,13 @@ function heroAimed(p) {
     const r = own(h, !drawing ? 0 : drawPow(p) < 0.5 ? 1 : 2, p);
     return { img: r.img, grip: r.grip, rot: 0, x: r.hand[0], y: r.hand[1] - 2, behind, fist: true };
   }
-  const dg = drawing && SPRITES.weaponDiag[A.art];
+  const wa = shotArt(p, A.art), dg = drawing && wa.diag;
   if (!dg) return null;
   // the stock at the shoulder; aimed up the screen it stays at the shoulders, behind the head and under the health frame
   const x = Math.round(Math.cos(ha) * AIM_HAND), y = AIM_DROP + Math.round(Math.sin(ha) * (Math.sin(ha) < 0 ? AIM_HAND_UP : AIM_HAND));
   if (h & 1) return { img: dg, grip: WEAPON_GRIP.diag[A.art], rot: ha - Math.PI / 4, x, y, behind, fist: false };
-  const icon = SPRITES.weaponArt[A.art];
-  return { img: icon, grip: WEAPON_GRIP.icon[A.art] || [icon.width >> 1, icon.height >> 1], rot: ha - (WEAPON_FWD[A.art] || 0), x, y, behind, fist: false };
+  const icon = wa.icon;
+  return { img: icon, grip: WEAPON_GRIP.icon[A.art] || [heldW(icon) >> 1, heldH(icon) >> 1], rot: ha - (WEAPON_FWD[A.art] || 0), x, y, behind, fist: false };
 }
 // is a key mid-wind-up holding the weapon on the aim (its CLASS_AB row's `aimHeld`: SAGITTA's bolts)
 function castAims(p) { if (!(p.castT > 0)) return false; const ab = abOf(p, p.castAb); return !!(ab && ab.aimHeld); }

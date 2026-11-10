@@ -399,6 +399,7 @@ function drawSelMode(L, a) {
 const BRIEF_WELL = 34, BRIEF_GAP = 3, BRIEF_SPLIT = 12; // an ability's well, the air between two, and between the words and the wells
 function selBriefHero(L) {
   if (DRAFT.phase !== 'pick' || DRAFT.lock[localId] >= 0 || L.stage) return -1;
+  if (state.menu.loPick != null) return -1; // the loadout's open picker stands on this ground (loOptions, js/ui/loadout.js)
   const hi = state.menu.screenT >= 1 && state.menu.popT <= 0 && mouse.inside ? heroCellAt(L.heroes) : -1;
   const h = hi >= 0 && hi < CLASSES.length ? hi : draftWant(localId);
   return h >= 0 && CLASSES[h] && !DRAFT.banned.includes(h) ? h : -1;

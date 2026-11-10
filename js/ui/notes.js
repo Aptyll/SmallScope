@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['THE PICK ABILITY CARD STANDS CLEAR OF THE ICONS AND LOCK IN', '0.812'],
     ['SHOTS: A SHORT STREAK BEHIND EVERY ARROW, BOLT AND STONE, NO MORE DOTS', '0.811'],
     ['TOWERS: A SIGHT LINE RUNS FROM THE GUN TO THE HERO IT IS ABOUT TO SHOOT', '0.811'],
     ['ARCUS is drawn at 32 px (body, roll, a finer longbow), waiting behind the fine-art switch', '0.810'],

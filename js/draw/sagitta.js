@@ -165,12 +165,12 @@ const SG_CARRY = [4, 4]; // where that hand closes on the slanted grid
 const SG_TUCK = 3; // grid rows of the butt hidden under her arm
 function sagittaCarry(p, px, py) {
   if (!isSagitta(p)) return false;
-  const img = SPRITES.weaponDiag[attackOf(p).art];
+  const img = shotArt(p, attackOf(p).art).diag;
   if (!img) return false;
   const out = p.dir !== 'left', rc = heroReach(p); // the prod runs right of the hand
   const hx = out ? px + 12 + rc : px + 3 - rc, hy = py + 10;
   // the butt is tucked under her arm: the grid's top rows (SG_TUCK) stay undrawn, or the stock crosses her jaw
-  const src = out ? img : heldFlip(img), k = src.height / 13, t = SG_TUCK * k; // k: a finer world's doubled art (fineArt)
+  const src = out ? img : heldFlip(img), k = src.dens || 1, t = SG_TUCK * k; // k: a finer body's art px a world px
   ctx.drawImage(src, 0, t, src.width, src.height - t, hx - (out ? SG_CARRY[0] : 12 - SG_CARRY[0]), hy - SG_CARRY[1] + SG_TUCK, src.width / k, (src.height - t) / k);
   if (p.dir !== 'up') heroFist(p, hx, hy, out ? 1 : -1);
   return true;
