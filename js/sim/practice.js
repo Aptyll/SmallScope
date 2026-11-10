@@ -30,8 +30,7 @@
 // on a frost plate at the gate (the dummy meter's own language). Leaving the
 // ice for more than PK_OFF_T abandons the run.
 //
-// Boots only under ARENA (js/sim/core.js pins the seed to PRACTICE_SEED, so
-// ?seed can never reshape it) and replaces genWorld outright: no camps,
+// Boots only under ARENA and replaces genWorld outright: no camps,
 // no eagles, no other players (js/app/boot.js), and the clock is pinned to early
 // morning forever (sim.js). One player, nothing at stake - die() revives on
 // the spot and the profile is never written (js/sim/player.js), with ONE

@@ -99,7 +99,7 @@ const POSITIONS = [
 // bare constants - its BASIC ATTACK on the left button (`attack`, read by
 // js/sim/attack.js, which says what each field means) and its four ACTIVE
 // ABILITIES on keys 1-4 (CLASS_AB, js/sim/abilities.js). Picked in the draft
-// (js/ui/draft.js) or hashed from the seed (bots) in initPlayers().
+// (js/ui/draft.js) or hashed from the match seed (bots) in initPlayers().
 const CLASSES = [
   {
     // the first hero (js/sim/armatos.js): his own 16 px body in each look
@@ -928,12 +928,12 @@ function initPlayers(roster, local) {
   roster = roster || defaultRoster(local);
   players.length = 0;
   for (let i = 0; i < MAX_PLAYERS; i++) players.push(new Player(i, roster[i].control, roster[i].team));
-  // bots draw their class from the seed, so a replayed world fields the
-  // same roster
+  // bots draw their class from the match seed (matchHash), so a replayed
+  // match fields the same roster
   for (const p of players) if (p.control === 'ai') {
     // floor(hash * N): even over however many classes exist (for two it maps
     // exactly as the old `< 0.5` coin, so old seeds keep their rosters)
-    setClass(p, Math.floor(hash2(p.id * 17 + 3, 77) * CLASSES.length)); // refreshes the kit too
+    setClass(p, Math.floor(matchHash(p.id * 17 + 3, 77) * CLASSES.length)); // refreshes the kit too
   }
   // a roster's own dressing (a lobby's humans) lands over the defaults
   for (const p of players) {
@@ -994,15 +994,15 @@ function seenAt(p, range, team) {
 // ---- contested orders --------------------------------------------------
 // Several players can order the same tile, drop or fish inside one sim step,
 // and only one of those can happen. Each such action queues a claim here;
-// resolveContests() runs exactly one per key, picked from (SEED, player id,
-// sim tick) - so the same step resolves the same way on every machine.
+// resolveContests() runs exactly one per key, picked by matchHash from the
+// player id and the sim tick - so a replay of the match resolves it the same way.
 const contests = new Map();
 function contest(key, p, fn) {
   let list = contests.get(key);
   if (!list) { list = []; contests.set(key, list); }
   list.push({ p, fn });
 }
-function contestRank(p) { return hash2(p.id * 131 + 7, state.tick); }
+function contestRank(p) { return matchHash(p.id * 131 + 7, state.tick); }
 function resolveContests() {
   for (const list of contests.values()) {
     let win = list[0], wr = contestRank(win.p);

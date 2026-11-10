@@ -6,8 +6,8 @@
 //
 //   npm start                      solo, the title as always
 //   npm start -- --net=host        host a public lobby on the dev App ID
-//   npm start -- --join=LOBBYID    join one (the seed comes from the lobby)
-//   npm start -- --seed=N          pin the world, as ?seed=N does
+//   npm start -- --join=LOBBYID    join one
+//   npm start -- --seed=N          pin the match's stream, as ?seed=N does (never the map)
 //   npm start -- --transport=relay the relay's rooms instead of Steam's lobbies (the default while Steam is up)
 //   npm start -- --windowed        a 1280x720 window instead of fullscreen
 //   npm start -- --steamnet=p2p    Steam's older P2P packets instead of its newer messages (steam-messages.js)
@@ -136,7 +136,7 @@ ipcMain.handle('steam:joinLobby', async (e, id) => {
   return lobbyInfo(l);
 });
 ipcMain.handle('steam:leaveLobby', (e, id) => { const l = lobbies.get(String(id)); if (l) { l.leave(); lobbies.delete(String(id)); } return true; });
-// a page starting (a boot, or a reload onto another seed, a rematch, a crossing)
+// a page starting (a boot, a rematch, a crossing)
 // owns no lobby yet: whatever the page before it created or joined is left here,
 // or it would linger on Steam's list with its old data - a party still looking
 // (`seek`), a code a friend's lookup then finds instead of the live one

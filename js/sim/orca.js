@@ -137,7 +137,7 @@ function updateOrcaSpouts(dt) {
 }
 // somewhere new to cruise to: a home tile off the tick
 function orcaGoal() {
-  const i = orcaHome[Math.floor(hash2(state.tick * 7 + 3, ++orca.n) * orcaHome.length)];
+  const i = orcaHome[Math.floor(matchHash(state.tick * 7 + 3, ++orca.n) * orcaHome.length)];
   orca.gx = (i % WORLD + 0.5) * TILE; orca.gy = (((i / WORLD) | 0) + 0.5) * TILE;
 }
 // one step of swimming: turn toward (tx, ty) at `turn`, go `v`, never out of

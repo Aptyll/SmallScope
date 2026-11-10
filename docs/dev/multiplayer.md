@@ -31,8 +31,8 @@ screen's player in slot `id` (title only: it is a fresh `initPlayers`).
 
 **`initPlayers(roster, local)` takes a roster** — one `{ control, team?, name?, cls? }` per
 slot — and the local slot; with neither it builds today's match (`defaultRoster`: this screen's
-human in `LOCAL_SLOT`, an AI everywhere else, teams alternating by slot). A bot still rolls its
-class off the seed; a roster entry's own `name`/`cls` land over that, which is
+human in `LOCAL_SLOT`, an AI everywhere else, teams alternating by slot). A bot still hashes its
+class off its slot and the match seed (`matchHash`, so the same `?seed` fields the same roster); a roster entry's own `name`/`cls` land over that, which is
 how a lobby dresses a remote human's body (`netClientWelcome`, [Online play](#online-play)).
 The profile is only ever applied to this screen's player (`applyProfile()`).
 
@@ -270,7 +270,7 @@ one does, its cooldown, cast, and the states it leaves on a body — are
 
 The local player's class is its **hero, picked each match** in the lobby's draft
 ([lobby](rendering.md#lobby), js/ui/draft.js: a ban phase, then everyone's blind pick); the one
-it flies out with is kept as the profile's hero (js/app/profile.js), the one the next pick starts on. Bots hash their hero from the seed in `initPlayers()`, and in the draft
+it flies out with is kept as the profile's hero (js/app/profile.js), the one the next pick starts on. Bots hash their hero from their slot in `initPlayers()`, and in the draft
 take what it gives them (`draftBotPick`). Lobby shows that roster as two team panels on the screen's edges — your side left, the
 rivals right, their picks face-down until the draft's countdown turns them. The party's leader sets
 the rivals' level on the party screen's head (`botsSet`, js/ui/rooms.js): `settings.aiLevel` (`AI_LEVELS`, js/ai/ai-skill.js: EASY / NORMAL / HARD /
@@ -538,8 +538,8 @@ contest('work:' + idx(tx, ty), p, () => { /* runs only if p wins */ });
 ```
 
 `resolveContests()` runs exactly one claim per key, choosing the lowest `contestRank(p)` =
-`hash2(p.id * 131 + 7, state.tick)` — a pure function of the run **seed**, the **player id** and the
-**sim tick**, so every machine simulating that step picks the same winner. It is called twice in
+`matchHash(p.id * 131 + 7, state.tick)` — a pure function of the **match seed** (`SEED`), the **player id** and the
+**sim tick**, so a replay of that step picks the same winner. It is called twice in
 `updatePlay`: once after the player loop (work swings, build orders, fish) and once at the end
 (drop pickups). Claims must re-check their preconditions inside the callback — cost is paid at
 resolution, so a loser keeps its gold.
@@ -559,7 +559,7 @@ field into the same `p.input` (`botAct`), plus a `goTo` walked by `navTo`, a `sa
 and a `think` stored as `p.ai.thought`. It runs inline (the examples baked from `bots/` into
 js/baked/bot-lib.js by `app/bake-bots.js`), in a Web Worker (a person's file) or on any transport a
 harness registers in `BOT_TRANSPORTS`; a headless runner steps only while `botPending()` is
-false, so a seed and the same files replay exactly. The live half of a seat (`botRt`) is never
+false, so the same `?seed` and the same files replay exactly. The live half of a seat (`botRt`) is never
 saved: a save keeps `p.botId` and the first step after a load reopens the program. The author's contract: [docs/bots/](../bots/README.md).
 
 `updateAI(p, dt)` (the `ai` banner) writes `p.input` and nothing else — a bot can never do anything
@@ -887,7 +887,7 @@ mid-cable holds the other way) and presses the hop again `ZIP_AI_OFF` (6 px) sho
 A ride no rung wanted this think is let go of at once (`ai.zipUsed`, `updateAI`), so a bot
 never coasts to the terminus by accident, and rungs 3 and 4 let go before they fight: nobody
 rides past an enemy holding the handle (roost to the map's centre is about 12.5 s by the cable against
-23 s on foot, seed 42). The -1, not a
+23 s on foot). The -1, not a
 timer, is what makes a bot drop a goal: harvest puts the target on `ai.avoid` for 12 s, hunt on
 `ai.huntAvoid`, spend backs off for 15 s, a push on `ai.pushCd`, roam
 re-picks. Harvest routes
@@ -895,7 +895,7 @@ with reach `WORK_REACH` (any open tile beside the target), so `aiOpenSides() >= 
 prefilter on work; a build site still wants `>= 3` open sides. Keep the -1 branches when you
 extend the ladder — a goal that is never dropped is a bot that stands still forever.
 
-**Calibrating a level** is done bot-vs-bot, headless: `node app/arena/run.js` plays a batch of seeds with no browser, one exact replay per seed, and scores each match ([arena.md](arena.md)). The same recipe by hand, in the served page: make the local player a
+**Calibrating a level** is done bot-vs-bot, headless: `node app/arena/run.js` plays a batch of seeds with no browser (a seed varies the match's stream on the one map), one exact replay per seed, and scores each match ([arena.md](arena.md)). The same recipe by hand, in the served page: make the local player a
 bot (`player.control = 'ai'`, `players[0].ai.prof = AI_LEVELS[1]` (NORMAL) for a middling player who
 never pushes — `aiRank` skips `player`, so it holds no push or guard player), stub
 `sampleHumanInput`, `DBG.beginDrop()`, then step the sim at its own `TICK_DT` (1/60 —
@@ -905,13 +905,13 @@ any other `dt` plays a different bot) in a loop until
 the local player is dead, so write your own clock back into it each step, and only `'won'` /
 `'lost'` in `state.over` end a match — `'respawning'` is the proxy dying). Set `DBG.freeze`
 first so the frame loop stops stepping under you. Two runs of one seed are **not** the same
-match: the title screen's live world spends seed draws for however many frames it was up
+match: the title screen's live world spends `rng()` draws for however many frames it was up
 before the harness started, so a seed is a distribution, not a replay. Wrapping `gainGold`
 and bucketing by the caller in `new Error().stack` (`hitObject`, the kill bounty in `die`,
 `animalDies`, `updateStructures`, else the trickle) is how the economy is sized.
 The match-length target is a match that ends round fifteen minutes with the human sitting it
 out, ten to twenty at the tails, which is what the ally clocks are set for. Where the levels
-last measured (seed 42 unless said): NORMAL resolves on the ally push at 17–21 min (seeds 42,
+last measured (`?seed=42` unless said): NORMAL resolves on the ally push at 17–21 min (seeds 42,
 99, 7), a few minutes long of the target, so the ally clocks are the next thing to tune; HARD is
 an ally win at about 12:35; relentless IMPOSSIBLE's pack of five goes at about 5:15 and takes
 the allied bird to **15 % nerve** by six minutes, then bleeds to the levelled allies (a rusher
@@ -957,7 +957,7 @@ what the rest of the code needs to know is this:
   copies onto that slot's `p.input`, `netHostStep`) and draws the snapshots the host sends every
   `SNAP_EVERY` (4) ticks, eased between two (`netClientLerp`). A key handler that calls a sim
   function directly therefore does nothing on a client.
-- **A joiner takes an open seat.** `netHostHello` refuses a different patch or seed. In a party
+- **A joiner takes an open seat.** `netHostHello` refuses a different patch or `world` (`worldKind()`: the match's map, the practice tool, the arena). In a party
   (`NET.mode`, js/ui/rooms.js) it seats the joiner on the leader's side, only while the party is
   on its seats (BUSY once the hero select or the match has begun; FULL past five), or any time on
   the practice tool (`practiceSeat`, onto the side's roost, or the arena's spawn). A host with no

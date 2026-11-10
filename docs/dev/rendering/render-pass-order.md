@@ -76,8 +76,8 @@ over it) → the end-of-match overlay (`renderDead`: the death dim and its plank
 `renderVictory` / `renderDefeat` — see [The end screens](the-end-screens.md)) → `drawTooltip`
 (every mode but an end screen) → the held-TAB scoreboard (deliberately **above** the death dim,
 see [Scoreboard and event log](scoreboard-and-event-log.md)) → the info stack (`drawTags`, left
-edge at the top quarter: FPS / POS / SEED as aligned label-value rows — one ESC-menu toggle or
-F3; only the fps line in `title`) → the screen fade (`state.fade`, the reroll whiteout) → the pixel cursor (always last).
+edge at the top quarter: FPS / SIM / DRAW / SFX / POS as aligned label-value rows — one ESC-menu toggle or
+F3; no POS in `title`) → the screen fade (`state.fade`, the whiteout before a reload) → the pixel cursor (always last).
 
 Anything that should be occluded by trees goes into `draws` with a sort key; anything flat goes
 in the pre-pass.

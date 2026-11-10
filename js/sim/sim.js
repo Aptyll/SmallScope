@@ -517,7 +517,7 @@ function trickle(p, dt) {
   if (p.trickleT >= TRICKLE_T) { p.trickleT -= TRICKLE_T; gainGold(p, TRICKLE_GOLD); }
 }
 function updatePlay(dt) {
-  state.tick++; // with SEED and the player id, this decides contested orders
+  state.tick++; // with the match seed and the player id, this decides contested orders (contestRank)
   // the surrender votes read their orders before any body runs, since a body
   // that is down or stunned drops every order it is given (js/sim/surrender.js)
   updateVotes(dt);

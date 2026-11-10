@@ -199,11 +199,9 @@ function joinRoom(r) {
   const m = state.menu;
   m.seek = null;
   roomsFeedClose();
-  const seed = r.data && +r.data.seed;
   // a party already on the practice field: this page follows it there
   // (`practice` 2 is the arena: netHostRoom)
   if (r.data && +r.data.practice && (!PRACTICE || (+r.data.practice === 2) !== ARENA)) { location.search = '?practice=1' + (+r.data.practice === 2 ? '&arena=1' : '') + '&join=' + r.room + '&back=1' + (netSteam() ? '&transport=steam' : ''); return; }
-  if (seed && seed !== SEED) { location.search = '?seed=' + seed + '&join=' + r.room + (netSteam() ? '&transport=steam' : ''); return; }
   netJoin(r.room);
   m.joining = true;
   SFX.place();
@@ -496,24 +494,23 @@ function rematchUrl() {
   const base = location.pathname + '?back=1', steam = netSteam() ? '&transport=steam' : '';
   const code = roomCode();
   if (NET.isHost) {
-    const seed = NET.nextSeed || rollSeed();
-    if (NET.peers.size) NET.transport.send('*', { t: 'rematch', seed });
+    if (NET.peers.size) NET.transport.send('*', { t: 'rematch' });
     const seats = {};
     for (const pr of NET.peers.values()) if (!pr.cross) seats[pr.uid] = pr.slot; // the rival party goes home
     try { sessionStorage.setItem(REMATCH_KEY, JSON.stringify({ mode: NET.mode, seats })); } catch (e) { }
-    return base + '&seed=' + seed + '&net=host' + steam + (code ? (steam ? '&code=' : '&room=') + code : '');
+    return base + '&net=host' + steam + (code ? (steam ? '&code=' : '&room=') + code : '');
   }
-  if (NET.rematch && NET.rematch.room) return base + '&seed=' + NET.rematch.seed + '&join=' + NET.rematch.room + steam;
+  if (NET.rematch && NET.rematch.room) return base + '&join=' + NET.rematch.room + steam;
   return null;
 }
-// the leader's, every step: the first step of an ended match picks the next valley
+// the leader's, every step: the first step of an ended match tells the party where to come back to
 function rematchOffer() {
-  if (NET.nextSeed || !(state.over === 'won' || state.over === 'lost') || !roomCode()) return;
-  NET.nextSeed = rollSeed();
-  NET.transport.send('*', { t: 'rematch', seed: NET.nextSeed });
+  if (NET.rematchSent || !(state.over === 'won' || state.over === 'lost') || !roomCode()) return;
+  NET.rematchSent = true;
+  NET.transport.send('*', { t: 'rematch' });
 }
-function rematchHeard(msg) {
-  NET.rematch = { seed: msg.seed | 0, room: roomCode() };
+function rematchHeard() {
+  NET.rematch = { room: roomCode() };
   if (PRACTICE) toLobby(); // the leader left the field: the party follows it back (js/ui/screens.js)
 }
 // the slot a returning person held last match, for netHostHello

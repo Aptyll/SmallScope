@@ -32,7 +32,7 @@ regress-data/
   <patch>/summary.json   one row per match: setup, winner, reason, minutes, kills, fun and its parts,
                          each side's kills, deaths, damage, siege, gold and bird nerve left, bot errors
   <patch>/<key>.json     the full match log (the bot lab opens it: F6 in the game, or botlab.html)
-  <patch>/map-*.json     the terrain, once per seed and shape
+  <patch>/map-*.json     the terrain, once per seed and shape (the one map every time)
   regress.html           the page: patches across, matches down, flags where a cell moved
   seasons.json           the ladder's history cut into one season per patch
 ```

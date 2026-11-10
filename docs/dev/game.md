@@ -23,7 +23,7 @@ the back woods behind the bird for logs to rebuild them; idle, it keeps to the r
 **Three lanes** join the bases, like a Rift: **the road** (mid) runs the map's diagonal from one
 perch to the other, one straight, dry packed-earth lane, and **the top and bot lanes** run
 straight up either edge of the valley and turn one hard corner, like the Rift's, crossing the creek on a ford at that corner, the middle. All
-three are there from worldgen, the same on every seed and readable from anywhere, and each leaves a
+three are there from worldgen, the same every match and readable from anywhere, and each leaves a
 base by its own mouth of the hollow ([the road](world.md#the-road),
 [the side lanes](world.md#the-side-lanes)). Half a minute after landing each merchant raises a
 **barracks** (a bot bay) just inside the mid mouth, then one inside the top and bot mouths:

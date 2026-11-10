@@ -7,8 +7,8 @@
 // match, DBG.saveLoad(DBG.saveCapture()) onto a fresh page, step the same
 // count, compare.
 //
-// Nothing here knows what a field means. The world is a seed (SEED):
-// a load is a page on the saved seed, which grows the very same
+// Nothing here knows what a field means. The world is the one map (MAP_SEED):
+// a load is a fresh page on the saved match seed, which grows the very same
 // valley, and the save is what the match has done to it since. That is
 //   - the ROOTS below, every mutable global the sim reads, serialized as one
 //     object graph, so a reference shared anywhere (a bot's hunt target, a
@@ -20,13 +20,13 @@
 // sim reads does not - it joins SAVE_ROOTS, or the proof misses it.
 //
 // The flow: saveDevLoad hands the record to the next page through
-// sessionStorage and reloads onto ?seed&map; js/app/boot.js calls saveBootLoad
+// sessionStorage and reloads onto its ?seed; js/app/boot.js calls saveBootLoad
 // after the world stands and before the ground is baked, so the bake paints
 // the saved valley and not the fresh one.
 
 // ---- tuning ---------------------------------------------------------------
-const SAVE_V = 13;          // the body's shape; a body of another shape is refused, never half-read, so
-                            // nothing below fills in a field an older save lacked (4: the survival leftovers cut; 5: the wallet is p.gold; 6: buildings lose `tier`, the pump's type is 'pump'; 7: one `shields` list; 8: a player's `buys`, `lifeT` and FROSTBITE's heal cut; 9: the loadout's picks, cooldowns and calling clocks; 10: the valley a fifth bigger; 11: HUNTER and WARRIOR gone, so every hero index moved, and craters and nets cut; 12: a crash pad's centre is tx/ty; 13: the map grows on worldgen's own streams, so every seed's valley moved)
+const SAVE_V = 14;          // the body's shape; a body of another shape is refused, never half-read, so
+                            // nothing below fills in a field an older save lacked (4: the survival leftovers cut; 5: the wallet is p.gold; 6: buildings lose `tier`, the pump's type is 'pump'; 7: one `shields` list; 8: a player's `buys`, `lifeT` and FROSTBITE's heal cut; 9: the loadout's picks, cooldowns and calling clocks; 10: the valley a fifth bigger; 11: HUNTER and WARRIOR gone, so every hero index moved, and craters and nets cut; 12: a crash pad's centre is tx/ty; 13: the map grows on worldgen's own streams, so every seed's valley moved; 14: one map, the record names its world, not a seed)
 
 // ---- what is saved ----------------------------------------------------------
 // [name, get, put]: get() hands the live value in, put(v) takes the decoded
@@ -119,7 +119,8 @@ function saveBaseline() {
 // JSON with a handful of $-tags, so the body is plain JSON and a shared object
 // is written once: {$i} names an object or array written in full, {$r} points
 // back at one ({$a} its items, {$p} an array's own fields), {$t} is an
-// untouched tile object of the fresh valley, {$k} a row of a static table,
+// untouched tile object of the fresh valley, {$b} one it changed (written in
+// full, filled back into the same object), {$k} a row of a static table,
 // {$c} the class a body was built from, {$m}/{$s}/{$y}
 // a Map, a Set and a typed array, {$f} a number JSON cannot hold, {$u}
 // undefined. Functions and canvases are nobody's state and are dropped.
@@ -203,6 +204,10 @@ function saveEncode(roots, touched) {
       if (props) out.$p = props;
     } else {
       out = {};
+      // a grown tile object the match changed is written as ITSELF ({$b}), so the
+      // load fills the fresh valley's same object and a later save of either page
+      // sees the same object at its tile, untouched again once its fields come back
+      if (saveBase && saveBase.at.has(v)) out.$b = saveBase.at.get(v);
       const cn = v.constructor && v.constructor.name;
       if (cn && cn !== 'Object') {
         if (SAVE_CLASSES[cn]) out.$c = cn;
@@ -254,7 +259,8 @@ function saveDecode(body, tileObj) {
       if (v.$p) for (const k of Object.keys(v.$p)) out[k] = dec(v.$p[k]);
       return out;
     }
-    out = v.$c && SAVE_CLASSES[v.$c] ? Object.create(SAVE_CLASSES[v.$c].prototype) : {};
+    if (v.$b !== undefined) { out = tileObj[v.$b]; for (const k of Object.keys(out)) delete out[k]; }
+    else out = v.$c && SAVE_CLASSES[v.$c] ? Object.create(SAVE_CLASSES[v.$c].prototype) : {};
     if (v.$i !== undefined) ids[v.$i] = out;
     for (const k in v) if (k[0] !== '$') out[k] = dec(v[k]);
     return out;
@@ -265,7 +271,7 @@ function saveDecode(body, tileObj) {
 }
 
 // ---- capture and apply ------------------------------------------------------
-// The match as one JSON-able record: { v, seed, map, body }. `touched` is
+// The match as one JSON-able record: { v, world, seed, body }. `touched` is
 // every tile whose object is not the fresh valley's untouched one; those
 // tiles are written out ([tile, object] pairs), and so is every ground tile
 // that differs from the grown ground.
@@ -285,14 +291,15 @@ function saveCapture() {
   roots.ground = grd;
   const { body, dropped } = saveEncode(roots, touched);
   if (dropped.size) console.warn('save: dropped', [...dropped].slice(0, 12));
-  return { v: SAVE_V, seed: SEED, body };
+  return { v: SAVE_V, world: worldKind(), seed: SEED, body };
 }
 // the record back onto this page, whose valley must be the saved one's fresh
-// (the same seed, no step taken yet). Throws on a record of another world,
-// before touching anything.
+// (the same ground and match seed, no step taken yet; the streams ride in the
+// body). Throws on a record of another, before touching anything.
 function saveApply(rec) {
   if (!rec || rec.v !== SAVE_V) throw new Error('save: version ' + (rec && rec.v));
-  if (rec.seed !== SEED) throw new Error('save: another world');
+  if (rec.world !== worldKind()) throw new Error('save: another world');
+  if (rec.seed !== SEED) throw new Error('save: another match'); // matchHash reads SEED
   const r = saveDecode(rec.body, objects);
   for (const [i, o] of r.tiles) objects[i] = o;
   for (let j = 0; j < r.ground.length; j += 2) ground[r.ground[j]] = r.ground[j + 1];
@@ -319,12 +326,12 @@ function saveHash() {
 
 // ---- the dev load -------------------------------------------------------------
 // A record (saveCapture) put back on a fresh page: it rides sessionStorage to
-// the next page, which grows the record's seed and applies it at
+// the next page, which grows the one map on the record's match seed and applies it at
 // boot (saveBootLoad). The replay proof's other half (DBG.saveLoad); nothing a
 // player reaches calls it.
 function saveDevLoad(rec) {
   try { sessionStorage.setItem('softfall.load', JSON.stringify(rec)); } catch (e) { return false; }
-  location.href = location.pathname + '?seed=' + SEED;
+  location.href = location.pathname + '?seed=' + SEED + (PRACTICE ? '&practice=1' + (ARENA ? '&arena=1' : '') : '');
   return true;
 }
 // boot's half (js/app/boot.js): true when a saved match was put back on this page

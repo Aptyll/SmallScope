@@ -86,7 +86,7 @@ function netSetup(role, transport) {
   NET.transport = transport || loopbackTransport;
   NET.peers.clear(); NET.parked.clear(); NET.kicked.clear(); NET.ready.clear(); NET.pings = []; NET.pingT = 0; NET.chat = []; NET.ranks = []; NET.pos = []; NET.botLv = null; NET.code = ''; NET.seek = null; NET.seekAt = null;
   NET.easeAt = 0; NET.gapAvg = 0; NET.gapDev = 0; NET.easeMs = 0;
-  NET.synced = false; NET.welcomed = false; NET.metaIn = false; NET.helloed = false; NET.refused = null; NET.lastTick = -1; NET.hostOver = null; NET.countN = -1; NET.published = false; NET.phase = 'room'; NET.rematch = null; NET.nextSeed = 0; NET.was = null;
+  NET.synced = false; NET.welcomed = false; NET.metaIn = false; NET.helloed = false; NET.refused = null; NET.lastTick = -1; NET.hostOver = null; NET.countN = -1; NET.published = false; NET.phase = 'room'; NET.rematch = null; NET.rematchSent = false; NET.was = null;
   NET.dictOut = encDict(); NET.dictIn = encDict(); NET.verifyFail = null;
   NET.bytesIn = 0; NET.bytesOut = 0; NET.bIn0 = 0; NET.bOut0 = 0; NET.bpsT = 0; NET.dropped = 0; NET.fulls = 0;
   if (NET.role === 'host') { NET.transport.listen(); snapShadowReset(); }
@@ -129,14 +129,14 @@ function netLeave() {
   if (was === 'client') { initPlayers(); camX = player.x - WV_W / 2; camY = player.y - WV_H / 2; } // the host's roster goes with the host
   else if (was === 'host') for (const p of players) if (p.control === 'remote') { p.control = 'ai'; p.input = makeInput(); }
 }
-// what the relay's list says of this room: who hosts it, on what patch and
-// seed, whether it is still open, and how many people are in it -
+// what the relay's list says of this room: who hosts it, on what patch, on
+// which ground (the match's map, the practice map or the arena), whether it is still open, and how many people are in it -
 // what a code typed into another party's box is matched against
 function netHostRoom() {
   if (NET.role !== 'host' || !NET.transport.roomData) return;
   let humans = 0; const sides = [0, 0];
   for (const p of players) if (isHuman(p)) { humans++; sides[p.team]++; }
-  NET.transport.roomData({ name: player ? player.name : '', patch: PATCH_TXT, seed: SEED, practice: ARENA ? 2 : PRACTICE ? 1 : 0, state: state.drop ? 'live' : 'open', humans, sides,
+  NET.transport.roomData({ name: player ? player.name : '', patch: PATCH_TXT, practice: worldKind(), state: state.drop ? 'live' : 'open', humans, sides,
     seek: NET.seek && !NET.seek.rival && !NET.seek.crossing ? NET.mode : '', // a party looking for another (js/ui/matchmaking.js)
     hs: NET.seek ? seekPower() : 0 }); // ...and how well its leader's machine hosts (seekPower): the best one hosts
 }
@@ -225,7 +225,7 @@ function netHostHello(peer, msg) {
   const refuse = (why) => NET.transport.send(peer, { t: 'refuse', why });
   if (NET.kicked.has(msg.uid)) return refuse('KICKED');
   if (msg.patch !== PATCH_TXT) return refuse('VERSION');
-  if (msg.seed !== SEED) return refuse('SEED');
+  if (msg.world !== worldKind()) return refuse('WORLD'); // the match's map, the practice map and the arena are three rooms
   let slot = -1;
   const park = NET.parked.get(msg.uid) || rematchSeat(msg.uid); // a dropped peer's slot, or the one it held last match
   if (park && !isHuman(players[park.slot])) { slot = park.slot; NET.parked.delete(msg.uid); }
@@ -270,7 +270,7 @@ function netHostHello(peer, msg) {
   NET.pos[slot] = msg.pos >= 0 && msg.pos < POSITIONS.length ? msg.pos | 0 : -1;
   const pr = { slot, uid: msg.uid, name: msg.name, cross: !!msg.party, lastTick: 0, ack: -1, dictAt: new Map(), q: [], qMin: Infinity, qN: 0 };
   NET.peers.set(peer, pr);
-  NET.transport.send(peer, Object.assign({ t: 'welcome', slot, hostSlot: localId, seed: SEED, tick: state.tick, roster: netRoster(), phase: NET.phase }, roomInfo()));
+  NET.transport.send(peer, Object.assign({ t: 'welcome', slot, hostSlot: localId, tick: state.tick, roster: netRoster(), phase: NET.phase }, roomInfo()));
   netHostFull(peer, pr);
   logEvent((p.name || 'A PLAYER') + ' JOINED', p);
   roomAttention(); // a host tabbed out hears the room fill (js/ui/roomtalk.js)
@@ -534,7 +534,7 @@ function netClientStats() {
   NET.was = { p: me, earned: me.earned, kills: me.kills, dead: me.dead };
 }
 function netClientHello() {
-  NET.transport.send('host', { t: 'hello', uid: NET.uid, patch: PATCH_TXT, seed: SEED, name: PROFILE.name(), cls: profileHero(), skins: profileHeroSkins(), load: loadoutStr(loadoutClean(PROFILE.loadout(CLASSES[profileHero()].name), profileHero(), PROFILE.pos())), rank: PROFILE.rank(), pos: PROFILE.pos(),
+  NET.transport.send('host', { t: 'hello', uid: NET.uid, patch: PATCH_TXT, world: worldKind(), name: PROFILE.name(), cls: profileHero(), skins: profileHeroSkins(), load: loadoutStr(loadoutClean(PROFILE.loadout(CLASSES[profileHero()].name), profileHero(), PROFILE.pos())), rank: PROFILE.rank(), pos: PROFILE.pos(),
     party: CROSS ? CROSS.party : undefined, pn: CROSS ? CROSS.n : undefined }); // a party crossing in (js/ui/matchmaking.js)
 }
 // the roster the host dealt: our slot is the human here, the host's is a

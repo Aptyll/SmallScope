@@ -304,7 +304,7 @@ stretches every third source pixel and frays 1 px linework.
   `p.buys` in the order bought (`buyItem`, `itemFinished`). When a match ends (`endMatch`, on the
   first win or loss) `buildsNote` files one record per **human** seat: the hero, those items, whether
   its side won, the patch, and whether both sides had a person. Bots, practice and 1V1 are left
-  out. The match's id is a hash of what every screen of it shares at the whistle (the seed, the
+  out. The match's id is a hash of what every screen of it shares at the whistle (the match's stream seed `SEED`, the
   seats, their heroes and builds), so the host and each guest file the same record under the
   same key (`buildsKey`: match and seat). The records live in `PROFILE.builds` (their own
   storage key, js/app/profile.js), the newest `BUILDS_KEEP` (3000).
