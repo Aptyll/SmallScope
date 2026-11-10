@@ -188,6 +188,12 @@ its own middle, so a blade reaches out of the fist; a blade's hand rides an elli
 (`BLADE_HAND`), a carry sits at `CARRY_HAND_Y` by facing; and anything pointing up the screen
 (`heldBehind`, past `HELD_RISE`) is drawn behind the body, as is a carried staff. `drawPlayer`
 calls it twice, behind the body and over it.
+**The grip rule** (`heroFist`, js/draw/heroes.js) keeps a hand on it: wherever a carry lands its
+grip, outside a body facing away, a 2 px fist in the look's hand colour (`set.hand`, the skin
+unless the look names a `hand` letter, with `set.ink` its outline) is drawn over the weapon,
+reaching back to close the sleeve. A slanted blade's grip sits at the arm's end (`hip.down`), so
+nothing grows out from under the body unheld. A carry a hero draws its own way (`HERO_CARRY`)
+calls `heroFist` too.
 Every art says which way its business end points as drawn (`WEAPON_FWD`, js/sprites/weapons.js)
 and the hand turns it by the facing or the aim minus that: a bow's arrowhead is at +x, drawn the
 way a bow is held — string toward the archer, belly toward the target — and the sword's point at

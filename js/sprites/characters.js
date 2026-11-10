@@ -109,6 +109,9 @@
     // further out (heroRise, heroReach, js/draw/heroes.js)
     const more = row.grids.down.length - 16; // a 20 px cell: 3 rows taller (one more is headroom), 1 px wider a side
     set.rise = (more * 3) >> 2; set.reach = more >> 2;
+    // the hand that closes on the carried weapon (heroFist, js/draw/heroes.js): the look's
+    // own `hand` letter (a glove), else its skin, ringed in its outline
+    set.hand = sp[row.hand || art.hand || 'k']; set.ink = sp.o;
     // standing still: the breath's two frames a facing (heroBreath, js/sprites/armatos.js),
     // and the loose cloth a pixel behind for the beat after a stop or a turn (heroCloth),
     // baked on first ask (drawPlayer's idle, js/draw/idle.js)

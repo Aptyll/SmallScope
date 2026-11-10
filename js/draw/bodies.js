@@ -840,6 +840,7 @@ function drawHeldTool(p, px, py, back) {
   if (axeOut) { ctx.drawImage(icon, hx - half, hy - half); return; }
   const face = p.dir === 'right' ? 0 : p.dir === 'down' ? Math.PI / 2 : p.dir === 'left' ? Math.PI : -Math.PI / 2;
   drawGripped(icon, hGrip, hx, hy, face - fwd);
+  if (p.dir !== 'up') heroFist(p, hx, hy, p.dir === 'left' ? -1 : 1); // THE GRIP RULE (js/draw/heroes.js)
 }
 
 // ---- going down -----------------------------------------------------------

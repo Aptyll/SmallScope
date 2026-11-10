@@ -100,7 +100,7 @@ function arcusCarry(p, px, py) {
   if (!isArcus(p) || (p.dir !== 'down' && p.dir !== 'up')) return false;
   const A = attackOf(p), img = SPRITES.weaponArt[A.art];
   if (!img) return false;
-  if (p.dir === 'down') drawGripped(img, WEAPON_GRIP.icon[A.art], px + 16, py + 10, 0);
+  if (p.dir === 'down') { drawGripped(img, WEAPON_GRIP.icon[A.art], px + 16, py + 10, 0); heroFist(p, px + 16, py + 10, 1); }
   else drawGripped(img, WEAPON_GRIP.icon[A.art], px + 0, py + 10, Math.PI);
   return true;
 }
