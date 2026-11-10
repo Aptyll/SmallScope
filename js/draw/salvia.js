@@ -9,14 +9,15 @@ const SV_INK = '#2e2440', SV_LINEN = '#e8dcb4', SV_LINEN_D = '#a89263', SV_SAGE 
   SV_WHITE = '#f8f8ff', SV_GOLD = '#f2cc6a', SV_GOLD_D = '#b98a2e';
 
 // ---- shots -----------------------------------------------------------------------
-// her staff's SPRIG: a green mote with a pale leaf behind it
+// her staff's SPRIG: one green leaf with a pale rib, tumbling end over end (lying, then standing), a short green wake
 function drawSprigShot(a, sx, sy, now) {
-  const nx = Math.cos(a.ang), ny = Math.sin(a.ang);
-  const x = Math.round(sx), y = Math.round(sy);
-  ctx.fillStyle = SV_SAGE_D; ctx.fillRect(Math.round(sx - nx * 4), Math.round(sy - ny * 4), 1, 1);
-  ctx.fillStyle = SV_SAGE; ctx.fillRect(Math.round(sx - nx * 2), Math.round(sy - ny * 2), 1, 1);
-  ctx.fillStyle = SV_INK; ctx.fillRect(x - 1, y - 1, 3, 3);
-  ctx.fillStyle = Math.sin(now * 20 + a.ox) > 0 ? SV_WHITE : SV_SAGE; ctx.fillRect(x, y, 1, 1);
+  const nx = Math.cos(a.ang), ny = Math.sin(a.ang), x = Math.round(sx), y = Math.round(sy), up = Math.floor(now * 9 + a.ox) % 2 === 1;
+  fxTail(sx, sy, nx, ny, 5, SV_SAGE, SV_SAGE_D);
+  const w = up ? 1 : 2, h = up ? 2 : 1; // the leaf's half-length each way
+  ctx.fillStyle = SV_INK; ctx.fillRect(x - w - 1, y - h, 2 * w + 3, 2 * h + 1); ctx.fillRect(x - w, y - h - 1, 2 * w + 1, 2 * h + 3);
+  ctx.fillStyle = SV_SAGE_D; ctx.fillRect(x - w, y - h, 2 * w + 1, 2 * h + 1);
+  ctx.fillStyle = SV_SAGE; ctx.fillRect(x - w, y - h, 2 * w + (up ? 0 : 1), 2 * h + (up ? 1 : 0)); // lit from the top-left
+  ctx.fillStyle = SV_WHITE; if (up) ctx.fillRect(x, y - 1, 1, 3); else ctx.fillRect(x - 1, y, 3, 1); // the rib
 }
 HERO_SHOTS.sprig = drawSprigShot;
 

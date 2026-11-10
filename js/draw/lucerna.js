@@ -9,14 +9,16 @@ const LU_INK = '#2e2440', LU_BRASS = '#f2cc6a', LU_BRASS_D = '#b98a2e', LU_LIGHT
   LU_WOOD = '#a3794f', LU_WOOD_D = '#6b4a30';
 
 // ---- shots -----------------------------------------------------------------------
-// her lantern's SPARK: a warm point, a pale tail
+// her lantern's SPARK: a warm ball of lamplight with four short rays that come and go, a brass streak behind it
 function drawLampSpark(a, sx, sy, now) {
-  const nx = Math.cos(a.ang), ny = Math.sin(a.ang);
-  const x = Math.round(sx), y = Math.round(sy);
-  ctx.fillStyle = LU_BRASS_D; ctx.fillRect(Math.round(sx - nx * 4), Math.round(sy - ny * 4), 1, 1);
-  ctx.fillStyle = LU_BRASS; ctx.fillRect(Math.round(sx - nx * 2), Math.round(sy - ny * 2), 1, 1);
-  ctx.fillStyle = LU_INK; ctx.fillRect(x - 1, y - 1, 3, 3);
-  ctx.fillStyle = Math.sin(now * 20 + a.ox) > 0 ? LU_WHITE : LU_LIGHT; ctx.fillRect(x, y, 1, 1);
+  const nx = Math.cos(a.ang), ny = Math.sin(a.ang), x = Math.round(sx), y = Math.round(sy), k = Math.floor(now * 12 + a.ox) % 2;
+  fxTail(sx, sy, nx, ny, 6, LU_BRASS, LU_BRASS_D);
+  fxHeadInk(x, y, 2, LU_INK);
+  ctx.fillStyle = LU_BRASS; ctx.fillRect(x - 1, y - 1, 3, 3);
+  ctx.fillStyle = LU_LIGHT; ctx.fillRect(x - 1, y - 1, 2, 2);
+  ctx.fillStyle = LU_WHITE; ctx.fillRect(x, y, 1, 1);
+  ctx.fillStyle = LU_BRASS_D; // the rays: upright, then slanted
+  for (const [dx, dy] of k ? [[3, 3], [-3, 3], [3, -3], [-3, -3]] : [[4, 0], [-4, 0], [0, 4], [0, -4]]) ctx.fillRect(x + dx, y + dy, 1, 1);
 }
 HERO_SHOTS.lampspark = drawLampSpark;
 

@@ -6,7 +6,7 @@
 // the warmth waits (HERO_BODY_FX). A body she set burning wears the shared
 // flames (drawUnitStates); the wildfire's jumps flash as lines (abFx).
 
-const IG_INK = '#2e2440', IG_EMBER = '#d8502e', IG_FLAME = '#ff9a3a', IG_CORE = '#ffe07a';
+const IG_INK = '#2e2440', IG_EMBER = '#d8502e', IG_FLAME = '#ff9a3a', IG_CORE = '#ffe07a', IG_AMBER = '#c8721e';
 
 // one small flame standing at (x, y), `h` px tall, flickering on its own beat
 // (`k` keeps neighbours out of step); drawn from the clock, never a roll
@@ -31,16 +31,13 @@ function drawBrandShot(a, sx, sy, now) {
   }
   igFlame(Math.round(sx), Math.round(sy) + 1, 4, now, a.ox);
 }
-// her staff's EMBER: a hot mote and two cooling behind it
+// her staff's EMBER: a small flame flying point first, a hot core that flickers, its fire streaming behind it
 function drawEmberShot(a, sx, sy, now) {
-  const nx = Math.cos(a.ang), ny = Math.sin(a.ang);
-  const x = Math.round(sx), y = Math.round(sy);
-  ctx.fillStyle = IG_EMBER;
-  ctx.fillRect(Math.round(sx - nx * 4), Math.round(sy - ny * 4), 1, 1);
-  ctx.fillStyle = IG_FLAME;
-  ctx.fillRect(Math.round(sx - nx * 2), Math.round(sy - ny * 2), 1, 1);
-  ctx.fillStyle = IG_INK; ctx.fillRect(x - 1, y - 1, 3, 3);
-  ctx.fillStyle = Math.sin(now * 20 + a.ox) > 0 ? IG_CORE : IG_FLAME; ctx.fillRect(x, y, 1, 1);
+  const nx = Math.cos(a.ang), ny = Math.sin(a.ang), x = Math.round(sx), y = Math.round(sy), k = Math.sin(now * 20 + a.ox) > 0;
+  fxTail(sx, sy, nx, ny, k ? 8 : 7, IG_FLAME, IG_AMBER);
+  fxHeadInk(x, y, 2, IG_INK);
+  ctx.fillStyle = IG_FLAME; ctx.fillRect(x - 1, y - 1, 3, 3);
+  ctx.fillStyle = IG_CORE; ctx.fillRect(x - (k ? 1 : 0), y - 1, k ? 2 : 1, 2); ctx.fillRect(Math.round(sx + nx * 2), Math.round(sy + ny * 2), 1, 1); // the tip, ahead
 }
 HERO_SHOTS.brand = drawBrandShot;
 HERO_SHOTS.ember = drawEmberShot;
