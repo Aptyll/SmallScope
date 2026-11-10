@@ -519,6 +519,12 @@ just a repaint: `bakeCloud`'s `lo`/`hi` ramp, its `CLOUD_CURVE` / `CLOUD_GAIN` c
 the speck atlases `MOTE_CV` / `STAR_CV` / `FLAKE_CV` (colour and shape are baked in; only the alpha
 that picks a level is live).
 
+**Changing the view's scale or the title logo's place** — `fitCanvas`'s pick of `dev` and
+`TARGET_ROWS` ([js/app/canvas.js](../../js/app/canvas.js)) and `LOGO_Y` ([js/ui/menu.js](../../js/ui/menu.js))
+are worked out a second time by the inline script under `#bootmark` in `index.html`, which places
+the page's boot logo before any script file runs. Change the pair together, or the logo jumps for
+a frame as the first title takes over from the page ([the boot mark](rendering/main-menu-title.md)).
+
 **Moving code between js files** — the game files share one global scope
 ([architecture.md](architecture.md#shared-global-scope)); these rules stand for any move.
 Move whole sections **verbatim** — no renames, no reformatting, no "while I'm here" fixes
