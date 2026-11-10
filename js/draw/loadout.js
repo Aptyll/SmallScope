@@ -5,7 +5,7 @@
 // the legs while a body is tangled (weakT), streaks behind a body running on a
 // SPRINT, a BANDAGE's step or an OUTRIDER's burst, and a gold pip on the
 // hero a DUELIST has marked. Every one blinks out over its last half second.
-const LO_INK = '#1a1418', LO_ROPE = '#d8c09a', LO_ROPE_D = '#9a7a58', LO_STREAK = '#e8eef6', LO_STONE = '#8a8f9c';
+const LO_INK = '#1a1418', LO_ROPE = '#d8c09a', LO_ROPE_D = '#9a7a58', LO_STREAK = '#e8eef6';
 function loBlink(t, now) { return t > 0 && (t >= 0.5 || Math.floor(now * 8) % 2 === 0); }
 function drawLoadoutMarks(e, px, py, w, h, now) {
   const cx = px + (w >> 1);
@@ -18,8 +18,8 @@ function drawLoadoutMarks(e, px, py, w, h, now) {
     }
     for (const [wx, wy] of [[cx - 5, y + 2], [cx + 4, y + 1]]) {
       ctx.fillStyle = LO_INK; ctx.fillRect(wx - 1, wy, 4, 2); ctx.fillRect(wx, wy - 1, 2, 4);
-      ctx.fillStyle = LO_STONE; ctx.fillRect(wx, wy, 2, 2);
-      ctx.fillStyle = LO_STREAK; ctx.fillRect(wx, wy, 1, 1);
+      ctx.fillStyle = WRECK_STONE.L; ctx.fillRect(wx, wy, 2, 2); // the rubble's own grey: thrown stone is one material (js/draw/falls.js)
+      ctx.fillStyle = WRECK_STONE.D; ctx.fillRect(wx + 1, wy + 1, 1, 1);
     }
   }
   if (e instanceof Player && !e.dead) {
