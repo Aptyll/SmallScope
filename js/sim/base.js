@@ -38,16 +38,20 @@ function baseGate(team, lane) {
 }
 function baseBaySpot(team, lane) { return baseTile(team, BASE_BAYS[lane][0], BASE_BAYS[lane][1]); }
 // where a bay's 3x2 footprint is centred (merchBaySite, js/sim/robots.js),
-// and the clearing round it: BAY_CLEAR tiles of the woods give way round the
-// footprint, one more in front, so the bay stands in the open like a tower
+// and the clearing round it: the woods give way BAY_CLEAR tiles round the
+// footprint, one more in front, rounded at the corners and wandering BAY_RAG
+// on the position noise, so the bay stands in the open like a tower
 // (TOWER_CLEAR) instead of half behind the hollow's edge pines
 const BAY_CLEAR = 2;
+const BAY_RAG = 0.8;
 function baseBaySite(team, lane) { const p = baseBaySpot(team, lane); return { cx: p.tx - 1, cy: p.ty - 0.5 }; }
 function bayKeeps(tx, ty) {
   if (ARENA) return false;
+  const px = tx + 0.5, py = ty + 0.5, e = (vnoise(tx * 0.9 + 5.3, ty * 0.9 + 1.7) - 0.5) * 2 * BAY_RAG;
   for (const team of [0, 1]) for (let lane = 0; lane < BASE_BAYS.length; lane++) {
     const c = baseBaySite(team, lane), ax = Math.round(c.cx), ay = Math.round(c.cy);
-    if (tx >= ax - BAY_CLEAR && tx < ax + 3 + BAY_CLEAR && ty >= ay - BAY_CLEAR && ty <= ay + 2 + BAY_CLEAR) return true;
+    const dx = Math.max(ax - px, 0, px - ax - 3), dy = Math.max(ay - py, 0, py - ay - 3);
+    if (Math.hypot(dx, dy) < BAY_CLEAR + 0.5 + e) return true;
   }
   return false;
 }
@@ -91,7 +95,7 @@ function placeBase() {
     }
   }
   // ...and each bay's clearing: its pines only, never a jungle wall's (treeFells)
-  const R2 = BAY_CLEAR + 3;
+  const R2 = BAY_CLEAR + 4;
   for (const team of [0, 1]) for (let lane = 0; lane < BASE_BAYS.length; lane++) {
     const c = baseBaySite(team, lane), ax = Math.round(c.cx), ay = Math.round(c.cy);
     for (let ty = ay - R2; ty <= ay + R2; ty++) for (let tx = ax - R2; tx <= ax + R2; tx++) {
