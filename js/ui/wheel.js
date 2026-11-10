@@ -28,10 +28,7 @@ function wheelOptions() {
   // straight up - picking one IS the roll (or the ring), so neither carries
   // a separate go wedge
   if (w.kind === 'pkdie') return [{ id: 'easy' }, { id: 'medium' }, { id: 'hard' }];
-  if (w.kind === 'agbell') return AG_WEDGES.map((id) => ({ id })); // one wedge per round (js/sim/practice.js)
-  // the MOUSE scheme's action wheel: the four abilities clockwise from the
-  // top, then the potion and the ping (MS_WHEEL, js/app/input.js)
-  return MS_WHEEL.map((id) => ({ id })); // 'kit'
+  return AG_WEDGES.map((id) => ({ id })); // 'agbell': one wedge per round (js/sim/practice.js)
 }
 
 // The whole geometry, in two lines: every wedge is span wide, and wedge i is
@@ -75,14 +72,10 @@ function wheelLayout() {
 function resolveWheel() {
   const w = state.wheel;
   const L = wheelLayout();
-  // the action wheel performs its own pick (msKitPick, js/app/input.js); only its
-  // own release stands the ping wheel up, so any other close drops that wedge
-  if (w.kind === 'kit') { if (L.seg >= 0 && MS_WHEEL[L.seg] !== 'ping') msKitPick(w, L.seg); return; }
   // the ping wheel: a wedge is its ping; a TAP - let go before the wheel
-  // showed - or a press in the hub of one the action wheel stood up is GO
-  // HERE; a hold let go in the hub is the cancel
+  // showed - is GO HERE; a hold let go in the hub is the cancel
   if (w.kind === 'ping') {
-    const k = L.seg >= 0 ? L.opts[L.seg].id : w.stand || !pingWheelShown(w, L) ? 'go' : null;
+    const k = L.seg >= 0 ? L.opts[L.seg].id : !pingWheelShown(w, L) ? 'go' : null;
     if (k) player.input.cmd = { kind: 'ping', k, x: Math.round(w.wx), y: Math.round(w.wy) };
     return;
   }
@@ -94,7 +87,7 @@ function resolveWheel() {
 // never flashes a wheel - and a flick out of the hub picks before it shows
 const PING_HOLD = 0.18; // s
 function pingWheelShown(w, L) {
-  if (w.kind !== 'ping' || w.stand) return true;
+  if (w.kind !== 'ping') return true;
   return performance.now() / 1000 - w.t0 >= PING_HOLD || (L || wheelLayout()).dist >= WHEEL_HUB;
 }
 
@@ -438,8 +431,6 @@ function renderWheel(now) {
         ctx.fillRect(rix - 9, riy - 9, 18, 1); ctx.fillRect(rix - 9, riy + 8, 18, 1);
         ctx.fillRect(rix - 9, riy - 9, 1, 18); ctx.fillRect(rix + 8, riy - 9, 1, 18);
       }
-    } else if (w.kind === 'kit') {
-      drawKitWedge(opt.id, Math.round(ix), Math.round(iy), hovered);
     }
   }
 
@@ -459,8 +450,6 @@ function renderWheel(now) {
     } else if (w.kind === 'agbell') {
       label = 'RING ' + AG_ROUNDS[opt.id].name;
       color = '#ffd95c';
-    } else if (w.kind === 'kit') {
-      ({ label, color } = kitLabel(opt.id));
     }
   }
   // centred under the wheel, but never off the edge: the wheel sits over its
@@ -471,32 +460,3 @@ function renderWheel(now) {
     Math.round(L.cy + WHEEL_R + WHEEL_PAD + 6), color, '#191b1f');
 }
 
-// ---- the action wheel's wedges ------------------------------------------
-// The MOUSE scheme's wheel (msWheelPress, js/app/input.js) wears what the strip
-// wears: an ability's own icon at half size, dark where it cannot cast yet
-// (locked or waiting), the potion, dark with none carried, and
-// the ping's GO HERE glyph.
-function kitAb(id) { return /^ab\d$/.test(id) ? +id[2] - 1 : -1; }
-function drawKitWedge(id, x, y, hot) {
-  const i = kitAb(id);
-  if (i >= 0) {
-    ctx.globalAlpha = abReady(player, i) ? 1 : 0.4;
-    ctx.drawImage(classAbIcon(player.cls, i), x - 8, y - 8, 16, 16);
-    ctx.globalAlpha = 1;
-    return;
-  }
-  if (id === 'ping') { drawPingGlyph(ctx, 'go', x, y, 2, hot ? '#ffd95c' : CALLS.go.ink, '#191b1f'); return; }
-  const im = SPRITES.itemPotion; // the potion
-  ctx.globalAlpha = potionSlot(player) >= 0 ? 1 : 0.4;
-  ctx.drawImage(im, x - (im.width >> 1), y - (im.height >> 1));
-  ctx.globalAlpha = 1;
-}
-// the line under the wheel: the ability's name (gold when it will cast), the
-// potion's name with how many you carry, or the ping's own verb
-function kitLabel(id) {
-  const i = kitAb(id);
-  if (i >= 0) return { label: abOf(player, i).name, color: abReady(player, i) ? '#ffd95c' : '#8c919a' };
-  if (id === 'ping') return { label: KEY_ACT.ping.verb, color: '#ffd95c' };
-  const n = potionSlot(player) >= 0 ? player.potions : 0;
-  return { label: BUILD_ITEMS.potion.name + ' ' + n, color: n > 0 && !(player.potT > 0) ? '#ffd95c' : '#8c919a' };
-}

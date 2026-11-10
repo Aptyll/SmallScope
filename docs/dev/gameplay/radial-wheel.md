@@ -1,13 +1,11 @@
 # The radial wheel
 
-One wheel serves every hold-and-flick choice in the game: the [ping wheel](pings.md), the mouse
-scheme's action wheel, the parkour die and the archery range's bell. It lives in
+One wheel serves every hold-and-flick choice in the game: the [ping wheel](pings.md), the parkour die and the archery range's bell. It lives in
 [js/ui/wheel.js](../../../js/ui/wheel.js); its orders run through `cmdOk`/`runCmd` there.
 
-- `state.wheel` (`{kind:'ping'|'kit'|'pkdie'|'agbell', tx, ty, seg, ax, ay}`, plus
+- `state.wheel` (`{kind:'ping'|'pkdie'|'agbell', tx, ty, seg, ax, ay}`, plus
   `sx`/`sy` on a ping wheel opened over the chart or the minimap) is the open wheel — `'ping'` is the
-  [ping wheel](pings.md), `'kit'` the mouse scheme's action wheel (`MS_WHEEL`, js/app/input.js),
-  `'pkdie'` the parkour roll die and `'agbell'` the archery
+  [ping wheel](pings.md), `'pkdie'` the parkour roll die and `'agbell'` the archery
   range's bell, both opened by holding **E**
   beside them and resolved on its release
   ([world.md](../world.md#the-practice-tool)); ESC/M/settings/death

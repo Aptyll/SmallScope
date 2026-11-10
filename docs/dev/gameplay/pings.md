@@ -9,8 +9,7 @@ answers is the ping and back-off rungs in [js/ai/ai-ladder.js](../../../js/ai/ai
 
 ## Making one
 
-One button, `ping` (`KEY_ACTIONS`): the **right button** on WASD, **G** on CLICK and MOUSE, and the ping wedge of the MOUSE scheme's action wheel (`MS_WHEEL`, which stands the
-wheel up for the next press to pick, its hub being GO HERE). `openPingWheel` (js/app/input.js)
+One button, `ping` (`KEY_ACTIONS`): the **right button** on WASD, **G** on CLICK. `openPingWheel` (js/app/input.js)
 opens a `state.wheel` of kind `'ping'` on the exact world point under the pointer (`wx`/`wy`) -
 or over the chart or the minimap disc, pinned to the press (`sx`/`sy`, through `ckPoint`).
 
