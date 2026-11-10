@@ -1,7 +1,7 @@
 'use strict';
 // ------------------------------------------------------------ fossor
 // FOSSOR's pixels (his rules: js/sim/fossor.js): his spade in his hands
-// (HERO_BLADES), his snow banks and his broken ground on the snow (HERO_GROUND),
+// (HERO_BLADES, HERO_CARRY), his snow banks and his broken ground on the snow (HERO_GROUND),
 // the mound he runs under and his planted feet (HERO_BODY_FX, HERO_FADE).
 
 const FS_INK = '#141a2c', FS_SNOW = '#f4f7ff', FS_SNOW_M = '#cfe0f2', FS_SNOW_D = '#9fb6d8';
@@ -12,7 +12,22 @@ let fossorSpadeArt = null;
 function fossorSpadeArtOf() {
   return fossorSpadeArt || (fossorSpadeArt = { flat: bakeBladeArt(FOSSOR_SPADE, FOSSOR_SPADE_PAL), diag: bakeBladeArt(FOSSOR_SPADE_DIAG, FOSSOR_SPADE_PAL) });
 }
-HERO_BLADES.spade = { art: fossorSpadeArtOf, hilt: [16, 9], hip: { down: [13, 12], up: [11, 10] }, grip: FOSSOR_SPADE_GRIP };
+// no `hip`: at rest he carries it his own way (fossorCarry), not on a shared hold
+HERO_BLADES.spade = { art: fossorSpadeArtOf, hilt: [16, 9], hip: {}, grip: FOSSOR_SPADE_GRIP };
+// At rest his fist closes on the spade's haft right at his hand on the body, so only a stub of
+// haft shows under it and nothing hangs below him. Facing down or up he holds it at the ready,
+// blade up beside his head on his right (behind him facing away); side-on it rides back over
+// his shoulder, the blade behind his head, never across his lamp.
+const FOSSOR_HAND_X = { down: 12, up: 12, left: 10, right: 5 }; // the fist's column on the 16 px cell
+const FOSSOR_HAND_Y = 10;                                          // and its row: the mitts' row
+function fossorCarry(p, px, py) {
+  if (!isFossor(p)) return false;
+  const img = fossorSpadeArtOf().diag, g = FOSSOR_SPADE_GRIP, back = p.dir === 'right'; // the blade behind him
+  const gx = back ? img.width - 1 - g[0] : g[0];
+  ctx.drawImage(back ? heldFlip(img) : img, Math.round(px + FOSSOR_HAND_X[p.dir] - gx), Math.round(py + FOSSOR_HAND_Y - g[1]));
+  return true;
+}
+HERO_CARRY.push(fossorCarry);
 
 // ---- the bank: packed snow blocks on each tile it walls --------------------------------------
 // each block rises over FS_UP, stands with a lit top and a shaded face, and blinks its last half second

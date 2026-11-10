@@ -251,7 +251,8 @@ const FOSSOR_SKINS = [
 // ------------------------------------------------------------ fossor spade
 // His SPADE as he holds it (HERO_BLADES.spade, js/draw/fossor.js): a broad steel blade on a long
 // ash haft. Flat with the blade left like every held blade (the hands close near the haft's end,
-// `hilt`), and slanted with the blade up and right for a body facing down or up.
+// `hilt`), and slanted with the blade up and right as he carries it, his fist (h H) closed on the
+// haft's end so only a stub shows under it (fossorCarry, js/draw/fossor.js).
 const FOSSOR_SPADE = [
   '..................',
   '..................',
@@ -282,14 +283,13 @@ const FOSSOR_SPADE_DIAG = [
   '.....owuo.......',
   '....owuo........',
   '...owuo.........',
-  '..owuo..........',
-  '.owuo...........',
-  'owuo............',
-  'oso.............',
-  '.o..............',
+  '..ohhoo.........',
+  '..oHho..........',
+  '..owo...........',
+  '...o............',
 ];
-const FOSSOR_SPADE_GRIP = [3, 9]; // where the hands close on the slanted grid
-const FOSSOR_SPADE_PAL = { o: '#241a12', T: '#e6ebf2', S: '#c8d2e4', s: '#8b93a8', w: '#a8794a', u: '#6e4a28' };
+const FOSSOR_SPADE_GRIP = [3, 10]; // his fist on the slanted grid
+const FOSSOR_SPADE_PAL = { o: '#241a12', T: '#e6ebf2', S: '#c8d2e4', s: '#8b93a8', w: '#a8794a', u: '#6e4a28', h: '#6e5432', H: '#4a3820' };
 
 // ------------------------------------------------------------ fossor registry
 heroArt('fossor', {
