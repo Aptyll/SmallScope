@@ -162,7 +162,7 @@ js/draw/heroes.js): the overhead frame lifts by `rise`, a staff or blade hand si
 out. No look uses a larger cell yet; the roll and the other doll poses are still 16 px, and the menus
 draw frames into 16 px boxes.
 **A look can carry a finer world body**: `fine: { dens, grids }` on its row (ARMATOS's LAST
-STANDARD, `ARM_FINE`; SAGITTA's and NIX's looks, `SAGITTA_FINE`, `NIX_FINE`) is a `down`/`up`/`side` set at `dens` art px a world px (32 px on the 16
+STANDARD, `ARM_FINE`; SAGITTA's, NIX's and IGNIA's looks, `SAGITTA_FINE`, `NIX_FINE`, `IGNIA_FINE`) is a `down`/`up`/`side` set at `dens` art px a world px (32 px on the 16
 px cell). When `WD` is 2 (`?fine=1`; it is 1 by default, so no player sees one yet), `champLook`
 builds it beside the 16 px set as `set.fine` through the same `lookSet`
 (walk, side and front run, breath and cloth step `dens` px, a world px; every frame carries
@@ -178,9 +178,9 @@ standard draws on half px (`drawStandardFine`); a swing's crescent (`drawSwish`)
 doubled (`SPR.fine2x`: Scale2x, the outline back to one px), and a blade row with no `fine()`
 gets its own art doubled the same way (`fineArt`, the ink read as the darkest colour on the art's
 rim). A staff (`HERO_STAVES`) follows the same way: its row's `fine()` frames, else its own
-doubled (`staffArt`). A shot weapon follows too: `WEAPON_FINE[art]` (js/sprites/weapons.js) is its
+doubled (`staffArt`; IGNIA's crook and lantern is drawn, `IGNIA_CROOK_FINE`). A shot weapon follows too: `WEAPON_FINE[art]` (js/sprites/weapons.js) is its
 drawn 32 px level art and slanted grid (SAGITTA's arbalest), else its own doubled (`shotArt`, read by
-the aim and by her carry). So `fine.grids` alone is a whole kit; a drawn `roll` or `fine()` (ARMATOS's) replaces the
+the aim and by her carry). So `fine.grids` alone is a whole kit; a drawn `roll` or `fine()` (ARMATOS's, NIX's dirk) replaces the
 doubled one where the doubling reads badly (a 45 degree edge comes out in two px steps).
 **The doubling is a stopgap, not 32 px art**: it keeps a fine kit from mixing pixel sizes, and
 reads softer than a drawn part beside it. A hero whose roll or blade is still doubled does not count

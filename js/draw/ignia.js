@@ -163,7 +163,54 @@ function igniaCrook() {
   igniaCrookArt = [bakeBladeArt(IGNIA_CROOK, IGNIA_CROOK_PAL), bakeBladeArt(beat, IGNIA_CROOK_PAL)];
   return igniaCrookArt;
 }
-HERO_STAVES.crook = { art: igniaCrook, grip: IGNIA_CROOK_GRIP };
+// ...and at 32 px for her fine body (`fine`, staffArt): drawn, not doubled, the grip the same world px:
+// a two px shaft with its bands, the hook's round, a lantern with a ring, a roof, a base and glass
+const IGNIA_CROOK_FINE = [
+  '....oooooooo......',
+  '..ooGGGGGGGGoo....',
+  '.oGGGggggggGGGo...',
+  'oGGgoooooooogGGo..',
+  'oGgo........oGgo..',
+  'oGgo........oGgo..',
+  'oGgo........oGgo..',
+  'oGgo.........oo...',
+  'oGgo........oyo...',
+  'oGgo.......oyYyo..',
+  'oGgo......oyyYYyo.',
+  'oGgo.....oYYyyYYYo',
+  'oGgo.....ooooooooo',
+  'oGgo.....oYfFFfYo.',
+  'oGgo.....oYFFFFYo.',
+  'oGgo.....oYFWWFYo.',
+  'oGgo.....oYFWWFYo.',
+  'oGgo.....oYFFFFYo.',
+  'oGgo.....oYfFFfYo.',
+  'oGgo.....ooooooooo',
+  'oGgo.....oYYyyYYYo',
+  'oGgo......ooooooo.',
+  'oGgo..............',
+  'oGgo..............',
+  'oGgo..............',
+  'oGgo..............',
+  'oGgo..............',
+  'oGgo..............',
+  'oggo..............',
+  'oggo..............',
+  'oGgo..............',
+  'oGgo..............',
+  'oggo..............',
+  'oggo..............',
+  'oGgo..............',
+  '.oo...............',
+];
+let igniaCrookFineArt = null;
+function igniaCrookFine() {
+  if (igniaCrookFineArt) return igniaCrookFineArt;
+  const tag = (c) => { c.dens = 2; return c; };
+  const beat = IGNIA_CROOK_FINE.map((r) => r.replace('oYFWWFYo', 'oYFFFFYo').replace('oYfFFfYo', 'oYFffFYo'));
+  return (igniaCrookFineArt = [tag(bakeBladeArt(IGNIA_CROOK_FINE, IGNIA_CROOK_PAL)), tag(bakeBladeArt(beat, IGNIA_CROOK_PAL))]);
+}
+HERO_STAVES.crook = { art: igniaCrook, fine: igniaCrookFine, grip: IGNIA_CROOK_GRIP };
 
 // ---- WILDFIRE -----------------------------------------------------------------------
 // Never a ring: the ground under the aim starts to smoulder from its middle
