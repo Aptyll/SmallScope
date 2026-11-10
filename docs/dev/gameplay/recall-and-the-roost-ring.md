@@ -29,8 +29,8 @@ your own side's ring and out of a fight (`p.fightT`, the items' clock: `ITEM_FIG
 blow given or taken, js/sim/items.js), `updateRecall` heals and refills the roll, with green motes rising off the body. A rival in it gets nothing.
 
 **It reads without a word** ([UI rule](../rendering/show-dont-label.md)): `drawRecallGround`
-(js/draw/recall.js) draws each down bird's ring as a soft glowing rim in its side's colour (four
-one-pixel circles, baked once); a recalling body gathers feathers in a pale tint of its side's colour
+(js/draw/recall.js) draws each down bird's reach as its moulted feathers lying along the rim, in a pale tint of its side's colour, in loose
+clumps with gaps (`roostEdgeArt`, baked once per side; never a drawn circle); a recalling body gathers feathers in a pale tint of its side's colour
 (`drawRecallFeathers`): they drift down one by one, turn round the body closer and quicker as the
 channel fills, and take off together at the end, with no ring on the snow; at the bird the same feathers come down round the
 body and drift off (`drawBackFeathers` off `p.backT`, set by the recall's arrival and by `respawnPlayer`); the overhead frame's bar slot fills

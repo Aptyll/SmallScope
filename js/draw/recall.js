@@ -1,13 +1,13 @@
 // ------------------------------------------------------------ recall's pixels
 // Flat on the snow, under everything that walks it (drawn in the world
-// flat pass, drawFlatPass in js/draw/passes.js): each roost's healing ring, and the recall's channel
+// flat pass, drawFlatPass in js/draw/passes.js): each roost's healing edge, and the recall's channel
 // feathers round whoever is leaving (js/sim/recall.js).
 //
-// THE ROOST RING is a soft glowing edge in the bird's side's colour round the
-// packed-earth disc (BOOM_R, js/sim/eagle.js): four one-pixel circles stepping
-// in from the rim, bright to faint, so the edge reads without a hard line. One
-// mirrored step pattern (circlePts), baked once per colour and size into a
-// canvas, since the rim is hundreds of pixels.
+// THE ROOST'S EDGE is the bird's moulted feathers lying along the rim of its reach
+// (BOOM_R, js/sim/eagle.js; roostEdgeArt below). The soft glowing rim (roostRingArt:
+// four one-pixel circles stepping in from the rim, bright to faint, one mirrored step
+// pattern, circlePts, baked once per colour and size) is still what a pump wears
+// (drawPumpRings, js/draw/structs.js).
 // THE CHANNEL is the bird's own feathers (drawRecallFeathers, called by drawPlayer,
 // js/draw/bodies.js, behind the body and again over it): feathers in a pale tint of
 // the side's colour drift down one by one as the channel runs and turn round the
@@ -84,6 +84,44 @@ function roostRingArt(col, r) {
   return cv;
 }
 
+// THE ROOST'S EDGE: where the bird's healing reaches, marked by what a roosting bird
+// leaves: its moulted feathers lying on the ground along the rim, in a pale tint of its
+// side's colour, in loose clumps with gaps between (never a drawn circle). Each lies
+// near level, one of two leans, a dark quill under a pale vane with a soft shade below
+// it. Placed by hash2 off the spot, so every screen lays the same feathers; baked once
+// per side and size.
+const ROOST_PAD = 6;            // px of canvas outside the rim, for a feather lying across it
+const ROOST_SPOTS = 84;         // places round the rim a feather may lie
+const ROOST_LIE = 0.68;         // the share of those that hold one (in clumps: the rest are gaps)
+const ROOST_SHADE = 'rgba(20,26,44,0.3)';
+const ROOST_FEATHER = [ // the two leans: V vane, Q quill, s shade
+  ['.VVV.', 'QQVVV', '.sss.'],
+  ['..VVV', 'QVVV.', '.sss.'],
+];
+const roostEdgeCv = new Map(); // 'side|r' -> the baked feathers
+function roostEdgeArt(T, r) {
+  const key = T.mark + '|' + r;
+  let cv = roostEdgeCv.get(key);
+  if (cv) return cv;
+  cv = document.createElement('canvas');
+  cv.width = cv.height = 2 * (r + ROOST_PAD) + 1;
+  const g = cv.getContext('2d'), c0 = r + ROOST_PAD, vane = featherTint(T.mark);
+  for (let i = 0; i < ROOST_SPOTS; i++) {
+    if (vnoise(i * 0.4, r) * 0.7 + hash2(i, r) * 0.3 > ROOST_LIE) continue; // a gap
+    const a = (i + hash2(i, 7) * 0.7) / ROOST_SPOTS * Math.PI * 2, rr = r - 1 + Math.round((hash2(i, 13) - 0.5) * 5);
+    const art = ROOST_FEATHER[hash2(i, 19) < 0.5 ? 0 : 1], flip = hash2(i, 23) < 0.5;
+    const x0 = Math.round(c0 + Math.cos(a) * rr) - 2, y0 = Math.round(c0 + Math.sin(a) * rr) - 1;
+    art.forEach((row, y) => { for (let x = 0; x < row.length; x++) {
+      const k = row[x];
+      if (k === '.') continue;
+      g.fillStyle = k === 'V' ? vane : k === 'Q' ? FEATHER_RIM : ROOST_SHADE; // a dark quill on every side: no loose red on the ground
+      g.fillRect(x0 + (flip ? 4 - x : x), y0 + y, 1, 1);
+    } });
+  }
+  roostEdgeCv.set(key, cv);
+  return cv;
+}
+
 function drawRecallGround(ex, ey) {
   if (!state.drop) return;
   const r = Math.round(BOOM_R * TILE);
@@ -91,7 +129,7 @@ function drawRecallGround(ex, ey) {
     if (e.state !== 'down') continue;
     const x = Math.round(e.x - ex) - r, y = Math.round(e.y - ey) - r;
     if (x > WV_W || y > WV_H || x + 2 * r < 0 || y + 2 * r < 0) continue;
-    ctx.drawImage(roostRingArt(TEAMS[skin(e.team)].mark, r), x, y);
+    ctx.drawImage(roostEdgeArt(TEAMS[skin(e.team)], r), x - ROOST_PAD, y - ROOST_PAD);
   }
   ctx.globalAlpha = 1;
 }
