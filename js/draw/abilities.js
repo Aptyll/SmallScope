@@ -425,22 +425,9 @@ function drawUnitStates(e, px, py, w, h, now) {
   heroMarks(e, px, py, w, h, now); // what a hero puts on a body: BELLA's marks and stacks (HERO_MARK, js/sim/heroes.js)
 }
 
-// The player's own layer: the one state only a player can be in - a raised
-// shield - over the ones every unit shares.
+// The player's own layer over the states every unit shares. A raised shield (shieldT) is drawn by the hero
+// who raises it (drawHoldShield, js/draw/armatos.js).
 function drawAbilityOnPlayer(p, px, py, now) {
-  if (p.shieldT > 0) {
-    const a = p.shieldA;
-    drawTurned(px + 8 + Math.round(Math.cos(a) * 7), py + 8 + Math.round(Math.sin(a) * 5), a, 8, () => {
-      ctx.fillStyle = '#242a3a';
-      ctx.fillRect(-1, -7, 4, 14);
-      ctx.fillStyle = '#9aa3ad';
-      ctx.fillRect(-1, -6, 3, 12);
-      ctx.fillStyle = '#c8d2e4';
-      ctx.fillRect(-1, -6, 1, 12);
-      ctx.fillStyle = p.holdHit ? '#ffd95c' : TEAMS[skin(p.team)].mark; // the trim carries the side - gold while ARMATOS's bash is primed
-      ctx.fillRect(0, -2, 1, 4);
-    });
-  }
   drawUnitStates(p, px, py, 16, 16, now);
 }
 

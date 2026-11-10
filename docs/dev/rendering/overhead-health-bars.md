@@ -4,8 +4,8 @@ Beside the bar sits the other thing drawn on every body alike: **`drawUnitStates
 now)`** ([js/draw/abilities.js](../../../js/draw/abilities.js)) paints the root's sprung jaws,
 the fire and the mark's gold chevrons over whatever sprite is wearing them, taking the sprite's own box so
 a rabbit, a soldier and a player get the same tells at their own size. `drawPlayer`
-reaches it through `drawAbilityOnPlayer` (which adds the one a player alone can show — a raised
-shield); `drawAnimal` and `drawRobot` call it directly. **The
+reaches it through `drawAbilityOnPlayer` (a raised shield is the hero's own art: `drawHoldShield`,
+js/draw/armatos.js); `drawAnimal` and `drawRobot` call it directly. **The
 fire never washes over the body** — tapering tongues off the shoulders and the crown (`burnTongue`) and a lit row under the feet — because a
 burning rival still has to read as the rival it is; the embers themselves are particles, thrown by
 `updateBurn` rather than drawn here. What each state *does* is
