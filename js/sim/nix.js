@@ -36,6 +36,7 @@ const DRIFT_STEP_PICK = 30;          // px from the aim it may stand
 const DRIFT_STEP_MEM = 3;         // s a struck rival stays one she can step to
 const DRIFT_STEP_SPD = 520;          // px/s
 const DRIFT_STEP_PAST = 12;          // px past them she comes out
+const DRIFT_FX_LIFE = 0.5;           // s the swept snow hangs
 // R SQUALL: she vanishes into a burst of snow, untouchable for a moment,
 // then strikes the nearest rival hero. If that hero falls within a few
 // seconds, the key is ready again, once.
@@ -249,6 +250,7 @@ function nixDrift(p) {
   p.sliding = false;
   faceToward(p, nx, ny, true);
   burst(p.x, p.y - 4, '#eef4fb', 10, 45, 0.4, true);
+  abFx.push({ kind: 'line', x: p.x, y: p.y, a: Math.atan2(ny, nx), r: d + DRIFT_STEP_PAST, half: 4, t: 0, col: '#ffffff', fx: 'drift', life: DRIFT_FX_LIFE }); // the snow her step sweeps up (drawDriftFx, js/draw/nix.js)
   sfxAt('dodge', p.x, p.y);
 }
 function driftEnd(p) {

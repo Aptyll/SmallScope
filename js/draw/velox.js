@@ -99,20 +99,37 @@ function drawLaneTele(p, a, closing, ex, ey) {
 
 // ---- on her ------------------------------------------------------------------------
 // KEEP MOVING's stacks as gold chevrons over her head, pointing the way she goes;
-// LONG RUN as white streaks off her back while it lasts
+// LONG RUN while it lasts: the lines her skates cut and the ice thrown off her heels
+// as she goes, frost glinting off the skates when she stands
 function drawVeloxMarks(e, px, py, w, h, now) {
   if (!isVelox(e)) return;
   if (e.runT > 0) {
-    const sp = Math.hypot(e.vx, e.vy);
+    const sp = Math.hypot(e.vx, e.vy), cx = px + (w >> 1), fy = py + h - 1, beat = Math.floor(now * 14);
     if (sp > 20) {
-      const nx = e.vx / sp, ny = e.vy / sp, cx = px + (w >> 1), cy = py + (h >> 1);
-      ctx.globalAlpha = 0.9; ctx.fillStyle = '#7f98bc';
-      for (let k = 0; k < 3; k++) {
-        const o = (k - 1) * 4, back = 8 + ((Math.floor(now * 20) + k * 3) % 6);
-        for (let s = 0; s < 4; s++) ctx.fillRect(Math.round(cx - nx * (back + s) - ny * o), Math.round(cy - ny * (back + s) + nx * o), 1, 1);
+      const nx = e.vx / sp, ny = e.vy / sp;
+      const hid = (x, y) => x >= px && x < px + w && y < fy - 1; // behind her own body (going down the screen)
+      // the two lines her skates cut in the ice, broken and fading behind her
+      for (const o of [-2, 2]) for (let d = 2; d < 30; d++) {
+        if ((d + beat + (o > 0 ? 3 : 0)) % 6 > 3) continue;
+        ctx.globalAlpha = 1 - d / 30; ctx.fillStyle = d < 12 ? VX_DEEP : '#5f7fae';
+        const x = Math.round(cx - nx * d - ny * o), y = Math.round(fy - ny * d + nx * o);
+        if (!hid(x, y)) ctx.fillRect(x, y, 1, 1);
       }
-      ctx.globalAlpha = 1;
+      // the ice thrown up off her heels: shavings fanning back, lit white over a shaded foot,
+      // never higher than her knees (nothing of it crosses the body going down the screen)
+      for (let k = 0; k < 6; k++) {
+        const t = ((beat + k * 3) % 9) / 9, side = (k - 2.5) * (2 + Math.max(0, ny)) * (0.5 + t), back = (4 + t * 12) * (1 - 0.7 * Math.max(0, ny)), up = Math.round(4 * Math.sin(Math.PI * t));
+        const x = Math.round(cx - nx * back - ny * side), y = Math.round(fy - ny * back + nx * side);
+        if (hid(x, y - up) || (ny > 0.3 && y - up < py + (h >> 1))) continue; // ...nor flies up beside her head
+        ctx.globalAlpha = 1 - t * 0.5;
+        ctx.fillStyle = '#5f7fae'; ctx.fillRect(x, y - up + 1, 2, 1);
+        ctx.fillStyle = k % 3 ? VX_WHITE : VX_ICE; ctx.fillRect(x, y - up - 1, 2, 2);
+      }
+    } else { // standing: frost glinting off each skate
+      ctx.fillStyle = beat % 4 < 2 ? VX_WHITE : VX_ICE;
+      for (const o of [-4, 4]) { const x = cx + o + (beat % 8 < 4 ? 0 : (o > 0 ? 1 : -1)); ctx.fillRect(x, fy - 1, 1, 3); ctx.fillRect(x - 1, fy, 3, 1); }
     }
+    ctx.globalAlpha = 1;
   }
 }
 // KEEP MOVING's stacks over the stack (HERO_OVER): gold chevrons pointing the way she goes

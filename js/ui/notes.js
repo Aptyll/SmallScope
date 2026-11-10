@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['Nix sweeps up a trail of drift snow with DRIFT STEP, and Velox cuts skate lines and throws up ice on a LONG RUN', '0.899'],
     ['SHOP: RECOMMENDED shows its items at twice the size', '0.898'],
     ['FALCO\'s STOOP shows him carried by his hawk, with a shadow that crosses the snow', '0.897'],
     ['The road runs whole to the pillars of each gate in the stone ring', '0.896'],
