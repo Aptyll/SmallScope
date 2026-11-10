@@ -19,6 +19,7 @@ const STAR_R = 26;              // px of ring
 const STAR_CORE = 9;            // px of its very centre...
 const STAR_CORE_MUL = 1.5;      // ...where the blow lands this much harder
 const STAR_DELAY = 0.8;         // s from the cast to the strike
+const STAR_FX_LIFE = 0.5;       // s its flash shows (drawn: AB_FX_LOOK.star, js/draw/aura.js)
 // W DRIFTING LIGHT: an orb drifting slowly down the aim, through walls (it is light)
 const ORB_LEN = 220;            // px it drifts (by day)
 const ORB_SPD = 70;             // px/s
@@ -29,11 +30,13 @@ const STEP_LEN = 72;            // px (by day)
 const STEP_SPD = 900;           // px/s: a few frames, so a wall still stops it (HERO_DASH)
 const STEP_R = 26;              // px round the spot she left
 const STEP_SLOW = 0.5;          // walk x this
+const STEP_FX_LIFE = 0.8;       // s the motes rise where she stood
 // R THE CURTAIN: a long band of light falls down the aim from where she stands, after a delay
 const CURTAIN_LEN = 900;        // px of band (by day): most of the way across the field
 const CURTAIN_HALF = 12;        // px either side of its middle a body is struck
 const CURTAIN_SEE = 40;         // px either side of it the hidden are revealed
 const CURTAIN_DELAY = 1.6;      // s from the cast to the fall
+const CURTAIN_FX_LIFE = 0.3;    // s the band's flash shows
 const CURTAIN_GLOW = 0.9;       // s the light stands over the band after it falls (drawn only)
 
 const auraStars = [];    // {x, y, team, owner, t, delay, dmg} - Q's spots waiting to be struck
@@ -51,7 +54,7 @@ const AURA_AB = [
     tip: 'STRIKE A SPOT FAR OFF. CENTRE HITS HARDER',
     blurb: 'A SPOT FAR AWAY IS STRUCK AFTER A SHORT DELAY, ITS RING SHOWN ON THE SNOW. RIVALS INSIDE ARE HURT, MORE IN THE VERY CENTRE.',
     use: (p) => auraStar(p),
-    tele: (p, px, py, a, col, closing, now, ex, ey) => { const c = auraSpot(p, STAR_RANGE); drawStarRing(Math.round(c.x - ex), Math.round(c.y - ey), col, 0.45 + 0.45 * closing, closing * 0.4); },
+    tele: (p, px, py, a, col, closing, now, ex, ey) => { const c = auraSpot(p, STAR_RANGE); drawStarPool(Math.round(c.x - ex), Math.round(c.y - ey), closing * 0.4, now); }, // its light gathering (js/draw/aura.js)
     pose: () => ({ dx: 0, dy: -2, rot: 0 }), // the staff raised to the sky
     icon: AURA_ICON32.star,
     bot: (p, foe, d) => d < auraReach(p, STAR_RANGE) - 10,
@@ -62,7 +65,7 @@ const AURA_AB = [
     tip: 'A SLOW ORB. SLOWS AND REVEALS',
     blurb: 'A SLOW ORB OF LIGHT DRIFTS ALONG A LINE, THROUGH TREES AND WALLS. RIVALS IT PASSES ARE SLOWED AND REVEALED.',
     use: (p) => auraOrb(p),
-    tele: (p, px, py, a, col, closing, now, ex, ey) => drawTeleLine(p.x, p.y, Math.cos(a), Math.sin(a), auraReach(p, ORB_LEN), col, 0.5 + 0.45 * closing, now, ex, ey),
+    tele: (p, px, py, a, col, closing, now, ex, ey) => drawOrbTele(p, px, py, a, closing, now, ex, ey), // a glow down its drift, the orb gathering
     pose: (p, prog) => ({ dx: 0, dy: prog < 0.6 ? -1 : 0, rot: 0 }),
     icon: AURA_ICON32.orb, mark: 'slow',
     bot: (p, foe, d) => foe instanceof Player && d < auraReach(p, ORB_LEN) * 0.8,
@@ -83,7 +86,7 @@ const AURA_AB = [
     tip: 'A BAND OF LIGHT FALLS ACROSS THE MAP',
     blurb: 'A LONG BAND OF LIGHT FALLS ACROSS THE MAP IN A LINE AFTER A DELAY. RIVALS UNDER IT TAKE HEAVY DAMAGE, AND EVERYONE HIDDEN ALONG IT IS REVEALED.',
     use: (p) => auraCurtain(p),
-    tele: (p, px, py, a, col, closing) => drawCurtainBand(px, py, Math.cos(a), Math.sin(a), auraReach(p, CURTAIN_LEN), col, 0.35 + 0.4 * closing, 0),
+    tele: (p, px, py, a, col, closing, now) => drawCurtainRise(px, py, Math.cos(a), Math.sin(a), auraReach(p, CURTAIN_LEN), closing * 0.3, now), // the first ribbons rising
     pose: () => ({ dx: 0, dy: -2, rot: 0 }),
     icon: AURA_ICON32.curtain,
     bot: (p, foe, d) => foe instanceof Player && d < auraReach(p, CURTAIN_LEN) * 0.6 && (foe.hp < foe.maxHp * 0.6 || foe.slowT > 0 || foe.stunT > 0),
@@ -123,8 +126,7 @@ function starStrike(s) {
   }
   for (const st of structsNear(side, s.x, s.y, STAR_R)) hurtStruct(st, s.dmg, src);
   if (PRACTICE) abHitDummies(s.x, s.y, STAR_R, s.dmg);
-  abFx.push({ kind: 'ring', x: s.x, y: s.y, r: STAR_R, t: 0, col: '#fff3b0' });
-  abFx.push({ kind: 'ring', x: s.x, y: s.y, r: STAR_CORE, t: 0, col: '#ffffff' });
+  abFx.push({ kind: 'ring', x: s.x, y: s.y, r: STAR_R, t: 0, col: '#fff3b0', fx: 'star', life: STAR_FX_LIFE });
   burst(s.x, s.y, '#fff3b0', 18, 70, 0.5, true);
   burst(s.x, s.y, '#ffffff', 8, 40, 0.4, true);
   sfxAt('break_', s.x, s.y);
@@ -167,7 +169,7 @@ function auraStep(p) {
     auraReveal(q);
     burst(q.x, unitMidY(q), '#e6f8ff', 5, 35, 0.4, true);
   }
-  abFx.push({ kind: 'ring', x: p.x, y: p.y, r: STEP_R, t: 0, col: '#e6f8ff' });
+  abFx.push({ kind: 'ring', x: p.x, y: p.y, r: STEP_R, t: 0, col: '#e6f8ff', fx: 'step', life: STEP_FX_LIFE });
   burst(p.x, p.y - 6, '#e6f8ff', 14, 55, 0.45, true);
   p.rushNX = dx / d; p.rushNY = dy / d;
   p.rushT = Math.max(TICK_DT, len / STEP_SPD);
@@ -218,7 +220,7 @@ function curtainFall(c) {
     for (const st of structsNear(side, c.x + c.nx * s, c.y + c.ny * s, CURTAIN_HALF)) if (!seen.includes(st)) { seen.push(st); hurtStruct(st, c.dmg, src); }
   }
   if (PRACTICE) for (let s = 0; s <= c.len; s += CURTAIN_HALF * 2) abHitDummies(c.x + c.nx * s, c.y + c.ny * s, CURTAIN_HALF, c.dmg);
-  abFx.push({ kind: 'line', x: c.x, y: c.y, a: Math.atan2(c.ny, c.nx), r: c.len, half: CURTAIN_HALF, t: 0, col: '#86f0bf' });
+  abFx.push({ kind: 'line', x: c.x, y: c.y, a: Math.atan2(c.ny, c.nx), r: c.len, half: CURTAIN_HALF, t: 0, col: '#86f0bf', fx: 'curtain', life: CURTAIN_FX_LIFE });
   for (let s = 8; s < c.len; s += 16) burst(c.x + c.nx * s, c.y + c.ny * s, s % 32 ? '#86f0bf' : '#e6f8ff', 2, 30, 0.45, true);
   sfxAt('break_', c.x + c.nx * c.len / 2, c.y + c.ny * c.len / 2);
 }
