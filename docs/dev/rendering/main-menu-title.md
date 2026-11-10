@@ -10,9 +10,7 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
 
 - **Items** `menuItems()` (FIRST MATCH on top while `PROFILE.guided()` is false - a profile that has
   never seen a match to its result nor the coach through - then QUICKPLAY / RANKED / PRACTICE TOOL, and QUIT under them in the desktop build only —
-  and nothing else; `menuActivate` dispatches on the word. RANKED stands grey with a lock before it and
-  one pip per match after it (`drawRankedLock`/`drawRankedPips`, js/ui/guide.js) until `rankedOpen()`
-  (js/ui/rooms.js); a press on it then is a refusal that shakes the lock (`menu.shutFx`). FIRST MATCH opens
+  and nothing else; `menuActivate` dispatches on the word. FIRST MATCH opens
   the party in its `guide` mode ([the coach](../gameplay/settings.md)). QUIT closes the app
   (`steamBridge.quit`, `win:quit` in desktop/main.js): the build opens fullscreen, and a browser tab has its own X. The first three open the
   [party lobby](../gameplay/settings.md) in that mode (`beginParty`): QUICKPLAY's and RANKED's FIND

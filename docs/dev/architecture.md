@@ -188,7 +188,7 @@ order, so the script tags still interleave them:
 | [js/ui/vote.js](../../js/ui/vote.js) | ~70 | shared scope, no `window.*` export | the surrender vote's panel top centre under the clock and its YES / NO click |
 | [js/ui/cheats.js](../../js/ui/cheats.js) | ~480 | shared scope, no `window.*` export | the practice bar down the left edge (PRACTICE TOOL only): its buttons, the map's group, the way to the arena and back, aim ghost and tooltip card |
 | [js/ui/tooltip.js](../../js/ui/tooltip.js) | ~270 | shared scope, no `window.*` export | the hover tooltip: `tipAt`, `tipPos` and `drawTooltip` |
-| [js/ui/guide.js](../../js/ui/guide.js) | ~250 | shared scope, no `window.*` export | the FIRST MATCH's coach (`GUIDE_STEPS`, `renderGuide`, `guideClick`) and RANKED's lock glyph |
+| [js/ui/guide.js](../../js/ui/guide.js) | ~225 | shared scope, no `window.*` export | the FIRST MATCH's coach (`GUIDE_STEPS`, `renderGuide`, `guideClick`) |
 | [js/ui/compose.js](../../js/ui/compose.js) | ~120 | shared scope, no `window.*` export | `renderUI`, the frame's UI pass in order |
 | [js/ui/notices.js](../../js/ui/notices.js) | ~410 | shared scope, no `window.*` export | the notice lane top-right under the minimap (the roost-under-attack plate) and the stat ledger that flies your sheet into it when a number moves |
 | [js/ui/announcer.js](../../js/ui/announcer.js) | ~180 | shared scope, no `window.*` export | the announcer: a queued call (FIRST BLOOD, multi-kills, SHUTDOWN, ACE, TOWER DESTROYED, bears) on a plate under the team rail with both faces and a sting, and the kill feed under the notice lane |
