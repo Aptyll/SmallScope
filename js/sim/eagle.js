@@ -9,7 +9,7 @@
 // match and every seed - a short glide down the road's diagonal from the
 // corner and a stoop into the trees at its base's PERCH (mode 'drop': the
 // bases, js/sim/base.js). Every match opens the same way, as ONE UNBROKEN
-// SHOT of your side's arrival: high over the clouds, the camera leaning on
+// SHOT of your side's arrival: high over the field, the camera leaning on
 // toward your roost, the stoop with the camera diving in to your own zoom
 // (dropCamAim / dropStoopZoom), the crash - and the whole crew leaps off the
 // wings together, CREW_HOP_T after it, fanning out over the pad (hopOff), so
