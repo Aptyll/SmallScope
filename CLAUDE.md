@@ -45,7 +45,7 @@ Each rule spans folders; its names are listed under the folder that owns them.
 **js/sim/: the match** ([world](docs/dev/world.md), [gameplay](docs/dev/gameplay.md))
 - It decides and never draws: pixels for what it owns go in js/draw/ or js/ui/.
 - Rule 2: player actions read `p.input`, never `keys`/`mouse`; single-winner actions go through
-  `contest()`; sounds and shakes go through `sfxAt`/`sfxFor`/`shakeFor`.
+  `contest()`; sounds go through `sfxAt`/`sfxFor`.
 - Rule 1: hits `hurtUnit` (a blow sweeps with `unitsHit`) and `hurtStruct`; states `stunUnit` and
   the other `*Unit` setters; areas `unitsNear`/`structsNear`; targets `unitAlive`; sight `seenAt`;
   gold `gainGold` in, `spendGold` out; XP `shareXp` on a death, `gainXp` under it; water
