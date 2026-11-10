@@ -36,6 +36,7 @@ const CRANK_D = 72;             // px thrown
 const CRANK_R = 40;             // px round her feet it slows
 const CRANK_SLOW = 0.55;        // walk x this
 const CRANK_DMG = 25;           // to each body near
+const CRANK_FX_LIFE = 0.55;     // s the crater shows (drawn: AB_FX_LOOK.crank)
 // R THE LONG BOLT: she kneels and draws (the towers' dashed line on the snow),
 // then looses one bolt across most of the screen: through soldiers and beasts,
 // ending on the first hero, who is thrown far back
@@ -53,7 +54,7 @@ const SAGITTA_AB = [
     tip: 'A BOLT THAT PINS RIVALS TO TREES',
     blurb: 'A BOLT DOWN THE LINE. THE FIRST RIVAL IT HITS IS SHOVED BACK, AND PINNED IN PLACE IF A TREE, A ROCK OR A WALL IS BEHIND THEM.',
     use: (p) => sagittaPin(p),
-    tele: (p, px, py, a, col, closing, now, ex, ey) => drawTeleLine(p.x, p.y, Math.cos(a), Math.sin(a), teleLen(p.x, p.y, Math.cos(a), Math.sin(a), PIN_RANGE), col, 0.5 + 0.45 * closing, now, ex, ey),
+    tele: (p, px, py, a, col, closing, now, ex, ey) => drawSightLine(p, a, PIN_RANGE, closing, now, ex, ey, false), // her sight down the bolt's line (js/draw/sagitta.js)
     pose: () => ({ dx: 0, dy: 0, rot: 0 }),
     icon: SAGITTA_ICON32.pin,
     bot: (p, foe, d, clear) => clear && d < PIN_RANGE - 10,
@@ -64,7 +65,7 @@ const SAGITTA_AB = [
     tip: 'PLANT A SHIELD THAT STOPS RIVAL SHOTS',
     blurb: 'PLANT A TALL SHIELD IN FRONT OF YOU FOR A FEW SECONDS. RIVAL SHOTS THAT MEET ITS FACE STOP ON IT. RIVALS CAN BREAK IT.',
     use: (p) => sagittaPavise(p),
-    tele: (p, px, py, a, col, closing) => drawRing(Math.round(px + Math.cos(a) * PAV_D), Math.round(py + 2 + Math.sin(a) * PAV_D), 9, col, 0.45 + 0.45 * closing, closing * 0.3),
+    tele: (p, px, py, a, col, closing) => drawPaviseTele(p, Math.round(px + Math.cos(a) * PAV_D), Math.round(py + 2 + Math.sin(a) * PAV_D), a, closing), // the shield coming up where it plants
     pose: () => ({ dx: 0, dy: 1, rot: 0 }),
     icon: SAGITTA_ICON32.pavise,
     bot: (p, foe, d) => foe instanceof Player && d > 70 && d < 260 && p.hp < p.maxHp * 0.8, // cover once the trade is going against her
@@ -75,7 +76,6 @@ const SAGITTA_AB = [
     tip: 'SHOOT YOUR FEET. JUMP BACK, SLOW THOSE NEAR',
     blurb: 'FIRE A BOLT INTO THE SNOW AT YOUR FEET. YOU ARE THROWN BACK, AWAY FROM YOUR AIM, AND RIVALS NEAR YOU ARE HIT AND SLOWED.',
     use: (p) => sagittaCrank(p),
-    tele: (p, px, py, a, col, closing) => drawRing(px, py + 2, CRANK_R, col, 0.4 + 0.45 * closing, closing * 0.3),
     pose: () => ({ dx: 0, dy: 0, rot: 0 }),
     icon: SAGITTA_ICON32.crank,
     bot: (p, foe, d) => d < 50,
@@ -86,7 +86,7 @@ const SAGITTA_AB = [
     tip: 'KNEEL. ONE BOLT ACROSS THE SCREEN',
     blurb: 'KNEEL AND DRAW, THEN LOOSE ONE BOLT ACROSS MOST OF THE SCREEN. IT GOES THROUGH SOLDIERS AND BEASTS. THE FIRST HERO IT HITS TAKES HEAVY DAMAGE AND IS THROWN FAR BACK.',
     use: (p) => sagittaLong(p),
-    tele: (p, px, py, a, col, closing, now, ex, ey) => drawLongBoltLine(p, a, closing, now, ex, ey), // the towers' crawling line (js/draw/sagitta.js)
+    tele: (p, px, py, a, col, closing, now, ex, ey) => drawSightLine(p, a, LONG_RANGE, closing, now, ex, ey, true), // her sight drawn tight across the field
     pose: () => ({ dx: 0, dy: 2, rot: 0 }), // down on one knee
     icon: SAGITTA_ICON32.longbolt,
     bot: (p, foe, d, clear) => foe instanceof Player && clear && d > 90 && d < LONG_RANGE - 40 && foe.hp < foe.maxHp * 0.55,
@@ -193,6 +193,7 @@ function sagittaCrank(p) {
   faceToward(p, dx, dy, true); // she lands still facing what she shot at
   burst(p.x, p.y + 4, '#eef4fb', 14, 60, 0.45, true);
   burst(p.x, p.y + 4, '#a3794f', 5, 40, 0.35, true);
+  abFx.push({ kind: 'ring', x: p.x, y: p.y, r: CRANK_R, t: 0, col: '#eef4fb', fx: 'crank', life: CRANK_FX_LIFE });
   sfxAt('hit', p.x, p.y);
 }
 function crankStep(p, mv) {

@@ -40,6 +40,7 @@ const STOOP_REACH = 260;        // px from him a marked hero may be
 const STOOP_UP = 0.7;           // s in the sky: untouchable, unseen, still
 const STOOP_UP_AD = 0.9;        // the drop adds this share of his DAMAGE
 const STOOP_KNOCK = 0.75;       // s the hero struck is knocked up
+const STOOP_FX_LIFE = 0.6;      // s the drop's mark shows (drawn: AB_FX_LOOK.stoop)
 
 const falcoKnives = []; // {x, y, nx, ny, d, len, team, owner, dmg, cast} - W's knives in flight, (x, y) on the snow under them
 
@@ -53,7 +54,7 @@ const FALCO_AB = [
     blurb: 'SEND YOUR HAWK TO A SPOT. IT STRIKES THE FIRST RIVAL THERE AND MARKS THEM, THEN FLIES BACK TO YOU. WHILE IT IS OUT IT SEES FOR YOUR SIDE, AND RIVALS CAN CUT IT DOWN: THEN IT IS GONE A WHILE.',
     use: (p) => falcoTalons(p),
     ok: (p) => !falcoHawkOf(p) && !(p.falcoDownT > 0),
-    tele: (p, px, py, a, col, closing, now, ex, ey) => { const c = falcoSpot(p, TALON_RANGE); drawRing(Math.round(c.x - ex), Math.round(c.y - ey), TALON_R, col, 0.5 + 0.45 * closing, 0); },
+    tele: (p, px, py, a, col, closing, now, ex, ey) => { const c = falcoSpot(p, TALON_RANGE); drawTalonsTele(Math.round(c.x - ex), Math.round(c.y - ey), closing, now); }, // the hawk's shadow wheeling over the spot (js/draw/falco.js)
     pose: (p, prog) => ({ dx: 0, dy: prog < 0.6 ? -1 : 0, rot: 0 }), // the glove up, the hawk off it
     icon: FALCO_ICON32.talons,
     bot: (p, foe, d) => d > 40 && d < TALON_RANGE && !falcoMarked(foe, p),
@@ -65,7 +66,7 @@ const FALCO_AB = [
     tip: 'THREE KNIVES. ALL THREE SLOW A MARK',
     blurb: 'THROW THREE KNIVES IN A NARROW FAN. A RIVAL YOUR HAWK MARKED WHO IS HIT BY ALL THREE IS SLOWED.',
     use: (p) => falcoFan(p),
-    tele: (p, px, py, a, col, closing) => drawWedge(px, py, a, FAN_LEN, FAN_SPREAD, col, 0.5 + 0.45 * closing),
+    tele: (p, px, py, a, col, closing, now, ex, ey) => drawFanTele(p, a, closing, ex, ey), // three blades fanned in his hand, their glint down each line
     pose: (p, prog) => ({ dx: 0, dy: prog < 0.6 ? -1 : 1, rot: 0 }), // the arm back, then the throw
     icon: FALCO_ICON32.fan,
     bot: (p, foe, d, clear) => clear && d < FAN_LEN - 10,
@@ -266,7 +267,7 @@ function falcoDrop(p) {
   faceToward(p, nx, ny, true);
   hurtUnit(q, abDmg(p, 'stoop', abRk(p, 'stoop', 'dmg')) + Math.round(statOf(p, 'dmg') * STOOP_UP_AD), nx, ny, p, { kb: 0, ab: 'stoop', crit: true });
   knockUp(q, STOOP_KNOCK, p);
-  abFx.push({ kind: 'ring', x: q.x, y: q.y, r: 24, t: 0, col: '#f2cc6a' });
+  abFx.push({ kind: 'ring', x: q.x, y: q.y, r: 24, t: 0, col: '#f2cc6a', fx: 'stoop', life: STOOP_FX_LIFE });
   burst(q.x, q.y + 2, '#eef4fb', 22, 80, 0.55, true);
   sfxAt('break_', q.x, q.y);
 }

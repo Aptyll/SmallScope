@@ -30,23 +30,50 @@ HERO_SHOTS.pinbolt = (a, sx, sy) => drawBoltBody(a, sx, sy, 12, SG_BRASS, true);
 HERO_SHOTS.longbolt = (a, sx, sy) => drawBoltBody(a, sx, sy, 15, SG_WHITE, true);
 
 // ---- THE LONG BOLT's line -----------------------------------------------------------
-// While she kneels, the line the bolt will fly: the towers' crawling dashes (drawTowerFx,
-// js/draw/towers.js), in her side's mark, white in the last quarter, out to the first
-// tree or wall on it
-function drawLongBoltLine(p, a, closing, now, ex, ey) {
-  const nx = Math.cos(a), ny = Math.sin(a), y0 = p.y + 4;
-  const L = teleLen(p.x, y0, nx, ny, LONG_RANGE), n = Math.floor(L / 2), crawl = Math.floor(now * 14);
-  const col = closing > 0.75 ? SG_WHITE : TEAMS[skin(p.team)].mark;
-  ctx.globalAlpha = 0.35 + 0.6 * closing;
-  for (let i = 6; i < n; i++) {
-    if ((i - crawl) % 4 >= 2) continue;
-    const x = Math.round(p.x + nx * i * 2 - ex), y = Math.round(y0 + ny * i * 2 - ey);
+// While she draws (PIN) or kneels (THE LONG BOLT), her sight down the line the bolt will
+// fly: one taut solid line in her side's mark, white in the last quarter, a glint running
+// along it, out to the first tree or wall on it; the long bolt's draws tight to 2 px
+function drawSightLine(p, a, range, closing, now, ex, ey, long) {
+  const nx = Math.cos(a), ny = Math.sin(a), x0 = p.x, y0 = p.y - BOW_Y;
+  const L = teleLen(x0, y0, nx, ny, range), glint = (now * (long ? 500 : 300)) % L;
+  const col = closing > 0.75 ? SG_WHITE : TEAMS[skin(p.team)].mark, thick = long && closing > 0.5 ? 2 : 1;
+  ctx.globalAlpha = 0.35 + 0.55 * closing;
+  for (let s = 10; s < L; s++) {
+    const x = Math.round(x0 + nx * s - ex), y = Math.round(y0 + ny * s - ey);
     if (x < -2 || y < -2 || x > WV_W + 2 || y > WV_H + 2) continue;
-    ctx.fillStyle = TOWER_RIM; ctx.fillRect(x, y + 1, 1, 1);
-    ctx.fillStyle = col; ctx.fillRect(x, y, 1, 1);
+    ctx.fillStyle = SG_INK; ctx.fillRect(x, y + thick, thick, 1);
+    ctx.fillStyle = Math.abs(s - glint) < 4 ? SG_WHITE : col; ctx.fillRect(x, y, thick, thick);
   }
   ctx.globalAlpha = 1;
 }
+// PAVISE's wind-up: the shield coming up out of the snow where she plants it, a little
+// higher each frame, its foot spike's snow thrown up
+function drawPaviseTele(p, x, y, a, closing) {
+  const view = Math.sin(a) < -Math.abs(Math.cos(a)) * 0.5 ? 'back' : 'face', spr = sgPavArt(view, p.team);
+  const h = Math.max(1, Math.round(spr.height * (0.3 + 0.7 * closing)));
+  ctx.globalAlpha = 0.5 + 0.5 * closing;
+  ctx.drawImage(spr, 0, 0, spr.width, h, x - 6, y + 2 - h, spr.width, h);
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = '#ffffff'; ctx.fillRect(x - 7, y + 1, 1, 1); ctx.fillRect(x + 7, y + 1, 1, 1);
+}
+// CRANK BACK's landing: the bolt driven into the snow at her feet, a crater blown out
+// round it, snow and grit thrown, the bolt left standing in the middle
+function drawCrankFx(f, px, py, now) {
+  const u = f.t / f.life, seed = fxSeed(f);
+  ctx.globalAlpha = Math.min(1, 2.5 * (1 - u));
+  ctx.fillStyle = '#7f98bc'; fillEllipsePx(px, py + 4, 8, 3);
+  ctx.fillStyle = '#9fb6d8'; fillEllipsePx(px, py + 3, 6, 2);
+  drawCracks(px, py + 4, 6, f.r * 0.7, Math.min(1, u * 5), seed, SG_INK, '#ffffff');
+  drawFlung(px, py + 4, 0, Math.PI, f.r, 0.5, 12, 14, Math.min(1, u * 1.4), seed, (x, y, k) => {
+    ctx.fillStyle = SG_INK; ctx.fillRect(x - 1, y - 1, 3, 3);
+    ctx.fillStyle = k % 4 ? '#f4f7ff' : '#a3794f'; ctx.fillRect(x, y, 1, 1);
+  });
+  ctx.fillStyle = SG_INK; ctx.fillRect(px - 1, py - 4, 3, 7); // the bolt standing in it
+  ctx.fillStyle = SG_WOOD; ctx.fillRect(px, py - 3, 1, 6);
+  ctx.fillStyle = SG_STEEL; ctx.fillRect(px, py - 4, 1, 1);
+  ctx.globalAlpha = 1;
+}
+AB_FX_LOOK.crank = drawCrankFx;
 
 // ---- the PAVISE ----------------------------------------------------------------------
 // A tall shield on a foot spike: its face and the side's stripe, or, planted facing up
