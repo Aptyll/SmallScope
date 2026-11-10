@@ -1836,6 +1836,7 @@ const FALCO_HAWK = SPR.bake(['.oo..', 'obey.', 'oBWWo', 'oBbWo', '.oBo.', '..o..
   { '.': null, o: '#2e2440', b: '#c09462', B: '#6e4a28', W: '#efe8d6', e: '#2e2440', y: '#f2cc6a' });
 const FALCO_HAWK_FOOT = [2, 5];
 const FALCO_GLOVE = '#c8a46a';
+const FALCO_GLOVE_D = '#96743e';
 // ...and the knife, the hawk and the glove at 32 px (dens 2) for his fine body (falcoArt, js/draw/falco.js):
 // drawn on twice the px, never doubled; the grips and the hawk's foot stay the 16 px ones, in world px.
 // The blade is lit on one edge and shaded on the other; the hawk has a hooked beak, a speckled chest and
@@ -1845,11 +1846,14 @@ const FALCO_FINE_ART = (() => {
   const tag = (c) => { c.dens = 2; return c; };
   const k = (rows, grip) => ({ img: tag(SPR.bake(rows, pal)), grip });
   return {
-    knife: {
-      down: k(['......', '..oo..', '.oGGo.', '.oGgo.', '.oGGo.', 'oyyyyo', '.oWEo.', '.oWEo.', '.oWEo.', '.oWEo.', '.oWEo.', '.oWEo.', '..oEo.', '...o..'], [1, 2]),
-      fwd: k(['........', '..oo....', '.oGGo...', '.oGgo...', '.oGGo...', 'oyyyyo..', '.oWEo...', '.oWEo...', '..oWEo..', '..oWEo..', '...oWEo.', '...oWEo.', '....oEo.', '.....o..'], [1, 2]),
-      up: k(['..o...', '.oWo..', '.oWEo.', '.oWEo.', '.oWEo.', '.oWEo.', '.oWEo.', '.oWEo.', '.oWEo.', 'oyyyyo', '.oGGo.', '.oGgo.', '.oGGo.', '.oGGo.', '..oo..', '......'], [1, 5]),
-    },
+    knife: (() => { // the carried knife slants down and out like the 16 px one (FALCO_KNIFE), ten px of blade a px a row
+      const out = k(['..oo........', '.oGGo.......', '.oGgo.......', '.oGGo.......', '.oGGo.......', 'oyyyyo......', '.oWEo.......', '.oWWEo......', '..oWEo......', '..oWWEo.....', '...oWEo.....', '...oWWEo....', '....oWEo....', '....oWWEo...', '.....oWEo...', '.....oWWEo..', '......oWEo..', '.......oEo..', '........o...', '............'], [1, 2]);
+      return {
+        down: out,
+        fwd: out,
+        up: k(['..o...', '.oWo..', '.oWEo.', '.oWEo.', '.oWEo.', '.oWEo.', '.oWEo.', '.oWEo.', '.oWEo.', '.oWEo.', '.oWEo.', 'oyyyyo', '.oGGo.', '.oGgo.', '.oGGo.', '.oGGo.', '..oo..', '......'], [1, 6]),
+      };
+    })(),
     hawk: tag(SPR.bake(['..oooo....', '.obbbbo...', 'obbbebyy..', 'oBbbbbyo..', 'oBBbWWWo..', 'oBBbWWWWo.', 'oBBBbWwWo.', 'oBBBbWWwo.', '.oBBBbWo..', '..oBBbyo..', '...oBBo...', '....oo....'],
       { '.': null, o: '#2e2440', b: '#c09462', B: '#6e4a28', W: '#f6f0e2', w: '#e0d4b8', e: '#2e2440', y: '#f2cc6a' })),
     glove: tag(SPR.bake(['..oooooo..', '.oGGGGGGo.', 'oGGGGGGGGo', 'oGGGGGGGgo', 'oGGGGGGggo', 'oggggggggo', '.oggggggo.', '..oooooo..'],
