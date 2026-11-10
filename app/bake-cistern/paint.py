@@ -66,6 +66,7 @@ COL = {k: hx(v) for k, v in {
     'under': '#1d3649', 'deep': '#2c5068', 'icicle': '#c6e6fb',
 }.items()}
 SHADE = (0x46, 0x5f, 0xa5, 64)  # the cast shade's ink and alpha (the scenery's, SHADE in ground.js)
+BLOCK_SHADE = (0x46, 0x5f, 0xa5, 120)  # ...and the darker one tucked under a fallen block
 
 # ground px centres -> tile coords -> w (along the creek, + downstream), p (along the road, + BLUE)
 gx = np.arange(N) + X0 + 0.5
@@ -298,7 +299,18 @@ def paint_tops(c, out):
     sn = vnoise(xw / 7.0 + 3.1, yw / 7.0 + 7.7) * 0.75 + c['hh'] * 0.12
     col = np.where((joint & (sn > 0.55))[:, None], COL['snowD'], col)
     col = np.where((sn > 0.86)[:, None], COL['snow'], col)
+    # the sill lies flush in the road: each slab along its two long edges stops
+    # 0 to 3 px short on its own roll, so the road's stones butt a stepped edge,
+    # and snow lies packed in the joint between them
+    sid = np.floor_divide(d1 + (row % 2) * 9, 18) * 1.0
+    rp = R[c['gy'], c['sx']] * T
+    e_in, e_out = rp - SILL[0] * T, SILL[1] * T - rp
+    k_in, k_out = np.floor(h2(sid, row * 1.0 + 41.0) * 4), np.floor(h2(sid + 17.0, row * 1.0) * 4)
+    drop = (e_in < k_in) | (e_out < k_out)
+    seam = ~drop & ((e_in < k_in + 1) | (e_out < k_out + 1))
+    col = np.where(seam[:, None], COL['snowD'], col)
     m = mt & (mat == M_SILL); out[m] = col[m]
+    c['drop'] = (mat == M_SILL) & (drop | ~mt) # (its raised face too: it lies flush)
     # a broken course's top: the cut blocks, their joints, snow lying on every step
     cc = np.clip(c['h'] // CH - 1, 0, 3)
     off = (cc % 2) * LB / 2
@@ -330,7 +342,8 @@ def paint_faces(c, out):
     col = np.where(((z == c['h'] - 1) & (c['h'] >= HWALL))[:, None], COL['snow'], col)
     m = mf & ((mat == M_CAP) | (mat == M_STONE)); out[m] = col[m]
     # a fallen block's sides: the stone, dark at its foot, snow along its top edge
-    col = stone_tone(lum)
+    # (a step darker than the wall's, so the rubble stands off the snow it lies in)
+    col = np.where((lum > 0.25)[:, None], COL['mid'], COL['dark'])
     col = np.where((z == 0)[:, None], COL['rim'], col)
     col = np.where((z == c['h'] - 1)[:, None], COL['snow'], col)
     m = mf & (mat == M_BLOCK); out[m] = col[m]
@@ -356,6 +369,8 @@ def shade(g):
     out = np.zeros((len(sy), 3), np.uint8)
     paint_tops(c, out); paint_faces(c, out)
     img[sy, sx, :3] = out; img[sy, sx, 3] = 255
+    dr = c['drop']; img[sy[dr], sx[dr], 3] = 0; hit[sy[dr], sx[dr]] = False
+    onsill = np.zeros((N, N), bool); onsill[sy, sx] = c['mat'] == M_SILL
     # inner lines: where two parts meet on screen, ink the one further back
     SID = np.full((N, N), -1, np.int32); SID[sy, sx] = g.ID[gy, sx]
     SGY = np.full((N, N), -1, np.int32); SGY[sy, sx] = gy
@@ -375,6 +390,7 @@ def shade(g):
     edge[:-1, :] |= hit[:-1, :] & ~hit[1:, :]
     edge[:, 1:] |= hit[:, 1:] & ~hit[:, :-1]
     edge[:, :-1] |= hit[:, :-1] & ~hit[:, 1:]
+    edge &= ~onsill
     img[edge, :3] = COL['rim']
     # a shadow on the ground to the south-east, as long as each thing is tall
     sh = np.zeros((N, N), bool)
@@ -384,6 +400,13 @@ def shade(g):
         s = np.zeros_like(src); s[dy:, dx:] = src[:N - dy, :N - dx]; sh |= s
     sh &= ~hit
     img[sh] = SHADE
+    # a fallen block's own foot: a darker shade close in to its south-east, so it sits in the snow
+    blk = g.M == M_BLOCK
+    foot = np.zeros((N, N), bool)
+    for dx, dy in ((1, 0), (2, 1), (3, 1), (1, 1), (2, 2)):
+        s = np.zeros_like(blk); s[dy:, dx:] = blk[:N - dy, :N - dx]; foot |= s
+    foot &= ~hit
+    img[foot] = BLOCK_SHADE; sh |= foot
     return img, hit, GY, sh
 
 # ---------------------------------------------------------------- the bake
