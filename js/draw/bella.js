@@ -8,8 +8,17 @@
 
 const BELLA_GOLD = '#f2cc6a', BELLA_GOLD_D = '#b98a2e', BELLA_INK = '#141a2c';
 
-// a 3 px diamond, its centre at (x, y)
+// a 3 px diamond, its centre at (x, y); where the world is drawn fine (WD, js/app/canvas.js) a true diamond on half px
 function bellaPip(x, y, col) {
+  if (WD > 1 && worldDense()) {
+    for (let pass = 0; pass < 2; pass++) {
+      ctx.fillStyle = pass ? col : BELLA_INK;
+      const n = pass ? 2 : 3;
+      for (let i = -n; i <= n; i++) { const k = n - Math.abs(i); ctx.fillRect(x - k / 2, y + i / 2, k + 0.5, 0.5); } // every edge on a half px
+    }
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(x - 0.5, y - 0.5, 0.5, 0.5); // one light on its upper face
+    return;
+  }
   ctx.fillStyle = BELLA_INK;
   ctx.fillRect(x - 1, y - 2, 3, 5); ctx.fillRect(x - 2, y - 1, 5, 3);
   ctx.fillStyle = col;
@@ -30,10 +39,21 @@ function drawBellaMarks(e, px, py, w, h, now) {
       const cx = px + 8 + Math.round(Math.cos(a) * 6), cy = py + 8 + Math.round(Math.sin(a) * 4);
       const nx = -Math.sin(a), ny = Math.cos(a); // the blade lies across the aim
       const age = PARRY_T - e.parryT, run = Math.floor(now * 14) % 16 - 7; // a glint walks the edge
-      for (let s = -7; s <= 7; s++) { const x = Math.round(cx + nx * s), y = Math.round(cy + ny * s); ctx.fillStyle = BELLA_INK; ctx.fillRect(x - 1, y - 1, 3, 3); }
-      for (let s = -6; s <= 6; s++) {
-        const x = Math.round(cx + nx * s), y = Math.round(cy + ny * s);
-        ctx.fillStyle = s === run ? '#ffffff' : Math.abs(s) < 2 ? BELLA_GOLD : '#dfe6f0'; ctx.fillRect(x, y, 1, 1);
+      if (WD > 1 && worldDense()) { // drawn fine: the blade steps on half px, a px of ink round it, its lower half in shade
+        const at = (v) => Math.round(v * 2) / 2;
+        ctx.fillStyle = BELLA_INK;
+        for (let s = -13.5; s <= 13.5; s++) ctx.fillRect(at(cx + nx * s / 2) - 0.5, at(cy + ny * s / 2) - 0.5, 2, 2);
+        for (let s = -12; s <= 12; s++) {
+          const x = at(cx + nx * s / 2), y = at(cy + ny * s / 2), gold = Math.abs(s) < 4, lit = Math.round(s / 2) === run;
+          ctx.fillStyle = lit ? '#ffffff' : gold ? BELLA_GOLD : '#eef2f8'; ctx.fillRect(x, y, 1, 1);
+          if (!lit) { ctx.fillStyle = gold ? BELLA_GOLD_D : '#a9b6c9'; ctx.fillRect(x + (ny > 0.7 ? 0.5 : 0), y + (ny > 0.7 ? 0 : 0.5), ny > 0.7 ? 0.5 : 1, ny > 0.7 ? 1 : 0.5); }
+        }
+      } else {
+        for (let s = -7; s <= 7; s++) { const x = Math.round(cx + nx * s), y = Math.round(cy + ny * s); ctx.fillStyle = BELLA_INK; ctx.fillRect(x - 1, y - 1, 3, 3); }
+        for (let s = -6; s <= 6; s++) {
+          const x = Math.round(cx + nx * s), y = Math.round(cy + ny * s);
+          ctx.fillStyle = s === run ? '#ffffff' : Math.abs(s) < 2 ? BELLA_GOLD : '#dfe6f0'; ctx.fillRect(x, y, 1, 1);
+        }
       }
       if (age < 0.18) { // the blade snapped into guard: one glint off it
         const k = Math.round(5 * (1 - age / 0.18));
