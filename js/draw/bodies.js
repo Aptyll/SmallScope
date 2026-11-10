@@ -370,7 +370,8 @@ const BODY_REACH = 30, BODY_REACH_UP = 44;
 // world layer, which is WD dense; its 16 px one anywhere else (a menu's showcase)
 function bodySet(p) { const s = classSet(p); return WD > 1 && s.fine && worldDense() ? s.fine : s; }
 // a frame drawn at (x, y) at its world size: a finer look's (`dens`) at 1/dens, every pixel kept
-const STUN_SWAY = [-1, 0, 1, 0]; // px a stunned hero's body stands off its feet, beat by beat
+const STUN_SWAY = [0, 1, 2, 1, 0, -1, -2, -1]; // px a stunned hero's body sways off its place, one slow swing a second, slumped STUN_SLUMP px
+const STUN_SLUMP = 1;
 function frameW(spr) { return spr.width / (spr.dens || 1); }
 function frameH(spr) { return spr.height / (spr.dens || 1); }
 function drawFrame(spr, x, y) {
@@ -463,8 +464,9 @@ function drawPlayer(p, ex, ey, now, stage) {
     const bob = seat ? seat.bob : 0; // a rider rises and falls with the gallop, the plate holds still
     // a blade's blow moves the whole body, and the hands with it: back on the draw, in on the cut (attackLean)
     const lean = state.mode !== 'title' ? attackLean(p) : null, lx = lean ? lean.dx : 0, ly = lean ? lean.dy : 0;
-    const daze = p.stunT > 0 && state.mode !== 'title' ? STUN_SWAY[Math.floor(p.stunT * 7) & 3] : 0; // stunned: the body rocks a px either way, off its own clock
-    const ax = px + lx + (pose ? pose.dx : 0) + daze, ay = py + ly + (pose ? pose.dy : 0) - zl + bob;
+    const dazed = p.stunT > 0 && state.mode !== 'title'; // stunned: the body slumps and sways wide and slow, off its own clock, so it reads dazed and not jitter
+    const daze = dazed ? STUN_SWAY[Math.floor(p.stunT * 8) & 7] : 0;
+    const ax = px + lx + (pose ? pose.dx : 0) + daze, ay = py + ly + (pose ? pose.dy : 0) - zl + bob + (dazed ? STUN_SLUMP : 0);
     const sy = ay + by - py, sx = ax + bx - px; // a taller frame (the hoist) keeps its feet
     // held tool: behind the body when facing away or pointing up the screen,
     // in the hand otherwise. A body holding the shield or charging has no hand

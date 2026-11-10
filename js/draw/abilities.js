@@ -325,10 +325,14 @@ function drawUnitStates(e, px, py, w, h, now) {
     for (let k = 0; k * 2 + 5 < w - 4; k++) ctx.fillRect(px + 5 + k * 2, py + h - 3, 1, 1);
   }
   if (e.slowT > 0 && e.slowMul < 1 && !(e.rootT > 0)) {
-    // slowed: ice caked on the feet, a deep blue rim so it holds on snow, two glints; under the jaws when both hold
-    ctx.fillStyle = '#2f5f8f'; ctx.fillRect(px + 3, py + h - 3, w - 6, 3); ctx.fillRect(px + 4, py + h - 4, w - 8, 1);
-    ctx.fillStyle = '#a8dcf0'; ctx.fillRect(px + 4, py + h - 3, w - 8, 2);
-    ctx.fillStyle = '#ffffff'; ctx.fillRect(px + 5, py + h - 3, 1, 1); ctx.fillRect(px + w - 7, py + h - 2, 1, 1);
+    // slowed: a clump of ice caked on each foot, the legs clear between and above them (it still walks: the
+    // solid block is a root's), a deep blue rim so it holds on snow, a glint on each
+    const cw = Math.max(2, (w >> 2) - 1), mid = px + (w >> 1);
+    for (const x of [mid - cw - 2, mid + 2]) {
+      ctx.fillStyle = '#2f5f8f'; ctx.fillRect(x - 1, py + h - 3, cw + 2, 3); ctx.fillRect(x, py + h - 4, cw, 1);
+      ctx.fillStyle = '#a8dcf0'; ctx.fillRect(x, py + h - 3, cw, 2);
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(x + (x < mid ? 0 : cw - 1), py + h - 3, 1, 1);
+    }
   }
   if (e.burnT > 0) {
     // Alight: tongues licking UP off the crown, and the snow under the feet
