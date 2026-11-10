@@ -41,6 +41,7 @@ function draftOpen() { return DRAFT.phase === 'ban' || DRAFT.phase === 'pick'; }
 function draftHiding() { return draftOpen() || DRAFT.phase === 'wait'; }
 function heroRanged(h) { return !!CLASSES[h].attack.shot; }
 function draftBansPerTeam() {
+  if (NET.mode === 'guide') return 0; // a FIRST MATCH goes straight to the pick: nobody new knows who to ban (js/ui/guide.js)
   const n = CLASSES.length;
   let b = n >= DRAFT_BAN_MANY ? MAX_PLAYERS >> 1 : 1;
   while (b > 0 && n - 2 * b < DRAFT_KEEP) b--;
