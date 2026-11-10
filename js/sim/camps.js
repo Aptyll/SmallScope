@@ -208,7 +208,7 @@ function layCampPlan(C) {
       const i = idx(t.tx, t.ty);
       if (ground[i] === 1) ground[i] = 0;
       objects[i] = null;
-      if (ch === 'T') placeObj(t.tx, t.ty, 'tree', { hp: TREE_HP, rare: treeRare(t.tx, t.ty) });
+      if (ch === 'T') placeObj(t.tx, t.ty, 'tree', { hp: TREE_HP, rare: treeRare(t.tx, t.ty), wall: true }); // the camp's drawn pines hold like the jungle's walls (treeFells, world.js)
       else if (ch === 'f') placeObj(t.tx, t.ty, 'snowdrop', { variant: k++ % 4, readyAt: 0 });
       else if (ch === 'r') C.spots.push([t.tx - C.tx, t.ty - C.ty]);
     }

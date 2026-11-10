@@ -219,18 +219,27 @@ function guideClick(mx, my) {
   return true; // the card eats the press either way
 }
 
+// the gold arrow's head, pointing down at a view point
+function drawGuideTip(sx, sy) {
+  ctx.fillStyle = GUIDE_INK;
+  for (let r = 0; r < 5; r++) ctx.fillRect(sx - 5 + r, sy - 1 + r, 11 - 2 * r, 2);
+  ctx.fillStyle = GUIDE_GOLD;
+  for (let r = 0; r < 4; r++) ctx.fillRect(sx - 4 + r, sy + r, 9 - 2 * r, 1);
+}
+// SHOP's last step, at the open counter: the same arrow over BUY while the pick can be bought,
+// so a first visit has one thing to press (drawn over the counter: renderUI, js/ui/compose.js)
+function renderGuideShop(now) {
+  const s = guideShown();
+  if (!s || s.id !== 'shop' || guide.flash || !state.shopSel || !shopBuyState(state.shopSel).ok) return;
+  const r = shopLayout().buy;
+  drawGuideTip(r.x + (r.w >> 1), r.y - 7 + Math.round(Math.sin(now * 5) * 1.5));
+}
 // a gold arrow over a world point, bobbing; at the view's edge, pointing, when it is off screen
 function drawGuideArrow(now, at) {
   const b = Math.round(Math.sin(now * 5) * 1.5);
   let sx = Math.round(wToSX(at.x)), sy = Math.round(wToSY(at.y));
   const M = 14;
-  if (sx >= M && sx < VIEW_W - M && sy >= M + 30 && sy < VIEW_H - 60) {
-    ctx.fillStyle = GUIDE_INK;
-    for (let r = 0; r < 5; r++) ctx.fillRect(sx - 5 + r, sy - 1 + r + b, 11 - 2 * r, 2);
-    ctx.fillStyle = GUIDE_GOLD;
-    for (let r = 0; r < 4; r++) ctx.fillRect(sx - 4 + r, sy + r + b, 9 - 2 * r, 1);
-    return;
-  }
+  if (sx >= M && sx < VIEW_W - M && sy >= M + 30 && sy < VIEW_H - 60) { drawGuideTip(sx, sy + b); return; }
   // off screen: a 2x chevron on the edge, toward it, in one of eight
   // directions so its stairs stay even (GUIDE_EDGE_ARROW, turned by quarters)
   const cx = VIEW_W / 2, cy = VIEW_H / 2, dx = sx - cx, dy = sy - cy;

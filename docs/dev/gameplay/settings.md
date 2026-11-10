@@ -230,7 +230,7 @@ buy plates, drawn `GUIDE_K` view px to each of its own so a first look finds it:
 dim X that turns the coach off for good (`guideClick`, which also sets `PROFILE.setGuided`), and a row of
 pips over it, one per lesson. One line of detail stands open under it for a lesson's first `GUIDE_TIP_T` seconds, then folds away; the DETAILS key (or ABILITY DETAILS on ALWAYS) opens it again. A
 lesson's whole meaning is its `GUIDE_STEPS` row: MOVE (walk `GUIDE_MOVE_PX` off the landing), SHOP (any
-buy; a gold arrow over your side's stall or merchant), ABILITIES (two casts; a key a point would learn
+buy; a gold arrow over your side's stall or merchant, and at the open counter over BUY while the pick can be bought: `renderGuideShop`), ABILITIES (two casts; a key a point would learn
 pulses gold), LAST HIT (three), RECALL (shown once the purse holds `GUIDE_RECALL_GOLD` or health is
 under half; done standing in the roost ring), TOWER (a rival tower falls; the arrow over the nearest)
 and THEIR EAGLE, which stays to the end. The card shows the first lesson not yet learned whose place is at
