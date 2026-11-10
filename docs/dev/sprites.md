@@ -185,7 +185,7 @@ shoulder, mirrored facing left, drawn behind the body facing up. **A blade is he
 every facing** so a hero keeps one shape as it turns and nothing heavy is held out level: a
 `HERO_BLADES` row with a slanted grid names its `hold` (`BLADE_HOLDS`; none is `slant`, up and out
 from the leading hand: ARMATOS, VARRO, MARIS; `far` the other hand facing down: FORTIVA; `shoulder`
-back over the shoulder behind the head: LIGNUM's axe; `rest` the head down on the snow beside the
+up against the shoulder, its head clear beside his own: LIGNUM's axe; `rest` the head down on the snow beside the
 foot: RUPES's maul; `low` point down and out from the fist at the hip, the knife fighter's way:
 NIX's dirk). Each is the row's own slanted grid mirrored left to right or top to bottom
 (`heldFlip`, `heldDrop`); none rises past the head, where the health frame sits. A row with no
@@ -248,7 +248,7 @@ her dark hair `a`/`A` and the sage `q`/`Q`; his linen `w`/`W` is her apron). The
 salvia-round1.png in the project files; side-on the head keeps the front's width and the body is
 two pixels narrower. Her dolls (`Hood` and `Tent` in app/bake-player/bodies.py) paint the sage in
 the doll's `cloak` material and the linen in `beard`; only the roll is used. Her 48 px model is her own front frame at 3x (`portrait`). Her SNOWDROP STAFF is a staff: `staff: 'snowdrop'` names `HERO_STAVES.snowdrop`
-(`SALVIA_STAFF`, js/draw/salvia.js), a snowdrop's white bell nodding off the top of a pale alder shaft,
+(`SALVIA_STAFF`, js/draw/salvia.js), a green sprig of snowdrop leaves with one white bud on a vine-wound alder shaft,
 swaying between two baked frames.
 RUPES has two looks (`RUPES_SKINS`, js/sprites/rupes.js): QUARRYMAN (free; a fur cap with ear
 flaps, a full beard, leather straps over the side's coat, fur mitts) and ICE CELLAR (200 coins; the

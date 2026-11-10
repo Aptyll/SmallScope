@@ -35,7 +35,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.765';
+const PATCH_TXT = 'PATCH 0.766';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -51,6 +51,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.766', 'SALVIA CARRIES A GREEN SPRIG, LIGNUM SHOWS HIS AXE, MARIS A BARBED HARPOON ON ITS LINE AND VELOX A SLING THAT HANGS.'],
   ['0.765', 'A HOG HUT HAS A YARD: A PACKED PATH FROM ITS DOOR, A WOODPILE UNDER SNOW AND A CHOPPING BLOCK.'],
   ['0.764', 'THE TITLE SCENE FINDS CLEAN SNOW TO STAND ON'],
   ['0.763', 'NO PINE STANDS ON THE EDGE OF A LANE: A STRIP OF CLEAR SNOW NOW RUNS BETWEEN THE PAVING AND THE WOODS.'],
