@@ -742,9 +742,9 @@ function netPredictable(p) {
 function netPredictWalk(p, inp, dt) {
   const hd = walkHeading(p, inp.mx, inp.my, false);
   kbDecay(p, dt);
-  const onIce = iceUnder(p), kit = kitOf(p);
-  walkSlide(p, inp.slide, dt, onIce, kit);
-  walkStep(p, dt, hd.mx, hd.my, hd.len, onIce, kit);
+  const slick = slickUnder(p), kit = kitOf(p);
+  walkSlide(p, inp.slide, dt, slick, kit);
+  walkStep(p, dt, hd.mx, hd.my, hd.len, slick, kit);
   clampWorld(p);
   if (p.charging) faceToward(p, inp.aimX - p.x, inp.aimY - p.y); // a drawn bow keeps facing the aim, as the step has it
 }

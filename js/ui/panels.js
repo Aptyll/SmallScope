@@ -375,7 +375,7 @@ function renderWorldMap(now) {
       ctx.stroke();
       ctx.restore();
     } else if (e.state !== 'down') continue;
-    drawMapBird(ctx, mx(e.x), my(e.y), TEAMS[skin(e.team)].mark, CHART_DARK);
+    drawMapBird(ctx, mx(e.x), my(e.y), TEAMS[skin(e.team)].mark, CHART_DARK, 2);
   }
 
   // your side's pings, the minimap's glyph at the spot (drawPingGlyph,
@@ -457,54 +457,54 @@ function drawFlatButton(r, label, hv) {
 // A toggle whose two states have names of their own carries them as on/off;
 // without them the row reads ON / OFF.
 const SET_TABS = [
-  { id: 'game', label: 'GAME', rows: [
+  { id: 'game', label: 'set.game', rows: [
     // one size dial per HUD widget (HUD_DIALS, below), top of the screen first
-    { id: 'hudRail', label: 'TOP BAR SIZE', kind: 'slider' },
-    { id: 'map', label: 'MINIMAP SIZE', kind: 'slider' },
-    { id: 'hud', label: 'BOTTOM BAR SIZE', kind: 'slider' },
-    { id: 'shake', label: 'SCREEN SHAKE', kind: 'toggle' },
-    { id: 'info', label: 'INFO DISPLAY', kind: 'toggle' },
-    { id: 'cursor', label: 'CURSOR', kind: 'toggle', on: 'PIXEL', off: 'BROWSER' },
+    { id: 'hudRail', label: 'set.hudRail', kind: 'slider' },
+    { id: 'map', label: 'set.map', kind: 'slider' },
+    { id: 'hud', label: 'set.hud', kind: 'slider' },
+    { id: 'shake', label: 'set.shake', kind: 'toggle' },
+    { id: 'info', label: 'set.info', kind: 'toggle' },
+    { id: 'cursor', label: 'set.cursor', kind: 'toggle', on: 'set.pixel', off: 'set.browser' },
     // where the hover tooltip sits (tipPos, js/ui/tooltip.js) - beside the
     // pointer, or parked in the bottom-left corner
-    { id: 'tipFollow', label: 'TOOLTIP', kind: 'toggle', on: 'FOLLOWS POINTER', off: 'BOTTOM LEFT' },
+    { id: 'tipFollow', label: 'set.tooltip', kind: 'toggle', on: 'set.followsPointer', off: 'set.bottomLeft' },
     // an ability's hover: the short card, every rank's numbers while the DETAILS key is held; or every rank's always
-    { id: 'tipFull', label: 'ABILITY DETAILS', kind: 'toggle', on: 'ALWAYS', off: () => 'HOLD ' + keyCap('details') },
+    { id: 'tipFull', label: 'set.details', kind: 'toggle', on: 'set.always', off: () => tr('set.hold', { key: keyCap('details') }) },
     // BLUE always, or the roster's colour (skin, player.js)
-    { id: 'teamBlue', label: 'MY TEAM', kind: 'toggle', on: 'ALWAYS BLUE', off: 'AS DEALT' },
+    { id: 'teamBlue', label: 'set.myTeam', kind: 'toggle', on: 'set.alwaysBlue', off: 'set.asDealt' },
   ] },
-  { id: 'video', label: 'VIDEO', rows: [
-    { id: 'quality', label: 'QUALITY', kind: 'choice',
-      opts: [{ id: 'low', label: 'LOW' }, { id: 'medium', label: 'MEDIUM' }, { id: 'high', label: 'HIGH' }],
+  { id: 'video', label: 'set.video', rows: [
+    { id: 'quality', label: 'set.quality', kind: 'choice',
+      opts: [{ id: 'low', label: 'set.low' }, { id: 'medium', label: 'set.medium' }, { id: 'high', label: 'set.high' }],
       val: () => vidPreset(), pick: (v) => Object.assign(settings, VID_PRESETS[v]) },
     // the frames the loop may present a second (capSkips, js/app/boot.js), low to
     // high with UNLIMITED (every frame the screen offers) at the top end.
     // Numbers, not words: the row is an instrument, and a player picking a
     // cap knows their screen's rate
-    { id: 'fpsCap', label: 'FPS CAP', kind: 'choice',
-      opts: [{ id: '30', label: '30' }, { id: '60', label: '60' }, { id: '120', label: '120' }, { id: '144', label: '144' }, { id: '0', label: 'UNLIMITED' }],
+    { id: 'fpsCap', label: 'set.fpsCap', kind: 'choice',
+      opts: [{ id: '30', label: '30' }, { id: '60', label: '60' }, { id: '120', label: '120' }, { id: '144', label: '144' }, { id: '0', label: 'set.unlimited' }],
       val: () => String(settings.fpsCap | 0), pick: (v) => { settings.fpsCap = +v; } },
-    { id: 'vidClouds', label: 'CLOUD SHADOWS', kind: 'toggle' },
-    { id: 'vidRays', label: 'SUN SHAFTS', kind: 'toggle' },
-    { id: 'vidStars', label: 'ICE STARS', kind: 'toggle' },
-    { id: 'vidSnow', label: 'SNOWFALL', kind: 'toggle' },
-    { id: 'vidVig', label: 'VIGNETTE', kind: 'toggle' },
+    { id: 'vidClouds', label: 'set.clouds', kind: 'toggle' },
+    { id: 'vidRays', label: 'set.rays', kind: 'toggle' },
+    { id: 'vidStars', label: 'set.stars', kind: 'toggle' },
+    { id: 'vidSnow', label: 'set.snow', kind: 'toggle' },
+    { id: 'vidVig', label: 'set.vignette', kind: 'toggle' },
     // the two sides' paint for colour-blind eyes (TEAM_PALETTES, js/sprites/
     // core.js), named by the colour blindness each palette is for. Every
     // entry wears its palette's chip, yours beside theirs, so a player can
     // also just pick the pair they tell apart. Any but OFF also puts the
     // rival's shape cue on (foeCue, js/sim/player.js)
-    { id: 'teamPal', label: 'COLOUR BLIND', kind: 'drop',
-      opts: [{ id: 'def', label: 'OFF' }, { id: 'rg', label: 'PROTANOPIA / DEUTERANOPIA' },
-        { id: 'by', label: 'TRITANOPIA' }, { id: 'hc', label: 'ACHROMATOPSIA' }],
+    { id: 'teamPal', label: 'set.colourBlind', kind: 'drop',
+      opts: [{ id: 'def', label: 'set.off' }, { id: 'rg', label: 'set.protanopia' },
+        { id: 'by', label: 'set.tritanopia' }, { id: 'hc', label: 'set.achromatopsia' }],
       val: () => settings.teamPal, pick: (v) => { settings.teamPal = v; applyTeamPal(); } },
   ] },
-  { id: 'audio', label: 'AUDIO', rows: [
-    { id: 'vol', label: 'MASTER', kind: 'slider' },
-    { id: 'music', label: 'MUSIC', kind: 'slider' },
-    { id: 'sfx', label: 'SOUNDS', kind: 'slider' },
+  { id: 'audio', label: 'set.audio', rows: [
+    { id: 'vol', label: 'set.master', kind: 'slider' },
+    { id: 'music', label: 'set.music', kind: 'slider' },
+    { id: 'sfx', label: 'set.sounds', kind: 'slider' },
   ] },
-  { id: 'controls', label: 'CONTROLS', rows: [] }, // the live listing below (drawKeyRows)
+  { id: 'controls', label: 'set.controls', rows: [] }, // the live listing below (drawKeyRows)
 ];
 // The QUALITY row is a macro over the video toggles, one click for a weak
 // machine: LOW turns the whole weather-and-light dressing off, MEDIUM keeps
@@ -541,39 +541,41 @@ const SET_FOOT_Y = SET_H - 19, SET_PLANK_W = 72, SET_PLANK_H = 13, SET_PLANK_GAP
 // so picking the scheme IS picking the listing: the cell in force
 // wears the navbar's gold. Its navbar sits pinned at the top of the content
 // window and only the listing scrolls.
-const CTRL_TABS = [{ id: 'wasd', label: 'WASD' }, { id: 'click', label: 'CLICK' }];
+const CTRL_TABS = [{ id: 'wasd', label: 'ctl.wasd' }, { id: 'click', label: 'ctl.click' }];
 const CTRL_TAB_H = 13; // the band the sub-navbar takes off the content window
 
 // Everything positioned inside the panel comes from here: the navbar cells,
 // the open page's rows (each carrying its y in view space, pre-scroll), the
 // content window, and how far this page can scroll. Draw, hit test and the
 // DBG anchors all call it, so a click can never disagree with a pixel.
+// an option's word: a key from the table, or a bare number (FPS CAP's 30, 60...) as itself
+function optWord(l) { return /^\d+$/.test(l) ? l : tr(l); }
 function settingsLayout() {
   const n = SET_TABS.length, cw = Math.floor((SET_W - 24) / n);
-  const tabs = SET_TABS.map((t, i) => ({ id: t.id, label: t.label,
+  const tabs = SET_TABS.map((t, i) => ({ id: t.id, label: tr(t.label),
     x: SET_X + 12 + i * cw, y: SET_Y + SET_TAB_Y, w: cw, h: 9 }));
   const tab = SET_TABS.find(t => t.id === setTab) || SET_TABS[0];
   const clipY0 = SET_Y + SET_CONTENT_Y, clipY1 = SET_Y + SET_CONTENT_B;
   const rows = [];
   let y = clipY0 + 6;
   for (const r of tab.rows) {
-    const row = { id: r.id, label: r.label, kind: r.kind, y, val: r.val, pick: r.pick, on: r.on,
-      off: typeof r.off === 'function' ? r.off() : r.off }; // (a label may name a live bind)
+    const row = { id: r.id, label: tr(r.label), kind: r.kind, y, val: r.val, pick: r.pick, on: r.on && tr(r.on),
+      off: typeof r.off === 'function' ? r.off() : r.off && tr(r.off) }; // (a label may name a live bind)
     if (r.kind === 'choice') {
       let x = SL_X;
-      row.opts = r.opts.map(o => { const w = pixelTextWidth(o.label); const q = { id: o.id, label: o.label, x, w }; x += w + 8; return q; });
+      row.opts = r.opts.map(o => { const t = optWord(o.label), w = pixelTextWidth(t); const q = { id: o.id, label: t, x, w }; x += w + 8; return q; });
     } else if (r.kind === 'drop') {
       // the closed box as wide as its longest entry, the list hung under it
       // (pre-scroll y, like the row's)
-      const w = DROP_TXT_X + Math.max(...r.opts.map(o => pixelTextWidth(o.label))) + 12;
+      const w = DROP_TXT_X + Math.max(...r.opts.map(o => pixelTextWidth(optWord(o.label)))) + 12;
       row.box = { x: SL_X, y: y - 2, w, h: 11 };
-      row.opts = r.opts.map((o, i) => ({ id: o.id, label: o.label, x: SL_X, y: y + 10 + i * DROP_ROW_H, w, h: DROP_ROW_H }));
+      row.opts = r.opts.map((o, i) => ({ id: o.id, label: optWord(o.label), x: SL_X, y: y + 10 + i * DROP_ROW_H, w, h: DROP_ROW_H }));
     }
     rows.push(row); y += 14;
   }
   // the controls page: its own navbar's cells, and the open listing under them
   const cn = CTRL_TABS.length, ccw = Math.floor((SET_W - 24) / cn);
-  const ctabs = CTRL_TABS.map((t, i) => ({ id: t.id, label: t.label, x: SET_X + 12 + i * ccw, y: clipY0 + 2, w: ccw, h: 9 }));
+  const ctabs = CTRL_TABS.map((t, i) => ({ id: t.id, label: tr(t.label), x: SET_X + 12 + i * ccw, y: clipY0 + 2, w: ccw, h: 9 }));
   const cell = settings.scheme; // the lit cell: the scheme in force
   const contentH = setTab === 'controls' ? KEYS_LIST_H + CTRL_TAB_H : (y + 2 - clipY0);
   const maxScroll = Math.max(0, contentH - (clipY1 - clipY0));
@@ -645,16 +647,16 @@ const CTRL_COL_X = [10, 110, 210];
 // key still works).
 const KEY_ROWS = {
   wasd: [
-    [{ acts: ['up', 'left', 'down', 'right'], verb: 'MOVE' }, { acts: ['ab1', 'ab2', 'ab3', 'ab4'], verb: 'ABILITIES' },
-      ['CLICK', 'FIRE'], 'dodge', 'slide', 'work', ['RMB', 'PING']],
-    [{ acts: ['item1', 'item2', 'item3'], verb: 'ITEMS' }, { acts: ['item4', 'item5', 'item6'], verb: 'ITEMS' }, 'recall', 'char', 'details'],
-    ['map', 'board', 'mute', 'pause', ['ESC', 'SETTINGS'], ['SCROLL', 'ZOOM'], ['F3', 'INFO'], ['.', 'HITBOX']],
+    [{ acts: ['up', 'left', 'down', 'right'], verb: 'ctl.move' }, { acts: ['ab1', 'ab2', 'ab3', 'ab4'], verb: 'ctl.abilities' },
+      ['ctl.click', 'ctl.fire'], 'dodge', 'slide', 'work', ['ctl.rmb', 'ctl.ping']],
+    [{ acts: ['item1', 'item2', 'item3'], verb: 'ctl.items' }, { acts: ['item4', 'item5', 'item6'], verb: 'ctl.items' }, 'recall', 'char', 'details'],
+    ['map', 'board', 'mute', 'pause', ['ctl.esc', 'ctl.settings'], ['ctl.scroll', 'ctl.zoom'], ['ctl.f3', 'ctl.info'], ['ctl.dot', 'ctl.hitbox']],
   ],
   click: [
-    [['RMB', 'MOVE / ACT'], ['HOLD RMB', 'FOLLOW'], { acts: ['ab1', 'ab2', 'ab3', 'ab4'], verb: 'ABILITIES' },
-      ['CLICK', 'FIRE'], 'amove', 'stop', 'dodge', 'slide'],
-    [{ acts: ['item1', 'item2', 'item3'], verb: 'ITEMS' }, { acts: ['item4', 'item5', 'item6'], verb: 'ITEMS' }, 'ping', 'char', 'recall', 'details'],
-    [ 'map', 'board', 'mute', 'pause', ['ESC', 'SETTINGS'], ['SCROLL', 'ZOOM'], ['F3', 'INFO']],
+    [['ctl.rmb', 'ctl.moveAct'], ['ctl.holdRmb', 'ctl.follow'], { acts: ['ab1', 'ab2', 'ab3', 'ab4'], verb: 'ctl.abilities' },
+      ['ctl.click', 'ctl.fire'], 'amove', 'stop', 'dodge', 'slide'],
+    [{ acts: ['item1', 'item2', 'item3'], verb: 'ctl.items' }, { acts: ['item4', 'item5', 'item6'], verb: 'ctl.items' }, 'ping', 'char', 'recall', 'details'],
+    [ 'map', 'board', 'mute', 'pause', ['ctl.esc', 'ctl.settings'], ['ctl.scroll', 'ctl.zoom'], ['ctl.f3', 'ctl.info']],
   ],
 };
 const KEY_ROW_H = 12, KEY_ROWS_Y = 5;
@@ -666,10 +668,10 @@ function keyRowsLayout() {
   for (let c = 0; c < R.length; c++) {
     const x0 = CTRL_COL_X[c];
     const rows = R[c].map((row) => {
-      if (Array.isArray(row)) return { fixed: row[0], verb: row[1], w: pixelTextWidth(row[0]) };
+      if (Array.isArray(row)) return { fixed: tr(row[0]), verb: tr(row[1]), w: pixelTextWidth(tr(row[0])) };
       const acts = row.acts || [row];
       const runs = acts.map((a) => { const lab = keyCap(a); return { act: a, lab, w: pixelTextWidth(lab) + 6 }; });
-      return { runs, verb: row.verb || KEY_ACT[row].verb, w: runs.reduce((s, r) => s + r.w + 2, -2) };
+      return { runs, verb: row.verb ? tr(row.verb) : KEY_ACT[row].verb, w: runs.reduce((s, r) => s + r.w + 2, -2) };
     });
     const dx = Math.max(30, rows.reduce((m, r) => Math.max(m, r.w), 0) + 4); // the verbs line up past the widest run
     let y = KEY_ROWS_Y;
@@ -680,7 +682,7 @@ function keyRowsLayout() {
       y += KEY_ROW_H;
     }
   }
-  const rw = pixelTextWidth('RESET'); // a row under the tallest column, at the right edge
+  const rw = pixelTextWidth(tr('set.reset')); // a row under the tallest column, at the right edge
   return { caps, words, reset: { x: SET_W - 16 - rw, y: KEY_ROWS_Y + KEY_ROWS_N * KEY_ROW_H + 6, w: rw, h: 7 } };
 }
 // the listing at ox, oy (the blit origin); hit is settingsHit's answer
@@ -688,7 +690,7 @@ function drawKeyRows(ox, oy, hit, now) {
   const K = keyRowsLayout();
   for (const w of K.words) drawPixelText(ctx, w.t, ox + w.x, oy + w.y, w.col);
   for (const c of K.caps) drawKeyCap(ctx, ox + c.x, oy + c.y, c.lab, false, state.rebind === c.act ? 2 : hit === 'key:' + c.act ? 1 : 0, now);
-  drawPixelText(ctx, 'RESET', ox + K.reset.x, oy + K.reset.y, bindsDefault() ? '#2c3a68' : hit === 'keyreset' ? '#cfe0ff' : '#7a8bb8');
+  drawPixelText(ctx, tr('set.reset'), ox + K.reset.x, oy + K.reset.y, bindsDefault() ? '#2c3a68' : hit === 'keyreset' ? '#cfe0ff' : '#7a8bb8');
 }
 function applySliderDrag() {
   const t = Math.max(0, Math.min(1, (mouse.x - SL_X) / SL_W));
@@ -746,8 +748,8 @@ function footPlanks() {
     ...(voteCanStart(player) || voteOpenFor(player) ? ['surrender'] : []), 'leave'];
   const n = ids.length, y = SET_Y + SET_FOOT_Y, pw = n > 3 ? SET_PLANK_W - 8 : SET_PLANK_W;
   const x0 = SET_X + Math.round((SET_W - (pw * n + SET_PLANK_GAP * (n - 1))) / 2);
-  const label = { close: 'CLOSE', surrender: 'SURRENDER', leave: 'LEAVE' };
-  return ids.map((id, i) => ({ id, label: label[id], x: x0 + i * (pw + SET_PLANK_GAP), y, w: pw, h: SET_PLANK_H }));
+  const word = { close: 'set.close', surrender: 'set.surrender', leave: 'set.leave' };
+  return ids.map((id, i) => ({ id, label: tr(word[id]), x: x0 + i * (pw + SET_PLANK_GAP), y, w: pw, h: SET_PLANK_H }));
 }
 function leavePlankRect() { return footPlanks().find((l) => l.id === 'leave') || null; }
 // CLOSE: the in-match slab folds (what ESC does, input.js), the title's
@@ -940,7 +942,7 @@ function drawToggleRow(y, on, onTxt, offTxt) {
   ctx.fillStyle = '#0a0e23'; ctx.fillRect(SL_X, y - 1, 15, 9);
   ctx.fillStyle = on ? '#8a6a24' : '#1c2750'; ctx.fillRect(SL_X + 1, y, 13, 7);
   ctx.fillStyle = on ? '#ffd95c' : '#7a8bb8'; ctx.fillRect(SL_X + (on ? 8 : 2), y + 1, 5, 5);
-  drawPixelTextShadow(ctx, on ? (onTxt || 'ON') : (offTxt || 'OFF'), SL_X + 20, y,
+  drawPixelTextShadow(ctx, on ? (onTxt || tr('set.on')) : (offTxt || tr('set.off')), SL_X + 20, y,
     on ? '#cfe0ff' : '#7a8bb8', 'rgba(8,12,28,0.9)');
 }
 
@@ -972,7 +974,7 @@ function renderSettings(now, opts) {
   }
   if (slide) { ctx.save(); ctx.translate(0, slide); }
   ctx.drawImage(setPanelCv, SET_X, SET_Y);
-  drawSlabHead('SETTINGS', SET_Y);
+  drawSlabHead(tr('set.title'), SET_Y);
   const off = SFX.isMuted();
   const hit = slide ? null : settingsHit(); // the menu's slide-in is not hoverable mid-flight
   const L = settingsLayout();

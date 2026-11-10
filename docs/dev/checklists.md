@@ -17,7 +17,8 @@ from. The procedure is the `concept-art` skill in
 ## Verifying a change
 
 After cloning, run `sh scripts/setup-hooks.sh` once: its pre-push hook refuses a push to main
-or a branch behind origin/main.
+or a branch behind origin/main. Cloud sessions get it on their own: `.claude/hooks/session-start.sh`
+runs it at session start.
 
 The rule is in [CLAUDE.md](../../CLAUDE.md): look at the running game, don't re-read the code and
 declare victory. The affordances:
@@ -74,6 +75,15 @@ declare victory. The affordances:
     parties of two on Steam and on the relay, must each end in ONE draft with a friend's point
     reaching the leader (`steam-party`, `steam-match`, `relay-match`). It serves the game itself on its own port and needs
     Playwright (`PLAYWRIGHT=<its folder>` if it is not on the require path).
+  - **`node app/check-same.js`** — run it before merging a refactor, a split or a cleanup that
+    should change nothing: it plays this tree and `origin/main` (or `node app/check-same.js <ref>`)
+    on the same seeds and the practice map for 8 match minutes each (`--min`, `--seeds`) and
+    compares the sim hash and six views of the frame every 10 s. Exit 0 is SAME; 1 names the first
+    tick and the fields that parted (pixels only is a draw change); 2 is cannot judge (a page
+    threw, the base played a seed twice and parted, or a match never moved). A refactor that
+    adds or removes a `state` key passes `--drop key`. Bots rarely take some paths (a rope, a
+    rare item): write a staged scene, a function body given `D`, `step(n)` and `mark(tag)`, and
+    pass `--scene <file>` (the comment at the top of the script). About 4 minutes on four cores.
   - **`node app/check-load.js`** — run it after touching `js/net/`, `SNAP_SKIP` or anything that adds
     bodies to a match: a host and nine headless players (`N=4` for fewer) on the relay, every seat a
     bot, the match STAGED (run fast to the first wave, then an extra wave queued at every bay), then
@@ -285,20 +295,22 @@ pop-up's preview/ledger, the wiki's hero page, the bot class hash
 particular hero names it with `heroIndex('NAME')`, never a number: an index moves whenever the
 table does. What a new hero needs written:
 
-1. a `CLASSES` entry ([js/sim/player.js](../../js/sim/player.js)) — `name`, `pos`, `passive`, the
+1. a `CLASSES` entry ([js/sim/player.js](../../js/sim/player.js)) — `name`, its `id` (lower-case,
+   never changed: the profile's skin slot and the registry's key), `pos`, `passive`, the
    `base`/`grow` stats, the `kit` numbers and `rankOrder`;
 2. its looks, in its own js/sprites/ file (the shape of [js/sprites/armatos.js](../../js/sprites/armatos.js)): each look's standing grids
    (`<HERO>_BODY`, walked by `heroWalk`) and its paint (`<HERO>_PAL`), and its **skins table**
-   (`<HERO>_SKINS`: the free first row, then the buyable ones), named on the `CLASSES` row as
-   `skins`, `skinPal` and `skinSlot`; its held run and roll: a doll for each look in
+   (`<HERO>_SKINS`: the free first row, then the buyable ones), registered at the file's end with
+   `heroArt(id, { looks, pal, glyph, emblem })` ([js/sprites/hero-art.js](../../js/sprites/hero-art.js));
+   its held run and roll: a doll for each look in
    `app/bake-player/bodies.py`, measured off the new standing frames and rebaked into
    js/baked/motion.js, named in its skins row's `motion` (the side run comes off the drawn side
    frame, `heroRunSide`; [the run and the roll](sprites.md#the-run-and-the-roll),
    [hero looks](sprites.md#hero-looks)) — **this is the expensive part**. `SPRITES.champLook`
    bakes it per team and look with no edit;
-3. a **`SKIN_TABS` row** in [js/ui/skins.js](../../js/ui/skins.js) (`slot` its `skinSlot`, `rows`
-   its skins table, `hero: heroIndex('NAME')`, an 8×8 glyph). A load check there throws for a hero
-   with no tab;
+3. in that same `heroArt` row, the **skins tab's 8×8 `glyph`**: `SKIN_TABS`
+   ([js/ui/skins.js](../../js/ui/skins.js)) builds the hero's tab from the registry, and a load
+   check in player.js throws for a `CLASSES` row with no `heroArt` row or a row with no hero;
 4. its four actives, `<HERO>_AB` in its own js/sim/ file (the `ARM_AB` shape,
    [js/sim/armatos.js](../../js/sim/armatos.js)), joined into `CLASS_AB`
    ([js/sim/abilities.js](../../js/sim/abilities.js)) in `CLASSES` order: each ability's
@@ -308,10 +320,9 @@ table does. What a new hero needs written:
    their tick and draw through the `HERO_*` tables, and **a `bot` row on all four** saying when a
    bot presses it. `abBotKey` asks it only for a key that is bought and ready (`abUnlocked`,
    `abReady`), so a key still locked at level 0 is never tried;
-5. a 12×12 hero **emblem** in `CLASS12` ([js/ui/menu.js](../../js/ui/menu.js), same palette),
-   keyed by the hero's name and drawn by hand (never a shrink), which the
-   [team rail](rendering/the-hud-corners/the-team-rail.md), the rooms and the tooltips wear. A load
-   check there throws for a hero with none;
+5. a 12×12 hero **`emblem`** in its `heroArt` row (same palette), drawn by hand (never a
+   shrink), which the [team rail](rendering/the-hud-corners/the-team-rail.md), the rooms and the
+   tooltips wear (`classIcon12`, js/ui/menu.js);
 6. an `attack` row on its `CLASSES` entry ([the basic attack](gameplay/the-basic-attack.md)), a new
    `art` in js/sprites/weapons.js or its own sprite file;
 7. a **`BOT_BUILDS` row** in [js/sim/items.js](../../js/sim/items.js): its item build, which is also
@@ -423,7 +434,7 @@ shipwreck and shop are meant to land here, and so is a rookery. Nothing in the m
 needs to learn about it. What *does* cost work: any **new object type** its `props` stamp (the
 checklist above), and any **new kind of monster** (a `MONSTER` row if it fights like the three
 wolves — hp in `ANIMAL_HP`/`ANIMAL_LV_HP`, a `HIT_PUFF` colour, a `YIELD` payout, a `WIKI_BEASTS`
-card, its sprite set in `SPRITES[kind]`, the cursor's hover box in `cursorInfo` and the hitbox
+card (its name and line as `beast.*` keys in js/app/text.js), its sprite set in `SPRITES[kind]`, the cursor's hover box in `cursorInfo` and the hitbox
 overlay's sizes in js/draw/render.js, `animalHitR`'s radius if it is not 8, and — if it can hurt a player
 — a `DEATH_CAUSE` key; a kind that does *not* fight needs its own `updateAnimal` branch).
 

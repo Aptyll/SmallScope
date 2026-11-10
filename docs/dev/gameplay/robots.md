@@ -19,15 +19,17 @@ read through `soldierType(b)` off `b.type`): its health and its growth, its blow
 s from `reach` px; a building takes `struct` times it, the bird `eagle`), the shot that carries a
 blow from range (`shot`, s in the air), its bounty share and its XP share, and its sprite set.
 **Melee** swings an axe (5 every 1.1 s, 15 px, 60 hp), **ranged** throws a packed snowball (6 every
-1.5 s from 72 px, 34 hp) and **siege**, the sled catapult, lobs a big one (10 every 2.4 s from 96 px,
-three times that on a building, 150 hp). `robotStrike(b, e, pt)` is the single blow: an axe lands
-now through `soldierLand`, a thrower's ball is held in `b.shot` and lands when its time is up
-(`soldierShot`) on what it was thrown at, a body where it then stands (a lob, not a dodgeable
-shot; a wreck's ball is lost with it). `soldierLand` sends a building through `hurtStruct` (the
+1.5 s from 72 px, 34 hp) and **siege**, the ballista cart, shoots a bolt (10 every 2.4 s from 96 px,
+three times that on a building, 150 hp). What flies is the kind's `look` (`SOLDIER_SHOTS`: the
+sounds it leaves and lands with, the puff where it hits). `robotStrike(b, e, pt)` is the single blow: an axe lands
+now through `soldierLand`, a shooter's ball or bolt is held in `b.shot` and lands when its time is up
+(`soldierShot`) on what it was aimed at, a body where it then stands (it follows, it is not a
+dodgeable shot; a wreck's shot is lost with it). `soldierLand` sends a building through `hurtStruct` (the
 same path a player's E swing takes, so the wreck, the payout and the `WRECKED A` line are one code
 path), the bird through `hurtEagle`, and any **body** through `hurtUnit` with `cause: 'soldier'`,
-credited to nobody. The ball's pixels are `drawSoldierShot` (js/draw/bodies.js), a siege one on a
-`SOLDIER_LOB` arc. Targets come from
+credited to nobody. The shot's pixels are `drawSoldierShot` (js/draw/bodies.js): a snowball on a
+low arc, or a bolt flat off the cart's stock (`BOLT_AT`). A soldier faces what it aims at, else the
+way it drives (`b.faceL`, set in `updateSoldier`); the cart's frames are mirrored for left. Targets come from
 `robotFoeUnit(b, range)` (nearest rival player or bot; players are noticed through `seenAt`, so a
 hidden body is as invisible to a soldier as to a wolf) and `enemyStructNear(team, x, y, r)`.
 `foePoint(e, fx, fy)` is where the axe lands: a body a little above its feet, or **the nearest
@@ -111,7 +113,9 @@ do not run the step, aged by `state.tick`): a gold coin that hops and spins off 
 grey one that drops and fades where a miss fell, drawn only for the side that missed it and only
 within `COIN_MISS_R` of the watched body (`drawPops`, js/draw/pops.js). A rival's gold coin in
 the fog is not drawn. The wolf den is the jungle: four wolves at 110 each and back `repop` (75 s)
-after the last dies, its clock on the den and on both maps ([world.md](../world.md#runtime)).
+after the last dies, its clock on the den and on both maps; beside it in each quarter a fox hollow
+(three foxes at 90 each, back in 60 s) and an ox range (one musk ox at 280, back in 90 s), their
+clocks at the camp's mark ([world.md](../world.md#runtime)).
 Bots farm through two roles, the LANER and the JUNGLER ([multiplayer.md](../multiplayer.md#bots)).
 
 ## Road towers

@@ -44,6 +44,7 @@
 //               (layOrcaPool), and what lives there is the orca under the ice
 //               (js/sim/orca.js) until its camp monster, the orca up in its
 //               hole, is out (`first`)
+//   farm        a jungler's camp: the bots' route takes it in (aiDenSpot, js/ai/ai-farm.js)
 //   river       the camp is a stretch of RIVERBANK, not a den: no props and
 //               no spots - its one monster walks `river` tiles of its own bank
 //               either way along the creek's bend round the site, up and
@@ -51,6 +52,8 @@
 //               updateCampMonster, wildlife.js)
 //
 // resource: the pack - gold per head, the jungle's farm (each wolf a FARM, js/sim/farm.js)
+// pack:     the FOX HOLLOW - three foxes, a quick clear, one in each jungle quarter
+// ox:       the OX RANGE - one musk ox, the quarter's big camp: slow, heavy, a long fight alone
 // buff:     the black bear, the one bear: first out at 5:00, the whole team paid and
 //           given the BLACK BUFF for the kill, and the side's black bears count up
 //           (state.bearStacks, wildlife.js); it walks a bank of the downstream bend
@@ -70,9 +73,28 @@ const CAMPS = {
     name: 'WOLF DEN',
     r: 5, mark: '#d8c0c4',
     icon: [[2, 3, 3, 3], [1, 4, 5, 2], [0, 1, 1, 2], [2, 0, 1, 2], [4, 0, 1, 2], [6, 1, 1, 2]], // paw print
+    farm: true,
     kind: 'wolf', pop: 4, repop: 75, // about one lap of a side's two dens: a jungle route on the clock
     props: [[0, 0, 'den']],
     spots: [[-2, -1], [2, -1], [-2, 2], [2, 2]],
+  },
+  pack: {
+    name: 'FOX HOLLOW',
+    r: 4, mark: '#f08a3c',
+    icon: [[0, 0, 2, 2], [5, 0, 2, 2], [0, 2, 7, 2], [1, 4, 5, 1], [2, 5, 3, 1], [3, 6, 1, 1]], // a fox's mask
+    farm: true,
+    kind: 'fox', pop: 3, repop: 60,
+    props: [],
+    spots: [[-2, -1], [2, -1], [0, 2]],
+  },
+  ox: {
+    name: 'OX RANGE',
+    r: 4, mark: '#cdb890',
+    icon: [[1, 0, 5, 1], [0, 1, 2, 3], [5, 1, 2, 3], [2, 2, 3, 3], [2, 5, 3, 2]], // a horned head
+    farm: true,
+    kind: 'ox', pop: 1, repop: 90,
+    props: [],
+    spots: [[0, 0]],
   },
   buff: {
     name: 'BLACK BEAR BEND',
@@ -147,6 +169,12 @@ const CAMP_EDGE = 72 * MAP_K;
 const CAMP_SITES = [
   { key: 'resource', u: 90, s: -25 },  // one den each side of the road, out from the lane mouth
   { key: 'resource', u: 90, s: 25 },
+  // each jungle quarter's two more camps, between the den and the creek, clear of
+  // the lanes, the jungle's pine walls and the other camps on every seed
+  { key: 'pack', u: 105.8, s: -30.8 },  // the fox hollow of the orca's quarter, between the warren and the pool
+  { key: 'ox', u: 97.5, s: -20 },       // ...and its ox range, inside the den
+  { key: 'pack', u: 103.3, s: 42.5 },   // the fox hollow of the bear's quarter
+  { key: 'ox', u: 101.7, s: 23.3 },     // ...and its ox range, past the den
   // the two contested spots on the mirror line, facing each other across the
   // road: the orca's pool top-left, the black bear bottom-right
   { key: 'buff', u: (WORLD - 1) / 2, s: 44 },  // the black bear, bottom-right of the middle, on the mirror line

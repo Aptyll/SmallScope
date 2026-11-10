@@ -322,7 +322,7 @@ function rollSweep(p) {
     p.rollHit.push(a);
     hurtUnit(a, dmg, nx, ny, p, { kb: ROLL_KB, ab: 'roll' });
     if (a.hp > 0 && !isAnchored(a)) stunUnit(a, stun); // a bear is not knocked out of its stride by a body
-    if (a.kind === 'deer' || isBigBeast(a)) { rollTackle(p, sp, nx, ny); return; } // too much animal to go through
+    if (a.kind === 'deer' || isBigBeast(a) || (MONSTER[a.kind] && MONSTER[a.kind].solid)) { rollTackle(p, sp, nx, ny); return; } // too much animal to go through
   }
   for (const b of robots) {
     if (!unitAlive(b) || b.team === p.team || p.rollHit.includes(b)) continue;
@@ -618,8 +618,9 @@ function unitUnder(src, wx, wy) {
   for (const b of robots) if (unitAlive(b) && b.team !== src.team && Math.abs(wx - b.x) <= 7 && wy >= b.y - 7 && wy <= b.y + 4) return b;
   for (const a of animals) {
     if (!unitFoe(src, a)) continue; // a deer your own side rides is no mark
-    const hw = a.kind === 'rabbit' ? 7 : isBigBeast(a) ? 34 : a.kind === 'wolf' ? 9 : 16;
-    const h = a.kind === 'rabbit' ? 11 : isBigBeast(a) ? 48 : a.kind === 'wolf' ? 14 : 34;
+    const box = MONSTER[a.kind] && MONSTER[a.kind].box; // a camp monster's own size (its MONSTER row), else the kind's
+    const hw = box ? box[0] : a.kind === 'rabbit' ? 7 : isBigBeast(a) ? 34 : 16;
+    const h = box ? box[1] : a.kind === 'rabbit' ? 11 : isBigBeast(a) ? 48 : 34;
     const by = a.y + 4;
     if (Math.abs(wx - a.x) <= hw && wy >= by - h && wy <= by) return a;
   }

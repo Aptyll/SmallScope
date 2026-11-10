@@ -50,6 +50,7 @@ order, so the script tags still interleave them:
 | [js/sprites/icons.js](../../js/sprites/icons.js) | ~80 | → `SPRITES` | HUD art: the cursor set |
 | [js/sprites/item-icons.js](../../js/sprites/item-icons.js) | ~84 | → `SPRITES` | the item icons: one 16 px grid an item, `SPRITES['item_' + id]` |
 | [js/sprites/weapons.js](../../js/sprites/weapons.js) | ~50 | → `SPRITES`, `WEAPON_FWD`, `WEAPON_GRIP` | the heroes' weapons as the hand holds them (a basic attack's `art`) |
+| [js/sprites/hero-art.js](../../js/sprites/hero-art.js) | ~25 | `HERO_ART`, `heroArt` | the hero art registry: each hero's own sprite file registers its looks, their paint, the skins tab's glyph and the 12 px emblem under its `CLASSES` `id`; every reader asks `heroArtOf` (player.js) |
 | [js/sprites/armatos.js](../../js/sprites/armatos.js) | ~430 | shared scope, no `window.*` export | ARMATOS's 32 px ability and passive icons (`ARM_ICON32`), his looks' 16 px grids and skins table (`ARM_BODY`, `ARM_SKINS`), and his greatsword (`ARM_SWORD`) |
 | [js/sprites/fortiva.js](../../js/sprites/fortiva.js) | ~370 | shared scope, no `window.*` export | FORTIVA's 32 px ability and passive icons (`FORT_ICON32`), her looks' 16 px grids and skins table (`FORT_BODY`, `FORT_SKINS`), and her greatsword (`FORT_SWORD`) |
 | [js/sprites/aura.js](../../js/sprites/aura.js) | ~260 | shared scope, no `window.*` export | AURA's 32 px ability and passive icons (`AURA_ICON32`) and her STAR SHARD staff's weapon art |
@@ -152,7 +153,7 @@ order, so the script tags still interleave them:
 | [js/draw/towers.js](../../js/draw/towers.js) | ~110 | shared scope, no `window.*` export | the road tower's pixels: the gun and parapet over the body, the aim line, the bolt and the spent bolt (the thing itself: js/sim/towers.js) |
 | [js/draw/canopy.js](../../js/draw/canopy.js) | ~160 | shared scope, no `window.*` export | the canopy window: the viewed hero's model drawn through a layer (`heroLayerOpen`/`heroLayerClose`, from `drawPlayer`) so a pine or snag covering it opens round it (`canopyOver`, `drawWindowed`, from `render()`) |
 | [js/draw/bodies.js](../../js/draw/bodies.js) | ~710 | shared scope, no `window.*` export | every walking thing's sprite pass: a beast on its clip, a robot, the merchant, and `drawPlayer` with its buff ring, ghost and held tool |
-| [js/draw/heroes.js](../../js/draw/heroes.js) | ~60 | shared scope, no `window.*` export | a hero's own blade in its hands (`HERO_BLADES`, `heroBlade`, `heroCarry`), a staff carried by its hero's own hold (`HERO_STAVES`, `STAFF_HOLDS`, `heroStaff`), a shot drawn with its own `look` (`HERO_SHOTS`), what it wears on its body (`HERO_BODY_FX`), and what is drawn in its place for a while (`HERO_BODY_DRAW`) |
+| [js/draw/heroes.js](../../js/draw/heroes.js) | ~60 | shared scope, no `window.*` export | a hero's own blade in its hands and its hold at rest (`HERO_BLADES`, `BLADE_HOLDS`, `heroBlade`, `heroCarry`), a staff carried upright in its hero's own hand (`HERO_STAVES`, `STAFF_HOLDS`, `heroStaff`), a shot drawn with its own `look` (`HERO_SHOTS`), what it wears on its body (`HERO_BODY_FX`), and what is drawn in its place for a while (`HERO_BODY_DRAW`) |
 | [js/draw/armatos.js](../../js/draw/armatos.js) | ~120 | shared scope, no `window.*` export | ARMATOS's pixels: his greatsword in his hands, the standard on his back and planted, and his keys' shapes on the snow |
 | [js/draw/fortiva.js](../../js/draw/fortiva.js) | ~90 | shared scope, no `window.*` export | FORTIVA's pixels: her greatsword in her hands, her state on her body, and her keys' shapes on the snow |
 | [js/draw/aura.js](../../js/draw/aura.js) | ~150 | shared scope, no `window.*` export | AURA's pixels: her star bolt, and the star's ring, the orb and the curtain's band on the snow |
@@ -188,7 +189,7 @@ order, so the script tags still interleave them:
 | [js/ui/vote.js](../../js/ui/vote.js) | ~70 | shared scope, no `window.*` export | the surrender vote's panel top centre under the clock and its YES / NO click |
 | [js/ui/cheats.js](../../js/ui/cheats.js) | ~480 | shared scope, no `window.*` export | the practice bar down the left edge (PRACTICE TOOL only): its buttons, the map's group, the way to the arena and back, aim ghost and tooltip card |
 | [js/ui/tooltip.js](../../js/ui/tooltip.js) | ~270 | shared scope, no `window.*` export | the hover tooltip: `tipAt`, `tipPos` and `drawTooltip` |
-| [js/ui/guide.js](../../js/ui/guide.js) | ~250 | shared scope, no `window.*` export | the FIRST MATCH's coach (`GUIDE_STEPS`, `renderGuide`, `guideClick`) and RANKED's lock glyph |
+| [js/ui/guide.js](../../js/ui/guide.js) | ~225 | shared scope, no `window.*` export | the FIRST MATCH's coach (`GUIDE_STEPS`, `renderGuide`, `guideClick`) |
 | [js/ui/compose.js](../../js/ui/compose.js) | ~120 | shared scope, no `window.*` export | `renderUI`, the frame's UI pass in order |
 | [js/ui/notices.js](../../js/ui/notices.js) | ~410 | shared scope, no `window.*` export | the notice lane top-right under the minimap (the roost-under-attack plate) and the stat ledger that flies your sheet into it when a number moves |
 | [js/ui/announcer.js](../../js/ui/announcer.js) | ~180 | shared scope, no `window.*` export | the announcer: a queued call (FIRST BLOOD, multi-kills, SHUTDOWN, ACE, TOWER DESTROYED, bears) on a plate under the team rail with both faces and a sting, and the kill feed under the notice lane |
@@ -287,7 +288,7 @@ file is a save file.
 - **The purse and the wardrobe are ids and a count.** `coins` starts at `START_COINS` (a
   profile from before the purse gets it too), `owned` holds the ids bought (a free cosmetic is
   never written there; the key is `slot:id`, bare for the bird's) and `worn` maps a slot
-  (`'bird'`, `'trail'`, or a hero's own, `'armatos'` ...) to the id worn. `buy(key, price)` spends and records in one write or
+  (`'bird'`, or a hero's own `id`, `'armatos'` ...) to the id worn. `buy(key, price)` spends and records in one write or
   does nothing; `wear(slot, id)` (null for the free default) writes through; `addCoins(n)` is a
   finished match's pay (`payMatchCoins`, js/ui/skins.js, from `endMatch`). Prices and what an id
   is live in the callers' tables (`SKIN_TABS`, js/ui/skins.js, and `BIRD_SKINS`,
@@ -449,18 +450,19 @@ answers the bridge's IPC: lobbies (create / join / leave / list / data / invite)
 events. `preload.js` exposes exactly that as `window.steamBridge` and nothing else of Node; the
 game reads it only in js/net/transport-steam.js and at boot's role pick. Without Steam running
 the bridge reports `ready: false` and the page plays solo. Flags: `--net=host`, `--join=LOBBYID`,
-`--seed=N`, `--devtools`, and for a headless check `--shot=PATH --wait=S --quit`.
+`--seed=N`, `--devtools`, `--steamnet=p2p`, and for a headless check `--shot=PATH --wait=S --quit`.
 
 **main.js prefers `desktop/app/index.html` over `../index.html`**, and build.js is what fills
 `desktop/app/` (the page, the code, the audio). A `desktop/app/` left over from an earlier build
 therefore silently runs an **old game** under `npm start`: delete it, or rebuild, before judging a
 change in the wrapper.
 
-steamworks.js
-0.4 exposes Steam's older P2P sockets (reliable packets to 1 MB, unreliable to 1200 bytes);
-the transport chunks text above the first, and a
-snapshot delta rides the second as numbered binary frames (`steamFrames`), the bridge carrying
-bytes both ways ([docs/pvp-architecture.md](../pvp-architecture.md)).
+Bytes
+cross Steam through its newer messages (`desktop/steam-messages.js`, koffi on the same DLL;
+512 KB a message), or with `--steamnet=p2p` through the older P2P packets steamworks.js 0.4
+exposes (reliable to 1 MB, unreliable to 1200 bytes); the transport chunks text and big frames to
+fit both, and a snapshot delta rides the unreliable channel as numbered binary frames
+(`steamFrames`), the bridge carrying bytes both ways ([docs/pvp-architecture.md](../pvp-architecture.md)).
 
 ## app/
 
@@ -515,6 +517,14 @@ None of the scripts is part of the game, and nothing in `js/` may depend on one 
   its invite card, Steam faked with the wrapper's bridge calls) and must end welcomed with both pages still drawing;
   then a party of three, and two parties meeting by matchmaking, must stand in one draft
   ([checklists](checklists.md#verifying-a-change)).
+- **`app/check-same.js`** — the refactor check (Playwright): this tree (uncommitted edits too) and
+  another commit (`origin/main` by default, written out with `git archive`) served side by side
+  and played on the same seeds and the practice map, every seat a bot, the page frozen from its
+  first frame with `Math.random`, `performance.now` and `Date.now` faked. Every 10 s of match it
+  compares `DBG.saveHash` and the canvas in six views; the base plays its first seed twice so a
+  leak outside the seed reads as "cannot judge", not as a pass. On a sim difference it names the
+  first tick, the save sections and the fields that parted. `--scene <file>` runs a staged scene
+  for a path bots rarely take ([checklists](checklists.md#verifying-a-change)).
 - **`app/check-size.js`** — the size check, run by `check-globals.js` (or alone; `--top N` lists
   the biggest files and functions). It counts code lines: blank, comment-only and data-only lines
   (a pixel-grid row, a table of numbers) are free, and a function counts only its own lines, not

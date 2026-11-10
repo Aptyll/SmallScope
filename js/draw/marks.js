@@ -151,7 +151,7 @@ function drawMapYou(g, x, y, col, rim, k) {
   const x0 = Math.round(x) - ((k + 1) >> 1), y0 = Math.round(y) - ((k + 1) >> 1);
   g.fillStyle = '#ffffff'; g.fillRect(x0, y0, k + 1, k + 1);
 }
-// A LANDMARK: a building whose STRUCTS entry names a `glyph` (the road tower)
+// A LANDMARK: a building whose STRUCTS entry names a `glyph` (the road tower, a bay)
 // wears it on both maps over its own tiles, in its side's ink on the map's
 // dark rim. A tower is a rook: a merlon either side of a gap over a solid
 // body, 3 x 5 px on the disc (k 1) and 5 x 7 on the chart (k 2), so where a
@@ -164,6 +164,13 @@ const MAP_GLYPHS = {
     g.fillStyle = col; g.fillRect(x0, y0 + k, w, h - k);
     g.fillRect(x0, y0, k, k); g.fillRect(x0 + w - k, y0, k, k); // the two merlons
   },
+  // a soldiers' bay: a low block with its door open in the map's dark
+  bay(g, x, y, col, rim, k) {
+    const w = 2 * k + 1, h = 2 * k, x0 = Math.round(x) - k, y0 = Math.round(y) - k;
+    g.fillStyle = rim; g.fillRect(x0 - 1, y0 - 1, w + 2, h + 2);
+    g.fillStyle = col; g.fillRect(x0, y0, w, h);
+    g.fillStyle = rim; g.fillRect(x0 + k, y0 + h - k, 1, k);
+  },
 };
 // every standing landmark through `put(o, cx, cy)` -> its map px, or null to skip it
 function drawMapStructs(g, put, rim, k) {
@@ -174,12 +181,14 @@ function drawMapStructs(g, put, rim, k) {
     if (at) fn(g, at[0], at[1], TEAMS[skin(o.team)].mark, rim, k);
   }
 }
-function drawMapBird(g, x, y, col, rim) {
-  const gx = Math.round(x), gy = Math.round(y);
-  g.fillStyle = rim;
-  g.fillRect(gx - 3, gy - 1, 7, 3); g.fillRect(gx - 1, gy - 3, 3, 7);
-  g.fillStyle = col;
-  g.fillRect(gx - 2, gy, 5, 1); g.fillRect(gx, gy - 2, 1, 5);
+// the objective is the biggest mark on a map: a solid diamond in its side's
+// ink, 7 px across on the disc (k 1) and 9 on the chart (k 2), over a tower's rook
+function drawMapBird(g, x, y, col, rim, k) {
+  const gx = Math.round(x), gy = Math.round(y), r = k + 2;
+  for (const [c, q] of [[rim, r + 1], [col, r]]) {
+    g.fillStyle = c;
+    for (let dy = -q; dy <= q; dy++) { const h = q - Math.abs(dy); g.fillRect(gx - h, gy + dy, 2 * h + 1, 1); }
+  }
 }
 
 // ---- a zipline on a map --------------------------------------------------

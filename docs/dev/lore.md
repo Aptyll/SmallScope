@@ -6,7 +6,8 @@ before naming anything, before writing a line a player will read (a blurb, an ev
 entry, a patch note, store copy), and before proposing a feature whose reason to exist *in the
 valley* is not obvious.
 
-**The player-facing canon is the wiki's WORLD page** (`WIKI_WORLD`, [js/ui/wiki.js](../../js/ui/wiki.js);
+**The player-facing canon is the wiki's WORLD page** (`WIKI_WORLD`, [js/ui/wiki.js](../../js/ui/wiki.js), its words the
+`world.*` keys of the [text table](rendering/the-text-table.md);
 what the page is: [gameplay.md](gameplay/the-wiki.md)) **and each hero's story** (`story` on its
 `CLASSES` entry, [js/sim/player.js](../../js/sim/player.js), printed under the hero's card on the
 wiki's HEROES page). The sentences live there and only there. This file is the rules they answer
@@ -131,7 +132,7 @@ The game already has a voice; new lines match it. `THE BOW IS THE ARGUMENT: KEEP
 - **A kind is named for what it is or does** (THROWING LOG, HOOKSHOT); **a perk for the
   person it makes you** (SPRINTER, FORAGER, WINTER'S CHILD: the parked cards, gameplay/roguelike-cards.md).
 - **A place is THE and a plain noun** — THE ROAD, THE ROOST, THE WORKS, THE COUNTER — and a camp
-  is what is in it and where: WOLF DEN, BLACK BEAR BEND (the bear walks a bend of the creek), ORCA'S POOL.
+  is what is in it and where: WOLF DEN, FOX HOLLOW, OX RANGE, BLACK BEAR BEND (the bear walks a bend of the creek), ORCA'S POOL.
 - **A person is a winter word**: a tree, a weather, a small animal, a bird (`NAME_POOL`,
   [js/app/profile.js](../../js/app/profile.js)).
 - **A hero is one Latin-sounding word and a title**: ARMATOS, THE LAST STANDARD; FORTIVA, THE

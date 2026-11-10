@@ -703,6 +703,14 @@ function iceUnder(p) {
   const ftx = Math.floor(p.x / TILE), fty = Math.floor((p.y + 4) / TILE);
   return (inWorld(ftx, fty) && ground[idx(ftx, fty)] === 1) || heroIce(p); // ...or a rival hero's ice (HERO_ICE, js/sim/heroes.js)
 }
+// ...and whether that ice glides, which is what the walk reads (walkSlide,
+// walkStep). The orca's pool is rough ice, crusted with rime: it holds a
+// foot like snow, so its late fight is fought standing a blade's reach from
+// the hole, not skating past it. A rival hero's ice glides anywhere.
+function slickUnder(p) {
+  const ftx = Math.floor(p.x / TILE), fty = Math.floor((p.y + 4) / TILE);
+  return (inWorld(ftx, fty) && ground[idx(ftx, fty)] === 1 && !orcaLakeAt(ftx, fty)) || heroIce(p);
+}
 function clampWorld(p) {
   p.x = Math.max(8, Math.min(WORLD * TILE - 8, p.x));
   p.y = Math.max(8, Math.min(WORLD * TILE - 8, p.y));
@@ -1119,10 +1127,10 @@ function updatePlayer(p, dt) {
   kbDecay(p, dt);
 
   // ---- unified momentum: input accelerates vx/vy, the surface sets friction/caps
-  const onIce = iceUnder(p);
+  const onIce = iceUnder(p), slick = slickUnder(p);
   const kit = kitOf(p);
-  walkSlide(p, inp.slide, dt, onIce, kit);
-  playerMove(p, dt, mx, my, len, onIce, kit);
+  walkSlide(p, inp.slide, dt, slick, kit);
+  playerMove(p, dt, mx, my, len, slick, kit);
   clampWorld(p);
   playerPlunge(p);
   playerStamina(p, dt, kit);

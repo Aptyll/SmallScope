@@ -318,3 +318,25 @@ SPRITES.weaponArt.clockstaff = SPR.bake([
   'oywwwyo.....', 'oywowyoooooo', 'oywooyoAAAao', 'oywwwyoooooo',
   '.oyyyo......', '..ooo.......', '............', '............',
 ], { '.': null, o: '#2e2440', y: '#f2cc6a', w: '#f4f0e8', A: '#8a5a34', a: '#5a3a24' });
+
+// ------------------------------------------------------------ faber registry
+// FABER in the hero art registry (heroArt, js/sprites/hero-art.js): the looks and
+// their paint, the skins tab's 8x8 glyph and the 12x12 emblem
+heroArt('faber', {
+  looks: FABER_SKINS, pal: FABER_PAL,
+  glyph: ['..ww....', '.w..w...', 'w.w..w..', 'w.ww.w..', '.w..w...', '..ww....', '..w.....', '..w.....'],
+  emblem: [ // a gear
+    '....ooo.....',
+    '.oo.oWo.oo..',
+    '.oWooWooWo..',
+    '..oWWWWWo...',
+    'ooWWoooWWoo.',
+    'oWWWo.oWWWo.',
+    'ooWWoooWWoo.',
+    '..oWWWWWo...',
+    '.oWooWooWo..',
+    '.oo.oWo.oo..',
+    '....ooo.....',
+    '............',
+  ],
+});

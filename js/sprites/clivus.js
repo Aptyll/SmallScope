@@ -177,7 +177,7 @@ const CLIVUS_ICON32 = {
 };
 
 // ------------------------------------------------------------ clivus looks
-// His own 16 px body in each look, on ARMATOS's frame (head 6 wide inside the ink,
+// His own 16 px body, on ARMATOS's frame (head 6 wide inside the ink,
 // shoulders 8; side-on the body 2 px narrower). r/R/d are his side's coat. His one shape is
 // the coil of rope over his left shoulder, across to the right hip.
 const CLIVUS_BODY = {
@@ -237,72 +237,14 @@ const CLIVUS_BODY = {
       '......BB.BB.....',
     ],
   },
-  summit: { // SUMMIT: his side's hood drawn close, the goggles down over his eyes, a slate cape over the shoulders
-    down: [
-      '................',
-      '.....oooooo.....',
-      '....orRRRRro....',
-      '....orrRRrro....',
-      '....orkkkkro....',
-      '....orSggSro....',
-      '....orkkkkro....',
-      '....orrKKrro....',
-      '...oqQqqqAAqo...',
-      '...oqqrrAAaqo...',
-      '...oqqrAArrqo...',
-      '...oqqAArRrqo...',
-      '....omAmYmmo....',
-      '.....pp..pp.....',
-      '.....bb..bb.....',
-      '.....BB..BB.....',
-    ],
-    up: [
-      '................',
-      '.....oooooo.....',
-      '....orRRRRro....',
-      '....orRRRRro....',
-      '....orrRRrro....',
-      '....orrrrrro....',
-      '....orrrrrro....',
-      '....orrrrrro....',
-      '...oAAqQQqqqo...',
-      '...oqAAQQqqqo...',
-      '...oqqAAqqqqo...',
-      '...oqqqAAaqqo...',
-      '....ommmmAmo....',
-      '.....pp..pp.....',
-      '.....bb..bb.....',
-      '.....BB..BB.....',
-    ],
-    side: [
-      '................',
-      '.....oooooo.....',
-      '....orRRRRro....',
-      '....orrrRRro....',
-      '....orrrkkko....',
-      '....orrrgSgo....',
-      '....orrrkkko....',
-      '....oorrrKro....',
-      '....oqqqqAAo....',
-      '....oqQqAAqo....',
-      '....oqQAAqqo....',
-      '....oqAAqqqo....',
-      '....omAmYmmo....',
-      '......pp.pp.....',
-      '......bb.bb.....',
-      '......BB.BB.....',
-    ],
-  },
 };
-// the letters his looks add to ARMATOS's: the knit cap (c C), the rope (a A) and the slate
-// cape (q Q); the goggles' lenses are ARMATOS's S, their strap his g, the belt his m
-const CLIVUS_PAL = Object.assign({}, ARM_PAL, { c: '#3a4058', C: '#5a6482', a: '#8a6a40', A: '#d2b07a', q: '#3c4356', Q: '#5a6278' });
-// His looks: GUIDE is his own and free, SUMMIT the first skin (js/ui/skins.js). Both run as
-// their drawn bodies (`run: 'drawn'`, heroRunFront); the dolls (app/bake-player: guide,
-// summit) roll them.
+// the letters his look adds to ARMATOS's: the knit cap (c C) and the rope (a A); the
+// goggles' lenses are ARMATOS's S, their strap his g, the belt his m
+const CLIVUS_PAL = Object.assign({}, ARM_PAL, { c: '#3a4058', C: '#5a6482', a: '#8a6a40', A: '#d2b07a' });
+// His one look, GUIDE, free. It runs as its drawn body (`run: 'drawn'`, heroRunFront); the
+// doll (app/bake-player: guide) rolls it.
 const CLIVUS_SKINS = [
   { id: 'guide', name: 'GUIDE', rarity: 'common', price: 0, grids: CLIVUS_BODY.guide, motion: 'guide', run: 'drawn' },
-  { id: 'summit', name: 'SUMMIT', rarity: 'rare', price: 200, grids: CLIVUS_BODY.summit, motion: 'summit', run: 'drawn' },
 ];
 
 // ------------------------------------------------------------ clivus ice axe
@@ -348,3 +290,22 @@ const CLIVUS_AXE_DIAG = [
 ];
 const CLIVUS_AXE_GRIP = [3, 9]; // where the hands close on the slanted grid
 const CLIVUS_AXE_PAL = { o: '#241a12', T: '#e6ebf2', S: '#c8d2e4', s: '#8b93a8', w: '#a8794a', u: '#6e4a28' };
+
+heroArt('clivus', {
+  looks: CLIVUS_SKINS, pal: CLIVUS_PAL,
+  glyph: ['.wwwww..', 'w..w..w.', '...w....', '...w....', '..w.....', '..w.....', '.w......', '.w......'],
+  emblem: [ // his ice axe: the pick and the adze across a short shaft
+    '............',
+    '.ooooooooo..',
+    'oWWWWWWWWWo.',
+    'oWoooWoooWWo',
+    '.oo.oWo..oWo',
+    '....oWo...o.',
+    '....oWo.....',
+    '....oWo.....',
+    '....oWo.....',
+    '....oWo.....',
+    '.....o......',
+    '............',
+  ],
+});

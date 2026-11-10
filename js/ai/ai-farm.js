@@ -164,7 +164,7 @@ function aiDenSpot(p) {
   if (!own) return null;
   let up = null, ud = Infinity, next = null, nt = Infinity;
   for (const C of camps) {
-    if (C.key !== 'resource') continue;
+    if (!C.spec.farm) continue; // the dens, the fox hollows and the ox ranges (CAMPS' `farm`)
     const cx = (C.tx + 0.5) * TILE, cy = (C.ty + 0.5) * TILE;
     if (rival && Math.hypot(cx - rival.x, cy - rival.y) < Math.hypot(cx - own.x, cy - own.y)) continue; // the rival's half
     const d = Math.hypot(cx - p.x, cy - p.y);

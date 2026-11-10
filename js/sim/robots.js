@@ -582,17 +582,17 @@ const SOLDIER_ZIP_REACH = 96;  // px off a cable's track a marching soldier turn
 // and `grow` more for every barracks `grow` of the match), its blow (`dmg`
 // every `cd` s from `reach` px away; a building takes `struct` times it, the
 // rival bird `eagle` nerve), the shot that carries a blow from range (`shot`:
-// s in the air, null for an axe), its bounty as a share of SOLDIER_BOUNTY
+// s in the air, 0 for an axe, and `look`, what flies: SOLDIER_SHOTS), its bounty as a share of SOLDIER_BOUNTY
 // (soldierBounty, js/sim/farm.js) and its share of SOLDIER_XP, and its
 // sprite set (`spr`, SPRITES). MELEE walks in front, tanky and slow-hitting;
 // RANGED stands back and throws a packed snowball, about half a melee's
-// health; SIEGE is the sled catapult that walks last, lobs a big snowball
-// far, takes several tower bolts and hits buildings hard: it is what lets a
-// wave push a tower.
+// health; SIEGE is the ballista cart that walks last, shoots a bolt far,
+// takes several tower bolts and hits buildings hard: it is what lets a wave
+// push a tower.
 const SOLDIER_TYPES = {
-  melee:  { hp: 60,  grow: 10, dmg: 5,  cd: 1.1, reach: 15, struct: 1, eagle: 8,  shot: 0,    bounty: 1,    xp: 1,   spr: 'robotTeam' },
-  ranged: { hp: 34,  grow: 6,  dmg: 6,  cd: 1.5, reach: 72, struct: 1, eagle: 6,  shot: 0.35, bounty: 0.65, xp: 0.7, spr: 'robotRanged' },
-  siege:  { hp: 150, grow: 25, dmg: 10, cd: 2.4, reach: 96, struct: 3, eagle: 20, shot: 0.7,  bounty: 3.2,  xp: 2,   spr: 'robotSiege' },
+  melee:  { hp: 60,  grow: 10, dmg: 5,  cd: 1.1, reach: 15, struct: 1, eagle: 8,  shot: 0,    look: null,   bounty: 1,    xp: 1,   spr: 'robotTeam' },
+  ranged: { hp: 34,  grow: 6,  dmg: 6,  cd: 1.5, reach: 72, struct: 1, eagle: 6,  shot: 0.35, look: 'ball', bounty: 0.65, xp: 0.7, spr: 'robotRanged' },
+  siege:  { hp: 150, grow: 25, dmg: 10, cd: 2.4, reach: 96, struct: 3, eagle: 20, shot: 0.45, look: 'bolt', bounty: 3.2,  xp: 2,   spr: 'robotSiege' },
 };
 function soldierType(b) { return SOLDIER_TYPES[b.type] || SOLDIER_TYPES.melee; }
 
@@ -606,6 +606,7 @@ function makeSoldier(o, type) {
   const T = soldierType(b);
   b.hp = b.maxHp = T.hp + T.grow * Math.floor(state.elapsed / STRUCTS.barracks.grow);
   b.shot = null; // a blow in the air from range: { tg, t, dmg, x, y } (soldierShot)
+  b.faceL = (baseCentre(1 - b.team).tx + 0.5) * TILE < b.x; // facing left (updateSoldier turns it): toward the rival base first
   b.owner = -1; // nobody's: no cargo, no payout but the bounty
   b.lane = o.lane === undefined ? 1 : o.lane; // the bay's lane (updateMerchant): 0 top, 1 mid, 2 bot
   b.wayI = 0;
@@ -690,7 +691,7 @@ function updateSoldier(b, dt) {
     return n.d;
   };
   b.atkAim = null; b.hitFoe = null;
-  const T = soldierType(b);
+  const T = soldierType(b), x0 = b.x, y0 = b.y;
   if (b.shot) soldierShot(b, dt);
   const swing = (pt, hit) => { b.atkAim = pt; if (b.atkCd <= 0) { b.atkCd = T.cd; hit(); } };
   const rival = state.drop && state.drop.eagles[1 - b.team];
@@ -743,6 +744,10 @@ function updateSoldier(b, dt) {
   }
   b.animT += dt * (moving ? 8 : 0);
   b.moving = moving;
+  // which way it faces (the ballista cart's bow, drawRobot): at what it aims, else the
+  // way it drives, held through a step that is mostly up or down the screen
+  if (b.atkAim) b.faceL = b.atkAim.x < b.x;
+  else if (moving && Math.abs(b.x - x0) > Math.abs(b.y - y0) * 0.5) b.faceL = b.x < x0;
   b.x = Math.max(8, Math.min(WORLD * TILE - 8, b.x));
   b.y = Math.max(8, Math.min(WORLD * TILE - 8, b.y));
   if (b.hp <= 0 && !b.dead) robotDies(b, null);
@@ -751,7 +756,12 @@ function updateSoldier(b, dt) {
 // ------------------------------------------------------------ soldier blows
 // What a wave's soldier lands (the `soldiers` banner above): a melee one's axe,
 // a ranged or siege one's snowball. The numbers are its kind's (SOLDIER_TYPES).
-const SOLDIER_LOB = 14;    // px a siege snowball's arc rises at its middle (drawn: drawSoldierShot, js/draw/bodies.js)
+// what a shot is (SOLDIER_TYPES' `look`; drawn by drawSoldierShot, js/draw/bodies.js):
+// the sound it leaves with and lands with, and the puff where it hits
+const SOLDIER_SHOTS = {
+  ball: { fire: 'swing', land: 'rockLand', puff: '#eef4fb', n: 5 },  // a packed snowball, thrown
+  bolt: { fire: 'arrow', land: 'hit',      puff: '#a3794f', n: 10 }, // a ballista bolt: splinters off the shaft
+};
 
 // nearest building belonging to any other team, within r px of (x, y)
 function enemyStructNear(team, x, y, r) {
@@ -802,7 +812,7 @@ function robotFoeUnit(b, range) {
 function robotStrike(b, e, pt) {
   const T = soldierType(b);
   if (T.shot) {
-    sfxAt('swing', b.x, b.y);
+    sfxAt(SOLDIER_SHOTS[T.look].fire, b.x, b.y);
     // `live`: a body is hit where it stands when the ball lands; a building or the bird where it was aimed
     b.shot = { tg: e, t: 0, x: pt.x, y: pt.y, x0: b.x, y0: b.y - 6, live: e.tx === undefined && !(state.drop && state.drop.eagles.indexOf(e) >= 0) };
     return;
@@ -822,8 +832,8 @@ function soldierLand(b, e, pt) {
   else if (e.tx !== undefined) { if (structures.indexOf(e) >= 0) hurtStruct(e, T.dmg * T.struct * orcaPushMul(b), src, b); } // `b` swung it, so STRUCT_DR stays off: a kind's dmg is already a building number
   else if (unitAlive(e)) hurtUnit(e, T.dmg, nx, ny, src, { cause: 'soldier' });
 }
-// a snowball in the air: when its time is up it lands on its mark (soldierLand)
-// and bursts into snow where it hit. A wreck's throw is lost with it (robotDies)
+// a shot in the air: when its time is up it lands on its mark (soldierLand)
+// and bursts where it hit (SOLDIER_SHOTS). A wreck's throw is lost with it (robotDies)
 function soldierShot(b, dt) {
   const s = b.shot, T = soldierType(b);
   s.t += dt;
@@ -832,6 +842,7 @@ function soldierShot(b, dt) {
   b.shot = null;
   const e = s.tg, pt = { x: s.x, y: s.y };
   soldierLand(b, e, pt);
-  burst(pt.x, pt.y, '#eef4fb', T.struct > 1 ? 10 : 5, 45, 0.4, true);
-  sfxAt('rockLand', pt.x, pt.y);
+  const L = SOLDIER_SHOTS[T.look];
+  burst(pt.x, pt.y, L.puff, L.n, 45, 0.4, true);
+  sfxAt(L.land, pt.x, pt.y);
 }

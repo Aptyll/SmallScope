@@ -71,18 +71,18 @@
 
   // ---------------------------------------------------------------- heroes
   // champLook(cls, team, skinId): the full pose set for one hero in one team's
-  // paint, in one of its looks (CLASSES[cls].skins, e.g. ARM_SKINS: `skinId`,
+  // paint, in one of its looks (heroArtOf(cls).looks, e.g. ARM_SKINS: `skinId`,
   // the free first one for none), baked on first ask and kept - ten players and
   // a menu or two is all that ever asks, so the cache stays small. Every reader
   // of a player's body goes through classSet(p) (js/sim/player.js), which asks
   // here. The look's own grids and doll, in its own paint over the team's coat.
   const lookCache = new Map();
   function champLook(cls, team, skinId) {
-    const rows = CLASSES[cls].skins, row = rows.find((r) => r.id === skinId) || rows[0];
+    const art = heroArtOf(cls), rows = art.looks, row = rows.find((r) => r.id === skinId) || rows[0];
     const key = cls + '|' + team + '|' + row.id;
     let set = lookCache.get(key);
     if (set) return set;
-    const sp = Object.assign({}, teamPlayerPal(TEAM_SKINS[team]), CLASSES[cls].skinPal, row.pal); // a look may repaint the hero's letters (`pal`: NIX's MOONLESS)
+    const sp = Object.assign({}, teamPlayerPal(TEAM_SKINS[team]), art.pal, row.pal); // a look may repaint the hero's letters (`pal`: NIX's MOONLESS)
     const w = heroWalk(row.grids);
     const side = w.side.map((g) => bake(g, sp)), flat = (gs) => gs.map((g) => bake(lie(g), sp)), pside = flat(w.side);
     set = Object.assign({

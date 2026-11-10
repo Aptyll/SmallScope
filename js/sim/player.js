@@ -92,8 +92,9 @@ const POSITIONS = [
 ];
 
 // Every player plays one of these HEROES, the way a League champion is the
-// same in every match: its own body in each of its looks (`skins`, worn per
-// person through `skinSlot`; js/sprites/<hero>.js), a kit - the numbers
+// same in every match: its `id`, which names its art in the hero registry
+// (its looks, worn per person, its paint, glyph and emblem: heroArtOf,
+// js/sprites/hero-art.js, filled by js/sprites/<hero>.js), a kit - the numbers
 // updatePlayer / basicAttack / tryDodge read through kitOf(p) instead of the
 // bare constants - its BASIC ATTACK on the left button (`attack`, read by
 // js/sim/attack.js, which says what each field means) and its four ACTIVE
@@ -112,9 +113,9 @@ const CLASSES = [
       bowCharge: 0.75, nock: 0.5, spdDmg: 5, dodgeSpeed: 225 },
     rankOrder: [0, 2, 1], // the verdict, the march, the brace
     attack: { name: 'OATH GREATSWORD', art: 'sword', cycle: 30 / 60, kb: 1.2, cut: { reach: 28, half: 1.05 } },
-    // his own body in each of his looks (ARM_SKINS, js/sprites/armatos.js),
-    // worn per player (heroSkinOf) in his iron over the side's coat
-    skins: ARM_SKINS, skinPal: ARM_PAL, skinSlot: 'armatos',
+    // its art: the heroArt('armatos') row in js/sprites/armatos.js (its looks, worn
+    // per player through heroSkinOf, their paint, the glyph and the emblem)
+    id: 'armatos',
     blade: 'oath', // his OATH GREATSWORD in his hands in place of the sword's own art (HERO_BLADES, js/draw/heroes.js)
   },
   {
@@ -129,9 +130,9 @@ const CLASSES = [
     grow: { hp: 10, dmg: 1.7, as: 0.01, armor: 2.6 },
     rankOrder: [0, 2, 1], // the sever, the yoke, the heart
     attack: { name: 'CHAIN GREATSWORD', art: 'sword', cycle: 30 / 60, kb: 1.2, cut: { reach: 28, half: 1.05 } },
-    // her own body in each of her looks (FORT_SKINS, js/sprites/fortiva.js),
-    // worn per player (heroSkinOf) in her iron over the side's coat
-    skins: FORT_SKINS, skinPal: FORT_PAL, skinSlot: 'fortiva',
+    // its art: the heroArt('fortiva') row in js/sprites/fortiva.js (its looks, worn
+    // per player through heroSkinOf, their paint, the glyph and the emblem)
+    id: 'fortiva',
     blade: 'chain', // her CHAIN GREATSWORD in her hands (HERO_BLADES, js/draw/heroes.js)
     kit: { iceMax: 1.1, iceSteer: 3.2, slideMin: 70, fatigue: 0.7, chargeMul: 0.7,
       bowCharge: 0.75, nock: 0.5, spdDmg: 5, dodgeSpeed: 225 },
@@ -144,9 +145,9 @@ const CLASSES = [
     blurb: ['FIND THE WEAKNESS. SPEND IT FIRST.', 'THE LUNGE, THE SLIP AND THE PARRY CHAIN INTO EACH OTHER.', 'CALL OUT ONE HERO AND FINISH THEM.'],
     story: 'SHE WON THE EMPIRE A WAR ITS COURT HAD ALREADY CALLED LOST, AND THE COURT NEVER FORGAVE HER. TRAITOR WAS THE KINDEST WORD THEY HAD. SHE KEPT THE SPATHA WITH THE EAGLE ON IT. SHE SAYS IT IS HERS NOW.', // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
     attack: { name: 'EAGLE SPATHA', art: 'sword', cycle: 26 / 60, kb: 1, cut: { reach: 26, half: 0.95 } }, // quicker and a little shorter than ARMATOS's greatsword
-    // her own body in each of her looks (BELLA_SKINS, js/sprites/bella.js),
-    // worn per player (heroSkinOf) over the side's coat
-    skins: BELLA_SKINS, skinPal: BELLA_PAL, skinSlot: 'bella',
+    // its art: the heroArt('bella') row in js/sprites/bella.js (its looks, worn
+    // per player through heroSkinOf, their paint, the glyph and the emblem)
+    id: 'bella',
     blade: 'spatha', // her EAGLE SPATHA in her hands (HERO_BLADES, js/draw/bella.js)
     base: { hp: 104, dmg: 18, armor: 16, ap: 0, haste: 0, ms: PLAYER_SPEED + 4 },
     grow: { hp: 7, dmg: 1.7, as: 0.013, armor: 2.1 }, // sized so 17 levels grow what 11 did when the cap was 12
@@ -167,9 +168,9 @@ const CLASSES = [
     base: { hp: 84, dmg: 14, armor: 10, ap: 0, haste: 0, ms: PLAYER_SPEED },
     grow: { hp: 6, dmg: 1.1, as: 0.01, armor: 1.8 },
     rankOrder: [0, 1, 2], // the brand, the brushfire, the warm hands
-    // her own body in each of her looks (IGNIA_SKINS, js/sprites/ignia.js), worn per
-    // player (heroSkinOf) over the side's coat
-    skins: IGNIA_SKINS, skinPal: IGNIA_PAL, skinSlot: 'ignia',
+    // its art: the heroArt('ignia') row in js/sprites/ignia.js (its looks, worn
+    // per player through heroSkinOf, their paint, the glyph and the emblem)
+    id: 'ignia',
     kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1, chargeMul: 0.55,
       bowCharge: BOW_CHARGE, nock: 0.4, spdDmg: 0, dodgeSpeed: DODGE_SPEED },
   },
@@ -186,8 +187,9 @@ const CLASSES = [
     base: { hp: 78, dmg: 13, armor: 9, ap: 0, haste: 0, ms: PLAYER_SPEED - 4 },
     grow: { hp: 5.5, dmg: 1, as: 0.01, armor: 1.7 },
     rankOrder: [0, 1, 2], // the falling star, the drifting light, the step
-    // her own body (AURA_SKINS, js/sprites/aura.js; one look for now), worn over the side's coat
-    skins: AURA_SKINS, skinPal: AURA_PAL, skinSlot: 'aura',
+    // its art: the heroArt('aura') row in js/sprites/aura.js (its looks, worn
+    // per player through heroSkinOf, their paint, the glyph and the emblem)
+    id: 'aura',
     kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1, chargeMul: 0.55,
       bowCharge: BOW_CHARGE, nock: 0.4, spdDmg: 0, dodgeSpeed: DODGE_SPEED },
   },
@@ -204,9 +206,9 @@ const CLASSES = [
     base: { hp: 80, dmg: 12, armor: 10, ap: 0, haste: 0, ms: PLAYER_SPEED },
     grow: { hp: 5.8, dmg: 0.9, as: 0.01, armor: 1.8 },
     rankOrder: [0, 2, 1], // the poultice, the cloak, the snowdrops
-    // her own body in each of her looks (SALVIA_SKINS, js/sprites/salvia.js), worn per
-    // player (heroSkinOf) over the side's coat
-    skins: SALVIA_SKINS, skinPal: SALVIA_PAL, skinSlot: 'salvia',
+    // its art: the heroArt('salvia') row in js/sprites/salvia.js (its looks, worn
+    // per player through heroSkinOf, their paint, the glyph and the emblem)
+    id: 'salvia',
     kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1, chargeMul: 0.55,
       bowCharge: BOW_CHARGE, nock: 0.4, spdDmg: 0, dodgeSpeed: DODGE_SPEED },
   },  {
@@ -222,9 +224,9 @@ const CLASSES = [
     base: { hp: 88, dmg: 13, armor: 12, ap: 0, haste: 0, ms: PLAYER_SPEED },
     grow: { hp: 6.2, dmg: 1, as: 0.01, armor: 2 },
     rankOrder: [0, 2, 1], // the crook, the shoo, the lantern
-    // her own body in each of her looks (LUCERNA_SKINS, js/sprites/lucerna.js), worn per
-    // player (heroSkinOf) over the side's coat
-    skins: LUCERNA_SKINS, skinPal: LUCERNA_PAL, skinSlot: 'lucerna',
+    // its art: the heroArt('lucerna') row in js/sprites/lucerna.js (its looks, worn
+    // per player through heroSkinOf, their paint, the glyph and the emblem)
+    id: 'lucerna',
     kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1, chargeMul: 0.55,
       bowCharge: BOW_CHARGE, nock: 0.4, spdDmg: 0, dodgeSpeed: DODGE_SPEED },
   },
@@ -241,8 +243,9 @@ const CLASSES = [
     base: { hp: 82, dmg: 13, armor: 10, ap: 0, haste: 0, ms: PLAYER_SPEED - 4 },
     grow: { hp: 5.8, dmg: 1, as: 0.01, armor: 1.8 },
     rankOrder: [0, 2, 1], // the icicle, the cold snap, the clear ice
-    // her own body (HIEMS_SKINS, js/sprites/hiems.js), worn over the side's coat
-    skins: HIEMS_SKINS, skinPal: HIEMS_PAL, skinSlot: 'hiems',
+    // its art: the heroArt('hiems') row in js/sprites/hiems.js (its looks, worn
+    // per player through heroSkinOf, their paint, the glyph and the emblem)
+    id: 'hiems',
     kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1, chargeMul: 0.55,
       bowCharge: BOW_CHARGE, nock: 0.4, spdDmg: 0, dodgeSpeed: DODGE_SPEED },
   },
@@ -257,9 +260,9 @@ const CLASSES = [
     base: { hp: 134, dmg: 15, armor: 24, ap: 0, haste: 0, ms: PLAYER_SPEED - 2 },
     grow: { hp: 10.5, dmg: 1.3, as: 0.008, armor: 2.9 },
     rankOrder: [0, 1, 2], // the heave, the shed, the shoulder
-    // his own body in each of his looks (RUPES_SKINS, js/sprites/rupes.js), worn per
-    // player (heroSkinOf) over the side's coat
-    skins: RUPES_SKINS, skinPal: RUPES_PAL, skinSlot: 'rupes',
+    // its art: the heroArt('rupes') row in js/sprites/rupes.js (its looks, worn
+    // per player through heroSkinOf, their paint, the glyph and the emblem)
+    id: 'rupes',
     blade: 'maul', // his ICE MAUL in his hands (HERO_BLADES, js/draw/rupes.js)
     kit: { iceMax: 1.1, iceSteer: 3.2, slideMin: 70, fatigue: 0.7, chargeMul: 0.7,
       bowCharge: 0.75, nock: 0.5, spdDmg: 5, dodgeSpeed: 220 },
@@ -276,9 +279,9 @@ const CLASSES = [
     base: { hp: 112, dmg: 17, armor: 18, ap: 0, haste: 0, ms: PLAYER_SPEED + 2 },
     grow: { hp: 8.5, dmg: 1.6, as: 0.012, armor: 2.4 },
     rankOrder: [0, 2, 1], // the lunge, the snap, the howl
-    // his own body in each of his looks (VARRO_SKINS, js/sprites/varro.js), worn per
-    // player (heroSkinOf) over the side's coat
-    skins: VARRO_SKINS, skinPal: VARRO_PAL, skinSlot: 'varro',
+    // its art: the heroArt('varro') row in js/sprites/varro.js (its looks, worn
+    // per player through heroSkinOf, their paint, the glyph and the emblem)
+    id: 'varro',
     blade: 'spear', // his HUNTING SPEAR in his hands (HERO_BLADES, js/draw/varro.js)
     kit: { iceMax: 1.15, iceSteer: 3.4, slideMin: 70, fatigue: 0.75, chargeMul: 0.7,
       bowCharge: 0.75, nock: 0.5, spdDmg: 5, dodgeSpeed: 235 },
@@ -296,9 +299,9 @@ const CLASSES = [
     base: { hp: 92, dmg: 14, armor: 14, ap: 0, haste: 0, ms: PLAYER_SPEED },
     grow: { hp: 6.5, dmg: 1.1, as: 0.01, armor: 2.2 },
     rankOrder: [1, 0, 2], // the note, the blast, the echo
-    // her own body in each of her looks (BUCINA_SKINS, js/sprites/bucina.js), worn per
-    // player (heroSkinOf) over the side's coat
-    skins: BUCINA_SKINS, skinPal: BUCINA_PAL, skinSlot: 'bucina',
+    // its art: the heroArt('bucina') row in js/sprites/bucina.js (its looks, worn
+    // per player through heroSkinOf, their paint, the glyph and the emblem)
+    id: 'bucina',
     kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1, chargeMul: 0.55,
       bowCharge: BOW_CHARGE, nock: 0.4, spdDmg: 0, dodgeSpeed: DODGE_SPEED },
   },
@@ -310,7 +313,9 @@ const CLASSES = [
     blurb: ['THE NIGHT IS HERS TO KEEP.', 'THE SNOW HIDES HER. THE FIRST BLOW FROM IT HITS HARDEST.', 'SEEN IN THE OPEN, SHE IS EASY TO CATCH.'],
     story: "SHE WAS THE EMPIRE'S BEST SCOUT UNTIL SHE CAME HOME WITH A TRUE REPORT NOBODY WANTED TO READ. IN THE VALLEY SHE KEEPS WATCH THROUGH THE LONG NIGHTS SO THE DIGGERS CAN SLEEP. SHE DOES NOT GIVE HER NAME, SO THE COMPANY GAVE HER ONE.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
     attack: { name: 'ICE DIRK', art: 'sword', cycle: 24 / 60, kb: 0.8, cut: { reach: 22, half: 0.9 } }, // quicker and shorter than the spatha
-    skins: NIX_SKINS, skinPal: NIX_PAL, skinSlot: 'nix',
+    // its art: the heroArt('nix') row in js/sprites/nix.js (its looks, worn
+    // per player through heroSkinOf, their paint, the glyph and the emblem)
+    id: 'nix',
     blade: 'dirk', // her ICE DIRK in her hands (HERO_BLADES, js/draw/nix.js)
     base: { hp: 98, dmg: 19, armor: 14, ap: 0, haste: 0, ms: PLAYER_SPEED + 6 },
     grow: { hp: 6.5, dmg: 1.8, as: 0.013, armor: 2 },
@@ -331,8 +336,9 @@ const CLASSES = [
     base: { hp: 80, dmg: 12, armor: 10, ap: 0, haste: 0, ms: PLAYER_SPEED - 6 },
     grow: { hp: 5.6, dmg: 1, as: 0.01, armor: 1.8 },
     rankOrder: [0, 1, 2], // the spark, the small machine, the clockspring
-    // his own body (FABER_SKINS, js/sprites/faber.js), worn over the side's coat
-    skins: FABER_SKINS, skinPal: FABER_PAL, skinSlot: 'faber',
+    // its art: the heroArt('faber') row in js/sprites/faber.js (its looks, worn
+    // per player through heroSkinOf, their paint, the glyph and the emblem)
+    id: 'faber',
     kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1, chargeMul: 0.55,
       bowCharge: BOW_CHARGE, nock: 0.4, spdDmg: 0, dodgeSpeed: DODGE_SPEED },
   },
@@ -349,9 +355,9 @@ const CLASSES = [
     base: { hp: 82, dmg: 14, armor: 10, ap: 0, haste: 0, ms: PLAYER_SPEED + 3 },
     grow: { hp: 6, dmg: 1.2, as: 0.016, armor: 1.7 },
     rankOrder: [0, 2, 1], // the skip stone, the quick step, the ice lane
-    // her own body in each of her looks (VELOX_SKINS, js/sprites/velox.js), worn per
-    // player (heroSkinOf) over the side's coat
-    skins: VELOX_SKINS, skinPal: VELOX_PAL, skinSlot: 'velox',
+    // its art: the heroArt('velox') row in js/sprites/velox.js (its looks, worn
+    // per player through heroSkinOf, their paint, the glyph and the emblem)
+    id: 'velox',
     // ice is her ground: a higher cap and a sharp turn on it; a drawn sling barely slows her
     kit: { iceMax: 1.25, iceSteer: 9, slideMin: SLIDE_MIN, fatigue: 0.8, chargeMul: 0.9,
       bowCharge: 0.6, nock: 0.4, spdDmg: 3, dodgeSpeed: 240 },
@@ -365,7 +371,9 @@ const CLASSES = [
     story: "HE KEPT THE HAWKS FOR AN IMPERIAL HUNT AND LET THEM ALL FLY THE DAY THE EMPIRE BURNED THE HUNTING PARK FOR A PARADE GROUND. ONE CAME BACK. IT IS THE ONLY ONE HE WILL SPEAK TO.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
     // a thrown knife: short, quick, a little further than a blade
     attack: { name: 'THROWING KNIFE', art: 'knife', cycle: 40 / 60, kb: 0.5, shot: { speed: 330, life: 0.42, col: '#c8d2e4', look: 'knife' } },
-    skins: FALCO_SKINS, skinPal: FALCO_PAL, skinSlot: 'falco',
+    // its art: the heroArt('falco') row in js/sprites/falco.js (its looks, worn
+    // per player through heroSkinOf, their paint, the glyph and the emblem)
+    id: 'falco',
     base: { hp: 96, dmg: 17, armor: 13, ap: 0, haste: 0, ms: PLAYER_SPEED + 4 },
     grow: { hp: 6.2, dmg: 1.7, as: 0.014, armor: 1.9 },
     rankOrder: [1, 0, 2], // the knife fan, the talons, the glide
@@ -380,7 +388,9 @@ const CLASSES = [
     blurb: ['THE THING UNDER THE ICE.', 'ON ICE AND BY THE WATER YOU ARE QUICK, AND YOUR STRIKES CHILL.', 'ONCE YOU SURFACE YOU HAVE NO WAY OUT.'],
     story: "SHE DOVE FOR THE EMPIRE'S SUNKEN GRAIN BARGES IN WATER NOBODY ELSE WOULD TOUCH, AND WAS SENT AWAY WHEN SHE WOULD NOT DIVE FOR A SUNKEN TAX CHEST. SHE SAYS THE ORCA IN THE CISTERN POOL IS THE ONLY HONEST THING IN THE VALLEY. SHE GIVES IT THE FIRST FISH OF EVERY CATCH.", // the wiki's hero page (docs/dev/lore.md)
     attack: { name: 'HARPOON', art: 'sword', cycle: 32 / 60, kb: 1.1, cut: { reach: 28, half: 0.8 } }, // a thrust: ARMATOS's greatsword's reach, narrower
-    skins: MARIS_SKINS, skinPal: MARIS_PAL, skinSlot: 'maris',
+    // its art: the heroArt('maris') row in js/sprites/maris.js (its looks, worn
+    // per player through heroSkinOf, their paint, the glyph and the emblem)
+    id: 'maris',
     blade: 'harpoon', // her HARPOON in her hands (HERO_BLADES, js/draw/maris.js)
     base: { hp: 126, dmg: 14, armor: 22, ap: 0, haste: 0, ms: PLAYER_SPEED - 2 },
     grow: { hp: 10, dmg: 1.2, as: 0.009, armor: 2.7 },
@@ -397,7 +407,9 @@ const CLASSES = [
     story: "HE FELLED TIMBER FOR THE EMPIRE'S SHIPS UNTIL THERE WAS NO FOREST LEFT TO FELL, THEN REFUSED TO BURN THE LAST ONE. THE VALLEY'S PINES GREW UP THROUGH THE WORKS AND NOBODY OWNS THEM. HE LIKES THAT.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
     // an axe's blow: ARMATOS's greatsword's reach, a little wider and slower
     attack: { name: 'FELLING AXE', art: 'sword', cycle: 34 / 60, kb: 1.2, cut: { reach: 26, half: 1 } },
-    skins: LIGNUM_SKINS, skinPal: LIGNUM_PAL, skinSlot: 'lignum',
+    // its art: the heroArt('lignum') row in js/sprites/lignum.js (its looks, worn
+    // per player through heroSkinOf, their paint, the glyph and the emblem)
+    id: 'lignum',
     blade: 'felling', // his FELLING AXE in his hands (HERO_BLADES, js/draw/lignum.js)
     base: { hp: 114, dmg: 18, armor: 18, ap: 0, haste: 0, ms: PLAYER_SPEED },
     grow: { hp: 9, dmg: 1.7, as: 0.011, armor: 2.4 },
@@ -418,9 +430,9 @@ const CLASSES = [
     base: { hp: 78, dmg: 20, armor: 9, ap: 0, haste: 0, ms: PLAYER_SPEED - 5 },
     grow: { hp: 5.6, dmg: 1.7, as: 0.01, armor: 1.6 },
     rankOrder: [0, 2, 1], // the pin, the crank back, the pavise
-    // her own body in each of her looks (SAGITTA_SKINS, js/sprites/sagitta.js), worn per
-    // player (heroSkinOf) over the side's coat
-    skins: SAGITTA_SKINS, skinPal: SAGITTA_PAL, skinSlot: 'sagitta',
+    // its art: the heroArt('sagitta') row in js/sprites/sagitta.js (its looks, worn
+    // per player through heroSkinOf, their paint, the glyph and the emblem)
+    id: 'sagitta',
     // a heavy draw that all but plants her feet while she winds it
     kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1, chargeMul: 0.45,
       bowCharge: 0.75, nock: 0.4, spdDmg: 0, dodgeSpeed: DODGE_SPEED },
@@ -434,7 +446,9 @@ const CLASSES = [
     story: "HE GUIDED THE EMPIRE'S COLUMNS OVER THE PASS FOR TWENTY WINTERS. THE LAST COLUMN HE TOOK WAS FAMILIES THE EMPIRE MEANT TO KEEP, ROPED TOGETHER IN A WHITEOUT, AND HE BROUGHT EVERY ONE OF THEM DOWN. HE HAS NOT BEEN BACK UP SINCE.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
     // an ice axe's blow: quicker and a little shorter than LIGNUM's felling axe
     attack: { name: 'ICE AXE', art: 'sword', cycle: 30 / 60, kb: 1, cut: { reach: 24, half: 0.95 } },
-    skins: CLIVUS_SKINS, skinPal: CLIVUS_PAL, skinSlot: 'clivus',
+    // its art: the heroArt('clivus') row in js/sprites/clivus.js (its look, its paint,
+    // the glyph and the emblem)
+    id: 'clivus',
     blade: 'iceaxe', // his ICE AXE in his hands (HERO_BLADES, js/draw/clivus.js)
     base: { hp: 110, dmg: 17, armor: 17, ap: 0, haste: 0, ms: PLAYER_SPEED },
     grow: { hp: 8.6, dmg: 1.7, as: 0.012, armor: 2.3 },
@@ -542,17 +556,24 @@ function levelUp(p) {
 // the pose set a body draws from: its hero in the look it wears, in its
 // team's paint (champLook, js/sprites/characters.js)
 function classSet(p) { return SPRITES.champLook(p.cls, skin(p.team), heroSkinOf(p)); }
-// the look a player wears on its hero (CLASSES[c].skins): the id its person
+// a hero's art in the registry (HERO_ART, js/sprites/hero-art.js): its looks,
+// their paint, the skins tab's glyph and the 12px emblem
+function heroArtOf(cls) { return HERO_ART[CLASSES[cls].id]; }
+// every hero has its art and every art its hero: a new hero without its
+// heroArt row, or a row left behind by a cut one, refuses to boot
+for (const c of CLASSES) if (!HERO_ART[c.id]) throw new Error('player.js: ' + c.name + ' has no heroArt row (js/sprites/hero-art.js)');
+for (const id in HERO_ART) if (!CLASSES.some((c) => c.id === id)) throw new Error('player.js: heroArt ' + id + ' has no CLASSES row');
+// the look a player wears on its hero (heroArtOf(cls).looks): the id its person
 // picked for that hero (`p.skins`, a slot -> id map from their profile, sent
 // with the hello and kept on the body, so every screen draws the same look),
 // or null for the hero's own
-function heroSkinOf(p) { const c = CLASSES[p.cls]; return c && c.skinSlot && p.skins ? p.skins[c.skinSlot] || null : null; }
+function heroSkinOf(p) { const c = CLASSES[p.cls]; return c && p.skins ? p.skins[c.id] || null : null; }
 // a hello's skins (msg.skins, js/net/net.js) as the host keeps them: only a
 // hero's slot naming one of that hero's looks gets through
 function cleanHeroSkins(m) {
   const out = {};
   if (!m || typeof m !== 'object') return out;
-  for (const c of CLASSES) if (c.skinSlot && typeof m[c.skinSlot] === 'string' && c.skins.some((r) => r.id === m[c.skinSlot])) out[c.skinSlot] = m[c.skinSlot];
+  for (const c of CLASSES) if (typeof m[c.id] === 'string' && HERO_ART[c.id].looks.some((r) => r.id === m[c.id])) out[c.id] = m[c.id];
   return out;
 }
 // the CLASSES index of the hero the profile last locked in (kept by name,
@@ -1042,7 +1063,7 @@ function damagePlayer(p, dmg, dx, dy, src, cause, crit, kb, o) {
 }
 
 // what the log says when nobody gets the credit
-const DEATH_CAUSE = { ice: 'FELL THROUGH THE ICE', creek: 'WENT IN THE CREEK', wolf: 'WENT TO THE WOLVES', bear: 'MET A BEAR', tackle: 'RAN INTO SOMETHING SOLID', eagle: 'LOST THEIR EAGLE', fire: 'BURNED IN THE SNOW', soldier: 'FELL TO THE WAVE', orca: 'WENT TO THE ORCA', tower: 'TOOK A TOWER BOLT' };
+const DEATH_CAUSE = { ice: 'FELL THROUGH THE ICE', creek: 'WENT IN THE CREEK', wolf: 'WENT TO THE WOLVES', fox: 'WENT TO THE FOXES', ox: 'MET A MUSK OX', bear: 'MET A BEAR', tackle: 'RAN INTO SOMETHING SOLID', eagle: 'LOST THEIR EAGLE', fire: 'BURNED IN THE SNOW', soldier: 'FELL TO THE WAVE', orca: 'WENT TO THE ORCA', tower: 'TOOK A TOWER BOLT' };
 // ...and what the line says when there IS credit but no arrow: `cause` is
 // read for the verb too, so a burn doesn't get written up as a shot
 const KILL_VERB = { fire: 'BURNED' };

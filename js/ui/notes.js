@@ -96,6 +96,14 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['THE SIEGE SOLDIER IS A BALLISTA CART THAT SHOOTS BOLTS', '0.688'],
+    ['THE ORCA\'S POOL IS ROUGH ICE: BLADES CAN FIGHT THE ORCA', '0.687'],
+    ['FOX HOLLOWS AND OX RANGES IN THE JUNGLE', '0.686'],
+    ['TRAIL SKINS REFUNDED; SKINS SCREEN IN HERO GRID ORDER', '0.684'],
+    ['RANKED OPEN FROM THE FIRST BOOT', '0.680'],
+    ['HEROES HOLD THEIR WEAPONS THE SAME WAY IN EVERY FACING; NO MORE BLADES HELD OUT LEVEL', '0.678'],
+    ['ASSASSINS BUILD FOR BURST; MARKSMEN KEEP THE MOST STEADY DAMAGE LATE', '0.675'],
+    ['EAGLES AND BAYS STAND OUT ON BOTH MAPS', '0.673'],
     ['NO MERCH TAG OVER THE MERCHANT', '0.672'],
     ['TWO CONTROL SCHEMES: WASD OR CLICK TO MOVE', '0.671'],
     ['BOTS FIGHT THE ORCA', '0.670'],
@@ -241,6 +249,7 @@ const PATCH_DIGEST = [
     ['EVERYTHING CASTS A SHADOW FROM ONE SUN', '0.279'],
   ]],
   ['FIGHTING AND TRADE', [
+    ['FALCO WEARS THE HUNTSMAN\'S GREEN HAT AND CAPE', '0.679'],
     ['SAGITTA\'S SHIELD STOPS SHOTS ONLY FROM THE FRONT', '0.649'],
     ['A NEW HERO, SAGITTA THE BOLT-THROWER: THE LONGEST REACH OF ANY MARKSMAN', '0.646'],
     ['SAGITTA PINS RIVALS TO TREES AND PLANTS A SHIELD THAT STOPS SHOTS', '0.646'],
@@ -456,7 +465,7 @@ function notesLayout() {
     if (!notesOpen.has(g.id)) return;
     for (const it of g.items) {
       let lines = notesWrapped.get(it);
-      if (!lines) { lines = wikiWrap(it.text, textW); notesWrapped.set(it, lines); }
+      if (!lines) { lines = wrapText(it.text, textW); notesWrapped.set(it, lines); }
       // a picture sits under its text, scaled up by whole pixels to fit the text's width
       const ps = it.pic ? Math.max(1, Math.min(NOTES_PIC_MAX, Math.floor(textW / it.pic.w))) : 0;
       const ph = it.pic ? 4 + it.pic.h * ps : 0;

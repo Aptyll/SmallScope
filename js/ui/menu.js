@@ -16,14 +16,11 @@ const PANEL_SLIDE_T = 0.32;
 // fullscreen, so the app needs its own way out; a browser tab has its X
 // FIRST MATCH leads the words for a profile that has never finished a match
 // nor seen the coach through (PROFILE.guided, js/app/profile.js): offered
-// until then, and always a mode in the party's list. RANKED stands dim with
-// a lock and its pips until RANKED_AT matches are played (rankedOpen,
-// js/ui/rooms.js).
+// until then, and always a mode in the party's list.
 function menuItems() {
   return (PROFILE.guided() ? [] : ['FIRST MATCH']).concat(['QUICKPLAY', 'RANKED', '1V1', 'PRACTICE TOOL'],
     window.steamBridge && steamBridge.quit ? ['QUIT'] : []);
 }
-function menuShut(label) { return label === 'RANKED' && !rankedOpen(); }
 // SETTINGS has no plank: it is the ESC panel's in play (js/ui/panels.js),
 // and the WIKI is a tab beside the patch notes (js/ui/notes.js).
 // The items are plain words at MENU_TXT_SCALE - white, the picked one gold -
@@ -39,7 +36,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.672';
+const PATCH_TXT = 'PATCH 0.690';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -55,6 +52,24 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.690', 'UNDER THE HOOD: ONE COMMAND NOW PROVES A CODE CLEANUP CHANGED NOTHING IN HOW THE GAME PLAYS OR LOOKS.'],
+  ['0.689', 'UNDER THE HOOD: THE WIKI WORDS, ITS BEASTS AND ITS WORLD PAGE NOW LIVE IN THE ONE TEXT TABLE.'],
+  ['0.688', 'THE SIEGE SOLDIER IS A BALLISTA CART NOW: A BIG BOW ON A SWIVEL POST OVER THE BOT, WOUND BY ITS OWN ARM, THAT TURNS TO FACE WHAT IT SHOOTS AND FIRES A STRAIGHT BOLT.', 'ballista-cart'],
+  ['0.687', 'THE ORCA\'S POOL IS ROUGH ICE NOW, FROSTED OVER: YOU WALK IT LIKE SNOW INSTEAD OF SKATING, SO A TEAM OF BLADES CAN STAND AT THE HOLE AND FELL THE ORCA.'],
+  ['0.686', 'TWO NEW CAMPS IN EVERY JUNGLE QUARTER: A FOX HOLLOW OF THREE AND AN OX RANGE WITH ONE MUSK OX. BOTH PAY GOLD, AND BOT JUNGLERS FARM THEM.', 'camp-beasts'],
+  ['0.685', 'UNDER THE HOOD: THE HERO PICK WORDS NOW LIVE IN THE ONE TEXT TABLE.'],
+  ['0.684', 'THE TRAIL SKINS, WHICH NOTHING IN A MATCH EVER WORE, LEAVE THE SHOP AND ANY YOU BOUGHT ARE REFUNDED IN COINS; THE SKINS SCREEN LISTS THE HEROES IN THE HERO GRID\'S ORDER.'],
+  ['0.683', 'UNDER THE HOOD: THE SETTINGS AND CONTROLS WORDS NOW LIVE IN THE ONE TEXT TABLE.'],
+  ['0.682', 'STEAM MATCHES NOW CROSS STEAM\'S OWN RELAY NETWORK, WHICH HIDES EVERY PLAYER\'S ADDRESS AND GETS THROUGH STRICT HOME ROUTERS.'],
+  ['0.681', 'UNDER THE HOOD: THE SHOP WORDS NOW LIVE IN THE ONE TEXT TABLE, AND THE POTION READS +100 HEALTH OVER 15S.'],
+  ['0.680', 'RANKED IS OPEN FROM YOUR FIRST BOOT: NO LOCK AND NO MATCHES TO PLAY FIRST.'],
+  ['0.679', 'FALCO WEARS THE OLD HUNT\'S GREEN: A HUNTSMAN\'S HAT WITH A LONG FEATHER AND A GREEN SHOULDER CAPE. LAST HAWK IS THE SAME CUT IN BLACK AND GOLD.'],
+  ['0.678', 'HEROES HOLD THEIR WEAPONS THE SAME WAY WHICHEVER WAY THEY FACE: SWORDS AND SPEARS SLANTED AT THE READY, LIGNUM\'S AXE OVER HIS SHOULDER, RUPES\'S MAUL RESTING ON THE SNOW, AND EVERY STAFF UPRIGHT.'],
+  ['0.677', 'UNDER THE HOOD: THE HOVER TOOLTIP WORDS NOW LIVE IN THE ONE TEXT TABLE.'],
+  ['0.676', 'EVERY CLOUD AGENT SESSION NOW TURNS ON THE PUSH GUARD, SO A PUSH TO MAIN OR OF A STALE BRANCH IS REFUSED.'],
+  ['0.675', 'BELLA, FALCO AND NIX RECOMMEND BURST BUILDS: DAMAGE AND FASTER KEYS INSTEAD OF ATTACK SPEED, SO MARKSMEN KEEP THE MOST STEADY DAMAGE LATE.'],
+  ['0.674', 'THE PATCH NOTES OPEN AGAIN: A PATCH YOU CLICK SHOWS ITS NOTES INSTEAD OF A BLANK SCREEN.'],
+  ['0.673', 'EACH EAGLE IS THE BIGGEST MARK ON THE MAP AND THE MINIMAP, A SOLID DIAMOND IN ITS SIDE\'S COLOUR, AND THE SOLDIERS\' BAYS SHOW BESIDE IT.'],
   ['0.672', 'THE MERCHANT NO LONGER WEARS A MERCH TAG: ITS STALL AND THE E SHOP PROMPT SAY WHAT IT IS.'],
   ['0.671', 'THE ONE-HAND MOUSE CONTROL SCHEME IS GONE: PLAY ON WASD OR CLICK, AND A SAVED MOUSE SETUP WAKES ON CLICK.'],
   ['0.670', 'BOTS FIGHT THE ORCA: ONCE IT IS UP AT 20:00 A BOT SIDE GOES FOR IT TOGETHER, FROM EITHER BANK, AND FIGHTS THE OTHER SIDE OVER IT.'],
@@ -763,7 +778,6 @@ function menuSelect(i) {
 function menuActivate(i) {
   SFX.unlock();
   const it = menuItems()[i];
-  if (menuShut(it)) { SFX.deny(); state.menu.shutFx = 0.3; return; } // RANKED, still locked: the lock shakes
   if (it === 'FIRST MATCH') beginParty('guide'); // QUICKPLAY against EASY bots with the coach (js/ui/guide.js)
   else if (it === 'QUICKPLAY') beginParty('quick'); // the party lobby (js/ui/rooms.js)
   else if (it === 'RANKED') beginParty('ranked');
@@ -933,7 +947,6 @@ function updateTitle(dt) {
   updateRooms(dt);
   // a word lights under the pointer, or as the keys' pick until the pointer moves
   const hit = !m.panel && m.screen === 'menu' && mouse.inside ? menuHit() : -1;
-  if (m.shutFx > 0) m.shutFx -= dt;
   for (let i = 0; i < menuItems().length; i++) {
     const target = hit === i || (m.keyNav && m.sel === i) ? 1 : 0;
     // `|| 0` because the array's length is a literal in core.js: a missing
@@ -1549,277 +1562,10 @@ function lobbySkin(k) {
 
 // The heroes' EMBLEMS at 12px - ARMATOS's broken standard, and one each - for
 // the team rail's chips (drawRailChip), the rooms and tooltips, on the
-// shared big-icon palette (AB32_PAL, js/sim/abilities.js): drawn by hand at
-// that size, keyed by hero name. The local player's own chip is baked with
-// every colour but the outline pushed to white, the maps' "you". A new hero
-// brings a CLASS12 grid (checked at load below).
-const CLASS12 = {
-  ARMATOS: [ // the broken standard - the pole, the torn cloth off its head
-    '..o.........',
-    '.ogooooo....',
-    '.oGrrrrro...',
-    '.owrRRrrro..',
-    '.owrrrrro...',
-    '.owrrRro....',
-    '.owrro.o....',
-    '.owro.......',
-    '.owo........',
-    '.owo........',
-    '.owo........',
-    '..o.........',
-  ],
-  FORTIVA: [ // the broken chain - a link snapped, its two ends apart
-    '............',
-    '..oooo......',
-    '.oCCCso.....',
-    '.oCo.so.....',
-    '.oCo.so.g...',
-    '.oCo.so..g..',
-    '.oCsso.g....',
-    '..oooo.oooo.',
-    '....g..oCCso',
-    '...g...oCo.o',
-    '.....g.oCsso',
-    '........ooo.',
-  ],
-  BELLA: [ // the saber, its edge curving up to the point, the gold guard
-    '.........oo.',
-    '........oWo.',
-    '.......oCo..',
-    '......oCo...',
-    '.....oCo....',
-    '....oCso....',
-    '.o.oCso.....',
-    '.ogoCo......',
-    '..oggo......',
-    '.owoGgo.....',
-    'owo..o......',
-    '.o..........',
-  ],
-  IGNIA: [ // one flame, white at its heart
-    '.....o......',
-    '....oro.....',
-    '....oro.o...',
-    '...orrgoro..',
-    '..orrggoro..',
-    '..orgggrro..',
-    '.orggWggro..',
-    '.orgWWWgro..',
-    '.orgWWWgro..',
-    '..orgWgro...',
-    '...orrro....',
-    '....ooo.....',
-  ],
-  AURA: [ // a four-pointed star, the light that falls
-    '.....o......',
-    '....oWo.....',
-    '....oWo.....',
-    '...obWbo....',
-    '.ooobWbooo..',
-    'oWWWWWWWWWo.',
-    '.ooobWbooo..',
-    '...obWbo....',
-    '....oWo.....',
-    '....oWo.....',
-    '.....o......',
-    '............',
-  ],
-  SALVIA: [ // a snowdrop, its white bell nodding off the stem
-    '...ooo......',
-    '..ovvvoo....',
-    '..ovooovo...',
-    '..ovo.ovo...',
-    '..ovooWWWo..',
-    '..ovoWWWWWo.',
-    '..ovooWoWo..',
-    '.oVvo.o.o...',
-    'oVVvo.......',
-    '.oovo.......',
-    '..ovo.......',
-    '...o........',
-  ],
-  LUCERNA: [ // her lantern, lit, on its ring
-    '....oooo....',
-    '....o..o....',
-    '...oooooo...',
-    '...oggggo...',
-    '..ogWWWWgo..',
-    '..ogWWWWgo..',
-    '..ogWbbWgo..',
-    '..ogWWWWgo..',
-    '...oggggo...',
-    '....oooo....',
-    '............',
-  ],
-  HIEMS: [ // a six-armed snowflake
-    '.....o......',
-    '..o.oWo.o...',
-    '.oWooWooWo..',
-    '..oWoWoWo...',
-    '.ooooWoooo..',
-    'oWWWWWWWWWo.',
-    '.ooooWoooo..',
-    '..oWoWoWo...',
-    '.oWooWooWo..',
-    '..o.oWo.o...',
-    '.....o......',
-    '............',
-  ],
-  RUPES: [ // the snowball, its trail behind it
-    '....oooo....',
-    '..ooWWWWoo..',
-    '.oWWWWWWWbo.',
-    '.oWWWWWWbbo.',
-    'oWWWWWWWbbbo',
-    'oWWWWWWbbbbo',
-    'oWWWWWbbbbbo',
-    '.oWWbbbbbbo.',
-    '.obbbbbbbbo.',
-    '..oobbbboo..',
-    '....oooo....',
-    '............',
-  ],
-  VARRO: [ // a wolf's paw print
-    '...oo.oo....',
-    '..oWWoWWo...',
-    '.ooWWoWWoo..',
-    'oWWoo.ooWWo.',
-    'oWWoooooWWo.',
-    '.oooWWWooo..',
-    '..oWWWWWo...',
-    '.oWWWWWWWo..',
-    '.oWWWWWWWo..',
-    '..oWWoWWo...',
-    '...oo.oo....',
-    '............',
-  ],
-  BUCINA: [ // her horn, the bell to the right
-    '............',
-    '.........oo.',
-    '........ogWo',
-    '.......ogggo',
-    '..ooo.ogggGo',
-    '.ogggogggGo.',
-    'ogGoggggGo..',
-    'ogo.oGGGoo..',
-    '.o...ooo....',
-    '............',
-    '............',
-    '............',
-  ],
-  NIX: [ // the snowblind's goggles, two slits in a bone band
-    '............',
-    '............',
-    '............',
-    '.oooooooooo.',
-    'oWWWWWWWWWWo',
-    'oWooWWWWooWo',
-    'oWWWWooWWWWo',
-    '.oooo..oooo.',
-    '............',
-    '............',
-    '............',
-    '............',
-  ],
-  FABER: [ // a gear
-    '....ooo.....',
-    '.oo.oWo.oo..',
-    '.oWooWooWo..',
-    '..oWWWWWo...',
-    'ooWWoooWWoo.',
-    'oWWWo.oWWWo.',
-    'ooWWoooWWoo.',
-    '..oWWWWWo...',
-    '.oWooWooWo..',
-    '.oo.oWo.oo..',
-    '....ooo.....',
-    '............',
-  ],
-  VELOX: [ // a skate, its blade under it
-    '............',
-    '.oooo.......',
-    '.oWWo.......',
-    '.oWWo.......',
-    '.oWWooooo...',
-    '.oWWWWWWWo..',
-    '.oWWWWWWWWo.',
-    '.ooooooooo..',
-    '..o.....o...',
-    'oWWWWWWWWWWo',
-    '.oooooooooo.',
-    '............',
-  ],
-  FALCO: [ // a hawk stooping, wings folded back
-    '............',
-    '.o........o.',
-    '.oWo....oWo.',
-    '..oWo..oWo..',
-    '...oWooWo...',
-    '....oWWo....',
-    '....oWWo....',
-    '....oWWo....',
-    '...oWooWo...',
-    '....o..o....',
-    '............',
-  ],
-  MARIS: [ // her harpoon's barbed head
-    '........ooo.',
-    '.......oWWo.',
-    '......oWWWo.',
-    '.....oWWWo..',
-    '....oooWo...',
-    '...owo.o....',
-    '..owo.......',
-    '.owo........',
-    'owo.........',
-    'oo..........',
-    '............',
-    '............',
-  ],
-  LIGNUM: [ // his felling axe's broad bit on its haft
-    '..oooo......',
-    '.oWWWWo.....',
-    '.oWWWWoo....',
-    '..oWWowo....',
-    '...ooowo....',
-    '.....owo....',
-    '.....owo....',
-    '.....owo....',
-    '.....owo....',
-    '.....owo....',
-    '.....ooo....',
-    '............',
-  ],
-  CLIVUS: [ // his ice axe: the pick and the adze across a short shaft
-    '............',
-    '.ooooooooo..',
-    'oWWWWWWWWWo.',
-    'oWoooWoooWWo',
-    '.oo.oWo..oWo',
-    '....oWo...o.',
-    '....oWo.....',
-    '....oWo.....',
-    '....oWo.....',
-    '....oWo.....',
-    '.....o......',
-    '............',
-  ],
-  SAGITTA: [ // a crossbow, prod up, the stock down
-    '............',
-    '.oooooooooo.',
-    'oWWWWWWWWWWo',
-    'oWooooooooWo',
-    'oWo.oWWo.oWo',
-    '.o..oWWo..o.',
-    '....oWWo....',
-    '...ooWWoo...',
-    '...oWWWWo...',
-    '...oWWWWo...',
-    '....oooo....',
-    '............',
-  ],
-};
-for (const c of CLASSES) if (!CLASS12[c.name]) throw new Error('menu.js: ' + c.name + ' has no CLASS12 emblem');
+// shared big-icon palette (AB32_PAL, js/draw/abilities.js): drawn by hand at
+// that size, each in its hero's registry row (`emblem`, heroArt). The local
+// player's own chip is baked with every colour but the outline pushed to
+// white, the maps' "you".
 const class12Cache = new Map();
 function classIcon12(i, you) {
   const key = i * 2 + (you ? 1 : 0);
@@ -1828,7 +1574,7 @@ function classIcon12(i, you) {
     cv = document.createElement('canvas');
     cv.width = cv.height = 12;
     const g = cv.getContext('2d');
-    const rows = CLASS12[CLASSES[i].name];
+    const rows = heroArtOf(i).emblem;
     for (let r = 0; r < rows.length; r++) {
       const row = rows[r];
       for (let c = 0; c < row.length; c++) {
@@ -2099,13 +1845,7 @@ function renderTitle(now) {
     const y = r.y + 2 + Math.round((1 - inT) * 8) + Math.round(out * 25) - Math.round(hv) + (pressed ? 1 : 0);
     ctx.globalAlpha = a;
     const label = menuItems()[i];
-    if (menuShut(label)) { // RANKED, locked: grey, its lock before it and the matches it waits for after
-      const sh = m.shutFx > 0 ? Math.round(Math.sin(m.shutFx * 60) * 2) : 0;
-      drawPixelTextOutline(ctx, label, r.x + 4, y, '#7d849a', 'rgba(8,12,28,0.9)', MENU_TXT_SCALE);
-      drawRankedLock(r.x - 10 + sh, y, 'rgba(8,12,28,0.9)', 2); // its shadow
-      drawRankedLock(r.x - 11 + sh, y - 1, hv > 0.5 ? '#ffd95c' : '#7d849a', 2);
-      drawRankedPips(r.x + r.w + 2, y + 3, 2);
-    } else drawPixelTextOutline(ctx, label, r.x + 4, y, hv > 0.5 ? '#ffd95c' : '#f4f7ff', 'rgba(8,12,28,0.9)', MENU_TXT_SCALE);
+    drawPixelTextOutline(ctx, label, r.x + 4, y, hv > 0.5 ? '#ffd95c' : '#f4f7ff', 'rgba(8,12,28,0.9)', MENU_TXT_SCALE);
     ctx.globalAlpha = 1;
   }
 
