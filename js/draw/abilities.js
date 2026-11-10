@@ -149,6 +149,63 @@ function drawFlameTongue(x, y, h, w, ph) {
   }
 }
 
+// one 0..1 roll for piece k of the look seeded `seed`: the same every frame and
+// on every screen (a look seeds off where it landed)
+function fxRoll(seed, k, j) { return hash2(seed + k * 131, j * 977 + 17); }
+function fxSeed(f) { return (Math.round(f.x) * 7 + Math.round(f.y) * 13) | 0; }
+// A blade's cut: a crescent swept across the wedge (a, half) out to r, the trail a
+// swing leaves, thick at its middle and thin at its tips. `u` 0..1 is its life: it
+// sweeps across in the first half (from the side `dir` names, 1 or -1), then fades.
+// cols: [ink, body, the shaded inner edge]; w its thickness at the middle.
+function drawSwoosh(px, py, a, r, half, u, w, cols, dir) {
+  const reveal = Math.min(1, u * 2.2), n = Math.max(8, Math.ceil(r * half * 2.4));
+  ctx.globalAlpha = u < 0.45 ? 1 : Math.max(0, 1 - (u - 0.45) / 0.55);
+  for (let pass = 0; pass < 3; pass++) {
+    ctx.fillStyle = cols[pass];
+    for (let i = 0; i <= n; i++) {
+      const f = i / n;
+      if (f > reveal) break;
+      const t = a + dir * half * (2 * f - 1), c = Math.cos(t), s = Math.sin(t);
+      const th = Math.max(1, Math.round(w * Math.pow(Math.sin(Math.PI * f), 0.7)));
+      const r0 = pass === 0 ? r - th - 1 : pass === 1 ? r - th : r - th, r1 = pass === 0 ? r + 1 : pass === 1 ? r : r - th + Math.max(1, th >> 2);
+      for (let k = r0; k <= r1; k++) ctx.fillRect(Math.round(px + c * k), Math.round(py + s * k), 1, 1);
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+// Pieces thrown out from (px, py) and falling back, over u 0..1: n of them, each on a
+// bearing within `half` of `a` (Math.PI: all round), landing between r*near and r, at
+// most `up` px high. paint(x, y, k, land) draws piece k; its shadow is drawn here.
+function drawFlung(px, py, a, half, r, near, up, n, u, seed, paint) {
+  const go = 1 - (1 - u) * (1 - u);
+  for (let k = 0; k < n; k++) {
+    const t = a + (fxRoll(seed, k, 1) * 2 - 1) * half;
+    const d = r * (near + (1 - near) * fxRoll(seed, k, 2)) * go;
+    const z = up * (0.5 + 0.5 * fxRoll(seed, k, 3)) * 4 * u * (1 - u);
+    const x = Math.round(px + Math.cos(t) * d), y = Math.round(py + Math.sin(t) * d);
+    ctx.fillStyle = 'rgba(40,52,90,0.3)'; ctx.fillRect(x, y + 1, 2, 1);
+    paint(x, Math.round(y - z), k, u > 0.9);
+  }
+}
+// Cracks run out from (px, py): n jagged lines, each `len` px at full, grown to `grow`
+// of that. dark is the split, lite the lit lip under it.
+function drawCracks(px, py, n, len, grow, seed, dark, lite) {
+  for (let k = 0; k < n; k++) {
+    let t = (k + fxRoll(seed, k, 4) * 0.6) / n * Math.PI * 2, x = px, y = py;
+    const L = len * (0.6 + 0.4 * fxRoll(seed, k, 5)) * grow;
+    for (let s = 0; s < L; s += 2) {
+      t += (fxRoll(seed, k, 10 + s) - 0.5) * 0.9;
+      x += Math.cos(t) * 2; y += Math.sin(t) * 2;
+      ctx.fillStyle = dark; ctx.fillRect(Math.round(x), Math.round(y), 1, 1);
+      ctx.fillStyle = lite; ctx.fillRect(Math.round(x), Math.round(y) + 1, 1, 1);
+      if (s > 6 && fxRoll(seed, k, 40 + s) < 0.12) { // a short branch off it
+        const b = t + (fxRoll(seed, k, 60 + s) < 0.5 ? 0.9 : -0.9);
+        ctx.fillStyle = dark; ctx.fillRect(Math.round(x + Math.cos(b) * 2), Math.round(y + Math.sin(b) * 2), 1, 1);
+      }
+    }
+  }
+}
+
 function drawAbilityGround(ex, ey, now) {
   // every wind-up's telegraph, live off the caster and drawn for BOTH sides
   // (each row's own `tele`): a line, a ring, a wedge - each in the wind-up
