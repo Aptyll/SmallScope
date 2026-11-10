@@ -291,17 +291,37 @@ function abMark(cv, id) {
   }
   return cv;
 }
-// a row's icon baked, with its mark if it has one
-function bakeAbRow(row) {
-  const cv = bakeAb32(row.icon);
+// A hero's kit shares one backing (its art row's `glow`, js/sprites/hero-art.js:
+// five tones, dark edge to bright core): the colour says WHO, the shape and
+// the mark say WHAT (Noah 11-10, from League's kits: one theme per champion,
+// light behind the subject, dark at the edges). The core sits on the
+// subject's own middle, so every icon lights where its picture is.
+const AB_GLOW_R = [17, 12, 8, 5]; // a band's outer radius, edge tone inward
+function abGlow(g, rows, glow) {
+  let sx = 0, sy = 0, n = 0;
+  for (let y = 0; y < rows.length; y++) for (let x = 0; x < rows[y].length; x++) if (AB32_PAL[rows[y][x]]) { sx += x; sy += y; n++; }
+  const cx = n ? sx / n : 15.5, cy = n ? sy / n : 15.5;
+  for (let y = 0; y < 32; y++) for (let x = 0; x < 32; x++) {
+    const d = Math.hypot(x - cx, y - cy);
+    let b = 0;
+    while (b < AB_GLOW_R.length && d < AB_GLOW_R[b]) b++;
+    g.fillStyle = glow[b];
+    g.fillRect(x, y, 1, 1);
+  }
+}
+// hero cls's row's icon baked: the kit's backing, the grid, its mark if it has one
+function bakeAbRow(cls, row) {
+  const glow = heroArtOf(cls).glow;
+  const cv = bakeAb32(row.icon, glow ? (g) => abGlow(g, row.icon, glow) : null);
   return row.mark ? abMark(cv, row.mark) : cv;
 }
 const ab32Cache = new Map();
-// a 32x32 grid in AB32_PAL on its own canvas
-function bakeAb32(rows) {
+// a 32x32 grid in AB32_PAL on its own canvas, over what `under(g)` paints
+function bakeAb32(rows, under) {
   const cv = document.createElement('canvas');
   cv.width = cv.height = 32;
   const g = cv.getContext('2d');
+  if (under) under(g);
   for (let r = 0; r < rows.length; r++) {
     const row = rows[r];
     for (let c = 0; c < row.length; c++) {
@@ -316,7 +336,7 @@ function bakeAb32(rows) {
 // a named hero's passive icon (HERO_PASSIVE, js/sim/heroes.js)
 function passiveIcon(cls) {
   const key = cls + ':p';
-  if (!ab32Cache.has(key)) ab32Cache.set(key, bakeAbRow(HERO_PASSIVE[CLASSES[cls].passive]));
+  if (!ab32Cache.has(key)) ab32Cache.set(key, bakeAbRow(cls, HERO_PASSIVE[CLASSES[cls].passive]));
   return ab32Cache.get(key);
 }
 // the baked 32x32 icon for hero cls's ability on key i
@@ -324,7 +344,7 @@ function classAbIcon(cls, i) {
   const key = cls + ':' + i;
   let cv = ab32Cache.get(key);
   if (!cv) {
-    cv = bakeAbRow(CLASS_AB[cls][i]);
+    cv = bakeAbRow(cls, CLASS_AB[cls][i]);
     ab32Cache.set(key, cv);
   }
   return cv;

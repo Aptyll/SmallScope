@@ -11,6 +11,9 @@
 //   glyph   the skins navbar's 8x8 tab glyph ('w' lit)
 //   emblem  the 12x12 emblem (the rail's chips, the rooms, tooltips) in
 //           AB32_PAL's letters (js/draw/abilities.js)
+//   glow    optional: its ability icons' shared backing, five tones from the
+//           dark edge to the bright core (abGlow, js/draw/abilities.js); a
+//           hero without one keeps the plain dark well
 // Readers ask heroArtOf(cls) (player.js) and never a hero's own globals, so a
 // new hero, or a new look on one, is its own file plus its CLASSES row.
 // player.js checks at load that every row has art and every art a row.
