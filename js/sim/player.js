@@ -496,6 +496,26 @@ const CLASSES = [
     kit: { iceMax: 0.9, iceSteer: 2.4, slideMin: SLIDE_MIN, fatigue: 0.8, chargeMul: 0.7,
       bowCharge: 0.75, nock: 0.5, spdDmg: 0, dodgeSpeed: DODGE_SPEED },
   },
+  {
+    // the twenty-second named hero (js/sim/portitor.js): the carrying support, a copper engine
+    // of the old works. It lifts an ally out of a fight, shields its side with crates and
+    // shoves rivals aside, and runs across the map to a friend; little damage of its own
+    name: 'PORTITOR', role: 'THE CARRIER', passive: 'bedroll', // HERO_PASSIVE, js/sim/portitor.js
+    blurb: ['NOBODY GETS LEFT IN THE SNOW.', 'LIFT AN ALLY OUT OF THE FIGHT. THEIR HANDS STAY FREE.', 'LITTLE DAMAGE OF ITS OWN.'],
+    story: "IT WAS BUILT IN THE OLD WORKS TO HAUL THE EMPIRE'S SILVER OVER THE PASS. ON THE LAST RETREAT IT SET THE SILVER DOWN IN THE SNOW AND CARRIED THE WOUNDED INSTEAD, ONE AT A TIME, ALL NIGHT. THE EMPIRE LEFT IT BEHIND FOR THAT. IT STILL KEEPS A BEDROLL ON ITS BACK FOR WHOEVER NEEDS IT.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
+    // a walking pole's blow: a little longer and slower than the ice axe
+    attack: { name: 'WALKING POLE', art: 'sword', cycle: 36 / 60, kb: 1.2, cut: { reach: 26, half: 0.85 } },
+    // its art: the heroArt('portitor') row in js/sprites/portitor.js (its looks, worn
+    // per player through heroSkinOf, their paint, the glyph and the emblem)
+    id: 'portitor',
+    blade: 'pole', // its WALKING POLE in its hands (HERO_BLADES, js/draw/portitor.js)
+    base: { hp: 108, dmg: 14, armor: 17, ap: 0, haste: 0, ms: PLAYER_SPEED - 2 },
+    grow: { hp: 8, dmg: 1.1, as: 0.01, armor: 2.4 },
+    rankOrder: [0, 1, 2], // the crate, the shoulder, the plough
+    // heavy on the ice: slow to turn, a low cap
+    kit: { iceMax: 0.9, iceSteer: 2.4, slideMin: SLIDE_MIN, fatigue: 1, chargeMul: 0.55,
+      bowCharge: BOW_CHARGE, nock: 0.4, spdDmg: 0, dodgeSpeed: DODGE_SPEED - 10 },
+  },
 ];
 // a hero's CLASSES index by name, -1 for none: what a profile or a bot names
 function heroIndex(name) { return CLASSES.findIndex((c) => c.name === name); }
@@ -908,6 +928,11 @@ class Player {
     // on any body his hawk marked or his fan struck: who marked it and until when, which throw and how many knives
     this.falcoSkyT = 0; this.falcoStoopId = -1; this.falcoFanN = 0; this.falcoDownT = 0;
     this.falcoBy = -1; this.falcoUntil = 0; this.falcoFanId = -1; this.falcoFanHits = 0;
+    // PORTITOR (js/sim/portitor.js): who he carries (an id, or -1), the carry's clock, CARRY HOME's
+    // faster walk, the ally its run is reaching, his charge count; on any body, who carries it,
+    // the charge that last struck it, and BEDROLL's mend showing on it
+    this.portRide = -1; this.portT = 0; this.portFastT = 0; this.portHomeId = -1; this.portRunN = 0;
+    this.portBy = -1; this.portRunHit = -1; this.bedT = 0;
     this.zip = -1; this.zipD = 0; this.zipDir = 1;  // the zipline (js/sim/zipline.js): the line ridden (its index in zips, or -1), px along it, and which way
     this.lastMx = 0; this.lastMy = 0;                // the stick's last held direction, unit (updatePlayer): what the clip-on reads when the body stands still for the press
     this.zipWalk = false; this.zipWalkL = 0;         // walking itself to a cable to clip on, and which (zipWalkStep, js/sim/zipline.js)

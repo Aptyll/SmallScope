@@ -130,7 +130,7 @@ obs = {
 - **Tiles to pixels:** the centre of tile `(tx, ty)` is `(tx * 16 + 8, ty * 16 + 8)`.
 - **Abilities.** `id` is what the key is on your body, your hero's own: ARMATOS `verdict`,
   `hold`, `march`, `guard`; SAGITTA `pin`, `pavise`, `crank`, `longbolt`; ARCUS `volley`,
-  `twin`, `gather`, `quiver`; FOSSOR `spade`, `burrow`, `bank`, `quake`.
+  `twin`, `gather`, `quiver`; FOSSOR `spade`, `burrow`, `bank`, `quake`; PORTITOR `crate`, `shoulder`, `plough`, `home`.
   `range` is how far its aim reaches in px, `null` when it has none.
 - **`lastCmd`.** `ok` is true when the order went through. When it did not, `why` names the
   reason where the game has one: `'gold'`, `'max'`, `'far'`, `'points'`, `'busy'`, `'bad'`, or

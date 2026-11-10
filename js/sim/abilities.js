@@ -72,6 +72,7 @@ const CLASS_AB = [
   CLIVUS_AB, // CLIVUS - the pick strike, the rope, the vault, the rope ring (js/sim/clivus.js)
   ARCUS_AB, // ARCUS - the volley, the twin nock, the gather, the full quiver (js/sim/arcus.js)
   FOSSOR_AB, // FOSSOR - the spadeful, under the snow, the bank, the broken ground (js/sim/fossor.js)
+  PORTITOR_AB, // PORTITOR - the supply crate, the shoulder, the plough, the carry home (js/sim/portitor.js)
 ];
 // every hero has a row of keys, and a bot knows how to use each one (its `bot`)
 for (const c of CLASSES) {

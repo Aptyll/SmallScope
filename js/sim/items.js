@@ -495,6 +495,7 @@ const BOT_BUILDS = {
   SAGITTA: ['beartooth', 'horn', 'feathers', 'auger', 'maul', 'sunstone'], // damage first: every bolt is slow, so each one has to land like a hammer
   FOSSOR: ['fang', 'hobnail', 'stonehide', 'oakheart', 'beartooth', 'bearskin'], // a fighter who stands its ground: the bite and the legs, then health and armor to stay planted
   ARCUS: ['horn', 'quick', 'frostline', 'feathers', 'sunstone', 'cloak'], // attack speed on attack speed: his arrows in the snow stack on top, so every item is more shots
+  PORTITOR: ['shepherd', 'hobnail', 'bearskin', 'clock', 'glacier', 'stonehide'], // the shepherd's staff for bigger shields, the boots to reach a friend, then the health and armor a carrier walking through a fight needs
 };
 for (const c of CLASSES) if (!BOT_BUILDS[c.name]) throw new Error('items.js: ' + c.name + ' has no BOT_BUILDS row');
 function botBuild(p) { return BOT_BUILDS[CLASSES[p.cls].name]; }

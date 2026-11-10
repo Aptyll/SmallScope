@@ -96,7 +96,7 @@ const CALLING_OF = {
   VELOX: 'quickhand', SAGITTA: 'quickhand', ARCUS: 'quickhand',
   FORTIVA: 'duelist', BELLA: 'duelist', CLIVUS: 'duelist', FOSSOR: 'duelist',
   ARMATOS: 'stalwart', RUPES: 'stalwart', MARIS: 'stalwart',
-  IGNIA: 'warden', SALVIA: 'warden', LUCERNA: 'warden', BUCINA: 'warden',
+  IGNIA: 'warden', SALVIA: 'warden', LUCERNA: 'warden', BUCINA: 'warden', PORTITOR: 'warden',
   AURA: 'ambusher', HIEMS: 'ambusher', FABER: 'ambusher', NIX: 'ambusher', FALCO: 'ambusher',
   VARRO: 'outrider', LIGNUM: 'outrider',
 };

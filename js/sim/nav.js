@@ -95,7 +95,8 @@ let sepX = new Float64Array(256), sepY = new Float64Array(256), sepS = new Float
 function separateUnits(dt) {
   const us = [];
   // (a zipline's rider hangs above the ground: nothing on it touches one, though every weapon still can)
-  for (const p of players) if (p.active && !p.dead && !inAir(p) && p.zip < 0) us.push({ e: p, r: PLAYER_R, s: unitSpace(p), m: UNIT_MASS.player, pri: 0, vel: true, small: true, roll: p.dodgeT > 0 || heroDashThrough(p) }); // (a hero's dash that slips through bodies passes like a roll: HERO_DASH `through`)
+  // ...and a body another carries stands where its carrier does (HERO_HELD, js/sim/heroes.js)
+  for (const p of players) if (p.active && !p.dead && !inAir(p) && p.zip < 0 && !heroHeld(p)) us.push({ e: p, r: PLAYER_R, s: unitSpace(p), m: UNIT_MASS.player, pri: 0, vel: true, small: true, roll: p.dodgeT > 0 || heroDashThrough(p) }); // (a hero's dash that slips through bodies passes like a roll: HERO_DASH `through`)
   // birds fly: they are the one unit nothing collides with
   // ...and a roll passes through everything but a deer and a bear (MONSTER.big)
   // ...and a ridden deer is carried by its rider, who stands for both (js/sim/wildlife.js)

@@ -462,6 +462,30 @@ and look in [js/sprites/fossor.js](../../../js/sprites/fossor.js). 118 hp, 19 ar
 | 3 | **BANK UP** | 18/17/16/15/14 s | a bank of snow `BANK_AHEAD` ahead, `BANK_HALF` either side across the aim, walls the tiles it crosses for `t` (2.5-3.5 s) for both sides (`HERO_SOLID`). A tile with a thing on it, water, or a body within `BANK_CLEAR` stays open, so nobody is walled in |
 | 4 | **BREAK GROUND** | 100/85/70 s | after a 0.5 s wind-up a line of broken ground runs `QUAKE_LEN` down the aim at `QUAKE_SPD`: each rival within `QUAKE_W` of it as it passes takes `dmg` (100/150/200) once and is thrown up for `up` (0.9/1/1.1 s) |
 
+PORTITOR, THE CARRIER — the carrying support, a copper engine of the old works: it lifts an ally
+out of a fight, shields its side, shoves rivals aside and runs across the map to a friend, with
+little damage of its own. Its rules live in **[js/sim/portitor.js](../../../js/sim/portitor.js)**
+(`PORTITOR_AB`, its `portitor` banner), its pixels in [js/draw/portitor.js](../../../js/draw/portitor.js),
+its icons and looks in [js/sprites/portitor.js](../../../js/sprites/portitor.js). 108 hp, 17 armor, a
+step slower than a walk. Its basic attack is the WALKING POLE, a cut. Q's crates in the air are
+`portitorCrates` (in `SAVE_ROOTS` and the snapshot's `portitor`); the carry is two ids on the bodies,
+`p.portRide` on the carrier and `q.portBy` on the ally, which ride the snapshot like any field.
+
+**The carry.** An ally up on its back (W or R) stands where it stands every step (`portCarryStep`,
+`HERO_TICK`, after every body has moved), cannot walk (`HERO_MOVE` 0), is never pushed apart from it
+(`HERO_HELD`, `separateUnits`), and keeps its hands free: a bow still shoots and a key still casts from
+up there, like a deer's rider. The ally's own roll, a dash of its own, a fall or the zipline hops it
+down; a stun, a fall or the air on the carrier drops it; the clock runs out beside it. Either body is
+still hit as itself.
+
+| key | name | cd | what it does |
+| --- | --- | --- | --- |
+| P | **BEDROLL** | — | the ally it carries mends `BED_CARRY` of their health a second; an ally standing still (under `BED_STILL`) within `BED_REST_R` of it mends `BED_REST` (`HERO_PASSIVE.bedroll` `tick`); green crosses rise off whoever is mending (`HERO_MARK`) |
+| 1 | **SUPPLY CRATE** | 10/9.5/9/8.5/8 s | a crate lobbed onto a spot up to `CRATE_RANGE` away lands after `CRATE_T`: every rival body within `CRATE_R` takes `dmg` (60/85/110/135/160) and walks ×`CRATE_SLOW` for `CRATE_SLOW_T`, buildings take it too, and every ally in the ring, itself too, takes a `CRATE_SHIELD` (+`CRATE_SHIELD_LV` a level) shield for `CRATE_SHIELD_T`. The ring shows on the snow for both sides while it flies |
+| 2 | **SHOULDER** | 16/15/14/13/12 s | the ally nearest the aim within `CARRY_REACH` is lifted onto its back for `CARRY_T` with a `shield` (50/70/90/110/130). The key again (`recast`) sets them down where it aims, up to `CARRY_SET` away, on open snow |
+| 3 | **PLOUGH ON** | 13/12/11/10/9 s | a charge of `PLOUGH_LEN` at `PLOUGH_SPD` (`p.dash = 'plough'`): every rival body it meets is struck once for `dmg` (50/75/100/125/150) and shoved off to the side of its line (×`PLOUGH_KB`); an ally on its back comes too |
+| 4 | **CARRY HOME** | 110/95/80 s | castable only with an ally near the aim within `HOME_RANGE` (`ok`). It runs to them at `HOME_SPD` through every body (`p.dash = 'home'`, `through`), steering onto them as they walk; each rival run through is struck for `dmg` (100/150/200) and shoved aside. On reaching them it lifts them for `HOME_T` with a `HOME_SHIELD` (+`HOME_SHIELD_LV` a level) shield and walks ×`HOME_WALK` while the carry holds |
+
 Bots play every hero through each row's `bot(p, foe, d, clear)` (`abBotKey`, asked by the ladder's
 ability block in js/ai/ai-ladder.js); a row's `botAim(p, foe)` turns the aim to a point of its own for that cast, held through the wind-up until it lands (AURA's step away, SALVIA's heals, LUCERNA's lantern). Every hero's four rows carry one: a load check under `CLASS_AB` throws for a hero without four
 keys that each have a `bot`.
