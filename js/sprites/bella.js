@@ -339,6 +339,36 @@ const BELLA_SPATHA = [
   '......................',
   '......................',
 ];
+// The same spatha at 45 degrees with the point up and right, for a body facing
+// down, up or sideways at rest: slimmer than the oath greatsword, the eagle-wing
+// guard swept toward the point, the grip in her hand at BELLA_SPATHA_GRIP.
+const BELLA_SPATHA_DIAG = [
+  '........................',
+  '........................',
+  '........................',
+  '........................',
+  '..................oo....',
+  '.................oTWo...',
+  '................oTEo....',
+  '...............oTEo.....',
+  '..............oTEo......',
+  '.............oTEo.......',
+  '............oTEo........',
+  '...........oTEo.........',
+  '....oo....oTEo..........',
+  '...oYyo..oTEo...........',
+  '....oyyooTEo............',
+  '.....oyyTEo.............',
+  '......oyyo..............',
+  '.....ogoyyo.............',
+  '....oGo.oyyo............',
+  '...ogo...oYo............',
+  '..oyYo....o.............',
+  '..oYo...................',
+  '...o....................',
+  '........................',
+];
+const BELLA_SPATHA_GRIP = [5, 18];   // where her hand closes on the slanted grid
 const BELLA_SPATHA_PAL = { o: '#241a12', e: '#c8d2e4', E: '#8b93a8', W: '#ffffff', T: '#eef2f8', g: '#6b4a30', G: '#a3794f', y: '#f2cc6a', Y: '#b98a2e' };
 
 // ------------------------------------------------------------ bella registry
