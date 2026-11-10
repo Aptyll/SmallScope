@@ -120,22 +120,38 @@ function drawShedFx(f, px, py, now) {
   ctx.globalAlpha = 1;
 }
 AB_FX_LOOK.shed = drawShedFx;
-// SHOULDER's wind-up: the snow he is about to plough, shoved up in lumps either side of
-// his path as far as the charge goes, unevenly, with scuffs down the middle. No outline.
+// SHOULDER's wind-up: the snow he is about to plough, shoved up in short uneven ridges either
+// side of his path as far as the charge goes. No outline. The lumps are the furrow's.
 const FURROW_HALF = 6;
-function furrowBits(x0, y0, nx, ny, L, seed, grow) {
+function furrowBits(x0, y0, nx, ny, L, seed) {
   for (const side of [-1, 1]) for (let s = 8 + 2 * (side + 1), k = side + 2; s < L; k += 2) {
     const w = side * (FURROW_HALF + 2 * fxRoll(seed, k, 1)), big = fxRoll(seed, k, 2);
     const x = Math.round(x0 + nx * s - ny * w), y = Math.round(y0 + ny * s + nx * w * 0.8);
-    ruLump(x - 2, y - 3, Math.round((3 + 3 * big) * grow), fxRoll(seed, k, 3) > 0.9);
+    ruLump(x - 2, y - 3, Math.round(3 + 3 * big), fxRoll(seed, k, 3) > 0.9);
     s += 3 + 4 * fxRoll(seed, k, 5);
+  }
+}
+// the wind-up's ridges: a few short banks of shoved snow either side of the path, 4 to 9 px
+// long with gaps of every size, taller and longer toward the far end
+function furrowRidges(x0, y0, nx, ny, L, seed) {
+  for (const side of [-1, 1]) for (let s = 7 + 3 * (side + 1), k = side + 2; s < L - 2; k += 2) {
+    const far = s / L, len = Math.min(L - s, Math.round(4 + 5 * fxRoll(seed, k, 1) * (0.4 + 0.6 * far))), h = 2 + Math.round(2 * far + 1.4 * fxRoll(seed, k, 2));
+    const w = side * (FURROW_HALF - 1 + 4 * fxRoll(seed, k, 3));
+    for (let t = 0; t < len; t++) {
+      const x = Math.round(x0 + nx * (s + t) - ny * w), y = Math.round(y0 + ny * (s + t) + nx * w * 0.8);
+      const hh = Math.max(1, h - (t === 0 || t === len - 1 ? 2 : fxRoll(seed, k * 31 + t, 5) < 0.35 ? 1 : 0)); // heaped unevenly, rounded off at its ends
+      ctx.fillStyle = '#5f79a8'; ctx.fillRect(x, y + 1, 2, 1);
+      ctx.fillStyle = '#9fb4d6'; ctx.fillRect(x, y, 2, 1);
+      ctx.fillStyle = RU_SNOW; ctx.fillRect(x, y - hh, 2, hh);
+    }
+    s += len + 1 + 10 * fxRoll(seed, k, 4) * (1 - 0.6 * far);
   }
 }
 function drawShoulderTele(p, a, closing, ex, ey) {
   const nx = Math.cos(a), ny = Math.sin(a), L = teleLen(p.x, p.y, nx, ny, SHOULDER_SPD * SHOULDER_T) * (0.4 + 0.6 * closing);
-  furrowBits(p.x - ex, p.y + 4 - ey, nx, ny, L, p.id * 7 + 3, 0.7 + 0.3 * closing);
+  furrowRidges(p.x - ex, p.y + 4 - ey, nx, ny, L, p.id * 7 + 3);
   const x = Math.round(p.x + nx * L - ex), y = Math.round(p.y + 4 + ny * L - ey);
-  ruLump(x - 2, y - 2, 4); // the snow banked up at its end
+  ruLump(x - 3, y - 3, 5); // the snow banked up at its end
 }
 // SHOULDER's furrow: what the charge left, back along the way he came: the trodden trough
 // and the lumps thrown to its sides, settling and going
@@ -147,7 +163,7 @@ function drawFurrowFx(f, px, py, now) {
     ctx.fillStyle = '#b4c8e4'; ctx.fillRect(x - 3, y - 2 + j, 6, 4);
     ctx.fillStyle = RU_SNOW_D; ctx.fillRect(x - 3, y - 2 + j, 6, 1);
   }
-  furrowBits(px, py, nx, ny, f.r, fxSeed(f), 1);
+  furrowBits(px, py, nx, ny, f.r, fxSeed(f));
   ctx.globalAlpha = 1;
 }
 AB_FX_LOOK.furrow = drawFurrowFx;
