@@ -107,7 +107,7 @@ nothing hurts it, and `ownsStruct` is true, so E never swings at it.
   strokes only while held: the frame runs off `o.payT` (`pumpFrame`).
 - **The colour is the whole read** (no text). The pump wears its holder's team paint, or a grey
   set held by nobody (`pumpSet`, js/draw/structs.js; `SPRITES.pumpNeutral`, js/baked/pump.js).
-  `drawPumpRings` lays a soft glowing rim (`roostRingArt`, js/draw/recall.js) flat on the snow in the holder's
+  `drawPumpRings` lays the roost's glowing rim (`roostRingArt`) flat on the snow in the holder's
   mark, or `PUMP_GREY`, and the fill of the side taking it as a three-pixel arc of its mark
   running round from the top; the fill shows only where the viewer's side can see. Both maps ink
   it the holder's colour or grey (`mmPump`/`chPump`, world.js).

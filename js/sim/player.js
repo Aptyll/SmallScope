@@ -791,7 +791,7 @@ class Player {
     // the potion being drunk: its heal's time left, and its motes' clock (js/sim/items.js)
     this.potT = 0; this.potFxT = 0;
     // the recall's channel, and the roost ring's motes' clock (js/sim/recall.js)
-    this.recallT = 0; this.ringFxT = 0;
+    this.recallT = 0; this.ringFxT = 0; this.mendT = 0; // ...and how long the bird has been mending it without a break
     this.nockT = 0;                                // the cycle: seconds until the next press (attackCycle, js/sim/attack.js)
     this.slashT = 0; this.slashA = 0; this.slashHalf = 0; // a blade's sweep in flight: the hand swings the sword through it (cutAttack, js/sim/attack.js; drawHeldTool, js/draw/bodies.js)
     this.fireArmed = false;                        // the bow button has been pressed since the last loose
