@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['YOUR RING AND HEALTH BAR WEAR YOUR TEAM\'S COLOUR', '0.725'],
     ['NEW END SCREENS: YOUR TEAM AS A BOARD, DAMAGE AS BARS', '0.724'],
     ['BERRY BUSHES REMOVED', '0.723'],
     ['FEWER FISH IN THE RIVER', '0.722'],

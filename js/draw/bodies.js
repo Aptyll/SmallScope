@@ -249,8 +249,7 @@ const BUFF_RING = 12;                // pips round the ring
 const BUFF_COL = '#ffb04a';          // a buff with no bear named (a hand grant): amber
 // THE TEAM RING: one pixel ring on the snow round every hero's feet, in its
 // side's paint (the coat's own shade, a value step under the mark so a blue
-// one holds on blue-white snow; your own in SELF_COL, the green of your bar),
-// on an ink underline and a faint wash of the same colour. Heroes alone wear
+// one holds on blue-white snow; your own too, like every ally's), on an ink underline and a faint wash of the same colour. Heroes alone wear
 // it - never a soldier, a beast or the merchant - so in a crowd the ringed
 // bodies are the ones that matter, and which side each is on reads off the
 // ground when the bodies and their frames are piled on each other. It is
@@ -272,7 +271,7 @@ function drawHeroRing(p, cx, cy) {
   const R = heroRingPts || heroRingShape(), was = ctx.globalAlpha;
   ctx.fillStyle = HERO_RING_INK;
   for (const q of R.edge) ctx.fillRect(cx + q[0], cy + q[1] + 1, 1, 1);
-  ctx.fillStyle = p === player ? SELF_COL : TEAMS[skin(p.team)].coat;
+  ctx.fillStyle = TEAMS[skin(p.team)].coat;
   for (const q of R.edge) ctx.fillRect(cx + q[0], cy + q[1], 1, 1);
   ctx.globalAlpha = was * HERO_RING_WASH;
   for (const q of R.rows) ctx.fillRect(cx + q[0], cy + q[1], q[2], 1);
@@ -520,7 +519,7 @@ function drawPlayer(p, ex, ey, now, stage) {
   // nothing standing in front of the body cuts into it
   overheadPlate(() => {
     const stam = staminaShown(p); // a full stamina bar shows over your own head only (js/draw/overhead.js)
-    drawHealthBar(p.x - ex + FRAME_DX, hy - 7, p.hp, p.maxHp, 14, p.team, undefined, undefined, 1, undefined, local ? SELF_COL : undefined, stam ? 2 : HP_ROWS_ALONE); // your own in green (unitBarCol, js/draw/overhead.js)
+    drawHealthBar(p.x - ex + FRAME_DX, hy - 7, p.hp, p.maxHp, 14, p.team, undefined, undefined, 1, undefined, stam ? 2 : HP_ROWS_ALONE); // your own in your side's colour, like every ally's
     if (p.healCutT > 0) drawHealCut(p.x - ex + FRAME_DX, hy - 7, p.hp, p.maxHp, 14); // FROSTBITE: its heals are cut
     if (shL) drawShieldBar(fx - 7, hy - 10, dawn);
     if (line > 0) drawOrcaCount(fx, hy - 10 - shL, line);
@@ -528,7 +527,7 @@ function drawPlayer(p, ex, ey, now, stage) {
     // the colour-blind cap or the status plate, whichever stands furthest out,
     // centred on the 7-row frame the badge spans (hy-8 .. hy-2)
     const st = statusOf(p);
-    queueTally(p, fx + 8 + (st ? STATUS_W : foeCue(p.team) ? 1 : 0), hy - 4.5, unitBarCol(p));
+    queueTally(p, fx + 8 + (st ? STATUS_W : foeCue(p.team) ? 1 : 0), hy - 4.5, barCol(p.team));
     // level badge: a 7-tall plate sharing its right frame column with the bar
     // backing's left edge (fx-8: one 1px frame everywhere, never a doubled
     // wall), and spanning the health bar and the stamina bar stacked (hy-8 ..
