@@ -150,7 +150,7 @@ window.DBG = {
   // the local profile: the store itself, the profile card (js/ui/profile-card.js)
   // and the hero row (js/ui/heroes.js), so a driver can rename, pick and read back
   PROFILE, beginProfile, leaveProfile, profileCommit, profileKey, profileHit, profileLayout, profileTagRect, overProfileTag,
-  applyProfile, heroList, lobbyPick, beginSkins, skinsLayout, birdSkinFor, coinTagRect, setCoins: (n) => PROFILE.setCoins(n),
+  applyProfile, heroList, lobbyPick, beginSkins, skinsLayout, coinTagRect, setCoins: (n) => PROFILE.setCoins(n),
   // the radial wheel: open one by hand (state.wheel) and read back the
   // geometry the hover test and the pixels both use
   wheelLayout, wheelSpan, wheelAng, WHEEL_HUB, WHEEL_R, WHEEL_RING,

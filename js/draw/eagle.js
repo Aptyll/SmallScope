@@ -209,15 +209,14 @@ function drawPerchBar(e, sx, bottom, now) {
 }
 // one bird in its team's armour, whatever its state. In the air the sprite
 // sits at (x, y) with the shadow `alt` px below it; the dive walks that gap
-// to zero so shadow and bird meet exactly at the crash point. The skin it
-// wears (birdSkinFor, read here only: the sim never asks) is one of Perch's
-// looks (SPRITES.perch), painted at its heading and its size in the pose of
+// to zero so shadow and bird meet exactly at the crash point. It wears
+// Perch's one look (SPRITES.perch.look), painted at its heading and its size in the pose of
 // the moment, so the bird draws 1:1 and unrotated, its
 // shadow is its own silhouette at the roost's size, and a rider on a wing
 // rides that wing (SPRITES.perch.seat)
 function drawEagle(e, ex, ey, now) {
   const sx = Math.round(e.x - ex), sy = Math.round(e.y - ey), t = skin(e.team);
-  const PR = SPRITES.perch, worn = birdSkinFor(e.team), look = PR.has(worn) ? worn : BIRD_SKINS[0].id;
+  const PR = SPRITES.perch, look = PR.look;
   warmPerch(e, look); PR.tick(4); // paint the frames it is about to need, a few ms a frame
   if (e.state === 'fly' || e.state === 'dive') {
     const u = e.state === 'dive' ? Math.min(1, e.diveT / EAGLE_DIVE_T) : 0;
