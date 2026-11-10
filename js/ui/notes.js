@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['POTION: green hearts lift off the body while it heals', '0.908'],
     ['AURA\'s THE CURTAIN is drawn as solid ribbons of light', '0.907'],
     ['ROOST: no ring, a white feather settles on the hero the bird is mending', '0.906'],
     ['Down when your side wins? You get VICTORY now', '0.905'],
