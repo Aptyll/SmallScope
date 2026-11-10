@@ -6,7 +6,7 @@
 // sides see all of it. The lantern she carries hangs from her hand (HERO_STAVES).
 
 const LU_INK = '#2e2440', LU_BRASS = '#f2cc6a', LU_BRASS_D = '#b98a2e', LU_LIGHT = '#fff1b8', LU_WHITE = '#ffffff',
-  LU_WOOD = '#a3794f', LU_WOOD_D = '#6b4a30';
+  LU_WOOD = '#a3794f', LU_WOOD_D = '#6b4a30', LU_LAMP_RIM = '#f6dc8e';
 
 // ---- shots -----------------------------------------------------------------------
 // her lantern's SPARK: a warm ball of lamplight with four short rays that come and go, a brass streak behind it
@@ -104,21 +104,21 @@ function drawLucernaGround(ex, ey, now) {
 }
 HERO_GROUND.push(drawLucernaGround);
 // ---- the keys' own looks -----------------------------------------------------------------
-// SHEPHERD'S CROOK's wind-up: the hook's line run out down the aim, a glint of her lamp
-// running along it to the hook at the end of its throw
+// SHEPHERD'S CROOK's wind-up: her lamp's light laid down the aim on the snow, a warm
+// strip broad by her and narrowing, a brighter glint running out along it, and the crook's
+// hook standing at the end of its throw
 function drawCrookTele(p, a, closing, now, ex, ey) {
-  const nx = Math.cos(a), ny = Math.sin(a), L = CROOK_RANGE * (0.3 + 0.7 * closing), x0 = p.x - ex, y0 = p.y - BOW_Y - ey;
-  const glint = ((now * 260) % L);
-  ctx.globalAlpha = 0.5 + 0.45 * closing;
-  for (let s = 8; s < L; s++) {
-    const x = Math.round(x0 + nx * s), y = Math.round(y0 + ny * s);
-    ctx.fillStyle = LU_INK; ctx.fillRect(x, y + 1, 1, 1);
-    ctx.fillStyle = Math.abs(s - glint) < 3 ? LU_LIGHT : LU_WOOD; ctx.fillRect(x, y, 1, 1);
-  }
-  const hx = Math.round(x0 + nx * L), hy = Math.round(y0 + ny * L);
-  ctx.fillStyle = LU_INK; ctx.fillRect(hx - 2, hy - 3, 5, 6);
-  ctx.fillStyle = LU_WOOD; ctx.fillRect(hx - 1, hy - 2, 3, 1); ctx.fillRect(hx + 1, hy - 2, 1, 3); ctx.fillRect(hx - 1, hy - 1, 1, 3);
+  const nx = Math.cos(a), ny = Math.sin(a), L = CROOK_RANGE * (0.3 + 0.7 * closing), x0 = p.x - ex, y0 = p.y + 3 - ey;
+  ctx.globalAlpha = 0.6 + 0.4 * closing;
+  fxStrip(x0 + nx * 8, y0 + ny * 8, nx, ny, L - 8, 3, 1, p.id * 41, LU_LAMP_RIM, LU_LIGHT, LU_WHITE);
+  const g = 8 + ((now * 260) % Math.max(1, L - 12));
+  ctx.fillStyle = LU_WHITE; ctx.fillRect(Math.round(x0 + nx * g) - 1, Math.round(y0 + ny * g), 4, 1); ctx.fillRect(Math.round(x0 + nx * g), Math.round(y0 + ny * g) - 1, 2, 3);
   ctx.globalAlpha = 1;
+  // the hook: a shaft's end and its curl, 2 px thick, inked
+  const hx = Math.round(x0 + nx * L), hy = Math.round(y0 + ny * L) - 2;
+  const hook = [[0, 3], [0, 2], [0, 1], [0, 0], [0, -1], [0, -2], [1, -3], [2, -3], [3, -2], [3, -1], [3, 0]];
+  ctx.fillStyle = LU_INK; for (const [dx, dy] of hook) ctx.fillRect(hx + dx - 1, hy + dy - 1, 4, 4);
+  for (const [dx, dy] of hook) { ctx.fillStyle = LU_WOOD; ctx.fillRect(hx + dx, hy + dy, 2, 2); ctx.fillStyle = LU_WOOD_D; ctx.fillRect(hx + dx + 1, hy + dy + 1, 1, 1); }
 }
 // LANTERN's wind-up: the light gathering on the spot it will land, brightest at its heart
 function drawLanternTele(x, y, closing) {

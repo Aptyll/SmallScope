@@ -6,6 +6,7 @@
 // over him (HERO_OVER), and his longbow upright at his side at rest
 // (HERO_CARRY). Both sides see all of it, but a rival's arrow in the fog is not there.
 
+const AC_SHADE = '#8a6a2c'; // a gold streak's underside
 const AC_INK = '#141a2c', AC_GOLD = '#f2cc6a', AC_WHITE = '#ffffff', AC_SHAFT = '#c8a46a';
 
 // ---- on the snow --------------------------------------------------------------------
@@ -73,21 +74,21 @@ function acArrow(x, y, a, len, team) {
   arrowBodyPx(AC_PX, x, y, Math.cos(a), Math.sin(a), 0, len, tm.mark, tm.coatD, AC_SHAFT, 0);
   paintArrowPx(AC_PX);
 }
-// VOLLEY: the five arrows fanned on the string, each sending a streak of its flight out
-// down its bearing as he draws, to the volley's whole reach as he looses
+// VOLLEY: the five arrows fanned on the string, each with the path of its flight laid
+// out down its bearing as he draws: a soft gold band, two px by him and one further out,
+// solid to the volley's reach (never a hairline of see-through dashes), white at its tip
 function drawVolleyTele(p, a0, closing, ex, ey) {
-  const x0 = p.x - ex, y0 = p.y - BOW_Y - ey;
+  const x0 = p.x - ex, y0 = p.y - BOW_Y - ey, L = VOLLEY_RANGE * closing;
+  ctx.globalAlpha = 0.45 + 0.35 * closing;
   for (let k = 0; k < VOLLEY_N; k++) {
     const a = a0 - VOLLEY_HALF + (2 * VOLLEY_HALF * k) / (VOLLEY_N - 1), nx = Math.cos(a), ny = Math.sin(a);
-    const L = VOLLEY_RANGE * closing;
-    ctx.globalAlpha = 0.25 + 0.35 * closing;
-    for (let s = 18; s < L; s += 1) { // the streak: thin, solid, thinning out with distance
-      if (s > L * 0.6 && s % 2) continue;
-      ctx.fillStyle = s < L * 0.6 ? AC_GOLD : AC_WHITE;
-      ctx.fillRect(Math.round(x0 + nx * s), Math.round(y0 + ny * s), 1, 1);
+    for (let s = 18; s < L; s++) {
+      const th = s < L * 0.45 ? 2 : 1, x = Math.round(x0 + nx * s), y = Math.round(y0 + ny * s);
+      ctx.fillStyle = AC_SHADE; ctx.fillRect(x, y + th, th, 1); // its shadow under it, so it holds on snow
+      ctx.fillStyle = s > L - 6 ? AC_WHITE : AC_GOLD; ctx.fillRect(x, y, th, th);
     }
-    ctx.globalAlpha = 1;
   }
+  ctx.globalAlpha = 1;
   // on the string, three of the five (the wind-up only has to say several): the middle and the two outermost bearings,
   // three px apart along the string, only the head and fore shaft of each showing ahead of the bow, clear of his
   // body, painted as one

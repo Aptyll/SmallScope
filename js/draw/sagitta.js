@@ -31,20 +31,31 @@ HERO_SHOTS.longbolt = (a, sx, sy) => drawBoltBody(a, sx, sy, 15, SG_WHITE, true)
 
 // ---- THE LONG BOLT's line -----------------------------------------------------------
 // While she draws (PIN) or kneels (THE LONG BOLT), her sight down the line the bolt will
-// fly: one taut solid line in her side's mark, white in the last quarter, a glint running
-// along it, out to the first tree or wall on it; the long bolt's draws tight to 2 px
+// fly: a taut band in her side's mark, 2 px over a dark underside so it is never a
+// hairline, white down its middle in the last quarter, a glint running along it, out to
+// the first tree or wall on it, where the bolt's head shows (the long bolt's the bigger)
 function drawSightLine(p, a, range, closing, now, ex, ey, long) {
   const nx = Math.cos(a), ny = Math.sin(a), x0 = p.x, y0 = p.y - BOW_Y;
   const L = teleLen(x0, y0, nx, ny, range), glint = (now * (long ? 500 : 300)) % L;
-  const col = closing > 0.75 ? SG_WHITE : TEAMS[skin(p.team)].mark, thick = long && closing > 0.5 ? 2 : 1;
-  ctx.globalAlpha = 0.35 + 0.55 * closing;
+  const col = TEAMS[skin(p.team)].mark, hot = closing > 0.75;
+  const on = (x, y) => !(x < -4 || y < -4 || x > WV_W + 4 || y > WV_H + 4);
+  ctx.globalAlpha = 0.5 + 0.4 * closing;
   for (let s = 10; s < L; s++) {
     const x = Math.round(x0 + nx * s - ex), y = Math.round(y0 + ny * s - ey);
-    if (x < -2 || y < -2 || x > WV_W + 2 || y > WV_H + 2) continue;
-    ctx.fillStyle = SG_INK; ctx.fillRect(x, y + thick, thick, 1);
-    ctx.fillStyle = Math.abs(s - glint) < 4 ? SG_WHITE : col; ctx.fillRect(x, y, thick, thick);
+    if (!on(x, y)) continue;
+    const lit = Math.abs(s - glint) < 5;
+    ctx.fillStyle = SG_INK; ctx.fillRect(x, y + 2, 2, 1);
+    ctx.fillStyle = lit ? SG_WHITE : col; ctx.fillRect(x, y, 2, 2);
+    if (hot && !lit) { ctx.fillStyle = SG_WHITE; ctx.fillRect(x, y, 1, 1); }
   }
   ctx.globalAlpha = 1;
+  const hx = Math.round(x0 + nx * L - ex), hy = Math.round(y0 + ny * L - ey), n = long ? 5 : 3; // the bolt's head where it will stop
+  if (on(hx, hy)) {
+    const pts = [];
+    for (let k = 0; k <= n; k++) for (let o = -(n - k); o <= n - k; o++) pts.push([Math.round(hx + nx * k - ny * o * 0.7), Math.round(hy + 1 + ny * k + nx * o * 0.7)]);
+    ctx.fillStyle = SG_INK; for (const [qx, qy] of pts) ctx.fillRect(qx - 1, qy - 1, 3, 3);
+    ctx.fillStyle = SG_STEEL; for (const [qx, qy] of pts) ctx.fillRect(qx, qy, 1, 1);
+  }
 }
 // PAVISE's wind-up: the shield coming up out of the snow where she plants it, a little
 // higher each frame, its foot spike's snow thrown up
