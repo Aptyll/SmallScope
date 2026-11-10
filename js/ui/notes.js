@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['Each forest wall corner slants off by its own amount', '0.916'],
     ['EAGLE: a blow knocks a white feather loose, no red specks', '0.915'],
     ['The forest walls\' square corners slant off', '0.914'],
     ['SURRENDER: no blind presses while the bird flies off', '0.913'],
