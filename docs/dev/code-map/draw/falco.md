@@ -6,4 +6,4 @@
 | the knife in his hand: hung from the fist at rest (`HERO_CARRY`), cocked back and flung (`HERO_AIMED.knife`) | `falcoCarry` | `falco` › `the knife in his hand` |
 | his thrown knives: the basic attack's (`HERO_SHOTS.knife`) and KNIFE FAN's | `drawThrownKnife` | `falco` › `knives` |
 | a rival his hawk marked, as his own side sees it, in the row over its stack (`HERO_OVER`) | `falcoSees` | `falco` › `over a body` |
-| STOOP: his body gone into the sky, its shadow and a falling dart (`HERO_BODY_DRAW`) | `drawFalcoSky` | `falco` › `STOOP` |
+| STOOP: his body gone from the snow (`HERO_BODY_DRAW`), his hawk carrying him over to the marked hero with their shadow under them (`HERO_AIR`, since the body pass keeps a body to its own box) | `drawFalcoSky`, `drawFalcoStoop` | `falco` › `STOOP` |
