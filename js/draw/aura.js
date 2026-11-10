@@ -108,23 +108,29 @@ function drawStepFx(f, px, py, now) {
 }
 AB_FX_LOOK.step = drawStepFx;
 // THE CURTAIN gathering over its band from (px, py) out along (nx, ny), `len` px,
-// `k` 0..1 the fall's nearness: the snow under it lit, and short ribbons of light
-// beginning to stand up off it, taller as the fall nears
+// `k` 0..1 the fall's nearness: the snow under it lit, and short ribbons of solid light
+// (auRibbon) beginning to stand up off it, taller as the fall nears
 function drawCurtainRise(px, py, nx, ny, len, k, now) {
   auBand(px, py, nx, ny, len, CURTAIN_HALF, AU_GREEN, 0.12 + 0.18 * k);
   const h = Math.round(8 + 18 * k);
   for (let s = 6, i = 0; s <= len; s += 6, i++) {
     const bx = px + nx * s, by = py + ny * s;
     if (bx < -10 || bx > WV_W + 10 || by < -4 || by > WV_H + h + 4) continue;
-    const sway = Math.sin(now * 3 + i * 0.7);
-    for (let y = 0; y < h; y++) {
-      const t = y / h;
-      ctx.globalAlpha = (0.6 + 0.4 * k) * (1 - t * 0.7);
-      ctx.fillStyle = t < 0.3 ? AU_PALE : i % 3 ? AU_GREEN : AU_TEAL;
-      ctx.fillRect(Math.round(bx + sway * t), Math.round(by - y - (i % 3) * 2), 2, 1);
-    }
+    auRibbon(bx, by - (i % 3) * 2, h - (i % 2) * 3, i, Math.sin(now * 3 + i * 0.7));
   }
-  ctx.globalAlpha = 1;
+}
+// one ribbon of the curtain standing `h` px up off (bx, by): three px of solid light, a pale core between two
+// green or teal edges, swaying more the higher it goes; its top third thins to every other px and then to the
+// core alone, so it ends in a point and never in a fade
+function auRibbon(bx, by, h, i, sway) {
+  const edge = i % 3 ? AU_GREEN : AU_TEAL;
+  for (let y = 0; y < h; y++) {
+    const t = y / h, x = Math.round(bx + sway * t * 2), yy = Math.round(by - y);
+    if (t > 0.85) { if (y & 1) { ctx.fillStyle = AU_PALE; ctx.fillRect(x, yy, 1, 1); } continue; }
+    if (t > 0.65 && (y & 1)) { ctx.fillStyle = edge; ctx.fillRect(x, yy, 1, 1); continue; }
+    ctx.fillStyle = edge; ctx.fillRect(x - 1, yy, 3, 1);
+    ctx.fillStyle = t < 0.35 ? AU_WHITE : AU_PALE; ctx.fillRect(x, yy, 1, 1);
+  }
 }
 // its fall: the band's snow flashed white, gone in a beat
 function drawCurtainFx(f, px, py, now) {
@@ -144,13 +150,8 @@ function drawCurtainFall(c, ex, ey, now, k) {
   for (let s = 6, i = 0; s <= c.len; s += 7, i++) {
     const bx = c.x + c.nx * s - ex, by = c.y + c.ny * s - ey;
     if (bx < -10 || bx > WV_W + 10 || by < -4 || by > WV_H + h + 4) continue;
-    const sway = Math.sin(now * 3 + i * 0.7) * 2;
-    for (let y = 0; y < h; y += 1) {
-      const t = y / h, x = Math.round(bx + sway * t);
-      ctx.globalAlpha = a * (1 - t) * 0.8;
-      ctx.fillStyle = t < 0.25 ? AU_PALE : i % 3 ? AU_GREEN : AU_TEAL;
-      ctx.fillRect(x, Math.round(by - y), i % 2 ? 1 : 2, 1);
-    }
+    ctx.globalAlpha = Math.min(1, a * 1.6); // whole, then gone together over the last of the glow
+    auRibbon(bx, by, h - (i % 3) * 6, i, Math.sin(now * 3 + i * 0.7));
   }
   ctx.globalAlpha = 1;
 }
