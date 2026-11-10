@@ -29,23 +29,58 @@ HERO_SHOTS.pinbolt = (a, sx, sy) => drawBoltBody(a, sx, sy, 12, SG_BRASS, true);
 // the long bolt: the whole arrow's length, doubled, steel
 HERO_SHOTS.longbolt = (a, sx, sy) => drawBoltBody(a, sx, sy, 15, SG_WHITE, true);
 
-// ---- THE LONG BOLT's line -----------------------------------------------------------
-// While she draws (PIN) or kneels (THE LONG BOLT), her sight down the line the bolt will
-// fly: one taut solid line in her side's mark, white in the last quarter, a glint running
-// along it, out to the first tree or wall on it; the long bolt's draws tight to 2 px
+// ---- her sight (PIN, THE LONG BOLT) ----------------------------------------------------
+// The tower's language (drawTowerFx, js/draw/towers.js), never a coloured bar: while she
+// draws (PIN) or kneels (THE LONG BOLT), one thin pale steel thread down the line the
+// bolt will fly, soft, out to the first tree or wall on it, and a glint on the chest of
+// the first body it meets from its first frame, so whoever it is knows at once. The two
+// are told apart by weight: PIN is the thread and a small glint; THE LONG BOLT shows the
+// bolt itself nocked at the bow end, and its glint is a bigger star that burns warm
+// through the last quarter.
+const SG_THREAD = '#dfe6f0', SG_THREAD_D = '#7f8eae', SG_WARM = '#ffe9a0', SG_SIGHT_R = 7; // px off the line a body still counts as on it
+function sightFirst(p, x0, y0, nx, ny, L, now) {
+  let best = null, bt = L;
+  const look = (u) => {
+    if (u === p || u.team === p.team || !unitAlive(u) || !fogShown(u, now)) return;
+    const t = (u.x - x0) * nx + (u.y - 6 - y0) * ny;
+    if (t > 8 && t < bt && Math.abs((u.x - x0) * ny - (u.y - 6 - y0) * nx) < SG_SIGHT_R) { bt = t; best = u; }
+  };
+  for (const u of players) if (u.active && !inAir(u)) look(u);
+  for (const u of animals) look(u);
+  for (const u of robots) look(u);
+  return best;
+}
 function drawSightLine(p, a, range, closing, now, ex, ey, long) {
   const nx = Math.cos(a), ny = Math.sin(a), x0 = p.x, y0 = p.y - BOW_Y;
-  const L = teleLen(x0, y0, nx, ny, range), glint = (now * (long ? 500 : 300)) % L;
-  const col = closing > 0.75 ? SG_WHITE : TEAMS[skin(p.team)].mark, thick = long && closing > 0.5 ? 2 : 1;
-  ctx.globalAlpha = 0.35 + 0.55 * closing;
-  for (let s = 10; s < L; s++) {
+  const L = teleLen(x0, y0, nx, ny, range);
+  ctx.globalAlpha = 0.4 + 0.4 * closing;
+  for (let s = long ? 22 : 10; s < L; s++) {
     const x = Math.round(x0 + nx * s - ex), y = Math.round(y0 + ny * s - ey);
     if (x < -2 || y < -2 || x > WV_W + 2 || y > WV_H + 2) continue;
-    ctx.fillStyle = SG_INK; ctx.fillRect(x, y + thick, thick, 1);
-    ctx.fillStyle = Math.abs(s - glint) < 4 ? SG_WHITE : col; ctx.fillRect(x, y, thick, thick);
+    ctx.fillStyle = SG_THREAD_D; ctx.fillRect(x, y + 1, 1, 1); // a soft underside, so pale steel holds on snow
+    ctx.fillStyle = SG_THREAD; ctx.fillRect(x, y, 1, 1);
   }
   ctx.globalAlpha = 1;
+  if (long) drawBoltBody({ vx: nx, vy: ny, team: p.team }, x0 + nx * 20 - ex, y0 + ny * 20 - ey, 15, SG_WHITE, true); // the bolt, nocked
 }
+// the glint, over the bodies (HERO_AIR): on the chest of the first body her sight meets
+function drawSightGlints(ex, ey, now) {
+  for (const p of players) {
+    if (!p.active || p.dead || !(p.castT > 0)) continue;
+    const ab = abOf(p, p.castAb);
+    if (!ab || (ab.id !== 'pin' && ab.id !== 'longbolt')) continue;
+    const long = ab.id === 'longbolt', a = aimAngle(p), nx = Math.cos(a), ny = Math.sin(a), x0 = p.x, y0 = p.y - BOW_Y;
+    const u = sightFirst(p, x0, y0, nx, ny, teleLen(x0, y0, nx, ny, long ? LONG_RANGE : PIN_RANGE), now);
+    if (!u) continue;
+    const hx = Math.round(u.x - ex), hy = Math.round(u.y - 3 - ey), glow = long && castProg(p) > 0.75 ? SG_WARM : SG_THREAD;
+    ctx.fillStyle = SG_INK;
+    if (long) { ctx.fillRect(hx - 4, hy - 1, 9, 3); ctx.fillRect(hx - 1, hy - 4, 3, 9); ctx.fillRect(hx - 2, hy - 2, 5, 5); }
+    else { ctx.fillRect(hx - 2, hy - 1, 5, 3); ctx.fillRect(hx - 1, hy - 2, 3, 5); }
+    fxMote(hx, hy, SG_WHITE, glow);
+    if (long) { ctx.fillStyle = glow; ctx.fillRect(hx - 3, hy, 2, 1); ctx.fillRect(hx + 2, hy, 2, 1); ctx.fillRect(hx, hy - 3, 1, 2); ctx.fillRect(hx, hy + 2, 1, 2); ctx.fillStyle = SG_WHITE; ctx.fillRect(hx - 1, hy, 3, 1); ctx.fillRect(hx, hy - 1, 1, 3); }
+  }
+}
+HERO_AIR.push(drawSightGlints);
 // PAVISE's wind-up: the shield coming up out of the snow where she plants it, a little
 // higher each frame, its foot spike's snow thrown up
 function drawPaviseTele(p, x, y, a, closing) {
