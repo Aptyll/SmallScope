@@ -147,25 +147,26 @@ AB_FX_LOOK.shoo = drawShooFx;
 
 // ---- the LANTERN ----------------------------------------------------------------------
 // What she carries (CLASSES' `staff: 'lantern'`; HERO_STAVES, js/draw/heroes.js): a brass
-// lamplighter's lantern hung from her hand by its ring, lit; the flame breathes between two
+// lamplighter's lantern hung from her hand by its ring, lit behind dark corner posts under a
+// brass eave; the flame breathes between two
 // frames. The hand closes on the ring at LUCERNA_LANTERN_GRIP.
 const LUCERNA_LANTERN = [
   '..ooo..',
   '..o.o..',
   '.ooooo.',
-  '.oyYyo.',
-  'oyFWFyo',
-  'oyFFFyo',
-  'oyfFfyo',
-  '.oYyYo.',
-  '..ooo..',
+  'oYyyyYo',
+  'onFWFno',
+  'onFFFno',
+  'onfFfno',
+  'oYyyyYo',
+  '.ooooo.',
 ];
 const LUCERNA_LANTERN_GRIP = [3, 1];
-const LUCERNA_LANTERN_PAL = { o: '#2e2440', y: '#f2cc6a', Y: '#b98a2e', f: '#f2cc6a', F: '#fff1b8', W: '#ffffff' };
+const LUCERNA_LANTERN_PAL = { o: '#2e2440', y: '#f2cc6a', Y: '#b98a2e', f: '#f2cc6a', F: '#fff1b8', W: '#ffffff', n: '#5a4a3c' };
 let lucernaLanternArt = null;
 function lucernaLantern() {
   if (lucernaLanternArt) return lucernaLanternArt;
-  const beat = LUCERNA_LANTERN.map((r) => r.replace('oyFWFyo', 'oyWFWyo'));
+  const beat = LUCERNA_LANTERN.map((r) => r.replace('onFWFno', 'onWFWno'));
   lucernaLanternArt = [bakeBladeArt(LUCERNA_LANTERN, LUCERNA_LANTERN_PAL), bakeBladeArt(beat, LUCERNA_LANTERN_PAL)];
   return lucernaLanternArt;
 }

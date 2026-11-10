@@ -133,35 +133,32 @@ HERO_MARK.push(drawVeloxMarks);
 
 // ---- the STAFF SLING ------------------------------------------------------------
 // Her staff (CLASSES' `staff: 'sling'`; HERO_STAVES, js/draw/heroes.js): a hooked
-// staff carried upright, the sling's cords and pouch hanging off the hook; the stone
-// in the pouch glints between two frames. The hand closes on the shaft at VELOX_SLING_GRIP.
+// staff carried upright, shorter than a mage's, the sling's cord and its leather pouch
+// hanging off the hook; the stone in the pouch glints between two frames. The hand closes on the shaft at VELOX_SLING_GRIP.
 const VELOX_SLING = [
-  '..oo....',
-  '.oGGo...',
-  '.oGoGo..',
-  '.obo.oo.',
-  '.obo.oco',
-  '.obo.oco',
-  '.obo.oqo',
-  '.obo.oSo',
-  '.obo..o.',
-  '.obo....',
-  '.obo....',
-  '.obo....',
-  '.obo....',
-  '.obo....',
-  '.obo....',
-  '.obo....',
-  '.obo....',
-  '.oBo....',
-  '..o.....',
+  '..oo.....',
+  '.oGGo....',
+  '.oGoGoo..',
+  '.obo.oco.',
+  '.obo.oco.',
+  '.obooqcqo',
+  '.oboqSSqo',
+  '.obooqqo.',
+  '.obo.oo..',
+  '.obo.....',
+  '.obo.....',
+  '.obo.....',
+  '.obo.....',
+  '.obo.....',
+  '.oBo.....',
+  '..o......',
 ];
-const VELOX_SLING_GRIP = [2, 10];
+const VELOX_SLING_GRIP = [2, 9];
 const VELOX_SLING_PAL = { o: '#241a12', G: '#c3ccd8', b: '#8a6440', B: '#5e4128', c: '#d8c49a', q: '#6f4d38', S: '#9aa3b8', W: '#dfe6f0' };
 let veloxSlingArt = null;
 function veloxSling() {
   if (veloxSlingArt) return veloxSlingArt;
-  const glint = VELOX_SLING.map((r, y) => (y === 7 ? '.obo.oWo' : r));
+  const glint = VELOX_SLING.map((r, y) => (y === 6 ? '.oboqWSqo' : r));
   veloxSlingArt = [bakeBladeArt(VELOX_SLING, VELOX_SLING_PAL), bakeBladeArt(glint, VELOX_SLING_PAL)];
   return veloxSlingArt;
 }
