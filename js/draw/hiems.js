@@ -67,31 +67,33 @@ function drawHiemsGround(ex, ey, now) {
     const px = Math.round(s.x - ex), py = Math.round(s.y - ey);
     if (px < -WHITE_R - 8 || py < -WHITE_R - 8 || px > WV_W + WHITE_R + 8 || py > WV_H + WHITE_R + 8) continue;
     const a = Math.min(1, s.t / 0.3, (s.life - s.t) / 0.4);
-    // a grey-blue haze (white alone vanishes on snow), its rim, and the driven snow:
-    // streaks of wind and flakes with a dark under-pixel, wheeling round her
+    // a grey-blue haze (white alone vanishes on snow) and the driven snow
     ctx.globalAlpha = 0.3 * a; hiDisc(px, py, WHITE_R, WHITE_R, '#9fb6d8');
     ctx.globalAlpha = 0.25 * a; hiDisc(px, py, WHITE_R - 6, WHITE_R - 6, '#c8d8e8');
-    for (let k = 0; k < 36; k++) { // its edge: gusts racing round the rim, never a drawn line
-      const ang = k / 36 * Math.PI * 2 + now * 2.2, r = WHITE_R - 1 - (k % 3) * 2, tx = -Math.sin(ang), ty = Math.cos(ang);
-      ctx.globalAlpha = 0.85 * a;
-      for (let s = 0; s < 5; s++) {
-        const x = Math.round(px + Math.cos(ang) * r - tx * s), y = Math.round(py + Math.sin(ang) * r - ty * s);
-        ctx.fillStyle = '#5f7aa0'; ctx.fillRect(x, y + 1, 1, 1);
-        ctx.fillStyle = s < 2 ? HI_WHITE : '#c8d8e8'; ctx.fillRect(x, y, 1, 1);
-      }
-    }
-    for (let k = 0; k < 90; k++) {
-      const r = WHITE_R * (0.1 + ((k * 37) % 88) / 100), ang = k * 2.399 + now * (1.6 + (k % 5) * 0.25);
-      const x = Math.round(px + Math.cos(ang) * r), y = Math.round(py + Math.sin(ang) * r - 6);
-      ctx.globalAlpha = 0.9 * a;
-      if (k % 3 === 0) { // a streak of wind, along the turn
-        const tx = -Math.sin(ang), ty = Math.cos(ang);
-        ctx.fillStyle = '#7f98bc';
-        for (let s = 0; s < 4; s++) ctx.fillRect(Math.round(x - tx * s * 1.5), Math.round(y - ty * s * 1.5), 1, 1);
+    // the driven snow: one wind across the whole storm, down and to the right. Streaks two px thick, uneven,
+    // each over its own dark under-row so it holds on snow, longer and closer together toward the edge, so the
+    // edge is told by where the streaks stop and nothing follows a circle; big flakes ride the same wind
+    ctx.globalAlpha = 0.95 * a;
+    const R2 = WHITE_R * 2, wx = 1, wy = 0.4;
+    for (let k = 0; k < 120; k++) {
+      const h1 = (k * 7919 % 997) / 997, h2 = (k * 104729 % 991) / 991, sp = 70 + (k % 5) * 14;
+      const ox = ((h1 * R2 + now * sp * wx) % R2) - WHITE_R, oy = ((h2 * R2 + now * sp * wy) % R2) - WHITE_R;
+      const d = Math.hypot(ox, oy) / WHITE_R;
+      if (d > 1 || (d < 0.55 && k % 3)) continue; // thin in the middle, where she stands
+      if (k % 4 === 3) { // a big flake
+        const x = Math.round(px + ox), y = Math.round(py + oy - 6);
+        ctx.fillStyle = '#5f7aa0'; ctx.fillRect(x, y + 2, 2, 1);
+        ctx.fillStyle = HI_WHITE; ctx.fillRect(x, y, 2, 2);
         continue;
       }
-      ctx.fillStyle = '#5f7aa0'; ctx.fillRect(x, y + 1, k % 7 ? 1 : 2, 1);
-      ctx.fillStyle = HI_WHITE; ctx.fillRect(x, y, k % 7 ? 1 : 2, 1);
+      const len = Math.round(5 + 11 * d + (k % 3) * 2);
+      for (let q = 0; q < len; q += 2) {
+        const sx = ox - q * wx, sy = oy - q * wy;
+        if (sx * sx + sy * sy > WHITE_R * WHITE_R) break;
+        const x = Math.round(px + sx), y = Math.round(py + sy - 6), th = q < len - 3 ? 2 : 1;
+        ctx.fillStyle = '#5f7aa0'; ctx.fillRect(x, y + th, 2, 1);
+        ctx.fillStyle = q < len * 0.4 ? HI_WHITE : '#dbe6f4'; ctx.fillRect(x, y, 2, th);
+      }
     }
     ctx.globalAlpha = 1;
   }
