@@ -1277,7 +1277,9 @@ function respawnPlayer(p) {
   p.backT = BACK_FX_T;
   burst(p.x, p.y - 2, '#f4f7ff', 16, 70, 0.5, true);
   sfxAt('place', p.x, p.y);
-  if (p === player) {
+  // the body comes back under a decided match's screen too (the match runs on
+  // underneath), but the screen is the ending's and stays
+  if (p === player && (!state.over || state.over === 'respawning')) {
     state.over = null;
     state.mode = 'play';
     state.spec = -1; // the camera returns to the local player, not whoever it was watching
@@ -1322,7 +1324,10 @@ function checkLastStanding() {
   if (PRACTICE) return;
   // state.eagleCine: the driven-off ceremony is playing - the screens wait
   // for it (eagleFleeResolve re-runs this once the camera has had its moment)
-  if (state.over || state.eagleCine || player.eliminated || rivalTeamsInMatch(player) > 0) return;
+  // a respawn wait is not an ending: a hero who is down when the last rival
+  // bird leaves has won with everyone else (the wait used to swallow the win,
+  // and the hero came back into a decided match with no screen at all)
+  if ((state.over && state.over !== 'respawning') || state.eagleCine || player.eliminated || rivalTeamsInMatch(player) > 0) return;
   endMatch('won');
 }
 
