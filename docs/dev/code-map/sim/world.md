@@ -2,7 +2,7 @@
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| worldgen, rivers, forest border and the two roost corners' guaranteed woods | `genWorld`, `carveRiver`, `borderNoise` (the seed's own border), `borderDepth` (that or the roost disc - what everything reads), `BORDER_MIN`/`BORDER_MAX`, `ROOST_R`/`ROOST_WOBBLE`, `CENTER_R`, `warrenGrove`/`GROVE_IN`/`GROVE_TAPER` (the border grown out round each warren, folded into `borderDepth`) | `world` |
+| worldgen, rivers, forest border and the two roost corners' guaranteed woods | `genWorld`, `carveRiver`, `borderNoise` (the map's own border), `borderDepth` (that or the roost disc - what everything reads), `BORDER_MIN`/`BORDER_MAX`, `ROOST_R`/`ROOST_WOBBLE`, `CENTER_R`, `warrenGrove`/`GROVE_IN`/`GROVE_TAPER` (the border grown out round each warren, folded into `borderDepth`) | `world` |
 | the snowdrop clump and its rest after a pick | `OBJECTS.snowdrop`, `SNOWDROP_CD`/`SNOWDROP_BUD_T`, `snowdropLeft` (`o.readyAt`; the pick: `pickSnowdrop`, js/sim/actions.js) | `world` |
 | the **segment index** the side lanes are laid on: a polyline's nearest two segments per tile, and the distance to it | `segLat`, `segsLat`, `addSeg`, `indexSegs` | `segment index` (its reader: `sideLaneDist`, js/sim/lanes.js) |
 | what a kind of scenery **is** - solid, which tool, the E verb and lift, what each map paints it (the minimap's colour, the chart's class) | `OBJECTS` | `world` (buildings carry the same `mm`/`map` pair: `STRUCTS`, structures.js) |

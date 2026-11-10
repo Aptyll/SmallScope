@@ -6,7 +6,7 @@
 | the economy: every gold payout in one table, and a beast's XP (`xp`) | `YIELD` | `constants` (`gainGold`, the one way it is paid: `players`, player.js; the XP: `shareXp`, `players`, player.js) |
 | tuning for one feature (the bow, the roll, a wolf, a tower, a ping, a potion) | **not here** - each block sits above the code that reads it; find it in this file's per-file section | - |
 | the one exception to that: `state` reads it at load, so it cannot live in a later file | `FISH_SPAWN_T` | `constants` (the rest of the shoal: `fish`, wildlife.js) |
-| determinism: the seeded stream every world draw comes from | `mulberry32`, `SEED`, `rng` | `rng` (`hash2`/`vnoise`: `ground prerender`, js/draw/ground.js; `treeRare`: `world`, world.js) |
+| determinism: the one map's seed and the match's stream | `mulberry32`, `MAP_SEED` (the map), `worldKind`, `SEED`, `rng` (the match), `worldRng` (worldgen's streams) | `rng` (`hash2`/`vnoise`: `ground prerender`, js/draw/ground.js; `treeRare`: `world`, world.js) |
 | the singletons | `state`, `settings`, `perf` | `state` (`players`/`player` + the entity arrays: `players`, player.js) |
 | settings persistence, the team palette, and the minimap-size helpers | `saveSettings`, `loadSettings`, `applyTeamPal`, `mmScale`, `applyMinimapSize` | `state` |
 | `relayout()` — the resize pair's second half | `relayout`, `placeSlab` (the settings slab's x, its sliders and mute) | `state` (`fitCanvas`: `canvas`, canvas.js — still the resize pair) |

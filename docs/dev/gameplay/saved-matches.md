@@ -8,9 +8,12 @@ player's item slots, the clock, and the two seeded streams' positions (`rng` and
 out** the same from that step: the proof is below. Nothing a player reaches calls it; it is
 `DBG.saveCapture`, `DBG.saveApply`, `DBG.saveHash` and `DBG.saveLoad` (js/app/boot.js).
 
-**How it works** (js/sim/save.js). The world is a seed: a load is a page on the saved `?seed` and
-`?map`, which grows the very same valley, and the save is what the match has done to it since.
-`saveBaseline` records the valley as it grew, at boot, before anything moves (each tile's object
+**How it works** (js/sim/save.js). There is one map, grown from `MAP_SEED` on every page, so a
+load is a fresh page on the same ground and match seed (the record names both: `world`, from
+`worldKind()`, and `seed`; `saveApply` throws on another, and `saveDevLoad` reloads onto
+`?seed=` the record's), and the save is what the match has done to it since. The streams'
+positions ride in the body.
+`saveBaseline` records the map as it grew, at boot, before anything moves (each tile's object
 by reference with a hash of its contents, and the ground); `saveCapture` then writes
 
 - **the roots** (`SAVE_ROOTS`): every mutable global the sim reads - `state` without its UI keys
@@ -23,10 +26,10 @@ by reference with a hash of its contents, and the ground); `saveCapture` then wr
   so do an array's own fields (a route's `partial`, js/sim/nav.js - dropping it once made a loaded
   bot re-plan a step early); a reference into a static table (`saveTables`, three levels down:
   a camp's `CAMPS` row) is written as its path;
-- **only the map objects and ground tiles that differ from the grown valley.** A reference to an
+- **only the map objects and ground tiles that differ from the grown map.** A reference to an
   untouched tile object is its tile index, so the 30 000-odd pines are never written. A tile
   object that points at a live thing (a den or hut at its camp's `site`, and the parts of
-  its footprint) is always written, because the fresh valley's copy would point at the fresh
+  its footprint) is always written, because the fresh map's copy would point at the fresh
   page's camp.
 
 **A new mutable global the sim reads joins `SAVE_ROOTS`**, or the proof silently misses it
@@ -34,9 +37,10 @@ by reference with a hash of its contents, and the ground); `saveCapture` then wr
 canvases are nobody's state and are dropped (a console warning names the path if one turns up).
 
 **The flow.** `DBG.saveLoad(rec)` (`saveDevLoad`) puts a record from `saveCapture` into
-`sessionStorage` (`softfall.load`) and reloads onto the same seed and shape; boot calls
+`sessionStorage` (`softfall.load`) and reloads onto the same match seed and ground (`?seed=`, and
+the practice tool's or arena's flags); boot calls
 `saveBootLoad` after the world stands and **before `prepGround`**, so the bake paints the saved
-valley, then `saveBootEnter` once boot is done (the saved camera, the fade up from dark, the
+map, then `saveBootEnter` once boot is done (the saved camera, the fade up from dark, the
 match's music; no HUD slide, whose ease would move the camera and pop the day's headline). A
 profile's saved matches from before saves were removed are cleared from storage once at load
 (`clearOldSaves`, js/app/profile.js).

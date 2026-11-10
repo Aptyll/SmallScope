@@ -62,9 +62,11 @@ are listed because a socket transport later will carry exactly these.
 | bot → game | `{ t: 'err', tick, msg }` | your code threw |
 | game → bot | `{ t: 'end', result }` | the match is over |
 
+`seed` is the match's own stream seed; it never changes the map, which is the same one every match.
+
 `rules`: `{ tickDt, thinkEvery, obsR, tile, world }`.
 
-`map`: `{ world, tile, shape, grid }`. `grid` is the map when your seat was taken: `world`
+`map`: `{ world, tile, grid }`. `grid` is the map when your seat was taken: `world`
 strings, one per row, one character per tile (`grid[ty][tx]`):
 
 | `#` | `~` | `-` | `=` | `,` | `.` |

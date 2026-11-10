@@ -1,8 +1,9 @@
 # The Steam store art
 
 The nine images Steamworks asks for, at the exact sizes it asks for them. Every one is a real
-frame of the game — one staged second on **seed 7**, at the blue team's roost — with the
-wordmark laid over it. `tools/` rebuilds the whole set from the seed.
+frame of the game with the wordmark laid over it: one staged second at the blue team's roost on
+the one map, its match stream pinned with `?seed=7`. `tools/` rebuilds the whole set
+from that seed.
 
 | file | Steamworks slot | size |
 | --- | --- | --- |

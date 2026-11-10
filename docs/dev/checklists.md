@@ -63,8 +63,8 @@ declare victory. The affordances:
     itself (`netStatus().verifyFail` names the first fields that disagreed); `netLoss(f)` on a
     host throws away that share of its snapshot sends before the transport, which is the
     ack-keyed delta's proof.
-  - **A match between two tabs**: serve the game, open `?seed=N&net=host&room=R` in one tab and
-    `?seed=N&net=client&room=R` in another (the same seed - the host refuses a different one);
+  - **A match between two tabs**: serve the game, open `?net=host&room=R` in one tab and
+    `?net=client&room=R` in another (both on the match's map - the host refuses a practice or arena page);
     the client takes the smaller side's first AI slot, or its own slot back after a reload. In
     the Claude browser pane a tab that never got a frame does not tick at all: drive a client
     with `setInterval(() => DBG.step(1/60, 4), 66)` and it plays.
@@ -77,7 +77,7 @@ declare victory. The affordances:
     Playwright (`PLAYWRIGHT=<its folder>` if it is not on the require path).
   - **`node app/check-same.js`** — run it before merging a refactor, a split or a cleanup that
     should change nothing: it plays this tree and `origin/main` (or `node app/check-same.js <ref>`)
-    on the same seeds and the practice map for 8 match minutes each (`--min`, `--seeds`) and
+    on the same match seeds (each varies the bot match, never the map) and the practice tool for 8 match minutes each (`--min`, `--seeds`) and
     compares the sim hash and six views of the frame every 10 s. Exit 0 is SAME; 1 names the first
     tick and the fields that parted (pixels only is a draw change); 2 is cannot judge (a page
     threw, the base played a seed twice and parted, or a match never moved). A refactor that
@@ -110,11 +110,12 @@ declare victory. The affordances:
   `DBG.notices` is the live stack, `DBG.noteRect(k)` where slot `k` sits, and
   `DBG.raiseNotice(kind, txt, good)` raises one.
   A plate ages on wall time in `updateFx`, so `DBG.step` runs its arrival and its fade.
-- **`?seed=N`** pins the world — the same seed twice proves a change is deterministic, two seeds
-  prove worldgen still varies. Without it every reload is a different world and A/B screenshots
-  are meaningless. The seed prints in the [info stack](gameplay/settings.md) — top quarter of the
-  left edge — but only while `settings.info` is on, and it defaults **off**: flip it on (the ESC
-  menu's INFO row, or F3) before capturing anything you intend to compare later.
+- **`?seed=N`** pins the match's stream (`rng`, `fxRng`, `matchHash`, the bots' sealed random),
+  never the map: every page grows the one map from `MAP_SEED`, and without `?seed` the match seed
+  is rolled when the page loads. The same seed twice proves a change is deterministic; two seeds give two different bot
+  matches on the same ground. The [info stack](gameplay/settings.md) (top quarter of the left
+  edge) shows FPS and POS only while `settings.info` is on, and it defaults **off**: flip it on (the
+  ESC menu's INFO row, or F3) before capturing anything you intend to compare later.
 - **`.`** cycles the [debug overlay](rendering/debug-overlays-hitboxes-and-routes.md): one press
   for the boxes and circles the sim tests, a second for the route every walker is following and
   the tile it is heading for. Reach for it before reasoning about a collision from the code alone.
@@ -156,7 +157,7 @@ sets `autoPort` so a second session previews alongside an already-running one, a
 **Test off `file://`, not just off the server.** `node app/server.js` hides a whole class of bug: the
 game is played by double-clicking [index.html](../../index.html), where `fetch` and XHR are
 blocked against the page's own folder. Point the driver at the repo's own
-`file:///.../index.html?seed=N` for anything that loads an asset.
+`file:///.../index.html` for anything that loads an asset.
 
 **Audio** is verifiable from outside too, and needs to be — headless Chrome has no speakers, and
 "I can't hear it" has several completely different causes that are indistinguishable by ear.

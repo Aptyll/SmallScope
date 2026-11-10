@@ -3,7 +3,7 @@
 Everything in the `eagle drop` banner. `beginDrop()` (from `lockIn`, or `startGame`/`DBG.beginDrop`)
 puts every active player aboard **its team's bird** (`p.aboard`) and builds
 `state.drop = { eagles: [red, blue], firstFlight }` via `makeEagles()`: **each bird flies in over
-its own corner**, fixed for every match and seed: RED (team 0) from the bottom-left corner, BLUE
+its own corner**, fixed for every match: RED (team 0) from the bottom-left corner, BLUE
 from the top-right, a short straight glide down the road's diagonal from `EAGLE_FROM_U` (3) u in
 from the corner (every wing seat still on the map) to `EAGLE_STOOP_U` (9) u short of its
 [base](../world.md#the-bases)'s **perch** (`basePerch`), where the stoop begins. The two birds never
@@ -67,7 +67,7 @@ mode `play`) outranks and clears it.
 objectives. A bird's life is `fly → dive → down → flee → gone` (`e.state`): at the end of its line
 `beginDive` sets the crash point, `findCrashPoint`: the side's **perch** (`roadNest(team)`'s nest,
 `basePerch`, at the back of its [base](../world.md#the-bases)'s hollow, on the road's diagonal),
-fixed for every match and seed, so the cables are laid knowing it. The stoop runs
+fixed for every match, so the cables are laid knowing it. The stoop runs
 `EAGLE_DIVE_T` (1.4 s, `u²`-eased, wingbeats quickening, speed motes streaming) and **banks**: the
 heading turns from the line's to the crash's bearing over the first part of the dive
 (`e.diveH0`/`e.diveTurn`, set by `beginDive`), and the roosting bird faces the way it came down.

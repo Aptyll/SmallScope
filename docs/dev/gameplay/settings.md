@@ -35,7 +35,7 @@ guest is ready (`partyFind`). FIRST MATCH goes straight to bots, pinned EASY (`N
 rematch comes back as QUICKPLAY. In QUICKPLAY and RANKED the party then looks for another party doing the
 same (js/ui/matchmaking.js): the word becomes a gold clock (a press stops looking) and the clock
 also shows after the mode's name on every member's screen. Two parties that find each other play each
-other, the one with the higher code reloading onto the other's valley as its rival side; with
+other, the one with the higher code reloading into the other's room as its rival side; with
 nobody found within 8 s, bots take the rival side. After the match each party goes back to its
 own party lobby. Then every empty seat on both sides takes a bot and the whole party goes to the
 **hero select** (netPhase 'pick', the lobby, js/ui/menu.js), which every member sees as the
@@ -54,16 +54,16 @@ LEAVE takes everyone back to the party on the title (the rematch: guests follow 
 `rematchHeard`); a guest's LEAVE takes only them to the title. A screen that is not in focus when someone joins, a chat
 line lands or the count starts flashes its taskbar button (the wrapper) or marks its tab's
 title with a star (a browser) until it is looked at. After the match LOBBY takes each screen
-back to the same party on a fresh valley, same code, same people in the same seats (the
+back to the same party on a fresh copy of the map, same code, same people in the same seats (the
 rematch, js/ui/rooms.js); a guest who presses it first waits until the leader's party is back.
 A guest whose leader walks out of the party, or who was shown out, is back in a party of its
 own with a rattle; one whose leader leaves mid-match gets the HOST LEFT end screen (a headline
 and a LOBBY plank over the frozen world, `hostleft` in DEAD_ITEMS, js/ui/screens.js), and one
 whose socket drops mid-match shows a red pip blinking top-centre until the transport redials
-(`drawNetLink`). Joining a party whose seed is not this page's reloads the page onto it
-(`?seed=N&join=CODE`). Under the wrapper with Steam asked for (`netSteam()`, js/net/net.js) the
+(`drawNetLink`). Every page is born on the one map, so joining a party never reloads the page
+(only following a party onto the practice field does). Under the wrapper with Steam asked for (`netSteam()`, js/net/net.js) the
 party is a Steam lobby (`steamRooms`, js/net/transport-steam.js: the leader writes its name,
-patch, seed, state, seat counts, code and `seek` into the lobby's data, and the list hands every key back). Which relay:
+patch, state, seat counts, code and `seek` into the lobby's data, and the list hands every key back). Which relay:
 `netRelay()` (js/net/net.js) - `?relay=host:port` once,
 remembered with the settings (`settings.relay`), else the page's own host.
 
@@ -155,10 +155,10 @@ slab is the one menu either has, so its exit lives there; the title's slide-in h
 leave, so it centres CLOSE alone). SURRENDER stands before LEAVE while your side may vote
 (js/sim/surrender.js). `settingsHit()` answers `'close'` (→ `settingsClose`: the
 in-match slab folds the way ESC folds it, the title's slide-in through `closeMenuPanel`), `'surrender'` and
-`'leave'` (→ `toLobby()`, js/ui/screens.js, the death screen's own fade back to the title on this
-seed, or back to the party for a party's leader on the practice field; anyone else there takes
-`leavePractice()`, js/ui/menu.js, the reroll's whiteout onto a bare URL, landing on a fresh
-title world); `leavePlankRect()` is the LEAVE plank, `null` on the title.
+`'leave'` (→ `toLobby()`, js/ui/screens.js, the death screen's own fade back to the title on the
+map, or back to the party for a party's leader on the practice field; anyone else there takes
+`leavePractice()`, js/ui/menu.js, a whiteout onto a bare URL, landing on a fresh
+title page); `leavePlankRect()` is the LEAVE plank, `null` on the title.
 
 **Mute is not a row.** It is a 9×9 speaker plate (`muteBtnRect`, `drawMuteBtn`) hard against the
 left end of the MASTER track on the AUDIO page — `muteBtnRect()` returns `null` on any other
@@ -190,20 +190,19 @@ it; `KEYS_LIST_H` (the listing and its RESET row) sizes the scroll.
 `settings.info` (one INFO DISPLAY toggle row in the ESC menu, **or F3**, minecraft-style — the
 keydown handler flips it in any mode and suppresses the browser's find bar; default off) shows
 the **info stack** — `drawTags()`, a vertical list on the left edge at the top quarter of the
-view, drawn above every overlay. Six lines — **FPS** (`loop()`
+view, drawn above every overlay. Five lines — **FPS** (`loop()`
 hands each raw unclamped frame delta to `perfFrame`, js/sim/core.js, which refreshes `perf.fps` every
 half second),
 **SIM** and **DRAW**, the ms a frame spent in `update()` and in `render()` over the same window
 (red together once they no longer fit a 60 Hz frame; DRAW is the script's side only, since a GPU
 canvas rasterises later off the main thread),
-**SFX**, the sampled sound bank's decoded/asked-for tally (below),
+**SFX**, the sampled sound bank's decoded/asked-for tally (below), and
 **POS**, the tile coordinates of the player the camera frames (`viewPlayer()`, so spectators read
-the watched player), and **SEED**, the run seed (see
-[world.md](../world.md#determinism-and-noise)) — each drawn as a dim label plus a value on one
+the watched player) — each drawn as a dim label plus a value on one
 shared x, so the numbers line up in a column. **Red on the fps value (below 45) is the only colour in the
 stack that means anything** alongside **SIM/DRAW** and **SFX** (below), and nothing else is
-tinted, which is what lets a warning read. In title, FPS, SIM, DRAW and SFX show and POS and SEED
-do not.
+tinted, which is what lets a warning read. In title, FPS, SIM, DRAW and SFX show and POS
+does not.
 
 **SFX** is the sampled sound bank: files decoded / files the table asks for, from `SFX.banked()`,
 red on anything missing — why it is there: [Audio](audio.md), *a failed load must never be quiet*.

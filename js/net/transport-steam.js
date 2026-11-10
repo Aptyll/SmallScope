@@ -8,15 +8,14 @@
 // made or joined and the host is known.
 //
 // The host CREATES the lobby and writes what a joiner needs into its data -
-// the patch, the seed, the room's state - before anyone can read it; a
-// joiner whose page was born with another seed reloads itself onto the
-// lobby's, since SEED is decided at load (js/sim/core.js). Steam tells the host
+// the patch and the room's state - before anyone can read it (every page is
+// born on the one map, so there is no world to agree on). Steam tells the host
 // who came and went through the lobby's chat updates, which the transport
 // turns into the same {t:'peer'} / {t:'gone'} the relay sends.
 //
 // A lobby's data is what a typed code is looked up in (steamRooms below,
 // polled every STEAM_LIST_T s from the bridge): the host writes its name,
-// patch, seed, state, seat counts and the party's code there (roomData, the
+// patch, state, seat counts and the party's code there (roomData, the
 // same call the relay's room takes), and a lobby without a `patch` key is
 // somebody else's test on the shared App ID and is not counted.
 //
@@ -67,7 +66,7 @@ function steamTransport(lobbyId) {
         const l = await this.bridge.createLobby('public', STEAM_LOBBY_MAX);
         this.lobbyId = l.id; this.owner = l.owner;
         this.code = steamCode();
-        await this.bridge.setLobbyData(l.id, { patch: PATCH_TXT, seed: String(SEED), state: 'open', name: info.name || '', code: this.code });
+        await this.bridge.setLobbyData(l.id, { patch: PATCH_TXT, state: 'open', name: info.name || '', code: this.code });
         this.wire();
         this.open = true;
       } catch (e) { this.error = String(e); }
@@ -81,10 +80,6 @@ function steamTransport(lobbyId) {
         this.id = info.id;
         const l = await this.bridge.joinLobby(this.lobbyId);
         this.owner = l.owner;
-        // the world is the lobby's: a page born on another seed starts over
-        // on it, and joins from boot (?join=, JOIN_AT_BOOT)
-        const seed = parseInt(l.data.seed, 10);
-        if (seed && seed !== SEED) { location.search = '?seed=' + seed + '&join=' + this.lobbyId + '&transport=steam'; return; }
         this.wire();
         this.open = true;
       } catch (e) { this.error = String(e); }
@@ -183,7 +178,7 @@ function steamCode() {
 }
 // The party lobby's feed of Steam lobbies, in the shape the relay's list
 // sends (wsRooms, js/net/transport-ws.js): { room: lobby id, n: members,
-// data: everything netHostRoom wrote (name, patch, seed, state, humans, sides,
+// data: everything netHostRoom wrote (name, patch, state, humans, sides,
 // code, practice, seek) }, the numbers
 // parsed back out of Steam's string store. Polled while a code is being
 // looked for; close() stops it. Lobbies without a patch key are not this game's.
@@ -204,7 +199,7 @@ function steamRooms(cb) {
         let sides = [0, 0]; try { sides = JSON.parse(d.sides || '[0,0]'); } catch (e) {}
         // every key the host wrote comes through (a party's `seek` among them,
         // js/ui/matchmaking.js), the numbers parsed back out of Steam's strings
-        rooms.push({ room: l.id, n: (l.members || []).length, data: Object.assign({}, d, { name: d.name || '', seed: num(d.seed), map: num(d.map), state: d.state || 'open', humans: num(d.humans), sides, code: d.code || '', practice: num(d.practice), seek: d.seek || '' }) });
+        rooms.push({ room: l.id, n: (l.members || []).length, data: Object.assign({}, d, { name: d.name || '', state: d.state || 'open', humans: num(d.humans), sides, code: d.code || '', practice: num(d.practice), seek: d.seek || '' }) });
       }
       if (!closed) cb(rooms, true);
     } catch (e) { if (!closed) cb([], false); }

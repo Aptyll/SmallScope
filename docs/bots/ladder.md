@@ -34,7 +34,8 @@ table, then the path of the standings page.
 - **An entry is one bot file playing all five seats of a side.** Seats 0, 2, 4, 6, 8 are team 0;
   1, 3, 5, 7, 9 are team 1. Sides alternate from one match to the next.
 - **Pairing:** the entry with the fewest games plays one of the four closest to it in rating.
-  Each match gets a fresh seed, recorded, so any match can be replayed.
+  Each match gets a fresh seed, recorded, so any match can be replayed. A seed varies the match,
+  never the map: every match is on the one map.
 - **Rating:** Elo, everyone starts at 1000, K = 32. A driven-off bird is a win; a match that
   reaches `--max` is a draw; a match that crashes is not rated.
 - **A changed file** keeps its rating and counts a new revision (`r2`, `r3` on the page), so
@@ -47,7 +48,7 @@ table, then the path of the standings page.
 ```
 ladder-data/
   ladder.json      entries: rating, games, W/L/D, revision, file hash
-  history.jsonl    one line per match: who, sides, seed, map, result, ratings before and after,
+  history.jsonl    one line per match: who, sides, seed, map (always the one), result, ratings before and after,
                    each side's kills, deaths, damage, siege, gold and bird nerve left, fun score
   logs/<id>.json   the full match log (the format the bot lab reads; F6 in the game, or botlab.html)
   bots/<id>.js     the files you entered

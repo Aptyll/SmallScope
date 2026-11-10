@@ -7,8 +7,8 @@
 // match, DBG.saveLoad(DBG.saveCapture()) onto a fresh page, step the same
 // count, compare.
 //
-// Nothing here knows what a field means. The world is a seed (SEED):
-// a load is a page on the saved seed, which grows the very same
+// Nothing here knows what a field means. The world is the one map (MAP_SEED):
+// a load is a fresh page on the saved match seed, which grows the very same
 // valley, and the save is what the match has done to it since. That is
 //   - the ROOTS below, every mutable global the sim reads, serialized as one
 //     object graph, so a reference shared anywhere (a bot's hunt target, a
@@ -25,8 +25,8 @@
 // the saved valley and not the fresh one.
 
 // ---- tuning ---------------------------------------------------------------
-const SAVE_V = 13;          // the body's shape; a body of another shape is refused, never half-read, so
-                            // nothing below fills in a field an older save lacked (4: the survival leftovers cut; 5: the wallet is p.gold; 6: buildings lose `tier`, the pump's type is 'pump'; 7: one `shields` list; 8: a player's `buys`, `lifeT` and FROSTBITE's heal cut; 9: the loadout's picks, cooldowns and calling clocks; 10: the valley a fifth bigger; 11: HUNTER and WARRIOR gone, so every hero index moved, and craters and nets cut; 12: a crash pad's centre is tx/ty; 13: the map grows on worldgen's own streams, so every seed's valley moved)
+const SAVE_V = 14;          // the body's shape; a body of another shape is refused, never half-read, so
+                            // nothing below fills in a field an older save lacked (4: the survival leftovers cut; 5: the wallet is p.gold; 6: buildings lose `tier`, the pump's type is 'pump'; 7: one `shields` list; 8: a player's `buys`, `lifeT` and FROSTBITE's heal cut; 9: the loadout's picks, cooldowns and calling clocks; 10: the valley a fifth bigger; 11: HUNTER and WARRIOR gone, so every hero index moved, and craters and nets cut; 12: a crash pad's centre is tx/ty; 13: the map grows on worldgen's own streams, so every seed's valley moved; 14: one map, the record names its world, not a seed)
 
 // ---- what is saved ----------------------------------------------------------
 // [name, get, put]: get() hands the live value in, put(v) takes the decoded
@@ -283,14 +283,15 @@ function saveCapture() {
   roots.ground = grd;
   const { body, dropped } = saveEncode(roots, touched);
   if (dropped.size) console.warn('save: dropped', [...dropped].slice(0, 12));
-  return { v: SAVE_V, seed: SEED, body };
+  return { v: SAVE_V, world: worldKind(), seed: SEED, body };
 }
 // the record back onto this page, whose valley must be the saved one's fresh
-// (the same seed, no step taken yet). Throws on a record of another world,
-// before touching anything.
+// (the same ground and match seed, no step taken yet; the streams ride in the
+// body). Throws on a record of another, before touching anything.
 function saveApply(rec) {
   if (!rec || rec.v !== SAVE_V) throw new Error('save: version ' + (rec && rec.v));
-  if (rec.seed !== SEED) throw new Error('save: another world');
+  if (rec.world !== worldKind()) throw new Error('save: another world');
+  if (rec.seed !== SEED) throw new Error('save: another match'); // matchHash reads SEED
   const r = saveDecode(rec.body, objects);
   for (const [i, o] of r.tiles) objects[i] = o;
   for (let j = 0; j < r.ground.length; j += 2) ground[r.ground[j]] = r.ground[j + 1];
@@ -317,12 +318,12 @@ function saveHash() {
 
 // ---- the dev load -------------------------------------------------------------
 // A record (saveCapture) put back on a fresh page: it rides sessionStorage to
-// the next page, which grows the record's seed and applies it at
+// the next page, which grows the one map on the record's match seed and applies it at
 // boot (saveBootLoad). The replay proof's other half (DBG.saveLoad); nothing a
 // player reaches calls it.
 function saveDevLoad(rec) {
   try { sessionStorage.setItem('softfall.load', JSON.stringify(rec)); } catch (e) { return false; }
-  location.href = location.pathname + '?seed=' + SEED;
+  location.href = location.pathname + '?seed=' + SEED + (PRACTICE ? '&practice=1' + (ARENA ? '&arena=1' : '') : '');
   return true;
 }
 // boot's half (js/app/boot.js): true when a saved match was put back on this page
