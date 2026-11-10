@@ -104,7 +104,7 @@ offsets *within* each baked panel stay in their own sections. A screen authored
 in the 270-row frame starts at `frameTop()` — `menuLayout()` shows the pattern (`toy` offset).
 
 **The sub-pixel camera.** The world buffer's corner is the camera **floored** to a whole world
-px (`ox`/`oy`, the screen shake folded in; also `wOX`/`wOY` for passes outside `render()`), and
+px (`ox`/`oy`; also `wOX`/`wOY` for passes outside `render()`), and
 the leftover fraction is spent at the blit: `worldCv` lands up-left of the canvas by
 `round(fraction × k)` **device** px. So the screen scrolls by the device px while every world
 pixel keeps its whole k×k block. A camera that moved only in whole world px stepped the whole

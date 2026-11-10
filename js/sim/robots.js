@@ -54,7 +54,7 @@ const ROBOT_KB = 40;
 // only through hurtUnit, which asks unitAlive first, so a merchant never
 // arrives here - the guard below is the same question asked twice on purpose,
 // since this is a named function and nothing stops a later caller finding it.
-function hurtRobot(b, dmg, nx, ny, src) {
+function hurtRobot(b, dmg, nx, ny, src, cue) {
   if (!unitAlive(b)) return;
   b.hp -= dmg;
   b.flash = 0.12;
@@ -64,7 +64,7 @@ function hurtRobot(b, dmg, nx, ny, src) {
   const puff = (heroMachine(b) && heroMachine(b).puff) || ['#c3c9d3', '#ffb347']; // sparks off the plating, or a hero body's own (HERO_MACHINE `puff`)
   burst(b.x, b.y - 2, puff[0], 6, 45, 0.35, true);
   burst(b.x, b.y - 2, puff[1], 3, 40, 0.3, true);
-  sfxAt('hit', b.x, b.y);
+  sfxAt(cue || 'hit', b.x, b.y); // a soldier's own blow lands quieter (waveHit, js/app/audio.js)
   if (b.hp <= 0) robotDies(b, src);
 }
 
@@ -545,7 +545,7 @@ function updateMerchant(b, dt) {
 // ------------------------------------------------------------ soldiers
 // The WAVES. Every STRUCTS.barracks.waveT seconds each merchant's barracks
 // (the `merchant` banner above) rolls out a column of soldiers - a bot's
-// chassis under its side's pennant (drawRobot) - that marches the ROAD
+// chassis in its side's paint (drawRobot) - that marches the ROAD
 // (placeRoad, world.js) to the rival bird and strikes it. A soldier is
 // allowed to FIGHT and nothing else: nobody owns it (owner -1), no tree
 // tempts it, and it lands its kind's blow (robotStrike; SOLDIER_TYPES) on any
@@ -759,8 +759,8 @@ function updateSoldier(b, dt) {
 // what a shot is (SOLDIER_TYPES' `look`; drawn by drawSoldierShot, js/draw/bodies.js):
 // the sound it leaves with and lands with, and the puff where it hits
 const SOLDIER_SHOTS = {
-  ball: { fire: 'swing', land: 'rockLand', puff: '#eef4fb', n: 5 },  // a packed snowball, thrown
-  bolt: { fire: 'arrow', land: 'hit',      puff: '#a3794f', n: 10 }, // a ballista bolt: splinters off the shaft
+  ball: { fire: 'waveSwing', land: 'rockLand', puff: '#eef4fb', n: 5 },  // a packed snowball, thrown
+  bolt: { fire: 'arrow', land: 'waveHit',  puff: '#a3794f', n: 10 }, // a ballista bolt: splinters off the shaft
 };
 
 // nearest building belonging to any other team, within r px of (x, y)
@@ -817,7 +817,7 @@ function robotStrike(b, e, pt) {
     b.shot = { tg: e, t: 0, x: pt.x, y: pt.y, x0: b.x, y0: b.y - 6, live: e.tx === undefined && !(state.drop && state.drop.eagles.indexOf(e) >= 0) };
     return;
   }
-  sfxAt('swing', b.x, b.y);
+  sfxAt('waveSwing', b.x, b.y); // the lane's fight sits under the heroes' (js/app/audio.js)
   soldierLand(b, e, pt);
 }
 // where a soldier's blow lands: a building goes through hurtStruct (the same

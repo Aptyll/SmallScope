@@ -45,7 +45,7 @@ A soldier is one 12×10 grid on `BOTPAL` (`botA`/`botB`: a faceless boxy chassis
 stub arms sitting on a single full-width tread, the two frames differing only in the tread
 notches). The body chars `L`/`T`/`t` are the team paint (`teamRobotPal` → `coatL`/`coat`/`coatD`),
 so `robotTeam[team]` is the whole melee bot in that colour; `drawRobot()` bobs the entire sprite while
-driving and adds the pennant (`PENNANT_AT`, per set) and the axe swing in code. The **ranged** and
+driving and, for a melee soldier, rams the chassis at its foe (`soldierRam`); a soldier carries nothing. The **ranged** and
 **siege** soldiers (`robotRanged`/`robotSiege`, js/baked/soldiers.js) are drawn by
 app/bake-soldiers/bake.py (looks B SNOWBALL ARM and D BALLISTA CART off
 `docs/media/concepts/wave-soldiers-concepts-1.png`, the cart redrawn in

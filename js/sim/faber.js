@@ -300,7 +300,6 @@ function faberEngine(p) {
   b.slamT = ENGINE_SLAM_FIRST; b.slamFx = 0;
   burst(c.x, c.y - 6, '#f2cc6a', 16, 60, 0.5, true);
   burst(c.x, c.y - 6, '#c3c9d3', 10, 45, 0.45, true);
-  shakeFor(p, 2);
   sfxAt('break_', c.x, c.y);
 }
 // the engine's step: it walks to the spot he points at (no further than
@@ -332,7 +331,6 @@ function stepEngine(b, dt) {
   if (PRACTICE) abHitDummies(b.x, b.y, ENGINE_SLAM_R, b.dmg);
   abFx.push({ kind: 'ring', x: b.x, y: b.y, r: ENGINE_SLAM_R, t: 0, col: '#f2cc6a' });
   burst(b.x, b.y, '#e6e1d6', 18, 70, 0.5, true);
-  shakeFor(src, 3);
   sfxAt('break_', b.x, b.y);
 }
 

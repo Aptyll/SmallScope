@@ -11,14 +11,14 @@ switches the brain off, a bot on a zipline rides it, and otherwise the merchant 
 were cut in 0.525.
 Robots drive on `navStep` ([Pathfinding](pathfinding.md)) and are solid to players and animals
 (see [Unit collisions](unit-collisions.md)). They join the y-sorted draws via `drawRobot()` in
-team colours, each kind its own sprite set (the whole sprite bobs while driving, the axe swings
-at a target, a thrower's ball leaves its hand) and show a health bar. Their SFX are positional (`sfxAt`) so a remote base doesn't spam audio.
+team colours, each kind its own sprite set (the whole sprite bobs while driving, a melee chassis rams
+its target, a thrower's ball leaves its hand) and show a health bar. Their SFX are positional (`sfxAt`) so a remote base doesn't spam audio.
 
 **Three kinds of soldier, League's.** What a kind is lives in `SOLDIER_TYPES` (js/sim/robots.js,
 read through `soldierType(b)` off `b.type`): its health and its growth, its blow (`dmg` every `cd`
 s from `reach` px; a building takes `struct` times it, the bird `eagle`), the shot that carries a
 blow from range (`shot`, s in the air), its bounty share and its XP share, and its sprite set.
-**Melee** swings an axe (5 every 1.1 s, 15 px, 60 hp), **ranged** throws a packed snowball (6 every
+**Melee** rams with its chassis (5 every 1.1 s, 15 px, 60 hp), **ranged** throws a packed snowball (6 every
 1.5 s from 72 px, 34 hp) and **siege**, the ballista cart, shoots a bolt (10 every 2.4 s from 96 px,
 three times that on a building, 150 hp). What flies is the kind's `look` (`SOLDIER_SHOTS`: the
 sounds it leaves and lands with, the puff where it hits). `robotStrike(b, e, pt)` is the single blow: an axe lands
@@ -47,9 +47,9 @@ bot is not a downed player, so it never touches the kill count; what it pays is
 ## Soldiers: the waves
 
 The `soldiers` banner (js/sim/robots.js). On the match's wave beat (`barracksBeat`: `STRUCTS.barracks`
-`first`, 60 s of match clock, then every `waveT`, 30 s) each merchant's [barracks](buildings.md) rolls out a column of **soldiers** — a tread-bot chassis under its
-side's pennant (`drawRobot` stamps `drawPennant` on a `kind: 'soldier'` body, the one thing
-that says this bot is not here to chop) — that marches **its bay's lane** (`b.lane`, from the
+`first`, 60 s of match clock, then every `waveT`, 30 s) each merchant's [barracks](buildings.md) rolls out a column of **soldiers** — a tread-bot chassis in its
+side's paint that carries nothing (a melee soldier's blow is the chassis itself ramming in,
+`soldierRam` in `drawRobot`) — that marches **its bay's lane** (`b.lane`, from the
 bay's `o.lane`: 0 top, 1 mid, 2 bot) to the rival bird. `makeSoldier(o)` is `makeRobot` with
 `kind: 'soldier'`, `owner: -1` (no cargo, no payout but the bounty) and a
 **route**. A top or bot soldier's is its own mouth of the [base](../world.md#the-bases) (`baseGate`),

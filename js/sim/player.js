@@ -1079,13 +1079,11 @@ function damagePlayer(p, dmg, dx, dy, src, cause, crit, kb, o) {
   if (!dot) {
     const k = o && o.ab && !o.basic ? HIT_KB * (kb === undefined ? 1 : kb) : 0;
     p.kbx = dx * k; p.kby = dy * k;
-    const n = Math.hypot(dx, dy) || 1;
-    p.hitNx = Math.round(dx / n * 8) / 8; p.hitNy = Math.round(dy / n * 8) / 8;
+    hitAim(p, dx, dy);
   }
   breakRecall(p); // a hit ends the walk home - that is what makes the channel a channel
   // a burn shakes and shouts once, when it lights (igniteUnit) - not four
   // times a second for as long as it runs
-  if (!dot) shakeFor(p, crit ? 6 : 3);
   tallyHit(p, dmg);
   if (!dot) sfxAt('hurt', p.x, p.y);
   // a burn's embers rise off the body; a blow's snow is kicked up at the
@@ -1397,7 +1395,7 @@ function endMatch(how) {
   state.end = how === 'won' || how === 'lost' ? endSnapshot() : null;
   // a side that surrendered skips its defeat and lands on the post-game stats (js/sim/surrender.js)
   if (how === 'lost' && state.surrendered === player.team) openScores('menu');
-  if (how === 'won') { SFX.victory(); state.shake = Math.max(state.shake, 4); }
+  if (how === 'won') SFX.victory();
   // ...and a loss gets the same courtesy: the defeat song used to come up
   // under silence where a win got a fanfare, so the worse of the two endings
   // was the quieter one. A sting, not a dirge - the song does the mourning.

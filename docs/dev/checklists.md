@@ -466,8 +466,7 @@ on loudness and the meter reads peak. Set `dur` if the clip holds more than one 
 existing files are a whole loop padded to a fixed length. **A cue the SIM raises never gates itself** (the CLAUDE.md rule): a world cue is
 `sfxAt('cue', x, y, r?, arg?)` — which applies the `nearPlayer` gate, so a remote base cannot spam
 the mix — a cue only one body should hear is `sfxFor(p, 'cue', arg?)`, one cue for the owner and
-another for bystanders is `sfxOwn(p, own, other)`, and a shake is `shakeFor(p, n)` /
-`shakeAt(x, y, n, r?)` (all js/net/events.js). They record the moment for a client that never ran
+another for bystanders is `sfxOwn(p, own, other)` (all js/net/events.js). They record the moment for a client that never ran
 the step; a bare `if (nearPlayer(...)) SFX.cue()` inside the step is a sound that client never
 hears. Outside the step (HUD, menus) the bare `SFX.cue()` is right. A cue on a repeating tick (`building()` on a
 site's dust timer) needs a wide `jitter` and a `gap`, or it settles into a rhythm. A

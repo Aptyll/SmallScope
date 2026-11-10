@@ -148,7 +148,6 @@ function fortSever(p) {
   }
   abFx.push({ kind: 'wedge', x: p.x, y: p.y - 2, a, r: SEVER_R, half: SEVER_HALF, t: 0, col: '#f4f7ff' });
   p.slashT = SLASH_T; p.slashA = a; p.slashHalf = SEVER_HALF; // the blade swept through the arc in her hands
-  shakeFor(p, heroes ? 4 : 2);
   sfxAt('swing', p.x, p.y);
 }
 
@@ -176,7 +175,6 @@ function defyRelease(p) {
   for (const s of structsNear(p, p.x, p.y, DEFY_R)) hurtStruct(s, dmg, p);
   if (PRACTICE) abHitDummies(p.x, p.y, DEFY_R, dmg);
   abFx.push({ kind: 'ring', x: p.x, y: p.y, r: DEFY_R, t: 0, col: took > 0 ? '#f2cc6a' : '#cfd8e8' });
-  shakeFor(p, took > 0 ? 4 : 2);
   sfxAt('shieldBreak', p.x, p.y);
 }
 
@@ -217,7 +215,6 @@ function yokeStrike(p) {
   if (hero && i >= 0) { p.abCd[i] *= 1 - YOKE_REFUND; burst(p.x, p.y - 12, '#f2cc6a', 6, 35, 0.4, true); }
   abFx.push({ kind: 'ring', x: cx, y: cy, r: YOKE_R, t: 0, col: '#f4f7ff' });
   for (let s = -10; s <= 10; s += 5) burst(cx - p.rushNY * s, cy + 2 + p.rushNX * s, '#eef4fb', 2, 30, 0.35, true); // the crack across the line
-  shakeFor(p, 4);
   sfxAt('break_', cx, cy);
 }
 
@@ -265,6 +262,5 @@ function noKneelLand(p) {
     const an = (i / 18) * Math.PI * 2;
     burst(p.x + Math.cos(an) * 10, p.y + 2 + Math.sin(an) * 6, i % 3 ? '#eef4fb' : '#cfd8e8', 1, 60, 0.4, true);
   }
-  shakeFor(p, 7);
   sfxAt('break_', p.x, p.y);
 }

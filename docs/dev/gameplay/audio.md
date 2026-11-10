@@ -7,7 +7,7 @@ cue at a place is `sfxAt('cue', x, y[, r][, 0, arg])` (heard within `r` px, `nea
 default when 0; `EV_ANYWHERE` reaches every screen - the eagle's boom); a cue for one body is
 `sfxFor(p, 'cue')` (a step, a nock, a refusal, a status landing on *you*); a level gained is
 `sfxOwn(p, 'levelUp', 'pickup')` - one cue for the owner, another for bystanders in earshot.
-Shakes go the same way (`shakeFor(p, n[, q])`, `shakeAt(x, y, n[, r])`). The why, and the bare
+There is no screen shake (removed 0.711). The why, and the bare
 `SFX.cue()` outside the step, are CLAUDE.md's hard rule. Two cues still gate by hand on purpose, pending the plan's semantic events: the
 roost alarm (with its plate) and the two end-of-match songs.
 `SFX.stat(up)` is bare for a different reason and not an exception at all: `updateStatLedger`
@@ -78,6 +78,23 @@ whatever it sounds like close up: a cue heard two hundred times a match is mixed
 hundredth and not the first. The whole sampled bank spans about **10 dB**, and no cue's own files
 should sit more than ~2 dB apart — `SFX.debug()` prints every clip's `g` and `SFX.meter()` reads
 the bus, so both are checkable without guessing.
+
+**Two things keep a busy moment from turning into a wall of noise.** Each cue plays on a
+*channel* (its key, unless it names `ch`), and a channel holds at most `max` shots at once
+(`SMP_VOICES` by default): a shot that arrives while that many still ring is dropped, not stacked.
+`chop()` holds two, a tenth of a second apart, so a treeline full of axes stays a few clear blows.
+A cue that borrows another's clip names its own channel (`swing`, `dodge` and `gust` all play the
+whoosh), so one can never use up another's voices or gap. Then the whole SOUNDS layer runs through
+the **bus damper**: a gentle compressor (`COMP`) that leaves one cue alone and squeezes a pile-up,
+and a trim taking the layer `BUS_DAMP_DB` down. Chromium's compressor adds makeup gain of its own
+(`COMP_MAKEUP_DB`, measured for these settings), which the trim takes back off; change `COMP` and
+measure it again, or every quiet cue comes out louder than it went in. `SFX.debug().voices` shows
+what each channel has sounding.
+
+**The lane's own fight is quieter than the heroes'.** A wave soldier's swing and landing play
+`waveSwing()`/`waveHit()` (`robotStrike`, js/sim/robots.js; the blow reaches `hurtRobot` and
+`hurtStruct` marked as a soldier's), well under `swing()`/`hit()` and two at a time, so a lane
+brawl is a murmur behind the heroes and never takes their voices away.
 
 **A failed load must never be quiet about it.** `loadBank()` counts every file into `bankStat`
 (`want`/`got`/`err`), logs one console warning naming the first failure, and `SFX.banked()` reads

@@ -263,7 +263,6 @@ function orcaBite() {
   orca.bit = 1;
   for (const e of unitsHit(null, orca.jx, orca.jy, ORCA_JAWS)) hurtUnit(e, orcaLethal(e), 0, 0, null, { cause: 'orca', kb: 0 });
   sfxAt('bite', orca.jx, orca.jy);
-  shakeAt(orca.jx, orca.jy, 5);
   burst(orca.hx, orca.hy - 4, '#ddf1f8', 12, 70, 0.5, true);
 }
 // a blow that takes the whole of a body, its shield and its hide included,

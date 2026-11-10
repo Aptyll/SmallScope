@@ -155,7 +155,6 @@ const TEXT = {
   'set.hudRail': 'TOP BAR SIZE',
   'set.map': 'MINIMAP SIZE',
   'set.hud': 'BOTTOM BAR SIZE',
-  'set.shake': 'SCREEN SHAKE',
   'set.info': 'INFO DISPLAY',
   'set.cursor': 'CURSOR',
   'set.pixel': 'PIXEL',
