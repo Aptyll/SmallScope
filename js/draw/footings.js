@@ -162,10 +162,10 @@ function stumpLook(tx, ty) {
     else if (hash2(tx * 31 + 4, ty * 11 + 6) < STUMP_BURIED * f) v = 3;
     break;
   }
-  // on a lane's shelf (JUNGLE_SHELF, js/sim/jungle.js) some lie where the lane's cutters left them
+  // on a lane's shelf (JUNGLE_SHELF_SPREAD, js/sim/jungle.js) some lie where the lane's cutters left them
   if (v < 3 && hash2(tx * 13 + 5, ty * 17 + 9) < STUMP_SHELF_LAIN) {
     const d = roadDist(tx, ty, true);
-    if (d >= JUNGLE_SHELF[0] && d <= JUNGLE_SHELF[1]) v = 4 + (hash2(tx * 7 + 1, ty * 5 + 2) < 0.5 ? 1 : 0);
+    if (d >= JUNGLE_SHELF_SPREAD[0] && d <= JUNGLE_SHELF_SPREAD[1]) v = 4 + (hash2(tx * 7 + 1, ty * 5 + 2) < 0.5 ? 1 : 0);
   }
   return { v, dx: treeNudgeX(tx, ty), dy: Math.min(0, treeNudgeY(tx, ty)) };
 }
