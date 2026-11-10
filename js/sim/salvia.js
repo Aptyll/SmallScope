@@ -52,7 +52,7 @@ const SALVIA_AB = [
     blurb: 'A TOSSED BUNDLE OF HERBS FLIES IN A LINE. THE FIRST ALLY IT MEETS IS HEALED; THE FIRST RIVAL IT MEETS IS SLOWED.',
     use: (p) => salviaPoultice(p),
     tele: (p, px, py, a, col, closing, now, ex, ey) => drawTeleLine(p.x, p.y, Math.cos(a), Math.sin(a), POULTICE_RANGE, col, 0.5 + 0.45 * closing, now, ex, ey),
-    icon: SALVIA_ICON32.poultice,
+    icon: SALVIA_ICON32.poultice, mark: 'heal',
     bot: (p, foe, d, clear) => !!salviaNeedy(p, POULTICE_RANGE * 0.85, 0.75, false) || (clear && d < POULTICE_RANGE * 0.8),
     botAim: (p, foe) => salviaAimAt(salviaNeedy(p, POULTICE_RANGE * 0.85, 0.75, false) || foe),
   },
@@ -63,7 +63,7 @@ const SALVIA_AB = [
     blurb: 'PLANT A FEW SNOWDROPS NEAR YOU. AN ALLY WHO WALKS OVER ONE PICKS IT AND IS HEALED. THEY WILT AFTER A WHILE.',
     use: (p) => salviaPlant(p),
     tele: (p, px, py, a, col, closing, now, ex, ey) => { const c = salviaSpot(p, DROP_RANGE); drawRing(Math.round(c.x - ex), Math.round(c.y - ey), DROP_SPREAD + DROP_R, col, 0.45 + 0.45 * closing, 0); },
-    icon: SALVIA_ICON32.drops,
+    icon: SALVIA_ICON32.drops, mark: 'heal',
     bot: (p, foe, d) => !!salviaNeedy(p, DROP_RANGE, 0.8, true) && d < 220,
     botAim: (p, foe) => salviaAimAt(salviaNeedy(p, DROP_RANGE, 0.8, true) || p),
   },
@@ -74,7 +74,7 @@ const SALVIA_AB = [
     blurb: 'WRAP THE ALLY NEAREST THE AIM, OR YOURSELF, IN A WARM CLOAK: A SHIELD FOR A FEW SECONDS AND A BURST OF SPEED.',
     use: (p) => salviaCloak(p),
     tele: (p, px, py, a, col, closing, now, ex, ey) => { const q = cloakTarget(p); drawRing(Math.round(q.x - ex), Math.round(q.y - ey), 10, col, 0.5 + 0.45 * closing, 0); },
-    icon: SALVIA_ICON32.cloak,
+    icon: SALVIA_ICON32.cloak, mark: 'shield',
     bot: (p, foe, d) => !!salviaNeedy(p, CLOAK_RANGE, 0.5, true) && d < 200,
     botAim: (p, foe) => salviaAimAt(salviaNeedy(p, CLOAK_RANGE, 0.5, true) || p),
   },
@@ -85,7 +85,7 @@ const SALVIA_AB = [
     blurb: 'A LARGE RING OF WARM AIR WHERE YOU STAND, FOR A FEW SECONDS. ALLIES INSIDE HEAL EVERY SECOND AND CANNOT BE SLOWED.',
     use: (p) => salviaThaw(p),
     tele: (p, px, py, a, col, closing) => drawRing(px, py, THAW_R, col, 0.35 + 0.45 * closing, closing * 0.3),
-    icon: SALVIA_ICON32.thaw,
+    icon: SALVIA_ICON32.thaw, mark: 'heal',
     bot: (p, foe, d) => d < 170 && salviaAllies(p, p.x, p.y, THAW_R).some((q, i, all) => q.hp < q.maxHp * 0.3 || all.filter((o) => o.hp < o.maxHp * 0.6).length >= 2), // a fight going badly: one ally nearly down, or two hurt
   },
 ];
@@ -263,7 +263,7 @@ function salviaOut(p) { p.brothT = 0; p.cloakT = 0; }
 // ---- the hooks she registers (js/sim/heroes.js) ------------------------------------
 HERO_PASSIVE.warmbroth = { out: salviaOut,
   name: 'WARM BROTH', blurb: 'YOUR HEALS ALSO GIVE THE ALLY A LITTLE SPEED AND TAKE OFF THEIR SLOWS.',
-  icon: SALVIA_ICON32.broth,
+  icon: SALVIA_ICON32.broth, mark: 'speed',
 };
 HERO_MOVE.push(salviaMoveMul);
 HERO_TICK.push(salviaWorld);

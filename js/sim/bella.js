@@ -72,7 +72,7 @@ const BELLA_AB = [
     blurb: 'A SHORT STANCE. THE FIRST HERO WHO STRIKES YOU IN IT IS TURNED ASIDE AND ANSWERED: A RIPOSTE THAT STUNS.',
     use: (p) => bellaParry(p),
     acol: '#f2cc6a', activeF: (p) => (p.parryT > 0 ? p.parryT / PARRY_T : 0),
-    icon: BELLA_ICON32.parry,
+    icon: BELLA_ICON32.parry, mark: 'stun',
     bot: (p, foe, d) => foe instanceof Player && d < PARRY_REACH && bellaThreat(foe),
   },
   {
@@ -325,7 +325,7 @@ function bellaOut(p) {
 
 // ---- the hooks she registers (js/sim/heroes.js) ------------------------------------
 HERO_PASSIVE.calculated = { deal: precisionDeal, tick: bellaTick, out: bellaOut,
-  name: 'CALCULATED STRIKES', blurb: 'YOUR ATTACKS ON HEROES BUILD PRECISION. FULL, YOUR NEXT ABILITY HITS HARDER AND YOU RUN FASTER FOR A MOMENT.', icon: BELLA_ICON32.precision };
+  name: 'CALCULATED STRIKES', blurb: 'YOUR ATTACKS ON HEROES BUILD PRECISION. FULL, YOUR NEXT ABILITY HITS HARDER AND YOU RUN FASTER FOR A MOMENT.', icon: BELLA_ICON32.precision, mark: 'speed' };
 HERO_TAKEN.push(parryTaken);
 HERO_MOVE.push(bellaMoveMul);
 HERO_DASH.lunge = { spd: LUNGE_SPD, t: LUNGE_LEN / LUNGE_SPD, ramp: 0.03, step: lungeStep, through: true };

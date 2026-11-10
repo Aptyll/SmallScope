@@ -50,7 +50,7 @@ const RUPES_AB = [
     use: (p) => rupesHeave(p),
     tele: (p, px, py, a, col, closing, now, ex, ey) => drawTeleLine(p.x, p.y, Math.cos(a), Math.sin(a), teleLen(p.x, p.y, Math.cos(a), Math.sin(a), HEAVE_RANGE), col, 0.5 + 0.45 * closing, now, ex, ey),
     pose: (p, prog) => ({ dx: 0, dy: prog < 0.7 ? -2 : 1, rot: 0 }), // the block lifted overhead, then thrown
-    icon: RUPES_ICON32.heave,
+    icon: RUPES_ICON32.heave, mark: 'slow',
     bot: (p, foe, d, clear) => clear && d < HEAVE_RANGE - 10,
   },
   {
@@ -72,7 +72,7 @@ const RUPES_AB = [
     use: (p) => rupesShoulder(p),
     tele: (p, px, py, a, col, closing, now, ex, ey) => drawTeleLine(p.x, p.y, Math.cos(a), Math.sin(a), teleLen(p.x, p.y, Math.cos(a), Math.sin(a), SHOULDER_SPD * SHOULDER_T), col, 0.5 + 0.45 * closing, now, ex, ey),
     pose: (p, prog) => ({ dx: 0, dy: 1, rot: 0.12 * (p.dir === 'left' ? -1 : 1) }), // the shoulder dropped
-    icon: RUPES_ICON32.shoulder,
+    icon: RUPES_ICON32.shoulder, mark: 'stun',
     bot: (p, foe, d, clear) => clear && foe instanceof Player && d < SHOULDER_SPD * SHOULDER_T - 6,
   },
   {
@@ -279,4 +279,4 @@ function avaBurst(p) {
 
 // ---- the hooks he registers (js/sim/heroes.js) ------------------------------------------
 HERO_PASSIVE.snowpack = { hurt: packHurt, deal: packDeal, tick: packTick, out: packOut,
-  name: 'SNOWPACK', blurb: 'HITS YOU TAKE PACK SNOW ONTO YOU. FULL, THE SNOW TAKES A SHARE OF EVERY HIT. DEEP SNOW PACKS IT FASTER. OUT OF A FIGHT IT MELTS.', icon: RUPES_ICON32.snowpack };
+  name: 'SNOWPACK', blurb: 'HITS YOU TAKE PACK SNOW ONTO YOU. FULL, THE SNOW TAKES A SHARE OF EVERY HIT. DEEP SNOW PACKS IT FASTER. OUT OF A FIGHT IT MELTS.', icon: RUPES_ICON32.snowpack, mark: 'shield' };

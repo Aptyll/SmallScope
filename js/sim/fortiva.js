@@ -53,7 +53,7 @@ const FORT_AB = [
     use: (p) => fortSever(p),
     tele: (p, px, py, a, col, closing) => drawSeverTele(px, py, a, col, closing),
     pose: (p, prog) => ({ dx: p.dir === 'left' ? 1 : p.dir === 'right' ? -1 : 0, dy: prog < 0.7 ? 0 : 1, rot: 0 }), // wound back, then through
-    icon: FORT_ICON32.sever,
+    icon: FORT_ICON32.sever, mark: 'heal',
     bot: (p, foe, d) => d > SEVER_EDGE - 8 && d < SEVER_R - 2,
   },
   {
@@ -64,7 +64,7 @@ const FORT_AB = [
     use: (p) => fortDefy(p),
     acol: '#f2cc6a', activeF: (p) => (p.defyT > 0 ? p.defyT / DEFY_T : 0),
     pose: () => ({ dx: 0, dy: 1, rot: 0 }), // braced
-    icon: FORT_ICON32.defy,
+    icon: FORT_ICON32.defy, mark: 'shield',
     bot: (p, foe, d) => foe instanceof Player && d < 70 && p.hp < p.maxHp * 0.9,
   },
   {
@@ -75,7 +75,7 @@ const FORT_AB = [
     use: (p) => fortYoke(p),
     tele: (p, px, py, a, col, closing, now, ex, ey) => drawYokeTele(p, a, col, closing, now, ex, ey),
     pose: (p, prog) => ({ dx: 0, dy: prog < 0.5 ? 1 : 0, rot: 0.12 * (p.dir === 'left' ? -1 : 1) }), // low, coiled
-    icon: FORT_ICON32.yoke,
+    icon: FORT_ICON32.yoke, mark: 'slow',
     bot: (p, foe, d, clear) => clear && d > 18 && d < YOKE_SPD * YOKE_T + YOKE_R - 10,
   },
   {
@@ -86,13 +86,13 @@ const FORT_AB = [
     use: (p) => fortNoKneel(p),
     tele: (p, px, py, a, col, closing, now, ex, ey) => drawNoKneelTele(p, col, closing, ex, ey),
     pose: (p, prog) => ({ dx: 0, dy: Math.round(2 * prog), rot: 0 }), // the crouch before the jump
-    icon: FORT_ICON32.nokneel,
+    icon: FORT_ICON32.nokneel, mark: 'up',
     bot: (p, foe, d) => foe instanceof Player && d > 30 && d < NOKNEEL_RANGE && (foe.hp < foe.maxHp * 0.6 || p.resolve >= UNB_HIGH),
   },
 ];
 
 HERO_PASSIVE.unbroken = { hurt: unbHurt, deal: unbDeal, tick: unbTick, out: unbOut,
-  name: 'UNBROKEN', blurb: 'BLOWS TRADED WITH HEROES BUILD RESOLVE. HIGH, CONTROL ON YOU IS SHORTER AND YOUR ATTACKS HEAL YOU.', icon: FORT_ICON32.unbroken };
+  name: 'UNBROKEN', blurb: 'BLOWS TRADED WITH HEROES BUILD RESOLVE. HIGH, CONTROL ON YOU IS SHORTER AND YOUR ATTACKS HEAL YOU.', icon: FORT_ICON32.unbroken, mark: 'heal' };
 
 // ---- UNBROKEN -----------------------------------------------------------------
 function isFort(p) { return p instanceof Player && CLASSES[p.cls].passive === 'unbroken'; }
