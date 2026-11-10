@@ -748,9 +748,9 @@ const SWISH_COL_0 = ['#f8fcff', '#9cb6d4', '#1b2233']; // a swish's light edge, 
 // `thrust` leaves none: the point is pushed straight out (SWING_JAB) and drawSlashes
 // (js/draw/abilities.js) draws its lines.
 const SWISH_KIND = {
-  edge: { w: [2, 5], from: 0 },                                              // a sword: a long thin bright edge
+  edge: { w: [0, 5], from: 0, col: ['#ffffff', '#a8c2e6', '#1b2233'] },         // a sword: a long bright edge, down to its ink line at the tail
   chop: { w: [4, 9], from: 0.55 },                                           // an axe or a pick: short and heavy, the end of the swing only
-  blunt: { w: [6, 10], from: 0.3, col: ['#dfe6f0', '#8494b0', '#1b2233'] },  // a hammer: broad and dull
+  blunt: { w: [6, 10], from: 0.3, col: ['#eef3fb', '#a9b8d0', '#1b2233'] },  // a hammer: broad and dull, never as dark as a shadow
   nick: { w: [1, 3], from: 0.5 },                                            // a dirk: a small quick cut
 };
 const SWING_JAB = [-3, 5, 4, 2, 0]; // px a thrust's point is out along the aim, by the swing's frame
