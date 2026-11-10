@@ -120,19 +120,37 @@ function drawShedFx(f, px, py, now) {
   ctx.globalAlpha = 1;
 }
 AB_FX_LOOK.shed = drawShedFx;
-// SHOULDER's wind-up: the furrow he is about to plough, a berm of snow either side of his
-// path heaped up to where the charge ends
+// SHOULDER's wind-up: the snow he is about to plough, shoved up in lumps either side of
+// his path as far as the charge goes, unevenly, with scuffs down the middle. No outline.
+const FURROW_HALF = 6;
+function furrowBits(x0, y0, nx, ny, L, seed, grow) {
+  for (const side of [-1, 1]) for (let s = 8 + 2 * (side + 1), k = side + 2; s < L; k += 2) {
+    const w = side * (FURROW_HALF + 2 * fxRoll(seed, k, 1)), big = fxRoll(seed, k, 2);
+    const x = Math.round(x0 + nx * s - ny * w), y = Math.round(y0 + ny * s + nx * w * 0.8);
+    ruLump(x - 2, y - 3, Math.round((3 + 3 * big) * grow), fxRoll(seed, k, 3) > 0.9);
+    s += 3 + 4 * fxRoll(seed, k, 5);
+  }
+}
 function drawShoulderTele(p, a, closing, ex, ey) {
   const nx = Math.cos(a), ny = Math.sin(a), L = teleLen(p.x, p.y, nx, ny, SHOULDER_SPD * SHOULDER_T) * (0.4 + 0.6 * closing);
-  for (let s = 8; s < L; s++) for (const side of [-1, 1]) {
-    const w = side * (6 + Math.sin(s * 0.5)), x = Math.round(p.x + nx * s - ny * w - ex), y = Math.round(p.y + 4 + ny * s + nx * w - ey);
-    ctx.fillStyle = RU_INK; ctx.fillRect(x, y + 1, 2, 2);
-    ctx.fillStyle = RU_SNOW_D; ctx.fillRect(x, y + 1, 2, 1);
-    ctx.fillStyle = RU_SNOW; ctx.fillRect(x, y, 2, 1);
-  }
+  furrowBits(p.x - ex, p.y + 4 - ey, nx, ny, L, p.id * 7 + 3, 0.7 + 0.3 * closing);
   const x = Math.round(p.x + nx * L - ex), y = Math.round(p.y + 4 + ny * L - ey);
   ruLump(x - 2, y - 2, 4); // the snow banked up at its end
 }
+// SHOULDER's furrow: what the charge left, back along the way he came: the trodden trough
+// and the lumps thrown to its sides, settling and going
+function drawFurrowFx(f, px, py, now) {
+  const u = f.t / f.life, nx = Math.cos(f.a), ny = Math.sin(f.a);
+  ctx.globalAlpha = Math.min(1, 2.5 * (1 - u));
+  for (let s = 4; s < f.r; s += 2) { // the trough: pressed snow, in shade under its upper lip, ragged along both sides
+    const x = Math.round(px + nx * s), y = Math.round(py + ny * s), j = Math.round(2 * fxRoll(fxSeed(f), s, 6));
+    ctx.fillStyle = '#b4c8e4'; ctx.fillRect(x - 3, y - 2 + j, 6, 4);
+    ctx.fillStyle = RU_SNOW_D; ctx.fillRect(x - 3, y - 2 + j, 6, 1);
+  }
+  furrowBits(px, py, nx, ny, f.r, fxSeed(f), 1);
+  ctx.globalAlpha = 1;
+}
+AB_FX_LOOK.furrow = drawFurrowFx;
 // AVALANCHE's wind-up: the snow rolling up round him into the ball, lumps drawn in on a
 // spiral, and powder kicked out ahead the way he will go
 function drawAvalancheTele(p, px, py, a, closing, now) {
