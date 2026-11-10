@@ -846,9 +846,7 @@ function drawHeldTool(p, px, py, back) {
   if (!icon) return;
   const half = icon.width >> 1;
   const hx = p.dir === 'left' || p.dir === 'up' ? px + 2 : px + 14; // the leading hand (up: the far one, occluded by the body)
-  // a short blade hung at the side rides `lift` px up, so its tip rests at the feet
-  const hb0 = heroBladeOf(p), lift = hb0 && hb0.lift && p.dir === 'down' ? hb0.lift : 0;
-  const hy = cyp + CARRY_HAND_Y[p.dir] + bob - lift;
+  const hy = cyp + CARRY_HAND_Y[p.dir] + bob;
   if (axeOut) { ctx.drawImage(icon, hx - half, hy - half); return; }
   const face = p.dir === 'right' ? 0 : p.dir === 'down' ? Math.PI / 2 : p.dir === 'left' ? Math.PI : -Math.PI / 2;
   drawGripped(icon, hGrip, hx, hy, face - fwd);

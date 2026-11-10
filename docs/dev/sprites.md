@@ -177,10 +177,10 @@ every facing** so a hero keeps one shape as it turns and nothing heavy is held o
 `HERO_BLADES` row with a slanted grid names its `hold` (`BLADE_HOLDS`; none is `slant`, up and out
 from the leading hand: ARMATOS, VARRO, MARIS; `far` the other hand facing down: FORTIVA; `shoulder`
 back over the shoulder behind the head: LIGNUM's axe; `rest` the head down on the snow beside the
-foot: RUPES's maul). Each is the row's own slanted grid mirrored left to right or top to bottom
+foot: RUPES's maul; `low` point down and out from the fist at the hip, the knife fighter's way:
+NIX's dirk). Each is the row's own slanted grid mirrored left to right or top to bottom
 (`heldFlip`, `heldDrop`); none rises past the head, where the health frame sits. A row with no
-slanted grid keeps the level carry (BELLA, NIX), and its `lift` raises a short blade hung at the
-side so its tip rests at the feet (NIX).
+slanted grid keeps the level carry.
 
 FORTIVA's looks (`FORT_SKINS`, js/sprites/fortiva.js) are built the same way on ARMATOS's frame and in
 his iron (`FORT_PAL` is `ARM_PAL` with her copper hair `a`/`A` and her chain `c`/`C`). UNBROKEN
@@ -330,7 +330,7 @@ NIX has two looks (`NIX_SKINS`, js/sprites/nix.js) on one set of grids and one d
 cut repainted by its row's `pal` (moonless black, gold goggles, a violet scarf), which
 `champLook` lays over the hero's palette. It is A off nix-round1.png in the project files. Her
 doll is `Snowblind` in app/bake-player/bodies.py. Her ICE DIRK is a `HERO_BLADES` row (`dirk`,
-js/draw/nix.js), half a sword's length.
+js/draw/nix.js), half a sword's length, with its own slanted grid (`NIX_DIRK_DIAG`) held `low`.
 
 VELOX has two looks (`VELOX_SKINS`, js/sprites/velox.js): CANAL RUNNER (free: a navy wool cap, auburn
 hair in a braid down her back, a gold scarf, a satchel at her hip, skate blades under her boots) and
