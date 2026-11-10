@@ -85,7 +85,8 @@ function heroStaff(p, px, py) {
   const mirror = (p.dir === 'down' ? back : p.dir === 'left' || p.dir === 'up') !== (s.lean ? s.lean === 'left' : heldLeansLeft(img)); // `lean` says it when a thing hung low off the staff would fool the reading
   if (mirror) img = heldFlip(img);
   const gx = mirror ? img.width - 1 - s.grip[0] : s.grip[0];
-  const beat = staffBeat(p), use = beat === 1 ? s.cast || STAFF_CAST : null, rc = heroReach(p) + (use ? use.out : 0), th = beat === 2 ? STAFF_THRUST[p.dir] : [0, 0];
+  const beat = staffBeat(p), kept = beat === 2 && s.cast && s.cast.keep; // a row's `cast.keep` holds its gather through the loosing beat: BUCINA sounds the horn at her lips
+  const use = beat === 1 || kept ? s.cast || STAFF_CAST : null, rc = heroReach(p) + (use ? use.out : 0), th = beat === 2 && !kept ? STAFF_THRUST[p.dir] : [0, 0];
   const hx = (back ? px + 2 - rc : px + 13 + rc) + th[0];
   const hy = py + 10 - (use ? use.up : p.charging ? 1 : 0) + th[1]; // a draw lifts it, a cast gathers it up, then looses it forward
   ctx.drawImage(img, Math.round(hx - gx), Math.round(hy - s.grip[1]));

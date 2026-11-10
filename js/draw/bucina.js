@@ -189,4 +189,4 @@ function bucinaHorn() {
   bucinaHornArt = [bakeBladeArt(BUCINA_HORN, BUCINA_HORN_PAL), bakeBladeArt(glint, BUCINA_HORN_PAL)];
   return bucinaHornArt;
 }
-HERO_STAVES.horn = { art: bucinaHorn, grip: BUCINA_HORN_GRIP, cast: { up: 4, out: 0 } }; // sounded, the mouthpiece comes up to her lips
+HERO_STAVES.horn = { art: bucinaHorn, grip: BUCINA_HORN_GRIP, cast: { up: 4, out: 0, keep: true } }; // sounded, the mouthpiece comes up to her lips and stays there while she blows
