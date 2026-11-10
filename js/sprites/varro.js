@@ -309,7 +309,7 @@ const VARRO_SKINS = [
 ];
 
 // ------------------------------------------------------------ varro spear
-// His HUNTING SPEAR: a leaf head, a wolf-tail tassel under it, an ash shaft, 18 px (the
+// His HUNTING SPEAR: a clean leaf head with a lit edge, an ash shaft, 18 px (the
 // staff's band, /mnt/project-files/visual-direction/rules.md). Flat at
 // its held length (point left, the sword's frame) for the side, the swing and the wind-up,
 // and slanted for a body facing down or up with the grip in his hands at VARRO_GRIP
@@ -323,15 +323,15 @@ const VARRO_SPEAR = [
   '......................',
   '......................',
   '......................',
-  '.......o..............',
-  '......oeoo............',
-  '....ooTTTToooooooooooo',
-  '...oWWeeeenGGGGgGGGgGG',
-  '....ooEEEEoffooooooooo',
-  '......oEoooffo........',
-  '.......o..offo........',
-  '..........oFo.........',
-  '...........o..........',
+  '......................',
+  '.....ooooo............',
+  '...ooTTTeeoooooooooooo',
+  '..oWTeeeeenGGGGgGGGgGG',
+  '...ooEEEEEoooooooooooo',
+  '.....ooooo............',
+  '......................',
+  '......................',
+  '......................',
   '......................',
   '......................',
   '......................',
@@ -343,34 +343,34 @@ const VARRO_SPEAR_DIAG = [
   '........................',
   '........................',
   '........................',
-  '........................',
-  '.................o......',
-  '.............ooooWo.....',
-  '............oeTTWo......',
+  '..................o.....',
+  '.................oWo....',
+  '...............ooeo.....',
+  '.............ooTeo......',
   '............oTTeEo......',
-  '...........oTTeEEo......',
-  '...........oTeEoEo......',
-  '...........onEEoo.......',
-  '..........oGfoo.........',
-  '.........oGfffo.........',
-  '........oGofffFo........',
-  '.......ogo.ofoFo........',
-  '......oGo...o.o.........',
-  '.....oGo................',
-  '....ogo.................',
+  '...........oTTeEo.......',
+  '...........oTeEEo.......',
+  '..........oTeEEo........',
+  '..........oeEoo.........',
+  '.........onoo...........',
+  '........ogo.............',
+  '.......oGo..............',
+  '......oGo...............',
+  '.....ogo................',
+  '....oGo.................',
   '...oGo..................',
-  '..oGo...................',
-  '...o....................',
-  '........................',
-  '........................',
+  '..ogo...................',
+  '.oGo....................',
+  'oGo.....................',
+  '.o......................',
 ];
 const VARRO_GRIP = [6, 19];
-const VARRO_SPEAR_PAL = { o: '#241a12', e: '#c8d2e4', E: '#8b93a8', W: '#ffffff', T: '#eef2f8', g: '#6b4a30', G: '#a3794f', n: '#4f5668', f: '#6f778c', F: '#a9b2c4' };
+const VARRO_SPEAR_PAL = { o: '#241a12', e: '#c8d2e4', E: '#8b93a8', W: '#ffffff', T: '#eef2f8', g: '#6b4a30', G: '#a3794f', n: '#4f5668' };
 WEAPON_FWD.spear = Math.PI;
 SPRITES.weaponArt.spear = SPR.bake([
   '............', '............', '............', '............',
-  '.ooo........', 'oWeeoooooooo', 'oeEEnGGgGGgo', '.oooofoooooo',
-  '....oFo.....', '.....o......', '............', '............',
+  '.ooo........', 'oWeeoooooooo', 'oeEEnGGgGGgo', '.ooooooooooo',
+  '............', '............', '............', '............',
 ], Object.assign({ '.': null }, VARRO_SPEAR_PAL));
 
 // ------------------------------------------------------------ varro registry

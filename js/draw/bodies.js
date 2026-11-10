@@ -695,7 +695,7 @@ function heroAimed(p) {
   const behind = heldBehind(ha), own = HERO_AIMED[A.art];
   if (own) {
     if (!drawing && !(p.nockT > 0 && p.castT <= 0 && attackCycle(p) - p.nockT < AIMED_LOOSE_T)) return null;
-    const r = own(h, !drawing ? 0 : drawPow(p) < 0.5 ? 1 : 2);
+    const r = own(h, !drawing ? 0 : drawPow(p) < 0.5 ? 1 : 2, p);
     return { img: r.img, grip: r.grip, rot: 0, x: r.hand[0], y: r.hand[1] - 2, behind, fist: true };
   }
   const dg = drawing && SPRITES.weaponDiag[A.art];
@@ -831,7 +831,8 @@ function drawHeldTool(p, px, py, back) {
     const sw = f === 0 ? SWING_FIRST : 1;
     const a0 = p.slashA - p.slashHalf, e = a0 + sw * p.slashHalf * 2;
     const hand = (a) => [cxp + Math.cos(a) * BLADE_HAND[0], cyp + Math.sin(a) * BLADE_HAND[1]];
-    if (f < SWISH_FRAMES) drawSwish(p, px, cyp, hand, bladeLen(wHeld, hGrip), f === 2 ? e - (e - a0) * SWISH_TAIL : a0, e, back);
+    // the swish runs at the cut's true reach, however short the blade drawn in the hand
+    if (f < SWISH_FRAMES) drawSwish(p, px, cyp, hand, Math.max(bladeLen(wHeld, hGrip), cut.reach - BLADE_HAND[0]), f === 2 ? e - (e - a0) * SWISH_TAIL : a0, e, back);
     if (heldBehind(e) === back) { const h = hand(e); drawGripped(wHeld, hGrip, h[0], h[1], e - fwd); }
     return;
   }

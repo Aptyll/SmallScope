@@ -307,8 +307,8 @@ const RUPES_SKINS = [
 ];
 
 // ------------------------------------------------------------ rupes maul
-// His ICE MAUL as he holds it (HERO_BLADES.maul, js/draw/rupes.js): a block of packed ice
-// bound to a heavy haft. Flat with the head left like every held blade (the middle of the
+// His ICE MAUL as he holds it (HERO_BLADES.maul, js/draw/rupes.js): a squared block of packed ice
+// in three planes (lit, flat, shaded), an iron band where the haft goes through. Flat with the head left like every held blade (the middle of the
 // square is the hand, on the haft; 18 px, the greatsword's band), and slanted with the head up and right for a body facing down or up.
 const RUPES_MAUL = [
   '..................',
@@ -316,29 +316,29 @@ const RUPES_MAUL = [
   '..................',
   '..................',
   '..................',
-  '.oooooo...........',
-  'oIIiiIo...........',
-  'oIiiiio...........',
-  'oiiiiioooooooooooo',
-  'oiiiiiouwwuuwwuuwo',
-  'oiiiiioooooooooooo',
-  'oiiiiIo...........',
-  '.oooooo...........',
-  '..................',
+  '.ooooo............',
+  'oIIIIIo...........',
+  'oIiiiDo...........',
+  'oIiiiDooooooooooo.',
+  'onnnnnuuwwuuwwuuwo',
+  'oIiiiDooooooooooo.',
+  'oDDDDDo...........',
+  'oDDDDDo...........',
+  '.ooooo............',
   '..................',
   '..................',
   '..................',
   '..................',
 ];
 const RUPES_MAUL_DIAG = [
-  '..........oooo..',
-  '.........oIIiio.',
-  '........oIiiiio.',
-  '........oiiiiio.',
-  '.......ooiiiiio.',
-  '......owoiiiioo.',
-  '.....owuoooooo..',
-  '....owuo........',
+  '........oIIo....',
+  '.......oiiIIo...',
+  '......oDDiinno..',
+  '.......oDDnnIIo.',
+  '.......ownniiIDo',
+  '......owuoDDiDo.',
+  '.....owuo.oDDo..',
+  '....owuo...oo...',
   '...owuo.........',
   '..owuo..........',
   '.owuo...........',
@@ -346,7 +346,7 @@ const RUPES_MAUL_DIAG = [
   '.oo.............',
 ];
 const RUPES_MAUL_GRIP = [3, 9]; // where the hands close on the slanted grid
-const RUPES_MAUL_PAL = { o: '#241a12', i: '#7cc4e8', I: '#cfeeff', w: '#a8794a', u: '#6e4a28' };
+const RUPES_MAUL_PAL = { o: '#241a12', i: '#6fb4dc', I: '#bfe6f8', D: '#3f82b4', n: '#4f5668', w: '#a8794a', u: '#6e4a28' };
 
 // ------------------------------------------------------------ rupes registry
 // RUPES in the hero art registry (heroArt, js/sprites/hero-art.js): the looks and

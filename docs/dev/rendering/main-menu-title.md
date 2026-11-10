@@ -9,7 +9,7 @@ middle at `ZOOM_TITLE` (the match's own view) and breathes a few px round it (`T
 scene is ten heroes, five a side, facing each other across the ice (`TITLE_SPOTS`, the rivals
 mirrored): `titleCast()` builds them as this screen's own `Player` bodies - never in `players`, never
 stepped or sent - your profile's hero leading your side and nine others dealt fresh each boot
-(`titleDeal`), and `titleCastDraws` hands them to the sorted pass, so `drawPlayer` paints the real
+(`titleDeal`), `titleCastPose` moves them off the menu's clock (a few px of pacing, a face turned to you; the two leaders hold), and `titleCastDraws` hands them to the sorted pass, so `drawPlayer` paints the real
 sprites, weapons, shade and team rings. `drawTitleBackdrop` leaves the scene in daylight: a thin wash
 (`TITLE_WASH`, thickening to `TITLE_WASH_DEEP` under a panel or a full screen) and two bands behind
 the logo and the words. Everything else lives in the `main menu` banner and on `state.menu`:

@@ -77,7 +77,7 @@
     for (const kind of ['run', 'hold']) {
       const mo = set[kind], bob = kind === 'run' ? SPR.motion.RUN_BOB : SPR.motion.HOLD_BOB;
       let r = null;
-      const right = () => r || (r = heroRunSide(row.grids.side, bob).map((g) => bake(g, sp)));
+      const right = () => r || (r = heroRunSide(row.grids.side, bob, row).map((g) => bake(g, sp)));
       let l = null;
       // ...and head-on and from behind too, for a look that says its doll does not match it
       const drawn = row.run === 'drawn', fr = {};
