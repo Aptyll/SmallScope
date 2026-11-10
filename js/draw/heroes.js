@@ -8,12 +8,7 @@
 // by facing, grip: where the hands close on the slanted grid }.
 const HERO_BLADES = {};
 // a grid of palette letters baked to a canvas, once
-function bakeBladeArt(rows, pal) {
-  const c = document.createElement('canvas'); c.width = rows[0].length; c.height = rows.length;
-  const g = c.getContext('2d');
-  rows.forEach((r, y) => { for (let x = 0; x < r.length; x++) { const col = pal[r[x]]; if (col) { g.fillStyle = col; g.fillRect(x, y, 1, 1); } } });
-  return c;
-}
+function bakeBladeArt(rows, pal) { return SPR.bake(rows, pal); } // the shared bake, which keeps the art's pixels (SPR.pixelsOf)
 // What a hero wears on or around its body beyond its sprite: fn(p, ax, ay, now,
 // front), called by drawPlayer (js/draw/bodies.js) once behind the body
 // (front false) and once over it (front true); (ax, ay) is the 16 px cell's
@@ -39,13 +34,10 @@ const STAFF_HOLDS = { lead: { far: false }, far: { far: true } };
 const HERO_FADE = [];
 function heroFade(p) { let a = 1; for (const f of HERO_FADE) a = Math.min(a, f(p)); return a; }
 function heroStaffOf(p) { const c = CLASSES[p.cls]; return c && c.staff ? HERO_STAVES[c.staff] : null; }
-// a held art mirrored left to right, or top to bottom, baked once
+// a held art mirrored left to right, or top to bottom, baked once (SPR's flips keep its pixels)
 const heldFlips = new Map(), heldDrops = new Map();
-function heldBaked(cache, img, lay) {
-  if (!cache.has(img)) {
-    const c = document.createElement('canvas'); c.width = img.width; c.height = img.height;
-    lay(c.getContext('2d')); cache.set(img, c);
-  }
+function heldBaked(cache, img, flip) {
+  if (!cache.has(img)) cache.set(img, flip(img));
   return cache.get(img);
 }
 // true when an art, as drawn, leans left (its top left of its foot), read once off
@@ -53,15 +45,15 @@ function heldBaked(cache, img, lay) {
 const heldLeans = new WeakMap();
 function heldLeansLeft(img) {
   if (!heldLeans.has(img)) {
-    const d = img.getContext('2d').getImageData(0, 0, img.width, img.height).data;
+    const d = SPR.pixelsOf(img);
     let n = 0, sx = 0, sy = 0, sxy = 0;
     for (let y = 0; y < img.height; y++) for (let x = 0; x < img.width; x++) if (d[(y * img.width + x) * 4 + 3]) { n++; sx += x; sy += y; sxy += x * y; }
     heldLeans.set(img, n > 0 && sxy / n - (sx / n) * (sy / n) > 0);
   }
   return heldLeans.get(img);
 }
-function heldFlip(img) { return heldBaked(heldFlips, img, (g) => { g.scale(-1, 1); g.drawImage(img, -img.width, 0); }); }
-function heldDrop(img) { return heldBaked(heldDrops, img, (g) => { g.scale(1, -1); g.drawImage(img, 0, -img.height); }); }
+function heldFlip(img) { return heldBaked(heldFlips, img, SPR.flipH); }
+function heldDrop(img) { return heldBaked(heldDrops, img, SPR.flipV); }
 // THE CAST POSE: a key's cast, and the beat a shot leaves the staff, raise it
 // up and out from the body (STAFF_RAISE, STAFF_OUT px) while the body rises a
 // pixel with it (attackLean, js/draw/bodies.js); a draw lifts it 1 px. Drawn

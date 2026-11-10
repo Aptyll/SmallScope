@@ -6,30 +6,101 @@
 // this file loads first and the rest in any order.
 window.SPRITES = {};
 window.SPR = (() => {
+  // A sprite's own pixels, kept on the CPU from the moment it is made: what a
+  // draw that measures art reads (a sun shade, a building's art box, a
+  // canopy's ink, a fall's ice, a blade's reach), never the canvas itself. A
+  // sprite canvas lives on the GPU, and reading one back (getImageData) stalls
+  // the frame until the GPU catches up - read lazily, every hero frame's first
+  // showing in a fight was a hitch. bake() and the flips record their pixels
+  // as they paint; a canvas made any other way is read back once, on first ask
+  // (`readbacks` counts those). A canvas handed here is never painted again.
+  const pixels = new WeakMap();
+  const rgbaCv = document.createElement('canvas');
+  rgbaCv.width = rgbaCv.height = 1;
+  const rgbaCtx = rgbaCv.getContext('2d', { willReadFrequently: true });
+  const rgbaOf = new Map();
+  // a palette colour as one pixel holds it: painted and read on a CPU pixel,
+  // so it rounds exactly as the sprite's own pixel would
+  function rgba(col) {
+    let v = rgbaOf.get(col);
+    if (!v) {
+      rgbaCtx.clearRect(0, 0, 1, 1);
+      rgbaCtx.fillStyle = col;
+      rgbaCtx.fillRect(0, 0, 1, 1);
+      rgbaOf.set(col, (v = rgbaCtx.getImageData(0, 0, 1, 1).data.slice()));
+    }
+    return v;
+  }
+  // a canvas painted from pixels already in hand (a putImageData of them):
+  // they are its kept pixels, so it is never read back. Alpha is exact; a
+  // half-clear pixel's colour may sit 1 off what a readback would round it to
+  function keepPixels(cv, px) { pixels.set(cv, px); return cv; }
+  const read = { n: 0 };
+  function pixelsOf(cv) {
+    let px = pixels.get(cv);
+    if (!px) {
+      px = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data;
+      pixels.set(cv, px);
+      read.n++;
+    }
+    return px;
+  }
+  // a CPU twin of a sprite whose pixels are known, for a layer that is read
+  // back every frame (the canopy's hero layer, js/draw/canopy.js): drawing a GPU
+  // canvas into a CPU one reads the GPU too. Null for a canvas made any other way
+  const twins = new WeakMap();
+  function cpuTwin(cv) {
+    let t = twins.get(cv);
+    if (t !== undefined) return t;
+    const px = pixels.get(cv);
+    t = null;
+    if (px && cv.width && cv.height) {
+      t = document.createElement('canvas');
+      t.width = cv.width; t.height = cv.height;
+      t.getContext('2d', { willReadFrequently: true }).putImageData(new ImageData(new Uint8ClampedArray(px), cv.width, cv.height), 0, 0);
+    }
+    twins.set(cv, t);
+    return t;
+  }
+
   function bake(rows, pal) {
     const h = rows.length, w = rows[0].length;
     const c = document.createElement('canvas');
     c.width = w; c.height = h;
-    const g = c.getContext('2d');
+    const g = c.getContext('2d'), px = new Uint8ClampedArray(w * h * 4);
     for (let y = 0; y < h; y++) {
       const row = rows[y];
       for (let x = 0; x < w; x++) {
         const col = pal[row[x]];
-        if (col) { g.fillStyle = col; g.fillRect(x, y, 1, 1); }
+        if (col) { g.fillStyle = col; g.fillRect(x, y, 1, 1); px.set(rgba(col), (y * w + x) * 4); }
       }
     }
+    pixels.set(c, px);
     return c;
   }
 
-  function flipH(src) {
+  // a sprite mirrored left to right (flipH) or top to bottom (flipV), its
+  // pixels mirrored with it when the source's are known
+  function flipped(src, horiz) {
+    const w = src.width, h = src.height;
     const c = document.createElement('canvas');
-    c.width = src.width; c.height = src.height;
+    c.width = w; c.height = h;
     const g = c.getContext('2d');
-    g.translate(src.width, 0);
-    g.scale(-1, 1);
+    if (horiz) { g.translate(w, 0); g.scale(-1, 1); } else { g.translate(0, h); g.scale(1, -1); }
     g.drawImage(src, 0, 0);
+    const from = pixels.get(src);
+    if (from) {
+      const px = new Uint8ClampedArray(from.length);
+      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+        const i = (y * w + x) * 4, j = horiz ? (y * w + w - 1 - x) * 4 : ((h - 1 - y) * w + x) * 4;
+        px[i] = from[j]; px[i + 1] = from[j + 1]; px[i + 2] = from[j + 2]; px[i + 3] = from[j + 3];
+      }
+      pixels.set(c, px);
+    }
     return c;
   }
+  const flipH = (src) => flipped(src, true);
+  const flipV = (src) => flipped(src, false);
 
   // A beast's frames are named CLIPS, one array per behaviour, so
   // `SPRITES[kind][dir]` is an object rather than a flat list and every kind
@@ -129,5 +200,5 @@ window.SPR = (() => {
     TEAM_SKINS.forEach((t, i) => Object.assign(t, TEAM_PALETTES[id][i]));
     for (const fn of teamBakes) fn();
   };
-  return { bake, flipH, bakeClips, mapClips, liveIcon, TEAM_SKINS, teamBuildPal, onTeams };
+  return { bake, flipH, flipV, pixelsOf, keepPixels, cpuTwin, readbacks: () => read.n, bakeClips, mapClips, liveIcon, TEAM_SKINS, teamBuildPal, onTeams };
 })();

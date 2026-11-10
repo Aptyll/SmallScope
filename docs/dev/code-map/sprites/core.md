@@ -2,4 +2,4 @@
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| the `SPR` helpers every sprite file bakes with (`bake`, `flipH`, `bakeClips`/`mapClips`), and the team palettes | its head; `teams` | `teams` |
+| the `SPR` helpers every sprite file bakes with (`bake`, `flipH`/`flipV`, `bakeClips`/`mapClips`), and each sprite's kept pixels (`pixelsOf`, `keepPixels`, `cpuTwin`), and the team palettes | its head; `teams` | `teams` |
