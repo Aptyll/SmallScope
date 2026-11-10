@@ -831,7 +831,10 @@ function drawSwish(p, px, cyp, hand, L, a0, e, back, S) {
   a0 += (e - a0) * S.from;
   const cx = px + 8, span = e - a0, dir = span < 0 ? -1 : 1, R = Math.ceil(L + 8);
   const rise = heroRise(p), reach = heroReach(p), headTop = cyp - 10 - rise, headBot = cyp - 4; // the head's rows, taller on a larger cell
-  for (let y = Math.round(cyp) - R; y <= Math.round(cyp) + R; y++) for (let x = Math.round(cx) - R; x <= Math.round(cx) + R; x++) {
+  // laid on the body's own px: a body drawn fine (bodySet's `dens`) gets its crescent on art px, its ink edge one of them
+  const k = bodySet(p).dens || 1, s = 1 / k;
+  for (let j = (Math.round(cyp) - R) * k; j <= (Math.round(cyp) + R) * k; j++) for (let i = (Math.round(cx) - R) * k; i <= (Math.round(cx) + R) * k; i++) {
+    const x = i * s, y = j * s;
     // the pixel's angle about the hands' middle, as a fraction of the way along the arc
     const a = Math.atan2(y - cyp, x - cx);
     let d = (a - a0) * dir; d -= Math.floor(d / (2 * Math.PI)) * 2 * Math.PI;
@@ -839,11 +842,11 @@ function drawSwish(p, px, cyp, hand, L, a0, e, back, S) {
     if (u > 1) continue;
     const h = hand(a), out = Math.hypot(h[0] - cx, h[1] - cyp) + L; // the blade's tip at that angle
     const rr = Math.hypot(x - cx, y - cyp), w = SWISH_W[0] + (SWISH_W[1] - SWISH_W[0]) * u;
-    if (rr > out + 1 || rr < out - w) continue;
+    if (rr > out + s || rr < out - w) continue;
     if (heldBehind(a) !== back) continue;
     if (!back && y >= headTop && y <= headBot && x >= px + 3 - reach && x <= px + 12 + reach) continue;
-    ctx.fillStyle = SWISH_COL[rr > out ? 2 : rr > out - 1.5 ? 0 : 1]; // ink only on the outer edge: the inner one is the motion
-    ctx.fillRect(x, y, 1, 1);
+    ctx.fillStyle = SWISH_COL[rr > out ? 2 : rr > out - 1.5 * s ? 0 : 1]; // ink only on the outer edge: the inner one is the motion
+    ctx.fillRect(x, y, s, s);
   }
 }
 function drawHeldTool(p, px, py, back) {
