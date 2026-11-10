@@ -869,7 +869,7 @@ function placeCreek() {
 // nothing is carried, and nothing buys or sells one. The lake's fish under
 // the ice are scenery (the `fish` banner, js/sim/wildlife.js). The pixels:
 // drawCreekFish, js/draw/ground.js.
-const CREEK_FISH_GAP = 5;        // tiles of creek per fish
+const CREEK_FISH_GAP = 12;       // tiles of creek per fish: a few to find along it, not a shoal
 const CREEK_FISH_SPD = [18, 34]; // px/s downstream, the slowest fish .. the fastest
 const CREEK_FISH_HEAL = 40;      // health one gives back
 const CREEK_FISH_LANE = CREEK_HW - 0.9; // tiles either side of the water's middle a fish keeps to: its body clear of the banks
