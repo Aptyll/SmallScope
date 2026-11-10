@@ -101,6 +101,7 @@ const ITEM_PASSIVES = {
 // every component of it already held, however deep (itemCost). `icon` is a
 // SPRITES key: SPRITES['item_' + id] (js/sprites/item-icons.js) unless named.
 // `styles` (ITEM_STYLES) names the shop's style tabs an item is listed on.
+// `kind` names the stat it is about when its stats cannot say (itemKind).
 const BUILD_ITEMS = {
   // basic
   flint:  { name: 'FLINT HEAD', price: 400, stats: { dmg: 3 } },
@@ -176,7 +177,7 @@ const BUILD_ITEMS = {
   // THE CONSUMABLE: a stack of up to `stack` in ONE slot (League's potions),
   // drunk off that slot's key (the `potion` banner below). No stats, no passive,
   // never a part of anything.
-  potion: { name: 'HEALTH POTION', price: 50, stack: 5, stats: {}, icon: 'itemPotion' },
+  potion: { name: 'HEALTH POTION', price: 50, stack: 5, stats: {}, icon: 'itemPotion', kind: 'hp' },
 };
 // THE STYLES a legendary or a pair of boots suits (its `styles`), League's
 // item classes: the shop's top tabs (js/ui/shop.js) list each one's items.
@@ -205,7 +206,27 @@ const ITEM_DONE = ITEM_ALL.filter((id) => itemTier(id) === 'legend');
 // what an item goes INTO: every item that names it in its recipe (the shop's BUILDS INTO row)
 function itemInto(id) { return ITEM_ALL.filter((k) => (BUILD_ITEMS[k].from || []).includes(id)); }
 
-function itemIcon(id) { return SPRITES[BUILD_ITEMS[id].icon || 'item_' + id]; }
+// WHAT AN ITEM IS ABOUT: the one stat it gives the most gold's worth of, each
+// stat priced by the basic that carries it alone (FLINT HEAD's 400 for 3
+// damage, and so on), so a new item finds its kind without being told. A pair
+// of boots is about what it adds to the speed every pair gives. Its icon glows
+// in that stat's colour (itemIcon, js/sprites/item-icons.js).
+const ITEM_WORTH = {};
+for (const id in BUILD_ITEMS) {
+  const it = BUILD_ITEMS[id], keys = Object.keys(it.stats);
+  if (!it.from && keys.length === 1 && !(keys[0] in ITEM_WORTH)) ITEM_WORTH[keys[0]] = it.price / it.stats[keys[0]];
+}
+function itemKind(id) {
+  const it = BUILD_ITEMS[id];
+  if (it.kind) return it.kind;
+  let best = 'ms', most = -1;
+  for (const k in it.stats) {
+    if (it.boots && k === 'ms') continue;
+    const w = it.stats[k] * ITEM_WORTH[k];
+    if (w > most) { most = w; best = k; }
+  }
+  return best;
+}
 function isPart(id) { return !BUILD_ITEMS[id].from && !BUILD_ITEMS[id].stack; }
 function isStack(id) { return !!BUILD_ITEMS[id].stack; }
 function isBoots(id) { return !!BUILD_ITEMS[id].boots; }

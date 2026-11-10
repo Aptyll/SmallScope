@@ -467,8 +467,12 @@ hero blade's `hilt`; a work tool's icon about its middle) - the carry rule in `d
 keeps a weapon off the face.
 
 The **item icons** are one 16×16 grid an item in [js/sprites/item-icons.js](../../js/sprites/item-icons.js),
-`SPRITES['item_' + id]` (`itemIcon`, js/sim/items.js; see [the items](gameplay/the-merchants-counter.md#the-items)),
-so a 20 px shop well shows each at 1x. One ink for all of them: a dark outline, flat lit planes on
+`SPRITES['item_' + id]` (see [the items](gameplay/the-merchants-counter.md#the-items)),
+so a 20 px shop well shows each at 1x. Every site draws one through `itemIcon`, which lays the grid
+over a stepped glow in the colour of what the item is about (`itemKind`, js/sim/items.js; the stat
+strip's own inks, deepened, `ITEM_GLOW`): light behind the subject and dark at the edges, centred on
+the subject's own middle, the ability icons' backing. The colour says what an item gives, the shape
+which item it is. One ink for all of them: a dark outline, flat lit planes on
 the top-left and shade on the bottom-right, and the material says the stat (steel and wood for
 damage, hide and fur for health, plate for armor, amber and violet for ability power, glass for
 cooldown speed, leather for boots). Each carries its own small palette beside its grid. The grids

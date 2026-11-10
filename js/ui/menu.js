@@ -35,7 +35,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.732';
+const PATCH_TXT = 'PATCH 0.733';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -51,6 +51,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.733', 'EVERY ITEM ICON GLOWS IN THE COLOUR OF WHAT IT GIVES: ORANGE DAMAGE, GOLD ATTACK SPEED, GREEN HEALTH, STEEL ARMOR, VIOLET ABILITY POWER, TEAL COOLDOWN, GREY SPEED.'],
   ['0.732', 'NO MORE LAG SPIKES IN FIGHTS AND UNDER TREES: SHADOWS, THE TREE WINDOW AND THE EAGLE NO LONGER MAKE THE GRAPHICS CARD STOP AND WAIT.'],
   ['0.731', 'FORTIVA: NO KNEELING LEAPS TO YOUR AIM AND LANDS ITS BLOW AGAIN, INSTEAD OF HITTING NOTHING AND THROWING HER ACROSS THE VALLEY.'],
   ['0.730', 'EVERY HERO HAS NEW ABILITY ICONS: ONE BOLD PICTURE ON A GLOW IN THE HERO\'S OWN COLOUR, AND A CORNER MARK THAT SAYS WHAT IT DOES TO A RIVAL, THE SAME MARK THEIR HEALTH BAR SHOWS (SNAIL SLOW, PADLOCK ROOT, STARS STUN, SHIELD).', 'kit-icons'],
