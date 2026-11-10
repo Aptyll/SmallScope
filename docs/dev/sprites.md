@@ -162,7 +162,7 @@ js/draw/heroes.js): the overhead frame lifts by `rise`, a staff or blade hand si
 out. No look uses a larger cell yet; the roll and the other doll poses are still 16 px, and the menus
 draw frames into 16 px boxes.
 **A look can carry a finer world body**: `fine: { dens, grids }` on its row (ARMATOS's LAST
-STANDARD, `ARM_FINE`) is a `down`/`up`/`side` set at `dens` art px a world px (32 px on the 16
+STANDARD, `ARM_FINE`; SAGITTA's and NIX's looks, `SAGITTA_FINE`, `NIX_FINE`) is a `down`/`up`/`side` set at `dens` art px a world px (32 px on the 16
 px cell). When `WD` is 2 (`?fine=1`; it is 1 by default, so no player sees one yet), `champLook`
 builds it beside the 16 px set as `set.fine` through the same `lookSet`
 (walk, side and front run, breath and cloth step `dens` px, a world px; every frame carries
@@ -371,7 +371,8 @@ sagitta-round1.png in the project files. Her dolls are `Siege` and `Tower` in
 app/bake-player/bodies.py; she runs on her drawn frames (`run: 'drawn'`). Her HEAVY ARBALEST is her
 basic attack's `art` (`SPRITES.weaponArt.arbalest`, prod left, seen from above and cocked), with a
 slanted grid of the same crossbow (`SPRITES.weaponDiag.arbalest`, pointing down and right): she
-carries the slanted one low at her hip in every facing (`HERO_CARRY`, js/draw/sagitta.js) and aims
+carries the slanted one low at her hip in every facing, the butt tucked under her arm (`SG_TUCK`
+rows of the grid stay undrawn, so the stock never crosses her jaw; `HERO_CARRY`, js/draw/sagitta.js) and aims
 in eight drawn headings, the level art in quarter turns or the slanted one (`aimHeading`,
 js/draw/bodies.js), never turned to a free angle.
 
@@ -384,7 +385,7 @@ is `Fletcher` in app/bake-player/bodies.py (motion `fletcher`); he runs on his d
 he carries its own carried art (`ARCUS_BOW_CARRY`, a shallow D) upright in his leading hand, beside
 the body in every facing (`HERO_CARRY`, js/draw/arcus.js). Drawn, it is one of eight set frames on
 the snapped aim with the string back and an arrow on it, half then full, and the string straight for
-a beat after the shot (`ARCUS_BOW_AIM`; `HERO_AIMED`, js/draw/heroes.js): never a turned sprite.
+a beat after the shot (`ARCUS_BOW_AIM`; `HERO_AIMED`, js/draw/heroes.js): never a turned sprite. His fine body (`ARCUS_FINE`, one set both paints repaint) holds the same bow at 32 px (`ARCUS_BOW_FINE`, `arcusBowsFine`: the carry and the same headings through `arcusBowAim`, grips and hands still world px).
 
 FABER has two looks (`FABER_SKINS`, js/sprites/faber.js): CLOCKMAKER (free) and WORKS FOREMAN
 (rare, 200 coins), both on ARMATOS's frame. `FABER_PAL` is `ARM_PAL` with the leather cap and apron

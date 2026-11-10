@@ -333,16 +333,40 @@ function roadLipAt(wx, wy) {
   return 0;
 }
 // a stone's own pixel: three greys by its roll, a lit rim toward the light
-// and a shaded one away from it, the joint dark
-function roadStonePx(st, joint) {
+// and a shaded one away from it, the joint dark. Paving WEARS with use, a
+// whole stone at a time and in flat tones: `worn` (the caller's, for a stone
+// in a lane's trodden middle: roadWorn) sits its face a step darker; one
+// stone in a few dozen is CRACKED (a dark line through its middle, on a
+// bearing of its own) and one SUNKEN (its face a step darker, its lit rim
+// in shade), both off the stone's own roll, so the same stone is the same on
+// every screen
+const ROAD_CRACKED = 0.035, ROAD_SUNKEN = 0.03; // the share of stones cracked, and sunken
+function roadStonePx(st, joint, worn) {
   if (st.gap < 1.1) return joint;
-  const base = st.id < 0.33 ? 0 : st.id < 0.66 ? 1 : 2;
-  if (st.gap < 2.1) return st.lx + st.ly < 0 ? ROAD_STONE_LIT[base] : ROAD_STONE_SHD[base];
-  return ROAD_STONE_MID[base];
+  const base = st.id < 0.33 ? 0 : st.id < 0.66 ? 1 : 2, w = hash2(st.x1 * 3.7 + 11, st.y1 * 5.3 + 29);
+  if (w < ROAD_CRACKED) {
+    const a = w / ROAD_CRACKED * Math.PI; // the crack's bearing
+    if (Math.abs(st.lx * Math.sin(a) - st.ly * Math.cos(a)) < 0.6 && st.gap >= 2.1) return ROAD_STONE_SHD[base];
+  }
+  const sunk = w > 1 - ROAD_SUNKEN;
+  if (st.gap < 2.1) return st.lx + st.ly < 0 && !sunk ? ROAD_STONE_LIT[base] : ROAD_STONE_SHD[base];
+  return sunk || worn ? ROAD_STONE_WORN[base] : ROAD_STONE_MID[base];
 }
+// is the stone whose middle is (x, y) world px in a lane's trodden middle:
+// ROAD_WORN_IN tiles inside the edge, the track's own edge wandering on a
+// slow noise so it is a path worn by feet, not a stripe
+const ROAD_WORN_IN = 1.5, ROAD_WORN_RAG = 0.9;
+function roadWorn(x, y) {
+  return laneDist(x / TILE - 0.5, y / TILE - 0.5) + (vnoise(x / 45 + 3.5, y / 45 + 8.5) - 0.5) * ROAD_WORN_RAG < -ROAD_WORN_IN;
+}
+// snow dusted into the joints by the path's edge: within ROAD_DUST tiles of
+// it, in patches
+const ROAD_DUST = 0.9;
+function roadDusted(wx, wy, d) { return d > -ROAD_DUST && vnoise(wx / 5 + 1.5, wy / 5 + 6.5) > 0.42 + (-d / ROAD_DUST) * 0.3; }
 const ROAD_STONE_LIT = ['#b9b4aa', '#b2ab9c', '#c0bab0'];
 const ROAD_STONE_MID = ['#9f9a90', '#999283', '#a7a197'];
 const ROAD_STONE_SHD = ['#7f7a71', '#7a7365', '#86817a'];
+const ROAD_STONE_WORN = ['#928d83', '#8c8577', '#99938a']; // a trodden stone's face: between the mid and the shade
 // dry grass through the snow at the verge, in cells of 8 px. It comes up in
 // CLUMPS (a slow noise ROAD_TUFT_CLUMP cells across: thick where it is high,
 // a stray sprig elsewhere), and each cell's sprig is one of ROAD_TUFTS, mirrored
@@ -376,7 +400,7 @@ function paintRoadOverlay(g, tx, ty, px, py, onIce) {
     const pv = near ? roadPavedAt(wx, wy) : d < 0, lipAt = near && !pv ? roadLipAt(wx, wy) : 0;
     if (pv) {
       // a flagstone, earth in its joints
-      c = roadStonePx(st, ROAD_COL_DEEP);
+      c = roadStonePx(st, !onIce && roadDusted(wx, wy, d) ? ROAD_COL_SNOW : ROAD_COL_DEEP, roadWorn(st.x1, st.y1));
       // a drift lapping over the stones by the edge: a clean clump of snow,
       // its shade on the stone below and right of it
       if (near && !onIce && st.gap >= 1.1) {
@@ -1391,7 +1415,7 @@ function treeCell(tx, ty, col) {
   const tone = treeTone(tx, ty);
   return col + (treeSize(tx, ty, tone) * SPRITES.treeAtlas.pals + v * TREE_TONES + tone) * SPRITES.treeAtlas.cols;
 }
-// THE HOUR ON THE CROWNS. The hour's grade (todGrade, js/draw/light.js) is one
+// THE HOUR ON THE CROWNS (and the moon: CROWN_MOON). The hour's grade (todGrade, js/draw/light.js) is one
 // multiply over the frame, and it turns white drifts rose or gold while a
 // pine's blue-grey snow barely moves, so at dusk the forest stood cold beside
 // warm snow. While the hour has a colour each pine wears SPRITES.treeGlow over
@@ -1400,9 +1424,13 @@ function treeCell(tx, ty, col) {
 // warms crown and drift alike.
 const CROWN_HOUR = 2.6;                          // how hard the hour's colour pulls the crowns
 const CROWN_TONE = [1, 0.85, 0.65, 0.4, 0.25, 1]; // the share each treeTone takes
-let crownT = -1, crownA = 0;
+const CROWN_MOON = 0.7;                         // ...and the moon, at full dark: the same lift, which the night's blue turns silver
+let crownT = -1, crownD = -1, crownA = 0;
 function crownHour() {
-  if (crownT !== state.time) { crownT = state.time; crownA = Math.min(1, todWarmth() * CROWN_HOUR); }
+  if (crownT !== state.time || crownD !== state.darkness) {
+    crownT = state.time; crownD = state.darkness;
+    crownA = Math.min(1, Math.max(todWarmth() * CROWN_HOUR, ARENA ? 0 : state.darkness * CROWN_MOON));
+  }
   return crownA;
 }
 // The atlas this frame's pines are drawn off: the plain one while the hour is

@@ -77,3 +77,46 @@ function structSprite(o) {
 function structArtOff(o, spr) {
   return { x: (structW(o) * TILE - spr.width) >> 1, y: structH(o) * TILE - spr.height };
 }
+
+// THE HOUR ON A BUILDING. The hour's grade warms the bright snow and lifts
+// the shade toward blue (todGrade, js/draw/light.js), so at dawn and dusk a
+// grey stone tower stood cold in a gold valley. While the hour has a colour
+// (crownHour, js/draw/ground.js: the pines' own share) a building's sunward
+// grey and pale pixels (never its team's paint) are lifted toward the drifts'
+// white, and the grade then warms them with the snow. A ROUND building
+// (HOUR_ROUND: the tower) takes it on its sunward side, the left of its
+// sprite, so it turns a lit face and a shaded one; a flat front takes it
+// evenly, at HOUR_FLAT. One more blit a building, off a mask kept per sprite.
+const HOUR_LIT = [246, 242, 238]; // the warm white the lit side is lifted toward
+const HOUR_SHARE = 0.55;          // how far, at the hour's full colour
+const HOUR_GREY = 70;             // a pixel whose channels spread wider than this is paint, not stone
+const HOUR_FLAT = 0.6;            // a flat front's share of what a round one's lit side takes
+const HOUR_ROUND = { tower: true };
+const hourLitCv = new WeakMap();  // sprite -> its lit pixels in HOUR_LIT
+function hourLitOf(spr, round) {
+  let c = hourLitCv.get(spr);
+  if (c) return c;
+  const w = spr.width, h = spr.height;
+  c = document.createElement('canvas'); c.width = w; c.height = h;
+  const g = c.getContext('2d');
+  g.drawImage(spr, 0, 0);
+  const img = g.getImageData(0, 0, w, h), d = img.data;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const i = (y * w + x) * 4, r = d[i], gr = d[i + 1], b = d[i + 2];
+    const luma = 0.3 * r + 0.59 * gr + 0.11 * b, grey = Math.max(r, gr, b) - Math.min(r, gr, b) < HOUR_GREY;
+    // round: the sunward half whole, a narrow step past the middle at half, the lee none
+    const a = !d[i + 3] || !grey || luma < 105 ? 0 : !round ? HOUR_FLAT : x < w * 0.5 ? 1 : x < w * 0.68 && luma >= 140 ? 0.5 : 0;
+    d[i] = HOUR_LIT[0]; d[i + 1] = HOUR_LIT[1]; d[i + 2] = HOUR_LIT[2]; d[i + 3] = a * 255;
+  }
+  g.putImageData(img, 0, 0);
+  hourLitCv.set(spr, c);
+  return c;
+}
+// over a building's sprite just laid at (x, y)
+function drawHourLit(spr, x, y, round) {
+  const a = crownHour();
+  if (a < 0.03) return;
+  ctx.globalAlpha = a * HOUR_SHARE;
+  ctx.drawImage(hourLitOf(spr, round), x, y);
+  ctx.globalAlpha = 1;
+}

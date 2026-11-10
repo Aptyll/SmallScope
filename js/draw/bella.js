@@ -111,7 +111,14 @@ function bellaSpathas() {
   if (bellaSpathaArt) return bellaSpathaArt;
   return (bellaSpathaArt = { flat: bakeBladeArt(BELLA_SPATHA, BELLA_SPATHA_PAL), diag: bakeBladeArt(BELLA_SPATHA_DIAG, BELLA_SPATHA_PAL) });
 }
-HERO_BLADES.spatha = { away: (p) => p.parryT > 0, art: bellaSpathas, hilt: [18, 11], hip: { down: [13, 11], up: [11, 10] }, grip: BELLA_SPATHA_GRIP };
+// ...and at 32 px for her fine body (BELLA_SPATHA_FINE), the grips the same world px
+let bellaSpathaFine = null;
+function bellaSpathasFine() {
+  if (bellaSpathaFine) return bellaSpathaFine;
+  const tag = (c) => { c.dens = 2; return c; };
+  return (bellaSpathaFine = { flat: tag(bakeBladeArt(BELLA_SPATHA_FINE, BELLA_SPATHA_PAL)), diag: tag(bakeBladeArt(BELLA_SPATHA_DIAG_FINE, BELLA_SPATHA_PAL)) });
+}
+HERO_BLADES.spatha = { away: (p) => p.parryT > 0, art: bellaSpathas, fine: bellaSpathasFine, hilt: [18, 11], hip: { down: [13, 11], up: [11, 10] }, grip: BELLA_SPATHA_GRIP };
 
 HERO_MARK.push(drawBellaMarks);
 HERO_GROUND.push(drawBellaDuels);

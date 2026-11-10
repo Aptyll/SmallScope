@@ -232,6 +232,7 @@ function drawSceneryObj(d, ox, oy, now, wkO, hovO) {
     // and draws the whole 48-wide stall up off the front row
     const spr = SPRITES.teamBuild[skin(o.team)].stall;
     drawSpriteFlash(spr, px + sh, py + TILE - spr.height, o.flash);
+    drawHourLit(spr, px + sh, py + TILE - spr.height);
   } else if (LANDMARKS[o.type]) {
     drawLandmark(o, px + sh, py); // the boat (js/draw/landmarks.js); their parts draw nothing
   } else if (o.type === 'dummy') {
@@ -337,6 +338,7 @@ function drawStructObj(o, px, py, sh, now) {
     const S = STRUCTS[o.type], art = S.frame ? S.frame(o) : spr;
     drawCastShade(art, sx, sy, true); // a standing building throws the sun's shade like a body, in one solid piece (ground.js)
     drawSpriteFlash(art, sx + sh, sy, o.flash);
+    drawHourLit(art, sx + sh, sy, HOUR_ROUND[o.type]); // dawn and dusk on its stone (js/draw/structs.js)
     if (S.over) S.over(o, sx + sh, sy, now);
     if (o.hp < o.maxHp * 0.6) {
       // four crack marks, placed as fractions of the sprite so they fit any size

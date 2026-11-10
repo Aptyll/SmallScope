@@ -41,14 +41,15 @@ function drawCoin(grid, ink, x, y) {
 }
 
 function drawPops(ex, ey) {
+  const vp = viewPlayer();
   for (const f of floaters) {
     if (!fogShown(f)) continue; // a number raised in the fog is not shown (js/draw/fog.js; render() has asked this frame already)
+    if (f.own !== undefined && (!vp || vp.id !== f.own)) continue; // a word for one hero's own screen (an ability point, js/sim/abilities.js)
     const s = f.scale || 1;
     drawWorldText(f.txt,
       Math.round(f.x + (f.vx || 0) * f.t - ex - pixelTextWidth(f.txt, s) / 2),
       Math.round(f.y - ey - f.t * (f.rise || 14)), f.color, s, 1 - f.t / (f.life || 0.9));
   }
-  const vp = viewPlayer();
   for (const c of coinPops) {
     const t = (state.tick - c.tick) * TICK_DT;
     if (t < 0 || t > COIN_POP_T) continue;

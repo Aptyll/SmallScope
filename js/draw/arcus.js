@@ -148,11 +148,12 @@ function arcusCarry(p, px, py) {
   const lead = p.dir === 'down' || p.dir === 'right', rc = heroReach(p); // the leading hand is on the right
   const side = p.dir === 'left' || p.dir === 'right';
   const hx = lead ? px + (side ? 15 : 16) + rc : px + (side ? 0 : -1) - rc, hy = py + 10;
-  const img = lead ? ARCUS_BOW_CARRY : heldFlip(ARCUS_BOW_CARRY);
-  ctx.drawImage(img, hx - (lead ? ARCUS_BOW_GRIP[0] : img.width - 1 - ARCUS_BOW_GRIP[0]), hy - ARCUS_BOW_GRIP[1]);
+  const art = bodySet(p).dens > 1 ? arcusBowsFine().carry : ARCUS_BOW_CARRY; // his fine body's bow is fine too
+  const img = lead ? art : heldFlip(art);
+  ctx.drawImage(img, hx - (lead ? ARCUS_BOW_GRIP[0] : heldW(img) - 1 - ARCUS_BOW_GRIP[0]), hy - ARCUS_BOW_GRIP[1], heldW(img), heldH(img));
   if (p.dir !== 'up') heroFist(p, hx, hy, lead ? 1 : -1);
   return true;
 }
 HERO_CARRY.push(arcusCarry);
 // drawn, it is one of eight set frames on the aim (ARCUS_BOW_AIM, js/sprites/arcus.js)
-HERO_AIMED.longbow = (heading, step) => ARCUS_BOW_AIM[heading][step];
+HERO_AIMED.longbow = (heading, step, p) => (bodySet(p).dens > 1 ? arcusBowsFine().aim : ARCUS_BOW_AIM)[heading][step];

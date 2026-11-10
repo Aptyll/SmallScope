@@ -96,6 +96,17 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['ARCUS is drawn at 32 px (body, roll, a finer longbow), waiting behind the fine-art switch', '0.810'],
+    ['ABILITY WORDS AND SHOP NUMBERS SHOW ONLY ON YOUR OWN SCREEN', '0.808'],
+    ['MOONLIT PINES AT NIGHT', '0.807'],
+    ['Nix carries her dirk clear of her face', '0.806'],
+    ['THE RING\'S GATES ARE DRESSED STONE SLABS', '0.805'],
+    ['TOWERS CATCH THE DAWN AND DUSK LIGHT', '0.804'],
+    ['THE COACH SHOWS EACH LESSON ITS LINE ONCE', '0.803'],
+    ['BELLA is drawn at 32 px (both looks, roll, spatha), waiting behind the fine-art switch', '0.801'],
+    ['BRUSH PATCHES ARE RAGGED, NOT OVALS', '0.800'],
+    ['Sagitta carries her arbalest under her arm, so it no longer covers her face', '0.799'],
+    ['FLAGSTONES SHOW WEAR', '0.798'],
     ['STAFF SHOTS: IGNIA, AURA, SALVIA, LUCERNA, HIEMS AND BUCINA EACH SHOOT THEIR OWN SHAPE', '0.797'],
     ['BRUSH PATCHES ARE FULL OF REEDS', '0.796'],
     ['AN EAGLE SHADOW PASSES OVER THE TITLE', '0.795'],

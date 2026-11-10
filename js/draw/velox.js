@@ -139,13 +139,13 @@ const VELOX_SLING = [
   '..oo.......',
   '.oGGo......',
   '.oGoGo.....',
-  '.obo.q.....',
-  '.obo..q....',
-  '.obo..q....',
-  '.obo...q...',
-  '.obo..oqoo.',
-  '.obo.oqSSqo',
-  '.obo..oqqo.',
+  '.obo.o.....',
+  '.obo..o....',
+  '.obo..o....',
+  '.obo...o...',
+  '.obo..ocoo.',
+  '.obo.ocSSco',
+  '.obo..occo.',
   '.obo...oo..',
   '.obo.......',
   '.obo.......',
@@ -158,7 +158,7 @@ const VELOX_SLING_PAL = { o: '#241a12', G: '#c3ccd8', b: '#8a6440', B: '#5e4128'
 let veloxSlingArt = null;
 function veloxSling() {
   if (veloxSlingArt) return veloxSlingArt;
-  const glint = VELOX_SLING.map((r, y) => (y === 8 ? '.obo.oqWSqo' : r));
+  const glint = VELOX_SLING.map((r, y) => (y === 8 ? '.obo.ocWSco' : r));
   veloxSlingArt = [bakeBladeArt(VELOX_SLING, VELOX_SLING_PAL), bakeBladeArt(glint, VELOX_SLING_PAL)];
   return veloxSlingArt;
 }
