@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['Rupes swings his ice maul at the length he carries it', '0.863'],
     ['BELLA\'s flat spatha drawn at 32 px behind ?fine=1', '0.862'],
     ['The pines round each jungle camp can no longer be chopped open either', '0.860'],
     ['HIEMS and AURA show their team colour from behind', '0.859'],
