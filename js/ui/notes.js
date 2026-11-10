@@ -96,6 +96,8 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['RECALL: FEATHERS IN YOUR SIDES COLOUR GATHER ROUND YOU, NO RING ON THE SNOW', '0.791'],
+    ['LEVEL UP: GOLD LIGHT CLIMBS YOUR HERO AND THE LEVEL PLATE BLINKS', '0.791'],
     ['THE COACH POINTS THE WAY TO YOUR LANE', '0.790'],
     ['LANE GRASS GROWS IN CLUMPS', '0.789'],
     ['Bucina keeps the horn at her lips while it sounds; Bella\'s parry shows a single blade', '0.788'],

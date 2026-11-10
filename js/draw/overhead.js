@@ -356,13 +356,14 @@ function drawBountyTag(cx, ny, bounty) {
 // is what it costs to take.
 // the plate's width in its own pixels, so a frame can be laid out around it
 function levelBadgeW(level) { return pixelTextWidth(String(level)) + 3; }
-function drawLevelBadge(rx, topY, level, s) {
+// `lit` turns it over, a dark number on gold: the blink of a level just gained (p.lvT)
+function drawLevelBadge(rx, topY, level, s, lit) {
   const k = s || 1, bw = levelBadgeW(level), bx = rx - bw * k;
   ctx.fillStyle = BAR_FRAME;
   ctx.fillRect(bx, topY, bw * k, 7 * k);
-  ctx.fillStyle = BAR_TRACK;
+  ctx.fillStyle = lit ? '#f2cc6a' : BAR_TRACK;
   ctx.fillRect(bx + k, topY + k, (bw - 1) * k, 5 * k);
-  drawPixelText(ctx, String(level), bx + 2 * k, topY + k, '#f2cc6a', k);
+  drawPixelText(ctx, String(level), bx + 2 * k, topY + k, lit ? BAR_FRAME : '#f2cc6a', k);
 }
 
 // The noticed mark: a "!" over a head for as long as an animal has a player
