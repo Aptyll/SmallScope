@@ -1252,10 +1252,11 @@ function lobbyLayout() {
   const filter = { y: LOBBY_HEAD };
   const grid = { x: gx, y: LOBBY_HEAD + 19, w: gw };
   const L = { cx, pw, play, filter, grid, cards, chat };
+  L.pitch = heroPitch(L);
   L.heroes = heroCells(L);
   // the stage under the grid: the hero pointed at, standing at 2x, when the
   // view has the room for it under the grid's last row
-  const last = L.heroes.length ? L.heroes[L.heroes.length - 1].y + HERO_PITCH : grid.y;
+  const last = L.heroes.length ? L.heroes[L.heroes.length - 1].y + L.pitch : grid.y;
   const S = LOBBY_MODEL, bs = 48 * S, feet = play.y - 10;
   L.S = S;
   L.body = { x: cx - (bs >> 1), y: feet - 46 * S, w: bs, h: bs };
