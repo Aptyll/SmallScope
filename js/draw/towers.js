@@ -121,35 +121,42 @@ function towerFigure(sk) {
   return (towerFigs[sk] = c);
 }
 
-// The footing: a road tower stands on a round of the lane's own flagstones,
-// laid whole (roadStoneAt, js/draw/ground.js) under a lip of snow like the
-// lane's edge, so it is built ON something and its foot reads as a place.
-// Drawn on the snow under every body (render, after the flat pass) while the
-// tower stands; three rounds, a tower wearing one by its tile.
-const TOWER_FOOT_RX = 31, TOWER_FOOT_RY = 17; // px: the round's half width and half height
-const towerFootCvs = [];
-function towerFooting(v) {
-  if (towerFootCvs[v]) return towerFootCvs[v];
-  const W = TOWER_FOOT_RX * 2 + 8, H = TOWER_FOOT_RY * 2 + 8, c = document.createElement('canvas');
-  c.width = W; c.height = H;
-  const g = c.getContext('2d'), ox = v * 977 + 131, oy = v * 613 + 59; // each round its own stones
-  const inside = (x, y) => { const u = (x - ox - W / 2) / (TOWER_FOOT_RX - 4), w = (y - oy - H / 2) / (TOWER_FOOT_RY - 3); return u * u + w * w < 1; };
+// The footing: a road tower stands on a round of the lane's own flagstones -
+// the same stones on the same grid (roadStoneAt, js/draw/ground.js), so where
+// the round meets the lane the paving is one piece - laid whole under a lip of
+// snow like the lane's edge. It is built ON something and its foot reads as a
+// place. Drawn on the snow under every body (render, after the flat pass)
+// while the tower stands; one canvas a tower, made when it is first in view.
+const TOWER_FOOT_RX = 50, TOWER_FOOT_RY = 25; // px: the round's half width and half height
+const towerFootCvs = new Map(); // a tower's tile index -> its round
+function towerFooting(o) {
+  const key = idx(o.tx, o.ty);
+  let c = towerFootCvs.get(key);
+  if (c) return c;
+  const f = towerFoot(o), W = TOWER_FOOT_RX * 2 + 8, H = TOWER_FOOT_RY * 2 + 8;
+  c = document.createElement('canvas'); c.width = W; c.height = H;
+  c.wx = Math.round(f.x) - (W >> 1); c.wy = Math.round(f.y) - (H >> 1) + 1; // its top-left, world px
+  const g = c.getContext('2d');
+  const round = (x, y) => { const u = (x - c.wx - W / 2) / (TOWER_FOOT_RX - 5), w = (y - c.wy - H / 2) / (TOWER_FOOT_RY - 4); return u * u + w * w < 1; };
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-    const st = roadStoneAt(x + ox, y + oy, 10, 0.8), in1 = inside(st.x1, st.y1), in2 = inside(st.x2, st.y2);
+    const wx = c.wx + x, wy = c.wy + y, st = roadStoneAt(wx, wy, ROAD_FLAG, 0.8);
+    const r1 = round(st.x1, st.y1), r2 = round(st.x2, st.y2);
     let col = null;
-    if (in1) col = roadStonePx(st, ROAD_COL_DEEP);
-    else if (in2 && st.gap < 1.1) col = ROAD_COL_DEEP;
-    else if (in2 && st.gap < ROAD_LIP) col = (st.x2 - ox - x) + (st.y2 - oy - y) > 0 ? ROAD_COL_LIP : ROAD_COL_LIP_SHD;
+    if (r1) col = roadStonePx(st, ROAD_COL_DEEP);
+    else if (roadStoneIn(st.x1, st.y1)) continue; // the lane's own stone: the ground's
+    else if (r2 && st.gap < 1.1) col = ROAD_COL_DEEP;
+    else if (r2 && st.gap < ROAD_LIP) col = (st.x2 - wx) + (st.y2 - wy) > 0 ? ROAD_COL_LIP : ROAD_COL_LIP_SHD;
     if (col) { g.fillStyle = col; g.fillRect(x, y, 1, 1); }
   }
-  return (towerFootCvs[v] = c);
+  towerFootCvs.set(key, c);
+  return c;
 }
 function drawTowerFootings(ex, ey) {
   for (const o of structures) {
     if (o.type !== 'tower') continue;
-    const c = towerFooting((o.tx + o.ty) % 3), f = towerFoot(o);
-    const x = Math.round(f.x - ex) - (c.width >> 1), y = Math.round(f.y - ey) - (c.height >> 1) - 2;
-    if (x > WV_W || y > WV_H || x + c.width < 0 || y + c.height < 0) continue;
-    ctx.drawImage(c, x, y);
+    const f = towerFoot(o);
+    if (f.x - ex < -TOWER_FOOT_RX - 8 || f.x - ex > WV_W + TOWER_FOOT_RX + 8 || f.y - ey < -TOWER_FOOT_RY - 8 || f.y - ey > WV_H + TOWER_FOOT_RY + 8) continue;
+    const c = towerFooting(o);
+    ctx.drawImage(c, Math.round(c.wx - ex), Math.round(c.wy - ey));
   }
 }
