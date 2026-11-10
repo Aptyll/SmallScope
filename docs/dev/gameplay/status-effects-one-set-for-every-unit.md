@@ -55,7 +55,7 @@ The seven states, and what each does to a body:
 | **root** | `rootT`/`rootMax` | move multiplier 0 — no walk, no roll, no slide; attacks still work (MARIS's HARPOON, among others) | sprung iron jaws at the feet |
 | **slow** | `slowT`/`slowMax`/`slowMul` | the multiplier on every speed cap | a clump of ice on each foot (`drawUnitStates`; a root's jaws take its place) |
 | **mark** | `markT` | on a player, `seenAt()` returns full range and both maps keep drawing them (its one legal bypass); an animal or a bot has no cover to strip, so it is the reveal alone (AURA's STARLIGHT, LUCERNA's LAMPLIGHT) | gold chevrons falling toward the head |
-| **fire** | `burnT`/`burnDps`/`burnBy` | see below | flame tongues off the crown, and lit snow under the feet |
+| **fire** | `burnT`/`burnDps`/`burnBy` | see below | flame tongues off the shoulders and the crown (`burnTongue`), and lit snow under the feet |
 | **healing cut** | `healCutT`/`healCut` | every heal `healPlayer` gives the body is `healCut` smaller (FROSTBITE: 40% for 3 s, the item passive; the TORCH trick: `TORCH_CUT` for `TORCH_T`, [the loadout](loadout.md)); only players heal, so the other kinds carry it harmlessly | the health bar's fill frosted, every other pixel of its lower row ice white (`drawHealCut`) |
 | **weak** | `weakT`/`weakMax` | every blow the body lands is worth `WEAK_MUL` (`loadoutDeal`, from `hurtUnit`; the BOLAS trick) | a cord round the shins |
 
