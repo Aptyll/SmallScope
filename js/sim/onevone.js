@@ -17,14 +17,17 @@ function onevoneBegin() {
   state.onevone = { towers: [0, 1].map(onevoneTowers) };
 }
 function onevoneTowers(team) { let n = 0; for (const o of structures) if (o.type === 'tower' && o.team === team) n++; return n; }
-// why side `team` has lost the duel, or null while it has not
+// why side `team` has lost the duel ('strike', 'farm' or 'tower'), or null while it has not
 function onevoneLost(team) {
   const side = players.filter((p) => p.active && p.team === team);
-  if (side.some((p) => p.deaths > 0)) return 'FIRST STRIKE';
-  if (players.some((q) => q.active && q.team !== team && q.farm >= ONEVONE_FARM)) return ONEVONE_FARM + ' SOLDIERS';
-  if (onevoneTowers(team) < state.onevone.towers[team]) return 'FIRST TOWER';
+  if (side.some((p) => p.deaths > 0)) return 'strike';
+  if (players.some((q) => q.active && q.team !== team && q.farm >= ONEVONE_FARM)) return 'farm';
+  if (onevoneTowers(team) < state.onevone.towers[team]) return 'tower';
   return null;
 }
+// how a 1V1 ended, as both end screens print it (js/ui/endscreens.js): '' in any other match
+const ONEVONE_WHY = { strike: 'onevone.strike', farm: 'onevone.farm', tower: 'onevone.tower' };
+function onevoneWhy() { const D = state.onevone; return D && ONEVONE_WHY[D.done] ? tr(ONEVONE_WHY[D.done], { n: ONEVONE_FARM }) : ''; }
 // every step of play (updatePlay, js/sim/sim.js): the first side to lose sends its bird home
 function updateOnevone() {
   const D = state.onevone;
@@ -32,9 +35,9 @@ function updateOnevone() {
   for (const team of [0, 1]) {
     const why = onevoneLost(team), e = state.drop.eagles[team];
     if (!why || !e) continue;
-    D.done = why;
+    D.done = why; D.lost = team; // the wire carries both to every screen (SNAP_STATE, js/net/snapshot.js)
     const win = players.find((p) => p.active && p.team !== team) || null;
-    if (e.state !== 'flee' && e.state !== 'gone') eagleFlee(e, win, why + ': THE ' + TEAMS[skin(1 - team)].name + ' SIDE WINS THE 1V1');
+    if (e.state !== 'flee' && e.state !== 'gone') eagleFlee(e, win, tr('onevone.line', { why: onevoneWhy(), side: TEAMS[skin(1 - team)].name }));
     return;
   }
 }
