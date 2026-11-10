@@ -82,7 +82,7 @@ function nixDirks() {
   const flat = bakeBladeArt(NIX_DIRK, NIX_DIRK_PAL);
   return (nixDirkArt = { flat, diag: flat });
 }
-HERO_BLADES.dirk = { art: nixDirks, hilt: [18, 11], hip: {}, grip: [0, 0] };
+HERO_BLADES.dirk = { art: nixDirks, hilt: [18, 11], hip: {}, grip: [0, 0], lift: 4 };
 
 HERO_GROUND.push(drawNixGround);
 HERO_AIR.push(drawNixAir);

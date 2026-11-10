@@ -149,9 +149,17 @@ They are F and G off armatos-round4.png in the project files. His 48 px face is 
 front at 3x (below).
 
 His OATH GREATSWORD (`ARM_SWORD`, `ARM_SWORD_DIAG`) replaces the sword's held art in his hands
-(`HERO_BLADES.oath`, js/draw/heroes.js: `heroBlade`, asked by `drawHeldTool`): flat for the side, the swing and the wind-up (turned about its `hilt`), and slanted
-facing down or up (`heroCarry`), the grip at his right hip (the row's `hip`) and the blade up past the
-shoulder, drawn behind the body facing up.
+(`HERO_BLADES.oath`, js/draw/heroes.js: `heroBlade`, asked by `drawHeldTool`): flat for the swing and the wind-up (turned about its `hilt`), and slanted
+at rest in every facing (`heroCarry`), the grip at his hip (the row's `hip`) and the blade up past the
+shoulder, mirrored facing left, drawn behind the body facing up. **A blade is held the same way in
+every facing** so a hero keeps one shape as it turns and nothing heavy is held out level: a
+`HERO_BLADES` row with a slanted grid names its `hold` (`BLADE_HOLDS`; none is `slant`, up and out
+from the leading hand: ARMATOS, VARRO, MARIS; `far` the other hand facing down: FORTIVA; `shoulder`
+back over the shoulder behind the head: LIGNUM's axe; `rest` the head down on the snow beside the
+foot: RUPES's maul). Each is the row's own slanted grid mirrored left to right or top to bottom
+(`heldFlip`, `heldDrop`); none rises past the head, where the health frame sits. A row with no
+slanted grid keeps the level carry (BELLA, NIX), and its `lift` raises a short blade hung at the
+side so its tip rests at the feet (NIX).
 
 FORTIVA's looks (`FORT_SKINS`, js/sprites/fortiva.js) are built the same way on ARMATOS's frame and in
 his iron (`FORT_PAL` is `ARM_PAL` with her copper hair `a`/`A` and her chain `c`/`C`). UNBROKEN
@@ -184,10 +192,9 @@ Her 48 px model is her own standing front too. Her CROOK AND LANTERN is not a bl
 the leading hand in every facing (`heroStaff`, asked by `drawHeldTool`, mirrored facing left or up)
 and held through a cast; the lantern's heart flickers between two baked frames. **Each staff hero
 carries it its own way** so two of them are two shapes on the snow: a `HERO_STAVES` row's `hold`
-names a `STAFF_HOLDS` entry (none is the leading hand; `far` the other hand, SALVIA;
-`yoke` level behind the shoulders, HIEMS; `hip` level at the hip, FABER). The level holds are the
-upright art a quarter turn over, baked once (`staffTurn`). A draw or a cast brings any hold upright
-into the leading hand. A new staff hero takes a hold no other staff hero has, or a new one.
+names a `STAFF_HOLDS` entry (none is the leading hand; `far` the other hand, SALVIA and HIEMS).
+A staff is always upright with its foot by the hero's own. A draw or a cast brings it into the
+leading hand.
 
 **Every hero body shows its side from every facing**: the side's coat letters (`r`/`R`/`d`) fill 16 px
 or more of the torso facing down and up and 12 or more side-on, the lower back from behind

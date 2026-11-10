@@ -14,7 +14,7 @@ let rupesMaulArt = null;
 function rupesMauls() {
   return rupesMaulArt || (rupesMaulArt = { flat: bakeBladeArt(RUPES_MAUL, RUPES_MAUL_PAL), diag: bakeBladeArt(RUPES_MAUL_DIAG, RUPES_MAUL_PAL) });
 }
-HERO_BLADES.maul = { art: rupesMauls, hilt: [14, 9], hip: { down: [13, 12], up: [11, 10] }, grip: RUPES_MAUL_GRIP };
+HERO_BLADES.maul = { art: rupesMauls, hilt: [14, 9], hip: { down: [13, 12], up: [11, 10] }, grip: RUPES_MAUL_GRIP, hold: 'rest' };
 
 // ---- shots -------------------------------------------------------------------------
 // HEAVE's block: a 5 px cube of packed snow, its lit top and shaded face, tumbling
