@@ -137,16 +137,16 @@ AB_FX_LOOK.drift = drawDriftFx;
 // long as she is gone and drops when she strikes
 function drawSquallFx(f, px, py, now) {
   const u = f.t / f.life, seed = fxSeed(f), up = Math.min(1, u * 6), down = Math.max(0, (u - 0.8) / 0.2);
-  ctx.fillStyle = NIX_SNOW_D; fillEllipsePx(px, py + 3, Math.round(9 * up), Math.round(3 * up)); // the snow swept off the ground
-  ctx.fillStyle = '#8ea6c6'; fillEllipsePx(px + 1, py + 3, Math.round(5 * up), Math.round(1 * up));
-  for (let pass = 0; pass < 2; pass++) for (let k = 0; k < 26; k++) {
+  ctx.fillStyle = '#bccde4'; fillEllipsePx(px, py + 3, Math.round(9 * up), Math.round(3 * up)); // the snow swept off the ground
+  for (let pass = 0; pass < 2; pass++) for (let k = 0; k < 38; k++) {
     const turn = k * 2.399 + u * (7 + 3 * fxRoll(seed, k, 1)), back = Math.sin(turn) < 0;
     if (back !== (pass === 0)) continue; // the far side of the whirl first
-    const h = fxRoll(seed, k, 2), r = (4 + 11 * h) * up * (1 + 0.5 * down), z = Math.round((2 + 13 * h) * up * (1 - down));
+    const h = fxRoll(seed, k, 2), r = (5 + 13 * (1 - h * 0.6)) * up * (1 + 0.4 * down), z = Math.round((1 + 15 * h) * up * (1 - down)); // wide at the snow, drawn in as it climbs
     const x = Math.round(px + Math.cos(turn) * r), y = Math.round(py + 2 + Math.sin(turn) * r * 0.45 - z);
-    const w = 2 + Math.round(3 * fxRoll(seed, k, 3) * (1 - 0.5 * h));
-    ctx.fillStyle = back ? NIX_SNOW_D : NIX_SNOW; ctx.fillRect(x, y, w, w > 3 ? 2 : 1); // its lit top (the far ones in shade)
-    ctx.fillStyle = back ? '#8ea6c6' : NIX_SNOW_D; ctx.fillRect(x, y + (w > 3 ? 2 : 1), w, 1); // its underside
+    const w = 2 + Math.round(4 * fxRoll(seed, k, 3) * (1 - 0.5 * h)), t = w > 3 ? 2 : 1;
+    ctx.fillStyle = back ? NIX_SNOW_D : NIX_SNOW; ctx.fillRect(x, y, w, t); if (w > 4) ctx.fillRect(x + 1, y - 1, w - 2, 1); // its lit top (the far ones in shade)
+    ctx.fillStyle = back ? '#7f96b8' : NIX_SNOW_D; ctx.fillRect(x, y + t, w, 1); // its underside
+    if (!back) { ctx.fillStyle = '#6f86ad'; ctx.fillRect(x + 1, y + t + 1, w - 1, 1); }
     if (k % 5 === 0) { ctx.fillStyle = k % 10 ? NIX_ICE : NIX_ICE_D; ctx.fillRect(x + w, y - 1, 1, 2); } // ice in it
   }
 }
