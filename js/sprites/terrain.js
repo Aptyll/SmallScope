@@ -1152,7 +1152,7 @@
   // night grade). B: a dark muted green outline, the needle darks lifted, the
   // snow a soft blue-grey. C: B with the needles' hue shifted by value -
   // shadows toward teal, lights toward yellow-green. D: C at 80% colour with
-  // a muted trunk. Each of the three comes in five TONES for how deep in the
+  // a muted trunk. Each of the three comes in six TONES for how deep in the
   // forest a tree stands (treeTone, js/draw/ground.js): the deep as filtered,
   // the ring inside the edge lighter, the edge lighter again. Nine pines in
   // ten stand deep, so the deep tone IS the picked look and the edge is what
@@ -1178,9 +1178,10 @@
   // (three rings in and further): its snow falls into shade with its needles,
   // so a wide wall reads as one dark mass with a lit rim, not a sheet of caps
   // A trunk inside the stand goes dark with it: left bright it is an orange
-  // speck on the forest floor. The fifth is the HOLLOW, darker again: where
-  // the deep forest's swell sinks (treeTone, js/draw/ground.js).
-  const TREE_TONES = [[0.07, 0, 0], [0.035, 0, -0.17], [0, -0.035, -0.2], [-0.04, -0.13, -0.22], [-0.08, -0.22, -0.22]];
+  // speck on the forest floor. The fifth is the HOLLOW, darker again, and the sixth the RIDGE, its
+  // needles and snow in the light: where the deep forest's swell sinks and
+  // lifts (treeTone, js/draw/ground.js).
+  const TREE_TONES = [[0.07, 0, 0], [0.035, 0, -0.17], [0, -0.035, -0.2], [-0.04, -0.13, -0.22], [-0.11, -0.24, -0.22], [0.06, 0, -0.17]];
   const treePals = (() => {
     const lin = (c) => (c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
     const gam = (c) => (c <= 0.0031308 ? 12.92 * c : 1.055 * Math.pow(c, 1 / 2.4) - 0.055);
@@ -1243,6 +1244,13 @@
   // one run of 24 frames per palette row
   // (row = size * treePals.length + palette row)
   const treeRows = [].concat(...treeSizes.map((frames) => treePals.map((pal) => frames.map((f) => bake(f, pal)))));
+  // THE HOUR ON THE CROWNS: the pine's snow and its lightest needles alone, in
+  // a warm white, one run of frames per height. Laid over a pine at dawn and
+  // dusk (treeArt, js/draw/ground.js) it lifts the crown's blue-grey snow
+  // to the open snow's white, so the hour's grade turns both the same rose or
+  // gold instead of leaving the forest cold beside warm drifts.
+  const TREE_GLOW = { w: '#f6f2ee', S: '#f6f2ee', s: 'rgba(246,242,238,0.7)', m: 'rgba(246,242,238,0.45)', l: 'rgba(246,242,238,0.3)' };
+  const treeGlowRows = treeSizes.map((frames) => frames.map((f) => bake(f, TREE_GLOW)));
   const treeSpr = treeRows[2]; // variant B, deep tone (the filtered look itself) - the pine a single frame stands for
   // ---------------------------------------------------------------- the hog hut
   // The HOG HUT camp's anchor (CAMPS.hut, js/sim/camps.js): a snow-roofed log
@@ -1588,7 +1596,7 @@
     // there and treeFrame() reverses the index when it crosses.
     // Each ROW is one height in one palette (treeSizes x treePals: three
     // heights, three variants x four forest depth tones, row = size * 12 +
-    // variant * 5 + tone; `pals` is the 15), each holding the same 48 frames,
+    // variant * 6 + tone; `pals` is the 18), each holding the same 48 frames,
     // so the whole forest - every variant, every tone - is still one texture.
     // A cell index is column + row * cols (treeCell, js/draw/ground.js).
     // `fw`/`fh`/`cols` ride on the canvas so the caller needs no second constant.
@@ -1601,6 +1609,21 @@
       g.imageSmoothingEnabled = false;
       treeRows.forEach((row, r) => row.concat(row.map(flipH)).forEach((f, i) => g.drawImage(f, i * fw, r * fh)));
       c.fw = fw; c.fh = fh; c.cols = cols; c.pals = treePals.length;
+      return c;
+    })(),
+    // the hour's share of a crown, a cell per treeAtlas column and a row per
+    // height: the side away from the cast shade (the left) takes it whole,
+    // the shaded side half
+    treeGlow: (() => {
+      const cols = treeSpr.length * 2, fw = treeSpr[0].width, fh = treeSpr[0].height, lit = fw >> 1;
+      const c = document.createElement('canvas');
+      c.width = fw * cols; c.height = fh * treeGlowRows.length;
+      const g = c.getContext('2d');
+      g.imageSmoothingEnabled = false;
+      treeGlowRows.forEach((row, r) => row.concat(row.map(flipH)).forEach((f, i) => {
+        g.globalAlpha = 0.5; g.drawImage(f, i * fw, r * fh);
+        g.drawImage(f, 0, 0, lit, fh, i * fw, r * fh, lit, fh);
+      }));
       return c;
     })(),
     stumps: stumps.map((g) => bake(g, TPAL)),

@@ -174,8 +174,14 @@ eagle's seats and a falling body keep the 16 px set. **The rest of the kit follo
 the doll's; a `HERO_BLADES` row's `fine()` (`armSwordsFine`: the art at 32 px, its `hilt` and
 `grip` the same world px) is what `bladeArt` hands the hands, and `drawGripped` and `heroCarry`
 draw any art at `heldW`×`heldH`; the fist closes on its art px (`heroFistFine`), and ARMATOS's
-standard draws on half px (`drawStandardFine`). ARMATOS is the one whole kit so far; another
-hero's weapon, fist and roll stay 16 px until it gets its own.
+standard draws on half px (`drawStandardFine`); a swing's crescent (`drawSwish`) lays itself on the body's art px. **A fine body brings the rest along**: a fine look with no `roll` gets its doll's roll
+doubled (`SPR.fine2x`: Scale2x, the outline back to one px), and a blade row with no `fine()`
+gets its own art doubled the same way (`fineArt`, the ink read as the darkest colour on the art's
+rim). So `fine.grids` alone is a whole kit; a drawn `roll` or `fine()` (ARMATOS's) replaces the
+doubled one where the doubling reads badly (a 45 degree edge comes out in two px steps).
+**The doubling is a stopgap, not 32 px art**: it keeps a fine kit from mixing pixel sizes, and
+reads softer than a drawn part beside it. A hero whose roll or blade is still doubled does not count
+toward turning `?fine=1` on for players; every part gets drawn first.
 The run facing down and up is still the doll's, unless the look's row says `run: 'drawn'`: then
 `heroRunFront` lifts the drawn front and back the same way (IGNIA's two looks, AURA's, SALVIA's, LUCERNA's and BUCINA's two, whose shawl, mantle, coat, cape and hair
 the doll does not match). Which look a player wears is `heroSkinOf(p)` (player.js): the id in `p.skins` under the
@@ -533,11 +539,11 @@ the colour, because a desaturated pine turns to mud under the night grade (round
 `tree-filters-1.png`, is the grey version that was turned down). **B** gives the outline a dark
 muted green, lifts the needle darks to an L floor of 0.40 and brings the snow down to a soft
 blue-grey band; **C** adds a hue shift by value (shadows toward teal, lights toward yellow-green);
-**D** takes C to 80% colour and mutes the trunk. Each comes in five **tones** by forest depth
+**D** takes C to 80% colour and mutes the trunk. Each comes in six **tones** by forest depth
 (`TREE_TONES`, a needle and a snow L shift): the deep is the filtered look itself, the ring inside the edge
-+0.035, the edge +0.07, and the **heart** (forest three tiles each way) drops its snow into shade so a wide wall is one dark mass with a lit rim, and the **hollow** is darker again (where the deep forest's swell sinks) — nine pines in ten stand deep, so darkening the deep instead would darken
++0.035, the edge +0.07, and the **heart** (forest three tiles each way) drops its snow into shade so a wide wall is one dark mass with a lit rim, the **hollow** is darker again and the **ridge** has needles and snow back in the light (where the deep forest's swell sinks and lifts) — nine pines in ten stand deep, so darkening the deep instead would darken
 the whole forest. Which row a tree wears is decided on its tile at draw time
-([rendering.md](rendering/render-pass-order.md)). `SPRITES.tree` is variant B's deep row.
+([rendering.md](rendering/render-pass-order.md)). `SPRITES.tree` is variant B's deep row. `SPRITES.treeGlow` is the snow and lightest needles alone in a warm white, a row per height: what a crown wears at dawn and dusk (`treeArt`, js/draw/ground.js) so the hour's grade warms it with the drifts.
 
 **The pine stands in three heights** (`TREE_CUTS`/`treeSizes`): the drawn tree, one without its
 middle tier of boughs (30 rows) and one without its bottom tier (26). Each is cut from the tree

@@ -96,6 +96,11 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['THE COACH POINTS THE WAY TO YOUR LANE', '0.790'],
+    ['LANE GRASS GROWS IN CLUMPS', '0.789'],
+    ['Bucina keeps the horn at her lips while it sounds; Bella\'s parry shows a single blade', '0.788'],
+    ['Maris and Varro keep a hand on the spear when they thrust', '0.787'],
+    ['PINES WARM WITH THE SNOW AT DAWN AND DUSK', '0.784'],
     ['BEAR AND ORCA BUFFS RISE AS MOTES ROUND THE HERO INSTEAD OF A RING OF DOTS', '0.783'],
     ['Heroes no longer cast empty handed: the blade is drawn back and then driven at the aim', '0.782'],
     ['Faber\'s staff is shorter than Aura\'s and Hiems\'s, its gear clear of the health bar', '0.781'],

@@ -35,7 +35,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.783';
+const PATCH_TXT = 'PATCH 0.790';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -51,6 +51,12 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.790', 'THE COACH POINTS THE WAY TO YOUR LANE FOR THE LAST HIT LESSON'],
+  ['0.789', 'THE GRASS BY THE LANES GROWS IN CLUMPS, AND A BRUSH PATCH NO LONGER SITS IN A DRAWN OVAL.'],
+  ['0.788', 'BUCINA SOUNDS THE HORN AT HER LIPS AND BELLA PARRIES WITH ONE BLADE, NOT TWO.'],
+  ['0.787', 'A SPEAR THRUST TAKES THE ARM WITH IT: THE HAFT STAYS IN THE HAND.'],
+  ['0.786', 'ARMATOS\'S SWING SWEEPS AT HIS NEW PIXEL DETAIL, AND ANY HERO MOVED TO IT CARRIES ITS WHOLE KIT ALONG; STILL SWITCHED OFF FOR NOW.'],
+  ['0.784', 'AT DAWN AND DUSK THE PINES TAKE THE SAME ROSE AND GOLD LIGHT AS THE SNOW, AND THE FOREST SHOWS ITS RIDGES FROM THE EAGLE.'],
   ['0.783', 'A BEAR OR ORCA BUFF IS WORN AS MOTES RISING ROUND THE HERO, AND A SWORD SWINGS WITH A BRIGHT EDGE.'],
   ['0.782', 'A HERO KEEPS THE WEAPON IN HAND THROUGH A CAST: DRAWN BACK, THEN DRIVEN AT THE AIM.'],
   ['0.781', 'FABER\'S STAFF IS A LITTLE SHORTER, SO ITS GEAR STANDS CLEAR OF HIS HEALTH BAR.'],
@@ -1739,7 +1745,7 @@ function renderTitle(now) {
   const bc = easeInOut(m.skinT);               // ...and the skins screen's
   const pan = Math.max(m.panel ? easeOut(m.panelT) : 0, sc, tc, nc, kc, rc, bc); // chrome ducks under a panel or any full screen
   const tintA = 1 - easeOut(outQ / 0.45);
-  if (tintA > 0.005) drawTitleBackdrop(tintA, pan);
+  if (tintA > 0.005) drawTitleBackdrop(tintA, Math.max(pan, state.settingsOpen ? 1 : 0)); // ...and the scene deepens under the settings slab too
   const { toy, rects } = menuLayout();
   const cx = Math.round(VIEW_W / 2);
   const chromeA = (1 - out) * (1 - pan);

@@ -536,6 +536,15 @@ function todNoon() {
   return Math.max(0, Math.min(1, n)) * (1 - state.darkness);
 }
 
+// 0..1: how far the hour's light is from white, for what must warm with it
+// (the pines' crowns: crownHour, js/draw/ground.js)
+const todWarm = [0, 0, 0, 0, 0, 0];
+function todWarmth() {
+  if (ARENA) return 0;
+  const g = todMix(Math.min(CYCLE - 1e-6, Math.max(0, state.time)), todWarm);
+  return (510 - g[1] - g[2]) / 510;
+}
+
 const todRGB = [0, 0, 0, 0, 0, 0];
 function todGrade() {
   // the practice arena keeps one fixed, neutral hour: its instruments

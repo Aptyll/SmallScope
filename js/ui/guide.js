@@ -18,6 +18,7 @@ const GUIDE_FLASH = 0.7;       // s a finished step's card holds, gold, before t
 const GUIDE_HOME_T = 1.5;      // s RECALL's card shows before standing at home counts
 const GUIDE_LIFT = 8;          // px between the card's foot and the strip's buy plates
 const GUIDE_H = 16, GUIDE_TIP_H = 10, GUIDE_PAD = 4;
+const GUIDE_RAIL_AIR = 8;      // px of air between the top bar and an edge arrow under it
 const GUIDE_K = 2;             // the card is drawn this many view px to one of its own: big enough that a first look finds it
 const GUIDE_INK = '#07080a', GUIDE_EDGE = '#2f3238', GUIDE_BG = '#16181c';
 const GUIDE_GOLD = '#f2cc6a', GUIDE_TXT = '#f4f7ff', GUIDE_LBL = '#a3a8b0', GUIDE_DIM = '#6c717a';
@@ -41,6 +42,31 @@ function guideNearTower() {
   return best ? { x: best.x, y: best.y - 70 } : null; // over the gun, not the foot
 }
 
+// where LAST HIT is learned: the rival soldier of your lane nearest you that
+// your side sees, else your own lane's soldier furthest down it (walk with
+// them and the fight finds you). With a rival soldier on the screen the
+// lesson is in front of you and no arrow hops between them.
+function guideSoldier() {
+  const pos = POSITIONS[player.position], lane = pos && pos.lane >= 0 ? pos.lane : 1;
+  const home = state.drop && state.drop.eagles[player.team];
+  let rival = null, rd = Infinity, own = null, od = -1;
+  for (const b of robots) {
+    if (b.kind !== 'soldier' || b.lane !== lane || !unitAlive(b)) continue;
+    if (b.team !== player.team) {
+      if (!inSight(player.team, b)) continue;
+      const d = Math.hypot(b.x - player.x, b.y - player.y);
+      if (d < rd) { rd = d; rival = b; }
+    } else if (home) {
+      const d = Math.hypot(b.x - home.x, b.y - home.y);
+      if (d > od) { od = d; own = b; }
+    }
+  }
+  const t = rival || own;
+  if (!t) return null;
+  if (rival) { const sx = wToSX(rival.x), sy = wToSY(rival.y); if (sx >= 0 && sx < VIEW_W && sy >= 0 && sy < VIEW_H) return null; }
+  return { x: t.x, y: t.y - 24 };
+}
+
 // One row per lesson, in order. caps: the key faces shown; word: the one
 // word; tip: the DETAILS line; need/count: a number to reach; ready: the step
 // waits (no card) until it is true; begin: noted as the step opens; done:
@@ -62,7 +88,8 @@ const GUIDE_STEPS = [
   { id: 'farm', word: 'LAST HIT', tip: 'THE FINAL BLOW ON A SOLDIER PAYS GOLD',
     caps: () => [guideAttackCap()],
     begin: (g) => { g.farm0 = player.farm; },
-    need: 3, count: (g) => player.farm - g.farm0 },
+    need: 3, count: (g) => player.farm - g.farm0,
+    at: guideSoldier },
   { id: 'recall', word: 'RECALL', tip: 'STAND STILL: YOUR EAGLE TAKES YOU HOME AND THE RING HEALS YOU',
     caps: () => [keyCap('recall')],
     ready: () => player.gold >= GUIDE_RECALL_GOLD || player.hp < player.maxHp / 2,
@@ -170,7 +197,7 @@ function drawGuideArrow(now, at) {
   // directions so its stairs stay even (GUIDE_EDGE_ARROW, turned by quarters)
   const cx = VIEW_W / 2, cy = VIEW_H / 2, dx = sx - cx, dy = sy - cy;
   const k = Math.min((VIEW_W / 2 - M) / Math.max(1, Math.abs(dx)), (VIEW_H / 2 - M - 20) / Math.max(1, Math.abs(dy)));
-  const ex = Math.round(cx + dx * k) - 7, ey = Math.round(cy + dy * k) - 7;
+  const ex = Math.round(cx + dx * k) - 7, ey = Math.max(Math.round(cy + dy * k) - 7, railBottom() + GUIDE_RAIL_AIR); // clear of the top bar: touching it, it reads as part of it
   const oct = (Math.round(Math.atan2(dy, dx) / (Math.PI / 4)) + 8) % 8; // 0 right, 1 down-right, ... clockwise
   const grid = GUIDE_EDGE_ARROW[oct & 1], turns = oct >> 1;
   const at2 = (i, j) => { for (let t = 0; t < turns; t++) { const n = 6 - j; j = i; i = n; } return [i, j]; };
