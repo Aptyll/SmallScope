@@ -82,7 +82,10 @@ at `SWING_FPS` (`swingFrame`): part way across, through with one solid pixel swi
 (`drawSwish`: a light edge, a body and an ink line on the outside, never over the head), the swish
 going, then held at the arc's end. Each pixel sits behind the body while it points up the screen.
 The whole body acts with it (`attackLean`): 1 px back off the aim through the draw, 1 px in toward
-it through the cut and the held finish. A bot with a blade fights at `AI_MELEE_D` (18 px) instead of a bow's 70,
+it through the cut and the held finish. A key's cast keeps the blade in the hands the same way
+(`castBeat`, js/draw/bodies.js): drawn back and up off the aim for the cast's first half, driven
+straight at it for the second, the body leaning with each; a cast under `CAST_BEAT_MIN` keeps the
+carry, and any other weapon stays carried through a cast. A bot with a blade fights at `AI_MELEE_D` (18 px) instead of a bow's 70,
 and only presses fire once the target is under the edge (`aiMelee`, js/ai/ai.js).
 
 ## A shot in flight
