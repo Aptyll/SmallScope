@@ -39,12 +39,18 @@ function deepPx(x, y) {
     if (i >= 0 && j >= 0 && i < DEEP_WIN && j < DEEP_WIN) {
       const k = j * DEEP_WIN + i;
       let d = deepWin[k];
-      if (d !== d) d = deepWin[k] = driftsDepth((x + 0.5) / TILE, (y + 0.5) / TILE);
+      if (d !== d) d = deepWin[k] = deepRagAt(x, y);
       return d;
     }
   }
-  return driftsDepth((x + 0.5) / TILE, (y + 0.5) / TILE);
+  return deepRagAt(x, y);
 }
+// ...ragged by a small noise (DEEP_RAG, in depth), so a drift's edge wanders
+// a few pixels off the sim's smooth outline instead of ruling an oval on the
+// snow. Only the paint moves: who is hidden reads the sim's own depth.
+const DEEP_RAG = 0.22, DEEP_RAG_PX = 7;
+function deepRag(x, y) { return (vnoise(x / DEEP_RAG_PX + 5.5, y / DEEP_RAG_PX + 13.5) - 0.5) * DEEP_RAG; }
+function deepRagAt(x, y) { return driftsDepth((x + 0.5) / TILE, (y + 0.5) / TILE) + deepRag(x, y); }
 const deepIn = (x, y) => deepPx(x, y) >= DEPTH_DEEP;
 // the tone for world pixel (x, y) given the plain snow's tone t, on a tile
 // whose driftCell is not empty
