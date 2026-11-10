@@ -448,7 +448,9 @@ replay window and the TAB scoreboard still work), but no dim and no planks: once
 it is closed. A lost match holds one line over the dim for a beat and then opens
 [the defeat screen](rendering/the-end-screens.md) by itself (`openDefeat()`), whose plank leads on
 to the post-game record and the title. Every death runs `checkLastStanding()`, which ends the match as a win once no **rival
-team** is left — `rivalTeamsInMatch()`/`teamInMatch()` read the same other-team rule `enemyOf`
+team** is left (a respawn wait does not hold it back: a hero who is down when the last rival bird
+leaves gets the victory screen with everyone else, and `respawnPlayer` sets the body down under
+that screen without taking it away) — `rivalTeamsInMatch()`/`teamInMatch()` read the same other-team rule `enemyOf`
 does, and **a team is in the match while its eagle roosts**: `teamInMatch` asks
 `teamEagleDown(team)` first, so a fled eagle takes the side out whatever else it still holds
 (`eagleFlee` in js/sim/eagle.js is what puts every player down at liftoff), and a side with every player

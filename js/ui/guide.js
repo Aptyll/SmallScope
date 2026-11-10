@@ -143,8 +143,7 @@ function guideHeadlineUp() {
 }
 function guideOn() {
   return NET.mode === 'guide' && !PRACTICE && !guide.off && state.mode === 'play' && !!state.drop &&
-    !player.aboard && !inAir(player) && hudHome() && !guideHeadlineUp() &&
-    !state.eagleCine; // a bird driven off has the camera (js/sim/eagle.js): the match is decided and the card leaves the picture
+    !player.aboard && !inAir(player) && hudHome() && !guideHeadlineUp(); // hudHome: never over a cinematic, the landing's or a bird driven off
 }
 function guideOpen(i) { guide.step = i; guide.t = 0; }
 function guideDone(s) { return s.need ? s.count(guide) >= s.need : s.done(guide); }
