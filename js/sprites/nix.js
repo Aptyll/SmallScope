@@ -1800,7 +1800,8 @@ const NIX_SKINS = [
 
 // ------------------------------------------------------------ nix dirk
 // Her ICE DIRK on TOOL_HELD_ART's frame, point left (HERO_BLADES.dirk, js/draw/nix.js):
-// a short blade of clear ice (half a sword's), a dark grip, an ice pommel.
+// a short blade of clear ice (half a sword's, 11 px with the hilt: the slanted grid's length, so it
+// never grows in the swing), a dark grip, an ice pommel.
 const NIX_DIRK = [
   '......................',
   '......................',
@@ -1811,10 +1812,10 @@ const NIX_DIRK = [
   '......................',
   '......................',
   '................o.....',
-  '........ooooooooEooo..',
-  '.......oWWIIWIIIEgGIo.',
-  '........oIiiiiiiEGgIo.',
   '.........oooooooEooo..',
+  '........oWWIWIIIEgGIo.',
+  '.........oIiiiiiEGgIo.',
+  '..........ooooooEooo..',
   '................o.....',
   '......................',
   '......................',
