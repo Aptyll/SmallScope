@@ -5,7 +5,7 @@
 // SNOWDROPS nodding until picked (shut and flickering as they wilt) and THAW's melted ground with
 // the warmth rising off it. Both sides see all of it.
 
-const SV_MELT = '#c5d3e8', SV_MELT_LIP = '#93a9cc', SV_EARTH = '#8a7458', SV_EARTH_D = '#6b5a48'; // THAW: the wet snow and its slumped lip, the bare earth and its damp edge
+const SV_MELT = '#c5d3e8', SV_MELT_LIP = '#93a9cc', SV_WET = '#7f95b8'; // THAW: the wet snow, its slush lip, a soaked spot
 const SV_INK = '#2e2440', SV_LINEN = '#e8dcb4', SV_LINEN_D = '#a89263', SV_SAGE = '#9cc87a', SV_SAGE_D = '#4f8a46',
   SV_WHITE = '#f8f8ff', SV_GOLD = '#f2cc6a', SV_GOLD_D = '#b98a2e';
 
@@ -44,21 +44,33 @@ function drawSalviaGround(ex, ey, now) {
     const px = Math.round(w.x - ex), py = Math.round(w.y - ey);
     if (px < -THAW_R - 4 || py < -THAW_R - 30 || px > WV_W + THAW_R + 4 || py > WV_H + THAW_R + 4) continue;
     const k = w.t / THAW_T, a = k > 0.85 ? (1 - k) / 0.15 : 1;
-    // the melted ground: a sheet of wet snow with a shore of its own and a slumped lip
-    // (never stripes, never a drawn outline), bare earth showing through in patches,
-    // and green shoots coming up in them
+    // the melted ground: a sheet of wet snow, wetter toward the middle, and at its true
+    // edge a broken lip of slush (never stripes, never a drawn outline: the lip has gaps
+    // and marks the limit); on it a few small wet spots where shoots have come up, a
+    // white snowdrop or two among them (small, not her SNOWDROPS: nothing to pick). No
+    // spots on ice or water: there only the wet sheen.
     const seed = (Math.round(w.x) * 7 + Math.round(w.y) * 13) | 0;
-    ctx.globalAlpha = 0.4 * a; fxSheet(px, py, THAW_R * 0.94, 0.08, seed, SV_MELT, SV_MELT_LIP);
-    ctx.globalAlpha = 0.35 * a; fxSheet(px + 6, py - 4, THAW_R * 0.55, 0.25, seed + 1, SV_MELT_LIP); // wetter toward the middle
-    for (let i = 0; i < 13; i++) {
-      const ang = (i + fxRoll(seed, i, 2) * 0.8) / 13 * Math.PI * 2, rr = THAW_R * (0.12 + 0.72 * fxRoll(seed, i, 3));
-      const x = Math.round(px + Math.cos(ang) * rr), y = Math.round(py + Math.sin(ang) * rr), er = 4 + Math.round(fxRoll(seed, i, 4) * 7);
-      ctx.globalAlpha = 0.85 * a; fxSheet(x, y, er, 0.3, seed + i * 7, SV_EARTH, SV_EARTH_D, 0.6);
-      ctx.globalAlpha = a; // a shoot or two in it, swaying
-      for (let j = 0; j < 2; j++) {
-        const sx = x + Math.round((fxRoll(seed, i, 5 + j) - 0.5) * er), sw = Math.round(Math.sin(now * 2 + i + j * 2));
+    ctx.globalAlpha = 0.4 * a; fxSheet(px, py, THAW_R * 0.97, 0.03, seed, SV_MELT);
+    ctx.globalAlpha = 0.35 * a; fxSheet(px + 6, py - 4, THAW_R * 0.55, 0.25, seed + 1, SV_MELT_LIP);
+    ctx.globalAlpha = 0.9 * a; ctx.fillStyle = SV_MELT_LIP;
+    for (let k = 0, n = Math.ceil(THAW_R * 2 * Math.PI); k < n; k++) {
+      const sec = Math.floor(k / 9);
+      if (fxRoll(seed, sec, 6) < 0.28) continue; // a gap
+      const t = k / n * Math.PI * 2, th = 2 + (fxRoll(seed, sec, 7) < 0.5 ? 1 : 0), off = Math.round(fxRoll(seed, sec, 8) * 3 + Math.sin(t * 9) * 1.2); // each stretch slumped its own way
+      for (let q = 0; q < th; q++) ctx.fillRect(Math.round(px + Math.cos(t) * (THAW_R - off - q)), Math.round(py + Math.sin(t) * (THAW_R - off - q)), 1, 1);
+    }
+    for (let i = 0; i < 6; i++) {
+      const ang = (i + fxRoll(seed, i, 2) * 0.8) / 6 * Math.PI * 2, rr = THAW_R * (0.2 + 0.6 * fxRoll(seed, i, 3));
+      const wx = w.x + Math.cos(ang) * rr, wy = w.y + Math.sin(ang) * rr;
+      if (iceAtPx(wx, wy) || waterAt(Math.floor(wx / TILE), Math.floor(wy / TILE))) continue;
+      const x = Math.round(wx - ex), y = Math.round(wy - ey);
+      ctx.globalAlpha = 0.8 * a; fxSheet(x, y, 4, 0.3, seed + i * 7, SV_WET, null, 0.6);
+      ctx.globalAlpha = a;
+      for (let j = 0; j < 3; j++) { // a tuft of shoots, swaying
+        const sx = x - 3 + j * 3, sw = Math.round(Math.sin(now * 2 + i + j * 2));
         ctx.fillStyle = SV_SAGE_D; ctx.fillRect(sx, y - 1, 1, 2);
-        ctx.fillStyle = SV_SAGE; ctx.fillRect(sx + sw, y - 3, 1, 2); ctx.fillRect(sx + sw + (j ? 1 : -1), y - 2, 1, 1);
+        ctx.fillStyle = SV_SAGE; ctx.fillRect(sx + sw, y - 3, 1, 2);
+        if (j === 1 || (j === 2 && i % 2)) { ctx.fillStyle = SV_WHITE; ctx.fillRect(sx + sw, y - 5, 2, 2); ctx.fillStyle = SV_SAGE_D; ctx.fillRect(sx + sw, y - 3, 1, 1); } // a small snowdrop, nodding
       }
     }
     ctx.globalAlpha = 1;
