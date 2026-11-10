@@ -296,7 +296,7 @@ app/bake-player/bodies.py: the cap in `pelt`, the hood in `cloak`, the mantle an
 are used only for the roll. `LIGNUM_PAL` is `ARM_PAL` with the fur `j`/`f`/`F`, the beard `w`/`W`,
 the leather `a`/`A`, the hood `q`/`Q` and the buckle `y`/`Y`. His FELLING AXE is a `HERO_BLADES`
 row (`blade: 'felling'`, js/draw/lignum.js). BARK SKIN lays bark plates on his shoulders
-(`HERO_BODY_FX`); TIMBER's trunk is drawn on the snow (`HERO_GROUND`).
+(`HERO_BODY_FX`); TIMBER's felled pine is drawn on the snow (`HERO_GROUND`, `pineHalf` its outline).
 
 CLIVUS has one look (`CLIVUS_SKINS`, js/sprites/clivus.js): GUIDE (free; a knit cap with snow
 goggles pushed up on the brow, a coil of rope over his left shoulder across to the right hip, a

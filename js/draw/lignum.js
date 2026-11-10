@@ -45,28 +45,57 @@ function drawLignumAxe(w, ex, ey, now) {
 function drawLignumAir(ex, ey, now) { for (const w of lignumAxes) drawLignumAxe(w, ex, ey, now); }
 
 // ---- the felled trunk ---------------------------------------------------------------------
-// a trunk 5 px thick from the stump end to the crown, bark ridges along it and the crown's
-// green at its far end; it falls over LG_FALL and sinks into the snow at the end of its life
+// A whole pine lying where it fell: a bare bark trunk from the stump end, then tier on
+// tier of boughs as wide as the blow lands, closing to a blunt top, lit and snow-tipped along its upper side.
+// `pineHalf` is its outline (px either side of the trunk's line, `s` px along a pine
+// `L` long): TIMBER's shadow is cut to the same shape (drawTimberTele).
+const LG_SNOW = '#f4f7ff', LG_SNOW_D = '#b9c8e2', LG_PINE_T = '#5a9a6c'; // the boughs' lit tops
+const PINE_BARE = 0.28, PINE_TIER = 8, PINE_WIDE = 9, PINE_TOP = 0.8; // the bare trunk's share, a tier's px, the lowest tier's half-width, where the top starts to close
+const PINE_PUFF = 0.4; // s the snow it lands in hangs
+function pineHalf(s, L) {
+  const bare = L * PINE_BARE;
+  if (s < bare) return 2;
+  const f = ((s - bare) % PINE_TIER) / PINE_TIER, top = L * PINE_TOP;
+  // as wide as the blow lands (TIMBER_W) nearly to the end, then closing to a blunt top
+  const env = s < top ? PINE_WIDE - 1.5 * (s - bare) / (top - bare) : PINE_WIDE - 1.5 - (PINE_WIDE - 5) * (s - top) / (L - top);
+  return Math.max(2, Math.round((env + 0.5) * (1 - 0.28 * f)));
+}
+// it comes down over LG_FALL (seen from above, its length growing as it tips), throws
+// up the snow it lands in, and sinks into the snow at the end of its life
 function drawLignumLog(g, ex, ey) {
-  const len = g.len * Math.min(1, g.t / LG_FALL), px = -g.ny, py = g.nx;
-  const left = g.life - g.t, alpha = Math.min(1, left * 3);
-  ctx.globalAlpha = alpha;
-  const pass = (half, col, from, to) => {
-    for (let s = from; s <= to; s += 1) {
-      for (let k = -half; k <= half; k++) {
-        const x = Math.round(g.x0 + g.nx * s + px * k - ex), y = Math.round(g.y0 + g.ny * s + py * k - ey);
-        ctx.fillStyle = col; ctx.fillRect(x, y, 1, 1);
-      }
-    }
-  };
-  const crown = Math.max(0, len - 26);
-  pass(3, LG_INK, 0, crown); pass(2, LG_BARK, 0, crown);
-  for (let s = 3; s < crown; s += 5) { // the bark's ridges
-    const x = Math.round(g.x0 + g.nx * s - px - ex), y = Math.round(g.y0 + g.ny * s - py - ey);
-    ctx.fillStyle = LG_BARK_L; ctx.fillRect(x, y, 2, 1);
+  const fall = Math.min(1, g.t / LG_FALL), px = -g.ny, py = g.nx, L = g.len;
+  const lit = py < 0 || (py === 0 && px < 0) ? 1 : -1; // the side of the trunk that is up the screen
+  ctx.globalAlpha = Math.min(1, (g.life - g.t) * 3);
+  const dot = (s, k, col) => { ctx.fillStyle = col; ctx.fillRect(Math.round(g.x0 + g.nx * s * fall + px * k - ex), Math.round(g.y0 + g.ny * s * fall + py * k - ey), 1, 1); };
+  for (let s = -1; s <= L + 1; s += 0.5) { // the ink under everything, one px past the outline
+    const h = Math.max(pineHalf(Math.max(0, s - 1), L), pineHalf(Math.min(L, s + 1), L)) + 1;
+    for (let k = -h; k <= h; k++) dot(s, k, LG_INK);
   }
-  if (len > crown) { pass(5, LG_INK, crown, len); pass(4, LG_PINE, crown, len); pass(2, LG_PINE_L, crown + 2, len - 2); }
+  const bare = L * PINE_BARE;
+  for (let s = 0; s <= L; s += 0.5) {
+    const h = pineHalf(s, L), green = s >= bare, f = ((s - bare) % PINE_TIER) / PINE_TIER;
+    for (let k = -h; k <= h; k++) {
+      const up = k * lit; // > 0 on the lit side
+      let col;
+      if (!green) col = up > 0 ? LG_BARK_L : LG_BARK;
+      else if (h > 2 && (up === h ? f < 0.5 : up === h - 1 && f < 0.25)) col = LG_SNOW; // snow lying on each tier's tip
+      else if (k === 0 && f > 0.6) col = LG_BARK; // the trunk showing between the tiers
+      else col = up > h / 2 ? LG_PINE_T : up > 0 ? LG_PINE_L : LG_PINE;
+      dot(s, k, col);
+    }
+  }
+  for (let s = 3; s < bare - 1; s += 4) dot(s, 0, LG_INK); // the bark's ridges
+  dot(0, 0, '#e6c896'); dot(0, lit, '#e6c896'); // the fresh cut
   ctx.globalAlpha = 1;
+  const u = (g.t - LG_FALL) / PINE_PUFF; // the snow it lands in, thrown off both sides
+  if (u < 0 || u >= 1) return;
+  const out = 1 - (1 - u) * (1 - u), r = u < 0.5 ? 2 : 1;
+  for (let i = 0, s = 6; s <= L; s += 9, i++) for (const side of [-1, 1]) {
+    const k = side * (pineHalf(s, L) + 3 + out * (7 + (i * 5 + (side > 0 ? 3 : 0)) % 6)), lift = Math.round(4 * Math.sin(Math.PI * u));
+    const x = Math.round(g.x0 + g.nx * (s + (i % 2) * 3) + px * k - ex), y = Math.round(g.y0 + g.ny * (s + (i % 2) * 3) + py * k - ey) - lift;
+    ctx.fillStyle = LG_SNOW_D; ctx.fillRect(x - r, y - r + 1, r * 2 + 1, r * 2);
+    ctx.fillStyle = LG_SNOW; ctx.fillRect(x - r, y - r, r * 2 + 1, r * 2 - (u > 0.7 ? 1 : 0) || 1);
+  }
 }
 function drawLignumGround(ex, ey) { for (const g of lignumLogs) drawLignumLog(g, ex, ey); }
 
@@ -107,15 +136,18 @@ function drawAxeTele(p, a, closing, now, ex, ey) {
   }
   ctx.globalAlpha = 1;
 }
-// TIMBER's wind-up: the pine's shadow tipping out across the snow where it will lie, the
-// trunk's lengthening as it leans and the crown's spreading at its end
+// TIMBER's wind-up: the pine's own shadow tipping out across the snow where it will lie,
+// lengthening as it leans, tier by tier to its tip (pineHalf)
 function drawTimberTele(L, closing, now, ex, ey) {
-  const len = L.len * Math.pow(closing, 0.7), px = -L.ny, py = L.nx;
+  const f = Math.pow(closing, 0.7), px = -L.ny, py = L.nx;
   ctx.fillStyle = `rgba(30,40,70,${(0.25 + 0.3 * closing).toFixed(2)})`;
-  for (let s = 0; s < len; s++) {
-    const crown = s > L.len - 30, half = crown ? Math.round(TIMBER_W * 0.8 * Math.sin(Math.PI * (s - L.len + 30) / 30)) + 2 : 2;
-    const x = L.x0 + L.nx * s - ex, y = L.y0 + L.ny * s - ey;
-    for (let k = -half; k <= half; k++) ctx.fillRect(Math.round(x + px * k), Math.round(y + py * k), 1, 1);
+  const seen = new Set(); // one fill a pixel, so the shadow stays one even tone
+  for (let s = 0; s <= L.len; s += 0.5) {
+    const h = pineHalf(s, L.len) + 1;
+    for (let k = -h; k <= h; k++) {
+      const x = Math.round(L.x0 + L.nx * s * f + px * k - ex), y = Math.round(L.y0 + L.ny * s * f + py * k - ey), key = x * 4096 + y;
+      if (!seen.has(key)) { seen.add(key); ctx.fillRect(x, y, 1, 1); }
+    }
   }
 }
 // CHOP landing: the felling axe's cleave, a broad crescent with the wood-chips and snow it
