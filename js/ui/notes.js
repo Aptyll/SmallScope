@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['Buildings: the tower merlons and the pump works carry snow', '0.879'],
     ['Aimed keys of IGNIA, NIX, HIEMS and ARMATOS wind up as strips of thaw, frost and trodden snow instead of thin lines', '0.878'],
     ['ARCUS\'s VOLLEY wind-up shows arrowheads you can read', '0.876'],
     ['Nix wears a pale ice scarf, so only her side colour stands out on her', '0.875'],
