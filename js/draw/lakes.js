@@ -125,7 +125,7 @@ function dressFree(tx, ty, rim) {
 // pads the map lays in the lee of a pine or the hut, and the skirt
 // round each deep drift. The shape IS the map's (leeDepth/driftsDepth read
 // per pixel, not per tile, since a pad is smaller than a tile), so a pile
-// is exactly where the map says the snow is, and it stops where the deep
+// is where the map says the snow is (its edge wandering a few px, deepRag), and it stops where the deep
 // band's own look begins. Its sunward rim is lit and a pixel of shade lies
 // past its lee; its thin edge is dithered into the field. Kept well below
 // the deep band's look (no raised lip, no deep shadow), so it never reads
@@ -136,7 +136,8 @@ function bakeDrifts() {
   if (!leeCell) return; // no depth map laid (the practice arena)
   const mid = DRIFT_MID(), top = DEEP_TOP();
   const band = (x, y) => { // 0 outside the mid band, else how far in (0..1]
-    const fx = x / TILE, fy = y / TILE, d = Math.max(leeDepth(fx, fy), driftsDepth(fx, fy));
+    const fx = x / TILE, fy = y / TILE, d0 = Math.max(leeDepth(fx, fy), driftsDepth(fx, fy));
+    const d = d0 > 0 ? d0 + deepRag(x, y) : 0; // the deep band's own wander, so the skirt's rim is no ruled oval either (js/draw/depth.js)
     return d < mid || d >= top ? 0 : Math.min(1, (d - mid) / DRIFT_FADE + 0.01);
   };
   const H = new Float32Array((TILE + 2) * (TILE + 2)), W = TILE + 2;

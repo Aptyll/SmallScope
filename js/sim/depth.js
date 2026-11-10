@@ -82,8 +82,8 @@ function driftsDepth(fx, fy) {
 // a runtime paving or a hole takes it away with the ground.
 function deepAt(x, y) { return !!brushOf(x, y); }
 // ...and WHICH patch (a drift of `drifts`), or null: the one the fog of war
-// hides a body in (js/sim/fog.js). The same depth the ground bake draws, so
-// what is drawn deep IS the brush to the pixel.
+// hides a body in (js/sim/fog.js). The same depth the ground bake draws, bar
+// the few pixels its painted edge wanders (DEEP_RAG, js/draw/depth.js).
 function brushOf(x, y) {
   const tx = Math.floor(x / TILE), ty = Math.floor(y / TILE);
   if (!inWorld(tx, ty) || ground[idx(tx, ty)] !== 0) return null;
