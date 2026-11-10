@@ -325,10 +325,10 @@ const BELLA_SPATHA = [
   '..............o.......',
   '.............oYoo.....',
   '..............oyYo..o.',
-  '..ooooooooooooooyoooyo',
-  '.oWTTTTTTTTTTTTTygGgyY',
-  '.oeEEEEEEEEEEEEEyGgGyY',
-  '..ooooooooooooooyoooyo',
+  '.........oooooooyoooyo',
+  '........oWTTTTTTygGgyY',
+  '........oeEEEEEEyGgGyY',
+  '.........oooooooyoooyo',
   '..............oyYo..o.',
   '.............oYoo.....',
   '..............o.......',
@@ -340,20 +340,20 @@ const BELLA_SPATHA = [
   '......................',
 ];
 // The same spatha at 45 degrees with the point up and right, for a body facing
-// down, up or sideways at rest: slimmer than the oath greatsword, the eagle-wing
+// down, up or sideways at rest: short and slim beside the oath greatsword (a one-hand blade, 13 px), the eagle-wing
 // guard swept toward the point, the grip in her hand at BELLA_SPATHA_GRIP.
 const BELLA_SPATHA_DIAG = [
   '........................',
   '........................',
   '........................',
   '........................',
-  '..................oo....',
-  '.................oTWo...',
-  '................oTEo....',
-  '...............oTEo.....',
-  '..............oTEo......',
-  '.............oTEo.......',
-  '............oTEo........',
+  '........................',
+  '........................',
+  '........................',
+  '........................',
+  '........................',
+  '.............oo.........',
+  '............oTWo........',
   '...........oTEo.........',
   '....oo....oTEo..........',
   '...oYyo..oTEo...........',
