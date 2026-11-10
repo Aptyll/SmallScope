@@ -57,7 +57,7 @@ function armSwords() {
   if (armSwordArt) return armSwordArt;
   return (armSwordArt = { flat: bakeBladeArt(ARM_SWORD, ARM_SWORD_PAL), diag: bakeBladeArt(ARM_SWORD_DIAG, ARM_SWORD_PAL) });
 }
-HERO_BLADES.oath = { art: armSwords, hilt: [19, 11], hip: { down: [13, 12], up: [11, 10] }, grip: ARM_GRIP };
+HERO_BLADES.oath = { art: armSwords, hilt: [19, 11], hip: { down: [13, 11], up: [11, 10] }, grip: ARM_GRIP };
 
 // ---- on the snow --------------------------------------------------------------
 // a box laid down a bearing: the IRON VERDICT's line, (px, py) its near end

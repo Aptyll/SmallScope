@@ -109,6 +109,9 @@
     // further out (heroRise, heroReach, js/draw/heroes.js)
     const more = row.grids.down.length - 16; // a 20 px cell: 3 rows taller (one more is headroom), 1 px wider a side
     set.rise = (more * 3) >> 2; set.reach = more >> 2;
+    // the hand that closes on the carried weapon (heroFist, js/draw/heroes.js): the look's
+    // own `hand` letter (a glove), else its skin, ringed in its outline
+    set.hand = sp[row.hand || art.hand || 'k']; set.ink = sp.o;
     lookCache.set(key, set);
     return set;
   }

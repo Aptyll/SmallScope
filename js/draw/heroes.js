@@ -69,6 +69,7 @@ function heroStaff(p, px, py) {
   const up = staffCasting(p), rc = heroReach(p) + (up ? STAFF_OUT : 0);
   const hx = back ? px + 2 - rc : px + 13 + rc, hy = py + 10 - (up ? STAFF_RAISE : p.charging ? 1 : 0); // a draw lifts it, a cast or a shot raises it
   ctx.drawImage(img, Math.round(hx - gx), Math.round(hy - s.grip[1]));
+  if (p.dir !== 'up') heroFist(p, hx, hy, back ? -1 : 1);
   return true;
 }
 // A look on a larger cell stands taller and wider than the 16 px one every offset
@@ -76,6 +77,21 @@ function heroStaff(p, px, py) {
 // as much), a hand `heroReach` px further out from the body's middle.
 function heroRise(p) { return classSet(p).rise || 0; }
 function heroReach(p) { return classSet(p).reach || 0; }
+// THE GRIP RULE: whatever a hero carries, a hand is seen closed on it. The
+// fist is drawn over the weapon at its grip, (x, y) on the screen, reaching
+// one pixel back toward the body so it closes the sleeve's end: FIST px square
+// in the look's hand colour, its outline on the side away from the body and
+// under it (`out` +1 when the grip is right of the body, -1 left of it).
+const FIST = 2;
+function heroFist(p, x, y, out) {
+  const set = classSet(p), gx = Math.round(x), gy = Math.round(y);
+  const x0 = out > 0 ? gx - FIST + 1 : gx, y0 = gy - FIST + 1;
+  ctx.fillStyle = set.ink;
+  ctx.fillRect(out > 0 ? x0 + FIST : x0 - 1, y0, 1, FIST + 1); // the outer edge
+  ctx.fillRect(x0, y0 + FIST, FIST, 1);                         // under the knuckles
+  ctx.fillStyle = set.hand;
+  ctx.fillRect(x0, y0, FIST, FIST);
+}
 function heroBodyFx(p, ax, ay, now, front) { for (const f of HERO_BODY_FX) f(p, ax, ay, now, front); }
 // A hero that is, for a while, not its body at all: fn(p, px, py, now) -> true
 // when it drew what stands there in its place (the held tool and the body's
@@ -115,15 +131,21 @@ function heroCarry(p, px, py, back) {
     const put = (im, out, ax, ay, gy) => ctx.drawImage(im, Math.round(ax - (out ? b.grip[0] : img.width - 1 - b.grip[0])), Math.round(ay - gy));
     if (hold.shoulder) {
       if (back === up) return true; // behind the head; over the back of a body facing away
-      put(lead ? heldFlip(img) : img, !lead, lead ? px + 13 + rc : px + 2 - rc, py + 9, b.grip[1]);
+      const sx = lead ? px + 13 + rc : px + 2 - rc;
+      put(lead ? heldFlip(img) : img, !lead, sx, py + 9, b.grip[1]);
+      heroFist(p, sx, py + 9, lead ? 1 : -1);
     } else if (hold.rest) {
       if (!pass) return true;
-      put(lead ? heldDrop(img) : heldFlip(heldDrop(img)), lead, lead ? px + 13 + rc : px + 2 - rc, py + 9, img.height - 1 - b.grip[1]);
+      const sx = lead ? px + 13 + rc : px + 2 - rc;
+      put(lead ? heldDrop(img) : heldFlip(heldDrop(img)), lead, sx, py + 9, img.height - 1 - b.grip[1]);
+      heroFist(p, sx, py + 9, lead ? 1 : -1);
     } else {
       if (!pass) return true;
       const at = up ? b.hip.up : b.hip.down;
       const out = up ? true : hold.far && p.dir === 'down' ? false : lead;
-      put(out ? img : heldFlip(img), out, out ? px + at[0] + rc : px + 15 - at[0] - rc, py + at[1], b.grip[1]);
+      const sx = out ? px + at[0] + rc : px + 15 - at[0] - rc;
+      put(out ? img : heldFlip(img), out, sx, py + at[1], b.grip[1]);
+      if (!up) heroFist(p, sx, py + at[1], out ? 1 : -1); // facing away the hand is the body's far side
     }
     return true;
   }

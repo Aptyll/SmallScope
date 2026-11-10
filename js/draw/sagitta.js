@@ -138,6 +138,7 @@ function sagittaCarry(p, px, py) {
   const A = attackOf(p), img = SPRITES.weaponArt[A.art];
   if (!img) return false;
   drawGripped(img, WEAPON_GRIP.icon[A.art], p.dir === 'down' ? px + 17 : px - 1, py + 11, -Math.PI / 2 - WEAPON_FWD[A.art]);
+  if (p.dir === 'down') heroFist(p, px + 17, py + 11, 1);
   return true;
 }
 HERO_CARRY.push(sagittaCarry);
