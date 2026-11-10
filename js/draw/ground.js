@@ -297,15 +297,50 @@ function paintTrunk(g, tr, px, py) {
 // to the next stone (px: under 1 is the joint) and which way the pixel lies
 // from the stone's middle (lx + ly < 0 faces the light, up-left)
 function roadStoneAt(wx, wy, cell, jit) {
-  const cx = Math.floor(wx / cell), cy = Math.floor(wy / cell);
-  let d1 = 1e9, d2 = 1e9, id = 0, x1 = 0, y1 = 0, x2 = 0, y2 = 0;
+  const cx = Math.floor(wx / cell), cy = Math.floor(wy / cell), X = wx + 0.5, Y = wy + 0.5;
+  // the nearest two middles by their squared distance; the root is taken of those two alone
+  let q1 = 1e18, q2 = 1e18, id = 0, x1 = 0, y1 = 0, x2 = 0, y2 = 0;
   for (let j = -1; j <= 1; j++) for (let i = -1; i <= 1; i++) {
     const h = hash2(cx + i + 501, cy + j + 907), h2 = hash2(cx + i + 133, cy + j + 71);
     const fx = (cx + i + 0.5 + (h - 0.5) * jit) * cell, fy = (cy + j + 0.5 + (h2 - 0.5) * jit) * cell;
-    const d = Math.hypot(wx + 0.5 - fx, wy + 0.5 - fy);
-    if (d < d1) { d2 = d1; d1 = d; id = h; x2 = x1; y2 = y1; x1 = fx; y1 = fy; } else if (d < d2) { d2 = d; x2 = fx; y2 = fy; }
+    const q = (X - fx) * (X - fx) + (Y - fy) * (Y - fy);
+    if (q < q1) { q2 = q1; q1 = q; id = h; x2 = x1; y2 = y1; x1 = fx; y1 = fy; } else if (q < q2) { q2 = q; x2 = fx; y2 = fy; }
   }
-  return { id, gap: d2 - d1, lx: wx + 0.5 - x1, ly: wy + 0.5 - y1, x1, y1, x2, y2 };
+  return { id, gap: Math.hypot(X - x2, Y - y2) - Math.hypot(X - x1, Y - y1), lx: X - x1, ly: Y - y1, x1, y1, x2, y2 };
+}
+// ONE TILE'S MEMO. A tile's bake asks the same thing many times over: every
+// pixel of a stone asks whether that stone is laid and whether it is trodden,
+// and a pixel beside the path asks a dozen neighbours whether they are paved
+// (roadLipAt). paintRoadOverlay opens the memo for the tile it paints and
+// shuts it after, so each answer is worked out once a tile and none outlives
+// the tile: a pad laid later (addPad) is never read stale. Outside a bake
+// every reader gets the plain answer.
+const ROAD_MEMO_PAD = 3, ROAD_MEMO_W = TILE + 2 * ROAD_MEMO_PAD; // px round the tile a lip pixel reaches (ROAD_LIP_LIT, ROAD_LIP_SHD)
+const roadMemo = { on: false, x: 0, y: 0, paved: new Uint8Array(ROAD_MEMO_W * ROAD_MEMO_W), dist: new Float64Array(ROAD_MEMO_W * ROAD_MEMO_W), laid: new Map(), worn: new Map() };
+function roadMemoOpen(px, py) {
+  roadMemo.on = true; roadMemo.x = px - ROAD_MEMO_PAD; roadMemo.y = py - ROAD_MEMO_PAD;
+  roadMemo.paved.fill(0); roadMemo.dist.fill(NaN); roadMemo.laid.clear(); roadMemo.worn.clear();
+}
+// world pixel (wx, wy)'s place in the open memo, -1 outside it or with none open
+function roadMemoAt(wx, wy) {
+  const i = wx - roadMemo.x, j = wy - roadMemo.y;
+  return roadMemo.on && i >= 0 && j >= 0 && i < ROAD_MEMO_W && j < ROAD_MEMO_W ? j * ROAD_MEMO_W + i : -1;
+}
+// a world pixel's lane distance (tiles, at its middle)
+function roadPxDist(wx, wy) {
+  const m = roadMemoAt(wx, wy);
+  if (m < 0) return laneDist((wx + 0.5) / TILE - 0.5, (wy + 0.5) / TILE - 0.5);
+  let d = roadMemo.dist[m];
+  if (d !== d) d = roadMemo.dist[m] = laneDist((wx + 0.5) / TILE - 0.5, (wy + 0.5) / TILE - 0.5);
+  return d;
+}
+// a stone's answer by its middle, (x, y) world px: once a tile while the memo is open
+function roadMemoStone(map, f, x, y) {
+  if (!roadMemo.on) return f(x, y);
+  const k = x * 8192 + y; // a stone's middle is its own: no two share one
+  let v = map.get(k);
+  if (v === undefined) { v = f(x, y); map.set(k, v); }
+  return v;
 }
 // is the stone whose middle is (x, y) world px part of the path: its middle inside the edge
 function roadStoneIn(x, y) { return laneDist(x / TILE - 0.5, y / TILE - 0.5) < -0.12; }
@@ -316,11 +351,18 @@ function roadStoneIn(x, y) { return laneDist(x / TILE - 0.5, y / TILE - 0.5) < -
 // so the edge keeps a straight run a walker can read
 const ROAD_EDGE_IN = 0.3, ROAD_EDGE_OUT = 0.1; // tiles inside and outside the line the edge may wander
 function roadPavedAt(wx, wy) {
-  const d = laneDist((wx + 0.5) / TILE - 0.5, (wy + 0.5) / TILE - 0.5);
+  const m = roadMemoAt(wx, wy);
+  if (m >= 0 && roadMemo.paved[m]) return roadMemo.paved[m] === 1;
+  const pv = roadPavedBy(roadPxDist(wx, wy), wx, wy, null);
+  if (m >= 0) roadMemo.paved[m] = pv ? 1 : 2;
+  return pv;
+}
+// ...for a caller that already holds the pixel's lane distance (and its stone, or null)
+function roadPavedBy(d, wx, wy, st) {
   if (d < -ROAD_EDGE_IN) return true;
   if (d >= ROAD_EDGE_OUT) return false;
-  const st = roadStoneAt(wx, wy, ROAD_FLAG, 0.8);
-  return roadStoneIn(st.x1, st.y1);
+  if (!st) st = roadStoneAt(wx, wy, ROAD_FLAG, 0.8);
+  return roadMemoStone(roadMemo.laid, roadStoneIn, st.x1, st.y1);
 }
 // what an unpaved pixel beside the path wears: 1 the earth round the last
 // stone (a paved pixel touches it), 2 the snow's lip facing the light (paving
@@ -383,24 +425,28 @@ function roadTuftAt(wx, wy) {
   const ch = ox >= 0 && ox < w && oy >= 0 && oy < T.length ? T[oy][r < 0.5 ? ox : w - 1 - ox] : '.';
   return ch === 'g' ? ROAD_COL_GRASS : ch === 'd' ? ROAD_COL_GRASS_D : null;
 }
+const ROAD_INNER = 2.4; // tiles inside the edge a tile's middle and corners must all lie for its paint to skip the edge's work
+function roadInner(tx, ty) {
+  for (const [i, j] of [[0, 0], [-0.5, -0.5], [0.5, -0.5], [-0.5, 0.5], [0.5, 0.5]]) if (laneDist(tx + i, ty + j) >= -ROAD_INNER) return false;
+  return true;
+}
 function paintRoadOverlay(g, tx, ty, px, py, onIce) {
+  roadMemoOpen(px, py);
+  // a tile deep in the paving (its middle and corners all ROAD_INNER inside the
+  // edge) has no pixel the edge reaches: every one is a stone, and none asks its own distance
+  const inner = roadInner(tx, ty);
   for (let j = 0; j < TILE; j++) for (let i = 0; i < TILE; i++) {
-    const fx = tx + (i + 0.5) / TILE - 0.5, fy = ty + (j + 0.5) / TILE - 0.5;
-    const d = laneDist(fx, fy); // ...which ends on the cistern's gates (js/sim/world.js)
+    const wx = px + i, wy = py + j;
+    const d = inner ? -ROAD_INNER : roadPxDist(wx, wy); // ...which ends on the cistern's gates (js/sim/world.js)
     if (d >= ROAD_SHOULDER) continue;
-    const wx = px + i, wy = py + j, hp = hash2(wx, wy); // this pixel's own roll
-    // the drift field: snow lies on the verge and mud spreads off it in
-    // CLUMPS, not as per-pixel static - a low-frequency noise read per pixel,
-    // so the melt reads as patches of snow and mud rather than sand
-    const clump = vnoise(wx / 6 + 3.1, wy / 6 + 7.7);
     let c = null;
     // the stone under the pixel; near the edge the path's own line decides (roadPavedAt)
     const near = d > -1.1 && d < 1.1;
     const st = d < 1.1 ? roadStoneAt(wx, wy, ROAD_FLAG, 0.8) : null;
-    const pv = near ? roadPavedAt(wx, wy) : d < 0, lipAt = near && !pv ? roadLipAt(wx, wy) : 0;
+    const pv = near ? roadPavedBy(d, wx, wy, st) : d < 0, lipAt = near && !pv ? roadLipAt(wx, wy) : 0;
     if (pv) {
       // a flagstone, earth in its joints
-      c = roadStonePx(st, !onIce && roadDusted(wx, wy, d) ? ROAD_COL_SNOW : ROAD_COL_DEEP, roadWorn(st.x1, st.y1));
+      c = roadStonePx(st, !onIce && roadDusted(wx, wy, d) ? ROAD_COL_SNOW : ROAD_COL_DEEP, roadMemoStone(roadMemo.worn, roadWorn, st.x1, st.y1));
       // a drift lapping over the stones by the edge: a clean clump of snow,
       // its shade on the stone below and right of it
       if (near && !onIce && st.gap >= 1.1) {
@@ -416,12 +462,16 @@ function paintRoadOverlay(g, tx, ty, px, py, onIce) {
     } else if (!onIce) { // (open ice past the crossing's rim is the lake's own pixels)
       // the shoulder: snow greyed by the march in patches thinning to the
       // field, dry grass poking through it
+      // the drift field: snow lies on the verge and mud spreads off it in
+      // CLUMPS, not as per-pixel static - a low-frequency noise read per pixel,
+      // so the melt reads as patches of snow and mud rather than sand
       const k = 1 - Math.max(0, d) / ROAD_SHOULDER;
-      if (clump < k * k * 0.7 - 0.05) c = ROAD_COL_GREY;
+      if (vnoise(wx / 6 + 3.1, wy / 6 + 7.7) < k * k * 0.7 - 0.05) c = ROAD_COL_GREY;
       if (d < 0.9) c = roadTuftAt(wx, wy) || c;
     }
     if (c) penDot(g, c, wx, wy);
   }
+  roadMemo.on = false;
   penFlush();
 }
 
