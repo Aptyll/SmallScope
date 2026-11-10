@@ -166,10 +166,16 @@ STANDARD, `ARM_FINE`) is a `down`/`up`/`side` set at `dens` art px a world px (3
 px cell). When `WD` is 2 (`?fine=1`; it is 1 by default, so no player sees one yet), `champLook`
 builds it beside the 16 px set as `set.fine` through the same `lookSet`
 (walk, side and front run, breath and cloth step `dens` px, a world px; every frame carries
-`dens`), and only `drawPlayer` reads it, through `bodySet` and only in a world layer, which is
-`WD` dense ([world zoom](rendering/world-zoom-and-the-two-pixel-spaces.md)). The menus,
-portraits, cards, the eagle's seats and a falling body keep the 16 px set, and the roll and the
-held weapon stay 16 px art.
+`dens`), and only `drawPlayer` reads it, through `bodySet` and only while `ctx` is a `WD`-dense
+layer (`worldDense`: the world buffer, the air layer and the layers that mirror them, `WD_CTX`;
+[world zoom](rendering/world-zoom-and-the-two-pixel-spaces.md)). The menus, portraits, cards, the
+eagle's seats and a falling body keep the 16 px set. **The rest of the kit follows the body**: a
+`roll` on the row (`ARM_ROLL_FINE`: 14 frames a facing in the doll's box at `dens` px) replaces
+the doll's; a `HERO_BLADES` row's `fine()` (`armSwordsFine`: the art at 32 px, its `hilt` and
+`grip` the same world px) is what `bladeArt` hands the hands, and `drawGripped` and `heroCarry`
+draw any art at `heldW`×`heldH`; the fist closes on its art px (`heroFistFine`), and ARMATOS's
+standard draws on half px (`drawStandardFine`). ARMATOS is the one whole kit so far; another
+hero's weapon, fist and roll stay 16 px until it gets its own.
 The run facing down and up is still the doll's, unless the look's row says `run: 'drawn'`: then
 `heroRunFront` lifts the drawn front and back the same way (IGNIA's two looks, AURA's, SALVIA's, LUCERNA's and BUCINA's two, whose shawl, mantle, coat, cape and hair
 the doll does not match). Which look a player wears is `heroSkinOf(p)` (player.js): the id in `p.skins` under the

@@ -112,10 +112,11 @@ async function open({ width = 1280, height = 720, dpr = 1, audio = false } = {})
 }
 
 // the game, served by app/server.js, booted past character create on the one
-// map, `seed` starting its match stream (or the practice tool on it, `practice`)
-async function openGame({ seed = 6, practice = false, port = +(process.env.PORT || 8471), width, height, dpr } = {}) {
+// map, `seed` starting its match stream (or the practice tool on it, `practice`);
+// `fine` opens it on the finer world buffer (?fine=1), where a look's 32 px body shows
+async function openGame({ seed = 6, practice = false, fine = false, port = +(process.env.PORT || 8471), width, height, dpr } = {}) {
   const pg = await open({ width, height, dpr });
-  await pg.goto(`http://localhost:${port}/?${practice ? 'practice=1' : 'seed=' + seed}`);
+  await pg.goto(`http://localhost:${port}/?${practice ? 'practice=1' : 'seed=' + seed}${fine ? '&fine=1' : ''}`);
   await sleep(1200);
   if (await pg.eval(() => typeof DBG === 'undefined')) throw new Error('the game did not load: is node app/server.js running on :' + port + '?');
   return pg;

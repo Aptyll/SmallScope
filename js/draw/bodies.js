@@ -353,7 +353,7 @@ const BODY_REACH = 30, BODY_REACH_UP = 44;
 // the overhead tells, on any mode.
 // the pose set a body is drawn from here: its look's finer one (`fine`, champLook) in a
 // world layer, which is WD dense; its 16 px one anywhere else (a menu's showcase)
-function bodySet(p) { const s = classSet(p); return WD > 1 && s.fine && inWorldLayer() ? s.fine : s; }
+function bodySet(p) { const s = classSet(p); return WD > 1 && s.fine && worldDense() ? s.fine : s; }
 // a frame drawn at (x, y) at its world size: a finer look's (`dens`) at 1/dens, every pixel kept
 function frameW(spr) { return spr.width / (spr.dens || 1); }
 function frameH(spr) { return spr.height / (spr.dens || 1); }
@@ -669,7 +669,8 @@ const CARRY_HAND_Y = { down: 1, up: -1, left: 0, right: 0 };
 function heldBehind(a) { return Math.sin(a) < -HELD_RISE; }
 // one held art at the hand (hx, hy), turned by `rot`, the hand closed on grip
 function drawGripped(img, grip, hx, hy, rot) {
-  drawTurned(Math.round(hx), Math.round(hy), rot, Math.ceil(Math.hypot(img.width, img.height)), () => ctx.drawImage(img, -grip[0], -grip[1]));
+  const w = heldW(img), h = heldH(img); // a finer art (`dens`) at its world size, its grip in world px
+  drawTurned(Math.round(hx), Math.round(hy), rot, Math.ceil(Math.hypot(w, h)), () => ctx.drawImage(img, -grip[0], -grip[1], w, h), img.dens || 1);
 }
 // Art turned by `rot` about (tx, ty), a whole world px: `draw` paints it about
 // the origin, within `r` world px of it. A turn is resampled onto the art's own
@@ -767,9 +768,9 @@ const bladeLens = new WeakMap();
 function bladeLen(img, grip) {
   let L = bladeLens.get(img);
   if (L !== undefined) return L;
-  const d = SPR.pixelsOf(img);
+  const d = SPR.pixelsOf(img), k = img.dens || 1; // a finer art's px are 1/dens of a world px
   L = 0;
-  for (let y = 0; y < img.height; y++) for (let x = 0; x < img.width; x++) if (d[(y * img.width + x) * 4 + 3]) L = Math.max(L, Math.hypot(x - grip[0], y - grip[1]));
+  for (let y = 0; y < img.height; y++) for (let x = 0; x < img.width; x++) if (d[(y * img.width + x) * 4 + 3]) L = Math.max(L, Math.hypot(x / k - grip[0], y / k - grip[1]));
   bladeLens.set(img, L);
   return L;
 }
