@@ -510,7 +510,7 @@ already current, so it is safe to call from a state change that repeats.
 | js/sim/sim.js | the trickle (`TRICKLE_GOLD`/`TRICKLE_T`); the per-surface steer/decay rates inline in `updatePlayer()`'s movement block; the darkness ramp in `update()`; `FLAKE_BASE`/`FLAKE_MIN`/`FLAKE_MAX` beside the flake block |
 | js/sim/weather.js | the `WIND_*` block (the three ripples, the bend that meanders them, the gust envelope's floor and peak, and how fast it all dies at dusk) |
 | js/sim/eagle.js | the eagle's siege (`EAGLE_HP`/`EAGLE_WORK_DMG`/`EAGLE_ARROW_DMG`/`GUST_R`/`PREEN_RATE`) |
-| js/draw/ground.js | the road's colours, `ROAD_COL_*` beside `paintRoadOverlay` |
+| js/draw/paving.js | the road's colours, `ROAD_COL_*` beside `paintRoadOverlay` |
 | js/draw/light.js | the `CLOUD_*` / `RAY_*` / `NIGHT_*` / `STAR_*` blocks in the `light & weather` banner (including `RAY_AFTER` / `RAY_NOON_HALF`, which decide how long the sun shafts are up for) |
 
 Several of the light.js numbers bake at LOAD, so a change to them needs a reload rather than
