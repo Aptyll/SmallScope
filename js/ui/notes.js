@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['ARCUS is drawn at 32 px (body, roll, a finer longbow), waiting behind the fine-art switch', '0.810'],
     ['ABILITY WORDS AND SHOP NUMBERS SHOW ONLY ON YOUR OWN SCREEN', '0.808'],
     ['MOONLIT PINES AT NIGHT', '0.807'],
     ['Nix carries her dirk clear of her face', '0.806'],
