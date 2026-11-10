@@ -326,7 +326,9 @@ that rides the snapshot; the client eases it like a body (`netClientLerp`).
   `ORCA_LET`.
 - **Up, from 20:00** (THE ORCA UP, `CAMPS.orca` `first` 1200, `repop` 360): the orca's camp brings it
   out of the water as a camp monster (`MONSTER.orca`: `still`, `hole`, `spout`, `push`) in a hole
-  in the middle of the pool, and the shadow is off while it is (`orcaUp`, `updateOrca`). It lunges
+  in the middle of the pool, and the shadow is off while it is (`orcaUp`, `updateOrca`). The pool
+  is rough ice (`slickUnder`, js/sim/sim.js; its rime is `paintRime`, js/draw/ground.js): it holds a
+  foot like snow, so a blade can stand in reach of the hole instead of skating past it. It lunges
   at whoever it hunts inside its reach (the bear's wind-up and strike, jaws open as the tell) and
   past that SPOUTS (`orcaSpout`): a lump of the pool's ice thrown at the spot they stood on, landing
   `ORCA_SPOUT_T` later on everyone inside `ORCA_SPOUT_HIT`, its ring on the ground the warning

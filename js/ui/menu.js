@@ -36,7 +36,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.684';
+const PATCH_TXT = 'PATCH 0.685';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -52,6 +52,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.685', 'THE ORCA\'S POOL IS ROUGH ICE NOW, FROSTED OVER: YOU WALK IT LIKE SNOW INSTEAD OF SKATING, SO A TEAM OF BLADES CAN STAND AT THE HOLE AND FELL THE ORCA.'],
   ['0.684', 'THE TRAIL SKINS, WHICH NOTHING IN A MATCH EVER WORE, LEAVE THE SHOP AND ANY YOU BOUGHT ARE REFUNDED IN COINS; THE SKINS SCREEN LISTS THE HEROES IN THE HERO GRID\'S ORDER.'],
   ['0.683', 'UNDER THE HOOD: THE SETTINGS AND CONTROLS WORDS NOW LIVE IN THE ONE TEXT TABLE.'],
   ['0.682', 'STEAM MATCHES NOW CROSS STEAM\'S OWN RELAY NETWORK, WHICH HIDES EVERY PLAYER\'S ADDRESS AND GETS THROUGH STRICT HOME ROUTERS.'],
