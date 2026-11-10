@@ -17,10 +17,12 @@ const BLAST_HALF = 0.55;        // rad either side of the aim
 const BLAST_KB = 230;           // px/s of shove (hurtUnit kb)
 const BLAST_SLOW = 0.7;         // walk x this...
 const BLAST_SLOW_T = 1.5;       // ...for this long
+const BLAST_FX_LIFE = 0.45;     // s its fronts run (drawn: AB_FX_LOOK.blast)
 // W RALLYING NOTE: a ring round her; allies inside attack faster and shrug off part of every stun and slow
 const RALLY_R = 110;            // px of ring
 const RALLY_T = 4;              // s it holds on each ally
 const RALLY_TEN = 0.3;          // tenacity while it holds (HERO_TEN)
+const RALLY_FX_LIFE = 0.9;      // s its notes rise (drawn: AB_FX_LOOK.rally)
 // E ECHO: a wave down the aim; a wall or a tree throws it back, and a rival struck going and coming is stunned
 const ECHO_RANGE = 210;         // px it travels out
 const ECHO_SPD = 400;           // px/s
@@ -45,7 +47,7 @@ const BUCINA_AB = [
     tip: 'A BLAST OF SOUND PUSHES RIVALS BACK',
     blurb: 'A BLAST OF SOUND IN FRONT OF HER. RIVALS IT CATCHES ARE PUSHED BACK AND SLOWED.',
     use: (p) => bucinaBlast(p),
-    tele: (p, px, py, a, col, closing) => drawWedge(px, py, a, BLAST_REACH, BLAST_HALF, col, 0.5 + 0.45 * closing),
+    tele: (p, px, py, a, col, closing, now) => drawBlastTele(px, py, a, closing, now), // the sound swelling in the horn's bell (js/draw/bucina.js)
     icon: BUCINA_ICON32.blast,
     bot: (p, foe, d) => d < BLAST_REACH * 0.8,
   },
@@ -55,7 +57,6 @@ const BUCINA_AB = [
     tip: 'ALLIES NEAR YOU ATTACK FASTER AND HOLD FIRM',
     blurb: 'A NOTE IN A RING AROUND HER. ALLIES INSIDE ATTACK FASTER AND SHRUG OFF PART OF EVERY STUN AND SLOW FOR A FEW SECONDS.',
     use: (p) => bucinaNote(p),
-    tele: (p, px, py, a, col, closing) => drawRing(px, py, RALLY_R, col, 0.35 + 0.45 * closing, 0),
     icon: BUCINA_ICON32.note,
     bot: (p, foe, d) => foe instanceof Player && d < 220 && bucinaAllies(p, RALLY_R).length >= 2,
   },
@@ -65,7 +66,7 @@ const BUCINA_AB = [
     tip: 'BOUNCES OFF WALLS. HIT TWICE: STUNNED',
     blurb: 'A SOUND WAVE IN A LINE. A WALL OR A TREE THROWS IT BACK. A RIVAL STRUCK GOING AND COMING IS STUNNED.',
     use: (p) => bucinaEcho(p),
-    tele: (p, px, py, a, col, closing, now, ex, ey) => drawTeleLine(p.x, p.y, Math.cos(a), Math.sin(a), ECHO_RANGE, col, 0.5 + 0.45 * closing, now, ex, ey),
+    tele: (p, px, py, a, col, closing, now, ex, ey) => drawEchoTele(p, a, closing, ex, ey), // faint fronts of the wave down its line
     icon: BUCINA_ICON32.echo,
     bot: (p, foe, d, clear) => clear && d < ECHO_RANGE * 0.9,
   },
@@ -75,7 +76,6 @@ const BUCINA_AB = [
     tip: 'PINES DROP THEIR SNOW. RIVALS UNDER ARE STUNNED',
     blurb: 'A LONG HORN CALL IN A WIDE RING. EVERY PINE INSIDE DROPS ITS SNOW: RIVALS UNDER ONE ARE STUNNED, AND THE WOODS INSIDE ARE SHOWN.',
     use: (p) => bucinaPines(p),
-    tele: (p, px, py, a, col, closing) => drawRing(px, py, PINES_R, col, 0.35 + 0.45 * closing, 0),
     icon: BUCINA_ICON32.pines,
     bot: (p, foe, d) => foe instanceof Player && d < PINES_R * 0.85 && (bucinaUnderPine(foe.x, foe.y) || inWoods(foe.x, foe.y)),
   },
@@ -121,7 +121,7 @@ function bucinaBlast(p) {
   for (const s of structsNear(p, mx, my, BLAST_REACH / 2)) hurtStruct(s, dmg, p);
   if (PRACTICE) abHitDummies(mx, my, BLAST_REACH / 2, dmg);
   if (struck) bucinaHeard(p);
-  abFx.push({ kind: 'wedge', x: p.x, y: p.y, a, r: BLAST_REACH, half: BLAST_HALF, t: 0, col: '#f2cc6a' });
+  abFx.push({ kind: 'wedge', x: p.x, y: p.y, a, r: BLAST_REACH, half: BLAST_HALF, t: 0, col: '#f2cc6a', fx: 'blast', life: BLAST_FX_LIFE });
   sfxAt('swing', p.x, p.y);
 }
 
@@ -129,7 +129,7 @@ function bucinaBlast(p) {
 function bucinaNote(p) {
   const as = abRk(p, 'note', 'as');
   for (const q of bucinaAllies(p, RALLY_R)) { q.rallyT = RALLY_T; q.rallyAs = as; }
-  abFx.push({ kind: 'ring', x: p.x, y: p.y, r: RALLY_R, t: 0, col: '#f2cc6a' });
+  abFx.push({ kind: 'ring', x: p.x, y: p.y, r: RALLY_R, t: 0, col: '#f2cc6a', fx: 'rally', life: RALLY_FX_LIFE });
   burst(p.x, p.y - 8, '#f2cc6a', 12, 55, 0.45, true);
   sfxAt('pickup', p.x, p.y);
 }

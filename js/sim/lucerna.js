@@ -29,6 +29,7 @@ const LANTERN_SEE = 40;         // px round it a rival is shown while it lies th
 // E SHOO: a swing of the crook in front of her that pushes rivals back
 const SHOO_REACH = 34;          // px
 const SHOO_HALF = 0.95;         // rad either side of the aim
+const SHOO_FX_LIFE = 0.4;       // s its sweep shows (drawn: AB_FX_LOOK.shoo)
 const SHOO_KB = 260;            // px/s of shove, the robots' and beasts' own scale (hurtUnit kb)
 // R CIRCLE OF LIGHT: a wide ring of lamplight where she stood; a rival on its edge is slowed hard and shown
 const CIRCLE_R = 92;            // px of ring
@@ -50,7 +51,7 @@ const LUCERNA_AB = [
     tip: 'HOOK A RIVAL AND PULL THEM TO YOU',
     blurb: 'A HOOK THROWN IN A LINE. THE FIRST RIVAL IT CATCHES IS PULLED TO HER AND SLOWED.',
     use: (p) => lucernaCrook(p),
-    tele: (p, px, py, a, col, closing, now, ex, ey) => drawTeleLine(p.x, p.y, Math.cos(a), Math.sin(a), CROOK_RANGE, col, 0.5 + 0.45 * closing, now, ex, ey),
+    tele: (p, px, py, a, col, closing, now, ex, ey) => drawCrookTele(p, a, closing, now, ex, ey), // the hook's line run out, a glint along it (js/draw/lucerna.js)
     icon: LUCERNA_ICON32.crook,
     bot: (p, foe, d, clear) => foe instanceof Player && clear && d > 45 && d < CROOK_RANGE * 0.85,
   },
@@ -60,7 +61,7 @@ const LUCERNA_AB = [
     tip: 'AN ALLY WHO TAKES IT COMES TO YOU',
     blurb: 'SHE THROWS HER LANTERN TO A SPOT. AN ALLY WHO WALKS ONTO IT IS DRAWN TO HER SIDE. IT COMES BACK AFTER A FEW SECONDS.',
     use: (p) => lucernaThrow(p),
-    tele: (p, px, py, a, col, closing, now, ex, ey) => { const c = lucernaSpot(p, LANTERN_RANGE); drawRing(Math.round(c.x - ex), Math.round(c.y - ey), LANTERN_R, col, 0.5 + 0.45 * closing, 0); },
+    tele: (p, px, py, a, col, closing, now, ex, ey) => { const c = lucernaSpot(p, LANTERN_RANGE); drawLanternTele(Math.round(c.x - ex), Math.round(c.y - ey), closing); }, // light gathering where it lands
     icon: LUCERNA_ICON32.lantern,
     bot: (p, foe, d) => !!lucernaInDanger(p) && d < 220,
     botAim: (p, foe) => { const q = lucernaInDanger(p) || p; return { x: q.x, y: q.y }; },
@@ -71,7 +72,6 @@ const LUCERNA_AB = [
     tip: 'A SWING OF THE CROOK PUSHES RIVALS BACK',
     blurb: 'A SWING OF THE CROOK IN FRONT OF HER. RIVALS IT CATCHES ARE PUSHED BACK.',
     use: (p) => lucernaShoo(p),
-    tele: (p, px, py, a, col, closing) => drawWedge(px, py, a, SHOO_REACH, SHOO_HALF, col, 0.5 + 0.45 * closing),
     icon: LUCERNA_ICON32.shoo,
     bot: (p, foe, d) => d < SHOO_REACH,
   },
@@ -81,7 +81,7 @@ const LUCERNA_AB = [
     tip: 'A RING OF LIGHT: RIVALS CROSSING SLOW',
     blurb: 'A WIDE RING OF LAMPLIGHT AROUND HER FOR A FEW SECONDS. RIVALS WHO CROSS ITS EDGE ARE SLOWED HARD AND SHOWN.',
     use: (p) => lucernaCircle(p),
-    tele: (p, px, py, a, col, closing) => drawRing(px, py, CIRCLE_R, col, 0.35 + 0.45 * closing, 0),
+    tele: (p, px, py, a, col, closing, now) => drawCircleTele(px, py, closing, now), // light rising round her, stroke by stroke
     icon: LUCERNA_ICON32.circle,
     bot: (p, foe, d) => foe instanceof Player && d < CIRCLE_R && d > CIRCLE_R * 0.4,
   },
@@ -206,7 +206,7 @@ function lucernaShoo(p) {
   }
   for (const s of structsNear(p, p.x + Math.cos(a) * SHOO_REACH / 2, p.y + Math.sin(a) * SHOO_REACH / 2, SHOO_REACH / 2)) hurtStruct(s, dmg, p);
   if (PRACTICE) abHitDummies(p.x + Math.cos(a) * SHOO_REACH / 2, p.y + Math.sin(a) * SHOO_REACH / 2, SHOO_REACH / 2, dmg);
-  abFx.push({ kind: 'line', x: p.x, y: p.y - 4, a, r: SHOO_REACH, half: 3, t: 0, col: '#f2cc6a' });
+  abFx.push({ kind: 'wedge', x: p.x, y: p.y - 4, a, r: SHOO_REACH, half: SHOO_HALF, t: 0, col: '#f2cc6a', fx: 'shoo', life: SHOO_FX_LIFE });
   sfxAt('swing', p.x, p.y);
 }
 
