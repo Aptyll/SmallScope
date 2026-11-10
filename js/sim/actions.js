@@ -937,7 +937,7 @@ function updateBurn(e, dt) {
       x: e.x + rand(-4, 4), y: unitMidY(e) + rand(-3, 4),
       vx: rand(-8, 8), vy: rand(-30, -14),
       life: rand(0.25, 0.45), maxLife: 0.4,
-      color: fxRng() < 0.45 ? '#ff9440' : fxRng() < 0.6 ? '#ffd95c' : '#e0533a', // fxRng: the one draw off the sim's stream this file made
+      color: fxRng() < 0.45 ? '#ff9440' : fxRng() < 0.6 ? '#ffd95c' : '#c8721e', // amber, never loose red (a red speck off a body reads as blood). fxRng: the one draw off the sim's stream this file made
       size: 1, grav: -22, alpha: 0.85,
     });
   }

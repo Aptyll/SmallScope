@@ -164,6 +164,7 @@ function render() {
 
   drawSweep(ex, ey);        // the wind's slow sweep of loose snow, laid in the world, over the pines (windSweep, js/sim/weather.js)
   drawDropAir(ex, ey, now, false); // the flight path, and a bird on the ground (the fliers: the air layer, below)
+  drawLooseFeathers(ex, ey); // ...and the feathers knocked off it, over it (js/draw/recall.js)
   drawZips(ex, ey, now);    // the ziplines' cables, lit gold under the pointer, over everything but the night (js/draw/zipline.js)
   renderLighting(ox, oy, now);
   drawCallouts(ex, ey); // the bots' calls, above the night like all world text (js/draw/callouts.js)
