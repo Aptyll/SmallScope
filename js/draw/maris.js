@@ -7,7 +7,7 @@
 // it (HERO_BODY_DRAW).
 
 const MA_INK = '#141a2c', MA_SNOW = '#f4f7ff', MA_SNOW_M = '#cfe0f2', MA_SNOW_D = '#9fb6d8';
-const MA_WATER = '#2c5478', MA_WATER_L = '#5f9cc8', MA_LINE = '#e8dcb4';
+const MA_WATER = '#2c5478', MA_WATER_L = '#5f9cc8', MA_LINE = '#e8dcb4', MA_WET_D = '#8aa3c9';
 
 // ---- the harpoon in her hands ----------------------------------------------------------
 let marisHarpoonArt = null;
@@ -137,8 +137,8 @@ HERO_BODY_DRAW.push(drawMarisUnder);
 
 // ---- UNDERTOW -----------------------------------------------------------------------
 // The water under the snow, never a ring and never a dotted line: through the
-// wind-up three wet seams open in the snow from her feet to the reach, wide at
-// her and thinning out, dark water with a pale thread in it; then the water
+// wind-up three seams of soaked snow spread from her feet to the reach, wide at
+// her and thinning out, a little darker than the ground and soft at the edge; then the water
 // breaks up through them as a whirl of three waves that sweep in toward her,
 // each a full-bodied crest thick at its middle, foam along the lip that leads,
 // which is the pull the blow is.
@@ -151,11 +151,9 @@ function drawUndertowTele(px, py, closing, now) {
       const a = k * Math.PI * 2 / TOW_ARMS + s / UNDERTOW_R * 1.6 + now * 0.5;
       const x = Math.round(px + Math.cos(a) * s), y = Math.round(py + 2 + Math.sin(a) * s);
       const w = s > len - 5 ? 1 : s < len * 0.45 ? 3 : 2; // wide at her, a point at its tip
-      if (!pass) { ctx.fillStyle = MA_SNOW_D; ctx.fillRect(x - 1, y - 1, w + 2, w + 2); } // the snow's wet lip, not an ink line
-      else {
-        ctx.fillStyle = MA_WATER; ctx.fillRect(x, y, w, w);
-        if (w > 1 && fxRoll(k, s | 0, 2) < 0.5) { ctx.fillStyle = MA_WATER_L; ctx.fillRect(x, y, 1, 1); }
-      }
+      // wet snow, never ink or navy (that is the waves' alone): a soft paler edge, the soaked snow inside it
+      if (!pass) { if (fxRoll(k, s | 0, 3) < 0.7) { ctx.fillStyle = MA_SNOW_M; ctx.fillRect(x - 1, y - 1, w + 2, w + 2); } }
+      else { ctx.fillStyle = fxRoll(k, s | 0, 2) < 0.25 ? MA_WET_D : MA_SNOW_D; ctx.fillRect(x, y, w, w); }
     }
   }
   ctx.globalAlpha = 1;
@@ -179,10 +177,9 @@ function drawUndertowFx(f, px, py, now) {
         ctx.fillStyle = q >= th - 1 && th > 2 ? (fxRoll(k, j >> 1, 5) < 0.75 ? MA_SNOW : MA_WATER_L) : q >= th - 3 && th > 3 ? MA_WATER_L : MA_WATER;
         ctx.fillRect(x, y, 2, 2);
       }
-      if (pass && th > 3 && fxRoll(k, j, 8) < 0.07) { // spray torn off the lip, flung on inward, no two alike
-        const d = 2 + fxRoll(k, j, 9) * 8, x = Math.round(px + ca * (r - th - d)), y = Math.round(py + 2 + sa * (r - th - d));
-        ctx.fillStyle = MA_INK; ctx.fillRect(x - 1, y - 1, 4, 3);
-        ctx.fillStyle = MA_SNOW; ctx.fillRect(x, y, 2, 1);
+      if (pass && th > 3 && fxRoll(k, j, 8) < 0.1) { // spray off the lip: pale flecks hugging it, no two alike
+        const d = 1 + fxRoll(k, j, 9) * 3, x = Math.round(px + ca * (r - th - d)), y = Math.round(py + 2 + sa * (r - th - d));
+        ctx.fillStyle = fxRoll(k, j, 10) < 0.6 ? MA_SNOW : MA_SNOW_M; ctx.fillRect(x, y, fxRoll(k, j, 11) < 0.4 ? 2 : 1, 1);
       }
     }
   }
