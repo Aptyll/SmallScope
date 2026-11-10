@@ -596,14 +596,19 @@ const RIVER_CRACK = rgbOf('#86b2cc'), RIVER_CRACK_LIT = rgbOf('#e6f4fa');
 const RIVER_CHANNEL_W = 0.42;              // share of the half-width the channel takes, either side of the middle
 const RIVER_STREAK_ROW = 2.5;              // px across between streak rows
 const RIVER_CRACK_EVERY = 7;               // tiles along the water between cracks, give or take
+const RIVER_CRACK_JAG = 0.8;               // tiles across the water per leg of a crack's zigzag
 function riverTone(x, y) {
   const fx = (x + 0.5) / TILE - 0.5, fy = (y + 0.5) / TILE - 0.5;
   creekAt(fx, fy);
   const a = CQ.a, n = CQ.n, hw = creekHW(a, n < 0 ? -1 : 1) || 1, t = Math.abs(n) / hw;
-  // a crack across: where the along-position, bent a little by a slow noise, crosses a crack's line
-  const ca = a + (vnoise(n * 0.35 + 4.1, a * 0.05) - 0.5) * 1.6, ci = Math.floor(ca / RIVER_CRACK_EVERY);
-  if (hash2(ci * 7 + 3, 91) < 0.7) {
-    const off = (ca - (ci + 0.5) * RIVER_CRACK_EVERY) * TILE; // px from the crack's line
+  // a crack across: each one its own line bank to bank, leaning by its hash
+  // and broken into jags (RIVER_CRACK_JAG tiles a leg), never ruler-straight
+  for (let ci = Math.floor(a / RIVER_CRACK_EVERY) - 1, c1 = ci + 2; ci <= c1; ci++) {
+    if (hash2(ci * 7 + 3, 91) >= 0.7) continue;
+    const lean = (hash2(ci * 11 + 5, 37) - 0.5) * 0.7, leg = n / RIVER_CRACK_JAG, k = Math.floor(leg), f = leg - k;
+    const jag = (q) => (hash2(ci * 13 + q * 7, 53) - 0.5) * 0.6;
+    const line = (ci + 0.5) * RIVER_CRACK_EVERY + lean * n + jag(k) + (jag(k + 1) - jag(k)) * f;
+    const off = (a - line) * TILE; // px from the crack's line, along the flow
     if (off >= 0 && off < 1) return RIVER_CRACK;
     if (off >= 1 && off < 2) return RIVER_CRACK_LIT;
   }

@@ -33,6 +33,17 @@ const JUNGLE_CLEARINGS = [ // [u, s, r]: an open disc: where it stands spread by
   [103.33, 28.33, 6], // the spine meets the warren's path
   [108.33, 63.33, 6], // the corner
 ].map(([u, s, r]) => [u * MAP_K, s * MAP_K, r]);
+// a landmark or two in each quarter, so a player can say where they are:
+// [u, s, kind], mirrored like the cuts. 'log' a felled trunk lying on the
+// river's bank, along the water (JUNGLE_LOG_LEN tiles along +s, the way the
+// practice field's lies), 'pine' one tall pine alone in the open
+const JUNGLE_MARKS = [
+  [110.8, 24, 'log'],      // the bank between the spine's mouth and the river mouth's
+  [108.33, 63.33, 'pine'], // the corner: a lone pine in the middle of the crossing
+].map(([u, s, kind]) => [u * MAP_K, s * MAP_K, kind]);
+const JUNGLE_LOG_LEN = 5; // tiles a junction's trunk lies along
+const JUNGLE_MARK_REACH = 4; // tiles a landmark may shift off its spot to find open snow
+const JUNGLE_MARK_BRUSH = 1.5; // tiles a trunk keeps off a brush patch's long axis
 const JUNGLE_RAG = 1.4;        // tiles a wall's edge wanders either way, on a slow noise: rounded bays and bulges, never a ragged pixel line
 const JUNGLE_RAG_FREQ = 1 / 5; // ...the noise's frequency, per tile
 const JUNGLE_ROAD_KEEP = 5;    // tiles off any road's edge nothing is planted: the lanes, their shoulders and the cables stay clear
@@ -106,6 +117,34 @@ function layJungle() {
     if (objects[i] || ground[i] !== 0 || open(tx, ty)) continue;
     if (baseAt(tx, ty, BASE_KEEP) >= 0 || cisternTouches(tx, ty)) continue;
     placeObj(tx, ty, 'tree', { hp: TREE_HP, rare: treeRare(tx, ty) });
+  }
+  jungleMarks();
+}
+// the junctions' landmarks (JUNGLE_MARKS), each on open snow or not at all
+function jungleMarks() {
+  // brush is laid later (layDrifts), so a trunk keeps off the patches' own discs
+  const drifts = [];
+  for (const [u, s, a] of BRUSH_PATCHES) for (const m of jungleMirror(u, s)) drifts.push([m[0], m[1], a + JUNGLE_MARK_BRUSH]);
+  const free = (tx, ty) => inWorld(tx, ty) && !objects[idx(tx, ty)] && ground[idx(tx, ty)] === 0
+    && drifts.every(([x, y, r]) => Math.hypot(tx + 0.5 - x, ty + 0.5 - y) >= r);
+  const tries = [];
+  for (let dy = -JUNGLE_MARK_REACH; dy <= JUNGLE_MARK_REACH; dy++) for (let dx = -JUNGLE_MARK_REACH; dx <= JUNGLE_MARK_REACH; dx++) tries.push([dx, dy]);
+  tries.sort((p, q) => Math.hypot(p[0], p[1]) - Math.hypot(q[0], q[1]) || p[1] - q[1] || p[0] - q[0]);
+  const h = JUNGLE_LOG_LEN >> 1, ks = [];
+  for (let k = -h; k <= h; k++) ks.push(k);
+  const fits = (kind, tx, ty) => kind === 'pine' ? free(tx, ty) : ks.every((k) => free(tx + k, ty + k));
+  for (const [u, s, kind] of JUNGLE_MARKS) {
+    // each copy takes the nearest spot that fits (a wall's ragged edge may stand on the drawn one);
+    // a mark that fits in only some copies stands in none, so the four quarters match
+    const at = jungleMirror(u, s).map(([x, y]) => {
+      for (const [dx, dy] of tries) if (fits(kind, Math.round(x) + dx, Math.round(y) + dy)) return [Math.round(x) + dx, Math.round(y) + dy];
+      return null;
+    });
+    if (at.includes(null)) continue;
+    for (const [tx, ty] of at) {
+      if (kind === 'pine') placeObj(tx, ty, 'tree', { hp: TREE_HP, rare: treeRare(tx, ty) });
+      else for (const k of ks) placeObj(tx + k, ty + k, 'log', { seg: k === -h ? 0 : k === h ? 2 : 1 });
+    }
   }
 }
 const JUNGLE_FELLS = { tree: true, stump: true, snag: true };
