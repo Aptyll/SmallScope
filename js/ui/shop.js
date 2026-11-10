@@ -143,8 +143,9 @@ const SHOP_PANE_X = 330;   // the right pane's left edge, from the slab's
 const SHOP_SELL_W = 52, SHOP_BTN_H = 16;   // the SELL plate, and both plates' height
 const SHOP_TREE_PITCH = 24, SHOP_TREE_ROW = 34; // the build tree: a leaf's pitch, a level's
 const SHOP_INTO_MAX = 7;   // BUILDS INTO wells shown (empty ones keep the row's shape)
-const SHOP_REC_ROW = 46;   // RECOMMENDED: a section's pitch, its headline, its wells and their prices
-const SHOP_PATH_PITCH = 27, SHOP_PATH_W = 152; // ...a path's wells (a chevron between), and the room one path and its rates take
+const SHOP_REC_WELL = 36, SHOP_REC_PITCH = 40; // RECOMMENDED: a few items, so each icon is drawn twice the grid's size
+const SHOP_REC_ROW = 56, SHOP_REC_RATES = 10; // ...a section's pitch (its headline, its wells, their prices), and the line of rates under the paths
+const SHOP_PATH_PITCH = 46, SHOP_PATH_W = 150; // ...a path's wells (a chevron between), and the room one path takes
 const SHOP_RIM = '#3c4048', SHOP_HOT = '#9ca1aa', SHOP_PICK = '#fff6c8';
 const SHOP_INK = '#e8eaee', SHOP_DIM = '#8a8f99', SHOP_FAINT_INK = '#5c616b', SHOP_STAT = '#7fd88a', SHOP_FAINT = '#24272d';
 const SHOP_PANE_BG = '#111216', SHOP_PLATE = '#2a2d33', SHOP_PLATE_HOT = '#3a3e46';
@@ -296,28 +297,32 @@ function shopLayout() {
   let tx = x + 8;
   for (const t of SHOP_TABS) { const w = pixelTextWidth(t.label) + 8; tabs.push({ id: t.id, x: tx - 4, y: y + 4, w, h: 14 }); tx += w + gap; }
   for (let i = 0; i <= ITEM_STAT_ORDER.length; i++) cats.push({ c: i - 1, x: x + 6, y: y + 25 + i * SHOP_CAT_PITCH, w: SHOP_CAT, h: SHOP_CAT });
-  const well = (id, wx, wy) => grid.push({ id, x: wx, y: wy, w: SHOP_WELL, h: SHOP_WELL });
+  const well = (id, wx, wy, w = SHOP_WELL) => grid.push({ id, x: wx, y: wy, w, h: w });
   if (state.shopTab === 'rec') {
+    // three sections of big wells: START with BOOTS beside it, the paths, THEN
     const { R, start } = shopRecommended();
-    const sy = (r) => y + 25 + r * SHOP_REC_ROW;
+    const sy = (r) => y + 25 + r * SHOP_REC_ROW + (r > 1 ? SHOP_REC_RATES : 0);
     const gw = PX - SHOP_GRID_X - 8; // the grid's width, past the stat bar to the pane
+    const B = SHOP_REC_WELL, fits = Math.floor((gw + SHOP_REC_PITCH - B) / SHOP_REC_PITCH); // the big wells a row holds
+    const big = (id, wx, r) => well(id, wx, sy(r) + 9, B);
     heads.push({ label: tr('shop.start'), x: gx, y: sy(0) });
+    start.slice(0, fits).forEach((id, i) => big(id, gx + i * SHOP_REC_PITCH, 0));
+    const bx = gx + Math.min(start.length, fits) * SHOP_REC_PITCH + 12, boots = R.boots.slice(0, Math.max(0, Math.floor((gx + gw - bx + SHOP_REC_PITCH - B) / SHOP_REC_PITCH)));
+    if (boots.length) heads.push({ label: tr('shop.boots'), x: bx, y: sy(0) });
+    boots.forEach((row, i) => big(row.ids[0], bx + i * SHOP_REC_PITCH, 0));
     const games = tr('shop.games', { n: R.games });
     heads.push({ label: games, x: gx + gw - pixelTextWidth(games), y: sy(0), dim: true });
-    start.forEach((id, i) => well(id, gx + i * SHOP_PITCH, sy(0) + 9));
     // the paths, side by side: three wells a step apart with a chevron
-    // between, and the pick and win rate beside them
+    // between, and the pick and win rate under their prices
     R.core.slice(0, Math.max(1, Math.floor((gw + 8) / SHOP_PATH_W))).forEach((row, k) => { // the paths that fit
       const px = gx + k * SHOP_PATH_W;
       heads.push({ label: tr(!R.data ? 'shop.core' : row.best ? 'shop.mostWins' : 'shop.mostPicked'), x: px, y: sy(1) });
-      row.ids.forEach((id, i) => well(id, px + i * SHOP_PATH_PITCH, sy(1) + 9));
-      if (row.pick !== undefined) rates.push({ x: px + row.ids.length * SHOP_PATH_PITCH + 2, y: sy(1) + 11, pick: row.pick, win: row.win });
-      for (let i = 1; i < row.ids.length; i++) arrows.push({ x: px + i * SHOP_PATH_PITCH - 5, y: sy(1) + 9 + (SHOP_WELL >> 1) });
+      row.ids.forEach((id, i) => big(id, px + i * SHOP_PATH_PITCH, 1));
+      if (row.pick !== undefined) rates.push({ x: px, y: sy(1) + 9 + B + 10, pick: row.pick, win: row.win });
+      for (let i = 1; i < row.ids.length; i++) arrows.push({ x: px + i * SHOP_PATH_PITCH - 7, y: sy(1) + 9 + (B >> 1) });
     });
-    heads.push({ label: tr('shop.boots'), x: gx, y: sy(2) });
-    R.boots.forEach((row, i) => well(row.ids[0], gx + i * SHOP_PITCH, sy(2) + 9));
-    heads.push({ label: tr(R.data ? 'shop.alsoBuilt' : 'shop.then'), x: gx, y: sy(3) });
-    R.more.forEach((id, i) => well(id, gx + i * SHOP_PITCH, sy(3) + 9));
+    heads.push({ label: tr(R.data ? 'shop.alsoBuilt' : 'shop.then'), x: gx, y: sy(2) });
+    R.more.slice(0, fits).forEach((id, i) => big(id, gx + i * SHOP_REC_PITCH, 2));
   } else {
     // the rows the grid holds; more than that (a narrow view's fewer columns)
     // and the wheel walks them, an arrow at each end that has more
@@ -528,14 +533,15 @@ function drawShopPanel(now) {
   drawShopPane(L, h);
 }
 
-// a path's numbers beside its wells: how many of the hero's games built it,
+// a path's numbers under its wells: how many of the hero's games built it,
 // and how many of those it won - a win rate over half in the stat green
 function drawShopRates(L) {
   for (const r of L.rates) {
     drawPixelText(ctx, tr('shop.pick'), r.x, r.y, SHOP_DIM);
     drawPixelText(ctx, r.pick + '%', r.x + 22, r.y, SHOP_INK);
-    drawPixelText(ctx, tr('shop.win'), r.x, r.y + 9, SHOP_DIM);
-    drawPixelText(ctx, r.win + '%', r.x + 22, r.y + 9, r.win > 50 ? SHOP_STAT : SHOP_INK);
+    const wx = r.x + 22 + pixelTextWidth(r.pick + '%') + 8, ww = pixelTextWidth(tr('shop.win')) + 3;
+    drawPixelText(ctx, tr('shop.win'), wx, r.y, SHOP_DIM);
+    drawPixelText(ctx, r.win + '%', wx + ww, r.y, r.win > 50 ? SHOP_STAT : SHOP_INK);
   }
   ctx.fillStyle = SHOP_DIM;
   for (const a of L.arrows) for (let k = 0; k < 3; k++) {
