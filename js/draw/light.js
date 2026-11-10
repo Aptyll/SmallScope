@@ -1057,6 +1057,7 @@ function renderLighting(ox, oy, now) {
   if (settings.vidStars) drawFrostGlint(ox, oy);
 
   litSnowdrops(now, dark);
+  litLamps(ox, oy, now, dark); // a tower's slits, a bay's door, the stall's lantern (js/draw/lamps.js)
   // ...and last, the readouts the grade was never allowed to touch
   flushWorldInk();
 }
