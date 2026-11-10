@@ -19,6 +19,7 @@ const FOOT_PAD = 4; // px round the round for its lip
 const FOOT_KERB = 3; // px a kerbed round's ring of blocks is wide...
 const FOOT_KERB_BLOCK = 9; // ...and px a block runs along it
 const FOOT_KERB_COL = { lit: '#c3beb4', mid: '#a49f95', shd: '#7d786f', joint: '#6b6459' };
+const FOOT_JOIN = 8; // px of snow between a kerb and the lane's paving that are paved over, so the two meet
 const footingCvs = new Map(); // a building's tile index -> its round
 function footingOf(o) {
   const key = idx(o.tx, o.ty);
@@ -67,11 +68,19 @@ function paintKerbRound(g, F, c, W, H) {
       const along = Math.atan2(dy / ay, dx / ax) * (ax + ay) / 2;
       const lit = -(dx / ax + dy / ay); // > 0 on the side facing the light
       if (Math.abs(((along % FOOT_KERB_BLOCK) + FOOT_KERB_BLOCK) % FOOT_KERB_BLOCK) < 1) col = FOOT_KERB_COL.joint;
-      else if (out < -FOOT_KERB + 1) col = FOOT_KERB_COL.joint; // its inner seam against the paving
+      else if (out < -FOOT_KERB + 1) col = lit < 0 ? FOOT_KERB_COL.lit : FOOT_KERB_COL.mid; // its inner face: raised, never a pit's rim
       else col = lit > 0.35 ? FOOT_KERB_COL.lit : lit < -0.35 ? FOOT_KERB_COL.shd : FOOT_KERB_COL.mid;
+    } else if (out < FOOT_JOIN && kerbMeetsLane(wx, wy, dx / (ax * ax), dy / (ay * ay), FOOT_JOIN - out)) {
+      col = roadStonePx(roadStoneAt(wx, wy, ROAD_FLAG, 0.8), ROAD_COL_DEEP); // a sliver of snow to the lane: paved over
     } else if (out < 1.5) col = (dx + dy) < 0 ? ROAD_COL_LIP : ROAD_COL_LIP_SHD; // the snow's lip over it
     if (col) { g.fillStyle = col; g.fillRect(x, y, 1, 1); }
   }
+}
+// does the lane's paving start within `reach` px straight out from the kerb (nx, ny: the way out)
+function kerbMeetsLane(wx, wy, nx, ny, reach) {
+  const n = Math.hypot(nx, ny);
+  for (let k = 1; k <= reach + 1; k++) if (roadPavedAt(Math.round(wx + nx / n * k), Math.round(wy + ny / n * k))) return true;
+  return false;
 }
 function drawFooting(o, ex, ey) {
   const F = FOOTINGS[o.type], f = F.at(o), rx = F.rx + FOOT_PAD, ry = F.ry + FOOT_PAD;

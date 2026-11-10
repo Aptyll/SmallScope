@@ -344,12 +344,11 @@ function roadMemoStone(map, f, x, y) {
 }
 // is the stone whose middle is (x, y) world px part of the path: its middle inside the edge
 function roadStoneIn(x, y) { return laneDist(x / TILE - 0.5, y / TILE - 0.5) < -0.12; }
-// is this world pixel paved: the path's last stones are laid whole (a stone
-// is in by its middle, roadStoneIn) but only inside a narrow band round the
-// lane's own line - a stone that would notch deeper than ROAD_EDGE_IN is laid
-// anyway and one that would stick out past ROAD_EDGE_OUT is cut on the line,
-// so the edge keeps a straight run a walker can read
-const ROAD_EDGE_IN = 0.3, ROAD_EDGE_OUT = 0.1; // tiles inside and outside the line the edge may wander
+// is this world pixel paved: the path's last stones are laid WHOLE, each in
+// by its middle (roadStoneIn), so the edge goes round a stone and never cuts
+// through one. No stone reaches ROAD_STONE_REACH tiles from the lane's line
+// (the farthest on the map is 0.875), so past it the side of the line answers
+const ROAD_STONE_REACH = 1;
 function roadPavedAt(wx, wy) {
   const m = roadMemoAt(wx, wy);
   if (m >= 0 && roadMemo.paved[m]) return roadMemo.paved[m] === 1;
@@ -359,8 +358,8 @@ function roadPavedAt(wx, wy) {
 }
 // ...for a caller that already holds the pixel's lane distance (and its stone, or null)
 function roadPavedBy(d, wx, wy, st) {
-  if (d < -ROAD_EDGE_IN) return true;
-  if (d >= ROAD_EDGE_OUT) return false;
+  if (d <= -ROAD_STONE_REACH) return true;
+  if (d >= ROAD_STONE_REACH) return false;
   if (!st) st = roadStoneAt(wx, wy, ROAD_FLAG, 0.8);
   return roadMemoStone(roadMemo.laid, roadStoneIn, st.x1, st.y1);
 }
