@@ -54,7 +54,7 @@ function drawAnimal(a, ex, ey, now) {
 // plate and bar together, on its body. `cx` is the body's centre, `mid` its
 // centre column, `fy` the row the frame stands on; drawAnimal's in the
 // world and the wiki's cards (ui/wiki.js) are the same pixels.
-const BEAST_BAR_W = { rabbit: 8, wolf: 11, deer: 23 }; // widths that split into even segments (hpSegCount)
+const BEAST_BAR_W = { rabbit: 8, wolf: 11, fox: 11, deer: 23, ox: 29 }; // widths that split into even segments (hpSegCount)
 function beastFrame(kind) { return (MONSTER[kind] && MONSTER[kind].frame) || { s: 1, w: BEAST_BAR_W[kind] || 17 }; }
 function drawBeastFrame(kind, cx, mid, fy, e, two, u, now) {
   const F = beastFrame(kind), k = F.s, camp = isCampKind(kind);

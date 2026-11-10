@@ -6,7 +6,7 @@
 // the camps' monsters (updateCampMonster), and go in this same array so
 // arrows, the draw list, the kill payouts and the cursor all treat them as
 // what they are: things you shoot.
-const ANIMAL_HP = { rabbit: 8, deer: 24, wolf: 30, alpha: 640, orca: 1800 };
+const ANIMAL_HP = { rabbit: 8, deer: 24, wolf: 30, fox: 26, ox: 240, alpha: 640, orca: 1800 };
 // Every animal wears a hero-style level: the table's average hero level
 // (animalLevel), never under a camp monster's MONSTER.lv. It is dealt at
 // spawn (makeAnimal) and follows the table after (relevelAnimal) while the
@@ -20,7 +20,7 @@ const ANIMAL_HP = { rabbit: 8, deer: 24, wolf: 30, alpha: 640, orca: 1800 };
 // a level-12 beast is worth a little over twice a level-1 one - about what
 // its hp grew by. Its XP (YIELD's `xp`, shared by the hunter's side standing
 // near: shareXp, js/sim/player.js) grows the same tenth a level.
-const ANIMAL_LV_HP = { rabbit: 1, deer: 2, wolf: 3, alpha: 50, orca: 120 };
+const ANIMAL_LV_HP = { rabbit: 1, deer: 2, wolf: 3, fox: 3, ox: 22, alpha: 50, orca: 120 };
 const ANIMAL_LV_GOLD = 0.1;
 const ANIMAL_LV_XP = 0.1;
 function animalLevel() {
@@ -40,7 +40,7 @@ function relevelAnimal(a) {
 }
 // what a hit knocks off a body: its own coat, so a puff says which beast
 // took the blow. Both prey are warm brown since the new sheets landed.
-const HIT_PUFF = { rabbit: '#9a6a45', deer: '#8f582f', wolf: '#6f778c', alpha: '#3b3b53', orca: '#2b3550' };
+const HIT_PUFF = { rabbit: '#9a6a45', deer: '#8f582f', wolf: '#6f778c', fox: '#cc5e26', ox: '#4c3830', alpha: '#3b3b53', orca: '#2b3550' };
 // Prey: how close a player gets before it bolts, how long it runs, and the two
 // speeds. A deer keeps the wider watch and the longer run; a rabbit sits tight
 // and then goes off like a spring. Both resolve the ring through seenAt, so
@@ -114,6 +114,8 @@ const ANIM_CLIPS = {
   rabbit: { idle: 6, rise: 8, hop: 14 },
   deer: { idle: 4, graze: 5, run: 16 },
   wolf: { idle: 0, run: 8 },
+  fox: { idle: 0, run: 9 },
+  ox: { idle: 0, run: 6 }, // the musk ox: four frames a stride, a heavy walk
   alpha: { idle: 5, walk: 8, run: 12, bite: 14, paw: 14, roar: 10, fish: 8 }, // the bear: patrols at a walk, charges at a gallop
   orca: { idle: 0, bite: 12, paw: 12, roar: 10 }, // the orca up in its hole: a lunge either way, and the breach it wakes with
 };
@@ -164,8 +166,9 @@ function makeAnimal(kind, x, y, fix) {
 // The stag stands twice a player's height (its 38 px cell, js/sprites/beasts.js),
 // and a bear is wider still (its 112x76 frame, js/baked/bears.js), so their
 // discs are wider and sit up on the flank.
-function animalHitR(a) { return isBigBeast(a) ? 28 : a.kind === 'deer' ? 12 : 8; }
-function animalHitY(a) { return a.y - (isBigBeast(a) ? 10 : a.kind === 'deer' ? 8 : 3); }
+// A camp monster drawn at its own size says so on its MONSTER row (`hit`: the disc's radius and its lift).
+function animalHitR(a) { const M = MONSTER[a.kind]; return M && M.hit ? M.hit[0] : isBigBeast(a) ? 28 : a.kind === 'deer' ? 12 : 8; }
+function animalHitY(a) { const M = MONSTER[a.kind]; return a.y - (M && M.hit ? M.hit[1] : isBigBeast(a) ? 10 : a.kind === 'deer' ? 8 : 3); }
 function animalHit(a, x, y) { return Math.hypot(a.x - x, animalHitY(a) - y) < animalHitR(a); }
 
 // One animal taking a hit, from an arrow or from a body rolled into it. Both
@@ -786,10 +789,11 @@ function animalDies(a) {
   } else if (a.kind === 'deer') {
     burst(a.x, a.y - 5, '#8f582f', 12, 50, 0.55);
     burst(a.x, a.y - 5, '#f2cc6a', 8, 45, 0.5);
-  } else if (a.kind === 'wolf') {
-    burst(a.x, a.y - 5, '#6f778c', 12, 50, 0.55);
-    burst(a.x, a.y - 5, '#cfd8e8', 8, 45, 0.5);
-    addFloater(a.x, a.y - 26, 'WOLF DOWN', '#f2cc6a');
+  } else if (MONSTER[a.kind] && MONSTER[a.kind].down) { // a pack beast or the ox: its own puff, and its name over it
+    const M = MONSTER[a.kind], up = M.box ? M.box[1] : 14;
+    burst(a.x, a.y - up * 0.4, HIT_PUFF[a.kind], 12, 50, 0.55);
+    burst(a.x, a.y - up * 0.4, '#cfd8e8', 8, 45, 0.5);
+    addFloater(a.x, a.y - up - 12, M.down, '#f2cc6a');
   } else if (isBigBeast(a)) {
     burst(a.x, a.y - 16, HIT_PUFF[a.kind], 20, 60, 0.7);
     burst(a.x, a.y - 16, '#ffb04a', 14, 55, 0.6);
@@ -852,7 +856,9 @@ const ORCA_LV = 12;
 const ORCA_SPOUT_R = 15 * TILE; // px the orca spouts at whoever it hunts past its lunge's reach: its pool and the shore round it (orcaSpout, js/sim/orca.js)
 const BEAR_FRAME = { s: 2, w: 24, segs: 5, centre: true };
 const MONSTER = {
-  wolf:  { bite: 9,  lvBite: 1, reach: 13, cd: 1,   spd: 96, r: 4.5, mass: 2,   big: false, cause: 'wolf' }, // the pack: faster than a walk, slower than a slide
+  wolf:  { bite: 9,  lvBite: 1, reach: 13, cd: 1,   spd: 96, r: 4.5, mass: 2,   big: false, cause: 'wolf', down: 'WOLF DOWN', box: [9, 14] }, // the pack: faster than a walk, slower than a slide
+  fox:   { bite: 7,  lvBite: 1, reach: 14, cd: 0.9, spd: 104, r: 5,  mass: 1.6, big: false, cause: 'fox', down: 'FOX DOWN', box: [13, 18], hit: [9, 5] }, // the fox hollow's three: lighter than a wolf, quicker to bite
+  ox:    { bite: 18, lvBite: 2, reach: 26, cd: 1.5, spd: 78,  r: 11, foot: 5, mass: 4, big: false, cause: 'ox', down: 'MUSK OX DOWN', box: [23, 32], hit: [18, 12], solid: true }, // the ox range's one: slow, heavy, a long fight for one hero
   alpha: { bite: 22, lvBite: 3, reach: 44, cd: 1.4, spd: 100, r: 18,  foot: 5, mass: 5,   big: true,  teamPay: true, feed: 'BLACK BEAR', buff: 'BLACK BUFF', buffCol: '#c2a6ff', anchor: true, cause: 'bear', lv: BEAR_LV, frame: BEAR_FRAME, stack: true }, // a midline camp's: a wall of hp, and a swipe that takes a quarter of you
   orca:  { bite: 34, lvBite: 4, reach: 80, cd: 1.8, spd: 0, r: 20, foot: 5, mass: 9, big: true, teamPay: true, feed: 'ORCA', buff: 'ORCA BUFF', buffCol: '#7fd4ff', anchor: true, cause: 'orca', lv: ORCA_LV, frame: BEAR_FRAME, still: true, hole: true, spout: ORCA_SPOUT_R, push: true }, // the late fight: up in its pool, a lunge across the ice and a spout at range
 };

@@ -61,6 +61,8 @@ const TEXT = {
   'recap.tower': 'TOWER',
   'recap.wave': 'WAVE',
   'recap.wolf': 'WOLF',
+  'recap.fox': 'FOX',
+  'recap.ox': 'MUSK OX',
   'recap.bear': 'BEAR',
   'recap.fire': 'FIRE',
   'recap.orca': 'ORCA',
