@@ -1829,17 +1829,17 @@ const FALCO_KNIFE = (() => {
 })();
 // HIS HAWK ON THE GLOVE (drawFalcoPerch, js/draw/falco.js): the falconer's one shape. A tan
 // gauntlet on the hand that does not hold the knife, raised beside him, and the hawk
-// perched on it while it is home: a small brown head, pale chest, one dark eye, a gold beak,
-// a tapered tail. Drawn
+// perched on it while it is home: a dark hooded head, a gold beak pointing out, a pale breast, a brown
+// wing behind and a tail that sticks back past its foot, so it is a bird and never a round lump. Drawn
 // looking right; FALCO_HAWK_FOOT is the pixel of its feet, which stand on the glove.
-const FALCO_HAWK = SPR.bake(['.oo..', 'obey.', 'oBWWo', 'oBbWo', '.oBo.', '..o..'],
-  { '.': null, o: '#2e2440', b: '#c09462', B: '#6e4a28', W: '#efe8d6', e: '#2e2440', y: '#f2cc6a' });
-const FALCO_HAWK_FOOT = [2, 5];
+const FALCO_HAWK = SPR.bake(['..oo...', '.oDDo..', '.oDDy..', '.oBWWo.', 'oBBWWo.', 'oBoyo..', '.o.....'],
+  { '.': null, o: '#2e2440', D: '#5e3c22', B: '#a8794a', W: '#f4eede', y: '#f2cc6a' });
+const FALCO_HAWK_FOOT = [3, 5];
 const FALCO_GLOVE = '#c8a46a';
 const FALCO_GLOVE_D = '#96743e';
 // ...and the knife, the hawk and the glove at 32 px (dens 2) for his fine body (falcoArt, js/draw/falco.js):
 // drawn on twice the px, never doubled; the grips and the hawk's foot stay the 16 px ones, in world px.
-// The blade is lit on one edge and shaded on the other; the hawk has a hooked beak, a speckled chest and
+// The blade is lit on one edge and shaded on the other; the hawk has a dark hood, a hooked beak, a speckled chest and
 // a foot on the glove; the glove is a tan gauntlet, darker under.
 const FALCO_FINE_ART = (() => {
   const pal = { '.': null, o: '#241a12', W: '#ffffff', E: '#aab4c8', G: '#a3794f', g: '#6b4a30', y: '#f2cc6a' };
@@ -1854,8 +1854,8 @@ const FALCO_FINE_ART = (() => {
         up: k(['..o...', '.oWo..', '.oWEo.', '.oWEo.', '.oWEo.', '.oWEo.', '.oWEo.', '.oWEo.', '.oWEo.', '.oWEo.', '.oWEo.', 'oyyyyo', '.oGGo.', '.oGgo.', '.oGGo.', '.oGGo.', '..oo..', '......'], [1, 6]),
       };
     })(),
-    hawk: tag(SPR.bake(['..oooo....', '.obbbbo...', 'obbbebyy..', 'oBbbbbyo..', 'oBBbWWWo..', 'oBBbWWWWo.', 'oBBBbWwWo.', 'oBBBbWWwo.', '.oBBBbWo..', '..oBBbyo..', '...oBBo...', '....oo....'],
-      { '.': null, o: '#2e2440', b: '#c09462', B: '#6e4a28', W: '#f6f0e2', w: '#e0d4b8', e: '#2e2440', y: '#f2cc6a' })),
+    hawk: tag(SPR.bake(['....oooo......', '...oDDDDo.....', '..oDDDeDyy....', '..oDDDDDyo....', '..oBBbWWWo....', '..oBBbWWWWo...', '..oBBBbWwWo...', '..oBBBbWWwo...', '...oBBBbWo....', '....oBBbyo....', '.....oBBo.....', '......oo......'],
+      { '.': null, o: '#2e2440', D: '#5e3c22', b: '#c09462', B: '#8a5c34', W: '#f6f0e2', w: '#e0d4b8', e: '#2e2440', y: '#f2cc6a' })), // the hooded head of the 16 px hawk; padded to its seven world px so the foot is the same
     glove: tag(SPR.bake(['..oooooo..', '.oGGGGGGo.', 'oGGGGGGGGo', 'oGGGGGGGgo', 'oGGGGGGggo', 'oggggggggo', '.oggggggo.', '..oooooo..'],
       { '.': null, o: '#2e2440', G: '#a8844e', g: '#80623a' })),
   };

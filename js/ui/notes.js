@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['FALCO\'s hawk has a dark hood, a pale breast and a tail', '0.886'],
     ['Lignum fells a whole snowy pine with TIMBER: boughs, a pine shadow as it tips, and snow thrown up where it lands', '0.885'],
     ['ARCUS\'s bow has a pale string and lighter wood', '0.884'],
     ['LUCERNA crook winds up as lamplight on the snow, MARIS harpoon as a thick cord, ARCUS volley as soft fading paths', '0.883'],
