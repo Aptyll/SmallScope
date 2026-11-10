@@ -205,6 +205,26 @@ function fxMote(x, y, core, glow) {
   ctx.fillStyle = glow; ctx.fillRect(x - 1, y, 3, 1); ctx.fillRect(x, y - 1, 1, 3);
   ctx.fillStyle = core; ctx.fillRect(x, y, 1, 1);
 }
+// A shot's tail behind its head at (sx, sy) flying along (nx, ny): one unbroken streak
+// `len` px long, two px thick for its near third in `near`, thinning to one in `far`.
+// Colours are hue shades, never white, so it holds on snow.
+function fxTail(sx, sy, nx, ny, len, near, far) {
+  for (let s = len; s >= 2; s--) {
+    const x = Math.round(sx - nx * s), y = Math.round(sy - ny * s), fat = s * 3 <= len + 2;
+    ctx.fillStyle = s * 2 <= len ? near : far;
+    ctx.fillRect(x - (fat ? 1 : 0), y - (fat ? 1 : 0), fat ? 2 : 1, fat ? 2 : 1);
+  }
+}
+// The dark under a small shot's head, a plus `r` px out (no corners), so a pale head holds on snow
+function fxHeadInk(x, y, r, ink) {
+  ctx.fillStyle = ink; ctx.fillRect(x - r + 1, y - r, 2 * r - 1, 2 * r + 1); ctx.fillRect(x - r, y - r + 1, 2 * r + 1, 2 * r - 1);
+}
+// A small shape of lit pixels `pts` ([dx, dy] off (x, y)) in `col`, each on its own dark
+// (`ink`, one px up, down and to each side), so the shape keeps its outline on snow instead of sitting in a box
+function fxInked(pts, x, y, ink, col) {
+  ctx.fillStyle = ink; for (const q of pts) { ctx.fillRect(x + q[0] - 1, y + q[1], 3, 1); ctx.fillRect(x + q[0], y + q[1] - 1, 1, 3); }
+  ctx.fillStyle = col; for (const q of pts) ctx.fillRect(x + q[0], y + q[1], 1, 1);
+}
 // A flat patch of colour `r` px round (px, py), squashed top to bottom by `sq`, with a
 // ragged edge: each row stops up to `rag` px short by its own roll, so it lies on the
 // snow as a sheet or a stain and never reads as a drawn circle

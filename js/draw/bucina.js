@@ -8,13 +8,19 @@
 const BU_INK = '#2e2440', BU_BRASS = '#f2cc6a', BU_BRASS_D = '#b98a2e', BU_PALE = '#fff1b8', BU_SOUND = '#cfe0f2';
 
 // ---- shots -----------------------------------------------------------------------
-// her horn's NOTE: a bright point with two small arcs of sound behind it
+// her horn's NOTE: no ball at all, three bowed fronts of sound flying wide end first, each smaller than the one ahead
 function drawHornNote(a, sx, sy, now) {
-  const nx = Math.cos(a.ang), ny = Math.sin(a.ang), x = Math.round(sx), y = Math.round(sy);
-  ctx.fillStyle = BU_SOUND;
-  for (const back of [3, 5]) for (const s of [-1, 1]) ctx.fillRect(Math.round(sx - nx * back - ny * s * (back - 1)), Math.round(sy - ny * back + nx * s * (back - 1)), 1, 1);
-  ctx.fillStyle = BU_INK; ctx.fillRect(x - 1, y - 1, 3, 3);
-  ctx.fillStyle = Math.sin(now * 20 + a.ox) > 0 ? '#ffffff' : BU_BRASS; ctx.fillRect(x, y, 1, 1);
+  const nx = Math.cos(a.ang), ny = Math.sin(a.ang), beat = Math.floor(now * 12 + a.ox) % 2;
+  for (const [back, half, col] of [[7 + beat, 1, BU_BRASS_D], [4, 2, BU_BRASS], [0, 3, BU_BRASS]]) {
+    for (const [off, c] of [[1, BU_INK], [0, col]]) { // each front on its own dark, behind it
+      ctx.fillStyle = c;
+      for (let t = -half; t <= half; t++) {
+        const d = back + off + t * t * 0.35; // bowed: the ends trail
+        ctx.fillRect(Math.round(sx - nx * d - ny * t), Math.round(sy - ny * d + nx * t), 1, 1);
+      }
+    }
+  }
+  ctx.fillStyle = BU_PALE; ctx.fillRect(Math.round(sx), Math.round(sy), 1, 1); // the front's lit middle
 }
 HERO_SHOTS.hornnote = drawHornNote;
 

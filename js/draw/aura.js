@@ -9,17 +9,14 @@
 const AU_INK = '#0a0e23', AU_STAR = '#fff3b0', AU_WHITE = '#ffffff', AU_PALE = '#e6f8ff', AU_GREEN = '#86f0bf', AU_TEAL = '#2fae7c';
 
 // ---- shots -----------------------------------------------------------------------
-// her staff's STAR BOLT: a pale point with a short cooling tail
+// her staff's STAR BOLT: a four-point star that twinkles (long arms, then short), a blue streak behind it
+const AU_STAR_ARMS = [4, 2].map((n) => { const o = [[0, 0]]; for (let d = 1; d <= n; d++) o.push([d, 0], [-d, 0], [0, d], [0, -d]); return o; });
 function drawStarBolt(a, sx, sy, now) {
-  const nx = Math.cos(a.ang), ny = Math.sin(a.ang);
-  const x = Math.round(sx), y = Math.round(sy);
-  ctx.fillStyle = '#7cc4e8';
-  ctx.fillRect(Math.round(sx - nx * 5), Math.round(sy - ny * 5), 1, 1);
-  ctx.fillStyle = AU_PALE;
-  ctx.fillRect(Math.round(sx - nx * 3), Math.round(sy - ny * 3), 1, 1);
-  ctx.fillStyle = AU_INK; ctx.fillRect(x - 1, y - 1, 3, 3);
-  ctx.fillStyle = Math.sin(now * 22 + a.ox) > 0 ? AU_WHITE : AU_STAR;
-  ctx.fillRect(x, y - 1, 1, 3); ctx.fillRect(x - 1, y, 3, 1);
+  const nx = Math.cos(a.ang), ny = Math.sin(a.ang), x = Math.round(sx), y = Math.round(sy);
+  fxTail(sx, sy, nx, ny, 7, '#7cc4e8', '#4f8fc8');
+  fxInked(AU_STAR_ARMS[Math.sin(now * 22 + a.ox) > 0 ? 0 : 1], x, y, AU_INK, '#ffd76a');
+  ctx.fillStyle = AU_STAR; ctx.fillRect(x, y - 1, 1, 3); ctx.fillRect(x - 1, y, 3, 1);
+  ctx.fillStyle = AU_WHITE; ctx.fillRect(x, y, 1, 1);
 }
 HERO_SHOTS.starbolt = drawStarBolt;
 
