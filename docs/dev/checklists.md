@@ -99,7 +99,7 @@ declare victory. The affordances:
     `npm start -- --seed=42 --shot=out.png --wait=4 --quit` boots the game from disk headlessly
     and captures it.
 - **The counter needs a merchant, and a merchant needs a roost**: `startGame()`, step until
-  `DBG.merchants.length` is 2 and the mode is `play`, step out the `state.dropBrief`, `hopOff()`,
+  `DBG.merchants.length` is 2, the mode is `play` and the crew has leapt off,
   then `warp` beside `DBG.merchants[i]` — it is a working NPC and wanders off its post, so re-warp
   before each check unless a counter is open (an open counter pins it: `shopServing`). `DBG.openShop()`,
   `shopHit(x, y)`, `buyItem(id, p?)`/`sellItem(slot, p?)`
@@ -132,8 +132,7 @@ declare victory. The affordances:
   CONTROLS page (listing-local; add `SET_X` and the content window's top less the scroll).
   [Keyboard and mouse](multiplayer.md#keyboard-and-mouse) lists what each key and button does.
 - **`localStorage.removeItem('softfall.profile')`** re-stages a first launch: a fresh profile
-  boots on the title with a pre-rolled name, and its `dropped` flag comes back false, so the next
-  ride runs the scripted first flight and its [drop brief](rendering/eagle-drop-mode-drop.md).
+  boots on the title with a pre-rolled name.
   A v2 save (`{ v: 2, active, chars: [{ name, cls, stats }..] }` written before a reload) stages
   the fold into one profile. `DBG.PROFILE` is the store; `DBG.beginProfile()` opens the profile
   card, driven by `profileHit`, `profileKey`, `profileCommit`/`leaveProfile` and read back
@@ -567,7 +566,7 @@ Code that is dead **on purpose** is the next section.
   (`docs/media/github-title.png`), the Steam, Discord, YouTube and X links and the license line; the store
   copy lives on Steam. The repo's **Social
   preview** is set by hand in GitHub settings to `github-preview.png` (1280×640, under 1 MB). A
-  still is staged through `DBG`: `PROFILE.markDropped()`, `beginDrop()`, `hideUI`, `step` to
+  still is staged through `DBG`: `beginDrop()`, `hideUI`, `step` to
   `e.t ≈ dur/2` for the pass, `freeze`, `POST /shot?f=`.
 
 - **A record put back counts its lifetime stats again.** The profile's stats

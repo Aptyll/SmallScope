@@ -91,7 +91,6 @@
       hero: '',        // the hero last locked in, by name ('' none): where the pick opens next time
       pos: -1,         // the position this profile asks for in the draft (a POSITIONS index, js/sim/player.js), -1 any
       loadouts: {},    // hero name -> its pre-game picks as "trick,trick,calling" (js/sim/loadout.js); a hero never picked has none
-      dropped: false,  // has this profile ever jumped off the eagle - gates the first-flight countdown
       bestLap: 0,      // the ice parkour's all-time best lap in seconds (0 = never lapped)
       bestRange: 0,    // the archery range's all-time best round score (0 = never played)
       bestRounds: {},  // ...and the bell's other rounds' (AG_ROUNDS, js/sim/practice.js), by round id - these three are all practice writes
@@ -171,7 +170,6 @@
       const s = read();
       profile = blank();
       if (s && typeof s === 'object') {
-        profile.dropped = !!s.dropped;
         if (typeof s.bestLap === 'number' && isFinite(s.bestLap) && s.bestLap > 0) profile.bestLap = s.bestLap;
         if (typeof s.bestRange === 'number' && isFinite(s.bestRange) && s.bestRange > 0) profile.bestRange = Math.floor(s.bestRange);
         if (s.bestRounds && typeof s.bestRounds === 'object') {
@@ -281,12 +279,6 @@
       profile.pos = i;
       saveNow();
     },
-
-    // ---- first flight -------------------------------------------------------
-    // whether this profile has ever left the eagle: false means the next ride
-    // runs the PREPARE TO DROP countdown and jumps itself (js/sim/eagle.js)
-    hasDropped() { return !!profile.dropped; },
-    markDropped() { if (!profile.dropped) { profile.dropped = true; saveNow(); } },
 
     // the ice parkour's all-time best lap - one of the two things the arena
     // itself writes back (updatePractice, js/sim/practice.js). Stored at the plate's

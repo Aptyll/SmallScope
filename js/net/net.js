@@ -519,9 +519,7 @@ function netClientStep(dt) {
 // runs, so a client reads the same facts off its own body as the snapshots
 // move it: earned is the match's gold earned (gainGold), kills only climbs, a
 // death is dead's rising edge, the match starts at takeoff
-// (beginDrop's two, which a client never calls) and the hop off the bird is
-// aboard's falling edge (hopOff's markDropped - the hop's cue itself
-// arrives as sfxFor's event). A redial
+// (beginDrop's two, which a client never calls). A redial
 // keeps the baseline, so what was earned while the socket was down still counts.
 function netClientStats() {
   const me = player;
@@ -532,9 +530,8 @@ function netClientStats() {
     if (me.earned > w.earned) PROFILE.addGold(me.earned - w.earned);
     for (let k = w.kills; k < me.kills; k++) PROFILE.addKill();
     if (me.dead && !w.dead) PROFILE.addDeath();
-    if (w.aboard && !me.aboard) PROFILE.markDropped();
   }
-  NET.was = { p: me, earned: me.earned, kills: me.kills, dead: me.dead, aboard: me.aboard };
+  NET.was = { p: me, earned: me.earned, kills: me.kills, dead: me.dead };
 }
 function netClientHello() {
   NET.transport.send('host', { t: 'hello', uid: NET.uid, patch: PATCH_TXT, seed: SEED, name: PROFILE.name(), cls: profileHero(), skins: profileHeroSkins(), load: loadoutStr(loadoutClean(PROFILE.loadout(CLASSES[profileHero()].name), profileHero(), PROFILE.pos())), rank: PROFILE.rank(), pos: PROFILE.pos(),
@@ -694,9 +691,10 @@ function netClientMode() {
     return;
   }
   if (state.over === 'won' || state.over === 'lost') return;
-  // seated on a bird that has come down: play begins on the roost, as the
-  // host's landAboard does, so the hop keys reach the host (no brief here)
-  if (me.aboard && state.drop.eagles[me.team].state === 'down') {
+  // seated on a bird that has come down, or leaping off it: play begins on
+  // the roost, as the host's landAboard does - the leap is the landing's,
+  // never a return to the ride
+  if ((me.aboard || me.dropT > 0) && state.drop.eagles[me.team].state === 'down') {
     if (state.mode === 'drop') { handOver(me); SFX.music.play('jump', { out: 0.1, in: 0.05 }); }
     return;
   }

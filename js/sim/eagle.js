@@ -1,20 +1,20 @@
 'use strict';
 // The eagle drop that opens every match, and the eagles themselves: the
-// route, the ride, the landing, the hop off, and the bird each side guards.
+// route, the ride, the landing, the crew's leap, and the bird each side guards.
 // The pixels - the birds, the riders, the trail, the roost's bar, the ride's
-// HUD and the brief's headline - are js/draw/eagle.js.
+// HUD and the landing's headline - are js/draw/eagle.js.
 // ------------------------------------------------------------ eagle drop
 // Nobody spawns in a camp: after PLAY's count each TEAM rides its own armoured
 // eagle in over its OWN corner - RED's bottom-left, BLUE's top-right, every
 // match and every seed - a short glide down the road's diagonal from the
 // corner and a stoop into the trees at its base's PERCH (mode 'drop': the
-// bases, js/sim/base.js). Everybody rides the landing: the bird dives with
-// the whole side on its back, the crash hands the mode over (landAboard), and
-// each rider hops off at the perch - a bot on its own beat after the wings
-// fold, a human with E (or the roll button, or simply walking:
-// hopOff, under the HOP OFF indicator drawHopPrompt raises). A profile's first ride sits through the
-// drop brief before the hop - both roosts toured with you still seated - and
-// never again once it has hopped off.
+// bases, js/sim/base.js). Every match opens the same way, as ONE UNBROKEN
+// SHOT of your side's arrival: high over the clouds, the camera leaning on
+// toward your roost, the stoop with the camera diving in to your own zoom
+// (dropCamAim / dropStoopZoom), the crash - and the whole crew leaps off the
+// wings together, CREW_HOP_T after it, fanning out over the pad (hopOff), so
+// your control starts the moment your boots touch. No hop key, no tour: the
+// one word on it is PROTECT YOUR EAGLE over your roost (drawDropHeadline).
 // state.drop outlives mode 'drop' - and the whole match: the bird blows a
 // crater at the perch, its MERCHANT (the driver on its neck - the `merchant`
 // banner, js/sim/robots.js) hops off to fell its back woods and raise the bot
@@ -26,25 +26,18 @@
 const EAGLE_FLIGHT_T = 2.5; // s the glide in takes (speed derives from the line's length)
 const EAGLE_FROM_U = 3;     // u from its own corner the line starts: at the corner, every wing seat still on the map
 const EAGLE_STOOP_U = 9;    // u short of the perch the line ends and the stoop onto it begins
-const BOT_HOP_T = 0.8;      // s after the crash the first bot hops off the grounded bird...
-const BOT_HOP_GAP = 0.3;    // ...and the gap to the next, by seat
-const HOP_FALL_T = 0.7;     // s the hop off a GROUNDED bird takes (a step down, not a free fall)...
+const CREW_HOP_T = 0.25;    // s after the crash the whole crew leaps off the grounded bird, together
+const HOP_FALL_T = 0.7;     // s the leap takes (a step down, not a free fall)...
 const HOP_ALT = 16;         // ...from this many px up
-const HOP_GAP = 6;          // px kept clear between the HOP OFF key and your name tag under it
-// the DROP BRIEF: a profile's first ride sits through a camera tour before
-// the hop: a beat on the crash you are sitting in, then across the map to
-// the RIVAL roost with the win condition, then home to finish on YOUR OWN
-// roost with the lose condition - the last thing said is where you are - and
-// the E - HOP OFF indicator takes over. Once a profile has hopped off a bird
-// (PROFILE.markDropped) the brief never runs again.
-const BRIEF_WAIT = 1;       // s the camera stays on the crash before it leaves
-const BRIEF_HOLD = 3;       // s it holds on the rival roost
-const BRIEF_HOLD_OURS = 4;  // s it holds on your own to finish
-const BRIEF_GO_MIN = 1;     // s a glide leg lasts at least, however close the target
-const BRIEF_MAX_T = 24;     // s the whole tour may run before it force-ends (safety)
-const BRIEF_TEXT = 4;        // the headline's scale, times the drop HUD's text scale (drawDropBrief)
-const BRIEF_RIM = 2;         // px of dark rim round it: the roost is pines edge to edge, and no plate
-const BRIEF_Y = 0.72;        // where its top sits, as a share of the view's height: under the bird
+const HOP_SPREAD = 60;      // px/s each leaper fans out from the bird's centre, unless steering
+// the landing's headline, the once the win condition is written down: PROTECT
+// YOUR EAGLE over your own roost, every match, while the wings settle
+// (drawDropHeadline reads the bird's own restT, so every screen shows it alike)
+const HEADLINE_IN = 0.4;     // s after the crash it comes up...
+const HEADLINE_HOLD = 2.6;   // ...and how long it holds
+const HEADLINE_TEXT = 4;     // its scale, times the drop HUD's text scale
+const HEADLINE_RIM = 2;      // px of dark rim round it: the roost is pines edge to edge, and no plate
+const HEADLINE_Y = 0.64;     // where its top sits, as a share of the view's height: under you, clear of the roost's bar and the HUD
 // the WIND TRAIL: the air the bird tears in level flight - ONE continuous
 // ribbon off each wingtip, laid along the flown line where the tip actually
 // was and fading out toward its tail (drawEagleTrail - pure reads of the
@@ -158,6 +151,38 @@ function eagleScale(e) {
   if (e.state === 'dive') { const u = Math.min(1, e.diveT / EAGLE_DIVE_T); return EAGLE_SCALE - (EAGLE_SCALE - EAGLE_REST_SCALE) * u * u; }
   return EAGLE_REST_SCALE;
 }
+// THE ARRIVAL'S CAMERA - one unbroken shot from the sky to your boots, read
+// by the drop branch of the camera and applyZoom (js/sim/sim.js). Local: it
+// moves this screen's view, never the match.
+// how far your own bird's stoop has come, eased: 0 in level flight, 1 at the impact
+function dropStoopU() {
+  const e = state.drop && state.drop.eagles[player.team];
+  return e && e.state === 'dive' ? easeInOut(Math.min(1, e.diveT / EAGLE_DIVE_T)) : 0;
+}
+// the zoom: the ride's wide framing walks in to your own zoom as your bird
+// comes down, so the landing is never a cut. It eases the bird's SIZE ON
+// SCREEN (zoom x eagleScale) from the ride's to the roost's, so the bird only
+// ever grows as it nears - the stoop's own shrink from 3x to 2x is paid for
+// by the zoom. `play` is the zoom the landing hands over to.
+function dropStoopZoom(play) {
+  const e = state.drop && state.drop.eagles[player.team];
+  if (!e || e.state !== 'dive') return DROP_ZOOM;
+  const u = dropStoopU();
+  return (DROP_ZOOM * EAGLE_SCALE + (play * EAGLE_REST_SCALE - DROP_ZOOM * EAGLE_SCALE) * u) / eagleScale(e);
+}
+// ...and the aim: your seat, leaning DROP_CAM_LEAD of the way on toward the
+// roost the bird is bound for, so the base waiting down the road is in the
+// shot. The lean grows in with the opening's pull-out and is gone by the
+// impact, where the frame is your seat exactly - the one handOver takes.
+const DROP_CAM_LEAD = 0.4;
+function dropCamAim() {
+  const e = state.drop.eagles[player.team];
+  if (!dropFlies(e) || e.state === 'flee') return { x: player.x, y: player.y };
+  const c = findCrashPoint(e);
+  const open = state.intro > 0 ? easeInOut(1 - state.intro / state.introLen) : 1;
+  const k = DROP_CAM_LEAD * open * (1 - dropStoopU());
+  return { x: player.x + (c.x - player.x) * k, y: player.y + (c.y - player.y) * k };
+}
 // how big a body on the bird draws: the bird's own perspective, 1x at rest
 function riderScale(e) { return eagleScale(e) / EAGLE_REST_SCALE; }
 // which way a rider on the bird faces: the heading's dominant axis, so a
@@ -179,8 +204,7 @@ function seatPos(e, si) {
 
 function beginDrop() {
   PROFILE.addMatch(); // the profile's matches: one per takeoff
-  // a profile's first ride sits through the drop brief before its hop
-  state.drop = { eagles: makeEagles(), firstFlight: !PROFILE.hasDropped() };
+  state.drop = { eagles: makeEagles() };
   onevoneBegin(); // a 1V1 party's rules into the match (js/sim/onevone.js)
   const seats = [0, 0]; // next free wing seat per team, dealt in slot order - the first slot of each side sits at seat 0
   for (const p of players) {
@@ -233,11 +257,11 @@ function landPlayer(p) {
   // then go: the light of the drop belongs to the drop (RAY_AFTER, draw-world.js)
   if (p === player) state.rayT = RAY_AFTER;
   burst(p.x, p.y - 2, '#f4f7ff', 16, 70, 0.5, true);
+  // the whole crew lands on one beat: a LANDED tag over each was four tags
+  // stacked on the roost, so only your own boots answer it
   if (p === player) {
     state.shake = 5;
     SFX.land();
-  } else {
-    addFloater(p.x, p.y - 20, p.name + ' LANDED', TEAMS[skin(p.team)].mark);
   }
 }
 
@@ -255,26 +279,23 @@ function handOver(p) {
 }
 
 // the crash with the local player aboard: the ride's song is interrupted by
-// the impact, play begins with you seated on the roost, and a first ride's
-// brief opens - the E hop comes after it (updateDrop)
+// the impact and play begins, still seated for the beat before the crew
+// leaps (updateDrop)
 function landAboard(p) {
   handOver(p);
   state.shake = 9;
   state.rayT = RAY_AFTER;
   SFX.music.play('jump', { out: 0.1, in: 0.05 });
-  if (state.drop.firstFlight) state.dropBrief = { ph: 'wait', t: 0, total: 0 };
 }
 
-// off the grounded bird: a step down off the wing - short, low, steerable
-// like any fall - and the drop brief never comes back after it. The local
-// player waits out its own brief first.
+// off the grounded bird: a leap down off the wing - short, low, fanning out
+// from the bird and steerable like any fall (updateDrop)
 function hopOff(p) {
-  if (!p.aboard || !state.drop || (p === player && state.dropBrief)) return;
+  if (!p.aboard || !state.drop) return;
   const e = state.drop.eagles[p.team];
   if (e.state !== 'down') return;
   p.aboard = false;
   p.dropT = HOP_FALL_T; p.dropAlt = HOP_ALT; p.dropSc = 1;
-  if (p === player) PROFILE.markDropped();
   sfxFor(p, 'dodge');
 }
 
@@ -289,49 +310,25 @@ function updateDrop(dt) {
     }
   }
   for (const e of state.drop.eagles) updateEagle(e, dt);
-  // the drop brief: the roost tour a forced landing opened on. The match runs
-  // on underneath - only the local camera and controls are spoken for
-  // (sampleHumanInput zeroes them, the camera branch in js/sim/sim.js follows
-  // dropBriefTarget) - and the landing grace holds until the hand-back, so
-  // nobody dies watching the lesson. Each glide leg ends when the camera has
-  // arrived AND the bird it is looking at is down (a first flight catches the
-  // dive mid-air; a veteran dropped at the window's end finds it landed).
-  const brief = state.dropBrief;
-  if (brief) {
-    if (state.mode !== 'play' || state.eagleCine) endBrief(); // the ceremony (or a death) outranks the lesson
-    else {
-      brief.t += dt; brief.total += dt;
-      player.invuln = Math.max(player.invuln, 0.4);
-      const tgt = dropBriefTarget();
-      const near = Math.hypot(tgt.x - WV_W / 2 - camX, tgt.y - WV_H / 2 - camY) < 24;
-      const birdDown = (t) => { const e = state.drop.eagles[t]; return e.state !== 'fly' && e.state !== 'dive'; };
-      const step = (ph) => { brief.ph = ph; brief.t = 0; };
-      if (brief.total > BRIEF_MAX_T) endBrief();
-      else if (brief.ph === 'wait') { if (brief.t > BRIEF_WAIT) step('theirs-go'); }
-      else if (brief.ph === 'theirs-go') { if (near && brief.t > BRIEF_GO_MIN && birdDown(1 - player.team)) step('theirs'); }
-      else if (brief.ph === 'theirs') { if (brief.t > BRIEF_HOLD) step('ours-go'); }
-      else if (brief.ph === 'ours-go') { if (near && brief.t > BRIEF_GO_MIN && birdDown(player.team)) step('ours'); }
-      else if (brief.t > BRIEF_HOLD_OURS) endBrief(); // 'ours': the finish, on the roost you are sitting on
-    }
-  }
   for (const p of players) {
     if (!p.active) continue;
     if (p.aboard) {
       const e = state.drop.eagles[p.team];
       const sp = seatPos(e, p.seat);
       p.x = sp.x; p.y = sp.y;
-      if (e.state !== 'down') { /* still riding in */ }
-      else if (!isHuman(p)) { if (e.restT >= BOT_HOP_T + p.seat * BOT_HOP_GAP) hopOff(p); } // the bots step off one by one once the wings fold
-      else if ((p !== player || state.mode === 'play') && (p.input.work || p.input.dodge || p.input.mx || p.input.my)) hopOff(p); // E, the roll button or simply walking: off the roost
+      if (e.state === 'down' && e.restT >= CREW_HOP_T) hopOff(p); // the whole crew at once, humans and bots alike
       p.input.dodge = false; // a seated roll is spent here, never carried into the landing
     } else if (p.dropT > 0) {
       p.dropT -= dt;
-      // steer the fall: the input axis drifts the landing point
-      const dm = Math.hypot(p.input.mx, p.input.my);
-      if (dm > 0) {
-        p.x = Math.max(TILE, Math.min(WORLD * TILE - TILE, p.x + p.input.mx / dm * DRIFT_SPD * dt));
-        p.y = Math.max(TILE, Math.min(WORLD * TILE - TILE, p.y + p.input.my / dm * DRIFT_SPD * dt));
-      }
+      // steer the fall: the input axis drifts the landing point; left
+      // alone, the leap fans out from the bird's centre, so the crew lands
+      // round the roost instead of on its back
+      const dm = Math.hypot(p.input.mx, p.input.my), e = state.drop.eagles[p.team];
+      const ox = p.x - e.x, oy = p.y - e.y, ol = Math.hypot(ox, oy) || 1;
+      const vx = dm > 0 ? p.input.mx / dm * DRIFT_SPD : ox / ol * HOP_SPREAD;
+      const vy = dm > 0 ? p.input.my / dm * DRIFT_SPD : oy / ol * HOP_SPREAD;
+      p.x = Math.max(TILE, Math.min(WORLD * TILE - TILE, p.x + vx * dt));
+      p.y = Math.max(TILE, Math.min(WORLD * TILE - TILE, p.y + vy * dt));
       if (p.dropT <= 0) landPlayer(p);
     }
   }
@@ -698,20 +695,4 @@ function teamEagleDown(team) {
 
 // a bird whose body is off the ground: drawn on the air layer (airCv)
 function dropFlies(e) { return e.state === 'fly' || e.state === 'dive' || e.state === 'flee'; }
-// the brief is over, however it ended: the controls come back
-function endBrief() {
-  if (!state.dropBrief) return;
-  state.dropBrief = null;
-}
-
-// where the drop brief's camera is looking right now: the sim camera
-// (js/sim/sim.js) glides toward this every frame, so a bird still finishing its
-// dive is TRACKED rather than met - the crash lands on screen
-function dropBriefTarget() {
-  const b = state.dropBrief, d = state.drop;
-  if (!b || !d) return { x: player.x, y: player.y };
-  if (b.ph === 'ours-go' || b.ph === 'ours') return d.eagles[player.team];
-  if (b.ph === 'theirs-go' || b.ph === 'theirs') return d.eagles[1 - player.team];
-  return { x: player.x, y: player.y }; // 'wait': the seat you are in
-}
 

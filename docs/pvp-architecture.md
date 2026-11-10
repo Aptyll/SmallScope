@@ -188,7 +188,7 @@ netClientStep(dt): send {t:'in'} - this tick's input and the ack - step our own 
 | deaths, respawns, the end of the match | host | snapshot state - `netClientMode` reads the local body (`aboard`, `dropT`, `dead`, `eliminated`) and the host's verdict turned to its own side |
 | a hit's puff and number, a cue, a shake | host | the cosmetic ring (`ev` on a `snap`), replayed by `evPlay` |
 | particles, footprints, snow, camera, cursor, HUD, tooltips, minimap, audio | each machine | never on the wire |
-| profile stats | client-side | every `PROFILE.add*` in the sim is gated on `p === player` inside the step, which is the host's screen, so a client writes its own from its snapshot body: `netClientStats` (js/net/net.js) diffs `earned` (gold), `kills`, `dead`'s rising edge and `aboard`'s falling edge (`markDropped`, and the hard music cut off a flying bird - the leap's cue arrives as `sfxFor`'s event), counts the match and its first day at takeoff, and `endMatch('won')` writes `addWin` |
+| profile stats | client-side | every `PROFILE.add*` in the sim is gated on `p === player` inside the step, which is the host's screen, so a client writes its own from its snapshot body: `netClientStats` (js/net/net.js) diffs `earned` (gold), `kills`, `dead`'s rising edge (the leap's cue arrives as `sfxFor`'s event), counts the match and its first day at takeoff, and `endMatch('won')` writes `addWin` |
 
 **Only the client's own walk is predicted** (the `prediction` banner, js/net/net.js). Each step
 the input a client sends is also stepped on its own body through the same walk the host runs
@@ -472,7 +472,7 @@ The same screens and the same protocol ride either transport; only the list and 
 6. **The drop.** The count ends in `lockIn` and `beginDrop`, which seats by slot. A client
    never starts anything: the ride arrives as snapshot state (`state.drop`, `aboard`, `dropT`, the
    eagles) and `netClientMode` moves its screen from the title to the ride, to play, to the death
-   overlay and back. The hop off the roost is an input (`input.work`, `input.dodge` or `input.jump`), like everything else a hand does.
+   overlay and back. The crew's leap off the roost is the host's, on its own beat, for every rider alike.
 7. **In match.** The party stays listed as `live`, which is how a dropped client finds it. On
    Steam the host learns who came and went from the lobby's chat updates (`LobbyChatUpdate` ->
    `peer`/`gone`).
