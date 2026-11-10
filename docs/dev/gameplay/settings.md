@@ -108,7 +108,9 @@ title also takes W/S and the arrows), a 1 px thumb on the right edge appears onl
 overflows, and the open page's name wears gold with a 1 px gold line under the word alone
 (`drawNavCell`, the CONTROLS sub-navbar the same) while the others sit dim until hovered. Everything inside the panel is laid out by **`settingsLayout()`** (js/ui/panels.js) off
 the row tables in `SET_TABS` — draw, hit test and the `DBG.settingsRows` anchors all read the
-same function, so a click can never disagree with a pixel. Rows keep the **14 px pitch**;
+same function, so a click can never disagree with a pixel. The tables hold text keys (`set.*`,
+`ctl.*`, [the text table](../rendering/the-text-table.md)) and the layout turns them into words;
+a bare number (FPS CAP's 30, 60, ...) prints as itself (`optWord`). Rows keep the **14 px pitch**;
 `settingsHit()`'s bands are `y-3 .. y+10`, touching but never overlapping, so one click can
 never land on two rows. It answers a row id, `'mute'`, `'close'`, `'leave'`, `'tab:<id>'`, `'ctab:<id>'`
 (a CONTROLS sub-tab), `'c:<row>:<opt>'` (a choice row's word), `'drop:<row>'` (a dropdown's box) or
