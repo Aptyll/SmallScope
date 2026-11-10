@@ -310,12 +310,6 @@ function abilityPose(p) {
   return null;
 }
 
-// Everything a STATUS leaves on a body, drawn over whatever sprite is
-// wearing it: the sprung jaws at rooted feet, the flames, and the gold mark
-// chevrons. Takes the sprite's own box, so a rabbit, a bot and a player wear
-// the same tells at their own size - a state you cannot see is a rule you
-// cannot play around, and that is as true of a deer as of a rival. Called by drawAbilityOnPlayer below and by drawAnimal /
-// drawRobot (js/draw/bodies.js).
 // one tongue of a burning body's fire (drawUnitStates): its foot at (x, y), `hgt` px tall, leaning `lean`
 // px by its tip; an amber body three wide at the foot and one at the tip, a yellow heart inside it low down; the crown's
 // stays short of the overhead frame
@@ -328,6 +322,12 @@ function burnTongue(x, y, hgt, lean) {
     if (u < 0.45) { ctx.fillStyle = r < 1 ? '#fff0a8' : '#ffd95c'; ctx.fillRect(x + ox, y - r, 1, 1); }
   }
 }
+// Everything a STATUS leaves on a body, drawn over whatever sprite is
+// wearing it: the sprung jaws at rooted feet, the ice on slowed ones, the flames, and the gold mark
+// chevrons. Takes the sprite's own box, so a rabbit, a bot and a player wear
+// the same tells at their own size - a state you cannot see is a rule you
+// cannot play around, and that is as true of a deer as of a rival. Called by drawAbilityOnPlayer below and by drawAnimal /
+// drawRobot (js/draw/bodies.js).
 function drawUnitStates(e, px, py, w, h, now) {
   if (e.rootT > 0) {
     // the sprung jaws, closed on the feet
