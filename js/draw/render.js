@@ -127,6 +127,7 @@ function render() {
   drawFlatPass(ox, oy, ex, ey, tx0, ty0, tx1, ty1, now); // the ice's sky, the flat objects, the rings
 
   const draws = gatherDraws(ox, oy, tx0, ty0, tx1, ty1, now);
+  drawHitPuffs(ex, ey, now); // a big hit's snow puff, under the bodies (js/draw/hitfx.js)
   drawSorted(draws, ox, oy, ex, ey, now);
 
   drawSelection(ox, oy, now);
@@ -140,6 +141,7 @@ function render() {
 
   drawBuildBars(ox, oy); // construction progress bars
   drawParticles(ex, ey);
+  drawHitFx(ex, ey, now); // a big hit's spark, over the bodies (js/draw/hitfx.js)
 
   drawAimLine(ex, ey, now);
   drawZipGuide(ex, ey);     // the dotted walk to the hovered cable (js/draw/zipline.js)
