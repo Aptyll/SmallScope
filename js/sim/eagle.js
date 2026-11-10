@@ -64,10 +64,10 @@ const EAGLE_SETTLE_T = 0.6; // seconds of wing-fold after the impact, into the r
 // answer the hit (the two birds, ai.js). At 60 a swing two blades emptied the
 // nerve in the fifty seconds between two harness marks, before anyone came
 const EAGLE_HP = 2000;
-const PERCH_BAR_W = 95;   // px: the roost's hp bar, the match's win/lose bar...
-const PERCH_BAR_H = 9;    // ...its height, room for the pool's number inside...
+const PERCH_BAR_W = 63;   // px: the roost's hp bar, the match's win/lose bar...
+const PERCH_BAR_H = 7;    // ...its height, the pool's number just fitting inside...
 const PERCH_BAR_SEGS = 8; // ...and its blocks: (PERCH_BAR_W + 1) must divide by this
-const PERCH_BAR_RIM = 2;  // its ink frame, twice a body's
+const PERCH_BAR_RIM = 1;  // its ink frame, a body's own
 const PERCH_LAG_HOLD = 0.35, PERCH_LAG_RATE = 900; // s a hit's lost chunk holds pale, then hp/s it drains at
 const EAGLE_WORK_DMG = 20;  // what one rival E swing chips off the roosting bird
 const EAGLE_ARROW_DMG = 12; // what one rival arrow chips, whatever it would do to a body
