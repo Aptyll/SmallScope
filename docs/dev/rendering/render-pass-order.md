@@ -28,16 +28,17 @@
 5. flat objects (stumps);
 6. `drawRecallGround` (the roost rings and the recall's) → `drawClickMarks` (the CLICK scheme's order and lock rings) → `drawAbilityGround` (the heroes'
    ground marks, `HERO_GROUND`, and every wind-up's telegraph);
-7. the **y-sorted `draws` array** (tall objects, every player, animals, robots, the practice
+7. `drawHitPuffs` (a big hit's snow clumps, under the bodies, js/draw/hitfx.js), then the **y-sorted `draws` array** (tall objects, every player, animals, robots, the practice
    targets, sorted by feet Y; empty player slots draw as team-tinted
    silhouettes via `drawGhost`; `pushMiddleDraws` adds the cistern's stone, piece by piece at
    the key of a body standing on it, and the orca out of the water, `drawOrcaBreach`, sorted by
-   its hole's waterline and cut at it - [the cistern](../world.md#the-cistern));
+   its hole's waterline and cut at it - [the cistern](../world.md#the-cistern)); a body under a big
+   hit is drawn off its spot by `hitNudge` (held where it was struck, then 1 px back);
 8. `drawSelection` (white pulsing corners with a dark shadow over an open wheel's target)
    → `drawWorkHint` (the E work prompt);
 9. `PRACTICE` only: `drawParkour` (the lap clock and BEST/LAST plate), `drawAgame`,
    `drawAgRings`;
-10. construction progress bars → particles → `drawAimLine` (the bow's) → `drawZipGuide` (the
+10. construction progress bars → particles → `drawHitFx` (a big hit's spark) → `drawAimLine` (the bow's) → `drawZipGuide` (the
     dotted walk to the hovered zipline, js/draw/zipline.js) → arrows (`drawShaft`);
 11. `heroAir` (what a hero's kit has in the air, `HERO_AIR`)
     → `drawTowerFx` (each road tower's dashed aim line and ring, js/draw/towers.js);

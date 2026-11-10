@@ -891,6 +891,7 @@ class Player {
     this.workTx = -1; this.workTy = -1;            // tile the current E swing is aimed at
     this.hurtT = 0; this.invuln = first ? 0 : 3;
     this.kbx = 0; this.kby = 0;
+    this.hitNx = 0; this.hitNy = 0; // which way the last blow landed (damagePlayer): its spark and recoil read it
     this.fallT = 0; this.fallRipT = 0;             // floundering in an ice hole
     this.footT = 0; this.footSide = 0;
     this.firePrev = false;
@@ -1037,14 +1038,14 @@ const camps = []; // the jungle camps, stood up at fixed sites by worldgen (see 
 const DOT_CAUSE = { fire: true };
 
 // The shove a blow lands on a body, in px/s. It is the BASELINE, not the
-// whole story: `kb` is a multiplier on it, so a basic attack's KNOCKBACK
-// (js/sim/attack.js) scales a player's shove exactly as it scales an animal's or a
-// soldier's, and the ordinary blow is 1.
+// whole story: `kb` is a multiplier on it, and the ordinary blow is 1. A
+// player takes it only from a key's blow (damagePlayer); a basic attack's
+// KNOCKBACK (js/sim/attack.js) still shoves an animal or a soldier.
 const HIT_KB = 110;
 
 // A hit grants NO i-frames. `invuln` is only ever set by something DELIBERATE -
 // the dodge roll, a respawn, the drop's landing, scrambling out of a hole - so
-// two arrows arriving in the same step both land, both shove and both light
+// two arrows arriving in the same step both land and both light
 // their fire, rather than the second being eaten by the first's grace.
 //
 // src: the player who dealt it (kill credit + the log line), null for the
@@ -1071,9 +1072,15 @@ function damagePlayer(p, dmg, dx, dy, src, cause, crit, kb, o) {
   else if (BEAST_CAUSES.has(cause)) p.dmgInB += dmg;
   p.hurtT = 0.25;
   p.fightT = ITEM_FIGHT_T; // in a fight: DEN's heal waits (js/sim/items.js)
+  // a PLAYER is shoved only by a key's blow: an attack (a hero's, a
+  // soldier's, a tower's, a beast's) lands where it stands, so a fight is
+  // not a pinball (Noah, 2026-11-10). Where the blow came from is kept either way
+  // (hitNx/hitNy): the hit's spark and recoil read it (js/draw/hitfx.js)
   if (!dot) {
-    const k = HIT_KB * (kb === undefined ? 1 : kb);
+    const k = o && o.ab && !o.basic ? HIT_KB * (kb === undefined ? 1 : kb) : 0;
     p.kbx = dx * k; p.kby = dy * k;
+    const n = Math.hypot(dx, dy) || 1;
+    p.hitNx = Math.round(dx / n * 8) / 8; p.hitNy = Math.round(dy / n * 8) / 8;
   }
   breakRecall(p); // a hit ends the walk home - that is what makes the channel a channel
   // a burn shakes and shouts once, when it lights (igniteUnit) - not four
@@ -1081,7 +1088,11 @@ function damagePlayer(p, dmg, dx, dy, src, cause, crit, kb, o) {
   if (!dot) shakeFor(p, crit ? 6 : 3);
   tallyHit(p, dmg);
   if (!dot) sfxAt('hurt', p.x, p.y);
-  burst(p.x, p.y - 6, dot ? '#ff9440' : '#cfd8e8', 8, 50, 0.45);
+  // a burn's embers rise off the body; a blow's snow is kicked up at the
+  // feet, never sprayed over the model (pale motes over a hero read as the
+  // body going see-through: Noah, 2026-11-10)
+  if (dot) burst(p.x, p.y - 6, '#ff9440', 8, 50, 0.45);
+  else burst(p.x, p.y + 3, '#cfd8e8', 6, 40, 0.35, 60);
   if (p.hp <= 0) die(p, src, cause);
 }
 

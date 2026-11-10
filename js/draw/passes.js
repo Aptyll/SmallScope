@@ -127,6 +127,7 @@ function gatherDraws(ox, oy, tx0, ty0, tx1, ty1, now) {
     }
   }
   trackDowns(now); // a body that just dropped goes down in place (the `going down` banner, js/draw/bodies.js)
+  trackHits(now); // a body that just took a big hit (the `hit feedback` banner, js/draw/hitfx.js)
   for (const p of players) {
     if (goingDown(p)) { if (fogShown(p, now)) draws.push({ y: p.y + 8, down: p }); continue; }
     if (p.dead || inAir(p) || !fogShown(p, now)) continue; // airborne players draw in drawDropAir; one in the fog not at all (js/draw/fog.js)
@@ -175,9 +176,10 @@ function drawSorted(draws, ox, oy, ex, ey, now) {
     if (d.reed) { litPunch(d.reed.x - ex - (REED_W >> 1) - 1, d.reed.y - ey - REED_H + 1, REED_W + 2, REED_H + 2, () => drawReed(d.reed, ex, ey, heroP)); continue; } // the brush's reeds (js/draw/depth.js)
     if (d.down) { drawDown(d.down, ex, ey, now); continue; }
     if (d.p && !d.ghost && (d.p.zip >= 0 || heroDashOver(d.p))) { airRiders.push(d.p); continue; } // on a cable, or over the pines on a hero's dash (HERO_DASH `over`): the air layer's, below
-    if (d.p) { if (d.ghost) drawGhost(d.p, ex, ey); else drawPlayer(d.p, ex, ey, now); continue; }
-    if (d.a) { drawAnimal(d.a, ex, ey, now); continue; }
-    if (d.r) { drawRobot(d.r, ex, ey, now); continue; }
+    // a body under a big hit is drawn held where it was struck, then 1 px back (hitNudge, js/draw/hitfx.js)
+    if (d.p) { if (d.ghost) drawGhost(d.p, ex, ey); else { const n = hitNudge(d.p, now); drawPlayer(d.p, ex - n.x, ey - n.y, now); } continue; }
+    if (d.a) { const n = hitNudge(d.a, now); drawAnimal(d.a, ex - n.x, ey - n.y, now); continue; }
+    if (d.r) { const n = hitNudge(d.r, now); drawRobot(d.r, ex - n.x, ey - n.y, now); continue; }
     if (d.pt) { drawPTarget(d.pt, ex, ey, now); continue; }
     // what stands in the sort that is not a body covers a body's night light
     // as it covers its pixels (litPunch, js/draw/light.js)

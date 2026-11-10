@@ -417,7 +417,7 @@ function drawPlayer(p, ex, ey, now, stage) {
     const sink = Math.round(Math.min(7, (HOLE_FALL_T - p.fallT) * 40));
     ctx.save();
     ctx.beginPath(); ctx.rect(bx - 2, by - 8, spr.width + 4, py + 12 - (by - 8)); ctx.clip();
-    drawSpriteFlash(spr, bx, by + sink, p.hurtT > 0.12 ? 1 : 0);
+    ctx.drawImage(spr, bx, by + sink);
     ctx.restore();
     // ripple rings at the waterline
     ctx.fillStyle = 'rgba(207,228,242,0.75)';
@@ -473,10 +473,13 @@ function drawPlayer(p, ex, ey, now, stage) {
       // turned about the cell's middle (a doll frame is wider than the cell it holds)
       ctx.translate(ax + 8, ay + 8);
       ctx.rotate(pose.rot);
-      drawSpriteFlash(spr, sx - ax - 8, sy - ay - 8, p.hurtT > 0.12 ? 1 : 0);
+      ctx.drawImage(spr, sx - ax - 8, sy - ay - 8);
       ctx.restore();
     } else {
-      drawSpriteFlash(spr, sx, sy, p.hurtT > 0.12 ? 1 : 0);
+      // never washed white when struck: a hero's model stays solid so a
+      // fight reads (Noah, 2026-11-10); the spark and the recoil tell the
+      // hit (js/draw/hitfx.js)
+      ctx.drawImage(spr, sx, sy);
     }
     heroBodyFx(p, ax, ay, now, true); // ...or over it (his standard facing away)
     if (seat) ctx.restore();
