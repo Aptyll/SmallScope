@@ -16,6 +16,7 @@ const GUIDE_MOVE_PX = 96;      // px walked from the landing that counts as movi
 const GUIDE_RECALL_GOLD = 400; // gold in the purse (or half health) before RECALL is taught
 const GUIDE_FLASH = 0.7;       // s a finished step's card holds, gold, before the next
 const GUIDE_TIP_T = 7;         // s a lesson's line of detail stands open before it folds away
+const GUIDE_HURT = 0.5, GUIDE_HURT_OUT = 0.75; // the share of your health under which RECALL is taught at once, and over which it steps back
 const GUIDE_HOME_T = 1.5;      // s RECALL's card shows before standing at home counts
 const GUIDE_SHOP_PX = 400;     // px from your counter past which SHOP steps aside: out in the lane the next lesson teaches
 const GUIDE_SHOP_BACK = 300;   // px from it within which SHOP comes back: the give between the two keeps a hero on the line from flipping cards
@@ -40,6 +41,12 @@ function guideShopNear() {
   const c = guideCounter();
   const up = guide.step >= 0 && GUIDE_STEPS[guide.step].id === 'shop';
   return !!c && Math.hypot(c.x - player.x, c.y - player.y) < (up ? GUIDE_SHOP_PX : GUIDE_SHOP_BACK);
+}
+// RECALL's moment: hurt and away from home. It takes the card ahead of its turn under GUIDE_HURT of
+// your health and keeps it until GUIDE_HURT_OUT, so a hero at the line does not flip cards
+function guideHurt() {
+  const up = guide.step >= 0 && GUIDE_STEPS[guide.step].id === 'recall';
+  return !roostRing(player) && player.hp < player.maxHp * (up ? GUIDE_HURT_OUT : GUIDE_HURT);
 }
 function guideRivalTowers() { return structures.filter((o) => o.type === 'tower' && o.team !== player.team); }
 function guideNearTower() {
@@ -86,6 +93,7 @@ function guideSoldier() {
 // waits (no card) until it is true; here: false while its place is far away,
 // and the next lesson teaches meanwhile; begin: noted as the coach starts, so
 // a lesson done before its turn shows learned the moment its card comes up;
+// now: true in the moment that calls for it, when it is shown ahead of its turn;
 // done: it is learned; away: it is learned with its card down too (RECALL:
 // SHOP takes the card as you near home, and the ring still counts); at: the
 // world point its arrow stands over.
@@ -111,6 +119,7 @@ const GUIDE_STEPS = [
   { id: 'recall', word: 'RECALL', tip: 'STAND STILL: YOUR EAGLE TAKES YOU HOME AND THE RING HEALS YOU',
     caps: () => [keyCap('recall')],
     ready: () => player.gold >= GUIDE_RECALL_GOLD || player.hp < player.maxHp / 2,
+    now: guideHurt,
     done: (g) => (g.up.recall || 0) > GUIDE_HOME_T && !!roostRing(player), away: true },
   { id: 'tower', word: 'TOWER', tip: 'GO IN BEHIND YOUR SOLDIERS: A TOWER SHOOTS THEM FIRST',
     caps: () => [],
@@ -139,6 +148,7 @@ function guideOpen(i) { guide.step = i; guide.t = 0; }
 function guideDone(s) { return s.need ? s.count(guide) >= s.need : s.done(guide); }
 // the lesson to show: the first one not learned whose place is at hand
 function guideNext() {
+  for (let i = 0; i < GUIDE_STEPS.length; i++) if (!guide.learned[i] && GUIDE_STEPS[i].now && GUIDE_STEPS[i].now()) return i; // its moment is this one: ahead of its turn
   for (let i = 0; i < GUIDE_STEPS.length; i++) {
     const s = GUIDE_STEPS[i];
     if (!guide.learned[i] && (!s.here || s.here())) return i;
