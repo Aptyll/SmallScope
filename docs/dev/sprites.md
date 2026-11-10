@@ -70,7 +70,7 @@ that).
 
 **The run, the held run and the dodge roll are the one set of player frames not typed by hand.**
 [app/bake-player/](../../app/bake-player/) paints them off a jointed doll of each hero look (ARMATOS's `standard` and `oath`, FORTIVA's `unbroken` and `coif`, BELLA's `general` and `traitor`,
-IGNIA's `hearth` and `wanderer`, AURA's `light`, SALVIA's `hood` and `tent`, LUCERNA's `lamp` and `dusk`, HIEMS's `scholar` and `frost`, FABER's `clockmaker` and `foreman`, NIX's `snowblind`, FALCO's `falconer`, RUPES's `quarry` and `cellar`, VARRO's `wolfkept` and `whitepack`, VELOX's `canal` and `night`, BUCINA's `horn` and `column`, MARIS's `diver` and `orca`, SAGITTA's `siege` and `tower`, LIGNUM's `feller` and `forest`, CLIVUS's `guide`; [hero looks](#hero-looks)) and
+IGNIA's `hearth` and `wanderer`, AURA's `light`, SALVIA's `hood` and `tent`, LUCERNA's `lamp` and `dusk`, HIEMS's `scholar` and `frost`, FABER's `clockmaker` and `foreman`, NIX's `snowblind`, FALCO's `falconer`, RUPES's `quarry` and `cellar`, VARRO's `wolfkept` and `whitepack`, VELOX's `canal` and `night`, BUCINA's `horn` and `column`, MARIS's `diver` and `orca`, SAGITTA's `siege` and `tower`, LIGNUM's `feller` and `forest`, CLIVUS's `guide`, ARCUS's `fletcher`, FOSSOR's `digger`; [hero looks](#hero-looks)) and
 writes them to js/baked/motion.js as char grids in characters.js's own letters, so `motionSet`
 bakes them through the same team and hero palettes as every hand-drawn pose: `run[dir]`,
 `hold[dir]` and `roll[dir]` sit beside the walking directions, `left` the mirror of `right`.
@@ -389,6 +389,15 @@ he carries its own carried art (`ARCUS_BOW_CARRY`, a shallow D) upright in his l
 the body in every facing (`HERO_CARRY`, js/draw/arcus.js). Drawn, it is one of eight set frames on
 the snapped aim with the string back and an arrow on it, half then full, and the string straight for
 a beat after the shot (`ARCUS_BOW_AIM`; `HERO_AIMED`, js/draw/heroes.js): never a turned sprite. His fine body (`ARCUS_FINE`, one set both paints repaint) holds the same bow at 32 px (`ARCUS_BOW_FINE`, `arcusBowsFine`: the carry and the same headings through `arcusBowAim`, grips and hands still world px).
+
+FOSSOR has one look (`FOSSOR_SKINS`, js/sprites/fossor.js): DIGGER (free: a brass machine in a
+miner's hat with a lamp, its coat in the side's colour with a gold hem, copper arms). It is drawn on
+ARMATOS's frame and runs as its drawn body (`run: 'drawn'`); its doll is `Digger` in
+app/bake-player/bodies.py (motion `digger`). `FOSSOR_PAL` is `ARM_PAL` with the brass `t`/`T`, the
+dark metal `n`/`m`/`M` and the lamp `l`/`L`. The cut is C off robot-heroes round 2 in the project
+files, drawn back down to the 16 px cell. His SPADE is a `HERO_BLADES` row (`blade: 'spade'`,
+js/draw/fossor.js); BANK UP's snow blocks and BREAK GROUND's crack are drawn on the snow
+(`HERO_GROUND`), and under the snow he fades under a running mound (`HERO_FADE`, `HERO_BODY_FX`).
 
 FABER has two looks (`FABER_SKINS`, js/sprites/faber.js): CLOCKMAKER (free) and WORKS FOREMAN
 (rare, 200 coins), both on ARMATOS's frame. `FABER_PAL` is `ARM_PAL` with the leather cap and apron

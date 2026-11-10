@@ -447,6 +447,21 @@ out of life or on what it struck). VOLLEY holds the bow on the aim through its w
 | 3 | **GATHER UP** | 12/11/10/9/8 s | castable only with an arrow of his standing (`ok`). Every one flies back to where he stands at `GATHER_SPD`, through every rival between: each deals `dmg` (30/45/60/75/90), and a body struck by `GATHER_N` of one call walks ×`GATHER_SLOW` for `GATHER_SLOW_T`. A dotted line runs from each arrow to him through the wind-up (`tele`), so the rival standing on one sees it coming |
 | 4 | **FULL QUIVER** | 100/85/70 s | a spot up to `RAIN_RANGE` away takes `RAIN_N` arrows over `RAIN_T`, spread inside `RAIN_R` on a sunflower spiral (no rng), each seen falling for `RAIN_FALL` with its shadow growing. Each landing deals `dmg` (40/60/80) within `RAIN_HIT` and walks a rival ×`RAIN_SLOW` for `RAIN_SLOW_T`, hits buildings too, and stands in the snow for him to pull up. The shadows of the arrows still to come mark the spot for both sides |
 
+FOSSOR, THE DIGGER — a brass machine of the old works made to dig: a heavy fighter, slow on its feet
+and on the ice, that stands its ground. Its rules live in **[js/sim/fossor.js](../../../js/sim/fossor.js)**
+(`FOSSOR_AB`, its `fossor` banner), its pixels in [js/draw/fossor.js](../../../js/draw/fossor.js), its icons
+and look in [js/sprites/fossor.js](../../../js/sprites/fossor.js). 118 hp, 19 armor, slower than most
+(`ms` `PLAYER_SPEED` - 4). BANK UP's banks are `fossorBanks`, BREAK GROUND's running lines
+`fossorQuakes` (both in `SAVE_ROOTS` and the snapshot's `fossor`).
+
+| key | name | cd | what it does |
+| --- | --- | --- | --- |
+| P | **DIG IN** | — | standing under `DIGIN_STILL` px/s for `DIGIN_T` plants his feet: every hit he takes is cut by `DIGIN_CUT` until he moves or dashes (`HERO_PASSIVE.digin`, `HERO_TAKEN`); snow is kicked up round his planted feet |
+| 1 | **SPADEFUL** | 8/7.5/7/6.5/6 s | a wedge `SPADE_R` deep, `SPADE_HALF` either side of the aim: each rival in it takes `dmg` (30/45/60/75/90) and walks ×`slow` (0.6) for `SPADE_SLOW_T` |
+| 2 | **UNDER THE SNOW** | 15/14/13/12/11 s | he runs `BURROW_LEN` under the snow down the aim at `BURROW_SPD`, through bodies (`HERO_DASH.burrow`, `through`), faded under a mound. Where he comes up every rival within `BURROW_HIT_R` takes `dmg` (40/60/80/100/120) and is thrown up for `up` (0.6 s) |
+| 3 | **BANK UP** | 18/17/16/15/14 s | a bank of snow `BANK_AHEAD` ahead, `BANK_HALF` either side across the aim, walls the tiles it crosses for `t` (2.5-3.5 s) for both sides (`HERO_SOLID`). A tile with a thing on it, water, or a body within `BANK_CLEAR` stays open, so nobody is walled in |
+| 4 | **BREAK GROUND** | 100/85/70 s | after a 0.5 s wind-up a line of broken ground runs `QUAKE_LEN` down the aim at `QUAKE_SPD`: each rival within `QUAKE_W` of it as it passes takes `dmg` (100/150/200) once and is thrown up for `up` (0.9/1/1.1 s) |
+
 Bots play every hero through each row's `bot(p, foe, d, clear)` (`abBotKey`, asked by the ladder's
 ability block in js/ai/ai-ladder.js); a row's `botAim(p, foe)` turns the aim to a point of its own for that cast, held through the wind-up until it lands (AURA's step away, SALVIA's heals, LUCERNA's lantern). Every hero's four rows carry one: a load check under `CLASS_AB` throws for a hero without four
 keys that each have a `bot`.

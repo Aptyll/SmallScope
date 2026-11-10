@@ -58,6 +58,7 @@ const SAVE_ROOTS = [
   ['hiemsGlazes', ...saveArr(hiemsGlazes)], ['hiemsStorms', ...saveArr(hiemsStorms)], // HIEMS's ice and blizzards (js/sim/hiems.js)
   ['veloxStones', ...saveArr(veloxStones)], ['veloxLanes', ...saveArr(veloxLanes)], // VELOX's skipping stones and ice lanes (js/sim/velox.js)
   ['arcusShafts', ...saveArr(arcusShafts)], ['arcusRains', ...saveArr(arcusRains)], // ARCUS's arrows in the snow and his falling quiver (js/sim/arcus.js)
+  ['fossorBanks', ...saveArr(fossorBanks)], ['fossorQuakes', ...saveArr(fossorQuakes)], // FOSSOR's snow banks and broken ground (js/sim/fossor.js)
   ['nixShards', ...saveArr(nixShards)], ['nixClouds', ...saveArr(nixClouds)], // NIX's shards in flight and clouds on the ground (js/sim/nix.js)
   ['faberParts', ...saveArr(faberParts)], ['faberArcs', ...saveArr(faberArcs)], ['faberBolts', ...saveArr(faberBolts)], ['faberSprings', ...saveArr(faberSprings)], // FABER's spare parts, sparks' jumps, bolts and clocksprings (js/sim/faber.js; his machines ride `robots`)
   ['falcoKnives', ...saveArr(falcoKnives)], // FALCO's knives in flight (js/sim/falco.js; his hawk out rides `robots`)

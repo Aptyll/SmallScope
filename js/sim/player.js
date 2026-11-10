@@ -476,6 +476,26 @@ const CLASSES = [
     kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1, chargeMul: 0.75,
       bowCharge: 0.6, nock: 0.4, spdDmg: 0, dodgeSpeed: DODGE_SPEED },
   },
+  {
+    // the twenty-first named hero (js/sim/fossor.js): a fighter of brass, a machine of the
+    // works made to dig. It stands its ground, goes under the snow to come up beneath a
+    // rival, and heaps up a bank nobody walks through; slow on its feet and on the ice
+    name: 'FOSSOR', role: 'THE DIGGER', passive: 'digin', // HERO_PASSIVE, js/sim/fossor.js
+    blurb: ['STAND YOUR GROUND AND DIG IN.', 'GO UNDER THE SNOW, COME UP UNDER THEM.', 'BREAK THE GROUND UNDER THEIR FEET.'],
+    story: "THE EMPIRE DUG IT OUT OF THE OLD WORKS AND SET IT TO DIG THEIR MINES. THE WINTER A SLOPE CAME DOWN ON A VILLAGE, IT WALKED OFF THE MINE AND DUG UNTIL THE LAST CHILD WAS OUT. THEY SENT IT UP THE PASS FOR THAT. IT STILL DIGS FOR ANYONE WHO ASKS.", // who it was before the pass: the wiki's hero page (docs/dev/lore.md)
+    // a spade's blow: a touch slower and wider than CLIVUS's ice axe
+    attack: { name: 'SPADE', art: 'sword', cycle: 34 / 60, kb: 1.2, cut: { reach: 25, half: 1 } },
+    // its art: the heroArt('fossor') row in js/sprites/fossor.js (its look, its paint,
+    // the glyph and the emblem)
+    id: 'fossor',
+    blade: 'spade', // its SPADE in its hands (HERO_BLADES, js/draw/fossor.js)
+    base: { hp: 118, dmg: 17, armor: 19, ap: 0, haste: 0, ms: PLAYER_SPEED - 4 },
+    grow: { hp: 9.2, dmg: 1.6, as: 0.01, armor: 2.5 },
+    rankOrder: [0, 1, 2], // the spadeful, under the snow, the bank
+    // a heavy machine: slow to turn on the ice and slow to get going
+    kit: { iceMax: 0.9, iceSteer: 2.4, slideMin: SLIDE_MIN, fatigue: 0.8, chargeMul: 0.7,
+      bowCharge: 0.75, nock: 0.5, spdDmg: 0, dodgeSpeed: DODGE_SPEED },
+  },
 ];
 // a hero's CLASSES index by name, -1 for none: what a profile or a bot names
 function heroIndex(name) { return CLASSES.findIndex((c) => c.name === name); }
@@ -872,6 +892,9 @@ class Player {
     this.keepN = 0; this.keepT = 0; this.quickT = 0; this.runT = 0;
     // SAGITTA (js/sim/sagitta.js): the bolts loosed since her last heavy one (HEAVY BOLTS)
     this.boltN = 0;
+    // FOSSOR (js/sim/fossor.js): DIG IN's still time, UNDER THE SNOW's blow and throw as dug,
+    // his count of quakes; on any body, the last BREAK GROUND that threw it
+    this.fsStillT = 0; this.fsUpDmg = 0; this.fsUpT = 0; this.fsQuakeN = 0; this.fsQuake = 0;
     // ARCUS (js/sim/arcus.js): WASTE NOTHING's stacks and their clock, TWIN NOCK's clock,
     // his volley and gather counts; on any body, which volley and which gather struck it and how often
     this.arcN = 0; this.arcT = 0; this.twinT = 0; this.arcVolN = 0; this.arcGathN = 0;
