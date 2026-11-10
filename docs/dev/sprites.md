@@ -352,6 +352,23 @@ is `Fletcher` in app/bake-player/bodies.py (motion `fletcher`); he runs on his d
 level facing a side, carried upright in his leading hand facing down or up (`HERO_CARRY`,
 js/draw/arcus.js).
 
+PORTITOR has two looks (`PORTITOR_SKINS`, js/sprites/portitor.js): BAGGAGE ENGINE (free: a copper
+box head with two lamp eyes and a mouth grille, its side's bedroll across its back, whose ends show
+beside the head and above the shoulders head-on so they never read as arms, its side's belly plate
+with a gold badge, the pack's straps from behind) and VERDIGRIS (rare, 200 coins: the same engine
+gone green, its `pal` repainting the copper and the lamps). The copper is `PORT_PAL` over the team
+letters `t T n m M`; only `r R` stay its side's. It is C off robot-heroes round 1 and 2 in the project
+files, on today's 16 px frame (round 2's 18 px grids wait for the larger hero size). Its doll is
+`Carrier` in app/bake-player/bodies.py (motion `carrier`); it runs on its drawn frames (`run:
+'drawn'`). Its WALKING POLE is a `HERO_BLADES` row with no slanted carry: at rest the pole stands
+upright on the snow beside its leading foot in every facing, its copper hand closed round the haft at
+the hip (`portitorCarry`, `HERO_CARRY`, js/draw/portitor.js); flat for the swing.
+
+An ally it carries is drawn up on its back by `drawPlayer` (`heldSeat`, js/draw/bodies.js): where the
+carrier stands, `HELD_LIFT` rows up, `HELD_BACK` behind it side-on, sorted just behind it (in front
+facing up: `heldSort`), with no shadow or ring of its own. The carrier's overhead stack stands
+`HELD_STACK` rows over the rider's, so neither frame covers the body on its back.
+
 FABER has two looks (`FABER_SKINS`, js/sprites/faber.js): CLOCKMAKER (free) and WORKS FOREMAN
 (rare, 200 coins), both on ARMATOS's frame. `FABER_PAL` is `ARM_PAL` with the leather cap and apron
 `a`/`A`, the goggle lenses `C`, the moustache `U` and the hard hat's lamp `S`. They are A and B off

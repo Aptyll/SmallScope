@@ -359,6 +359,23 @@ function backRow(spr, col) {
   }
   return spr[k];
 }
+// A body another hero carries (HERO_HELD, js/sim/heroes.js: PORTITOR's carry) sits up on
+// its carrier's back, drawn where the carrier stands now: HELD_LIFT rows up, a little
+// behind the carrier side-on, its legs hidden behind the carrier facing down and over its
+// back facing up (heldSort, the draw order); the carrier casts the shadow.
+const HELD_LIFT = 9, HELD_BACK = 3;
+function heldSeat(p) {
+  const c = heroHeld(p);
+  if (!c) return null;
+  const back = c.dir === 'right' ? -HELD_BACK : c.dir === 'left' ? HELD_BACK : 0;
+  return { x: c.x, y: c.y, dx: back, lift: HELD_LIFT };
+}
+// ...and where it sorts against its carrier: just behind, but in front from behind
+function heldSort(p) { const c = heroHeld(p); return c ? (c.dir === 'up' ? 0.5 : -0.5) : 0; }
+// A carrier's overhead stack stands over its rider's whole stack (HELD_STACK rows: the
+// name down to the stamina bar, and a gap), so neither frame covers the body up on its back
+const HELD_STACK = 21;
+function heldCarrying(p) { for (const q of players) if (q !== p && heroHeld(q) === p) return true; return false; }
 // how far a player's model reaches off its centre column and over its feet,
 // the greatsword at full swing included (the body light's scenery test,
 // js/draw/light.js)
@@ -373,7 +390,8 @@ function drawPlayer(p, ex, ey, now, stage) {
   // upright, a body strides only while it covers ground on its own feet - the
   // sim's own test for stepping animT on (updatePlayer, js/sim/sim.js) - so a
   // shift-slide and a push against a wall stand, and a zipline's rider hangs still
-  const striding = p.moving && p.zip < 0 && !p.mount && !p.sliding && Math.hypot(p.vx, p.vy) > 8; // ...and a deer's rider sits
+  const held = stage ? null : heldSeat(p); // ...and a carried body sits up on its carrier (heldSeat)
+  const striding = p.moving && p.zip < 0 && !p.mount && !held && !p.sliding && Math.hypot(p.vx, p.vy) > 8; // ...and a deer's rider sits
   if (striding) frame = 1 + (Math.floor(p.animT) % 2);
   // a zipline's rider: the body ZIP_ALT rows up, the shadow where it always
   // is - the rope and handle over its head are the cable pass's (drawZips)
@@ -381,27 +399,27 @@ function drawPlayer(p, ex, ey, now, stage) {
   // a deer's rider: the body sits in the deer's back (riderSeat) and rides
   // its leap (rideLift, js/sim/wildlife.js); the deer casts the shadow
   const seat = p.mount ? riderSeat(p) : null;
-  const rl = rideLift(p) + (seat ? seat.lift : 0);
+  const rl = rideLift(p) + (seat ? seat.lift : 0) + (held ? held.lift : 0);
   let spr = set[frame];
   // ...and a body on the move runs: the doll's eight frames (runFrame)
   const running = frame > 0 && p.fallT <= 0;
   if (running) spr = classSet(p)[handsBusy(p) ? 'hold' : 'run'][p.dir][runFrame(p)];
   const MB = SPRITES.motionBox;
-  const px = Math.round(p.x - 8 - ex) + (seat ? seat.dx : 0);
-  const py = Math.round(p.y - 12 - ey) - rl; // a rider's whole body - held tool, marks, plate - sits up on the deer
+  const px = Math.round((held ? held.x : p.x) - 8 - ex) + (seat ? seat.dx : 0) + (held ? held.dx : 0);
+  const py = Math.round((held ? held.y : p.y) - 12 - ey) - rl; // a rider's whole body - held tool, marks, plate - sits up on the deer
   // where the frame's top-left sits: any frame - the 16x16 cell, a larger
   // hero's, a wider run frame, the hoist - is centred on the cell with its
   // floor on the cell's floor
   const bx = px - ((spr.width - 16) >> 1);
   const by = py + 16 - spr.height;
   // shadow (not while swimming in a hole, and not on a deer, which casts its own)
-  if (!stage && p.fallT <= 0 && !p.mount) {
+  if (!stage && p.fallT <= 0 && !p.mount && !held) {
     // the sun's shade, cut from the frame on show (ground.js), feet on the
     // foot row: a roll's own frame, so the ball goes over its own shadow
     if (p.dodgeT > 0) drawCastShade(classSet(p).roll[p.dir][rollFrame(1 - p.dodgeT / DODGE_T)], px - MB.x, py - MB.y);
     else drawCastShade(spr, bx, by);
   }
-  if (!stage && p.fallT <= 0 && !zl) drawHeroRing(p, Math.round(p.x - ex), Math.round(p.y - ey) + HERO_RING_DY); // the team ring, on the snow under it
+  if (!stage && p.fallT <= 0 && !zl && !held) drawHeroRing(p, Math.round(p.x - ex), Math.round(p.y - ey) + HERO_RING_DY); // the team ring, on the snow under it
   if (p.buffT > 0 && p.fallT <= 0) drawBuffRing(p, Math.round(p.x - ex), Math.round(p.y - ey) + 3, now);
   if (p.pushT > 0 && p.fallT <= 0) drawPushRing(p, Math.round(p.x - ex), Math.round(p.y - ey) + 3, now);
 
@@ -500,7 +518,8 @@ function drawPlayer(p, ex, ey, now, stage) {
 
   // the whole stack hangs off one y
   const hy = py - heroRise(p) - (zl ? zl + 5 : 0) - // a taller body lifts it; a rider's frame rises with it and clears the handle
-    (p.mount ? MOUNT_BAR_ROWS : 0); // ...and a deer's rider stands the frame up off the head for the deer's row
+    (p.mount ? MOUNT_BAR_ROWS : 0) - // ...and a deer's rider stands the frame up off the head for the deer's row
+    (heldCarrying(p) ? HELD_LIFT + HELD_STACK : 0); // ...and a carrier's stands over the stack of the body on its back (heldSeat)
   // fx is the stack's own centre column - the body's, shifted by FRAME_DX so
   // the frame straddles the sprite. Everything in the frame hangs off it.
   const fx = Math.round(p.x - ex) + FRAME_DX;

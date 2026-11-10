@@ -130,7 +130,7 @@ function gatherDraws(ox, oy, tx0, ty0, tx1, ty1, now) {
   for (const p of players) {
     if (goingDown(p)) { if (fogShown(p, now)) draws.push({ y: p.y + 8, down: p }); continue; }
     if (p.dead || inAir(p) || !fogShown(p, now)) continue; // airborne players draw in drawDropAir; one in the fog not at all (js/draw/fog.js)
-    draws.push({ y: p.y + 8, p, ghost: !p.active }); // empty slots stand as silhouettes
+    draws.push({ y: p.y + 8 + heldSort(p), p, ghost: !p.active }); // empty slots stand as silhouettes; a carried body just behind its carrier (heldSort, js/draw/bodies.js)
   }
   for (const a of animals) if (fogShown(a, now)) draws.push({ y: a.y + 4, a });
   for (const b of robots) if (fogShown(b, now)) draws.push({ y: b.y + (b.merchant ? 8 : 4), r: b }); // a merchant stands on player feet (robots.js)

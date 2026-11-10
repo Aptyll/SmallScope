@@ -111,7 +111,7 @@ function trBody(e, foot, r, pack) {
 function trampleStep(dt) {
   if (state.mode === 'title') return;
   for (const p of players) {
-    if (!p.active || inAir(p) || p.zip >= 0 || p.mount || !fogShown(p)) continue; // a rider's deer leaves the tracks; one in the fog leaves none you see
+    if (!p.active || inAir(p) || p.zip >= 0 || p.mount || heroHeld(p) || !fogShown(p)) continue; // a rider's deer leaves the tracks; one carried (HERO_HELD) none; one in the fog none you see
     // the same reads the footprint emitter makes (updatePlayer, sim.js): a
     // slide rides two runners, a walk presses a stride
     const pack = p.sliding ? TR_SLIDE : TR_WALK;
