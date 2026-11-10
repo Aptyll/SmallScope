@@ -1001,15 +1001,40 @@
     ],
   ];
 
-  const stump = [
-    '.....oooooo.....',
-    '....occcccco....',
-    '....ocCCCCco....',
-    '....occCCcco....',
-    '....ovuuuuvo....',
-    '....ovuUUuvo....',
-    '.....osssso.....',
-    '................',
+  // What a felled pine leaves, in three cuts (stumpLook, js/draw/ground.js,
+  // picks one by the tile): a broad clean one, a small one under a cap of
+  // snow, and a low one with a splinter left standing where it tore.
+  const stumps = [
+    [
+      '.....oooooo.....',
+      '....occcccco....',
+      '....ocCCCCco....',
+      '....occCCcco....',
+      '....ovuuuuvo....',
+      '....ovuUUuvo....',
+      '.....osssso.....',
+      '................',
+    ],
+    [
+      '................',
+      '......oooo......',
+      '.....owwwco.....',
+      '.....oswCco.....',
+      '.....ovuuvo.....',
+      '.....ovUuvo.....',
+      '......osso......',
+      '................',
+    ],
+    [
+      '.........o......',
+      '....oooooUoo....',
+      '...occccuUcco...',
+      '...ocCCcccCco...',
+      '...ovccccccvo...',
+      '...ovuuUUuuvo...',
+      '....osssssso....',
+      '................',
+    ],
   ];
 
   // Dead trees: bare snags, the wiki's THE WORKS figure (js/ui/wiki.js). Same
@@ -1577,7 +1602,7 @@
       c.fw = fw; c.fh = fh; c.cols = cols; c.pals = treePals.length;
       return c;
     })(),
-    stump: bake(stump, TPAL),
+    stumps: stumps.map((g) => bake(g, TPAL)),
     deadTree: [bake(deadTree1, DTPAL), bake(deadTree2, DTPAL)],
     den: bake(den, DNPAL),
     hogHut: hogHut.map((f) => bake(f, HHPAL)),
