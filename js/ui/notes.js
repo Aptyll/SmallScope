@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['Clivus\'s ice axe head and Arcus\'s hat read clearly at a glance', '0.778'],
     ['EVERY WEAPON SWINGS ITS OWN WAY: A SPEAR THRUSTS, AN AXE CHOPS, A HAMMER KNOCKS UP SNOW', '0.777'],
     ['A SMALL SPARK ON EVERY BLOW THAT LANDS ON A HERO', '0.777'],
     ['THE SHOP OPENS ON WHAT YOUR GOLD BUYS NOW', '0.776'],
