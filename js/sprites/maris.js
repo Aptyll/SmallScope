@@ -305,7 +305,7 @@ const MARIS_SKINS = [
 ];
 
 // ------------------------------------------------------------ maris harpoon
-// Her HARPOON as she holds it (HERO_BLADES.harpoon, js/draw/maris.js): a slim iron point with one long barb on
+// Her HARPOON as she holds it (HERO_BLADES.harpoon, js/draw/maris.js): a slim iron point with one hooked barb on
 // a long ash shaft, her line lashed under the head and its end hanging. Flat with the head left like every held blade (18 px, the greatsword's
 // band; the hands close near the shaft's end, `hilt`), and slanted with the head up and right
 // for a body facing down or up.
@@ -333,10 +333,10 @@ const MARIS_HARPOON_DIAG = [
   '............ooo.',
   '...........oSSo.',
   '..........oSso..',
-  '.....oooooSso...',
-  '.....oSSSSso....',
-  '.....ooorro.....',
-  '......orro......',
+  '......ooooSso...',
+  '......oSSSso....',
+  '.....oSoorro....',
+  '.....oorro......',
   '.....owuoR......',
   '....owuo.R......',
   '...owuo..R......',
