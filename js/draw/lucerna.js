@@ -170,7 +170,7 @@ function lucernaLantern() {
   lucernaLanternArt = [bakeBladeArt(LUCERNA_LANTERN, LUCERNA_LANTERN_PAL), bakeBladeArt(beat, LUCERNA_LANTERN_PAL)];
   return lucernaLanternArt;
 }
-HERO_STAVES.lantern = { art: lucernaLantern, grip: LUCERNA_LANTERN_GRIP };
+HERO_STAVES.lantern = { art: lucernaLantern, grip: LUCERNA_LANTERN_GRIP, cast: { up: 5, out: 1 } }; // gathering a cast she holds it aloft
 
 // ---- the status plate -------------------------------------------------------------
 // PULLED (lucernaPull, js/sim/lucerna.js) on the frame's plate (statusIcon,
