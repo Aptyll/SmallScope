@@ -263,3 +263,24 @@ SPRITES.weaponArt.knife = SPR.bake([
   '.oo..oooo...', 'oEEooGgoWTo.', 'oEEoogGoEEEo', '.oo..oooooo.',
   '............', '............', '............', '............',
 ], { '.': null, o: '#241a12', T: '#eef2f8', W: '#ffffff', E: '#8b93a8', g: '#6b4a30', G: '#a3794f' });
+
+// ------------------------------------------------------------ falco registry
+// FALCO in the hero art registry (heroArt, js/sprites/hero-art.js): the looks and
+// their paint, the skins tab's 8x8 glyph and the 12x12 emblem
+heroArt('falco', {
+  looks: FALCO_SKINS, pal: FALCO_PAL,
+  glyph: ['........', '.w....w.', '.ww..ww.', '..wwww..', '...ww...', '...ww...', '..w..w..', '........'],
+  emblem: [ // a hawk stooping, wings folded back
+    '............',
+    '.o........o.',
+    '.oWo....oWo.',
+    '..oWo..oWo..',
+    '...oWooWo...',
+    '....oWWo....',
+    '....oWWo....',
+    '....oWWo....',
+    '...oWooWo...',
+    '....o..o....',
+    '............',
+  ],
+});

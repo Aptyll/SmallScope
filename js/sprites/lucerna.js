@@ -317,3 +317,24 @@ SPRITES.weaponArt.lantern = SPR.bake([
   '.oyFWFyooooo', '.oyFFFyo.oyo', '.oyfFfyo.ooo', '..oYyYo.....',
   '...ooo......', '............', '............', '............',
 ], { '.': null, o: '#2e2440', y: '#f2cc6a', Y: '#b98a2e', f: '#f2cc6a', F: '#fff1b8', W: '#ffffff' });
+
+// ------------------------------------------------------------ lucerna registry
+// LUCERNA in the hero art registry (heroArt, js/sprites/hero-art.js): the looks and
+// their paint, the skins tab's 8x8 glyph and the 12x12 emblem
+heroArt('lucerna', {
+  looks: LUCERNA_SKINS, pal: LUCERNA_PAL,
+  glyph: ['...ww...', '..w..w..', '.wwwwww.', '.w.ww.w.', '.wwwwww.', '.w.ww.w.', '.wwwwww.', '..wwww..'],
+  emblem: [ // her lantern, lit, on its ring
+    '....oooo....',
+    '....o..o....',
+    '...oooooo...',
+    '...oggggo...',
+    '..ogWWWWgo..',
+    '..ogWWWWgo..',
+    '..ogWbbWgo..',
+    '..ogWWWWgo..',
+    '...oggggo...',
+    '....oooo....',
+    '............',
+  ],
+});

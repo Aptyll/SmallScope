@@ -4,3 +4,4 @@
 | --- | --- | --- |
 | IGNIA's 32 px ability and passive icons (letters in `AB32_PAL`, baked by `bakeAb32`, abilities.js) | `IGNIA_ICON32` | `ignia icons` |
 | her looks: the standing grids (on ARMATOS's frame), her copper hair and ember letters, the skins table (`run: 'drawn'`) | `IGNIA_BODY`, `IGNIA_PAL`, `IGNIA_SKINS` | `ignia bodies` |
+| IGNIA in the hero art registry: its looks and paint, the skins tab's glyph, the 12px emblem | `heroArt('ignia', ...)` (js/sprites/hero-art.js) | `ignia registry` |

@@ -317,3 +317,25 @@ SPRITES.weaponArt.arbalest = SPR.bake([
   '.oo.......', 'oGGo......', 'oGo.......', 'oGooooooo.', 'oWbbbbbYbo', 'oGooooBBBo',
   'oGo...oBBo', 'oGo...oYo.', 'oGo....o..', 'oGGo......', '.oo.......',
 ], { '.': null, o: '#241a12', G: '#c3ccd8', W: '#eef2f8', b: '#8a6440', B: '#5e4128', Y: '#d9a640' });
+
+// ------------------------------------------------------------ sagitta registry
+// SAGITTA in the hero art registry (heroArt, js/sprites/hero-art.js): the looks and
+// their paint, the skins tab's 8x8 glyph and the 12x12 emblem
+heroArt('sagitta', {
+  looks: SAGITTA_SKINS, pal: SAGITTA_PAL,
+  glyph: ['wwwwwwww', 'w..ww..w', '...ww...', '...ww...', '..wwww..', '..wwww..', '...ww...', '........'],
+  emblem: [ // a crossbow, prod up, the stock down
+    '............',
+    '.oooooooooo.',
+    'oWWWWWWWWWWo',
+    'oWooooooooWo',
+    'oWo.oWWo.oWo',
+    '.o..oWWo..o.',
+    '....oWWo....',
+    '...ooWWoo...',
+    '...oWWWWo...',
+    '...oWWWWo...',
+    '....oooo....',
+    '............',
+  ],
+});

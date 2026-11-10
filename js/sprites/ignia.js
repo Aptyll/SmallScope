@@ -306,3 +306,25 @@ const IGNIA_SKINS = [
   { id: 'hearth', name: 'HEARTHKEEPER', rarity: 'common', price: 0, grids: IGNIA_BODY.hearth, motion: 'hearth', run: 'drawn' },
   { id: 'wanderer', name: 'WANDERER', rarity: 'rare', price: 200, grids: IGNIA_BODY.wanderer, motion: 'wanderer', run: 'drawn' },
 ];
+
+// ------------------------------------------------------------ ignia registry
+// IGNIA in the hero art registry (heroArt, js/sprites/hero-art.js): the looks and
+// their paint, the skins tab's 8x8 glyph and the 12x12 emblem
+heroArt('ignia', {
+  looks: IGNIA_SKINS, pal: IGNIA_PAL,
+  glyph: ['...w....', '..ww....', '..www.w.', '.wwww.w.', '.wwwwww.', 'ww..www.', 'ww..www.', '.wwwww..'],
+  emblem: [ // one flame, white at its heart
+    '.....o......',
+    '....oro.....',
+    '....oro.o...',
+    '...orrgoro..',
+    '..orrggoro..',
+    '..orgggrro..',
+    '.orggWggro..',
+    '.orgWWWgro..',
+    '.orgWWWgro..',
+    '..orgWgro...',
+    '...orrro....',
+    '....ooo.....',
+  ],
+});

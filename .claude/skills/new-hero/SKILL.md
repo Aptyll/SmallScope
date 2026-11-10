@@ -64,17 +64,18 @@ LOOKS (optional): default look name, first buyable skin name
    - `js/draw/<hero>.js`: tells, rings, entities, the held weapon.
    - `js/sprites/<hero>.js`: ability icons, then bodies and weapon once picked (step 4).
    - Its `CLASSES` row in js/sim/player.js with `pos:` (the draft positions it plays, best first:
-     `POSITIONS` ids, js/ui/draft.js), `passive`, `base`/`grow` stats, its looks (`skins`,
-     `skinPal`, `skinSlot`: a hero is drawn only in its own `skins` table, so until step 4 point
-     `skins` and `skinPal` at the closest hero's, e.g. `ARM_SKINS` and `ARM_PAL`), and its own
+     `POSITIONS` ids, js/ui/draft.js), its `id` (lower-case name, never changed), `passive`,
+     `base`/`grow` stats, and its own
      **basic attack**: an
      `attack` row (`name`, `art`, `cycle`, `kb`, and a `shot` `{ speed, life, col, look }` or a `cut`
      `{ reach, half }`; [the basic attack](../../../docs/dev/gameplay/the-basic-attack.md)). Copy the
      closest hero's row and say in the PR what you changed; a new `art` goes in
      js/sprites/weapons.js. Code that needs the hero names it with `heroIndex('NAME')`, never a
-     bare index. Each of these is a load check that refuses to boot without it: a `SKIN_TABS`
-     row in js/ui/skins.js (`hero: heroIndex('NAME')`, `rows` the same table as the row's
-     `skins`), the 12px emblem in `CLASS12` (js/ui/menu.js, keyed by the hero's name), and a
+     bare index. Each of these is a load check that refuses to boot without it: the hero's
+     art row, `heroArt(id, { looks, pal, glyph, emblem })` at the end of js/sprites/<hero>.js
+     (js/sprites/hero-art.js: its looks, their paint, the skins tab's 8x8 glyph and the 12px
+     emblem; the skins tab, the bodies and the rail chips all read it; until step 4 its `looks`
+     and `pal` point at the closest hero's, e.g. `ARM_SKINS` and `ARM_PAL`), and a
      `BOT_BUILDS` row (js/sim/items.js, keyed by name). Then the scripts in `index.html` in load
      order.
    - **Register, don't stack.** The shared sim reaches a hero only through the lists and tables
@@ -90,7 +91,7 @@ LOOKS (optional): default look name, first buyable skin name
    (default look `price: 0`, first buyable skin `rarity: 'rare'`, 200 coins, as Armatos), a doll
    per look in `app/bake-player/bodies.py`, then `python app/bake-player/bake.py`. The rebake
    must only add lines to js/baked/motion.js: every other hero's frames stay byte-identical.
-   Point the `CLASSES` row's `skins`/`skinPal` and its `SKIN_TABS` row at them. The weapon is held naturally in all
+   Point the hero's `heroArt` row's `looks`/`pal` at them. The weapon is held naturally in all
    four facings (a `HERO_BLADES` row: flat and slanted art, the `hilt` on the flat art and the grip on the slanted, the hip by facing; a mage's
    staff is a `HERO_STAVES` row named by `staff:` on the `CLASSES` row, IGNIA's crook). The side run
    comes off the drawn side frame (`heroRunSide`): keep the head as wide as the front and the body

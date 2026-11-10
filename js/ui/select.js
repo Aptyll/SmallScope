@@ -188,7 +188,7 @@ function drawSeatRow(r, mine, hidden, flash, hot) {
   ctx.fillStyle = SC_EDGE; ctx.fillRect(r.x + 8, r.y + r.h - 1, r.w - 16, 1);
   const dx = mine ? r.x + 26 : r.x + r.w - 26, dy = r.y + (r.h >> 1);
   const ring = h >= 0 && banning ? SEL_RED : h >= 0 && firm ? mark : me ? SEL_GOLD : SC_EDGE;
-  const worn = h >= 0 && CLASSES[h].skinSlot && p.skins ? p.skins[CLASSES[h].skinSlot] || null : null; // the look this seat wears
+  const worn = h >= 0 && p.skins ? p.skins[CLASSES[h].id] || null : null; // the look this seat wears
   drawSelDisc(dx, dy, ring, h, team, firm ? 1 : 0.45, role, worn);
   if (h >= 0 && banning && D.lock[p.id] >= 0) draftSlash(dx - 10, dy - 10, 21);
   if (me && draftOpen()) drawSelSwap(r, hot === 'swap');
@@ -281,11 +281,11 @@ function drawShowcase(L, now, a) {
   drawPixelTextOutline(ctx, nm, L.cx - (pixelTextWidth(nm, 2) >> 1), S.y + S.h + 6, '#f4f7ff', SC_INK, 2);
 }
 function selSkinRows(h) {
-  const c = CLASSES[h], tab = c && c.skinSlot ? SKIN_TABS.find((t) => t.hero === h) : null;
+  const c = CLASSES[h], tab = c ? SKIN_TABS.find((t) => t.hero === h) : null;
   return tab ? tab.rows.map((r) => ({ r, tab, own: skinHas(tab, r) })) : [{ r: { id: null, name: c.name, rarity: 'common' }, tab: null, own: true }];
 }
 function selSkinWorn(h) {
-  const c = CLASSES[h], id = c && c.skinSlot && player.skins ? player.skins[c.skinSlot] || null : null;
+  const c = CLASSES[h], id = c && player.skins ? player.skins[c.id] || null : null;
   const rows = selSkinRows(h), k = rows.findIndex((s) => s.r.id === id);
   return k > 0 ? k : 0;
 }
