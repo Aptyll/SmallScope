@@ -1,20 +1,29 @@
 'use strict';
 // The title's scene: what the landing page shows behind the logo and the
 // words. Ten heroes stand on the frozen middle, five a side, facing each other
-// across it at the match's own zoom - the game in one picture before a word is
+// across the merchant's boat at the match's own zoom - the game in one picture before a word is
 // read. They are this screen's own bodies (never in `players`, never stepped
 // by the sim, never sent): drawPlayer paints them in the sorted pass like
 // any body, so they wear the real sprites, weapons, shade and team rings.
 // Your own hero (the profile's last pick) leads the blue side; the other nine
 // are dealt fresh each time the title opens.
-const TITLE_AT = [8, 78];      // world px off the map's centre the scene is framed on: the open ice south of the merchant's boat
+const TITLE_AT = [9, 12];      // world px off the boat's tile the scene is framed on: the merchant's boat, frozen into the middle
+                               // (off the map's centre on a map with no boat)
 const TITLE_DRIFT = [3, 2];    // world px the camera breathes round it, each axis
 // where each side's five stand, world px off the scene's centre, the leader first
-// (your side as written, on the left; the rivals mirrored across the middle)
-const TITLE_SPOTS = [[-36, 4], [-58, -18], [-58, 24], [-84, 0], [-104, -22]];
+// (your side as written, left of the boat; the rivals mirrored across it)
+const TITLE_SPOTS = [[-62, -4], [-84, -30], [-80, 22], [-108, -8], [-102, -46]];
 let titleBodies = null;
 
-function titleSceneAt() { const c = WORLD * TILE / 2; return { x: c + TITLE_AT[0], y: c + TITLE_AT[1] }; }
+function titleSceneAt() {
+  const c = WORLD * TILE / 2;
+  let at = { x: c, y: c }, bd = Infinity;
+  for (const l of landmarks) {
+    const d = Math.hypot(l.tx * TILE - c, l.ty * TILE - c);
+    if (l.key === 'boat' && d < bd) { bd = d; at = { x: l.tx * TILE, y: l.ty * TILE }; }
+  }
+  return { x: at.x + TITLE_AT[0], y: at.y + TITLE_AT[1] };
+}
 // the title's camera: the scene, breathing a few px so the picture is never dead still
 function titleCamTarget() {
   const s = titleSceneAt(), t = state.menu.camT;
