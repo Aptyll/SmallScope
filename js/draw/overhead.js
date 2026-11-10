@@ -143,6 +143,7 @@ const tallySpot = new Map(); // body -> { x, y, col, a, f }: where its frame las
 let tallyFrame = 0;
 function queueTally(u, rx, cy, col) {
   if (!u.tallyN || !inWorldLayer()) return; // a UI pass (the wiki's beasts) has no fight to total
+  if (u.bot && !u.tallyBy) return; // a soldier only wears a total a hero's blow is in (hurtRobot, js/sim/robots.js)
   // the air layer sits on the exact camera, the world buffer on its floor:
   // a rider's total is moved onto the world buffer's px, where the queue lives
   if (ctx === actx) { rx += camX - Math.floor(camX); cy += camY - Math.floor(camY); }
