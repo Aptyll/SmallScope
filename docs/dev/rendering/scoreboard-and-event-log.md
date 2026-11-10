@@ -19,7 +19,7 @@ is **the match's gold earned** (`p.earned`, paid by `gainGold`), not the purse â
 an item is progress â€” while the GOLD column shows the purse, so a player that has
 spent can sit above one showing more gold. It is the centre piece while the key is held, on the HUD's
 graphite (`drawHudFrame`): the two sides as two blocks, a stripe in `TEAMS[skin(team)].mark` down each and
-the side's wash on its rows. A row is a hero: its face (`drawFace`), level, hero name over the person's
+the side's wash on its rows. A row is a hero: its face (`drawFace`), level and hero name at 2x in the numbers' white, the person's name under it
 (a bot is its hero alone, `boardName`), the six items it carries in wells on their rims (`itemMetal`,
 `shopIcon`), then K/D/A (kills, deaths, assists -
 [Takedowns](../gameplay/death-and-respawn.md#takedowns-assists-bounties-and-shutdowns)), farm (last hits

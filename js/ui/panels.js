@@ -43,7 +43,7 @@ const SB_W = 408;
 const SB_ROW = 20;        // a row: the 18 px face and wells and their air
 const SB_HEAD = 28;       // the clock and the column glyphs over the first row
 const SB_GAP = 8;         // between the two sides' blocks
-const SB_FACE = 14, SB_LVL = 46, SB_NAME = 52, SB_ITEMS = 140, SB_WELL = 18; // a row's left edges, panel-relative
+const SB_FACE = 14, SB_LVL = 50, SB_NAME = 56, SB_ITEMS = 140, SB_WELL = 18; // a row's left edges, panel-relative
 const SB_COL = [312, 356, 400]; // right edges of K/D/A / FARM / GOLD, panel-relative
 
 function scoreboardOpen() { return keyHeld('board') && state.mode !== 'title' && !window.DBG.hideUI; }
@@ -81,7 +81,7 @@ function renderScoreboard() {
   endIcon('time', x + 10, y + 6, WIN_ACCENT);
   drawPixelTextOutline(ctx, clockTxt(state.elapsed), x + 30, y + 9, SC_TXT, SC_INK, 2);
   const kda = tr('board.kda');
-  drawPixelTextOutline(ctx, kda, x + SB_COL[0] - pixelTextWidth(kda), y + 14, SC_LBL, SC_INK, 1);
+  drawPixelTextOutline(ctx, kda, x + SB_COL[0] - pixelTextWidth(kda), y + 14, SC_TXT, SC_INK, 1);
   endIcon('farm', x + SB_COL[1] - 16, y + 6, WIN_ACCENT); // FARM: last hits on soldiers and camp monsters (js/sim/farm.js)
   endIcon('gold', x + SB_COL[2] - 16, y + 6, WIN_ACCENT);
 
@@ -108,12 +108,15 @@ function renderScoreboard() {
         ctx.globalAlpha = 0.55;
       }
       const lv = String(p.level);
-      drawPixelTextOutline(ctx, lv, x + SB_LVL - pixelTextWidth(lv), ry + 7, SC_GOLD, SC_INK, 1);
-      // the hero, and under it the person playing it (a bot is its hero alone)
-      const hero = CLASSES[p.cls] ? CLASSES[p.cls].name : p.name, nm = boardName(p);
-      drawPixelTextOutline(ctx, hero, x + SB_NAME, ry + (nm !== hero ? 3 : 7), you ? SC_GOLD : playerTint(p), SC_INK, 1);
-      if (nm !== hero) drawPixelTextOutline(ctx, nm, x + SB_NAME, ry + 11, SC_LBL, SC_INK, 1);
-      if (gone) drawPixelTextOutline(ctx, tr('board.out'), x + SB_NAME + 4 + pixelTextWidth(hero), ry + (nm !== hero ? 3 : 7), SC_LBL, SC_INK, 1);
+      drawPixelTextOutline(ctx, lv, x + SB_LVL - pixelTextWidth(lv, 2), ry + 4, SC_LIT, SC_INK, 2);
+      // the hero at 2x in the numbers' white, and under it the person playing it (a bot is its hero alone),
+      // cut to the column so a long name never runs under the wells
+      const hero = CLASSES[p.cls] ? CLASSES[p.cls].name : p.name, two = boardName(p) !== hero;
+      let nm = boardName(p);
+      while (nm.length > 1 && pixelTextWidth(nm) > SB_ITEMS - SB_NAME - 4) nm = nm.slice(0, -1);
+      drawPixelTextOutline(ctx, hero, x + SB_NAME, ry + (two ? 0 : 4), you ? SC_GOLD : SC_LIT, SC_INK, 2);
+      if (two) drawPixelText(ctx, nm, x + SB_NAME, ry + 13, SC_LBL, 1); // bare, under the hero's own outline
+      if (gone) drawPixelTextOutline(ctx, tr('board.out'), x + SB_NAME + 4 + pixelTextWidth(hero, 2), ry + 6, SC_LBL, SC_INK, 1);
       // what it carries: six wells, a part's rim or a finished item's (itemMetal), the strip's own
       for (let i = 0; i < 6; i++) {
         const id = p.items && p.items[i], r = { x: x + SB_ITEMS + i * (SB_WELL + 1), y: ry, w: SB_WELL, h: SB_WELL };
