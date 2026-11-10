@@ -28,6 +28,16 @@ const WIN_SLIDE = 0.32; // the planks' slide, finishing exactly on WIN_T.menu
 const WIN_BODY = 48, WIN_TIER = 8;
 const WIN_BANNER_W = 36, WIN_BANNER_H = 96; // the cloth; the rail hangs above it
 
+// a 1V1's ending under the rule, 2x, fading in at f 0..1: FIRST STRIKE,
+// 100 SOLDIERS or FIRST TOWER (onevoneWhy, js/sim/onevone.js); nothing in any other match
+function drawEndWhy(L, f, col, ink) {
+  const why = onevoneWhy();
+  if (!why || f <= 0) return;
+  ctx.globalAlpha = Math.min(1, f);
+  drawPixelTextOutline(ctx, why, Math.round(L.cx - pixelTextWidth(why, 2) / 2), L.ruleY + 6, col, ink, 2);
+  ctx.globalAlpha = 1;
+}
+
 // the composition, in the 270-tall frame everything else is authored in
 function winLayout() {
   const toy = frameTop();
@@ -641,6 +651,8 @@ function renderVictory(now) {
     drawGoldRule(L.cx, L.ruleY, Math.round((tw / 2 + 10) * easeOut(Math.min(1, (t - WIN_T.rule) / 0.4))), 1, RULE_GOLD);
   }
 
+  drawEndWhy(L, (t - WIN_T.rule - 0.3) / 0.4, '#ffd95c', '#2a1c10');
+
   // --- the tally ----------------------------------------------------------
   drawEndTally(WIN_STATS, ws, t, L.statY, WIN_T, WIN_ACCENT);
   drawStoryLines(ws, t, L.storyY, WIN_T, WIN_ACCENT); // the match story (js/ui/story.js), under the plates
@@ -892,6 +904,8 @@ function renderDefeat(now) {
   if (t > DEF_T.rule) {
     drawGoldRule(L.cx, L.ruleY, Math.round((tw / 2 + 10) * easeOut(Math.min(1, (t - DEF_T.rule) / 0.4))), 1, RULE_FROST);
   }
+
+  drawEndWhy(L, (t - DEF_T.rule - 0.3) / 0.4, '#9fbde0', '#0a0e23');
 
   // --- the tally ----------------------------------------------------------
   drawEndTally(DEF_STATS, ws, t, L.statY, DEF_T, DEF_ACCENT);

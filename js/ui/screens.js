@@ -535,11 +535,12 @@ function renderDead(now) {
   // body fell. 3x, or 2x on a view too narrow to hold it (a 25-glyph line
   // is 297px at 3x).
   const gone = state.over === 'hostleft'; // the host walked out from under the match
-  const t = tr(gone ? 'end.hostLeft' : 'end.lost');
+  const why = gone ? '' : onevoneWhy(); // a 1V1 says DEFEAT and how (js/sim/onevone.js)
+  const t = why ? tr('end.defeat') : tr(gone ? 'end.hostLeft' : 'end.lost');
   const ts = pixelTextWidth(t, 3) <= VIEW_W - 20 ? 3 : 2;
   const toy = frameTop();
   drawPixelTextOutline(ctx, t, Math.round((VIEW_W - pixelTextWidth(t, ts)) / 2), toy + 34, '#cfe4f2', '#0a0e23', ts);
-  const t2 = tr(gone ? 'end.hostLeftSub' : 'end.lostSub');
+  const t2 = why || tr(gone ? 'end.hostLeftSub' : 'end.lostSub');
   drawPixelTextOutline(ctx, t2, Math.round((VIEW_W - pixelTextWidth(t2, 2)) / 2), toy + 34 + ts * 5 + 8, '#8f9cc4', '#0a0e23', 2);
   drawEndPlanks(now, 0);
 }

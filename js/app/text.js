@@ -28,6 +28,11 @@ const TEXT = {
   'end.noResult': 'NO RESULT',
   'end.lobby': 'LOBBY',
   'end.back': 'BACK',
+  // how a 1V1 ended (onevoneWhy, js/sim/onevone.js): under either headline, and the feed's line
+  'onevone.strike': 'FIRST STRIKE',
+  'onevone.farm': '{n} SOLDIERS',
+  'onevone.tower': 'FIRST TOWER',
+  'onevone.line': '{why}: THE {side} SIDE WINS THE 1V1',
 
   // ---- the post-game stats (js/ui/lobby.js)
   'score.stats': 'STATS',
