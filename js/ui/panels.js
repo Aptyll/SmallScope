@@ -375,7 +375,7 @@ function renderWorldMap(now) {
       ctx.stroke();
       ctx.restore();
     } else if (e.state !== 'down') continue;
-    drawMapBird(ctx, mx(e.x), my(e.y), TEAMS[skin(e.team)].mark, CHART_DARK);
+    drawMapBird(ctx, mx(e.x), my(e.y), TEAMS[skin(e.team)].mark, CHART_DARK, 2);
   }
 
   // your side's pings, the minimap's glyph at the spot (drawPingGlyph,

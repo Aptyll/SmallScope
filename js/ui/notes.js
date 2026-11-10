@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['EAGLES AND BAYS STAND OUT ON BOTH MAPS', '0.673'],
     ['NO MERCH TAG OVER THE MERCHANT', '0.672'],
     ['TWO CONTROL SCHEMES: WASD OR CLICK TO MOVE', '0.671'],
     ['BOTS FIGHT THE ORCA', '0.670'],

@@ -56,7 +56,7 @@ const STRUCTS = {
   // most of a SIDE's soldiers alive at once, every bay counted: a side
   // nobody fights back against does not fill the map, it waits for its
   // column to spend itself.
-  barracks: { name: 'BARRACKS', w: 3, h: 2, art: 'spawner', sight: 176, mm: mmTeam, map: chTeam,
+  barracks: { name: 'BARRACKS', w: 3, h: 2, art: 'spawner', sight: 176, mm: mmTeam, map: chTeam, glyph: 'bay',
     cost: { gold: 400 }, hp: 320, buildT: 6, mix: ['melee', 'melee', 'melee', 'ranged', 'ranged', 'ranged'],
     siege: [[0, 3], [900, 2], [1500, 1]], first: 60, waveT: 30, grow: 180, cap: 16, // cap: soldiers a LANE holds, queued or out (two whole waves and change)
     // waveT: the clock to the next wave. queue/rollT: soldiers still to leave
