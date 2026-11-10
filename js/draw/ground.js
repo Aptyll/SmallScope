@@ -167,12 +167,13 @@ function paintGroundTile(g, tx, ty) {
 // ---- the road's pixels ----------------------------------------------------
 // The road (placeRoad, world.js) is not a kind of tile but a BAND laid over
 // the snow at pixel precision: every pixel of a tile near it asks roadDist
-// for its distance to the ragged edge and is painted by that - inside, CLEAN
-// packed earth in two tones by 8 px quad and nothing else (no ruts, stones or
-// specks: a lane is the pitch, and the bodies on it are the only detail), a
-// full value step under the snow so it reads without colour and at night,
-// with snow lying in clumps over the last half tile of the verge; outside,
-// ROAD_EDGE tiles of earth breaking up into the snow in clumps. So the edge is one wandering line and never a tile staircase, and
+// for its distance to the ragged edge and is painted by that - inside, packed
+// earth in two tones by 8 px quad, a full value step under the snow so it
+// reads without colour and at night, with its detail (roadDetailAt: ruts,
+// frozen puddles, stones) kept within that step, and snow lying in clumps
+// over the last half tile of the verge; outside, ROAD_EDGE tiles of earth
+// breaking up into the snow in clumps, then snow greyed by the march and dry
+// grass through it. So the edge is one wandering line and never a tile staircase, and
 // a 16 px tile can be half road and half snow. On an ICE tile - which only
 // a PATH ever crosses, never the diagonal - `onIce` paints the earth and its
 // snowy verge the same way but leaves the water alone outside it, under a
@@ -180,6 +181,12 @@ function paintGroundTile(g, tx, ty) {
 // a shoreline, not a muddy shoulder. 
 const ROAD_COL_A = '#b5a182', ROAD_COL_B = '#ad997a'; // the two tones of packed earth
 const ROAD_COL_DEEP = '#8a7556';                       // the earth in shade (the wiki mound's rim)
+const ROAD_COL_RUT = '#94805f';                        // the ruts the siege carts wear
+const ROAD_COL_ICE = '#b4c4cf', ROAD_COL_GLINT = '#dde8ef'; // a frozen puddle in a rut
+const ROAD_COL_STONE = '#9b958c', ROAD_COL_STONE_LIT = '#c9c4ba', ROAD_COL_STONE_SHADE = '#6e675d';
+const ROAD_COL_GREY = '#d5dce6';                       // the snow beside the lane, greyed by the march
+const ROAD_COL_GRASS = '#a08c58', ROAD_COL_GRASS_D = '#73643c'; // dry grass through the verge snow
+const ROAD_RUT = 1.0;                                  // tiles off a lane's centreline its two ruts run
 const ROAD_EDGE = 0.45;                                // tiles past the edge the earth breaks up over
 const ROAD_COL_RIM = '#d6ecf4';                        // the broken-ice rim where a path crosses a frozen lake
 const ROAD_COL_SNOW = '#e7eff8';                       // snow melting in over the verge
@@ -227,30 +234,93 @@ function paintLog(g, seg, px, py, ox, oy) {
   }
   penFlush();
 }
+// tiles off the centreline of the lane (fx, fy) lies on - the diagonal's or
+// a side lane's - or 99 off both (a pad is neither)
+function roadLatAt(fx, fy) {
+  const dm = roadMainDist(fx, fy), ds = sideLaneDist(fx, fy);
+  if (dm < 0 && dm <= ds) return Math.abs(roadOffS(fx, fy));
+  return ds < 0 ? segsLat(laneSegs, laneA, laneB, fx, fy) : 99;
+}
+// how far (tiles) a point `lat` off its lane's centreline lies from the
+// nearer rut, which wanders a little either way along the lane
+function roadRutOff(fx, fy, lat) {
+  return Math.abs(lat - ROAD_RUT - (vnoise(fx * 0.11 + 4.4, fy * 0.11 + 8.8) - 0.5) * 0.35);
+}
+// the lane's own pixel detail at world pixel (wx, wy), or null for plain
+// earth. Everything sits within a value step of the earth, so the lane still
+// reads as one dark band at night: two broken RUTS worn by the siege carts
+// down every lane, a FROZEN PUDDLE now and then lying in a rut (an 8x4 oval
+// in one cell of 14 px in a few, kept where its centre falls on a rut), and
+// the odd small STONE with its lit top and shade.
+const ROAD_POOL = ['.dddddd.', 'digiiiib', 'diiiiiib', '.bbbbbb.'];
+function roadDetailAt(wx, wy, fx, fy, hp) {
+  const pcx = Math.floor(wx / 14), pcy = Math.floor(wy / 14), ph = hash2(pcx * 14 + 7, pcy * 14 + 9);
+  if (ph < 0.4) {
+    const x0 = pcx * 14 + 1 + ((ph * 700) | 0) % 5, y0 = pcy * 14 + 2 + ((ph * 1900) | 0) % 7;
+    const ox = wx - x0, oy = wy - y0;
+    if (ox >= 0 && ox < 8 && oy >= 0 && oy < 4 && ROAD_POOL[oy][ox] !== '.') {
+      const cx = (x0 + 4) / TILE - 0.5, cy = (y0 + 2) / TILE - 0.5, lat = roadLatAt(cx, cy);
+      if (lat < 99 && roadRutOff(cx, cy, lat) < 0.16 && laneDist(cx, cy) < -0.8) {
+        const ch = ROAD_POOL[oy][ox];
+        return ch === 'd' ? ROAD_COL_DEEP : ch === 'b' ? ROAD_COL_A : ch === 'g' ? ROAD_COL_GLINT : ROAD_COL_ICE;
+      }
+    }
+  }
+  const lat = roadLatAt(fx, fy);
+  if (lat < 99) {
+    const r = roadRutOff(fx, fy, lat);
+    if (r < 0.075 && hp > 0.1 && vnoise(wx / 5 + 9.1, wy / 5 + 2.2) > 0.22) return ROAD_COL_RUT;
+  }
+  // a stone: one in a few cells of 7 px, a 3x2 pebble at a rolled spot in it
+  const cx = Math.floor(wx / 7), cy = Math.floor(wy / 7), h = hash2(cx * 7 + 3, cy * 7 + 5);
+  if (h < 0.035) {
+    const ox = wx - cx * 7 - 1 - ((h * 400) | 0) % 4, oy = wy - cy * 7 - 1 - ((h * 1300) | 0) % 4;
+    if (oy === 0 && ox >= 0 && ox <= 2) return ox === 0 ? ROAD_COL_STONE : ROAD_COL_STONE_LIT;
+    if (oy === 1 && ox >= 0 && ox <= 2) return ox === 2 ? ROAD_COL_STONE_SHADE : ROAD_COL_STONE;
+    if (oy === 2 && ox >= 1 && ox <= 3) return ROAD_COL_DEEP;
+  }
+  return null;
+}
+// a tuft of dry grass through the snow at the verge: a 4x4 clump of
+// blades in one cell of 8 px in a few, mirrored on half of them, or null
+const ROAD_TUFT = ['.g..', '.g.g', 'gdgd', '.dd.'];
+function roadTuftAt(wx, wy) {
+  const cx = Math.floor(wx / 8), cy = Math.floor(wy / 8), h = hash2(cx * 8 + 11, cy * 8 + 1);
+  if (h > 0.16) return null;
+  const ox = wx - cx * 8 - 1 - ((h * 900) | 0) % 3, oy = wy - cy * 8 - 1 - ((h * 2100) | 0) % 3;
+  const ch = ox >= 0 && ox < 4 && oy >= 0 && oy < 4 ? ROAD_TUFT[oy][h < 0.08 ? ox : 3 - ox] : '.';
+  return ch === 'g' ? ROAD_COL_GRASS : ch === 'd' ? ROAD_COL_GRASS_D : null;
+}
 function paintRoadOverlay(g, tx, ty, px, py, onIce) {
   for (let j = 0; j < TILE; j++) for (let i = 0; i < TILE; i++) {
     const fx = tx + (i + 0.5) / TILE - 0.5, fy = ty + (j + 0.5) / TILE - 0.5;
     const d = laneDist(fx, fy); // ...which ends on the cistern's gates (js/sim/world.js)
     if (d >= ROAD_SHOULDER) continue;
+    const wx = px + i, wy = py + j, hp = hash2(wx, wy); // this pixel's own roll
     // the drift field: snow lies on the verge and mud spreads off it in
     // CLUMPS, not as per-pixel static - a low-frequency noise read per pixel,
     // so the melt reads as patches of snow and mud rather than sand
-    const clump = vnoise((px + i) / 6 + 3.1, (py + j) / 6 + 7.7);
+    const clump = vnoise(wx / 6 + 3.1, wy / 6 + 7.7);
     let c = null;
     if (d < 0) {
-      // clean packed earth: two tones by 8 px quad and nothing else, so a
-      // body, a shot and a ground mark are the only detail on a lane
-      c = vnoise(((px + i) >> 3) / 13, ((py + j) >> 3) / 13) > 0.5 ? ROAD_COL_A : ROAD_COL_B;
+      // packed earth in two tones by 8 px quad
+      c = vnoise((wx >> 3) / 13, (wy >> 3) / 13) > 0.5 ? ROAD_COL_A : ROAD_COL_B;
+      c = roadDetailAt(wx, wy, fx, fy, hp) || c;
       // the verge: snow lying over the last of the earth in clumps
-      if (d > -0.5 && clump > 1.0 - (d + 0.5) / 0.5 * 0.5) c = ROAD_COL_SNOW;
+      if (d > -0.6 && clump + hp * 0.15 > 1.0 - (d + 0.6) / 0.6 * 0.5) c = ROAD_COL_SNOW;
     } else if (onIce) {
       // the bank: broken ice along the crossing's own edge, and open water past it
       if (d < 0.09) c = ROAD_COL_RIM;
     } else {
-      // the shoulder: one thin band of trodden earth breaking up into the snow in clumps
+      // the shoulder: trodden earth breaking up into the snow in clumps, then
+      // snow greyed by the march in patches thinning to the field, dry grass
+      // poking through it
+      const k = 1 - d / ROAD_SHOULDER;
       if (d < ROAD_EDGE && clump < 0.62 - d / ROAD_EDGE * 0.5) c = ROAD_COL_B;
+      else if (clump < k * k * 0.7 - 0.05) c = ROAD_COL_GREY;
+      if (d < 0.9) c = roadTuftAt(wx, wy) || c;
     }
-    if (c) penDot(g, c, px + i, py + j);
+    if (c) penDot(g, c, wx, wy);
   }
   penFlush();
 }
