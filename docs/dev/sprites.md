@@ -6,6 +6,14 @@ file holds what, is at the end.
 
 Sprites are literal ASCII grids paired with a palette object mapping character → hex (or `null`
 for transparent), baked by `bake()` at load. Left-facing variants are `flipH()` of the right ones.
+
+**Measuring art reads `SPR.pixelsOf(cv)`, never the canvas.** A sprite canvas lives on the GPU and
+`getImageData` on it stalls the frame; `bake` and `flipH`/`flipV` keep each sprite's pixels as they
+paint, so a sun shade, a building's shot box, a canopy's ink or a blade's reach reads those. Any
+other canvas is read back once on first ask (`SPR.readbacks()` counts them). A canvas drawn into a
+CPU layer that is read every frame (the canopy's hero layer) goes through its `SPR.cpuTwin`: one GPU
+canvas drawn into a CPU one makes every later read of it wait on the GPU. So hand-built art bakes
+through `SPR.bake`, not a copy of it.
 Character sprites are 16×16 in the world, each hero drawn only in its own looks
 ([hero looks](#hero-looks)); its 48 px face is that same standing front at 3x. The run and the roll
 are wider frames holding that same cell, and the one set not typed by hand
@@ -639,7 +647,7 @@ candidates (C, the ice-fishing shack, stood in the game until 4.12; A, the slat 
 ## The shape of a sprite file
 
 `js/sprites/core.js` loads first and makes two globals: the empty `SPRITES` registry and `SPR`,
-the helpers every art file shares — `bake`, `flipH`, `bakeClips`, `mapClips`,
+the helpers every art file shares — `bake`, `flipH`/`flipV`, `pixelsOf`, `keepPixels`, `cpuTwin`, `bakeClips`, `mapClips`,
 `liveIcon`, the `TEAM_SKINS` table and `teamBuildPal`. Each art file
 is a private IIFE with the same skeleton: destructure what it needs off `SPR`, its palettes and
 grids under `// ---- name` banners, the set builders, and at the bottom one

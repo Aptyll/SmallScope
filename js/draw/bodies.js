@@ -345,9 +345,9 @@ function riderSeat(p) {
 function backRow(spr, col) {
   const k = 'back' + col;
   if (spr[k] === undefined) {
-    const d = spr.getContext('2d').getImageData(col, 0, 1, spr.height).data;
+    const d = SPR.pixelsOf(spr), at = (y) => d[(y * spr.width + col) * 4 + 3];
     let y = Math.floor(spr.height * 0.6);
-    while (y > 0 && d[(y - 1) * 4 + 3] > 0) y--;
+    while (y > 0 && at(y - 1) > 0) y--;
     spr[k] = y;
   }
   return spr[k];
@@ -716,11 +716,9 @@ const bladeLens = new WeakMap();
 function bladeLen(img, grip) {
   let L = bladeLens.get(img);
   if (L !== undefined) return L;
-  const c = document.createElement('canvas'); c.width = img.width; c.height = img.height;
-  const g = c.getContext('2d'); g.drawImage(img, 0, 0);
-  const d = g.getImageData(0, 0, c.width, c.height).data;
+  const d = SPR.pixelsOf(img);
   L = 0;
-  for (let y = 0; y < c.height; y++) for (let x = 0; x < c.width; x++) if (d[(y * c.width + x) * 4 + 3]) L = Math.max(L, Math.hypot(x - grip[0], y - grip[1]));
+  for (let y = 0; y < img.height; y++) for (let x = 0; x < img.width; x++) if (d[(y * img.width + x) * 4 + 3]) L = Math.max(L, Math.hypot(x - grip[0], y - grip[1]));
   bladeLens.set(img, L);
   return L;
 }
@@ -861,10 +859,7 @@ const downPxOf = new WeakMap();       // frame -> its opaque pixels, read once
 function downPixels(spr) {
   let px = downPxOf.get(spr);
   if (px) return px;
-  sctx.clearRect(0, 0, 32, 32);
-  sctx.globalCompositeOperation = 'source-over';
-  sctx.drawImage(spr, 0, 0);
-  const d = sctx.getImageData(0, 0, spr.width, spr.height).data;
+  const d = SPR.pixelsOf(spr);
   px = [];
   for (let y = 0; y < spr.height; y++) for (let x = 0; x < spr.width; x++) {
     const i = (y * spr.width + x) * 4;
