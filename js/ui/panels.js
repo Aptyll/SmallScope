@@ -37,9 +37,14 @@ function logEvent(txt, p, o) {
 }
 
 // ---- scoreboard (hold TAB) ----
-const SB_W = 216;
-const SB_ROW = 9;
-const SB_COL = [96, 128, 176, 208]; // right edges of LVL / GOLD / K/D/A / FARM, panel-relative
+// The centre piece while TAB is held: the two sides as two blocks on the HUD's graphite, a row a hero -
+// its face, level, name, the six items it carries, K/D/A, farm and purse - the numbers at 2x.
+const SB_W = 408;
+const SB_ROW = 20;        // a row: the 18 px face and wells and their air
+const SB_HEAD = 28;       // the clock and the column glyphs over the first row
+const SB_GAP = 8;         // between the two sides' blocks
+const SB_FACE = 14, SB_LVL = 46, SB_NAME = 52, SB_ITEMS = 140, SB_WELL = 18; // a row's left edges, panel-relative
+const SB_COL = [312, 356, 400]; // right edges of K/D/A / FARM / GOLD, panel-relative
 
 function scoreboardOpen() { return keyHeld('board') && state.mode !== 'title' && !window.DBG.hideUI; }
 
@@ -68,57 +73,63 @@ function renderScoreboard() {
   const groups = scoreGroups();
   if (!groups.length) return;
   const rows = groups.reduce((n, g) => n + g.length, 0);
-  const h = 30 + rows * SB_ROW + (groups.length - 1) * 3;
+  const h = SB_HEAD + rows * SB_ROW + (groups.length - 1) * SB_GAP + 6;
   const x = Math.round((VIEW_W - SB_W) / 2), y = Math.round((VIEW_H - h) / 2);
-  const shadow = 'rgba(8,12,28,0.9)';
+  drawHudFrame(x, y, SB_W, h, { corners: { tl: true, tr: true, bl: true, br: true } });
 
-  ctx.fillStyle = 'rgba(4,7,20,0.45)'; ctx.fillRect(x + 2, y + 2, SB_W, h);
-  ctx.fillStyle = 'rgba(10,15,34,0.96)'; ctx.fillRect(x, y, SB_W, h);
-  ctx.fillStyle = '#2c3a68';
-  ctx.fillRect(x, y, SB_W, 1); ctx.fillRect(x, y + h - 1, SB_W, 1);
-  ctx.fillRect(x, y, 1, h); ctx.fillRect(x + SB_W - 1, y, 1, h);
-  ctx.fillStyle = '#3d4f85'; ctx.fillRect(x + 1, y + 1, SB_W - 2, 1); // lit top edge
+  // the head: the match clock (the top bar's), and a glyph over each number's column (the end table's)
+  endIcon('time', x + 10, y + 6, WIN_ACCENT);
+  drawPixelTextOutline(ctx, clockTxt(state.elapsed), x + 30, y + 9, SC_TXT, SC_INK, 2);
+  const kda = tr('board.kda');
+  drawPixelTextOutline(ctx, kda, x + SB_COL[0] - pixelTextWidth(kda), y + 14, SC_LBL, SC_INK, 1);
+  endIcon('farm', x + SB_COL[1] - 16, y + 6, WIN_ACCENT); // FARM: last hits on soldiers and camp monsters (js/sim/farm.js)
+  endIcon('gold', x + SB_COL[2] - 16, y + 6, WIN_ACCENT);
 
-  drawPixelTextShadow(ctx, tr('board.title'), x + 6, y + 6, '#cfe0ff', shadow);
-  const clock = clockTxt(state.elapsed); // the match clock, the one the top bar shows
-  drawPixelTextShadow(ctx, clock, x + SB_W - 6 - pixelTextWidth(clock), y + 6, '#7a8bb8', shadow);
-  ctx.fillStyle = '#222c55'; ctx.fillRect(x + 4, y + 15, SB_W - 8, 1);
-
-  const head = ['board.lvl', 'board.gold', 'board.kda', 'board.farm'].map((k) => tr(k)); // FARM: last hits on soldiers and camp monsters (js/sim/farm.js)
-  drawPixelTextShadow(ctx, tr('board.player'), x + 14, y + 19, '#7a8bb8', shadow);
-  for (let i = 0; i < head.length; i++) {
-    drawPixelTextShadow(ctx, head[i], x + SB_COL[i] - pixelTextWidth(head[i]), y + 19, '#7a8bb8', shadow);
-  }
-
-  let ry = y + 28;
+  let ry = y + SB_HEAD;
   for (const g of groups) {
     const tm = TEAMS[skin(g[0].team)];
     ctx.fillStyle = tm.mark;
-    ctx.fillRect(x + 4, ry, 2, g.length * SB_ROW - 2); // one stripe down the whole team
+    ctx.fillRect(x + 6, ry, 3, g.length * SB_ROW - 2); // one stripe down the whole side
     for (const p of g) {
-      const dim = p.dead ? 0.55 : 1;
-      ctx.globalAlpha = dim * (p === player ? 0.26 : 0.13);
-      ctx.fillStyle = tm.mark;
-      ctx.fillRect(x + 8, ry, SB_W - 12, SB_ROW - 2);
-      ctx.globalAlpha = dim;
-      if (p === player) drawPixelTextShadow(ctx, '>', x + 9, ry + 1, '#ffd95c', shadow);
-      const nm = boardName(p);
-      drawPixelTextShadow(ctx, nm, x + 14, ry + 1, playerTint(p), shadow);
-      if (p.dead) {
-        // eliminated reads OUT; a respawn-pending player shows the countdown
-        // instead, since "OUT" on someone back in 3s is actively wrong
-        const tag = p.eliminated ? tr('board.out') : tr('board.wait', { s: Math.ceil(p.respawnT) });
-        drawPixelTextShadow(ctx, tag, x + 18 + pixelTextWidth(nm), ry + 1, '#8f9cc4', shadow);
+      const you = p === player, gone = p.dead && (p.eliminated || p.respawnT <= 0), wait = p.dead && !gone;
+      if (you) { ctx.fillStyle = SC_GOLD; ctx.fillRect(x + 11, ry - 1, SB_W - 17, SB_ROW); } // your row, outlined
+      ctx.fillStyle = SC_PLATE; ctx.fillRect(x + 12, ry, SB_W - 19, SB_ROW - 2);
+      ctx.globalAlpha = you ? 0.3 : 0.16;
+      ctx.fillStyle = tm.mark; ctx.fillRect(x + 12, ry, SB_W - 19, SB_ROW - 2); // the side's wash on its rows
+      ctx.globalAlpha = p.dead ? 0.55 : 1;
+      // the face in its ink rim, a waiting hero's seconds over it (the rail's chip)
+      ctx.fillStyle = SC_INK; ctx.fillRect(x + SB_FACE, ry, SB_WELL, SB_WELL);
+      drawFace(x + SB_FACE + 1, ry + 1, SB_WELL - 2, p);
+      if (wait) {
+        const t = String(Math.ceil(p.respawnT));
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = RAIL_WAIT_DIM; ctx.fillRect(x + SB_FACE + 1, ry + 1, SB_WELL - 2, SB_WELL - 2);
+        drawPixelTextOutline(ctx, t, x + SB_FACE + Math.round((SB_WELL - pixelTextWidth(t)) / 2), ry + 7, RAIL_WAIT, SC_INK);
+        ctx.globalAlpha = 0.55;
       }
-      const vals = [String(p.level), String(p.gold), p.kills + '/' + p.deaths + '/' + (p.assists || 0), String(p.farm)];
-      const cols = ['#cfe0ff', '#f2cc6a', '#ff9a8a', '#cfe0ff'];
+      const lv = String(p.level);
+      drawPixelTextOutline(ctx, lv, x + SB_LVL - pixelTextWidth(lv), ry + 7, SC_GOLD, SC_INK, 1);
+      // the hero, and under it the person playing it (a bot is its hero alone)
+      const hero = CLASSES[p.cls] ? CLASSES[p.cls].name : p.name, nm = boardName(p);
+      drawPixelTextOutline(ctx, hero, x + SB_NAME, ry + (nm !== hero ? 3 : 7), you ? SC_GOLD : playerTint(p), SC_INK, 1);
+      if (nm !== hero) drawPixelTextOutline(ctx, nm, x + SB_NAME, ry + 11, SC_LBL, SC_INK, 1);
+      if (gone) drawPixelTextOutline(ctx, tr('board.out'), x + SB_NAME + 4 + pixelTextWidth(hero), ry + (nm !== hero ? 3 : 7), SC_LBL, SC_INK, 1);
+      // what it carries: six wells, a part's rim or a finished item's (itemMetal), the strip's own
+      for (let i = 0; i < 6; i++) {
+        const id = p.items && p.items[i], r = { x: x + SB_ITEMS + i * (SB_WELL + 1), y: ry, w: SB_WELL, h: SB_WELL };
+        ctx.fillStyle = id ? itemMetal(id).rim : SC_EDGE; ctx.fillRect(r.x, r.y, r.w, r.h);
+        ctx.fillStyle = BAG_WELL; ctx.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
+        if (id) shopIcon(itemIcon(id), r);
+      }
+      const vals = [p.kills + '/' + p.deaths + '/' + (p.assists || 0), String(p.farm), String(p.gold)];
+      const cols = [SC_LIT, SC_TXT, SC_GOLD];
       for (let i = 0; i < vals.length; i++) {
-        drawPixelTextShadow(ctx, vals[i], x + SB_COL[i] - pixelTextWidth(vals[i]), ry + 1, cols[i], shadow);
+        drawPixelTextOutline(ctx, vals[i], x + SB_COL[i] - pixelTextWidth(vals[i], 2), ry + 4, cols[i], SC_INK, 2);
       }
       ctx.globalAlpha = 1;
       ry += SB_ROW;
     }
-    ry += 3; // teams read as blocks
+    ry += SB_GAP; // the sides read as two blocks
   }
 }
 

@@ -17,12 +17,16 @@ it is live. `scoreGroups()` is the ordering: players grouped by team, teams rank
 `scoreOf(p)` and players inside a team by their own, ties broken by team then player id. `scoreOf`
 is **the match's gold earned** (`p.earned`, paid by `gainGold`), not the purse — spending gold on
 an item is progress — while the GOLD column shows the purse, so a player that has
-spent can sit above one showing more gold (its LVL column is the visible tell). A team stripe in
-`TEAMS[skin(team)].mark` runs down each group, each row carries a faint team wash (stronger for the
-local player, which also gets a gold `>`), dead players dim to 0.55 and gain a tag — the respawn
-countdown (`3S`), or `OUT` once `p.eliminated`. The head is SCOREBOARD and, on the right, the
-match clock (`clockTxt(state.elapsed)`, the top bar's). The columns are LVL, GOLD, K/D/A (kills, deaths,
-assists - [Takedowns](../gameplay/death-and-respawn.md#takedowns-assists-bounties-and-shutdowns)) and FARM
-(last hits on soldiers and camp monsters). Its words are the text table's `board.*` keys. The panel
-is `SB_W` wide, its height follows the row count, and it is centred on `VIEW_W`/`VIEW_H`
+spent can sit above one showing more gold. It is the centre piece while the key is held, on the HUD's
+graphite (`drawHudFrame`): the two sides as two blocks, a stripe in `TEAMS[skin(team)].mark` down each and
+the side's wash on its rows. A row is a hero: its face (`drawFace`), level, hero name over the person's
+(a bot is its hero alone, `boardName`), the six items it carries in wells on their rims (`itemMetal`,
+`shopIcon`), then K/D/A (kills, deaths, assists -
+[Takedowns](../gameplay/death-and-respawn.md#takedowns-assists-bounties-and-shutdowns)), farm (last hits
+on soldiers and camp monsters) and the purse, the three numbers at 2x. Your row is outlined in gold and
+names its hero in gold. A dead hero's row dims to 0.55; one waiting to respawn wears its seconds over its
+face (the rail chip's), one out for good the `board.out` tag. The head is the match clock
+(`clockTxt(state.elapsed)`, the top bar's) and a glyph over the farm and gold columns (`endIcon`, the end
+table's); K/D/A is the one word (`board.kda`). Never an objective's health. The panel is `SB_W` wide, its
+height follows the row count, and it is centred on `VIEW_W`/`VIEW_H`
 every frame — no `relayout()` anchors, so it needs nothing on a resize.

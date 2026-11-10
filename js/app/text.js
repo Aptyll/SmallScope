@@ -76,12 +76,7 @@ const TEXT = {
   'recap.burn': 'BURN',
 
   // ---- the TAB scoreboard (js/ui/panels.js)
-  'board.title': 'SCOREBOARD',
-  'board.player': 'PLAYER',
-  'board.lvl': 'LVL',
-  'board.gold': 'GOLD',
   'board.kda': 'K/D/A',
-  'board.farm': 'FARM',
   'board.out': 'OUT',          // a player out for good
   'board.wait': '{s}S',        // a player's respawn wait
 
