@@ -59,8 +59,34 @@ function titleCast() {
   }
   return titleBodies;
 }
+// THE CAST LIVES: nobody stands dead still for minutes. Off the menu's own clock
+// (never the sim's), each body but the two leaders now and then paces a few px
+// toward the middle and back, or turns its face to you for a breath. A pure
+// read of the time, so a repaint of the same instant draws the same picture.
+const TITLE_PACE = 12;         // world px a pace covers
+const TITLE_PACE_T = 0.9;      // s each way
+const TITLE_PACE_HOLD = 2.2;   // s it stands at the far end
+const TITLE_LOOK_T = 1.8;      // s a face is turned to you
+const TITLE_ACT_EVERY = 11;    // s between one body's acts, give or take its seat
+function titleCastPose(b, i, t) {
+  const n = TITLE_SPOTS.length, mine = i < n, k = i % n, sp = TITLE_SPOTS[k], at = titleSceneAt();
+  const hx = at.x + (mine ? sp[0] : -sp[0]), toward = mine ? 1 : -1, face = mine ? 'right' : 'left', back = mine ? 'left' : 'right';
+  b.x = hx; b.y = at.y + sp[1]; b.dir = face; b.moving = false; b.vx = 0; b.animT = 0;
+  if (k === 0) return; // a leader holds its ground
+  const every = TITLE_ACT_EVERY + k * 1.7, u = (t + i * 3.1) % every;
+  if (k % 2 === 0) { // turns to you
+    if (u < TITLE_LOOK_T) b.dir = 'down';
+    return;
+  }
+  const out = TITLE_PACE_T, far = out + TITLE_PACE_HOLD, home = far + TITLE_PACE_T;
+  if (u < out) { b.x = hx + toward * TITLE_PACE * (u / out); b.moving = true; b.vx = toward * 20; }
+  else if (u < far) b.x = hx + toward * TITLE_PACE;
+  else if (u < home) { b.x = hx + toward * TITLE_PACE * (1 - (u - far) / TITLE_PACE_T); b.moving = true; b.vx = -toward * 20; b.dir = back; }
+  if (b.moving) b.animT = t * SHOW_STRIDE; // a walk's stride (js/ui/select.js)
+  b.x = Math.round(b.x);
+}
 // into the sorted pass (bodyDraws, js/draw/passes.js), by the feet like every body
 function titleCastDraws(draws) {
   if (state.mode !== 'title') return;
-  for (const b of titleCast()) draws.push({ y: b.y + 8, p: b });
+  titleCast().forEach((b, i) => { titleCastPose(b, i, state.menu.t); draws.push({ y: b.y + 8, p: b }); });
 }
