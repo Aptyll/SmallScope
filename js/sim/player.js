@@ -425,6 +425,25 @@ const CLASSES = [
     kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1, chargeMul: 0.45,
       bowCharge: 0.75, nock: 0.4, spdDmg: 0, dodgeSpeed: DODGE_SPEED },
   },
+  {
+    // the nineteenth named hero (js/sim/arcus.js): the planted marksman. His longbow is quick
+    // on the string and his arrows in the snow quicken it more; he has no dash, so a rival
+    // who reaches him has him
+    name: 'ARCUS', role: 'THE FLETCHER', passive: 'wastenothing', // HERO_PASSIVE, js/sim/arcus.js
+    blurb: ['PLANT YOUR FEET AND FILL THE SNOW.', 'WALK OVER YOUR ARROWS TO SHOOT FASTER.', 'CALL THEM BACK THROUGH YOUR RIVALS.'],
+    story: "HE MADE THE EMPIRE'S ARROWS, TEN THOUSAND A WINTER. WHEN A CARTLOAD WAS SENT AGAINST A TOWN THAT HAD DONE NOTHING, HE BROKE EVERY SHAFT ON THE CART AND WALKED OVER THE PASS. NOW HE CUTS HIS OWN FROM THE VALLEY'S WILLOWS AND WILL NOT LEAVE ONE LYING IN THE SNOW.",
+    // a longbow arrow: a little further and quicker than VELOX's stone, well short of the arbalest
+    attack: { name: 'WILLOW LONGBOW', art: 'longbow', cycle: 46 / 60, kb: 0.7, shot: { speed: 400, life: 0.68, col: '#c8a46a' } },
+    base: { hp: 80, dmg: 15, armor: 9, ap: 0, haste: 0, ms: PLAYER_SPEED - 2 },
+    grow: { hp: 5.8, dmg: 1.5, as: 0.02, armor: 1.6 },
+    rankOrder: [0, 2, 1], // the volley, the gather, the twin nock
+    // his own body in each of his looks (ARCUS_SKINS, js/sprites/arcus.js), worn per
+    // player (heroSkinOf) over the side's coat
+    skins: ARCUS_SKINS, skinPal: ARCUS_PAL, skinSlot: 'arcus',
+    // a light draw he can walk through, no better than anyone on ice
+    kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1, chargeMul: 0.75,
+      bowCharge: 0.6, nock: 0.4, spdDmg: 0, dodgeSpeed: DODGE_SPEED },
+  },
 ];
 // a hero's CLASSES index by name, -1 for none: what a profile or a bot names
 function heroIndex(name) { return CLASSES.findIndex((c) => c.name === name); }
@@ -808,6 +827,10 @@ class Player {
     this.keepN = 0; this.keepT = 0; this.quickT = 0; this.runT = 0;
     // SAGITTA (js/sim/sagitta.js): the bolts loosed since her last heavy one (HEAVY BOLTS)
     this.boltN = 0;
+    // ARCUS (js/sim/arcus.js): WASTE NOTHING's stacks and their clock, TWIN NOCK's clock,
+    // his volley and gather counts; on any body, which volley and which gather struck it and how often
+    this.arcN = 0; this.arcT = 0; this.twinT = 0; this.arcVolN = 0; this.arcGathN = 0;
+    this.arcVol = -1; this.arcGId = -1; this.arcGN = 0;
     // NIX (js/sim/nix.js): a moment shown after striking from her cloud; WHITEOUT's
     // vanish and the hero it struck (the reset's clock, and whether this cast may reset);
     // NIGHT WATCH's hidden blow waiting

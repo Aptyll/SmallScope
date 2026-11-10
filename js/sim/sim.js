@@ -578,6 +578,7 @@ function updatePlay(dt) {
       heroShotHit(a, t, nx, ny); // what a hero's shot does once it lands (HERO_SHOT_HIT, js/sim/heroes.js)
     };
     let dead = a.t > a.life;
+    let endK = 'life'; // what ended it, for a hero's shot (HERO_SHOT_END): its flight, or the contact's kind
     // how much of the step the shot really flew: one that ends ON something
     // ends where it met it, so its burst, its embers and its impact land there
     let end = 1;
@@ -615,7 +616,7 @@ function updatePlay(dt) {
         if (a.pierce) a.pierceHit.push(t);
         else dead = true;
       }
-      if (dead) { a.struck = true; end = h.s; break; }
+      if (dead) { a.struck = true; end = h.s; endK = h.k; break; }
     }
     if (end < 1) { a.x = x0 + dx * end; a.y = y0 + dy * end; }
     // a faint mote in the shooter's colour every few px of flight: the shot
@@ -648,7 +649,8 @@ function updatePlay(dt) {
       // is not news, dropping a milestone run is (AG_RUN_STEP, js/sim/practice.js)
       if (PRACTICE && !a.ptHit) { if (agStreak >= AG_RUN_STEP) SFX.runBroke(); agStreak = 0; }
       // A shot that ends - a miss, a wall, a body, or the end of its life -
-      // just vanishes: nothing is ever lying in the snow to walk back over.
+      // vanishes; only a hero's own shot leaves something behind (ARCUS's arrows in the snow)
+      heroShotEnd(a, endK);
       arrows.splice(i, 1);
     }
   }

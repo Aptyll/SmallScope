@@ -1804,6 +1804,20 @@ const CLASS12 = {
     '....oooo....',
     '............',
   ],
+  ARCUS: [ // a longbow, string on the left, the belly bowed right
+    '............',
+    '..oooo......',
+    '..oWWWoo....',
+    '..oWooWWo...',
+    '..oWo.oWWo..',
+    '..oWo..oWo..',
+    '..oWo..oWo..',
+    '..oWo.oWWo..',
+    '..oWooWWo...',
+    '..oWWWoo....',
+    '..oooo......',
+    '............',
+  ],
 };
 for (const c of CLASSES) if (!CLASS12[c.name]) throw new Error('menu.js: ' + c.name + ' has no CLASS12 emblem');
 const class12Cache = new Map();

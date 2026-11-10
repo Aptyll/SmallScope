@@ -84,6 +84,7 @@ const SKIN_TABS = [
   { id: 'bucina', name: 'BUCINA', slot: 'bucina', rows: BUCINA_SKINS, hero: heroIndex('BUCINA'), glyph: ['......ww', '.....w.w', 'w...w..w', 'ww.w...w', '.ww....w', '..ww...w', '...ww.w.', '....ww..'] },
   { id: 'nix', name: 'NIX', slot: 'nix', rows: NIX_SKINS, hero: heroIndex('NIX'), glyph: ['...w....', '.w.w.w..', '..www...', 'wwwwwww.', '..www...', '.w.w.w..', '...w....', '........'] },
   { id: 'sagitta', name: 'SAGITTA', slot: 'sagitta', rows: SAGITTA_SKINS, hero: heroIndex('SAGITTA'), glyph: ['wwwwwwww', 'w..ww..w', '...ww...', '...ww...', '..wwww..', '..wwww..', '...ww...', '........'] },
+  { id: 'arcus', name: 'ARCUS', slot: 'arcus', rows: ARCUS_SKINS, hero: heroIndex('ARCUS'), glyph: ['.ww.....', '.w.ww...', '.w...w..', '.w....w.', '.w....w.', '.w...w..', '.w.ww...', '.ww.....'] },
   { id: 'faber', name: 'FABER', slot: 'faber', rows: FABER_SKINS, hero: heroIndex('FABER'), glyph: ['..ww....', '.w..w...', 'w.w..w..', 'w.ww.w..', '.w..w...', '..ww....', '..w.....', '..w.....'] },
   { id: 'falco', name: 'FALCO', slot: 'falco', rows: FALCO_SKINS, hero: heroIndex('FALCO'), glyph: ['........', '.w....w.', '.ww..ww.', '..wwww..', '...ww...', '...ww...', '..w..w..', '........'] },
   { id: 'maris', name: 'MARIS', slot: 'maris', rows: MARIS_SKINS, hero: heroIndex('MARIS'), glyph: ['.....ww.', '....wwww', '...w.ww.', '..w..w..', '.w......', 'w.......', 'ww......', '.w......'] },
