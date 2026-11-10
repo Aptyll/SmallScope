@@ -308,7 +308,7 @@ function merchNextBay(b) {
 // the axe cannot take (a pine, a snag, a stump: never the bird's own
 // tiles or a building, another bay included)
 function merchBaySite(team, lane) {
-  const p = baseBaySpot(team, lane), cx = p.tx - 1, cy = p.ty - 0.5;
+  const { cx, cy } = baseBaySite(team, lane);
   const fits = (tx, ty) => footprint('barracks', tx, ty).every(([x, y]) => {
     if (!inWorld(x, y) || ground[idx(x, y)] !== 0) return false;
     const o = objAt(x, y);
