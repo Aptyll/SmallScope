@@ -2,4 +2,4 @@
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| the pines' bend frames and their nine palettes (`treePals`, filtered from `TSPAL`) | by banner | `trees` |
+| the pines' bend frames, their three heights (`TREE_CUTS`/`treeSizes`) and their twelve palettes (`treePals`, filtered from `TSPAL`) | by banner | `trees` |
