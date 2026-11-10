@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['Nix swings a dirk the size of the one she carries', '0.819'],
     ['CLIVUS is drawn at 32 px (body, roll, ice axe), waiting behind the fine-art switch', '0.817'],
     ['EVERY TOWER STANDS IN ITS OWN CLEARING', '0.816'],
     ['TOWERS: A WRECKED TOWER SHUDDERS AND COMES DOWN IN DUST AND STONES', '0.814'],
