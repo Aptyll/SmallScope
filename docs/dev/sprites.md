@@ -345,8 +345,11 @@ with a brass goggle band over dark hair, a work apron over the side's coat) and 
 200 coins: the same cut in slate and steel), both on ARMATOS's frame. They are A and C off
 sagitta-round1.png in the project files. Her dolls are `Siege` and `Tower` in
 app/bake-player/bodies.py; she runs on her drawn frames (`run: 'drawn'`). Her HEAVY ARBALEST is her
-basic attack's `art` (`SPRITES.weaponArt.arbalest`, prod left): held level facing a side and on the
-aim while drawn, shouldered prod-up facing down or up (`HERO_CARRY`, js/draw/sagitta.js).
+basic attack's `art` (`SPRITES.weaponArt.arbalest`, prod left, seen from above and cocked), with a
+slanted grid of the same crossbow (`SPRITES.weaponDiag.arbalest`, pointing down and right): she
+carries the slanted one low at her hip in every facing (`HERO_CARRY`, js/draw/sagitta.js) and aims
+in eight drawn headings, the level art in quarter turns or the slanted one (`aimHeading`,
+js/draw/bodies.js), never turned to a free angle.
 
 ARCUS has two looks (`ARCUS_SKINS`, js/sprites/arcus.js): WILLOW CUTTER (free: a brimmed felt cap
 with a white feather over short brown hair and a beard, a leather jerkin and a quiver on his back)
