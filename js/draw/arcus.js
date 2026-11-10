@@ -87,8 +87,17 @@ function drawVolleyTele(p, a0, closing, ex, ey) {
       ctx.fillRect(Math.round(x0 + nx * s), Math.round(y0 + ny * s), 1, 1);
     }
     ctx.globalAlpha = 1;
-    acArrow(Math.round(x0 + nx * 14), Math.round(y0 + ny * 14), a, ARROW_LEN, p.team);
   }
+  // the five on the string, side by side and painted as one: every rim first, then every shaft, so no arrow's rim
+  // covers its neighbour and each shaft reads
+  const tm = TEAMS[skin(p.team)];
+  AC_PX.length = 0;
+  for (let k = 0; k < VOLLEY_N; k++) {
+    const a = a0 - VOLLEY_HALF + (2 * VOLLEY_HALF * k) / (VOLLEY_N - 1), nx = Math.cos(a), ny = Math.sin(a);
+    const off = (k - (VOLLEY_N - 1) / 2) * 2; // each two px along the string from the next, a rim's width of dark between shafts
+    arrowBodyPx(AC_PX, Math.round(x0 + nx * 14 - Math.sin(a0) * off), Math.round(y0 + ny * 14 + Math.cos(a0) * off), nx, ny, 0, ARROW_LEN, tm.mark, tm.coatD, AC_SHAFT, 0);
+  }
+  paintArrowPx(AC_PX);
 }
 // GATHER UP: every arrow of his in the snow shakes loose and leans out toward him, a short
 // streak behind it showing the way it will fly, so a rival standing on one sees it coming
