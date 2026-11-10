@@ -50,12 +50,11 @@ function drawFalcoAir(ex, ey, now) {
 
 // the hawk out (HERO_MACHINE.falcoHawk's draw, in the body pass where its side sees it):
 // low over the snow so the disc a blow lands in is where it flies, its shadow under it,
-// a rival-or-ally bar over it, white for a blink when struck
+// a rival-or-ally bar over it
 function drawHawkOut(b, ex, ey, now) {
   const x = Math.round(b.x - ex), y = Math.round(b.y - ey);
   hawkShadow(x, y + 4);
   drawHawk(x, y - 8, Math.floor(now * 14) % 2, b.face < 0);
-  if (b.flash > 0) { ctx.globalAlpha = 0.7; ctx.fillStyle = '#ffffff'; ctx.fillRect(x - 7, y - 11, 15, 8); ctx.globalAlpha = 1; }
   drawHealthBar(b.x - ex, y - 16, b.hp, b.maxHp, 8, b.team, undefined, b);
 }
 

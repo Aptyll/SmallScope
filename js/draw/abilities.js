@@ -324,6 +324,12 @@ function drawUnitStates(e, px, py, w, h, now) {
     ctx.fillStyle = '#c8d2e4';
     for (let k = 0; k * 2 + 5 < w - 4; k++) ctx.fillRect(px + 5 + k * 2, py + h - 3, 1, 1);
   }
+  if (e.slowT > 0 && e.slowMul < 1 && !(e.rootT > 0)) {
+    // slowed: ice caked on the feet, a deep blue rim so it holds on snow, two glints; under the jaws when both hold
+    ctx.fillStyle = '#2f5f8f'; ctx.fillRect(px + 3, py + h - 3, w - 6, 3); ctx.fillRect(px + 4, py + h - 4, w - 8, 1);
+    ctx.fillStyle = '#a8dcf0'; ctx.fillRect(px + 4, py + h - 3, w - 8, 2);
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(px + 5, py + h - 3, 1, 1); ctx.fillRect(px + w - 7, py + h - 2, 1, 1);
+  }
   if (e.burnT > 0) {
     // Alight: tongues licking UP off the crown, and the snow under the feet
     // lit by them - never a wash over the body, because a burning rival still
