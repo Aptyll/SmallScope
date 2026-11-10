@@ -86,7 +86,7 @@ const ARCUS_AB = [
     ok: (p) => arcusShaftsOf(p) > 0, // nothing in the snow, nothing to call
     tele: (p, px, py, a, col, closing, now, ex, ey) => drawGatherLines(p, col, closing, ex, ey),
     pose: () => ({ dx: 0, dy: 1, rot: 0 }),
-    icon: ARCUS_ICON32.gather,
+    icon: ARCUS_ICON32.gather, mark: 'slow',
     bot: (p, foe) => foe instanceof Player && arcusGatherHits(p, foe) >= 2,
   },
   {
@@ -97,7 +97,7 @@ const ARCUS_AB = [
     use: (p) => arcusQuiver(p),
     tele: (p, px, py, a, col, closing, now, ex, ey) => { const c = arcusSpot(p); drawRing(Math.round(c.x - ex), Math.round(c.y - ey), RAIN_R, col, 0.45 + 0.45 * closing, closing * 0.3); },
     pose: () => ({ dx: 0, dy: -2, rot: 0 }), // the bow raised high
-    icon: ARCUS_ICON32.quiver,
+    icon: ARCUS_ICON32.quiver, mark: 'slow',
     bot: (p, foe, d) => foe instanceof Player && d > 60 && d < RAIN_RANGE && (foe.hp < foe.maxHp * 0.7 || arcusFoesNear(p, foe) >= 2),
     botAim: (p, foe) => ({ x: foe.x + (foe.vx || 0) * 0.5, y: foe.y + (foe.vy || 0) * 0.5 }), // where they are walking to
   },
@@ -303,7 +303,7 @@ function updateArcusWorld(dt) {
 // ---- the hooks he registers (js/sim/heroes.js) ------------------------------------
 HERO_PASSIVE.wastenothing = { shot: arcusShot, deal: arcusDeal, tick: arcusTick, out: arcusOut,
   name: 'WASTE NOTHING', blurb: 'YOUR ARROWS STAY IN THE SNOW: A BASIC SHOT THAT HITS A HERO, AND EVERY ARROW OF YOUR KEYS. WALK OVER ONE TO PULL IT UP AND SHOOT FASTER FOR A WHILE, UP TO FIVE TIMES.',
-  icon: ARCUS_ICON32.waste };
+  icon: ARCUS_ICON32.waste, mark: 'speed' };
 HERO_STAT.push({ name: 'WASTE NOTHING', add: arcusAs });
 HERO_SHOT_HIT.arcus = arcusHit;
 HERO_SHOT_HIT.volley = volleyHit;

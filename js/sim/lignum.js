@@ -52,7 +52,7 @@ const LIGNUM_AB = [
     acol: '#d9a648', activeF: (p) => (p.chopT > 0 ? p.chopT / CHOP_WAIT : 0),
     tele: (p, px, py, a, col, closing) => drawWedge(px, py, a, CHOP_R, CHOP_HALF, col, 0.5 + 0.4 * closing, closing * 0.5),
     pose: (p, prog) => ({ dx: 0, dy: prog < 0.6 ? -1 : 1, rot: 0 }), // up, then down
-    icon: LIGNUM_ICON32.chop,
+    icon: LIGNUM_ICON32.chop, mark: 'slow',
     bot: (p, foe, d) => d < CHOP_R - 4,
   },
   {
@@ -75,7 +75,7 @@ const LIGNUM_AB = [
     use: (p) => lignumBark(p),
     tele: (p, px, py, a, col, closing) => drawRing(px, py + 2, 12, col, 0.45 + 0.4 * closing, closing * 0.5),
     pose: () => ({ dx: 0, dy: 1, rot: 0 }), // set low
-    icon: LIGNUM_ICON32.bark,
+    icon: LIGNUM_ICON32.bark, mark: 'shield',
     bot: (p, foe, d) => d < 90 && p.hp < p.maxHp * 0.8,
   },
   {
@@ -86,7 +86,7 @@ const LIGNUM_AB = [
     use: (p) => lignumTimber(p),
     tele: (p, px, py, a, col, closing, now, ex, ey) => { const L = timberLine(p, a); drawLineBox(Math.round(L.x0 - ex), Math.round(L.y0 - ey), a, L.len, TIMBER_W, col, 0.45 + 0.4 * closing, closing * 0.5); },
     pose: (p, prog) => ({ dx: 0, dy: prog < 0.7 ? -1 : 2, rot: 0 }), // the felling axe up, then down
-    icon: LIGNUM_ICON32.timber,
+    icon: LIGNUM_ICON32.timber, mark: 'up',
     bot: (p, foe, d) => foe instanceof Player && d < TIMBER_LEN - 16,
   },
 ];
@@ -307,7 +307,7 @@ function logSolid(tx, ty) {
 
 // ---- the hooks he registers (js/sim/heroes.js) ------------------------------------------
 HERO_PASSIVE.treeline = { deal: lignumDeal, tick: lignumTick, out: lignumOut,
-  name: 'TREELINE', blurb: 'STEPPING OUT OF THE WOODS, YOUR NEXT BASIC ATTACK WITHIN A FEW SECONDS HITS HARDER AND GIVES YOU A BURST OF SPEED.', icon: LIGNUM_ICON32.treeline };
+  name: 'TREELINE', blurb: 'STEPPING OUT OF THE WOODS, YOUR NEXT BASIC ATTACK WITHIN A FEW SECONDS HITS HARDER AND GIVES YOU A BURST OF SPEED.', icon: LIGNUM_ICON32.treeline, mark: 'speed' };
 HERO_MOVE.push(lignumMove);
 HERO_SOLID.push(logSolid);
 HERO_TICK.push((dt) => { updateLignumAxes(dt); updateLignumLogs(dt); });

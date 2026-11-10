@@ -56,7 +56,7 @@ const BUCINA_AB = [
     blurb: 'A NOTE IN A RING AROUND HER. ALLIES INSIDE ATTACK FASTER AND SHRUG OFF PART OF EVERY STUN AND SLOW FOR A FEW SECONDS.',
     use: (p) => bucinaNote(p),
     tele: (p, px, py, a, col, closing) => drawRing(px, py, RALLY_R, col, 0.35 + 0.45 * closing, 0),
-    icon: BUCINA_ICON32.note,
+    icon: BUCINA_ICON32.note, mark: 'speed',
     bot: (p, foe, d) => foe instanceof Player && d < 220 && bucinaAllies(p, RALLY_R).length >= 2,
   },
   {
@@ -66,7 +66,7 @@ const BUCINA_AB = [
     blurb: 'A SOUND WAVE IN A LINE. A WALL OR A TREE THROWS IT BACK. A RIVAL STRUCK GOING AND COMING IS STUNNED.',
     use: (p) => bucinaEcho(p),
     tele: (p, px, py, a, col, closing, now, ex, ey) => drawTeleLine(p.x, p.y, Math.cos(a), Math.sin(a), ECHO_RANGE, col, 0.5 + 0.45 * closing, now, ex, ey),
-    icon: BUCINA_ICON32.echo,
+    icon: BUCINA_ICON32.echo, mark: 'stun',
     bot: (p, foe, d, clear) => clear && d < ECHO_RANGE * 0.9,
   },
   {
@@ -76,7 +76,7 @@ const BUCINA_AB = [
     blurb: 'A LONG HORN CALL IN A WIDE RING. EVERY PINE INSIDE DROPS ITS SNOW: RIVALS UNDER ONE ARE STUNNED, AND THE WOODS INSIDE ARE SHOWN.',
     use: (p) => bucinaPines(p),
     tele: (p, px, py, a, col, closing) => drawRing(px, py, PINES_R, col, 0.35 + 0.45 * closing, 0),
-    icon: BUCINA_ICON32.pines,
+    icon: BUCINA_ICON32.pines, mark: 'stun',
     bot: (p, foe, d) => foe instanceof Player && d < PINES_R * 0.85 && (bucinaUnderPine(foe.x, foe.y) || inWoods(foe.x, foe.y)),
   },
 ];

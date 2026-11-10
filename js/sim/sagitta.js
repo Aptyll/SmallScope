@@ -55,7 +55,7 @@ const SAGITTA_AB = [
     use: (p) => sagittaPin(p),
     tele: (p, px, py, a, col, closing, now, ex, ey) => drawTeleLine(p.x, p.y, Math.cos(a), Math.sin(a), teleLen(p.x, p.y, Math.cos(a), Math.sin(a), PIN_RANGE), col, 0.5 + 0.45 * closing, now, ex, ey),
     pose: () => ({ dx: 0, dy: 0, rot: 0 }),
-    icon: SAGITTA_ICON32.pin,
+    icon: SAGITTA_ICON32.pin, mark: 'stun',
     bot: (p, foe, d, clear) => clear && d < PIN_RANGE - 10,
   },
   {
@@ -66,7 +66,7 @@ const SAGITTA_AB = [
     use: (p) => sagittaPavise(p),
     tele: (p, px, py, a, col, closing) => drawRing(Math.round(px + Math.cos(a) * PAV_D), Math.round(py + 2 + Math.sin(a) * PAV_D), 9, col, 0.45 + 0.45 * closing, closing * 0.3),
     pose: () => ({ dx: 0, dy: 1, rot: 0 }),
-    icon: SAGITTA_ICON32.pavise,
+    icon: SAGITTA_ICON32.pavise, mark: 'shield',
     bot: (p, foe, d) => foe instanceof Player && d > 70 && d < 260 && p.hp < p.maxHp * 0.8, // cover once the trade is going against her
   },
   {
@@ -77,7 +77,7 @@ const SAGITTA_AB = [
     use: (p) => sagittaCrank(p),
     tele: (p, px, py, a, col, closing) => drawRing(px, py + 2, CRANK_R, col, 0.4 + 0.45 * closing, closing * 0.3),
     pose: () => ({ dx: 0, dy: 0, rot: 0 }),
-    icon: SAGITTA_ICON32.crank,
+    icon: SAGITTA_ICON32.crank, mark: 'slow',
     bot: (p, foe, d) => d < 50,
   },
   {

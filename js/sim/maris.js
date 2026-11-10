@@ -47,7 +47,7 @@ const MARIS_AB = [
     use: (p) => marisHarpoon(p),
     tele: (p, px, py, a, col, closing, now, ex, ey) => drawTeleLine(p.x, p.y, Math.cos(a), Math.sin(a), teleLen(p.x, p.y, Math.cos(a), Math.sin(a), HARPOON_RANGE), col, 0.5 + 0.45 * closing, now, ex, ey),
     pose: (p, prog) => ({ dx: 0, dy: prog < 0.7 ? -1 : 1, rot: 0 }), // drawn back, then thrown
-    icon: MARIS_ICON32.harpoon,
+    icon: MARIS_ICON32.harpoon, mark: 'root',
     bot: (p, foe, d, clear) => clear && foe instanceof Player && d < HARPOON_RANGE - 12,
   },
   {
@@ -58,7 +58,7 @@ const MARIS_AB = [
     use: (p) => marisBrace(p),
     tele: (p, px, py, a, col, closing) => drawRing(px, py + 2, 12, col, 0.45 + 0.4 * closing, closing * 0.5),
     pose: () => ({ dx: 0, dy: 1, rot: 0 }), // set low
-    icon: MARIS_ICON32.brace,
+    icon: MARIS_ICON32.brace, mark: 'shield',
     bot: (p, foe, d) => d < BRACE_NEAR && p.hp < p.maxHp * 0.75,
   },
   {
@@ -69,7 +69,7 @@ const MARIS_AB = [
     use: (p) => marisUndertow(p),
     tele: (p, px, py, a, col, closing) => drawRing(px, py + 2, UNDERTOW_R, col, 0.45 + 0.4 * closing, closing * 0.5),
     pose: (p, prog) => ({ dx: 0, dy: prog < 0.6 ? 0 : 1, rot: 0 }),
-    icon: MARIS_ICON32.undertow,
+    icon: MARIS_ICON32.undertow, mark: 'slow',
     bot: (p, foe, d) => d < UNDERTOW_R - 6,
   },
   {
@@ -80,7 +80,7 @@ const MARIS_AB = [
     use: (p) => marisBreach(p),
     tele: (p, px, py, a, col, closing, now, ex, ey) => { const s = breachSpot(p, p.input.aimX, p.input.aimY); drawRing(Math.round(s[0] - ex), Math.round(s[1] - ey), BREACH_R, col, 0.4 + 0.4 * closing, closing * 0.5); }, // where she comes up
     pose: () => ({ dx: 0, dy: 2, rot: 0 }), // crouched to dive
-    icon: MARIS_ICON32.breach,
+    icon: MARIS_ICON32.breach, mark: 'up',
     bot: (p, foe, d) => foe instanceof Player && d > 70 && d < BREACH_RANGE,
   },
 ];
@@ -245,6 +245,6 @@ function breachUp(p) {
 
 // ---- the hooks she registers (js/sim/heroes.js) ------------------------------------------
 HERO_PASSIVE.coldwater = { deal: coldDeal, tick: coldTick, out: coldOut,
-  name: 'COLD WATER', blurb: 'ON ICE AND BY OPEN WATER YOU MOVE FASTER AND YOUR STRIKES SLOW. IT LASTS A FEW SECONDS AFTER YOU LEAVE. YOU SWIM WHERE OTHERS GO IN.', icon: MARIS_ICON32.cold };
+  name: 'COLD WATER', blurb: 'ON ICE AND BY OPEN WATER YOU MOVE FASTER AND YOUR STRIKES SLOW. IT LASTS A FEW SECONDS AFTER YOU LEAVE. YOU SWIM WHERE OTHERS GO IN.', icon: MARIS_ICON32.cold, mark: 'speed' };
 HERO_MOVE.push(coldMove);
 HERO_SWIM.push(coldSwim);

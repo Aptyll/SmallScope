@@ -65,7 +65,7 @@ const ARM_AB = [
     use: (p) => (p.castSlam ? armBash(p) : armBrace(p)),
     tele: (p, px, py, a, col, closing) => { if (p.castSlam) drawWedge(px, py, a, BASH_R, BASH_HALF, p.holdHit ? TELE_HOT : col, 0.55 + 0.4 * closing, closing); }, // the bash's wedge; the raise shows none
     acol: '#f2cc6a', activeF: (p) => (p.shieldT > 0 && p.hold ? p.shieldT / abRk(p, 'hold', 't') : 0),
-    icon: ARM_ICON32.hold,
+    icon: ARM_ICON32.hold, mark: 'shield',
     bot: (p, foe, d) => (p.shieldT > 0 && p.hold
       ? d < BASH_R - 4 && (p.holdHit || p.shieldT < 0.4) // the bash: primed, or before the brace drops anyway
       : d < 110 && foe instanceof Player),
@@ -78,7 +78,7 @@ const ARM_AB = [
     use: (p) => armMarch(p),
     tele: (p, px, py, a, col, closing, now, ex, ey) => drawMarchTele(p, a, col, closing, now, ex, ey),
     pose: (p, prog) => ({ dx: 0, dy: prog < 0.5 ? 1 : 0, rot: 0.14 * (p.dir === 'left' ? -1 : 1) }), // head down
-    icon: ARM_ICON32.march,
+    icon: ARM_ICON32.march, mark: 'stun',
     bot: (p, foe, d, clear) => clear && foe instanceof Player && d > 34 && d < MARCH_SPD * MARCH_T - 10,
   },
   {
@@ -89,14 +89,14 @@ const ARM_AB = [
     use: (p) => armGuard(p),
     tele: (p, px, py, a, col, closing) => drawRing(px, py + 2, GUARD_R, col, 0.45 + 0.4 * closing, closing * 0.5),
     pose: () => ({ dx: 0, dy: 1, rot: 0 }), // the standard driven down
-    icon: ARM_ICON32.guard,
+    icon: ARM_ICON32.guard, mark: 'shield',
     bot: (p, foe, d) => d < GUARD_R && (guardAllies(p) >= 2 || p.hp < p.maxHp * 0.5),
   },
 ];
 
 // the passive, by the name his CLASSES entry gives (`passive`; HERO_PASSIVE, js/sim/heroes.js)
 HERO_PASSIVE.resolve = { hurt: resolveHurt, cast: resolveCast, tick: resolveTick,
-  name: "LEGION'S RESOLVE", blurb: 'THE HITS YOU TAKE BUILD RESOLVE. FULL, YOUR NEXT ABILITY GIVES YOU A SHIELD.', icon: ARM_ICON32.resolve };
+  name: "LEGION'S RESOLVE", blurb: 'THE HITS YOU TAKE BUILD RESOLVE. FULL, YOUR NEXT ABILITY GIVES YOU A SHIELD.', icon: ARM_ICON32.resolve, mark: 'shield' };
 
 // ---- LEGION'S RESOLVE -------------------------------------------------------
 function resolveHurt(p, dmg) {
