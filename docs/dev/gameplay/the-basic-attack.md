@@ -67,8 +67,12 @@ grows the same wedge in place of the aim line (`drawAimLine`), so the reach the 
 have is on the ground before it lands. **The hand swings the blade itself**: it is drawn at its
 real 22 px length (`SPRITES.weaponHeld`, or the hero's own blade), a draw winds it back to the
 start of its arc, and for `SLASH_T` after the loose (`p.slashT`/`slashA`/`slashHalf`, counted
-down in `updatePlayer`) `drawHeldTool` sweeps it across the wedge from the hands (turned about its grip), two
-ghosts of it trailing, each behind the body while it points up the screen. A bot with a blade fights at `AI_MELEE_D` (18 px) instead of a bow's 70,
+down in `updatePlayer`) `drawHeldTool` swings it across the wedge from the hands (turned about its grip) in drawn steps
+at `SWING_FPS` (`swingFrame`): part way across, through with one solid pixel swish behind it
+(`drawSwish`: a light edge, a body and an ink line on the outside, never over the head), the swish
+going, then held at the arc's end. Each pixel sits behind the body while it points up the screen.
+The whole body acts with it (`attackLean`): 1 px back off the aim through the draw, 1 px in toward
+it through the cut and the held finish. A bot with a blade fights at `AI_MELEE_D` (18 px) instead of a bow's 70,
 and only presses fire once the target is under the edge (`aiMelee`, js/ai/ai.js).
 
 ## A shot in flight
