@@ -41,7 +41,7 @@ function applyZoom(dt, snap) {
   const want = show ? ZOOM_SHOW
     : state.mode !== 'drop' ? zoomWantOf()
     : state.intro > 0 ? DROP_ZOOM + (DROP_OPEN_ZOOM - DROP_ZOOM) * (1 - easeInOut(1 - state.intro / state.introLen))
-      : DROP_ZOOM;
+      : dropStoopZoom(zoomWantOf());
   const k = 1 - Math.exp(-(director.on ? DIR_ZOOM_EASE : ZOOM_EASE) * dt); // a director's zoom glides (js/app/director.js)
   const zPrev = zoomCur;
   if (snap) zoomCur = want;
@@ -163,10 +163,12 @@ function update(dt) {
     // riding: track the eagle (the rider sits on it). The first INTRO_T is
     // the opening shot: held on your seat while applyZoom pulls the view out
     // round it. Kept inside the world, like play's: the bird comes in over
-    // its own corner, from the very edge of the map.
+    // its own corner, from the very edge of the map. While your bird is up
+    // the camera holds your seat exactly, so the stoop's zoom (dropStoopZoom)
+    // lands on the very framing the crash hands over (handOver).
     const tx = Math.max(0, Math.min(WORLD * TILE - WV_W, player.x - WV_W / 2));
     const ty = Math.max(0, Math.min(WORLD * TILE - WV_H, player.y - WV_H / 2));
-    if (state.intro > 0) {
+    if (state.intro > 0 || dropFlies(state.drop.eagles[player.team])) {
       state.intro = Math.max(0, state.intro - dt);
       camX = tx; camY = ty;
     } else {

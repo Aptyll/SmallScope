@@ -158,6 +158,18 @@ function eagleScale(e) {
   if (e.state === 'dive') { const u = Math.min(1, e.diveT / EAGLE_DIVE_T); return EAGLE_SCALE - (EAGLE_SCALE - EAGLE_REST_SCALE) * u * u; }
   return EAGLE_REST_SCALE;
 }
+// the camera's stoop: the ride's wide framing walks in to your own zoom as
+// your bird comes down, so the landing is one shot and never a cut. The
+// zoom eases the bird's SIZE ON SCREEN (zoom x eagleScale) from the ride's
+// to the roost's, so the bird only ever grows as it nears - the stoop's own
+// shrink from 3x to 2x is paid for by the zoom. `play` is the zoom the
+// landing hands over to (applyZoom, sim.js).
+function dropStoopZoom(play) {
+  const e = state.drop && state.drop.eagles[player.team];
+  if (!e || e.state !== 'dive') return DROP_ZOOM;
+  const u = easeInOut(Math.min(1, e.diveT / EAGLE_DIVE_T));
+  return (DROP_ZOOM * EAGLE_SCALE + (play * EAGLE_REST_SCALE - DROP_ZOOM * EAGLE_SCALE) * u) / eagleScale(e);
+}
 // how big a body on the bird draws: the bird's own perspective, 1x at rest
 function riderScale(e) { return eagleScale(e) / EAGLE_REST_SCALE; }
 // which way a rider on the bird faces: the heading's dominant axis, so a

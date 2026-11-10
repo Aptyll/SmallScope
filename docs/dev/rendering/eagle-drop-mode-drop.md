@@ -13,6 +13,10 @@ walker. Each flies its line dead straight (`eaglePathAt(e, u)`, the point and he
 fraction u). `beginDrop` sets mode `drop`, snaps the world zoom tight on your seat
 (`DROP_OPEN_ZOOM`, the camera clamped inside the world, since the bird starts at its corner) and
 starts the menu exit, which pulls it out to `DROP_ZOOM` (the opening shot, the menu exit above).
+The landing is **one shot, never a cut**: while your own bird stoops, `dropStoopZoom` (applyZoom's drop
+want) walks the zoom from `DROP_ZOOM` in to your own play zoom, easing the bird's size *on screen*
+(zoom × `eagleScale`) so the bird only grows as it nears, and the camera holds your seat exactly
+while your bird flies, so `handOver` at the crash lands on the zoom and the framing already there.
 Every rider gets a **wing seat** (`p.seat`, dealt per team in `beginDrop`; `seatPos` rotates the
 `EAGLE_SEATS` offsets (one on the back, two inner wings, two out on the primaries) by the heading,
 and the human sits seat 0 of their own bird); the team's **merchant** rides the neck
@@ -119,6 +123,18 @@ the bird through mode `dead`. The
 takeoff itself: over `FLEE_LIFT_T` the bird turns from wherever the dive left it pointing to
 `fleeTo` (away from the world's centre, shortest arc) while climbing; then it flies at `FLEE_SPD`
 until `FLEE_T`, when it is `gone` and draws nothing ever again.
+
+**The sky** (`drawDropSky`, the air layer's first and last strokes while your own bird is up,
+`skyLift`: 1 in level flight, falling `1 − u²` down the stoop, 0 once mode `drop` ends): a pale
+altitude veil (`DROP_VEIL`) over the ground under the birds, low clouds between the bird and the
+pines with their flat cool shadows on the ground below (`SKY_DROP_SHADOW`, offset
+`SKY_SHADOW_DX`/`DY`), and big high ones over the birds. Each layer is world-anchored on its own grid of
+cells (`skyClouds`: one cloud or none per `SKY_CELL`/`SKY_CELL_OVER` cell by `hash2`), so the sky has
+no edge, and slides faster than the ground by its parallax about the camera's centre
+(`DROP_SKY_UNDER` 1.35, `DROP_SKY_OVER` 2.1); the stoop swells that parallax so the bird drops
+through them as they fade. A cloud (`cloudSprite`, cached) is a cluster of stepped round puffs
+on a 2 px block grid in three values (`SKY_LIGHT`/`SKY_MID`/`SKY_SHADE`, lit top left), never
+smoothed. Pure reads of the bird's clock and the camera: nothing in it touches the match.
 
 Drawing: `drawDropAir` (above the world, below lighting) first dots **the flight path across the
 snow itself** while mode is `drop` — each flying bird's whole line dashed in its team colour, dots
