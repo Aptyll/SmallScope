@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['NIX: SQUALL leaves a whirl of snow where she vanished, SNOW CLOUD has a soft cloud shadow', '0.912'],
     ['HIEMS\'s WHITEOUT shows wind-driven snow', '0.911'],
     ['RUPES and SALVIA: SHOULDER ploughs a furrow in the snow, POULTICE is a tied linen bundle with sage', '0.910'],
     ['POTION: green hearts lift off the body while it heals', '0.908'],
