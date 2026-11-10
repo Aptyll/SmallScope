@@ -160,7 +160,7 @@ function renderScoreboard() {
 // needs the inverse of the MAP_S projection everything else draws with.
 function mapTileAt(sx, sy) {
   if (sx < MAP_X || sy < MAP_Y || sx >= MAP_X + MAP_W || sy >= MAP_Y + MAP_W) return null;
-  const tx = Math.floor((sx - MAP_X) / MAP_S), ty = Math.floor((sy - MAP_Y) / MAP_S);
+  const tx = Math.floor((sx - MAP_OX) / MAP_S), ty = Math.floor((sy - MAP_OY) / MAP_S);
   return inWorld(tx, ty) ? { tx, ty } : null;
 }
 // whether a press would close the chart: the pointer off the slab
@@ -177,15 +177,38 @@ const chartCls = new Uint8Array(WORLD * WORLD);  // the class of every tile
 const chartTmp = new Uint8Array(WORLD * WORLD);  // the flatten's scratch
 let chartOut = null;   // the class of every chart pixel
 let chartSpan = null;  // the tiles [t0, t1] chart pixel p covers on either axis
-let mapAllocW = 0;     // the MAP_W the buffers and the bake were made for
+let mapAllocW = 0;     // the MAP_W the buffers and the bake were made for...
+let mapAllocN = 0;     // ...and the square they show
+// the square of tiles worth showing: every tile that is not woods (the
+// lanes, the jungle's corridors, the huts' clearings) and CHART_PAD more,
+// centred, so the chart spends its pixels on the played map, not the border wood
+const CHART_PAD = 3;
+let chartFitted = false; // the world grows once a page (boot), so the fit is taken once, the first time the chart opens
+function chartFit() {
+  if (chartFitted) return;
+  chartFitted = true;
+  let x0 = WORLD, y0 = WORLD, x1 = -1, y1 = -1;
+  for (let i = 0; i < WORLD * WORLD; i++) {
+    const o = structOf(objects[i]), c = o ? objChart(o) : null;
+    if ((c == null ? chartGround(i) : c) === CH_FOREST) continue;
+    const x = i % WORLD, y = (i / WORLD) | 0;
+    if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
+  }
+  if (x1 < 0) { MAP_T0 = 0; MAP_N = WORLD; } else {
+    MAP_N = Math.min(WORLD, Math.max(x1 - x0, y1 - y0) + 1 + CHART_PAD * 2);
+    MAP_T0 = Math.max(0, Math.min(WORLD - MAP_N, Math.round((x0 + x1 + y0 + y1) / 4 - MAP_N / 2)));
+  }
+  relayout(); // the slab's size and the chart's origin follow the square
+}
 function mapAlloc() {
-  if (mapAllocW === MAP_W) return;
-  mapAllocW = MAP_W;
+  chartFit();
+  if (mapAllocW === MAP_W && mapAllocN === MAP_N + MAP_T0 * WORLD) return;
+  mapAllocW = MAP_W; mapAllocN = MAP_N + MAP_T0 * WORLD;
   mapCv.width = mapCv.height = MAP_W;
   mapImg = mapCtx.createImageData(MAP_W, MAP_W);
   chartOut = new Uint8Array(MAP_W * MAP_W);
   chartSpan = [];
-  for (let p = 0; p < MAP_W; p++) chartSpan.push([Math.floor(p / MAP_S), Math.min(WORLD - 1, Math.floor((p + 1) / MAP_S - 1e-6))]);
+  for (let p = 0; p < MAP_W; p++) chartSpan.push([MAP_T0 + Math.floor(p / MAP_S), Math.min(MAP_T0 + MAP_N - 1, MAP_T0 + Math.floor((p + 1) / MAP_S - 1e-6))]);
   chartBuiltAt = -1e9;
   buildMapPanel();
 }
@@ -193,7 +216,7 @@ function mapAlloc() {
 // woods, the road, the ice, open water, then a side's buildings
 // and its bird in the two depths of each team's ink, the cistern's stone
 const CHART_INK = [
-  [214, 219, 226], [44, 60, 62], [150, 136, 116], [170, 192, 208], [52, 74, 98],
+  [214, 219, 226], [44, 60, 62], [150, 136, 116], [124, 182, 222], [52, 74, 98],
   [168, 66, 58], [74, 114, 174], [224, 85, 72], [106, 168, 232],
   [104, 112, 128],
 ];
@@ -291,7 +314,7 @@ function drawChartCamps() {
   let hov = null, hd = CHART_HOVER_R;
   const pts = camps.map((L) => {
     const m = campMark(L);
-    const lx = MAP_X + Math.round((m.tx + 0.5) * MAP_S), ly = MAP_Y + Math.round((m.ty + 0.5) * MAP_S);
+    const lx = MAP_OX + Math.round((m.tx + 0.5) * MAP_S), ly = MAP_OY + Math.round((m.ty + 0.5) * MAP_S);
     const d = Math.hypot(mouse.x - lx, mouse.y - ly);
     if (mouse.inside && d < hd) { hd = d; hov = { L, lx, ly }; }
     return { L, lx, ly };
@@ -303,7 +326,7 @@ function drawChartCamps() {
 function drawChartClocks() {
   for (const L of camps) {
     const m = campMark(L);
-    drawCampMapClock(ctx, L, MAP_X + Math.round((m.tx + 0.5) * MAP_S), MAP_Y + Math.round((m.ty + 0.5) * MAP_S));
+    drawCampMapClock(ctx, L, MAP_OX + Math.round((m.tx + 0.5) * MAP_S), MAP_OY + Math.round((m.ty + 0.5) * MAP_S));
   }
 }
 
@@ -321,7 +344,7 @@ function renderWorldMap(now) {
   // terrain
   buildWorldMapImg();
   ctx.drawImage(mapCv, MAP_X, MAP_Y);
-  fogOverMap(ctx, now, 0, 0, WORLD, WORLD, MAP_X, MAP_Y, MAP_W, MAP_W); // the fog of war (js/draw/fog.js)
+  fogOverMap(ctx, now, MAP_T0, MAP_T0, MAP_N, MAP_N, MAP_X, MAP_Y, MAP_W, MAP_W); // the fog of war (js/draw/fog.js)
 
   // night falls over the chart too
   if (state.darkness > 0.01) {
@@ -332,13 +355,16 @@ function renderWorldMap(now) {
   }
 
   // current camera view
+  ctx.save();
+  ctx.beginPath(); ctx.rect(MAP_X, MAP_Y, MAP_W, MAP_W); ctx.clip(); // (it may run off the square)
   ctx.strokeStyle = 'rgba(40,52,80,0.55)';
   ctx.lineWidth = 1;
-  ctx.strokeRect(MAP_X + (camX / TILE) * MAP_S + 0.5, MAP_Y + (camY / TILE) * MAP_S + 0.5,
+  ctx.strokeRect(MAP_OX + (camX / TILE) * MAP_S + 0.5, MAP_OY + (camY / TILE) * MAP_S + 0.5,
     (WV_W / TILE) * MAP_S - 1, (WV_H / TILE) * MAP_S - 1);
+  ctx.restore();
 
   const vp = viewPlayer();
-  const mx = (x) => MAP_X + Math.round((x / TILE) * MAP_S), my = (y) => MAP_Y + Math.round((y / TILE) * MAP_S);
+  const mx = (x) => MAP_OX + Math.round((x / TILE) * MAP_S), my = (y) => MAP_OY + Math.round((y / TILE) * MAP_S);
   // the ziplines under everything that moves: each side's cable pylon to
   // pylon in its ink, the minimap's own line at the chart's scale
   for (const z of zips) if (z) drawMapZip(ctx, z, mx, my, TEAMS[skin(z.team)].mark);
@@ -370,8 +396,8 @@ function renderWorldMap(now) {
       ctx.strokeStyle = TEAMS[skin(e.team)].mark;
       ctx.setLineDash([3, 2]);
       ctx.beginPath();
-      ctx.moveTo(MAP_X + (e.x0 / TILE) * MAP_S, MAP_Y + (e.y0 / TILE) * MAP_S);
-      ctx.lineTo(MAP_X + (e.x1 / TILE) * MAP_S, MAP_Y + (e.y1 / TILE) * MAP_S);
+      ctx.moveTo(MAP_OX + (e.x0 / TILE) * MAP_S, MAP_OY + (e.y0 / TILE) * MAP_S);
+      ctx.lineTo(MAP_OX + (e.x1 / TILE) * MAP_S, MAP_OY + (e.y1 / TILE) * MAP_S);
       ctx.stroke();
       ctx.restore();
     } else if (e.state !== 'down') continue;
@@ -383,7 +409,7 @@ function renderWorldMap(now) {
   for (const c of callouts) {
     if (c.see !== vp.team || !CALLS[c.k].ping) continue;
     ctx.globalAlpha = Math.max(0, callFade(c));
-    drawPingGlyph(ctx, c.k, MAP_X + (c.x / TILE) * MAP_S, MAP_Y + (c.y / TILE) * MAP_S, 1, CALLS[c.k].ink, CHART_DARK);
+    drawPingGlyph(ctx, c.k, MAP_OX + (c.x / TILE) * MAP_S, MAP_OY + (c.y / TILE) * MAP_S, 1, CALLS[c.k].ink, CHART_DARK);
   }
   ctx.globalAlpha = 1;
 

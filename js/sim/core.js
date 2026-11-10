@@ -362,6 +362,7 @@ function relayout() {
   PANEL_X = Math.round((VIEW_W - PANEL_W) / 2);
   PANEL_Y = Math.round((VIEW_H - PANEL_H) / 2);
   MAP_X = PANEL_X + MAP_SIDE; MAP_Y = PANEL_Y + MAP_HEAD;
+  MAP_OX = MAP_X - MAP_T0 * MAP_S; MAP_OY = MAP_Y - MAP_T0 * MAP_S;
   SET_Y = Math.round((VIEW_H - SET_H) / 2);
   placeSlab(VIEW_W);
   fitFlakes();

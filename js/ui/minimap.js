@@ -20,7 +20,7 @@ function updateMinimap() {
       r = c[0]; g = c[1]; b = c[2];
     } else if (cisternTouches(i % WORLD, (i / WORLD) | 0)) { r = 122; g = 131; b = 153; } // the cistern's stone, a rock's grey
     else if (ground[i] === 2) { r = 58; g = 92; b = 128; } // open water: a hole
-    else if (ground[i] === 1) { r = 145; g = 188; b = 212; } // ice
+    else if (ground[i] === 1) { r = 124; g = 182; b = 222; } // ice: a clear blue, apart from the snow and the road (the chart's own)
     else if (ground[i] === 3) { r = 188; g = 168; b = 138; } // the road
     else { r = 205; g = 216; b = 232; } // snow
     const j = i * 4;
