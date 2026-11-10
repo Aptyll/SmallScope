@@ -330,16 +330,11 @@ function burnTongue(x, y, hgt, lean) {
 // drawRobot (js/draw/bodies.js).
 function drawUnitStates(e, px, py, w, h, now) {
   if (e.rootT > 0) {
-    // the sprung jaws, closed on the feet: an iron bar on the snow, inked so it holds, and a saw of teeth
-    // standing off it, each a px taller at its leading edge (a saw, never a row of dots)
-    const x0 = px + 3, n = w - 6;
-    ctx.fillStyle = '#1c2030'; ctx.fillRect(x0 - 1, py + h - 2, n + 2, 3);
-    ctx.fillStyle = '#5d6478'; ctx.fillRect(x0, py + h - 1, n, 1);
-    ctx.fillStyle = '#8d94a6'; ctx.fillRect(x0, py + h - 2, n, 1);
-    for (let k = 0; k + 1 < n; k += 3) {
-      ctx.fillStyle = '#1c2030'; ctx.fillRect(x0 + k - 1, py + h - 4, 3, 2); ctx.fillRect(x0 + k - 1, py + h - 5, 2, 1);
-      ctx.fillStyle = '#dfe6f0'; ctx.fillRect(x0 + k, py + h - 3, 2, 1); ctx.fillRect(x0 + k, py + h - 4, 1, 1);
-    }
+    // the sprung jaws, closed on the feet
+    ctx.fillStyle = '#3c4356';
+    ctx.fillRect(px + 4, py + h - 2, w - 8, 2);
+    ctx.fillStyle = '#c8d2e4';
+    for (let k = 0; k * 2 + 5 < w - 4; k++) ctx.fillRect(px + 5 + k * 2, py + h - 3, 1, 1);
   }
   if (e.slowT > 0 && e.slowMul < 1 && !(e.rootT > 0)) {
     // slowed: a clump of ice caked on each foot, the legs clear between and above them (it still walks: the
