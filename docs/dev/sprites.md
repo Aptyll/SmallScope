@@ -627,8 +627,8 @@ shared 64×64 scratch canvas and a larger sprite clips ([rendering.md](rendering
 and the practice dummy (`DUMMY_SPR`, js/draw/practice.js)
 paint their char grids onto their own canvases and assign into `SPRITES`, which works because it
 is a plain object - exactly what each js/sprites/ file does for its own keys (the paragraph
-below), so a sprite that belongs to a drawer can live beside it. The detailed 32×32 ability icons (`AB32`/`AB32_PAL`,
-js/sim/abilities.js) bake lazily beside their drawer.
+below), so a sprite that belongs to a drawer can live beside it. The detailed 32×32 ability icons (`AB32_PAL`,
+js/draw/abilities.js) bake lazily beside their drawer.
 
 **The story landmarks** (`landmarks.js`, palette `LMPAL`) are E of
 `docs/media/concepts/landmarks-concepts-1.png`: the rowboat (50×24 over 3×1). The paint on the hull is a

@@ -44,7 +44,8 @@ LOOKS (optional): default look name, first buyable skin name
    the picks; never park on a question.
 2. **Build the kit on a borrowed look.** One file per side, named for the hero:
    - `js/sim/<hero>.js`: its ability rows (the `ARM_AB` shape: `cd`, `cast`, `blurb`, `use`,
-     `tele`, a `bot` hint saying when a bot should press it, its own `icon`; `recast`/`ok` if
+     `tele`, a `bot` hint saying when a bot should press it, its own `icon` drawn to the rules above `AB32_PAL` (js/draw/abilities.js) and a `mark` for what
+     it does when the picture alone does not say it; `recast`/`ok` if
      needed), its passive in `HERO_PASSIVE`. All four rows carry a `bot`, and the table joins
      `CLASS_AB` (js/sim/abilities.js) at the hero's own index; a load check refuses a hero
      without four keys that each have one.

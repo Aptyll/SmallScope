@@ -59,7 +59,7 @@ const HIEMS_AB = [
     use: (p) => hiemsIcicle(p),
     tele: (p, px, py, a, col, closing, now, ex, ey) => drawTeleLine(p.x, p.y, Math.cos(a), Math.sin(a), teleLen(p.x, p.y, Math.cos(a), Math.sin(a), ICICLE_RANGE), col, 0.5 + 0.45 * closing, now, ex, ey),
     pose: (p, prog) => ({ dx: 0, dy: prog < 0.7 ? -1 : 1, rot: 0 }),
-    icon: HIEMS_ICON32.icicle,
+    icon: HIEMS_ICON32.icicle, mark: 'slow',
     bot: (p, foe, d, clear) => clear && d < ICICLE_RANGE - 10,
   },
   {
@@ -70,7 +70,7 @@ const HIEMS_AB = [
     use: (p) => hiemsGlaze(p),
     tele: (p, px, py, a, col, closing, now, ex, ey) => { const c = hiemsSpot(p, GLAZE_RANGE); drawRing(Math.round(c.x - ex), Math.round(c.y - ey), GLAZE_R, col, 0.45 + 0.45 * closing, closing * 0.4); },
     pose: () => ({ dx: 0, dy: 1, rot: 0 }), // the staff swept low
-    icon: HIEMS_ICON32.glaze,
+    icon: HIEMS_ICON32.glaze, mark: 'slow',
     bot: (p, foe, d) => d < GLAZE_RANGE && foe instanceof Player,
   },
   {
@@ -81,7 +81,7 @@ const HIEMS_AB = [
     use: (p) => hiemsSnap(p),
     tele: (p, px, py, a, col, closing, now, ex, ey) => { const c = hiemsSpot(p, SNAP_RANGE); drawRing(Math.round(c.x - ex), Math.round(c.y - ey), SNAP_R, col, 0.45 + 0.45 * closing, closing * 0.5); },
     pose: () => ({ dx: 0, dy: -2, rot: 0 }), // the staff raised
-    icon: HIEMS_ICON32.snap,
+    icon: HIEMS_ICON32.snap, mark: 'root',
     bot: (p, foe, d) => d < SNAP_RANGE && (foe.chillN > 0 || unitsNear(p, foe.x, foe.y, SNAP_R).length >= 3),
   },
   {
@@ -92,7 +92,7 @@ const HIEMS_AB = [
     use: (p) => hiemsWhiteout(p),
     tele: (p, px, py, a, col, closing) => drawRing(px, py, WHITE_R, col, 0.4 + 0.45 * closing, closing * 0.3),
     pose: () => ({ dx: 0, dy: -2, rot: 0 }),
-    icon: HIEMS_ICON32.whiteout,
+    icon: HIEMS_ICON32.whiteout, mark: 'blind',
     bot: (p, foe, d) => foe instanceof Player && d < WHITE_R && (unitsNear(p, p.x, p.y, WHITE_R).filter((q) => q instanceof Player).length >= 2 || foe.hp < foe.maxHp * 0.6),
   },
 ];
