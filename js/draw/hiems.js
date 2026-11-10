@@ -216,35 +216,36 @@ HERO_MARK.push(drawHiemsMarks);
 
 // ---- the SNOWFLAKE STAFF ------------------------------------------------------------
 // Her staff (CLASSES' `staff: 'flake'`; HERO_STAVES, js/draw/heroes.js): a six-pointed flake
-// of ice on a pale birch staff, carried upright; the flake's heart glints between two frames.
+// of ice, white on a deep blue boss, on a pale birch staff, carried upright; the flake's heart glints between two frames.
 // The hand closes on the shaft at HIEMS_FLAKE_GRIP.
 const HIEMS_FLAKE = [
-  '.o.o.o.',
-  'oCoCoCo',
-  '.oCCCo.',
-  'oCCSCCo',
-  '.oCCCo.',
-  'oCoCoCo',
-  '.oocoo.',
-  '..oGo..',
-  '..oGo..',
-  '..oGo..',
-  '..oGo..',
-  '..oGo..',
-  '..oGo..',
-  '..oGo..',
-  '..oGo..',
-  '..oGo..',
-  '..ogo..',
-  '..ogo..',
-  '...o...',
+  '....o.....',
+  '.o.oco.o..',
+  'ocodcdoco.',
+  'odcdcdcdo.',
+  'oddcScddo.',
+  'odcdcdcdo.',
+  'ocodcdoco.',
+  '.oGoco.o..',
+  '.oGoo.....',
+  '.oGo......',
+  '.oGo......',
+  '.oGo......',
+  '.oGo......',
+  '.oGo......',
+  '.oGo......',
+  '.oGo......',
+  '.oGo......',
+  '.ogo......',
+  '.ogo......',
+  '..o.......',
 ];
-const HIEMS_FLAKE_GRIP = [3, 10];
-const HIEMS_FLAKE_PAL = { o: '#2e2440', C: '#e6f8ff', c: '#7cc4e8', S: '#ffffff', W: '#a8dcf0', g: '#8a95a8', G: '#c3ccd8' };
+const HIEMS_FLAKE_GRIP = [2, 11];
+const HIEMS_FLAKE_PAL = { o: '#2e2440', c: '#e6f8ff', d: '#2f5f8f', S: '#ffffff', g: '#8a95a8', G: '#c3ccd8' };
 let hiemsFlakeArt = null;
 function hiemsFlake() {
   if (hiemsFlakeArt) return hiemsFlakeArt;
-  const glint = HIEMS_FLAKE.map((r, y) => (y === 3 ? 'oCWSWCo' : r));
+  const glint = HIEMS_FLAKE.map((r, y) => (y === 4 ? 'oddSSSddo.' : r));
   hiemsFlakeArt = [bakeBladeArt(HIEMS_FLAKE, HIEMS_FLAKE_PAL), bakeBladeArt(glint, HIEMS_FLAKE_PAL)];
   return hiemsFlakeArt;
 }
