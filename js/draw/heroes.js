@@ -130,6 +130,8 @@ function heroSleeve(p, px, y, out) {
   const set = classSet(p), x0 = Math.round(out > 0 ? px + 12 : px + 4 - SLEEVE), y0 = Math.round(y) - FIST + 1;
   ctx.fillStyle = set.ink; ctx.fillRect(x0, y0 - 1, SLEEVE, FIST + 2);
   ctx.fillStyle = set.sleeve; ctx.fillRect(x0, y0, SLEEVE, FIST);
+  // on a fine body the sleeve's top art px row is lit, so the reach reads as an arm, not a bar
+  if (bodySet(p).dens > 1) { const u = 1 / bodySet(p).dens; ctx.globalAlpha = 0.3; ctx.fillStyle = '#ffffff'; ctx.fillRect(x0, y0, SLEEVE, u); ctx.globalAlpha = 1; }
 }
 // A look on a larger cell stands taller and wider than the 16 px one every offset
 // here was first set for: `heroRise` rows over it (the overhead frame lifts by
