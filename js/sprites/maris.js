@@ -305,8 +305,8 @@ const MARIS_SKINS = [
 ];
 
 // ------------------------------------------------------------ maris harpoon
-// Her HARPOON as she holds it (HERO_BLADES.harpoon, js/draw/maris.js): a barbed iron head on
-// a long ash shaft. Flat with the head left like every held blade (18 px, the greatsword's
+// Her HARPOON as she holds it (HERO_BLADES.harpoon, js/draw/maris.js): a slim iron point with one hooked barb on
+// a long ash shaft, her line lashed under the head and its end hanging. Flat with the head left like every held blade (18 px, the greatsword's
 // band; the hands close near the shaft's end, `hilt`), and slanted with the head up and right
 // for a body facing down or up.
 const MARIS_HARPOON = [
@@ -316,13 +316,13 @@ const MARIS_HARPOON = [
   '..................',
   '..................',
   '..................',
-  '..oo..............',
-  '.oSo..............',
-  'oSSsoooooooooooooo',
-  'oSssouwwuwwuwwuwwo',
-  'oSSsoooooooooooooo',
-  '.oSo..............',
-  '..oo..............',
+  '....oo............',
+  '...oSo............',
+  'oooSsooooooooooooo',
+  'oSSssrrwuwwuwwuwwo',
+  'oooSsooooooooooooo',
+  '...oSo............',
+  '....oo............',
   '..................',
   '..................',
   '..................',
@@ -330,23 +330,23 @@ const MARIS_HARPOON = [
   '..................',
 ];
 const MARIS_HARPOON_DIAG = [
-  '...........oooo.',
-  '..........oSSSo.',
-  '.........oSssSo.',
-  '.........oSsoSo.',
-  '........owoo.o..',
-  '.......owuo.....',
-  '......owuo......',
-  '.....owuo.......',
-  '....owuo........',
-  '...owuo.........',
-  '..owuo..........',
+  '............ooo.',
+  '...........oSSo.',
+  '..........oSso..',
+  '......ooooSso...',
+  '......oSSSso....',
+  '.....oSoorro....',
+  '.....oorro......',
+  '.....owuoR......',
+  '....owuo.R......',
+  '...owuo..R......',
+  '..owuo..R.......',
   '.owuo...........',
   'owuo............',
   '.oo.............',
 ];
 const MARIS_HARPOON_GRIP = [3, 9]; // where the hands close on the slanted grid
-const MARIS_HARPOON_PAL = { o: '#241a12', S: '#c8d2e4', s: '#8b93a8', w: '#a8794a', u: '#6e4a28' };
+const MARIS_HARPOON_PAL = { o: '#241a12', S: '#c8d2e4', s: '#8b93a8', w: '#a8794a', u: '#6e4a28', r: '#e6dcc8', R: '#b89a6a' };
 
 // ------------------------------------------------------------ maris registry
 // MARIS in the hero art registry (heroArt, js/sprites/hero-art.js): the looks and

@@ -4,9 +4,13 @@
 behind it (`updateTitle()` steps the animals - until a room is shared, when they stand still
 for every guest's sake, [online play](../../pvp-architecture.md#the-wire-form) - and advances the menu
 timers; players, arrows and structures do not tick and `state.time` is frozen), snow falls as usual, and the camera is
-driven by `titleCamTarget()` (js/ui/titlescene.js): it frames **the title's scene** on the frozen
-middle at `ZOOM_TITLE` (the match's own view) and breathes a few px round it (`TITLE_DRIFT`). The
-scene is ten heroes, five a side, facing each other across the ice (`TITLE_SPOTS`, the rivals
+driven by `titleCamTarget()` (js/ui/titlescene.js): it frames **the title's scene**
+at `ZOOM_TITLE` (the match's own view) and breathes a few px round it (`TITLE_DRIFT`). Where the scene
+stands is found, not written: `titleSceneAt()` takes the spot nearest the map's centre where the logo's
+room (`TITLE_LOGO`), the word column (`TITLE_WORDS`) and all ten heroes (`TITLE_BODY`) each sit on one
+clean ground (`titleSpotOk`; `titleGround` passes open snow or plain paving with nothing standing on it,
+no brush, no ice), found once per view size, so text never sits over reeds or a wall whatever the map
+becomes. The scene is ten heroes, five a side, facing each other (`TITLE_SPOTS`, the rivals
 mirrored): `titleCast()` builds them as this screen's own `Player` bodies - never in `players`, never
 stepped or sent - your profile's hero leading your side and nine others dealt fresh each boot
 (`titleDeal`), `titleCastPose` moves them off the menu's clock (a few px of pacing, a face turned to you; the two leaders hold), and `titleCastDraws` hands them to the sorted pass, so `drawPlayer` paints the real

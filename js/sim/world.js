@@ -441,6 +441,7 @@ const ROAD_HW_WOOD = 2.5;   // ...and through each corner's woods: a five-tile f
 const ROAD_GATE_BLEND = 2;  // u either side of a gate the width eases from one to the other
 const ROAD_RAG = 0.8;       // tiles the edge wanders either way - the organic verge
 const ROAD_SHOULDER = 1.4;  // tiles of dirty snow past the edge (the bake only)
+const ROAD_CLEAR = 1.5;     // tiles past the edge no pine stands (placeRoad): the tile the stones end in and one clear tile of snow
 const ROAD_ICE_KEEP = 6;    // tiles past the edge no pond or river reaches (genWorld's carve rules)
 const ROAD_ICE_TAPER = 7;   // ...and the tiles over which a river narrows to nothing on its way in
 const ROAD_STEP = 20;       // tiles between a wave's waypoints along it
@@ -540,8 +541,13 @@ function roadNest(team) {
 function placeRoad() {
   if (ARENA) return;
   for (let ty = 0; ty < WORLD; ty++) for (let tx = 0; tx < WORLD; tx++) {
-    if (!onRoad(tx, ty)) continue;
     const i = idx(tx, ty);
+    if (!onRoad(tx, ty)) {
+      // the verge: no pine on the tile the stones end in, nor on the one
+      // past it, so the snow's lip shows between the paving and the woods
+      if (objects[i] && laneFells(objects[i]) && laneDist(tx, ty) < ROAD_CLEAR) objects[i] = null;
+      continue;
+    }
     ground[i] = 3; // the lane is never ice: genWorld keeps the ponds ROAD_ICE_KEEP away, and it paves over the frozen creek where it crosses it
     objects[i] = null; // only worldgen's scenery stands here yet: a pine of the woods it cuts through
   }

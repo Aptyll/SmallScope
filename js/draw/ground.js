@@ -1014,7 +1014,9 @@ const CASTERS = {
                 const nx = Math.floor(n / (TREE_NUDGE_Y * 2 + 1)) - TREE_NUDGE_X, ny = n % (TREE_NUDGE_Y * 2 + 1) - TREE_NUDGE_Y;
                 return [A, f * A.fw, A.fw, A.fh, -5 + nx, -21 + ny, size * A.pals * A.fh]; // the height's own rows of the atlas
               } },
-  stump:    { code: () => 121, art: () => whole(SPRITES.stump, 0, 4) },
+  // a stump's code is its cut AND where it stands (stumpLook), like a pine's
+  stump:    { code: (o, tx, ty) => { const L = stumpLook(tx, ty); return 300 + L.v * 100 + (L.dx + TREE_NUDGE_X) * 10 + L.dy + TREE_NUDGE_Y; },
+              art: (c) => whole(SPRITES.stumps[Math.floor((c - 300) / 100)], Math.floor((c - 300) % 100 / 10) - TREE_NUDGE_X, 4 + (c - 300) % 10 - TREE_NUDGE_Y) },
   den:      { code: () => 122, art: () => whole(SPRITES.den, 0, -4) },
   hut:      { code: () => 125, art: () => { const s = SPRITES.hogHut[0]; return whole(s, TILE - (s.width >> 1), TILE - s.height); } },
   stall:    { code: () => 126, art: () => { const s = SPRITES.teamBuild[0].stall; return whole(s, 0, TILE - s.height); } }, // one silhouette for both sides
@@ -1263,6 +1265,13 @@ function treeCell(tx, ty, col) {
 const TREE_NUDGE_X = 3, TREE_NUDGE_Y = 2;
 function treeNudgeX(tx, ty) { return Math.floor(hash2(tx * 11 + 5, ty * 13 + 9) * (TREE_NUDGE_X * 2 + 1)) - TREE_NUDGE_X; }
 function treeNudgeY(tx, ty) { return Math.floor(hash2(tx * 17 + 2, ty * 19 + 4) * (TREE_NUDGE_Y * 2 + 1)) - TREE_NUDGE_Y; }
+// a stump's look: which of the three cuts (SPRITES.stumps), and it stands
+// where its pine stood - the pine's own nudge, never lower than the tile's
+// line (a pine on the tile below would bury it) - so a felled stand is not a
+// grid of one stump
+function stumpLook(tx, ty) {
+  return { v: Math.floor(hash2(tx * 23 + 7, ty * 29 + 3) * 3), dx: treeNudgeX(tx, ty), dy: Math.min(0, treeNudgeY(tx, ty)) };
+}
 
 // The practice dummy (the `practice arena` banner, js/sim/practice.js), baked here
 // beside its draw rather than under js/sprites/. A big target you read across the arena:

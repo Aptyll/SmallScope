@@ -96,6 +96,13 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['SOLDIERS BREAK APART AND BEASTS SINK INTO THE SNOW WHERE THEY FALL', '0.767'],
+    ['Salvia, Lignum, Maris and Velox each carry something you can tell apart at a glance', '0.766'],
+    ['HOG HUTS HAVE A YARD, A PATH AND A WOODPILE', '0.765'],
+    ['TITLE HEROES STAND ON OPEN SNOW, CLEAR OF THE WORDS', '0.764'],
+    ['A CLEAR STRIP OF SNOW BETWEEN EVERY LANE AND THE WOODS', '0.763'],
+    ['STUMPS IN THREE CUTS, NO LONGER IN ROWS', '0.762'],
+    ['Hiems\'s staff top is a clear snowflake; resting staves show their whole head from the front', '0.761'],
     ['LANES KEEP A CLEAN STRAIGHT EDGE', '0.759'],
     ['Lignum, Rupes, Sagitta, Varro and Velox have proper side views, Velox carries a real staff sling and Lucerna a caged lantern', '0.758'],
     ['SIXTEEN ABILITIES REDRAWN: NO DISCS, NO DOTTED LINES, ICE AND SNOW THAT LOOK LIKE ICE AND SNOW', '0.760'],
