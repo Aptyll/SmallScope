@@ -75,19 +75,16 @@ function keyLabel(k) {
 // abilities (R the big one), A the attack-move, S the stop, 1-6 the item
 // slots, G the ping wheel, C the sheet. D and F the two tricks.
 //
-// THE THIRD SCHEME, MOUSE (the `mouse only` banner below), is CLICK for one
-// hand: the same actions and the same keys (`ms` is only where it differs
-// from `ck`), with the dodge and the slide on the mouse's two side buttons.
-// A side button is a KEY here - 'Mouse4' (the back button) and 'Mouse5'
+// A mouse's side button is a KEY here - 'Mouse4' (the back button) and 'Mouse5'
 // (forward) are names like 'Shift', pressed through keyPress by
-// pointerPress - so any action on any scheme can be rebound onto one.
+// pointerPress - so any action on either scheme can be rebound onto one.
 const KEY_ACTIONS = [
   { id: 'up', verb: 'MOVE UP', key: 'w' }, { id: 'left', verb: 'MOVE LEFT', key: 'a' },
   { id: 'down', verb: 'MOVE DOWN', key: 's' }, { id: 'right', verb: 'MOVE RIGHT', key: 'd' },
   { id: 'ab1', verb: 'ABILITY 1', key: '1', ck: 'q' }, { id: 'ab2', verb: 'ABILITY 2', key: '2', ck: 'w' },
   { id: 'ab3', verb: 'ABILITY 3', key: '3', ck: 'e' }, { id: 'ab4', verb: 'ABILITY 4', key: '4', ck: 'r' },
   { id: 'amove', verb: 'ATTACK MOVE', ck: 'a' }, { id: 'stop', verb: 'STOP', ck: 's' },
-  { id: 'dodge', verb: 'DODGE', key: ' ', ck: ' ', ms: 'Mouse4' }, { id: 'slide', verb: 'SLIDE', key: 'Shift', ck: 'Shift', ms: 'Mouse5' }, { id: 'work', verb: 'USE', key: 'e' },
+  { id: 'dodge', verb: 'DODGE', key: ' ', ck: ' ' }, { id: 'slide', verb: 'SLIDE', key: 'Shift', ck: 'Shift' }, { id: 'work', verb: 'USE', key: 'e' },
   // the six item slots' keys (useItem, js/sim/items.js): what a slot holds is
   // used off its key - a potion drunk. On WASD they run on past the abilities'
   // 1-4; under CLICK, where QWER are the abilities, they are 1-6
@@ -96,7 +93,7 @@ const KEY_ACTIONS = [
   { id: 'item5', verb: 'ITEM 5', key: '9', ck: '5' }, { id: 'item6', verb: 'ITEM 6', key: '0', ck: '6' },
   { id: 'recall', verb: 'RECALL', key: 'h', ck: 'h' },
   // the loadout's two tricks (tryTrick, js/sim/loadout.js): League's D and F
-  // under CLICK and MOUSE; on WASD, where D walks, Q and F beside the hand
+  // under CLICK; on WASD, where D walks, Q and F beside the hand
   { id: 'trick1', verb: 'TRICK 1', key: 'q', ck: 'd' }, { id: 'trick2', verb: 'TRICK 2', key: 'f', ck: 'f' },
   // held, an ability's hover card opens every rank's numbers (tipFull,
   // js/ui/tooltip.js). Its own key, never the slide's Shift: holding it to
@@ -111,24 +108,23 @@ const KEY_ACT = {};
 for (const a of KEY_ACTIONS) KEY_ACT[a.id] = a;
 const ITEM_KEYS = ['item1', 'item2', 'item3', 'item4', 'item5', 'item6']; // slot i's key is ITEM_KEYS[i]
 const TRICK_KEYS = ['trick1', 'trick2']; // trick i's key is TRICK_KEYS[i]
-const SCHEMES = ['wasd', 'click', 'mouse'];
+const SCHEMES = ['wasd', 'click'];
 function schemeKey(a, scheme) { // the action's default on a scheme, or undefined
-  const s = scheme || settings.scheme;
-  return s === 'mouse' ? (a.ms !== undefined ? a.ms : a.ck) : s === 'click' ? a.ck : a.key;
+  return (scheme || settings.scheme) === 'click' ? a.ck : a.key;
 }
 function schemeActs(scheme) { return KEY_ACTIONS.filter((a) => schemeKey(a, scheme)); }       // the actions a scheme has
-function binds() { return settings.scheme === 'mouse' ? settings.bindsMouse : settings.scheme === 'click' ? settings.bindsClick : settings.binds; } // the live map
+function binds() { return settings.scheme === 'click' ? settings.bindsClick : settings.binds; } // the live map
 // keys no bind may take: the fixed jobs above, and the browser's F row
 function keyReserved(k) { return k === 'Escape' || k === 'Enter' || k === 'Backspace' || k === '.' || k === 'Meta' || /^(Arrow|F\d)/.test(k); }
-settings.binds = {}; settings.bindsClick = {}; settings.bindsMouse = {};
+settings.binds = {}; settings.bindsClick = {};
 for (const a of KEY_ACTIONS) {
   if (a.key) settings.binds[a.id] = a.key;
   if (a.ck) settings.bindsClick[a.id] = a.ck;
-  if (schemeKey(a, 'mouse')) settings.bindsMouse[a.id] = schemeKey(a, 'mouse');
 }
 // a loaded profile's binds made whole (boot.js, after loadSettings): a bind an
 // action never had, a reserved key or a key two actions share falls back to
-// the default
+// the default. A profile saved on the old MOUSE scheme (cut in 0.671) wakes
+// on CLICK, the scheme it was built on
 function mendBinds() {
   const mend = (map, scheme) => {
     const s = map && typeof map === 'object' ? map : {};
@@ -142,7 +138,8 @@ function mendBinds() {
   };
   settings.binds = mend(settings.binds, 'wasd');
   settings.bindsClick = mend(settings.bindsClick, 'click');
-  settings.bindsMouse = mend(settings.bindsMouse, 'mouse');
+  delete settings.bindsMouse;
+  if (settings.scheme === 'mouse') settings.scheme = 'click';
   if (!SCHEMES.includes(settings.scheme)) settings.scheme = 'wasd';
 }
 // a key event carries only a key, read against the live map
@@ -373,7 +370,6 @@ function keyPress(e) {
     // an open wheel goes first: a gesture half-finished, and Escape is how
     // it is thought better of
     if (ck.arm) ck.arm = false; // an armed attack-move is the lightest gesture to think better of
-    else if (ms.ready >= 0) ms.ready = -1; // ...and so is a readied ability (the `mouse only` banner)
     else if (state.wheel) state.wheel = null;
     else if (cheatAimOff()) { /* the practice bar's armed aim, put down */ }
     else if (state.mapOpen) { state.mapOpen = false; SFX.ui(false); }
@@ -397,7 +393,7 @@ pageListen(window, 'keyup', (e) => {
 function keyRelease(e) {
   // letting go of the ping key pings the pick (GO HERE on a tap), exactly
   // as the right button does
-  if (keyIs(e, 'ping') && state.wheel && state.wheel.kind === 'ping' && !state.wheel.stand) { resolveWheel(); state.wheel = null; return; }
+  if (keyIs(e, 'ping') && state.wheel && state.wheel.kind === 'ping') { resolveWheel(); state.wheel = null; return; }
   // letting go of the work key with a wheel it held up (roll die or range
   // bell) takes what the pointer is on (or cancels from the hub),
   // exactly as releasing the right button does
@@ -470,14 +466,12 @@ function pointerPress(button) {
     openPingWheel();
     return;
   }
-  if (button === 1) { if (msOn()) msWheelPress(); return; } // the middle button is the MOUSE scheme's action wheel, and nobody else's
   if (button !== 0) return;
   if (state.mode === 'title') { menuClick(); return; }
   if (state.mode === 'drop') { SFX.unlock(); if (state.mapOpen && mapCloseHit()) state.mapOpen = false; return; }
   if (state.mode === 'dead') { SFX.unlock(); if (!voteClick()) deadClick(); return; }
   if (state.mode !== 'play') return;
   if (ckOn() && ck.arm) { ckArmedPress(); return; } // an armed attack-move: this press lays it
-  if (state.wheel && state.wheel.stand) { resolveWheel(); state.wheel = null; return; } // a standing ping wheel: this press picks
   if (state.wheel) { state.wheel = null; return; } // left-click while it is open: cancel
   if (state.settingsOpen) { mouse.down = true; settingsMouseDown(); return; }
   if (state.mapOpen) { if (mapCloseHit()) { SFX.unlock(); state.mapOpen = false; } return; } // a press off the slab closes the chart; on it, the press is swallowed
@@ -492,7 +486,6 @@ function pointerPress(button) {
   if (shopClick(shopHit(mouse.x, mouse.y))) return;
   if (state.charOpen && charClick(charHit(mouse.x, mouse.y))) return;
   if (hudPress(mouse.x, mouse.y)) { SFX.unlock(); return; }
-  if (msOn() && msLeftPress()) return; // a readied ability casts here instead of the tool
   mouse.down = true;
   clickAction(player);
 }
@@ -508,9 +501,9 @@ function sideButton(button, down) {
 // ...and came back up
 function pointerRelease(button) {
   if (button === 3 || button === 4) { sideButton(button, false); return; }
+  if (button === 1) return; // the middle button is bound to nothing
   if (button === 2 && ckOn()) { ckRightRelease(); return; }
   if (button === 2 && state.wheel) { resolveWheel(); state.wheel = null; return; }
-  if (button === 1) { if (msOn()) msWheelRelease(); return; }
   // releasing the button just drops the held intent; updatePlayer fires the
   // tool on that falling edge, the same way an AI's shot is timed
   if (button === 0) player.input.fire = false;
@@ -577,15 +570,13 @@ const CK_MARK_T = 0.6;    // s the click ring lives on the snow
 const CK_COL = { move: '#f4f7ff', work: '#ffd95c', foe: '#ff6a5c' }; // the ring: a walk, a job, a fight
 // order: {kind:'move'|'amove', x, y} | {kind:'work', tx, ty} | {kind:'chase', t}
 //        | {kind:'use', what:'shop'|'pkdie'|'agbell', o, tx, ty}
-// lock: the unit the tool is on; stand: that lock is the LEFT press's (the
-// MOUSE scheme's), which aims and auto-attacks but never walks the body;
-// arm: A pressed, the next left press lays the attack-move; follow: the
+// lock: the unit the tool is on; arm: A pressed, the next left press lays the attack-move; follow: the
 // right button is down over open ground; hop: a right press while seated on
 // the roost; mark: the last ring on the snow
-const ck = { order: null, lock: null, stand: false, arm: false, follow: false, hop: false, mark: null };
-function ckOn() { return settings.scheme === 'click' || settings.scheme === 'mouse'; } // MOUSE is CLICK with more on the mouse
-function ckClear() { ck.order = null; ck.lock = null; ck.stand = false; ck.arm = false; ck.follow = false; ck.hop = false; msClear(); }
-function ckOrder(o, mx, my, kind) { ck.order = o; ck.lock = null; ck.stand = false; ck.mark = { x: mx, y: my, t: CK_MARK_T, col: CK_COL[kind] }; }
+const ck = { order: null, lock: null, arm: false, follow: false, hop: false, mark: null };
+function ckOn() { return settings.scheme === 'click'; }
+function ckClear() { ck.order = null; ck.lock = null; ck.arm = false; ck.follow = false; ck.hop = false; }
+function ckOrder(o, mx, my, kind) { ck.order = o; ck.lock = null; ck.mark = { x: mx, y: my, t: CK_MARK_T, col: CK_COL[kind] }; }
 // where a press landed, in the world: the chart's tile, the disc's point,
 // or the ground under the pointer - null over the HUD or off the map. `far`
 // says it came off a map, where only a walk can be meant.
@@ -610,10 +601,9 @@ function ckRightPress() {
   // a wheel a walk opened (the die, the bell) stands
   // until a press picks; the ping wheel is G's, and G's release pings -
   // unless the action wheel stood it up, when this press picks too
-  if (state.wheel) { if (state.wheel.kind !== 'ping' || state.wheel.stand) { resolveWheel(); state.wheel = null; } return; }
+  if (state.wheel) { if (state.wheel.kind !== 'ping') { resolveWheel(); state.wheel = null; } return; }
   if (cheatAimOff()) { SFX.unlock(); return; } // ...and the practice bar's aim
   ck.arm = false;
-  ms.ready = -1; // a readied ability is put down by the walk, League's grammar
   if (player.dead) return;
   const pt = ckPoint();
   if (!pt) return;
@@ -729,7 +719,7 @@ function ckStep(p, dt) {
   // the held right button drags a walk's goal under the pointer
   if (ck.follow && ck.order && ck.order.kind === 'move' && !state.mapOpen && !overHud(mouse.x, mouse.y)) { ck.order.x = mouseWX(); ck.order.y = mouseWY(); }
   // the lock: dropped the moment the target is dead, gone or out of sight
-  if (ck.lock && !ckSees(p, ck.lock)) { ck.lock = null; ck.stand = false; if (ck.order && ck.order.kind === 'chase') ck.order = null; }
+  if (ck.lock && !ckSees(p, ck.lock)) { ck.lock = null; if (ck.order && ck.order.kind === 'chase') ck.order = null; }
   // an attack-move takes the first foe it sees on the way
   if (!ck.lock && ck.order && ck.order.kind === 'amove') ck.lock = ckAcquire(p);
   const o = ck.order, t = ck.lock;
@@ -738,7 +728,7 @@ function ckStep(p, dt) {
   // map or into a corner's forest, so it spends the bots' roost budget on
   // the search (a search that runs out still hands back a first leg)
   const walk = (x, y, reach) => { const n = navTo(p, x, y, PLAYER_R, reach || 0, dt, NAV_BUDGET * 4); if (!n.ok) return -1; r.mx = n.dx; r.my = n.dy; return n.d; };
-  if (o && (!t || ck.stand)) {
+  if (o && !t) {
     if (o.kind === 'move' || o.kind === 'amove') {
       const d = walk(o.x, o.y, 0);
       if (d < 0 || d < CK_ARRIVE) ck.order = null;
@@ -758,7 +748,7 @@ function ckStep(p, dt) {
     const d = Math.hypot(t.x - p.x, t.y - p.y);
     const reach = ckReach(p), hold = ckHoldR(p, reach);
     r.aimX = t.x; r.aimY = ty;
-    if (d > hold && !ck.stand) walk(t.x, t.y, 0); // a left press's lock never walks
+    if (d > hold) walk(t.x, t.y, 0);
     // the auto-attack: the hand off the button, a clear flight, the target
     // inside the tool's reach - draw to the auto-draw and loose (the same
     // held-then-dropped intent a bot fires by)
@@ -768,98 +758,9 @@ function ckStep(p, dt) {
   // grammar): for that one step the aim is the pointer, and an auto-draw
   // holds a step rather than loose at it
   if (inp.ability >= 0 && t) { r.aimX = mouseWX(); r.aimY = mouseWY(); if (r.fire !== null) r.fire = p.charging; }
-  // ...and one cast off the MOUSE scheme's wheel or a readied well casts at
-  // the point it was laid on, held through the whole wind-up (the effect
-  // lands at the aim held at its end - updateAbilities)
-  if (ms.castAt) {
-    if (inp.ability >= 0 || p.castT > 0) { r.aimX = ms.castAt.x; r.aimY = ms.castAt.y; if (r.fire !== null) r.fire = p.charging; }
-    else ms.castAt = null;
-  }
   // the roll goes where the pointer is - one rule, with no walk keys to read
   if (inp.dodge) { const dx = mouseWX() - p.x, dy = mouseWY() - p.y, l = Math.hypot(dx, dy); if (l > 1) { r.mx = dx / l; r.my = dy / l; } }
   return r;
-}
-
-// ------------------------------------------------------------ mouse only
-// THE THIRD SCHEME (settings.scheme 'mouse'): CLICK for one hand. Every
-// CLICK gesture stands - ckOn() is true here too, so the right button walks,
-// works, chases and holds to follow - and what CLICK leaves on the keyboard
-// moves onto the mouse:
-// - the SIDE BUTTONS are the dodge (back) and the slide (forward): keys named
-//   'Mouse4' and 'Mouse5' (sideButton), rebindable like any other;
-// - a LEFT press on a foe takes the lock as it draws (ck.stand), so the loose
-//   goes to the body - CLICK's assist - and the auto-attack keeps working it
-//   from where you stand; it never walks, which is the right button's job;
-// - HOLDING THE MIDDLE BUTTON opens the ACTION WHEEL at the pointer: the four
-//   abilities, the potion and the ping (MS_WHEEL). The travel picks and
-//   the release performs. An ability casts at the point the press was made,
-//   not where the flick ended (ms.castAt, held through the wind-up - ckStep),
-//   and the ping wedge stands the ping wheel up on that point for the next
-//   press to pick (w.stand; a press in its hub is GO HERE);
-// - a click on an ABILITY WELL readies it (ms.ready) where a key would cast:
-//   the snow shows its reach from the body toward the pointer
-//   (drawCastPreview, js/draw/marks.js), the next left press on the world
-//   casts there, a right press, Escape or the well again puts it down, and
-//   the scroll wheel walks it along the wells. A row with no `aim` on
-//   CLASS_AB (a self-cast, or a ring round the body) casts at once, and a
-//   skill point in hand buys, exactly as the key does.
-// Nothing here reaches the sim but the input struct, as for CLICK.
-const MS_WHEEL = ['ab1', 'ab2', 'ab3', 'ab4', 'potion', 'ping'];
-// ready: the readied well, -1 none; castAt: the world point a mouse cast
-// aims at until it lands
-const ms = { ready: -1, castAt: null };
-function msOn() { return settings.scheme === 'mouse'; }
-function msClear() { ms.ready = -1; ms.castAt = null; }
-// does ability i want a direction - a line or a cone off the body? Only
-// those are worth readying; the rest cast the moment they are asked for
-function msAims(i) { const a = abOf(player, i).aim; return !!(a && (a.line || a.cone)); }
-function msCast(i, wx, wy) {
-  SFX.unlock();
-  player.input.ability = i;
-  ms.castAt = { x: wx, y: wy };
-  ms.ready = -1;
-}
-// a click on ability well i (hudPress, js/ui/strip.js)
-function msWell(i) {
-  if (abLvCanBuy(player, i) || !msAims(i)) { player.input.ability = i; return; }
-  ms.ready = ms.ready === i ? -1 : i;
-  SFX.notch();
-}
-// a left press on the world, before the tool sees it: true when it was a cast
-function msLeftPress() {
-  const wx = mouseWX(), wy = mouseWY();
-  if (ms.ready >= 0) { msCast(ms.ready, wx, wy); return true; }
-  const t = unitUnder(player, wx, wy);
-  if (t && ckSees(player, t)) { ck.lock = t; ck.stand = true; }
-  else if (ck.stand) { ck.lock = null; ck.stand = false; } // a shot at open snow lets the last one go
-  return false;
-}
-function msWheelPress() {
-  if (state.mode !== 'play' || state.settingsOpen || player.dead) return;
-  if (state.wheel) { if (state.wheel.stand) { resolveWheel(); state.wheel = null; } return; }
-  if (state.mapOpen) { openPingWheel(); return; } // over the chart, a ping is the one thing the wheel can mean
-  if (overHud(mouse.x, mouse.y)) return;
-  const wx = mouseWX(), wy = mouseWY(), tx = Math.floor(wx / TILE), ty = Math.floor(wy / TILE);
-  if (!inWorld(tx, ty)) return;
-  ms.ready = -1;
-  SFX.unlock();
-  SFX.wheelUp();
-  state.wheel = { kind: 'kit', tx, ty, wx, wy, seg: -1, ax: mouse.x, ay: mouse.y, sx: mouse.x, sy: mouse.y };
-}
-function msWheelRelease() {
-  const w = state.wheel;
-  if (!w || w.stand) return;
-  if (w.kind === 'kit') { const seg = wheelLayout().seg; state.wheel = null; msKitPick(w, seg); return; }
-  if (w.kind === 'ping') { resolveWheel(); state.wheel = null; } // the chart's ping wheel the press opened
-}
-// the action wheel's pick: an ability cast at the press point, a potion, or
-// the ping wheel stood up on the press's point
-function msKitPick(w, seg) {
-  if (seg < 0) return;
-  const id = MS_WHEEL[seg];
-  if (id === 'potion') player.input.useItem = Math.max(0, potionSlot(player));
-  else if (id === 'ping') { SFX.wheelUp(); state.wheel = { kind: 'ping', tx: w.tx, ty: w.ty, wx: w.wx, wy: w.wy, seg: -1, ax: mouse.x, ay: mouse.y, stand: true }; }
-  else msCast(+id.slice(2) - 1, w.wx, w.wy);
 }
 
 pageListen(canvas, 'contextmenu', (e) => e.preventDefault());
@@ -889,13 +790,6 @@ pageListen(canvas, 'wheel', (e) => {
   if (state.settingsOpen) { settingsScrollBy(e.deltaY > 0 ? 14 : -14); return; }
   if (state.mapOpen || state.wheel) return;
   if (shopScrollBy(e.deltaY > 0 ? 1 : -1)) return; // the shop's grid, when its rows run past it (js/ui/shop.js)
-  // a readied ability (the MOUSE scheme): the wheel walks it along the four
-  // wells - the camera's zoom waits
-  if (ms.ready >= 0) {
-    ms.ready = (ms.ready + (e.deltaY > 0 ? 1 : -1) + AB_KEYS) % AB_KEYS;
-    SFX.notch();
-    return;
-  }
   // over the minimap the wheel zooms the minimap instead of the camera
   if (overMinimap()) {
     const mz = settings.mmZoom | 0;

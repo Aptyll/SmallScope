@@ -74,8 +74,8 @@ remembered with the settings (`settings.relay`), else the page's own host.
 left ([the hover tooltip](../rendering/the-hud-corners/the-hover-tooltip.md)) —
 `tipFull` — the ABILITY DETAILS row: HOLD ALT (the default: an ability's hover is the short card, the DETAILS key, Alt unless rebound, opens every rank's numbers; the row prints the live bind, an `off` given as a function) or ALWAYS (`tipClassAb`) —
 `aiLevel` — the rival bots' level, picked by the leader on the party screen's head, an index into `AI_LEVELS` (js/ai/ai-skill.js), NORMAL until moved (a settings save from before EASY is moved up one, `loadSettings`) —
-`scheme` — the keyboard scheme, `'wasd'`, `'click'` or `'mouse'` — with `binds` / `bindsClick` /
-`bindsMouse`, the key each action is bound to under each
+`scheme` — the keyboard scheme, `'wasd'` or `'click'` (a saved `'mouse'` wakes on `'click'`, `mendBinds`) — with `binds` / `bindsClick`,
+the key each action is bound to under each
 ([the two controllers](../multiplayer.md#keyboard-and-mouse)) —
 `relay` (above) —
 `fpsCap` — the FPS CAP row, frames the loop may present a second, 0 = every frame the screen
@@ -165,7 +165,7 @@ red × when it is off. While muted all three sound dials draw grey rather than g
 (`drawSliderRow`'s `dim`), so what the speaker silences reads off the page without a word of
 text. **N** still toggles the same flag from anywhere.
 
-**The CONTROLS page is itself tabbed** — WASD, CLICK, MOUSE (`CTRL_TABS`), **one cell per
+**The CONTROLS page is itself tabbed** — WASD and CLICK (`CTRL_TABS`), **one cell per
 scheme**: the cell in gold is the scheme in force (`settings.scheme`), and a click on another
 makes it the live scheme (dropping every order the click scheme held) as well as showing its
 listing, so there is no SCHEME row and no words to switch. Its sub-navbar is pinned at the top
@@ -209,8 +209,8 @@ red on anything missing — why it is there: [Audio](audio.md), *a failed load m
 `settings.hitbox` is the same idea one key over: **`.`** toggles it 0 ↔ 2 in any mode. One press
 draws the circles and boxes the sim actually tests over the sprites that hide them, *and* the
 route every walker is following with the tile it is heading for; the next press turns both off. It
-has no ESC-menu row, only the `. HITBOX` line in the WASD scheme's CONTROLS block (CLICK and
-MOUSE leave it out); the rest is in
+has no ESC-menu row, only the `. HITBOX` line in the WASD scheme's CONTROLS block (CLICK
+leaves it out); the rest is in
 [Debug overlays](../rendering/debug-overlays-hitboxes-and-routes.md).
 
 Beneath the minimap `renderMinimap()` prints the elapsed clock alone, centred on the disc. There

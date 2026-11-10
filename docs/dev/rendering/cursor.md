@@ -12,9 +12,7 @@ both the pixel cursor and the browser-cursor fallback read from it. It returns
   so hover and click can never disagree), a live wheel segment, or an ability well or a potion slot (`stripHit()`); any other item slot is read, not
   handled, and stays an arrow, as does the strip's gold plate (see [The HUD corners](the-hud-corners.md)); **grab** — dragging a
   slider; **reticle** — everywhere else in play.
-- Reticle `mode` (table `RETICLE`): **idle** white cross; **cast** gold ring — the MOUSE scheme's
-  readied ability, dim while it cannot cast ([the mouse scheme](../multiplayer.md#the-mouse-scheme));
-  **amove** red ring — the CLICK scheme's
+- Reticle `mode` (table `RETICLE`): **idle** white cross; **amove** red ring — the CLICK scheme's
   A is armed and the next left press lays the attack-move
   ([the click scheme](../multiplayer.md#the-click-scheme); its rings on the snow are
   `drawClickMarks`, js/draw/marks.js); **lock** gold ring — E will work

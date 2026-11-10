@@ -458,9 +458,6 @@ function cursorInfo() {
   // the CLICK scheme's armed attack-move: the pointer is the order waiting to
   // be laid, and reads as one wherever it is
   if (ckOn() && ck.arm) return ret('amove', false);
-  // the MOUSE scheme's readied ability: the pointer is where the next left
-  // press casts it, dim while it cannot
-  if (ms.ready >= 0) return ret('cast', !abReady(player, ms.ready));
   if (player.charging) {
     return ret('bow', false, { frac: drawPow(player) });
   }
@@ -487,7 +484,6 @@ const RETICLE = {
   ice:  { col: '#a8e0f8', gap: 3, diag: true },
   bow:  { col: '#ffd95c', gap: 6, diag: true },
   amove: { col: '#ff6a5c', gap: 4, diag: true }, // the CLICK scheme's armed attack-move
-  cast: { col: '#ffd95c', gap: 5, diag: true },  // the MOUSE scheme's readied ability
 };
 let lastCssCursor = null;
 

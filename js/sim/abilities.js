@@ -45,8 +45,8 @@ const TELE_HOT = '#ffd95c'; // ...and the last quarter of it, when it is about t
 // is the whole effect, fired when the cast lands - what an ability IS lives in
 // its row, never in an `if` somewhere else. `cast` is the seconds the body
 // spends performing it (the pose is abilityPose, js/draw/abilities.js). `aim`
-// is the ground it covers, for the MOUSE scheme's range preview
-// (drawCastPreview, js/draw/marks.js): a `line` of that many px toward the
+// is the ground it covers (a bot's reach, botAbView in js/ai/bot-api.js, and
+// the draw's cull, js/draw/abilities.js): a `line` of that many px toward the
 // aim, a `cone` of radius r and `half` rad either side of it, or a `ring`
 // of radius r round the body; a row without one aims at nothing. Every
 // field a row may carry is listed over ARM_AB (js/sim/armatos.js).
