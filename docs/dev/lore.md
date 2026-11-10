@@ -6,7 +6,8 @@ before naming anything, before writing a line a player will read (a blurb, an ev
 entry, a patch note, store copy), and before proposing a feature whose reason to exist *in the
 valley* is not obvious.
 
-**The player-facing canon is the wiki's WORLD page** (`WIKI_WORLD`, [js/ui/wiki.js](../../js/ui/wiki.js);
+**The player-facing canon is the wiki's WORLD page** (`WIKI_WORLD`, [js/ui/wiki.js](../../js/ui/wiki.js), its words the
+`world.*` keys of the [text table](rendering/the-text-table.md);
 what the page is: [gameplay.md](gameplay/the-wiki.md)) **and each hero's story** (`story` on its
 `CLASSES` entry, [js/sim/player.js](../../js/sim/player.js), printed under the hero's card on the
 wiki's HEROES page). The sentences live there and only there. This file is the rules they answer
