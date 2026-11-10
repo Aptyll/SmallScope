@@ -25,16 +25,16 @@ roosts ([PvP](../multiplayer.md#pvp)).
 Either way the local player's overlay goes up through `endMatch('lost' | 'won' | 'respawning')`
 (js/sim/player.js, the `damage & death` banner; the screens it raises are the `death & spectate`
 banner, js/ui/screens.js): `state.mode = 'dead'`, every local overlay closed, and the screen goes
-to a dim with one plank, **LOBBY**, for `'lost'` (the match is decided for everyone), to
+to a dim under one line for `'lost'` (the match is decided for everyone), which the defeat screen follows on its own, to
 [the victory screen](../rendering/the-end-screens.md), whose one plank is **LOBBY**, for `'won'`, or, for `'respawning'` (temporary), to **the wait**: no dim and no planks
 at all — `endMatch` puts the view on an ally (`viewPlayer` holds it on the body until its
 [fall](../rendering/going-down.md) is over) (`state.deadView = 'spec'`, `specNext` keeping to
 the side's own through `specOk`, the only spectating there is), one line — **RESPAWNING IN Ns** at 3× in the upper band — reads
 the live countdown, and [the replay window](../rendering/replay-the-last-four-seconds.md) opens large
 over the view with a close box on its corner (or ESC), so the death is watched first and the ally
-after, the player choosing when. **LOBBY** on a `'lost'` dim does not leave: it opens
-[the defeat screen](../rendering/the-end-screens.md), the loss's own summary — a lost match ends when
-you stop watching it, not the instant you go down. LOBBY on **either** ceremony then opens
+after, the player choosing when. A `'lost'` dim has no plank and no replay: after `LOST_BEAT` s (or a press) it opens
+[the defeat screen](../rendering/the-end-screens.md), the loss's own summary, the way a win goes
+to the victory screen. LOBBY on **either** ceremony then opens
 [the post-game lobby](../rendering/the-post-game-lobby.md), the whole match's record, and that
 screen's LOBBY is the door out.
 `'respawning'` needs no state of its own beyond `state.rpClosed` (reset by every `endMatch`):
