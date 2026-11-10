@@ -202,7 +202,7 @@ function drawFaberWinder(b, ex, ey, now) {
   const spr = faberArt(Math.floor(b.animT * 3) % 2 ? 'wk' : 'w', Math.floor(b.animT * 3) % 2 ? FABER_WINDER_KEY : FABER_WINDER, FABER_WINDER_PAL, b.team, left);
   const bx = Math.round(b.x - 6 - ex), by = Math.round(b.y + 4 - ey) - spr.height;
   drawCastShade(spr, bx, by);
-  drawSpriteFlash(spr, bx, by, b.flash);
+  ctx.drawImage(spr, bx, by); // solid when struck, like any soldier (drawRobot)
   drawUnitStates(b, bx, by, spr.width, spr.height, now);
   faberBars(b, ex, by - 2);
   if (b.stunT > 0) drawStunStars(Math.round(b.x - ex), by - 9, b, 4);
@@ -235,7 +235,7 @@ function drawFaberEngine(b, ex, ey, now) {
   const sink = b.slamFx > 0.15 ? 2 : 0; // the slam: it drops its whole weight onto its fists
   const bx = Math.round(b.x - 8 - ex), by = Math.round(b.y + 5 - ey) - spr.height + sink;
   drawCastShade(spr, bx, by - sink);
-  drawSpriteFlash(spr, bx, by, b.flash);
+  ctx.drawImage(spr, bx, by); // solid when struck, like any soldier (drawRobot)
   // the boiler's glow ticks while it runs
   if (Math.floor(now * 4) % 2) { ctx.fillStyle = FA_WHITE; ctx.fillRect(bx + (left ? 8 : 7), by + 5, 1, 1); }
   drawUnitStates(b, bx, by, spr.width, spr.height, now);

@@ -21,8 +21,9 @@ archery target says when it breaks (`wordPop`, js/sim/core.js, a staged scene's 
 the same `drawTallies` pass in the same ink, gold (`BAR_NEUTRAL`): `TALLY_POP_SC` for the
 `TALLY_POP` instant it lands, then `TALLY_SC`, rising `WORD_POP_RISE` px and fading over
 `WORD_POP_T`. A player who goes down gets no `NAME DOWN` in the air: the feed
-says it and the fall shows it. Units also flash white on hit via `drawSpriteFlash` (0.8-alpha
-overlay).
+says it and the fall shows it. Beasts, structures and props flash white on hit via `drawSpriteFlash`
+(0.8-alpha overlay); heroes, soldiers and a hero's machines never do (at night the wash reads as a pale
+block): their sparks, shove and bar tell the hit.
 
 ## The running XP total
 

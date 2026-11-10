@@ -324,6 +324,16 @@ function drawUnitStates(e, px, py, w, h, now) {
     ctx.fillStyle = '#c8d2e4';
     for (let k = 0; k * 2 + 5 < w - 4; k++) ctx.fillRect(px + 5 + k * 2, py + h - 3, 1, 1);
   }
+  if (e.slowT > 0 && e.slowMul < 1 && !(e.rootT > 0)) {
+    // slowed: a clump of ice caked on each foot, the legs clear between and above them (it still walks: the
+    // solid block is a root's), a deep blue rim so it holds on snow, a glint on each
+    const cw = Math.max(2, (w >> 2) - 1), mid = px + (w >> 1);
+    for (const x of [mid - cw - 2, mid + 2]) {
+      ctx.fillStyle = '#2f5f8f'; ctx.fillRect(x - 1, py + h - 3, cw + 2, 3); ctx.fillRect(x, py + h - 4, cw, 1);
+      ctx.fillStyle = '#a8dcf0'; ctx.fillRect(x, py + h - 3, cw, 2);
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(x + (x < mid ? 0 : cw - 1), py + h - 3, 1, 1);
+    }
+  }
   if (e.burnT > 0) {
     // Alight: tongues licking UP off the crown, and the snow under the feet
     // lit by them - never a wash over the body, because a burning rival still
