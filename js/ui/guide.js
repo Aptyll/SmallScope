@@ -18,6 +18,7 @@ const GUIDE_FLASH = 0.7;       // s a finished step's card holds, gold, before t
 const GUIDE_HOME_T = 1.5;      // s RECALL's card shows before standing at home counts
 const GUIDE_LIFT = 8;          // px between the card's foot and the strip's buy plates
 const GUIDE_H = 16, GUIDE_TIP_H = 10, GUIDE_PAD = 4;
+const GUIDE_K = 2;             // the card is drawn this many view px to one of its own: big enough that a first look finds it
 const GUIDE_INK = '#07080a', GUIDE_EDGE = '#2f3238', GUIDE_BG = '#16181c';
 const GUIDE_GOLD = '#f2cc6a', GUIDE_TXT = '#f4f7ff', GUIDE_LBL = '#a3a8b0', GUIDE_DIM = '#6c717a';
 
@@ -116,7 +117,8 @@ function updateGuide(now) {
   if (s.need ? s.count(guide) >= s.need : s.done(guide)) { guide.flash = GUIDE_FLASH; SFX.place(); }
 }
 
-// the card's rect and its X's, centred over the strip and its buy plates
+// the card's rect on the view (x, y, w, h: GUIDE_K view px to each of its own
+// lw x lh), centred over the strip and its buy plates, and its X's corner in its own px
 function guideRect(s) {
   const tip = guideTipOn();
   const caps = s.caps();
@@ -126,9 +128,13 @@ function guideRect(s) {
   w += pixelTextWidth(guideWord(s)) + GUIDE_PAD + 9; // the X
   if (tip) w = Math.max(w, pixelTextWidth(s.tip) + GUIDE_PAD * 2);
   const h = GUIDE_H + (tip ? GUIDE_TIP_H : 0);
-  const top = VIEW_H - Math.round((AB_H + HUD_BAKE_HEAD) * hudSc()) - GUIDE_LIFT - h;
-  const x = Math.round((VIEW_W - w) / 2);
-  return { x, y: top, w, h, xx: x + w - 9, xy: top + 5 };
+  const top = VIEW_H - Math.round((AB_H + HUD_BAKE_HEAD) * hudSc()) - GUIDE_LIFT - h * GUIDE_K;
+  const x = Math.round((VIEW_W - w * GUIDE_K) / 2);
+  return { x, y: top, w: w * GUIDE_K, h: h * GUIDE_K, lw: w, lh: h, xx: w - 9, xy: 5 };
+}
+// the pointer over the card's X (its own px, with 3 px of grace to its left)
+function guideOverX(r, mx, my) {
+  return mx >= r.x + (r.xx - 3) * GUIDE_K && mx < r.x + r.w && my >= r.y && my < r.y + GUIDE_H * GUIDE_K;
 }
 function guideTipOn() { return settings.tipFull || keyHeld('details'); }
 function guideWord(s) { return s.need ? s.word + ' ' + Math.min(s.need, Math.max(0, s.count(guide))) + '/' + s.need : s.word; }
@@ -144,7 +150,7 @@ function guideClick(mx, my) {
   if (!s) return false;
   const r = guideRect(s);
   if (mx < r.x || mx >= r.x + r.w || my < r.y || my >= r.y + r.h) return false;
-  if (mx >= r.xx - 3 && my < r.y + GUIDE_H) { guide.off = true; PROFILE.setGuided(); SFX.pickup(); }
+  if (guideOverX(r, mx, my)) { guide.off = true; PROFILE.setGuided(); SFX.pickup(); }
   return true; // the card eats the press either way
 }
 
@@ -192,33 +198,37 @@ function renderGuide(now) {
   const at = !guide.flash && s.at ? s.at() : null;
   if (at) drawGuideArrow(now, at);
   const r = guideRect(s), lit = guide.flash > 0;
-  const hot = mouse.inside && mouse.x >= r.xx - 3 && mouse.x < r.x + r.w && mouse.y >= r.y && mouse.y < r.y + GUIDE_H;
-  ctx.fillStyle = lit ? GUIDE_GOLD : GUIDE_INK; ctx.fillRect(r.x - 1, r.y - 1, r.w + 2, r.h + 2);
-  ctx.fillStyle = GUIDE_EDGE; ctx.fillRect(r.x, r.y, r.w, r.h);
-  ctx.fillStyle = GUIDE_BG; ctx.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
-  let x = r.x + GUIDE_PAD;
+  const hot = mouse.inside && guideOverX(r, mouse.x, mouse.y);
+  const w = r.lw, h = r.lh;
+  ctx.save();
+  ctx.translate(r.x, r.y); ctx.scale(GUIDE_K, GUIDE_K); // from here the card's own px
+  ctx.fillStyle = lit ? GUIDE_GOLD : GUIDE_INK; ctx.fillRect(-1, -1, w + 2, h + 2);
+  ctx.fillStyle = GUIDE_EDGE; ctx.fillRect(0, 0, w, h);
+  ctx.fillStyle = GUIDE_BG; ctx.fillRect(1, 1, w - 2, h - 2);
+  let x = GUIDE_PAD;
   const caps = s.caps();
   caps.forEach((c, i) => {
     // an ability key a point would learn pulses gold; one not learned is dim
     const learn = s.id === 'ability' && abLvCanBuy(player, i), dark = s.id === 'ability' && !abUnlocked(player, i);
-    x += drawKeyCap(ctx, x, r.y + 3, c, dark && !learn, learn && Math.sin(now * 8) > 0 ? 2 : 0, now) + 2;
+    x += drawKeyCap(ctx, x, 3, c, dark && !learn, learn && Math.sin(now * 8) > 0 ? 2 : 0, now) + 2;
   });
   if (caps.length) x += 2;
   const word = guideWord(s);
-  drawPixelText(ctx, word, x, r.y + 6, lit ? GUIDE_GOLD : GUIDE_TXT, 1);
+  drawPixelText(ctx, word, x, 6, lit ? GUIDE_GOLD : GUIDE_TXT, 1);
   if (s.need) { // the count in gold
     const head = s.word + ' ';
-    drawPixelText(ctx, word.slice(head.length), x + pixelTextWidth(head) + 1, r.y + 6, GUIDE_GOLD, 1);
+    drawPixelText(ctx, word.slice(head.length), x + pixelTextWidth(head) + 1, 6, GUIDE_GOLD, 1);
   }
   // the X
   ctx.fillStyle = hot ? GUIDE_GOLD : GUIDE_DIM;
   for (let i = 0; i < 5; i++) { ctx.fillRect(r.xx + i, r.xy + i, 1, 1); ctx.fillRect(r.xx + 4 - i, r.xy + i, 1, 1); }
-  if (guideTipOn()) drawPixelText(ctx, s.tip, r.x + GUIDE_PAD, r.y + GUIDE_H + 1, GUIDE_LBL, 1);
+  if (guideTipOn()) drawPixelText(ctx, s.tip, GUIDE_PAD, GUIDE_H + 1, GUIDE_LBL, 1);
   // one pip a lesson: learned gold, this one white, the rest dark
-  const n = GUIDE_STEPS.length, pw = n * 4 - 1, px0 = Math.round((VIEW_W - pw) / 2);
+  const n = GUIDE_STEPS.length, pw = n * 4 - 1, px0 = (w - pw) >> 1;
   for (let i = 0; i < n; i++) {
-    ctx.fillStyle = GUIDE_INK; ctx.fillRect(px0 + i * 4 - 1, r.y - 6, 4, 4);
+    ctx.fillStyle = GUIDE_INK; ctx.fillRect(px0 + i * 4 - 1, -6, 4, 4);
     ctx.fillStyle = i < guide.step || (i === guide.step && lit) ? GUIDE_GOLD : i === guide.step ? GUIDE_TXT : GUIDE_EDGE;
-    ctx.fillRect(px0 + i * 4, r.y - 5, 2, 2);
+    ctx.fillRect(px0 + i * 4, -5, 2, 2);
   }
+  ctx.restore();
 }

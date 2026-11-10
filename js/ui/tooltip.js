@@ -145,7 +145,10 @@ function tipAt(mx, my) {
     }
     // the hero pop-up's four ability wells raise the same card
     if (m.screen === 'hero' && m.popT >= 1) { const h = heroScreenHit(); return h && h.ab != null ? tipClassAb(h.ab, player.cls) : null; }
-    if (m.screen === 'lobby' && m.screenT >= 1) return loadoutTip(lobbyLayout()); // the picks' wells and picker (js/ui/loadout.js)
+    if (m.screen === 'lobby' && m.screenT >= 1) {
+      const L = lobbyLayout(), b = selBriefHit(L); // the pick's brief: an ability's card (js/ui/select.js)
+      return b ? tipClassAb(b.i, b.h) : loadoutTip(L);
+    } // the picks' wells and picker (js/ui/loadout.js)
     return null;
   }
   if (state.mode !== 'play') return null;

@@ -222,10 +222,11 @@ eight seconds: [rendering.md](../rendering/the-hud-corners/the-stat-ledger-your-
 
 ## The FIRST MATCH
 
-**The FIRST MATCH** (`PARTY_MODES.guide`) is a real 5v5 against EASY bots with the coach on (js/ui/guide.js).
+**The FIRST MATCH** (`PARTY_MODES.guide`) is a real 5v5 against EASY bots with the coach on (js/ui/guide.js);
+its draft has no ban phase and opens on the pick (`draftBansPerTeam`).
 The coach is this screen's UI only: it reads the local player and never writes the sim, so every screen
 in a FIRST MATCH party coaches its own player. One flat graphite card stands centred over the hud strip's
-buy plates: the key caps of the live scheme (`keyCap`) and one word, a gold count where a lesson has one, a
+buy plates, drawn `GUIDE_K` view px to each of its own so a first look finds it: the key caps of the live scheme (`keyCap`) and one word, a gold count where a lesson has one, a
 dim X that turns the coach off for good (`guideClick`, which also sets `PROFILE.setGuided`), and a row of
 pips over it, one per lesson. The DETAILS key (or ABILITY DETAILS on ALWAYS) opens one line of detail under it. A
 lesson's whole meaning is its `GUIDE_STEPS` row: MOVE (walk `GUIDE_MOVE_PX` off the landing), SHOP (any
