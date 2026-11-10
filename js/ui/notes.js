@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['Each tower stands on a clean kerbed round of paving', '0.828'],
     ['FIRST MATCH: THE COACH TEACHES ABILITIES AND LAST HITS IN THE LANE AND SHOP WHEN YOU ARE HOME', '0.826'],
     ['The M map is bigger, and the frozen river shows clear blue on it and on the minimap', '0.824'],
     ['Smoother frames in the first seconds after landing', '0.823'],
