@@ -449,18 +449,19 @@ answers the bridge's IPC: lobbies (create / join / leave / list / data / invite)
 events. `preload.js` exposes exactly that as `window.steamBridge` and nothing else of Node; the
 game reads it only in js/net/transport-steam.js and at boot's role pick. Without Steam running
 the bridge reports `ready: false` and the page plays solo. Flags: `--net=host`, `--join=LOBBYID`,
-`--seed=N`, `--devtools`, and for a headless check `--shot=PATH --wait=S --quit`.
+`--seed=N`, `--devtools`, `--steamnet=p2p`, and for a headless check `--shot=PATH --wait=S --quit`.
 
 **main.js prefers `desktop/app/index.html` over `../index.html`**, and build.js is what fills
 `desktop/app/` (the page, the code, the audio). A `desktop/app/` left over from an earlier build
 therefore silently runs an **old game** under `npm start`: delete it, or rebuild, before judging a
 change in the wrapper.
 
-steamworks.js
-0.4 exposes Steam's older P2P sockets (reliable packets to 1 MB, unreliable to 1200 bytes);
-the transport chunks text above the first, and a
-snapshot delta rides the second as numbered binary frames (`steamFrames`), the bridge carrying
-bytes both ways ([docs/pvp-architecture.md](../pvp-architecture.md)).
+Bytes
+cross Steam through its newer messages (`desktop/steam-messages.js`, koffi on the same DLL;
+512 KB a message), or with `--steamnet=p2p` through the older P2P packets steamworks.js 0.4
+exposes (reliable to 1 MB, unreliable to 1200 bytes); the transport chunks text and big frames to
+fit both, and a snapshot delta rides the unreliable channel as numbered binary frames
+(`steamFrames`), the bridge carrying bytes both ways ([docs/pvp-architecture.md](../pvp-architecture.md)).
 
 ## app/
 
