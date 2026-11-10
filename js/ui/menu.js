@@ -35,7 +35,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.853';
+const PATCH_TXT = 'PATCH 0.854';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -51,6 +51,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.854', 'HIEMS AND AURA SHOW THEIR SIDE\'S COLOUR FROM BEHIND AT 32 PX.'],
   ['0.853', 'LIGNUM SWINGS THE SAME SINGLE-BIT AXE HE CARRIES, AND HIS WHOLE KIT IS DRAWN AT 32 PX BEHIND THE SWITCH.'],
   ['0.852', 'THE JUNGLE\'S PINE WALLS STAND: NO SWING, BOT, MERCHANT OR TIMBER CAN CUT A WAY THROUGH THEM.'],
   ['0.851', 'BANNERS WAIT FOR THE SHOP TO CLOSE, THE DEATH SCREEN NAMES WHO YOU ARE WATCHING, AND THE KILL FEED SHOWS EACH TEAM AT A GLANCE.'],
