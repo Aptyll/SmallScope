@@ -348,13 +348,21 @@ function heroRunBox(N) { const B = SPR.motion.BOX; return N === 16 ? B : { w: N 
 // whole pixels by `bob` (SPR.motion's RUN_BOB / HOLD_BOB: up, the feet leave the snow
 // with it; down, the hips sink over the legs), and the legs - the
 // bottom rows that stand as two apart - scissor fore and aft, the near one over
-// the far one. Frames come out in the cell's run box (heroRunBox).
+// the far one, the head leans a pixel into the run (HERO_LEAN), and the look's loose
+// cloth (its `cloth` boxes and `hem`, heroCloth) trails a frame late. Frames come out
+// in the cell's run box (heroRunBox).
+const HERO_LEAN = 7 / 16; // the share of the cell, from its top, that is the head: a runner's head leads its hips by a pixel
 const HERO_STRIDE = [2, 1, 0, -1, -2, -1, 0, 1]; // px the near foot is ahead, a frame at a time (the far one behind by as much)
-function heroRunSide(side, bob) {
+function heroRunSide(side, bob, look) {
   const N = side.length, B = heroRunBox(N);
   const runs = (row) => { const out = []; let x0 = -1; for (let x = 0; x <= N; x++) { const on = x < N && row[x] !== '.'; if (on && x0 < 0) x0 = x; if (!on && x0 >= 0) { out.push([x0, x]); x0 = -1; } } return out; };
   const legTop = heroLegTop(side); // the rows that stand as two legs
+  const lean = Math.round(N * HERO_LEAN); // the head's rows, carried a pixel ahead of the hips
   return HERO_STRIDE.map((step, f) => {
+    // the loose cloth (heroCloth) rides a frame late: a pixel behind as the body rises,
+    // and where the body was the frame before
+    const was = bob[(f + bob.length - 1) % bob.length], late = Math.max(-1, Math.min(1, was - bob[f]));
+    const body = (look && (bob[f] < was || late) && heroCloth(side, look, 'side', bob[f] < was ? -1 : 0, late)) || side;
     const g = Array.from({ length: B.h }, () => Array(B.w).fill('.'));
     const put = (x, y, c) => { if (c !== '.' && y >= 0 && y < B.h && x >= 0 && x < B.w) g[y][x] = c; };
     for (let y = legTop; y < N; y++) { // the legs: the far (first) one, then the near over it
@@ -362,7 +370,7 @@ function heroRunSide(side, bob) {
       const legs = [[r[0], -1], [r[r.length - 1], 1]];
       for (const [[x0, x1], sgn] of legs) for (let x = x0; x < x1; x++) put(B.x + x + Math.round(sgn * step * deep), B.y + y + Math.min(0, bob[f]), side[y][x]); // up: the whole body leaves the snow
     }
-    for (let y = 0; y < legTop; y++) for (let x = 0; x < N; x++) put(B.x + x, B.y + y + bob[f], side[y][x]); // the body, over the hips
+    for (let y = 0; y < legTop; y++) for (let x = 0; x < N; x++) put(B.x + x + (y < lean ? 1 : 0), B.y + y + bob[f], body[y][x]); // the body, over the hips, the head leaning into the run
     return g.map((r) => r.join(''));
   });
 }
