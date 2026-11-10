@@ -839,7 +839,7 @@ function menuSelect(i) {
 function menuActivate(i) {
   SFX.unlock();
   const it = menuItems()[i];
-  if (it === 'FIRST MATCH') beginParty('guide'); // QUICKPLAY against EASY bots with the coach (js/ui/guide.js)
+  if (it === 'FIRST MATCH') { beginParty('guide'); partyFind(); } // EASY bots with the coach (js/ui/guide.js), straight on to the pick: the party's seats and codes are a step back (ESC) for whoever brings a friend
   else if (it === 'QUICKPLAY') beginParty('quick'); // the party lobby (js/ui/rooms.js)
   else if (it === 'RANKED') beginParty('ranked');
   else if (it === '1V1') beginParty('onevone'); // you alone, one hero a side on the mid road (js/sim/onevone.js)
