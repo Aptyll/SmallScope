@@ -1788,7 +1788,7 @@ const NIX_ROLL_FINE_SNOWBLIND = {
     ],
   ],
 };
-const NIX_PAL = Object.assign({}, ARM_PAL, { q: '#2b3042', Q: '#3d4459', L: '#59627c', m: '#7fb0d8', M: '#4f7fae' });
+const NIX_PAL = Object.assign({}, ARM_PAL, { q: '#2b3042', Q: '#3d4459', L: '#59627c', m: '#dfeaf4', M: '#b7cade' }); // the scarf pale ice, so only her side's colour is saturated on her
 // The looks she can wear: the first is her own and free, the second is bought with
 // coins on the skins screen (js/ui/skins.js, the NIX tab): moonless black, moon-gold
 // goggles, a night-violet scarf.
