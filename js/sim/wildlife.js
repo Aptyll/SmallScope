@@ -724,8 +724,8 @@ const CAMP_SWITCH = TILE;  // px closer another player must be before an awake m
 // midline camp's kill wears (MONSTER's `buff` and `buffCol`: the BLACK
 // BUFF): CAMP_BUFF_DMG on every blow the player lands
 // (hurtUnit, actions.js) and CAMP_BUFF_SPD on the walk (abilityMoveMul,
-// abilities.js), worn as motes rising round the feet that thin out as it
-// runs out, in the bear's colour (drawBuffRing, js/draw/bodies.js). The bear pays
+// abilities.js), worn as the bear's fur on the shoulders with a sheen in the
+// bear's colour, its hem thinning as it runs out (drawBearRuff, js/draw/bodies.js). The bear pays
 // EVERY player on the killer's team EPIC_TEAM_GOLD and gives the whole team
 // the buff for CAMP_BUFF_EPIC_T - the kill in the game that pays people who were not
 // there, which is what makes it worth walking to as five. And it keeps

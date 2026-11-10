@@ -236,12 +236,8 @@ function centreTextX(sx, txt, scale) { return Math.round(sx) - (pixelTextWidth(t
 // something that is usually absent is what made the plate lopsided before.
 const FRAME_DX = 3;
 
-// A bear buff, worn: motes of that bear's colour (MONSTER's buffCol: violet the black
-// bear's) lifting off the snow round the feet, each on its own darker glow so it reads
-// on snow. They thin out one at a time as the buff runs out - the motes ARE the timer,
-// and a full set on a rival is the warning. The longest buff (a bear's) lifts all of them.
-const BUFF_MOTES = 8;                // motes round the feet at a full buff
-const BUFF_COL = '#ffb04a';          // a buff with no bear named (a hand grant): amber
+// a buff with no bear named (a hand grant): amber; the stat panel's buff row reads it too
+const BUFF_COL = '#ffb04a';
 // THE TEAM RING: one pixel ring on the snow round every hero's feet, in its
 // side's paint (the coat's own shade, a value step under the mark so a blue
 // one holds on blue-white snow; your own too, like every ally's), the mark itself
@@ -268,39 +264,55 @@ function drawHeroRing(p, cx, cy) {
   const T = TEAMS[skin(p.team)];
   for (const q of heroRingPts || heroRingShape()) { ctx.fillStyle = q[0] + q[1] * 2 < -3 ? T.mark : T.coat; ctx.fillRect(cx + q[0], cy + q[1], 1, 1); } // the lit side a step brighter
 }
-function drawBuffRing(p, cx, cy, now, front) {
-  drawBuffMotes(cx, cy, 8, p.buffT / CAMP_BUFF_EPIC_T, (MONSTER[p.buffKind] && MONSTER[p.buffKind].buffCol) || BUFF_COL, now, 0, 2, front);
-}
-// the orca buff (p.pushT), the same motes a size up and a step out in the orca's colour,
-// standing between the bear's, so a hero wearing both shows both
-function drawPushRing(p, cx, cy, now, front) {
-  drawBuffMotes(cx, cy, 10, p.pushT / ORCA_PUSH_T, MONSTER.orca.buffCol, now, 0.5, 3, front);
-}
-// `share` of the motes, standing `r` px out round the feet (squashed to the ground's
-// 3/4 view), each `sz` px square with a bright core on a dark rim so it holds on snow
-// and on ice, rising from the feet to the shoulders on its own beat and shrinking to
-// a point before it goes: never above the head. `off` shifts where they stand so two
-// buffs never share a spot. Drawn twice: the far half before the body, the near half
-// (`front`) over it, so the buff is read against the body too.
-const BUFF_RISE = 13;
-function drawBuffMotes(cx, cy, r, share, col, now, off, sz, front) {
-  const n = Math.ceil(BUFF_MOTES * Math.min(1, share)), dark = buffShade(col);
-  for (let i = 0; i < n; i++) {
-    const a = ((i + off) / BUFF_MOTES) * Math.PI * 2 + 0.4;
-    if ((Math.sin(a) >= 0) !== !!front) continue;
-    const u = (now * 0.7 + i * 0.37) % 1, s = u > 0.8 ? 1 : u > 0.5 ? 2 : sz;
-    const x = Math.round(cx + Math.cos(a) * r * (1 - 0.25 * u)) - (s >> 1), y = Math.round(cy + Math.sin(a) * r * 0.5 * (1 - u) - u * BUFF_RISE) - (s >> 1); // every one tops out at the same height
-    ctx.fillStyle = dark; ctx.fillRect(x - 1, y, s + 2, s); ctx.fillRect(x, y - 1, s, s + 2);
-    ctx.fillStyle = col; ctx.fillRect(x, y, s, s);
-    if (s > 1) { ctx.fillStyle = '#ffffff'; ctx.fillRect(x, y, 1, 1); }
+// THE BLACK BUFF, worn (p.buffT): the bear's own shaggy fur over the shoulders, dark with
+// a sheen of the bear's colour (MONSTER's buffCol: violet the black bear's) on its lit tufts,
+// a ragged hem of tufts that stirs as the body moves. Facing the screen it sits on each
+// shoulder and leaves the chest open (the side's colour stays seen); facing away it is one
+// mantle across the back. It thins at the hem through the buff's last share, so a rival's
+// is read as fresh or nearly spent. In the 16 px cell, like WARM CLOAK (js/draw/salvia.js).
+const RUFF_FUR = '#2c2533', RUFF_LIT = '#4b3f57', RUFF_INK = '#141a2c', RUFF_LATE = 0.25; // fur, its lit tufts, the rim, and the share left when it starts to thin
+const RUFF_ROWS = { // [y, x0, x1] per facing, top row first; the last row is the tufted hem
+  front: [[9, 3, 5], [10, 2, 4], [9, 10, 12], [10, 11, 13]],
+  side: [[8, 6, 9], [9, 5, 9]],
+  back: [[8, 4, 11], [9, 3, 12]],
+};
+function drawBearRuff(p, ax, ay, now) {
+  const face = p.dir === 'up' ? 'back' : p.dir === 'down' ? 'front' : 'side', rows = RUFF_ROWS[face];
+  const share = Math.min(1, p.buffT / CAMP_BUFF_EPIC_T), thin = share < RUFF_LATE ? 1 - share / RUFF_LATE : 0;
+  const sheen = (MONSTER[p.buffKind] && MONSTER[p.buffKind].buffCol) || BUFF_COL, stir = Math.floor(now * 6 + p.id) % 2;
+  const flip = p.dir === 'left';
+  const put = (x, y, c) => { ctx.fillStyle = c; ctx.fillRect(ax + (flip ? 15 - x : x), ay + y, 1, 1); };
+  for (let i = 0; i < rows.length; i++) {
+    const [y, x0, x1] = rows[i], hem = i === rows.length - 1 || (face === 'front' && i === 1);
+    put(x0 - 1, y, RUFF_INK); put(x1 + 1, y, RUFF_INK);
+    if (i === 0 || (face === 'front' && i === 2)) for (let x = x0; x <= x1; x++) put(x, y - 1, RUFF_INK);
+    for (let x = x0; x <= x1; x++) {
+      put(x, y, (x + y) % 3 === 0 ? RUFF_LIT : RUFF_FUR);
+      if (y === rows[0][0] && (x + stir) % 3 === 1) put(x, y, sheen); // the sheen on its lit top
+    }
+    if (!hem) continue;
+    for (let x = x0; x <= x1; x++) { // the tufts hanging off the hem, every other px, stirring; fewer as it runs out
+      if ((x + stir) % 2 || (thin && ((x * 7 + 3) % 10) / 10 < thin)) continue;
+      put(x, y + 1, RUFF_INK);
+    }
   }
 }
-// a buff colour's own darker step, for a mote's rim
-const buffShades = {};
-function buffShade(col) {
-  if (buffShades[col]) return buffShades[col];
-  const v = parseInt(col.slice(1), 16), k = (c) => Math.round(c * 0.4);
-  return (buffShades[col] = 'rgb(' + k(v >> 16) + ',' + k((v >> 8) & 255) + ',' + k(v & 255) + ')');
+// THE ORCA BUFF, worn (p.pushT): the body comes out of the orca's pool wet. Drops run off
+// the hem and the hands and fall to the snow at the feet, where they leave a dark wet
+// spot, and the shoulders keep a pale wet shine. The drops thin out with the buff.
+const DRIP_N = 6, DRIP_T = 0.6, DRIP_COL = '#7fd4ff', DRIP_DARK = '#2c5478', DRIP_SHINE = '#d8f2ff';
+const DRIP_FROM = [[3, 11], [12, 11], [5, 12], [10, 12], [2, 9], [13, 9]]; // [x, y] in the cell each drop leaves from
+function drawOrcaDrips(p, ax, ay, now) {
+  const share = Math.min(1, p.pushT / ORCA_PUSH_T), n = Math.max(1, Math.ceil(DRIP_N * share));
+  for (let i = 0; i < n; i++) {
+    const [x, y0] = DRIP_FROM[(i + p.id) % DRIP_FROM.length], u = (now / DRIP_T + i * 0.37 + p.id * 0.21) % 1;
+    const y = y0 + Math.round(u * u * (14 - y0)); // gravity: slow off the cloth, quick to the snow
+    if (u < 0.8) { ctx.fillStyle = DRIP_COL; ctx.fillRect(ax + x, ay + y, 1, 2); ctx.fillStyle = DRIP_DARK; ctx.fillRect(ax + x, ay + y + 2, 1, 1); }
+    else { ctx.fillStyle = DRIP_DARK; ctx.fillRect(ax + x - 1, ay + 16, 3, 1); ctx.fillStyle = DRIP_COL; ctx.fillRect(ax + x, ay + 16, 1, 1); } // the wet spot it lands as
+  }
+  ctx.fillStyle = DRIP_SHINE; // the wet shine on the shoulders
+  ctx.fillRect(ax + (p.dir === 'left' ? 11 : 4), ay + 9, 1, 1);
+  if (p.dir === 'up' || p.dir === 'down') ctx.fillRect(ax + 11, ay + 9, 1, 1);
 }
 
 // The class body's run and dodge roll are the doll's frames (js/baked/motion.js,
@@ -417,8 +429,6 @@ function drawPlayer(p, ex, ey, now, stage) {
     else drawCastShade(spr, bx, by);
   }
   if (!stage && p.fallT <= 0 && !zl) drawHeroRing(p, Math.round(p.x - ex), Math.round(p.y - ey) + HERO_RING_DY); // the team ring, on the snow under it
-  if (p.buffT > 0 && p.fallT <= 0) drawBuffRing(p, Math.round(p.x - ex), Math.round(p.y - ey) + 3, now);
-  if (p.pushT > 0 && p.fallT <= 0) drawPushRing(p, Math.round(p.x - ex), Math.round(p.y - ey) + 3, now);
   if (p.recallT > 0) drawRecallFeathers(p, Math.round(p.x - ex), Math.round(p.y - ey) + 5); // the far half of the recall's feathers (js/draw/recall.js)
   if (p.backT > 0) drawBackFeathers(p, Math.round(p.x - ex), Math.round(p.y - ey) + 5); // ...and of the ones that set it down
   if (p.mendT > 0) drawMendFeathers(p, Math.round(p.x - ex), Math.round(p.y - ey) + 5); // ...and of the one settling on a body its bird is mending
@@ -500,14 +510,14 @@ function drawPlayer(p, ex, ey, now, stage) {
       drawFrame(spr, sx, sy);
     }
     heroBodyFx(p, ax, ay, now, true); // ...or over it (his standard facing away)
+    if (p.buffT > 0 && p.fallT <= 0) drawBearRuff(p, ax, ay, now); // a bear's fur on the shoulders
+    if (p.pushT > 0 && p.fallT <= 0) drawOrcaDrips(p, ax, ay, now); // ...and the orca's pool running off it
     if (seat) ctx.restore();
     ctx.globalAlpha = a0;
     if (held) drawHeldTool(p, px + lx, py + ly + bob, false);
     // what an ability left ON this body - shield, net, jaws, fury, mark -
     // drawn over the sprite for every side alike (js/sim/abilities.js)
     if (state.mode !== 'title') drawAbilityOnPlayer(p, ax, ay, now);
-    if (p.buffT > 0 && p.fallT <= 0) drawBuffRing(p, Math.round(p.x - ex), Math.round(p.y - ey) + 3, now, true); // the near half of a buff's motes, over the body
-    if (p.pushT > 0 && p.fallT <= 0) drawPushRing(p, Math.round(p.x - ex), Math.round(p.y - ey) + 3, now, true);
     if (p.recallT > 0) drawRecallFeathers(p, Math.round(p.x - ex), Math.round(p.y - ey) + 5, true);
     if (p.backT > 0) drawBackFeathers(p, Math.round(p.x - ex), Math.round(p.y - ey) + 5, true);
     if (p.mendT > 0) drawMendFeathers(p, Math.round(p.x - ex), Math.round(p.y - ey) + 5, true);
