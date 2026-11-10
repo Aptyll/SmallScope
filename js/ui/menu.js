@@ -35,7 +35,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.736';
+const PATCH_TXT = 'PATCH 0.737';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -51,6 +51,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.737', 'THE TITLE SCREEN SHOWS THE GAME: TEN HEROES FACE OFF ON THE FROZEN MIDDLE IN DAYLIGHT, YOUR OWN HERO LEADING YOUR SIDE.'],
   ['0.736', 'SAGITTA\'S CROSSBOW LOOKS LIKE A CROSSBOW: SHE CARRIES IT AT HER HIP AND AIMS IT IN CLEAN ANGLES. NIX HOLDS HER ICE DIRK POINT DOWN AT HER SIDE, NEVER OUT AT ARM\'S LENGTH OR OVER HER HEAD.'],
   ['0.735', 'THE LANES END ON WHOLE FLAGSTONES UNDER A LIP OF SNOW, AND THE EDGE OF EVERY PINE WALL IS ONE SOLID LINE OF TALL PINES.'],
   ['0.734', 'THE PINE WALLS READ AS A FOREST: PINES OF THREE HEIGHTS STAND IN GROVES, THE GROUND BETWEEN THEM IS DARK, AND THE EDGE CATCHES THE LIGHT.'],
