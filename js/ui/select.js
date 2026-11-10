@@ -389,6 +389,7 @@ function drawSelMode(L, a) {
   drawPixelText(ctx, size, rx - pixelTextWidth(size), L.mode.y, SC_LBL, 1);
   drawPixelTextShadow(ctx, mode, rx - pixelTextWidth(mode, 2), L.mode.y + 8, '#f4f7ff', SC_INK, 2);
 }
+// ------------------------------------------------------------ the brief
 // THE BRIEF: under the grid while you pick, the hero in one row - its name
 // and title, and its four abilities as icons, each raising its own card
 // (tipAt, js/ui/tooltip.js). It shows the face under the pointer, else the
