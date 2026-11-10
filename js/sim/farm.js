@@ -41,3 +41,19 @@ function farmHit(p, x, y) {
   p.farm++;
   coinPop(x, y, false, p.team);
 }
+
+// ---- falls ---------------------------------------------------------------------
+// A soldier or a beast that goes down leaves its fall where it stood: the body's
+// last frame, which way it faced and where the blow came from. Like the coin it is
+// a cosmetic of the step: recorded for the screens that do not run it (evPush),
+// aged by the sim's tick, drawn by js/draw/falls.js (a machine comes apart, a
+// beast tips over and the snow takes it).
+const FALL_T = 1.1;            // s a fall lives
+const falls = [];              // { k: 'R' machine | 'A' beast, spr, dir, team, x, y, left, ang, tick }
+function unitFall(k, spr, dir, team, x, y, left, ang) {
+  evPush('fall', [k, spr, dir, team, x, y, left, ang]);
+  for (let i = falls.length - 1; i >= 0; i--) if ((state.tick - falls[i].tick) * TICK_DT > FALL_T) falls.splice(i, 1);
+  falls.push({ k, spr, dir, team, x, y, left: !!left, ang, tick: state.tick });
+}
+// the way a blow from src came at u, or straight down the screen when nothing says
+function fallAng(u, src) { return src && src.x !== undefined && (src.x !== u.x || src.y !== u.y) ? Math.atan2(u.y - src.y, u.x - src.x) : Math.PI / 2; }
