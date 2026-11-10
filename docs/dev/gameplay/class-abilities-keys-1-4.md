@@ -445,19 +445,22 @@ out of life or on what it struck). VOLLEY holds the bow on the aim through its w
 | 1 | **VOLLEY** | 9/8.5/8/7.5/7 s | `VOLLEY_N` arrows in a fan `VOLLEY_HALF` either side of the aim at `VOLLEY_SPD` for `VOLLEY_RANGE`: each first arrow on a body deals `dmg` (40/60/80/100/120), each later arrow of the same volley ×`VOLLEY_MORE` (`HERO_SHOT_HIT.volley`) |
 | 2 | **TWIN NOCK** | 14/13/12/11/10 s | for `TWIN_T` each basic arrow is loosed as a pair `TWIN_SIDE` apart, straddling the aim, dealing ×`share` (50/60/70/80/90 %) of the first (`arcusShot`, the passive's `shot`); his stacks over him turn white while it lasts |
 | 3 | **GATHER UP** | 12/11/10/9/8 s | castable only with an arrow of his standing (`ok`). Every one flies back to where he stands at `GATHER_SPD`, through every rival between: each deals `dmg` (30/45/60/75/90), and a body struck by `GATHER_N` of one call walks ×`GATHER_SLOW` for `GATHER_SLOW_T`. A dotted line runs from each arrow to him through the wind-up (`tele`), so the rival standing on one sees it coming |
-| 4 | **FULL QUIVER** | 100/85/70 s | a spot up to `RAIN_RANGE` away takes `RAIN_N` arrows over `RAIN_T`, spread inside `RAIN_R` on a sunflower spiral (no rng), each seen falling for `RAIN_FALL` with its shadow growing. Each landing deals `dmg` (40/60/80) within `RAIN_HIT` and walks a rival ×`RAIN_SLOW` for `RAIN_SLOW_T`, hits buildings too, and stands in the snow for him to pull up. A ring marks the spot for both sides while arrows are still coming |
+| 4 | **FULL QUIVER** | 100/85/70 s | a spot up to `RAIN_RANGE` away takes `RAIN_N` arrows over `RAIN_T`, spread inside `RAIN_R` on a sunflower spiral (no rng), each seen falling for `RAIN_FALL` with its shadow growing. Each landing deals `dmg` (40/60/80) within `RAIN_HIT` and walks a rival ×`RAIN_SLOW` for `RAIN_SLOW_T`, hits buildings too, and stands in the snow for him to pull up. The shadows of the arrows still to come mark the spot for both sides |
 
 Bots play every hero through each row's `bot(p, foe, d, clear)` (`abBotKey`, asked by the ladder's
 ability block in js/ai/ai-ladder.js); a row's `botAim(p, foe)` turns the aim to a point of its own for that cast, held through the wind-up until it lands (AURA's step away, SALVIA's heals, LUCERNA's lantern). Every hero's four rows carry one: a load check under `CLASS_AB` throws for a hero without four
 keys that each have a `bot`.
 
-Every wind-up with an area is **telegraphed on the snow for both sides** (`drawAbilityGround`): each row's own `tele` draws its shape (a dash's marching line, a ring, a
-wedge, a line box) — in
-`TELE_COL` red, `TELE_HOT` gold for the last quarter, the inside hashing in as the landing nears
-(`castProg`, off `p.castMax`) — and every landing flashes the same shape in the blow's own colour
-for `AB_FX_T` (`abFx`, ticked in `updateAbilityWorld`). The shapes are `drawWedge`/`drawRing`/
-`drawTeleLine`/`drawLineBox`, and the sword's sweep (`drawSlashes`, called from js/draw/render.js beside the E swing
-arcs) is the same wedge. A telegraphed cast keeps the body facing the live aim the whole wind-up
+Every wind-up that reaches past the caster is **shown on the snow for both sides** (`drawAbilityGround` calls each row's
+own `tele`, eased in by `castProg`, off `p.castMax`), drawn as the key's own thing, never a generic shape: a sword's shadow,
+frost creeping down a line, stakes driven round a reach, a fin circling where MARIS comes up. A line keeps its true range
+(`teleLen` stops it at the first tree or wall), and a zone's edge is drawn by what makes it (shields, gusts, a glowing
+band), never a dotted circle. Quick melee swings (about 0.2 s or less) and instant self-casts show none: the cut itself
+shows the reach. Every landing pushes an `abFx` entry (ticked in `updateAbilityWorld`); one with `fx` is drawn by
+`AB_FX_LOOK[fx]` for its own `life` (in the hero's draw file, built from the shared `drawSwoosh`, `drawFlung`,
+`drawCracks` and `fxRoll` in js/draw/abilities.js), and one without falls back to a plain shape in the blow's colour for
+`AB_FX_T` (`drawWedge`/`drawRing`/`drawLineBox`). The sword's sweep (`drawSlashes`, called from js/draw/render.js beside
+the E swing arcs) is drawn with `drawWedge`. A telegraphed cast keeps the body facing the live aim the whole wind-up
 (`updateAbilities`), so the shape and the body agree about where it is going.
 
 A player's movement caps fold through one function — `abilityMoveMul(p)`: a root pins, a cast

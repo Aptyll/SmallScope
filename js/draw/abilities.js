@@ -72,19 +72,6 @@ function drawRing(px, py, r, col, alpha, fill) {
   ctx.globalAlpha = 1;
 }
 
-// a dashed line marching from (x0, y0) out along (nx, ny) for `len` px - a
-// shot's or a dash's telegraph
-function drawTeleLine(x0, y0, nx, ny, len, col, alpha, now, ex, ey) {
-  const march = (now * 60) % 4; // dashes crawl toward the landing
-  ctx.globalAlpha = alpha;
-  for (let s = 10 + march; s < len; s += 4) {
-    const px = Math.round(x0 + nx * s - ex), py = Math.round(y0 + ny * s - ey);
-    if (px < -2 || py < -2 || px > WV_W + 2 || py > WV_H + 2) continue;
-    ctx.fillStyle = '#0a0e23'; ctx.fillRect(px, py + 1, 1, 1);
-    ctx.fillStyle = col; ctx.fillRect(px, py, 1, 1);
-  }
-  ctx.globalAlpha = 1;
-}
 // the sword's sweep, drawn over the bodies (js/render.js beside the E swing
 // arcs): the wedge it reached, fading, and a bright edge sweeping across it
 function drawSlashes(ex, ey) {

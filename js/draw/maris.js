@@ -16,9 +16,9 @@ function marisHarpoons() {
 }
 HERO_BLADES.harpoon = { art: marisHarpoons, hilt: [14, 9], hip: { down: [13, 11], up: [11, 10] }, grip: MARIS_HARPOON_GRIP };
 
-// ---- a line: one px dots from (x0, y0) to (x1, y1), ink under, sagging a little ---------------
+// ---- a line: one px, unbroken, from (x0, y0) to (x1, y1), ink under, sagging a little ----------
 function drawMarisLine(x0, y0, x1, y1) {
-  const d = Math.hypot(x1 - x0, y1 - y0), n = Math.max(1, Math.round(d / 2));
+  const d = Math.hypot(x1 - x0, y1 - y0), n = Math.max(1, Math.round(d));
   for (let k = 1; k < n; k++) {
     const t = k / n, sag = Math.sin(t * Math.PI) * Math.min(4, d / 30);
     const x = Math.round(x0 + (x1 - x0) * t), y = Math.round(y0 + (y1 - y0) * t + sag);
@@ -64,6 +64,54 @@ function drawMarisFx(p, ax, ay, now, front) {
   if (p.braceT > 0) drawBraceIce(p, ax, ay, now); // braced: ice crusted over her (BRACE FOR COLD, below)
 }
 HERO_BODY_FX.push(drawMarisFx);
+
+// ---- the keys' wind-ups -------------------------------------------------------------
+// HARPOON's: her line paid out along the snow down the throw, lying in loose waves,
+// out further as she draws back, its barbed head at the end of it
+function drawHarpoonTele(p, a, closing, now, ex, ey) {
+  const nx = Math.cos(a), ny = Math.sin(a), L = teleLen(p.x, p.y, nx, ny, HARPOON_RANGE) * (0.3 + 0.7 * closing);
+  for (let s = 8; s < L; s++) {
+    const w = Math.sin(s * 0.12 - now * 3) * 2 * (1 - s / (L + 20));
+    const x = Math.round(p.x + nx * s - ny * w - ex), y = Math.round(p.y + 3 + ny * s + nx * w - ey);
+    ctx.fillStyle = MA_INK; ctx.fillRect(x, y + 1, 1, 1);
+    ctx.fillStyle = MA_LINE; ctx.fillRect(x, y, 1, 1);
+  }
+  const x = Math.round(p.x + nx * L - ex), y = Math.round(p.y + 3 + ny * L - ey); // the head, barbs back
+  for (const [dx, dy] of [[0, 0], [-ny * 2 - nx * 2, nx * 2 - ny * 2], [ny * 2 - nx * 2, -nx * 2 - ny * 2]]) {
+    ctx.fillStyle = MA_INK; ctx.fillRect(Math.round(x + dx) - 1, Math.round(y + dy) - 1, 3, 3);
+  }
+  ctx.fillStyle = '#c3ccd8'; ctx.fillRect(x, y, 1, 1); ctx.fillRect(Math.round(x - ny * 2 - nx * 2), Math.round(y + nx * 2 - ny * 2), 1, 1); ctx.fillRect(Math.round(x + ny * 2 - nx * 2), Math.round(y - nx * 2 - ny * 2), 1, 1);
+}
+// BREACH's: the spot she will come up, her fin cutting a circle through the snow round
+// it and the crust over it heaving and starting to crack
+function drawBreachTele(p, x, y, closing, now) {
+  ctx.fillStyle = 'rgba(40,52,90,0.25)'; fillEllipsePx(x, y + 2, Math.round(BREACH_R * 0.5 * (0.5 + 0.5 * closing)), Math.round(BREACH_R * 0.2 * (0.5 + 0.5 * closing)));
+  drawCracks(x, y + 2, 7, BREACH_R, 0.15 + 0.55 * closing, p.id * 29, MA_INK, '#ffffff');
+  const t = now * 4, r = BREACH_R * 0.7, fx = Math.round(x + Math.cos(t) * r), fy = Math.round(y + 2 + Math.sin(t) * r * 0.5);
+  for (let k = 1; k <= 6; k++) { // the furrow behind it
+    const b = t - k * 0.12;
+    ctx.fillStyle = MA_SNOW_D; ctx.fillRect(Math.round(x + Math.cos(b) * r), Math.round(y + 3 + Math.sin(b) * r * 0.5), 2, 1);
+  }
+  const dir = Math.cos(t + Math.PI / 2) >= 0 ? 1 : -1; // its edge leading the way it swims
+  ctx.fillStyle = MA_INK; ctx.fillRect(fx - 2, fy - 1, 5, 2); ctx.fillRect(fx - (dir > 0 ? 1 : 0), fy - 4, 2, 3); ctx.fillRect(fx + dir, fy - 6, 1, 2);
+  ctx.fillStyle = MA_SNOW; ctx.fillRect(fx - 3, fy, 7, 1);
+}
+// its landing: the crust burst up round her in slabs, cracks to the reach, and on ice
+// the dark water showing through it
+function drawBreachFx(f, px, py, now) {
+  const u = f.t / f.life, seed = fxSeed(f), wet = f.col === '#7cc4e8';
+  ctx.globalAlpha = Math.min(1, 2.5 * (1 - u));
+  ctx.fillStyle = wet ? MA_WATER : MA_SNOW_D; fillEllipsePx(px, py + 3, 12, 5);
+  if (wet) { ctx.fillStyle = MA_WATER_L; fillEllipsePx(px, py + 2, 8, 3); }
+  drawCracks(px, py + 3, 9, f.r, Math.min(1, u * 5), seed, MA_INK, '#ffffff');
+  drawFlung(px, py + 3, 0, Math.PI, f.r, 0.4, 20, 14, Math.min(1, u * 1.3), seed, (x, y, k) => {
+    ctx.fillStyle = MA_INK; ctx.fillRect(x - 2, y - 1, 5, 4);
+    ctx.fillStyle = k % 3 ? MA_SNOW : MA_SNOW_M; ctx.fillRect(x - 1, y, 3, 2);
+    if (wet && k % 4 === 0) { ctx.fillStyle = MA_WATER_L; ctx.fillRect(x - 1, y + 1, 3, 1); }
+  });
+  ctx.globalAlpha = 1;
+}
+AB_FX_LOOK.breach = drawBreachFx;
 
 // ---- under the snow ----------------------------------------------------------------------
 // BREACH: no body, only the snow heaving over her as she goes, cracks running ahead
