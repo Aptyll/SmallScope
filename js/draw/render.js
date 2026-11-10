@@ -127,6 +127,7 @@ function render() {
   const draws = gatherDraws(ox, oy, tx0, ty0, tx1, ty1, now);
   drawHitPuffs(ex, ey, now); // a big hit's snow puff, under the bodies (js/draw/hitfx.js)
   drawSorted(draws, ox, oy, ex, ey, now);
+  titleFlyDraw(ex, ey); // the title's passing eagle: its shadow over the snow and the ten (js/ui/titlescene.js)
 
   drawSelection(ox, oy, now);
   drawCheatGhost(ox, oy); // the practice bar's armed teleport / dummy (js/ui/cheats.js)
