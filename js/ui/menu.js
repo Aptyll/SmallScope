@@ -6,7 +6,7 @@
 // and js/ui/wiki.js.
 // ------------------------------------------------------------ main menu
 // The title screen is a real menu over the living world: ten heroes face off
-// on the frozen middle (js/ui/titlescene.js) while the snow keeps falling, the
+// in the stone ring at the middle (js/ui/titlescene.js) while the snow keeps falling, the
 // modes take mouse or arrows+enter, and every mode change is a transition
 // rather than a cut.
 const INTRO_T = 1.6;    // title -> play: tint dissolves, camera settles, HUD slides in
@@ -35,7 +35,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.752';
+const PATCH_TXT = 'PATCH 0.756';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -51,6 +51,10 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.756', 'FORTIVA SWINGS HER OWN CHAINED BLADE, BUCINA CARRIES A COILED HORN AND FABER\'S STAFF IS A BRASS GEAR.'],
+  ['0.755', 'THE BAYS AND THE MERCHANT\'S STALL STAND ON PAVING THAT JOINS THE ROOST, AND A WOLF DEN HAS A DOORSTEP OF DARK EARTH.'],
+  ['0.754', 'FIRST MATCH ON THE TITLE GOES STRAIGHT TO PICKING YOUR HERO, WITH A FULL MINUTE TO CHOOSE.'],
+  ['0.753', 'THE JUNGLE IS WALLED WITH PINES ON PURPOSE, THE RIVER IS FROZEN SOLID AND YOU CAN WALK ACROSS IT, EVERY FISH IS GONE, THE BEAR KEEPS TO ITS OWN CLEARING, AND THE MID LANE RUNS STRAIGHT THROUGH THE STONE RING.'],
   ['0.752', 'BELLA\'S SPATHA IS A SHORT ONE-HAND BLADE, SO SHE READS LIGHTER AND QUICKER THAN ARMATOS AT A GLANCE.'],
   ['0.751', 'A RUNNING HERO\'S FEET LEAVE THE SNOW: THE BACK FOOT LIFTS AT FULL STRIDE AND THE SWINGING ONE AS THE LEGS PASS.'],
   ['0.750', 'A WOLF DEN HAS A YARD: TRODDEN SNOW, PAW TRAILS AND HALF-BURIED STONES ROUND ITS MOUTH.'],
@@ -838,7 +842,7 @@ function menuSelect(i) {
 function menuActivate(i) {
   SFX.unlock();
   const it = menuItems()[i];
-  if (it === 'FIRST MATCH') beginParty('guide'); // QUICKPLAY against EASY bots with the coach (js/ui/guide.js)
+  if (it === 'FIRST MATCH') { beginParty('guide'); partyFind(); } // EASY bots with the coach (js/ui/guide.js), straight on to the pick: the party's seats and codes are a step back (ESC) for whoever brings a friend
   else if (it === 'QUICKPLAY') beginParty('quick'); // the party lobby (js/ui/rooms.js)
   else if (it === 'RANKED') beginParty('ranked');
   else if (it === '1V1') beginParty('onevone'); // you alone, one hero a side on the mid road (js/sim/onevone.js)
@@ -1749,6 +1753,13 @@ function renderTitle(now) {
     ctx.globalAlpha = a;
     const label = menuItems()[i];
     drawPixelTextOutline(ctx, label, r.x + 4, y, hv > 0.5 ? '#ffd95c' : '#f4f7ff', 'rgba(8,12,28,0.9)', MENU_TXT_SCALE);
+    if (label === 'FIRST MATCH') { // the one word a new profile is offered: a gold diamond stands before it
+      const dx = r.x - 6, dy = y + 6;
+      for (const [rr, c] of [[4, 'rgba(8,12,28,0.9)'], [3, '#ffd95c']]) {
+        ctx.fillStyle = c;
+        for (let d = -rr; d <= rr; d++) { const w = rr - Math.abs(d); ctx.fillRect(dx - w, dy + d, w * 2 + 1, 1); }
+      }
+    }
     ctx.globalAlpha = 1;
   }
 

@@ -8,8 +8,8 @@ and the dens are where it gets rich, and the woods are pocket money.
 
 Every player owns a wallet, `p.gold`: currency only, no ceiling. The six item slots beside it
 are the build. **Gold is
-the only currency**; the heal in the world (the creek fish) is taken where it swims
-and never carried ([Heals](heals.md)). The whole economy is the
+the only currency**; a potion is an item, and nothing else heals out of a pocket
+([Heals](heals.md)). The whole economy is the
 `YIELD` table in the constants banner of [js/sim/core.js](../../../js/sim/core.js) - the one tuning table
 with no single owner - which gives every source a different **yield profile**
 rather than a different resource (the League model: one number, many ways to earn it):
@@ -23,7 +23,7 @@ rather than a different resource (the League model: one number, many ways to ear
 | rabbit | `rabbit` 2 coins × 35 → 70 | bolts when approached; jinks one shot per 10 s |
 | deer | `deer` 3 coins × 40 → 120 | the big mobile target: two of them, each running its side's line |
 | wolf | `wolf` 2 coins × 55 → 110 | a den's four (440), each a FARM ([Farming](robots.md#farming)); neutral until hit, and then the pack bites back |
-| black bear | `alpha` 6 coins × 105 → 630 | BLUE's river camp's one; `EPIC_TEAM_GOLD` (280) to every teammate besides, and the BLACK BUFF for the whole team |
+| black bear | `alpha` 6 coins × 105 → 630 | BLUE's bend camp's one; `EPIC_TEAM_GOLD` (280) to every teammate besides, and the BLACK BUFF for the whole team |
 | orca | `orca` 8 coins × 110 → 880 | the orca up in its pool from 20:00; `EPIC_TEAM_GOLD` (280) to every teammate besides, and the ORCA BUFF (the push) for the whole team |
 | bird | `bird` 2 coins × 28 → 56 | dormant: nothing spawns one |
 | gold pump (`pump`) | `pay` (20) every `period` (10 s) to every hero of the side holding it — 120 a minute each | one of the map's two neutral objectives, taken by standing in its ring ([The gold pumps](buildings.md#the-gold-pumps)); both held is 240 a minute each, twice the trickle |

@@ -203,7 +203,7 @@ included), so the field is cut to the shape of the lake and **an ice hole is a h
 too**. Each twinkles on its own rate, and the whole reflection ripples a pixel sideways on a slow
 wave down the field, because ice is not a perfect mirror.
 
-It is drawn **early** — right after the visible tile range is computed, above the under-ice fish
+It is drawn **early** — right after the visible tile range is computed, above the orca's shadow
 and the crack decals but under everything that walks, so a body standing on the ice covers its own
 reflection — and therefore **under** the night multiply as well. That is deliberate: the same blue
 that cools the snow cools the stars with it, which is what a reflection does.

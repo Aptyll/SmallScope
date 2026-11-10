@@ -22,15 +22,15 @@ the road's head, a shop for anybody at all who walks up to it, then raises the b
 the back woods behind the bird for logs to rebuild them; idle, it keeps to the road just up from the bird.
 **Three lanes** join the bases, like a Rift: **the road** (mid) runs the map's diagonal from one
 perch to the other, one straight flagstone lane, and **the top and bot lanes** run
-straight up either edge of the valley and turn one hard corner, like the Rift's, crossing the creek on a ford at that corner, the middle. All
+straight up either edge of the valley and turn one hard corner, like the Rift's, where the frozen creek ends under them. All
 three are there from worldgen, the same every match and readable from anywhere, and each leaves a
 base by its own mouth of the hollow ([the road](world.md#the-road),
 [the side lanes](world.md#the-side-lanes)). Half a minute after landing each merchant raises a
 **barracks** (a bot bay) just inside the mid mouth, then one inside the top and bot mouths:
 every thirty seconds each one marches a **wave** of soldier bots down its own lane at the rival
 bird, one soldier more every three minutes, each lane's live soldiers capped. Both sides get the
-same waves, so with nobody on a lane the two columns meet at its middle (the mid ones forking round
-the cistern and over the stepping stones outside its wall) and grind there — which side's wave
+same waves, so with nobody on a lane the two columns meet at its middle (the mid ones straight
+through the cistern) and grind there — which side's wave
 gets through is decided by who walks out to it. **Drive off the rival eagle
 and the match is won** — nothing else ends one: a player who goes down waits, and is set back
 down at their own bird.
@@ -42,24 +42,22 @@ Every hero, you included, stands in a ring of its side's colour under a bar of t
 A settings toggle (MY TEAM) shows the roster's real colours instead.
 [Teams and colours](multiplayer.md#teams-and-colours).
 
-**The creek splits the valley.** One creek runs the other diagonal, corner to
-corner through the woods and all, so the two roosts sit on opposite halves: it meets the road once,
-at the middle, inside **the cistern**, and elsewhere it is crossed only at stepping-stone fords
-(the mid waves' two just outside the cistern's wall, where it runs out under it, and one under
-each side lane), or by a dodge roll
-from the bank. The cistern is the works' ring of cut
-stone round the crossing: the road comes in at two gates with stone sills, the wall is down in
-four breaches with the fallen blocks round them, and nothing gets through the stone itself, roll
-or charge. Inside, the creek pools and freezes into plain ice, both sides' alike. The orca lives
+**The creek is the Rift's river, frozen.** One creek runs the other diagonal, lane to lane: it
+starts under the top lane and ends under the bot lane, and past them the border woods stand
+unbroken. It is rough ice that holds a foot like snow, so everyone walks across it anywhere, and
+it meets the road once, at the middle, under **the cistern**. The cistern is the works' ring of cut
+stone round the crossing: the road runs straight through it, in at one gate with a stone sill and
+out at the other, over a floor of snow with a brush drift either side of the road. The wall is
+down in four breaches with the fallen blocks round them, the creek runs in and out under it, and
+nothing gets through the stone itself, roll or charge. The orca lives
 in **its own pool** on the creek's upstream bend, top-left of the middle: anyone
 can walk over it, but the orca
 under the ice locks on a player out on it, stalks them while a 3 2 1 counts down over their head, and then it comes up
-through the ice and they go down. [The orca](gameplay/wildlife.md#the-orca). It swings round the two
+through the ice and they go down. [The orca](gameplay/wildlife.md#the-orca). The creek swings round the two
 spots on the mirror line in a half-loop each, so each side is nearer one: the **orca's pool**, its own
 frozen pond where the orca lives, on RED's bank top-left of the middle, and the **black bear** on
-BLUE's bank bottom-right, walking it up and down and stopping to fish. The cistern's pool at the
-middle is plain ice. Anyone who steps in plunges as through the ice, and a bot shoved off the
-bank goes in like anybody. [The creek](world.md#the-creek), [the cistern](world.md#the-cistern).
+BLUE's bank bottom-right, keeping to its clearing. [The creek](code-map/sim/world.md),
+[the cistern](code-map/sim/cistern.md).
 
 The world is 278 tiles of 16 px — a 4448×4448 px snowfield with a forest border and an interior
 threaded by frozen lakes and rivers. Every match plays this one map.
@@ -134,8 +132,7 @@ the woods are side income, and the road makes you level**, and the late levels c
 slots are the build. There is no backpack and no food pouch.
 
 **Heals are League's.** A **health potion** (50 gold, up to five stacked in one item slot) heals
-100 over 15 s on the slot's key and nothing stops it; a **creek fish** rolled over heals 40 at
-once. Nothing else is eaten.
+100 over 15 s on the slot's key and nothing stops it. Nothing else is eaten.
 [Heals](gameplay/heals.md).
 
 **Items are bought at a counter.** You walk to a body to get them.
@@ -183,7 +180,7 @@ bots near a DANGER back off. [Pings](gameplay/pings.md), [Bots](multiplayer.md#b
 off the river, one between the den and the warren and a block at the lane's corner, mirrored to all four, with gaps to walk in.
 **The camps are the jungle, and the jungle is symmetric.** Six fixed sites, three on each side of the
 road, mirrored so both teams walk the same distance: four **WOLF DENS** that pay gold, and one
-**BLACK BEAR BEND**, the one bear, patrolling a bank of the creek: first out at 5:00 and back 5:00
+**BLACK BEAR BEND**, the one bear, patrolling its clearing on a bend of the creek: first out at 5:00 and back 5:00
 after each kill, which pays the whole team, gives it the BLACK BUFF, and adds a black bear to the
 side's count: +5% on every blow for the rest of the match, up to four. Facing it across the road is
 the **ORCA'S POOL**: [the orca](gameplay/wildlife.md#the-orca) under its ice, and from 20:00 up in a hole

@@ -30,19 +30,18 @@ if (ARENA) {
   genPracticeWorld();
 } else {
   genWorld();
-  placeCreek();     // the creek down the cross-diagonal, its bends and fords, and the cistern round its frozen middle (world.js, cistern.js)
-  layLanes();       // ...and the top and bot lanes, forded where they cross it (js/sim/lanes.js)
+  layLanes();       // the top and bot lanes: fixed cuts, registered first so the creek can end under them (js/sim/lanes.js)
+  placeCreek();     // ...the frozen creek down the cross-diagonal, lane to lane, its bends, and the cistern round the middle (world.js, cistern.js)
   placeRoad();       // the diagonal lane, and the side lanes with it (world.js)
   placeBase();       // ...and each side's hollow round the end of it, where its bird roosts (js/sim/base.js)
   placeZips();       // ...and each side's cable along it (js/sim/zipline.js)
   placeTowers();     // ...and three road towers on each side's cable, which it is cut back to (js/sim/towers.js)
-  layJungle();       // ...and the pine walls that make the field a jungle, mirrored to all four quarters (js/sim/jungle.js)
+  layJungle();       // ...and the jungle: the field inside the lanes planted solid and its paths cut through, mirrored to all four quarters (js/sim/jungle.js)
   placeCamps();      // worldgen's last pass, before the ground is baked: the camps clear their sites
   placeLandmarks();  // ...and the story landmarks take their spots (landmarks.js)
   placePumps();      // ...and the two gold pumps beside the top and bot lanes' middles, with no rng() (js/sim/pumps.js)
   towerLandings();   // ...and, with every pine planted, each cable's run-out past its towers (js/sim/towers.js)
   spawnAnimals();
-  spawnFish();
   spawnOrca();       // ...and the orca under its lake (js/sim/orca.js)
   stockCamps();      // the monsters go in once the world is standing
 }
@@ -116,7 +115,6 @@ window.DBG = {
   botThought, botGuess, BOTLOG, botLogExport, openBotLab, botViewStep,
   get botView() { return botView; }, set botView(v) { botView = v | 0; },
   SEED, state, animals, objects, ground, mouse, keys, footprints, flakes,
-  fish, addFish, spawnEmerger,
   // the ice breaking in its own shape (js/sim/icebreak.js): DBG.iceBreak(x, y, 'breach', 0, { warn: 0.9 })
   iceBreaks, iceBreak, iceBreakAge, iceBreakCovers, iceBreakHolds, iceBreakWet, ICE_BREAK_SHAPES,
   // the orca and its lake (js/sim/orca.js, js/sim/world.js): its state, the line over a head, the disc
@@ -198,9 +196,9 @@ window.DBG = {
   BUILD_ITEMS, ITEM_PARTS, ITEM_DONE, ITEM_ALL, itemTier, itemInto, shopRecommended, itemCost: (id, p) => itemCost(p || player, id),
   buyItem: (id, p) => buyItem(p || player, id), sellItem: (slot, p) => sellItem(p || player, slot),
   botNextItem, botItemBuy,
-  // the heals: the potion's slot and its drink, and a creek fish's heal
+  // the heals: the potion's slot and its drink
   potionSlot: (p) => potionSlot(p || player), useItem: (slot, p) => useItem(p || player, slot),
-  POTION_HEAL, POTION_T, CREEK_FISH_HEAL, creekFishN, creekFishAt,
+  POTION_HEAL, POTION_T,
   // the news plates under the minimap: the live stack, where a slot lands,
   // and a way to raise one
   notices, noteRect, NOTE_KIND, raiseNotice,
@@ -224,9 +222,9 @@ window.DBG = {
   // the paint: which preset a team wears on this screen (settings.teamBlue), and the two merchants
   skin, get merchants() { return robots.filter((b) => b.merchant); },
   // the road and the bases (js/sim/base.js)
-  pads, roadNest, roadSpan, roadDist, roadMainDist, laneDist, findCrashPoint, // the road system: the crash pads, a side's nest and junction, the gates, the three distances (laneDist: as laid, ended on the perches and at the cistern), and where a bird lands
+  pads, roadNest, roadSpan, roadDist, roadMainDist, laneDist, findCrashPoint, // the road system: the crash pads, a side's nest and junction, the gates, the three distances (laneDist: as laid, ended on the perches), and where a bird lands
   baseAt, baseCentre, basePerch, BASE_R, // the bases: whose hollow a tile is in, its centre, its perch, its radius
-  creekAt, creekFlow, creekWet, creekBends, creekOuterFords, waterAt, CQ, // the creek: the distance to its banks (CQ holds where), the current, the plunge test, the bends and the fixed fords
+  creekAt, creekIceAt, creekSpan, creekBends, waterAt, CQ, // the frozen creek: the distance to its banks (CQ holds where), whether a point is on its ice, where it starts and ends, the bends
   cisternR, cisternDist, cisternReach, cisternTile, cisternBlocks, cisternTouches, // the cistern (js/sim/cistern.js): tiles from the crossing, px to its stone, how much of a step it lets a body take, and its three tile reads
   zips, zipPoint, zipNearest, zipNear, zipStart, zipEnd, zipToggle,  // the ziplines (js/sim/zipline.js): both lines, a point along one, the nearest point to a body, and the ride's own verbs
   landmarks, LANDMARKS, // the story landmarks (landmarks.js): every one stood, and the table

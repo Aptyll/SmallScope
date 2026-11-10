@@ -93,7 +93,7 @@ function selClock() {
   const D = DRAFT, m = state.menu;
   if (m.countT > 0) return { t: m.countT, f: m.countT / COUNT_T };
   if (!draftOpen()) return null;
-  return { t: D.t, f: D.t / (D.phase === 'ban' ? DRAFT_BAN_T : DRAFT_PICK_T) };
+  return { t: D.t, f: D.t / (D.phase === 'ban' ? DRAFT_BAN_T : draftPickT()) };
 }
 function selActing() { return draftOpen() && DRAFT.lock[localId] < 0; }
 function drawSelectTop(L, a) {

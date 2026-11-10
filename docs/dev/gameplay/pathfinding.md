@@ -5,7 +5,7 @@ ones, prey both fleeing and grazing, any future enemy — routes through the `pa
 rather than steering straight at it.
 `findPath(sx, sy, gx, gy, reach, budget, e)` is grid A* over the tile map: a tile is `walkable()`
 when it is in-world, not `isSolidTile` for the walker `e` (its own side's gates stand open; `navTo`
-passes the unit, `navLineClear`/`navSmooth` carry it on), and not open water (`waterAt`: an ice hole or the creek); eight-connected with no
+passes the unit, `navLineClear`/`navSmooth` carry it on), and not open water (`waterAt`: an ice hole); eight-connected with no
 corner cutting (a diagonal needs both orthogonal neighbours open, so a unit of radius ≤ 5 never
 clips a tree walking centre to centre); octile heuristic; typed-array scores stamped by a
 generation counter so nothing is cleared between searches; a binary heap; no `rng`, so it is
@@ -18,8 +18,8 @@ search is cheap enough that dozens of units replanning several times a second is
 A tile can charge a **toll** (`navToll`, extra steps per step onto it): ground a walker can
 stand on but should not linger on, so a route goes round unless round is much further. The one
 toll today is [the orca's](wildlife.md#the-orca) ice (`ORCA_TOLL`, set by `spawnOrca`); the lane over its
-lake charges none, so the bots keep to the road (the waves go round it by a ford:
-[Soldiers](robots.md#soldiers-the-waves)). The straight line a plan tries in
+lake charges none, so the bots keep to the road
+([Soldiers](robots.md#soldiers-the-waves)). The straight line a plan tries in
 place of a search, and `navSmooth`'s string-pulling, are `navLineClear` with `free` set, which
 refuses a tolled tile, so neither cuts across ground the search went round.
 

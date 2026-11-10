@@ -5,13 +5,8 @@
 `renderScreen` and the rest). **World space** (`ctx = wctx`):
 
 1. `syncCasts` (repaint the shade of any scenery that changed, [cast shadows](light-and-weather.md#cast-shadows)) →
-   ground blit → **the creek's fish** (`drawCreekFish`, js/draw/ground.js: the whitefish under the
-   water, at `SWIM_A` alpha with a rim in the water's own shade) → **the creek's current**
-   (`drawCreekFlow`, the same file: glints drifting downstream over the still water the bake laid
-   and over the fish, on the field's clock) → under-ice fish (`drawIceFish`, js/draw/lakes.js: frost pike and gold sunfish,
-   `SPRITES.iceFish[kind].shadow` at 0.42 alpha, a solid rim over a half-strength core, and the crisp `swim` sprite clipped to the open-hole
-   tiles round a fish crossing one) → **the orca's shadow** (`drawOrcaShadow`, js/draw/orca.js:
-   the same look at a deer's size, cut to the ice's own pixels so it never shows over the road it
+   ground blit → **the orca's shadow** (`drawOrcaShadow`, js/draw/orca.js:
+   a dark under-ice silhouette at a deer's size, cut to the ice's own pixels so it never shows over the road it
    swims under, darkening as it comes up, gone while it is out) →
    ice-crack decals → ice breaks (`drawIceBreaks`, js/draw/icebreak.js);
 2. `PRACTICE` only: `drawAgTrack` (the archery rails) and `drawParkourLine` (the start line);
@@ -21,7 +16,7 @@
    grooves and skate scratches share the one `footprints` array, branching on
    `f.k` - the crisp, short-lived detail over the trample);
 4. **the stars reflected in the ice** (`drawIceStars`, `settings.vidStars` — on the surface, so
-   it covers the fish and the cracks, and under everything that walks) → `drawDrift` (a
+   it covers the orca's shadow and the cracks, and under everything that walks) → `drawDrift` (a
    blizzard day's low streaks, [the day's weather](drawing-a-thousand-of-something.md#the-days-weather)) → **the weather on the
    ice** (`drawLakeSky`, js/draw/lakes.js: blown streaks over big lakes, a frosty night's glints
    and cracks, fresh dust while it snows - [the wind's leavings](../world.md#the-winds-leavings));
@@ -32,7 +27,7 @@
    targets, sorted by feet Y; empty player slots draw as team-tinted
    silhouettes via `drawGhost`; `pushMiddleDraws` adds the cistern's stone, piece by piece at
    the key of a body standing on it, and the orca out of the water, `drawOrcaBreach`, sorted by
-   its hole's waterline and cut at it - [the cistern](../world.md#the-cistern)); a body under a big
+   its hole's waterline and cut at it - [the cistern](../code-map/sim/cistern.md)); a body under a big
    hit is drawn off its spot by `hitNudge` (held where it was struck, then 1 px back);
 8. `drawSelection` (white pulsing corners with a dark shadow over an open wheel's target)
    → `drawWorkHint` (the E work prompt);

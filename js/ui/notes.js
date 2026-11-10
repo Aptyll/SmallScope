@@ -96,6 +96,10 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['Fortiva, Bucina and Faber carry weapons that are their own: a chained blade, a coiled horn, a brass gear', '0.756'],
+    ['BAYS AND THE STALL STAND ON PAVING', '0.755'],
+    ['FIRST MATCH: ONE CLICK TO THE HERO PICK, A MINUTE TO CHOOSE', '0.754'],
+    ['A DESIGNED JUNGLE, A FROZEN RIVER, NO FISH, A STRAIGHT MID', '0.753'],
     ['BELLA: A SHORT ONE-HAND SPATHA', '0.752'],
     ['RUNNING FEET LIFT OFF THE SNOW', '0.751'],
     ['WOLF DENS HAVE A TRODDEN YARD AND PAW TRAILS', '0.750'],

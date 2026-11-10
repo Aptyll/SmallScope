@@ -14,12 +14,6 @@ function drawGroundPass(ox, oy, ex, ey, now) {
   groundView(ox, oy, ox + WV_W, oy + WV_H);
   syncCasts(Math.floor(ox / TILE), Math.floor(oy / TILE), Math.floor((ox + WV_W) / TILE), Math.floor((oy + WV_H) / TILE));
   ctx.drawImage(groundCv, ox, oy, WV_W, WV_H, 0, 0, WV_W, WV_H);
-  // the creek's fish and its current, drifting over the still water the bake laid (ground.js)
-  drawCreekFish(ox, oy); // under the water: drawn first, so the glints run over it
-  drawCreekFlow(ox, oy, Math.floor(ox / TILE), Math.floor(oy / TILE), Math.floor((ox + WV_W) / TILE), Math.floor((oy + WV_H) / TILE));
-
-  // the lake's fish under the ice, shadows and crisp in open holes (js/draw/lakes.js)
-  drawIceFish(ex, ey);
 
   // the orca, a shadow under the same ice (js/draw/orca.js)
   drawOrcaShadow(ex, ey, now);
@@ -76,7 +70,7 @@ function drawFootprints(ox, oy) {
 // the ice's sky and weather, the flat objects, and the rings and marks laid on the snow
 function drawFlatPass(ox, oy, ex, ey, tx0, ty0, tx1, ty1, now) {
   // the night sky, reflected in every frozen tile: on the ice surface, so it
-  // covers the fish under it and the cracks in it, and under everything that
+  // covers the shadows under it and the cracks in it, and under everything that
   // walks - a body standing on the ice covers its own reflection
   if (settings.vidStars) drawIceStars(ox, oy, tx0, ty0, tx1, ty1);
   // a blizzard day's low streaks, on the ground under everything that stands
@@ -127,7 +121,9 @@ function gatherDraws(ox, oy, tx0, ty0, tx1, ty1, now) {
     }
   }
   trackDowns(now); // a body that just dropped goes down in place (the `going down` banner, js/draw/bodies.js)
-  for (const p of players) {
+  // on the title the match's own players wait unplaced at the map's centre:
+  // the title's cast stands in for them
+  for (const p of state.mode === 'title' ? [] : players) {
     if (goingDown(p)) { if (fogShown(p, now)) draws.push({ y: p.y + 8, down: p }); continue; }
     if (p.dead || inAir(p) || !fogShown(p, now)) continue; // airborne players draw in drawDropAir; one in the fog not at all (js/draw/fog.js)
     draws.push({ y: p.y + 8, p, ghost: !p.active }); // empty slots stand as silhouettes

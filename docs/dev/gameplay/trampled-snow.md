@@ -20,5 +20,5 @@ Each pixel asks what it stands on, the way the bake painted it (`trMask`): snow 
 pressed shades and throws clods where churned; **ice** is the lakes' dust layer's to
 show: it reads `trampleAt(x, y)` per pixel and thins under it, and
 `trDustSync` hands it (`iceDustInvalidate`) the lake tiles whose trample moved, so the dust comes
-back as the trample refills - on a build without that layer, ice takes sparse frost scuffs instead; open water, the creek, its deck and the road's earth
+back as the trample refills - on a build without that layer, ice takes sparse frost scuffs instead; open water and the road's earth
 take nothing. The footprints and slide trails draw over it as the crisp detail.

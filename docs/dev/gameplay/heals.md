@@ -1,8 +1,7 @@
-# Heals: potions and creek fish
+# Heals: potions
 
-A player heals three ways, League's way: the **roost ring** at home ([Recall and the roost
-ring](recall-and-the-roost-ring.md)), a **health potion** bought at the shop, and a **creek fish**
-rolled over. Every heal goes through `healPlayer(p, n)` (js/sim/player.js),
+A player heals two ways, League's way: the **roost ring** at home ([Recall and the roost
+ring](recall-and-the-roost-ring.md)) and a **health potion** bought at the shop. Every heal goes through `healPlayer(p, n)` (js/sim/player.js),
 which caps at max health and returns what it gave. A body under FROSTBITE (`cutHeal`, the item
 passive) takes every heal `healCut` (40%) smaller while `healCutT` runs. Nothing is carried but potions: there is no
 pouch of food, no chew and no fishing.
@@ -29,22 +28,9 @@ while `p.potions` is how many. `isStack(id)` says so; `isPart` and `ITEM_PARTS` 
   the time left of a running drink with the strip's cooldown veil (`drawItemCell`,
   js/ui/hud-draw.js).
 
-## The creek fish
-
-The creek carries one kind of fish, a whitefish every `CREEK_FISH_GAP` tiles (`creekFishAt`, the
-`creek` banner of js/sim/world.js). A hurt body **rolling** over a showing fish takes it
-(`creekFishCatch`, called from the roll in `playerMove`, js/sim/sim.js): `CREEK_FISH_HEAL` (40) at once through
-`healPlayer`, nothing carried. Two rollers reach one fish through `contest('creekfish:' + i)`. Its
-place swims back after `CREEK_FISH_BACK` (45 s; `state.creekGone`). A body at full health rolls
-past and leaves it. Fish cannot be bought or sold. The fish under the lakes' ice are scenery (the
-`fish` banner, js/sim/wildlife.js).
-
 ## Bots
 
-The built-in brain (js/ai) drinks when under `AI_POTION_HP` (60%), never in its own roost ring (`aiDrink`, rung 1). Its heal rung (`aiHealRung`, 5', after the
-fight rungs) rolls over a showing creek fish within `AI_HEAL_R` tiles
-from the dry bank when the roll lands on dry ground (`aiFishRoll`), only when hurt and with no
-rival within `AI_HEAL_SAFE`. A fish chase gives up after `AI_FISH_T`. At a counter it buys one
+The built-in brain (js/ai) drinks when under `AI_POTION_HP` (60%), never in its own roost ring (`aiDrink`, rung 1). At a counter it buys one
 potion before its build and tops up to `BOT_POTIONS` (2) when nothing on its list is affordable
 (`botWantsPotion`); potions are sold last when the build needs their slot (`botStrayPart`).
 Scripted bots read `me.potions`/`me.potionT` and drink with

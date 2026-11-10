@@ -58,7 +58,7 @@ without you, and `updateRespawns` ticks a respawn timer down under the `'respawn
 same way. Only **pause (P) and the settings panel (ESC)** stop the sim, and neither does in a
 match another screen shares (`netShared`, js/net/net.js: a host's menu never stops its guests, and
 its P does nothing); `update()` (time, darkness, camera, fx) always keeps running. In `title` only
-the ambient half runs (`updateTitle`: animals and fish), and not even that once a room is shared
+the ambient half runs (`updateTitle`: the animals), and not even that once a room is shared
 — see [Main menu](../rendering/main-menu-title.md).
 
 ## Takedowns: assists, bounties and shutdowns
@@ -71,7 +71,7 @@ record. On a death, `die` reads the victim's **worth** (`killWorth`) and **bount
 before it clears the streak, and `payTakedown` pays:
 
 - the **killer**: the worth plus the bounty, through `awardGold`. A death with no rival `src`
-  (the ice, the creek, the orca, wolves, a bear, a wave) goes to the latest rival on the record,
+  (the ice, the orca, wolves, a bear, a wave) goes to the latest rival on the record,
   who takes the kill, the streak and the gold; losing the bird (`cause` `eagle`) is nobody's.
   Its log line stays the world's (`DEATH_CAUSE`), in the killer's colours.
 - every other recent rival: an **assist** (`p.assists`) and an even share of `ASSIST_SHARE`

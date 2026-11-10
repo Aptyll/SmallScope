@@ -117,7 +117,7 @@ hold more than one cue — the footstep file is a whole walking loop, the coin r
 than clicking off mid-waveform. A key with several files picks one at random per shot.
 
 Sampled cues that sit beside a synth sibling: `coin()` (gold into the purse — an `awardGold`
-payout, a bot's deposit) and `heal()` (a potion drunk or a creek fish taken) are the world's;
+payout, a bot's deposit) and `heal()` (a potion drunk or a world heal, `healFx`) are the world's;
 `pickup()` stays the synth UI blip so menus keep an instant, identical
 click. `hammer()` (finishing a structure, the merchant raising one) stands beside `place()` the same
 way, with `building()` as its quieter, shorter sibling on a site's dust tick — it repeats for as

@@ -4,7 +4,7 @@
 // join the bases - the TOP lane up the left edge and along the top, the BOT
 // lane along the bottom and up the right edge, like the Rift's - each out of
 // its own mouth in either hollow (baseGate, js/sim/base.js), straight through
-// the border woods to one hard corner, where it fords the creek: the map's
+// the border woods to one hard corner, where the frozen creek ends under it: the map's
 // middle. They are fixed cuts, the same on
 // every seed: control points in the road's frame (baseTile), smoothed, so
 // RED's half and BLUE's mirror along the road and the bot lane mirrors the
@@ -15,12 +15,11 @@
 // turns ice to road), both maps ink it and every reader of the road reads it.
 // And each side
 // strings its own cable down it (laneZipTiles, below). Laid by
-// layLanes at boot after placeCreek and before placeRoad (js/app/boot.js), so
+// layLanes at boot before placeCreek and placeRoad (js/app/boot.js), so
 // genWorld's carve rules never saw it.
 const LANE_HW = 3;        // tiles either side of the centreline: a six-tile lane, a tile narrower than the mid road across the field
 const LANE_RAG = 0.5;     // tiles its edge wanders either way on the position noise
 const LANE_SEG = 3;       // tiles of centreline per registered segment
-const LANE_FORD_HW = 1.5; // tiles either side of the centreline the creek is forded where a lane crosses it: a three-stone ford
 const LANE_ZIP_SPAN = 14;  // tiles along the lane between a side cable's pylons: the mid road's ZIP_SPAN
 const LANE_ZIP_MID = 28 * MAP_K; // tiles short of the lane's middle its front terminus stands: the mid road's ZIP_MID_GAP
 const LANE_HOLD = 0.6;     // share of the way from a side's mouth to a lane's middle its laner waits at with no column on the lane (laneHold)
@@ -86,8 +85,9 @@ function sideLaneDist(fx, fy) {
   if (lat >= 99) return 99;
   return lat - (LANE_HW + (vnoise(fx * 0.3 + 13.1, fy * 0.3 + 77.2) - 0.5) * 2 * LANE_RAG);
 }
-// Runs at boot after placeCreek, before placeRoad (js/app/boot.js): registers
-// both lanes, and fords the creek where each crosses it. No rng(): no seed moves.
+// Runs at boot before placeCreek, which ends the frozen creek under each
+// lane (creekSpan), and placeRoad (js/app/boot.js): registers both lanes.
+// No rng(): no seed moves.
 function layLanes() {
   laneSegs.length = 0; laneA = laneB = null;
   if (ARENA) return;
@@ -100,11 +100,6 @@ function layLanes() {
   }
   const ix = indexSegs(laneSegs, LANE_HW + LANE_RAG + ROAD_SHOULDER + 2.4); // past this no pixel of a tile is the lane's or its shoulder's
   laneA = ix.A; laneB = ix.B;
-  // the fords: stones on the creek LANE_FORD_HW either side of the
-  // centreline, laid along the lane whichever way the water bends there
-  for (let i = 0; i < WORLD * WORLD; i++) {
-    if (ground[i] === 4 && segsLat(laneSegs, laneA, laneB, i % WORLD, (i / WORLD) | 0) < LANE_FORD_HW) ground[i] = 5;
-  }
 }
 // the march down a side lane: from the side's own mouth to the rival's every
 // ROAD_STEP tiles along the centreline (px), then into the rival hollow's

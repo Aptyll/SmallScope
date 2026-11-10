@@ -102,7 +102,7 @@ function bakeDressing() {
   bakeCracks();
 }
 // stamp a tile's dressing: called by paintGroundTile over the snow or the
-// ice, under the road, the creek and the cast shade. Nothing lands on an
+// ice, under the road and the cast shade. Nothing lands on an
 // open hole (ground 2 paints its own water).
 function paintDressing(g, tx, ty, px, py) {
   const a = dressPx && dressPx.get(idx(tx, ty));
@@ -110,12 +110,12 @@ function paintDressing(g, tx, ty, px, py) {
   for (const p of a) penDot(g, DRESS_INK[p >> 8], px + (p & 15), py + ((p >> 4) & 15)); // the pixel pen (ground.js)
   penFlush();
 }
-// is this world pixel free for the dressing: not the road's band, not the
-// creek, not a tile the deep band owns - unless `rim`: the mid band's piles
+// is this world pixel free for the dressing: not the road's band, not a
+// tile the deep band owns - unless `rim`: the mid band's piles
 // are worked out per pixel and stop where the deep band starts on their own,
 // so a tile whose middle is deep still wears the skirt round its edge
 function dressFree(tx, ty, rim) {
-  return inWorld(tx, ty) && ground[idx(tx, ty)] !== 3 && !creekNear(tx, ty) && !objAt(tx, ty)
+  return inWorld(tx, ty) && ground[idx(tx, ty)] !== 3 && !objAt(tx, ty)
     && laneDist(tx, ty) >= ROAD_SHOULDER + 1.2 && (rim || !deepSnowAt(tx, ty));
 }
 
@@ -129,8 +129,8 @@ function dressFree(tx, ty, rim) {
 // band's own look begins. Its sunward rim is lit and a pixel of shade lies
 // past its lee; its thin edge is dithered into the field. Kept well below
 // the deep band's look (no raised lip, no deep shadow), so it never reads
-// as snow that slows you. Nothing is drawn on ice, the road, the creek or
-// a tile something stands on.
+// as snow that slows you. Nothing is drawn on ice, the road or a tile
+// something stands on.
 const DRIFT_FADE = 0.06;      // depth over DEPTH_MID across which a pile's edge dithers in
 function bakeDrifts() {
   if (!leeCell) return; // no depth map laid (the practice arena)
@@ -463,48 +463,3 @@ const dustCv = (() => {
   }
   return cv;
 })();
-
-// ------------------------------------------------------------ the fish under the ice
-// the lake's frost pike and gold sunfish (f.kind), SHADOWS drifting
-// under the thin ice and crisp in open holes - both pre-turned to the
-// nearest of the baked headings, so a fish is never rotated off the pixel
-// grid (SPRITES.iceFish, js/baked/fish.js)
-// Drawn by render() right after the ground blit, in world space off the
-// camera's ex/ey.
-function drawIceFish(ex, ey) {
-  for (const f of fish) {
-    // `vis` is how much of the body is over water (1 for every born fish).
-    // The alpha ramps off the BACK half of it, so an emerger stays completely
-    // invisible until most of it is under the ice and only its tail is still
-    // outside - by which point that tail is a couple of pixels at a fraction
-    // of 0.4. Nothing readable is ever drawn over snow.
-    const em = f.born ? 1 : Math.max(0, (f.vis - 0.5) * 2);
-    if (em <= 0) continue;
-    const sx = f.x - ex, sy = f.y - ey;
-    if (sx < -16 || sy < -16 || sx > WV_W + 16 || sy > WV_H + 16) continue;
-    const F = SPRITES.iceFish[f.kind] || SPRITES.iceFish.fish, n = F.shadow.length;
-    const hd = ((Math.round(f.a / (Math.PI * 2) * n) % n) + n) % n, wag = Math.sin(f.t * 7) > 0 ? 1 : 0; // the tail's wag
-    const x0 = Math.round(sx), y0 = Math.round(sy);
-    const sh = F.shadow[hd][wag];
-    ctx.globalAlpha = 0.42 * em; // the rim at 0.42, the core (baked at half) about 0.22: look N
-    ctx.drawImage(sh, x0 - (sh.width >> 1), y0 - (sh.height >> 1));
-    // whatever of it lies under an open hole is the fish itself, crisp: cut
-    // to the hole's own tiles, so a long body crossing the rim is half fish
-    // in the water and half shadow under the ice
-    const tx = Math.floor(f.x / TILE), ty = Math.floor(f.y / TILE);
-    let cut = false;
-    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
-      if (!inWorld(tx + dx, ty + dy) || ground[idx(tx + dx, ty + dy)] !== 2 || iceBreakHolds(idx(tx + dx, ty + dy))) continue; // a break's water is its own pixels, laid over this
-      if (!cut) { ctx.save(); ctx.beginPath(); cut = true; }
-      ctx.rect(Math.round((tx + dx) * TILE - ex), Math.round((ty + dy) * TILE - ey), TILE, TILE);
-    }
-    if (cut) {
-      ctx.clip();
-      const sw = F.swim[hd][wag];
-      ctx.globalAlpha = 0.95 * em;
-      ctx.drawImage(sw, x0 - (sw.width >> 1), y0 - (sw.height >> 1));
-      ctx.restore();
-    }
-    ctx.globalAlpha = 1;
-  }
-}

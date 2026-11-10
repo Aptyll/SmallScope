@@ -56,11 +56,9 @@ bay's `o.lane`: 0 top, 1 mid, 2 bot) to the rival bird. `makeSoldier(o)` is `mak
 then `laneWaypoints(team, lane)`: [the side lane](../world.md#the-side-lanes) every `ROAD_STEP` tiles to
 the rival mouth, then the rival hollow's centre. A mid soldier's is its own eagle's junction
 (`e.mouth`, where the road leaves its base), `roadWaypoints(team)`, the rival's junction. The
-rival roost itself is read live each frame, since it may have flown. The mid road's middle is swapped for a way round [the cistern](../world.md#the-cistern)
-(`cisternWayRound`): the road just short of its own gate, the bank of one of the fords outside the
-culverts, the far bank, the road just past the rival gate. Every other soldier out of the door
-(`o.queue`'s parity) takes the other ford, so a column forks round the ring and the two sides'
-waves meet on the stones, never on the orca's ice. `updateSoldier` is four rungs, first hit wins:
+rival roost itself is read live each frame, since it may have flown. The road runs straight through
+[the cistern](../code-map/sim/cistern.md), gate to gate over its floor, so a mid column walks it end
+to end and the two sides' waves meet inside the ring. `updateSoldier` is four rungs, first hit wins:
 
 1. a rival **unit** inside `SOLDIER_AGGRO` (96 px — `robotFoeUnit`, so a hero hidden from it lets a
    column walk past): close to its kind's `reach` and strike (`robotStrike`, its kind's blow,

@@ -52,16 +52,16 @@ a contact gets a 0.3 bounce (`UNIT_BOUNCE`). Players carry `vx/vy`; animals and 
 their knockback (their walk is a direction re-chosen each tick), and an idle animal/robot applies
 its knockback too, so a shoved deer actually moves.
 
-**Open water takes a player and nobody else.** A player walks into an ice hole or
-[the creek](../world.md#the-creek) and plunges; an animal or a robot meets a wall there. A **bot**'s
+**Open water takes a player and nobody else.** A player walks into an
+[ice hole](../world.md#ice-holes) and plunges; an animal or a robot meets a wall there. A **bot**'s
 own walk is strict too (`moveEntity(…, strict)` in `updatePlayer`) unless it is already standing
 in water or a shove past `WADE_SHOVE` (40 px/s of knockback) is carrying it, so a bot never wades
-in by itself and still goes in off the bank when it is knocked off. An
+in by itself and still goes in off the edge when it is knocked off. An
 [ice break](../world.md#ice-breaks)'s water is read by the pixel at the feet (`iceBreakWet`): a
 player goes in exactly where it shows, and a strict move (a bot's own walk, a shove) and every
 other walker stop at its edge, unless the step starts in it.
 
 **The cistern's stone is held to the pixel.** Every body, every step (`moveEntity`), meets
-[the cistern](../world.md#the-cistern)'s footprint by `cisternReach`: the circle round its feet is
+[the cistern](../code-map/sim/cistern.md)'s footprint by `cisternReach`: the circle round its feet is
 swept along the step and stops against the stone, so a roll, a rush, a reel or a shove ends at the
 wall, never inside it.

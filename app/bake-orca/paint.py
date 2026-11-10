@@ -13,8 +13,7 @@
 #            as it rises, `shut` once it has bitten. `jaw` is the pixel of the
 #            cell between the jaws, the point the draw lays on the bitten spot.
 #   shadow   top-down, SHADOW_HD headings round from +x (east) clockwise, SHADOW_PH
-#            steps of the tail's up-and-down beat each, as a SHADOW under the ice the way the lake's fish are
-#            one (js/baked/fish.js): no colour of its own, the under-ice ink
+#            steps of the tail's up-and-down beat each, as a SHADOW under the ice: no colour of its own, the under-ice ink
 #            solid round its edge and half strength in its core
 # Each frame is trimmed to its pixels and carries where it sits in its CELL
 # (canvas.ox / canvas.oy), so a draw still lays the cell's centre on the spot.
@@ -29,7 +28,7 @@ CELL = 64          # px square of every shadow frame before the trim
 BCELL = 80         # ...and of a breach frame (the flukes hang under the waterline)
 SHADOW_HD = 64     # headings: a step is under 6 degrees, so a turn rolls round instead of jumping
 SHADOW_PH = 8      # steps of one beat of the tail
-SHADOW = '#4a708c'                     # the under-ice ink every shadow is made of (js/baked/fish.js): its rim
+SHADOW = '#4a708c'                     # the under-ice ink the shadow is made of: its rim
 SHADOW_CORE = 'rgba(74,112,140,0.52)'  # ...and its core, about half the rim
 
 # tones from the black bear's own palette (BLACK_PAL) so it sits with the camps
@@ -209,7 +208,7 @@ js = ["'use strict';",
       "//           `jaw` is the cell's pixel between the jaws, laid on the bitten spot",
       "//   shade(hd, ph)  the shadow: heading hd of " + str(SHADOW_HD) + " round from +x (east) clockwise, step ph",
       "//           of " + str(SHADOW_PH) + " of the tail's beat; top-down, the under-ice ink, solid rim over a",
-      "//           half-strength core, like the lake's fish (js/baked/fish.js); drawn at part alpha",
+      "//           half-strength core; drawn at part alpha",
       "//           under the ice. Packed (rows run-length, '|' between them) and baked the first time",
       "//           it is asked for, so the game starts without painting them all",
       "// Every frame is cut from its cell (cell: a shadow's, bcell: a breach's) and keeps where it sat in it",
