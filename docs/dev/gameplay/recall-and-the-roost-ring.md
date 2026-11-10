@@ -30,7 +30,7 @@ blow given or taken, js/sim/items.js), `updateRecall` heals and refills the roll
 
 **It reads without a word** ([UI rule](../rendering/show-dont-label.md)): `drawRecallGround`
 (js/draw/recall.js) draws each down bird's ring as a soft glowing rim in its side's colour (four
-one-pixel circles, baked once); a recalling body gathers the bird's white feathers, tipped in its side's colour
+one-pixel circles, baked once); a recalling body gathers feathers in a pale tint of its side's colour
 (`drawRecallFeathers`): they drift down one by one, turn round the body closer and quicker as the
 channel fills, and take off together at the end, with no ring on the snow; the overhead frame's bar slot fills
 in the side's glow for the channel (`drawPlayer`, js/draw/bodies.js).
