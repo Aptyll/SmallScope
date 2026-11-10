@@ -12,6 +12,8 @@ A side sees a circle round each of its heroes (`FOG_HERO`, 10 tiles, times any h
   a band about 2.5 tiles either side. A cable runs only to its furthest standing tower
   (`towersSync`), so the band shrinks as towers fall. The drawn dim joins the row into a
   straight-edged band (`fogBand`, js/draw/fog.js) that lies inside the circles; who is seen still asks the eyes.
+  Where any two edges cross, the mask rounds off the dark V between them (`fogJoin`, a smooth max over
+  `FOG_JOIN` px): it lights at most a quarter of that of unseen ground, and shows no body there.
 - a hero's machine (`HERO_MACHINE` `sight`): FABER's machines, and FALCO's hawk while it is out
   on TALONS, which sees `TALON_SIGHT` round itself.
 

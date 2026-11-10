@@ -15,9 +15,14 @@ const FOG_TINT = [158, 160, 168]; // the multiply: a flat grey dim, cooler than 
 const FOG_CELL = 4;   // world px between the corners the edge is measured at
 const FOG_STEP = 2;   // world px per step of the rim
 const FOG_ARC = 3;    // world px of arc between two sight lines at the end of their reach
-const FOG_CLAMP = 16; // px either side of the edge a corner's distance is kept to
+const FOG_CLAMP = 64; // px either side of the edge a corner's distance is kept to (as far as two edges are joined, FOG_JOIN)
 const FOG_BAND = 8;   // world px of half-dim just outside the edge: the rim is two flat steps, not one hard line
 const FOG_HALF = FOG_TINT.map((v) => Math.round((v + 255) / 2)); // ...and that band's multiply, halfway to no dim
+// world px over which two eyes' edges are joined in the mask: where two
+// circles cross, a plain max leaves a sharp dark V cut into the lit ground
+// (a row of them along a lane reads as a saw), so the mask takes a smooth max
+// (fogJoin) that rounds the V off, filling at most FOG_JOIN / 4 px of it
+const FOG_JOIN = 64;
 
 const fogEyesDraw = [];
 const fogBands = []; // the cables' eyes joined pair by pair, for the mask (fogBand)
@@ -107,6 +112,14 @@ function fogShown(u, now) {
   return v;
 }
 
+// two edges' distances joined: the larger, raised where they are close so the
+// V between two circles rounds off. Only the mask reads it: who is shown
+// (fogShown) and the maps still ask the eyes, so the few px of unseen ground
+// a join lights show no body
+function fogJoin(a, b) {
+  const h = FOG_JOIN - Math.abs(a - b), m = (a > b ? a : b) + (h > 0 ? h * h / (4 * FOG_JOIN) : 0);
+  return m > FOG_CLAMP ? FOG_CLAMP : m;
+}
 // the corners' distances for the cells over the world view, eye by eye: an
 // open eye's circle by its radius, a stopped one through its sight lines
 function fogCorners(gx0, gy0) {
@@ -124,8 +137,7 @@ function fogCorners(gx0, gy0) {
         if (g[row + i] >= FOG_CLAMP) continue;
         const px = (gx0 + i) * FOG_CELL - s.ax;
         const t = Math.max(0, Math.min(1, (px * s.dx + py * s.dy) / s.len2)), ex = px - s.dx * t, ey = py - s.dy * t;
-        const m = s.r - Math.sqrt(ex * ex + ey * ey);
-        if (m > g[row + i]) g[row + i] = m > FOG_CLAMP ? FOG_CLAMP : m;
+        g[row + i] = fogJoin(g[row + i], s.r - Math.sqrt(ex * ex + ey * ey));
       }
     }
   }
@@ -144,7 +156,7 @@ function fogCorners(gx0, gy0) {
         if (dist <= inner) m = FOG_CLAMP;
         else if (s.open) m = s.r - dist;
         else m = s.d[fogRay(s, dx, dy)] - dist;
-        if (m > g[row + i]) g[row + i] = m > FOG_CLAMP ? FOG_CLAMP : m;
+        g[row + i] = fogJoin(g[row + i], m);
       }
     }
   }
