@@ -172,7 +172,7 @@ function drawSorted(draws, ox, oy, ex, ey, now) {
 
   airRiders.length = 0;
   for (const d of draws) {
-    if (d.reed) { litPunch(0, 0, WV_W, WV_H, () => drawReed(d.reed, ex, ey, heroP)); continue; } // the brush's reeds (js/draw/depth.js)
+    if (d.reed) { litPunch(d.reed.x - ex - (REED_W >> 1) - 1, d.reed.y - ey - REED_H + 1, REED_W + 2, REED_H + 2, () => drawReed(d.reed, ex, ey, heroP)); continue; } // the brush's reeds (js/draw/depth.js)
     if (d.down) { drawDown(d.down, ex, ey, now); continue; }
     if (d.p && !d.ghost && d.p.zip >= 0) { airRiders.push(d.p); continue; } // on a cable: the air layer's, below
     if (d.p) { if (d.ghost) drawGhost(d.p, ex, ey); else drawPlayer(d.p, ex, ey, now); continue; }

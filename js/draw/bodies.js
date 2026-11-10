@@ -355,7 +355,7 @@ function backRow(spr, col) {
 // how far a player's model reaches off its centre column and over its feet,
 // the greatsword at full swing included (the body light's scenery test,
 // js/draw/light.js)
-const BODY_REACH = 40, BODY_REACH_UP = 64;
+const BODY_REACH = 30, BODY_REACH_UP = 44;
 // stage: a model on show off the map (the champ select's showcase, drawShowcase,
 // js/ui/select.js) - the tool in hand, no sun shade (its stage lights it), none of
 // the overhead tells, on any mode.

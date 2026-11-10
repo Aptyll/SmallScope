@@ -877,6 +877,7 @@ const bodyCtx = bodyCv.getContext('2d');
 bodyCtx.imageSmoothingEnabled = false;
 const litCv = document.createElement('canvas'), lctx = litCv.getContext('2d');     // where a body shows this frame
 const punchCv = document.createElement('canvas'), pctx = punchCv.getContext('2d'); // one piece of scenery, to cut out of it
+const punchBigCv = document.createElement('canvas'), pbctx = punchBigCv.getContext('2d'); // ...and a piece too big for that one
 const preCv = document.createElement('canvas'), prectx = preCv.getContext('2d');   // the frame before the night
 const LIT_STEP = 64;
 let litOn = false;      // the night is deep enough to hold anything back this frame
@@ -889,7 +890,7 @@ function bodyLightFrame() {
   // canvas read back as a source is copied whole, and the buffer is cut for
   // the furthest zoom out
   const lw = Math.ceil((WV_W + 1) / LIT_STEP) * LIT_STEP, lh = Math.ceil((WV_H + 1) / LIT_STEP) * LIT_STEP;
-  for (const c of [litCv, preCv]) if (c.width !== lw || c.height !== lh) { c.width = lw; c.height = lh; }
+  for (const c of [litCv, preCv, punchBigCv]) if (c.width !== lw || c.height !== lh) { c.width = lw; c.height = lh; }
   if (punchCv.width !== PUNCH_W) { punchCv.width = PUNCH_W; punchCv.height = PUNCH_H; }
   lctx.clearRect(0, 0, WV_W + 1, WV_H + 1); // the corner of the buffer this frame uses (sizeWorldView)
 }
@@ -909,12 +910,15 @@ function bodyLayerOpen(cx, fy, hw, up) {
   const lx = cx - (BODY_LW >> 1), ly = fy - BODY_FOOT;
   bodyCtx.setTransform(1, 0, 0, 1, 0, 0);
   bodyCtx.globalAlpha = 1;
-  bodyCtx.clearRect(0, 0, BODY_LW, BODY_LH);
+  // only the model's own box of the layer is cleared and copied (hw, up)
+  const bw = Math.min(BODY_LW >> 1, hw), bu = Math.min(BODY_FOOT, up);
+  bodyCtx.clearRect((BODY_LW >> 1) - bw, BODY_FOOT - bu, bw * 2, bu + 8);
   bodyCtx.save();
+  bodyCtx.beginPath(); bodyCtx.rect((BODY_LW >> 1) - bw, BODY_FOOT - bu, bw * 2, bu + 8); bodyCtx.clip();
   bodyCtx.setTransform(1, 0, 0, 1, -lx, -ly);
   bodyCtx.globalAlpha = wctx.globalAlpha; // the caller's fade rides in with it
   ctx = bodyCtx;
-  return { x: lx + T.e, y: ly + T.f, hw, up };
+  return { x: lx + T.e, y: ly + T.f, hw: bw, up: bu };
 }
 function bodyLayerClose(L) {
   if (!L) return;
@@ -924,44 +928,48 @@ function bodyLayerClose(L) {
   wctx.save();
   wctx.setTransform(1, 0, 0, 1, 0, 0);
   wctx.globalAlpha = 1; // the layer already carries the fade
-  wctx.drawImage(bodyCv, L.x, L.y);
+  const sx = (BODY_LW >> 1) - L.hw, sy = BODY_FOOT - L.up, sw = L.hw * 2, sh = L.up + 8;
+  wctx.drawImage(bodyCv, sx, sy, sw, sh, L.x + sx, L.y + sy, sw, sh);
   wctx.restore();
   wctx.globalAlpha = a;
-  litAdd(bodyCv, L.x, L.y, BODY_LW >> 1, BODY_FOOT, L.hw, L.up);
+  if (litOn) { lctx.drawImage(bodyCv, sx, sy, sw, sh, L.x + sx, L.y + sy, sw, sh); litBoxes.push(L.x + sx, L.y + sy, sw, sh); }
 }
 // Scenery in the y-sort, drawn by `draw` inside the box (x, y, w, h) in the
-// world's own coordinates: for every body on record that box crosses, the
-// piece is drawn once more, cut to that body's box, and taken out of the
-// record, so what stands in front of a body covers its light as well as its
-// pixels. The scratch is one body's box, never the frame: a canvas used as a
-// source right after it was drawn on is copied whole, and a frame-sized one
-// copied per pine cost more than the rest of the night together.
-const PUNCH_W = 160, PUNCH_H = 160;
+// world's own coordinates: if that box crosses a body on record, the piece is
+// drawn once more on a scratch, cut to its box, and taken out of the record,
+// so what stands in front of a body covers its light as well as its pixels.
+// One redraw a piece, however many bodies stand behind it. A piece no bigger
+// than PUNCH_W x PUNCH_H (a pine, a reed: most of the sort) uses the small
+// scratch and a bigger one the view-sized one, because a canvas used as a
+// source right after it was drawn on is copied whole, and a frame-sized
+// scratch copied per pine cost more than the rest of the night together.
+const PUNCH_W = 64, PUNCH_H = 64;
 function litPunch(x, y, w, h, draw) {
   draw();
   if (!litOn || !litBoxes.length || ctx !== wctx) return;
   const T = wctx.getTransform();
-  const x0 = Math.floor(x + T.e), y0 = Math.floor(y + T.f), x1 = x0 + Math.ceil(w) + 1, y1 = y0 + Math.ceil(h) + 1;
-  // a piece no bigger than the scratch (a pine, most of the sort) is drawn
-  // once for every body it crosses; a bigger one once per body, cut to it
-  const small = x1 - x0 <= PUNCH_W && y1 - y0 <= PUNCH_H;
-  for (let i = 0; i < litBoxes.length; i += 4) {
-    const bx = litBoxes[i], by = litBoxes[i + 1], bw = Math.min(PUNCH_W, litBoxes[i + 2]), bh = Math.min(PUNCH_H, litBoxes[i + 3]);
-    if (x0 >= bx + bw || x1 <= bx || y0 >= by + bh || y1 <= by) continue;
-    const cx = small ? x0 : bx, cy = small ? y0 : by, cw = small ? x1 - x0 : bw, ch = small ? y1 - y0 : bh;
-    pctx.setTransform(1, 0, 0, 1, 0, 0);
-    pctx.globalAlpha = 1; pctx.globalCompositeOperation = 'source-over';
-    pctx.clearRect(0, 0, PUNCH_W, PUNCH_H);
-    pctx.save();
-    pctx.beginPath(); pctx.rect(0, 0, cw, ch); pctx.clip();
-    pctx.setTransform(T.a, T.b, T.c, T.d, T.e - cx, T.f - cy);
-    ctx = pctx;
-    try { draw(); } finally { ctx = wctx; pctx.restore(); }
-    lctx.globalCompositeOperation = 'destination-out';
-    lctx.drawImage(punchCv, 0, 0, cw, ch, cx, cy, cw, ch);
-    lctx.globalCompositeOperation = 'source-over';
-    if (small) return;
-  }
+  const x0 = Math.max(0, Math.floor(x + T.e)), y0 = Math.max(0, Math.floor(y + T.f));
+  const x1 = Math.min(WV_W + 1, Math.ceil(x + w + T.e) + 1), y1 = Math.min(WV_H + 1, Math.ceil(y + h + T.f) + 1);
+  if (x0 >= x1 || y0 >= y1) return;
+  let hit = false;
+  for (let i = 0; i < litBoxes.length && !hit; i += 4)
+    hit = x0 < litBoxes[i] + litBoxes[i + 2] && x1 > litBoxes[i] && y0 < litBoxes[i + 1] + litBoxes[i + 3] && y1 > litBoxes[i + 1];
+  if (!hit) return;
+  const cw = x1 - x0, ch = y1 - y0, small = cw <= PUNCH_W && ch <= PUNCH_H;
+  const cv = small ? punchCv : punchBigCv, c = small ? pctx : pbctx;
+  // the small scratch holds the box at its own corner, the big one in place
+  const ox = small ? x0 : 0, oy = small ? y0 : 0;
+  c.setTransform(1, 0, 0, 1, 0, 0);
+  c.globalAlpha = 1; c.globalCompositeOperation = 'source-over';
+  c.clearRect(x0 - ox, y0 - oy, cw, ch);
+  c.save();
+  c.beginPath(); c.rect(x0 - ox, y0 - oy, cw, ch); c.clip();
+  c.setTransform(T.a, T.b, T.c, T.d, T.e - ox, T.f - oy);
+  ctx = c;
+  try { draw(); } finally { ctx = wctx; c.restore(); }
+  lctx.globalCompositeOperation = 'destination-out';
+  lctx.drawImage(cv, x0 - ox, y0 - oy, cw, ch, x0, y0, cw, ch);
+  lctx.globalCompositeOperation = 'source-over';
 }
 // the frame as it stands, before the night goes over it...
 function bodyLightKeep() {

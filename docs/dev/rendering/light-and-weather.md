@@ -44,9 +44,11 @@ it was. `renderLighting` copies the frame as it stood before the night (`bodyLig
 it back through the record at `BODY_HOLD` (`bodyLightStamp`). The ground, the trees, the shade
 under the feet and the rim take the whole night. Never a bird, a ghost seat or a rider on the air layer; a body out of a rival's sight is not drawn
 at all (`fogShown`), so nothing hidden is lit. By day the pass does
-nothing (`litOn`). The scratch is one body's box and the record is sized to the view in steps: a
-canvas read back as a source right after it was drawn on is copied whole. Cost on the headless
-software renderer: about 2 ms with 37 bodies on screen at a treeline, nothing by day.
+nothing (`litOn`). One redraw a piece, however many bodies stand behind it; the scratch is 64 px for a pine or a reed
+and view-sized for anything bigger, and the record is sized to the view in steps: a canvas read
+back as a source right after it was drawn on is copied whole. Cost on the headless software
+renderer: about 4 ms with 51 bodies on screen at a treeline (the worst crowd staged), nothing by
+day; not measured on a GPU canvas.
 Check it with a rival under a canopy: no pixel the canopy covers may change.
 
 **The grade dims what the world *is*, never what the game is *saying*.** A name tag, the
