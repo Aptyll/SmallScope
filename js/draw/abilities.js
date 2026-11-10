@@ -365,16 +365,16 @@ function drawUnitStates(e, px, py, w, h, now) {
     ctx.globalAlpha = 1;
   }
   if (e.markT > 0) {
-    // the mark: gold chevrons falling toward the head, for everyone
-    const ph = (now * 2.2) % 1;
+    // the mark: found. A gold chevron either side of the body pointing in at it, closing a px and opening
+    // again, for everyone; beside the body and never over the head, where a hero's frame would cover it
+    const near = Math.floor(now * 2.2 % 1 * 3) === 2 ? 1 : 0, my = py + (h >> 1) - 3;
     ctx.globalAlpha = e.markT < 0.6 ? e.markT / 0.6 : 1;
-    const mx = px + (w >> 1) - 3;
-    for (let k = 0; k < 2; k++) {
-      const y = py - 8 - 5 * k + Math.round(ph * 4);
-      ctx.fillStyle = '#0f1632';
-      ctx.fillRect(mx, y + 1, 6, 2);
-      ctx.fillStyle = '#f2cc6a';
-      ctx.fillRect(mx, y, 2, 2); ctx.fillRect(mx + 4, y, 2, 2); ctx.fillRect(mx + 2, y + 1, 2, 2);
+    for (const d of [1, -1]) {
+      const x0 = d > 0 ? px - 5 + near : px + w + 4 - near; // the chevron's open end; its point is 2 px nearer the body
+      for (const [col, oy] of [['#0f1632', 1], ['#f2cc6a', 0]]) {
+        ctx.fillStyle = col;
+        for (let r = 0; r < 5; r++) ctx.fillRect(x0 + d * (2 - Math.abs(r - 2)) - (d < 0 ? 1 : 0), my + r + oy, 2, 1);
+      }
     }
     ctx.globalAlpha = 1;
   }
