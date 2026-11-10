@@ -1620,9 +1620,6 @@ function treeNudgeY(tx, ty) { return Math.floor(hash2(tx * 17 + 2, ty * 19 + 4) 
 // where its pine stood - the pine's own nudge, never lower than the tile's
 // line (a pine on the tile below would bury it) - so a felled stand is not a
 // grid of one stump
-function stumpLook(tx, ty) {
-  return { v: Math.floor(hash2(tx * 23 + 7, ty * 29 + 3) * 3), dx: treeNudgeX(tx, ty), dy: Math.min(0, treeNudgeY(tx, ty)) };
-}
 
 // The practice dummy (the `practice arena` banner, js/sim/practice.js), baked here
 // beside its draw rather than under js/sprites/. A big target you read across the arena:

@@ -51,6 +51,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.873', 'ROUND EACH ROOST THE FELLED STUMPS LIE WHERE THE EAGLE CAME DOWN, NOT IN PLANTED ROWS.'],
   ['0.873', 'ROPE RING IS STAKES AND A STRUNG ROPE, UNDERTOW IS WAVES CLOSING IN'],
   ['0.872', 'IN A FIRST MATCH THE COACH TEACHES RECALL THE MOMENT YOU ARE HURT AWAY FROM HOME.'],
   ['0.871', 'NIX, LIGNUM, SALVIA AND VARRO SHOW MORE OF THEIR SIDE\'S COLOUR FROM BEHIND.'],
