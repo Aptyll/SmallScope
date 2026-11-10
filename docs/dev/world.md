@@ -20,14 +20,13 @@ stable per tile.
   corner, ~58 along the diagonal) outright: `borderDepth` is the seed's own `borderNoise` **or**
   a quarter-disc whose arc wobbles ±`ROOST_WOBBLE` (3) on the fine noise, so whatever the seed grew
   there the corner holds one solid block of woods round its [base](#the-bases)'s hollow, and
-  the road's gate is at least the arc out. The union only adds pines, and `genWorld` rolls its per-tree `rng()` only under
-  `borderNoise`, so the discs cost the shared stream nothing and move no seed's ground hash
-  (the [camps](#camps)' clearings do); not under `ARENA`.
+  the road's gate is at least the arc out. The union only adds pines and rolls nothing; not under `ARENA`.
 - `ringPts` is `RING_N` (6) points, evenly spaced on a ring `SPAWN_D` (`WORLD / 2 - 55`) tiles
   from the centre at the treeline. Nobody starts there (players land from the eagles,
-  [multiplayer.md](multiplayer.md#where-players-start)) and no pocket is carved; the river
-  spokes and the keep-clear rules hang off them — which is why `RING_N` is frozen at
-  six instead of tracking `MAX_PLAYERS`: the roster's size must not reshape terrain.
+  [multiplayer.md](multiplayer.md#where-players-start)) and no pocket is carved; the rivers
+  run from each to the centre and round from one to the next, and the ponds and rivers keep
+  clear of them — which is why `RING_N` is frozen at six instead of tracking `MAX_PLAYERS`:
+  the roster's size must not reshape terrain.
 - `ground` — `Uint8Array(WORLD²)`: `0` snow, `1` ice, `2` open-water hole (runtime-only, see
   [Ice holes](#ice-holes-and-the-lake-fish)), `3` the road ([The road](#the-road)), `4` the
   creek's open water and `5` a ford's stepping stone ([The creek](#the-creek)). **Open water is
@@ -43,7 +42,7 @@ stable per tile.
   instead of ending in a cut. Neither test rolls anything, so a seed's rng stream is what it was.
 - `objects` — flat `Array(WORLD*WORLD)`, **at most one object per tile**. Every object is
   `{ type, tx, ty, hp, flash, shake, ...extra }`. The `OBJECTS` table's types: `tree`,
-  `rock` (genWorld's placeholder, [lifted at boot](#rocks)), `bush`, `den`, `dummy`, `banner`, `log`,
+  `bush`, `den`, `dummy`, `banner`, `log`,
   `pylon`, `pkdie`, `agbell`, `stump`, `eagle`, `hut`, `part`, and the
   [story landmarks](#story-landmarks)' `boat` (added from `LANDMARKS`); the `STRUCTS` table's: `pump`,
   `barracks`, `tower`. `banner`/`log` are
@@ -80,16 +79,12 @@ stable per tile.
   branch, so a player reads wait-or-move-on off the plant at a glance, and **under the pointer a
   regrowing bush wears the neutral unit bar** filling toward ripe (the frames say roughly, a hover
   says exactly — [rendering.md](rendering/render-pass-order.md)). A bush never rims: E does
-  nothing to it. The bushes genWorld lays only keep its stream; `placeBushes` takes them up at
-  boot and lays the real ones by the wolf dens and on the creek's banks. Each
+  nothing to it. `placeBushes` lays them at boot by the wolf dens and on the creek's banks. Each
   type has one tier and a footprint (`STRUCTS[type].w/h`, 1×1 when absent), with `footprint()`,
   `structCenter()` and `structMouth()` (the ground point in front of the doorway) as the geometry
   helpers. A wreck leaves the tiles empty.
-- The world center is an empty clearing: `CENTER_R` keeps ice ponds, the placeholder rocks
-  and bushes clear of it, so the river spokes meet in
-  open ground. The old ore loop there draws two
-  `rand()` per spot and places nothing — **no-ops kept on purpose**, so every seed's stream
-  stays what it is.
+- The world center is an empty clearing: `CENTER_R` keeps the ice ponds clear of it, so the
+  river spokes meet in open ground.
 - Every `tree` carries `rare` (boolean), set at worldgen from `treeRare(tx, ty)`: a `hash2`
   roll makes a `TREE_RARE_CHANCE` (25%) of them **gold pines** — the only pines that pay:
   `YIELD.treeRare` gold (straight to the feller through `awardGold`, the plain gold number and a
@@ -231,19 +226,23 @@ stack** on the left edge at the top quarter of the view (drawn after the map, se
 overlays), so a screenshot carries the world it came from while `settings.info` is on — the INFO
 DISPLAY row in the ESC menu or **F3**, default **off**, so flip it on before comparison captures.
 
-- `rng` is a single `mulberry32(SEED)` stream shared by worldgen *and* runtime effects (particle
-  bursts, animal wanders, drop velocities). Worldgen is reproducible only because it runs first at
-  boot — hence the CLAUDE.md rule against adding or removing an `rng()` call inside `genWorld()`;
-  adding one after boot reshuffles nothing.
+- **The map is made on streams of its own.** Each worldgen pass that rolls draws from
+  `worldRng(name)` (js/sim/core.js: the pass's name hashed into `SEED`, carrying its own `rand`
+  and `randi`): `genWorld`'s `'ponds'` and `'rivers'`, `placeLandmarks`' `'landmarks'`. Every
+  other boot pass rolls nothing (positions, `hash2`, `vnoise`, written-down sites). So a pass that
+  changes moves only its own layer, and the rest of a seed's valley stays where it was
+  (CLAUDE.md hard rule 3). Every screen grows the map itself from the seed, so worldgen never
+  reads `rng()`, `Math.random()` or anything local.
+- `rng` is the **match's** `mulberry32(SEED)` stream: runtime rolls (particle bursts, animal
+  wanders, drop velocities) and the beasts the match starts with (`spawnAnimals` and the passes
+  after it at boot). Its state is saved, so a loaded match draws the next number the saved one would.
 - `hash2(x, y)` mixes `SEED` in, and `vnoise(x, y)` is built on it. Both are still pure functions
   of position *within a run* — use them for anything that must stay stable per tile no matter when
   it is asked (ground texture, forest boundary, tree rare-drops).
   `borderDepth()` rides on `vnoise`, so the seed reshapes the forest and with it the whole map
   (everywhere but inside the two roost discs, which every seed grows alike).
-- An exception to the single stream — nothing outside worldgen may
-  perturb the main `rng`'s worldgen prefix. `fxRng` (`SEED ^ 0x9e3779b9`) feeds resize-driven
-  snowflake top-ups in `fitFlakes()`, so window size / resolution changes cannot move the world
-  (the boot-time 70 flakes still draw from `rng`, unchanged). The [camps](#camps) roll nothing at all -
+- `fxRng` (`SEED ^ 0x9e3779b9`) feeds the snowflakes (the boot fall and `fitFlakes()`' resize
+  top-ups), so window size and zoom cannot move a match's rolls. The [camps](#camps) roll nothing at all -
   their sites are written down - and neither does [the creek](#the-creek); the creek and the
   camps' clearings are the boot passes that write `ground` after `genWorld`, so a seed's ground
   hash includes them.

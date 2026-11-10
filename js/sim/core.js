@@ -110,9 +110,24 @@ const SEED = (function () {
   if (q) return (parseInt(q[1], 10) >>> 0) || 1;
   return rollSeed();
 })();
+// the MATCH's stream: everything that rolls while the match runs (and the
+// beasts it starts with). The map is not made on it: see worldRng.
 const rng = mulberry32(SEED);
 function rand(a, b) { return a + rng() * (b - a); }
 function randi(a, b) { return Math.floor(rand(a, b + 1)); }
+// Worldgen's streams: each pass that makes the map draws from its own,
+// worldRng('ponds') and so on (the pass's name hashed into SEED), never from
+// rng(). So a pass that changes (draws more or less, is added or cut) moves
+// only its own layer; every other layer of a seed's valley, and the match's
+// stream, stay where they were. A stream carries its own rand and randi.
+function worldRng(name) {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < name.length; i++) { h ^= name.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+  const r = mulberry32((SEED ^ h) >>> 0);
+  r.rand = (a, b) => a + r() * (b - a);
+  r.randi = (a, b) => Math.floor(r.rand(a, b + 1));
+  return r;
+}
 
 // ------------------------------------------------------------ state
 const state = {

@@ -92,13 +92,12 @@ function lmClear(tx, ty, L) {
 
 const landmarks = []; // every landmark stood this match: { key, tx, ty } (placeLandmarks' spacing reads it)
 
-// Worldgen's landmark pass (boot.js, after liftRocks): each kind in table
+// Worldgen's landmark pass (boot.js, after placeCamps): each kind in table
 // order takes its count of anchors from the tiles its rule allows, in an
-// order shuffled on a stream of its own - mulberry32(SEED ^ 'LMRK') - so it
-// never touches the shared rng() and every existing seed keeps its terrain.
+// order shuffled on its own stream, worldRng('landmarks').
 // It writes only `objects`. A seed that has no room for one stands fewer.
 function placeLandmarks() {
-  const rnd = mulberry32(SEED ^ 0x4c4d524b);
+  const rnd = worldRng('landmarks');
   const depth = lmIceDepth();
   for (const key in LANDMARKS) {
     const L = LANDMARKS[key], ok = LM_WHERE[L.where];

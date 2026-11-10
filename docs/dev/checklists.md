@@ -580,11 +580,6 @@ function or constant no code has. What is left here is what that check cannot
 see as dead and is kept for a stated reason; a verbatim code move carries it along, and a new
 entry needs a reason that outweighs keeping it working.
 
-- A tree's `variant` (rolled by `randi(0, 1)` in `genWorld`) picks no art any more: there is one
-  pine in twenty-four bend frames, `treeFrame` reads the wind for the lean it wears, and the tile's
-  own `hash2` mirrors it, gives it a standing lean, a palette row and a nudge.
-  **The roll has to stay** — removing an `rng()` call inside `genWorld` reshuffles every
-  existing seed.
 - The `<` glyph in [js/app/font.js](../../js/app/font.js) was added for the removed resolution cycle
   control and is currently unreferenced — kept as generic font coverage. (`>` is live again: it
   marks your own row on the scoreboard.)

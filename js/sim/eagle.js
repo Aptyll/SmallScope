@@ -571,9 +571,8 @@ function eagleCrash(e) {
   for (const p of players) if (p.active && p.aboard && p.team === e.team && p === player) landAboard(p);
 }
 
-// what the road's furniture and the cables may stand on in place of: a pine,
-// a snag or one of genWorld's placeholder rocks gives way (liftRocks, world.js)
-function laneFells(o) { o = structOf(o); return !!o && (o.type === 'tree' || o.type === 'rock'); }
+// what the road's furniture and the cables may stand on in place of: a pine gives way
+function laneFells(o) { o = structOf(o); return !!o && o.type === 'tree'; }
 
 // the impact language, shared by the landing and the loss (k scales it up):
 // snow thrown high, the team's colours in it, feathers left hanging, and a
