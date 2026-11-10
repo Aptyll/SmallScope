@@ -266,15 +266,16 @@ function drawHeroRing(p, cx, cy) {
 }
 // THE BLACK BUFF, worn (p.buffT): the bear's own shaggy fur over the shoulders, dark with
 // a sheen of the bear's colour (MONSTER's buffCol: violet the black bear's) on its lit tufts,
-// a ragged hem of tufts that stirs as the body moves. Facing the screen it sits on each
+// a ragged hem of tufts that stirs as the body moves, a px wider than the shoulders each side
+// so the silhouette itself changes. Facing the screen it sits on each
 // shoulder and leaves the chest open (the side's colour stays seen); facing away it is one
 // mantle across the back. It thins at the hem through the buff's last share, so a rival's
 // is read as fresh or nearly spent. In the 16 px cell, like WARM CLOAK (js/draw/salvia.js).
 const RUFF_FUR = '#2c2533', RUFF_LIT = '#4b3f57', RUFF_INK = '#141a2c', RUFF_LATE = 0.25; // fur, its lit tufts, the rim, and the share left when it starts to thin
 const RUFF_ROWS = { // [y, x0, x1] per facing, top row first; the last row is the tufted hem
-  front: [[9, 3, 5], [10, 2, 4], [9, 10, 12], [10, 11, 13]],
-  side: [[8, 6, 9], [9, 5, 9]],
-  back: [[8, 4, 11], [9, 3, 12]],
+  front: [[9, 2, 5], [10, 1, 4], [9, 10, 13], [10, 11, 14]],
+  side: [[9, 4, 10], [10, 4, 9]],
+  back: [[8, 3, 12], [9, 2, 13]],
 };
 function drawBearRuff(p, ax, ay, now) {
   const face = p.dir === 'up' ? 'back' : p.dir === 'down' ? 'front' : 'side', rows = RUFF_ROWS[face];
@@ -288,7 +289,7 @@ function drawBearRuff(p, ax, ay, now) {
     if (i === 0 || (face === 'front' && i === 2)) for (let x = x0; x <= x1; x++) put(x, y - 1, RUFF_INK);
     for (let x = x0; x <= x1; x++) {
       put(x, y, (x + y) % 3 === 0 ? RUFF_LIT : RUFF_FUR);
-      if (y === rows[0][0] && (x + stir) % 3 === 1) put(x, y, sheen); // the sheen on its lit top
+      if (y === rows[0][0] && (x + stir) % 4 !== 3) put(x, y, sheen); // the sheen along its lit top, broken every fourth px by a dark tuft
     }
     if (!hem) continue;
     for (let x = x0; x <= x1; x++) { // the tufts hanging off the hem, every other px, stirring; fewer as it runs out
@@ -297,22 +298,29 @@ function drawBearRuff(p, ax, ay, now) {
     }
   }
 }
-// THE ORCA BUFF, worn (p.pushT): the body comes out of the orca's pool wet. Drops run off
-// the hem and the hands and fall to the snow at the feet, where they leave a dark wet
-// spot, and the shoulders keep a pale wet shine. The drops thin out with the buff.
-const DRIP_N = 6, DRIP_T = 0.6, DRIP_COL = '#7fd4ff', DRIP_DARK = '#2c5478', DRIP_SHINE = '#d8f2ff';
-const DRIP_FROM = [[3, 11], [12, 11], [5, 12], [10, 12], [2, 9], [13, 9]]; // [x, y] in the cell each drop leaves from
-function drawOrcaDrips(p, ax, ay, now) {
-  const share = Math.min(1, p.pushT / ORCA_PUSH_T), n = Math.max(1, Math.ceil(DRIP_N * share));
-  for (let i = 0; i < n; i++) {
-    const [x, y0] = DRIP_FROM[(i + p.id) % DRIP_FROM.length], u = (now / DRIP_T + i * 0.37 + p.id * 0.21) % 1;
-    const y = y0 + Math.round(u * u * (14 - y0)); // gravity: slow off the cloth, quick to the snow
-    if (u < 0.8) { ctx.fillStyle = DRIP_COL; ctx.fillRect(ax + x, ay + y, 1, 2); ctx.fillStyle = DRIP_DARK; ctx.fillRect(ax + x, ay + y + 2, 1, 1); }
-    else { ctx.fillStyle = DRIP_DARK; ctx.fillRect(ax + x - 1, ay + 16, 3, 1); ctx.fillStyle = DRIP_COL; ctx.fillRect(ax + x, ay + 16, 1, 1); } // the wet spot it lands as
+// THE ORCA BUFF, worn (p.pushT): the body comes out of the orca's pool wet. The clothes over
+// the shoulders and chest are a value darker, soaked, and short runs of water drip off the
+// hem and the hands to dark wet spots at the feet; more while the buff is fresh, fewer as it
+// runs out. Never on or beside the face (on a rival they read as tears).
+const DRIP_N = 6, DRIP_T = 0.5, DRIP_COL = '#bfeeff', DRIP_DARK = '#2c5478', WET = 'rgba(16,34,72,0.3)';
+const DRIP_FROM = [[2, 11], [13, 11], [4, 13], [11, 13], [6, 14], [9, 14]]; // [x, y] in the cell: the hands, then the hem
+const WET_ROWS = [8, 12]; // the cell rows the soaked clothes cover (shoulders to the waist)
+function drawOrcaDrips(p, ax, ay, now, spr, sx, sy) {
+  if (spr && !(spr.dens > 1)) { // the soak: every inked px of the body in those rows, a value darker
+    const w = spr.width, m = inkMask(spr, 0, 0, w, spr.height);
+    ctx.fillStyle = WET;
+    for (let y = WET_ROWS[0]; y <= WET_ROWS[1]; y++) {
+      const j = ay + y - sy; if (j < 0 || j >= spr.height) continue;
+      for (let i = 0; i < w; i++) if (m[j * w + i]) ctx.fillRect(sx + i, ay + y, 1, 1);
+    }
   }
-  ctx.fillStyle = DRIP_SHINE; // the wet shine on the shoulders
-  ctx.fillRect(ax + (p.dir === 'left' ? 11 : 4), ay + 9, 1, 1);
-  if (p.dir === 'up' || p.dir === 'down') ctx.fillRect(ax + 11, ay + 9, 1, 1);
+  const share = Math.min(1, p.pushT / ORCA_PUSH_T), n = Math.max(2, Math.ceil(DRIP_N * share));
+  for (let i = 0; i < n; i++) {
+    const [x, y0] = DRIP_FROM[i], u = (now / DRIP_T + i * 0.41 + p.id * 0.23) % 1;
+    const y = y0 + Math.round(u * u * (15 - y0)); // gravity: slow off the cloth, quick to the snow
+    if (u < 0.8) { ctx.fillStyle = DRIP_COL; ctx.fillRect(ax + x, ay + y, 1, 2); }
+    else { ctx.fillStyle = DRIP_DARK; ctx.fillRect(ax + x - 1, ay + 16, 3, 1); } // the wet spot it lands as
+  }
 }
 
 // The class body's run and dodge roll are the doll's frames (js/baked/motion.js,
@@ -511,7 +519,7 @@ function drawPlayer(p, ex, ey, now, stage) {
     }
     heroBodyFx(p, ax, ay, now, true); // ...or over it (his standard facing away)
     if (p.buffT > 0 && p.fallT <= 0) drawBearRuff(p, ax, ay, now); // a bear's fur on the shoulders
-    if (p.pushT > 0 && p.fallT <= 0) drawOrcaDrips(p, ax, ay, now); // ...and the orca's pool running off it
+    if (p.pushT > 0 && p.fallT <= 0) drawOrcaDrips(p, ax, ay, now, pose && pose.rot ? null : spr, sx, sy); // ...and the orca's pool running off it
     if (seat) ctx.restore();
     ctx.globalAlpha = a0;
     if (held) drawHeldTool(p, px + lx, py + ly + bob, false);
