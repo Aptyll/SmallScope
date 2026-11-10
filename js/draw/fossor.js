@@ -16,15 +16,15 @@ function fossorSpadeArtOf() {
 HERO_BLADES.spade = { art: fossorSpadeArtOf, hilt: [16, 9], hip: {}, grip: FOSSOR_SPADE_GRIP };
 // At rest his fist closes on the spade's haft right at his hand on the body, so only a stub of
 // haft shows under it and nothing hangs below him. Facing down or up he holds it at the ready,
-// blade up beside his head on his right (behind him facing away); side-on it rides back over
-// his shoulder, the blade behind his head, never across his lamp.
-const FOSSOR_HAND_X = { down: 12, up: 12, left: 10, right: 5 }; // the fist's column on the 16 px cell
+// blade up beside his head on his right (behind him facing away); side-on his fist is at the
+// front of his body and the blade leans the way he faces, out ahead of his lamp, never across it.
+const FOSSOR_HAND_X = { down: 12, up: 12, left: 5, right: 10 }; // the fist's column on the 16 px cell
 const FOSSOR_HAND_Y = 10;                                          // and its row: the mitts' row
 function fossorCarry(p, px, py) {
   if (!isFossor(p)) return false;
-  const img = fossorSpadeArtOf().diag, g = FOSSOR_SPADE_GRIP, back = p.dir === 'right'; // the blade behind him
-  const gx = back ? img.width - 1 - g[0] : g[0];
-  ctx.drawImage(back ? heldFlip(img) : img, Math.round(px + FOSSOR_HAND_X[p.dir] - gx), Math.round(py + FOSSOR_HAND_Y - g[1]));
+  const img = fossorSpadeArtOf().diag, g = FOSSOR_SPADE_GRIP, flip = p.dir === 'left'; // the blade up and left
+  const gx = flip ? img.width - 1 - g[0] : g[0];
+  ctx.drawImage(flip ? heldFlip(img) : img, Math.round(px + FOSSOR_HAND_X[p.dir] - gx), Math.round(py + FOSSOR_HAND_Y - g[1]));
   return true;
 }
 HERO_CARRY.push(fossorCarry);

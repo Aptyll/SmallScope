@@ -397,7 +397,7 @@ app/bake-player/bodies.py (motion `digger`). `FOSSOR_PAL` is `ARM_PAL` with the 
 dark metal `n`/`m`/`M` and the lamp `l`/`L`. The cut is C off robot-heroes round 2 in the project
 files, drawn back down to the 16 px cell. His SPADE is a `HERO_BLADES` row (`blade: 'spade'`,
 js/draw/fossor.js), carried at rest his own way (`HERO_CARRY`, `fossorCarry`): his fist closes on
-the haft's end at his hand, blade up beside his head facing down or up, over his shoulder side-on; BANK UP's snow blocks and BREAK GROUND's crack are drawn on the snow
+the haft's end at his hand, blade up beside his head facing down or up, leaning the way he faces side-on; BANK UP's snow blocks and BREAK GROUND's crack are drawn on the snow
 (`HERO_GROUND`), and under the snow he fades under a running mound (`HERO_FADE`, `HERO_BODY_FX`).
 
 FABER has two looks (`FABER_SKINS`, js/sprites/faber.js): CLOCKMAKER (free) and WORKS FOREMAN
