@@ -46,17 +46,20 @@ function drawHiemsGround(ex, ey, now) {
     const px = Math.round(g.x - ex), py = Math.round(g.y - ey);
     if (px < -GLAZE_R - 4 || py < -GLAZE_R - 4 || px > WV_W + GLAZE_R + 4 || py > WV_H + GLAZE_R + 4) continue;
     const a = g.t < g.life ? 1 : Math.max(0, 1 - (g.t - g.life) / GLAZE_FADE);
-    // the glaze: a sheet of clear ice with a broken edge, its lip a shade deeper on
-    // the near side, and shine streaks that slide across it
-    const seed = (Math.round(g.x) * 7 + Math.round(g.y) * 13) | 0, ry = GLAZE_R;
-    ctx.globalAlpha = 0.6 * a; fxPatch(px, py + 2, GLAZE_R, 1, 6, seed, HI_DEEP);
-    ctx.globalAlpha = 0.85 * a; fxPatch(px, py, GLAZE_R, 1, 6, seed, HI_MID);
-    ctx.globalAlpha = 0.5 * a; fxPatch(px - 4, py - 5, GLAZE_R * 0.45, 0.7, 4, seed + 3, HI_PALE); // where it lies thickest
+    // the glaze: a sheet of clear ice with a shore of its own (never a disc): its lip a
+    // shade deeper on the near side, a frost rim, where it lies thickest paler, cracks
+    // run through it from where it was struck, and shine streaks that slide across it
+    const seed = (Math.round(g.x) * 7 + Math.round(g.y) * 13) | 0, r = GLAZE_R * 0.9;
+    ctx.globalAlpha = 0.6 * a; fxSheet(px, py + 2, r, 0.12, seed, HI_DEEP);
+    ctx.globalAlpha = 0.9 * a; fxSheet(px, py, r, 0.12, seed, HI_MID, HI_PALE);
+    ctx.globalAlpha = 0.55 * a; fxSheet(px - 5, py - 6, r * 0.5, 0.3, seed + 3, HI_PALE);
+    fxSheet(px + 9, py + 10, r * 0.28, 0.35, seed + 5, HI_PALE);
+    ctx.globalAlpha = 0.8 * a; drawCracks(px, py + 1, 5, r * 0.8, 1, seed, HI_DEEP, HI_WHITE);
     ctx.globalAlpha = 0.9 * a; ctx.fillStyle = HI_WHITE;
     const sh = Math.floor(now * 8) % 12;
     for (let k = -1; k <= 1; k++) {
       const x0 = px + k * 11 - 4 + (sh - 6), y0 = py - k * 5 + 2;
-      for (let s = 0; s < 8; s++) { const x = x0 + s, y = y0 - Math.round(s / 2); if (Math.abs(x - px) / GLAZE_R + Math.abs(y - py) / ry < 0.8) ctx.fillRect(x, y, 1, 1); }
+      for (let s = 0; s < 8; s++) { const x = x0 + s, y = y0 - Math.round(s / 2); if (Math.hypot(x - px, y - py) < r * 0.75) ctx.fillRect(x, y, 2, 1); }
     }
     ctx.globalAlpha = 1;
   }

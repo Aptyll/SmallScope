@@ -2,9 +2,10 @@
 // ------------------------------------------------------------ salvia
 // SALVIA's pixels (her rules: js/sim/salvia.js): her staff's sprig in flight
 // (HERO_SHOTS), and on the snow (HERO_GROUND) the POULTICE's bundle flying, the
-// SNOWDROPS nodding until picked (shut and flickering as they wilt) and THAW's warm ring with
+// SNOWDROPS nodding until picked (shut and flickering as they wilt) and THAW's melted ground with
 // the warmth rising off it. Both sides see all of it.
 
+const SV_MELT = '#c5d3e8', SV_MELT_LIP = '#93a9cc', SV_EARTH = '#8a7458', SV_EARTH_D = '#6b5a48'; // THAW: the wet snow and its slumped lip, the bare earth and its damp edge
 const SV_INK = '#2e2440', SV_LINEN = '#e8dcb4', SV_LINEN_D = '#a89263', SV_SAGE = '#9cc87a', SV_SAGE_D = '#4f8a46',
   SV_WHITE = '#f8f8ff', SV_GOLD = '#f2cc6a', SV_GOLD_D = '#b98a2e';
 
@@ -43,11 +44,24 @@ function drawSalviaGround(ex, ey, now) {
     const px = Math.round(w.x - ex), py = Math.round(w.y - ey);
     if (px < -THAW_R - 4 || py < -THAW_R - 30 || px > WV_W + THAW_R + 4 || py > WV_H + THAW_R + 4) continue;
     const k = w.t / THAW_T, a = k > 0.85 ? (1 - k) / 0.15 : 1;
-    // the melted ground inside, then the rim
-    ctx.globalAlpha = 0.12 * a; ctx.fillStyle = SV_GOLD;
-    for (let y = -THAW_R; y <= THAW_R; y += 2) { const hw = Math.floor(Math.sqrt(THAW_R * THAW_R - y * y)); ctx.fillRect(px - hw, py + y, hw * 2 + 1, 1); }
+    // the melted ground: a sheet of wet snow with a shore of its own and a slumped lip
+    // (never stripes, never a drawn outline), bare earth showing through in patches,
+    // and green shoots coming up in them
+    const seed = (Math.round(w.x) * 7 + Math.round(w.y) * 13) | 0;
+    ctx.globalAlpha = 0.4 * a; fxSheet(px, py, THAW_R * 0.94, 0.08, seed, SV_MELT, SV_MELT_LIP);
+    ctx.globalAlpha = 0.35 * a; fxSheet(px + 6, py - 4, THAW_R * 0.55, 0.25, seed + 1, SV_MELT_LIP); // wetter toward the middle
+    for (let i = 0; i < 13; i++) {
+      const ang = (i + fxRoll(seed, i, 2) * 0.8) / 13 * Math.PI * 2, rr = THAW_R * (0.12 + 0.72 * fxRoll(seed, i, 3));
+      const x = Math.round(px + Math.cos(ang) * rr), y = Math.round(py + Math.sin(ang) * rr), er = 4 + Math.round(fxRoll(seed, i, 4) * 7);
+      ctx.globalAlpha = 0.85 * a; fxSheet(x, y, er, 0.3, seed + i * 7, SV_EARTH, SV_EARTH_D, 0.6);
+      ctx.globalAlpha = a; // a shoot or two in it, swaying
+      for (let j = 0; j < 2; j++) {
+        const sx = x + Math.round((fxRoll(seed, i, 5 + j) - 0.5) * er), sw = Math.round(Math.sin(now * 2 + i + j * 2));
+        ctx.fillStyle = SV_SAGE_D; ctx.fillRect(sx, y - 1, 1, 2);
+        ctx.fillStyle = SV_SAGE; ctx.fillRect(sx + sw, y - 3, 1, 2); ctx.fillRect(sx + sw + (j ? 1 : -1), y - 2, 1, 1);
+      }
+    }
     ctx.globalAlpha = 1;
-    svMeltEdge(px, py, THAW_R, a, now); // the melt's ragged edge, never a drawn line
     // warmth rising off it, a mote at a time round the ring
     for (let i = 0; i < 14; i++) {
       const ang = i / 14 * Math.PI * 2 + i * 0.37, rr = THAW_R * (0.25 + 0.7 * ((i * 0.618) % 1));
@@ -74,18 +88,6 @@ function drawSalviaGround(ex, ey, now) {
 HERO_GROUND.push(drawSalviaGround);
 
 // ---- the keys' own looks -----------------------------------------------------------------
-// THAW's edge: where the melt meets the snow, ragged and wet, bare earth showing through
-function svMeltEdge(px, py, r, alpha, now) {
-  const n = Math.ceil(r * 2 * Math.PI);
-  for (let k = 0; k < n; k++) {
-    const t = k / n * Math.PI * 2, rr = r + Math.round(Math.sin(t * 7) * 2 + Math.sin(t * 13 + 1) * 1.5);
-    const x = Math.round(px + Math.cos(t) * rr), y = Math.round(py + Math.sin(t) * rr);
-    ctx.globalAlpha = alpha * 0.8; ctx.fillStyle = '#7f98bc'; ctx.fillRect(x, y, 1, 2);
-    if (k % 5 === 0) { ctx.fillStyle = '#6b5a48'; ctx.fillRect(x, y, 2, 1); } // earth through the melt
-    if (k % 9 === 0 && Math.floor(now * 3 + k) % 3 === 0) { ctx.fillStyle = '#ffffff'; ctx.fillRect(x, y - 1, 1, 1); } // a wet glint
-  }
-  ctx.globalAlpha = 1;
-}
 // a herb leaf at (x, y), pointing along t: two px of sage, its vein darker
 function svLeaf(x, y, t) {
   const c = Math.round(Math.cos(t)), s = Math.round(Math.sin(t));
