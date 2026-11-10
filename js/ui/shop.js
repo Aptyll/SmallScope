@@ -151,7 +151,7 @@ const SHOP_PANE_BG = '#111216', SHOP_PLATE = '#2a2d33', SHOP_PLATE_HOT = '#3a3e4
 const SHOP_BUY = '#2c5a3a', SHOP_BUY_HOT = '#3a7048'; // the BUY plate: the one green action on the slab
 // A price you cannot pay: the refusal red every other "not enough gold" in the
 // game already speaks, on the rim and the price, with the goods greyed back.
-const SHOP_DEAR_BAND = '#3a1420', SHOP_DEAR_INK = '#e0637a';
+const SHOP_DEAR_INK = '#e0637a';
 const SHOP_DEAR_WASH = 'rgba(8,9,12,0.62)';
 const SHOP_TABS = [{ id: 'rec', label: tr('shop.rec') }, { id: 'all', label: tr('shop.all') }].concat(ITEM_STYLES);
 
@@ -483,12 +483,12 @@ function shopItemWell(r, id, h) {
 // a flat plate with a word on it, and the gold it moves after the word as a
 // bare number (the purse is the one coin on the slab): gold, red when the
 // purse is short, dim when the plate is dim
-function shopPlate(r, word, n, bg, ink) {
+function shopPlate(r, word, n, bg, ink, nInk) {
   ctx.fillStyle = bg; ctx.fillRect(r.x, r.y, r.w, r.h);
   const tw = pixelTextWidth(word) + (n === undefined ? 0 : 5 + pixelTextWidth(String(n)));
   const x0 = r.x + ((r.w - tw) >> 1), ty = r.y + ((r.h - 5) >> 1);
   drawPixelText(ctx, word, x0, ty, ink);
-  if (n !== undefined) drawPixelText(ctx, String(n), x0 + pixelTextWidth(word) + 5, ty, ink === SHOP_INK ? RES_COLORS.gold : ink);
+  if (n !== undefined) drawPixelText(ctx, String(n), x0 + pixelTextWidth(word) + 5, ty, nInk || (ink === SHOP_INK ? RES_COLORS.gold : ink));
 }
 // what buying the pick needs: its price now, and whether it can go through
 function shopBuyState(id) {
@@ -612,10 +612,11 @@ function drawShopPane(L, h) {
     drawPixelText(ctx, tr('shop.potionHeal', { hp: POTION_HEAL, s: POTION_T }), R.x + 17, y, SHOP_STAT);
     drawPixelText(ctx, (player.potions || 0) + ' / ' + it.stack, R.x + 6, y + 13, SHOP_DIM);
   }
-  // BUY: the pick's price now; red when the purse is short, dim when it has no room
+  // BUY: the pick's price now. A purse that is short greys the plate and prints the gold still missing, in
+  // gold behind a minus (never an error's red: nothing went wrong); no room dims it
   const b = shopBuyState(pk.id), hot = !!h && h.kind === 'buy';
-  shopPlate(L.buy, tr('shop.buy'), b.n, !b.gold ? SHOP_DEAR_BAND : !b.ok ? SHOP_PLATE : hot ? SHOP_BUY_HOT : SHOP_BUY,
-    !b.gold ? SHOP_DEAR_INK : b.ok ? SHOP_INK : SHOP_DIM);
+  if (!b.gold) shopPlate(L.buy, tr('shop.buy'), '-' + (b.n - Math.floor(player.gold)), SHOP_PLATE, SHOP_DIM, RES_COLORS.gold);
+  else shopPlate(L.buy, tr('shop.buy'), b.n, !b.ok ? SHOP_PLATE : hot ? SHOP_BUY_HOT : SHOP_BUY, b.ok ? SHOP_INK : SHOP_DIM);
 }
 // the tree: a line down from each parent and across to its children, then the
 // wells; a component you hold is rimmed green with a tick and wears no price
