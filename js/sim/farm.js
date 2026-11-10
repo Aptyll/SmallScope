@@ -43,16 +43,19 @@ function farmHit(p, x, y) {
 }
 
 // ---- falls ---------------------------------------------------------------------
-// A soldier or a beast that goes down leaves its fall where it stood: the body's
+// A soldier or a beast that goes down, or a building wrecked (a STRUCTS row's `wreck`:
+// its type, side and footprint's bottom-left), leaves its fall where it stood: the body's
 // last frame, which way it faced and where the blow came from. Like the coin it is
 // a cosmetic of the step: recorded for the screens that do not run it (evPush),
 // aged by the sim's tick, drawn by js/draw/falls.js (a machine comes apart, a
 // beast tips over and the snow takes it).
 const FALL_T = 1.1;            // s a fall lives
-const falls = [];              // { k: 'R' machine | 'A' beast, spr, dir, team, x, y, left, ang, tick }
+const FALL_T_WRECK = 1.9;      // ...and a building coming down
+const falls = [];              // { k: 'R' machine | 'A' beast | 'S' building, spr, dir, team, x, y, left, ang, tick }
+function fallLife(f) { return f.k === 'S' ? FALL_T_WRECK : FALL_T; }
 function unitFall(k, spr, dir, team, x, y, left, ang) {
   evPush('fall', [k, spr, dir, team, x, y, left, ang]);
-  for (let i = falls.length - 1; i >= 0; i--) if ((state.tick - falls[i].tick) * TICK_DT > FALL_T) falls.splice(i, 1);
+  for (let i = falls.length - 1; i >= 0; i--) if ((state.tick - falls[i].tick) * TICK_DT > fallLife(falls[i])) falls.splice(i, 1);
   falls.push({ k, spr, dir, team, x, y, left: !!left, ang, tick: state.tick });
 }
 // the way a blow from src came at u, or straight down the screen when nothing says

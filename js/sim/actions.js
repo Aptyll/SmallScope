@@ -502,6 +502,7 @@ function destroyStructure(o, p) {
   if (STRUCTS[o.type]) removeStruct(o);
   else setTile(idx(o.tx, o.ty), null);
   const c = structCenter(o), ox = c.x, oy = c.y;
+  if (STRUCTS[o.type] && STRUCTS[o.type].wreck) unitFall('S', o.type, '', o.team, o.tx * TILE, (o.ty + structH(o)) * TILE, false, 0); // it comes down where it stood (drawWreck, js/draw/falls.js)
   sfxAt('break_', ox, oy);
   burst(ox, oy, '#8a6142', 10, 50, 0.5, true);
   burst(ox, oy, '#eef4fb', 6, 40, 0.5, true);
