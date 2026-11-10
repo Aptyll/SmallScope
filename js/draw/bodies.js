@@ -812,6 +812,21 @@ function drawHeldTool(p, px, py, back) {
     return;
   }
 
+  // a weapon with drawn aim frames (HERO_AIMED, js/draw/heroes.js): one of eight set
+  // frames on the snapped aim, the bow hand out from the chest and closed on its grip,
+  // through the draw and for a beat after the shot. Behind the body when it points up.
+  const aimed = swinging ? null : heroAimed(p);
+  if (aimed) {
+    const q = aimed.heading * Math.PI / 4, c = Math.round(Math.cos(q)), sn = Math.round(Math.sin(q));
+    const k = c && sn ? 0.75 : 1; // a diagonal reach, in whole pixels
+    const hx = cxp + Math.round(c * AIMED_HAND[0] * k), hy = cyp - 2 + Math.round(sn * AIMED_HAND[sn > 0 ? 1 : 2] * k);
+    if ((sn < 0) === back) {
+      ctx.drawImage(aimed.art.img, hx - aimed.art.grip[0], hy - aimed.art.grip[1]);
+      if (!back) heroFist(p, hx, hy, c < 0 ? -1 : 1);
+    }
+    return;
+  }
+
   // the drawn weapon tracks the aim. Drawn over the sweep: the shot about to
   // leave is the thing to read. A blade is drawn back to the START of its
   // arc, wound up, so the draw reads as the swing it is about to be.

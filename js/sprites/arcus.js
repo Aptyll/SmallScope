@@ -255,14 +255,69 @@ const ARCUS_SKINS = [
 // ------------------------------------------------------------ arcus longbow
 // His WILLOW LONGBOW as the weapon art the HUD shows and the hands hold (SPRITES.weaponArt,
 // js/sprites/weapons.js): a tall willow stave the full height of the grid, its string toward
-// him and its belly toward the shot (+x), no arrow on the string at rest. Facing down or up he
-// carries it upright at his side (HERO_CARRY, js/draw/arcus.js).
+// him and its belly toward the shot (+x), no arrow on the string at rest. At rest he carries
+// its own carried art upright at his side (ARCUS_BOW_CARRY below).
 WEAPON_FWD.longbow = 0;
 WEAPON_GRIP.icon.longbow = [9, 5];
 SPRITES.weaponArt.longbow = SPR.bake([
   '....og......', '....oGg.....', '...F.oGg....', '...F..oGg...', '...F...oGg..', '...F....oGg.',
   '...F...oGg..', '...F..oGg...', '...F.oGg....', '....oGg.....', '....og......', '............',
 ], { '.': null, o: '#241a12', g: '#6b4a30', G: '#a3794f', F: '#d8d2c4' });
+
+// The same bow as he CARRIES it (arcusCarry, js/draw/arcus.js): strung and at rest it is a
+// shallow D, twelve rows tall, the string toward him and the belly away, so it stands beside
+// the body in every facing and never lies across his face. Drawn belly right; the hand closes
+// on the stave's middle (ARCUS_BOW_GRIP).
+const ARCUS_BOW_GRIP = [4, 6];
+const ARCUS_BOW_CARRY = SPR.bake([
+  '..Go..', '.FGo..', '.F.Go.', '.F.Go.', '.F..Go', '.F..Go',
+  '.F..Go', '.F..go', '.F.go.', '.F.go.', '.Fgo..', '..go..',
+], { '.': null, o: '#241a12', g: '#6b4a30', G: '#a3794f', F: '#9c917c' });
+
+// The bow as he DRAWS it (HERO_AIMED.longbow, js/draw/arcus.js): eight headings, each its
+// own pixel frame, never a turned one. Per heading three steps: 0 the string straight just
+// after the arrow has gone, 1 half drawn, 2 full drawn with the nock at his chest, the arrow
+// on the string in both. Two are set by hand, aimed right (E) and down-right (SE); down is E
+// with its rows and columns swapped, the other five their mirrors. ARCUS_BOW_AIM[heading][step]
+// is { img, grip }, headings clockwise from +x, the grip where the bow hand closes on the stave.
+const ARCUS_BOW_AIM = (() => {
+  const pal = { '.': null, o: '#241a12', g: '#6b4a30', G: '#a3794f', F: '#9c917c', A: '#c8a46a', h: '#2a3044' };
+  const E = [[
+    '......Go......', '.....FGo......', '.....F.Go.....', '.....F.Go.....', '.....F..Go....', '.....F..Go....', '.....F..Go....',
+    '.....F..go....', '.....F..go....', '.....F.go.....', '.....F.go.....', '.....Fgo......', '......go......',
+  ], [
+    '.....FGo......', '.....F.Go.....', '....F..Go.....', '....F..Go.....', '...F....Go....', '...F....Go....', '...FAAAAGAAAAh',
+    '...F....go....', '...F....go....', '....F..go.....', '....F..go.....', '.....F.go.....', '.....Fgo......',
+  ], [
+    '....FGo.......', '....F.Go......', '...F...Go.....', '...F...Go.....', '..F.....Go....', '..F.....Go....', '.FAAAAAAGAAh..',
+    '..F.....go....', '..F.....go....', '...F...go.....', '...F...go.....', '....F.go......', '....Fgo.......',
+  ]];
+  const SE = [[
+    '..............', '..............', '..............', '..........FGo.', '.........F.Go.', '........F.Go..', '.......F..Go..',
+    '......F..Go...', '.....F..Go....', '....F..go.....', '...F.ggo......', '...ggoo.......', '...oo.........', '..............',
+  ], [
+    '..............', '..............', '..............', '.......FFFFGo.', '....AFF....Go.', '....FA....Go..', '....F.A...Go..',
+    '...F...A.Go...', '...F....Go....', '...F...goA....', '...F.ggo..A...', '...ggoo....A..', '...oo.......h.', '..............',
+  ], [
+    '..............', '..............', '.......FFFGo..', '...AFFF...Go..', '...FA.....Go..', '...F.A....Go..', '...F..A..Go...',
+    '..F....A.Go...', '..F.....Goo...', '..F...ggoA....', '..ggggoo..h...', '..oooo........', '..............', '..............',
+  ]];
+  const turn = (rows) => rows[0].split('').map((_, x) => rows.map(r => r[x]).join('')); // rows and columns swapped: +x becomes +y
+  const out = [[], [], [], [], [], [], [], []];
+  for (let f = 0; f < 3; f++) {
+    const e = SPR.bake(E[f], pal), s = SPR.bake(turn(E[f]), pal), d = SPR.bake(SE[f], pal);
+    const gx = 8, gy = 6, gd = 8; // the stave's middle on the E grid, and on the SE one
+    out[0][f] = { img: e, grip: [gx, gy] };
+    out[1][f] = { img: d, grip: [gd, gd] };
+    out[2][f] = { img: s, grip: [gy, gx] };
+    out[3][f] = { img: SPR.flipH(d), grip: [d.width - 1 - gd, gd] };
+    out[4][f] = { img: SPR.flipH(e), grip: [e.width - 1 - gx, gy] };
+    out[5][f] = { img: SPR.flipV(SPR.flipH(d)), grip: [d.width - 1 - gd, d.height - 1 - gd] };
+    out[6][f] = { img: SPR.flipV(s), grip: [gy, s.height - 1 - gx] };
+    out[7][f] = { img: SPR.flipV(d), grip: [gd, d.height - 1 - gd] };
+  }
+  return out;
+})();
 
 // ------------------------------------------------------------ arcus registry
 // ARCUS in the hero art registry (heroArt, js/sprites/hero-art.js): the looks and
