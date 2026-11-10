@@ -42,10 +42,16 @@ const CH_SNOW = 0, CH_FOREST = 1, CH_ROAD = 2, CH_ICE = 3, CH_HOLE = 4,
 const chTeam = (o) => skin(o.team === undefined ? 0 : o.team) ? CH_BLUE : CH_RED;   // a side's building
 const chPump = (o) => o.hold >= 0 ? (skin(o.hold) ? CH_BLUE : CH_RED) : CH_STONE; // a gold pump: its holder's, or nobody's grey (js/sim/pumps.js)
 const chEagle = (o) => skin(o.team === undefined ? 0 : o.team) ? CH_EAGLE_BLUE : CH_EAGLE_RED; // its bird, its gate
+// whether a pine may be felled in a match - by a swing (E or the hands),
+// a bot, the merchant's axe or LIGNUM's TIMBER. A wall pine (`wall`) holds the
+// jungle's drawn shape, so none of them opens it
+function treeFells(o) { return !!o && o.type === 'tree' && !o.wall; }
 const OBJECTS = {
   // lift 33: the pine's canopy reaches 21 px above its own tile (drawn at
   // py - 21), and the prompt clears it by the same 12 px everything else gets
-  tree:     { solid: true,  work: true, verb: 'CHOP', lift: 33, auto: true,
+  // `ready`: a pine that holds one of the jungle's designed walls (`wall`,
+  // stamped by layJungle, js/sim/jungle.js) never comes down (treeFells)
+  tree:     { solid: true,  work: true, verb: 'CHOP', lift: 33, auto: true, ready: (o) => treeFells(o),
               mm: [52, 100, 82],   map: CH_FOREST },
   // a SNOWDROP clump, stamped only by the warren camp (CAMPS.meadow): open
   // until someone picks it, when one pick shields the picker's whole company

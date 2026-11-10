@@ -7,7 +7,7 @@ works is their `OBJECTS` entry's `work` flag. Two verbs, two inputs:
 - **Left click = the hero's basic attack** ([the basic attack](the-basic-attack.md)). The press only records intent (`clickAction` sets
   `input.fire`); `updatePlayer` starts the draw on the rising edge and fires on the falling one.
 - **The hands work on their own** (`autoWork(p)`, js/sim/actions.js — `updatePlayer` calls it every
-  step `p.input.work` is *not* set). Whatever an `OBJECTS` entry marks `auto` — a tree, a snowdrop clump, a rival's roosting eagle — and **any building on the
+  step `p.input.work` is *not* set). Whatever an `OBJECTS` entry marks `auto` — a tree (never a jungle wall's pine: the entry's `ready` is `treeFells`), a snowdrop clump, a rival's roosting eagle — and **any building on the
   other team** (`autoWorks`, resolving a footprint tile through `structOf` and refusing your
   own via `ownsStruct`, exactly as `workTarget` does) is swung at the moment it is inside
   `WORK_REACH`, no key held: `autoTarget(p)` takes the nearest such tile in the ring around
