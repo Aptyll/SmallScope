@@ -307,7 +307,8 @@ table does. What a new hero needs written:
    js/baked/motion.js, named in its skins row's `motion` (the side run comes off the drawn side
    frame, `heroRunSide`; [the run and the roll](sprites.md#the-run-and-the-roll),
    [hero looks](sprites.md#hero-looks)) — **this is the expensive part**. `SPRITES.champLook`
-   bakes it per team and look with no edit;
+   bakes it per team and look with no edit, the idle breath included; a look with hair, a braid,
+   a cape or a skirt names its `cloth` boxes or `hem` rows so they hang behind a stop (`heroCloth`);
 3. in that same `heroArt` row, the **skins tab's 8×8 `glyph`**: `SKIN_TABS`
    ([js/ui/skins.js](../../js/ui/skins.js)) builds the hero's tab from the registry, and a load
    check in player.js throws for a `CLASSES` row with no `heroArt` row or a row with no hero;

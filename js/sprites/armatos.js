@@ -352,8 +352,7 @@ const HERO_STRIDE = [2, 1, 0, -1, -2, -1, 0, 1]; // px the near foot is ahead, a
 function heroRunSide(side, bob) {
   const N = side.length, B = heroRunBox(N);
   const runs = (row) => { const out = []; let x0 = -1; for (let x = 0; x <= N; x++) { const on = x < N && row[x] !== '.'; if (on && x0 < 0) x0 = x; if (!on && x0 >= 0) { out.push([x0, x]); x0 = -1; } } return out; };
-  let legTop = N;
-  while (legTop > 0 && runs(side[legTop - 1]).length >= 2) legTop--; // the rows that stand as two legs
+  const legTop = heroLegTop(side); // the rows that stand as two legs
   return HERO_STRIDE.map((step, f) => {
     const g = Array.from({ length: B.h }, () => Array(B.w).fill('.'));
     const put = (x, y, c) => { if (c !== '.' && y >= 0 && y < B.h && x >= 0 && x < B.w) g[y][x] = c; };
@@ -380,6 +379,52 @@ function heroRunFront(grid, bob) {
     }
     return g.map((r) => r.join(''));
   });
+}
+
+// the first row of the legs: the bottom rows that stand as two apart
+function heroLegTop(g) {
+  const two = (row) => /[^.]\.+[^.]/.test(row.replace(/^\.+|\.+$/g, ''));
+  let y = g.length;
+  while (y > 0 && two(g[y - 1])) y--;
+  return y;
+}
+
+// ------------------------------------------------------------ idle
+// THE BREATH: a standing body's second frame (drawPlayer's idle, js/draw/idle.js).
+// The head and shoulders sink one pixel: a chest row above the hands goes and the rows
+// over it step down, so the hands, the weapon in them and the feet hold still. The row
+// that goes is the one most like a neighbour, so the drop reads as a breath and not a
+// change of costume. Counted from the grid's own size (the hands sit 6 rows over the floor).
+function heroBreath(g) {
+  const h = g.length, w = g[0].length, hand = h - 6;
+  const diff = (a, b) => { let n = 0; for (let x = 0; x < w; x++) n += a[x] !== b[x]; return n; };
+  const cost = (y) => Math.min(diff(g[y], g[y - 1]), diff(g[y], g[y + 1]));
+  const cut = cost(hand - 2) < cost(hand - 1) ? hand - 2 : hand - 1;
+  return ['.'.repeat(w)].concat(g.slice(0, cut), g.slice(cut + 1));
+}
+// THE CLOTH: a look's loose parts (its `cloth` boxes, [x0, y0, x1, y1] on a facing's grid,
+// and its `hem`, the rows of skirt over the legs) one pixel along (dx, dy) for the beat
+// after a stop or a turn. A part pushed off the body grows from its seam; one pushed into
+// the body tucks behind it. A hem only swings sideways.
+function heroCloth(g, look, face, dx, dy) {
+  const h = g.length, w = g[0].length, boxes = [];
+  for (const b of (look.cloth && look.cloth[face]) || []) boxes.push([b, dy]);
+  if (look.hem && dx) { const top = heroLegTop(g); boxes.push([[0, top - look.hem, w - 1, top - 1], 0]); }
+  if (!boxes.length) return null;
+  const sway = (x, y) => { for (const [[x0, y0, x1, y1], vy] of boxes) if (x >= x0 && x <= x1 && y >= y0 && y <= y1) return vy; return null; };
+  const out = g.map((r) => r.split('')), loose = [];
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const vy = g[y][x] === '.' ? null : sway(x, y);
+    if (vy !== null) { loose.push([x, y, vy]); out[y][x] = '.'; }
+  }
+  if (!loose.length) return null;
+  const fixed = (x, y) => x >= 0 && y >= 0 && x < w && y < h && g[y][x] !== '.' && sway(x, y) === null;
+  for (const [x, y, vy] of loose) {
+    const tx = x + dx, ty = y + vy;
+    if (tx >= 0 && ty >= 0 && tx < w && ty < h && out[ty][tx] === '.') out[ty][tx] = g[y][x];
+  }
+  for (const [x, y, vy] of loose) if (out[y][x] === '.' && fixed(x - dx, y - vy)) out[y][x] = g[y][x]; // the seam
+  return out.map((r) => r.join(''));
 }
 
 // ------------------------------------------------------------ armatos greatsword

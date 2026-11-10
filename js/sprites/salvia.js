@@ -304,8 +304,8 @@ const SALVIA_PAL = Object.assign({}, ARM_PAL, { a: '#5a3a2a', A: '#7a5238', q: '
 // not the doll's (app/bake-player: hood, tent), so her run is her drawn body in every
 // facing (heroRunFront, js/sprites/armatos.js); the doll rolls her.
 const SALVIA_SKINS = [
-  { id: 'hood', name: 'MENDER', rarity: 'common', price: 0, grids: SALVIA_BODY.hood, motion: 'hood', run: 'drawn' },
-  { id: 'tent', name: 'FIELD TENT', rarity: 'rare', price: 200, grids: SALVIA_BODY.tent, motion: 'tent', run: 'drawn' },
+  { id: 'hood', name: 'MENDER', rarity: 'common', price: 0, grids: SALVIA_BODY.hood, motion: 'hood', hem: 2, run: 'drawn' },
+  { id: 'tent', name: 'FIELD TENT', rarity: 'rare', price: 200, grids: SALVIA_BODY.tent, motion: 'tent', hem: 2, run: 'drawn' },
 ];
 
 // ------------------------------------------------------------ salvia staff

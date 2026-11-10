@@ -247,7 +247,7 @@ const AURA_PAL = Object.assign({}, ARM_PAL, { a: '#a9b4cc', A: '#e8edf7', q: '#4
 // are not the doll's (app/bake-player: light), so her run is her drawn body in every
 // facing (heroRunFront, js/sprites/armatos.js); the doll rolls her.
 const AURA_SKINS = [
-  { id: 'light', name: 'NORTHERN LIGHT', rarity: 'common', price: 0, grids: AURA_BODY.light, motion: 'light', run: 'drawn' },
+  { id: 'light', name: 'NORTHERN LIGHT', rarity: 'common', price: 0, grids: AURA_BODY.light, motion: 'light', hem: 2, run: 'drawn' },
 ];
 
 // ------------------------------------------------------------ aura staff

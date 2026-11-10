@@ -246,8 +246,8 @@ const NIX_PAL = Object.assign({}, ARM_PAL, { q: '#2b3042', Q: '#3d4459', m: '#7f
 // coins on the skins screen (js/ui/skins.js, the NIX tab): moonless black, moon-gold
 // goggles, a night-violet scarf.
 const NIX_SKINS = [
-  { id: 'snowblind', name: 'SNOWBLIND', rarity: 'common', price: 0, grids: NIX_BODY.snowblind, motion: 'snowblind' },
-  { id: 'moonless', name: 'MOONLESS', rarity: 'rare', price: 200, grids: NIX_BODY.snowblind, motion: 'snowblind',
+  { id: 'snowblind', name: 'SNOWBLIND', rarity: 'common', price: 0, grids: NIX_BODY.snowblind, motion: 'snowblind', hem: 2 },
+  { id: 'moonless', name: 'MOONLESS', rarity: 'rare', price: 200, grids: NIX_BODY.snowblind, motion: 'snowblind', hem: 2,
     pal: { q: '#161a26', Q: '#262c3e', w: '#b98a2e', W: '#f2cc6a', m: '#4f4480', M: '#3a3060' } },
 ];
 
