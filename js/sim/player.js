@@ -563,6 +563,7 @@ function shareXp(dead, xp, team, src) {
   for (const q of who) gainXp(q, each);
 }
 const LEVEL_FX_T = 0.9; // s the level-up shows on the body
+const BACK_FX_T = 0.9;  // s the bird's feathers fall away round a body it has just set down (p.backT; drawBackFeathers, js/draw/recall.js)
 function levelUp(p) {
   p.level++;
   p.skillPts++;
@@ -796,6 +797,7 @@ class Player {
     this.fireArmed = false;                        // the bow button has been pressed since the last loose
     this.readyFlash = 0;                           // the HUD's tell: renocked
     this.lvT = 0;                                  // a level just gained, counting down (levelUp)
+    this.backT = 0;                                // just set down by the bird, counting down (respawnPlayer, the recall)
     this.dodgeT = 0; this.dodgeVX = 0; this.dodgeVY = 0; this.dodgeDustT = 0;
     this.dodgeCharges = DODGE_CHARGES; this.dodgeRegenT = 0;
     this.rollHit = [];                             // what this roll has already swiped (once each)
@@ -1272,6 +1274,7 @@ function respawnPlayer(p) {
   p.eliminated = false;
   p.respawnT = 0;
   p.reset(false);
+  p.backT = BACK_FX_T;
   burst(p.x, p.y - 2, '#f4f7ff', 16, 70, 0.5, true);
   sfxAt('place', p.x, p.y);
   if (p === player) {
