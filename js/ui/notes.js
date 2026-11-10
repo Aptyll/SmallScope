@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['FIRST MATCH: A DEATH SHOWS ITS LESSON WHILE YOU WAIT TO RESPAWN', '0.850'],
     ['The stone ring\'s brush drifts are smaller and stand clear of the road and the wall', '0.849'],
     ['BELLA\'s slanted spatha drawn at 32 px behind ?fine=1', '0.848'],
     ['Varro carries the same spear he thrusts, its tip no higher than his ears', '0.847'],
