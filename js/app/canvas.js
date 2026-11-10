@@ -107,12 +107,15 @@ const ZOOM_FLOOR = Math.min(ZOOM_MIN, DROP_ZOOM); // widest world buffer we ever
 // 16px art reads twice its old size and the screen holds 180 rows of world.
 // Whole, so it is a rung on every display; the wheel still zooms out from it.
 const ZOOM_REST = 2;
-// ...and the shots that frame the valley instead of you - the title's backdrop, the
+// ...and the shots that frame the valley instead of you - the
 // roost tour, the driven-off ceremony - hold the view they were composed at
 // (applyZoom, js/sim/sim.js): 360 rows of world, half as close as play.
 const ZOOM_SHOW = 1;
+// ...and the title frames its ten heroes at the match's own view, so the landing page
+// shows them the size they are played at (js/ui/titlescene.js)
+const ZOOM_TITLE = ZOOM_REST;
 let kWant = 0;            // device px per world px - a WHOLE number, the wheel steps it by 1 (0 until fitCanvas first rungs ZOOM_REST)
-let zoomCur = ZOOM_SHOW;  // applied scale, eased toward the wanted zoom every update (applyZoom, js/sim/sim.js); the game boots on the title
+let zoomCur = ZOOM_TITLE;  // applied scale, eased toward the wanted zoom every update (applyZoom, js/sim/sim.js); the game boots on the title
 let WV_W = 640, WV_H = 360; // the world view in world px
 let wOX = 0, wOY = 0;       // this frame's world buffer corner in world px: the camera floored, the shake folded in (render())
 

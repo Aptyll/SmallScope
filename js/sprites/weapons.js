@@ -11,8 +11,10 @@ const WEAPON_FWD = { sword: Math.PI, staff: Math.PI };
 // WEAPON_GRIP says where the hand closes on each art, [x, y] on its grid: the
 // hand turns the weapon about that point, so a blade reaches OUT of the fist
 // and its hilt never swings back across the body (drawHeldTool,
-// js/draw/bodies.js). `held` is the long art, `icon` the 12 px one.
-const WEAPON_GRIP = { held: { sword: [20, 11] }, icon: { sword: [10, 5], staff: [2, 6] } };
+// js/draw/bodies.js). `held` is the long art, `icon` the 12 px one, `diag` the
+// slanted grid of an aimed weapon that has one (SPRITES.weaponDiag: the same
+// weapon drawn pointing down and right, so an aim is eight drawn headings).
+const WEAPON_GRIP = { held: { sword: [20, 11] }, icon: { sword: [10, 5], staff: [2, 6] }, diag: {} };
 (() => {
   // the wood and steel every weapon here is painted in
   const PAL = {
@@ -48,4 +50,5 @@ const WEAPON_GRIP = { held: { sword: [20, 11] }, icon: { sword: [10, 5], staff: 
   };
   SPRITES.weaponArt = { sword: SPR.bake(ART.sword, PAL), staff: SPR.bake(ART.staff, PAL) };
   SPRITES.weaponHeld = { sword: SPR.bake(HELD.sword, PAL) };
+  SPRITES.weaponDiag = {};
 })();

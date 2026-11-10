@@ -102,15 +102,14 @@ function nixFade(p) {
 }
 
 // ---- the dirk in her hands ---------------------------------------------------
-// Her ICE DIRK (HERO_BLADES.dirk, js/draw/heroes.js): no slanted carry, so facing
-// down or up she holds it upright in the leading hand like any sword
+// Her ICE DIRK (HERO_BLADES.dirk, js/draw/heroes.js): at rest she holds it the knife
+// fighter's way, point down and out from the fist at her hip (BLADE_HOLDS.low), the
+// same in every facing, so it is never level at arm's length or over her head
 let nixDirkArt = null;
 function nixDirks() {
-  if (nixDirkArt) return nixDirkArt;
-  const flat = bakeBladeArt(NIX_DIRK, NIX_DIRK_PAL);
-  return (nixDirkArt = { flat, diag: flat });
+  return nixDirkArt || (nixDirkArt = { flat: bakeBladeArt(NIX_DIRK, NIX_DIRK_PAL), diag: bakeBladeArt(NIX_DIRK_DIAG, NIX_DIRK_PAL) });
 }
-HERO_BLADES.dirk = { art: nixDirks, hilt: [18, 11], hip: {}, grip: [0, 0], lift: 4 };
+HERO_BLADES.dirk = { art: nixDirks, hilt: [18, 11], hip: { down: [13, 10], up: [13, 10] }, grip: NIX_DIRK_GRIP, hold: 'low' };
 
 HERO_GROUND.push(drawNixGround);
 HERO_AIR.push(drawNixAir);

@@ -72,11 +72,13 @@ function drawPylon(o, px, py) {
 // the pointer the strand wears the work-target rim's two golds on its beat
 // (drawTargetRim, js/draw/render.js) - the one "you can act on this" ink
 const ZIP_INK = '#1c2030', ZIP_LIT = '#6a7488';
+const ZIP_ROPE = ['#c2b08a', '#9c8a66'], ZIP_ROPE_INK = '#4a4034'; // the rope's two strands, twisted, and its underside
 const ZIP_HOV_A = '#f2cc6a', ZIP_HOV_B = '#c9a227';
 const ZIP_GUIDE = '#ffd95c'; // the guide's dots: the draw meter's gold (DRAW_COL, js/draw/overhead.js)
 // The cable pass, between drawDropAir and renderLighting in render(): over
-// every body and canopy, under the night grade. A span is a 1 px dark line
-// with a 1 px lit line under it, rasterised pixel by pixel (a stroked path
+// every body and canopy, under the night grade. A span is a ROPE two pixels
+// thick: its strands twisted along the top (ZIP_ROPE, three pixels of one then
+// three of the other), its underside dark, rasterised pixel by pixel (a stroked path
 // would blur across the pixel grid), sagging ZIP_SAG at its middle and
 // leaning windSway(mid tile) px sideways so the line moves with the pines
 // and stills at dusk. Bounds against WV_*: a span whose box misses the frame
@@ -110,8 +112,8 @@ function drawZips(ex, ey, now) {
         const y = Math.round(ay + (by - ay) * t + ZIP_SAG * 4 * t * (1 - t));
         if (x === lx && y === ly) continue;
         lx = x; ly = y;
-        ctx.fillStyle = ZIP_INK; ctx.fillRect(x, y, 1, 1);
-        ctx.fillStyle = lit; ctx.fillRect(x, y + 1, 1, 1);
+        ctx.fillStyle = hot === z ? lit : ZIP_ROPE[((k / 3) | 0) & 1]; ctx.fillRect(x, y, 1, 1);
+        ctx.fillStyle = ZIP_ROPE_INK; ctx.fillRect(x, y + 1, 1, 1);
       }
     }
     // a cable cut at a tower runs on past it to its landing and comes down
@@ -127,8 +129,8 @@ function drawZips(ex, ey, now) {
       const x = Math.round(ax + (bx - ax) * k / n), y = Math.round(ay + (by - ay) * k / n);
       if (x === lx && y === ly) continue;
       lx = x; ly = y;
-      ctx.fillStyle = ZIP_INK; ctx.fillRect(x, y, 1, 1);
-      ctx.fillStyle = lit; ctx.fillRect(x, y + 1, 1, 1);
+      ctx.fillStyle = hot === z ? lit : ZIP_ROPE[((k / 3) | 0) & 1]; ctx.fillRect(x, y, 1, 1);
+      ctx.fillStyle = ZIP_ROPE_INK; ctx.fillRect(x, y + 1, 1, 1);
     }
     // the end stop clamped on the cable where the ride lets go
     const sx = Math.round(ax), sy = Math.round(ay);

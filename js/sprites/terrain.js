@@ -1149,10 +1149,12 @@
     return treeSway.map((f, i) => up.map((r, row) => treeRowShift(r, treeLeanPx(i, row))));
   });
   const TREE_ROLE = { o: 'outline', k: 'needle', d: 'needle', g: 'needle', h: 'needle', G: 'needle', L: 'needle', l: 'needle', m: 'needle', s: 'snow', S: 'snow', w: 'snow', U: 'trunk', u: 'trunk' };
-  // [needle L shift, snow L shift]: edge, inner ring, deep, and the HEART
+  // [needle L shift, snow L shift, trunk L shift]: edge, inner ring, deep, and the HEART
   // (three rings in and further): its snow falls into shade with its needles,
   // so a wide wall reads as one dark mass with a lit rim, not a sheet of caps
-  const TREE_TONES = [[0.07, 0], [0.035, 0], [0, -0.035], [-0.04, -0.13]];
+  // A trunk inside the stand goes dark with it: left bright it is an orange
+  // speck on the forest floor.
+  const TREE_TONES = [[0.07, 0, 0], [0.035, 0, -0.17], [0, -0.035, -0.2], [-0.04, -0.13, -0.22]];
   const treePals = (() => {
     const lin = (c) => (c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
     const gam = (c) => (c <= 0.0031308 ? 12.92 * c : 1.055 * Math.pow(c, 1 / 2.4) - 0.055);
@@ -1184,7 +1186,7 @@
     const hueShift = (r, c, st) => { if (r !== 'needle') return c; const t = (c.L - st.needle.min) / (st.needle.max - st.needle.min); return { ...c, h: lerpH(c.h, lerpH(195, 128, t), 0.6) }; };
     const colour = (k) => (r, c) => r !== 'needle' ? c : { ...c, C: c.C * k };
     const trunk = (r, c) => r !== 'trunk' ? c : { L: lerp(c.L, 0.50, 0.4), C: c.C * 0.65, h: c.h };
-    const tone = ([d, sn]) => (r, c) => r === 'needle' ? { ...c, L: c.L + d } : r === 'snow' ? { ...c, L: c.L + sn } : c;
+    const tone = ([d, sn, tr]) => (r, c) => r === 'needle' ? { ...c, L: c.L + d } : r === 'snow' ? { ...c, L: c.L + sn } : r === 'trunk' ? { ...c, L: c.L + tr, C: tr < 0 ? c.C * 0.45 : c.C } : c;
     const run = (filters) => {
       const lch = {};
       for (const k in TREE_ROLE) lch[k] = toLch(TSPAL[k]);

@@ -132,6 +132,7 @@ function gatherDraws(ox, oy, tx0, ty0, tx1, ty1, now) {
     if (p.dead || inAir(p) || !fogShown(p, now)) continue; // airborne players draw in drawDropAir; one in the fog not at all (js/draw/fog.js)
     draws.push({ y: p.y + 8, p, ghost: !p.active }); // empty slots stand as silhouettes
   }
+  titleCastDraws(draws); // the title's ten, this screen's own bodies (js/ui/titlescene.js)
   for (const a of animals) if (fogShown(a, now)) draws.push({ y: a.y + 4, a });
   for (const b of robots) if (fogShown(b, now)) draws.push({ y: b.y + (b.merchant ? 8 : 4), r: b }); // a merchant stands on player feet (robots.js)
   // the archery targets (the training grounds', or one a staged scene stood in
@@ -336,7 +337,7 @@ function drawStructObj(o, px, py, sh, now) {
     // its type's own frame when it moves (the gold pump's stroke, off its
     // payout clock) and its type's own pass over the sprite (STRUCTS `over`)
     const S = STRUCTS[o.type], art = S.frame ? S.frame(o) : spr;
-    drawCastShade(art, sx, sy); // a standing building throws the sun's shade like a body (ground.js)
+    drawCastShade(art, sx, sy, true); // a standing building throws the sun's shade like a body, in one solid piece (ground.js)
     drawSpriteFlash(art, sx + sh, sy, o.flash);
     if (S.over) S.over(o, sx + sh, sy, now);
     if (o.hp < o.maxHp * 0.6) {
