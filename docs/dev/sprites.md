@@ -379,8 +379,10 @@ cream feather `W`; LAST HAWK is the same cut repainted by its row's `pal` (black
 silver hair, a gold belt). It is C off falco-round1.png in the project files. Both run as their
 drawn bodies (`run: 'drawn'`); his doll (`Falconer` in app/bake-player/bodies.py) is used only for
 the roll. His THROWING KNIFE is weapon art
-(`SPRITES.weaponArt.knife`, point right, `WEAPON_GRIP.icon.knife`), carried in the leading hand and held on
-the aim while drawn, and thrown as a shot drawn by `HERO_SHOTS.knife`.
+(`SPRITES.weaponArt.knife`, point right, `WEAPON_GRIP.icon.knife`) for the HUD. On the snow his hand
+holds its own small art (`FALCO_KNIFE`): hung point down from the fist at rest (`HERO_CARRY`), cocked
+back over the shoulder while drawn and the empty hand flung out for a beat after the throw
+(`FALCO_KNIFE_AIM`, `HERO_AIMED`); the shot is drawn by `HERO_SHOTS.knife`.
 
 **The 48 px face** (`SPRITES.portrait(cls, team, skinId)`, characters.js) is a hero's own 16 px
 standing front in that look (the free one when `skinId` is null) at 3x on a 48×48 canvas, the

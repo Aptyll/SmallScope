@@ -139,3 +139,19 @@ AB_FX_LOOK.stoop = drawStoopFx;
 HERO_GROUND.push(drawFalcoGround);
 HERO_AIR.push(drawFalcoAir);
 HERO_BODY_DRAW.push(drawFalcoSky);
+
+// ---- the knife in his hand -----------------------------------------------------------
+// At rest it hangs point down from the fist at his side, forward of him side-on
+// (FALCO_KNIFE, js/sprites/falco.js; HERO_CARRY): a short blade, never held out level.
+// Thrown, the hand cocks it back over the shoulder and flings empty (HERO_AIMED).
+function falcoCarry(p, px, py) {
+  if (attackOf(p).art !== 'knife') return false;
+  const lead = p.dir === 'down' || p.dir === 'right', side = p.dir === 'left' || p.dir === 'right', rc = heroReach(p);
+  const k = side ? FALCO_KNIFE.fwd : FALCO_KNIFE.down, img = lead ? k.img : heldFlip(k.img);
+  const hx = lead ? px + (side ? 12 : 13) + rc : px + (side ? 3 : 2) - rc, hy = py + 11;
+  ctx.drawImage(img, hx - (lead ? k.grip[0] : img.width - 1 - k.grip[0]), hy - k.grip[1]);
+  if (p.dir !== 'up') heroFist(p, hx, hy, lead ? 1 : -1);
+  return true;
+}
+HERO_CARRY.push(falcoCarry);
+HERO_AIMED.knife = (heading, step) => FALCO_KNIFE_AIM[heading][step];

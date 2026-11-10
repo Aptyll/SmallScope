@@ -264,6 +264,42 @@ SPRITES.weaponArt.knife = SPR.bake([
   '............', '............', '............', '............',
 ], { '.': null, o: '#241a12', T: '#eef2f8', W: '#ffffff', E: '#8b93a8', g: '#6b4a30', G: '#a3794f' });
 
+// The same knife as his hand holds it on the snow, small and never level at arm's length
+// (falcoCarry and HERO_AIMED.knife, js/draw/falco.js). FALCO_KNIFE.down hangs point down from
+// the fist at rest (`fwd` side-on, its point a pixel forward, drawn for a body facing right);
+// FALCO_KNIFE.up is cocked point up for the throw (`back` side-on, its point a pixel back).
+// Each is { img, grip }, the grip where the fist closes.
+const FALCO_KNIFE = (() => {
+  const pal = { '.': null, o: '#241a12', W: '#ffffff', E: '#aab4c8', G: '#a3794f' };
+  const k = (rows, grip) => ({ img: SPR.bake(rows, pal), grip });
+  return {
+    down: k(['.o.', 'oGo', 'oGo', 'oWo', 'oEo', 'oEo', '.o.'], [1, 2]),
+    fwd: k(['.o..', 'oGo.', 'oGo.', 'oWo.', '.oEo', '.oEo', '..o.'], [1, 2]),
+    up: k(['.o.', 'oWo', 'oWo', 'oEo', 'oGo', 'oGo', '.o.'], [1, 4]),
+    back: k(['.o..', 'oWo.', 'oWo.', '.oEo', '.oGo', '.oGo', '..o.'], [2, 4]),
+  };
+})();
+// THE THROW, by the aim's heading (0..7 clockwise from +x) and step (HERO_AIMED): 1 and 2 the
+// knife cocked back over the shoulder away from the aim, a pixel further at the full draw;
+// 0 the empty hand flung out on the aim after the knife has left it. `hand` is where the
+// fist is, px from the chest.
+const FALCO_KNIFE_AIM = (() => {
+  const out = [];
+  for (let h = 0; h < 8; h++) {
+    const q = h * Math.PI / 4, c = Math.round(Math.cos(q)), sn = Math.round(Math.sin(q));
+    const art = !c ? FALCO_KNIFE.up : FALCO_KNIFE.back;
+    const img = c < 0 ? SPR.flipH(art.img) : art.img, grip = c < 0 ? [art.img.width - 1 - art.grip[0], art.grip[1]] : art.grip;
+    const lf = (v) => v < 0 ? 1 : 0; // the chest's middle is between two columns: a hand to the left reaches one more
+    const bx = c ? -c : 1; // the throwing hand: behind the aim side-on, the right hand facing down or up
+    out.push([
+      { img: null, grip: [0, 0], hand: [c ? c * 5 - lf(c) : 5, sn * 3] },
+      { img, grip, hand: [bx * 5 - lf(bx), -1] },
+      { img, grip, hand: [bx * 6 - lf(bx), -2] },
+    ]);
+  }
+  return out;
+})();
+
 // ------------------------------------------------------------ falco registry
 // FALCO in the hero art registry (heroArt, js/sprites/hero-art.js): the looks and
 // their paint, the skins tab's 8x8 glyph and the 12x12 emblem
