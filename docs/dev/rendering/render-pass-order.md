@@ -85,13 +85,14 @@ in the pre-pass.
 A **tree** is 27×37 and draws at `(px - 5, py - 21)` — bottom-aligned on its own tile, trunk on
 the tile's centre line, canopy overhanging the tile above (which the `draws`
 loop's existing 1-tile top margin and 2-tile bottom margin already cover) — **nudged** off that
-line by `treeNudgeX`/`treeNudgeY` (up to 2 px across, 1 px up or down, off the tile's `hash2`) so
+line by `treeNudgeX`/`treeNudgeY` (up to 3 px across, 2 px up or down, off the tile's `hash2`) so
 the forest does not stand on the tile grid. Only the art moves: the tile, its collision and its
 chop reach stay put, and the sprite, its cast shade (`CASTERS.tree`), the work-target rim and the
-hit flash all read the nudge. The atlas **row** it draws from is the tile's too (`treeCell`): a
+hit flash all read the nudge. The atlas **row** it draws from is the tile's too (`treeCell`): one of
+three heights (`treeSize`, in groves), a
 palette variant off the hash, a third of the forest each, and a **tone** for its depth in the
 forest (`treeTone`: 0 if any of its 8 neighbours is open, 2 if the ring two out is forest too, 1
-between; a dead snag and the world's border count as forest). It is read live, so felling a pine
+between, 3 in the heart; a dead snag and the world's border count as forest). It is read live, so felling a pine
 lightens the ones it opens up. None of it is world state — no `rng`, nothing on the wire. How far over it is
 leaning comes from `treeFrame(tx, ty)` off the [wind field](drawing-a-thousand-of-something.md#the-wind-field), never
 from a clock of its own, and it is blitted out of **one atlas texture** rather than a per-frame

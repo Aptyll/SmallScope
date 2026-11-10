@@ -1127,13 +1127,32 @@
   // night grade). B: a dark muted green outline, the needle darks lifted, the
   // snow a soft blue-grey. C: B with the needles' hue shifted by value -
   // shadows toward teal, lights toward yellow-green. D: C at 80% colour with
-  // a muted trunk. Each of the three comes in three TONES for how deep in the
+  // a muted trunk. Each of the three comes in four TONES for how deep in the
   // forest a tree stands (treeTone, js/draw/ground.js): the deep as filtered,
   // the ring inside the edge lighter, the edge lighter again. Nine pines in
   // ten stand deep, so the deep tone IS the picked look and the edge is what
   // moves - darkening the deep instead would darken the whole forest.
+  // Three HEIGHTS of the one pine, so a stand's crowns do not sit on a ruled
+  // grid: the drawn tree, one with its middle tier of boughs taken out (30
+  // rows) and one with its bottom tier taken out (26, and narrower). Each is
+  // cut from the tree standing straight (frame 11 with its lean taken back
+  // off), set on the cell's floor and leant again by the ladder's own
+  // cantilever, so a short pine bends less at the tip than a tall one beside
+  // it. Which height a tile wears: treeSize, js/draw/ground.js.
+  const TREE_CUTS = [null, [14, 20], [21, 31]]; // rows of the drawn tree a height leaves out
+  const treeLeanPx = (i, row) => { const h = (36 - row) / 36; return Math.round((i - 11.5) / 11.5 * 2.6 * (3 * h * h - h * h * h) / 2); };
+  const treeRowShift = (r, d) => { let o = ''; for (let x = 0; x < r.length; x++) o += r[x - d] || '.'; return o; };
+  const treeSizes = TREE_CUTS.map((cut) => {
+    if (!cut) return treeSway;
+    const up = treeSway[11].map((r, row) => treeRowShift(r, -treeLeanPx(11, row))).filter((r, row) => row < cut[0] || row > cut[1]);
+    while (up.length < 37) up.unshift('.'.repeat(27));
+    return treeSway.map((f, i) => up.map((r, row) => treeRowShift(r, treeLeanPx(i, row))));
+  });
   const TREE_ROLE = { o: 'outline', k: 'needle', d: 'needle', g: 'needle', h: 'needle', G: 'needle', L: 'needle', l: 'needle', m: 'needle', s: 'snow', S: 'snow', w: 'snow', U: 'trunk', u: 'trunk' };
-  const TREE_TONES = [0.07, 0.035, 0]; // needle L shift: edge, inner ring, deep
+  // [needle L shift, snow L shift]: edge, inner ring, deep, and the HEART
+  // (three rings in and further): its snow falls into shade with its needles,
+  // so a wide wall reads as one dark mass with a lit rim, not a sheet of caps
+  const TREE_TONES = [[0.07, 0], [0.035, 0], [0, -0.035], [-0.04, -0.13]];
   const treePals = (() => {
     const lin = (c) => (c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
     const gam = (c) => (c <= 0.0031308 ? 12.92 * c : 1.055 * Math.pow(c, 1 / 2.4) - 0.055);
@@ -1165,7 +1184,7 @@
     const hueShift = (r, c, st) => { if (r !== 'needle') return c; const t = (c.L - st.needle.min) / (st.needle.max - st.needle.min); return { ...c, h: lerpH(c.h, lerpH(195, 128, t), 0.6) }; };
     const colour = (k) => (r, c) => r !== 'needle' ? c : { ...c, C: c.C * k };
     const trunk = (r, c) => r !== 'trunk' ? c : { L: lerp(c.L, 0.50, 0.4), C: c.C * 0.65, h: c.h };
-    const tone = (d) => (r, c) => r !== 'needle' ? c : { ...c, L: c.L + d };
+    const tone = ([d, sn]) => (r, c) => r === 'needle' ? { ...c, L: c.L + d } : r === 'snow' ? { ...c, L: c.L + sn } : c;
     const run = (filters) => {
       const lch = {};
       for (const k in TREE_ROLE) lch[k] = toLch(TSPAL[k]);
@@ -1188,7 +1207,8 @@
   })();
   // baked once, up here, because both the array and the atlas below need it:
   // one run of 24 frames per palette row
-  const treeRows = treePals.map((pal) => treeSway.map((f) => bake(f, pal)));
+  // (row = size * treePals.length + palette row)
+  const treeRows = [].concat(...treeSizes.map((frames) => treePals.map((pal) => frames.map((f) => bake(f, pal)))));
   const treeSpr = treeRows[2]; // variant B, deep tone (the filtered look itself) - the pine a single frame stands for
   // ---------------------------------------------------------------- the hog hut
   // The HOG HUT camp's anchor (CAMPS.hut, js/sim/camps.js): a snow-roofed log
@@ -1532,8 +1552,9 @@
     // treeFrame() sends half the forest into it off the tile's hash. A
     // mirrored tree leans the other way, so the ladder runs backwards over
     // there and treeFrame() reverses the index when it crosses.
-    // Each ROW is one palette (treePals above: three variants x three forest
-    // depth tones, row = variant * 3 + tone), each holding the same 48 frames,
+    // Each ROW is one height in one palette (treeSizes x treePals: three
+    // heights, three variants x four forest depth tones, row = size * 12 +
+    // variant * 4 + tone; `pals` is the 12), each holding the same 48 frames,
     // so the whole forest - every variant, every tone - is still one texture.
     // A cell index is column + row * cols (treeCell, js/draw/ground.js).
     // `fw`/`fh`/`cols` ride on the canvas so the caller needs no second constant.
@@ -1545,7 +1566,7 @@
       const g = c.getContext('2d');
       g.imageSmoothingEnabled = false;
       treeRows.forEach((row, r) => row.concat(row.map(flipH)).forEach((f, i) => g.drawImage(f, i * fw, r * fh)));
-      c.fw = fw; c.fh = fh; c.cols = cols;
+      c.fw = fw; c.fh = fh; c.cols = cols; c.pals = treePals.length;
       return c;
     })(),
     stump: bake(stump, TPAL),
