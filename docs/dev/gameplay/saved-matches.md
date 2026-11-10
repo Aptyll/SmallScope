@@ -27,7 +27,10 @@ by reference with a hash of its contents, and the ground); `saveCapture` then wr
   bot re-plan a step early); a reference into a static table (`saveTables`, three levels down:
   a camp's `CAMPS` row) is written as its path;
 - **only the map objects and ground tiles that differ from the grown map.** A reference to an
-  untouched tile object is its tile index, so the 30 000-odd pines are never written. A tile
+  untouched tile object is its tile index, so the 30 000-odd pines are never written. A grown
+  tile object the match changed is written in full and filled back into the fresh page's same
+  object, so both pages hold it the same way and it counts as untouched again once its fields
+  come back. A tile
   object that points at a live thing (a den or hut at its camp's `site`, and the parts of
   its footprint) is always written, because the fresh map's copy would point at the fresh
   page's camp.

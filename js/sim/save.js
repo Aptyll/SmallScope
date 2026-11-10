@@ -20,7 +20,7 @@
 // sim reads does not - it joins SAVE_ROOTS, or the proof misses it.
 //
 // The flow: saveDevLoad hands the record to the next page through
-// sessionStorage and reloads onto ?seed&map; js/app/boot.js calls saveBootLoad
+// sessionStorage and reloads onto its ?seed; js/app/boot.js calls saveBootLoad
 // after the world stands and before the ground is baked, so the bake paints
 // the saved valley and not the fresh one.
 
@@ -119,7 +119,8 @@ function saveBaseline() {
 // JSON with a handful of $-tags, so the body is plain JSON and a shared object
 // is written once: {$i} names an object or array written in full, {$r} points
 // back at one ({$a} its items, {$p} an array's own fields), {$t} is an
-// untouched tile object of the fresh valley, {$k} a row of a static table,
+// untouched tile object of the fresh valley, {$b} one it changed (written in
+// full, filled back into the same object), {$k} a row of a static table,
 // {$c} the class a body was built from, {$m}/{$s}/{$y}
 // a Map, a Set and a typed array, {$f} a number JSON cannot hold, {$u}
 // undefined. Functions and canvases are nobody's state and are dropped.
@@ -203,6 +204,10 @@ function saveEncode(roots, touched) {
       if (props) out.$p = props;
     } else {
       out = {};
+      // a grown tile object the match changed is written as ITSELF ({$b}), so the
+      // load fills the fresh valley's same object and a later save of either page
+      // sees the same object at its tile, untouched again once its fields come back
+      if (saveBase && saveBase.at.has(v)) out.$b = saveBase.at.get(v);
       const cn = v.constructor && v.constructor.name;
       if (cn && cn !== 'Object') {
         if (SAVE_CLASSES[cn]) out.$c = cn;
@@ -254,7 +259,8 @@ function saveDecode(body, tileObj) {
       if (v.$p) for (const k of Object.keys(v.$p)) out[k] = dec(v.$p[k]);
       return out;
     }
-    out = v.$c && SAVE_CLASSES[v.$c] ? Object.create(SAVE_CLASSES[v.$c].prototype) : {};
+    if (v.$b !== undefined) { out = tileObj[v.$b]; for (const k of Object.keys(out)) delete out[k]; }
+    else out = v.$c && SAVE_CLASSES[v.$c] ? Object.create(SAVE_CLASSES[v.$c].prototype) : {};
     if (v.$i !== undefined) ids[v.$i] = out;
     for (const k in v) if (k[0] !== '$') out[k] = dec(v[k]);
     return out;
@@ -265,7 +271,7 @@ function saveDecode(body, tileObj) {
 }
 
 // ---- capture and apply ------------------------------------------------------
-// The match as one JSON-able record: { v, seed, map, body }. `touched` is
+// The match as one JSON-able record: { v, world, seed, body }. `touched` is
 // every tile whose object is not the fresh valley's untouched one; those
 // tiles are written out ([tile, object] pairs), and so is every ground tile
 // that differs from the grown ground.

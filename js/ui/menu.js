@@ -36,7 +36,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.701';
+const PATCH_TXT = 'PATCH 0.702';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -52,6 +52,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.702', 'ONE MAP: EVERY MATCH IS PLAYED ON THE SAME VALLEY, ON EVERY SCREEN. A REMATCH OR A JOIN NO LONGER CHANGES IT.'],
   ['0.701', 'NO BLOOD IN THE CALLS: THE ANNOUNCER CALLS THE MATCH\'S FIRST TAKEDOWN FIRST STRIKE, AND A 1V1 IS WON BY FIRST STRIKE.'],
   ['0.700', 'UNDER THE HOOD: A HERO CAN NOW BE DRAWN ON A LARGER CELL THAN 16 PIXELS. NO HERO USES IT YET AND NOTHING LOOKS DIFFERENT.'],
   ['0.699', 'A SMALL ICON BESIDE EVERY HEALTH BAR SAYS WHAT IS HOLDING A HERO OR A BEAST: THROWN, PULLED, FROZEN, STUNNED, ROOTED, BLINDED, WEAKENED OR SLOWED, THE STRONGEST ONE SHOWN, ITS FILL DRAINING AS IT WEARS OFF.'],
