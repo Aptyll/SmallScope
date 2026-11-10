@@ -247,11 +247,12 @@ function paintLog(g, seg, px, py, ox, oy) {
 // side, a root plate of earth standing up at its foot, a splintered top,
 // three lopped branch stubs, a drift banked on its upper side and its shade
 // off the lower one, so it lies in the snow and has a top and a bottom
-const TRUNK_COL = { rim: '#2a1c10', dark: '#4a3218', mid: '#6b4a2a', light: '#8a6142', wood: '#d9b382', earth: '#3b2c22', root: '#5a4330', snow: '#f4f7ff', snowD: '#d8e4f2', capRim: '#8ea2bc', drift: '#cfdbea' };
+const TRUNK_COL = { rim: '#2a1c10', dark: '#4a3218', mid: '#6b4a2a', light: '#8a6142', wood: '#d9b382', earth: '#3b2c22', root: '#5a4330', snow: '#f4f7ff', snowD: '#d8e4f2', capRim: '#6f86a8', capSide: '#c4d4e8', drift: '#cfdbea' };
 const TRUNK_R = [6.5, 4.5];   // px half-thickness at the foot and at the broken top
 const TRUNK_PLATE = [5, 13];  // px the root plate stands along the line and across it
 const TRUNK_STUBS = [[0.34, -1], [0.55, 1], [0.78, -1]]; // [along, side]: a lopped branch (side -1 the upper)
 const TRUNK_SHADE = 'rgba(40,60,100,0.24)';
+const TRUNK_CREST = 3;         // px of that cap, along the spine, that are its white crest: the line that holds in shade and at night
 const TRUNK_CAP = 0.1;        // how far past the trunk's middle, in half-thicknesses, its snow cap comes down: most of what is seen from above is snow
 function paintTrunk(g, tr, px, py) {
   const vx = tr.x1 - tr.x0, vy = tr.y1 - tr.y0, L = Math.hypot(vx, vy), ux = vx / L, uy = vy / L;
@@ -278,7 +279,7 @@ function paintTrunk(g, tr, px, py) {
         const cap = r * TRUNK_CAP + (vnoise(a / 4 + seed, 1.7) - 0.5) * 3; // the snow cap's lower edge
         if (ad > r - 1) c = d < cap ? TRUNK_COL.capRim : TRUNK_COL.rim; // the snow's own edge is blue, never the bark's dark
         else if (a > end - 2) c = h < 0.3 ? TRUNK_COL.light : TRUNK_COL.wood; // the break's raw wood
-        else if (d < cap) c = d > cap - 1.5 || h < 0.15 ? TRUNK_COL.snowD : TRUNK_COL.snow;
+        else if (d < cap) c = d > cap - TRUNK_CREST ? TRUNK_COL.snow : h < 0.12 ? TRUNK_COL.snow : TRUNK_COL.capSide; // the load's crest along the spine, white; its far side rounding away in shade
         else if (d < cap + 1.5) c = TRUNK_COL.light;
         else c = h < 0.08 ? TRUNK_COL.rim : d > r * 0.55 ? TRUNK_COL.dark : h < 0.35 ? TRUNK_COL.dark : TRUNK_COL.mid;
       } else if (a <= end && d > r && d < r + 5 - f * 2) c = TRUNK_SHADE; // its shade, off the lower side
