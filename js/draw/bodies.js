@@ -462,7 +462,8 @@ function drawPlayer(p, ex, ey, now, stage) {
       ctx.save();
       ctx.beginPath(); ctx.rect(sx - 32, py + bob + seat.hip - 64, frameW(spr) + 64, 64); ctx.clip();
     }
-    if (p.invuln > 0 && state.mode !== 'title' && ((now * 12) | 0) % 2 === 0) ctx.globalAlpha = 0.45;
+    const a0 = ctx.globalAlpha; // the caller's fade (the pick screen's showcase fading in and out): the weapon keeps it too
+    if (p.invuln > 0 && state.mode !== 'title' && ((now * 12) | 0) % 2 === 0) ctx.globalAlpha = a0 * 0.45;
     const fade = heroFade(p); if (fade < 1) ctx.globalAlpha = Math.min(ctx.globalAlpha, fade); // a hero hidden by its own kit, as its side sees it (HERO_FADE, js/draw/heroes.js)
     heroBodyFx(p, ax, ay, now, false); // a hero's own marks behind the body: ARMATOS's standard (HERO_BODY_FX, js/draw/heroes.js)
     if (pose && pose.rot) {
@@ -477,7 +478,7 @@ function drawPlayer(p, ex, ey, now, stage) {
     }
     heroBodyFx(p, ax, ay, now, true); // ...or over it (his standard facing away)
     if (seat) ctx.restore();
-    ctx.globalAlpha = 1;
+    ctx.globalAlpha = a0;
     if (held) drawHeldTool(p, px + lx, py + ly + bob, false);
     // what an ability left ON this body - shield, net, jaws, fury, mark -
     // drawn over the sprite for every side alike (js/sim/abilities.js)
