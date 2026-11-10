@@ -83,7 +83,7 @@ function placeTowers() {
 // footprint of snow is near does one take road tiles (never ice, water or a
 // ford). Null if none will stand.
 const TOWER_SEEK = 6;   // tiles from its pylon a tower's footprint is looked for
-const TOWER_CLEAR = 1;  // tiles round a tower (one more in front) the lane's pines and rocks give way
+const TOWER_CLEAR = 1;  // tiles round a tower (one more in front) the lane's pines give way
 function towerStand(team, at) {
   const tx0 = Math.floor(at.x / TILE), ty0 = Math.floor((at.y + 4) / TILE);
   const w = structW('tower'), h = structH('tower'), offs = [];

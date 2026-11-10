@@ -47,11 +47,6 @@ const OBJECTS = {
   // py - 21), and the prompt clears it by the same 12 px everything else gets
   tree:     { solid: true,  work: true, verb: 'CHOP', lift: 33, auto: true,
               mm: [52, 100, 82],   map: CH_FOREST },
-  // genWorld's placeholder (liftRocks): its rock passes still stand one so
-  // the seed's rolls stay put, and every one is lifted before the match. Never
-  // drawn, never seen; solid and two wide as it always was, so the worldgen
-  // passes laid round it lay the same valley.
-  rock:     { solid: true,  w: 2 },
   // a BERRY BUSH: walked into ripe, it heals the walker and empties
   // (bushTouch, below) - no tool, no key, nothing carried. An emptied bush is
   // still a bush; `ready` says whether it is ripe. (On the minimap and off the
@@ -240,9 +235,8 @@ function setTile(i, o) { objects[i] = o; snapTouch(i); return o; }
 const cx = WORLD / 2, cy = WORLD / 2;
 
 // six evenly spaced points on a ring 55 tiles in from the world edge (at the
-// treeline). These were the spawn camps before the eagle drop; they still
-// anchor the river spokes and the keep-clear rules so existing seeds keep
-// their terrain. Nobody starts here any more - every player lands from the eagle.
+// treeline): the frozen rivers run from each to the centre and round from one
+// to the next, and the ponds and rivers keep clear of them (genWorld).
 // RING_N is frozen at six ON PURPOSE: it stopped tracking the player count when
 // the roster grew to ten, because player count must never reshape the terrain.
 const SPAWN_D = WORLD / 2 - 55 * MAP_K;
@@ -273,9 +267,7 @@ const ROOST_WOBBLE = 3;  // +- tiles the arc wanders
 // always solid from the world edge inward (variation eats into the interior).
 // borderNoise is the seed's own border alone; borderDepth is that OR the roost
 // disc, and is what everything reads - genWorld's tree rule, the eagles'
-// line, the lane. genWorld spends its per-tree rng()
-// only under borderNoise (the disc's extra pines roll nothing), so a seed's
-// interior is exactly what it was before the corners were guaranteed.
+// line, the lane. Neither rolls anything.
 function borderNoise(tx, ty) {
   const K = MAP_K; // the noise stretches with the layout, so a bigger valley keeps the treeline's shapes
   let n = vnoise(tx / (22 * K), ty / (22 * K)) * 0.65 + vnoise(tx / (9 * K) + 40, ty / (9 * K) + 40) * 0.35;
@@ -302,7 +294,7 @@ function borderDepth(tx, ty) {
 // as wide as its clearing and three more, tapering GROVE_TAPER a tile either
 // side back into the seed's own edge with a wobble on the fine noise - and clearCamp then cuts the clearing out of it, so the
 // warren is dug into the treeline on every seed. Like the roost discs it only
-// ever ADDS trees, and they roll nothing (genWorld's variant rule). Pure
+// ever ADDS trees, and they roll nothing. Pure
 // position: the sites, the fine noise.
 const GROVE_IN = 3;       // tiles past the warren's centre the tongue reaches
 const GROVE_TAPER = 1.4;  // tiles of depth lost per tile either side of the clearing
@@ -348,35 +340,24 @@ function genWorld() {
   for (let ty = 0; ty < WORLD; ty++) {
     for (let tx = 0; tx < WORLD; tx++) {
       const d = Math.min(tx, ty, WORLD - 1 - tx, WORLD - 1 - ty);
-      // `variant` picks no art any more - there is one pine in twenty-four bend
-      // frames and treeFrame() reads the wind for the lean it wears (the tile's
-      // own hash only mirrors it and gives it a standing lean) - but the ROLL
-      // stays: dropping an rng() call here reshuffles every
-      // existing seed (the hard rule in CLAUDE.md). It is rolled exactly where
-      // the seed's own border (borderNoise) plants a pine; the roost discs'
-      // extra pines (borderDepth) take variant 0 and roll nothing, so the
-      // stream past this loop is what it always was.
-      if (d < borderDepth(tx, ty)) placeObj(tx, ty, 'tree', { hp: TREE_HP, variant: d < borderNoise(tx, ty) ? randi(0, 1) : 0, rare: treeRare(tx, ty) });
+      if (d < borderDepth(tx, ty)) placeObj(tx, ty, 'tree', { hp: TREE_HP, rare: treeRare(tx, ty) });
     }
   }
 
-  // central clearing (the old ore field); CENTER_R (the map types, above)
-  // keeps other worldgen out of it so the river spokes still meet in open
-  // ground. Its rng() draws are kept so existing seeds still produce the same world.
-  for (let i = 0; i < 8; i++) { rand(-0.25, 0.25); rand(3.6, 6.2); }
-
-  // frozen ponds - carved only into the open snow interior, away from the ring points
+  // frozen ponds - carved only into the open snow interior, away from the ring
+  // points and out of the central clearing (CENTER_R), on their own stream
+  const P = worldRng('ponds');
   const nearAnySpawn = (tx, ty, r) => ringPts.some((p) => Math.hypot(tx - p.tx, ty - p.ty) < r);
   for (let l = 0; l < 14; l++) {
     let px = 0, py = 0, ok = false;
     for (let tries = 0; tries < 40 && !ok; tries++) {
-      px = randi(BORDER_MIN + 6, WORLD - 1 - BORDER_MIN - 6);
-      py = randi(BORDER_MIN + 6, WORLD - 1 - BORDER_MIN - 6);
+      px = P.randi(BORDER_MIN + 6, WORLD - 1 - BORDER_MIN - 6);
+      py = P.randi(BORDER_MIN + 6, WORLD - 1 - BORDER_MIN - 6);
       ok = !objects[idx(px, py)] && ground[idx(px, py)] === 0 &&
         Math.hypot(px - cx, py - cy) > 16 && !nearAnySpawn(px, py, 16);
     }
     if (!ok) continue;
-    let n = randi(70, 160);
+    let n = P.randi(70, 160);
     let wx = px, wy = py;
     while (n-- > 0) {
       for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
@@ -385,7 +366,7 @@ function genWorld() {
           Math.hypot(tx - cx, ty - cy) > CENTER_R + 3 && !nearAnySpawn(tx, ty, 10) &&
           roadDist(tx, ty) >= ROAD_ICE_KEEP) ground[idx(tx, ty)] = 1; // never near the road (the `the road` group below)
       }
-      wx += randi(-1, 1); wy += randi(-1, 1);
+      wx += P.randi(-1, 1); wy += P.randi(-1, 1);
       wx = Math.max(4, Math.min(WORLD - 5, wx));
       wy = Math.max(4, Math.min(WORLD - 5, wy));
     }
@@ -398,7 +379,8 @@ function genWorld() {
   // - and around THE ROAD: no ice inside ROAD_ICE_KEEP of its edge, so the lane
   // never meets ice, and a river running at it narrows to nothing over
   // ROAD_ICE_TAPER tiles first (the disc below) rather than ending in a cut.
-  // Neither test rolls anything: the rng stream a seed draws is untouched.
+  // Neither test rolls anything. The rivers draw on a stream of their own.
+  const R = worldRng('rivers');
   const carveIce = (tx, ty) => {
     if (inWorld(tx, ty) && !objects[idx(tx, ty)] && ground[idx(tx, ty)] === 0 &&
       Math.hypot(tx - cx, ty - cy) > CENTER_R + 3 && !nearAnySpawn(tx, ty, 9) &&
@@ -406,8 +388,8 @@ function genWorld() {
   };
   const carveRiver = (x0, y0, x1, y1) => {
     let wx = x0, wy = y0;
-    let a = Math.atan2(y1 - wy, x1 - wx) + rand(-0.4, 0.4);
-    const phase = rand(0, Math.PI * 2), wig = rand(0.06, 0.12);
+    let a = Math.atan2(y1 - wy, x1 - wx) + R.rand(-0.4, 0.4);
+    const phase = R.rand(0, Math.PI * 2), wig = R.rand(0.06, 0.12);
     for (let s = 0; s < 320; s++) {
       // home in on the target while serpentining around the straight line
       const home = Math.atan2(y1 - wy, x1 - wx);
@@ -429,49 +411,9 @@ function genWorld() {
     const a = ringPts[i], b = ringPts[(i + 1) % ringPts.length];
     carveRiver(a.tx, a.ty, b.tx, b.ty);
   }
-
-  function free(tx, ty) {
-    return inWorld(tx, ty) && !objects[idx(tx, ty)] && ground[idx(tx, ty)] === 0;
-  }
-  function nearSpawn(tx, ty) {
-    return ringPts.some((p) => Math.hypot(tx - p.tx, ty - p.ty) < 8);
-  }
-
-  // no interior trees: wood only grows at the forest boundary.
-  // rocks
-  for (let c = 0; c < 110; c++) {
-    const ox = randi(BORDER_MIN, WORLD - 1 - BORDER_MIN), oy = randi(BORDER_MIN, WORLD - 1 - BORDER_MIN);
-    const n = randi(1, 4);
-    for (let i = 0; i < n; i++) {
-      const tx = ox + Math.round(rand(-1.6, 1.6));
-      const ty = oy + Math.round(rand(-1.6, 1.6));
-      if (free(tx, ty) && !nearSpawn(tx, ty) && Math.hypot(tx - cx, ty - cy) > CENTER_R + 3) {
-        placeObj(tx, ty, 'rock', { hp: 5, variant: randi(0, 1) });
-      }
-    }
-  }
-  // berry bushes. These stand here only to keep the seed: every roll below is
-  // the stream the map has always drawn, and the bushes themselves are taken
-  // up again and set by the camps and the river (placeBushes).
-  for (let c = 0; c < 96; c++) {
-    const tx = randi(BORDER_MIN, WORLD - 1 - BORDER_MIN), ty = randi(BORDER_MIN, WORLD - 1 - BORDER_MIN);
-    if (free(tx, ty) && !nearSpawn(tx, ty) && Math.hypot(tx - cx, ty - cy) > CENTER_R + 3) {
-      placeObj(tx, ty, 'bush', { berries: 2, regrow: 0 });
-    }
-  }
 }
 
-// THE ROCKS ARE GONE (0.531), but genWorld still rolls its two rock passes
-// (the interior scatter): taking their rng() calls
-// out would reshuffle every seed, and the rock each one stands is what the
-// later rolls in the same passes test `free` against. So they still stand
-// OBJECTS.rock, the road, the base, the cables and the camps are laid round
-// them exactly as before (laneFells lets a rock give way), and liftRocks takes
-// every one up again after the camps - the valley a seed grows keeps its shape.
-function liftRocks() {
-  for (let i = 0; i < objects.length; i++) if (objects[i] && objects[i].type === 'rock') objects[i] = null;
-}
-// Taking a piece of scenery off the map at runtime (a crater, the landing's
+// Taking a piece of scenery off the map at runtime (the landing's
 // lane, the merchant's axe): the whole footprint goes, so a wide piece
 // never leaves half of itself behind. Returns what stood there, or null.
 function fellScenery(tx, ty) {
@@ -505,7 +447,7 @@ function fellScenery(tx, ty) {
 // (every pond and river ROAD_ICE_KEEP tiles off its edge, a river running at
 // it petering out over ROAD_ICE_TAPER first), as they always did, so no
 // seed's ice moves; the road as laid (laneDist) is that line ended on the two
-// perches and the cistern's gates. A rock or a bush on it is gone. Every camp
+// perches and the cistern's gates. Every camp
 // site (CAMP_SITES) is written well off its centreline. Its centre is open
 // ground. Under each bird lies a PAD, the crash's packed-earth disc (the
 // `pads` registry below), so the road, the pad and the roost are one ground.
@@ -619,11 +561,11 @@ function placeRoad() {
     const i = idx(tx, ty);
     if (ground[i] === 4 || ground[i] === 5) continue; // the lane never paves the creek or a ford
     ground[i] = 3; // the lane is never ice (genWorld keeps it ROAD_ICE_KEEP away)
-    objects[i] = null; // only worldgen's scenery stands here yet: a pine of the woods it cuts through, a rock, a bush
+    objects[i] = null; // only worldgen's scenery stands here yet: a pine of the woods it cuts through
   }
   // the furniture: a point `out` tiles past the ragged edge on one side of u,
   // if that tile is on dry ground (a pennant pole takes the pine on its spot -
-  // the gate stands in the treeline - but gives way to a rock or a bush)
+  // the gate stands in the treeline)
   const s = roadSpan();
   const mark = (u, side, out, type, extra) => {
     const e = roadEdgeAt(u, side) + out;
@@ -981,8 +923,7 @@ function creekFishCatch(p) {
 
 // ------------------------------------------------------------ berry bushes
 // THE BUSHES' PLACES, laid at boot after the camps and the landmarks
-// (js/app/boot.js), on no rng at all: genWorld's own bushes are taken up (they
-// stand there only to keep its stream) and new ones are set near the jungle's
+// (js/app/boot.js), on no rng at all: they are set near the jungle's
 // camps and on the river's banks, so both sides walk the same way to the
 // same heal. BUSH_DEN_N stand round each of RED's wolf dens, on the den's side
 // toward the map's middle, and are mirrored onto BLUE's dens (tx <-> ty): a
@@ -999,8 +940,6 @@ const BUSH_BANK = 1.6;                   // tiles of dry snow between a river bu
 const BUSH_RIVER_W = [26, 48, 70].map((w) => w * MAP_K); // tiles along the creek either way from its middle a river pair stands at
 const BUSH_NUDGE = 4, BUSH_SPACING = 3;  // the search for open snow, and the least gap between two bushes
 function placeBushes() {
-  for (let i = 0; i < objects.length; i++) if (objects[i] && objects[i].type === 'bush') objects[i] = null;
-  if (ARENA) return;
   const placed = [];
   const open = (tx, ty) => {
     if (!inWorld(tx, ty)) return false;

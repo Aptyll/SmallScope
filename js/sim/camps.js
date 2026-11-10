@@ -257,8 +257,7 @@ function campFrame(C) {
 function campLocal(C, F, a, o) { return { tx: C.tx + F.ax * a + F.ox * o, ty: C.ty + F.ay * a + F.oy * o }; }
 // A drawn camp (CAMPS' `plan`) onto the ground: every character is one
 // tile, so the clearing, its wall of pines, its props and its monsters'
-// spots are the drawing on every seed. Pines plant the way the border's do,
-// variant off the tile's hash so they roll nothing.
+// spots are the drawing on every seed. Pines plant the way the border's do.
 function layCampPlan(C) {
   const P = C.spec.plan, F = campFrame(C), back = P.length >> 1, mid = P[0].length >> 1;
   C.spots = [];
@@ -270,7 +269,7 @@ function layCampPlan(C) {
       const i = idx(t.tx, t.ty);
       if (ground[i] === 1) ground[i] = 0;
       objects[i] = null;
-      if (ch === 'T') placeObj(t.tx, t.ty, 'tree', { hp: TREE_HP, variant: hash2(t.tx * 3 + 1, t.ty * 3 + 2) > 0.5 ? 1 : 0, rare: treeRare(t.tx, t.ty) });
+      if (ch === 'T') placeObj(t.tx, t.ty, 'tree', { hp: TREE_HP, rare: treeRare(t.tx, t.ty) });
       else if (ch === 'f') placeObj(t.tx, t.ty, 'snowdrop', { variant: k++ % 4, readyAt: 0 });
       else if (ch === 'r') C.spots.push([t.tx - C.tx, t.ty - C.ty]);
     }

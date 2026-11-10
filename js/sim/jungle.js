@@ -54,7 +54,7 @@ function layJungle() {
       if (objects[i] || (ground[i] !== 0 && ground[i] !== 1) || waterAt(tx, ty) || cisternTouches(tx, ty)) continue;
       if (roadDist(tx, ty, true) < JUNGLE_ROAD_KEEP || baseAt(tx, ty, BASE_KEEP) >= 0) continue;
       ground[i] = 0;
-      placeObj(tx, ty, 'tree', { hp: TREE_HP, variant: hash2(tx * 3 + 1, ty * 3 + 2) > 0.5 ? 1 : 0, rare: treeRare(tx, ty) });
+      placeObj(tx, ty, 'tree', { hp: TREE_HP, rare: treeRare(tx, ty) });
     }
   }
 }
