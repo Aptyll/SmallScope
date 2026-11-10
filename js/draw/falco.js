@@ -32,7 +32,7 @@ function drawFalcoPerch(p, ax, ay, now, front) {
   const lead = p.dir === 'down' || p.dir === 'right', side = p.dir === 'left' || p.dir === 'right', rc = heroReach(p);
   const bob = !p.moving ? 0 : -runBob(p);
   // the glove: 3 px of tan on the off side, its outline outside and under it
-  const gx = lead ? ax + (side ? 1 : 0) - rc : ax + (side ? 12 : 13) + rc, gy = ay + 8 + bob;
+  const gx = lead ? ax + (side ? 1 : 0) - rc : ax + (side ? 12 : 13) + rc, gy = ay + (heroAimed(p) ? 12 : 10) + bob; // the bird's head at his eye line; down at the hip while the knife arm is up, so only one arm is raised
   ctx.fillStyle = FC_INK; ctx.fillRect(gx - 1, gy - 1, 5, 4);
   ctx.fillStyle = FALCO_GLOVE; ctx.fillRect(gx, gy, 3, 2);
   if (!falcoHasHawk(p)) return;

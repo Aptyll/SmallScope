@@ -280,11 +280,12 @@ const FALCO_KNIFE = (() => {
 })();
 // HIS HAWK ON THE GLOVE (drawFalcoPerch, js/draw/falco.js): the falconer's one shape. A tan
 // gauntlet on the hand that does not hold the knife, raised beside him, and the hawk
-// perched on it while it is home: brown back, pale chest, one dark eye, a gold beak. Drawn
+// perched on it while it is home: a small brown head, pale chest, one dark eye, a gold beak,
+// a tapered tail. Drawn
 // looking right; FALCO_HAWK_FOOT is the pixel of its feet, which stand on the glove.
-const FALCO_HAWK = SPR.bake(['.ooo.', 'obWey', 'oBWWo', 'oBbWo', 'oBBWo', 'oBoo.', '.o...'],
+const FALCO_HAWK = SPR.bake(['.oo..', 'obey.', 'oBWWo', 'oBbWo', '.oBo.', '..o..'],
   { '.': null, o: '#2e2440', b: '#a8794a', B: '#6e4a28', W: '#efe8d6', e: '#2e2440', y: '#f2cc6a' });
-const FALCO_HAWK_FOOT = [2, 6];
+const FALCO_HAWK_FOOT = [2, 5];
 const FALCO_GLOVE = '#c8a46a';
 // THE THROW (HERO_AIMED.knife): by step, for the knife hand on the right of the body (`x`
 // mirrors for the left). 1 and 2 the knife raised point up beside the head, a pixel higher
