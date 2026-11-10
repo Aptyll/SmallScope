@@ -182,7 +182,7 @@ let mapAllocN = 0;     // ...and the square they show
 // the square of tiles worth showing: every tile that is not woods (the
 // lanes, the jungle's corridors, the huts' clearings) and CHART_PAD more,
 // centred, so the chart spends its pixels on the played map, not the border wood
-const CHART_PAD = 3;
+const CHART_PAD = 5;
 let chartFitted = false; // the world grows once a page (boot), so the fit is taken once, the first time the chart opens
 function chartFit() {
   if (chartFitted) return;
