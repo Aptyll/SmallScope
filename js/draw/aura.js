@@ -227,6 +227,97 @@ const AURA_SHARD_FLARE = [
   '...oWo...',
   '..oyYyo..',
 ].concat(AURA_SHARD.slice(9));
+// The star-glass at 32 px (dens 2) for her fine body (HERO_STAVES' `fine`): the star laid from its shape on twice the
+// px, long points and a white heart, flaring between the two frames (/mnt/project-files/visuals-loop/heroes-a/fine/aura.py);
+// the grip stays AURA_SHARD_GRIP, in world px
+const AURA_SHARD_FINE = [
+  '..................',
+  '........oo........',
+  '.......occo.......',
+  '.......occo.......',
+  '......ocCCco......',
+  '......ocCCco......',
+  '....oocCWWCcoo....',
+  '..ooccCWWWWCccoo..',
+  '.occCCWWWWWWCCcco.',
+  '.occCCWWWWWWCCcco.',
+  '..ooccCWWWWCccoo..',
+  '....oocCWWCcoo....',
+  '......ocCCco......',
+  '......ocCCco......',
+  '.......occo.......',
+  '......ooccoo......',
+  '.....oyYYYYyo.....',
+  '.....oYyYYyYo.....',
+  '......ooGgoo......',
+  '.......oGgo.......',
+  '.......oGgo.......',
+  '.......oGgo.......',
+  '.......oGgo.......',
+  '.......oGgo.......',
+  '.......oGgo.......',
+  '.......oGgo.......',
+  '.......oGgo.......',
+  '.......oGgo.......',
+  '.......oGgo.......',
+  '.......oGgo.......',
+  '.......oGgo.......',
+  '.......oGgo.......',
+  '.......oGgo.......',
+  '.......oGgo.......',
+  '.......oGgo.......',
+  '.......oGgo.......',
+  '.......oggo.......',
+  '.......oggo.......',
+  '.......oggo.......',
+  '.......oggo.......',
+  '........oo........',
+  '..................',
+];
+const AURA_SHARD_FLARE_FINE = [
+  '..................',
+  '........oo........',
+  '.......oWWo.......',
+  '.......oWWo.......',
+  '......ocWWco......',
+  '......oWWWWo......',
+  '....ooWWWWWWoo....',
+  '..oocWWWWWWWWcoo..',
+  '.oWWWWWWWWWWWWWWo.',
+  '.oWWWWWWWWWWWWWWo.',
+  '..oocWWWWWWWWcoo..',
+  '....ooWWWWWWoo....',
+  '......oWWWWo......',
+  '......ocWWco......',
+  '.......oWWo.......',
+  '......ooWWoo......',
+  '.....oyYYYYyo.....',
+  '.....oYyYYyYo.....',
+  '......ooGgoo......',
+  '.......oGgo.......',
+  '.......oGgo.......',
+  '.......oGgo.......',
+  '.......oGgo.......',
+  '.......oGgo.......',
+  '.......oGgo.......',
+  '.......oGgo.......',
+  '.......oGgo.......',
+  '.......oGgo.......',
+  '.......oGgo.......',
+  '.......oGgo.......',
+  '.......oGgo.......',
+  '.......oGgo.......',
+  '.......oGgo.......',
+  '.......oGgo.......',
+  '.......oGgo.......',
+  '.......oGgo.......',
+  '.......oggo.......',
+  '.......oggo.......',
+  '.......oggo.......',
+  '.......oggo.......',
+  '........oo........',
+  '..................',
+];
 const AURA_SHARD_GRIP = [4, 12];
 const AURA_SHARD_PAL = { o: '#2e2440', C: AU_STAR, c: '#f2cc6a', W: AU_WHITE, y: '#f2cc6a', Y: '#b98a2e', g: '#3a2c40', G: '#5c4868' };
 let auraShardArt = null;
@@ -235,4 +326,10 @@ function auraShard() {
   auraShardArt = [bakeBladeArt(AURA_SHARD, AURA_SHARD_PAL), bakeBladeArt(AURA_SHARD_FLARE, AURA_SHARD_PAL)];
   return auraShardArt;
 }
-HERO_STAVES.shard = { art: auraShard, grip: AURA_SHARD_GRIP };
+let auraShardFineArt = null;
+function auraShardFine() {
+  if (auraShardFineArt) return auraShardFineArt;
+  const tag = (c) => { c.dens = 2; return c; };
+  return (auraShardFineArt = [tag(bakeBladeArt(AURA_SHARD_FINE, AURA_SHARD_PAL)), tag(bakeBladeArt(AURA_SHARD_FLARE_FINE, AURA_SHARD_PAL))]);
+}
+HERO_STAVES.shard = { art: auraShard, fine: auraShardFine, grip: AURA_SHARD_GRIP };
