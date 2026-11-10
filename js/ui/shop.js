@@ -463,9 +463,11 @@ function shopPrice(n, x, y, dear) {
   drawPixelText(ctx, String(n), x + 10, y, dear ? SHOP_DEAR_INK : RES_COLORS.gold);
 }
 // a bare number centred under a well: the grid's price, gold or red
-function shopTag(n, r, dear) {
+// (...or the stat green on your build's next item while your gold buys a piece
+// of it: started, so "buy this now" points at "for that")
+function shopTag(n, r, dear, started) {
   const t = String(n);
-  drawPixelText(ctx, t, r.x + ((r.w - pixelTextWidth(t) + 1) >> 1), r.y + r.h + 2, dear ? SHOP_DEAR_INK : RES_COLORS.gold);
+  drawPixelText(ctx, t, r.x + ((r.w - pixelTextWidth(t) + 1) >> 1), r.y + r.h + 2, started ? SHOP_STAT : dear ? SHOP_DEAR_INK : RES_COLORS.gold);
 }
 // one item's well: its rim says its tier, hover or pick; a filtered-out item
 // greys back. What you cannot afford keeps its colours and says so in its red
@@ -511,11 +513,12 @@ function drawShopPanel(now) {
   for (const hd of L.heads) drawPixelText(ctx, hd.label, hd.x, hd.y, hd.dim ? SHOP_FAINT_INK : SHOP_DIM);
   drawShopRates(L);
   const rec = state.shopTab === 'rec' ? null : shopRecSet();
+  const next = shopRecNext(), started = shopOpenPick() !== next; // a piece of the next item is in reach
   for (const r of L.grid) {
     const n = r.id === 'potion' ? BUILD_ITEMS.potion.price : itemCost(player, r.id).gold;
     shopItemWell(r, r.id, h);
     if (rec && rec.has(r.id)) shopPip(r); // on your hero's build
-    shopTag(n, r, n > player.gold);
+    shopTag(n, r, n > player.gold, started && r.id === next);
     if (r.id === 'potion' && player.potions > 0) { const t = String(player.potions); drawPixelText(ctx, t, r.x + r.w - 2 - pixelTextWidth(t), r.y + 2, SHOP_INK); }
   }
   drawShopSlots(L, h);
