@@ -133,7 +133,7 @@ CLOUD SHADOWS (`vidClouds` — `cloudShade`'s two full-view multiply fills, the 
 costs every daytime frame), SUN SHAFTS (`vidRays` — `godRays` and its motes), ICE STARS
 (`vidStars` — the whole `drawIceStars` pass, mirror included), SNOWFALL (`vidSnow` — the
 falling flakes' draw; the sim still moves them), VIGNETTE (`vidVig` — the frame vignette only,
-the hurt flash is feedback and never goes). The QUALITY row's LOW / MEDIUM / HIGH words are a
+the dark edge that closes in on a blow taken is feedback and never goes). The QUALITY row's LOW / MEDIUM / HIGH words are a
 macro over four of them — clouds, shafts, stars and the vignette (`VID_PRESETS`): LOW turns them all off, MEDIUM keeps
 everything but the cloud shadows, HIGH is everything, and the word matching the current mix
 wears gold — a hand-picked mix golds none of them. SNOWFALL is deliberately in no preset:
