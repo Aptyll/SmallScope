@@ -983,8 +983,11 @@ function netEcho() {
   const size = snapSize(s);
   const dict = encDict(), bytes = snapEncode(s, dict);
   const kept = snapKeepSkipped();
+  // no frame of the blank world: the draw keeps a little of its last frame
+  // (a body's fall starts on the edge of p.dead it SAW, trackDowns; a call
+  // plate hangs on the name tag the air layer left, callAnchor), and a blank
+  // frame between would hand the echo a death, or a world, no screen saw
   snapBlank();
-  const blanked = snapFrame();
   snapApply(snapDecode(bytes, encDict()));
   const b = snapFrame();
   // what did not survive the round trip, field by field (a second build
@@ -992,7 +995,7 @@ function netEcho() {
   const mismatch = [];
   snapCompare(JSON.parse(json), snapBuild(), '', mismatch, 20);
   snapRestoreSkipped(kept); // the page goes on stepping this world: its bookkeeping back (a heading lost is a NaN walk)
-  return { diff: snapDiff(a2, b), noise, blankDiff: snapDiff(a2, blanked), bytes: json.length, binBytes: bytes.length, size, mismatch };
+  return { diff: snapDiff(a2, b), noise, bytes: json.length, binBytes: bytes.length, size, mismatch };
 }
 // echo every `every` ticks over `ticks` of stepping; the worst diff and when
 function netEchoRun(ticks, every) {
