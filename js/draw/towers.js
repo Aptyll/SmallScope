@@ -9,6 +9,8 @@
 // what is in the air: the line the gun is aimed down while it winds on a
 // hero, the bolt in flight, and the spent one standing in the snow.
 const TOWER_RIM = '#0d1226';    // the dark shadow pixel under the aim line, so it reads on snow
+const TOWER_AIM_HOT = 0.85;      // the share of the wind the sight line takes to reach its mark; past it, it burns pale
+const TOWER_AIM_PALE = '#ffe9a0'; // ...in this, a warm pale that holds on snow where white would not
 const TOWER_HEADS = 16;          // the baked headings (app/bake-tower/bake.py)
 const TOWER_LOOSE_SHOW = 0.15;   // s the loosed frame holds before the winding starts
 const TOWER_PIN_FADE = 0.6;      // s a spent bolt takes to fade out at the end of its TOWER_PIN_T
@@ -52,28 +54,24 @@ function drawTowerFx(ex, ey, now) {
     const gx = Math.round(gun.x - ex), gy = Math.round(gun.y - ey);
     if (gx < -260 || gy < -260 || gx > WV_W + 260 || gy > WV_H + 260) continue;
     const tg = o.tgt;
-    // THE AIM: while it winds on a HERO, a dashed line on the snow from the
-    // tower's foot to theirs, crawling toward them and brightening as the
-    // string comes back, and a ring at their feet - the loose is coming, and
-    // the way out of it is out of the ring. (A bot is never warned.)
+    // THE AIM: while it winds on a HERO, the gun's sight line, one unbroken thread in
+    // its side's colour from the gun's nose toward their chest. It runs out as the
+    // string comes back and reaches them as the bolt is loosed, a glint riding its
+    // end; the last moment it burns pale. No line on the snow, no ring at the feet:
+    // the loose is coming down this line. (A bot is never warned.)
     if (tg instanceof Player && o.chg > 0.02 && !o.bolt && fogShown(tg, now)) {
-      const hot = o.chg > 0.85, crawl = Math.floor(now * 14);
-      const dx = tg.x - foot.x, dy = tg.y + 4 - foot.y, L = Math.hypot(dx, dy) || 1, n = Math.floor(L / 2);
-      ctx.globalAlpha = 0.3 + 0.6 * o.chg;
-      for (let i = 4; i < n; i++) {
-        if ((i - crawl) % 4 >= 2) continue;
-        const x = Math.round(foot.x + dx * i / n - ex), y = Math.round(foot.y + dy * i / n - ey);
+      const hot = o.chg > TOWER_AIM_HOT;
+      const x0 = gun.x + Math.cos(o.ang) * 14, y0 = gun.y + Math.sin(o.ang) * 9 - 10; // where the bolt leaves
+      const dx = tg.x - x0, dy = tg.y - 6 - y0, n = Math.ceil(Math.max(Math.abs(dx), Math.abs(dy))) || 1;
+      const m = Math.round(n * Math.min(1, o.chg / TOWER_AIM_HOT));
+      for (let i = 0; i <= m; i++) {
+        const x = Math.round(x0 + dx * i / n - ex), y = Math.round(y0 + dy * i / n - ey);
         ctx.fillStyle = TOWER_RIM; ctx.fillRect(x, y + 1, 1, 1);
-        ctx.fillStyle = hot ? '#ffffff' : tm.mark; ctx.fillRect(x, y, 1, 1);
+        ctx.fillStyle = hot ? TOWER_AIM_PALE : tm.mark; ctx.fillRect(x, y, 1, 1);
       }
-      const rx = Math.round(tg.x - ex), ry = Math.round(tg.y + 4 - ey), r = Math.round(9 - 3 * o.chg);
-      for (let a = 0; a < 24; a++) {
-        if (a % 2) continue;
-        const x = Math.round(rx + Math.cos(a / 24 * Math.PI * 2) * r), y = Math.round(ry + Math.sin(a / 24 * Math.PI * 2) * r * 0.55);
-        ctx.fillStyle = TOWER_RIM; ctx.fillRect(x, y + 1, 1, 1);
-        ctx.fillStyle = hot ? '#ffffff' : tm.mark; ctx.fillRect(x, y, 1, 1);
-      }
-      ctx.globalAlpha = 1;
+      const hx = Math.round(x0 + dx * m / n - ex), hy = Math.round(y0 + dy * m / n - ey); // the glint on its end
+      ctx.fillStyle = TOWER_RIM; ctx.fillRect(hx - 2, hy - 1, 5, 3); ctx.fillRect(hx - 1, hy - 2, 3, 5);
+      fxMote(hx, hy, '#ffffff', TOWER_AIM_PALE); // warm on either side: never a loose dot of a side's red
     }
     const set = SPRITES.teamBuild[skin(o.team)], bo = SPRITES.towerAt.bolt;
     // THE BOLT in the air, from the gun's nose to the mark's chest

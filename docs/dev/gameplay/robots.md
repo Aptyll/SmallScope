@@ -127,8 +127,9 @@ The `road towers` banner (js/sim/towers.js). Every zipline has three `STRUCTS.to
   hero. A hero is only a mark while `seenAt` says the side sees them.
 - **The turn and the wind**: the gun turns at `TOWER_TRAVERSE`, and once inside `TOWER_LOCK` of
   the mark it winds for `TOWER_WIND` (0.7 s) before it looses; then `TOWER_RELOAD` (1.6 s).
-  While it winds on a hero, `drawTowerFx` (js/draw/towers.js) runs a dashed line on the snow
-  from the foot to them and a ring at their feet, brightening as the string comes back.
+  While it winds on a hero, `drawTowerFx` (js/draw/towers.js) runs the gun's sight line, one
+  unbroken thread in its side's colour, out from the gun's nose toward their chest: it reaches them as
+  the string comes all the way back (`TOWER_AIM_HOT`), then burns pale until the loose.
 - **The bolt**: `TOWER_BOLT_T` in the air, then `hurtUnit` (`cause: 'tower'`, a short knockback).
   A bot takes `TOWER_DMG_BOT` (15). A hero takes `TOWER_DMG` (24), and each bolt in a row into
   the same hero adds `TOWER_HEAT` of that, up to three times the first. The spent bolt stands in

@@ -37,7 +37,7 @@ const CRANK_R = 40;             // px round her feet it slows
 const CRANK_SLOW = 0.55;        // walk x this
 const CRANK_DMG = 25;           // to each body near
 const CRANK_FX_LIFE = 0.55;     // s the crater shows (drawn: AB_FX_LOOK.crank)
-// R THE LONG BOLT: she kneels and draws (the towers' dashed line on the snow),
+// R THE LONG BOLT: she kneels and draws (her aim shown on the snow, js/draw/sagitta.js),
 // then looses one bolt across most of the screen: through soldiers and beasts,
 // ending on the first hero, who is thrown far back
 const LONG_SPD = 760;           // px/s
