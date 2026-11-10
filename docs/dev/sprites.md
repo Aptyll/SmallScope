@@ -187,8 +187,8 @@ ponytail, an iron band, a dark mask, a dark mantle where the gold was) is bought
 bella-round4.png in the project files and its skin; their dolls (`General`, `Traitor` in
 app/bake-player/bodies.py) stream the ponytail behind her in the run (the doll's `hair` and `cloak`
 materials). Her 48 px model is her own standing front too. Her EAGLE SPATHA (`BELLA_SPATHA`,
-`HERO_BLADES.spatha`) has no slanted carry (an empty `hip`): facing down or up she holds it upright
-in the leading hand.
+`HERO_BLADES.spatha`) is flat for the swing and slanted at rest (`BELLA_SPATHA_DIAG`, the grip at
+`BELLA_SPATHA_GRIP`): she holds it at the ready in the leading hand in every facing.
 
 IGNIA's looks (`IGNIA_SKINS`, js/sprites/ignia.js) are drawn on ARMATOS's frame too (`IGNIA_PAL` is
 `ARM_PAL` with her copper hair `a`/`A` and the ember letters `u`/`f`/`F`). HEARTHKEEPER (loose
