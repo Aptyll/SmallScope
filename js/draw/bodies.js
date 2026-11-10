@@ -177,7 +177,6 @@ function drawMerchant(b, ex, ey, now) {
     }
   }
   drawUnitStates(b, px, py - lift, spr.width, spr.height, now);
-  drawWorldText('MERCH', centreTextX(b.x - ex, 'MERCH'), py - 17 - lift, TEAMS[skin(b.team)].mark);
   if (b.stunT > 0) drawStunStars(Math.round(b.x - ex), py - 10, b, 5);
   heroOver(b, Math.round(b.x - ex), py - 22 - lift, now); // a hero's marks, over the name (HERO_OVER)
 }
