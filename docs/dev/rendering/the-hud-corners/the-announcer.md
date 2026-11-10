@@ -2,7 +2,7 @@
 
 League's two readouts of a fight, in the HUD's graphite (js/ui/announcer.js).
 
-**The call.** A big moment raises one call: FIRST BLOOD (the match's first player kill), a
+**The call.** A big moment raises one call: FIRST STRIKE (the match's first player kill), a
 DOUBLE / TRIPLE / QUADRA / PENTA KILL (die()'s run of kills `MULTI_T` apart), SHUTDOWN (the body
 wore a bounty), ACE (that kill left the whole fallen side down), TOWER DESTROYED (a road tower,
 `STRUCTS.tower.call`) and BLACK BEAR DOWN / ORCA DOWN (a `teamPay` kill). A kill earns

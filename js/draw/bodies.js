@@ -18,6 +18,7 @@ function drawAnimal(a, ex, ey, now) {
   const gy = Math.round(a.y + 4 - spr.height - ey);
   drawCastShade(spr, px, gy); // the sun's shade, cut from this frame (ground.js), on the ground under a leap
   const py = gy - rideLift(a); // a ridden deer's leap lifts it off its shade (js/sim/wildlife.js)
+  const lit = spr.width <= 120 ? bodyLayerOpen(px + (spr.width >> 1), py + spr.height, (spr.width >> 1) + 4, spr.height + 4) : null; // keeps its light at night (js/draw/light.js)
   drawSpriteFlash(spr, px, py, a.flash);
   // netted, snared, alight, marked: the same four tells a player wears, at
   // this body's size (drawUnitStates, js/draw/abilities.js). `top` (a bear's
@@ -25,6 +26,7 @@ function drawAnimal(a, ex, ey, now) {
   // tells sit on the standing body, not on the box
   const ty = py + (spr.top || 0);
   drawUnitStates(a, px, ty, spr.width, spr.height - (spr.top || 0), now);
+  bodyLayerClose(lit);
   // The frame centres on the SPRITE's own columns (px, already rounded), not
   // on a.x: a wolf's 16-wide body under an 11-wide bar rounded the two
   // halves apart, and the bar shivered a pixel against the body as it ran.
@@ -47,25 +49,32 @@ function drawAnimal(a, ex, ey, now) {
 // threat, bare track at rest and filling from the first flicker of
 // interest to the full bar it charges on (updateWolf, js/sim/wildlife.js); a
 // deer's sprint and a rabbit's jink charge (updatePrey) in stamina white -
-// each is one, spent on the run and on the dash. Over the frame, the stun
-// stars or the noticed mark, never both. The bar's width is the kind's
+// each is one, spent on the run and on the dash. On its right, the status
+// plate while a control holds it (drawStatusPlate); over it, the noticed mark
+// unless it is stunned. The bar's width is the kind's
 // (beastFrame): BEAST_BAR_W, or a camp monster's own `frame` row - a bear's
 // is drawn at its body's 2x, cut into fixed `segs`, and centred whole,
 // plate and bar together, on its body. `cx` is the body's centre, `mid` its
 // centre column, `fy` the row the frame stands on; drawAnimal's in the
 // world and the wiki's cards (ui/wiki.js) are the same pixels.
-const BEAST_BAR_W = { rabbit: 8, wolf: 11, fox: 11, deer: 23, ox: 29 }; // widths that split into even segments (hpSegCount)
+const BEAST_BAR_W = { rabbit: 8, wolf: 11, deer: 23 }; // widths that split into even segments (hpSegCount)
 function beastFrame(kind) { return (MONSTER[kind] && MONSTER[kind].frame) || { s: 1, w: BEAST_BAR_W[kind] || 17 }; }
 function drawBeastFrame(kind, cx, mid, fy, e, two, u, now) {
   const F = beastFrame(kind), k = F.s, camp = isCampKind(kind);
   const bc = F.centre ? mid + levelBadgeW(e.level) * k / 2 : cx; // the bar's centre: the plate's half off a centred frame's
   const bx = Math.round(bc - F.w * k / 2);                       // the bar's own left column (drawHealthBar's x)
   // a hero's summon (HERO_SUMMON) wears its side's bar, so it is never taken for a den's
-  drawHealthBar(bc, fy - 8 * k, e.hp, e.maxHp, F.w, e.summon ? e.team : undefined, undefined, u, k, F.segs);
+  const st = statusOf(e), team = e.summon ? e.team : undefined;
+  // a plate's total stands past the plate, where a player's does (drawPlayer)
+  drawHealthBar(bc, fy - 8 * k, e.hp, e.maxHp, F.w, team, undefined, st ? undefined : u, k, F.segs);
   drawHealthBar(bc, fy - 5 * k, two, 1, F.w, undefined, camp ? THREAT_COL : STAM_COL, undefined, k);
   drawLevelBadge(bx - k, fy - 9 * k, e.level, k);
-  if (e.stunT > 0) drawStunStars(mid, fy - 13 * k, e, 4, undefined, k);
-  else if (e.senseT > 0) drawSenseMark(mid, fy - 16 * k, e, camp ? THREAT_COL : STAM_COL, k);
+  if (st) {
+    drawStatusPlate(bx + (F.w + 1) * k, fy - 10 * k, e, st, k); // its left column the bar backing's right wall
+    if (u) queueTally(u, bx + (F.w + 1 + STATUS_W) * k, fy - 7 * k, barCol(team));
+  }
+  // the noticed mark over the head, unless its stunned plate says it is seeing nothing
+  if (e.senseT > 0 && !(e.stunT > 0)) drawSenseMark(mid, fy - 16 * k, e, camp ? THREAT_COL : STAM_COL, k);
   // a hero's marks on it (HERO_OVER) stand over all of that: the '!' tops the stack at fy - 16k
   if (now !== undefined) heroOver(e, mid, fy - 16 * k - 5, now);
 }
@@ -98,6 +107,7 @@ function drawRobot(b, ex, ey, now) {
 
   drawCastShade(spr, bx, by + bob + zl); // on the ground under the bob
 
+  const lit = bodyLayerOpen(Math.round(b.x - ex), by + spr.height, 20, 36); // keeps its light at night (js/draw/light.js)
   if (zl) drawZipHandle(b, Math.round(b.x - ex), by, ey); // the handle over the chassis and the rope up to the cable (js/draw/zipline.js)
   drawSpriteFlash(spr, bx, by, b.flash);
   // a soldier (the `soldiers` banner, robots.js) flies its side's pennant off a back corner of the
@@ -123,6 +133,7 @@ function drawRobot(b, ex, ey, now) {
 
   // the four shared tells, same as any other body (js/sim/abilities.js)
   drawUnitStates(b, bx, by, spr.width, spr.height, now);
+  bodyLayerClose(lit);
   drawHealthBar(b.x - ex, by - 4, b.hp, b.maxHp, T.spr === 'robotSiege' ? 12 : 8, b.team, undefined, b);
   if (b.stunT > 0) drawStunStars(Math.round(b.x - ex), by - 9, b, 4);
   heroOver(b, Math.round(b.x - ex), by - 15, now); // a hero's marks, over the bar and the stars (HERO_OVER)
@@ -185,6 +196,7 @@ function drawMerchant(b, ex, ey, now) {
   const lift = (b.hopT > 0 ? Math.round(Math.sin(Math.min(1, b.hopT / MERCH_HOP_T) * Math.PI) * 10) : 0) +
     (b.moving ? Math.floor(b.animT / 2) % 2 : 0);
   drawCastShade(spr, px, py); // stays on the snow through a hop
+  const lit = bodyLayerOpen(px + 8, py + spr.height, 20, 40); // keeps its light at night (js/draw/light.js)
   drawSpriteFlash(spr, px, py - lift, b.flash);
   // the swing: the soldier's wind-up and chop, aimed at the tile in hand
   if (b.tgt && !b.moving && lift === 0) {
@@ -202,6 +214,7 @@ function drawMerchant(b, ex, ey, now) {
     }
   }
   drawUnitStates(b, px, py - lift, spr.width, spr.height, now);
+  bodyLayerClose(lit);
   if (b.stunT > 0) drawStunStars(Math.round(b.x - ex), py - 10, b, 5);
   heroOver(b, Math.round(b.x - ex), py - 22 - lift, now); // a hero's marks, over the name (HERO_OVER)
 }
@@ -240,6 +253,37 @@ const FRAME_DX = 3;
 // longest buff (a bear's) fills every pip.
 const BUFF_RING = 12;                // pips round the ring
 const BUFF_COL = '#ffb04a';          // a buff with no bear named (a hand grant): amber
+// THE TEAM RING: one pixel ring on the snow round every hero's feet, in its
+// side's paint (the coat's own shade, a value step under the mark so a blue
+// one holds on blue-white snow; your own in SELF_COL, the green of your bar),
+// on an ink underline and a faint wash of the same colour. Heroes alone wear
+// it - never a soldier, a beast or the merchant - so in a crowd the ringed
+// bodies are the ones that matter, and which side each is on reads off the
+// ground when the bodies and their frames are piled on each other. It is
+// ground, like the shade: under the body, under the night, never in the
+// body's light. Not under a body plunged through the ice, riding a cable, or
+// off the map on a stage. A hero its own kit hides is not drawn for a rival
+// at all (fogShown), so its ring never is either.
+const HERO_RING_RX = 8, HERO_RING_RY = 4, HERO_RING_DY = 6, HERO_RING_WASH = 0.25;
+const HERO_RING_INK = '#0f1632';
+let heroRingPts = null; // [dx, dy] of the outline, then [dx0, dy, w] of each wash row
+function heroRingShape() {
+  const rx = HERO_RING_RX, ry = HERO_RING_RY, edge = [], rows = [];
+  const half = (v, r, q) => Math.round(r * Math.sqrt(Math.max(0, 1 - ((v + 0.5) / q) ** 2)) - 0.5);
+  for (let x = -rx; x < rx; x++) { const y = half(x, ry, rx); edge.push([x, y], [x, -y - 1]); }
+  for (let y = -ry; y < ry; y++) { const x = half(y, rx, ry); edge.push([x, y], [-x - 1, y]); rows.push([-x - 1, y, 2 * x + 2]); }
+  return (heroRingPts = { edge, rows });
+}
+function drawHeroRing(p, cx, cy) {
+  const R = heroRingPts || heroRingShape(), was = ctx.globalAlpha;
+  ctx.fillStyle = HERO_RING_INK;
+  for (const q of R.edge) ctx.fillRect(cx + q[0], cy + q[1] + 1, 1, 1);
+  ctx.fillStyle = p === player ? SELF_COL : TEAMS[skin(p.team)].coat;
+  for (const q of R.edge) ctx.fillRect(cx + q[0], cy + q[1], 1, 1);
+  ctx.globalAlpha = was * HERO_RING_WASH;
+  for (const q of R.rows) ctx.fillRect(cx + q[0], cy + q[1], q[2], 1);
+  ctx.globalAlpha = was;
+}
 function drawBuffRing(p, cx, cy, now) {
   drawPipRing(cx, cy, 7 + ((now * 3) & 1), p.buffT / CAMP_BUFF_EPIC_T, (MONSTER[p.buffKind] && MONSTER[p.buffKind].buffCol) || BUFF_COL);
 }
@@ -315,6 +359,10 @@ function backRow(spr, col) {
   }
   return spr[k];
 }
+// how far a player's model reaches off its centre column and over its feet,
+// the greatsword at full swing included (the body light's scenery test,
+// js/draw/light.js)
+const BODY_REACH = 30, BODY_REACH_UP = 44;
 // stage: a model on show off the map (the champ select's showcase, drawShowcase,
 // js/ui/select.js) - the tool in hand, no sun shade (its stage lights it), none of
 // the overhead tells, on any mode.
@@ -341,11 +389,11 @@ function drawPlayer(p, ex, ey, now, stage) {
   const MB = SPRITES.motionBox;
   const px = Math.round(p.x - 8 - ex) + (seat ? seat.dx : 0);
   const py = Math.round(p.y - 12 - ey) - rl; // a rider's whole body - held tool, marks, plate - sits up on the deer
-  // where the frame's top-left sits: a frame fills the 16x16 cell (a taller
-  // one keeps its feet on the cell's floor, a doll frame holds the cell at
-  // motionBox's x, y)
-  const bx = running ? px - MB.x : px;
-  const by = running ? py - MB.y : py + 16 - spr.height;
+  // where the frame's top-left sits: any frame - the 16x16 cell, a larger
+  // hero's, a wider run frame, the hoist - is centred on the cell with its
+  // floor on the cell's floor
+  const bx = px - ((spr.width - 16) >> 1);
+  const by = py + 16 - spr.height;
   // shadow (not while swimming in a hole, and not on a deer, which casts its own)
   if (!stage && p.fallT <= 0 && !p.mount) {
     // the sun's shade, cut from the frame on show (ground.js), feet on the
@@ -353,6 +401,7 @@ function drawPlayer(p, ex, ey, now, stage) {
     if (p.dodgeT > 0) drawCastShade(classSet(p).roll[p.dir][rollFrame(1 - p.dodgeT / DODGE_T)], px - MB.x, py - MB.y);
     else drawCastShade(spr, bx, by);
   }
+  if (!stage && p.fallT <= 0 && !zl) drawHeroRing(p, Math.round(p.x - ex), Math.round(p.y - ey) + HERO_RING_DY); // the team ring, on the snow under it
   if (p.buffT > 0 && p.fallT <= 0) drawBuffRing(p, Math.round(p.x - ex), Math.round(p.y - ey) + 3, now);
   if (p.pushT > 0 && p.fallT <= 0) drawPushRing(p, Math.round(p.x - ex), Math.round(p.y - ey) + 3, now);
 
@@ -360,6 +409,9 @@ function drawPlayer(p, ex, ey, now, stage) {
   // through the canopy window's hero layer (js/draw/canopy.js) when it is the
   // viewed hero's, so a canopy over it can open round exactly what is drawn
   const layer = heroLayerOpen(p, px, py);
+  // ...and through the body layer when it is anyone else's and the night is on,
+  // so a body keeps its light (js/draw/light.js)
+  const lit = !layer ? bodyLayerOpen(px + 8, py + 16, BODY_REACH, BODY_REACH_UP) : null;
   if (p.fallT > 0) {
     // plunged through the ice: quick sink, only the head above the waterline
     const sink = Math.round(Math.min(7, (HOLE_FALL_T - p.fallT) * 40));
@@ -434,6 +486,8 @@ function drawPlayer(p, ex, ey, now, stage) {
     if (zl) drawZipHandle(p, Math.round(p.x - ex), sy, ey); // the handle over the head and the rope up to the cable (js/draw/zipline.js)
   }
   heroLayerClose(layer);
+  if (layer) litAdd(heroCv, heroAt.x, heroAt.y, HERO_LW >> 1, HERO_FOOT, BODY_REACH, BODY_REACH_UP);
+  bodyLayerClose(lit);
 
   // ...and neither the title's living world nor an end screen's frozen one
   // wears any of the tells below: both are compositions somebody is looking
@@ -443,7 +497,7 @@ function drawPlayer(p, ex, ey, now, stage) {
   if (stage || state.mode === 'title' || endScreen()) return;
 
   // the whole stack hangs off one y
-  const hy = py - (zl ? zl + 5 : 0) - // a rider's frame rises with it and clears the handle
+  const hy = py - heroRise(p) - (zl ? zl + 5 : 0) - // a taller body lifts it; a rider's frame rises with it and clears the handle
     (p.mount ? MOUNT_BAR_ROWS : 0); // ...and a deer's rider stands the frame up off the head for the deer's row
   // fx is the stack's own centre column - the body's, shifted by FRAME_DX so
   // the frame straddles the sprite. Everything in the frame hangs off it.
@@ -463,14 +517,15 @@ function drawPlayer(p, ex, ey, now, stage) {
   // (overheadPlate, js/draw/light.js), so it reads the same in any light and
   // nothing standing in front of the body cuts into it
   overheadPlate(() => {
-    drawHealthBar(p.x - ex + FRAME_DX, hy - 7, p.hp, p.maxHp, 14, p.team);
+    drawHealthBar(p.x - ex + FRAME_DX, hy - 7, p.hp, p.maxHp, 14, p.team, undefined, undefined, 1, undefined, local ? SELF_COL : undefined); // your own in green (unitBarCol, js/draw/overhead.js)
     if (p.healCutT > 0) drawHealCut(p.x - ex + FRAME_DX, hy - 7, p.hp, p.maxHp, 14); // FROSTBITE: its heals are cut
     if (shL) drawShieldBar(fx - 7, hy - 10, dawn);
     if (line > 0) drawOrcaCount(fx, hy - 10 - shL, line);
     // the running damage total, past the frame's right edge: the bar backing,
-    // the colour-blind cap or the stun plate, whichever stands furthest out,
+    // the colour-blind cap or the status plate, whichever stands furthest out,
     // centred on the 7-row frame the badge spans (hy-8 .. hy-2)
-    queueTally(p, fx + 8 + (p.stunT > 0 ? 6 : foeCue(p.team) ? 1 : 0), hy - 4.5, barCol(p.team));
+    const st = statusOf(p);
+    queueTally(p, fx + 8 + (st ? STATUS_W : foeCue(p.team) ? 1 : 0), hy - 4.5, unitBarCol(p));
     // level badge: a 7-tall plate sharing its right frame column with the bar
     // backing's left edge (fx-8: one 1px frame everywhere, never a doubled
     // wall), and spanning the health bar and the stamina bar stacked (hy-8 ..
@@ -523,31 +578,17 @@ function drawPlayer(p, ex, ey, now, stage) {
       drawHealthBar(cx, hy - 1, p.mount.hp, p.mount.maxHp, 14, p.team, MOUNT_BAR_COL);
       queueTally(p.mount, Math.round(cx - 7) + 15, Math.round(hy), MOUNT_BAR_COL); // where drawHealthBar puts a total
     }
-    // stunned: the mirror of the level badge on the other side of the frame -
-    // same backing, same track, sharing its left frame column with the health
-    // bar backing's right edge, so the stack still reads as one outline. The
-    // sparks say what the state is and the track drains from the bottom as the
-    // window runs out, which answers the only question a stun asks.
-    //
-    // Nothing is drawn here while nothing is stunning - an empty plate parked
-    // over every head is a bar that is never a bar. That does mean the resting
+    // the status plate: what has this body pinned, the mirror of the level
+    // badge on the frame's other side (drawStatusPlate, js/draw/overhead.js),
+    // the one state that matters most and nothing while nothing holds.
+    // That does mean the resting
     // frame is only the level badge plus the bars, 22 px spanning cx-14..cx+7,
     // sitting three pixels left of the sprite's own seam; turn the pink centre
     // column on under '.' (drawHitboxes) and you can see it. Fixing that by
     // shifting the badge and both bars 3 px right would take the BARS off the
     // body to square up a badge, and the frame would still grow rightwards the
-    // moment a stun landed, so it is left as it is.
-    if (p.stunT > 0) {
-      const bx = fx + 8, by = hy - 8;
-      ctx.fillStyle = BAR_FRAME;
-      ctx.fillRect(bx, by, 6, 7); // 6 wide: the column to its left is the bar backing, already painted
-      ctx.fillStyle = BAR_TRACK;
-      ctx.fillRect(bx, by + 1, 5, 5);
-      const h = Math.max(1, Math.round(5 * Math.min(1, p.stunT / Math.max(0.01, p.stunMax))));
-      ctx.fillStyle = '#b06a14'; // bright enough to read as a fill against the track, dim enough to sit under the sparks
-      ctx.fillRect(bx, by + 6 - h, 5, h);
-      drawStunStars(bx + 2, by + 3, p, 1.5, 1);
-    }
+    // moment a state landed, so it is left as it is.
+    if (st) drawStatusPlate(fx + 8, hy - 9, p, st);
     // bow draw meter: gold while charging, blinking white and settling to
     // pale gold the moment the draw is full - brighter, never a new hue, so it
     // stays the bow's colour next to a red rival's bar. Drawn for everyone -

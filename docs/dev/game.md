@@ -12,7 +12,7 @@ nine other people are on it.
 
 Ten players in `players` — **people and bots: every seat nobody takes is a bot's**, alone or in an
 online lobby ([online play](multiplayer.md#online-play)) — across **two teams of five, RED vs
-BLUE** (players alternate). Everyone plays one of **eighteen heroes** (ARMATOS the defensive initiator, FORTIVA the juggernaut, BELLA the duelist, IGNIA the hearthkeeper, AURA the artillery mage, SALVIA the healer, LUCERNA the catch-and-save support, HIEMS the control mage, RUPES the engage tank, VARRO the jungler who calls wolves, BUCINA the tempo support, NIX the night scout, FABER the zone mage, VELOX the skating marksman, FALCO the diving assassin, MARIS the catch tank, LIGNUM the treeline skirmisher and SAGITTA the siege marksman — a human's is the one picked on the champ select's hero grid) and is **dropped in by their team's armoured eagle**, which flies in over its own corner and lands
+BLUE** (players alternate). Everyone plays one of **twenty heroes** (ARMATOS the defensive initiator, FORTIVA the juggernaut, BELLA the duelist, IGNIA the hearthkeeper, AURA the artillery mage, SALVIA the healer, LUCERNA the catch-and-save support, HIEMS the control mage, RUPES the engage tank, VARRO the jungler who calls wolves, BUCINA the tempo support, NIX the night scout, FABER the zone mage, VELOX the skating marksman, FALCO the diving assassin, MARIS the catch tank, LIGNUM the treeline skirmisher, SAGITTA the siege marksman, CLIVUS the climbing fighter and ARCUS the fletcher — a human's is the one picked on the champ select's hero grid) and is **dropped in by their team's armoured eagle**, which flies in over its own corner and lands
 the whole side at home; nobody starts at a spawn camp. Each side's **base** is a fixed hollow cut
 into its **corner's** woods, RED always bottom-left, BLUE always top-right
 ([the bases](world.md#the-bases)); the bird roosts on its perch at the back and becomes its team's
@@ -38,6 +38,7 @@ down at their own bird.
 **Your side is always blue.** Whatever team index the roster dealt you, your allies are painted
 BLUE and your enemies RED — nameplates, arrows, armour, buildings, map marks, bot names, all of
 it — through one function (`skin`, js/sim/player.js) the paint goes through and the rules never do.
+**You alone are green**: your own health bar and the ring at your feet (`SELF_COL`), so you find your hero among allies in the same coat; every hero stands in a ring of its side's colour, and no soldier or beast does.
 A settings toggle (MY TEAM) shows the roster's real colours instead.
 [Teams and colours](multiplayer.md#teams-and-colours).
 
@@ -73,7 +74,7 @@ ride). Nothing in either counts and nothing is at stake. See [the practice tool]
 ## The pillars
 
 **Your weapon is your hero's.** The left button is one plain MOBA basic attack that belongs to
-the hero's kit (ARMATOS's OATH GREATSWORD, FORTIVA's CHAIN GREATSWORD, BELLA's EAGLE SPATHA, IGNIA's CROOK AND LANTERN, NIX's ICE DIRK, FALCO's THROWING KNIFE, AURA's STAR SHARD, SALVIA's SNOWDROP STAFF, LUCERNA's LANTERN, HIEMS's SNOWFLAKE STAFF, FABER's CLOCK STAFF, VARRO's HUNTING SPEAR, BUCINA's HORN, RUPES's ICE MAUL, MARIS's HARPOON, LIGNUM's FELLING AXE, VELOX's STAFF SLING, SAGITTA's HEAVY ARBALEST), held
+the hero's kit (ARMATOS's OATH GREATSWORD, FORTIVA's CHAIN GREATSWORD, BELLA's EAGLE SPATHA, IGNIA's CROOK AND LANTERN, NIX's ICE DIRK, FALCO's THROWING KNIFE, AURA's STAR SHARD, SALVIA's SNOWDROP STAFF, LUCERNA's LANTERN, HIEMS's SNOWFLAKE STAFF, FABER's CLOCK STAFF, VARRO's HUNTING SPEAR, BUCINA's HORN, RUPES's ICE MAUL, MARIS's HARPOON, LIGNUM's FELLING AXE, VELOX's STAFF SLING, SAGITTA's HEAVY ARBALEST, CLIVUS's ICE AXE, ARCUS's WILLOW LONGBOW), held
 to draw and released to land, and nothing on the map drops another: what grows over a match is the
 hero's level and the six item slots. The **bottom bar** shows those six slots beside the
 abilities at all times. [The basic attack](gameplay/the-basic-attack.md).
@@ -91,7 +92,7 @@ a bandage, a torch, bolas, a shield, a sprint, shaking off a hold, a cleaver for
 No flash: the roll is everybody's. [The loadout](gameplay/loadout.md).
 
 **Keys 1-4 are your hero.** Each hero carries four active abilities of its own (ARMATOS's line
-slam, brace, march and planted standard; SAGITTA's pin, pavise, crank back and long bolt) and a
+slam, brace, march and planted standard; SAGITTA's pin, pavise, crank back and long bolt; ARCUS's volley, twin nock, gather up and full quiver) and a
 passive beside them, each key with a cooldown, a cast the body visibly performs, and effects drawn plainly for both sides: the game is readable
 first, sneaky second. [Class abilities](gameplay/class-abilities-keys-1-4.md),
 [Classes](multiplayer.md#classes).
@@ -180,10 +181,8 @@ bots near a DANGER back off. [Pings](gameplay/pings.md), [Bots](multiplayer.md#b
 
 **Pine walls make the field a jungle** (js/sim/jungle.js): in each quarter a wall off the mid road, one
 off the river, one between the den and the warren and a block at the lane's corner, mirrored to all four, with gaps to walk in.
-**The camps are the jungle, and the jungle is symmetric.** Fixed sites on each side of the
-road, mirrored so both teams walk the same distance. Each jungle quarter holds three camps that pay
-gold: a **WOLF DEN** (four wolves), a **FOX HOLLOW** (three foxes, a quick clear) and an **OX RANGE**
-(one musk ox, slow and heavy, the quarter's big camp). On the middle line stands one
+**The camps are the jungle, and the jungle is symmetric.** Six fixed sites, three on each side of the
+road, mirrored so both teams walk the same distance: four **WOLF DENS** that pay gold, and one
 **BLACK BEAR BEND**, the one bear, patrolling a bank of the creek: first out at 5:00 and back 5:00
 after each kill, which pays the whole team, gives it the BLACK BUFF, and adds a black bear to the
 side's count: +5% on every blow for the rest of the match, up to four. Facing it across the road is

@@ -114,7 +114,7 @@ world grid while the screen slides under it, so it wanders within half a world p
 
 **The air layer** removes that cost where it showed: the eagle the camera rides, and a player on a
 zipline. A bird in flight (`dropFlies`: fly, dive, flee), anyone falling from it and a player on a
-cable's handle (held out of the y-sorted pass in `airRiders`, so whoever that pass would not show
+cable's handle or over the pines on a hero's `over` dash (CLIVUS's vault; held out of the y-sorted pass in `airRiders`, so whoever that pass would not show
 stays hidden) draw into `airCv` (js/app/canvas.js) off the **exact** camera, and the layer is blitted
 over the world with no shift, so the body holds still on the screen while the ground slides under
 it. A rider is drawn over the cable and the canopy. Only `airBox` is graded and blitted: the whole

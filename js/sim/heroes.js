@@ -24,7 +24,9 @@
 // - HERO_DASH[id]: a charge riding the rush's state (rushT, rushNX/NY) at its
 //   own pace: { spd, t, ramp, step(p, mv, dt), pose(p)? }, picked by p.dash = id
 //   (`pose` is the body's while it runs: abilityPose; else the rush's lean); with
-//   `through` it passes the small bodies a roll passes (separateUnits).
+//   `through` it passes the small bodies a roll passes (separateUnits); with `over`
+//   it goes over scenery (isSolidTile: every tile but a building's) and open water
+//   (playerPlunge): CLIVUS's vault.
 // - HERO_TICK: fn(dt) once a step for what a hero leaves in the world.
 // - HERO_GROUND: fn(ex, ey, now) drawn on the snow under the wind-ups.
 // - HERO_MARK: fn(e, px, py, w, h, now) drawn over any body with the states
@@ -56,10 +58,13 @@
 // - HERO_SWIM: fn(p) -> true for a hero open water never takes (playerPlunge,
 //   js/sim/sim.js): MARIS swims the creek and a broken hole.
 // - HERO_SOLID: fn(tx, ty, e) -> true for a tile a kit has walled for now (isSolidTile,
-//   js/sim/world.js): LIGNUM's felled trunk.
+//   js/sim/world.js): LIGNUM's felled trunk, CLIVUS's rope ring (to rivals only).
 // - HERO_SHOT_HIT[id]: fn(a, t, nx, ny) once a shot with `a.hit = id` has landed its
 //   blow on body t (the arrow loop, js/sim/sim.js): SAGITTA's pin against a tree.
 //   Clearing a.pierce there ends a piercing shot on that body.
+// - HERO_SHOT_END[id]: fn(a, k) once a shot with `a.hit = id` is gone (the arrow loop):
+//   k is what ended it, 'life' for the end of its flight, else the contact's kind
+//   ('wall', 'player', 'robot', 'animal' ...): ARCUS's arrows left standing in the snow.
 // An ability row may also carry recast(p) (true: the key pressed again is
 // its second half, castSlam), ok(p) (false: the press is refused) and aimHeld
 // (its wind-up holds the weapon on the aim: castAims, js/draw/bodies.js).
@@ -85,6 +90,7 @@ const HERO_WRECK = [];
 const HERO_SWIM = [];
 const HERO_SOLID = [];
 const HERO_SHOT_HIT = {};
+const HERO_SHOT_END = {};
 
 // the ability whose use() is running right now, so a blow it lands says so
 // (o.ab, stamped by hurtUnit, js/sim/actions.js); '' between casts. Never state: set and cleared
@@ -111,6 +117,7 @@ function heroTen(e) { let m = 1; for (const f of HERO_TEN) m *= 1 - Math.min(1, 
 function heroMove(p) { let m = 1; for (const f of HERO_MOVE) m *= f(p); return m; }
 function heroDash(p) { return p.dash ? HERO_DASH[p.dash] : null; }
 function heroDashThrough(p) { const d = p.rushT > 0 && heroDash(p); return !!(d && d.through); }
+function heroDashOver(e) { const d = e.rushT > 0 && heroDash(e); return !!(d && d.over); }
 function heroTick(dt) { for (const f of HERO_TICK) f(dt); }
 function heroGround(ex, ey, now) { for (const f of HERO_GROUND) f(ex, ey, now); }
 function heroMarks(e, px, py, w, h, now) { for (const f of HERO_MARK) f(e, px, py, w, h, now); }
@@ -134,3 +141,4 @@ function heroWreck(b, src) { for (const f of HERO_WRECK) f(b, src); }
 function heroSolid(tx, ty, e) { for (const f of HERO_SOLID) if (f(tx, ty, e)) return true; return false; }
 function heroSwim(p) { for (const f of HERO_SWIM) if (f(p)) return true; return false; }
 function heroShotHit(a, t, nx, ny) { const f = a.hit && HERO_SHOT_HIT[a.hit]; if (f) f(a, t, nx, ny); }
+function heroShotEnd(a, k) { const f = a.hit && HERO_SHOT_END[a.hit]; if (f) f(a, k); }

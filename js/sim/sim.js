@@ -525,7 +525,7 @@ function updatePlay(dt) {
   // the surrender votes read their orders before any body runs, since a body
   // that is down or stunned drops every order it is given (js/sim/surrender.js)
   updateVotes(dt);
-  updateOnevone(); // a 1V1's end: first blood, the soldiers, the first tower (js/sim/onevone.js)
+  updateOnevone(); // a 1V1's end: first strike, the soldiers, the first tower (js/sim/onevone.js)
 
   // every player steps through the same code, each off its own input struct
   // (players still on or under the eagle are moved by updateDrop instead)
@@ -578,6 +578,7 @@ function updatePlay(dt) {
       heroShotHit(a, t, nx, ny); // what a hero's shot does once it lands (HERO_SHOT_HIT, js/sim/heroes.js)
     };
     let dead = a.t > a.life;
+    let endK = 'life'; // what ended it, for a hero's shot (HERO_SHOT_END): its flight, or the contact's kind
     // how much of the step the shot really flew: one that ends ON something
     // ends where it met it, so its burst, its embers and its impact land there
     let end = 1;
@@ -615,7 +616,7 @@ function updatePlay(dt) {
         if (a.pierce) a.pierceHit.push(t);
         else dead = true;
       }
-      if (dead) { a.struck = true; end = h.s; break; }
+      if (dead) { a.struck = true; end = h.s; endK = h.k; break; }
     }
     if (end < 1) { a.x = x0 + dx * end; a.y = y0 + dy * end; }
     // a faint mote in the shooter's colour every few px of flight: the shot
@@ -648,7 +649,8 @@ function updatePlay(dt) {
       // is not news, dropping a milestone run is (AG_RUN_STEP, js/sim/practice.js)
       if (PRACTICE && !a.ptHit) { if (agStreak >= AG_RUN_STEP) SFX.runBroke(); agStreak = 0; }
       // A shot that ends - a miss, a wall, a body, or the end of its life -
-      // just vanishes: nothing is ever lying in the snow to walk back over.
+      // vanishes; only a hero's own shot leaves something behind (ARCUS's arrows in the snow)
+      heroShotEnd(a, endK);
       arrows.splice(i, 1);
     }
   }
@@ -929,7 +931,7 @@ function playerPlunge(p) {
   // easily, the creek's three only from its bank, so a roll that runs out over
   // the current goes in. The creek asks the feet against its banks as drawn
   // (creekWet), so nobody goes in off a pixel of snow or the frozen stretch.
-  if (p.fallT <= 0 && !heroSwim(p)) { // ...unless the hero swims (HERO_SWIM, js/sim/heroes.js)
+  if (p.fallT <= 0 && !heroSwim(p) && !heroDashOver(p)) { // ...unless the hero swims (HERO_SWIM, js/sim/heroes.js) or is in the air over it (HERO_DASH `over`)
     const htx = Math.floor(p.x / TILE), hty = Math.floor((p.y + 4) / TILE);
     const g = inWorld(htx, hty) ? ground[idx(htx, hty)] : 0;
     // a tile an ice break holds open is wet only where its pixels are: the

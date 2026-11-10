@@ -322,7 +322,7 @@ function rollSweep(p) {
     p.rollHit.push(a);
     hurtUnit(a, dmg, nx, ny, p, { kb: ROLL_KB, ab: 'roll' });
     if (a.hp > 0 && !isAnchored(a)) stunUnit(a, stun); // a bear is not knocked out of its stride by a body
-    if (a.kind === 'deer' || isBigBeast(a) || (MONSTER[a.kind] && MONSTER[a.kind].solid)) { rollTackle(p, sp, nx, ny); return; } // too much animal to go through
+    if (a.kind === 'deer' || isBigBeast(a)) { rollTackle(p, sp, nx, ny); return; } // too much animal to go through
   }
   for (const b of robots) {
     if (!unitAlive(b) || b.team === p.team || p.rollHit.includes(b)) continue;
@@ -618,9 +618,8 @@ function unitUnder(src, wx, wy) {
   for (const b of robots) if (unitAlive(b) && b.team !== src.team && Math.abs(wx - b.x) <= 7 && wy >= b.y - 7 && wy <= b.y + 4) return b;
   for (const a of animals) {
     if (!unitFoe(src, a)) continue; // a deer your own side rides is no mark
-    const box = MONSTER[a.kind] && MONSTER[a.kind].box; // a camp monster's own size (its MONSTER row), else the kind's
-    const hw = box ? box[0] : a.kind === 'rabbit' ? 7 : isBigBeast(a) ? 34 : 16;
-    const h = box ? box[1] : a.kind === 'rabbit' ? 11 : isBigBeast(a) ? 48 : 34;
+    const hw = a.kind === 'rabbit' ? 7 : isBigBeast(a) ? 34 : a.kind === 'wolf' ? 9 : 16;
+    const h = a.kind === 'rabbit' ? 11 : isBigBeast(a) ? 48 : a.kind === 'wolf' ? 14 : 34;
     const by = a.y + 4;
     if (Math.abs(wx - a.x) <= hw && wy >= by - h && wy <= by) return a;
   }
@@ -791,8 +790,10 @@ function stunUnit(e, t, src, firm) {
 function rootUnit(e, t, src) {
   t *= ccMul(e);
   if (t <= 0 || !unitAlive(e)) return;
-  ccCredit(e, e.rootT || 0, t, src);
-  e.rootT = Math.max(e.rootT || 0, t);
+  const cur = e.rootT || 0;
+  ccCredit(e, cur, t, src);
+  e.rootT = Math.max(cur, t);
+  e.rootMax = cur > 0 ? Math.max(e.rootMax || 0, e.rootT) : e.rootT; // the hold's full length, what its plate drains from (drawStatusPlate)
   if (e.zip >= 0) zipEnd(e, true); // a rider is pulled off the cable
   if (e instanceof Player) { e.vx = 0; e.vy = 0; e.sliding = false; }
 }
@@ -802,7 +803,9 @@ function rootUnit(e, t, src) {
 function slowUnit(e, t, mul) {
   t *= ccMul(e);
   if (t <= 0 || !unitAlive(e)) return;
-  e.slowT = Math.max(e.slowT || 0, t);
+  const cur = e.slowT || 0;
+  e.slowT = Math.max(cur, t);
+  e.slowMax = cur > 0 ? Math.max(e.slowMax || 0, e.slowT) : e.slowT;
   e.slowMul = Math.min(e.slowMul === undefined ? 1 : e.slowMul, mul);
 }
 // KNOCKED UP: thrown into the air - a stun no tenacity shortens, with the body
@@ -955,7 +958,9 @@ function updateBurn(e, dt) {
 // (loadoutDeal, from hurtUnit), League's exhaust. From the BOLAS trick.
 function weakenUnit(e, t) {
   if (t <= 0 || !unitAlive(e)) return;
-  e.weakT = Math.max(e.weakT || 0, t * ccMul(e));
+  const cur = e.weakT || 0;
+  e.weakT = Math.max(cur, t * ccMul(e));
+  e.weakMax = cur > 0 ? Math.max(e.weakMax || 0, e.weakT) : e.weakT;
 }
 // put a body out - a death, a respawn, a fresh landing
 function douseUnit(e) { e.burnT = 0; e.burnDps = 0; e.burnTick = 0; e.burnBy = -1; e.burnFxT = 0; }
@@ -987,8 +992,8 @@ function unitMoveMul(e) {
 // every timed state a fresh body starts with none of, on any kind of unit
 function clearUnitStatus(e) {
   e.stunT = 0; e.stunMax = 0;
-  e.rootT = 0; e.slowT = 0; e.slowMul = 1; e.markT = 0; e.upT = 0; e.healCutT = 0; e.healCut = 0;
-  e.weakT = 0;
+  e.rootT = 0; e.rootMax = 0; e.slowT = 0; e.slowMax = 0; e.slowMul = 1; e.markT = 0; e.upT = 0; e.healCutT = 0; e.healCut = 0;
+  e.weakT = 0; e.weakMax = 0;
   douseUnit(e);
 }
 

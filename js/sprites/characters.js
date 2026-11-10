@@ -104,6 +104,11 @@
         right: { get: right, enumerable: true }, left: { get: () => l || (l = right().map(flipH)), enumerable: true },
       });
     }
+    // how far this look's body stands over and out past the 16 px cell's 15-row one
+    // (a larger cell's): the overhead frame lifts by `rise`, a hand sits `reach` px
+    // further out (heroRise, heroReach, js/draw/heroes.js)
+    const more = row.grids.down.length - 16; // a 20 px cell: 3 rows taller (one more is headroom), 1 px wider a side
+    set.rise = (more * 3) >> 2; set.reach = more >> 2;
     lookCache.set(key, set);
     return set;
   }

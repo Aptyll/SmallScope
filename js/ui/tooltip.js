@@ -47,6 +47,7 @@ const AB_RANK_STAT = {
   mark: ['tip.mark', tipNum, 'S'], shieldHp: ['tip.shieldHp', tipCent, '%'],
   burn: ['tip.burn', tipNum, ''], walk: ['tip.walk', (v) => tipCent(v - 1), '%'],
   markDmg: ['tip.markDmg', tipNum, ''], hp: ['tip.hp', tipNum, ''], wolfHp: ['tip.wolfHp', tipNum, ''], hps: ['tip.hps', tipNum, ''], shield: ['tip.shield', tipNum, ''], as: ['tip.as', tipCent, '%'], shot: ['tip.shot', tipNum, ''],
+  share: ['tip.share', tipCent, '%'], // ARCUS's TWIN NOCK (js/sim/arcus.js)
 };
 const TIP_RANK_ON = '#f2cc6a';
 // one ranked value as a row's value: plain text when it never changes, else

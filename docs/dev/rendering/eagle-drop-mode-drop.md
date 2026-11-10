@@ -128,7 +128,7 @@ shadow `alt` px below and up to 10 px right of the body (`alt` is
 point) at the bird's **true ground size** — the roost's, not the nearer-the-camera flight size —
 and beating with the same wings (`SPRITES.perch.shadow`: the silhouette of the very pose drawn,
 painted at the roost's size), then the bird.
-**Perch** (in the skin `birdSkinFor(team)` names, js/sprites/perch.js) is painted at
+**Perch** (in its one look, `SPRITES.perch.look`, js/sprites/perch.js) is painted at
 its heading and at its size, so it draws 1:1 and unrotated: in level flight a smooth stroke
 (`'s' + strokeAt(e.flap, STROKE_N)`, `EAGLE_BEAT_HZ` (1) a second) at 1.5× the roost's size
 (`EAGLE_SCALE` 3 over `EAGLE_REST_SCALE` 2), flying dead level; in the stoop the pose of its
@@ -139,8 +139,7 @@ queues every frame a state will draw on its first frame in it, stepped by the sa
 runs, and the next state's frames well ahead on the perch cache's slow queue (one frame per
 `IDLE_GAP`, only while nothing is urgent): in flight the stoop `beginDive` will start (its turn onto
 `findCrashPoint`), at the roost the takeoff `eagleFlee` would fly; a frame not painted yet holds
-the one the bird drew last. Every skin is one of Perch's looks, so a war eagle flies, stoops, roosts
-and takes off the same way, under it the **wind trail** (`drawEagleTrail`,
+the one the bird drew last. Under it the **wind trail** (`drawEagleTrail`,
 drawn before the bird's own cull because it hangs behind a bird already off the frame): **one
 continuous ribbon off each wingtip**, sampled every `TRAIL_STEP` (6) px back along the flown
 line for `TRAIL_T` (1.1 s) of flight, each sample where the tip actually *was* on that beat —

@@ -41,7 +41,7 @@ const ANN_TOWER = [[0, 0, 1, 2], [3, 0, 1, 2], [6, 0, 1, 2], [0, 1, 7, 1], [1, 2
 // from its name (MONSTER[kind].feed, js/sim/wildlife.js). 'kill' only feeds.
 const ANN_MULTI = ['', '', 'DOUBLE KILL', 'TRIPLE KILL', 'QUADRA KILL', 'PENTA KILL'];
 const ANN_TEXT = {
-  first: () => 'FIRST BLOOD',
+  first: () => 'FIRST STRIKE',
   multi: (c) => ANN_MULTI[c.n],
   shut: () => 'SHUTDOWN',
   ace: () => 'ACE',

@@ -85,6 +85,12 @@ const DRAW_COL = '#ffd95c', DRAW_FULL_COL = '#fff3c4', DRAW_FULL_FLASH = 0.12; /
 const NOCK_COL = '#6f7ca8'; // reloading
 const THREAT_COL = '#ff6a6a'; // a wolf's threat bar: the red it already wears on the debug overlay
 function barCol(team) { return team === undefined || team === null ? BAR_NEUTRAL : TEAMS[skin(team)].mark; }
+// YOUR OWN bar is green on your screen, the green of the health bar in the
+// HUD strip (HP_LIT, js/ui/hud-draw.js), and nobody else's ever is: two heroes
+// of one side can wear the same coat, and the bar is the one mark that says
+// which of them the keys move. Allies stay the side's blue, rivals red.
+const SELF_COL = '#7fd36b';
+function unitBarCol(u) { return u === player ? SELF_COL : barCol(u.team); }
 
 // Health reads in EVEN segments: N blocks of one width with a 1 px dark tick
 // between, across the fill and the bare track alike, so a w-wide bar splits
@@ -164,7 +170,7 @@ function queueXp(p, rx, cy) {
 // a player dropped in the step before any frame showed its total (a
 // one-shot): its spot is where drawPlayer's frame would have hung it
 function tallyFall(p) {
-  if (p.tallyN && !tallySpot.has(p)) tallySpot.set(p, { x: p.x + FRAME_DX + 8, y: p.y - 16.5, col: barCol(p.team), a: 1, f: -1 });
+  if (p.tallyN && !tallySpot.has(p)) tallySpot.set(p, { x: p.x + FRAME_DX + 8, y: p.y - 16.5, col: unitBarCol(p), a: 1, f: -1 });
 }
 function tallyImg(txt, col) {
   const key = txt + '|' + col;
@@ -230,21 +236,23 @@ function drawTallies(k, subX, subY) {
 // bear's frame is its body's 2x (MONSTER.frame, js/sim/wildlife.js) - with `w`
 // and the cut still counted in the bar's own pixels; `segs` fixes the cut
 // instead of hpSegCount's (it must divide w + 1)
-function drawHealthBar(cxp, topY, hp, maxHp, w, team, col, u, s, segs) {
+function drawHealthBar(cxp, topY, hp, maxHp, w, team, col, u, s, segs, paint) {
   const k = s || 1;
   overheadPlate(() => {
-    healthBarPx(cxp, topY, hp, maxHp, w, team, col, k, segs);
+    healthBarPx(cxp, topY, hp, maxHp, w, team, col, k, segs, paint);
     if (u) queueTally(u, Math.round(cxp - w * k / 2) + (w + 1) * k + (foeCue(team) ? 1 : 0), Math.round(topY) + k, barCol(team));
   });
 }
-function healthBarPx(cxp, topY, hp, maxHp, w, team, col, s, segs) {
+// `col` makes the bar a meter (unsegmented); `paint` only recolours a health
+// bar's fill (the local player's own green, unitBarCol) and keeps its segments
+function healthBarPx(cxp, topY, hp, maxHp, w, team, col, s, segs, paint) {
   const k = s || 1, x = Math.round(cxp - w * k / 2), y = Math.round(topY);
   const frac = Math.max(0, Math.min(1, hp / maxHp));
   ctx.fillStyle = BAR_FRAME;
   ctx.fillRect(x - k, y - k, (w + 2) * k, 4 * k);
   ctx.fillStyle = BAR_TRACK;
   ctx.fillRect(x, y, w * k, 2 * k);
-  ctx.fillStyle = col || barCol(team);
+  ctx.fillStyle = col || paint || barCol(team);
   // a living thing's last sliver of hp is still a pixel; an empty charge
   // (a wolf's threat at rest, a spent jink) is bare track, not a false one
   const fw = frac > 0 ? Math.max(1, Math.round(w * frac)) : 0;
@@ -381,6 +389,73 @@ function drawStunStars(cx, cy, e, r, squash, s) {
     const a = a0 + i * Math.PI * 2 / 3;
     ctx.fillStyle = Math.sin(a) > 0 ? '#ffb641' : '#fff3c4'; // the near half is the bright one
     ctx.fillRect(Math.round(cx + Math.cos(a) * r * k), Math.round(cy + Math.sin(a) * r * sq * k), k, k);
+  }
+}
+
+// ---- the status plate beside the frame ----------------------------------
+// What has a body pinned, as one 7x7 icon on a plate hard against the
+// frame's RIGHT edge, the level badge's mirror: it shares the bar backing's
+// column, so the stack still reads as one outline, and stands a row proud of
+// the frame above and below, the one thing on it that is not a bar. One
+// state at a time, the highest in STATUS_ICONS (the list is the priority:
+// the first row whose `on` holds wins), the way a League bar shows the one
+// control that matters. Behind the icon the plate fills in the state's own
+// deep tone and drains from the bottom as `left(e)` runs down from `max(e)`,
+// which answers the only question a control asks: how long. Nothing at all
+// while nothing holds - an empty plate parked over every head is a bar that
+// is never a bar. A row's `px` is its icon, 7 strings of 7: '#' its ink, '+'
+// its lit pixel; 'x' the frame's ink, a cut through it.
+// Shared by a hero's frame (drawPlayer) and a beast's (drawBeastFrame); a
+// hero's kit adds its own control with statusIcon (HIEMS's freeze and
+// whiteout, LUCERNA's pull), ranked into place by `rank`.
+const STATUS_ICONS = [];
+function statusIcon(row) {
+  const at = STATUS_ICONS.findIndex((r) => r.rank > row.rank);
+  STATUS_ICONS.splice(at < 0 ? STATUS_ICONS.length : at, 0, row);
+}
+// THROWN: knocked up, a stun no tenacity cuts (knockUp, js/sim/actions.js)
+statusIcon({ id: 'up', rank: 10, on: (e) => e.upT > 0, left: (e) => e.upT, max: (e) => e.upMax,
+  ink: '#eef4fb', lit: '#ffffff', deep: '#55407a',
+  px: ['...+...', '..###..', '.#####.', '...#...', '...#...', '.......', '##...##'] });
+// STUNNED: seeing stars
+statusIcon({ id: 'stun', rank: 40, on: (e) => e.stunT > 0, left: (e) => e.stunT, max: (e) => e.stunMax,
+  ink: '#ffd95c', lit: '#ffffff', deep: '#6a4410',
+  px: ['...#...', '..#+#..', '...#...', '.......', '.#...#.', '#+#.#+#', '.#...#.'] });
+// ROOTED: locked where it stands (rootUnit)
+statusIcon({ id: 'root', rank: 50, on: (e) => e.rootT > 0, left: (e) => e.rootT, max: (e) => e.rootMax,
+  ink: '#dfe6f2', lit: '#ffffff', deep: '#2e3446',
+  px: ['..###..', '.#...#.', '.#...#.', '#######', '###x###', '###x###', '#######'] });
+// WEAKENED: its blows worth WEAK_MUL of themselves, the blade snapped (weakenUnit)
+statusIcon({ id: 'weak', rank: 70, on: (e) => e.weakT > 0, left: (e) => e.weakT, max: (e) => e.weakMax,
+  ink: '#eef2fa', lit: '#f2cc6a', deep: '#5e3a52',
+  px: ['......#', '.....##', '....##.', '...x#..', '..##...', '+++....', '.+.....'] });
+// SLOWED: the snail (slowUnit)
+statusIcon({ id: 'slow', rank: 80, on: (e) => e.slowT > 0 && e.slowMul < 1, left: (e) => e.slowT, max: (e) => e.slowMax,
+  ink: '#e0d49a', lit: '#fff6cc', deep: '#5a5030',
+  px: ['.......', '...###.', '..#...#', '..#.#.#', '+.#..##', '#.####.', '#######'] });
+// the row that wins on this body, or null
+function statusOf(e) {
+  for (const r of STATUS_ICONS) if (r.on(e)) return r;
+  return null;
+}
+// the plate, its left column `bx` (the column past the bar backing's right
+// wall) and its top `by` (a row over the backing's), `k` pixels to its own pixel
+const STATUS_W = 8, STATUS_N = 7;
+function drawStatusPlate(bx, by, e, r, k) {
+  k = k || 1;
+  const n = STATUS_N;
+  ctx.fillStyle = BAR_FRAME;
+  ctx.fillRect(bx, by, STATUS_W * k, (n + 2) * k); // the column to its left is the bar backing, already painted
+  ctx.fillStyle = BAR_TRACK;
+  ctx.fillRect(bx, by + k, n * k, n * k);
+  const m = r.max(e), h = m > 0 ? Math.max(1, Math.round(n * Math.min(1, r.left(e) / m))) : n;
+  ctx.fillStyle = r.deep;
+  ctx.fillRect(bx, by + (n + 1 - h) * k, n * k, h * k);
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+    const c = r.px[y][x];
+    if (c === '.') continue;
+    ctx.fillStyle = c === '+' ? r.lit : c === 'x' ? BAR_FRAME : r.ink;
+    ctx.fillRect(bx + x * k, by + (1 + y) * k, k, k);
   }
 }
 

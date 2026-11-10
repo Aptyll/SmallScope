@@ -47,31 +47,28 @@ const SK_TICK = ['......ww', '.....ww.', 'w...ww..', 'ww.ww...', '.www....', '..
 const SK_TICK_PAL = { w: '#cfe0ff' };
 
 // ---- the catalogue ----------------------------------------------------------
-// The eagle's table lives with its art (BIRD_SKINS, js/sprites/eagle.js), and
-// each hero's with its own (heroArt, js/sprites/hero-art.js): every look sold
+// Each hero's table lives with its own art (heroArt, js/sprites/hero-art.js): every look sold
 // here is worn in a match and seen on every screen. Every table's first row is
 // free and is the slot's default; an id is what a profile keeps, so it never
 // changes.
-// The navbar: one tab per wardrobe slot - its word, its 8x8 glyph, the slot
-// the profile keeps its pick under, and its table: the eagle first, then a
-// tab per hero in the hero grid's order, each read off the registry (a hero's
-// slot is its id). What a skin looks like on a card is skinArt below.
-const SKIN_TABS = [
-  { id: 'bird', name: 'EAGLE', slot: 'bird', rows: BIRD_SKINS, glyph: ['........', 'w......w', 'ww....ww', '.ww..ww.', '..wwww..', '...ww...', '...ww...', '..w..w..'] },
-  ...CLASSES.map((c, h) => { const a = heroArtOf(h); return { id: c.id, name: c.name, slot: c.id, rows: a.looks, hero: h, glyph: a.glyph }; }),
-];
-const SK_TAB_BIRD = 0; // SKIN_TABS' eagle, the one non-hero tab a match reads
+// The navbar: one tab per hero, in the hero grid's order, read off the
+// registry - its word, its 8x8 glyph, the slot the profile keeps its pick
+// under (the hero's id) and its looks. What a look is on a card is skinArt.
+const SKIN_TABS = CLASSES.map((c, h) => { const a = heroArtOf(h); return { id: c.id, name: c.name, slot: c.id, rows: a.looks, hero: h, glyph: a.glyph }; });
 
 // The wardrobe slots the game no longer has - the HERO coat tints and the
-// WEAPON tints (the old HUNTER's coat and bow), and the TRAIL streaks, which
-// were never worn in a match - and what each of their skins cost: a profile
+// WEAPON tints (the old HUNTER's coat and bow), the TRAIL streaks, which were
+// never worn in a match, and the EAGLE skins, cut to keep the wardrobe to the
+// heroes' looks - and what each of their skins cost (the eagle's keys are
+// bare, the way they were sold): a profile
 // that bought one gets the coins back on its next boot (PROFILE.refundRetired,
 // called from boot.js). Add a slot that goes; never change a price here.
-const SKIN_RETIRED_SLOTS = ['scout', 'weapon', 'trail'];
+const SKIN_RETIRED_SLOTS = ['scout', 'weapon', 'trail', 'bird'];
 const SKIN_RETIRED = {
   'scout:pine': 100, 'scout:frost': 200, 'scout:ember': 200, 'scout:aurora': 400, 'scout:robot': 800,
   'weapon:birch': 100, 'weapon:frost': 200, 'weapon:ember': 200, 'weapon:night': 400, 'weapon:sun': 800,
   'trail:smoke': 100, 'trail:frost': 200, 'trail:ember': 200, 'trail:aurora': 400, 'trail:stars': 800,
+  helm: 100, beak: 100, horned: 200, crested: 200, ironclad: 400,
 };
 
 // the row an id names in a table, the free one for anything it does not have
@@ -80,9 +77,8 @@ function skinRow(rows, id) {
   return rows[0];
 }
 // The profile keeps what was bought as one list of keys. An id is only
-// unique within its table, so a key is `slot:id` - but the bird's, which
-// went out first, stay bare.
-function skinKey(tab, r) { return tab.slot === 'bird' ? r.id : tab.slot + ':' + r.id; }
+// unique within its table, so a key is `slot:id`.
+function skinKey(tab, r) { return tab.slot + ':' + r.id; }
 function skinHas(tab, r) { return r.price <= 0 || PROFILE.owns(skinKey(tab, r)); }
 // the row a tab's slot wears now: the pick, if it is still owned, else the free one
 function skinWorn(tab) {
@@ -94,14 +90,8 @@ function skinWorn(tab) {
 // hero's own free one)
 function profileHeroSkins() {
   const out = {};
-  for (const tab of SKIN_TABS) if (tab.hero != null) { const r = skinWorn(tab); if (r !== tab.rows[0]) out[tab.slot] = r.id; }
+  for (const tab of SKIN_TABS) { const r = skinWorn(tab); if (r !== tab.rows[0]) out[tab.slot] = r.id; }
   return out;
-}
-// Which skin a bird wears on this screen: your own company's bird wears the
-// one you wear, the other company's the free one (a skin is not sent to the
-// other screens yet). Always a BIRD_SKINS id.
-function birdSkinFor(team) {
-  return player && team === player.team ? skinWorn(SKIN_TABS[SK_TAB_BIRD]).id : BIRD_SKINS[0].id;
 }
 // what a finished match pays (endMatch, js/sim/player.js, on its first ending
 // only); practice pays nothing
@@ -111,16 +101,10 @@ function payMatchCoins(won) {
 }
 
 // ---- the pictures -------------------------------------------------------------
-// A card's picture: { img, sx, sy, w, h, turn } - a source rect, and whether
-// it is today's eagle, which flies along +x and is turned nose-up. f is the
-// beat (0..3) while the card is lit. Cached; nothing is smoothed.
+// A card's picture: { img, sx, sy, w, h } - the hero standing in that look.
+// Cached; nothing is smoothed.
 const skinArtCache = new Map();
-function skinArt(tab, r, t, f) {
-  if (tab.id === 'bird') {
-    const set = (SPRITES.birdSkinIcon[r.id] || SPRITES.birdSkinIcon[BIRD_SKINS[0].id])[t]; // every bird skin has a card (perch.js)
-    const spr = set[f % set.length];
-    return { img: spr, sx: 0, sy: 0, w: spr.width, h: spr.height };
-  }
+function skinArt(tab, r, t) {
   const key = tab.id + ':' + r.id + ':' + t;
   let cv = skinArtCache.get(key);
   if (!cv) {
@@ -367,8 +351,7 @@ function drawSkinCard(c, now, a) {
   ctx.fillRect(c.x + 1, y + 1, c.w - 2, SK_ART_H + 2);
   // the picture at the largest whole scale its box holds; one bigger than
   // the box at 1x is clipped to it rather than shrunk off the pixel grid
-  const beat = hv > 0.5 || worn || picked;
-  const art = skinArt(tab, r, skin(player.team), beat ? Math.floor(now * 6 + c.i) % 4 : 0);
+  const art = skinArt(tab, r, skin(player.team));
   const bw = art.w, bh = art.h;
   const S = Math.max(1, Math.min(SK_ART_MAX, Math.floor(Math.min((c.w - 8) / bw, (SK_ART_H - 8) / bh))));
   const bx = c.x + Math.round((c.w - bw * S) / 2), by = y + 4 + Math.round((SK_ART_H - bh * S) / 2);
