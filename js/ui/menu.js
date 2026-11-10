@@ -1582,6 +1582,7 @@ function renderLobby(now, a) {
     drawHeroFilters(L, a, hot, now);   // the positions and the search (js/ui/heroes.js)
     drawHeroRow(L.heroes, a);          // the grid
     drawLobbyStage(now, a, easeOut(m.cswapT));
+    drawSelBrief(L, a);                // the pointed hero's name, title and abilities, where the stage has no room (js/ui/select.js)
     drawSelPlay(L, a, hot);            // BAN / LOCK IN
   }
   drawLoadoutPicks(L, a, hot);         // the calling and the two tricks, and a picker over them (js/ui/loadout.js)

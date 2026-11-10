@@ -389,6 +389,53 @@ function drawSelMode(L, a) {
   drawPixelText(ctx, size, rx - pixelTextWidth(size), L.mode.y, SC_LBL, 1);
   drawPixelTextShadow(ctx, mode, rx - pixelTextWidth(mode, 2), L.mode.y + 8, '#f4f7ff', SC_INK, 2);
 }
+// THE BRIEF: under the grid while you pick, the hero in one row - its name
+// and title, and its four abilities as icons, each raising its own card
+// (tipAt, js/ui/tooltip.js). It shows the face under the pointer, else the
+// hero you point at, so a new player reads a hero before locking it. It stands
+// where the 2x stage would when the grid leaves the stage no room.
+const BRIEF_WELL = 34, BRIEF_GAP = 3, BRIEF_SPLIT = 12; // an ability's well, the air between two, and between the words and the wells
+function selBriefHero(L) {
+  if (DRAFT.phase !== 'pick' || DRAFT.lock[localId] >= 0 || L.stage) return -1;
+  const hi = state.menu.screenT >= 1 && state.menu.popT <= 0 && mouse.inside ? heroCellAt(L.heroes) : -1;
+  const h = hi >= 0 && hi < CLASSES.length ? hi : draftWant(localId);
+  return h >= 0 && CLASSES[h] && !DRAFT.banned.includes(h) ? h : -1;
+}
+function selBrief(L) {
+  const h = selBriefHero(L);
+  if (h < 0) return null;
+  const last = L.heroes.length ? L.heroes[L.heroes.length - 1].y + HERO_PITCH : L.grid.y;
+  if (L.play.y - last < BRIEF_WELL + 8) return null; // no room under this grid
+  const c = CLASSES[h], n = CLASS_AB[h].length;
+  const tw = Math.max(pixelTextWidth(c.name, 2), pixelTextWidth(c.role || ''));
+  const ww = n * BRIEF_WELL + (n - 1) * BRIEF_GAP;
+  const x = L.cx - ((tw + BRIEF_SPLIT + ww) >> 1), y = last + ((L.play.y - last - BRIEF_WELL) >> 1);
+  const wells = [];
+  for (let i = 0; i < n; i++) wells.push({ x: x + tw + BRIEF_SPLIT + i * (BRIEF_WELL + BRIEF_GAP), y, w: BRIEF_WELL, h: BRIEF_WELL, i });
+  return { h, x, y, tw, wells };
+}
+// the well under the pointer: { h, i } or null
+function selBriefHit(L) {
+  const B = selBrief(L);
+  if (!B || !mouse.inside) return null;
+  for (const w of B.wells) if (overRect(w, 1, 1)) return { h: B.h, i: w.i };
+  return null;
+}
+function drawSelBrief(L, a) {
+  const B = selBrief(L);
+  if (!B) return;
+  const c = CLASSES[B.h], hit = selBriefHit(L);
+  ctx.globalAlpha = a;
+  drawPixelTextShadow(ctx, c.name, B.x + B.tw - pixelTextWidth(c.name, 2), B.y + 6, SC_LIT, SC_INK, 2);
+  if (c.role) drawPixelText(ctx, c.role, B.x + B.tw - pixelTextWidth(c.role), B.y + 21, SC_LBL);
+  for (const w of B.wells) {
+    const hot = hit && hit.i === w.i;
+    ctx.fillStyle = hot ? SEL_GOLD : SC_EDGE; ctx.fillRect(w.x, w.y, w.w, w.h);
+    ctx.fillStyle = SC_PLATE; ctx.fillRect(w.x + 1, w.y + 1, w.w - 2, w.h - 2);
+    const im = classAbIcon(B.h, w.i);
+    ctx.drawImage(im, w.x + ((w.w - im.width) >> 1), w.y + ((w.h - im.height) >> 1));
+  }
+}
 // LOCK IN (BAN in the ban phase) on its plate under the grid: white and
 // live while there is a confirm to make, gold under the hand, red for a
 // ban, slate once made; gone with the showcase
