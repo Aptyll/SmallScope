@@ -5,10 +5,10 @@
 // to the eagle. The patch notes, roadmap and wiki it opens are js/ui/notes.js
 // and js/ui/wiki.js.
 // ------------------------------------------------------------ main menu
-// The title screen is a real menu over the living world: the camera drifts
-// around the interior while animals, fish and snow keep running, the three
-// modes (QUICKPLAY / RANKED / PRACTICE TOOL) take mouse or arrows+enter, and
-// every mode change is a transition rather than a cut.
+// The title screen is a real menu over the living world: ten heroes face off
+// on the frozen middle (js/ui/titlescene.js) while the snow keeps falling, the
+// modes take mouse or arrows+enter, and every mode change is a transition
+// rather than a cut.
 const INTRO_T = 1.6;    // title -> play: tint dissolves, camera settles, HUD slides in
 const HUD_IN_T = 0.7;   // the HUD slide occupies the last part of the intro
 const PANEL_SLIDE_T = 0.32;
@@ -945,18 +945,6 @@ function beginIntro() {
   SFX.music.stop(0.6);
 }
 
-// slow lissajous drift around the open interior, never into the border forest
-function titleCamTarget() {
-  const c = WORLD * TILE / 2;
-  const t = state.menu.camT;
-  const rx = Math.max(0, (WORLD / 2 - BORDER_MAX - 6) * TILE - WV_W / 2);
-  const ry = Math.max(0, Math.min(rx * 0.8, (WORLD / 2 - BORDER_MAX - 6) * TILE - WV_H / 2));
-  return {
-    x: c + Math.cos(t * 0.045 + 0.7) * rx - WV_W / 2,
-    y: c + Math.sin(t * 0.031 + 0.7) * ry - WV_H / 2,
-  };
-}
-
 function updateTitle(dt) {
   const m = state.menu;
   // the party's comings and goings: a card whose kind changed (an empty seat
@@ -1040,24 +1028,25 @@ function chamRect(x, y, w, h) {
 }
 
 // ---- title dressing -------------------------------------------------------
-// What the title still dresses itself in: a tint that weighs on the edges and
-// leaves the centre clear (drawTitleBackdrop). The rest of this banner - the
+// What the title still dresses itself in: two soft bands behind its text, the
+// scene between them left in daylight (drawTitleBackdrop). The rest of this banner - the
 // gold rule and the frost slab - is drawn by the wiki and the rooms; the title itself is the logo and three
 // words over the world. Every piece takes its alpha from the caller so it
 // fades with the chrome.
 
-function drawTitleBackdrop(tintA) {
-  ctx.fillStyle = 'rgba(10,16,42,' + tintA.toFixed(3) + ')';
+// tintA is the chrome's own fade, 0..1. The scene keeps its daylight: a thin
+// wash over the whole, and a band behind the logo and a deeper one behind the
+// words and the corner tags, so white text reads on snow and ice.
+// Under a full screen or a panel (deep, 0..1) the wash thickens to TITLE_WASH_DEEP,
+// so the scene sits back behind what is being read.
+const TITLE_WASH = 0.1, TITLE_WASH_DEEP = 0.6, TITLE_BAND_TOP = 0.3, TITLE_BAND_FOOT = 0.62;
+function drawTitleBackdrop(tintA, deep) {
+  ctx.fillStyle = 'rgba(10,16,42,' + ((TITLE_WASH + (TITLE_WASH_DEEP - TITLE_WASH) * deep) * tintA).toFixed(3) + ')';
   ctx.fillRect(0, 0, VIEW_W, VIEW_H);
-  const dark = (k) => 'rgba(3,5,16,' + Math.min(1, tintA * k).toFixed(3) + ')';
-  // the cinematic band: heavier along the top and bottom edges
+  const dark = (k) => 'rgba(6,10,28,' + Math.min(1, tintA * k).toFixed(3) + ')';
   const v = ctx.createLinearGradient(0, 0, 0, VIEW_H);
-  v.addColorStop(0, dark(1.1)); v.addColorStop(0.2, dark(0)); v.addColorStop(0.8, dark(0)); v.addColorStop(1, dark(1.25));
+  v.addColorStop(0, dark(TITLE_BAND_TOP)); v.addColorStop(0.3, dark(0)); v.addColorStop(0.52, dark(0)); v.addColorStop(1, dark(TITLE_BAND_FOOT));
   ctx.fillStyle = v; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
-  // corner vignette
-  const r = ctx.createRadialGradient(VIEW_W / 2, VIEW_H / 2, VIEW_H * 0.35, VIEW_W / 2, VIEW_H / 2, VIEW_W * 0.6);
-  r.addColorStop(0, dark(0)); r.addColorStop(1, dark(1.3));
-  ctx.fillStyle = r; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
 }
 
 // a gold rule with diamond finials at both ends and an ember-set one in the middle
@@ -1693,8 +1682,6 @@ function renderTitle(now) {
   const m = state.menu;
   // leaving: 0 while the menu is up, 0->1 over the intro
   const outQ = state.intro > 0 ? 1 - state.intro / INTRO_T : 0;
-  const tintA = 0.55 * (1 - easeOut(outQ / 0.45));
-  if (tintA > 0.005) drawTitleBackdrop(tintA);
   const out = easeOut(outQ / 0.22);           // menu chrome drops away first
   const sc = easeInOut(m.screenT);             // the lobby cross-fade
   const tc = easeInOut(m.wikiT);               // ...and the wiki's own
@@ -1703,6 +1690,8 @@ function renderTitle(now) {
   const rc = easeInOut(m.roomsT);              // ...and the party lobby's
   const bc = easeInOut(m.skinT);               // ...and the skins screen's
   const pan = Math.max(m.panel ? easeOut(m.panelT) : 0, sc, tc, nc, kc, rc, bc); // chrome ducks under a panel or any full screen
+  const tintA = 1 - easeOut(outQ / 0.45);
+  if (tintA > 0.005) drawTitleBackdrop(tintA, pan);
   const { toy, rects } = menuLayout();
   const cx = Math.round(VIEW_W / 2);
   const chromeA = (1 - out) * (1 - pan);

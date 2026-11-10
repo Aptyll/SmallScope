@@ -451,8 +451,7 @@ function drawPlayer(p, ex, ey, now, stage) {
     // mid-cast (or holding the shield, or charging) has no hand free for it -
     // but a mage casts with the staff in hand (heroStaffOf, js/draw/heroes.js), and a
     // key that is a shot holds the weapon on the aim through its wind-up (castAims).
-    const held = (state.mode !== 'title' || stage) &&
-      (p.castT <= 0 || heroStaffOf(p) || castAims(p)) && p.shieldT <= 0 && p.rushT <= 0 && p.zip < 0; // ...or holding a zipline's handle
+    const held = (p.castT <= 0 || heroStaffOf(p) || castAims(p)) && p.shieldT <= 0 && p.rushT <= 0 && p.zip < 0; // ...or holding a zipline's handle
     // what points up the screen or is carried facing away goes behind (THE CARRY RULE, drawHeldTool)
     if (held) drawHeldTool(p, px + lx, py + ly + bob, true);
     // a rider's body stops at the deer's back: the rows from its hip down
