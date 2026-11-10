@@ -126,7 +126,7 @@
     // a look drawn finer for the world (`fine`: grids at `dens` art px a world px, the
     // WD-dense world buffer's, js/app/canvas.js): its own set, which drawPlayer asks for
     // through bodySet; the menus, portraits and cards keep the 16 px one
-    if (row.fine) set.fine = lookSet(Object.assign({}, row, row.fine, { run: 'drawn' }), row.fine.grids, row.fine.dens, sp, art.hand);
+    if (row.fine && WD > 1) set.fine = lookSet(Object.assign({}, row, row.fine, { run: 'drawn' }), row.fine.grids, row.fine.dens, sp, art.hand);
     lookCache.set(key, set);
     return set;
   }

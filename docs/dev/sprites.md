@@ -163,7 +163,8 @@ out. No look uses a larger cell yet; the roll and the other doll poses are still
 draw frames into 16 px boxes.
 **A look can carry a finer world body**: `fine: { dens, grids }` on its row (ARMATOS's LAST
 STANDARD, `ARM_FINE`) is a `down`/`up`/`side` set at `dens` art px a world px (32 px on the 16
-px cell). `champLook` builds it beside the 16 px set as `set.fine` through the same `lookSet`
+px cell). When `WD` is 2 (`?fine=1`; it is 1 by default, so no player sees one yet), `champLook`
+builds it beside the 16 px set as `set.fine` through the same `lookSet`
 (walk, side and front run, breath and cloth step `dens` px, a world px; every frame carries
 `dens`), and only `drawPlayer` reads it, through `bodySet` and only in a world layer, which is
 `WD` dense ([world zoom](rendering/world-zoom-and-the-two-pixel-spaces.md)). The menus,
