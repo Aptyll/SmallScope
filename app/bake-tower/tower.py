@@ -136,6 +136,7 @@ def body(cols):
     # the back parapet (seen over the deck)
     for i in range(5):
         c.prism(FX - DW / 2 + 2.5 + i * (DW - 5) / 4, yd - D - 6 + 2.5, 4, 4, 2, 4, 'stone', bias=0.02)
+        c.dome((FX - DW / 2 + 2.5 + i * (DW - 5) / 4, yd - D - 6 + 2.5 - 5.9), 2.1, 1.0, mat='snow', flat=0.4)   # the snow each merlon carries
     return c.render()
 
 def deck():
@@ -147,8 +148,10 @@ def front(cols):
     yd = FY - 2 - ZD
     for i in range(5):   # merlons on the deck's front edge, crenels between
         c.prism(FX - DW / 2 + 2.5 + i * (DW - 5) / 4, yd + 0.5, 5, 5, 2.5, 4.5, 'stone', bias=0.05)
+        c.dome((FX - DW / 2 + 2.5 + i * (DW - 5) / 4, yd + 0.5 - 6.9), 2.6, 1.15, mat='snow', flat=0.4)   # its cap of snow
     for s_ in (-1, 1):   # the side merlons
         c.prism(FX + s_ * (DW / 2 - 2.5), yd - 6, 4, 4, 2.5, 4.5, 'stone', bias=0.0)
+        c.dome((FX + s_ * (DW / 2 - 2.5), yd - 6 - 6.9), 2.2, 1.1, mat='snow', flat=0.4)
     return c.render()
 
 # ---- the gun ---------------------------------------------------------------

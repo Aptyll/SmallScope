@@ -42,6 +42,8 @@ def pump(f=0, frames=8):
     box(c, 5, 31, 54, 23, 4, 'wood', tt=0.95, ft=0.55)
     for x in (14, 23, 32, 41, 50): box(c, x, 31, 1, 23, 4, 'wood', tt=0.55, ft=0.3)   # plank seams
     c.dome((9, 52.5), 3.5, 1.6, mat='snow', flat=0.4)                                      # a drift on the corner
+    c.dome((51, 32.6), 6.5, 1.7, mat='snow', flat=0.4)                                     # snow lying along the deck's back edge, where no boot goes
+    c.dome((56, 52.8), 2.6, 1.3, mat='snow', flat=0.4)
     # crank and gearbox at the back
     ccx, ccy, cr = 15, 38, 5.5
     pin = (ccx + cr * math.cos(th), ccy + cr * math.sin(th))
@@ -55,6 +57,7 @@ def pump(f=0, frames=8):
     c.tube((38, 34), (px + 1, py), 1.4, mat='wood', bias=-0.25)
     box(c, 8.5, 32, 13, 3, 10, 'iron', tt=0.55, ft=0.3)                # gearbox
     box(c, 8.5, 40.5, 13, 0, 1.2, 'iron', ft=0.7)                      # its seam
+    c.dome((15, 33.2), 6.2, 1.5, mat='snow', flat=0.4)                  # the gearbox's lid under snow
     c.dome((ccx, ccy), 2.2, 2.2, mat='iron', bias=0.1)                    # crank hub
     c.tube((ccx, ccy), pin, 1.4, mat='iron', bias=0.1)                  # crank arm
     c.dome((ccx - (pin[0] - ccx) * 0.9, ccy - (pin[1] - ccy) * 0.9), 4.2, 4.2, mat='iron', bias=-0.2, flat=0.4)  # counterweight
