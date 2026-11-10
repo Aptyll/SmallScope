@@ -9,7 +9,8 @@
 //
 // It reads only what the sim already keeps and the snapshot already
 // carries: a body's running damage total and the tick of its last hit
-// (tallyHit, js/sim/core.js) and its knockback (kbx/kby). So a client sees
+// (tallyHit, js/sim/core.js), and which way the blow came (a player's
+// hitNx/hitNy, anything else's knockback kbx/kby). So a client sees
 // the same hit the host does, and nothing here can change the match. The
 // hit-stop is a held DRAWING: the sim never pauses, the body is drawn where
 // it stood and then slides to where it really is.
@@ -55,8 +56,11 @@ function hitWatch(u, kind, now) {
   if (!(u.maxHp > 0) || dealt < HIT_BIG[kind] * u.maxHp) return;
   const cur = hitFx.get(u);
   if (cur && now - cur.t0 < HIT_AGAIN_T) return;
+  // which way the blow came: a player keeps it (hitNx/hitNy, damagePlayer),
+  // since an attack no longer shoves one; anything else is read off its shove
   const k = Math.hypot(u.kbx || 0, u.kby || 0);
-  hitFx.set(u, { t0: now, x: u.x, y: u.y, nx: k > 1 ? u.kbx / k : 0, ny: k > 1 ? u.kby / k : 0, seed: tick | 0 });
+  const nx = kind === 'P' ? u.hitNx || 0 : k > 1 ? u.kbx / k : 0, ny = kind === 'P' ? u.hitNy || 0 : k > 1 ? u.kby / k : 0;
+  hitFx.set(u, { t0: now, x: u.x, y: u.y, nx, ny, seed: tick | 0 });
   hitLive.add(u);
 }
 
@@ -138,7 +142,7 @@ function drawHitSpark(h, cx, cy, t) {
 // the snow kicked up at the feet: four clumps thrown out to the sides of
 // the push, rising as they go: a lump, a round
 // clump, a fleck. White on top, shade under, a dark rim, so a clump reads on snow
-const HIT_PUFF_A = [1.7, -1.7, 2.5, -2.5]; // rad off the push each clump flies
+const HIT_PUFF_A = [2.0, -2.0, 2.7, -2.7]; // rad off the push each clump flies
 const HIT_CLUMP = [['www', 'sss'], ['.ww.', 'wwww', '.ss.'], ['ss']];
 function drawHitPuff(h, fx, fy, t) {
   const e = t / HIT_PUFF_T, out = 1 - (1 - e) * (1 - e);
@@ -146,7 +150,7 @@ function drawHitPuff(h, fx, fy, t) {
   for (let i = 0; i < 4; i++) {
     // out to the sides and back toward the blow, where the sliding body is not
     const a = (push ? Math.atan2(h.ny, h.nx) : 0) + HIT_PUFF_A[i] + (hash2(h.seed, i + 3) - 0.5) * 0.3;
-    const r = 5 + out * (5 + (i & 1) * 3) + hash2(h.seed, i + 7) * 2;
+    const r = 8 + out * (4 + (i & 1) * 3) + hash2(h.seed, i + 7) * 2;
     const x = fx + Math.round(Math.cos(a) * r), y = fy + Math.round(Math.sin(a) * r * 0.7 - out * (2 + (i & 1) * 2));
     const x0 = x - (g[0].length >> 1), y0 = y - (g.length >> 1);
     for (let row = 0; row < g.length; row++) for (let col = 0; col < g[row].length; col++) {

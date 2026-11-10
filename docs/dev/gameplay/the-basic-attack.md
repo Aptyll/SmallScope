@@ -52,6 +52,11 @@ It rides to `hurtUnit` as `o.kbMul`, which scales whatever shove that kind takes
 is still the absolute px/s an *ability* (or the cut's own 30) picks for a particular blow. A shot
 with no `kb` at all takes the ordinary shove, ×1.
 
+A **player** is never shoved by an attack: `damagePlayer` gives a player knockback only from a
+key's blow (one with `o.ab`, never `o.basic`), so a soldier's, a tower's, a beast's or a hero's
+attack lands where the player stands. It still keeps which way the blow came (`hitNx`/`hitNy`) for
+the hit's spark and recoil (js/draw/hitfx.js). An attack's `kb` still shoves animals and soldiers.
+
 ## The cut
 
 A `cut` row is a blade. **The draw is still the throttle** — a tap reaches `SLASH_REACH_MIN`

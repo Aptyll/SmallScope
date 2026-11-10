@@ -3,14 +3,15 @@
 // buffer and blits it under the UI, plus the '.' debug overlays and the
 // cursor, reticle and bow aim line.
 // ------------------------------------------------------------ render
-function drawSpriteFlash(spr, x, y, flash) {
+// `amt` is how white the flash washes it (0.8 unless named)
+function drawSpriteFlash(spr, x, y, flash, amt) {
   ctx.drawImage(spr, x, y);
   if (flash > 0) {
     sctx.clearRect(0, 0, spr.width, spr.height);
     sctx.globalCompositeOperation = 'source-over';
     sctx.drawImage(spr, 0, 0);
     sctx.globalCompositeOperation = 'source-in';
-    sctx.fillStyle = 'rgba(255,255,255,0.8)';
+    sctx.fillStyle = 'rgba(255,255,255,' + (amt === undefined ? 0.8 : amt) + ')';
     sctx.fillRect(0, 0, spr.width, spr.height);
     ctx.drawImage(scratch, 0, 0, spr.width, spr.height, x, y, spr.width, spr.height);
   }

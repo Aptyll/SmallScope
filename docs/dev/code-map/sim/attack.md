@@ -7,4 +7,4 @@
 | **what one press does**, for every player | `basicAttack` (called by `playerAttack`, sim.js) | `basic attack` › `the press` |
 | a shot's press: the one arrow it puts in the air | `shootAttack` | `basic attack` › `the shot` |
 | a blade's press: the wedge it sweeps at this draw, and the sweep left on the snow | `cutAttack`, `slashReach`, `SLASH_T`, `SLASH_REACH_MIN`, `slashes`, `updateSlashes` (the hand's own swing: `p.slashT`/`slashA`/`slashHalf`, player.js, drawn by `drawHeldTool`, js/draw/bodies.js) | `basic attack` › `the cut` |
-| how hard an attack shoves what it hits | `kb` on each `attack` row (`HIT_KB` player.js, `ROBOT_KB` robots.js, `o.kbMul` in `hurtUnit`) | `basic attack` |
+| how hard an attack shoves what it hits (a beast or a soldier: never a player, `damagePlayer`) | `kb` on each `attack` row (`HIT_KB` player.js, `ROBOT_KB` robots.js, `o.kbMul` in `hurtUnit`) | `basic attack` |
