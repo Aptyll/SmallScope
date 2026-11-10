@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['Down when your side wins? You get VICTORY now', '0.905'],
     ['FORTIVA\'s DEFIANT HEART shows as gold chains and a heart plate on her chest', '0.904'],
     ['RECALL: a hero the bird sets down arrives in its feathers', '0.903'],
     ['SHOP: RECOMMENDED keeps its boots on a narrow screen', '0.902'],
