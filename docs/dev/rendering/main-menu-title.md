@@ -45,7 +45,14 @@ the logo and the words. Everything else lives in the `main menu` banner and on `
   logo is `LOGO_IMG` (the picture `docs/media/logos/mainMenuSoftfall.png` keyed and baked to
   `js/baked/logodata.js` by `app/bake-logo.js`), drawn 1:1 with its top `LOGO_Y` below the view's top edge under a cold pulsing glow,
   still at rest, with no rule and no subtitle, the pixel-font word standing in only until it
-  decodes. Nothing on the title burns and nothing is ruled: `drawGoldRule` lives
+  decodes. **The boot mark**: the page itself shows the same picture (`#bootmark` in index.html, an
+  `<img>` of `js/baked/logo.png`, which the same bake writes) from its first paint, on the canvas's
+  dark ground stretched over the window, through the seconds the scripts and the world take. An
+  inline script under it stands it exactly where the title will, by working `fitCanvas`'s pick of
+  the scale and `LOGO_Y` out for itself, since it runs before any script file; a change to either
+  changes it there too. The loop takes the mark down behind its first frame (js/app/boot.js), and
+  that first title has its logo at rest with no drop-in (`logoStood`) while the valley fades up
+  under it over `LOGO_DAWN`. Nothing on the title burns and nothing is ruled: `drawGoldRule` lives
   here for the wiki's header. `PATCH_TXT` prints bottom-right and the
   profile's name bottom-left (`drawProfileTag`, js/ui/profile-card.js); both are click targets, and both ride the footer's
   fade so a panel hides them.

@@ -512,6 +512,7 @@ function capSkips(nowMs) {
 }
 
 let last = performance.now();
+let bootMark = document.getElementById('bootmark'); // the logo index.html has shown since the page's first paint
 function loop(nowMs) {
   // the next frame is asked for first: a throw in a step or a draw is still
   // reported, but costs that one frame, never the whole game (a client's
@@ -554,6 +555,7 @@ function loop1(nowMs) {
     }
     perf.simAcc += t1 - t0; perf.drawAcc += performance.now() - t1;
   }
+  if (bootMark) { bootMark.remove(); bootMark = null; } // the first frame is drawn (or a frozen or hidden page has skipped it): the page's logo comes down behind it
 }
 pageListenStart(); // keys, mouse and resize reach the game only now that every global stands (js/sim/core.js)
 requestAnimationFrame(loop);

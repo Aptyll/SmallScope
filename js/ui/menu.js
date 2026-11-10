@@ -44,6 +44,11 @@ const PATCH_TXT = 'PATCH 0.888';
 const LOGO_IMG = new Image();
 LOGO_IMG.src = window.LOGO_PNG || '';
 const LOGO_Y = 12;
+// index.html's boot mark has stood the logo here since the page's first paint
+// (it works LOGO_Y and the view's scale out for itself): the first title has
+// its logo at rest, with no drop-in, and the valley fades up under it
+let logoStood = !!document.getElementById('bootmark');
+const LOGO_DAWN = 0.5; // s that fade takes
 // PATCH_TXT prints bottom-right of the title screen; click it for the notes.
 // one sentence per patch, newest first - the biggest change only, in plain english.
 // The number counts patches: 0.391 is the 391st, each patch is 0.001 more, and the
@@ -1851,7 +1856,9 @@ function renderTitle(now) {
   const chromeA = (1 - out) * (1 - pan);
 
   // logo: drops in at boot, lifts away on play
-  const logoIn = easeOut(m.t / 0.6);
+  if (logoStood && m.t < LOGO_DAWN) { ctx.globalAlpha = 1 - m.t / LOGO_DAWN; ctx.fillStyle = '#0d1524'; ctx.fillRect(0, 0, VIEW_W, VIEW_H); ctx.globalAlpha = 1; } // the page's boot ground (index.html's #game), lifting off the valley
+  if (m.t >= 0.6) logoStood = false;
+  const logoIn = logoStood ? 1 : easeOut(m.t / 0.6);
   const ly = Math.round(LOGO_Y - (1 - logoIn) * 30 - out * 40); // still at rest: no bob
   const logoA = logoIn * (1 - out) * (1 - pan) * (1 - sc);
   const logoOk = LOGO_IMG.complete && LOGO_IMG.naturalWidth > 0;
