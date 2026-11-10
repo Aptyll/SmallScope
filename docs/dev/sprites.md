@@ -368,8 +368,8 @@ FABER has two looks (`FABER_SKINS`, js/sprites/faber.js): CLOCKMAKER (free) and 
 faber-round1.png in the project files. Their dolls (`Clockmaker` and `Foreman` in
 app/bake-player/bodies.py) paint the cap in the doll's `hair` material and the hard hat in `hat`;
 only the roll is used. His CLOCK STAFF is a staff like IGNIA's: `staff: 'clock'` names
-`HERO_STAVES.clock` (`FABER_CLOCK`, js/draw/faber.js), a brass clock dial (quarter marks, two hands) hung out from a walnut shaft, whose
-hand ticks between two baked frames. His two machines draw themselves from small grids baked per
+`HERO_STAVES.clock` (`FABER_CLOCK`, js/draw/faber.js), a toothed brass gear (dark hub, one light) standing out from a walnut shaft, whose
+wheel turns a tooth on between two baked frames. His two machines draw themselves from small grids baked per
 side (`faberArt`, js/draw/faber.js), the side's colour in a band across each.
 
 FALCO has two looks (`FALCO_SKINS`, js/sprites/falco.js) on one set of grids and one doll:
