@@ -34,6 +34,7 @@ const MOVED = [
   'js/ui/lobby.js',
   'js/ui/tooltip.js',
   'js/ui/shop.js',
+  'js/ui/panels.js',
 ];
 
 function readText() {
