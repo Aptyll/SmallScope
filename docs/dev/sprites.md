@@ -385,7 +385,7 @@ is `Fletcher` in app/bake-player/bodies.py (motion `fletcher`); he runs on his d
 he carries its own carried art (`ARCUS_BOW_CARRY`, a shallow D) upright in his leading hand, beside
 the body in every facing (`HERO_CARRY`, js/draw/arcus.js). Drawn, it is one of eight set frames on
 the snapped aim with the string back and an arrow on it, half then full, and the string straight for
-a beat after the shot (`ARCUS_BOW_AIM`; `HERO_AIMED`, js/draw/heroes.js): never a turned sprite.
+a beat after the shot (`ARCUS_BOW_AIM`; `HERO_AIMED`, js/draw/heroes.js): never a turned sprite. His fine body (`ARCUS_FINE`, one set both paints repaint) holds the same bow at 32 px (`ARCUS_BOW_FINE`, `arcusBowsFine`: the carry and the same headings through `arcusBowAim`, grips and hands still world px).
 
 FABER has two looks (`FABER_SKINS`, js/sprites/faber.js): CLOCKMAKER (free) and WORKS FOREMAN
 (rare, 200 coins), both on ARMATOS's frame. `FABER_PAL` is `ARM_PAL` with the leather cap and apron
