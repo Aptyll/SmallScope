@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['BOTS FIGHT THE ORCA', '0.670'],
     ['EVERY HERO\'S SKINS TAB IS ON SCREEN', '0.669'],
     ['THE KILL FEED NAMES BOTS BY THEIR HERO', '0.668'],
     ['THE END SCREEN\'S STORY LINES PRINT WHOLE NUMBERS', '0.667'],

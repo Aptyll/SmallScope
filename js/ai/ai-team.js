@@ -100,6 +100,8 @@ const AI_BEAR_N = 3;        // bots the side sends to it, all together
 const AI_BEAR_LV = 6;       // mean hero level the party must have (a weak party feeds the bear)
 const AI_BEAR_R = 120;      // px off the bear the party meets at before one of them wakes it
 const AI_BEAR_WAIT = 15;    // s the party waits for its last member before going in short
+const AI_ORCA_N = 5;        // bots the side sends to the orca at most: the late fight takes all the guards leave
+const AI_ORCA_LV = 12;      // mean hero level that party must have (the orca's own, ORCA_LV)
 
 // ---- memory -----------------------------------------------------------------
 const AI_SEEN_T = 10;       // s a sighting is kept at most (the memory knob cuts it shorter)
@@ -120,7 +122,7 @@ const AI_ODDS_R = 150;      // px round a fight the numbers are counted in (the 
 // the side's shared mind, one per team; it is saved whole (SAVE_ROOTS,
 // js/sim/save.js), the bear by reference like any other shared body
 function aiTeamNew() {
-  return { at: -1, stance: 'FARM', why: '', winT: 0, roles: {}, pos: {}, order: [], seen: [], calls: [], focus: -1, bear: null, bearT: 0, answerT: 0, nPush: 0, nGuard: 0, braceT: 0, braceN: 0 };
+  return { at: -1, stance: 'FARM', why: '', winT: 0, roles: {}, pos: {}, order: [], seen: [], calls: [], focus: -1, bear: null, bearT: 0, bearN: 0, answerT: 0, nPush: 0, nGuard: 0, braceT: 0, braceN: 0 };
 }
 const aiTeams = [aiTeamNew(), aiTeamNew()];
 
@@ -184,24 +186,38 @@ function aiPlan(team) {
   if (T.winT > 0) nPush = Math.max(nPush, bots.length - nGuard);
   else if (T.braceT > 0) { const home = Math.min(nPush, T.braceN); nGuard += home; nPush -= home; }
   nPush = Math.min(nPush, bots.length);
+  // the beast: the orca once it is up, and the side's own bear (the teamPay
+  // camp nearest its bird) - asleep, no rival seen by it, a party strong
+  // enough to spare. A party already out keeps going while its beast lives
+  // and the bird is quiet. The orca's party is called off the push: it is
+  // the late fight, and its buff is the push (orcaPushMul)
+  let beast = null, party = 0;
+  if (!(mine && mine.threat) && T.winT <= 0) {
+    let lv = 0;
+    for (const q of bots) lv += q.level;
+    lv /= bots.length;
+    const orc = aiSideOrca(), bear = aiSideBear(team);
+    // (the orca's party is as many of AI_ORCA_N as the guards leave, never fewer than a bear's)
+    const cands = [[orc, Math.max(AI_BEAR_N, Math.min(AI_ORCA_N, bots.length - nGuard)), 0, AI_ORCA_LV, true], [bear, AI_BEAR_N, AI_BEAR_AT, AI_BEAR_LV, false]];
+    if (T.bear && T.bear === bear) cands.reverse(); // a party out on the bear finishes it first
+    for (const [b, n, at, lvMin, fromPush] of cands) {
+      if (!b) continue;
+      const out = T.bear === b;
+      const quiet = !T.seen.some((sg) => state.elapsed - sg.t < 6 && Math.hypot(sg.x - b.x, sg.y - b.y) < AI_ODDS_R * 2);
+      const spare = bots.length - (fromPush ? nGuard : nPush + nGuard);
+      if (spare >= n && (out || (state.elapsed >= at && lv >= lvMin && quiet && !b.target))) {
+        beast = b; party = n;
+        if (fromPush) nPush = Math.min(nPush, bots.length - nGuard - n);
+        break;
+      }
+    }
+  }
   const want = [];
   for (let i = 0; i < nPush; i++) want.push('pusher');
   for (let i = 0; i < nGuard && want.length < bots.length; i++) want.push('guard');
   // (what aiWantsPush and aiOnGuard read: the plan's counts, not the profile's)
   T.nPush = nPush; T.nGuard = want.length - nPush;
-  // the bear: the side's own (the teamPay camp nearest its bird), asleep,
-  // with no rival seen by it, and a party strong enough to spare. A party
-  // already out keeps going while the bear lives and the bird is quiet
-  const bear = aiSideBear(team);
-  let party = 0;
-  if (bear && !(mine && mine.threat) && T.winT <= 0) {
-    const out = T.bear === bear;
-    let lv = 0, n = 0;
-    for (const q of bots) { lv += q.level; n++; }
-    const quiet = !T.seen.some((sg) => state.elapsed - sg.t < 6 && Math.hypot(sg.x - bear.x, sg.y - bear.y) < AI_ODDS_R * 2);
-    if (bots.length - want.length >= AI_BEAR_N && (out || (state.elapsed >= AI_BEAR_AT && n && lv / n >= AI_BEAR_LV && quiet && !bear.target))) party = AI_BEAR_N;
-  }
-  if (party) { if (T.bear !== bear) T.bearT = 0; T.bear = bear; for (let i = 0; i < party; i++) want.push('slayer'); }
+  if (party) { if (T.bear !== beast) T.bearT = 0; T.bear = beast; T.bearN = party; for (let i = 0; i < party; i++) want.push('slayer'); }
   else T.bear = null;
   // a grudge (aiDowned) takes the side's one stalker job first, whatever the clock
   const grudger = bots.find((q) => aiGrudge(q));
@@ -238,7 +254,7 @@ function aiPlan(team) {
   if (mine && mine.threat) { T.stance = 'HOLD'; T.why = mine.hp < AI_ALARM_HP ? 'BIRD HURT' : 'BIRD HIT'; }
   else if (T.braceT > 0 && T.winT <= 0) { T.stance = 'BRACE'; T.why = T.braceN + ' COMING'; }
   else if (T.winT > 0) { T.stance = 'WINDOW'; T.why = heart * 2 > bots.length ? 'BEAR BUFF' : gap > 0 ? gap + ' DOWN' : 'CLOSING'; }
-  else if (T.bear) { T.stance = 'BEAR'; T.why = 'PARTY OF ' + party; }
+  else if (T.bear) { T.stance = T.bear.kind === 'orca' ? 'ORCA' : 'BEAR'; T.why = 'PARTY OF ' + party; }
   else if (nPush > 0) { T.stance = 'PUSH'; T.why = nPush + ' ON BIRD'; }
   else if (want.indexOf('stalker') >= 0) { T.stance = 'PRESS'; T.why = 'HUNTING'; }
   else { T.stance = 'FARM'; T.why = 'LEVELLING'; }
@@ -340,8 +356,15 @@ function aiSideBear(team) {
   }
   return best;
 }
-// The bear party (the slayer role): meet AI_BEAR_R off the bear, and once
-// AI_BEAR_N are there (or the first has waited AI_BEAR_WAIT) go in together.
+// the orca, while it is up in its pool (CAMPS.orca, js/sim/camps.js): the one
+// late fight both sides want, so it is nobody's own
+function aiSideOrca() {
+  for (const a of animals) if (a.kind === 'orca' && unitAlive(a)) return a;
+  return null;
+}
+// The beast party (the slayer role): meet AI_BEAR_R off the bear or the orca,
+// and once the plan's T.bearN are there (or the first has waited AI_BEAR_WAIT)
+// go in together.
 // Returns the bear to fight (the camp rung plays it, js/ai/ai-ladder.js), a point to
 // walk to while the party forms, or null when p is not in one.
 function aiBearJob(p, dt) {
@@ -352,8 +375,8 @@ function aiBearJob(p, dt) {
   for (const q of players) if (q.team === p.team && !q.dead && q.control === 'ai' && aiRole(q) === 'slayer' && Math.hypot(q.x - b.x, q.y - b.y) < AI_BEAR_R * 1.5) here++;
   const at = Math.hypot(p.x - b.x, p.y - b.y) < AI_BEAR_R * 1.5;
   if (at) T.bearT += dt / Math.max(1, here); // the party's shared wait, one clock however many are waiting
-  if (here >= AI_BEAR_N || T.bearT > AI_BEAR_WAIT) return { fight: b };
-  return { meet: { x: b.x + (p.x - b.x) / (Math.hypot(p.x - b.x, p.y - b.y) || 1) * AI_BEAR_R, y: b.y + (p.y - b.y) / (Math.hypot(p.x - b.x, p.y - b.y) || 1) * AI_BEAR_R }, here };
+  if (here >= T.bearN || T.bearT > AI_BEAR_WAIT) return { fight: b };
+  return { meet: { x: b.x + (p.x - b.x) / (Math.hypot(p.x - b.x, p.y - b.y) || 1) * AI_BEAR_R, y: b.y + (p.y - b.y) / (Math.hypot(p.x - b.x, p.y - b.y) || 1) * AI_BEAR_R }, here, beast: b };
 }
 // how many rivals are pushing into the side's half, deeper than its own
 // pushers are into theirs (0: no brace). The depth is how far along the line

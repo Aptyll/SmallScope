@@ -321,17 +321,33 @@ function aiCampFight(k) {
   //    coming to it, so it walks in to its own range first - a blade to arm's
   //    length, a bow to ~90 px with the line open
   if (wolf) {
-    aiNote(p, bj && wolf === bj.fight ? 'HUNT' : 'WOLF', bj && wolf === bj.fight ? 'THE BEAR' : wolf.target === p ? 'ON ME' : 'HELPING', wolf);
+    aiNote(p, bj && wolf === bj.fight ? 'HUNT' : 'WOLF', bj && wolf === bj.fight ? (wolf.kind === 'orca' ? 'THE ORCA' : 'THE BEAR') : wolf.target === p ? 'ON ME' : 'HELPING', wolf);
     if (p.zip >= 0) inp.jump = true; // off the zipline first
-    const d = Math.hypot(wolf.x - p.x, wolf.y - p.y);
+    // a beast that never walks (the orca in its hole) is measured to its hide,
+    // not its middle (unitRadius): it never closes, so the bot must, and the
+    // melee cone already reaches for that hide. A walking beast comes to the
+    // bot, and is read to its middle as it always was
+    const M = MONSTER[wolf.kind] || {}, hide = M.still ? Math.max(0, unitRadius(wolf) - PLAYER_R) : 0;
+    const d = Math.hypot(wolf.x - p.x, wolf.y - p.y) - hide;
     const clear = aiLineClear(p, wolf.x, wolf.y - 4);
     aimAt(wolf.x, wolf.y - 4);
     const away = Math.atan2(p.y - wolf.y, p.x - wolf.x);
     const melee = aiMelee(p);
-    if (wolf.target !== p && (melee ? d > AI_MELEE_D : d > 90 || !clear)) { if (steerTo(wolf.x, wolf.y, 0) < 0) { inp.mx = 0; inp.my = 0; } }
-    else if (d < 64 && !melee && !prof.relentless) { inp.mx = Math.cos(away); inp.my = Math.sin(away); } // a bow keeps its distance; a blade (or a relentless side) stands its ground
+    // a bow stands off past the beast's reach; a beast that never walks (the
+    // orca in its hole) is gone in on even by the one it is after, since
+    // giving ground never takes that one out of its fight
+    const bowD = M.still ? Math.max(90, M.reach + 12) : 90, keep = M.still ? Math.max(64, M.reach + 4) : 64;
+    // (the orca's far bank is a long way round by a ford: its walk may search
+    // as far as a roost's, AI_ROOST_BUDGET; a bear's keeps the usual search)
+    // a route ends on the beast's own tile, or, where that is no ground (the
+    // orca's hole), on ground inside the reach it fights from (findPath, in
+    // tiles). Only there: a reach would also end a route on the near bank of
+    // a creek with the bear across it
+    const reach = walkable(Math.floor(wolf.x / TILE), Math.floor(wolf.y / TILE), p) ? 0 : Math.ceil((hide + (melee ? AI_MELEE_D : bowD)) / TILE);
+    if ((wolf.target !== p || M.still) && (melee ? d > AI_MELEE_D : d > bowD || !clear)) { if (steerTo(wolf.x, wolf.y, reach, M.still ? AI_ROOST_BUDGET : undefined) < 0) { inp.mx = 0; inp.my = 0; } }
+    else if (d < keep && !melee && !prof.relentless) { inp.mx = Math.cos(away); inp.my = Math.sin(away); } // a bow keeps its distance; a blade (or a relentless side) stands its ground
     inp.fire = clear && (!melee || d < AI_MELEE_D + 8) && p.chargeT < drawTime(p) * 0.7;
-    if (d < 30 && p.dodgeCharges > 0 && rng() < dt * 3) inp.dodge = true;
+    if (d + hide < 30 && p.dodgeCharges > 0 && rng() < dt * 3) inp.dodge = true; // (a roll is measured to the middle, as it always was)
     ai.tgt = null;
     return true;
   }
@@ -613,7 +629,7 @@ function aiRoamJobs(k) {
   //     alone it works like anybody else. Every other bot walks its
   //     position (aiFarmWalk, js/ai/ai-farm.js).
   if (bj && bj.meet) { // the bear party forming, off the bear's reach
-    aiNote(p, 'REGROUP', 'BEAR PARTY ' + bj.here + '/' + AI_BEAR_N, bj.meet);
+    aiNote(p, 'REGROUP', (bj.beast.kind === 'orca' ? 'ORCA' : 'BEAR') + ' PARTY ' + bj.here + '/' + aiTeams[p.team].bearN, bj.meet);
     if (steerTo(bj.meet.x, bj.meet.y, 2) >= 0) { aimAt(bj.meet.x, bj.meet.y); inp.fire = false; ai.tgt = null; return true; }
   }
   if (!order && !pushE && !defend && !guardE) {

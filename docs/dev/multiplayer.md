@@ -740,7 +740,14 @@ strafe across a line does not flip it between jobs. The **bear**: from `AI_BEAR_
 party of `AI_BEAR_N` (3) to the teamPay camp nearest its own bird (`aiSideBear`). They meet
 `AI_BEAR_R` off it until all three are there or `AI_BEAR_WAIT` (15 s) runs out (`aiBearJob`),
 then the camp rung (4) fights it. The kill pays the whole side and gives it the bear's buff, which opens the window:
-bear, then push, is a loop that comes out of the rules rather than a script.
+bear, then push, is a loop that comes out of the rules rather than a script. The **orca**, once it is up in its pool
+(from 20:00), comes first: a side whose bots average level `AI_ORCA_LV` (12), its bird quiet and
+no rival seen by the pool, sends as many of `AI_ORCA_N` (5) as its guards leave, never fewer than
+three, taking them off the push (`aiSideOrca`; a party already out on the bear finishes it). It is
+nobody's own, so both sides go and the fight for it is a fight between them. The camp rung reads
+a beast that never walks (`still`) to its hide rather than its middle, walks in on it even when
+it is the one hunted, holds a bow past its lunge, and routes to ground beside its hole (the hole
+itself is water), searching as far as a roost walk for the far bank's ford.
 
 The fight rung weighs the numbers (`aiOdds`: rivals within `AI_ODDS_R` of the foe against its own
 side within `AI_ODDS_R` of it) through the profile's `judge` plus the mood's (`aiFallBack`): a
