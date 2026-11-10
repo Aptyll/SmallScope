@@ -133,36 +133,37 @@ function drawThawTele(px, py, closing, now) {
 }
 
 // ---- the SNOWDROP STAFF ----------------------------------------------------------------
-// Her staff (CLASSES' `staff: 'snowdrop'`; HERO_STAVES, js/draw/heroes.js): a snowdrop's
-// white bell nodding off the top of a pale alder shaft, two leaves under it, carried
-// upright; the bell sways between two frames. The hand closes on the shaft at SALVIA_STAFF_GRIP.
+// Her staff (CLASSES' `staff: 'snowdrop'`; HERO_STAVES, js/draw/heroes.js): a green sprig of
+// snowdrop leaves on a pale alder shaft wound with a vine, one small white bud at its tip,
+// carried upright; the bud nods between two frames. The hand closes on the shaft at
+// SALVIA_STAFF_GRIP.
 const SALVIA_STAFF = [
-  '...o...',
-  '..olo..',
-  '.oWWWo.',
-  'oWWWWWo',
-  'oWsWsWo',
-  'oWoWoWo',
-  '.o.o.o.',
-  '..oUo..',
-  'olouolo',
-  '.oouoo.',
-  '..ouo..',
-  '..ouo..',
-  '..ouo..',
-  '..ouo..',
-  '..ouo..',
-  '..ouo..',
-  '..obo..',
-  '..obo..',
-  '...o...',
+  '....o....',
+  '...oWo...',
+  '..oWWWo..',
+  '.ooosooo.',
+  '.oLoUoLo.',
+  '.oLLULLo.',
+  '.olLULlo.',
+  '..olUlo..',
+  '...oUo...',
+  '...ouo...',
+  '...oUo...',
+  '...ouo...',
+  '...oUo...',
+  '...ouo...',
+  '...oUo...',
+  '...ouo...',
+  '...oUo...',
+  '...obo...',
+  '....o....',
 ];
-const SALVIA_STAFF_GRIP = [3, 11];
-const SALVIA_STAFF_PAL = { o: '#2e2440', W: '#f8f8ff', s: '#c8d8e8', l: '#4f8a46', U: '#4f8a46', u: '#b08a62', b: '#7a5a40' };
+const SALVIA_STAFF_GRIP = [4, 11];
+const SALVIA_STAFF_PAL = { o: '#2e2440', W: '#f8f8ff', s: '#c8d8e8', l: '#3f7240', L: '#7cb864', U: '#4f8a46', u: '#b08a62', b: '#7a5a40' };
 let salviaStaffArt = null;
 function salviaStaff() {
   if (salviaStaffArt) return salviaStaffArt;
-  const sway = SALVIA_STAFF.map((r, y) => (y === 4 ? 'oWWsWWo' : y === 5 ? 'oWWoWWo' : y === 6 ? '.oo.oo.' : r));
+  const sway = SALVIA_STAFF.map((r, y) => (y === 0 ? '.....o...' : y === 1 ? '....oWo..' : y === 2 ? '...oWWWo.' : r));
   salviaStaffArt = [bakeBladeArt(SALVIA_STAFF, SALVIA_STAFF_PAL), bakeBladeArt(sway, SALVIA_STAFF_PAL)];
   return salviaStaffArt;
 }
