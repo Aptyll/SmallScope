@@ -230,8 +230,10 @@ and held through a cast; the lantern's heart flickers between two baked frames. 
 carries it its own way** so two of them are two shapes on the snow: a `HERO_STAVES` row's `hold`
 names a `STAFF_HOLDS` entry (none is the leading hand; `far` the other hand, SALVIA and HIEMS).
 A staff is always upright with its foot by the hero's own. A draw or a cast brings it into the
-leading hand; a draw lifts it 1 px, and a cast or the beat after a shot raises it up and a pixel out,
-still in the hand, with the body a pixel up (`staffCasting`).
+leading hand; a draw lifts it 1 px, and a cast is two beats (`staffBeat`): its first half gathers the
+staff up and a pixel out with the body a pixel up (a row's own `cast` sets it: BUCINA's horn at her lips, LUCERNA holds
+her lantern aloft), its second half and the beat after a shot thrust it the way she faces
+(`STAFF_THRUST`) with the body leaning in and the sleeve reaching out behind the fist (`heroSleeve`).
 
 **Every hero body shows its side from every facing**: the side's coat letters (`r`/`R`/`d`) fill 16 px
 or more of the torso facing down and up and 12 or more side-on, the lower back from behind
@@ -531,9 +533,9 @@ the colour, because a desaturated pine turns to mud under the night grade (round
 `tree-filters-1.png`, is the grey version that was turned down). **B** gives the outline a dark
 muted green, lifts the needle darks to an L floor of 0.40 and brings the snow down to a soft
 blue-grey band; **C** adds a hue shift by value (shadows toward teal, lights toward yellow-green);
-**D** takes C to 80% colour and mutes the trunk. Each comes in four **tones** by forest depth
+**D** takes C to 80% colour and mutes the trunk. Each comes in five **tones** by forest depth
 (`TREE_TONES`, a needle and a snow L shift): the deep is the filtered look itself, the ring inside the edge
-+0.035, the edge +0.07, and the **heart** (forest three tiles each way) drops its snow into shade so a wide wall is one dark mass with a lit rim — nine pines in ten stand deep, so darkening the deep instead would darken
++0.035, the edge +0.07, and the **heart** (forest three tiles each way) drops its snow into shade so a wide wall is one dark mass with a lit rim, and the **hollow** is darker again (where the deep forest's swell sinks) — nine pines in ten stand deep, so darkening the deep instead would darken
 the whole forest. Which row a tree wears is decided on its tile at draw time
 ([rendering.md](rendering/render-pass-order.md)). `SPRITES.tree` is variant B's deep row.
 

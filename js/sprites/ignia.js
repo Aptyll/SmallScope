@@ -305,8 +305,8 @@ const IGNIA_PAL = Object.assign({}, ARM_PAL, { a: '#8e3a22', A: '#c85a2c', u: '#
 // and shawl are not the doll's (app/bake-player: hearth, wanderer), so her run is her
 // drawn body in every facing (heroRunFront, js/sprites/armatos.js); the doll rolls her.
 const IGNIA_SKINS = [
-  { id: 'hearth', name: 'HEARTHKEEPER', rarity: 'common', price: 0, grids: IGNIA_BODY.hearth, motion: 'hearth', hem: 1, run: 'drawn' },
-  { id: 'wanderer', name: 'WANDERER', rarity: 'rare', price: 200, grids: IGNIA_BODY.wanderer, motion: 'wanderer', hem: 1, run: 'drawn' },
+  { id: 'hearth', name: 'HEARTHKEEPER', rarity: 'common', price: 0, grids: IGNIA_BODY.hearth, motion: 'hearth', sleeve: 'r', hem: 1, run: 'drawn' },
+  { id: 'wanderer', name: 'WANDERER', rarity: 'rare', price: 200, grids: IGNIA_BODY.wanderer, motion: 'wanderer', sleeve: 'r', hem: 1, run: 'drawn' },
 ];
 
 // ------------------------------------------------------------ ignia registry

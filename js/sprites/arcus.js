@@ -239,8 +239,8 @@ const ARCUS_BODY = {
   ],
 };
 // his felt (c, C), hair and beard (a, A), quiver (q) and strap (s), the goose feather (W, F)
-const ARCUS_PAL = Object.assign({}, ARM_PAL, { a: '#5a3a24', A: '#7a5232', q: '#8a6440', Q: '#5e4128', F: '#b8b2a4', s: '#6e4a2e',
-  c: '#5e4a3a', C: '#7e6650', W: '#f4f0e8' });
+const ARCUS_PAL = Object.assign({}, ARM_PAL, { a: '#5a3a24', A: '#7a5232', q: '#8a6440', Q: '#5e4128', F: '#b8b2a4', s: '#c8a46a',
+  c: '#a08660', C: '#c0a67c', W: '#f4f0e8' });
 // The looks he can wear: the first is his own and free, the second is bought with coins on
 // the skins screen (js/ui/skins.js, the ARCUS tab): a snow-white felt with a slate goose
 // feather and a birch quiver. `run: 'drawn'`: his brim is not the doll's run, so his run is

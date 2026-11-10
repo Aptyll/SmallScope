@@ -464,11 +464,12 @@ function drawPlayer(p, ex, ey, now, stage) {
     const ax = px + lx + (pose ? pose.dx : 0), ay = py + ly + (pose ? pose.dy : 0) - zl + bob;
     const sy = ay + by - py, sx = ax + bx - px; // a taller frame (the hoist) keeps its feet
     // held tool: behind the body when facing away or pointing up the screen,
-    // in the hand otherwise. A body
-    // mid-cast (or holding the shield, or charging) has no hand free for it -
-    // but a mage casts with the staff in hand (heroStaffOf, js/draw/heroes.js), and a
-    // key that is a shot holds the weapon on the aim through its wind-up (castAims).
-    const held = (p.castT <= 0 || heroStaffOf(p) || castAims(p)) && p.shieldT <= 0 && p.rushT <= 0 && p.zip < 0; // ...or holding a zipline's handle
+    // in the hand otherwise. A body holding the shield or charging has no hand
+    // free for it. A cast keeps it in the hands: a mage casts with the staff
+    // (heroStaffOf, js/draw/heroes.js), a blade is drawn back and then driven at
+    // the aim (castBeat), and a key that is a shot holds the weapon on the aim
+    // through its wind-up (castAims).
+    const held = p.shieldT <= 0 && p.rushT <= 0 && p.zip < 0; // ...or holding a zipline's handle
     // what points up the screen or is carried facing away goes behind (THE CARRY RULE, drawHeldTool)
     if (held) drawHeldTool(p, px + lx, py + ly + bob, true);
     // a rider's body stops at the deer's back: the rows from its hip down
@@ -747,6 +748,16 @@ function heroAimed(p) {
 }
 // is a key mid-wind-up holding the weapon on the aim (its CLASS_AB row's `aimHeld`: SAGITTA's bolts)
 function castAims(p) { if (!(p.castT > 0)) return false; const ab = abOf(p, p.castAb); return !!(ab && ab.aimHeld); }
+// A KEY'S CAST WITH A BLADE IN THE HANDS, two beats like a staff's (staffBeat,
+// js/draw/heroes.js): 1 the blade drawn back and up off the aim, 2 driven at the
+// aim, the body leaning with each (attackLean). 0: no cast, a shot's own aim
+// (castAims), or a cast too short to show two beats, which keeps the carry.
+const CAST_BEAT_MIN = 0.1;  // s: a shorter cast shows no beats
+const CAST_GATHER = 0.5;    // the share of a cast spent drawn back
+function castBeat(p) {
+  if (!(p.castT > 0) || !(p.castMax >= CAST_BEAT_MIN) || castAims(p)) return 0;
+  return castProg(p) < CAST_GATHER ? 1 : 2;
+}
 // ---- the blow's motion -----------------------------------------------------
 // A blade's attack is drawn as frames at SWING_FPS, the body's rate, never a
 // 60 fps tween: the wind-up (the body 1 px back off the aim while the blade is
@@ -783,11 +794,15 @@ function swingFrame(p) {
 }
 // the body's offset for a blow or a staff's cast ({ dx, dy } whole px), or null
 function attackLean(p) {
-  if (heroStaffOf(p)) return staffCasting(p) ? { dx: 0, dy: -1 } : null; // a staff's cast lifts the body with it (staffCasting, js/draw/heroes.js)
+  if (heroStaffOf(p)) { // a staff's cast lifts the body as it gathers, then leans it in behind the thrust (staffBeat, js/draw/heroes.js)
+    const beat = staffBeat(p), th = STAFF_THRUST[p.dir];
+    return beat === 1 ? { dx: 0, dy: -1 } : beat === 2 ? { dx: Math.sign(th[0]), dy: Math.sign(th[1]) } : null;
+  }
   if (!attackOf(p).cut) return null;
   let a, s;
   if (swingFrame(p) >= 0) { a = p.slashA; s = 1; } // the strike and the held finish
   else if (p.charging) { a = aimAngle(p); s = -1; } // the wind-up
+  else if (castBeat(p)) { a = aimAngle(p); s = castBeat(p) === 1 ? -1 : 1; } // a key's cast: back, then in
   else return null;
   return { dx: s * Math.round(Math.cos(a)), dy: s * Math.round(Math.sin(a)) };
 }
@@ -904,6 +919,15 @@ function drawHeldTool(p, px, py, back) {
       if (aimed.img) drawGripped(aimed.img, aimed.grip, hx, hy, aimed.rot);
       if (aimed.fist && !back) heroFist(p, hx, hy, aimed.x < 0 ? -1 : 1);
     }
+    return;
+  }
+
+  // a key's cast with a blade (castBeat): drawn back by half its arc, then
+  // driven straight at the aim; behind the body while it points up the screen
+  const cb = cut && !swinging ? castBeat(p) : 0;
+  if (cb) {
+    const a = aimAngle(p), w = cb === 1 ? a + (Math.cos(a) < -0.01 ? cut.half : -cut.half) : a; // drawn back on the upper side of the aim
+    if (heldBehind(w) === back) drawGripped(wHeld, hGrip, cxp + Math.cos(w) * BLADE_HAND[0], cyp + Math.sin(w) * BLADE_HAND[1], w - fwd);
     return;
   }
 
