@@ -96,6 +96,8 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['AURA: DRIFTING LIGHT is a light with rays and a trail', '0.894'],
+    ['LIGNUM: BARK SKIN grows over him as a furrowed trunk', '0.894'],
     ['Night frames on the mid ring draw four times faster', '0.893'],
     ['ARMATOS braces behind a real legion shield', '0.892'],
     ['Each bay stands in its own clearing at the edge of the base, no longer half hidden in the pines', '0.891'],

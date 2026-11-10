@@ -100,26 +100,36 @@ function drawLignumLog(g, ex, ey) {
 function drawLignumGround(ex, ey) { for (const g of lignumLogs) drawLignumLog(g, ex, ey); }
 
 // ---- on his body ----------------------------------------------------------------------------
-// BARK SKIN: bark grows over him plate by plate as he hardens, upright strips with the
-// grain cut into them (wood, never ice: no spikes, no shine), and sheds at the end;
-// beside a pine, needles sprout from it
-const BARK_PLATES = [ // [x, y, w, h] in his 16 px cell, in the order they grow: chest, shoulders, arms, hips, shins
-  [6, 8, 4, 3], [3, 7, 2, 3], [11, 7, 2, 3], [2, 10, 2, 2], [12, 10, 2, 2], [4, 11, 3, 2], [9, 11, 3, 2], [5, 14, 2, 1], [9, 14, 2, 1],
+// BARK SKIN: bark grows over him as he hardens (wood, never ice: no spikes, no shine): a
+// trunk in two browns (lit on the left, shaded on the right) with a few furrows running
+// down it, climbing row by row from his thighs to his chest and peeling back the same
+// way as it wears off. It stops at the shin so his boots show, and his collar and
+// sleeves stay in his side's colour. Beside a pine, sprigs of needles sprout from his
+// shoulders.
+const BARK_X = 5, BARK_Y = 9; // where the rows sit in his 16 px cell
+const BARK_ROWS = [ // top row first: L lit, B shaded, | a furrow (ink), . bare
+  '.L|LBB.',
+  '.L|L|B.',
+  '.LLB|B.',
+  '.L|B|B.',
+  '.LL.BB.',
 ];
-const BARK_GROW = 0.3; // s the bark takes to cover him
+const BARK_GROW = 0.3; // s the bark takes to cover him, and to peel off him
 function drawLignumFx(p, ax, ay, now, front) {
   if (!front || CLASSES[p.cls].passive !== 'treeline' || !(p.barkT > 0)) return;
-  const n = Math.ceil(Math.min(1, (BARK_T - p.barkT) / BARK_GROW) * BARK_PLATES.length);
-  const shed = p.barkT < 0.3 ? Math.round((0.3 - p.barkT) * 10) : 0; // the plates drop as it wears off
-  for (let i = 0; i < n; i++) {
-    const [x, y, w, h] = BARK_PLATES[i], sx = ax + x, sy = ay + y + (i % 2 ? shed : 0);
-    ctx.fillStyle = LG_INK; ctx.fillRect(sx - 1, sy - 1, w + 2, h + 2);
-    ctx.fillStyle = LG_BARK; ctx.fillRect(sx, sy, w, h);
-    ctx.fillStyle = LG_BARK_L; for (let c = 0; c < w; c += 2) ctx.fillRect(sx + c, sy, 1, h); // the grain
+  const n = Math.ceil(Math.min(1, (BARK_T - p.barkT) / BARK_GROW, p.barkT / BARK_GROW) * BARK_ROWS.length);
+  for (let r = BARK_ROWS.length - n; r < BARK_ROWS.length; r++) for (let c = 0; c < BARK_ROWS[r].length; c++) {
+    const k = BARK_ROWS[r][c];
+    if (k === '.') continue;
+    ctx.fillStyle = k === 'L' ? LG_BARK_L : k === '|' ? LG_INK : LG_BARK;
+    ctx.fillRect(ax + BARK_X + c, ay + BARK_Y + r, 1, 1);
   }
-  if (pineBeside(p) && n >= 3) { // needles: twice as hard by a pine
-    ctx.fillStyle = LG_PINE_L; ctx.fillRect(ax + 2, ay + 6, 1, 1); ctx.fillRect(ax + 13, ay + 6, 1, 1);
-    if (Math.floor(now * 4) % 2) { ctx.fillStyle = LG_PINE; ctx.fillRect(ax + 7, ay + 7, 2, 1); }
+  if (pineBeside(p) && n >= BARK_ROWS.length) { // needles: twice as hard by a pine
+    const sw = Math.floor(now * 4) % 2;
+    for (const [nx0, d] of [[3, -1], [12, 1]]) {
+      ctx.fillStyle = LG_PINE; ctx.fillRect(ax + nx0, ay + 5, 1, 2); ctx.fillRect(ax + nx0 + d, ay + 5 + sw, 1, 1);
+      ctx.fillStyle = LG_PINE_L; ctx.fillRect(ax + nx0, ay + 4, 1, 1); ctx.fillRect(ax + nx0 + d, ay + 4 + sw, 1, 1);
+    }
   }
 }
 

@@ -6,6 +6,7 @@
 // CURTAIN's ribbons rising until it falls. Both sides see all of it: the
 // telegraph is the whole fairness of a strike from that far.
 
+const AU_HALO = '#7cc4e8', AU_HALO_D = '#3f73b0'; // a light's blue halo and the deeper blue that holds it on snow
 const AU_INK = '#0a0e23', AU_STAR = '#fff3b0', AU_WHITE = '#ffffff', AU_PALE = '#e6f8ff', AU_GREEN = '#86f0bf', AU_TEAL = '#2fae7c';
 
 // ---- shots -----------------------------------------------------------------------
@@ -178,8 +179,19 @@ function drawAuraGround(ex, ey, now) {
     ctx.fillStyle = AU_PALE;
     for (let y = -4; y <= 4; y++) { const w = Math.round(ORB_R * Math.sqrt(1 - (y / 5) ** 2)); ctx.fillRect(px - w, py + 8 + y, w * 2 + 1, 1); }
     ctx.globalAlpha = 1;
-    const r = 3 + (Math.sin(now * 6 + o.x) > 0 ? 1 : 0);
-    auDisc(px, py, r + 1, AU_INK); auDisc(px, py, r, '#7cc4e8'); auDisc(px, py, r - 1, AU_PALE); auDisc(px, py, r - 2.5, AU_WHITE);
+    // a light, not a ringed ball: a white heart in a soft blue halo that breathes (no
+    // ink round it: its own deeper blue holds it on snow), four thin rays that turn
+    // long and short, and motes of it left behind along the way it has come
+    const big = Math.sin(now * 6 + o.x) > 0 ? 1 : 0, r = 3 + big;
+    for (let k = 1; k <= 3; k++) {
+      const tx = Math.round(px - o.nx * (4 + k * 5) + Math.sin(now * 5 + k * 2) * 1.5), ty = Math.round(py - o.ny * (4 + k * 5) + Math.cos(now * 4 + k) * 1.5);
+      ctx.fillStyle = AU_HALO; ctx.fillRect(tx - 1, ty, 3, 1); ctx.fillRect(tx, ty - 1, 1, 3);
+      ctx.fillStyle = k === 1 ? AU_WHITE : AU_PALE; ctx.fillRect(tx, ty, 1, 1);
+    }
+    auDisc(px, py, r + 1, AU_HALO_D); auDisc(px, py, r, AU_HALO); auDisc(px, py, r - 1, AU_PALE); auDisc(px, py, r - 2, AU_WHITE);
+    const ray = r + 2 + big * 2;
+    ctx.fillStyle = AU_HALO; ctx.fillRect(px - ray, py, ray * 2 + 1, 1); ctx.fillRect(px, py - ray - 1, 1, ray * 2 + 3);
+    ctx.fillStyle = AU_WHITE; ctx.fillRect(px - ray + 2, py, ray * 2 - 3, 1); ctx.fillRect(px, py - ray + 1, 1, ray * 2 - 1);
   }
   for (const c of auraCurtains) {
     if (c.t >= c.delay) { drawCurtainFall(c, ex, ey, now, (c.t - c.delay) / CURTAIN_GLOW); continue; }
