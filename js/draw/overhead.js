@@ -80,6 +80,14 @@ function paintArrowPx(px) {
 // snow, on a pine, on another body's frame, so no two frames matched.
 const BAR_FRAME = '#0f1632', BAR_TRACK = '#3a3448';
 const BAR_NEUTRAL = '#f2cc6a';
+// A hero that is not you wears less over its head, so the body under the stack
+// is what a glance lands on: its stamina bar shows only while it is short of a
+// roll (the tell a rival out of rolls gives is kept; a full white bar over all
+// ten heads was the brightest thing on the field and said nothing), its health
+// bar takes the freed row (HP_ROWS_ALONE), and its name wears a softer rim
+// (NAME_RIM_SOFT) than your own, which keeps the full ink
+const HP_ROWS_ALONE = 3, NAME_RIM_SOFT = '#39446b';
+function staminaShown(p) { return p === player || p.dodgeCharges < DODGE_CHARGES || !!p.mount; } // a rider keeps it: the deer's bar hangs off its frame row
 const STAM_COL = '#f4f7ff', STAM_GHOST = '#9aa4c0'; // the fill, and the dimmer chunk just spent draining into place
 const DRAW_COL = '#ffd95c', DRAW_FULL_COL = '#fff3c4', DRAW_FULL_FLASH = 0.12; // s of white the peak blinks for
 const NOCK_COL = '#6f7ca8'; // reloading
@@ -236,31 +244,32 @@ function drawTallies(k, subX, subY) {
 // bear's frame is its body's 2x (MONSTER.frame, js/sim/wildlife.js) - with `w`
 // and the cut still counted in the bar's own pixels; `segs` fixes the cut
 // instead of hpSegCount's (it must divide w + 1)
-function drawHealthBar(cxp, topY, hp, maxHp, w, team, col, u, s, segs, paint) {
+function drawHealthBar(cxp, topY, hp, maxHp, w, team, col, u, s, segs, paint, rows) {
   const k = s || 1;
   overheadPlate(() => {
-    healthBarPx(cxp, topY, hp, maxHp, w, team, col, k, segs, paint);
+    healthBarPx(cxp, topY, hp, maxHp, w, team, col, k, segs, paint, rows);
     if (u) queueTally(u, Math.round(cxp - w * k / 2) + (w + 1) * k + (foeCue(team) ? 1 : 0), Math.round(topY) + k, barCol(team));
   });
 }
 // `col` makes the bar a meter (unsegmented); `paint` only recolours a health
-// bar's fill (the local player's own green, unitBarCol) and keeps its segments
-function healthBarPx(cxp, topY, hp, maxHp, w, team, col, s, segs, paint) {
-  const k = s || 1, x = Math.round(cxp - w * k / 2), y = Math.round(topY);
+// bar's fill (the local player's own green, unitBarCol) and keeps its segments;
+// `rows` is how tall the fill stands (2, or HP_ROWS_ALONE over a hero with no stamina bar under it)
+function healthBarPx(cxp, topY, hp, maxHp, w, team, col, s, segs, paint, rows) {
+  const k = s || 1, r = rows || 2, x = Math.round(cxp - w * k / 2), y = Math.round(topY);
   const frac = Math.max(0, Math.min(1, hp / maxHp));
   ctx.fillStyle = BAR_FRAME;
-  ctx.fillRect(x - k, y - k, (w + 2) * k, 4 * k);
+  ctx.fillRect(x - k, y - k, (w + 2) * k, (r + 2) * k);
   ctx.fillStyle = BAR_TRACK;
-  ctx.fillRect(x, y, w * k, 2 * k);
+  ctx.fillRect(x, y, w * k, r * k);
   ctx.fillStyle = col || paint || barCol(team);
   // a living thing's last sliver of hp is still a pixel; an empty charge
   // (a wolf's threat at rest, a spent jink) is bare track, not a false one
   const fw = frac > 0 ? Math.max(1, Math.round(w * frac)) : 0;
-  ctx.fillRect(x, y, fw * k, 2 * k);
+  ctx.fillRect(x, y, fw * k, r * k);
   if (col) return;
   const n = segs || hpSegCount(maxHp, w), seg = (w + 1) / n;
   ctx.fillStyle = HP_TICK;
-  for (let i = 1; i < n; i++) ctx.fillRect(x + (i * seg - 1) * k, y, k, 2 * k);
+  for (let i = 1; i < n; i++) ctx.fillRect(x + (i * seg - 1) * k, y, k, r * k);
   // a rival's bar under a colour-blind palette wears a raised dark cap on its
   // right end (foeCue, js/sim/player.js), so the side reads by outline alone
   if (foeCue(team)) {
