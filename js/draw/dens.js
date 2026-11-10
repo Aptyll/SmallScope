@@ -1,18 +1,18 @@
 // ---- the den's yard ---------------------------------------------------------
 // A wolf den is lived in, so the snow in front of its mouth says so: a yard
 // the pack has trodden flat (two pressed bands with a shaded upper wall and a
-// lit lower one, like any hollow in this light), bare frozen ground at the
-// mouth, the pack's trails out to where each wolf waits (the camp's `spots`)
+// lit lower one, like any hollow in this light), a doorstep of dark earth out
+// of the mouth, the pack's trails out to where each wolf waits (the camp's `spots`)
 // and on into the open, and a ring of half-buried stones. Pure dressing: one canvas
 // a den, a function of the den's tile and hash2/vnoise alone, drawn on the
 // snow under every body (render, after the flat pass) the way a tower's
-// footing is (js/draw/towers.js).
+// footing is (js/draw/footings.js).
 const DEN_YARD_RX = 70, DEN_YARD_RY = 42;   // px: the yard's half width and half height
 const DEN_YARD_RAG = 0.4;                   // how far its edge wanders, as a share of the radius
 const DEN_YARD_IN = 0.6;                    // the share of the radius the harder inner band fills
-const DEN_YARD_BARE = 10;                   // px: the bare ground's reach from the mouth
+const DEN_STEP_W = 14, DEN_STEP_L = 13;     // px: the doorstep's width and its reach out of the mouth
 const DEN_YARD_COL = { out: 'rgba(138,150,178,0.2)', in: 'rgba(124,136,166,0.34)', wall: 'rgba(92,106,142,0.5)', lit: 'rgba(250,253,255,0.75)' };
-const DEN_BARE_COL = ['#8690a8', '#98a2b8', '#6e7890']; // frozen ground: the den's own rock, a little lower
+const DEN_STEP_COL = ['#4c4a52', '#5e5b62']; // dark earth, in two flat tones
 const DEN_PRINT_COL = 'rgba(96,110,146,0.6)';
 const DEN_TRAIL_STEP = 5;                   // px between prints along a trail
 // the yard's stones, half buried, on 1 px grids in the den's palette (DNPAL, js/sprites/terrain.js)
@@ -44,23 +44,24 @@ function denYard(C) {
     const ob = objects[idx(tx, ty)];
     return !(ob && ob.type === 'tree');
   };
-  // 0 at the yard's middle, 1 on its ragged edge
+  // 0 at the yard's middle, 1 on its ragged edge; each den's edge wanders its own way
+  const sx0 = hash2(key, 5) * 97, sy0 = hash2(key, 11) * 97;
   const reach = (x, y) => {
     if (!open(x, y)) return 9;
     const u = (x - cx) / DEN_YARD_RX, w = (y - cy) / DEN_YARD_RY;
-    return Math.sqrt(u * u + w * w) + (vnoise(x / 17, y / 17) - 0.5) * 2 * DEN_YARD_RAG * 0.5 + (vnoise(x / 6 + 40, y / 6) - 0.5) * 0.12;
+    return Math.sqrt(u * u + w * w) + (vnoise(x / 17 + sx0, y / 17 + sy0) - 0.5) * 2 * DEN_YARD_RAG + (vnoise(x / 6 + 40, y / 6) - 0.5) * 0.12;
   };
   const band = (x, y) => { const r = reach(x, y); return r < DEN_YARD_IN ? 2 : r < 1 ? 1 : 0; };
+  // the doorstep: a tongue of dark earth straight out of the mouth, about a hero wide, its tip ragged
   const bare = (x, y) => {
-    const u = (x - m.x) / (DEN_YARD_BARE * 1.7), w = (y - m.y) / DEN_YARD_BARE;
-    return y > m.y - 1 && open(x, y) && Math.sqrt(u * u + w * w) + (vnoise(x / 5, y / 5 + 9) - 0.5) * 0.5 < 1;
+    const d = y - m.y, hw = DEN_STEP_W / 2 - Math.max(0, d - DEN_STEP_L * 0.55) * 0.5 + (vnoise(y / 3, key) - 0.5) * 2;
+    return d >= 0 && d < DEN_STEP_L + (vnoise(x / 3, key + 5) - 0.5) * 4 && Math.abs(x - m.x) < hw && open(x, y);
   };
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     const wx = c.wx + x, wy = c.wy + y, b = band(wx, wy);
     let col = null;
     if (bare(wx, wy)) {
-      // frozen ground in flat patches, a dark line under the snow's edge above it
-      col = !bare(wx - 1, wy - 1) ? DEN_BARE_COL[2] : DEN_BARE_COL[vnoise(wx / 4 + 7, wy / 3) > 0.56 ? 1 : 0];
+      col = DEN_STEP_COL[vnoise(wx / 4 + 7, wy / 3) > 0.52 ? 1 : 0];
     } else if (b) {
       const up = band(wx - 1, wy - 1), dn = band(wx + 1, wy + 1);
       col = up < b ? DEN_YARD_COL.wall : dn < b ? null : b === 2 ? DEN_YARD_COL.in : DEN_YARD_COL.out;
