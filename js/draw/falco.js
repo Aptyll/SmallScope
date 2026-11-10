@@ -35,13 +35,14 @@ function drawFalcoPerch(p, ax, ay, now, front) {
   const bob = !p.moving ? 0 : -runBob(p);
   // the glove: 3 px of tan on the off side, its outline outside and under it
   const gx = lead ? ax + (side ? 1 : 0) - rc : ax + (side ? 12 : 13) + rc, gy = ay + (heroAimed(p) ? 12 : 10) + bob; // the bird's head at his eye line; down at the hip while the knife arm is up, so only one arm is raised
-  ctx.fillStyle = FC_INK; ctx.fillRect(gx - 1, gy - 1, 5, 4);
-  ctx.fillStyle = FALCO_GLOVE; ctx.fillRect(gx, gy, 3, 2);
+  const fine = bodySet(p).dens > 1; // his fine body's glove and hawk are fine too (FALCO_FINE_ART)
+  if (fine) ctx.drawImage(FALCO_FINE_ART.glove, gx - 1, gy - 1, 5, 4);
+  else { ctx.fillStyle = FC_INK; ctx.fillRect(gx - 1, gy - 1, 5, 4); ctx.fillStyle = FALCO_GLOVE; ctx.fillRect(gx, gy, 3, 2); }
   if (!falcoHasHawk(p)) return;
-  const right = side ? lead : !lead; // which way the hawk looks
-  const img = right ? FALCO_HAWK : heldFlip(FALCO_HAWK);
-  const fx = right ? FALCO_HAWK_FOOT[0] : img.width - 1 - FALCO_HAWK_FOOT[0];
-  ctx.drawImage(img, gx + 1 - fx, gy - 1 - FALCO_HAWK_FOOT[1] - (Math.floor(now * 1.2 + p.id) % 5 === 0 ? 1 : 0)); // now and then it shifts its feet
+  const right = side ? lead : !lead, hawk = fine ? FALCO_FINE_ART.hawk : FALCO_HAWK; // which way the hawk looks
+  const img = right ? hawk : heldFlip(hawk);
+  const fx = right ? FALCO_HAWK_FOOT[0] : heldW(img) - 1 - FALCO_HAWK_FOOT[0];
+  ctx.drawImage(img, gx + 1 - fx, gy - 1 - FALCO_HAWK_FOOT[1] - (Math.floor(now * 1.2 + p.id) % 5 === 0 ? 1 : 0), heldW(img), heldH(img)); // now and then it shifts its feet
 }
 HERO_BODY_FX.push(drawFalcoPerch);
 function drawFalcoAir(ex, ey, now) {
@@ -189,16 +190,19 @@ HERO_BODY_DRAW.push(drawFalcoSky);
 function falcoCarry(p, px, py) {
   if (attackOf(p).art !== 'knife') return false;
   const lead = p.dir === 'down' || p.dir === 'right', side = p.dir === 'left' || p.dir === 'right', rc = heroReach(p);
-  const k = side ? FALCO_KNIFE.fwd : FALCO_KNIFE.down, img = lead ? k.img : heldFlip(k.img);
+  const K = falcoKnifeArt(p), k = side ? K.fwd : K.down, img = lead ? k.img : heldFlip(k.img);
   const hx = lead ? px + (side ? 12 : 13) + rc : px + (side ? 3 : 2) - rc, hy = py + 11;
-  ctx.drawImage(img, hx - (lead ? k.grip[0] : img.width - 1 - k.grip[0]), hy - k.grip[1]);
+  ctx.drawImage(img, hx - (lead ? k.grip[0] : heldW(img) - 1 - k.grip[0]), hy - k.grip[1], heldW(img), heldH(img));
   if (p.dir !== 'up') heroFist(p, hx, hy, lead ? 1 : -1);
   return true;
 }
 HERO_CARRY.push(falcoCarry);
+// the knife art for this body: the 32 px one for a body drawn fine
+function falcoKnifeArt(p) { return bodySet(p).dens > 1 ? FALCO_FINE_ART.knife : FALCO_KNIFE; }
 // the knife hand is the leading one, the side away from the glove, so a raised knife never
 // crosses the hawk; a hand on the left reaches one more (the chest's middle is between two columns)
 HERO_AIMED.knife = (heading, step, p) => {
   const lead = p.dir === 'down' || p.dir === 'right', t = FALCO_THROW[step];
-  return { img: step ? FALCO_KNIFE.up.img : null, grip: FALCO_KNIFE.up.grip, hand: [lead ? t.hand[0] : -t.hand[0] - 1, t.hand[1]] };
+  const up = falcoKnifeArt(p).up;
+  return { img: step ? up.img : null, grip: up.grip, hand: [lead ? t.hand[0] : -t.hand[0] - 1, t.hand[1]] };
 };
