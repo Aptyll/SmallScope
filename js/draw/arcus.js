@@ -3,7 +3,7 @@
 // ARCUS's pixels (his rules: js/sim/arcus.js): his arrows standing in the snow and
 // FULL QUIVER's ring on it (HERO_GROUND), the quiver's arrows falling (HERO_AIR),
 // GATHER UP's lines while he calls them (its row's `tele`), WASTE NOTHING's stacks
-// over him (HERO_OVER), and his longbow upright at his side facing down or up
+// over him (HERO_OVER), and his longbow upright at his side at rest
 // (HERO_CARRY). Both sides see all of it, but a rival's arrow in the fog is not there.
 
 const AC_INK = '#141a2c', AC_GOLD = '#f2cc6a', AC_WHITE = '#ffffff', AC_SHAFT = '#c8a46a';
@@ -94,14 +94,19 @@ HERO_OVER.push({
 });
 
 // ---- the longbow at his side ---------------------------------------------------------
-// Facing down or up the level carry would lay the bow across his feet; he carries it
-// upright in his leading hand instead, the string toward him (HERO_CARRY)
+// At rest he carries it upright in his leading hand, clear of the body in every facing
+// (ARCUS_BOW_CARRY, js/sprites/arcus.js): the string toward him and a pixel off his coat,
+// the belly away, forward of him side-on (THE GRIP RULE). Never across the face.
 function arcusCarry(p, px, py) {
-  if (!isArcus(p) || (p.dir !== 'down' && p.dir !== 'up')) return false;
-  const A = attackOf(p), img = SPRITES.weaponArt[A.art];
-  if (!img) return false;
-  if (p.dir === 'down') { drawGripped(img, WEAPON_GRIP.icon[A.art], px + 16, py + 10, 0); heroFist(p, px + 16, py + 10, 1); }
-  else drawGripped(img, WEAPON_GRIP.icon[A.art], px + 0, py + 10, Math.PI);
+  if (!isArcus(p)) return false;
+  const lead = p.dir === 'down' || p.dir === 'right', rc = heroReach(p); // the leading hand is on the right
+  const side = p.dir === 'left' || p.dir === 'right';
+  const hx = lead ? px + (side ? 15 : 16) + rc : px + (side ? 0 : -1) - rc, hy = py + 10;
+  const img = lead ? ARCUS_BOW_CARRY : heldFlip(ARCUS_BOW_CARRY);
+  ctx.drawImage(img, hx - (lead ? ARCUS_BOW_GRIP[0] : img.width - 1 - ARCUS_BOW_GRIP[0]), hy - ARCUS_BOW_GRIP[1]);
+  if (p.dir !== 'up') heroFist(p, hx, hy, lead ? 1 : -1);
   return true;
 }
 HERO_CARRY.push(arcusCarry);
+// drawn, it is one of eight set frames on the aim (ARCUS_BOW_AIM, js/sprites/arcus.js)
+HERO_AIMED.longbow = (heading, step) => ARCUS_BOW_AIM[heading][step];
