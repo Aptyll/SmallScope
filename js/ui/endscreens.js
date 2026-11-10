@@ -259,7 +259,8 @@ function renderDefeat(now) {
   const ws = state.end || (state.end = endSnapshot());
   const t = state.defeatT;
   const L = winLayout();
-  ctx.fillStyle = 'rgba(5,8,20,' + (0.9 * Math.min(1, t / DEF_T.dim)).toFixed(3) + ')';
+  // the dim deepens from where the loss's beat left it (renderDead, js/ui/screens.js), never from clear
+  ctx.fillStyle = 'rgba(5,8,20,' + Math.max(Math.min(0.75, state.deadTimer * 0.6), 0.9 * Math.min(1, t / DEF_T.dim)).toFixed(3) + ')';
   ctx.fillRect(0, 0, VIEW_W, VIEW_H);
   drawEndTitle(L, tr('end.defeat'), t, DEF_T, 12, '#9fbde0', '#e8f2ff', (e) => e * e);
   drawEndBody(L, ws, t, DEF_T, DEF_ACCENT, now);

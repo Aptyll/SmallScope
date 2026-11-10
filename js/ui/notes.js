@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['A lost match goes straight to DEFEAT', '0.895'],
     ['AURA: DRIFTING LIGHT is a light with rays and a trail', '0.894'],
     ['LIGNUM: BARK SKIN grows over him as a furrowed trunk', '0.894'],
     ['Night frames on the mid ring draw four times faster', '0.893'],

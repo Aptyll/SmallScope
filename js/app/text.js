@@ -19,7 +19,6 @@
 const TEXT = {
   // ---- the end of a match (js/ui/screens.js, js/ui/endscreens.js)
   'end.lost': 'YOUR EAGLE WAS DRIVEN OFF',
-  'end.lostSub': 'THE MATCH IS OVER',
   'end.hostLeft': 'THE HOST LEFT',
   'end.hostLeftSub': 'THE MATCH ENDS HERE',
   'end.respawn': 'RESPAWNING IN {s}S',
