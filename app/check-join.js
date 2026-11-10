@@ -107,15 +107,15 @@ async function runPath(browser, kind) {
   };
   const A = await mk('host', '76561190000000001'), B = await mk('guest', '76561190000000002');
   const q = steam ? '&transport=steam' : '';
-  const open = async (pg, seed) => { await pg.goto(base + '?seed=' + seed + q); await pg.waitForFunction(() => window.DBG && typeof menuActivate === 'function'); await pg.waitForTimeout(800); };
-  await open(A, 7);
+  const open = async (pg) => { await pg.goto(base + (q ? '?' + q.slice(1) : '')); await pg.waitForFunction(() => window.DBG && typeof menuActivate === 'function'); await pg.waitForTimeout(800); };
+  await open(A);
   await A.evaluate(() => menuActivate(menuItems().indexOf('QUICKPLAY'))); // QUICKPLAY: a party, hosted
   await A.waitForFunction(() => NET.role === 'host' && NET.transport.open && roomCode(), null, { timeout: 10000 });
   let why0 = '';
   const host = await A.evaluate(() => ({ code: roomCode(), lobby: NET.transport.lobbyId || null }));
   if (kind === 'steam-invite') await B.goto(base + '?join=' + host.lobby + q); // what a Steam invite opens (steamJoinRequested / +connect_lobby)
   else if (kind.startsWith('friend')) { // the guest in a party of its own, the host in its friends' column
-    await open(B, 9);
+    await open(B);
     await B.evaluate(() => menuActivate(menuItems().indexOf('QUICKPLAY')));
     await B.waitForFunction((l) => NET.role === 'host' && NET.transport.open && FRIENDS.on && FRIENDS.list.some((f) => f.lobby === l), host.lobby, { timeout: 10000 });
     if (kind === 'friend-join') {
@@ -127,8 +127,8 @@ async function runPath(browser, kind) {
       await B.waitForFunction(() => !!friendCardRect(), null, { timeout: 5000 });
       await B.evaluate(() => { const r = friendCardRect(); mouse.x = r.join.x + 2; mouse.y = r.join.y + 2; menuClick(); });
     }
-  } else { // a code typed into the guest's own party, on another seed: the page reloads onto the host's
-    await open(B, 9);
+  } else { // a code typed into the guest's own party
+    await open(B);
     await B.evaluate(() => menuActivate(menuItems().indexOf('QUICKPLAY')));
     await B.waitForFunction(() => NET.role === 'host' && NET.transport.open, null, { timeout: 10000 });
     await B.evaluate((c) => { state.menu.codeOn = true; state.menu.code = ''; for (const ch of c) codeType(ch); }, host.code);
@@ -137,7 +137,7 @@ async function runPath(browser, kind) {
   const t0 = Date.now();
   while (Date.now() - t0 < JOIN_WAIT * 1000) {
     await B.waitForTimeout(500);
-    try { ok = await B.evaluate(() => NET.role === 'client' && NET.welcomed && SEED === 7); } catch (e) { ok = false; } // mid-reload
+    try { ok = await B.evaluate(() => NET.role === 'client' && NET.welcomed); } catch (e) { ok = false; } // mid-reload
     if (ok) break;
   }
   if (!ok) why = why || 'guest never welcomed';
@@ -164,7 +164,7 @@ async function runPath(browser, kind) {
 // ---- a party (or two) into one champ select ------------------------------
 // steam-party: a leader and two friends who joined by code; the friends say
 // READY, the leader presses FIND MATCH, and all three must stand in ONE draft
-// (the leader's seed, three people in it, a friend's point seen by the
+// (three people in it, a friend's point seen by the
 // leader). steam-match / relay-match: two parties of two press FIND MATCH at
 // once and must meet in one draft of four (js/ui/matchmaking.js), with no
 // lobby left on the list still saying it looks for a match.
@@ -173,7 +173,7 @@ async function runParty(browser, kind) {
   const steam = kind !== 'relay-match', S = fakeSteam(), errs = [], pages = [], leads = [];
   const spec = kind === 'steam-party' ? [3] : [2, 2];
   const base = 'http://localhost:' + CHECK_PORT + '/', q = steam ? '&transport=steam' : '';
-  const open = async (pg, seed) => { await pg.goto(base + '?seed=' + seed + q); await pg.waitForFunction(() => window.DBG && typeof menuActivate === 'function'); await pg.waitForTimeout(800); };
+  const open = async (pg) => { await pg.goto(base + (q ? '?' + q.slice(1) : '')); await pg.waitForFunction(() => window.DBG && typeof menuActivate === 'function'); await pg.waitForTimeout(800); };
   const hosted = (pg) => pg.waitForFunction(() => NET.role === 'host' && NET.transport.open && roomCode(), null, { timeout: 10000 });
   let k = 0, why = '';
   for (let pi = 0; pi < spec.length && !why; pi++) {
@@ -186,19 +186,19 @@ async function runParty(browser, kind) {
       pages.push(pg); mine.push(pg);
     }
     const A = mine[0]; leads.push(A);
-    await open(A, 7 + pi * 100);
+    await open(A);
     await A.evaluate(() => menuActivate(menuItems().indexOf('QUICKPLAY'))); // QUICKPLAY: a party, hosted
     await hosted(A);
-    const host = await A.evaluate(() => ({ code: roomCode(), seed: SEED }));
+    const host = await A.evaluate(() => ({ code: roomCode() }));
     for (const B of mine.slice(1)) {
-      await open(B, 9 + pi * 100);
+      await open(B);
       await B.evaluate(() => menuActivate(menuItems().indexOf('QUICKPLAY')));
       await hosted(B);
       await B.evaluate((c) => { state.menu.codeOn = true; state.menu.code = ''; for (const ch of c) codeType(ch); }, host.code);
       const t0 = Date.now(); let ok = false;
       while (!ok && Date.now() - t0 < JOIN_WAIT * 1000) {
         await B.waitForTimeout(400);
-        try { ok = await B.evaluate((sd) => NET.role === 'client' && NET.welcomed && SEED === sd, host.seed); } catch (e) { ok = false; } // mid-reload
+        try { ok = await B.evaluate(() => NET.role === 'client' && NET.welcomed); } catch (e) { ok = false; } // mid-reload
       }
       if (!ok) { why = 'a friend never joined party ' + pi; break; }
       await B.evaluate(() => netReady(true));
@@ -211,9 +211,9 @@ async function runParty(browser, kind) {
     let seen = [];
     while (Date.now() - t0 < PARTY_WAIT * 1000) {
       await pages[0].waitForTimeout(1000);
-      seen = await Promise.all(pages.map((pg) => pg.evaluate(() => ({ seed: SEED, screen: state.menu.screen, draft: DRAFT.phase, people: players.filter(isHuman).length })).catch(() => null)));
-      if (seen.every((v) => v && v.screen === 'lobby' && (v.draft === 'ban' || v.draft === 'pick') && v.people === n && v.seed === seen[0].seed)) break;
-      seen = seen.map((v) => (v ? v.seed + ' ' + v.screen + ' ' + v.draft + ' ' + v.people : 'reloading'));
+      seen = await Promise.all(pages.map((pg) => pg.evaluate(() => ({ screen: state.menu.screen, draft: DRAFT.phase, people: players.filter(isHuman).length })).catch(() => null)));
+      if (seen.every((v) => v && v.screen === 'lobby' && (v.draft === 'ban' || v.draft === 'pick') && v.people === n)) break;
+      seen = seen.map((v) => (v ? v.screen + ' ' + v.draft + ' ' + v.people : 'reloading'));
     }
     if (typeof seen[0] === 'string') why = 'not one draft: ' + seen.join(' | ');
     else {

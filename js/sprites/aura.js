@@ -247,11 +247,11 @@ const AURA_PAL = Object.assign({}, ARM_PAL, { a: '#a9b4cc', A: '#e8edf7', q: '#4
 // are not the doll's (app/bake-player: light), so her run is her drawn body in every
 // facing (heroRunFront, js/sprites/armatos.js); the doll rolls her.
 const AURA_SKINS = [
-  { id: 'light', name: 'NORTHERN LIGHT', rarity: 'common', price: 0, grids: AURA_BODY.light, motion: 'light', run: 'drawn' },
+  { id: 'light', name: 'NORTHERN LIGHT', rarity: 'common', price: 0, grids: AURA_BODY.light, motion: 'light', hem: 2, run: 'drawn' },
 ];
 
 // ------------------------------------------------------------ aura staff
-// Her STAR SHARD as the weapon art the HUD shows and the hands aim on a draw
+// Her STAR-GLASS as the weapon art the HUD shows and the hands aim on a draw
 // (SPRITES.weaponArt, js/sprites/weapons.js): a fallen star's pale shard bound to a
 // dark staff, head left like the sword's point. Carried, it is upright (HERO_STAVES.shard, js/draw/aura.js).
 WEAPON_FWD.starstaff = Math.PI;

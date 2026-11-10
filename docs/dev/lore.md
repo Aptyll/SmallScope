@@ -22,7 +22,7 @@ Softfall is an exile, and the valley takes anyone who can dig.** Nobody here was
 
 Softfall is a high valley, and the snow that buried it. The snow came down soft and did not
 stop, and an older **works** went under whole — its gold, its tools, its machines. It falls again
-every winter, and the valley comes out from under it a different shape each time.
+every winter, and the valley comes out from under it the same shape each time.
 
 Each winter two **companies** hire five **exiles** apiece, and fly each crew in on an armoured
 **eagle** to dig the works back out. A company does not ask where its exiles came from. Valley law is one line long: **a claim stands while its bird holds its
@@ -46,7 +46,7 @@ guild sells — not from a new faction or a new magic.
 | --- | --- |
 | ten heroes, every one with a past somewhere else | the empire throws people out; the valley takes anyone who can dig |
 | two identical sides on a mirrored map | two companies after the same claim; neither is the villain |
-| every seed is a new map | every winter's snow redraws the valley |
+| every match is played on the one map | every winter's snow buries the valley, and it comes out the same shape |
 | gold in the pines | the works are under everything: the pines grew up through them |
 | gold is the only currency in a match (the coins that buy skins are outside the valley) | the valley pays in one thing |
 | XP comes from being near when rival bodies fall, never from gold; felling pays gold only | the works pay an exile pocket money; the road is what teaches one |

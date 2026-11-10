@@ -63,8 +63,8 @@ declare victory. The affordances:
     itself (`netStatus().verifyFail` names the first fields that disagreed); `netLoss(f)` on a
     host throws away that share of its snapshot sends before the transport, which is the
     ack-keyed delta's proof.
-  - **A match between two tabs**: serve the game, open `?seed=N&net=host&room=R` in one tab and
-    `?seed=N&net=client&room=R` in another (the same seed - the host refuses a different one);
+  - **A match between two tabs**: serve the game, open `?net=host&room=R` in one tab and
+    `?net=client&room=R` in another (both on the match's map - the host refuses a practice or arena page);
     the client takes the smaller side's first AI slot, or its own slot back after a reload. In
     the Claude browser pane a tab that never got a frame does not tick at all: drive a client
     with `setInterval(() => DBG.step(1/60, 4), 66)` and it plays.
@@ -77,7 +77,7 @@ declare victory. The affordances:
     Playwright (`PLAYWRIGHT=<its folder>` if it is not on the require path).
   - **`node app/check-same.js`** — run it before merging a refactor, a split or a cleanup that
     should change nothing: it plays this tree and `origin/main` (or `node app/check-same.js <ref>`)
-    on the same seeds and the practice map for 8 match minutes each (`--min`, `--seeds`) and
+    on the same match seeds (each varies the bot match, never the map) and the practice tool for 8 match minutes each (`--min`, `--seeds`) and
     compares the sim hash and six views of the frame every 10 s. Exit 0 is SAME; 1 names the first
     tick and the fields that parted (pixels only is a draw change); 2 is cannot judge (a page
     threw, the base played a seed twice and parted, or a match never moved). A refactor that
@@ -99,7 +99,7 @@ declare victory. The affordances:
     `npm start -- --seed=42 --shot=out.png --wait=4 --quit` boots the game from disk headlessly
     and captures it.
 - **The counter needs a merchant, and a merchant needs a roost**: `startGame()`, step until
-  `DBG.merchants.length` is 2 and the mode is `play`, step out the `state.dropBrief`, `hopOff()`,
+  `DBG.merchants.length` is 2, the mode is `play` and the crew has leapt off,
   then `warp` beside `DBG.merchants[i]` — it is a working NPC and wanders off its post, so re-warp
   before each check unless a counter is open (an open counter pins it: `shopServing`). `DBG.openShop()`,
   `shopHit(x, y)`, `buyItem(id, p?)`/`sellItem(slot, p?)`
@@ -110,11 +110,12 @@ declare victory. The affordances:
   `DBG.notices` is the live stack, `DBG.noteRect(k)` where slot `k` sits, and
   `DBG.raiseNotice(kind, txt, good)` raises one.
   A plate ages on wall time in `updateFx`, so `DBG.step` runs its arrival and its fade.
-- **`?seed=N`** pins the world — the same seed twice proves a change is deterministic, two seeds
-  prove worldgen still varies. Without it every reload is a different world and A/B screenshots
-  are meaningless. The seed prints in the [info stack](gameplay/settings.md) — top quarter of the
-  left edge — but only while `settings.info` is on, and it defaults **off**: flip it on (the ESC
-  menu's INFO row, or F3) before capturing anything you intend to compare later.
+- **`?seed=N`** pins the match's stream (`rng`, `fxRng`, `matchHash`, the bots' sealed random),
+  never the map: every page grows the one map from `MAP_SEED`, and without `?seed` the match seed
+  is rolled when the page loads. The same seed twice proves a change is deterministic; two seeds give two different bot
+  matches on the same ground. The [info stack](gameplay/settings.md) (top quarter of the left
+  edge) shows FPS and POS only while `settings.info` is on, and it defaults **off**: flip it on (the
+  ESC menu's INFO row, or F3) before capturing anything you intend to compare later.
 - **`.`** cycles the [debug overlay](rendering/debug-overlays-hitboxes-and-routes.md): one press
   for the boxes and circles the sim tests, a second for the route every walker is following and
   the tile it is heading for. Reach for it before reasoning about a collision from the code alone.
@@ -132,8 +133,7 @@ declare victory. The affordances:
   CONTROLS page (listing-local; add `SET_X` and the content window's top less the scroll).
   [Keyboard and mouse](multiplayer.md#keyboard-and-mouse) lists what each key and button does.
 - **`localStorage.removeItem('softfall.profile')`** re-stages a first launch: a fresh profile
-  boots on the title with a pre-rolled name, and its `dropped` flag comes back false, so the next
-  ride runs the scripted first flight and its [drop brief](rendering/eagle-drop-mode-drop.md).
+  boots on the title with a pre-rolled name.
   A v2 save (`{ v: 2, active, chars: [{ name, cls, stats }..] }` written before a reload) stages
   the fold into one profile. `DBG.PROFILE` is the store; `DBG.beginProfile()` opens the profile
   card, driven by `profileHit`, `profileKey`, `profileCommit`/`leaveProfile` and read back
@@ -156,7 +156,7 @@ sets `autoPort` so a second session previews alongside an already-running one, a
 **Test off `file://`, not just off the server.** `node app/server.js` hides a whole class of bug: the
 game is played by double-clicking [index.html](../../index.html), where `fetch` and XHR are
 blocked against the page's own folder. Point the driver at the repo's own
-`file:///.../index.html?seed=N` for anything that loads an asset.
+`file:///.../index.html` for anything that loads an asset.
 
 **Audio** is verifiable from outside too, and needs to be — headless Chrome has no speakers, and
 "I can't hear it" has several completely different causes that are indistinguishable by ear.
@@ -307,7 +307,8 @@ table does. What a new hero needs written:
    js/baked/motion.js, named in its skins row's `motion` (the side run comes off the drawn side
    frame, `heroRunSide`; [the run and the roll](sprites.md#the-run-and-the-roll),
    [hero looks](sprites.md#hero-looks)) — **this is the expensive part**. `SPRITES.champLook`
-   bakes it per team and look with no edit;
+   bakes it per team and look with no edit, the idle breath included; a look with hair, a braid,
+   a cape or a skirt names its `cloth` boxes or `hem` rows so they hang behind a stop (`heroCloth`);
 3. in that same `heroArt` row, the **skins tab's 8×8 `glyph`**: `SKIN_TABS`
    ([js/ui/skins.js](../../js/ui/skins.js)) builds the hero's tab from the registry, and a load
    check in player.js throws for a `CLASSES` row with no `heroArt` row or a row with no hero;
@@ -465,8 +466,7 @@ on loudness and the meter reads peak. Set `dur` if the clip holds more than one 
 existing files are a whole loop padded to a fixed length. **A cue the SIM raises never gates itself** (the CLAUDE.md rule): a world cue is
 `sfxAt('cue', x, y, r?, arg?)` — which applies the `nearPlayer` gate, so a remote base cannot spam
 the mix — a cue only one body should hear is `sfxFor(p, 'cue', arg?)`, one cue for the owner and
-another for bystanders is `sfxOwn(p, own, other)`, and a shake is `shakeFor(p, n)` /
-`shakeAt(x, y, n, r?)` (all js/net/events.js). They record the moment for a client that never ran
+another for bystanders is `sfxOwn(p, own, other)` (all js/net/events.js). They record the moment for a client that never ran
 the step; a bare `if (nearPlayer(...)) SFX.cue()` inside the step is a sound that client never
 hears. Outside the step (HUD, menus) the bare `SFX.cue()` is right. A cue on a repeating tick (`building()` on a
 site's dust timer) needs a wide `jitter` and a `gap`, or it settles into a rhythm. A
@@ -567,7 +567,7 @@ Code that is dead **on purpose** is the next section.
   (`docs/media/github-title.png`), the Steam, Discord, YouTube and X links and the license line; the store
   copy lives on Steam. The repo's **Social
   preview** is set by hand in GitHub settings to `github-preview.png` (1280×640, under 1 MB). A
-  still is staged through `DBG`: `PROFILE.markDropped()`, `beginDrop()`, `hideUI`, `step` to
+  still is staged through `DBG`: `beginDrop()`, `hideUI`, `step` to
   `e.t ≈ dur/2` for the pass, `freeze`, `POST /shot?f=`.
 
 - **A record put back counts its lifetime stats again.** The profile's stats

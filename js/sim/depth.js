@@ -11,8 +11,8 @@
 // deepAt: a body in it is hidden, js/sim/fog.js), the ground bake draws that
 // band raised (js/draw/depth.js) with its reeds standing in it, and the
 // lighter bands are there for anything that dresses the snow. A pure function
-// of the seed and the scenery worldgen stood up: hash2/vnoise only, not one
-// rng() call, so no seed's world moves and every client lays the same map.
+// of the map and the scenery worldgen stood up: hash2/vnoise only, not one
+// rng() call, so every client lays the same map.
 const DEPTH_DEEP = 0.6;     // snowDepth at and above which snow is DEEP: the brush
 const DEPTH_MID = 0.25;     // ...and the band under it: a drift you see but do not hide in
 const DRIFT_HOLLOW = 0.2;   // the deepest a hollow's dusting gets: under DEPTH_MID, a dusting and never a drift
@@ -93,7 +93,7 @@ function brushOf(x, y) {
 }
 
 // ---- the brush ---------------------------------------------------------------
-// THE BRUSH: deep snow, hand-placed - the same patches on every seed, each a
+// THE BRUSH: deep snow, hand-placed - the same patches every match, each a
 // stand of frosted reeds in a drift (js/draw/depth.js draws both) that hides
 // whoever is in it from the other side (brushHide, js/sim/fog.js). RED's half
 // is listed in the road's frame (baseTile, js/sim/base.js: u along the road

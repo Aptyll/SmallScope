@@ -66,9 +66,8 @@ AND `hudHome()`, so the plate's existence IS the appears-then-goes ask; `drawAbB
 under the same two gates
 — a gold-rimmed plus, lighting on hover, the tooltip carrying the numbers). The `hudHome()` half
 matters because the plate hangs in open screen ABOVE the strip: the intro's `HUD_SLIDE` ([the HUD corners](../the-hud-corners.md)) is not far
-enough to carry it off the bottom with the wells, and a **drop brief pins `state.intro`** for the
-whole roost tour (the brief's camera branch in js/sim/sim.js never counts it down), so without that
-gate four gold plus plates bob alone along the bottom edge for the length of the cinematic.
+enough to carry it off the bottom with the wells, so without that gate four gold plus plates
+bob alone along the bottom edge while the HUD slides in.
 `hudInT()` is the one answer to "how far in is the HUD", shared by `renderUI`'s slide and both
 gates. Pressing the plate buys the level,
 pressing the well casts — two surfaces, so neither can steal the other's click, and the well's

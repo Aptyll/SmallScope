@@ -201,7 +201,7 @@ function updateStructures(dt) {
         const top = (o.ty + structH(o)) * TILE - structSprite(o).height + 4;
         for (let i = 0; i < 6; i++) burst(o.tx * TILE + 4 + i * 8, top, '#f4f7fc', 3, 35, 0.6, true);
         burst(structCenter(o).x, top + 12, '#aeb6c4', 8, 50, 0.5, true);
-        sfxAt('hammer', ox, oy); shakeAt(ox, oy, 2.5);
+        sfxAt('hammer', ox, oy);
         STRUCTS[o.type].built(o);
       }
       continue;

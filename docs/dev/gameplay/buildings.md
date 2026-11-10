@@ -49,8 +49,8 @@ from `createStruct`), `built(o)` (a site finished), `tick(o, dt)` (each tick it 
   (0.5 s), so a wave reads as a column. Breaking one stalls the waves until the merchant rebuilds
   it ([Soldiers](robots.md#soldiers-the-waves)).
 - **Buildings take damage from everything a rival can throw, and only from the other team.**
-  `hurtStruct(o, dmg, p, bot)` is the one blow: the flash, the shake, the damage total, the camera
-  kick, the wreck payout and the `<NAME> WRECKED A <TYPE>` feed line are one path and cannot
+  `hurtStruct(o, dmg, p, bot)` is the one blow: the flash, the shiver, the damage total,
+  the wreck payout and the `<NAME> WRECKED A <TYPE>` feed line are one path and cannot
   drift apart. What reaches it:
   - the **E swing**, `hitObject()`'s structure branch, **contested** with everything else E does
     (it runs inside `swingHit`'s `contest('work:' + idx)`);

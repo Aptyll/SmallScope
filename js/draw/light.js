@@ -758,6 +758,8 @@ function litSnowdrops(now, dark) {
 // raises a sense mark of its own, ui/menu.js) has no grade over it and no
 // flush coming, and draws where it stands.
 const worldInk = [];
+// one text is INK_STRIDE slots: text, x, y, colour, scale, alpha, is-a-tag, rim
+const INK_STRIDE = 8, WORLD_RIM = '#0f1632';
 // The frames over a body - a health bar, the level plate, the draw meter,
 // the name - are readouts too, and they are held back the same way, one
 // closure per body (overheadPlate). Graded in place, a bar wore whatever
@@ -792,11 +794,11 @@ function flushPlates() {
   platesNow = false;
   worldPlates.length = 0;
 }
-function drawWorldText(text, x, y, color, scale, alpha) {
+function drawWorldText(text, x, y, color, scale, alpha, rim) {
   if (!inWorldLayer() || platesNow) {
     const was = ctx.globalAlpha;
     if (alpha !== undefined) ctx.globalAlpha = was * alpha;
-    drawPixelTextOutline(ctx, text, x, y, color, '#0f1632', scale || 1);
+    drawPixelTextOutline(ctx, text, x, y, color, rim || WORLD_RIM, scale || 1);
     ctx.globalAlpha = was;
     return;
   }
@@ -805,7 +807,7 @@ function drawWorldText(text, x, y, color, scale, alpha) {
   // later never shows what its body hid; an explicit one (a floater's own
   // fade) multiplies it.
   worldInk.push(text, x, y, color, scale || 1,
-    (alpha === undefined ? 1 : alpha) * ctx.globalAlpha, false);
+    (alpha === undefined ? 1 : alpha) * ctx.globalAlpha, false, rim || WORLD_RIM);
 }
 // A name that must never sit on another name. On the ground names overlap
 // the way League's do - a crowd's tags stacked into a tower read worse than
@@ -817,13 +819,13 @@ function drawWorldText(text, x, y, color, scale, alpha) {
 // every other world text keeps where it was put.
 function drawNameTag(text, x, y, color, scale) {
   if (!inWorldLayer()) { drawWorldText(text, x, y, color, scale); return; }
-  worldInk.push(text, x, y, color, scale || 1, ctx.globalAlpha, true);
+  worldInk.push(text, x, y, color, scale || 1, ctx.globalAlpha, true, WORLD_RIM);
 }
 const TAG_GAP = 1;      // px kept clear between two tags' outlines
 const TAG_CLIMB = 8;    // most climbs one tag makes before it settles where it is
 function settleNameTags() {
   const tags = [];
-  for (let i = 0; i < worldInk.length; i += 7) if (worldInk[i + 6]) tags.push(i);
+  for (let i = 0; i < worldInk.length; i += INK_STRIDE) if (worldInk[i + 6]) tags.push(i);
   if (tags.length < 2) return;
   tags.sort((a, b) => worldInk[b + 2] - worldInk[a + 2] || a - b);
   const placed = []; // [x0, y0, x1, y1] outline boxes, outline included
@@ -843,10 +845,10 @@ function settleNameTags() {
 function flushWorldInk() {
   flushPlates(); // under the loose ink: a damage floater still lands over a frame
   settleNameTags();
-  for (let i = 0; i < worldInk.length; i += 7) {
+  for (let i = 0; i < worldInk.length; i += INK_STRIDE) {
     ctx.globalAlpha = worldInk[i + 5];
     drawPixelTextOutline(ctx, worldInk[i], worldInk[i + 1], worldInk[i + 2],
-      worldInk[i + 3], '#0f1632', worldInk[i + 4]);
+      worldInk[i + 3], worldInk[i + 7], worldInk[i + 4]);
   }
   ctx.globalAlpha = 1;
   worldInk.length = 0;

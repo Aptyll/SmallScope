@@ -303,8 +303,8 @@ const LUCERNA_PAL = Object.assign({}, ARM_PAL, { a: '#4a3226', A: '#6a4a36', q: 
 // doll's (app/bake-player: lamp, dusk), so her run is her drawn body in every facing
 // (heroRunFront, js/sprites/armatos.js); the doll rolls her.
 const LUCERNA_SKINS = [
-  { id: 'lamp', name: 'LAMPLIGHTER', rarity: 'common', price: 0, grids: LUCERNA_BODY.lamp, motion: 'lamp', run: 'drawn' },
-  { id: 'dusk', name: 'DUSK ROAD', rarity: 'rare', price: 200, grids: LUCERNA_BODY.dusk, motion: 'dusk', run: 'drawn' },
+  { id: 'lamp', name: 'LAMPLIGHTER', rarity: 'common', price: 0, grids: LUCERNA_BODY.lamp, motion: 'lamp', hem: 2, run: 'drawn' },
+  { id: 'dusk', name: 'DUSK ROAD', rarity: 'rare', price: 200, grids: LUCERNA_BODY.dusk, motion: 'dusk', hem: 2, run: 'drawn' },
 ];
 
 // ------------------------------------------------------------ lucerna lantern

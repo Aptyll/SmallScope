@@ -37,7 +37,7 @@ const { execFileSync } = require('child_process');
 
 const ROOT = path.join(__dirname, '..');
 const CHUNK = 600;              // ticks between comparisons: 10 s of match
-const PRACTICE_SEED = 'practice';
+const PRACTICE_RUN = 'practice';
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png',
   '.json': 'application/json', '.mp3': 'audio/mpeg', '.ogg': 'audio/ogg', '.wav': 'audio/wav' };
 
@@ -131,7 +131,6 @@ function playInPage({ chunks, CHUNK, drop, scene, upTo }) {
     window.__checkT += 7;
     settings.hitbox = 2; D.showPaths = true; v.hit = shot(); settings.hitbox = 0; D.showPaths = false;
     state.mapOpen = true; v.map = shot(); state.mapOpen = false;
-    const sk = settings.shake; settings.shake = true; state.shake = 3; v.shake = shot(); state.shake = 0; settings.shake = sk;
     mouse.inside = true; mouse.x = VIEW_W / 2 + 10; mouse.y = VIEW_H / 2 - 6; v.mouse = shot(); mouse.inside = false;
     D.hideUI = true; v.clean = shot(); D.hideUI = false;
     return v;
@@ -142,7 +141,7 @@ function playInPage({ chunks, CHUNK, drop, scene, upTo }) {
   if (upTo === state.tick) return { body: without(() => D.saveCapture().body) };
   if (!PRACTICE) D.startGame();
   if (scene) {
-    for (let i = 0; i < 6000 && (state.mode !== 'play' || state.dropBrief); i++) step(1);
+    for (let i = 0; i < 6000 && (state.mode !== 'play' || player.aboard); i++) step(1);
     rows.push({ tag: 'field', tick: state.tick, sim: simHash(), px: views() });
     const mark = (tag) => rows.push({ tag, tick: state.tick, sim: simHash(), px: { plain: shot() } });
     new Function('D', 'mark', 'step', scene)(D, mark, step);
@@ -163,7 +162,7 @@ async function play(browser, base, seed, a, upTo) {
   const errors = [];
   pg.on('pageerror', (e) => errors.push(String(e).split('\n')[0]));
   await pg.addInitScript(initScript);
-  const q = seed === PRACTICE_SEED ? '?practice=1' : '?seed=' + seed;
+  const q = seed === PRACTICE_RUN ? '?practice=1' : '?seed=' + seed;
   try {
     await pg.goto(base + '/index.html' + q);
     await pg.waitForFunction(() => window.DBG && window.DBG.startGame, null, { timeout: 60000 });
@@ -207,7 +206,7 @@ async function main() {
   const { sha, dir } = exportRef(a.ref);
   const [B, T] = await Promise.all([serve(dir), serve(ROOT)]);
   const browser = await chromium.launch();
-  const seeds = a.scene ? a.seeds.slice(0, 1) : a.seeds.concat(a.practice ? [PRACTICE_SEED] : []);
+  const seeds = a.scene ? a.seeds.slice(0, 1) : a.seeds.concat(a.practice ? [PRACTICE_RUN] : []);
   const what = a.scene ? 'a staged scene' : `${a.min} match min per seed, compared every ${CHUNK / 60} s`;
   console.log(`check-same: this tree vs ${a.ref} (${sha.slice(0, 7)}), seeds ${seeds.join(' ')}, ${what}`);
   let code = 0;

@@ -31,8 +31,8 @@ screen's player in slot `id` (title only: it is a fresh `initPlayers`).
 
 **`initPlayers(roster, local)` takes a roster** — one `{ control, team?, name?, cls? }` per
 slot — and the local slot; with neither it builds today's match (`defaultRoster`: this screen's
-human in `LOCAL_SLOT`, an AI everywhere else, teams alternating by slot). A bot still rolls its
-class off the seed; a roster entry's own `name`/`cls` land over that, which is
+human in `LOCAL_SLOT`, an AI everywhere else, teams alternating by slot). A bot still hashes its
+class off its slot and the match seed (`matchHash`, so the same `?seed` fields the same roster); a roster entry's own `name`/`cls` land over that, which is
 how a lobby dresses a remote human's body (`netClientWelcome`, [Online play](#online-play)).
 The profile is only ever applied to this screen's player (`applyProfile()`).
 
@@ -66,10 +66,8 @@ fire          bow held: rising edge draws, falling edge looses; any of it ends
 work          E held (with it clear, the hands still take a tree, a chest or a snowdrop in reach: autoWork)
 slide         shift held
 dodge         edge-triggered, cleared by the sim when it reads it
-jump          edge-triggered: the hop off the roosted bird (hopOff,
-              js/sim/eagle.js; read at the top of updatePlay's player loop,
-              before the air skips the body) - and
-              on the ground the zipline's: clip on under any side's cable,
+jump          edge-triggered (read at the top of updatePlay's player loop,
+              before the air skips the body): on the ground the zipline's: clip on under any side's cable,
               let go while riding, or - out of reach with the aim on a
               cable as drawn - the walk there that clips on (zipToggle,
               js/sim/world.js; E sets it there)
@@ -245,9 +243,9 @@ read through `statOf(p, key)` (js/sim/stats.js), never off the kit. `setClass(p,
 | --- | --- | --- | --- | --- |
 | 0 | **ARMATOS** — THE LAST STANDARD, the defensive initiator (a passive, `CLASSES[c].passive`) | make the whole team stand its ground | his own body (LAST STANDARD, or a look bought on the skins screen) and his own kit, 130 hp, 24 armor | the OATH GREATSWORD: a 28 px cut, 1.05 rad either side of the aim, drawn as his own blade |
 | 1 | **FORTIVA** — THE UNBROKEN, the juggernaut (passive UNBROKEN) | win the long fight: harder to stop the longer she trades | her own body (UNBROKEN, or CHAINBREAKER bought on the skins screen), 132 hp, 20 armor, a step slower | the CHAIN GREATSWORD: the same cut as his, drawn as her own blade |
-| 2 | **BELLA** — THE IMPERIAL GENERAL, the duelist (passive CALCULATED STRIKES) | find one weakness and spend it before the rival can react | her own body (IMPERIAL GENERAL, or TRAITOR'S BLADE bought on the skins screen), 104 hp, 16 armor, a step faster | the EAGLE SPATHA: a quicker, shorter cut (26 px, 0.95 rad, `cycle` 26/60 s), drawn as her own blade |
+| 2 | **BELLA** — THE IMPERIAL GENERAL, the duelist (passive CALCULATED STRIKES) | find one weakness and spend it before the rival can react | her own body (IMPERIAL GENERAL, or EXILE'S BLADE bought on the skins screen), 104 hp, 16 armor, a step faster | the EAGLE SPATHA: a quicker, shorter cut (26 px, 0.95 rad, `cycle` 26/60 s), drawn as her own blade |
 | 3 | **IGNIA** — THE HEARTHKEEPER, the burn-and-zone mage (passive SPREADING FLAME) | burn a fight down: one rival's fire spreads through the crowd, the snow and the creek put it out | her own body (HEARTHKEEPER, or WANDERER bought on the skins screen), 84 hp, 10 armor | the CROOK AND LANTERN: an ember shot (260 px/s for 0.85 s, `cycle` 60/60 s), the staff carried upright |
-| 4 | **AURA** — THE NORTHERN LIGHT, the artillery mage (passive STARLIGHT) | hit from further than anyone, light up the night; caught up close is the danger | her own body (NORTHERN LIGHT), 78 hp, 9 armor, a step slower than anyone | the STAR SHARD: a star bolt, 270 px/s for 0.95 s, `cycle` 66/60 s, drawn as her own shot (`look`, `HERO_SHOTS`) |
+| 4 | **AURA** — THE NORTHERN LIGHT, the artillery mage (passive STARLIGHT) | hit from further than anyone, light up the night; caught up close is the danger | her own body (NORTHERN LIGHT), 78 hp, 9 armor, a step slower than anyone | the STAR-GLASS: a star bolt, 270 px/s for 0.95 s, `cycle` 66/60 s, drawn as her own shot (`look`, `HERO_SHOTS`) |
 | 5 | **SALVIA** — THE MENDER, the healer (passive WARM BROTH) | keep your side on its feet: heals, speed, the slows taken off | her own body (MENDER, or FIELD TENT bought on the skins screen), 80 hp, 10 armor | the SNOWDROP STAFF: a sprig, 250 px/s for 0.85 s, `cycle` 62/60 s, drawn as her own shot (`look`, `HERO_SHOTS`) |
 | 6 | **LUCERNA** — THE LANTERN, the catch-and-save support (passive LAMPLIGHT) | pull a rival in, bring an ally home, light what hides near her | her own body (LAMPLIGHTER, or DUSK ROAD bought on the skins screen), 88 hp, 12 armor | the LANTERN: a spark, 260 px/s for 0.8 s, `cycle` 62/60 s, drawn as her own shot (`look`, `HERO_SHOTS`) |
 | 7 | **HIEMS** — THE LONG WINTER, the control mage (passive DEEP CHILL) | freeze a fight slowly: every hit chills, the third freezes; hold a choke with ice and a blizzard | her own body (WEATHER SCHOLAR, or FIRST FROST bought on the skins screen), 82 hp, 10 armor, a step slower | the SNOWFLAKE STAFF: a frost bolt, 270 px/s for 0.85 s, `cycle` 62/60 s, drawn as her own shot; every hit of it chills |
@@ -272,7 +270,7 @@ one does, its cooldown, cast, and the states it leaves on a body — are
 
 The local player's class is its **hero, picked each match** in the lobby's draft
 ([lobby](rendering.md#lobby), js/ui/draft.js: a ban phase, then everyone's blind pick); the one
-it flies out with is kept as the profile's hero (js/app/profile.js), the one the next pick starts on. Bots hash their hero from the seed in `initPlayers()`, and in the draft
+it flies out with is kept as the profile's hero (js/app/profile.js), the one the next pick starts on. Bots hash their hero from their slot in `initPlayers()`, and in the draft
 take what it gives them (`draftBotPick`). Lobby shows that roster as two team panels on the screen's edges — your side left, the
 rivals right, their picks face-down until the draft's countdown turns them. The party's leader sets
 the rivals' level on the party screen's head (`botsSet`, js/ui/rooms.js): `settings.aiLevel` (`AI_LEVELS`, js/ai/ai-skill.js: EASY / NORMAL / HARD /
@@ -401,11 +399,10 @@ so a fast shot never steps over one ([a shot in flight](gameplay/the-basic-attac
 `ARROW_HIT_R` (10 px) disc round the player's centre — wider than the 4.5 px body a walker
 collides with, because a walking target crosses its own width twice in the quarter second a
 full-draw arrow takes to fly 80 px, and the same disc on every side keeps it a fact of arrows
-rather than a hidden handicap; a hit calls `damagePlayer(target, dmg, dx, dy, src, cause)` for knockback, flash,
+rather than a hidden handicap; a hit calls `damagePlayer(target, dmg, dx, dy, src, cause)` for the shove a key's blow lands (an attack lands none on a player), the hit's spark (js/draw/hitfx.js), the
 floater and possibly `die(p, src, cause)`. Friendly fire is off, and an arrow can never hit its
 shooter. `damagePlayer` takes a seventh argument, `crit` (a blow's `crit` through `hurtUnit`, e.g.
-FALCO's STOOP or NIX's WHITEOUT): it runs the damage floater hotter and at double scale and doubles
-the local shake. SAGITTA's piercing bolt (`a.pierce`) is the one shot that takes a body and keeps flying — everyone on the
+FALCO's STOOP or NIX's WHITEOUT): it runs the damage floater hotter and at double scale. SAGITTA's piercing bolt (`a.pierce`) is the one shot that takes a body and keeps flying — everyone on the
 line is hit once each (`a.pierceHit`), and only a raised shield or the world stops it. A player
 riding a zipline is a target like any other, and cannot shoot back ([the ride](gameplay/momentum-movement-players-only.md#the-zipline)).
 
@@ -540,8 +537,8 @@ contest('work:' + idx(tx, ty), p, () => { /* runs only if p wins */ });
 ```
 
 `resolveContests()` runs exactly one claim per key, choosing the lowest `contestRank(p)` =
-`hash2(p.id * 131 + 7, state.tick)` — a pure function of the run **seed**, the **player id** and the
-**sim tick**, so every machine simulating that step picks the same winner. It is called twice in
+`matchHash(p.id * 131 + 7, state.tick)` — a pure function of the **match seed** (`SEED`), the **player id** and the
+**sim tick**, so a replay of that step picks the same winner. It is called twice in
 `updatePlay`: once after the player loop (work swings, build orders, fish) and once at the end
 (drop pickups). Claims must re-check their preconditions inside the callback — cost is paid at
 resolution, so a loser keeps its gold.
@@ -561,7 +558,7 @@ field into the same `p.input` (`botAct`), plus a `goTo` walked by `navTo`, a `sa
 and a `think` stored as `p.ai.thought`. It runs inline (the examples baked from `bots/` into
 js/baked/bot-lib.js by `app/bake-bots.js`), in a Web Worker (a person's file) or on any transport a
 harness registers in `BOT_TRANSPORTS`; a headless runner steps only while `botPending()` is
-false, so a seed and the same files replay exactly. The live half of a seat (`botRt`) is never
+false, so the same `?seed` and the same files replay exactly. The live half of a seat (`botRt`) is never
 saved: a save keeps `p.botId` and the first step after a load reopens the program. The author's contract: [docs/bots/](../bots/README.md).
 
 `updateAI(p, dt)` (the `ai` banner) writes `p.input` and nothing else — a bot can never do anything
@@ -889,7 +886,7 @@ mid-cable holds the other way) and presses the hop again `ZIP_AI_OFF` (6 px) sho
 A ride no rung wanted this think is let go of at once (`ai.zipUsed`, `updateAI`), so a bot
 never coasts to the terminus by accident, and rungs 3 and 4 let go before they fight: nobody
 rides past an enemy holding the handle (roost to the map's centre is about 12.5 s by the cable against
-23 s on foot, seed 42). The -1, not a
+23 s on foot). The -1, not a
 timer, is what makes a bot drop a goal: harvest puts the target on `ai.avoid` for 12 s, hunt on
 `ai.huntAvoid`, spend backs off for 15 s, a push on `ai.pushCd`, roam
 re-picks. Harvest routes
@@ -897,7 +894,7 @@ with reach `WORK_REACH` (any open tile beside the target), so `aiOpenSides() >= 
 prefilter on work; a build site still wants `>= 3` open sides. Keep the -1 branches when you
 extend the ladder — a goal that is never dropped is a bot that stands still forever.
 
-**Calibrating a level** is done bot-vs-bot, headless: `node app/arena/run.js` plays a batch of seeds with no browser, one exact replay per seed, and scores each match ([arena.md](arena.md)). The same recipe by hand, in the served page: make the local player a
+**Calibrating a level** is done bot-vs-bot, headless: `node app/arena/run.js` plays a batch of seeds with no browser (a seed varies the match's stream on the one map), one exact replay per seed, and scores each match ([arena.md](arena.md)). The same recipe by hand, in the served page: make the local player a
 bot (`player.control = 'ai'`, `players[0].ai.prof = AI_LEVELS[1]` (NORMAL) for a middling player who
 never pushes — `aiRank` skips `player`, so it holds no push or guard player), stub
 `sampleHumanInput`, `DBG.beginDrop()`, then step the sim at its own `TICK_DT` (1/60 —
@@ -907,13 +904,13 @@ any other `dt` plays a different bot) in a loop until
 the local player is dead, so write your own clock back into it each step, and only `'won'` /
 `'lost'` in `state.over` end a match — `'respawning'` is the proxy dying). Set `DBG.freeze`
 first so the frame loop stops stepping under you. Two runs of one seed are **not** the same
-match: the title screen's live world spends seed draws for however many frames it was up
+match: the title screen's live world spends `rng()` draws for however many frames it was up
 before the harness started, so a seed is a distribution, not a replay. Wrapping `gainGold`
 and bucketing by the caller in `new Error().stack` (`hitObject`, the kill bounty in `die`,
 `animalDies`, `updateStructures`, else the trickle) is how the economy is sized.
 The match-length target is a match that ends round fifteen minutes with the human sitting it
 out, ten to twenty at the tails, which is what the ally clocks are set for. Where the levels
-last measured (seed 42 unless said): NORMAL resolves on the ally push at 17–21 min (seeds 42,
+last measured (`?seed=42` unless said): NORMAL resolves on the ally push at 17–21 min (seeds 42,
 99, 7), a few minutes long of the target, so the ally clocks are the next thing to tune; HARD is
 an ally win at about 12:35; relentless IMPOSSIBLE's pack of five goes at about 5:15 and takes
 the allied bird to **15 % nerve** by six minutes, then bleeds to the levelled allies (a rusher
@@ -959,7 +956,7 @@ what the rest of the code needs to know is this:
   copies onto that slot's `p.input`, `netHostStep`) and draws the snapshots the host sends every
   `SNAP_EVERY` (4) ticks, eased between two (`netClientLerp`). A key handler that calls a sim
   function directly therefore does nothing on a client.
-- **A joiner takes an open seat.** `netHostHello` refuses a different patch or seed. In a party
+- **A joiner takes an open seat.** `netHostHello` refuses a different patch or `world` (`worldKind()`: the match's map, the practice tool, the arena). In a party
   (`NET.mode`, js/ui/rooms.js) it seats the joiner on the leader's side, only while the party is
   on its seats (BUSY once the hero select or the match has begun; FULL past five), or any time on
   the practice tool (`practiceSeat`, onto the side's roost, or the arena's spawn). A host with no
@@ -974,7 +971,7 @@ what the rest of the code needs to know is this:
 - **A side is a field, not a slot.** Anything that wants "which side" reads `p.team`, never the
   slot number; a party sits on the leader's side.
 - **A cue reaches a client only if the sim said where and who.** Inside the step, `sfxAt`,
-  `sfxFor`, `sfxOwn`, `shakeAt` and `shakeFor` (js/net/events.js) play the cosmetic on the host and
+  `sfxFor` and `sfxOwn` (js/net/events.js) play the cosmetic on the host and
   record it (`evPush`; `burst` and the floaters record themselves); the ring rides out with the
   snapshot and the client replays each entry against its *own* player (`evPlay`). A bare
   `if (p === player) SFX.cue()` in the step is a sound no client hears.
@@ -991,9 +988,9 @@ what the rest of the code needs to know is this:
   starts no ally push and is no ally's anchor. A human's ping does steer its side's bots for either kind (`isHuman`). Notices (`raiseNotice`) and
   the own-bird alarm are raised on the host's screen only.
 - **What the step gates on `p === player`, a client does for itself.** The profile's lifetime
-  stats and `markDropped` never run on a client's screen, so
+  stats never run on a client's screen, so
   `netClientStats` (js/net/net.js) reads them off its snapshot body each step: `earned` climbing is gold,
-  `kills` climbing a kill, `dead` rising a death, `aboard` falling the hop, and the first step of
+  `kills` climbing a kill, `dead` rising a death, and the first step of
   the ride the match and its first day. Its own landing (mode `play` and the landing's hard music
   cut once its bird is `down`) is `netClientMode`'s. A new local-only side effect in the sim needs its edge there.
 
@@ -1002,10 +999,9 @@ what the rest of the code needs to know is this:
 Nowhere, until they land: every active player boards **its team's** eagle in `beginDrop()`. Each
 bird flies a short fixed line in over its own corner (`EAGLE_FLIGHT_T`, 2.5 s), RED's the
 bottom-left and BLUE's the top-right, and roosts on its [base](world.md#the-bases)'s perch with
-the whole side on its back. The bots hop off one by one once the wings fold; a human hops off
-with E, the roll button or by walking, under the E HOP OFF indicator, after the
-[drop brief](rendering/eagle-drop-mode-drop.md#the-drop-brief) on a profile's first flight. Each rider's `spawn` comes
-from `landPlayer()`, the nearest open tile to where its hop came down, and that tile is what the
+the whole side on its back. The whole crew, bots and humans alike, leaps off together a beat
+after the impact ([the arrival](rendering/eagle-drop-mode-drop.md)), with no key to press. Each rider's `spawn` comes
+from `landPlayer()`, the nearest open tile to where its leap came down, and that tile is what the
 bot brain treats as "home". There are no spawn pockets, no starter rings, and no guaranteed
 resources near a landing. `ringPts` (six points on a ring
 `SPAWN_D` tiles from the centre — `RING_N` is frozen at 6, decoupled from the player count) is the

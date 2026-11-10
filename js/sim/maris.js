@@ -240,7 +240,6 @@ function breachUp(p) {
   abFx.push({ kind: 'ring', x: p.x, y: p.y, r: BREACH_R, t: 0, col: broke ? '#7cc4e8' : '#f4f7ff' });
   burst(p.x, p.y - 4, '#f4f7ff', 24, 85, 0.6, true);
   burst(p.x, p.y - 4, broke ? '#3a6080' : '#cfd8e8', 12, 60, 0.6, true);
-  shakeFor(p, broke ? 7 : 5);
   sfxAt(broke ? 'splash' : 'break_', p.x, p.y);
 }
 

@@ -28,16 +28,17 @@
 5. flat objects (stumps);
 6. `drawRecallGround` (the roost rings and the recall's) → `drawClickMarks` (the CLICK scheme's order and lock rings) → `drawAbilityGround` (the heroes'
    ground marks, `HERO_GROUND`, and every wind-up's telegraph);
-7. the **y-sorted `draws` array** (tall objects, every player, animals, robots, the practice
+7. `drawHitPuffs` (a big hit's snow clumps, under the bodies, js/draw/hitfx.js), then the **y-sorted `draws` array** (tall objects, every player, animals, robots, the practice
    targets, sorted by feet Y; empty player slots draw as team-tinted
    silhouettes via `drawGhost`; `pushMiddleDraws` adds the cistern's stone, piece by piece at
    the key of a body standing on it, and the orca out of the water, `drawOrcaBreach`, sorted by
-   its hole's waterline and cut at it - [the cistern](../world.md#the-cistern));
+   its hole's waterline and cut at it - [the cistern](../world.md#the-cistern)); a body under a big
+   hit is drawn off its spot by `hitNudge` (held where it was struck, then 1 px back);
 8. `drawSelection` (white pulsing corners with a dark shadow over an open wheel's target)
    → `drawWorkHint` (the E work prompt);
 9. `PRACTICE` only: `drawParkour` (the lap clock and BEST/LAST plate), `drawAgame`,
    `drawAgRings`;
-10. construction progress bars → particles → `drawAimLine` (the bow's) → `drawZipGuide` (the
+10. construction progress bars → particles → `drawHitFx` (a big hit's spark) → `drawAimLine` (the bow's) → `drawZipGuide` (the
     dotted walk to the hovered zipline, js/draw/zipline.js) → arrows (`drawShaft`);
 11. `heroAir` (what a hero's kit has in the air, `HERO_AIR`)
     → `drawTowerFx` (each road tower's dashed aim line and ring, js/draw/towers.js);
@@ -65,11 +66,9 @@ a radial gradient filled over every device px cost 5 ms a frame on a CPU-drawn c
 **`replayTick`** (banks the frame just finished into the replay ring — it
 sits here, not at the end of `render()`, so the strip holds no HUD, no dim and no picture of
 itself) → `tipResolve` ([the hover tooltip](the-hud-corners/the-hover-tooltip.md)'s one answer for the frame) →
-`drawHopPrompt` (mode `play`, the local player still seated on its roost after the brief: the HOP OFF
-key cap, E, under `renderUI` so the G sheet and the counter cover it) →
 `renderUI` (skipped in `title` and `drop`) → `drawAgameUI` (`PRACTICE`, mode `play`) →
-`renderDropUI` (mode `drop` only: your arrow, keybind indicators) → `drawDropBrief` (mode
-`play`, only while [the drop brief](eagle-drop-mode-drop.md#the-drop-brief) holds a roost) → `renderWorldMap` (the M map, in `play` and `drop`) → `renderWheel` (the radial menu — after
+`renderDropUI` (mode `drop` only: your arrow, keybind indicators) → `drawDropHeadline` (mode
+`play`, the landing's PROTECT YOUR EAGLE while your bird's wings settle, [the arrival](eagle-drop-mode-drop.md)) → `renderWorldMap` (the M map, in `play` and `drop`) → `renderWheel` (the radial menu — after
 the chart, because a ping wheel opens over it) → `renderSettings` → `renderTitle` (the main
 menu, also during the play intro) → `renderReplay` (the replay window: the whole frame on a
 death, the corner on pause — **before** the death overlay, whose countdown and ESC prompt draw
@@ -77,8 +76,8 @@ over it) → the end-of-match overlay (`renderDead`: the death dim and its plank
 `renderVictory` / `renderDefeat` — see [The end screens](the-end-screens.md)) → `drawTooltip`
 (every mode but an end screen) → the held-TAB scoreboard (deliberately **above** the death dim,
 see [Scoreboard and event log](scoreboard-and-event-log.md)) → the info stack (`drawTags`, left
-edge at the top quarter: FPS / POS / SEED as aligned label-value rows — one ESC-menu toggle or
-F3; only the fps line in `title`) → the screen fade (`state.fade`, the reroll whiteout) → the pixel cursor (always last).
+edge at the top quarter: FPS / SIM / DRAW / SFX / POS as aligned label-value rows — one ESC-menu toggle or
+F3; no POS in `title`) → the screen fade (`state.fade`, the whiteout before a reload) → the pixel cursor (always last).
 
 Anything that should be occluded by trees goes into `draws` with a sort key; anything flat goes
 in the pre-pass.

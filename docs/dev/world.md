@@ -17,8 +17,8 @@ stable per tile.
   across, open snow. The two **roost corners** —
   bottom-left and top-right, where the eagles always come down
   ([eagle drop](rendering/eagle-drop-mode-drop.md)) — are forested to `ROOST_R` (68 times `MAP_K` tiles from the
-  corner, ~58 along the diagonal) outright: `borderDepth` is the seed's own `borderNoise` **or**
-  a quarter-disc whose arc wobbles ±`ROOST_WOBBLE` (3) on the fine noise, so whatever the seed grew
+  corner, ~58 along the diagonal) outright: `borderDepth` is the map's own `borderNoise` **or**
+  a quarter-disc whose arc wobbles ±`ROOST_WOBBLE` (3) on the fine noise, so whatever the noise grew
   there the corner holds one solid block of woods round its [base](#the-bases)'s hollow, and
   the road's gate is at least the arc out. The union only adds pines and rolls nothing; not under `ARENA`.
 - `ringPts` is `RING_N` (6) points, evenly spaced on a ring `SPAWN_D` (`WORLD / 2 - 55`) tiles
@@ -39,7 +39,7 @@ stable per tile.
   everything within `ROAD_ICE_KEEP` (6) tiles of [the road](#the-road)'s edge, so rivers gap
   naturally around them — and a river running at the road narrows to nothing over
   `ROAD_ICE_TAPER` (7) tiles first (`carveRiver`'s disc shrinks with `roadDist`), so it peters out
-  instead of ending in a cut. Neither test rolls anything, so a seed's rng stream is what it was.
+  instead of ending in a cut. Neither test rolls anything, so the `'rivers'` stream is what it was.
 - `objects` — flat `Array(WORLD*WORLD)`, **at most one object per tile**. Every object is
   `{ type, tx, ty, hp, flash, shake, ...extra }`. The `OBJECTS` table's types: `tree`,
   `bush`, `den`, `dummy`, `banner`, `log`,
@@ -112,7 +112,7 @@ stable per tile.
   [cast shadows](rendering/light-and-weather.md#cast-shadows), and `render()` repaints a caster's reach itself
   when what stands on a tile changes, so felling or placing scenery calls nothing.
 - **Open snow wears soft drifts** (the `snow's pixels` banner, js/draw/ground.js): swells laid
-  along the wind (`SNOW_ANG`, which `layDrifts` turns onto the seed's prevailing wind, `driftWind`, so
+  along the wind (`SNOW_ANG`, which `layDrifts` turns onto the map's prevailing wind, `driftWind`, so
   the swells and the [drifts](#snow-depth) lean one way; -0.33 under `ARENA`), lit on the sun's side and shaded on the lee in four close tones
   (`SNOW_PAL`) under a Bayer dither, with a rare white glint on the lit tone. A low noise
   (`SNOW_REGION`, ~22 tiles a step, cut at `SNOW_CUT` into thirds of the map) lays out regions of
@@ -141,7 +141,7 @@ band of shade on the ice under it, and the far bank's face is lit pale.
 **Each lake rolls one of two styles** (`ICE_STYLES`) for its whole body: `bakeLakes` labels
 every lake by flood fill and rolls it off its first tile's `hash2` (`rollIceStyle`, weighted by
 `w`), and sweeps each tile's depth in from the shore (`lakeDepth`, 1 on the edge). It rolls no
-`rng()`, runs once before the bake, and is the same for a seed on every screen; the ground
+`rng()`, runs once before the bake, and is the same on every screen; the ground
 array only ever flips ice ↔ hole at runtime and both are lake, so it never needs redoing.
 
 | Style | Edge | The ice |
@@ -201,7 +201,7 @@ removed them names the commit to recover them from.
 ## The practice tool
 
 `?practice=1` (`PRACTICE`, js/sim/core.js) is the **practice tool on this same map**: boot.js grows
-it with `genWorld` and every pass after it, like a match, on `PRACTICE_MAP_SEED`. There is no ride:
+it with `genWorld` and every pass after it, like a match, on the one map. There is no ride:
 `practiceLand` (js/sim/practice.js) crashes both birds onto their perches at boot (`eagleCrash`, so
 each merchant pitches its stall and raises the bays as in a match), people stand on their side's
 roost (`practiceSeat`, `roostTile`), empty seats are parked with no bots, and the match clock runs,
@@ -210,43 +210,47 @@ so the waves keep the match's beat. Nothing is at stake: a death revives on the 
 written. The practice bar (js/ui/cheats.js) adds the map's group: WAVES and TOWERS (the field's
 standing toggles, `state.prac`), SPAWN WAVE (`barracksQueue` on every bay) and RESPAWN CAMPS.
 Its **ARENA** well reloads the party onto the side room, `?practice=1&arena=1` (`ARENA`): the small
-fixed training field (`genPracticeWorld`, `WORLD` 112, `PRACTICE_SEED`) with the dummy, the bell's
+fixed training field (`genPracticeWorld`, `WORLD` 112) with the dummy, the bell's
 rounds, the ice parkour and the deer ride, no lanes, bases, creek or camps, and its light pinned to
 early morning; its **MAP** well goes back (`practiceCross`, js/ui/rooms.js).
 
 ## Determinism and noise
 
-Every run picks a fresh `SEED` at boot with `rollSeed()` — always **three digits**, 100..999, so
-it can be said aloud — and **everything
-random derives from it**: there is no other entropy source. `?seed=N` in the URL overrides it with
-any N, which is
-how you replay or diff a specific world (and `?practice=1` overrides *that*: the
-[practice tool](#the-practice-tool) pins `SEED` to `PRACTICE_MAP_SEED`, its arena to `PRACTICE_SEED`). `drawTags()` prints it as a line of the **info
-stack** on the left edge at the top quarter of the view (drawn after the map, settings, and death
-overlays), so a screenshot carries the world it came from while `settings.info` is on — the INFO
-DISPLAY row in the ESC menu or **F3**, default **off**, so flip it on before comparison captures.
+There is **one map**, grown from `MAP_SEED` (471, js/sim/core.js), a constant that is never rolled
+and never sent: every match, every screen and the [practice tool](#the-practice-tool) stand on the
+same valley, and a page is born on it. **Everything random derives from two numbers** and there is
+no other entropy source: `MAP_SEED` for the map, `SEED` for the match. `SEED` is rolled when the
+page loads, so no two matches play out alike (bots' first heroes, tie-breaks, the orca's wanders,
+every `rng()` roll), unless `?seed=N` pins it, which a tool uses to replay a bot match; it never
+changes the map, and the same `?seed` gives the same match (and `DBG.saveHash`). Only the host's
+matters online: a client paints what the host sends. Players never see either. `matchHash(a, b)`
+(js/sim/core.js) is `hash2` with `SEED` mixed in, for the host's per-match picks.
+`worldKind()` names the ground a page stands on (0 the match's map, 1 the practice tool on it, 2
+the arena); a host and a joiner, and a save and the page it loads on, must agree on it
+(`netHostHello`, `saveApply`). The info stack (`drawTags`, **F3** or the INFO DISPLAY row in the ESC
+menu, default **off**) prints fps, frame times and the framed player's tile, no seed.
 
 - **The map is made on streams of its own.** Each worldgen pass that rolls draws from
-  `worldRng(name)` (js/sim/core.js: the pass's name hashed into `SEED`, carrying its own `rand`
+  `worldRng(name)` (js/sim/core.js: the pass's name hashed into `MAP_SEED`, carrying its own `rand`
   and `randi`): `genWorld`'s `'ponds'` and `'rivers'`, `placeLandmarks`' `'landmarks'`. Every
   other boot pass rolls nothing (positions, `hash2`, `vnoise`, written-down sites). So a pass that
-  changes moves only its own layer, and the rest of a seed's valley stays where it was
-  (CLAUDE.md hard rule 3). Every screen grows the map itself from the seed, so worldgen never
+  changes moves only its own layer, and the rest of the valley stays where it was
+  (CLAUDE.md hard rule 3). Every screen grows the map itself from `MAP_SEED`, so worldgen never
   reads `rng()`, `Math.random()` or anything local.
 - `rng` is the **match's** `mulberry32(SEED)` stream: runtime rolls (particle bursts, animal
   wanders, drop velocities) and the beasts the match starts with (`spawnAnimals` and the passes
   after it at boot). Its state is saved, so a loaded match draws the next number the saved one would.
-- `hash2(x, y)` mixes `SEED` in, and `vnoise(x, y)` is built on it. Both are still pure functions
-  of position *within a run* — use them for anything that must stay stable per tile no matter when
-  it is asked (ground texture, forest boundary, tree rare-drops).
-  `borderDepth()` rides on `vnoise`, so the seed reshapes the forest and with it the whole map
-  (everywhere but inside the two roost discs, which every seed grows alike).
+- `hash2(x, y)` (js/draw/ground.js) mixes `MAP_SEED` in, and `vnoise(x, y)` is built on it. Both are pure functions
+  of position — use them for anything that must stay stable per tile no matter when
+  it is asked (ground texture, forest boundary, tree rare-drops, the day's weather, which every
+  screen works out for itself).
+  `borderDepth()` rides on `vnoise`, so the forest's edge is the map's own, never the match's.
 - `fxRng` (`SEED ^ 0x9e3779b9`) feeds the snowflakes (the boot fall and `fitFlakes()`' resize
   top-ups), so window size and zoom cannot move a match's rolls. The [camps](#camps) roll nothing at all -
   their sites are written down - and neither does [the creek](#the-creek); the creek and the
-  camps' clearings are the boot passes that write `ground` after `genWorld`, so a seed's ground
+  camps' clearings are the boot passes that write `ground` after `genWorld`, so the map's ground
   hash includes them.
-- `SEED` is a `const` in the rng banner and `hash2` closes over it, so nothing may call `hash2`
+- `MAP_SEED` and `SEED` are `const`s in the rng banner and `hash2` closes over `MAP_SEED`, so nothing may call `hash2`
   before that line runs. Everything that does — `genWorld`, the ground bake, the panel bakes — is
   further down in boot order.
 
@@ -340,7 +344,7 @@ round a world point and returns the break (null where no bare ice lies under it)
 - **Every pixel is hashed, never rolled**: the hole is the footprint one px proud
   (`ICE_BREAK_PROUD`) with a chipped edge, each pixel's freeze time `ft` runs from 0 at the rim
   to 1 in the middle, and the plates and cracks come off Voronoi cells seeded the same way. All
-  of it comes from `hash2` (the world seed), the break's spot and its own seed, so a break is a
+  of it comes from `hash2` (the map's), the break's spot and its own seed, so a break is a
   few numbers (`iceBreaks`, saved in `SAVE_ROOTS` and carried as a snapshot singleton) and
   every screen rebuilds its pixels (`breakCache`). No `rng()` call is spent.
 - **Its life**, off `state.tick` (`iceBreakAge`): `warn` s of cracks tracing the outline, then

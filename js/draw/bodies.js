@@ -80,12 +80,18 @@ function drawBeastFrame(kind, cx, mid, fy, e, two, u, now) {
 }
 
 // A bot (a wave's soldier): one sprite, two tread frames. The whole thing
-// bobs 1px while driving so body and tread never part. No face - the states
-// are the tread rolling and the axe swinging at a foe.
-// where each soldier sprite set flies its pennant: [px right of the body's
-// x, px up from the tread's foot] - the roof's corner, two rows down; the
-// ballista cart's off the top of its winch at the back (mirrored with it)
-const PENNANT_AT = { robotTeam: [4, 8], robotRanged: [-5, 8], robotSiege: [-10, 16] };
+// bobs 1px while driving so body and tread never part. No face, and nothing
+// carried: the states are the tread rolling and, for a melee soldier, the
+// chassis itself ramming a foe (soldierRam).
+// a melee soldier's blow, in whole px along the line to its foe: it rocks
+// back through the wind-up, drives in as the blow lands (atkCd running out,
+// prog 1) and settles back over the first beat after
+function soldierRam(prog) {
+  if (prog < 0.12) return 2;
+  if (prog < 0.24) return 1;
+  if (prog < 0.55) return 0;
+  return prog < 0.85 ? -1 : 1;
+}
 function drawRobot(b, ex, ey, now) {
   if (b.merchant) { drawMerchant(b, ex, ey, now); return; }
   // its kind's sprite set (SOLDIER_TYPES' `spr`): frames 0-1 roll, and a
@@ -104,35 +110,23 @@ function drawRobot(b, ex, ey, now) {
   const bx = Math.round(b.x - ex) - (left ? spr.width - ax : ax);
   const zl = b.zip >= 0 ? ZIP_ALT : 0; // a soldier on a zipline hangs ZIP_ALT rows up, its shadow on the snow
   const by = Math.round(b.y + 4 - ey) - spr.height - bob - zl; // tread bottom sits at b.y + 4
+  // the ram (soldierRam): the body and its shadow shift, the bar holds still
+  let rx = 0, ry = 0;
+  if (b.atkAim && !T.shot) {
+    const dx = b.atkAim.x - b.x, dy = b.atkAim.y - b.y, d = Math.hypot(dx, dy) || 1;
+    const n = soldierRam(1 - b.atkCd / T.cd);
+    rx = Math.round(dx / d * n); ry = Math.round(dy / d * n);
+  }
 
-  drawCastShade(spr, bx, by + bob + zl); // on the ground under the bob
+  drawCastShade(spr, bx + rx, by + bob + zl + ry); // on the ground under the bob
 
   const lit = bodyLayerOpen(Math.round(b.x - ex), by + spr.height, 20, 36); // keeps its light at night (js/draw/light.js)
   if (zl) drawZipHandle(b, Math.round(b.x - ex), by, ey); // the handle over the chassis and the rope up to the cable (js/draw/zipline.js)
-  drawSpriteFlash(spr, bx, by, b.flash);
-  // a soldier (the `soldiers` banner, robots.js) flies its side's pennant off a back corner of the
-  // chassis' roof (a thrower's left, its arm is on the right), two rows down
-  const pd = PENNANT_AT[T.spr] || PENNANT_AT.robotTeam;
-  drawPennant(ctx, Math.round(b.x - ex) + (left ? -pd[0] - 1 : pd[0]), by + spr.height - pd[1], TEAMS[skin(b.team)].mark);
-
-  // a melee soldier's blow: the axe aimed at whatever b.atkAim points to,
-  // raised away from the target through a slow wind-up, then a fast chop
-  // that lands pointing at it
-  if (b.atkAim && !T.shot) {
-    const prog = 1 - b.atkCd / T.cd;
-    const tdx = b.atkAim.x - b.x, tdy = b.atkAim.y - b.y;
-    const e = prog < 0.7 ? prog / 0.7 * 0.3 : 0.3 + (prog - 0.7) / 0.3 * 0.7;
-    const a = Math.atan2(tdy, tdx) - 1.6 * (1 - e);
-    ctx.save();
-    ctx.translate(Math.round(bx + 6 + Math.cos(a) * 7), Math.round(by + 3 + Math.sin(a) * 7));
-    ctx.rotate(a + Math.PI / 2);
-    ctx.drawImage(SPRITES.itemAxe, -4, -4);
-    ctx.restore();
-  }
+  drawSpriteFlash(spr, bx + rx, by + ry, b.flash);
   if (b.shot) drawSoldierShot(b, T, ex, ey, left);
 
   // the four shared tells, same as any other body (js/sim/abilities.js)
-  drawUnitStates(b, bx, by, spr.width, spr.height, now);
+  drawUnitStates(b, bx + rx, by + ry, spr.width, spr.height, now);
   bodyLayerClose(lit);
   drawHealthBar(b.x - ex, by - 4, b.hp, b.maxHp, T.spr === 'robotSiege' ? 12 : 8, b.team, undefined, b);
   if (b.stunT > 0) drawStunStars(Math.round(b.x - ex), by - 9, b, 4);
@@ -180,7 +174,7 @@ function drawSoldierShot(b, T, ex, ey, left) {
 // The merchant (the `merchant` banner, robots.js): its own 16x18 hooded-robe
 // grids (sprites.js), two rows taller than a slot, standing on player feet
 // (b.y + 8 in the sort, the feet on the player's own foot row),
-// with the soldier's axe swing over whatever it is felling or setting, the hop
+// with an axe swing over whatever it is felling or setting, the hop
 // off the bird as a lift, the shared tells, and a MERCH nameplate in the
 // side's paint - a name, the one text a body over the world gets (the bird it
 // drives wears PERCH the same way, drawEagle in eagle.js). NO HEALTH BAR: it
@@ -198,7 +192,7 @@ function drawMerchant(b, ex, ey, now) {
   drawCastShade(spr, px, py); // stays on the snow through a hop
   const lit = bodyLayerOpen(px + 8, py + spr.height, 20, 40); // keeps its light at night (js/draw/light.js)
   drawSpriteFlash(spr, px, py - lift, b.flash);
-  // the swing: the soldier's wind-up and chop, aimed at the tile in hand
+  // the swing: a slow wind-up and a fast chop, aimed at the tile in hand
   if (b.tgt && !b.moving && lift === 0) {
     const tdx = b.tgt.tx * TILE + 8 - b.x, tdy = b.tgt.ty * TILE + 8 - b.y;
     if (Math.hypot(tdx, tdy) <= 20) {
@@ -386,6 +380,9 @@ function drawPlayer(p, ex, ey, now, stage) {
   // ...and a body on the move runs: the doll's eight frames (runFrame)
   const running = frame > 0 && p.fallT <= 0;
   if (running) spr = classSet(p)[handsBusy(p) ? 'hold' : 'run'][p.dir][runFrame(p)];
+  // ...and standing still it breathes, its cloth a beat behind a stop or a turn (js/draw/idle.js)
+  idleTick(p, striding, now);
+  if (frame === 0 && !seat && p.fallT <= 0 && !(state.mode !== 'title' && abilityPose(p))) spr = idleFrame(p, now);
   const MB = SPRITES.motionBox;
   const px = Math.round(p.x - 8 - ex) + (seat ? seat.dx : 0);
   const py = Math.round(p.y - 12 - ey) - rl; // a rider's whole body - held tool, marks, plate - sits up on the deer
@@ -417,7 +414,7 @@ function drawPlayer(p, ex, ey, now, stage) {
     const sink = Math.round(Math.min(7, (HOLE_FALL_T - p.fallT) * 40));
     ctx.save();
     ctx.beginPath(); ctx.rect(bx - 2, by - 8, spr.width + 4, py + 12 - (by - 8)); ctx.clip();
-    drawSpriteFlash(spr, bx, by + sink, p.hurtT > 0.12 ? 1 : 0);
+    ctx.drawImage(spr, bx, by + sink);
     ctx.restore();
     // ripple rings at the waterline
     ctx.fillStyle = 'rgba(207,228,242,0.75)';
@@ -473,10 +470,13 @@ function drawPlayer(p, ex, ey, now, stage) {
       // turned about the cell's middle (a doll frame is wider than the cell it holds)
       ctx.translate(ax + 8, ay + 8);
       ctx.rotate(pose.rot);
-      drawSpriteFlash(spr, sx - ax - 8, sy - ay - 8, p.hurtT > 0.12 ? 1 : 0);
+      ctx.drawImage(spr, sx - ax - 8, sy - ay - 8);
       ctx.restore();
     } else {
-      drawSpriteFlash(spr, sx, sy, p.hurtT > 0.12 ? 1 : 0);
+      // never washed white when struck: a hero's model stays solid so a
+      // fight reads (Noah, 2026-11-10); the spark and the recoil tell the
+      // hit (js/draw/hitfx.js)
+      ctx.drawImage(spr, sx, sy);
     }
     heroBodyFx(p, ax, ay, now, true); // ...or over it (his standard facing away)
     if (seat) ctx.restore();
@@ -519,7 +519,8 @@ function drawPlayer(p, ex, ey, now, stage) {
   // (overheadPlate, js/draw/light.js), so it reads the same in any light and
   // nothing standing in front of the body cuts into it
   overheadPlate(() => {
-    drawHealthBar(p.x - ex + FRAME_DX, hy - 7, p.hp, p.maxHp, 14, p.team, undefined, undefined, 1, undefined, local ? SELF_COL : undefined); // your own in green (unitBarCol, js/draw/overhead.js)
+    const stam = staminaShown(p); // a full stamina bar shows over your own head only (js/draw/overhead.js)
+    drawHealthBar(p.x - ex + FRAME_DX, hy - 7, p.hp, p.maxHp, 14, p.team, undefined, undefined, 1, undefined, local ? SELF_COL : undefined, stam ? 2 : HP_ROWS_ALONE); // your own in green (unitBarCol, js/draw/overhead.js)
     if (p.healCutT > 0) drawHealCut(p.x - ex + FRAME_DX, hy - 7, p.hp, p.maxHp, 14); // FROSTBITE: its heals are cut
     if (shL) drawShieldBar(fx - 7, hy - 10, dawn);
     if (line > 0) drawOrcaCount(fx, hy - 10 - shL, line);
@@ -542,18 +543,19 @@ function drawPlayer(p, ex, ey, now, stage) {
     const tag = boardName(p);
     drawWorldText(tag,
       centreTextX(p.x - ex, tag), hy - 18 - lift, // clear of the draw meter's frame (top row hy-11) with a gap row
-      TEAMS[skin(p.team)].mark);
+      TEAMS[skin(p.team)].mark, undefined, undefined, local ? undefined : NAME_RIM_SOFT); // your own name keeps the full rim
     drawBountyTag(p.x - ex, hy - 18 - lift, bounty); // a streak's price, over the name (js/draw/overhead.js)
     heroOver(p, Math.round(p.x - ex), stackTop - 5, now); // ...and over it all, a hero's marks on this body
     // dodge stamina: one clean unsegmented WHITE bar under the health bar -
     // white on every side, since stamina has no side, and white is neither the
     // team's paint above it nor the gold of the draw - charges stay discrete
-    // in the sim, the bar just shows the pooled total. Drawn for every player
-    // (a rival out of rolls is a tell, and the level badge spans both bars, so
-    // a lone hp bar would look broken).
+    // in the sim, the bar just shows the pooled total. Yours always shows;
+    // another hero's only while it is short of a roll (staminaShown: a rival
+    // out of rolls is a tell, a full bar is not), and its health bar stands a
+    // row taller in the meantime, under the same level badge.
     // The gap row between the two is the hp backing's own bottom row, frame
     // colour, as between every pair of bars on a beast (drawBeastFrame).
-    {
+    if (stam) {
       const bx = fx - 7, by = hy - 4;
       ctx.fillStyle = BAR_FRAME;
       ctx.fillRect(bx - 1, by, 16, 3); // rows under the hp backing only

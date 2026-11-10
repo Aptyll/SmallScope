@@ -23,7 +23,7 @@ object adds a pass here; it does not register anywhere.
 
 **The grade is pale on purpose, and the dark lives at the rim.** What says *night* has to be the
 **hue** and the **edge**, because the one thing it cannot be is the middle of the screen going
-dark — a top-down field read at a glance has to stay read at a glance. Measured on seed 42's
+dark — a top-down field read at a glance has to stay read at a glance. Measured on the map's
 roost (daylight: open snow L169, pines L108), the tint leaves snow at **L98** and pines at
 **L51** — a darker one sinks a blue name tag into blue snow and takes the red out of a red
 team's paint — while its channels stay far

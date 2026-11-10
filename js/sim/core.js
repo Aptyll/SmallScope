@@ -89,41 +89,46 @@ function mulberry32(a) {
 // match so the waves keep their beat. Its side room, the training ARENA
 // (the `practice arena` banner, js/sim/practice.js), has no eagles and its
 // clock pinned to early morning (sim.js never advances state.time under
-// ARENA). Each pins SEED to its own constant BELOW ?seed on purpose, so
-// both are the same ground on every machine every time - and a page on one
-// is refused by a host on the other (netHostHello's seed test).
+// ARENA). A host on one refuses a page on another (netHostHello's `world`).
 // Entered from the party's START (partyPractice, js/ui/rooms.js), left from
 // the ESC panel's LEAVE, crossed between with the bar's ARENA / MAP well -
-// all page reloads, like the reroll. A party plays it together: the
-// leader's page hosts, friends join on the spawn.
-const PRACTICE_SEED = 0x50524143; // 'PRAC': the arena
-const PRACTICE_MAP_SEED = 471;    // the map's: a three-digit seed like any match's (rollSeed)
+// all page reloads. A party plays it together: the leader's page hosts,
+// friends join on the spawn.
 
-// one run seed drives every deterministic value: worldgen, per-tile hashes, fx.
-// A rolled seed is always three digits (100..999) - short enough to read off
-// the lobby and say aloud. ?seed=N in the URL replays a world exactly, any N.
-function rollSeed() { return 100 + Math.floor(Math.random() * 900); }
+// THE MAP: every match, every screen and the practice tool play on the one
+// valley this grows (worldRng, and hash2/vnoise under every per-tile look).
+// It is a constant, never rolled and never sent: a page is born on the map.
+const MAP_SEED = 471;
+// which ground this page stands on: 0 the match's map, 1 the practice tool on
+// it, 2 the arena. A host and a joiner, and a save and the page it loads on,
+// must agree on it (netHostHello, saveApply)
+function worldKind() { return ARENA ? 2 : PRACTICE ? 1 : 0; }
+// SEED starts the MATCH's own stream: rng, fxRng, matchHash, the bots' sealed
+// random. Rolled when the page loads, so no two matches play out alike, and
+// never shown; ?seed=N pins it, which a tool uses to replay a bot match. It
+// never touches the map. Only the host's matters: a client paints what the
+// host sends, and nothing a client works out itself reads it.
 const SEED = (function () {
-  if (ARENA) return PRACTICE_SEED;
-  if (PRACTICE) return PRACTICE_MAP_SEED;
   const q = /[?&]seed=([0-9]+)/.exec(location.search);
-  if (q) return (parseInt(q[1], 10) >>> 0) || 1;
-  return rollSeed();
+  return q ? (parseInt(q[1], 10) >>> 0) || 1 : (Math.floor(Math.random() * 0x7ffffffe) + 1);
 })();
+// a hash of (a, b) that differs match to match (hash2 is the map's, the same
+// every match): for the host's own picks, a bot's first hero, a tie-break
+function matchHash(a, b) { return hash2((a ^ SEED) | 0, (b + Math.imul(SEED, 0x9e3779b1)) | 0); }
 // the MATCH's stream: everything that rolls while the match runs (and the
 // beasts it starts with). The map is not made on it: see worldRng.
 const rng = mulberry32(SEED);
 function rand(a, b) { return a + rng() * (b - a); }
 function randi(a, b) { return Math.floor(rand(a, b + 1)); }
 // Worldgen's streams: each pass that makes the map draws from its own,
-// worldRng('ponds') and so on (the pass's name hashed into SEED), never from
-// rng(). So a pass that changes (draws more or less, is added or cut) moves
-// only its own layer; every other layer of a seed's valley, and the match's
+// worldRng('ponds') and so on (the pass's name hashed into MAP_SEED), never
+// from rng(). So a pass that changes (draws more or less, is added or cut)
+// moves only its own layer; every other layer of the valley, and the match's
 // stream, stay where they were. A stream carries its own rand and randi.
 function worldRng(name) {
   let h = 0x811c9dc5;
   for (let i = 0; i < name.length; i++) { h ^= name.charCodeAt(i); h = Math.imul(h, 0x01000193); }
-  const r = mulberry32((SEED ^ h) >>> 0);
+  const r = mulberry32((MAP_SEED ^ h) >>> 0);
   r.rand = (a, b) => a + r() * (b - a);
   r.randi = (a, b) => Math.floor(r.rand(a, b + 1));
   return r;
@@ -149,7 +154,6 @@ const state = {
   // seconds of sun shafts still owed after the eagle drop (landPlayer sets it,
   // updateFx counts it down, rayLight reads it - js/draw-world.js)
   rayT: 0,
-  shake: 0,
   deadTimer: 0,
   // out of the match: the overlay's state. over: 'lost' | 'won' | null; view:
   // 'menu' (the planks) | 'spec' (following a living player); spec: that player's
@@ -236,19 +240,13 @@ const state = {
   introLen: 1,         // that transition's full length (the camera ease divides by it)
   introFrom: null,     // camera position the transition started from
   drop: null,          // the eagle while it is in the air: see makeEagles() / beginDrop()
-  // the DROP BRIEF: a local player that never jumped rides the landing, and the
-  // crash pans the camera to both roosts and states the objective before
-  // handing the controls (and the E hop off the bird) back -
-  // { ph: 'wait'|'theirs-go'|'theirs'|'ours-go'|'ours', t, total }, run by
-  // updateDrop (js/sim/eagle.js), camera in js/sim/sim.js, text in drawDropBrief.
-  dropBrief: null,
   fade: null,          // screen fade: { a, to, spd, color, then }
 };
 
 // volume is the master dial; musicVol and sfxVol sit under it (SFX.setVolume /
 // setMusicVolume / setSfxVolume). A save written before the split simply has
 // neither key and keeps the defaults - no version bump needed.
-const settings = { v: 4, volume: 0.5, musicVol: 0.7, sfxVol: 1, mmR: 24, mmZoom: 5, hudScale: 1, shake: true, muted: false, info: false, pixelCursor: true, hitbox: 0,
+const settings = { v: 4, volume: 0.5, musicVol: 0.7, sfxVol: 1, mmR: 24, mmZoom: 5, hudScale: 1, muted: false, info: false, pixelCursor: true, hitbox: 0,
   // your side is painted BLUE and the rival side RED whatever team the roster
   // dealt you (skin(), js/sim/player.js); off = the roster's real colours
   teamBlue: true,
@@ -327,6 +325,7 @@ function loadSettings() {
   try {
     const s = PROFILE.settings(); // null when this profile has never saved any
     if (s) Object.assign(settings, s);
+    delete settings.shake; // the screen shake and its toggle are gone (0.711)
     applyTeamPal();
     // a save from before the minimap ladder grew: its mmZoom indexes the old
     // six-rung array, so carry it across instead of silently rescaling the
@@ -426,6 +425,7 @@ function tallyHit(u, amount) {
   if (!u.tallyN || (state.tick - u.tallyTick) * TICK_DT > TALLY_HOLD) u.tallyN = 0;
   u.tallyN += n;
   u.tallyTick = state.tick;
+  u.tallyLast = n; // ...and this blow on its own: a big one draws its hit (js/draw/hitfx.js)
 }
 
 // A word that floats up off a hit (a staged target's `word`, hitPTarget,

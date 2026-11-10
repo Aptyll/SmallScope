@@ -112,6 +112,24 @@
     // the hand that closes on the carried weapon (heroFist, js/draw/heroes.js): the look's
     // own `hand` letter (a glove), else its skin, ringed in its outline
     set.hand = sp[row.hand || art.hand || 'k']; set.ink = sp.o;
+    // standing still: the breath's two frames a facing (heroBreath, js/sprites/armatos.js),
+    // and the loose cloth a pixel behind for the beat after a stop or a turn (heroCloth),
+    // baked on first ask (drawPlayer's idle, js/draw/idle.js)
+    const FACE = { down: 'down', up: 'up', right: 'side', left: 'side' }, breaths = {}, cloths = new Map();
+    const breathOf = (d) => breaths[d] || (breaths[d] = [row.grids[FACE[d]], heroBreath(row.grids[FACE[d]])]);
+    const facing = (d, g) => (d === 'left' ? flipH(bake(g, sp)) : bake(g, sp));
+    set.breath = Object.defineProperties({}, Object.fromEntries(Object.keys(FACE).map((d) => {
+      let fr = null;
+      return [d, { get: () => fr || (fr = d === 'left' ? set.breath.right.map(flipH) : breathOf(d).map((g) => bake(g, sp))), enumerable: true }];
+    })));
+    set.cloth = (d, dx, dy, b) => {
+      const k = d + dx + ',' + dy + b;
+      if (!cloths.has(k)) {
+        const g = heroCloth(breathOf(d)[b], row, FACE[d], d === 'left' ? -dx : dx, dy);
+        cloths.set(k, g && facing(d, g));
+      }
+      return cloths.get(k);
+    };
     lookCache.set(key, set);
     return set;
   }

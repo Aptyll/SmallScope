@@ -243,7 +243,7 @@ const BELLA_BODY = {
         '......BB.BB.....',
       ],
   },
-  // TRAITOR'S BLADE: the ponytail kept; an iron band for the circlet, a dark mask,
+  // EXILE'S BLADE: the ponytail kept; an iron band for the circlet, a dark mask,
   // a dark mantle where the gold was
   traitor: {
       down: [
@@ -307,8 +307,8 @@ const BELLA_PAL = Object.assign({}, ARM_PAL, { a: '#3a2a3e', A: '#5e4660', q: '#
 // The looks she can wear: the first is her own and free, the rest are bought
 // with coins on the skins screen (js/ui/skins.js, the BELLA tab).
 const BELLA_SKINS = [
-  { id: 'general', name: 'IMPERIAL GENERAL', rarity: 'common', price: 0, grids: BELLA_BODY.general, motion: 'general' },
-  { id: 'traitor', name: "TRAITOR'S BLADE", rarity: 'rare', price: 200, grids: BELLA_BODY.traitor, motion: 'traitor' },
+  { id: 'general', name: 'IMPERIAL GENERAL', rarity: 'common', price: 0, grids: BELLA_BODY.general, motion: 'general', cloth: { down: [[12, 2, 13, 7]], side: [[1, 2, 3, 9]] } },
+  { id: 'traitor', name: "EXILE'S BLADE", rarity: 'rare', price: 200, grids: BELLA_BODY.traitor, motion: 'traitor', cloth: { down: [[12, 2, 13, 7]], side: [[1, 2, 3, 9]] } },
 ];
 
 // ------------------------------------------------------------ bella spatha

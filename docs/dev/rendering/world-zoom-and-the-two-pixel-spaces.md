@@ -25,8 +25,8 @@ Consequences a new pass has to respect:
   the world view is *wider* than the canvas, and culling to the canvas eats the edges.
 - `worldCv` is allocated at the most zoomed-out size (`ZOOM_FLOOR`) once per
   canvas size, and each frame uses the `WV_W`×`WV_H` corner — never resize it per frame.
-- Anything **UI-layer but anchored to a world point** (the radial wheel, the HOP OFF key cap over the
-  roost, the archery round's off-screen markers) converts through `wToSX`/`wToSY`, and
+- Anything **UI-layer but anchored to a world point** (the radial wheel, the gold arrow over your seat on the
+  wing, the archery round's off-screen markers) converts through `wToSX`/`wToSY`, and
   keeps its own pixel size.
 - **A pointer position becomes a world position only through `mouseWX()`/`mouseWY()`**
   (`mouse / zoomCur + cam`). Aim, hover, the work target and the right-click tile all read them,
@@ -57,8 +57,9 @@ not stored as a float at all:
   a resize, never from `zoomCur`, which a ride or a show may be holding elsewhere. The wheel still
   steps out to `ZOOM_MIN`.
 - **The shows hold `ZOOM_SHOW` (1)**, the framing they were composed at: the title's backdrop,
-  the drop brief's roost tour and the driven-off ceremony (`applyZoom`'s `show`, js/sim/sim.js), then
-  ease back to the wheel's zoom. The ride itself keeps `DROP_OPEN_ZOOM` → `DROP_ZOOM`.
+  and the driven-off ceremony (`applyZoom`'s `show`, js/sim/sim.js), then ease back to the wheel's
+  zoom. The ride itself runs `DROP_OPEN_ZOOM` → `DROP_ZOOM`, then `dropStoopZoom` walks it in to
+  the wheel's zoom through your bird's stoop, so the landing is never a cut.
 - The rungs are therefore `k / devScale`. At `devScale` 3 (a 1080p fullscreen) that is **third
   steps** — 0.67, 1, 1.33, 1.67 … 4.67, thirteen of them; at 4 (1440p) it is quarters, seventeen.
   A display with fewer pixels to spend gets fewer, coarser rungs, which is the honest answer
@@ -103,7 +104,7 @@ offsets *within* each baked panel stay in their own sections. A screen authored
 in the 270-row frame starts at `frameTop()` — `menuLayout()` shows the pattern (`toy` offset).
 
 **The sub-pixel camera.** The world buffer's corner is the camera **floored** to a whole world
-px (`ox`/`oy`, the screen shake folded in; also `wOX`/`wOY` for passes outside `render()`), and
+px (`ox`/`oy`; also `wOX`/`wOY` for passes outside `render()`), and
 the leftover fraction is spent at the blit: `worldCv` lands up-left of the canvas by
 `round(fraction × k)` **device** px. So the screen scrolls by the device px while every world
 pixel keeps its whole k×k block. A camera that moved only in whole world px stepped the whole

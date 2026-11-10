@@ -274,7 +274,6 @@ function rollTackle(p, sp, nx, ny) {
   p.vx = -nx * 30; p.vy = -ny * 30; // bounced back off it
   damagePlayer(p, Math.max(1, Math.round(rollLerp(ROLL_DMG, t) * TACKLE_SELF)), -nx, -ny, null, 'tackle');
   if (!p.dead) stunUnit(p, rollLerp(TACKLE_STUN, t));
-  shakeFor(p, 4);
   sfxAt('hit', p.x, p.y);
   burst(p.x + nx * 5, p.y - 3, '#eef4fb', 8, 45, 0.45, true);
 }
@@ -397,7 +396,6 @@ function chopTree(o, p) {
   if (o.hp > 0) { shedHit(o); return; } // the blow shakes the crown (js/sim/shed.js); a fell has its own snow
   setTile(idx(o.tx, o.ty), { type: 'stump', tx: o.tx, ty: o.ty, flash: 0, shake: 0 });
   sfxAt('treeFall', ox, oy);
-  shakeFor(p, 2.5);
   // the fell's one payout, a gold pine's included
   const gold = o.rare;
   awardGold(p, YIELD.treeFall + (gold ? YIELD.treeRare : 0), ox, oy - 6);
@@ -497,10 +495,9 @@ function hurtStruct(o, dmg, p, bot) {
   if (p instanceof Player) p.dmgStruct += Math.min(dmg, Math.max(0, o.hp));
   o.hp -= dmg;
   joltObj(o, 0.1, 0.22);
-  sfxAt('hit', c.x, c.y);
+  sfxAt(bot ? 'waveHit' : 'hit', c.x, c.y); // a soldier's axe on a wall is the lane's quieter blow
   burst(c.x, c.y - 4, '#a3794f', 5, 40, 0.4, true);
   tallyHit(o, dmg);
-  shakeFor(p, 1);
   if (o.hp <= 0) {
     const name = STRUCTS[o.type].name;
     // the wreck pays out half its price, straight to whoever broke it
@@ -693,6 +690,12 @@ function structsInCone(src, x, y, a, r, half) {
 // anyway - a player's HIT_KB, a soldier's ROBOT_KB, an animal's own curve - and
 // it is what a basic attack's `kb` rides in on (CLASSES[c].attack, js/sim/attack.js),
 // so one number on an attack means the same thing landed on any of the three.
+// which way the last blow came, kept on the body (hitNx/hitNy) for its
+// spark and recoil (js/draw/hitfx.js): a player's is set in damagePlayer
+function hitAim(e, nx, ny) {
+  const n = Math.hypot(nx, ny) || 1;
+  e.hitNx = Math.round(nx / n * 8) / 8; e.hitNy = Math.round(ny / n * 8) / 8;
+}
 function hurtUnit(e, dmg, nx, ny, src, o) {
   if (!unitAlive(e)) return;
   o = o || {};
@@ -710,10 +713,12 @@ function hurtUnit(e, dmg, nx, ny, src, o) {
   if (e instanceof Player) {
     damagePlayer(e, dmg, nx, ny, src, o.cause || null, o.crit, km, o);
   } else if (isAnimalUnit(e)) {
+    hitAim(e, nx, ny);
     if (src instanceof Player) src.dmgBeast += Math.min(dmg, Math.max(0, e.hp)); // the post-game record (js/ui/lobby.js)
     hurtAnimal(e, dmg, nx, ny, (o.kb === undefined ? 30 : o.kb) * km, src ? src.id : undefined);
   } else {
-    hurtRobot(e, dmg, nx, ny, src);
+    hitAim(e, nx, ny);
+    hurtRobot(e, dmg, nx, ny, src, o.cause === 'soldier' ? 'waveHit' : null);
     // the chassis takes its own shove inside hurtRobot; anything that names
     // one of its own, or scales the one it has, writes over it here
     if (o.kb !== undefined || km !== 1) {

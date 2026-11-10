@@ -29,9 +29,9 @@ Each rule spans folders; its names are listed under the folder that owns them.
 1. **Go through the shared function, never around it.** Each one is where every case is handled,
    so a copy silently skips wildlife, bots, stealth, heroes or the other team.
 2. **The sim never reads the local machine.** Anything it reads off this screen is dead online.
-3. **The map grows from the seed alone.** Each worldgen pass rolls on its own `worldRng(name)`,
-   never `rng()` or the local machine, so every screen grows the same valley and a changed pass
-   moves only its own layer.
+3. **One map, the same on every screen.** It grows from `MAP_SEED` alone: each worldgen pass rolls
+   on its own `worldRng(name)`, never `rng()` or the local machine, so a changed pass moves only
+   its own layer.
 4. **Pixels stay exact.** Zoom scales the world, never the UI, and rests on a whole `kWant`.
 
 ## Folder by folder
@@ -45,7 +45,7 @@ Each rule spans folders; its names are listed under the folder that owns them.
 **js/sim/: the match** ([world](docs/dev/world.md), [gameplay](docs/dev/gameplay.md))
 - It decides and never draws: pixels for what it owns go in js/draw/ or js/ui/.
 - Rule 2: player actions read `p.input`, never `keys`/`mouse`; single-winner actions go through
-  `contest()`; sounds and shakes go through `sfxAt`/`sfxFor`/`shakeFor`.
+  `contest()`; sounds go through `sfxAt`/`sfxFor`.
 - Rule 1: hits `hurtUnit` (a blow sweeps with `unitsHit`) and `hurtStruct`; states `stunUnit` and
   the other `*Unit` setters; areas `unitsNear`/`structsNear`; targets `unitAlive`; sight `seenAt`;
   gold `gainGold` in, `spendGold` out; XP `shareXp` on a death, `gainXp` under it; water
@@ -53,8 +53,8 @@ Each rule spans folders; its names are listed under the folder that owns them.
   `ok = false`, and a new walker joins `separateUnits`. Loops over `players` skip `inAir(p)`.
 - What a thing *is* lives in its table entry (`OBJECTS`, `STRUCTS`, `BUILD_ITEMS`),
   never in an `if`. A hero reaches the shared sim only through the `HERO_*` hook tables.
-- Rule 3: `rng()` is the match's stream; a worldgen pass rolls on `worldRng(name)`, and a per-tile
-  look reads `hash2`/`vnoise`.
+- Rule 3: `rng()` is the match's stream (`SEED`; `?seed=N` varies it for a tool, never the map);
+  a worldgen pass rolls on `worldRng(name)`, and a per-tile look reads `hash2`/`vnoise`.
 - A feature's tuning constants sit in the file that owns it. New mutable state joins `SAVE_ROOTS`.
 
 **js/ai/: the bots** ([bots](docs/dev/multiplayer.md#bots), [bot API](docs/bots/api.md))

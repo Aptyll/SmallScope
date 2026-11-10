@@ -132,7 +132,6 @@ function lignumChop(p, second) {
   if (PRACTICE) abHitDummies(p.x + nx * CHOP_R * 0.5, p.y + ny * CHOP_R * 0.5, CHOP_R * 0.5, dmg);
   abFx.push({ kind: 'wedge', x: p.x, y: p.y - 2, a, r: CHOP_R, half: CHOP_HALF, t: 0, col: second ? '#d9a648' : '#e6ebf2' });
   p.chopT = second ? 0 : CHOP_WAIT;
-  if (second) shakeFor(p, 2);
   sfxAt(second ? 'chop' : 'swing', p.x, p.y);
 }
 
@@ -287,7 +286,6 @@ function lignumTimber(p) {
   }
   lignumLogs.push({ x0: L.x0, y0: L.y0, nx: L.nx, ny: L.ny, len: L.len, team: p.team, owner: p.id, t: 0, life: TIMBER_T, tiles });
   for (let s = 0; s <= L.len; s += 12) burst(L.x0 + L.nx * s, L.y0 + L.ny * s, '#f4f7ff', 4, 50, 0.5, true);
-  shakeFor(p, 6);
   sfxAt('treeFall', L.x0, L.y0);
 }
 function updateLignumLogs(dt) {

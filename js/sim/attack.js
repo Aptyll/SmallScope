@@ -124,7 +124,6 @@ function cutAttack(p, A) {
   slashes.push({ x: p.x, y: p.y - 2, a, r, half: cut.half, t: 0, hit: targets.length > 0 });
   p.slashT = SLASH_T; p.slashA = a; p.slashHalf = cut.half; // the hand swings the blade through the same arc (drawHeldTool)
   faceToward(p, dx, dy, true);
-  if (targets.length) { shakeFor(p, 2); for (const t of targets) shakeFor(t, 2); }
   sfxAt('swing', p.x, p.y); if (targets.length) sfxAt('hit', p.x, p.y);
 }
 function updateSlashes(dt) {

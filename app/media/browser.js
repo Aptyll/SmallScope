@@ -111,8 +111,8 @@ async function open({ width = 1280, height = 720, dpr = 1, audio = false } = {})
   return pg;
 }
 
-// the game, served by app/server.js, booted past character create at a seed
-// (or the practice field, `practice`: its own fixed world, no seed)
+// the game, served by app/server.js, booted past character create on the one
+// map, `seed` starting its match stream (or the practice tool on it, `practice`)
 async function openGame({ seed = 6, practice = false, port = +(process.env.PORT || 8471), width, height, dpr } = {}) {
   const pg = await open({ width, height, dpr });
   await pg.goto(`http://localhost:${port}/?${practice ? 'practice=1' : 'seed=' + seed}`);

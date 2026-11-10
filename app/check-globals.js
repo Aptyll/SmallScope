@@ -17,7 +17,8 @@
 // It runs app/check-size.js too, so a file or function grown too big fails here,
 // app/check-dead.js, so a top-level name, a sprite, a sound cue or a sound
 // file nothing uses fails here, and
-// app/check-text.js, so a word missing from the text table fails here.
+// app/check-text.js, so a word missing from the text table fails here, and
+// app/check-names.js, so a read of a name nothing declares fails here.
 //
 // It reads each file with a small tokenizer (strings, template literals,
 // comments and regex literals skipped, brackets tracked) and takes the
@@ -281,8 +282,11 @@ function main() {
   // and the docs name only code that exists (app/check-docs.js)
   const docs = require('./check-docs.js').check();
   problems.push(...docs);
+  // and every name the game reads is declared somewhere (app/check-names.js)
+  const names = require('./check-names.js').check();
+  problems.push(...names);
   if (!problems.length) {
-    console.log(`globals ok: ${byName.size} top-level names across ${order.length} scripts, no collisions; sizes ok; no dead code; text ok; docs ok`);
+    console.log(`globals ok: ${byName.size} top-level names across ${order.length} scripts, no collisions; sizes ok; no dead code; text ok; docs ok; names ok`);
     return 0;
   }
   for (const p of problems) console.log(p);
@@ -291,7 +295,8 @@ function main() {
     (sizes.length ? ` - ${sizes.length} too big: split the file along its sections, or the function into named steps` : '') +
     (dead.length ? ` - ${dead.length} never used: delete them` : '') +
     (text.length ? ` - ${text.length} in the text table (app/check-text.js)` : '') +
-    (docs.length ? ` - ${docs.length} doc line(s) name code that is gone: fix the doc (app/check-docs.js)` : ''));
+    (docs.length ? ` - ${docs.length} doc line(s) name code that is gone: fix the doc (app/check-docs.js)` : '') +
+    (names.length ? ` - ${names.length} read(s) of a name nothing declares: it throws when that line runs (app/check-names.js)` : ''));
   return 1;
 }
 module.exports = { tokenize, loadOrder, declarations };

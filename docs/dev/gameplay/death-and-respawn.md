@@ -51,7 +51,7 @@ arrows never shift): clicking an arrow or pressing the arrow keys cycles (`specN
 skipping the dead — and skipping rivals while a respawn wait runs, since the wait is not a scouting
 window), ESC returns to the planks (on a wait, which has none, it closes the replay instead), and a
 watched player that dies hands the view to the next. There is deliberately no hint text; with nobody left the plate shows a dash instead of a name. LOBBY (`toLobby`) fades to dark and reloads
-the page on the same seed, which boots into the title screen. **TAB still opens the standings
+the page on the same URL (or the party's rematch), which boots into the title screen. **TAB still opens the standings
 while you are out**, which is the point of holding them above the dim.
 `state.mode` is `title | drop | play | dead`, and `updatePlay()` runs in `play`, `dead` **and**
 `drop` (the clock starts with the eagle; airborne players are skipped) — the match carries on

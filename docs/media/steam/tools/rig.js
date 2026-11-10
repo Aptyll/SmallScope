@@ -31,9 +31,7 @@ const TO_PLAY = `
   if (state.mode === 'title') startGame();
   var guard = 0;
   while (inAir(player) && guard++ < 4000) {
-    DBG.step(1/60, 1);
-    var e = state.drop && state.drop.eagles[player.team];
-    if (e && e.state === 'down' && player.aboard) { state.dropBrief = null; DBG.hopOff(); }
+    DBG.step(1/60, 1); // the crew leaps on its own a beat after the landing
   }
   DBG.step(1/60, 60);   // the hop's fall lands
   return JSON.stringify({ mode: state.mode, tick: state.tick, air: inAir(player),

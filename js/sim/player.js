@@ -99,7 +99,7 @@ const POSITIONS = [
 // bare constants - its BASIC ATTACK on the left button (`attack`, read by
 // js/sim/attack.js, which says what each field means) and its four ACTIVE
 // ABILITIES on keys 1-4 (CLASS_AB, js/sim/abilities.js). Picked in the draft
-// (js/ui/draft.js) or hashed from the seed (bots) in initPlayers().
+// (js/ui/draft.js) or hashed from the match seed (bots) in initPlayers().
 const CLASSES = [
   {
     // the first hero (js/sim/armatos.js): his own 16 px body in each look
@@ -161,7 +161,7 @@ const CLASSES = [
     // short of it; slow damage, not burst, and the least life of anyone
     name: 'IGNIA', role: 'THE HEARTHKEEPER', passive: 'spreadflame', // HERO_PASSIVE, js/sim/ignia.js
     blurb: ['THE ONLY FIRE FOR MILES.', 'ONE BURNING RIVAL SETS THE NEXT ALIGHT.', 'SNOW AND WATER PUT YOUR FIRE OUT.'],
-    story: "SHE KEPT THE GREAT HEARTH IN THE EMPEROR'S HALL, AND ONE HARD WINTER SHE CARRIED ITS COALS TO A VILLAGE THAT HAD NONE. THE HALL WENT COLD AND THE COURT DID NOT FORGIVE IT. IN THE VALLEY SHE IS THE ONLY FIRE FOR MILES, AND EVERYONE WANTS TO SIT NEAR HER.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
+    story: "SHE KEPT THE GREAT HEARTH IN THE EMPEROR'S HALL, AND ONE HARD WINTER SHE CARRIED ITS COALS TO A VILLAGE THAT HAD NONE. THE COURT DID NOT FORGIVE IT. SHE STILL CARRIES THE LAST OF THOSE COALS IN HER LANTERN, AND EVERYONE IN THE VALLEY WANTS TO SIT NEAR HER.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
     // a staff's ember, not an arrow: a little shorter and slower than the shortbow
     staff: 'crook', // her CROOK AND LANTERN, carried upright (HERO_STAVES, js/draw/ignia.js)
     attack: { name: 'CROOK AND LANTERN', art: 'staff', cycle: 60 / 60, kb: 0.6, shot: { speed: 260, life: 0.85, col: '#ff9a3a', look: 'ember' } },
@@ -180,10 +180,10 @@ const CLASSES = [
     // slower than anyone; slow, telegraphed strikes, one blink, and nothing else
     name: 'AURA', role: 'THE NORTHERN LIGHT', passive: 'starlight', // HERO_PASSIVE, js/sim/aura.js
     blurb: ['THE NIGHT IS ON YOUR SIDE.', 'OUTREACH ANYONE. NOTHING HIDES FROM YOUR LIGHT.', 'CAUGHT UP CLOSE, YOU HAVE ONE STEP.'],
-    story: "SHE STEERED THE EMPIRE'S FLEET BY THE STARS, AND WARNED THE ADMIRALS A STORM WAS COMING. THEY SAILED ANYWAY, AND SHE BROUGHT HER ONE SHIP HOME. THE VALLEY'S NIGHTS ARE CLEAR AND BLUE, AND SHE STILL KNOWS EVERY STAR BY NAME.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
+    story: "SHE STEERED THE EMPIRE'S FLEET BY THE STARS, AND WARNED THE ADMIRALS A STORM WAS COMING. THEY SAILED ANYWAY, AND SHE BROUGHT HER ONE SHIP HOME. SHE KEPT ITS STAR-GLASS, AND ON THE VALLEY'S CLEAR NIGHTS SHE GATHERS THE STARLIGHT IN IT AND TURNS IT ON THE SNOW.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
     // a staff's star bolt: a little shorter and slower than the shortbow
-    staff: 'shard', // her STAR SHARD, carried upright (HERO_STAVES, js/draw/aura.js)
-    attack: { name: 'STAR SHARD', art: 'starstaff', cycle: 66 / 60, kb: 0.5, shot: { speed: 270, life: 0.95, col: '#e6f8ff', look: 'starbolt' } },
+    staff: 'shard', // her STAR-GLASS, carried upright (HERO_STAVES, js/draw/aura.js)
+    attack: { name: 'STAR-GLASS', art: 'starstaff', cycle: 66 / 60, kb: 0.5, shot: { speed: 270, life: 0.95, col: '#e6f8ff', look: 'starbolt' } },
     base: { hp: 78, dmg: 13, armor: 9, ap: 0, haste: 0, ms: PLAYER_SPEED - 4 },
     grow: { hp: 5.5, dmg: 1, as: 0.01, armor: 1.7 },
     rankOrder: [0, 1, 2], // the falling star, the drifting light, the step
@@ -236,7 +236,7 @@ const CLASSES = [
     // with ice and a blizzard; low burst, and a step slower than most
     name: 'HIEMS', role: 'THE LONG WINTER', passive: 'deepchill', // HERO_PASSIVE, js/sim/hiems.js
     blurb: ['THE COLD IS ON YOUR SIDE.', 'EVERY HIT CHILLS. THE THIRD CHILL FREEZES THEM IN PLACE.', 'LITTLE BURST: FREEZE THEM, THEN LET YOUR SIDE FINISH.'],
-    story: "SHE KEPT THE WEATHER RECORDS FOR THE EMPIRE'S COURT, AND TOLD THEM THE COLD YEARS WERE COMING AND WOULD NOT STOP. THEY SENT HER AWAY FOR SPOILING THE HARVEST FEAST. SHE CAME UP THE PASS TO SEE WHETHER SHE WAS RIGHT. THE SNOW HAS NOT STOPPED.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
+    story: "SHE KEPT THE WEATHER RECORDS FOR THE EMPIRE'S COURT, AND TOLD THEM THE COLD YEARS WERE COMING AND WOULD NOT STOP. THEY SENT HER AWAY FOR SPOILING THE HARVEST FEAST. SHE CAME UP THE PASS TO SEE WHETHER SHE WAS RIGHT. THE SNOW HAS NOT STOPPED, AND SHE HAS LEARNED TO PUT IT WHERE SHE WANTS.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
     // a staff's frost bolt: AURA's star bolt, a little shorter
     staff: 'flake', // her SNOWFLAKE STAFF, carried upright (HERO_STAVES, js/draw/hiems.js)
     attack: { name: 'SNOWFLAKE STAFF', art: 'flakestaff', cycle: 62 / 60, kb: 0.5, shot: { speed: 270, life: 0.85, col: '#e6f8ff', look: 'frostbolt' } },
@@ -649,7 +649,7 @@ function makeInput() {
     work: false,         // E held
     slide: false,        // shift held
     dodge: false,        // edge-triggered, cleared once the sim reads it
-    jump: false,         // edge-triggered: the hop off the roost (hopOff, js/sim/eagle.js), or on/off a cable or a deer
+    jump: false,         // edge-triggered: on/off a cable or a deer
     useItem: -1,         // edge-triggered: use what is in this item slot (0-5) - drink a potion (useItem, js/sim/items.js)
     ability: -1,         // edge-triggered: cast the class ability on this key (1-4), js/sim/abilities.js
     trick: -1,           // edge-triggered: use the loadout's trick on this key (0-1), js/sim/loadout.js
@@ -891,6 +891,7 @@ class Player {
     this.workTx = -1; this.workTy = -1;            // tile the current E swing is aimed at
     this.hurtT = 0; this.invuln = first ? 0 : 3;
     this.kbx = 0; this.kby = 0;
+    this.hitNx = 0; this.hitNy = 0; // which way the last blow landed (damagePlayer): its spark and recoil read it
     this.fallT = 0; this.fallRipT = 0;             // floundering in an ice hole
     this.footT = 0; this.footSide = 0;
     this.firePrev = false;
@@ -927,12 +928,12 @@ function initPlayers(roster, local) {
   roster = roster || defaultRoster(local);
   players.length = 0;
   for (let i = 0; i < MAX_PLAYERS; i++) players.push(new Player(i, roster[i].control, roster[i].team));
-  // bots draw their class from the seed, so a replayed world fields the
-  // same roster
+  // bots draw their class from the match seed (matchHash), so a replayed
+  // match fields the same roster
   for (const p of players) if (p.control === 'ai') {
     // floor(hash * N): even over however many classes exist (for two it maps
     // exactly as the old `< 0.5` coin, so old seeds keep their rosters)
-    setClass(p, Math.floor(hash2(p.id * 17 + 3, 77) * CLASSES.length)); // refreshes the kit too
+    setClass(p, Math.floor(matchHash(p.id * 17 + 3, 77) * CLASSES.length)); // refreshes the kit too
   }
   // a roster's own dressing (a lobby's humans) lands over the defaults
   for (const p of players) {
@@ -993,15 +994,15 @@ function seenAt(p, range, team) {
 // ---- contested orders --------------------------------------------------
 // Several players can order the same tile, drop or fish inside one sim step,
 // and only one of those can happen. Each such action queues a claim here;
-// resolveContests() runs exactly one per key, picked from (SEED, player id,
-// sim tick) - so the same step resolves the same way on every machine.
+// resolveContests() runs exactly one per key, picked by matchHash from the
+// player id and the sim tick - so a replay of the match resolves it the same way.
 const contests = new Map();
 function contest(key, p, fn) {
   let list = contests.get(key);
   if (!list) { list = []; contests.set(key, list); }
   list.push({ p, fn });
 }
-function contestRank(p) { return hash2(p.id * 131 + 7, state.tick); }
+function contestRank(p) { return matchHash(p.id * 131 + 7, state.tick); }
 function resolveContests() {
   for (const list of contests.values()) {
     let win = list[0], wr = contestRank(win.p);
@@ -1037,14 +1038,14 @@ const camps = []; // the jungle camps, stood up at fixed sites by worldgen (see 
 const DOT_CAUSE = { fire: true };
 
 // The shove a blow lands on a body, in px/s. It is the BASELINE, not the
-// whole story: `kb` is a multiplier on it, so a basic attack's KNOCKBACK
-// (js/sim/attack.js) scales a player's shove exactly as it scales an animal's or a
-// soldier's, and the ordinary blow is 1.
+// whole story: `kb` is a multiplier on it, and the ordinary blow is 1. A
+// player takes it only from a key's blow (damagePlayer); a basic attack's
+// KNOCKBACK (js/sim/attack.js) still shoves an animal or a soldier.
 const HIT_KB = 110;
 
 // A hit grants NO i-frames. `invuln` is only ever set by something DELIBERATE -
 // the dodge roll, a respawn, the drop's landing, scrambling out of a hole - so
-// two arrows arriving in the same step both land, both shove and both light
+// two arrows arriving in the same step both land and both light
 // their fire, rather than the second being eaten by the first's grace.
 //
 // src: the player who dealt it (kill credit + the log line), null for the
@@ -1071,17 +1072,25 @@ function damagePlayer(p, dmg, dx, dy, src, cause, crit, kb, o) {
   else if (BEAST_CAUSES.has(cause)) p.dmgInB += dmg;
   p.hurtT = 0.25;
   p.fightT = ITEM_FIGHT_T; // in a fight: DEN's heal waits (js/sim/items.js)
+  // a PLAYER is shoved only by a key's blow: an attack (a hero's, a
+  // soldier's, a tower's, a beast's) lands where it stands, so a fight is
+  // not a pinball (Noah, 2026-11-10). Where the blow came from is kept either way
+  // (hitNx/hitNy): the hit's spark and recoil read it (js/draw/hitfx.js)
   if (!dot) {
-    const k = HIT_KB * (kb === undefined ? 1 : kb);
+    const k = o && o.ab && !o.basic ? HIT_KB * (kb === undefined ? 1 : kb) : 0;
     p.kbx = dx * k; p.kby = dy * k;
+    hitAim(p, dx, dy);
   }
   breakRecall(p); // a hit ends the walk home - that is what makes the channel a channel
   // a burn shakes and shouts once, when it lights (igniteUnit) - not four
   // times a second for as long as it runs
-  if (!dot) shakeFor(p, crit ? 6 : 3);
   tallyHit(p, dmg);
   if (!dot) sfxAt('hurt', p.x, p.y);
-  burst(p.x, p.y - 6, dot ? '#ff9440' : '#cfd8e8', 8, 50, 0.45);
+  // a burn's embers rise off the body; a blow's snow is kicked up at the
+  // feet, never sprayed over the model (pale motes over a hero read as the
+  // body going see-through: Noah, 2026-11-10)
+  if (dot) burst(p.x, p.y - 6, '#ff9440', 8, 50, 0.45);
+  else burst(p.x, p.y + 3, '#cfd8e8', 6, 40, 0.35, 60);
   if (p.hp <= 0) die(p, src, cause);
 }
 
@@ -1386,7 +1395,7 @@ function endMatch(how) {
   state.end = how === 'won' || how === 'lost' ? endSnapshot() : null;
   // a side that surrendered skips its defeat and lands on the post-game stats (js/sim/surrender.js)
   if (how === 'lost' && state.surrendered === player.team) openScores('menu');
-  if (how === 'won') { SFX.victory(); state.shake = Math.max(state.shake, 4); }
+  if (how === 'won') SFX.victory();
   // ...and a loss gets the same courtesy: the defeat song used to come up
   // under silence where a win got a fanfare, so the worse of the two endings
   // was the quieter one. A sting, not a dirge - the song does the mourning.

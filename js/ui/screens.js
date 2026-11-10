@@ -354,7 +354,6 @@ function openDefeat() {
   state.defeatT = 0;
   state.deadSel = 0;
   state.deadHover = [0, 0];
-  state.shake = Math.max(state.shake, 2);
 }
 
 // the spectate control, top centre: [<] NAME [>]. Arrow boxes are SPEC_AW

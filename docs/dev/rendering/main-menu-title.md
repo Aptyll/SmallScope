@@ -17,8 +17,7 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   MATCH leads to the [lobby](../rendering.md#lobby)'s hero select, PRACTICE TOOL's START to the
   [practice tool](../world.md#the-practice-tool) on the match's map;
   there is no WIKI or SETTINGS item: the [wiki](the-hud-corners/the-wiki-screen.md) opens from a word in the corner of
-  the patch notes, settings are the ESC panel's in play, and the seed lives on
-  [lobby](../rendering.md#lobby) under the map), stacked `MENU_TXT_PITCH` apart, climbing from `MENU_BOTTOM`
+  the patch notes, and settings are the ESC panel's in play), stacked `MENU_TXT_PITCH` apart, climbing from `MENU_BOTTOM`
   above the view's foot. **`menu.hover` has one cell per item** and its length is
   a literal in core.js, a file that loads before `menuItems`
   exists; the ease tops a missing cell up with `|| 0`, because a short array goes NaN and silently

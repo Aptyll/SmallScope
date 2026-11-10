@@ -78,7 +78,7 @@ A scene file sets `window.SCENE = { o, setup(M), tick(M), done(M) }` (read `scen
 `o.dpr` is the frame; `o.k` (device px per world px) is the take's S, and an edit can zoom from
 the frame's width up to any k. A bigger S costs disk and time per frame, not quality you can't get
 in post below S: record at the closest zoom the cut needs. Actors act through `p.input` only.
-`o.practice` stages on the practice field instead of a match (no seed, no drop).
+`o.practice` stages in the practice tool on the map instead of a match (no `?seed`, no drop).
 
 ## A cut
 

@@ -8,7 +8,7 @@
 // ten), the lowest code among equals: it waits, and the others cross over to
 // it (seekCross). A
 // crossing party's leader tells its guests (`cross`) and every page of it
-// reloads onto the host's valley and joins its room with the party's code
+// reloads and joins the host's room with the party's code
 // in the hello (CROSS); the host seats the first party that knocks on its
 // rival side (crossAdmit) and turns away any other (MATCHED). Once all of
 // that party's people are in (or MATCH_GATHER runs out), or once
@@ -16,8 +16,7 @@
 // bots and everyone goes on to the hero select (partyStart). A crossed
 // page remembers its own party (homeParty): after the match, a refusal, or
 // its host walking out, it goes back to it - its leader hosting the party's
-// code again and its guests joining it, all on one valley read off that
-// code (homeSeed), so nobody has to tell anyone which.
+// code again and its guests joining it.
 const MATCH_WAIT = 8;     // s a party looks for another before bots fill the rival side
 const MATCH_HOLD = 6;     // s more it waits after seeing a party that may be crossing to it
 const MATCH_GATHER = 20;  // s a crossing party's people have to arrive before their empty seats go to bots
@@ -116,40 +115,33 @@ function seekCross(r) {
   s.crossing = true;
   roomsFeedClose();
   for (const pr of NET.peers.values()) seats[pr.uid] = pr.slot;
-  const code = roomCode(), n = partySize(), seed = +r.data.seed;
+  const code = roomCode(), n = partySize();
   homeSave({ code, lead: true, mode: NET.mode, seats });
-  if (NET.peers.size) NET.transport.send('*', { t: 'cross', room: r.room, seed, code, n });
-  practiceGo(crossUrl(r.room, seed, code, n));
+  if (NET.peers.size) NET.transport.send('*', { t: 'cross', room: r.room, code, n });
+  practiceGo(crossUrl(r.room, code, n));
 }
 // a guest told its party is crossing: after it
 function crossHeard(msg) {
   if (state.mode !== 'title' || !msg.code) return;
   homeSave({ code: String(msg.code), lead: false, mode: NET.mode, seats: {} });
-  practiceGo(crossUrl(String(msg.room), msg.seed | 0, String(msg.code), msg.n | 0));
+  practiceGo(crossUrl(String(msg.room), String(msg.code), msg.n | 0));
 }
-function crossUrl(room, seed, code, n) {
+function crossUrl(room, code, n) {
   const steam = netSteam() ? '&transport=steam' : '';
-  return location.pathname + '?seed=' + seed + '&join=' + room + '&back=1&party=' + code + '&pn=' + n + steam;
+  return location.pathname + '?join=' + room + '&back=1&party=' + code + '&pn=' + n + steam;
 }
 function homeSave(h) { try { sessionStorage.setItem(HOME_KEY, JSON.stringify(h)); } catch (e) { } }
-// the valley a crossed party goes home to, read off its code and the valley
-// it crossed to: the leader and every guest land on the same one
-function homeSeed(code) {
-  let h = SEED;
-  for (let i = 0; i < code.length; i++) h = (h * 31 + code.charCodeAt(i)) % 100003;
-  return 100 + (h % 900);
-}
 // where a crossed page goes back to: its leader hosting the code again with
 // its guests' seats kept, a guest joining it (rematchUrl, partyLost, partyGiveUp)
 function crossHomeUrl() {
   const h = homeParty, steam = netSteam() ? '&transport=steam' : '';
-  const base = location.pathname + '?seed=' + homeSeed(h.code);
+  const base = location.pathname + '?back=1';
   try { sessionStorage.removeItem(HOME_KEY); } catch (e) { }
   if (h.lead) {
     try { sessionStorage.setItem(REMATCH_KEY, JSON.stringify({ mode: h.mode, seats: h.seats || {} })); } catch (e) { }
-    return base + '&net=host&back=1' + steam + (steam ? '&code=' : '&room=') + h.code;
+    return base + '&net=host' + steam + (steam ? '&code=' : '&room=') + h.code;
   }
-  return base + '&join=' + h.code + '&back=1' + steam;
+  return base + '&join=' + h.code + steam;
 }
 function crossHome() { if (!state.fade) practiceGo(crossHomeUrl()); }
 // a guest whose host walked out or showed it out: home, if this page crossed;
