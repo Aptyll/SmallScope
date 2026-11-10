@@ -24,7 +24,7 @@
 // ground) and move by the cable alone - no moveEntity, so a wall or a pine
 // under the line never stops one. The lines are laid at boot by placeZips,
 // right after the road and the bases, on pure reads (basePerch, roadNest,
-// roadSpan, roadEdgeAt, objAt): nothing rolls, so genWorld and every seed's
+// roadEdgeAt, objAt): nothing rolls, so genWorld and every seed's
 // ground are untouched; a pylon (`pylon`, OBJECTS) fells the pine or rock
 // on its tile like the road's own furniture and refuses anything else. Its
 // pixels and the cable pass are js/draw/zipline.js. Bots ride it through
@@ -50,7 +50,7 @@ function zipTile(u, s) { return { x: u + s / Math.SQRT2, y: WORLD - 1 - u + s / 
 function placeZips() {
   zips.length = 0;
   if (ARENA) return;
-  const sp = roadSpan(), um = (sp.u0 + sp.u1) / 2;
+  const um = (WORLD - 1) / 2; // the map's middle, the same u for both sides: one fixed map, mirrored, so both cables stop ZIP_MID_GAP short of it
   for (const team of [0, 1]) {
     const side = roadNest(team).side, dirF = team === 0 ? 1 : -1; // dirF: u toward the centre
     const u1 = basePerch(team).u + dirF * ZIP_BASE_OUT, uEnd = um - dirF * ZIP_MID_GAP;

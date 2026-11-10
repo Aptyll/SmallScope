@@ -76,6 +76,61 @@ function placeTowers() {
   });
   towersSync();
 }
+// THE RUN-OUT: a cable cut at a tower does not end in its wall - it runs on
+// through it, the way the line was going, to a landing on open snow past the
+// tower and a stake there, so the ride lets go clear of the stone and the
+// cable's speed carries the rider on toward the front. Laid once the whole
+// world stands (boot, after every pass that plants a pine), on pure reads.
+// For each tower on a line (o.zi): w.land[i], the point the ride ends on
+// (a body position), and w.stake[i], where the strand is staked into the snow
+// (drawn only: js/draw/zipline.js). A rider already past a tower when the
+// line is cut back to it comes down where it hangs (towersDrop), as before.
+const TOWER_LAND = 40;     // px past the tower's middle the landing is first looked for: clear of its 3x2 foot
+const TOWER_LAND_MAX = 120; // px past it the landing is looked for at most
+const TOWER_LAND_RUN = 24; // px ahead of the landing that must be open too: the hop-off's slide has room
+const TOWER_STAKE = 22;    // px past the landing the strand is staked into the snow
+const TOWER_LAND_BEND = [0, 0.35, -0.35, 0.6, -0.6, 0.85, -0.85]; // rad off the line's own way the run-out may bend, tried in turn
+function towerLandings() {
+  zipWhole.forEach((w, L) => {
+    if (!w) return;
+    w.land = []; w.stake = [];
+    for (const o of structures) {
+      if (o.type !== 'tower' || o.zl !== L) continue;
+      const i = o.zi, c = w.pts[i], nx = w.pts[i + 1] || null, pv = w.pts[i - 1];
+      // the way the line goes on: the next span, or the last span carried on past the front end
+      let dx = nx ? nx.x - c.x : c.x - pv.x, dy = nx ? nx.y - c.y : c.y - pv.y;
+      const dl = Math.hypot(dx, dy) || 1; dx /= dl; dy /= dl;
+      const far = nx ? Math.min(TOWER_LAND_MAX, dl - TOWER_LAND_RUN) : TOWER_LAND_MAX;
+      // straight on first; where the line runs along a treeline (a side lane's
+      // outer verge) the run-out bends off it, a little more each try, to the
+      // open snow beside it
+      // a bend toward the map's middle is tried before one away from it, so
+      // the two sides' mirrored lines bend the same way
+      const C = WORLD * TILE / 2, sg = dx * (C - c.y) - dy * (C - c.x) < 0 ? -1 : 1;
+      for (const a0 of TOWER_LAND_BEND) {
+        const a = a0 * sg, ca = Math.cos(a), sa = Math.sin(a), ux = dx * ca - dy * sa, uy = dx * sa + dy * ca;
+        for (let t = TOWER_LAND; t <= far && !w.land[i]; t += 4) {
+          const x = c.x + ux * t, y = c.y + uy * t;
+          if (!towerLandOk(x, y) || !towerLandOk(x + ux * TOWER_LAND_RUN, y + uy * TOWER_LAND_RUN)) continue;
+          w.land[i] = { x, y };
+          w.stake[i] = { x: x + ux * TOWER_STAKE, y: y + uy * TOWER_STAKE };
+        }
+        if (w.land[i]) break;
+      }
+    }
+    if (zips[L]) zips[L].cut = -1; // cut again, with the run-outs
+  });
+  towersSync();
+}
+// a body standing at (x, y) is on open ground: its feet and the four corners of its round all walkable
+function towerLandOk(x, y) {
+  const fy = y + 4, r = PLAYER_R + 1;
+  if (cisternCrowds(x, y, PLAYER_R)) return false;
+  for (const [ox, oy] of [[0, 0], [-r, -r], [r, -r], [-r, r], [r, r]]) {
+    if (!walkable(Math.floor((x + ox) / TILE), Math.floor((fy + oy) / TILE))) return false;
+  }
+  return true;
+}
 // a tower on the cable's point `at` (a pylon's): the 3x2 footprint nearest
 // it (inside TOWER_SEEK tiles) whose every tile is in the world, clear of
 // the cistern's stone and holding nothing but the pylon or scenery the lane
@@ -125,8 +180,11 @@ function towersSync(sim) {
     const z = zips[L];
     if (far < 0) { zips[L] = null; if (sim) towersDrop(L, -1); return; }
     if (z && z.cut === far) return;
-    zips[L] = Object.assign({}, w, { pts: w.pts.slice(0, far + 1), cum: w.cum.slice(0, far + 1), len: w.cum[far], cut: far });
-    if (sim) towersDrop(L, w.cum[far]);
+    const pts = w.pts.slice(0, far + 1), cum = w.cum.slice(0, far + 1), land = w.land && w.land[far];
+    if (land) { pts.push(land); cum.push(w.cum[far] + Math.hypot(land.x - w.pts[far].x, land.y - w.pts[far].y)); } // on through the tower to its run-out (towerLandings)
+    const len = cum[cum.length - 1];
+    zips[L] = Object.assign({}, w, { pts, cum, len, cut: far, stake: land ? w.stake[far] : null });
+    if (sim) towersDrop(L, w.cum[far]); // past the tower the run-out need not lie on the old line
   });
 }
 // a cable cut back under its riders: whoever hangs past the new end (all of

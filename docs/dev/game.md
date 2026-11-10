@@ -204,7 +204,8 @@ anywhere — hands on the handle, still a target, dropped by a stun or a root, a
 into the fight always walked. **Three road towers hold each cable**: a stone tower with a
 great crossbow on its deck stands beside the lane a third and two thirds of the way out and at the end of every cable,
 so nine a side, and the cable runs only to the furthest one still standing, so breaking a tower takes ground back
-from the rival's ride. A tower shoots the rival wave first, so a hero who walks in under it with
+from the rival's ride. Past that tower the cable runs on to a stake in the open snow, so the ride lets go clear of
+the stone. A tower shoots the rival wave first, so a hero who walks in under it with
 their own soldiers can bring it down, and a hero who hits one of its side's heroes in its ring, or
 walks in alone, gets the bolt: it winds for a beat with a dashed line on the snow to its mark, and
 each bolt in a row into the same hero hits harder. [Road towers](gameplay/robots.md#road-towers),
