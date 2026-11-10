@@ -214,6 +214,7 @@ function drawSceneryObj(d, ox, oy, now, wkO, hovO) {
     const drawTree = () => {
       if (o === wkO) drawTargetRim(A, cx, cy, fw, fh, artX, artY, now);
       drawFrameFlash(A, fi, artX, artY, o.flash);
+      drawCrownHour(fi, artX, artY); // dawn and dusk on its snow (js/draw/ground.js)
     };
     const open = canopyOver(A, cx, cy, fw, fh, artX, artY);
     if (open > 0) drawWindowed(open, artX, artY, fw, fh, drawTree); else drawTree();

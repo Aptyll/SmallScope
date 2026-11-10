@@ -1280,14 +1280,14 @@ function treeLean(tx, ty, sway) {
 // neighbours), 2 deep inside (every tile two rings out is forest too), 1
 // between, 3 the heart, its snow in shade (forest three tiles each way). It is read live, so felling a pine brightens the ones it opens.
 // The heart is not one sheet: a slow noise CANOPY_SWELL tiles across lifts
-// it in broad RIDGES (tone 1, their snow in the light) and sinks it in
+// it in broad RIDGES (tone 5, needles and snow in the light) and sinks it in
 // HOLLOWS (tone 4, darker than the heart), so a wide forest has a shape that
 // still reads from the eagle's back.
 // A stand is anything woody - a dead snag walls a forest in like a pine - and
 // the world's border counts as forest.
-const TREE_TONES = 5;
-const CANOPY_SWELL = 11;    // tiles across a ridge or a hollow of the deep forest
-const CANOPY_RIDGE = 0.58, CANOPY_HOLLOW = 0.4; // the swell above which the heart is a ridge, below which a hollow
+const TREE_TONES = 6;
+const CANOPY_SWELL = 17;    // tiles across a ridge or a hollow of the deep forest
+const CANOPY_RIDGE = 0.54, CANOPY_HOLLOW = 0.45; // the swell above which the heart is a ridge, below which a hollow
 function woody(tx, ty) {
   if (!inWorld(tx, ty)) return true;
   const o = objects[idx(tx, ty)];
@@ -1302,7 +1302,7 @@ function treeTone(tx, ty) {
   // the swell, ragged a little by the tile's own hash so a ridge's edge is
   // crowns, not a contour line
   const sw = vnoise(tx / CANOPY_SWELL + 11.5, ty / CANOPY_SWELL + 47.5) * 0.7 + vnoise(tx / 4 + 3.5, ty / 4 + 19.5) * 0.3 + (hash2(tx * 13 + 5, ty * 17 + 9) - 0.5) * 0.08;
-  return sw > CANOPY_RIDGE ? 1 : sw < CANOPY_HOLLOW ? 4 : 3;
+  return sw > CANOPY_RIDGE ? 5 : sw < CANOPY_HOLLOW ? 4 : 3;
 }
 // Which of the pine's three heights a tile wears (TREE_CUTS, js/sprites/terrain.js):
 // 0 the drawn tree, 1 and 2 shorter. Half of it is a slow noise, so tall and
@@ -1321,6 +1321,29 @@ function treeCell(tx, ty, col) {
   const v = Math.floor(hash2(tx * 5 + 3, ty * 7 + 1) * 3);
   const tone = treeTone(tx, ty);
   return col + (treeSize(tx, ty, tone) * SPRITES.treeAtlas.pals + v * TREE_TONES + tone) * SPRITES.treeAtlas.cols;
+}
+// THE HOUR ON THE CROWNS. The hour's grade (todGrade, js/draw/light.js) is one
+// multiply over the frame, and it turns white drifts rose or gold while a
+// pine's blue-grey snow barely moves, so at dusk the forest stood cold beside
+// warm snow. While the hour has a colour each pine wears SPRITES.treeGlow over
+// its crown, its snow lifted toward the drifts' white by crownHour() and by
+// how far into the light its tone stands (CROWN_TONE), and the grade then
+// warms crown and drift alike.
+const CROWN_HOUR = 2.6;                          // how hard the hour's colour pulls the crowns
+const CROWN_TONE = [1, 0.85, 0.65, 0.4, 0.25, 1]; // the share each treeTone takes
+let crownT = -1, crownA = 0;
+function crownHour() {
+  if (crownT !== state.time) { crownT = state.time; crownA = Math.min(1, todWarmth() * CROWN_HOUR); }
+  return crownA;
+}
+// the glow over a pine drawn from treeAtlas cell fi at (x, y)
+function drawCrownHour(fi, x, y) {
+  const a = crownHour();
+  if (a < 0.03) return;
+  const A = SPRITES.treeAtlas, row = Math.floor(fi / A.cols);
+  ctx.globalAlpha = a * CROWN_TONE[row % TREE_TONES];
+  ctx.drawImage(SPRITES.treeGlow, (fi % A.cols) * A.fw, Math.floor(row / A.pals) * A.fh, A.fw, A.fh, x, y, A.fw, A.fh);
+  ctx.globalAlpha = 1;
 }
 // The nudge that breaks the grid: up to TREE_NUDGE_X px either side of the
 // tile's centre line and TREE_NUDGE_Y up or down. Only the art moves - the
