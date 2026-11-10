@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['The stone ring\'s brush drifts are smaller and stand clear of the road and the wall', '0.849'],
     ['BELLA\'s slanted spatha drawn at 32 px behind ?fine=1', '0.848'],
     ['Varro carries the same spear he thrusts, its tip no higher than his ears', '0.847'],
     ['The Tab scoreboard is bigger and shows each hero with a face and items', '0.846'],
