@@ -557,9 +557,8 @@ function updateMerchant(b, dt) {
 // soldierBounty in js/sim/farm.js), and it takes every hit, state and gust
 // like any other body. It marches its BAY'S LANE (b.lane). A mid soldier's
 // route is the road's waypoints from its own base's junction to the rival's
-// (roadWaypoints), round the cistern at the middle by a ford outside one of
-// its culverts (cisternWayRound, js/sim/cistern.js), then up the rival's road
-// to the roost; a top or bot soldier's is its own mouth, down its lane to the
+// (roadWaypoints), straight through the cistern at the middle, then up the
+// rival's road to the roost; a top or bot soldier's is its own mouth, down its lane to the
 // rival mouth and into the rival hollow (laneWaypoints, js/sim/lanes.js). A
 // waypoint it cannot reach is skipped, not waited on, so a wave never stands
 // still on a blocked tile. On the march it rides its own side's ZIPLINE of its
@@ -623,9 +622,6 @@ function makeSoldier(o, type) {
   if (own && own.mouth) b.way.push({ x: own.mouth.x, y: own.mouth.y });
   for (const w of roadWaypoints(b.team)) b.way.push(w);
   if (rival && rival.mouth) b.way.push({ x: rival.mouth.x, y: rival.mouth.y });
-  // ...round the cistern by a culvert's ford, the column forking: every
-  // other soldier out of the door takes the other one (o.queue counts down)
-  cisternWayRound(b.way, b.team, o.queue % 2);
   return b;
 }
 

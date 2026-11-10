@@ -70,7 +70,6 @@ const TEXT = {
   'recap.fire': 'FIRE',
   'recap.orca': 'ORCA',
   'recap.ice': 'ICE',
-  'recap.creek': 'CREEK',
   'recap.tackle': 'A TACKLE',
   'recap.eagle': 'EAGLE',
   'recap.roll': 'ROLL',

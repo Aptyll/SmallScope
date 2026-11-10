@@ -89,8 +89,6 @@ function update(dt) {
       state.time -= CYCLE;
       state.day++;
       SFX.dawnChime();
-      // the shoal is not reset here: it is a live population, refilled a fish
-      // at a time by updateFish's trickle
     }
   }
   // darkness curve
@@ -644,7 +642,7 @@ function updatePlay(dt) {
     }
   }
 
-  updateWildlife(dt); // the animals, the fish, the orca and the camps (below)
+  updateWildlife(dt); // the animals, the orca and the camps (below)
   if (PRACTICE) updatePractice(dt); // the dummy mends itself between combos
 
   // structures + their robots
@@ -660,12 +658,11 @@ function updatePlay(dt) {
   tickObjTimers(dt); // the blinks, shivers and regrowth running on map objects (the `object timers` banner)
 }
 
-// wildlife, one step of updatePlay: the animals, the lake's fish, the orca,
+// wildlife, one step of updatePlay: the animals, the orca,
 // the camps' clocks and the meadow's stock
 function updateWildlife(dt) {
   for (const a of animals) updateAnimal(a, dt);
   for (let i = animals.length - 1; i >= 0; i--) if (animals[i].dead) animals.splice(i, 1);
-  updateFish(dt);
   updateOrca(dt); // the orca under its lake's ice: the cruise, the hunt and the breach (js/sim/orca.js)
   updateCamps(dt); // a cleared camp counts down and comes back whole
   updateCampSight(); // and each side learns the clocks it can see
@@ -695,12 +692,13 @@ function iceUnder(p) {
   return (inWorld(ftx, fty) && ground[idx(ftx, fty)] === 1) || heroIce(p); // ...or a rival hero's ice (HERO_ICE, js/sim/heroes.js)
 }
 // ...and whether that ice glides, which is what the walk reads (walkSlide,
-// walkStep). The orca's pool is rough ice, crusted with rime: it holds a
-// foot like snow, so its late fight is fought standing a blade's reach from
-// the hole, not skating past it. A rival hero's ice glides anywhere.
+// walkStep). The orca's pool and the frozen creek are rough ice, crusted with
+// rime: they hold a foot like snow, so the orca's late fight is fought
+// standing a blade's reach from the hole, and a river fight is fought like
+// one on the bank, not skating past it. A rival hero's ice glides anywhere.
 function slickUnder(p) {
   const ftx = Math.floor(p.x / TILE), fty = Math.floor((p.y + 4) / TILE);
-  return (inWorld(ftx, fty) && ground[idx(ftx, fty)] === 1 && !orcaLakeAt(ftx, fty)) || heroIce(p);
+  return (inWorld(ftx, fty) && ground[idx(ftx, fty)] === 1 && !orcaLakeAt(ftx, fty) && !creekIceAt(ftx, fty)) || heroIce(p);
 }
 function clampWorld(p) {
   p.x = Math.max(8, Math.min(WORLD * TILE - 8, p.x));
@@ -880,7 +878,6 @@ function playerMove(p, dt, mx, my, len, onIce, kit) {
     } else {
       rollSweep(p); // everything small in the way takes a swipe and is rolled through
     }
-    creekFishCatch(p); // ...and a fish in the creek under it is a heal taken (js/sim/world.js)
     p.dodgeDustT -= dt;
     if (p.dodgeDustT <= 0) {
       p.dodgeDustT = 0.05;
@@ -916,10 +913,7 @@ function playerMove(p, dt, mx, my, len, onIce, kit) {
 
 function playerPlunge(p) {
   // open water: standing over a carved ice hole plunges you in, and so does
-  // the creek. An active dodge roll carries over both: a hole's one tile
-  // easily, the creek's three only from its bank, so a roll that runs out over
-  // the current goes in. The creek asks the feet against its banks as drawn
-  // (creekWet), so nobody goes in off a pixel of snow or the frozen stretch.
+  // an orca's break; an active dodge roll carries over both.
   if (p.fallT <= 0 && !heroSwim(p) && !heroDashOver(p)) { // ...unless the hero swims (HERO_SWIM, js/sim/heroes.js) or is in the air over it (HERO_DASH `over`)
     const htx = Math.floor(p.x / TILE), hty = Math.floor((p.y + 4) / TILE);
     const g = inWorld(htx, hty) ? ground[idx(htx, hty)] : 0;
@@ -927,8 +921,7 @@ function playerPlunge(p) {
     // break's own shape says where the water is (iceBreakWet, js/sim/icebreak.js)
     const held = g === 2 && iceBreakHolds(idx(htx, hty));
     if ((g === 2 && !held && p.dodgeT <= 0) ||
-      (iceBreaks.length && p.dodgeT <= 0 && iceBreakWet(p.x, p.y + 4)) ||
-      (g === 4 && p.dodgeT <= 0 && creekWet(p.x / TILE - 0.5, (p.y + 4) / TILE - 0.5))) {
+      (iceBreaks.length && p.dodgeT <= 0 && iceBreakWet(p.x, p.y + 4))) {
       p.dodgeT = 0; p.rollHit.length = 0; // a roll ends in the water
       p.fallT = HOLE_FALL_T;
       p.fallRipT = 0;
@@ -943,7 +936,7 @@ function playerPlunge(p) {
       sfxAt('splash', p.x, p.y);
       burst(p.x, p.y + 4, '#3a6080', 10, 55, 0.5, true);
       burst(p.x, p.y + 2, '#ddf1f8', 8, 60, 0.5, true);
-      damagePlayer(p, HOLE_FALL_DMG, 0, 0, null, g === 4 ? 'creek' : 'ice');
+      damagePlayer(p, HOLE_FALL_DMG, 0, 0, null, 'ice');
     }
   }
 }

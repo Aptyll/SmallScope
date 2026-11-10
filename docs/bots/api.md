@@ -69,9 +69,9 @@ are listed because a socket transport later will carry exactly these.
 `map`: `{ world, tile, grid }`. `grid` is the map when your seat was taken: `world`
 strings, one per row, one character per tile (`grid[ty][tx]`):
 
-| `#` | `~` | `-` | `=` | `,` | `.` |
-| --- | --- | --- | --- | --- | --- |
-| solid (tree, wall, the cistern's stone) | open water | ice | road or a gate's sill | ford | snow |
+| `#` | `~` | `-` | `=` | `.` |
+| --- | --- | --- | --- | --- |
+| solid (tree, wall, the cistern's stone) | open water | ice (the lakes and the frozen creek) | road or a gate's sill | snow |
 
 Trees fall and buildings rise after that: `obs.nodes` and `obs.structs` are the live word near you.
 
@@ -147,8 +147,7 @@ obs = {
   `cmd: { kind: 'shop', act: 'item', id }`; it needs a free slot once its parts are used. The
   health potion (`stack` 5) is the one that stacks: the first takes a slot, the next ones join it.
 - **Healing.** Drink a potion with `useItem` (its slot): 100 health over 15 s that nothing
-  stops, one at a time. Roll (`dodge`) over a creek fish from the bank for 40 at once. A fish does
-  nothing at full health.
+  stops, one at a time.
 
 ## The act
 

@@ -6,7 +6,7 @@
 // and js/ui/wiki.js.
 // ------------------------------------------------------------ main menu
 // The title screen is a real menu over the living world: ten heroes face off
-// on the frozen middle (js/ui/titlescene.js) while the snow keeps falling, the
+// in the stone ring at the middle (js/ui/titlescene.js) while the snow keeps falling, the
 // modes take mouse or arrows+enter, and every mode change is a transition
 // rather than a cut.
 const INTRO_T = 1.6;    // title -> play: tint dissolves, camera settles, HUD slides in

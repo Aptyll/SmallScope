@@ -203,9 +203,9 @@ const CHART_DARK = HUD_INK; // the minimap's own dark: every mark's rim on the c
 const CHART_INK_TXT = '#d4d7dc'; // the header's ink
 let chartBuiltAt = -1e9;
 
-function chartGround(i) { // the creek inks as open water, its fords as gaps
+function chartGround(i) { // a hole inks as open water, the frozen creek as ice
   if (cisternTouches(i % WORLD, (i / WORLD) | 0)) return CH_STONE;
-  const g = ground[i]; return g === 2 || g === 4 ? CH_HOLE : g === 3 ? CH_ROAD : g === 1 ? CH_ICE : CH_SNOW;
+  const g = ground[i]; return g === 2 ? CH_HOLE : g === 3 ? CH_ROAD : g === 1 ? CH_ICE : CH_SNOW;
 }
 function buildWorldMapImg() {
   if (state.tick - chartBuiltAt < MM_REBUILD && state.tick >= chartBuiltAt) return;

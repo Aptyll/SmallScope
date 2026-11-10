@@ -244,7 +244,7 @@ read through `statOf(p, key)` (js/sim/stats.js), never off the kit. `setClass(p,
 | 0 | **ARMATOS** — THE LAST STANDARD, the defensive initiator (a passive, `CLASSES[c].passive`) | make the whole team stand its ground | his own body (LAST STANDARD, or a look bought on the skins screen) and his own kit, 130 hp, 24 armor | the OATH GREATSWORD: a 28 px cut, 1.05 rad either side of the aim, drawn as his own blade |
 | 1 | **FORTIVA** — THE UNBROKEN, the juggernaut (passive UNBROKEN) | win the long fight: harder to stop the longer she trades | her own body (UNBROKEN, or CHAINBREAKER bought on the skins screen), 132 hp, 20 armor, a step slower | the CHAIN GREATSWORD: the same cut as his, drawn as her own blade |
 | 2 | **BELLA** — THE IMPERIAL GENERAL, the duelist (passive CALCULATED STRIKES) | find one weakness and spend it before the rival can react | her own body (IMPERIAL GENERAL, or EXILE'S BLADE bought on the skins screen), 104 hp, 16 armor, a step faster | the EAGLE SPATHA: a quicker, shorter cut (26 px, 0.95 rad, `cycle` 26/60 s), drawn as her own blade |
-| 3 | **IGNIA** — THE HEARTHKEEPER, the burn-and-zone mage (passive SPREADING FLAME) | burn a fight down: one rival's fire spreads through the crowd, the snow and the creek put it out | her own body (HEARTHKEEPER, or WANDERER bought on the skins screen), 84 hp, 10 armor | the CROOK AND LANTERN: an ember shot (260 px/s for 0.85 s, `cycle` 60/60 s), the staff carried upright |
+| 3 | **IGNIA** — THE HEARTHKEEPER, the burn-and-zone mage (passive SPREADING FLAME) | burn a fight down: one rival's fire spreads through the crowd, deep snow and open water put it out | her own body (HEARTHKEEPER, or WANDERER bought on the skins screen), 84 hp, 10 armor | the CROOK AND LANTERN: an ember shot (260 px/s for 0.85 s, `cycle` 60/60 s), the staff carried upright |
 | 4 | **AURA** — THE NORTHERN LIGHT, the artillery mage (passive STARLIGHT) | hit from further than anyone, light up the night; caught up close is the danger | her own body (NORTHERN LIGHT), 78 hp, 9 armor, a step slower than anyone | the STAR-GLASS: a star bolt, 270 px/s for 0.95 s, `cycle` 66/60 s, drawn as her own shot (`look`, `HERO_SHOTS`) |
 | 5 | **SALVIA** — THE MENDER, the healer (passive WARM BROTH) | keep your side on its feet: heals, speed, the slows taken off | her own body (MENDER, or FIELD TENT bought on the skins screen), 80 hp, 10 armor | the SNOWDROP STAFF: a sprig, 250 px/s for 0.85 s, `cycle` 62/60 s, drawn as her own shot (`look`, `HERO_SHOTS`) |
 | 6 | **LUCERNA** — THE LANTERN, the catch-and-save support (passive LAMPLIGHT) | pull a rival in, bring an ally home, light what hides near her | her own body (LAMPLIGHTER, or DUSK ROAD bought on the skins screen), 88 hp, 12 armor | the LANTERN: a spark, 260 px/s for 0.8 s, `cycle` 62/60 s, drawn as her own shot (`look`, `HERO_SHOTS`) |
@@ -301,7 +301,7 @@ wave get 65% each and five get 46% each. What a death is worth:
 | a hero (`die`) | `KILL_XP` 40 + `KILL_XP_LV` 15 × its level | its rival side, whatever downed it |
 | a beast with an `xp` in `YIELD` (`animalDies`): deer 40, wolf 15, black bear 150 | grown `ANIMAL_LV_XP` (a tenth) a level | the side of whoever landed the last blow |
 
-Rabbits, buildings, the works (pines), fish, sales and the clock pay **no
+Rabbits, buildings, the works (pines), sales and the clock pay **no
 XP** — the road is where a hero levels. The table is sized against a hero who keeps to the road
 and the camps: about level 6 at ten minutes and level 12 near minute 25 (sized when 12 was the
 cap, the arena's 4.37 runs); levels 13-18 continue the same curve and have not been timed. Dying never touches `xp`; level and xp are set in the
@@ -539,12 +539,12 @@ contest('work:' + idx(tx, ty), p, () => { /* runs only if p wins */ });
 `resolveContests()` runs exactly one claim per key, choosing the lowest `contestRank(p)` =
 `matchHash(p.id * 131 + 7, state.tick)` — a pure function of the **match seed** (`SEED`), the **player id** and the
 **sim tick**, so a replay of that step picks the same winner. It is called twice in
-`updatePlay`: once after the player loop (work swings, build orders, fish) and once at the end
+`updatePlay`: once after the player loop (work swings, build orders) and once at the end
 (drop pickups). Claims must re-check their preconditions inside the callback — cost is paid at
 resolution, so a loser keeps its gold.
 
-Currently contested: work swings (`swingHit`, keyed by tile) and creek fish (`creekFishCatch`, keyed by fish index),
-first-come whichever team gets there. A shop buy
+Currently contested: work swings (`swingHit`, keyed by tile) and mounting a deer (`ride:`, keyed
+by animal), first-come whichever team gets there. A shop buy
 is not contested: every item is always on sale, so two buyers never want the same thing.
 
 ## Bots
@@ -716,7 +716,7 @@ three, taking them off the push (`aiSideOrca`; a party already out on the bear f
 nobody's own, so both sides go and the fight for it is a fight between them. The camp rung reads
 a beast that never walks (`still`) to its hide rather than its middle, walks in on it even when
 it is the one hunted, holds a bow past its lunge, and routes to ground beside its hole (the hole
-itself is water), searching as far as a roost walk for the far bank's ford.
+itself is water), searching as far as a roost walk.
 
 The fight rung weighs the numbers (`aiOdds`: rivals within `AI_ODDS_R` of the foe against its own
 side within `AI_ODDS_R` of it) through the profile's `judge` plus the mood's (`aiFallBack`): a
@@ -767,8 +767,6 @@ The ladder:
    blade to arm's length, a bow to 90 px with the line open - since that monster is not coming
    to it. The camp goes for whoever is nearest, so the helpers keep on whichever of
    the side it is chasing.
-5'. **heal** — hurt, out of its roost ring and no rival within `AI_HEAL_SAFE`: roll over a showing
-   creek fish from the dry bank (`aiHealRung`, [Heals](gameplay/heals.md#bots)).
 5a. **the ping** — a human teammate's [ping](gameplay/pings.md) this bot took up (`ai.ping`,
    set by `pingSteer` for the two bots nearest the spot). Read before the ladder (the `order`
    block of `aiOrders`): it overrides the defend, guard and push reads below and the human as an anchor — the one

@@ -9,7 +9,7 @@ screen's world is live and a spectated match is someone else's feet:
 | `settings.hitbox` | draws |
 | --- | --- |
 | `0` | nothing (default; persists under the profile like every other setting) |
-| `2` | bodies (tile boxes, unit circles, projectile points, pickup radii) plus the route every walker is following |
+| `2` | bodies (tile boxes, unit circles, projectile points) plus the route every walker is following |
 
 Colour carries the kind, so there is nothing to label: **cyan** a wall to everyone (`isSolidTile`,
 so a multi-tile building boxes each of its footprint tiles; the cistern's stone, held by the pixel,
@@ -17,7 +17,7 @@ is its footprint's edge px instead, with a green ring round the feet of each bod
 `drawCisternHitbox`), **blue** open water — a wall to
 animals and robots, a hole a player falls into — **green** the body circle
 `moveEntity`/`separateUnits` push apart, plus a dot on the anchor point itself, **red** the circle
-an arrow is tested against (on a standing building, the box of its drawn art — `structShotBox`, past the cyan footprint wherever the art stands past it), **violet** a walk-over pickup or a click target, **gold** a projectile
+an arrow is tested against (on a standing building, the box of its drawn art — `structShotBox`, past the cyan footprint wherever the art stands past it), **gold** a projectile
 (a point, never a circle), **pink** the model's own centre column (`hbMid`).
 
 Every shape is read from the expression the sim uses, never a copy of the number — an overlay that
@@ -40,7 +40,7 @@ frame that is genuinely centred has as many columns strictly left of the line as
 line rightwards. It is dotted so the frame it is measuring reads through it.
 
 **Reaches and sight ranges are deliberately not drawn.** `WORK_REACH`, a wolf's bite and a camp's ground, a
-road tower's range, the bird flush, the fish catch: they are wide enough to bury the 7 px
+road tower's range, the bird flush: they are wide enough to bury the 7 px
 circle the overlay exists to show, and a sight range is per-target (`seenAt`), so it needs a
 design of its own rather than a ring.
 
@@ -70,13 +70,6 @@ something. `DBG.showPaths` still forces the same pass on by itself, whatever `se
 into its box and ends on the tile the walker actually stops on. Wandering is a routed goal like
 any other; a mover steered by a heading on a timer would have no `nav` and nothing honest to draw.
 
-The two exceptions are the two things that don't walk:
-
-| Not a walker | Drawn as | Why |
-| --- | --- | --- |
-| a bird in flight | straight dotted line to `a.perch` + the goal box | it flies over the route grid, but the perch it's coming down on is a real decided destination |
-| a fish | `hbArrow` — a barbed heading stub, teal, **no box** | it steers (`f.a`) and genuinely has nowhere it is going; a box would claim a destination that doesn't exist |
-
-The arrowhead is the whole tell: **a barbed stub is a heading, a line ending in a box is a walk to
-a decided place.** Keep that split if you add another mover — draw the box only when there is a
-goal tile to put it on.
+The one exception is the thing that doesn't walk: **a bird in flight** draws a straight dotted line
+to `a.perch` and the goal box, since it flies over the route grid but the perch it is coming down
+on is a real decided destination. Draw the box only when there is a goal tile to put it on.

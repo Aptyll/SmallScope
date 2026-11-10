@@ -25,7 +25,7 @@
 // References between entities (a bot's home bay, a wolf's target, a part
 // tile's anchor, the eagle's merchant) cannot cross a wire as pointers, so
 // pack() turns each into a token naming the KIND and the ID - P player id,
-// R robot, A animal, W arrow, D drop, F fish by network id, O object tile
+// R robot, A animal, W arrow, D drop, O object tile
 // index, C camp index, E eagle by team - and snapResolve() rebuilds them
 // once everything they can name exists. Anything that is a per-machine
 // concern rather than the match's is skipped: a player's `input` (the host
@@ -53,10 +53,10 @@ const SNAP_SKIP = new Set(['input', 'ai', 'nav', '_fx', '_fy', '_tx', '_ty', '_t
 // client without it drew pose 'lundefined' and threw)
 // the match's own state keys: the clock, the result, the birds. Everything
 // else on `state` is one screen's UI (overlays, the menu, the death view)
-const SNAP_STATE = ['time', 'elapsed', 'day', 'tick', 'darkness', 'wind', 'windDir', 'windT', 'fishT', 'creekGone', 'over', 'end', 'eagleCine', 'story', 'votes', 'voteCd', 'surrendered', 'prac', 'bearStacks', 'onevone'];
+const SNAP_STATE = ['time', 'elapsed', 'day', 'tick', 'darkness', 'wind', 'windDir', 'windT', 'over', 'end', 'eagleCine', 'story', 'votes', 'voteCd', 'surrendered', 'prac', 'bearStacks', 'onevone'];
 const SNAP_DEPTH = 8; // how deep pack() follows plain objects before giving up (a cycle guard)
 // the moving kinds, their arrays and their token letters
-const SNAP_KINDS = { R: () => robots, A: () => animals, W: () => arrows, F: () => fish };
+const SNAP_KINDS = { R: () => robots, A: () => animals, W: () => arrows };
 
 // ---- network ids ----------------------------------------------------------
 // A stable id per moving entity for its life, so a delta can name it and a
@@ -65,7 +65,7 @@ const SNAP_KINDS = { R: () => robots, A: () => animals, W: () => arrows, F: () =
 // TOLD the id with each entity and registers it (snapNidSet), so its maps
 // answer the same tokens the host wrote.
 const snapNids = new WeakMap(); // entity -> nid
-const snapMaps = { R: new Map(), A: new Map(), W: new Map(), F: new Map() }; // kind -> nid -> entity
+const snapMaps = { R: new Map(), A: new Map(), W: new Map() }; // kind -> nid -> entity
 let snapNidNext = 16;
 function snapNid(e) { let n = snapNids.get(e); if (n === undefined) { n = snapNidNext++; snapNids.set(e, n); } return n; }
 function snapNidSet(e, n) { snapNids.set(e, n); if (n >= snapNidNext) snapNidNext = n + 1; }
@@ -675,7 +675,7 @@ function snapApplyDelta(d) {
 // (fogShown and inSight answer no for a body with `fogHid`). A field the
 // rail or the scoreboard starts reading about rivals joins SNAP_FOG_KEEP,
 // or it shows the last-seen value while the rival is in the fog. Everything
-// not in SNAP_FOG_KINDS (the tiles, the fish, the eagles, the
+// not in SNAP_FOG_KINDS (the tiles, the eagles, the
 // clock) goes to both sides alike.
 //   The ring keeps each tick's hidden ids per side (snapFogHid); a cut from a
 // base for one side reads that side's sight at every entry after it, the

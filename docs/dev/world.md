@@ -28,10 +28,9 @@ stable per tile.
   clear of them — which is why `RING_N` is frozen at six instead of tracking `MAX_PLAYERS`:
   the roster's size must not reshape terrain.
 - `ground` — `Uint8Array(WORLD²)`: `0` snow, `1` ice, `2` open-water hole (runtime-only, see
-  [Ice holes](#ice-holes-and-the-lake-fish)), `3` the road ([The road](#the-road)), `4` the
-  creek's open water and `5` a ford's stepping stone ([The creek](#the-creek)). **Open water is
-  `waterAt(tx, ty)`** — a hole or the creek — the one read every walker, route, spawn and climb-out
-  asks; a new check against `=== 2` alone is a hole the creek does not have. Ice is **mechanically slippery** (see
+  [Ice holes](#ice-holes)), `3` the road ([The road](#the-road)). The frozen creek is ground `1`
+  ([the creek](code-map/sim/world.md)). **Open water is `waterAt(tx, ty)`**, a carved hole, the one
+  read every walker, route, spawn and climb-out asks. Ice is **mechanically slippery** (see
   [Momentum movement](gameplay/momentum-movement-players-only.md)), and worldgen carves it as a travel
   network: 14 frozen lakes plus winding ~5-tile-wide rivers (`carveRiver` in `genWorld()`) —
   a spoke from each ring point to the central clearing and a ring linking each point to its
@@ -99,7 +98,7 @@ stable per tile.
   `fillRect` — a million single ones were a third of the bake, and a run lays exactly what its
   pixels would. The per-tile painter is `paintGroundTile(g, tx, ty)`, and a runtime change goes through
   `repaintGround(tx, ty)` (the CLAUDE.md hard rule — the four neighbours are repainted because
-  edge rims depend on them). The runtime ground writers: [ice holes](#ice-holes-and-the-lake-fish) and
+  edge rims depend on them). The runtime ground writers: [ice holes](#ice-holes) and
   their dawn refreeze, [ice breaks](#ice-breaks) opening and freezing back, a roost pad's paving ([the road](#the-road)), and the
   practice arena's track rolls. The bake also lays the scenery's
   [cast shadows](rendering/light-and-weather.md#cast-shadows), and `render()` repaints a caster's reach itself
@@ -114,14 +113,14 @@ stable per tile.
   so any repaint lays back exactly the snow the bake laid, a lake-shore tile reads the same
   lattice, and nothing rolls. Kept subtle on purpose: the lee tone stays well above a cast
   shadow. A chunk bake lays each row of its snow in one strip (`snowStrip`) — `putImageData` per
-  tile alone would cost the map half a second — under every tile but ice and holes (the road and
-  the creek lie over snow), and shares the height lattice across the chunk (`snowLatOpen`: a
+  tile alone would cost the map half a second — under every tile but ice and holes (the road lies
+  over snow), and shares the height lattice across the chunk (`snowLatOpen`: a
   tile reads a 12-point square for its own 8, so alone it works out each height about twice).
 
 ### The ice shore
 
 **A lake is a shape, not a run of tiles** (the `the ice shore` banner, js/draw/ground.js). The
-tile grid still says where the ice is for every rule — slipping, cracking, fish, the maps — and
+tile grid still says where the ice is for every rule — slipping, cracking, the maps — and
 only the pixels wander: `iceAtPx(x, y)` blends the four tile centres round a pixel (1 for a
 *lake* tile, ice or open hole, 0 for anything else) and pushes the blend across 0.5 with two
 octaves of `vnoise`. Every style's noise stays under half a unit, so a tile whose 3x3 is all
@@ -154,8 +153,8 @@ rule**: no walker, route or slide reads it, and the ice's shine shows through ev
 it, so a lake still reads as slippery. `bakeDressing` runs in `prepGround` right after
 `bakeLakes`: it labels every lake with its area (`lakeTiles`; `BIG_LAKE` tiles makes one big) and
 works cracks, banks and drifts out **once** into per-tile pixel lists (`dressPx`), which
-every paint of a tile stamps (`paintDressing`, called from `paintGroundTile` under the road, the
-creek and the cast shade). So a repaint lays back exactly what the bake laid, a drift reaching
+every paint of a tile stamps (`paintDressing`, called from `paintGroundTile` under the road and the
+cast shade). So a repaint lays back exactly what the bake laid, a drift reaching
 across a tile edge carries on, and a hole that refreezes gets its crack back.
 
 - **One snow depth, three bands.** The deep snow layer owns one seeded depth map (`snowDepth`,
@@ -168,8 +167,8 @@ across a tile edge carries on, and a hole that refreezes gets its crack back.
 - **Drifts in the lee**: the map's mid band drawn per pixel (`bakeDrifts`, reading `leeDepth` and
   `driftsDepth`) - the pads the map lays behind a pine or the hut, and the skirt round each
   deep drift - as a low flat pile, sunward rim lit and a pixel of shade past its lee. Its shape is
-  the map's, so it ends where the deep band's own look begins. Nothing on ice, the road, the
-  creek or a tile something stands on.
+  the map's, so it ends where the deep band's own look begins. Nothing on ice, the road or a
+  tile something stands on.
 - **Dust** on every lake (`dustIce`, called on each ice pixel in the shore painters): sparse
   grains in streaks along the prevailing wind, heavier near the downwind shore, each only pulling
   the ice a little toward snow. Trampled snow's `trampleAt(x, y)` thins it where feet have been, and
@@ -240,7 +239,7 @@ menu, default **off**) prints fps, frame times and the framed player's tile, no 
   `borderDepth()` rides on `vnoise`, so the forest's edge is the map's own, never the match's.
 - `fxRng` (`SEED ^ 0x9e3779b9`) feeds the snowflakes (the boot fall and `fitFlakes()`' resize
   top-ups), so window size and zoom cannot move a match's rolls. The [camps](#camps) roll nothing at all -
-  their sites are written down - and neither does [the creek](#the-creek); the creek and the
+  their sites are written down - and neither does [the creek](code-map/sim/world.md); the creek and the
   camps' clearings are the boot passes that write `ground` after `genWorld`, so the map's ground
   hash includes them.
 - `MAP_SEED` and `SEED` are `const`s in the rng banner and `hash2` closes over `MAP_SEED`, so nothing may call `hash2`
@@ -271,54 +270,31 @@ in wildlife or the AI reads `state.darkness`. What keys off the cycle:
   into a mirror on it with the **reflected stars** coming up inside that
   ([the reflected sky](rendering/light-and-weather.md#the-reflected-sky)) - so a frozen lake reads darker than the
   snow around it after dusk, and an ice hole is a hole in the reflection.
-- The shoal is not topped up at dawn; it refills continuously. See
-  [Ice holes and the lake fish](#ice-holes-and-the-lake-fish).
 
 `state.day` drives no difficulty. What damages a player: another player's arrows, a
 plunge through the ice (see [PvP](multiplayer.md#pvp)), and the wolves of a
 [wolf den](#camps).
 
-## Ice holes and the lake fish
+## Ice holes
 
 **Holes are open water in the ice** (`ground = 2`), opened by an [ice break](#ice-breaks), which
 freezes each tile back on its own clock (`breakClose`, js/sim/icebreak.js). Nothing a player
-carries opens one, and no hole outlives its break. Constants live in the `fish` banner of
-[js/sim/wildlife.js](../../js/sim/wildlife.js) (`HOLE_FALL_DMG`, `HOLE_FALL_T`,
-`FISH_MAX`/`FISH_MIN`; `FISH_SPAWN_T` alone stays in core.js).
+carries opens one, and no hole outlives its break. Constants live in the `open water` banner of
+[js/sim/wildlife.js](../../js/sim/wildlife.js) (`HOLE_FALL_DMG`, `HOLE_FALL_T`).
 
 - **Falling in**: standing over a hole tile (checked at each player's feet in `updatePlayer`,
   js/sim/sim.js) plunges that player: `HOLE_FALL_DMG` (15) via `damagePlayer`, velocity zeroed, and
   `p.fallT` runs `HOLE_FALL_T` (1.1 s) of floundering — no movement, tools, dodge, or
   slide (`clickAction`, `tryWork`, and `tryDodge` all check `fallT`). `drawPlayer` clips
   the sprite to the waterline with ripple rects. The climb-out teleports to
-  `nearestDryTile()` with brief i-frames. [The creek](#the-creek) plunges the same way, off the same check (`creekWet` on a ground-`4`
-  tile), with the death line `WENT IN THE CREEK`. An **active dodge roll crosses open water safely**
-  (the fall check skips while `dodgeT > 0`): any hole, and the creek when the roll starts at its bank. Every player falls in; `die(p)` and `Player.reset()`
+  `nearestDryTile()` with brief i-frames. An **active dodge roll crosses open water safely**
+  (the fall check skips while `dodgeT > 0`). Every player falls in; `die(p)` and `Player.reset()`
   clear `fallT`.
 - **Everyone else avoids water**: `moveEntity` treats hole tiles as solid for every entity
   except the player, so animals and robots never wade in, and `walkable()` refuses
   `ground === 2`, so no bot ever routes over one; arrows still fly over holes.
-- **Fish**: the `fish` array holds up to `FISH_MAX` (30) passive swimmers, that many spawned at
-  boot (`spawnFish()`, after `spawnAnimals()`) on **interior** ice only (tile centers passing
-  `fishClear` with a 14 px margin, ~a tile off the shore). `updateFish()` wanders them with a
-  **soft edge cap**: `fishClear(x, y)` requires `FISH_MARGIN` (6 px) of water on all four sides
-  of the body, the steering veers away from shore a look-ahead early (choosing the more open
-  side, falling back to the fish's per-fish `ts` turn bias), and movement is hard-clamped —
-  a position that would poke the body into snow is never committed. That clamp is **axis-aligned**
-  (`fishClear` probes ±margin on the four compass directions from the centre) while the drawn body
-  is rotated, so a fish swimming diagonally along a shore can clip a corner of snow with its
-  nose or tail for a frame or two, at the faint alpha an under-ice fish is drawn with — accepted.
-  Each is a **FROST PIKE** or, one in `FISH_RARE` (0.2, js/sim/wildlife.js), a **GOLD SUNFISH**: `f.kind`
-  (`fish` or `sunfish`) comes from `hash2` of its spawn spot inside `addFish`, so no `rng()` call
-  is added. They render in a pass right after the ground blit (`drawIceFish`, js/draw/lakes.js, using `ex`/`ey`) as a cold blue
-  **shadow** under the ice (`SPRITES.iceFish[kind].shadow`, look N: the swim sprite's shape in the under-ice ink
-  alone, solid round its rim and half as strong in its core, so a pike and a sunfish are told apart
-  by shape, never colour) at 0.42 alpha; where a fish crosses an open hole the crisp swim sprite is drawn clipped to the hole's
-  tiles, so only what is in the open water shows in colour. Both are baked by
-  app/bake-fish/paint.py (16 headings, 2 tail frames). An ice break spooks nearby fish into a fast dart.
-- **The lake fish are scenery.** Nobody catches them: the creek's whitefish is the river's heal
-  ([Heals](gameplay/heals.md)). `SFX.splash()` is the water cue. `DBG` exposes `fish`, `holes`,
-  `addFish`, `spawnEmerger`.
+- **Nothing lives under the lake ice** but [the orca](gameplay/wildlife.md#the-orca). `SFX.splash()`
+  is the water cue.
 
 ### Ice breaks
 
@@ -341,7 +317,7 @@ round a world point and returns the break (null where no bare ice lies under it)
   few numbers (`iceBreaks`, saved in `SAVE_ROOTS` and carried as a snapshot singleton) and
   every screen rebuilds its pixels (`breakCache`). No `rng()` call is spent.
 - **Its life**, off `state.tick` (`iceBreakAge`): `warn` s of cracks tracing the outline, then
-  it opens (plates flung out over `ICE_BREAK_BURST`, a splash, the fish scattered), stays wide
+  it opens (plates flung out over `ICE_BREAK_BURST`, a splash), stays wide
   open `hold` s (`ICE_BREAK_HOLD` by default), freezes back over `ICE_BREAK_FREEZE` (20 s) from
   the rim inward along a ragged front, and the new ice thickens from dark to the sheet's tone
   over `ICE_BREAK_SKIM`.
@@ -354,33 +330,3 @@ round a world point and returns the break (null where no bare ice lies under it)
   water as drawn, and a strict move (`moveEntity`) stops at its edge.
 - **The pixels** (`drawIceBreaks`, flat in `render()`): one small canvas a
   break, repainted each frame it is on screen, clipped to where the ice is drawn (`iceAtPx`).
-
-### The shoal is a population, not a nightly reset
-
-Nothing catches the lake fish any more, but the population rules stand: what
-keeps it full is a trickle in `updateFish`: `state.fishT` counts down `FISH_SPAWN_T` (11 s), or
-`FISH_SPAWN_FAST` (4 s) while the shoal is under `FISH_MIN` (10), and each expiry calls
-`spawnEmerger()` unless the shoal is already at `FISH_MAX`. Nothing takes a born fish out now, so
-the trickle only fills a shoal that has not reached `FISH_MAX` yet, fastest while it is under its floor.
-
-**`born` is a fish's whole life story.** A born fish is hard-clamped
-inside the water and drawn. An **emerger** is none of those. `spawnEmerger()`
-puts it two tiles *into the snow* beside a roomy shore tile, pointed at the water — the snow being
-the deep lake the map has no way to draw — and it creeps in at `FISH_EMERGE_SPD` (7 px/s) with the
-wander, the edge cap and the clamp all switched off, because the shore is the thing it is crossing.
-
-`fishVis(f)` samples five points nose-to-tail and returns the fraction over water; that is `f.vis`,
-and it is what promotes the fish (`vis >= 1` *and* `fishClear` agreeing ⇒ `born`, after which the
-clamp keeps `vis` at 1 forever). The **draw alpha ramps off the back half of it** —
-`max(0, (vis - 0.5) * 2)` — so an emerger is completely invisible until more than half its body is
-under the ice, and by the time anything is drawn the only part still outside is a pixel or two of
-tail at a fraction of 0.4. An emerger that has not made it in
-`FISH_EMERGE_MAX` (14 s) is dropped, unseen. Everything that selects a fish — the draw, an ice break's spook — tests
-`born` first.
-
-**The emerge sites are found once and cached** (`emergeSites`/`buildEmergeSites`, a lazy one-time
-scan costing ~1.4 ms) — never rejection-sample random tiles for one: on a 278² world a tile
-that is ice with swimming room *and* has snow exactly two tiles off is rare enough that the
-tries come up empty and the trickle silently stops. The
-shoreline never moves, and a hole only flips ice↔water which `fishClear` counts as swimmable
-either way, so one scan stays correct for the match; `genWorld()` only ever runs at boot.

@@ -101,7 +101,7 @@ a wander is the same gallop run slower, not a second animation; and `clipFrame`
 | `rabbit` | `idle` low over its paws, `rise` up on its haunches, `hop` | `updatePrey` |
 | `deer` | `graze` head down in the snow, `idle` head up and turning, `run` the gallop | `updatePrey` |
 | `wolf` | `idle`, `run` | `updateCampMonster` |
-| `alpha` / `dire` (the bears) | `idle`, `walk`, `run`, `bite`, `paw`, `roar`, `fish` | `updateCampMonster` |
+| `alpha` / `dire` (the bears) | `idle`, `walk`, `run`, `bite`, `paw`, `roar` | `updateCampMonster` |
 
 **The head is the tell.** Standing still and settled, a deer's head is DOWN in the snow and a
 rabbit is low over its paws; standing still and *wary*, the deer's head is up and turning and
@@ -203,7 +203,7 @@ They are not shown on the minimap or world map.
 ## Camp monsters: neutral until hit
 
 The [camps](../world.md#camps) keep three kinds — the **wolf** (a den's 4), the **black bear**
-(`alpha`, BLUE's river camp, 1) — one `MONSTER`
+(`alpha`, BLUE's bend camp, 1) — one `MONSTER`
 row each (wildlife.js: the bite and what it grows a level, the reach, the seconds between one
 body's bites, the hunting speed, the body's radius and mass, `big` for a bear's big body, and
 `cause`, the death line a bite writes). The kind keys are the old wolves' and stay so saves
@@ -211,7 +211,7 @@ still load. All three run
 `updateCampMonster()`:
 
 - **Neutral.** There is no sight and no threat bar filling on a linger: a player can stand at
-  the mouth of a den, or beside a fishing bear, and nothing happens. **A hit is the whole trigger** — an arrow, a roll, a
+  the mouth of a den, or beside the bear, and nothing happens. **A hit is the whole trigger** — an arrow, a roll, a
   key, anything through `hurtUnit` — and it wakes the *camp*: `wakeCamp(w, hitter)` hands the
   hitter to every monster of the same camp at a full leash bar. A bear that was not already
   hunting plays its `roar` clip, planted, for `BEAR_ROAR_FRAMES`, and the camp gives `SFX.roar()`
@@ -226,7 +226,7 @@ still load. All three run
 - **The leash bar.** `a.threat` (0..1) is the red bar hung under the health bar the way a
   player's stamina is (`THREAT_COL`, `drawAnimal`; bare track at rest). It holds full while
   the quarry is on the camp's **ground** — `CAMP_GROUND` (7) tiles past the camp's `r`, or past
-  a river camp's bank band (`campNear`, [world.md](../world.md#river-camps)) — and
+  a drawn camp's drawing (`campNear`) — and
   drains over `CAMP_LEASH_T` (3 s) anywhere off it, with the monster at your heels or not; it
   keeps coming while the bar drains and the hunt ends only when the bar is empty. Then it walks
   home and **heals**: a monster with nobody to hunt mends from nothing to full over
@@ -254,14 +254,7 @@ still load. All three run
 - **Off duty** it patrols its camp on routed legs from the same `wanderGoal` the prey graze with
   (2–5 tiles); once it drifts past `r * 0.8` the arc narrows to 0.5 rad straight back at the
   camp, so the only way it will walk out there is home. Taking a quarry drops the patrol goal.
-  **A bear walks its river instead** (`riverLeg`): legs of `RIVER_LEG` (3–7) points along its
-  bank (`C.path`), turning at either end, back to the nearest point first when a hunt left it off
-  the bank. `RIVER_FISH_P` (0.6) of legs end in a stop to **fish**: it faces the water for
-  `RIVER_FISH_WAIT` (1.4–3.2 s), then plays its own `fish` clip (`BEAR_FISH_FRAMES`): paw up over
-  the water, a scoop that flips a fish into the air, the snap that catches it and the chewing. The
-  fish is drawn in the frames; on the scoop (`BEAR_FISH_STRIKE`) `riverFish` splashes the water at
-  the edge (a burst and `SFX.splash`). A hit mid-catch drops it at once for the hunt.
-  A hit mid-fish wakes it as anywhere else; the fish can wait.
+  The bear patrols its clearing the same way.
   The noticed mark (`a.senseT`) is worn on a hunt and nothing else.
 
 | Kind | hp (+ a level) | bite (+ a level) | reach / cd / spd | body | kill |
@@ -270,7 +263,7 @@ still load. All three run
 | alpha (black bear) | 640 (+50) | 22 (+3) | 44 px / 1.4 s / 100 | r 18, mass 5, a big body a roll **tackles** | `YIELD.alpha` 630, `EPIC_TEAM_GOLD` (280) to every teammate on the ground, the BLACK BUFF for the whole team, a feed line |
 | orca (up in its pool, from 20:00) | 1560 (+100), from lv 12 | 28 (+3) | 80 px / 1.8 s / 0: `still`, it never leaves its hole; past its reach it spouts (`spout`, 240 px) | r 20, mass 9, anchored | `YIELD.orca` 880, `EPIC_TEAM_GOLD` to every teammate on the ground, the ORCA BUFF (`p.pushT`, `ORCA_PUSH_T` 180 s) for the whole team, a feed line |
 
-The bear is the one `teamPay` camp kind, on its bend of [the creek](../world.md#the-creek)
+The bear is the one `teamPay` camp kind, in its clearing on its bend of [the creek](../code-map/sim/world.md)
 (BLUE's bank; the orca's pool faces it across the road on RED's). It is first out at 5:00
 (`CAMPS.buff.first`; `stockCamps` holds it, `updateCamps` runs the clock, `campCleared` reads it
 as cleared until then) and back `repop` (5:00) after each kill. Each kill also counts one more
@@ -312,7 +305,7 @@ nothing walks into it, and it never leaves the water (up, from 20:00, it is one:
 that rides the snapshot; the client eases it like a body (`netClientLerp`).
 
 - **It cruises** the whole disc (`orcaWater`) as a shadow under the ice at
-  `ORCA_SWIM`, the lake's fish's look at the size of a deer, from one home tile (`orcaHome`: room
+  `ORCA_SWIM`, a dark under-ice silhouette the size of a deer, from one home tile (`orcaHome`: room
   of `ORCA_MARGIN` round it) to the next; every pick is `hash2` off the tick, never `rng()`.
 - **It locks on** (`orcaLook`) the nearest player standing on *its bare ice* (`orcaPrey`: ground
   `1` inside the disc, not in the air, not on a cable; a deer's back is still the ice) within

@@ -39,7 +39,7 @@ const RC_KIND = {
 const RC_KINDS = ['atk', 'ab', 'other'];
 // the world's names, by cause, for the pointer
 const RC_WORLD = { tower: 'recap.tower', soldier: 'recap.wave', wolf: 'recap.wolf', bear: 'recap.bear', fire: 'recap.fire',
-  orca: 'recap.orca', ice: 'recap.ice', creek: 'recap.creek', tackle: 'recap.tackle', eagle: 'recap.eagle' };
+  orca: 'recap.orca', ice: 'recap.ice', tackle: 'recap.tackle', eagle: 'recap.eagle' };
 const RC_MOVE = { roll: 'recap.roll' };
 // 0 the ring alone, 1 the lines, 2 opened out: this screen's, kept across deaths
 const recap = { view: 1 };

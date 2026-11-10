@@ -99,18 +99,23 @@ function brushOf(x, y) {
 // is listed in the road's frame (baseTile, js/sim/base.js: u along the road
 // from RED's corner, s across it, - the top side); BLUE's is the same list
 // mirrored across the creek's line, which is (tx, ty) -> (ty, tx), so both
-// sides get the same ambushes. Per patch: [u, s, half-length, half-width (tiles),
-// angle (deg, world: 0 east, 90 south)] - an ellipse with a wandering rim.
+// sides get the same ambushes; a patch ON the creek's line (the cistern's)
+// is its own mirror, laid once. Per patch: [u, s, half-length, half-width
+// (tiles), angle (deg, world: 0 east, 90 south)] - an ellipse with a
+// wandering rim.
 //   lane:   one by each side lane, on its inside edge, short of the lane's middle
 //   mid:    one either side of the mid road
 //   jungle: one each side of the road between the mid road and the dens
 //   river:  one each side short of the creek, toward the bears
+//   ring:   the cistern's floor, one drift either side of the road through it
+const CIST_DRIFT_S = 5; // tiles off the road's middle a ring drift lies (the road is ROAD_HW either side)
 const BRUSH_PATCHES = [
   [60, -25.5, 4, 1.7, -70], [60, 25.5, 4, 1.7, -20], // lane, inside the first tower
   [86, -55, 4, 1.7, -85], [86, 55, 4, 1.7, -5],     // lane, out by the second tower
   [90, -8.5, 3.5, 1.5, -45], [90, 8.5, 3.5, 1.5, -45], // mid
   [76, -13, 3, 2, 45], [76, 13, 3, 2, 45],         // jungle
   [103, -28, 3.5, 2, 45], [103, 30, 3.5, 2, 45],   // river
+  [(WORLD - 1) / 2 / MAP_K, -CIST_DRIFT_S / MAP_K, 4, 1.9, -45], [(WORLD - 1) / 2 / MAP_K, CIST_DRIFT_S / MAP_K, 4, 1.9, -45], // ring
 ].map(([u, s, a, b, ang]) => [u * MAP_K, s * MAP_K, a, b, ang]); // MAP_K spreads where they stand, never their size
 const BRUSH_AMP = 0.95;   // the depth in a patch past its rim's slope
 const BRUSH_EDGE = 0.6;   // tiles in from the rim it takes to reach BRUSH_AMP
@@ -154,7 +159,7 @@ function layBrush() {
   brushes.length = 0;
   BRUSH_PATCHES.forEach(([u, s, a, b, ang], k) => {
     const t = baseTile(0, u, s);
-    for (const side of [0, 1]) {
+    for (const side of Math.abs(u - (WORLD - 1) / 2) < 0.01 ? [0] : [0, 1]) {
       const g = (side ? 90 - ang : ang) * Math.PI / 180;
       const D = {
         brush: true, key: k, x: side ? t.ty : t.tx, y: side ? t.tx : t.ty, a, b, c: Math.cos(g), s: Math.sin(g), flip: side ? -1 : 1,

@@ -5,7 +5,7 @@
 //           `jaw` is the cell's pixel between the jaws, laid on the bitten spot
 //   shade(hd, ph)  the shadow: heading hd of 64 round from +x (east) clockwise, step ph
 //           of 8 of the tail's beat; top-down, the under-ice ink, solid rim over a
-//           half-strength core, like the lake's fish (js/baked/fish.js); drawn at part alpha
+//           half-strength core; drawn at part alpha
 //           under the ice. Packed (rows run-length, '|' between them) and baked the first time
 //           it is asked for, so the game starts without painting them all
 // Every frame is cut from its cell (cell: a shadow's, bcell: a breach's) and keeps where it sat in it

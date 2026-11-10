@@ -19,8 +19,8 @@
 //   kind/pop    the monster kind (ANIMAL_HP etc., wildlife.js) and how many
 //   repop       seconds after the LAST one dies before the whole camp is
 //               back - a camp is cleared or it is not; nothing trickles
-//   first       match seconds before a camp is out the first time (the river
-//               bears: the timed objectives); none means it stands from the start
+//   first       match seconds before a camp is out the first time (the bear
+//               and the orca: the timed objectives); none means it stands from the start
 //   props       what stands in it: [dx, dy, type, extra] off the centre
 //   spots       where each monster stands, [dx, dy] off the centre
 //   plan        a camp DRAWN, not scattered (the treeline camps): rows of
@@ -44,16 +44,11 @@
 //               (layOrcaPool), and what lives there is the orca under the ice
 //               (js/sim/orca.js) until its camp monster, the orca up in its
 //               hole, is out (`first`)
-//   river       the camp is a stretch of RIVERBANK, not a den: no props and
-//               no spots - its one monster walks `river` tiles of its own bank
-//               either way along the creek's bend round the site, up and
-//               down, and stops at the water to fish (riverPath; the walk,
-//               updateCampMonster, wildlife.js)
 //
 // resource: the pack - gold per head, the jungle's farm (each wolf a FARM, js/sim/farm.js)
 // buff:     the black bear, the one bear: first out at 5:00, the whole team paid and
 //           given the BLACK BUFF for the kill, and the side's black bears count up
-//           (state.bearStacks, wildlife.js); it walks a bank of the downstream bend
+//           (state.bearStacks, wildlife.js); it keeps its clearing on the downstream bend
 // orca:     the orca's pool on the upstream bend, the top side of the middle
 // hut:      no monster - a hut buried in the treeline, scenery since its
 //           chests went (0.531)
@@ -76,7 +71,7 @@ const CAMPS = {
   },
   buff: {
     name: 'BLACK BEAR BEND',
-    r: 4, mark: '#c2a6ff', river: 9,
+    r: 4, mark: '#c2a6ff',
     icon: [[3, 1, 1, 1], [2, 2, 3, 1], [1, 3, 5, 1], [2, 4, 3, 1], [3, 5, 1, 1]], // a cut stone
     kind: 'alpha', pop: 1, repop: 300, first: 300, // first out at 5:00, then 5:00 after each kill
     props: [],
@@ -170,37 +165,11 @@ function campSites() {
   return out;
 }
 
-// A river camp's stretch (CAMPS' `river`): one point a tile along the creek,
-// on the camp's own side of the water (the bend swings the water away from
-// the site, creekBends), RIVER_BANK tiles of dry snow back from the bank, and
-// beside each the water's edge it fishes at (wx, wy). Pure position: the
-// creek's line, never the rng.
-const RIVER_BANK = 0.6; // tiles between the bear's line and the water's nominal bank
-const RIVER_REACH = 0.35; // tiles into the water from its bank that the scoop lands (wx, wy)
-const RIVER_BAND = 2;   // tiles either side of the line that are the camp's ground (campNear)
-function riverPath(C) {
-  const B = creekBends().find((b) => b.tx === C.tx && b.ty === C.ty), out = [];
-  if (!B) return out;
-  // (w along, p across) back to tile coordinates (creekP, roadOffS)
-  const at = (w, p) => ({ tx: ((w + p) * Math.SQRT2 + WORLD - 1) / 2, ty: ((w - p) * Math.SQRT2 + WORLD - 1) / 2 });
-  for (let k = -C.spec.river; k <= C.spec.river; k++) {
-    const w = B.w + k, m = creekMid(w);
-    const bank = at(w, m - B.side * (CREEK_HW + CREEK_HW_RAG + RIVER_BANK)), edge = at(w, m - B.side * (CREEK_HW - RIVER_REACH));
-    out.push({ tx: bank.tx, ty: bank.ty, x: (bank.tx + 0.5) * TILE, y: (bank.ty + 0.5) * TILE, wx: (edge.tx + 0.5) * TILE, wy: (edge.ty + 0.5) * TILE });
-  }
-  return out;
-}
-// where the maps stamp a camp's glyph, in tile coordinates: its site, or the
-// middle of a river camp's stretch of bank
-function campMark(C) {
-  const q = C.path && C.path[C.path.length >> 1];
-  return q ? { tx: q.tx, ty: q.ty } : { tx: C.tx, ty: C.ty };
-}
+// where the maps stamp a camp's glyph, in tile coordinates: its site
+function campMark(C) { return { tx: C.tx, ty: C.ty }; }
 // whether tile coordinates (tx, ty) are within `pad` tiles of a camp's
-// ground: its round clearing, a river camp's stretch of bank too, and a
-// drawn camp's whole drawing (CAMPS' `plan`, turned to its site). Every
-// keep-out and the camp's own reach (campAt, the leash) ask this, so the
-// bank counts wherever the clearing does, and nothing a later pass stands
+// ground: its round clearing, or a drawn camp's whole drawing (CAMPS' `plan`, turned to its site). Every
+// keep-out and the camp's own reach (campAt, the leash) ask this, so nothing a later pass stands
 // up (a rock, a landmark, a drift) lands inside a drawing.
 function campNear(C, tx, ty, pad) {
   const P = C.spec.plan;
@@ -209,9 +178,7 @@ function campNear(C, tx, ty, pad) {
     const back = P.length >> 1, mid = P[0].length >> 1;
     return Math.abs(a) <= mid + pad && o >= -back - pad && o <= P.length - 1 - back + pad;
   }
-  if (Math.hypot(tx - C.tx, ty - C.ty) <= C.r + pad) return true;
-  if (C.path) for (const q of C.path) if (Math.hypot(tx - q.tx, ty - q.ty) <= RIVER_BAND + pad) return true;
-  return false;
+  return Math.hypot(tx - C.tx, ty - C.ty) <= C.r + pad;
 }
 
 // A treeline camp's own axes, in tile steps: `o` OUT from the edge its site is
@@ -277,13 +244,6 @@ function placeCamps() {
     if (spec.plan) layCampPlan(C);
     else clearCamp(C);
     if (spec.pool) layOrcaPool(C);
-    if (spec.river) { // the bank it walks: nothing standing on the line or a tile either side of it
-      C.path = riverPath(C);
-      for (const q of C.path) for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
-        const x = Math.round(q.tx) + dx, y = Math.round(q.ty) + dy;
-        if (inWorld(x, y) && objects[idx(x, y)] && ground[idx(x, y)] !== 4) objects[idx(x, y)] = null;
-      }
-    }
     for (const [dx, dy, type, variant] of spec.props) {
       const extra = type === 'snowdrop' ? { variant, readyAt: 0 } : {};
       if (dx === 0 && dy === 0) extra.site = C; // the anchor knows its camp: its clock is drawn off it (drawCampClock)
@@ -312,11 +272,9 @@ function layOrcaPool(C) {
 
 // one monster into its slot - the slot's own tile, or the nearest free one
 function spawnCampMonster(C, i) {
-  // a river camp's monster comes back in the middle of its stretch
-  const q = C.path && C.path[C.path.length >> 1];
   const spots = C.spots || C.spec.spots; // a drawn camp's spots are its plan's, turned to the site (layCampPlan)
-  const [dx, dy] = q || !spots.length ? [0, 0] : spots[i % spots.length]; // a save from before the river keeps no path: the old site
-  let tx = q ? Math.round(q.tx) : C.tx + dx, ty = q ? Math.round(q.ty) : C.ty + dy;
+  const [dx, dy] = !spots.length ? [0, 0] : spots[i % spots.length];
+  let tx = C.tx + dx, ty = C.ty + dy;
   if (objAt(tx, ty)) {
     let found = null;
     for (let r = 1; r <= C.r && !found; r++) for (let oy = -r; oy <= r && !found; oy++) for (let ox = -r; ox <= r && !found; ox++) {

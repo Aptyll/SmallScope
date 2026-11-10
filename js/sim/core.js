@@ -39,7 +39,6 @@ const CYCLE = DAY_LEN + NIGHT_LEN;
 // The one piece of the shoal's tuning that is not in js/sim/wildlife.js with the
 // rest of it: `state` below reads it at load time, and a const declared in a
 // file that loads later does not exist yet when this one runs.
-const FISH_SPAWN_T = 11;   // seconds between new fish while the shoal is healthy
 
 // One currency, many sources. Every source pays gold with a different yield profile
 // (burst on completion, or per kill); this table is the whole economy, with the
@@ -166,8 +165,6 @@ const state = {
   // (endSnapshot(), the victory banner); defeatT is the loss summary's own
   // clock, started when that view opens rather than when the player went down
   end: null, defeatT: 0,
-  fishT: FISH_SPAWN_T, // countdown to the next fish swimming in (see updateFish)
-  creekGone: {}, // the creek's caught fish: index -> the windT it swims back at (creekFishAt, js/sim/world.js)
   // the practice tool's world toggles (the practice bar's map group,
   // cheatCmd js/sim/practice.js): the bays' waves march, the road towers shoot
   prac: { waves: true, towers: true },

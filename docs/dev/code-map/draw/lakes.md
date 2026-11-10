@@ -10,4 +10,3 @@
 | the long cracks on a big lake | `bakeCracks`, `walkCrack`, `crackLine`, `CRACK_*` | `long cracks` |
 | the dust on the ice, and the hook that scuffs it | `dustIce` (called on each ice pixel by `paintIceTile`/`paintSnowShore`), `iceDust`, `dustLee`/`bakeDustLee`, `DUST_*`, `trodden` (reads `trampleAt`), `iceDustInvalidate` (trampled snow calls it) | `dust on the ice` |
 | the weather on the ice every frame: the dials, blown streaks over big lakes, a frosty night's glints and cracks, fresh dust | `lakeSky`, `drawLakeSky` (called by `render()` after `drawIceStars`), `LSTREAK_*`, `GLINT_*`, `CRACK_FROST*`, `dustCv`/`DUST_VARS`/`DUST_LEVELS` | `the weather on the ice` |
-| the lake's fish drawn: a shadow under the ice, crisp where one crosses an open hole | `drawIceFish` (called by `render()` right after the ground blit) | `the fish under the ice` |
