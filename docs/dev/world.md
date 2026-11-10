@@ -41,11 +41,12 @@ stable per tile.
   instead of ending in a cut. Neither test rolls anything, so the `'rivers'` stream is what it was.
 - `objects` — flat `Array(WORLD*WORLD)`, **at most one object per tile**. Every object is
   `{ type, tx, ty, hp, flash, shake, ...extra }`. The `OBJECTS` table's types: `tree`,
-  `snowdrop`, `den`, `dummy`, `banner`, `log`,
+  `snowdrop`, `den`, `dummy`, `banner`, `log`, `trunk`,
   `pylon`, `pkdie`, `agbell`, `stump`, `eagle`, `hut`, `part`, and the
   [story landmarks](#story-landmarks)' `boat` (added from `LANDMARKS`); the `STRUCTS` table's: `pump`,
   `barracks`, `tower`. `banner`/`log` are
-  [the road](#the-road)'s furniture (`banner` is also the practice gate's flag), `pylon`
+  [the road](#the-road)'s furniture (`banner` is also the practice gate's flag), `trunk` the fallen pine a
+  junction's landmark (`jungleMarks`: each tile it lies across carries the trunk's whole line), `pylon`
   [the zipline](#the-zipline)'s, and `dummy`/`pkdie`/`agbell` exist only in
   [the practice tool](#the-practice-tool)'s arena. `den` (solid, inert scenery
   two tiles wide — `OBJECTS.den.w`, so `placeCamps` fills the tile east of it with a `part` — that
