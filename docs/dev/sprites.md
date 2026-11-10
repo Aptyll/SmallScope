@@ -533,9 +533,9 @@ the colour, because a desaturated pine turns to mud under the night grade (round
 `tree-filters-1.png`, is the grey version that was turned down). **B** gives the outline a dark
 muted green, lifts the needle darks to an L floor of 0.40 and brings the snow down to a soft
 blue-grey band; **C** adds a hue shift by value (shadows toward teal, lights toward yellow-green);
-**D** takes C to 80% colour and mutes the trunk. Each comes in four **tones** by forest depth
+**D** takes C to 80% colour and mutes the trunk. Each comes in five **tones** by forest depth
 (`TREE_TONES`, a needle and a snow L shift): the deep is the filtered look itself, the ring inside the edge
-+0.035, the edge +0.07, and the **heart** (forest three tiles each way) drops its snow into shade so a wide wall is one dark mass with a lit rim — nine pines in ten stand deep, so darkening the deep instead would darken
++0.035, the edge +0.07, and the **heart** (forest three tiles each way) drops its snow into shade so a wide wall is one dark mass with a lit rim, and the **hollow** is darker again (where the deep forest's swell sinks) — nine pines in ten stand deep, so darkening the deep instead would darken
 the whole forest. Which row a tree wears is decided on its tile at draw time
 ([rendering.md](rendering/render-pass-order.md)). `SPRITES.tree` is variant B's deep row.
 
