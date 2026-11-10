@@ -69,7 +69,8 @@ function renderUI(now) {
   renderNotices();
 
   // the announcer, top centre under the rail, and the kill feed under the
-  // news plates (js/ui/announcer.js): over the panels like the news, and up
+  // news plates (js/ui/announcer.js): the feed over the panels like the news, a call
+  // waiting until no panel covers it (annCovered), and both up
   // while you are down - a spectator is exactly who wants the calls
   renderAnnouncer();
 

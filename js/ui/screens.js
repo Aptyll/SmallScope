@@ -356,14 +356,15 @@ function openDefeat() {
   state.deadHover = [0, 0];
 }
 
-// the spectate control, top centre: [<] NAME [>]. Arrow boxes are SPEC_AW
-// wide; the name plate between them is sized to the widest player name so the
+// the spectate control, top centre: [<] FACE HERO [>], on the HUD's graphite. Arrow boxes are SPEC_AW
+// wide; the plate between them is sized to the widest hero name so the
 // arrows never jump as the target changes.
-const SPEC_Y = 6, SPEC_H = 13, SPEC_AW = 11;
+const SPEC_Y = 6, SPEC_H = 20, SPEC_AW = 13, SPEC_FACE = 16;
+function specName(p) { return CLASSES[p.cls] ? CLASSES[p.cls].name : p.name; } // who you are watching, by the hero on the field
 function specLayout() {
   let nw = 0;
-  for (const p of players) if (p.active) nw = Math.max(nw, pixelTextWidth(p.name));
-  const w = SPEC_AW + 6 + nw + 6 + SPEC_AW;
+  for (const p of players) if (p.active) nw = Math.max(nw, pixelTextWidth(specName(p), 2));
+  const w = SPEC_AW + 3 + SPEC_FACE + 5 + nw + 5 + SPEC_AW;
   const x = Math.round((VIEW_W - w) / 2);
   const rb = railBottom(); // the team rail keeps the top edge while you are out (ui.js)
   const y = rb ? rb + 4 : SPEC_Y;
@@ -476,7 +477,7 @@ function drawRespawnLine() {
   const t = tr('end.respawn', { s: Math.max(0, Math.ceil(player.respawnT)) });
   const ts = pixelTextWidth(t, 3) <= VIEW_W - 20 ? 3 : 2;
   drawPixelTextOutline(ctx, t, Math.round((VIEW_W - pixelTextWidth(t, ts)) / 2),
-    frameTop() + 30, '#cfe4f2', '#0a0e23', ts);
+    Math.max(frameTop() + 30, noteY() + ANN_FACE + 2 * ANN_PAD + 6), '#cfe4f2', '#0a0e23', ts); // clear of the spectate bar and a call under it
 }
 
 function renderDead(now) {
@@ -484,40 +485,37 @@ function renderDead(now) {
   // the recap owns the frame: only a respawn wait's countdown reads over it
   if (replayFull()) { if (state.over === 'respawning') { drawRespawnLine(); renderGuideDead(now); } return; }
   if (state.deadView === 'spec') {
-    // top centre: [<] NAME [>]. The name sits on a plate in the target's
-    // team colour; each arrow is its own box that lights gold under the
+    // top centre: [<] FACE HERO [>]. The watched hero's face and name at 2x over a rule in its side's
+    // colour; each arrow is its own box that lights gold under the
     // pointer, so the control explains itself without a word of hint.
     const vp = viewPlayer();
     const L = specLayout();
     const hit = specHit();
-    ctx.fillStyle = 'rgba(12,18,42,0.82)';
-    ctx.fillRect(L.x, L.y, L.w, L.h);
-    const mark = vp === player ? '#8f9cc4' : TEAMS[skin(vp.team)].mark;
-    ctx.fillStyle = mark;
-    ctx.fillRect(L.x + SPEC_AW, L.y, L.w - SPEC_AW * 2, 1);
-    ctx.fillRect(L.x + SPEC_AW, L.y + L.h - 1, L.w - SPEC_AW * 2, 1);
+    ctx.fillStyle = HUD_INK; ctx.fillRect(L.x, L.y, L.w, L.h);
+    ctx.fillStyle = AB_BG; ctx.fillRect(L.x + 1, L.y + 1, L.w - 2, L.h - 2);
     for (const dir of [-1, 1]) {
       const r = dir < 0 ? L.left : L.right;
       const hot = hit === dir;
-      ctx.fillStyle = hot ? '#1f2b5c' : '#141c3c';
-      ctx.fillRect(r.x, r.y, r.w, r.h);
-      ctx.fillStyle = hot ? '#c89a3c' : '#35426e';
-      ctx.fillRect(r.x, r.y, r.w, 1); ctx.fillRect(r.x, r.y + r.h - 1, r.w, 1);
-      ctx.fillRect(dir < 0 ? r.x : r.x + r.w - 1, r.y, 1, r.h);
-      // a 4-wide chevron, pointing out of the plate
+      ctx.fillStyle = hot ? '#3a3e46' : HUD_EDGE;
+      ctx.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
+      // a 5-tall chevron, 2 px thick, pointing out of the plate
       const cx = r.x + (r.w >> 1), cy = r.y + (r.h >> 1);
-      ctx.fillStyle = hot ? '#ffd95c' : '#cfe0ff';
+      ctx.fillStyle = hot ? '#ffd95c' : '#d4d7dc';
       for (let i = 0; i < 4; i++) {
         const px = dir < 0 ? cx - 2 + i : cx + 1 - i;
-        ctx.fillRect(px, cy - i, 1, 1); ctx.fillRect(px, cy + i, 1, 1);
+        ctx.fillRect(px - (dir < 0 ? 0 : 1), cy - i, 2, 1); ctx.fillRect(px - (dir < 0 ? 0 : 1), cy + i, 2, 1);
       }
     }
+    const fx = L.x + SPEC_AW + 3, tx = fx + SPEC_FACE + 5;
     if (vp !== player) {
-      drawPixelTextShadow(ctx, vp.name, Math.round(L.x + (L.w - pixelTextWidth(vp.name)) / 2), L.y + 4, playerTint(vp), '#0a0e23');
+      const nm = specName(vp);
+      drawFace(fx, L.y + 2, SPEC_FACE, vp);
+      drawPixelText(ctx, nm, tx, L.y + 4, '#f4f7ff', 2);
+      ctx.fillStyle = TEAMS[skin(vp.team)].mark; ctx.fillRect(tx, L.y + 16, pixelTextWidth(nm, 2), 1);
     } else {
       // nobody left to watch: an empty plate with a dim dash where a name would be
-      ctx.fillStyle = '#5a6690';
-      ctx.fillRect(Math.round(L.x + L.w / 2) - 3, L.y + 6, 6, 1);
+      ctx.fillStyle = '#6c717a';
+      ctx.fillRect(Math.round(L.x + L.w / 2) - 4, L.y + 9, 8, 2);
     }
     if (state.over === 'respawning') { drawRespawnLine(); renderGuideDead(now); }
     return;
