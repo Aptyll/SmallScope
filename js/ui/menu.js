@@ -35,7 +35,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.739';
+const PATCH_TXT = 'PATCH 0.740';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -51,6 +51,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.740', 'ARCUS CARRIES HIS LONGBOW UPRIGHT AT HIS SIDE, CLEAR OF HIS FACE, AND DRAWS IT WITH THE STRING BACK AND AN ARROW ON IT IN EVERY DIRECTION.'],
   ['0.739', 'IGNIA, LUCERNA, MARIS, NIX AND SALVIA SEEN FROM THE SIDE ARE FIGURES NOW, NOT SLABS: A NECK, A SHOULDER, AN ARM AND A HAND. LUCERNA AND SALVIA GET SHAPED BACKS.'],
   ['0.738', 'ROAD TOWERS STAND ON A ROUND OF FLAGSTONES THAT JOINS THE LANE, THE ZIPLINE IS A TWISTED ROPE, AND A TOWER THROWS ONE CLEAN SHADOW.'],
   ['0.737', 'THE TITLE SCREEN SHOWS THE GAME: TEN HEROES FACE OFF ON THE FROZEN MIDDLE IN DAYLIGHT, YOUR OWN HERO LEADING YOUR SIDE.'],
