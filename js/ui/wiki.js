@@ -109,7 +109,7 @@ const WIKI_WORLD = [
     text: 'world.worksText' },
   { name: 'world.claim', fig: () => [wikiHero('SAGITTA', 'right'), wikiHero('LIGNUM', 'left', true)],
     text: 'world.claimText' },
-  { name: 'world.eagles', air: true, fig: () => [SPRITES.perch.figure(BIRD_SKINS[0].id, skin(player.team))],
+  { name: 'world.eagles', air: true, fig: () => [SPRITES.perch.figure(SPRITES.perch.look, skin(player.team))],
     text: 'world.eaglesText' },
   { name: 'world.counter', fig: () => [SPRITES.merchant[skin(player.team)].down[0]],
     text: 'world.counterText' },
