@@ -310,12 +310,6 @@ function abilityPose(p) {
   return null;
 }
 
-// Everything a STATUS leaves on a body, drawn over whatever sprite is
-// wearing it: the sprung jaws at rooted feet, the flames, and the gold mark
-// chevrons. Takes the sprite's own box, so a rabbit, a bot and a player wear
-// the same tells at their own size - a state you cannot see is a rule you
-// cannot play around, and that is as true of a deer as of a rival. Called by drawAbilityOnPlayer below and by drawAnimal /
-// drawRobot (js/draw/bodies.js).
 // one tongue of a burning body's fire (drawUnitStates): its foot at (x, y), `hgt` px tall, leaning `lean`
 // px by its tip; an amber body three wide at the foot and one at the tip, a yellow heart inside it low down; the crown's
 // stays short of the overhead frame
@@ -328,13 +322,24 @@ function burnTongue(x, y, hgt, lean) {
     if (u < 0.45) { ctx.fillStyle = r < 1 ? '#fff0a8' : '#ffd95c'; ctx.fillRect(x + ox, y - r, 1, 1); }
   }
 }
+// Everything a STATUS leaves on a body, drawn over whatever sprite is
+// wearing it: the sprung jaws at rooted feet, the ice on slowed ones, the flames, and the gold mark
+// chevrons. Takes the sprite's own box, so a rabbit, a bot and a player wear
+// the same tells at their own size - a state you cannot see is a rule you
+// cannot play around, and that is as true of a deer as of a rival. Called by drawAbilityOnPlayer below and by drawAnimal /
+// drawRobot (js/draw/bodies.js).
 function drawUnitStates(e, px, py, w, h, now) {
   if (e.rootT > 0) {
-    // the sprung jaws, closed on the feet
-    ctx.fillStyle = '#3c4356';
-    ctx.fillRect(px + 4, py + h - 2, w - 8, 2);
-    ctx.fillStyle = '#c8d2e4';
-    for (let k = 0; k * 2 + 5 < w - 4; k++) ctx.fillRect(px + 5 + k * 2, py + h - 3, 1, 1);
+    // the sprung jaws, closed on the feet: an iron bar on the snow, inked so it holds, and a saw of teeth
+    // standing off it, each a px taller at its leading edge (a saw, never a row of dots)
+    const x0 = px + 3, n = w - 6;
+    ctx.fillStyle = '#1c2030'; ctx.fillRect(x0 - 1, py + h - 2, n + 2, 3);
+    ctx.fillStyle = '#5d6478'; ctx.fillRect(x0, py + h - 1, n, 1);
+    ctx.fillStyle = '#8d94a6'; ctx.fillRect(x0, py + h - 2, n, 1);
+    for (let k = 0; k + 1 < n; k += 3) {
+      ctx.fillStyle = '#1c2030'; ctx.fillRect(x0 + k - 1, py + h - 4, 3, 2); ctx.fillRect(x0 + k - 1, py + h - 5, 2, 1);
+      ctx.fillStyle = '#dfe6f0'; ctx.fillRect(x0 + k, py + h - 3, 2, 1); ctx.fillRect(x0 + k, py + h - 4, 1, 1);
+    }
   }
   if (e.slowT > 0 && e.slowMul < 1 && !(e.rootT > 0)) {
     // slowed: a clump of ice caked on each foot, the legs clear between and above them (it still walks: the
