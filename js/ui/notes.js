@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['FIRST MATCH: BEFORE THE FIRST WAVE THE COACH POINTS UP YOUR LANE', '0.840'],
     ['Maris keeps the hooked barb and line on her harpoon when she thrusts it', '0.839'],
     ['Brush reeds in three tones; a beast in the brush stays in sight', '0.838'],
     ['The found mark shows at the feet instead of hiding behind the health frame', '0.837'],
