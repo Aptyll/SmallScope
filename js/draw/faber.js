@@ -75,8 +75,9 @@ function drawFaberGround(ex, ey, now) {
   // the small machines' bolts: a brass pin
   for (const w of faberBolts) {
     const x = Math.round(w.x - ex), y = Math.round(w.y - ey);
-    ctx.fillStyle = FA_INK; ctx.fillRect(x - 1, y - 1, 3, 3);
-    ctx.fillStyle = FA_BRASS; ctx.fillRect(x, y, 1, 1);
+    ctx.fillStyle = FA_INK; ctx.fillRect(x - 1, y + 1, 3, 1);
+    ctx.fillStyle = FA_BRASS; ctx.fillRect(x - 1, y, 2, 1);
+    ctx.fillStyle = '#fff3c4'; ctx.fillRect(x + 1, y, 1, 1);
   }
 }
 HERO_GROUND.push(drawFaberGround);

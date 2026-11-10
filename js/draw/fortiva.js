@@ -5,38 +5,33 @@
 // as gold glints circling her, DEFIANT HEART's shield as a gold shell round
 // her, NO KNEELING's after as embers off her shoulders.
 
-const FT_INK = '#141a2c', FT_GOLD = '#f2cc6a', FT_STEEL = '#c3ccd8', FT_SNOW_D = '#9fb6d8';
-// a link of chain, 3 x 3 with its eye, steel or gold
+const FT_INK = '#141a2c', FT_GOLD = '#f2cc6a', FT_GOLD_D = '#a9781f', FT_STEEL = '#c3ccd8', FT_SNOW_D = '#9fb6d8';
+// a broken piece of chain: a link lying flat (a lit oval) with the next one through it
+// edge-on, steel or gold, solid; (x, y) the flat link's top-left
 function ftLink(x, y, col) {
-  ctx.fillStyle = FT_INK; ctx.fillRect(x - 1, y - 1, 5, 5);
-  ctx.fillStyle = col; ctx.fillRect(x, y, 3, 3);
-  ctx.fillStyle = FT_INK; ctx.fillRect(x + 1, y + 1, 1, 1);
+  const d = col === FT_GOLD ? FT_GOLD_D : '#6f7f96';
+  ctx.fillStyle = col; ctx.fillRect(x, y, 2, 1); ctx.fillRect(x - 1, y + 1, 3, 1);
+  ctx.fillStyle = d; ctx.fillRect(x, y + 2, 2, 1); ctx.fillRect(x + 2, y + 1, 2, 1);
+  ctx.fillStyle = FT_INK; ctx.fillRect(x + 2, y + 2, 1, 1);
 }
-// SEVER THE CHAINS' wind-up: the greatsword's shadow swung back across the arc,
-// and round its outer edge - where it cuts harder and heals - a chain laid out
-// link by link as the blade comes round
+// SEVER THE CHAINS' wind-up: the sword is cocked back, and its chain pays out behind
+// her along the line the cut starts from, longer as she draws, gold once it is taut
 function drawSeverTele(p, px, py, a, closing) {
-  ctx.fillStyle = 'rgba(40,52,90,0.22)';
-  const reach = SEVER_HALF * 2 * closing; // swept in from her back side
-  for (let dy = -SEVER_R; dy <= SEVER_R; dy++) for (let dx = -SEVER_R; dx <= SEVER_R; dx++) {
-    const d = Math.hypot(dx, dy / 0.9);
-    if (d < SEVER_EDGE || d > SEVER_R) continue;
-    let t = Math.atan2(dy / 0.9, dx) - (a - SEVER_HALF);
-    t -= Math.floor(t / (Math.PI * 2)) * Math.PI * 2;
-    if (t <= reach) ctx.fillRect(px + dx, py + 2 + dy, 1, 1);
+  const t = a - SEVER_HALF, nx = Math.cos(t), ny = Math.sin(t) * 0.9, len = SEVER_R * (0.3 + 0.7 * closing);
+  const col = closing > 0.75 ? FT_GOLD : FT_STEEL, d = closing > 0.75 ? FT_GOLD_D : '#6f7f96';
+  for (let s = 9; s < len; s++) {
+    const x = Math.round(px + nx * s), y = Math.round(py + 2 + ny * s);
+    ctx.fillStyle = FT_INK; ctx.fillRect(x, y + 1, 1, 1);
+    ctx.fillStyle = s % 4 < 2 ? col : d; ctx.fillRect(x, y, 1, 1); // link, link, the next one edge-on
   }
-  const n = 11, lit = Math.ceil(n * closing), r = SEVER_R - 3;
-  for (let i = 0; i < lit; i++) {
-    const t = a - SEVER_HALF + (i + 0.5) / n * SEVER_HALF * 2;
-    ftLink(Math.round(px + Math.cos(t) * r) - 1, Math.round(py + 2 + Math.sin(t) * r * 0.9) - 1, closing > 0.75 ? FT_GOLD : FT_STEEL);
-  }
+  ftLink(Math.round(px + nx * len) - 1, Math.round(py + 2 + ny * len) - 1, col); // its loose end
 }
 // its landing: the cut swept through the arc, gold at its edge, and the chain broken
 // at the rim, links thrown off it
 function drawSeverFx(f, px, py, now) {
   const u = f.t / f.life;
   drawSwoosh(px, py, f.a, f.r, f.half, u, 9, [FT_INK, '#ffffff', FT_GOLD], 1);
-  drawFlung(px, py + 2, f.a, f.half, f.r + 14, 0.8, 8, 9, Math.min(1, u * 1.5), fxSeed(f), (x, y, k) => ftLink(x - 1, y - 1, k % 3 ? FT_STEEL : FT_GOLD));
+  drawFlung(px, py + 2, f.a, f.half, f.r + 14, 0.45, 8, 5, Math.min(1, u * 1.5), fxSeed(f), (x, y, k) => ftLink(x - 1, y - 1, k % 3 ? FT_STEEL : FT_GOLD));
 }
 AB_FX_LOOK.sever = drawSeverFx;
 // DEFIANT HEART's wave: the gold shell round her burst, its shards thrown out to
@@ -45,8 +40,8 @@ function drawDefyFx(f, px, py, now) {
   const u = f.t / f.life, seed = fxSeed(f), gold = f.col === FT_GOLD;
   ctx.globalAlpha = Math.min(1, 2.5 * (1 - u));
   drawFlung(px, py, 0, Math.PI, f.r, 0.7, 6, 18, Math.min(1, u * 1.6), seed, (x, y, k) => {
-    ctx.fillStyle = FT_INK; ctx.fillRect(x - 1, y - 1, 4, 3);
-    ctx.fillStyle = gold ? (k % 3 ? FT_GOLD : '#ffffff') : (k % 3 ? '#cfd8e8' : '#ffffff'); ctx.fillRect(x, y, 2, 1);
+    if (gold && k % 3 === 0) ftLink(x - 1, y - 1, FT_GOLD); // a paid shell throws its links
+    else fxChip(x, y - 1, k, gold ? '#ffe9a8' : '#f4f7ff', gold ? FT_GOLD_D : '#7f98bc', FT_INK);
   });
   drawFlung(px, py + 3, 0, Math.PI, f.r + 6, 0.9, 2, 14, Math.min(1, u * 1.2), seed + 5, (x, y) => {
     ctx.fillStyle = FT_SNOW_D; ctx.fillRect(x, y + 1, 2, 1);
@@ -69,10 +64,7 @@ function drawYokeFx(f, px, py, now) {
   ctx.globalAlpha = Math.min(1, 2.5 * (1 - u));
   ctx.fillStyle = '#7f98bc'; fillEllipsePx(px, py + 2, 5, 2);
   drawCracks(px, py + 2, 7, f.r, Math.min(1, u * 5), seed, FT_INK, '#ffffff');
-  drawFlung(px, py + 2, 0, Math.PI, f.r * 0.8, 0.4, 8, 10, Math.min(1, u * 1.4), seed, (x, y) => {
-    ctx.fillStyle = FT_INK; ctx.fillRect(x - 1, y - 1, 3, 3);
-    ctx.fillStyle = '#f4f7ff'; ctx.fillRect(x, y, 1, 1);
-  });
+  drawFlung(px, py + 2, 0, Math.PI, f.r * 0.8, 0.4, 8, 10, Math.min(1, u * 1.4), seed, (x, y, k) => fxChip(x, y - 1, k, '#f4f7ff', '#7f98bc', FT_INK));
   ctx.globalAlpha = 1;
 }
 AB_FX_LOOK.yoke = drawYokeFx;
@@ -91,9 +83,9 @@ function drawNoKneelFx(f, px, py, now) {
   ctx.fillStyle = '#7f98bc'; fillEllipsePx(px, py + 3, NOKNEEL_UP_R - 6, Math.round(NOKNEEL_UP_R * 0.4));
   ctx.fillStyle = FT_SNOW_D; fillEllipsePx(px, py + 2, NOKNEEL_UP_R - 10, Math.round(NOKNEEL_UP_R * 0.3));
   drawCracks(px, py + 3, 9, f.r, Math.min(1, u * 5), seed, FT_INK, '#ffffff');
-  drawFlung(px, py + 3, 0, Math.PI, f.r, 0.5, 16, 20, Math.min(1, u * 1.3), seed, (x, y, k) => {
-    ctx.fillStyle = FT_INK; ctx.fillRect(x - 1, y - 1, 3, 3);
-    ctx.fillStyle = k % 4 ? '#f4f7ff' : FT_GOLD; ctx.fillRect(x, y, 1, 1);
+  // the crust thrown up at every distance out, a few of her links among the lumps: the cracks are the shape
+  drawFlung(px, py + 3, 0, Math.PI, f.r, 0.1, 16, 11, Math.min(1, u * 1.3), seed, (x, y, k) => {
+    if (k % 5 === 0) ftLink(x - 1, y - 1, FT_GOLD); else fxChip(x, y - 1, k, '#f4f7ff', '#7f98bc', FT_INK);
   });
   ctx.globalAlpha = 1;
 }
@@ -124,16 +116,20 @@ function drawFortBody(p, ax, ay, now, front) {
     }
   }
   if (!front) return;
-  // DEFIANT HEART: the shell, thinning as its clock runs out
+  // DEFIANT HEART: her chest thrown out with a flash as it starts and links bursting
+  // off her, then her chains worn crossed over the heart, gold, for as long as it holds
   if (p.defyT > 0 && shieldOf(p, 'ward') > 0) {
-    ctx.globalAlpha = 0.35 + 0.5 * Math.min(1, p.defyT / DEFY_T);
-    ctx.fillStyle = '#f2cc6a';
-    for (let i = 0; i < 20; i++) {
-      if ((i + Math.floor(now * 10)) % 5 === 0) continue;
-      const t = (i / 20) * Math.PI * 2;
-      ctx.fillRect(Math.round(cx + Math.cos(t) * 9), Math.round(ay + 8 + Math.sin(t) * 10), 1, 1);
+    const age = DEFY_T - p.defyT, hx = ax + 8, hy = ay + 9;
+    for (let s = -3; s <= 3; s++) { // the crossed chains
+      const lit = (s + Math.floor(now * 8)) % 4 === 0;
+      ctx.fillStyle = FT_INK; ctx.fillRect(hx + s, hy + s + 1, 1, 1); ctx.fillRect(hx + s, hy - s + 1, 1, 1);
+      ctx.fillStyle = lit ? '#ffffff' : s % 2 ? FT_GOLD : FT_GOLD_D; ctx.fillRect(hx + s, hy + s, 1, 1); ctx.fillRect(hx + s, hy - s, 1, 1);
     }
-    ctx.globalAlpha = 1;
+    if (age < 0.3) {
+      const u = age / 0.3, k = Math.round(4 * (1 - u));
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(hx - k, hy, 2 * k + 1, 1); ctx.fillRect(hx, hy - k, 1, 2 * k + 1); // the flash on her heart
+      drawFlung(hx, hy + 4, 0, Math.PI, 16, 0.5, 7, 5, u, p.id * 29, (x, y) => ftLink(x - 1, y - 1, FT_GOLD));
+    }
   }
   // NO KNEELING's after: embers rising off her shoulders
   if (p.nkT > 0) {

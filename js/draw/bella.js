@@ -29,10 +29,16 @@ function drawBellaMarks(e, px, py, w, h, now) {
       const a = aimAngle(e);
       const cx = px + 8 + Math.round(Math.cos(a) * 6), cy = py + 8 + Math.round(Math.sin(a) * 4);
       const nx = -Math.sin(a), ny = Math.cos(a); // the blade lies across the aim
-      for (let s = -5; s <= 5; s++) {
+      const age = PARRY_T - e.parryT, run = Math.floor(now * 14) % 16 - 7; // a glint walks the edge
+      for (let s = -7; s <= 7; s++) { const x = Math.round(cx + nx * s), y = Math.round(cy + ny * s); ctx.fillStyle = BELLA_INK; ctx.fillRect(x - 1, y - 1, 3, 3); }
+      for (let s = -6; s <= 6; s++) {
         const x = Math.round(cx + nx * s), y = Math.round(cy + ny * s);
-        ctx.fillStyle = BELLA_INK; ctx.fillRect(x, y + 1, 1, 1);
-        ctx.fillStyle = Math.abs(s) < 2 ? BELLA_GOLD : '#eef2f8'; ctx.fillRect(x, y, 1, 1);
+        ctx.fillStyle = s === run ? '#ffffff' : Math.abs(s) < 2 ? BELLA_GOLD : '#dfe6f0'; ctx.fillRect(x, y, 1, 1);
+      }
+      if (age < 0.18) { // the blade snapped into guard: one glint off it
+        const k = Math.round(5 * (1 - age / 0.18));
+        ctx.fillStyle = BELLA_INK; ctx.fillRect(cx - k - 1, cy - 1, 2 * k + 3, 3); ctx.fillRect(cx - 1, cy - k - 1, 3, 2 * k + 3);
+        ctx.fillStyle = '#ffffff'; ctx.fillRect(cx - k, cy, 2 * k + 1, 1); ctx.fillRect(cx, cy - k, 1, 2 * k + 1);
       }
     }
   }
@@ -47,24 +53,26 @@ HERO_OVER.push({
     if (duel) { ctx.fillStyle = BELLA_GOLD; ctx.fillRect(mx - 4, my, 2, 1); ctx.fillRect(mx + 3, my, 2, 1); }
   },
 });
-// the duel on the snow under the hero called out: her spatha laid either side of
-// their feet, points in, on a shadow in the caller's side's colour, closing on them
-// as the duel runs out (HERO_GROUND)
-function drawDuelBlade(tipX, y, dir, col) {
-  const img = bellaSpathas().flat; // its point at the left, the hilt at the right
-  ctx.fillStyle = col; ctx.fillRect(dir > 0 ? tipX - 16 : tipX, y + 2, 16, 1);
-  if (dir < 0) { ctx.drawImage(img, tipX - 1, y - 10); return; }
-  ctx.save(); ctx.translate(tipX + 1, 0); ctx.scale(-1, 1); ctx.drawImage(img, 0, y - 10); ctx.restore();
+// the duel on the snow round the hero called out: two spathas planted point down
+// either side of them, hilts up, the duelling ground; they stand nearer as the duel
+// runs out (HERO_GROUND)
+function drawDuelBlade(x, y) {
+  ctx.fillStyle = '#9fb6d8'; ctx.fillRect(x - 2, y, 5, 1); ctx.fillRect(x - 1, y - 1, 3, 1); // the snow heaped at its point
+  ctx.fillStyle = BELLA_INK; ctx.fillRect(x - 1, y - 12, 3, 12); ctx.fillRect(x - 3, y - 13, 7, 3); ctx.fillRect(x - 1, y - 17, 3, 4);
+  ctx.fillStyle = '#eef2f8'; ctx.fillRect(x, y - 11, 1, 10);
+  ctx.fillStyle = '#a9b6c9'; ctx.fillRect(x, y - 4, 1, 3);
+  ctx.fillStyle = BELLA_GOLD; ctx.fillRect(x - 2, y - 12, 5, 1); ctx.fillRect(x, y - 16, 1, 1);
+  ctx.fillStyle = BELLA_GOLD_D; ctx.fillRect(x, y - 15, 1, 3);
 }
 function drawBellaDuels(ex, ey, now) {
   for (const b of players) {
     if (!(b.duelT > 0)) continue;
     const q = players[b.duelId];
     if (!q || !unitAlive(q)) continue;
-    const px = Math.round(q.x - ex), py = Math.round(q.y - ey) + 4;
-    const gap = 6 + Math.round(6 * b.duelT / DUEL_T), col = TEAMS[skin(b.team)].mark;
-    drawDuelBlade(px - gap, py, 1, col);
-    drawDuelBlade(px + gap, py, -1, col);
+    const px = Math.round(q.x - ex), py = Math.round(q.y - ey) + 5;
+    const gap = 10 + Math.round(6 * b.duelT / DUEL_T);
+    drawDuelBlade(px - gap, py);
+    drawDuelBlade(px + gap, py);
   }
 }
 // PERFECT PARRY's riposte: the answering thrust, a gold streak to the one it

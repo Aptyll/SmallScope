@@ -138,8 +138,7 @@ function drawVerdictFx(f, px, py, now) {
     const x = Math.round(px + nx * s - ny * o), y = Math.round(y0 + ny * s + nx * o);
     ctx.fillStyle = 'rgba(40,52,90,0.3)'; ctx.fillRect(x, y + 1, 2, 1);
     const z = Math.round(z0 * (0.6 + 0.4 * fxRoll(seed, k, 9)));
-    ctx.fillStyle = STD_INK; ctx.fillRect(x - 1, y - z - 1, 4, 3);
-    ctx.fillStyle = k % 3 ? '#f4f7ff' : '#cfd8e8'; ctx.fillRect(x, y - z, 2, 1);
+    fxChip(x, y - z - 1, k, k % 3 ? '#f4f7ff' : '#cfd8e8', '#7f98bc', STD_INK); // lumps of the crust
   }
   ctx.globalAlpha = 1;
 }
@@ -218,8 +217,7 @@ function drawGuardFx(f, px, py, now) {
   ctx.globalAlpha = Math.min(1, 2.5 * (1 - u));
   drawCracks(px, py + 3, 7, 22, Math.min(1, u * 5), seed, STD_INK, '#ffffff');
   drawFlung(px, py + 3, 0, Math.PI, 30, 0.4, 10, 16, Math.min(1, u * 1.4), seed, (x, y, k) => {
-    ctx.fillStyle = STD_INK; ctx.fillRect(x - 1, y - 1, 3, 3);
-    ctx.fillStyle = k % 4 ? '#f4f7ff' : STD_GOLD; ctx.fillRect(x, y, 1, 1);
+    fxChip(x, y - 1, k, k % 4 ? '#f4f7ff' : STD_GOLD, k % 4 ? '#7f98bc' : STD_GOLD_D, STD_INK);
   });
   ctx.globalAlpha = 1;
 }

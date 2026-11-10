@@ -174,6 +174,20 @@ function drawFlung(px, py, a, half, r, near, up, n, u, seed, paint) {
     paint(x, Math.round(y - z), k, u > 0.9);
   }
 }
+// A piece of debris, solid and lit from above: a pale top, its shaded body and an ink
+// foot, in one of three small shapes by k, (x, y) its top-left. No box round it: on
+// snow the body and the foot carry it.
+function fxChip(x, y, k, lite, dark, ink) {
+  const s = k % 3;
+  ctx.fillStyle = ink; ctx.fillRect(s === 2 ? x + 1 : x, y + 2, s === 1 ? 1 : 2, 1);
+  ctx.fillStyle = dark; ctx.fillRect(x, y + 1, s === 0 ? 2 : s === 1 ? 1 : 3, 1);
+  ctx.fillStyle = lite; ctx.fillRect(x, y, s === 1 ? 1 : 2, 1);
+}
+// A mote of light: one bright pixel in a 1 px glow of its colour, no rim
+function fxMote(x, y, core, glow) {
+  ctx.fillStyle = glow; ctx.fillRect(x - 1, y, 3, 1); ctx.fillRect(x, y - 1, 1, 3);
+  ctx.fillStyle = core; ctx.fillRect(x, y, 1, 1);
+}
 // Cracks run out from (px, py): n jagged lines, each `len` px at full, grown to `grow`
 // of that. dark is the split, lite the lit lip under it.
 function drawCracks(px, py, n, len, grow, seed, dark, lite) {
