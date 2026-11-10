@@ -30,15 +30,16 @@ const YARD_THINGS = {
 };
 const YARDS = {
   den: {
-    rx: 70, ry: 42, rag: 0.4, dy: 8, flip: true, step: [14, 13], trails: true,
+    rx: 70, ry: 42, rag: 0.4, dy: 8, mid: 0, step: [14, 13], trails: true,
     door: (C) => ({ x: (C.tx + 1) * TILE, y: (C.ty + 1) * TILE - 3 }), // the middle of the mouth's lip row
     things: [[-52, 2, 'rockA'], [44, -8, 'rockB'], [60, 16, 'rockD'], [-34, 30, 'rockC'], [26, 36, 'rockD'], [-66, 18, 'rockD'], [58, -22, 'rockC'], [-8, 42, 'rockB'], [-60, -14, 'rockB']],
   },
   hut: {
-    rx: 50, ry: 28, rag: 0.3, dy: 12, flip: false,
+    rx: 50, ry: 28, rag: 0.3, dy: 12, mid: 10,
     door: (C) => ({ x: C.tx * TILE + 6, y: (C.ty + 1) * TILE - 4 }),  // the door in its left wall (SPRITES.hogHut)
-    path: [[0, 0], [-7, 12], [-5, 34], [6, 58], [2, 84]],              // px off the door: out, and down into the clearing
-    things: [[33, -1, 'pile'], [-24, 10, 'block'], [-33, 22, 'log'], [-13, 24, 'log'], [40, 14, 'rockD']],
+    path: [[0, 0], [-7, 12], [-9, 34], [8, 58], [14, 84]],              // px off the door: out, and down into the clearing
+    // the woodpile stands against the right wall (`true`: it stays put when the yard flips)
+    things: [[33, -1, 'pile', true], [-24, 10, 'block'], [-33, 22, 'log'], [-13, 24, 'log'], [46, 12, 'rockD'], [-40, 2, 'rockC']],
   },
 };
 const yardCvs = new Map(); // a camp's tile index -> its yard
@@ -52,7 +53,7 @@ function yardOf(C, Y) {
   const W = Math.ceil(Y.rx * (1 + Y.rag)) * 2 + 24, H = Math.ceil(reachY) * 2 + 24;
   c = document.createElement('canvas'); c.width = W; c.height = H;
   c.wx = cx - (W >> 1); c.wy = cy - (H >> 1);
-  const g = c.getContext('2d');
+  const g = c.getContext('2d'), flip = hash2(key, 77) > 0.5;
   // open snow only: the yard stops at a pine, at ice and at paving
   const open = (x, y) => {
     const tx = Math.floor(x / TILE), ty = Math.floor(y / TILE);
@@ -66,7 +67,8 @@ function yardOf(C, Y) {
     let best = 99;
     const bx = x - m.x - (vnoise(y / 11, key) - 0.5) * 5, by = y - m.y;
     for (let k = 1; k < Y.path.length; k++) {
-      const [ax, ay] = Y.path[k - 1], [qx, qy] = Y.path[k], vx = qx - ax, vy = qy - ay;
+      const sg = (q) => (flip && q > 1 ? -1 : 1); // past its first step out of the door the path bends the other way at a flipped camp
+      const ax = Y.path[k - 1][0] * sg(k - 1), ay = Y.path[k - 1][1], qx = Y.path[k][0] * sg(k), qy = Y.path[k][1], vx = qx - ax, vy = qy - ay;
       const t = Math.max(0, Math.min(1, ((bx - ax) * vx + (by - ay) * vy) / (vx * vx + vy * vy)));
       best = Math.min(best, Math.hypot(bx - ax - vx * t, by - ay - vy * t));
     }
@@ -113,10 +115,9 @@ function yardOf(C, Y) {
       g.fillRect(px - c.wx, py - c.wy, 2, 1); g.fillRect(px - c.wx + (ux > 0 ? 1 : 0), py - c.wy + 1, 1, 1);
     }
   }
-  // what lies in it, where the ground is open; a den's lie either side of the mouth by its tile
-  const flip = Y.flip && hash2(key, 77) > 0.5 ? -1 : 1;
-  for (const [ox, oy, name] of Y.things) {
-    const rows = YARD_THINGS[name], x0 = Math.round(m.x + ox * flip - rows[0].length / 2), y0 = Math.round(m.y + oy);
+  // what lies in it, where the ground is open; which side of the yard's middle (`mid`, px off the door) each lies flips with the camp
+  for (const [ox, oy, name, stays] of Y.things) {
+    const rows = YARD_THINGS[name], x0 = Math.round(m.x + (flip && !stays ? 2 * Y.mid - ox : ox) - rows[0].length / 2), y0 = Math.round(m.y + oy);
     if (!open(x0, y0 + rows.length - 1) || !open(x0 + rows[0].length, y0 + rows.length - 1)) continue;
     for (let r = 0; r < rows.length; r++) for (let q = 0; q < rows[r].length; q++) {
       const col = YARD_PAL[rows[r][q]];
